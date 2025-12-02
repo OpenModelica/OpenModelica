@@ -106,6 +106,7 @@ import System;
 import Testsuite;
 import Util;
 import SerializeTaskSystemInfo;
+import File;
 
 public
 uniontype TranslateModelKind
@@ -193,9 +194,9 @@ algorithm
   System.realtimeTick(ClockIndexes.RT_CLOCK_TEMPLATES);
   /*Temporary disabled omsi fmu and generate C-fmu for omsicpp simcodetarget*/
   if Config.simCodeTarget() == "omsicpp" then
-     callTargetTemplatesFMU(simCode, "C", FMUVersion, FMUType);
-   else
-    callTargetTemplatesFMU(simCode, Config.simCodeTarget(), FMUVersion, FMUType);
+     callTargetTemplatesFMU(simCode, "C", FMUVersion, FMUType, p);
+  else
+    callTargetTemplatesFMU(simCode, Config.simCodeTarget(), FMUVersion, FMUType, p);
   end if;
   timeTemplates := System.realtimeTock(ClockIndexes.RT_CLOCK_TEMPLATES);
 end generateModelCodeFMU;
@@ -363,7 +364,7 @@ algorithm
 
       numProc = Flags.getConfigInt(Flags.NUM_PROC);
       true = numProc == 0;
-      print("hpcom computes the ideal number of processors. If you want to set the number manually, use the flag +n=_ \n");
+      print("hpcom computes the ideal number of processors. If you want to set the number manually, use the flag +n=_\n");
     then HpcOmSimCodeMain.createSimCode(inBackendDAE, inInitDAE, inInitDAE_lambda0, inRemovedInitialEquationLst, inClassName, filenamePrefix, inString11, functions, externalFunctionIncludes, includeDirs, libs,libPaths,program, simSettingsOpt, recordDecls, literals, args);
 
     case(_, _, _, _, _, _, _, _, _,_, _, _, _, _) equation
@@ -393,6 +394,7 @@ function generateModelCodeNewBackend
   output String fileDir;
   output Real timeSimCode = 0.0;
   output Real timeTemplates = 0.0;
+  output DAE.FunctionTree oldFunctionTree;
 protected
   Integer numCheckpoints;
   NSimCode.SimCode simCode;
@@ -402,7 +404,7 @@ algorithm
   StackOverflow.clearStacktraceMessages();
   try
     System.realtimeTick(ClockIndexes.RT_CLOCK_SIMCODE);
-    simCode := NSimCode.SimCode.create(bdae, className, fileNamePrefix, simSettingsOpt);
+    (simCode, oldFunctionTree) := NSimCode.SimCode.create(bdae, className, fileNamePrefix, simSettingsOpt);
     if Flags.isSet(Flags.DUMP_SIMCODE) then
       print(NSimCode.SimCode.toString(simCode));
     end if;
@@ -455,7 +457,7 @@ algorithm
   try
     SimCodeUtil.resetFunctionIndex();
     SimCodeFunctionUtil.codegenResetTryThrowIndex();
-    if Config.acceptMetaModelicaGrammar() or Flags.isSet(Flags.GEN_DEBUG_SYMBOLS) then
+    if /*Config.acceptMetaModelicaGrammar() or*/ Flags.isSet(Flags.GEN_DEBUG_SYMBOLS) then
       Tpl.textFileConvertLines(Tpl.tplCallWithFailErrorNoArg(func), file);
     else
       nErr := Error.getNumErrorMessages();
@@ -723,6 +725,7 @@ end callTargetTemplatesCPP;
 
 protected function callTargetTemplatesOMSICpp
   input SimCode.SimCode iSimCode;
+  input Absyn.Program program;
   protected
   String fmuVersion;
   String fmuType;
@@ -731,7 +734,7 @@ algorithm
     fmuVersion:="2.0";
     fmuType:="me";
    Tpl.tplNoret3(CodegenOMSICpp.translateModel, iSimCode, fmuVersion, fmuType);
-   callTargetTemplatesFMU(iSimCode,"C",fmuVersion,fmuType);
+   callTargetTemplatesFMU(iSimCode,"C",fmuVersion,fmuType,program);
 end callTargetTemplatesOMSICpp;
 
 protected function callTargetTemplatesFMU
@@ -740,26 +743,29 @@ protected function callTargetTemplatesFMU
   input String target;
   input String FMUVersion;
   input String FMUType;
+  input Absyn.Program program;
 algorithm
 
   setGlobalRoot(Global.optionSimCode, SOME(simCode));
   _ := match (simCode,target)
     local
-      String str, newdir, newpath, resourcesDir, dirname;
+      String str, newdir, newpath, resourcesDir, dirname, htmlFile;
       String fmutmp;
       String guid;
-      Boolean b;
+      Boolean b, exportDocumentation;
       Boolean needSundials = false;
-      String fileprefix;
+      String fileprefix, fileNamePrefixHash;
       String install_include_omc_dir, install_include_omc_c_dir, install_share_buildproject_dir, install_fmu_sources_dir, fmu_tmp_sources_dir;
       String cmakelistsStr, needCvode, cvodeDirectory;
-      list<String> sourceFiles, model_desc_src_files;
+      String modelDefinesHeaderStr;
+      list<String> sourceFiles, model_desc_src_files, fmi2HeaderFiles, modelica_standard_table_sources;
       list<String> dgesv_sources, cminpack_sources, simrt_c_sundials_sources, simrt_linear_solver_sources, simrt_non_linear_solver_sources;
       list<String> simrt_mixed_solver_sources, fmi_export_files, model_gen_files, model_all_gen_files, shared_source_files;
       SimCode.VarInfo varInfo;
     case (SimCode.SIMCODE(),"C")
       algorithm
-        fmutmp := simCode.fileNamePrefix + ".fmutmp";
+        fileNamePrefixHash := Util.hashFileNamePrefix(simCode.fileNamePrefix);
+        fmutmp := fileNamePrefixHash + ".fmutmp";
         if System.directoryExists(fmutmp) then
           if not System.removeDirectory(fmutmp) then
             Error.addInternalError("Failed to remove directory: " + fmutmp, sourceInfo());
@@ -829,6 +835,16 @@ algorithm
             end if;
           end if;
         end if;
+
+        // create optional html documentation directory
+        (htmlFile, exportDocumentation) := exportHTMLDocumentation(program, simCode, FMUVersion);
+        if exportDocumentation then
+          Util.createDirectoryTree(fmutmp + "/documentation/");
+          if 0 <> System.systemCall("mv '" + htmlFile + "' '" + fmutmp + "/documentation/" + "'") then
+            Error.addInternalError("Failed to move documentation file " + htmlFile + "", sourceInfo());
+          end if;
+        end if;
+
         SimCodeUtil.resetFunctionIndex();
         varInfo := simCode.modelInfo.varInfo;
 
@@ -844,23 +860,19 @@ algorithm
         // The simrt C source files are installed to the folder specified by RuntimeSources.fmu_sources_dir. Copy them from there.
         copyFiles(RuntimeSources.simrt_c_sources, source=install_fmu_sources_dir, destination=fmu_tmp_sources_dir);
 
-        if varInfo.numLinearSystems > 0 or varInfo.numNonLinearSystems > 0 then
-          // The dgesv headers are in the RuntimeSources.fmu_sources_dir for now since they are not properly installed in the include folder
-          copyFiles(RuntimeSources.dgesv_headers, source=install_fmu_sources_dir, destination=fmu_tmp_sources_dir);
-          copyFiles(RuntimeSources.dgesv_sources, source=install_fmu_sources_dir, destination=fmu_tmp_sources_dir);
-          dgesv_sources := RuntimeSources.dgesv_sources;
-        else
-          dgesv_sources := {};
-        end if;
+        /*
+        * fix issue https://github.com/OpenModelica/OpenModelica/issues/13719
+        * copy the fmu runtime external solver sources to support source code cross compilation
+        */
+        // The dgesv headers are in the RuntimeSources.fmu_sources_dir for now since they are not properly installed in the include folder
+        copyFiles(RuntimeSources.dgesv_headers, source=install_fmu_sources_dir, destination=fmu_tmp_sources_dir);
+        copyFiles(RuntimeSources.dgesv_sources, source=install_fmu_sources_dir, destination=fmu_tmp_sources_dir);
+        dgesv_sources := RuntimeSources.dgesv_sources;
 
         // Add CMinpack sources to FMU
-        if varInfo.numNonLinearSystems > 0 then
-          copyFiles(RuntimeSources.cminpack_headers, source=install_fmu_sources_dir, destination=fmu_tmp_sources_dir);
-          copyFiles(RuntimeSources.cminpack_sources, source=install_fmu_sources_dir, destination=fmu_tmp_sources_dir);
-          cminpack_sources := RuntimeSources.cminpack_sources;
-        else
-          cminpack_sources := {};
-        end if;
+        copyFiles(RuntimeSources.cminpack_headers, source=install_fmu_sources_dir, destination=fmu_tmp_sources_dir);
+        copyFiles(RuntimeSources.cminpack_sources, source=install_fmu_sources_dir, destination=fmu_tmp_sources_dir);
+        cminpack_sources := RuntimeSources.cminpack_sources;
 
         // Check if the sundials files are needed
         if SimCodeUtil.cvodeFmiFlagIsSet(simCode.fmiSimulationFlags) then
@@ -885,15 +897,38 @@ algorithm
         // This fmu export files of OMC are located in a very unexpected place. Right now they are in SimulationRuntime/fmi/export/openmodelica
         // and then then they are installed to include/omc/c/fmi-export for some reason. The source, install, and source fmu location
         // for these files should be made consistent. For now to avoid modifing things a lot they are left as they are and copied here.
-        fmi_export_files := if FMUVersion == "1.0" then RuntimeSources.fmi1Files else RuntimeSources.fmi2Files;
-        copyFiles(fmi_export_files, source=install_include_omc_c_dir, destination=fmu_tmp_sources_dir);
+        if FMUVersion == "1.0" then
+          copyFiles(RuntimeSources.fmi1Files, source=install_include_omc_c_dir, destination=fmu_tmp_sources_dir);
+          fmi_export_files := RuntimeSources.fmi1Files;
+        else
+          copyFiles(RuntimeSources.fmi2_sources, source=install_include_omc_c_dir, destination=fmu_tmp_sources_dir);
+          copyFiles(RuntimeSources.fmi2_headers, source=install_include_omc_c_dir, destination=fmu_tmp_sources_dir);
+          fmi_export_files := RuntimeSources.fmi2_sources;
+        end if;
+
+        /*
+         * fix issue https://github.com/OpenModelica/OpenModelica/issues/13213
+         * copy fmu reference headers directly to FMU sources, to support source code compilation
+        */
+        fmi2HeaderFiles := {"fmi/fmi2Functions.h","fmi/fmi2FunctionTypes.h", "fmi/fmi2TypesPlatform.h", "fmi/fmiModelFunctions.h", "fmi/fmiModelTypes.h"};
+        copyFiles(fmi2HeaderFiles, source=install_include_omc_c_dir, destination=fmu_tmp_sources_dir);
+
+        /*
+        * fix issue fhttps://github.com/OpenModelica/OpenModelica/issues/13260
+        * Check if modelicaStandardTables source files are needed
+        * this is not clear as of now, may be we should copy all the external C sources by default
+        */
+        copyFiles(RuntimeSources.modelica_external_c_sources, source=install_include_omc_dir, destination=fmu_tmp_sources_dir);
+        copyFiles(RuntimeSources.modelica_external_c_headers, source=install_include_omc_dir, destination=fmu_tmp_sources_dir);
+        modelica_standard_table_sources := RuntimeSources.modelica_external_c_sources;
 
         System.writeFile(fmutmp+"/sources/isfmi" + (if FMUVersion=="1.0" then "1" else "2"), "");
 
         model_gen_files := list(simCode.fileNamePrefix + f for f in RuntimeSources.defaultFileSuffixes);
 
         // I need to see some tests failing or something not working to make sense of what to add here
-        shared_source_files := List.flatten({RuntimeSources.simrt_c_sources,
+        shared_source_files := List.flatten({fmi_export_files,
+                                             RuntimeSources.simrt_c_sources,
                                              simrt_linear_solver_sources,
                                              simrt_non_linear_solver_sources,
                                              simrt_mixed_solver_sources
@@ -907,7 +942,8 @@ algorithm
                                                 shared_source_files,
                                                 dgesv_sources,
                                                 cminpack_sources,
-                                                simrt_c_sundials_sources
+                                                simrt_c_sundials_sources,
+                                                modelica_standard_table_sources
                                     });
         end if;
 
@@ -928,9 +964,21 @@ algorithm
         System.copyFile(source = install_share_buildproject_dir + "CMakeLists.txt.in",
                         destination = fmu_tmp_sources_dir + "CMakeLists.txt");
         cmakelistsStr := System.readFile(fmu_tmp_sources_dir + "CMakeLists.txt");
+        /*
+        https://github.com/OpenModelica/OpenModelica/issues/12916
+        use hashed fmu Strings for project Name in cmake to avoid long path issues
+        */
+        cmakelistsStr := System.stringReplace(cmakelistsStr, "@FMU_NAME_HASH_IN@", fileNamePrefixHash);
+
         cmakelistsStr := System.stringReplace(cmakelistsStr, "@FMU_NAME_IN@", simCode.fileNamePrefix);     // Name with underscored instead of dots
         cmakelistsStr := System.stringReplace(cmakelistsStr, "@FMU_TARGET_NAME@", simCode.fmuTargetName);  // Name with dots
 
+        // Include debugging symbols?
+        if Flags.isSet(Flags.GEN_DEBUG_SYMBOLS) then
+          cmakelistsStr := System.stringReplace(cmakelistsStr, "@CMAKE_BUILD_TYPE@", "Debug");
+        else
+          cmakelistsStr := System.stringReplace(cmakelistsStr, "@CMAKE_BUILD_TYPE@", "Release");
+        end if;
         // Set CMake runtime dependencies level
         _ := match (Flags.getConfigString(Flags.FMU_RUNTIME_DEPENDS))
           local
@@ -969,10 +1017,15 @@ algorithm
 
         System.writeFile(fmu_tmp_sources_dir + "CMakeLists.txt", cmakelistsStr);
 
+        // Set model define include in fmu2_model_interface.c
+        modelDefinesHeaderStr := System.readFile(fmu_tmp_sources_dir + "fmi-export/fmu2_model_interface.c");
+        modelDefinesHeaderStr := System.stringReplace(modelDefinesHeaderStr, "fmu2_dummy_model_defines.h", "../" + simCode.fileNamePrefix + "_FMU.h");
+        System.writeFile(fmu_tmp_sources_dir + "fmi-export/fmu2_model_interface.c", modelDefinesHeaderStr);
+
         Tpl.closeFile(Tpl.tplCallWithFailErrorNoArg(function CodegenFMU.fmuMakefile(a_target=Config.simulationCodeTarget(), a_simCode=simCode, a_FMUVersion=FMUVersion, a_sourceFiles=model_all_gen_files, a_runtimeObjectFiles=list(System.stringReplace(f,".c",".o") for f in shared_source_files), a_dgesvObjectFiles=list(System.stringReplace(f,".c",".o") for f in dgesv_sources), a_cminpackObjectFiles=list(System.stringReplace(f,".c",".o") for f in cminpack_sources), a_sundialsObjectFiles=list(System.stringReplace(f,".c",".o") for f in simrt_c_sundials_sources)),
-                      txt=Tpl.redirectToFile(Tpl.emptyTxt, simCode.fileNamePrefix+".fmutmp/sources/Makefile.in")));
+                      txt=Tpl.redirectToFile(Tpl.emptyTxt, fmutmp+"/sources/Makefile.in")));
         Tpl.closeFile(Tpl.tplCallWithFailError(CodegenFMU.settingsfile, simCode,
-                      txt=Tpl.redirectToFile(Tpl.emptyTxt, simCode.fileNamePrefix+".fmutmp/sources/omc_simulation_settings.h")));
+                      txt=Tpl.redirectToFile(Tpl.emptyTxt, fmutmp+"/sources/omc_simulation_settings.h")));
         /*Temporary generate extra files for omsicpp simcodetarget, additionaly to C-fmu code*/
         if Config.simCodeTarget() ==  "omsicpp" then
          runTpl(func = function CodegenOMSICpp.translateModel(a_simCode=simCode, a_FMUVersion=FMUVersion, a_FMUType=FMUType));
@@ -1024,6 +1077,42 @@ algorithm
   setGlobalRoot(Global.optionSimCode, NONE());
 end callTargetTemplatesFMU;
 
+protected function exportHTMLDocumentation
+  "generate html documentation for fmu's from Documentation annotation
+  (e.g) annotation(Documentation(info=\"<html> </html>\",
+                                 revisions=\"<html> </html>\",
+                                 __OpenModelica_infoHeader = \"<html> </html>\"))
+  "
+  input Absyn.Program program;
+  input SimCode.SimCode simCode;
+  input String FMUVersion;
+  output String fileName;
+  output Boolean export = true;
+protected
+  File.File file;
+  String info, revisions, infoHeader;
+algorithm
+  (info, revisions, infoHeader) := Interactive.getNamedAnnotationExp(simCode.modelInfo.name, program, Absyn.IDENT("Documentation"), SOME(("","","")),Interactive.getDocumentationAnnotationString);
+
+  // do not export if Documentation annotation does not exist
+  if (stringEmpty(info) and stringEmpty(revisions) and stringEmpty(infoHeader)) then
+    export := false;
+  end if;
+
+  if (FMUVersion == "1.0") then
+    fileName := "_main.html";
+  else
+    fileName := "index.html";
+  end if;
+
+  file := File.File();
+  File.open(file, fileName, File.Mode.Write);
+  File.write(file, infoHeader + "\n");
+  File.write(file, "<h1>" + AbsynUtil.pathString(simCode.modelInfo.name) + "</h1>\n");
+  File.write(file, "<p> <i>" + simCode.modelInfo.description + "</i> </p>\n");
+  File.write(file, "<h4> <u> Information </u> </h4>" + info + "\n");
+  File.write(file, "<h4> <u> Revisions </u> </h4>" + revisions + "\n");
+end exportHTMLDocumentation;
 
 protected function callTargetTemplatesXML
 "Generate target code by passing the SimCode data structure to templates."
@@ -1084,7 +1173,9 @@ algorithm
     ExecStat.execStat("FrontEnd");
 
     if runBackend then
-      (outLibs, outFileDir, resultValues) := translateModelCallBackendNB(flatModel, funcTree, className, inFileNamePrefix, inSimSettingsOpt);
+      (outLibs, outFileDir, resultValues, funcs) := translateModelCallBackendNB(flatModel, funcTree, className, inFileNamePrefix, inSimSettingsOpt);
+    else
+      funcs := NFConvertDAE.convertFunctionTree(funcTree);
     end if;
 
     // This must be done after calling the backend since it uses the FlatModel,
@@ -1092,7 +1183,7 @@ algorithm
     if dumpValidFlatModelicaNF then
       flatString := NFFlatString;
     elseif not runSilent then
-      (dae, funcs) := NFConvertDAE.convert(flatModel, funcTree);
+      dae := NFConvertDAE.convertModel(flatModel);
       flatString := DAEDump.dumpStr(dae, funcs);
     end if;
 
@@ -1388,6 +1479,7 @@ protected function translateModelCallBackendNB
   output list<String> outLibs;
   output String outFileDir;
   output list<tuple<String, Values.Value>> resultValues;
+  output DAE.FunctionTree oldFunctionTree;
 protected
   Real timeSimCode=0.0, timeTemplates=0.0, timeBackend=0.0;
   NBackendDAE bdae;
@@ -1405,7 +1497,7 @@ algorithm
   timeBackend := System.realtimeTock(ClockIndexes.RT_CLOCK_BACKEND);
   ExecStat.execStat("backend");
 
-  (outLibs, outFileDir, timeSimCode, timeTemplates) := generateModelCodeNewBackend(bdae, inClassName, inFileNamePrefix, inSimSettingsOpt);
+  (outLibs, outFileDir, timeSimCode, timeTemplates, oldFunctionTree) := generateModelCodeNewBackend(bdae, inClassName, inFileNamePrefix, inSimSettingsOpt);
 
   resultValues := {("timeTemplates", Values.REAL(timeTemplates)),
                   ("timeSimCode", Values.REAL(timeSimCode)),
@@ -1581,7 +1673,7 @@ algorithm
 
     // create DAE mode Sparse pattern and TODO: Jacobians
     // sparsity pattern generation
-    if Flags.getConfigBool(Flags.GENERATE_SYMBOLIC_JACOBIAN) then
+    if Flags.getConfigString(Flags.GENERATE_DYNAMIC_JACOBIAN) == "symbolic" then
       // create symbolic jacobian (like nls systems!)
       (daeModeJac, daeModeSparsity, daeModeColoring, nonlinearPattern) := listGet(inBackendDAE.shared.symjacs, BackendDAE.SymbolicJacobianAIndex);
       if Util.isSome(inBackendDAE.shared.dataReconciliationData) then
@@ -1674,7 +1766,7 @@ algorithm
 
     algebraicStateVars := SimCodeUtil.sortSimVarsAndWriteIndex(algebraicStateVars, crefToSimVarHT);
 
-    // only create sparsity pattern for dae mode data even if it is created with --generateSymbolicJacobian
+    // only create sparsity pattern for dae mode data even if it is created with --generateDynamicJacobian=symbolic
     // the A matrix will be used symbolically
     // (also the A matrix sparsity pattern seems to be faulty so we use this one instead)
     daeModeJacobian := listGet(inBackendDAE.shared.symjacs, BackendDAE.SymbolicJacobianAIndex);
@@ -1682,7 +1774,7 @@ algorithm
     daeModeSP := SOME(symDAESparsPattern);
 
     // copy the sparsity pattern to the A jacobian
-    if Flags.getConfigBool(Flags.GENERATE_SYMBOLIC_JACOBIAN) then
+    if Flags.getConfigString(Flags.GENERATE_DYNAMIC_JACOBIAN) == "symbolic" then
      SymbolicJacs := list(SimCodeUtil.syncDAEandSimJac(symjac, symDAESparsPattern) for symjac in SymbolicJacs);
     end if;
 
@@ -1757,7 +1849,8 @@ algorithm
       partitionData               = SimCode.emptyPartitionData,
       daeModeData                 = daeModeData,
       inlineEquations             = {},
-      omsiData                    = NONE()
+      omsiData                    = NONE(),
+      scalarized                  = true
     );
 
     (simCode, (_, _, lits)) := SimCodeUtil.traverseExpsSimCode(simCode, SimCodeFunctionUtil.findLiteralsHelper, literals);

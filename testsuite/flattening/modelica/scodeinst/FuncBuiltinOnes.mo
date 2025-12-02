@@ -1,7 +1,6 @@
 // name: FuncBuiltinOnes
 // keywords: ones
 // status: correct
-// cflags: -d=newInst
 //
 // Tests the builtin ones operator.
 //

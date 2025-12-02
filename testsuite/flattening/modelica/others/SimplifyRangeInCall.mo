@@ -1,13 +1,13 @@
 // name:     SimplifyRangeInCall
 // keywords: simplify call range
 // status:   correct
-// cflags: -d=-newInst
 //
 // Checks that ranges in calls are simplified.
 //
 
 class SimplifyRangeInClass
   Real r[2] = sin(1:2);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end SimplifyRangeInClass;
 
 // Result:

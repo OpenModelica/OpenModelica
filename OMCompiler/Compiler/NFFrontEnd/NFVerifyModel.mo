@@ -58,29 +58,32 @@ protected
 public
   function verify
     input FlatModel flatModel;
+    input Boolean isPartial;
   algorithm
     for var in flatModel.variables loop
-      verifyVariable(var);
+      verifyVariable(var, isPartial);
     end for;
 
     for eq in flatModel.equations loop
-      verifyEquation(eq);
+      verifyEquation(eq, isPartial);
     end for;
 
     for ieq in flatModel.initialEquations loop
-      verifyEquation(ieq);
+      verifyEquation(ieq, isPartial);
     end for;
 
     for alg in flatModel.algorithms loop
-      verifyAlgorithm(alg);
+      verifyAlgorithm(alg, isPartial);
     end for;
 
     for ialg in flatModel.initialAlgorithms loop
-      verifyAlgorithm(ialg);
+      verifyAlgorithm(ialg, isPartial);
     end for;
 
     // check for discrete real variables not assigned in when equations (#5836)
-    checkDiscreteReal(flatModel);
+    if not isPartial then
+      checkDiscreteReal(flatModel);
+    end if;
 
     execStat(getInstanceName());
   end verify;
@@ -88,31 +91,35 @@ public
 protected
   function verifyVariable
     input Variable var;
+    input Boolean isPartial;
   algorithm
-    verifyBinding(var.binding);
+    verifyBinding(var.binding, isPartial);
 
     for attr in var.typeAttributes loop
-      verifyBinding(Util.tuple22(attr));
+      verifyBinding(Util.tuple22(attr), isPartial);
     end for;
 
     for v in var.children loop
-      verifyVariable(v);
+      verifyVariable(v, isPartial);
     end for;
   end verifyVariable;
 
   function verifyBinding
     input Binding binding;
+    input Boolean isPartial;
   algorithm
     if Binding.isBound(binding) then
-      checkSubscriptBounds(Binding.getTypedExp(binding), Binding.getInfo(binding));
+      checkSubscriptBounds(Binding.getTypedExp(binding), isPartial, Binding.getInfo(binding));
     end if;
   end verifyBinding;
 
   function verifyEquation
     input Equation eq;
+    input Boolean isPartial;
   algorithm
     () := match eq
       case Equation.WHEN()
+        guard not isPartial
         algorithm
           verifyWhenEquation(eq.branches, eq.source);
         then
@@ -121,7 +128,7 @@ protected
       else ();
     end match;
 
-    Equation.applyExpShallow(eq, function checkSubscriptBounds(info = Equation.info(eq)));
+    Equation.applyExpShallow(eq, function checkSubscriptBounds(isPartial = isPartial, info = Equation.info(eq)));
   end verifyEquation;
 
   function verifyWhenEquation
@@ -251,31 +258,35 @@ protected
 
   function verifyAlgorithm
     input Algorithm alg;
+    input Boolean isPartial;
   algorithm
-    Algorithm.apply(alg, verifyStatement);
+    Algorithm.apply(alg, function verifyStatement(isPartial = isPartial));
   end verifyAlgorithm;
 
   function verifyStatement
     input Statement stmt;
+    input Boolean isPartial;
   algorithm
-    Statement.applyExp(stmt, function checkSubscriptBounds(info = Statement.info(stmt)));
+    Statement.applyExp(stmt, function checkSubscriptBounds(isPartial = isPartial, info = Statement.info(stmt)));
   end verifyStatement;
 
   function checkSubscriptBounds
     input Expression exp;
+    input Boolean isPartial;
     input SourceInfo info;
   algorithm
-    Expression.apply(exp, function checkSubscriptBounds_traverser(info = info));
+    Expression.apply(exp, function checkSubscriptBounds_traverser(isPartial = isPartial, info = info));
   end checkSubscriptBounds;
 
   function checkSubscriptBounds_traverser
     input Expression exp;
+    input Boolean isPartial;
     input SourceInfo info;
   algorithm
     () := match exp
       case Expression.CREF()
         algorithm
-          checkSubscriptBoundsCref(exp.cref, info);
+          checkSubscriptBoundsCref(exp.cref, isPartial, info);
         then
           ();
 
@@ -285,6 +296,7 @@ protected
 
   function checkSubscriptBoundsCref
     input ComponentRef cref;
+    input Boolean isPartial;
     input SourceInfo info;
   algorithm
     () := match cref
@@ -308,14 +320,17 @@ protected
                 Error.addSourceMessage(Error.ARRAY_INDEX_OUT_OF_BOUNDS,
                   {Subscript.toString(s), String(index),
                    Dimension.toString(d), ComponentRef.firstName(cref)}, info);
-                fail();
+
+                if not isPartial then
+                  fail();
+                end if;
               end if;
             end if;
 
             index := index + 1;
           end for;
 
-          checkSubscriptBoundsCref(cref.restCref, info);
+          checkSubscriptBoundsCref(cref.restCref, isPartial, info);
         then
           ();
 
@@ -336,7 +351,8 @@ protected
     list<Variable> illegal_discrete_vars = {};
     String err_str = "";
   algorithm
-    discrete_reals := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
+    // use hash and equality that ignores subscripts to handle arrays
+    discrete_reals := UnorderedSet.new(ComponentRef.hashStrip, ComponentRef.isEqualStrip);
 
     // collect all lhs crefs that are discrete and real from equations
     for eqn in flatModel.equations loop
@@ -353,8 +369,6 @@ protected
     // check if all discrete real variables are assigned in when bodys
     for variable in flatModel.variables loop
       // check variability and not type for discrete variables
-      // remove all subscripts to handle arrays
-      variable.name := ComponentRef.stripSubscriptsAll(variable.name);
       if Variable.variability(variable) == Variability.DISCRETE and Type.isReal(Type.arrayElementType(variable.ty)) and
          not UnorderedSet.contains(variable.name, discrete_reals) then
         illegal_discrete_vars := variable :: illegal_discrete_vars;
@@ -364,7 +378,8 @@ protected
     // report error if there are any
     if not listEmpty(illegal_discrete_vars) then
       for var in illegal_discrete_vars loop
-        Error.addSourceMessage(Error.DISCRETE_REAL_UNDEFINED, {ComponentRef.toString(var.name)}, var.info);
+        Error.addSourceMessage(Error.DISCRETE_REAL_UNDEFINED,
+          {ComponentRef.toString(ComponentRef.stripSubscriptsAll(var.name))}, var.info);
       end for;
       fail();
     end if;
@@ -529,8 +544,7 @@ protected
       case Expression.CREF(ty = ty, cref = cref)
         guard(Type.isReal(Type.arrayElementType(ty)))
         algorithm
-          // remove all subscripts to handle arrays
-          UnorderedSet.add(ComponentRef.stripSubscriptsAll(cref), discreteReals);
+          UnorderedSet.add(cref, discreteReals);
         then
           ();
 
@@ -561,13 +575,12 @@ protected
     ComponentRef element;
     list<InstNode> inputs;
   algorithm
-    // remove all subscripts to handle arrays
-    UnorderedSet.add(ComponentRef.stripSubscriptsAll(cref), discreteReals);
+    UnorderedSet.add(cref, discreteReals);
     // also add all record elements
     (inputs, _, _) := Record.collectRecordParams(cls);
     for node in inputs loop
       element := ComponentRef.prefixCref(node, InstNode.getType(node), {}, cref);
-      UnorderedSet.add(ComponentRef.stripSubscriptsAll(element), discreteReals);
+      UnorderedSet.add(element, discreteReals);
     end for;
   end checkDiscreteRealRecord;
 

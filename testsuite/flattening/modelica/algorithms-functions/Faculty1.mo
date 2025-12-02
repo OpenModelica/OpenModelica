@@ -1,7 +1,6 @@
 // name:     Faculty1
 // keywords: algorithm,scoping
 // status:   correct
-// cflags: -d=-newInst
 //
 // Example for a recursive function. The function 'Faculty' must be
 // known during its definition in order to be called from itself.
@@ -16,6 +15,7 @@ end Faculty1;
 
 model Test
   Real x=Faculty1(integer(2*time));
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Test;
 
 // Result:

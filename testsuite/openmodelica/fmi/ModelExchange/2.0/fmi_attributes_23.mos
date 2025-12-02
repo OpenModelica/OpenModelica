@@ -1,0 +1,69 @@
+// name: fmi_attributes_23.mos
+// keywords: FMI 2.0 export html documentation
+// status: correct
+// teardown_command: rm -rf fmi_attributes_23.fmu fmi_attributes_23.log fmi_attributes_23_index.html fmi_attributes_23_info.json
+
+loadString("
+  model fmi_attributes_23 \"model description text example \"
+    parameter Real A = 2;
+    output Real B;
+  equation
+    B = A*time;
+  annotation(
+      Documentation(info=\"<html>
+  <p>The linear resistor connects the branch voltage <em>v</em> with the branch current <em>i</em> by <em>i*R = v</em>. The Resistance <em>R</em> is allowed to be positive, zero, or negative.</p>
+  </html>\",
+          revisions=\"<html>
+  <ul>
+  <li><em> August 07, 2009   </em>
+         by Anton Haumer<br> temperature dependency of resistance added<br>
+         </li>
+  <li><em> March 11, 2009   </em>
+         by Christoph Clauss<br> conditional heat port added<br>
+         </li>
+  <li><em> 1998   </em>
+         by Christoph Clauss<br> initially implemented<br>
+         </li>
+  </ul>
+  </html>\", __OpenModelica_infoHeader = \"<html><h2>TestModel</h2></html>\"));
+
+  end fmi_attributes_23;
+"); getErrorString();
+
+buildModelFMU(fmi_attributes_23); getErrorString();
+
+// unzip to console, quiet, extra quiet
+system("unzip -cqq fmi_attributes_23.fmu documentation/index.html > fmi_attributes_23_index.html"); getErrorString();
+
+readFile("fmi_attributes_23_index.html"); getErrorString();
+
+
+// Result:
+// true
+// ""
+// "fmi_attributes_23.fmu"
+// ""
+// 0
+// ""
+// "<html><h2>TestModel</h2></html>
+// <h1>fmi_attributes_23</h1>
+// <p> <i>model description text example </i> </p>
+// <h4> <u> Information </u> </h4><html>
+//   <p>The linear resistor connects the branch voltage <em>v</em> with the branch current <em>i</em> by <em>i*R = v</em>. The Resistance <em>R</em> is allowed to be positive, zero, or negative.</p>
+//   </html>
+// <h4> <u> Revisions </u> </h4><html>
+//   <ul>
+//   <li><em> August 07, 2009   </em>
+//          by Anton Haumer<br> temperature dependency of resistance added<br>
+//          </li>
+//   <li><em> March 11, 2009   </em>
+//          by Christoph Clauss<br> conditional heat port added<br>
+//          </li>
+//   <li><em> 1998   </em>
+//          by Christoph Clauss<br> initially implemented<br>
+//          </li>
+//   </ul>
+//   </html>
+// "
+// ""
+// endResult

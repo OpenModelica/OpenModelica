@@ -1,7 +1,6 @@
 // name: CevalFuncArray5
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 // Checks that the function evaluation can handle non-literal bindings.
 //

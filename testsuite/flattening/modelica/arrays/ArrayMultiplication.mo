@@ -1,7 +1,6 @@
 // name: ArrayMultiplication
 // keywords: array, multiplication
 // status: correct
-// cflags: -d=-newInst
 //
 // Tests elementwise array multiplication
 //
@@ -12,6 +11,7 @@ model ArrayMultiplication
   Integer intArray[3];
 equation
   intArray = intArray1 .* intArray2;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ArrayMultiplication;
 
 // Result:

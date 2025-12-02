@@ -1,7 +1,6 @@
 // name: expconn7.mo
 // keywords:
 // status: incorrect
-// cflags:   -d=newInst
 //
 // FAILREASON: This should fail, since neither of the connected components
 //             exist.

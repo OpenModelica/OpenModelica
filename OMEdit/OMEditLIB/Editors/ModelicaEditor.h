@@ -39,6 +39,7 @@
 #include "Util/Utilities.h"
 #include "Editors/BaseEditor.h"
 
+#include <QRegExp>
 #include <QSyntaxHighlighter>
 
 class ModelWidget;
@@ -58,14 +59,15 @@ public:
   bool isTextChanged() {return mTextChanged;}
   virtual void popUpCompleter() override;
   virtual QString wordUnderCursor() override;
+  virtual void symbolAtPosition(const QPoint &pos) override;
   QString stringAfterWord(const QString &word);
   static LibraryTreeItem *deepResolve(LibraryTreeItem *pItem, QStringList nameComponents);
-  QList<LibraryTreeItem *> getCandidateContexts(QStringList nameComponents);
+  static QList<LibraryTreeItem *> getCandidateContexts(LibraryTreeItem *pLibraryTreeItem, QStringList nameComponents);
   static void tryToCompleteInSingleContext(QStringList &result, LibraryTreeItem *pItem, QString lastPart);
-  void getCompletionSymbols(QString word, QList<CompleterItem> &classes, QList<CompleterItem> &components);
-  LibraryTreeItem *getAnnotationCompletionRoot();
-  void getCompletionAnnotations(const QStringList &stack, QList<CompleterItem> &annotations);
-  bool getCompletionAnnotations(const QString &str, QList<CompleterItem> &annotations);
+  static void getCompletionSymbols(LibraryTreeItem *pLibraryTreeItem, QString word, QList<CompleterItem> &classes, QList<CompleterItem> &components);
+  static LibraryTreeItem *getAnnotationCompletionRoot();
+  static void getCompletionAnnotations(const QStringList &stack, QList<CompleterItem> &annotations);
+  static bool getCompletionAnnotations(const QString &str, QList<CompleterItem> &annotations);
   static QList<CompleterItem> getCodeSnippets();
 private:
   QString mLastValidText;

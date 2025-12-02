@@ -1,7 +1,6 @@
 // name: FuncMap1
 // keywords: function map array reduction
 // status: correct
-// cflags: -d=newInst
 //
 // checks mapping functions are typed correctly.
 

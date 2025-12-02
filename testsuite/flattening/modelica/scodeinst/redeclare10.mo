@@ -1,7 +1,6 @@
 // name: redeclare10
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 //
 

@@ -1,6 +1,5 @@
 // name: SubscriptedExp1
 // status: correct
-// cflags: -d=newInst
 //
 //
 

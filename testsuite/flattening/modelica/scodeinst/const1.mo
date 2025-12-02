@@ -1,7 +1,6 @@
 // name: const1.mo
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 
 

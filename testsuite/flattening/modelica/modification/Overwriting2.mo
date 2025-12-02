@@ -1,7 +1,6 @@
 // name:     Overwriting2
 // keywords: modification,equation
 // status:   correct
-// cflags: -d=-newInst
 //
 // The modification for `x' does not overwrite the equation.
 
@@ -10,6 +9,7 @@ class Overwriting2
   Real u;
 equation
   x = 2.0;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Overwriting2;
 
 // Result:

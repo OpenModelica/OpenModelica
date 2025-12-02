@@ -100,6 +100,29 @@ static inline void* mmc_mk_scon_len(mmc_uint_t nbytes)
     return res;
 }
 
+static inline void* mmc_mk_scon_n(const char *s, int length)
+{
+    size_t header = MMC_STRINGHDR(length);
+    size_t nwords = MMC_HDRSLOTS(header) + 1;
+    struct mmc_string *p;
+    void *res;
+    if (length == 0) return mmc_emptystring;
+    if (length == 1) {
+      unsigned char c = *s;
+      return mmc_strings_len1[(unsigned int)c];
+    }
+    p = (struct mmc_string *) mmc_check_out_of_memory(omc_alloc_interface.malloc_atomic(nwords*sizeof(void*)));
+    p->header = header;
+    memcpy(p->data, s, length);
+    p->data[length] = '\0';
+    res = MMC_TAGPTR(p);
+    MMC_CHECK_STRING(res);
+#ifdef MMC_MK_DEBUG
+    fprintf(stderr, "STRING slots: %u size: %d str: %s\n", MMC_HDRSLOTS(header), length, s); fflush(NULL);
+#endif
+    return res;
+}
+
 static inline void* mmc_mk_scon(const char *s)
 {
     size_t nbytes = strlen(s);

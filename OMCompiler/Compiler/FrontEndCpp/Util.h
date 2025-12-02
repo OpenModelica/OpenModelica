@@ -4,6 +4,7 @@
 #include <iterator>
 #include <string_view>
 #include <ostream>
+#include <vector>
 
 namespace OpenModelica
 {
@@ -62,6 +63,15 @@ namespace OpenModelica
         os << delimiter << **first;
         ++first;
       }
+    }
+
+    template<typename T>
+    std::vector<T> cloneVector(const std::vector<T> &v)
+    {
+      std::vector<T> res;
+      res.reserve(v.size());
+      for (const auto &e: v) res.emplace_back(e->clone());
+      return res;
     }
   }
 }

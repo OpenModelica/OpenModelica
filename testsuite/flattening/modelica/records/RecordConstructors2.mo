@@ -1,5 +1,4 @@
 // status: correct
-// cflags: -d=-newInst
 
 model RecordConstructors2
   record R
@@ -7,6 +6,7 @@ model RecordConstructors2
     Real r = default;
   end R;
   R r = R();
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end RecordConstructors2;
 
 // Result:

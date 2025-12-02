@@ -1,7 +1,6 @@
 // name:     Connect7
 // keywords: connect
 // status:   correct
-// cflags: -d=-newInst
 //
 // If parameters are involved in connections, the parameters have to
 // be known to generate the equations.  If the parameter N would have
@@ -20,6 +19,7 @@ class Connect7
 equation
   connect(c[N],cx);
   connect(c[2],cy);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Connect7;
 
 // Result:

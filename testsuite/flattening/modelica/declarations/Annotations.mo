@@ -1,7 +1,6 @@
 // name:     Annotations
 // keywords: declaration annotations comments
 // status:   correct
-// cflags:   +showAnnotations -d=-newInst
 //
 // Checks that annotations are output correctly on the flat code when
 // +showAnnotations is used.
@@ -20,6 +19,7 @@ class c
 equation
   x = f(time);
   annotation(key = value);
+  annotation(__OpenModelica_commandLineOptions="+showAnnotations -d=-newInst");
 end c;
 
 // Result:
@@ -35,6 +35,6 @@ end c;
 //   Real x "x" annotation(key = value);
 // equation
 //   x = f(time);
-//   annotation(key = value);
+//   annotation(key = value, __OpenModelica_commandLineOptions = "+showAnnotations -d=-newInst");
 // end c;
 // endResult

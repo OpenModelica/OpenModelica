@@ -177,6 +177,8 @@ void buildOMC(CC, CXX, extraFlags, Boolean buildCpp, Boolean clean) {
      echo set -ex
      echo export OPENMODELICAHOME="\${MSYS_WORKSPACE}/build"
      echo export OPENMODELICALIBRARY="\${MSYS_WORKSPACE}/build/lib/omlibrary"
+     echo set
+     echo which cmake
      echo time make -f Makefile.omdev.mingw \${MAKETHREADS} omc testsuite-depends
      echo cd \${MSYS_WORKSPACE}
      echo make -f Makefile.omdev.mingw \${MAKETHREADS} BUILDTYPE=Release all-runtimes
@@ -286,27 +288,6 @@ void buildOMC(CC, CXX, extraFlags, Boolean buildCpp, Boolean clean) {
   }
 }
 
-void buildOMSens() {
-  if (isWindows()) {
-  bat ("""
-     If Defined LOCALAPPDATA (echo LOCALAPPDATA: %LOCALAPPDATA%) Else (Set "LOCALAPPDATA=C:\\Users\\OpenModelica\\AppData\\Local")
-     echo on
-     (
-     echo export MSYS_WORKSPACE="`cygpath '${WORKSPACE}'`"
-     echo echo MSYS_WORKSPACE: \${MSYS_WORKSPACE}
-     echo cd \${MSYS_WORKSPACE}
-     echo export MAKETHREADS=-j16
-     echo set -e
-     echo time make -f Makefile.omdev.mingw \${MAKETHREADS} omsens
-     ) > buildOMSensWindows.sh
-
-     set MSYSTEM=UCRT64
-     set MSYS2_PATH_TYPE=inherit
-     %OMDEV%\\tools\\msys\\usr\\bin\\sh --login -i -c "cd `cygpath '${WORKSPACE}'` && chmod +x buildOMSensWindows.sh && ./buildOMSensWindows.sh && rm -f ./buildOMSensWindows.sh"
-  """)
-  }
-}
-
 void buildOMC_CMake(cmake_args, cmake_exe='cmake') {
   standardSetup()
 
@@ -318,6 +299,7 @@ void buildOMC_CMake(cmake_args, cmake_exe='cmake') {
      echo export MSYS_WORKSPACE="`cygpath '${WORKSPACE}'`"
      echo echo MSYS_WORKSPACE: \${MSYS_WORKSPACE}
      echo cd \${MSYS_WORKSPACE}
+     echo which cmake
      echo set -ex
      echo mkdir build_cmake
      echo ${cmake_exe} --version
@@ -339,7 +321,15 @@ void buildOMC_CMake(cmake_args, cmake_exe='cmake') {
   }
 }
 
-void buildGUI(stash, isQt5) {
+def getQtMajorVersion(qtVersion) {
+  def OM_QT_MAJOR_VERSION = 'OM_QT_MAJOR_VERSION=5'
+  if (qtVersion.equals('qt6')) {
+    OM_QT_MAJOR_VERSION = 'OM_QT_MAJOR_VERSION=6'
+  }
+  return OM_QT_MAJOR_VERSION
+}
+
+void buildGUI(stash, qtVersion) {
   if (isWindows()) {
   bat ("""
      If Defined LOCALAPPDATA (echo LOCALAPPDATA: %LOCALAPPDATA%) Else (Set "LOCALAPPDATA=C:\\Users\\OpenModelica\\AppData\\Local")
@@ -352,7 +342,9 @@ void buildGUI(stash, isQt5) {
      echo set -e
      echo export OPENMODELICAHOME="\${MSYS_WORKSPACE}/build"
      echo export OPENMODELICALIBRARY="\${MSYS_WORKSPACE}/build/lib/omlibrary"
-     echo time make -f Makefile.omdev.mingw \${MAKETHREADS} qtclients
+     echo set
+     echo which cmake
+     echo time make -f Makefile.omdev.mingw \${MAKETHREADS} qtclients ${getQtMajorVersion(qtVersion)}
      echo echo Check that at least OMEdit can be started
      echo ./build/bin/OMEdit --help
      ) > buildGUIWindows.sh
@@ -371,9 +363,13 @@ void buildGUI(stash, isQt5) {
   if (stash) {
     patchConfigStatus()
   }
-  sh 'echo ./configure `./config.status --config` > config.status.2 && bash ./config.status.2'
-  // compile OMSens_Qt for Qt5
-  if (isQt5) {
+  if (qtVersion.equals('qt6')) {
+    sh 'echo ./configure --with-qt6 `./config.status --config` > config.status.2 && bash ./config.status.2'
+  } else {
+    sh 'echo ./configure `./config.status --config` > config.status.2 && bash ./config.status.2'
+  }
+  // compile OMSens_Qt for Qt5 and Qt6
+  if (qtVersion.equals('qt6') || qtVersion.equals('qt5')) {
     sh "touch omc.skip omc-diff.skip ReferenceFiles.skip omsimulator.skip && ${makeCommand()} -j${numPhysicalCPU()} omc omc-diff ReferenceFiles omsimulator omparser omsens_qt" // Pretend we already built omc since we already did so
   } else {
     sh "touch omc.skip omc-diff.skip ReferenceFiles.skip omsimulator.skip omsens_qt.skip && ${makeCommand()} -j${numPhysicalCPU()} omc omc-diff ReferenceFiles omsimulator omparser omsens_qt" // Pretend we already built omc since we already did so
@@ -385,7 +381,7 @@ void buildGUI(stash, isQt5) {
   }
 }
 
-void buildAndRunOMEditTestsuite(stash) {
+void buildAndRunOMEditTestsuite(stash, qtVersion) {
   if (isWindows()) {
   bat ("""
      If Defined LOCALAPPDATA (echo LOCALAPPDATA: %LOCALAPPDATA%) Else (Set "LOCALAPPDATA=C:\\Users\\OpenModelica\\AppData\\Local")
@@ -396,7 +392,7 @@ void buildAndRunOMEditTestsuite(stash) {
      echo cd \${MSYS_WORKSPACE}
      echo export MAKETHREADS=-j16
      echo set -e
-     echo time make -f Makefile.omdev.mingw \${MAKETHREADS} omedit-testsuite
+     echo time make -f Makefile.omdev.mingw \${MAKETHREADS} omedit-testsuite ${getQtMajorVersion(qtVersion)}
      echo export "APPDATA=\${PWD}/libraries"
      echo cd build/bin
      echo ./RunOMEditTestsuite.sh
@@ -416,18 +412,25 @@ void buildAndRunOMEditTestsuite(stash) {
   if (stash) {
     patchConfigStatus()
   }
-  sh 'echo ./configure `./config.status --config` > config.status.2 && bash ./config.status.2'
+  if (qtVersion.equals('qt6')) {
+    sh 'echo ./configure --with-qt6 `./config.status --config` > config.status.2 && bash ./config.status.2'
+  } else {
+    sh 'echo ./configure `./config.status --config` > config.status.2 && bash ./config.status.2'
+  }
   if (stash) {
     makeLibsAndCache()
   }
   sh "touch omc.skip omc-diff.skip ReferenceFiles.skip omsimulator.skip omedit.skip omplot.skip && ${makeCommand()} -j${numPhysicalCPU()} omc omc-diff ReferenceFiles omsimulator omedit omplot omparser" // Pretend we already built omc since we already did so
   sh "${makeCommand()} -j${numPhysicalCPU()} --output-sync=recurse omedit-testsuite" // Builds the OMEdit testsuite
-  sh label: 'RunOMEditTestsuite', script: '''
-  HOME="\$PWD/libraries"
-  cd build/bin
-  xvfb-run ./RunOMEditTestsuite.sh
-  '''
-
+  if (qtVersion.equals('qt6')) {
+    // OMEdit compiled with Qt6 crashes in webengine libs on ubuntu
+  } else {
+    sh label: 'RunOMEditTestsuite', script: '''
+    HOME="\$PWD/libraries"
+    cd build/bin
+    xvfb-run ./RunOMEditTestsuite.sh
+    '''
+    }
   }
 }
 
@@ -457,6 +460,12 @@ if not exist "%OMDEV%" (
   git clone https://gitlab.liu.se/OpenModelica/OMDevUCRT.git OMDevUCRT
   cd %OMDEV%
   git checkout master
+  call SETUP_OMDEV.bat
+) else (
+  cd %OMDEV%
+  git fetch origin
+  git reset --hard origin/master
+  git pull
   call SETUP_OMDEV.bat
 )
 """)

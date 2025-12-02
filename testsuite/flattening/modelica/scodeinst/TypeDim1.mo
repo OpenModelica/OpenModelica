@@ -1,7 +1,6 @@
 // name: TypeDim1
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 
 model TypeDim1

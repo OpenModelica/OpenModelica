@@ -25,8 +25,8 @@ runScript(modelTesting);getErrorString();
 // ""
 // OpenModelicaModelTesting.Kind.VerifiedSimulation
 // Modelica.Media.Examples.TestOnly.IdealGasN2Mix
-// {"U","m"}
-// Simulation options: startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Media.Examples.TestOnly.IdealGasN2Mix', options = '', outputFormat = 'mat', variableFilter = 'time|U|m', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
+// {"U", "m"}
+// Simulation options: startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Media.Examples.TestOnly.IdealGasN2Mix', options = '', outputFormat = 'mat', variableFilter = 'time|U|m', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
 // Result file: Modelica.Media.Examples.TestOnly.IdealGasN2Mix_res.mat
 // Messages: LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.

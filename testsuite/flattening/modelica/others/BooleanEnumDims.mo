@@ -1,5 +1,4 @@
 // status: correct
-// cflags: -d=-newInst
 
 model BooleanEnumDims
   type E = enumeration(False,True);
@@ -9,6 +8,7 @@ equation
   r[false,E.True] = 1.5;
   r[true,E.False] = 3.5;
   r[true,E.True] = 4.5;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end BooleanEnumDims;
 // Result:
 // class BooleanEnumDims

@@ -283,12 +283,11 @@ if true then /* Suppress output */
   // "NBackend Classes"
     "../NBackEnd/Classes/NBackendDAE.mo",
     "../NBackEnd/Classes/NBEquation.mo",
+    "../NBackEnd/Classes/NBPartition.mo",
     "../NBackEnd/Classes/NBStrongComponent.mo",
-    "../NBackEnd/Classes/NBSystem.mo",
     "../NBackEnd/Classes/NBVariable.mo",
   // "NBackend Modules"
     "../NBackEnd/Modules/NBModule.mo",
-    "../NBackEnd/Modules/1_Main/NBAdjacency.mo",
     "../NBackEnd/Modules/1_Main/NBCausalize.mo",
     "../NBackEnd/Modules/1_Main/NBDAEMode.mo",
     "../NBackEnd/Modules/1_Main/NBInitialization.mo",
@@ -307,9 +306,12 @@ if true then /* Suppress output */
     "../NBackEnd/Modules/3_Post/NBTearing.mo",
     "../NBackEnd/Modules/3_Post/NBEvaluation.mo",
   // "NBackend Util"
+    "../NBackEnd/Util/NBAdjacency.mo",
+    "../NBackEnd/Util/NBASSC.mo",
     "../NBackEnd/Util/NBBackendUtil.mo",
     "../NBackEnd/Util/NBDifferentiate.mo",
     "../NBackEnd/Util/NBReplacements.mo",
+    "../NBackEnd/Util/NBResizable.mo",
     "../NBackEnd/Util/NBSlice.mo",
 
   // "NSimCode"
@@ -317,6 +319,7 @@ if true then /* Suppress output */
     "../NSimCode/NSimCodeUtil.mo",
     "../NSimCode/NSimGenericCall.mo",
     "../NSimCode/NSimJacobian.mo",
+    "../NSimCode/NSimPartition.mo",
     "../NSimCode/NSimStrongComponent.mo",
     "../NSimCode/NSimVar.mo",
 
@@ -352,6 +355,7 @@ if true then /* Suppress output */
     "../MidCode/HashTableMidVar.mo",
 
   // "NFFrontEnd";
+    "../NFFrontEnd/BaseModelica.mo",
     "../NFFrontEnd/NFAlgorithm.mo",
     "../NFFrontEnd/NFArrayConnections.mo",
     "../NFFrontEnd/NFAttributes.mo",
@@ -372,6 +376,7 @@ if true then /* Suppress output */
     "../NFFrontEnd/NFComplexType.mo",
     "../NFFrontEnd/NFComponent.mo",
     "../NFFrontEnd/NFComponentRef.mo",
+    "../NFFrontEnd/NFConnectBreakTree.mo",
     "../NFFrontEnd/NFConnectEquations.mo",
     "../NFFrontEnd/NFConnection.mo",
     "../NFFrontEnd/NFConnectionSets.mo",

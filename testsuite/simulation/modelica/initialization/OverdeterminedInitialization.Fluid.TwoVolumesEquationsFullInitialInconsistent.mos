@@ -16,9 +16,9 @@ buildModel(OverdeterminedInitialization.Fluid.TwoVolumesEquationsFullInitialInco
 // ""
 // true
 // ""
-// {"OverdeterminedInitialization.Fluid.TwoVolumesEquationsFullInitialInconsistent","OverdeterminedInitialization.Fluid.TwoVolumesEquationsFullInitialInconsistent_init.xml"}
-// "Error: The initialization problem is inconsistent due to the following equation: p1 = 100000.0 (200000.0 = 100000.0)
+// {"OverdeterminedInitialization.Fluid.TwoVolumesEquationsFullInitialInconsistent", "OverdeterminedInitialization.Fluid.TwoVolumesEquationsFullInitialInconsistent_init.xml"}
+// "Error: The initialization problem is inconsistent due to the following equation: p1 = 1e5 (2e5 = 1e5)
 // Warning: The initial conditions are over specified. The following 1 initial equations are redundant, so they are removed from the initialization system:
-//          p1 = 100000.0.
+//          p1 = 1e5.
 // "
 // endResult

@@ -1,7 +1,6 @@
 // name: PackageRestriction2
 // keywords:
 // status: incorrect
-// cflags: -d=newInst
 //
 
 package P
@@ -20,8 +19,8 @@ end PackageRestriction2;
 
 // Result:
 // Error processing file: PackageRestriction2.mo
-// [flattening/modelica/declarations/PackageRestriction2.mo:14:3-14:7:writable] Error: Equations are not allowed in package.
-// [flattening/modelica/declarations/PackageRestriction2.mo:18:3-18:15:writable] Error: Variable P.x not found in scope PackageRestriction2.
+// [flattening/modelica/declarations/PackageRestriction2.mo:13:3-13:7:writable] Error: Equations are not allowed in package.
+// [flattening/modelica/declarations/PackageRestriction2.mo:17:3-17:15:writable] Error: Variable P.x not found in scope PackageRestriction2.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

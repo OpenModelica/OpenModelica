@@ -44,7 +44,7 @@ extern "C" {
 
 typedef struct DATA_HYBRD
 {
-  int initialized; /* 1 = initialized, else = 0*/
+  modelica_boolean initialized;
   double* resScaling;
   int useXScaling;
   double* xScalefactors;
@@ -103,4 +103,3 @@ NLS_SOLVER_STATUS solveHybrd(DATA *data, threadData_t *threadData, NONLINEAR_SYS
 #endif
 
 #endif
-

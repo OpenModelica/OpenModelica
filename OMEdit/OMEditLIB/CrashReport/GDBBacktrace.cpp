@@ -100,7 +100,11 @@ QString GDBBacktrace::createCommandsFile(QString *errorString)
   gdbBacktraceCommandsFile.setFileName(gdbBacktraceCommandsFilePath);
   if (gdbBacktraceCommandsFile.open(QIODevice::WriteOnly)) {
     QTextStream out(&gdbBacktraceCommandsFile);
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+    out.setEncoding(QStringConverter::Utf8);
+#else
     out.setCodec(Helper::utf8.toUtf8().constData());
+#endif
     out.setGenerateByteOrderMark(false);
     out << gdbBatchCommands;
     out.flush();

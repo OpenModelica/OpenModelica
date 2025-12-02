@@ -54,6 +54,7 @@ public:
   PlotWindowContainer(QWidget *pParent = 0);
   QString getUniqueName(QString name = QString("Plot"), int number = 1);
   OMPlot::PlotWindow* getCurrentWindow();
+  QMdiSubWindow* getPlotSubWindowFromMdi();
   OMPlot::PlotWindow* getInteractiveWindow(QString targetWindow);
 #if !defined(WITHOUT_OSG)
   AnimationWindow* getCurrentAnimationWindow();
@@ -66,18 +67,18 @@ public:
   bool isUniqueName(QString name);
   bool eventFilter(QObject *pObject, QEvent *pEvent);
   void removePlotCurves(OMPlot::PlotWindow *pPlotWindow);
-  void showDiagramWindow(ModelWidget *pModelWidget = 0);
+  void showDiagramWindow(ModelWidget *pModelWidget = 0, bool initializeVisualization = false);
 private:
   void addRenameTabToSubWindowSystemMenu(QMdiSubWindow *pMdiSubWindow);
   DiagramWindow *mpDiagramWindow;
 public slots:
-  void addPlotWindow(bool maximized = false);
+  void addPlotWindow();
   void addParametricPlotWindow();
-  void addArrayPlotWindow(bool maximized = false);
+  void addArrayPlotWindow();
   void addArrayParametricPlotWindow();
-  OMPlot::PlotWindow* addInteractivePlotWindow(bool maximized = false, QString owner = QString(), int port = 0);
-  void addAnimationWindow(bool maximized = false);
-  void addDiagramWindow(ModelWidget *pModelWidget = 0, bool maximized = false);
+  OMPlot::PlotWindow* addInteractivePlotWindow(QString owner = QString(), int port = 0);
+  void addAnimationWindow();
+  void addDiagramWindow(ModelWidget *pModelWidget = 0);
   void clearPlotWindow();
   void removeInteractivePlotWindow();
   void renamePlotWindow();

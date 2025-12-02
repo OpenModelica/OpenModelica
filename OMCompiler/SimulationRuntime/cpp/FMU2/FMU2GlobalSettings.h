@@ -45,6 +45,8 @@
 
 class FMU2GlobalSettings : public IGlobalSettings
 {
+ private:
+   const string _emptyString = "";
  public:
   virtual  ~FMU2GlobalSettings() {}
   ///< Start time of integration (default: 0.0)
@@ -62,7 +64,7 @@ class FMU2GlobalSettings : public IGlobalSettings
   ///< Write out results (EMIT_NONE)
   virtual EmitResults     getEmitResults() { return EMIT_NONE; }
   virtual void            setEmitResults(EmitResults) {}
-  virtual const string&   getVariableFilter() { return "";}
+  virtual const string&   getVariableFilter() { return _emptyString; }
   virtual void            setVariableFilter(const string&) {}
   virtual bool            useEndlessSim() {return true; }
   virtual void            useEndlessSim(bool) {}

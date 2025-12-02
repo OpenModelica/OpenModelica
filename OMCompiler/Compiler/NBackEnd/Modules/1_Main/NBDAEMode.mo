@@ -43,12 +43,15 @@ protected
 
   // Backend imports
   import BackendDAE = NBackendDAE;
-  import BEquation = NBEquation;
-  import BVariable = NBVariable;
   import Causalize = NBCausalize;
+  import NBEquation.{Equation, EquationPointers, EqData, Iterator};
+  import Inline = NBInline;
   import Jacobian = NBJacobian;
-  import System = NBSystem;
+  import Partition = NBPartition;
+  import StrongComponent = NBStrongComponent;
   import Tearing = NBTearing;
+  import BVariable = NBVariable;
+  import NBVariable.{VariablePointer, VariablePointers, VarData};
 
 public
   function main extends Module.wrapper;
@@ -60,11 +63,13 @@ public
       // for now just copy the dae
       bdae := match bdae
         local
-          list<System.System> ode;
+          list<Partition.Partition> ode;
+          EqData eqData;
+          VariablePointers variables;
 
-        case BackendDAE.MAIN(ode = ode)
+        case BackendDAE.MAIN(ode = ode, eqData = eqData as EqData.EQ_DATA_SIM(), varData = VarData.VAR_DATA_SIM(variables = variables))
           algorithm
-            bdae.dae := SOME(func(ode));
+            bdae.dae := SOME(func(ode, variables, eqData.uniqueIndex));
         then bdae;
 
         else algorithm
@@ -72,12 +77,10 @@ public
         then fail();
       end match;
 
-      // Modules
-      bdae := Causalize.main(bdae, NBSystem.SystemType.DAE);
-      bdae := Tearing.main(bdae, NBSystem.SystemType.DAE);
-      bdae := Jacobian.main(bdae, NBSystem.SystemType.DAE);
+      // fake causalize system to fulfill pipeline requirements
+      bdae := Causalize.main(bdae, NBPartition.Kind.DAE);
     else
-      Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed!"});
+      Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed."});
     end try;
   end main;
 
@@ -97,19 +100,58 @@ public
 protected
   function daeModeDefault extends Module.daeModeInterface;
   protected
-    list<System.System> new_systems = {};
+    list<Partition.Partition> new_partitions = {};
+    UnorderedSet<VariablePointer> dummy_set = UnorderedSet.new(BVariable.hash, BVariable.equalName);
   algorithm
-    for syst in systems loop
-      // move unknowns
-      syst.daeUnknowns := SOME(syst.unknowns);
-      // convert all algebraic variables to algebraic states
-      // BVariable.VariablePointers.mapPtr(syst.unknowns, function BVariable.makeAlgStateVar());
-      // convert all residual equations to dae residuals
-      BEquation.EquationPointers.mapPtr(syst.equations, function BEquation.Equation.createResidual(new = false));
-      syst.unknowns := BEquation.EquationPointers.getResiduals(syst.equations);
-      new_systems := syst :: new_systems;
+    for part in partitions loop
+      new_partitions := match part.association
+        local
+          Partition.Association association;
+          Option<array<StrongComponent>> new_comps;
+          EquationPointers new_eqns;
+          VariablePointers new_vars;
+
+        case association as Partition.Association.CONTINUOUS() algorithm
+          // update association to continuous -> dae
+          association.kind := NBPartition.Kind.DAE;
+          part.association := association;
+
+          // get the new components
+          part.strongComponents := StrongComponent.sortDAEModeComponents(part.strongComponents, variables, uniqueIndex);
+
+          // get the new equations and variables
+          (new_eqns, new_vars) := match part.strongComponents
+            local
+              array<StrongComponent> new_c;
+              list<Pointer<Equation>> eqns;
+              list<Pointer<Variable>> vars;
+              UnorderedSet<Pointer<Equation>> new_eqns_set;
+              UnorderedSet<Pointer<Variable>> new_vars_set;
+
+            case SOME(new_c) algorithm
+              new_eqns_set := UnorderedSet.new(Equation.hash, Equation.equalName);
+              new_vars_set := UnorderedSet.new(BVariable.hash, BVariable.equalName);
+              for comp in new_c loop
+                eqns := StrongComponent.getEquations(comp);
+                vars := StrongComponent.getVariables(comp);
+                for eqn in eqns loop UnorderedSet.add(eqn, new_eqns_set); end for;
+                for var in vars loop UnorderedSet.add(var, new_vars_set); end for;
+              end for;
+            then (EquationPointers.fromList(UnorderedSet.toList(new_eqns_set)), VariablePointers.fromList(UnorderedSet.toList(new_vars_set)));
+            else (part.equations, part.unknowns);
+          end match;
+
+          part.equations := new_eqns;
+          part.daeUnknowns := SOME(part.unknowns);
+          part.unknowns := new_vars;
+
+          // accumulate new partitions
+        then if Partition.Partition.isEmpty(part) then new_partitions else part :: new_partitions;
+
+        else new_partitions;
+      end match;
     end for;
-    systems := listReverse(new_systems);
+    partitions := listReverse(new_partitions);
   end daeModeDefault;
 
   annotation(__OpenModelica_Interface="backend");

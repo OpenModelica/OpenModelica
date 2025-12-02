@@ -1,7 +1,6 @@
 // name: FunctionCompOrder2
 // keywords:
 // status: incorrect
-// cflags: -d=newInst
 //
 
 function f
@@ -20,7 +19,7 @@ end FunctionCompOrder2;
 
 // Result:
 // Error processing file: FunctionCompOrder2.mo
-// [flattening/modelica/scodeinst/FunctionCompOrder2.mo:7:1-15:6:writable] Error: Cyclically dependent function components found: {x2, x1}
+// [flattening/modelica/scodeinst/FunctionCompOrder2.mo:6:1-14:6:writable] Error: Cyclically dependent function components found: {x2, x1}
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

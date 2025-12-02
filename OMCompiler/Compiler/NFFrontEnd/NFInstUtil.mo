@@ -30,21 +30,25 @@
  */
 
 encapsulated package NFInstUtil
-  import ComponentRef = NFComponentRef;
+  import Absyn;
+  import Algorithm = NFAlgorithm;
+  import Binding = NFBinding;
   import Call = NFCall;
+  import Class = NFClass;
+  import NFClassTree.ClassTree;
+  import Component = NFComponent;
+  import ComponentRef = NFComponentRef;
+  import Equation = NFEquation;
   import Expression = NFExpression;
   import FlatModel = NFFlatModel;
-  import NFInstNode.InstNode;
   import NFFlatten.FunctionTree;
   import NFFunction.Function;
+  import NFInstNode.InstNode;
+  import SCode;
+  import Statement = NFStatement;
   import Subscript = NFSubscript;
   import Type = NFType;
   import Variable = NFVariable;
-  import Algorithm = NFAlgorithm;
-  import Statement = NFStatement;
-  import Equation = NFEquation;
-  import SCode;
-  import Absyn;
 
 protected
   import AbsynUtil;
@@ -64,6 +68,11 @@ public
   protected
     FlatModel flat_model = flatModel;
   algorithm
+    if Flags.getConfigString(Flags.OBFUSCATE) == "protected" or
+       Flags.getConfigString(Flags.OBFUSCATE) == "encrypted" then
+      flat_model := FlatModel.obfuscate(flat_model);
+    end if;
+
     // --dumpFlatModel=stage dumps specific stages, --dumpFlatModel dumps all stages.
     if Flags.isConfigFlagSet(Flags.DUMP_FLAT_MODEL, stage) or
        listEmpty(Flags.getConfigStringList(Flags.DUMP_FLAT_MODEL)) then
@@ -299,12 +308,20 @@ public
     fn := Function.mapBody(fn, expandSlicedCrefsAlg);
   end expandSlicedCrefsFunction;
 
+  type MergeNameMap = UnorderedMap<String, Absyn.ComponentRef>;
+
+  function makeMergeNameMap
+    output MergeNameMap nameMap = UnorderedMap.new<Absyn.ComponentRef>(stringHashDjb2, stringEq);
+  end makeMergeNameMap;
+
   function mergeScalars
     "Tries to merge components inside the given class into arrays. Components
      can be merged if they have e.g. the same type, same prefixes, same
      modifiers, etc."
     input output InstNode node;
     input Absyn.Path classPath;
+    input Boolean isRootClass;
+    input MergeNameMap nameMap = makeMergeNameMap();
   protected
     SCode.Element elem;
   algorithm
@@ -313,7 +330,7 @@ public
     end if;
 
     elem := InstNode.definition(node);
-    elem := mergeScalars2(elem, classPath);
+    elem := mergeScalars2(elem, classPath, isRootClass, nameMap);
     node := InstNode.setDefinition(elem, node);
     execStat(getInstanceName());
   end mergeScalars;
@@ -322,27 +339,30 @@ public
     "Helper function to mergeScalars, does the actual merging."
     input output SCode.Element cls;
     input Absyn.Path classPath;
+    input Boolean isRootClass;
+    input MergeNameMap nameMap;
   protected
     SCode.ClassDef cdef;
     list<SCode.Element> elems;
-    UnorderedMap<String, Absyn.ComponentRef> name_map;
   algorithm
     () := match cls
       case SCode.Element.CLASS(classDef = cdef as SCode.ClassDef.PARTS())
         algorithm
           // Merge components.
-          (elems, name_map) := mergeScalars3(cdef.elementLst);
-          elems := list(mergeScalarsElement(e, name_map) for e in elems);
+          elems := mergeScalars3(cdef.elementLst, nameMap);
+          elems := list(mergeScalarsElement(e, nameMap) for e in elems);
           cdef.elementLst := elems;
           // Replace references to merged components with their new names.
-          cdef.normalEquationLst := mergeScalarsEql(cdef.normalEquationLst, name_map);
-          cdef.initialEquationLst := mergeScalarsEql(cdef.initialEquationLst, name_map);
-          cdef.normalAlgorithmLst := mergeScalarsAlgs(cdef.normalAlgorithmLst, name_map);
-          cdef.initialAlgorithmLst := mergeScalarsAlgs(cdef.initialAlgorithmLst, name_map);
+          cdef.normalEquationLst := mergeScalarsEql(cdef.normalEquationLst, nameMap);
+          cdef.initialEquationLst := mergeScalarsEql(cdef.initialEquationLst, nameMap);
+          cdef.normalAlgorithmLst := mergeScalarsAlgs(cdef.normalAlgorithmLst, nameMap);
+          cdef.initialAlgorithmLst := mergeScalarsAlgs(cdef.initialAlgorithmLst, nameMap);
           cls.classDef := cdef;
 
-          System.writeFile(AbsynUtil.pathString(classPath) + "_merged_table.json",
-            UnorderedMap.toJSON(name_map, Util.id, Dump.printComponentRefStr));
+          if isRootClass then
+            System.writeFile(AbsynUtil.pathString(classPath) + "_merged_table.json",
+              UnorderedMap.toJSON(nameMap, Util.id, Dump.printComponentRefStr));
+          end if;
         then
           ();
 
@@ -355,18 +375,17 @@ public
      new list with components merged, as well as a map of the merged components'
      old names to their new names."
     input list<SCode.Element> elements;
+    input MergeNameMap nameMap;
     output list<SCode.Element> outElements;
-    output UnorderedMap<String, Absyn.ComponentRef> outNameMap;
   protected
     list<list<SCode.Element>> mergeable;
     SCode.Element merged_e;
-    Integer i = 1;
+    Integer i = UnorderedMap.size(nameMap) + 1;
     Absyn.TypeSpec ty;
     String prefix;
   algorithm
     // Find the groups of mergeable component.
     (mergeable, outElements) := makeMergeMap(elements);
-    outNameMap := UnorderedMap.new<Absyn.ComponentRef>(stringHashDjb2, stringEq);
 
     // Merge each group of mergeable components.
     for el in mergeable loop
@@ -374,7 +393,7 @@ public
       // an index to ensure the name is unique.
       ty := SCodeUtil.getComponentTypeSpec(listHead(el));
       prefix := "$" + AbsynUtil.pathLastIdent(AbsynUtil.typeSpecPath(ty));
-      merged_e := mergeComponents(el, prefix + String(i), outNameMap);
+      merged_e := mergeComponents(el, prefix + String(i), nameMap);
       i := i + 1;
       outElements := merged_e :: outElements;
     end for;
@@ -583,7 +602,7 @@ public
     "Merges a list of components into a single component."
     input list<SCode.Element> components;
     input String prefix;
-    input UnorderedMap<String, Absyn.ComponentRef> nameMap;
+    input MergeNameMap nameMap;
     output SCode.Element mergedComponent;
   protected
     Absyn.TypeSpec ty;
@@ -748,7 +767,7 @@ public
       mod_bindings := lookupModBinding(name, mod) :: mod_bindings;
     end for;
 
-    bindings := List.threadMap(mod_bindings, bindings, cons);
+    bindings := list(cons(e1, e2) threaded for e1 in mod_bindings, e2 in bindings);
   end getModBindings;
 
   function lookupModBinding
@@ -784,7 +803,7 @@ public
 
   function mergeScalarsElement
     input output SCode.Element element;
-    input UnorderedMap<String, Absyn.ComponentRef> nameMap;
+    input MergeNameMap nameMap;
   algorithm
     () := match element
       case SCode.Element.EXTENDS()
@@ -806,7 +825,7 @@ public
   function mergeScalarsEql
     "Updates the names of merged components in a list of equations."
     input output list<SCode.Equation> eql;
-    input UnorderedMap<String, Absyn.ComponentRef> nameMap;
+    input MergeNameMap nameMap;
   algorithm
     eql := SCodeUtil.mapEquationsList(eql, function mergeScalarsEq(nameMap = nameMap));
   end mergeScalarsEql;
@@ -814,7 +833,7 @@ public
   function mergeScalarsEq
     "Updates the names of merged components in an equation."
     input output SCode.Equation eq;
-    input UnorderedMap<String, Absyn.ComponentRef> nameMap;
+    input MergeNameMap nameMap;
   algorithm
     eq := SCodeUtil.mapEquationExps(eq, function mergeScalarsExps(nameMap = nameMap));
 
@@ -832,7 +851,7 @@ public
 
   function mergeScalarsMod
     input output SCode.Mod mod;
-    input UnorderedMap<String, Absyn.ComponentRef> nameMap;
+    input MergeNameMap nameMap;
   algorithm
     () := match mod
       case SCode.Mod.MOD()
@@ -848,7 +867,7 @@ public
 
   function mergeScalarsSubMod
     input output SCode.SubMod mod;
-    input UnorderedMap<String, Absyn.ComponentRef> nameMap;
+    input MergeNameMap nameMap;
   algorithm
     mod.mod := mergeScalarsMod(mod.mod, nameMap);
   end mergeScalarsSubMod;
@@ -856,14 +875,14 @@ public
   function mergeScalarsExps
     "Updates the names of merged components in an expression."
     input output Absyn.Exp exp;
-    input UnorderedMap<String, Absyn.ComponentRef> nameMap;
+    input MergeNameMap nameMap;
   algorithm
     exp := AbsynUtil.traverseExp(exp, mergeScalarsExp, nameMap);
   end mergeScalarsExps;
 
   function mergeScalarsExp
     input output Absyn.Exp exp;
-    input output UnorderedMap<String, Absyn.ComponentRef> nameMap;
+    input output MergeNameMap nameMap;
   algorithm
     () := match exp
       case Absyn.Exp.CREF()
@@ -880,7 +899,7 @@ public
   function mergeScalarsCref
     "Updates the names of a component reference if it refers to a merged component."
     input output Absyn.ComponentRef cref;
-    input UnorderedMap<String, Absyn.ComponentRef> nameMap;
+    input MergeNameMap nameMap;
   protected
     Option<Absyn.ComponentRef> repl_ocr;
     Absyn.ComponentRef repl_cr;
@@ -908,7 +927,7 @@ public
   function mergeScalarsAlgs
     "Updates the names of merged components in a list of algorithm sections."
     input output list<SCode.AlgorithmSection> algs;
-    input UnorderedMap<String, Absyn.ComponentRef> nameMap;
+    input MergeNameMap nameMap;
   algorithm
     algs := list(SCodeUtil.mapAlgorithmStatements(a,
       function mergeScalarsStmt(nameMap = nameMap)) for a in algs);
@@ -917,10 +936,49 @@ public
   function mergeScalarsStmt
     "Updates the names of merged components in a statement."
     input output SCode.Statement stmt;
-    input UnorderedMap<String, Absyn.ComponentRef> nameMap;
+    input MergeNameMap nameMap;
   algorithm
     stmt := SCodeUtil.mapStatementExps(stmt, function mergeScalarsExps(nameMap = nameMap));
   end mergeScalarsStmt;
+
+  function mergeScalarsComponentBindings
+    input InstNode node;
+    input MergeNameMap nameMap;
+  protected
+    Class cls;
+    ClassTree cls_tree;
+  algorithm
+    cls := InstNode.getClass(node);
+    cls_tree := Class.classTree(cls);
+    ClassTree.applyComponents(cls_tree, function mergeScalarsComponentBinding(nameMap = nameMap));
+    cls := Class.setClassTree(cls_tree, cls);
+    InstNode.updateClass(cls, node);
+  end mergeScalarsComponentBindings;
+
+  function mergeScalarsComponentBinding
+    input InstNode node;
+    input MergeNameMap nameMap;
+  protected
+    Component comp;
+    Binding binding;
+  algorithm
+    if not InstNode.isComponent(node) then
+      return;
+    end if;
+
+    comp := InstNode.component(node);
+
+    () := match comp
+      case Component.COMPONENT_DEF()
+        algorithm
+          comp.definition := mergeScalarsElement(comp.definition, nameMap);
+          InstNode.updateComponent(comp, node);
+        then
+          ();
+
+      else ();
+    end match;
+  end mergeScalarsComponentBinding;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFInstUtil;

@@ -44,7 +44,6 @@
 
 #include <QGridLayout>
 #include <QMessageBox>
-#include <QDesktopWidget>
 
 /*!
  * \class OMSSimulationDialog
@@ -139,7 +138,7 @@ int OMSSimulationDialog::exec(const QString &modelCref, LibraryTreeItem *pLibrar
     delete mpSystemSimulationInformationWidget;
     mpSystemSimulationInformationWidget = 0;
   }
-  LibraryTreeItem *pTopLibraryTreeItem = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->getTopLevelLibraryTreeItem(mpLibraryTreeItem);
+  LibraryTreeItem *pTopLibraryTreeItem = LibraryTreeModel::getTopLevelLibraryTreeItem(mpLibraryTreeItem);
   LibraryTreeItem *pRootSystemLibraryTreeItem = 0;
   if (pTopLibraryTreeItem && pTopLibraryTreeItem->childrenSize() > 0) {
     pRootSystemLibraryTreeItem = pTopLibraryTreeItem->childAt(0);
@@ -228,7 +227,7 @@ void OMSSimulationDialog::saveSimulationSettings()
   }
   if (mpStartTimeTextBox->text().toDouble() > mpStopTimeTextBox->text().toDouble()) {
     QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::error),
-                          GUIMessages::getMessage(GUIMessages::SIMULATION_STARTTIME_LESSTHAN_STOPTIME), Helper::ok);
+                          GUIMessages::getMessage(GUIMessages::SIMULATION_STARTTIME_LESSTHAN_STOPTIME), QMessageBox::Ok);
     return;
   }
 

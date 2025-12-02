@@ -42,45 +42,80 @@ encapsulated package NFFlatModelicaUtil
   import System;
   import Util;
 
+  // Used to indicate what type of element an annotation comes from, to allow
+  // filtering out specific annotations for dumping.
+  type ElementType = enumeration(
+    ROOT_CLASS,
+    CLASS,
+    FUNCTION,
+    COMPONENT,
+    EQUATION,
+    ALGORITHM,
+    OTHER
+  );
+
   function appendElementSourceCommentString
     input DAE.ElementSource source;
     input output IOStream.IOStream s;
+  protected
+    Option<SCode.Comment> opt_cmt;
   algorithm
-    s := appendCommentString(ElementSource.getOptComment(source), s);
+    opt_cmt := ElementSource.getOptComment(source);
+    if isSome(opt_cmt) then
+      s := appendCommentString(Util.getOption(opt_cmt), s);
+    end if;
   end appendElementSourceCommentString;
 
   function appendElementSourceCommentAnnotation
     input DAE.ElementSource source;
+    input ElementType elementType;
     input String indent;
     input String ending;
     input output IOStream.IOStream s;
+  protected
+    Option<SCode.Comment> opt_cmt;
   algorithm
-    s := appendCommentAnnotation(ElementSource.getOptComment(source), indent, ending, s);
+    opt_cmt := ElementSource.getOptComment(source);
+    if isSome(opt_cmt) then
+      s := appendCommentAnnotation(Util.getOption(opt_cmt), elementType, indent, ending, s);
+    end if;
   end appendElementSourceCommentAnnotation;
 
   function appendElementSourceComment
     input DAE.ElementSource source;
+    input ElementType elementType;
     input output IOStream.IOStream s;
   algorithm
-    s := appendComment(ElementSource.getOptComment(source), s);
+    s := appendCommentOpt(ElementSource.getOptComment(source), elementType, s);
   end appendElementSourceComment;
 
-  function appendComment
+  function appendCommentOpt
     input Option<SCode.Comment> comment;
+    input ElementType elementType;
+    input output IOStream.IOStream s;
+  algorithm
+    if isSome(comment) then
+      s := appendComment(Util.getOption(comment), elementType, s);
+    end if;
+  end appendCommentOpt;
+
+  function appendComment
+    input SCode.Comment comment;
+    input ElementType elementType;
     input output IOStream.IOStream s;
   algorithm
     s := appendCommentString(comment, s);
-    s := appendCommentAnnotation(comment, " ", "", s);
+    s := appendCommentAnnotation(comment, elementType, " ", "", s);
   end appendComment;
 
   function appendCommentString
-    input Option<SCode.Comment> comment;
+    input SCode.Comment comment;
     input output IOStream.IOStream s;
   protected
     String str;
   algorithm
     () := match comment
-      case SOME(SCode.Comment.COMMENT(comment = SOME(str)))
+      case SCode.Comment.COMMENT(comment = SOME(str))
         algorithm
           s := IOStream.append(s, " \"");
           s := IOStream.append(s, System.escapedString(str, false));
@@ -93,7 +128,8 @@ encapsulated package NFFlatModelicaUtil
   end appendCommentString;
 
   function appendCommentAnnotation
-    input Option<SCode.Comment> comment;
+    input SCode.Comment comment;
+    input ElementType elementType;
     input String indent;
     input String ending;
     input output IOStream.IOStream s;
@@ -101,10 +137,13 @@ encapsulated package NFFlatModelicaUtil
     SCode.Mod mod;
   algorithm
     () := match comment
-      case SOME(SCode.Comment.COMMENT(annotation_ =
-          SOME(SCode.Annotation.ANNOTATION(modification = mod))))
+      case SCode.Comment.COMMENT(annotation_ =
+          SOME(SCode.Annotation.ANNOTATION(modification = mod)))
         algorithm
-          mod := DAEDump.filterStructuralMods(mod);
+          mod := match elementType
+            case ElementType.ROOT_CLASS then filterRootClassAnnotations(mod);
+            else DAEDump.filterStructuralMods(mod);
+          end match;
 
           if not SCodeUtil.isEmptyMod(mod) then
             s := IOStream.append(s, indent);
@@ -118,6 +157,22 @@ encapsulated package NFFlatModelicaUtil
       else ();
     end match;
   end appendCommentAnnotation;
+
+  function filterRootClassAnnotations
+    input output SCode.Mod mod;
+  protected
+    function filter
+      input SCode.SubMod smod;
+      output Boolean keep;
+    algorithm
+      keep := match smod.ident
+        case "experiment" then true;
+        else false;
+      end match;
+    end filter;
+  algorithm
+    mod := SCodeUtil.filterSubMods(mod, filter);
+  end filterRootClassAnnotations;
 
   function appendAnnotationMod
     input SCode.Mod mod;
@@ -198,7 +253,7 @@ encapsulated package NFFlatModelicaUtil
           str := Dump.printComponentRefStr(exp.componentRef);
 
           if str <> "time" then
-            str := "'" + str + "'";
+            str := Util.makeQuotedIdentifier(str);
             exp.componentRef := Absyn.ComponentRef.CREF_IDENT(str, {});
           end if;
         then

@@ -189,17 +189,17 @@ void mat4_init4(simulation_result *self, DATA *data, threadData_t *threadData)
       const char *unitStr = NULL;
       size_t unitLength = 0;
 
-      if (mData->realAlias[i].aliasType == 0)
+      if (mData->realAlias[i].aliasType == ALIAS_TYPE_VARIABLE)
       { /* variable */
         unitStr = MMC_STRINGDATA(mData->realVarsData[mData->realAlias[i].nameID].attribute.unit);
         unitLength = unitStr ? strlen(unitStr) + 3 : 0;
       }
-      else if (mData->realAlias[i].aliasType == 1)
+      else if (mData->realAlias[i].aliasType == ALIAS_TYPE_PARAMETER)
       { /* parameter */
         unitStr = MMC_STRINGDATA(mData->realParameterData[mData->realAlias[i].nameID].attribute.unit);
         unitLength = unitStr ? strlen(unitStr) + 3 : 0;
       }
-      else if (mData->realAlias[i].aliasType == 2)
+      else if (mData->realAlias[i].aliasType == ALIAS_TYPE_TIME)
       { /* time */
         unitStr = "s";
         unitLength = 4;
@@ -326,17 +326,17 @@ void mat4_init4(simulation_result *self, DATA *data, threadData_t *threadData)
       const char *unitStr = NULL;
       size_t unitLength = 0;
 
-      if (mData->realAlias[i].aliasType == 0)
+      if (mData->realAlias[i].aliasType == ALIAS_TYPE_VARIABLE)
       { /* variable */
         unitStr = MMC_STRINGDATA(mData->realVarsData[mData->realAlias[i].nameID].attribute.unit);
         unitLength = unitStr ? strlen(unitStr) : 0;
       }
-      else if (mData->realAlias[i].aliasType == 1)
+      else if (mData->realAlias[i].aliasType == ALIAS_TYPE_PARAMETER)
       { /* parameter */
         unitStr = MMC_STRINGDATA(mData->realParameterData[mData->realAlias[i].nameID].attribute.unit);
         unitLength = unitStr ? strlen(unitStr) : 0;
       }
-      else if (mData->realAlias[i].aliasType == 2)
+      else if (mData->realAlias[i].aliasType == ALIAS_TYPE_TIME)
       { /* time */
         unitStr = "s";
         unitLength = 1;
@@ -510,7 +510,7 @@ void mat4_writeParameterData4(simulation_result *self, DATA *data, threadData_t 
 
   for (int i=0; i < mData->nAliasReal; i++)
     if (!mData->realAlias[i].filterOutput) {
-      if (mData->realAlias[i].aliasType == 0)
+      if (mData->realAlias[i].aliasType == ALIAS_TYPE_VARIABLE)
       { /* variable */
         dataInfo[4 * cur + 0] = dataInfo[4 * realLookup[mData->realAlias[i].nameID] + 0];
         dataInfo[4 * cur + 1] = dataInfo[4 * realLookup[mData->realAlias[i].nameID] + 1];
@@ -521,7 +521,7 @@ void mat4_writeParameterData4(simulation_result *self, DATA *data, threadData_t 
           dataInfo[4 * cur + 1] = -dataInfo[4 * cur + 1];
         cur++;
       }
-      else if (mData->realAlias[i].aliasType == 1)
+      else if (mData->realAlias[i].aliasType == ALIAS_TYPE_PARAMETER)
       { /* parameter */
         dataInfo[4 * cur + 0] = dataInfo[4 * realParameterLookup[mData->realAlias[i].nameID] + 0];
         dataInfo[4 * cur + 1] = dataInfo[4 * realParameterLookup[mData->realAlias[i].nameID] + 1];
@@ -532,7 +532,7 @@ void mat4_writeParameterData4(simulation_result *self, DATA *data, threadData_t 
           dataInfo[4 * cur + 1] = -dataInfo[4 * cur + 1];
         cur++;
       }
-      else if (mData->realAlias[i].aliasType == 2)
+      else if (mData->realAlias[i].aliasType == ALIAS_TYPE_TIME)
       { /* time */
         dataInfo[4 * cur + 0] = 2;
         dataInfo[4 * cur + 1] = 1;
@@ -547,7 +547,7 @@ void mat4_writeParameterData4(simulation_result *self, DATA *data, threadData_t 
 
   for (int i=0; i < mData->nAliasInteger; i++)
     if (!mData->integerAlias[i].filterOutput) {
-      if (mData->integerAlias[i].aliasType == 0)
+      if (mData->integerAlias[i].aliasType == ALIAS_TYPE_VARIABLE)
       { /* variable */
         dataInfo[4 * cur + 0] = dataInfo[4 * integerLookup[mData->integerAlias[i].nameID] + 0];
         dataInfo[4 * cur + 1] = dataInfo[4 * integerLookup[mData->integerAlias[i].nameID] + 1];
@@ -558,7 +558,7 @@ void mat4_writeParameterData4(simulation_result *self, DATA *data, threadData_t 
           dataInfo[4 * cur + 1] = -dataInfo[4 * cur + 1];
         cur++;
       }
-      else if (mData->integerAlias[i].aliasType == 1)
+      else if (mData->integerAlias[i].aliasType == ALIAS_TYPE_PARAMETER)
       { /* parameter */
         dataInfo[4 * cur + 0] = dataInfo[4 * integerParameterLookup[mData->integerAlias[i].nameID] + 0];
         dataInfo[4 * cur + 1] = dataInfo[4 * integerParameterLookup[mData->integerAlias[i].nameID] + 1];
@@ -573,7 +573,7 @@ void mat4_writeParameterData4(simulation_result *self, DATA *data, threadData_t 
 
   for (int i=0; i < mData->nAliasBoolean; i++)
     if (!mData->booleanAlias[i].filterOutput) {
-      if (mData->booleanAlias[i].aliasType == 0)
+      if (mData->booleanAlias[i].aliasType == ALIAS_TYPE_VARIABLE)
       { /* variable */
         if (mData->booleanAlias[i].negate)
         {
@@ -592,7 +592,7 @@ void mat4_writeParameterData4(simulation_result *self, DATA *data, threadData_t 
           cur++;
         }
       }
-      else if (mData->booleanAlias[i].aliasType == 1)
+      else if (mData->booleanAlias[i].aliasType == ALIAS_TYPE_PARAMETER)
       { /* parameter */
         if (mData->booleanAlias[i].negate)
         {
@@ -753,7 +753,7 @@ void mat4_emit4(simulation_result *self, DATA *data, threadData_t *threadData)
 
   for (int i=0; i < mData->nAliasBoolean; i++)
     if (!mData->booleanAlias[i].filterOutput)
-      if (mData->booleanAlias[i].aliasType == 0)
+      if (mData->booleanAlias[i].aliasType == ALIAS_TYPE_VARIABLE)
         if (mData->booleanAlias[i].negate)
           WRITE_REAL_VALUE(matData->data_2, cur++, (1-data->localData[0]->booleanVars[mData->booleanAlias[i].nameID]));
 

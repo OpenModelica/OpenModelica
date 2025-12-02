@@ -1,7 +1,6 @@
 // name:     Redeclare5
 // keywords: redeclare, bug #36
 // status:   correct
-// cflags: -d=-newInst
 //
 model B
   parameter Real b=1.0;
@@ -20,6 +19,7 @@ end C;
 
 model D
   C c(redeclare BB d);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end D;
 
 

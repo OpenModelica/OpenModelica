@@ -76,7 +76,7 @@ ViewerWidget::ViewerWidget(QWidget* parent, Qt::WindowFlags flags)
   : GLWidget(parent, flags)
 {
   // Set the number of samples used for multisampling
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 4, 0))
+#if QT_VERSION >= QT_VERSION_CHECK(5, 4, 0)
   QSurfaceFormat format;
   format.setSamples(4);
   setFormat(format);
@@ -210,7 +210,11 @@ void ViewerWidget::keyReleaseEvent(QKeyEvent *event)
 void ViewerWidget::mouseMoveEvent(QMouseEvent *event)
 {
   int pixelRatio = qCeil(qApp->devicePixelRatio());
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+  getEventQueue()->mouseMotion(static_cast<float>(event->position().x() * pixelRatio), static_cast<float>(event->position().y() * pixelRatio));
+#else
   getEventQueue()->mouseMotion(static_cast<float>(event->x() * pixelRatio), static_cast<float>(event->y() * pixelRatio));
+#endif
 }
 
 /*!
@@ -240,7 +244,11 @@ void ViewerWidget::mousePressEvent(QMouseEvent *event)
       mMouseButton = 3;
       if (event->modifiers() == Qt::ShiftModifier) {
         //qt counts pixels from upper left corner and osg from bottom left corner
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+        pickVisualizer(event->position().x() * pixelRatio, (this->height() - event->position().y()) * pixelRatio);
+#else
         pickVisualizer(event->x() * pixelRatio, (this->height() - event->y()) * pixelRatio);
+#endif
         showVisualizerPickContextMenu(event->pos());
         return;
       }
@@ -248,7 +256,11 @@ void ViewerWidget::mousePressEvent(QMouseEvent *event)
     default:
       break;
   }
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+  getEventQueue()->mouseButtonPress(static_cast<float>(event->position().x() * pixelRatio), static_cast<float>(event->position().y() * pixelRatio), mMouseButton);
+#else
   getEventQueue()->mouseButtonPress(static_cast<float>(event->x() * pixelRatio), static_cast<float>(event->y() * pixelRatio), mMouseButton);
+#endif
 }
 
 /*!
@@ -499,7 +511,11 @@ void ViewerWidget::mouseReleaseEvent(QMouseEvent *event)
       break;
   }
   int pixelRatio = qCeil(qApp->devicePixelRatio());
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+  getEventQueue()->mouseButtonRelease(static_cast<float>(event->position().x() * pixelRatio), static_cast<float>(event->position().y() * pixelRatio), mMouseButton);
+#else
   getEventQueue()->mouseButtonRelease(static_cast<float>(event->x() * pixelRatio), static_cast<float>(event->y() * pixelRatio), mMouseButton);
+#endif
 }
 
 /*!
@@ -509,7 +525,7 @@ void ViewerWidget::mouseReleaseEvent(QMouseEvent *event)
  */
 void ViewerWidget::wheelEvent(QWheelEvent *event)
 {
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 6, 0))
+#if QT_VERSION >= QT_VERSION_CHECK(5, 6, 0)
   static QPoint angleDelta = QPoint(0, 0);
   angleDelta += event->angleDelta();
   QPoint numDegrees = angleDelta / 8;

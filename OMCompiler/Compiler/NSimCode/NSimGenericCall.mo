@@ -45,6 +45,8 @@ protected
   import ComponentRef = NFComponentRef;
   import ConvertDAE = NFConvertDAE;
   import Expression = NFExpression;
+  import Operator = NFOperator;
+  import SimplifyExp = NFSimplifyExp;
   import Statement = NFStatement;
 
   // old backend import
@@ -59,19 +61,44 @@ public
     list<SimIterator> iters;
     Expression lhs;
     Expression rhs;
+    Boolean resizable;
   end SINGLE_GENERIC_CALL;
 
   record IF_GENERIC_CALL
     Integer index;
     list<SimIterator> iters;
     list<SimBranch> branches;
+    Boolean resizable;
   end IF_GENERIC_CALL;
 
   record WHEN_GENERIC_CALL
     Integer index;
     list<SimIterator> iters;
     list<SimBranch> branches;
+    Boolean resizable;
   end WHEN_GENERIC_CALL;
+
+  function mapShallow
+    input output SimGenericCall call;
+    input mapExp func;
+    partial function mapExp
+      input output Expression exp;
+    end mapExp;
+  algorithm
+    call := match call
+      case SINGLE_GENERIC_CALL() algorithm
+        call.lhs := func(call.lhs);
+        call.rhs := func(call.rhs);
+      then call;
+      case IF_GENERIC_CALL() algorithm
+        call.branches := list(SimBranch.mapShallow(branch, func) for branch in call.branches);
+      then call;
+      case WHEN_GENERIC_CALL() algorithm
+        call.branches := list(SimBranch.mapShallow(branch, func) for branch in call.branches);
+      then call;
+      else call;
+    end match;
+  end mapShallow;
 
   function toString
     input SimGenericCall call;
@@ -97,30 +124,40 @@ public
   protected
     Pointer<Equation> eqn_ptr;
     Integer index;
+    Boolean resizable;
     Equation body, eqn;
   algorithm
-    (Identifier.IDENTIFIER(eqn = eqn_ptr), index) := ident_tpl;
+    (Identifier.IDENTIFIER(eqn = eqn_ptr, resizable = resizable), index) := ident_tpl;
     eqn := Pointer.access(eqn_ptr);
     call := match eqn
+      local
+        list<SimIterator> iters;
 
-      case Equation.FOR_EQUATION(body = {body as Equation.IF_EQUATION()})
+      case Equation.FOR_EQUATION(body = {body as Equation.IF_EQUATION()}) algorithm
+        iters := SimIterator.fromIterator(eqn.iter);
       then IF_GENERIC_CALL(
-          index = index,
-          iters = SimIterator.fromIterator(eqn.iter),
-          branches = SimBranch.fromIfBody(body.body));
+          index     = index,
+          iters     = iters,
+          branches  = SimBranch.fromIfBody(body.body),
+          resizable = resizable);
 
-      case Equation.FOR_EQUATION(body = {body as Equation.WHEN_EQUATION()})
+      case Equation.FOR_EQUATION(body = {body as Equation.WHEN_EQUATION()}) algorithm
+        iters := SimIterator.fromIterator(eqn.iter);
       then WHEN_GENERIC_CALL(
-          index = index,
-          iters = SimIterator.fromIterator(eqn.iter),
-          branches = SimBranch.fromWhenBody(body.body));
+          index     = index,
+          iters     = iters,
+          branches  = SimBranch.fromWhenBody(body.body),
+          resizable = resizable);
 
-      case Equation.FOR_EQUATION(body = {body})
+      case Equation.FOR_EQUATION(body = {body}) algorithm
+        iters := SimIterator.fromIterator(eqn.iter);
       then SINGLE_GENERIC_CALL(
-          index = index,
-          iters = SimIterator.fromIterator(eqn.iter),
-          lhs   = Equation.getLHS(body),
-          rhs   = Equation.getRHS(body));
+          index     = index,
+          iters     = iters,
+          lhs       = Util.getOption(Equation.getLHS(body)),
+          rhs       = Util.getOption(Equation.getRHS(body)),
+          resizable = resizable);
+
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for incorrect equation: " + Equation.toString(eqn)});
       then fail();
@@ -133,18 +170,21 @@ public
   algorithm
     old_call := match call
       case SINGLE_GENERIC_CALL() then OldSimCode.SINGLE_GENERIC_CALL(
-        index = call.index,
-        iters = list(SimIterator.convert(iter) for iter in call.iters),
-        lhs   = Expression.toDAE(call.lhs),
-        rhs   = Expression.toDAE(call.rhs));
+        index     = call.index,
+        iters     = list(SimIterator.convert(iter) for iter in call.iters),
+        lhs       = Expression.toDAE(call.lhs),
+        rhs       = Expression.toDAE(call.rhs),
+        resizable = call.resizable);
       case IF_GENERIC_CALL() then OldSimCode.IF_GENERIC_CALL(
         index     = call.index,
         iters     = list(SimIterator.convert(iter) for iter in call.iters),
-        branches  = list(SimBranch.convert(branch) for branch in call.branches));
+        branches  = list(SimBranch.convert(branch) for branch in call.branches),
+        resizable = call.resizable);
       case WHEN_GENERIC_CALL() then OldSimCode.WHEN_GENERIC_CALL(
         index     = call.index,
         iters     = list(SimIterator.convert(iter) for iter in call.iters),
-        branches  = list(SimBranch.convert(branch) for branch in call.branches));
+        branches  = list(SimBranch.convert(branch) for branch in call.branches),
+        resizable = call.resizable);
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for incorrect call: " + toString(call)});
       then fail();
@@ -152,46 +192,119 @@ public
   end convert;
 
   uniontype SimIterator
-    record SIM_ITERATOR
+    record SIM_ITERATOR_RANGE
       ComponentRef name;
-      Integer start;
-      Integer step;
+      Expression start;
+      Expression step;
+      Expression stop;
+      Expression size;
+      list<DependentIterator> sub_iter;
+    end SIM_ITERATOR_RANGE;
+
+    record SIM_ITERATOR_LIST
+      ComponentRef name;
+      list<Integer> lst;
       Integer size;
-    end SIM_ITERATOR;
+      list<DependentIterator> sub_iter;
+    end SIM_ITERATOR_LIST;
 
     function toString
       input SimIterator iter;
-      output String str = "{" + ComponentRef.toString(iter.name) + " | start:" + intString(iter.start) + ", step:" + intString(iter.step) + ", size: " + intString(iter.size) + "}";
+      output String str;
+      function subIterString
+        input list<DependentIterator> sub_iter;
+        output String str = List.toString(list(Util.tuple21(tpl) for tpl in sub_iter), ComponentRef.toString, "", "(", ", ", ")", false);
+      end subIterString;
+    algorithm
+      str := match iter
+        case SIM_ITERATOR_RANGE() then "{" + ComponentRef.toString(iter.name) + " | start:" + Expression.toString(iter.start) + ", step:" + Expression.toString(iter.step) + ", stop:" + Expression.toString(iter.stop) + ", size: " + Expression.toString(iter.size) + "}" + subIterString(iter.sub_iter);
+        case SIM_ITERATOR_LIST()  then "{" + ComponentRef.toString(iter.name) + " | list: " + List.toString(iter.lst, intString, "", "{", ", ", "}", true, 10) + "}" + subIterString(iter.sub_iter);
+      end match;
     end toString;
 
     function fromIterator
+      "create sim iterator from backend iterator.
+      Note: needs to reverse the order of iterators since it needs to be mapped inner first"
       input Iterator iter;
       output list<SimIterator> sim_iter = {};
     protected
       list<ComponentRef> names;
       list<Expression> ranges;
+      list<Option<Iterator>> maps;
       ComponentRef name;
-      Expression range;
-      Integer start, step, stop;
+      Operator addOp, mulOp;
+      Expression range, step, size;
+      Option<Iterator> map;
+      list<Integer> lst;
+      list<DependentIterator> sub_iter;
     algorithm
-      (names, ranges) := Iterator.getFrames(iter);
-      for tpl in listReverse(List.zip(names, ranges)) loop
-        (name, range) := tpl;
-        (start, step, stop) := match range
-          case Expression.RANGE() then (Expression.integerValue(range.start), Expression.integerValue(Util.getOptionOrDefault(range.step, Expression.INTEGER(1))), Expression.integerValue(range.stop));
+      (names, ranges, maps) := Iterator.getFrames(iter);
+      for tpl in List.zip3(names, ranges, maps) loop
+        (name, range, map) := tpl;
+        sim_iter := match range
+          case Expression.RANGE() algorithm
+            step      := Util.getOptionOrDefault(range.step, Expression.INTEGER(1));
+            addOp     := Operator.makeAdd(Expression.typeOf(range.start));
+            mulOp     := Operator.makeMul(Expression.typeOf(range.start));
+            // build the size expression (stop-start)/step+1
+            size      := Expression.MULTARY({range.stop}, {range.start}, addOp);
+            size      := Expression.MULTARY({size}, {step}, mulOp);
+            size      := Expression.MULTARY({size, Expression.INTEGER(1)}, {}, addOp);
+            size      := SimplifyExp.simplify(size);
+            sub_iter  := if Util.isSome(map) then subIterators(Util.getOption(map)) else {};
+          then SIM_ITERATOR_RANGE(name, range.start, step, range.stop, size, sub_iter) :: sim_iter;
+
+          case Expression.ARRAY() guard(range.literal) algorithm
+            lst       := list(Expression.integerValue(e) for e in range.elements);
+            sub_iter  := if Util.isSome(map) then subIterators(Util.getOption(map)) else {};
+          then SIM_ITERATOR_LIST(name, lst, listLength(lst), sub_iter) :: sim_iter;
+
           else algorithm
-            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for incorrect range: " + Expression.toString(range)});
+            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for incorrect iterator domain: " + Expression.toString(range)});
           then fail();
         end match;
-        sim_iter := SIM_ITERATOR(name, start, step, intDiv(stop-start,step)+1) :: sim_iter;
       end for;
     end fromIterator;
 
+    function subIterators
+      "creates a list dependent sub iterators. the ranges can only be an array"
+      input Iterator iter;
+      output list<DependentIterator> sub_iter = {};
+    protected
+      list<ComponentRef> names;
+      list<Expression> ranges;
+      ComponentRef name;
+      Expression range;
+    algorithm
+      // sub iterators are not allowed to have sub iterators themselves
+      (names, ranges, _) := Iterator.getFrames(iter);
+      for tpl in listReverse(List.zip(names, ranges)) loop
+        (name, range) := tpl;
+        sub_iter := match range
+          case Expression.ARRAY() then (name, range.elements) :: sub_iter;
+          else algorithm
+            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for incorrect iterator domain: " + Expression.toString(range)});
+          then fail();
+        end match;
+      end for;
+    end subIterators;
+
     function convert
       input SimIterator iter;
-      output OldBackendDAE.SimIterator old_iter = OldBackendDAE.SIM_ITERATOR(ComponentRef.toDAE(iter.name), iter.start, iter.step, iter.size);
+      output OldBackendDAE.SimIterator old_iter;
+      function convertSubIterator
+        input tuple<ComponentRef, array<Expression>> sub_iter;
+        output tuple<DAE.ComponentRef, array<DAE.Exp>> old_sub_iter = (ComponentRef.toDAE(Util.tuple21(sub_iter)), listArray(list(Expression.toDAE(e) for e in Util.tuple22(sub_iter))));
+      end convertSubIterator;
+    algorithm
+      old_iter := match iter
+        case SIM_ITERATOR_RANGE() then OldBackendDAE.SIM_ITERATOR_RANGE(ComponentRef.toDAE(iter.name), Expression.toDAE(iter.start), Expression.toDAE(iter.step), Expression.toDAE(iter.stop), Expression.toDAE(iter.size), Expression.getInteger(iter.size), list(convertSubIterator(si) for si in iter.sub_iter));
+        case SIM_ITERATOR_LIST()  then OldBackendDAE.SIM_ITERATOR_LIST(ComponentRef.toDAE(iter.name), iter.lst, iter.size, list(convertSubIterator(si) for si in iter.sub_iter));
+      end match;
     end convert;
   end SimIterator;
+
+  type DependentIterator = tuple<ComponentRef, array<Expression>> "represents a dependent sub iterator";
 
   uniontype SimBranch
     record SIM_BRANCH
@@ -203,6 +316,25 @@ public
       Expression condition;
       list<Statement> body;
     end SIM_BRANCH_STMT;
+
+    function mapShallow
+      input output SimBranch branch;
+      input mapExp func;
+    protected
+      partial function mapExp
+        input output Expression exp;
+      end mapExp;
+    algorithm
+      branch := match branch
+        case SIM_BRANCH() algorithm
+          branch.body := list((func(Util.tuple21(tpl)), func(Util.tuple22(tpl))) for tpl in branch.body);
+        then branch;
+        case SIM_BRANCH_STMT() algorithm
+          branch.body := list(Statement.mapExp(stmt, func) for stmt in branch.body);
+        then branch;
+        else branch;
+      end match;
+    end mapShallow;
 
     function toString
       input SimBranch branch;
@@ -235,9 +367,9 @@ public
     algorithm
       for eqn in listReverse(if_body.then_eqns) loop
         // ToDo: what if there are more complex things inside?
-        body := (Equation.getLHS(Pointer.access(eqn)), Equation.getRHS(Pointer.access(eqn))) :: body;
+        body := (Util.getOption(Equation.getLHS(Pointer.access(eqn))), Util.getOption(Equation.getRHS(Pointer.access(eqn)))) :: body;
       end for;
-      branch := SIM_BRANCH(if_body.condition, body) ;
+      branch := SIM_BRANCH(if_body.condition, body);
       if Util.isSome(if_body.else_if) then
         branches := branch :: fromIfBody(Util.getOption(if_body.else_if));
       else

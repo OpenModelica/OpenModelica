@@ -1,7 +1,6 @@
 // name: EqualityConstraint1
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 
 type Real3 = Real[3];

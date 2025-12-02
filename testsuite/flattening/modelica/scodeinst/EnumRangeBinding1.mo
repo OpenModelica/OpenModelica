@@ -1,7 +1,6 @@
 // name: EnumRangeBinding1
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 
 model EnumRangeBinding1

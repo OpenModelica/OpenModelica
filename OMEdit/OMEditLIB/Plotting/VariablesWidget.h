@@ -38,6 +38,8 @@
 #include "Simulation/SimulationOptions.h"
 #include "PlotWindow.h"
 #include "Animation/TimeManager.h"
+#include "util/read_matlab4.h"
+#include "util/read_csv.h"
 
 #include <QDomDocument>
 #include <QTreeView>
@@ -82,12 +84,9 @@ public:
   bool isMainArrayProtected() const;
   SimulationOptions getSimulationOptions() {return mSimulationOptions;}
   void setSimulationOptions(SimulationOptions simulationOptions) {mSimulationOptions = simulationOptions;}
-  bool isActive() const {return mActive;}
-  void setActive();
   QIcon getVariableTreeItemIcon(QString name) const;
   void insertChild(int position, VariablesTreeItem *pVariablesTreeItem);
   VariablesTreeItem* child(int row);
-  void removeChildren();
   void removeChild(VariablesTreeItem *pVariablesTreeItem);
   int columnCount() const;
   bool setData(int column, const QVariant &value, int role = Qt::EditRole);
@@ -98,7 +97,13 @@ public:
   VariablesTreeItem* rootParent();
   QVariant getValue(QString fromUnit, QString toUnit);
 
-  QList<VariablesTreeItem*> mChildren;
+  QVector<VariablesTreeItem*> mChildren;
+  /* See issue #14192
+   * We need a hash to speed up the search for child items.
+   * We maintain both mChildren vector and mChildrenHash hash.
+   * One is ordered vector and other is unordered hash.
+   */
+  QHash<QString, VariablesTreeItem*> mChildrenHash;
 private:
   VariablesTreeItem *mpParentVariablesTreeItem;
   bool mIsRootItem;
@@ -124,8 +129,6 @@ private:
   QList<IntStringPair> mDefinedIn;
   QString mInfoFileName;
   bool mExistInResultFile;
-protected:
-  bool mActive;
 };
 
 class VariablesTreeView;
@@ -157,11 +160,13 @@ public:
   Qt::ItemFlags flags(const QModelIndex &index) const override;
   VariablesTreeItem* findVariablesTreeItem(const QString &name, VariablesTreeItem *pVariablesTreeItem, Qt::CaseSensitivity caseSensitivity = Qt::CaseSensitive) const;
   VariablesTreeItem* findVariablesTreeItemOneLevel(const QString &name, VariablesTreeItem *pVariablesTreeItem = 0, Qt::CaseSensitivity caseSensitivity = Qt::CaseSensitive) const;
-  void updateVariablesTreeItem(VariablesTreeItem *pVariablesTreeItem);
-  QModelIndex variablesTreeItemIndex(const VariablesTreeItem *pVariablesTreeItem) const;
+  VariablesTreeItem* findVariablesTreeItemFromClassNameTopLevel(const QString &className) const;
+  void updateVariablesTreeItem(VariablesTreeItem *pVariablesTreeItem, int column);
+  QModelIndex variablesTreeItemIndex(VariablesTreeItem *pVariablesTreeItem, int column = 0) const;
   bool insertVariablesItems(QString fileName, QString filePath, QStringList variablesList, SimulationOptions simulationOptions);
   void parseInitXml(QXmlStreamReader &xmlReader, SimulationOptions simulationOptions, QStringList *variablesList);
   bool removeVariableTreeItem(QString variable, bool closeInteractivePlotWindow);
+  void removeVariableTreeItem(VariablesTreeItem *pVariablesTreeItem);
   void unCheckVariables(VariablesTreeItem *pVariablesTreeItem);
   void plotAllVariables(VariablesTreeItem *pVariablesTreeItem, OMPlot::PlotWindow *pPlotWindow);
 private:
@@ -169,20 +174,19 @@ private:
   VariablesTreeItem *mpRootVariablesTreeItem;
   VariablesTreeItem *mpActiveVariablesTreeItem;
   QHash<QString, QHash<QString,QString> > mScalarVariablesHash;
-  QModelIndex variablesTreeItemIndexHelper(const VariablesTreeItem *pVariablesTreeItem, const VariablesTreeItem *pParentVariablesTreeItem, const QModelIndex &parentIndex) const;
   void filterVariableTreeItem(VariableNode *pParentVariableNode, VariablesTreeItem *pParentVariablesTreeItem);
   void insertVariablesItems(VariableNode *pParentVariableNode, VariablesTreeItem *pParentVariablesTreeItem);
   QHash<QString, QString> parseScalarVariable(QXmlStreamReader &xmlReader);
   void getVariableInformation(ModelicaMatReader *pMatReader, QString variableToFind, QString *type, QString *value, bool *changeAble, QString *variability,
                               QString *unit, QString *displayUnit, QString *description);
 signals:
-  void itemChecked(const QModelIndex &index, qreal curveThickness, int curveStyle, bool shiftKey);
+  void itemChecked(const QModelIndex &index, qreal curveThickness, int curveStyle, int keyDown);
   void unitChanged(const QModelIndex &index);
   void valueEntered(const QModelIndex &index);
   void variableTreeItemRemoved(QString variable);
 public slots:
   void removeVariableTreeItem();
-  void setVariableTreeItemActive();
+  void enableTimeControls();
   void filterDependencies();
   void openTransformationsBrowser();
 };
@@ -237,12 +241,13 @@ public:
   void updateVisualization();
   void updatePlotWindows();
   void updateBrowserTime(double time);
-  double readVariableValue(QString variable, double time);
+  QPair<double, bool> readVariableValue(QString variable, double time, bool reportError = true);
   void closeResultFile();
 private:
   TreeSearchFilters *mpTreeSearchFilters;
   Label *mpSimulationTimeLabel;
   QComboBox *mpSimulationTimeComboBox;
+  Label *mpTimeControlsDescriptionLabel;
   QSlider *mpSimulationTimeSlider;
   int mSliderRange;
   QToolBar *mpToolBar;
@@ -263,16 +268,18 @@ private:
   csv_data *mpCSVData;
   QFile mPlotFileReader;
   void selectInteractivePlotWindow(VariablesTreeItem *pVariablesTreeItem);
-  void openResultFile(double &startTime, double &stopTime);
+  void openResultFile(VariablesTreeItem *pVariablesTreeItem, double &startTime, double &stopTime);
   void checkVariable(const QModelIndex &index, bool checkState);
   void unCheckVariableAndErrorMessage(const QModelIndex &index, const QString &errorMessage);
   void unCheckCurveVariable(const QString &variable);
+  void updateDisplayUnitAndValue(const QString &unitPrefix, const QString &displayUnit, VariablesTreeItem *pVariablesTreeItem);
 public slots:
-  void plotVariables(const QModelIndex &index, qreal curveThickness, int curveStyle, bool shiftKey, OMPlot::PlotCurve *pPlotCurve = 0, OMPlot::PlotWindow *pPlotWindow = 0);
+  void plotVariables(const QModelIndex &index, qreal curveThickness, int curveStyle, int keyDown, OMPlot::PlotCurve *pPlotCurve = 0, OMPlot::PlotWindow *pPlotWindow = 0);
   void unitChanged(const QModelIndex &index);
+  void updatePlottedVariablesDisplayUnitAndValue();
   void simulationTimeChanged(int value);
   void valueEntered(const QModelIndex &index);
-  void timeUnitChanged(QString unit);
+  void timeUnitChanged(int index);
   void updateVariablesTree(QMdiSubWindow *pSubWindow);
   void showContextMenu(QPoint point);
   void findVariables();
@@ -287,6 +294,7 @@ private slots:
   void incrementVisualization();
 signals:
   void updateDynamicSelect(double time);
+  void resetDynamicSelect();
 };
 
 #endif // VARIABLESWIDGET_H

@@ -1,7 +1,6 @@
 // name:     Connect1
 // keywords: connect
 // status:   correct
-// cflags: -d=-newInst
 //
 // Basic connections
 //
@@ -17,6 +16,7 @@ equation
   connect(c1,c2);
   c1.e = 1;
   c2.f = time;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Connect1;
 
 // Result:

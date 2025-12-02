@@ -1,7 +1,6 @@
 // name:     BM5 -  Asin component
 // keywords: Asin
 // status:   correct
-// cflags: -d=-newInst
 //
 // Testing instantiation of the Math.Asin component.
 //
@@ -1071,6 +1070,7 @@ model BM5
 
 equation
   connect(constant1.outPort,asin1.inPort) annotation(Line(visible=true,points={{-23.52,16.83},{1.72,15.92}}));
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end BM5;
 // function Modelica.Math.asin
 // input Real u;

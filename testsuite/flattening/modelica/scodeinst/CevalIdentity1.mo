@@ -1,7 +1,6 @@
 // name: CevalIdentity1
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 //
 

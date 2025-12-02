@@ -1,7 +1,6 @@
 // name: CevalAtan21
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 //
 

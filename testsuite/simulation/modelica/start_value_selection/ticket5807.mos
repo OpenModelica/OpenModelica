@@ -36,44 +36,11 @@ simulate(TestInitStart); getErrorString();
 // |                 | |       | | |                2                1
 // |                 | |       | | x0 [1-dim]
 // |                 | |       | | |               -2
-// |                 | |       | | indRow: [1-dim]
-// |                 | |       | | | 0
-// |                 | |       | | indCol: [2-dim]
-// |                 | |       | | | 0 1
-// |                 | |       | | vector x (solution): [2-dim]
-// |                 | |       | | |               -0                1
 // |                 | |       | | regular initial point!!!
-// |                 | |       | | ******************************************************
-// |                 | |       | | NEWTON SOLVER STARTED! equation number:  2
-// |                 | |       | | maximum number of function evaluation:  100
-// |                 | |       | | nls status
-// |                 | |       | | | variables
-// |                 | |       | | | [ 1]                              p  =               -2		 nom =                2		 min =  -1.7976931e+308		 max =   1.7976931e+308
-// |                 | |       | | Iteration: 1
-// |                 | |       | | newton step
-// |                 | |       | | | variables
-// |                 | |       | | | [ 1]                              p  =               -2		 step =               -0		 old =               -2
-// |                 | |       | | Need to damp, grad_f =   -0.0000000000e+00
-// |                 | |       | | Need to damp, error_f =    0.0000000000e+00
-// |                 | |       | | Need to damp this!! lambda1 =    1.0000000000e+00
-// |                 | |       | | Need to damp, error_f1 =    0.0000000000e+00
-// |                 | |       | | Need to damp, forced error =    0.0000000000e+00
-// |                 | |       | | function values: [1-dim]
-// |                 | |       | | |                0
-// |                 | |       | | scaled function values: [1-dim]
-// |                 | |       | | |                0
-// |                 | |       | | error measurements:
-// |                 | |       | | delta_x        =   0.0000000000e+00
-// |                 | |       | | delta_x_scaled =   0.0000000000e+00
-// |                 | |       | | newtonXTol          =   1.0000000000e-12
-// |                 | |       | | error_f        =   0.0000000000e+00
-// |                 | |       | | error_f_scaled =   0.0000000000e+00
-// |                 | |       | | newtonFTol          =   1.0000000000e-12
-// |                 | |       | | Note: newton solver rejected last x because previous was as good
 // LOG_NLS           | info    | | Solution status: SOLVED
-// |                 | |       | | |  number of iterations           : 1
-// |                 | |       | | |  number of function evaluations : 3
-// |                 | |       | | |  number of jacobian evaluations : 1
+// |                 | |       | | |  number of iterations           : 0
+// |                 | |       | | |  number of function evaluations : 1
+// |                 | |       | | |  number of jacobian evaluations : 0
 // |                 | |       | | | solution values:
 // |                 | |       | | | [ 1]                              p  =               -2
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.

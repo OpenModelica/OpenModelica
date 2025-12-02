@@ -1,7 +1,6 @@
 // name: IfExpression14
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 
 model IfExpression14
@@ -12,7 +11,7 @@ end IfExpression14;
 
 // Result:
 // class IfExpression14
-//   parameter Boolean cond = false;
+//   final parameter Boolean cond = false;
 //   Real a[1];
 //   Real a[2];
 //   Real a[3];

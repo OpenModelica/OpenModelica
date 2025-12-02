@@ -1,6 +1,5 @@
 // name: FlowDeclConnector
 // keywords: flow
-// cflags: +std=2.x -d=-newInst
 // status: correct
 //
 // Tests the flow prefix on a connector type
@@ -14,6 +13,7 @@ class FlowDeclConnector
   flow FlowConnector fc;
 equation
   fc.r = 1.0;
+  annotation(__OpenModelica_commandLineOptions="+std=2.x -d=-newInst");
 end FlowDeclConnector;
 
 // Result:

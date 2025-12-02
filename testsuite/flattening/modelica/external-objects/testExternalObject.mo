@@ -1,7 +1,7 @@
 // name:     testExternalObject
 // keywords: external object
-// cflags:   +i=ExtObjectTest.Ex -d=-newInst
 // status:   correct
+// cflags:   -i=ExtObjectTest.Ex
 //
 // description: External object in extended class
 
@@ -9,6 +9,7 @@ package ExtObjectTest
   model Ex
     package ExtPackage1 = ExtPackage;
     ExtPackage1.ExtObj mapping = ExtPackage1.ExtObj();
+    annotation(__OpenModelica_commandLineOptions="-d=-newInst");
   end Ex;
 
   package ExtPackage

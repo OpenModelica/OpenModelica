@@ -1,0 +1,65 @@
+// name: GetModelInstanceImport2
+// keywords:
+// status: correct
+// cflags: -d=newInst
+//
+//
+
+loadString("
+  type A1 = Real;
+  type A2 = Real;
+  type A3 = Real;
+  type B = Real;
+  type C = Real;
+
+  package P1
+    import A1;
+    import A2;
+    import A3;
+
+    package P2
+      import B;
+
+      package P3
+        import C;
+
+        model M
+        end M;
+      end P3;
+    end P2;
+  end P1;
+");
+
+getModelInstance(P1.P2.P3.M, prettyPrint = true);
+
+// Result:
+// true
+// "{
+//   \"name\": \"P1.P2.P3.M\",
+//   \"restriction\": \"model\",
+//   \"imports\": [
+//     {
+//       \"path\": \"C\"
+//     },
+//     {
+//       \"path\": \"B\"
+//     },
+//     {
+//       \"path\": \"A1\"
+//     },
+//     {
+//       \"path\": \"A2\"
+//     },
+//     {
+//       \"path\": \"A3\"
+//     }
+//   ],
+//   \"source\": {
+//     \"filename\": \"<interactive>\",
+//     \"lineStart\": 19,
+//     \"columnStart\": 9,
+//     \"lineEnd\": 20,
+//     \"columnEnd\": 14
+//   }
+// }"
+// endResult

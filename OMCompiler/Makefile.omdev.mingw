@@ -37,6 +37,8 @@ ifeq (ucrt64,$(findstring ucrt64,$(MSYSTEM_PREFIX)))
 override CFLAGS += -DUCRT64
 endif
 
+# adrpo: automake 1.17 breaks compilation of libffi on msys2/ucrt
+export WANT_AUTOMAKE=1.16
 
 # makefile for Windows MinGW OMDev
 all : .testvariables settings omc
@@ -103,7 +105,8 @@ MODELICA_SPEC_PLATFORM=win32
 SHREXT=.dll
 STAEXT=.a
 EXE=.exe
-IPOPT_TARGET=ipopt
+MOO_TARGET=moo
+PRIMME_TARGET=primme
 SUITESPARSE_TARGET=suitesparse
 SUITESPARSE_SHARED=OFF
 SUNDIALS_TARGET=sundials
@@ -111,9 +114,6 @@ LD_LAPACK=-lopenblas
 GRAPHLIB=libmetis.a
 GRAPHINCLUDE=3rdParty/metis-5.1.0/include/ -DUSE_METIS -DUSE_GRAPH
 BOOTSTRAP_FMIL_DEP=fmil
-IDLPYTHON = $(OMDEV)/lib/omniORB-4.2.0-mingw64/bin/x86_win32/omniidl -T -bcxx -Wbh=.h -Wbs=.cc -p../../lib/python -Wbdebug
-IDLPYTHONTARGET = $(builddir_share)/omc/scripts/PythonInterface/OMPythonIDL/omc_communication_idl.py
-IDLFILE=$(top_builddir)/Compiler/runtime/omc_communication.idl
 LIB_OMC=lib/omc
 LIBMODELICAEXTERNALC=$(OMBUILDDIR)/lib/omc/libModelicaExternalC$(STAEXT)
 LIBMODELICASTANDARDTABLES=$(OMBUILDDIR)/lib/omc/libModelicaStandardTables$(STAEXT)
@@ -280,9 +280,12 @@ else # 64-bit MSYS
 	(cp -puf $(OM_MSYS_ENV_DIR)/bin/zlib1.dll $(builddir_bin)/)
 
 	test ! -f $(OM_MSYS_ENV_DIR)/bin/libnghttp2-14.dll || cp -puf $(OM_MSYS_ENV_DIR)/bin/libnghttp2-14.dll $(builddir_bin)/
+	test ! -f $(OM_MSYS_ENV_DIR)/bin/libnghttp3-9.dll || cp -puf $(OM_MSYS_ENV_DIR)/bin/libnghttp3-9.dll $(builddir_bin)/
 	test ! -f $(OM_MSYS_ENV_DIR)/bin/libunistring-2.dll || cp -puf $(OM_MSYS_ENV_DIR)/bin/libunistring-2.dll $(builddir_bin)/
 endif
 	mkdir -p $(builddir_lib)/omc/libexec/
+	(cp -pufr $(OMDEV)/tools/xsltproc $(builddir_lib)/omc/libexec/)
+	(cp -pufr $(OMDEV)/tools/gnuplot $(builddir_lib)/omc/libexec/)
 
 copycppmsvcheader: getMSVCversion
 	echo Copying needed header files to the $(OMBUILDDIR)/include/omc/omsicpp/ directory
@@ -290,7 +293,7 @@ copycppmsvcheader: getMSVCversion
 	(cp -puf $(BOOST_PATH_MSVC)/boost/*.hpp              $(OMBUILDDIR)/include/omc/omsicpp/3rdParty/boost/msvc/boost)
 	(cp -pufr $(BOOST_PATH_MSVC)/boost/*                 $(OMBUILDDIR)/include/omc/omsicpp/3rdParty/boost/msvc/boost)
 
-omc:  interactive fmil omdev_extra_dlls breakprocess opencl_rt CMinpack metis Cdaskr $(IPOPT_TARGET) $(SEMLA_LIB) OMSI parmodauto ModelicaExternalC
+omc:  interactive fmil omdev_extra_dlls breakprocess opencl_rt CMinpack metis Cdaskr $(MOO_TARGET) $(PRIMME_TARGET) $(SEMLA_LIB) OMSI parmodauto ModelicaExternalC
 	(time $(MAKE) -f $(defaultMakefileTarget) CFLAGS="$(CFLAGS)" omc-bootstrapped OMBUILDDIR=$(OMBUILDDIR))
 
 boehm-gc-lib: $(builddir_bin)/libomcgc-1.dll

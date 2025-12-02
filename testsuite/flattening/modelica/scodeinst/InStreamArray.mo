@@ -1,6 +1,5 @@
 // name: InStreamArray
 // keywords: stream instream connector
-// cflags: -d=newInst
 // status: correct
 //
 
@@ -125,19 +124,19 @@ end InStreamArray;
 //   c[1].t.a.s = c[1].a.s;
 //   c[1].b.e = c[1].v.p.e;
 //   c[1].b.e = c[1].t.b.e;
-//   c[1].b.s = ($OMC$PositiveMax(-c[1].t.b.f, 1e-07 * c[1].t.fnom) * c[1].t.b.s + $OMC$PositiveMax(-c[1].v.p.f, 1e-07 * c[1].v.fnom) * c[1].v.p.s) / ($OMC$PositiveMax(-c[1].t.b.f, 1e-07 * c[1].t.fnom) + $OMC$PositiveMax(-c[1].v.p.f, 1e-07 * c[1].v.fnom)) " equation generated from stream connection";
+//   c[1].b.s = $OMC$inStreamDiv(($OMC$PositiveMax(-c[1].t.b.f, 1e-7 * c[1].t.fnom) * c[1].t.b.s + $OMC$PositiveMax(-c[1].v.p.f, 1e-7 * c[1].v.fnom) * c[1].v.p.s) / ($OMC$PositiveMax(-c[1].t.b.f, 1e-7 * c[1].t.fnom) + $OMC$PositiveMax(-c[1].v.p.f, 1e-7 * c[1].v.fnom)), 0) " equation generated from stream connection";
 //   c[2].a.e = c[2].t.a.e;
 //   c[2].t.a.f - c[2].a.f = 0.0;
 //   c[2].t.a.s = c[2].a.s;
 //   c[2].b.e = c[2].v.p.e;
 //   c[2].b.e = c[2].t.b.e;
-//   c[2].b.s = ($OMC$PositiveMax(-c[2].t.b.f, 1e-07 * c[2].t.fnom) * c[2].t.b.s + $OMC$PositiveMax(-c[2].v.p.f, 1e-07 * c[2].v.fnom) * c[2].v.p.s) / ($OMC$PositiveMax(-c[2].t.b.f, 1e-07 * c[2].t.fnom) + $OMC$PositiveMax(-c[2].v.p.f, 1e-07 * c[2].v.fnom)) " equation generated from stream connection";
+//   c[2].b.s = $OMC$inStreamDiv(($OMC$PositiveMax(-c[2].t.b.f, 1e-7 * c[2].t.fnom) * c[2].t.b.s + $OMC$PositiveMax(-c[2].v.p.f, 1e-7 * c[2].v.fnom) * c[2].v.p.s) / ($OMC$PositiveMax(-c[2].t.b.f, 1e-7 * c[2].t.fnom) + $OMC$PositiveMax(-c[2].v.p.f, 1e-7 * c[2].v.fnom)), 0) " equation generated from stream connection";
 //   c[3].a.e = c[3].t.a.e;
 //   c[3].t.a.f - c[3].a.f = 0.0;
 //   c[3].t.a.s = c[3].a.s;
 //   c[3].b.e = c[3].v.p.e;
 //   c[3].b.e = c[3].t.b.e;
-//   c[3].b.s = ($OMC$PositiveMax(-c[3].t.b.f, 1e-07 * c[3].t.fnom) * c[3].t.b.s + $OMC$PositiveMax(-c[3].v.p.f, 1e-07 * c[3].v.fnom) * c[3].v.p.s) / ($OMC$PositiveMax(-c[3].t.b.f, 1e-07 * c[3].t.fnom) + $OMC$PositiveMax(-c[3].v.p.f, 1e-07 * c[3].v.fnom)) " equation generated from stream connection";
+//   c[3].b.s = $OMC$inStreamDiv(($OMC$PositiveMax(-c[3].t.b.f, 1e-7 * c[3].t.fnom) * c[3].t.b.s + $OMC$PositiveMax(-c[3].v.p.f, 1e-7 * c[3].v.fnom) * c[3].v.p.s) / ($OMC$PositiveMax(-c[3].t.b.f, 1e-7 * c[3].t.fnom) + $OMC$PositiveMax(-c[3].v.p.f, 1e-7 * c[3].v.fnom)), 0) " equation generated from stream connection";
 //   c[1].b.e = c[2].a.e;
 //   c[2].b.e = c[3].a.e;
 //   c[1].a.f = 0.0;
@@ -149,19 +148,19 @@ end InStreamArray;
 //   c[3].v.p.f + c[3].t.b.f - c[3].b.f = 0.0;
 //   c[1].t.a.f + c[1].t.b.f = 0.0;
 //   c[1].t.a.f = c[1].t.a.e - c[1].t.b.e;
-//   c[1].t.a.s = ($OMC$PositiveMax(c[1].b.f, 1e-07 * c[1].fnom * c[1].M) * c[2].a.s + $OMC$PositiveMax(-c[1].v.p.f, 1e-07 * c[1].v.fnom) * c[1].v.p.s) / ($OMC$PositiveMax(c[1].b.f, 1e-07 * c[1].fnom * c[1].M) + $OMC$PositiveMax(-c[1].v.p.f, 1e-07 * c[1].v.fnom));
+//   c[1].t.a.s = $OMC$inStreamDiv(($OMC$PositiveMax(c[1].b.f, 1e-7 * c[1].fnom * c[1].M) * c[2].a.s + $OMC$PositiveMax(-c[1].v.p.f, 1e-7 * c[1].v.fnom) * c[1].v.p.s) / ($OMC$PositiveMax(c[1].b.f, 1e-7 * c[1].fnom * c[1].M) + $OMC$PositiveMax(-c[1].v.p.f, 1e-7 * c[1].v.fnom)), c[1].t.b.s);
 //   c[1].t.b.s = c[1].a.s;
 //   c[1].v.p.e = 1.0;
 //   c[1].v.p.s = 1.0;
 //   c[2].t.a.f + c[2].t.b.f = 0.0;
 //   c[2].t.a.f = c[2].t.a.e - c[2].t.b.e;
-//   c[2].t.a.s = ($OMC$PositiveMax(c[2].b.f, 1e-07 * c[2].fnom * c[2].M) * c[3].a.s + $OMC$PositiveMax(-c[2].v.p.f, 1e-07 * c[2].v.fnom) * c[2].v.p.s) / ($OMC$PositiveMax(c[2].b.f, 1e-07 * c[2].fnom * c[2].M) + $OMC$PositiveMax(-c[2].v.p.f, 1e-07 * c[2].v.fnom));
+//   c[2].t.a.s = $OMC$inStreamDiv(($OMC$PositiveMax(c[2].b.f, 1e-7 * c[2].fnom * c[2].M) * c[3].a.s + $OMC$PositiveMax(-c[2].v.p.f, 1e-7 * c[2].v.fnom) * c[2].v.p.s) / ($OMC$PositiveMax(c[2].b.f, 1e-7 * c[2].fnom * c[2].M) + $OMC$PositiveMax(-c[2].v.p.f, 1e-7 * c[2].v.fnom)), c[2].t.b.s);
 //   c[2].t.b.s = c[1].b.s;
 //   c[2].v.p.e = 1.0;
 //   c[2].v.p.s = 1.0;
 //   c[3].t.a.f + c[3].t.b.f = 0.0;
 //   c[3].t.a.f = c[3].t.a.e - c[3].t.b.e;
-//   c[3].t.a.s = ($OMC$PositiveMax(c[3].b.f, 1e-07 * c[3].fnom * c[3].M) * c[3].b.s + $OMC$PositiveMax(-c[3].v.p.f, 1e-07 * c[3].v.fnom) * c[3].v.p.s) / ($OMC$PositiveMax(c[3].b.f, 1e-07 * c[3].fnom * c[3].M) + $OMC$PositiveMax(-c[3].v.p.f, 1e-07 * c[3].v.fnom));
+//   c[3].t.a.s = $OMC$inStreamDiv(($OMC$PositiveMax(c[3].b.f, 1e-7 * c[3].fnom * c[3].M) * c[3].b.s + $OMC$PositiveMax(-c[3].v.p.f, 1e-7 * c[3].v.fnom) * c[3].v.p.s) / ($OMC$PositiveMax(c[3].b.f, 1e-7 * c[3].fnom * c[3].M) + $OMC$PositiveMax(-c[3].v.p.f, 1e-7 * c[3].v.fnom)), c[3].t.b.s);
 //   c[3].t.b.s = c[2].b.s;
 //   c[3].v.p.e = 1.0;
 //   c[3].v.p.s = 1.0;

@@ -137,19 +137,13 @@ val(D.x_out, 0.1, "loopsOverFMUs.mat");
 // info:    Alg. loop (size 2/4)
 //            loopsOverFMUs.root.D
 //            loopsOverFMUs.root.C
-// info:    Alg. loop (size 3/7)
-//            loopsOverFMUs.root.B
-//            loopsOverFMUs.root.A
-// info:    Alg. loop (size 2/4)
-//            loopsOverFMUs.root.D
-//            loopsOverFMUs.root.C
 // info:    Final Statistics for 'loopsOverFMUs.root':
 //          NumSteps = 101 NumRhsEvals  = 102 NumLinSolvSetups = 7
 //          NumNonlinSolvIters = 101 NumNonlinSolvConvFails = 0 NumErrTestFails = 0
 // "
-// 0.6354248688935413
-// -1.8
-// 1.164575131106459
+// 0.6354248688935424
+// -1.8000000000000003
+// 1.1645751311064578
 // 2.0
 // 2.442813485479551
 // 2.0

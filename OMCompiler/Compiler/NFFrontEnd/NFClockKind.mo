@@ -31,6 +31,7 @@
 
 encapsulated uniontype NFClockKind
   import Absyn;
+  import BaseModelica;
   import DAE;
   import Expression = NFExpression;
 
@@ -40,32 +41,56 @@ protected
   import JSON;
 
 public
-  record INFERRED_CLOCK
+  record INFERRED_CLOCK         "Clock()"
   end INFERRED_CLOCK;
 
   record RATIONAL_CLOCK
-    Expression intervalCounter " integer type >= 0 ";
-    Expression resolution      " integer type >= 1, defaults to 1 ";
+    Expression intervalCounter  " integer type >= 0 ";
+    Expression resolution       " integer type >= 1, defaults to 1 ";
   end RATIONAL_CLOCK;
 
   record REAL_CLOCK
-    Expression interval        " real type > 0 ";
+    Expression interval         " real type > 0 ";
   end REAL_CLOCK;
 
   record EVENT_CLOCK
-    Expression condition       " boolean type ";
-    Expression startInterval   " real type >= 0.0 ";
+    Expression condition        " boolean type ";
+    Expression startInterval    " real type >= 0.0 ";
   end EVENT_CLOCK;
 
   record SOLVER_CLOCK
-    Expression c               " clock type ";
-    Expression solverMethod    " string type ";
+    Expression c                " clock type ";
+    Expression solverMethod     " string type ";
   end SOLVER_CLOCK;
+
+  function isInferred
+    input ClockKind ck;
+    output Boolean b;
+  algorithm
+    b := match ck
+      case INFERRED_CLOCK() then true;
+      else false;
+    end match;
+  end isInferred;
 
   function compare
     input ClockKind ck1;
     input ClockKind ck2;
     output Integer comp;
+  protected
+    function compareInt
+      input ClockKind kind;
+      output Integer i;
+    algorithm
+      i := match kind
+        case INFERRED_CLOCK() then 0;
+        case RATIONAL_CLOCK() then 1;
+        case REAL_CLOCK()     then 2;
+        case EVENT_CLOCK()    then 3;
+        case SOLVER_CLOCK()   then 4;
+                              else 5;
+      end match;
+    end compareInt;
   algorithm
     comp := match (ck1, ck2)
       local
@@ -93,6 +118,7 @@ public
             comp := Expression.compare(sm1, sm2);
           end if;
         then comp;
+      else if compareInt(ck1) < compareInt(ck2) then -1 else 1;
     end match;
   end compare;
 
@@ -500,6 +526,7 @@ public
 
   function toFlatString
     input ClockKind ck;
+    input BaseModelica.OutputFormat format;
     output String str;
   algorithm
     str := match ck
@@ -507,10 +534,10 @@ public
         Expression e1, e2;
 
       case INFERRED_CLOCK()       then "";
-      case RATIONAL_CLOCK(e1, e2) then Expression.toFlatString(e1) + ", " + Expression.toFlatString(e2);
-      case REAL_CLOCK(e1)         then Expression.toFlatString(e1);
-      case EVENT_CLOCK(e1, e2)    then Expression.toFlatString(e1) + ", " + Expression.toFlatString(e2);
-      case SOLVER_CLOCK(e1, e2)   then Expression.toFlatString(e1) + ", " + Expression.toFlatString(e2);
+      case RATIONAL_CLOCK(e1, e2) then Expression.toFlatString(e1, format) + ", " + Expression.toFlatString(e2, format);
+      case REAL_CLOCK(e1)         then Expression.toFlatString(e1, format);
+      case EVENT_CLOCK(e1, e2)    then Expression.toFlatString(e1, format) + ", " + Expression.toFlatString(e2, format);
+      case SOLVER_CLOCK(e1, e2)   then Expression.toFlatString(e1, format) + ", " + Expression.toFlatString(e2, format);
     end match;
 
     str := "Clock(" + str + ")";
@@ -518,7 +545,7 @@ public
 
   function toJSON
     input ClockKind clk;
-    output JSON json = JSON.emptyObject();
+    output JSON json = JSON.emptyListObject();
   algorithm
     json := JSON.addPair("kind", JSON.makeString("clock"), json);
 

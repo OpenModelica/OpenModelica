@@ -133,7 +133,7 @@ algorithm
   if not listEmpty(systs) then
     BackendDAE.DAE({syst}, shared) := BackendDAEOptimize.collapseIndependentBlocks(BackendDAE.DAE(systs, shared));
     (systs, clockedSysts1, unpartRemEqs) := baseClockPartitioning(syst, shared);
-    assert(listLength(clockedSysts1) == 0, "Get clocked system in SynchronousFeatures.addContVarsEqs");
+    assert(listEmpty(clockedSysts1), "Get clocked system in SynchronousFeatures.addContVarsEqs");
     shared.removedEqs := BackendEquation.addList(unpartRemEqs, shared.removedEqs);
   end if;
 
@@ -165,11 +165,13 @@ algorithm
   systs := listAppend(contSysts, clockedSysts);
   outDAE := BackendDAE.DAE(systs, shared);
 
-  if Flags.isSet(Flags.DUMP_SYNCHRONOUS) then
-    print("synchronous features pre-phase: synchronousFeatures\n\n");
-    BackendDump.dumpEqSystems(systs, "clock partitioning");
-    BackendDump.dumpBasePartitions(shared.partitionsInfo.basePartitions, "Base clocks");
-    BackendDump.dumpSubPartitions(shared.partitionsInfo.subPartitions, "Sub clocks");
+  if not listEmpty(clockedSysts) then
+    if Flags.isSet(Flags.DUMP_SYNCHRONOUS) then
+      print("synchronous features pre-phase: synchronousFeatures\n\n");
+      BackendDump.dumpEqSystems(systs, "clock partitioning");
+      BackendDump.dumpBasePartitions(shared.partitionsInfo.basePartitions, "Base clocks");
+      BackendDump.dumpSubPartitions(shared.partitionsInfo.subPartitions, "Sub clocks");
+    end if;
   end if;
 end clockPartitioning1;
 
@@ -272,7 +274,7 @@ algorithm
           // add all $DER.x as additional variables
           for derVar in derVars loop
             var := listGet(BackendVariable.getVar(derVar, syst.orderedVars), 1);
-            var := BackendDAE.VAR(ComponentReference.crefPrefixDer(derVar), BackendDAE.VARIABLE(), DAE.BIDIR(), DAE.NON_PARALLEL(), var.varType, NONE(), NONE(), var.arryDim, DAE.emptyElementSource, NONE(), NONE(), NONE(), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), false, false);
+            var := BackendDAE.VAR(ComponentReference.crefPrefixDer(derVar), BackendDAE.VARIABLE(), DAE.BIDIR(), DAE.NON_PARALLEL(), var.varType, NONE(), NONE(), var.arryDim, DAE.emptyElementSource, NONE(), NONE(), NONE(), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), false, false, false);
             syst.orderedVars := BackendVariable.addVar(var, syst.orderedVars);
           end for;
           // add defining equations for $DER.x, depending on solverMethod
@@ -1219,10 +1221,10 @@ protected
   list<Integer> row;
 algorithm
   row := arrayGet(m,eq);
-  row := List.deleteMember(row,var);
+  row := List.deleteMemberOnTrue(var,row,intEq);
   arrayUpdate(m,eq,row);
   row := arrayGet(mT,var);
-  row := List.deleteMember(row,eq);
+  row := List.deleteMemberOnTrue(eq,row,intEq);
   arrayUpdate(mT,var,row);
 end removeEdge;
 
@@ -1450,7 +1452,6 @@ algorithm
     algorithm
       cr := DAE.CREF_IDENT(BackendDAE.WHENCLK_PRREFIX + intString(suffixIdx), DAE.T_CLOCK_DEFAULT, {});
       addVar := BackendVariable.makeVar(cr);
-      addVar.varType := DAE.T_CLOCK_DEFAULT;
       addEq := BackendDAE.EQUATION(Expression.crefToExp(cr), clk, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC);
   then(substGetPartition(varExp), false, (addEq::newEqs, addVar::newVars, suffixIdx+1));
   else
@@ -1526,8 +1527,8 @@ algorithm
   usedVars := arrayCreate(arrayLength(mT), false);
   partitionsCnt := partitionIndependentBlocksMasked(m, mT, rm, rmT, arrayCreate(BackendEquation.getNumberOfEquations(eqs), true), eqPartMap, varPartMap,  remEqPartMap, usedVars, usedRemovedVars);
     /*
-    print("eqPartMap "+stringDelimitList(List.map(arrayList(eqPartMap),intString)," | ")+"\n");
-    print("varPartMap "+stringDelimitList(List.map(arrayList(varPartMap),intString)," | ")+"\n");
+    print("eqPartMap "+stringDelimitList(List.mapArray(eqPartMap,intString)," | ")+"\n");
+    print("varPartMap "+stringDelimitList(List.mapArray(varPartMap,intString)," | ")+"\n");
     print("partitionsCnt :"+intString(partitionsCnt)+"\n");
     varAtts := {};
     eqAtts := {};
@@ -1548,7 +1549,7 @@ algorithm
 
   // and get adjacency matrix for subpartitions, remove the sample()-vars first since they are not handled as connections (necessary to get the right order)
   (partAdjacency,order) := getSubPartitionAdjacency(partitionsCnt, baseClockEqIdx, subClockInterfaceEqIdxs, eqPartMap, varPartMap, clockedVarsMask, eqs, vars);
-    //print("order "+stringDelimitList(List.map(arrayList(order),intString)," | ")+"\n");
+    //print("order "+stringDelimitList(List.mapArray(order,intString)," | ")+"\n");
 
   //Detect clocked continuous partitions and create new subclock equations
   (m, mT) := BackendDAEUtil.adjacencyMatrixMasked(inEqSystem, BackendDAE.SUBCLOCK_IDX(), clockedEqsMask, SOME(funcs), BackendDAEUtil.isInitializationDAE(inShared));
@@ -1640,7 +1641,7 @@ algorithm
   mergedOrder := {};
   mergedParts :={};
   clk := arrayGet(subclocks,order[1]);
-  for part in arrayList(order) loop
+  for part in order loop
     clk2 := arrayGet(subclocks,part);
     if subClkEqual(clk,clk2) then
       //these 2 partitions have the same subclock, put them in one partition
@@ -1800,13 +1801,13 @@ protected
   Integer i;
   DAE.Exp e, subclk;
 algorithm
-  DAE.CREF(componentRef = cr) := List.first(inExpLst);
+  DAE.CREF(componentRef = cr) := listHead(inExpLst);
   (_, varIxs) := BackendVariable.getVar(cr, inVars);
-  i := List.first(varIxs);
-  i := List.first(arrayGet(mT, i)) "Equation idx, containing var";
+  i := listHead(varIxs);
+  i := listHead(arrayGet(mT, i)) "Equation idx, containing var";
   i := arrayGet(inPartitions, i) "Partitions, from which var get";
   subclk := DAE.CREF(getSubClkName(i, 1), DAE.T_CLOCK_DEFAULT);
-  e := DAE.CALL(inPath, subclk::List.rest(inExpLst), inAttr);
+  e := DAE.CALL(inPath, subclk::listRest(inExpLst), inAttr);
   (outVar, outEq) := createSubClock(inPartitionIdx, inClkCnt, e);
 end createSubClockVar;
 
@@ -1973,7 +1974,7 @@ protected function createSubClockVarFactor
 protected
   DAE.Exp e;
 algorithm
-  outExp := substGetPartition(List.first(inExpLst));
+  outExp := substGetPartition(listHead(inExpLst));
   //To do this, the eqPartMap has to exclude the subPartition interfaces. Anyway, its not used anymore
   /*
   (outExp, outNewEqs, outNewVars, outClkCnt) := match listGet(inExpLst, 2)
@@ -2388,10 +2389,10 @@ algorithm
                   varDirection = DAE.BIDIR(), varParallelism = DAE.NON_PARALLEL(),
                   varType = inType, bindExp = NONE(), tplExp = NONE(),
                   arryDim = {}, source = DAE.emptyElementSource,
-                  values = NONE(), tearingSelectOption = SOME(BackendDAE.DEFAULT()),
+                  values = DAEUtil.setProtectedAttr(DAEUtil.getEmptyVarAttr(inType), true), tearingSelectOption = SOME(BackendDAE.DEFAULT()),
                   hideResult = NONE(),
                   comment = NONE(), connectorType = DAE.NON_CONNECTOR(),
-                  innerOuter = DAE.NOT_INNER_OUTER(), unreplaceable = false, initNonlinear = false);
+                  innerOuter = DAE.NOT_INNER_OUTER(), unreplaceable = false, initNonlinear = false, encrypted = false);
 end createVar;
 
 protected function createEqVarPair
@@ -2416,7 +2417,7 @@ protected
   Boolean create;
   DAE.Exp e;
 algorithm
-  e := List.first(inExps);
+  e := listHead(inExps);
   create := match e
     case DAE.CREF() then false;
     case DAE.RCONST() then false;
@@ -2437,7 +2438,7 @@ algorithm
         ty := Expression.typeof(e);
         cr := DAE.CREF_IDENT("$var" + intString(inCnt), ty, {});
         (var, eq) := createEqVarPair(cr, ty, e);
-      then (DAE.CREF(cr, ty)::List.rest(inExps), eq::inEqs, var::inVars, inCnt + 1);
+      then (DAE.CREF(cr, ty)::listRest(inExps), eq::inEqs, var::inVars, inCnt + 1);
     case false
       then (inExps, inEqs, inVars, inCnt);
   end match;

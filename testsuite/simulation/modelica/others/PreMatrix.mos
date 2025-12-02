@@ -16,6 +16,6 @@ buildModel(PreMatrix);getErrorString();
 // Result:
 // true
 // ""
-// {"PreMatrix","PreMatrix_init.xml"}
+// {"PreMatrix", "PreMatrix_init.xml"}
 // ""
 // endResult

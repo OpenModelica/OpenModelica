@@ -1,7 +1,6 @@
 // name: FuncBuiltinIdentity
 // keywords: identity
 // status: correct
-// cflags: -d=newInst
 //
 // Tests the builtin identity operator.
 //

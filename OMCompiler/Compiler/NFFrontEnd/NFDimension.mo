@@ -32,6 +32,7 @@
 encapsulated uniontype NFDimension
 protected
   import Dimension = NFDimension;
+  import Dump;
   import Operator = NFOperator;
   import Prefixes = NFPrefixes;
   import List;
@@ -76,6 +77,15 @@ public
     Variability var;
   end EXP;
 
+  record RESIZABLE
+    "for all symbolic purposes this is INTEGER() for codegeneration it is EXP()
+    invoked by using annotation(__OpenModelica_resizable=true) on a parameter"
+    Integer size              "the actual size defined by the user";
+    Option<Integer> opt_size  "the optimal size determined by the backend";
+    Expression exp            "the full expression (parameter)";
+    Variability var;
+  end RESIZABLE;
+
   record UNKNOWN
   end UNKNOWN;
 
@@ -86,6 +96,8 @@ public
   algorithm
     dim := match exp
       local
+        Expression e;
+        Integer value;
         Class cls;
         ComponentRef cref;
         Type ty;
@@ -112,7 +124,21 @@ public
         guard Expression.isArray(exp.exp) and Expression.arrayAllEqual(exp.exp)
         then fromExp(Expression.arrayFirstScalar(exp.exp), var);
 
-      else EXP(exp, var);
+      else algorithm
+        e := SimplifyExp.simplify(exp);
+      then match e
+        // if it can be simplified to an integer its just an integer
+        case Expression.INTEGER(value) then INTEGER(value, var);
+        // if it can be simplified to an integer after replacing resizables its resizable
+        else algorithm
+          e := Expression.map(e, Expression.replaceResizableParameter);
+          e := SimplifyExp.simplify(e);
+        then match e
+          case Expression.INTEGER(value) then RESIZABLE(value, NONE(), exp, var);
+          // otherwise it is just an expression
+          else EXP(exp, var);
+        end match;
+      end match;
     end match;
   end fromExp;
 
@@ -171,51 +197,83 @@ public
       local
         Type ty;
 
-      case INTEGER() then DAE.DIM_INTEGER(dim.size);
-      case BOOLEAN() then DAE.DIM_BOOLEAN();
+      case INTEGER()    then DAE.DIM_INTEGER(dim.size);
+      case BOOLEAN()    then DAE.DIM_BOOLEAN();
       case ENUM(enumType = ty as Type.ENUMERATION())
         then DAE.DIM_ENUM(ty.typePath, ty.literals, listLength(ty.literals));
-      case EXP() then DAE.DIM_EXP(Expression.toDAE(dim.exp));
-      case UNKNOWN() then DAE.DIM_UNKNOWN();
+      case EXP()        then DAE.DIM_EXP(Expression.toDAE(dim.exp));
+      case RESIZABLE()  then DAE.DIM_EXP(Expression.toDAE(dim.exp));
+      case UNKNOWN()    then DAE.DIM_UNKNOWN();
     end match;
   end toDAE;
 
   function add
     input Dimension a, b;
     output Dimension c;
+  protected
+    function addExp
+      input Expression e1;
+      input Expression e2;
+      output Expression res = Expression.BINARY(e1, Operator.OPERATOR(Type.INTEGER(), NFOperator.Op.ADD), e2);
+    end addExp;
+    function addOpt
+      input Option<Integer> s1;
+      input Option<Integer> s2;
+      output Option<Integer> res;
+    algorithm
+      res := match (s1, s2)
+        local
+          Integer i1, i2;
+        case (SOME(i1), SOME(i2)) then SOME(i1+i2);
+        else NONE();
+      end match;
+    end addOpt;
   algorithm
     c := match (a, b)
-      case (UNKNOWN(),_) then UNKNOWN();
-      case (_,UNKNOWN()) then UNKNOWN();
-      case (INTEGER(),INTEGER()) then INTEGER(a.size+b.size, Prefixes.variabilityMax(a.var, b.var));
-      case (INTEGER(),EXP()) then EXP(Expression.BINARY(b.exp, Operator.OPERATOR(Type.INTEGER(), NFOperator.Op.ADD), Expression.INTEGER(a.size)), b.var);
-      case (EXP(),INTEGER()) then EXP(Expression.BINARY(a.exp, Operator.OPERATOR(Type.INTEGER(), NFOperator.Op.ADD), Expression.INTEGER(b.size)), a.var);
-      case (EXP(),EXP()) then EXP(Expression.BINARY(a.exp, Operator.OPERATOR(Type.INTEGER(), NFOperator.Op.ADD), b.exp), Prefixes.variabilityMax(a.var, b.var));
+      case (UNKNOWN(),_)              then UNKNOWN();
+      case (_,UNKNOWN())              then UNKNOWN();
+      case (INTEGER(),INTEGER())      then INTEGER(a.size+b.size, Prefixes.variabilityMax(a.var, b.var));
+      case (INTEGER(),EXP())          then EXP(addExp(b.exp, Expression.INTEGER(a.size)), b.var);
+      case (EXP(),INTEGER())          then EXP(addExp(a.exp, Expression.INTEGER(b.size)), a.var);
+      case (EXP(),EXP())              then EXP(addExp(a.exp, b.exp), Prefixes.variabilityMax(a.var, b.var));
+      case (INTEGER(),RESIZABLE())    then RESIZABLE(a.size+b.size, addOpt(SOME(a.size), b.opt_size), addExp(b.exp, Expression.INTEGER(a.size)), b.var);
+      case (RESIZABLE(),INTEGER())    then RESIZABLE(a.size+b.size, addOpt(a.opt_size, SOME(b.size)), addExp(a.exp, Expression.INTEGER(b.size)), a.var);
+      case (EXP(),RESIZABLE())        then EXP(addExp(a.exp, b.exp), Prefixes.variabilityMax(a.var, b.var));
+      case (RESIZABLE(),EXP())        then EXP(addExp(a.exp, b.exp), Prefixes.variabilityMax(a.var, b.var));
+      case (RESIZABLE(),RESIZABLE())  then RESIZABLE(a.size+b.size, addOpt(a.opt_size, b.opt_size), addExp(a.exp, b.exp), Prefixes.variabilityMax(a.var, b.var));
       else UNKNOWN();
     end match;
   end add;
 
   function size
     input Dimension dim;
+    input Boolean resize = false;
     output Integer size;
   algorithm
     size := match dim
       local
         Type ty;
 
-      case INTEGER() then dim.size;
-      case BOOLEAN() then 2;
+      case INTEGER()    then dim.size;
+      case RESIZABLE()  then if resize then Util.getOptionOrDefault(dim.opt_size, dim.size) else dim.size;
+      case BOOLEAN()    then 2;
       case ENUM(enumType = ty as Type.ENUMERATION()) then listLength(ty.literals);
+      else algorithm
+        if Flags.isSet(Flags.FAILTRACE) then
+          Error.addCompilerWarning(getInstanceName() + " could not get size of: " + toString(dim));
+        end if;
+      then fail();
     end match;
   end size;
 
   function sizesProduct
     "Returns the product of the given dimension sizes."
     input list<Dimension> dims;
+    input Boolean resize = false;
     output Integer outSize = 1;
   algorithm
     for dim in dims loop
-      outSize := outSize * Dimension.size(dim);
+      outSize := outSize * Dimension.size(dim, resize);
     end for;
   end sizesProduct;
 
@@ -229,6 +287,7 @@ public
       case (_, UNKNOWN()) then true;
       case (EXP(), _) then true;
       case (_, EXP()) then true;
+      case (RESIZABLE(), RESIZABLE()) then Expression.isEqual(dim1.exp, dim2.exp);
       else Dimension.size(dim1) == Dimension.size(dim2);
     end match;
   end isEqual;
@@ -239,11 +298,12 @@ public
     output Boolean isEqual;
   algorithm
     isEqual := match (dim1, dim2)
-      case (UNKNOWN(), _) then false;
-      case (_, UNKNOWN()) then false;
-      case (EXP(), EXP()) then Expression.isEqual(dim1.exp, dim2.exp);
-      case (EXP(), _) then false;
-      case (_, EXP()) then false;
+      case (UNKNOWN(), _)             then false;
+      case (_, UNKNOWN())             then false;
+      case (EXP(), EXP())             then Expression.isEqual(dim1.exp, dim2.exp);
+      case (RESIZABLE(), RESIZABLE()) then Expression.isEqual(dim1.exp, dim2.exp);
+      case (EXP(), _)                 then false;
+      case (_, EXP())                 then false;
       else Dimension.size(dim1) == Dimension.size(dim2);
     end match;
   end isEqualKnown;
@@ -270,6 +330,7 @@ public
       case (_, EXP()) guard isSizeOf(dim2, node1, index1) then true;
 
       case (EXP(), EXP()) then Expression.isEqual(dim1.exp, dim2.exp);
+      case (RESIZABLE(), RESIZABLE()) then Expression.isEqual(dim1.exp, dim2.exp);
       case (UNKNOWN(), _) then false;
       case (_, UNKNOWN()) then false;
       else Dimension.size(dim1) == Dimension.size(dim2);
@@ -294,6 +355,16 @@ public
     end match;
   end isSizeOf;
 
+  function isResizable
+    input Dimension dim;
+    output Boolean b;
+  algorithm
+    b := match dim
+      case RESIZABLE() then true;
+      else false;
+    end match;
+  end isResizable;
+
   function allEqualKnown
     input list<Dimension> dims1;
     input list<Dimension> dims2;
@@ -309,6 +380,7 @@ public
       case INTEGER() then true;
       case BOOLEAN() then true;
       case ENUM() then true;
+      case RESIZABLE() then true;
       case EXP() then allowExp;
       else false;
     end match;
@@ -356,6 +428,7 @@ public
       case BOOLEAN() then Type.BOOLEAN();
       case ENUM() then dim.enumType;
       case EXP() then Expression.typeOf(dim.exp);
+      case RESIZABLE() then Expression.typeOf(dim.exp);
       else Type.UNKNOWN();
     end match;
   end subscriptType;
@@ -368,14 +441,25 @@ public
       local
         Type ty;
 
+      case RAW_DIM() then Dump.printSubscriptStr(dim.dim);
       case INTEGER() then String(dim.size);
       case BOOLEAN() then "Boolean";
       case ENUM(enumType = ty as Type.ENUMERATION()) then AbsynUtil.pathString(ty.typePath);
       case EXP() then Expression.toString(dim.exp);
+      case RESIZABLE() then Expression.toString(dim.exp) + "(R)";
       case UNKNOWN() then ":";
       case UNTYPED() then Expression.toString(dim.dimension);
     end match;
   end toString;
+
+  function hashList
+    input list<Dimension> dims;
+    output Integer hash = 5381;
+  algorithm
+    for dim in dims loop
+      hash := stringHashDjb2Continue(toString(dim), hash);
+    end for;
+  end hashList;
 
   function toStringList
     input list<Dimension> dims;
@@ -391,15 +475,17 @@ public
 
   function toFlatString
     input Dimension dim;
+    input BaseModelica.OutputFormat format;
     output String str;
   algorithm
     str := match dim
       case INTEGER() then String(dim.size);
       case BOOLEAN() then "Boolean";
-      case ENUM() then Type.toFlatString(dim.enumType);
-      case EXP() then Expression.toFlatString(dim.exp);
+      case ENUM() then Type.toFlatString(dim.enumType, format);
+      case EXP() then Expression.toFlatString(dim.exp, format);
+      case RESIZABLE() then Expression.toFlatString(dim.exp, format) + "(R)";
       case UNKNOWN() then ":";
-      case UNTYPED() then Expression.toFlatString(dim.dimension);
+      case UNTYPED() then Expression.toFlatString(dim.dimension, format);
     end match;
   end toFlatString;
 
@@ -419,6 +505,7 @@ public
       case ENUM(enumType = ty as Type.ENUMERATION())
         then Expression.makeEnumLiteral(ty, listLength(ty.literals));
       case EXP() then dim.exp;
+      case RESIZABLE() then dim.exp;
       case UNKNOWN()
         then match subscriptedExp
           case Expression.CREF()
@@ -444,6 +531,7 @@ public
       case ENUM(enumType = ty as Type.ENUMERATION())
         then Expression.INTEGER(listLength(ty.literals));
       case EXP() then dim.exp;
+      case RESIZABLE() then dim.exp;
     end match;
   end sizeExp;
 
@@ -484,6 +572,7 @@ public
       case ENUM(enumType = ty as Type.ENUMERATION())
         then Expression.makeEnumLiteral(ty, listLength(ty.literals));
       case EXP() then dim.exp;
+      case RESIZABLE() then dim.exp;
     end match;
   end upperBoundExp;
 
@@ -514,6 +603,7 @@ public
       case BOOLEAN() then Variability.CONSTANT;
       case ENUM() then Variability.CONSTANT;
       case EXP() then dim.var;
+      case RESIZABLE() then dim.var;
       case UNKNOWN() then Variability.CONTINUOUS;
     end match;
   end variability;
@@ -543,6 +633,12 @@ public
         then
           if referenceEq(e1, e2) then dim else fromExp(e2, dim.var);
 
+      case RESIZABLE(exp = e1)
+        algorithm
+          e2 := Expression.map(e1, func);
+        then
+          if referenceEq(e1, e2) then dim else fromExp(e2, dim.var);
+
       else dim;
     end match;
   end mapExp;
@@ -561,6 +657,7 @@ public
     outArg := match dim
       case UNTYPED() then Expression.fold(dim.dimension, func, arg);
       case EXP() then Expression.fold(dim.exp, func, arg);
+      case RESIZABLE() then Expression.fold(dim.exp, func, arg);
       else arg;
     end match;
   end foldExp;
@@ -582,11 +679,14 @@ public
 
   function eval
     input Dimension dim;
-    input EvalTarget target = EvalTarget.IGNORE_ERRORS();
+    input EvalTarget target = NFCeval.noTarget;
     output Dimension outDim;
   algorithm
     outDim := match dim
       case EXP() then fromExp(Ceval.evalExp(dim.exp, target), dim.var);
+      case RESIZABLE() algorithm
+        dim.exp := Ceval.evalExp(dim.exp, target);
+      then dim;
       else dim;
     end match;
   end eval;
@@ -594,14 +694,16 @@ public
   function simplify
     input output Dimension dim;
   algorithm
-    () := match dim
-      case EXP()
-        algorithm
-          dim.exp := SimplifyExp.simplify(dim.exp);
-        then
-          ();
-
-      else ();
+    dim := match dim
+      local
+        Expression simple;
+      case EXP() algorithm
+        simple := SimplifyExp.simplify(dim.exp);
+      then fromExp(simple, Expression.variability(simple));
+      case RESIZABLE() algorithm
+        dim.exp := SimplifyExp.simplify(dim.exp);
+      then dim;
+      else dim;
     end match;
   end simplify;
 
@@ -614,6 +716,7 @@ public
       case BOOLEAN() then Type.BOOLEAN();
       case ENUM() then dim.enumType;
       case EXP() then Expression.typeOf(dim.exp);
+      case RESIZABLE() then Expression.typeOf(dim.exp);
       else Type.UNKNOWN();
     end match;
   end typeOf;

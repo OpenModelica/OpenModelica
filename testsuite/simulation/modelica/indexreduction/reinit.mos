@@ -1,0 +1,66 @@
+// Name:     reinit
+// keywords: index reduction, reinit, state selection
+// status:   correct
+// teardown_command: rm -rf  *_init.xml *_records.c *.exe *.log *_res.mat *.c *.libs *.makefile *.o *.dll *.so *_functions.h *.h *_diff.csv output.log
+// cflags: -d=stateselection
+
+loadString("model SelectReinit
+  Real x(start = 1, fixed = true);
+  Real y;
+equation
+  der(y) = -y;
+  y = x;
+  when time > 0.5 then
+    reinit(x, 1);
+  end when;
+end SelectReinit;"); getErrorString();
+
+simulate(SelectReinit); getErrorString();
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "SelectReinit_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'SelectReinit', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Notification: Model statistics after passing the back-end for initialization:
+//  * Number of independent subsystems: 2
+//  * Number of states: 0 ()
+//  * Number of discrete variables: 1 ('-d=discreteinfo' for list of discrete vars)
+//  * Number of discrete states: 0 ('-d=discreteinfo' for list of discrete states)
+//  * Number of clocked states: 0 ('-d=discreteinfo' for list of clocked states)
+//  * Top-level inputs: 0
+// Notification: Strong component statistics for initialization (3):
+//  * Single equations (assignments): 3
+//  * Array equations: 0
+//  * Algorithm blocks: 0
+//  * Record equations: 0
+//  * When equations: 0
+//  * If-equations: 0
+//  * Equation systems (not torn): 0
+//  * Torn equation systems: 0
+//  * Mixed (continuous/discrete) equation systems: 0
+// Notification: Model statistics after passing the back-end for simulation:
+//  * Number of independent subsystems: 1
+//  * Number of states: 1 (y)
+//  * Number of discrete variables: 1 ('-d=discreteinfo' for list of discrete vars)
+//  * Number of discrete states: 0 ('-d=discreteinfo' for list of discrete states)
+//  * Number of clocked states: 0 ('-d=discreteinfo' for list of clocked states)
+//  * Top-level inputs: 0
+// Notification: Strong component statistics for simulation (2):
+//  * Single equations (assignments): 2
+//  * Array equations: 0
+//  * Algorithm blocks: 0
+//  * Record equations: 0
+//  * When equations: 0
+//  * If-equations: 0
+//  * Equation systems (not torn): 0
+//  * Torn equation systems: 0
+//  * Mixed (continuous/discrete) equation systems: 0
+// [<interactive>:2:3-2:34:writable] Warning: Variable x has attribute stateSelect=StateSelect.always, but can't be selected as a state.
+// "
+// endResult

@@ -1,7 +1,6 @@
 // name: CevalOnes1
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 //
 

@@ -1,7 +1,6 @@
 // name: ExtendsVisibility5
 // keywords: extends visibility
 // status: correct
-// cflags: -d=newInst
 //
 
 model A

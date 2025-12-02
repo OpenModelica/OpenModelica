@@ -1,6 +1,5 @@
 // name: VectorizeUnknownDim
 // status: correct
-// cflags: -d=-newInst
 
 model VectorizeUnknownDim
   function Foo
@@ -14,6 +13,7 @@ model VectorizeUnknownDim
   Integer b[2];
 algorithm
   b := Foo(a);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end VectorizeUnknownDim;
 
 // Result:

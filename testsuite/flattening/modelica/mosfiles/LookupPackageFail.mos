@@ -16,11 +16,11 @@ getErrorString();
 // Result:
 // true
 // ""
-// "[flattening/modelica/mosfiles/LookupPackageFail.mo:12:5-12:10:writable] Error: Class P.B not found in scope P.A.
+// "[flattening/modelica/mosfiles/LookupPackageFail.mo:11:5-11:10:writable] Error: Class P.B not found in scope P.A.
 // Error: Error occurred while flattening model P.A
 // "
 // ""
-// "[flattening/modelica/mosfiles/LookupPackageFail.mo:12:5-12:10:writable] Error: Class P.B not found in scope P.A.
+// "[flattening/modelica/mosfiles/LookupPackageFail.mo:11:5-11:10:writable] Error: Class P.B not found in scope P.A.
 // Error: Error occurred while flattening model P.A
 // "
 // endResult

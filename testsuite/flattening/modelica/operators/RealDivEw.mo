@@ -1,7 +1,6 @@
 // name: RealDivEw
 // keywords: real, division, element-wise
 // status: correct
-// cflags: -d=-newInst
 //
 // Tests element-wise array division.
 //
@@ -16,6 +15,7 @@ end f;
 
 model RealMulEw
   Real x[:] = f({1, 2, 3}, {4, 5, 6});
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end RealMulEw;
 
 // Result:

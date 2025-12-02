@@ -1,7 +1,6 @@
 // name:     BN3 -  VariableLimiter component
 // keywords: VariableLimiter
 // status:   correct
-// cflags: -d=-newInst
 //
 // Testing instantiation of the Nonlinear.VariableLimiter component.
 //
@@ -959,6 +958,7 @@ equation
   connect(constant3.outPort,variableLimiter1.limit2) annotation(Line(visible=true,points={{-12.27,-34.26},{31.83,4.97}}));
   connect(constant1.outPort,variableLimiter1.inPort) annotation(Line(visible=true,points={{1.11,11.36},{30.91,13.49}}));
   connect(constant2.outPort,variableLimiter1.limit1) annotation(Line(visible=true,points={{9.63,53.93},{30.91,21.09}}));
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end BN3;
 
 // class BN3

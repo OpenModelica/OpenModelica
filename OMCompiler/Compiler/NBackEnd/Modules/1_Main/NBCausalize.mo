@@ -1,7 +1,7 @@
 /*
 * This file is part of OpenModelica.
 *
-* Copyright (c) 1998-2020, Open Source Modelica Consortium (OSMC),
+* Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
 * c/o Linköpings universitet, Department of Computer and Information Science,
 * SE-58183 Linköping, Sweden.
 *
@@ -52,14 +52,16 @@ protected
 
   // Backend imports
   import Adjacency = NBAdjacency;
+  import ASSC = NBASSC;
   import BackendDAE = NBackendDAE;
   import BEquation = NBEquation;
   import Differentiate = NBDifferentiate;
-  import NBEquation.{Equation, EquationPointers, EqData, EquationAttributes};
+  import NBEquation.{Equation, EquationPointers, EqData, EquationAttributes, Iterator};
   import Matching = NBMatching;
   import Sorting = NBSorting;
   import StrongComponent = NBStrongComponent;
-  import System = NBSystem;
+  import BPartition = NBPartition;
+  import NBPartition.Partition;
   import BVariable = NBVariable;
   import NBVariable.{VariablePointers, VarData};
 
@@ -76,78 +78,80 @@ protected
 
 public
   function main extends Module.wrapper;
-    input System.SystemType systemType;
+    input BPartition.Kind kind;
   protected
     Module.causalizeInterface func = getModule();
   algorithm
-    bdae := match (systemType, bdae)
+    bdae := match (kind, bdae)
       local
-        list<System.System> systems;
+        list<Partition> partitions, clocked;
         VarData varData;
         EqData eqData;
         FunctionTree funcTree;
 
-      case (System.SystemType.ODE, BackendDAE.MAIN(ode = systems, varData = varData, eqData = eqData, funcTree = funcTree))
+      case (NBPartition.Kind.ODE, BackendDAE.MAIN(ode = partitions, clocked = clocked, varData = varData, eqData = eqData, funcTree = funcTree))
         algorithm
-          (systems, varData, eqData, funcTree) := applyModule(systems, systemType, varData, eqData, funcTree, func);
-          bdae.ode := systems;
+          (partitions, varData, eqData, funcTree) := applyModule(partitions, kind, varData, eqData, funcTree, func);
+          (clocked, varData, eqData, funcTree) := applyModule(clocked, kind, varData, eqData, funcTree, func);
+          bdae.ode := partitions;
+          bdae.clocked := clocked;
           bdae.varData := varData;
           bdae.eqData := eqData;
           bdae.funcTree := funcTree;
       then bdae;
 
-      case (System.SystemType.INI, BackendDAE.MAIN(init = systems, varData = varData, eqData = eqData, funcTree = funcTree))
+      case (NBPartition.Kind.INI, BackendDAE.MAIN(init = partitions, varData = varData, eqData = eqData, funcTree = funcTree))
         algorithm
           if Flags.isSet(Flags.INITIALIZATION) then
             print(StringUtil.headline_1("Balance Initialization") + "\n");
           end if;
-          (systems, varData, eqData, funcTree) := applyModule(systems, systemType, varData, eqData, funcTree, func);
-          bdae.init := systems;
+          (partitions, varData, eqData, funcTree) := applyModule(partitions, kind, varData, eqData, funcTree, func);
+          bdae.init := partitions;
           if Util.isSome(bdae.init_0) then
-            (systems, varData, eqData, funcTree) := applyModule(Util.getOption(bdae.init_0), systemType, varData, eqData, funcTree, func);
-            bdae.init_0 := SOME(systems);
+            (partitions, varData, eqData, funcTree) := applyModule(Util.getOption(bdae.init_0), kind, varData, eqData, funcTree, func);
+            bdae.init_0 := SOME(partitions);
           end if;
           bdae.varData := varData;
           bdae.eqData := eqData;
           bdae.funcTree := funcTree;
       then bdae;
 
-      case (System.SystemType.DAE, BackendDAE.MAIN(dae = SOME(systems), varData = varData, eqData = eqData, funcTree = funcTree))
+      case (NBPartition.Kind.DAE, BackendDAE.MAIN(dae = SOME(partitions), varData = varData, eqData = eqData, funcTree = funcTree))
         algorithm
-          (systems, varData, eqData, funcTree) := applyModule(systems, systemType, varData, eqData, funcTree, causalizeDAEMode);
-          bdae.dae := SOME(systems);
+          (partitions, varData, eqData, funcTree) := applyModule(partitions, kind, varData, eqData, funcTree, causalizeDAEMode);
+          bdae.dae := SOME(partitions);
           bdae.varData := varData;
           bdae.eqData := eqData;
           bdae.funcTree := funcTree;
       then bdae;
 
       else algorithm
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed with system type " + System.System.systemTypeString(systemType) + "!"});
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed with partition type " + Partition.Partition.kindToString(kind) + "!"});
       then fail();
     end match;
   end main;
 
   function applyModule
-    input list<System.System> systems;
-    input System.SystemType systemType;
-    output list<System.System> new_systems = {};
+    input list<Partition> partitions;
+    input BPartition.Kind kind;
+    output list<Partition> new_partitions = {};
     input output VarData varData;
     input output EqData eqData;
     input output FunctionTree funcTree;
     input Module.causalizeInterface func;
   protected
-    System.System new_system;
-    Boolean violated = false "true if any system violated variability consistency";
+    Partition new_partition;
+    Boolean violated = false "true if any partition violated variability consistency";
   algorithm
-    for system in systems loop
-      (new_system, varData, eqData, funcTree) := func(system, varData, eqData, funcTree);
-      new_systems := new_system :: new_systems;
+    for partition in partitions loop
+      (new_partition, varData, eqData, funcTree) := func(partition, varData, eqData, funcTree);
+      new_partitions := new_partition :: new_partitions;
     end for;
-    new_systems := listReverse(new_systems);
+    new_partitions := listReverse(new_partitions);
 
-    if systemType <> System.SystemType.INI then
-      for system in new_systems loop
-        violated := checkSystemVariabilities(system) or violated;
+    if kind <> NBPartition.Kind.INI then
+      for partition in new_partitions loop
+        violated := checkSystemVariabilities(partition) or violated;
       end for;
       if violated then fail(); end if;
     end if;
@@ -155,23 +159,28 @@ public
 
   function checkSystemVariabilities
     "checks whether variability is valid. Prevents things like `Integer i = time;`"
-    input System.System system;
+    input Partition partition;
     output Boolean violated = false;
+  protected
+    String err;
   algorithm
-    if isSome(system.strongComponents) then
-      for scc in Util.getOption(system.strongComponents) loop
+    if isSome(partition.strongComponents) then
+      for scc in Util.getOption(partition.strongComponents) loop
         () := match scc
           local
             Type ty1, ty2;
           case StrongComponent.SINGLE_COMPONENT() algorithm
-            ty1 := Type.removeSizeOneArrays(Variable.typeOf(Pointer.access(scc.var)));
-            ty2 := Type.removeSizeOneArrays(Equation.getType(Pointer.access(scc.eqn)));
+            ty1 := Type.removeSizeOneArraysAndRecords(Variable.typeOf(Pointer.access(scc.var)));
+            ty2 := Type.removeSizeOneArraysAndRecords(Equation.getType(Pointer.access(scc.eqn)));
             if not Type.isEqual(ty1, ty2) then
               // The variability of the equation must be greater or equal to that of the variable it solves.
               // See MLS section 3.8 Variability of Expressions
-              Error.addMessage(Error.COMPILER_ERROR, {getInstanceName() + " failed. The following strong component has conflicting types: "
-                + Type.toString(ty1) + " != " + Type.toString(ty2)
-                + "\n" + StrongComponent.toString(scc)});
+              err := getInstanceName() + " failed. The following strong component has conflicting types: "
+                + Type.toString(ty1) + " != " + Type.toString(ty2) + "\n" + StrongComponent.toString(scc);
+              if Flags.isSet(Flags.BLT_DUMP) then
+                err := err + "\n" + Partition.toString(partition);
+              end if;
+              Error.addMessage(Error.COMPILER_ERROR, {err});
               violated := true;
             end if;
           then ();
@@ -184,16 +193,24 @@ public
 
   function simple
     input VariablePointers vars;
-    input EquationPointers eqs;
+    input EquationPointers eqns;
+    input Adjacency.MatrixStrictness st = NBAdjacency.MatrixStrictness.MATCHING;
+    input Iterator iter = Iterator.EMPTY();
+    output Matching matching;
     output list<StrongComponent> comps;
   protected
-    Adjacency.Matrix adj;
-    Matching matching;
+    Adjacency.Matrix full, adj;
   algorithm
-    // create scalar adjacency matrix for now
-    adj := Adjacency.Matrix.create(vars, eqs);
+    // create full matrix
+    full := Adjacency.Matrix.createFull(vars, eqns);
+
+    // create solvable adjacency matrix for matching
+    adj := Adjacency.Matrix.fromFull(full, vars.map, eqns.map, eqns, st, iter);
     matching := Matching.regular(NBMatching.EMPTY_MATCHING, adj);
-    comps := Sorting.tarjan(adj, matching, vars, eqs);
+
+    // create all occurence adjacency matrix for sorting, upgrading the matching matrix
+    adj := Adjacency.Matrix.upgrade(adj, full, vars.map, eqns.map, eqns, NBAdjacency.MatrixStrictness.SORTING);
+    comps := Sorting.tarjan(adj, matching, vars, eqns);
   end simple;
 
   function getModule
@@ -219,76 +236,98 @@ public
 protected
   function causalizePseudoArray extends Module.causalizeInterface;
   protected
+    BPartition.Kind kind = Partition.getKind(partition);
     VariablePointers variables;
     EquationPointers equations;
-    Adjacency.Matrix adj;
+    Adjacency.Matrix full, adj_matching, adj_sorting;
     Matching matching;
     list<StrongComponent> comps;
   algorithm
-    (variables, equations, adj, matching, comps) := match system.systemType
+    (variables, equations, full, matching, comps) := match kind
       local
         list<Pointer<Variable>> fixable, unfixable;
         list<Pointer<Equation>> initials, simulation;
+        UnorderedMap<ComponentRef, Integer> vo, vn, eo, en;
 
-      case NBSystem.SystemType.INI algorithm
-        (fixable, unfixable)    := List.splitOnTrue(VariablePointers.toList(system.unknowns), BVariable.isFixable);
-        (initials, simulation)  := List.splitOnTrue(EquationPointers.toList(system.equations), Equation.isInitial);
-        matching                := NBMatching.EMPTY_MATCHING;
+      case kind as NBPartition.Kind.INI algorithm
+        // compress the arrays to remove gaps
+        partition.unknowns   := VariablePointers.compress(partition.unknowns);
+        partition.equations  := EquationPointers.compress(partition.equations);
 
+        // split the variables and equations
+        (fixable, unfixable)    := List.splitOnTrue(VariablePointers.toList(partition.unknowns), BVariable.isFixable);
+        (initials, simulation)  := List.splitOnTrue(EquationPointers.toList(partition.equations), Equation.isInitial);
+
+        // create full matrix
+        full := Adjacency.Matrix.createFull(partition.unknowns, partition.equations);
+
+        // do not resolve potential singular partitions in Phase I or II! -> regular matching
         // #################################################
         // Phase I: match initial equations <-> unfixable vars
         // #################################################
-        variables := VariablePointers.fromList(unfixable);
-        equations := EquationPointers.fromList(initials);
-        adj := Adjacency.Matrix.create(variables, equations, NBAdjacency.MatrixStrictness.SOLVABLE);
-        // do not resolve potential singular systems in Phase I or II! -> regular matching
-        matching := Matching.regular(matching, adj, true, true);
+        vn := UnorderedMap.subMap(partition.unknowns.map, list(BVariable.getVarName(var) for var in unfixable));
+        en := UnorderedMap.subMap(partition.equations.map, list(Equation.getEqnName(eqn) for eqn in initials));
+        adj_matching := Adjacency.Matrix.fromFull(full, vn, en, partition.equations, NBAdjacency.MatrixStrictness.MATCHING);
+        matching := Matching.regular(NBMatching.EMPTY_MATCHING, adj_matching, true, true);
 
         // #################################################
         // Phase II: match all equations <-> unfixables
         // #################################################
-        (adj, variables, equations) := Adjacency.Matrix.expand(adj, variables, equations, {}, simulation);
-        // do not resolve potential singular systems in Phase I or II! -> regular matching
-        matching := Matching.regular(matching, adj, true, true);
+        vo := vn;
+        eo := en;
+        vn := UnorderedMap.new<Integer>(ComponentRef.hash, ComponentRef.isEqual);
+        en := UnorderedMap.subMap(partition.equations.map, list(Equation.getEqnName(eqn) for eqn in simulation));
+        (adj_matching, full) := Adjacency.Matrix.expand(adj_matching, full, vo, vn, eo, en, partition.unknowns, partition.equations);
+        matching := Matching.regular(matching, adj_matching, true, true);
 
         // #################################################
         // Phase III: match all equations <-> all vars
         // #################################################
-        (adj, variables, equations) := Adjacency.Matrix.expand(adj, variables, equations, fixable, {});
-        (matching, adj, variables, equations, funcTree, varData, eqData) := Matching.singular(matching, adj, variables, equations, funcTree, varData, eqData, system.systemType, false, true, false);
+        vo := UnorderedMap.merge(vo, vn, sourceInfo());
+        eo := UnorderedMap.merge(eo, en, sourceInfo());
+        vn := UnorderedMap.subMap(partition.unknowns.map, list(BVariable.getVarName(var) for var in fixable));
+        en := UnorderedMap.new<Integer>(ComponentRef.hash, ComponentRef.isEqual);
+        (adj_matching, full) := Adjacency.Matrix.expand(adj_matching, full, vo, vn, eo, en, partition.unknowns, partition.equations);
+        (matching, adj_matching, full, variables, equations, funcTree, varData, eqData) := Matching.singular(matching, adj_matching, full, partition.unknowns, partition.equations, funcTree, varData, eqData, kind, false, false);
 
-        adj := Adjacency.Matrix.create(variables, equations, NBAdjacency.MatrixStrictness.FULL);
-        comps := Sorting.tarjan(adj, matching, variables, equations);
-      then (variables, equations, adj, matching, comps);
+        // create all occurence adjacency matrix for sorting, upgrading the matching matrix
+        adj_sorting := Adjacency.Matrix.upgrade(adj_matching, full, variables.map, equations.map, equations, NBAdjacency.MatrixStrictness.SORTING);
+        comps := Sorting.tarjan(adj_sorting, matching, variables, equations);
+      then (variables, equations, full, matching, comps);
 
       else algorithm
         // compress the arrays to remove gaps
-        variables := VariablePointers.compress(system.unknowns);
-        equations := EquationPointers.compress(system.equations);
+        variables := VariablePointers.compress(partition.unknowns);
+        equations := EquationPointers.compress(partition.equations);
 
-        // create solvable adjacency matrix for matching and full for sorting
-        adj := Adjacency.Matrix.create(variables, equations, NBAdjacency.MatrixStrictness.SOLVABLE);
-        (matching, adj, variables, equations, funcTree, varData, eqData) := Matching.singular(NBMatching.EMPTY_MATCHING, adj, variables, equations, funcTree, varData, eqData, system.systemType, false, true);
-        adj := Adjacency.Matrix.create(variables, equations, NBAdjacency.MatrixStrictness.FULL);
-        comps := Sorting.tarjan(adj, matching, variables, equations);
-      then (variables, equations, adj, matching, comps);
+        // perform ASSC on the system
+        ASSC.main(equations, variables);
+
+        // create full matrix
+        full := Adjacency.Matrix.createFull(variables, equations);
+
+        // create solvable adjacency matrix for matching
+        adj_matching := Adjacency.Matrix.fromFull(full, variables.map, equations.map, equations, NBAdjacency.MatrixStrictness.MATCHING);
+
+        // perform matching
+        (matching, adj_matching, full, variables, equations, funcTree, varData, eqData) := Matching.singular(NBMatching.EMPTY_MATCHING, adj_matching, full, variables, equations, funcTree, varData, eqData, kind, false);
+
+        // create all occurence adjacency matrix for sorting, upgrading the matching matrix
+        adj_sorting := Adjacency.Matrix.upgrade(adj_matching, full, variables.map, equations.map, equations, NBAdjacency.MatrixStrictness.SORTING);
+        comps := Sorting.tarjan(adj_sorting, matching, variables, equations);
+      then (variables, equations, full, matching, comps);
     end match;
 
-    system.unknowns := variables;
-    system.equations := equations;
-    system.adjacencyMatrix := SOME(adj);
-    system.matching := SOME(matching);
-    system.strongComponents := SOME(listArray(comps));
+    partition.unknowns := variables;
+    partition.equations := equations;
+    partition.adjacencyMatrix := SOME(full);
+    partition.matching := SOME(matching);
+    partition.strongComponents := SOME(listArray(comps));
   end causalizePseudoArray;
 
   function causalizeDAEMode extends Module.causalizeInterface;
-  protected
-    Pointer<list<StrongComponent>> acc = Pointer.create({});
   algorithm
-    // create all components as residuals for now
-    // ToDo: use tearing to get inner/tmp equations
-    EquationPointers.mapPtr(system.equations, function StrongComponent.makeDAEModeResidualTraverse(acc = acc));
-    system.strongComponents := SOME(List.listArrayReverse(Pointer.access(acc)));
+    // nothing to do?
   end causalizeDAEMode;
 
   annotation(__OpenModelica_Interface="backend");

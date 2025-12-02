@@ -1,7 +1,6 @@
 // name: TypenameInvalid2
 // keywords:
 // status: incorrect
-// cflags: -d=newInst
 //
 
 model TypenameInvalid2
@@ -13,7 +12,7 @@ end TypenameInvalid2;
 
 // Result:
 // Error processing file: TypenameInvalid2.mo
-// [flattening/modelica/scodeinst/TypenameInvalid2.mo:11:3-11:8:writable] Error: Type name 'E' is not allowed in this context.
+// [flattening/modelica/scodeinst/TypenameInvalid2.mo:10:3-10:8:writable] Error: Type name 'E' is not allowed in this context.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

@@ -1,6 +1,5 @@
 // name: ClassMod1
 // status: correct
-// cflags: -d=newInst
 
 model A
   model B

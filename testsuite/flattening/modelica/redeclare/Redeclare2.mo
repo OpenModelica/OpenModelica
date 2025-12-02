@@ -1,7 +1,6 @@
 // name:     Redeclare2
 // keywords: redeclare
 // status:   correct
-// cflags: -d=-newInst
 //
 // Replaceable classes.
 
@@ -20,6 +19,7 @@ end B;
 class Redeclare2
   replaceable class Q = A;
   Q x;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Redeclare2;
 
 // Result:

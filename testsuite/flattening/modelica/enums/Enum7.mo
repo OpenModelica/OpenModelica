@@ -1,7 +1,6 @@
 // name:     Enumeration7
 // keywords: enumeration enum
 // status:   correct
-// cflags: -d=-newInst
 //
 //
 //
@@ -81,6 +80,7 @@ model X
   equation
    x = if frame_r_out == frame_r_in then 0 else 1;
    f=enum.a;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end X;
 
 // Result:

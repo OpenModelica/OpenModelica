@@ -1,7 +1,6 @@
 // name:     Constant8
 // keywords: Constant package lookup
 // status:   correct
-// cflags: -d=-newInst
 //
 // Constants can be looked up in parent scopes, also throug base classs.
 //
@@ -21,6 +20,7 @@ end A;
 
 model Constant8
  extends A.B.test;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Constant8;
 
 // Result:

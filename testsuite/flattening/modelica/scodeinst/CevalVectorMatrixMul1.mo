@@ -1,7 +1,6 @@
 // name: CevalVectorMatrixMul1
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 //
 

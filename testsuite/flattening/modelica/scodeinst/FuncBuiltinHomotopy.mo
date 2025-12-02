@@ -1,7 +1,6 @@
 // name: FuncBuiltinHomotopy
 // keywords: homotopy
 // status: correct
-// cflags: -d=newInst
 //
 // Tests the builtin homotopy operator.
 //

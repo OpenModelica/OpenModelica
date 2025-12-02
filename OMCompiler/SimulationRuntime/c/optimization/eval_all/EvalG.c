@@ -63,13 +63,13 @@ static inline void structJac3(const long double * const a, const modelica_real *
 static inline void structJacC(const modelica_real *const J, double *values,
     const int nv, int *k, const modelica_boolean * const Jj);
 
-static inline void printMaxError(Number *g, const int m, const int nx, const int nJ, long double **t,
+static inline void printMaxError(ipnumber *g, const int m, const int nx, const int nJ, long double **t,
     const int np, const int nsi, DATA * data, OptData * optData);
 
 
 /* eval constraints
  */
-Bool evalfG(Index n, double * vopt, Bool new_x, int m, Number *g, void * useData){
+Bool evalfG(ipindex n, double * vopt, Bool new_x, int m, ipnumber *g, void * useData){
   OptData *optData = (OptData*)useData;
 
   const int nx = optData->dim.nx;
@@ -149,7 +149,7 @@ Bool evalfG(Index n, double * vopt, Bool new_x, int m, Number *g, void * useData
     /*terminal constraint(s)*/
     memcpy(g + m - ncf, &v[nsi-1][0][index_conf], ncf*sizeof(double));
   }
-  if(ACTIVE_STREAM(LOG_IPOPT_ERROR)){
+  if(OMC_ACTIVE_STREAM(OMC_LOG_IPOPT_ERROR)){
     const int nJ = optData->dim.nJ;
     printMaxError(g, m, nx, nJ, optData->time.t, np ,nsi ,optData->data, optData);
   }
@@ -160,7 +160,7 @@ Bool evalfG(Index n, double * vopt, Bool new_x, int m, Number *g, void * useData
  *  eval derivation of s.t.
  *  author: Vitalij Ruge
  **/
-Bool evalfDiffG(Index n, double * vopt, Bool new_x, Index m, Index njac, Index *iRow, Index *iCol, Number *values, void * useData){
+Bool evalfDiffG(ipindex n, double * vopt, Bool new_x, ipindex m, ipindex njac, ipindex *iRow, ipindex *iCol, ipnumber *values, void * useData){
   OptData *optData = (OptData*)useData;
 
   if(!values){
@@ -663,7 +663,7 @@ static inline void generated_jac_struc(OptData * optData, int *iRow, int* iCol){
 }
 
 
-static inline void printMaxError(Number *g, const int m, const int nx, const int nJ,
+static inline void printMaxError(ipnumber *g, const int m, const int nx, const int nJ,
     long double **t, const int np, const int nsi, DATA * data, OptData * optData){
 
   int index = 0;
@@ -713,15 +713,15 @@ static inline void printMaxError(Number *g, const int m, const int nx, const int
 
   if(kk>-1){
     if(kk < nx){
-      infoStreamPrint(LOG_IPOPT_ERROR, 0, "max error is %g for the approximation of the state %s(time = %g)\n",
+      infoStreamPrint(OMC_LOG_IPOPT_ERROR, 0, "max error is %g for the approximation of the state %s(time = %g)\n",
               gmax, data->modelData->realVarsData[kk].info.name, (double)t[ii][jj]);
     }else if(kk < nJ){
       const int ll = kk - nx + optData->dim.index_con;
-      infoStreamPrint(LOG_IPOPT_ERROR, 0,"max violation is %g for the constraint %s(time = %g)\n",
+      infoStreamPrint(OMC_LOG_IPOPT_ERROR, 0,"max violation is %g for the constraint %s(time = %g)\n",
               gmax, data->modelData->realVarsData[ll].info.name, (double)t[ii][jj]);
     }else{
       const int ll = kk - nx + optData->dim.index_con;
-      infoStreamPrint(LOG_IPOPT_ERROR, 0,"max violation is %g for the final constraint %s(time = %g)\n", gmax, data->modelData->realVarsData[ll].info.name, (double)t[ii][jj]);
+      infoStreamPrint(OMC_LOG_IPOPT_ERROR, 0,"max violation is %g for the final constraint %s(time = %g)\n", gmax, data->modelData->realVarsData[ll].info.name, (double)t[ii][jj]);
     }
   }
 }

@@ -1,11 +1,11 @@
 // status: correct
-// cflags: -d=-newInst
 // ticket #3518
 
 model Matrix3
  Boolean b = false;
  constant Integer n = 2;
  Boolean[:,:] vecB = [fill(true,n-1);b];
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Matrix3;
 
 // Result:

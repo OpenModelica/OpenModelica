@@ -1,7 +1,6 @@
 // name: NonexistentRedeclareModifier1
 // keywords:
 // status: incorrect
-// cflags: -d=newInst
 //
 
 model M
@@ -13,7 +12,7 @@ end NonexistentRedeclareModifier1;
 
 // Result:
 // Error processing file: NonexistentRedeclareModifier1.mo
-// [flattening/modelica/scodeinst/NonexistentRedeclareModifier1.mo:11:7-11:27:writable] Error: Modified element x not found in class M.
+// [flattening/modelica/scodeinst/NonexistentRedeclareModifier1.mo:10:7-10:27:writable] Error: Modified element x not found in class M.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

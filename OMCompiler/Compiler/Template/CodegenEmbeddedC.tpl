@@ -637,7 +637,7 @@ template functionBodyExternalFunction(Function fn)
     case VARIABLE(name=cref)::_ then 'return <%crefLocal(cref)%>;'
     else error(sourceInfo(), "Not variable return"))
   let varAssign = if outVars then
-    (List.rest(outVars) |> var => '*out<%varName(var)%> = <%varName(var)%>;')
+    (listRest(outVars) |> var => '*out<%varName(var)%> = <%varName(var)%>;')
   <<
   static inline <%prototype%>
   {
@@ -669,7 +669,7 @@ template functionPrototype(Text fname, list<Variable> fargs, list<Variable> outV
       case VARIABLE(__) then varType(var)
       else error(sourceInfo(), "modelica_fnptr"))
     else "void")
-  let outargs = if outVars then (List.rest(outVars) |> var => ', <%varType(var)%> *out<%varName(var)%>')
+  let outargs = if outVars then (listRest(outVars) |> var => ', <%varType(var)%> *out<%varName(var)%>')
   '<%outarg%> <%fname%>(fmi2Component comp<%fargsStr%><%outargs%>)'
 end functionPrototype;
 

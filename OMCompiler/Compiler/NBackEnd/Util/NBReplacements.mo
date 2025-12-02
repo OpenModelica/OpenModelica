@@ -53,17 +53,20 @@ protected
   import ComponentRef = NFComponentRef;
   import Expression = NFExpression;
   import NFInstNode.InstNode;
+  import InstContext = NFInstContext;
   import NFFunction.Function;
   import NFFlatten.FunctionTreeImpl;
   import SimplifyExp = NFSimplifyExp;
   import Statement = NFStatement;
   import Subscript = NFSubscript;
   import Type = NFType;
+  import Typing = NFTyping;
   import Variable = NFVariable;
 
   // Backend imports
   import BVariable = NBVariable;
   import NBEquation.{EqData, Equation, EquationPointers};
+  import Inline = NBInline;
   import Solve = NBSolve;
   import StrongComponent = NBStrongComponent;
   import NBVariable.{VarData, VariablePointers};
@@ -121,12 +124,13 @@ public
         (solvedEq, _, status, _) := Solve.solveBody(Pointer.access(comp.eqn), varName, FunctionTreeImpl.EMPTY());
         if status == NBSolve.Status.EXPLICIT then
           // apply all previous replacements on the RHS
-          replace_exp := Equation.getRHS(solvedEq);
+          SOME(replace_exp) := Equation.getRHS(solvedEq);
           replace_exp := Expression.map(replace_exp, function applySimpleExp(replacements = replacements));
+          replace_exp := SimplifyExp.simplifyDump(replace_exp, true, getInstanceName());
           // add the new replacement rule
-          UnorderedMap.add(varName, SimplifyExp.simplifyDump(replace_exp, true, getInstanceName()), replacements);
+          addInputArgTpl((varName, replace_exp) , replacements, true);
         else
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because strong component cannot be solved explicitely: " + StrongComponent.toString(comp)});
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because strong component cannot be solved explicitly: " + StrongComponent.toString(comp)});
           fail();
         end if;
       then ();
@@ -174,7 +178,7 @@ public
     entries := UnorderedMap.toList(replacements);
     for entry in entries loop
       (aliasCref, replacement) := entry;
-      var_ptr := BVariable.getVarPointer(aliasCref);
+      var_ptr := BVariable.getVarPointer(aliasCref, sourceInfo());
       var := Pointer.access(var_ptr);
       var.binding := Binding.update(var.binding, replacement);
       Pointer.update(var_ptr, var);
@@ -200,9 +204,10 @@ public
           // try to strip the subscripts and see if that cref occurs
           stripped := ComponentRef.stripSubscriptsAll(exp.cref);
           if UnorderedMap.contains(stripped, replacements) then
-            subs  := ComponentRef.subscriptsAllWithWholeFlat(exp.cref);
+            subs  := ComponentRef.subscriptsAllFlat(exp.cref);
+            subs  := list(s for s guard(not Subscript.isWhole(s)) in subs);
             res   := UnorderedMap.getOrFail(stripped, replacements);
-            res   := Expression.applySubscripts(subs, res);
+            res   := Expression.applySubscripts(subs, res, true);
           else
             // do nothing
             res := exp;
@@ -228,6 +233,19 @@ public
       else var;
     end match;
   end applySimpleVar;
+
+  function replaceVarPtr
+    "replaces a pointer if there is a name replacement in the map"
+    input output Pointer<Variable> var_ptr;
+    input UnorderedMap<ComponentRef, ComponentRef> replacements;
+  protected
+    Option<ComponentRef> cref;
+  algorithm
+    cref := UnorderedMap.get(BVariable.getVarName(var_ptr), replacements);
+    if Util.isSome(cref) then
+      var_ptr := BVariable.getVarPointer(Util.getOption(cref), sourceInfo());
+    end if;
+  end replaceVarPtr;
 
   function simpleToString
     input UnorderedMap<ComponentRef, Expression> replacements;
@@ -265,17 +283,19 @@ public
     "replaces all function calls in the replacements map with their body expressions,
     if possible."
     input output EqData eqData;
+    input VariablePointers variables;
     input UnorderedMap<Absyn.Path, Function> replacements;
   algorithm
-        // do nothing if replacements are empty
+    // do nothing if replacements are empty
     if UnorderedMap.isEmpty(replacements) then return; end if;
-    eqData := EqData.mapExp(eqData, function applyFuncExp(replacements = replacements));
+    eqData := EqData.mapExp(eqData, function applyFuncExp(replacements = replacements, variables = variables));
   end replaceFunctions;
 
   function applyFuncExp
     "Needs to be mapped with Expression.map()"
     input output Expression exp                               "Replacement happens inside this expression";
     input UnorderedMap<Absyn.Path, Function> replacements     "rules for replacements are stored inside here";
+    input VariablePointers variables;
   algorithm
     exp := match exp
       local
@@ -296,12 +316,12 @@ public
         input_crefs := list(ComponentRef.fromNode(node, InstNode.getType(node)) for node in fn.inputs);
         // ToDo: rather use the function slots for this?
         for tpl in List.zip(input_crefs, call.arguments) loop
-          addInputArgTpl(tpl, local_replacements);
+          addInputArgTpl(tpl, local_replacements, false);
         end for;
 
         // add replacement rules for local (protected) variables
         for local_node in fn.locals loop
-          local_cref    := ComponentRef.fromNode(local_node, InstNode.getType(local_node));
+          local_cref      := ComponentRef.fromNode(local_node, InstNode.getType(local_node));
           binding_exp_opt := InstNode.getBindingExpOpt(local_node);
           if Util.isSome(binding_exp_opt) then
             // replace binding expression with already gathered input replacements
@@ -310,16 +330,19 @@ public
             // add a "wild" binding. This will result in unused outputs being ignored.
             binding_exp := Expression.CREF(Type.UNKNOWN(), ComponentRef.WILD());
           end if;
-          addInputArgTpl((local_cref, binding_exp), local_replacements);
+          addInputArgTpl((local_cref, binding_exp), local_replacements, false);
         end for;
 
         // get the expression from function body (fails if its not a single replacable assignment)
         body_exp := getFunctionBody(fn);
-
         // replace input withs arguments in expression
         body_exp := Expression.map(body_exp, function applySimpleExp(replacements = local_replacements));
+        // if any of the inputs had an undetermined size, retype the new body
+        if not List.all(input_crefs, ComponentRef.sizeKnown) then
+          body_exp := Typing.typeExp(body_exp, NFInstContext.RHS, sourceInfo(), true);
+        end if;
         body_exp := SimplifyExp.combineBinaries(body_exp);
-        body_exp := SimplifyExp.simplifyDump(body_exp, true, getInstanceName(), "\n");
+        body_exp := SimplifyExp.simplifyDump(body_exp, true, getInstanceName());
 
         if Flags.isSet(Flags.DUMPBACKENDINLINE) then
           print("[" + getInstanceName() + "] Inlining: " + Expression.toString(exp) + "\n");
@@ -336,30 +359,31 @@ public
     all record children replacements."
     input tuple<ComponentRef, Expression> tpl;
     input UnorderedMap<ComponentRef, Expression> replacements;
+    input Boolean lowered_lhs "true if the LHS has properly lowered (backend) crefs";
   protected
     ComponentRef cref;
     Expression arg;
-    list<Pointer<Variable>> arg_children;
     list<Expression> children_args;
-    list<ComponentRef> children;
+    list<ComponentRef> children, tmp;
     Call call;
     Function fn;
   algorithm
     (cref, arg) := tpl;
     UnorderedMap.add(cref, arg, replacements);
 
-    // also try to add element replacements (throw error if impossible?)
-    children := ComponentRef.getRecordChildren(cref);
+    // also try to add record children replacements (throw error if impossible?)
+    children := if lowered_lhs then BVariable.getRecordChildrenCref(cref) else ComponentRef.getRecordChildren(cref);
     if not listEmpty(children) then
       children_args := match arg
 
         // if the argument is a cref, get its children
         case Expression.CREF() algorithm
-          arg_children := BVariable.getRecordChildren(BVariable.getVarPointer(arg.cref));
-        then list(Expression.fromCref(BVariable.getVarName(child)) for child in arg_children);
+          tmp := BVariable.getRecordChildrenCref(arg.cref);
+        then list(Expression.fromCref(child) for child in tmp);
 
         // if it is a basic record, take its elements
-        case Expression.RECORD() then arg.elements;
+        case Expression.RECORD()  then arg.elements;
+        case Expression.TUPLE()   then arg.elements;
 
         // if the argument is a record constructor, map it to its attributes
         case Expression.CALL(call = call as Call.TYPED_CALL(fn = fn)) algorithm
@@ -371,17 +395,17 @@ public
             //   case that inputs map 1:1 to attributes
             children_args := call.arguments;
           else
-            children_args := {};
+            children_args := Expression.getRecordElements(arg);
           end if;
         then children_args;
 
-        else {};
+        else Expression.getRecordElements(arg);
       end match;
 
       // check if children and children_args can be mapped to one another
-      if listLength(children) == listLength(children_args) then
+      if List.compareLength(children, children_args) == 0 then
         for child_tpl in List.zip(children, children_args) loop
-          addInputArgTpl(child_tpl, replacements);
+          addInputArgTpl(child_tpl, replacements, lowered_lhs);
         end for;
       end if;
     end if;
@@ -408,7 +432,6 @@ public
       then fail();
     end match;
   end getFunctionBody;
-
 
   annotation(__OpenModelica_Interface="backend");
 end NBReplacements;

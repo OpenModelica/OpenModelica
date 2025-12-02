@@ -86,6 +86,9 @@ int main(int argc, char *argv[])
 
   try
   {
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 6, 0) && QT_VERSION < QT_VERSION_CHECK(6, 0, 0))
+    QApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
+#endif
     CellApplication a(argc, argv, threadData);
     return a.exec();
   }
@@ -93,7 +96,7 @@ int main(int argc, char *argv[])
   {
     // 2006-01-30 AF, add message box
     QString msg = QString("In main(), exception: \n") + e.what();
-    QMessageBox::warning( 0, "Warning", msg, "OK" );
+    QMessageBox::warning(nullptr, "Warning", msg);
   }
 
   return 0;

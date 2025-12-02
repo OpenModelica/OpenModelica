@@ -1,5 +1,5 @@
 package Vectorized
-  import SI = Modelica.SIunits;
+  import SI = Modelica.Units.SI;
 
   connector Terminal
     SI.Voltage v;
@@ -39,7 +39,7 @@ package Vectorized
     connect(plant.term, grid.terms);
   end SolarSystem;
 
-  annotation(uses(Modelica(version="3.2.3")));
+  annotation(uses(Modelica(version="4.0.0")));
 end Vectorized;
 
 model VectorizedSolarSystemTest = Vectorized.SolarSystem;

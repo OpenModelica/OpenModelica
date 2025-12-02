@@ -37,6 +37,7 @@
 #include "Plotting/VariablesWidget.h"
 #include "Simulation/SimulationOutputWidget.h"
 #include "OMS/BusDialog.h"
+#include "OMPlot.h"
 
 #include <QPainter>
 
@@ -52,7 +53,11 @@ ItemDelegate::ItemDelegate(QObject *pParent, bool drawRichText, bool drawGrid)
 QString ItemDelegate::formatDisplayText(QVariant variant) const
 {
   QString text;
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+  if (variant.typeId() == QMetaType::Double) {
+#else
   if (variant.type() == QVariant::Double) {
+#endif
     text = QLocale().toString(variant.toDouble());
   } else {
     text = variant.toString();
@@ -60,6 +65,25 @@ QString ItemDelegate::formatDisplayText(QVariant variant) const
     if (mDrawRichText) {
       text.replace("\n", "<br />");
       text.replace("\t", "&#9;");
+
+      /* Issue #13453.
+       * QTextDocument eats the multiple whitespaces.
+       * This is default behavoir of html. We can use white-space: pre-wrap; css but it causes other issues like word wrap.
+       * So we detect multiple spaces and convert them to no break space.
+       */
+      QString newText;
+      int len = text.length();
+      bool convert = false;
+      for (int i = 0; i < len; i++) {
+        if (text.at(i).isSpace() && (convert || (i + 1 < len && text.at(i + 1).isSpace()))) {
+          convert = true;
+          newText.append("&nbsp;");
+        } else {
+          newText.append(text.at(i));
+          convert = false;
+        }
+      }
+      text = newText;
     }
   }
   return text;
@@ -88,7 +112,11 @@ void ItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, 
   QRect decorationRect;
   value = index.data(Qt::DecorationRole);
   if (value.isValid()) {
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+    if (value.typeId() == QMetaType::QIcon) {
+#else
     if (value.type() == QVariant::Icon) {
+#endif
       icon = qvariant_cast<QIcon>(value);
       decorationRect = QRect(QPoint(0, 0), icon.actualSize(opt.decorationSize, iconMode, iconState));
     } else {
@@ -307,9 +335,9 @@ QWidget* ItemDelegate::createEditor(QWidget *pParent, const QStyleOptionViewItem
       QComboBox *pComboBox = new QComboBox(pParent);
       pComboBox->setEnabled(!pVariablesTreeItem->getDisplayUnits().isEmpty());
       foreach (QString unit, pVariablesTreeItem->getDisplayUnits()) {
-        pComboBox->addItem(Utilities::convertUnitToSymbol(unit), unit);
+        pComboBox->addItem(OMPlot::Plot::convertUnitToSymbol(unit), unit);
       }
-      connect(pComboBox, SIGNAL(currentIndexChanged(QString)), SLOT(unitComboBoxChanged(QString)));
+      connect(pComboBox, SIGNAL(currentIndexChanged(int)), SLOT(unitComboBoxChanged(int)));
       return pComboBox;
     }
   } else if (parent() && qobject_cast<ConnectorsTreeView*>(parent())) {
@@ -363,13 +391,31 @@ void ItemDelegate::setEditorData(QWidget *editor, const QModelIndex &index) cons
 }
 
 /*!
+ * \brief ItemDelegate::setModelData
+ * Sets the value for display unit in VariablesTreeView.
+ * \param editor
+ * \param model
+ * \param index
+ */
+void ItemDelegate::setModelData(QWidget *editor, QAbstractItemModel *model, const QModelIndex &index) const
+{
+  if (parent() && qobject_cast<VariablesTreeView*>(parent()) && index.column() == 3) {
+    /* The default implementation sends QComboBox currentText instead of data of the current item. */
+    QComboBox* comboBox = static_cast<QComboBox*>(editor);
+    model->setData(index, comboBox->currentData(), Qt::EditRole);
+  } else {
+    QItemDelegate::setModelData(editor, model, index);
+  }
+}
+
+/*!
  * \brief ItemDelegate::unitComboBoxChanged
  * Handles the case when display unit is changed in the VariablesTreeView.
- * \param text
+ * \param index
  */
-void ItemDelegate::unitComboBoxChanged(QString text)
+void ItemDelegate::unitComboBoxChanged(int index)
 {
-  Q_UNUSED(text);
+  Q_UNUSED(index);
   QComboBox *pComboBox = qobject_cast<QComboBox*>(sender());
   if (pComboBox) {
     emit commitData(pComboBox);

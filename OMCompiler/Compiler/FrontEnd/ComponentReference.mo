@@ -58,6 +58,7 @@ protected import Print;
 protected import StringUtil;
 protected import System;
 protected import Types;
+protected import UnorderedSet;
 protected import Util;
 
 
@@ -834,7 +835,7 @@ protected
 algorithm
   for i in inSubs1 loop
     res::rest := rest;
-    res := if i>res then 1 elseif i<res then -1 else 0;
+    res := if i>res then 1 elseif i < res then -1 else 0;
     if res <> 0 then
       return;
     end if;
@@ -1318,7 +1319,7 @@ algorithm
           ((subs as (_ :: _))) = crefSubs(cr);
         end if;
         // fails if any mapped functions returns false
-      then List.mapAllValueBool(subs, Expression.subscriptIsFirst, true);
+      then List.all(subs, Expression.subscriptIsFirst);
     else false;
   end matchcontinue;
 end crefIsFirstArrayElt;
@@ -1565,7 +1566,7 @@ algorithm
 
     case(_::ssl,DAE.T_ARRAY(tty,ad))
       equation
-        ad = List.stripFirst(ad);
+        ad = List.restOrEmpty(ad);
         b = containWholeDim2(ssl,DAE.T_ARRAY(tty,ad));
       then
         b;
@@ -2467,8 +2468,7 @@ algorithm
 end crefSetLastSubs;
 
 public function crefApplySubs
-  "Apply subs to the first componenentref ident that is of array type.
-   TODO: must not apply subs whose list length exceeds array dimensions.
+  "Apply subs to the first componenentref idents that are of array type.
    author: rfranke"
   input DAE.ComponentRef inComponentRef;
   input list<DAE.Subscript> inSubs;
@@ -2478,26 +2478,47 @@ algorithm
     local
       DAE.Ident id;
       DAE.Type tp;
-      list<DAE.Subscript> subs;
+      list<DAE.Subscript> subs, subs1, subs2;
       DAE.ComponentRef cr;
+      DAE.Dimensions dims;
 
-    case DAE.CREF_IDENT(ident = id, identType = tp as DAE.T_ARRAY(), subscriptLst = subs)
+    case DAE.CREF_IDENT(ident = id, identType = tp as DAE.T_ARRAY(dims = dims), subscriptLst = subs)
+      algorithm
+        if listLength(subs) + listLength(inSubs) > listLength(dims) then
+          Error.addInternalError("ComponentReference.crefApplySubs ["
+            + ExpressionDump.printListStr(inSubs, ExpressionDump.printSubscriptStr, ",") + "] to ident "
+            + printComponentRefStr(inComponentRef) + " with " + intString(listLength(dims)) + " dimensions\n", sourceInfo());
+          fail();
+        end if;
       then
         makeCrefIdent(id, tp, listAppend(subs, inSubs));
 
-    case DAE.CREF_QUAL(ident = id, identType = tp as DAE.T_ARRAY(), subscriptLst = subs, componentRef = cr)
+    case DAE.CREF_QUAL(ident = id, identType = tp as DAE.T_ARRAY(dims = dims), subscriptLst = subs, componentRef = cr)
+      algorithm
+        if listLength(inSubs) > listLength(dims) - listLength(subs) then
+          (subs1, subs2) := List.split(inSubs, listLength(dims) - listLength(subs));
+          cr := crefApplySubs(cr, subs2);
+        else
+          subs1 := inSubs;
+        end if;
+        if listLength(subs) + listLength(subs1) > listLength(dims) then
+          Error.addInternalError("ComponentReference.crefApplySubs ["
+            + ExpressionDump.printListStr(inSubs, ExpressionDump.printSubscriptStr, ",") + "] to qual "
+            + printComponentRefStr(inComponentRef) + " with " + intString(listLength(dims)) + " dimensions\n", sourceInfo());
+          fail();
+        end if;
       then
-        makeCrefQual(id, tp, listAppend(subs, inSubs), cr);
+        makeCrefQual(id, tp, listAppend(subs, subs1), cr);
 
     case DAE.CREF_QUAL(ident = id, identType = tp, subscriptLst = subs, componentRef = cr)
-      equation
-        cr = crefApplySubs(cr, inSubs);
+      algorithm
+        cr := crefApplySubs(cr, inSubs);
       then
         makeCrefQual(id, tp, subs, cr);
 
     else
-      equation
-        Error.addInternalError("function ComponentReference.crefApplySubs to non array\n", sourceInfo());
+      algorithm
+        Error.addInternalError("ComponentReference.crefApplySubs to non array " + printComponentRefStr(inComponentRef) + "\n", sourceInfo());
       then
         fail();
   end match;
@@ -3320,7 +3341,7 @@ algorithm
         crefs =  List.map(varLst,creffromVar);
         crefs = List.map1r(crefs,joinCrefs,inCref);
       then
-        List.map1Flat(crefs,expandCref_impl,true);
+        List.mapFlat(crefs, function expandCref_impl(expandRecord = true));
 
     // A array record ident cref without subscripts. Expand record true
     case (DAE.CREF_IDENT(id, ty as DAE.T_ARRAY(), {}),true)
@@ -3406,7 +3427,7 @@ algorithm
         // Expand the rest of the cref.
         crefs = expandCref_impl(cref,expandRecord);
         // Append the head of this cref to all of the generated crefs.
-        crefs = List.map3r(crefs, makeCrefQual, id, ty, subs);
+        crefs = list(makeCrefQual(id, ty, subs, c) for c in crefs);
       then
         crefs;
 
@@ -4077,6 +4098,13 @@ algorithm
     else false;
   end match;
 end isWild;
+
+public function uniqueList
+  input list<DAE.ComponentRef> crefs;
+  output list<DAE.ComponentRef> uniqueCrefs;
+algorithm
+  uniqueCrefs := UnorderedSet.unique_list(crefs, hashComponentRef, crefEqual);
+end uniqueList;
 
 annotation(__OpenModelica_Interface="frontend");
 end ComponentReference;

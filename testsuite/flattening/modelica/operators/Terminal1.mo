@@ -1,7 +1,6 @@
 // name:     Terminal1
 // keywords: The terminal operator
 // status:   correct
-// cflags: -d=-newInst
 //
 //  The terminal operator.
 //
@@ -10,6 +9,7 @@ class Terminal1
   Boolean t;
 equation
   t=terminal();
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Terminal1;
 
 // Result:

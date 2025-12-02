@@ -52,7 +52,7 @@ val(mechanics.r6.w, 0);
 // true
 // record SimulationResult
 //     resultFile = "Modelica.Mechanics.MultiBody.Examples.Systems.RobotR3.fullRobot_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Mechanics.MultiBody.Examples.Systems.RobotR3.fullRobot', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Mechanics.MultiBody.Examples.Systems.RobotR3.fullRobot', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
@@ -61,39 +61,39 @@ val(mechanics.r6.w, 0);
 // [Modelica 3.1.0+maint.om/Mechanics/MultiBody/Parts.mo:948:5-949:59:writable] Warning: Parameter mechanics.load.r[2] has no binding, and is fixed during initialization (fixed=true), using available start value (start=0.0) as default value.
 // [Modelica 3.1.0+maint.om/Mechanics/MultiBody/Parts.mo:948:5-949:59:writable] Warning: Parameter mechanics.load.r[1] has no binding, and is fixed during initialization (fixed=true), using available start value (start=0.0) as default value.
 // "
+// -1.1651297647909292e-16
+// 1.5737380636990038e-18
 // 0.0
+// 2.912824411977323e-15
+// -5.825648823954646e-17
+// -5.146936976669325
+// 0.27415086170667075
 // 0.0
+// 94.40456670339901
+// -1.8880913340679804
+// -7.726060447507483
+// 0.07367818054499484
 // 0.0
+// 183.94173861956358
+// -3.6788347723912715
+// -1.2008487863935242
+// 30.021219659838106
+// -0.6004243931967621
+// -1.4485586307863916
+// 36.213965769659794
+// -0.7242793153931958
+// 1.9925158957926655e-16
+// -4.981289739481663e-15
+// 9.962579478963328e-17
 // 0.0
-// 0.0
-// -5.146936976669323
-// 0.2741508617066707
-// 0.0
-// 94.404566703399
-// -1.88809133406798
-// -7.726060447507481
-// 0.07367818054499482
-// 0.0
-// 183.9417386195635
-// -3.678834772391271
-// -1.200848786393524
-// 30.0212196598381
-// -0.6004243931967619
-// -1.448558630786392
-// 36.21396576965979
-// -0.7242793153931959
-// 0.0
-// 0.0
+// -1.0471975511965976
 // -0.0
-// 0.0
-// -1.047197551196598
-// -0.0
-// 0.349065850398866
-// 1.570796326794897
+// 0.3490658503988659
+// 1.5707963267948963
 // 0.0
 // 0.0
 // 0.0
-// -1.919862177193763
+// -1.9198621771937625
 // 0.0
 // 0.0
 // 0.0

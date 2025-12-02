@@ -44,9 +44,9 @@
 #include <QDir>
 #include <QFileDialog>
 #include <QTextCodec>
+#include <QStringBuilder>
 
 #define toAscii toLatin1
-
 
 QString StringHandler::mLastOpenDir;
 
@@ -63,113 +63,6 @@ StringHandler::StringHandler()
 StringHandler::~StringHandler()
 {
 
-}
-
-/*!
- * \brief StringHandler::getTLMCausality
- * Returns the TLM causality as string.
- * \param causality
- * \return
- */
-QString StringHandler::getTLMCausality(int causality)
-{
-  switch (causality) {
-    case TLMInput:
-      return "Input";
-    case TLMOutput:
-      return "Output";
-    case TLMBidirectional:
-    default:
-      return "Bidirectional";
-  }
-}
-
-/*!
- * \brief StringHandler::getTLMDomain
- * Returns the TLM domain as string.
- * \param domain
- * \return
- */
-QString StringHandler::getTLMDomain(int domain)
-{
-  switch (domain) {
-    case Mechanical:
-      return "Mechanical";
-    case Electric:
-      return "Electric";
-    case Hydraulic:
-      return "Hydraulic";
-    case Pneumatic:
-      return "Pneumatic";
-    case Magnetic:
-      return "Magnetic";
-    default:
-      //Should never be reahed
-      return "";
-  }
-}
-
-QString StringHandler::getSimulationTool(int tool)
-{
-  switch (tool)
-  {
-    case StringHandler::Adams:
-      return "ADAMS";
-    case StringHandler::Beast:
-      return "BEAST";
-    case StringHandler::Dymola:
-      return "Dymola";
-    case StringHandler::OpenModelica:
-      return "OpenModelica";
-    case StringHandler::Simulink:
-      return "Simulink";
-    case StringHandler::WolframSystemModeler:
-      return "Wolfram SystemModeler";
-    case StringHandler::Other:
-      return "Other";
-    default:
-      // should never be reached
-      return "";
-  }
-}
-
-QString StringHandler::getSimulationToolStartCommand(QString tool, QString simulationToolStartCommand)
-{
-  if (tool.toLower().contains("adams"))
-    return "startTLMAdams";
-  else if (tool.toLower().contains("beast"))
-    return "startTLMBeast";
-  else if (tool.toLower().contains("dymola"))
-    return "startTLMDymola";
-  else if (tool.toLower().contains("openmodelica"))
-    return "startTLMOpenModelica";
-  else if (tool.toLower().contains("simulink"))
-    return "startTLMSimulink";
-  else if (tool.toLower().contains("wolfram systemmodeler"))
-    return "startTLMWSM";
-  else if (tool.toLower().contains("other"))
-    return simulationToolStartCommand;
-  else
-    // should never be reached
-    return "";
-}
-
-StringHandler::SimulationTools StringHandler::getSimulationTool(QString simulationToolStartCommand)
-{
-  if (simulationToolStartCommand.toLower().compare("starttlmadams")== 0)
-    return StringHandler::Adams;
-  else if (simulationToolStartCommand.toLower().compare("starttlmbeast")== 0)
-    return StringHandler::Beast;
-  else if (simulationToolStartCommand.toLower().compare("starttlmdymola")== 0)
-    return StringHandler::Dymola;
-  else if (simulationToolStartCommand.toLower().compare("starttlmopenmodelica")== 0)
-    return StringHandler::OpenModelica;
-  else if (simulationToolStartCommand.toLower().compare("starttlmsimulink")== 0)
-    return StringHandler::Simulink;
-  else if (simulationToolStartCommand.toLower().compare("starttlmwsm")== 0)
-    return StringHandler::WolframSystemModeler;
-  else
-    return StringHandler::Other;
 }
 
 QString StringHandler::getModelicaClassType(int type)
@@ -430,9 +323,9 @@ QString StringHandler::getLinePatternString(StringHandler::LinePattern type)
   }
 }
 
-QComboBox* StringHandler::getLinePatternComboBox()
+ComboBox* StringHandler::getLinePatternComboBox()
 {
-  QComboBox *pLinePatternComboBox = new QComboBox;
+  ComboBox *pLinePatternComboBox = new ComboBox;
   pLinePatternComboBox->setIconSize(QSize(58, 16));
   pLinePatternComboBox->addItem(ResourceCache::getIcon(":/Resources/icons/line-none.svg"), getLinePatternString(LineNone));
   pLinePatternComboBox->addItem(ResourceCache::getIcon(":/Resources/icons/line-solid.svg"), getLinePatternString(LineSolid));
@@ -535,9 +428,9 @@ QString StringHandler::getFillPatternString(StringHandler::FillPattern type)
   }
 }
 
-QComboBox* StringHandler::getFillPatternComboBox()
+ComboBox* StringHandler::getFillPatternComboBox()
 {
-  QComboBox *pFillPatternComboBox = new QComboBox;
+  ComboBox *pFillPatternComboBox = new ComboBox;
   pFillPatternComboBox->addItem(ResourceCache::getIcon(":/Resources/icons/fill-none.svg"), getFillPatternString(FillNone));
   pFillPatternComboBox->addItem(ResourceCache::getIcon(":/Resources/icons/fill-solid.svg"), getFillPatternString(FillSolid));
   pFillPatternComboBox->addItem(ResourceCache::getIcon(":/Resources/icons/fill-horizontal.svg"), getFillPatternString(FillHorizontal));
@@ -665,9 +558,9 @@ QString StringHandler::getArrowString(StringHandler::Arrow type)
   }
 }
 
-QComboBox* StringHandler::getStartArrowComboBox()
+ComboBox* StringHandler::getStartArrowComboBox()
 {
-  QComboBox *pStartArrowComboBox = new QComboBox;
+  ComboBox *pStartArrowComboBox = new ComboBox;
   pStartArrowComboBox->setIconSize(QSize(58, 16));
   pStartArrowComboBox->addItem(ResourceCache::getIcon(":/Resources/icons/line-solid.svg"), getArrowString(ArrowNone));
   pStartArrowComboBox->addItem(ResourceCache::getIcon(":/Resources/icons/arrow-start-open.svg"), getArrowString(ArrowOpen));
@@ -676,9 +569,9 @@ QComboBox* StringHandler::getStartArrowComboBox()
   return pStartArrowComboBox;
 }
 
-QComboBox* StringHandler::getEndArrowComboBox()
+ComboBox* StringHandler::getEndArrowComboBox()
 {
-  QComboBox *pEndArrowComboBox = new QComboBox;
+  ComboBox *pEndArrowComboBox = new ComboBox;
   pEndArrowComboBox->setIconSize(QSize(58, 16));
   pEndArrowComboBox->addItem(ResourceCache::getIcon(":/Resources/icons/line-solid.svg"), getArrowString(ArrowNone));
   pEndArrowComboBox->addItem(ResourceCache::getIcon(":/Resources/icons/arrow-end-open.svg"), getArrowString(ArrowOpen));
@@ -1154,79 +1047,88 @@ QString StringHandler::escapeTextAnnotationString(QString value)
   return res;
 }
 
-#define CONSUME_CHAR(value,res,i) \
-  if (value.at(i) == '\\') { \
-  i++; \
-  switch (value[i].toAscii()) { \
-  case '\'': res.append('\''); break; \
-  case '"':  res.append('\"'); break; \
-  case '?':  res.append('\?'); break; \
-  case '\\': res.append('\\'); break; \
-  case 'a':  res.append('\a'); break; \
-  case 'b':  res.append('\b'); break; \
-  case 'f':  res.append('\f'); break; \
-  case 'n':  res.append('\n'); break; \
-  case 'r':  res.append('\r'); break; \
-  case 't':  res.append('\t'); break; \
-  case 'v':  res.append('\v'); break; \
-  } \
+#define CONSUME_CHAR(value, res, len, i) \
+  if (value[i] == '\\' && i + 1 < len) { \
+    i++; \
+    switch (value[i].toAscii()) { \
+      case '\'': res.append('\''); break; \
+      case '"':  res.append('\"'); break; \
+      case '?':  res.append('\?'); break; \
+      case '\\': res.append('\\'); break; \
+      case 'a':  res.append('\a'); break; \
+      case 'b':  res.append('\b'); break; \
+      case 'f':  res.append('\f'); break; \
+      case 'n':  res.append('\n'); break; \
+      case 'r':  res.append('\r'); break; \
+      case 't':  res.append('\t'); break; \
+      case 'v':  res.append('\v'); break; \
+      default:   res.append('\\') \
+                    .append(value[i]); \
+    } \
   } else { \
-  res.append(value[i]); \
+    res.append(value[i]); \
   }
 
 QString StringHandler::unparse(QString value)
 {
   QString res;
   value = value.trimmed();
-  if (value.length() > 1 && value.at(0) == '\"' && value.at(value.length() - 1) == '\"') {
-    value = value.mid(1, (value.length() - 2));
-    for (int i=0; i < value.length(); i++) {
-      CONSUME_CHAR(value,res,i);
+  int len = value.length();
+  if (len > 2 && value.at(0) == '\"' && value.at(len - 1) == '\"') {
+    len -= 2;
+    value = value.mid(1, len);
+    for (int i = 0; i < len; i++) {
+      CONSUME_CHAR(value, res, len, i);
     }
-    return res;
-  } else {
-    return "";
   }
+  return res;
 }
 
 QStringList StringHandler::unparseStrings(QString value)
 {
   QStringList lst;
-  value = value.trimmed();
-  if (value[0] != '{') return lst; // ERROR?
-  int i=1;
   QString res;
-  while (value[i] == '"') {
+  value = value.trimmed();
+  int len = value.length();
+  if (len < 2 || value[0] != '{') {
+    return lst; // ERROR?
+  }
+  if (value[1] == '}') {
+    return lst; // empty list
+  }
+  int i = 1;
+  while (i < len && value[i] == '"') {
     i++;
-    while (value.at(i) != '"') {
-      CONSUME_CHAR(value,res,i);
-      i++;
+    while ((i < len && value[i] != '"')
       /* if we have unexpected double quotes then, however omc should return \" */
-      /* remove this block once fixed in omc */
-      if (value[i] == '"' && value[i+1] != ',') {
-        if (value[i+1] != '}') {
-          CONSUME_CHAR(value,res,i);
-          i++;
-        }
-      }
-      /* remove this block once fixed in omc */
+      /* remove this condition once fixed in omc */
+      || (i + 1 < len && value[i + 1] != ',' && value[i + 1] != '}')
+      /* remove this condition once fixed in omc */
+    ) {
+      CONSUME_CHAR(value, res, len, i);
+      i++;
     }
-    i++;
-    if (value[i] == '}') {
+    if (i < len) {
       lst.append(res);
+      res = QString();
+      i++;
+    }
+    if (i == len) {
+      return lst; // ERROR?
+    }
+    if (value[i] == '}') {
       return lst;
     }
     if (value[i] == ',') {
-      lst.append(res);
       i++;
-      res = "";
-      while (value[i] == ' ')     // if we have space before next value e.g {"x", "y", "z"}
+      while (i < len && value[i] == ' ') { // if we have space before next value e.g {"x", "y", "z"}
         i++;
-      continue;
-    }
-    while (value[i] != '"' && !value[i].isNull()) {
-      i++;
-      fprintf(stderr, "error? malformed string-list. skipping: %c\n", value[i].toAscii());
+      }
+    } else {
+      while (i < len && value[i] != '"') {
+        fprintf(stderr, "error? malformed string-list. skipping: %c\n", value[i].toAscii());
+        i++;
+      }
     }
   }
   return lst; // ERROR?
@@ -1291,12 +1193,9 @@ QString StringHandler::getSaveFileName(QWidget* parent, const QString &caption, 
   QString dir_str;
   QString fileName;
 
-  if (dir)
-  {
+  if (dir) {
     dir_str = *dir;
-  }
-  else
-  {
+  } else {
     dir_str = StringHandler::getLastOpenDirectory();
   }
 
@@ -1576,10 +1475,14 @@ void StringHandler::fillEncodingComboBox(QComboBox *pEncodingComboBox)
 
 QStringList StringHandler::makeVariableParts(QString variable)
 {
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 14, 0))
-  return variable.split(QRegExp("\\.(?![^\\[\\]]*\\])"), Qt::SkipEmptyParts);
+  /* Do not split quoted variable.
+   * See https://github.com/OpenModelica/OpenModelica/issues/10599#issuecomment-2077331404
+   */
+  QRegularExpression re("\\.(?=(?:[^\']*\'[^\']*\')*[^\']*$)(?![^\\[\\]]*\\])");
+#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
+  return variable.split(re, Qt::SkipEmptyParts);
 #else // QT_VERSION_CHECK
-  return variable.split(QRegExp("\\.(?![^\\[\\]]*\\])"), QString::SkipEmptyParts);
+  return variable.split(re, QString::SkipEmptyParts);
 #endif // QT_VERSION_CHECK
 }
 
@@ -1591,18 +1494,17 @@ QStringList StringHandler::makeVariablePartsWithInd(QString variable)
   //if the last part is array with index, split it into the name and index parts:
 
   if (!varParts.isEmpty()) {
-	  QString* lastStr = &(varParts.last());
-	  int i = lastStr->lastIndexOf(QRegExp("\\[\\d+\\]"));
-	  if(i>=0){
-		  QString indexPart = *lastStr;
-		  indexPart.remove(0,i);
-		  lastStr->truncate(i);
-		  varParts.append(indexPart);
-	  }
+    QString* lastStr = &(varParts.last());
+    int i = lastStr->lastIndexOf(QRegularExpression(Helper::arrayIndexRegularExpression));
+    if(i>=0){
+      QString indexPart = *lastStr;
+      indexPart.remove(0,i);
+      lastStr->truncate(i);
+      varParts.append(indexPart);
+    }
   }
   return varParts;
 }
-
 
 bool StringHandler::naturalSort(const QString &s1, const QString &s2) {
   int i1 = 0; // index in string
@@ -1664,6 +1566,41 @@ QProcessEnvironment StringHandler::simulationProcessEnvironment()
   environment.insert("PATH", OMHOMEBin + ";" + environment.value("PATH"));
   return environment;
 }
+
+/*!
+ * \brief StringHandler::modelicaSimulationProcessEnvironment
+ * Returns the environment for simulation process.
+ * \param pathsFileName
+ * \param errorMsg
+ * \return
+ */
+QProcessEnvironment StringHandler::modelicaSimulationProcessEnvironment(const QString pathsFileName, QString *errorMsg)
+{
+  QProcessEnvironment environment = StringHandler::simulationProcessEnvironment();
+
+  // Parse the fileName.bat file to get the necessary paths.
+  // Return errorMsg if fails to parse the file as expected.
+  QFile batFile(pathsFileName);
+  batFile.open(QIODevice::ReadOnly | QIODevice::Text);
+
+  QString line;
+  // first line is supposed to be '@echo off'
+  line = batFile.readLine();
+  // Second line is where the PATH is set. We want that.
+  line = batFile.readLine();
+
+  if (!line.toLower().startsWith("set path=")) {
+    *errorMsg = "Failed to read the neccesary PATH values from '" + pathsFileName + "'\n"
+                + "If simulation fails please check that you have the bat file and it is formatted correctly\n";
+  } else {
+    // Strip the 'set PATH='
+    line.remove(0, 9);
+    environment.insert("PATH", line + ";" + environment.value("PATH"));
+  }
+  batFile.close();
+
+  return environment;
+}
 #endif
 
 StringHandler::SimulationMessageType StringHandler::getSimulationMessageType(QString type)
@@ -1706,6 +1643,22 @@ QString StringHandler::getSimulationMessageTypeString(StringHandler::SimulationM
 }
 
 /*!
+ * \brief makeClassNameRelativeHelper
+ * Helper function for StringHandler::makeClassNameRelative
+ * \param draggedClassName
+ * \param droppedClassName
+ * \return
+ */
+QString makeClassNameRelativeHelper(QString draggedClassName, QString droppedClassName)
+{
+  if (StringHandler::getFirstWordBeforeDot(draggedClassName).compare(StringHandler::getFirstWordBeforeDot(droppedClassName)) == 0) {
+    return makeClassNameRelativeHelper(StringHandler::removeFirstWordAfterDot(draggedClassName), StringHandler::removeFirstWordAfterDot(droppedClassName));
+  } else {
+    return draggedClassName;
+  }
+}
+
+/*!
  * \brief StringHandler::makeClassNameRelative
  * Removes the first characters matching with droppedClassName from draggedClassName.
  * \param draggedClassName
@@ -1716,10 +1669,18 @@ QString StringHandler::makeClassNameRelative(QString draggedClassName, QString d
 {
   if (draggedClassName.compare(droppedClassName) == 0) {
     return getLastWordAfterDot(draggedClassName);
-  } else if (getFirstWordBeforeDot(draggedClassName).compare(getFirstWordBeforeDot(droppedClassName)) == 0) {
-    return makeClassNameRelative(removeFirstWordAfterDot(draggedClassName), removeFirstWordAfterDot(droppedClassName));
   } else {
-    return draggedClassName;
+    /* issue #13153. If the droppedClassName path size is greater than draggedClassName then it is not possible to get relative name so use the fully qualified path
+     * e.g., (P.M.A, P.M.B.D) => P.M.A
+     * otherwise make relative path e.g.,
+     * (P.M.A, P.M.B) => A
+     * (P.M.A.C, P.M.B) => A.C
+     */
+    if (makeVariableParts(draggedClassName).size() < makeVariableParts(droppedClassName).size()) {
+      return draggedClassName;
+    } else {
+    return makeClassNameRelativeHelper(draggedClassName, droppedClassName);
+    }
   }
 }
 
@@ -1791,6 +1752,8 @@ int StringHandler::getLeadingSpacesSize(QString str)
  */
 bool StringHandler::isFileWritAble(QString filePath)
 {
+  if (filePath.isEmpty())
+    return true;
   QFile file(filePath);
   if (file.exists()) {
     return file.permissions().testFlag(QFile::WriteUser);
@@ -1800,19 +1763,20 @@ bool StringHandler::isFileWritAble(QString filePath)
 }
 
 /*!
- * \brief StringHandler::containsSpace
- * Returns true if string contains a space.
- * \param str
+ * \brief StringHandler::nameContainsComma
+ * Checks if the name contains the comma.
+ * Quoted identifiers are allowed to have comma in them.
+ * \param name
  * \return
  */
-bool StringHandler::containsSpace(QString str)
+bool StringHandler::nameContainsComma(const QString &name)
 {
-  for (int i = 0 ; i < str.size() ; i++) {
-    if (str.at(i).isSpace()) {
-      return true;
-    }
+  QString str = name.trimmed();
+  if (str.contains(',') && !(str.startsWith('\'') && str.endsWith('\''))) {
+    return true;
+  } else {
+    return false;
   }
-  return false;
 }
 
 /*!
@@ -1842,8 +1806,8 @@ QString StringHandler::trimmedEnd(const QString &str)
  */
 QString StringHandler::joinDerivativeAndPreviousVariable(QString fullVariableName, QString variableName, QString derivativeOrPrevious)
 {
-  int times = (fullVariableName.lastIndexOf(derivativeOrPrevious) / derivativeOrPrevious.size()) + 1;
-  return QString("%1%2%3").arg(QString(derivativeOrPrevious).repeated(times), variableName, QString(")").repeated(times));
+  const int times = fullVariableName.count(derivativeOrPrevious);
+  return derivativeOrPrevious.repeated(times) % variableName % QString(")").repeated(times);
 }
 
 /*!

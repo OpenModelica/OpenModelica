@@ -1,7 +1,6 @@
 // name: PrintRecordTypes1
 // keywords:
 // status: correct
-// cflags: -d=newInst,-nfScalarize,printRecordTypes
 //
 
 record R1
@@ -25,6 +24,7 @@ equation
     b[i].c[10] = R2(R1(1, 0), R1(i,1));
     b[i].c[1].rb = R1(i,0);
   end for;
+  annotation(__OpenModelica_commandLineOptions="-d=-nfScalarize,printRecordTypes");
 end PrintRecordTypes1;
 
 // Result:

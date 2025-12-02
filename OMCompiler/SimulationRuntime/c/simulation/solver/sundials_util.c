@@ -66,7 +66,7 @@ void setJacElementSundialsSparse(int row, int column, int nth, double value, voi
   SUNMatrix A = (SUNMatrix) Jac;
   /* TODO: Remove this check for performance reasons? */
   if (SM_SPARSETYPE_S(A) != CSC_MAT) {
-    errorStreamPrint(LOG_STDOUT, 0,
+    errorStreamPrint(OMC_LOG_STDOUT, 0,
                      "In function setJacElementSundialsSparse: Wrong sparse format "
                      "of SUNMatrix A.");
   }
@@ -76,6 +76,28 @@ void setJacElementSundialsSparse(int row, int column, int nth, double value, voi
   }
   SM_INDEXVALS_S(A)[nth] = row;
   SM_DATA_S(A)[nth] = value;
+}
+
+/**
+ * @brief Set Sundials sparse pattern from SimRuntime SPARSE_PATTERN
+ *
+ * @param jacobian  Jacobian
+ * @param Jac       Sundials Matrix
+ */
+void setSundialsSparsePattern(JACOBIAN* jacobian, SUNMatrix Jac) {
+  const SPARSE_PATTERN* sp = jacobian->sparsePattern;
+  long int column, row, nz;
+
+  for (column = 0; column < jacobian->sizeCols; column++) {
+    for (nz = sp->leadindex[column]; nz < sp->leadindex[column + 1]; nz++) {
+      /* set row, col */
+      row = sp->index[nz];
+      if (column > 0 && SM_INDEXPTRS_S(Jac)[column] == 0) {
+        SM_INDEXPTRS_S(Jac)[column] = nz;
+      }
+      SM_INDEXVALS_S(Jac)[nz] = row;
+    }
+  }
 }
 
 /**
@@ -339,4 +361,3 @@ int _omc_SUNMatScaleIAdd_Sparse(realtype c, SUNMatrix A)
 }
 
 #endif /* WITH_SUNDIALS */
-

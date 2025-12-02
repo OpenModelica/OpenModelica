@@ -445,7 +445,7 @@ case SIMCODE(modelInfo=MODELINFO(vars = vars as SIMVARS(__))) then
 
     virtual string getModelName();
     virtual bool isJacobianSparse();//true if getSparseJacobian is implemented and getJacobian is not, false if getJacobian is implemented and getSparseJacobian is not.
-    virtual bool isAnalyticJacobianGenerated();//true if the flag --generateSymbolicJacobian is true, false if not.
+    virtual bool isAnalyticJacobianGenerated();//true if the flag --generateDynamicJacobian=symbolic, false if not.
     virtual  shared_ptr<ISimObjects> getSimObjects();
    private:
     //update residual methods
@@ -1031,7 +1031,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
       else "A matrix type is not supported"
           end match
 
-      let isAnalyticJacobianGenerated = if getConfigBool(GENERATE_SYMBOLIC_JACOBIAN) then 'return true;' else 'return false;'
+      let isAnalyticJacobianGenerated = if stringEq(getConfigString(GENERATE_DYNAMIC_JACOBIAN), "symbolic") then 'return true;' else 'return false;'
 
      let statesetjacobian =
      (stateSets |> set hasindex i1 fromindex 0 => (match set
@@ -12118,9 +12118,13 @@ template giveZeroFunc3(Integer index1, Exp relation, Text &varDecls /*BUFP*/,Tex
         else
             f[<%index1%>] = (<%e1%> - 1e-6 - <%e2%>);
         >>
+      case EQUAL(ty = T_INTEGER(__)) then
+        <<
+        f[<%index1%>] = std::abs(<%e2%> - <%e1%>);
+        >>
       else
         <<
-        error(sourceInfo(), 'Unknown relation: <%ExpressionDumpTpl.dumpExp(rel,"\"")%> for <%index1%>')
+        error(sourceInfo(), 'Unsupported relation: <%ExpressionDumpTpl.dumpExp(rel,"\"")%> for <%index1%>')
         >>
       end match
   case CALL(path=IDENT(name="sample"), expLst={_, start, interval}) then
@@ -13032,14 +13036,14 @@ template modelicaLine(builtin.SourceInfo info)
   match info
   case SOURCEINFO(columnNumberStart=0) then "/* Dummy Line */"
   else <<
-  <% if boolOr(acceptMetaModelicaGrammar(), Flags.isSet(Flags.GEN_DEBUG_SYMBOLS)) then '/*#modelicaLine <%infoStr(info)%>*/'%>
+  <% if Flags.isSet(Flags.GEN_DEBUG_SYMBOLS) then '/*#modelicaLine <%infoStr(info)%>*/'%>
   >>
 end modelicaLine;
 
 template endModelicaLine()
 ::=
   <<
-  <% if boolOr(acceptMetaModelicaGrammar(), Flags.isSet(Flags.GEN_DEBUG_SYMBOLS)) then "/*#endModelicaLine*/"%>
+  <% if Flags.isSet(Flags.GEN_DEBUG_SYMBOLS) then "/*#endModelicaLine*/"%>
   >>
 end endModelicaLine;
 
@@ -13808,7 +13812,7 @@ template algebraicDAEVar(list<SimVar> algVars, String className)
     case SIMVAR(__) then
       <<
       algebraicNominal[<%i%>] = <%crefAttributes(name)%>.nominal * data->simulationInfo->tolerance;
-      infoStreamPrint(LOG_SOLVER, 0, "%s -> %g", <%crefVarInfo(name)%>.name, algebraicNominal[<%i%>]);
+      infoStreamPrint(OMC_LOG_SOLVER, 0, "%s -> %g", <%crefVarInfo(name)%>.name, algebraicNominal[<%i%>]);
       >>
     end match)
 

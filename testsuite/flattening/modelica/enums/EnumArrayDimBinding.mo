@@ -1,7 +1,6 @@
 // name:     Enumeration1
 // keywords: enumeration enum array
 // status:   correct
-// cflags: -d=-newInst
 //
 // Checks that the enumeration dimension of the component is preserved, and not
 // replaced with the dimension of the binding.
@@ -11,6 +10,7 @@ type E = enumeration(A, B, C);
 
 model EnumerationArrayDimBinding
   Real x[E] = {1, 2, 3};
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end EnumerationArrayDimBinding;
 
 // Result:

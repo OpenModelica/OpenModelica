@@ -49,6 +49,9 @@ public:
   bool isFinal() const {return mpFinalAction->isChecked();}
   void setEach(bool each);
   bool isEach() const {return mpEachAction->isChecked();}
+  bool hasEach() const {return mHasEach;}
+  void setBreak(bool break_);
+  bool isBreak() const {return mpBreakAction->isChecked();}
   bool isModified() const;
 private:
   QMenu *mpFinalEachMenu;
@@ -56,11 +59,15 @@ private:
   bool mFinalDefault = false;
   QAction *mpEachAction;
   bool mEachDefault = false;
+  bool mHasEach = false;
+  QAction *mpBreakAction;
+  bool mBreakDefault = false;
+signals:
+  void breakToggled(bool breakValue);
 public slots:
   void showParameterMenu();
 };
 
-class ElementParametersOld;
 class ElementParameters;
 class Parameter : public QObject
 {
@@ -73,15 +80,12 @@ public:
     Enumeration,
     ReplaceableComponent,
     ReplaceableClass,
+    Record,
     Choices,
     ChoicesAllMatching
   };
-  Parameter(Element *pElement, bool showStartAttribute, QString tab, QString groupBox, ElementParametersOld *pElementParametersOld);
-  Parameter(ModelInstance::Element *pElement, ElementParameters *pElementParameters);
-  Element* getElement() {return mpElement;}
+  Parameter(ModelInstance::Element *pElement, bool defaultValue, ElementParameters *pElementParameters);
   ModelInstance::Element* getModelInstanceElement() {return mpModelInstanceElement;}
-  bool isParameter() const;
-  bool isInput() const;
   void setTab(QString tab) {mTab = tab;}
   const StringAnnotation &getTab() {return mTab;}
   void setGroup(QString group) {mGroup = group;}
@@ -95,17 +99,24 @@ public:
   const StringAnnotation &getGroupImage() const {return mGroupImage;}
   void updateNameLabel();
   QString getName() const {return mName;}
+  QString getExtendName() const {return mExtendName;}
+  bool isInherited() const {return mInherited;}
   Label* getNameLabel() {return mpNameLabel;}
   FixedCheckBox* getFixedCheckBox() {return mpFixedCheckBox;}
   QString getOriginalFixedValue() const {return mOriginalFixedValue;}
   FinalEachToolButton *getFixedFinalEachMenu() const {return mpFixedFinalEachMenuButton;}
   void setValueType(ValueType valueType) {mValueType = valueType;}
-  void setValueWidget(QString value, bool defaultValue, QString fromUnit, bool valueModified = false, bool adjustSize = true, bool unitComboBoxChanged = false);
-  ValueType getValueType() {return mValueType;}
+  void setValueWidget(QString value, bool defaultValue, QString fromUnit, bool valueModified = false, bool unitComboBoxChanged = false);
+  bool isEnumeration() const {return mValueType == Enumeration;}
+  bool isReplaceableComponent() const {return mValueType == ReplaceableComponent;}
+  bool isReplaceableClass() const {return mValueType == ReplaceableClass;}
+  bool isRecord() const {return mValueType == Record;}
+  bool isChoices() const {return mValueType == Choices;}
   QWidget* getValueWidget();
   bool isValueModified();
   QString getValue();
-  QToolButton *getEditRedeclareClassButton() const {return mpEditRedeclareClassButton;}
+  void hideValueWidget();
+  QToolButton *getEditClassButton() const {return mpEditClassButton;}
   FinalEachToolButton *getFinalEachMenu() const {return mpFinalEachMenuButton;}
   QToolButton* getFileSelectorButton() {return mpFileSelectorButton;}
   void setLoadSelectorFilter(QString loadSelectorFilter) {mLoadSelectorFilter = loadSelectorFilter;}
@@ -124,15 +135,17 @@ public:
   QComboBox* getUnitComboBox() {return mpUnitComboBox;}
   FinalEachToolButton *getDisplayUnitFinalEachMenu() const {return mpDisplayUnitFinalEachMenuButton;}
   Label* getCommentLabel() {return mpCommentLabel;}
+  bool isStartFinalInHierarchy() const {return mStartFinalInHierarchy;}
+  void setStartFinalInHierarchy(bool startFinalInHierarchy) {mStartFinalInHierarchy = startFinalInHierarchy;}
+  bool isFixedFinalInHierarchy() const {return mFixedFinalInHierarchy;}
+  void setFixedFinalInHierarchy(bool fixedFinalInHierarchy) {mFixedFinalInHierarchy = fixedFinalInHierarchy;}
   void setFixedState(QString fixed, bool defaultValue);
   QString getFixedState() const;
   void setEnabled(bool enable);
   void update();
 private:
-  Element *mpElement;
   ModelInstance::Element *mpModelInstanceElement;
   ElementParameters *mpElementParameters = 0;
-  ElementParametersOld *mpElementParametersOld = 0;
   StringAnnotation mTab;
   StringAnnotation mGroup;
   bool mGroupDefined;
@@ -148,6 +161,8 @@ private:
   BooleanAnnotation mConnectorSizing;
 
   QString mName;
+  QString mExtendName;
+  bool mInherited;
   Label *mpNameLabel;
   FixedCheckBox *mpFixedCheckBox;
   QString mOriginalFixedValue;
@@ -155,26 +170,32 @@ private:
   ValueType mValueType;
   bool mValueCheckBoxModified;
   QString mDefaultValue;
-  QComboBox *mpValueComboBox;
+  ComboBox *mpValueComboBox;
   QLineEdit *mpValueTextBox;
   QCheckBox *mpValueCheckBox;
-  QToolButton *mpEditRedeclareClassButton = 0;
+  QToolButton *mpEditClassButton = 0;
   FinalEachToolButton *mpFinalEachMenuButton = 0;
   QToolButton *mpFileSelectorButton;
   bool mHasDisplayUnit = false;
   QString mUnit;
   QString mDisplayUnit;
   QString mPreviousUnit;
-  QComboBox *mpUnitComboBox;
+  ComboBox *mpUnitComboBox;
   FinalEachToolButton *mpDisplayUnitFinalEachMenuButton = 0;
   Label *mpCommentLabel;
+  bool mStartFinalInHierarchy = false;
+  bool mFixedFinalInHierarchy = false;
 
+  void createEditClassButton();
   void createValueWidget();
   void enableDisableUnitComboBox(const QString &value);
   void updateValueBinding(const FlatModelica::Expression expression);
   bool isValueModifiedHelper() const;
+  void resetUnitCombobox();
+private slots:
+  void setBreakValue(bool breakValue);
 public slots:
-  void editRedeclareClassButtonClicked();
+  void editClassButtonClicked();
   void fileSelectorButtonClicked();
   void unitComboBoxChanged(int index);
   void valueComboBoxChanged(int index);
@@ -225,11 +246,19 @@ public:
   ElementParameters(ModelInstance::Element *pElement, GraphicsView *pGraphicsView, bool inherited, bool nested, ModelInstance::Modifier *pDefaultElementModifier,
                     ModelInstance::Modifier *pReplaceableConstrainedByModifier, ModelInstance::Modifier *pElementModifier, QWidget *pParent = 0);
   ~ElementParameters();
+  QString getElementQualifiedName() const;
   QString getElementParentClassName() const;
+  QString getComponentClassName() const;
+  QString getComponentClassComment() const;
+  ModelInstance::Model *getModel() const;
   GraphicsView *getGraphicsView() const {return mpGraphicsView;}
+  bool hasElement() const {return mpElement ? true : false;}
+  bool isElementArray() const {return mpElement->getDimensions().isArray();}
+  QString getElementDimensions() const {return mpElement->getDimensions().getTypedDimensionsString();}
   bool isInherited() const {return mInherited;}
+  bool isNested() const {return mNested;}
   QString getModification() const {return mModification;}
-  void applyFinalStartFixedAndDisplayUnitModifiers(Parameter *pParameter, ModelInstance::Modifier *pModifier, bool defaultValue, bool isElementModification, bool checkFinal);
+  void applyFinalStartFixedAndDisplayUnitModifiers(Parameter *pParameter, ModelInstance::Modifier *pModifier, bool defaultValue, bool isElementModification);
   void updateParameters();
 private:
   ModelInstance::Element *mpElement;
@@ -262,59 +291,18 @@ private:
   QDialogButtonBox *mpButtonBox;
 
   void setUpDialog();
-  void createTabsGroupBoxesAndParameters(ModelInstance::Model *pModelInstance);
-  void fetchElementExtendsModifiers(ModelInstance::Model *pModelInstance);
-  void fetchElementModifiers();
+  void createTabsGroupBoxesAndParameters(ModelInstance::Model *pModelInstance, bool defaultValue);
+  void fetchElementExtendsModifiers(ModelInstance::Model *pModelInstance, bool defaultValue);
+  void fetchModifiers(ModelInstance::Modifier *pModifier);
+  void fetchRootElementModifiers(ModelInstance::Element *pModelElement);
   void fetchClassExtendsModifiers(ModelInstance::Element *pModelElement);
+  void fetchRootClassExtendsModifiers(ModelInstance::Element *pModelElement);
   void applyModifier(ModelInstance::Modifier *pModifier, bool defaultValue);
-  Parameter* findParameter(LibraryTreeItem *pLibraryTreeItem, const QString &parameter, Qt::CaseSensitivity caseSensitivity = Qt::CaseSensitive) const;
   Parameter* findParameter(const QString &parameter, Qt::CaseSensitivity caseSensitivity = Qt::CaseSensitive) const;
 public slots:
   void commentLinkClicked(QString link);
   void updateElementParameters();
   virtual void reject() override;
-};
-
-class ElementParametersOld : public QDialog
-{
-  Q_OBJECT
-public:
-  ElementParametersOld(Element *pComponent, QWidget *pParent = 0);
-  ~ElementParametersOld();
-  QString getElementParentClassName() const;
-private:
-  Element *mpElement;
-  Label *mpParametersHeading;
-  QFrame *mHorizontalLine;
-  QTabWidget *mpParametersTabWidget;
-  QGroupBox *mpComponentGroupBox;
-  Label *mpComponentNameLabel;
-  Label *mpComponentNameTextBox;
-  Label *mpComponentCommentLabel;
-  Label *mpComponentCommentTextBox;
-  QGroupBox *mpComponentClassGroupBox;
-  Label *mpComponentClassNameLabel;
-  Label *mpComponentClassNameTextBox;
-  Label *mpComponentClassCommentLabel;
-  Label *mpComponentClassCommentTextBox;
-  Label *mpModifiersLabel;
-  QLineEdit *mpModifiersTextBox;
-  QMap<QString, int> mTabsMap;
-  QList<Parameter*> mParametersList;
-  QPushButton *mpOkButton;
-  QPushButton *mpCancelButton;
-  QDialogButtonBox *mpButtonBox;
-
-  void setUpDialog();
-  void createTabsGroupBoxesAndParameters(LibraryTreeItem *pLibraryTreeItem);
-  void createTabsGroupBoxesAndParametersHelper(LibraryTreeItem *pLibraryTreeItem, bool useInsert = false);
-  void fetchElementExtendsModifiers();
-  void fetchElementModifiers();
-  Parameter* findParameter(LibraryTreeItem *pLibraryTreeItem, const QString &parameter, Qt::CaseSensitivity caseSensitivity = Qt::CaseSensitive) const;
-  Parameter* findParameter(const QString &parameter, Qt::CaseSensitivity caseSensitivity = Qt::CaseSensitive) const;
-public slots:
-  void commentLinkClicked(QString link);
-  void updateElementParameters();
 };
 
 class ElementAttributes : public QDialog
@@ -361,75 +349,6 @@ private:
   QDialogButtonBox *mpButtonBox;
 public slots:
   void updateElementAttributes();
-};
-
-class CompositeModelSubModelAttributes : public QDialog
-{
-  Q_OBJECT
-public:
-  CompositeModelSubModelAttributes(Element *pElement, QWidget *pParent = 0);
-  void setUpDialog();
-  void initializeDialog();
-private:
-  Element *mpElement;
-  Label *mpNameLabel;
-  QLineEdit *mpNameTextBox;
-  Label *mpSimulationToolLabel;
-  QComboBox *mpSimulationToolComboBox;
-  Label *mpStartCommandLabel;
-  QLineEdit *mpStartCommandTextBox;
-  Label *mpModelFileLabel;
-  QLineEdit *mpModelFileTextBox;
-  Label *mpExactStepFlagLabel;
-  QCheckBox *mpExactStepCheckBox;
-  Label *mpGeometryFileLabel;
-  QLineEdit *mpGeometryFileTextBox;
-  QPushButton *mpGeometryFileBrowseButton;
-  QScrollArea *mpParametersScrollArea;
-  QWidget *mpParametersScrollWidget;
-  QGridLayout *mpParametersLayout;
-  QLabel *mpParametersLabel;
-  QList<QLabel*> mParameterLabels;
-  QList<QLineEdit*> mParameterLineEdits;
-  QPushButton *mpOkButton;
-  QPushButton *mpCancelButton;
-  QDialogButtonBox *mpButtonBox;
-private slots:
-  void changeSimulationToolStartCommand(QString tool);
-  void changeSimulationTool(QString simulationToolStartCommand);
-  void browseGeometryFile();
-  void updateSubModelParameters();
-};
-
-class LineAnnotation;
-class CompositeModelConnectionAttributes : public QDialog
-{
-  Q_OBJECT
-public:
-  CompositeModelConnectionAttributes(GraphicsView *pGraphicsView, LineAnnotation *pConnectionLineAnnotation, bool edit, QWidget *pParent = 0);
-private:
-  GraphicsView *mpGraphicsView;
-  LineAnnotation *mpConnectionLineAnnotation;
-  bool mEdit;
-  Label *mpHeading;
-  QFrame *mpHorizontalLine;
-  Label *mpFromLabel;
-  Label *mpConnectionStartLabel;
-  Label *mpToLabel;
-  Label *mpConnectionEndLabel;
-  Label *mpDelayLabel;
-  QLineEdit *mpDelayTextBox;
-  Label *mpZfLabel;
-  QLineEdit *mpZfTextBox;
-  Label *mpZfrLabel;
-  QLineEdit *mpZfrTextBox;
-  Label *mpAlphapLabel;
-  QLineEdit *mpAlphaTextBox;
-  QPushButton *mpOkButton;
-  QPushButton *mpCancelButton;
-  QDialogButtonBox *mpButtonBox;
-public slots:
-  void createCompositeModelConnection();
 };
 
 #endif // COMPONENTPROPERTIES_H

@@ -40,7 +40,7 @@ void ModelicaMessage(const char* string) {
 }
 
 extern void ModelicaVFormatMessage(const char*string, va_list args) {
-  va_infoStreamPrint(LOG_STDOUT, 0, string, args);
+  va_infoStreamPrint(OMC_LOG_STDOUT, 0, string, args);
 }
 
 void ModelicaFormatMessage(const char* string,...) {
@@ -55,7 +55,7 @@ void ModelicaWarning(const char* string) {
 }
 
 extern void ModelicaVFormatWarning(const char*string, va_list args) {
-  va_warningStreamPrint(LOG_STDOUT, 0, string, args);
+  va_warningStreamPrint(OMC_LOG_STDOUT, 0, string, args);
 }
 
 void ModelicaFormatWarning(const char* string,...) {

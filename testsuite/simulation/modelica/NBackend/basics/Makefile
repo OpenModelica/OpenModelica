@@ -3,25 +3,22 @@ TEST = ../../../../rtest -v
 TESTFILES = \
 emptyModel.mos \
 helloWorld.mos \
-multary_simplification.mos \
+evaluateFalse.mos \
 parameterSystem.mos \
-Alias.mos \
-Alias2.mos \
 simpleNonlinearLoop.mos \
 implicitEquation.mos \
 underdetermined_init.mos \
 partitioning.mos \
 variability.mos \
+enumeration.mos \
+simpleForLoop.mos \
+solveSingleEquation.mos \
+detectStates.mos \
+for_if_if.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make failingtest
 FAILINGTESTFILES = \
-Alias3.mos \
-simpleForLoop.mos \
-minimalTearing.mos \
-solveSingleEquation.mos \
-StaticIR.mos \
-detectStates.mos \
 
 # Dependency files that are not .mo .mos or Makefile
 # Add them here or they will be cleaned.

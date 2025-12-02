@@ -3,7 +3,6 @@
 // status:   correct
 //
 // Drmodelica: 9.2 External Functions (p. 311)
-// cflags: -d=-newInst
 //
 
 
@@ -29,6 +28,7 @@ model LeastSquares
 
 equation
   x = ls(in1, in2);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end LeastSquares;
 
 // Result:

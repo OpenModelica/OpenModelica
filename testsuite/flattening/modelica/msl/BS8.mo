@@ -1,7 +1,6 @@
 // name:     BS8 - SawTooth component
 // keywords: SawTooth
 // status:   correct
-// cflags: -d=-newInst
 //
 // Testing instantiation of the SawTooth component.
 //
@@ -1179,6 +1178,7 @@ model BS8
 
 equation
   connect(sawTooth1.outPort,der1.inPort) annotation(Line(visible=true,points={{-22.91,13.49},{-8.01,12.57}}));
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end BS8;
 // class BS8
 // parameter Integer sawTooth1.nout(min = 1) = 1 "Number of outputs";
@@ -1246,6 +1246,6 @@ end BS8;
 //   assert(sawTooth1.outPort.n == der1.inPort.n, "automatically generated from connect");
 //   der1.inPort.signal[1] = sawTooth1.outPort.signal[1];
 // end BS8;
-// [flattening/modelica/msl/BS8.mo:686:45-686:73:writable] Warning: Non-array modification '1e-60' for array component, possibly due to missing 'each'.
+// [flattening/modelica/msl/BS8.mo:685:45-685:73:writable] Warning: Non-array modification '1e-60' for array component, possibly due to missing 'each'.
 //
 // endResult

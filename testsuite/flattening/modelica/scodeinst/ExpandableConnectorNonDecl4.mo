@@ -1,7 +1,6 @@
 // name: ExpandableConnectorNonDecl4
 // keywords: expandable connector
 // status: incorrect
-// cflags: -d=newInst
 //
 //
 
@@ -18,7 +17,7 @@ end ExpandableConnectorNonDecl4;
 
 // Result:
 // Error processing file: ExpandableConnectorNonDecl4.mo
-// [flattening/modelica/scodeinst/ExpandableConnectorNonDecl4.mo:16:3-16:21:writable] Error: Variable EC.ri not found in scope ExpandableConnectorNonDecl4.
+// [flattening/modelica/scodeinst/ExpandableConnectorNonDecl4.mo:15:3-15:21:writable] Error: Variable EC.ri not found in scope ExpandableConnectorNonDecl4.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

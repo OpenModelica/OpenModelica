@@ -16,7 +16,7 @@ readFile("BB.BouncingBall.xml"); getErrorString();
 // true
 // ""
 // "class BB.BouncingBall
-//   parameter Real e(start = 0.9);
+//   parameter Real e(start = 0.9) = 0.9;
 //   Real b1.y(start = 5.0);
 //   Real b1.vy(start = 0.0);
 //   Real b1.ay;
@@ -31,11 +31,10 @@ readFile("BB.BouncingBall.xml"); getErrorString();
 //   end when;
 // end BB.BouncingBall;
 // "
-// "[openmodelica/xml/BB.mo:13:5-13:34:writable] Warning: Parameter e has no binding, and is fixed during initialization (fixed=true), using available start value (start=0.9) as default value.
+// "[openmodelica/xml/BB.mo:13:5-13:34:writable] Warning: Parameter e has no value, and is fixed during initialization (fixed=true), using available start value (start=0.9) as default value.
 // "
-// (true,"BB.BouncingBall.xml")
-// "[openmodelica/xml/BB.mo:13:5-13:34:writable] Warning: Parameter e has no binding, and is fixed during initialization (fixed=true), using available start value (start=0.9) as default value.
-// "
+// (true, "BB.BouncingBall.xml")
+// ""
 // "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
 // <dae xmlns:p1=\"http://www.w3.org/1998/Math/MathML\"
 //                                                 xmlns:xlink=\"http://www.w3.org/1999/xlink\"
@@ -44,12 +43,12 @@ readFile("BB.BouncingBall.xml"); getErrorString();
 // <variables dimension=\"6\">
 // <orderedVariables dimension=\"4\">
 // <variablesList>
-// <variable id=\"1\" name=\"bounce_time\" variability=\"discrete\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"NonConnector\" stream=\"NonStreamConnector\">
+// <variable id=\"1\" name=\"b1.y\" variability=\"continuousState\" direction=\"none\" type=\"Real\" differentiatedIndex=\"1\" derivativeName=\"b1.vy\" fixed=\"false\" flow=\"NonConnector\" stream=\"NonStreamConnector\">
 // <attributesValues>
-// <initialValue string=\"0.0\">
+// <initialValue string=\"5.0\">
 // <MathML>
 // <math xmlns=\"http://www.w3.org/1998/Math/MathML\">
-// <cn type=\"real\">0.0
+// <cn type=\"real\">5.0
 // </cn>
 // </math>
 // </MathML>
@@ -58,6 +57,9 @@ readFile("BB.BouncingBall.xml"); getErrorString();
 // </variable>
 // <variable id=\"2\" name=\"b1.vy\" variability=\"continuousState\" direction=\"none\" type=\"Real\" differentiatedIndex=\"1\" fixed=\"false\" flow=\"NonConnector\" stream=\"NonStreamConnector\">
 // <attributesValues>
+// <stateSelect>
+// Always
+// </stateSelect>
 // <initialValue string=\"0.0\">
 // <MathML>
 // <math xmlns=\"http://www.w3.org/1998/Math/MathML\">
@@ -68,12 +70,12 @@ readFile("BB.BouncingBall.xml"); getErrorString();
 // </initialValue>
 // </attributesValues>
 // </variable>
-// <variable id=\"3\" name=\"b1.y\" variability=\"continuousState\" direction=\"none\" type=\"Real\" differentiatedIndex=\"1\" derivativeName=\"b1.vy\" fixed=\"false\" flow=\"NonConnector\" stream=\"NonStreamConnector\">
+// <variable id=\"3\" name=\"bounce_time\" variability=\"discrete\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"NonConnector\" stream=\"NonStreamConnector\">
 // <attributesValues>
-// <initialValue string=\"5.0\">
+// <initialValue string=\"0.0\">
 // <MathML>
 // <math xmlns=\"http://www.w3.org/1998/Math/MathML\">
-// <cn type=\"real\">5.0
+// <cn type=\"real\">0.0
 // </cn>
 // </math>
 // </MathML>
@@ -108,6 +110,14 @@ readFile("BB.BouncingBall.xml"); getErrorString();
 // </bindExpression>
 // </variable>
 // <variable id=\"2\" name=\"e\" variability=\"parameter\" direction=\"none\" type=\"Real\" fixed=\"true\" flow=\"NonConnector\" stream=\"NonStreamConnector\">
+// <bindExpression string=\"0.9\">
+// <MathML>
+// <math xmlns=\"http://www.w3.org/1998/Math/MathML\">
+// <cn type=\"real\">0.9
+// </cn>
+// </math>
+// </MathML>
+// </bindExpression>
 // <attributesValues>
 // <initialValue string=\"0.9\">
 // <MathML>

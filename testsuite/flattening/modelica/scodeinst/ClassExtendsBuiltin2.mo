@@ -1,7 +1,6 @@
 // name: ClassExtendsBuiltin2
 // keywords:
 // status: incorrect
-// cflags: -d=newInst
 //
 
 model A
@@ -20,7 +19,7 @@ end ClassExtendsBuiltin2;
 
 // Result:
 // Error processing file: ClassExtendsBuiltin2.mo
-// [flattening/modelica/scodeinst/ClassExtendsBuiltin2.mo:14:13-16:13:writable] Error: A class extending from builtin type MyReal may not have other elements.
+// [flattening/modelica/scodeinst/ClassExtendsBuiltin2.mo:13:13-15:13:writable] Error: A class extending from builtin type MyReal may not have other elements.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

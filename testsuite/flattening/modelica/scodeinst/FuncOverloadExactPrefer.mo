@@ -1,7 +1,6 @@
 // name: FuncOverloadExactPrefer
 // keywords: overload, cast
 // status: correct
-// cflags: -d=newInst
 //
 // Tests proper selection of exact matches over converted matches.
 // Compare with FuncOverloadAmbiguousDefault

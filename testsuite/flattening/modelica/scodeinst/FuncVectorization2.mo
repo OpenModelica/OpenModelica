@@ -1,7 +1,6 @@
 // name: FuncVectorization2
 // keywords: vectorization function
 // status: correct
-// cflags: -d=newInst
 //
 // Checks mixed vectorization where some arguments are vectorized over some
 // dimensions while others are applied as is.
@@ -66,6 +65,6 @@ end FuncVectorization2;
 //   Integer g[2,2];
 //   Integer g[2,3];
 // equation
-//   g = array(array(FuncVectorization2.F(b[$i1,$i2], 1) for $i2 in 1:3) for $i1 in 1:2);
+//   g = array(array(FuncVectorization2.F(b[$i0,$i1], 1) for $i1 in 1:3) for $i0 in 1:2);
 // end FuncVectorization2;
 // endResult

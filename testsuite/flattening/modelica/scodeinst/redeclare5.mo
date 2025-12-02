@@ -1,7 +1,6 @@
 // name: redeclare5.mo
 // keywords:
 // status: correct
-// cflags:   -d=newInst
 //
 
 

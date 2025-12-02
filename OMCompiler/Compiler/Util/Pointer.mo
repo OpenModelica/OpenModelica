@@ -81,6 +81,10 @@ static inline void* pointerAccess(void *ptr)
 ");
 end access;
 
+function clone
+  input output Pointer<T> mutable = create(access(mutable));
+end clone;
+
 function apply
   input output Pointer<T> mutable;
   input Func func;
@@ -95,36 +99,6 @@ algorithm
     update(mutable, new);
   end if;
 end apply;
-
-function applyFold<Arg>
-  input Pointer<T> mutable;
-  input Func func;
-  output Arg arg;
-  partial function Func
-    input T value;
-    output Arg arg;
-  end Func;
-algorithm
-  arg := func(access(mutable));
-end applyFold;
-
-function applyMapFold<Arg>
-  input output Pointer<T> mutable;
-  input Func func;
-  input output Arg arg;
-  partial function Func
-    input output T value;
-    input output Arg arg;
-  end Func;
-protected
-  T new;
-algorithm
-  (new, arg) := func(access(mutable), arg);
-  if not referenceEq(new, access(mutable)) then
-    update(mutable, new);
-  end if;
-end applyMapFold;
-
 
 annotation(__OpenModelica_Interface="util");
 end Pointer;

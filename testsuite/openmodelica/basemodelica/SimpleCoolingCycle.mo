@@ -1,6 +1,5 @@
 // name: SimpleCoolingCycle
 // status: correct
-// cflags: -d=newInst -f
 
 type MolarMass = Real(final quantity = "MolarMass");
 
@@ -51,9 +50,11 @@ end CounterFlowNTU;
 model SimpleCoolingCycle
   replaceable package Medium_air = DryAirNasa;
   CounterFlowNTU heatExchange_CounterFlowNTU(redeclare package MediumA = Medium_air);
+  annotation(__OpenModelica_commandLineOptions="-d=newInst -f");
 end SimpleCoolingCycle;
 
 // Result:
+// //! base 0.1.0
 // package 'SimpleCoolingCycle'
 //   function 'SimpleCoolingCycle.heatExchange_CounterFlowNTU.MediumA.specificHeatCapacityCp'
 //     input 'heatExchange_CounterFlowNTU.MediumA.ThermodynamicState' 'state';

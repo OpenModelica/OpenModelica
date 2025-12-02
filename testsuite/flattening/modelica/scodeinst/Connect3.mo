@@ -1,7 +1,6 @@
 // name: Connect3
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 
 connector C

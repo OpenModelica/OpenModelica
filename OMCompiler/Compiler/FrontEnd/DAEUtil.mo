@@ -130,11 +130,15 @@ public function topLevelInput "author: PA
   input DAE.ConnectorType connectorType;
   input DAE.VarVisibility visibility = DAE.PUBLIC();
   output Boolean isTopLevel;
+protected
+  // the new frontend only keeps top level inputs, obsoleting bogus check for DAE.CREF_IDENT
+  Boolean newInst = Flags.isSet(Flags.SCODE_INST);
 algorithm
-  isTopLevel := match (varDirection, componentRef, visibility)
-    case (          _,                _, DAE.PROTECTED()) then false;
-    case (DAE.INPUT(), DAE.CREF_IDENT(),               _) then true;
-    case (DAE.INPUT(),                _,               _)
+  isTopLevel := match (varDirection, componentRef, visibility, newInst)
+    case (          _,                _, DAE.PROTECTED(),    _) then false;
+    case (DAE.INPUT(),                _,               _, true) then true;
+    case (DAE.INPUT(), DAE.CREF_IDENT(),               _,    _) then true;
+    case (DAE.INPUT(),                _,               _,    _)
       guard(ConnectUtil.faceEqual(ConnectUtil.componentFaceType(componentRef), Connect.OUTSIDE()))
       then topLevelConnectorType(connectorType);
     else false;
@@ -241,8 +245,27 @@ algorithm
   end match;
 end expTypeArrayDimensions;
 
+public function typeExp
+ "Converts a type to an expression, covering constants and parameters."
+  input DAE.Type tp;
+  output DAE.Exp exp;
+algorithm
+  exp := match tp
+    local
+      DAE.Dimension dim;
+      list<DAE.Dimension> rest;
+    case DAE.T_ARRAY(dims = dim :: rest) algorithm
+      exp := dimExp(dim);
+      for d in rest loop
+        exp := DAE.BINARY(exp, DAE.MUL(DAE.T_INTEGER_DEFAULT), dimExp(d));
+      end for;
+    then exp;
+    else DAE.ICONST(1);
+  end match;
+end typeExp;
+
 public function dimExp
- "Converts a dimension to an expression, covering constants and paramters."
+ "Converts a dimension to an expression, covering constants and parameters."
   input DAE.Dimension dim;
   output DAE.Exp exp;
 algorithm
@@ -346,6 +369,21 @@ algorithm
     else {};
   end match;
 end getClassList;
+
+public function getEmptyVarAttr
+  input DAE.Type ty;
+  output Option<DAE.VariableAttributes> attr;
+algorithm
+  attr := match Types.getBasicType(ty)
+    case DAE.Type.T_REAL()        then SOME(DAE.emptyVarAttrReal);
+    case DAE.Type.T_INTEGER()     then SOME(DAE.emptyVarAttrInt);
+    case DAE.Type.T_BOOL()        then SOME(DAE.emptyVarAttrBool);
+    case DAE.Type.T_STRING()      then SOME(DAE.emptyVarAttrString);
+    case DAE.Type.T_ENUMERATION() then SOME(DAE.emptyVarAttrEnum);
+    case DAE.Type.T_CLOCK()       then SOME(DAE.emptyVarAttrClock);
+    else NONE();
+  end match;
+end getEmptyVarAttr;
 
 public function getBoundStartEquation "
 Returned bound equation"
@@ -659,6 +697,7 @@ algorithm
       DAE.ConnectorType ct; list<Absyn.Path> cls;
       Option<DAE.VariableAttributes> attr;
       Option<SCode.Comment> cmt; Absyn.InnerOuter io,io2;
+      Boolean ie;
       DAE.VarVisibility prot;
       DAE.ElementSource source "the origin of the element";
 
@@ -667,24 +706,24 @@ algorithm
         Since we can not handle this with current instantiation procedure, we create temporary variables in the dae.
         These are named uniqly and renamed later in "instClass"
      */
-    case(_,DAE.DAE(DAE.VAR(oldVar,kind,dir,prl,prot,tp,bind,dim,ct,source,attr,cmt,(Absyn.INNER_OUTER()))::elist))
+    case(_,DAE.DAE(DAE.VAR(oldVar,kind,dir,prl,prot,tp,bind,dim,ct,source,attr,cmt,(Absyn.INNER_OUTER()),ie)::elist))
       guard
         compareUniquedVarWithNonUnique(var,oldVar)
       equation
         newVar = nameInnerouterUniqueCref(oldVar);
-        o = DAE.VAR(oldVar,kind,dir,prl,prot,tp,NONE(),dim,ct,source,attr,cmt,Absyn.OUTER()) "intact";
-        u = DAE.VAR(newVar,kind,dir,prl,prot,tp,bind,dim,ct,source,attr,cmt,Absyn.NOT_INNER_OUTER()) " unique'ified";
+        o = DAE.VAR(oldVar,kind,dir,prl,prot,tp,NONE(),dim,ct,source,attr,cmt,Absyn.OUTER(),ie) "intact";
+        u = DAE.VAR(newVar,kind,dir,prl,prot,tp,bind,dim,ct,source,attr,cmt,Absyn.NOT_INNER_OUTER(),ie) " unique'ified";
         elist= u::o::elist;
       then
         DAE.DAE(elist);
 
-    case(_,DAE.DAE(DAE.VAR(cr,kind,dir,prl,prot,tp,bind,dim,ct,source,attr,cmt,io)::elist))
+    case(_,DAE.DAE(DAE.VAR(cr,kind,dir,prl,prot,tp,bind,dim,ct,source,attr,cmt,io,ie)::elist))
       guard
         ComponentReference.crefEqualNoStringCompare(var,cr)
       equation
         io2 = removeInnerAttribute(io);
       then
-        DAE.DAE(DAE.VAR(cr,kind,dir,prl,prot,tp,bind,dim,ct,source,attr,cmt,io2)::elist);
+        DAE.DAE(DAE.VAR(cr,kind,dir,prl,prot,tp,bind,dim,ct,source,attr,cmt,io2,ie)::elist);
 
     case(_,DAE.DAE(DAE.COMP(id,elist,source,cmt)::elist2))
       equation
@@ -2411,6 +2450,7 @@ algorithm
       DAE.Exp e_1,e1_1,e2_1,e1,e2,e_2,e,e3,e_3;
       Absyn.Path p;
       Absyn.InnerOuter io;
+      Boolean encrypted;
       list<DAE.Exp> conds, conds_1;
       list<list<DAE.Element>> trueBranches, trueBranches_1;
       Boolean partialPrefix;
@@ -2431,7 +2471,8 @@ algorithm
                source=source,
                variableAttributesOption = dae_var_attr,
                comment = comment,
-               innerOuter=io)::elts))
+               innerOuter=io,
+               encrypted=encrypted)::elts))
       equation
         str = ComponentReference.printComponentRefStr(cr);
         str_1 = Util.stringReplaceChar(str, ".", "_");
@@ -2440,7 +2481,7 @@ algorithm
         ty = ComponentReference.crefLastType(cr);
         cref_ = ComponentReference.makeCrefIdent(str_1,ty,{});
       then
-        (DAE.VAR(cref_,a,b,prl,prot,t,d_1,instDim,ct,source,dae_var_attr,comment,io)::elts_1);
+        (DAE.VAR(cref_,a,b,prl,prot,t,d_1,instDim,ct,source,dae_var_attr,comment,io,encrypted)::elts_1);
 
     case ((DAE.DEFINE(componentRef = cr,exp = e,source = source)::elts))
       equation
@@ -2605,9 +2646,10 @@ algorithm
       DAE.ElementSource source;
       Option<DAE.VariableAttributes> a11;
       Option<SCode.Comment> a12; Absyn.InnerOuter a13;
+      Boolean e;
 
-    case(_, DAE.VAR(_,a2,a3,prl,a4,a5,a6,a7,ct,source,a11,a12,a13))
-      then DAE.VAR(newCr,a2,a3,prl,a4,a5,a6,a7,ct,source,a11,a12,a13);
+    case(_, DAE.VAR(_,a2,a3,prl,a4,a5,a6,a7,ct,source,a11,a12,a13,e))
+      then DAE.VAR(newCr,a2,a3,prl,a4,a5,a6,a7,ct,source,a11,a12,a13,e);
   end match;
 end replaceCrefInVar;
 
@@ -2628,9 +2670,10 @@ algorithm
       DAE.ElementSource source;
       Option<DAE.VariableAttributes> a11;
       Option<SCode.Comment> a12; Absyn.InnerOuter a13;
+      Boolean e;
 
-    case(_, DAE.VAR(a1,a2,a3,prl,a4,_,a6,a7,ct,source,a11,a12,a13))
-      then DAE.VAR(a1,a2,a3,prl,a4,newType,a6,a7,ct,source,a11,a12,a13);
+    case(_, DAE.VAR(a1,a2,a3,prl,a4,_,a6,a7,ct,source,a11,a12,a13,e))
+      then DAE.VAR(a1,a2,a3,prl,a4,newType,a6,a7,ct,source,a11,a12,a13,e);
   end match;
 end replaceTypeInVar;
 
@@ -2652,10 +2695,11 @@ algorithm
       DAE.ElementSource source;
       Option<DAE.VariableAttributes> a11;
       Option<SCode.Comment> a12; Absyn.InnerOuter a13;
+      Boolean e;
 
-    case(_, _, DAE.VAR(_,a2,a3,prl,a4,_,a6,a7,ct,source,a11,a12,a13))
+    case(_, _, DAE.VAR(_,a2,a3,prl,a4,_,a6,a7,ct,source,a11,a12,a13,e))
       equation
-        outelem = DAE.VAR(newCr,a2,a3,prl,a4,newType,a6,a7,ct,source,a11,a12,a13);
+        outelem = DAE.VAR(newCr,a2,a3,prl,a4,newType,a6,a7,ct,source,a11,a12,a13,e);
       then outelem;
   end match;
 end replaceCrefandTypeInVar;
@@ -2678,9 +2722,10 @@ algorithm
       DAE.ElementSource source;
       Option<DAE.VariableAttributes> a11;
       Option<SCode.Comment> a12; Absyn.InnerOuter a13;
+      Boolean e;
 
-    case(_, DAE.VAR(a1,a2,a3,prl,a4,a5,_,a7,ct,source,a11,a12,a13))
-      then DAE.VAR(a1,a2,a3,prl,a4,a5,SOME(newBindung),a7,ct,source,a11,a12,a13);
+    case(_, DAE.VAR(a1,a2,a3,prl,a4,a5,_,a7,ct,source,a11,a12,a13,e))
+      then DAE.VAR(a1,a2,a3,prl,a4,a5,SOME(newBindung),a7,ct,source,a11,a12,a13,e);
   end match;
 end replaceBindungInVar;
 
@@ -3102,7 +3147,7 @@ protected function verifyClockWhenEquation
 protected
   SourceInfo info;
 algorithm
-  if not isNone(ew) then
+  if isSome(ew) then
     info := ElementSource.getElementSourceFileInfo(source);
     Error.addSourceMessageAndFail(Error.ELSE_WHEN_CLOCK, {}, info);
   end if;
@@ -3369,7 +3414,7 @@ algorithm (outrefs,matching) := match(inCrefs)
         // if then reinint;reinit; else reinit;reinit; end if;
         // make sure both of them are 0!
         true = intEq(i, 0);
-        true = intEq(listLength(crefs), 0);
+        true = listEmpty(crefs);
         b1 = true;
       end if;
     then
@@ -3674,6 +3719,7 @@ algorithm
       Option<DAE.VariableAttributes> variableAttributesOption;
       Option<SCode.Comment> absynCommentOption;
       Absyn.InnerOuter innerOuter;
+      Boolean encrypted;
       Integer i,j;
 
     case (DAE.COMP(ident=ident,dAElist = sublist,source=source,comment=comment),_)
@@ -3684,13 +3730,13 @@ algorithm
     case (DAE.VAR(componentRef = cr,kind=DAE.PARAM(),direction=direction,parallelism=parallelism,
                   protection=protection,ty=ty,binding=SOME(e),dims=dims,connectorType=ct,
                   source=source,variableAttributesOption=variableAttributesOption,
-                  comment=absynCommentOption,innerOuter=innerOuter),(ht,cache,env))
+                  comment=absynCommentOption,innerOuter=innerOuter,encrypted=encrypted),(ht,cache,env))
       equation
         (e1,(_,i,j)) = Expression.traverseExpBottomUp(e,evaluateAnnotationTraverse,(ht,0,0));
         (e2,ht1,cache) = evaluateAnnotation4(cache,env,cr,e1,i,j,ht);
       then
         (DAE.VAR(cr,DAE.PARAM(),direction,parallelism,protection,ty,SOME(e2),dims,ct,
-            source,variableAttributesOption,absynCommentOption,innerOuter),(ht1,cache,env));
+            source,variableAttributesOption,absynCommentOption,innerOuter,encrypted),(ht1,cache,env));
     else (iel,inHt);
   end matchcontinue;
 end evaluateAnnotation3;
@@ -4185,63 +4231,70 @@ algorithm
     case DAE.EQUEQUATION(cr1 = cr1, cr2 = cr2)
       algorithm
         (DAE.CREF(new_cr1), arg) := func(Expression.crefExp(cr1), arg);
-        if not referenceEq(cr1, new_cr1) then element.cr1 := new_cr1; end if;
         (DAE.CREF(new_cr2), arg) := func(Expression.crefExp(cr2), arg);
-        if not referenceEq(cr2, new_cr2) then element.cr2 := new_cr2; end if;
+        if not referenceEq(cr1, new_cr1) or not referenceEq(cr2, new_cr2) then
+          element := DAE.EQUEQUATION(new_cr1, new_cr2, element.source);
+        end if;
       then
         ();
 
     case DAE.EQUATION(exp = e1, scalar = e2)
       algorithm
         (new_e1, arg) := func(e1, arg);
-        if not referenceEq(e1, new_e1) then element.exp := new_e1; end if;
         (new_e2, arg) := func(e2, arg);
-        if not referenceEq(e2, new_e2) then element.scalar := new_e2; end if;
+        if not referenceEq(e1, new_e1) or not referenceEq(e2, new_e2) then
+          element := DAE.EQUATION(new_e1, new_e2, element.source);
+        end if;
       then
         ();
 
     case DAE.INITIALEQUATION(exp1 = e1, exp2 = e2)
       algorithm
         (new_e1, arg) := func(e1, arg);
-        if not referenceEq(e1, new_e1) then element.exp1 := new_e1; end if;
         (new_e2, arg) := func(e2, arg);
-        if not referenceEq(e2, new_e2) then element.exp2 := new_e2; end if;
+        if not referenceEq(e1, new_e1) or not referenceEq(e2, new_e2) then
+          element := DAE.INITIALEQUATION(new_e1, new_e2, element.source);
+        end if;
       then
         ();
 
     case DAE.COMPLEX_EQUATION(lhs = e1, rhs = e2)
       algorithm
         (new_e1, arg) := func(e1, arg);
-        if not referenceEq(e1, new_e1) then element.lhs := new_e1; end if;
         (new_e2, arg) := func(e2, arg);
-        if not referenceEq(e2, new_e2) then element.rhs := new_e2; end if;
+        if not referenceEq(e1, new_e1) or not referenceEq(e2, new_e2) then
+          element := DAE.COMPLEX_EQUATION(new_e1, new_e2, element.source);
+        end if;
       then
         ();
 
     case DAE.INITIAL_COMPLEX_EQUATION(lhs = e1, rhs = e2)
       algorithm
         (new_e1, arg) := func(e1, arg);
-        if not referenceEq(e1, new_e1) then element.lhs := new_e1; end if;
         (new_e2, arg) := func(e2, arg);
-        if not referenceEq(e2, new_e2) then element.rhs := new_e2; end if;
+        if not referenceEq(e1, new_e1) or not referenceEq(e2, new_e2) then
+          element := DAE.INITIAL_COMPLEX_EQUATION(new_e1, new_e2, element.source);
+        end if;
       then
         ();
 
     case DAE.ARRAY_EQUATION(exp = e1, array = e2)
       algorithm
         (new_e1, arg) := func(e1, arg);
-        if not referenceEq(e1, new_e1) then element.exp := new_e1; end if;
         (new_e2, arg) := func(e2, arg);
-        if not referenceEq(e2, new_e2) then element.array := new_e2; end if;
+        if not referenceEq(e1, new_e1) or not referenceEq(e2, new_e2) then
+          element := DAE.ARRAY_EQUATION(element.dimension, new_e1, new_e2, element.source);
+        end if;
       then
         ();
 
     case DAE.INITIAL_ARRAY_EQUATION(exp = e1, array = e2)
       algorithm
         (new_e1, arg) := func(e1, arg);
-        if not referenceEq(e1, new_e1) then element.exp := new_e1; end if;
         (new_e2, arg) := func(e2, arg);
-        if not referenceEq(e2, new_e2) then element.array := new_e2; end if;
+        if not referenceEq(e1, new_e1) or not referenceEq(e2, new_e2) then
+          element := DAE.INITIAL_ARRAY_EQUATION(element.dimension, new_e1, new_e2, element.source);
+        end if;
       then
         ();
 
@@ -6692,5 +6745,16 @@ algorithm
   end match;
 end getParameters;
 
+public function getInteger
+  input DAE.Exp exp;
+  output Integer i;
+algorithm
+  i := match exp
+    case DAE.ICONST(integer = i) then i;
+    else algorithm
+      Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because expression is not an ICONST: " + ExpressionDump.printExpStr(exp) + ".\n"});
+    then fail();
+  end match;
+end getInteger;
 annotation(__OpenModelica_Interface="frontend");
 end DAEUtil;

@@ -1,7 +1,6 @@
 // name:     ScalarizeBindings
 // keywords: declaration scalarization
 // status:   correct
-// cflags: +scalarizeBindings -d=-newInst
 //
 // Checks that array bindings are scalarized when the +scalarizeBindings flag is
 // used.
@@ -9,6 +8,7 @@
 
 class ScalarizeBindings
   Real x[3] = {1, 2, 3};
+  annotation(__OpenModelica_commandLineOptions="+scalarizeBindings -d=-newInst");
 end ScalarizeBindings;
 
 // Result:

@@ -1,0 +1,35 @@
+// name: 13328
+// keywords: NewBackend, reduction, top level input, events, for loop, for expression
+// status: correct
+// cflags: --newBackend
+
+loadString("
+model Iterator
+  constant Integer n = 3;
+  input Real[n] u1, u2, u3;
+  output Real y1, y2;
+  Real[n] x;
+equation
+  y1 = max({if u1[j] > 1 then u2[j] else u3[j] for j in 1:n});
+  y2 = max({if x[j] > 1 then u2[j] else u3[j] for j in 1:n});
+  der(x) = u1;
+end Iterator;
+"); getErrorString();
+
+simulate(Iterator); getErrorString();
+
+diffSimulationResults("Iterator_res.mat", "ReferenceFiles/Iterator_res.mat", "Iterator_diff.csv", 1e-8);
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "Iterator_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Iterator', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// (true, {})
+// endResult

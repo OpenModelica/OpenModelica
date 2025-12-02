@@ -1,6 +1,5 @@
 // name: Expression1
 // status: correct
-// cflags: -d=newInst -f
 
 function f
   input Real X[:];
@@ -16,9 +15,11 @@ model Expression1
   Real X[2];
 equation
   Q = f(X);
+  annotation(__OpenModelica_commandLineOptions="-d=newInst -f");
 end Expression1;
 
 // Result:
+// //! base 0.1.0
 // package 'Expression1'
 //   function 'f'
 //     input Real[:] 'X';

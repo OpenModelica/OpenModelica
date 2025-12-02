@@ -1,7 +1,6 @@
 // name: inst8.mo
 // keywords:
 // status: correct
-// cflags:   -d=newInst
 //
 //
 

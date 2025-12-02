@@ -1,7 +1,7 @@
 dnl Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.63])
-AC_INIT([OMEdit],[dev],[https://trac.openmodelica.org/OpenModelica],[openmodelica],[https://openmodelica.org])
+AC_INIT([OMEdit],[dev],[https://github.com/OpenModelica/OpenModelica/issues],[openmodelica],[https://openmodelica.org])
 
 AC_SUBST(APP)
 AC_SUBST(EXE)
@@ -121,6 +121,10 @@ else
   AC_MSG_RESULT("OSG is enabled")
 fi
 
+if test "$WITH_QT6" = "yes"; then
+  CPPFLAGS="$CPPFLAGS -DOM_OMEDIT_ENABLE_QTWEBENGINE"
+fi
+
 AC_MSG_CHECKING([check if -lboost_regex is needed for OMSimulator])
 AC_RUN_IFELSE( [AC_LANG_PROGRAM([[
 #include <regex>
@@ -154,7 +158,7 @@ exit(1);
 for flag in -Wno-clobbered; do
   OLD_CXXFLAGS="$CXXFLAGS"
   CXXFLAGS="$CXXFLAGS $flag -Werror"
-  AC_TRY_LINK([], [return 0;], [CXXFLAGS="$OLD_CXXFLAGS $flag"],[CXXFLAGS="$OLD_CXXFLAGS"])
+  AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[return 0;]])],[CXXFLAGS="$OLD_CXXFLAGS $flag"],[CXXFLAGS="$OLD_CXXFLAGS"])
 done
 
 AC_MSG_CHECKING([for LSB description])
@@ -169,4 +173,5 @@ fi
 m4_include([common/m4/semver.m4])
 SOURCE_REVISION="$SOURCE_REVISION$NON_FREE_VERSION"
 
-AC_OUTPUT(Makefile.unix omedit_config.h OMEditLIB/OMEditLIB.unix.config.pri OMEditLIB/Debugger/Parser/Makefile.unix OMEditLIB/Debugger/Parser/Makefile.lib.unix OMEditGUI/OMEditGUI.unix.config.pri Testsuite/Makefile.unix)
+AC_CONFIG_FILES([Makefile.unix omedit_config.h OMEditLIB/OMEditLIB.unix.config.pri OMEditLIB/Debugger/Parser/Makefile.unix OMEditLIB/Debugger/Parser/Makefile.lib.unix OMEditGUI/OMEditGUI.unix.config.pri Testsuite/Makefile.unix])
+AC_OUTPUT

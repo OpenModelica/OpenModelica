@@ -46,27 +46,27 @@ readFile("plt-files.txt");
 // Evaluating: getErrorString()
 // ""
 // Evaluating: getSimulationOptions(Modelica.Blocks.Examples.BusUsage)
-// (0.0,2.0,1e-06,500,0.004)
+// (0.0, 2.0, 1e-6, 500, 0.004)
 // Evaluating: getSimulationOptions(Modelica.Thermal.HeatTransfer.Examples.TwoMasses)
-// (0.0,1.0,1e-06,1000,0.001)
+// (0.0, 1.0, 1e-6, 1000, 0.001)
 // Evaluating: getErrorString()
 // ""
 // Evaluating: getSimulationOptions(Modelica.Mechanics.MultiBody.Examples.Elementary.DoublePendulum)
-// (0.0,3.0,1e-06,500,0.006)
+// (0.0, 3.0, 1e-6, 500, 0.006)
 // Evaluating: getErrorString()
 // ""
 // Evaluating: getSimulationOptions(Modelica.Mechanics.MultiBody.Examples.Elementary.DoublePendulum, defaultInterval = 1e-5)
-// (0.0,3.0,1e-06,500,0.006)
+// (0.0, 3.0, 1e-6, 500, 0.006)
 // Evaluating: getErrorString()
 // ""
 // Evaluating: getSimulationOptions(Modelica.Mechanics.MultiBody.Examples.Elementary.DoublePendulum, defaultNumberOfIntervals = 30)
-// (0.0,3.0,1e-06,30,0.1)
+// (0.0, 3.0, 1e-6, 30, 0.1)
 // Evaluating: getErrorString()
 // ""
 // Evaluating: simulate(Modelica.Blocks.Examples.BusUsage, outputFormat = "empty")
 // record SimulationResult
 //     resultFile = "Modelica.Blocks.Examples.BusUsage_res.empty",
-//     simulationOptions = "startTime = 0.0, stopTime = 2.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Blocks.Examples.BusUsage', options = '', outputFormat = 'empty', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 2.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Blocks.Examples.BusUsage', options = '', outputFormat = 'empty', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
@@ -76,7 +76,7 @@ readFile("plt-files.txt");
 // Evaluating: simulate(Modelica.Blocks.Examples.BusUsage, outputFormat = "mat")
 // record SimulationResult
 //     resultFile = "Modelica.Blocks.Examples.BusUsage_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 2.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Blocks.Examples.BusUsage', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 2.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Blocks.Examples.BusUsage', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
@@ -93,7 +93,7 @@ readFile("plt-files.txt");
 // Evaluating: simulate(Modelica.Blocks.Examples.BusUsage, outputFormat = "csv")
 // record SimulationResult
 //     resultFile = "Modelica.Blocks.Examples.BusUsage_res.csv",
-//     simulationOptions = "startTime = 0.0, stopTime = 2.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Blocks.Examples.BusUsage', options = '', outputFormat = 'csv', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 2.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Blocks.Examples.BusUsage', options = '', outputFormat = 'csv', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
@@ -619,7 +619,7 @@ readFile("plt-files.txt");
 // Evaluating: simulate(Modelica.Blocks.Examples.BusUsage, outputFormat = "plt")
 // record SimulationResult
 //     resultFile = "Modelica.Blocks.Examples.BusUsage_res.plt",
-//     simulationOptions = "startTime = 0.0, stopTime = 2.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Blocks.Examples.BusUsage', options = '', outputFormat = 'plt', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 2.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Blocks.Examples.BusUsage', options = '', outputFormat = 'plt', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "

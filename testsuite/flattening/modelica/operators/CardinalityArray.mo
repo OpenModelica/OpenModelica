@@ -1,7 +1,6 @@
 // name:     CardinalityArray
 // keywords: cardinality #2585
 // status:   correct
-// cflags: -d=-newInst
 //
 // Tests the cardinality operator when arrays are involved.
 //
@@ -20,6 +19,7 @@ model CardinalityArray
   Integer c = cardinality(a1[1].c);
 equation
   connect(a1.c, a2.c);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end CardinalityArray;
 
 // Result:

@@ -1,7 +1,6 @@
 // name: CevalConstant1
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 //
 

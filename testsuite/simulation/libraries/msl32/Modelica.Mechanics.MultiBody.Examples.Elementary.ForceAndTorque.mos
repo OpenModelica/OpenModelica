@@ -27,8 +27,8 @@ runScript(modelTesting);getErrorString();
 // ""
 // OpenModelicaModelTesting.Kind.VerifiedSimulation
 // Modelica.Mechanics.MultiBody.Examples.Elementary.ForceAndTorque
-// {"revolute2.phi","revolute2.w","revolute1.phi","revolute1.w"}
-// Simulation options: startTime = 0.0, stopTime = 1.01, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Mechanics.MultiBody.Examples.Elementary.ForceAndTorque', options = '', outputFormat = 'mat', variableFilter = 'time|revolute2.phi|revolute2.w|revolute1.phi|revolute1.w', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
+// {"revolute2.phi", "revolute2.w", "revolute1.phi", "revolute1.w"}
+// Simulation options: startTime = 0.0, stopTime = 1.01, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Mechanics.MultiBody.Examples.Elementary.ForceAndTorque', options = '', outputFormat = 'mat', variableFilter = 'time|revolute2.phi|revolute2.w|revolute1.phi|revolute1.w', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
 // Result file: Modelica.Mechanics.MultiBody.Examples.Elementary.ForceAndTorque_res.mat
 // Messages: LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.

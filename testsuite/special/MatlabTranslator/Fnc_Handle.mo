@@ -139,7 +139,7 @@ algorithm
         cls_stmt = Absyn.ALGORITHMS(alg_exp);      
         cp = listAppend(in_cp::{},cls_stmt::{});      
         cd = Absyn.PARTS({},{},cp,{},NONE());                
-        class1 = Absyn.CLASS(fname,false,false,false,Absyn.R_FUNCTION(Absyn.FR_NORMAL_FUNCTION(Absyn.NO_PURITY())),cd,{},{},info)::{};
+        class1 = Absyn.CLASS(fname,false,false,false,Absyn.R_FUNCTION(Absyn.FR_NORMAL_FUNCTION(Absyn.NO_PURITY())),cd,{},{},{},info)::{};
         fnc_hdl_ident2 = listAppend(fname::{},in_ident1);
       then (class1,{fname},fnc_hdl_ident2); 
     end matchcontinue;  

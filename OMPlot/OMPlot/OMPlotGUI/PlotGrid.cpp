@@ -30,6 +30,7 @@
  */
 
 #include "PlotGrid.h"
+#include "OMPlot.h"
 
 using namespace OMPlot;
 
@@ -52,12 +53,24 @@ PlotGrid::~PlotGrid()
 
 void PlotGrid::setGrid()
 {
+  enableX(true);
   enableXMin(false);
+  enableY(true);
   enableYMin(false);
 }
 
 void PlotGrid::setDetailedGrid()
 {
+  enableX(true);
   enableXMin(true);
+  enableY(true);
   enableYMin(true);
+}
+
+void PlotGrid::setXGrid()
+{
+  enableX(true);
+  enableXMin(true);
+  enableY(false);
+  enableYMin(false);
 }

@@ -17,30 +17,30 @@ getDerivedUnits("Pa");getErrorString();
 getDerivedUnits("n");getErrorString();
 
 // Result:
-// (false,1e-06,0.0)
+// (false, 1e-6, 0.0)
 // ""
-// (true,1.0,-273.15)
+// (true, 1.0, -273.15)
 // ""
-// (true,0.5555555555555556,255.3722222222222)
+// (true, 0.5555555555555556, 255.37222222222223)
 // ""
-// (true,0.5555555555555556,-17.77777777777774)
+// (true, 0.5555555555555556, -17.777777777777743)
 // ""
-// (true,1.8,31.99999999999994)
+// (true, 1.7999999999999998, 31.999999999999936)
 // ""
-// (false,1.0,0.0)
+// (false, 1.0, 0.0)
 // "Error: Error parsing unit Unknown: Prefix not found
 // "
-// (true,133.322387415,0.0)
+// (true, 133.322387415, 0.0)
 // ""
-// (true,7.500615758456563e-09,0.0)
+// (true, 7.500615758456563e-9, 0.0)
 // ""
-// (true,1.157407407407407e-05,0.0)
+// (true, 1.1574074074074073e-5, 0.0)
 // ""
-// {"degC","degF","degRk"}
+// {"degC", "degF", "degRk"}
 // ""
-// {"VA","var"}
+// {"VA", "var"}
 // ""
-// {"bar","inWG","mmHg","psi"}
+// {"bar", "inWG", "mmHg", "psi"}
 // ""
 // {}
 // "Error: Error parsing unit n: Unit not found

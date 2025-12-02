@@ -55,6 +55,8 @@
 #include "commandcompletion.h"
 #include "omcinteractiveenvironment.h"
 #include "indent.h"
+#include "OMPlot.h"
+#include "PlotCurve.h"
 
 //#include "evalthread.h"
 
@@ -397,7 +399,7 @@ namespace IAEX {
     {
       inCommand = false;
       QTextCursor tc(textCursor());
-      int i = toPlainText().indexOf(QRegExp("\\n|$"), tc.position());
+      int i = toPlainText().indexOf(QRegularExpression("\\n|$"), tc.position());
 
       if(i -tc.position() > 0)
         tc.setPosition(i, QTextCursor::KeepAnchor);
@@ -422,7 +424,7 @@ namespace IAEX {
         int k2 = t.blockNumber();
         QTextBlock b = t.block();
         int k = b.userState();
-        int prevLevel = b.text().indexOf(QRegExp("\\S"));
+        int prevLevel = b.text().indexOf(QRegularExpression("\\S"));
 
         while(k2 >= 0 && !indentationStates.contains(k))
         {
@@ -493,7 +495,7 @@ namespace IAEX {
 
   bool MyTextEdit2a::lessIndented(QString s)
   {
-    QRegExp l("\\b(equation|algorithm|public|protected|else|elseif)\\b");
+    QRegularExpression l("\\b(equation|algorithm|public|protected|else|elseif)\\b");
     return s.indexOf(l) >= 0;
   }
 
@@ -529,7 +531,7 @@ namespace IAEX {
 
   void MyTextEdit2a::goToPos(const QUrl& u)
   {
-    QRegExp e("/|\\-|:");
+    QRegularExpression e("/|\\-|:");
     int r=u.path().section(e, 1,1).toInt();
     int c=u.path().section(e, 2,2).toInt();
     int r2=u.path().section(e, 3,3).toInt();
@@ -704,7 +706,7 @@ namespace IAEX {
     setMainWidget(main);
 
     layout_ = new QGridLayout(mainWidget());
-    layout_->setMargin(0);
+    layout_->setContentsMargins(0, 0, 0, 0);
     layout_->setSpacing(0);
 
     setTreeWidget(new InputTreeView(this));
@@ -868,7 +870,7 @@ namespace IAEX {
     else
     {
       // 2006-01-30 AF, add message box
-      QMessageBox::warning( 0, tr("Warning"), tr("No Output style defined, please define an Output style in stylesheet.xml"), "OK" );
+      QMessageBox::warning(nullptr, tr("Warning"), tr("No Output style defined, please define an Output style in stylesheet.xml"));
     }
 
     QTextCursor cursor = output_->textCursor();
@@ -1027,7 +1029,7 @@ namespace IAEX {
     tmp.replace( "&nbsp;&nbsp;&nbsp;&nbsp;", "  " );
 
     // 2005-12-08 AF, remove any <span style tag
-    QRegExp spanEnd( "</span>" );
+    QRegularExpression spanEnd( "</span>" );
     tmp.remove( spanEnd );
     int pos = 0;
     while( true )
@@ -1444,31 +1446,35 @@ namespace IAEX {
 
   void GraphCell::PlotCallbackFunction(void *p, int externalWindow, const char* filename, const char *title, const char *grid,
                                        const char *plotType, const char *logX, const char *logY, const char *xLabel, const char *yLabel,
-                                       const char *x1, const char *x2, const char *y1, const char *y2, const char *curveWidth,
+                                       const char *xRange1, const char *xRange2, const char *yRange1, const char *yRange2, const char *curveWidth,
                                        const char *curveStyle, const char *legendPosition, const char *footer, const char *autoScale,
                                        const char *variables)
   {
     GraphCell *pGraphCell = (GraphCell*)p;
     if (pGraphCell) {
       QStringList lst;
-      lst << ""; // yes the first one has to be empty.
-      lst << filename;
-      lst << title;
-      lst << grid;
-      lst << plotType;
-      lst << logX;
-      lst << logY;
-      lst << xLabel;
-      lst << yLabel;
-      lst << x1;
-      lst << x2;
-      lst << y1;
-      lst << y2;
-      lst << curveWidth;
-      lst << curveStyle;
-      lst << legendPosition;
-      lst << footer;
-      lst << autoScale;
+      lst << "";              // yes the first one has to be empty.
+      lst << filename;        // 1st argument
+      lst << title;           // 2nd argument
+      lst << grid;            // 3rd argument
+      lst << plotType;        // 4th argument
+      lst << logX;            // 5th argument
+      lst << logY;            // 6th argument
+      lst << xLabel;          // 7th argument
+      lst << yLabel;          // 8th argument
+      lst << xRange1;         // 9th argument
+      lst << xRange2;         // 10th argument
+      lst << yRange1;         // 11th argument
+      lst << yRange2;         // 12th argument
+      lst << curveWidth;      // 13th argument
+      lst << curveStyle;      // 14th argument
+      lst << legendPosition;  // 15th argument
+      lst << footer;          // 16th argument
+      lst << autoScale;       // 17th argument
+      lst << "";              // Skip --yaxis 18th argument
+      lst << "";              // Skip --ylabel-right 19th argument
+      lst << "";              // Skip --yrange-right first value 20th argument
+      lst << ""; // Skip --yrange-right second value 21st argument
 #if (QT_VERSION >= QT_VERSION_CHECK(5, 14, 0))
       lst << QString(variables).split(" ", Qt::SkipEmptyParts);
 #else // QT_VERSION_CHECK
@@ -1498,7 +1504,7 @@ namespace IAEX {
     }
     catch (PlotException &e)
     {
-      QMessageBox::warning( 0, tr("Error"), e.what(), "OK" );
+      QMessageBox::warning(nullptr, tr("Error"), e.what());
     }
   }
 
@@ -1611,7 +1617,7 @@ namespace IAEX {
       setState(Finished);
 
     output_->selectAll();
-    res = res.replace(QRegExp("\\[<interactive>:([\\d]+):([\\d]+)-([\\d]+):([\\d]+):.*\\](.*)"),"[\\1:\\2-\\3:\\4]\\5");
+    res = res.replace(QRegularExpression("\\[<interactive>:([\\d]+):([\\d]+)-([\\d]+):([\\d]+):.*\\](.*)"),"[\\1:\\2-\\3:\\4]\\5");
     output_->textCursor().insertText( res );
 
     QPalette pal = output_->palette(); // define palette for textEdit.
@@ -1623,7 +1629,9 @@ namespace IAEX {
       pal.setColor(QPalette::Base, Qt::white);
     }
     output_->setPalette(pal);
-
+#if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
+ // TODO
+#else
     QRegExp e("([\\d]+:[\\d]+-[\\d]+:[\\d]+)|([\\d]+:[\\d]+)");
     int cap = 1;
     int p=0;
@@ -1650,7 +1658,7 @@ namespace IAEX {
       actions.push_back(a);
     }
     emit setStatusMenu(actions);
-
+#endif
     ++numEvals_;
     contentChanged();
 

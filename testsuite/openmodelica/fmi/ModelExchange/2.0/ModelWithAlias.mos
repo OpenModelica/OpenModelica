@@ -1,0 +1,75 @@
+// name:     ModelWithAlias
+// keywords: fmu export simulation alias
+// status: correct
+// teardown_command: rm -rf index.html model_res.mat ModelWithAlias.log ModelWithAlias_* ModelWithAlias_tmp.xml ModelWithAlias.fmu ModelWithAlias_me_systemCall.log ModelWithAlias-tmp/
+// cflags: -d=-newInst
+//
+// Export of 2.0 ME FMU with alias variables.
+// For issue https://github.com/OpenModelica/OpenModelica/issues/14513
+// Alias variables aren't used by the C FMI runtime.
+
+loadString("
+model ModelWithAlias
+  Real x (start=1, fixed=true);
+  Real y;
+equation
+  x = y;
+  der(x) = -x;
+end ModelWithAlias;
+"); getErrorString();
+
+buildModelFMU(ModelWithAlias, version="2.0", fmuType="me", platforms={"dynamic"}); getErrorString();
+
+// unzip to console, quiet, extra quiet
+system("unzip -cqq ModelWithAlias.fmu modelDescription.xml > ModelWithAlias_tmp.xml"); getErrorString();
+
+system("sed -i -n '/<ModelVariables/,/<\\/ModelVariables>/p' ModelWithAlias_tmp.xml"); getErrorString();
+readFile("ModelWithAlias_tmp.xml"); getErrorString();
+
+// Simulate with OMSimulator
+system(getInstallationDirectoryPath() + "/bin/OMSimulator ModelWithAlias.fmu --mode=me --stopTime=0.0 --suppressPath=true --tempDir=\"ModelWithAlias-tmp\"", "ModelWithAlias_me_systemCall.log"); getErrorString();
+readFile("ModelWithAlias_me_systemCall.log");
+
+// Result:
+// true
+// ""
+// "ModelWithAlias.fmu"
+// ""
+// 0
+// ""
+// 0
+// ""
+// "  <ModelVariables>
+//   <!-- Index of variable = \"1\" -->
+//   <ScalarVariable
+//     name=\"x\"
+//     valueReference=\"0\"
+//     initial=\"exact\">
+//     <Real start=\"1.0\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"2\" -->
+//   <ScalarVariable
+//     name=\"der(x)\"
+//     valueReference=\"1\"
+//     >
+//     <Real derivative=\"1\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"3\" -->
+//   <ScalarVariable
+//     name=\"y\"
+//     valueReference=\"0\"
+//     >
+//     <Real/>
+//   </ScalarVariable>
+//   </ModelVariables>
+// "
+// ""
+// 0
+// ""
+// "info:    maximum step size for 'model.root': 0.002000
+// info:    Result file: model_res.mat (bufferSize=10)
+// info:    Final Statistics for 'model.root':
+//          NumSteps = 0 NumRhsEvals  = 0 NumLinSolvSetups = 0
+//          NumNonlinSolvIters = 0 NumNonlinSolvConvFails = 0 NumErrTestFails = 0
+// "
+// endResult

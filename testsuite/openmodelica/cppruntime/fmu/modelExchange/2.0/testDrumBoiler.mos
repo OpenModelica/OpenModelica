@@ -62,10 +62,18 @@ val(evaporator_qm_S, 100);
 //   fmiVersion=\"2.0\"
 //   modelName=\"DrumBoilerModel\"
 //   description=\"\"
+//   version=\"\"
 //   variableNamingConvention=\"structured\"
 //   numberOfEventIndicators=\"3\">
 //   <ModelExchange
-//     modelIdentifier=\"DrumBoilerModel\" providesDirectionalDerivative=\"true\">
+//     modelIdentifier=\"DrumBoilerModel\"
+//     needsExecutionTool=\"false\"
+//     completedIntegratorStepNotNeeded=\"false\"
+//     canBeInstantiatedOnlyOncePerProcess=\"false\"
+//     canNotUseMemoryManagementFunctions=\"false\"
+//     canGetAndSetFMUstate=\"false\"
+//     canSerializeFMUstate=\"false\"
+//     providesDirectionalDerivative=\"true\">
 //   </ModelExchange>
 //   <UnitDefinitions>
 //     <Unit name=\"m/s2\">

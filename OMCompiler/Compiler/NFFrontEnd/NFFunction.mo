@@ -46,6 +46,7 @@ import NFModifier.Modifier;
 protected
 import ErrorExt;
 import Inst = NFInst;
+import NFInst.InstSettings;
 import Binding = NFBinding;
 import Config;
 import DAE;
@@ -281,6 +282,7 @@ uniontype Function
   function new
     input Absyn.Path path;
     input InstNode node;
+    input list<SCode.Comment> comments;
     output Function fn;
   protected
     Class cls;
@@ -290,7 +292,7 @@ uniontype Function
     FunctionStatus status;
   algorithm
     (inputs, outputs, locals) := collectParams(node);
-    attr := makeAttributes(node, inputs, outputs);
+    attr := makeAttributes(node, inputs, outputs, comments);
     // Make sure builtin functions aren't added to the function tree.
     status := if isBuiltinAttr(attr) then FunctionStatus.COLLECTED else FunctionStatus.INITIAL;
     fn := FUNCTION(path, node, inputs, outputs, locals, {}, Type.UNKNOWN(),
@@ -424,6 +426,7 @@ uniontype Function
         Absyn.ComponentRef cr;
         InstNode node;
         list<Function> funcs;
+        list<SCode.Comment> cmts;
 
       case SCode.CLASS() guard SCodeUtil.isOperatorRecord(def)
         algorithm
@@ -465,8 +468,8 @@ uniontype Function
         algorithm
           node := makeEnumConversionOp(fnNode);
           node := InstNode.setNodeType(NFInstNode.InstNodeType.ROOT_CLASS(parent), node);
-          node := instFunction3(node, context, info);
-          fn := new(fnPath, node);
+          (node, cmts) := instFunction3(node, context, info);
+          fn := new(fnPath, node, cmts);
           fnNode := InstNode.cacheAddFunc(fnNode, fn, false);
         then
           (fnNode, false);
@@ -478,8 +481,8 @@ uniontype Function
           end if;
 
           fnNode := InstNode.setNodeType(NFInstNode.InstNodeType.ROOT_CLASS(parent), fnNode);
-          fnNode := instFunction3(fnNode, context, info);
-          fn := new(fnPath, fnNode);
+          (fnNode, cmts) := instFunction3(fnNode, context, info);
+          fn := new(fnPath, fnNode, cmts);
           specialBuiltin := isSpecialBuiltin(fn);
           fn.derivatives := FunctionDerivative.instDerivatives(fnNode, fn);
           fn.inverses := FunctionInverse.instInverses(fnNode, fn);
@@ -495,6 +498,7 @@ uniontype Function
     input output InstNode fnNode;
     input InstContext.Type context;
     input SourceInfo info;
+          output list<SCode.Comment> cmts;
   protected
     SCode.Element def;
     Integer numError = Error.getNumErrorMessages();
@@ -509,10 +513,14 @@ uniontype Function
       fail();
     end try;
 
+    // Save the comments from the node before the class tree is flattened and
+    // we lose the comments from the extended classes.
+    cmts := InstNode.getComments(fnNode);
+
     // Set up an empty function cache to signal that this function is
     // currently being instantiated, so recursive functions can be handled.
     InstNode.cacheInitFunc(fnNode);
-    Inst.instExpressions(fnNode, context = context);
+    Inst.instExpressions(fnNode, context = context, settings = InstSettings.create());
   end instFunction3;
 
   function makeEnumConversionOp
@@ -843,22 +851,30 @@ uniontype Function
 
   function typeString
     "Constructs a string representing the type of the function, on the form
-     function_name<function>(input types) => output type"
+     function_name<function>(inputs) => outputs"
     input Function fn;
     output String str;
-  algorithm
-    str := List.toString(fn.inputs, paramTypeString,
-      AbsynUtil.pathString(name(fn)) + "<function>",
-      "(", ", ", ") => " + Type.toString(fn.returnType), true);
-  end typeString;
+  protected
+    String inputs, outputs;
 
-  function paramTypeString
-    input InstNode param;
-    output String str = Type.toString(InstNode.getType(param));
-  end paramTypeString;
+    function param_str
+      input InstNode p;
+      output String s = Type.toString(InstNode.getType(p)) + " " + InstNode.name(p);
+    end param_str;
+  algorithm
+    inputs := List.toString(fn.inputs, param_str, "", "", ", ", "");
+    outputs := List.toString(fn.outputs, param_str, "", "", ", ", "");
+
+    if listEmpty(fn.outputs) or listLength(fn.outputs) > 1 then
+      outputs := "(" + outputs + ")";
+    end if;
+
+    str := AbsynUtil.pathString(name(fn)) + "<function>(" + inputs + ") => " + outputs;
+  end typeString;
 
   function toFlatStream
     input Function fn;
+    input BaseModelica.OutputFormat format;
     input String indent;
     input output IOStream.IOStream s;
     input String overrideName = "";
@@ -869,7 +885,7 @@ uniontype Function
     SCode.Mod annMod;
   algorithm
     if isDefaultRecordConstructor(fn) then
-      s := Record.toFlatDeclarationStream(fn.node, indent, s);
+      s := Record.toFlatDeclarationStream(fn.node, format, indent, s);
     elseif isPartialDerivative(fn) then
       fn_name := if stringEmpty(overrideName) then Util.makeQuotedIdentifier(AbsynUtil.pathString(fn.path)) else overrideName;
 
@@ -880,36 +896,42 @@ uniontype Function
       s := IOStream.append(s, Util.makeQuotedIdentifier(AbsynUtil.pathString(getDerivedFunctionName(fn))));
       s := IOStream.append(s, ", ");
       s := IOStream.append(s, stringDelimitList(getDerivedInputNames(fn), ", "));
-      s := FlatModelicaUtil.appendComment(SCodeUtil.getElementComment(InstNode.definition(fn.node)), s);
+      s := FlatModelicaUtil.appendCommentOpt(SCodeUtil.getElementComment(InstNode.definition(fn.node)),
+        NFFlatModelicaUtil.ElementType.FUNCTION, s);
       s := IOStream.append(s, ")");
     else
       cmt := Util.getOptionOrDefault(SCodeUtil.getElementComment(InstNode.definition(fn.node)), SCode.COMMENT(NONE(), NONE()));
       fn_name := if stringEmpty(overrideName) then Util.makeQuotedIdentifier(AbsynUtil.pathString(fn.path)) else overrideName;
 
       s := IOStream.append(s, indent);
+
+      if InstNode.isPartial(fn.node) then
+        s := IOStream.append(s, "partial ");
+      end if;
+
       s := IOStream.append(s, "function ");
       s := IOStream.append(s, fn_name);
-      s := FlatModelicaUtil.appendCommentString(SOME(cmt), s);
+      s := FlatModelicaUtil.appendCommentString(cmt, s);
       s := IOStream.append(s, "\n");
 
       for i in fn.inputs loop
-        s := IOStream.append(s, InstNode.toFlatString(i, indent + "  "));
+        s := IOStream.append(s, InstNode.toFlatString(i, format, indent + "  "));
         s := IOStream.append(s, ";\n");
       end for;
 
       for o in fn.outputs loop
-        s := IOStream.append(s, InstNode.toFlatString(o, indent + "  "));
+        s := IOStream.append(s, InstNode.toFlatString(o, format, indent + "  "));
         s := IOStream.append(s, ";\n");
       end for;
 
       if not listEmpty(fn.locals) then
         for l in fn.locals loop
-          s := IOStream.append(s, InstNode.toFlatString(l, indent + "  "));
+          s := IOStream.append(s, InstNode.toFlatString(l, format, indent + "  "));
           s := IOStream.append(s, ";\n");
         end for;
       end if;
 
-      s := Sections.toFlatStream(InstNode.getSections(fn.node), fn.path, indent, s);
+      s := Sections.toFlatStream(InstNode.getSections(fn.node), fn.path, format, indent, s);
 
       if isSome(cmt.annotation_) then
         SOME(SCode.ANNOTATION(modification=annMod)) := cmt.annotation_;
@@ -930,7 +952,8 @@ uniontype Function
 
       if not SCodeUtil.emptyModOrEquality(annMod) then
         cmt := SCode.COMMENT(SOME(SCode.ANNOTATION(annMod)), NONE());
-        s := FlatModelicaUtil.appendCommentAnnotation(SOME(cmt), indent + "  ", ";\n", s);
+        s := FlatModelicaUtil.appendCommentAnnotation(cmt,
+          NFFlatModelicaUtil.ElementType.FUNCTION, indent + "  ", ";\n", s);
       end if;
 
       s := IOStream.append(s, indent);
@@ -941,13 +964,14 @@ uniontype Function
 
   function toFlatString
     input Function fn;
+    input BaseModelica.OutputFormat format = BaseModelica.defaultFormat;
     input String indent = "";
     output String str;
   protected
     IOStream.IOStream s;
   algorithm
     s := IOStream.create(getInstanceName(), IOStream.IOStreamType.LIST());
-    s := toFlatStream(fn, indent, s);
+    s := toFlatStream(fn, format, indent, s);
     str := IOStream.string(s);
     IOStream.delete(s);
   end toFlatString;
@@ -1086,7 +1110,7 @@ uniontype Function
       end if;
 
       // No slot could be found, so it doesn't exist.
-      Error.addSourceMessage(Error.NO_SUCH_PARAMETER,
+      Error.addSourceMessage(Error.NO_SUCH_INPUT_PARAMETER,
         {InstNode.name(instance(fn)), arg_name}, info);
     end for;
 
@@ -1333,7 +1357,7 @@ uniontype Function
 
       // Check if the type of the argument and the input parameter matches exactly.
       input_ty := Component.getType(comp);
-      (arg_exp, ty, mk) := TypeCheck.matchTypes(arg_ty, input_ty, arg_exp, allowUnknown = true);
+      (arg_exp, ty, mk) := TypeCheck.matchTypes(arg_ty, input_ty, arg_exp, NFTypeCheck.ALLOW_UNKNOWN);
       matched := TypeCheck.isValidArgumentMatch(mk);
 
       if not matched and vectorize then
@@ -1411,7 +1435,7 @@ uniontype Function
     // Check that the argument and the input parameter are type compatible when
     // the dimensions to vectorize over has been removed from the argument's type.
     rest_ty := Type.liftArrayLeftList(Type.arrayElementType(argTy), rest_dims);
-    (argExp, argTy, matchKind) := TypeCheck.matchTypes(rest_ty, inputTy, argExp, allowUnknown = false);
+    (argExp, argTy, matchKind) := TypeCheck.matchTypes(rest_ty, inputTy, argExp);
   end matchArgVectorized;
 
   function fillUnknownVectorizedDims
@@ -1694,79 +1718,78 @@ uniontype Function
     InstContext.Type next_context = InstContext.set(context, NFInstContext.SUBEXPRESSION);
     list<InstNode> inputs;
     list<Slot> slots;
+    array<Slot> slots_arr;
+    TypedArg ty_arg;
+    TypeCheck.MatchKind mk;
   algorithm
     Expression.PARTIAL_FUNCTION_APPLICATION(fn = fn_ref, args = args, argNames = arg_names) := exp;
     // TODO: Handle overloaded functions?
     fn :: _ := typeRefCache(fn_ref);
-    inputs := fn.inputs;
-    slots := fn.slots;
-    rest_names := arg_names;
+    slots_arr := listArray(fn.slots);
 
     purity := if Function.isImpure(fn) or Function.isOMImpure(fn) then Purity.IMPURE else Purity.PURE;
     variability := Variability.CONSTANT;
 
+    // Type the arguments and add them to the slots.
     for arg in args loop
       (arg, arg_ty, arg_var, arg_pur) := Typing.typeExp(arg, next_context, info);
-
-      arg_name :: rest_names := rest_names;
-      (arg, inputs, slots) :=
-        applyPartialApplicationArg(arg_name, arg, arg_ty, inputs, slots, fn, info);
-
-      ty_args := Expression.box(arg) :: ty_args;
+      arg_name :: arg_names := arg_names;
+      ty_arg := TypedArg.TYPED_ARG(SOME(arg_name), arg, arg_ty, arg_var, arg_pur);
+      (slots_arr, true) := fillNamedArg(ty_arg, slots_arr, fn, info);
       variability := Prefixes.variabilityMax(variability, arg_var);
       purity := Prefixes.purityMin(purity, arg_pur);
     end for;
 
-    fn.inputs := inputs;
-    fn.slots := slots;
-    ty := Type.FUNCTION(fn, NFType.FunctionType.FUNCTIONAL_VARIABLE);
-    exp := Expression.PARTIAL_FUNCTION_APPLICATION(fn_ref, listReverseInPlace(ty_args), arg_names, ty);
+    exp := makePartialApplicationFromSlots(slots_arr, fn, fn_ref, info);
+    ty := Expression.typeOf(exp);
   end typePartialApplication;
 
-  function applyPartialApplicationArg
-    input String argName;
-    input output Expression argExp;
-    input Type argType;
-    input list<InstNode> inputs;
-    input list<Slot> slots;
+  function makePartialApplicationFromSlots
+    input array<Slot> slotsArray;
     input Function fn;
+    input ComponentRef fnRef;
     input SourceInfo info;
-          output list<InstNode> outInputs = {};
-          output list<Slot> outSlots = {};
+    output Expression outExp;
   protected
-    InstNode i;
-    list<InstNode> rest_inputs = inputs;
-    Slot s;
-    list<Slot> rest_slots = slots;
+    list<InstNode> inputs = {};
+    list<Slot> slots = {};
+    list<Expression> args = {};
+    list<String> arg_names = {};
+    TypedArg ty_arg;
+    Expression arg;
     TypeCheck.MatchKind mk;
+    Type fn_ty;
   algorithm
-    while not listEmpty(rest_inputs) loop
-      i :: rest_inputs := rest_inputs;
-      s :: rest_slots := rest_slots;
-
-      if InstNode.name(s.node) == argName then
-        (argExp, _, mk) := TypeCheck.matchTypes(argType, InstNode.getType(i), argExp, true);
+    for slot in slotsArray loop
+      if isSome(slot.arg) then
+        // For each slot that's filled, type check the argument and add it to
+        // the arguments of the partial function application.
+        SOME(ty_arg) := slot.arg;
+        (arg, _, mk) := TypeCheck.matchTypes(ty_arg.ty, InstNode.getType(slot.node), ty_arg.value, NFTypeCheck.ALLOW_UNKNOWN);
 
         if TypeCheck.isIncompatibleMatch(mk) then
           Error.addSourceMessage(Error.NAMED_ARG_TYPE_MISMATCH,
-            {AbsynUtil.pathString(name(fn)), argName, Expression.toString(argExp),
-             Type.toString(argType), Type.toString(InstNode.getType(i))}, info);
+            {AbsynUtil.pathString(name(fn)), Util.getOption(ty_arg.name), Expression.toString(ty_arg.value),
+             Type.toString(ty_arg.ty), Type.toString(InstNode.getType(slot.node))}, info);
           fail();
         end if;
 
-        outInputs := listAppend(listReverseInPlace(outInputs), rest_inputs);
-        outSlots := listAppend(listReverseInPlace(outSlots), rest_slots);
-        return;
+        args := Expression.box(arg) :: args;
+        arg_names := Util.getOption(ty_arg.name) :: arg_names;
+      else
+        // For each slot that's not filled, add it as an input of the partially evaluated function.
+        inputs := slot.node :: inputs;
+        slots := slot :: slots;
       end if;
+    end for;
 
-      outInputs := i :: outInputs;
-      outSlots := s :: outSlots;
-    end while;
-
-    Error.addSourceMessage(Error.NO_SUCH_INPUT_PARAMETER,
-      {AbsynUtil.pathString(name(fn)), argName}, info);
-    fail();
-  end applyPartialApplicationArg;
+    fn.inputs := listReverseInPlace(inputs);
+    fn.slots := listReverseInPlace(slots);
+    fn_ty := Type.FUNCTION(fn, NFType.FunctionType.FUNCTIONAL_VARIABLE);
+    args := listReverseInPlace(args);
+    arg_names := listReverseInPlace(arg_names);
+    outExp := Expression.PARTIAL_FUNCTION_APPLICATION(fnRef, args, arg_names, fn_ty);
+  end makePartialApplicationFromSlots;
 
   function isBuiltin
     input Function fn;
@@ -1984,22 +2007,22 @@ uniontype Function
 
   function isDefaultRecordConstructor
     input Function fn;
-    output Boolean isConstructor;
-  algorithm
-    isConstructor := match Class.restriction(InstNode.getClass(fn.node))
-      case Restriction.RECORD_CONSTRUCTOR() then true;
-      else false;
-    end match;
+    output Boolean isConstructor = Restriction.isRecordConstructor(InstNode.restriction(fn.node));
   end isDefaultRecordConstructor;
 
   function isNonDefaultRecordConstructor
     input Function fn;
-    output Boolean isConstructor;
-  algorithm
-    isConstructor := match fn.path
-      case Absyn.Path.QUALIFIED(path = Absyn.Path.QUALIFIED(name = "'constructor'")) then true;
-      else false;
-    end match;
+    output Boolean b = isNonDefaultRecordConstructorPath(fn.path);
+    function isNonDefaultRecordConstructorPath
+      input Absyn.Path path;
+      output Boolean b;
+    algorithm
+      b := match path
+        case Absyn.Path.QUALIFIED(name = "'constructor'") then true;
+        case Absyn.Path.QUALIFIED()                       then isNonDefaultRecordConstructorPath(path.path);
+        else false;
+      end match;
+    end isNonDefaultRecordConstructorPath;
   end isNonDefaultRecordConstructor;
 
   function toDAE
@@ -2137,7 +2160,7 @@ uniontype Function
   algorithm
     comp := InstNode.component(node);
     binding := Component.getBinding(comp);
-    binding2 := Binding.mapExp(binding, mapFn);
+    binding2 := Binding.mapExpShallow(binding, mapFn);
 
     if not referenceEq(binding, binding2) then
       comp := Component.setBinding(binding2, comp);
@@ -2277,7 +2300,7 @@ protected
     InstNode n;
     Boolean check_vis;
   algorithm
-    Error.assertion(InstNode.isClass(node), getInstanceName() + " got non-class node", sourceInfo());
+    Error.assertion(InstNode.isClass(node) or InstNode.isComponent(node), getInstanceName() + " got non-class/non-component node", sourceInfo());
     cls := InstNode.getClass(node);
 
     () := match cls
@@ -2393,7 +2416,7 @@ protected
   algorithm
     try
       comp := InstNode.component(component);
-      default := Binding.getExpOpt(Component.getImplicitBinding(comp));
+      default := Binding.getExpOpt(Component.getImplicitBinding(comp, InstNode.instanceParent(component)));
       name := InstNode.name(component);
 
       // Remove $in_ for OM input output arguments.
@@ -2456,6 +2479,7 @@ protected
     input InstNode node;
     input list<InstNode> inputs;
     input list<InstNode> outputs;
+    input list<SCode.Comment> comments;
     output DAE.FunctionAttributes attr;
   protected
     SCode.Element def;
@@ -2463,10 +2487,9 @@ protected
     SCode.Restriction res;
     SCode.FunctionRestriction fres;
     Boolean is_partial;
-    list<SCode.Comment> cmts;
     SCode.Comment cmt;
   algorithm
-    def := InstNode.definition(Class.lastBaseClass(node));
+    def := InstNode.classDefinition(Class.lastBaseClass(node));
     res := SCodeUtil.getClassRestriction(def);
 
     Error.assertion(SCodeUtil.isFunctionRestriction(res), getInstanceName() + " got non-function restriction", sourceInfo());
@@ -2474,8 +2497,7 @@ protected
     SCode.Restriction.R_FUNCTION(functionRestriction = fres) := res;
     is_partial := InstNode.isPartial(node);
 
-    cmts := InstNode.getComments(node);
-    cmt := mergeFunctionAnnotations(cmts);
+    cmt := mergeFunctionAnnotations(comments);
 
     attr := matchcontinue fres
       local
@@ -2853,7 +2875,7 @@ protected
   algorithm
     for func in original.derivatives loop
       if FunctionDerivative.perfectFit(func, interface_map) then
-        derivative := SOME(List.first(getCachedFuncs(func.derivativeFn)));
+        derivative := SOME(listHead(getCachedFuncs(func.derivativeFn)));
         return;
       end if;
     end for;

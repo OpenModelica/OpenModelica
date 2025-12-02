@@ -1,7 +1,6 @@
 // name: InvalidConnectorType2
 // keywords:
 // status: incorrect
-// cflags: -d=newInst
 //
 
 model InvalidConnectorType2

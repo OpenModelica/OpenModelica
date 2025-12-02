@@ -202,6 +202,7 @@ public uniontype Element
     Option<VariableAttributes> variableAttributesOption;
     Option<SCode.Comment> comment;
     Absyn.InnerOuter innerOuter "inner/outer required to 'change' outer references";
+    Boolean encrypted "true if the variable belongs to an encrypted class";
   end VAR;
 
   record DEFINE "A solved equation"
@@ -555,8 +556,12 @@ uniontype VariableAttributes
   end VAR_ATTR_ENUMERATION;
 end VariableAttributes;
 
-public constant VariableAttributes emptyVarAttrReal = VAR_ATTR_REAL(NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE());
-public constant VariableAttributes emptyVarAttrBool = VAR_ATTR_BOOL(NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE());
+public constant VariableAttributes emptyVarAttrReal   = VAR_ATTR_REAL(NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE());
+public constant VariableAttributes emptyVarAttrInt    = VAR_ATTR_INT(NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE());
+public constant VariableAttributes emptyVarAttrBool   = VAR_ATTR_BOOL(NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE());
+public constant VariableAttributes emptyVarAttrClock  = VAR_ATTR_CLOCK(NONE(),NONE());
+public constant VariableAttributes emptyVarAttrString = VAR_ATTR_STRING(NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE());
+public constant VariableAttributes emptyVarAttrEnum   = VAR_ATTR_ENUMERATION(NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE());
 
 public uniontype StateSelect
   record NEVER end NEVER;
@@ -1160,7 +1165,6 @@ uniontype Dimension
   end DIM_EXP;
 
   record DIM_UNKNOWN "Dimension with unknown size."
-    //DimensionBinding dimensionBinding "unknown dimension can be bound or unbound";
   end DIM_UNKNOWN;
 end Dimension;
 

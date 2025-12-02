@@ -1,7 +1,6 @@
 // name: VectorizeBindings3
 // keywords:
 // status: correct
-// cflags: -d=newInst --newBackend
 //
 
 operator record Complex
@@ -100,6 +99,7 @@ model VectorizeBindings3
   constant Integer m = 3;
   parameter Integer effectiveStatorTurns = 1;
   IM_SquirrelCage aimc(effectiveStatorTurns = effectiveStatorTurns);
+  annotation(__OpenModelica_commandLineOptions="--newBackend");
 end VectorizeBindings3;
 
 // Result:
@@ -139,10 +139,10 @@ end VectorizeBindings3;
 //   final parameter Integer aimc.stator.m = 3;
 //   final parameter Real aimc.stator.effectiveTurns = aimc.effectiveStatorTurns;
 //   final parameter Integer aimc.stator.electroMagneticConverter.m = 3;
-//   final parameter Real[3] aimc.stator.electroMagneticConverter.effectiveTurns = array(aimc.stator.effectiveTurns for $i1 in 1:3);
+//   final parameter Real[3] aimc.stator.electroMagneticConverter.effectiveTurns = array(aimc.stator.effectiveTurns for $f1 in 1:3);
 //   final parameter Real[3] aimc.stator.electroMagneticConverter.orientation = {0.0, 2.0, 4.0};
-//   parameter Complex[3] aimc.stator.electroMagneticConverter.singlePhaseElectroMagneticConverter.N = array(Complex.'*'.multiply(Complex.'constructor'.fromReal(aimc.stator.electroMagneticConverter.singlePhaseElectroMagneticConverter[$singlePhaseElectroMagneticConverter1].effectiveTurns, 0.0), ComplexMath.exp(Complex.'constructor'.fromReal(0.0, {0.0, 2.0, 4.0}[$singlePhaseElectroMagneticConverter1]))) for $singlePhaseElectroMagneticConverter1 in 1:3);
-//   final parameter Real[3] aimc.stator.electroMagneticConverter.singlePhaseElectroMagneticConverter.orientation = {0.0, 2.0, 4.0};
 //   final parameter Real[3] aimc.stator.electroMagneticConverter.singlePhaseElectroMagneticConverter.effectiveTurns = array(aimc.stator.electroMagneticConverter.effectiveTurns[$singlePhaseElectroMagneticConverter1] for $singlePhaseElectroMagneticConverter1 in 1:3);
+//   final parameter Real[3] aimc.stator.electroMagneticConverter.singlePhaseElectroMagneticConverter.orientation = {0.0, 2.0, 4.0};
+//   parameter Complex[3] aimc.stator.electroMagneticConverter.singlePhaseElectroMagneticConverter.N = array(Complex.'*'.multiply(Complex.'constructor'.fromReal(aimc.stator.electroMagneticConverter.singlePhaseElectroMagneticConverter[$singlePhaseElectroMagneticConverter1].effectiveTurns, 0.0), ComplexMath.exp(Complex.'constructor'.fromReal(0.0, {0.0, 2.0, 4.0}[$singlePhaseElectroMagneticConverter1]))) for $singlePhaseElectroMagneticConverter1 in 1:3);
 // end VectorizeBindings3;
 // endResult

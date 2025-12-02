@@ -41,6 +41,8 @@ public
 import ComponentRef = NFComponentRef;
 import Absyn;
 import AbsynUtil;
+import NFInstNode.InstNode;
+import Type = NFType;
 import UnorderedMap;
 
 protected
@@ -91,7 +93,8 @@ protected uniontype Token
   record T_RPAREN end T_RPAREN;
 end Token;
 
-public constant ComponentRef UPDATECREF = ComponentRef.STRING("jhagemann", ComponentRef.EMPTY());
+public constant ComponentRef UPDATECREF = ComponentRef.CREF(InstNode.NAME_NODE("jhagemann"), {},
+  Type.UNKNOWN(), NFComponentRef.Origin.CREF, ComponentRef.EMPTY());
 
 public constant list<tuple<String, Unit>> LU_COMPLEXUNITS = {
 /*                   fac,mol,cd, m, s, A, K, g*/
@@ -200,12 +203,7 @@ end isMaster;
 
 public function hashUnit
   input Unit inKey;
-  output Integer outHash;
-protected
-  String str;
-algorithm
-  str := unit2string(inKey);
-  outHash := stringHashDjb2(str);
+  output Integer outHash = stringHashDjb2(unit2string(inKey));
 end hashUnit;
 
 public function unitEqual

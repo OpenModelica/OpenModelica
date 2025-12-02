@@ -1,6 +1,5 @@
 // name: ExternalFunctionExtends
 // status: correct
-// cflags: -d=-newInst
 
 class ExternalFunctionExtends
   function f1
@@ -14,6 +13,7 @@ class ExternalFunctionExtends
     o1 := r1;
   end f2;
   constant Real r = f2(1.0);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ExternalFunctionExtends;
 
 // Result:
@@ -27,6 +27,6 @@ end ExternalFunctionExtends;
 // class ExternalFunctionExtends
 //   constant Real r = 1.0;
 // end ExternalFunctionExtends;
-// [flattening/modelica/external-functions/ExternalFunctionExtends.mo:12:5-12:15:writable] Warning: Ignoring external declaration of the extended class: f1.
+// [flattening/modelica/external-functions/ExternalFunctionExtends.mo:11:5-11:15:writable] Warning: Ignoring external declaration of the extended class: f1.
 //
 // endResult

@@ -3,25 +3,18 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
 
-find_package(Qt5 COMPONENTS Widgets PrintSupport Xml REQUIRED)
+find_package(Qt${OM_QT_MAJOR_VERSION} COMPONENTS Widgets PrintSupport Xml REQUIRED)
 
-set(OMSHELLLIB_SOURCES commandcompletion.cpp
-                       omcinteractiveenvironment.cpp
-                       oms.cpp
-                       oms.qrc)
+set(OMSHELLL_SOURCES  main.cpp
+                      commandcompletion.cpp
+                      omcinteractiveenvironment.cpp
+                      oms.cpp
+                      oms.qrc
+                      rc_omshell.rc)
 
-set(OMSHELLLIB_HEADERS commandcompletion.h
+set(OMSHELLL_HEADERS commandcompletion.h
                        omcinteractiveenvironment.h
                        oms.h)
-
-
-add_library(OMShellLib STATIC ${OMSHELLLIB_SOURCES} ${OMSHELLLIB_HEADERS})
-
-target_link_libraries(OMShellLib PUBLIC OpenModelicaCompiler)
-target_link_libraries(OMShellLib PUBLIC Qt5::Xml)
-target_link_libraries(OMShellLib PUBLIC Qt5::Widgets)
-target_link_libraries(OMShellLib PUBLIC Qt5::PrintSupport)
-
 
 if(APPLE)
   set(MACOSX_BUNDLE_ICON_FILE omshell.icns)
@@ -34,8 +27,14 @@ else()
   set(app_icon_macos "")
 endif()
 
-add_executable(OMShell WIN32 MACOSX_BUNDLE main.cpp rc_omshell.rc ${app_icon_macos})
-target_link_libraries(OMShell PRIVATE OMShellLib)
+add_executable(OMShell WIN32 MACOSX_BUNDLE ${OMSHELLL_SOURCES}
+                                           ${OMSHELLL_HEADERS}
+                                           ${app_icon_macos})
+
+target_link_libraries(OMShell PRIVATE OpenModelicaCompiler)
+target_link_libraries(OMShell PRIVATE Qt${OM_QT_MAJOR_VERSION}::Xml)
+target_link_libraries(OMShell PRIVATE Qt${OM_QT_MAJOR_VERSION}::Widgets)
+target_link_libraries(OMShell PRIVATE Qt${OM_QT_MAJOR_VERSION}::PrintSupport)
 
 
 install(TARGETS OMShell

@@ -1,7 +1,6 @@
 // name: IfExpression4
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 
 model IfExpression4
@@ -11,7 +10,7 @@ end IfExpression4;
 
 // Result:
 // class IfExpression4
-//   parameter Boolean b = true;
+//   final parameter Boolean b = true;
 //   Real x[1];
 //   Real x[2];
 // equation

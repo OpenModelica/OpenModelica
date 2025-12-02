@@ -1,7 +1,6 @@
 // name:     Function2
 // keywords: function
 // status:   correct
-// cflags: -d=-newInst
 //
 // This tests for illegal parts of a function definition.
 // This test should really fail, but since the MSL uses public non-formal
@@ -20,6 +19,7 @@ model Function2
   Real x, z;
 equation
   x = f(z);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Function2;
 
 // Result:
@@ -37,6 +37,6 @@ end Function2;
 // equation
 //   x = f(z);
 // end Function2;
-// [flattening/modelica/algorithms-functions/Function2.mo:14:3-14:15:writable] Warning: Invalid public variable toomuch, function variables that are not input/output must be protected.
+// [flattening/modelica/algorithms-functions/Function2.mo:13:3-13:15:writable] Warning: Invalid public variable toomuch, function variables that are not input/output must be protected.
 //
 // endResult

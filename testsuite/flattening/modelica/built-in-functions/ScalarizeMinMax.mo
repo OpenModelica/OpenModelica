@@ -1,7 +1,6 @@
 // name:     ScalarizeMinMax
 // keywords: scalarize min max
 // status:   correct
-// cflags:   +scalarizeMinMax -d=-newInst
 //
 // Tests that min/max reductions are scalarized when +scalarizeMinMax is used.
 //
@@ -12,6 +11,7 @@ model ScalarizeMinMax
 equation
   r1 = min(x);
   r2 = max(x);
+  annotation(__OpenModelica_commandLineOptions="+scalarizeMinMax -d=-newInst");
 end ScalarizeMinMax;
 
 // Result:

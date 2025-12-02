@@ -505,35 +505,22 @@ algorithm
   strings := listReverse(strings);
 end stringSplitAtChar;
 
-public function boolOrList "Example:
-    boolOrList({true,false,false})  => true
-    boolOrList({false,false,false}) => false"
-  input list<Boolean> inBooleanLst;
-  output Boolean outBoolean = false;
+public function optionToString<T>
+  input Option<T> ot;
+  input FuncType f;
+  output String str;
+  partial function FuncType
+    input T t;
+    output String str;
+  end FuncType;
+protected
+  T t;
 algorithm
-  for b in inBooleanLst loop
-    if b then
-      outBoolean := true;
-      return;
-    end if;
-  end for;
-end boolOrList;
-
-public function boolAndList "Takes a list of boolean values and applies the boolean AND operator on the elements
-  Example:
-  boolAndList({}) => true
-  boolAndList({true, true}) => true
-  boolAndList({false,false,true}) => false"
-  input list<Boolean> inBooleanLst;
-  output Boolean outBoolean = true;
-algorithm
-  for b in inBooleanLst loop
-    if not b then
-      outBoolean := false;
-      return;
-    end if;
-  end for;
-end boolAndList;
+  str := match ot
+    case SOME(t) then "SOME(" + f(t) + ")";
+    else "NONE()";
+  end match;
+end optionToString;
 
 public function applyOption<TI, TO>
   "Takes an option value and a function over the value. It returns in another
@@ -555,7 +542,6 @@ algorithm
   outOption := match(inOption)
     local
       TI ival;
-      TO oval;
 
     case SOME(ival) then SOME(inFunc(ival));
     else NONE();
@@ -578,7 +564,6 @@ algorithm
   outOption := match(inOption)
     local
       TI ival;
-      TO oval;
 
     case SOME(ival) then SOME(inFunc(ival, inArg));
     else NONE();
@@ -692,20 +677,6 @@ public function makeOptionOnTrue<T>
   output Option<T> outOption = if inCondition then SOME(inValue) else NONE();
   annotation(__OpenModelica_EarlyInline = true);
 end makeOptionOnTrue;
-
-public function stringOption "author: PA
-  Returns string value or empty string from string option."
-  input Option<String> inStringOption;
-  output String outString;
-algorithm
-  outString:= match(inStringOption)
-    local
-      String s;
-
-    case SOME(s) then s;
-    else "";
-  end match;
-end stringOption;
 
 public function getOption<T>
   "Returns an option value if SOME, otherwise fails"
@@ -1017,23 +988,6 @@ algorithm
   end match;
 end optionEqual;
 
-public function optionHash<T>
-  input Option<T> inOption;
-  input HashFunc inFunc;
-  output Integer outHash;
-  partial function HashFunc
-    input T inValue;
-    output Integer outHash;
-  end HashFunc;
-algorithm
-  outHash := match inOption
-    local
-      T val;
-    case SOME(val) then inFunc(val);
-    else 0;
-  end match;
-end optionHash;
-
 public function makeValueOrDefault<TI, TO>
   "Returns the value if the function call succeeds, otherwise the default"
   input FuncType inFunc;
@@ -1205,21 +1159,6 @@ public function stringEqCaseInsensitive
 algorithm
   eq := stringEq(System.tolower(str1), System.tolower(str2));
 end stringEqCaseInsensitive;
-
-public function optionList<T>
-  "SOME(a) => {a}
-   NONE()  => {}"
-  input Option<T> inOption;
-  output list<T> outList;
-algorithm
-  outList := match(inOption)
-    local
-      T value;
-
-    case SOME(value) then {value};
-    else {};
-  end match;
-end optionList;
 
 public function stringPadRight
   "Pads a string with the given padding so that the resulting string is as long
@@ -1503,6 +1442,11 @@ algorithm
    outFileName := if System.regularFileExists(f) then f else outFileName;
  end if;
 end absoluteOrRelative;
+
+public function hashFileNamePrefix
+  input String inFileNamePrefix;
+  output String hashStr = substring(intString(stringHashDjb2(inFileNamePrefix)), 1, 3);
+end hashFileNamePrefix;
 
 public function intLstString
   input list<Integer> lst;

@@ -1,7 +1,6 @@
 // name:     ArrayMulMatrixSimplifier
 // keywords: Simplifier
 // status:   correct
-// cflags: -d=-newInst
 //
 // Check si that the multiplication with array * matrix, simplify process works.
 // Also tests builtin pre function.
@@ -17,6 +16,7 @@ model ArrayMulMatrixSimplifier
 equation
       x= pre(x)*A + B*u;
       y= A*pre(x) + B*u;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ArrayMulMatrixSimplifier;
 // Result:
 // class ArrayMulMatrixSimplifier

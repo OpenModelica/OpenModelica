@@ -35,7 +35,7 @@ readFile("linearized_model.log"); getErrorString(); // Check that output log is 
 // ""
 // record SimulationResult
 //     resultFile = "simple_test_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'simple_test', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'simple_test', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_STDOUT        | info    | Linearization will be performed at point of time: 0.000000
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
@@ -51,7 +51,7 @@ readFile("linearized_model.log"); getErrorString(); // Check that output log is 
 // ""
 // record SimulationResult
 //     resultFile = "linearized_model_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'euler', fileNamePrefix = 'linearized_model', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'euler', fileNamePrefix = 'linearized_model', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
@@ -83,7 +83,7 @@ readFile("linearized_model.log"); getErrorString(); // Check that output log is 
 // ""
 // record SimulationResult
 //     resultFile = "simple_test_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'simple_test', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-l=0 -l_datarec'",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'simple_test', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-l=0 -l_datarec'",
 //     messages = "LOG_STDOUT        | info    | Linearization will be performed at point of time: 0.000000
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
@@ -97,7 +97,7 @@ readFile("linearized_model.log"); getErrorString(); // Check that output log is 
 // ""
 // record SimulationResult
 //     resultFile = "linearized_model_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'euler', fileNamePrefix = 'linearized_model', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'euler', fileNamePrefix = 'linearized_model', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
@@ -109,9 +109,9 @@ readFile("linearized_model.log"); getErrorString(); // Check that output log is 
 //   parameter Integer m = 0 \"number of inputs\";
 //   parameter Integer p = 0 \"number of outputs\";
 //   parameter Integer nz = 3 \"data recovery variables\";
-//   parameter Real x0[1] = {0};
-//   parameter Real u0[0] = zeros(0);
-//   parameter Real z0[3] = {0, 0, 0};
+//   parameter Real x0[n] = {0};
+//   parameter Real u0[m] = zeros(0);
+//   parameter Real z0[nz] = {0, 0, 0};
 //   parameter Real A[n, n] = [0];
 //   parameter Real B[n, m] = zeros(n, m);
 //   parameter Real C[p, n] = zeros(p, n);

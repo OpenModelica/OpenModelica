@@ -454,7 +454,7 @@ algorithm
 
         // prepare set-c residual equations and residual vars
         (_, reqns) = BackendEquation.traverseEquationArray(BackendEquation.listEquation(setC_eq), BackendEquation.traverseEquationToScalarResidualForm, (shared.functionTree, {}));
-        (reqns, resVarsLst) = BackendEquation.convertResidualsIntoSolvedEquations(listReverse(reqns), "$res", BackendVariable.makeVar(DAE.emptyCref), 1);
+        (reqns, resVarsLst) = BackendEquation.convertResidualsIntoSolvedEquations(listReverse(reqns), "$res", 1);
         outResidualVars = BackendVariable.listVar(resVarsLst);
         outResidualEqns = BackendEquation.listEquation(reqns);
 
@@ -567,12 +567,12 @@ public function createInnerEquations
    input list<Integer> inputlist;
    output BackendDAE.InnerEquations outequations={};
 protected
-   Integer eqnumber,varnumber;
+   Integer varnumber;
    Integer count=1;
    Integer inpcount=1;
 algorithm
-   for i in tempsets loop
-      (eqnumber,varnumber):=getSolvedVariableNumber(i,solvedeqvar);
+   for eqnumber in tempsets loop
+      varnumber:=getSolvedVariableNumber(eqnumber,solvedeqvar);
       // map the tempsets with setS, to get the correct equation index for example (26/37) in ordered equation list
       if not listMember(varnumber,knowns) then
         outequations:=BackendDAE.INNEREQUATION(listGet(sets, count),{varnumber})::outequations;
@@ -633,18 +633,18 @@ end dumpDependencyTree;
 
 
 public function getSolvedDependentEquationAndVars
-   input list<Integer> inlist;
-   input list<tuple<Integer,Integer>> solvedvar;
-   output list<Integer> sets_eqs={};
-   output list<Integer> sets_vars={};
+  input list<Integer> inlist;
+  input list<tuple<Integer,Integer>> solvedvar;
+  output list<Integer> sets_eqs={};
+  output list<Integer> sets_vars={};
 protected
-   Integer eqnumber,varnumber;
+  Integer eqnumber;
 algorithm
-   for i in inlist loop
-     (eqnumber,varnumber):= getSolvedEquationNumber(i,solvedvar);
-     sets_eqs:=eqnumber::sets_eqs;
-     sets_vars:=varnumber::sets_vars;
-   end for;
+  for varnumber in inlist loop
+    eqnumber:= getSolvedEquationNumber(varnumber,solvedvar);
+    sets_eqs:=eqnumber::sets_eqs;
+    sets_vars:=varnumber::sets_vars;
+  end for;
 end getSolvedDependentEquationAndVars;
 
 public function getVariablesAfterExtraction
@@ -885,22 +885,22 @@ algorithm
 end BuildSquareSubSetHelper;
 
 public function BuildSquareSubSetHelper1
-   input list<Integer> inlist1;
-   input list<tuple<Integer,Integer>> solvedeqvar;
-   input list<Integer> solvedeqs;
-   output list<Integer> tempsolvedeqs={};
-   output list<Integer> tempeqs={};
+  input list<Integer> inlist1;
+  input list<tuple<Integer,Integer>> solvedeqvar;
+  input list<Integer> solvedeqs;
+  output list<Integer> tempsolvedeqs={};
+  output list<Integer> tempeqs={};
 protected
-   Integer eqnumber,varnumber;
+  Integer eqnumber;
 algorithm
-   for k in inlist1 loop
-     (eqnumber,varnumber):= getSolvedEquationNumber(k,solvedeqvar);
-     if(not listMember(eqnumber,solvedeqs)) then
-         tempeqs:=eqnumber::tempeqs;
-         tempsolvedeqs:=eqnumber::tempsolvedeqs;
-     end if;
-   end for;
-   tempsolvedeqs:=listAppend(solvedeqs,tempsolvedeqs);
+  for varnumber in inlist1 loop
+    eqnumber:= getSolvedEquationNumber(varnumber,solvedeqvar);
+    if(not listMember(eqnumber,solvedeqs)) then
+      tempeqs:=eqnumber::tempeqs;
+      tempsolvedeqs:=eqnumber::tempsolvedeqs;
+    end if;
+  end for;
+  tempsolvedeqs:=listAppend(solvedeqs,tempsolvedeqs);
 end BuildSquareSubSetHelper1;
 
 
@@ -1184,8 +1184,8 @@ algorithm
       (_,tmptargetblocks,_):= tmpblocks;
       if(not intEq(count,tmpcount)) then
         //print("Targets:" + intString(tmpcount) + ": " + anyString(tmptargetblocks) + "\n ");
-        //print("first block:" + anyString(List.first(targetblocks))+ "\n");
-        if(listMember(List.first(targetblocks),tmptargetblocks)) then
+        //print("first block:" + anyString(listHead(targetblocks))+ "\n");
+        if(listMember(listHead(targetblocks),tmptargetblocks)) then
           //print("Predeccsors Block Found:" + anyString(targetblocks) + "\n");
           targetexist:=true;
         end if;
@@ -1285,7 +1285,7 @@ algorithm
    for blocks in blockinfo loop
       (blockitems1,targetblocks,targetblocksvar):= blocks;
       (blockstoupdate,exist,foundblock):=findSquareAndNonSquareBlocksHelper(targetblocks,targetblocksvar);
-      (blockvarlst1,_):=List.first(targetblocksvar);
+      (blockvarlst1,_):=listHead(targetblocksvar);
       outlist1:=(blockitems1,blockvarlst1,exist,foundblock)::outlist1;
       for j in blockstoupdate loop
          (blockitem,_):=j;
@@ -1428,12 +1428,12 @@ algorithm
   print("\nLoop-1\n"+ "========\n");
   for blocks in predecessortargetinfo loop
     (blockitems,targetblocks,targetblocksvar,knownblocks,foundblockranks):= blocks;
-    (dependendblock,_):=listGet(allblockranks,List.first(foundblockranks));
+    (dependendblock,_):=listGet(allblockranks,listHead(foundblockranks));
     targetblocktobeinserted:=List.setDifferenceOnTrue(knownblocks,usedblocks,intEq);
     print("\nExtractEquationsfromNoPredecessorBlocks :" + dumplistInteger(blockitems) + " => " + dumplistInteger(dependendblock) + " => known blocks:" + dumplistInteger(targetblocktobeinserted) + "\n");
     //print("\ntargetblocktobeinserted :" + anyString(targetblocktobeinserted) + "=> SET_S :" + anyString(usedblocks));
     if(not listEmpty(targetblocktobeinserted)) then
-       usedblocks:=List.first(targetblocktobeinserted)::usedblocks;
+       usedblocks:=listHead(targetblocktobeinserted)::usedblocks;
     else
        //print("\n Problem is ill posed because there are two few variables of interest. Boundary condition A is ignored \n");
        blockspostoberemoved:=tmpcount::blockspostoberemoved;
@@ -1451,8 +1451,8 @@ algorithm
         blocksize:=listLength(blockitems)-1;
         sets:=listAppend(List.firstN(blockitems,blocksize),sets);
         // insert 1 equation of targetBlock into set-s
-        //sets:=List.first(dependendblock)::sets;
-        sets:=List.first(targetblocktobeinserted)::sets;
+        //sets:=listHead(dependendblock)::sets;
+        sets:=listHead(targetblocktobeinserted)::sets;
         print("\nAfterinsertion :" + dumplistInteger(targetblocktobeinserted) + "=> SET_S :" + dumplistInteger(sets) + "\n");
     elseif(not List.setEqualOnTrue(blockitems,dependendblock,intEq) and listEmpty(targetblocktobeinserted)) then
        // Block does not exist
@@ -1595,12 +1595,12 @@ public function getRemovedEquationSolvedVariables
   input list<tuple<Integer,Integer>> solvedvar;
   output list<Integer> outvarlist={};
 protected
-  Integer eqnumber,varnumber;
+  Integer varnumber;
 algorithm
-    for i in inlist loop
-        (_,varnumber):=getSolvedVariableNumber(i,solvedvar);
-        outvarlist:=varnumber::outvarlist;
-    end for;
+  for i in inlist loop
+    varnumber:=getSolvedVariableNumber(i,solvedvar);
+    outvarlist:=varnumber::outvarlist;
+  end for;
 end getRemovedEquationSolvedVariables;
 
 
@@ -1698,10 +1698,10 @@ public function getDependencyequation
   output list<Integer> outinteger;
 protected
   list<Integer> t={},nonsq;
-  Integer eqnumber,varnumber;
+  Integer varnumber;
 algorithm
-    for i in inlist loop
-       (eqnumber,varnumber):= getSolvedVariableNumber(i,solvedvariables);
+    for eqnumber in inlist loop
+       varnumber:= getSolvedVariableNumber(eqnumber,solvedvariables);
        nonsq:=getdirectOccurrencesinEquation(m,eqnumber,varnumber);
        //print(anyString(nonsq));
        for lst in nonsq loop
@@ -1752,52 +1752,51 @@ public function checkBlueOrRedSquareBlocks
   output list<Integer> outlist={};
   output list<String> outstring={};
 protected
-   Integer count=1,eqnumber,varnumber;
-   Boolean b1,b2,b3;
-   String s1;
+  Integer count=1,varnumber;
+  Boolean b1,b2,b3;
+  String s1;
 algorithm
-      for i in inlist loop
-        (eqnumber,varnumber):=getSolvedVariableNumber(i,solvedvar);
-         b1:=listMember(varnumber,knowns);
-         b2:=listMember(varnumber,unknowns);
-         b3:=listMember(varnumber,outputs);
-         if(b1==false and b2==true) then
-            s1:="unknowns";
-            outstring:=s1::outstring;
-            outlist:=i::outlist;
-         end if;
-         if(b1==true and b2==false) then
-            s1:="knowns";
-            outstring:=s1::outstring;
-            outlist:=i::outlist;
-         end if;
+  for i in inlist loop
+    varnumber:=getSolvedVariableNumber(i,solvedvar);
+    b1:=listMember(varnumber,knowns);
+    b2:=listMember(varnumber,unknowns);
+    b3:=listMember(varnumber,outputs);
+    if(b1==false and b2==true) then
+      s1:="unknowns";
+      outstring:=s1::outstring;
+      outlist:=i::outlist;
+    end if;
+    if(b1==true and b2==false) then
+      s1:="knowns";
+      outstring:=s1::outstring;
+      outlist:=i::outlist;
+    end if;
 
-         if(b1==false and b2==false) then
-            s1:="unknowns";
-            outstring:=s1::outstring;
-            outlist:=i::outlist;
-         end if;
-         count:=count+1;
-      end for;
-   outlist:=listReverse(outlist);
-   outstring:=listReverse(outstring);
+    if(b1==false and b2==false) then
+      s1:="unknowns";
+      outstring:=s1::outstring;
+      outlist:=i::outlist;
+    end if;
+    count:=count+1;
+  end for;
+  outlist:=listReverse(outlist);
+  outstring:=listReverse(outstring);
 end checkBlueOrRedSquareBlocks;
 
 /* function which gives solvedvars based on the equation */
 public function getSolvedVariableNumber
   input Integer eqnumber;
   input list<tuple<Integer,Integer>> inlist;
-  output tuple<Integer,Integer> mappedEqVar;
+  output Integer solvedvar;
 protected
-     Integer eq,solvedvar;
+  Integer solvedeq;
 algorithm
-   for var in inlist loop
-      (eq,solvedvar):=var;
-      if(intEq(eqnumber,eq)) then
-          mappedEqVar :=(eqnumber,solvedvar);
-          return;
-      end if;
-   end for;
+  for var in inlist loop
+    (solvedeq,solvedvar):=var;
+    if(intEq(eqnumber,solvedeq)) then
+      return;
+    end if;
+  end for;
 end getSolvedVariableNumber;
 
 
@@ -1805,28 +1804,25 @@ end getSolvedVariableNumber;
 public function getSolvedEquationNumber
   input Integer varnumber;
   input list<tuple<Integer,Integer>> inlist;
-  output tuple<Integer,Integer> mappedEqVar;
+  output Integer solvedeq;
 protected
-     Integer eq,solvedvar;
+  Integer solvedvar;
 algorithm
-   for var in inlist loop
-      (eq,solvedvar):=var;
-      if(intEq(varnumber,solvedvar)) then
-          mappedEqVar :=(eq,solvedvar);
-          return;
-      end if;
-   end for;
+  for var in inlist loop
+    (solvedeq,solvedvar):=var;
+    if(intEq(varnumber,solvedvar)) then
+      return;
+    end if;
+  end for;
 end getSolvedEquationNumber;
 
 public function dumpMatching
   input array<Integer> v;
   output list<tuple<Integer,Integer>> eqvarlist={};
 protected
-  list<Integer> var;
   Integer count=1;
 algorithm
-  var:=arrayList(v);
-  for i in var loop
+  for i in v loop
       eqvarlist:=(i,count)::eqvarlist;
       count:=count+1;
   end for;
@@ -2150,7 +2146,7 @@ protected function isApproximatedEquation2
         then false;
     case(SCode.COMMENT(annotation_=SOME(SCode.ANNOTATION(SCode.MOD(subModLst=subModLst))))::t)
       equation
-        ret = (List.exist(subModLst,isApproximatedEquation3)) or isApproximatedEquation2(t);
+        ret = (List.any(subModLst,isApproximatedEquation3)) or isApproximatedEquation2(t);
       then
         ret;
     case(_::t)
@@ -3701,9 +3697,10 @@ protected
   Option<SCode.Comment> cmt;
   DAE.ConnectorType ct;
   DAE.VarInnerOuter innerOuter;
+  Boolean encrypted;
 algorithm
-  BackendDAE.VAR(name,kind,dir,prl,tp,bind,tplExp,ad,source,attr,ts,hideResult,cmt,ct,innerOuter,_) := inVar;
-  outVar := BackendDAE.VAR(name,kind,dir,prl,tp,bindExp,tplExp,ad,source,attr,ts,hideResult,cmt,ct,innerOuter,false,false);
+  BackendDAE.VAR(name,kind,dir,prl,tp,bind,tplExp,ad,source,attr,ts,hideResult,cmt,ct,innerOuter,_,_,encrypted) := inVar;
+  outVar := BackendDAE.VAR(name,kind,dir,prl,tp,bindExp,tplExp,ad,source,attr,ts,hideResult,cmt,ct,innerOuter,false,false,encrypted);
 end setVarBindingOpt;
 
 public function moveVariables "

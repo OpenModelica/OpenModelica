@@ -1,7 +1,6 @@
 // name: TypeEnumeration
 // keywords: type
 // status: correct
-// cflags: -d=-newInst
 //
 // Tests declaring a type from an enumeration
 //
@@ -12,6 +11,7 @@ model TypeEnumeration
   Enum et;
 equation
   et = Enum.test3;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end TypeEnumeration;
 
 // Result:

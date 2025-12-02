@@ -47,6 +47,7 @@ import Class = NFClass;
 import Expression = NFExpression;
 import NFInstNode.InstNode;
 import NFModifier.Modifier;
+import SimplifyExp = NFSimplifyExp;
 import Statement = NFStatement;
 import NFType.Type;
 import Operator = NFOperator;
@@ -63,6 +64,7 @@ import Attributes = NFAttributes;
 import Builtin = NFBuiltin;
 import BuiltinCall = NFBuiltinCall;
 import Ceval = NFCeval;
+import Config;
 import ComponentRef = NFComponentRef;
 import Origin = NFComponentRef.Origin;
 import ExecStat.execStat;
@@ -111,7 +113,8 @@ uniontype TypingError
 end TypingError;
 
 // Used by typeDimension for catching cyclic dimension involving :
-constant Expression WHOLEDIM_CREF = Expression.CREF(Type.UNKNOWN(), ComponentRef.STRING(":", ComponentRef.EMPTY()));
+constant Expression WHOLEDIM_CREF = Expression.CREF(Type.UNKNOWN(),
+  ComponentRef.CREF(InstNode.NAME_NODE(":"), {}, Type.UNKNOWN(), NFComponentRef.Origin.CREF, ComponentRef.EMPTY()));
 
 public
 function typeClass
@@ -144,9 +147,15 @@ algorithm
 
     case Class.INSTANCED_CLASS(elements = cls_tree as ClassTree.FLAT_TREE())
       algorithm
-        for c in cls_tree.components loop
-          typeComponent(c, context);
-        end for;
+        if InstContext.inInstanceAPI(context) then
+          for c in cls_tree.components loop
+            typeComponentTry(c, context);
+          end for;
+        else
+          for c in cls_tree.components loop
+            typeComponent(c, context);
+          end for;
+        end if;
 
         () := match c.ty
           case Type.COMPLEX(complexTy = ComplexType.RECORD(constructor = con))
@@ -400,9 +409,10 @@ protected
 algorithm
   cache := InstNode.getFuncCache(constructor);
 
-  recordTy := match cache
-    case CachedData.FUNCTION(funcs = fn :: _)
+  recordTy := matchcontinue cache
+    case CachedData.FUNCTION()
       algorithm
+        fn := List.find(cache.funcs, Function.isDefaultRecordConstructor);
         (fields, indexMap) := Record.collectRecordFields(fn.node);
       then
         ComplexType.RECORD(constructor, fields, indexMap);
@@ -413,7 +423,7 @@ algorithm
           " got record type without constructor", sourceInfo());
       then
         fail();
-  end match;
+  end matchcontinue;
 end makeRecordType;
 
 function typeComponent
@@ -422,15 +432,18 @@ function typeComponent
   input Boolean typeChildren = true;
   output Type ty;
 protected
-  InstNode node = InstNode.resolveOuter(component);
-  Component c = InstNode.component(node);
+  InstNode node;
+  Component c;
   Expression cond;
   Boolean is_deleted;
   array<Dimension> dims;
 algorithm
-  if InstNode.isOnlyOuter(component) then
+  if InstNode.isEmpty(component) or InstNode.isOnlyOuter(component) then
     return;
   end if;
+
+  node := InstNode.resolveOuter(component);
+  c := InstNode.component(node);
 
   ty := match c
     // An untyped component, type it.
@@ -476,6 +489,7 @@ algorithm
     case Component.COMPONENT() then c.ty;
     case Component.ITERATOR() then c.ty;
     case Component.ENUM_LITERAL(literal = Expression.ENUM_LITERAL(ty = ty)) then ty;
+    case Component.INVALID_COMPONENT() then Component.getType(c);
 
     // Any other type of component shouldn't show up here.
     else
@@ -486,6 +500,23 @@ algorithm
 
   end match;
 end typeComponent;
+
+function typeComponentTry
+  input InstNode componentNode;
+  input InstContext.Type context;
+protected
+  Component comp;
+algorithm
+  ErrorExt.setCheckpoint(getInstanceName());
+  try
+    typeComponent(componentNode, context);
+  else
+    comp := InstNode.component(componentNode);
+    comp := Component.INVALID_COMPONENT(comp, ErrorExt.printCheckpointMessagesStr());
+    InstNode.updateComponent(comp, componentNode);
+  end try;
+  ErrorExt.delCheckpoint(getInstanceName());
+end typeComponentTry;
 
 function checkComponentStreamAttribute
   input ConnectorType.Type cty;
@@ -523,8 +554,8 @@ algorithm
       algorithm
         (exp, ty, var, purity) := typeExp(range, InstContext.set(context, NFInstContext.ITERATION_RANGE), info);
 
-        // If the iteration range is structural, it must be a parameter expression.
-        if structural and var > Variability.PARAMETER then
+        // If the iteration range is structural, it must be a parameter expression (unless we don't scalarize and it is a non structural parameter).
+        if structural and var > Variability.PARAMETER and (not var == Variability.NON_STRUCTURAL_PARAMETER or Flags.isSet(Flags.NF_SCALARIZE)) then
           Error.addSourceMessageAndFail(Error.NON_PARAMETER_ITERATOR_RANGE,
             {Expression.toString(exp)}, info);
         end if;
@@ -582,6 +613,7 @@ algorithm
       TypingError ty_err;
       Integer parent_dims, dim_index;
       Boolean evaluated;
+      Ceval.EvalTarget target;
 
     // A dimension that we're already trying to type.
     case Dimension.UNTYPED(isProcessing = true)
@@ -614,9 +646,11 @@ algorithm
               exp := Ceval.tryEvalExp(exp);
               evaluated := Expression.isLiteral(exp);
             else
-              exp := Ceval.evalExp(exp, Ceval.EvalTarget.DIMENSION(component, index, exp, info));
+              target := Ceval.EvalTarget.new(info, context,
+                SOME(Ceval.EvalTargetData.DIMENSION_DATA(component, index, exp)));
+              exp := Ceval.evalExp(exp, target);
             end if;
-          else
+          elseif not var == Variability.NON_STRUCTURAL_PARAMETER then
             Error.addSourceMessage(Error.DIMENSION_NOT_KNOWN, {Expression.toString(exp)}, info);
             fail();
           end if;
@@ -715,7 +749,9 @@ algorithm
               if InstContext.inRelaxed(context) then
                 exp := Ceval.tryEvalExp(exp);
               else
-                exp := Ceval.evalExp(exp, Ceval.EvalTarget.DIMENSION(component, index, exp, info));
+                target := Ceval.EvalTarget.new(info, context,
+                  SOME(Ceval.EvalTargetData.DIMENSION_DATA(component, index, exp)));
+                exp := Ceval.evalExp(exp, target);
               end if;
 
               exp := subscriptDimExp(exp, component);
@@ -780,7 +816,8 @@ algorithm
     if InstContext.inRelaxed(context) then
       e := Ceval.tryEvalExp(e);
     else
-      e := Ceval.evalExp(e, Ceval.EvalTarget.DIMENSION(component, index, e, info));
+      e := Ceval.evalExp(e, Ceval.EvalTarget.new(info, context,
+        SOME(Ceval.EvalTargetData.DIMENSION_DATA(component, index, e))));
     end if;
 
     (dim, error) := nthDimensionBoundsChecked(Expression.typeOf(e), dim_index);
@@ -958,7 +995,7 @@ function typeComponentBinding
   input InstContext.Type context;
   input Boolean typeChildren = true;
 protected
-  InstNode node = InstNode.resolveOuter(component);
+  InstNode node;
   Component c;
   Binding binding;
   InstNode cls;
@@ -968,15 +1005,16 @@ protected
   Attributes attrs;
   Type ty;
 algorithm
-  c := InstNode.component(node);
-
-  if InstNode.isOnlyOuter(component) then
+  if InstNode.isEmpty(component) or InstNode.isOnlyOuter(component) then
     return;
   end if;
 
+  node := InstNode.resolveOuter(component);
+  c := InstNode.component(node);
+
   () := match c
     case Component.COMPONENT()
-      guard Component.isDeleted(c)
+      guard Component.isDeleted(c) or Component.isInvalid(c)
       then ();
 
     case Component.COMPONENT(binding = Binding.UNTYPED_BINDING(), attributes = attrs)
@@ -1075,6 +1113,8 @@ algorithm
       then
         ();
 
+    case Component.INVALID_COMPONENT() then ();
+
     else
       algorithm
         Error.assertion(false, getInstanceName() + " got invalid node " + InstNode.name(node), sourceInfo());
@@ -1133,15 +1173,16 @@ algorithm
       Expression exp;
       Type ty;
       Variability var;
+      Purity purity;
       SourceInfo info;
       NFBinding.EachType each_ty;
 
     case Binding.UNTYPED_BINDING(bindingExp = exp)
       algorithm
         info := Binding.getInfo(binding);
-        (exp, ty, var) := typeExp(exp, context, info);
+        (exp, ty, var, purity) := typeExp(exp, context, info);
       then
-        Binding.TYPED_BINDING(exp, ty, var, binding.eachType,
+        Binding.TYPED_BINDING(exp, ty, var, purity, binding.eachType,
           Mutable.create(NFBinding.EvalState.NOT_EVALUATED), false,
           binding.source, binding.info);
 
@@ -1167,14 +1208,17 @@ algorithm
       Expression exp;
       Type ty;
       Variability var;
+      Purity purity;
       SourceInfo info;
       MatchKind mk;
       NFBinding.EvalState eval_state;
+      InstContext.Type next_context;
 
     case Binding.UNTYPED_BINDING(bindingExp = exp)
       algorithm
+        next_context := InstContext.set(context, NFInstContext.CONDITION);
         info := Binding.getInfo(condition);
-        (exp, ty, var) := typeExp(exp, InstContext.set(context, NFInstContext.CONDITION), info);
+        (exp, ty, var, purity) := typeExp(exp, next_context, info);
         (exp, _, mk) := TypeCheck.matchTypes(ty, Type.BOOLEAN(), exp);
 
         if TypeCheck.isIncompatibleMatch(mk) then
@@ -1194,7 +1238,7 @@ algorithm
         if evaluate then
           ErrorExt.setCheckpoint(getInstanceName());
           try
-            exp := Ceval.evalExp(exp, Ceval.EvalTarget.CONDITION(info));
+            exp := Ceval.evalExp(exp, Ceval.EvalTarget.new(info, next_context));
             exp := simplifyDimExp(exp);
             eval_state := NFBinding.EvalState.EVALUATED;
           else
@@ -1202,7 +1246,7 @@ algorithm
           ErrorExt.rollBack(getInstanceName());
         end if;
       then
-        Binding.TYPED_BINDING(exp, ty, var, NFBinding.EachType.NOT_EACH,
+        Binding.TYPED_BINDING(exp, ty, var, purity, NFBinding.EachType.NOT_EACH,
           Mutable.create(eval_state), false, condition.source, info);
 
   end match;
@@ -1240,6 +1284,10 @@ algorithm
       then
         NFModifier.NOMOD();
 
+    // Modifier that has already been typed.
+    case Modifier.MODIFIER(binding = Binding.TYPED_BINDING())
+      then attribute;
+
     // Normal modifier with no submodifiers.
     case Modifier.MODIFIER(name = name, binding = binding)
       algorithm
@@ -1273,6 +1321,7 @@ function typeExp
   input output Expression exp;
   input InstContext.Type context;
   input SourceInfo info;
+  input Boolean retype = false;
         output Type ty;
         output Variability variability;
         output Purity purity;
@@ -1322,7 +1371,7 @@ algorithm
         next_context := InstContext.set(context, NFInstContext.SUBEXPRESSION);
         (e1, ty1, var1, pur1) := typeExp(exp.exp1, next_context, info);
         (e2, ty2, var2, pur2) := typeExp(exp.exp2, next_context, info);
-        (exp, ty) := TypeCheck.checkBinaryOperation(e1, ty1, var1, exp.operator, e2, ty2, var2, context, info);
+        (exp, ty) := TypeCheck.checkBinaryOperation(e1, ty1, var1, exp.operator, e2, ty2, var2, context, info, retype);
       then
         (exp, ty, Prefixes.variabilityMax(var1, var2), Prefixes.purityMin(pur1, pur2));
 
@@ -1356,7 +1405,7 @@ algorithm
         next_context := InstContext.set(context, NFInstContext.SUBEXPRESSION);
         (e1, ty1, var1, pur1) := typeExp(exp.exp1, next_context, info);
         (e2, ty2, var2, pur2) := typeExp(exp.exp2, next_context, info);
-        (exp, ty) := TypeCheck.checkRelationOperation(e1, ty1, var1, exp.operator, e2, ty2, var2, context, info);
+        (exp, ty) := TypeCheck.checkRelationOperation(e1, ty1, var1, exp.operator, e2, ty2, var2, exp.index, context, info);
         variability := Prefixes.variabilityMax(var1, var2);
         purity := Prefixes.purityMin(pur1, pur2);
 
@@ -1373,8 +1422,7 @@ algorithm
 
     case Expression.CALL()
       algorithm
-        (e1, ty, var1, pur1) := Call.typeCall(exp, context, info);
-
+        (e1, ty, var1, pur1) := Call.typeCall(exp, context, info, retype);
         // If the call has multiple outputs and isn't alone on either side of an
         // equation/algorithm, select the first output.
         if Type.isTuple(ty) and not InstContext.isSingleExpression(context) then
@@ -1388,7 +1436,7 @@ algorithm
       algorithm
         next_context := InstContext.set(context, NFInstContext.SUBEXPRESSION);
       then
-        typeExp(exp.exp, next_context, info);
+        typeExp(exp.exp, next_context, info, retype);
 
     case Expression.SUBSCRIPTED_EXP()
       then typeSubscriptedExp(exp, context, info);
@@ -1396,7 +1444,7 @@ algorithm
     case Expression.MUTABLE()
       algorithm
         e1 := Mutable.access(exp.exp);
-        (e1, ty, variability, purity) := typeExp(e1, context, info);
+        (e1, ty, variability, purity) := typeExp(e1, context, info, retype);
         exp.exp := Mutable.create(e1);
       then
         (exp, ty, variability, purity);
@@ -1406,11 +1454,9 @@ algorithm
 
     case Expression.FILENAME() then (exp, Type.STRING(),  Variability.CONSTANT, Purity.PURE);
 
-    else
-      algorithm
-        Error.assertion(false, getInstanceName() + " got unknown expression: " + Expression.toString(exp), sourceInfo());
-      then
-        fail();
+    case Expression.MULTARY() then typeExp(SimplifyExp.splitMultary(exp), context, info, retype);
+
+    else (exp, Expression.typeOf(exp), Expression.variability(exp), Expression.purity(exp));
 
   end match;
 
@@ -1652,6 +1698,7 @@ function typeExpDim
 protected
   Type ty;
   Expression e;
+  InstContext.Type next_context;
 algorithm
   ty := Expression.typeOf(exp);
 
@@ -1665,6 +1712,10 @@ algorithm
     end if;
   end if;
 
+  // Clear any scope flags. For dimensions we only really care about if we're
+  // in a class or function and other flags shouldn't influence the typing.
+  next_context := InstContext.clearExpFlags(context);
+
   // Otherwise we try to type as little as possible of the expression to get
   // the dimension we need, to avoid introducing unnecessary cycles.
   (dim, error) := match exp
@@ -1674,18 +1725,23 @@ algorithm
 
     // A cref, use typeCrefDim to get the dimension.
     case Expression.CREF()
-      then typeCrefDim(exp.cref, dimIndex, context, info);
+      then typeCrefDim(exp.cref, dimIndex, next_context, info);
 
     // Any other expression, type the whole expression and get the dimension
     // from the type.
     else
       algorithm
-        (e, ty, _) := typeExp(exp, context, info);
+        (e, ty, _) := typeExp(exp, next_context, info);
+
+        if Type.isTuple(ty) then
+          ty := Type.firstTupleType(ty);
+          e := Expression.tupleElement(e, ty, 1);
+        end if;
 
         if Type.isConditionalArray(ty) then
           e := Expression.map(e,
-            function evaluateArrayIf(target = Ceval.EvalTarget.GENERIC(info)));
-          (e, ty, _) := typeExp(e, context, info);
+            function evaluateArrayIf(target = Ceval.EvalTarget.new(info, next_context)));
+          (e, ty, _) := typeExp(e, next_context, info);
         end if;
 
         typedExp := SOME(e);
@@ -1969,16 +2025,10 @@ algorithm
 
     case ComponentRef.CREF(node = InstNode.COMPONENT_NODE())
       algorithm
-        if Component.hasCondition(InstNode.component(cref.node)) and
-           (not InstContext.inConnect(context) or InstContext.inSubscript(context)) and not InstContext.inRelaxed(context) then
-          Error.addStrictMessage(Error.CONDITIONAL_COMPONENT_INVALID_CONTEXT,
-            {InstNode.name(cref.node)}, info);
-        end if;
-
         // The context used when typing a component node depends on where the
         // component was declared, not where it's used. This can be different to
         // the given context, e.g. for package constants used in a function.
-        node_ty := typeComponent(cref.node, crefContext(cref.node), typeChildren = firstPart or not InstContext.inDimension(context));
+        node_ty := typeComponent(cref.node, InstContext.nodeContext(cref.node, context), typeChildren = firstPart or not InstContext.inDimension(context));
 
         (subs, subs_var) := typeSubscripts(cref.subscripts, node_ty, Expression.CREF(node_ty, cref), context, info);
         (rest_cr, rest_var) := typeCref2(cref.restCref, context, info, false);
@@ -2001,30 +2051,19 @@ algorithm
       then
         (cref, Variability.CONSTANT);
 
+    case ComponentRef.CREF(node = InstNode.NAME_NODE())
+      algorithm
+        (subs, subs_var) := typeSubscripts(cref.subscripts, cref.ty,
+          Expression.CREF(cref.ty, cref), context, info, checkSubscripts = false);
+        (rest_cr, rest_var) := typeCref2(cref.restCref, context, info, false);
+        cref.restCref := rest_cr;
+        subsVariability := Prefixes.variabilityMax(subs_var, rest_var);
+      then
+        (cref, rest_var);
+
     else (cref, Variability.CONSTANT);
   end match;
 end typeCref2;
-
-function crefContext
-  input InstNode crefNode;
-  output InstContext.Type context;
-protected
-  InstNode parent;
-  Restriction parent_res;
-algorithm
-  parent := InstNode.explicitParent(crefNode);
-
-  // Records might actually be record constructors that should count as
-  // functions here, such record constructors are always root classes.
-  if not InstNode.isRootClass(parent) then
-    context := NFInstContext.CLASS;
-    return;
-  end if;
-
-  parent_res := InstNode.restriction(parent);
-  context := if Restriction.isFunction(parent_res) or Restriction.isRecord(parent_res) then
-    NFInstContext.FUNCTION else NFInstContext.CLASS;
-end crefContext;
 
 function typeSubscripts
   input list<Subscript> subscripts;
@@ -2032,6 +2071,7 @@ function typeSubscripts
   input Expression subscriptedExp;
   input InstContext.Type context;
   input SourceInfo info;
+  input Boolean checkSubscripts = true;
   output list<Subscript> typedSubs;
   output Variability variability = Variability.CONSTANT;
 protected
@@ -2051,15 +2091,20 @@ algorithm
   next_context := InstContext.set(context, NFInstContext.SUBSCRIPT);
   i := 1;
 
-  if listLength(subscripts) > listLength(dims) then
+  if listLength(subscripts) > listLength(dims) and checkSubscripts then
     Error.addSourceMessage(Error.WRONG_NUMBER_OF_SUBSCRIPTS,
       {Expression.toString(subscriptedExp), String(listLength(subscripts)), String(listLength(dims))}, info);
     fail();
   end if;
 
   for s in subscripts loop
-    dim :: dims := dims;
-    (sub, var) := typeSubscript(s, dim, subscriptedExp, i, next_context, info);
+    if checkSubscripts then
+      dim :: dims := dims;
+    else
+      dim := Dimension.UNKNOWN();
+    end if;
+
+    (sub, var) := typeSubscript(s, dim, subscriptedExp, i, next_context, info, checkSubscripts);
     typedSubs := sub :: typedSubs;
     variability := Prefixes.variabilityMax(variability, var);
     i := i + 1;
@@ -2082,6 +2127,7 @@ function typeSubscript
   input Integer index;
   input InstContext.Type context;
   input SourceInfo info;
+  input Boolean checkSubscript;
   output Subscript outSubscript = subscript;
   output Variability variability = Variability.CONSTANT;
 protected
@@ -2095,7 +2141,12 @@ algorithm
       algorithm
         e := evaluateEnd(subscript.exp, dimension, subscriptedExp, index, context, info);
         (e, ty, variability) := typeExp(e, context, info);
-        (e, matched_ty) := checkSubscriptType(e, Type.arrayElementType(ty), dimension, info);
+
+        if checkSubscript then
+          (e, matched_ty) := checkSubscriptType(e, Type.arrayElementType(ty), dimension, info);
+        else
+          matched_ty := ty;
+        end if;
 
         if Type.isArray(ty) then
           outSubscript := Subscript.SLICE(e);
@@ -2112,14 +2163,24 @@ algorithm
     // Other subscripts have already been typed, but still need to be type checked.
     case Subscript.INDEX(index = e)
       algorithm
-        (e, ty) := checkSubscriptType(e, Expression.typeOf(e), dimension, info);
+        if checkSubscript then
+          (e, ty) := checkSubscriptType(e, Expression.typeOf(e), dimension, info);
+        else
+          ty := Expression.typeOf(e);
+        end if;
+
         outSubscript := Subscript.INDEX(e);
       then
         (ty, Expression.variability(e));
 
     case Subscript.SLICE(slice = e)
       algorithm
-        (e, ty) := checkSubscriptType(e, Type.unliftArray(Expression.typeOf(e)), dimension, info);
+        if checkSubscript then
+          (e, ty) := checkSubscriptType(e, Type.unliftArray(Expression.typeOf(e)), dimension, info);
+        else
+          ty := Type.unliftArray(Expression.typeOf(e));
+        end if;
+
         outSubscript := Subscript.SLICE(e);
       then
         (ty, Expression.variability(e));
@@ -2146,7 +2207,7 @@ protected
 algorithm
   expected_ty := Dimension.subscriptType(dimension);
   (subscriptExp, outType, mk) := TypeCheck.matchTypes(subscriptType,
-    expected_ty, subscriptExp, allowUnknown = true);
+    expected_ty, subscriptExp, NFTypeCheck.ALLOW_UNKNOWN);
 
   if TypeCheck.isIncompatibleMatch(mk) then
     Error.addSourceMessage(Error.SUBSCRIPT_TYPE_MISMATCH,
@@ -2172,42 +2233,50 @@ protected
   Type ty1 = Type.UNKNOWN(), ty2, ty3;
   list<Type> tys = {};
   MatchKind mk;
-  Integer n=1;
+  Integer array_len, idx;
   InstContext.Type next_context;
 algorithm
   next_context := InstContext.set(context, NFInstContext.SUBEXPRESSION);
+  array_len := arrayLength(elements);
 
-  for e in elements loop
-    (exp, ty2, var, pur) := typeExp(e, next_context, info);
-    variability := Prefixes.variabilityMax(var, variability);
-    purity := Prefixes.purityMin(pur, purity);
+  if array_len > 0 then
+    (exp, ty1, variability, purity) := typeExp(arrayGet(elements, 1), next_context, info);
+    expl := exp :: expl;
+    tys := ty1 :: tys;
 
-    (, ty3, mk) := TypeCheck.matchTypes(ty2, ty1, exp, allowUnknown = true);
-    if TypeCheck.isIncompatibleMatch(mk) then
-      // Try the other way around to get the super-type of the array
-      (, ty3, mk) := TypeCheck.matchTypes(ty1, ty2, exp, allowUnknown = false);
-      if TypeCheck.isCompatibleMatch(mk) then
+    for i in 2:array_len loop
+      (exp, ty2, var, pur) := typeExp(arrayGet(elements, i), next_context, info);
+      variability := Prefixes.variabilityMax(var, variability);
+      purity := Prefixes.purityMin(pur, purity);
+
+      (, ty3, mk) := TypeCheck.matchTypes(ty2, ty1, exp, NFTypeCheck.IGNORE_DIMENSIONS_IN_RECORDS);
+      if TypeCheck.isIncompatibleMatch(mk) then
+        // Try the other way around to get the super-type of the array
+        (, ty3, mk) := TypeCheck.matchTypes(ty1, ty2, exp, NFTypeCheck.IGNORE_DIMENSIONS_IN_RECORDS);
+        if TypeCheck.isCompatibleMatch(mk) then
+          ty1 := ty3;
+        end if;
+      else
         ty1 := ty3;
       end if;
-    else
-      ty1 := ty3;
-    end if;
-    expl := exp :: expl;
-    tys := ty2 :: tys;
-    n := n+1;
-  end for;
+      expl := exp :: expl;
+      tys := ty2 :: tys;
+    end for;
+  end if;
+
   // Give the actual error-messages here after we got the super-type of the array
+  idx := array_len;
   for e in expl loop
     ty2::tys := tys;
-    (exp, , mk) := TypeCheck.matchTypes(ty2, ty1, e);
+    (exp, , mk) := TypeCheck.matchTypes(ty2, ty1, e, NFTypeCheck.IGNORE_DIMENSIONS_IN_RECORDS);
     expl2 := exp::expl2;
-    n := n-1;
     if not InstContext.inAnnotation(context) then // forget errors when handling annotations
       if TypeCheck.isIncompatibleMatch(mk) then
-        Error.addSourceMessage(Error.NF_ARRAY_TYPE_MISMATCH, {String(n), Expression.toString(exp), Type.toString(ty2), Type.toString(ty1)}, info);
+        Error.addSourceMessage(Error.NF_ARRAY_TYPE_MISMATCH, {String(idx), Expression.toString(exp), Type.toString(ty2), Type.toString(ty1)}, info);
         fail();
       end if;
     end if;
+    idx := idx-1;
   end for;
 
   arrayType := Type.liftArrayLeft(ty1, Dimension.fromExpList(expl2));
@@ -2473,7 +2542,7 @@ algorithm
 
         if variability <= Variability.STRUCTURAL_PARAMETER and purity == Purity.PURE then
           // Evaluate the index if it's a constant.
-          index := Ceval.evalExp(index, Ceval.EvalTarget.IGNORE_ERRORS());
+          index := Ceval.evalExp(index, NFCeval.noTarget);
 
           // TODO: Print an error if the index couldn't be evaluated to an int.
           Expression.INTEGER(iindex) := index;
@@ -2634,35 +2703,18 @@ algorithm
     fail();
   end if;
 
+  // Evaluate the if-expression if exactly one branch contains a der call,
+  // since this can affect the number of state variables.
+  if Expression.contains(tb2, function Expression.isCallNamed(name = "der")) <>
+     Expression.contains(fb2, function Expression.isCallNamed(name = "der")) and
+     Flags.getConfigString(Flags.EVALUATE_STRUCTURAL_PARAMETERS) == "all" then
+    Structural.markExp(cond);
+  end if;
+
   ifExp := Expression.IF(ty, cond, tb2, fb2);
   var := Prefixes.variabilityMax(cond_var, Prefixes.variabilityMax(tb_var, fb_var));
   purity := Prefixes.purityMin(cond_pur, Prefixes.purityMin(tb_pur, fb_pur));
 end typeIfExpression;
-
-function evaluateCondition
-  input Expression condExp;
-  input InstContext.Type context;
-  input SourceInfo info;
-  output Boolean condBool;
-protected
-  Expression cond_exp;
-algorithm
-  cond_exp := Ceval.evalExp(condExp, Ceval.EvalTarget.GENERIC(info));
-
-  if Expression.arrayAllEqual(cond_exp) then
-    cond_exp := Expression.arrayFirstScalar(cond_exp);
-  end if;
-
-  condBool := match cond_exp
-    case Expression.BOOLEAN() then cond_exp.value;
-    else
-      algorithm
-        Error.assertion(false, getInstanceName() + " failed to evaluate condition `" +
-          Expression.toString(condExp) + "`", info);
-      then
-        fail();
-  end match;
-end evaluateCondition;
 
 function typeClassSections
   input InstNode classNode;
@@ -2829,7 +2881,7 @@ algorithm
             algorithm
               // The only other kind of expression that's allowed is scalar constants.
               if Type.isScalarBuiltin(ty) and var == Variability.CONSTANT then
-                outArg := Ceval.evalExp(outArg, Ceval.EvalTarget.GENERIC(info));
+                outArg := Ceval.evalExp(outArg, Ceval.EvalTarget.new(info, NFInstContext.FUNCTION));
               else
                 Error.addSourceMessage(Error.EXTERNAL_ARG_WRONG_EXP,
                   {Expression.toString(outArg)}, info);
@@ -2950,6 +3002,10 @@ function typeComponentSections
 protected
   Component comp;
 algorithm
+  if InstNode.isEmpty(component) then
+    return;
+  end if;
+
   comp := InstNode.component(component);
 
   if Component.isDeleted(comp) or InstNode.isOnlyOuter(component) then
@@ -3005,10 +3061,6 @@ algorithm
         e1 := typeIterator(eq.iterator, e1, context, structural = true);
         next_context := InstContext.set(context, NFInstContext.FOR);
         body := list(typeEquation(e, next_context) for e in eq.body);
-
-        if Equation.containsList(body, Equation.isConnection) then
-          Structural.markExp(e1);
-        end if;
       then
         Equation.FOR(eq.iterator, SOME(e1), body, eq.scope, eq.source);
 
@@ -3081,8 +3133,9 @@ algorithm
   // Expandable connectors can only be type checked after they've been augmented during
   // the connection handling.
   if not (lhs_deleted or rhs_deleted) and
-     not (Type.isExpandableConnector(lhs_ty) or Type.isExpandableConnector(rhs_ty)) then
-    (lhs, rhs, _, mk) := TypeCheck.matchExpressions(lhs, lhs_ty, rhs, rhs_ty, allowUnknown = true);
+     not (Type.isExpandableConnector(Type.arrayElementType(lhs_ty)) or
+          Type.isExpandableConnector(Type.arrayElementType(rhs_ty))) then
+    (lhs, rhs, _, mk) := TypeCheck.matchExpressions(lhs, lhs_ty, rhs, rhs_ty, NFTypeCheck.ALLOW_UNKNOWN);
 
     if TypeCheck.isIncompatibleMatch(mk) then
       // TODO: Better error message.
@@ -3252,7 +3305,7 @@ algorithm
         (e2, ty2) := typeExp(st.rhs, InstContext.set(context, NFInstContext.RHS), info);
 
         // TODO: Should probably only be allowUnknown = true if in a function.
-        (e2, _, mk) := TypeCheck.matchTypes(ty2, ty1, e2, allowUnknown = true);
+        (e2, _, mk) := TypeCheck.matchTypes(ty2, ty1, e2, NFTypeCheck.ALLOW_UNKNOWN);
 
         if TypeCheck.isIncompatibleMatch(mk) then
           Error.addSourceMessage(Error.ASSIGN_TYPE_MISMATCH_ERROR,
@@ -3379,6 +3432,10 @@ function checkAssignment
   input InstContext.Type context;
   input SourceInfo info;
 algorithm
+  if InstContext.inInstanceAPI(context) then
+    return;
+  end if;
+
   () := match lhsExp
     local
       Integer i;
@@ -3449,11 +3506,11 @@ algorithm
 
   (e1, ty1) := typeExp(lhsExp, InstContext.set(context, NFInstContext.LHS), info);
   (e2, ty2) := typeExp(rhsExp, InstContext.set(context, NFInstContext.RHS), info);
-  (e1, e2, ty, mk) := TypeCheck.matchExpressions(e1, ty1, e2, ty2);
+  (e2, e1, ty, mk) := TypeCheck.matchExpressions(e2, ty2, e1, ty1);
 
   if TypeCheck.isIncompatibleMatch(mk) then
     Error.addSourceMessage(Error.EQUATION_TYPE_MISMATCH_ERROR,
-      {Expression.toString(e1) + " = " + Expression.toString(e2),
+      {Expression.toString(lhsExp) + " = " + Expression.toString(rhsExp),
        Type.toString(ty1) + " = " + Type.toString(ty2)}, info);
     fail();
   end if;
@@ -3523,7 +3580,6 @@ algorithm
       // If all conditions up to and including this one are parameter
       // expressions, consider the condition to be structural.
       var := Variability.STRUCTURAL_PARAMETER;
-      Structural.markExp(cond);
     end if;
 
     accum_var := Prefixes.variabilityMax(accum_var, var);
@@ -3677,7 +3733,16 @@ algorithm
 
   // The first argument must be a cref.
   cref := match crefExp
-    case Expression.CREF() then crefExp.cref;
+    case Expression.CREF()
+      algorithm
+        if ComponentRef.isIterator(crefExp.cref) then
+          Error.addSourceMessage(Error.ASSIGN_ITERATOR_ERROR,
+            {ComponentRef.toString(crefExp.cref)}, info);
+          fail();
+        end if;
+      then
+        crefExp.cref;
+
     else
       algorithm
         Error.addSourceMessage(Error.REINIT_MUST_BE_VAR_OR_ARRAY, {}, info);

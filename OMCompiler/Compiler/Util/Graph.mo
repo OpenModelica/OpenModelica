@@ -610,7 +610,7 @@ algorithm
         //print(" List size 2 " + intString(listLength(edges)) + "\n");
         //print(" List size 3 " + intString(listLength(edges)) + "\n");
         M = listAppend(edges,M);
-        //print("Start new round! \n");
+        //print("Start new round!\n");
       then allReachableNodesWork((M,L),inGraph,inEqualFunc);
     else
       equation
@@ -1034,7 +1034,7 @@ public function filterGraph
     output Boolean outCond;
   end CondFunc;
 algorithm
-  outGraph := List.accumulateMapAccum1(inGraph, filterGraph2, inCondFunc);
+  outGraph := List.accumulateMapAccum(inGraph, function filterGraph2(inCondFunc = inCondFunc));
 end filterGraph;
 
 protected function filterGraph2

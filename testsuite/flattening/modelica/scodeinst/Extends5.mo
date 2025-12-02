@@ -1,7 +1,6 @@
 // name: Extends5.mo
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 // Checks that the lookup finds the correct element when the component scope has
 // the same name as the extended class.

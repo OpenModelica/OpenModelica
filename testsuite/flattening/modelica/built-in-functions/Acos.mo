@@ -1,7 +1,6 @@
 // name: Acos
 // keywords: acos
 // status: correct
-// cflags: -d=-newInst
 //
 // Tests the built-in acos function
 //
@@ -10,6 +9,7 @@ model Acos
   Real r;
 equation
   r = acos(0.5);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Acos;
 
 // Result:

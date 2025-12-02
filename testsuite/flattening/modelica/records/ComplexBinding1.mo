@@ -1,7 +1,6 @@
 // name:     ComplexBinding1
 // keywords: #4606 
 // status:   correct
-// cflags: -d=-newInst
 //
 
 operator record Complex 
@@ -38,6 +37,7 @@ model ComplexBinding1
   parameter Complex Z1 = Complex(1, 1);
   parameter Complex Z2 = Z1;
   Complex Z3 = F(Z1, Z2);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ComplexBinding1;
 
 // Result:

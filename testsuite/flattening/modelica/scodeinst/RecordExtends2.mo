@@ -1,7 +1,6 @@
 // name: RecordExtends2
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 
 package P

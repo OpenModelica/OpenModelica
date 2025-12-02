@@ -47,23 +47,23 @@ res := OpenModelica.Scripting.readSimulationResult("initializationTests.discrete
 // ""
 // record SimulationResult
 //     resultFile = "initializationTests.discreteTest5_baseModel_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'initializationTests.discreteTest5_baseModel', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'initializationTests.discreteTest5_baseModel', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
 // ""
-// {{0.0,0.0},{2.0,2.0},{0.0,0.0}}
+// {{0.0, 0.0}, {2.0, 2.0}, {0.0, 0.0}}
 // ""
 // record SimulationResult
 //     resultFile = "initializationTests.discreteTest5_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'initializationTests.discreteTest5', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'initializationTests.discreteTest5', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
 // "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // "
-// {{0.0,0.0},{2.0,2.0},{2.0,2.0},{0.0,0.0}}
+// {{0.0, 0.0}, {2.0, 2.0}, {2.0, 2.0}, {0.0, 0.0}}
 // ""
 // endResult

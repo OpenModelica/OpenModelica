@@ -25,23 +25,23 @@ BuiltinReal.funcRealInt(27.777777777777777);getErrorString();
 
 // Result:
 // true
-// (4.0,-1.0,3.75,0.6,1.5,2.755675960631075,2.5,1.5)
+// (4.0, -1.0, 3.75, 0.6, 1.5, 2.7556759606310752, 2.5, 1.5)
 // ""
-// (15.73,-15.73)
+// (15.73, -15.73)
 // ""
-// (false,true,true,false,true,false)
+// (false, true, true, false, true, false)
 // ""
-// (true,true,false,true,false,false)
+// (true, true, false, true, false, false)
 // ""
-// (false,false,false,true,true,true)
+// (false, false, false, true, true, true)
 // ""
 // "1.0"
 // ""
-// "1.357661211213455e+101"
+// "1.3576612112134545e101"
 // ""
 // "0.3333333333333333"
 // ""
-// "-3.333333333333333e+239"
+// "-3.333333333333333e239"
 // ""
 // 27
 // ""

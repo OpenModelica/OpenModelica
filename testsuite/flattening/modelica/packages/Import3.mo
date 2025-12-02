@@ -1,7 +1,6 @@
 // name:     Import3
 // keywords: import
 // status:   correct
-// cflags: -d=-newInst
 //
 // Import in enclosing scopes is valid.
 
@@ -44,6 +43,7 @@ end B;
 
 model Import3
   extends B.A.F;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Import3;
 
 // Result:

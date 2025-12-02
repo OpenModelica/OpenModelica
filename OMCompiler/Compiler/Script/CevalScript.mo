@@ -58,6 +58,7 @@ import ErrorTypes;
 import FCore;
 import GlobalScript;
 import Interactive;
+import Interactive.Access;
 import SimCode;
 import Values;
 
@@ -320,6 +321,7 @@ public function loadFile "load the file or the directory structure if the file i
   input Boolean checkUses;
   input Boolean notifyLoad;
   input Boolean requireExactVersion;
+  input Boolean allowWithin = true;
   output Absyn.Program outProgram;
 protected
   String dir,filename,cname,prio,mp;
@@ -338,6 +340,9 @@ algorithm
     return;
   end if;
   outProgram := Parser.parse(name,encoding);
+  if not allowWithin then
+    checkTopClassWithin(outProgram, name);
+  end if;
   ClassLoader.checkOnLoadMessage(outProgram);
 
   // Check if we have duplicate top level classes before calling checkUsesAndUpdateProgram()
@@ -393,6 +398,19 @@ algorithm
     end match;
   end for;
 end checkDuplicateTopLevelClasses;
+
+protected function checkTopClassWithin
+  input Absyn.Program program;
+  input String filename;
+algorithm
+  if not AbsynUtil.withinEqual(program.within_, Absyn.Within.TOP()) then
+    Error.addSourceMessage(Error.LIBRARY_UNEXPECTED_WITHIN,
+      {AbsynUtil.withinString(Absyn.Within.TOP()), AbsynUtil.withinString(program.within_)},
+      SOURCEINFO(filename, false, 1, 0, 1, 0, 0)
+    );
+    fail();
+  end if;
+end checkTopClassWithin;
 
 protected function checkUsesAndUpdateProgram
   input Absyn.Program newp;
@@ -550,14 +568,7 @@ protected
   String actualVersionStr, pathStr;
 algorithm
   semverWanted := SemanticVersion.parse(version);
-  _ := match actualVersion
-    case SOME(actualVersionStr)
-      then ();
-    case NONE()
-      algorithm
-        actualVersionStr := "";
-      then ();
-  end match;
+  actualVersionStr := Util.getOptionOrDefault(actualVersion, "");
   pathStr := AbsynUtil.pathString(path);
   semverActual := SemanticVersion.parse(actualVersionStr);
   if 0 == SemanticVersion.compare(semverWanted, semverActual, comparePrerelease=false) then
@@ -649,10 +660,11 @@ algorithm
       DAE.Type ty;
       list<DAE.Type> tys;
       Values.Value v;
-      Integer i, access;
+      Integer i;
+      Access access;
       list<String> strs, strs1, strs2, interfaceType;
       Real r,r1,r2;
-      Boolean bval, b, b1, mergeAST, includePartial, qualified, sort, requireExactVersion;
+      Boolean bval, b, b1, mergeAST, includePartial, qualified, sort, requireExactVersion, allowWithin;
       Absyn.CodeNode codeNode;
       list<Absyn.Path> paths;
       list<Absyn.Class> classes;
@@ -669,9 +681,8 @@ algorithm
         Absyn.PROGRAM(classes=classes,within_=within_) := Parser.parsestring(str1,str2);
         paths := list(Absyn.Path.IDENT(AbsynUtil.className(c)) for c in classes);
         paths := List.map1r(paths,AbsynUtil.joinWithinPath,within_);
-        vals := List.map(paths,ValuesUtil.makeCodeTypeName);
       then
-        ValuesUtil.makeArray(vals);
+        ValuesUtil.makeCodeTypeNameArray(paths);
 
     case ("parseString",_)
       then ValuesUtil.makeArray({});
@@ -682,9 +693,8 @@ algorithm
         Error.clearMessages() "Clear messages";
         Print.clearErrorBuf() "Clear error buffer";
         paths := Interactive.parseFile(str1, encoding);
-        vals := List.map(paths,ValuesUtil.makeCodeTypeName);
       then
-        ValuesUtil.makeArray(vals);
+        ValuesUtil.makeCodeTypeNameArray(paths);
 
     case ("loadFileInteractiveQualified",{Values.STRING(str1),Values.STRING(encoding)})
       algorithm
@@ -692,9 +702,8 @@ algorithm
         Error.clearMessages() "Clear messages";
         Print.clearErrorBuf() "Clear error buffer";
         paths := Interactive.parseFile(str1, encoding, updateProgram=true);
-        vals := List.map(paths,ValuesUtil.makeCodeTypeName);
       then
-        ValuesUtil.makeArray(vals);
+        ValuesUtil.makeCodeTypeNameArray(paths);
 
     case ("loadFileInteractive",{Values.STRING(str1),Values.STRING(encoding),Values.BOOL(b),Values.BOOL(b1),Values.BOOL(requireExactVersion)})
       algorithm
@@ -712,8 +721,8 @@ algorithm
 
     case ("setSourceFile",{Values.CODE(Absyn.C_TYPENAME(path)),Values.STRING(str)})
       algorithm
-        Values.ENUM_LITERAL(index=access) := Interactive.checkAccessAnnotationAndEncryption(path, SymbolTable.getAbsyn());
-        if (access >= 9) then // i.e., The class is not encrypted.
+        access := Interactive.checkAccessAnnotationAndEncryption(path, SymbolTable.getAbsyn());
+        if access >= Access.all then // i.e., The class is not encrypted.
           (b,p) := Interactive.setSourceFile(path, str, SymbolTable.getAbsyn());
           SymbolTable.setAbsyn(p);
         else
@@ -816,16 +825,6 @@ algorithm
 
     case ("listVariables",{})
       then ValuesUtil.makeArray(getVariableNames(SymbolTable.getVars(),{}));
-
-    case ("setCompileCommand",{Values.STRING(cmd)})
-      algorithm
-        // cmd = Util.rawStringToInputString(cmd);
-        Settings.setCompileCommand(cmd);
-      then
-        Values.BOOL(true);
-
-    case ("getCompileCommand",{})
-      then Values.STRING(Settings.getCompileCommand());
 
     case ("setTempDirectoryPath",{Values.STRING(cmd)})
       algorithm
@@ -1124,9 +1123,6 @@ algorithm
     case ("compareFilesAndMove",_)
       then Values.BOOL(false);
 
-    case ("readFileNoNumeric",{Values.STRING(str)})
-      then Values.STRING(System.readFileNoNumeric(str));
-
     case ("getErrorString",{Values.BOOL(b)})
       then Values.STRING(Error.printMessagesStr(b));
 
@@ -1308,11 +1304,11 @@ algorithm
       then
         Values.BOOL(false);
 
-    case ("loadFile",Values.STRING(name)::Values.STRING(encoding)::Values.BOOL(b)::Values.BOOL(b1)::Values.BOOL(requireExactVersion)::_)
+    case ("loadFile",Values.STRING(name)::Values.STRING(encoding)::Values.BOOL(b)::Values.BOOL(b1)::Values.BOOL(requireExactVersion)::Values.BOOL(allowWithin)::_)
       algorithm
         execStatReset();
         name := Testsuite.friendlyPath(name);
-        newp := loadFile(name, encoding, SymbolTable.getAbsyn(), b, b1, requireExactVersion);
+        newp := loadFile(name, encoding, SymbolTable.getAbsyn(), b, b1, requireExactVersion, allowWithin);
         execStat("loadFile("+name+")");
         SymbolTable.setAbsyn(newp);
         outCache := FCore.emptyCache();
@@ -1322,11 +1318,18 @@ algorithm
     case ("loadFile",_)
       then Values.BOOL(false);
 
-    case ("loadFiles",Values.ARRAY(valueLst=vals)::Values.STRING(encoding)::Values.INTEGER(i)::Values.BOOL(b)::Values.BOOL(b1)::Values.BOOL(requireExactVersion)::_)
+    case ("loadFiles",Values.ARRAY(valueLst=vals)::Values.STRING(encoding)::Values.INTEGER(i)::Values.BOOL(b)::Values.BOOL(b1)::Values.BOOL(requireExactVersion)::Values.BOOL(allowWithin)::_)
       algorithm
         strs := List.mapMap(vals,ValuesUtil.extractValueString,Testsuite.friendlyPath);
         newps := Parser.parallelParseFilesToProgramList(strs,encoding,numThreads=i);
-        newp := List.fold(newps, function checkUsesAndUpdateProgram(checkUses=b, modelicaPath=Settings.getModelicaPath(Testsuite.isRunning()), notifyLoad=b1, requireExactVersion=requireExactVersion, mergeAST=false), SymbolTable.getAbsyn());
+        newp := SymbolTable.getAbsyn();
+        for p in newps loop
+          str :: strs := strs;
+          if not allowWithin then
+            checkTopClassWithin(p, str);
+          end if;
+          newp := checkUsesAndUpdateProgram(p, newp, b, Settings.getModelicaPath(Testsuite.isRunning()), b1, requireExactVersion, false);
+        end for;
         SymbolTable.setAbsyn(newp);
         outCache := FCore.emptyCache();
       then
@@ -1418,8 +1421,7 @@ algorithm
     case ("reloadClass",_)
       then Values.BOOL(false);
 
-    case
-    ("loadString",Values.STRING(str)::Values.STRING(name)::Values.STRING(encoding)::Values.BOOL(mergeAST)::Values.BOOL(b)::Values.BOOL(b1)::Values.BOOL(requireExactVersion)::_)
+    case ("loadString",Values.STRING(str)::Values.STRING(name)::Values.STRING(encoding)::Values.BOOL(mergeAST)::Values.BOOL(b)::Values.BOOL(b1)::Values.BOOL(requireExactVersion)::_)
       algorithm
         str := if not (encoding == "UTF-8") then System.iconv(str, encoding, "UTF-8") else str;
         newp := Parser.parsestring(str,name);
@@ -1457,13 +1459,13 @@ algorithm
 
     case ("classAnnotationExists",{Values.CODE(Absyn.C_TYPENAME(classpath)),Values.CODE(Absyn.C_TYPENAME(path))})
       algorithm
-        b := Interactive.getNamedAnnotation(classpath, SymbolTable.getAbsyn(), path, SOME(false), isSome);
+        b := Interactive.getNamedAnnotationExp(classpath, SymbolTable.getAbsyn(), path, SOME(false), isSome);
       then
         Values.BOOL(b);
 
     case ("getBooleanClassAnnotation",{Values.CODE(Absyn.C_TYPENAME(classpath)),Values.CODE(Absyn.C_TYPENAME(path))})
       algorithm
-        Absyn.BOOL(b) := Interactive.getNamedAnnotation(classpath, SymbolTable.getAbsyn(), path, NONE(), Interactive.getAnnotationExp);
+        Absyn.BOOL(b) := Interactive.getNamedAnnotationExp(classpath, SymbolTable.getAbsyn(), path, NONE(), Interactive.getAnnotationExp);
       then
         Values.BOOL(b);
 
@@ -1527,15 +1529,20 @@ algorithm
     case ("getAllSubtypeOf",{
           Values.CODE(Absyn.C_TYPENAME(path)),
           Values.CODE(Absyn.C_TYPENAME(parentClass)),
-          Values.BOOL(qualified),
+          _, // qualified not used
           Values.BOOL(includePartial),
           Values.BOOL(sort)})
       algorithm
-        paths := InteractiveUtil.getAllSubtypeOf(path, parentClass, SymbolTable.getAbsyn(), qualified, includePartial);
-        paths := if sort then List.sort(paths, AbsynUtil.pathGe) else paths;
-        vals := List.map(paths,ValuesUtil.makeCodeTypeName);
+        paths := InteractiveUtil.getAllSubtypeOf(path, parentClass, SymbolTable.getAbsyn(), includePartial, sort);
       then
-        ValuesUtil.makeArray(vals);
+        ValuesUtil.makeCodeTypeNameArray(paths);
+
+    case ("getReplaceableChoices", {
+          Values.CODE(Absyn.C_TYPENAME(path)),
+          Values.CODE(Absyn.C_TYPENAME(parentClass)),
+          Values.BOOL(includePartial),
+          Values.BOOL(sort)})
+      then InteractiveUtil.getReplaceableChoices(path, parentClass, SymbolTable.getAbsyn(), includePartial, sort);
 
     // check for OMSimulator API calls
     case (_,_)
@@ -1593,7 +1600,7 @@ algorithm
   evalParamAnn := Config.getEvaluateParametersInAnnotations();
   Config.setEvaluateParametersInAnnotations(true);
   try
-    Absyn.STRING(version) := Interactive.getNamedAnnotation(path, p, Absyn.IDENT("version"), SOME(Absyn.STRING("")), Interactive.getAnnotationExp);
+    Absyn.STRING(version) := Interactive.getNamedAnnotationExp(path, p, Absyn.IDENT("version"), SOME(Absyn.STRING("")), Interactive.getAnnotationExp);
   else
     version := "";
   end try;
@@ -2023,7 +2030,7 @@ protected
 algorithm
   skip := match cl
     case SCode.CLASS(classDef=SCode.CLASS_EXTENDS()) then false;
-    case SCode.CLASS(classDef=SCode.PARTS(elementLst=eltsTmp)) then not List.exist(eltsTmp, SCodeUtil.isElementExtendsOrClassExtends);
+    case SCode.CLASS(classDef=SCode.PARTS(elementLst=eltsTmp)) then not List.any(eltsTmp, SCodeUtil.isElementExtendsOrClassExtends);
     else true;
   end match;
   if not skip then
@@ -2660,7 +2667,7 @@ algorithm
       list<SCode.Element> elts;
       String name;
     case SCode.CLASS(restriction=SCode.R_PACKAGE(), encapsulatedPrefix=SCode.ENCAPSULATED(), classDef=SCode.PARTS(elementLst=elts))
-      then List.exist(elts, containsPublicInterface2);
+      then List.any(elts, containsPublicInterface2);
     else
       equation
         name = SCodeUtil.elementName(elt);
@@ -3099,7 +3106,7 @@ protected
   String str;
   Absyn.Path path, className;
   Boolean nested;
-  Integer access;
+  Access access;
   Absyn.Class absynClass;
   Absyn.Restriction restriction;
 algorithm
@@ -3111,13 +3118,13 @@ algorithm
           else className;
         end match;
         // handle encryption
-        Values.ENUM_LITERAL(index=access) := Interactive.checkAccessAnnotationAndEncryption(path, SymbolTable.getAbsyn());
+        access := Interactive.checkAccessAnnotationAndEncryption(path, SymbolTable.getAbsyn());
         (absynClass as Absyn.CLASS(restriction=restriction, info=SOURCEINFO(fileName=str))) := InteractiveUtil.getPathedClassInProgram(className, SymbolTable.getAbsyn());
         absynClass := if nested then absynClass else AbsynUtil.filterNestedClasses(absynClass);
         /* If the class has Access.packageText annotation or higher
          * If the class has Access.nonPackageText annotation or higher and class is not a package
          */
-        if ((access >= 7) or ((access >= 5) and not AbsynUtil.isPackageRestriction(restriction))) then
+        if ((access >= Access.packageText) or ((access >= Access.nonPackageText) and not AbsynUtil.isPackageRestriction(restriction))) then
           str := Dump.unparseStr(Absyn.PROGRAM({absynClass}, match path case Absyn.IDENT() then Absyn.TOP(); else Absyn.WITHIN(AbsynUtil.stripLast(path)); end match), options=Dump.DUMPOPTIONS(str));
         else
           Error.addMessage(Error.ACCESS_ENCRYPTED_PROTECTED_CONTENTS, {});
@@ -3180,7 +3187,7 @@ algorithm
     paths := List.sort(paths, AbsynUtil.pathGe);
   end if;
 
-  res := ValuesUtil.makeArray(list(ValuesUtil.makeCodeTypeName(p) for p in paths));
+  res := ValuesUtil.makeCodeTypeNameArray(paths);
 end getClassNames;
 
 function checkSettings
@@ -3406,74 +3413,57 @@ public function getImportList
   input output list<Absyn.Import> pub_imports_list = {};
   input output list<Absyn.Import> pro_imports_list = {};
 algorithm
-  () := match (inClass)
-    local
-      list<Absyn.ClassPart> parts;
+  for part in AbsynUtil.getClassPartsInClass(inClass) loop
+    (pub_imports_list, pro_imports_list) := getImportsInClassPart(part, pub_imports_list, pro_imports_list);
+  end for;
 
-    case Absyn.CLASS(body = Absyn.PARTS(classParts = parts)) algorithm
-      for part in parts loop
-        (pub_imports_list, pro_imports_list) := getImportsInClassPart(part, pub_imports_list, pro_imports_list);
-      end for;
-    then ();
-
-    // check also the case model extends X end X;
-    case Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = parts)) algorithm
-      for part in parts loop
-        (pub_imports_list, pro_imports_list) := getImportsInClassPart(part, pub_imports_list, pro_imports_list);
-      end for;
-    then ();
-
-    case Absyn.CLASS(body = Absyn.DERIVED()) then ();
-  end match;
+  pub_imports_list := listReverseInPlace(pub_imports_list);
+  pro_imports_list := listReverseInPlace(pro_imports_list);
 end getImportList;
 
 protected function getImportsInClassPart
-  input Absyn.ClassPart inAbsynClassPart;
+  input Absyn.ClassPart part;
   input output list<Absyn.Import> pub_imports_list;
   input output list<Absyn.Import> pro_imports_list;
 algorithm
-  () := matchcontinue (inAbsynClassPart)
-    local
-      list<Absyn.ElementItem> els;
-    case Absyn.PUBLIC(contents = els) algorithm
-      for elem in els loop
-        pub_imports_list := getImportsInElementItem(elem, pub_imports_list);
-      end for;
-    then ();
+  () := match part
+    case Absyn.PUBLIC()
+      algorithm
+        for elem in part.contents loop
+          pub_imports_list := getImportsInElementItem(elem, pub_imports_list);
+        end for;
+      then
+        ();
 
-    case Absyn.PROTECTED(contents = els) algorithm
-      for elem in els loop
-        pro_imports_list := getImportsInElementItem(elem, pro_imports_list);
-      end for;
-    then ();
+    case Absyn.PROTECTED()
+      algorithm
+        for elem in part.contents loop
+          pro_imports_list := getImportsInElementItem(elem, pro_imports_list);
+        end for;
+      then
+        ();
 
     else ();
-
-  end matchcontinue;
+  end match;
 end getImportsInClassPart;
 
 protected function getImportsInElementItem
-"Helper function to getImportCount"
-  input Absyn.ElementItem inAbsynElementItem;
+  "Helper function to getImportCount"
+  input Absyn.ElementItem item;
   input output list<Absyn.Import> imports_list;
 algorithm
-  () := matchcontinue inAbsynElementItem
+  () := match item
     local
       Absyn.Import import_;
-      Absyn.Class class_;
 
     case Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.IMPORT(import_ = import_)))
       algorithm
         imports_list := import_::imports_list;
-      then ();
-
-    case Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.CLASSDEF(class_ = class_)))
-      algorithm
-        // imports_list := getImportList(class_, get_protected, imports_list);
-      then ();
+      then
+        ();
 
     else ();
-  end matchcontinue;
+  end match;
 end getImportsInElementItem;
 
 protected function getMMfileTotalDependencies

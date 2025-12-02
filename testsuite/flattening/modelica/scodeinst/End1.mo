@@ -1,7 +1,6 @@
 // name: End1
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 //
 

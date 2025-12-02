@@ -159,14 +159,14 @@ void Transformation::parseTransformation(const ModelInstance::PlacementAnnotatio
 
   // transformation
   mVisible = placementAnnotation.getVisible();
-  mVisible.evaluate(placementAnnotation.getParentModel());
+  mVisible.evaluate(mpComponent ? mpComponent->getGraphicsView()->getModelWidget()->getModelInstance() : placementAnnotation.getParentModel());
   ModelInstance::Transformation transformation = placementAnnotation.getTransformation();
   mOriginDiagram = transformation.getOrigin();
-  mOriginDiagram.evaluate(placementAnnotation.getParentModel());
+  mOriginDiagram.evaluate(mpComponent ? mpComponent->getGraphicsView()->getModelWidget()->getModelInstance() : placementAnnotation.getParentModel());
   mExtentDiagram = transformation.getExtent();
-  mExtentDiagram.evaluate(placementAnnotation.getParentModel());
+  mExtentDiagram.evaluate(mpComponent ? mpComponent->getGraphicsView()->getModelWidget()->getModelInstance() : placementAnnotation.getParentModel());
   mRotateAngleDiagram = transformation.getRotation();
-  mRotateAngleDiagram.evaluate(placementAnnotation.getParentModel());
+  mRotateAngleDiagram.evaluate(mpComponent ? mpComponent->getGraphicsView()->getModelWidget()->getModelInstance() : placementAnnotation.getParentModel());
   // map values from element coordinate system to DiagramMap extent
   if (pExtend && pExtend->getIconDiagramMapHasExtent(false)) {
     ExtentAnnotation extendsCoOrdinateExtents = pExtend->getIconDiagramMapExtent(false);
@@ -182,34 +182,34 @@ void Transformation::parseTransformation(const ModelInstance::PlacementAnnotatio
       const qreal y4 = extendsCoOrdinateExtents.at(1).y();
 
       QPointF origin;
-      origin.setX(Utilities::mapToCoOrdinateSystem(mOriginDiagram.x(), x1, x2, x3, x4));
-      origin.setY(Utilities::mapToCoOrdinateSystem(mOriginDiagram.y(), y1, y2, y3, y4));
+      origin.setX(Utilities::mapToCoordinateSystem(mOriginDiagram.x(), x1, x2, x3, x4));
+      origin.setY(Utilities::mapToCoordinateSystem(mOriginDiagram.y(), y1, y2, y3, y4));
       mOriginDiagram = origin;
 
       QVector<QPointF> extent;
       QPointF point;
-      point.setX(Utilities::mapToCoOrdinateSystem(mExtentDiagram.at(0).x(), x1, x2, x3, x4));
-      point.setY(Utilities::mapToCoOrdinateSystem(mExtentDiagram.at(0).y(), y1, y2, y3, y4));
+      point.setX(Utilities::mapToCoordinateSystem(mExtentDiagram.at(0).x(), x1, x2, x3, x4));
+      point.setY(Utilities::mapToCoordinateSystem(mExtentDiagram.at(0).y(), y1, y2, y3, y4));
       extent.append(point);
-      point.setX(Utilities::mapToCoOrdinateSystem(mExtentDiagram.at(1).x(), x1, x2, x3, x4));
-      point.setY(Utilities::mapToCoOrdinateSystem(mExtentDiagram.at(1).y(), y1, y2, y3, y4));
+      point.setX(Utilities::mapToCoordinateSystem(mExtentDiagram.at(1).x(), x1, x2, x3, x4));
+      point.setY(Utilities::mapToCoordinateSystem(mExtentDiagram.at(1).y(), y1, y2, y3, y4));
       extent.append(point);
       mExtentDiagram = extent;
 
-      mExtentCenterDiagram.setX(Utilities::mapToCoOrdinateSystem(mExtentCenterDiagram.x(), x1, x2, x3, x4));
-      mExtentCenterDiagram.setY(Utilities::mapToCoOrdinateSystem(mExtentCenterDiagram.y(), y1, y2, y3, y4));
+      mExtentCenterDiagram.setX(Utilities::mapToCoordinateSystem(mExtentCenterDiagram.x(), x1, x2, x3, x4));
+      mExtentCenterDiagram.setY(Utilities::mapToCoordinateSystem(mExtentCenterDiagram.y(), y1, y2, y3, y4));
     }
   }
   // icon transformation
   mVisibleIcon = placementAnnotation.getIconVisible();
-  mVisibleIcon.evaluate(placementAnnotation.getParentModel());
+  mVisibleIcon.evaluate(mpComponent ? mpComponent->getGraphicsView()->getModelWidget()->getModelInstance() : placementAnnotation.getParentModel());
   ModelInstance::Transformation iconTransformation = placementAnnotation.getIconTransformation();
   mOriginIcon = iconTransformation.getOrigin();
-  mOriginIcon.evaluate(placementAnnotation.getParentModel());
+  mOriginIcon.evaluate(mpComponent ? mpComponent->getGraphicsView()->getModelWidget()->getModelInstance() : placementAnnotation.getParentModel());
   mExtentIcon = iconTransformation.getExtent();
-  mExtentIcon.evaluate(placementAnnotation.getParentModel());
+  mExtentIcon.evaluate(mpComponent ? mpComponent->getGraphicsView()->getModelWidget()->getModelInstance() : placementAnnotation.getParentModel());
   mRotateAngleIcon = iconTransformation.getRotation();
-  mRotateAngleIcon.evaluate(placementAnnotation.getParentModel());
+  mRotateAngleIcon.evaluate(mpComponent ? mpComponent->getGraphicsView()->getModelWidget()->getModelInstance() : placementAnnotation.getParentModel());
   // map values from element coordinate system to IconMap extent.
   if (pExtend && pExtend->getIconDiagramMapHasExtent(true)) {
     ExtentAnnotation extendsCoOrdinateExtents = pExtend->getIconDiagramMapExtent(true);
@@ -225,22 +225,22 @@ void Transformation::parseTransformation(const ModelInstance::PlacementAnnotatio
       const qreal y4 = extendsCoOrdinateExtents.at(1).y();
 
       QPointF origin;
-      origin.setX(Utilities::mapToCoOrdinateSystem(mOriginIcon.x(), x1, x2, x3, x4));
-      origin.setY(Utilities::mapToCoOrdinateSystem(mOriginIcon.y(), y1, y2, y3, y4));
+      origin.setX(Utilities::mapToCoordinateSystem(mOriginIcon.x(), x1, x2, x3, x4));
+      origin.setY(Utilities::mapToCoordinateSystem(mOriginIcon.y(), y1, y2, y3, y4));
       mOriginIcon = origin;
 
       QVector<QPointF> extent;
       QPointF point;
-      point.setX(Utilities::mapToCoOrdinateSystem(mExtentIcon.at(0).x(), x1, x2, x3, x4));
-      point.setY(Utilities::mapToCoOrdinateSystem(mExtentIcon.at(0).y(), y1, y2, y3, y4));
+      point.setX(Utilities::mapToCoordinateSystem(mExtentIcon.at(0).x(), x1, x2, x3, x4));
+      point.setY(Utilities::mapToCoordinateSystem(mExtentIcon.at(0).y(), y1, y2, y3, y4));
       extent.append(point);
-      point.setX(Utilities::mapToCoOrdinateSystem(mExtentIcon.at(1).x(), x1, x2, x3, x4));
-      point.setY(Utilities::mapToCoOrdinateSystem(mExtentIcon.at(1).y(), y1, y2, y3, y4));
+      point.setX(Utilities::mapToCoordinateSystem(mExtentIcon.at(1).x(), x1, x2, x3, x4));
+      point.setY(Utilities::mapToCoordinateSystem(mExtentIcon.at(1).y(), y1, y2, y3, y4));
       extent.append(point);
       mExtentIcon = extent;
 
-      mExtentCenterIcon.setX(Utilities::mapToCoOrdinateSystem(mExtentCenterIcon.x(), x1, x2, x3, x4));
-      mExtentCenterIcon.setY(Utilities::mapToCoOrdinateSystem(mExtentCenterIcon.y(), y1, y2, y3, y4));
+      mExtentCenterIcon.setX(Utilities::mapToCoordinateSystem(mExtentCenterIcon.x(), x1, x2, x3, x4));
+      mExtentCenterIcon.setY(Utilities::mapToCoordinateSystem(mExtentCenterIcon.y(), y1, y2, y3, y4));
     }
   }
 }

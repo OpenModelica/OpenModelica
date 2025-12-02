@@ -65,6 +65,8 @@
 #include "textcell.h"
 #include "celldocument.h"
 #include "graphcell.h"
+#include "OMPlot.h"
+#include "PlotCurve.h"
 #include <QMessageBox>
 #include <QPushButton>
 
@@ -416,14 +418,27 @@ namespace IAEX
           QString text = e.text();
           // replace all href="...\..." with href=".../..."
           QString pattern("(href[^=]*=[^\"]*\"[^\"\\\\]*)\\\\([^\"]*\")");
+#if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
+          QRegularExpression rx(pattern, QRegularExpression::CaseInsensitiveOption);
+#else
           QRegExp rx(pattern);
           rx.setCaseSensitivity(Qt::CaseInsensitive);
           rx.setMinimal(true);
           rx.setPatternSyntax(QRegExp::RegExp);
+#endif
           if (!rx.isValid())
           {
             fprintf(stderr, "Invalid QRegExp(%s)\n", rx.pattern().toStdString().c_str());
           }
+#if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
+  QRegularExpressionMatch match = rx.match(text);
+  while (match.hasMatch())
+  {
+    text = text.replace(rx, match.captured(1) + QString::fromAscii("/") + match.captured(2));
+    match = rx.match(text);
+  }
+  textcell->setTextHtml(text);
+#else
           int done = rx.indexIn(text);
           if (done > -1)
           {
@@ -441,6 +456,7 @@ namespace IAEX
           {
             textcell->setTextHtml( text );
           }
+#endif
         }
         else if( e.tagName() == XML_RULE )
         {
@@ -641,7 +657,7 @@ namespace IAEX
                   pPlotCurve->addYAxisValue(d);
                 }
                 // set the curve data
-                pPlotCurve->setData(pPlotCurve->getXAxisVector(), pPlotCurve->getYAxisVector(), pPlotCurve->getSize());
+                pPlotCurve->plotData();
               }
               gCell->mpPlotWindow->getPlot()->addPlotCurve(pPlotCurve);
               pPlotCurve->attach(gCell->mpPlotWindow->getPlot());

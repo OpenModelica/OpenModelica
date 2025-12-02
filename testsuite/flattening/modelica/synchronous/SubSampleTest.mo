@@ -1,7 +1,6 @@
 // name: SubSampleTest
 // keywords: synchronous features
 // status: correct
-// cflags: -d=-newInst
 
 model SubSampleTest
   output Integer x[2];
@@ -10,6 +9,7 @@ model SubSampleTest
 equation
   y = subSample(2.1);
   x = subSample(z, 2);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end SubSampleTest;
 
 // Result:

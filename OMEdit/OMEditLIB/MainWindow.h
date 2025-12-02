@@ -44,7 +44,7 @@ extern "C" {
 #include "Util/StringHandler.h"
 
 #include <QtGlobal>
-#if (QT_VERSION < QT_VERSION_CHECK(5, 0, 0))
+#if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
 #error "OMEdit requires Qt 5.0.0 or newer"
 #endif
 
@@ -65,6 +65,7 @@ extern "C" {
 class OMCProxy;
 class TransformationsWidget;
 class LibraryWidget;
+class ElementWidget;
 class GDBAdapter;
 class StackFramesWidget;
 class LocalsWidget;
@@ -73,12 +74,8 @@ class GDBLoggerWidget;
 class DocumentationWidget;
 class PlotWindowContainer;
 class VariablesWidget;
-#if !defined(WITHOUT_OSG)
-class ThreeDViewer;
-#endif
 class BreakpointsWidget;
 class SimulationDialog;
-class TLMCoSimulationDialog;
 class OMSSimulationDialog;
 class ModelWidgetContainer;
 class ModelWidget;
@@ -108,20 +105,21 @@ public:
   void setUpMainWindow(threadData_t *threadData);
   bool isDebug() const {return mDebug;}
   void setDebug(bool debug) {mDebug = debug;}
-  bool isNewApi() const {return mNewApi;}
-  void setNewApi(bool newApi) {mNewApi = newApi;}
-  bool isNewApiCommandLine() const {return mNewApiCommandLine;}
-  void setNewApiCommandLine(bool newApiCommandLine) {mNewApiCommandLine = newApiCommandLine;}
   bool isNewApiProfiling() const {return mNewApiProfiling;}
   void setNewApiProfiling(bool newApiProfiling);
+  bool isCRMLEnabled() const {return mCRMLEnabled;}
+  void setCRMLEnabled(bool crmlEnabled) {mCRMLEnabled = crmlEnabled;}
   bool isTestsuiteRunning() const {return mTestsuiteRunning;}
   void setTestsuiteRunning(bool testsuiteRunning) {mTestsuiteRunning = testsuiteRunning;}
+  bool isSkipExpressionEvaluation() const {return mSkipExpressionEvaluation;}
+  void setSkipExpressionEvaluation(bool skipExpressionEvaluation) {mSkipExpressionEvaluation = skipExpressionEvaluation;}
   OMCProxy* getOMCProxy() {return mpOMCProxy;}
   void setExitApplicationStatus(bool status) {mExitApplicationStatus = status;}
   bool getExitApplicationStatus() {return mExitApplicationStatus;}
   int getNumberOfProcessors() {return mNumberOfProcessors;}
   QDockWidget* getMessagesDockWidget() {return mpMessagesDockWidget;}
   LibraryWidget* getLibraryWidget() {return mpLibraryWidget;}
+  ElementWidget* getElementWidget() {return mpElementWidget;}
   StackFramesWidget* getStackFramesWidget() {return mpStackFramesWidget;}
   BreakpointsWidget* getBreakpointsWidget() {return mpBreakpointsWidget;}
   LocalsWidget* getLocalsWidget() {return mpLocalsWidget;}
@@ -134,13 +132,7 @@ public:
   VariablesWidget* getVariablesWidget() {return mpVariablesWidget;}
   QDockWidget* getVariablesDockWidget() {return mpVariablesDockWidget;}
   SearchWidget* getSearchWidget() {return mpSearchWidget;}
-#if !defined(WITHOUT_OSG)
-  bool isThreeDViewerInitialized();
-  ThreeDViewer* getThreeDViewer();
-  QDockWidget* getThreeDViewerDockWidget() {return mpThreeDViewerDockWidget;}
-#endif
   SimulationDialog* getSimulationDialog() {return mpSimulationDialog;}
-  TLMCoSimulationDialog* getTLMCoSimulationDialog() {return mpTLMCoSimulationDialog;}
   OMSSimulationDialog* getOMSSimulationDialog() {return mpOMSSimulationDialog;}
   ModelWidgetContainer* getModelWidgetContainer() {return mpModelWidgetContainer;}
   WelcomePageWidget* getWelcomePageWidget() {return mpWelcomePageWidget;}
@@ -204,16 +196,11 @@ public:
   QAction* getTransitionModeAction() {return mpTransitionModeAction;}
   QAction* getReSimulateModelAction() {return mpReSimulateModelAction;}
   QAction* getReSimulateSetupAction() {return mpReSimulateSetupAction;}
-  QAction* getSimulationParamsAction() {return mpSimulationParamsAction;}
-  QAction* getFetchInterfaceDataAction() {return mpFetchInterfaceDataAction;}
-  QAction* getAlignInterfacesAction() {return mpAlignInterfacesAction;}
-  QAction* getTLMSimulationAction() {return mpTLMCoSimulationAction;}
   QAction* getAddSystemAction() {return mpAddSystemAction;}
   QAction* getAddOrEditIconAction() {return mpAddOrEditIconAction;}
   QAction* getDeleteIconAction() {return mpDeleteIconAction;}
   QAction* getAddConnectorAction() {return mpAddConnectorAction;}
   QAction* getAddBusAction() {return mpAddBusAction;}
-  QAction* getAddTLMBusAction() {return mpAddTLMBusAction;}
   QAction* getAddSubModelAction() {return mpAddSubModelAction;}
   QAction* getLogCurrentFileAction() {return mpLogCurrentFileAction;}
   QAction* getStageCurrentFileForCommitAction() {return mpStageCurrentFileForCommitAction;}
@@ -226,7 +213,6 @@ public:
   QToolBar* getShapesToolBar() const {return mpShapesToolBar;}
   QToolBar* getCheckToolBar() const {return mpCheckToolBar;}
   QToolBar* getSimulationToolBar() const {return mpSimulationToolBar;}
-  QToolBar* getTLMSimulationToolbar() const {return mpTLMSimulationToolbar;}
   QToolBar* getOMSimulatorToobar() const {return mpOMSimulatorToolbar;}
   void showModelingPerspectiveToolBars(ModelWidget *pModelWidget);
   void showDebuggingPerspectiveToolBars(ModelWidget *pModelWidget);
@@ -245,6 +231,9 @@ public:
   void simulateWithAnimation(LibraryTreeItem *pLibraryTreeItem);
 #endif
   void simulationSetup(LibraryTreeItem *pLibraryTreeItem);
+  void translateCRML(LibraryTreeItem *pLibraryTreeItem);
+  void translateAsCRML(LibraryTreeItem *pLibraryTreeItem);
+  void runScript(LibraryTreeItem *pLibraryTreeItem);
   void instantiateModel(LibraryTreeItem *pLibraryTreeItem);
   void checkModel(LibraryTreeItem *pLibraryTreeItem);
   void checkAllModels(LibraryTreeItem *pLibraryTreeItem);
@@ -253,13 +242,11 @@ public:
   void exportReadonlyPackage(LibraryTreeItem *pLibraryTreeItem);
   void exportModelXML(LibraryTreeItem *pLibraryTreeItem);
   void exportModelFigaro(LibraryTreeItem *pLibraryTreeItem);
-  void fetchInterfaceData(LibraryTreeItem *pLibraryTreeItem, QString singleModel=QString());
-  void TLMSimulate(LibraryTreeItem *pLibraryTreeItem);
   void exportModelToOMNotebook(LibraryTreeItem *pLibraryTreeItem);
   void createOMNotebookTitleCell(LibraryTreeItem *pLibraryTreeItem, QDomDocument xmlDocument, QDomElement domElement);
   void createOMNotebookImageCell(LibraryTreeItem *pLibraryTreeItem, QDomDocument xmlDocument, QDomElement domElement, QString filePath);
   void createOMNotebookCodeCell(LibraryTreeItem *pLibraryTreeItem, QDomDocument xmlDocument, QDomElement domElement);
-  TransformationsWidget* showTransformationsWidget(QString fileName, bool profiling);
+  TransformationsWidget* showTransformationsWidget(QString fileName, bool profiling, bool checkProfilingExists);
   void findFileAndGoToLine(QString fileName, QString lineNumber);
   void printStandardOutAndErrorFilesMessages();
   static void PlotCallbackFunction(void *p, int externalWindow, const char* filename, const char* title, const char* grid, const char* plotType, const char* logX,
@@ -275,11 +262,11 @@ public:
   QList<QString> mMOLDirectoriesList;
 private:
   bool mDebug;
-  bool mNewApi;
-  bool mNewApiCommandLine;
-  bool mNewApiProfiling;
+  bool mNewApiProfiling = false;
   FILE *mpNewApiProfilingFile = nullptr;
-  bool mTestsuiteRunning;
+  bool mCRMLEnabled = false;
+  bool mTestsuiteRunning = false;
+  bool mSkipExpressionEvaluation = false;
   OMCProxy *mpOMCProxy;
   bool mExitApplicationStatus;
   int mNumberOfProcessors;
@@ -288,6 +275,8 @@ private:
   QDockWidget *mpMessagesDockWidget;
   LibraryWidget *mpLibraryWidget;
   QDockWidget *mpLibraryDockWidget;
+  ElementWidget *mpElementWidget;
+  QDockWidget *mpElementDockWidget;
   GDBAdapter *mpGDBAdapter;
   StackFramesWidget *mpStackFramesWidget;
   QDockWidget *mpStackFramesDockWidget;
@@ -305,12 +294,7 @@ private:
   VariablesWidget *mpVariablesWidget;
   QDockWidget *mpVariablesDockWidget;
   TraceabilityGraphViewWidget *mpTraceabilityGraphViewWidget;
-#if !defined(WITHOUT_OSG)
-  ThreeDViewer *mpThreeDViewer;
-  QDockWidget *mpThreeDViewerDockWidget;
-#endif
   SimulationDialog *mpSimulationDialog;
-  TLMCoSimulationDialog *mpTLMCoSimulationDialog;
   OMSSimulationDialog *mpOMSSimulationDialog;
   ModelWidgetContainer *mpModelWidgetContainer;
   WelcomePageWidget *mpWelcomePageWidget;
@@ -329,7 +313,9 @@ private:
   // File Menu
   // Modelica File Actions
   QAction *mpNewModelicaClassAction;
+  QAction *mpNewMOSFileAction;
   QAction *mpNewSSPModelAction;
+  QAction *mpNewCRMLFileAction;
   QAction *mpOpenModelicaFileAction;
   QAction *mpOpenModelicaFileWithEncodingAction;
   QAction *mpLoadModelicaLibraryAction;
@@ -337,15 +323,13 @@ private:
   QAction *mpOpenResultFileAction;
   QAction *mpOpenTransformationFileAction;
   QAction *mpUnloadAllAction;
-  // CompositeModel File Actions
-  QAction *mpNewCompositeModelFileAction;
-  QAction *mpOpenCompositeModelFileAction;
-  QAction *mpLoadExternModelAction;
+  // Directory actions
   QAction *mpOpenDirectoryAction;
   QAction *mpSaveAction;
   QAction *mpSaveAsAction;
   QAction *mpSaveAllAction;
   QAction *mpSaveTotalAction;
+  // FMU
   QAction *mpImportFMUAction;
   QAction *mpImportFMUModelDescriptionAction;
   QAction *mpImportFromOMNotebookAction;
@@ -396,6 +380,8 @@ private:
   QAction *mpArchivedSimulationsAction;
   // Data reconciliation action
   QAction *mpCalculateDataReconciliationAction;
+  // CRML run testsuite action
+  QAction *mpRunCRMLTestsuiteAction;
   // Debug Menu
   QAction *mpDebugConfigurationsAction;
   QAction *mpAttachDebuggerToRunningProcessAction;
@@ -425,7 +411,6 @@ private:
   QAction *mpOpenModelicaScriptingAction;
   QAction *mpModelicaDocumentationAction;
   QAction *mpOMSimulatorUsersGuideAction;
-  QAction *mpOpenModelicaTLMSimulatorDocumentationAction;
   QAction *mpAboutOMEditAction;
   // Toolbar Actions
   // Shapes Toolbar Actions
@@ -453,18 +438,12 @@ private:
   QAction *mpDiagramWindowAction;
   QAction *mpClearPlotWindowAction;
   QAction *mpExportVariablesAction;
-  // TLM Simulation Action
-  QAction *mpSimulationParamsAction;
-  QAction *mpFetchInterfaceDataAction;
-  QAction *mpAlignInterfacesAction;
-  QAction *mpTLMCoSimulationAction;
   // OMSimulator Actions
   QAction *mpAddSystemAction;
   QAction *mpAddOrEditIconAction;
   QAction *mpDeleteIconAction;
   QAction *mpAddConnectorAction;
   QAction *mpAddBusAction;
-  QAction *mpAddTLMBusAction;
   QAction *mpAddSubModelAction;
   QAction *mpOMSSimulateAction;
   // Toolbars
@@ -487,7 +466,6 @@ private:
   QToolBar *mpDebuggerToolBar;
   QMenu *mpDebugConfigurationMenu;
   QToolButton *mpDebugConfigurationToolButton;
-  QToolBar *mpTLMSimulationToolbar;
   QToolBar *mpOMSimulatorToolbar;
   QHash<QString, TransformationsWidget*> mTransformationsWidgetHash;
 signals:
@@ -500,7 +478,9 @@ public slots:
   void switchToAlgorithmicDebuggingPerspectiveSlot();
   void showSearchBrowser();
   void createNewModelicaClass();
+  void createNewMOSFile();
   void createNewSSPModel();
+  void createNewCRMLFile();
   void openModelicaFile();
   void showOpenModelicaFileDialog();
   void loadModelicaLibrary();
@@ -508,9 +488,6 @@ public slots:
   void showOpenResultFileDialog();
   void showOpenTransformationFileDialog();
   void unloadAll(bool onlyModelicaClasses = false);
-  void createNewCompositeModelFile();
-  void openCompositeModelFile();
-  void loadExternalModels();
   void openDirectory();
   void writeOutputFileData(QString data);
   void writeErrorFileData(QString data);
@@ -560,8 +537,6 @@ public slots:
   void importNgspiceNetlist();
   void exportModelAsImage(bool copyToClipboard = false);
   void exportToClipboard();
-  void fetchInterfaceData();
-  void TLMSimulate();
   void openTemporaryDirectory();
   void openWorkingDirectory();
   void openTerminal();
@@ -572,7 +547,6 @@ public slots:
   void openOpenModelicaScriptingDocumentation();
   void openModelicaDocumentation();
   void openOMSimulatorUsersGuide();
-  void openOpenModelicaTLMSimulatorDocumentation();
   void openAboutOMEdit();
   void toggleShapesButton();
   void editToolBarVisibilityChanged(bool visible);
@@ -584,25 +558,23 @@ public slots:
   void reSimulationToolBarVisibilityChanged(bool visible);
   void plotToolBarVisibilityChanged(bool visible);
   void debuggerToolBarVisibilityChanged(bool visible);
-  void TLMSimulationToolBarVisibilityChanged(bool visible);
   void OMSimulatorToolBarVisibilityChanged(bool visible);
   void openRecentModelWidget();
   void updateModelSwitcherMenu(QMdiSubWindow *pSubWindow);
   void runDebugConfiguration();
   void updateDebuggerToolBarMenu();
   void toggleAutoSave();
-  void readInterfaceData(LibraryTreeItem *pLibraryTreeItem);
   void enableReSimulationToolbar(bool visible);
 private slots:
   void perspectiveTabChanged(int tabIndex);
   void documentationDockWidgetVisibilityChanged(bool visible);
-  void threeDViewerDockWidgetVisibilityChanged(bool visible);
   void messagesTabBarClicked(int index);
   void messagesDockWidgetVisibilityChanged(bool visible);
   void messageTabAdded(QWidget *pSimulationOutputTab, const QString &name);
   void messageTabClosed(int index);
   void autoSave();
   void showDataReconciliationDialog();
+  void runCRMLTestsuite();
   void showDebugConfigurationsDialog();
   void showAttachToProcessDialog();
   void createGitRepository();
@@ -623,7 +595,6 @@ private:
   void switchToAlgorithmicDebuggingPerspective();
   void closeAllWindowsButThis(QMdiArea *pMdiArea);
   void tileSubWindows(QMdiArea *pMdiArea, bool horizontally);
-  void fetchInterfaceDataHelper(LibraryTreeItem *pLibraryTreeItem, QString singleModel = QString());
   void toolBarVisibilityChanged(const QString &toolbar, bool visible);
   MessageTab* createMessageTab(const QString &name, bool fixedTab);
 protected:

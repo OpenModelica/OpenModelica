@@ -73,14 +73,15 @@ protected
   import Jacobian = NBackendDAE;
   import NBJacobian.JacobianType;
   import StrongComponent = NBStrongComponent;
-  import System = NBSystem;
+  import Partition = NBPartition;
+  import NBPartitioning.ClockedInfo;
   import BVariable = NBVariable;
   import NBVariable.{VariablePointers, VarData};
   import NBEvents.EventInfo;
   import Inline = NBInline;
 
   // Util imports
-  import BuiltinSystem = System;
+  import System;
   import StringUtil;
 
 public
@@ -96,7 +97,7 @@ public
     Real clck;
   algorithm
     (name, clck) := name_clock;
-    str := "\t" + name + StringUtil.repeat(".", 50 - stringLength(name)) + BuiltinSystem.sprintff("%.4g", clck);
+    str := "\t" + name + StringUtil.repeat(".", 50 - stringLength(name)) + System.sprintff("%.4g", clck);
   end moduleClockString;
 
 // =========================================================================
@@ -107,12 +108,15 @@ public
 // *************************************************************************
   partial function partitioningInterface
     "Partitioning
-     This function is only allowed to create systems of specialized SystemType
+     This function is only allowed to create partitions of specialized Kind
      by creating an adjacency matrix using provided variables and equations."
-    input System.SystemType systemType;
+    input Partition.Kind kind;
     input VariablePointers variables;
     input EquationPointers equations;
-    output list<System.System> systems;
+    input VariablePointers clocks;
+    input EquationPointers clocked;
+    input ClockedInfo info;
+    output list<Partition.Partition> partitions;
   end partitioningInterface;
 
 //                               CAUSALIZE
@@ -121,7 +125,7 @@ public
     "Causalize
      This function is allowed to add variables, equations and manipulate the
      function tree (index reduction)."
-    input output System.System system;
+    input output Partition.Partition partition;
     input output VarData varData;
     input output EqData eqData;
     input output FunctionTree funcTree;
@@ -131,12 +135,13 @@ public
 //                  Index Reduction + Balance Initialization
 // *************************************************************************
   partial function resolveSingularitiesInterface
+    input output Adjacency.Matrix adj;
+    input output Adjacency.Matrix full;
     input output VariablePointers variables;
     input output EquationPointers equations;
     input output VarData varData;
     input output EqData eqData;
     input output FunctionTree funcTree;
-    input Adjacency.Matrix adj;
     input Matching matching;
     input Option<Adjacency.Mapping> mapping_opt;
     output Boolean changed;
@@ -146,8 +151,10 @@ public
 // *************************************************************************
   partial function daeModeInterface
     "DAEMode
-     This function is only allowed to create a list of new systems for dae Mode."
-    input output list<System.System> systems;
+     This function is only allowed to create a list of new partitions for dae Mode."
+    input output list<Partition.Partition> partitions;
+    input VariablePointers variables;
+    input Pointer<Integer> uniqueIndex;
   end daeModeInterface;
 
 // =========================================================================
@@ -194,7 +201,7 @@ public
     input output VariablePointers states        "States";
     input output VariablePointers derivatives   "State derivatives (der(x) -> $DER.x)";
     input output VariablePointers algebraics    "Algebraic variables";
-    input EquationPointers equations            "System equations";
+    input EquationPointers equations            "Partition equations";
     output list<Pointer<Equation>> aux_eqns     "New auxiliary equations";
   end detectContinuousStatesInterface;
 
@@ -207,7 +214,8 @@ public
     input output VariablePointers knowns          "Knowns";
     input output VariablePointers initials        "Initial unknowns";
     input output VariablePointers discretes       "Discrete variables";
-    input output VariablePointers discrete_states "Discrete variables";
+    input output VariablePointers discrete_states "Discrete State variables";
+    input output VariablePointers clocked_states  "Clocked State variables";
     input output VariablePointers previous        "Previous discrete variables (pre(d) -> $PRE.d)";
     input String context                          "only for debugging";
   end detectDiscreteStatesInterface;
@@ -249,6 +257,7 @@ public
     input output VarData varData              "Data containing variable pointers, for lowering purposes";
     input FunctionTree funcTree               "function tree for differentiation (solve)";
     input list<DAE.InlineType> inline_types   "Inline types for which to inline at the current state";
+    input Boolean init                        "true if for initial partition";
   end inlineInterface;
 
 // =========================================================================
@@ -259,12 +268,12 @@ public
 // *************************************************************************
   partial function jacobianInterface
     "The jacobian is only allowed to read the variables and equations of current
-    system and additionally the global known variables. It needs a unique name
+    partition and additionally the global known variables. It needs a unique name
     and is allowed to manipulate the function tree.
     [!] This function can not only be used as an optimization module but also for
-    nonlinear systems, state sets, linearization and dynamic optimization."
+    nonlinear partitions, state sets, linearization and dynamic optimization."
     input String name                                     "Name of jacobian";
-    input JacobianType jacType                            "Type of jacobian (sim/nonlin)";
+    input JacobianType jacType                            "Type of jacobian (ode/dae/lin/nonlin)";
     input VariablePointers seedCandidates                 "differentiate by these";
     input VariablePointers partialCandidates              "solve the equations for these";
     input EquationPointers equations                      "Equations array";
@@ -272,6 +281,7 @@ public
     input Option<array<StrongComponent>> strongComponents "Strong Components";
     output Option<Jacobian> jacobian                      "Resulting jacobian";
     input output FunctionTree funcTree                    "Function call bodies";
+    input Boolean init;
   end jacobianInterface;
 
 // =========================================================================
@@ -286,13 +296,14 @@ public
      necessary. Only has access to the strong component itself, everything else
      accessable with pointers."
     input output StrongComponent comp     "the suspected algebraic loop.";
+    input output Adjacency.Matrix full    "the full adjacency matrix containing solvability info";
     input output FunctionTree funcTree    "Function call bodies";
     input output Integer index            "current unique loop index";
     input VariablePointers variables      "all variables";
+    input EquationPointers equations      "all equations";
     input Pointer<Integer> eq_index       "equation index";
-    input System.SystemType systemType = NBSystem.SystemType.ODE   "system type";
+    input Partition.Kind kind = NBPartition.Kind.ODE   "partition type";
   end tearingInterface;
-
 
   annotation(__OpenModelica_Interface="backend");
 end NBModule;

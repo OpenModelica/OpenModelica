@@ -195,12 +195,12 @@ void BreakpointDialog::addOrEditBreakpoint()
       if (!pLibraryTreeItem->isSaved()) {
         QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error),
                               GUIMessages::getMessage(GUIMessages::BREAKPOINT_INSERT_NOT_SAVED).arg(pLibraryTreeItem->getNameStructure()),
-                              Helper::ok);
+                              QMessageBox::Ok);
         return;
-      } else if (pLibraryTreeItem->getLibraryType() != LibraryTreeItem::Modelica) {
+      } else if (!pLibraryTreeItem->isModelica()) {
         QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error),
                               GUIMessages::getMessage(GUIMessages::BREAKPOINT_INSERT_NOT_MODELICA_CLASS).arg(pLibraryTreeItem->getNameStructure()),
-                              Helper::ok);
+                              QMessageBox::Ok);
         return;
       } else if (!mpBreakpointTreeItem) { /* Add Case */
         pBreakpointMarker = new BreakpointMarker(pLibraryTreeItem->getFileName(), lineNumber, mpBreakpointsTreeModel);
@@ -240,7 +240,7 @@ void BreakpointDialog::addOrEditBreakpoint()
       }
     } else {
       QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error),
-                            GUIMessages::getMessage(GUIMessages::CLASS_NOT_FOUND).arg(mpFileNameTextBox->text()), Helper::ok);
+                            GUIMessages::getMessage(GUIMessages::CLASS_NOT_FOUND).arg(mpFileNameTextBox->text()), QMessageBox::Ok);
       return;
     }
   }

@@ -94,8 +94,11 @@ LocalsTreeItem::LocalsTreeItem(const QVector<QVariant> &localItemData, LocalsTre
 
 LocalsTreeItem::~LocalsTreeItem()
 {
-  qDeleteAll(mChildren);
-  mChildren.clear();
+  if (mpModelicaValue) {
+    mpModelicaValue->deleteLater();
+  }
+
+  removeChildren();
 }
 
 /*!
@@ -143,13 +146,20 @@ LocalsTreeItem* LocalsTreeItem::child(int row)
 
 void LocalsTreeItem::removeChildren()
 {
-  qDeleteAll(mChildren);
+  for (LocalsTreeItem *pChildLocalsTreeItem : std::as_const(mChildren)) {
+    if (pChildLocalsTreeItem) {
+      // Use deleteLater since LocalsTreeItem inherits from QObject. Avoids QObject delete while in use issues.
+      pChildLocalsTreeItem->deleteLater();
+    }
+  }
   mChildren.clear();
 }
 
 void LocalsTreeItem::removeChild(LocalsTreeItem *pLocalsTreeItem)
 {
   mChildren.removeOne(pLocalsTreeItem);
+  // Use deleteLater since LocalsTreeItem inherits from QObject. Avoids QObject delete while in use issues.
+  pLocalsTreeItem->deleteLater();
 }
 
 int LocalsTreeItem::columnCount() const
@@ -367,7 +377,7 @@ int LocalsTreeModel::rowCount(const QModelIndex &parent) const
   } else {
     pParentLocalsTreeViewItem = static_cast<LocalsTreeItem*>(parent.internalPointer());
   }
-  return pParentLocalsTreeViewItem->getChildren().size();
+  return pParentLocalsTreeViewItem ? pParentLocalsTreeViewItem->childrenSize() : 0;
 }
 
 bool LocalsTreeModel::hasChildren(const QModelIndex &parent) const
@@ -408,12 +418,11 @@ QModelIndex LocalsTreeModel::index(int row, int column, const QModelIndex &paren
     pParentLocalsTreeViewItem = static_cast<LocalsTreeItem*>(parent.internalPointer());
   }
 
-  LocalsTreeItem *pChildLocalsTreeViewItem = pParentLocalsTreeViewItem->child(row);
-  if (pChildLocalsTreeViewItem) {
-    return createIndex(row, column, pChildLocalsTreeViewItem);
-  } else {
+  if (row < 0 || row >= pParentLocalsTreeViewItem->childrenSize()) {
     return QModelIndex();
   }
+
+  return createIndex(row, column, pParentLocalsTreeViewItem->child(row));
 }
 
 QModelIndex LocalsTreeModel::parent(const QModelIndex &index) const
@@ -446,7 +455,7 @@ LocalsTreeItem* LocalsTreeModel::findLocalsTreeItem(const QString &name, LocalsT
   if (root->getNameStructure() == name) {
     return root;
   }
-  for (int i = root->getChildren().size(); --i >= 0;) {
+  for (int i = root->childrenSize(); --i >= 0;) {
     if (LocalsTreeItem *item = findLocalsTreeItem(name, root->getChildren().at(i))) {
       return item;
     }
@@ -456,24 +465,11 @@ LocalsTreeItem* LocalsTreeModel::findLocalsTreeItem(const QString &name, LocalsT
 
 QModelIndex LocalsTreeModel::localsTreeItemIndex(const LocalsTreeItem *pLocalsTreeItem) const
 {
-  return localsTreeItemIndexHelper(pLocalsTreeItem, mpRootLocalsTreeItem, QModelIndex());
-}
+  if (!pLocalsTreeItem || pLocalsTreeItem == mpRootLocalsTreeItem) {
+    return QModelIndex();
+  }
 
-QModelIndex LocalsTreeModel::localsTreeItemIndexHelper(const LocalsTreeItem *pLocalsTreeItem, const LocalsTreeItem *pParentLocalsTreeItem,
-                                                       const QModelIndex &parentIndex) const
-{
-  if (pLocalsTreeItem == pParentLocalsTreeItem) {
-    return parentIndex;
-  }
-  for (int i = pParentLocalsTreeItem->getChildren().size(); --i >= 0; ) {
-    const LocalsTreeItem *childItem = pParentLocalsTreeItem->getChildren().at(i);
-    QModelIndex childIndex = index(i, 0, parentIndex);
-    QModelIndex index = localsTreeItemIndexHelper(pLocalsTreeItem, childItem, childIndex);
-    if (index.isValid()) {
-      return index;
-    }
-  }
-  return QModelIndex();
+  return createIndex(pLocalsTreeItem->row(), 0, const_cast<LocalsTreeItem *>(pLocalsTreeItem));
 }
 
 void LocalsTreeModel::insertLocalItemData(const QVector<QVariant> &localItemData, LocalsTreeItem *pParentLocalsTreeItem)
@@ -493,7 +489,7 @@ void LocalsTreeModel::insertLocalItemData(const QVector<QVariant> &localItemData
     QModelIndex index = localsTreeItemIndex(pParentLocalsTreeItem);
     pLocalsTreeItem = new LocalsTreeItem(localItemData, this, pParentLocalsTreeItem);
     pLocalsTreeItem->setNameStructure(nameStructure);
-    int row = pParentLocalsTreeItem->getChildren().size();
+    int row = pParentLocalsTreeItem->childrenSize();
     beginInsertRows(index, row, row);
     pParentLocalsTreeItem->insertChild(row, pLocalsTreeItem);
     endInsertRows();
@@ -532,22 +528,20 @@ void LocalsTreeModel::insertLocalsList(const QList<QVector<QVariant> > &locals)
 
 void LocalsTreeModel::removeLocalItem(LocalsTreeItem *pLocalsTreeItem)
 {
-  QModelIndex index = localsTreeItemIndex(pLocalsTreeItem);
-  int row = index.row();
-  beginRemoveRows(localsTreeItemIndex(pLocalsTreeItem->parent()), row, row);
-  pLocalsTreeItem->removeChildren();
   LocalsTreeItem *pParentLocalsTreeItem = pLocalsTreeItem->parent();
-  pParentLocalsTreeItem->removeChild(pLocalsTreeItem);
-  pLocalsTreeItem->deleteLater();
-  endRemoveRows();
+  if (pParentLocalsTreeItem) {
+    int row = pLocalsTreeItem->row();
+    beginRemoveRows(localsTreeItemIndex(pParentLocalsTreeItem), row, row);
+    pParentLocalsTreeItem->removeChild(pLocalsTreeItem);
+    endRemoveRows();
+  }
 }
 
 void LocalsTreeModel::removeLocalItems()
 {
-  const int n = mpRootLocalsTreeItem->getChildren().size();
+  const int n = mpRootLocalsTreeItem->childrenSize();
   if (n > 0) {
-    QModelIndex index = localsTreeItemIndex(mpRootLocalsTreeItem);
-    beginRemoveRows(index, 0, n - 1);
+    beginRemoveRows(localsTreeItemIndex(mpRootLocalsTreeItem), 0, n - 1);
     mpRootLocalsTreeItem->removeChildren();
     endRemoveRows();
   }

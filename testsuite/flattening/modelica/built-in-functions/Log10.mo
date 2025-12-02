@@ -1,7 +1,6 @@
 // name: Log10
 // keywords: log10
 // status: correct
-// cflags: -d=-newInst
 //
 // Tests the built-in log10 function
 //
@@ -10,6 +9,7 @@ model Log10
   Real r;
 equation
   r = log10(45);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Log10;
 
 // Result:

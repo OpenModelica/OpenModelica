@@ -17,7 +17,7 @@ IDL	= $(OMDEV)/lib/omniORB-4.2.0-msvc-10/bin/x86_win32/omniidl -T -bcxx -Wbh=.h 
 IDLPYTHON = $(IDL)
 
 OBJ = socketimpl.obj printimpl.obj systemimpl.obj systemimplmisc.obj dynload.obj dynload_try.obj settingsimpl.obj \
-ptolemyio.obj BackendDAEEXT.obj ErrorMessage.obj errorext.obj \
+ptolemyio.obj ASSCEXT.obj BackendDAEEXT.obj ErrorMessage.obj errorext.obj \
 omc_communication.obj omc_communication_impl.obj corbaimpl.obj \
 unitparser.obj unitparserext.obj SimulationResults.obj IOStreamExt.obj rtclock.obj
 

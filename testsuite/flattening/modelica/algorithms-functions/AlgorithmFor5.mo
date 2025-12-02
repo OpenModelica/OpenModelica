@@ -1,7 +1,6 @@
 // name:     AlgorithmFor5
 // keywords: algorithm,array
 // status:   correct
-// cflags: -d=-newInst
 //
 // Test for loops in algorithms. The range is implicit.
 //
@@ -12,6 +11,7 @@ algorithm
   for i loop
     a[i] := i;
   end for;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end AlgorithmFor5;
 
 // Result:

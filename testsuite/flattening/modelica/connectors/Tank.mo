@@ -1,7 +1,6 @@
 // name:     Tank
 // keywords: replaceable connector
 // status:   correct
-// cflags: -d=-newInst
 //
 //
 //
@@ -27,6 +26,7 @@ equation
   outlet.pressure = inlet.pressure;
   outlet.volumeFlowRate = 2;
 
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Tank;
 
 

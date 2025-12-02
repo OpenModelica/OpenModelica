@@ -1,7 +1,6 @@
 // name:     Ticket4276b.mo
 // keywords: declaration
 // status:   correct
-// cflags: -d=-newInst
 //
 // Check that you can assign to parameter(fixed=false)
 //
@@ -23,6 +22,7 @@ initial algorithm
   (a, x) := f(2);
 equation
   x = 1;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Ticket4276b;
 
 

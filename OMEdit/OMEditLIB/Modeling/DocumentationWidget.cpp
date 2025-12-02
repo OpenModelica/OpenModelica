@@ -47,13 +47,14 @@
 #include <QMenu>
 #include <QDesktopServices>
 #include <QApplication>
-#include <QDesktopWidget>
+#ifndef OM_DISABLE_DOCUMENTATION
 #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
 #include <QWebEnginePage>
 #include <QWebEngineSettings>
-#else
+#else // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
 #include <QWebFrame>
-#endif
+#endif // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
+#endif // #ifndef OM_DISABLE_DOCUMENTATION
 #include <QWidgetAction>
 #include <QButtonGroup>
 #include <QInputDialog>
@@ -70,6 +71,7 @@ DocumentationWidget::DocumentationWidget(QWidget *pParent)
   : QWidget(pParent)
 {
   setObjectName("DocumentationWidget");
+#ifndef OM_DISABLE_DOCUMENTATION
   mDocumentationFile.setFileName(Utilities::tempDirectory() + "/DocumentationWidget.html");
   // documentation toolbar
   QToolBar *pDocumentationToolBar = new QToolBar;
@@ -120,6 +122,7 @@ DocumentationWidget::DocumentationWidget(QWidget *pParent)
   pDocumentationToolBar->addSeparator();
   pDocumentationToolBar->addAction(mpSaveAction);
   pDocumentationToolBar->addAction(mpCancelAction);
+#endif // #ifndef OM_DISABLE_DOCUMENTATION
   // create the documentation viewer
   mpDocumentationViewer = new DocumentationViewer(this, false);
   mpDocumentationViewerFrame = new QFrame;
@@ -129,6 +132,7 @@ DocumentationWidget::DocumentationWidget(QWidget *pParent)
   pDocumentationViewerLayout->setContentsMargins(0, 0, 0, 0);
   pDocumentationViewerLayout->addWidget(mpDocumentationViewer);
   mpDocumentationViewerFrame->setLayout(pDocumentationViewerLayout);
+#ifndef OM_DISABLE_DOCUMENTATION
   // create the editors tab widget
   mpEditorsWidget = new QWidget;
   mpEditorsWidget->hide();
@@ -229,7 +233,7 @@ DocumentationWidget::DocumentationWidget(QWidget *pParent)
   mpSubscriptAction->setStatusTip(tr("Type very small letters just below the line of text"));
   mpSubscriptAction->setCheckable(true);
 #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
-  // TODO: ToggleSubscript
+  connect(mpSubscriptAction, SIGNAL(triggered()), SLOT(subscript()));
 #else
   connect(mpSubscriptAction, SIGNAL(triggered()), mpHTMLEditor->pageAction(QWebPage::ToggleSubscript), SLOT(trigger()));
 #endif
@@ -238,7 +242,7 @@ DocumentationWidget::DocumentationWidget(QWidget *pParent)
   mpSuperscriptAction->setStatusTip(tr("Type very small letters just above the line of text"));
   mpSuperscriptAction->setCheckable(true);
 #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
-  // TODO: ToggleSuperscript
+  connect(mpSuperscriptAction, SIGNAL(triggered()), SLOT(superscript()));
 #else
   connect(mpSuperscriptAction, SIGNAL(triggered()), mpHTMLEditor->pageAction(QWebPage::ToggleSuperscript), SLOT(trigger()));
 #endif
@@ -389,6 +393,11 @@ DocumentationWidget::DocumentationWidget(QWidget *pParent)
   mpEditorToolBar->addAction(mpUnLinkAction);
   // update the actions whenever the selectionChanged signal is raised.
   connect(mpHTMLEditor->page(), SIGNAL(selectionChanged()), SLOT(updateActions()));
+#ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
+  // Qt webengine editing works only when we have a selection.
+  // Call updateActions() to disable all actions since there is not selection yet.
+  updateActions();
+#endif // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
   // add a layout to html editor widget
   QVBoxLayout *pHTMLWidgetLayout = new QVBoxLayout;
   pHTMLWidgetLayout->setAlignment(Qt::AlignTop);
@@ -400,11 +409,6 @@ DocumentationWidget::DocumentationWidget(QWidget *pParent)
   // create the HTMLEditor
   mpHTMLSourceEditor = new HTMLEditor(this);
   mpHTMLSourceEditor->hide();
-#ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
-  // TODO: contentsChanged
-#else
-  connect(mpHTMLEditor->page(), SIGNAL(contentsChanged()), SLOT(updateHTMLSourceEditor()));
-#endif
   HTMLHighlighter *pHTMLHighlighter = new HTMLHighlighter(OptionsDialog::instance()->getHTMLEditorPage(), mpHTMLSourceEditor->getPlainTextEdit());
   connect(OptionsDialog::instance(), SIGNAL(HTMLEditorSettingsChanged()), pHTMLHighlighter, SLOT(settingsChanged()));
   // eidtors widget layout
@@ -422,19 +426,25 @@ DocumentationWidget::DocumentationWidget(QWidget *pParent)
   mDocumentationHistoryPos = -1;
   setExecutingPreviousNextButtons(false);
   setScrollPosition(QPoint(0, 0));
+#endif // #ifndef OM_DISABLE_DOCUMENTATION
   // Documentation viewer layout
   QGridLayout *pGridLayout = new QGridLayout;
   pGridLayout->setContentsMargins(0, 0, 0, 0);
   pGridLayout->addWidget(mpDocumentationViewerFrame);
+#ifndef OM_DISABLE_DOCUMENTATION
   pGridLayout->addWidget(mpEditorsWidget);
+#endif // #ifndef OM_DISABLE_DOCUMENTATION
   QVBoxLayout *pMainLayout = new QVBoxLayout;
   pMainLayout->setContentsMargins(0, 0, 0, 0);
   pMainLayout->setSpacing(0);
+#ifndef OM_DISABLE_DOCUMENTATION
   pMainLayout->addWidget(pDocumentationToolBar);
+#endif // #ifndef OM_DISABLE_DOCUMENTATION
   pMainLayout->addLayout(pGridLayout, 1);
   setLayout(pMainLayout);
 }
 
+#ifndef OM_DISABLE_DOCUMENTATION
 /*!
  * \brief DocumentationWidget::~DocumentationWidget
  */
@@ -443,6 +453,7 @@ DocumentationWidget::~DocumentationWidget()
   mDocumentationFile.remove();
   delete mpDocumentationHistoryList;
 }
+#endif // #ifndef OM_DISABLE_DOCUMENTATION
 
 /*!
  * \brief DocumentationWidget::showDocumentation
@@ -451,8 +462,9 @@ DocumentationWidget::~DocumentationWidget()
  */
 void DocumentationWidget::showDocumentation(LibraryTreeItem *pLibraryTreeItem)
 {
+#ifndef OM_DISABLE_DOCUMENTATION
   // We only support documentation of Modelica classes.
-  if (pLibraryTreeItem->getLibraryType() != LibraryTreeItem::Modelica) {
+  if (!pLibraryTreeItem->isModelica()) {
     return;
   }
   // if documentation is proctected then do not show it.
@@ -489,10 +501,11 @@ void DocumentationWidget::showDocumentation(LibraryTreeItem *pLibraryTreeItem)
     while (mpDocumentationHistoryList->count() > (mDocumentationHistoryPos+1)) {
       mpDocumentationHistoryList->removeLast();
     }
+    /* remove if url exists */
+    removeDocumentationHistory(pLibraryTreeItem);
     /* append new url */
     mpDocumentationHistoryList->append(DocumentationHistory(pLibraryTreeItem));
     mDocumentationHistoryPos++;
-    connect(pLibraryTreeItem, SIGNAL(unLoaded()), SLOT(updateDocumentationHistory()));
   }
 
   updatePreviousNextButtons();
@@ -503,8 +516,12 @@ void DocumentationWidget::showDocumentation(LibraryTreeItem *pLibraryTreeItem)
   mpCancelAction->setDisabled(true);
   mpDocumentationViewerFrame->show();
   mpEditorsWidget->hide();
+#else // #ifndef OM_DISABLE_DOCUMENTATION
+  qDebug() << "Documentation is not supported due to missing webkit and webengine.";
+#endif // #ifndef OM_DISABLE_DOCUMENTATION
 }
 
+#ifndef OM_DISABLE_DOCUMENTATION
 /*!
  * \brief DocumentationWidget::execCommand
  * Calls the document.execCommand API.
@@ -542,6 +559,40 @@ void DocumentationWidget::execCommand(const QString &command, const QString &val
 #endif
 }
 
+#ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
+struct JavaScriptResult {
+  QVariant result;
+  bool finished;
+  JavaScriptResult() : result(QVariant("")), finished(false) {}
+  JavaScriptResult(JavaScriptResult *pJavaScriptResult) : result(pJavaScriptResult->result), finished(pJavaScriptResult->finished) {}
+  ~JavaScriptResult() {}
+  bool isFinished() {return finished;}
+};
+
+struct JavascriptResultFunctor {
+  JavaScriptResult *mpJavaScriptResult;
+  JavascriptResultFunctor(JavaScriptResult *pJavaScriptResult) : mpJavaScriptResult(pJavaScriptResult) {}
+  void operator()(const QVariant &result) {
+    mpJavaScriptResult->result.setValue(result);
+    mpJavaScriptResult->finished = true;
+  }
+};
+
+QVariant DocumentationWidget::runJavaScript(const QString &javaScript)
+{
+  JavaScriptResult *pJavaScriptResult = new JavaScriptResult();
+  QDeadlineTimer deadline(10000); // 10 seconds
+  QWebEnginePage *pWebPage = mpHTMLEditor->page();
+  pWebPage->runJavaScript(javaScript, JavascriptResultFunctor(pJavaScriptResult));
+  while (!pJavaScriptResult->isFinished() && !deadline.hasExpired()) {
+    QCoreApplication::processEvents();
+  }
+  QVariant result = pJavaScriptResult->result;
+  delete pJavaScriptResult;
+  return result;
+}
+#endif // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
+
 /*!
  * \brief DocumentationWidget::queryCommandState
  * Calls the document.queryCommandState API.\n
@@ -554,9 +605,8 @@ bool DocumentationWidget::queryCommandState(const QString &commandName)
   QString javaScript = QString("document.queryCommandState(\"%1\")").arg(commandName);
   QVariant result;
 #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
-  QWebEnginePage *pWebPage = mpHTMLEditor->page();
-  pWebPage->runJavaScript(javaScript, [&](const QVariant & arg){ result = arg; });
-#else
+  result = runJavaScript(javaScript);
+#else // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
   QWebFrame *pWebFrame = mpHTMLEditor->page()->mainFrame();
   result = pWebFrame->evaluateJavaScript(javaScript);
 #endif
@@ -575,9 +625,8 @@ QString DocumentationWidget::queryCommandValue(const QString &commandName)
   QString javaScript = QString("document.queryCommandValue(\"%1\")").arg(commandName);
   QVariant result;
 #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
-  QWebEnginePage *pWebPage = mpHTMLEditor->page();
-  pWebPage->runJavaScript(javaScript, [&](const QVariant & arg){ result = arg; });
-#else
+  result = runJavaScript(javaScript);
+#else // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
   QWebFrame *pWebFrame = mpHTMLEditor->page()->mainFrame();
   result = pWebFrame->evaluateJavaScript(javaScript);
 #endif
@@ -598,6 +647,35 @@ void DocumentationWidget::saveScrollPosition()
     documentationHistory.mScrollPosition = mpDocumentationViewer->page()->mainFrame()->scrollPosition();
 #endif
     mpDocumentationHistoryList->replace(mDocumentationHistoryPos, documentationHistory);
+  }
+}
+
+/*!
+ * \brief DocumentationWidget::updateDocumentationHistory
+ * \param pLibraryTreeItem
+ * Removes the corresponding LibraryTreeItem from the DocumentationHistory.
+ */
+void DocumentationWidget::updateDocumentationHistory(LibraryTreeItem *pLibraryTreeItem)
+{
+  if (pLibraryTreeItem) {
+    if (removeDocumentationHistory(pLibraryTreeItem)) {
+      updatePreviousNextButtons();
+      if (mDocumentationHistoryPos > -1) {
+        cancelDocumentation();
+        LibraryTreeModel *pLibraryTreeModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel();
+        pLibraryTreeModel->showModelWidget(mpDocumentationHistoryList->at(mDocumentationHistoryPos).mpLibraryTreeItem);
+      } else {
+        mpEditInfoAction->setDisabled(true);
+        mpEditRevisionsAction->setDisabled(true);
+        mpEditInfoHeaderAction->setDisabled(true);
+        mpSaveAction->setDisabled(true);
+        mpCancelAction->setDisabled(true);
+        mpDocumentationViewer->setHtml(""); // clear if we don't have any documentation to show
+        mpDocumentationViewerFrame->show();
+        mpEditorsWidget->hide();
+        mEditType = EditType::None;
+      }
+    }
   }
 }
 
@@ -650,11 +728,16 @@ void DocumentationWidget::updatePreviousNextButtons()
 void DocumentationWidget::writeDocumentationFile(QString documentation)
 {
   /* Create a local file with the html we want to view as otherwise JavaScript does not run properly. */
-  mDocumentationFile.open(QIODevice::WriteOnly);
-  QTextStream out(&mDocumentationFile);
-  out.setCodec(Helper::utf8.toUtf8().constData());
-  out << documentation;
-  mDocumentationFile.close();
+  if (mDocumentationFile.open(QIODevice::WriteOnly)) {
+    QTextStream out(&mDocumentationFile);
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+    out.setEncoding(QStringConverter::Utf8);
+#else
+    out.setCodec(Helper::utf8.toUtf8().constData());
+#endif
+    out << documentation;
+    mDocumentationFile.close();
+  }
 }
 
 /*!
@@ -674,8 +757,7 @@ bool DocumentationWidget::isLinkSelected()
                                "isLinkSelected()");
   QVariant result;
 #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
-  QWebEnginePage *pWebPage = mpHTMLEditor->page();
-  pWebPage->runJavaScript(javaScript, [&](const QVariant & arg){ result = arg; });
+  result = runJavaScript(javaScript);
 #else
   QWebFrame *pWebFrame = mpHTMLEditor->page()->mainFrame();
   result = pWebFrame->evaluateJavaScript(javaScript);
@@ -684,16 +766,20 @@ bool DocumentationWidget::isLinkSelected()
 }
 
 /*!
- * \brief DocumentationWidget::updateDocumentationHistory
+ * \brief DocumentationWidget::removeDocumentationHistory
+ * Removes the LibraryTreeItem from the documentation history.
  * \param pLibraryTreeItem
- * Removes the corresponding LibraryTreeItem from the DocumentationHistory.
+ * \return true if removed
  */
-void DocumentationWidget::updateDocumentationHistory(LibraryTreeItem *pLibraryTreeItem)
+bool DocumentationWidget::removeDocumentationHistory(LibraryTreeItem *pLibraryTreeItem)
 {
-  if (pLibraryTreeItem) {
-    int index = mpDocumentationHistoryList->indexOf(DocumentationHistory(pLibraryTreeItem));
+  int index = -1;
+  bool removed = false;
+  do {
+    index = mpDocumentationHistoryList->indexOf(DocumentationHistory(pLibraryTreeItem));
     if (index > -1) {
       mpDocumentationHistoryList->removeOne(DocumentationHistory(pLibraryTreeItem));
+      removed = true;
       if (index == mDocumentationHistoryPos) {
         if (!(index == 0 && !mpDocumentationHistoryList->isEmpty())) {
           mDocumentationHistoryPos--;
@@ -703,24 +789,108 @@ void DocumentationWidget::updateDocumentationHistory(LibraryTreeItem *pLibraryTr
       } else if (index > mDocumentationHistoryPos) {
         // do nothing
       }
-      updatePreviousNextButtons();
-      if (mDocumentationHistoryPos > -1) {
-        cancelDocumentation();
-        LibraryTreeModel *pLibraryTreeModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel();
-        pLibraryTreeModel->showModelWidget(mpDocumentationHistoryList->at(mDocumentationHistoryPos).mpLibraryTreeItem);
-      } else {
-        mpEditInfoAction->setDisabled(true);
-        mpEditRevisionsAction->setDisabled(true);
-        mpEditInfoHeaderAction->setDisabled(true);
-        mpSaveAction->setDisabled(true);
-        mpCancelAction->setDisabled(true);
-        mpDocumentationViewer->setHtml(""); // clear if we don't have any documentation to show
-        mpDocumentationViewerFrame->show();
-        mpEditorsWidget->hide();
-        mEditType = EditType::None;
-      }
     }
+  } while (index > -1);
+
+  return removed;
+}
+
+/*!
+ * \brief DocumentationWidget::updateHTMLSourceEditor
+ * Updates the contents of the HTML source editor.
+ */
+void DocumentationWidget::updateHTMLSourceEditor()
+{
+#ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
+  QEventLoop eventLoop;
+  QTimer timer;
+  connect(&timer, SIGNAL(timeout()), &eventLoop, SLOT(quit()));
+  PlainTextEdit *textEdit = mpHTMLSourceEditor->getPlainTextEdit();
+  mpHTMLEditor->page()->toHtml([&](const QString &result){
+    textEdit->setPlainText(result);
+    eventLoop.quit();
+  });
+  /* Just in case toHtml response doesn't arrive for some reason we don't want to stay in blocked state.
+   * So we start a timer which will quit the event loop after 5 secs.
+   */
+  timer.start(5000);
+  eventLoop.exec();
+  // Remove contenteditable="true".
+  QString contents = textEdit->toPlainText();
+  contents.remove(" contenteditable=\"true\"");
+  textEdit->setPlainText(contents);
+#else // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
+  mpHTMLSourceEditor->getPlainTextEdit()->setPlainText(mpHTMLEditor->page()->mainFrame()->toHtml());
+#endif // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
+}
+
+/*!
+ * \brief DocumentationWidget::updateActionsHelper
+ * Helper function for DocumentationWidget::updateActions
+ */
+void DocumentationWidget::updateActionsHelper()
+{
+  bool state = mpStyleComboBox->blockSignals(true);
+  QString format = queryCommandValue("formatBlock");
+  int currentIndex = mpStyleComboBox->findData(format);
+  if (currentIndex > -1) {
+    mpStyleComboBox->setCurrentIndex(currentIndex);
+  } else {
+    mpStyleComboBox->setCurrentIndex(0);
   }
+  mpStyleComboBox->blockSignals(state);
+  state = mpFontComboBox->blockSignals(true);
+  QString fontName = queryCommandValue("fontName");
+#ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
+  // Remove quotes around the font name.
+  fontName = StringHandler::removeFirstLastQuotes(fontName);
+#else // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
+  // Remove single quote around the font name.
+  fontName = StringHandler::removeFirstLastSingleQuotes(fontName);
+#endif // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
+  /* Issue #13038
+   * We get the current font name by calling `document.queryCommandValue("fontName")` via JavaScript on current cursor position.
+   * The webkit returns `-webkit-standard` for default font name instead of the actual font name.
+   * When we get `-webkit-standard` convert it to default system font name.
+   */
+  if (fontName.compare(QStringLiteral("-webkit-standard")) == 0) {
+    fontName = Helper::systemFontInfo.family();
+  }
+  currentIndex = mpFontComboBox->findText(fontName, Qt::MatchExactly);
+  if (currentIndex > -1) {
+    mpFontComboBox->setCurrentIndex(currentIndex);
+  }
+  mpFontComboBox->blockSignals(state);
+  bool ok;
+  int fontSize = queryCommandValue("fontSize").toInt(&ok);
+  if (ok) {
+    state = mpFontSizeSpinBox->blockSignals(true);
+    mpFontSizeSpinBox->setValue(fontSize);
+    mpFontSizeSpinBox->blockSignals(state);
+  }
+#ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
+  mpBoldAction->setChecked(queryCommandState("bold"));
+  mpItalicAction->setChecked(queryCommandState("italic"));
+  mpUnderlineAction->setChecked(queryCommandState("underline"));
+  mpStrikethroughAction->setChecked(queryCommandState("strikeThrough"));
+  mpSubscriptAction->setChecked(queryCommandState("subscript"));
+  mpSuperscriptAction->setChecked(queryCommandState("superscript"));
+#else // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
+  mpBoldAction->setChecked(mpHTMLEditor->pageAction(QWebPage::ToggleBold)->isChecked());
+  mpItalicAction->setChecked(mpHTMLEditor->pageAction(QWebPage::ToggleItalic)->isChecked());
+  mpUnderlineAction->setChecked(mpHTMLEditor->pageAction(QWebPage::ToggleUnderline)->isChecked());
+  mpStrikethroughAction->setChecked(mpHTMLEditor->pageAction(QWebPage::ToggleStrikethrough)->isChecked());
+  mpSubscriptAction->setChecked(mpHTMLEditor->pageAction(QWebPage::ToggleSubscript)->isChecked());
+  mpSuperscriptAction->setChecked(mpHTMLEditor->pageAction(QWebPage::ToggleSuperscript)->isChecked());
+#endif // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
+  mpAlignLeftToolButton->setChecked(queryCommandState("justifyLeft"));
+  mpAlignCenterToolButton->setChecked(queryCommandState("justifyCenter"));
+  mpAlignRightToolButton->setChecked(queryCommandState("justifyRight"));
+  mpJustifyToolButton->setChecked(queryCommandState("justifyFull"));
+  mpBulletListAction->setChecked(queryCommandState("insertUnorderedList"));
+  mpNumberedListAction->setChecked(queryCommandState("insertOrderedList"));
+  mpLinkAction->setEnabled(!mpHTMLEditor->page()->selectedText().isEmpty());
+  mpUnLinkAction->setEnabled(!mpHTMLEditor->page()->selectedText().isEmpty() && isLinkSelected());
 }
 
 /*!
@@ -766,7 +936,7 @@ void DocumentationWidget::editInfoDocumentation()
 {
   if (mDocumentationHistoryPos >= 0) {
     LibraryTreeItem *pLibraryTreeItem = mpDocumentationHistoryList->at(mDocumentationHistoryPos).mpLibraryTreeItem;
-    if (pLibraryTreeItem && !pLibraryTreeItem->isNonExisting()) {
+    if (pLibraryTreeItem) {
       // get the info documentation
       QList<QString> info = MainWindow::instance()->getOMCProxy()->getDocumentationAnnotationInClass(pLibraryTreeItem);
       writeDocumentationFile(info.at(0));
@@ -801,7 +971,7 @@ void DocumentationWidget::editRevisionsDocumentation()
 {
   if (mDocumentationHistoryPos >= 0) {
     LibraryTreeItem *pLibraryTreeItem = mpDocumentationHistoryList->at(mDocumentationHistoryPos).mpLibraryTreeItem;
-    if (pLibraryTreeItem && !pLibraryTreeItem->isNonExisting()) {
+    if (pLibraryTreeItem) {
       // get the revision documentation
       QList<QString> revisions = MainWindow::instance()->getOMCProxy()->getDocumentationAnnotationInClass(pLibraryTreeItem);
       writeDocumentationFile(revisions.at(1));
@@ -836,7 +1006,7 @@ void DocumentationWidget::editInfoHeaderDocumentation()
 {
   if (mDocumentationHistoryPos >= 0) {
     LibraryTreeItem *pLibraryTreeItem = mpDocumentationHistoryList->at(mDocumentationHistoryPos).mpLibraryTreeItem;
-    if (pLibraryTreeItem && !pLibraryTreeItem->isNonExisting()) {
+    if (pLibraryTreeItem) {
       // get the __OpenModelica_infoHeader documentation annotation
       QList<QString> infoHeader = MainWindow::instance()->getOMCProxy()->getDocumentationAnnotationInClass(pLibraryTreeItem);
       writeDocumentationFile(infoHeader.at(2));
@@ -873,7 +1043,7 @@ void DocumentationWidget::saveDocumentation(LibraryTreeItem *pNextLibraryTreeIte
 {
   if (mDocumentationHistoryPos >= 0) {
     LibraryTreeItem *pLibraryTreeItem = mpDocumentationHistoryList->at(mDocumentationHistoryPos).mpLibraryTreeItem;
-    if (pLibraryTreeItem && !pLibraryTreeItem->isNonExisting()) {
+    if (pLibraryTreeItem) {
       QList<QString> documentation = MainWindow::instance()->getOMCProxy()->getDocumentationAnnotationInClass(pLibraryTreeItem);
       // old documentation annotation
       QList<QString> oldDocAnnotationList;
@@ -887,6 +1057,10 @@ void DocumentationWidget::saveDocumentation(LibraryTreeItem *pNextLibraryTreeIte
         oldDocAnnotationList.append(QString("__OpenModelica_infoHeader=\"%1\"").arg(StringHandler::escapeStringQuotes(documentation.at(2))));
       }
       QString oldDocAnnotationString = QString("annotate=Documentation(%1)").arg(oldDocAnnotationList.join(","));
+      // if we are on html editor tab then update the source before saving the documentation
+      if (mpTabBar->currentIndex() == 0) {
+        updateHTMLSourceEditor();
+      }
       // new documentation annotation
       QList<QString> newDocAnnotationList;
       if (mEditType == EditType::Info) { // if editing the info section
@@ -964,6 +1138,7 @@ void DocumentationWidget::toggleEditor(int tabIndex)
 {
   switch (tabIndex) {
     case 1:
+      updateHTMLSourceEditor();
       mpHTMLEditorWidget->hide();
       mpHTMLSourceEditor->show();
       mpHTMLSourceEditor->getPlainTextEdit()->setFocus(Qt::ActiveWindowFocusReason);
@@ -973,6 +1148,9 @@ void DocumentationWidget::toggleEditor(int tabIndex)
       if (mpHTMLSourceEditor->getPlainTextEdit()->document()->isModified()) {
         writeDocumentationFile(mpHTMLSourceEditor->getPlainTextEdit()->toPlainText());
         mpHTMLEditor->setUrl(QUrl::fromLocalFile(mDocumentationFile.fileName()));
+#ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
+        updateActions();
+#endif // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
       }
       mpHTMLSourceEditor->hide();
       mpHTMLEditorWidget->show();
@@ -988,53 +1166,70 @@ void DocumentationWidget::toggleEditor(int tabIndex)
  */
 void DocumentationWidget::updateActions()
 {
-  bool state = mpStyleComboBox->blockSignals(true);
-  QString format = queryCommandValue("formatBlock");
-  int currentIndex = mpStyleComboBox->findData(format);
-  if (currentIndex > -1) {
-    mpStyleComboBox->setCurrentIndex(currentIndex);
-  } else {
-    mpStyleComboBox->setCurrentIndex(0);
-  }
-  mpStyleComboBox->blockSignals(state);
-  state = mpFontComboBox->blockSignals(true);
-  QString fontName = queryCommandValue("fontName");
-  // font name has extra single quote around it so remove it.
-  fontName = StringHandler::removeFirstLastSingleQuotes(fontName);
-  currentIndex = mpFontComboBox->findText(fontName, Qt::MatchExactly);
-  if (currentIndex > -1) {
-    mpFontComboBox->setCurrentIndex(currentIndex);
-  }
-  mpFontComboBox->blockSignals(state);
-  bool ok;
-  int fontSize = queryCommandValue("fontSize").toInt(&ok);
-  if (ok) {
-    state = mpFontSizeSpinBox->blockSignals(true);
-    mpFontSizeSpinBox->setValue(fontSize);
-    mpFontSizeSpinBox->blockSignals(state);
-  }
 #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
-  mpBoldAction->setChecked(mpHTMLEditor->pageAction(QWebEnginePage::ToggleBold)->isChecked());
-  mpItalicAction->setChecked(mpHTMLEditor->pageAction(QWebEnginePage::ToggleItalic)->isChecked());
-  mpUnderlineAction->setChecked(mpHTMLEditor->pageAction(QWebEnginePage::ToggleUnderline)->isChecked());
-  mpStrikethroughAction->setChecked(mpHTMLEditor->pageAction(QWebEnginePage::ToggleStrikethrough)->isChecked());
-  // TODO: ToggleSubscript/ToggleSuperscript
-#else
-  mpBoldAction->setChecked(mpHTMLEditor->pageAction(QWebPage::ToggleBold)->isChecked());
-  mpItalicAction->setChecked(mpHTMLEditor->pageAction(QWebPage::ToggleItalic)->isChecked());
-  mpUnderlineAction->setChecked(mpHTMLEditor->pageAction(QWebPage::ToggleUnderline)->isChecked());
-  mpStrikethroughAction->setChecked(mpHTMLEditor->pageAction(QWebPage::ToggleStrikethrough)->isChecked());
-  mpSubscriptAction->setChecked(mpHTMLEditor->pageAction(QWebPage::ToggleSubscript)->isChecked());
-  mpSuperscriptAction->setChecked(mpHTMLEditor->pageAction(QWebPage::ToggleSuperscript)->isChecked());
-#endif
-  mpAlignLeftToolButton->setChecked(queryCommandState("justifyLeft"));
-  mpAlignCenterToolButton->setChecked(queryCommandState("justifyCenter"));
-  mpAlignRightToolButton->setChecked(queryCommandState("justifyRight"));
-  mpJustifyToolButton->setChecked(queryCommandState("justifyFull"));
-  mpBulletListAction->setChecked(queryCommandState("insertUnorderedList"));
-  mpNumberedListAction->setChecked(queryCommandState("insertOrderedList"));
-  mpLinkAction->setEnabled(!mpHTMLEditor->page()->selectedText().isEmpty());
-  mpUnLinkAction->setEnabled(!mpHTMLEditor->page()->selectedText().isEmpty() && isLinkSelected());
+  if (!mpHTMLEditor->page()->hasSelection()) {
+    mpStyleComboBox->setEnabled(false);
+    mpFontComboBox->setEnabled(false);
+    mpFontSizeSpinBox->setEnabled(false);
+    mpBoldAction->setEnabled(false);
+    mpBoldAction->setChecked(false);
+    mpItalicAction->setEnabled(false);
+    mpItalicAction->setChecked(false);
+    mpUnderlineAction->setEnabled(false);
+    mpUnderlineAction->setChecked(false);
+    mpStrikethroughAction->setEnabled(false);
+    mpStrikethroughAction->setChecked(false);
+    mpSubscriptAction->setEnabled(false);
+    mpSubscriptAction->setChecked(false);
+    mpSuperscriptAction->setEnabled(false);
+    mpSuperscriptAction->setChecked(false);
+    mpTextColorToolButton->setEnabled(false);
+    mpBackgroundColorToolButton->setEnabled(false);
+    mpAlignLeftToolButton->setEnabled(false);
+    mpAlignLeftToolButton->setChecked(false);
+    mpAlignCenterToolButton->setEnabled(false);
+    mpAlignCenterToolButton->setChecked(false);
+    mpAlignRightToolButton->setEnabled(false);
+    mpAlignRightToolButton->setChecked(false);
+    mpJustifyToolButton->setEnabled(false);
+    mpJustifyToolButton->setChecked(false);
+    mpDecreaseIndentAction->setEnabled(false);
+    mpIncreaseIndentAction->setEnabled(false);
+    mpBulletListAction->setEnabled(false);
+    mpBulletListAction->setChecked(false);
+    mpNumberedListAction->setEnabled(false);
+    mpNumberedListAction->setChecked(false);
+    mpLinkAction->setEnabled(false);
+    mpLinkAction->setChecked(false);
+    mpUnLinkAction->setEnabled(false);
+    mpUnLinkAction->setChecked(false);
+  } else {
+    mpStyleComboBox->setEnabled(true);
+    mpFontComboBox->setEnabled(true);
+    mpFontSizeSpinBox->setEnabled(true);
+    mpBoldAction->setEnabled(true);
+    mpItalicAction->setEnabled(true);
+    mpUnderlineAction->setEnabled(true);
+    mpStrikethroughAction->setEnabled(true);
+    mpSubscriptAction->setEnabled(true);
+    mpSuperscriptAction->setEnabled(true);
+    mpTextColorToolButton->setEnabled(true);
+    mpBackgroundColorToolButton->setEnabled(true);
+    mpAlignLeftToolButton->setEnabled(true);
+    mpAlignCenterToolButton->setEnabled(true);
+    mpAlignRightToolButton->setEnabled(true);
+    mpJustifyToolButton->setEnabled(true);
+    mpDecreaseIndentAction->setEnabled(true);
+    mpIncreaseIndentAction->setEnabled(true);
+    mpBulletListAction->setEnabled(true);
+    mpNumberedListAction->setEnabled(true);
+    mpLinkAction->setEnabled(true);
+    mpUnLinkAction->setEnabled(true);
+    updateActionsHelper();
+  }
+#else // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
+  updateActionsHelper();
+#endif // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
 }
 
 /*!
@@ -1070,6 +1265,24 @@ void DocumentationWidget::fontSize(int size)
 //  execCommand("styleWithCSS", "true");
   execCommand("fontSize", QString::number(size));
 //  execCommand("styleWithCSS", "false");
+}
+
+/*!
+ * \brief DocumentationWidget::subscript
+ * Subscript the text by executing command subscript.
+ */
+void DocumentationWidget::subscript()
+{
+  execCommand("subscript");
+}
+
+/*!
+ * \brief DocumentationWidget::superscript
+ * Superscript the text by executing command superscript.
+ */
+void DocumentationWidget::superscript()
+{
+  execCommand("superscript");
 }
 
 /*!
@@ -1189,12 +1402,11 @@ void DocumentationWidget::createLink()
                                "getLinkHref()");
   QString href;
 #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
-  QWebEnginePage *pWebPage = mpHTMLEditor->page();
-  pWebPage->runJavaScript(javaScript, [&](const QVariant & arg){ href = arg.toString(); });
-#else
+  href = runJavaScript(javaScript).toString();
+#else // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
   QWebFrame *pWebFrame = mpHTMLEditor->page()->mainFrame();
   href = pWebFrame->evaluateJavaScript(javaScript).toString();
-#endif
+#endif // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
   href = QInputDialog::getText(this, tr("Create Link"), "Enter URL", QLineEdit::Normal, href);
   execCommand("createLink", href);
 }
@@ -1207,30 +1419,59 @@ void DocumentationWidget::removeLink()
 {
   execCommand("unlink");
 }
+#endif // #ifndef OM_DISABLE_DOCUMENTATION
 
-/*!
- * \brief DocumentationWidget::updateHTMLSourceEditor
- * Slot activated when QWebView::page() contentsChanged SIGNAL is raised.\n
- * Updates the contents of the HTML source editor.
- */
-void DocumentationWidget::updateHTMLSourceEditor()
-{
 #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
-  PlainTextEdit *textEdit = mpHTMLSourceEditor->getPlainTextEdit();
-  mpHTMLEditor->page()->toHtml([textEdit](const QString &result){ textEdit->setPlainText(result); });
-#else
-  mpHTMLSourceEditor->getPlainTextEdit()->setPlainText(mpHTMLEditor->page()->mainFrame()->toHtml());
-#endif
+DocumentationPage::DocumentationPage(QObject *parent)
+  : QWebEnginePage(parent)
+{
+
 }
 
 /*!
- * \brief DocumentationWidget::updateDocumentationHistory
- * Slot activated when LibraryTreeItem unloaded SIGNAL is raised.
+ * \brief DocumentationPage::acceptNavigationRequest
+ * Reimplementation of acceptNavigationRequest.
+ * Because you can not delegate all links in QtWebEngine we must override
+ * here and generate our own link requests
+
+ * BUT a loadStarted signal is emitted by this page **before** this is called
+ * Even **before** it knows how we want to handle it!
+ * Once we "return false" from this a loadFinished with okay **false** is generated.
+
+ * These false loadStart and LoadFinished greatly confuse our model
+
+ * Therefore do NOT emit a signal from this method as it can create huge delays in when
+ * loadFinished(okay) returns (with okay as false)
  */
-void DocumentationWidget::updateDocumentationHistory()
+bool DocumentationPage::acceptNavigationRequest(const QUrl &url, NavigationType type, bool isMainFrame)
 {
-  updateDocumentationHistory(qobject_cast<LibraryTreeItem*>(sender()));
+  if ((type == QWebEnginePage::NavigationTypeLinkClicked) || (type == QWebEnginePage::NavigationTypeOther)) {
+    // qDebug() << "acceptNavigationRequest " << url.toString() << " , " << type << " , " << isMainFrame;
+    if (isMainFrame) {
+        mUrl = url;
+        QTimer::singleShot(20,this,SLOT(emitLinkClicked()));
+        return false;
+    }
+    // allow secondary frames such as iframes to be loaded automatically
+    return true;
+  }
+  if (type == QWebEnginePage::NavigationTypeTyped) {
+    // qDebug() << "acceptNavigationRequest from scheme handler load" << url.toString();
+    return true;
+  }
+  if (type == QWebEnginePage::NavigationTypeRedirect) {
+    // qDebug() << "acceptNavigationRequest from scheme handler redirect" << url.toString();
+    return true;
+  }
+  qDebug() << " Unhandled acceptNavigationRequest with type: " << type;
+  return true;
 }
+
+void DocumentationPage::emitLinkClicked()
+{
+  emit linkClicked(mUrl);
+}
+#endif // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
 
 /*!
  * \class DocumentationViewer
@@ -1242,46 +1483,56 @@ void DocumentationWidget::updateDocumentationHistory()
  * \param isContentEditable
  */
 DocumentationViewer::DocumentationViewer(DocumentationWidget *pDocumentationWidget, bool isContentEditable)
+#ifndef OM_DISABLE_DOCUMENTATION
 #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
   : QWebEngineView(pDocumentationWidget)
-#else
+#else //#ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
   : QWebView(pDocumentationWidget)
 #endif
+#else // #ifndef OM_DISABLE_DOCUMENTATION
+  : QWidget(pDocumentationWidget)
+#endif // #ifndef OM_DISABLE_DOCUMENTATION
   , mIsContentEditable(isContentEditable)
 {
+  mpDocumentationWidget = pDocumentationWidget;
+#ifndef OM_DISABLE_DOCUMENTATION
   setContextMenuPolicy(Qt::CustomContextMenu);
   connect(this, SIGNAL(customContextMenuRequested(QPoint)), SLOT(showContextMenu(QPoint)));
-  mpDocumentationWidget = pDocumentationWidget;
   resetZoom();
   // set DocumentationViewer settings
 #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
+  // create a new QWebEnginePage so we can handle link clicks
+  mpDocumentationPage = new DocumentationPage(this);
+  setPage(mpDocumentationPage);
   settings()->setFontFamily(QWebEngineSettings::StandardFont, Helper::systemFontInfo.family());
   settings()->setFontSize(QWebEngineSettings::DefaultFontSize, Helper::systemFontInfo.pointSize());
   settings()->setAttribute(QWebEngineSettings::LocalStorageEnabled, true);
-#else
+#else // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
   settings()->setFontFamily(QWebSettings::StandardFont, Helper::systemFontInfo.family());
   settings()->setFontSize(QWebSettings::DefaultFontSize, Helper::systemFontInfo.pointSize());
   settings()->setAttribute(QWebSettings::LocalStorageEnabled, true);
-#endif
+#endif // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
   settings()->setDefaultTextEncoding(Helper::utf8.toUtf8().constData());
   // set DocumentationViewer web page policy
 #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
-  if (isContentEditable)
-    page()->runJavaScript("document.documentElement.contentEditable = true");
-  // TODO: DelegateAllLinks, linkClicked
+  // Set the contenteditable="true" in pageLoaded()
+  /* Qt WebEngine doesn't support DelegateAllLinks, linkClicked
+   * We created an object of QWebEnginePage which overrides acceptNavigationRequest to handle link clicks
+   */
+  connect(page(), SIGNAL(linkClicked(QUrl)), SLOT(processLinkClick(QUrl)));
   connect(page(), SIGNAL(linkHovered(QString)), SLOT(processLinkHover(QString)));
-#else
-  page()->setContentEditable(isContentEditable);
+#else // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
+  page()->setContentEditable(mIsContentEditable);
   page()->setLinkDelegationPolicy(QWebPage::DelegateAllLinks);
   connect(page(), SIGNAL(linkClicked(QUrl)), SLOT(processLinkClick(QUrl)));
   connect(page(), SIGNAL(linkHovered(QString,QString,QString)), SLOT(processLinkHover(QString,QString,QString)));
-#endif
+#endif // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
   createActions();
-  if (!isContentEditable) {
-    connect(this, SIGNAL(loadFinished(bool)), SLOT(pageLoaded(bool)));
-  }
+  connect(this, SIGNAL(loadFinished(bool)), SLOT(pageLoaded(bool)));
+#endif // #ifndef OM_DISABLE_DOCUMENTATION
 }
 
+#ifndef OM_DISABLE_DOCUMENTATION
 /*!
  * \brief DocumentationViewer::setFocusInternal
  * Sets the focus on QWebView.\n
@@ -1291,8 +1542,8 @@ void DocumentationViewer::setFocusInternal()
 {
   setFocus(Qt::ActiveWindowFocusReason);
   QPoint center = QPoint(0, 0);
-  QMouseEvent *pMouseEvent1 = new QMouseEvent(QEvent::MouseButtonPress, center, Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
-  QMouseEvent *pMouseEvent2 = new QMouseEvent(QEvent::MouseButtonRelease, center, Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
+  QMouseEvent *pMouseEvent1 = new QMouseEvent(QEvent::MouseButtonPress, center, center, Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
+  QMouseEvent *pMouseEvent2 = new QMouseEvent(QEvent::MouseButtonRelease, center, center, Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
   QApplication::postEvent(this, pMouseEvent1);
   QApplication::postEvent(this, pMouseEvent2);
 }
@@ -1305,10 +1556,10 @@ void DocumentationViewer::createActions()
 #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
   page()->action(QWebEnginePage::SelectAll)->setShortcut(QKeySequence("Ctrl+a"));
   page()->action(QWebEnginePage::Copy)->setShortcut(QKeySequence("Ctrl+c"));
-#else
+#else // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
   page()->action(QWebPage::SelectAll)->setShortcut(QKeySequence("Ctrl+a"));
   page()->action(QWebPage::Copy)->setShortcut(QKeySequence("Ctrl+c"));
-#endif
+#endif // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
 }
 
 /*!
@@ -1352,12 +1603,12 @@ void DocumentationViewer::processLinkClick(QUrl url)
   } else { // if it is normal http request then check if its not redirected to https
 #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
     // TODO: QNetworkAccessManager
-#else
+#else // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
     QNetworkAccessManager* accessManager = page()->networkAccessManager();
     QNetworkRequest request(url);
     QNetworkReply* reply = accessManager->get(request);
     connect(reply, SIGNAL(finished()), SLOT(requestFinished()));
-#endif
+#endif // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
   }
 }
 
@@ -1417,10 +1668,10 @@ void DocumentationViewer::showContextMenu(QPoint point)
 #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
   menu.addAction(page()->action(QWebEnginePage::SelectAll));
   menu.addAction(page()->action(QWebEnginePage::Copy));
-#else
+#else // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
   menu.addAction(page()->action(QWebPage::SelectAll));
   menu.addAction(page()->action(QWebPage::Copy));
-#endif
+#endif // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
   menu.exec(mapToGlobal(point));
 }
 
@@ -1432,12 +1683,18 @@ void DocumentationViewer::showContextMenu(QPoint point)
 void DocumentationViewer::pageLoaded(bool ok)
 {
   Q_UNUSED(ok);
-  const QPoint scrollPosition = mpDocumentationWidget->getScrollPosition();
+  if (!mIsContentEditable) {
+    const QPoint scrollPosition = mpDocumentationWidget->getScrollPosition();
 #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
-  page()->runJavaScript(QString("window.scrollTo(%1, %2);").arg(scrollPosition.x()).arg(scrollPosition.y()));
-#else
-  page()->mainFrame()->scroll(scrollPosition.x(), scrollPosition.y());
-#endif
+    page()->runJavaScript(QString("window.scrollTo(%1, %2);").arg(scrollPosition.x()).arg(scrollPosition.y()));
+#else // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
+    page()->mainFrame()->scroll(scrollPosition.x(), scrollPosition.y());
+#endif // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
+  } else {
+#ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
+    page()->runJavaScript("document.documentElement.contentEditable = true");
+#endif // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
+  }
 }
 
 /*!
@@ -1447,18 +1704,18 @@ void DocumentationViewer::pageLoaded(bool ok)
  */
 #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
 QWebEngineView* DocumentationViewer::createWindow(QWebEnginePage::WebWindowType type)
-#else
+#else // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
 QWebView* DocumentationViewer::createWindow(QWebPage::WebWindowType type)
-#endif
+#endif // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
 {
   Q_UNUSED(type);
 #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
   QWebEngineView *webView = new QWebEngineView;
   QWebEnginePage *newWeb = new QWebEnginePage(webView);
-#else
+#else // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
   QWebView *webView = new QWebView;
   QWebPage *newWeb = new QWebPage(webView);
-#endif
+#endif // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
   webView->setAttribute(Qt::WA_DeleteOnClose, true);
   webView->setPage(newWeb);
   webView->show();
@@ -1481,15 +1738,15 @@ void DocumentationViewer::keyPressEvent(QKeyEvent *event)
 //      mpDocumentationWidget->execCommand("insertHTML", "<p><br></p>");
 #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
       QWebEngineView::keyPressEvent(event);
-#else
+#else // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
       QWebView::keyPressEvent(event);
-#endif
+#endif // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
     } else {
 #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
       QWebEngineView::keyPressEvent(event);
-#else
+#else // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
       QWebView::keyPressEvent(event);
-#endif
+#endif // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
     }
   } else { // if non-editable QWebView
     if (shiftModifier && !controlModifier && event->key() == Qt::Key_Backspace) {
@@ -1503,15 +1760,15 @@ void DocumentationViewer::keyPressEvent(QKeyEvent *event)
     } else if (controlModifier && event->key() == Qt::Key_A) {
 #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
       page()->triggerAction(QWebEnginePage::SelectAll);
-#else
+#else // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
       page()->triggerAction(QWebPage::SelectAll);
-#endif
+#endif // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
     } else {
 #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
       QWebEngineView::keyPressEvent(event);
-#else
+#else // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
       QWebView::keyPressEvent(event);
-#endif
+#endif // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
     }
   }
 }
@@ -1524,7 +1781,7 @@ void DocumentationViewer::keyPressEvent(QKeyEvent *event)
  */
 void DocumentationViewer::wheelEvent(QWheelEvent *event)
 {
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 6, 0))
+#if QT_VERSION >= QT_VERSION_CHECK(5, 6, 0)
   if (event->angleDelta().y() != 0 && event->modifiers().testFlag(Qt::ControlModifier)) {
 #else // QT_VERSION_CHECK
   if (event->orientation() == Qt::Vertical && event->modifiers().testFlag(Qt::ControlModifier)) {
@@ -1533,7 +1790,7 @@ void DocumentationViewer::wheelEvent(QWheelEvent *event)
     /* ticket:4349 Take smaller steps for zooming.
      * Also set the minimum zoom to readable size.
      */
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 6, 0))
+#if QT_VERSION >= QT_VERSION_CHECK(5, 6, 0)
   if (event->angleDelta().y() > 0) {
 #else // QT_VERSION_CHECK
   if (event->delta() > 0) {
@@ -1548,9 +1805,9 @@ void DocumentationViewer::wheelEvent(QWheelEvent *event)
   } else {
 #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
     QWebEngineView::wheelEvent(event);
-#else
+#else // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
     QWebView::wheelEvent(event);
-#endif
+#endif // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
   }
 }
 
@@ -1567,8 +1824,9 @@ void DocumentationViewer::mouseDoubleClickEvent(QMouseEvent *event)
   } else {
 #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
     QWebEngineView::mouseDoubleClickEvent(event);
-#else
+#else // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
     QWebView::mouseDoubleClickEvent(event);
-#endif
+#endif // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
   }
 }
+#endif // #ifndef OM_DISABLE_DOCUMENTATION

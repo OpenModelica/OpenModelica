@@ -1,7 +1,6 @@
 // name:     RedeclareClass2
 // keywords: redeclare class
 // status:   correct
-// cflags: -d=-newInst
 //
 // Tests simple redeclaration of inherited classes.
 //
@@ -27,6 +26,7 @@ model RedeclareClass2
   P2.M1 m1;
 equation
   m1.r = 1.0;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end RedeclareClass2;
 
 // Result:

@@ -1,7 +1,6 @@
 // name:     Enum13
 // keywords: enumeration enum mod bug1621
 // status:   correct
-// cflags: -d=-newInst
 //
 // Checks that it's possible to have a modifier on a component that contains an
 // enumeration, and still use the enumeration inside the model.
@@ -14,6 +13,7 @@ end modelInner;
 
 model topModel
   modelInner m(param1 = modelInner.typeA.e2);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end topModel;
 
 // Result:

@@ -1,7 +1,6 @@
 // name:     Enum10
 // keywords: enumeration enum type extends
 // status:   correct
-// cflags: -d=-newInst
 //
 // Tests creation of new enumeration type by extending an already existing one.
 //
@@ -12,6 +11,7 @@ type enum2 = enum1(start = two);
 model Enum10
   enum1 e1;
   enum2 e2;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Enum10;
 
 // Result:

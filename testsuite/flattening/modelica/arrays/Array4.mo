@@ -1,7 +1,6 @@
 // name:     Array4
 // keywords: array
 // status:   correct
-// cflags: -d=-newInst
 //
 // This is a test of arrays of arrays.  The type T2 is equivalent or
 // similar to Real[2,3].
@@ -11,6 +10,7 @@ model Array4
   type T1 = Real[3];
   type T2 = T1[2];
   parameter T2 x;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Array4;
 
 // Result:

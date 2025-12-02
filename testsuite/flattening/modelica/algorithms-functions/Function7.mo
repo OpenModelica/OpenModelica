@@ -1,7 +1,6 @@
 // name:     Function7
 // keywords: function
 // status:   incorrect
-// cflags: -d=-newInst
 //
 // This tests basic function functionality
 //
@@ -18,10 +17,11 @@ model Function7
   Real z;
 equation
   x = f(z);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Function7;
 // Result:
 // Error processing file: Function7.mo
-// [flattening/modelica/algorithms-functions/Function7.mo:20:3-20:11:writable] Error: Type mismatch in equation x=f(z) of type String=Real.
+// [flattening/modelica/algorithms-functions/Function7.mo:19:3-19:11:writable] Error: Type mismatch in equation x=f(z) of type String=Real.
 // Error: Error occurred while flattening model Function7
 //
 // # Error encountered! Exiting...

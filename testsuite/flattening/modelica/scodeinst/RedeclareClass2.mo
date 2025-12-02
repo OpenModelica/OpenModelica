@@ -1,7 +1,6 @@
 // name: RedeclareClass2
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 
 model LosslessPipe

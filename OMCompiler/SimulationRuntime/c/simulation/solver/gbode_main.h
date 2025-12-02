@@ -64,7 +64,6 @@ extern "C" {
  * @brief Function to compute single-rate step.
  */
 typedef int (*gm_step_function)(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo);
-typedef double (*gm_stepSize_control_function)(double* err_values, double* stepSize_values, unsigned int err_order);
 
 typedef struct DATA_GBODEF{
   enum GB_METHOD GM_method;                         /* Method to use for integration. */
@@ -74,7 +73,7 @@ typedef struct DATA_GBODEF{
                                                      * Something like
                                                      *  0 = yold-x + h*(sum(A[i,j]*k[j], j=1..i-1) + A[i,i]*f(t + c[i]*h, x))
                                                      * */
-  ANALYTIC_JACOBIAN* jacobian;                      /* Jacobian of non-linear system of implicit Runge-Kutta method */
+  JACOBIAN* jacobian;                               /* Jacobian of non-linear system of implicit Runge-Kutta method */
   SPARSE_PATTERN* sparsePattern_DIRK;               /* Sparsity pattern for the DIRK methd, will be reduced based on the fast states selection */
 
   double *y;                                        /* State vector of the current Runge-Kutta step */
@@ -92,7 +91,7 @@ typedef struct DATA_GBODEF{
   double *errValues;                                /* ring buffer for step size control */
   double *stepSizeValues;                           /* ring buffer for step size control */
 
-  double time, timeLeft, timeRight;                 /* actual time values and the time values of the current interpolation interval */
+  double time, timeLeft, timeRight, eventTime;      /* actual time values and the time values of the current interpolation interval */
   double stepSize, lastStepSize;                    /* actual and last step size of integration */
   int act_stage;                                    /* Current stage of Runge-Kutta method. */
   enum GB_CTRL_METHOD ctrl_method;                  /* Step size control algorithm */
@@ -110,7 +109,6 @@ typedef struct DATA_GBODEF{
   unsigned int nlSystemSize;                        /* Size of non-linear system to solve in a RK step. */
   modelica_boolean symJacAvailable;                 /* Boolean stating if a symbolic Jacobian is available */
   gm_step_function step_fun;                        /* Step function of the integrator */
-  gm_stepSize_control_function stepSize_control;    /* Chosen step size control function (i, pi, const) */
 
   FILE *fastStatesDebugFile;                        /* File pointer for debugging the integration process with respect to slow and fast states */
 
@@ -127,9 +125,9 @@ typedef struct DATA_GBODE{
                                                      * Something like
                                                      *  0 = yold-x + h*(sum(A[i,j]*k[j], j=1..i-1) + A[i,i]*f(t + c[i]*h, x))
                                                      * */
-  ANALYTIC_JACOBIAN* jacobian;                      /* Jacobian of non-linear system of implicit Runge-Kutta method */
+  JACOBIAN* jacobian;                               /* Jacobian of non-linear system of implicit Runge-Kutta method */
   double *y;                                        /* State vector of the current Runge-Kutta step */
-  double *yt, *y1;                                  /* Result vector of the states of embedded RK step */
+  double *yt, *y1, *y2;                             /* Result vector of the states of embedded RK step */
   double *yLeft, *kLeft, *yRight, *kRight;          /* Needed for interpolation of the slow states and emitting to the result files */
   double *yOld;                                     /* State vector of last Runge-Kutta step */
   double *f;                                        /* State derivatives of ODE for initialization */
@@ -145,8 +143,8 @@ typedef struct DATA_GBODE{
   double *errValues;                                /* ring buffer for step size control */
   double *stepSizeValues;                           /* ring buffer for step size control */
   double err_slow, err_fast, err_int;               /* error of the slow, fast states and a preiction of the interpolation error */
-  double percentage, err_threshold;                 /* percentage of fast states and the corresponding error threshold */
-  double time, timeLeft, timeRight, timeDense;      /* actual time values and the time values of the current interpolation interval and for dense output */
+  double percentage;                                /* percentage of fast states */
+  double time, timeLeft, timeRight, eventTime;      /* actual time values and the time values of the current interpolation interval and for dense output */
   double stepSize, lastStepSize, optStepSize;       /* actual, last, and optimal step size of integration */
   double maxStepSize;                               /* maximal step size of integration */
   double initialStepSize;                           /* initial step size of integration */
@@ -169,7 +167,6 @@ typedef struct DATA_GBODE{
   unsigned int nlSystemSize;                        /* Size of non-linear system to solve in a RK step. */
   modelica_boolean symJacAvailable;                 /* Boolean stating if a symbolic Jacobian is available */
   gm_step_function step_fun;                        /* Step function of the integrator */
-  gm_stepSize_control_function stepSize_control;    /* Chosen step size control function (i, pi, const) */
 
   /* statistics */
   SOLVERSTATS stats;

@@ -569,7 +569,7 @@ algorithm
         //  BackendDump.debuglst((rlst, intString, ", ", "\n"));
         vlst = List.map1r(rlst, BackendVariable.getVarAt, vars);
         blst = List.map(vlst, BackendVariable.isFlowVar);
-        foundflow = Util.boolOrList(blst);
+        foundflow = List.any(blst, Util.id);
         rlst = selectNonFlows(rlst, blst);
         foundflow = generateCliquesResidual1(rlst, ass1, ass2, m, mt, mark, rowmarks, colummarks, foundflow, vars);
         generateCliquesResidual2(rlst, ass1, ass2, m, mt, mark+1, rowmarks, colummarks, o::partner);
@@ -622,7 +622,7 @@ algorithm
         next := List.fold1(rlst, List.removeOnTrue, intEq, m[e]);
         vlst := List.map1r(next, BackendVariable.getVarAt, vars);
         blst := List.map(vlst, BackendVariable.isFlowVar);
-        b1 := Util.boolOrList(blst);
+        b1 := List.any(blst, Util.id);
         next := selectNonFlows(next, blst);
         ofoundFlow := generateCliquesResidual1(next, ass1, ass2, m, mt, mark, rowmarks, colummarks, b1 or ofoundFlow, vars);
       end if;
@@ -728,7 +728,7 @@ algorithm
         // check for partner
         //  BackendDump.debuglst((rlst, intString, ", ", "\n"));
         vlst = List.map1r(rlst, BackendVariable.getVarAt, vars);
-        constr = List.mapBoolAnd(vlst, BackendVariable.isFlowVar);
+        constr = List.all(vlst, BackendVariable.isFlowVar);
         constraints = List.consOnTrue(constr, o, iconstraints);
         //  print("Process Orphan " + intString(o) + "\n");
         //  BackendDump.debuglst((mt[o], intString, ", ", "\n"));
@@ -763,7 +763,6 @@ protected function prepairOrphansOrder1 "author: Frenkel TUD 2012-05"
 protected
   list<Integer> next, r, elst;
   Boolean b1;
-  list<Boolean> blst;
   list<BackendDAE.Var> vlst;
 algorithm
   for e in eqns loop
@@ -784,8 +783,7 @@ algorithm
         next := List.fold1(elst, List.removeOnTrue, intEq, next);
         List.map2_0(r, addPreOrphan, preorphan, orphans);
         vlst := List.map1r(r, BackendVariable.getVarAt, vars);
-        blst := List.map(vlst, BackendVariable.isFlowVar);
-        b1 := Util.boolOrList(blst);
+        b1 := List.any(vlst, BackendVariable.isFlowVar);
         // print("Go From " + intString(e) + " to " + stringDelimitList(List.map(next, intString), ", ") + "\n");
         ofoundFlow := prepairOrphansOrder1(next, ass1, ass2, m, mt, mark, rowmarks, colummarks, preorphan, orphans, r, b1 or ofoundFlow, vars);
       end if;
@@ -1816,7 +1814,7 @@ algorithm
       cr = ComponentReference.makeCrefIdent(stringAppendList({"$tmp", sa, "_", sb}), DAE.T_REAL_DEFAULT, {});
       cexp = Expression.crefExp(cr);
       eqns = BackendEquation.add(BackendDAE.EQUATION(cexp, e, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN), inEqns);
-      v = BackendDAE.VAR(cr, BackendDAE.VARIABLE(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), NONE(), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), false, false);
+      v = BackendDAE.VAR(cr, BackendDAE.VARIABLE(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), NONE(), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), false, false, false);
       vars = BackendVariable.addVar(v, inVars);
     then
       (vars, eqns, cexp, (a, b+1));
@@ -3303,7 +3301,7 @@ algorithm
         crlst = List.uniqueOnTrue(crlst, ComponentReference.crefEqualNoStringCompare);
         true = intEq(size, listLength(crlst));
         cr::crlst1 = crlst;
-        true = List.map1BoolAnd(crlst1, ComponentReference.crefEqualWithoutLastSubs, cr);
+        true = List.all(crlst1, function ComponentReference.crefEqualWithoutLastSubs(cr2 = cr));
         // check if crefs no on other side
         set = HashSet.emptyHashSet();
         crnosubs = ComponentReference.crefStripLastSubs(cr);
@@ -3326,7 +3324,7 @@ algorithm
         crlst = List.uniqueOnTrue(crlst, ComponentReference.crefEqualNoStringCompare);
         true = intEq(size, listLength(crlst));
         cr::crlst1 = crlst;
-        true = List.map1BoolAnd(crlst1, ComponentReference.crefEqualWithoutLastSubs, cr);
+        true = List.all(crlst1, function ComponentReference.crefEqualWithoutLastSubs(cr2 = cr));
         // check if crefs no on other side
         set = HashSet.emptyHashSet();
         crnosubs = ComponentReference.crefStripLastSubs(cr);

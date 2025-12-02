@@ -49,7 +49,6 @@
 #include <QHeaderView>
 #include <QAction>
 #include <QMenu>
-#include <QDesktopWidget>
 #include <QTcpSocket>
 #include <QMessageBox>
 #include <QTextDocumentFragment>
@@ -443,7 +442,7 @@ SimulationOutputWidget::~SimulationOutputWidget()
   }
   /* Ticket:3788 comment:12 Delete the entire simulation folder. */
   if (OptionsDialog::instance()->getSimulationPage()->getDeleteEntireSimulationDirectoryCheckBox()->isChecked()) {
-    Utilities::removeDirectoryRecursivly(mSimulationOptions.getWorkingDirectory());
+    Utilities::removeDirectoryRecursively(mSimulationOptions.getWorkingDirectory());
   }
   if (mpSimulationOutputHandler) {
     delete mpSimulationOutputHandler;
@@ -470,8 +469,7 @@ void SimulationOutputWidget::addGeneratedFileTab(QString fileName)
 {
   QFile file(fileName);
   QFileInfo fileInfo(fileName);
-  if (file.exists()) {
-    file.open(QIODevice::ReadOnly);
+  if (file.open(QIODevice::ReadOnly)) {
     BaseEditor *pEditor;
     if (Utilities::isCFile(fileInfo.suffix())) {
       pEditor = new CEditor(MainWindow::instance());
@@ -489,50 +487,33 @@ void SimulationOutputWidget::addGeneratedFileTab(QString fileName)
 /*!
  * \brief SimulationOutputWidget::writeSimulationMessage
  * Writes the simulation output in a formatted text form.\n
- * \param pSimulationMessage - the simulation output message.
+ * \param type
+ * \param text
+ * \param index
  */
-void SimulationOutputWidget::writeSimulationMessage(SimulationMessage *pSimulationMessage)
+void SimulationOutputWidget::writeSimulationMessage(StringHandler::SimulationMessageType type, QString text, QString index)
 {
-  static QString lastSream;
-  static QString lastType;
-  /* format the error message */
-  QString type = StringHandler::getSimulationMessageTypeString(pSimulationMessage->mType);
-  QString text;
-  if (pSimulationMessage->mType != StringHandler::OMEditInfo) {
-    text = ((lastSream == pSimulationMessage->mStream && pSimulationMessage->mLevel > 0) ? "|" : pSimulationMessage->mStream) + "\t\t| ";
-    text += ((lastSream == pSimulationMessage->mStream && lastType == type && pSimulationMessage->mLevel > 0) ? "|" : type) + "\t | ";
-    for (int i = 0 ; i < pSimulationMessage->mLevel ; ++i)
-      text += "| ";
-  }
-  text += pSimulationMessage->mText;
   /* move the cursor down before adding to the logger. */
   QTextCursor textCursor = mpSimulationOutputTextBrowser->textCursor();
   textCursor.movePosition(QTextCursor::End);
   mpSimulationOutputTextBrowser->setTextCursor(textCursor);
   /* set the text color */
   QTextCharFormat charFormat = mpSimulationOutputTextBrowser->currentCharFormat();
-  charFormat.setForeground(OptionsDialog::instance()->getMessagesPage()->getColor(pSimulationMessage->mType));
+  charFormat.setForeground(OptionsDialog::instance()->getMessagesPage()->getColor(type));
   mpSimulationOutputTextBrowser->setCurrentCharFormat(charFormat);
   /* append the output */
   /* write the error message */
-  if (pSimulationMessage->mText.compare("Reached display limit") == 0) {
+  if (text.compare(Helper::displayLimit) == 0) {
     QString simulationLogFilePath = QString("%1/%2.log").arg(mSimulationOptions.getWorkingDirectory()).arg(mSimulationOptions.getOutputFileName());
-    mpSimulationOutputTextBrowser->insertHtml(QString("Reached display limit. To read the full log open the file <a href=\"file:///%1\">%1</a>\n").arg(simulationLogFilePath));
+    mpSimulationOutputTextBrowser->insertHtml(Helper::displayLimitMsg.arg(simulationLogFilePath));
   } else {
     mpSimulationOutputTextBrowser->insertPlainText(text);
   }
   /* write the error link */
-  if (!pSimulationMessage->mIndex.isEmpty()) {
-    mpSimulationOutputTextBrowser->insertHtml("&nbsp;<a href=\"omedittransformationsbrowser://" + QUrl::fromLocalFile(mSimulationOptions.getWorkingDirectory() + "/" + mSimulationOptions.getOutputFileName() + "_info.json").path() + "?index=" + pSimulationMessage->mIndex + "\">Debug more</a><br />");
+  if (!index.isEmpty()) {
+    mpSimulationOutputTextBrowser->insertHtml("&nbsp;<a href=\"omedittransformationsbrowser://" + QUrl::fromLocalFile(mSimulationOptions.getWorkingDirectory() + "/" + mSimulationOptions.getOutputFileName() + "_info.json").path() + "?index=" + index + "\">Debug more</a><br />");
   } else {
     mpSimulationOutputTextBrowser->insertPlainText("\n");
-  }
-  /* save the current stream & type as last */
-  lastSream = pSimulationMessage->mStream;
-  lastType = type;
-  /* write the child messages */
-  foreach (SimulationMessage* pSimulationMessage, pSimulationMessage->mChildren) {
-    writeSimulationMessage(pSimulationMessage);
   }
 }
 
@@ -559,7 +540,7 @@ void SimulationOutputWidget::compileModel()
   connect(mpCompilationProcess, SIGNAL(started()), SLOT(compilationProcessStarted()));
   connect(mpCompilationProcess, SIGNAL(readyReadStandardOutput()), SLOT(readCompilationStandardOutput()));
   connect(mpCompilationProcess, SIGNAL(readyReadStandardError()), SLOT(readCompilationStandardError()));
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 6, 0))
+#if QT_VERSION >= QT_VERSION_CHECK(5, 6, 0)
   connect(mpCompilationProcess, SIGNAL(errorOccurred(QProcess::ProcessError)), SLOT(compilationProcessError(QProcess::ProcessError)));
 #else
   connect(mpCompilationProcess, SIGNAL(error(QProcess::ProcessError)), SLOT(compilationProcessError(QProcess::ProcessError)));
@@ -589,8 +570,13 @@ void SimulationOutputWidget::compileModel()
     args << "-j" + numProcs;
   }
   args << "-f" << mSimulationOptions.getOutputFileName() + ".makefile";
+#  if !defined(__FreeBSD__)
   writeCompilationOutput(QString("%1 %2\n").arg("make").arg(args.join(" ")), Qt::blue);
   mpCompilationProcess->start("make", args);
+#  else
+  writeCompilationOutput(QString("%1 %2\n").arg("gmake").arg(args.join(" ")), Qt::blue);
+  mpCompilationProcess->start("gmake", args);
+#  endif
 #endif
 }
 
@@ -608,14 +594,14 @@ void SimulationOutputWidget::runPostCompilation()
     connect(mpPostCompilationProcess, SIGNAL(started()), SLOT(postCompilationProcessStarted()));
     connect(mpPostCompilationProcess, SIGNAL(readyReadStandardOutput()), SLOT(readPostCompilationStandardOutput()));
     connect(mpPostCompilationProcess, SIGNAL(readyReadStandardError()), SLOT(readPostCompilationStandardError()));
-  #if (QT_VERSION >= QT_VERSION_CHECK(5, 6, 0))
+  #if QT_VERSION >= QT_VERSION_CHECK(5, 6, 0)
     connect(mpPostCompilationProcess, SIGNAL(errorOccurred(QProcess::ProcessError)), SLOT(postCompilationProcessError(QProcess::ProcessError)));
   #else
     connect(mpPostCompilationProcess, SIGNAL(error(QProcess::ProcessError)), SLOT(postCompilationProcessError(QProcess::ProcessError)));
   #endif
     connect(mpPostCompilationProcess, SIGNAL(finished(int, QProcess::ExitStatus)), SLOT(postCompilationProcessFinished(int, QProcess::ExitStatus)));
     writeCompilationOutput(QString("%1\n").arg(postCompilationCommand), Qt::blue);
-  #if (QT_VERSION >= QT_VERSION_CHECK(5, 15, 0))
+  #if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
     QStringList args(QProcess::splitCommand(postCompilationCommand));
     const QString program(args.takeFirst());
     mpPostCompilationProcess->start(program, args);
@@ -725,36 +711,6 @@ void SimulationOutputWidget::postCompilationProcessFinishedHelper(int exitCode, 
 }
 
 /*!
- * \brief getPathsFromBatFile
- * Parses the fileName.bat file to get the necessary paths.
- * Returns "" if it fails to parse the file as expected.
- */
-QString SimulationOutputWidget::getPathsFromBatFile(QString fileName) {
-
-  QFile batFile(fileName);
-  batFile.open(QIODevice::ReadOnly | QIODevice::Text);
-
-  QString line;
-  // first line is supposed to be '@echo off'
-  line = batFile.readLine();
-  // Second line is where the PATH is set. We want that.
-  line = batFile.readLine();
-
-  if (!line.toLower().startsWith("set path=")) {
-    QString warnMessage = "Failed to read the neccesary PATH values from '" + fileName + "'\n"
-                          + "If simulation fails please check that you have the bat file and it is formatted correctly\n";
-    writeSimulationOutput(warnMessage, StringHandler::Error, true);
-    line = "";
-  } else {
-    // Strip the 'set PATH='
-    line.remove(0, 9);
-  }
-  batFile.close();
-
-  return line;
-}
-
-/*!
  * \brief SimulationOutputWidget::updateMessageTab
  * Updates the corresponsing MessageTab.
  */
@@ -788,7 +744,7 @@ void SimulationOutputWidget::runSimulationExecutable()
   connect(mpSimulationProcess, SIGNAL(started()), SLOT(simulationProcessStarted()));
   connect(mpSimulationProcess, SIGNAL(readyReadStandardOutput()), SLOT(readSimulationStandardOutput()));
   connect(mpSimulationProcess, SIGNAL(readyReadStandardError()), SLOT(readSimulationStandardError()));
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 6, 0))
+#if QT_VERSION >= QT_VERSION_CHECK(5, 6, 0)
   connect(mpSimulationProcess, SIGNAL(errorOccurred(QProcess::ProcessError)), SLOT(simulationProcessError(QProcess::ProcessError)));
 #else
   connect(mpSimulationProcess, SIGNAL(error(QProcess::ProcessError)), SLOT(simulationProcessError(QProcess::ProcessError)));
@@ -801,15 +757,14 @@ void SimulationOutputWidget::runSimulationExecutable()
   fileName = fileName.replace("//", "/");
   // run the simulation executable to create the result file
 #if defined(_WIN32)
-  QProcessEnvironment processEnvironment = StringHandler::simulationProcessEnvironment();
-
-  QString paths = getPathsFromBatFile(fileName + ".bat");
-
+  QString errorMsg;
+  QProcessEnvironment processEnvironment = StringHandler::modelicaSimulationProcessEnvironment(fileName + ".bat", &errorMsg);
+  if (!errorMsg.isEmpty()) {
+    writeSimulationOutput(errorMsg, StringHandler::Error, true);
+  }
   fileName = fileName.append(".exe");
   QFileInfo fileInfo(mSimulationOptions.getFileName());
-  paths = fileInfo.absoluteDir().absolutePath() + ";" + paths;
-
-  processEnvironment.insert("PATH", paths + ";" + processEnvironment.value("PATH"));
+  processEnvironment.insert("PATH", fileInfo.absoluteDir().absolutePath() + ";" + processEnvironment.value("PATH"));
   mpSimulationProcess->setProcessEnvironment(processEnvironment);
 #endif
   // make the output tab enabled and current
@@ -843,7 +798,7 @@ void SimulationOutputWidget::compilationProcessFinishedHelper(int exitCode, QPro
     if (mSimulationOptions.getBuildOnly() &&
         (OptionsDialog::instance()->getDebuggerPage()->getAlwaysShowTransformationsCheckBox()->isChecked() ||
          mSimulationOptions.getLaunchTransformationalDebugger() || profiling)) {
-      MainWindow::instance()->showTransformationsWidget(mSimulationOptions.getWorkingDirectory() + "/" + mSimulationOptions.getOutputFileName() + "_info.json", profiling);
+      MainWindow::instance()->showTransformationsWidget(mSimulationOptions.getWorkingDirectory() + "/" + mSimulationOptions.getOutputFileName() + "_info.json", profiling, false);
     }
     MainWindow::instance()->getSimulationDialog()->showAlgorithmicDebugger(mSimulationOptions);
     progressStr = tr("Compilation of %1 finished.").arg(mSimulationOptions.getClassName());
@@ -1027,9 +982,9 @@ void SimulationOutputWidget::openTransformationalDebugger()
   QString fileName = QString("%1/%2_info.json").arg(mSimulationOptions.getWorkingDirectory(), mSimulationOptions.getOutputFileName());
   /* open the model_info.json file */
   if (QFileInfo(fileName).exists()) {
-    MainWindow::instance()->showTransformationsWidget(fileName, mSimulationOptions.getProfiling().compare(QStringLiteral("none")) != 0);
+    MainWindow::instance()->showTransformationsWidget(fileName, mSimulationOptions.getProfiling().compare(QStringLiteral("none")) != 0, false);
   } else {
-    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), GUIMessages::getMessage(GUIMessages::FILE_NOT_FOUND).arg(fileName), Helper::ok);
+    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), GUIMessages::getMessage(GUIMessages::FILE_NOT_FOUND).arg(fileName), QMessageBox::Ok);
   }
 }
 
@@ -1043,7 +998,7 @@ void SimulationOutputWidget::openSimulationLogFile()
   QUrl logFile (QString("file:///%1/%2.log").arg(mSimulationOptions.getWorkingDirectory(), mSimulationOptions.getOutputFileName()));
   if (!QDesktopServices::openUrl(logFile)) {
     QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
-                          GUIMessages::getMessage(GUIMessages::UNABLE_TO_OPEN_FILE).arg(logFile.toString()), Helper::ok);
+                          GUIMessages::getMessage(GUIMessages::UNABLE_TO_OPEN_FILE).arg(logFile.toString()), QMessageBox::Ok);
   }
 }
 
@@ -1217,7 +1172,7 @@ void SimulationOutputWidget::readSimulationStandardOutput()
   /* The remote embedded server does not currently disconnect connected clients when a simulation finishes.
    * This check hides the mazy network message of an open connection at shutdown.
    */
-  QRegExp rx("info/network");
+  QRegularExpression rx("info/network");
   QString stdOutput = mpSimulationProcess->readAllStandardOutput();
   if (!stdOutput.contains(rx)) {
     mSimulationStandardOutput.append(stdOutput);
@@ -1288,7 +1243,8 @@ void SimulationOutputWidget::openTransformationBrowser(QUrl url)
 #endif
     /* open the model_info.json file */
     if (QFileInfo(fileName).exists()) {
-      TransformationsWidget *pTransformationsWidget = MainWindow::instance()->showTransformationsWidget(fileName, mSimulationOptions.getProfiling().compare(QStringLiteral("none")) != 0);
+      bool profiling = mSimulationOptions.getProfiling().compare(QStringLiteral("none")) != 0;
+      TransformationsWidget *pTransformationsWidget = MainWindow::instance()->showTransformationsWidget(fileName, profiling, false);
       QUrlQuery query(url);
       int equationIndex = query.queryItemValue("index").toInt();
       QTreeWidgetItem *pTreeWidgetItem = pTransformationsWidget->findEquationTreeItem(equationIndex);
@@ -1300,7 +1256,7 @@ void SimulationOutputWidget::openTransformationBrowser(QUrl url)
     } else {
       QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), QString("%1<br />%2")
                             .arg(GUIMessages::getMessage(GUIMessages::FILE_NOT_FOUND).arg(fileName))
-                            .arg(tr("Url is <b>%1</b>").arg(url.toString())), Helper::ok);
+                            .arg(tr("Url is <b>%1</b>").arg(url.toString())), QMessageBox::Ok);
     }
   } else if (url.scheme().compare("file") == 0) {
     // we know that file link is always simulation log file.

@@ -48,6 +48,8 @@ template mmDeclaration(MMDeclaration it) ::=
     <%match statements
      case {c as MM_MATCH(__)} then //match function
        mmMatchFunBody(mf.inArgs, mf.outArgs, mf.locals, c.matchCases)
+     case {c as MM_FOR_LOOP(__)} then //for-loop function
+       mmForLoopFunBody(mf.inArgs, mf.outArgs, mf.locals, c.idxName, c.arrName, c.eltName, c.statements)
      case sts then //simple assignment functions
        <<
          <%typedIdentsEx(mf.inArgs, "input", "")%>
@@ -118,6 +120,59 @@ end try;
 %>
 >>
 end mmMatchFunBody;
+
+template mmForLoopFunBody(TypedIdents inArgs, TypedIdents outArgs, TypedIdents locals, Ident idxName, Ident arrName, Ident eltName, list<MMExp> statements) ::=
+<<
+  <%inOutArgs(inArgs, outArgs)%>
+<%if locals then <<
+protected
+  <%typedIdents(locals)%>
+>>%>
+algorithm<% if debugSusan() then
+<<
+
+try
+>>
+%>
+  for <%idxName%> in 1:arrayLength(<%arrName%>) loop
+    <%if eltName then <<
+    <%eltName%> := arrayGet(<%arrName%>, <%idxName%>);
+    >>%>
+    <%statements |> it => '<%mmExp(it, ":=")%>;' ;separator="\n"%>
+  end for;<% if debugSusan() then
+<<
+
+else
+  Tpl.fakeStackOverflow();
+end try;
+>>
+%>
+>>
+end mmForLoopFunBody;
+
+template inOutArgs(TypedIdents inArgs, TypedIdents outArgs) ::=
+  match intersectInOutArgs(inArgs, outArgs)
+  case (inOut, in, out) then
+  <<
+  <%if inOut then <<
+  <%typedIdentsEx(inOut, "input output", "")%>
+  <%if in then <<
+
+  >> else if out then <<
+
+  >>%>
+  >>%>
+  <%if in then <<
+  <%typedIdentsEx(in, "input", "")%>
+  <%if out then <<
+
+  >>%>
+  >>%>
+  <%if out then <<
+  <%typedIdentsEx(out, "output", "")%>
+  >>%>
+  >>
+end inOutArgs;
 
 template pathIdent(PathIdent path) ::=
   match path

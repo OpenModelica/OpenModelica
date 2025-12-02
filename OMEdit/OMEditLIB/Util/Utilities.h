@@ -32,6 +32,9 @@
  * @author Adeel Asghar <adeel.asghar@liu.se>
  */
 
+#ifndef UTILITIES_H
+#define UTILITIES_H
+
 #include <QApplication>
 #include <QSplashScreen>
 #include <QStatusBar>
@@ -57,19 +60,11 @@
 #include <QListWidgetItem>
 #include <QScrollArea>
 #include <QScrollBar>
-#include <QGenericMatrix>
-
-#ifndef OM_OMEDIT_ENABLE_LIBXML2
-#include <QAbstractMessageHandler>
-#endif
 
 #if defined(_WIN32)
 #include <windows.h>
 #include <tlhelp32.h>
 #endif
-
-#ifndef UTILITIES_H
-#define UTILITIES_H
 
 class OMCProxy;
 
@@ -181,35 +176,61 @@ public:
   virtual QSize minimumSizeHint() const override;
   virtual QSize sizeHint() const override;
   void setText(const QString &text);
+  void useMinimumSize(bool enable) {mUseMinimumSize = enable;}
 private:
   Qt::TextElideMode mElideMode;
   QString mText;
+  bool mUseMinimumSize = false;
 
   QString elidedText() const;
 protected:
   virtual void resizeEvent(QResizeEvent *event) override;
 };
 
-//! @class DoubleSpinBox
-/*! \brief Only keeping this class so that if in future we need to change the way QDoubleSpinBox works then we don't have to change the
- * forms controls again.
+/* ticket:10458 ticket:13591
+ * Disable the wheel event of combobox, spinbox and doublespinbox
+ * Set the focus to Qt::StrongFocus instead of Qt::WheelFocus
+ * Ignore the wheel event if it doesn't have the focus.
  */
-/* Old Description */
-/*! \brief It creates a double spinbox with a specified precision value.
- * If you want the precision value to be changed based on the global precision value defined in omedit.ini then connect this object with
- * the object of GeneralSettingsPage object right after creating this object. e.g,\n
- * connect(GeneralSettingsPage, SIGNAL(globalPrecisionValueChanged(int)), DoubleSpinBox, SLOT(handleGlobalPrecisionValueChange(int)));
+
+/*!
+ * \class ComboBox
+ * \brief Creates a QComboBox.
+ */
+class ComboBox : public QComboBox
+{
+  Q_OBJECT
+public:
+  ComboBox(QWidget *parent = nullptr);
+  void addElidedItem(const QString &text, const QVariant &userData);
+protected:
+  virtual void wheelEvent(QWheelEvent *event) override;
+};
+
+/*!
+ * \class SpinBox
+ * \brief Creates a QSpinBox.
+ */
+class SpinBox : public QSpinBox
+{
+  Q_OBJECT
+public:
+  SpinBox(QWidget *parent = 0);
+protected:
+  virtual void wheelEvent(QWheelEvent *event) override;
+};
+
+/*!
+ * \class DoubleSpinBox
+ * \brief Creates a QDoubleSpinBox.
  */
 class DoubleSpinBox : public QDoubleSpinBox
 {
   Q_OBJECT
 public:
-  DoubleSpinBox(QWidget *parent = 0) : QDoubleSpinBox(parent) {}
-  /* old implementation
-  DoubleSpinBox(int precision = 2, QWidget *parent = 0) : QDoubleSpinBox(parent) {setDecimals(precision);}
-public slots:
-  void handleGlobalPrecisionValueChange(int value) {setDecimals(value);}
-  */
+  DoubleSpinBox(QWidget *parent = 0);
+protected:
+  virtual void wheelEvent(QWheelEvent *event) override;
 };
 
 /*!
@@ -264,6 +285,11 @@ inline QDataStream& operator>>(QDataStream& in, RecentFile& recentFile)
   return in;
 }
 
+inline bool operator==(const RecentFile& lhs, const RecentFile& rhs)
+{
+  return lhs.fileName == rhs.fileName;
+}
+
 //! @struct FindTextOM
 /*! \brief It contains the recently searched text from find/replace dialog .
  * We must register this struct as a meta type since we need to use it as a QVariant.
@@ -290,6 +316,11 @@ inline QDataStream& operator>>(QDataStream& in, FindTextOM& findText)
 {
   in >> findText.text;
   return in;
+}
+
+inline bool operator==(const FindTextOM& lhs, const FindTextOM& rhs)
+{
+  return lhs.text == rhs.text;
 }
 
 //! @struct DebuggerConfiguration
@@ -332,59 +363,10 @@ inline QDataStream& operator>>(QDataStream& in, DebuggerConfiguration& configura
   return in;
 }
 
-/*!
- * \class MessageHandler
- * \brief Defines the appropriate error message of the parsed XML validated againast the XML Schema.\n
- * The class implementation and logic is inspired from Qt Creator sources.
- */
-#ifdef OM_OMEDIT_ENABLE_LIBXML2
-class MessageHandler
+inline bool operator==(const DebuggerConfiguration& lhs, const DebuggerConfiguration& rhs)
 {
-public:
-  MessageHandler() {}
-  QString statusMessage() const { return mDescription;}
-  int line() const { return mLine;}
-  int column() const { return mColumn;}
-  void setFailed(bool failed) {mFailed = failed;}
-  bool isFailed() {return mFailed;}
-private:
-  QString mDescription;
-  int mLine = 0;
-  int mColumn = 0;
-  bool mFailed = false;
-};
-#else
-class MessageHandler : public QAbstractMessageHandler
-{
-public:
-  MessageHandler()
-  : QAbstractMessageHandler(0) {mFailed = false;}
-  QString statusMessage() const { return mDescription;}
-  int line() const { return mSourceLocation.line();}
-  int column() const { return mSourceLocation.column();}
-  void setFailed(bool failed) {mFailed = failed;}
-  bool isFailed() {return mFailed;}
-protected:
-  virtual void handleMessage(QtMsgType type, const QString &description, const QUrl &identifier, const QSourceLocation &sourceLocation) override
-  {
-    Q_UNUSED(type);
-    Q_UNUSED(identifier);
-    mDescription = description;
-    mSourceLocation = sourceLocation;
-  }
-private:
-  QString mDescription;
-  QSourceLocation mSourceLocation;
-  bool mFailed;
-};
-#endif
-
-typedef struct {
-  QString mDelay;
-  QString mZf;
-  QString mZfr;
-  QString mAlpha;
-} CompositeModelConnection;
+  return lhs.name == rhs.name;
+}
 
 class PreviewPlainTextEdit : public QPlainTextEdit
 {
@@ -443,7 +425,7 @@ public:
   QDetachableProcess(QObject *pParent = 0);
 
   void start(const QString &program, const QStringList &arguments, OpenMode mode = ReadWrite);
-#if (QT_VERSION < QT_VERSION_CHECK(5, 15, 0))
+#if QT_VERSION < QT_VERSION_CHECK(5, 15, 0)
   void start(const QString &command, OpenMode mode = ReadWrite);
 #endif
 };
@@ -495,10 +477,12 @@ namespace Utilities {
   QString escapeForHtmlNonSecure(const QString &str);
   QString& tempDirectory();
   QSettings* getApplicationSettings();
-  void parseCompositeModelText(MessageHandler *pMessageHandler, QString contents);
+  QString generateHash(const QString &input);
   qreal convertUnit(qreal value, qreal offset, qreal scaleFactor);
+  QStringList extractArrayParts(const QString &value);
   bool isValueLiteralConstant(QString value);
-  QString arrayExpressionUnitConversion(OMCProxy *pOMCProxy, QString modifierValue, QString fromUnit, QString toUnit);
+  bool isValueScalarLiteralConstant(QString value);
+  QString arrayExpressionUnitConversion(OMCProxy *pOMCProxy, QString value, QString fromUnit, QString toUnit);
   Label* getHeadingLabel(QString heading);
   QFrame* getHeadingLine();
   bool detectBOM(QString fileName);
@@ -513,7 +497,6 @@ namespace Utilities {
 #endif
   bool isCFile(QString extension);
   bool isModelicaFile(QString extension);
-  QGenericMatrix<3,3, double> getRotationMatrix(QGenericMatrix<3,1,double> rotation);
   QString getGDBPath();
 
   namespace FileIconProvider {
@@ -536,15 +519,14 @@ namespace Utilities {
   float maxi(float arr[],int n);
   float mini(float arr[], int n);
   QList<QPointF> liangBarskyClipper(float xmin, float ymin, float xmax, float ymax, float x1, float y1, float x2, float y2);
-  void removeDirectoryRecursivly(QString path);
-  qreal mapToCoOrdinateSystem(qreal value, qreal startA, qreal endA, qreal startB, qreal endB);
+  void removeDirectoryRecursively(QString path);
+  qreal mapToCoordinateSystem(qreal value, qreal startA, qreal endA, qreal startB, qreal endB);
   QStringList variantListToStringList(const QVariantList lst);
   void addDefaultDisplayUnit(const QString &unit, QStringList &displayUnit);
-  QString convertUnitToSymbol(const QString &displayUnit);
-  QString convertSymbolToUnit(const QString &symbol);
   QRectF adjustSceneRectangle(const QRectF sceneRectangle, const qreal factor);
   void setToolTip(QComboBox *pComboBox, const QString &description, const QStringList &optionsDescriptions);
   bool isMultiline(const QString &text);
+  QMap<QString, QLocale> supportedLanguages();
 } // namespace Utilities
 
 #endif // UTILITIES_H

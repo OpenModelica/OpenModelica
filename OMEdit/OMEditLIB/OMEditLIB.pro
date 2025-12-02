@@ -28,19 +28,13 @@
  #
  #/
 
-QT += network core gui webkit xml xmlpatterns svg opengl
-greaterThan(QT_MAJOR_VERSION, 4) {
-  QT += printsupport widgets webkitwidgets concurrent
-}
+include(../OMEdit.config.pre.pri)
 
-# Set the C++ standard.
-CONFIG += c++1z
+DESTDIR = ../bin
+ICON = Resources/icons/omedit.icns
 
-TARGET = OMEdit
 TEMPLATE = lib
 CONFIG += staticlib
-
-DEFINES += OM_HAVE_PTHREADS
 
 TRANSLATIONS = Resources/nls/OMEdit_de.ts \
   Resources/nls/OMEdit_es.ts \
@@ -59,35 +53,14 @@ evil_hack_to_fool_lupdate {
 
 # Windows libraries and includes
 win32 {
-
-  _cxx = $$(CXX)
-  contains(_cxx, clang++) {
-    message("Found clang++ on windows in $CXX, removing unknown flags: -fno-keep-inline-dllexport -mthreads")
-    QMAKE_CFLAGS -= -fno-keep-inline-dllexport
-    QMAKE_CXXFLAGS -= -fno-keep-inline-dllexport
-    QMAKE_CXXFLAGS_EXCEPTIONS_ON -= -mthreads
+  CONFIG(release, debug|release) { # release
+    # required for backtrace
+    # In order to get the stack trace in Windows we must add -g flag. Qt automatically adds the -O2 flag for optimization.
+    # We should also unset the QMAKE_LFLAGS_RELEASE define because it is defined as QMAKE_LFLAGS_RELEASE = -Wl,-s in qmake.conf file for MinGW
+    # -s will remove all symbol table and relocation information from the executable.
+    QMAKE_CXXFLAGS += -g -DUA_DYNAMIC_LINKING
+    QMAKE_LFLAGS_RELEASE =
   }
-
-
-CONFIG(release, debug|release) { # release
-  # required for backtrace
-  # In order to get the stack trace in Windows we must add -g flag. Qt automatically adds the -O2 flag for optimization.
-  # We should also unset the QMAKE_LFLAGS_RELEASE define because it is defined as QMAKE_LFLAGS_RELEASE = -Wl,-s in qmake.conf file for MinGW
-  # -s will remove all symbol table and relocation information from the executable.
-  QMAKE_CXXFLAGS += -g -DUA_DYNAMIC_LINKING
-  QMAKE_LFLAGS_RELEASE =
-}
-
-# if OM_ENABLE_ENCRYPTION
-_OM_ENABLE_ENCRYPTION = $$(OM_ENABLE_ENCRYPTION)
-equals(_OM_ENABLE_ENCRYPTION, yes) {
-  QMAKE_CXXFLAGS += -DOM_ENABLE_ENCRYPTION
-}
-
-# On older msys the include directory for binutils is in binutils
-# On recent (November 2022) MSYS2 this is no longer needed.
-  INCLUDEPATH += $$(OMDEV)/tools/msys/include/binutils
-
 
   OPENMODELICAHOME = $$(OMBUILDDIR)
   host_short =
@@ -111,16 +84,11 @@ INCLUDEPATH += . ../ \
   $$OPENMODELICAHOME/../OMParser/ \
   $$OPENMODELICAHOME/../OMParser/3rdParty/antlr4/runtime/Cpp/runtime/src
 
-# Don't show the warnings from included headers.
-# Don't add a space between for and open parenthesis below. Qt4 complains about it.
-for(path, INCLUDEPATH) {
-  QMAKE_CXXFLAGS += -isystem $${path}
-}
-
 SOURCES += Util/Helper.cpp \
   Util/Utilities.cpp \
   Util/StringHandler.cpp \
   Util/OutputPlainTextEdit.cpp \
+  Util/DirectoryOrFileSelector.cpp \
   MainWindow.cpp \
   $$OPENMODELICAHOME/include/omc/scripting-API/OpenModelicaScriptingAPIQt.cpp \
   OMC/OMCProxy.cpp \
@@ -128,12 +96,13 @@ SOURCES += Util/Helper.cpp \
   Modeling/MessagesWidget.cpp \
   Modeling/ItemDelegate.cpp \
   Modeling/LibraryTreeWidget.cpp \
+  Modeling/ElementTreeWidget.cpp \
   Modeling/Commands.cpp \
-  Modeling/CoOrdinateSystem.cpp \
   Modeling/ModelWidgetContainer.cpp \
   Modeling/ModelicaClassDialog.cpp \
   Modeling/FunctionArgumentDialog.cpp \
   Modeling/InstallLibraryDialog.cpp \
+  Modeling/QuickInsertWidget.cpp \
   Search/SearchWidget.cpp \
   Options/OptionsDialog.cpp \
   Editors/BaseEditor.cpp \
@@ -141,7 +110,8 @@ SOURCES += Util/Helper.cpp \
   Editors/TransformationsEditor.cpp \
   Editors/TextEditor.cpp \
   Editors/CEditor.cpp \
-  Editors/CompositeModelEditor.cpp \
+  Editors/CRMLEditor.cpp \
+  Editors/MOSEditor.cpp \
   Editors/OMSimulatorEditor.cpp \
   Editors/MetaModelicaEditor.cpp \
   Editors/HTMLEditor.cpp \
@@ -180,13 +150,9 @@ SOURCES += Util/Helper.cpp \
   Simulation/SimulationOutputHandler.cpp \
   Simulation/OpcUaClient.cpp \
   Simulation/ArchivedSimulationsWidget.cpp \
-  TLM/FetchInterfaceDataDialog.cpp \
-  TLM/FetchInterfaceDataThread.cpp \
-  TLM/TLMCoSimulationDialog.cpp \
-  TLM/TLMCoSimulationOutputWidget.cpp \
-  TLM/TLMCoSimulationThread.cpp \
   FMI/ImportFMUDialog.cpp \
   FMI/ImportFMUModelDescriptionDialog.cpp \
+  FMI/FMUExportOutputWidget.cpp \
   Plotting/VariablesWidget.cpp \
   Plotting/DiagramWindow.cpp \
   Options/NotificationsDialog.cpp \
@@ -208,6 +174,8 @@ SOURCES += Util/Helper.cpp \
   CrashReport/backtrace.c \
   CrashReport/GDBBacktrace.cpp \
   CrashReport/CrashReportDialog.cpp \
+  CRML/CRMLTranslateAsDialog.cpp \
+  CRML/CRMLTranslatorOutputWidget.cpp \
   Git/GitCommands.cpp \
   Git/CommitChangesDialog.cpp \
   Git/RevertCommitsDialog.cpp \
@@ -225,6 +193,7 @@ SOURCES += Util/Helper.cpp \
   Animation/TimeManager.cpp \
   Util/ResourceCache.cpp \
   Util/NetworkAccessManager.cpp \
+  Util/GitHubArtifactDownloader.cpp \
   FlatModelica/Expression.cpp \
   FlatModelica/ExpressionFuncs.cpp \
   FlatModelica/Parser.cpp
@@ -233,6 +202,7 @@ HEADERS  += Util/Helper.h \
   Util/Utilities.h \
   Util/StringHandler.h \
   Util/OutputPlainTextEdit.h \
+  Util/DirectoryOrFileSelector.h \
   MainWindow.h \
   $$OPENMODELICAHOME/include/omc/scripting-API/OpenModelicaScriptingAPIQt.h \
   OMC/OMCProxy.h \
@@ -240,12 +210,13 @@ HEADERS  += Util/Helper.h \
   Modeling/MessagesWidget.h \
   Modeling/ItemDelegate.h \
   Modeling/LibraryTreeWidget.h \
+  Modeling/ElementTreeWidget.h \
   Modeling/Commands.h \
-  Modeling/CoOrdinateSystem.h \
   Modeling/ModelWidgetContainer.h \
   Modeling/ModelicaClassDialog.h \
   Modeling/FunctionArgumentDialog.h \
   Modeling/InstallLibraryDialog.h \
+  Modeling/QuickInsertWidget.h \
   Search/SearchWidget.h \
   Options/OptionsDefaults.h \
   Options/OptionsDialog.h \
@@ -254,7 +225,8 @@ HEADERS  += Util/Helper.h \
   Editors/TransformationsEditor.h \
   Editors/TextEditor.h \
   Editors/CEditor.h \
-  Editors/CompositeModelEditor.h \
+  Editors/CRMLEditor.h \
+  Editors/MOSEditor.h \
   Editors/OMSimulatorEditor.h \
   Editors/MetaModelicaEditor.h \
   Editors/HTMLEditor.h \
@@ -294,14 +266,9 @@ HEADERS  += Util/Helper.h \
   Simulation/SimulationOutputHandler.h \
   Simulation/OpcUaClient.h \
   Simulation/ArchivedSimulationsWidget.h \
-  TLM/FetchInterfaceDataDialog.h \
-  TLM/FetchInterfaceDataThread.h \
-  TLM/TLMCoSimulationOptions.h \
-  TLM/TLMCoSimulationDialog.h \
-  TLM/TLMCoSimulationOutputWidget.h \
-  TLM/TLMCoSimulationThread.h \
   FMI/ImportFMUDialog.h \
   FMI/ImportFMUModelDescriptionDialog.h \
+  FMI/FMUExportOutputWidget.h \
   Plotting/VariablesWidget.h \
   Plotting/DiagramWindow.h \
   Options/NotificationsDialog.h \
@@ -323,6 +290,9 @@ HEADERS  += Util/Helper.h \
   CrashReport/backtrace.h \
   CrashReport/GDBBacktrace.h \
   CrashReport/CrashReportDialog.h \
+  CRML/CRMLTranslateAsDialog.h \
+  CRML/CRMLTranslatorOptions.h \
+  CRML/CRMLTranslatorOutputWidget.h \
   Git/GitCommands.h \
   Git/CommitChangesDialog.h \
   Git/RevertCommitsDialog.h \
@@ -342,84 +312,60 @@ HEADERS  += Util/Helper.h \
   Interfaces/ModelInterface.h \
   Util/ResourceCache.h \
   Util/NetworkAccessManager.h \
+  Util/GitHubArtifactDownloader.h \
   FlatModelica/Expression.h \
   FlatModelica/ExpressionFuncs.h \
   FlatModelica/Parser.h
 
 CONFIG(osg) {
 
-#    CONFIG += opengl
-#  }
+  greaterThan(QT_MAJOR_VERSION, 4):greaterThan(QT_MINOR_VERSION, 3) { # if Qt 5.4 or greater
+    SOURCES += Animation/OpenGLWidget.cpp
+  } else {
+    SOURCES += Animation/GLWidget.cpp
+  }
+  SOURCES += Animation/AbstractAnimationWindow.cpp \
+    Animation/ViewerWidget.cpp \
+    Animation/AnimationWindow.cpp \
+    Animation/ExtraShapes.cpp \
+    Animation/Visualization.cpp \
+    Animation/VisualizationMAT.cpp \
+    Animation/VisualizationCSV.cpp \
+    Animation/VisualizationFMU.cpp \
+    Animation/FMUSettingsDialog.cpp \
+    Animation/FMUWrapper.cpp \
+    Animation/AbstractVisualizer.cpp \
+    Animation/Shape.cpp \
+    Animation/Vector.cpp
 
-greaterThan(QT_MAJOR_VERSION, 4):greaterThan(QT_MINOR_VERSION, 3) { # if Qt 5.4 or greater
-  SOURCES += Animation/OpenGLWidget.cpp
-} else {
-  SOURCES += Animation/GLWidget.cpp
-}
-SOURCES += Animation/AbstractAnimationWindow.cpp \
-  Animation/ViewerWidget.cpp \
-  Animation/AnimationWindow.cpp \
-  Animation/ThreeDViewer.cpp \
-  Animation/ExtraShapes.cpp \
-  Animation/Visualization.cpp \
-  Animation/VisualizationMAT.cpp \
-  Animation/VisualizationCSV.cpp \
-  Animation/VisualizationFMU.cpp \
-  Animation/FMUSettingsDialog.cpp \
-  Animation/FMUWrapper.cpp \
-  Animation/AbstractVisualizer.cpp \
-  Animation/Shape.cpp \
-  Animation/Vector.cpp
-
-greaterThan(QT_MAJOR_VERSION, 4):greaterThan(QT_MINOR_VERSION, 3) { # if Qt 5.4 or greater
-  HEADERS += Animation/OpenGLWidget.h
-} else {
-  HEADERS += Animation/GLWidget.h
-}
-HEADERS += Animation/AbstractAnimationWindow.h \
-  Animation/ViewerWidget.h \
-  Animation/AnimationWindow.h \
-  Animation/ThreeDViewer.h \
-  Animation/AnimationUtil.h \
-  Animation/ExtraShapes.h \
-  Animation/Visualization.h \
-  Animation/VisualizationMAT.h \
-  Animation/VisualizationCSV.h \
-  Animation/VisualizationFMU.h \
-  Animation/FMUSettingsDialog.h \
-  Animation/FMUWrapper.h \
-  Animation/AbstractVisualizer.h \
-  Animation/Shape.h \
-  Animation/Vector.h \
-  Animation/rapidxml.hpp
+  greaterThan(QT_MAJOR_VERSION, 4):greaterThan(QT_MINOR_VERSION, 3) { # if Qt 5.4 or greater
+    HEADERS += Animation/OpenGLWidget.h
+  } else {
+    HEADERS += Animation/GLWidget.h
+  }
+  HEADERS += Animation/AbstractAnimationWindow.h \
+    Animation/ViewerWidget.h \
+    Animation/AnimationWindow.h \
+    Animation/AnimationUtil.h \
+    Animation/ExtraShapes.h \
+    Animation/Visualization.h \
+    Animation/VisualizationMAT.h \
+    Animation/VisualizationCSV.h \
+    Animation/VisualizationFMU.h \
+    Animation/FMUSettingsDialog.h \
+    Animation/FMUWrapper.h \
+    Animation/AbstractVisualizer.h \
+    Animation/Shape.h \
+    Animation/Vector.h \
+    Animation/rapidxml.hpp
 }
 
 OTHER_FILES += Resources/css/stylesheet.qss \
-  Resources/XMLSchema/tlmModelDescription.xsd \
   Debugger/Parser/GDBMIOutput.g \
   Debugger/Parser/GDBMIParser.h \
   Debugger/Parser/GDBMIParser.cpp \
   Debugger/Parser/main.cpp
 
-# Please read the warnings. They are like vegetables; good for you even if you hate them.
-CONFIG += warn_on
-win32 {
-  # -Wno-clobbered is not recognized by clang
-  !contains(_cxx, clang++) {
-    QMAKE_CXXFLAGS += -Wno-clobbered
-  }
-}
-
 RESOURCES += resource_omedit.qrc
 
-DESTDIR = ../bin
-
-UI_DIR = generatedfiles/ui
-
-MOC_DIR = generatedfiles/moc
-
-RCC_DIR = generatedfiles/rcc
-
-ICON = Resources/icons/omedit.icns
-
-QMAKE_INFO_PLIST = Info.plist
+include(../OMEdit.config.post.pri)

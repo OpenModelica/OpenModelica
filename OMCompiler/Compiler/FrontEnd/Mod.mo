@@ -549,13 +549,13 @@ algorithm
       equation
         subs_1 = unelabSubmods(subs);
       then
-        SCode.MOD(finalPrefix,each_,subs_1,NONE(),info);
+        SCode.MOD(finalPrefix,each_,subs_1,NONE(),NONE(),info);
 
     case DAE.MOD(finalPrefix = finalPrefix,eachPrefix = each_,subModLst = subs,binding = SOME(DAE.UNTYPED(e)), info = info)
       equation
         subs_1 = unelabSubmods(subs);
       then
-        SCode.MOD(finalPrefix,each_,subs_1,SOME(e),info);
+        SCode.MOD(finalPrefix,each_,subs_1,SOME(e),NONE(),info);
 
     // use the constant first!
     case DAE.MOD(finalPrefix = finalPrefix,eachPrefix = each_,subModLst = subs,
@@ -565,7 +565,7 @@ algorithm
         subs_1 = unelabSubmods(subs);
         e_1 = Expression.unelabExp(ValuesUtil.valueExp(v));
       then
-        SCode.MOD(finalPrefix,each_,subs_1,SOME(e_1),info); // default typechecking non-delayed
+        SCode.MOD(finalPrefix,each_,subs_1,SOME(e_1),NONE(),info); // default typechecking non-delayed
 
     /* / use the expression second
     case ((DAE.MOD(finalPrefix = finalPrefix,eachPrefix = each_,subModLst = subs,
@@ -584,7 +584,7 @@ algorithm
         subs_1 = unelabSubmods(subs);
         e_1 = absynExp; //Expression.unelabExp(e);
       then
-        SCode.MOD(finalPrefix,each_,subs_1,SOME(e_1),info);
+        SCode.MOD(finalPrefix,each_,subs_1,SOME(e_1),NONE(),info);
 
     case DAE.REDECL(finalPrefix = finalPrefix,eachPrefix = each_,element = elem)
       then
@@ -854,7 +854,8 @@ protected
   list<SCode.SubMod> submods;
   Boolean found;
 algorithm
-  (submods, found) := List.findMap3(inAccumMods, compactSubMod2, inSubMod, inModScope, inName);
+  (submods, found) := List.findMap(inAccumMods,
+    function compactSubMod2(inNewMod = inSubMod, inModScope = inModScope, inName = inName));
   outSubMods := List.consOnTrue(not found, inSubMod, submods);
 end compactSubMod;
 
@@ -896,37 +897,31 @@ protected function mergeSubModsInSameScope
   input list<String> inElementName;
   input ModScope inModScope;
   output SCode.SubMod outMod;
+protected
+  String scope, name;
+  list<SCode.SubMod> submods;
+  SourceInfo info1, info2;
+  SCode.Mod mod1 = inMod1.mod, mod2 = inMod2.mod;
 algorithm
-  outMod := match(inMod1, inMod2, inElementName, inModScope)
-    local
-      String id, scope, name;
-      SCode.Final fp;
-      SCode.Each ep;
-      list<SCode.SubMod> submods1, submods2;
-      Option<Absyn.Exp> binding;
-      SourceInfo info1, info2;
-      SCode.Mod mod1, mod2;
-
+  outMod := match(mod1, mod2)
     // The second modifier has no binding, use the binding from the first.
-    case (SCode.NAMEMOD(id, SCode.MOD(fp, ep, submods1, binding, info1)),
-          SCode.NAMEMOD(mod = SCode.MOD(subModLst = submods2, binding = NONE())), _, _)
+    case (SCode.MOD(), SCode.MOD(binding = NONE()))
       equation
-        submods1 = List.fold2(submods1, compactSubMod, inModScope,
-          inElementName, submods2);
+        submods = List.fold2(mod1.subModLst, compactSubMod, inModScope, inElementName, mod2.subModLst);
       then
-        SCode.NAMEMOD(id, SCode.MOD(fp, ep, submods1, binding, info1));
+        SCode.NAMEMOD(inMod1.ident, SCode.MOD(mod1.finalPrefix, mod1.eachPrefix,
+          submods, mod1.binding, mod1.comment, mod1.info));
 
     // The first modifier has no binding, use the binding from the second.
-    case (SCode.NAMEMOD(mod = SCode.MOD(subModLst = submods1, binding = NONE())),
-          SCode.NAMEMOD(id, SCode.MOD(fp, ep, submods2, binding, info2)), _, _)
+    case (SCode.MOD(binding = NONE()), SCode.MOD())
       equation
-        submods1 = List.fold2(submods1, compactSubMod, inModScope,
-          inElementName, submods2);
+        submods = List.fold2(mod1.subModLst, compactSubMod, inModScope, inElementName, mod2.subModLst);
       then
-        SCode.NAMEMOD(id, SCode.MOD(fp, ep, submods1, binding, info2));
+        SCode.NAMEMOD(inMod2.ident, SCode.MOD(mod2.finalPrefix, mod2.eachPrefix,
+          submods, mod2.binding, mod2.comment, mod2.info));
 
-    // Both modifiers have bindings, print error.
-    case (SCode.NAMEMOD(mod = mod1), SCode.NAMEMOD(mod = mod2), _, _)
+    // Both modifiers have a binding.
+    else
       equation
         info1 = SCodeUtil.getModifierInfo(mod1);
         info2 = SCodeUtil.getModifierInfo(mod2);

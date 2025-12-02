@@ -3,7 +3,6 @@
 // status:   correct
 //
 // Drmodelica: 2.2 Restricted Classes (p.28)
-// cflags: -d=-newInst
 //
 function Multiply
   input Real x;
@@ -17,6 +16,7 @@ model MultFuncCall
   Real res;
 equation
   res = Multiply(3.5, 2.0);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end MultFuncCall;
 
 

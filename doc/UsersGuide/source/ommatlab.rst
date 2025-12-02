@@ -82,11 +82,11 @@ The object constructor requires a minimum of 2 input arguments which are strings
 
 -  The fourth input argument (optional), which is used to set the command line options e.g.,
 
->>> ModelicaSystem(mod,"BouncingBall.mo","BouncingBall",["Modelica", "SystemDynamics", "dcmotor.mo"],"-d=newInst")
+>>> omc.ModelicaSystem("BouncingBall.mo","BouncingBall",["Modelica", "SystemDynamics", "dcmotor.mo"],"-d=newInst")
 
 Matlab does not support keyword arguments, and hence inorder to skip an argument, empty list should be used "[]" e.g.,
 
->>> ModelicaSystem(mod,"BouncingBall.mo","BouncingBall",[],"-d=newInst")
+>>> omc.ModelicaSystem("BouncingBall.mo","BouncingBall",[],"-d=newInst")
 
 
 WorkDirectory
@@ -101,7 +101,7 @@ BuildModel
 ~~~~~~~~~~
 The buildModel API can be used after ModelicaSystem(), in case the model needs to be updated or additional simulationflags needs to be set using sendExpression()
 
->>> buildModel(mod)
+>>> omc.buildModel()
 
 Standard get methods
 ~~~~~~~~~~~~~~~~~~~~

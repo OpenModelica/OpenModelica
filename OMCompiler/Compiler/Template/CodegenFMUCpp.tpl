@@ -772,7 +772,8 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
 
   # simulations use -O0 by default; can be changed to e.g. -O2 or -Ofast
   SIM_OPT_LEVEL=-O0
-
+  # the default is ON by default, override the var from commandLine to skip the zipping of fmu  e.g. make -f ZIP_FMU=OFF
+  ZIP_FMU = ON
   # native build or cross compilation
   ifeq ($(TARGET_TRIPLET),)
     TRIPLET=<%Autoconf.triple%>
@@ -829,7 +830,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
 
   # need boost system lib prior to C++11, forcing also dynamic libs
   ifeq ($(findstring USE_CPP_03,$(CFLAGS)),USE_CPP_03)
-    $(eval LIBS=$(LIBS) -L"$(BOOST_LIBS)" -l$(BOOST_SYSTEM_LIB))
+    $(eval LIBS=$(LIBS) -L"$(BOOST_LIBS)")
     $(eval BINARIES=$(BINARIES) $(BOOST_LIBS)/lib$(BOOST_SYSTEM_LIB)$(DLLEXT) <%platformbins%>)
   # link static libs to avoid dependencies; can't link all static under Linux
   else ifeq ($(findstring gcc,$(CC)),gcc)
@@ -857,11 +858,17 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   <%\t%>cp "$(OMHOME)/share/omc/runtime/cpp/licenses/sundials.license" "documentation/"
   endif
   <%\t%>rm -f <%fmuTargetName%>.fmu
+  ifeq ($(ZIP_FMU),ON)
   ifeq ($(USE_FMU_SUNDIALS),ON)
   <%\t%>zip -r "<%fmuTargetName%>.fmu" modelDescription.xml binaries sources documentation
   <%\t%>rm -rf documentation
   else
   <%\t%>zip -r "<%fmuTargetName%>.fmu" modelDescription.xml binaries sources
+  endif
+  endif
+
+  ifeq ($(ZIP_FMU),OFF)
+  <%\t%>rm -f OMCpp<%fileNamePrefix%>* <%fileNamePrefix%>_FMU.* <%fileNamePrefix%>.def <%fileNamePrefix%>.sh <%fileNamePrefix%>.bat <%fileNamePrefix%>.makefile <%fileNamePrefix%>_init.xml
   endif
 
   clean:

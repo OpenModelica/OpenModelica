@@ -46,14 +46,13 @@ public:
   PolygonAnnotation(QString annotation, GraphicsView *pGraphicsView);
   PolygonAnnotation(ModelInstance::Polygon *pPolygon, bool inherited, GraphicsView *pGraphicsView);
   // Used for shape inside a component
-  PolygonAnnotation(ShapeAnnotation *pShapeAnnotation, Element *pParent);
   PolygonAnnotation(ModelInstance::Polygon *pPolygon, Element *pParent);
-  // Used for icon/diagram inherited shape
-  PolygonAnnotation(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView);
+  // Used for OMS Element shape
+  PolygonAnnotation(ShapeAnnotation *pShapeAnnotation, Element *pParent);
   // Used for default input/output component
   PolygonAnnotation(Element *pParent);
   void parseShapeAnnotation(QString annotation) override;
-  void parseShapeAnnotation();
+  void parseShapeAnnotation() override;
   QPainterPath getShape() const;
   QRectF boundingRect() const override;
   QPainterPath shape() const override;
@@ -71,8 +70,6 @@ public:
   void setPolygon(ModelInstance::Polygon *pPolygon) {mpPolygon = pPolygon;}
 private:
   ModelInstance::Polygon *mpPolygon;
-public slots:
-  void duplicate() override;
 };
 
 #endif // POLYGONANNOTATION_H

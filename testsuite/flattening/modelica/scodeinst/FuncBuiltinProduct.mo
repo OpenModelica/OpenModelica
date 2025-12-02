@@ -1,7 +1,6 @@
 // name: FuncBuiltinProduct
 // keywords: product
 // status: correct
-// cflags: -d=newInst
 //
 // Tests the builtin product operator.
 //

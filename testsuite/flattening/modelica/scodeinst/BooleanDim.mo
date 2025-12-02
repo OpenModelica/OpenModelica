@@ -1,7 +1,6 @@
 // name: BooleanDim.mo
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 
 model BooleanDim

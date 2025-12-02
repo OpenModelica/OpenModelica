@@ -1,7 +1,7 @@
  Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.63])
-AC_INIT([OpenModelica Exported FMU],[dev],[https://trac.openmodelica.org/OpenModelica],[openmodelica],[https://openmodelica.org])
+AC_INIT([OpenModelica Exported FMU],[dev],[https://github.com/OpenModelica/OpenModelica/issues],[openmodelica],[https://openmodelica.org])
 
 AC_SUBST(AR)
 AC_SUBST(DLLEXT)

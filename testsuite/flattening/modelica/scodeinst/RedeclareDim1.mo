@@ -1,7 +1,6 @@
 // name: RedeclareDim1
 // keywords: redeclare
 // status: correct
-// cflags: -d=newInst
 //
 
 model A

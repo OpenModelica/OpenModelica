@@ -511,7 +511,7 @@ void NotebookWindow::createFileMenu()
   QString recentFile;
   for(int i = 0; i < 8; ++i)
   {
-    if((recentFile = s.value(QString("Recent")+QString(i), QString()).toString()) != QString())
+    if((recentFile = s.value(QString("Recent")+QString(QChar(i)), QString()).toString()) != QString())
     {
       QAction* tmpAction = recentMenu->addAction(recentFile);
       connect(tmpAction, SIGNAL(triggered()), this, SLOT(recentTriggered()));
@@ -825,8 +825,13 @@ void NotebookWindow::createFormatMenu()
   fontsgroup = new QActionGroup( this );
   fontMenu = formatMenu->addMenu( tr("&Font") );
 
+#if (QT_VERSION < QT_VERSION_CHECK(6, 0, 0))
   QFontDatabase fontDatabase;
   QStringList fonts = fontDatabase.families( QFontDatabase::Latin );
+#else
+  QStringList fonts = QFontDatabase::families( QFontDatabase::Latin );
+#endif
+
   for( int index = 0; index < fonts.count(); ++index )
   {
     QAction *tmp = new QAction( fonts[index], this );
@@ -1842,20 +1847,29 @@ void NotebookWindow::updateFontMenu()
   QTextCursor cursor( subject_->getCursor()->currentCell()->textCursor() );
   if( !cursor.isNull() )
   {
-    QString family = cursor.charFormat().fontFamily();
-    if( fonts_.contains( family ))
+#if (QT_VERSION < QT_VERSION_CHECK(6, 0, 0))
+    const QStringList families = {cursor.charFormat().fontFamily()};
+#elif (QT_VERSION < QT_VERSION_CHECK(7, 0, 0))
+    const QStringList families = cursor.charFormat().fontFamilies().toStringList();
+#else
+    const QStringList families = cursor.charFormat().fontFamilies();
+#endif
+
+    for ( const auto &family: families )
     {
-      fonts_[family]->setChecked( true );
-    }
-    else
-    {
-      qDebug("No font found");
-      QHash<QString, QAction*>::iterator f_iter = fonts_.begin();
-      while( f_iter != fonts_.end() )
+      if ( fonts_.contains( family ) )
       {
-        f_iter.value()->setChecked( false );
-        ++f_iter;
+        fonts_[family]->setChecked( true );
+        return;
       }
+    }
+
+    qDebug("No font found");
+    QHash<QString, QAction*>::iterator f_iter = fonts_.begin();
+    while( f_iter != fonts_.end() )
+    {
+      f_iter.value()->setChecked( false );
+      ++f_iter;
     }
   }
 }
@@ -2381,14 +2395,14 @@ void NotebookWindow::newFile()
   {
     if(subject_->hasChanged())
     {
-      int res = QMessageBox::question(this, tr("Save document?"), tr("The document has been modified. Do you want to save the changes?"),  QMessageBox::Yes | QMessageBox::Default, QMessageBox::No,  QMessageBox::Cancel);
+      int res = QMessageBox::question(this, tr("Save document?"), tr("The document has been modified. Do you want to save the changes?"), QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
       if(res == QMessageBox::Yes)
       {
         save();
         if(subject_->getFilename().isNull())
           return;
       }
-      else if(res == QMessageBox::Cancel)
+      else if(res == QMessageBox::No)
         return;
     }
 
@@ -2409,7 +2423,7 @@ void NotebookWindow::updateRecentFiles(QString filename)
   QString tmp;
   for(int i = 0; i < 8; ++i)
   {
-    if((tmp = s.value(QString("Recent") + QString(i), QString()).toString()) != QString())
+    if((tmp = s.value(QString("Recent") + QString(QChar(i)), QString()).toString()) != QString())
       tmpLst.push_back(tmp);
     else
       break;
@@ -2421,7 +2435,7 @@ void NotebookWindow::updateRecentFiles(QString filename)
     tmpLst.push_front(filename);
 
   for(int i = 0; i < 8 && i < tmpLst.size(); ++i)
-    s.setValue(QString("Recent") + QString(i), tmpLst[i]);
+    s.setValue(QString("Recent") + QString(QChar(i)), tmpLst[i]);
 
 }
 
@@ -2465,7 +2479,7 @@ void NotebookWindow::openFile(const QString filename)
   }
   catch(std::exception &e)
   {
-    QMessageBox::warning( 0, tr("Warning"), tr("In OpenFile(), Exception: \n") + e.what(), "OK" );
+    QMessageBox::warning(nullptr, tr("Warning"), tr("In OpenFile(), Exception: \n") + e.what());
     openFile();
   }
 }
@@ -2643,13 +2657,13 @@ void NotebookWindow::helpText()
     }
     else
     {
-      QMessageBox::warning( 0, tr("Warning"), tr("Could not find the help document OMNotebookHelp.onb"), "OK" );
+      QMessageBox::warning(nullptr, tr("Warning"), tr("Could not find the help document OMNotebookHelp.onb"));
     }
   }
   catch(std::exception &e)
   {
     QString msg = tr("In HelpText(), Exception: \n") + e.what();
-    QMessageBox::warning( 0, tr("Warning"), msg, "OK" );
+    QMessageBox::warning(nullptr, tr("Warning"), msg);
   }
 }
 
@@ -2792,7 +2806,7 @@ void NotebookWindow::print()
     if( title.isEmpty() )
       title = "(untitled)";
 
-    QMessageBox::information( 0, tr("Document printed"), tr( "The document %1 has been printed on %2." ).arg(title, printer.printerName()), "OK" );
+    QMessageBox::information(nullptr, tr("Document printed"), tr( "The document %1 has been printed on %2." ).arg(title, printer.printerName()));
   }
 
   delete dlg;
@@ -2855,7 +2869,7 @@ void NotebookWindow::pdf()
     title.remove( "\n" );
     if( title.isEmpty() )
       title = "(untitled)";
-    QMessageBox::information( 0, tr("Document exported"), tr("The document %1 has been exported as PDF to %2.").arg(title, filename), "OK" );
+    QMessageBox::information(nullptr, tr("Document exported"), tr("The document %1 has been exported as PDF to %2.").arg(title, filename));
   }
 }
 
@@ -2912,7 +2926,7 @@ void NotebookWindow::changeStyle(QAction *action)
   else
   {
     // 2006-01-30 AF, add message box
-    QMessageBox::warning( 0, tr("Warning"), tr("Not a valid style name: %1").arg(action->text()), "OK" );
+    QMessageBox::warning(nullptr, tr("Warning"), tr("Not a valid style name: %1").arg(action->text()));
   }
 
   updateChapterCounters();
@@ -3021,7 +3035,7 @@ void NotebookWindow::changeFontSize( QAction *action )
       else
       {
         // 2006-01-30 AF, add message box
-        QMessageBox::warning( 0, tr("Warning"), tr("Not a value between %1 and %2.").arg(6).arg(200), "OK" );
+        QMessageBox::warning(nullptr, tr("Warning"), tr("Not a value between %1 and %2.").arg(6).arg(200));
       }
     }
   }
@@ -3036,7 +3050,7 @@ void NotebookWindow::changeFontSize( QAction *action )
     {
       // 2006-01-30 AF, add message box
       QString msg = "Not a correct font size";
-      QMessageBox::warning( 0, tr("Warning"), msg, "OK" );
+      QMessageBox::warning(nullptr, tr("Warning"), msg);
     }
   }
 }
@@ -3129,7 +3143,7 @@ void NotebookWindow::changeTextAlignment( QAction *action )
   {
     // 2006-01-30 AF, add message box
     QString msg = "Unable to find the correct alignment";
-    QMessageBox::warning( 0, tr("Warning"), msg, "OK" );
+    QMessageBox::warning(nullptr, tr("Warning"), msg);
   }
 }
 
@@ -3160,7 +3174,7 @@ void NotebookWindow::changeVerticalAlignment( QAction *action )
   {
     // 2006-01-30 AF, add message box
     QString msg = "Unable to find the correct vertical alignment";
-    QMessageBox::warning( 0, tr("Warning"), msg, "OK" );
+    QMessageBox::warning(nullptr, tr("Warning"), msg);
   }
 }
 
@@ -3187,7 +3201,7 @@ void NotebookWindow::changeBorder( QAction *action )
       else
       {
         // 2006-01-30 AF, add message box
-        QMessageBox::warning( 0, tr("Warning"), tr("Not a value between %1 and %2.").arg(0).arg(30), "OK" );
+        QMessageBox::warning(nullptr, tr("Warning"), tr("Not a value between %1 and %2.").arg(0).arg(30));
       }
     }
   }
@@ -3202,7 +3216,7 @@ void NotebookWindow::changeBorder( QAction *action )
     else
     {
       // 2006-01-30 AF, add message box
-      QMessageBox::warning( 0, tr("Warning"), tr("Error converting string to integer."), "OK" );
+      QMessageBox::warning(nullptr, tr("Warning"), tr("Error converting string to integer."));
     }
   }
 }
@@ -3229,7 +3243,7 @@ void NotebookWindow::changeMargin( QAction *action )
       else
       {
         // 2006-01-30 AF, add message box
-        QMessageBox::warning( 0, tr("Warning"), tr("Not a value between %1 and %2.").arg(0).arg(80), "OK" );
+        QMessageBox::warning(nullptr, tr("Warning"), tr("Not a value between %1 and %2.").arg(0).arg(80));
       }
     }
   }
@@ -3243,7 +3257,7 @@ void NotebookWindow::changeMargin( QAction *action )
     else
     {
       // 2006-01-30 AF, add message box
-      QMessageBox::warning( 0, tr("Warning"), tr("Error converting string to integer."), "OK" );
+      QMessageBox::warning(nullptr, tr("Warning"), tr("Error converting string to integer."));
     }
   }
 }
@@ -3270,7 +3284,7 @@ void NotebookWindow::changePadding( QAction *action )
       else
       {
         // 2006-01-30 AF, add message box
-        QMessageBox::warning( 0, tr("Warning"), tr("Not a value between %1 and %2.").arg(0).arg(60), "OK" );
+        QMessageBox::warning(nullptr, tr("Warning"), tr("Not a value between %1 and %2.").arg(0).arg(60));
       }
     }
   }
@@ -3284,7 +3298,7 @@ void NotebookWindow::changePadding( QAction *action )
     else
     {
       // 2006-01-30 AF, add message box
-      QMessageBox::warning( 0, tr("Warning"), tr("Error converting string to integer."), "OK" );
+      QMessageBox::warning(nullptr, tr("Warning"), tr("Error converting string to integer."));
     }
   }
 }
@@ -3517,8 +3531,8 @@ void NotebookWindow::insertLink()
     }
     else
     {
-      QMessageBox::warning( this, "Error",
-        tr("A text that should make up the link, must be selected"), "OK" );
+      QMessageBox::warning(this, "Error",
+        tr("A text that should make up the link, must be selected"));
     }
   }
 }
@@ -3652,7 +3666,7 @@ void NotebookWindow::openOldFile()
   catch(std::exception &e )
   {
     QString msg = QString("In NotebookWindow(), Exception:\r\n") + e.what();
-    QMessageBox::warning( 0, tr("Warning"), msg, "OK" );
+    QMessageBox::warning(nullptr, tr("Warning"), msg);
     openOldFile();
   }
 }
@@ -3700,7 +3714,7 @@ void NotebookWindow::pureText()
     if( title.isEmpty() )
       title = "(untitled)";
 
-    QMessageBox::information( 0, "Document exported", tr("The document %1 has been exported as pure text to %2.").arg(title,filename), "OK" );
+    QMessageBox::information(nullptr, "Document exported", tr("The document %1 has been exported as pure text to %2.").arg(title,filename));
   }
 }
 
@@ -3724,7 +3738,7 @@ void NotebookWindow::deleteCurrentCell()
 
 void NotebookWindow::deleteCurrentCellAsk()
 {
-  if (QMessageBox::warning( 0, "Delete Cell", tr("Delete current cell?\nThis action cannot be undone!"), QMessageBox::Ok|QMessageBox::Default,QMessageBox::Cancel ) == QMessageBox::Ok)
+  if (QMessageBox::warning(nullptr, "Delete Cell", tr("Delete current cell?\nThis action cannot be undone!"), QMessageBox::Ok|QMessageBox::Default,QMessageBox::Cancel ) == QMessageBox::Ok)
   {
     subject_->cursorDeleteCell();
     updateChapterCounters();
@@ -3951,7 +3965,7 @@ void NotebookWindow::shiftselectedcells()
     else
     {
         QString msg=tr("This functionality works only on the selected cells. Put the cursor to a position where you want to shift and then select cells you like to move and press this button.");
-        QMessageBox::warning( 0, tr("Warning"), msg, "OK" );
+        QMessageBox::warning(nullptr, tr("Warning"), msg);
     }
 }
 
@@ -3966,13 +3980,13 @@ void NotebookWindow::shiftcellsUp()
     {
       if( dynamic_cast<CellGroup*>(current->previous()) )
       {
-        QMessageBox::warning( 0, tr("Warning"), err_hierarchy, "OK" );
+        QMessageBox::warning(nullptr, tr("Warning"), err_hierarchy);
       }
       else
       {
         if (current->isClosed())
         {
-          QMessageBox::warning( 0, tr("Warning"), tr("Cannot move closed cells."), "OK" );
+          QMessageBox::warning(nullptr, tr("Warning"), tr("Cannot move closed cells."));
           return;
         }
         //qDebug()<<"not a groupcell" ;
@@ -4049,12 +4063,12 @@ void NotebookWindow::shiftcellsUp()
     }
     else
     {
-      QMessageBox::warning( 0, tr("Warning"), err_hierarchy, "OK" );
+      QMessageBox::warning(nullptr, tr("Warning"), err_hierarchy);
     }
   }
   else
   {
-    QMessageBox::warning( 0, tr("Warning"), tr("This functionality does not work on selected cells. Click on the cell to move up, and press this action."), "OK" );
+    QMessageBox::warning(nullptr, tr("Warning"), tr("This functionality does not work on selected cells. Click on the cell to move up, and press this action."));
   }
 }
 
@@ -4073,13 +4087,13 @@ void NotebookWindow::shiftcellsDown()
       if( typeid(CellGroup) == typeid(*next))
       {
           //qDebug()<<"group cell";
-          QMessageBox::warning( 0, tr("Warning"), err_hierarchy, "OK" );
+          QMessageBox::warning(nullptr, tr("Warning"), err_hierarchy);
       }
       else
       {
         if (current->isClosed())
         {
-          QMessageBox::warning( 0, tr("Warning"), tr("Cannot move closed cells."), "OK" );
+          QMessageBox::warning(nullptr, tr("Warning"), tr("Cannot move closed cells."));
           return;
         }
         //qDebug()<<"not a group cell";
@@ -4160,7 +4174,7 @@ void NotebookWindow::shiftcellsDown()
   }
   else
   {
-      QMessageBox::warning( 0, tr("Warning"), tr("This functionality does not work on selected cells. Click on the cell to move down, and press this action"), "OK" );
+      QMessageBox::warning(nullptr, tr("Warning"), tr("This functionality does not work on selected cells. Click on the cell to move down, and press this action"));
   }
 }
 

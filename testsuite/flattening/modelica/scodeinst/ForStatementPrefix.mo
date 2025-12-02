@@ -1,7 +1,6 @@
 // name: ForStatementPrefix.mo
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 // Checks that for loop iterators are not prefixed.
 //

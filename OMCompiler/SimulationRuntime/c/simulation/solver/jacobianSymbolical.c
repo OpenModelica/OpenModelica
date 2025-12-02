@@ -36,7 +36,7 @@
   #include <gc/omc_gc.h>
 #endif
 
-#include "simulation/solver/jacobianSymbolical.h"
+#include "jacobianSymbolical.h"
 
 #ifdef USE_PARJAC
 /** Allocate thread local Jacobians in case of OpenMP-parallel Jacobian computation.
@@ -44,12 +44,12 @@
  * (symbolical only), used in IDA and Dassl.
  */
 // ToDo: Make this usable without OpenMP and use it as default!
-void allocateThreadLocalJacobians(DATA* data, ANALYTIC_JACOBIAN** jacColumns)
+void allocateThreadLocalJacobians(DATA* data, JACOBIAN** jacColumns)
 {
   int maxTh = omc_get_max_threads();
-  *jacColumns = (ANALYTIC_JACOBIAN*) malloc(maxTh*sizeof(ANALYTIC_JACOBIAN));
+  *jacColumns = (JACOBIAN*) malloc(maxTh*sizeof(JACOBIAN));
   const int index = data->callback->INDEX_JAC_A;
-  ANALYTIC_JACOBIAN* jac = &(data->simulationInfo->analyticJacobians[index]);
+  JACOBIAN* jac = &(data->simulationInfo->analyticJacobians[index]);
   SPARSE_PATTERN* sparsePattern = data->simulationInfo->analyticJacobians[index].sparsePattern;
 
   unsigned int columns = jac->sizeCols;
@@ -105,7 +105,7 @@ void allocateThreadLocalJacobians(DATA* data, ANALYTIC_JACOBIAN** jacColumns)
  * \param setJacElement       Function to set element (i,j) in matrix A.
  */
 void genericColoredSymbolicJacobianEvaluation(int rows, int columns, SPARSE_PATTERN* spp,
-                                              void* matrixA, ANALYTIC_JACOBIAN* jacColumns, DATA* data,
+                                              void* matrixA, JACOBIAN* jacColumns, DATA* data,
                                               threadData_t* threadData,
                                               setJacElementFunc setJacElement)
 {
@@ -127,7 +127,7 @@ void genericColoredSymbolicJacobianEvaluation(int rows, int columns, SPARSE_PATT
   }
   //  printf("My id = %d of max threads= %d\n", omc_get_thread_num(), omp_get_num_threads());
 #endif
-  ANALYTIC_JACOBIAN* t_jac = &(jacColumns[omc_get_thread_num()]);
+  JACOBIAN* t_jac = &(jacColumns[omc_get_thread_num()]);
 
   unsigned int i, j, currentIndex, nth;
 
@@ -159,12 +159,13 @@ void genericColoredSymbolicJacobianEvaluation(int rows, int columns, SPARSE_PATT
       t_jac->seedVars[j] = 0;
     }
   }
+
 } // omp parallel
 }
 
 #ifdef USE_PARJAC
-/** Free ANALYTIC_JACOBIAN struct */
-void freeAnalyticalJacobian(ANALYTIC_JACOBIAN** jacColumns)
+/** Free JACOBIAN struct */
+void freeAnalyticalJacobian(JACOBIAN** jacColumns)
 {
   int maxTh = omc_get_max_threads();
   unsigned int i;
@@ -178,3 +179,6 @@ void freeAnalyticalJacobian(ANALYTIC_JACOBIAN** jacColumns)
   free(*jacColumns);
 }
 #endif
+
+
+

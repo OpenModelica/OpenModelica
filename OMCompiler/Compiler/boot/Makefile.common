@@ -14,7 +14,7 @@ generate-files-in-steps:
 	$(MAKE) -f $(defaultMakefileTarget) Makefile.depends INCLUDESOURCES=1
 	$(MAKE) -f $(defaultMakefileTarget) generate-files INCLUDESOURCES=1 INCLUDEDEPENDS=1
 
-.PHONY: interfaces generate-files runtime-depends parser compilerruntime patch-files bootstrap-from-tarball bootstrap-from-tarball2
+.PHONY: interfaces generate-files runtime-depends parser compilerruntime frontendcpp patch-files bootstrap-from-tarball bootstrap-from-tarball2
 
 GEN_DIR=build/
 
@@ -44,7 +44,7 @@ else
 OMCRUNTIMEAR=$(OMCRUNTIMEAR2)
 OMPARSEAR=$(OMHOME)/$(LIB_OMC)/libomparse.a
 LOMPARSE=-lomparse
-LCOMPILERRUNTIME=$(LIBOMCBACKENDRUNTIMEAR) -lomcruntime $(LIBFFI)
+LCOMPILERRUNTIME=$(LIBOMCBACKENDRUNTIMEAR) -lomcruntime -lomcfrontendcpp $(LIBFFI)
 FMILIB_OR_BOOT=$(FMILIB) -lexpat
 endif
 
@@ -86,11 +86,14 @@ bootstrap-from-tarball2:
 runtime-depends:
 	@# NOTE: OpenModelicaBootstrappingHeader.h has to be regenerated without any other process writing to so/etc or you get bus errors
 	$(MAKE) -f $(defaultMakefileTarget) -C .. OpenModelicaBootstrappingHeader.h OMBUILDDIR=$(OMBUILDDIR) OMC="$(OMC)"
-	$(MAKE) -f $(defaultMakefileTarget) parser compilerruntime
+	$(MAKE) -f $(defaultMakefileTarget) parser compilerruntime frontendcpp
 parser:
 	$(MAKE) -f $(defaultMakefileTarget) -C ../../Parser install OMBUILDDIR=$(OMBUILDDIR) OM_ENABLE_ENCRYPTION=$(OM_ENABLE_ENCRYPTION)
 compilerruntime:
 	$(MAKE) -f $(defaultMakefileTarget) -C ../runtime install OMBUILDDIR=$(OMBUILDDIR)
+frontendcpp:
+	$(MAKE) -f $(defaultMakefileTarget) -C ../FrontEndCpp install OMBUILDDIR=$(OMBUILDDIR)
+
 
 bootstrap-from-compiled: make-separate
 
@@ -188,7 +191,7 @@ $(GEN_DIR)_main_static_omc.o: $(GEN_DIR)_main_static_omc.c
 $(GEN_DIR)_main_static.o: $(GEN_DIR)_main_static.c
 	$(CC) -DOMC_ENTRYPOINT_STATIC -c $(GEN_DIR)_main_static.c -o  $(GEN_DIR)_main_static.o $(CFLAGS) $(CPPFLAGS)
 
-$(OMHOME)/$(LIB_OMC)/libOpenModelicaCompiler$(SHREXT): $(ALL_OBJECTS) $(OMCRUNTIMEAR) $(OMPARSEAR) $(GEN_DIR)_main_omc.o
+$(OMHOME)/$(LIB_OMC)/libOpenModelicaCompiler$(SHREXT): $(ALL_OBJECTS) $(OMCRUNTIMEAR) $(OMCFRONTENDCPP) $(OMPARSEAR) $(GEN_DIR)_main_omc.o
 	@test ! -z "`echo $(ALL_OBJECTS)`" || (echo Empty dependencies for $@ ; false)
 	$(CC) -shared $(RPATH) $(INSTALL_NAME) -o $@ $(ALL_OBJECTS) $(GEN_DIR)_main_omc.o $(LDFLAGS)
 	test ! "$(SHREXT)" = ".dylib" || install_name_tool -id @rpath/libOpenModelicaCompiler.dylib $@
@@ -205,7 +208,7 @@ install: $(GEN_DIR)omc$(EXE_SUFFIX)$(EXE_EXT) install-interface
 
 else
 #static
-$(GEN_DIR)omc$(EXE_SUFFIX)$(EXE_EXT): $(ALL_OBJECTS) $(GEN_DIR)_main_static.o $(GEN_DIR)_main_static_omc.o $(OMCRUNTIMEAR) $(OMPARSEAR)
+$(GEN_DIR)omc$(EXE_SUFFIX)$(EXE_EXT): $(ALL_OBJECTS) $(GEN_DIR)_main_static.o $(GEN_DIR)_main_static_omc.o $(OMCRUNTIMEAR) $(OMFRONTENDCPP) $(OMPARSEAR)
 	@test ! -z "`echo $(ALL_OBJECTS)`" || (echo Empty dependencies for $@ ; false)
 	$(CC) $(GEN_DIR)_main_static.o $(RPATH) $(CFLAGS) $(CPPFLAGS) -o $@ $(GEN_DIR)_main_static_omc.o $(ALL_OBJECTS) $(LDFLAGS)
 install: $(GEN_DIR)omc$(EXE_SUFFIX)$(EXE_EXT) install-interface

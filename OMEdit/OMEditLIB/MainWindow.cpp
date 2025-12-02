@@ -40,8 +40,10 @@
 #include "Modeling/MessagesWidget.h"
 #include "OMS/OMSProxy.h"
 #include "Modeling/LibraryTreeWidget.h"
+#include "Modeling/ElementTreeWidget.h"
 #include "Modeling/ModelicaClassDialog.h"
 #include "OMS/ModelDialog.h"
+#include "CRML/CRMLTranslateAsDialog.h"
 #include "Debugger/GDB/GDBAdapter.h"
 #include "Debugger/StackFrames/StackFramesWidget.h"
 #include "Debugger/Locals/LocalsWidget.h"
@@ -49,22 +51,19 @@
 #include "Plotting/VariablesWidget.h"
 #include "Search/SearchWidget.h"
 #if !defined(WITHOUT_OSG)
-#include "Animation/ThreeDViewer.h"
 #include "Animation/ViewerWidget.h"
 #endif
 #include "Util/Helper.h"
 #include "Simulation/ArchivedSimulationsWidget.h"
 #include "Simulation/SimulationOutputWidget.h"
+#include "CRML/CRMLTranslatorOutputWidget.h"
 #include "OMS/OMSSimulationOutputWidget.h"
-#include "TLM/FetchInterfaceDataDialog.h"
-#include "TLM/TLMCoSimulationOutputWidget.h"
 #include "OMS/OMSSimulationDialog.h"
 #include "Debugger/DebuggerConfigurationsDialog.h"
 #include "Debugger/Attach/AttachToProcessDialog.h"
 #include "TransformationalDebugger/TransformationsWidget.h"
 #include "Options/NotificationsDialog.h"
 #include "Simulation/SimulationDialog.h"
-#include "TLM/TLMCoSimulationDialog.h"
 #include "FMI/ImportFMUDialog.h"
 #include "FMI/ImportFMUModelDescriptionDialog.h"
 #include "Git/CommitChangesDialog.h"
@@ -80,7 +79,8 @@
 #include "Util/NetworkAccessManager.h"
 #include "Modeling/InstallLibraryDialog.h"
 #include "CrashReport/CrashReportDialog.h"
-
+#include "FMI/FMUExportOutputWidget.h"
+#include "PlotCurve.h"
 #include <QtSvg/QSvgGenerator>
 #include <QNetworkProxyFactory>
 
@@ -88,12 +88,10 @@ namespace ToolBars {
   QString welcomePerspective = "welcomePerspective";
   QString modelingModelicaPerspective = "modelingModelicaPerspective";
   QString modelingTextPerspective = "modelingTextPerspective";
-  QString modelingCompositeModelPerspective = "modelingCompositeModelPerspective";
   QString modelingOMSPerspective = "modelingOMSPerspective";
   QString plottingPerspective = "plottingPerspective";
   QString debuggingModelicaPerspective = "debuggingPerspective";
   QString debuggingTextPerspective = "debuggingTextPerspective";
-  QString debuggingCompositeModelPerspective = "debuggingCompositeModelPerspective";
   QString debuggingOMSPerspective = "debuggingOMSPerspective";
   QString editToolBar = "editToolBar";
   QString viewToolBar = "viewToolBar";
@@ -104,7 +102,6 @@ namespace ToolBars {
   QString reSimulationToolBar = "reSimulationToolBar";
   QString plotToolBar = "plotToolBar";
   QString debuggerToolBar = "debuggerToolBar";
-  QString TLMSimulationToolBar = "TLMSimulationToolBar";
   QString OMSimulatorToolBar = "OMSimulatorToolBar";
 }
 
@@ -126,9 +123,15 @@ MainWindow::MainWindow(QWidget *parent)
    * Because RecentFile, FindTextOM and DebuggerConfiguration structs should be registered before reading the recentFilesList, FindTextOM and
    * DebuggerConfiguration section respectively from the settings file.
    */
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+  qRegisterMetaType<RecentFile>("RecentFile");
+  qRegisterMetaType<FindTextOM>("FindTextOM");
+  qRegisterMetaType<DebuggerConfiguration>("DebuggerConfiguration");
+#else // #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
   qRegisterMetaTypeStreamOperators<RecentFile>("RecentFile");
   qRegisterMetaTypeStreamOperators<FindTextOM>("FindTextOM");
   qRegisterMetaTypeStreamOperators<DebuggerConfiguration>("DebuggerConfiguration");
+#endif // #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
   /*! @note The above three lines registers the structs as QMetaObjects. Do not remove/move them. */
   qRegisterMetaType<QProcess::ProcessError>("QProcess::ProcessError");
   qRegisterMetaType<QProcess::ExitStatus>("QProcess::ExitStatus");
@@ -255,12 +258,20 @@ void MainWindow::setUpMainWindow(threadData_t *threadData)
   // Create an object of LibraryWidget
   mpLibraryWidget = new LibraryWidget(this);
   // Create LibraryDockWidget
-  mpLibraryDockWidget = new QDockWidget(tr("Libraries"), this);
+  mpLibraryDockWidget = new QDockWidget(Helper::libraries, this);
   mpLibraryDockWidget->setObjectName("Libraries");
   mpLibraryDockWidget->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
   mpLibraryDockWidget->setWidget(mpLibraryWidget);
   addDockWidget(Qt::LeftDockWidgetArea, mpLibraryDockWidget);
   mpLibraryWidget->getLibraryTreeView()->setFocus(Qt::ActiveWindowFocusReason);
+  // Create an object of ElementWidget
+  mpElementWidget = new ElementWidget(this);
+  // Create ElementDockWidget
+  mpElementDockWidget = new QDockWidget(Helper::elements, this);
+  mpElementDockWidget->setObjectName("Elements");
+  mpElementDockWidget->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
+  mpElementDockWidget->setWidget(mpElementWidget);
+  addDockWidget(Qt::LeftDockWidgetArea, mpElementDockWidget);
   // Create an object of SearchWidget
   mpSearchWidget = new SearchWidget(this);
   mpSearchDockWidget = new QDockWidget(tr("Search"),this);
@@ -333,20 +344,6 @@ void MainWindow::setUpMainWindow(threadData_t *threadData)
   // create traceability graph view widget
   //  mpTraceabilityGraphViewWidget = new TraceabilityGraphViewWidget(this);
   mpTraceabilityInformationURI = new TraceabilityInformationURI(this);
-#if !defined(WITHOUT_OSG)
-  /* Ticket #4252
-   * Do not create an object of ThreeDViewer by default.
-   * Only create it when user really use it.
-   */
-  mpThreeDViewer = 0;
-  // Create ThreeDViewer dock
-  mpThreeDViewerDockWidget = new QDockWidget(tr("3D Viewer"), this);
-  mpThreeDViewerDockWidget->setObjectName("3DViewer");
-  mpThreeDViewerDockWidget->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
-  addDockWidget(Qt::RightDockWidgetArea, mpThreeDViewerDockWidget);
-  mpThreeDViewerDockWidget->hide();
-  connect(mpThreeDViewerDockWidget, SIGNAL(visibilityChanged(bool)), SLOT(threeDViewerDockWidgetVisibilityChanged(bool)));
-#endif
   // set the corners for the dock widgets
   setCorner(Qt::TopLeftCorner, Qt::LeftDockWidgetArea);
   setCorner(Qt::BottomLeftCorner, Qt::LeftDockWidgetArea);
@@ -364,8 +361,6 @@ void MainWindow::setUpMainWindow(threadData_t *threadData)
   ArchivedSimulationsWidget::create();
   // Create simulation dialog when needed
   mpSimulationDialog = 0;
-  // Create TLM co-simulation dialog when needed
-  mpTLMCoSimulationDialog = 0;
   // Create the OMSimulator simulation dialog when needed
   mpOMSSimulationDialog = 0;
   // Create an object of ModelWidgetContainer
@@ -407,11 +402,7 @@ void MainWindow::setUpMainWindow(threadData_t *threadData)
     mpLibraryWidget->getLibraryTreeModel()->addModelicaLibraries();
   }
   // set command line options
-  if (OptionsDialog::instance()->getDebuggerPage()->getGenerateOperationsCheckBox()->isChecked()) {
-    mpOMCProxy->setCommandLineOptions("-d=infoXmlOperations");
-  }
   OptionsDialog::instance()->saveSimulationSettings();
-  OptionsDialog::instance()->saveNFAPISettings();
   // create tabs from MessagesWidget
   QTabBar::ButtonPosition closeSide = (QTabBar::ButtonPosition)style()->styleHint(QStyle::SH_TabBar_CloseButtonPosition, 0, mpMessagesTabWidget);
   MessagesTabWidget *pMessagesTabWidget = MessagesWidget::instance()->getMessagesTabWidget();
@@ -429,10 +420,14 @@ void MainWindow::setUpMainWindow(threadData_t *threadData)
   // restore OMEdit widgets state
   QSettings *pSettings = Utilities::getApplicationSettings();
   if (OptionsDialog::instance()->getGeneralSettingsPage()->getPreserveUserCustomizations()) {
-    restoreGeometry(pSettings->value("application/geometry").toByteArray());
     bool restoreMessagesWidget = !MessagesWidget::instance()->getAllMessageWidget()->getMessagesTextBrowser()->toPlainText().isEmpty();
     mRestoringState = true;
+    /* With qt6 we need to call restoreState before restoreGeometry otherwise OMEdit crash on startup.
+     * Don't know why this is happening.
+     * The example in Qt docs calls restoreGeometry first.
+     */
     restoreState(pSettings->value("application/windowState").toByteArray());
+    restoreGeometry(pSettings->value("application/geometry").toByteArray());
     mRestoringState = false;
     pSettings->beginGroup("algorithmicDebugger");
     /* restore stackframes list and locals columns width */
@@ -489,33 +484,6 @@ void MainWindow::setNewApiProfiling(bool newApiProfiling)
   }
 }
 
-#if !defined(WITHOUT_OSG)
-/*!
- * \brief MainWindow::isThreeDViewerInitialized
- * Returns true if ThreeDViewer is initialized.
- * \return
- */
-bool MainWindow::isThreeDViewerInitialized()
-{
-  return mpThreeDViewer ? true : false;
-}
-
-/*!
- * \brief MainWindow::getThreeDViewer
- * Returns the ThreeDViewer object. Initializes it if its not initialized.
- * \return
- */
-ThreeDViewer* MainWindow::getThreeDViewer()
-{
-  // create an object of ThreeDViewer
-  if (!mpThreeDViewer) {
-    mpThreeDViewer = new ThreeDViewer(this);
-    mpThreeDViewerDockWidget->setWidget(mpThreeDViewer);
-  }
-  return mpThreeDViewer;
-}
-#endif
-
 /*!
  * \brief MainWindow::isModelingPerspectiveActive
  * Returns true if the Modeling perspective is active.
@@ -570,7 +538,7 @@ void MainWindow::showModelingPerspectiveToolBars(ModelWidget *pModelWidget)
   }
   // show/hide toolbars
   QSettings *pSettings = Utilities::getApplicationSettings();
-  if (pModelWidget && pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Text) {
+  if (pModelWidget && pModelWidget->getLibraryTreeItem()->isText()) {
     pSettings->beginGroup(ToolBars::modelingTextPerspective);
     SHOW_HIDE_TOOLBAR(mpEditToolBar, ToolBars::editToolBar, true);
     SHOW_HIDE_TOOLBAR(mpViewToolBar, ToolBars::viewToolBar, true);
@@ -582,23 +550,8 @@ void MainWindow::showModelingPerspectiveToolBars(ModelWidget *pModelWidget)
     mpReSimulationToolBar->setEnabled(mpVariablesDockWidget->isVisible() && !mpVariablesWidget->getVariablesTreeView()->selectionModel()->selectedIndexes().isEmpty());
     SHOW_HIDE_TOOLBAR(mpPlotToolBar, ToolBars::plotToolBar, false);
     SHOW_HIDE_TOOLBAR(mpDebuggerToolBar, ToolBars::debuggerToolBar, false);
-    SHOW_HIDE_TOOLBAR(mpTLMSimulationToolbar, ToolBars::TLMSimulationToolBar, false);
     SHOW_HIDE_TOOLBAR(mpOMSimulatorToolbar, ToolBars::OMSimulatorToolBar, false);
-  } else if (pModelWidget && pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::CompositeModel) {
-    pSettings->beginGroup(ToolBars::modelingCompositeModelPerspective);
-    SHOW_HIDE_TOOLBAR(mpEditToolBar, ToolBars::editToolBar, true);
-    SHOW_HIDE_TOOLBAR(mpViewToolBar, ToolBars::viewToolBar, true);
-    SHOW_HIDE_TOOLBAR(mpShapesToolBar, ToolBars::shapesToolBar, false);
-    SHOW_HIDE_TOOLBAR(mpModelSwitcherToolBar, ToolBars::modelSwitcherToolBar, true);
-    SHOW_HIDE_TOOLBAR(mpCheckToolBar, ToolBars::checkToolBar, false);
-    SHOW_HIDE_TOOLBAR(mpSimulationToolBar, ToolBars::simulationToolBar, false);
-    SHOW_HIDE_TOOLBAR(mpReSimulationToolBar, ToolBars::reSimulationToolBar, false);
-    mpReSimulationToolBar->setEnabled(mpVariablesDockWidget->isVisible() && !mpVariablesWidget->getVariablesTreeView()->selectionModel()->selectedIndexes().isEmpty());
-    SHOW_HIDE_TOOLBAR(mpPlotToolBar, ToolBars::plotToolBar, false);
-    SHOW_HIDE_TOOLBAR(mpDebuggerToolBar, ToolBars::debuggerToolBar, false);
-    SHOW_HIDE_TOOLBAR(mpTLMSimulationToolbar, ToolBars::TLMSimulationToolBar, true);
-    SHOW_HIDE_TOOLBAR(mpOMSimulatorToolbar, ToolBars::OMSimulatorToolBar, false);
-  } else if (pModelWidget && pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
+  } else if (pModelWidget && pModelWidget->getLibraryTreeItem()->isSSP()) {
     pSettings->beginGroup(ToolBars::modelingOMSPerspective);
     SHOW_HIDE_TOOLBAR(mpEditToolBar, ToolBars::editToolBar, true);
     SHOW_HIDE_TOOLBAR(mpViewToolBar, ToolBars::viewToolBar, true);
@@ -610,7 +563,6 @@ void MainWindow::showModelingPerspectiveToolBars(ModelWidget *pModelWidget)
     mpReSimulationToolBar->setEnabled(mpVariablesDockWidget->isVisible() && !mpVariablesWidget->getVariablesTreeView()->selectionModel()->selectedIndexes().isEmpty());
     SHOW_HIDE_TOOLBAR(mpPlotToolBar, ToolBars::plotToolBar, false);
     SHOW_HIDE_TOOLBAR(mpDebuggerToolBar, ToolBars::debuggerToolBar, false);
-    SHOW_HIDE_TOOLBAR(mpTLMSimulationToolbar, ToolBars::TLMSimulationToolBar, false);
     SHOW_HIDE_TOOLBAR(mpOMSimulatorToolbar, ToolBars::OMSimulatorToolBar, true);
   } else { // Covers the case of LibraryTreeItem::Modelica and default.
     pSettings->beginGroup(ToolBars::modelingModelicaPerspective);
@@ -624,7 +576,6 @@ void MainWindow::showModelingPerspectiveToolBars(ModelWidget *pModelWidget)
     mpReSimulationToolBar->setEnabled(mpVariablesDockWidget->isVisible() && !mpVariablesWidget->getVariablesTreeView()->selectionModel()->selectedIndexes().isEmpty());
     SHOW_HIDE_TOOLBAR(mpPlotToolBar, ToolBars::plotToolBar, false);
     SHOW_HIDE_TOOLBAR(mpDebuggerToolBar, ToolBars::debuggerToolBar, false);
-    SHOW_HIDE_TOOLBAR(mpTLMSimulationToolbar, ToolBars::TLMSimulationToolBar, false);
     SHOW_HIDE_TOOLBAR(mpOMSimulatorToolbar, ToolBars::OMSimulatorToolBar, false);
   }
   pSettings->endGroup();
@@ -642,7 +593,7 @@ void MainWindow::showDebuggingPerspectiveToolBars(ModelWidget *pModelWidget)
   }
   // show/hide toolbars
   QSettings *pSettings = Utilities::getApplicationSettings();
-  if (pModelWidget && pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Text) {
+  if (pModelWidget && pModelWidget->getLibraryTreeItem()->isText()) {
     pSettings->beginGroup(ToolBars::debuggingTextPerspective);
     SHOW_HIDE_TOOLBAR(mpEditToolBar, ToolBars::editToolBar, true);
     SHOW_HIDE_TOOLBAR(mpViewToolBar, ToolBars::viewToolBar, true);
@@ -654,23 +605,8 @@ void MainWindow::showDebuggingPerspectiveToolBars(ModelWidget *pModelWidget)
     mpReSimulationToolBar->setEnabled(mpVariablesDockWidget->isVisible() && !mpVariablesWidget->getVariablesTreeView()->selectionModel()->selectedIndexes().isEmpty());
     SHOW_HIDE_TOOLBAR(mpPlotToolBar, ToolBars::plotToolBar, false);
     SHOW_HIDE_TOOLBAR(mpDebuggerToolBar, ToolBars::debuggerToolBar, true);
-    SHOW_HIDE_TOOLBAR(mpTLMSimulationToolbar, ToolBars::TLMSimulationToolBar, false);
     SHOW_HIDE_TOOLBAR(mpOMSimulatorToolbar, ToolBars::OMSimulatorToolBar, false);
-  } else if (pModelWidget && pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::CompositeModel) {
-    pSettings->beginGroup(ToolBars::debuggingCompositeModelPerspective);
-    SHOW_HIDE_TOOLBAR(mpEditToolBar, ToolBars::editToolBar, true);
-    SHOW_HIDE_TOOLBAR(mpViewToolBar, ToolBars::viewToolBar, true);
-    SHOW_HIDE_TOOLBAR(mpShapesToolBar, ToolBars::shapesToolBar, false);
-    SHOW_HIDE_TOOLBAR(mpModelSwitcherToolBar, ToolBars::modelSwitcherToolBar, true);
-    SHOW_HIDE_TOOLBAR(mpCheckToolBar, ToolBars::checkToolBar, false);
-    SHOW_HIDE_TOOLBAR(mpSimulationToolBar, ToolBars::simulationToolBar, false);
-    SHOW_HIDE_TOOLBAR(mpReSimulationToolBar, ToolBars::reSimulationToolBar, false);
-    mpReSimulationToolBar->setEnabled(mpVariablesDockWidget->isVisible() && !mpVariablesWidget->getVariablesTreeView()->selectionModel()->selectedIndexes().isEmpty());
-    SHOW_HIDE_TOOLBAR(mpPlotToolBar, ToolBars::plotToolBar, false);
-    SHOW_HIDE_TOOLBAR(mpDebuggerToolBar, ToolBars::debuggerToolBar, true);
-    SHOW_HIDE_TOOLBAR(mpTLMSimulationToolbar, ToolBars::TLMSimulationToolBar, true);
-    SHOW_HIDE_TOOLBAR(mpOMSimulatorToolbar, ToolBars::OMSimulatorToolBar, false);
-  } else if (pModelWidget && pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
+  } else if (pModelWidget && pModelWidget->getLibraryTreeItem()->isSSP()) {
     pSettings->beginGroup(ToolBars::debuggingOMSPerspective);
     SHOW_HIDE_TOOLBAR(mpEditToolBar, ToolBars::editToolBar, true);
     SHOW_HIDE_TOOLBAR(mpViewToolBar, ToolBars::viewToolBar, true);
@@ -682,7 +618,6 @@ void MainWindow::showDebuggingPerspectiveToolBars(ModelWidget *pModelWidget)
     mpReSimulationToolBar->setEnabled(mpVariablesDockWidget->isVisible() && !mpVariablesWidget->getVariablesTreeView()->selectionModel()->selectedIndexes().isEmpty());
     SHOW_HIDE_TOOLBAR(mpPlotToolBar, ToolBars::plotToolBar, false);
     SHOW_HIDE_TOOLBAR(mpDebuggerToolBar, ToolBars::debuggerToolBar, true);
-    SHOW_HIDE_TOOLBAR(mpTLMSimulationToolbar, ToolBars::TLMSimulationToolBar, false);
     SHOW_HIDE_TOOLBAR(mpOMSimulatorToolbar, ToolBars::OMSimulatorToolBar, true);
   } else { // Covers the case of LibraryTreeItem::Modelica and default.
     pSettings->beginGroup(ToolBars::debuggingModelicaPerspective);
@@ -696,7 +631,6 @@ void MainWindow::showDebuggingPerspectiveToolBars(ModelWidget *pModelWidget)
     mpReSimulationToolBar->setEnabled(mpVariablesDockWidget->isVisible() && !mpVariablesWidget->getVariablesTreeView()->selectionModel()->selectedIndexes().isEmpty());
     SHOW_HIDE_TOOLBAR(mpPlotToolBar, ToolBars::plotToolBar, false);
     SHOW_HIDE_TOOLBAR(mpDebuggerToolBar, ToolBars::debuggerToolBar, true);
-    SHOW_HIDE_TOOLBAR(mpTLMSimulationToolbar, ToolBars::TLMSimulationToolBar, false);
     SHOW_HIDE_TOOLBAR(mpOMSimulatorToolbar, ToolBars::OMSimulatorToolBar, false);
   }
   pSettings->endGroup();
@@ -819,6 +753,7 @@ int MainWindow::askForExit()
  */
 void MainWindow::beforeClosingMainWindow()
 {
+  mpAutoSaveTimer->stop();
   // Issue #9101. Close all top level windows
   foreach (QWidget *pWidget, QApplication::topLevelWidgets())  {
     if (pWidget == this) {
@@ -831,14 +766,13 @@ void MainWindow::beforeClosingMainWindow()
   // delete the OMSProxy object
   OMSProxy::destroy();
   delete mpLibraryWidget;
+  delete mpElementWidget;
   delete mpModelWidgetContainer;
+  mpModelWidgetContainer = nullptr;
   // delete the ArchivedSimulationsWidget object
   ArchivedSimulationsWidget::destroy();
   if (mpSimulationDialog) {
     delete mpSimulationDialog;
-  }
-  if (mpTLMCoSimulationDialog) {
-    delete mpTLMCoSimulationDialog;
   }
   if (mpOMSSimulationDialog) {
     delete mpOMSSimulationDialog;
@@ -891,7 +825,7 @@ void MainWindow::beforeClosingMainWindow()
   if (OptionsDialog::instance()->getFMIPage()->getDeleteFMUDirectoryAndModelCheckBox()->isChecked()) {
     foreach (QString fmuDirectory, mFMUDirectoriesList) {
       if (QDir().exists(fmuDirectory)) {
-        Utilities::removeDirectoryRecursivly(fmuDirectory);
+        Utilities::removeDirectoryRecursively(fmuDirectory);
       }
     }
     mFMUDirectoriesList.clear();
@@ -899,7 +833,7 @@ void MainWindow::beforeClosingMainWindow()
   // Delete the MOL directories
   foreach (QString molDirectory, mMOLDirectoriesList) {
     if (QDir().exists(molDirectory)) {
-      Utilities::removeDirectoryRecursivly(molDirectory);
+      Utilities::removeDirectoryRecursively(molDirectory);
     }
   }
   mMOLDirectoriesList.clear();
@@ -967,7 +901,7 @@ void MainWindow::openResultFile(const QString &fileName)
 
 void MainWindow::simulate(LibraryTreeItem *pLibraryTreeItem)
 {
-  if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::Modelica) {
+  if (pLibraryTreeItem->isModelica()) {
     if (!mpSimulationDialog) {
       mpSimulationDialog = new SimulationDialog(this);
     }
@@ -978,9 +912,9 @@ void MainWindow::simulate(LibraryTreeItem *pLibraryTreeItem)
       }
     }
     mpSimulationDialog->directSimulate(pLibraryTreeItem, false, false, false, false);
-  } else if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS) {
+  } else if (pLibraryTreeItem->isSSP()) {
     // get the top level LibraryTreeItem
-    LibraryTreeItem *pTopLevelLibraryTreeItem = mpLibraryWidget->getLibraryTreeModel()->getTopLevelLibraryTreeItem(pLibraryTreeItem);
+    LibraryTreeItem *pTopLevelLibraryTreeItem = LibraryTreeModel::getTopLevelLibraryTreeItem(pLibraryTreeItem);
     if (pTopLevelLibraryTreeItem) {
       if (!mpOMSSimulationDialog) {
         mpOMSSimulationDialog = new OMSSimulationDialog(this);
@@ -1038,7 +972,7 @@ void MainWindow::simulateWithAnimation(LibraryTreeItem *pLibraryTreeItem)
 
 void MainWindow::simulationSetup(LibraryTreeItem *pLibraryTreeItem)
 {
-  if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::Modelica) {
+  if (pLibraryTreeItem->isModelica()) {
     if (!mpSimulationDialog) {
       mpSimulationDialog = new SimulationDialog(this);
     }
@@ -1049,9 +983,9 @@ void MainWindow::simulationSetup(LibraryTreeItem *pLibraryTreeItem)
       }
     }
     mpSimulationDialog->show(pLibraryTreeItem, false, SimulationOptions());
-  } else if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS) {
+  } else if (pLibraryTreeItem->isSSP()) {
     // get the top level LibraryTreeItem
-    LibraryTreeItem *pTopLevelLibraryTreeItem = mpLibraryWidget->getLibraryTreeModel()->getTopLevelLibraryTreeItem(pLibraryTreeItem);
+    LibraryTreeItem *pTopLevelLibraryTreeItem = LibraryTreeModel::getTopLevelLibraryTreeItem(pLibraryTreeItem);
     if (pTopLevelLibraryTreeItem) {
       if (!mpOMSSimulationDialog) {
         mpOMSSimulationDialog = new OMSSimulationDialog(this);
@@ -1059,6 +993,87 @@ void MainWindow::simulationSetup(LibraryTreeItem *pLibraryTreeItem)
       mpOMSSimulationDialog->exec(pTopLevelLibraryTreeItem->getNameStructure(), pLibraryTreeItem);
     }
   }
+}
+
+/*!
+ * \brief MainWindow::translateCRML
+ * Translates the CRML model.
+ * \param pLibraryTreeItem
+ */
+void MainWindow::translateCRML(LibraryTreeItem *pLibraryTreeItem)
+{
+  /* if CRML text is changed manually by user then validate it before saving. */
+  if (pLibraryTreeItem->getModelWidget()) {
+    if (!pLibraryTreeItem->getModelWidget()->validateText(&pLibraryTreeItem)) {
+      return;
+    }
+  }
+
+  CRMLTranslatorOptions crmlTranslatorOptions;
+  crmlTranslatorOptions.setMode("translate");
+  crmlTranslatorOptions.setCRMLFile(pLibraryTreeItem->getFileName());
+  crmlTranslatorOptions.setWorkingDirectory(OptionsDialog::instance()->getGeneralSettingsPage()->getWorkingDirectory());
+  CRMLPage *pCRMLPage = OptionsDialog::instance()->getCRMLPage();
+  crmlTranslatorOptions.setCompilerJar(pCRMLPage->getCompilerJarTextBox()->text());
+  crmlTranslatorOptions.setCompilerCommandLineOptions(pCRMLPage->getCompilerCommandLineOptionsTextBox()->text());
+  crmlTranslatorOptions.setCompilerProcess(pCRMLPage->getCompilerProcessTextBox()->text());
+  crmlTranslatorOptions.setModelicaLibraries(pCRMLPage->getModelicaLibraries()->items());
+
+  CRMLTranslatorOutputWidget *pCRMLTranslatorOutputWidget = new CRMLTranslatorOutputWidget(crmlTranslatorOptions);
+  MessagesWidget::instance()->addSimulationOutputTab(pCRMLTranslatorOutputWidget, pLibraryTreeItem->getName());
+  pCRMLTranslatorOutputWidget->start();
+}
+
+void MainWindow::translateAsCRML(LibraryTreeItem *pLibraryTreeItem)
+{
+  /* if the CRML text is changed manually by user then validate it before saving. */
+  if (pLibraryTreeItem->getModelWidget()) {
+    if (!pLibraryTreeItem->getModelWidget()->validateText(&pLibraryTreeItem)) {
+      return;
+    }
+  }
+
+  CRMLTranslatorOptions crmlTranslatorOptions;
+  crmlTranslatorOptions.setMode("translateAs");
+  crmlTranslatorOptions.setCRMLFile(pLibraryTreeItem->getFileName());
+  crmlTranslatorOptions.setWorkingDirectory(OptionsDialog::instance()->getGeneralSettingsPage()->getWorkingDirectory());
+  CRMLPage *pCRMLPage = OptionsDialog::instance()->getCRMLPage();
+  crmlTranslatorOptions.setCompilerJar(pCRMLPage->getCompilerJarTextBox()->text());
+  crmlTranslatorOptions.setCompilerCommandLineOptions(pCRMLPage->getCompilerCommandLineOptionsTextBox()->text());
+  crmlTranslatorOptions.setCompilerProcess(pCRMLPage->getCompilerProcessTextBox()->text());
+  crmlTranslatorOptions.setModelicaLibraries(pCRMLPage->getModelicaLibraries()->items());
+  // output directory and within will be set from the CRMLTranslateAsDialog
+  CRMLTranslateAsDialog *pCRMLTranslateAsDialog = new CRMLTranslateAsDialog(&crmlTranslatorOptions, this);
+  if (pCRMLTranslateAsDialog->exec()) {
+    CRMLTranslatorOutputWidget *pCRMLTranslatorOutputWidget = new CRMLTranslatorOutputWidget(crmlTranslatorOptions);
+    MessagesWidget::instance()->addSimulationOutputTab(pCRMLTranslatorOutputWidget, pLibraryTreeItem->getName());
+    pCRMLTranslatorOutputWidget->start();
+  }
+}
+
+void MainWindow::runScript(LibraryTreeItem *pLibraryTreeItem)
+{
+  /* if Modelica text is changed manually by user then validate it before saving. */
+  if (pLibraryTreeItem->getModelWidget()) {
+    if (!pLibraryTreeItem->getModelWidget()->validateText(&pLibraryTreeItem)) {
+      return;
+    }
+  }
+  // set the status message.
+  mpStatusBar->showMessage(QString("%1 %2").arg(Helper::runScript, pLibraryTreeItem->getNameStructure()));
+  // show the progress bar
+  mpProgressBar->setRange(0, 0);
+  showProgressBar();
+  QString result = mpOMCProxy->runScript(pLibraryTreeItem->getFileName());
+  if (!result.isEmpty()) {
+    QString windowTitle = QString("%1 - %2").arg(Helper::runScript, pLibraryTreeItem->getNameStructure());
+    InformationDialog *pInformationDialog = new InformationDialog(windowTitle, result, true, this);
+    pInformationDialog->show();
+  }
+  // hide progress bar
+  hideProgressBar();
+  // clear the status bar message
+  mpStatusBar->clearMessage();
 }
 
 void MainWindow::instantiateModel(LibraryTreeItem *pLibraryTreeItem)
@@ -1150,6 +1165,14 @@ void MainWindow::checkAllModels(LibraryTreeItem *pLibraryTreeItem)
 
 void MainWindow::exportModelFMU(LibraryTreeItem *pLibraryTreeItem)
 {
+  // check for supported targetLanguage C or Cpp
+  QString targetLanguage = OptionsDialog::instance()->getSimulationPage()->getTargetLanguageComboBox()->currentText();
+  if (targetLanguage.compare("C") != 0 && targetLanguage.compare("Cpp") != 0) {
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, tr("Target Language <b>%1</b> is not supported for FMU Export. Only <b>C</b> and <b>Cpp</b> are supported").arg(targetLanguage),
+                                                                  tr("FMU_EXPORT Failed"), Helper::errorLevel));
+    return;
+  }
+
   /* if Modelica text is changed manually by user then validate it before saving. */
   if (pLibraryTreeItem->getModelWidget()) {
     if (!pLibraryTreeItem->getModelWidget()->validateText(&pLibraryTreeItem)) {
@@ -1157,22 +1180,28 @@ void MainWindow::exportModelFMU(LibraryTreeItem *pLibraryTreeItem)
     }
   }
   // set the status message.
-  mpStatusBar->showMessage(tr("Exporting model as FMU"));
+  mpStatusBar->showMessage(tr("Translating model %1 as FMU").arg(pLibraryTreeItem->getName()));
   // show the progress bar
   mpProgressBar->setRange(0, 0);
   showProgressBar();
-  // create a folder with model name to dump the files in it.
-  QString modelDirectoryPath = QString("%1/%2").arg(OptionsDialog::instance()->getGeneralSettingsPage()->getWorkingDirectory(), pLibraryTreeItem->getNameStructure());
-  if (!QDir().exists(modelDirectoryPath)) {
-    QDir().mkpath(modelDirectoryPath);
+  /*
+   * create a folder with hashed string from model name
+   * see https://github.com/OpenModelica/OpenModelica/issues/12171, to have short temp directory path and dump the files in it.
+  */
+  QString modelDirectoryPath = QString("%1/%2%3").arg(OptionsDialog::instance()->getGeneralSettingsPage()->getWorkingDirectory(), pLibraryTreeItem->getName(), Utilities::generateHash(pLibraryTreeItem->getNameStructure()));
+
+  QDir dir(modelDirectoryPath);
+  if (dir.exists()) {
+    dir.removeRecursively();
   }
+  dir.mkpath(modelDirectoryPath);
+
   // set the folder as working directory
   MainWindow::instance()->getOMCProxy()->changeDirectory(modelDirectoryPath);
   // buildModelFMU parameters
   QString version = OptionsDialog::instance()->getFMIPage()->getFMIExportVersion();
   QString type = OptionsDialog::instance()->getFMIPage()->getFMIExportType();
   QString FMUName = OptionsDialog::instance()->getFMIPage()->getFMUNameTextBox()->text();
-  QString newFmuName = pLibraryTreeItem->getWhereToMoveFMU();
   QSettings *pSettings = Utilities::getApplicationSettings();
   QList<QString> platforms;
   if (pSettings->contains("FMIExport/Platforms")) {
@@ -1195,41 +1224,25 @@ void MainWindow::exportModelFMU(LibraryTreeItem *pLibraryTreeItem)
     mpOMCProxy->setCommandLineOptions(QString("-d=gendebugsymbols"));
   }
   bool includeResources = OptionsDialog::instance()->getFMIPage()->getIncludeResourcesCheckBox()->isChecked();
-  QString fmuFileName = mpOMCProxy->buildModelFMU(pLibraryTreeItem->getNameStructure(), version, type, FMUName, platforms, includeResources);
-  if (!fmuFileName.isEmpty()) { // FMU was generated
-    if (!newFmuName.isEmpty()) { // FMU should be moved
-      QDir newNameAsDir(newFmuName);
-      QString whereToMove;
-      if (newNameAsDir.exists()) {
-        whereToMove = newNameAsDir.filePath(pLibraryTreeItem->getNameStructure() + ".fmu");
-      } else {
-        whereToMove = newFmuName;
-      }
-      QFile(whereToMove).remove();
-      if (QFile(fmuFileName).rename(whereToMove)) {
-        fmuFileName = whereToMove;
-      } else {
-        MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, GUIMessages::getMessage(GUIMessages::FMU_MOVE_FAILED).arg(whereToMove),
-                                                              Helper::scriptingKind, Helper::errorLevel));
-      }
-    }
-    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, GUIMessages::getMessage(GUIMessages::FMU_GENERATED).arg(fmuFileName),
-                                                          Helper::scriptingKind, Helper::notificationLevel));
-  }
-  //trace export FMU
-  if (OptionsDialog::instance()->getTraceabilityPage()->getTraceabilityGroupBox()->isChecked() && !fmuFileName.isEmpty()) {
-    //Push traceability information automaticaly to Daemon
-    MainWindow::instance()->getCommitChangesDialog()->generateTraceabilityURI("fmuExport", pLibraryTreeItem->getFileName(), pLibraryTreeItem->getNameStructure(), fmuFileName);
-  }
-  // unset the generate debug symbols flag
-  if (OptionsDialog::instance()->getFMIPage()->getGenerateDebugSymbolsCheckBox()->isChecked()) {
-    mpOMCProxy->setCommandLineOptions(QString("-d=-gendebugsymbols"));
-  }
-  MainWindow::instance()->getOMCProxy()->changeDirectory(OptionsDialog::instance()->getGeneralSettingsPage()->getWorkingDirectory());
+  bool isTranslationSuccessful = mpOMCProxy->translateModelFMU(pLibraryTreeItem->getNameStructure(), version, type, FMUName, platforms, includeResources);
   // hide progress bar
   hideProgressBar();
   // clear the status bar message
   mpStatusBar->clearMessage();
+
+  if (isTranslationSuccessful) {
+    // create a FMU compilation window  similar to simulation process
+    FmuExportOutputWidget * pFmuExportOutputWidget = new FmuExportOutputWidget(pLibraryTreeItem, this);
+    MessagesWidget::instance()->addSimulationOutputTab(pFmuExportOutputWidget, pLibraryTreeItem->getName() + "_fmuExport");
+    if (targetLanguage.compare("C") == 0) {
+      pFmuExportOutputWidget->compileModelCRuntime();
+    } else {
+      pFmuExportOutputWidget->compileModelCppRuntime();
+    }
+  } else {
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, QString("Translation of FMU: <b>%1</b> Failed").arg(pLibraryTreeItem->getName()),
+                                                                  "Translation Error", Helper::errorLevel));
+  }
 }
 
 #ifndef OM_ENABLE_ENCRYPTION
@@ -1242,7 +1255,7 @@ void showEncryptionSupportMessage()
                                    " For that, you need a special version of OpenModelica that is only released in binary form;"
                                    " please contact your library supplier for information on how to get it.<br /><br />"
                                    "Read more about <u><a href=\"https://openmodelica.org/doc/OpenModelicaUsersGuide/%1/encryption.html\">OpenModelica Encryption</a></u>.")
-                           .arg(Helper::OpenModelicaUsersGuideVersion), Helper::ok);
+                           .arg(Helper::OpenModelicaUsersGuideVersion), QMessageBox::Ok);
 }
 #endif // OM_ENABLE_ENCRYPTION
 
@@ -1359,83 +1372,6 @@ void MainWindow::exportModelFigaro(LibraryTreeItem *pLibraryTreeItem)
   pExportFigaroDialog->exec();
 }
 
-/*!
- * \brief MainWindow::fetchInterfaceData
- * \param pLibraryTreeItem
- * Fetches the interface data for TLM co-simulation.
- */
-void MainWindow::fetchInterfaceData(LibraryTreeItem *pLibraryTreeItem, QString singleModel)
-{
-  /* if CompositeModel text is changed manually by user then validate it before fetching the interface data. */
-  if (pLibraryTreeItem->getModelWidget()) {
-    if (!pLibraryTreeItem->getModelWidget()->validateText(&pLibraryTreeItem)) {
-      return;
-    }
-  }
-  if (pLibraryTreeItem->isSaved()) {
-    fetchInterfaceDataHelper(pLibraryTreeItem, singleModel);
-  } else {
-    QMessageBox *pMessageBox = new QMessageBox(this);
-    pMessageBox->setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::question));
-    pMessageBox->setIcon(QMessageBox::Question);
-    pMessageBox->setAttribute(Qt::WA_DeleteOnClose);
-    pMessageBox->setText(GUIMessages::getMessage(GUIMessages::COMPOSITEMODEL_UNSAVED).arg(pLibraryTreeItem->getNameStructure()));
-    pMessageBox->setStandardButtons(QMessageBox::Yes | QMessageBox::No);
-    pMessageBox->setDefaultButton(QMessageBox::Yes);
-    int answer = pMessageBox->exec();
-    switch (answer) {
-      case QMessageBox::Yes:
-        if (mpLibraryWidget->saveLibraryTreeItem(pLibraryTreeItem)) {
-          fetchInterfaceDataHelper(pLibraryTreeItem, singleModel);
-        }
-        break;
-      case QMessageBox::No:
-      default:
-        break;
-    }
-  }
-}
-
-/*!
- * \brief MainWindow::TLMSimulate
- * \param pLibraryTreeItem
- * Starts the TLM co-simulation.
- */
-void MainWindow::TLMSimulate(LibraryTreeItem *pLibraryTreeItem)
-{
-  if (!mpTLMCoSimulationDialog) {
-    mpTLMCoSimulationDialog = new TLMCoSimulationDialog(this);
-  }
-  /* if CompositeModel text is changed manually by user then validate it before starting the TLM co-simulation. */
-  if (pLibraryTreeItem->getModelWidget()) {
-    if (!pLibraryTreeItem->getModelWidget()->validateText(&pLibraryTreeItem)) {
-      return;
-    }
-  }
-  if (pLibraryTreeItem->isSaved()) {
-    mpTLMCoSimulationDialog->show(pLibraryTreeItem);
-  } else {
-    QMessageBox *pMessageBox = new QMessageBox(this);
-    pMessageBox->setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::question));
-    pMessageBox->setIcon(QMessageBox::Question);
-    pMessageBox->setAttribute(Qt::WA_DeleteOnClose);
-    pMessageBox->setText(GUIMessages::getMessage(GUIMessages::COMPOSITEMODEL_UNSAVED).arg(pLibraryTreeItem->getNameStructure()));
-    pMessageBox->setStandardButtons(QMessageBox::Yes | QMessageBox::No);
-    pMessageBox->setDefaultButton(QMessageBox::Yes);
-    int answer = pMessageBox->exec();
-    switch (answer) {
-      case QMessageBox::Yes:
-        if (mpLibraryWidget->saveLibraryTreeItem(pLibraryTreeItem)) {
-          mpTLMCoSimulationDialog->show(pLibraryTreeItem);
-        }
-        break;
-      case QMessageBox::No:
-      default:
-        break;
-    }
-  }
-}
-
 void MainWindow::exportModelToOMNotebook(LibraryTreeItem *pLibraryTreeItem)
 {
   /* if Modelica text is changed manually by user then validate it before saving. */
@@ -1478,12 +1414,20 @@ void MainWindow::exportModelToOMNotebook(LibraryTreeItem *pLibraryTreeItem)
   mpProgressBar->setValue(value++);
   // create a file object and write the xml in it.
   QFile omnotebookFile(omnotebookFileName);
-  omnotebookFile.open(QIODevice::WriteOnly);
-  QTextStream textStream(&omnotebookFile);
-  textStream.setCodec(Helper::utf8.toUtf8().constData());
-  textStream.setGenerateByteOrderMark(false);
-  textStream << xmlDocument.toString();
-  omnotebookFile.close();
+  if (omnotebookFile.open(QIODevice::WriteOnly)) {
+    QTextStream textStream(&omnotebookFile);
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+    textStream.setEncoding(QStringConverter::Utf8);
+#else
+    textStream.setCodec(Helper::utf8.toUtf8().constData());
+#endif
+    textStream.setGenerateByteOrderMark(false);
+    textStream << xmlDocument.toString();
+    omnotebookFile.close();
+  } else {
+    QString msg = tr("Unable to open %1").arg(omnotebookFileName);
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, msg, Helper::scriptingKind, Helper::errorLevel));
+  }
   mpProgressBar->setValue(value++);
   // hide the progressbar and clear the message in status bar
   mpStatusBar->clearMessage();
@@ -1559,17 +1503,19 @@ void MainWindow::createOMNotebookCodeCell(LibraryTreeItem *pLibraryTreeItem, QDo
 /*!
  * \brief MainWindow::showTransformationsWidget
  * Creates a TransformationsWidget and show it to the user.
- * \param fileName
+ * \param fileName - path to model_info.json file.
+ * \param profiling - enable/disable profiling
+ * \param checkProfilingExists - check profiling files exists
  * \return
  */
-TransformationsWidget *MainWindow::showTransformationsWidget(QString fileName, bool profiling)
+TransformationsWidget *MainWindow::showTransformationsWidget(QString fileName, bool profiling, bool checkProfilingExists)
 {
   TransformationsWidget *pTransformationsWidget = mTransformationsWidgetHash.value(fileName, 0);
   if (!pTransformationsWidget) {
-    pTransformationsWidget = new TransformationsWidget(fileName, profiling);
+    pTransformationsWidget = new TransformationsWidget(fileName, profiling, checkProfilingExists);
     mTransformationsWidgetHash.insert(fileName, pTransformationsWidget);
   } else {
-    pTransformationsWidget->reloadTransformations();
+    pTransformationsWidget->loadTransformations(profiling, checkProfilingExists);
   }
   pTransformationsWidget->show();
   pTransformationsWidget->raise();
@@ -1669,10 +1615,9 @@ void MainWindow::PlotCallbackFunction(void *p, int externalWindow, const char* f
     if (!fileInfo.exists()) return;
     OMPlot::PlotWindow *pPlotWindow = pMainWindow->getPlotWindowContainer()->getCurrentWindow();
     if (pPlotWindow && !externalWindow) {
-      if (pPlotWindow->getPlotType() == OMPlot::PlotWindow::PLOT && strcmp(plotType, "plotparametric") == 0) {
+      if (pPlotWindow->isPlot() && strcmp(plotType, "plotparametric") == 0) {
         pMainWindow->getPlotWindowContainer()->addParametricPlotWindow();
-      } else if (pPlotWindow->getPlotType() == OMPlot::PlotWindow::PLOTPARAMETRIC &&
-                 ((strcmp(plotType, "plot") == 0) || (strcmp(plotType, "plotall") == 0))) {
+      } else if (pPlotWindow->isPlotParametric() && ((strcmp(plotType, "plot") == 0) || (strcmp(plotType, "plotall") == 0))) {
         pMainWindow->getPlotWindowContainer()->addPlotWindow();
       }
     } else if (externalWindow || pMainWindow->getPlotWindowContainer()->subWindowList().size() == 0) {
@@ -1716,7 +1661,7 @@ void MainWindow::PlotCallbackFunction(void *p, int externalWindow, const char* f
       throw OMPlot::PlotException("Invalid input" + QString(autoScale));
     }
     // plot variables
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 14, 0))
+#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
     QStringList variablesList = QString(variables).split(" ", Qt::SkipEmptyParts);
 #else // QT_VERSION_CHECK
     QStringList variablesList = QString(variables).split(" ", QString::SkipEmptyParts);
@@ -1737,7 +1682,7 @@ void MainWindow::PlotCallbackFunction(void *p, int externalWindow, const char* f
           }
         }
         pVariablesTreeModel->setData(index, Qt::Checked, Qt::CheckStateRole);
-        pMainWindow->getVariablesWidget()->plotVariables(index, pPlotWindow->getCurveWidth(), pPlotWindow->getCurveStyle(), false, pPlotCurve);
+        pMainWindow->getVariablesWidget()->plotVariables(index, pPlotWindow->getCurveWidth(), pPlotWindow->getCurveStyle(), Qt::NoModifier, pPlotCurve);
       }
     }
     // variables list is empty for plotAll
@@ -1775,7 +1720,6 @@ void MainWindow::addSystemLibraries()
     mpLibrariesMenu->clear();
     // get the available libraries and versions.
     QStringList libraries = MainWindow::instance()->getOMCProxy()->getAvailableLibraries();
-    libraries.sort();
     foreach (QString library, libraries) {
       QStringList versions = MainWindow::instance()->getOMCProxy()->getAvailableLibraryVersions(library);
       if (versions.isEmpty()) {
@@ -1937,6 +1881,16 @@ void MainWindow::createNewModelicaClass()
 }
 
 /*!
+ * \brief MainWindow::createNewMOSFile
+ * Opens the new Modelica Scripting dialog.
+ */
+void MainWindow::createNewMOSFile()
+{
+  CreateNewItemDialog *pCreateNewItemDialog = new CreateNewItemDialog("", true, ".mos", this);
+  pCreateNewItemDialog->exec();
+}
+
+/*!
  * \brief MainWindow::createNewSSPModel
  * Opens the new SSP model dialog.
  */
@@ -1946,6 +1900,15 @@ void MainWindow::createNewSSPModel()
   pCreateModelDialog->exec();
 }
 
+/*!
+ * \brief MainWindow::createNewCRMLFile
+ * Opens the new CRML Model dialog.
+ */
+void MainWindow::createNewCRMLFile()
+{
+  CreateNewItemDialog *pCreateNewItemDialog = new CreateNewItemDialog("", true, ".crml", this);
+  pCreateNewItemDialog->exec();
+}
 
 void MainWindow::openModelicaFile()
 {
@@ -2082,7 +2045,7 @@ void MainWindow::showOpenTransformationFileDialog()
   }
   mpProgressBar->setRange(0, 0);
   mpStatusBar->showMessage(QString("%1: %2").arg(Helper::loading, fileName));
-  showTransformationsWidget(fileName, false);
+  showTransformationsWidget(fileName, false, true);
   mpStatusBar->clearMessage();
   hideProgressBar();
 }
@@ -2099,112 +2062,19 @@ void MainWindow::unloadAll(bool onlyModelicaClasses)
   for (int i = pLibraryTreeItem->childrenSize(); --i >= 0; ) {
     LibraryTreeItem *pChildLibraryTreeItem = pLibraryTreeItem->child(i);
     if (pChildLibraryTreeItem) {
-      if ((pChildLibraryTreeItem->getNameStructure().compare(QStringLiteral("OpenModelica")) == 0)
-          || (pChildLibraryTreeItem->getNameStructure().compare(QStringLiteral("OMEdit.Search.Feature")) == 0)) {
+      if ((pChildLibraryTreeItem->getNameStructure().compare(Helper::OMEditInternal) == 0)) {
         continue;
-      } else if (pChildLibraryTreeItem->getLibraryType() == LibraryTreeItem::Modelica) {
+      } else if (pChildLibraryTreeItem->isModelica()) {
         MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->unloadClass(pChildLibraryTreeItem, false, false);
-      } else if (!onlyModelicaClasses && pChildLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS) {
+      } else if (!onlyModelicaClasses && pChildLibraryTreeItem->isSSP()) {
         MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->unloadOMSModel(pChildLibraryTreeItem, true, false);
-      } else if (!onlyModelicaClasses) { // LibraryTreeItem::CompositeModel or LibraryTreeItem::Text
-        MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->unloadCompositeModelOrTextFile(pChildLibraryTreeItem, false);
+      } else if (!onlyModelicaClasses) { // LibraryTreeItem::Text
+        MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->unloadTextFile(pChildLibraryTreeItem, false);
       }
     }
   }
   // clear everything from OMC
   MainWindow::instance()->getOMCProxy()->clear();
-}
-
-/*!
- * \brief MainWindow::createNewCompositeModelFile
- * Creates a new TLM LibraryTreeItem & ModelWidget.\n
- * Slot activated when mpNewCompositeModelFileAction triggered signal is raised.
- */
-void MainWindow::createNewCompositeModelFile()
-{
-  QString compositeModelName = mpLibraryWidget->getLibraryTreeModel()->getUniqueTopLevelItemName("CompositeModel");
-  LibraryTreeModel *pLibraryTreeModel = mpLibraryWidget->getLibraryTreeModel();
-  LibraryTreeItem *pLibraryTreeItem = pLibraryTreeModel->createLibraryTreeItem(LibraryTreeItem::CompositeModel, compositeModelName, compositeModelName, "",
-                                                                               false, pLibraryTreeModel->getRootLibraryTreeItem());
-  if (pLibraryTreeItem) {
-    mpLibraryWidget->getLibraryTreeModel()->showModelWidget(pLibraryTreeItem);
-  }
-}
-
-/*!
- * \brief MainWindow::openCompositeModelFile
- * Opens the CompositeModel file(s).\n
- * Slot activated when mpOpenCompositeModelFileAction triggered signal is raised.
- */
-void MainWindow::openCompositeModelFile()
-{
-  QStringList fileNames;
-  fileNames = StringHandler::getOpenFileNames(this, QString(Helper::applicationName).append(" - ").append(Helper::chooseFiles), NULL,
-                                              Helper::xmlFileTypes, NULL);
-  if (fileNames.isEmpty()) {
-    return;
-  }
-  int progressValue = 0;
-  mpProgressBar->setRange(0, fileNames.size());
-  showProgressBar();
-  foreach (QString file, fileNames) {
-    file = file.replace("\\", "/");
-    mpStatusBar->showMessage(QString(Helper::loading).append(": ").append(file));
-    mpProgressBar->setValue(++progressValue);
-    // if file doesn't exists
-    if (!QFile::exists(file)) {
-      QMessageBox *pMessageBox = new QMessageBox(this);
-      pMessageBox->setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::error));
-      pMessageBox->setIcon(QMessageBox::Critical);
-      pMessageBox->setAttribute(Qt::WA_DeleteOnClose);
-      pMessageBox->setText(QString(GUIMessages::getMessage(GUIMessages::UNABLE_TO_LOAD_FILE).arg(file)));
-      pMessageBox->setInformativeText(QString(GUIMessages::getMessage(GUIMessages::FILE_NOT_FOUND).arg(file)));
-      pMessageBox->setStandardButtons(QMessageBox::Ok);
-      pMessageBox->exec();
-    } else {
-      mpLibraryWidget->openFile(file, Helper::utf8, false);
-    }
-  }
-  mpStatusBar->clearMessage();
-  hideProgressBar();
-}
-
-/*!
- * \brief MainWindow::loadExternalModels
- * Loads the external model(s) for TLM meta-modeling.\n
- * Slot activated when mpLoadExternModelAction triggered signal is raised.
- */
-void MainWindow::loadExternalModels()
-{
-  QStringList fileNames;
-  fileNames = StringHandler::getOpenFileNames(this, QString(Helper::applicationName).append(" - ").append(Helper::chooseFiles), NULL,
-                                              NULL, NULL);
-  if (fileNames.isEmpty()) {
-    return;
-  }
-  int progressValue = 0;
-  mpProgressBar->setRange(0, fileNames.size());
-  showProgressBar();
-  foreach (QString file, fileNames) {
-    file = file.replace("\\", "/");
-    mpStatusBar->showMessage(QString(Helper::loading).append(": ").append(file));
-    mpProgressBar->setValue(++progressValue);
-    // if file doesn't exists
-    if (!QFile::exists(file)) {
-      QMessageBox *pMessageBox = new QMessageBox(this);
-      pMessageBox->setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::error));
-      pMessageBox->setIcon(QMessageBox::Critical);
-      pMessageBox->setAttribute(Qt::WA_DeleteOnClose);
-      pMessageBox->setText(QString(GUIMessages::getMessage(GUIMessages::UNABLE_TO_LOAD_FILE).arg(file)));
-      pMessageBox->setInformativeText(QString(GUIMessages::getMessage(GUIMessages::FILE_NOT_FOUND).arg(file)));
-      pMessageBox->setStandardButtons(QMessageBox::Ok);
-      pMessageBox->exec();
-    } else {
-      mpLibraryWidget->openFile(file, Helper::utf8, false, false, true);
-    }
-  }
-  mpStatusBar->clearMessage();
-  hideProgressBar();
 }
 
 /*!
@@ -2667,9 +2537,9 @@ void MainWindow::simulateModelWithAlgorithmicDebugger()
 void MainWindow::simulateModelInteractive()
 {
   ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
-  if (pModelWidget && pModelWidget->getLibraryTreeItem() && pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
+  if (pModelWidget && pModelWidget->getLibraryTreeItem() && pModelWidget->getLibraryTreeItem()->isSSP()) {
     // get the top level LibraryTreeItem
-    LibraryTreeItem *pTopLevelLibraryTreeItem = mpLibraryWidget->getLibraryTreeModel()->getTopLevelLibraryTreeItem(pModelWidget->getLibraryTreeItem());
+    LibraryTreeItem *pTopLevelLibraryTreeItem = LibraryTreeModel::getTopLevelLibraryTreeItem(pModelWidget->getLibraryTreeItem());
     if (pTopLevelLibraryTreeItem) {
       if (!mpOMSSimulationDialog) {
         mpOMSSimulationDialog = new OMSSimulationDialog(this);
@@ -2895,7 +2765,7 @@ void MainWindow::importModelfromOMNotebook()
   if (!file.open(QIODevice::ReadOnly))
   {
     QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
-                          GUIMessages::getMessage(GUIMessages::ERROR_OPENING_FILE).arg(fileName).arg(file.errorString()), Helper::ok);
+                          GUIMessages::getMessage(GUIMessages::ERROR_OPENING_FILE).arg(fileName).arg(file.errorString()), QMessageBox::Ok);
     hideProgressBar();
     return;
   }
@@ -2904,7 +2774,7 @@ void MainWindow::importModelfromOMNotebook()
   QDomDocument xmlDocument;
   if (!xmlDocument.setContent(&file))
   {
-    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), tr("Error reading the xml file"), Helper::ok);
+    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), tr("Error reading the xml file"), QMessageBox::Ok);
     hideProgressBar();
     return;
   }
@@ -3004,7 +2874,7 @@ void MainWindow::exportModelAsImage(bool copyToClipboard)
     pGraphicsView->mSkipBackground = oldSkipDrawBackground;
     if (!fileName.endsWith(".svg") && !copyToClipboard) {
       if (!modelImage.save(fileName)) {
-        QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), tr("Error saving the image file"), Helper::ok);
+        QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), tr("Error saving the image file"), QMessageBox::Ok);
       }
     } else if (copyToClipboard) {
       QClipboard *pClipboard = QApplication::clipboard();
@@ -3026,32 +2896,6 @@ void MainWindow::exportModelAsImage(bool copyToClipboard)
 void MainWindow::exportToClipboard()
 {
   exportModelAsImage(true);
-}
-
-/*!
- * \brief MainWindow::fetchInterfaceData
- * Slot activated when mpFetchInterfaceDataAction triggered signal is raised.
- * Calls the function that fetches the interface data.
- */
-void MainWindow::fetchInterfaceData()
-{
-  ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
-  if (pModelWidget) {
-    fetchInterfaceData(pModelWidget->getLibraryTreeItem());
-  }
-}
-
-/*!
- * \brief MainWindow::TLMSimulate
- * Slot activated when mpTLMSimulateAction triggered signal is raised.
- * Calls the function that starts the TLM simulation.
- */
-void MainWindow::TLMSimulate()
-{
-  ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
-  if (pModelWidget) {
-    TLMSimulate(pModelWidget->getLibraryTreeItem());
-  }
 }
 
 /*!
@@ -3095,7 +2939,7 @@ void MainWindow::openTerminal()
   QString arguments = OptionsDialog::instance()->getGeneralSettingsPage()->getTerminalCommandArguments();
   QDetachableProcess process;
   process.setWorkingDirectory(OptionsDialog::instance()->getGeneralSettingsPage()->getWorkingDirectory());
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 15, 0))
+#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
   const QStringList args(QProcess::splitCommand(arguments));
   process.start(terminalCommand, args);
 #else
@@ -3144,15 +2988,23 @@ void MainWindow::runOMSensPlugin()
     }
   }
   // if OMSens plugin is already loaded.
-  InformationInterface *pInformationInterface = qobject_cast<InformationInterface*>(mpOMSensPlugin);
-  pInformationInterface->setOpenModelicaHome(Helper::OpenModelicaHome);
-  pInformationInterface->setTempPath(Utilities::tempDirectory());
   ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
-  if (pModelWidget) {
+  if (pModelWidget && pModelWidget->getLibraryTreeItem()) {
+    if (!pModelWidget->getLibraryTreeItem()->isSaved()) {
+      // save the model
+      if (!MainWindow::instance()->getLibraryWidget()->saveLibraryTreeItem(pModelWidget->getLibraryTreeItem())) {
+        return;
+      }
+    }
+    InformationInterface *pInformationInterface = qobject_cast<InformationInterface*>(mpOMSensPlugin);
+    pInformationInterface->setOpenModelicaHome(Helper::OpenModelicaHome);
+    pInformationInterface->setTempPath(Utilities::tempDirectory());
+    pInformationInterface->setOMSensPath(OptionsDialog::instance()->getSensitivityOptimizationPage()->getOMSensBackendPathTextBox()->text());
+    pInformationInterface->setPython(OptionsDialog::instance()->getSensitivityOptimizationPage()->getPythonTextBox()->text());
     ModelInterface *pModelInterface = qobject_cast<ModelInterface*>(mpOMSensPlugin);
     pModelInterface->analyzeModel(pModelWidget->toOMSensData());
   } else {
-    QMessageBox::information(this, QString("%1 - %2").arg(Helper::applicationName).arg(Helper::information), tr("Please open a model before starting the OMSens plugin."), Helper::ok);
+    QMessageBox::information(this, QString("%1 - %2").arg(Helper::applicationName).arg(Helper::information), tr("Please open a model before starting the OMSens plugin."), QMessageBox::Ok);
   }
 #endif
 }
@@ -3222,21 +3074,8 @@ void MainWindow::openModelicaDocumentation()
  */
 void MainWindow::openOMSimulatorUsersGuide()
 {
-  QUrl OMSimulatorUsersGuideUrl("https://openmodelica.org/doc/OMSimulator/master/html/");
+  QUrl OMSimulatorUsersGuideUrl("https://openmodelica.org/doc/OMSimulator/master/OMSimulator/UsersGuide/html/");
   QDesktopServices::openUrl(OMSimulatorUsersGuideUrl);
-}
-
-/*!
- * \brief MainWindow::openOpenModelicaTLMSimulatorDocumentation
- * Opens the OpenModelica TLM Simulator documentation.
- */
-void MainWindow::openOpenModelicaTLMSimulatorDocumentation()
-{
-  QUrl openModelicaTLMSimulatorDocumentation(QString("file:///%1/OMTLMSimulator/Documentation/OMTLMSimulator.pdf").arg(Helper::OpenModelicaHome));
-  if (!QDesktopServices::openUrl(openModelicaTLMSimulatorDocumentation)) {
-    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, GUIMessages::getMessage(GUIMessages::UNABLE_TO_OPEN_FILE)
-                                                          .arg(openModelicaTLMSimulatorDocumentation.toString()), Helper::scriptingKind, Helper::errorLevel));
-  }
 }
 
 void MainWindow::openAboutOMEdit()
@@ -3357,16 +3196,6 @@ void MainWindow::plotToolBarVisibilityChanged(bool visible)
 void MainWindow::debuggerToolBarVisibilityChanged(bool visible)
 {
   toolBarVisibilityChanged(ToolBars::debuggerToolBar, visible);
-}
-
-/*!
- * \brief MainWindow::TLMSimulationToolBarVisibilityChanged
- * Slot activated when toolbar visibility is changed.
- * \param visible
- */
-void MainWindow::TLMSimulationToolBarVisibilityChanged(bool visible)
-{
-  toolBarVisibilityChanged(ToolBars::TLMSimulationToolBar, visible);
 }
 
 /*!
@@ -3526,49 +3355,6 @@ void MainWindow::toggleAutoSave()
 }
 
 /*!
- * \brief MainWindow::readInterfaceData
- * \param pLibraryTreeItem
- * Reads the interface data by reading the interfaceData.xml file and updates the meta-model text.
- */
-void MainWindow::readInterfaceData(LibraryTreeItem *pLibraryTreeItem)
-{
-  if (!pLibraryTreeItem) {
-    return;
-  }
-
-  FetchInterfaceDataDialog *pDialog = qobject_cast<FetchInterfaceDataDialog*>(sender());
-  QString singleModel = pDialog->getSingleModel();
-
-  QFileInfo fileInfo(pLibraryTreeItem->getFileName());
-  QFile file(fileInfo.absoluteDir().absolutePath()+ "/interfaceData.xml");
-  if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
-    QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error),
-                          GUIMessages::getMessage(GUIMessages::ERROR_OPENING_FILE).arg("interfaceData.xml")
-                          .arg(file.errorString()), Helper::ok);
-  } else {
-    QDomDocument modelDataDocument;
-    modelDataDocument.setContent(&file);
-    file.close();
-    // Get the interfaces element
-    QDomElement modelData, interfaces,parameters;
-    modelData = modelDataDocument.documentElement();
-    interfaces = modelData.firstChildElement("Interfaces");
-    parameters = modelData.firstChildElement("Parameters");
-    if(interfaces.isNull() && parameters.isNull()) {
-        interfaces = modelDataDocument.documentElement();   //Backwards compatibility, remove later /Robert
-    }
-
-    // if we don't have ModelWidget then show it.
-    if (!pLibraryTreeItem->getModelWidget()) {
-      mpLibraryWidget->getLibraryTreeModel()->showModelWidget(pLibraryTreeItem);
-    }
-    CompositeModelEditor *pCompositeModelEditor = dynamic_cast<CompositeModelEditor*>(pLibraryTreeItem->getModelWidget()->getEditor());
-    pCompositeModelEditor->addInterfacesData(interfaces, parameters, singleModel);
-    pLibraryTreeItem->getModelWidget()->updateModelText();
-  }
-}
-
-/*!
  * \brief MainWindow::enableReSimulationToolbar
  * * Handles the VisibilityChanged signal of Variables Dock Widget.
  * \param visible
@@ -3619,29 +3405,13 @@ void MainWindow::documentationDockWidgetVisibilityChanged(bool visible)
   if (visible) {
     ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
     if (pModelWidget && pModelWidget->getLibraryTreeItem() &&
-        pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
+        pModelWidget->getLibraryTreeItem()->isModelica()) {
       LibraryTreeItem *pLibraryTreeItem = pModelWidget->getLibraryTreeItem();
       if (pModelWidget->validateText(&pLibraryTreeItem)) {
         mpDocumentationWidget->showDocumentation(pLibraryTreeItem);
       }
     }
   }
-}
-
-/*!
- * \brief MainWindow::threeDViewerDockWidgetVisibilityChanged
- * Handles the VisibilityChanged signal of ThreeDViewer Dock Widget.
- * \param visible
- */
-void MainWindow::threeDViewerDockWidgetVisibilityChanged(bool visible)
-{
-#if !defined(WITHOUT_OSG)
-  if (visible) {
-    getThreeDViewer()->getViewerWidget()->update();
-  }
-#else
-  Q_UNUSED(visible);
-#endif
 }
 
 /*!
@@ -3691,6 +3461,12 @@ void MainWindow::messageTabAdded(QWidget *pSimulationOutputTab, const QString &n
     if (pOMSSimulationOutputWidget) {
       connect(pOMSSimulationOutputWidget, SIGNAL(updateText(QString)), pMessageTab, SLOT(updateText(QString)));
       connect(pOMSSimulationOutputWidget, SIGNAL(updateProgressBar(QProgressBar*)), pMessageTab, SLOT(updateProgress(QProgressBar*)));
+    } else {
+      CRMLTranslatorOutputWidget *pCRMLTranslatorOutputWidget = qobject_cast<CRMLTranslatorOutputWidget*>(pSimulationOutputTab);
+      if (pCRMLTranslatorOutputWidget) {
+        connect(pCRMLTranslatorOutputWidget, SIGNAL(updateText(QString)), pMessageTab, SLOT(updateText(QString)));
+        connect(pCRMLTranslatorOutputWidget, SIGNAL(updateProgressBar(QProgressBar*)), pMessageTab, SLOT(updateProgress(QProgressBar*)));
+      }
     }
   }
 }
@@ -3737,6 +3513,26 @@ void MainWindow::showDataReconciliationDialog()
       mpSimulationDialog->directSimulate(pLibraryTreeItem, false, false, false, true);
     }
   }
+}
+
+/*!
+ * \brief MainWindow::runCRMLTestsuite
+ * Slot activated when mpRunCRMLTestsuiteAction triggered signal is raised.\n
+ * Runs the CRML testsuite and opens the result as html.
+ */
+void MainWindow::runCRMLTestsuite()
+{
+  CRMLTranslatorOptions crmlTranslatorOptions;
+  crmlTranslatorOptions.setMode("testsuite");
+  crmlTranslatorOptions.setWorkingDirectory(OptionsDialog::instance()->getGeneralSettingsPage()->getWorkingDirectory());
+  CRMLPage *pCRMLPage = OptionsDialog::instance()->getCRMLPage();
+  crmlTranslatorOptions.setCompilerJar(pCRMLPage->getCompilerJarTextBox()->text());
+  crmlTranslatorOptions.setCompilerCommandLineOptions(pCRMLPage->getCompilerCommandLineOptionsTextBox()->text());
+  crmlTranslatorOptions.setCompilerProcess(pCRMLPage->getCompilerProcessTextBox()->text());
+
+  CRMLTranslatorOutputWidget *pCRMLTranslatorOutputWidget = new CRMLTranslatorOutputWidget(crmlTranslatorOptions);
+  MessagesWidget::instance()->addSimulationOutputTab(pCRMLTranslatorOutputWidget, tr("CRML Testsuite"));
+  pCRMLTranslatorOutputWidget->start();
 }
 
 /*!
@@ -3863,10 +3659,20 @@ void MainWindow::createActions()
   mpNewModelicaClassAction->setStatusTip(Helper::createNewModelicaClass);
   mpNewModelicaClassAction->setShortcut(QKeySequence("Ctrl+n"));
   connect(mpNewModelicaClassAction, SIGNAL(triggered()), SLOT(createNewModelicaClass()));
+  // create new MOS action
+  mpNewMOSFileAction = new QAction(Helper::newMOSScript, this);
+  mpNewMOSFileAction->setStatusTip(Helper::newMOSScriptTip);
+  connect(mpNewMOSFileAction, SIGNAL(triggered()), SLOT(createNewMOSFile()));
   // create new SSP Model action
   mpNewSSPModelAction = new QAction(Helper::newOMSimulatorModel, this);
   mpNewSSPModelAction->setStatusTip(Helper::newOMSimulatorModelTip);
   connect(mpNewSSPModelAction, SIGNAL(triggered()), SLOT(createNewSSPModel()));
+  // create new CRML action
+  if (isCRMLEnabled()) {
+    mpNewCRMLFileAction = new QAction(Helper::newCRMLModel, this);
+    mpNewCRMLFileAction->setStatusTip(Helper::newCRMLModelTip);
+    connect(mpNewCRMLFileAction, SIGNAL(triggered()), SLOT(createNewCRMLFile()));
+  }
   // open Modelica file action
   mpOpenModelicaFileAction = new QAction(QIcon(":/Resources/icons/open.svg"), Helper::openModelicaFiles, this);
   mpOpenModelicaFileAction->setShortcut(QKeySequence("Ctrl+o"));
@@ -3897,18 +3703,6 @@ void MainWindow::createActions()
   mpUnloadAllAction = new QAction(tr("Unload All"), this);
   mpUnloadAllAction->setStatusTip(tr("Unloads all loaded classes"));
   connect(mpUnloadAllAction, SIGNAL(triggered()), SLOT(unloadAll()));
-  // create new CompositeModel action
-  mpNewCompositeModelFileAction = new QAction(QIcon(":/Resources/icons/new.svg"), tr("New Composite Model"), this);
-  mpNewCompositeModelFileAction->setStatusTip(tr("Create New Composite Model file"));
-  connect(mpNewCompositeModelFileAction, SIGNAL(triggered()), SLOT(createNewCompositeModelFile()));
-  // open CompositeModel file action
-  mpOpenCompositeModelFileAction = new QAction(QIcon(":/Resources/icons/open.svg"), tr("Open Composite Model(s)"), this);
-  mpOpenCompositeModelFileAction->setStatusTip(tr("Opens the Composite Model file(s)"));
-  connect(mpOpenCompositeModelFileAction, SIGNAL(triggered()), SLOT(openCompositeModelFile()));
-  // load External Model action
-  mpLoadExternModelAction = new QAction(tr("Load External Model(s)"), this);
-  mpLoadExternModelAction->setStatusTip(tr("Loads the External Model(s) for the TLM co-simulation"));
-  connect(mpLoadExternModelAction, SIGNAL(triggered()), SLOT(loadExternalModels()));
   // open the directory action
   mpOpenDirectoryAction = new QAction(tr("Open Directory"), this);
   mpOpenDirectoryAction->setStatusTip(tr("Opens the directory"));
@@ -4137,6 +3931,13 @@ void MainWindow::createActions()
   mpCalculateDataReconciliationAction = new QAction(tr("Calculate Data Reconciliation"), this);
   mpCalculateDataReconciliationAction->setStatusTip(tr("Calculates the data reconciliation"));
   connect(mpCalculateDataReconciliationAction, SIGNAL(triggered()), SLOT(showDataReconciliationDialog()));
+  // CRML menu
+  if (isCRMLEnabled()) {
+    // run testsuite
+    mpRunCRMLTestsuiteAction = new QAction(tr("Run CRML Testsuite"), this);
+    mpRunCRMLTestsuiteAction->setStatusTip(tr("Runs the CRML Testsuite and display report"));
+    connect(mpRunCRMLTestsuiteAction, SIGNAL(triggered()), SLOT(runCRMLTestsuite()));
+  }
   // Debug Menu
   // Debug configurations
   mpDebugConfigurationsAction = new QAction(Helper::debugConfigurations, this);
@@ -4244,10 +4045,6 @@ void MainWindow::createActions()
   mpOMSimulatorUsersGuideAction = new QAction(tr("OMSimulator User's Guide"), this);
   mpOMSimulatorUsersGuideAction->setStatusTip(tr("Opens the OMSimulator User's Guide"));
   connect(mpOMSimulatorUsersGuideAction, SIGNAL(triggered()), SLOT(openOMSimulatorUsersGuide()));
-  // OMTLMSimulator documenatation action
-  mpOpenModelicaTLMSimulatorDocumentationAction = new QAction(tr("OpenModelica TLM Simulator Documentation"), this);
-  mpOpenModelicaTLMSimulatorDocumentationAction->setStatusTip(tr("Opens the OpenModelica TLM Simulator Documentation"));
-  connect(mpOpenModelicaTLMSimulatorDocumentationAction, SIGNAL(triggered()), SLOT(openOpenModelicaTLMSimulatorDocumentation()));
   // about OMEdit action
   mpAboutOMEditAction = new QAction(tr("About OMEdit"), this);
   mpAboutOMEditAction->setStatusTip(tr("Information about OMEdit"));
@@ -4346,21 +4143,6 @@ void MainWindow::createActions()
   mpClearPlotWindowAction = new QAction(QIcon(":/Resources/icons/clear.svg"), tr("Clear Plot Window"), this);
   mpClearPlotWindowAction->setStatusTip(tr("Clears all the curves from the plot window"));
   connect(mpClearPlotWindowAction, SIGNAL(triggered()), mpPlotWindowContainer, SLOT(clearPlotWindow()));
-  // simulation parameters
-  mpSimulationParamsAction = new QAction(QIcon(":/Resources/icons/simulation-parameters.svg"), Helper::simulationParams, this);
-  mpSimulationParamsAction->setStatusTip(Helper::simulationParamsTip);
-  // fetch interface data
-  mpFetchInterfaceDataAction = new QAction(QIcon(":/Resources/icons/interface-data.svg"), Helper::fetchInterfaceData, this);
-  mpFetchInterfaceDataAction->setStatusTip(Helper::fetchInterfaceDataTip);
-  connect(mpFetchInterfaceDataAction, SIGNAL(triggered()), SLOT(fetchInterfaceData()));
-  // align interfaces
-  mpAlignInterfacesAction = new QAction(QIcon(":/Resources/icons/align-interfaces.svg"), Helper::alignInterfaces, this);
-  mpAlignInterfacesAction->setStatusTip(Helper::alignInterfacesTip);
-  // TLM simulate action
-  mpTLMCoSimulationAction = new QAction(QIcon(":/Resources/icons/tlm-simulate.svg"), Helper::tlmCoSimulationSetup, this);
-  mpTLMCoSimulationAction->setStatusTip(Helper::tlmCoSimulationSetupTip);
-  mpTLMCoSimulationAction->setEnabled(false);
-  connect(mpTLMCoSimulationAction, SIGNAL(triggered()), SLOT(TLMSimulate()));
   // Add System Action
   mpAddSystemAction = new QAction(QIcon(":/Resources/icons/add-system.svg"), Helper::addSystem, this);
   mpAddSystemAction->setStatusTip(Helper::addSystemTip);
@@ -4376,9 +4158,6 @@ void MainWindow::createActions()
   // Add bus action
   mpAddBusAction = new QAction(QIcon(":/Resources/icons/bus.svg"), Helper::addBus, this);
   mpAddBusAction->setStatusTip(Helper::addBusTip);
-  // Add tlm bus action
-  mpAddTLMBusAction = new QAction(QIcon(":/Resources/icons/tlm-bus.svg"), Helper::addTLMBus, this);
-  mpAddTLMBusAction->setStatusTip(Helper::addTLMBusTip);
   // Add SubModel Action
   mpAddSubModelAction = new QAction(QIcon(":/Resources/icons/import-fmu.svg"), Helper::addSubModel, this);
   mpAddSubModelAction->setStatusTip(Helper::addSubModelTip);
@@ -4403,10 +4182,6 @@ void MainWindow::createMenus()
   mpFileMenu->addAction(mpOpenTransformationFileAction);
   mpFileMenu->addSeparator();
   mpFileMenu->addAction(mpUnloadAllAction);
-  mpFileMenu->addSeparator();
-  mpFileMenu->addAction(mpNewCompositeModelFileAction);
-  mpFileMenu->addAction(mpOpenCompositeModelFileAction);
-  mpFileMenu->addAction(mpLoadExternModelAction);
   mpFileMenu->addSeparator();
   mpFileMenu->addAction(mpOpenDirectoryAction);
   mpFileMenu->addSeparator();
@@ -4499,15 +4274,12 @@ void MainWindow::createMenus()
   pViewToolbarsMenu->addAction(mpReSimulationToolBar->toggleViewAction());
   pViewToolbarsMenu->addAction(mpPlotToolBar->toggleViewAction());
   pViewToolbarsMenu->addAction(mpDebuggerToolBar->toggleViewAction());
-  pViewToolbarsMenu->addAction(mpTLMSimulationToolbar->toggleViewAction());
   pViewToolbarsMenu->addAction(mpOMSimulatorToolbar->toggleViewAction());
   // Add Actions to Windows View Sub Menu
   pViewWindowsMenu->addAction(mpLibraryDockWidget->toggleViewAction());
+  pViewWindowsMenu->addAction(mpElementDockWidget->toggleViewAction());
   pViewWindowsMenu->addAction(mpDocumentationDockWidget->toggleViewAction());
   pViewWindowsMenu->addAction(mpVariablesDockWidget->toggleViewAction());
-#if !defined(WITHOUT_OSG)
-  pViewWindowsMenu->addAction(mpThreeDViewerDockWidget->toggleViewAction());
-#endif
   pViewWindowsMenu->addAction(mpMessagesDockWidget->toggleViewAction());
   pViewWindowsMenu->addAction(mpSearchDockWidget->toggleViewAction());
   pViewWindowsMenu->addAction(mpStackFramesDockWidget->toggleViewAction());
@@ -4548,7 +4320,6 @@ void MainWindow::createMenus()
   pSSPMenu->addSeparator();
   pSSPMenu->addAction(mpAddConnectorAction);
   pSSPMenu->addAction(mpAddBusAction);
-  pSSPMenu->addAction(mpAddTLMBusAction);
   pSSPMenu->addSeparator();
   pSSPMenu->addAction(mpAddSubModelAction);
   // add OMSimulator menu to menu bar
@@ -4579,10 +4350,19 @@ void MainWindow::createMenus()
   pDataReconciliationMenu->addAction(mpCalculateDataReconciliationAction);
   // add data reconciliation menu to menu bar
   menuBar()->addAction(pDataReconciliationMenu->menuAction());
+  // CRML menu
+  if (isCRMLEnabled()) {
+    QMenu *pCRMLMenu = new QMenu(menuBar());
+    pCRMLMenu->setTitle(tr("&CRML"));
+    // add actions to CRML menu
+    pCRMLMenu->addAction(mpRunCRMLTestsuiteAction);
+    // add data CRML menu to menu bar
+    menuBar()->addAction(pCRMLMenu->menuAction());
+  }
 #ifndef Q_OS_MAC
   // Sensitivity Optimization menu
   QMenu *pSensitivityOptimizationMenu = new QMenu(menuBar());
-  pSensitivityOptimizationMenu->setTitle(tr("Sensitivity Optimization"));
+  pSensitivityOptimizationMenu->setTitle(Helper::sensitivityOptimization);
   // add actions to Sensitivity Optimization menu
   pSensitivityOptimizationMenu->addAction(mpRunOMSensAction);
   // add Sensitivity Optimization menu to menu bar
@@ -4651,7 +4431,6 @@ void MainWindow::createMenus()
   pHelpMenu->addAction(mpModelicaDocumentationAction);
   pHelpMenu->addSeparator();
   pHelpMenu->addAction(mpOMSimulatorUsersGuideAction);
-  pHelpMenu->addAction(mpOpenModelicaTLMSimulatorDocumentationAction);
   pHelpMenu->addSeparator();
   pHelpMenu->addAction(mpAboutOMEditAction);
   // add Help menu to menu bar
@@ -4701,9 +4480,6 @@ void MainWindow::switchToWelcomePerspective()
   mpLocalsDockWidget->hide();
   mpTargetOutputDockWidget->hide();
   mpGDBLoggerDockWidget->hide();
-#if !defined(WITHOUT_OSG)
-  mpThreeDViewerDockWidget->hide();
-#endif
   // show/hide toolbars
   QSettings *pSettings = Utilities::getApplicationSettings();
   pSettings->beginGroup(ToolBars::welcomePerspective);
@@ -4717,7 +4493,6 @@ void MainWindow::switchToWelcomePerspective()
   mpReSimulationToolBar->setEnabled(mpVariablesDockWidget->isVisible() && !mpVariablesWidget->getVariablesTreeView()->selectionModel()->selectedIndexes().isEmpty());
   SHOW_HIDE_TOOLBAR(mpPlotToolBar, ToolBars::plotToolBar, false);
   SHOW_HIDE_TOOLBAR(mpDebuggerToolBar, ToolBars::debuggerToolBar, false);
-  SHOW_HIDE_TOOLBAR(mpTLMSimulationToolbar, ToolBars::TLMSimulationToolBar, false);
   SHOW_HIDE_TOOLBAR(mpOMSimulatorToolbar, ToolBars::OMSimulatorToolBar, false);
   pSettings->endGroup();
 }
@@ -4725,11 +4500,6 @@ void MainWindow::switchToWelcomePerspective()
 #define ADD_SHOW_DIAGRAMVIEW() \
   if (mpPlotWindowContainer->getDiagramWindow() && mpPlotWindowContainer->getDiagramWindow()->getModelWidget()) { \
     ModelWidget *pModelWidget = mpPlotWindowContainer->getDiagramWindow()->getModelWidget(); \
-    pModelWidget->getDiagramGraphicsView()->setIsVisualizationView(false); \
-    if ((pModelWidget->getIconGraphicsView() && pModelWidget->getIconGraphicsView()->isVisible()) \
-        || (pModelWidget->getEditor() && pModelWidget->getEditor()->isVisible())) { \
-      pModelWidget->getDiagramGraphicsView()->hide(); \
-    } \
     mpPlotWindowContainer->getDiagramWindow()->removeVisualizationDiagram(); \
     pModelWidget->getDiagramGraphicsView()->emitResetDynamicSelect(); \
     pModelWidget->getMainLayout()->addWidget(pModelWidget->getDiagramGraphicsView(), 1); \
@@ -4741,12 +4511,11 @@ void MainWindow::switchToWelcomePerspective()
  */
 void MainWindow::switchToModelingPerspective()
 {
+  ADD_SHOW_DIAGRAMVIEW();
   mpCentralStackedWidget->setCurrentWidget(mpModelWidgetContainer);
-  mpModelWidgetContainer->currentModelWidgetChanged(mpModelWidgetContainer->getCurrentMdiSubWindow());
   if (OptionsDialog::instance()->getGeneralSettingsPage()->getHideVariablesBrowserCheckBox()->isChecked()) {
     mpVariablesDockWidget->hide();
   }
-  ADD_SHOW_DIAGRAMVIEW();
   // In case user has tabbed the dock widgets then make LibraryWidget active.
   QList<QDockWidget*> tabifiedDockWidgetsList = tabifiedDockWidgets(mpLibraryDockWidget);
   if (tabifiedDockWidgetsList.size() > 0) {
@@ -4773,16 +4542,15 @@ void MainWindow::switchToPlottingPerspective()
   }
   ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
   mpCentralStackedWidget->setCurrentWidget(mpPlotWindowContainer);
-  mpModelWidgetContainer->currentModelWidgetChanged(0);
   mpUndoAction->setEnabled(false);
   mpRedoAction->setEnabled(false);
   mpModelSwitcherToolButton->setEnabled(false);
   // if no plotwindow is opened then open one for user
   if (mpPlotWindowContainer->subWindowList().size() == 0) {
-    mpPlotWindowContainer->addPlotWindow(true);
+    mpPlotWindowContainer->addPlotWindow();
   }
   if (pModelWidget) {
-    mpPlotWindowContainer->showDiagramWindow(pModelWidget);
+    mpPlotWindowContainer->showDiagramWindow(pModelWidget, true);
   }
   mpVariablesDockWidget->show();
   // show/hide toolbars
@@ -4798,7 +4566,6 @@ void MainWindow::switchToPlottingPerspective()
   mpReSimulationToolBar->setEnabled(mpVariablesDockWidget->isVisible() && !mpVariablesWidget->getVariablesTreeView()->selectionModel()->selectedIndexes().isEmpty());
   SHOW_HIDE_TOOLBAR(mpPlotToolBar, ToolBars::plotToolBar, true);
   SHOW_HIDE_TOOLBAR(mpDebuggerToolBar, ToolBars::debuggerToolBar, false);
-  SHOW_HIDE_TOOLBAR(mpTLMSimulationToolbar, ToolBars::TLMSimulationToolBar, false);
   SHOW_HIDE_TOOLBAR(mpOMSimulatorToolbar, ToolBars::OMSimulatorToolBar, false);
   pSettings->endGroup();
   // In case user has tabbed the dock widgets then make VariablesWidget active.
@@ -4811,9 +4578,6 @@ void MainWindow::switchToPlottingPerspective()
   mpLocalsDockWidget->hide();
   mpTargetOutputDockWidget->hide();
   mpGDBLoggerDockWidget->hide();
-#if !defined(WITHOUT_OSG)
-  mpThreeDViewerDockWidget->hide();
-#endif
 }
 
 /*!
@@ -4823,7 +4587,6 @@ void MainWindow::switchToPlottingPerspective()
 void MainWindow::switchToAlgorithmicDebuggingPerspective()
 {
   mpCentralStackedWidget->setCurrentWidget(mpModelWidgetContainer);
-  mpModelWidgetContainer->currentModelWidgetChanged(mpModelWidgetContainer->getCurrentMdiSubWindow());
   if (OptionsDialog::instance()->getGeneralSettingsPage()->getHideVariablesBrowserCheckBox()->isChecked()) {
     mpVariablesDockWidget->hide();
   }
@@ -4892,24 +4655,6 @@ void MainWindow::tileSubWindows(QMdiArea *pMdiArea, bool horizontally)
   }
 }
 
-/*!
- * \brief MainWindow::fetchInterfaceDataHelper
- * \param pLibraryTreeItem
- * Helper function for fetching the interface data.
- */
-void MainWindow::fetchInterfaceDataHelper(LibraryTreeItem *pLibraryTreeItem, QString singleModel)
-{
-  /* if Modelica text is changed manually by user then validate it before saving. */
-  if (pLibraryTreeItem->getModelWidget()) {
-    if (!pLibraryTreeItem->getModelWidget()->validateText(&pLibraryTreeItem)) {
-      return;
-    }
-  }
-  FetchInterfaceDataDialog *pFetchInterfaceDataDialog = new FetchInterfaceDataDialog(pLibraryTreeItem, singleModel, this);
-  connect(pFetchInterfaceDataDialog, SIGNAL(readInterfaceData(LibraryTreeItem*)), SLOT(readInterfaceData(LibraryTreeItem*)));
-  pFetchInterfaceDataDialog->exec();
-}
-
 //! Creates the toolbars
 void MainWindow::createToolbars()
 {
@@ -4927,7 +4672,13 @@ void MainWindow::createToolbars()
   mpNewModelMenu->setTitle(tr("&New"));
   mpNewModelMenu->setIcon(QIcon(":/Resources/icons/new.svg"));
   mpNewModelMenu->addAction(mpNewModelicaClassAction);
+  mpNewModelMenu->addAction(mpNewMOSFileAction);
+  mpNewModelMenu->addSeparator();
   mpNewModelMenu->addAction(mpNewSSPModelAction);
+  if (isCRMLEnabled()) {
+    mpNewModelMenu->addSeparator();
+    mpNewModelMenu->addAction(mpNewCRMLFileAction);
+  }
   // new ToolButton
   QToolButton *pNewToolButton = new QToolButton;
   pNewToolButton->setMenu(mpNewModelMenu);
@@ -5061,18 +4812,6 @@ void MainWindow::createToolbars()
   mpDebugConfigurationToolButton->setIcon(QIcon(":/Resources/icons/debugger.svg"));
   connect(mpDebugConfigurationToolButton, SIGNAL(clicked()), SLOT(runDebugConfiguration()));
   mpDebuggerToolBar->addWidget(mpDebugConfigurationToolButton);
-  // TLM Simulation Toolbar
-  mpTLMSimulationToolbar = addToolBar(tr("TLM Simulation Toolbar"));
-  mpTLMSimulationToolbar->setObjectName("TLM Simulation Toolbar");
-  mpTLMSimulationToolbar->setAllowedAreas(Qt::TopToolBarArea);
-  // add actions to TLM Simulation Toolbar
-  mpTLMSimulationToolbar->addAction(mpSimulationParamsAction);
-  mpTLMSimulationToolbar->addSeparator();
-  mpTLMSimulationToolbar->addAction(mpFetchInterfaceDataAction);
-  mpTLMSimulationToolbar->addAction(mpAlignInterfacesAction);
-  mpTLMSimulationToolbar->addSeparator();
-  mpTLMSimulationToolbar->addAction(mpTLMCoSimulationAction);
-  connect(mpTLMSimulationToolbar, SIGNAL(visibilityChanged(bool)), SLOT(TLMSimulationToolBarVisibilityChanged(bool)));
   // SSP Toolbar
   mpOMSimulatorToolbar = addToolBar(tr("SSP Toolbar"));
   mpOMSimulatorToolbar->setObjectName("SSP Toolbar");
@@ -5085,7 +4824,6 @@ void MainWindow::createToolbars()
   mpOMSimulatorToolbar->addSeparator();
   mpOMSimulatorToolbar->addAction(mpAddConnectorAction);
   mpOMSimulatorToolbar->addAction(mpAddBusAction);
-  mpOMSimulatorToolbar->addAction(mpAddTLMBusAction);
   mpOMSimulatorToolbar->addSeparator();
   mpOMSimulatorToolbar->addAction(mpAddSubModelAction);
   connect(mpOMSimulatorToolbar, SIGNAL(visibilityChanged(bool)), SLOT(OMSimulatorToolBarVisibilityChanged(bool)));
@@ -5111,11 +4849,9 @@ void MainWindow::toolBarVisibilityChanged(const QString &toolbar, bool visible)
       break;
     case 1:
       pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
-      if (pModelWidget && pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Text) {
+      if (pModelWidget && pModelWidget->getLibraryTreeItem()->isText()) {
         perspective = ToolBars::modelingTextPerspective;
-      } else if (pModelWidget && pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::CompositeModel) {
-        perspective = ToolBars::modelingCompositeModelPerspective;
-      } else if (pModelWidget && pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
+      } else if (pModelWidget && pModelWidget->getLibraryTreeItem()->isSSP()) {
         perspective = ToolBars::modelingOMSPerspective;
       } else {
         perspective = ToolBars::modelingModelicaPerspective;
@@ -5126,11 +4862,9 @@ void MainWindow::toolBarVisibilityChanged(const QString &toolbar, bool visible)
       break;
     case 3:
       pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
-      if (pModelWidget && pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Text) {
+      if (pModelWidget && pModelWidget->getLibraryTreeItem()->isText()) {
         perspective = ToolBars::debuggingTextPerspective;
-      } else if (pModelWidget && pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::CompositeModel) {
-        perspective = ToolBars::debuggingCompositeModelPerspective;
-      } else if (pModelWidget && pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
+      } else if (pModelWidget && pModelWidget->getLibraryTreeItem()->isSSP()) {
         perspective = ToolBars::debuggingOMSPerspective;
       } else {
         perspective = ToolBars::debuggingModelicaPerspective;
@@ -5217,9 +4951,9 @@ AboutOMEditDialog::AboutOMEditDialog(MainWindow *pMainWindow)
 
   const QString aboutText = tr(
      "<h2>%1 - %2</h2>"
-     "<b>Connected to %3</b><br />"
-     "<b>Connected to %4</b><br /><br />"
-     "Installation path <b>%5</b><br /><br />"
+     "<b>Connected to %3 %4 encryption support</b><br />"
+     "<b>Connected to %5</b><br /><br />"
+     "Installation path <b>%6</b><br /><br />"
      "Copyright <b>Open Source Modelica Consortium (OSMC)</b>.<br />"
      "Distributed under OSMC-PL and GPL, see <u><a href=\"http://www.openmodelica.org\">www.openmodelica.org</a></u>."
 #if defined(WITHOUT_OSG)
@@ -5229,6 +4963,11 @@ AboutOMEditDialog::AboutOMEditDialog(MainWindow *pMainWindow)
      .arg(Helper::applicationName,
           Helper::applicationIntroText,
           Helper::OpenModelicaVersion,
+#ifdef OM_ENABLE_ENCRYPTION
+          "with",
+#else
+          "without",
+#endif
           oms_getVersion(),
           Helper::OpenModelicaHome);
   // about text label

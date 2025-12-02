@@ -1,7 +1,6 @@
 // name:     reinit
 // keywords: reinit
 // status:   correct
-// cflags: -d=-newInst
 //
 // using reinit in when initial() is not allowed, changed to assignment
 //
@@ -22,6 +21,7 @@ algorithm
   when time > 0 then
     reinit(x, u); // if x is u since der(x) = (u - x)/T
   end when;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end FilterBlock1;
 
 // Result:

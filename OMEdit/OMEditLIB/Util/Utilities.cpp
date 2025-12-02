@@ -38,27 +38,17 @@
 #include "OMC/OMCProxy.h"
 #include "Modeling/ItemDelegate.h"
 #include "Editors/BaseEditor.h"
+#include "OMPlot.h"
 
 #include <QApplication>
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 11, 0))
-#include <QScreen>
-#else // QT_VERSION_CHECK
-#include <QDesktopWidget>
-#endif // QT_VERSION_CHECK
+#include <QCryptographicHash>
+#include <QByteArray>
 #include <QGridLayout>
 #include <QStylePainter>
 #include <QPainter>
 #include <QColorDialog>
 #include <QDir>
 #include <QRegExp>
-#ifdef OM_OMEDIT_ENABLE_LIBXML2
-#include <libxml/parser.h>
-#include <libxml/valid.h>
-#else
-#include <QXmlSchema>
-#include <QXmlSchemaValidator>
-#endif
-
 
 extern "C" {
 extern const char* System_openModelicaPlatform();
@@ -259,7 +249,7 @@ Label::Label(const QString &text, QWidget *parent, Qt::WindowFlags flags)
 
 QSize Label::minimumSizeHint() const
 {
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 15, 0))
+#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
   if (!pixmap(Qt::ReturnByValue).isNull() || mElideMode == Qt::ElideNone) {
 #else // QT_VERSION_CHECK
   if (pixmap() != NULL || mElideMode == Qt::ElideNone) {
@@ -267,17 +257,22 @@ QSize Label::minimumSizeHint() const
     return QLabel::minimumSizeHint();
   }
   const QFontMetrics &fm = fontMetrics();
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 11, 0))
+#if QT_VERSION >= QT_VERSION_CHECK(5, 11, 0)
   QSize size(fm.horizontalAdvance("..."), fm.height()+5);
 #else // QT_VERSION_CHECK
   QSize size(fm.width("..."), fm.height()+5);
 #endif // QT_VERSION_CHECK
+  // use minimum size width 200 if mUseMinimumSize is true
+  // this is used in parameter dialogs
+  if (mUseMinimumSize && !mText.isEmpty()) {
+    size.setWidth(qMax(size.width(), 200));
+  }
   return size;
 }
 
 QSize Label::sizeHint() const
 {
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 15, 0))
+#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
   if (!pixmap(Qt::ReturnByValue).isNull() || mElideMode == Qt::ElideNone) {
 #else // QT_VERSION_CHECK
   if (pixmap() != NULL || mElideMode == Qt::ElideNone) {
@@ -285,7 +280,7 @@ QSize Label::sizeHint() const
     return QLabel::sizeHint();
   }
   const QFontMetrics& fm = fontMetrics();
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 11, 0))
+#if QT_VERSION >= QT_VERSION_CHECK(5, 11, 0)
   QSize size(fm.horizontalAdvance(mText), fm.height()+5);
 #else // QT_VERSION_CHECK
   QSize size(fm.width(mText), fm.height()+5);
@@ -319,6 +314,67 @@ void Label::resizeEvent(QResizeEvent *event)
 {
   QLabel::resizeEvent(event);
   QLabel::setText(elidedText());
+}
+
+ComboBox::ComboBox(QWidget *parent)
+  : QComboBox(parent)
+{
+  setFocusPolicy(Qt::StrongFocus);
+}
+
+/*!
+ * \brief ComboBox::addElidedItem
+ * Adds an item with elided text if it exceeds maximum width.
+ * Sets the full text as tooltip.
+ * \param text
+ * \param userData
+ */
+void ComboBox::addElidedItem(const QString &text, const QVariant &userData)
+{
+  QFontMetrics fm = fontMetrics();
+  // use elided text for the item with maximum width of 500 pixels
+  const QString elidedText = fm.elidedText(text, Qt::ElideMiddle, 500);
+  addItem(elidedText, userData);
+  setItemData(count() - 1, text, Qt::ToolTipRole);
+}
+
+void ComboBox::wheelEvent(QWheelEvent *event)
+{
+  if (!hasFocus()) {
+    event->ignore();
+  } else {
+    QComboBox::wheelEvent(event);
+  }
+}
+
+SpinBox::SpinBox(QWidget *parent)
+  : QSpinBox(parent)
+{
+  setFocusPolicy(Qt::StrongFocus);
+}
+
+void SpinBox::wheelEvent(QWheelEvent *event)
+{
+  if (!hasFocus()) {
+    event->ignore();
+  } else {
+    QSpinBox::wheelEvent(event);
+  }
+}
+
+DoubleSpinBox::DoubleSpinBox(QWidget *parent)
+  : QDoubleSpinBox(parent)
+{
+  setFocusPolicy(Qt::StrongFocus);
+}
+
+void DoubleSpinBox::wheelEvent(QWheelEvent *event)
+{
+  if (!hasFocus()) {
+    event->ignore();
+  } else {
+    QDoubleSpinBox::wheelEvent(event);
+  }
 }
 
 FixedCheckBox::FixedCheckBox(QWidget *parent)
@@ -462,7 +518,7 @@ void QDetachableProcess::start(const QString &program, const QStringList &argume
   setProcessState(QProcess::NotRunning);
 }
 
-#if (QT_VERSION < QT_VERSION_CHECK(5, 15, 0))
+#if QT_VERSION < QT_VERSION_CHECK(5, 15, 0)
 /*!
  * \brief QDetachableProcess::start
  * Starts a process and detaches from it.
@@ -591,6 +647,30 @@ QString& Utilities::tempDirectory()
   return tmpPath;
 }
 
+/*
+ * \brief Utilities::generateHash
+ * hash the string input
+ * \param input
+ * \return hashprefix with first 4 chars
+*/
+QString Utilities::generateHash(const QString &input)
+{
+    // Convert the input string to a QByteArray
+    QByteArray byteArray = input.toUtf8();
+    // Create a QCryptographicHash object with the desired algorithm (SHA-256 in this case)
+    QCryptographicHash hash(QCryptographicHash::Sha256);
+    // Add the data to be hashed
+    hash.addData(byteArray);
+    // Obtain the resulting hash as a QByteArray
+    QByteArray hashResult = hash.result();
+    // Convert the hash result to a hex string for readability
+    QString hashString = hashResult.toHex();
+    // Extract the first 4 characters
+    QString hashPrefix = hashString.left(4);
+
+    return hashPrefix;
+}
+
 /*!
  * \brief Utilities::getApplicationSettings
  * Returns the application settings object.
@@ -603,70 +683,11 @@ QSettings* Utilities::getApplicationSettings()
   if (!init) {
     init = 1;
     pSettings = new QSettings(QSettings::IniFormat, QSettings::UserScope, Helper::organization, Helper::application);
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
     pSettings->setIniCodec(Helper::utf8.toUtf8().constData());
+#endif
   }
   return pSettings;
-}
-
-
-/*!
- * \brief Utilities::parseCompositeModelText
- * Parses the CompositeModel text against the schema.
- * \param pMessageHandler
- * \param contents
- */
-void Utilities::parseCompositeModelText(MessageHandler *pMessageHandler, QString contents)
-{
-  QFile schemaFile(QString(":/Resources/XMLSchema/tlmModelDescription.xsd"));
-  schemaFile.open(QIODevice::ReadOnly);
-  const QString schemaText(QString::fromUtf8(schemaFile.readAll()));
-  schemaFile.close();
-  const QByteArray schemaData = schemaText.toUtf8();
-
-#ifdef OM_OMEDIT_ENABLE_LIBXML2
-  xmlDocPtr doc;
-  QByteArray contentsArray(contents.toLocal8Bit());
-  doc = xmlParseDoc((const xmlChar *)contentsArray.data());
-  if (doc)
-  {
-    xmlParserInputBufferPtr buf = xmlParserInputBufferCreateMem(schemaData.data(), schemaData.size(), XML_CHAR_ENCODING_UTF8);
-    xmlDtdPtr dtd = xmlIOParseDTD(NULL, buf, XML_CHAR_ENCODING_UTF8);
-    xmlFreeParserInputBuffer(buf);
-    if (dtd)
-    {
-      xmlValidCtxtPtr vctxt;
-      vctxt = xmlNewValidCtxt();
-      if (vctxt)
-      {
-        int ok = xmlValidateDtd(vctxt, doc, dtd);
-        if (!ok)
-          pMessageHandler->setFailed(true);
-        xmlFreeValidCtxt(vctxt);
-      }
-      else
-        pMessageHandler->setFailed(true);
-      xmlFreeDtd(dtd);
-    }
-    else
-      pMessageHandler->setFailed(true);
-    xmlFreeDoc(doc);
-  }
-  else
-      pMessageHandler->setFailed(true);
-
-#else
-  QXmlSchema schema;
-  schema.setMessageHandler(pMessageHandler);
-  schema.load(schemaData);
-  if (!schema.isValid()) {
-    pMessageHandler->setFailed(true);
-  } else {
-    QXmlSchemaValidator validator(schema);
-    if (!validator.validate(contents.toUtf8())) {
-      pMessageHandler->setFailed(true);
-    }
-  }
-#endif
 }
 
 /*!
@@ -680,6 +701,44 @@ void Utilities::parseCompositeModelText(MessageHandler *pMessageHandler, QString
 qreal Utilities::convertUnit(qreal value, qreal offset, qreal scaleFactor)
 {
   return (value - offset) / scaleFactor;
+}
+
+/*!
+ * \brief Utilities::extractArrayParts
+ * Parses the input string and extracts the parts of an array.
+ * \param input
+ * \return
+ */
+QStringList Utilities::extractArrayParts(const QString &input) {
+  QString trimmed = input.trimmed();
+  // If input is NOT an array (doesn't start with { and end with }), return it as single element
+  if (!trimmed.startsWith('{') || !trimmed.endsWith('}')) {
+    return QStringList{ trimmed };
+  }
+
+  // Remove outer braces
+  QString content = trimmed.mid(1, trimmed.length() - 2);
+  // Regex matches:
+  // 1) quoted strings in group 1
+  // 2) numbers in group 2
+  // 3) unquoted strings in group 3
+  QRegularExpression regex("\"([^\"]*)\"|(-?\\d+(?:\\.\\d+)?(?:[eE][-+]?\\d+)?)|([a-zA-Z_][a-zA-Z0-9_]*)");
+
+  QStringList parts;
+  QRegularExpressionMatchIterator i = regex.globalMatch(content);
+
+  while (i.hasNext()) {
+    QRegularExpressionMatch match = i.next();
+    if (!match.captured(1).isNull()) {
+      parts << match.captured(1);  // quoted string without quotes
+    } else if (!match.captured(2).isNull()) {
+      parts << match.captured(2);  // number
+    } else if (!match.captured(3).isNull()) {
+      parts << match.captured(3);  // unquoted string
+    }
+  }
+
+  return parts;
 }
 
 /*!
@@ -698,37 +757,50 @@ bool Utilities::isValueLiteralConstant(QString value)
 }
 
 /*!
+ * \brief Utilities::isValueScalarLiteralConstant
+ * \param value
+ * \return
+ */
+bool Utilities::isValueScalarLiteralConstant(QString value)
+{
+  /* Issue #13636
+   * Check if value is scalar and literal constant.
+   */
+  QRegExp rx("\\s*-?\\d+(\\.\\d+)?([eE][-+]?\\d+)?");
+  return rx.exactMatch(value);
+}
+
+/*!
  * \brief Utilities::arrayExpressionUnitConversion
  * If the expression is like an array of constants see ticket:4840
  * \param pOMCProxy
- * \param modifierValue
+ * \param value
  * \param fromUnit
  * \param toUnit
  * \return
  */
-QString Utilities::arrayExpressionUnitConversion(OMCProxy *pOMCProxy, QString modifierValue, QString fromUnit, QString toUnit)
+QString Utilities::arrayExpressionUnitConversion(OMCProxy *pOMCProxy, QString value, QString fromUnit, QString toUnit)
 {
-  QStringList modifierValuesArray = StringHandler::removeFirstLastCurlBrackets(modifierValue).split(",");
-  QStringList modifierConvertedValuesArray;
+  QStringList values = Utilities::extractArrayParts(value);
+  QStringList convertedValues;
   OMCInterface::convertUnits_res convertUnit;
   int i = 0;
   bool ok = true;
-  foreach (QString modifierValueArrayElement, modifierValuesArray) {
-    qreal modifierRealValueArrayElement = modifierValueArrayElement.toDouble(&ok);
+  foreach (QString value, values) {
+    qreal realValue = value.toDouble(&ok);
     if (ok) {
       if (i == 0) {
         convertUnit = pOMCProxy->convertUnits(fromUnit, toUnit);
       }
       if (convertUnit.unitsCompatible) {
-        modifierRealValueArrayElement = Utilities::convertUnit(modifierRealValueArrayElement, convertUnit.offset, convertUnit.scaleFactor);
-        modifierConvertedValuesArray.append(StringHandler::number(modifierRealValueArrayElement));
+        realValue = Utilities::convertUnit(realValue, convertUnit.offset, convertUnit.scaleFactor);
+        convertedValues.append(StringHandler::number(realValue));
       }
+    } else {
+      convertedValues.append(value);
     }
   }
-  if (ok) {
-    modifierValue = QString("{%1}").arg(modifierConvertedValuesArray.join(","));
-  }
-  return modifierValue;
+  return QString("{%1}").arg(convertedValues.join(","));
 }
 
 Label* Utilities::getHeadingLabel(QString heading)
@@ -875,7 +947,7 @@ void Utilities::highlightParentheses(QPlainTextEdit *pPlainTextEdit, QTextCharFo
 qint64 Utilities::getProcessId(QProcess *pProcess)
 {
   qint64 processId = 0;
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 3, 0))
+#if QT_VERSION >= QT_VERSION_CHECK(5, 3, 0)
   processId = pProcess->processId();
 #else /* Qt4 */
 #if defined(_WIN32)
@@ -995,43 +1067,11 @@ bool Utilities::isModelicaFile(QString extension)
   }
 }
 
-/*!
- * \brief Utilities::getRotationMatrix
- * Computes the corresponding rotation matrix for specified rotation vector
- * \param rotation Rotation vector with Euler angles
- * \return
- */
-QGenericMatrix<3,3, double> Utilities::getRotationMatrix(QGenericMatrix<3,1,double> rotation)
-{
-  double c1 = cos(rotation(0,0));
-  double s1 = sin(rotation(0,0));
-  double c2 = cos(rotation(0,1));
-  double s2 = sin(rotation(0,1));
-  double c3 = cos(rotation(0,2));
-  double s3 = sin(rotation(0,2));
-
-  double R_data[9];
-  R_data[0] = c2*c3;             R_data[1] = c2*s3;              R_data[2] = -s2;
-  R_data[3] = -c1*s3+s1*s2*c3;   R_data[4] = c1*c3+s1*s2*s3;     R_data[5] = s1*c2;
-  R_data[6] = s1*s3+c1*s2*c3;    R_data[7] = -s1*c3+c1*s2*s3;    R_data[8] = c1*c2;
-
-  QGenericMatrix<3,3,double> R(R_data);
-
-  return R;
-}
-
 QString Utilities::getGDBPath()
 {
 #if defined(_WIN32)
   const char *OMDEV = getenv("OMDEV");
-  const char *MSYSTEM_PREFIX = getenv("MSYSTEM_PREFIX");
   const char* msysEnv = System_openModelicaPlatform(); /* "ucrt64" or "mingw64" */
-
-  // MSYSTEM_PREFIX is set: <MSYSTEM_PREFIX>/bin/gdb.exe
-  if (!QString(MSYSTEM_PREFIX).isEmpty()) {
-    QString qMSYSTEM_PREFIX = QString(MSYSTEM_PREFIX).replace("\\", "/");
-    return QString(qMSYSTEM_PREFIX) + QString("/bin/gdb.exe");
-  }
 
   // OMDEV is set: <OMDEV>/tools/msys/<CONFIG_OPENMODELICA_SPEC_PLATFORM>/bin/gdb.exe
   if (!QString(OMDEV).isEmpty()) {
@@ -1040,7 +1080,7 @@ QString Utilities::getGDBPath()
   }
 
   // Default: <OPENMODELICAHOME>/tools/msys/<CONFIG_OPENMODELICA_SPEC_PLATFORM>/bin/gdb.exe
-  return QString(Helper::OpenModelicaHome) + QString("/tools/msys/") + QString(msysEnv) + QString("bin/gdb.exe");
+  return QString(Helper::OpenModelicaHome) + QString("/tools/msys/") + QString(msysEnv) + QString("/bin/gdb.exe");
 #else
   return "gdb";
 #endif
@@ -1076,7 +1116,7 @@ QIcon Utilities::FileIconProvider::FileIconProviderImplementation::icon(const QF
   // Get icon from OS.
   QIcon icon;
   // File icons are unknown on linux systems.
-#if defined(Q_OS_LINUX)
+#if defined(Q_OS_UNIX)
   icon = isDir ? QFileIconProvider::icon(fileInfo) : mUnknownFileIcon;
 #else
   icon = QFileIconProvider::icon(fileInfo);
@@ -1219,18 +1259,18 @@ QList<QPointF> Utilities::liangBarskyClipper(float xmin, float ymin, float xmax,
 }
 
 /*!
- * \brief Utilities::removeDirectoryRecursivly
+ * \brief Utilities::removeDirectoryRecursively
  * Removes the directory recursively.
  * \param path
  */
-void Utilities::removeDirectoryRecursivly(QString path)
+void Utilities::removeDirectoryRecursively(QString path)
 {
   QFileInfo fileInfo(path);
   if (fileInfo.isDir()) {
     QDir dir(path);
     QStringList filesList = dir.entryList(QDir::AllDirs | QDir::Files | QDir::NoSymLinks | QDir::NoDotAndDotDot | QDir::Writable | QDir::CaseSensitive);
     for (int i = 0 ; i < filesList.count() ; ++i) {
-      removeDirectoryRecursivly(QString("%1/%2").arg(path, filesList.at(i)));
+      removeDirectoryRecursively(QString("%1/%2").arg(path, filesList.at(i)));
     }
     QDir().rmdir(path);
   } else {
@@ -1239,7 +1279,7 @@ void Utilities::removeDirectoryRecursivly(QString path)
 }
 
 /*!
- * \brief Utilities::mapToCoOrdinateSystem
+ * \brief Utilities::mapToCoordinateSystem
  * If you have numbers x in the range [a,b] and you want to transform them to numbers y in the range [c,d].\n
  * y = ((x−a) * ((d−c)/(b−a))) + c
  * \param value
@@ -1249,7 +1289,7 @@ void Utilities::removeDirectoryRecursivly(QString path)
  * \param endB
  * \return
  */
-qreal Utilities::mapToCoOrdinateSystem(qreal value, qreal startA, qreal endA, qreal startB, qreal endB)
+qreal Utilities::mapToCoordinateSystem(qreal value, qreal startA, qreal endA, qreal startB, qreal endB)
 {
   return ((value - startA) * ((endB - startB) / (endA - startA))) + startB;
 }
@@ -1272,53 +1312,46 @@ void Utilities::addDefaultDisplayUnit(const QString &unit, QStringList &displayU
 {
   /* Issue #5447
    * For angular speeds always add in the menu in the unit column, in addition to the standard "rad/s" also "rpm"
-   * For energies always add in the menu in the Display Unit column, in addition to standard "J", also "Wh" (prefixes such as kWh, MWh, GWh will be obtained automatically)
-   */
-  /* Issue #8758
-   * Whenever unit = "K", we also add "degC" even if it is not defined as displayUnits.
+   * For energies always add in the menu in the Unit column, in addition to standard "J", also "Wh" (prefixes such as kWh, MWh, GWh will be obtained automatically)
    */
   if (unit.compare(QStringLiteral("rad/s")) == 0) {
     displayUnit << "rpm";
   } else if (unit.compare(QStringLiteral("J")) == 0) {
     displayUnit << "Wh";
   } else if (unit.compare(QStringLiteral("K")) == 0) {
+    /* Issue #8758
+     * Whenever unit = "K", we also add "degC" even if it is not defined as displayUnits.
+     */
     displayUnit << "degC";
+  } else if (unit.compare(QStringLiteral("m/s")) == 0) {
+    /* Issue #12340
+     * Whenever unit = "m/s", we also add "km/h" even if it is not defined as displayUnits.
+     */
+    displayUnit << "km/h";
+  } else if (unit.compare(QStringLiteral("m3/s")) == 0) {
+    /* Issue #13379
+     * For volume flow rate it would be good to have extra display units l/s, which is 0.001 m3/s, and maybe also m3/h, which is 1/3600 m3/s.
+     * Whenever unit = "m3/s", we also add "l/s" and "m3/h" even if it is not defined as displayUnits.
+     */
+    displayUnit << "l/s" << "m3/h";
   }
-}
 
-/*!
- * \brief Utilities::convertUnitToSymbol
- * Converts the unit to a symbol.
- * \param displayUnit
- * \return
- */
-QString Utilities::convertUnitToSymbol(const QString &displayUnit)
-{
-  if (displayUnit.compare(QStringLiteral("Ohm")) == 0) {
-    return QChar(937);
-  } else if (displayUnit.compare(QStringLiteral("degC")) == 0) {
-    return QString("%1C").arg(QChar(176));
-  } else {
-    return displayUnit;
+  // add prefixes if unit is prefixable
+  QStringList newDisplayUnits = displayUnit;
+  foreach (auto newDisplayUnit, newDisplayUnits) {
+    if (OMPlot::Plot::prefixableUnit(newDisplayUnit)) {
+      displayUnit << QString("k%1").arg(newDisplayUnit)
+                  << QString("M%1").arg(newDisplayUnit)
+                  << QString("G%1").arg(newDisplayUnit)
+                  << QString("T%1").arg(newDisplayUnit)
+                  << QString("m%1").arg(newDisplayUnit)
+                  << QString("u%1").arg(newDisplayUnit)
+                  << QString("n%1").arg(newDisplayUnit)
+                  << QString("p%1").arg(newDisplayUnit);
+    }
   }
-}
-
-/*!
- * \brief Utilities::convertSymbolToUnit
- * Converts the symbol to unit.
- * \param symbol
- * \return
- */
-QString Utilities::convertSymbolToUnit(const QString &symbol)
-{
-  // Greek Omega
-  if (symbol.compare(QChar(937)) == 0) {
-    return "Ohm";
-  } else if (symbol.compare(QString("%1C").arg(QChar(176))) == 0) {
-    return "degC";
-  } else {
-    return symbol;
-  }
+  // remove duplicates
+  displayUnit.removeDuplicates();
 }
 
 /*!
@@ -1378,4 +1411,29 @@ void Utilities::setToolTip(QComboBox *pComboBox, const QString &description, con
 bool Utilities::isMultiline(const QString &text)
 {
   return text.indexOf('\n') >= 0;
+}
+
+/*!
+ * \brief Utilities::supportedLanguages
+ * Returns the map of languages that OMEdit support.
+ * \return
+ */
+QMap<QString, QLocale> Utilities::supportedLanguages()
+{
+  static int init = 0;
+  static QMap<QString, QLocale> languagesMap;
+  if (!init) {
+    init = 1;
+    languagesMap.insert(QObject::tr("Chinese").append(" (zh_CN)"), QLocale(QLocale::Chinese));
+    languagesMap.insert(QObject::tr("English").append(" (en)"), QLocale(QLocale::English));
+    languagesMap.insert(QObject::tr("French").append(" (fr)"), QLocale(QLocale::French));
+    languagesMap.insert(QObject::tr("German").append(" (de)"), QLocale(QLocale::German));
+    languagesMap.insert(QObject::tr("Italian").append(" (it)"), QLocale(QLocale::Italian));
+    languagesMap.insert(QObject::tr("Japanese").append(" (ja)"), QLocale(QLocale::Japanese));
+    languagesMap.insert(QObject::tr("Romanian").append(" (ro)"), QLocale(QLocale::Romanian));
+    languagesMap.insert(QObject::tr("Russian").append(" (ru)"), QLocale(QLocale::Russian));
+    languagesMap.insert(QObject::tr("Spanish").append(" (es)"), QLocale(QLocale::Spanish));
+    languagesMap.insert(QObject::tr("Swedish").append(" (sv)"), QLocale(QLocale::Swedish));
+  }
+  return languagesMap;
 }

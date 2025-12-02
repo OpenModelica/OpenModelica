@@ -1,7 +1,6 @@
 // name:     Gear - Complete example with Gear
 // keywords: Gear, Mechanics, Modelica2.2
 // status:   correct
-// cflags:   +std=2.x -d=-newInst
 //
 // Testing instantiation of the Gear model
 //
@@ -3618,6 +3617,7 @@ equation
   connect(inertia2.flange_b,springDamper2.flange_a) annotation(Line(visible=true,points={{-55.39,-9.84},{-48.57,-9.84}}));
   connect(inertia1.flange_b,springDamper1.flange_a) annotation(Line(visible=true,points={{25.3,-9.84},{33.16,-9.84}}));
   connect(springDamper1.flange_b,fixed1.flange_b) annotation(Line(visible=true,points={{53.59,-10.37},{69.05,-10.37}}));
+  annotation(__OpenModelica_commandLineOptions="+std=2.x -d=-newInst");
 end Gear;
 // function Modelica.Math.sin
 // input Real u(quantity = "Angle", unit = "rad", displayUnit = "deg");

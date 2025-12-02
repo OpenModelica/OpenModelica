@@ -1,11 +1,11 @@
 // name: TrigIdentity
 // status: correct
-// cflags: -d=-newInst
 
 model TrigIdentity
   Real x = sin(time)^2 + cos(time)^2;
   Real y = sin(asin(time));
   Real z = 2*sin(time)*cos(time);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end TrigIdentity;
 
 // Result:

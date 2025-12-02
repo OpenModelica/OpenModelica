@@ -1,7 +1,6 @@
 // name: Terminate1
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 
 model Terminate1

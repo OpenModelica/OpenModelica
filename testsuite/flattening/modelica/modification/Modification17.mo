@@ -1,7 +1,6 @@
 // name:     Modification17
 // keywords: modification
 // status:   correct
-// cflags: -d=-newInst
 //
 
 package Modelica
@@ -36,6 +35,7 @@ model Modification17
   final parameter Modelica.SIunits.Length[n] lengths = if n == 1 then {b} elseif myDivision == MyType.divisionType1 then cat(1, {b / (n - 1) / 2}, fill(b / (n - 1), n - 2), {b / (n - 1) / 2}) else fill(b / n, n);
   final parameter Modelica.SIunits.Volume[n] volumes = array(areas[i] * lengths[i] for i in 1:n);
   extends mySecondPartialModel(final x = lengths, final y = areas, final z = volumes);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Modification17;
 
 // Result:

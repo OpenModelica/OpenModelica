@@ -38,7 +38,6 @@
 #ifndef PLOTWINDOW_H
 #define PLOTWINDOW_H
 
-#include <QtGlobal>
 #include <QMainWindow>
 #include <QCheckBox>
 #include <QComboBox>
@@ -52,27 +51,19 @@
 #include <QDoubleSpinBox>
 #include <QDialog>
 #include <QStackedWidget>
+#include <QTextStream>
 #include <QDialogButtonBox>
 
-#include <qwt_plot.h>
-#include <qwt_text.h>
-#include <qwt_plot_curve.h>
-#include <qwt_plot_picker.h>
-#include <qwt_scale_draw.h>
-#include <qwt_picker_machine.h>
-#include <qwt_plot_grid.h>
-#include <qwt_curve_fitter.h>
-#include <qwt_legend.h>
-#include <qwt_plot_zoomer.h>
-#include <qwt_plot_panner.h>
-#include <qwt_scale_engine.h>
+#include "qwt_series_data.h"
+#include "qwt_scale_draw.h"
+#include "qwt_plot_curve.h"
 #if QWT_VERSION >= 0x060000
+#if QWT_VERSION < 0x060200
 #include <qwt_compat.h>
+#else
+#define QwtArray QVector
 #endif
-#include <stdexcept>
-#include "util/read_matlab4.h"
-#include "util/read_csv.h"
-#include "OMPlot.h"
+#endif
 
 namespace OMPlot
 {
@@ -81,94 +72,109 @@ class PlotCurve;
 
 class PlotWindow : public QMainWindow
 {
-  Q_OBJECT
+	Q_OBJECT
 public:
-  enum PlotType {PLOT, PLOTALL, PLOTPARAMETRIC, PLOTINTERACTIVE, PLOTARRAY, PLOTARRAYPARAMETRIC};
+	enum PlotType { PLOT, PLOTALL, PLOTPARAMETRIC, PLOTINTERACTIVE, PLOTARRAY, PLOTARRAYPARAMETRIC };
 private:
-  Plot *mpPlot;
-  QCheckBox *mpLogXCheckBox;
-  QCheckBox *mpLogYCheckBox;
-  QComboBox *mpGridComboBox;
-  QToolButton *mpAutoScaleButton;
-  QToolButton *mpSetupButton;
-  QToolButton *mpStartSimulationToolButton;
-  QToolButton *mpPauseSimulationToolButton;
-  QLabel *mpSimulationSpeedLabel;
-  QComboBox *mpSimulationSpeedComboBox;
-  QTextStream *mpTextStream;
-  QFile mFile;
-  QStringList mVariablesList;
-  PlotType mPlotType;
-  QString mGridType;
-  QString mXLabel;
-  QString mYLabel;
-  QString mXCustomLabel;
-  QString mYCustomLabel;
-  QString mXUnit;
-  QString mXDisplayUnit;
-  QString mYUnit;
-  QString mYDisplayUnit;
-  QString mTimeUnit;
-  QString mXRangeMin;
-  QString mXRangeMax;
-  QString mYRangeMin;
-  QString mYRangeMax;
-  double mCurveWidth;
-  int mCurveStyle;
-  QFont mLegendFont;
-  double mTime;
-  bool mIsInteractiveSimulation;
-  QString mInteractiveTreeItemOwner;
-  int mInteractivePort;
-  QwtSeriesData<QPointF>* mpInteractiveData;
-  QString mInteractiveModelName;
-  bool mPrefixUnits;
-  bool mCanUseXPrefixUnits;
-  bool mCanUseYPrefixUnits;
-  QMdiSubWindow *mpSubWindow;
+	Plot* mpPlot;
+	QCheckBox* mpLogXCheckBox;
+	QCheckBox* mpLogYCheckBox;
+	QComboBox* mpGridComboBox;
+	QToolButton* mpAutoScaleButton;
+	QToolButton* mpSetupButton;
+	QToolButton* mpStartSimulationToolButton;
+	QToolButton* mpPauseSimulationToolButton;
+	QLabel* mpSimulationSpeedLabel;
+	QComboBox* mpSimulationSpeedComboBox;
+	QTextStream* mpTextStream;
+	QFile mFile;
+	QStringList mVariablesList;
+	PlotType mPlotType;
+	QString mGridType;
+	QString mXLabel;
+	QString mYLabel;
+	QString mYRightLabel;
+	QString mXCustomLabel;
+	QString mYCustomLabel;
+	QString mYRightCustomLabel;
+	QString mXUnit;
+	QString mXDisplayUnit;
+	QString mYUnit;
+	QString mYDisplayUnit;
+	QString mYRightUnit;
+	QString mYRightDisplayUnit;
+	QString mTimeUnit;
+	QString mXRangeMin;
+	QString mXRangeMax;
+	QString mYRangeMin;
+	QString mYRangeMax;
+	QString mYRightRangeMin;
+	QString mYRightRangeMax;
+	double mCurveWidth;
+	int mCurveStyle;
+	QFont mLegendFont;
+	double mTime;
+	bool mIsInteractiveSimulation;
+	QString mInteractiveTreeItemOwner;
+	int mInteractivePort;
+	QwtSeriesData<QPointF>* mpInteractiveData;
+	QString mInteractiveModelName;
+    bool mCanHavePrefixUnits = false;
+    bool mPrefixUnits = false;
+	QMdiSubWindow* mpSubWindow;
 public:
-  PlotWindow(QStringList arguments = QStringList(), QWidget *parent = 0, bool isInteractiveSimulation = false);
+	PlotWindow(QStringList arguments = QStringList(), QWidget* parent = 0, bool isInteractiveSimulation = false, int toolbarIconSize = 0);
 
-  ~PlotWindow();
+	~PlotWindow();
 
-  void setUpWidget();
-  void initializePlot(QStringList arguments);
-  void setVariablesList(QStringList variables);
-  void setPlotType(PlotType type);
-  PlotType getPlotType();
-  void initializeFile(QString file);
-  void getStartStopTime(double &start, double &stop);
-  void setupToolbar();
-  void plot(PlotCurve *pPlotCurve = 0);
-  void plotParametric(PlotCurve *pPlotCurve = 0);
-  void plotArray(double time, PlotCurve *pPlotCurve = 0);
-  void plotArrayParametric(double time, PlotCurve *pPlotCurve = 0);
-  QPair<QVector<double>*, QVector<double>*> plotInteractive(PlotCurve *pPlotCurve = 0);
-  void setInteractiveOwner(const QString &interactiveTreeItemOwner);
-  void setInteractivePort(const int port);
-  void setInteractivePlotData(QwtSeriesData<QPointF>* pInteractiveData);
-  void setSubWindow(QMdiSubWindow *pSubWindow) {mpSubWindow = pSubWindow;}
-  QMdiSubWindow* getSubWindow() {return mpSubWindow;}
-  void setInteractiveModelName(const QString &modelName);
-  QString getInteractiveOwner() {return mInteractiveTreeItemOwner;}
-  int getInteractivePort() {return mInteractivePort;}
-  void setTitle(QString title);
-  void setGrid(QString grid);
-  QString getGrid();
-  QCheckBox* getLogXCheckBox();
-  QCheckBox* getLogYCheckBox();
-  QToolButton* getAutoScaleButton() {return mpAutoScaleButton;}
-  QToolButton* getStartSimulationButton() {return mpStartSimulationToolButton;}
-  QToolButton* getPauseSimulationButton() {return mpPauseSimulationToolButton;}
-  QComboBox* getSimulationSpeedBox() {return mpSimulationSpeedComboBox;}
-  void setXLabel(const QString &label) {mXLabel = label;}
-  QString getXLabel() const {return mXLabel;}
-  void setYLabel(const QString &label) {mYLabel = label;}
-  QString getYLabel() const {return mYLabel;}
+	void setUpWidget(int toolbarIconSize);
+	void initializePlot(QStringList arguments);
+	void setVariablesList(QStringList variables);
+	void setPlotType(PlotType type);
+	bool isPlot() const { return mPlotType == PlotWindow::PLOT; }
+	bool isPlotAll() const { return mPlotType == PlotWindow::PLOTALL; }
+	bool isPlotParametric() const { return mPlotType == PlotWindow::PLOTPARAMETRIC; }
+	bool isPlotInteractive() const { return mPlotType == PlotWindow::PLOTINTERACTIVE; }
+	bool isPlotArray() const { return mPlotType == PlotWindow::PLOTARRAY; }
+	bool isPlotArrayParametric() const { return mPlotType == PlotWindow::PLOTARRAYPARAMETRIC; }
+	PlotType getPlotType() const { return mPlotType; }
+	void initializeFile(QString file);
+	void getStartStopTime(double& start, double& stop);
+	void setupToolbar(int toolbarIconSize);
+	void plot(PlotCurve* pPlotCurve = 0);
+	void plotParametric(PlotCurve* pPlotCurve = 0);
+	void plotArray(double time, PlotCurve* pPlotCurve = 0);
+	void plotArrayParametric(double time, PlotCurve* pPlotCurve = 0);
+	QPair<QVector<double>*, QVector<double>*> plotInteractive(PlotCurve* pPlotCurve = 0);
+	void setInteractiveOwner(const QString& interactiveTreeItemOwner);
+	void setInteractivePort(const int port);
+	void setInteractivePlotData(QwtSeriesData<QPointF>* pInteractiveData);
+	void setSubWindow(QMdiSubWindow* pSubWindow) { mpSubWindow = pSubWindow; }
+	QMdiSubWindow* getSubWindow() { return mpSubWindow; }
+	void setInteractiveModelName(const QString& modelName);
+	QString getInteractiveOwner() { return mInteractiveTreeItemOwner; }
+	int getInteractivePort() { return mInteractivePort; }
+	void setTitle(QString title);
+	void setGrid(QString grid);
+	QString getGrid();
+	QCheckBox* getLogXCheckBox();
+	QCheckBox* getLogYCheckBox();
+	QToolButton* getAutoScaleButton() { return mpAutoScaleButton; }
+	QToolButton* getStartSimulationButton() { return mpStartSimulationToolButton; }
+	QToolButton* getPauseSimulationButton() { return mpPauseSimulationToolButton; }
+	QComboBox* getSimulationSpeedBox() { return mpSimulationSpeedComboBox; }
+	void setXLabel(const QString& label) { mXLabel = label; }
+	QString getXLabel() const { return mXLabel; }
+	void setYLabel(const QString& label) { mYLabel = label; }
+	QString getYLabel() const { return mYLabel; }
+	void setYRightLabel(const QString& label) {mYRightLabel = label;}
+	QString getYRightLabel() const { return mYRightLabel; }
   void setXCustomLabel(const QString &label) {mXCustomLabel = label;}
   QString getXCustomLabel() const {return mXCustomLabel;}
   void setYCustomLabel(const QString &label) {mYCustomLabel = label;}
   QString getYCustomLabel() const {return mYCustomLabel;}
+  void setYRightCustomLabel(const QString& label) {mYRightCustomLabel = label;}
+  QString getYRightCustomLabel() const {return mYRightCustomLabel;}
   void setXUnit(QString xUnit) {mXUnit = xUnit;}
   QString getXUnit() {return mXUnit;}
   void setXDisplayUnit(QString xDisplayUnit) {mXDisplayUnit = xDisplayUnit;}
@@ -177,6 +183,10 @@ public:
   QString getYUnit() {return mYUnit;}
   void setYDisplayUnit(QString yDisplayUnit) {mYDisplayUnit = yDisplayUnit;}
   QString getYDisplayUnit() {return mYDisplayUnit;}
+  void setYRightUnit(QString yUnit) { mYRightUnit = yUnit; }
+  QString getYRightUnit() { return mYRightUnit; }
+  void setYRightDisplayUnit(QString yDisplayUnit) { mYRightDisplayUnit = yDisplayUnit; }
+  QString getYRightDisplayUnit() { return mYRightDisplayUnit; }
   void setTimeUnit(QString timeUnit) {mTimeUnit = timeUnit;}
   QString getTimeUnit() {return mTimeUnit;}
   void setXRange(double min, double max);
@@ -185,6 +195,9 @@ public:
   void setYRange(double min, double max);
   QString getYRangeMin();
   QString getYRangeMax();
+  void setYRightRange(double min, double max);
+  QString getYRightRangeMin();
+  QString getYRightRangeMax();
   void setCurveWidth(double width);
   double getCurveWidth();
   void setCurveStyle(int style);
@@ -195,12 +208,10 @@ public:
   QString getLegendPosition();
   void setFooter(QString footer);
   QString getFooter();
+  bool canHavePrefixUnits() const { return mCanHavePrefixUnits; }
+  void setCanHavePrefixUnits(bool canHavePrefixUnits) { mCanHavePrefixUnits = canHavePrefixUnits; }
   bool getPrefixUnits() const;
   void setPrefixUnits(bool prefixUnits);
-  bool canUseXPrefixUnits() const;
-  void setCanUseXPrefixUnits(bool canUseXPrefixUnits);
-  bool canUseYPrefixUnits() const;
-  void setCanUseYPrefixUnits(bool canUseYPrefixUnits);
   void checkForErrors(QStringList variables, QStringList variablesPlotted);
   Plot* getPlot();
   void receiveMessage(QStringList arguments);
@@ -209,10 +220,12 @@ public:
   double getTime() {return mTime;}
   void updateTimeText();
   void updatePlot();
+  void emitPrefixUnitsChanged();
 private:
   void setInteractiveControls(bool enabled);
 signals:
   void closingDown();
+  void prefixUnitsChanged();
 private slots:
   void fitInView();
 public slots:
@@ -227,6 +240,7 @@ public slots:
   void setLogY(bool on);
   void setAutoScale(bool on);
   bool toggleSign(PlotCurve *pPlotCurve, bool checked);
+  void setYAxisRight(PlotCurve* pPlotCurve, bool right);
   void showSetupDialog();
   void showSetupDialog(QString variable);
   void interactiveSimulationStarted();
@@ -276,6 +290,7 @@ private:
   QDoubleSpinBox *mpThicknessSpinBox;
   QCheckBox *mpHideCheckBox;
   QCheckBox *mpToggleSignCheckBox;
+  QCheckBox *mpRightYAxisCheckBox;
 public:
   VariablePageWidget(PlotCurve *pPlotCurve, SetupDialog *pSetupDialog);
   void setCurvePickColorButtonIcon();
@@ -288,6 +303,7 @@ public:
   QDoubleSpinBox* getThicknessSpinBox() {return mpThicknessSpinBox;}
   QCheckBox* getHideCheckBox() {return mpHideCheckBox;}
   QCheckBox* getToggleSignCheckBox() const {return mpToggleSignCheckBox;}
+  QCheckBox* getYRightAxisCheckBox() const {return mpRightYAxisCheckBox;}
 public slots:
   void resetLabel();
   void pickColor();
@@ -316,6 +332,12 @@ private:
   QDoubleSpinBox *mpVerticalAxisTitleFontSizeSpinBox;
   QLabel *mpVerticalAxisNumbersFontSizeLabel;
   QDoubleSpinBox *mpVerticalAxisNumbersFontSizeSpinBox;
+  QLabel* mpRightVerticalAxisLabel;
+  QLineEdit* mpRightVerticalAxisTextBox;
+  QLabel* mpRightVerticalAxisTitleFontSizeLabel;
+  QDoubleSpinBox* mpRightVerticalAxisTitleFontSizeSpinBox;
+  QLabel* mpRightVerticalAxisNumbersFontSizeLabel;
+  QDoubleSpinBox* mpRightVerticalAxisNumbersFontSizeSpinBox;
   QLabel *mpHorizontalAxisLabel;
   QLineEdit *mpHorizontalAxisTextBox;
   QLabel *mpHorizontalAxisTitleFontSizeLabel;
@@ -345,6 +367,11 @@ private:
   QLineEdit *mpYMinimumTextBox;
   QLabel *mpYMaximumLabel;
   QLineEdit *mpYMaximumTextBox;
+  QGroupBox* mpYRightAxisGroupBox;
+  QLabel* mpYRightMinimumLabel;
+  QLineEdit* mpYRightMinimumTextBox;
+  QLabel* mpYRightMaximumLabel;
+  QLineEdit* mpYRightMaximumTextBox;
   QCheckBox *mpPrefixUnitsCheckbox;
   /* buttons */
   QPushButton *mpOkButton;
@@ -354,7 +381,7 @@ private:
 public:
   SetupDialog(PlotWindow *pPlotWindow);
   void selectVariable(QString variable);
-  void setupPlotCurve(VariablePageWidget *pVariablePageWidget);
+  void setupPlotCurve(VariablePageWidget *pVariablePageWidget, bool prefixUnitsChanged);
 public slots:
   void variableSelected(QListWidgetItem *current, QListWidgetItem *previous);
   void autoScaleChecked(bool checked);

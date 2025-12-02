@@ -1,7 +1,6 @@
 // name:     Extends1
 // keywords: extends
 // status:   correct
-// cflags: -d=-newInst
 //
 // Testing extends clauses
 
@@ -16,6 +15,7 @@ end B;
 
 model Extends1
   B x;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Extends1;
 
 // Result:

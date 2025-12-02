@@ -1,5 +1,4 @@
 // status: correct
-// cflags: -d=-newInst
 encapsulated model EncapsulatedAssert
 
 Real x;
@@ -9,6 +8,7 @@ equation
 
   x = 10;
 
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end EncapsulatedAssert;
 // Result:
 // class EncapsulatedAssert

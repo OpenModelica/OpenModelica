@@ -166,7 +166,7 @@ uniontype LookupState
     end if;
 
     n := InstNode.resolveInner(node);
-    Inst.expand(n);
+    Inst.expand(n, NFInstContext.NO_CONTEXT);
 
     callable := match InstNode.restriction(n)
       case Restriction.RECORD() then true;
@@ -419,13 +419,14 @@ uniontype LookupState
      print a (hopefully relevant) error message and fail."
     input InstNode node;
     input LookupState currentState;
+    input InstContext.Type context;
     input Boolean checkAccessViolations = true;
     output LookupState nextState;
   protected
     LookupState entry_ty;
     SCode.Element el;
   algorithm
-    if checkAccessViolations then
+    if checkAccessViolations and not InstContext.inInstanceAPI(context) then
       // Check that the element is allowed to be accessed given its visibility.
       checkProtection(node, currentState);
       // Check that we're allowed to look in the current scope.
@@ -469,7 +470,7 @@ uniontype LookupState
     input InstNode node;
     output LookupState state;
   algorithm
-    if InstNode.isComponent(node) or InstNode.isName(node) then
+    if InstNode.isComponent(node) or InstNode.isName(node) or InstNode.isEmpty(node) then
       state := COMP();
     else
       state := elementState(InstNode.definition(node));

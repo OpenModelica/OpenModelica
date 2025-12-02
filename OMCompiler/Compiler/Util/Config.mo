@@ -462,7 +462,7 @@ public function languageStandardString
   input LanguageStandard inStandard;
   output String outString;
 protected
-  constant String lookup[LanguageStandard] = array("1.x","2.x","3.0","3.1","3.2","3.3","3.4","3.5","3.6", "3.6", "experimental" /*Change this to latest version if you add more versions!*/);
+  constant String lookup[LanguageStandard] = array("1.x","2.x","3.0","3.1","3.2","3.3","3.4","3.5","3.6","3.6","experimental" /*Change this to latest version if you add more versions!*/);
 algorithm
   outString := lookup[inStandard];
 end languageStandardString;
@@ -610,6 +610,15 @@ algorithm
     case("adaptiveGlobal") then true;
   end match;
 end adaptiveHomotopy;
+
+public function replacedHomotopy
+  output Boolean outBoolean;
+protected
+  String replaceHomotopy;
+algorithm
+  replaceHomotopy := Flags.getConfigString(Flags.REPLACE_HOMOTOPY);
+  outBoolean := replaceHomotopy == "actual" or replaceHomotopy == "simplified";
+end replacedHomotopy;
 
 public function synchronousFeaturesAllowed
 "@autor: adrpo

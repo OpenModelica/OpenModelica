@@ -6,6 +6,7 @@ ManyEventsManyConditions.mos \
 TransmissionLineModelica.mos \
 DistributionSystemModelicaIndividual.mos \
 Table.mos \
+TimeTable.mos \
 Verification_Table.mos \
 CascadedFirstOrder.mos \
 HarmonicOscillatorNetwork.mos \
@@ -21,15 +22,14 @@ OneDHeatTransferTT_FD.mos \
 OneDHeatTransferTT_Modelica.mos \
 CocurrentHeatExchangerEquations.mos \
 CounterCurrentHeatExchangerEquations.mos \
-PowerSystemStepLoad.mos \
 SimpleAdvection.mos \
+PowerSystemStepLoad.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make failingtest
 FAILINGTESTFILES = \
-CombiTimeTable.mos \
 TransmissionLineEquations.mos \
-CombiTimeTable.mos \
+CombiTimeTable.mos \ #this actually runs but somehow external functions dont work
 
 # Dependency files that are not .mo .mos or Makefile
 # Add them here or they will be cleaned.

@@ -1,4 +1,4 @@
-CMAKE_MINIMUM_REQUIRED(VERSION 2.8.9)
+cmake_minimum_required(VERSION 3.5)
 #OMSI base simulation runtime
 PROJECT(OMSIBASE)
 SET(CMAKE_VERBOSE_MAKEFILE ON)
@@ -17,7 +17,7 @@ ENDIF(NOT LIB_EXPAT)
 MESSAGE(STATUS "Using expat library ${LIB_EXPAT}")
 
 include_directories ("${CMAKE_SOURCE_DIR}/base/include" "${CMAKE_SOURCE_DIR}/solver/include")
-add_library( ${OSUBaseName} 
+add_library( ${OSUBaseName}
   src/omsi_event_helper.c
   src/omsi_getters_and_setters.c
   src/omsi_initialization.c

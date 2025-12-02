@@ -33,7 +33,7 @@ readFile("logOverride.txt"); getErrorString();
 // Result:
 // true
 // ""
-// {"TestOverride","TestOverride_init.xml"}
+// {"TestOverride", "TestOverride_init.xml"}
 // ""
 // true
 // ""

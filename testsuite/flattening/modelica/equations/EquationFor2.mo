@@ -1,7 +1,6 @@
 // name:     EquationFor2
 // keywords: equation,array
 // status:   correct
-// cflags: -d=-newInst
 //
 // Test for loops in equations.
 //
@@ -14,6 +13,7 @@ equation
   for i in 1:N-1 loop
     a[i+1] = a[i] + 1.0;
   end for;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end EquationFor2;
 // Result:
 // class EquationFor2

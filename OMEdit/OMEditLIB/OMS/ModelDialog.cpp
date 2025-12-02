@@ -58,14 +58,11 @@ SystemWidget::SystemWidget(LibraryTreeItem *pLibraryTreeItem, QWidget *pParent)
   mpTypeLabel = new Label(Helper::type);
   mpTypeComboBox = new QComboBox;
   if (!pLibraryTreeItem || pLibraryTreeItem->isTopLevel()) {
-    mpTypeComboBox->addItem(Helper::systemTLM, oms_system_tlm);
     mpTypeComboBox->addItem(Helper::systemWC, oms_system_wc);
     mpTypeComboBox->addItem(Helper::systemSC, oms_system_sc);
     mpTypeComboBox->setCurrentIndex(1);
   } else if (pLibraryTreeItem->isSystemElement()) {
-    if (pLibraryTreeItem->isTLMSystem()) {
-      mpTypeComboBox->addItem(Helper::systemWC, oms_system_wc);
-    } else if (pLibraryTreeItem->isWCSystem()) {
+    if (pLibraryTreeItem->isWCSystem()) {
       mpTypeComboBox->addItem(Helper::systemSC, oms_system_sc);
     }
   }
@@ -140,12 +137,12 @@ CreateModelDialog::CreateModelDialog(QWidget *pParent)
 void CreateModelDialog::createNewModel()
 {
   if (mpNameTextBox->text().isEmpty()) {
-    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), GUIMessages::getMessage(GUIMessages::ENTER_NAME).arg(tr("Model")), Helper::ok);
+    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), GUIMessages::getMessage(GUIMessages::ENTER_NAME).arg(tr("Model")), QMessageBox::Ok);
     return;
   }
 
   if (mpSystemWidget->getNameTextBox()->text().isEmpty()) {
-    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), GUIMessages::getMessage(GUIMessages::ENTER_NAME).arg(tr("System")), Helper::ok);
+    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), GUIMessages::getMessage(GUIMessages::ENTER_NAME).arg(tr("System")), QMessageBox::Ok);
     return;
   }
 
@@ -226,7 +223,7 @@ AddSystemDialog::AddSystemDialog(GraphicsView *pGraphicsView)
 void AddSystemDialog::addSystem()
 {
   if (mpSystemWidget->getNameTextBox()->text().isEmpty()) {
-    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), GUIMessages::getMessage(GUIMessages::ENTER_NAME).arg(tr("System")), Helper::ok);
+    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), GUIMessages::getMessage(GUIMessages::ENTER_NAME).arg(tr("System")), QMessageBox::Ok);
     return;
   }
 
@@ -234,7 +231,7 @@ void AddSystemDialog::addSystem()
   // Check if Model already have the system
   if (pParentLibraryTreeItem->isTopLevel() && pParentLibraryTreeItem->childrenSize() > 0) {
     QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
-                          tr("A model already have a system. Only one system is allowed inside a model."), Helper::ok);
+                          tr("A model already have a system. Only one system is allowed inside a model."), QMessageBox::Ok);
     return;
   }
   // Check if system already exists
@@ -243,7 +240,7 @@ void AddSystemDialog::addSystem()
     if (pChildLibraryTreeItem && pChildLibraryTreeItem->getName().compare(mpSystemWidget->getNameTextBox()->text()) == 0) {
       QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
                             GUIMessages::getMessage(GUIMessages::MODEL_ALREADY_EXISTS)
-                            .arg(tr("System"), mpSystemWidget->getNameTextBox()->text(), pParentLibraryTreeItem->getNameStructure()), Helper::ok);
+                            .arg(tr("System"), mpSystemWidget->getNameTextBox()->text(), pParentLibraryTreeItem->getNameStructure()), QMessageBox::Ok);
       return;
     }
   }
@@ -317,11 +314,6 @@ AddSubModelDialog::AddSubModelDialog(GraphicsView *pGraphicsView, const QString 
   pMainLayout->addWidget(mpBrowsePathButton, 2, 2);
   pMainLayout->addWidget(mpNameLabel, 3, 0);
   pMainLayout->addWidget(mpNameTextBox, 3, 1, 1, 2);
-  if(mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isTLMSystem()) {
-    pMainLayout->addWidget(mpStartScriptLabel, 4, 0);
-    pMainLayout->addWidget(mpStartScriptTextBox, 4, 1);
-    pMainLayout->addWidget(mpBrowseStartScriptButton,4,2);
-  }
   pMainLayout->addWidget(mpButtonBox, 5, 0, 1, 3, Qt::AlignRight);
   setLayout(pMainLayout);
   // Fixes issue #7150. Set the focus on the name instead of path.
@@ -332,15 +324,12 @@ AddSubModelDialog::AddSubModelDialog(GraphicsView *pGraphicsView, const QString 
 /*!
  * \brief AddSubModelDialog::browseSubModelPath
  * Allows the user to select the submodel path and returns it.
- * \param pGraphicsView
+ * \param pName
  * \return
  */
-QString AddSubModelDialog::browseSubModelPath(GraphicsView *pGraphicsView, QString *pName)
+QString AddSubModelDialog::browseSubModelPath(QString *pName)
 {
   QString fileTypes;
-  if (!pGraphicsView->getModelWidget()->getLibraryTreeItem()->isTLMSystem()) {
-    fileTypes = Helper::subModelFileTypes;
-  }
   QString path = StringHandler::getOpenFileName(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::chooseFile), NULL, fileTypes, NULL);
   QFileInfo fileInfo(path);
   if (fileInfo.exists()) {
@@ -356,7 +345,7 @@ QString AddSubModelDialog::browseSubModelPath(GraphicsView *pGraphicsView, QStri
 void AddSubModelDialog::browseSubModelPath()
 {
   QString name = "";
-  QString path = AddSubModelDialog::browseSubModelPath(mpGraphicsView, &name);
+  QString path = AddSubModelDialog::browseSubModelPath(&name);
   if (!path.isEmpty()) {
     mpPathTextBox->setText(path);
     mpNameTextBox->setText(name);
@@ -382,18 +371,13 @@ void AddSubModelDialog::browseStartScript()
 void AddSubModelDialog::addSubModel()
 {
   if (mpNameTextBox->text().isEmpty()) {
-    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), GUIMessages::getMessage(GUIMessages::ENTER_NAME).arg(tr("SubModel")), Helper::ok);
-    return;
-  }
-
-  if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isTLMSystem() && mpStartScriptTextBox->text().isEmpty()) {
-    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), GUIMessages::getMessage(GUIMessages::ENTER_SCRIPT), Helper::ok);
+    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), GUIMessages::getMessage(GUIMessages::ENTER_NAME).arg(tr("SubModel")), QMessageBox::Ok);
     return;
   }
 
   QFileInfo fileInfo(mpPathTextBox->text());
   if (!fileInfo.exists()) {
-    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), tr("Unable to find the SubModel file."), Helper::ok);
+    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), tr("Unable to find the SubModel file."), QMessageBox::Ok);
     return;
   }
   LibraryTreeItem *pParentLibraryTreeItem;
@@ -402,7 +386,7 @@ void AddSubModelDialog::addSubModel()
     LibraryTreeItem *pChildLibraryTreeItem = pParentLibraryTreeItem->child(i);
     if (pChildLibraryTreeItem && pChildLibraryTreeItem->getName().compare(mpNameTextBox->text()) == 0) {
       QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
-                            GUIMessages::getMessage(GUIMessages::MODEL_ALREADY_EXISTS).arg(tr("SubModel"), mpNameTextBox->text(), pParentLibraryTreeItem->getNameStructure()), Helper::ok);
+                            GUIMessages::getMessage(GUIMessages::MODEL_ALREADY_EXISTS).arg(tr("SubModel"), mpNameTextBox->text(), pParentLibraryTreeItem->getNameStructure()), QMessageBox::Ok);
       return;
     }
   }
@@ -422,21 +406,12 @@ void AddSubModelDialog::addSubModel()
       failed = true;
     }
   } else {
-    if (OMSProxy::instance()->addExternalTLMModel(nameStructure, mpStartScriptTextBox->text(), fileInfo.absoluteFilePath())) {
-      if (mpGraphicsView->mContextMenuStartPositionValid) {
-        OMSProxy::instance()->createElementGeometryUsingPosition(nameStructure, mpGraphicsView->mContextMenuStartPosition);
-      }
-      mpGraphicsView->getModelWidget()->createOMSimulatorUndoCommand(QString("Add external tlm model %1").arg(nameStructure));
-      mpGraphicsView->getModelWidget()->updateModelText();
-      accept();
-    } else {
-      failed = true;
-    }
+    failed = true;
   }
 
   if (failed) {
     QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
-                          tr("Failed to add submodel. %1").arg(GUIMessages::getMessage(GUIMessages::CHECK_MESSAGE_BROWSER)), Helper::ok);
+                          tr("Failed to add submodel. %1").arg(GUIMessages::getMessage(GUIMessages::CHECK_MESSAGE_BROWSER)), QMessageBox::Ok);
   }
 }
 
@@ -452,12 +427,12 @@ ReplaceSubModelDialog::ReplaceSubModelDialog(GraphicsView *pGraphicsView, QStrin
   : QDialog(pGraphicsView)
 {
   setAttribute(Qt::WA_DeleteOnClose);
-  setWindowTitle(QString("%1 - %2").arg(Helper::applicationName).arg("replaceSubModel"));
+  setWindowTitle(QString("%1 - %2").arg(Helper::applicationName, Helper::replaceSubModel));
   setMinimumWidth(400);
   mpGraphicsView = pGraphicsView;
   mpElementName = pName;
   // set heading
-  mpHeading = Utilities::getHeadingLabel("replaceSubModel");
+  mpHeading = Utilities::getHeadingLabel(Helper::replaceSubModel);
   // set separator line
   mpHorizontalLine = Utilities::getHeadingLine();
 
@@ -524,13 +499,13 @@ void ReplaceSubModelDialog::browseSubModelPath()
 void ReplaceSubModelDialog::replaceSubModel()
 {
   if (mpPathTextBox->text().isEmpty()) {
-    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), GUIMessages::getMessage(GUIMessages::ENTER_VALUE).arg(tr("ReplaceSubModel")), Helper::ok);
+    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), GUIMessages::getMessage(GUIMessages::ENTER_VALUE).arg(tr("ReplaceSubModel")), QMessageBox::Ok);
     return;
   }
 
   QFileInfo fileInfo(mpPathTextBox->text());
   if (!fileInfo.exists()) {
-    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), tr("Unable to find the SubModel file."), Helper::ok);
+    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), tr("Unable to find the SubModel file."), QMessageBox::Ok);
     return;
   }
 
@@ -563,7 +538,7 @@ void ReplaceSubModelDialog::replaceSubModel()
 
   if (failed) {
     QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
-                          tr("Failed to replace submodel. %1").arg(GUIMessages::getMessage(GUIMessages::CHECK_MESSAGE_BROWSER)), Helper::ok);
+                          tr("Failed to replace submodel. %1").arg(GUIMessages::getMessage(GUIMessages::CHECK_MESSAGE_BROWSER)), QMessageBox::Ok);
   }
 }
 
@@ -649,7 +624,7 @@ void AddOrEditIconDialog::addOrEditIcon()
     }
   } else { // add case
     if (mpFileTextBox->text().isEmpty()) {
-      QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), GUIMessages::getMessage(GUIMessages::ENTER_NAME).arg(Helper::fileLabel), Helper::ok);
+      QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), GUIMessages::getMessage(GUIMessages::ENTER_NAME).arg(Helper::fileLabel), QMessageBox::Ok);
       mpFileTextBox->setFocus();
       return;
     }
@@ -728,7 +703,7 @@ AddConnectorDialog::AddConnectorDialog(GraphicsView *pGraphicsView)
 void AddConnectorDialog::addConnector()
 {
   if (mpNameTextBox->text().isEmpty()) {
-    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), GUIMessages::getMessage(GUIMessages::ENTER_NAME).arg(tr("Connector")), Helper::ok);
+    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), GUIMessages::getMessage(GUIMessages::ENTER_NAME).arg(tr("Connector")), QMessageBox::Ok);
     return;
   }
 
@@ -738,7 +713,7 @@ void AddConnectorDialog::addConnector()
     LibraryTreeItem *pChildLibraryTreeItem = pParentLibraryTreeItem->child(i);
     if (pChildLibraryTreeItem && pChildLibraryTreeItem->getName().compare(mpNameTextBox->text()) == 0) {
       QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
-                            GUIMessages::getMessage(GUIMessages::MODEL_ALREADY_EXISTS).arg(tr("Connector"), mpNameTextBox->text(), pParentLibraryTreeItem->getNameStructure()), Helper::ok);
+                            GUIMessages::getMessage(GUIMessages::MODEL_ALREADY_EXISTS).arg(tr("Connector"), mpNameTextBox->text(), pParentLibraryTreeItem->getNameStructure()), QMessageBox::Ok);
       return;
     }
   }
@@ -749,8 +724,8 @@ void AddConnectorDialog::addConnector()
   if (OMSProxy::instance()->addConnector(nameStructure, causality, signalType)) {
     if (mpGraphicsView->mContextMenuStartPositionValid) {
       ssd_connector_geometry_t connectorGeometry;
-      connectorGeometry.x = Utilities::mapToCoOrdinateSystem(mpGraphicsView->mContextMenuStartPosition.x(), -100, 100, 0, 1);
-      connectorGeometry.y = Utilities::mapToCoOrdinateSystem(mpGraphicsView->mContextMenuStartPosition.y(), -100, 100, 0, 1);
+      connectorGeometry.x = Utilities::mapToCoordinateSystem(mpGraphicsView->mContextMenuStartPosition.x(), -100, 100, 0, 1);
+      connectorGeometry.y = Utilities::mapToCoordinateSystem(mpGraphicsView->mContextMenuStartPosition.y(), -100, 100, 0, 1);
       OMSProxy::instance()->setConnectorGeometry(nameStructure, &connectorGeometry);
     }
     mpGraphicsView->getModelWidget()->createOMSimulatorUndoCommand(QString("Add connector %1").arg(nameStructure));

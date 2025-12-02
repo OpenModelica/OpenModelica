@@ -46,8 +46,10 @@
 #include <QTableWidget>
 #include <QPlainTextEdit>
 #include <QListWidget>
+#include <QRegExp>
 #include <QToolButton>
 #include <QTreeWidget>
+#include <QTextCodec>
 
 class Label;
 class LibraryWidget;
@@ -71,6 +73,9 @@ private:
   QDialogButtonBox *mpButtonBox;
 
   void findAndSelectLibraryTreeItem(const QRegExp &regExp);
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+  void findAndSelectLibraryTreeItem(const QRegularExpression &regExp);
+#endif
 private slots:
   void searchClasses();
   void useModelicaClass();
@@ -103,7 +108,7 @@ private:
 private slots:
   void browseExtendsClass();
   void browseParentClass();
-  void showHideSaveContentsInOneFileCheckBox(QString text);
+  void showHideSaveContentsInOneFileCheckBox(int index);
   void createModelicaClass();
 };
 
@@ -246,7 +251,7 @@ private:
   QPushButton *mpOkButton;
   QPushButton *mpCancelButton;
   QDialogButtonBox *mpButtonBox;
-  void saveLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
+  void updateClassTextRecursive(LibraryTreeItem *pLibraryTreeItem);
 private slots:
   void convert();
 };
@@ -346,10 +351,11 @@ class CreateNewItemDialog : public QDialog
 {
   Q_OBJECT
 public:
-  CreateNewItemDialog(QString path, bool isCreateFile, QWidget *pParent = 0);
+  CreateNewItemDialog(QString path, bool isCreateFile, QString extension, QWidget *pParent = 0);
 private:
   QString mPath;
   bool mIsCreateFile;
+  QString mExtension;
   Label *mpNameLabel;
   QLineEdit *mpNameTextBox;
   Label *mpPathLabel;
@@ -358,6 +364,8 @@ private:
   QPushButton *mpOkButton;
   QPushButton *mpCancelButton;
   QDialogButtonBox *mpButtonBox;
+
+  QString getHeading() const;
 private slots:
   void browsePath();
   void createNewFileOrFolder();

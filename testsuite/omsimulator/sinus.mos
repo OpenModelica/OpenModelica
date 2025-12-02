@@ -1,0 +1,32 @@
+// keywords: fmu export import
+// status: correct
+// teardown_command: rm -rf sinus.fmu sinus.log sinus_systemCall.log sinus_info.json sinus_res.mat/
+
+loadString("
+  model sinus
+    output Real x;
+    output Integer positive;
+  equation
+    x = sin(time);
+    if(x >= 0) then
+      positive = 1;
+    else
+      positive = 0;
+    end if;
+  end sinus;"); getErrorString();
+
+buildModelFMU(sinus, version="2.0", fmuType="cs", platforms={"static"}); getErrorString();
+
+system(getInstallationDirectoryPath() + "/bin/OMSimulator sinus.fmu --stopTime=4.0 -r=sinus_res.mat", "sinus_systemCall.log");
+readFile("sinus_systemCall.log");
+
+
+// Result:
+// true
+// ""
+// "sinus.fmu"
+// ""
+// 0
+// "info:    Result file: sinus_res.mat (bufferSize=1)
+// "
+// endResult

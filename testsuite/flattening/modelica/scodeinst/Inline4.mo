@@ -1,7 +1,6 @@
 // name: Inline4
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 
 operator record Complex
@@ -43,11 +42,11 @@ end Inline4;
 // Result:
 // class Inline4
 //   parameter Real UStart(fixed = false);
-//   parameter Real port.UNom(start = 4e5);
+//   parameter Real port.UNom(start = 4e5) = 4e5;
 //   final parameter Real port.UStart = UStart;
 //   final parameter Real port.vStart.re = port.UStart / 1.7320508075688772 * cos(port.UStart);
 //   final parameter Real port.vStart.im = port.UStart / 1.7320508075688772 * sin(port.UStart);
 // end Inline4;
-// [flattening/modelica/scodeinst/Inline4.mo:33:3-33:37:writable] Warning: Parameter port.UNom has no binding, and is fixed during initialization (fixed=true), using available start value (start=4e5) as default value.
+// [flattening/modelica/scodeinst/Inline4.mo:32:3-32:37:writable] Warning: Parameter port.UNom has no value, and is fixed during initialization (fixed=true), using available start value (start=400e3) as default value.
 //
 // endResult

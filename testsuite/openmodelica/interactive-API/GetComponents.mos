@@ -62,11 +62,11 @@ getComponents(G);
 // Result:
 // true
 // ""
-// {{Real, x, "", "public", false, false, false, false, "unspecified", "none", "unspecified", {}},{Real, y, "", "public", false, false, false, false, "unspecified", "none", "unspecified", {}}}
-// {{Real, a, "", "public", false, false, false, false, "unspecified", "none", "unspecified", {}},{Real, b, "", "public", false, false, false, false, "unspecified", "none", "unspecified", {}}}
-// {{A, a, "", "public", false, false, false, false, "unspecified", "none", "unspecified", {}},{B, b, "", "public", false, false, false, false, "unspecified", "none", "unspecified", {}}}
-// {{Real, r1, "", "public", false, false, false, false, "parameter", "none", "unspecified", {}},{Real, r2, "", "public", false, false, false, false, "parameter", "none", "unspecified", {}}}
-// {{Foo, f, "", "public", false, false, false, false, "unspecified", "none", "unspecified", {}},{A, a, "", "public", false, false, false, false, "unspecified", "none", "unspecified", {}}}
+// {{Real, x, "", "public", false, false, false, false, "unspecified", "none", "unspecified", {}}, {Real, y, "", "public", false, false, false, false, "unspecified", "none", "unspecified", {}}}
+// {{Real, a, "", "public", false, false, false, false, "unspecified", "none", "unspecified", {}}, {Real, b, "", "public", false, false, false, false, "unspecified", "none", "unspecified", {}}}
+// {{A, a, "", "public", false, false, false, false, "unspecified", "none", "unspecified", {}}, {B, b, "", "public", false, false, false, false, "unspecified", "none", "unspecified", {}}}
+// {{Real, r1, "", "public", false, false, false, false, "parameter", "none", "unspecified", {}}, {Real, r2, "", "public", false, false, false, false, "parameter", "none", "unspecified", {}}}
+// {{Foo, f, "", "public", false, false, false, false, "unspecified", "none", "unspecified", {}}, {A, a, "", "public", false, false, false, false, "unspecified", "none", "unspecified", {}}}
 // {{F.G.T, x, "", "public", false, false, false, false, "unspecified", "none", "unspecified", {}}}
-// {{Real, x, "definition comment", "public", false, false, false, true, "unspecified", "none", "unspecified", {}},{Real, y, "constrainedby comment", "public", false, false, false, true, "unspecified", "none", "unspecified", {}},{Real, z, "constrainedby comment", "public", false, false, false, true, "unspecified", "none", "unspecified", {}}}
+// {{Real, x, "definition comment", "public", false, false, false, true, "unspecified", "none", "unspecified", {}}, {Real, y, "constrainedby comment", "public", false, false, false, true, "unspecified", "none", "unspecified", {}}, {Real, z, "constrainedby comment", "public", false, false, false, true, "unspecified", "none", "unspecified", {}}}
 // endResult

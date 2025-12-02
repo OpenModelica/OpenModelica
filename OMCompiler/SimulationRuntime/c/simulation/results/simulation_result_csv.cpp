@@ -48,8 +48,73 @@
 #include <string.h>
 #include <time.h>
 
+#define MAX_IDENT_LENGTH 4096
+
 extern "C" {
 
+/**
+ * @brief Count the occurrences of a substring in a string
+ *
+ * @param str     String to search.
+ * @param substr  Substring to count in `str`.
+ * @return int    Number of occurrences.
+ */
+int countSubstring(const char* str, const char* substr) {
+    int count = 0;
+    size_t substr_len = strlen(substr);
+    const char* ptr = str;
+    while ((ptr = strstr(ptr, substr)) != NULL) {
+        count++;
+        ptr += substr_len;
+    }
+    return count;
+}
+
+/**
+ * @brief Escape CSV style.
+ *
+ * Escape double-quotes with another double-quote to handle quoted identifiers
+ * with double-quotes in original. Example: `'a"b'` --> `a""b`
+ *
+ * @param original      Variable to escape characters into CSV style.
+ * @param replaced      Buffer to store escaped version of `original`.
+ * @param n             Size of buffer `replaced`.
+ */
+void csvEscapedString(const char* original, char* replaced, size_t n, threadData_t* threadData)
+{
+  size_t original_length = strlen(original);
+
+  // Count the occurrences of \"
+  int num_occurrences = countSubstring(original, "\\\"");
+  size_t replaced_length = original_length + num_occurrences;
+
+  if (replaced == NULL || n < replaced_length + 1) {
+    throwStreamPrint(threadData, "Buffer too small. Failed to escape identifier for CSV result file.");
+    return;
+  }
+
+  size_t j = 0;
+  for (size_t i = 0; i < original_length; i++) {
+      if (original[i] == '"') {
+          replaced[j++] = '"';
+          replaced[j++] = '"';
+      } else {
+          replaced[j++] = original[i];
+      }
+  }
+
+  // Null-terminate the replaced string
+  replaced[j] = '\0';
+  return;
+}
+
+/**
+ * @brief Write CSV data row.
+ *
+ * @param self        Simulation result.
+ * @param data        Simulation data.
+ * @param threadData  Thread data for error handling.
+ */
 void omc_csv_emit(simulation_result *self, DATA *data, threadData_t *threadData)
 {
   FILE *fout = (FILE*) self->storage;
@@ -78,8 +143,8 @@ void omc_csv_emit(simulation_result *self, DATA *data, threadData_t *threadData)
   //for(i = 0; i < data->modelData->nVariablesString; i++) if(!data->modelData->stringVarsData[i].filterOutput)
   //  fprintf(fout, formatstring, MMC_STRINGDATA((data->localData[0])->stringVars[i]));
 
-  for(i = 0; i < data->modelData->nAliasReal; i++) if(!data->modelData->realAlias[i].filterOutput && data->modelData->realAlias[i].aliasType != 1) {
-    if (data->modelData->realAlias[i].aliasType == 2) {
+  for(i = 0; i < data->modelData->nAliasReal; i++) if(!data->modelData->realAlias[i].filterOutput && data->modelData->realAlias[i].aliasType != ALIAS_TYPE_PARAMETER) {
+    if (data->modelData->realAlias[i].aliasType == ALIAS_TYPE_TIME) {
       value = (data->localData[0])->timeValue;
     } else {
       value = (data->localData[0])->realVars[data->modelData->realAlias[i].nameID];
@@ -90,21 +155,21 @@ void omc_csv_emit(simulation_result *self, DATA *data, threadData_t *threadData)
       fprintf(fout, format, value);
     }
   }
-  for(i = 0; i < data->modelData->nAliasInteger; i++) if(!data->modelData->integerAlias[i].filterOutput && data->modelData->integerAlias[i].aliasType != 1) {
+  for(i = 0; i < data->modelData->nAliasInteger; i++) if(!data->modelData->integerAlias[i].filterOutput && data->modelData->integerAlias[i].aliasType != ALIAS_TYPE_PARAMETER) {
     if (data->modelData->integerAlias[i].negate) {
       fprintf(fout, formatint, -(data->localData[0])->integerVars[data->modelData->integerAlias[i].nameID]);
     } else {
       fprintf(fout, formatint, (data->localData[0])->integerVars[data->modelData->integerAlias[i].nameID]);
     }
   }
-  for(i = 0; i < data->modelData->nAliasBoolean; i++) if(!data->modelData->booleanAlias[i].filterOutput && data->modelData->booleanAlias[i].aliasType != 1) {
+  for(i = 0; i < data->modelData->nAliasBoolean; i++) if(!data->modelData->booleanAlias[i].filterOutput && data->modelData->booleanAlias[i].aliasType != ALIAS_TYPE_PARAMETER) {
     if (data->modelData->booleanAlias[i].negate) {
       fprintf(fout, formatbool, (data->localData[0])->booleanVars[data->modelData->booleanAlias[i].nameID]==1?0:1);
     } else {
       fprintf(fout, formatbool, (data->localData[0])->booleanVars[data->modelData->booleanAlias[i].nameID]);
     }
   }
-  //for(i = 0; i < data->modelData->nAliasString; i++) if(!data->modelData->stringAlias[i].filterOutput && data->modelData->stringAlias[i].aliasType != 1) {
+  //for(i = 0; i < data->modelData->nAliasString; i++) if(!data->modelData->stringAlias[i].filterOutput && data->modelData->stringAlias[i].aliasType != ALIAS_TYPE_PARAMETER) {
   //  /* there would no negation of a string happen */
   //  fprintf(fout, formatstring, MMC_STRINGDATA((data->localData[0])->stringVars[data->modelData->stringAlias[i].nameID]));
   //}
@@ -112,6 +177,13 @@ void omc_csv_emit(simulation_result *self, DATA *data, threadData_t *threadData)
   rt_accumulate(SIM_TIMER_OUTPUT);
 }
 
+/**
+ * @brief Write CSV header.
+ *
+ * @param self        Simulation result.
+ * @param data        Simulation data.
+ * @param threadData  Thread data for error handling.
+ */
 void omc_csv_init(simulation_result *self, DATA *data, threadData_t *threadData)
 {
   int i;
@@ -119,29 +191,49 @@ void omc_csv_init(simulation_result *self, DATA *data, threadData_t *threadData)
 
   const char* format = ",\"%s\"";
   FILE *fout = omc_fopen(self->filename, "w");
+  char escapedNameBuffer[MAX_IDENT_LENGTH];
 
   assertStreamPrint(threadData, 0!=fout, "Error, couldn't create output file: [%s] because of %s", self->filename, strerror(errno));
 
   fprintf(fout, "\"time\"");
-  if(self->cpuTime)
+  if(self->cpuTime) {
     fprintf(fout, format, "$cpuTime");
-  for(i = 0; i < mData->nVariablesReal; i++) if(!mData->realVarsData[i].filterOutput)
-    fprintf(fout, format, mData->realVarsData[i].info.name);
-  for(i = 0; i < mData->nVariablesInteger; i++) if(!mData->integerVarsData[i].filterOutput)
-    fprintf(fout, format, mData->integerVarsData[i].info.name);
-  for(i = 0; i < mData->nVariablesBoolean; i++) if(!mData->booleanVarsData[i].filterOutput)
-    fprintf(fout, format, mData->booleanVarsData[i].info.name);
-  //for(i = 0; i < mData->nVariablesString; i++) if(!mData->stringVarsData[i].filterOutput)
-  //  fprintf(fout, format, mData->stringVarsData[i].info.name);
+  }
+  for(i = 0; i < mData->nVariablesReal; i++) if(!mData->realVarsData[i].filterOutput) {
+    csvEscapedString(mData->realVarsData[i].info.name, escapedNameBuffer, MAX_IDENT_LENGTH, threadData);
+    fprintf(fout, format, escapedNameBuffer);
+  }
+  for(i = 0; i < mData->nVariablesInteger; i++) {
+    if(!mData->integerVarsData[i].filterOutput) {
+      csvEscapedString(mData->integerVarsData[i].info.name, escapedNameBuffer, MAX_IDENT_LENGTH, threadData);
+      fprintf(fout, format, escapedNameBuffer);
+    }
+  }
+  for(i = 0; i < mData->nVariablesBoolean; i++) {
+    if(!mData->booleanVarsData[i].filterOutput) {
+      csvEscapedString(mData->booleanVarsData[i].info.name, escapedNameBuffer, MAX_IDENT_LENGTH, threadData);
+      fprintf(fout, format, escapedNameBuffer);
+    }
+  }
 
-  for(i = 0; i < mData->nAliasReal; i++) if(!mData->realAlias[i].filterOutput && data->modelData->realAlias[i].aliasType != 1)
-    fprintf(fout, format, mData->realAlias[i].info.name);
-  for(i = 0; i < mData->nAliasInteger; i++) if(!mData->integerAlias[i].filterOutput && data->modelData->integerAlias[i].aliasType != 1)
-    fprintf(fout, format, mData->integerAlias[i].info.name);
-  for(i = 0; i < mData->nAliasBoolean; i++) if(!mData->booleanAlias[i].filterOutput && data->modelData->booleanAlias[i].aliasType != 1)
-    fprintf(fout, format, mData->booleanAlias[i].info.name);
-  //for(i = 0; i < mData->nAliasString; i++) if(!mData->stringAlias[i].filterOutput && data->modelData->stringAlias[i].aliasType != 1)
-  //  fprintf(fout, format, mData->stringAlias[i].info.name);
+  for(i = 0; i < mData->nAliasReal; i++) {
+    if(!mData->realAlias[i].filterOutput && data->modelData->realAlias[i].aliasType != ALIAS_TYPE_PARAMETER) {
+      csvEscapedString(mData->realAlias[i].info.name, escapedNameBuffer, MAX_IDENT_LENGTH, threadData);
+      fprintf(fout, format, escapedNameBuffer);
+    }
+  }
+  for(i = 0; i < mData->nAliasInteger; i++) {
+    if(!mData->integerAlias[i].filterOutput && data->modelData->integerAlias[i].aliasType != ALIAS_TYPE_PARAMETER) {
+      csvEscapedString(mData->integerAlias[i].info.name, escapedNameBuffer, MAX_IDENT_LENGTH, threadData);
+      fprintf(fout, format, escapedNameBuffer);
+    }
+  }
+  for(i = 0; i < mData->nAliasBoolean; i++) {
+    if(!mData->booleanAlias[i].filterOutput && data->modelData->booleanAlias[i].aliasType != ALIAS_TYPE_PARAMETER) {
+      csvEscapedString(mData->booleanAlias[i].info.name, escapedNameBuffer, MAX_IDENT_LENGTH, threadData);
+      fprintf(fout, format, escapedNameBuffer);
+    }
+  }
   fprintf(fout, "\n");
   self->storage = fout;
 }

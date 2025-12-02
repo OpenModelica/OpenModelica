@@ -1,7 +1,6 @@
 // name: inst5.mo
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 // Check that instances are cloned properly, so that modifiers don't "stick" to
 // a class.
@@ -19,8 +18,8 @@ end B;
 
 // Result:
 // class B
-//   Real a1.x = 3;
+//   Real a1.x = 3.0;
 //   Real a2.x;
-//   Real a3.x = 5;
+//   Real a3.x = 5.0;
 // end B;
 // endResult

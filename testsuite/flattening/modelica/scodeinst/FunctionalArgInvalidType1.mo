@@ -1,7 +1,6 @@
 // name: FunctionalArgInvalidType1
 // keywords:
 // status: incorrect
-// cflags: -d=newInst
 //
 
 partial function F
@@ -28,10 +27,10 @@ end FunctionalArgInvalidType1;
 
 // Result:
 // Error processing file: FunctionalArgInvalidType1.mo
-// [flattening/modelica/scodeinst/FunctionalArgInvalidType1.mo:26:3-26:21:writable] Error: Type mismatch for positional argument 1 in f1(f=f2). The argument has type:
-//   f2<function>(Integer) => Integer
+// [flattening/modelica/scodeinst/FunctionalArgInvalidType1.mo:25:3-25:21:writable] Error: Type mismatch for positional argument 1 in f1(f=f2). The argument has type:
+//   f2<function>(Integer x) => Integer y
 // expected type:
-//   f<function>(Real) => Real
+//   f<function>(Real x) => Real y
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

@@ -51,6 +51,7 @@ private:
   QPointF mOldScenePosition;
   int mConnectedPointIndex;
   bool mIsSystemLibrary;
+  bool mIsElementMode;
   bool mIsInherited;
   bool mIsOMSConnector;
   bool mIsVisualizationView;

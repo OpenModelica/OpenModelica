@@ -33,6 +33,11 @@ InvalidComponentExtends1.mo \
 InvalidComponentExtends2.mo \
 InvalidInheritedExtends1.mo \
 InvalidInheritedExtends2.mo \
+InvalidReplaceableExtends1.mo \
+InvalidReplaceableExtends2.mo \
+InvalidReplaceableExtends3.mo \
+InvalidReplaceableExtends4.mo \
+InvalidReplaceableExtends5.mo \
 MicroCircuitInvalid.mo \
 MoonLanding.mo \
 OneArgBaseFunction.mo \
@@ -54,11 +59,6 @@ ColoredPointIllegalMod2.mo \
 ColoredPointIllegalMod3.mo \
 GenericMicroCircuit.mo \
 InheritanceRestrictions.mo \
-InvalidReplaceableExtends1.mo \
-InvalidReplaceableExtends2.mo \
-InvalidReplaceableExtends3.mo \
-InvalidReplaceableExtends4.mo \
-InvalidReplaceableExtends5.mo \
 MicroCircuitValid.mo \
 Oscillator.mo \
 SimpleTypeExtend.mo \

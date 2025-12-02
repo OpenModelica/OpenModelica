@@ -1,7 +1,6 @@
 // name:     BM23 -  Sqrt component
 // keywords: Sqrt
 // status:   correct
-// cflags: -d=-newInst
 //
 // Testing instantiation of the Math.Sqrt component.
 //
@@ -979,6 +978,7 @@ model BM23
 
 equation
   connect(constant1.outPort,sqrt1.inPort) annotation(Line(visible=true,points={{-64.27,9.53},{-41.77,6.19}}));
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end BM23;
 // class BM23
 // parameter Integer sqrt1.n = 1 "Number of inputs (= number of outputs)";

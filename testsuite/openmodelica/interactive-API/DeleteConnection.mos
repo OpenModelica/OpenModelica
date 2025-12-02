@@ -44,20 +44,20 @@ list();
 
 // Result:
 // true
-// Ok
+// true
 // "model M
 // equation
 //   connect(c1, c2);
 // end M;"
-// Ok
+// true
 // "model M
 // equation
-// 
+//
 // end M;"
 // true
 // ""
 // true
-// Ok
+// true
 // "model M
 // equation
 //   for i in 1:n - 1 loop
@@ -69,7 +69,7 @@ list();
 //   end for;
 //   connect(c1, c2);
 // end M;"
-// Ok
+// true
 // "model M
 // equation
 //   for i in 1:n - 1 loop
@@ -80,7 +80,7 @@ list();
 //   end for;
 //   connect(c1, c2);
 // end M;"
-// Ok
+// true
 // "model M
 // equation
 //   for i in 1:n - 1 loop
@@ -88,16 +88,16 @@ list();
 //   end for;
 //   connect(c1, c2);
 // end M;"
-// Ok
+// true
 // "model M
 // equation
 //   for i in 1:n - 1 loop
 //     connect(c2[i], c3[i + 1]);
 //   end for;
 // end M;"
-// Ok
+// true
 // "model M
 // equation
-// 
+//
 // end M;"
 // endResult

@@ -40,7 +40,6 @@
 #include "Modeling/Model.h"
 
 #include <QGraphicsItem>
-#include <QSettings>
 #include <QGroupBox>
 #include <QDialog>
 #include <QComboBox>
@@ -63,7 +62,7 @@ public:
   void setDefaults();
   void setDefaults(ShapeAnnotation *pShapeAnnotation);
   void parseShapeAnnotation(QString annotation);
-  void parseShapeAnnotation(ModelInstance::Shape *pShape);
+  void parseShapeAnnotation(ModelInstance::Shape *pShape, GraphicsView *pGraphicsView);
   QStringList getOMCShapeAnnotation();
   QStringList getShapeAnnotation();
   void setOrigin(QPointF origin) {mOrigin = origin;}
@@ -83,7 +82,7 @@ public:
   void setDefaults();
   void setDefaults(ShapeAnnotation *pShapeAnnotation);
   void parseShapeAnnotation(QString annotation);
-  void parseShapeAnnotation(ModelInstance::Shape *pShape);
+  void parseShapeAnnotation(ModelInstance::Shape *pShape, GraphicsView *pGraphicsView);
   QStringList getOMCShapeAnnotation();
   QStringList getShapeAnnotation();
   QStringList getTextShapeAnnotation();
@@ -110,7 +109,6 @@ class ShapeAnnotation : public QObject, public QGraphicsItem, public GraphicItem
   Q_OBJECT
   Q_INTERFACES(QGraphicsItem)
 private:
-  ShapeAnnotation *mpReferenceShapeAnnotation;
   bool mIsInheritedShape;
   QPointF mOldScenePosition;
   bool mIsCornerItemClicked;
@@ -122,15 +120,12 @@ private:
   QVector<QPointF> mOldExtents;
   QString mOldAnnotation;
   QAction *mpShapePropertiesAction;
-  QAction *mpAlignInterfacesAction;
-  QAction *mpShapeAttributesAction;
   QAction *mpEditTransitionAction;
 public:
   enum LineGeometryType {VerticalLine, HorizontalLine};
   Transformation mTransformation;
   ShapeAnnotation(QGraphicsItem *pParent);
-  ShapeAnnotation(ShapeAnnotation *pShapeAnnotation, QGraphicsItem *pParent);
-  ShapeAnnotation(bool inheritedShape, GraphicsView *pGraphicsView, ShapeAnnotation *pShapeAnnotation, QGraphicsItem *pParent = 0);
+  ShapeAnnotation(bool inheritedShape, GraphicsView *pGraphicsView, QGraphicsItem *pParent = 0);
   void setDefaults();
   void setDefaults(ShapeAnnotation *pShapeAnnotation);
   void setUserDefaults();
@@ -141,11 +136,12 @@ public:
   void applyLinePattern(QPainter *painter);
   void applyFillPattern(QPainter *painter);
   virtual void parseShapeAnnotation(QString annotation) = 0;
+  virtual void parseShapeAnnotation() = 0;
   virtual QString getOMCShapeAnnotation() = 0;
   virtual QString getOMCShapeAnnotationWithShapeName() = 0;
   virtual QString getShapeAnnotation() = 0;
   virtual void drawAnnotation(QPainter *painter) = 0;
-  QList<QPointF> getExtentsForInheritedShapeFromIconDiagramMap(GraphicsView *pGraphicsView, ShapeAnnotation *pReferenceShapeAnnotation);
+  QList<QPointF> getExtentsForInheritedShapeFromIconDiagramMap(GraphicsView *pGraphicsView);
   void applyTransformation();
   void drawCornerItems();
   void setCornerItemsActiveOrPassive();
@@ -155,8 +151,6 @@ public:
   QPointF getOldScenePosition() {return mOldScenePosition;}
   bool isCornerItemClicked() const {return mIsCornerItemClicked;}
   QAction* getShapePropertiesAction() const {return mpShapePropertiesAction;}
-  QAction* getAlignInterfacesAction() const {return mpAlignInterfacesAction;}
-  QAction* getShapeAttributesAction() const {return mpShapeAttributesAction;}
   QAction* getEditTransitionAction() const {return mpEditTransitionAction;}
   virtual void addPoint(QPointF point) {Q_UNUSED(point);}
   virtual void clearPoints() {}
@@ -164,6 +158,7 @@ public:
   void updateExtent(const int index, const QPointF point);
   void setOriginItemPos(const QPointF point);
   GraphicsView* getGraphicsView() {return mpGraphicsView;}
+  GraphicsView* getContainingGraphicsView();
   Element* getParentComponent() const {return mpParentComponent;}
   OriginItem* getOriginItem() {return mpOriginItem;}
   void setPoints(QVector<QPointF> points) {mPoints = points;}
@@ -218,17 +213,9 @@ public:
   virtual void setShapeFlags(bool enable);
   virtual void updateShape(ShapeAnnotation *pShapeAnnotation) = 0;
   virtual ModelInstance::Extend* getExtend() const = 0;
-  void emitAdded() {emit added();}
-  void emitChanged() {emit changed();}
-  void emitDeleted() {emit deleted();}
   void emitPrepareGeometryChange() {prepareGeometryChange();}
-signals:
-  void added();
-  void changed();
-  void deleted();
 public slots:
   void deleteMe();
-  virtual void duplicate() = 0;
   void bringToFront();
   void bringForward();
   void sendToBack();
@@ -253,13 +240,8 @@ public slots:
   LineGeometryType findLineGeometryType(QPointF point1, QPointF point2);
   bool isLineStraight(QPointF point1, QPointF point2);
   void showShapeProperties();
-  void alignInterfaces();
-  void showShapeAttributes();
   void editTransition();
   void manhattanizeShape(bool addToStack = true);
-  void referenceShapeAdded();
-  void referenceShapeChanged();
-  void referenceShapeDeleted();
   void updateDynamicSelect(double time);
   void resetDynamicSelect();
 protected:

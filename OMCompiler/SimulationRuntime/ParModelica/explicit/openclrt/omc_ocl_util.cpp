@@ -157,11 +157,11 @@ void ocl_get_device(){
             clGetDeviceInfo(ocl_device, CL_DEVICE_MAX_CLOCK_FREQUENCY , sizeof(cl_uint), &mem, NULL);
             printf("%d CL_DEVICE_MAX_CLOCK_FREQUENCY :\t%d\n", i,mem);
             clGetDeviceInfo(ocl_device, CL_DEVICE_LOCAL_MEM_SIZE, sizeof(cl_ulong), &mem2, NULL);
-            printf("%d CL_DEVICE_LOCAL_MEM_SIZE :\t%llu KB\n", i, mem2/1024);
+            printf("%d CL_DEVICE_LOCAL_MEM_SIZE :\t%llu KB\n", i, static_cast<unsigned long long>(mem2/1024));
             clGetDeviceInfo(ocl_device, CL_DEVICE_GLOBAL_MEM_SIZE, sizeof(cl_ulong), &mem2, NULL);
-            printf("%d CL_DEVICE_GLOBAL_MEM_SIZE: %llu MB\n", i, mem2/1024/1024);
+            printf("%d CL_DEVICE_GLOBAL_MEM_SIZE: %llu MB\n", i, static_cast<unsigned long long>(mem2/1024/1024));
             clGetDeviceInfo(ocl_device, CL_DEVICE_MAX_MEM_ALLOC_SIZE, sizeof(cl_ulong), &mem2, NULL);
-            printf("%d CL_DEVICE_MAX_MEM_ALLOC_SIZE: %llu MB\n", i, mem2/1024/1024);
+            printf("%d CL_DEVICE_MAX_MEM_ALLOC_SIZE: %llu MB\n", i, static_cast<unsigned long long>(mem2/1024/1024));
             clGetDeviceInfo(ocl_device, CL_DEVICE_MAX_PARAMETER_SIZE, sizeof(size_t), &arg_nr, NULL);
             printf("%d CL_DEVICE_MAX_PARAMETER_SIZE: %ld MB\n", i, arg_nr);
 

@@ -106,7 +106,7 @@ algorithm
           exp := Binding.getExp(binding);
           true := Expression.isRecord(exp);
         else
-          exp := Class.makeRecordExp(listHead(fn.outputs));
+          exp := Class.makeRecordExp(listHead(fn.outputs), fn.node, typed = true);
         end if;
 
         for i in fn.inputs loop
@@ -120,12 +120,13 @@ algorithm
     // Normal function
     case Call.TYPED_CALL(fn = fn as Function.FUNCTION(inputs = inputs, outputs = outputs, locals = locals),
                          arguments = args)
+      guard Function.hasSingleOrEmptyBody(fn)
       algorithm
         body := Function.getBody(fn);
 
         // This function can so far only handle functions with at most one
         // statement and output and no local variables.
-        if listLength(body) > 1 or listLength(outputs) <> 1 or listLength(locals) > 0 then
+        if listLength(body) > 1 or listLength(outputs) <> 1 or not listEmpty(locals) then
           exp := Expression.CALL(call);
           return;
         end if;
@@ -239,7 +240,7 @@ protected
   Binding binding;
   Expression cref_exp, binding_exp;
 algorithm
-  binding := Component.getImplicitBinding(InstNode.component(outputNode));
+  binding := Component.getImplicitBinding(InstNode.component(outputNode), InstNode.instanceParent(outputNode));
 
   if Binding.isBound(binding) then
     cref_exp := Expression.fromCref(ComponentRef.fromNode(outputNode, Type.UNKNOWN()));

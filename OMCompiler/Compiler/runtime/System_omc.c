@@ -134,6 +134,18 @@ extern void System_realtimeClear(int ix)
   rt_clear(ix);
 }
 
+extern double System_realtimeAccumulate(int ix)
+{
+  if (ix < 0 || ix >= NUM_USER_RT_CLOCKS) MMC_THROW();
+  return rt_accumulate(ix);
+}
+
+extern double System_realtimeAccumulated(int ix)
+{
+  if (ix < 0 || ix >= NUM_USER_RT_CLOCKS) MMC_THROW();
+  return rt_accumulated(ix);
+}
+
 extern int System_realtimeNtick(int ix)
 {
   if (ix < 0 || ix >= NUM_USER_RT_CLOCKS) MMC_THROW();
@@ -735,6 +747,19 @@ extern const char* System_openModelicaPlatform()
   return CONFIG_OPENMODELICA_SPEC_PLATFORM;
 }
 
+/**
+ * @brief Returns the alternative platform OpenModelica is compiled for.
+ *
+ * Returns CONFIG_OPENMODELICA_SPEC_PLATFORM_ALTERNATIVE defined in omc_config.h
+ *
+ * @return const char* platform specifier
+ */
+extern const char* System_openModelicaPlatformAlternative()
+{
+  return CONFIG_OPENMODELICA_SPEC_PLATFORM_ALTERNATIVE;
+}
+
+
 extern const char* System_gccDumpMachine()
 {
   return CONFIG_GCC_DUMPMACHINE;
@@ -758,27 +783,38 @@ extern const char* System_snprintff(const char *fmt, int len, double d)
     MMC_THROW();
   }
   buf = ModelicaAllocateString(len);
-  if (snprintf(buf,len,fmt,d) >= len) {
+
+  int str_len = snprintf(buf, len + 1, fmt, d);
+
+  if (str_len < 0) {
+    fprintf(stderr, "System_snprintff: Encoding error.\n");
     MMC_THROW();
   }
+
+  if (str_len > len) {
+    fprintf(stderr, "System_snprintff: The formatted string would have length %d but the buffer only has room for %d characters.\n", str_len, len);
+    MMC_THROW();
+  }
+
   return buf;
 }
 
 extern const char* System_sprintff(const char *fmt, double d)
 {
   char *buf;
-  const int buf_size = 20;
-  buf = ModelicaAllocateString(buf_size);
+  const int len = 20;
+  buf = ModelicaAllocateString(len);
 
-  int len = snprintf(buf, buf_size, fmt, d);
+  int str_len = snprintf(buf, len + 1, fmt, d);
 
-  if (len < 0) {
+  if (str_len < 0) {
+    fprintf(stderr, "System_sprintff: Encoding error.\n");
     MMC_THROW();
   }
 
-  if (len >= buf_size) {
-    buf = ModelicaAllocateString(len + 1);
-    snprintf(buf, len, fmt, d);
+  if (str_len > len) {
+    buf = ModelicaAllocateString(str_len);
+    snprintf(buf, str_len + 1, fmt, d);
   }
 
   return buf;
@@ -1063,6 +1099,51 @@ int System_isRML()
   return 0;
 }
 
+extern void* System_splitOnNewline(const char *str, int includeDelimiter)
+{
+  const char *start = str;
+  const char *current = start;
+  size_t sz;
+  void *lst = mmc_mk_nil();
+
+  while (*current != '\0') {
+    // Split on \n and \r\n.
+    if (*current == '\n' || (*current == '\r' && *(current + 1) == '\n')) {
+      sz = current - start;
+
+      // Save the string up to the newline.
+      if (sz > 0) {
+        lst = mmc_mk_cons(mmc_mk_scon_n(start, sz), lst);
+      }
+
+      // Is the newline one character (\n) or two (\r\n)?
+      if (*current == '\r' && *(current + 1) == '\n') {
+        sz = 2;
+      } else {
+        sz = 1;
+      }
+
+      // Save the newline if includeDelimiter = true.
+      if (includeDelimiter) {
+        lst = mmc_mk_cons(mmc_mk_scon_n(current, sz), lst);
+      }
+
+      // Move to the next character after the newline.
+      current += sz;
+      start = current;
+    } else {
+      ++current;
+    }
+  }
+
+  // Save the rest of the string if there's anything left.
+  if (current != start) {
+    lst = mmc_mk_cons(mmc_mk_scon_n(start, current - start), lst);
+  }
+
+  return listReverse(lst);
+}
+
 extern void* System_strtokIncludingDelimiters(const char *str0, const char *delimit)
 {
   char* str = (char*)str0;
@@ -1073,7 +1154,6 @@ extern void* System_strtokIncludingDelimiters(const char *str0, const char *deli
   void *lst = mmc_mk_nil();
   void *slst = mmc_mk_nil();
   char* s = str;
-  char* stmp;
   mmc_uint_t start = 0, end = 0;
   /* len + 3 in pos signifies that there is no delimiter in the string */
   mmc_uint_t pos = len + 3;
@@ -1131,13 +1211,8 @@ extern void* System_strtokIncludingDelimiters(const char *str0, const char *deli
       break;
     }
     start = MMC_UNTAGFIXNUM(MMC_CAR(lst));
-    /* create stmp */
     pos = end - start;
-    stmp = (char*)malloc((pos+1) * sizeof(char));
-    strncpy(stmp, str + start, pos);
-    stmp[pos] = '\0';
-    slst = mmc_mk_cons(mmc_mk_scon(stmp), slst);
-    free(stmp);
+    slst = mmc_mk_cons(mmc_mk_scon_n(str + start, pos), slst);
   }
   return slst;
 }

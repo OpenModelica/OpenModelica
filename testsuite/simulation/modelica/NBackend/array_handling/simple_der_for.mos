@@ -15,145 +15,17 @@ end simple_der_for;
 
 "); getErrorString();
 
-setCommandLineOptions("--newBackend -d=symjacdump");
+setCommandLineOptions("--newBackend");
 
 simulate(simple_der_for); getErrorString();
+
+val(x[1],1);
+val(x[10],1);
 
 // Result:
 // true
 // ""
 // true
-// #################################################
-//
-// 	[symjacdump] Creating symbolic Jacobians:
-//
-// #################################################
-//
-// ===========================
-// CONTINUOUS 1 ODE System
-// ===========================
-//
-// --- Alias of INI[1 | 1] ---
-// BLOCK 1: Single Strong Component (status = Solve.EXPLICIT)
-// ------------------------------------------------------------
-// ### Variable:
-// 	Real $FUN_2
-// ### Equation:
-// 	[SCAL] (1) $FUN_2 = cos(time) ($RES_$AUX_3)
-//
-// --- Alias of INI[1 | 2] ---
-// BLOCK 2: Sliced Component (status = Solve.EXPLICIT)
-// -----------------------------------------------------
-// ### Variable:
-// 	$DER.x[3]
-// ### Equation:
-// 	[SCAL] (1) $DER.x[3] = $FUN_2 ($RES_SIM_0)
-// 	 slice: {}
-//
-// --- Alias of INI[1 | 4] ---
-// BLOCK 3: Generic Component (status = Solve.EXPLICIT)
-// ------------------------------------------------------
-// ### Variable:
-// 	$FUN_1[$i1]
-// ### Equation:
-// 	[FOR-] (10) ($RES_$AUX_4)
-// 	[----] for $i1 in 1:10 loop
-// 	[----]   [SCAL] (1) $FUN_1[$i1] = sin($i1 * time) ($RES_$AUX_5)
-// 	[----] end for;
-// 	 slice: {9, 8, 7, 6, 5, 4, 3, 2, 1, 0}
-//
-// --- Alias of INI[1 | 5] ---
-// BLOCK 4: Generic Component (status = Solve.EXPLICIT)
-// ------------------------------------------------------
-// ### Variable:
-// 	$DER.x[$i1]
-// ### Equation:
-// 	[FOR-] (10) ($RES_SIM_1)
-// 	[----] for $i1 in 1:10 loop
-// 	[----]   [SCAL] (1) $DER.x[$i1] = x[$i1] + $DER.x[1 + $i1] + $FUN_1[$i1] ($RES_SIM_2)
-// 	[----] end for;
-// 	 slice: {0, 1}
-//
-// --- Alias of INI[1 | 6] ---
-// BLOCK 5: Generic Component (status = Solve.EXPLICIT)
-// ------------------------------------------------------
-// ### Variable:
-// 	$DER.x[1 + $i1]
-// ### Equation:
-// 	[FOR-] (10) ($RES_SIM_1)
-// 	[----] for $i1 in 1:10 loop
-// 	[----]   [SCAL] (1) $DER.x[1 + $i1] = -((x[$i1] + $FUN_1[$i1]) - $DER.x[$i1]) ($RES_SIM_2)
-// 	[----] end for;
-// 	 slice: {9, 8, 7, 6, 5, 4, 3, 2}
-//
-// ###################################
-//
-// 	[ODE] Jacobian ODE_JAC: SIM
-//
-// ###################################
-//
-// Partial Derivative Variables (3/22)
-// *************************************
-// (1)       [ALGB] (1) Real $FUN_2
-// (2)       [ALGB] (10) Real[10] $FUN_1
-// (3)       [DER-] (11) Real[11] $DER.x
-//
-// Seed Variables (1/11)
-// ***********************
-// (1)       [STAT] (11) Real[11] x
-//
-// ==============================
-// Sparsity Pattern (nnz: 10)
-// ==============================
-//
-// ### Seeds (col vars) ###
-// --------------------------
-// {x[11], x[10], x[9], x[8], x[7], x[6], x[5], x[4], x[3], x[2], x[1]}
-//
-// ### Partials (row vars) ###
-// -----------------------------
-// {$DER.x[11], $DER.x[10], $DER.x[9], $DER.x[8], $DER.x[7], $DER.x[6], $DER.x[5], $DER.x[4], $DER.x[3], $DER.x[2], $DER.x[1]}
-//
-// ### Columns ###
-// -----------------
-// (x[1])	 affects:	{$DER.x[2]}
-// (x[2])	 affects:	{$DER.x[3]}
-// (x[3])	 affects:	{$DER.x[4]}
-// (x[4])	 affects:	{$DER.x[5]}
-// (x[5])	 affects:	{$DER.x[6]}
-// (x[6])	 affects:	{$DER.x[7]}
-// (x[7])	 affects:	{$DER.x[8]}
-// (x[8])	 affects:	{$DER.x[9]}
-// (x[9])	 affects:	{$DER.x[9]}
-// (x[10])	 affects:	{$DER.x[10]}
-// (x[11])	 affects:	{}
-//
-// ##### Rows #####
-// ------------------
-// ($DER.x[1])	 depends on:	{}
-// ($DER.x[2])	 depends on:	{x[1]}
-// ($DER.x[3])	 depends on:	{x[2]}
-// ($DER.x[4])	 depends on:	{x[3]}
-// ($DER.x[5])	 depends on:	{x[4]}
-// ($DER.x[6])	 depends on:	{x[5]}
-// ($DER.x[7])	 depends on:	{x[6]}
-// ($DER.x[8])	 depends on:	{x[7]}
-// ($DER.x[9])	 depends on:	{x[8],x[9]}
-// ($DER.x[10])	 depends on:	{x[10]}
-// ($DER.x[11])	 depends on:	{}
-//
-// =====================
-// Sparsity Coloring
-// =====================
-// Color (1)
-//   - Column: {x[1],x[2],x[3],x[4],x[5],x[6],x[7],x[9],x[10],x[11]}
-//   - Row:    {}
-//
-// Color (2)
-//   - Column: {x[8]}
-//   - Row:    {}
-//
-//
 // record SimulationResult
 //     resultFile = "simple_der_for_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'simple_der_for', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
@@ -162,4 +34,6 @@ simulate(simple_der_for); getErrorString();
 // "
 // end SimulationResult;
 // ""
+// 4.665076808625762
+// 0.8270481657743375
 // endResult

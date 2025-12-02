@@ -232,6 +232,7 @@ algorithm
       Option<DAE.VariableAttributes> variableAttributesOption;
       Option<SCode.Comment> absynCommentOption;
       Absyn.InnerOuter innerOuter;
+      Boolean e;
       DAE.Dimensions dimension;
       DAE.Algorithm alg,alg_1;
       String i;
@@ -242,12 +243,12 @@ algorithm
       list<DAE.Statement> assrtLst;
 
     case (DAE.VAR(componentRef,kind,direction,parallelism,protection,ty,SOME(binding),dims,ct,
-                 source,variableAttributesOption,absynCommentOption,innerOuter),fns)
+                 source,variableAttributesOption,absynCommentOption,innerOuter,e),fns)
       equation
         (binding_1,source,true,_) = inlineExp(binding,fns,source);
       then
         (DAE.VAR(componentRef,kind,direction,parallelism,protection,ty,SOME(binding_1),dims,ct,
-                      source,variableAttributesOption,absynCommentOption,innerOuter),true);
+                      source,variableAttributesOption,absynCommentOption,innerOuter,e),true);
 
     case (DAE.DEFINE(componentRef,exp,source) ,fns)
       equation
@@ -698,17 +699,24 @@ algorithm
     case (e,(SOME(functionTree),_),source)
       guard
         Expression.isConst(inExp)
-      equation
-        e_1 = Ceval.cevalSimpleWithFunctionTreeReturnExp(inExp, functionTree);
-        source = ElementSource.addSymbolicTransformation(source,DAE.OP_INLINE(DAE.PARTIAL_EQUATION(e),DAE.PARTIAL_EQUATION(e_1)));
-      then (e_1,source,true);
+      algorithm
+        try
+          e_1 := Ceval.cevalSimpleWithFunctionTreeReturnExp(inExp, functionTree);
+          source := ElementSource.addSymbolicTransformation(source,DAE.OP_INLINE(DAE.PARTIAL_EQUATION(e),DAE.PARTIAL_EQUATION(e_1)));
+          b := true;
+        else
+          e_1 := inExp;
+          source := inSource;
+          b := false;
+        end try;
+      then (e_1,source,b);
     case (e,fns,source)
       equation
         (e_1,_) = Expression.traverseExpBottomUp(e,function forceInlineCall(fns=fns, visitedPaths=AvlSetPath.Tree.EMPTY()),{});
         b = not referenceEq(e, e_1);
         if b then
-        source = ElementSource.addSymbolicTransformation(source,DAE.OP_INLINE(DAE.PARTIAL_EQUATION(e),DAE.PARTIAL_EQUATION(e_1)));
-        (DAE.PARTIAL_EQUATION(e_1),source) = ExpressionSimplify.simplifyAddSymbolicOperation(DAE.PARTIAL_EQUATION(e_1), source);
+          source = ElementSource.addSymbolicTransformation(source,DAE.OP_INLINE(DAE.PARTIAL_EQUATION(e),DAE.PARTIAL_EQUATION(e_1)));
+          (DAE.PARTIAL_EQUATION(e_1),source) = ExpressionSimplify.simplifyAddSymbolicOperation(DAE.PARTIAL_EQUATION(e_1), source);
         end if;
       then
         (e_1,source,b);
@@ -839,7 +847,7 @@ algorithm
           crefs = List.map(fn,getInputCrefs);
           crefs = List.select(crefs,removeWilds);
           argmap = List.zip(crefs,args);
-          false = List.exist(fn,DAEUtil.isProtectedVar);
+          false = List.any(fn,DAEUtil.isProtectedVar);
           newExp = getRhsExp(fn);
           // compare types
           true = checkExpsTypeEquiv(e1, newExp);
@@ -975,7 +983,6 @@ algorithm
 
     case (e1 as DAE.CALL(p,args,DAE.CALL_ATTR(inlineType=inlineType))) guard not AvlSetPath.hasKey(visitedPaths, p)
       equation
-        //print(printInlineTypeStr(inlineType));
         false = Config.acceptMetaModelicaGrammar();
         true = checkInlineType(inlineType,fns);
         (fn,comment) = getFunctionBody(p,fns);

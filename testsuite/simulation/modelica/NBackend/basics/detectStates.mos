@@ -43,60 +43,78 @@ simulate(expandDerOperator3); getErrorString();
 // Result:
 // true
 // ""
-// false
-// [stateselection] Natural states before index reduction:
-// ****************************************
-// 	[STAT] Real x
-// 	[STAT] Real y
+// true
+// [stateselection] (0) Forced states by StateSelect.ALWAYS:
+// ***********************************************************
+// 	<no states>
 //
-// [stateselection] Natural discrete states:
-// ****************************************
-// 	<no discrete states>
+// [stateselection] (2) Natural states before index reduction:
+// *************************************************************
+// 	[STAT] (1) Real x
+// 	[STAT] (1) Real y
+//
+// [stateselection] State Order:
+// *******************************
+// 	(y --d/dt--> $FUN_2)
+// 	(x --d/dt--> $FUN_1)
 //
 // record SimulationResult
 //     resultFile = "expandDerOperator1_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'expandDerOperator1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = "LOG_STDOUT        | info    | Jacobian or SparsePattern is not generated or failed to initialize! Switch back to normal.
-// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'expandDerOperator1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
 // ""
-// [stateselection] Natural states before index reduction:
-// ****************************************
-// 	[STAT] Real y
-// 	[STAT] Real x
+// [stateselection] (0) Forced states by StateSelect.ALWAYS:
+// ***********************************************************
+// 	<no states>
 //
-// [stateselection] Natural discrete states:
-// ****************************************
-// 	<no discrete states>
+// [stateselection] (2) Natural states before index reduction:
+// *************************************************************
+// 	[STAT] (1) Real y
+// 	[STAT] (1) Real x
+//
+// [stateselection] State Order:
+// *******************************
+// 	(x --d/dt--> $FUN_1)
+//
+// [stateselection] (0) State Derivatives Created by Differentiation
+// *******************************************************************
+//
+//
+// [stateselection] (1) Selected Dummy States
+// ********************************************
+// 	[DSTA] (1) Real y;
 //
 // record SimulationResult
 //     resultFile = "expandDerOperator2_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'expandDerOperator2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = "LOG_STDOUT        | info    | Jacobian or SparsePattern is not generated or failed to initialize! Switch back to normal.
-// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'expandDerOperator2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
 // ""
-// [stateselection] Natural states before index reduction:
-// ****************************************
-// 	[STAT] Real $AUX_0 = x + y
+// [stateselection] (0) Forced states by StateSelect.ALWAYS:
+// ***********************************************************
+// 	<no states>
 //
-// [stateselection] Created auxiliary equations:
-// ****************************************
-// 	[SCAL] ($RES_$AUX_0) $AUX_0 = x + y
+// [stateselection] (1) Natural states before index reduction:
+// *************************************************************
+// 	[STAT] (1) Real $AUX_0 = x + y
 //
-// [stateselection] Natural discrete states:
-// ****************************************
-// 	<no discrete states>
+// [stateselection] (1) Created auxiliary equations:
+// ***************************************************
+// 	[SCAL] (1) $AUX_0 = x + y ($RES_$AUX_0)
+//
+// [stateselection] State Order:
+// *******************************
+// 	($AUX_0 --d/dt--> z)
 //
 // record SimulationResult
 //     resultFile = "expandDerOperator3_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'expandDerOperator3', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = "LOG_STDOUT        | info    | Jacobian or SparsePattern is not generated or failed to initialize! Switch back to normal.
-// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'expandDerOperator3', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;

@@ -1,7 +1,6 @@
 // name:     EnumRange
 // keywords: enumeration enum range reduction
 // status:   correct
-// cflags: -d=-newInst
 //
 // Tests that enumeration literals are preserved when used in ranges.
 //
@@ -27,6 +26,7 @@ equation
   a = sum(A[i] for i in Package1.Package2.E.one : Package1.Package2.E.two);
   b = sum(B[i] for i in E2.b : E2.e);
   c = sum(C[i] for i in Test.E3.x : Test.E3.z);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end EnumRange;
 
 // Result:

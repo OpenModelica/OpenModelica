@@ -1,7 +1,6 @@
 // name: ForEquation7
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 //
 

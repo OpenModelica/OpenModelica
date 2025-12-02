@@ -168,12 +168,43 @@ template ScalarVariableType(SimCode simCode, DAE.ComponentRef simVarCref, AliasV
  "Generates code for ScalarVariable Type file for FMU target."
 ::=
   match type_
-    case T_INTEGER(__) then '<Integer <%ScalarVariableTypeStartAttribute(simCode, simVarCref, simVarAlias, startValue, "Int", complexStartExpressions, stateDerVectorName)%><%ScalarVariableTypeFixedAttribute(isFixed)%><%ScalarVariableTypeIntegerMinAttribute(minValue)%><%ScalarVariableTypeIntegerMaxAttribute(maxValue)%><%ScalarVariableTypeUnitAttribute(unit)%><%ScalarVariableTypeDisplayUnitAttribute(displayUnit)%> />'
-    case T_REAL(__) then '<Real <%ScalarVariableTypeStartAttribute(simCode, simVarCref, simVarAlias, startValue, "Real", complexStartExpressions, stateDerVectorName)%><%ScalarVariableTypeFixedAttribute(isFixed)%><%ScalarVariableTypeNominalAttribute(nominalValue)%><%ScalarVariableTypeRealMinAttribute(minValue)%><%ScalarVariableTypeRealMaxAttribute(maxValue)%><%ScalarVariableTypeUnitAttribute(unit)%><%ScalarVariableTypeDisplayUnitAttribute(displayUnit)%> />'
-    case T_BOOL(__) then '<Boolean <%ScalarVariableTypeStartAttribute(simCode, simVarCref, simVarAlias, startValue, "Bool", complexStartExpressions, stateDerVectorName)%><%ScalarVariableTypeFixedAttribute(isFixed)%><%ScalarVariableTypeUnitAttribute(unit)%><%ScalarVariableTypeDisplayUnitAttribute(displayUnit)%> />'
-    case T_STRING(__) then '<String <%ScalarVariableTypeStartAttribute(simCode, simVarCref, simVarAlias, startValue, "String", complexStartExpressions, stateDerVectorName)%><%ScalarVariableTypeFixedAttribute(isFixed)%><%ScalarVariableTypeUnitAttribute(unit)%><%ScalarVariableTypeDisplayUnitAttribute(displayUnit)%> />'
-    case T_ENUMERATION(__) then '<Integer <%ScalarVariableTypeStartAttribute(simCode, simVarCref, simVarAlias, startValue, "Int", complexStartExpressions, stateDerVectorName)%><%ScalarVariableTypeFixedAttribute(isFixed)%><%ScalarVariableTypeUnitAttribute(unit)%><%ScalarVariableTypeDisplayUnitAttribute(displayUnit)%> />'
-    case T_COMPLEX(complexClassType = ci as ClassInf.EXTERNAL_OBJ(__)) then '<ExternalObject path="<%escapeModelicaStringToXmlString(dotPath(ci.path))%>" />'
+    case T_INTEGER(__) then
+      let start_  = ScalarVariableTypeStartAttribute(simCode, simVarCref, simVarAlias, startValue, "Int", complexStartExpressions, stateDerVectorName)
+      let fixed_  = ' fixed="<%isFixed%>"'
+      let min_    = attributeOptionString(minValue, "min")
+      let max_    = attributeOptionString(maxValue, "max")
+      let unit_   = unitString(unit, "unit")
+      let disp_   = unitString(displayUnit, "displayUnit")
+      '<Integer <%start_%><%fixed_%><%min_%><%max_%><%unit_%><%disp_%> />'
+    case T_REAL(__) then
+      let start_  = ScalarVariableTypeStartAttribute(simCode, simVarCref, simVarAlias, startValue, "Real", complexStartExpressions, stateDerVectorName)
+      let fixed_  = ' fixed="<%isFixed%>"'
+      let nom_    = ' useNominal="<%Util.isSome(nominalValue)%>"<%attributeOptionString(nominalValue, "nominal")%>'
+      let min_    = attributeOptionString(minValue, "min")
+      let max_    = attributeOptionString(maxValue, "max")
+      let unit_   = unitString(unit, "unit")
+      let disp_   = unitString(displayUnit, "displayUnit")
+      '<Real <%start_%><%fixed_%><%nom_%><%min_%><%max_%><%unit_%><%disp_%> />'
+    case T_BOOL(__) then
+      let start_  = ScalarVariableTypeStartAttribute(simCode, simVarCref, simVarAlias, startValue, "Bool", complexStartExpressions, stateDerVectorName)
+      let fixed_  = ' fixed="<%isFixed%>"'
+      let unit_   = unitString(unit, "unit")
+      let disp_   = unitString(displayUnit, "displayUnit")
+      '<Boolean <%start_%><%fixed_%><%unit_%><%disp_%> />'
+    case T_STRING(__) then
+      let start_  = ScalarVariableTypeStartAttribute(simCode, simVarCref, simVarAlias, startValue, "String", complexStartExpressions, stateDerVectorName)
+      let fixed_  = ' fixed="<%isFixed%>"'
+      let unit_   = unitString(unit, "unit")
+      let disp_   = unitString(displayUnit, "displayUnit")
+      '<String <%start_%><%fixed_%><%unit_%><%disp_%> />'
+    case T_ENUMERATION(__) then
+      let start_  = ScalarVariableTypeStartAttribute(simCode, simVarCref, simVarAlias, startValue, "Int", complexStartExpressions, stateDerVectorName)
+      let fixed_  = ' fixed="<%isFixed%>"'
+      let unit_   = unitString(unit, "unit")
+      let disp_   = unitString(displayUnit, "displayUnit")
+      '<Integer <%start_%><%fixed_%><%unit_%><%disp_%> />'
+    case T_COMPLEX(complexClassType = ci as ClassInf.EXTERNAL_OBJ(__)) then
+      '<ExternalObject path="<%escapeModelicaStringToXmlString(dotPath(ci.path))%>" />'
     else error(sourceInfo(), 'ScalarVariableType: <%unparseType(type_)%>')
 end ScalarVariableType;
 
@@ -183,7 +214,7 @@ template ScalarVariableTypeStartAttribute(SimCode simCode, DAE.ComponentRef simV
 ::=
   match startValue
     case SOME(exp) then
-      let startString = StartString(exp)
+      let startString = attributeString(exp, "start")
       match startString
         case "" then
           let unsued = match simVarAlias

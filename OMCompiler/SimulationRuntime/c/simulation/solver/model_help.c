@@ -40,6 +40,7 @@
 #include "../../util/omc_error.h"
 #include "../../util/varinfo.h"
 #include "model_help.h"
+#include "../arrayIndex.h"
 #include "../options.h"
 #include "../simulation_info_json.h"
 #include "../../util/omc_msvc.h" /* for freaking round! */
@@ -70,6 +71,8 @@ int nonlinearSparseSolverMinSize = DEFAULT_FLAG_NLSS_MIN_SIZE;
 double maxStepFactor = 1e12;
 double newtonXTol = 1e-12;
 double newtonFTol = 1e-12;
+int newtonMaxSteps = DEFAULT_FLAG_NEWTON_MAX_STEPS;
+int maxJacUpdate[4] = {10,3,1,1};
 double steadyStateTol = 1e-3;
 const size_t SIZERINGBUFFER = 3;
 int compiledInDAEMode = 0;
@@ -114,27 +117,16 @@ void updateDiscreteSystem(DATA *data, threadData_t *threadData)
   storeRelations(data);
 
   data->callback->functionDAE(data, threadData);
-  debugStreamPrint(LOG_EVENTS_V, 0, "updated discrete System");
 
   relationChanged = checkRelations(data);
   discreteChanged = checkForDiscreteChanges(data, threadData);
   while(discreteChanged || data->simulationInfo->needToIterate || relationChanged)
   {
-    if(data->simulationInfo->needToIterate) {
-      debugStreamPrint(LOG_EVENTS_V, 0, "reinit() call. Iteration needed!");
-    }
-    if(relationChanged) {
-      debugStreamPrint(LOG_EVENTS_V, 0, "relations changed. Iteration needed.");
-    }
-    if(discreteChanged) {
-      debugStreamPrint(LOG_EVENTS_V, 0, "discrete Variable changed. Iteration needed.");
-    }
-
     storePreValues(data);
     updateRelationsPre(data);
 
-    printRelations(data, LOG_EVENTS_V);
-    printZeroCrossings(data, LOG_EVENTS_V);
+    printRelations(data, OMC_LOG_EVENTS_V);
+    printZeroCrossings(data, OMC_LOG_EVENTS_V);
 
     data->callback->functionDAE(data, threadData);
 
@@ -161,8 +153,6 @@ void saveZeroCrossings(DATA* data, threadData_t *threadData)
 {
   TRACE_PUSH
   long i = 0;
-
-  debugStreamPrint(LOG_ZEROCROSSINGS, 0, "save all zero-crossings");
 
   for(i=0;i<data->modelData->nZeroCrossings;i++)
     data->simulationInfo->zeroCrossingsPre[i] = data->simulationInfo->zeroCrossings[i];
@@ -208,7 +198,7 @@ void printAllVars(DATA *data, int ringSegment, int stream)
   MODEL_DATA      *mData = data->modelData;
   SIMULATION_INFO *sInfo = data->simulationInfo;
 
-  if (!ACTIVE_STREAM(stream)) return;
+  if (!OMC_ACTIVE_STREAM(stream)) return;
 
   infoStreamPrint(stream, 1, "Print values for buffer segment %d regarding point in time : %g", ringSegment, data->localData[ringSegment]->timeValue);
 
@@ -251,60 +241,6 @@ void printAllVars(DATA *data, int ringSegment, int stream)
   TRACE_POP
 }
 
-#ifdef USE_DEBUG_OUTPUT
-/*! \fn printAllVarsDebug
- *
- *  prints all variable values
- *
- *  \param [in]  [data]
- *  \param [in]  [ringSegment]
- */
-void printAllVarsDebug(DATA *data, int ringSegment, int stream)
-{
-  TRACE_PUSH
-  long i;
-  MODEL_DATA      *mData = data->modelData;
-  SIMULATION_INFO *sInfo = data->simulationInfo;
-
-  debugStreamPrint(stream, 1, "Print values for buffer segment %d regarding point in time : %e", ringSegment, data->localData[ringSegment]->timeValue);
-
-  debugStreamPrint(stream, 1, "states variables");
-  for(i=0; i<mData->nStates; ++i)
-    debugStreamPrint(stream, 0, "%ld: %s = %g (pre: %g)", i+1, mData->realVarsData[i].info.name, data->localData[ringSegment]->realVars[i], sInfo->realVarsPre[i]);
-  messageClose(stream);
-
-  debugStreamPrint(stream, 1, "derivatives variables");
-  for(i=mData->nStates; i<2*mData->nStates; ++i)
-    debugStreamPrint(stream, 0, "%ld: %s = %g (pre: %g)", i+1, mData->realVarsData[i].info.name, data->localData[ringSegment]->realVars[i], sInfo->realVarsPre[i]);
-  messageClose(stream);
-
-  debugStreamPrint(stream, 1, "other real values");
-  for(i=2*mData->nStates; i<mData->nVariablesReal; ++i)
-    debugStreamPrint(stream, 0, "%ld: %s = %g (pre: %g)", i+1, mData->realVarsData[i].info.name, data->localData[ringSegment]->realVars[i], sInfo->realVarsPre[i]);
-  messageClose(stream);
-
-  debugStreamPrint(stream, 1, "integer variables");
-  for(i=0; i<mData->nVariablesInteger; ++i)
-    debugStreamPrint(stream, 0, "%ld: %s = %ld (pre: %ld)", i+1, mData->integerVarsData[i].info.name, data->localData[ringSegment]->integerVars[i], sInfo->integerVarsPre[i]);
-  messageClose(stream);
-
-  debugStreamPrint(stream, 1, "boolean variables");
-  for(i=0; i<mData->nVariablesBoolean; ++i)
-    debugStreamPrint(stream, 0, "%ld: %s = %s (pre: %s)", i+1, mData->booleanVarsData[i].info.name, data->localData[ringSegment]->booleanVars[i] ? "true" : "false", sInfo->booleanVarsPre[i] ? "true" : "false");
-  messageClose(stream);
-
-#if !defined(OMC_NVAR_STRING) || OMC_NVAR_STRING>0
-  debugStreamPrint(stream, 1, "string variables");
-  for(i=0; i<mData->nVariablesString; ++i)
-    debugStreamPrint(stream, 0, "%ld: %s = %s (pre: %s)", i+1, mData->stringVarsData[i].info.name, data->localData[ringSegment]->stringVars[i], sInfo->stringVarsPre[i]);
-  messageClose(stream);
-#endif
-  messageClose(stream);
-
-  TRACE_POP
-}
-#endif
-
 /*! \fn printParameters
  *
  *  prints all parameter values
@@ -320,7 +256,7 @@ void printParameters(DATA *data, int stream)
   long i;
   MODEL_DATA *mData = data->modelData;
 
-  if (!ACTIVE_STREAM(stream)) return;
+  if (!OMC_ACTIVE_STREAM(stream)) return;
 
   infoStreamPrint(stream, 1, "parameter values");
 
@@ -328,9 +264,9 @@ void printParameters(DATA *data, int stream)
   {
     infoStreamPrint(stream, 1, "real parameters");
     for(i=0; i<mData->nParametersReal; ++i)
-      infoStreamPrint(stream, 0, "[%ld] parameter Real %s(start=%g, fixed=%s) = %g", i+1,
+      infoStreamPrint(stream, 0, "[%ld] parameter Real %s(start=%s, fixed=%s) = %g", i+1,
                                  mData->realParameterData[i].info.name,
-                                 mData->realParameterData[i].attribute.start,
+                                 real_vector_to_string(&mData->realParameterData[i].attribute.start, mData->realParameterData[i].dimension.numberOfDimensions == 0),
                                  mData->realParameterData[i].attribute.fixed ? "true" : "false",
                                  data->simulationInfo->realParameter[i]);
     messageClose(stream);
@@ -394,7 +330,7 @@ void printSparseStructure(SPARSE_PATTERN *sparsePattern, int sizeRows, int sizeC
   unsigned int row, col, i, j;
   char *buffer;
 
-  if (!ACTIVE_STREAM(stream))
+  if (!OMC_ACTIVE_STREAM(stream))
   {
     return;
   }
@@ -490,29 +426,6 @@ modelica_boolean sparsitySanityCheck(SPARSE_PATTERN *sparsePattern, int nlsSize,
   return TRUE;
 }
 
-
-#ifdef USE_DEBUG_OUTPUT
-/*! \fn printRelationsDebug
- *
- *  print all relations
- *
- *  \param [in]  [data]
- *  \param [in]  [stream]
- */
-void printRelationsDebug(DATA *data, int stream)
-{
-  TRACE_PUSH
-  long i;
-
-  debugStreamPrint(stream, 1, "status of relations at time=%.12g", data->localData[0]->timeValue);
-  for(i=0; i<data->modelData->nRelations; i++)
-    debugStreamPrint(stream, 0, "[%ld] %s = %c | pre(%s) = %c", i, data->callback->relationDescription(i), data->simulationInfo->relations[i] ? 'T' : 'F', data->callback->relationDescription(i), data->simulationInfo->relationsPre[i] ? 'T' : 'F');
-  messageClose(stream);
-
-  TRACE_POP
-}
-#endif
-
 /*! \fn printRelations
  *
  *  print all relations
@@ -525,7 +438,7 @@ void printRelations(DATA *data, int stream)
   TRACE_PUSH
   long i;
 
-  if (!ACTIVE_STREAM(stream))
+  if (!OMC_ACTIVE_STREAM(stream))
   {
     TRACE_POP
     return;
@@ -553,7 +466,7 @@ void printZeroCrossings(DATA *data, int stream)
   TRACE_PUSH
   long i;
 
-  if (!ACTIVE_STREAM(stream))
+  if (!OMC_ACTIVE_STREAM(stream))
   {
     TRACE_POP
     return;
@@ -644,30 +557,30 @@ void printRingBufferSimulationData(RINGBUFFER *rb, DATA* data)
 
   for (int i = 0; i < ringBufferLength(rb); i++)
   {
-    messageClose(LOG_STDOUT);
+    messageClose(OMC_LOG_STDOUT); // FIXME what does this belong to?
     SIMULATION_DATA *sdata = (SIMULATION_DATA *)getRingData(rb, i);
-    infoStreamPrint(LOG_STDOUT, 1, "Time: %g ", sdata->timeValue);
+    infoStreamPrint(OMC_LOG_STDOUT, 1, "Time: %g ", sdata->timeValue);
 
-    infoStreamPrint(LOG_STDOUT, 1, "RingBuffer Real Variable");
+    infoStreamPrint(OMC_LOG_STDOUT, 1, "RingBuffer Real Variable");
     for (int j = 0; j < data->modelData->nVariablesReal; ++j)
     {
-      infoStreamPrint(LOG_STDOUT, 0, "%d: %s = %g ", j+1, data->modelData->realVarsData[j].info.name, sdata->realVars[j]);
+      infoStreamPrint(OMC_LOG_STDOUT, 0, "%d: %s = %g ", j+1, data->modelData->realVarsData[j].info.name, sdata->realVars[j]);
     }
-    messageClose(LOG_STDOUT);
+    messageClose(OMC_LOG_STDOUT);
 
-    infoStreamPrint(LOG_STDOUT, 1, "RingBuffer Integer Variable");
+    infoStreamPrint(OMC_LOG_STDOUT, 1, "RingBuffer Integer Variable");
     for (int j = 0; j < data->modelData->nVariablesInteger; ++j)
     {
-      infoStreamPrint(LOG_STDOUT, 0, "%d: %s = %li ", j+1, data->modelData->integerVarsData[j].info.name, sdata->integerVars[j]);
+      infoStreamPrint(OMC_LOG_STDOUT, 0, "%d: %s = %li ", j+1, data->modelData->integerVarsData[j].info.name, sdata->integerVars[j]);
     }
-    messageClose(LOG_STDOUT);
+    messageClose(OMC_LOG_STDOUT);
 
-    infoStreamPrint(LOG_STDOUT, 1, "RingBuffer Boolean Variable");
+    infoStreamPrint(OMC_LOG_STDOUT, 1, "RingBuffer Boolean Variable");
     for(int j = 0; j < data->modelData->nVariablesBoolean; ++j)
     {
-      infoStreamPrint(LOG_STDOUT, 0, "%d: %s = %s ", j+1, data->modelData->booleanVarsData[j].info.name, sdata->booleanVars[j] ? "true" : "false");
+      infoStreamPrint(OMC_LOG_STDOUT, 0, "%d: %s = %s ", j+1, data->modelData->booleanVarsData[j].info.name, sdata->booleanVars[j] ? "true" : "false");
     }
-    messageClose(LOG_STDOUT);
+    messageClose(OMC_LOG_STDOUT);
   }
 
   TRACE_POP
@@ -716,76 +629,36 @@ void setAllVarsToStart(DATA *data)
 {
   TRACE_PUSH
   SIMULATION_DATA *sData = data->localData[0];
-  MODEL_DATA      *mData = data->modelData;
-  long i;
+  MODEL_DATA *mData = data->modelData;
+  long array_idx;
+  long scalar_idx = 0;
+  long dim_idx;
 
-  for(i=0; i<mData->nVariablesReal; ++i)
+  for (array_idx = 0; array_idx < mData->nVariablesRealArray; ++array_idx)
   {
-    sData->realVars[i] = mData->realVarsData[i].attribute.start;
-    debugStreamPrint(LOG_DEBUG, 0, "set Real var %s = %g", mData->realVarsData[i].info.name, sData->realVars[i]);
+    for (dim_idx = 0; dim_idx < mData->realVarsData[array_idx].attribute.start.dim_size[0]; dim_idx++)
+    {
+      sData->realVars[scalar_idx] = real_get(mData->realVarsData[array_idx].attribute.start, dim_idx);
+      scalar_idx++;
+    }
   }
-  for(i=0; i<mData->nVariablesInteger; ++i)
+
+  for (array_idx = 0; array_idx < mData->nVariablesInteger; ++array_idx)
   {
-    sData->integerVars[i] = mData->integerVarsData[i].attribute.start;
-    debugStreamPrint(LOG_DEBUG, 0, "set Integer var %s = %ld", mData->integerVarsData[i].info.name, sData->integerVars[i]);
+    sData->integerVars[array_idx] = mData->integerVarsData[array_idx].attribute.start;
   }
-  for(i=0; i<mData->nVariablesBoolean; ++i)
+
+  for (array_idx = 0; array_idx < mData->nVariablesBoolean; ++array_idx)
   {
-    sData->booleanVars[i] = mData->booleanVarsData[i].attribute.start;
-    debugStreamPrint(LOG_DEBUG, 0, "set Boolean var %s = %s", mData->booleanVarsData[i].info.name, sData->booleanVars[i] ? "true" : "false");
+    sData->booleanVars[array_idx] = mData->booleanVarsData[array_idx].attribute.start;
   }
-#if !defined(OMC_NVAR_STRING) || OMC_NVAR_STRING>0
-  for(i=0; i<mData->nVariablesString; ++i)
+
+#if !defined(OMC_NVAR_STRING) || OMC_NVAR_STRING > 0
+  for (array_idx = 0; array_idx < mData->nVariablesString; ++array_idx)
   {
-    sData->stringVars[i] = mmc_mk_scon_persist(mData->stringVarsData[i].attribute.start);
-    debugStreamPrint(LOG_DEBUG, 0, "set String var %s = %s", mData->stringVarsData[i].info.name, MMC_STRINGDATA(sData->stringVars[i]));
+    sData->stringVars[array_idx] = mmc_mk_scon_persist(mData->stringVarsData[array_idx].attribute.start);
   }
 #endif
-  TRACE_POP
-}
-
-/*! \fn setAllStartToVars
- *
- *  This function sets the start-attribute of all variables to their current values.
- *
- *  \param [ref] [data]
- *
- *  \author lochel
- */
-void setAllStartToVars(DATA *data)
-{
-  TRACE_PUSH
-  SIMULATION_DATA *sData = data->localData[0];
-  MODEL_DATA      *mData = data->modelData;
-  long i;
-
-  debugStreamPrint(LOG_DEBUG, 1, "the start-attribute of all variables to their current values:");
-  for(i=0; i<mData->nVariablesReal; ++i)
-  {
-    mData->realVarsData[i].attribute.start = sData->realVars[i];
-    debugStreamPrint(LOG_DEBUG, 0, "Real var %s(start=%g)", mData->realVarsData[i].info.name, sData->realVars[i]);
-  }
-  for(i=0; i<mData->nVariablesInteger; ++i)
-  {
-    mData->integerVarsData[i].attribute.start = sData->integerVars[i];
-    debugStreamPrint(LOG_DEBUG, 0, "Integer var %s(start=%ld)", mData->integerVarsData[i].info.name, sData->integerVars[i]);
-  }
-  for(i=0; i<mData->nVariablesBoolean; ++i)
-  {
-    mData->booleanVarsData[i].attribute.start = sData->booleanVars[i];
-    debugStreamPrint(LOG_DEBUG, 0, "Boolean var %s(start=%s)", mData->booleanVarsData[i].info.name, sData->booleanVars[i] ? "true" : "false");
-  }
-#if !defined(OMC_NVAR_STRING) || OMC_NVAR_STRING>0
-  for(i=0; i<mData->nVariablesString; ++i)
-  {
-    mData->stringVarsData[i].attribute.start = MMC_STRINGDATA(sData->stringVars[i]);
-    debugStreamPrint(LOG_DEBUG, 0, "String var %s(start=%s)", mData->stringVarsData[i].info.name, MMC_STRINGDATA(sData->stringVars[i]));
-  }
-#endif
-  if (DEBUG_STREAM(LOG_DEBUG)) {
-    messageClose(LOG_DEBUG);
-  }
-
   TRACE_POP
 }
 
@@ -801,28 +674,36 @@ void setAllParamsToStart(DATA *data)
 {
   TRACE_PUSH
   SIMULATION_INFO *sInfo = data->simulationInfo;
-  MODEL_DATA      *mData = data->modelData;
-  long i;
+  MODEL_DATA *mData = data->modelData;
+  long array_idx;
+  long scalar_idx = 0;
+  long dim_idx;
 
-  for(i=0; i<mData->nParametersReal; ++i)
+  for (array_idx = 0; array_idx < mData->nParametersRealArray; ++array_idx)
   {
-    sInfo->realParameter[i] = mData->realParameterData[i].attribute.start;
-    debugStreamPrint(LOG_DEBUG, 0, "set Real var %s = %g", mData->realParameterData[i].info.name, sInfo->realParameter[i]);
+    // FIXME there is no messageCloseDebug so we use infoStreamPrint here
+    infoStreamPrint(OMC_LOG_DEBUG, 1, "set Real var %s:", mData->realParameterData[array_idx].info.name);
+    for (dim_idx = 0; dim_idx < mData->realParameterData[array_idx].attribute.start.dim_size[0]; dim_idx++)
+    {
+      sInfo->realParameter[scalar_idx] = real_get(mData->realParameterData[array_idx].attribute.start, dim_idx);
+      scalar_idx++;
+    }
+    messageClose(OMC_LOG_DEBUG);
   }
-  for(i=0; i<mData->nParametersInteger; ++i)
+
+  for (array_idx = 0; array_idx < mData->nParametersInteger; ++array_idx)
   {
-    sInfo->integerParameter[i] = mData->integerParameterData[i].attribute.start;
-    debugStreamPrint(LOG_DEBUG, 0, "set Integer var %s = %ld", mData->integerParameterData[i].info.name, sInfo->integerParameter[i]);
+    sInfo->integerParameter[array_idx] = mData->integerParameterData[array_idx].attribute.start;
   }
-  for(i=0; i<mData->nParametersBoolean; ++i)
+
+  for (array_idx = 0; array_idx < mData->nParametersBoolean; ++array_idx)
   {
-    sInfo->booleanParameter[i] = mData->booleanParameterData[i].attribute.start;
-    debugStreamPrint(LOG_DEBUG, 0, "set Boolean var %s = %s", mData->booleanParameterData[i].info.name, sInfo->booleanParameter[i] ? "true" : "false");
+    sInfo->booleanParameter[array_idx] = mData->booleanParameterData[array_idx].attribute.start;
   }
-  for(i=0; i<mData->nParametersString; ++i)
+
+  for (array_idx = 0; array_idx < mData->nParametersString; ++array_idx)
   {
-    sInfo->stringParameter[i] = mData->stringParameterData[i].attribute.start;
-    debugStreamPrint(LOG_DEBUG, 0, "set String var %s = %s", mData->stringParameterData[i].info.name, MMC_STRINGDATA(sInfo->stringParameter[i]));
+    sInfo->stringParameter[array_idx] = mData->stringParameterData[array_idx].attribute.start;
   }
 
   TRACE_POP
@@ -973,7 +854,7 @@ int getNextSampleTimeFMU(DATA *data, double *nextSampleEvent)
 
   if(0 < data->modelData->nSamples)
   {
-    infoStreamPrint(LOG_EVENTS, 0, "Next event time = %f", data->simulationInfo->nextSampleEvent);
+    infoStreamPrint(OMC_LOG_EVENTS, 0, "Next event time = %f", data->simulationInfo->nextSampleEvent);
     TRACE_POP
     *nextSampleEvent = data->simulationInfo->nextSampleEvent;
     return 1 /* TRUE */;
@@ -983,13 +864,215 @@ int getNextSampleTimeFMU(DATA *data, double *nextSampleEvent)
   return 0 /* FALSE */;
 }
 
-/*! \fn initializeDataStruc
+/**
+ * @brief Allocates static model data.
  *
- *  function initialize DATA structure
+ * Allocate memory for model data of variables, parameters, sensitivity
+ * parameters and alias variables.
+ * Won't allocate memory for dynamic memory inside struct.
  *
- *  \param [ref] [data]
+ * Free with `freeModelDataVars`.
+ *
+ * @param modelData   Pointer to model data.
+ * @param allocAlias  If true allocate memory for `modelData->realAlias`, ... , `modelData->stringAlias`.
+ *                    Alias variables aren't used in FMI C runtime.
+ * @param threadData  Thread data for error handling, can be `NULL`.
  *
  */
+void allocModelDataVars(MODEL_DATA* modelData, modelica_boolean allocAlias, threadData_t* threadData)
+{
+  // Variables
+  modelData->realVarsData = (STATIC_REAL_DATA*) omc_alloc_interface.malloc_uncollectable(modelData->nVariablesRealArray * sizeof(STATIC_REAL_DATA));
+  assertStreamPrint(threadData, modelData->nVariablesRealArray == 0 || modelData->realVarsData != NULL, "Out of memory");
+
+  modelData->integerVarsData = (STATIC_INTEGER_DATA*) omc_alloc_interface.malloc_uncollectable(modelData->nVariablesIntegerArray * sizeof(STATIC_INTEGER_DATA));
+  assertStreamPrint(threadData, modelData->nVariablesIntegerArray == 0 || modelData->integerVarsData != NULL, "Out of memory");
+
+  modelData->booleanVarsData = (STATIC_BOOLEAN_DATA*) omc_alloc_interface.malloc_uncollectable(modelData->nVariablesBooleanArray * sizeof(STATIC_BOOLEAN_DATA));
+  assertStreamPrint(threadData, modelData->nVariablesBooleanArray == 0 || modelData->booleanVarsData != NULL, "Out of memory");
+
+#if !defined(OMC_NVAR_STRING) || OMC_NVAR_STRING>0
+  modelData->stringVarsData = (STATIC_STRING_DATA*) omc_alloc_interface.malloc_uncollectable(modelData->nVariablesStringArray * sizeof(STATIC_STRING_DATA));
+  assertStreamPrint(threadData, modelData->nVariablesStringArray == 0 || modelData->stringVarsData != NULL, "Out of memory");
+#endif
+
+  // Parameter
+  modelData->realParameterData = (STATIC_REAL_DATA*) omc_alloc_interface.malloc_uncollectable(modelData->nParametersRealArray * sizeof(STATIC_REAL_DATA));
+  assertStreamPrint(threadData, modelData->nParametersRealArray == 0 || modelData->realParameterData != NULL, "Out of memory");
+
+  modelData->integerParameterData = (STATIC_INTEGER_DATA*) omc_alloc_interface.malloc_uncollectable(modelData->nParametersIntegerArray * sizeof(STATIC_INTEGER_DATA));
+  assertStreamPrint(threadData, modelData->nParametersIntegerArray == 0 || modelData->integerParameterData != NULL, "Out of memory");
+
+  modelData->booleanParameterData = (STATIC_BOOLEAN_DATA*) omc_alloc_interface.malloc_uncollectable(modelData->nParametersBooleanArray * sizeof(STATIC_BOOLEAN_DATA));
+  assertStreamPrint(threadData, modelData->nParametersBooleanArray == 0 || modelData->booleanParameterData != NULL, "Out of memory");
+
+  modelData->stringParameterData = (STATIC_STRING_DATA*) omc_alloc_interface.malloc_uncollectable(modelData->nParametersStringArray * sizeof(STATIC_STRING_DATA));
+  assertStreamPrint(threadData, modelData->nParametersStringArray == 0 || modelData->stringParameterData != NULL, "Out of memory");
+
+  // Sensitivity
+  modelData->realSensitivityData = (STATIC_REAL_DATA*) omc_alloc_interface.malloc_uncollectable(modelData->nSensitivityVars * sizeof(STATIC_REAL_DATA));
+  assertStreamPrint(threadData, modelData->nSensitivityVars == 0 || modelData->realSensitivityData != NULL, "Out of memory");
+
+  // Alias Variables
+  // TODO: alias variables aren't used at all for FMUs.
+  if (allocAlias) {
+    modelData->realAlias = (DATA_REAL_ALIAS*) omc_alloc_interface.malloc_uncollectable(modelData->nAliasRealArray * sizeof(DATA_REAL_ALIAS));
+    assertStreamPrint(threadData, modelData->nAliasRealArray == 0 || modelData->realAlias != NULL, "Out of memory");
+
+    modelData->integerAlias = (DATA_INTEGER_ALIAS*) omc_alloc_interface.malloc_uncollectable(modelData->nAliasIntegerArray * sizeof(DATA_INTEGER_ALIAS));
+    assertStreamPrint(threadData, modelData->nAliasIntegerArray == 0 || modelData->integerAlias != NULL, "Out of memory");
+
+    modelData->booleanAlias = (DATA_BOOLEAN_ALIAS*) omc_alloc_interface.malloc_uncollectable(modelData->nAliasBooleanArray * sizeof(DATA_BOOLEAN_ALIAS));
+    assertStreamPrint(threadData, modelData->nAliasBooleanArray == 0 || modelData->booleanAlias != NULL, "Out of memory");
+
+    modelData->stringAlias = (DATA_STRING_ALIAS*) omc_alloc_interface.malloc_uncollectable(modelData->nAliasStringArray * sizeof(DATA_STRING_ALIAS));
+    assertStreamPrint(threadData, modelData->nAliasStringArray == 0 || modelData->stringAlias != NULL, "Out of memory");
+  }
+  else {
+    modelData->realAlias = NULL;
+    modelData->integerAlias = NULL;
+    modelData->booleanAlias = NULL;
+    modelData->stringAlias = NULL;
+  }
+}
+
+/**
+ * @brief Free var info and var data.
+ *
+ * VAR_INFO strings get allocated in `read_var_info`.
+ *
+ * @param modelData   Pointer to model data.
+ */
+void freeModelDataVars(MODEL_DATA* modelData)
+{
+  unsigned int i;
+
+  // Variables
+  for(i=0; i < modelData->nVariablesReal; i++) {
+    freeVarInfo(&modelData->realVarsData[i].info);
+  }
+  omc_alloc_interface.free_uncollectable(modelData->realVarsData);
+
+  for(i=0; i < modelData->nVariablesInteger; i++) {
+    freeVarInfo(&modelData->integerVarsData[i].info);
+  }
+  omc_alloc_interface.free_uncollectable(modelData->integerVarsData);
+
+  for(i=0; i < modelData->nVariablesBoolean; i++) {
+    freeVarInfo(&modelData->booleanVarsData[i].info);
+  }
+  omc_alloc_interface.free_uncollectable(modelData->booleanVarsData);
+
+#if !defined(OMC_NVAR_STRING) || OMC_NVAR_STRING>0
+  for(i=0; i < modelData->nVariablesString; i++) {
+    freeVarInfo(&modelData->stringVarsData[i].info);
+  }
+  omc_alloc_interface.free_uncollectable(modelData->stringVarsData);
+#endif
+
+  // Parameters
+  for(i=0; i < modelData->nParametersReal; i++) {
+    freeVarInfo(&modelData->realParameterData[i].info);
+  }
+  omc_alloc_interface.free_uncollectable(modelData->realParameterData);
+
+  for(i=0; i < modelData->nParametersInteger; i++) {
+    freeVarInfo(&modelData->integerParameterData[i].info);
+  }
+  omc_alloc_interface.free_uncollectable(modelData->integerParameterData);
+
+  for(i=0; i < modelData->nParametersBoolean; i++) {
+    freeVarInfo(&modelData->booleanParameterData[i].info);
+  }
+  omc_alloc_interface.free_uncollectable(modelData->booleanParameterData);
+
+  for(i=0; i < modelData->nParametersString; i++) {
+    freeVarInfo(&modelData->stringParameterData[i].info);
+  }
+  omc_alloc_interface.free_uncollectable(modelData->stringParameterData);
+
+  // Sensitivity
+  for(i=0; i < modelData->nSensitivityVars; i++) {
+    freeVarInfo(&modelData->realSensitivityData[i].info);
+  }
+  omc_alloc_interface.free_uncollectable(modelData->realSensitivityData);
+
+  // Alias Variables
+  if (modelData->realAlias != NULL) {
+    for(i=0; i < modelData->nAliasReal; i++) {
+      freeVarInfo(&modelData->realAlias[i].info);
+    }
+    omc_alloc_interface.free_uncollectable(modelData->realAlias);
+  }
+
+  if (modelData->integerAlias != NULL) {
+    for(i=0; i < modelData->nAliasInteger; i++) {
+      freeVarInfo(&modelData->integerAlias[i].info);
+    }
+    omc_alloc_interface.free_uncollectable(modelData->integerAlias);
+  }
+
+  if (modelData->booleanAlias != NULL) {
+    for(i=0; i < modelData->nAliasBoolean; i++) {
+      freeVarInfo(&modelData->booleanAlias[i].info);
+    }
+    omc_alloc_interface.free_uncollectable(modelData->booleanAlias);
+  }
+
+  if (modelData->stringAlias != NULL) {
+    for(i=0; i < modelData->nAliasString; i++) {
+      freeVarInfo(&modelData->stringAlias[i].info);
+    }
+    omc_alloc_interface.free_uncollectable(modelData->stringAlias);
+  }
+}
+
+/**
+ * @brief Allocate memory for scalar attributes.
+ *
+ * Only allocate arrays of length 1 for the scalar case.
+ * Used for scalar only FMI case.
+ *
+ * Memory is freed with `freeModelDataVars`.
+ *
+ * @param modelData   Pointer to model data.
+ */
+void scalarAllocArrayAttributes(MODEL_DATA* modelData) {
+  size_t i;
+
+  // Variables
+  for(i = 0; i < modelData->nVariablesRealArray; i++) {
+    simple_alloc_1d_real_array(&modelData->realVarsData[i].attribute.start, 1);
+  }
+
+  // Parameter
+  for(i = 0; i < modelData->nParametersRealArray; i++) {
+    simple_alloc_1d_real_array(&modelData->realParameterData[i].attribute.start, 1);
+  }
+}
+
+ /*!
+  * @brief Initialize `data` struct.
+  *
+  * Simulation data:
+  *
+  *   - Allocate ring buffer.
+  *
+  * Model data:
+  *
+  *   - Allocate variable and parameter arrays.
+  *
+  * Simulation info:
+  *
+  *   - Allocate clocks.
+  *   - Allocate zero crossings.
+  *   - Buffer for pre variables.
+  *   - Buffer for linear and non-linear solvers.
+  *
+  * @param data         Partially initialized struct `DATA` to initialize.
+  *                     Uses information about number of variables from `data->modelData`.
+  * @param threadData   Used for error handling.
+  */
 void initializeDataStruc(DATA *data, threadData_t *threadData)
 {
   TRACE_PUSH
@@ -999,14 +1082,32 @@ void initializeDataStruc(DATA *data, threadData_t *threadData)
   /* RingBuffer */
   data->simulationData = 0;
   data->simulationData = allocRingBuffer(SIZERINGBUFFER, sizeof(SIMULATION_DATA));
-  if(!data->simulationData)
-  {
+  if (!data->simulationData) {
     throwStreamPrint(threadData, "Your memory is not strong enough for our ringbuffer!");
   }
 
+  /* Index map for array variables */
+  allocateArrayIndexMaps(data->modelData, data->simulationInfo, threadData);
+  computeVarIndices(data->simulationInfo, data->modelData);
+
+  data->modelData->nStates           = data->simulationInfo->realVarsIndex[data->modelData->nStatesArray];
+  data->modelData->nVariablesReal    = data->simulationInfo->realVarsIndex[data->modelData->nVariablesRealArray];
+  data->modelData->nVariablesInteger = data->simulationInfo->integerVarsIndex[data->modelData->nVariablesIntegerArray];
+  data->modelData->nVariablesBoolean = data->simulationInfo->booleanVarsIndex[data->modelData->nVariablesBooleanArray];
+  data->modelData->nVariablesString  = data->simulationInfo->stringVarsIndex[data->modelData->nVariablesStringArray];
+
+  data->modelData->nParametersReal    = data->simulationInfo->realParamsIndex[data->modelData->nParametersRealArray];
+  data->modelData->nParametersInteger = data->simulationInfo->integerParamsIndex[data->modelData->nParametersIntegerArray];
+  data->modelData->nParametersBoolean = data->simulationInfo->booleanParamsIndex[data->modelData->nParametersBooleanArray];
+  data->modelData->nParametersString  = data->simulationInfo->stringParamsIndex[data->modelData->nParametersStringArray];
+
+  data->modelData->nAliasReal    = data->simulationInfo->realAliasIndex[data->modelData->nAliasRealArray];
+  data->modelData->nAliasInteger = data->simulationInfo->integerAliasIndex[data->modelData->nAliasIntegerArray];
+  data->modelData->nAliasBoolean = data->simulationInfo->booleanAliasIndex[data->modelData->nAliasBooleanArray];
+  data->modelData->nAliasString  = data->simulationInfo->stringAliasIndex[data->modelData->nAliasStringArray];
+
   /* prepare RingBuffer */
-  for(i=0; i<SIZERINGBUFFER; i++)
-  {
+  for (i = 0; i < SIZERINGBUFFER; i++) {
     /* set time value */
     /*
     * fix issue #11855, always take the startTime provided in modeldescription.xml
@@ -1030,22 +1131,7 @@ void initializeDataStruc(DATA *data, threadData_t *threadData)
   memset(data->localData, 0, SIZERINGBUFFER * sizeof(SIMULATION_DATA));
   lookupRingBuffer(data->simulationData, (void**) data->localData);
 
-  /* create modelData var arrays */
-  data->modelData->realVarsData = (STATIC_REAL_DATA*) omc_alloc_interface.malloc_uncollectable(data->modelData->nVariablesReal * sizeof(STATIC_REAL_DATA));
-  data->modelData->integerVarsData = (STATIC_INTEGER_DATA*) omc_alloc_interface.malloc_uncollectable(data->modelData->nVariablesInteger * sizeof(STATIC_INTEGER_DATA));
-  data->modelData->booleanVarsData = (STATIC_BOOLEAN_DATA*) omc_alloc_interface.malloc_uncollectable(data->modelData->nVariablesBoolean * sizeof(STATIC_BOOLEAN_DATA));
-#if !defined(OMC_NVAR_STRING) || OMC_NVAR_STRING>0
-  data->modelData->stringVarsData = (STATIC_STRING_DATA*) omc_alloc_interface.malloc_uncollectable(data->modelData->nVariablesString * sizeof(STATIC_STRING_DATA));
-#endif
-  data->modelData->realParameterData = (STATIC_REAL_DATA*) omc_alloc_interface.malloc_uncollectable(data->modelData->nParametersReal * sizeof(STATIC_REAL_DATA));
-  data->modelData->integerParameterData = (STATIC_INTEGER_DATA*) omc_alloc_interface.malloc_uncollectable(data->modelData->nParametersInteger * sizeof(STATIC_INTEGER_DATA));
-  data->modelData->booleanParameterData = (STATIC_BOOLEAN_DATA*) omc_alloc_interface.malloc_uncollectable(data->modelData->nParametersBoolean * sizeof(STATIC_BOOLEAN_DATA));
-  data->modelData->stringParameterData = (STATIC_STRING_DATA*) omc_alloc_interface.malloc_uncollectable(data->modelData->nParametersString * sizeof(STATIC_STRING_DATA));
-
-  data->modelData->realAlias = (DATA_REAL_ALIAS*) omc_alloc_interface.malloc_uncollectable(data->modelData->nAliasReal * sizeof(DATA_REAL_ALIAS));
-  data->modelData->integerAlias = (DATA_INTEGER_ALIAS*) omc_alloc_interface.malloc_uncollectable(data->modelData->nAliasInteger * sizeof(DATA_INTEGER_ALIAS));
-  data->modelData->booleanAlias = (DATA_BOOLEAN_ALIAS*) omc_alloc_interface.malloc_uncollectable(data->modelData->nAliasBoolean * sizeof(DATA_BOOLEAN_ALIAS));
-  data->modelData->stringAlias = (DATA_STRING_ALIAS*) omc_alloc_interface.malloc_uncollectable(data->modelData->nAliasString * sizeof(DATA_STRING_ALIAS));
+  /* modelData vars, parameter and alias arrays are already allocated in read_input_xml */
 
   data->modelData->samplesInfo = (SAMPLE_INFO*) omc_alloc_interface.malloc_uncollectable(data->modelData->nSamples * sizeof(SAMPLE_INFO));
   data->simulationInfo->nextSampleEvent = data->simulationInfo->startTime;
@@ -1168,7 +1254,7 @@ void initializeDataStruc(DATA *data, threadData_t *threadData)
   data->simulationInfo->inlineData->algOldVars = (modelica_real*) calloc(data->modelData->nStates, sizeof(modelica_real));
 
   /* buffer for analytical jacobians */
-  data->simulationInfo->analyticJacobians = (ANALYTIC_JACOBIAN*) omc_alloc_interface.malloc_uncollectable(data->modelData->nJacobians*sizeof(ANALYTIC_JACOBIAN));
+  data->simulationInfo->analyticJacobians = (JACOBIAN*) omc_alloc_interface.malloc_uncollectable(data->modelData->nJacobians*sizeof(JACOBIAN));
 
   data->modelData->modelDataXml.functionNames = NULL;
   data->modelData->modelDataXml.equationInfo = NULL;
@@ -1232,15 +1318,6 @@ void initializeDataStruc(DATA *data, threadData_t *threadData)
   initializeStateSetJacobians(data, threadData);
 #endif
 
-  /* allocate memory for sensitivity analysis */
-  if (omc_flag[FLAG_IDAS])
-  {
-    data->simulationInfo->sensitivityParList = (int*) calloc(data->modelData->nSensitivityParamVars, sizeof(int));
-    data->simulationInfo->sensitivityMatrix = (modelica_real*) calloc(data->modelData->nSensitivityVars-data->modelData->nSensitivityParamVars, sizeof(modelica_real));
-    data->modelData->realSensitivityData = (STATIC_REAL_DATA*) omc_alloc_interface.malloc_uncollectable(data->modelData->nSensitivityVars * sizeof(STATIC_REAL_DATA));
-  }
-
-
   TRACE_POP
 }
 
@@ -1270,28 +1347,9 @@ void deInitializeDataStruc(DATA *data)
   omc_alloc_interface.free_uncollectable(data->localData);
   freeRingBuffer(data->simulationData);
 
-  /* free modelData var arrays */
-  #define FREE_VARS(n,vars) { if (needToFree) { \
-    for(i=0; i < data->modelData->n; i++) { \
-      freeVarInfo(&((data->modelData->vars[i]).info)); \
-    } \
-  } \
-  omc_alloc_interface.free_uncollectable(data->modelData->vars); }
-
-  FREE_VARS(nVariablesReal,realVarsData)
-  FREE_VARS(nVariablesInteger,integerVarsData)
-  FREE_VARS(nVariablesBoolean,booleanVarsData)
-#if !defined(OMC_NVAR_STRING) || OMC_NVAR_STRING>0
-  FREE_VARS(nVariablesString,stringVarsData)
-#endif
-  FREE_VARS(nParametersReal,realParameterData)
-  FREE_VARS(nParametersInteger,integerParameterData)
-  FREE_VARS(nParametersBoolean,booleanParameterData)
-  FREE_VARS(nParametersString,stringParameterData)
-  FREE_VARS(nAliasReal,realAlias)
-  FREE_VARS(nAliasInteger,integerAlias)
-  FREE_VARS(nAliasBoolean,booleanAlias)
-  FREE_VARS(nAliasString,stringAlias)
+  if (needToFree) {
+    freeModelDataVars(data->modelData);
+  }
 
   omc_alloc_interface.free_uncollectable(data->modelData->samplesInfo);
   free(data->simulationInfo->nextSampleTimes);
@@ -1316,17 +1374,23 @@ void deInitializeDataStruc(DATA *data)
   free(data->simulationInfo->states_left);
   free(data->simulationInfo->states_right);
 
+  freeArrayIndexMaps(data->simulationInfo);
+
   /* free buffer for old state variables */
   free(data->simulationInfo->realVarsOld);
   free(data->simulationInfo->integerVarsOld);
   free(data->simulationInfo->booleanVarsOld);
+#if !defined(OMC_NVAR_STRING) || OMC_NVAR_STRING>0
   omc_alloc_interface.free_uncollectable(data->simulationInfo->stringVarsOld);
+#endif
 
   /* free buffer for all variable pre values */
   free(data->simulationInfo->realVarsPre);
   free(data->simulationInfo->integerVarsPre);
   free(data->simulationInfo->booleanVarsPre);
+#if !defined(OMC_NVAR_STRING) || OMC_NVAR_STRING>0
   omc_alloc_interface.free_uncollectable(data->simulationInfo->stringVarsPre);
+#endif
 
   /* free buffer for all parameters values */
   free(data->simulationInfo->realParameter);
@@ -1379,7 +1443,9 @@ void deInitializeDataStruc(DATA *data)
   for(i=0; i<data->modelData->nDelayExpressions; i++)
     freeRingBuffer(data->simulationInfo->delayStructure[i]);
 
+#if !defined(OMC_NDELAY_EXPRESSIONS) || OMC_NDELAY_EXPRESSIONS>0
   free(data->simulationInfo->delayStructure);
+#endif
 
 #if !defined(OMC_NO_STATESELECTION)
   /* free stateset data */
@@ -1395,7 +1461,6 @@ void deInitializeDataStruc(DATA *data)
   {
     free(data->simulationInfo->sensitivityParList);
     free(data->simulationInfo->sensitivityMatrix);
-    FREE_VARS(nSensitivityVars, realSensitivityData)
   }
 
   /* Free model info xml data */
@@ -1415,7 +1480,7 @@ void setZCtol(double relativeTol)
 
   /* lochel: force tolZC > 0 */
   tolZC = TOL_HYSTERESIS_ZEROCROSSINGS * fmax(relativeTol, MINIMAL_STEP_SIZE);
-  infoStreamPrint(LOG_EVENTS_V, 0, "Set tolerance for zero-crossing hysteresis to: %e", tolZC);
+  infoStreamPrint(OMC_LOG_EVENTS_V, 0, "Set tolerance for zero-crossing hysteresis to: %e", tolZC);
 
   TRACE_POP
 }

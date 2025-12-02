@@ -118,7 +118,7 @@ static short initial_guess_ipopt_sim(OptData *optData, SOLVER_INFO* solverInfo, 
    tol = data->simulationInfo->tolerance;
    data->simulationInfo->tolerance = fmin(fmax(tol,1e-8),1e-3);
 
-   infoStreamPrint(LOG_SOLVER, 0, "Initial Guess: Initializing DASSL");
+   infoStreamPrint(OMC_LOG_SOLVER, 0, "Initial Guess: Initializing DASSL");
    sInfo->solverMethod = "dassl";
    solverInfo->solverMethod = S_DASSL;
    dassl_initial(data, threadData, solverInfo, dasslData);
@@ -132,7 +132,7 @@ static short initial_guess_ipopt_sim(OptData *optData, SOLVER_INFO* solverInfo, 
      for(i = 0; i< nu;++i)
        data->simulationInfo->inputVars[i] = u0[i]/*optData->bounds.scalF[i + nx]*/;
 
-   printGuess = (short)(ACTIVE_STREAM(LOG_INIT) && !ACTIVE_STREAM(LOG_SOLVER));
+   printGuess = (short)(OMC_ACTIVE_STREAM(OMC_LOG_INIT) && !OMC_ACTIVE_STREAM(OMC_LOG_SOLVER));
 
    if((double)data->simulationInfo->startTime < optData->time.t0){
      double t = data->simulationInfo->startTime;
@@ -187,7 +187,10 @@ static short initial_guess_ipopt_sim(OptData *optData, SOLVER_INFO* solverInfo, 
          lookupRingBuffer(data->simulationData, (void**) data->localData);
          importStartValues(data, threadData, cflags, (double)optData->time.t[i][j]);
          for(l=0; l<nReal; ++l){
-            data->localData[0]->realVars[l] = data->modelData->realVarsData[l].attribute.start;
+            if(data->modelData->realVarsData[l].dimension.numberOfDimensions > 0){
+              throwStreamPrint(NULL, "Support for array variables not yet implemented!");
+            }
+            data->localData[0]->realVars[l] = real_get(data->modelData->realVarsData[l].attribute.start, 0);
          }
        }
 
@@ -200,8 +203,8 @@ static short initial_guess_ipopt_sim(OptData *optData, SOLVER_INFO* solverInfo, 
          if(((double) v[i][j][l] < (double)optData->bounds.vmin[l]*optData->bounds.vnom[l])
              || (double) (v[i][j][l] > (double) optData->bounds.vmax[l]*optData->bounds.vnom[l])){
            printf("\n********************************************\n");
-           warningStreamPrint(LOG_STDOUT, 0, "Initial guess failure at time %g",(double)optData->time.t[i][j]);
-           warningStreamPrint(LOG_STDOUT, 0, "%g<= (%s=%g) <=%g",
+           warningStreamPrint(OMC_LOG_STDOUT, 0, "Initial guess failure at time %g",(double)optData->time.t[i][j]);
+           warningStreamPrint(OMC_LOG_STDOUT, 0, "%g<= (%s=%g) <=%g",
                (double)optData->bounds.vmin[l]*optData->bounds.vnom[l],
                data->modelData->realVarsData[l].info.name,
                (double)v[i][j][l],
@@ -250,18 +253,18 @@ static int initial_guess_ipopt_cflag(OptData *optData, char* cflags)
       }
     }
 
-    infoStreamPrint(LOG_IPOPT, 0, "Using const trajectory as initial guess.");
+    infoStreamPrint(OMC_LOG_IPOPT, 0, "Using const trajectory as initial guess.");
     return 0;
   }else if(!strcmp(cflags,"sim") || !strcmp(cflags,"SIM")){
 
-    infoStreamPrint(LOG_IPOPT, 0, "Using simulation as initial guess.");
+    infoStreamPrint(OMC_LOG_IPOPT, 0, "Using simulation as initial guess.");
     return 1;
   }else if(!strcmp(cflags,"file") || !strcmp(cflags,"FILE")){
-    infoStreamPrint(LOG_STDOUT, 0, "Using values from file as initial guess.");
+    infoStreamPrint(OMC_LOG_STDOUT, 0, "Using values from file as initial guess.");
     return 2;
   }
 
-  warningStreamPrint(LOG_STDOUT, 0, "not support ipopt_init=%s", cflags);
+  warningStreamPrint(OMC_LOG_STDOUT, 0, "not support ipopt_init=%s", cflags);
   return 1;
 
 }
@@ -350,7 +353,7 @@ static inline void smallIntSolverStep(DATA* data, threadData_t *threadData, SOLV
       a *= 0.5;
       if(++iter >  10){
         printf("\n");
-        warningStreamPrint(LOG_STDOUT, 0, "Initial guess failure at time %.12g", solverInfo->currentTime);
+        warningStreamPrint(OMC_LOG_STDOUT, 0, "Initial guess failure at time %.12g", solverInfo->currentTime);
         assert(0);
       }
     }while(err < 0);

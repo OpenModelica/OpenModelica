@@ -2703,7 +2703,7 @@ algorithm
     case (lst,dim)
       equation
         first_lst = List.map(lst, listHead);
-        rest = List.map(lst, List.rest);
+        rest = List.map(lst, listRest);
         first_lst_1 = catDimension(first_lst, dim);
         rest_1 = catDimension2(rest, dim);
         res = List.threadMap(rest_1, first_lst_1, List.consr);
@@ -4451,7 +4451,7 @@ output Boolean res;
 algorithm
   res := matchcontinue(cr,exp)
     case(_,_) equation
-      res = List.map1BoolOr(Expression.extractCrefsFromExp(exp),ComponentReference.crefEqual,cr);
+      res = List.any(Expression.extractCrefsFromExp(exp), function ComponentReference.crefEqual(inComponentRef2 = cr));
     then res;
     else false;
   end matchcontinue;

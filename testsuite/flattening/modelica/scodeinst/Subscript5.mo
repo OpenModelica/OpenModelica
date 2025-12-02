@@ -1,6 +1,5 @@
 // name: Subscript5
 // status: correct
-// cflags: -d=newInst
 //
 // Checks that partially subscripted crefs are padded with :.
 // 

@@ -1,7 +1,6 @@
 // name: ConnectorRestriction5
 // keywords:
 // status: incorrect
-// cflags: -d=newInst
 //
 
 connector C
@@ -17,7 +16,7 @@ end ConnectorRestriction5;
 
 // Result:
 // Error processing file: ConnectorRestriction5.mo
-// [flattening/modelica/declarations/ConnectorRestriction5.mo:11:3-11:25:writable] Error: Protected sections are not allowed in connector.
+// [flattening/modelica/declarations/ConnectorRestriction5.mo:10:3-10:25:writable] Error: Protected sections are not allowed in connector.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

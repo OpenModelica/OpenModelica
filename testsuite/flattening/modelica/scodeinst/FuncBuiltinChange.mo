@@ -1,7 +1,6 @@
 // name: FuncBuiltinChange
 // keywords: change
 // status: correct
-// cflags: -d=newInst
 //
 // Tests the builtin change operator.
 //

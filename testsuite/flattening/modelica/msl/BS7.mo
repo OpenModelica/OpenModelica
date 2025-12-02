@@ -1,7 +1,6 @@
 // name:     BS7 - Ramp component
 // keywords: Ramp
 // status:   correct
-// cflags: -d=-newInst
 //
 // Testing instantiation of the Ramp component.
 //
@@ -1177,6 +1176,7 @@ model BS7
 
 equation
   connect(ramp1.outPort,der1.inPort) annotation(Line(visible=true,points={{-19.57,10.45},{11.45,12.57}}));
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end BS7;
 // class BS7
 // parameter Integer ramp1.nout(min = 1) = 1 "Number of outputs";
@@ -1236,6 +1236,6 @@ end BS7;
 //   assert(ramp1.outPort.n == der1.inPort.n, "automatically generated from connect");
 //   der1.inPort.signal[1] = ramp1.outPort.signal[1];
 // end BS7;
-// [flattening/modelica/msl/BS7.mo:687:38-687:66:writable] Warning: Non-array modification '1e-60' for array component, possibly due to missing 'each'.
+// [flattening/modelica/msl/BS7.mo:686:38-686:66:writable] Warning: Non-array modification '1e-60' for array component, possibly due to missing 'each'.
 //
 // endResult

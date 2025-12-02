@@ -161,7 +161,7 @@ void SimulationDialog::setUpForm()
   mpNumberofIntervalsRadioButton = new QRadioButton(tr("Number of Intervals:"));
   mpNumberofIntervalsRadioButton->setChecked(true);
   connect(mpNumberofIntervalsRadioButton, SIGNAL(toggled(bool)), SLOT(numberOfIntervalsRadioToggled(bool)));
-  mpNumberofIntervalsSpinBox = new QSpinBox;
+  mpNumberofIntervalsSpinBox = new SpinBox;
   mpNumberofIntervalsSpinBox->setRange(0, std::numeric_limits<int>::max());
   mpNumberofIntervalsSpinBox->setSingleStep(100);
   // Interval
@@ -190,10 +190,10 @@ void SimulationDialog::setUpForm()
   // get the solver methods
   QStringList solverMethods, solverMethodsDesc;
   MainWindow::instance()->getOMCProxy()->getSolverMethods(&solverMethods, &solverMethodsDesc);
-  mpMethodComboBox = new QComboBox;
+  mpMethodComboBox = new ComboBox;
   mpMethodComboBox->addItems(solverMethods);
   Utilities::setToolTip(mpMethodComboBox, "Integration Methods", solverMethodsDesc);
-  connect(mpMethodComboBox, SIGNAL(currentIndexChanged(QString)), SLOT(enableDisableOptions(QString)));
+  connect(mpMethodComboBox, SIGNAL(currentIndexChanged(int)), SLOT(enableDisableOptions(int)));
   mpMehtodHelpButton = new QToolButton;
   mpMehtodHelpButton->setIcon(QIcon(":/Resources/icons/link-external.svg"));
   mpMehtodHelpButton->setToolTip(tr("Integration help"));
@@ -206,7 +206,7 @@ void SimulationDialog::setUpForm()
   mpJacobianLabel->setToolTip(MainWindow::instance()->getOMCProxy()->getJacobianFlagDetailedDescription());
   QStringList jacobianMethods, jacobianMethodsDesc;
   MainWindow::instance()->getOMCProxy()->getJacobianMethods(&jacobianMethods, &jacobianMethodsDesc);
-  mpJacobianComboBox = new QComboBox;
+  mpJacobianComboBox = new ComboBox;
   jacobianMethods.prepend("");
   jacobianMethodsDesc.prepend("");
   mpJacobianComboBox->addItems(jacobianMethods);
@@ -227,7 +227,7 @@ void SimulationDialog::setUpForm()
   mpMaxStepSizeTextBox = new QLineEdit;
   // max integration order
   mpMaxIntegrationOrderLabel = new Label(tr("Maximum Integration Order:"));
-  mpMaxIntegrationOrderSpinBox = new QSpinBox;
+  mpMaxIntegrationOrderSpinBox = new SpinBox;
   // set the layout for options groupbox
   QGridLayout *pOptionsGridLayout = new QGridLayout;
   pOptionsGridLayout->setColumnStretch(1, 1);
@@ -258,7 +258,7 @@ void SimulationDialog::setUpForm()
   mpCflagsTextBox = new QLineEdit;
   // Number of Processors
   mpNumberOfProcessorsLabel = new Label(tr("Number of Processors:"));
-  mpNumberOfProcessorsSpinBox = new QSpinBox;
+  mpNumberOfProcessorsSpinBox = new SpinBox;
   mpNumberOfProcessorsSpinBox->setMinimum(1);
   mpNumberOfProcessorsNoteLabel = new Label(tr("Use 1 processor if you encounter problems during compilation."));
   // build only
@@ -356,7 +356,7 @@ void SimulationDialog::setUpForm()
   MainWindow::instance()->getOMCProxy()->getInitializationMethods(&initializationMethods, &initializationMethodsDesc);
   initializationMethods.prepend("");
   initializationMethodsDesc.prepend("");
-  mpInitializationMethodComboBox = new QComboBox;
+  mpInitializationMethodComboBox = new ComboBox;
   mpInitializationMethodComboBox->addItems(initializationMethods);
   Utilities::setToolTip(mpInitializationMethodComboBox, "Initialization Methods", initializationMethodsDesc);
   // Equation System Initialization File
@@ -372,7 +372,7 @@ void SimulationDialog::setUpForm()
   mpEquationSystemInitializationTimeTextBox = new QLineEdit;
   // clock
   mpClockLabel = new Label(tr("Clock (Optional):"));
-  mpClockComboBox = new QComboBox;
+  mpClockComboBox = new ComboBox;
   mpClockComboBox->addItems(Helper::clockOptions.split(","));
   // Linear Solvers
   mpLinearSolverLabel = new Label(tr("Linear Solver (Optional):"));
@@ -381,7 +381,7 @@ void SimulationDialog::setUpForm()
   MainWindow::instance()->getOMCProxy()->getLinearSolvers(&linearSolverMethods, &linearSolverMethodsDesc);
   linearSolverMethods.prepend("");
   linearSolverMethodsDesc.prepend("");
-  mpLinearSolverComboBox = new QComboBox;
+  mpLinearSolverComboBox = new ComboBox;
   mpLinearSolverComboBox->addItems(linearSolverMethods);
   Utilities::setToolTip(mpLinearSolverComboBox, "Linear Solvers", linearSolverMethodsDesc);
   // Non Linear Solvers
@@ -391,7 +391,7 @@ void SimulationDialog::setUpForm()
   MainWindow::instance()->getOMCProxy()->getNonLinearSolvers(&nonLinearSolverMethods, &nonLinearSolverMethodsDesc);
   nonLinearSolverMethods.prepend("");
   nonLinearSolverMethodsDesc.prepend("");
-  mpNonLinearSolverComboBox = new QComboBox;
+  mpNonLinearSolverComboBox = new ComboBox;
   mpNonLinearSolverComboBox->addItems(nonLinearSolverMethods);
   Utilities::setToolTip(mpNonLinearSolverComboBox, "Non Linear Solvers", nonLinearSolverMethodsDesc);
   // time where the linearization of the model should be performed
@@ -403,7 +403,7 @@ void SimulationDialog::setUpForm()
   mpOutputVariablesTextBox = new QLineEdit;
   // measure simulation time checkbox
   mpProfilingLabel = new Label(tr("Profiling (enable performance measurements)"));
-  mpProfilingComboBox = new QComboBox;
+  mpProfilingComboBox = new ComboBox;
   OMCInterface::getConfigFlagValidOptions_res profiling = MainWindow::instance()->getOMCProxy()->getConfigFlagValidOptions("profiling");
   mpProfilingComboBox->addItems(profiling.validOptions);
   mpProfilingComboBox->setCurrentIndex(0);
@@ -483,7 +483,7 @@ void SimulationDialog::setUpForm()
   mpOutputTab = new QWidget;
   // Output Format
   mpOutputFormatLabel = new Label(tr("Output Format:"));
-  mpOutputFormatComboBox = new QComboBox;
+  mpOutputFormatComboBox = new ComboBox;
   mpOutputFormatComboBox->addItems(Helper::ModelicaSimulationOutputFormats.toLower().split(","));
   // single precision
   mpSinglePrecisionCheckBox = new QCheckBox(tr("Single Precision"));
@@ -494,7 +494,7 @@ void SimulationDialog::setUpForm()
                                    "If you want to change the output path then update the working directory in Options/Preferences."));
   mpResultFileNameLabel = new Label(tr("Result File (Optional):"));
   mpResultFileNameTextBox = new QLineEdit;
-  connect(mpOutputFormatComboBox, SIGNAL(currentIndexChanged(QString)), SLOT(resultFileNameChanged(QString)));
+  connect(mpOutputFormatComboBox, SIGNAL(currentIndexChanged(int)), SLOT(resultFileNameChanged(int)));
   // Variable filter
   mpVariableFilterLabel = new Label(tr("Variable Filter (Optional):"));
   mpVariableFilterTextBox = new QLineEdit(".*");
@@ -588,7 +588,7 @@ bool SimulationDialog::validate()
   }
   if (mpStartTimeTextBox->text().toDouble() > mpStopTimeTextBox->text().toDouble()) {
     QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::error),
-                          GUIMessages::getMessage(GUIMessages::SIMULATION_STARTTIME_LESSTHAN_STOPTIME), Helper::ok);
+                          GUIMessages::getMessage(GUIMessages::SIMULATION_STARTTIME_LESSTHAN_STOPTIME), QMessageBox::Ok);
     return false;
   }
   /* Ticket:5974
@@ -601,7 +601,7 @@ bool SimulationDialog::validate()
           || pSimulationOutputWidget->isSimulationProcessRunning())) {
     QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::error),
                           tr("Simulation of model <b>%1</b> is already running. Please wait for it to finish or cancel it before running another simulation of the same model.")
-                          .arg(mClassName), Helper::ok);
+                          .arg(mClassName), QMessageBox::Ok);
     return false;
   }
   return true;
@@ -669,7 +669,7 @@ void SimulationDialog::initializeFields(bool isReSimulate, SimulationOptions sim
             commandLineOptionKey = commandLineOption;
             commandLineOptionValues = "";
           }
-          QString commandLineOptionKeyFiltered = QString(commandLineOptionKey).remove(QRegExp("\\-|\\--|\\+"));
+          QString commandLineOptionKeyFiltered = QString(commandLineOptionKey).remove(QRegularExpression("\\-|\\--|\\+"));
           if (commandLineOptionKeyFiltered.compare("matchingAlgorithm") == 0) {
             int currentIndex = mpTranslationFlagsWidget->getMatchingAlgorithmComboBox()->findText(commandLineOptionValues);
             if (currentIndex > -1) {
@@ -793,7 +793,7 @@ void SimulationDialog::initializeFields(bool isReSimulate, SimulationOptions sim
           } else if (simulationFlag.compare("s") == 0) {
             mpMethodComboBox->setCurrentIndex(mpMethodComboBox->findText(value));
           } else if (simulationFlag.compare("lv") == 0) {
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 14, 0))
+#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
             QStringList logStreams = value.split(",", Qt::SkipEmptyParts);
 #else // QT_VERSION_CHECK
             QStringList logStreams = value.split(",", QString::SkipEmptyParts);
@@ -867,6 +867,18 @@ void SimulationDialog::initializeFields(bool isReSimulate, SimulationOptions sim
     mpSaveSimulationFlagsAnnotationCheckBox->setVisible(true);
     mpSaveTranslationFlagsAnnotationCheckBox->setVisible(true);
     mpSimulateCheckBox->setVisible(true);
+    /* issue #11727
+     * Select Interval if it is defined in the experiment annotation.
+     */
+    if (mpLibraryTreeItem->getModelWidget() && mpLibraryTreeItem->getModelWidget()->getModelInstance()) {
+      if (mpLibraryTreeItem->getModelWidget()->getModelInstance()->getAnnotation()->getExperimentAnnotation().hasInterval()) {
+        mpIntervalRadioButton->setChecked(true);
+        mpLibraryTreeItem->mSimulationOptions.setHasInterval(true);
+      } else {
+        mpNumberofIntervalsRadioButton->setChecked(true);
+        mpLibraryTreeItem->mSimulationOptions.setHasInterval(false);
+      }
+    }
   } else {
     mIsReSimulate = true;
     mClassName = simulationOptions.getClassName();
@@ -901,6 +913,11 @@ void SimulationDialog::applySimulationOptions(SimulationOptions simulationOption
   mpNumberofIntervalsSpinBox->setValue(simulationOptions.getNumberofIntervals());
   // Interval
   mpIntervalTextBox->setText(QString::number(simulationOptions.getStepSize()));
+  if (simulationOptions.hasInterval()) {
+    mpIntervalRadioButton->setChecked(true);
+  } else {
+    mpNumberofIntervalsRadioButton->setChecked(true);
+  }
   // Interactive simulation
   QString targetLanguage = OptionsDialog::instance()->getSimulationPage()->getTargetLanguageComboBox()->currentText();
   if (targetLanguage.compare("C") == 0) {
@@ -1097,11 +1114,6 @@ bool SimulationDialog::translateModel(QString simulationParameters)
   bool result = MainWindow::instance()->getOMCProxy()->translateModel(mClassName, simulationParameters);
   // reset simulation settings
   OptionsDialog::instance()->saveSimulationSettings();
-  OptionsDialog::instance()->saveNFAPISettings();
-  // set the infoXMLOperations flag
-  if (OptionsDialog::instance()->getDebuggerPage()->getGenerateOperationsCheckBox()->isChecked()) {
-    MainWindow::instance()->getOMCProxy()->setCommandLineOptions("-d=infoXmlOperations");
-  }
   return result;
 }
 
@@ -1128,6 +1140,14 @@ SimulationOptions SimulationDialog::createSimulationOptions()
   } else {
     simulationOptions.setStepSize(mpIntervalTextBox->text().toDouble());
   }
+  /* issue #11727
+   * Save Interval in resimulate case only if we can find the class and it is defined in the experiment annotation.
+   */
+  LibraryTreeItem *pLibraryTreeItem = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem(mClassName);
+  if (pLibraryTreeItem && pLibraryTreeItem->getModelWidget() && pLibraryTreeItem->getModelWidget()->getModelInstance()) {
+    simulationOptions.setHasInterval(pLibraryTreeItem->getModelWidget()->getModelInstance()->getAnnotation()->getExperimentAnnotation().hasInterval());
+  }
+
   simulationOptions.setInteractiveSimulation(mpInteractiveSimulationGroupBox->isChecked());
   simulationOptions.setInteractiveSimulationWithSteps(mpInteractiveSimulationStepCheckBox->isChecked());
   simulationOptions.setMethod(mpMethodComboBox->currentText());
@@ -1552,7 +1572,7 @@ void SimulationDialog::saveSimulationFlagsAnnotation()
   if (logStreams.size() > 0) {
     simulationFlags.insert("lv", logStreams.join(","));
   }
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 14, 0))
+#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
   QStringList additionalSimulationFlags = mpAdditionalSimulationFlagsTextBox->text().split(" ", Qt::SkipEmptyParts);
 #else // QT_VERSION_CHECK
   QStringList additionalSimulationFlags = mpAdditionalSimulationFlagsTextBox->text().split(" ", QString::SkipEmptyParts);
@@ -1562,7 +1582,7 @@ void SimulationDialog::saveSimulationFlagsAnnotation()
     if (additionalSimulationFlag.startsWith('-')) {
       additionalSimulationFlag.remove(0, 1);
     }
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 14, 0))
+#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
     QStringList nameValueList = additionalSimulationFlag.split("=", Qt::SkipEmptyParts);
 #else // QT_VERSION_CHECK
     QStringList nameValueList = additionalSimulationFlag.split("=", QString::SkipEmptyParts);
@@ -1738,6 +1758,14 @@ void SimulationDialog::performSimulation(const SimulationOptions &simulationOpti
       MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, msg, Helper::scriptingKind, Helper::notificationLevel));
       return;
     }
+  } else {
+    /* issue #13790
+     * Always add this error message.
+     * It could be that translateModel fails without any error so in this case atleast this simple message is shown.
+     * If translateModel fails with error then its errors and this message is shown.
+     */
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, tr("Translation of <b>%1</b> failed.").arg(mClassName),
+                                                          Helper::scriptingKind, Helper::errorLevel));
   }
 }
 
@@ -1772,7 +1800,7 @@ void SimulationDialog::showAlgorithmicDebugger(SimulationOptions simulationOptio
     // start the debugger
     if (GDBAdapter::instance()->isGDBRunning()) {
       QMessageBox::information(this, QString(Helper::applicationName).append(" - ").append(Helper::information),
-                               GUIMessages::getMessage(GUIMessages::DEBUGGER_ALREADY_RUNNING), Helper::ok);
+                               GUIMessages::getMessage(GUIMessages::DEBUGGER_ALREADY_RUNNING), QMessageBox::Ok);
     } else {
       QString GDBPath = OptionsDialog::instance()->getDebuggerPage()->getGDBPath();
       GDBAdapter::instance()->launch(fileName, simulationOptions.getWorkingDirectory(), simulationOptions.getSimulationFlags(), GDBPath, simulationOptions);
@@ -1815,7 +1843,7 @@ void SimulationDialog::stopInteractiveSimulationSampling(SimulationOptions simul
 void SimulationDialog::removeInteractiveSimulation(bool isInteractiveSimulation, QString className, bool closeInteractivePlotWindow)
 {
   if (isInteractiveSimulation) {
-    className.remove(QRegExp("_res.int"));
+    className.remove(QRegularExpression("_res.int"));
     SimulationOutputWidget *pSimulationOutputWidget = MessagesWidget::instance()->getSimulationOutputWidget(className);
     if (pSimulationOutputWidget) {
       pSimulationOutputWidget->cancelCompilationOrSimulation();
@@ -1871,7 +1899,7 @@ bool SimulationDialog::createOpcUaClient(SimulationOptions simulationOptions, QS
     MainWindow::instance()->getPlotWindowContainer()->setActiveSubWindow(pInteractivePlotWindow->getSubWindow());
     pInteractivePlotWindow->interactiveSimulationPaused();
   } else {
-    pInteractivePlotWindow = pPlotWindowContainer->addInteractivePlotWindow(true, owner, simulationOptions.getInteractiveSimulationPortNumber());
+    pInteractivePlotWindow = pPlotWindowContainer->addInteractivePlotWindow(owner, simulationOptions.getInteractiveSimulationPortNumber());
   }
   connect(pOpcUaWorker, SIGNAL(sendUpdateCurves()), pInteractivePlotWindow, SLOT(updateCurves()));
   qRegisterMetaType<QPair<double,double>>();
@@ -1936,7 +1964,7 @@ void SimulationDialog::simulationProcessFinished(SimulationOptions simulationOpt
     // if simulated with animation then open the animation directly.
     if (simulationOptions.getSimulateWithAnimation()) {
       if (simulationOptions.getFullResultFileName().endsWith(".mat")) {
-        MainWindow::instance()->getPlotWindowContainer()->addAnimationWindow(MainWindow::instance()->getPlotWindowContainer()->subWindowList().isEmpty());
+        MainWindow::instance()->getPlotWindowContainer()->addAnimationWindow();
         AnimationWindow *pAnimationWindow = MainWindow::instance()->getPlotWindowContainer()->getCurrentAnimationWindow();
         if (pAnimationWindow) {
           pAnimationWindow->openAnimationFile(resultFileInfo.absoluteFilePath());
@@ -1951,12 +1979,12 @@ void SimulationDialog::simulationProcessFinished(SimulationOptions simulationOpt
     /* issue #11811
      * Make sure we always update the diagramWindow after simulation.
      */
-    MainWindow::instance()->getPlotWindowContainer()->showDiagramWindow(0);
+    MainWindow::instance()->getPlotWindowContainer()->showDiagramWindow(0, false);
   }
   bool profiling = simulationOptions.getProfiling().compare(QStringLiteral("none")) != 0;
   if (OptionsDialog::instance()->getDebuggerPage()->getAlwaysShowTransformationsCheckBox()->isChecked() ||
       simulationOptions.getLaunchTransformationalDebugger() || profiling) {
-    MainWindow::instance()->showTransformationsWidget(simulationOptions.getWorkingDirectory() + "/" + simulationOptions.getOutputFileName() + "_info.json", profiling);
+    MainWindow::instance()->showTransformationsWidget(simulationOptions.getWorkingDirectory() + "/" + simulationOptions.getOutputFileName() + "_info.json", profiling, false);
   }
   // Show the data reconciliation report
   if (simulationOptions.getEnableDataReconciliation()) {
@@ -2020,10 +2048,11 @@ void SimulationDialog::intervalRadioToggled(bool toggle)
  * \brief SimulationDialog::enableDisableOptions
  * Slot activated when mpMethodComboBox currentIndexChanged signal is raised.\n
  * Enables/disables the options group box
- * \param method
+ * \param index
  */
-void SimulationDialog::enableDisableOptions(QString method)
+void SimulationDialog::enableDisableOptions(int index)
 {
+  const QString method = mpMethodComboBox->itemText(index);
   if (method.compare(QStringLiteral("dassl")) == 0 || method.compare(QStringLiteral("ida")) == 0 || method.compare(QStringLiteral("gbode")) == 0) {
     mpOptionsGroupBox->setEnabled(true);
     mpEquidistantTimeGridCheckBox->setEnabled(true);
@@ -2136,7 +2165,7 @@ void SimulationDialog::simulate()
               mpSaveSimulationFlagsAnnotationCheckBox->isChecked() ||
               mpSimulateCheckBox->isChecked())) {
           QMessageBox::information(this, QString("%1 - %2").arg(Helper::applicationName).arg(Helper::information),
-                                   GUIMessages::getMessage(GUIMessages::SELECT_SIMULATION_OPTION), Helper::ok);
+                                   GUIMessages::getMessage(GUIMessages::SELECT_SIMULATION_OPTION), QMessageBox::Ok);
           return;
         }
         if ((mpLibraryTreeItem->getModelWidget() && mpSaveExperimentAnnotationCheckBox->isChecked()) ||
@@ -2184,12 +2213,12 @@ void SimulationDialog::reject()
 /*!
  * \brief SimulationDialog::resultFileNameChanged
  * Slot activated when mpOutputFormatComboBox currentIndexChanged signal is raised.
- * \param text
+ * \param index
  */
-void SimulationDialog::resultFileNameChanged(QString text)
+void SimulationDialog::resultFileNameChanged(int index)
 {
-  Q_UNUSED(text);
-  QComboBox *pComboBoxSender = qobject_cast<QComboBox*>(sender());
+  Q_UNUSED(index);
+  ComboBox *pComboBoxSender = qobject_cast<ComboBox*>(sender());
   if (pComboBoxSender) {
     mpSinglePrecisionCheckBox->setEnabled(mpOutputFormatComboBox->currentText().compare("mat") == 0);
     mpResultFileNameTextBox->setPlaceholderText(QString("%1_res.%2").arg(mClassName).arg(mpOutputFormatComboBox->currentText()));
@@ -2216,7 +2245,7 @@ DataReconciliationDialog::DataReconciliationDialog(LibraryTreeItem *pLibraryTree
   pHeadingLabel->setElideMode(Qt::ElideMiddle);
   QFrame *pHeadingLineFrame = Utilities::getHeadingLine();
   mpDataReconciliationAlgorithmLabel = new Label(tr("Algorithm:"));
-  mpDataReconciliationAlgorithmComboBox = new QComboBox;
+  mpDataReconciliationAlgorithmComboBox = new ComboBox;
   mpDataReconciliationAlgorithmComboBox->addItem(tr("Data Reconciliation"), QString("dataReconciliation"));
   mpDataReconciliationAlgorithmComboBox->addItem(tr("Boundary Conditions"), QString("dataReconciliationBoundaryConditions"));
   connect(mpDataReconciliationAlgorithmComboBox, SIGNAL(currentIndexChanged(int)), this, SLOT(switchAlgorithmPage(int)));
@@ -2434,13 +2463,13 @@ void DataReconciliationDialog::calculateDataReconciliation()
   if (currentIndex == 0){
     if (mpLibraryTreeItem->mSimulationOptions.getDataReconciliationMeasurementInputFile().isEmpty()){
       QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::information),
-                               "Measurement Input File not provided, Data Reconciliation cannot be computed!", Helper::ok);
+                               "Measurement Input File not provided, Data Reconciliation cannot be computed!", QMessageBox::Ok);
       mpDataReconciliationMeasurementInputFileTextBox->setFocus(Qt::ActiveWindowFocusReason);
       return;
     }
     if (mpDataReconciliationEpsilonTextBox->text().toDouble() <= 0 && !mpDataReconciliationEpsilonTextBox->text().isEmpty()) {
       QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::error),
-                          "Epsilon value must be greater than 0", Helper::ok);
+                          "Epsilon value must be greater than 0", QMessageBox::Ok);
       mpDataReconciliationEpsilonTextBox->setFocus(Qt::ActiveWindowFocusReason);
       return;
     }
@@ -2451,13 +2480,13 @@ void DataReconciliationDialog::calculateDataReconciliation()
   if (currentIndex == 1){
     if (mpLibraryTreeItem->mSimulationOptions.getBoundaryConditionMeasurementInputFile().isEmpty()){
       QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::information),
-                             "Reconciled Measurement File not provided, Boundary Conditions cannot be computed!", Helper::ok);
+                             "Reconciled Measurement File not provided, Boundary Conditions cannot be computed!", QMessageBox::Ok);
       mpBoundaryConditionMeasurementInputFileTextBox->setFocus(Qt::ActiveWindowFocusReason);
       return;
     }
     else if (mpLibraryTreeItem->mSimulationOptions.getBoundaryConditionCorrelationMatrixInputFile().isEmpty()){
       QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::information),
-                             "Reconciled Correlation Matrix File not provided, Boundary Conditions cannot be computed!", Helper::ok);
+                             "Reconciled Correlation Matrix File not provided, Boundary Conditions cannot be computed!", QMessageBox::Ok);
       mpBoundaryConditionCorrelationMatrixInputFileTextBox->setFocus(Qt::ActiveWindowFocusReason);
       return;
     }

@@ -1,7 +1,6 @@
 // name: ConnectInvalidType2
 // keywords:
 // status: incorrect
-// cflags: -d=newInst
 //
 
 connector C1
@@ -23,7 +22,7 @@ end ConnectInvalidType2;
 
 // Result:
 // Error processing file: ConnectInvalidType2.mo
-// [flattening/modelica/scodeinst/ConnectInvalidType2.mo:21:3-21:18:writable] Error: The connectors in connect(c1, c2) are not type compatible.
+// [flattening/modelica/scodeinst/ConnectInvalidType2.mo:20:3-20:18:writable] Error: The connectors in connect(c1, c2) are not type compatible.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

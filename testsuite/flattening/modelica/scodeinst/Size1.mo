@@ -1,7 +1,6 @@
 // name: Size1
 // keywords: size
 // status: correct
-// cflags: -d=newInst
 //
 // Tests the builtin size operator.
 //

@@ -5,6 +5,8 @@
 #include "open62541.h"
 #include "SimulationOptions.h"
 
+#include "qwt_series_data.h"
+
 class VariablesTreeItem;
 class OpcUaWorker;
 class Variable;

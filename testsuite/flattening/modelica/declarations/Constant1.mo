@@ -1,7 +1,6 @@
 // name:     Constant1
 // keywords: declaration
 // status:   correct
-// cflags: -d=-newInst
 //
 // Basic constant definitions.
 //
@@ -12,6 +11,7 @@ class Constant1
   Real x;
 equation
   x = 2.0 * PI;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Constant1;
 
 // Result:

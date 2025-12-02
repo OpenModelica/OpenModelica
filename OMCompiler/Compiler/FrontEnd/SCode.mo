@@ -121,6 +121,7 @@ uniontype Mod "- Modifications"
     Each  eachPrefix "each prefix";
     list<SubMod> subModLst;
     Option<Absyn.Exp> binding;
+    Option<String> comment;
     SourceInfo info;
   end MOD;
 
@@ -129,6 +130,16 @@ uniontype Mod "- Modifications"
     Each          eachPrefix  "each prefix";
     Element       element     "The new element declaration.";
   end REDECL;
+
+  record BREAK_COMPONENT
+    SourceInfo info;
+  end BREAK_COMPONENT;
+
+  record BREAK_CONNECT
+    Absyn.ComponentRef lhs;
+    Absyn.ComponentRef rhs;
+    SourceInfo info;
+  end BREAK_CONNECT;
 
   record NOMOD end NOMOD;
 

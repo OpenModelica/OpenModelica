@@ -4,7 +4,6 @@
 //
 // <insert description here>
 // Drmodelica: 7.2  Array Constructor (p. 210)
-// cflags: -d=-newInst
 //
 
 type Angle = Real(unit="rad"); // The type Angle is a subtype of Real
@@ -18,6 +17,7 @@ class ArrayConstruct1
   parameter Angle alpha = 2.0; // The expanded type of alpha is Real
   Real[3] f = array(alpha, 2, 3.0); // A 3-vector of type Real[3]
   Angle[3] A = {1.0, alpha, 4}; // The expanded type of A is Real[3]
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ArrayConstruct1;
 
 // insert expected flat file here. Can be done by issuing the command

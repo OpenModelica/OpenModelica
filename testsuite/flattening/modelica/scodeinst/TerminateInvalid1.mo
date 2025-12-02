@@ -1,7 +1,6 @@
 // name: TerminateInvalid1
 // keywords:
 // status: incorrect
-// cflags: -d=newInst
 //
 
 model TerminateInvalid1
@@ -11,7 +10,7 @@ end TerminateInvalid1;
 
 // Result:
 // Error processing file: TerminateInvalid1.mo
-// [flattening/modelica/scodeinst/TerminateInvalid1.mo:9:3-9:17:writable] Error: Type mismatch for positional argument 1 in terminate(message=1.0). The argument has type:
+// [flattening/modelica/scodeinst/TerminateInvalid1.mo:8:3-8:17:writable] Error: Type mismatch for positional argument 1 in terminate(message=1.0). The argument has type:
 //   Real
 // expected type:
 //   String

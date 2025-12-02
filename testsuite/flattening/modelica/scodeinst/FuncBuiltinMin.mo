@@ -1,7 +1,6 @@
 // name: FuncBuiltinMin
 // keywords: min
 // status: correct
-// cflags: -d=newInst
 //
 // Tests the builtin min operator.
 //
@@ -37,7 +36,7 @@ end FuncBuiltinMin;
 //   Real r2 = 1.0;
 //   Real r3 = min(r1, r2);
 //   Real r4 = min(r1, 100.0);
-//   Real r5 = 4.611686018427388e+18;
+//   Real r5 = 4.611686018427388e18;
 //   Integer i1 = 5;
 //   Integer i2 = 1;
 //   Integer i3 = min(i2, i1);

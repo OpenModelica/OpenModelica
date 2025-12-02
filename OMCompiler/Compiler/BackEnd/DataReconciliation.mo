@@ -235,7 +235,7 @@ algorithm
 
   // prepare set-c residual equations and residual vars
   (_, residualEquations) := BackendEquation.traverseEquationArray(BackendEquation.listEquation(setC_Eq), BackendEquation.traverseEquationToScalarResidualForm, (shared.functionTree, {}));
-  (residualEquations, residualVars) := BackendEquation.convertResidualsIntoSolvedEquations(listReverse(residualEquations), "$res_F_", BackendVariable.makeVar(DAE.emptyCref), 1);
+  (residualEquations, residualVars) := BackendEquation.convertResidualsIntoSolvedEquations(listReverse(residualEquations), "$res_F_", 1);
   outResidualVars := BackendVariable.listVar(listReverse(residualVars));
   outResidualEqns := BackendEquation.listEquation(residualEquations);
 
@@ -763,7 +763,7 @@ algorithm
 
   // prepare set-c residual equations and residual vars
   (_, residualEquations) := BackendEquation.traverseEquationArray(BackendEquation.listEquation(setC_Eq), BackendEquation.traverseEquationToScalarResidualForm, (shared.functionTree, {}));
-  (residualEquations, residualVars) := BackendEquation.convertResidualsIntoSolvedEquations(listReverse(residualEquations), "$res_F_", BackendVariable.makeVar(DAE.emptyCref), 1);
+  (residualEquations, residualVars) := BackendEquation.convertResidualsIntoSolvedEquations(listReverse(residualEquations), "$res_F_", 1);
   outResidualVars := BackendVariable.listVar(listReverse(residualVars));
   outResidualEqns := BackendEquation.listEquation(residualEquations);
 
@@ -1050,11 +1050,11 @@ protected
   list<tuple<Integer, BackendDAE.Equation, list<Integer>>> unMeasuredVariablesAndEquations;
 algorithm
   for eq in unMeasuredEqsLst loop
-    (_, varIndex) := getSolvedVariableNumber(eq, solvedEqsAndVarsInfo);
+    varIndex := getSolvedVariableNumber(eq, solvedEqsAndVarsInfo);
     intermediateVars := getVariablesAfterExtraction({eq}, {}, sBltAdjacencyMatrix);
     intermediateVars := listReverse(List.setDifferenceOnTrue(intermediateVars, knownVars, intEq));
     //print("\n equation No: " + anyString(eq) + "==>" + anyString(varIndex));
-    unmeasuredEq := BackendEquation.get(orderedEqs, listGet(arrayList(mapIncRowEqn), eq));
+    unmeasuredEq := BackendEquation.get(orderedEqs, mapIncRowEqn[eq]);
     setBFailedBoundaryConditionEquations := (varIndex, unmeasuredEq, intermediateVars) :: setBFailedBoundaryConditionEquations;
   end for;
   unMeasuredVariablesAndEquations := {};
@@ -1146,12 +1146,12 @@ algorithm
   swappedEquationList := {};
   for item in mappedEbltSetS loop
     (eqIndex, matchedEqsLst) := item;
-    eq := BackendEquation.get(currentSystem.orderedEqs, listGet(arrayList(mapIncRowEqn), eqIndex));
+    eq := BackendEquation.get(currentSystem.orderedEqs, mapIncRowEqn[eqIndex]);
     if BackendEquation.isComplexEquation(eq) then
       complexEquationList := eq :: complexEquationList;
       // swap complex equation in Set-C with simple equation in Set-S with procedure succeeded
       for index in matchedEqsLst loop
-        swapEq := BackendEquation.get(currentSystem.orderedEqs, listGet(arrayList(mapIncRowEqn), index));
+        swapEq := BackendEquation.get(currentSystem.orderedEqs, mapIncRowEqn[index]);
         if not BackendEquation.isComplexEquation(swapEq) then
           ebltEqsLst := List.removeOnTrue(eqIndex, intEq, ebltEqsLst); // remove the complex equation from set-C
           tempSetS := List.removeOnTrue(index, intEq, tempSetS); // remove the simple equation from set-S
@@ -1224,18 +1224,18 @@ algorithm
 
     // if status == false, prepare setB = {(var, equation to be removed)}
     if not status then
-      (_, varnumber) := getSolvedVariableNumber(eq, solvedEqsAndVarsInfo);
+      varnumber := getSolvedVariableNumber(eq, solvedEqsAndVarsInfo);
       if listEmpty(minimalSetS) then
         minimalSetS := {eq}; // first equation is detected as boundary condition equation
       end if;
-      if not listMember(List.last(listReverse(minimalSetS)), eqlistToRemove) then
-        eqlistToRemove := List.last(listReverse(minimalSetS)) :: eqlistToRemove;
-        setB := (varnumber, List.last(listReverse(minimalSetS))) :: setB;
+      if not listMember(listHead(minimalSetS), eqlistToRemove) then
+        eqlistToRemove := listHead(minimalSetS) :: eqlistToRemove;
+        setB := (varnumber, listHead(minimalSetS)) :: setB;
         // store the failed boundary conditions equation for D.2 as they will be removed during extraction of set-C and set-S
         if not boundaryConditionVarExist(setBFailedBoundaryConditionEquations, boundaryConditionVarIndex) then
-          intermediateVarsInBoundaryConditionEquation := getVariablesAfterExtraction({List.last(listReverse(minimalSetS))}, {}, sBltAdjacencyMatrix);
+          intermediateVarsInBoundaryConditionEquation := getVariablesAfterExtraction({listHead(minimalSetS)}, {}, sBltAdjacencyMatrix);
           intermediateVarsInBoundaryConditionEquation := listReverse(List.setDifferenceOnTrue(intermediateVarsInBoundaryConditionEquation, knownVars, intEq));
-          failedboundaryConditionEquation := BackendEquation.get(orderedEqs, listGet(arrayList(mapIncRowEqn), List.last(listReverse(minimalSetS))));
+          failedboundaryConditionEquation := BackendEquation.get(orderedEqs, mapIncRowEqn[listHead(minimalSetS)]);
           setBFailedBoundaryConditionEquations := (boundaryConditionVarIndex, failedboundaryConditionEquation, intermediateVarsInBoundaryConditionEquation) :: setBFailedBoundaryConditionEquations;
         end if;
       end if;
@@ -1389,7 +1389,7 @@ algorithm
       break;
     end if;
 
-    (mappedEq, _) := getSolvedEquationNumber(varIndex, solvedEqsAndVarsInfo);
+    mappedEq := getSolvedEquationNumber(varIndex, solvedEqsAndVarsInfo);
 
     if not listMember(mappedEq, bindingEquations) then
       minimalSetS := mappedEq :: minimalSetS;
@@ -1743,7 +1743,7 @@ algorithm
 
   // prepare set-c residual equations and residual vars
   (_, residualEquations) := BackendEquation.traverseEquationArray(BackendEquation.listEquation(setC_Eq), BackendEquation.traverseEquationToScalarResidualForm, (shared.functionTree, {}));
-  (residualEquations, residualVars) := BackendEquation.convertResidualsIntoSolvedEquations(listReverse(residualEquations), "$res_F_", BackendVariable.makeVar(DAE.emptyCref), 1);
+  (residualEquations, residualVars) := BackendEquation.convertResidualsIntoSolvedEquations(listReverse(residualEquations), "$res_F_", 1);
   outResidualVars := BackendVariable.listVar(listReverse(residualVars));
   outResidualEqns := BackendEquation.listEquation(residualEquations);
 
@@ -1907,7 +1907,7 @@ algorithm
     print("\nEquation Not Exist : " + "NIL");
     print("\nRemainingVars      : " + dumplistInteger(rest) + "\n");
   else
-    mappedEq := listGet(arrayList(mapIncRowEqn), firstMatchedEquation);
+    mappedEq := mapIncRowEqn[firstMatchedEquation];
     tmpEq := BackendEquation.get(orderedEqs, mappedEq);
     //print("\n" + "   ("  + intString(mappedEq) + "/"  + intString(firstMatchedEquation)  + "): " + BackendDump.equationString(tmpEq) + "\n");
     print("\nVarIndex                     : " + intString(varIndex));
@@ -2097,7 +2097,7 @@ protected
   Integer count = 1;
 algorithm
   /* get equation index which have annotation __OpenModelica_BoundaryCondition=true*/
-  for i in arrayList(adjacencyMatrix) loop
+  for i in adjacencyMatrix loop
     for j in boundaryConditions loop
       if valueEq(i, {j}) then
         boundaryConditionsEquationIndexes := count :: boundaryConditionsEquationIndexes;
@@ -2116,7 +2116,7 @@ protected function getUncertainRefineVariablesBindedEquations
   output list<Integer> knownsWithBindedEquations = {};
 algorithm
   /* check already binded equations for variables of interest*/
-  for i in arrayList(adjacencyMatrix) loop
+  for i in adjacencyMatrix loop
     for j in knowns loop
       if valueEq(i, {j}) then
         knownsWithBindedEquations := j :: knownsWithBindedEquations;
@@ -2134,7 +2134,7 @@ protected
   Integer varNumber;
 algorithm
   for eq in constantEquations loop
-    (_, varNumber) := getSolvedVariableNumber(eq, solvedEqsVarInfo);
+    varNumber := getSolvedVariableNumber(eq, solvedEqsVarInfo);
     constantVariables := varNumber :: constantVariables;
   end for;
 end getExactConstantVariables;
@@ -2148,7 +2148,7 @@ protected
   Integer varNumber;
 algorithm
   for eq in boundaryConditionEquations loop
-    (_, varNumber) := getSolvedVariableNumber(eq, solvedEqsVarInfo);
+    varNumber := getSolvedVariableNumber(eq, solvedEqsVarInfo);
     boundaryConditionVariables := varNumber :: boundaryConditionVariables;
   end for;
 end getBoundaryConditionVariables;
@@ -2197,7 +2197,7 @@ protected function getAbsoluteIndexHelper
 algorithm
   for i in inList loop
     if i > 0 then
-      outList := listGet(arrayList(mapIncRowEqn), i) :: outList;
+      outList := mapIncRowEqn[i] :: outList;
     else
       // equations in E-BLT, have negativeindex
       outList := i :: outList;
@@ -2219,9 +2219,9 @@ protected
   BackendDAE.Var var;
   BackendDAE.Equation tmpEq;
 algorithm
-  (_, varNumber) := getSolvedVariableNumber(eq, solvedEqsVarInfo);
+  varNumber := getSolvedVariableNumber(eq, solvedEqsVarInfo);
   var := BackendVariable.getVarAt(orderedVars, varNumber);
-  mappedEq := listGet(arrayList(mapIncRowEqn), eq);
+  mappedEq := mapIncRowEqn[eq];
   tmpEq := BackendEquation.get(orderedEqs, mappedEq);
   print("\n" + heading + intString(varNumber) + ": "  + ComponentReference.printComponentRefStr(var.varName) + ": " + "("  + intString(mappedEq) + "/"  + intString(eq)  + "): " + "(" +  intString(BackendEquation.equationSize(tmpEq)) + "): " + BackendDump.equationString(tmpEq));
   count := count + 1;
@@ -2244,9 +2244,9 @@ algorithm
     print("\n" + heading + ":" + "(" + intString(listLength(tempSetS))  + ")" + "\n============================================================\n");
   end if;
   for eq in tempSetS loop
-    (_, varNumber) := getSolvedVariableNumber(eq, solvedEqsVarInfo);
+    varNumber := getSolvedVariableNumber(eq, solvedEqsVarInfo);
     var := BackendVariable.getVarAt(orderedVars, varNumber);
-    mappedEq := listGet(arrayList(mapIncRowEqn), eq);
+    mappedEq := mapIncRowEqn[eq];
     tmpEq := BackendEquation.get(orderedEqs, mappedEq);
     print("\n" + intString(varNumber) + ": "  + ComponentReference.printComponentRefStr(var.varName) + ": " + "("  + intString(mappedEq) + "/"  + intString(eq)  + "): " + "(" +  intString(BackendEquation.equationSize(tmpEq)) + "): "  + BackendDump.equationString(tmpEq));
     count := count + 1;
@@ -2365,7 +2365,7 @@ algorithm
   for blocks in predecessorBlockInfo loop
     (mainBlock, targetBlocks, _, knownBlocks, constantBlocks, _) := blocks;
     if not listEmpty(knownBlocks) then // known Blocks
-      targetBlocksWithKnowns := filterTargetBlocksWithoutRanks(List.rest(targetBlocks), targetBlocksWithKnowns);
+      targetBlocksWithKnowns := filterTargetBlocksWithoutRanks(listRest(targetBlocks), targetBlocksWithKnowns);
     elseif not listEmpty(constantBlocks) then // constant Blocks
       targetBlocksWithConstants := filterTargetBlocksWithoutRanks(targetBlocks, targetBlocksWithConstants);
     else // unknown Blocks
@@ -2564,10 +2564,10 @@ public function checkBlueOrRedOrBrownBlocks
   output list<Integer> outIntegerList = {};
   output list<String> outStringList = {};
 protected
-  Integer eqNumber, varNumber;
+  Integer varNumber;
 algorithm
   for i in inlist loop
-    (eqNumber, varNumber) := getSolvedVariableNumber(i, solvedVar);
+    varNumber := getSolvedVariableNumber(i, solvedVar);
     // knownVars are named as knowns and belong to Blue Blocks
     if listMember(varNumber, knowns) then
       outStringList := "knowns" :: outStringList;
@@ -2590,14 +2590,13 @@ public function getSolvedVariableNumber
   "returns solvedvars based on the equation "
   input Integer eqnumber;
   input list<tuple<Integer, Integer>> inlist;
-  output tuple<Integer, Integer> mappedEqVar;
+  output Integer solvedvar;
 protected
-  Integer eq, solvedvar;
+  Integer solvedeq;
 algorithm
   for var in inlist loop
-    (eq, solvedvar):=var;
-    if intEq(eqnumber, eq) then
-      mappedEqVar := (eqnumber, solvedvar);
+    (solvedeq, solvedvar):=var;
+    if intEq(eqnumber, solvedeq) then
       return;
     end if;
   end for;
@@ -2607,14 +2606,13 @@ public function getSolvedEquationNumber
   "returns solvedeqs based on the variables "
   input Integer varnumber;
   input list<tuple<Integer, Integer>> inlist;
-  output tuple<Integer, Integer> mappedEqVar;
+  output Integer solvedeq;
 protected
-  Integer eq, solvedvar;
+  Integer solvedvar;
 algorithm
   for var in inlist loop
-    (eq, solvedvar) := var;
+    (solvedeq, solvedvar) := var;
     if intEq(varnumber, solvedvar) then
-      mappedEqVar := (eq, solvedvar);
       return;
     end if;
   end for;
@@ -2627,11 +2625,9 @@ public function getSolvedEquationAndVarsInfo
   output list<tuple<Integer,Integer>> eqvarlist={};
   output list<Integer> solvedEqLst ={};
 protected
-  list<Integer> var;
   Integer count=1;
 algorithm
-  var:=arrayList(v);
-  for i in var loop
+  for i in v loop
     eqvarlist:=(i,count)::eqvarlist;
     solvedEqLst := i :: solvedEqLst;
     count:=count+1;
@@ -2748,8 +2744,8 @@ algorithm
     case({}) then (false, false);
     case(SCode.COMMENT(annotation_=SOME(SCode.ANNOTATION(SCode.MOD(subModLst=subModLst))))::t)
       equation
-        isApproximatedEquation = List.exist(subModLst, isEquationTaggedApproximated) or isEquationTaggedApproximatedOrBoundaryConditionHelper(t);
-        isboundaryConditionEquation = List.exist(subModLst, isEquationTaggedBoundaryCondition) or isEquationTaggedApproximatedOrBoundaryConditionHelper(t);
+        isApproximatedEquation = List.any(subModLst, isEquationTaggedApproximated) or isEquationTaggedApproximatedOrBoundaryConditionHelper(t);
+        isboundaryConditionEquation = List.any(subModLst, isEquationTaggedBoundaryCondition) or isEquationTaggedApproximatedOrBoundaryConditionHelper(t);
       then
         (isApproximatedEquation, isboundaryConditionEquation);
     case(_::t)
@@ -2927,8 +2923,8 @@ protected
   list<Integer> t={}, nonsq, e_BltList;
   Integer eqnumber, varnumber;
 algorithm
-  for i in inlist loop
-    (eqnumber,varnumber) := getSolvedVariableNumber(i, solvedvariables);
+  for eqnumber in inlist loop
+    varnumber := getSolvedVariableNumber(eqnumber, solvedvariables);
     (nonsq, outEBLT) := getdirectOccurrencesinEquation(m, eqnumber, varnumber);
     //print(anyString(nonsq));
     for lst in nonsq loop
@@ -3035,7 +3031,7 @@ algorithm
     if blockFound then
       outstringlist := listGet(inlist2, count);
     end if;
-  count := count+1;
+    count := count+1;
   end for;
 end getBlockVarList;
 
@@ -3090,7 +3086,7 @@ algorithm
     for tmpblocks in blockinfo loop
       (_, tmptargetblocks, _) := tmpblocks;
       if not intEq(count,tmpcount) then
-        if listMember(List.first(targetblocks), tmptargetblocks) then
+        if listMember(listHead(targetblocks), tmptargetblocks) then
           targetexist := true;
         end if;
       end if;

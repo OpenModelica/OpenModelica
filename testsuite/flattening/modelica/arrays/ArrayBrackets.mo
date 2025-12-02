@@ -1,7 +1,6 @@
 // name: ArrayBrackets
 // keywords: array
 // status: correct
-// cflags: -d=-newInst
 //
 // tests array construction with bracket syntax
 //
@@ -10,6 +9,7 @@ model ArrayBrackets
   Integer intArray[1,7];
 equation
   intArray = [1, 2, 3, 4, 5, 6, 7];
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ArrayBrackets;
 
 // Result:

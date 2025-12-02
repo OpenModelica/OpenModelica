@@ -1,7 +1,6 @@
 // name: OperatorFunction1
 // keywords: operator
 // status: correct
-// cflags: -d=-newInst
 //
 // tests the shorthand operator function keyword
 //
@@ -23,6 +22,7 @@ equation
   r1.r = 1.0;
   r2.r = 2.0;
   r3 = r1 + r2;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end OperatorIllegal;
 
 // Result:

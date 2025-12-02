@@ -82,6 +82,7 @@ extern modelica_integer nobox_stringGet(threadData_t *threadData,metamodelica_st
 extern modelica_metatype boxptr_stringUpdateStringChar(threadData_t *,metamodelica_string str, metamodelica_string c, modelica_metatype ix);
 extern modelica_integer stringHash(metamodelica_string_const);
 extern modelica_integer stringHashDjb2(metamodelica_string_const s);
+extern modelica_integer stringHashDjb2Continue(metamodelica_string_const s, modelica_integer hash);
 extern modelica_integer stringHashDjb2Mod(metamodelica_string_const s,modelica_integer mod);
 extern modelica_integer stringHashSdbm(metamodelica_string_const str);
 #define substring(X,Y,Z) boxptr_substring(threadData,X,mmc_mk_icon(Y),mmc_mk_icon(Z))
@@ -109,7 +110,6 @@ extern modelica_integer listLength(modelica_metatype);
 #define isNone(X) MMC_OPTIONNONE(X)
 #define isSome(X) MMC_OPTIONSOME(X)
 
-extern modelica_metatype boxptr_listNth(threadData_t*,modelica_metatype,modelica_metatype);
 extern modelica_metatype boxptr_listGet(threadData_t*,modelica_metatype,modelica_metatype);
 extern modelica_metatype boxptr_listDelete(threadData_t*,modelica_metatype,modelica_metatype);
 extern modelica_metatype boxptr_listRest(threadData_t*,modelica_metatype);
@@ -132,7 +132,7 @@ extern modelica_metatype listArrayLiteral(modelica_metatype);
 
 static inline modelica_metatype nobox_arrayGet(threadData_t *threadData,modelica_metatype arr,modelica_integer ix)
 {
-  int nelts = MMC_HDRSLOTS(MMC_GETHDR(arr));
+  int nelts = arrayLength(arr);
   if (ix < 1 || ix > nelts)
     MMC_THROW_INTERNAL();
   return MMC_STRUCTDATA(arr)[ix-1];
@@ -166,12 +166,11 @@ static inline modelica_metatype arrayCreateNoInit(modelica_integer nelts, modeli
 #define arrayUpdateNoBoundsChecking(X,Y,Z) boxptr_arrayUpdateNoBoundsChecking(threadData,X,mmc_mk_icon(Y),Z)
 extern modelica_metatype arrayAppend(modelica_metatype, modelica_metatype);
 
-extern modelica_metatype boxptr_arrayNth(threadData_t *threadData,modelica_metatype,modelica_metatype);
 extern modelica_metatype boxptr_arrayGet(threadData_t *threadData,modelica_metatype,modelica_metatype);
 static inline modelica_metatype boxptr_arrayUpdate(threadData_t *threadData,modelica_metatype arr, modelica_metatype i, modelica_metatype val)
 {
   int ix = mmc_unbox_integer(i);
-  int nelts = MMC_HDRSLOTS(MMC_GETHDR(arr));
+  int nelts = arrayLength(arr);
   if (ix < 1 || ix > nelts)
     MMC_THROW_INTERNAL();
   MMC_STRUCTDATA(arr)[ix-1] = val;

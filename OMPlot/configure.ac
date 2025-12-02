@@ -1,7 +1,7 @@
 dnl Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.63])
-AC_INIT([OMOptim],[dev],[https://trac.openmodelica.org/OpenModelica],[openmodelica],[https://openmodelica.org])
+AC_INIT([OMPlot],[dev],[https://github.com/OpenModelica/OpenModelica/issues],[openmodelica],[https://openmodelica.org])
 
 AC_SUBST(APP)
 AC_SUBST(EXE)
@@ -26,19 +26,14 @@ test -z "$CXXFLAGS" && CXXFLAGS="$CFLAGS"
 AC_LANG([C++])
 AC_PROG_CC
 AC_PROG_CXX
-AX_CXX_COMPILE_STDCXX(14,[noext],[mandatory])
+AX_CXX_COMPILE_STDCXX(17, [noext],[mandatory])
 
 host_short=$host_cpu-$host_os
 
 m4_include([common/m4/qmake.m4])
 
-if test -z "$QMAKE"; then
-  AC_MSG_ERROR([Could not find qmake (QT4)])
-elif test -z "$LRELEASE"; then
-  AC_MSG_ERROR([Could not find lrelease (QT4)])
-fi
-
 m4_include([common/m4/omhome.m4])
 FIND_OPENMODELICAHOME()
 
-AC_OUTPUT(Makefile qwt/Makefile.unix OMPlot/OMPlotGUI/Makefile.unix OMPlot/OMPlotGUI/OMPlotGUI.config qwt/qwt.config)
+AC_CONFIG_FILES([Makefile qwt/Makefile.unix OMPlot/OMPlotGUI/Makefile.unix OMPlot/OMPlotGUI/OMPlotGUI.config qwt/qwt.config])
+AC_OUTPUT

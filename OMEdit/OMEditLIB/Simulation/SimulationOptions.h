@@ -52,6 +52,7 @@ public:
     setStopTime("1");
     setNumberofIntervals(500);
     setStepSize(0.002);
+    setHasInterval(false);
     setInteractiveSimulation(false);
     setInteractiveSimulationWithSteps(false);
     setInteractiveSimulationPortNumber(4841);
@@ -133,6 +134,8 @@ public:
   int getNumberofIntervals() const {return mNumberofIntervals;}
   void setStepSize(qreal stepSize) {mStepSize = stepSize;}
   qreal getStepSize() const {return mStepSize;}
+  void setHasInterval(bool hasInterval) {mHasInterval = hasInterval;}
+  bool hasInterval() const {return mHasInterval;}
   void setInteractiveSimulation(bool interactiveSim) {mInteractiveSimulation = interactiveSim;}
   bool isInteractiveSimulation() const {return mInteractiveSimulation;}
   void setInteractiveSimulationWithSteps(bool withSteps) {mInteractiveSimulationWithSteps = withSteps;}
@@ -275,6 +278,7 @@ private:
   QString mStopTime;
   int mNumberofIntervals;
   qreal mStepSize;
+  bool mHasInterval;
   bool mInteractiveSimulation;
   bool mInteractiveSimulationWithSteps;
   int mInteractiveSimulationPortNumber;

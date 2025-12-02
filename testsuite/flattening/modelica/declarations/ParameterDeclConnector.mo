@@ -1,7 +1,6 @@
 // name: ParameterDeclConnector
 // keywords: parameter
 // status: correct
-// cflags: -d=-newInst
 //
 // Tests the parameter prefix on a connector type
 //
@@ -15,6 +14,7 @@ class ParameterDeclConnector
   parameter ParameterConnector pc;
 equation
   pc.r = 1.0;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ParameterDeclConnector;
 
 // Result:

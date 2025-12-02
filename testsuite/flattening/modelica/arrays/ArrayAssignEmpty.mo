@@ -1,7 +1,6 @@
 // name: ArrayAssignEmpty.mo [BUG: #1907, #2300]
 // keywords: Empty arrays used in algorithm
 // status:   correct
-// cflags: -d=-newInst
 // #1907
 
 model ArrayAssignEmpty
@@ -12,6 +11,7 @@ model ArrayAssignEmpty
   Real r[0];
 algorithm
   r := f(time);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ArrayAssignEmpty;
 
 // Result:

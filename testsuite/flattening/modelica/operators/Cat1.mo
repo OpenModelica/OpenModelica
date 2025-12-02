@@ -1,7 +1,6 @@
 // name:     Cat1
 // keywords: cat
 // status:   correct
-// cflags: -d=-newInst
 //
 // Tests the builtin cat operator.
 //
@@ -32,6 +31,7 @@ model Cat1
   extends myPartialModel(final x = aDivisions,
                          final y = bDivisions);
 
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Cat1;
 
 // Result:

@@ -1,7 +1,6 @@
 // name: Assert2
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 
 model Assert2

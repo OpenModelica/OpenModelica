@@ -139,7 +139,7 @@ static int increase_buffer(threadData_t *threadData)
     new_buf[0]='\0';
     cursize = INITIAL_BUFSIZE;
   } else {
-    //fprintf(stderr,"increasing buffer from %d to %d \n",cursize,((int)(cursize * GROWTH_FACTOR)));
+    //fprintf(stderr,"increasing buffer from %d to %d\n",cursize,((int)(cursize * GROWTH_FACTOR)));
     new_buf = (char*)malloc((new_size =(int) (cursize * GROWTH_FACTOR))*sizeof(char));
     if (new_buf == NULL) { return -1; }
     memcpy(new_buf,buf,cursize);
@@ -165,7 +165,7 @@ static int increase_buffer_fixed(threadData_t *threadData,int increase)
     cursize = increase;
   } else {
   new_size = (int)(cursize+increase);
-    //fprintf(stderr,"increasing buffer_FIXED_ from %d to %d \n",cursize,new_size);
+    //fprintf(stderr,"increasing buffer_FIXED_ from %d to %d\n",cursize,new_size);
     new_buf = (char*)malloc(new_size*sizeof(char));
     if (new_buf == NULL) { return -1; }
     //memcpy(new_buf,buf,cursize);
@@ -277,10 +277,9 @@ static const char* PrintImpl__getErrorString(threadData_t *threadData)
 }
 
 /* returns 0 on success */
-static int PrintImpl__printBuf(threadData_t *threadData,const char* str)
+static int PrintImpl__printBuf(threadData_t *threadData,const char* str,long len)
 {
   print_members* members = getMembers(threadData);
-  long len = strlen(str);
   /* printf("cursize: %d, nfilled %d, strlen: %d\n",cursize,nfilled,strlen(str)); */
 
   while (nfilled + len + 1 > cursize) {

@@ -1,7 +1,6 @@
 // name: NonfixedParamSubscript
 // keywords: parameter fixed subscript
 // status: correct
-// cflags: -d=-newInst
 //
 // Tests non-fixed parameters as subscripts.
 //
@@ -13,6 +12,7 @@ initial equation
   p = 1;
 equation
   r[p] = 2.0;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end M;
 
 // Result:

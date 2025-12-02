@@ -4,7 +4,6 @@
 //
 // MORE WORK HAS TO BE DONE ON THIS FILE!
 // Drmodelica: 7.4 Array Indexing operator (p. 216)
-// cflags: -d=-newInst
 //
 
 class ArrayIndex
@@ -16,6 +15,7 @@ algorithm
   B := fill(1,2,2); // B will have the values {{1, 1}, {1, 1}}
   B[2, 1] := 8; // Assignment to the array element B[2, 1]
   c := A[1, 1];
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ArrayIndex;
 
 // Result:

@@ -6,7 +6,6 @@
 // Drmodelica: 9.1 reinit (p. 296)
 // adrpo: reinit is not allowed in when initial(), using assingment instead!
 // lochel: it is not possible to replace or even convert a reinit to an assignment! Use initial equation/algorithm instead!
-// cflags: -d=-newInst
 
 block FilterBlock1
   parameter Real T = 1 "Time constant";
@@ -20,6 +19,7 @@ equation
   y = k*x;
 initial algorithm
   x := u; // if x is u since der(x) = (u - x)/T
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end FilterBlock1;
 
 // Result:

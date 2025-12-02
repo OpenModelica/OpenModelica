@@ -37,6 +37,7 @@
 
 #include "../../simulation_data.h"
 #include "../simulation_info_json.h"
+#include "../jacobian_util.h"
 #include "../../util/omc_error.h"
 #include "../../util/parallel_helper.h"
 #include "omc_math.h"
@@ -106,48 +107,17 @@ int freeLapackData(void **voiddata)
  *  \author wbraun
  *
  */
-int getAnalyticalJacobianLapack(DATA* data, threadData_t *threadData, double* jac, int sysNumber)
+void getAnalyticalJacobianLapack(DATA* data, threadData_t *threadData, LINEAR_SYSTEM_DATA* systemData, double* jac)
 {
-  int i,j,k,l,ii,currentSys = sysNumber;
-  LINEAR_SYSTEM_DATA* systemData = &(((DATA*)data)->simulationInfo->linearSystemData[currentSys]);
+  int k;
+  JACOBIAN* jacobian = systemData->parDynamicData[omc_get_thread_num()].jacobian;
+  JACOBIAN* parentJacobian = systemData->parDynamicData[omc_get_thread_num()].parentJacobian;
 
-  const int index = systemData->jacobianIndex;
-  ANALYTIC_JACOBIAN* jacobian = systemData->parDynamicData[omc_get_thread_num()].jacobian;
-  ANALYTIC_JACOBIAN* parentJacobian = systemData->parDynamicData[omc_get_thread_num()].parentJacobian;
+  /* call generic dense Jacobian */
+  evalJacobian(data, threadData, jacobian, parentJacobian, jac, TRUE);
 
-  memset(jac, 0, (systemData->size)*(systemData->size)*sizeof(double));
-
-  if (jacobian->constantEqns != NULL) {
-    jacobian->constantEqns(data, threadData, jacobian, parentJacobian);
-  }
-
-  for(i=0; i < jacobian->sparsePattern->maxColors; i++)
-  {
-    /* activate seed variable for the corresponding color */
-    for(ii=0; ii < jacobian->sizeCols; ii++)
-      if(jacobian->sparsePattern->colorCols[ii]-1 == i)
-          jacobian->seedVars[ii] = 1;
-
-    ((systemData->analyticalJacobianColumn))(data, threadData, jacobian, parentJacobian);
-
-    for(j = 0; j < jacobian->sizeCols; j++) {
-      if(jacobian->seedVars[j] == 1) {
-        ii = jacobian->sparsePattern->leadindex[j];
-        while(ii < jacobian->sparsePattern->leadindex[j+1]) {
-          l  = jacobian->sparsePattern->index[ii];
-          k  = j*jacobian->sizeRows + l;
-          jac[k] = -jacobian->resultVars[l];
-          ii++;
-        };
-      }
-      /* de-activate seed variable for the corresponding color */
-      if(jacobian->sparsePattern->colorCols[j]-1 == i) {
-          jacobian->seedVars[j] = 0;
-      }
-    }
-  }
-
-  return 0;
+  for (k = 0; k < (jacobian->sizeRows) * (jacobian->sizeCols); k++)
+    jac[k] = -jac[k];
 }
 
 /*! \fn wrapper_fvec_lapack for the residual function
@@ -155,9 +125,7 @@ int getAnalyticalJacobianLapack(DATA* data, threadData_t *threadData, double* ja
  */
 static int wrapper_fvec_lapack(_omc_vector* x, _omc_vector* f, int* iflag, RESIDUAL_USERDATA* resUserData, int sysNumber)
 {
-  int currentSys = sysNumber;
-
-  resUserData->data->simulationInfo->linearSystemData[currentSys].residualFunc(resUserData, x->data, f->data, iflag);
+  resUserData->data->simulationInfo->linearSystemData[sysNumber].residualFunc(resUserData, x->data, f->data, iflag);
   return 0;
 }
 
@@ -185,7 +153,7 @@ int solveLapack(DATA *data, threadData_t *threadData, int sysNumber, double* aux
   double tmpJacEvalTime;
   int reuseMatrixJac = (data->simulationInfo->currentContext == CONTEXT_SYM_JACOBIAN && data->simulationInfo->currentJacobianEval > 0);
 
-  infoStreamPrintWithEquationIndexes(LOG_LS, omc_dummyFileInfo, 0, indexes,
+  infoStreamPrintWithEquationIndexes(OMC_LOG_LS, omc_dummyFileInfo, 0, indexes,
     "Start solving Linear System %d (size %d) at time %g with Lapack Solver",
     eqSystemNumber, (int) systemData->size, data->localData[0]->timeValue);
 
@@ -211,7 +179,7 @@ int solveLapack(DATA *data, threadData_t *threadData, int sysNumber, double* aux
     if (!reuseMatrixJac) {
       /* calculate jacobian -> matrix A*/
       if(systemData->jacobianIndex != -1) {
-        getAnalyticalJacobianLapack(data, threadData, solverData->A->data, sysNumber);
+        getAnalyticalJacobianLapack(data, threadData, systemData, solverData->A->data);
       } else {
         assertStreamPrint(threadData, 1, "jacobian function pointer is invalid" );
       }
@@ -223,13 +191,13 @@ int solveLapack(DATA *data, threadData_t *threadData, int sysNumber, double* aux
   }
   tmpJacEvalTime = rt_ext_tp_tock(&(solverData->timeClock));
   systemData->jacobianTime += tmpJacEvalTime;
-  infoStreamPrint(LOG_LS_V, 0, "###  %f  time to set Matrix A and vector b.", tmpJacEvalTime);
+  infoStreamPrint(OMC_LOG_LS_V, 0, "###  %f  time to set Matrix A and vector b.", tmpJacEvalTime);
 
   /* Log A*x=b */
-  if(ACTIVE_STREAM(LOG_LS_V)){
-    _omc_printVector(solverData->x, "Vector old x", LOG_LS_V);
-    _omc_printMatrix(solverData->A, "Matrix A", LOG_LS_V);
-    _omc_printVector(solverData->b, "Vector b", LOG_LS_V);
+  if(OMC_ACTIVE_STREAM(OMC_LOG_LS_V)){
+    _omc_printVector(solverData->x, "Vector old x", OMC_LOG_LS_V);
+    _omc_printMatrix(solverData->A, "Matrix A", OMC_LOG_LS_V);
+    _omc_printVector(solverData->b, "Vector b", OMC_LOG_LS_V);
   }
 
   rt_ext_tp_tick(&(solverData->timeClock));
@@ -264,26 +232,26 @@ int solveLapack(DATA *data, threadData_t *threadData, int sysNumber, double* aux
   }
 
 
-  infoStreamPrint(LOG_LS_V, 0, "Solve System: %f", rt_ext_tp_tock(&(solverData->timeClock)));
+  infoStreamPrint(OMC_LOG_LS_V, 0, "Solve System: %f", rt_ext_tp_tock(&(solverData->timeClock)));
 
   if(solverData->info < 0)
   {
-    warningStreamPrint(LOG_LS, 0, "Error solving linear system of equations (no. %d) at time %f. Argument %d illegal.", (int)systemData->equationIndex, data->localData[0]->timeValue, (int)solverData->info);
+    warningStreamPrint(OMC_LOG_LS, 0, "Error solving linear system of equations (no. %d) at time %f. Argument %d illegal.", (int)systemData->equationIndex, data->localData[0]->timeValue, (int)solverData->info);
     success = 0;
   }
   else if(solverData->info > 0)
   {
-    warningStreamPrintWithLimit(LOG_LS, 0, ++(systemData->numberOfFailures) /* Update counter */, data->simulationInfo->maxWarnDisplays,
+    warningStreamPrintWithLimit(OMC_LOG_LS, 0, ++(systemData->numberOfFailures) /* Update counter */, data->simulationInfo->maxWarnDisplays,
                                 "Failed to solve linear system of equations (no. %d) at time %f, system is singular for U[%d, %d].",
                                 (int)systemData->equationIndex, data->localData[0]->timeValue, (int)solverData->info+1, (int)solverData->info+1);
 
     success = 0;
 
     /* debug output */
-    if (ACTIVE_STREAM(LOG_LS)){
-      _omc_printMatrix(solverData->A, "Matrix U", LOG_LS);
+    if (OMC_ACTIVE_STREAM(OMC_LOG_LS)){
+      _omc_printMatrix(solverData->A, "Matrix U", OMC_LOG_LS);
 
-      _omc_printVector(solverData->b, "Output vector x", LOG_LS);
+      _omc_printVector(solverData->b, "Output vector x", OMC_LOG_LS);
     }
   }
 
@@ -298,7 +266,7 @@ int solveLapack(DATA *data, threadData_t *threadData, int sysNumber, double* aux
       residualNorm = _omc_euclideanVectorNorm(solverData->work);
 
       if ((isnan(residualNorm)) || (residualNorm>1e-4)){
-        warningStreamPrintWithLimit(LOG_LS, 0, ++(systemData->numberOfFailures) /* Update counter */, data->simulationInfo->maxWarnDisplays,
+        warningStreamPrintWithLimit(OMC_LOG_LS, 0, ++(systemData->numberOfFailures) /* Update counter */, data->simulationInfo->maxWarnDisplays,
                                     "Failed to solve linear system of equations (no. %d) at time %f. Residual norm is %.15g.",
                                     (int)systemData->equationIndex, data->localData[0]->timeValue, residualNorm);
         success = 0;
@@ -308,19 +276,19 @@ int solveLapack(DATA *data, threadData_t *threadData, int sysNumber, double* aux
       _omc_copyVector(solverData->x, solverData->b);
     }
 
-    if (ACTIVE_STREAM(LOG_LS_V)){
-        if (1 == systemData->method) {
-          infoStreamPrint(LOG_LS_V, 1, "Residual Norm %.15g of solution x:", residualNorm);
-        } else {
-          infoStreamPrint(LOG_LS_V, 1, "Solution x:");
-        }
-      infoStreamPrint(LOG_LS_V, 0, "System %d numVars %d.", eqSystemNumber, modelInfoGetEquation(&data->modelData->modelDataXml,eqSystemNumber).numVar);
+    if (OMC_ACTIVE_STREAM(OMC_LOG_LS_V)) {
+      if (1 == systemData->method) {
+        infoStreamPrint(OMC_LOG_LS_V, 1, "Residual Norm %.15g of solution x:", residualNorm);
+      } else {
+        infoStreamPrint(OMC_LOG_LS_V, 1, "Solution x:");
+      }
+      infoStreamPrint(OMC_LOG_LS_V, 0, "System %d numVars %d.", eqSystemNumber, modelInfoGetEquation(&data->modelData->modelDataXml,eqSystemNumber).numVar);
 
       for(i = 0; i < systemData->size; ++i) {
-        infoStreamPrint(LOG_LS_V, 0, "[%d] %s = %.15g", i+1, modelInfoGetEquation(&data->modelData->modelDataXml,eqSystemNumber).vars[i], aux_x[i]);
+        infoStreamPrint(OMC_LOG_LS_V, 0, "[%d] %s = %.15g", i+1, modelInfoGetEquation(&data->modelData->modelDataXml,eqSystemNumber).vars[i], aux_x[i]);
       }
 
-      messageClose(LOG_LS_V);
+      messageClose(OMC_LOG_LS_V);
     }
   }
 

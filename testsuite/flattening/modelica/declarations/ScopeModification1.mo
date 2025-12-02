@@ -1,7 +1,6 @@
 // name:     ScopeModification1
 // keywords: scoping,modification
 // status:   correct
-// cflags: -d=-newInst
 //
 // In class modifications the scope of the outer class is used for
 // looking up variables. Consequently 'a' of the outer class is used
@@ -15,6 +14,7 @@ class ScopeModification1
   end Inner;
   Real a=1;
   Inner m(b = a);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ScopeModification1;
 
 // Result:

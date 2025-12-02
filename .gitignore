@@ -17,6 +17,10 @@
 /issues/
 /Makefile
 /OMCompiler/SimulationRuntime/ModelicaExternalC/build/
+/OMCompiler/compile
+/OMCompiler/depcomp
+/OMCompiler/ltmain.sh
+/OMCompiler/missing
 /OMEncryption/
 /OMJava/
 /OMPublicKey/

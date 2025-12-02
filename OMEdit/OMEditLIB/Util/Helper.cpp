@@ -42,12 +42,14 @@ QString Helper::organization = "openmodelica";  /* case-sensitive string. Don't 
 QString Helper::application = "omedit"; /* case-sensitive string. Don't change it. Used by ini settings file. */
 // Following four variables are set once we are connected to OMC......in OMCProxy::initializeOMC().
 QString Helper::OpenModelicaVersion = "";
-QString Helper::OpenModelicaUsersGuideVersion = "latest";
 QString Helper::OpenModelicaHome = "";
 QString Helper::ModelicaPath = "";
 QString Helper::userHomeDirectory = "";
+QString Helper::OpenModelicaUsersGuideVersion = "latest";
+QString Helper::OMEditInternal = "OMEditInternal";
 QString Helper::OMCServerName = "OMEdit";
-QString Helper::omFileTypes = "All Files (*.mo *.mol *.ssp);;Modelica Files (*.mo);;Encrypted Modelica Libraries (*.mol);;System Structure and Parameterization Files (*.ssp)";
+QString Helper::omFileTypes = "All Files (*.mo *.mol *.bmo *.mos *.ssp *.crml);;Modelica Files (*.mo);;Encrypted Modelica Libraries (*.mol);;Base Modelica Files (*.bmo)"
+                              ";;Modelica Script Files (*.mos);;System Structure and Parameterization Files (*.ssp);;CRML Files (*.crml)";
 QString Helper::omEncryptedFileTypes = "Encrypted Modelica Libraries (*.mol)";
 QString Helper::omnotebookFileTypes = "OMNotebook Files (*.onb *.onbz *.nb)";
 QString Helper::ngspiceNetlistFileTypes = "ngspice Netlist Files (*.cir *.sp *.spice)";
@@ -60,16 +62,11 @@ QString Helper::matFileTypes = "MAT Files (*.mat)";
 QString Helper::csvFileTypes = "CSV Files (*.csv)";
 QString Helper::omResultFileTypes = "OpenModelica Result Files (*.mat *.plt *.csv)";
 QString Helper::omResultFileTypesRegExp = "\\b(mat|plt|csv)\\b";
-#if defined(_WIN32)
-QString Helper::exeFileTypes = "EXE Files (*.exe)";
-#else
-QString Helper::exeFileTypes = "Executable files (*)";
-#endif
 QString Helper::txtFileTypes = "TXT Files (*.txt)";
 QString Helper::figaroFileTypes = "Figaro Files (*.fi)";
+QString Helper::jarFileTypes = "Jar Files (*.jar)";
 QString Helper::visualizationFileTypes = "Visualization Files (*.mat *.csv *.fmu);;Visualization MAT(*.mat);;Visualization CSV(*.csv);;Visualization FMU(*.fmu)";
 QString Helper::subModelFileTypes = "SubModel Files (*.fmu *.mat *.csv);;SubModel FMU (*.fmu);;SubModel MAT (*.mat);;SubModel CSV (*.csv)";
-QString Helper::omScriptTypes = "Script Files (*.mos)";
 int Helper::treeIndentation = 13;
 QSize Helper::iconSize = QSize(20, 20);
 int Helper::tabWidth = 20;
@@ -128,16 +125,26 @@ QString Helper::STRING = QString("String");
 QString Helper::BOOLEAN = QString("Boolean");
 QString Helper::INTEGER = QString("Integer");
 QString Helper::REAL = QString("Real");
+QString Helper::BREAK = QString("break");
 /* OMSimulator system types */
 QString Helper::systemTLM = QString("TLM - Transmission Line Modeling System");
 QString Helper::systemWC = QString("Weakly Coupled - Connected Co-Simulation FMUs System");
 QString Helper::systemSC = QString("Strongly Coupled - Connected Model-Exchange FMUs System");
+QString Helper::displayLimit = QString("Reached display limit");
+QString Helper::displayLimitMsg = QString("Reached display limit. To read the full log open the file <a href=\"file:///%1\">%1</a>");
+QString Helper::arrayIndexRegularExpression = QString(R"(\[(\d+)(?:,(\d+))?\])");
 /* Global translated variables */
 QString Helper::newModelicaClass;
+QString Helper::newModelicaClassLibraryBrowser;
 QString Helper::createNewModelicaClass;
 QString Helper::openModelicaFiles;
 QString Helper::openConvertModelicaFiles;
+QString Helper::newCRMLModel;
+QString Helper::newCRMLModelTip;
+QString Helper::newMOSScript;
+QString Helper::newMOSScriptTip;
 QString Helper::libraries;
+QString Helper::elements;
 QString Helper::clearRecentFiles;
 QString Helper::encoding;
 QString Helper::fileLabel;
@@ -168,6 +175,10 @@ QString Helper::saveTotal;
 QString Helper::saveTotalTip;
 QString Helper::apply;
 QString Helper::chooseDirectory;
+QString Helper::addPath;
+QString Helper::removePath;
+QString Helper::addItem;
+QString Helper::removeItem;
 QString Helper::general;
 QString Helper::output;
 QString Helper::parameters;
@@ -190,6 +201,7 @@ QString Helper::instantiateModelTip;
 QString Helper::FMU;
 QString Helper::exportt;
 QString Helper::exportFMUTip;
+QString Helper::sensitivityOptimization;
 QString Helper::exportEncryptedPackage;
 QString Helper::exportEncryptedPackageTip;
 QString Helper::exportReadonlyPackage;
@@ -220,11 +232,15 @@ QString Helper::fitToDiagram;
 QString Helper::loading;
 QString Helper::question;
 QString Helper::search;
-QString Helper::unloadClass;
 QString Helper::duplicate;
 QString Helper::duplicateTip;
+QString Helper::unloadClass;
 QString Helper::unloadClassTip;
-QString Helper::unloadCompositeModelOrTextTip;
+QString Helper::reloadClass;
+QString Helper::reloadClassTip;
+QString Helper::unloadTextFileTip;
+QString Helper::unloadCRMLTip;
+QString Helper::unloadMOSTip;
 QString Helper::unloadOMSModelTip;
 QString Helper::refresh;
 QString Helper::simulate;
@@ -247,6 +263,12 @@ QString Helper::simulationSetupTip;
 QString Helper::simulation;
 QString Helper::reSimulation;
 QString Helper::interactiveSimulation;
+QString Helper::translateCRML;
+QString Helper::translateCRMLTip;
+QString Helper::translateAsCRML;
+QString Helper::translateAsCRMLTip;
+QString Helper::runScript;
+QString Helper::runScriptTip;
 QString Helper::options;
 QString Helper::extent;
 QString Helper::bottom;
@@ -285,6 +307,7 @@ QString Helper::startAngle;
 QString Helper::endAngle;
 QString Helper::curveStyle;
 QString Helper::figaro;
+QString Helper::crml;
 QString Helper::remove;
 QString Helper::fileLocation;
 QString Helper::errorLocation;
@@ -296,6 +319,7 @@ QString Helper::diagramView;
 QString Helper::textView;
 QString Helper::documentationView;
 QString Helper::filterClasses;
+QString Helper::filterElements;
 QString Helper::findReplaceModelicaText;
 QString Helper::left;
 QString Helper::center;
@@ -363,13 +387,6 @@ QString Helper::version;
 QString Helper::unlimited;
 QString Helper::simulationOutput;
 QString Helper::cancelSimulation;
-QString Helper::fetchInterfaceData;
-QString Helper::fetchInterfaceDataTip;
-QString Helper::alignInterfaces;
-QString Helper::alignInterfacesTip;
-QString Helper::tlmCoSimulationSetup;
-QString Helper::tlmCoSimulationSetupTip;
-QString Helper::tlmCoSimulation;
 QString Helper::animationChooseFile;
 QString Helper::animationChooseFileTip;
 QString Helper::animationInitialize;
@@ -408,6 +425,7 @@ QString Helper::moveUp;
 QString Helper::moveDown;
 QString Helper::fixErrorsManually;
 QString Helper::revertToLastCorrectVersion;
+QString Helper::saveWithErrors;
 QString Helper::translationFlagsTip;
 QString Helper::saveExperimentAnnotation;
 QString Helper::saveOpenModelicaSimulationFlagsAnnotation;
@@ -437,15 +455,24 @@ QString Helper::installLibrary;
 QString Helper::upgradeInstalledLibraries;
 QString Helper::updateLibraryIndex;
 QString Helper::dataReconciliation;
+QString Helper::replaceSubModel;
+QString Helper::modelicaPathTip;
+QString Helper::selectParentClassName;
 
 void Helper::initHelperVariables()
 {
   /* Global translated variables */
-  Helper::newModelicaClass = tr("New Modelica Class");
+  Helper::newModelicaClass = tr("Modelica Class");
+  Helper::newModelicaClassLibraryBrowser = tr("New Modelica Class");
   Helper::createNewModelicaClass = tr("Create New Modelica Class");
   Helper::openModelicaFiles = tr("Open Model/Library File(s)");
   Helper::openConvertModelicaFiles = tr("Open/Convert Modelica File(s) With Encoding");
+  Helper::newCRMLModel = tr("CRML Model");
+  Helper::newCRMLModelTip = tr("Creates a new CRML Model");
+  Helper::newMOSScript = tr("Modelica Script");
+  Helper::newMOSScriptTip = tr("Creates a new Modelca Script");
   Helper::libraries = tr("Libraries");
+  Helper::elements = tr("Elements");
   Helper::clearRecentFiles = tr("Clear Recent Files");
   Helper::encoding = tr("Encoding:");
   Helper::fileLabel = tr("File:");
@@ -477,6 +504,10 @@ void Helper::initHelperVariables()
   Helper::apply = tr("Apply");
   Helper::importFMU = tr("Import FMU");
   Helper::chooseDirectory = tr("Choose Directory");
+  Helper::addPath = tr("Add Path");
+  Helper::removePath = tr("Remove Path");
+  Helper::addItem = tr("Add");
+  Helper::removeItem = tr("Remove");
   Helper::general = tr("General");
   Helper::output = tr("Output");
   Helper::parameters = tr("Parameters");
@@ -499,6 +530,7 @@ void Helper::initHelperVariables()
   Helper::FMU = tr("FMU");
   Helper::exportt = tr("Export");
   Helper::exportFMUTip = tr("Exports the model as Functional Mockup Unit (FMU)");
+  Helper::sensitivityOptimization = tr("Sensitivity Optimization");
   Helper::exportReadonlyPackage = tr("Read-only Package");
   Helper::exportRealonlyPackageTip = tr("Exports the package as read-only package");
   Helper::exportEncryptedPackage = tr("Encrypted Package");
@@ -533,7 +565,11 @@ void Helper::initHelperVariables()
   Helper::duplicateTip = tr("Duplicates the item");
   Helper::unloadClass = tr("Unload");
   Helper::unloadClassTip = tr("Unload the Modelica class");
-  Helper::unloadCompositeModelOrTextTip = tr("Unloads the CompositeModel/Text file");
+  Helper::reloadClass = tr("Reload");
+  Helper::reloadClassTip = tr("Reload the Modelica class");
+  Helper::unloadTextFileTip = tr("Unloads the file without deleting it from the file system");
+  Helper::unloadCRMLTip = tr("Unload the CRML file");
+  Helper::unloadMOSTip = tr("Unload the Modelica Script file");
   Helper::unloadOMSModelTip = tr("Unloads the model");
   Helper::refresh = tr("Refresh");
   Helper::simulate = tr("Simulate");
@@ -556,6 +592,12 @@ void Helper::initHelperVariables()
   Helper::simulation = tr("Simulation");
   Helper::reSimulation = tr("Re-simulation");
   Helper::interactiveSimulation = tr("Interactive Simulation");
+  Helper::translateCRML = tr("Translate");
+  Helper::translateCRMLTip = tr("Translates the CRML model to Modelica");
+  Helper::translateAsCRML = tr("Translate As");
+  Helper::translateAsCRMLTip = tr("Translates As the CRML model to Modelica");
+  Helper::runScript = tr("Run");
+  Helper::runScriptTip = tr("Runs the Modelica Script");
   Helper::options = tr("Options");
   Helper::extent = tr("Extent");
   Helper::bottom = tr("Bottom:");
@@ -594,6 +636,7 @@ void Helper::initHelperVariables()
   Helper::endAngle = tr("End Angle:");
   Helper::curveStyle = tr("Curve Style");
   Helper::figaro = tr("Figaro");
+  Helper::crml = tr("CRML");
   Helper::remove = tr("Remove");
   Helper::fileLocation = tr("Location", "For files");
   Helper::errorLocation = tr("Location", "For errors");
@@ -605,6 +648,7 @@ void Helper::initHelperVariables()
   Helper::textView = tr("Text View");
   Helper::documentationView = tr("Documentation View");
   Helper::filterClasses = tr("Filter Classes");
+  Helper::filterElements = tr("Filter Elements");
   Helper::findReplaceModelicaText = tr("Find/Replace...");
   Helper::left = tr("Left");
   Helper::center = tr("Center");
@@ -672,13 +716,6 @@ void Helper::initHelperVariables()
   Helper::unlimited = tr("unlimited");
   Helper::simulationOutput = tr("Simulation Output");
   Helper::cancelSimulation = tr("Cancel Simulation");
-  Helper::fetchInterfaceData = tr("Fetch Interface Data");
-  Helper::fetchInterfaceDataTip = tr("Fetches the interface data");
-  Helper::alignInterfaces = tr("Align Interfaces");
-  Helper::alignInterfacesTip = tr("Aligns the interfaces");
-  Helper::tlmCoSimulationSetup = tr("TLM Co-Simulation Setup");
-  Helper::tlmCoSimulationSetupTip = tr("Opens the TLM co-simulation setup");
-  Helper::tlmCoSimulation = tr("TLM Co-Simulation");
   Helper::animationChooseFile = tr("Animation File");
   Helper::animationChooseFileTip = tr("Open an animation.");
   Helper::animationInitialize = tr("Initialize");
@@ -691,7 +728,7 @@ void Helper::initHelperVariables()
   Helper::animationPauseTip = tr("Pause the animation");
   Helper::simulationParams = tr("Simulation Parameters");
   Helper::simulationParamsTip = tr("Shows the Simulation Parameters dialog");
-  Helper::newOMSimulatorModel = tr("New SSP Model");
+  Helper::newOMSimulatorModel = tr("SSP Model");
   Helper::newOMSimulatorModelTip = tr("Creates a new SSP Model");
   Helper::addSystem = tr("Add System");
   Helper::addSystemTip = tr("Adds the System i.e., FMI or TLM");
@@ -717,6 +754,7 @@ void Helper::initHelperVariables()
   Helper::moveDown = tr("Move Down");
   Helper::fixErrorsManually = tr("Fix error(s) manually");
   Helper::revertToLastCorrectVersion = tr("Revert to last correct version");
+  Helper::saveWithErrors = tr("Save with Errors");
   Helper::translationFlagsTip = tr("Space separated list of OMC command line options e.g., -d=initialization --cheapmatchingAlgorithm=3");
   Helper::saveExperimentAnnotation = tr("Save experiment annotation inside model i.e., experiment annotation");
   Helper::saveOpenModelicaSimulationFlagsAnnotation = tr("Save simulation flags inside model i.e., __OpenModelica_simulationFlags annotation");
@@ -746,6 +784,9 @@ void Helper::initHelperVariables()
   Helper::upgradeInstalledLibraries = tr("Upgrade Installed Libraries");
   Helper::updateLibraryIndex = tr("Update Library Index");
   Helper::dataReconciliation = tr("Data Reconciliation");
+  Helper::replaceSubModel = tr("Replace SubModel");
+  Helper::modelicaPathTip = tr("List of paths searched while loading a library. Paths are separated by ; on Windows and : on Linux and macOS.");
+  Helper::selectParentClassName = tr("Select Parent Class");
 }
 
 QString GUIMessages::getMessage(int type)
@@ -842,6 +883,8 @@ QString GUIMessages::getMessage(int type)
       return tr("The read-only package is generated at <b>%1</b>.");
     case UNLOAD_CLASS_MSG:
       return tr("Are you sure you want to unload <b>%1</b>? Everything contained inside this class will also be unloaded.");
+    case RELOAD_CLASS_MSG:
+      return tr("Are you sure you want to reload <b>%1</b>? Any unsaved changes will be lost.");
     case DELETE_CLASS_MSG:
       return tr("Are you sure you want to delete <b>%1</b>? Everything contained inside this class will also be deleted.");
     case UNLOAD_TEXT_FILE_MSG:
@@ -851,7 +894,7 @@ QString GUIMessages::getMessage(int type)
     case WRONG_MODIFIER:
       return tr("The Modifier <b>%1</b> format is invalid. The correct format is <b>phi(start=1)</b>");
     case SET_INFO_XML_FLAG:
-      return tr("The operations were not generated. Check Generate Operations in <b>%1->Debugger->Transformational Debugger</b> OR you must set the -d=infoXmlOperations flag via <b>%2->Simulation->OMC Command Line Options</b> and simulate again.");
+      return tr("The operations were not generated. Check Generate Operations in <b>%1->Debugger->Transformational Debugger</b> OR you must set the -d=infoXmlOperations flag via <b>Simulation Setup->Translation Flags->Additional Translation Flags</b> and simulate again.");
     case DEBUG_CONFIGURATION_EXISTS_MSG:
       return tr("A debug configuration with name <b>%1</b> already exists. Error occurred while saving the debug configuration <b>%2<b>.");
     case DEBUG_CONFIGURATION_SIZE_EXCEED:
@@ -866,12 +909,6 @@ QString GUIMessages::getMessage(int type)
       return tr("The class <b>%1</b> is not saved. Breakpoints are only allowed on saved classes.");
     case BREAKPOINT_INSERT_NOT_MODELICA_CLASS:
       return tr("The class <b>%1</b> is not a modelica class. Breakpoints are only allowed on modelica classes.");
-    case TLMMANAGER_NOT_SET:
-      return tr("TLM Manager executable path is not set. Set it via <b>%1->TLM</b>");
-    case COMPOSITEMODEL_UNSAVED:
-      return tr("CompositeModel <b>%1</b> has unsaved changes. Do you want to save?");
-    case TLMCOSIMULATION_ALREADY_RUNNING:
-      return tr("TLM co-simulation session is already running. Only one session is allowed.");
     case TERMINAL_COMMAND_NOT_SET:
       return tr("Terminal command is not set. You can define a new terminal command in <b>%1->General->Terminal Command</b>.");
     case UNABLE_FIND_COMPONENT_IN_CONNECTION:
@@ -907,6 +944,8 @@ QString GUIMessages::getMessage(int type)
     case VISUALIZATION_VECTORS_SCALING_ZOOMED_OUT_SCENE_TOO_MUCH:
       return tr("Automatically-adjusted vector length scales zoomed out the scene too much. "
                 "Home position will be reset as if adjustable-length vectors were not drawn.");
+    case CRML_SUPPORT:
+      return tr("CRML support is not enabled. Please enable it in <b>%1->General->Enable CRML Support</b> and restart OMEdit.").arg(Helper::toolsOptionsPath);
     default:
       return "";
   }

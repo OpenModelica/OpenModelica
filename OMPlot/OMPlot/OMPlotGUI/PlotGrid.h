@@ -32,10 +32,13 @@
 #ifndef PLOTGRID_H
 #define PLOTGRID_H
 
-#include "OMPlot.h"
+#include "qwt_plot_grid.h"
+
+#include <QPen>
 
 namespace OMPlot
 {
+class Plot;
 class PlotGrid : public QwtPlotGrid
 {
 public:
@@ -45,6 +48,7 @@ public:
   QPen getMinorPen() {return QPen(Qt::lightGray, 0.0, Qt::DotLine);}
   void setGrid();
   void setDetailedGrid();
+  void setXGrid();
 };
 }
 

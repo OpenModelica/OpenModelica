@@ -33,12 +33,10 @@
  */
 
 #include "Legend.h"
-#include "iostream"
-#if QWT_VERSION < 0x060100
-#include "qwt_legend_item.h"
-#else
-#include "qwt_legend_label.h"
-#endif
+#include "OMPlot.h"
+#include "PlotCurve.h"
+
+#include "qwt_text.h"
 
 #include <QAction>
 #include <QEvent>
@@ -56,6 +54,10 @@ Legend::Legend(Plot *pParent)
   mpToggleSignAction = new QAction(tr("Toggle Sign"), this);
   mpToggleSignAction->setCheckable(true);
   connect(mpToggleSignAction, SIGNAL(triggered(bool)), SLOT(toggleSign(bool)));
+
+  mpToggleAxisAction = new QAction(tr("Right Y-Axis"), this);
+  mpToggleAxisAction->setCheckable(true);
+  connect(mpToggleAxisAction, SIGNAL(triggered(bool)), SLOT(switchAxis(bool)));
 
   mpSetupAction = new QAction(tr("Setup"), this);
   connect(mpSetupAction, SIGNAL(triggered()), SLOT(showSetupDialog()));
@@ -92,7 +94,11 @@ bool Legend::eventFilter(QObject *object, QEvent *event)
 #endif
     if (pPlotCurve) {
       QString toolTip = tr("Name: <b>%1</b><br />Filename: <b>%2</b>").arg(pPlotCurve->title().text()).arg(pPlotCurve->getFileName());
+#if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
+      QToolTip::showText(pMouseEvent->globalPosition().toPoint(), toolTip, this);
+#else
       QToolTip::showText(pMouseEvent->globalPos(), toolTip, this);
+#endif
     } else {
       QToolTip::hideText();
     }
@@ -107,6 +113,16 @@ void Legend::toggleSign(bool checked)
     mpPlot->getParentPlotWindow()->updatePlot();
     mpPlotCurve = 0;
   }
+}
+
+void Legend::switchAxis(bool checked)
+{
+    if (mpPlotCurve) {
+        mpPlotCurve->setYAxisRight(checked);
+        mpPlotCurve = 0;
+        mpPlot->getParentPlotWindow()->updatePlot();
+    }
+    return;
 }
 
 void Legend::showSetupDialog()
@@ -131,7 +147,11 @@ void Legend::legendMenu(const QPoint& pos)
     bool state = mpToggleSignAction->blockSignals(true);
     mpToggleSignAction->setChecked(mpPlotCurve->getToggleSign());
     mpToggleSignAction->blockSignals(state);
+    state = mpToggleAxisAction->blockSignals(true);
+    mpToggleAxisAction->setChecked(mpPlotCurve->isYAxisRight());
+    mpToggleAxisAction->blockSignals(state);
     menu.addAction(mpToggleSignAction);
+    menu.addAction(mpToggleAxisAction);
     menu.addSeparator();
     menu.addAction(mpSetupAction);
     menu.exec(mapToGlobal(pos));

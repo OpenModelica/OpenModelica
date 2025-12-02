@@ -46,7 +46,7 @@ void optData2ModelData(OptData *optData, double *vopt, const int index);
 
 void diffSynColoredOptimizerSystem(OptData *optData, modelica_real **J, const int i, const int j, const int index);
 void diffSynColoredOptimizerSystemF(OptData *optData, modelica_real **J);
-void debugeJac(OptData * optData,Number* vopt);
+void debugeJac(OptData * optData,ipnumber* vopt);
 void debugeSteps(OptData * optData, modelica_real*vopt, modelica_real * lambda);
 void copy_initial_values(OptData * optData, DATA* data);
 void setLocalVars(OptData * optData, DATA * data, const double * const vopt, const int i, const int j, const int shift);
@@ -58,10 +58,10 @@ extern "C"
 {
 #endif
 
-Bool evalfG(Index n, double * v, Bool new_x, int m, Number *g, void * useData);
-Bool evalfDiffG(Index n, double * x, Bool new_x, Index m, Index njac, Index *iRow, Index *iCol, Number *values, void * useData);
-Bool evalfF(Index n, double * v, Bool new_x, Number *objValue, void * useData);
-Bool evalfDiffF(Index n, double * v, Bool new_x, Number *gradF, void * useData);
+Bool evalfG(ipindex n, double * v, Bool new_x, int m, ipnumber *g, void * useData);
+Bool evalfDiffG(ipindex n, double * x, Bool new_x, ipindex m, ipindex njac, ipindex *iRow, ipindex *iCol, ipnumber *values, void * useData);
+Bool evalfF(ipindex n, double * v, Bool new_x, ipnumber *objValue, void * useData);
+Bool evalfDiffF(ipindex n, double * v, Bool new_x, ipnumber *gradF, void * useData);
 Bool ipopt_h(int n, double *v, Bool new_x, double obj_factor, int m, double *lambda, Bool new_lambda,
                     int nele_hess, int *iRow, int *iCol, double *values, void* useData);
 

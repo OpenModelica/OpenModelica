@@ -1,7 +1,6 @@
 // name:     RecordDefaultArgMod
 // keywords: record, default argument, modifier, #2643
 // status:   correct
-// cflags: -d=-newInst
 //
 // Tests that default arguments in records are properly overwritten by
 // modifications.
@@ -14,6 +13,7 @@ model RecordDefaultArgMod
   end MyRecord;
 
   MyRecord r = MyRecord(time, -time);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end RecordDefaultArgMod;
 
 // Result:

@@ -63,7 +63,7 @@ readFile("Bug5673.xml"); getErrorString();
 //     causality = \"local\" isValueChangeable = \"false\"
 //     alias = \"noAlias\"
 //     classIndex = \"0\" classType = \"rAlg\"
-//     isProtected = \"false\" hideResult = \"\" initNonlinear = \"false\"
+//     isProtected = \"false\" hideResult = \"\" isEncrypted = \"false\" initNonlinear = \"false\"
 //     fileName = \"&lt;interactive&gt;\" startLine = \"5\" startColumn = \"2\" endLine = \"5\" endColumn = \"13\" fileWritable = \"true\">
 //     <Real fixed=\"true\" useNominal=\"false\" />
 //   </ScalarVariable>
@@ -74,7 +74,7 @@ readFile("Bug5673.xml"); getErrorString();
 //     causality = \"local\" isValueChangeable = \"false\"
 //     alias = \"alias\" aliasVariable=\"b\" aliasVariableId=\"0\"
 //     classIndex = \"0\" classType = \"rAli\"
-//     isProtected = \"false\" hideResult = \"\" initNonlinear = \"false\"
+//     isProtected = \"false\" hideResult = \"\" isEncrypted = \"false\" initNonlinear = \"false\"
 //     fileName = \"&lt;interactive&gt;\" startLine = \"5\" startColumn = \"2\" endLine = \"5\" endColumn = \"13\" fileWritable = \"true\">
 //     <Real fixed=\"false\" useNominal=\"false\" />
 //   </ScalarVariable>
@@ -91,26 +91,26 @@ readFile("Bug5673.xml"); getErrorString();
 // "  <ModelVariables>
 //
 //   <ScalarVariable
-//     name = \"a\"
-//     valueReference = \"1000\"
-//     variability = \"parameter\" isDiscrete = \"true\"
-//     causality = \"calculatedParameter\" isValueChangeable = \"false\"
-//     alias = \"noAlias\"
-//     classIndex = \"0\" classType = \"rPar\"
-//     isProtected = \"false\" hideResult = \"\" initNonlinear = \"false\"
-//     fileName = \"&lt;interactive&gt;\" startLine = \"12\" startColumn = \"3\" endLine = \"12\" endColumn = \"9\" fileWritable = \"true\">
-//     <Real fixed=\"true\" useNominal=\"false\" />
-//   </ScalarVariable>
-//   <ScalarVariable
 //     name = \"b\"
-//     valueReference = \"1001\"
+//     valueReference = \"1000\"
 //     variability = \"parameter\" isDiscrete = \"true\"
 //     causality = \"parameter\" isValueChangeable = \"true\"
 //     alias = \"noAlias\"
-//     classIndex = \"1\" classType = \"rPar\"
-//     isProtected = \"false\" hideResult = \"\" initNonlinear = \"false\"
+//     classIndex = \"0\" classType = \"rPar\"
+//     isProtected = \"false\" hideResult = \"\" isEncrypted = \"false\" initNonlinear = \"false\"
 //     fileName = \"&lt;interactive&gt;\" startLine = \"11\" startColumn = \"3\" endLine = \"11\" endColumn = \"21\" fileWritable = \"true\">
 //     <Real start=\"1.0\" fixed=\"true\" useNominal=\"false\" />
+//   </ScalarVariable>
+//   <ScalarVariable
+//     name = \"a\"
+//     valueReference = \"1001\"
+//     variability = \"continuous\" isDiscrete = \"false\"
+//     causality = \"local\" isValueChangeable = \"false\"
+//     alias = \"alias\" aliasVariable=\"b\" aliasVariableId=\"0\"
+//     classIndex = \"0\" classType = \"rAli\"
+//     isProtected = \"false\" hideResult = \"\" isEncrypted = \"false\" initNonlinear = \"false\"
+//     fileName = \"&lt;interactive&gt;\" startLine = \"12\" startColumn = \"3\" endLine = \"12\" endColumn = \"9\" fileWritable = \"true\">
+//     <Real fixed=\"false\" useNominal=\"false\" />
 //   </ScalarVariable>
 //
 //

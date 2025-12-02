@@ -8,8 +8,6 @@
 // Modelica Standard Library
 //
 
-alarm(800);
-
 loadModel(Modelica,{"3.2.1"});
 
 setMatchingAlgorithm("PFPlusExt"); getErrorString();
@@ -101,7 +99,6 @@ res := OpenModelica.Scripting.compareSimulationResults("Modelica.Fluid.Examples.
    "pipe4.flowModel.m_flows[5]"});
 
 // Result:
-// 900
 // true
 // true
 // ""

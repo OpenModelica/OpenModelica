@@ -1,7 +1,6 @@
 // name:     RedeclareLocalClass
 // keywords: redeclare,type
 // status:   correct
-// cflags: -d=-newInst
 //
 // Checks that the compiler correctly handles redeclarations of local classes.
 //
@@ -34,6 +33,7 @@ end Terminal_n;
 model RedeclareLocalClass 
   extends PartialTwoPort(redeclare package PhaseSystem_n = OnePhase,
     redeclare Terminal_n terminal_n(i(start = zeros(PhaseSystem_n.n))));
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end RedeclareLocalClass;
 
 

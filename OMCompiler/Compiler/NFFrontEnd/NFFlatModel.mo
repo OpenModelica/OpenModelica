@@ -35,32 +35,34 @@ encapsulated uniontype NFFlatModel
   import Variable = NFVariable;
 
 protected
-  import Statement = NFStatement;
-  import NFFunction.Function;
-  import Expression = NFExpression;
-  import Type = NFType;
   import Binding = NFBinding;
-  import Dimension = NFDimension;
-  import ComplexType = NFComplexType;
-  import NFInstNode.InstNode;
-  import IOStream;
-  import NFSubscript.Subscript;
   import Class = NFClass;
-  import NFClassTree.ClassTree;
+  import ComplexType = NFComplexType;
   import Component = NFComponent;
-  import NFComponentRef.ComponentRef;
   import DAE.ElementSource;
-  import MetaModelica.Dangerous.listReverseInPlace;
-  import StringUtil;
-  import Util;
-  import Prefixes = NFPrefixes;
-  import NFPrefixes.Visibility;
-  import FlatModelicaUtil = NFFlatModelicaUtil;
-  import UnorderedMap;
-  import Typing = NFTyping;
+  import Dimension = NFDimension;
   import ErrorExt;
-  import Lookup = NFLookup;
+  import ExpandExp = NFExpandExp;
+  import Expression = NFExpression;
+  import FlatModelicaUtil = NFFlatModelicaUtil;
   import InstContext = NFInstContext;
+  import IOStream;
+  import Lookup = NFLookup;
+  import MetaModelica.Dangerous.listReverseInPlace;
+  import NFClassTree.ClassTree;
+  import NFComponentRef.ComponentRef;
+  import NFFunction.Function;
+  import NFInstNode.InstNode;
+  import NFPrefixes.Visibility;
+  import NFSubscript.Subscript;
+  import Prefixes = NFPrefixes;
+  import Scalarize = NFScalarize;
+  import Statement = NFStatement;
+  import StringUtil;
+  import Type = NFType;
+  import Typing = NFTyping;
+  import UnorderedMap;
+  import Util;
 
   import FlatModel = NFFlatModel;
 
@@ -231,59 +233,87 @@ public
     input output IOStream.IOStream s;
   protected
     FlatModel flat_model = flatModel;
-    String name = className(flatModel);
+    String name = Util.makeQuotedIdentifier(className(flatModel));
+    BaseModelica.OutputFormat format;
+    Boolean scalarize;
   algorithm
-    s := IOStream.append(s, "package '" + name + "'\n");
-    flat_model.variables := reconstructRecordInstances(flat_model.variables);
+    format := BaseModelica.formatFromFlags();
+    scalarize := Flags.isConfigFlagSet(Flags.BASE_MODELICA_OPTIONS, "scalarize");
+
+    if Flags.getConfigString(Flags.OBFUSCATE) == "protected" or
+       Flags.getConfigString(Flags.OBFUSCATE) == "encrypted" then
+      flat_model := obfuscate(flat_model);
+    end if;
+
+    if scalarize then
+      flat_model.variables := Scalarize.scalarizeVariables(flat_model.variables, forceScalarize = true);
+      flat_model.equations := Equation.splitRecordEquations(flat_model.equations);
+      flat_model.equations := Scalarize.scalarizeEquations(flat_model.equations, forceScalarize = true);
+      flat_model.equations := Equation.mapExpList(flat_model.equations, ExpandExp.expandCallArgs);
+      flat_model.initialEquations := Equation.splitRecordEquations(flat_model.initialEquations);
+      flat_model.initialEquations := Scalarize.scalarizeEquations(flat_model.initialEquations, forceScalarize = true);
+      flat_model.initialEquations := Equation.mapExpList(flat_model.initialEquations, ExpandExp.expandCallArgs);
+    else
+      flat_model.variables := reconstructRecordInstances(flat_model.variables);
+    end if;
+
+    if format.moveBindings then
+      flat_model := moveBindings(flat_model);
+    end if;
+
+    s := IOStream.append(s, "//! base 0.1.0\n");
+    s := IOStream.append(s, "package " + name + "\n");
 
     for fn in functions loop
       if not (Function.isDefaultRecordConstructor(fn) or Function.isExternalObjectConstructorOrDestructor(fn)) then
-        s := Function.toFlatStream(fn, "  ", s);
+        // Function parameters are not affected by the scalarization mode, so use default format here.
+        s := Function.toFlatStream(fn, BaseModelica.defaultFormat, "  ", s);
         s := IOStream.append(s, ";\n\n");
       end if;
     end for;
 
     for ty in collectFlatTypes(flat_model, functions) loop
-      s := Type.toFlatDeclarationStream(ty, "  ", s);
+      s := Type.toFlatDeclarationStream(ty, format, "  ", s);
       s := IOStream.append(s, ";\n\n");
     end for;
 
-    s := IOStream.append(s, "  model '" + name + "'");
+    s := IOStream.append(s, "  model " + name);
     s := FlatModelicaUtil.appendElementSourceCommentString(flat_model.source, s);
     s := IOStream.append(s, "\n");
 
     for v in flat_model.variables loop
-      s := Variable.toFlatStream(v, "    ", printBindingTypes, s);
+      s := Variable.toFlatStream(v, format, "    ", printBindingTypes, s);
       s := IOStream.append(s, ";\n");
     end for;
 
     if not listEmpty(flat_model.initialEquations) then
       s := IOStream.append(s, "  initial equation\n");
-      s := Equation.toFlatStreamList(flat_model.initialEquations, "    ", s);
+      s := Equation.toFlatStreamList(flat_model.initialEquations, format, "    ", s);
     end if;
 
     if not listEmpty(flat_model.equations) then
       s := IOStream.append(s, "  equation\n");
-      s := Equation.toFlatStreamList(flat_model.equations, "    ", s);
+      s := Equation.toFlatStreamList(flat_model.equations, format, "    ", s);
     end if;
 
     for alg in flat_model.initialAlgorithms loop
       if not listEmpty(alg.statements) then
         s := IOStream.append(s, "  initial algorithm\n");
-        s := Statement.toFlatStreamList(alg.statements, "    ", s);
+        s := Statement.toFlatStreamList(alg.statements, format, "    ", s);
       end if;
     end for;
 
     for alg in flat_model.algorithms loop
       if not listEmpty(alg.statements) then
         s := IOStream.append(s, "  algorithm\n");
-        s := Statement.toFlatStreamList(alg.statements, "    ", s);
+        s := Statement.toFlatStreamList(alg.statements, format, "    ", s);
       end if;
     end for;
 
-    s := FlatModelicaUtil.appendElementSourceCommentAnnotation(flat_model.source, "    ", ";\n", s);
-    s := IOStream.append(s, "  end '" + name + "';\n");
-    s := IOStream.append(s, "end '" + name + "';\n");
+    s := FlatModelicaUtil.appendElementSourceCommentAnnotation(flat_model.source,
+      NFFlatModelicaUtil.ElementType.ROOT_CLASS, "    ", ";\n", s);
+    s := IOStream.append(s, "  end " + name + ";\n");
+    s := IOStream.append(s, "end " + name + ";\n");
   end appendFlatStream;
 
   function collectFlatTypes
@@ -322,6 +352,7 @@ public
   algorithm
     () := match ty
       case Type.ENUMERATION()
+        guard not Type.isBuiltinEnumeration(ty)
         algorithm
           UnorderedMap.tryAdd(ty.typePath, ty, types);
         then
@@ -343,6 +374,12 @@ public
       case Type.COMPLEX(complexTy = ComplexType.EXTERNAL_OBJECT())
         algorithm
           UnorderedMap.tryAdd(InstNode.scopePath(ty.cls), ty, types);
+        then
+          ();
+
+      case Type.FUNCTION(fnType = NFType.FunctionType.FUNCTIONAL_PARAMETER)
+        algorithm
+          UnorderedMap.tryAdd(InstNode.scopePath(ty.fn.node), ty, types);
         then
           ();
 
@@ -553,21 +590,7 @@ public
     input Expression exp;
     input output TypeMap types;
   algorithm
-    () := match exp
-      case Expression.SUBSCRIPTED_EXP()
-        guard Flags.getConfigBool(Flags.MODELICA_OUTPUT)
-        algorithm
-          collectSubscriptedFlatType(exp.exp, exp.subscripts, exp.ty, types);
-        then
-          ();
-
-      else
-        algorithm
-          collectFlatType(Expression.typeOf(exp), types);
-        then
-          ();
-
-    end match;
+    collectFlatType(Expression.typeOf(exp), types);
   end collectExpFlatTypes_traverse;
 
   function collectFunctionFlatTypes
@@ -592,25 +615,6 @@ public
     collectFlatType(Component.getType(comp), types);
     collectBindingFlatTypes(Component.getBinding(comp), types);
   end collectComponentFlatTypes;
-
-  function collectSubscriptedFlatType
-    input Expression exp;
-    input list<Subscript> subs;
-    input Type subscriptedTy;
-    input TypeMap types;
-  protected
-    Type exp_ty;
-    list<Type> sub_tyl;
-    list<Dimension> dims;
-    list<String> strl;
-    String name;
-  algorithm
-    exp_ty := Expression.typeOf(exp);
-    dims := List.firstN(Type.arrayDims(exp_ty), listLength(subs));
-    sub_tyl := list(Dimension.subscriptType(d) for d in dims);
-    name := Type.subscriptedTypeName(exp_ty, sub_tyl);
-    UnorderedMap.tryAdd(Absyn.IDENT(name), Type.SUBSCRIPTED(name, exp_ty, sub_tyl, subscriptedTy), types);
-  end collectSubscriptedFlatType;
 
   function reconstructRecordInstances
     input list<Variable> variables;
@@ -682,7 +686,7 @@ public
     end if;
 
     recordVar := Variable.VARIABLE(recordName, record_ty, record_binding, InstNode.visibility(record_node),
-      Component.getAttributes(record_comp), {}, {}, Component.comment(record_comp), InstNode.info(record_node), NFBackendExtension.DUMMY_BACKEND_INFO);
+      Component.getAttributes(record_comp), {}, variables, Component.comment(record_comp), InstNode.info(record_node), NFBackendExtension.DUMMY_BACKEND_INFO);
   end reconstructRecordInstance;
 
   function typeFlatType
@@ -745,7 +749,7 @@ public
     input ObfuscationMap obfuscationMap;
   algorithm
     var.name := obfuscateCref(var.name, obfuscationMap);
-    var.comment := obfuscateCommentOpt(var.comment, ComponentRef.node(var.name),
+    var.comment := obfuscateComment(var.comment, ComponentRef.node(var.name),
       obfuscationMap, stripComment = not Variable.isAccessible(var));
     var := Variable.mapExpShallow(var, function obfuscateExp(obfuscationMap = obfuscationMap));
   end obfuscateVariable;
@@ -1045,17 +1049,32 @@ public
 
   function removeNonTopLevelDirections
     input output FlatModel flatModel;
-  protected
-    Integer expose_local_ios;
   algorithm
     // Keep the declared directions if --useLocalDirection=true has been set.
     if Flags.getConfigBool(Flags.USE_LOCAL_DIRECTION) then
       return;
     end if;
 
-    expose_local_ios := Flags.getConfigInt(Flags.EXPOSE_LOCAL_IOS);
-    flatModel.variables := list(Variable.removeNonTopLevelDirection(v, expose_local_ios) for v in flatModel.variables);
+    flatModel.variables := list(Variable.removeNonTopLevelDirection(v) for v in flatModel.variables);
   end removeNonTopLevelDirections;
+
+  function moveBindings
+    "Moves binding equations of variables to the equation section of the flat model."
+    input output FlatModel flatModel;
+  protected
+    list<Variable> vars = {};
+    list<Equation> eqs = {};
+  algorithm
+    for var in flatModel.variables loop
+      (var, eqs) := Variable.moveBinding(var, eqs);
+      vars := var :: vars;
+    end for;
+
+    if not listEmpty(eqs) then
+      flatModel.variables := listReverseInPlace(vars);
+      flatModel.equations := listAppend(listReverseInPlace(eqs), flatModel.equations);
+    end if;
+  end moveBindings;
 
   annotation(__OpenModelica_Interface="frontend");
 end NFFlatModel;

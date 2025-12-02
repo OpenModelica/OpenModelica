@@ -1,6 +1,5 @@
 // name: ClassMod6
 // status: correct
-// cflags: -d=newInst
 
 model X
   Real x;

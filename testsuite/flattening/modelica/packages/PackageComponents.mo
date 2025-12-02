@@ -1,7 +1,6 @@
 // name: PackageComponents
 // keywords: package
 // status: correct
-// cflags: -d=-newInst
 //
 // Tests simple package creation and instantation of its components
 //
@@ -18,6 +17,7 @@ model PackageComponents
   TestPackage.TestClass tc;
 equation
   tc.i = 1;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end PackageComponents;
 
 // Result:

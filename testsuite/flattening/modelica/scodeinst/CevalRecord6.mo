@@ -1,27 +1,26 @@
 // name: CevalRecord6
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 
 record R
-  Real x = 1.0;
-  Real y;
-  Real z = 3.0;
+  parameter Real x = 1.0;
+  parameter Real y(fixed = false);
+  parameter Real z = 3.0;
 end R;
 
 model CevalRecord6
-  constant R r1;
-  Real x = r1.x;
-  Real z = r1.z;
+  R r1;
+  parameter Real x = r1.x annotation(Evaluate=true);
+  parameter Real z = r1.z annotation(Evaluate=true);
 end CevalRecord6;
 
 // Result:
 // class CevalRecord6
-//   constant Real r1.x = 1.0;
-//   constant Real r1.y;
-//   constant Real r1.z = 3.0;
-//   Real x = 1.0;
-//   Real z = 3.0;
+//   final parameter Real r1.x = 1.0;
+//   parameter Real r1.y(fixed = false);
+//   final parameter Real r1.z = 3.0;
+//   final parameter Real x = 1.0;
+//   final parameter Real z = 3.0;
 // end CevalRecord6;
 // endResult

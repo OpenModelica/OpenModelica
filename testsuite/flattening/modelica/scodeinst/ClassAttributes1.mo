@@ -1,7 +1,6 @@
 // name: ClassAttributes1
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 
 model ClassAttributes1

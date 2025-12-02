@@ -10,6 +10,6 @@ buildModel(RecordPassedToFunction); getErrorString();
 // Result:
 // true
 // ""
-// {"RecordPassedToFunction","RecordPassedToFunction_init.xml"}
+// {"RecordPassedToFunction", "RecordPassedToFunction_init.xml"}
 // ""
 // endResult

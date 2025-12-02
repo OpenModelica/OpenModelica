@@ -1,7 +1,6 @@
 // name:     RedeclareComponent3
 // keywords: redeclare component modifier
 // status:   correct
-// cflags: -d=-newInst
 //
 // Tests that modifiers are merged when redeclaring components.
 //
@@ -20,6 +19,7 @@ class RedeclareComponent3
 
   redeclare Real r(start = 1.0);
   C2 c;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end RedeclareComponent3;
 
 // Result:

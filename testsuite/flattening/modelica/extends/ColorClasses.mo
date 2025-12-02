@@ -3,7 +3,6 @@
 // status:   correct
 //
 // Drmodelica: 4.1 Public Respectively Protected Elements (p. 117)
-// cflags: -d=-newInst
 //
 record ColorData "Superclass of Color"
   parameter Real red;
@@ -36,4 +35,5 @@ equation
   b = C2.obj1.green;
   c = C12.obj1.green;
   d = C22.obj1.green;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ColorClasses;

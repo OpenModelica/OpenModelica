@@ -1,7 +1,6 @@
 // name:     Constant6
 // keywords: declaration,array
 // status:   correct
-// cflags: -d=-newInst
 //
 // Can you call functions in constant expressions?
 //
@@ -15,6 +14,7 @@ end inc;
 
 class Constant6
   Real x[inc(1)];
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Constant6;
 
 // Result:

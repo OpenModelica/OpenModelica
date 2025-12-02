@@ -1,7 +1,6 @@
 // name: ModelSimple
 // keywords: model
 // status: correct
-// cflags: -d=-newInst
 //
 // Tests simple model declaration and instantiation
 //
@@ -14,6 +13,7 @@ model ModelSimple
   TestModel tm;
 equation
   tm.i = 1;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ModelSimple;
 
 // Result:

@@ -1,7 +1,6 @@
 // name: FunctionRecursive2
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 
 function fac

@@ -129,10 +129,12 @@ val(y4, 1.0);
 // x4[i]=(if firstTick() then 0.0 else $DER.x4[i]) * interval() + previous(x4[i])[Real]
 // end for;
 // 21: y4=sum(x4) [Real]
-// 22: y3=sum(x3) [Real]removedEquations equations:
+// 22: y3=sum(x3) [Real]
+// removedEquations equations:
 // ========================================
 // SubClock:
-// factor(1/1) shift(0/1) Hold Events: false
+// factor(1/1) shift(0/1)
+// Hold Events: false
 //
 // ========================================
 //
@@ -141,13 +143,13 @@ val(y4, 1.0);
 // initialEquations: (13)
 // ========================================
 // 1: $DER.x4=0.0 [Real]
-// 2: x1={1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0} [Real[10]]
+// 2: x1=1.0 [Real]
 // 3: $CLKPRE.x1=x1 [Real[10]]
-// 4: x2={2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0} [Real[10]]
+// 4: x2=2.0 [Real]
 // 5: $CLKPRE.x2=x2 [Real[10]]
-// 6: x3={3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0} [Real[10]]
+// 6: x3=3.0 [Real]
 // 7: $CLKPRE.x3=x3 [Real[10]]
-// 8: x4={4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0} [Real[10]]
+// 8: x4=4.0 [Real]
 // 9: $CLKPRE.x4=x4 [Real[10]]
 // 10: y1=0.0 [Real]
 // 11: y2=0.0 [Real]
@@ -186,6 +188,9 @@ val(y4, 1.0);
 // ========================================
 //
 // equationsForZeroCrossings:
+// ========================================
+//
+// generic calls:
 // ========================================
 //
 // jacobianEquations:
@@ -236,7 +241,7 @@ val(y4, 1.0);
 // 	variableDeclarations: x (Real, )  ,
 // record SimulationResult
 //     resultFile = "ArrayEquationsTest_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'ArrayEquationsTest', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'ArrayEquationsTest', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = ""
 // end SimulationResult;
 // ""

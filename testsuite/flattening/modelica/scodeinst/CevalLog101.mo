@@ -1,7 +1,6 @@
 // name: CevalLog101
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 //
 

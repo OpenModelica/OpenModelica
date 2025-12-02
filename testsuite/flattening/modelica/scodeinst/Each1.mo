@@ -1,7 +1,6 @@
 // name: Each1
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 
 model N

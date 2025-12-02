@@ -1,7 +1,6 @@
 // name:     MissingFunction1
 // keywords: ffi
 // status:   correct
-// cflags: -d=newInst
 //
 //
 

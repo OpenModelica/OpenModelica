@@ -39,6 +39,8 @@ encapsulated package NBEvaluation
 public
   import BackendDAE = NBackendDAE;
   import Module = NBModule;
+  import Partition = NBPartition.Partition;
+  import StrongComponent = NBStrongComponent;
 
 protected
   // Old Backend imports
@@ -66,6 +68,28 @@ public
   end Stages;
 
   constant Stages DEFAULT_STAGES = STAGES(true, true, false, true);
+
+  function removeDummies
+    "removes the dummy components in a partition
+    Note: will be expanded into removeConstantComponents()"
+    input output BackendDAE bdae;
+  algorithm
+    bdae := match bdae
+      case BackendDAE.MAIN() algorithm
+        bdae.ode        := list(removeDummyComponents(p) for p in bdae.ode);
+        bdae.algebraic  := list(removeDummyComponents(p) for p in bdae.algebraic);
+        bdae.ode_event  := list(removeDummyComponents(p) for p in bdae.ode_event);
+        bdae.alg_event  := list(removeDummyComponents(p) for p in bdae.alg_event);
+      then bdae;
+      else bdae;
+    end match;
+  end removeDummies;
+
+  function removeDummyComponents
+    input output Partition part;
+  algorithm
+    part.strongComponents := Util.applyOption(part.strongComponents, function Array.filter(fun = StrongComponent.isDummy));
+  end removeDummyComponents;
 
   annotation(__OpenModelica_Interface="backend");
 end NBEvaluation;

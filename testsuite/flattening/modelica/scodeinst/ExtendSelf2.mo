@@ -1,7 +1,6 @@
 // name: ExtendSelf2.mo
 // keywords:
 // status: incorrect
-// cflags: -d=newInst
 //
 // Checks that an extends loop gives an error.
 //
@@ -16,7 +15,7 @@ end ExtendSelf2;
 
 // Result:
 // Error processing file: ExtendSelf2.mo
-// [flattening/modelica/scodeinst/ExtendSelf2.mo:10:3-10:22:writable] Error: extends ExtendSelf2 causes an instantiation loop.
+// [flattening/modelica/scodeinst/ExtendSelf2.mo:9:3-9:22:writable] Error: extends ExtendSelf2 causes an instantiation loop.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

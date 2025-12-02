@@ -3,7 +3,6 @@
 // status:   correct
 //
 // Drmodelica: 13.2  Sampled Systems (p. 429)
-// cflags: -d=-newInst
 //
 
 model DiscreteVectorStateSpace
@@ -28,6 +27,7 @@ model DVSSTest
   DiscreteVectorStateSpace dvss;
 equation
   dvss.u= fill(time,dvss.m);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end DVSSTest;
 
 

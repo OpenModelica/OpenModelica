@@ -106,7 +106,7 @@ public:
   bool isSimulationProcessKilled() {return mIsSimulationProcessKilled;}
   bool isSimulationProcessRunning() {return mIsSimulationProcessRunning;}
   void addGeneratedFileTab(QString fileName);
-  void writeSimulationMessage(SimulationMessage *pSimulationMessage);
+  void writeSimulationMessage(StringHandler::SimulationMessageType type, QString text, QString index);
   void embeddedServerInitialized();
   void updateMessageTab(const QString &text);
   void updateMessageTabProgress();
@@ -151,7 +151,6 @@ private:
   void deleteIntermediateCompilationFiles();
   void writeSimulationOutput(QString output, StringHandler::SimulationMessageType type, bool textFormat);
   void simulationProcessFinishedHelper();
-  QString getPathsFromBatFile(QString fileName);
 private slots:
   void openTransformationalDebugger();
   void openSimulationLogFile();

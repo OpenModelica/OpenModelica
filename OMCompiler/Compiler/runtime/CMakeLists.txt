@@ -139,6 +139,7 @@ set(OMC_BACKENDRUNTIIME_SOURCES
     HpcOmSchedulerExt_omc.cpp
     HpcOmBenchmarkExt_omc.cpp
     TaskGraphResults_omc.cpp
+    ASSCEXT_omc.cpp
     BackendDAEEXT_omc.cpp
     matching.c
     matching_cheap.c
@@ -153,6 +154,7 @@ target_link_libraries(omcbackendruntime PUBLIC omc::simrt::runtime)
 target_link_libraries(omcbackendruntime PUBLIC omc::3rd::metis)
 target_link_libraries(omcbackendruntime PUBLIC omc::3rd::fmilib)
 target_link_libraries(omcbackendruntime PUBLIC omc::3rd::zlib)
+target_link_libraries(omcbackendruntime PUBLIC omc::3rd::FMIL::expat)
 
 target_include_directories(omcbackendruntime PUBLIC ${Intl_INCLUDE_DIRS})
 target_include_directories(omcbackendruntime PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
@@ -240,7 +242,11 @@ endif()
 if (MINGW)
   set(OMC_MAKE_EXE "mingw32-make")
 else()
-  set(OMC_MAKE_EXE "make")
+  if(CMAKE_HOST_SYSTEM_NAME STREQUAL "FreeBSD")
+    set(OMC_MAKE_EXE "gmake")
+  else()
+    set(OMC_MAKE_EXE "make")
+  endif()
 endif()
 
 set(OMC_CMAKE_EXE "${CMAKE_COMMAND}")

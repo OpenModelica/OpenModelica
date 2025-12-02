@@ -1,0 +1,203 @@
+// name:     testDumpDerivativeTest.mos
+// keywords: kinsol jacobian dumps
+// status: correct
+// teardown_command: rm -rf derDebugTest* output.log
+// cflags: -d=-newInst
+//
+// Test flag LOG_NLS_DERIVATIVE_TEST to detect anomalies in the symbolic Jacobian
+//
+loadString("
+model derDebugTest
+  Real x(start = 1e3, nominal=1e3);
+  Real y(start = 1e4, nominal=1e4);
+  Real z(start = 1, nominal=1);
+
+  Real s(start=1, fixed=true, nominal=1);
+equation
+  x^2 + y - z^2 = 1;
+  y + z^6 - x^2 = 1;
+  x^3 - y  = s;
+
+  der(s) = x;
+end derDebugTest;
+"); getErrorString();
+
+simulate(derDebugTest,
+         simflags="-lv=LOG_NLS_DERIVATIVE_TEST -nls=kinsol",
+         startTime=0,
+         stopTime=0); getErrorString();
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "derDebugTest_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'derDebugTest', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_NLS_DERIVATIVE_TEST -nls=kinsol'",
+//     messages = "LOG_NLS_DERIVATIVE_TEST | info    | kinsol: Derivative test (atol=2.22045e-14, rtol=1.00000e-04, scaled = false, Caller: kinsol: Jacobian eval):
+// |                 | |       | | Matrix Info
+// |                 | |       | | | NLS index = 8
+// |                 | |       | | | Columns   = 2
+// |                 | |       | | | Rows      = 2
+// |                 | |       | | | NNZ       = 4
+// |                 | |       | | | Curr Time = 0.00000e+00
+// |                 | |       | | Anomalies
+// |                 | |       | | | Column / Variable: 2, Name: z
+// |                 | |       | | | | Type         Col    Row    Symbolic         Numerical        RelError
+// |                 | |       | | | | Numerical    2      1      +8.00000000e+00  +8.00093073e+00  +1.16327965e-04
+// |                 | |       | | | | Numerical    2      2      -2.00000000e+00  -1.78885438e+00  +1.05572809e-01
+// |                 | |       | | Summary
+// |                 | |       | | | Numerical errors:  2 (value mismatch w.r.t. reference)
+// |                 | |       | | | Structural errors: 0 (non-zero not in sparsity pattern)
+// |                 | |       | | | Max relative error: 1.056e-01
+// |                 | warning | | | Derivative test failed (2 numerical, 0 structural errors)
+// LOG_NLS_DERIVATIVE_TEST | info    | kinsol: Derivative test (atol=2.22045e-14, rtol=1.00000e-04, scaled = false, Caller: kinsol: Jacobian eval):
+// |                 | |       | | Matrix Info
+// |                 | |       | | | NLS index = 8
+// |                 | |       | | | Columns   = 2
+// |                 | |       | | | Rows      = 2
+// |                 | |       | | | NNZ       = 4
+// |                 | |       | | | Curr Time = 0.00000e+00
+// |                 | |       | | Anomalies
+// |                 | |       | | | Column / Variable: 2, Name: z
+// |                 | |       | | | | Type         Col    Row    Symbolic         Numerical        RelError
+// |                 | |       | | | | Numerical    2      1      +8.00000000e+00  +8.00093073e+00  +1.16327965e-04
+// |                 | |       | | | | Numerical    2      2      -2.00000000e+00  -1.78885438e+00  +1.05572809e-01
+// |                 | |       | | Summary
+// |                 | |       | | | Numerical errors:  2 (value mismatch w.r.t. reference)
+// |                 | |       | | | Structural errors: 0 (non-zero not in sparsity pattern)
+// |                 | |       | | | Max relative error: 1.056e-01
+// |                 | warning | | | Derivative test failed (2 numerical, 0 structural errors)
+// LOG_NLS_DERIVATIVE_TEST | info    | kinsol: Derivative test (atol=2.22045e-14, rtol=1.00000e-04, scaled = false, Caller: kinsol: Jacobian eval):
+// |                 | |       | | Matrix Info
+// |                 | |       | | | NLS index = 8
+// |                 | |       | | | Columns   = 2
+// |                 | |       | | | Rows      = 2
+// |                 | |       | | | NNZ       = 4
+// |                 | |       | | | Curr Time = 0.00000e+00
+// |                 | |       | | Anomalies
+// |                 | |       | | | Column / Variable: 2, Name: z
+// |                 | |       | | | | Type         Col    Row    Symbolic         Numerical        RelError
+// |                 | |       | | | | Numerical    2      2      +2.51978675e+01  +2.51248512e+01  +2.89771587e-03
+// |                 | |       | | Summary
+// |                 | |       | | | Numerical errors:  1 (value mismatch w.r.t. reference)
+// |                 | |       | | | Structural errors: 0 (non-zero not in sparsity pattern)
+// |                 | |       | | | Max relative error: 2.898e-03
+// |                 | warning | | | Derivative test failed (1 numerical, 0 structural errors)
+// LOG_NLS_DERIVATIVE_TEST | info    | kinsol: Derivative test (atol=2.22045e-14, rtol=1.00000e-04, scaled = false, Caller: kinsol: Jacobian eval):
+// |                 | |       | | Matrix Info
+// |                 | |       | | | NLS index = 8
+// |                 | |       | | | Columns   = 2
+// |                 | |       | | | Rows      = 2
+// |                 | |       | | | NNZ       = 4
+// |                 | |       | | | Curr Time = 0.00000e+00
+// |                 | |       | | Anomalies
+// |                 | |       | | | Column / Variable: 2, Name: z
+// |                 | |       | | | | Type         Col    Row    Symbolic         Numerical        RelError
+// |                 | |       | | | | Numerical    2      2      +1.70417465e+01  +1.70390601e+01  +1.57636595e-04
+// |                 | |       | | Summary
+// |                 | |       | | | Numerical errors:  1 (value mismatch w.r.t. reference)
+// |                 | |       | | | Structural errors: 0 (non-zero not in sparsity pattern)
+// |                 | |       | | | Max relative error: 1.576e-04
+// |                 | warning | | | Derivative test failed (1 numerical, 0 structural errors)
+// LOG_NLS_DERIVATIVE_TEST | info    | kinsol: Derivative test (atol=2.22045e-14, rtol=1.00000e-04, scaled = false, Caller: kinsol: Jacobian eval):
+// |                 | |       | | Matrix Info
+// |                 | |       | | | NLS index = 8
+// |                 | |       | | | Columns   = 2
+// |                 | |       | | | Rows      = 2
+// |                 | |       | | | NNZ       = 4
+// |                 | |       | | | Curr Time = 0.00000e+00
+// |                 | |       | | Anomalies
+// |                 | |       | | Summary
+// |                 | |       | | | Numerical errors:  0 (value mismatch w.r.t. reference)
+// |                 | |       | | | Structural errors: 0 (non-zero not in sparsity pattern)
+// |                 | |       | | | Max relative error: 6.024e-06
+// LOG_NLS_DERIVATIVE_TEST | info    | kinsol: Derivative test (atol=2.22045e-14, rtol=1.00000e-04, scaled = false, Caller: kinsol: Jacobian eval):
+// |                 | |       | | Matrix Info
+// |                 | |       | | | NLS index = 8
+// |                 | |       | | | Columns   = 2
+// |                 | |       | | | Rows      = 2
+// |                 | |       | | | NNZ       = 4
+// |                 | |       | | | Curr Time = 0.00000e+00
+// |                 | |       | | Anomalies
+// |                 | |       | | Summary
+// |                 | |       | | | Numerical errors:  0 (value mismatch w.r.t. reference)
+// |                 | |       | | | Structural errors: 0 (non-zero not in sparsity pattern)
+// |                 | |       | | | Max relative error: 2.088e-07
+// LOG_NLS_DERIVATIVE_TEST | info    | kinsol: Derivative test (atol=2.22045e-14, rtol=1.00000e-04, scaled = false, Caller: kinsol: Jacobian eval):
+// |                 | |       | | Matrix Info
+// |                 | |       | | | NLS index = 8
+// |                 | |       | | | Columns   = 2
+// |                 | |       | | | Rows      = 2
+// |                 | |       | | | NNZ       = 4
+// |                 | |       | | | Curr Time = 0.00000e+00
+// |                 | |       | | Anomalies
+// |                 | |       | | Summary
+// |                 | |       | | | Numerical errors:  0 (value mismatch w.r.t. reference)
+// |                 | |       | | | Structural errors: 0 (non-zero not in sparsity pattern)
+// |                 | |       | | | Max relative error: 2.265e-07
+// LOG_NLS_DERIVATIVE_TEST | info    | kinsol: Derivative test (atol=2.22045e-14, rtol=1.00000e-04, scaled = false, Caller: kinsol: Jacobian eval):
+// |                 | |       | | Matrix Info
+// |                 | |       | | | NLS index = 8
+// |                 | |       | | | Columns   = 2
+// |                 | |       | | | Rows      = 2
+// |                 | |       | | | NNZ       = 4
+// |                 | |       | | | Curr Time = 0.00000e+00
+// |                 | |       | | Anomalies
+// |                 | |       | | Summary
+// |                 | |       | | | Numerical errors:  0 (value mismatch w.r.t. reference)
+// |                 | |       | | | Structural errors: 0 (non-zero not in sparsity pattern)
+// |                 | |       | | | Max relative error: 2.503e-07
+// LOG_NLS_DERIVATIVE_TEST | info    | kinsol: Derivative test (atol=2.22045e-14, rtol=1.00000e-04, scaled = false, Caller: kinsol: Jacobian eval):
+// |                 | |       | | Matrix Info
+// |                 | |       | | | NLS index = 8
+// |                 | |       | | | Columns   = 2
+// |                 | |       | | | Rows      = 2
+// |                 | |       | | | NNZ       = 4
+// |                 | |       | | | Curr Time = 0.00000e+00
+// |                 | |       | | Anomalies
+// |                 | |       | | Summary
+// |                 | |       | | | Numerical errors:  0 (value mismatch w.r.t. reference)
+// |                 | |       | | | Structural errors: 0 (non-zero not in sparsity pattern)
+// |                 | |       | | | Max relative error: 2.711e-07
+// LOG_NLS_DERIVATIVE_TEST | info    | kinsol: Derivative test (atol=2.22045e-14, rtol=1.00000e-04, scaled = false, Caller: kinsol: Jacobian eval):
+// |                 | |       | | Matrix Info
+// |                 | |       | | | NLS index = 8
+// |                 | |       | | | Columns   = 2
+// |                 | |       | | | Rows      = 2
+// |                 | |       | | | NNZ       = 4
+// |                 | |       | | | Curr Time = 0.00000e+00
+// |                 | |       | | Anomalies
+// |                 | |       | | Summary
+// |                 | |       | | | Numerical errors:  0 (value mismatch w.r.t. reference)
+// |                 | |       | | | Structural errors: 0 (non-zero not in sparsity pattern)
+// |                 | |       | | | Max relative error: 2.713e-07
+// LOG_NLS_DERIVATIVE_TEST | info    | kinsol: Derivative test (atol=2.22045e-14, rtol=1.00000e-04, scaled = false, Caller: kinsol: Jacobian eval):
+// |                 | |       | | Matrix Info
+// |                 | |       | | | NLS index = 16
+// |                 | |       | | | Columns   = 2
+// |                 | |       | | | Rows      = 2
+// |                 | |       | | | NNZ       = 4
+// |                 | |       | | | Curr Time = 0.00000e+00
+// |                 | |       | | Anomalies
+// |                 | |       | | Summary
+// |                 | |       | | | Numerical errors:  0 (value mismatch w.r.t. reference)
+// |                 | |       | | | Structural errors: 0 (non-zero not in sparsity pattern)
+// |                 | |       | | | Max relative error: 2.711e-07
+// LOG_NLS_DERIVATIVE_TEST | info    | kinsol: Derivative test (atol=2.22045e-14, rtol=1.00000e-04, scaled = false, Caller: kinsol: Jacobian eval):
+// |                 | |       | | Matrix Info
+// |                 | |       | | | NLS index = 16
+// |                 | |       | | | Columns   = 2
+// |                 | |       | | | Rows      = 2
+// |                 | |       | | | NNZ       = 4
+// |                 | |       | | | Curr Time = 0.00000e+00
+// |                 | |       | | Anomalies
+// |                 | |       | | Summary
+// |                 | |       | | | Numerical errors:  0 (value mismatch w.r.t. reference)
+// |                 | |       | | | Structural errors: 0 (non-zero not in sparsity pattern)
+// |                 | |       | | | Max relative error: 2.711e-07
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// endResult

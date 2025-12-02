@@ -1,7 +1,6 @@
 // name: InStreamVariability1
 // keywords: stream inStream connector
 // status: incorrect
-// cflags: -d=newInst
 //
 
 connector C
@@ -18,7 +17,7 @@ end InStreamVariability1;
 
 // Result:
 // Error processing file: InStreamVariability1.mo
-// [flattening/modelica/scodeinst/InStreamVariability1.mo:16:3-16:29:writable] Error: Connector 'c[n].s' has non-parameter subscript 'n'.
+// [flattening/modelica/scodeinst/InStreamVariability1.mo:15:3-15:29:writable] Error: Connector 'c[n].s' has non-parameter subscript 'n'.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

@@ -1,7 +1,6 @@
 // name: InnerOuterInvalidType2
 // keywords:
 // status: incorrect
-// cflags: -d=newInst
 //
 
 model A
@@ -20,8 +19,8 @@ end InnerOuterInvalidType2;
 
 // Result:
 // Error processing file: InnerOuterInvalidType2.mo
-// [flattening/modelica/scodeinst/InnerOuterInvalidType2.mo:8:9-8:20:writable] Notification: From here:
-// [flattening/modelica/scodeinst/InnerOuterInvalidType2.mo:17:3-17:15:writable] Error: Found inner component M instead of expected class.
+// [flattening/modelica/scodeinst/InnerOuterInvalidType2.mo:7:9-7:20:writable] Notification: From here:
+// [flattening/modelica/scodeinst/InnerOuterInvalidType2.mo:16:3-16:15:writable] Error: Found inner component M instead of expected class.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

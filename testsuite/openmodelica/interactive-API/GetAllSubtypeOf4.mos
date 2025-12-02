@@ -1,0 +1,24 @@
+// name: GetAllSubtypeOf4
+// keywords:
+// status: correct
+// cflags: -d=newInst
+//
+// Tests the getAllSubtypeOf API function.
+//
+
+loadString("
+  model M1 = Base;
+
+  model M
+    M1 m1;
+  end M;
+");
+
+getAllSubtypeOf(Base, M, false, false, false);
+getErrorString();
+
+// Result:
+// true
+// {}
+// ""
+// endResult

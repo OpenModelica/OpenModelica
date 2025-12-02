@@ -144,7 +144,7 @@ import Util;
 
   public function createMemoryMap
     "author: marcusw
-     Creates a MemoryMap which contains informations about an optimized memory alignment and append the informations to the given TaskGraph."
+     Creates a MemoryMap which contains information about an optimized memory alignment and append the information to the given TaskGraph."
     input SimCode.ModelInfo iModelInfo;
     input HashTableCrIListArray.HashTable iVarToArrayIndexMapping;
     input HashTableCrILst.HashTable iVarToIndexMapping;
@@ -188,6 +188,7 @@ import Util;
     BackendDAE.AdjacencyMatrix adjacencyMatrix;
     Option<HpcOmSimCode.MemoryMap> tmpMemoryMapOpt;
     Integer varCount;
+    Integer stateVarsCnt, derivativeVarsCnt, algVarsCnt, discreteAlgVarsCnt, intAlgVarsCnt, boolAlgVarsCnt, stringAlgVarsCnt, inputVarsCnt, outputVarsCnt, aliasVarsCnt, intAliasVarsCnt, boolAliasVarsCnt, stringAliasVarsCnt, paramVarsCnt, intParamVarsCnt, boolParamVarsCnt, stringParamVarsCnt;
     Integer VARSIZE_FLOAT, VARSIZE_INTEGER, VARSIZE_BOOLEAN, VARSIZE_STRING, CACHELINE_SIZE;
     array<tuple<Integer,Integer, Integer>> simCodeVarTypes; //<varDataType, varSize, varType>
 
@@ -220,108 +221,125 @@ import Util;
           simVarIdxMappingHashTable = HashTableCrILst.emptyHashTableSized(BaseHashTable.biggerBucketSize);
           varCount = 0;
           //simVarIdxMappingHashTable = fillSimVarHashTable(stateVars,varCount,VARDATATYPE_FLOAT,simVarIdxMappingHashTable);
-          varCount = varCount + listLength(stateVars);
+          stateVarsCnt = listLength(stateVars);
+          varCount = varCount + stateVarsCnt;
           //simVarIdxMappingHashTable = fillSimVarHashTable(derivativeVars,varCount,VARDATATYPE_FLOAT,simVarIdxMappingHashTable);
-          varCount = varCount + listLength(derivativeVars);
+          derivativeVarsCnt = listLength(derivativeVars);
+          varCount = varCount + derivativeVarsCnt;
           simVarIdxMappingHashTable = fillSimVarHashTable(algVars,varCount,VARDATATYPE_FLOAT,simVarIdxMappingHashTable);
-          varCount = varCount + listLength(algVars);
+          algVarsCnt = listLength(algVars);
+          varCount = varCount + algVarsCnt;
           simVarIdxMappingHashTable = fillSimVarHashTable(discreteAlgVars,varCount,VARDATATYPE_FLOAT,simVarIdxMappingHashTable);
-          varCount = varCount + listLength(discreteAlgVars);
+          discreteAlgVarsCnt = listLength(discreteAlgVars);
+          varCount = varCount + discreteAlgVarsCnt;
           simVarIdxMappingHashTable = fillSimVarHashTable(intAlgVars,varCount,VARDATATYPE_INTEGER,simVarIdxMappingHashTable);
-          varCount = varCount + listLength(intAlgVars);
+          intAlgVarsCnt = listLength(intAlgVars);
+          varCount = varCount + intAlgVarsCnt;
           simVarIdxMappingHashTable = fillSimVarHashTable(boolAlgVars,varCount,VARDATATYPE_BOOLEAN,simVarIdxMappingHashTable);
-          varCount = varCount + listLength(boolAlgVars);
+          boolAlgVarsCnt = listLength(boolAlgVars);
+          varCount = varCount + boolAlgVarsCnt;
           simVarIdxMappingHashTable = fillSimVarHashTable(stringAlgVars,varCount,VARDATATYPE_STRING,simVarIdxMappingHashTable);
-          varCount = varCount + listLength(stringAlgVars);
+          stringAlgVarsCnt = listLength(stringAlgVars);
+          varCount = varCount + stringAlgVarsCnt;
           simVarIdxMappingHashTable = fillSimVarHashTable(inputVars,varCount,VARDATATYPE_FLOAT,simVarIdxMappingHashTable);
-          varCount = varCount + listLength(inputVars);
+          inputVarsCnt = listLength(inputVars);
+          varCount = varCount + inputVarsCnt;
           simVarIdxMappingHashTable = fillSimVarHashTable(outputVars,varCount,VARDATATYPE_FLOAT,simVarIdxMappingHashTable);
-          varCount = varCount + listLength(outputVars);
+          outputVarsCnt = listLength(outputVars);
+          varCount = varCount + outputVarsCnt;
           //simVarIdxMappingHashTable = fillSimVarHashTable(aliasVars,varCount,VARDATATYPE_FLOAT,simVarIdxMappingHashTable);
-          varCount = varCount + listLength(aliasVars);
+          aliasVarsCnt = listLength(aliasVars);
+          varCount = varCount + aliasVarsCnt;
           //simVarIdxMappingHashTable = fillSimVarHashTable(intAliasVars,varCount,VARDATATYPE_INTEGER,simVarIdxMappingHashTable);
-          varCount = varCount + listLength(intAliasVars);
+          intAliasVarsCnt = listLength(intAliasVars);
+          varCount = varCount + intAliasVarsCnt;
           //simVarIdxMappingHashTable = fillSimVarHashTable(boolAliasVars,varCount,VARDATATYPE_BOOLEAN,simVarIdxMappingHashTable);
-          varCount = varCount + listLength(boolAliasVars);
+          boolAliasVarsCnt = listLength(boolAliasVars);
+          varCount = varCount + boolAliasVarsCnt;
           simVarIdxMappingHashTable = fillSimVarHashTable(stringAliasVars,varCount,VARDATATYPE_STRING,simVarIdxMappingHashTable);
-          varCount = varCount + listLength(stringAliasVars);
+          stringAliasVarsCnt = listLength(stringAliasVars);
+          varCount = varCount + stringAliasVarsCnt;
           simVarIdxMappingHashTable = fillSimVarHashTable(paramVars,varCount,VARDATATYPE_FLOAT,simVarIdxMappingHashTable);
-          varCount = varCount + listLength(paramVars);
+          paramVarsCnt = listLength(paramVars);
+          varCount = varCount + paramVarsCnt;
           simVarIdxMappingHashTable = fillSimVarHashTable(intParamVars,varCount,VARDATATYPE_INTEGER,simVarIdxMappingHashTable);
-          varCount = varCount + listLength(intParamVars);
+          intParamVarsCnt = listLength(intParamVars);
+          varCount = varCount + intParamVarsCnt;
           simVarIdxMappingHashTable = fillSimVarHashTable(boolParamVars,varCount,VARDATATYPE_BOOLEAN,simVarIdxMappingHashTable);
-          varCount = varCount + listLength(boolParamVars);
+          boolParamVarsCnt = listLength(boolParamVars);
+          varCount = varCount + boolParamVarsCnt;
           simVarIdxMappingHashTable = fillSimVarHashTable(stringParamVars,varCount,VARDATATYPE_STRING,simVarIdxMappingHashTable);
-          varCount = varCount + listLength(stringParamVars);
+          stringParamVarsCnt = listLength(stringParamVars);
+          varCount = varCount + stringParamVarsCnt;
 
           simCodeVarTypes = arrayCreate(varCount, (-1,-1,-1));
           varCount = 0;
 
-          /* if(intGt(listLength(stateVars), 0)) then
-            List.map_0(List.intRange2(varCount+1, varCount+listLength(stateVars)), function Array.updateIndexFirst(inValue = (VARDATATYPE_FLOAT,VARSIZE_FLOAT,VARTYPE_STATE), inArray=simCodeVarTypes));
+          /* if stateVarsCnt > 0 then
+            List.map_0(List.intRange2(varCount+1, varCount+stateVarsCnt), function Array.updateIndexFirst(inValue = (VARDATATYPE_FLOAT,VARSIZE_FLOAT,VARTYPE_STATE), inArray=simCodeVarTypes));
           end if; */
-          varCount = varCount + listLength(stateVars);
-          /* if(intGt(listLength(derivativeVars), 0)) then
-            List.map_0(List.intRange2(varCount+1, varCount+listLength(derivativeVars)), function Array.updateIndexFirst(inValue = (VARDATATYPE_FLOAT,VARSIZE_FLOAT,VARTYPE_STATEDER), inArray=simCodeVarTypes));
+          varCount = varCount + stateVarsCnt;
+          /* if derivativeVarsCnt > 0 then
+            List.map_0(List.intRange2(varCount+1, varCount+derivativeVarsCnt), function Array.updateIndexFirst(inValue = (VARDATATYPE_FLOAT,VARSIZE_FLOAT,VARTYPE_STATEDER), inArray=simCodeVarTypes));
           end if; */
-          varCount = varCount + listLength(derivativeVars);
-          if(intGt(listLength(algVars), 0)) then
-            List.map_0(List.intRange2(varCount+1, varCount+listLength(algVars)), function Array.updateIndexFirst(inValue = (VARDATATYPE_FLOAT,VARSIZE_FLOAT,VARTYPE_OTHER), inArray=simCodeVarTypes));
+          varCount = varCount + derivativeVarsCnt;
+          if algVarsCnt > 0 then
+            List.map_0(List.intRange2(varCount+1, varCount+algVarsCnt), function Array.updateIndexFirst(inValue = (VARDATATYPE_FLOAT,VARSIZE_FLOAT,VARTYPE_OTHER), inArray=simCodeVarTypes));
           end if;
-          varCount = varCount + listLength(algVars);
-          if(intGt(listLength(discreteAlgVars), 0)) then
-            List.map_0(List.intRange2(varCount+1, varCount+listLength(discreteAlgVars)), function Array.updateIndexFirst(inValue = (VARDATATYPE_FLOAT,VARSIZE_FLOAT,VARTYPE_OTHER), inArray=simCodeVarTypes));
+          varCount = varCount + algVarsCnt;
+          if discreteAlgVarsCnt > 0 then
+            List.map_0(List.intRange2(varCount+1, varCount+discreteAlgVarsCnt), function Array.updateIndexFirst(inValue = (VARDATATYPE_FLOAT,VARSIZE_FLOAT,VARTYPE_OTHER), inArray=simCodeVarTypes));
           end if;
-          varCount = varCount + listLength(discreteAlgVars);
-          if(intGt(listLength(intAlgVars), 0)) then
-            List.map_0(List.intRange2(varCount+1, varCount+listLength(intAlgVars)), function Array.updateIndexFirst(inValue = (VARDATATYPE_INTEGER,VARSIZE_INTEGER,VARTYPE_OTHER), inArray=simCodeVarTypes));
+          varCount = varCount + discreteAlgVarsCnt;
+          if intAlgVarsCnt > 0 then
+            List.map_0(List.intRange2(varCount+1, varCount+intAlgVarsCnt), function Array.updateIndexFirst(inValue = (VARDATATYPE_INTEGER,VARSIZE_INTEGER,VARTYPE_OTHER), inArray=simCodeVarTypes));
           end if;
-          varCount = varCount + listLength(intAlgVars);
-          if(intGt(listLength(boolAlgVars), 0)) then
-            List.map_0(List.intRange2(varCount+1, varCount+listLength(boolAlgVars)), function Array.updateIndexFirst(inValue = (VARDATATYPE_BOOLEAN,VARSIZE_BOOLEAN,VARTYPE_OTHER), inArray=simCodeVarTypes));
+          varCount = varCount + intAlgVarsCnt;
+          if boolAlgVarsCnt > 0 then
+            List.map_0(List.intRange2(varCount+1, varCount+boolAlgVarsCnt), function Array.updateIndexFirst(inValue = (VARDATATYPE_BOOLEAN,VARSIZE_BOOLEAN,VARTYPE_OTHER), inArray=simCodeVarTypes));
           end if;
-          varCount = varCount + listLength(boolAlgVars);
-          if(intGt(listLength(stringAlgVars), 0)) then
-            List.map_0(List.intRange2(varCount+1, varCount+listLength(stringAlgVars)), function Array.updateIndexFirst(inValue = (VARDATATYPE_STRING,VARSIZE_STRING,VARTYPE_OTHER), inArray=simCodeVarTypes));
+          varCount = varCount + boolAlgVarsCnt;
+          if stringAlgVarsCnt > 0 then
+            List.map_0(List.intRange2(varCount+1, varCount+stringAlgVarsCnt), function Array.updateIndexFirst(inValue = (VARDATATYPE_STRING,VARSIZE_STRING,VARTYPE_OTHER), inArray=simCodeVarTypes));
           end if;
-          varCount = varCount + listLength(stringAlgVars);
-          if(intGt(listLength(inputVars), 0)) then
-            List.map_0(List.intRange2(varCount+1, varCount+listLength(inputVars)), function Array.updateIndexFirst(inValue = (VARDATATYPE_FLOAT,VARSIZE_FLOAT,VARTYPE_OTHER), inArray=simCodeVarTypes));
+          varCount = varCount + stringAlgVarsCnt;
+          if inputVarsCnt > 0 then
+            List.map_0(List.intRange2(varCount+1, varCount+inputVarsCnt), function Array.updateIndexFirst(inValue = (VARDATATYPE_FLOAT,VARSIZE_FLOAT,VARTYPE_OTHER), inArray=simCodeVarTypes));
           end if;
-          varCount = varCount + listLength(inputVars);
-          if(intGt(listLength(outputVars), 0)) then
-            List.map_0(List.intRange2(varCount+1, varCount+listLength(outputVars)), function Array.updateIndexFirst(inValue = (VARDATATYPE_FLOAT,VARSIZE_FLOAT,VARTYPE_OTHER), inArray=simCodeVarTypes));
+          varCount = varCount + inputVarsCnt;
+          if outputVarsCnt > 0 then
+            List.map_0(List.intRange2(varCount+1, varCount+outputVarsCnt), function Array.updateIndexFirst(inValue = (VARDATATYPE_FLOAT,VARSIZE_FLOAT,VARTYPE_OTHER), inArray=simCodeVarTypes));
           end if;
-          varCount = varCount + listLength(outputVars);
-          /*if(intGt(listLength(aliasVars), 0)) then
-            List.map_0(List.intRange2(varCount+1, varCount+listLength(aliasVars)), function Array.updateIndexFirst(inValue = (VARDATATYPE_FLOAT,VARSIZE_FLOAT,VARTYPE_ALIAS), inArray=simCodeVarTypes));
+          varCount = varCount + outputVarsCnt;
+          /*if aliasVarsCnt > 0 then
+            List.map_0(List.intRange2(varCount+1, varCount+aliasVarsCnt), function Array.updateIndexFirst(inValue = (VARDATATYPE_FLOAT,VARSIZE_FLOAT,VARTYPE_ALIAS), inArray=simCodeVarTypes));
           end if;*/
-          varCount = varCount + listLength(aliasVars);
-          /*if(intGt(listLength(intAliasVars), 0)) then
-            List.map_0(List.intRange2(varCount+1, varCount+listLength(intAliasVars)), function Array.updateIndexFirst(inValue = (VARDATATYPE_INTEGER,VARSIZE_INTEGER,VARTYPE_ALIAS), inArray=simCodeVarTypes));
+          varCount = varCount + aliasVarsCnt;
+          /*if intAliasVarsCnt > 0 then
+            List.map_0(List.intRange2(varCount+1, varCount+intAliasVarsCnt), function Array.updateIndexFirst(inValue = (VARDATATYPE_INTEGER,VARSIZE_INTEGER,VARTYPE_ALIAS), inArray=simCodeVarTypes));
           end if;*/
-          varCount = varCount + listLength(intAliasVars);
-          /*if(intGt(listLength(boolAliasVars), 0)) then
-            List.map_0(List.intRange2(varCount+1, varCount+listLength(boolAliasVars)), function Array.updateIndexFirst(inValue = (VARDATATYPE_BOOLEAN,VARSIZE_BOOLEAN,VARTYPE_ALIAS), inArray=simCodeVarTypes));
+          varCount = varCount + intAliasVarsCnt;
+          /*if boolAliasVarsCnt > 0 then
+            List.map_0(List.intRange2(varCount+1, varCount+boolAliasVarsCnt), function Array.updateIndexFirst(inValue = (VARDATATYPE_BOOLEAN,VARSIZE_BOOLEAN,VARTYPE_ALIAS), inArray=simCodeVarTypes));
           end if;*/
-          varCount = varCount + listLength(boolAliasVars);
-          varCount = varCount + listLength(stringAliasVars);
-          if(intGt(listLength(paramVars), 0)) then
-            List.map_0(List.intRange2(varCount+1, varCount+listLength(paramVars)), function Array.updateIndexFirst(inValue = (VARDATATYPE_FLOAT,VARSIZE_FLOAT,VARTYPE_PARAM), inArray=simCodeVarTypes));
+          varCount = varCount + boolAliasVarsCnt;
+          varCount = varCount + stringAliasVarsCnt;
+          if paramVarsCnt > 0 then
+            List.map_0(List.intRange2(varCount+1, varCount+paramVarsCnt), function Array.updateIndexFirst(inValue = (VARDATATYPE_FLOAT,VARSIZE_FLOAT,VARTYPE_PARAM), inArray=simCodeVarTypes));
           end if;
-          varCount = varCount + listLength(paramVars);
-          if(intGt(listLength(intParamVars), 0)) then
-            List.map_0(List.intRange2(varCount+1, varCount+listLength(intParamVars)), function Array.updateIndexFirst(inValue = (VARDATATYPE_INTEGER,VARSIZE_INTEGER,VARTYPE_PARAM), inArray=simCodeVarTypes));
+          varCount = varCount + paramVarsCnt;
+          if intParamVarsCnt > 0 then
+            List.map_0(List.intRange2(varCount+1, varCount+intParamVarsCnt), function Array.updateIndexFirst(inValue = (VARDATATYPE_INTEGER,VARSIZE_INTEGER,VARTYPE_PARAM), inArray=simCodeVarTypes));
           end if;
-          varCount = varCount + listLength(intParamVars);
-          if(intGt(listLength(boolParamVars), 0)) then
-            List.map_0(List.intRange2(varCount+1, varCount+listLength(boolParamVars)), function Array.updateIndexFirst(inValue = (VARDATATYPE_BOOLEAN,VARSIZE_BOOLEAN,VARTYPE_PARAM), inArray=simCodeVarTypes));
+          varCount = varCount + intParamVarsCnt;
+          if boolParamVarsCnt > 0 then
+            List.map_0(List.intRange2(varCount+1, varCount+boolParamVarsCnt), function Array.updateIndexFirst(inValue = (VARDATATYPE_BOOLEAN,VARSIZE_BOOLEAN,VARTYPE_PARAM), inArray=simCodeVarTypes));
           end if;
-          varCount = varCount + listLength(boolParamVars);
-          if(intGt(listLength(stringParamVars), 0)) then
-            List.map_0(List.intRange2(varCount+1, varCount+listLength(stringParamVars)), function Array.updateIndexFirst(inValue = (VARDATATYPE_STRING,VARSIZE_STRING,VARTYPE_PARAM), inArray=simCodeVarTypes));
+          varCount = varCount + boolParamVarsCnt;
+          if stringParamVarsCnt > 0 then
+            List.map_0(List.intRange2(varCount+1, varCount+stringParamVarsCnt), function Array.updateIndexFirst(inValue = (VARDATATYPE_STRING,VARSIZE_STRING,VARTYPE_PARAM), inArray=simCodeVarTypes));
           end if;
-          varCount = varCount + listLength(stringParamVars);
+          varCount = varCount + stringParamVarsCnt;
           //printSimCodeVarTypes(simCodeVarTypes);
 
           //print("-------------------------------------\n");
@@ -530,7 +548,7 @@ import Util;
     //print("createCacheMapLevelOptimized0: Handling new level. CL used by previous layer: " + stringDelimitList(List.map(cacheLinesPrevLevel,intString), ",") + " Number of CL: " + intString(numCL) + "\n");
     availableCLold := List.setDifferenceIntN(allCL,cacheLinesPrevLevel,numCL);
     //append free space to available cache lines and remove full cache lines
-    detailedCacheLineInfo := createDetailedCacheMapInformations(availableCLold, cacheLinesFloat, cacheLineSize);
+    detailedCacheLineInfo := createDetailedCacheMapInformation(availableCLold, cacheLinesFloat, cacheLineSize);
     detailedCacheLineInfo := listReverse(detailedCacheLineInfo);
     //print("createCacheMapLevelOptimized0: clCandidates: " + stringDelimitList(List.map(List.map(detailedCacheLineInfo,Util.tuple21),intString), ",") + "\n");
     ((cacheMap,cacheMapMeta,createdCL,detailedCacheLineInfo)) := List.fold1(getTaskListTasks(iLevelTasks), createCacheMapLevelOptimizedForTask, iNodeSimCodeVarMapping, (cacheMap,cacheMapMeta, 0,detailedCacheLineInfo));
@@ -999,7 +1017,7 @@ import Util;
       ((varDataType,varNumBytesRequired,_)) := arrayGet(simCodeVarTypes, varIdx);
       (threadCacheLinesFloat,threadCacheLinesInt,threadCacheLinesBool,threadCacheLines) := getCacheLineForVarType(varDataType, arrayGet(iThreadCacheLines, iThreadIdx));
 
-      if(intGt(listLength(threadCacheLines), 0)) then
+      if not listEmpty(threadCacheLines) then
         lastCL::fullCLs := threadCacheLines;
       else
         lastCLidx := numCLs + 1;
@@ -1317,10 +1335,10 @@ import Util;
           if(boolOr(intLt(numBytesFree, iVarSize), List.exist1(prefetchLevel,intEq, iLevelIdx))) then //The CL has not enough space or is used for prefetching -- can not be used for writing
             tmpMatchedCacheLine = findMatchingSharedCLLevelfix0(iNodeVar, iVarSize, iLevelIdx, iThreadIdx, iCurrentListIdx+1, rest);
           else
-            if(List.exist(writeLevel, function isCLWrittenByOtherThread(iLevelIdx=iLevelIdx, iThreadIdx=iThreadIdx))) then //The CL is written by another thread in the same level -- can not be used for writing
+            if(List.any(writeLevel, function isCLWrittenByOtherThread(iLevelIdx=iLevelIdx, iThreadIdx=iThreadIdx))) then //The CL is written by another thread in the same level -- can not be used for writing
               tmpMatchedCacheLine = findMatchingSharedCLLevelfix0(iNodeVar, iVarSize, iLevelIdx, iThreadIdx, iCurrentListIdx+1, rest);
             else
-              if(List.exist(writeLevel, function isCLWrittenByOtherThread(iLevelIdx=iLevelIdx-1, iThreadIdx=iThreadIdx))) then //The CL is written by another thread in the previous level -- can not be used for writing
+              if(List.any(writeLevel, function isCLWrittenByOtherThread(iLevelIdx=iLevelIdx-1, iThreadIdx=iThreadIdx))) then //The CL is written by another thread in the previous level -- can not be used for writing
                 tmpMatchedCacheLine = findMatchingSharedCLLevelfix0(iNodeVar, iVarSize, iLevelIdx, iThreadIdx, iCurrentListIdx+1, rest);
               else //CL matches
                 tmpMatchedCacheLine = SOME((head, iCurrentListIdx));
@@ -1820,8 +1838,8 @@ import Util;
     oResult := intGe(freeSpace, iNumBytes);
   end doesSCVarFitIntoCL;
 
-  protected function createDetailedCacheMapInformations "author: marcusw
-    This method will create more detailed informations about the given cachelines. It will return a list
+  protected function createDetailedCacheMapInformation "author: marcusw
+    This method will create more detailed information about the given cachelines. It will return a list
     of tuples, containing the cacheLineIndex and the number of bytes that are free in the cache line."
     input list<Integer> iCacheLinesIdc; //cache line indices
     input list<CacheLineMap> iCacheLines; //input cache lines
@@ -1831,11 +1849,11 @@ import Util;
     array<CacheLineMap> iCacheLinesArray;
   algorithm
     iCacheLinesArray := listArray(iCacheLines);
-    oCacheLines := List.fold2(iCacheLinesIdc, createDetailedCacheMapInformations0, iCacheLinesArray, iCacheLineSize, {});
-  end createDetailedCacheMapInformations;
+    oCacheLines := List.fold2(iCacheLinesIdc, createDetailedCacheMapInformation0, iCacheLinesArray, iCacheLineSize, {});
+  end createDetailedCacheMapInformation;
 
-  protected function createDetailedCacheMapInformations0 "author: marcusw
-    Append more detailed informations about the cacheline with index 'iCacheLineIdx' to the iCacheLines-list."
+  protected function createDetailedCacheMapInformation0 "author: marcusw
+    Append more detailed information about the cacheline with index 'iCacheLineIdx' to the iCacheLines-list."
     input Integer iCacheLineIdx;
     input array<CacheLineMap> iCacheLinesArray;
     input Integer iCacheLineSize;
@@ -1849,7 +1867,7 @@ import Util;
     oCacheLines := matchcontinue(iCacheLineIdx, iCacheLinesArray, iCacheLineSize, iCacheLines)
       case(_,_,_,_)
         equation
-          //print("createDetailedCacheMapInformations0: CacheLineIdx: " + intString(iCacheLineIdx) + "\n");
+          //print("createDetailedCacheMapInformation0: CacheLineIdx: " + intString(iCacheLineIdx) + "\n");
           cacheLineEntry = arrayGet(iCacheLinesArray, arrayLength(iCacheLinesArray) - iCacheLineIdx + 1);
           numBytesFree = iCacheLineSize-getNumOfUsedBytesByCacheLine(cacheLineEntry);
           //print("\tNumber of free bytes: " + intString(numBytesFree) + "\n");
@@ -1859,7 +1877,7 @@ import Util;
       else
         then iCacheLines;
     end matchcontinue;
-  end createDetailedCacheMapInformations0;
+  end createDetailedCacheMapInformation0;
 
   protected function getNumOfUsedBytesByCacheLine "author: marcusw
     Get the number of bytes that are already blocked in the cacheline."
@@ -1917,7 +1935,7 @@ import Util;
   end compareCacheLineMapByIdx;
 
   protected function convertCacheToVarArrayMapping "author: marcusw
-    Convert the informations of the given cache-map to variable-array mapping used for the code generation."
+    Convert the information of the given cache-map to variable-array mapping used for the code generation."
     input CacheMap iCacheMap;
     input Integer iCacheLineSize;
     input list<SimCodeVar.SimVar> iStateVars;
@@ -2024,7 +2042,7 @@ import Util;
   end convertCacheToVarArrayMapping;
 
   protected function addCacheLineMapToVarArrayMapping "author: marcusw
-    Append the informations of the given cachline-map to the position-mapping-structure."
+    Append the information of the given cachline-map to the position-mapping-structure."
     input CacheLineMap iCacheLineMap;
     input Integer iCacheLineSize;
     input array<Integer> iVarIdxOffsets; //an offset that is substracted from the arrayPosition (for float, int and bool variables -> taken from iArrayIdx)
@@ -2058,7 +2076,7 @@ import Util;
   end addCacheLineMapToVarArrayMapping;
 
   protected function addCacheLineEntryToVarArrayMapping "author: marcusw
-    Append the informations of the given cachline-entry to the position-mapping-structure."
+    Append the information of the given cachline-entry to the position-mapping-structure."
     input CacheLineEntry iCacheLineEntry;
     input Integer iArrayIdx;
     input tuple<Integer,Integer> iClIdxSize; //<CLIdx, CLSize>>
@@ -2499,7 +2517,7 @@ import Util;
           if(boolNot(listEmpty(iVarList))) then
             varHead = listHead(iVarList);
             if(intEq(varHead, varIdx)) then
-              iVarList = List.rest(iVarList);
+              iVarList = listRest(iVarList);
               //print("createMemoryMapTraverse0: Removed variable " + intString(varIdx) + "\n");
             end if;
           end if;
@@ -2538,7 +2556,7 @@ import Util;
     scVarTaskMapping := arrayCreate(iNumScVars,-1);
     HpcOmTaskGraph.TASKGRAPHMETA(varCompMapping=varCompMapping) := iTaskGraphMeta;
     //iterate over all variables
-    ((oScVarTaskMapping,_)) := Array.fold3(varCompMapping, getSimCodeVarNodeMapping0, iEqSystems, iVarNameSCVarIdxMapping, iCompNodeMapping, (scVarTaskMapping,1));
+    ((oScVarTaskMapping,_)) := Array.fold(varCompMapping, function getSimCodeVarNodeMapping0(iEqSystems = iEqSystems, iVarNameSCVarIdxMapping = iVarNameSCVarIdxMapping, iCompNodeMapping = iCompNodeMapping), (scVarTaskMapping,1));
   end getSimCodeVarNodeMapping;
 
   protected function getSimCodeVarNodeMapping0 "author: marcusw
@@ -2698,13 +2716,13 @@ import Util;
     scVarTaskMapping := arrayCreate(arrayLength(iSCVarCLMapping),-1);
     HpcOmTaskGraph.TASKGRAPHMETA(varCompMapping=varCompMapping) := iTaskGraphMeta;
     //iterate over all variables
-    ((tmpCLTaskMapping,oScVarTaskMapping,_)) := Array.fold3(varCompMapping, getCacheLineTaskMapping0, iEqSystems, iVarNameSCVarIdxMapping, iSCVarCLMapping, (tmpCLTaskMapping,scVarTaskMapping,1));
+    ((tmpCLTaskMapping,oScVarTaskMapping,_)) := Array.fold(varCompMapping, function getCacheLineTaskMapping0( iEqSystems = iEqSystems, iVarNameSCVarIdxMapping = iVarNameSCVarIdxMapping, iSCVarCLMapping = iSCVarCLMapping), (tmpCLTaskMapping,scVarTaskMapping,1));
     tmpCLTaskMapping := Array.map1(tmpCLTaskMapping, List.sort, intLt);
     oCLTaskMapping := Array.map1(tmpCLTaskMapping, List.sortedUnique, intEq);
   end getCacheLineTaskMapping;
 
   protected function getCacheLineTaskMapping0 "author: marcusw
-    This method will extend the mapping with the informations of the given node."
+    This method will extend the mapping with the information of the given node."
     input tuple<Integer,Integer,Integer> iNodeIdx; //<nodeIdx,eqSysIdx,varOffset>
     input BackendDAE.EqSystems iEqSystems;
     input HashTableCrILst.HashTable iVarNameSCVarIdxMapping;
@@ -3263,15 +3281,15 @@ import Util;
   protected function printEqSimCodeVarMapping
     input array<array<list<Integer>>> iMapping; //eqSysIdx -> eqIdx -> list<scVarIdx>
   protected
-    array<list<Integer>> sysInformations;
+    array<list<Integer>> sysInformation;
     Integer sysIdx;
     list<Integer> vars;
   algorithm
     for sysIdx in 1:arrayLength(iMapping) loop
       print("System " + intString(sysIdx) + "\n");
-      sysInformations := arrayGet(iMapping, sysIdx);
-      for eqIdx in 1:arrayLength(sysInformations) loop
-        vars := arrayGet(sysInformations, eqIdx);
+      sysInformation := arrayGet(iMapping, sysIdx);
+      for eqIdx in 1:arrayLength(sysInformation) loop
+        vars := arrayGet(sysInformation, eqIdx);
         //print(" Equation " + intString(eqIdx) + " needs variables " + stringDelimitList(List.map(vars, intString), ",") + "\n");
       end for;
     end for;

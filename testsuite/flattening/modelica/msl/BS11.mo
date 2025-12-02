@@ -1,7 +1,6 @@
 // name:     BS11 - TimeTable component
 // keywords: TimeTable
 // status:   correct
-// cflags: -d=-newInst
 //
 // Testing instantiation of the TimeTable component.
 //
@@ -1287,6 +1286,7 @@ model BS11
 
 equation
   connect(timeTable1.outPort,der1.inPort) annotation(Line(visible=true,points={{-22.91,19.87},{-11.97,19.87}}));
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end BS11;
 // function Modelica.Blocks.Sources.TimeTable.getInterpolationCoefficients
 // input Real[:, 2] table "Table for interpolation";

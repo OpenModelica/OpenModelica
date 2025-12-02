@@ -1,7 +1,6 @@
 // name:     DuplicateElementsEquivalent
 // keywords: check if duplicate elements are the same even with when having named imports!
 // status:   incorrect
-// cflags: -d=-newInst
 
 
 package Crap
@@ -14,6 +13,7 @@ model DuplicateElementsEquivalent
  import C=Crap;
  C.X x;
  Crap.X x;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end DuplicateElementsEquivalent;
 
 // Result:

@@ -1,7 +1,6 @@
 // name: PartialType3
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 
 partial model A

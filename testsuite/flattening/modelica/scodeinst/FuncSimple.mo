@@ -1,7 +1,6 @@
 // name: FuncSimple
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 // A very simple function test.
 //

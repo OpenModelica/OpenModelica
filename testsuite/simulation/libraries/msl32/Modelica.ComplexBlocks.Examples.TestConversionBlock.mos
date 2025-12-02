@@ -27,8 +27,8 @@ runScript(modelTesting);getErrorString();
 // ""
 // OpenModelicaModelTesting.Kind.VerifiedSimulation
 // Modelica.ComplexBlocks.Examples.TestConversionBlock
-// {"polarToComplex.y.re","polarToComplex.y.im","complexToReal.re","complexToReal.im"}
-// Simulation options: startTime = 0.0, stopTime = 1.01, numberOfIntervals = 1010, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.ComplexBlocks.Examples.TestConversionBlock', options = '', outputFormat = 'mat', variableFilter = 'time|polarToComplex.y.re|polarToComplex.y.im|complexToReal.re|complexToReal.im', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
+// {"polarToComplex.y.re", "polarToComplex.y.im", "complexToReal.re", "complexToReal.im"}
+// Simulation options: startTime = 0.0, stopTime = 1.01, numberOfIntervals = 1010, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.ComplexBlocks.Examples.TestConversionBlock', options = '', outputFormat = 'mat', variableFilter = 'time|polarToComplex.y.re|polarToComplex.y.im|complexToReal.re|complexToReal.im', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
 // Result file: Modelica.ComplexBlocks.Examples.TestConversionBlock_res.mat
 // Messages: LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.

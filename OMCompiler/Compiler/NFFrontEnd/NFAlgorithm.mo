@@ -200,6 +200,30 @@ public
     end try;
   end getInputsOutputs;
 
+  function isEqual
+    input Algorithm alg1;
+    input Algorithm alg2;
+    output Boolean b;
+  algorithm
+    b := List.isEqualOnTrue(alg1.inputs, alg2.inputs, ComponentRef.isEqual)
+      and List.isEqualOnTrue(alg1.outputs, alg2.outputs, ComponentRef.isEqual)
+      and List.isEqualOnTrue(alg1.statements, alg2.statements, Statement.isEqual);
+  end isEqual;
+
+  function isEmpty
+    input Algorithm alg;
+    output Boolean b = listEmpty(alg.statements);
+  end isEmpty;
+
+  function isDiscrete
+    "returns true if the algorithm contains any discrete outputs"
+    input Algorithm alg;
+    output Boolean b;
+  algorithm
+    b := List.any(alg.outputs, ComponentRef.isDiscrete);
+    b := if b then b else List.any(alg.statements, Statement.isDiscrete);
+  end isDiscrete;
+
 protected
   function statementInputsOutputs "Helper for getInputsOutputs.
     Traverse statements and find inputs and outputs"

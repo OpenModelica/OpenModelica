@@ -1,6 +1,6 @@
 // name: WildLexerMetaModelica
 // status: incorrect
-// cflags: +g=MetaModelica -d=-newInst
+// cflags: -g=MetaModelica -d=-newInst
 //
 
 class WildLexerModelica

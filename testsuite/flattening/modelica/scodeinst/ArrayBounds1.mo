@@ -1,7 +1,6 @@
 // name: ArrayBounds1
 // keywords:
 // status: incorrect
-// cflags: -d=newInst
 //
 
 model ArrayBounds1
@@ -11,7 +10,7 @@ end ArrayBounds1;
 
 // Result:
 // Error processing file: ArrayBounds1.mo
-// [flattening/modelica/scodeinst/ArrayBounds1.mo:9:3-9:16:writable] Error: Subscript '4' for dimension 1 (size = 3) of x is out of bounds.
+// [flattening/modelica/scodeinst/ArrayBounds1.mo:8:3-8:16:writable] Error: Subscript '4' for dimension 1 (size = 3) of x is out of bounds.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

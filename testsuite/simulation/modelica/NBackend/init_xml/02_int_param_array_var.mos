@@ -1,0 +1,43 @@
+// name: 02_int_param_array_var
+// keywords: NewBackend
+// status: correct
+// teardown_command: rm -f *ParameterArrayVariable*
+//
+// Check if init XML has array variable for integer parameter array
+// intParamArray with size=p.
+
+setCommandLineOptions("--newBackend --simCodeScalarize=false");
+
+loadString("
+model ParameterArrayVariable
+  parameter Integer p = 5;
+  parameter Integer intParamArray[p] = fill(1,p);
+end ParameterArrayVariable;
+"); getErrorString();
+
+buildModel(ParameterArrayVariable); getErrorString();
+
+system("sed -n '/<ArrayVariable/,/<\\/ArrayVariable>/p' ParameterArrayVariable_init.xml > ParameterArrayVariable_init.tmp.xml");
+initFileContent := readFile("ParameterArrayVariable_init.tmp.xml");
+
+// Result:
+// true
+// true
+// ""
+// {"ParameterArrayVariable", "ParameterArrayVariable_init.xml"}
+// ""
+// 0
+// "  <ArrayVariable
+//     name = \"intParamArray\"
+//     valueReference = \"1001\"
+//     variability = \"parameter\" isDiscrete = \"true\"
+//     causality = \"local\" isValueChangeable = \"false\"
+//     alias = \"noAlias\"
+//     classIndex = \"1\" classType = \"iPar\"
+//     isProtected = \"false\" hideResult = \"false\" isEncrypted = \"false\" initNonlinear = \"false\"
+//     fileName = \"\" startLine = \"0\" startColumn = \"0\" endLine = \"0\" endColumn = \"0\" fileWritable = \"true\">
+//     <Dimension start=\"5\"/>
+//     <Integer start=\"1\" fixed=\"false\" />
+//   </ArrayVariable>
+// "
+// endResult

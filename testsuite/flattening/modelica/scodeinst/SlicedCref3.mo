@@ -1,7 +1,6 @@
 // name: SlicedCref3
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 
 record R
@@ -26,6 +25,6 @@ end SlicedCref3;
 //   Real x[3];
 // algorithm
 //   r.x := {1.0, 1.0, 1.0};
-//   x := array(r[$i1].x for $i1 in 1:3);
+//   x := array(r[$i0].x for $i0 in 1:3);
 // end SlicedCref3;
 // endResult

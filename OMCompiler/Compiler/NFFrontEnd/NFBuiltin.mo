@@ -415,14 +415,31 @@ constant InstNode TIME =
       NFBinding.EMPTY_BINDING,
       NFBinding.EMPTY_BINDING,
       NFAttributes.INPUT_ATTR,
-      NONE(),
-      NONE(),
+      SCode.noComment,
+      ComponentState.TypeChecked,
+      AbsynUtil.dummyInfo)),
+    InstNode.EMPTY_NODE(),
+    InstNodeType.NORMAL_COMP());
+
+constant InstNode SUBST_NODE =
+  InstNode.COMPONENT_NODE("$SUBST_CREF",
+    NONE(),
+    Visibility.PUBLIC,
+    Pointer.createImmutable(Component.COMPONENT(
+      REAL_NODE, // TODO: make this generic integer / real
+      Type.ANY(),
+      NFBinding.EMPTY_BINDING,
+      NFBinding.EMPTY_BINDING,
+      NFAttributes.DEFAULT_ATTR,
+      SCode.noComment,
       ComponentState.TypeChecked,
       AbsynUtil.dummyInfo)),
     InstNode.EMPTY_NODE(),
     InstNodeType.NORMAL_COMP());
 
 constant ComponentRef TIME_CREF = ComponentRef.CREF(TIME, {}, Type.REAL(), Origin.CREF, ComponentRef.EMPTY());
+constant ComponentRef SUBST_CREF = ComponentRef.CREF(SUBST_NODE, {}, Type.ANY(), Origin.CREF, ComponentRef.EMPTY());
+
 
 function makeBuiltinLookupTree
   "This function takes lists of component and class names and prints out a lookup tree.

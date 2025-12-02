@@ -1,7 +1,7 @@
 dnl Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.63])
-AC_INIT([OMOptim],[dev],[https://trac.openmodelica.org/OpenModelica],[openmodelica],[https://openmodelica.org])
+AC_INIT([OMNotebook],[dev],[https://github.com/OpenModelica/OpenModelica/issues],[openmodelica],[https://openmodelica.org])
 
 AC_SUBST(APP)
 AC_SUBST(EXE)
@@ -23,7 +23,7 @@ AC_LANG([C++])
 test -z "$CXXFLAGS" && CXXFLAGS="$CFLAGS"
 AC_PROG_CC
 AC_PROG_CXX
-AX_CXX_COMPILE_STDCXX(14,[noext],[mandatory])
+AX_CXX_COMPILE_STDCXX(17, [noext],[mandatory])
 
 host_short=$host_cpu-$host_os
 
@@ -38,4 +38,5 @@ DRMODELICADIR=`pwd`/DrModelica
 AC_SUBST([DRCONTROLDIR])
 AC_SUBST([DRMODELICADIR])
 
-AC_OUTPUT(Makefile OMNotebook/OMNotebookGUI/Makefile.unix OMNotebook/OMNotebookGUI/OMNotebook.config OMNotebook/OMNotebookGUI/omc_config.h)
+AC_CONFIG_FILES([Makefile OMNotebook/OMNotebookGUI/Makefile.unix OMNotebook/OMNotebookGUI/OMNotebook.config OMNotebook/OMNotebookGUI/omc_config.h])
+AC_OUTPUT

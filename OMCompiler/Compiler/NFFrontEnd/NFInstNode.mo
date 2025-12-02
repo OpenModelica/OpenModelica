@@ -31,6 +31,7 @@
 
 encapsulated package NFInstNode
 
+import BaseModelica;
 import Binding = NFBinding;
 import Component = NFComponent;
 import Class = NFClass;
@@ -49,6 +50,7 @@ import NFModifier.Modifier;
 import SCodeDump;
 import DAE;
 import Expression = NFExpression;
+import Global;
 
 protected
 import List;
@@ -120,12 +122,21 @@ end InstNodeType;
 
 constant Integer NUMBER_OF_CACHES = 2;
 
+type PackageCacheState = enumeration(
+  NOT_INITIALIZED,
+  PROCESSING,
+  EXPANDED,
+  PARTIALLY_INSTANTIATED,
+  INSTANTIATED
+);
+
 uniontype CachedData
 
   record NO_CACHE end NO_CACHE;
 
   record PACKAGE
     InstNode instance;
+    PackageCacheState state;
   end PACKAGE;
 
   record FUNCTION
@@ -320,13 +331,22 @@ uniontype InstNode
     iterator := fromComponent(name, Component.newIterator(ty, info), EMPTY_NODE());
   end newIterator;
 
-  function newIndexedIterator
-    input Integer index;
-    input Type ty = Type.INTEGER();
+  function newUniqueIterator
     input SourceInfo info = AbsynUtil.dummyInfo;
+    input Type ty = Type.INTEGER();
     output InstNode iterator;
   algorithm
-    iterator := newIterator("$i" + String(index), ty, info);
+    iterator := newIterator("$i" + String(System.tmpTickIndex(Global.iteratorIndex)), ty, info);
+  end newUniqueIterator;
+
+  function newIndexedIterator
+    input Integer index;
+    input String name = "i";
+    input SourceInfo info = AbsynUtil.dummyInfo;
+    input Type ty = Type.INTEGER();
+    output InstNode iterator;
+  algorithm
+    iterator := newIterator("$" + name + String(index), ty, info);
   end newIndexedIterator;
 
   function fromComponent
@@ -404,7 +424,8 @@ uniontype InstNode
     output Boolean isFunc;
   algorithm
     isFunc := match node
-      case CLASS_NODE() then Class.isFunction(Pointer.access(node.cls));
+      case CLASS_NODE()     then Class.isFunction(Pointer.access(node.cls));
+      case COMPONENT_NODE() then Class.isFunction(getClass(node));
       else false;
     end match;
   end isFunction;
@@ -591,6 +612,12 @@ uniontype InstNode
         then
           ();
 
+      case NAME_NODE()
+        algorithm
+          node.name := name;
+        then
+          ();
+
       case VAR_NODE()
         algorithm
           node.name := name;
@@ -703,25 +730,57 @@ uniontype InstNode
     "Returns the enclosing scopes of a node as a path."
     input InstNode node;
     input Boolean ignoreRedeclare = false;
+    input Boolean ignoreBaseClass = false;
     output Absyn.Path path;
   algorithm
     path := AbsynUtil.stringListPath(
-      list(InstNode.name(n) for n in enclosingScopeList(node, ignoreRedeclare)));
+      list(InstNode.name(n) for n in enclosingScopeList(node, ignoreRedeclare, ignoreBaseClass)));
   end enclosingScopePath;
 
   function enclosingScopeList
     "Returns the enclosing scopes of a node as a list of nodes."
     input InstNode node;
     input Boolean ignoreRedeclare = false;
+    input Boolean ignoreBaseClass = false;
     output list<InstNode> res = {};
   protected
     InstNode scope = node;
   algorithm
     while not isTopScope(scope) loop
       res := scope :: res;
-      scope := classScope(parentScope(scope, ignoreRedeclare));
+      scope := enclosingScope(scope, ignoreRedeclare, ignoreBaseClass);
+
+      if isEmpty(scope) then
+        break;
+      end if;
+
+      scope := classScope(scope);
     end while;
   end enclosingScopeList;
+
+  function enclosingScope
+    input InstNode node;
+    input Boolean ignoreRedeclare = false;
+    input Boolean ignoreBaseClass = false;
+    output InstNode scope;
+  protected
+    InstNodeType it;
+    InstNode orig_node;
+  algorithm
+    scope := match node
+      case CLASS_NODE(nodeType = InstNodeType.REDECLARED_CLASS(originalNode = SOME(orig_node)))
+        guard ignoreRedeclare
+        then enclosingScope(orig_node, ignoreRedeclare, ignoreBaseClass);
+
+      case CLASS_NODE(nodeType = InstNodeType.REDECLARED_CLASS(parent = scope))
+        guard ignoreRedeclare
+        then scope;
+
+      case CLASS_NODE() then if ignoreBaseClass then getDerivedNode(node.parentScope) else node.parentScope;
+      case COMPONENT_NODE() then enclosingScope(classScope(node), ignoreRedeclare, ignoreBaseClass);
+      case IMPLICIT_SCOPE() then node.parentScope;
+    end match;
+  end enclosingScope;
 
   function classScope
     input InstNode node;
@@ -751,7 +810,7 @@ uniontype InstNode
   algorithm
     topScope := match node
       case CLASS_NODE(nodeType = InstNodeType.TOP_SCOPE()) then node;
-      else topScope(parentScope(node));
+      else topScope(parent(node));
     end match;
   end topScope;
 
@@ -989,14 +1048,37 @@ uniontype InstNode
     definition := match node
       case CLASS_NODE() then node.definition;
       case COMPONENT_NODE(definition = SOME(definition)) then definition;
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for non class/component node: " + toString(node)});
+      then fail();
     end match;
   end definition;
 
-  function extendsDefinition
+  function classDefinition
     input InstNode node;
     output SCode.Element definition;
   algorithm
-    InstNodeType.BASE_CLASS(definition = definition) := derivedNodeType(node);
+    definition := match node
+      case CLASS_NODE()     then node.definition;
+      case COMPONENT_NODE() then classDefinition(Component.classInstance(Pointer.access(node.component)));
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for non class/component node: " + toString(node)});
+      then fail();
+    end match;
+  end classDefinition;
+
+  function extendsDefinition
+    input InstNode node;
+    output Option<SCode.Element> definition;
+  protected
+    InstNodeType ty;
+  algorithm
+    ty := derivedNodeType(node);
+
+    definition := match ty
+      case InstNodeType.BASE_CLASS() then SOME(ty.definition);
+      else NONE();
+    end match;
   end extendsDefinition;
 
   function setDefinition
@@ -1007,6 +1089,12 @@ uniontype InstNode
       case CLASS_NODE()
         algorithm
           node.definition := definition;
+        then
+          ();
+
+      case COMPONENT_NODE()
+        algorithm
+          node.definition := SOME(definition);
         then
           ();
 
@@ -1156,31 +1244,27 @@ uniontype InstNode
   function getAnnotation
     input String name;
     input InstNode node;
-    output Option<SCode.SubMod> mod = NONE();
+    output SCode.Mod mod;
+    output InstNode scope = node;
+  protected
+    Option<SCode.Annotation> ann;
   algorithm
+    while InstNode.isComponent(scope) loop
+      ann := SCodeUtil.commentAnnotation(Component.comment(InstNode.component(scope)));
 
-    if InstNode.isComponent(node) then
-      mod := match Component.comment(InstNode.component(node))
-        local
-          list<SCode.SubMod> subModLst;
-          Boolean done = false;
+      if isSome(ann) then
+        mod := SCodeUtil.lookupAnnotation(Util.getOption(ann), name);
 
-        case SOME(SCode.COMMENT(annotation_=SOME(SCode.ANNOTATION(modification = SCode.MOD(subModLst = subModLst)))))
-        algorithm
-          for sm in subModLst loop
-            if sm.ident == name then
-              mod := SOME(sm);
-              done := true;
-              break;
-            end if;
-          end for;
-          if not done then
-            mod := getAnnotation(name, parent(node));
-          end if;
-        then mod;
-        else getAnnotation(name, parent(node));
-      end match;
-    end if;
+        if not SCodeUtil.isEmptyMod(mod) then
+          scope := instanceParent(scope);
+          return;
+        end if;
+      end if;
+
+      scope := instanceParent(scope);
+    end while;
+
+    mod := SCode.Mod.NOMOD();
   end getAnnotation;
 
   type ScopeType = enumeration(
@@ -1428,10 +1512,11 @@ uniontype InstNode
 
   function setPackageCache
     input output InstNode node;
-    input CachedData in_pack_cache;
+    input InstNode packageNode;
+    input PackageCacheState state;
   algorithm
     () := match node
-      case CLASS_NODE() algorithm CachedData.setPackageCache(node.caches, in_pack_cache); then ();
+      case CLASS_NODE() algorithm CachedData.setPackageCache(node.caches, CachedData.PACKAGE(packageNode, state)); then ();
       else algorithm Error.assertion(false, getInstanceName() + " got node without cache", sourceInfo()); then fail();
     end match;
   end setPackageCache;
@@ -1535,12 +1620,6 @@ uniontype InstNode
     else
       same := false;
     end try;
-
-    // TODO: This is wrong, but removing it breakes some expandable connectors
-    //       at the moment.
-    if not same then
-      same := name(node1) == name(node2);
-    end if;
   end isSame;
 
   function checkIdentical
@@ -1582,25 +1661,27 @@ uniontype InstNode
 
   function toFlatString
     input InstNode node;
+    input BaseModelica.OutputFormat format;
     input String indent;
     output String name;
   algorithm
     name := match node
-      case COMPONENT_NODE() then Component.toFlatString(node.name, Pointer.access(node.component), indent);
-      case CLASS_NODE() then Class.toFlatString(Pointer.access(node.cls), node, indent);
+      case COMPONENT_NODE() then Component.toFlatString(node.name, Pointer.access(node.component), format, indent);
+      case CLASS_NODE() then Class.toFlatString(Pointer.access(node.cls), node, format, indent);
       else name(node);
     end match;
   end toFlatString;
 
   function toFlatStream
     input InstNode node;
+    input BaseModelica.OutputFormat format;
     input String indent;
     input output IOStream.IOStream s;
   algorithm
     s := match node
-      case COMPONENT_NODE() then Component.toFlatStream(node.name, Pointer.access(node.component), indent, s);
-      case CLASS_NODE() then Class.toFlatStream(Pointer.access(node.cls), node, indent, s);
-      else IOStream.append(s, toFlatString(node, indent));
+      case COMPONENT_NODE() then Component.toFlatStream(node.name, Pointer.access(node.component), format, indent, s);
+      case CLASS_NODE() then Class.toFlatStream(Pointer.access(node.cls), node, format, indent, s);
+      else IOStream.append(s, toFlatString(node, format, indent));
     end match;
   end toFlatStream;
 
@@ -1716,6 +1797,26 @@ uniontype InstNode
       else ();
     end match;
   end protectComponent;
+
+  function protect
+      input output InstNode node;
+  algorithm
+    () := match node
+      case COMPONENT_NODE(visibility = Visibility.PUBLIC)
+        algorithm
+          node.visibility := Visibility.PROTECTED;
+        then
+          ();
+
+      case CLASS_NODE(visibility = Visibility.PUBLIC)
+        algorithm
+          node.visibility := Visibility.PROTECTED;
+        then
+          ();
+
+      else ();
+    end match;
+  end protect;
 
   function isEncapsulated
     input InstNode node;
@@ -1916,6 +2017,18 @@ uniontype InstNode
     end match;
   end clone;
 
+  function cloneComponent
+    input InstNode component;
+    input InstNode newParent;
+    output InstNode outComponent;
+  algorithm
+    outComponent := match component
+      case COMPONENT_NODE()
+        then COMPONENT_NODE(component.name, component.definition, component.visibility,
+          Pointer.create(Pointer.access(component.component)), newParent, component.nodeType);
+    end match;
+  end cloneComponent;
+
   function getComments
     input InstNode node;
     input list<SCode.Comment> accumCmts = {};
@@ -1996,10 +2109,21 @@ uniontype InstNode
     output Option<Expression> binding_exp;
   algorithm
     binding_exp := match node
-      case COMPONENT_NODE() guard(Component.hasBinding(Pointer.access(node.component)))
-        then Binding.typedExp(Component.getBinding(Pointer.access(node.component)));
-      case COMPONENT_NODE()
-        then getBindingExpOpt(instanceParent(node));
+      local
+        Variable var;
+        InstNode scope;
+
+      case COMPONENT_NODE() algorithm
+        scope := instanceParent(node);
+        try
+          binding_exp := Binding.getExpOpt(Component.getImplicitBinding(Pointer.access(node.component), scope));
+        else
+          binding_exp := getBindingExpOpt(scope);
+        end try;
+      then binding_exp;
+      case VAR_NODE() algorithm
+          var := Pointer.access(node.varPointer);
+        then Binding.getExpOpt(var.binding);
       else NONE();
     end match;
   end getBindingExpOpt;

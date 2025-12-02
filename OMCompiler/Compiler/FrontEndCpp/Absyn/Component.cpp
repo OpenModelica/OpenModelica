@@ -1,5 +1,6 @@
 #include <ostream>
 
+#include "ElementVisitor.h"
 #include "Expression.h"
 #include "Component.h"
 
@@ -9,7 +10,7 @@ using namespace OpenModelica::Absyn;
 extern record_description SCode_Element_COMPONENT__desc;
 
 Component::Component(MetaModelica::Record value)
-  : Element::Base(SourceInfo{value[7]}),
+  : Element(SourceInfo{value[7]}),
     _name{value[0].toString()},
     _prefixes{value[1]},
     _attributes{value[2]},
@@ -23,6 +24,11 @@ Component::Component(MetaModelica::Record value)
 
 Component::~Component() = default;
 
+void Component::apply(ElementVisitor &visitor)
+{
+  visitor.visit(*this);
+}
+
 MetaModelica::Value Component::toSCode() const noexcept
 {
   return MetaModelica::Record(Element::COMPONENT, SCode_Element_COMPONENT__desc, {
@@ -33,7 +39,7 @@ MetaModelica::Value Component::toSCode() const noexcept
     _modifier.toSCode(),
     _comment.toSCode(),
     MetaModelica::Option(_condition, [](const auto &c) { return c.toAbsyn(); }),
-    _info
+    info()
   });
 }
 
@@ -42,12 +48,23 @@ const std::string& Component::name() const noexcept
   return _name;
 }
 
+const ElementPrefixes& Component::prefixes() const noexcept
+{
+  return _prefixes;
+}
+
+
+const ElementAttributes& Component::attributes() const noexcept
+{
+  return _attributes;
+}
+
 const Comment& Component::comment() const noexcept
 {
   return _comment;
 }
 
-std::unique_ptr<Element::Base> Component::clone() const noexcept
+std::unique_ptr<Element> Component::clone() const noexcept
 {
   return std::make_unique<Component>(*this);
 }

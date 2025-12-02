@@ -37,7 +37,6 @@
 
 #include "Annotations/ShapeAnnotation.h"
 #include "Element/CornerItem.h"
-#include "Modeling/CoOrdinateSystem.h"
 #include "Modeling/ModelWidgetContainer.h"
 #include "OMC/OMCProxy.h"
 #include "Annotations/LineAnnotation.h"
@@ -60,128 +59,36 @@ class BitmapAnnotation;
 class LibraryTreeItem;
 class Element;
 
-class ElementInfo : public QObject
+class ElementInfo
 {
-  Q_OBJECT
 public:
-  ElementInfo(QObject *pParent = 0);
-  ElementInfo(ElementInfo *pElementInfo, QObject *pParent = 0);
-  void updateElementInfo(const ElementInfo *pElementInfo);
+  ElementInfo() = default;
+  ElementInfo(const ElementInfo &elementInfo);
   void parseElementInfoString(QString value);
   void fetchParameterValue(OMCProxy *pOMCProxy, const QString &className);
-  void applyDefaultPrefixes(QString defaultPrefixes);
   void setClassName(const QString &className) {mClassName = className;}
   QString getClassName() const {return mClassName;}
   void setName(const QString &name) {mName = name;}
   QString getName() const {return mName;}
   void setComment(const QString &comment) {mComment = comment;}
   QString getComment() const {return StringHandler::removeFirstLastQuotes(mComment);}
-  void setProtected(bool protect) {mIsProtected = protect;}
-  bool getProtected() const {return mIsProtected;}
-  void setFinal(bool final) {mIsFinal = final;}
-  bool getFinal() const {return mIsFinal;}
-  void setEach(bool each) {mIsEach = each;}
-  bool getEach() const {return mIsEach;}
-  void setFlow(bool flow) {mIsFlow = flow;}
-  bool getFlow() const {return mIsFlow;}
-  void setStream(bool stream) {mIsStream = stream;}
-  bool getStream() const {return mIsStream;}
-  void setReplaceable(bool replaceable) {mIsReplaceable = replaceable;}
-  bool getReplaceable() const {return mIsReplaceable;}
-  void setRedeclare(bool redeclare) {mIsRedeclare = redeclare;}
-  bool getRedeclare() const {return mIsRedeclare;}
-  void setVariablity(const QString &variability) {mVariability = variability;}
-  QString getVariablity() const {return mVariability;}
-  void setInner(bool inner) {mIsInner = inner;}
-  bool getInner() const {return mIsInner;}
-  void setOuter(bool outer) {mIsOuter = outer;}
-  bool getOuter() const {return mIsOuter;}
-  void setCausality(const QString &causality) {mCasuality = causality;}
-  QString getCausality() const {return mCasuality;}
-  void setIsElement(bool isElement) {mIsElement = isElement;}
-  bool getIsElement() const {return mIsElement;}
-  void setRestriction(const QString &restriction) {mRestriction = restriction;}
-  QString getRestriction() const {return mRestriction;}
-  void setParentClassName(const QString &parentClassName) {mParentClassName = parentClassName;}
-  QString getParentClassName() const {return mParentClassName;}
-  void setConstrainedByClassName(const QString &constrainedByClassName) {mConstrainedByClassName = constrainedByClassName;}
-  QString getConstrainedByClassName() const {return mConstrainedByClassName;}
-  void setArrayIndex(const QString &arrayIndex);
-  QString getArrayIndex() const {return mArrayIndex;}
-  int getArrayIndexAsNumber(bool *ok) const;
-  bool isArray() const {return mIsArray;}
-  bool isModifiersLoaded() const {return mModifiersLoaded;}
-  void setModifiersLoaded(bool modifiersLoaded) {mModifiersLoaded = modifiersLoaded;}
-  void setModifiersMap(QMap<QString, QString> modifiersMap) {mModifiersMap = modifiersMap;}
-  QMap<QString, QString> getModifiersMapWithoutFetching() const {return mModifiersMap;}
-  QMap<QString, QString> getModifiersMap(OMCProxy *pOMCProxy, QString className, Element *pElement);
+  void setCausality(const QString &causality) {mCausality = causality;}
+  QString getCausality() const {return mCausality;}
   bool isParameterValueLoaded() const {return mParameterValueLoaded;}
   void setParameterValue(const QString &parameterValue) {mParameterValue = parameterValue;}
   QString getParameterValueWithoutFetching() const {return mParameterValue;}
   QString getParameterValue(OMCProxy *pOMCProxy, const QString &className);
-  // CompositeModel attributes
-  void setStartCommand(const QString &startCommand) {mStartCommand = startCommand;}
-  QString getStartCommand() const {return mStartCommand;}
-  void setExactStep(bool exactStep) {mExactStep = exactStep;}
-  bool getExactStep() const {return mExactStep;}
-  void setModelFile(const QString &modelFile) {mModelFile = modelFile;}
-  QString getModelFile() const {return mModelFile;}
-  void setGeometryFile(const QString &geometryFile) {mGeometryFile = geometryFile;}
-  QString getGeometryFile() const {return mGeometryFile;}
-  void setPosition(const QString &position) {mPosition = position;}
-  QString getPosition() const {return mPosition;}
-  void setAngle321(const QString &angle321) {mAngle321 = angle321;}
-  QString getAngle321() const {return mAngle321;}
-  void setDimensions(int dimensions) {mDimensions = dimensions;}
-  int getDimensions() const {return mDimensions;}
-  void setTLMCausality(const QString &causality) {mTLMCausality = causality;}
-  QString getTLMCausality() const {return mTLMCausality;}
-  void setDomain(const QString &domain) {mDomain = domain;}
-  QString getDomain() const {return mDomain;}
   // operator overloading
   bool operator==(const ElementInfo &componentInfo) const;
   bool operator!=(const ElementInfo &componentInfo) const;
   QString getHTMLDescription() const;
 private:
-  QString mParentClassName;
   QString mClassName;
   QString mName;
   QString mComment;
-  bool mIsProtected;
-  bool mIsFinal;
-  bool mIsEach;
-  bool mIsFlow;
-  bool mIsStream;
-  bool mIsReplaceable;
-  bool mIsRedeclare;
-  bool mIsElement;
-  QString mRestriction; // only matters when mIsElement is true.
-  QMap<QString, QString> mVariabilityMap;
-  QString mVariability;
-  bool mIsInner;
-  bool mIsOuter;
-  QMap<QString, QString> mCasualityMap;
-  QString mCasuality;
-  QString mConstrainedByClassName;
-  QString mArrayIndex;
-  bool mIsArray;
-  bool mModifiersLoaded;
-  QMap<QString, QString> mModifiersMap;
-  bool mParameterValueLoaded;
+  QString mCausality;
+  bool mParameterValueLoaded = false;
   QString mParameterValue;
-  // CompositeModel attributes
-  QString mStartCommand;
-  bool mExactStep;
-  QString mModelFile;
-  QString mGeometryFile;
-  QString mPosition;
-  QString mAngle321;
-  int mDimensions;
-  QString mTLMCausality;
-  QString mDomain;
-
-  void fetchModifiers(OMCProxy *pOMCProxy, QString className, Element *pElement);
-  bool isModiferClassRecord(QString modifierName, Element *pElement);
 };
 
 class Element : public QObject, public QGraphicsItem
@@ -198,24 +105,22 @@ public:
   Element(ModelInstance::Component *pModelComponent, bool inherited, GraphicsView *pGraphicsView, bool createTransformation, QPointF position, const QString &placementAnnotation);
   Element(ModelInstance::Model *pModel, Element *pParentElement);
   Element(ModelInstance::Component *pModelComponent, Element *pParentElement, Element *pRootParentElement);
-
-  Element(QString name, LibraryTreeItem *pLibraryTreeItem, QString annotation, QPointF position, ElementInfo *pElementInfo, GraphicsView *pGraphicsView);
-  Element(LibraryTreeItem *pLibraryTreeItem, Element *pParentElement);
+  // Used for OMS Element
+  Element(QString name, LibraryTreeItem *pLibraryTreeItem, QString annotation, QPointF position, GraphicsView *pGraphicsView);
+  // Used for OMS Connector Element
   Element(Element *pElement, Element *pParentElement, Element *pRootParentElement);
-  Element(Element *pElement, GraphicsView *pGraphicsView);
-  // used for interface point
-  Element(ElementInfo *pElementInfo, Element *pParentElement);
   bool isRoot() const {return mElementType == Element::Root;}
   bool isExtend() const {return mElementType == Element::Extend;}
   bool isPort() const {return mElementType == Element::Port;}
   bool isInheritedElement() {return mIsInheritedElement;}
-  bool hasShapeAnnotation(Element *pElement);
+  bool hasShapeAnnotation() const;
   bool hasNonExistingClass();
   QRectF boundingRect() const override;
   QPainterPath shape() const override;
   QRectF itemsBoundingRect();
   void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = 0) override;
   ModelInstance::Model *getModel() const {return mpModel;}
+  void setModel(ModelInstance::Model *pModel) {mpModel = pModel;}
   ModelInstance::Component *getModelComponent() const {return mpModelComponent;}
   void setModelComponent(ModelInstance::Component *pModelComponent) {mpModelComponent = pModelComponent;}
   LibraryTreeItem* getLibraryTreeItem() {return mpLibraryTreeItem;}
@@ -228,30 +133,18 @@ public:
   Element* getParentElement() const {return mpParentElement;}
   Element* getRootParentElement();
   QString getTransformationString() {return mTransformationString;}
-  void setDialogAnnotation(QStringList dialogAnnotation) {mDialogAnnotation = dialogAnnotation;}
-  QStringList getDialogAnnotation() {return mDialogAnnotation;}
-  void setChoicesAnnotation(QStringList choicesAnnotation) {mChoicesAnnotation = choicesAnnotation;}
-  QStringList getChoicesAnnotation() {return mChoicesAnnotation;}
-  void setChoicesAllMatchingAnnotation(QStringList choicesAllMatching) {mChoicesAllMatchingAnnotation = choicesAllMatching;}
-  QStringList getChoicesAllMatchingAnnotation() {return mChoicesAllMatchingAnnotation;}
-  void setChoices(QStringList choices) {mChoices = choices;}
-  QStringList getChoices() {return mChoices;}
-  bool hasChoices() {return (mChoices.size() > 0);}
-  CoOrdinateSystem getCoOrdinateSystem() const;
-  ModelInstance::CoordinateSystem getCoOrdinateSystemNew() const;
+  ModelInstance::CoordinateSystem getCoordinateSystem() const;
   ResizerItem* getBottomLeftResizerItem() {return mpBottomLeftResizerItem;}
   ResizerItem* getTopLeftResizerItem() {return mpTopLeftResizerItem;}
   ResizerItem* getTopRightResizerItem() {return mpTopRightResizerItem;}
   ResizerItem* getBottomRightResizerItem() {return mpBottomRightResizerItem;}
   OriginItem* getOriginItem() {return mpOriginItem;}
+  QAction* getShowElementAction() {return mpShowElementAction;}
   QAction* getParametersAction() {return mpParametersAction;}
-  QAction* getFetchInterfaceDataAction() {return mpFetchInterfaceDataAction;}
   QAction* getAttributesAction() {return mpAttributesAction;}
   QAction* getOpenClassAction() {return mpOpenClassAction;}
-  QAction* getSubModelAttributesAction() {return mpSubModelAttributesAction;}
   QAction* getElementPropertiesAction() {return mpElementPropertiesAction;}
   QAction* getReplaceSubModelAction() {return mpReplaceSubModelAction;}
-  ElementInfo* getElementInfo() {return mpElementInfo;}
   QList<ShapeAnnotation*> getShapesList() {return mShapesList;}
   QList<Element*> getInheritedElementsList() {return mInheritedElementsList;}
   QList<Element*> getElementsList() {return mElementsList;}
@@ -266,6 +159,7 @@ public:
   QString getOMCPlacementAnnotation(QPointF position);
   QString getTransformationOrigin();
   QString getTransformationExtent();
+  bool isConnector() const;
   bool isExpandableConnector() const;
   bool isArray() const;
   QStringList getAbsynArrayIndexes() const;
@@ -274,7 +168,6 @@ public:
   bool isConnectorSizing();
   bool isParameterConnectorSizing(const QString &parameter);
   static bool isParameterConnectorSizing(ModelInstance::Model *pModel, QString parameter);
-  static bool isParameterConnectorSizing(Element *pElement, QString parameter);
   void createClassElements();
   void applyRotation(qreal angle);
   void addConnectionDetails(LineAnnotation *pConnectorLineAnnotation);
@@ -285,33 +178,20 @@ public:
   bool isInitialState() {return mIsInitialState;}
   void setActiveState(bool activeState) {mActiveState = activeState;}
   bool isActiveState() {return mActiveState;}
+  void setIgnoreSelection(bool ignoreSelection) {mIgnoreSelection = ignoreSelection;}
+  bool ignoreSelection() const {return mIgnoreSelection;}
   void removeChildren();
   void removeChildrenNew();
-  void reDrawElementNew();
-  void emitAdded();
+  void reDrawElement();
   void emitTransformChange(bool positionChanged) {emit transformChange(positionChanged);}
   void emitTransformHasChanged();
-  void emitChanged();
-  void emitDeleted();
-  void componentParameterHasChanged();
   QPair<QString, bool> getParameterDisplayString(QString parameterName);
   QPair<QString, bool> getParameterModifierValue(const QString &parameterName, const QString &modifier);
-  QString getDerivedClassModifierValue(QString modifierName);
-  QString getInheritedDerivedClassModifierValue(Element *pElement, QString modifierName);
-  void shapeAdded();
-  void shapeUpdated();
-  void shapeDeleted();
-  void renameComponentInConnections(QString newName);
-  void insertInterfacePoint(QString interfaceName, QString position, QString angle321, int dimensions, QString causality, QString domain);
-  void removeInterfacePoint(QString interfaceName);
-  void adjustInterfacePoints();
   void updateElementTransformations(const Transformation &oldTransformation, const bool positionChanged);
   void handleOMSElementDoubleClick();
   bool isInBus() {return mpBusComponent != 0;}
   void setBusComponent(Element *pBusComponent);
   Element* getBusComponent() {return mpBusComponent;}
-  Element* getElementByName(const QString &elementName);
-  static ModelInstance::Component *getModelComponentByName(ModelInstance::Model *pModel, const QString &name);
   void reDrawConnector(QPainter *painter);
 
   Transformation mTransformation;
@@ -321,36 +201,30 @@ private:
   ModelInstance::Model *mpModel = nullptr;
   QString mName;
   QString mClassName;
-  Element *mpReferenceElement;
-  Element *mpParentElement;
-  LibraryTreeItem *mpLibraryTreeItem;
-  ElementInfo *mpElementInfo;
-  GraphicsView *mpGraphicsView;
-  bool mIsInheritedElement;
+  Element *mpReferenceElement = nullptr;
+  Element *mpParentElement = nullptr;
+  LibraryTreeItem *mpLibraryTreeItem = nullptr;
+  GraphicsView *mpGraphicsView = nullptr;
+  bool mIsInheritedElement = false;
   ElementType mElementType;
   QString mTransformationString;
-  QStringList mDialogAnnotation;
-  QStringList mChoicesAnnotation;
-  QStringList mChoicesAllMatchingAnnotation;
-  QStringList mChoices;
   QString mParameterValue;
-  LineAnnotation *mpNonExistingElementLine;
-  RectangleAnnotation *mpDefaultElementRectangle;
-  TextAnnotation *mpDefaultElementText;
-  RectangleAnnotation *mpStateElementRectangle;
-  QAction *mpParametersAction;
-  QAction *mpFetchInterfaceDataAction;
-  QAction *mpAttributesAction;
-  QAction *mpOpenClassAction;
-  QAction *mpSubModelAttributesAction;
-  QAction *mpElementPropertiesAction;
-  QAction *mpReplaceSubModelAction;
-  ResizerItem *mpBottomLeftResizerItem;
-  ResizerItem *mpTopLeftResizerItem;
-  ResizerItem *mpTopRightResizerItem;
-  ResizerItem *mpBottomRightResizerItem;
-  ResizerItem *mpSelectedResizerItem;
-  OriginItem *mpOriginItem;
+  LineAnnotation *mpNonExistingElementLine = nullptr;
+  RectangleAnnotation *mpDefaultElementRectangle = nullptr;
+  TextAnnotation *mpDefaultElementText = nullptr;
+  RectangleAnnotation *mpStateElementRectangle = nullptr;
+  QAction *mpShowElementAction = nullptr;
+  QAction *mpParametersAction = nullptr;
+  QAction *mpAttributesAction = nullptr;
+  QAction *mpOpenClassAction = nullptr;
+  QAction *mpElementPropertiesAction = nullptr;
+  QAction *mpReplaceSubModelAction = nullptr;
+  ResizerItem *mpBottomLeftResizerItem = nullptr;
+  ResizerItem *mpTopLeftResizerItem = nullptr;
+  ResizerItem *mpTopRightResizerItem = nullptr;
+  ResizerItem *mpBottomRightResizerItem = nullptr;
+  ResizerItem *mpSelectedResizerItem = nullptr;
+  OriginItem *mpOriginItem = nullptr;
   QRectF mSceneBoundingRect;
   QPointF mTransformationStartPosition;
   QPointF mPivotPoint;
@@ -359,18 +233,17 @@ private:
   QList<Element*> mElementsList;
   QPointF mOldScenePosition;
   QPointF mOldPosition;
-  bool mHasTransition;
-  bool mIsInitialState;
-  bool mActiveState;
-  Element *mpBusComponent;
+  bool mHasTransition = false;
+  bool mIsInitialState = false;
+  bool mActiveState = false;
+  Element *mpBusComponent = nullptr;
+  bool mIgnoreSelection = false;
   void createNonExistingElement();
   void deleteNonExistingElement();
   void createDefaultElement();
   void deleteDefaultElement();
   void createStateElement();
-  void drawInterfacePoints();
   void drawElement();
-  void reDrawElement(bool coOrdinateSystemUpdated = false);
   void drawModelicaElement();
   void drawOMSElement();
   void drawInheritedElementsAndShapes();
@@ -384,42 +257,21 @@ private:
   void hideResizerItems();
   void getScale(qreal *sx, qreal *sy);
   void updateConnections();
-  QPair<QString, bool> getParameterDisplayStringFromExtendsModifiers(QString parameterName);
-  QPair<QString, bool> getParameterDisplayStringFromExtendsParameters(QString parameterName, QPair<QString, bool> modifierString);
-  static QPair<QString, bool> getParameterDisplayStringFromExtendsParameters(ModelInstance::Model *pModel, QString parameterName, QPair<QString, bool> modifierString);
   static bool checkEnumerationDisplayString(QString &displayString, const QString &typeName);
   void updateToolTip();
   bool canUseDiagramAnnotation() const;
 signals:
-  void added();
   void transformChange(bool positionChanged);
   void transformHasChanged();
   void transformChanging();
-  void displayTextChanged();
-  void changed();
-  void deleted();
 public slots:
   void updatePlacementAnnotation();
   void updateOriginItem();
-  void handleLoaded();
-  void handleUnloaded();
-  void handleCoOrdinateSystemUpdated();
-  void handleShapeAdded();
-  void handleElementAdded();
-  void handleNameChanged();
-  void referenceElementAdded();
-  void referenceElementTransformHasChanged();
-  void referenceElementChanged();
-  void referenceElementDeleted();
   void prepareResizeElement(ResizerItem *pResizerItem);
   void resizeElement(QPointF newPosition);
   void finishResizeElement();
   void resizedElement();
-  void componentCommentHasChanged();
-  void componentNameHasChanged();
-  void displayTextChangedRecursive();
   void deleteMe();
-  void duplicate();
   void rotateClockwise();
   void rotateAntiClockwise();
   void flipHorizontal();
@@ -436,11 +288,10 @@ public slots:
   void moveRight();
   void moveShiftRight();
   void moveCtrlRight();
+  void showElement();
   void showParameters();
   void showAttributes();
-  void fetchInterfaceData();
   void openClass();
-  void showSubModelAttributes();
   void showElementPropertiesDialog();
   void showReplaceSubModelDialog();
   void updateDynamicSelect(double time);

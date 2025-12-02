@@ -80,3 +80,4 @@ convertPackageToLibrary
 noneFromVersion
 allowNonStandardModelica
 reinitInAlgorithms
+hideResult

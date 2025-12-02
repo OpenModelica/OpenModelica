@@ -58,8 +58,9 @@ public:
   virtual bool editorEvent(QEvent *event, QAbstractItemModel *model, const QStyleOptionViewItem &option, const QModelIndex &index) override;
   virtual QWidget* createEditor(QWidget *pParent, const QStyleOptionViewItem &option, const QModelIndex &index) const override;
   virtual void setEditorData(QWidget *editor, const QModelIndex &index) const override;
+  virtual void setModelData(QWidget *editor, QAbstractItemModel *model, const QModelIndex &index) const override;
 public slots:
-  void unitComboBoxChanged(QString text);
+  void unitComboBoxChanged(int index);
 };
 
 #endif // ITEMDELEGATE_H

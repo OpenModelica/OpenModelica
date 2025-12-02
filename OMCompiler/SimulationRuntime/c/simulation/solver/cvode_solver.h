@@ -33,6 +33,8 @@
 
 #ifndef OMC_FMI_RUNTIME
   #include "omc_config.h"
+#else
+  #include "fmi-export/fmu2_model_interface.h"
 #endif
 #include "../../simulation_data.h"
 #include "../../util/simulation_options.h"
@@ -78,7 +80,7 @@ typedef struct CVODE_CONFIG
                                 * CV_ITER_NEWTON = 2 for Newton iterations */
 
   booleantype internalSteps;           /* if TRUE internal step of the integrator are used, default FALSE */
-  enum JACOBIAN_METHOD jacobianMethod; /* Method for Jacobian computation */
+  JACOBIAN_METHOD jacobianMethod; /* Method for Jacobian computation */
 
   /* Optional configurations */
   double minStepSize;          /* Lower bound on the magnitude of the step size.
@@ -124,58 +126,20 @@ typedef struct CVODE_SOLVER
   CVODE_USERDATA *simData;
 } CVODE_SOLVER;
 
+#else /* WITH_SUNDIALS */
+
+typedef void CVODE_SOLVER;
+
+#endif /* WITH_SUNDIALS */
+
 /* Function prototypes */
 int cvode_solver_initial(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, CVODE_SOLVER *cvodeData, int isFMI);
 int cvode_solver_reinit(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, CVODE_SOLVER *cvodeData);
 int cvode_solver_deinitial(CVODE_SOLVER *cvodeData);
 int cvode_solver_step(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo);
-int cvode_solver_fmi_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo, double tNext, double* states, void* fmuComponent);
 
-#else /* WITH_SUNDIALS */
-typedef void CVODE_SOLVER;
-
-// TODO: Move to .c file
-int cvode_solver_initial(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, CVODE_SOLVER *cvodeData, int isFMI)
-{
 #ifdef OMC_FMI_RUNTIME
-  printf("##CVODE## SUNDIALS not available in FMU. See OpenModelica command line flag \"--fmiFlags\" from \"omc --help\" on how to enable CVODE in FMUs.\n");
-  return -1;
-#else
-  throwStreamPrint(threadData, "##CVODE## SUNDIALS not available. Reconfigure omc with SUNDIALS.\n");
+int cvode_solver_fmi_step(ModelInstance *comp, double tNext, double* states);
 #endif
-}
-
-int cvode_solver_deinitial(CVODE_SOLVER *cvodeData)
-{
-#ifdef OMC_FMI_RUNTIME
-  printf("##CVODE## SUNDIALS not available in FMU. See OpenModelica command line flag \"--fmiFlags\" from \"omc --help\" on how to enable CVODE in FMUs.\n");
-  return -1;
-#else
-  throwStreamPrint(NULL, "##CVODE## SUNDIALS not available. Reconfigure omc with SUNDIALS.\n");
-#endif
-}
-
-int cvode_solver_step(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
-{
-#ifdef OMC_FMI_RUNTIME
-  printf("##CVODE## SUNDIALS not available in FMU. See OpenModelica command line flag \"--fmiFlags\" from \"omc --help\" on how to enable CVODE in FMUs.\n");
-  return -1;
-#else
-  throwStreamPrint(threadData, "##CVODE## SUNDIALS not available. Reconfigure omc with SUNDIALS.\n");
-#endif
-}
-
-int cvode_solver_fmi_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo, double tNext, double* states, void* fmuComponent)
-{
-#ifdef OMC_FMI_RUNTIME
-  printf("##CVODE## SUNDIALS not available in FMU. See OpenModelica command line flag \"--fmiFlags\" from \"omc --help\" on how to enable CVODE in FMUs.\n");
-  return -1;
-#else
-  throwStreamPrint(threadData, "##CVODE## SUNDIALS not available. Reconfigure omc with SUNDIALS.\n");
-#endif
-}
-
-
-#endif /* WITH_SUNDIALS */
 
 #endif /* #ifndef CVODE_SOLVER_H */

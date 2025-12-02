@@ -1,7 +1,6 @@
 // name: SumVar
 // keywords: sum bug1700
 // status: correct
-// cflags: -d=-newInst
 //
 // Testing the built-in sum function on arrays with variable dimensions.
 //
@@ -19,6 +18,7 @@ model SumVar
   Integer j;
 equation
   j = mySum(3, i);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end SumVar;
 
 // Result:

@@ -1,7 +1,6 @@
 // name:     RecordFuncParam
 // keywords: record function
 // status:   correct
-// cflags: -d=-newInst
 //
 // Tests records as input arguments to functions in a simulation context.
 // Fix for bug #1215: http://openmodelica.ida.liu.se:8080/cb/issue/1215
@@ -24,6 +23,7 @@ equation
   r.x = time;
   r.y = r.x * 2;
   y = f(r);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end RecordFuncParam;
 
 // Result:

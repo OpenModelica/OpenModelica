@@ -1,0 +1,123 @@
+// name:     overrideLiteralStartFromFile_alg.mos [BUG: #14163]
+// keywords: start value selection
+// status:   correct
+// teardown_command: rm -rf *overrideLiteralStartFromFile_alg_model*
+// cflags:
+
+// set start value in second run from file (T=909.9999) not from literal start value (1173
+
+loadString("
+model overrideLiteralStartFromFile_alg_model
+  Real T(start = 1173);
+equation
+  T + 1e-6*log(T) = 910;
+  annotation(experiment(StopTime = 0));
+end overrideLiteralStartFromFile_alg_model;
+");getErrorString();
+
+simulate(overrideLiteralStartFromFile_alg_model, simflags="-r=init_overrideLiteralStartFromFile_alg_model.mat");getErrorString();
+simulate(overrideLiteralStartFromFile_alg_model, simflags="-iif=init_overrideLiteralStartFromFile_alg_model.mat -lv=LOG_INIT_V,LOG_NLS_V");getErrorString();
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "init_overrideLiteralStartFromFile_alg_model.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'overrideLiteralStartFromFile_alg_model', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-r=init_overrideLiteralStartFromFile_alg_model.mat'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// record SimulationResult
+//     resultFile = "overrideLiteralStartFromFile_alg_model_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'overrideLiteralStartFromFile_alg_model', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-iif=init_overrideLiteralStartFromFile_alg_model.mat -lv=LOG_INIT_V,LOG_NLS_V'",
+//     messages = "LOG_NLS           | info    | initialize non-linear system solvers
+// |                 | |       | | 2 non-linear systems
+// LOG_INIT          | info    | ### START INITIALIZATION ###
+// LOG_INIT          | info    | updating min-values
+// LOG_INIT          | info    | updating max-values
+// LOG_INIT          | info    | updating nominal-values
+// LOG_INIT          | info    | updating primary start-values
+// LOG_INIT          | info    | import start values
+// |                 | |       | file: init_overrideLiteralStartFromFile_alg_model.mat
+// |                 | |       | time: 0
+// LOG_INIT          | info    | import real variables
+// LOG_INIT_V        | info    | | T(start=910)
+// LOG_INIT          | info    | import integer variables
+// LOG_INIT          | info    | import boolean variables
+// LOG_INIT          | info    | import real parameters
+// LOG_INIT          | info    | import integer parameters
+// LOG_INIT          | info    | import boolean parameters
+// LOG_NLS           | info    | update static data of non-linear system solvers
+// LOG_INIT          | info    | initialization method: symbolic        [solves the initialization problem symbolically - default]
+// LOG_NLS           | info    | ############ Solve nonlinear system 2 at time 0 ############
+// |                 | |       | | initial variable values:
+// |                 | |       | | | [ 1]                              T  =        909.99999		 nom =                1
+// LOG_NLS_V         | info    | Start solving Non-Linear System 2 (size 1) at time 0 with Mixed (Newton/Homotopy) Solver
+// |                 | |       | | System values [1-dim]
+// |                 | |       | | |        909.99999
+// |                 | |       | | Nominal values [1-dim]
+// |                 | |       | | |                1
+// |                 | |       | | Scaling values [2-dim]
+// |                 | |       | | |        909.99999                1
+// |                 | |       | | x0 [1-dim]
+// |                 | |       | | |        909.99999
+// |                 | |       | | regular initial point!!!
+// LOG_NLS           | info    | | Solution status: SOLVED
+// |                 | |       | | |  number of iterations           : 0
+// |                 | |       | | |  number of function evaluations : 1
+// |                 | |       | | |  number of jacobian evaluations : 0
+// |                 | |       | | | solution values:
+// |                 | |       | | | [ 1]                              T  =        909.99999
+// LOG_INIT_V        | info    | parameter values
+// LOG_SOTI          | info    | ### SOLUTION OF THE INITIALIZATION ###
+// |                 | |       | | other real variables
+// |                 | |       | | | [1] Real $cse1(start=-2.63e+08, nominal=1) = -2.63e+08 (pre: -2.63e+08)
+// |                 | |       | | | [2] Real T(start=910, nominal=1) = 910 (pre: 910)
+// LOG_INIT          | info    | ### END INITIALIZATION ###
+// LOG_NLS           | info    | ############ Solve nonlinear system 7 at time 0 ############
+// |                 | |       | | initial variable values:
+// |                 | |       | | | [ 1]                              T  =        909.99999		 nom =                1
+// LOG_NLS_V         | info    | Start solving Non-Linear System 7 (size 1) at time 0 with Mixed (Newton/Homotopy) Solver
+// |                 | |       | | System values [1-dim]
+// |                 | |       | | |        909.99999
+// |                 | |       | | Nominal values [1-dim]
+// |                 | |       | | |                1
+// |                 | |       | | Scaling values [2-dim]
+// |                 | |       | | |        909.99999                1
+// |                 | |       | | x0 [1-dim]
+// |                 | |       | | |        909.99999
+// |                 | |       | | regular initial point!!!
+// LOG_NLS           | info    | | Solution status: SOLVED
+// |                 | |       | | |  number of iterations           : 0
+// |                 | |       | | |  number of function evaluations : 1
+// |                 | |       | | |  number of jacobian evaluations : 0
+// |                 | |       | | | solution values:
+// |                 | |       | | | [ 1]                              T  =        909.99999
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_NLS           | info    | ############ Solve nonlinear system 7 at time 0 ############
+// |                 | |       | | initial variable values:
+// |                 | |       | | | [ 1]                              T  =        909.99999		 nom =                1
+// LOG_NLS_V         | info    | Start solving Non-Linear System 7 (size 1) at time 0 with Mixed (Newton/Homotopy) Solver
+// |                 | |       | | System values [1-dim]
+// |                 | |       | | |        909.99999
+// |                 | |       | | Nominal values [1-dim]
+// |                 | |       | | |                1
+// |                 | |       | | Scaling values [2-dim]
+// |                 | |       | | |        909.99999                1
+// |                 | |       | | x0 [1-dim]
+// |                 | |       | | |        909.99999
+// |                 | |       | | regular initial point!!!
+// LOG_NLS           | info    | | Solution status: SOLVED
+// |                 | |       | | |  number of iterations           : 0
+// |                 | |       | | |  number of function evaluations : 2
+// |                 | |       | | |  number of jacobian evaluations : 0
+// |                 | |       | | | solution values:
+// |                 | |       | | | [ 1]                              T  =        909.99999
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// LOG_NLS           | info    | free non-linear system solvers
+// "
+// end SimulationResult;
+// ""
+// endResult

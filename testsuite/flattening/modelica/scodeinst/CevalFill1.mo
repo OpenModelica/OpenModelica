@@ -1,7 +1,6 @@
 // name: CevalFill1
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 //
 

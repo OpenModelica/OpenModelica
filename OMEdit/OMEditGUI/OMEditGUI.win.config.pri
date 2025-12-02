@@ -42,8 +42,10 @@ LIBS += -L$$(OMBUILDDIR)/../OMEdit/OMEditLIB/Debugger/Parser -lGDBMIParser \
 # libbdf links differently on newer MSYS2, e.g. when using UCRT64
 msystem_prefix = $$(MSYSTEM_PREFIX)
 contains(msystem_prefix, .*ucrt64.*) {
+  BFD_PATH = $$(MSYSTEM_PREFIX)/lib
   BFD_LIBS = -lbfd -lintl -liberty -lsframe -lzstd -lzlib
 } else {
+  BFD_PATH = $$(MSYSTEM_PREFIX)/lib/binutils
   BFD_LIBS = -lbfd -lintl -liberty -lzlib
 }
 
@@ -54,10 +56,11 @@ CONFIG(release, debug|release) { # release
   # -s will remove all symbol table and relocation information from the executable.
   QMAKE_CXXFLAGS += -g -DUA_DYNAMIC_LINKING
   QMAKE_LFLAGS_RELEASE =
-  LIBS += -L$$(MSYSTEM_PREFIX)/lib/binutils -L$$(MSYSTEM_PREFIX)/bin
-  INCLUDEPATH += $$(MSYSTEM_PREFIX)/include/binutils
-  LIBS += -limagehlp $$BFD_LIBS -llibosg.dll -llibosgViewer.dll -llibOpenThreads.dll -llibosgDB.dll -llibosgGA.dll
+  OSG_LIBS = -limagehlp $$BFD_LIBS -llibosg.dll -llibosgViewer.dll -llibOpenThreads.dll -llibosgDB.dll -llibosgGA.dll -lOpengl32
 } else { # debug
   LIBS += -L$$(MSYSTEM_PREFIX)/bin
-  LIBS += -llibosg.dll -llibosgViewer.dll -llibOpenThreads.dll -llibosgDB.dll -llibosgGA.dll
+  OSG_LIBS = -llibosg.dll -llibosgViewer.dll -llibOpenThreads.dll -llibosgDB.dll -llibosgGA.dll -lOpengl32
 }
+
+LIBS += -L$$BFD_PATH -L$$(MSYSTEM_PREFIX)/bin
+LIBS += $$OSG_LIBS

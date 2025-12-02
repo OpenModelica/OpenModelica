@@ -63,12 +63,14 @@ DiagramWindow::DiagramWindow(QWidget *parent) : QWidget(parent)
  */
 void DiagramWindow::showVisualizationDiagram(ModelWidget *pModelWidget)
 {
-  if (pModelWidget && pModelWidget->getDiagramGraphicsView() && pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
+  if (pModelWidget && pModelWidget->getDiagramGraphicsView() && pModelWidget->getLibraryTreeItem()->isModelica()) {
     setWindowTitle(pModelWidget->getLibraryTreeItem()->getName());
     mpModelWidget = pModelWidget;
     mpModelWidget->getDiagramGraphicsView()->setIsVisualizationView(true);
-    connect(MainWindow::instance()->getVariablesWidget(), SIGNAL(updateDynamicSelect(double)), mpModelWidget->getDiagramGraphicsView(), SIGNAL(updateDynamicSelect(double)), Qt::UniqueConnection);
-    MainWindow::instance()->getVariablesWidget()->updateVisualization();
+    connect(MainWindow::instance()->getVariablesWidget(), SIGNAL(updateDynamicSelect(double)),
+            mpModelWidget->getDiagramGraphicsView(), SIGNAL(updateDynamicSelect(double)), Qt::UniqueConnection);
+    connect(MainWindow::instance()->getVariablesWidget(), SIGNAL(resetDynamicSelect()),
+            mpModelWidget->getDiagramGraphicsView(), SIGNAL(resetDynamicSelect()), Qt::UniqueConnection);
     mpModelWidget->getDiagramGraphicsView()->show();
     mpMainLayout->addWidget(mpModelWidget->getDiagramGraphicsView());
   } else {
@@ -85,7 +87,12 @@ void DiagramWindow::removeVisualizationDiagram()
   if (mpModelWidget) {
     // set the window title to default
     setWindowTitle("Diagram");
-    disconnect(MainWindow::instance()->getVariablesWidget(), SIGNAL(updateDynamicSelect(double)), mpModelWidget->getDiagramGraphicsView(), SIGNAL(updateDynamicSelect(double)));
+    mpModelWidget->getDiagramGraphicsView()->setIsVisualizationView(false);
+    mpModelWidget->getDiagramGraphicsView()->clearSelection();
+    disconnect(MainWindow::instance()->getVariablesWidget(), SIGNAL(updateDynamicSelect(double)),
+               mpModelWidget->getDiagramGraphicsView(), SIGNAL(updateDynamicSelect(double)));
+    disconnect(MainWindow::instance()->getVariablesWidget(), SIGNAL(resetDynamicSelect()),
+               mpModelWidget->getDiagramGraphicsView(), SIGNAL(resetDynamicSelect()));
     mpMainLayout->removeWidget(mpModelWidget->getDiagramGraphicsView());
     mpModelWidget = 0;
   }

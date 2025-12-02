@@ -1,7 +1,6 @@
 // name:     SubscriptsFill1
 // keywords: array subscripts #2977
 // status:   correct
-// cflags: -d=-newInst
 //
 // Tests that any missing subscripts are filled in with :.
 //
@@ -10,6 +9,7 @@ model SubscriptsFill1
   Real x[2, 3] = {{1, 2, 3}, {4, 5, 6}};
   Real y[3] = x[1];
   Real z[3] = x[2];
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end SubscriptsFill1;
 
 // Result:

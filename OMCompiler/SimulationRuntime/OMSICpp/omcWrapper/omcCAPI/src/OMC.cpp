@@ -180,7 +180,7 @@ int LoadFile(data* omcData, const char* fileName)
     modelica_boolean requireExactVersion = false;
 
     MMC_TRY_TOP_SET(omcData->threadData)
-      result = omc_OpenModelicaScriptingAPI_loadFile(threadData, mmc_mk_scon(fileName), mmc_mk_scon(encoding.c_str()), uses, notify, requireExactVersion);
+      result = omc_OpenModelicaScriptingAPI_loadFile(threadData, mmc_mk_scon(fileName), mmc_mk_scon(encoding.c_str()), uses, notify, requireExactVersion, false);
       CP_TD();
     MMC_CATCH_TOP(return -1)
 

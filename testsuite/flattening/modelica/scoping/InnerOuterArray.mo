@@ -1,7 +1,6 @@
 // name:     InnerOuterArray
 // keywords: dynamic scope, inner outer, lookup, array
 // status:   correct
-// cflags: -d=-newInst
 //
 // Tests that inner/outer arrays are handled correctly.
 //
@@ -16,6 +15,7 @@ end A;
 model InnerOuterArray
   A a;
   inner Real x[3];
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end InnerOuterArray;
 
 // Result:

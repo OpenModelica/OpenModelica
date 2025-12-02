@@ -1,7 +1,6 @@
 // name: WhenVariableMismatch2
 // keywords:
 // status: incorrect
-// cflags: -d=newInst
 //
 
 model WhenVariableMismatch2
@@ -16,7 +15,7 @@ end WhenVariableMismatch2;
 
 // Result:
 // Error processing file: WhenVariableMismatch2.mo
-// [flattening/modelica/scodeinst/WhenVariableMismatch2.mo:10:3-14:11:writable] Error: The same variables must be solved in elsewhen clause as in the when clause.
+// [flattening/modelica/scodeinst/WhenVariableMismatch2.mo:9:3-13:11:writable] Error: The same variables must be solved in elsewhen clause as in the when clause.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

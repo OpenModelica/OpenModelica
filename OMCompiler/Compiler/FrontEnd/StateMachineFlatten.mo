@@ -115,7 +115,7 @@ algorithm
   assert(listLength(elementLst) == 1, "Internal compiler error: Handling of elementLst != 1 not supported\n");
   DAE.COMP(ident, dAElist, source, comment) := listHead(elementLst);
 
-  if not List.exist(dAElist, isFlatSm) then
+  if not List.any(dAElist, isFlatSm) then
     outDAElist := inDAElist;
     return;
   end if;
@@ -194,7 +194,7 @@ algorithm
   (transitionLst, otherLst2) := List.extractOnTrue(otherLst1, isTransition);
   ({initialStateOp}, otherLst3) := List.extractOnTrue(otherLst2, isInitialState);
   (eqnLst, otherLst4) := List.extractOnTrue(otherLst3, isEquation);
-  assert(listLength(otherLst4) == 0, "Internal compiler error. Unexpected elements in flat state machine.");
+  assert(listEmpty(otherLst4), "Internal compiler error. Unexpected elements in flat state machine.");
 
   DAE.NORETCALL(exp=DAE.CALL(path=Absyn.IDENT("initialState"), expLst={DAE.CREF(componentRef=crefInitialState)})) := initialStateOp;
   ({initialStateComp}, smCompsLst2) := List.extract1OnTrue(smCompsLst, sMCompEqualsRef, crefInitialState);
@@ -549,7 +549,7 @@ algorithm
     eqn := DAE.EQUATION(exp, scalarNew, source);
 
     // If it is an assigning state equation, transform equation 'a.x = e' to 'a.x = if a.active then e else a.x_previous'
-    if List.exist(stateVarCrefs, function ComponentReference.crefEqual(inComponentRef1=crefLHS)) then
+    if List.any(stateVarCrefs, function ComponentReference.crefEqual(inComponentRef1=crefLHS)) then
       // Transform equation 'a.x = e' to 'a.x = if a.active then e else a.x_previous'
       eqn1 := wrapInStateActivationConditional(eqn, enclosingStateRef, true);
 
@@ -1032,7 +1032,7 @@ algorithm
       DAE.CallAttributes attr;
       DAE.Type ty;
     case (DAE.CALL(Absyn.IDENT("previous"), {DAE.CREF(cr, ty)}, _), (crefs, _))
-      guard List.exist(crefs, function ComponentReference.crefEqual(inComponentRef1=cr))
+      guard List.any(crefs, function ComponentReference.crefEqual(inComponentRef1=cr))
       algorithm
         // print("StateMachineFlatten.traversingSubsPreviousCrefs: cr: "+ComponentReference.crefStr(cr)+", crefs: " + stringDelimitList(List.map(crefs, ComponentReference.crefStr), ",")+"\n");
         substituteRef := ComponentReference.appendStringLastIdent("_previous", cr);
@@ -1751,7 +1751,7 @@ Create a DAE.VAR with some defaults"
   output DAE.Element var;
 algorithm
   var := DAE.VAR(componentRef, kind, DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.PUBLIC(), ty, NONE(), dims,
-    DAE.NON_CONNECTOR(), DAE.emptyElementSource, NONE() /* VariableAttributes */, NONE(), Absyn.NOT_INNER_OUTER());
+    DAE.NON_CONNECTOR(), DAE.emptyElementSource, NONE() /* VariableAttributes */, NONE(), Absyn.NOT_INNER_OUTER(), false);
 end createVarWithDefaults;
 
 protected function createVarWithStartValue "
@@ -1767,7 +1767,7 @@ protected
   DAE.Element var;
 algorithm
   var := DAE.VAR(componentRef, kind, DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.PUBLIC(), ty, NONE(), dims,
-    DAE.NON_CONNECTOR(), DAE.emptyElementSource, NONE() /* VariableAttributes */, NONE(), Absyn.NOT_INNER_OUTER());
+    DAE.NON_CONNECTOR(), DAE.emptyElementSource, NONE() /* VariableAttributes */, NONE(), Absyn.NOT_INNER_OUTER(), false);
   outVar := setVarFixedStartValue(var, startExp);
 end createVarWithStartValue;
 

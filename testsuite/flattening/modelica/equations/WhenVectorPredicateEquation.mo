@@ -1,7 +1,6 @@
 // name:     WhenVectorPredicateEquation
 // keywords: when
 // status:   correct
-// cflags: -d=-newInst
 //
 // Conditional Equations with when-equations
 //
@@ -17,6 +16,7 @@ equation
     y1 = sin(x);
     y3 = 2*x + y1 + y2;
   end when;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end WhenSet;
 
 // Result:

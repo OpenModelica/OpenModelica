@@ -141,6 +141,8 @@ template getQtInterfaceHeaders(list<DAE.Type> tys, String className)
 
   #include <QOpenGLContext> // must be first include to fix undefined GLDEBUGPROC
   #include <QtCore>
+  /* import the scripting here */
+  #define IMPORT_INTO
   #include "OpenModelicaScriptingAPI.h"
 
   class <%className%> : public QObject
@@ -317,7 +319,7 @@ template getQtOutArg(Text name, Text shortName, DAE.Type ty, Text &varDecl, Text
     case T_CODE(ty=C_TYPENAME(__))
     case T_STRING(__) then
       let &varDecl += 'void *<%shortName%>_mm = NULL;<%\n%>'
-      let &postCall += '<%name%> = QString::fromUtf8(MMC_STRINGDATA(<%shortName%>_mm));<%\n%>'
+      let &postCall += '<%name%> = QString::fromUtf8((char*)MMC_STRINGDATA(<%shortName%>_mm));<%\n%>'
       '<%shortName%>_mm'
     case T_INTEGER(__)
     case T_BOOL(__)

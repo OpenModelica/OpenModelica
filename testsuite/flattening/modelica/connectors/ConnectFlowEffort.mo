@@ -1,6 +1,5 @@
 // name:     ConnectFlowEffort
 // keywords: connect,modification
-// cflags: +std=2.x -d=-newInst
 // status:   incorrect
 //
 // Flow and effort variables may not be connected.
@@ -19,12 +18,13 @@ class ConnectFlowEffort
   Connector2 c2;
 equation
   connect(c1, c2);
+  annotation(__OpenModelica_commandLineOptions="+std=2.x -d=-newInst");
 end ConnectFlowEffort;
 
 // Result:
 // Error processing file: ConnectFlowEffort.mo
-// [flattening/modelica/connectors/ConnectFlowEffort.mo:21:3-21:18:writable] Error: Cannot connect flow component c2.e to non-flow component c1.e.
-// [flattening/modelica/connectors/ConnectFlowEffort.mo:21:3-21:18:writable] Error: The type of variables
+// [flattening/modelica/connectors/ConnectFlowEffort.mo:20:3-20:18:writable] Error: Cannot connect flow component c2.e to non-flow component c1.e.
+// [flattening/modelica/connectors/ConnectFlowEffort.mo:20:3-20:18:writable] Error: The type of variables
 // c1 type:
 // connector Connector1
 //   Real e;

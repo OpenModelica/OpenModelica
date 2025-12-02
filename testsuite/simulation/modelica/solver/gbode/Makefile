@@ -4,12 +4,12 @@ TESTFILES = \
 Burger_01.mos \
 HeatingSystem.mos \
 IRK_01.mos \
-IRKGaussian_01.mos \
 multiRate_01.mos \
-multiRate_02.mos \
 RK_01.mos \
 
 FAILINGTESTFILES = \
+IRKGaussian_01.mos \
+multiRate_02.mos \
 
 # Dependency files that are not .mo .mos or Makefile
 # Add them here or they will be cleaned.

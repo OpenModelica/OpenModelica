@@ -1,13 +1,13 @@
 // name: ModifierVariable
 // keywords: modifier
 // status: correct
-// cflags: -d=-newInst
 //
 // Tests modification of variables
 //
 
 model ModifierVariable
   parameter Real r1(start = 4711.0);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ModifierVariable;
 
 // Result:

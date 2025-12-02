@@ -4,7 +4,6 @@
 //
 // defines and uses a package
 // Drmodelica: 10.1 Abstract Data Type (p. 333)
-// cflags: -d=-newInst
 //
 
 encapsulated package ComplexNumbers
@@ -49,6 +48,7 @@ class ComplexUser
   equation
     z = ComplexNumbers.Multiply(a, b);
     w = ComplexNumbers.Add(a, b);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ComplexUser;
 
 // class ComplexUser

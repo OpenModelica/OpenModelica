@@ -1,7 +1,6 @@
 // name: BuiltinAttribute13
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 
 model BuiltinAttribute13

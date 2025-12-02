@@ -1,7 +1,6 @@
 // name: Tanh
 // keywords: tanh
 // status: correct
-// cflags: -d=-newInst
 //
 // Tests the built-in tanh function
 //
@@ -10,6 +9,7 @@ model Tanh
   Real r;
 equation
   r = tanh(45);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Tanh;
 
 // Result:

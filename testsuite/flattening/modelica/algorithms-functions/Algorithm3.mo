@@ -1,7 +1,6 @@
 // name:     Algorithm3
 // keywords: algorithm
 // status:   correct
-// cflags: -d=-newInst
 //
 // Type checks in algorithms.
 //
@@ -11,6 +10,7 @@ class Algorithm3
   Real x;
 algorithm
   x := i;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Algorithm3;
 
 // Result:

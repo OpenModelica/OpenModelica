@@ -6,10 +6,12 @@ constVar1.mos \
 constVar2.mos \
 constVar4.mos \
 InOutRecord.mos \
+InputRecord.mos \
 RecordConstructor1.mos \
 TestComplexSum1.mos \
 TestComplexSum2.mos \
-Ticket5134.mos
+Ticket5134.mos \
+Ticket14485.mos \
 
 # test that currently fail. Move up when fixed. 
 # Run make testfailing

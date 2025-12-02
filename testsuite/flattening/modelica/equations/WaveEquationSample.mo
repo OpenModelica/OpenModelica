@@ -3,7 +3,6 @@
 // status:   correct
 //
 // Drmodelica: "15: Pressure Dynamics in 1D Ducts - Solving Wave Equations by Discretized PDEs (p. 587)
-// cflags: -d=-newInst
 //
 
 model WaveEquationSample
@@ -33,6 +32,7 @@ equation
   for i in 2:n-1 loop
   der(dp[i]) = c^2 * (p[i+1] - 2 * p[i] + p[i-1]) / dL^2;
   end for;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end WaveEquationSample;
 
 // Result:

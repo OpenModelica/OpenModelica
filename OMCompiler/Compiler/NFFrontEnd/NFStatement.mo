@@ -128,6 +128,92 @@ public
     DAE.ElementSource source;
   end FAILURE;
 
+  function isDiscrete
+    input Statement stmt;
+    output Boolean b;
+  algorithm
+    b := match stmt
+      case ASSIGNMENT()           then Type.isDiscrete(stmt.ty);
+      case FUNCTION_ARRAY_INIT()  then Type.isDiscrete(stmt.ty);
+      case FOR()                  then List.any(stmt.body, isDiscrete);
+      case IF() algorithm
+        for branch in stmt.branches loop
+          b := List.any(Util.tuple22(branch), isDiscrete);
+          if b then break; end if;
+        end for;
+      then b;
+      case WHEN()                 then true;
+      case WHILE()                then List.any(stmt.body, isDiscrete);
+                                  else false;
+    end match;
+  end isDiscrete;
+
+  function filterDiscrete
+    input list<Statement> stmts;
+    input output list<Statement> out_stmts = {};
+  protected
+    Statement stmt;
+    list<Statement> rest;
+  algorithm
+    out_stmts := match stmts
+      case (stmt as FOR()) :: rest algorithm
+        stmt.body := filterDiscrete(stmt.body);
+        out_stmts := if listLength(stmt.body) == 0 then out_stmts else stmt :: out_stmts;
+      then filterDiscrete(rest, out_stmts);
+      case (stmt as IF()) :: rest algorithm
+        // ToDo: remove empty branches after removal
+        // Note: need to be careful to carry inverted conditions of removed branches
+        stmt.branches := list((Util.tuple21(tpl), filterDiscrete(Util.tuple22(tpl))) for tpl in stmt.branches);
+      then filterDiscrete(rest, stmt :: out_stmts);
+      case stmt :: rest guard(isDiscrete(stmt)) then filterDiscrete(rest, out_stmts);
+      case stmt :: rest then filterDiscrete(rest, stmt :: out_stmts);
+      else listReverse(out_stmts);
+    end match;
+  end filterDiscrete;
+
+  function isEqual
+    input Statement stmt1;
+    input Statement stmt2;
+    output Boolean b;
+  protected
+    function branchEqual
+      input tuple<Expression, list<Statement>> branch1;
+      input tuple<Expression, list<Statement>> branch2;
+      output Boolean b;
+    protected
+      Expression e1, e2;
+      list<Statement> b1, b2;
+    algorithm
+      (e1, b1) := branch1;
+      (e2, b2) := branch2;
+      b := Expression.isEqual(e1,e2) and List.isEqualOnTrue(b1, b2, isEqual);
+    end branchEqual;
+  algorithm
+    b := match (stmt1, stmt2)
+      case (ASSIGNMENT(), ASSIGNMENT()) then Expression.isEqual(stmt1.lhs, stmt2.lhs)
+        and Expression.isEqual(stmt1.rhs, stmt2.rhs);
+      case (FUNCTION_ARRAY_INIT(), FUNCTION_ARRAY_INIT()) then stringEqual(stmt1.name, stmt2.name);
+      case (FOR(), FOR()) then InstNode.nameEqual(stmt1.iterator, stmt2.iterator)
+        and Util.optionEqual(stmt1.range, stmt2.range, Expression.isEqual)
+        and List.isEqualOnTrue(stmt1.body, stmt2.body, isEqual);
+      case (IF(), IF()) then List.isEqualOnTrue(stmt1.branches, stmt2.branches, branchEqual);
+      case (WHEN(), WHEN()) then List.isEqualOnTrue(stmt1.branches, stmt2.branches, branchEqual);
+      case (ASSERT(), ASSERT()) then Expression.isEqual(stmt1.condition, stmt2.condition)
+        and Expression.isEqual(stmt1.message, stmt2.message)
+        and Expression.isEqual(stmt1.level, stmt2.level);
+      case (TERMINATE(), TERMINATE()) then Expression.isEqual(stmt1.message, stmt2.message);
+      case (REINIT(), REINIT()) then Expression.isEqual(stmt1.cref, stmt2.cref)
+        and Expression.isEqual(stmt1.reinitExp, stmt2.reinitExp);
+      case (NORETCALL(), NORETCALL()) then Expression.isEqual(stmt1.exp, stmt2.exp);
+      case (WHILE(), WHILE()) then Expression.isEqual(stmt1.condition, stmt2.condition)
+        and List.isEqualOnTrue(stmt1.body, stmt2.body, isEqual);
+      case (RETURN(), RETURN()) then true;
+      case (BREAK(), BREAK()) then true;
+      case (FAILURE(), FAILURE()) then List.isEqualOnTrue(stmt1.body, stmt2.body, isEqual);
+      else false;
+    end match;
+  end isEqual;
+
   function makeAssignment
     input Expression lhs;
     input Expression rhs;
@@ -907,6 +993,7 @@ public
 
   function toFlatStream
     input Statement stmt;
+    input BaseModelica.OutputFormat format;
     input String indent;
     input output IOStream.IOStream s;
   protected
@@ -917,9 +1004,9 @@ public
     s := match stmt
       case ASSIGNMENT()
         algorithm
-          s := IOStream.append(s, Expression.toFlatString(stmt.lhs));
+          s := IOStream.append(s, Expression.toFlatString(stmt.lhs, format));
           s := IOStream.append(s, " := ");
-          s := IOStream.append(s, Expression.toFlatString(stmt.rhs));
+          s := IOStream.append(s, Expression.toFlatString(stmt.rhs, format));
         then
           s;
 
@@ -937,11 +1024,11 @@ public
 
           if isSome(stmt.range) then
             s := IOStream.append(s, " in ");
-            s := IOStream.append(s, Expression.toFlatString(Util.getOption(stmt.range)));
+            s := IOStream.append(s, Expression.toFlatString(Util.getOption(stmt.range), format));
           end if;
 
           s := IOStream.append(s, " loop\n");
-          s := toFlatStreamList(stmt.body, indent + "  ", s);
+          s := toFlatStreamList(stmt.body, format, indent + "  ", s);
           s := IOStream.append(s, indent);
           s := IOStream.append(s, "end for");
         then
@@ -953,9 +1040,9 @@ public
 
           for b in stmt.branches loop
             s := IOStream.append(s, str);
-            s := IOStream.append(s, Expression.toFlatString(Util.tuple21(b)));
+            s := IOStream.append(s, Expression.toFlatString(Util.tuple21(b), format));
             s := IOStream.append(s, " then\n");
-            s := toFlatStreamList(Util.tuple22(b), indent + "  ", s);
+            s := toFlatStreamList(Util.tuple22(b), format, indent + "  ", s);
             s := IOStream.append(s, indent);
             str := "elseif ";
           end for;
@@ -970,9 +1057,9 @@ public
 
           for b in stmt.branches loop
             s := IOStream.append(s, str);
-            s := IOStream.append(s, Expression.toFlatString(Util.tuple21(b)));
+            s := IOStream.append(s, Expression.toFlatString(Util.tuple21(b), format));
             s := IOStream.append(s, " then\n");
-            s := toFlatStreamList(Util.tuple22(b), indent + "  ", s);
+            s := toFlatStreamList(Util.tuple22(b), format, indent + "  ", s);
             s := IOStream.append(s, indent);
             str := "elsewhen ";
           end for;
@@ -984,11 +1071,11 @@ public
       case ASSERT()
         algorithm
           s := IOStream.append(s, "assert(");
-          s := IOStream.append(s, Expression.toFlatString(stmt.condition));
+          s := IOStream.append(s, Expression.toFlatString(stmt.condition, format));
           s := IOStream.append(s, ", ");
-          s := IOStream.append(s, Expression.toFlatString(stmt.message));
+          s := IOStream.append(s, Expression.toFlatString(stmt.message, format));
           s := IOStream.append(s, ", ");
-          s := IOStream.append(s, Expression.toFlatString(stmt.level));
+          s := IOStream.append(s, Expression.toFlatString(stmt.level, format));
           s := IOStream.append(s, ")");
         then
           s;
@@ -996,7 +1083,7 @@ public
       case TERMINATE()
         algorithm
           s := IOStream.append(s, "terminate(");
-          s := IOStream.append(s, Expression.toFlatString(stmt.message));
+          s := IOStream.append(s, Expression.toFlatString(stmt.message, format));
           s := IOStream.append(s, ")");
         then
           s;
@@ -1004,22 +1091,22 @@ public
       case REINIT()
         algorithm
           s := IOStream.append(s, "reinit(");
-          s := IOStream.append(s, Expression.toFlatString(stmt.cref));
+          s := IOStream.append(s, Expression.toFlatString(stmt.cref, format));
           s := IOStream.append(s, ", ");
-          s := IOStream.append(s, Expression.toFlatString(stmt.reinitExp));
+          s := IOStream.append(s, Expression.toFlatString(stmt.reinitExp, format));
           s := IOStream.append(s, ")");
         then
           s;
 
       case NORETCALL()
-        then IOStream.append(s, Expression.toFlatString(stmt.exp));
+        then IOStream.append(s, Expression.toFlatString(stmt.exp, format));
 
       case WHILE()
         algorithm
           s := IOStream.append(s, "while ");
-          s := IOStream.append(s, Expression.toFlatString(stmt.condition));
+          s := IOStream.append(s, Expression.toFlatString(stmt.condition, format));
           s := IOStream.append(s, " loop\n");
-          s := toFlatStreamList(stmt.body, indent + "  ", s);
+          s := toFlatStreamList(stmt.body, format, indent + "  ", s);
           s := IOStream.append(s, indent);
           s := IOStream.append(s, "end while");
         then
@@ -1030,11 +1117,12 @@ public
       else IOStream.append(s, "#UNKNOWN STATEMENT#");
     end match;
 
-    s := FlatModelicaUtil.appendElementSourceComment(source(stmt), s);
+    s := FlatModelicaUtil.appendElementSourceComment(source(stmt), NFFlatModelicaUtil.ElementType.ALGORITHM, s);
   end toFlatStream;
 
   function toFlatStreamList
     input list<Statement> stmtl;
+    input BaseModelica.OutputFormat format;
     input String indent;
     input output IOStream.IOStream s;
   protected
@@ -1054,7 +1142,7 @@ public
 
       prev_multi_line := multi_line;
 
-      s := toFlatStream(stmt, indent, s);
+      s := toFlatStream(stmt, format, indent, s);
       s := IOStream.append(s, ";\n");
     end for;
   end toFlatStreamList;

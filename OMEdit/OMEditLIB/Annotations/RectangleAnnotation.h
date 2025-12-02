@@ -46,16 +46,15 @@ public:
   RectangleAnnotation(QString annotation, GraphicsView *pGraphicsView);
   RectangleAnnotation(ModelInstance::Rectangle *pRectangle, bool inherited, GraphicsView *pGraphicsView);
   // Used for shape inside a component
-  RectangleAnnotation(ShapeAnnotation *pShapeAnnotation, Element *pParent);
   RectangleAnnotation(ModelInstance::Rectangle *pRectangle, Element *pParent);
-  // Used for icon/diagram inherited shape
-  RectangleAnnotation(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView);
+  // Used for OMS Element shape
+  RectangleAnnotation(ShapeAnnotation *pShapeAnnotation, Element *pParent);
   // Used for default component
   RectangleAnnotation(Element *pParent);
   // Used for OMSimulator FMU
   RectangleAnnotation(GraphicsView *pGraphicsView);
   void parseShapeAnnotation(QString annotation) override;
-  void parseShapeAnnotation();
+  void parseShapeAnnotation() override;
   QRectF boundingRect() const override;
   QPainterPath shape() const override;
   void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = 0) override;
@@ -68,8 +67,6 @@ public:
   void setRectangle(ModelInstance::Rectangle *pRectangle) {mpRectangle = pRectangle;}
 private:
   ModelInstance::Rectangle *mpRectangle;
-public slots:
-  void duplicate() override;
 };
 
 #endif // RECTANGLEANNOTATION_H

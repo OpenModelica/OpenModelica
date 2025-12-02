@@ -1,7 +1,6 @@
 // name: CardinalityInvalidArg2
 // keywords: cardinality
 // status: incorrect
-// cflags: -d=newInst
 //
 // Cardinality can only be applied to scalar connectors.
 //
@@ -26,7 +25,7 @@ end CardinalityInvalidArg2;
 
 // Result:
 // Error processing file: CardinalityInvalidArg2.mo
-// [flattening/modelica/scodeinst/CardinalityInvalidArg2.mo:23:3-24:9:writable] Error: Type mismatch for positional argument 1 in cardinality(c=a1.c). The argument has type:
+// [flattening/modelica/scodeinst/CardinalityInvalidArg2.mo:22:3-23:9:writable] Error: Type mismatch for positional argument 1 in cardinality(c=a1.c). The argument has type:
 //   C[2]
 // expected type:
 //   Connector

@@ -127,7 +127,7 @@ val(f, 0.0);
 // ""
 // record SimulationResult
 //     resultFile = "initializationTests.homotopy4_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'initializationTests.homotopy4', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-homotopyOnFirstTry -homTauStart=0.4'",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'initializationTests.homotopy4', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-homotopyOnFirstTry -homTauStart=0.4'",
 //     messages = "LOG_STDOUT        | info    | homotopy parameter homTauStart changed to 0.400000
 // LOG_STDOUT        | warning | Sparsity pattern for non-linear system 0 is not regular. This indicates that something went wrong during sparsity pattern generation. Removing sparsity pattern and disabling NLS scaling.
 // LOG_SUCCESS       | info    | The initialization finished successfully with 479 homotopy steps.
@@ -138,7 +138,7 @@ val(f, 0.0);
 // Warning: There are nonlinear iteration variables with default zero start attribute found in NLSJac1. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // Warning: There are nonlinear iteration variables with default zero start attribute found in NLSJac4. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // "
-// {{0.0,0.0},{-9.0,-9.0},{4.999999998926914,4.999999998926914},{-4.999999998926914,-4.999999998926914},{0.999999998926914,0.999999998926914},{-0.412118494041246,-0.412118494041246},{0.1698416531308245,0.1698416531308245},{-9.0,-9.0},{-0.956375928404503,-0.956375928404503},{-9.0,-9.0},{4.169841653130824,4.169841653130824},{-4.169841653130824,-4.169841653130824},{3.0,3.0},{-3.0,-3.0},{9.0,9.0},{-6.956375928404503,-6.956375928404503},{3.043624071595497,3.043624071595497},{-1.0,-1.0},{-23.11140462719703,-23.11140462719703}}
+// {{0.0, 0.0}, {-9.0, -9.0}, {4.999999998926914, 4.999999998926914}, {-4.999999998926914, -4.999999998926914}, {0.999999998926914, 0.999999998926914}, {-0.412118494041246, -0.412118494041246}, {0.16984165313082453, 0.16984165313082453}, {-9.0, -9.0}, {-0.956375928404503, -0.956375928404503}, {-9.0, -9.0}, {4.169841653130824, 4.169841653130824}, {-4.169841653130824, -4.169841653130824}, {3.0, 3.0}, {-3.0, -3.0}, {9.0, 9.0}, {-6.956375928404503, -6.956375928404503}, {3.043624071595497, 3.043624071595497}, {-1.0, -1.0}, {-23.111404627197025, -23.111404627197025}}
 // ""
 // x=
 // -9.0
@@ -183,7 +183,7 @@ val(f, 0.0);
 // -0.412118494041246
 //
 // c=
-// 0.1698416531308245
+// 0.16984165313082453
 //
 // d=
 // -9.0
@@ -192,5 +192,5 @@ val(f, 0.0);
 // -0.956375928404503
 //
 // f=
-// -23.11140462719703
+// -23.111404627197025
 // endResult

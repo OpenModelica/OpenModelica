@@ -1,7 +1,6 @@
 // name: CevalSkew1
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 //
 

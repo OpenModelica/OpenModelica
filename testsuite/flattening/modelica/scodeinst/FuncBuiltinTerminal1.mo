@@ -1,7 +1,6 @@
 // name: FuncBuiltinTerminal1
 // keywords: terminal
 // status: correct
-// cflags: -d=newInst
 //
 // Tests the builtin terminal operator.
 //

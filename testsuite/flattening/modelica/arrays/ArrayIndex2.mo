@@ -1,7 +1,6 @@
 // name:     ArrayIndex2
 // keywords: array indices bug1241
 // status:   correct
-// cflags: -d=-newInst
 //
 // Checks that array indices are correct when using :.
 //
@@ -20,6 +19,7 @@ equation
     C[:,:,a] = {{cos(time),sin(time)},
                 {-sin(time),cos(time)}};
   end for;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ArrayIndex2;
 
 // Result:

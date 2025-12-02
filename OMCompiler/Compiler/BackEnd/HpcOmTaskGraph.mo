@@ -111,6 +111,9 @@ public uniontype TaskGraphMeta   // stores all the metadata for the TaskGraph
   end TASKGRAPHMETA;
 end TaskGraphMeta;
 
+type VariableType = enumeration(INTEGER, REAL, BOOLEAN, STRING);
+type VariableList = tuple<list<Integer>, list<Integer>, list<Integer>, list<Integer>>; //variables <int, float, bool, string>
+
 //----------------------------------------------------------
 //  Functions to build the task graph from the BLT structure
 //----------------------------------------------------------
@@ -183,6 +186,7 @@ algorithm
   //print("createTaskGraph0 varCompMapping created\n");
   compDescs := getEquationStrings(comps,iSyst);  //gets the description i.e. the whole equation, for every component
   ((tmpGraph,inComps,compParamMapping,commCosts,compNames,nodeMark,_)) := List.fold(comps, function createTaskGraph1(iSystInfo=(adjacencyMatrix,iSyst,iShared,listLength(comps)),iVarInfo=(varCompMapping,eqCompMapping,{}),iAnalyzeParameters=iAnalyzeParameters),(tmpGraph,inComps,compParamMapping,commCosts,compNames,nodeMark,1));
+  tmpGraph := Array.mapNoCopy(tmpGraph, function List.sort(inCompFunc = intGt));
   // gather the metadata
   tmpGraphData := TASKGRAPHMETA(inComps, varCompMapping, eqCompMapping, compParamMapping, compNames, compDescs, exeCosts, commCosts, nodeMark, compInformations);
   if(intGt(eqSysIdx,1)) then
@@ -448,7 +452,7 @@ protected
   BackendDAE.EqSystem isyst;
   BackendDAE.Shared ishared;
   BackendDAE.Variables orderedVars;
-  BackendDAE.Variables globalKnownVars, localKnownVars;
+  BackendDAE.Variables globalKnownVars, localKnownVars, knownVars;
   BackendDAE.EquationArray orderedEqs;
   TaskGraph graphIn;
   TaskGraph graphTmp;
@@ -462,12 +466,12 @@ protected
   array<Integer> nodeMark;
   tuple<list<Integer>, list<tuple<Integer, Integer>>, list<Integer>, list<Integer>> unsolvedVars; //<intVarIdc, <floatVarIdx, [0 if derived, 1 if not]>, boolVarIdc,stringVarIdc>
   list<Integer> eventVarLst;
-  array<tuple<list<Integer>,list<Integer>,list<Integer>,list<Integer>>> requiredSccs; //required variables <int, float, bool, string>
   Integer componentIndex, numberOfComps;
   list<tuple<Integer,list<Integer>,list<Integer>,list<Integer>,list<Integer>>> requiredSccs_RefCount; //<sccIdx, refCountInt, refCountFloat, refCountBool, refCountString>
   String compName;
   list<Integer> paramVars;
   array<list<Integer>> compParamMapping;
+  UnorderedMap<Integer, VariableList> requiredSccs;
 algorithm
   (adjacencyMatrix,isyst,ishared,numberOfComps) := iSystInfo;
   BackendDAE.SHARED(globalKnownVars=globalKnownVars, localKnownVars=localKnownVars) := ishared;
@@ -479,19 +483,52 @@ algorithm
   compNames := arrayUpdate(compNames,componentIndex,compName);
   _ := HpcOmBenchmark.benchSystem();
 
-  (unsolvedVars,paramVars) := getUnsolvedVarsBySCC(iComponent,adjacencyMatrix,orderedVars,BackendVariable.addVariables(globalKnownVars,localKnownVars),orderedEqs,eventVarLst,iAnalyzeParameters);
+  // The known vars are only used if iAnalyzeParameters is true, skip this
+  // potentially very expensive operation otherwise.
+  if iAnalyzeParameters then
+    knownVars := BackendVariable.addVariables(globalKnownVars, localKnownVars);
+  else
+    knownVars := globalKnownVars;
+  end if;
+
+  (unsolvedVars,paramVars) := getUnsolvedVarsBySCC(iComponent,adjacencyMatrix,orderedVars,knownVars,orderedEqs,eventVarLst,iAnalyzeParameters);
   compParamMapping := arrayUpdate(compParamMapping, componentIndex, paramVars);
-  requiredSccs := arrayCreate(numberOfComps,({},{},{},{})); //create a ref-counter for each component
-  requiredSccs := List.fold2(List.map1(Util.tuple41(unsolvedVars),Util.makeTuple,1),fillSccList,1,varCompMapping,requiredSccs);
-  requiredSccs := List.fold2(Util.tuple42(unsolvedVars),fillSccList,2,varCompMapping,requiredSccs);
-  requiredSccs := List.fold2(List.map1(Util.tuple43(unsolvedVars),Util.makeTuple,1),fillSccList,3,varCompMapping,requiredSccs);
-  requiredSccs := List.fold2(List.map1(Util.tuple44(unsolvedVars),Util.makeTuple,1),fillSccList,4,varCompMapping,requiredSccs);
-  ((_,requiredSccs_RefCount)) := Array.fold(requiredSccs, convertRefArrayToList, (1,{}));
+
+  requiredSccs := UnorderedMap.new<VariableList>(Util.id, intEq);
+  for intVar in Util.tuple41(unsolvedVars) loop
+    fillRequiredSccs((intVar, 1), VariableType.INTEGER, varCompMapping, requiredSccs);
+  end for;
+
+  for floatVar in Util.tuple42(unsolvedVars) loop
+    fillRequiredSccs(floatVar, VariableType.REAL, varCompMapping, requiredSccs);
+  end for;
+
+  for boolVar in Util.tuple43(unsolvedVars) loop
+    fillRequiredSccs((boolVar, 1), VariableType.BOOLEAN, varCompMapping, requiredSccs);
+  end for;
+
+  for stringVar in Util.tuple44(unsolvedVars) loop
+    fillRequiredSccs((stringVar, 1), VariableType.STRING, varCompMapping, requiredSccs);
+  end for;
+
+  requiredSccs_RefCount := createRequiredSccsRefCount(requiredSccs);
   (commCosts,commCostsOfNode) := updateCommCostBySccRef(requiredSccs_RefCount, componentIndex, commCosts);
   graphTmp := fillAdjacencyList(graphIn,componentIndex,commCostsOfNode,1);
-  graphTmp := Array.map1(graphTmp,List.sort,intGt);
   graphInfoOut := (graphTmp,inComps,compParamMapping,commCosts,compNames,nodeMark,componentIndex+1);
 end createTaskGraph1;
+
+protected function createRequiredSccsRefCount
+  input UnorderedMap<Integer, VariableList> requiredSccs;
+  output list<tuple<Integer,list<Integer>,list<Integer>,list<Integer>,list<Integer>>> requiredSccsRefCount = {};
+protected
+  Integer scc_idx;
+  list<Integer> int_vars, float_vars, bool_vars, string_vars;
+algorithm
+  for e in UnorderedMap.toList(requiredSccs) loop
+    (scc_idx, (int_vars, float_vars, bool_vars, string_vars)) := e;
+    requiredSccsRefCount := (scc_idx, int_vars, float_vars, bool_vars, string_vars) :: requiredSccsRefCount;
+  end for;
+end createRequiredSccsRefCount;
 
 protected function updateCommCostBySccRef "author: marcusw
   Updates the given commCosts-array with the values of the refCount-list."
@@ -598,7 +635,6 @@ algorithm
     local
       Integer i;
       Integer v;
-      List<BackendDAE.Equation> eqnLst;
       List<BackendDAE.Var> varLst;
       array<Integer> ass2;
       List<Integer> es;
@@ -618,20 +654,15 @@ algorithm
     case(BackendDAE.SINGLEEQUATION(eqn = i, var = v), BackendDAE.EQSYSTEM(orderedEqs = orderedEqs, orderedVars = orderedVars),_)
       equation
        //get the equation string
-       eqnLst = BackendEquation.equationList(orderedEqs);
-       eqn = listGet(eqnLst,i);
-       eqString = BackendDump.equationString(eqn);
+       eqString = BackendDump.equationString(BackendEquation.get(orderedEqs, i));
        //get the variable string
-       varLst = BackendVariable.varList(orderedVars);
-       var = listGet(varLst,v);
-       varString = getVarString(var);
+       varString = getVarString(BackendVariable.getVarAt(orderedVars, v));
        desc = (eqString + " FOR " + varString);
        descLst = desc::iEqDesc;
      then
        descLst;
   case(BackendDAE.EQUATIONSYSTEM(jac = BackendDAE.FULL_JACOBIAN(_)), BackendDAE.EQSYSTEM(orderedEqs = orderedEqs),_)
      equation
-       _ = BackendEquation.equationList(orderedEqs);
        desc = ("Equation System");
        descLst = desc::iEqDesc;
      then
@@ -639,9 +670,7 @@ algorithm
    case(BackendDAE.SINGLEARRAY(eqn = i, vars = vs), BackendDAE.EQSYSTEM(orderedEqs = orderedEqs, orderedVars = orderedVars, matching= BackendDAE.MATCHING()),_)
      equation
       //get the equation string
-      eqnLst = BackendEquation.equationList(orderedEqs);
-      eqn = listGet(eqnLst,i);
-      eqString = BackendDump.equationString(eqn);
+      eqString = BackendDump.equationString(BackendEquation.get(orderedEqs, i));
       //get the variable string
       varLst = BackendVariable.varList(orderedVars);
       //var = listGet(varLst,arrayGet(ass2,i));
@@ -654,9 +683,7 @@ algorithm
    case(BackendDAE.SINGLEALGORITHM(eqn = i, vars = vs), BackendDAE.EQSYSTEM(orderedEqs = orderedEqs, orderedVars = orderedVars, matching= BackendDAE.MATCHING()),_)
      equation
       //get the equation string
-      eqnLst = BackendEquation.equationList(orderedEqs);
-      eqn = listGet(eqnLst,i);
-      eqString = BackendDump.equationString(eqn);
+      eqString = BackendDump.equationString(BackendEquation.get(orderedEqs, i));
       //get the variable string
       varLst = BackendVariable.varList(orderedVars);
       //var = listGet(varLst,arrayGet(ass2,i));
@@ -669,9 +696,7 @@ algorithm
    case(BackendDAE.SINGLECOMPLEXEQUATION(eqn = i, vars = vs), BackendDAE.EQSYSTEM(orderedEqs = orderedEqs, orderedVars = orderedVars, matching= BackendDAE.MATCHING()),_)
      equation
       //get the equation string
-      eqnLst = BackendEquation.equationList(orderedEqs);
-      eqn = listGet(eqnLst,i);
-      eqString = BackendDump.equationString(eqn);
+      eqString = BackendDump.equationString(BackendEquation.get(orderedEqs, i));
       //get the variable string
       varLst = BackendVariable.varList(orderedVars);
       //var = listGet(varLst,arrayGet(ass2,i));
@@ -684,9 +709,7 @@ algorithm
    case(BackendDAE.SINGLEWHENEQUATION(eqn = i, vars = vs), BackendDAE.EQSYSTEM(orderedEqs = orderedEqs, orderedVars = orderedVars, matching= BackendDAE.MATCHING()),_)
      equation
       //get the equation string
-      eqnLst = BackendEquation.equationList(orderedEqs);
-      eqn = listGet(eqnLst,i);
-      eqString = BackendDump.equationString(eqn);
+      eqString = BackendDump.equationString(BackendEquation.get(orderedEqs, i));
       //get the variable string
       varLst = BackendVariable.varList(orderedVars);
       //var = listGet(varLst,arrayGet(ass2,i));
@@ -699,9 +722,7 @@ algorithm
    case(BackendDAE.SINGLEIFEQUATION(eqn = i, vars = vs), BackendDAE.EQSYSTEM(orderedEqs = orderedEqs, orderedVars = orderedVars, matching= BackendDAE.MATCHING()),_)
      equation
       //get the equation string
-      eqnLst = BackendEquation.equationList(orderedEqs);
-      eqn = listGet(eqnLst,i);
-      eqString = BackendDump.equationString(eqn);
+      eqString = BackendDump.equationString(BackendEquation.get(orderedEqs, i));
       //get the variable string
       varLst = BackendVariable.varList(orderedVars);
       //var = listGet(varLst,arrayGet(ass2,i));
@@ -714,7 +735,6 @@ algorithm
   case(BackendDAE.TORNSYSTEM(linear=true), BackendDAE.EQSYSTEM(orderedEqs = orderedEqs,  matching= BackendDAE.MATCHING()),_)
      equation
       //get the equation string
-       _ = BackendEquation.equationList(orderedEqs);
        desc = ("Torn linear System");
        descLst = desc::iEqDesc;
     then
@@ -722,7 +742,6 @@ algorithm
   case(BackendDAE.TORNSYSTEM(linear=false), BackendDAE.EQSYSTEM(orderedEqs = orderedEqs,  matching= BackendDAE.MATCHING()),_)
      equation
       //get the equation string
-       _ = BackendEquation.equationList(orderedEqs);
        desc = ("Torn nonlinear System");
        descLst = desc::iEqDesc;
     then
@@ -875,72 +894,32 @@ algorithm
   end matchcontinue;
 end isWhenEquation;
 
-protected function fillSccList "author: marcusw
-  This function appends the scc, which solves the given variable, to the requiredsccs-list."
-  input tuple<Integer,Integer> iVariable; //<varIdx, [derived = 0, not derived = 1]>
-  input Integer iVarType; //<1 = int, 2 = float, 3 = bool, 4 = string>
-  input array<tuple<Integer,Integer,Integer>> iVarCompMapping; //<sccIdx, eqSysIdx, offset>
-  input array<tuple<list<Integer>,list<Integer>,list<Integer>,list<Integer>>> iRequiredSccs; //<int vars, float vars, bool vars>
-  output array<tuple<list<Integer>,list<Integer>,list<Integer>,list<Integer>>> oRequiredSccs;
-algorithm
-  oRequiredSccs := match(iVariable,iVarType,iVarCompMapping,iRequiredSccs)
-    local
-      Integer varIdx, sccIdx;
-      list<Integer> integerVars,floatVars,booleanVars,stringVars;
-      array<tuple<list<Integer>,list<Integer>,list<Integer>,list<Integer>>> tmpRequiredSccs;
-    case ((varIdx,1),1,_,tmpRequiredSccs)
-      equation
-        ((sccIdx,_,_)) = arrayGet(iVarCompMapping,varIdx);
-        ((integerVars,floatVars,booleanVars,stringVars)) = arrayGet(iRequiredSccs, sccIdx);
-        integerVars = varIdx::integerVars;
-        tmpRequiredSccs = arrayUpdate(tmpRequiredSccs,sccIdx,(integerVars,floatVars,booleanVars,stringVars));
-      then tmpRequiredSccs;
-    case ((varIdx,1),2,_,tmpRequiredSccs)
-      equation
-        ((sccIdx,_,_)) = arrayGet(iVarCompMapping,varIdx);
-        ((integerVars,floatVars,booleanVars,stringVars)) = arrayGet(iRequiredSccs, sccIdx);
-        floatVars = varIdx::floatVars;
-        tmpRequiredSccs = arrayUpdate(tmpRequiredSccs,sccIdx,(integerVars,floatVars,booleanVars,stringVars));
-      then tmpRequiredSccs;
-    case ((varIdx,1),3,_,tmpRequiredSccs)
-      equation
-        ((sccIdx,_,_)) = arrayGet(iVarCompMapping,varIdx);
-        ((integerVars,floatVars,booleanVars,stringVars)) = arrayGet(iRequiredSccs, sccIdx);
-        booleanVars = varIdx::booleanVars;
-        tmpRequiredSccs = arrayUpdate(tmpRequiredSccs,sccIdx,(integerVars,floatVars,booleanVars,stringVars));
-      then tmpRequiredSccs;
-    case ((varIdx,1),4,_,tmpRequiredSccs)
-      equation
-        ((sccIdx,_,_)) = arrayGet(iVarCompMapping,varIdx);
-        ((integerVars,floatVars,booleanVars,stringVars)) = arrayGet(iRequiredSccs, sccIdx);
-        stringVars = varIdx::stringVars;
-        tmpRequiredSccs = arrayUpdate(tmpRequiredSccs,sccIdx,(integerVars,floatVars,booleanVars,stringVars));
-      then tmpRequiredSccs;
-   else iRequiredSccs;
-  end match;
-end fillSccList;
-
-protected function convertRefArrayToList "author: marcusw
-  Append the reference values for the given scc to the result list, if the reference counter is not zero."
-  input tuple<list<Integer>,list<Integer>,list<Integer>,list<Integer>> iRefCountValues; //<referenceInt, referenceFloat, referenceBool,referenceString>
-  input tuple<Integer,list<tuple<Integer,list<Integer>,list<Integer>,list<Integer>,list<Integer>>>> iList; //the current index and the current ref-list (<sccIdx, refCountInt, refCountFloat, refCountBool, refCountString>)
-  output tuple<Integer,list<tuple<Integer,list<Integer>,list<Integer>,list<Integer>,list<Integer>>>> oList;
+protected function fillRequiredSccs
+  input tuple<Integer, Integer> var; // <varIdx, [0 if derived, 1 if not]>
+  input VariableType varType;
+  input array<tuple<Integer, Integer, Integer>> varMapping;
+  input UnorderedMap<Integer, tuple<list<Integer>, list<Integer>, list<Integer>, list<Integer>>> requiredSccs;
 protected
-  Integer curIdx;
-  list<Integer> integerVars,floatVars,booleanVars,stringVars;
-  tuple<Integer,list<Integer>,list<Integer>,list<Integer>,list<Integer>> tmpTuple;
-  list<tuple<Integer,list<Integer>,list<Integer>,list<Integer>,list<Integer>>> curList;
+  Integer var_idx, scc_idx, not_derived;
+  list<Integer> integerVars, floatVars, booleanVars, stringVars;
 algorithm
-  oList := match(iRefCountValues,iList)
-    case(({},{},{},{}),(curIdx,curList))
-      then ((curIdx+1,curList));
-    case((integerVars,floatVars,booleanVars,stringVars),(curIdx,curList))
-      equation
-        tmpTuple = (curIdx,integerVars,floatVars,booleanVars,stringVars);
-        curList = tmpTuple::curList;
-      then ((curIdx+1,curList));
-   end match;
-end convertRefArrayToList;
+  (var_idx, not_derived) := var;
+
+  if not_derived == 1 then
+    (scc_idx, _, _) := varMapping[var_idx];
+    (integerVars, floatVars, booleanVars, stringVars) :=
+      UnorderedMap.getOrDefault(scc_idx, requiredSccs, ({}, {}, {}, {}));
+
+    () := match varType
+      case VariableType.INTEGER algorithm integerVars := var_idx::integerVars; then ();
+      case VariableType.REAL    algorithm floatVars := var_idx::floatVars;     then ();
+      case VariableType.BOOLEAN algorithm booleanVars := var_idx::booleanVars; then ();
+      case VariableType.STRING  algorithm stringVars := var_idx::stringVars;   then ();
+    end match;
+
+    UnorderedMap.add(scc_idx, (integerVars, floatVars, booleanVars, stringVars), requiredSccs);
+  end if;
+end fillRequiredSccs;
 
 protected function getUnsolvedVarsBySCC "author: marcusw, waurich
   Returns all required variables which are not solved inside the given component."
@@ -1449,7 +1428,7 @@ protected
 algorithm
   tmpMappingArray := arrayCreate(iNumberOfSccs,-1);
   TASKGRAPHMETA(inComps=inComps,nodeMark=nodeMark) := iTaskGraphMeta;
-  ((oMapping,_)) := Array.fold1(inComps, getSccNodeMapping0, nodeMark, (tmpMappingArray,1));
+  (oMapping,_) := Array.fold(inComps, function getSccNodeMapping0(iNodeMarks = nodeMark), (tmpMappingArray,1));
 end getSccNodeMapping;
 
 protected function getSccNodeMapping0 "author: marcusw
@@ -1595,7 +1574,7 @@ algorithm
       varLst = BackendVariable.varList(orderedVars);
       stateVars = getStates(varLst,{},1);
       //print("stateVars: " + stringDelimitList(List.map(stateVars,intString),",") + " varOffset: " + intString(varOffset) + "\n");
-      //print("varCompMapping: " + stringDelimitList(arrayList(Array.map(varCompMapping,tuple3ToString)),",") + "\n");
+      //print("varCompMapping: " + stringDelimitList(List.mapArray(varCompMapping, tuple3ToString),",") + "\n");
       false = listEmpty(stateVars);
       stateVars = List.map1(stateVars,intAdd,varOffset);
       stateNodes = getArrayTuple31(stateVars,varCompMapping);
@@ -1921,7 +1900,7 @@ algorithm
   lstOut := match(lstIn,deleteEntriesIn)
     local
       Integer start;
-      list<Integer> deleteEntries, rest, lstTmp;
+      list<Integer> rest, lstTmp;
       array<Integer> deleteArr;
    case({},_)
      then {};
@@ -1931,8 +1910,7 @@ algorithm
      equation
         deleteArr = arrayCreate(List.fold(listAppend(rest,deleteEntriesIn),intMax,start),0);
         List.map2_0(deleteEntriesIn,Array.updateIndexFirst,1,deleteArr);
-        (deleteEntries,_) = List.mapFold(arrayList(deleteArr),setDeleteArr,0);
-        deleteArr = listArray(deleteEntries);
+        (deleteArr,_) = Array.mapFold(deleteArr,setDeleteArr,0);
         lstTmp = List.map1(lstIn,removeContinuousEntries1,deleteArr);
      then lstTmp;
     end match;
@@ -3385,9 +3363,8 @@ algorithm
         exeCosts = listReverse(exeCosts);
         // cluster these singleNodes
         (cluster,_) = distributeToClusters(singleNodes,exeCosts,numProc);
-        //print("cluster "+stringDelimitList(List.map(arrayList(cluster),intLstString),"\n")+"\n");
+        //print("cluster "+stringDelimitList(List.mapArray(cluster, intLstString),"\n")+"\n");
         //update taskgraph and taskgraphMeta
-        _ = arrayList(cluster);
         //(oTaskGraph,oTaskGraphMeta) = contractNodesInGraph(clusterLst,iTaskGraph,iTaskGraphMeta);
         changed = intGt(listLength(singleNodes),numProc);
   then (iTaskGraph,iTaskGraphMeta,changed);
@@ -3550,7 +3527,7 @@ algorithm
   //print("oneChildren "+stringDelimitList(List.map(oneChildren,intLstString),"\n")+"\n");
   (graphOut,graphTOut,graphDataOut,contractedTasksOut) := contractNodesInGraph(oneChildren,graphIn,graphTIn,graphDataIn,contractedTasksIn);
   changed := not listEmpty(oneChildren);
-  //print("contractedTasksOut "+stringDelimitList(List.map(arrayList(contractedTasksOut),intString),"\n")+"\n");
+  //print("contractedTasksOut "+stringDelimitList(List.mapArray(contractedTasksOut, intString),"\n")+"\n");
 end mergeSimpleNodes;
 
 public function mergeParentNodes "author: marcusw, waurich
@@ -3573,7 +3550,7 @@ algorithm
   //print("mergedNodes "+stringDelimitList(List.map(mergedNodes,intLstString),"\n")+"\n");
   (graphOut,graphTOut,graphDataOut,contractedTasksOut) := contractNodesInGraph(mergedNodes,graphIn,graphTIn,graphDataIn,contractedTasksIn);
   changed := not listEmpty(mergedNodes);
-  //print("contractedTasksOut "+stringDelimitList(List.map(arrayList(contractedTasksOut),intString),"\n")+"\n");
+  //print("contractedTasksOut "+stringDelimitList(List.mapArray(contractedTasksOut,intString),"\n")+"\n");
 end mergeParentNodes;
 
 protected function mergeParentNodes0
@@ -3618,7 +3595,7 @@ algorithm
         true = realGt(realAdd(highestCommCost, highestParentExeCost), sumParentExeCosts);
         //We can only merge the parents if they have no other child-nodes -> check this
         parentChilds = List.map1(parentNodes, Array.getIndexFirst, iGraph);
-        true = intEq(listLength(List.removeOnTrue(1, intEq, List.map(parentChilds, listLength))), 0);
+        true = listEmpty(List.removeOnTrue(1, intEq, List.map(parentChilds, listLength)));
         mergeNodeList = iNodeIdx :: parentNodes;
         //print("HpcOmTaskGraph.mergeParentNodes0: mergeNodeList " + stringDelimitList(List.map(mergeNodeList,intString), ", ") + "\n");
         //print("HpcOmTaskGraph.mergeParentNodes0: Merging " + intString(iNodeIdx) + " with " + stringDelimitList(List.map(parentNodes,intString), ", ") + "\n");
@@ -3655,7 +3632,7 @@ algorithm
   //print("mergedNodes "+stringDelimitList(List.map(mergedNodes,intLstString),"\n")+"\n");
   (graphOut,graphTOut,graphDataOut,contractedTasksOut) := contractNodesInGraph(mergedNodes,graphIn,graphTIn,graphDataIn,contractedTasksIn);
   changed := not listEmpty(mergedNodes);
-  //print("contractedTasksOut "+stringDelimitList(List.map(arrayList(contractedTasksOut),intString),"\n")+"\n");
+  //print("contractedTasksOut "+stringDelimitList(List.mapArray(contractedTasksOut, intString),"\n")+"\n");
 end mergeSinkNodes;
 
 public function markSystemComponents "author: marcusw
@@ -3847,8 +3824,8 @@ algorithm
     //Set the mark of all nodeList-nodes to 'nodeListHeadIdx'
     nodeMarks := arrayUpdate(nodeMarks, nodeListHeadIdx, nodeListHeadIdx);
     nodeMarksT := arrayUpdate(nodeMarksT, nodeListHeadIdx, nodeListHeadIdx);
-    //print("contractNodesInGraph: Node marks " + stringDelimitList(arrayList(Array.map(nodeMarks,intString)),",") + "\n");
-    //print("contractNodesInGraph: Contracted nodes " + stringDelimitList(arrayList(Array.map(tmpContractedTasks,intString)),",") + "\n");
+    //print("contractNodesInGraph: Node marks " + stringDelimitList(List.mapArray(nodeMarks,intString),",") + "\n");
+    //print("contractNodesInGraph: Contracted nodes " + stringDelimitList(List.mapArray(tmpContractedTasks,intString),",") + "\n");
 
     //Set the mark of all nodes connected with 'nodeListHeadIdx' to 'nodeListHeadIdx'
     outgoingEdges := arrayGet(tmpTaskGraph, nodeListHeadIdx);
@@ -3859,7 +3836,7 @@ algorithm
     List.map_0(outgoingEdges, function Array.updateIndexFirst(inValue=nodeListHeadIdx, inArray=nodeMarks)); //O(n)
     List.map_0(incomingEdges, function Array.updateIndexFirst(inValue=nodeListHeadIdx, inArray=nodeMarksT)); //O(n)
 
-    //print("contractNodesInGraph: Node marks " + stringDelimitList(arrayList(Array.map(nodeMarks,intString)),",") + "\n");
+    //print("contractNodesInGraph: Node marks " + stringDelimitList(List.mapArray(nodeMarks,intString),",") + "\n");
 
     //Get all child-nodes (parent-nodes) of the nodes in the node-list and remove the nodes that are part of the node-list itself or connected to 'nodeListHeadIdx'
     childNodes := List.flatten(List.map(nodeListRestIdc,function getContractedNodeChildren(iRefValue=nodeListHeadIdx,iTaskGraph=tmpTaskGraph,iContractedTasks=tmpContractedTasks,iNodeMarks=nodeMarks))); //O(e)
@@ -4096,7 +4073,7 @@ algorithm
   //print("HpcOmTaskGraph.contractNodesInGraph1 contractNodes: " + stringDelimitList(List.map(contractNodes,intString),",") + "\n");
   //print("HpcOmTaskGraph.contractNodesInGraph1 startNode: " + intString(List.last(contractNodes)) + "\n");
   startNode := List.last(contractNodes);
-  deleteEntries := List.deleteMember(contractNodes,startNode); //all nodes which should be deleted
+  deleteEntries := List.deleteMemberOnTrue(startNode,contractNodes,intEq); //all nodes which should be deleted
   //print("HpcOmTaskGraph.contractNodesInGraph1 deleteEntries: " + stringDelimitList(List.map(deleteEntries,intString),",") + "\n");
   deleteNodesParents := List.flatten(List.map1(deleteEntries, Array.getIndexFirst, graphInT));
   //print("HpcOmTaskGraph.contractNodesInGraph1 deleteNodesParents: " + stringDelimitList(List.map(deleteNodesParents,intString),",") + "\n");
@@ -4415,7 +4392,7 @@ algorithm
         pathLst = listHead(lstIn);
         pathLst = inPath::pathLst;
         lstTmp = List.replaceAt(pathLst, 1, lstIn);
-        rest = List.deleteMember(allNodes,inPath);
+        rest = List.deleteMemberOnTrue(inPath,allNodes,intEq);
         lstTmp = findOneChildParents(rest,graphIn,doNotMerge,lstTmp,child,contrNodes);
       then
         lstTmp;
@@ -4432,7 +4409,7 @@ algorithm
         pathLst = listHead(lstIn);
         pathLst = inPath::pathLst;
         lstTmp = List.replaceAt(pathLst, 1, lstIn);
-        rest = List.deleteMember(allNodes,inPath);
+        rest = List.deleteMemberOnTrue(inPath,allNodes,intEq);
         lstTmp = findOneChildParents(rest,graphIn,doNotMerge,lstTmp,0,contrNodes);
       then
         lstTmp;
@@ -4545,7 +4522,7 @@ algorithm
         reqTimeOp = convertSimEqToSccCosts(reqTimeOpSimCode, iSimEqCompMapping, reqTimeOp);
         //print("createCosts: scc costs converted\n");
         commCosts = createCommCosts(commCosts,1,reqTimeCom);
-        ((_,tmpTaskGraphMeta)) = Array.fold4(inComps,createCosts0,(comps,shared),compMapping, reqTimeOp, reqTimeCom, (1,iTaskGraphMeta));
+        (_, tmpTaskGraphMeta) = Array.fold(inComps, function createCosts0(iComps_shared = (comps,shared), iCompMapping = compMapping, reqTimeOp = reqTimeOp, reqTimeCom = reqTimeCom), (1,iTaskGraphMeta));
       then tmpTaskGraphMeta;
     else
       equation
@@ -4804,7 +4781,7 @@ protected function convertSimEqToSccCosts
   input array<Real> iReqTimeOp;
   output array<Real> oReqTimeOp; //calcTime for each scc
 algorithm
-  ((_,oReqTimeOp)) := Array.fold1(iReqTimeOpSimCode, convertSimEqToSccCosts1, iSimeqCompMapping, (1,iReqTimeOp));
+  (_,oReqTimeOp) := Array.fold(iReqTimeOpSimCode, function convertSimEqToSccCosts1(iSimeqCompMapping = iSimeqCompMapping), (1,iReqTimeOp));
 end convertSimEqToSccCosts;
 
 protected function convertSimEqToSccCosts1
@@ -5156,8 +5133,8 @@ algorithm
   tmpComps := {};
   tmpMapping := {};
   TASKGRAPHMETA(inComps=inComps, nodeMark=nodeMarks) := iTaskGraphMeta;
-  ((tmpComps,tmpMapping)) := Array.fold2(inComps,getGraphComponents0,iSystComps,iCompEqSysMapping,(tmpComps,tmpMapping));
-  ((_,(tmpComps,tmpMapping))) := Array.fold2(nodeMarks,getGraphComponents2, iSystComps, iCompEqSysMapping, (1,(tmpComps,tmpMapping)));
+  ((tmpComps,tmpMapping)) := Array.fold(inComps, function getGraphComponents0(systComps = iSystComps, iCompEqSysMapping = iCompEqSysMapping),(tmpComps,tmpMapping));
+  ((_,(tmpComps,tmpMapping))) := Array.fold(nodeMarks, function getGraphComponents2(systComps = iSystComps, iCompEqSysMapping = iCompEqSysMapping), (1,(tmpComps,tmpMapping)));
   oComps := tmpComps;
   oCompEqGraphMapping := listArray(tmpMapping);
 end getGraphComponents;
@@ -5590,7 +5567,7 @@ algorithm
   nodeCoords := arrayCreate(size,((0,0)));
   nodeCoords := List.fold1(List.intRange(size),getYCoordForNode,parallelSets,nodeCoords);
   nodeCoordsOut := nodeCoords;
-  //print("nodeCoords"+stringDelimitList(List.map(arrayList(nodeCoords),tupleToString),",")+"\n");
+  //print("nodeCoords"+stringDelimitList(List.mapArray(nodeCoords, tupleToString),",")+"\n");
 end getNodeCoords;
 
 protected function getYCoordForNode "author: Waurich TUD 2013-07
@@ -5832,7 +5809,7 @@ algorithm
   parentComps := arrayGet(inComps, iParentNodeIdx);
   childComps := arrayGet(inComps, iChildNodeIdx);
   concreteCommCostsOpt := List.map2(parentComps, getCommCostBetweenNodes0, childComps, commCosts);
-  concreteCommCosts := List.flatten(List.map(concreteCommCostsOpt, List.fromOption));
+  concreteCommCosts := list(Util.getOption(c) for c guard isSome(c) in concreteCommCostsOpt);
   oCommCost := getHighestCommCost(concreteCommCosts, COMMUNICATION(0,{},{},{},{},-1,-1.0));
 end getCommCostBetweenNodes;
 
@@ -6608,7 +6585,7 @@ end appendToElementUnique;
 protected function dumpStateAssign
   input array<list<Integer>> stateAssign;
 algorithm
-  print("stateAssign "+stringDelimitList(List.map(arrayList(stateAssign),intLstString),"\n")+"\n");
+  print("stateAssign "+stringDelimitList(List.mapArray(stateAssign, intLstString),"\n")+"\n");
 end dumpStateAssign;
 
 protected function dumpPartitionData"dumps the partitiondata info.

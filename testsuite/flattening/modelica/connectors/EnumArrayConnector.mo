@@ -1,7 +1,6 @@
 // name: EnumArrayConnector
 // keywords: connect enum array
 // status: correct
-// cflags: -d=-newInst
 //
 // Tests that connectors containing arrays with enum dimensions work correctly.
 //
@@ -20,6 +19,7 @@ model EnumArrayConnector
   end B;
 
   B b;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end EnumArrayConnector;
 
 // Result:

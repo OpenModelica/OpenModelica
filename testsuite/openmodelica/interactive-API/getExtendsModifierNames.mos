@@ -1,0 +1,46 @@
+// name: getExtendsModifierNames
+// keywords:
+// status: correct
+// cflags: -d=newInst
+
+loadString("
+  record R
+    Real r1;
+    Real r2;
+  end R;
+
+  model A
+    Real x;
+    Real y;
+    Real z;
+    R r;
+    replaceable Real w;
+    replaceable R r2;
+  end A;
+
+  model B
+    extends A(x = 1.0, r(r1 = 2.0), redeclare Real w = 1.0, redeclare R r2(x = 1.0));
+    Real w;
+  end B;
+
+  model C
+    extends A;
+  end C;
+");
+
+getExtendsModifierNames(B, A);
+getErrorString();
+getExtendsModifierNames(B, A, useQuotes = true);
+getErrorString();
+getExtendsModifierNames(C, A);
+getErrorString();
+
+// Result:
+// true
+// {x, r.r1, w, r2}
+// ""
+// {"x", "r.r1", "w", "r2"}
+// ""
+// {}
+// ""
+// endResult

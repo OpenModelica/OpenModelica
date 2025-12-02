@@ -114,7 +114,7 @@ public:
     virtual string getModelName();
     virtual bool isJacobianSparse();
     //true if getSparseJacobian is implemented and getJacobian is not, false if getJacobian is implemented and getSparseJacobian is not.
-    virtual bool isAnalyticJacobianGenerated(); //true if the flag --generateSymbolicJacobian is true, false if not.
+    virtual bool isAnalyticJacobianGenerated(); //true if the flag --generateDynamicJacobian=symbolic, false if not.
     virtual shared_ptr<ISimObjects> getSimObjects();
 
 

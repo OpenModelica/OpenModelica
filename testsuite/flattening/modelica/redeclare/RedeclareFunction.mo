@@ -1,7 +1,6 @@
 // name:     RedeclareFunction (Bug1432)
 // keywords: redeclare function
 // status:   correct
-// cflags: -d=-newInst
 //
 // Checks that it's possible to modify packages which have a constant that influences a function.
 //
@@ -30,6 +29,7 @@ model RedeclareFunction
     end B;
 
     B b;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end RedeclareFunction;
 
 // Result:

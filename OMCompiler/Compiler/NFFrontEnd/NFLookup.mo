@@ -90,20 +90,21 @@ end lookupClassName;
 function lookupBaseClassName
   input Absyn.Path name;
   input InstNode scope;
+  input InstContext.Type context;
   input SourceInfo info;
   output list<InstNode> nodes;
 protected
   LookupState state;
 algorithm
   try
-    (nodes, state) := lookupNames(name, scope, NFInstContext.NO_CONTEXT);
+    (nodes, state) := lookupNames(name, scope, context);
   else
     Error.addSourceMessage(Error.LOOKUP_BASECLASS_ERROR,
       {AbsynUtil.pathString(name), InstNode.scopeName(scope)}, info);
     fail();
   end try;
 
-  LookupState.assertClass(state, listHead(nodes), name, NFInstContext.NO_CONTEXT, info);
+  LookupState.assertClass(state, listHead(nodes), name, context, info);
 end lookupBaseClassName;
 
 function lookupComponent
@@ -126,7 +127,7 @@ algorithm
       {Dump.printComponentRefStr(cref), InstNode.scopeName(scope)}, info);
   end try;
 
-  state := fixTypenameState(node, state);
+  state := fixTypenameState(node, state, context);
   LookupState.assertComponent(state, node, cref, context, info);
 end lookupComponent;
 
@@ -149,18 +150,19 @@ algorithm
   end try;
 
   node := ComponentRef.node(foundCref);
-  state := fixTypenameState(node, state);
+  state := fixTypenameState(node, state, context);
   LookupState.assertComponent(state, node, cref, context, info);
 end lookupConnector;
 
 function fixTypenameState
   input InstNode component;
   input output LookupState state;
+  input InstContext.Type context;
 protected
   Type ty;
 algorithm
   if InstNode.isClass(component) then
-    ty := InstNode.getType(Inst.expand(component));
+    ty := InstNode.getType(Inst.expand(component, context));
 
     state := match ty
       case Type.ENUMERATION() then LookupState.COMP();
@@ -251,7 +253,7 @@ algorithm
   // not. Components are instantiated before their bindings, so in proper models
   // we shouldn't get any non-expanded external objects here. But to avoid
   // getting weird errors in erroneous models we make sure it's expanded anyway.
-  Inst.expand(node);
+  Inst.expand(node, NFInstContext.NO_CONTEXT);
   cls := InstNode.getClass(node);
 
   () := match cls
@@ -698,7 +700,7 @@ algorithm
     node := Inst.instPackage(node, context);
 
     // allow lookup in partial nodes if -d=nfAPI is on
-    if InstNode.isPartial(node) and not InstContext.inRelaxed(context) then
+    if InstNode.isPartial(node) and not (InstContext.inRelaxed(context) or InstContext.inRedeclared(context)) then
       state := LookupState.ERROR(LookupState.PARTIAL_CLASS());
       return;
     end if;
@@ -713,7 +715,7 @@ algorithm
         if is_import then
           state := LookupState.ERROR(LookupState.IMPORT());
         else
-          state := LookupState.next(node, state, checkAccessViolations);
+          state := LookupState.next(node, state, context, checkAccessViolations);
         end if;
       then
         ();
@@ -725,7 +727,7 @@ algorithm
         if is_import then
           state := LookupState.ERROR(LookupState.IMPORT());
         else
-          state := LookupState.next(node, state, checkAccessViolations);
+          state := LookupState.next(node, state, context, checkAccessViolations);
           (node, state) := lookupLocalName(name.path, node, state, context, checkAccessViolations);
         end if;
       then
@@ -767,7 +769,7 @@ algorithm
     // PartialModelicaServices is mistakenly partial in MSL versions older than
     // 3.2.3. We can't just check for Modelica 3.2 since that will break e.g. 3.2.2,
     // so just disable the check specifically for PartialModelicaServices instead.
-    if InstNode.isPartial(node) and not InstContext.inRelaxed(context) and
+    if InstNode.isPartial(node) and not (InstContext.inRelaxed(context) or InstContext.inRedeclared(context)) and
        not InstNode.name(node) == "PartialModelicaServices" then
       state := LookupState.ERROR(LookupState.PARTIAL_CLASS());
       return;
@@ -779,14 +781,14 @@ algorithm
     case Absyn.Path.IDENT()
       algorithm
         node := lookupLocalSimpleName(name.name, node);
-        state := LookupState.next(node, state);
+        state := LookupState.next(node, state, context);
       then
         (node :: nodes, state);
 
     case Absyn.Path.QUALIFIED()
       algorithm
         node := lookupLocalSimpleName(name.name, node);
-        state := LookupState.next(node, state);
+        state := LookupState.next(node, state, context);
       then
         lookupLocalNames(name.path, node, node :: nodes, state, context);
 
@@ -964,7 +966,7 @@ protected
   Class cls;
   Boolean is_import, scope_is_class;
 algorithm
-  if LookupState.isError(state) then
+  if LookupState.isError(state) or (InstContext.inConnect(context) and InstNode.isEmpty(node)) then
     return;
   end if;
 
@@ -974,7 +976,7 @@ algorithm
   if scope_is_class then
     scope := Inst.instPackage(node, context);
 
-    if InstNode.isPartial(scope) and not InstContext.inRelaxed(context) then
+    if InstNode.isPartial(scope) and not (InstContext.inRelaxed(context) or InstContext.inRedeclared(context)) then
       state := LookupState.ERROR(LookupState.PARTIAL_CLASS());
       return;
     end if;
@@ -1020,7 +1022,7 @@ algorithm
     state := LookupState.ERROR(LookupState.NON_ENCAPSULATED());
     return;
   else
-    state := LookupState.next(n, state);
+    state := LookupState.next(n, state, context);
   end if;
 
   (foundCref, foundScope, state) := match cref
@@ -1147,7 +1149,7 @@ algorithm
                 fail();
           end match;
         then
-          InstNode.replaceComponent(comp, node);
+          InstNode.replaceComponent(comp, InstNode.setDefinition(def, node));
 
       else
         algorithm
@@ -1167,6 +1169,7 @@ algorithm
   ErrorExt.setCheckpoint(getInstanceName());
 
   try
+    true := Flags.getConfigBool(Flags.LOAD_MISSING_LIBRARIES);
     version := loadLibrary_work(name, scope);
     Error.addMessage(Error.NOTIFY_IMPLICIT_LOAD, {name, version});
     System.loadModelCallBack(name);

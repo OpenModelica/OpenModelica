@@ -27,17 +27,16 @@ getErrorString();
 // Result:
 // true
 // ""
-// {"startTime","stopTime"}
+// {"startTime", "stopTime"}
 // ""
-// {"solver","jacobian"}
+// {"solver", "jacobian"}
 // ""
-// "
-// \\ndassl"
+// "dassl"
 // ""
 // "coloredNumerical"
 // ""
-// "1"
+// 1
 // ""
-// "2"
+// 2
 // ""
 // endResult

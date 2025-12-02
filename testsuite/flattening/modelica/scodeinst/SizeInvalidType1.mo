@@ -1,7 +1,6 @@
 // name: SizeInvalidType1
 // keywords: size
 // status: incorrect
-// cflags: -d=newInst
 //
 // Tests the builtin size operator.
 //
@@ -13,7 +12,7 @@ end SizeInvalidType1;
 
 // Result:
 // Error processing file: SizeInvalidType1.mo
-// [flattening/modelica/scodeinst/SizeInvalidType1.mo:11:3-11:27:writable] Error: Type mismatch for positional argument 2 in size (dim="1"). The argument has type:
+// [flattening/modelica/scodeinst/SizeInvalidType1.mo:10:3-10:27:writable] Error: Type mismatch for positional argument 2 in size (dim="1"). The argument has type:
 //   String
 // expected type:
 //   Integer

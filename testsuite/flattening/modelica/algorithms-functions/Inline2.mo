@@ -1,7 +1,6 @@
 // name: Inline2
 // keywords: inline, function
 // status: correct
-// cflags: -d=-newInst
 //
 // Test case for inline annotations
 //
@@ -28,6 +27,7 @@ model Inline2
 equation
   x = 2;
   y = (2 + simpleInline(x)) * (simpleInline(x + 8) / 2);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Inline2;
 
 // Result:

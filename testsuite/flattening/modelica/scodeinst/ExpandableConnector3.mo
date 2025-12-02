@@ -1,7 +1,6 @@
 // name: ExpandableConnector3
 // keywords: expandable connector
 // status: correct
-// cflags: -d=newInst
 //
 //
 

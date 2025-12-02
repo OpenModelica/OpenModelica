@@ -1,7 +1,6 @@
 // name: RecordSimple
 // keywords: record
 // status: correct
-// cflags: -d=-newInst
 //
 // Tests very simple record declaration and instantiation
 //
@@ -11,6 +10,7 @@ end TestRecord;
 
 model RecordSimple
   TestRecord tr;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end RecordSimple;
 
 // Result:

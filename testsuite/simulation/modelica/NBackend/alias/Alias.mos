@@ -1,0 +1,80 @@
+// name: Alias
+// keywords: NewBackend
+// status: correct
+
+loadString("
+  model Alias
+    Real y;             // not simple
+    Real x,z;           // regular simple
+    Real a, b, c;       // constant simple
+  equation
+    a = b;
+    b = c;
+    x = z;
+    c = 3.0;
+    y = time + c;
+    z = sin(time);
+  end Alias;
+"); getErrorString();
+
+setCommandLineOptions("--newBackend -d=dumprepl");
+simulate(Alias); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// =====================================
+//   [dumprepl] Simulation Alias Sets:
+// =====================================
+//
+// Alias Set 1:
+// **************
+// 	<No Constant/Parameter Binding>
+// 	### Set Equations:
+// 	[SCAL] (1) z = $FUN_1 ($RES_SIM_0)
+// 	[SCAL] (1) x = z ($RES_SIM_3)
+//
+// Alias Set 2:
+// **************
+// 	Constant/Parameter Binding: [SCAL] (1) c = 3.0 ($RES_SIM_2)
+// 	### Set Equations:
+// 	[SCAL] (1) y = time + c ($RES_SIM_1)
+// 	[SCAL] (1) b = c ($RES_SIM_4)
+// 	[SCAL] (1) a = b ($RES_SIM_5)
+//
+// [dumprepl] Constant Replacements:
+// ***********************************
+// 	c	 ==> 	3.0
+// 	b	 ==> 	3.0
+// 	a	 ==> 	3.0
+// [dumprepl] Trivial Alias Replacements:
+// ****************************************
+// 	z	 ==> 	x
+// 	$FUN_1	 ==> 	x
+// [dumprepl] Nontrivial Alias Replacements:
+// *******************************************
+// 	y	 ==> 	3.0 + time
+//
+// ==================================
+//   [dumprepl] Clocked Alias Sets:
+// ==================================
+//
+// <No Clocked Alias Sets>
+//
+// [dumprepl] Constant Replacements:
+// ***********************************
+// [dumprepl] Trivial Alias Replacements:
+// ****************************************
+// [dumprepl] Nontrivial Alias Replacements:
+// *******************************************
+//
+// record SimulationResult
+//     resultFile = "Alias_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Alias', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// endResult

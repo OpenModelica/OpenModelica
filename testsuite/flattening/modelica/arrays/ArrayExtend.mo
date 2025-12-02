@@ -1,7 +1,6 @@
 // name: ArrayExtend
 // keywords: array, inheritance
 // status: correct
-// cflags: -d=-newInst
 //
 // Tests extension of types that are declared as arrays
 // Makes sure you can't combine them with simple components
@@ -17,6 +16,7 @@ model TestModels = TestModel[3];
 model ArrayExtend
   extends TestModels;
   Real illegalReal;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ArrayExtend;
 
 // Result:

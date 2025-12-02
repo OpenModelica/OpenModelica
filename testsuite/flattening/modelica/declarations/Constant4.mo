@@ -1,7 +1,6 @@
 // name:     Constant4
 // keywords: declaration,array
 // status:   correct
-// cflags: -d=-newInst
 //
 //
 //
@@ -9,6 +8,7 @@
 class Constant4
   Real x[2];
 //  Real y[size(x,1)]; causes infinite loop
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Constant4;
 
 // Result:

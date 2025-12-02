@@ -1,7 +1,6 @@
 // name: AssignInput1
 // keywords:
 // status: incorrect
-// cflags: -d=newInst
 //
 
 function f
@@ -18,7 +17,7 @@ end AssignInput1;
 
 // Result:
 // Error processing file: AssignInput1.mo
-// [flattening/modelica/scodeinst/AssignInput1.mo:11:3-11:13:writable] Error: Trying to assign to input component x.
+// [flattening/modelica/scodeinst/AssignInput1.mo:10:3-10:13:writable] Error: Trying to assign to input component x.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

@@ -98,13 +98,13 @@ int full_implicit_MS(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
   solved = solveNLS_gb(data, threadData, nlsData, gbData);
 
   if (solved != NLS_SOLVED) {
-    warningStreamPrint(LOG_SOLVER, 0, "gbode error: Failed to solve NLS in full_implicit_MS at time t=%g", gbData->time);
+    warningStreamPrint(OMC_LOG_SOLVER, 0, "gbode error: Failed to solve NLS in full_implicit_MS at time t=%g", gbData->time);
     return -1;
   }
 
   memcpy(gbData->kv + stage * nStates, fODE, nStates*sizeof(double));
 
-  /* Corrector Schritt */
+  /* Corrector step */
   for (i = 0; i < nStates; i++) {
     gbData->y[i] = 0;
     for (stage = 0; stage < nStages-1; stage++) {
@@ -142,7 +142,7 @@ int full_implicit_MS_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solve
   int nStages = gbfData->tableau->nStages;
   NLS_SOLVER_STATUS solved = NLS_FAILED;
 
-  /* Predictor Schritt */
+  /* Predictor step */
   for (ii = 0; ii < gbData->nFastStates; ii++)
   {
     i = gbData->fastStatesIdx[ii];
@@ -193,13 +193,13 @@ int full_implicit_MS_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solve
   solved = solveNLS_gb(data, threadData, nlsData, gbData);
 
   if (solved != NLS_SOLVED) {
-    warningStreamPrint(LOG_SOLVER, 0, "gbodef error: Failed to solve NLS in full_implicit_MS_MR at time t=%g", gbfData->time);
+    warningStreamPrint(OMC_LOG_SOLVER, 0, "gbodef error: Failed to solve NLS in full_implicit_MS_MR at time t=%g", gbfData->time);
     return -1;
   }
 
   memcpy(gbfData->kv + stage * nStates, fODE, nStates*sizeof(double));
 
-  /* Corrector Schritt */
+  /* Corrector step */
   for (ii = 0; ii < gbData->nFastStates; ii++)
   {
     i = gbData->fastStatesIdx[ii];
@@ -207,7 +207,7 @@ int full_implicit_MS_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solve
     for (stage = 0; stage < nStages-1; stage++)
     {
       gbfData->y[i] += -gbfData->yv[stage * nStates + i] * gbfData->tableau->c[stage] +
-                        gbfData->kv[stage * nStates + i] * gbfData->tableau->b[stage] *  gbfData->stepSize;
+                        gbfData->kv[stage * nStates + i] * gbfData->tableau->b[stage] * gbfData->stepSize;
     }
     gbfData->y[i] += gbfData->kv[stage * nStates + i] * gbfData->tableau->b[stage] * gbfData->stepSize;
     gbfData->y[i] /= gbfData->tableau->c[stage];
@@ -239,14 +239,14 @@ int expl_diag_impl_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
   int nStages = gbData->tableau->nStages;
   NLS_SOLVER_STATUS solved = NLS_FAILED;
 
-  if (!gbData->isExplicit  && ACTIVE_STREAM(LOG_GBODE_NLS_V)) {
+  if (!gbData->isExplicit  && OMC_ACTIVE_STREAM(OMC_LOG_GBODE_NLS_V)) {
     // NLS - used values for extrapolation
-    infoStreamPrint(LOG_GBODE_NLS_V, 1, "NLS - used values for extrapolation:");
-    printVector_gb(LOG_GBODE_NLS_V, "xL", gbData->yv + nStates, nStates, gbData->tv[1]);
-    printVector_gb(LOG_GBODE_NLS_V, "kL", gbData->kv + nStates, nStates, gbData->tv[1]);
-    printVector_gb(LOG_GBODE_NLS_V, "xR", gbData->yv, nStates, gbData->tv[0]);
-    printVector_gb(LOG_GBODE_NLS_V, "kR", gbData->kv, nStates, gbData->tv[0]);
-    messageClose(LOG_GBODE_NLS_V);
+    infoStreamPrint(OMC_LOG_GBODE_NLS_V, 1, "NLS - used values for extrapolation:");
+    printVector_gb(OMC_LOG_GBODE_NLS_V, "xL", gbData->yv + nStates, nStates, gbData->tv[1]);
+    printVector_gb(OMC_LOG_GBODE_NLS_V, "kL", gbData->kv + nStates, nStates, gbData->tv[1]);
+    printVector_gb(OMC_LOG_GBODE_NLS_V, "xR", gbData->yv, nStates, gbData->tv[0]);
+    printVector_gb(OMC_LOG_GBODE_NLS_V, "kR", gbData->kv, nStates, gbData->tv[0]);
+    messageClose(OMC_LOG_GBODE_NLS_V);
   }
 
   /* Runge-Kutta step */
@@ -292,22 +292,29 @@ int expl_diag_impl_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
 
       // Set start vector
       memcpy(nlsData->nlsx,    gbData->yOld, nStates*sizeof(modelica_real));
-      memcpy(nlsData->nlsxOld, gbData->yOld, nStates*sizeof(modelica_real));
-      extrapolation_gb(gbData, nlsData->nlsxExtrapolation, gbData->time + gbData->tableau->c[stage_] * gbData->stepSize);
+      memcpy(nlsData->nlsxExtrapolation,    gbData->yOld, nStates*sizeof(modelica_real));
 
+      if (stage>1) {
+        extrapolation_hermite_gb(nlsData->nlsxOld, gbData->nStates, gbData->time + gbData->tableau->c[stage_-2] * gbData->stepSize, gbData->x + (stage_-2) * nStates, gbData->k + (stage_-2) * nStates,
+                             gbData->time + gbData->tableau->c[stage_-1] * gbData->stepSize, gbData->x + (stage_-1) * nStates, gbData->k + (stage_-1) * nStates, gbData->time + gbData->tableau->c[stage_] * gbData->stepSize);
+      } else {
+        extrapolation_gb(gbData, nlsData->nlsxOld, gbData->time + gbData->tableau->c[stage_] * gbData->stepSize);
+      }
+
+      infoStreamPrint(OMC_LOG_GBODE_NLS_V, 0, "Solving NLS of stage %d at time %g", stage_+1, gbData->time + gbData->tableau->c[stage_] * gbData->stepSize);
       solved = solveNLS_gb(data, threadData, nlsData, gbData);
 
       if (solved != NLS_SOLVED) {
-        warningStreamPrint(LOG_SOLVER, 0, "gbode error: Failed to solve NLS in expl_diag_impl_RK in stage %d at time t=%g", stage_, gbData->time);
+        warningStreamPrint(OMC_LOG_SOLVER, 0, "gbode error: Failed to solve NLS in expl_diag_impl_RK in stage %d at time t=%g", stage_+1, gbData->time + gbData->tableau->c[stage_] * gbData->stepSize);
         return -1;
       }
 
-      if (ACTIVE_STREAM(LOG_GBODE_NLS_V)) {
-        infoStreamPrint(LOG_GBODE_NLS_V, 1, "NLS - start values and solution of the NLS:");
-        printVector_gb(LOG_GBODE_NLS_V, "x0", nlsData->nlsxOld, nStates, gbData->time + gbData->tableau->c[stage_] * gbData->stepSize);
-        printVector_gb(LOG_GBODE_NLS_V, "xS", nlsData->nlsxExtrapolation, nStates, gbData->time + gbData->tableau->c[stage_] * gbData->stepSize);
-        printVector_gb(LOG_GBODE_NLS_V, "xL", nlsData->nlsx,              nStates, gbData->time + gbData->tableau->c[stage_] * gbData->stepSize);
-        messageClose(LOG_GBODE_NLS_V);
+      if (OMC_ACTIVE_STREAM(OMC_LOG_GBODE_NLS_V)) {
+        infoStreamPrint(OMC_LOG_GBODE_NLS_V, 1, "NLS - start values and solution of the NLS:");
+        printVector_gb(OMC_LOG_GBODE_NLS_V, "x0", nlsData->nlsxOld, nStates, gbData->time + gbData->tableau->c[stage_] * gbData->stepSize);
+        printVector_gb(OMC_LOG_GBODE_NLS_V, "xS", nlsData->nlsxExtrapolation, nStates, gbData->time + gbData->tableau->c[stage_] * gbData->stepSize);
+        printVector_gb(OMC_LOG_GBODE_NLS_V, "xL", nlsData->nlsx,              nStates, gbData->time + gbData->tableau->c[stage_] * gbData->stepSize);
+        messageClose(OMC_LOG_GBODE_NLS_V);
       }
 
       memcpy(gbData->x + stage_ * nStates, nlsData->nlsx, nStates*sizeof(double));
@@ -315,6 +322,7 @@ int expl_diag_impl_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
     // copy last calculation of fODE, which should coincide with k[i], here, it yields stage == stage_
     memcpy(gbData->k + stage_ * nStates, fODE, nStates*sizeof(double));
   }
+  infoStreamPrint(OMC_LOG_GBODE_NLS_V, 0, "GBODE: all stages done.");
 
   // Apply RK-scheme for determining the approximations at (gbData->time + gbData->stepSize)
   // y       = yold+h*sum(b[stage_]  * k[stage_], stage_=1..nStages);
@@ -323,11 +331,15 @@ int expl_diag_impl_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
   for (i=0; i<nStates; i++)
   {
     gbData->y[i]  = gbData->yOld[i];
-    gbData->yt[i] = gbData->yOld[i];
+    if (!gbData->tableau->richardson) {
+      gbData->yt[i] = gbData->yOld[i];
+    }
     for (stage_=0; stage_<nStages; stage_++)
     {
       gbData->y[i]  += gbData->stepSize * gbData->tableau->b[stage_]  * (gbData->k + stage_ * nStates)[i];
-      gbData->yt[i] += gbData->stepSize * gbData->tableau->bt[stage_] * (gbData->k + stage_ * nStates)[i];
+      if (!gbData->tableau->richardson) {
+        gbData->yt[i] += gbData->stepSize * gbData->tableau->bt[stage_] * (gbData->k + stage_ * nStates)[i];
+      }
     }
   }
 
@@ -369,43 +381,39 @@ int expl_diag_impl_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solv
                    gbfData->time,      gbfData->yOld,
                    gbData->nSlowStates, gbData->slowStatesIdx, nStates, gbData->tableau, gbData->x, gbData->k);
 
-
-  if (ACTIVE_STREAM(LOG_GBODE_NLS)) {
-    infoStreamPrint(LOG_GBODE_NLS, 1, "NLS - used values for extrapolation:");
-    printVector_gb(LOG_GBODE_NLS, "xL", gbfData->yv + nStates, nStates, gbfData->tv[1]);
-    printVector_gb(LOG_GBODE_NLS, "kL", gbfData->kv + nStates, nStates, gbfData->tv[1]);
-    printVector_gb(LOG_GBODE_NLS, "xR", gbfData->yv, nStates, gbfData->tv[0]);
-    printVector_gb(LOG_GBODE_NLS, "kR", gbfData->kv, nStates, gbfData->tv[0]);
-    messageClose(LOG_GBODE_NLS);
+  if (OMC_ACTIVE_STREAM(OMC_LOG_GBODE_NLS)) {
+    infoStreamPrint(OMC_LOG_GBODE_NLS, 1, "NLS - used values for extrapolation:");
+    printVector_gbf(OMC_LOG_GBODE_NLS, "xL", gbfData->yv + nStates, nStates, gbfData->tv[1], gbData->nFastStates, gbData->fastStatesIdx);
+    printVector_gbf(OMC_LOG_GBODE_NLS, "kL", gbfData->kv + nStates, nStates, gbfData->tv[1], gbData->nFastStates, gbData->fastStatesIdx);
+    printVector_gbf(OMC_LOG_GBODE_NLS, "xR", gbfData->yv, nStates, gbfData->tv[0], gbData->nFastStates, gbData->fastStatesIdx);
+    printVector_gbf(OMC_LOG_GBODE_NLS, "kR", gbfData->kv, nStates, gbfData->tv[0], gbData->nFastStates, gbData->fastStatesIdx);
+    messageClose(OMC_LOG_GBODE_NLS);
   }
 
-  for (stage = 0; stage < nStages; stage++)
-  {
+  for (stage = 0; stage < nStages; stage++) {
     gbfData->act_stage = stage;
     // k[i] = f(tOld + c[i]*h, yOld + h*sum(a[i,j]*k[j], i=j..i))
     // residual constant part:
-    // res = f(tOld + c[i]*h, yOld + h*sum(a[i,j]*k[j], i=j..i-i))
+    // res = f(tOld + c[i]*h, yOld + h*sum(a[i,j]*k[j], i=j..i-1))
     // yOld from integrator is correct for the fast states
 
-    for (i=0; i < nStates; i++)
-    {
+    for (i=0; i < nStates; i++) {
       gbfData->res_const[i] = gbfData->yOld[i];
       for (stage_ = 0; stage_ < stage; stage_++)
         gbfData->res_const[i] += gbfData->stepSize * gbfData->tableau->A[stage * nStages + stage_] * gbfData->k[stage_ * nStates + i];
     }
+    // TODO can be streamlined by taking res_const[i-1] instead of the whole sum.
 
     // set simulation time with respect to the current stage
+    // t = t_0 + c[j]*h
     sData->timeValue = gbfData->time + gbfData->tableau->c[stage]*gbfData->stepSize;
 
     // index of diagonal element of A
-    if (gbfData->tableau->A[stage * nStages + stage_] == 0)
-    {
+    if (gbfData->tableau->A[stage * nStages + stage_] == 0) {
       // Calculate the fODE values for the explicit stage
       memcpy(sData->realVars, gbfData->res_const, nStates*sizeof(double));
       gbode_fODE(data, threadData, &(gbfData->stats.nCallsODE));
-    }
-    else
-    {
+    } else {
       // interpolate the slow states on the time of the current stage
       gb_interpolation(gbData->interpolation,
                        gbData->timeLeft,  gbData->yLeft,  gbData->kLeft,
@@ -420,23 +428,24 @@ int expl_diag_impl_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solv
       projVector_gbf(nlsData->nlsx, gbfData->yOld, nFastStates, gbData->fastStatesIdx);
       memcpy(nlsData->nlsxOld, nlsData->nlsx, nFastStates*sizeof(modelica_real));
 
-      // use help vector gbData->y1 for scurity reasons
+      // use help vector gbData->y1 for security reasons
       extrapolation_gbf(gbData, gbData->y1, gbfData->time + gbfData->tableau->c[stage_] * gbfData->stepSize);
       projVector_gbf(nlsData->nlsxExtrapolation, gbData->y1, nFastStates, gbData->fastStatesIdx);
 
+      infoStreamPrint(OMC_LOG_GBODE_NLS_V, 0, "Solving NLS of gbf stage %d at time %g", stage_+1, gbfData->time + gbfData->tableau->c[stage_] * gbfData->stepSize);
       solved = solveNLS_gb(data, threadData, nlsData, gbData);
 
       if (solved != NLS_SOLVED) {
-        warningStreamPrint(LOG_SOLVER, 0, "gbodef error: Failed to solve NLS in expl_diag_impl_RK_MR in stage %d at time t=%g", stage_, gbfData->time);
+        warningStreamPrint(OMC_LOG_SOLVER, 0, "gbodef error: Failed to solve NLS in expl_diag_impl_RK_MR in stage %d at time t=%g", stage_+1, gbfData->time + gbfData->tableau->c[stage_] * gbfData->stepSize);
         return -1;
       }
 
       // debug residuals
-      if (ACTIVE_STREAM(LOG_GBODE_NLS)) {
-        infoStreamPrint(LOG_GBODE_NLS, 1, "NLS - start values and solution of the NLS:");
-        printVector_gb(LOG_GBODE_NLS, "xS", nlsData->nlsxExtrapolation, nFastStates, gbfData->time + gbfData->tableau->c[stage_] * gbfData->stepSize);
-        printVector_gb(LOG_GBODE_NLS, "xL", nlsData->nlsx,              nFastStates, gbfData->time + gbfData->tableau->c[stage_] * gbfData->stepSize);
-        messageClose(LOG_GBODE_NLS);
+      if (OMC_ACTIVE_STREAM(OMC_LOG_GBODE_NLS)) {
+        infoStreamPrint(OMC_LOG_GBODE_NLS, 1, "NLS - start values and solution of the NLS:");
+        printVector_gb(OMC_LOG_GBODE_NLS, "xS", nlsData->nlsxExtrapolation, nFastStates, gbfData->time + gbfData->tableau->c[stage_] * gbfData->stepSize);
+        printVector_gb(OMC_LOG_GBODE_NLS, "xL", nlsData->nlsx,              nFastStates, gbfData->time + gbfData->tableau->c[stage_] * gbfData->stepSize);
+        messageClose(OMC_LOG_GBODE_NLS);
       }
     }
 
@@ -449,13 +458,13 @@ int expl_diag_impl_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solv
   // y       = yold+h*sum(b[stage_]  * k[stage_], stage_=1..nStages);
   // yt      = yold+h*sum(bt[stage_] * k[stage_], stage_=1..nStages);
   // for the fast states only!
-  for (ii=0; ii<nFastStates; ii++) {
+  for (ii = 0; ii < nFastStates; ii++) {
     i = gbData->fastStatesIdx[ii];
     // y   is the new approximation
     // yt  is the approximation of the embedded method for error estimation
     gbfData->y[i]  = gbfData->yOld[i];
     gbfData->yt[i] = gbfData->yOld[i];
-    for (stage_=0; stage_<nStages; stage_++) {
+    for (stage_ = 0; stage_ < nStages; stage_++) {
       gbfData->y[i]  += gbfData->stepSize * gbfData->tableau->b[stage_]  * (gbfData->k + stage_ * nStates)[i];
       gbfData->yt[i] += gbfData->stepSize * gbfData->tableau->bt[stage_] * (gbfData->k + stage_ * nStates)[i];
     }
@@ -490,17 +499,17 @@ int full_implicit_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
   NLS_SOLVER_STATUS solved = NLS_FAILED;
 
   // NLS - used values for extrapolation
-  if (ACTIVE_STREAM(LOG_GBODE_NLS)) {
-    infoStreamPrint(LOG_GBODE_NLS, 1, "NLS - used values for extrapolation:");
-    printVector_gb(LOG_GBODE_NLS, "xL", gbData->yv + nStates, nStates, gbData->tv[1]);
-    printVector_gb(LOG_GBODE_NLS, "kL", gbData->kv + nStates, nStates, gbData->tv[1]);
-    printVector_gb(LOG_GBODE_NLS, "xR", gbData->yv, nStates, gbData->tv[0]);
-    printVector_gb(LOG_GBODE_NLS, "kR", gbData->kv, nStates, gbData->tv[0]);
-    messageClose(LOG_GBODE_NLS);
+  if (OMC_ACTIVE_STREAM(OMC_LOG_GBODE_NLS)) {
+    infoStreamPrint(OMC_LOG_GBODE_NLS, 1, "NLS - used values for extrapolation:");
+    printVector_gb(OMC_LOG_GBODE_NLS, "xL", gbData->yv + nStates, nStates, gbData->tv[1]);
+    printVector_gb(OMC_LOG_GBODE_NLS, "kL", gbData->kv + nStates, nStates, gbData->tv[1]);
+    printVector_gb(OMC_LOG_GBODE_NLS, "xR", gbData->yv, nStates, gbData->tv[0]);
+    printVector_gb(OMC_LOG_GBODE_NLS, "kR", gbData->kv, nStates, gbData->tv[0]);
+    messageClose(OMC_LOG_GBODE_NLS);
   }
 
   /* Set start values for non-linear solver by extrapolation */
-  for (stage_=0; stage_<nStages; stage_++) {
+  for (stage_ = 0; stage_ < nStages; stage_++) {
     memcpy(nlsData->nlsx + stage_*nStates,    gbData->yOld, nStates*sizeof(modelica_real));
     memcpy(nlsData->nlsxOld + stage_*nStates, gbData->yOld, nStates*sizeof(modelica_real));
 
@@ -511,27 +520,27 @@ int full_implicit_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
 
   if (solved != NLS_SOLVED) {
     gbData->stats.nConvergenveTestFailures++;
-    warningStreamPrint(LOG_SOLVER, 0, "gbode error: Failed to solve NLS in full_implicit_RK at time t=%g", gbData->time);
+    warningStreamPrint(OMC_LOG_SOLVER, 0, "gbode error: Failed to solve NLS in full_implicit_RK at time t=%g", gbData->time);
     return -1;
   }
 
-  if (ACTIVE_STREAM(LOG_GBODE_NLS)) {
-    infoStreamPrint(LOG_GBODE_NLS, 1, "NLS - start values and solution of the NLS:");
-    for (stage_=0; stage_<nStages; stage_++) {
-      printVector_gb(LOG_GBODE_NLS, "xS", nlsData->nlsxExtrapolation + stage_*nStates, nStates, gbData->time + gbData->tableau->c[stage_] * gbData->stepSize);
-      printVector_gb(LOG_GBODE_NLS, "xL", nlsData->nlsx + stage_*nStates,              nStates, gbData->time + gbData->tableau->c[stage_] * gbData->stepSize);
+  if (OMC_ACTIVE_STREAM(OMC_LOG_GBODE_NLS)) {
+    infoStreamPrint(OMC_LOG_GBODE_NLS, 1, "NLS - start values and solution of the NLS:");
+    for (stage_ = 0; stage_ < nStages; stage_++) {
+      printVector_gb(OMC_LOG_GBODE_NLS, "xS", nlsData->nlsxExtrapolation + stage_*nStates, nStates, gbData->time + gbData->tableau->c[stage_] * gbData->stepSize);
+      printVector_gb(OMC_LOG_GBODE_NLS, "xL", nlsData->nlsx + stage_*nStates,              nStates, gbData->time + gbData->tableau->c[stage_] * gbData->stepSize);
     }
-    messageClose(LOG_GBODE_NLS);
+    messageClose(OMC_LOG_GBODE_NLS);
   }
 
 
   // Apply RK-scheme for determining the approximations at (gbData->time + gbData->stepSize)
   // y       = yold+h*sum(b[stage_]  * k[stage_], stage_=1..nStages);
   // yt      = yold+h*sum(bt[stage_] * k[stage_], stage_=1..nStages);
-  for (i=0; i<nStates; i++) {
+  for (i = 0; i < nStates; i++) {
     gbData->y[i]  = gbData->yOld[i];
     gbData->yt[i] = gbData->yOld[i];
-    for (stage_=0; stage_<nStages; stage_++) {
+    for (stage_ = 0; stage_ < nStages; stage_++) {
       gbData->y[i]  += gbData->stepSize * gbData->tableau->b[stage_]  * (gbData->k + stage_ * nStates)[i];
       gbData->yt[i] += gbData->stepSize * gbData->tableau->bt[stage_] * (gbData->k + stage_ * nStates)[i];
     }
@@ -551,7 +560,8 @@ int full_implicit_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
  * @param solverInfo
  * @return int
  */
-int gbodef_richardson(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo) {
+int gbodef_richardson(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
+{
   SIMULATION_DATA *sData = (SIMULATION_DATA*)data->localData[0];
   modelica_real* fODE = sData->realVars + data->modelData->nStates;
   DATA_GBODE* gbData = (DATA_GBODE*)solverInfo->solverData;
@@ -570,7 +580,7 @@ int gbodef_richardson(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
 
   if (!gbfData->isExplicit) {
     // Store relevant part of the ring buffer, which is used for extrapolation
-    for (i=0; i<2; i++) {
+    for (i = 0; i < 2; i++) {
       gbData->tr[i] = gbfData->tv[i];
       memcpy(gbData->yr + i * nStates, gbfData->yv + i * nStates, nStates * sizeof(double));
       memcpy(gbData->kr + i * nStates, gbfData->kv + i * nStates, nStates * sizeof(double));
@@ -582,14 +592,14 @@ int gbodef_richardson(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
   if (step_info != 0) {
     stepSize = stepSize/2;
     lastStepSize = lastStepSize/2;
-    warningStreamPrint(LOG_SOLVER, 0, "Failure: gbode Richardson extrapolation (first half step)");
+    warningStreamPrint(OMC_LOG_SOLVER, 0, "Failure: gbode Richardson extrapolation (first half step)");
   } else {
     // debug the approximations after performed step
-    if (ACTIVE_STREAM(LOG_GBODE)) {
-      infoStreamPrint(LOG_GBODE, 1, "Richardson extrapolation (first 1/2 step) approximation:");
-      printVector_gb(LOG_GBODE, " y",  gbfData->y,  nStates, gbfData->time + gbfData->stepSize);
-      printVector_gb(LOG_GBODE, "yt", gbfData->yt, nStates, gbfData->time + gbfData->stepSize);
-      messageClose(LOG_GBODE);
+    if (OMC_ACTIVE_STREAM(OMC_LOG_GBODE)) {
+      infoStreamPrint(OMC_LOG_GBODE, 1, "Richardson extrapolation (first 1/2 step) approximation:");
+      printVector_gb(OMC_LOG_GBODE, " y",  gbfData->y,  nStates, gbfData->time + gbfData->stepSize);
+      printVector_gb(OMC_LOG_GBODE, "yt", gbfData->yt, nStates, gbfData->time + gbfData->stepSize);
+      messageClose(OMC_LOG_GBODE);
     }
     gbfData->time += gbfData->stepSize;
     gbfData->lastStepSize = gbfData->stepSize;
@@ -612,14 +622,14 @@ int gbodef_richardson(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
     if (step_info != 0) {
       stepSize = stepSize/2;
       lastStepSize = lastStepSize/2;
-      warningStreamPrint(LOG_SOLVER, 0, "Failure: gbode Richardson extrapolation (second half step)");
+      warningStreamPrint(OMC_LOG_SOLVER, 0, "Failure: gbode Richardson extrapolation (second half step)");
     } else {
       // debug the approximations after performed step
-      if (ACTIVE_STREAM(LOG_GBODE)) {
-        infoStreamPrint(LOG_GBODE, 1, "Richardson extrapolation (second 1/2 step) approximation:");
-        printVector_gb(LOG_GBODE, " y",  gbfData->y,  nStates, gbfData->time + gbfData->stepSize);
-        printVector_gb(LOG_GBODE, "yt", gbfData->yt, nStates, gbfData->time + gbfData->stepSize);
-        messageClose(LOG_GBODE);
+      if (OMC_ACTIVE_STREAM(OMC_LOG_GBODE)) {
+        infoStreamPrint(OMC_LOG_GBODE, 1, "Richardson extrapolation (second 1/2 step) approximation:");
+        printVector_gb(OMC_LOG_GBODE, " y",  gbfData->y,  nStates, gbfData->time + gbfData->stepSize);
+        printVector_gb(OMC_LOG_GBODE, "yt", gbfData->yt, nStates, gbfData->time + gbfData->stepSize);
+        messageClose(OMC_LOG_GBODE);
       }
       memcpy(gbfData->y1, gbfData->y, nStates * sizeof(double));
 
@@ -642,13 +652,13 @@ int gbodef_richardson(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
       if (step_info != 0) {
         stepSize = stepSize/2;
         lastStepSize = lastStepSize/2;
-        warningStreamPrint(LOG_SOLVER, 0, "Failure: gbode Richardson extrapolation (full step)");
+        warningStreamPrint(OMC_LOG_SOLVER, 0, "Failure: gbode Richardson extrapolation (full step)");
       } else {
-        if (ACTIVE_STREAM(LOG_GBODE)) {
-          infoStreamPrint(LOG_GBODE, 1, "Richardson extrapolation (full step) approximation");
-          printVector_gb(LOG_GBODE, " y",  gbfData->y,  nStates, gbfData->time + gbfData->stepSize);
-          printVector_gb(LOG_GBODE, "yt", gbfData->yt, nStates, gbfData->time + gbfData->stepSize);
-          messageClose(LOG_GBODE);
+        if (OMC_ACTIVE_STREAM(OMC_LOG_GBODE)) {
+          infoStreamPrint(OMC_LOG_GBODE, 1, "Richardson extrapolation (full step) approximation");
+          printVector_gb(OMC_LOG_GBODE, " y",  gbfData->y,  nStates, gbfData->time + gbfData->stepSize);
+          printVector_gb(OMC_LOG_GBODE, "yt", gbfData->yt, nStates, gbfData->time + gbfData->stepSize);
+          messageClose(OMC_LOG_GBODE);
         }
       }
     }
@@ -661,7 +671,7 @@ int gbodef_richardson(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
   memcpy(gbfData->yOld, gbfData->yLeft, nStates * sizeof(double));
   if (!gbfData->isExplicit) {
     // Restore ring buffer
-    for (i=0; i<2; i++) {
+    for (i = 0; i < 2; i++) {
       gbfData->tv[i] = gbData->tr[i];
       memcpy(gbfData->yv + i * nStates, gbData->yr + i * nStates, nStates * sizeof(double));
       memcpy(gbfData->kv + i * nStates, gbData->kr + i * nStates, nStates * sizeof(double));
@@ -669,7 +679,7 @@ int gbodef_richardson(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
   }
   if (!step_info) {
     // Extrapolate values based on order of the scheme
-    for (i=0; i<nStates; i++) {
+    for (i = 0; i < nStates; i++) {
       gbfData->yt[i] = (pow(2.,p) * gbfData->y1[i] - gbfData->y[i]) / (pow(2.,p) - 1);
     }
   }
@@ -685,7 +695,8 @@ int gbodef_richardson(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
  * @param solverInfo
  * @return int
  */
-int gbode_richardson(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo) {
+int gbode_richardson(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
+{
   SIMULATION_DATA *sData = (SIMULATION_DATA*)data->localData[0];
   modelica_real* fODE = sData->realVars + data->modelData->nStates;
   DATA_GBODE* gbData = (DATA_GBODE*)solverInfo->solverData;
@@ -703,7 +714,7 @@ int gbode_richardson(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
 
   if (!gbData->isExplicit) {
     // Store relevant part of the ring buffer, which is used for extrapolation
-    for (i=0; i<2; i++) {
+    for (i = 0; i < 2; i++) {
       gbData->tr[i] = gbData->tv[i];
       memcpy(gbData->yr + i * nStates, gbData->yv + i * nStates, nStates * sizeof(double));
       memcpy(gbData->kr + i * nStates, gbData->kv + i * nStates, nStates * sizeof(double));
@@ -715,14 +726,14 @@ int gbode_richardson(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
   if (step_info != 0) {
     stepSize = stepSize/2;
     lastStepSize = lastStepSize/2;
-    warningStreamPrint(LOG_SOLVER, 0, "Failure: gbode Richardson extrapolation (first half step)");
+    warningStreamPrint(OMC_LOG_SOLVER, 0, "Failure: gbode Richardson extrapolation (first half step)");
   } else {
     // debug the approximations after performed step
-    if (ACTIVE_STREAM(LOG_GBODE)) {
-      infoStreamPrint(LOG_GBODE, 1, "Richardson extrapolation (first 1/2 step) approximation:");
-      printVector_gb(LOG_GBODE, " y",  gbData->y,  nStates, gbData->time + gbData->stepSize);
-      printVector_gb(LOG_GBODE, "yt", gbData->yt, nStates, gbData->time + gbData->stepSize);
-      messageClose(LOG_GBODE);
+    if (OMC_ACTIVE_STREAM(OMC_LOG_GBODE)) {
+      infoStreamPrint(OMC_LOG_GBODE, 1, "Richardson extrapolation (first 1/2 step) approximation:");
+      printVector_gb(OMC_LOG_GBODE, " y",  gbData->y,  nStates, gbData->time + gbData->stepSize);
+      printVector_gb(OMC_LOG_GBODE, "yt", gbData->yt, nStates, gbData->time + gbData->stepSize);
+      messageClose(OMC_LOG_GBODE);
     }
     gbData->time += gbData->stepSize;
     gbData->lastStepSize = gbData->stepSize;
@@ -745,14 +756,14 @@ int gbode_richardson(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
     if (step_info != 0) {
       stepSize = stepSize/2;
       lastStepSize = lastStepSize/2;
-      warningStreamPrint(LOG_SOLVER, 0, "Failure: gbode Richardson extrapolation (second half step)");
+      warningStreamPrint(OMC_LOG_SOLVER, 0, "Failure: gbode Richardson extrapolation (second half step)");
     } else {
       // debug the approximations after performed step
-      if (ACTIVE_STREAM(LOG_GBODE)) {
-        infoStreamPrint(LOG_GBODE, 1, "Richardson extrapolation (second 1/2 step) approximation:");
-        printVector_gb(LOG_GBODE, " y",  gbData->y,  nStates, gbData->time + gbData->stepSize);
-        printVector_gb(LOG_GBODE, "yt", gbData->yt, nStates, gbData->time + gbData->stepSize);
-        messageClose(LOG_GBODE);
+      if (OMC_ACTIVE_STREAM(OMC_LOG_GBODE)) {
+        infoStreamPrint(OMC_LOG_GBODE, 1, "Richardson extrapolation (second 1/2 step) approximation:");
+        printVector_gb(OMC_LOG_GBODE, " y",  gbData->y,  nStates, gbData->time + gbData->stepSize);
+        printVector_gb(OMC_LOG_GBODE, "yt", gbData->yt, nStates, gbData->time + gbData->stepSize);
+        messageClose(OMC_LOG_GBODE);
       }
       memcpy(gbData->y1, gbData->y, nStates * sizeof(double));
 
@@ -775,13 +786,13 @@ int gbode_richardson(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
       if (step_info != 0) {
         stepSize = stepSize/2;
         lastStepSize = lastStepSize/2;
-        warningStreamPrint(LOG_SOLVER, 0, "Failure: gbode Richardson extrapolation (full step)");
+        warningStreamPrint(OMC_LOG_SOLVER, 0, "Failure: gbode Richardson extrapolation (full step)");
       } else {
-        if (ACTIVE_STREAM(LOG_GBODE)) {
-          infoStreamPrint(LOG_GBODE, 1, "Richardson extrapolation (full step) approximation");
-          printVector_gb(LOG_GBODE, " y",  gbData->y,  nStates, gbData->time + gbData->stepSize);
-          printVector_gb(LOG_GBODE, "yt", gbData->yt, nStates, gbData->time + gbData->stepSize);
-          messageClose(LOG_GBODE);
+        if (OMC_ACTIVE_STREAM(OMC_LOG_GBODE)) {
+          infoStreamPrint(OMC_LOG_GBODE, 1, "Richardson extrapolation (full step) approximation");
+          printVector_gb(OMC_LOG_GBODE, " y",  gbData->y,  nStates, gbData->time + gbData->stepSize);
+          printVector_gb(OMC_LOG_GBODE, "yt", gbData->yt, nStates, gbData->time + gbData->stepSize);
+          messageClose(OMC_LOG_GBODE);
         }
       }
     }
@@ -795,7 +806,7 @@ int gbode_richardson(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
 
   if (!gbData->isExplicit) {
     // Restore ring buffer
-    for (i=0; i<2; i++) {
+    for (i = 0; i < 2; i++) {
       gbData->tv[i] = gbData->tr[i];
       memcpy(gbData->yv + i * nStates, gbData->yr + i * nStates, nStates * sizeof(double));
       memcpy(gbData->kv + i * nStates, gbData->kr + i * nStates, nStates * sizeof(double));
@@ -804,7 +815,7 @@ int gbode_richardson(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
 
   if (!step_info) {
     // Extrapolate values based on order of the scheme
-    for (i=0; i<nStates; i++) {
+    for (i = 0; i < nStates; i++) {
       gbData->yt[i] = (pow(2.,p) * gbData->y1[i] - gbData->y[i]) / (pow(2.,p) - 1);
     }
   }

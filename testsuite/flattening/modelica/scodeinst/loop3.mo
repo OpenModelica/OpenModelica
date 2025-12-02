@@ -1,7 +1,6 @@
 // name: loop3.mo
 // keywords:
 // status: correct
-// cflags:   -d=newInst
 //
 
 

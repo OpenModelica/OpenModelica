@@ -60,6 +60,7 @@ import EvalFunctionExt = NFEvalFunctionExt;
 import FFI;
 import Flags;
 import Global;
+import InstContext = NFInstContext;
 import MetaModelica.Dangerous.*;
 import NFPrefixes.Variability;
 import RangeIterator = NFRangeIterator;
@@ -72,6 +73,9 @@ import UnorderedMap;
 
 type FlowControl = enumeration(NEXT, CONTINUE, BREAK, RETURN, ASSERTION);
 type ArgumentMap = UnorderedMap<InstNode, Expression>;
+
+constant InstContext.Type STATEMENT_CONTEXT = intBitOr(NFInstContext.FUNCTION, NFInstContext.ALGORITHM);
+constant InstContext.Type IF_COND_CONTEXT = intBitOr(STATEMENT_CONTEXT, intBitOr(NFInstContext.IF, NFInstContext.CONDITION));
 
 public
 function evaluate
@@ -87,13 +91,14 @@ algorithm
     // make sure we don't try to evaluate the non-differentiated function body.
     fail();
   else
-    result := evaluateNormal(fn, args);
+    result := evaluateNormal(fn, args, target.context);
   end if;
 end evaluate;
 
 function evaluateNormal
   input Function fn;
   input list<Expression> args;
+  input InstContext.Type context;
   output Expression result;
 protected
   list<Statement> fn_body;
@@ -102,6 +107,7 @@ protected
   Integer call_count, limit;
   Pointer<Integer> call_counter = fn.callCounter;
   FlowControl ctrl;
+  InstContext.Type body_context;
 algorithm
   // Functions contain a mutable call counter that's increased by one at the
   // start of each evaluation, and decreased by one when the evalution is
@@ -118,6 +124,8 @@ algorithm
 
   Pointer.update(call_counter, call_count);
 
+  body_context := InstContext.clearScopeFlags(context);
+
   try
     fn_body := Function.getBody(fn);
     arg_map := createArgumentMap(fn.inputs, fn.outputs, fn.locals, args, mutableParams = true);
@@ -126,7 +134,7 @@ algorithm
     //       sorted by dependencies first.
     fn_body := applyReplacements(arg_map, fn_body);
     fn_body := optimizeBody(fn_body);
-    ctrl := evaluateStatements(fn_body);
+    ctrl := evaluateStatements(fn_body, body_context);
 
     if ctrl <> FlowControl.ASSERTION then
       result := createResult(arg_map, fn.outputs);
@@ -167,13 +175,14 @@ algorithm
   result := matchcontinue lang
     case "builtin"
       // Functions defined as 'external "builtin"', delegate to Ceval.
-      then Ceval.evalBuiltinCall(fn, args, EvalTarget.IGNORE_ERRORS());
+      then Ceval.evalBuiltinCall(fn, args, NFCeval.noTarget);
 
     case "FORTRAN 77"
       // This had better be a Lapack function.
       then evaluateExternal2(name, fn, args, ext_args);
 
     case _
+      guard not InstContext.inInstanceAPI(target.context)
       // For anything else, try to call the function via FFI.
       then callExternalFunction(name, fn, args, ext_args, output_ref, ann);
 
@@ -339,8 +348,13 @@ algorithm
   ty := Type.mapDims(ty, function applyReplacementsDim(map = map));
 
   result := match ty
-    case Type.ARRAY() guard buildArrayBinding and Type.hasKnownSize(ty)
-      then Expression.fillType(ty, Expression.EMPTY(Type.arrayElementType(ty)));
+    case Type.ARRAY() guard buildArrayBinding
+      then
+        if Type.hasKnownSize(ty) then
+          Expression.fillType(ty, Expression.EMPTY(Type.arrayElementType(ty)))
+        else
+          Expression.makeEmptyArray(ty);
+
     case Type.COMPLEX() then buildRecordBinding(node, map, mutableParams);
     else Expression.EMPTY(ty);
   end match;
@@ -702,10 +716,11 @@ end assertAssignedOutput;
 
 function evaluateStatements
   input list<Statement> stmts;
+  input InstContext.Type context;
   output FlowControl ctrl = FlowControl.NEXT;
 algorithm
   for s in stmts loop
-    ctrl := evaluateStatement(s);
+    ctrl := evaluateStatement(s, context);
 
     if ctrl <> FlowControl.NEXT then
       if ctrl == FlowControl.CONTINUE then
@@ -719,17 +734,18 @@ end evaluateStatements;
 
 function evaluateStatement
   input Statement stmt;
+  input InstContext.Type context;
   output FlowControl ctrl;
 algorithm
   // adrpo: we really need some error handling here to detect which statement cannot be evaluated
   // try
   ctrl := match stmt
-    case Statement.ASSIGNMENT() then evaluateAssignment(stmt.lhs, stmt.rhs, stmt.source);
-    case Statement.FOR()        then evaluateFor(stmt.iterator, stmt.range, stmt.body, stmt.source);
-    case Statement.IF()         then evaluateIf(stmt.branches, stmt.source);
-    case Statement.ASSERT()     then evaluateAssert(stmt.condition, stmt);
-    case Statement.NORETCALL()  then evaluateNoRetCall(stmt.exp, stmt.source);
-    case Statement.WHILE()      then evaluateWhile(stmt.condition, stmt.body, stmt.source);
+    case Statement.ASSIGNMENT() then evaluateAssignment(stmt.lhs, stmt.rhs, stmt.source, context);
+    case Statement.FOR()        then evaluateFor(stmt.iterator, stmt.range, stmt.body, stmt.source, context);
+    case Statement.IF()         then evaluateIf(stmt.branches, stmt.source, context);
+    case Statement.ASSERT()     then evaluateAssert(stmt.condition, stmt, stmt.source, context);
+    case Statement.NORETCALL()  then evaluateNoRetCall(stmt.exp, stmt.source, context);
+    case Statement.WHILE()      then evaluateWhile(stmt.condition, stmt.body, stmt.source, context);
     case Statement.RETURN()     then FlowControl.RETURN;
     case Statement.BREAK()      then FlowControl.BREAK;
     else
@@ -749,9 +765,11 @@ function evaluateAssignment
   input Expression lhsExp;
   input Expression rhsExp;
   input DAE.ElementSource source;
+  input InstContext.Type context;
   output FlowControl ctrl = FlowControl.NEXT;
 algorithm
-  assignVariable(lhsExp, Ceval.evalExp(rhsExp, EvalTarget.STATEMENT(source)));
+  assignVariable(lhsExp,
+    Ceval.evalExp(rhsExp, evalTargetFromSource(source, STATEMENT_CONTEXT, context)));
 end evaluateAssignment;
 
 public
@@ -956,6 +974,7 @@ function evaluateFor
   input Option<Expression> range;
   input list<Statement> forBody;
   input DAE.ElementSource source;
+  input InstContext.Type context;
   output FlowControl ctrl = FlowControl.NEXT;
 protected
   RangeIterator range_iter;
@@ -964,7 +983,8 @@ protected
   list<Statement> body = forBody;
   Integer i = 0, limit = Flags.getConfigInt(Flags.EVAL_LOOP_LIMIT);
 algorithm
-  range_exp := Ceval.evalExp(Util.getOption(range), EvalTarget.STATEMENT(source));
+  range_exp := Ceval.evalExp(Util.getOption(range),
+    evalTargetFromSource(source, STATEMENT_CONTEXT, context));
   range_iter := RangeIterator.fromExp(range_exp);
 
   if RangeIterator.hasNext(range_iter) then
@@ -975,7 +995,7 @@ algorithm
       (range_iter, value) := RangeIterator.next(range_iter);
       // Update the mutable expression with the iteration value and evaluate the statement.
       Mutable.update(iter_exp, value);
-      ctrl := evaluateStatements(body);
+      ctrl := evaluateStatements(body, context);
 
       if ctrl <> FlowControl.NEXT then
         if ctrl == FlowControl.BREAK then
@@ -998,6 +1018,7 @@ end evaluateFor;
 function evaluateIf
   input list<tuple<Expression, list<Statement>>> branches;
   input DAE.ElementSource source;
+  input InstContext.Type context;
   output FlowControl ctrl;
 protected
   Expression cond;
@@ -1006,8 +1027,8 @@ algorithm
   for branch in branches loop
     (cond, body) := branch;
 
-    if Expression.isTrue(Ceval.evalExp(cond, EvalTarget.STATEMENT(source))) then
-      ctrl := evaluateStatements(body);
+    if Expression.isTrue(Ceval.evalExp(cond, evalTargetFromSource(source, IF_COND_CONTEXT, context))) then
+      ctrl := evaluateStatements(body, context);
       return;
     end if;
   end for;
@@ -1018,27 +1039,28 @@ end evaluateIf;
 function evaluateAssert
   input Expression condition;
   input Statement assertStmt;
+  input DAE.ElementSource source;
+  input InstContext.Type context;
   output FlowControl ctrl = FlowControl.NEXT;
 protected
   Expression cond, msg, lvl;
-  DAE.ElementSource source;
-  EvalTarget target = EvalTarget.STATEMENT(Statement.source(assertStmt));
+  EvalTarget target = evalTargetFromSource(source, STATEMENT_CONTEXT, context);
 algorithm
   if Expression.isFalse(Ceval.evalExp(condition, target)) then
-    Statement.ASSERT(message = msg, level = lvl, source = source) := assertStmt;
+    Statement.ASSERT(message = msg, level = lvl) := assertStmt;
     msg := Ceval.evalExp(msg, target);
     lvl := Ceval.evalExp(lvl, target);
 
     () := match (msg, lvl)
       case (Expression.STRING(), Expression.ENUM_LITERAL(name = "warning"))
         algorithm
-          Error.addSourceMessage(Error.ASSERT_TRIGGERED_WARNING, {msg.value}, ElementSource.getInfo(source));
+          Error.addSourceMessage(Error.ASSERT_TRIGGERED_WARNING, {msg.value}, EvalTarget.getInfo(target));
         then
           ();
 
       case (Expression.STRING(), Expression.ENUM_LITERAL(name = "error"))
         algorithm
-          Error.addSourceMessage(Error.ASSERT_TRIGGERED_ERROR, {msg.value}, ElementSource.getInfo(source));
+          Error.addSourceMessage(Error.ASSERT_TRIGGERED_ERROR, {msg.value}, EvalTarget.getInfo(target));
           ctrl := FlowControl.ASSERTION;
         then
           ();
@@ -1056,22 +1078,24 @@ end evaluateAssert;
 function evaluateNoRetCall
   input Expression callExp;
   input DAE.ElementSource source;
+  input InstContext.Type context;
   output FlowControl ctrl = FlowControl.NEXT;
 algorithm
-  Ceval.evalExp(callExp, EvalTarget.STATEMENT(source));
+  Ceval.evalExp(callExp, evalTargetFromSource(source, STATEMENT_CONTEXT, context));
 end evaluateNoRetCall;
 
 function evaluateWhile
   input Expression condition;
   input list<Statement> body;
   input DAE.ElementSource source;
+  input InstContext.Type context;
   output FlowControl ctrl = FlowControl.NEXT;
 protected
   Integer i = 0, limit = Flags.getConfigInt(Flags.EVAL_LOOP_LIMIT);
-  EvalTarget target = EvalTarget.STATEMENT(source);
+  EvalTarget target = evalTargetFromSource(source, STATEMENT_CONTEXT, context);
 algorithm
   while Expression.isTrue(Ceval.evalExp(condition, target)) loop
-    ctrl := evaluateStatements(body);
+    ctrl := evaluateStatements(body, context);
 
     if ctrl <> FlowControl.NEXT then
       if ctrl == FlowControl.BREAK then
@@ -1089,6 +1113,13 @@ algorithm
     end if;
   end while;
 end evaluateWhile;
+
+function evalTargetFromSource
+  input DAE.ElementSource source;
+  input InstContext.Type context;
+  input InstContext.Type currentContext;
+  output EvalTarget target = EvalTarget.new(ElementSource.getInfo(source), InstContext.set(context, currentContext));
+end evalTargetFromSource;
 
 function evaluateExternal2
   input String name;
@@ -1157,11 +1188,15 @@ algorithm
   pkg_name := InstNode.name(InstNode.libraryScope(fn.node));
   fn_handle := loadLibraryFunction(pkg_name, extName, extAnnotation, debug, info);
 
-  (mapped_args, specs) := mapExternalArgs(fn, args, extArgs);
-  ret_ty := if ComponentRef.isCref(outputRef) then ComponentRef.nodeType(outputRef) else Type.NORETCALL();
-  (res, output_vals) := FFI.callFunction(fn_handle, mapped_args, specs, ret_ty);
-
-  freeLibraryFunction(fn_handle, debug);
+  try
+    (mapped_args, specs) := mapExternalArgs(fn, args, extArgs);
+    ret_ty := if ComponentRef.isCref(outputRef) then ComponentRef.nodeType(outputRef) else Type.NORETCALL();
+    (res, output_vals) := FFI.callFunction(fn_handle, mapped_args, specs, ret_ty);
+    freeLibraryFunction(fn_handle, debug);
+  else
+    freeLibraryFunction(fn_handle, debug);
+    fail();
+  end try;
 
   if listEmpty(output_vals) then
     // No output parameters, just return the return value.
@@ -1290,7 +1325,8 @@ algorithm
       paths := (dir + "/" + System.modelicaPlatform() + "/" + lib) :: paths;
 
       if Autoconf.os == "Windows_NT" then
-        paths := (dir + "/" + System.openModelicaPlatform() + "/" + lib) :: paths;
+        paths := (dir + "/" + System.openModelicaPlatform() + "/" + lib) ::
+                 (dir + "/" + System.openModelicaPlatformAlternative() + "/" + lib) :: paths;
       end if;
 
     end for;
@@ -1334,7 +1370,7 @@ algorithm
   ErrorExt.rollBack(getInstanceName());
 
   if not found then
-    paths := list("  " + Testsuite.friendly(uriToFilename(p)) for p in paths);
+    paths := list("  " + Testsuite.friendly(uriToFilename(p)) for p guard not stringEmpty(p) in paths);
     Error.addSourceMessage(Error.EXTERNAL_FUNCTION_NOT_FOUND,
       {fnName, stringDelimitList(paths, "\n")}, info);
     fail();

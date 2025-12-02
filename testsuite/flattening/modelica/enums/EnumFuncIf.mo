@@ -1,7 +1,6 @@
 // name:     EnumRange
 // keywords: enumeration enum range reduction
 // status:   correct
-// cflags: --condenseArrays=false -d=-newInst
 //
 // Tests that enum dimensions are used properly when an if-expression containing
 // a function call is expanded.
@@ -20,6 +19,7 @@ model EnumFuncIf
   Real y;
 equation
   x = if f(y) then zeros(size(E, 1)) else x / y;
+  annotation(__OpenModelica_commandLineOptions="--condenseArrays=false -d=-newInst");
 end EnumFuncIf;
 
 // Result:

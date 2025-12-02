@@ -1,7 +1,6 @@
 // name: FuncVectorization3
 // keywords: vectorization function
 // status: correct
-// cflags: -d=newInst
 //
 //
 
@@ -28,6 +27,6 @@ end FuncVectorization3;
 //   Real x[2];
 //   Real x[3];
 // equation
-//   x = array(FuncVectorization3.f({1.0, 2.0, 3.0}[$i1]) for $i1 in 1:3);
+//   x = array(FuncVectorization3.f({1.0, 2.0, 3.0}[$i0]) for $i0 in 1:3);
 // end FuncVectorization3;
 // endResult

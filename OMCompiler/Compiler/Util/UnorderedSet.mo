@@ -468,6 +468,45 @@ public
     res := true;
   end none;
 
+  function filterOnFalse
+    "Returns new set containing elements for which fn returns false"
+    input UnorderedSet<T> set;
+    input PredFn fn;
+    output UnorderedSet<T> falseSet = new<T>(set.hashFn, set.eqFn);
+
+    partial function PredFn
+      input T key;
+      output Boolean res;
+    end PredFn;
+  algorithm
+    for b in Mutable.access(set.buckets) loop
+      for k in b loop
+        if not fn(k) then
+          add(k, falseSet);
+        end if;
+      end for;
+    end for;
+  end filterOnFalse;
+
+  function splitOnTrue
+    "Splits a set into two subsets depending on predicate function."
+    input UnorderedSet<T> set;
+    input PredFn fn;
+    output UnorderedSet<T> trueSet = new<T>(set.hashFn, set.eqFn);
+    output UnorderedSet<T> falseSet = new<T>(set.hashFn, set.eqFn);
+
+    partial function PredFn
+      input T key;
+      output Boolean res;
+    end PredFn;
+  algorithm
+    for b in Mutable.access(set.buckets) loop
+      for k in b loop
+        add(k, if fn(k) then trueSet else falseSet);
+      end for;
+    end for;
+  end splitOnTrue;
+
   function size
     "Returns the number of elements the set contains."
     input UnorderedSet<T> set;
@@ -553,7 +592,7 @@ public
     input list<T> inList;
     input Hash hashFunc;
     input KeyEq keyEqFunc;
-    output list<T> outList = toList(fromList(inList, hashFunc, keyEqFunc));
+    output list<T> outList = if List.hasSeveralElements(inList) then toList(fromList(inList, hashFunc, keyEqFunc)) else inList;
   end unique_list;
 
   function union
@@ -562,17 +601,19 @@ public
     input UnorderedSet<T> set2;
     output UnorderedSet<T> set;
   protected
-    list<T> lst;
+    array<list<T>> buckets;
   algorithm
     if Mutable.access(set1.size) > Mutable.access(set2.size) then
       set := set1;
-      lst := toList(set2);
+      buckets := Mutable.access(set2.buckets);
     else
       set := set2;
-      lst := toList(set1);
+      buckets := Mutable.access(set1.buckets);
     end if;
-    for e in lst loop
-      add(e, set);
+    for b in buckets loop
+      for k in b loop
+        add(k, set);
+      end for;
     end for;
   end union;
 
@@ -597,6 +638,19 @@ public
     end if;
   end union_list;
 
+  function merge
+    "set1 U set2
+    like union, but always merges the second into the first list"
+    input output UnorderedSet<T> set1;
+    input UnorderedSet<T> set2;
+  algorithm
+    for b in Mutable.access(set2.buckets) loop
+      for k in b loop
+        add(k, set1);
+      end for;
+    end for;
+  end merge;
+
   function intersection
     "set1 n set2"
     input UnorderedSet<T> set1;
@@ -613,10 +667,12 @@ public
       set_small := set1;
       set_big   := set2;
     end if;
-    for t in toList(set_small) loop
-      if contains(t, set_big) then
-        acc := t :: acc;
-      end if;
+    for b in Mutable.access(set_small.buckets) loop
+      for k in b loop
+        if contains(k, set_big) then
+          acc := k :: acc;
+        end if;
+      end for;
     end for;
     set := fromList(acc, set1.hashFn, set1.eqFn);
   end intersection;
@@ -636,40 +692,115 @@ public
     if not listEmpty(set_lst) then
       // determine the smallest set to make sure we traverse the fewest elements
       (set_small, rest) := extractFromLst(set_lst, intLt);
-      for t in toList(set_small) loop
-        if List.all(rest, function contains(key = t)) then
-          acc := t :: acc;
-        end if;
+      for b in Mutable.access(set_small.buckets) loop
+        for k in b loop
+          if List.all(rest, function contains(key = k)) then
+            acc := k :: acc;
+          end if;
+        end for;
       end for;
     end if;
     set := fromList(acc, hashFunc, keyEqFunc);
   end intersection_list;
 
+  function difference_list
+    "lst1 / lst2, assuming unique lists"
+    input list<T> inList1;
+    input list<T> inList2;
+    input Hash hashFunc;
+    input KeyEq keyEqFunc;
+    output list<T> acc = {};
+  protected
+    UnorderedSet<T> set2;
+    list<T> lst1 = inList1, lst2 = inList2;
+  algorithm
+    // remove common start, since this seems to be very common
+    while not (listEmpty(lst1) or listEmpty(lst2)) and keyEqFunc(listHead(lst1), listHead(lst2)) loop
+      lst1 := listRest(lst1);
+      lst2 := listRest(lst2);
+    end while;
+
+    // {} - B = {}
+    // A - {} = A
+    if listEmpty(lst1) or listEmpty(lst2) then
+      acc := lst1;
+      return;
+    end if;
+
+    set2 := fromList(lst2, hashFunc, keyEqFunc);
+    for k in lst1 loop
+      if not contains(k, set2) then
+        acc := k :: acc;
+      end if;
+    end for;
+  end difference_list;
+
   function difference
     "set1 / set2"
     input UnorderedSet<T> set1;
     input UnorderedSet<T> set2;
-    output UnorderedSet<T> set = new<T>(set1.hashFn, set1.eqFn);
+    output UnorderedSet<T> set;
+  protected
+    list<T> acc = {};
   algorithm
-    for cref in toList(set1) loop
-      if not contains(cref, set2) then
-        add(cref, set);
-      end if;
+    for b in Mutable.access(set1.buckets) loop
+      for k in b loop
+        if not contains(k, set2) then
+          acc := k :: acc;
+        end if;
+      end for;
     end for;
+    set := fromList(acc, set1.hashFn, set1.eqFn);
   end difference;
 
   function sym_difference
     "set1 / set2 U set2 / set1"
     input UnorderedSet<T> set1;
     input UnorderedSet<T> set2;
-    output UnorderedSet<T> set = difference(set1, set2);
+    output UnorderedSet<T> set;
+  protected
+    list<T> acc = {};
   algorithm
-    for cref in toList(set2) loop
-      if not contains(cref, set1) then
-        add(cref, set);
-      end if;
+    for b in Mutable.access(set1.buckets) loop
+      for k in b loop
+        if not contains(k, set2) then
+          acc := k :: acc;
+        end if;
+      end for;
     end for;
+    for b in Mutable.access(set2.buckets) loop
+      for k in b loop
+        if not contains(k, set1) then
+          acc := k :: acc;
+        end if;
+      end for;
+    end for;
+    set := fromList(acc, set1.hashFn, set1.eqFn);
   end sym_difference;
+
+  function isDisjoint
+    input UnorderedSet<T> set1;
+    input UnorderedSet<T> set2;
+    output Boolean b = true;
+  protected
+    UnorderedSet<T> set_small, set_big;
+  algorithm
+    if Mutable.access(set1.size) > Mutable.access(set2.size) then
+      set_small := set2;
+      set_big   := set1;
+    else
+      set_small := set1;
+      set_big   := set2;
+    end if;
+    for buckets in Mutable.access(set_small.buckets) loop
+      for k in buckets loop
+        if contains(k, set_big) then
+          b := false;
+          return;
+        end if;
+      end for;
+    end for;
+  end isDisjoint;
 
 protected
   function find
@@ -746,7 +877,7 @@ protected
       size := Mutable.access(single.size);
       for tmp in tmp_lst loop
         if func(Mutable.access(tmp.size), size) then
-          size := Mutable.access(single.size);
+          size := Mutable.access(tmp.size);
           rest := single :: rest;
           single := tmp;
         else

@@ -1,7 +1,6 @@
 // name:     Extends2
 // keywords: extends
 // status:   correct
-// cflags: -d=-newInst
 //
 // Testing extends clauses, and encapsulated models. MathCore bug #372
 
@@ -22,6 +21,7 @@ end A;
 
 model test2
   extends A;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end test2;
 
 // Result:

@@ -11,7 +11,7 @@ system("./ReaderTMY3_total", outputFile="ignored.txt");getErrorString();
 // ""
 // true
 // ""
-// {"ReaderTMY3_total","ReaderTMY3_total_init.xml"}
+// {"ReaderTMY3_total", "ReaderTMY3_total_init.xml"}
 // ""
 // 0
 // ""

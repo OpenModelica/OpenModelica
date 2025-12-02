@@ -1,7 +1,6 @@
 // name: RedeclareMod8
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 
 record A

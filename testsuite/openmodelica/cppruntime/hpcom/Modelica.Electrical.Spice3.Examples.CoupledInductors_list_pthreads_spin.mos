@@ -26,6 +26,7 @@ setCommandLineOptions("+n=1 +hpcomScheduler=list +hpcomCode=pthreads_spin"); get
 
 runScript(modelTesting);getErrorString();
 
+
 // Result:
 // "\"true
 // \"
@@ -37,7 +38,7 @@ runScript(modelTesting);getErrorString();
 // OpenModelicaModelTesting.Kind.VerifiedSimulation
 // Modelica.Electrical.Spice3.Examples.CoupledInductors
 // 80
-// {"L1.iinternal","L2.iinternal","C1.v","L3.iinternal","C2.v"}
+// {"L1.iinternal", "L2.iinternal", "C1.v", "L3.iinternal", "C2.v"}
 // true
 // ""
 // true
@@ -50,11 +51,10 @@ runScript(modelTesting);getErrorString();
 // There is no parallel potential in the ODE system model!
 // The ODE system model is not big enough to perform an effective parallel simulation!
 // HpcOm is still under construction.
-// Simulation options: startTime = 0.0, stopTime = 0.2, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Spice3.Examples.CoupledInductors', options = '', outputFormat = 'mat', variableFilter = 'time|L1.iinternal|L2.iinternal|C1.v|L3.iinternal|C2.v', cflags = '', simflags = ' -emit_protected'
+// Simulation options: startTime = 0.0, stopTime = 0.2, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Spice3.Examples.CoupledInductors', options = '', outputFormat = 'mat', variableFilter = 'time|L1.iinternal|L2.iinternal|C1.v|L3.iinternal|C2.v', cflags = '', simflags = ' -emit_protected'
 // Result file: Modelica.Electrical.Spice3.Examples.CoupledInductors_res.mat
 // Files Equal!
 // "true
 // "
 // ""
 // endResult
-

@@ -31,7 +31,7 @@ PROG = omc
 
 SCRIPT_FILES = openmodelica.lefty default_profiling.xsl replace-startValue.sh replace-startValue.xsl simcodedump.xsl ngspicetoModelica.py
 
-SUBDIRS	= runtime Script
+SUBDIRS	= FrontEndCpp runtime Script
 
 .SUFFIXES:
 .SUFFIXES: .o .mo .h

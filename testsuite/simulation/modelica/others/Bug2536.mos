@@ -30,7 +30,7 @@ OpenModelica.Scripting.readSimulationResultVars(resultFile); getErrorString();
 // end SimulationResult;
 // ""
 // "Bug2536_res.mat"
-// {"b","c","time"}
+// {"b", "c", "time"}
 // ""
 // record SimulationResult
 //     resultFile = "Bug2536_res.mat",
@@ -41,6 +41,6 @@ OpenModelica.Scripting.readSimulationResultVars(resultFile); getErrorString();
 // end SimulationResult;
 // ""
 // "Bug2536_res.mat"
-// {"a","b","c","time"}
+// {"a", "b", "c", "time"}
 // ""
 // endResult

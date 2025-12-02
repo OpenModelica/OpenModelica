@@ -1,7 +1,6 @@
 // name: FuncBuiltinMod
 // keywords: mod
 // status: correct
-// cflags: -d=newInst
 //
 // Tests the builtin mod function.
 //

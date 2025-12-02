@@ -30,12 +30,15 @@
  */
 
 #include "PlotCurve.h"
-#if QWT_VERSION < 0x060000
-#include "qwt_legend_item.h"
-#else
-#include "qwt_painter.h"
-#endif
+#include "OMPlot.h"
+
 #include "qwt_symbol.h"
+#include "qwt_text.h"
+#include "qwt_scale_map.h"
+#include "qwt_math.h"
+
+#include <QtMath>
+#include <QStringBuilder>
 
 using namespace OMPlot;
 
@@ -56,6 +59,7 @@ PlotCurve::PlotCurve(const QString &fileName, const QString &absoluteFilePath, c
   setYDisplayUnit(yDisplayUnit);
   mCustomTitle = "";
   setToggleSign(false);
+  setYAxisRight(false);  // default to left y-axis
   setTitleLocal();
   /* set curve width and style */
   setCurveWidth(mpParentPlot->getParentPlotWindow()->getCurveWidth());
@@ -75,14 +79,14 @@ void PlotCurve::setTitleLocal()
 {
   if (mCustomTitle.isEmpty()) {
     QString titleStr = getYVariable();
-    if (!getYDisplayUnit().isEmpty() || !mpParentPlot->getYScaleDraw()->getUnitPrefix().isEmpty()) {
-      titleStr += QString(" (%1%2)").arg(mpParentPlot->getYScaleDraw()->getUnitPrefix(), getYDisplayUnit());
+    if (!getYDisplayUnit().isEmpty() || !getYUnitPrefix().isEmpty()) {
+      titleStr += QString(" (%1)").arg(Plot::convertUnitToSymbol(getYUnitPrefix() % getYDisplayUnit()));
     }
 
-    if (mpParentPlot->getParentPlotWindow()->getPlotType() == PlotWindow::PLOTPARAMETRIC) {
+    if (mpParentPlot->getParentPlotWindow()->isPlotParametric() || mpParentPlot->getParentPlotWindow()->isPlotArrayParametric()) {
       QString xVariable = getXVariable();
-      if (!getXDisplayUnit().isEmpty() || !mpParentPlot->getXScaleDraw()->getUnitPrefix().isEmpty()) {
-        xVariable += QString(" (%1%2)").arg(mpParentPlot->getXScaleDraw()->getUnitPrefix(), getXDisplayUnit());
+      if (!getXDisplayUnit().isEmpty() || !getXUnitPrefix().isEmpty()) {
+        xVariable += QString(" (%1)").arg(Plot::convertUnitToSymbol(getXUnitPrefix() % getXDisplayUnit()));
       }
       if (!xVariable.isEmpty()) {
         titleStr += QString(" <b>vs</b> %1").arg(xVariable);
@@ -91,6 +95,10 @@ void PlotCurve::setTitleLocal()
     // Add - sign if curve is toggled
     if (getToggleSign()) {
       titleStr.prepend(QString("-"));
+    }
+     // Append right arrow if curve is plotted on right axis
+    if (isYAxisRight()) {
+      titleStr.append(QChar(0x2794));
     }
     setTitle(titleStr);
     // visibility
@@ -106,7 +114,7 @@ void PlotCurve::setTitleLocal()
   }
 }
 
-Qt::PenStyle PlotCurve::getPenStyle(int style)
+Qt::PenStyle PlotCurve::getPenStyle(int style) const
 {
   switch (style)
   {
@@ -123,7 +131,7 @@ Qt::PenStyle PlotCurve::getPenStyle(int style)
   }
 }
 
-QwtPlotCurve::CurveStyle PlotCurve::getCurveStyle(int style)
+QwtPlotCurve::CurveStyle PlotCurve::getCurveStyle(int style) const
 {
   switch (style)
   {
@@ -155,11 +163,6 @@ void PlotCurve::setCurveStyle(int style)
     setStyle(getCurveStyle(mStyle));
 }
 
-void PlotCurve::setXAxisVector(QVector<double> vector)
-{
-  mXAxisVector = vector;
-}
-
 void PlotCurve::addXAxisValue(double value)
 {
   mXAxisVector.push_back(value);
@@ -170,19 +173,9 @@ void PlotCurve::updateXAxisValue(int index, double value)
   mXAxisVector.replace(index, value);
 }
 
-const double* PlotCurve::getXAxisVector() const
-{
-  return mXAxisVector.data();
-}
-
 QPair<QVector<double>*, QVector<double>*> PlotCurve::getAxisVectors()
 {
   return qMakePair(&mXAxisVector, &mYAxisVector);
-}
-
-void PlotCurve::setYAxisVector(QVector<double> vector)
-{
-  mYAxisVector = vector;
 }
 
 void PlotCurve::addYAxisValue(double value)
@@ -195,14 +188,14 @@ void PlotCurve::updateYAxisValue(int index, double value)
   mYAxisVector.replace(index, value);
 }
 
-const double* PlotCurve::getYAxisVector() const
-{
-  return mYAxisVector.data();
-}
-
-int PlotCurve::getSize()
+int PlotCurve::getXAxisSize() const
 {
   return mXAxisVector.size();
+}
+
+int PlotCurve::getYAxisSize() const
+{
+  return mYAxisVector.size();
 }
 
 void PlotCurve::setFileName(QString fileName)
@@ -264,13 +257,100 @@ void PlotCurve::toggleVisibility(bool visibility)
   setVisible(visibility);
 }
 
-void PlotCurve::setData(const double* xData, const double* yData, int size)
+/*!
+ * \brief PlotCurve::setYAxisRight
+ * Assigns the curve to the right or left y-axis
+*/
+void PlotCurve::setYAxisRight(bool right)
 {
-#if QWT_VERSION >= 0x060000
-  setRawSamples(xData, yData, size);
-#else
-  setRawData(xData, yData, size);
-#endif
+    auto axis = right ? QwtPlot::yRight : QwtPlot::yLeft;
+    QwtPlotCurve::setYAxis(axis);
+}
+
+/*!
+ * \brief PlotCurve::resetPrefixUnit
+ * Resets the unit prefix and exponent.
+ * \param resetValues - reset the values.
+ */
+void PlotCurve::resetPrefixUnit(bool resetValues)
+{
+  if (!mXUnitPrefix.isEmpty() && resetValues) {
+    for (int i = 0 ; i < mXAxisVector.size() ; i++) {
+      updateXAxisValue(i, mXAxisVector.at(i) * qPow(10, mXExponent));
+    }
+  }
+  mXUnitPrefix = "";
+  mXExponent = 0;
+
+  if (!mYUnitPrefix.isEmpty() && resetValues) {
+    for (int i = 0 ; i < mYAxisVector.size() ; i++) {
+      updateYAxisValue(i, mYAxisVector.at(i) * qPow(10, mYExponent));
+    }
+  }
+  mYUnitPrefix = "";
+  mYExponent = 0;
+}
+
+/*!
+ * \brief PlotCurve::plotData
+ * Plot the curve data.
+ * Finds the upper and lower bounds and add the prefix if auto prefix units is on.
+ * \param toggleSign - Skips the prefixing of units. When toggle is on then we have already switched the values and just want to plot them as it is.
+ */
+void PlotCurve::plotData(bool toggleSign)
+{
+  if (!toggleSign) {
+    if (mpParentPlot->getParentPlotWindow()->getPrefixUnits()) {
+      bool canUseXPrefixUnits;
+      if ((mpParentPlot->getParentPlotWindow()->isPlotParametric() || mpParentPlot->getParentPlotWindow()->isPlotArrayParametric())
+          && Plot::prefixableUnit(getXDisplayUnit())) {
+        canUseXPrefixUnits = true;
+      } else {
+        canUseXPrefixUnits = false;
+      }
+
+      bool canUseYPrefixUnits = Plot::prefixableUnit(getYDisplayUnit());
+
+      double xLowerBound = 0.0;
+      double xUpperBound = 0.0;
+      double yLowerBound = 0.0;
+      double yUpperBound = 0.0;
+
+      for (int i = 0 ; i < getXAxisSize() ; i++) {
+        xLowerBound = qMin(xLowerBound, mXAxisVector.at(i));
+        xUpperBound = qMax(xUpperBound, mXAxisVector.at(i));
+      }
+
+      for (int i = 0 ; i < getYAxisSize() ; i++) {
+        yLowerBound = qMin(yLowerBound, mYAxisVector.at(i));
+        yUpperBound = qMax(yUpperBound, mYAxisVector.at(i));
+      }
+
+      if (canUseXPrefixUnits) {
+        Plot::getUnitPrefixAndExponent(xLowerBound, xUpperBound, mXUnitPrefix, mXExponent);
+        // update if unit prefix is not empty.
+        if (!mXUnitPrefix.isEmpty()) {
+          for (int i = 0 ; i < mXAxisVector.size() ; i++) {
+            updateXAxisValue(i, mXAxisVector.at(i) / qPow(10, mXExponent));
+          }
+        }
+      }
+
+      if (canUseYPrefixUnits) {
+        Plot::getUnitPrefixAndExponent(yLowerBound, yUpperBound, mYUnitPrefix, mYExponent);
+        // update if unit prefix is not empty.
+        if (!mYUnitPrefix.isEmpty()) {
+          for (int i = 0 ; i < mYAxisVector.size() ; i++) {
+            updateYAxisValue(i, mYAxisVector.at(i) / qPow(10, mYExponent));
+          }
+        }
+      }
+    } else {
+      // revert the values when there is no perfixUnits.
+      resetPrefixUnit(true);
+    }
+  }
+  setSamples(mXAxisVector, mYAxisVector);
 }
 
 #if QWT_VERSION < 0x060000
@@ -295,7 +375,7 @@ void PlotCurve::updateLegend(QwtLegend *legend) const
  * \param dist
  * \return
  */
-int PlotCurve::closestPoint(const QPoint &pos, double *dist) const
+int PlotCurve::closestPoint(const QPointF &pos, double *dist) const
 {
   const size_t numSamples = dataSize();
   if (plot() == NULL || numSamples <= 0) {

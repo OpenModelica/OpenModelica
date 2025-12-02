@@ -140,10 +140,10 @@ QVariant SimulationMessageModel::data(const QModelIndex &index, int role) const
         .arg(QUrl::fromLocalFile(simulationOptions.getWorkingDirectory() + "/" + simulationOptions.getOutputFileName() + "_info.json").path())
         .arg(pSimulationMessage->mIndex);
     // create display text
-    if (pSimulationMessage->mText.compare("Reached display limit") == 0) {
+    if (pSimulationMessage->mText.compare(Helper::displayLimit) == 0) {
       QString simulationLogFilePath = QString("%1/%2.log").arg(mpSimulationOutputWidget->getSimulationOptions().getWorkingDirectory())
                                       .arg(mpSimulationOutputWidget->getSimulationOptions().getOutputFileName());
-      text = QString("Reached display limit. To read the full log open the file <a href=\"file:///%1\">%1</a>").arg(simulationLogFilePath);
+      text = Helper::displayLimitMsg.arg(simulationLogFilePath);
     } else {
       text = pSimulationMessage->mText + (pSimulationMessage->mIndex.isEmpty() ? "" : debugLink);
     }
@@ -299,88 +299,85 @@ void SimulationOutputHandler::parseSimulationOutput(const QString &output)
     QXmlStreamReader::TokenType token = mXmlStreamReader.readNext();
     if (token == QXmlStreamReader::StartElement) {
       QXmlStreamAttributes attributes = mXmlStreamReader.attributes();
-      if (mXmlStreamReader.name() == "message") {
+      if (mXmlStreamReader.name() == QString("message")) {
         QString text = attributes.value("text").toString() + "\n";
         mNumberOfBytes += text.toUtf8().size();
-        // write simulation log file
-        writeSimulationLog(text);
-        /* if display limit is reached then close and display the so far text
-         * and display a message showing that the limit is reached.
-         */
+
         if (isMaximumDisplayLimitReached()) {
           // Only generate the reached display limit message once.
           if (!mShownDisplayLimitReachedMessage) {
             mShownDisplayLimitReachedMessage = true;
-
+            // if display limit is reached then close and display the so far text
+            int currentLevel = mLevel;
             while (mLevel > 0) {
-              endElement();
+              mLevel--;
             }
-
+            addSimulationMessage(mSimulationMessagesLevelMap.value(0, 0));
+            // restore the level
+            mLevel = currentLevel;
+            // Display a message showing that the limit is reached.
+            SimulationMessage *pSimulationMessage;
             if (mpSimulationOutputWidget->isOutputStructured()) {
-              mpSimulationMessage = new SimulationMessage(mpSimulationMessageModel->getRootSimulationMessage());
+              pSimulationMessage = new SimulationMessage(mpSimulationMessageModel->getRootSimulationMessage());
             } else {
-              mpSimulationMessage = new SimulationMessage;
+              pSimulationMessage = new SimulationMessage;
             }
-            mpSimulationMessage->mStream = "LOG_STDOUT";
-            mpSimulationMessage->mType = StringHandler::OMEditInfo;
-            mpSimulationMessage->mText = QString("Reached display limit");
-            mpSimulationMessage->mLevel = mLevel;
-            mSimulationMessagesLevelMap.insert(mLevel, mpSimulationMessage);
-            mLevel++;
-            endElement();
+            pSimulationMessage->mStream = "LOG_STDOUT";
+            pSimulationMessage->mType = StringHandler::OMEditInfo;
+            pSimulationMessage->mText = Helper::displayLimit;
+            pSimulationMessage->mLevel = 0;
+            addSimulationMessage(pSimulationMessage);
+          }
+        }
+
+        if (mpSimulationOutputWidget->isOutputStructured()) {
+          mpSimulationMessage = new SimulationMessage(mpSimulationMessageModel->getRootSimulationMessage());
+        } else {
+          mpSimulationMessage = new SimulationMessage;
+        }
+        mpSimulationMessage->mStream = attributes.value("stream").toString();
+        mpSimulationMessage->mType = StringHandler::getSimulationMessageType(attributes.value("type").toString());
+        // check if we get the message about embedded opc-ua server initialized.
+        if (attributes.value("text") == QString("The embedded server is initialized.") ){
+          mpSimulationOutputWidget->embeddedServerInitialized();
+        }
+        if (mpSimulationOutputWidget->isOutputStructured()) {
+          mpSimulationMessage->mText = Qt::convertFromPlainText(attributes.value("text").toString(), Qt::WhiteSpaceNormal);
+        } else {
+          mpSimulationMessage->mText = attributes.value("text").toString();
+        }
+        mpSimulationMessage->mLevel = mLevel;
+        mSimulationMessagesLevelMap.insert(mLevel, mpSimulationMessage);
+        if (mLevel > 0) {
+          SimulationMessage *pSimulationMessage = mSimulationMessagesLevelMap.value(mLevel - 1, 0);
+          if (pSimulationMessage) {
+            mpSimulationMessage->setParent(pSimulationMessage);
+            if (mpSimulationOutputWidget->isOutputStructured()) {
+              mpSimulationMessage->mDeweyId = pSimulationMessage->mDeweyId + "." + QString::number(pSimulationMessage->children().size() + 1);
+              mpSimulationMessage->mDeweyId = QString("%1.%2").arg(pSimulationMessage->mDeweyId)
+                                              .arg(QString::number(pSimulationMessage->children().size() + 1));
+            }
+            pSimulationMessage->mChildren.append(mpSimulationMessage);
           }
         } else {
           if (mpSimulationOutputWidget->isOutputStructured()) {
-            mpSimulationMessage = new SimulationMessage(mpSimulationMessageModel->getRootSimulationMessage());
-          } else {
-            mpSimulationMessage = new SimulationMessage;
+            mpSimulationMessage->mDeweyId = QString("%1.%2").arg(mpSimulationMessageModel->getRootSimulationMessage()->mDeweyId)
+                                            .arg(QString::number(mpSimulationMessageModel->getRootSimulationMessage()->children().size() + 1));
           }
-          mpSimulationMessage->mStream = attributes.value("stream").toString();
-          mpSimulationMessage->mType = StringHandler::getSimulationMessageType(attributes.value("type").toString());
-          // check if we get the message about embedded opc-ua server initialized.
-          if (attributes.value("text") == "The embedded server is initialized.") {
-            mpSimulationOutputWidget->embeddedServerInitialized();
-          }
-          if (mpSimulationOutputWidget->isOutputStructured()) {
-            mpSimulationMessage->mText = Qt::convertFromPlainText(attributes.value("text").toString(), Qt::WhiteSpaceNormal);
-          } else {
-            mpSimulationMessage->mText = attributes.value("text").toString();
-          }
-          mpSimulationMessage->mLevel = mLevel;
-          mSimulationMessagesLevelMap.insert(mLevel, mpSimulationMessage);
-          if (mLevel > 0) {
-            SimulationMessage *pSimulationMessage = mSimulationMessagesLevelMap.value(mLevel - 1, 0);
-            if (pSimulationMessage) {
-              mpSimulationMessage->setParent(pSimulationMessage);
-              if (mpSimulationOutputWidget->isOutputStructured()) {
-                mpSimulationMessage->mDeweyId = pSimulationMessage->mDeweyId + "." + QString::number(pSimulationMessage->children().size() + 1);
-                mpSimulationMessage->mDeweyId = QString("%1.%2").arg(pSimulationMessage->mDeweyId)
-                                                .arg(QString::number(pSimulationMessage->children().size() + 1));
-              }
-              pSimulationMessage->mChildren.append(mpSimulationMessage);
-            }
-          } else {
-            if (mpSimulationOutputWidget->isOutputStructured()) {
-              mpSimulationMessage->mDeweyId = QString("%1.%2").arg(mpSimulationMessageModel->getRootSimulationMessage()->mDeweyId)
-                                              .arg(QString::number(mpSimulationMessageModel->getRootSimulationMessage()->children().size() + 1));
-            }
-          }
-          mLevel++;
         }
-      } else if (mXmlStreamReader.name() == "used") {
+        mLevel++;
+      } else if (mXmlStreamReader.name() == QString("used")) {
         if (mpSimulationMessage) {
           mpSimulationMessage->mIndex = attributes.value("index").toString();
         }
-      } else if (mXmlStreamReader.name() == "status") {
+      } else if (mXmlStreamReader.name() == QString("status")) {
         int progress = attributes.value("progress").toInt();
         mpSimulationOutputWidget->getProgressBar()->setValue(progress/100);
         mpSimulationOutputWidget->updateMessageTabProgress();
       }
     } else if (token == QXmlStreamReader::EndElement) {
-      if (mXmlStreamReader.name() == "message") {
-        if (!isMaximumDisplayLimitReached()) {
-          endElement();
-        }
+      if (mXmlStreamReader.name() == QString("message")) {
+        endElement();
       }
     }
   }
@@ -404,24 +401,46 @@ void SimulationOutputHandler::parseSimulationOutput(const QString &output)
       pSimulationMessage->mType = StringHandler::getSimulationMessageType("error");
       pSimulationMessage->mText = errorText;
       pSimulationMessage->mLevel = 0;
-      if (mpSimulationOutputWidget->isOutputStructured()) {
-        mpSimulationMessageModel->insertSimulationMessage(pSimulationMessage);
-      } else {
-        mpSimulationOutputWidget->writeSimulationMessage(pSimulationMessage);
-      }
+      addSimulationMessage(pSimulationMessage);
     }
   }
 }
 
 /*!
- * \brief SimulationOutputHandler::writeSimulationLog
- * Writes the simulation log file.
- * \param text
+ * \brief SimulationOutputHandler::writeSimulationMessage
+ * Writes the simulation message.\n
+ * The same function is used to write the message in the log file and in the SimulationOutputWidget.\n
+ * If pSimulationOutputWidget is NULL then the message is written to the log file otherwise to the SimulationOutputWidget.
+ * \param pSimulationMessage
+ * \param pSimulationOutputWidget
  */
-void SimulationOutputHandler::writeSimulationLog(const QString &text)
+void SimulationOutputHandler::writeSimulationMessage(SimulationMessage *pSimulationMessage, SimulationOutputWidget *pSimulationOutputWidget)
 {
-  if (mpSimulationLogFile) {
-    fputs(text.toUtf8().constData(), mpSimulationLogFile);
+  static QString lastStream;
+  static QString lastType;
+  /* format the error message */
+  QString type = StringHandler::getSimulationMessageTypeString(pSimulationMessage->mType);
+  QString text;
+  if (pSimulationMessage->mType != StringHandler::OMEditInfo) {
+    text = ((lastStream == pSimulationMessage->mStream && pSimulationMessage->mLevel > 0) ? "|" : pSimulationMessage->mStream) + "\t\t| ";
+    text += ((lastStream == pSimulationMessage->mStream && lastType == type && pSimulationMessage->mLevel > 0) ? "|" : type) + "\t | ";
+    for (int i = 0 ; i < pSimulationMessage->mLevel ; ++i)
+      text += "| ";
+  }
+  text += pSimulationMessage->mText;
+
+  if (pSimulationOutputWidget) {
+    pSimulationOutputWidget->writeSimulationMessage(pSimulationMessage->mType, text, pSimulationMessage->mIndex);
+  } else if (mpSimulationLogFile) {
+    fputs(QString(text + "\n").toUtf8().constData(), mpSimulationLogFile);
+  }
+
+  /* save the current stream & type as last */
+  lastStream = pSimulationMessage->mStream;
+  lastType = type;
+  /* write the child messages */
+  foreach (SimulationMessage* pSimulationMessage, pSimulationMessage->mChildren) {
+    writeSimulationMessage(pSimulationMessage);
   }
 }
 
@@ -434,7 +453,7 @@ void SimulationOutputHandler::addSimulationMessage(SimulationMessage *pSimulatio
   if (mpSimulationOutputWidget->isOutputStructured()) {
     mpSimulationMessageModel->insertSimulationMessage(pSimulationMessage);
   } else {
-    mpSimulationOutputWidget->writeSimulationMessage(pSimulationMessage);
+    writeSimulationMessage(pSimulationMessage, mpSimulationOutputWidget);
   }
 }
 
@@ -468,6 +487,10 @@ void SimulationOutputHandler::endElement()
   mLevel--;
   // if mLevel is 0 then we have finished the one complete top level message tag. Add it to SimulationMessageModel now.
   if (mLevel == 0) {
-    addSimulationMessage(mSimulationMessagesLevelMap.value(0, 0));
+    if (!isMaximumDisplayLimitReached()) {
+      addSimulationMessage(mSimulationMessagesLevelMap.value(0, 0));
+    }
+    // write simulation log file
+    writeSimulationMessage(mSimulationMessagesLevelMap.value(0, 0));
   }
 }

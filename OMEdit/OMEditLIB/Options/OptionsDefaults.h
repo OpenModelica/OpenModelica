@@ -54,6 +54,7 @@ namespace OptionsDefaults
     int activateAccessAnnotationsIndex = 1;
     bool createBackupFile = true;
     bool displayNFAPIErrorsWarnings = false;
+    bool enableCRMLSupport = false;
     int libraryIconSize = 24;
     int libraryIconMaximumTextLength = 3;
     bool showProtectedClasses = false;
@@ -64,7 +65,6 @@ namespace OptionsDefaults
     int welcomePageView = 1;
     bool showLatestNews = true;
     int recentFilesAndLatestNewsSize = 15;
-    bool disableInstanceAPI = false;
   }
 
   namespace Libraries {
@@ -107,10 +107,19 @@ namespace OptionsDefaults
     QColor commentRuleColor = QColor(0, 150, 0);
   }
 
-  namespace CompositeModelEditor {
-    QColor tagRuleColor = QColor(0, 0, 255);
-    QColor elementRuleColor = QColor(0, 0, 255);
-    QColor quotesRuleColor = QColor(139, 0, 0);
+  namespace CRMLEditor {
+    QColor numberRuleColor = QColor(139, 0, 139);
+    QColor keywordRuleColor = QColor(139, 0, 0);
+    QColor typeRuleColor = QColor(255, 10, 10);
+    QColor quotesRuleColor = QColor(0, 139, 0);
+    QColor commentRuleColor = QColor(0, 150, 0);
+  }
+
+  namespace MOSEditor {
+    QColor numberRuleColor = QColor(139, 0, 139);
+    QColor keywordRuleColor = QColor(139, 0, 0);
+    QColor typeRuleColor = QColor(255, 10, 10);
+    QColor quotesRuleColor = QColor(0, 139, 0);
     QColor commentRuleColor = QColor(0, 150, 0);
   }
 
@@ -137,22 +146,6 @@ namespace OptionsDefaults
 
   namespace GraphicalViewsPage {
     bool moveConnectorsTogether = false;
-    double iconExtentLeft = -100;
-    double iconExtentBottom = -100;
-    double iconExtentRight = 100;
-    double iconExtentTop = 100;
-    double iconGridHorizontal = 2;
-    double iconGridVertical = 2;
-    double iconInitialScale = 0.1;
-    bool iconPreserveAspectRatio = true;
-    double diagramExtentLeft = -100;
-    double diagramExtentBottom = -100;
-    double diagramExtentRight = 100;
-    double diagramExtentTop = 100;
-    double diagramGridHorizontal = 2;
-    double diagramGridVertical = 2;
-    double diagramInitialScale = 0.1;
-    bool diagramPreserveAspectRatio = true;
   }
 
   namespace Simulation {
@@ -225,6 +218,11 @@ namespace OptionsDefaults
     QString process; // this value is set in FigaroPage constructor.
   }
 
+  namespace CRML {
+    QString compilerJar = "crml-compiler-all.jar";
+    QString process = "java";
+  }
+
   namespace Debugger {
     int GDBCommandTimeout = 40;
     int GDBOutputLimit = 0;
@@ -233,7 +231,7 @@ namespace OptionsDefaults
     bool clearOutputOnNewRun = true;
     bool clearLogOnNewRun = true;
     bool alwaysShowTransformationalDebugger = false;
-    bool generateOperations = false;
+    bool generateOperations = true;
   }
 
   namespace FMI {
@@ -249,15 +247,13 @@ namespace OptionsDefaults
     bool deleteFMUDirectoyAndModel = false;
   }
 
-  namespace TLM {
-    QString pluginPath; // this value is set in TLMPage constructor.
-    QString managerProcess; // this value is set in TLMPage constructor.
-    QString monitorProcess; // this value is set in TLMPage constructor.
-  }
-
   namespace OMSimulator {
     QString commandLineOptions = "--suppressPath=true";
     int loggingLevel = 0;
+  }
+
+  namespace SensitivityOptimization {
+    QString python = "python";
   }
 
   namespace Traceability {

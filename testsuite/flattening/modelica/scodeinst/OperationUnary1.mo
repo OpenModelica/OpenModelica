@@ -1,7 +1,6 @@
 // name: OperationUnary1
 // keywords: 
 // status: correct
-// cflags: -d=newInst
 //
 
 model OperationUnary1

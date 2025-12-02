@@ -1,5 +1,5 @@
 AC_PREREQ([2.63])
-AC_INIT([SimulationRuntimeCpp],[dev],[https://trac.openmodelica.org/OpenModelica],[openmodelica],[https://openmodelica.org])
+AC_INIT([SimulationRuntimeCpp],[dev],[https://github.com/OpenModelica/OpenModelica/issues],[openmodelica],[https://openmodelica.org])
 
 AC_LANG([C])
 AC_PROG_CC
@@ -176,4 +176,5 @@ fi
 AC_ARG_WITH(build-type,  [  --with-build-type=[Release|Debug|RelWithDebInfo]       (set the cmake build type)],[CMAKE_BUILDTYPE="$withval"],[])
 AC_MSG_RESULT([Build type is set to $CMAKE_BUILDTYPE])
 
-AC_OUTPUT(Makefile)
+AC_CONFIG_FILES([Makefile])
+AC_OUTPUT

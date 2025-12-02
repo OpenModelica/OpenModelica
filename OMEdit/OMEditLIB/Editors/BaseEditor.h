@@ -45,6 +45,7 @@
 
 class ModelWidget;
 class InfoBar;
+class ReloadAsModelicaInfoBar;
 class LineNumberArea;
 class FindReplaceWidget;
 class Label;
@@ -314,6 +315,8 @@ protected:
   virtual void focusOutEvent(QFocusEvent *event) override;
   void paintEvent(QPaintEvent *e) override;
   void wheelEvent(QWheelEvent *event) override;
+  virtual void mousePressEvent(QMouseEvent *event) override;
+  virtual void mouseMoveEvent(QMouseEvent *event) override;
 };
 
 class BaseEditor : public QWidget
@@ -332,13 +335,16 @@ public:
   void setForceSetPlainText(bool forceSetPlainText) {mForceSetPlainText = forceSetPlainText;}
   virtual void popUpCompleter () = 0;
   virtual QString wordUnderCursor();
+  virtual void symbolAtPosition(const QPoint &pos);
   bool isModelicaModelInPackageOneFile();
+  static QStringList completerItemsToStringList(const QList<CompleterItem> &items);
 private:
   void initialize();
   void createActions();
 protected:
   ModelWidget *mpModelWidget;
   InfoBar *mpInfoBar;
+  ReloadAsModelicaInfoBar *mpReloadAsModelicaInfoBar;
   PlainTextEdit *mpPlainTextEdit;
   FindReplaceWidget *mpFindReplaceWidget;
   QAction *mpFindReplaceAction;
@@ -349,11 +355,14 @@ protected:
   QAction *mpResetZoomAction;
   QAction *mpZoomInAction;
   QAction *mpZoomOutAction;
+  QAction *mpOpenClassAction;
   QAction *mpToggleCommentSelectionAction;
   QAction *mpFoldAllAction;
   QAction *mpUnFoldAllAction;
-  DocumentMarker *mpDocumentMarker;
+  DocumentMarker *mpDocumentMarker = nullptr;
   bool mForceSetPlainText;
+  QPoint mContextMenuStartPosition;
+  bool mContextMenuStartPositionValid = false;
 
   QMenu* createStandardContextMenu();
   void contentsChanged();
@@ -364,7 +373,9 @@ public slots:
   void showFindReplaceWidget();
   void clearFindReplaceTexts();
   void showGotoLineNumberDialog();
+  void openClass();
   virtual void toggleCommentSelection();
+  void reloadAsModelica();
 };
 
 class LineNumberArea : public QWidget
@@ -459,6 +470,15 @@ public:
 private:
   Label *mpInfoLabel;
   QToolButton *mpCloseButton;
+};
+
+class ReloadAsModelicaInfoBar : public QFrame
+{
+public:
+  ReloadAsModelicaInfoBar(BaseEditor *pBaseEditor);
+private:
+  Label *mpInfoLabel;
+  QPushButton *mpReloadButton;
 };
 
 #endif // BASEEDITOR_H

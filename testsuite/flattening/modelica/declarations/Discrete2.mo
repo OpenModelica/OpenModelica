@@ -1,7 +1,6 @@
 // name:     Discrete2
 // keywords: declaration,unknown
 // status:   erroneous
-// cflags: -d=-newInst
 //
 // This is not valid, but should it complain now or later?
 
@@ -9,6 +8,7 @@ class Discrete2
   discrete Real x;
 equation
   x = sin(time);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Discrete2;
 
 // Result:

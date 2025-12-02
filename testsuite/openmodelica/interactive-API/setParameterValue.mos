@@ -1,0 +1,33 @@
+// name: setParameterValue
+// keywords:
+// status: correct
+// cflags: -d=newInst
+//
+// Tests the setParameterValue API function.
+//
+
+loadString("
+  model M
+    parameter Real x;
+    String s;
+  end M;
+");
+
+setParameterValue(M, x, 1.0);
+list(M);
+setParameterValue(M, s, "s");
+list(M);
+
+// Result:
+// true
+// true
+// "model M
+//   parameter Real x = 1.0;
+//   String s;
+// end M;"
+// true
+// "model M
+//   parameter Real x = 1.0;
+//   String s = \"s\";
+// end M;"
+// endResult

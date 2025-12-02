@@ -160,6 +160,8 @@ static char *linker = (char *)def_linker;
 static char *cflags = (char *)def_cflags;
 static char *ldflags= (char *)def_ldflags;
 
+static char *winDirectory = NULL;
+
 /* TODO! FIXME!
  * we need to move these to threadData if we are to run things in parallel in OMC!
  */
@@ -171,6 +173,11 @@ static int isPartialInstantiation = 0;
 static int usesCardinality = 1;
 static char* class_names_for_simulation = NULL;
 static const char *select_from_dir = NULL;
+
+
+/* TODO: Unused functions referenced by the bootstrapping sources.
+ *       Remove when the sources have been updated. */
+extern const char* SystemImpl__readFileNoNumeric(const char* filename) { return 0; }
 
 /*
  * Common implementations
@@ -191,39 +198,6 @@ static int str_contain_char(const char* chars, const char chr)
     i++;
   }
   return 0;
-}
-
-static int filterString(char* buf,char* bufRes)
-{
-  int i,bufPointer = 0,slen,isNumeric=0,numericEncounter=0;
-  char preChar;
-  char filterChars[] = "0123456789.\0";
-  char numeric[] = "0123456789\0";
-  slen = strlen(buf);
-  preChar = '\0';
-  for(i=0;i<slen;++i) {
-    if((str_contain_char(filterChars,buf[i]))) {
-      if(buf[i]=='.') {
-        if(str_contain_char(numeric,preChar) || (( i < slen+1) && str_contain_char(numeric,buf[i+1])) ) {
-          if(isNumeric == 0) {isNumeric=1; numericEncounter++;}
-          //printf("skipping_1: '%c'\n",buf[i]);
-        } else {
-          bufRes[bufPointer++] = buf[i];
-          isNumeric=0;
-        }
-      } else {
-        if(isNumeric == 0){isNumeric=1;numericEncounter++;}
-        //printf("skipping_2: '%c'\n",buf[i]);
-      }
-    } else {
-      bufRes[bufPointer++] = buf[i];
-      isNumeric=0;
-    }
-    preChar = buf[i];
-    //isNumeric=0;
-  }
-  bufRes[bufPointer++] = '\0';
-  return numericEncounter;
 }
 
 extern int SystemImpl__setCCompiler(const char *str)
@@ -548,11 +522,8 @@ void* SystemImpl__trimChar(const char* str, char char_to_be_trimmed)
     while(str[end_pos] == char_to_be_trimmed) {
       end_pos--;
     }
-    res = (char*)omc_alloc_interface.malloc_atomic(end_pos - start_pos +2);
-    strncpy(res,&str[start_pos],end_pos - start_pos+1);
-    res[end_pos - start_pos+1] = '\0';
-    rmlRes = (void*) mmc_mk_scon(res);
-    return rmlRes;
+
+    return mmc_mk_scon_n(str + start_pos, end_pos - start_pos + 1);
   } else {
     return mmc_mk_scon("");
   }
@@ -579,7 +550,7 @@ const char* SystemImpl__basename(const char *str)
  *
  * @param cmd       Command to execute.
  * @param outFile   Path to output file, can be NULL.
- * @return int      Return 0 on success, 1 on failure.
+ * @return int      Return exit code of process running command cmd.
  */
 int runProcess(const char* cmd, const char* outFile)
 {
@@ -588,43 +559,59 @@ int runProcess(const char* cmd, const char* outFile)
   SECURITY_ATTRIBUTES securityAttributes;
   HANDLE logFileHandle = NULL;
   wchar_t* unicodeOutFile = NULL;
-  char *terminal = "cmd /c";
-  char *command = (char *)omc_alloc_interface.malloc_atomic(strlen(cmd) + strlen(terminal) + 4);
   DWORD exitCode = 1;
 
-  ZeroMemory(&startupInfo, sizeof(startupInfo));
-  ZeroMemory(&processInfo, sizeof(processInfo));
-
-  startupInfo.cb = sizeof(startupInfo);   // Size of struct in bytes
-  if (*outFile) {
-    unicodeOutFile = omc_multibyte_to_wchar_str(outFile);
-    securityAttributes.nLength = sizeof(securityAttributes);
-    securityAttributes.lpSecurityDescriptor = NULL;
-    securityAttributes.bInheritHandle = TRUE;
-    logFileHandle = CreateFileW(unicodeOutFile,
-                    FILE_APPEND_DATA,
-                    FILE_SHARE_WRITE | FILE_SHARE_READ,
-                    &securityAttributes,
-                    OPEN_ALWAYS,
-                    FILE_ATTRIBUTE_NORMAL,
-                    NULL);
-    startupInfo.dwFlags |= STARTF_USESTDHANDLES;  // Additional handles in hStdInput, hStdOutput and hStdError elements
-    startupInfo.hStdInput = GetStdHandle(STD_INPUT_HANDLE);
-    startupInfo.hStdError = logFileHandle;
-    startupInfo.hStdOutput = logFileHandle;
-  }
-
+  // Build command
+  char* terminal = "cmd /c";
+  char* command = (char*) calloc(sizeof(char), strlen(cmd) + strlen(terminal) + 4);
   sprintf(command, "%s \"%s\"", terminal, cmd);
   wchar_t* unicodeCommand = omc_multibyte_to_wchar_str(command);
   //printf("unicodeCommand: %ls\n", unicodeCommand);
 
-  if (CreateProcessW(NULL, unicodeCommand, NULL, NULL, TRUE, CREATE_NO_WINDOW, NULL, NULL, &startupInfo, &processInfo))
+  // Prepare log file
+  securityAttributes.nLength = sizeof(securityAttributes);
+  securityAttributes.lpSecurityDescriptor = NULL;
+  securityAttributes.bInheritHandle = TRUE;
+  if (*outFile)
   {
+    unicodeOutFile = omc_multibyte_to_wchar_str(outFile);
+    logFileHandle = CreateFileW(unicodeOutFile,
+                                FILE_APPEND_DATA,
+                                FILE_SHARE_WRITE | FILE_SHARE_READ,
+                                &securityAttributes,
+                                OPEN_ALWAYS,
+                                FILE_ATTRIBUTE_NORMAL,
+                                NULL);
+  }
+
+  // Create and run process
+  ZeroMemory( &startupInfo, sizeof(startupInfo) );
+  ZeroMemory( &processInfo, sizeof(processInfo) );
+
+  startupInfo.cb         = sizeof(startupInfo);   // Size of struct in bytes
+  startupInfo.dwFlags    |= STARTF_USESTDHANDLES; // Additional handles in hStdInput, hStdOutput and hStdError elements
+  startupInfo.hStdInput  = GetStdHandle(STD_INPUT_HANDLE);
+  startupInfo.hStdError  = logFileHandle;
+  startupInfo.hStdOutput = logFileHandle;
+
+  BOOL bSuccess = CreateProcessW(NULL,
+    unicodeCommand,
+    NULL,
+    NULL,
+    TRUE,
+    CREATE_NO_WINDOW,
+    NULL,
+    NULL,
+    &startupInfo,
+    &processInfo);
+  if (bSuccess) {
     WaitForSingleObject(processInfo.hProcess, INFINITE);
     // Get the exit code.
     GetExitCodeProcess(processInfo.hProcess, &exitCode);
     CloseHandle(processInfo.hProcess);
     CloseHandle(processInfo.hThread);
+  } else {
+    printf("Error: Failed to create proccess: %ls", unicodeCommand);
   }
   if (logFileHandle) {
     CloseHandle(logFileHandle);
@@ -632,10 +619,40 @@ int runProcess(const char* cmd, const char* outFile)
 
   free(unicodeOutFile);
   free(unicodeCommand);
-  GC_free(command);
+  free(command);
   return (int)exitCode;
 }
 #endif
+
+char* SystemImpl__winGetSystemDirectoryA()
+{
+#if defined(__MINGW32__) || defined(_MSC_VER)
+  if (winDirectory) {
+    return winDirectory;
+  }
+  char* winDirectory = (char*) omc_alloc_interface.malloc(MAXPATHLEN * sizeof(char*));
+  if (!GetSystemDirectoryA(winDirectory, MAXPATHLEN-1)) {
+    LPVOID lpMsgBuf;
+    const char* ctokens[2];
+    FormatMessage(
+            FORMAT_MESSAGE_ALLOCATE_BUFFER |
+            FORMAT_MESSAGE_FROM_SYSTEM |
+            FORMAT_MESSAGE_IGNORE_INSERTS,
+            NULL,
+            GetLastError(),
+            MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+            (LPTSTR) &lpMsgBuf,
+            0, NULL );
+    ctokens[0] = lpMsgBuf;
+    ctokens[1] = "";
+    c_add_message(NULL,-1, ErrorType_runtime,ErrorLevel_error, gettext("OMC unable to get the Windows system directory %s%s.\n"), ctokens, 2);
+    LocalFree(lpMsgBuf);
+  }
+  return winDirectory;
+#else
+  return "";
+#endif
+}
 
 int SystemImpl__systemCall(const char* str, const char* outFile)
 {
@@ -654,7 +671,7 @@ int SystemImpl__systemCall(const char* str, const char* outFile)
   if (pID == 0) { // child
     if (*outFile) {
       /* redirect stdout, stderr in the fork'ed process */
-      int fd = open(outFile, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR);
+      int fd = open(outFile, O_RDWR | O_CREAT | O_APPEND, S_IRUSR | S_IWUSR);
       if (fd < 0) {
         _exit(1);
       }
@@ -956,14 +973,16 @@ extern int SystemImpl__createDirectory(const char *str)
   }
 }
 
+#define OMC_MAX_FREAD_BUF_SIZE 8192
+
 extern int SystemImpl__copyFile(const char *str_1, const char *str_2)
 {
   int rv = 1;
   size_t n;
-  char buf[8192];
+  char buf[OMC_MAX_FREAD_BUF_SIZE+1];
   FILE *source, *target;
 
-  source = omc_fopen(str_1, "r");
+  source = omc_fopen(str_1, "rb");
   if (source==0) {
     const char *msg[2] = {strerror(errno), str_1};
     c_add_message(NULL,85,
@@ -974,7 +993,7 @@ extern int SystemImpl__copyFile(const char *str_1, const char *str_2)
       2);
     return 0;
   }
-  target = omc_fopen(str_2, "w");
+  target = omc_fopen(str_2, "wb");
   if (target==0) {
     const char *msg[2] = {strerror(errno), str_2};
     c_add_message(NULL,85,
@@ -987,7 +1006,7 @@ extern int SystemImpl__copyFile(const char *str_1, const char *str_2)
     return 0;
   }
 
-  while (( n = omc_fread(buf, 1, 8192, source, 1) )) {
+  while (( n = omc_fread(buf, 1, OMC_MAX_FREAD_BUF_SIZE, source, 1) )) {
     if (n != fwrite(buf, 1, n, target)) {
       rv = 0;
       break;
@@ -1245,39 +1264,6 @@ extern int SystemImpl__removeDirectory(const char *path)
   }
 
   return retval==0;
-}
-
-extern const char* SystemImpl__readFileNoNumeric(const char* filename)
-{
-  char* buf, *bufRes;
-  int res,numCount;
-  FILE * file = NULL;
-  omc_stat_t statstr;
-  res = omc_stat(filename, &statstr);
-
-  if(res!=0) {
-    const char *c_tokens[1]={filename};
-    c_add_message(NULL,85, /* ERROR_OPENING_FILE */
-      ErrorType_scripting,
-      ErrorLevel_error,
-      gettext("Error opening file %s."),
-      c_tokens,
-      1);
-    return "No such file";
-  }
-
-  file = omc_fopen(filename,"rb");
-  buf = (char*) omc_alloc_interface.malloc_atomic(statstr.st_size+1);
-  bufRes = (char*) omc_alloc_interface.malloc_atomic((statstr.st_size+70)*sizeof(char));
-  if( (res = omc_fread(buf, sizeof(char), statstr.st_size, file, 0)) != statstr.st_size) {
-    fclose(file);
-    return "Failed while reading file";
-  }
-  buf[statstr.st_size] = '\0';
-  numCount = filterString(buf,bufRes);
-  fclose(file);
-  sprintf(bufRes,"%s\nFilter count from number domain: %d",bufRes,numCount);
-  return bufRes;
 }
 
 extern double SystemImpl__getCurrentTime(void)
@@ -1726,7 +1712,7 @@ static int SystemImpl__getVariableValue(double timeStamp, void* timeValues, void
 
   if(valueFound == 0){
     // value could not be found in the dataset, what do we do?
-    printf("\n WARNING: timestamp(%f) outside simulation timeline \n", timeStamp);
+    printf("\n WARNING: timestamp(%f) outside simulation timeline\n", timeStamp);
     return 1;
   }
   return 0;
@@ -2724,7 +2710,7 @@ char* System_getSimulationHelpTextSphinx(int detailed, int sphinx)
       const char **flagName;
       const char **flagDesc;
       if (sphinx) {
-        cur += snprintf(cur, CHECK_NONNEGATIVE_BUFFER(), ":ref:`-%s=value <simflag-%s>` *or* -%s value \n%s\n", FLAG_NAME[i], FLAG_NAME[i], FLAG_NAME[i], desc[i]);
+        cur += snprintf(cur, CHECK_NONNEGATIVE_BUFFER(), ":ref:`-%s=value <simflag-%s>` *or* -%s value\n%s\n", FLAG_NAME[i], FLAG_NAME[i], FLAG_NAME[i], desc[i]);
       } else {
         cur += snprintf(cur, CHECK_NONNEGATIVE_BUFFER(), "<-%s=value> or <-%s value>\n%s\n", FLAG_NAME[i], FLAG_NAME[i], desc[i]);
       }
@@ -2733,7 +2719,7 @@ char* System_getSimulationHelpTextSphinx(int detailed, int sphinx)
 
       case FLAG_IDA_LS:
         numExtraFlags = IDA_LS_MAX;
-        flagName = IDA_LS_METHOD;
+        flagName = IDA_LS_METHOD_NAME;
         flagDesc = IDA_LS_METHOD_DESC;
         break;
 
@@ -2745,7 +2731,7 @@ char* System_getSimulationHelpTextSphinx(int detailed, int sphinx)
 
       case FLAG_JACOBIAN:
         numExtraFlags = JAC_MAX;
-        flagName = JACOBIAN_METHOD;
+        flagName = JACOBIAN_METHOD_NAME;
         flagDesc = JACOBIAN_METHOD_DESC;
         break;
 
@@ -2763,9 +2749,9 @@ char* System_getSimulationHelpTextSphinx(int detailed, int sphinx)
 
       case FLAG_LV:
         firstExtraFlag=firstOMCErrorStream;
-        numExtraFlags = SIM_LOG_MAX;
-        flagName = LOG_STREAM_NAME;
-        flagDesc = LOG_STREAM_DESC;
+        numExtraFlags = OMC_SIM_LOG_MAX;
+        flagName = OMC_LOG_STREAM_NAME;
+        flagDesc = OMC_LOG_STREAM_DESC;
         break;
 
       case FLAG_NEWTON_STRATEGY:
@@ -2782,7 +2768,7 @@ char* System_getSimulationHelpTextSphinx(int detailed, int sphinx)
 
       case FLAG_NLS_LS:
         numExtraFlags = NLS_LS_MAX;
-        flagName = NLS_LS_METHOD;
+        flagName = NLS_LS_METHOD_NAME;
         flagDesc = NLS_LS_METHOD_DESC;
         break;
 
@@ -2934,7 +2920,7 @@ void SystemImpl__initGarbageCollector(void)
 
 int SystemImpl__fileContentsEqual(const char *file1, const char *file2)
 {
-  char buf1[8192],buf2[8192];
+  char buf1[OMC_MAX_FREAD_BUF_SIZE+1],buf2[OMC_MAX_FREAD_BUF_SIZE+1];
   FILE *f1,*f2;
   int i1,i2,totalread=0,error=0;
   omc_stat_t stbuf1;
@@ -2953,8 +2939,8 @@ int SystemImpl__fileContentsEqual(const char *file1, const char *file2)
     return 0;
   }
   do {
-    i1 = omc_fread(buf1,1,8192,f1, 1);
-    i2 = omc_fread(buf2,1,8192,f2, 1);
+    i1 = omc_fread(buf1,1,OMC_MAX_FREAD_BUF_SIZE,f1, 1);
+    i2 = omc_fread(buf2,1,OMC_MAX_FREAD_BUF_SIZE,f2, 1);
     if (i1 != i2 || strncmp(buf1,buf2,i1)) {
       error = 1;
     }
@@ -3091,8 +3077,8 @@ int SystemImpl__covertTextFileToCLiteral(const char *textFile, const char *outFi
   FILE *fin;
   FILE *fout = NULL;
   int result = 0, n, i, j, k, isMSVC = !strcmp(target, "msvc");
-  char buffer[512];
-  char obuffer[1024];
+  char buffer[BUFSIZ+1];
+  char obuffer[BUFSIZ*2+1];
   fin = omc_fopen(textFile, "r");
   if (!fin) {
     goto done;
@@ -3118,7 +3104,7 @@ int SystemImpl__covertTextFileToCLiteral(const char *textFile, const char *outFi
     fputc('{', fout);
     fputc('\n', fout);
     do {
-      n = omc_fread(buffer,1,511,fin, 1);
+      n = omc_fread(buffer,1,BUFSIZ,fin, 1);
       j = 0;
       /* adrpo: encode each char */
       for (i=0; i<n; i++) {
@@ -3161,7 +3147,7 @@ int SystemImpl__covertTextFileToCLiteral(const char *textFile, const char *outFi
   {
     fputc('\"', fout);
     do {
-      n = omc_fread(buffer,1,511,fin, 1);
+      n = omc_fread(buffer,1,BUFSIZ,fin, 1);
       j = 0;
       for (i=0; i<n; i++) {
         switch (buffer[i]) {

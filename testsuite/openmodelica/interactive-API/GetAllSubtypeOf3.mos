@@ -1,0 +1,37 @@
+// name: GetAllSubtypeOf3
+// keywords:
+// status: correct
+// cflags: -d=newInst
+//
+// Tests the getAllSubtypeOf API function.
+//
+
+loadString("
+  partial model A
+  end A;
+
+  partial model B
+    extends A;
+  end B;
+
+  model D
+    extends A;
+  end D;
+
+  model C
+    extends A;
+  end C;
+");
+
+getAllSubtypeOf(A, includePartial = true);
+getAllSubtypeOf(A, includePartial = false);
+getAllSubtypeOf(A, includePartial = true, sort = true);
+getErrorString();
+
+// Result:
+// true
+// {A, B, D, C}
+// {D, C}
+// {A, B, C, D}
+// ""
+// endResult

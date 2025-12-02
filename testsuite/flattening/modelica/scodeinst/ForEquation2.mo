@@ -1,7 +1,6 @@
 // name: ForEquation2.mo
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 
 model ForEquation2

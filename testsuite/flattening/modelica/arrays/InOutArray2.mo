@@ -1,7 +1,6 @@
 // name: String arrays
 // keywords: array
 // status: correct
-// cflags: -d=-newInst
 
 function strCombine
   input String[:] inVal;
@@ -16,6 +15,7 @@ end strCombine;
 class InOutArray2
   constant String A[5] = { "hello", " world", "!", " ab", "ba " };
   String Asum = strCombine(A);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end InOutArray2;
 
 // Result:

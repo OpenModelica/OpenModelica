@@ -80,7 +80,17 @@ protected
   DAE.Element class_elem;
 algorithm
   daeFunctions := convertFunctionTree(functions);
+  dae := convertModel(flatModel);
+  execStat(getInstanceName());
+end convert;
 
+function convertModel
+  input FlatModel flatModel;
+  output DAE.DAElist dae;
+protected
+  list<DAE.Element> elems;
+  DAE.Element class_elem;
+algorithm
   elems := convertVariables(flatModel.variables, {});
   elems := convertEquations(flatModel.equations, elems);
   elems := convertInitialEquations(flatModel.initialEquations, elems);
@@ -89,9 +99,7 @@ algorithm
 
   class_elem := DAE.COMP(FlatModel.fullName(flatModel), elems, flatModel.source, ElementSource.getOptComment(flatModel.source));
   dae := DAE.DAE({class_elem});
-
-  execStat(getInstanceName());
-end convert;
+end convertModel;
 
 function convertStatements
   input list<Statement> statements;
@@ -138,7 +146,7 @@ algorithm
   binding_exp := Binding.toDAEExp(var.binding);
   var_attr := convertVarAttributes(var.typeAttributes, var.ty, var.attributes);
   daeVar := makeDAEVar(var.name, var.ty, binding_exp, var.attributes,
-    var.visibility, var_attr, var.comment, settings, var.info);
+    var.visibility, var_attr, var.comment, settings, var.info, Variable.isEncrypted(var));
 end convertVariable;
 
 function makeDAEVar
@@ -148,9 +156,10 @@ function makeDAEVar
   input Attributes attr;
   input Visibility vis;
   input Option<DAE.VariableAttributes> vattr;
-  input Option<SCode.Comment> comment;
+  input SCode.Comment comment;
   input VariableConversionSettings settings;
   input SourceInfo info;
+  input Boolean encrypted;
   output DAE.Element var;
 protected
   DAE.ComponentRef dcref;
@@ -181,15 +190,16 @@ algorithm
           ConnectorType.toDAE(attr.connectorType),
           source,
           vattr,
-          comment,
-          Absyn.NOT_INNER_OUTER()
+          SOME(comment),
+          Absyn.NOT_INNER_OUTER(),
+          encrypted
         );
 
     else
       DAE.VAR(dcref, DAE.VarKind.VARIABLE(), DAE.VarDirection.BIDIR(),
         DAE.VarParallelism.NON_PARALLEL(), Prefixes.visibilityToDAE(vis), dty,
-        binding, {}, DAE.ConnectorType.NON_CONNECTOR(), source, vattr, comment,
-        Absyn.NOT_INNER_OUTER());
+        binding, {}, DAE.ConnectorType.NON_CONNECTOR(), source, vattr, SOME(comment),
+        Absyn.NOT_INNER_OUTER(),encrypted);
 
   end match;
 end makeDAEVar;
@@ -970,6 +980,7 @@ protected
   list<Statement> stmts;
   list<DAE.Statement> dstmts;
   Boolean first = true;
+  Boolean single = listLength(ifBranches) == 1;
   DAE.Else else_stmt = DAE.Else.NOELSE();
 algorithm
   for b in listReverse(ifBranches) loop
@@ -977,7 +988,7 @@ algorithm
     dcond := Expression.toDAE(cond);
     dstmts := convertStatements(stmts);
 
-    if first and Expression.isTrue(cond) then
+    if first and not single and Expression.isTrue(cond) then
       else_stmt := DAE.Else.ELSE(dstmts);
     else
       else_stmt := DAE.Else.ELSEIF(dcond, dstmts, else_stmt);
@@ -996,14 +1007,18 @@ function convertWhenStatement
   input DAE.ElementSource source;
   output DAE.Statement whenStatement;
 protected
+  Expression co;
+  list<ComponentRef> conditions;
   DAE.Exp cond;
   list<DAE.Statement> stmts;
   Option<DAE.Statement> when_stmt = NONE();
 algorithm
   for b in listReverse(whenBranches) loop
-    cond := Expression.toDAE(Util.tuple21(b));
+    co := Util.tuple21(b);
+    conditions := list(c for c guard(Type.isBoolean(ComponentRef.getSubscriptedType(c))) in UnorderedSet.toList(Expression.extractCrefs(co)));
+    cond := Expression.toDAE(co);
     stmts := convertStatements(Util.tuple22(b));
-    when_stmt := SOME(DAE.Statement.STMT_WHEN(cond, {}, false, stmts, when_stmt, source));
+    when_stmt := SOME(DAE.Statement.STMT_WHEN(cond, list(ComponentRef.toDAE(c) for c in conditions), false, stmts, when_stmt, source));
   end for;
 
   SOME(whenStatement) := when_stmt;
@@ -1152,7 +1167,7 @@ algorithm
         var_attr := convertVarAttributes(ty_attr, ty, attr);
       then
         makeDAEVar(cref, ty, binding, attr, InstNode.visibility(node), var_attr,
-          comp.comment, FUNCTION_VARIABLE_CONVERSION_SETTINGS, info);
+          comp.comment, FUNCTION_VARIABLE_CONVERSION_SETTINGS, info, false);
 
     else
       algorithm

@@ -1,7 +1,6 @@
 // name:     Extends10
 // keywords: extends
 // status:   correct
-// cflags: -d=-newInst
 //
 // Testing that imports are handled properly when extending.
 //
@@ -31,6 +30,7 @@ end M;
 
 class Extends10
   extends M.A;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Extends10;
 
 // Result:

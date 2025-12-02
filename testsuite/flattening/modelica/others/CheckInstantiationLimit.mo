@@ -1,6 +1,5 @@
 // name: CheckInstantiationLimit
 // status: correct
-// cflags: -d=-newInst
 
 model CheckInstantiationLimit
   extends M(i=1);
@@ -19,6 +18,7 @@ model M
   N n(i=i+1) if i<P.limit;
 end M;
 
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end CheckInstantiationLimit;
 // Result:
 // class CheckInstantiationLimit

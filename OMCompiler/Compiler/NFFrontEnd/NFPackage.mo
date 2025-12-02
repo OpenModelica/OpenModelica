@@ -168,7 +168,7 @@ public
     InstNode cr_node = ComponentRef.node(cref);
   algorithm
     Typing.typeComponentBinding(cr_node, NFInstContext.CLASS);
-    binding := Component.getImplicitBinding(InstNode.component(cr_node));
+    binding := Component.getImplicitBinding(InstNode.component(cr_node), InstNode.instanceParent(cr_node));
 
     if Binding.isUnbound(binding) then
       binding := getPackageConstantBinding2(cr_node, ComponentRef.rest(cref));
@@ -293,8 +293,7 @@ public
   algorithm
     exp := match exp
       case Expression.CREF(cref = cref as ComponentRef.CREF())
-        then if ComponentRef.isPackageConstant(cref) then
-          Ceval.evalExp(exp, Ceval.EvalTarget.IGNORE_ERRORS()) else exp;
+        then if ComponentRef.isPackageConstant(cref) then Ceval.evalExp(exp) else exp;
 
       else exp;
     end match;

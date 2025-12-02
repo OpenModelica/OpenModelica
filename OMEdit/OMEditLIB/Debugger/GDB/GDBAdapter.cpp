@@ -316,7 +316,13 @@ void GDBAdapter::launch(QString program, QString workingDirectory, QStringList a
   setGDBKilled(false);
 #if defined(_WIN32)
   /* Set the environment for GDB process */
-  QProcessEnvironment processEnvironment = StringHandler::simulationProcessEnvironment();
+  QString fileName = QString(simulationOptions.getWorkingDirectory()).append("/").append(simulationOptions.getOutputFileName());
+  fileName = fileName.replace("//", "/");
+  QString errorMsg;
+  QProcessEnvironment processEnvironment = StringHandler::modelicaSimulationProcessEnvironment(fileName + ".bat", &errorMsg);
+  if (!errorMsg.isEmpty()) {
+    MainWindow::instance()->getTargetOutputWidget()->logDebuggerErrorOutput(errorMsg);
+  }
   if (!simulationOptions.getFileName().isEmpty()) {
     QFileInfo fileInfo(simulationOptions.getFileName());
     processEnvironment.insert("PATH", fileInfo.absoluteDir().absolutePath() + ";" + processEnvironment.value("PATH"));
@@ -327,7 +333,7 @@ void GDBAdapter::launch(QString program, QString workingDirectory, QStringList a
   connect(mpGDBProcess, SIGNAL(started()), SLOT(handleGDBProcessStarted()));
   connect(mpGDBProcess, SIGNAL(readyReadStandardOutput()), SLOT(readGDBStandardOutput()));
   connect(mpGDBProcess, SIGNAL(readyReadStandardError()), SLOT(readGDBErrorOutput()));
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 6, 0))
+#if QT_VERSION >= QT_VERSION_CHECK(5, 6, 0)
   connect(mpGDBProcess, SIGNAL(errorOccurred(QProcess::ProcessError)), SLOT(handleGDBProcessError(QProcess::ProcessError)));
 #else
   connect(mpGDBProcess, SIGNAL(error(QProcess::ProcessError)), SLOT(handleGDBProcessError(QProcess::ProcessError)));
@@ -764,7 +770,7 @@ void GDBAdapter::createFullBacktraceCB(GDBMIResultRecord *pGDBMIResultRecord)
   if (MainWindow::instance()->getLibraryWidget()->saveFile(fileInfo.absoluteFilePath(), backtrace)) {
     LibraryTreeItem *pLibraryTreeItem = pLibraryTreeModel->createLibraryTreeItem(LibraryTreeItem::Text, fileInfo.fileName(),
                                                                                  fileInfo.absoluteFilePath(), fileInfo.absoluteFilePath(),
-                                                                                 true, pLibraryTreeModel->getRootLibraryTreeItem());
+                                                                                 true, false, pLibraryTreeModel->getRootLibraryTreeItem());
     if (pLibraryTreeItem) {
       pLibraryTreeModel->showModelWidget(pLibraryTreeItem);
     }
@@ -886,7 +892,11 @@ void GDBAdapter::handleGDBProcessStartedHelper()
   mDebuggerLogFile.setFileName(QString("%1omeditdebugger.log").arg(tmpPath));
   if (mDebuggerLogFile.open(QIODevice::WriteOnly | QIODevice::Text)) {
     mDebuggerLogFileTextStream.setDevice(&mDebuggerLogFile);
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+    mDebuggerLogFileTextStream.setEncoding(QStringConverter::Utf8);
+#else
     mDebuggerLogFileTextStream.setCodec(Helper::utf8.toUtf8().constData());
+#endif
     mDebuggerLogFileTextStream.setGenerateByteOrderMark(false);
   }
   emit GDBProcessStarted();

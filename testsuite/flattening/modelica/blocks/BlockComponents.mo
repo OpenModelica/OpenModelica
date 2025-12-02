@@ -1,7 +1,6 @@
 // name: BlockComponents
 // keywords: block
 // status: correct
-// cflags: -d=-newInst
 //
 // Tests declaration and instantiation of a block with components in it
 //
@@ -19,6 +18,7 @@ model BlockComponents
 equation
   tb.inInt = 3;
   i = tb.outInt;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end BlockComponents;
 
 // Result:

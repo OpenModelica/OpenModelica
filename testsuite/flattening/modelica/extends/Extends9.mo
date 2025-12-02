@@ -1,7 +1,6 @@
 // name:     Extends9
 // keywords: extends
 // status:   correct
-// cflags: -d=-newInst
 //
 // Testing modifiers that are looked up through the same base class
 //
@@ -35,6 +34,7 @@ partial model Base
 end Base;
 model Main
   extends Base(x=flange_b.phi);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Main;
 
 

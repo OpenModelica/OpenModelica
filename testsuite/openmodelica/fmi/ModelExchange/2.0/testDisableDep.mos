@@ -52,10 +52,18 @@ readFile("modelDescription.tmp.xml");
 //   fmiVersion=\"2.0\"
 //   modelName=\"testDID\"
 //   description=\"\"
+//   version=\"\"
 //   variableNamingConvention=\"structured\"
 //   numberOfEventIndicators=\"0\">
 //   <ModelExchange
-//     modelIdentifier=\"testDID\">
+//     modelIdentifier=\"testDID\"
+//     needsExecutionTool=\"false\"
+//     completedIntegratorStepNotNeeded=\"false\"
+//     canBeInstantiatedOnlyOncePerProcess=\"false\"
+//     canNotUseMemoryManagementFunctions=\"false\"
+//     canGetAndSetFMUstate=\"false\"
+//     canSerializeFMUstate=\"false\"
+//     providesDirectionalDerivative=\"false\">
 //     <SourceFiles>
 //       <File name=\"testDID.c\" />
 //       <File name=\"testDID_functions.c\" />
@@ -80,6 +88,8 @@ readFile("modelDescription.tmp.xml");
 //       <File name=\"testDID_18spd.c\" />
 //       <File name=\"testDID_init_fmu.c\" />
 //       <File name=\"testDID_FMU.c\" />
+//       <File name=\"fmi-export/fmu2_model_interface.c\" />
+//       <File name=\"fmi-export/fmu_read_flags.c\" />
 //       <File name=\"./gc/memory_pool.c\" />
 //       <File name=\"./gc/omc_gc.c\" />
 //       <File name=\"./util/base_array.c\" />
@@ -109,6 +119,7 @@ readFile("modelDescription.tmp.xml");
 //       <File name=\"./util/utility.c\" />
 //       <File name=\"./util/varinfo.c\" />
 //       <File name=\"./math-support/pivot.c\" />
+//       <File name=\"./simulation/arrayIndex.c\" />
 //       <File name=\"./simulation/jacobian_util.c\" />
 //       <File name=\"./simulation/omc_simulation_util.c\" />
 //       <File name=\"./simulation/options.c\" />
@@ -123,6 +134,49 @@ readFile("modelDescription.tmp.xml");
 //       <File name=\"./simulation/solver/synchronous.c\" />
 //       <File name=\"./simulation/solver/initialization/initialization.c\" />
 //       <File name=\"./meta/meta_modelica_catch.c\" />
+//       <File name=\"./external_solvers/dgesv.c\" />
+//       <File name=\"./external_solvers/dgetrf.c\" />
+//       <File name=\"./external_solvers/dgetri.c\" />
+//       <File name=\"./external_solvers/dtrtri.c\" />
+//       <File name=\"./external_solvers/dtrti2.c\" />
+//       <File name=\"./external_solvers/dlamch.c\" />
+//       <File name=\"./external_solvers/ilaenv.c\" />
+//       <File name=\"./external_solvers/xerbla.c\" />
+//       <File name=\"./external_solvers/dgetf2.c\" />
+//       <File name=\"./external_solvers/dgetrs.c\" />
+//       <File name=\"./external_solvers/dlaswp.c\" />
+//       <File name=\"./external_solvers/ieeeck.c\" />
+//       <File name=\"./external_solvers/iparmq.c\" />
+//       <File name=\"./external_solvers/dgemm.c\" />
+//       <File name=\"./external_solvers/dger.c\" />
+//       <File name=\"./external_solvers/dgemv.c\" />
+//       <File name=\"./external_solvers/dscal.c\" />
+//       <File name=\"./external_solvers/dswap.c\" />
+//       <File name=\"./external_solvers/dtrsm.c\" />
+//       <File name=\"./external_solvers/dtrmm.c\" />
+//       <File name=\"./external_solvers/dtrmv.c\" />
+//       <File name=\"./external_solvers/idamax.c\" />
+//       <File name=\"./external_solvers/lsame.c\" />
+//       <File name=\"./external_solvers/i_nint.c\" />
+//       <File name=\"./external_solvers/pow_di.c\" />
+//       <File name=\"./external_solvers/s_cmp.c\" />
+//       <File name=\"./external_solvers/s_copy.c\" />
+//       <File name=\"./external_solvers/s_cat.c\" />
+//       <File name=\"./external_solvers/F77_aloc.c\" />
+//       <File name=\"./external_solvers/exit_.c\" />
+//       <File name=\"./external_solvers/enorm_.c\" />
+//       <File name=\"./external_solvers/hybrj_.c\" />
+//       <File name=\"./external_solvers/dpmpar_.c\" />
+//       <File name=\"./external_solvers/qrfac_.c\" />
+//       <File name=\"./external_solvers/qform_.c\" />
+//       <File name=\"./external_solvers/dogleg_.c\" />
+//       <File name=\"./external_solvers/r1updt_.c\" />
+//       <File name=\"./external_solvers/r1mpyq_.c\" />
+//       <File name=\"ModelicaExternalC/ModelicaStandardTables.c\" />
+//       <File name=\"ModelicaExternalC/ModelicaMatIO.c\" />
+//       <File name=\"ModelicaExternalC/ModelicaIO.c\" />
+//       <File name=\"ModelicaExternalC/ModelicaStandardTablesDummyUsertab.c\" />
+//       <File name=\"ModelicaExternalC/snprintf.c\" />
 //     </SourceFiles>
 //   </ModelExchange>
 //   <TypeDefinitions>

@@ -44,7 +44,8 @@
 #define DEFAULT_FLAG_LSS_MIN_SIZE 1000
 #define DEFAULT_FLAG_NLSS_MAX_DENSITY 0.1
 #define DEFAULT_FLAG_NLSS_MIN_SIZE 1000
-#define DEFAULT_FLAG_LV_MAX_WARN 3          /* Default value for flag FLAG_LV_MAX_WARN */
+#define DEFAULT_FLAG_LV_MAX_WARN 3
+#define DEFAULT_FLAG_NEWTON_MAX_STEPS 20
 
 enum _FLAG
 {
@@ -96,8 +97,6 @@ enum _FLAG
   FLAG_IIM,
   FLAG_IIT,
   FLAG_ILS,
-  FLAG_IMPRK_ORDER,
-  FLAG_IMPRK_LS,
   FLAG_INITIAL_STEP_SIZE,
   FLAG_INPUT_CSV,
   FLAG_INPUT_FILE_STATES,
@@ -126,16 +125,23 @@ enum _FLAG
   FLAG_MAX_ORDER,
   FLAG_MAX_STEP_SIZE,
   FLAG_MEASURETIMEPLOTFORMAT,
-  FLAG_NEWTON_DIAGNOSTICS,
+  FLAG_MOO_OPTIMIZATION,
+  FLAG_MOO_L2BN_P1_ITERATIONS,
+  FLAG_MOO_L2BN_P2_ITERATIONS,
+  FLAG_MOO_L2BN_P2_LEVEL,
   FLAG_NEWTON_FTOL,
+  FLAG_NEWTON_MAX_STEPS,
   FLAG_NEWTON_MAX_STEP_FACTOR,
   FLAG_NEWTON_XTOL,
+  FLAG_NEWTON_JAC_UPDATES,
   FLAG_NEWTON_STRATEGY,
   FLAG_NLS,
   FLAG_NLS_INFO,
   FLAG_NLS_LS,
   FLAG_NLSS_MAX_DENSITY,
   FLAG_NLSS_MIN_SIZE,
+  FLAG_NLS_JAC_TEST_ATOL,
+  FLAG_NLS_JAC_TEST_RTOL,
   FLAG_NOEMIT,
   FLAG_NOEQUIDISTANT_GRID,
   FLAG_NOEQUIDISTANT_OUT_FREQ,
@@ -159,6 +165,8 @@ enum _FLAG
   FLAG_DATA_RECONCILE_STATE,
   FLAG_SR,
   FLAG_SR_CTRL,
+  FLAG_SR_CTRL_FILTER,
+  FLAG_SR_CTRL_FHR,
   FLAG_SR_ERR,
   FLAG_SR_INT,
   FLAG_SR_NLS,
@@ -170,10 +178,14 @@ enum _FLAG
   FLAG_MR_PAR,
   FLAG_RT,
   FLAG_S,
+  FLAG_SAVE_INITIAL_GUESS_SYSTEM,
   FLAG_SINGLE_PRECISION,
   FLAG_SOLVER_STEPS,
   FLAG_STEADY_STATE,
   FLAG_STEADY_STATE_TOL,
+  FLAG_STOP_AT_SYSTEM,
+  FLAG_SVD_SPARSE_COUNT,
+  FLAG_SVD_SPARSE_SIGMA,
   FLAG_DATA_RECONCILE_Sx,
   FLAG_UP_HESSIAN,
   FLAG_W,
@@ -253,7 +265,6 @@ enum GB_METHOD {
   RK_RUNGEKUTTA,      /* rungekutta*/
   RK_RKSSC,           /* rungekuttaSsc */
 
-
   RK_MAX
 };
 
@@ -265,6 +276,7 @@ enum GB_NLS_METHOD {
 
   GB_NLS_NEWTON,
   GB_NLS_KINSOL,
+  GB_NLS_KINSOL_B,
 
   GB_NLS_MAX
 };
@@ -276,11 +288,15 @@ extern const char *GB_NLS_METHOD_DESC[GB_NLS_MAX];
  * @brief Step size controller method
  */
 enum GB_CTRL_METHOD {
-  GB_CTRL_UNKNOWN = 0,  /* Unknown controller */
-  GB_CTRL_I = 1,        /* I controller */
-  GB_CTRL_PI = 2,       /* PI controller */
-  GB_CTRL_PID = 3,       /* PID controller */
-  GB_CTRL_CNST = 4,     /* Constant step size */
+  GB_CTRL_UNKNOWN = 0,        /* Unknown controller */
+  GB_CTRL_I = 1,              /* I controller */
+  GB_CTRL_PI_33 = 2,          /* PI controller for step size */
+  GB_CTRL_PI_34 = 3,          /* PI controller for step size */
+  GB_CTRL_PI_42 = 4,          /* PI controller for step size */
+  GB_CTRL_PID_H312 = 5,       /* PID controller for step size */
+  GB_CTRL_PID_SOEDERLIND = 6, /* PID controller for step size */
+  GB_CTRL_PID_STIFF = 7,      /* PID controller for step size */
+  GB_CTRL_CNST = 8,           /* Constant step size */
 
   GB_CTRL_MAX
 };
@@ -308,18 +324,12 @@ enum SOLVER_METHOD
 {
   S_UNKNOWN = 0,
 
-  S_EULER,
-  S_HEUN,
-  S_RUNGEKUTTA,
-  S_IMPEULER,
-  S_TRAPEZOID,
-  S_IMPRUNGEKUTTA,
-  S_GBODE,
-  S_IRKSCO,
   S_DASSL,
   S_IDA,
   S_CVODE,
-  S_ERKSSC,
+  S_GBODE,
+  S_EULER,
+  S_RUNGEKUTTA,
   S_SYM_SOLVER,
   S_SYM_SOLVER_SSC,
   S_QSS,
@@ -388,11 +398,13 @@ typedef enum NONLINEAR_SOLVER
 #if !defined(OMC_MINIMAL_RUNTIME)
   NLS_HYBRID,
   NLS_KINSOL,
+  NLS_KINSOL_B,
   NLS_NEWTON,
   NLS_MIXED,
 #else
   NLS_HYBRID_DOESNT_EXIST,
   NLS_KINSOL_DOESNT_EXIST,
+  NLS_KINSOL_B_DOESNT_EXIST,
   NLS_NEWTON_DOESNT_EXIST,
   NLS_MIXED_DOESNT_EXIST,
 #endif
@@ -420,7 +432,7 @@ typedef enum NEWTON_STRATEGY
 extern const char *NEWTONSTRATEGY_NAME[NEWTON_MAX];
 extern const char *NEWTONSTRATEGY_DESC[NEWTON_MAX];
 
-enum JACOBIAN_METHOD
+typedef enum JACOBIAN_METHOD
 {
   JAC_UNKNOWN = 0,
 
@@ -431,9 +443,9 @@ enum JACOBIAN_METHOD
   SYMJAC,             /* Non-colored symbolic Jacobian */
 
   JAC_MAX
-};
+} JACOBIAN_METHOD;
 
-extern const char *JACOBIAN_METHOD[JAC_MAX];
+extern const char *JACOBIAN_METHOD_NAME[JAC_MAX];
 extern const char *JACOBIAN_METHOD_DESC[JAC_MAX];
 
 /**
@@ -454,7 +466,7 @@ enum IDA_LS
   IDA_LS_MAX        /* Maximum number of methods available. Not a method itself! */
 };
 
-extern const char *IDA_LS_METHOD[IDA_LS_MAX];
+extern const char *IDA_LS_METHOD_NAME[IDA_LS_MAX];
 extern const char *IDA_LS_METHOD_DESC[IDA_LS_MAX];
 
 /**
@@ -475,7 +487,7 @@ typedef enum NLS_LS
   NLS_LS_MAX
 } NLS_LS;
 
-extern const char *NLS_LS_METHOD[NLS_LS_MAX];
+extern const char *NLS_LS_METHOD_NAME[NLS_LS_MAX];
 extern const char *NLS_LS_METHOD_DESC[NLS_LS_MAX];
 
 /**
@@ -493,7 +505,7 @@ enum IMPRK_LS
   IMPRK_LS_MAX
 };
 
-extern const char *IMPRK_LS_METHOD[IMPRK_LS_MAX];
+extern const char *IMPRK_LS_METHOD_NAME[IMPRK_LS_MAX];
 extern const char *IMPRK_LS_METHOD_DESC[IMPRK_LS_MAX];
 
 enum HOMOTOPY_BACKTRACE_STRATEGY

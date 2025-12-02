@@ -50,7 +50,7 @@ const char *EVAL_CONTEXT_STRING[CONTEXT_MAX] = {
 void setContext(DATA* data, double currentTime, EVAL_CONTEXT currentContext) {
   data->simulationInfo->currentContextOld = data->simulationInfo->currentContext;
   data->simulationInfo->currentContext = currentContext;
-  infoStreamPrint(LOG_SOLVER_CONTEXT, 0, "+++ Set context %s +++ at time %f", EVAL_CONTEXT_STRING[currentContext], currentTime);
+  infoStreamPrint(OMC_LOG_SOLVER_CONTEXT, 0, "+++ Set context %s +++ at time %f", EVAL_CONTEXT_STRING[currentContext], currentTime);
   if (currentContext == CONTEXT_JACOBIAN ||
       currentContext == CONTEXT_SYM_JACOBIAN)
   {
@@ -64,7 +64,7 @@ void setContext(DATA* data, double currentTime, EVAL_CONTEXT currentContext) {
  * @param data  Pointer to data struct.
  */
 void unsetContext(DATA* data) {
-  infoStreamPrint(LOG_SOLVER_CONTEXT, 0, "--- Unset context %s ---", EVAL_CONTEXT_STRING[data->simulationInfo->currentContext]);
+  infoStreamPrint(OMC_LOG_SOLVER_CONTEXT, 0, "--- Unset context %s ---", EVAL_CONTEXT_STRING[data->simulationInfo->currentContext]);
   data->simulationInfo->currentContext = data->simulationInfo->currentContextOld;
 }
 
@@ -79,6 +79,6 @@ void increaseJacContext(DATA* data) {
       currentContext == CONTEXT_SYM_JACOBIAN)
   {
     data->simulationInfo->currentJacobianEval++;
-    infoStreamPrint(LOG_SOLVER_CONTEXT, 0, "+++ Increase Jacobian column context %s +++ to %d", EVAL_CONTEXT_STRING[currentContext], data->simulationInfo->currentJacobianEval);
+    infoStreamPrint(OMC_LOG_SOLVER_CONTEXT, 0, "+++ Increase Jacobian column context %s +++ to %d", EVAL_CONTEXT_STRING[currentContext], data->simulationInfo->currentJacobianEval);
   }
 }

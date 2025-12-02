@@ -13,6 +13,6 @@ getErrorString();
 
 // Result:
 // true
-// {"RecordFuncParam","RecordFuncParam_init.xml"}
+// {"RecordFuncParam", "RecordFuncParam_init.xml"}
 // ""
 // endResult

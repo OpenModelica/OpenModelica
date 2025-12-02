@@ -1,7 +1,6 @@
 // name: Connect15
 // keywords:  connector, arrays
 // status: correct
-// cflags: -d=-newInst
 //
 // Test that it is possible to connect to array of connector.
 //
@@ -19,6 +18,7 @@ model Connect15
   A t1,t2;
 equation
 connect(t1.p[1],t2.p[2]);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Connect15;
 
 // Result:

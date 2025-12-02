@@ -430,7 +430,7 @@ case SIMCODE(modelInfo=MODELINFO(vars = vars as SIMVARS(__))) then
 
     virtual string getModelName();
     virtual bool isJacobianSparse();//true if getSparseJacobian is implemented and getJacobian is not, false if getJacobian is implemented and getSparseJacobian is not.
-    virtual bool isAnalyticJacobianGenerated();//true if the flag --generateSymbolicJacobian is true, false if not.
+    virtual bool isAnalyticJacobianGenerated();//true if the flag --generateDynamicJacobian=symbolic, false if not.
    private:
     // update residual methods
     <%extraResidualsFuncsDecl%>
@@ -1035,7 +1035,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
       else "A matrix type is not supported"
           end match
 
-      let isAnalyticJacobianGenerated = if getConfigBool(GENERATE_SYMBOLIC_JACOBIAN) then 'return true;' else 'return false;'
+      let isAnalyticJacobianGenerated = if stringEq(getConfigString(GENERATE_DYNAMIC_JACOBIAN), "symbolic") then 'return true;' else 'return false;'
 
      let statesetjacobian =
      (stateSets |> set hasindex i1 fromindex 0 => (match set
@@ -6230,52 +6230,51 @@ case SES_NONLINEAR(nlSystem = nls as NONLINEARSYSTEM(__)) then
   let size = listLength(nls.crefs)
   <<
 
-   <%nls.crefs |> name hasindex i0 =>
+  <%nls.crefs |> name hasindex i0 =>
     let namestr = contextCref(name, context, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
     <<
     _res[<%i0%>] = <%namestr%>;
-     >>
+    >>
   ;separator="\n"%>
-   >>
- case SES_LINEAR(lSystem = ls as LINEARSYSTEM(__))then
-   match ls.jacobianMatrix
-       case SOME(__) then
-       let &varDecls = buffer "" /*BUFD*/
-       let prebody = (ls.residual |> eq2 =>
-         functionExtraResidualsPreBody(eq2, &varDecls, context, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-     ;separator="\n")
-     let body = (ls.residual |> eq2 as SES_RESIDUAL(__) hasindex i0 =>
-         let &preExp = buffer "" /*BUFD*/
-         let expPart = daeExp(eq2.exp, context, &preExp, &varDecls, simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-         '<%preExp%>_b[<%i0%>] = <%expPart%>;'
+  >>
+case SES_LINEAR(lSystem = ls as LINEARSYSTEM(__)) then
+  match ls.jacobianMatrix
+  case SOME(__) then
+    let &varDecls = buffer "" /*BUFD*/
+    let prebody = (ls.residual |> eq2 =>
+      functionExtraResidualsPreBody(eq2, &varDecls, context, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
       ;separator="\n")
-       <<
-         <%varDecls%>
-         //prebody
-         <%prebody%>
-         //body
-         <%body%>
-       >>
+    let body = (ls.residual |> eq2 as SES_RESIDUAL(__) hasindex i0 =>
+      let &preExp = buffer "" /*BUFD*/
+      let expPart = daeExp(eq2.exp, context, &preExp, &varDecls, simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+      '<%preExp%>_b[<%i0%>] = <%expPart%>;'
+      ;separator="\n")
+    <<
+      <%varDecls%>
+      //prebody
+      <%prebody%>
+      //body
+      <%body%>
+    >>
   else
-   let &varDecls = buffer "" /*BUFD*/
-   let Amatrix=
-    (ls.simJac |> (row, col, eq as SES_RESIDUAL(__)) hasindex i0 fromindex 0 =>
-      let &preExp = buffer ""
-      let expPart = daeExp(eq.exp, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-      '<%preExp%>__A(<%row%>,<%col%>)=<%expPart%>;'
-  ;separator="\n")
+    let &varDecls = buffer "" /*BUFD*/
+    let Amatrix =
+      (ls.simJac |> (row, col, eq as SES_RESIDUAL(__)) hasindex i0 fromindex 0 =>
+        let &preExp = buffer ""
+        let expPart = daeExp(eq.exp, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+        '<%preExp%>__A(<%row%>,<%col%>)=<%expPart%>;'
+      ;separator="\n")
 
- let bvector =  (ls.beqs |> exp hasindex i0 fromindex 1=>
-     let &preExp = buffer ""
-     let expPart = daeExp(exp, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-     '<%preExp%>__b(<%i0%>)=<%expPart%>;'
-  ;separator="\n")
- <<
-     <%varDecls%>
+    let bvector =  (ls.beqs |> exp hasindex i0 fromindex 1=>
+        let &preExp = buffer ""
+        let expPart = daeExp(exp, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+        '<%preExp%>__b(<%i0%>)=<%expPart%>;'
+      ;separator="\n")
+    <<
+      <%varDecls%>
       <%Amatrix%>
       <%bvector%>
-  >>
-
+    >>
 end initAlgloopEquation;
 
 
@@ -9783,38 +9782,9 @@ template equation_function_create_single_func(SimEqSystem eq, Context context, S
   let &measureTimeStartVar = buffer "" /*BUFD*/
   let &measureTimeEndVar = buffer "" /*BUFD*/
 
-  let body = match eq
-   case e as SES_SIMPLE_ASSIGN(__)
-     then
-      equationSimpleAssign(e, context, &varDeclsLocal, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation, assignToStartValues, overwriteOldStartValue)
-   case e as SES_IFEQUATION(__)
-     then
-     equationIfEquation(e, context, &varDeclsLocal, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-   case e as SES_ALGORITHM(__)
-   case e as SES_INVERSE_ALGORITHM(__)
-      then
-      equationAlgorithm(e, context, &varDeclsLocal,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-   case e as SES_WHEN(__)
-      then
-      equationWhen(e, context, &varDeclsLocal, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-    case e as SES_ARRAY_CALL_ASSIGN(__)
-      then
-      equationArrayCallAssign(e, context, &varDeclsLocal, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation, assignToStartValues)
-    case e as SES_LINEAR(__)
-    case e as SES_NONLINEAR(__)
-      then
-      equationLinearOrNonLinear(e, context, &varDeclsLocal,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName)
-    case e as SES_MIXED(__)
-      then
-      /*<%equationMixed(e, context, &varDeclsLocal, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>*/
-      let &additionalFuncs += equation_function_create_single_func(e.cont, context, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, method, classnameext, stateDerVectorName, useFlatArrayNotation, createMeasureTime, assignToStartValues, overwriteOldStartValue, "")
-      "throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,\"Mixed systems are not supported yet\");"
-    case e as SES_FOR_LOOP(__)
-      then
-        equationForLoop(e, context, &varDeclsLocal,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation, assignToStartValues)
-    else
-      error(sourceInfo(), 'NOT IMPLEMENTED EQUATION: <%dumpEqs(fill(eq,1))%>')
-  end match
+  let body = equation_function_create_single_body(eq, context, simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace,
+                                                  additionalFuncs, method, classnameext, stateDerVectorName /*=__zDot*/, useFlatArrayNotation,
+                                                  createMeasureTime, assignToStartValues, overwriteOldStartValue, varDeclsLocal)
   let &measureTimeStartVar += if createMeasureTime then generateMeasureTimeStartCode("measuredProfileBlockStartValues", 'evaluate<%ix_str%>', "MEASURETIME_PROFILEBLOCKS") else ""
   let &measureTimeEndVar += if createMeasureTime then generateMeasureTimeEndCode("measuredProfileBlockStartValues", "measuredProfileBlockEndValues", '(*measureTimeProfileBlocksArray)[<%ix_str_array%>]', 'evaluate<%ix_str%>', "MEASURETIME_PROFILEBLOCKS") else ""
     <<
@@ -9831,6 +9801,49 @@ template equation_function_create_single_func(SimEqSystem eq, Context context, S
     }
     >>
 end equation_function_create_single_func;
+
+template equation_function_create_single_body(SimEqSystem eq, Context context, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace,
+                                              Text& additionalFuncs, Text method, Text classnameext, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation,
+                                              Boolean createMeasureTime, Boolean assignToStartValues, Boolean overwriteOldStartValue, Text &varDeclsLocal)
+::=
+  match eq
+    case e as SES_SIMPLE_ASSIGN(__)
+      then
+      equationSimpleAssign(e, context, &varDeclsLocal, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation, assignToStartValues, overwriteOldStartValue)
+    case e as SES_IFEQUATION(__)
+      then
+      equationIfEquation(e, context, &varDeclsLocal, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+    case e as SES_ALGORITHM(__)
+    case e as SES_INVERSE_ALGORITHM(__)
+      then
+      equationAlgorithm(e, context, &varDeclsLocal,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+    case e as SES_WHEN(__)
+      then
+      equationWhen(e, context, &varDeclsLocal, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+    case e as SES_ARRAY_CALL_ASSIGN(__)
+      then
+      equationArrayCallAssign(e, context, &varDeclsLocal, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation, assignToStartValues)
+    case e as SES_LINEAR(__)
+    case e as SES_NONLINEAR(__)
+      then
+      equationLinearOrNonLinear(e, context, &varDeclsLocal,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName)
+    case e as SES_MIXED(__)
+      then
+      /*<%equationMixed(e, context, &varDeclsLocal, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>*/
+      let &additionalFuncs += equation_function_create_single_func(e.cont, context, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, method, classnameext, stateDerVectorName, useFlatArrayNotation, createMeasureTime, assignToStartValues, overwriteOldStartValue, "")
+      "throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,\"Mixed systems are not supported yet\");"
+    case e as SES_FOR_LOOP(__)
+      then
+      equationForLoop(e, context, &varDeclsLocal,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation, assignToStartValues)
+    case e as SES_FOR_EQUATION(__)
+      then
+      equationForEquation(e, context, &varDeclsLocal, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace,
+                          additionalFuncs, method, classnameext, stateDerVectorName, useFlatArrayNotation,
+                          createMeasureTime, assignToStartValues, overwriteOldStartValue, varDeclsLocal)
+    else
+      error(sourceInfo(), 'NOT IMPLEMENTED EQUATION: <%dumpEqs(fill(eq,1))%>')
+  end match
+end equation_function_create_single_body;
 
 template equationMixed(SimEqSystem eq, Context context, Text &varDecls, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl,
                        Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
@@ -11443,6 +11456,35 @@ template equationForLoop(SimEqSystem eq, Context context, Text &varDecls, SimCod
       >>
 end equationForLoop;
 
+template equationForEquation(SimEqSystem eq, Context context, Text &varDecls, SimCode simCode, Text &extraFuncs, Text &extraFuncsDecl, Text extraFuncsNamespace,
+                             Text& additionalFuncs, Text method,Text classnameext, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation,
+                             Boolean createMeasureTime, Boolean assignToStartValues, Boolean overwriteOldStartValue, Text &varDeclsLocal)
+::=
+  match eq
+    case SES_FOR_EQUATION(__) then
+/*
+      let startFixedExp = match cref2simvar(cref, simCode)
+        case SIMVAR(varKind = CLOCKED_STATE(isStartFixed = isStartFixed)) then
+          'if (<%if isStartFixed then "_clockStart[clockIndex - 1] || "%>_clockSubactive[clockIndex - 1]) return;'
+*/
+      let &preExp = buffer ""
+      let iterExp = daeExp(iter, context, preExp, varDecls, simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, false)
+      let startExp = daeExp(startIt, context, preExp, varDecls, simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, false)
+      let endExp = daeExp(endIt, context, preExp, varDecls, simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, false)
+      let bodyPart = (body |> eq =>
+        equation_function_create_single_body(eq, context, simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace,
+                                             additionalFuncs, method, classnameext, stateDerVectorName, useFlatArrayNotation,
+                                             createMeasureTime, assignToStartValues, overwriteOldStartValue, varDeclsLocal)
+        ;separator="\n")
+//      <%if not assignToStartValues then '<%startFixedExp%>'%>
+      <<
+      for (int <%iterExp%> = <%startExp%>; <%iterExp%> <= <%endExp%>; <%iterExp%>++) {
+        <%preExp%>
+        <%bodyPart%>
+      }
+      >>
+end equationForEquation;
+
 // Previously unknown dims were set to ICONST(-1) at SimCode creation
 // we do not do that anymore.
 // This used to return '' for ICONST no matter the value. I am not sure
@@ -12237,6 +12279,10 @@ template giveZeroFunc3(Integer index1, Exp relation, Text &varDecls /*BUFP*/,Tex
             f[<%index1%>] = (<%e2%> - <%e1%> - _zeroTol);
         else
             f[<%index1%>] = (<%e1%> - _zeroTol - <%e2%>);
+        >>
+      case EQUAL(ty = T_INTEGER(__)) then
+        <<
+        f[<%index1%>] = std::abs(<%e2%> - <%e1%>);
         >>
       else
         <<
@@ -13158,14 +13204,14 @@ template modelicaLine(builtin.SourceInfo info)
   match info
   case SOURCEINFO(columnNumberStart=0) then "/* Dummy Line */"
   else <<
-  <% if boolOr(acceptMetaModelicaGrammar(), Flags.isSet(Flags.GEN_DEBUG_SYMBOLS)) then '/*#modelicaLine <%infoStr(info)%>*/'%>
+  <% if Flags.isSet(Flags.GEN_DEBUG_SYMBOLS) then '/*#modelicaLine <%infoStr(info)%>*/'%>
   >>
 end modelicaLine;
 
 template endModelicaLine()
 ::=
   <<
-  <% if boolOr(acceptMetaModelicaGrammar(), Flags.isSet(Flags.GEN_DEBUG_SYMBOLS)) then "/*#endModelicaLine*/"%>
+  <% if Flags.isSet(Flags.GEN_DEBUG_SYMBOLS) then "/*#endModelicaLine*/"%>
   >>
 end endModelicaLine;
 
@@ -13918,7 +13964,7 @@ template algebraicDAEVar(list<SimVar> algVars, String className)
     case SIMVAR(__) then
       <<
       algebraicNominal[<%i%>] = <%crefAttributes(name)%>.nominal * data->simulationInfo->tolerance;
-      infoStreamPrint(LOG_SOLVER, 0, "%s -> %g", <%crefVarInfo(name)%>.name, algebraicNominal[<%i%>]);
+      infoStreamPrint(OMC_LOG_SOLVER, 0, "%s -> %g", <%crefVarInfo(name)%>.name, algebraicNominal[<%i%>]);
       >>
     end match)
 

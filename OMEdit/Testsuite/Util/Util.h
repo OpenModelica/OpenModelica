@@ -47,7 +47,6 @@ static int execution_failed() \
   exit(1); \
 } \
 QT_BEGIN_NAMESPACE \
-QTEST_ADD_GPU_BLACKLIST_SUPPORT_DEFS \
 QT_END_NAMESPACE \
 int main(int argc, char *argv[]) \
 { \
@@ -57,7 +56,6 @@ int main(int argc, char *argv[]) \
   OMEditApplication app(argc, argv, threadData, true); \
   app.setAttribute(Qt::AA_Use96Dpi, true); \
   QTEST_DISABLE_KEYPAD_NAVIGATION \
-  QTEST_ADD_GPU_BLACKLIST_SUPPORT \
   TestObject tc; \
   QTEST_SET_MAIN_SOURCE_PATH \
   return QTest::qExec(&tc,argc, argv); \

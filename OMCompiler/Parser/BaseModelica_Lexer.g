@@ -326,7 +326,7 @@ NL: '\r\n' | '\n' | '\r';
 /* OpenModelica extensions */
 CODE : '$Code';
 CODE_NAME : '$TypeName';
-CODE_EXP : '$Exp';
+CODE_EXP : '$Expression';
 CODE_ANNOTATION : '$annotation';
 CODE_VAR : '$Var';
 
@@ -386,7 +386,7 @@ fragment
 SCHAR : NL | ~('\r' | '\n' | '\\' | '"');
 
 fragment
-SESCAPE : esc='\\' ('\\' | '"' | '\'' | '?' | 'a' | 'b' | 'f' | 'n' | 'r' | 't' | 'v' |
+SESCAPE : esc='\\' ('\'' | '"' | '\\' | '?' | 'a' | 'b' | 'f' | 'n' | 'r' | 't' | 'v' |
   {
     char chars[2] = {LA(1),'\0'};
     const char *str = chars;
@@ -431,8 +431,9 @@ QIDENT :
          '\'' (QCHAR | SESCAPE) (QCHAR | SESCAPE)* '\'' ;
 
 fragment
-QCHAR :  (DIGIT | NONDIGIT | '!' | '#' | '$' | '%' | '&' | '(' | ')' | '*' | '+' | ',' | '-' | '.' | '/' | ':' | ';' | '<' | '>' | '=' | '?' | '@' | '[' | ']' | '^' |
-'{' | '}' | '|' | '~' | ' ');
+QCHAR :  (DIGIT | NONDIGIT | '!' | '#' | '$' | '%' | '&' | '(' | ')'
+          | '*' | '+' | ',' | '-' | '.' | '/' | ':' | ';' | '<' | '>' | '='
+          | '?' | '@' | '[' | ']' | '^' | '{' | '}' | '|' | '~' | ' ' | '"' );
 
 fragment
 NONDIGIT :   ('_' | 'a'..'z' | 'A'..'Z');

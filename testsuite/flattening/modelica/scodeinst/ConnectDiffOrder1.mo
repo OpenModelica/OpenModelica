@@ -1,7 +1,6 @@
 // name: ConnectDiffOrder1
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 
 connector C1

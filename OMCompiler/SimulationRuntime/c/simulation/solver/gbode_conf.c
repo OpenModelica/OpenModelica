@@ -54,7 +54,8 @@ void dumOptions(const char* flagName, const char* flagValue, const char** argsAr
  *                                      FLAG_MR for multi-rate method.
  * @return enum GB_METHOD    Runge-Kutta method.
  */
-enum GB_METHOD getGB_method(enum _FLAG flag) {
+enum GB_METHOD getGB_method(enum _FLAG flag)
+{
   enum GB_METHOD method;
   const char* flag_value;
   assertStreamPrint(NULL, flag==FLAG_SR || flag==FLAG_MR,
@@ -65,11 +66,11 @@ enum GB_METHOD getGB_method(enum _FLAG flag) {
   if (flag_value != NULL) {
     for (method=GB_UNKNOWN; method<RK_MAX; method++) {
       if (strcmp(flag_value, GB_METHOD_NAME[method]) == 0){
-        infoStreamPrint(LOG_SOLVER, 0, "Chosen gbode method: %s", GB_METHOD_NAME[method]);
+        infoStreamPrint(OMC_LOG_SOLVER, 0, "Chosen gbode method: %s", GB_METHOD_NAME[method]);
         return method;
       }
     }
-    errorStreamPrint(LOG_STDOUT, 0, "Unknown gbode method %s.", flag_value);
+    dumOptions(FLAG_NAME[flag], flag_value, GB_METHOD_NAME, RK_MAX);
     return GB_UNKNOWN;
   }
 
@@ -104,7 +105,7 @@ enum GB_METHOD getGB_method(enum _FLAG flag) {
   }
 
   // Default value for single-rate method
-  infoStreamPrint(LOG_SOLVER, 0, "Chosen gbode method: esdirk4 [default]");
+  infoStreamPrint(OMC_LOG_SOLVER, 0, "Chosen gbode method: esdirk4 [default]");
   return RK_ESDIRK4;
 }
 
@@ -119,7 +120,8 @@ enum GB_METHOD getGB_method(enum _FLAG flag) {
  *                    FLAG_MR_NLS for multi-rate method.
  * @return enum GB_NLS_METHOD   NLS method.
  */
-enum GB_NLS_METHOD getGB_NLS_method(enum _FLAG flag) {
+enum GB_NLS_METHOD getGB_NLS_method(enum _FLAG flag)
+{
   enum GB_NLS_METHOD method;
   const char* flag_value;
 
@@ -129,9 +131,9 @@ enum GB_NLS_METHOD getGB_NLS_method(enum _FLAG flag) {
 
   // Get method from flag
   if (flag_value != NULL) {
-    for (method=GB_NLS_UNKNOWN; method<GB_NLS_MAX; method++) {
-      if (strcmp(flag_value, GB_NLS_METHOD_NAME[method]) == 0){
-        infoStreamPrint(LOG_SOLVER, 0, "Chosen gbode NLS method: %s", GB_NLS_METHOD_NAME[method]);
+    for (method = GB_NLS_UNKNOWN; method < GB_NLS_MAX; method++) {
+      if (strcmp(flag_value, GB_NLS_METHOD_NAME[method]) == 0) {
+        infoStreamPrint(OMC_LOG_SOLVER, 0, "Chosen gbode NLS method: %s", GB_NLS_METHOD_NAME[method]);
         return method;
       }
     }
@@ -143,7 +145,7 @@ enum GB_NLS_METHOD getGB_NLS_method(enum _FLAG flag) {
   if (flag == FLAG_MR_NLS) {
     return getGB_NLS_method(FLAG_SR_NLS);
   } else {
-    infoStreamPrint(LOG_SOLVER, 0, "Chosen gbode NLS method: kinsol [default]");
+    infoStreamPrint(OMC_LOG_SOLVER, 0, "Chosen gbode NLS method: kinsol [default]");
     return GB_NLS_KINSOL;
   }
 }
@@ -158,7 +160,8 @@ enum GB_NLS_METHOD getGB_NLS_method(enum _FLAG flag) {
  *                                FLAG_MR_CTRL for multi-rate method.
  * @return enum GB_CTRL_METHOD    Step size control method.
  */
-enum GB_CTRL_METHOD getControllerMethod(enum _FLAG flag) {
+enum GB_CTRL_METHOD getControllerMethod(enum _FLAG flag)
+{
   enum GB_CTRL_METHOD method;
   const char *flag_value;
 
@@ -167,9 +170,9 @@ enum GB_CTRL_METHOD getControllerMethod(enum _FLAG flag) {
 
   flag_value = omc_flagValue[flag];
   if (flag_value != NULL) {
-    for (method=GB_CTRL_UNKNOWN; method<GB_CTRL_MAX; method++) {
+    for (method = GB_CTRL_UNKNOWN; method < GB_CTRL_MAX; method++) {
       if (strcmp(flag_value, GB_CTRL_METHOD_NAME[method]) == 0) {
-        infoStreamPrint(LOG_SOLVER, 0, "Chosen gbode step size control: %s", GB_CTRL_METHOD_NAME[method]);
+        infoStreamPrint(OMC_LOG_SOLVER, 0, "Chosen gbode step size control: %s", GB_CTRL_METHOD_NAME[method]);
         return method;
       }
     }
@@ -180,8 +183,8 @@ enum GB_CTRL_METHOD getControllerMethod(enum _FLAG flag) {
     if (flag == FLAG_MR_CTRL) {
       return getControllerMethod(FLAG_SR_CTRL);
     } else {
-      infoStreamPrint(LOG_SOLVER, 0, "Chosen gbode step size control: i [default]");
-      return GB_CTRL_I;
+      infoStreamPrint(OMC_LOG_SOLVER, 0, "Chosen gbode step size control: pid_h312 [default]");
+      return GB_CTRL_PID_H312; // Default for single-rate method
     }
   }
 }
@@ -197,7 +200,8 @@ enum GB_CTRL_METHOD getControllerMethod(enum _FLAG flag) {
  * @return enum GB_INTERPOL_METHOD    Interpolation method for emitting
  *                                    results and slow states interpolation.
  */
-enum GB_INTERPOL_METHOD getInterpolationMethod(enum _FLAG flag) {
+enum GB_INTERPOL_METHOD getInterpolationMethod(enum _FLAG flag)
+{
   enum GB_INTERPOL_METHOD method;
   const char *flag_value;
   char* flag_value_string;
@@ -207,13 +211,13 @@ enum GB_INTERPOL_METHOD getInterpolationMethod(enum _FLAG flag) {
 
   flag_value = omc_flagValue[flag];
   if (flag_value != NULL) {
-    for (method=GB_INTERPOL_UNKNOWN; method<GB_INTERPOL_MAX; method++) {
+    for (method = GB_INTERPOL_UNKNOWN; method < GB_INTERPOL_MAX; method++) {
       if (strcmp(flag_value, GB_INTERPOL_METHOD_NAME[method]) == 0) {
         if (flag == FLAG_MR_INT && (method == GB_INTERPOL_HERMITE_ERRCTRL || method == GB_DENSE_OUTPUT_ERRCTRL)) {
-          warningStreamPrint(LOG_SOLVER, 0, "Chosen gbode interpolation method %s not supported for fast state integration", GB_INTERPOL_METHOD_NAME[method]);
+          warningStreamPrint(OMC_LOG_SOLVER, 0, "Chosen gbode interpolation method %s not supported for fast state integration", GB_INTERPOL_METHOD_NAME[method]);
           method = GB_DENSE_OUTPUT;
         }
-        infoStreamPrint(LOG_SOLVER, 0, "Chosen gbode interpolation method: %s", GB_INTERPOL_METHOD_NAME[method]);
+        infoStreamPrint(OMC_LOG_SOLVER, 0, "Chosen gbode interpolation method: %s", GB_INTERPOL_METHOD_NAME[method]);
         return method;
       }
     }
@@ -224,17 +228,44 @@ enum GB_INTERPOL_METHOD getInterpolationMethod(enum _FLAG flag) {
     if (flag == FLAG_MR_INT) {
       method = getInterpolationMethod(FLAG_SR_INT);
       if (method == GB_INTERPOL_HERMITE_ERRCTRL || method == GB_DENSE_OUTPUT_ERRCTRL) {
-        warningStreamPrint(LOG_SOLVER, 0, "Chosen gbode interpolation method %s not supported for fast state integration", GB_INTERPOL_METHOD_NAME[method]);
-        infoStreamPrint(LOG_SOLVER, 0, "Chosen gbode interpolation method: dense_output [default]");
+        warningStreamPrint(OMC_LOG_SOLVER, 0, "Chosen gbode interpolation method %s not supported for fast state integration", GB_INTERPOL_METHOD_NAME[method]);
+        infoStreamPrint(OMC_LOG_SOLVER, 0, "Chosen gbode interpolation method: dense_output [default]");
         method = GB_DENSE_OUTPUT;
       }
       return method;
     } else {
-      infoStreamPrint(LOG_SOLVER, 0, "Chosen gbode interpolation method: dense_output [default]");
-      return GB_DENSE_OUTPUT;
+      infoStreamPrint(OMC_LOG_SOLVER, 0, "Chosen gbode interpolation method: dense_output_errctrl [default]");
+      return GB_DENSE_OUTPUT_ERRCTRL;
     }
   }
 }
+
+/**
+ * @brief Use filter technic for step size control
+ *
+ * Read flag FLAG_SR_CTRL_FILTER to get filter value.
+ * Defaults to 1.
+ * gbctrl_filter = 0 -> constant step size,
+ * gbctrl_filter = 1 -> full adaptation without smoothing.
+ *
+ * @return double   Percentage of fast states selection.
+ */
+double getGBCtrlFilterValue()
+{
+  double filter;
+  const char *flag_value = omc_flagValue[FLAG_SR_CTRL_FILTER];
+
+  if (flag_value) {
+    filter = atof(omc_flagValue[FLAG_SR_CTRL_FILTER]);
+    if (filter < 0 || filter > 1) {
+      throwStreamPrint(NULL, "Flag -gbctrl_filter has to be between 0 and 1.");
+    }
+  } else {
+    filter = 1.0;
+  }
+  return filter;
+}
+
 
 /**
  * @brief Get percentage of states for the fast states selection.
@@ -244,7 +275,8 @@ enum GB_INTERPOL_METHOD getInterpolationMethod(enum _FLAG flag) {
  *
  * @return double   Percentage of fast states selection.
  */
-double getGBRatio() {
+double getGBRatio()
+{
   double percentage;
   const char *flag_value = omc_flagValue[FLAG_MR_PAR];
 
@@ -269,7 +301,8 @@ double getGBRatio() {
  *                                  Allowed values: FLAG_SR_ERR, FLAG_MR_ERR
  * @return enum GB_EXTRAPOL_METHOD  Extrapolation method.
  */
-enum GB_EXTRAPOL_METHOD getGBErr(enum _FLAG flag) {
+enum GB_EXTRAPOL_METHOD getGBErr(enum _FLAG flag)
+{
   assertStreamPrint(NULL, flag==FLAG_SR_ERR || flag==FLAG_MR_ERR, "Illegal input 'flag' to getGBErr!");
 
   enum GB_EXTRAPOL_METHOD extrapolationMethod;
@@ -283,12 +316,12 @@ enum GB_EXTRAPOL_METHOD getGBErr(enum _FLAG flag) {
     } else if (strcmp(flag_value, "embedded")==0) {
       extrapolationMethod = GB_EXT_EMBEDDED;
     } else {
-      errorStreamPrint(LOG_STDOUT, 0, "Illegal value '%s' for flag -%s", flag_value, FLAG_NAME[flag]);
-      infoStreamPrint(LOG_STDOUT, 1, "Allowed values are:");
-      infoStreamPrint(LOG_STDOUT, 0, "default");
-      infoStreamPrint(LOG_STDOUT, 0, "richardson");
-      infoStreamPrint(LOG_STDOUT, 0, "embedded");
-      messageClose(LOG_STDOUT);
+      errorStreamPrint(OMC_LOG_STDOUT, 0, "Illegal value '%s' for flag -%s", flag_value, FLAG_NAME[flag]);
+      infoStreamPrint(OMC_LOG_STDOUT, 1, "Allowed values are:");
+      infoStreamPrint(OMC_LOG_STDOUT, 0, "default");
+      infoStreamPrint(OMC_LOG_STDOUT, 0, "richardson");
+      infoStreamPrint(OMC_LOG_STDOUT, 0, "embedded");
+      messageClose(OMC_LOG_STDOUT);
       omc_throw(NULL);
     }
   } else {
@@ -305,11 +338,12 @@ enum GB_EXTRAPOL_METHOD getGBErr(enum _FLAG flag) {
  * @param argsArr     Pointer to flag argument names.
  * @param maxArgs     Size of maxArgs.
  */
-void dumOptions(const char* flagName, const char* flagValue, const char** argsArr, unsigned int maxArgs) {
-  errorStreamPrint(LOG_STDOUT, 0, "Unknown flag value \"%s\" for flag %s.", flagValue, flagName);
-  infoStreamPrint(LOG_STDOUT, 1, "Valid arguments are:");
+void dumOptions(const char* flagName, const char* flagValue, const char** argsArr, unsigned int maxArgs)
+{
+  errorStreamPrint(OMC_LOG_STDOUT, 0, "Unknown flag value \"%s\" for flag %s.", flagValue, flagName);
+  infoStreamPrint(OMC_LOG_STDOUT, 1, "Valid arguments are:");
   for (int i=0; i<maxArgs; i++) {
-    infoStreamPrint(LOG_STDOUT, 0, "%s", argsArr[i]);
+    infoStreamPrint(OMC_LOG_STDOUT, 0, "%s", argsArr[i]);
   }
-  messageClose(LOG_STDOUT);
+  messageClose(OMC_LOG_STDOUT);
 }

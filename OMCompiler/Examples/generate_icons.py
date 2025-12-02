@@ -214,7 +214,6 @@ def getStrings(value, start='{', end='}'):
     lst.append(value[begin:len(value) + 1].strip())
     return lst
 
-
 def consumeChar(value, res, i):
     if value[i] == '\\':
       i+=1
@@ -293,6 +292,24 @@ def componentPlacement(componentAnnotations):
             else:
                 return getStrings(placementAnnotation)
 
+def toInt(value, defaultValue = 0):
+    try:
+        return int(value)
+    except:
+        return defaultValue
+
+def toFloat(value, defaultValue = 0):
+    try:
+        return float(value)
+    except:
+        return defaultValue
+
+def toBool(value, defaultValue = False):
+    try:
+        return bool(value)
+    except:
+        return defaultValue
+
 graphics_cache = {}
 
 # get graphics objects from annotation Icon
@@ -313,10 +330,10 @@ def getGraphicsForClass(modelicaClass):
     r = regex_coordSys.search(answer2)
     if r:
         g = r.groups()
-        result['coordinateSystem']['extent'] = [[float(g[0]), float(g[1])], [float(g[2]), float(g[3])]]
-        result['coordinateSystem']['preserveAspectRatio'] = bool(g[4])
-        result['coordinateSystem']['initialScale'] = float(g[5])
-        result['coordinateSystem']['grid'] = [float(g[6]), float(g[7])]
+        result['coordinateSystem']['extent'] = [[toFloat(g[0]), toFloat(g[1])], [toFloat(g[2]), toFloat(g[3])]]
+        result['coordinateSystem']['preserveAspectRatio'] = toBool(g[4])
+        result['coordinateSystem']['initialScale'] = toFloat(g[5])
+        result['coordinateSystem']['grid'] = [toFloat(g[6]), toFloat(g[7])]
 
         withOutCoordSys = answer2[answer2.find(',{'):]
     else:
@@ -334,20 +351,20 @@ def getGraphicsForClass(modelicaClass):
             graphicsObj['type'] = 'Line'
             g = r.groups()
             graphicsObj['visible'] = g[0]
-            graphicsObj['origin'] = [float(g[1]), float(g[2])]
-            graphicsObj['rotation'] = float(g[3])
+            graphicsObj['origin'] = [toFloat(g[1]), toFloat(g[2])]
+            graphicsObj['rotation'] = toFloat(g[3])
 
             points = []
             gg = re.findall(regex_points, g[4])
             for i in range(0, len(gg)):
-                points.append([float(gg[i][0]), float(gg[i][1])])
+                points.append([toFloat(gg[i][0]), toFloat(gg[i][1])])
             graphicsObj['points'] = points
 
-            graphicsObj['color'] = [int(g[5]), int(g[6]), int(g[7])]
+            graphicsObj['color'] = [toInt(g[5]), toInt(g[6]), toInt(g[7])]
             graphicsObj['pattern'] = g[8]
-            graphicsObj['thickness'] = float(g[9])
+            graphicsObj['thickness'] = toFloat(g[9])
             graphicsObj['arrow'] = [g[10], g[11]]
-            graphicsObj['arrowSize'] = float(g[12])
+            graphicsObj['arrowSize'] = toFloat(g[12])
             graphicsObj['smooth'] = g[13]
 
         r = regex_rectangle.search(icon_line)
@@ -355,16 +372,16 @@ def getGraphicsForClass(modelicaClass):
             graphicsObj['type'] = 'Rectangle'
             g = r.groups()
             graphicsObj['visible'] = g[0]
-            graphicsObj['origin'] = [float(g[1]), float(g[2])]
-            graphicsObj['rotation'] = float(g[3])
-            graphicsObj['lineColor'] = [int(g[4]), int(g[5]), int(g[6])]
-            graphicsObj['fillColor'] = [int(g[7]), int(g[8]), int(g[9])]
+            graphicsObj['origin'] = [toFloat(g[1]), toFloat(g[2])]
+            graphicsObj['rotation'] = toFloat(g[3])
+            graphicsObj['lineColor'] = [toInt(g[4]), toInt(g[5]), toInt(g[6])]
+            graphicsObj['fillColor'] = [toInt(g[7]), toInt(g[8]), toInt(g[9])]
             graphicsObj['linePattern'] = g[10]
             graphicsObj['fillPattern'] = g[11]
-            graphicsObj['lineThickness'] = float(g[12])
+            graphicsObj['lineThickness'] = toFloat(g[12])
             graphicsObj['borderPattern'] = g[13]
-            graphicsObj['extent'] = [[float(g[14]), float(g[15])], [float(g[16]), float(g[17])]]
-            graphicsObj['radius'] = float(g[18])
+            graphicsObj['extent'] = [[toFloat(g[14]), toFloat(g[15])], [toFloat(g[16]), toFloat(g[17])]]
+            graphicsObj['radius'] = toFloat(g[18])
 
         r = regex_polygon.search(icon_line)
         if r:
@@ -372,18 +389,18 @@ def getGraphicsForClass(modelicaClass):
             graphicsObj['type'] = 'Polygon'
             g = r.groups()
             graphicsObj['visible'] = g[0]
-            graphicsObj['origin'] = [float(g[1]), float(g[2])]
-            graphicsObj['rotation'] = float(g[3])
-            graphicsObj['lineColor'] = [int(g[4]), int(g[5]), int(g[6])]
-            graphicsObj['fillColor'] = [int(g[7]), int(g[8]), int(g[9])]
+            graphicsObj['origin'] = [toFloat(g[1]), toFloat(g[2])]
+            graphicsObj['rotation'] = toFloat(g[3])
+            graphicsObj['lineColor'] = [toInt(g[4]), toInt(g[5]), toInt(g[6])]
+            graphicsObj['fillColor'] = [toInt(g[7]), toInt(g[8]), toInt(g[9])]
             graphicsObj['linePattern'] = g[10]
             graphicsObj['fillPattern'] = g[11]
-            graphicsObj['lineThickness'] = float(g[12])
+            graphicsObj['lineThickness'] = toFloat(g[12])
 
             points = []
             gg = re.findall(regex_points, g[13])
             for i in range(0, len(gg)):
-                points.append([float(gg[i][0]), float(gg[i][1])])
+                points.append([toFloat(gg[i][0]), toFloat(gg[i][1])])
             graphicsObj['points'] = points
 
             minX = 100
@@ -412,17 +429,17 @@ def getGraphicsForClass(modelicaClass):
             graphicsObj['type'] = 'Text'
             g = r.groups()
             graphicsObj['visible'] = g[0]
-            graphicsObj['origin'] = [float(g[1]), float(g[2])]
-            graphicsObj['rotation'] = float(g[3])
-            graphicsObj['lineColor'] = [int(g[4]), int(g[5]), int(g[6])]
-            graphicsObj['fillColor'] = [int(g[7]), int(g[8]), int(g[9])]
+            graphicsObj['origin'] = [toFloat(g[1]), toFloat(g[2])]
+            graphicsObj['rotation'] = toFloat(g[3])
+            graphicsObj['lineColor'] = [toInt(g[4]), toInt(g[5]), toInt(g[6])]
+            graphicsObj['fillColor'] = [toInt(g[7]), toInt(g[8]), toInt(g[9])]
             graphicsObj['linePattern'] = g[10]
             graphicsObj['fillPattern'] = g[11]
-            graphicsObj['lineThickness'] = float(g[12])
-            graphicsObj['extent'] = [[float(g[13]), float(g[14])], [float(g[15]), float(g[16])]]
+            graphicsObj['lineThickness'] = toFloat(g[12])
+            graphicsObj['extent'] = [[toFloat(g[13]), toFloat(g[14])], [toFloat(g[15]), toFloat(g[16])]]
             graphicsObj['textString'] = g[17].strip('"')
-            graphicsObj['fontSize'] = float(g[18])
-            graphicsObj['textColor'] = [int(g[19]), int(g[20]), int(g[21])]
+            graphicsObj['fontSize'] = toFloat(g[18])
+            graphicsObj['textColor'] = [toInt(g[19]), toInt(g[20]), toInt(g[21])]
             graphicsObj['fontName'] = g[22]
             if graphicsObj['fontName']:
                 graphicsObj['fontName'] = graphicsObj['fontName'].strip('"')
@@ -438,33 +455,33 @@ def getGraphicsForClass(modelicaClass):
             g = r.groups()
             graphicsObj['type'] = 'Ellipse'
             graphicsObj['visible'] = g[0]
-            graphicsObj['origin'] = [float(g[1]), float(g[2])]
-            graphicsObj['rotation'] = float(g[3])
-            graphicsObj['lineColor'] = [int(g[4]), int(g[5]), int(g[6])]
-            graphicsObj['fillColor'] = [int(g[7]), int(g[8]), int(g[9])]
+            graphicsObj['origin'] = [toFloat(g[1]), toFloat(g[2])]
+            graphicsObj['rotation'] = toFloat(g[3])
+            graphicsObj['lineColor'] = [toInt(g[4]), toInt(g[5]), toInt(g[6])]
+            graphicsObj['fillColor'] = [toInt(g[7]), toInt(g[8]), toInt(g[9])]
             graphicsObj['linePattern'] = g[10]
             graphicsObj['fillPattern'] = g[11]
-            graphicsObj['lineThickness'] = float(g[12])
-            graphicsObj['extent'] = [[float(g[13]), float(g[14])], [float(g[15]), float(g[16])]]
-            graphicsObj['startAngle'] = float(g[17])
-            graphicsObj['endAngle'] = float(g[18])
+            graphicsObj['lineThickness'] = toFloat(g[12])
+            graphicsObj['extent'] = [[toFloat(g[13]), toFloat(g[14])], [toFloat(g[15]), toFloat(g[16])]]
+            graphicsObj['startAngle'] = toFloat(g[17])
+            graphicsObj['endAngle'] = toFloat(g[18])
 
         r = regex_bitmap.search(icon_line)
         if r:
             g = r.groups()
             graphicsObj['type'] = 'Bitmap'
             graphicsObj['visible'] = g[0]
-            graphicsObj['origin'] = [float(g[1]), float(g[2])]
-            graphicsObj['rotation'] = float(g[3])
-            graphicsObj['extent'] = [[float(g[4]), float(g[5])], [float(g[6]), float(g[7])]]
+            graphicsObj['origin'] = [toFloat(g[1]), toFloat(g[2])]
+            graphicsObj['rotation'] = toFloat(g[3])
+            graphicsObj['extent'] = [[toFloat(g[4]), toFloat(g[5])], [toFloat(g[6]), toFloat(g[7])]]
 
-            if not g[9]:
+            if g[9] != '""':
                 graphicsObj['href'] = "data:image;base64,"+g[9].strip('"')
             else:
                 fname = ask_omc('uriToFilename', g[8], parsed=False).strip().strip('"')
                 if not os.path.exists(fname):
                     fname = os.path.join(baseDir, g[8].strip('"'))
-                if os.path.exists(fname):
+                if not os.path.isdir(fname) and os.path.exists(fname):
                     with open(fname, "rb") as f_p:
                         graphicsObj['href'] = "data:image;base64,"+base64.b64encode(f_p.read()).decode()
                 else:
@@ -493,107 +510,111 @@ def getGraphicsWithPortsForClass(modelicaClass):
     graphics = getGraphicsForClass(modelicaClass)
     graphics['className'] = modelicaClass
     graphics['ports'] = []
-    componentsList = unparseArrays(ask_omc('getComponents', modelicaClass + ', useQuotes = true', parsed=False))
-    if componentsList:
-        componentAnnotations = ask_omc('getComponentAnnotations', modelicaClass, parsed=False)
-        componentAnnotationsList = getStrings(removeFirstLastCurlBrackets(componentAnnotations))
+    if (modelicaClass):
+        componentsList = unparseArrays(ask_omc('getComponents', modelicaClass + ', useQuotes = true', parsed=False))
+        if componentsList:
+            componentAnnotations = ask_omc('getComponentAnnotations', modelicaClass, parsed=False)
+            componentAnnotationsList = getStrings(removeFirstLastCurlBrackets(componentAnnotations))
 
-        for i in range(len(componentsList)):
-            componentInfo = unparseStrings(componentsList[i])
-            class_name = componentInfo[0]
-            component_name = componentInfo[1]
+            for i in range(len(componentsList)):
+                componentInfo = unparseStrings(componentsList[i])
+                class_name = componentInfo[0]
+                component_name = componentInfo[1]
 
-            if ask_omc('isConnector', class_name):
-                comp_annotation = componentPlacement(componentAnnotationsList[i])
+                if ask_omc('isConnector', class_name):
+                    if (i < len(componentAnnotationsList)):
+                        comp_annotation = componentPlacement(componentAnnotationsList[i])
+                        if (comp_annotation):
+                            # base class graphics for ports
+                            g_base = []
+                            base_classes = []
+                            getBaseClasses(class_name, base_classes)
 
-                # base class graphics for ports
-                g_base = []
-                base_classes = []
-                getBaseClasses(class_name, base_classes)
+                            for base_class in base_classes:
+                                graphics_base = getGraphicsForClass(base_class)
+                                g_base.append(graphics_base)
 
-                for base_class in base_classes:
-                    graphics_base = getGraphicsForClass(base_class)
-                    g_base.append(graphics_base)
+                            g = getGraphicsForClass(class_name)
 
-                g = getGraphicsForClass(class_name)
+                            g_this = g['graphics']
 
-                g_this = g['graphics']
+                            g['graphics'] = []
+                            for g_b in g_base:
+                                for g_i in g_b['graphics']:
+                                    g['graphics'].append(g_i)
+                            for g_b in g_this:
+                                g['graphics'].append(g_b)
 
-                g['graphics'] = []
-                for g_b in g_base:
-                    for g_i in g_b['graphics']:
-                        g['graphics'].append(g_i)
-                for g_b in g_this:
-                    g['graphics'].append(g_b)
+                            g['id'] = component_name
+                            g['className'] = class_name
 
-                g['id'] = component_name
-                g['className'] = class_name
+                            g['desc'] = componentInfo[2]
 
-                g['desc'] = componentInfo[2]
+                            g['classDesc'] = ask_omc('getClassComment', class_name).strip().strip('"')
 
-                g['classDesc'] = ask_omc('getClassComment', class_name).strip().strip('"')
+                            minX = g['coordinateSystem']['extent'][0][0]
+                            minY = g['coordinateSystem']['extent'][0][1]
+                            maxX = g['coordinateSystem']['extent'][1][0]
+                            maxY = g['coordinateSystem']['extent'][1][1]
 
-                minX = g['coordinateSystem']['extent'][0][0]
-                minY = g['coordinateSystem']['extent'][0][1]
-                maxX = g['coordinateSystem']['extent'][1][0]
-                maxY = g['coordinateSystem']['extent'][1][1]
+                            for gs in g['graphics']:
+                                # use default values if it is not there
+                                if not 'extent' in gs:
+                                    gs['extent'] = [[-100, -100], [100, 100]]
 
-                for gs in g['graphics']:
-                    # use default values if it is not there
-                    if not 'extent' in gs:
-                        gs['extent'] = [[-100, -100], [100, 100]]
+                                if not 'origin' in gs:
+                                    gs['origin'] = [0, 0]
 
-                    if not 'origin' in gs:
-                        gs['origin'] = [0, 0]
+                                if minX > gs['extent'][0][0] + gs['origin'][0]:
+                                    minX = gs['extent'][0][0] + gs['origin'][0]
+                                if minX > gs['extent'][1][0] + gs['origin'][0]:
+                                    minX = gs['extent'][1][0] + gs['origin'][0]
+                                if minY > gs['extent'][0][1] + gs['origin'][1]:
+                                    minY = gs['extent'][0][1] + gs['origin'][1]
+                                if minY > gs['extent'][1][1] + gs['origin'][1]:
+                                    minY = gs['extent'][1][1] + gs['origin'][1]
+                                if maxX < gs['extent'][1][0] + gs['origin'][0]:
+                                    maxX = gs['extent'][1][0] + gs['origin'][0]
+                                if maxX < gs['extent'][0][0] + gs['origin'][0]:
+                                    maxX = gs['extent'][0][0] + gs['origin'][0]
+                                if maxY < gs['extent'][1][1] + gs['origin'][1]:
+                                    maxY = gs['extent'][1][1] + gs['origin'][1]
+                                if maxY < gs['extent'][0][1] + gs['origin'][1]:
+                                    maxY = gs['extent'][0][1] + gs['origin'][1]
 
-                    if minX > gs['extent'][0][0] + gs['origin'][0]:
-                        minX = gs['extent'][0][0] + gs['origin'][0]
-                    if minX > gs['extent'][1][0] + gs['origin'][0]:
-                        minX = gs['extent'][1][0] + gs['origin'][0]
-                    if minY > gs['extent'][0][1] + gs['origin'][1]:
-                        minY = gs['extent'][0][1] + gs['origin'][1]
-                    if minY > gs['extent'][1][1] + gs['origin'][1]:
-                        minY = gs['extent'][1][1] + gs['origin'][1]
-                    if maxX < gs['extent'][1][0] + gs['origin'][0]:
-                        maxX = gs['extent'][1][0] + gs['origin'][0]
-                    if maxX < gs['extent'][0][0] + gs['origin'][0]:
-                        maxX = gs['extent'][0][0] + gs['origin'][0]
-                    if maxY < gs['extent'][1][1] + gs['origin'][1]:
-                        maxY = gs['extent'][1][1] + gs['origin'][1]
-                    if maxY < gs['extent'][0][1] + gs['origin'][1]:
-                        maxY = gs['extent'][0][1] + gs['origin'][1]
+                            g['coordinateSystem']['extent'] = [[minX, minY], [maxX, maxY]]
 
-                g['coordinateSystem']['extent'] = [[minX, minY], [maxX, maxY]]
+                            #print(comp_annotation)
+                            if comp_annotation[0] == "true":
+                                index_delta = 7
+                                if comp_annotation[10] == "-":
+                                    # fallback to diagram annotations
+                                    index_delta = 0
 
-                #print comp_annotation
-                index_delta = 7
-                if comp_annotation[10] == "-":
-                    # fallback to diagram annotations
-                    index_delta = 0
+                                for i in [1,2,7]:
+                                    if comp_annotation[i + index_delta] == "-":
+                                        comp_annotation[i + index_delta] = 0
+                                origin_x = toFloat(comp_annotation[1 + index_delta])
+                                origin_y = toFloat(comp_annotation[2 + index_delta])
+                                x0 = toFloat(comp_annotation[3 + index_delta])
+                                y0 = toFloat(comp_annotation[4 + index_delta])
+                                x1 = toFloat(comp_annotation[5 + index_delta])
+                                y1 = toFloat(comp_annotation[6 + index_delta])
 
-                for i in [1,2,7]:
-                    if comp_annotation[i + index_delta] == "-":
-                        comp_annotation[i + index_delta] = 0
-                origin_x = float(comp_annotation[1 + index_delta])
-                origin_y = float(comp_annotation[2 + index_delta])
-                x0 = float(comp_annotation[3 + index_delta])
-                y0 = float(comp_annotation[4 + index_delta])
-                x1 = float(comp_annotation[5 + index_delta])
-                y1 = float(comp_annotation[6 + index_delta])
+                                if comp_annotation[7 + index_delta] == "":
+                                    rotation = 0.0
+                                else:
+                                    rotation = toFloat(comp_annotation[7 + index_delta])
 
-                if comp_annotation[7 + index_delta] == "":
-                    rotation = 0.0
-                else:
-                    rotation = float(comp_annotation[7 + index_delta])
+                                g['transformation'] = {}
+                                g['transformation']['origin'] = [origin_x, origin_y]
+                                g['transformation']['extent'] = [[x0, y0], [x1, y1]]
+                                if isinstance(rotation,dict):
+                                    g['transformation']['rotation'] = 0.0
+                                else:
+                                    g['transformation']['rotation'] = rotation
 
-                g['transformation'] = {}
-                g['transformation']['origin'] = [origin_x, origin_y]
-                g['transformation']['extent'] = [[x0, y0], [x1, y1]]
-                if isinstance(rotation,dict):
-                    g['transformation']['rotation'] = 0.0
-                else:
-                    g['transformation']['rotation'] = rotation
-                graphics['ports'].append(g)
+                                graphics['ports'].append(g)
 
     return graphics
 
@@ -601,13 +622,13 @@ def getGraphicsWithPortsForClass(modelicaClass):
 def getGradientColors(startColor, stopColor, mid_points):
     result = []
 
-    startRed = int(startColor[0])
-    startGreen = int(startColor[1])
-    startBlue = int(startColor[2])
+    startRed = toInt(startColor[0])
+    startGreen = toInt(startColor[1])
+    startBlue = toInt(startColor[2])
 
-    stopRed = int(stopColor[0])
-    stopGreen = int(stopColor[1])
-    stopBlue = int(stopColor[2])
+    stopRed = toInt(stopColor[0])
+    stopGreen = toInt(stopColor[1])
+    stopBlue = toInt(stopColor[2])
 
     r_delta = (stopRed - startRed) / (mid_points + 1)
     g_delta = (stopGreen - startGreen) / (mid_points + 1)
@@ -851,6 +872,9 @@ def getSvgFromGraphics(dwg, graphics, minX, maxY, includeInvisibleText, transfor
         if y0 > y1:
             ymin = y1
             ymax = y0
+
+        if (graphics['href'] == ''):
+            return None
         shape = dwg.image(graphics['href'], x=xmin,y=ymin,width=xmax-xmin,height=ymax-ymin) # put in correct URL or base64 data "data:image;base64,"
 
     elif graphics['type'] == 'Empty':
@@ -1154,7 +1178,7 @@ def getSvgFromGraphics(dwg, graphics, minX, maxY, includeInvisibleText, transfor
                 ]
 
                 for (stopValue, idx) in stopValues:
-                    gradient.add_stop_color(offset=stopValue, color='rgb({0}, {1}, {2})'.format(int(colors[idx][0]), int(colors[idx][1]), int(colors[idx][2])), opacity=1)
+                    gradient.add_stop_color(offset=stopValue, color='rgb({0}, {1}, {2})'.format(toInt(colors[idx][0]), toInt(colors[idx][1]), toInt(colors[idx][2])), opacity=1)
 
                 definitions.add(gradient)
             elif graphics['type'] == 'Rectangle':
@@ -1343,11 +1367,12 @@ def exportIcon(modelicaClass, base_classes, includeInvisbleText, warn_duplicates
 def getBaseClasses(modelica_class, base_classes):
     inheritance_cnt = ask_omc('getInheritanceCount', modelica_class)
 
-    for i in range(1, inheritance_cnt + 1):
-        base_class = ask_omc('getNthInheritedClass', modelica_class + ', ' + str(i))
-        if base_class not in base_classes:
-            base_classes.append(base_class)
-            getBaseClasses(base_class, base_classes)
+    if inheritance_cnt:
+        for i in range(1, inheritance_cnt + 1):
+            base_class = ask_omc('getNthInheritedClass', modelica_class + ', ' + str(i))
+            if base_class not in base_classes:
+                base_classes.append(base_class)
+                getBaseClasses(base_class, base_classes)
 
 
 def main():

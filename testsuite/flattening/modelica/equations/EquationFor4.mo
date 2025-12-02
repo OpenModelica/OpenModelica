@@ -1,7 +1,6 @@
 // name:     EquationFor4
 // keywords: equation,array, connect
 // status:   correct
-// cflags: -d=-newInst
 //
 // Test for loops in connections.  The size is a parameter.
 //
@@ -18,6 +17,7 @@ equation
   for i in 1:N-1 loop
     connect(p[i],p[i+1]);
   end for;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end EquationFor4;
 
 // Result:

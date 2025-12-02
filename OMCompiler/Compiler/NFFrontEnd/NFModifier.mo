@@ -43,6 +43,7 @@ public
 import Absyn;
 import AbsynUtil;
 import BaseAvlTree;
+import BaseModelica;
 import Binding = NFBinding;
 import NFInstNode.InstNode;
 import SCode;
@@ -173,6 +174,7 @@ public
   algorithm
     newMod := match mod
       local
+        list<SCode.SubMod> submods;
         list<tuple<String, Modifier>> submod_lst;
         ModTable.Tree submod_table;
         Binding binding;
@@ -188,7 +190,7 @@ public
         algorithm
           is_each := SCodeUtil.eachBool(mod.eachPrefix);
           binding := Binding.fromAbsyn(mod.binding, is_each, ModifierScope.isClass(modScope), scope, mod.info);
-          submod_lst := list((m.ident, createSubMod(m, modScope, scope)) for m in mod.subModLst);
+          submod_lst := list((m.ident, createSubMod(m, modScope, scope)) for m guard not SCodeUtil.isBreakSubMod(m) in mod.subModLst);
           submod_table := ModTable.fromList(submod_lst,
             function mergeLocal(scope = modScope, prefix = {}));
         then
@@ -312,7 +314,7 @@ public
           then
             mod;
 
-        else SCode.Mod.MOD(SCode.Final.FINAL(), SCode.Each.NOT_EACH(), {}, NONE(), info);
+        else SCode.Mod.MOD(SCode.Final.FINAL(), SCode.Each.NOT_EACH(), {}, NONE(), NONE(), info);
       end match;
     end if;
   end patchElementModFinal;
@@ -603,12 +605,14 @@ public
           if printName then mod.name + subs_str + binding_str else subs_str + binding_str;
 
       case REDECLARE() then InstNode.toString(mod.element);
+
       else "";
     end match;
   end toString;
 
   function toFlatStreamList
     input list<Modifier> modifiers;
+    input BaseModelica.OutputFormat format;
     input output IOStream.IOStream s;
     input String delimiter = ", ";
   protected
@@ -619,7 +623,7 @@ public
     end if;
 
     while true loop
-      s := toFlatStream(listHead(mods), s);
+      s := toFlatStream(listHead(mods), format, s);
       mods := listRest(mods);
 
       if listEmpty(mods) then
@@ -632,6 +636,7 @@ public
 
   function toFlatStream
     input Modifier mod;
+    input BaseModelica.OutputFormat format;
     input output IOStream.IOStream s;
     input Boolean printName = true;
   protected
@@ -648,14 +653,14 @@ public
           submods := ModTable.listValues(mod.subModifiers);
           if not listEmpty(submods) then
             s := IOStream.append(s, "(");
-            s := toFlatStreamList(submods, s);
+            s := toFlatStreamList(submods, format, s);
             s := IOStream.append(s, ")");
             binding_sep := " = ";
           else
             binding_sep := if printName then " = " else "= ";
           end if;
 
-          s := IOStream.append(s, Binding.toFlatString(mod.binding, binding_sep));
+          s := IOStream.append(s, Binding.toFlatString(mod.binding, format, binding_sep));
         then
           ();
 
@@ -665,13 +670,14 @@ public
 
   function toFlatString
     input Modifier mod;
+    input BaseModelica.OutputFormat format;
     input Boolean printName = true;
     output String str;
   protected
     IOStream.IOStream s;
   algorithm
     s := IOStream.create(getInstanceName(), IOStream.IOStreamType.LIST());
-    s := toFlatStream(mod, s, printName);
+    s := toFlatStream(mod, format, s, printName);
     str := IOStream.string(s);
     IOStream.delete(s);
   end toFlatString;

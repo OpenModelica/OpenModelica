@@ -1,7 +1,6 @@
 // name:     Lookup1
 // keywords: scoping
 // status:   correct
-// cflags: -d=-newInst
 //
 // Names are looked up in a partially defined class.
 //
@@ -12,6 +11,7 @@ class Lookup1
     Real c = a;
   end B;
   B b;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Lookup1;
 
 

@@ -1,7 +1,6 @@
 // name:     Ticket4062.mo
 // keywords: check if we can connect ExternalObject in connectors
 // status:   correct
-// cflags: -d=-newInst
 //
 
 package Modelica_DeviceDrivers  "Modelica_DeviceDrivers - A collection of drivers interfacing hardware like input devices, communication devices, shared memory, analog-digital converters and else"
@@ -346,6 +345,7 @@ equation
   connect(serialReceive.pkgOut, unpackInt.pkgIn);
   connect(unpackInt.y, integerToReal.u);
   annotation(experiment(StopTime = 15, Tolerance = 0.001, __Dymola_fixedstepsize = 0.001, __Dymola_Algorithm = "Euler"));
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Ticket4062;
 
 // Result:

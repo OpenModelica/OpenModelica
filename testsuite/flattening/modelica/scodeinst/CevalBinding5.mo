@@ -1,6 +1,5 @@
 // name: CevalBinding5
 // status: correct
-// cflags: -d=newInst
 //
 // Simple test of component bindings.
 //
@@ -39,14 +38,14 @@ end CevalBinding5;
 //   parameter Real r2[1].r.x[2] = 0.0;
 //   parameter Real r2[2].r.x[1] = 0.0;
 //   parameter Real r2[2].r.x[2] = 0.0;
-//   parameter Real b[1].r2.r.x[1] = r2[1].r.x[1];
-//   parameter Real b[1].r2.r.x[2] = r2[1].r.x[2];
-//   protected final parameter Boolean b[1].b = abs(b[1].r2.r.x[1]) < 0.0;
+//   final parameter Real b[1].r2.r.x[1] = 0.0;
+//   final parameter Real b[1].r2.r.x[2] = 0.0;
+//   protected final parameter Boolean b[1].b = false;
 //   protected parameter Real b[1].eff.r2.r.x[1] = 0.0;
 //   protected parameter Real b[1].eff.r2.r.x[2] = 0.0;
 //   protected final parameter Boolean b[1].eff.b = false;
-//   parameter Real b[2].r2.r.x[1] = r2[2].r.x[1];
-//   parameter Real b[2].r2.r.x[2] = r2[2].r.x[2];
+//   final parameter Real b[2].r2.r.x[1] = 0.0;
+//   final parameter Real b[2].r2.r.x[2] = 0.0;
 //   protected final parameter Boolean b[2].b = false;
 //   protected parameter Real b[2].eff.r2.r.x[1] = 0.0;
 //   protected parameter Real b[2].eff.r2.r.x[2] = 0.0;

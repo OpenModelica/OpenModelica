@@ -1,6 +1,5 @@
 // name:      TanksConnectedPI
 // keywords: <insert keywords here>
-// cflags: +std=2.x -d=-newInst
 // status:   correct
 //
 // <insert description here>
@@ -88,6 +87,7 @@ model TanksConnectedPI
   connect(tank1.qOut,tank2.qIn);
   connect(tank2.tActuator,piContinuous2.cOut);
   connect(tank2.tSensor,piContinuous2.cIn);
+  annotation(__OpenModelica_commandLineOptions="+std=2.x -d=-newInst");
 end TanksConnectedPI;
 
 // insert expected flat file here. Can be done by issuing the command

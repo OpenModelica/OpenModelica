@@ -69,7 +69,11 @@ namespace IAEX
   public:
     CellStyle()
     {
+#if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
+      textFormat_.setFontFamilies({"Times New Roman"});
+#else
       textFormat_.setFontFamily( "Times New Roman" );
+#endif
       textFormat_.setFontItalic( false );
       textFormat_.setFontOverline( false );
       textFormat_.setFontStrikeOut( false );

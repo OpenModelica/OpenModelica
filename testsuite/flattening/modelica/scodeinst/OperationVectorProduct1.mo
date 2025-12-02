@@ -1,7 +1,6 @@
 // name: OperationVectorProduct1
 // keywords: 
 // status: correct
-// cflags: -d=newInst
 //
 
 model OperationVectorProduct1

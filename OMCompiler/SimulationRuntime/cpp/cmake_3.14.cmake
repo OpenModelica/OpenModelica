@@ -14,7 +14,16 @@ set(CMAKE_INSTALL_DEFAULT_COMPONENT_NAME simrtcpp)
 
 
 # Boost and a threading library are required for the CPP-runtime.
-find_package(Boost COMPONENTS program_options filesystem REQUIRED)
+if(APPLE)
+ # MacPorts installs the Boost configuration file in a non-standard location,
+ # keep using the old FindBoost module for now.
+ find_package(Boost COMPONENTS program_options filesystem REQUIRED)
+elseif(CMAKE_VERSION VERSION_LESS "3.30")
+ find_package(Boost COMPONENTS program_options filesystem REQUIRED)
+else()
+  find_package(Boost CONFIG COMPONENTS program_options filesystem REQUIRED)
+endif()
+
 find_package(Threads REQUIRED)
 
 
@@ -68,7 +77,6 @@ omc_get_library_filename(omc::simrt::cpp::solver::dgesvsolver DGESVSOLVER_LIB)
 omc_get_library_filename(omc::simrt::cpp::solver::ida IDA_LIB)
 omc_get_library_filename(omc::simrt::cpp::solver::kinsol KINSOL_LIB)
 omc_get_library_filename(omc::simrt::cpp::solver::newton NEWTON_LIB)
-# omc_get_library_filename(omc::simrt::cpp::core::utils::extension EXTENSIONUTILITIES_LIB)
 omc_get_library_filename(omc::simrt::cpp::core::simcontroller SIMCONTROLLER_LIB)
 
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/LibrariesConfig.h.in ${CMAKE_CURRENT_BINARY_DIR}/LibrariesConfig.h)

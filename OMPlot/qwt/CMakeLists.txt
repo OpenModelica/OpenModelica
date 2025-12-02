@@ -11,8 +11,11 @@ option (QWT_WITH_WIDGETS "Whether to build widgets" ON)
 
 option (QWT_WITH_EXAMPLES "Whether to include examples" OFF)
 
-option (USE_QT6 "qt 6.x" OFF)
 
+option (USE_QT6 "qt 6.x" OFF)
+if (OM_QT_MAJOR_VERSION VERSION_GREATER_EQUAL 6)
+  set (USE_QT6 ON CACHE BOOL "qt 6.x" FORCE)
+endif ()
 
 set (QWT_VER_MAJ 6)
 set (QWT_VER_MIN 1)

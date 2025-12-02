@@ -50,8 +50,8 @@ int initializeMixedSystems(DATA *data, threadData_t *threadData)
   int size;
   MIXED_SYSTEM_DATA *system = data->simulationInfo->mixedSystemData;
 
-  infoStreamPrint(LOG_MIXED, 1, "initialize mixed system solvers");
-  infoStreamPrint(LOG_MIXED, 0, "%ld mixed systems", data->modelData->nMixedSystems);
+  infoStreamPrint(OMC_LOG_MIXED, 1, "initialize mixed system solvers");
+  infoStreamPrint(OMC_LOG_MIXED, 0, "%ld mixed systems", data->modelData->nMixedSystems);
 
   for(i=0; i<data->modelData->nMixedSystems; ++i)
   {
@@ -71,7 +71,7 @@ int initializeMixedSystems(DATA *data, threadData_t *threadData)
     }
   }
 
-  messageClose(LOG_MIXED);
+  messageClose(OMC_LOG_MIXED);
   return 0;
 }
 
@@ -86,7 +86,7 @@ int freeMixedSystems(DATA *data, threadData_t *threadData)
   int i;
   MIXED_SYSTEM_DATA* system = data->simulationInfo->mixedSystemData;
 
-  infoStreamPrint(LOG_MIXED, 1, "free mixed system solvers");
+  infoStreamPrint(OMC_LOG_MIXED, 1, "free mixed system solvers");
 
   for(i=0;i<data->modelData->nMixedSystems;++i)
   {
@@ -107,7 +107,7 @@ int freeMixedSystems(DATA *data, threadData_t *threadData)
     free(system[i].solverData);
   }
 
-  messageClose(LOG_MIXED);
+  messageClose(OMC_LOG_MIXED);
   return 0;
 }
 
@@ -163,10 +163,9 @@ int check_mixed_solutions(DATA *data, int printFailingSystems)
     if(system[i].solved == 0)
     {
       retVal = 1;
-      if(printFailingSystems && ACTIVE_WARNING_STREAM(LOG_MIXED))
+      if(printFailingSystems && OMC_ACTIVE_WARNING_STREAM(OMC_LOG_MIXED))
       {
-        warningStreamPrint(LOG_MIXED, 1, "mixed system fails: %d at t=%g", modelInfoGetEquation(&data->modelData->modelDataXml, system->equationIndex).id, data->localData[0]->timeValue);
-        messageClose(LOG_MIXED);
+        warningStreamPrint(OMC_LOG_MIXED, 0, "mixed system fails: %d at t=%g", modelInfoGetEquation(&data->modelData->modelDataXml, system->equationIndex).id, data->localData[0]->timeValue);
       }
     }
 

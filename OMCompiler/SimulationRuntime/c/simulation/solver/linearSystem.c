@@ -78,8 +78,8 @@ int initializeLinearSystems(DATA *data, threadData_t *threadData)
 
   maxNumberThreads = omc_get_max_threads();
 
-  infoStreamPrint(LOG_LS, 1, "initialize linear system solvers");
-  infoStreamPrint(LOG_LS, 0, "%ld linear systems", data->modelData->nLinearSystems);
+  infoStreamPrint(OMC_LOG_LS, 1, "initialize linear system solvers");
+  infoStreamPrint(OMC_LOG_LS, 0, "%ld linear systems", data->modelData->nLinearSystems);
 
   if (LSS_DEFAULT == data->simulationInfo->lssMethod) {
 #ifdef WITH_SUITESPARSE
@@ -112,7 +112,7 @@ int initializeLinearSystems(DATA *data, threadData_t *threadData)
       {
         assertStreamPrint(threadData, 0 != linsys[i].analyticalJacobianColumn, "jacobian function pointer is invalid" );
       }
-      ANALYTIC_JACOBIAN* jacobian = &(data->simulationInfo->analyticJacobians[linsys[i].jacobianIndex]);
+      JACOBIAN* jacobian = &(data->simulationInfo->analyticJacobians[linsys[i].jacobianIndex]);
       if(linsys[i].initialAnalyticalJacobian(data, threadData, jacobian))
       {
         linsys[i].jacobianIndex = -1;
@@ -126,7 +126,7 @@ int initializeLinearSystems(DATA *data, threadData_t *threadData)
       for (j=0; j<maxNumberThreads; ++j)
       {
         // ToDo Simplify this. Only have one location for jacobian
-        linsys[i].parDynamicData[j].jacobian = copyAnalyticJacobian(jacobian);
+        linsys[i].parDynamicData[j].jacobian = copyJacobian(jacobian);
       }
 #else
       linsys[i].parDynamicData[0].jacobian = jacobian;
@@ -138,14 +138,14 @@ int initializeLinearSystems(DATA *data, threadData_t *threadData)
       someSmallDensity = 1;
       if (size > linearSparseSolverMinSize) {
         someBigSize = 1;
-        infoStreamPrint(LOG_STDOUT, 0,
+        infoStreamPrint(OMC_LOG_STDOUT, 0,
                         "Using sparse solver for linear system %d,\n"
                         "because density of %.3f remains under threshold of %.3f\n"
                         "and size of %d exceeds threshold of %d.",
                         i, nnz/(double)(size*size), linearSparseSolverMaxDensity,
                         size, linearSparseSolverMinSize);
       } else {
-        infoStreamPrint(LOG_STDOUT, 0,
+        infoStreamPrint(OMC_LOG_STDOUT, 0,
                         "Using sparse solver for linear system %d,\n"
                         "because density of %.3f remains under threshold of %.3f.",
                         i, nnz/(double)(size*size), linearSparseSolverMaxDensity);
@@ -153,7 +153,7 @@ int initializeLinearSystems(DATA *data, threadData_t *threadData)
     } else if (size > linearSparseSolverMinSize) {
       linsys[i].useSparseSolver = 1;
       someBigSize = 1;
-        infoStreamPrint(LOG_STDOUT, 0,
+        infoStreamPrint(OMC_LOG_STDOUT, 0,
                         "Using sparse solver for linear system %d,\n"
                         "because size of %d exceeds threshold of %d.",
                         i, size, linearSparseSolverMinSize);
@@ -214,7 +214,7 @@ int initializeLinearSystems(DATA *data, threadData_t *threadData)
       case LSS_DEFAULT:
         {
           int indexes[2] = {1, linsys[i].equationIndex};
-          infoStreamPrintWithEquationIndexes(LOG_STDOUT, omc_dummyFileInfo, 0, indexes, "The simulation runtime does not have access to sparse solvers. Defaulting to a dense linear system solver instead.");
+          infoStreamPrintWithEquationIndexes(OMC_LOG_STDOUT, omc_dummyFileInfo, 0, indexes, "The simulation runtime does not have access to sparse solvers. Defaulting to a dense linear system solver instead.");
           linsys[i].useSparseSolver = 0;
           break;
         }
@@ -301,18 +301,18 @@ int initializeLinearSystems(DATA *data, threadData_t *threadData)
   /* print relevant flag information */
   if(someSmallDensity) {
     if(someBigSize) {
-      infoStreamPrint(LOG_STDOUT, 0, "The maximum density and the minimal system size for using sparse solvers can be\n"
+      infoStreamPrint(OMC_LOG_STDOUT, 0, "The maximum density and the minimal system size for using sparse solvers can be\n"
                                      "specified using the runtime flags '<-lssMaxDensity=value>' and '<-lssMinSize=value>'.");
     } else {
-      infoStreamPrint(LOG_STDOUT, 0, "The maximum density for using sparse solvers can be specified\n"
+      infoStreamPrint(OMC_LOG_STDOUT, 0, "The maximum density for using sparse solvers can be specified\n"
                                      "using the runtime flag '<-lssMaxDensity=value>'.");
     }
   } else if(someBigSize) {
-    infoStreamPrint(LOG_STDOUT, 0, "The minimal system size for using sparse solvers can be specified\n"
+    infoStreamPrint(OMC_LOG_STDOUT, 0, "The minimal system size for using sparse solvers can be specified\n"
                                    "using the runtime flag '<-lssMinSize=value>'.");
   }
 
-  messageClose(LOG_LS);
+  messageClose(OMC_LOG_LS);
 
   TRACE_POP
   return 0;
@@ -364,7 +364,7 @@ int updateStaticDataOfLinearSystems(DATA *data, threadData_t *threadData)
   int size;
   LINEAR_SYSTEM_DATA *linsys = data->simulationInfo->linearSystemData;
 
-  infoStreamPrint(LOG_LS_V, 1, "update static data of linear system solvers");
+  infoStreamPrint(OMC_LOG_LS_V, 1, "update static data of linear system solvers");
 
   for(i=0; i<data->modelData->nLinearSystems; ++i)
   {
@@ -376,7 +376,7 @@ int updateStaticDataOfLinearSystems(DATA *data, threadData_t *threadData)
     linsys[i].initializeStaticLSData(data, threadData, &linsys[i], 0 /* false */);
   }
 
-  messageClose(LOG_LS_V);
+  messageClose(OMC_LOG_LS_V);
 
   TRACE_POP
   return 0;
@@ -414,7 +414,7 @@ int freeLinearSystems(DATA *data, threadData_t *threadData)
   int i,j;
   LINEAR_SYSTEM_DATA* linsys = data->simulationInfo->linearSystemData;
 
-  infoStreamPrint(LOG_LS_V, 1, "free linear system solvers");
+  infoStreamPrint(OMC_LOG_LS_V, 1, "free linear system solvers");
   for(i=0; i<data->modelData->nLinearSystems; ++i)
   {
     /* free system and solver data */
@@ -430,15 +430,15 @@ int freeLinearSystems(DATA *data, threadData_t *threadData)
       }
     }
 
-    /* ToDo Implement unique function to free a ANALYTIC_JACOBIAN */
+    /* ToDo Implement unique function to free a JACOBIAN */
     if (1 == linsys[i].method) {
-      ANALYTIC_JACOBIAN* jacobian = &(data->simulationInfo->analyticJacobians[linsys[i].jacobianIndex]);
-      freeAnalyticJacobian(jacobian);
+      JACOBIAN* jacobian = &(data->simulationInfo->analyticJacobians[linsys[i].jacobianIndex]);
+      freeJacobian(jacobian);
       /* Note: The Jacobian of data->simulationInfo itself will be free later. */
 
 #ifdef USE_PARJAC
       for (j=0; j<omc_get_max_threads(); ++j) {
-        // Note: We cannot use neither freeAnalyticJacobian() nor freeSparsePattern()
+        // Note: We cannot use neither freeJacobian() nor freeSparsePattern()
         //       since the sparsePattern points to data->simulationInfo->analyticJacobians[linsys[i].jacobianIndex]
         //       which is free some lines above (and are invalid pointers at this point). Thus, free
         //       what is left.
@@ -548,7 +548,7 @@ int freeLinearSystems(DATA *data, threadData_t *threadData)
     freeLinSystThreadData(&(linsys[i]));
   }
 
-  messageClose(LOG_LS_V);
+  messageClose(OMC_LOG_LS_V);
 
   TRACE_POP
   return 0;
@@ -598,7 +598,7 @@ int solve_linear_system(DATA *data, threadData_t *threadData, int sysNumber, dou
     case LSS_UMFPACK:
       success = solveUmfPack(data, threadData, sysNumber, aux_x);
       if (!success && linsys->strictTearingFunctionCall != NULL){
-        debugString(LOG_DT, "Solving the casual tearing set failed! Now the strict tearing set is used.");
+        debugString(OMC_LOG_DT, "Solving the casual tearing set failed! Now the strict tearing set is used.");
         success = linsys->strictTearingFunctionCall(data, threadData);
         if (success) success=2;
       }
@@ -633,7 +633,7 @@ int solve_linear_system(DATA *data, threadData_t *threadData, int sysNumber, dou
     case LS_UMFPACK:
       success = solveUmfPack(data, threadData, sysNumber, aux_x);
       if (!success && linsys->strictTearingFunctionCall != NULL){
-        debugString(LOG_DT, "Solving the casual tearing set failed! Now the strict tearing set is used.");
+        debugString(OMC_LOG_DT, "Solving the casual tearing set failed! Now the strict tearing set is used.");
         success = linsys->strictTearingFunctionCall(data, threadData);
         if (success) success=2;
       }
@@ -653,7 +653,7 @@ int solve_linear_system(DATA *data, threadData_t *threadData, int sysNumber, dou
 
       /* check if solution process was successful, if not use alternative tearing set if available (dynamic tearing)*/
       if (!success && linsys->strictTearingFunctionCall != NULL){
-        debugString(LOG_DT, "Solving the casual tearing set failed! Now the strict tearing set is used.");
+        debugString(OMC_LOG_DT, "Solving the casual tearing set failed! Now the strict tearing set is used.");
         success = linsys->strictTearingFunctionCall(data, threadData);
         if (success){
           success=2;
@@ -667,9 +667,9 @@ int solve_linear_system(DATA *data, threadData_t *threadData, int sysNumber, dou
       /* if there is no alternative tearing set, use fallback solver */
       if (!success){
         if (linsys->failed){
-          logLevel = LOG_LS;
+          logLevel = OMC_LOG_LS;
         } else {
-          logLevel = LOG_STDOUT;
+          logLevel = OMC_LOG_STDOUT;
         }
         warningStreamPrintWithLimit(logLevel, 0, linsys->numberOfFailures, data->simulationInfo->maxWarnDisplays,
                                     "The default linear solver fails, the fallback solver with total pivoting is started at time %f. That might raise performance issues, for more information use -lv LOG_LS.", data->localData[0]->timeValue);
@@ -755,32 +755,32 @@ int check_linear_solution(DATA *data, int printFailingSystems, int sysNumber)
       return 1;
     }
 #ifdef USE_PARJAC
-    warningStreamPrintWithEquationIndexes(LOG_STDOUT, omc_dummyFileInfo, 1, indexes, "Thread %u: Solving linear system %d fails at time %g. For more information use -lv LOG_LS.", omc_get_thread_num(), index, data->localData[0]->timeValue);
+    warningStreamPrintWithEquationIndexes(OMC_LOG_STDOUT, omc_dummyFileInfo, 1, indexes, "Thread %u: Solving linear system %d fails at time %g. For more information use -lv LOG_LS.", omc_get_thread_num(), index, data->localData[0]->timeValue);
 #else
-    warningStreamPrintWithEquationIndexes(LOG_STDOUT, omc_dummyFileInfo, 1, indexes, "Solving linear system %d fails at time %g. For more information use -lv LOG_LS.", index, data->localData[0]->timeValue);
+    warningStreamPrintWithEquationIndexes(OMC_LOG_STDOUT, omc_dummyFileInfo, 1, indexes, "Solving linear system %d fails at time %g. For more information use -lv LOG_LS.", index, data->localData[0]->timeValue);
 #endif
 
     for(j=0; j<modelInfoGetEquation(&data->modelData->modelDataXml, (linsys[i]).equationIndex).numVar; ++j) {
       int done=0;
       long k;
       const MODEL_DATA *mData = data->modelData;
-      for(k=0; k<mData->nVariablesReal && !done; ++k)
+      for(k=0; k<mData->nVariablesRealArray && !done; ++k)
       {
         if (!strcmp(mData->realVarsData[k].info.name, modelInfoGetEquation(&data->modelData->modelDataXml, (linsys[i]).equationIndex).vars[j]))
         {
         done = 1;
-        warningStreamPrint(LOG_LS, 0, "[%ld] Real %s(start=%g, nominal=%g)", j+1,
+        warningStreamPrint(OMC_LOG_LS, 0, "[%ld] Real %s(start=%s, nominal=%g)", j+1,
                                      mData->realVarsData[k].info.name,
-                                     mData->realVarsData[k].attribute.start,
+                                     real_vector_to_string(&mData->realVarsData[k].attribute.start, mData->realVarsData[k].dimension.numberOfDimensions == 0),
                                      mData->realVarsData[k].attribute.nominal);
         }
       }
       if (!done)
       {
-        warningStreamPrint(LOG_LS, 0, "[%ld] Real %s(start=?, nominal=?)", j+1, modelInfoGetEquation(&data->modelData->modelDataXml, (linsys[i]).equationIndex).vars[j]);
+        warningStreamPrint(OMC_LOG_LS, 0, "[%ld] Real %s(start=?, nominal=?)", j+1, modelInfoGetEquation(&data->modelData->modelDataXml, (linsys[i]).equationIndex).vars[j]);
       }
     }
-    messageCloseWarning(LOG_STDOUT);
+    messageCloseWarning(OMC_LOG_STDOUT);
 
     TRACE_POP
     return 1;
@@ -843,7 +843,7 @@ static void setAElementUmfpack(int row, int col, double value, int nth, LINEAR_S
 {
   DATA_UMFPACK* sData = (DATA_UMFPACK*) linearSystemData->parDynamicData[omc_get_thread_num()].solverData[0];
 
-  infoStreamPrint(LOG_LS_V, 0, " set %d. -> (%d,%d) = %f", nth, row, col, value);
+  infoStreamPrint(OMC_LOG_LS_V, 0, " set %d. -> (%d,%d) = %f", nth, row, col, value);
   if (row > 0) {
     if (sData->Ap[row] == 0) {
       sData->Ap[row] = nth;

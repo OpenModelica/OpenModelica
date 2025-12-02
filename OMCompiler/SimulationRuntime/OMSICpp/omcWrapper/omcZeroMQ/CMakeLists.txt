@@ -1,6 +1,4 @@
-#cmake_minimum_required(VERSION 3.0.0)
-
-
+cmake_minimum_required(VERSION 3.5)
 
 project(${OMCZeroMQName} VERSION 0.1)
 
@@ -36,7 +34,7 @@ ELSE()
 ENDIF(IS_MINGW32)
 MESSAGE(STATUS "Boost root for omc - zeromq:")
 MESSAGE(STATUS ${BOOST_ROOT})
-FIND_PACKAGE(Boost 1.60.0 COMPONENTS program_options system)
+FIND_PACKAGE(Boost 1.60.0 COMPONENTS program_options)
 if(Boost_FOUND)
 IF(NOT(COMPILER_SUPPORTS_CXX11))
   FIND_PACKAGE(Threads)
@@ -52,7 +50,7 @@ ENDIF(NOT(COMPILER_SUPPORTS_CXX11))
 else()
 MESSAGE(STATUS "Boost version is older than 1.60 therefore boost threads and system is needed for boost property tree")
 #older boost versions needs for boost property tree library boost threads and system
-FIND_PACKAGE(Boost REQUIRED COMPONENTS program_options thread system)
+FIND_PACKAGE(Boost REQUIRED COMPONENTS program_options thread)
 endif()
 
 MESSAGE(STATUS "using boost include for omc - zeromq:  ${Boost_INCLUDE_DIR}")
@@ -95,4 +93,3 @@ ADD_EXECUTABLE(${OMCZeroMQName} src/omc.cpp src/omcZeromqTask.cpp)
 #target_link_libraries(${OMCZeroMQName}  ${ZeroMQ_LIBRARY} ${OMCCAPIName} ${Boost_LIBRARIES}  )
 target_link_libraries(${OMCZeroMQName} libzmq ${OMCCAPIName} ${Boost_LIBRARIES}  )
 install(TARGETS ${OMCZeroMQName} DESTINATION bin )
-

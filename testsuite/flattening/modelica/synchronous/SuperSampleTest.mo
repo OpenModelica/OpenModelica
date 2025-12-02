@@ -1,7 +1,6 @@
 // name: SuperSampleTest
 // keywords: synchronous features
 // status: correct
-// cflags: -d=-newInst
 
 model SuperSampleTest
   output Real x;
@@ -11,6 +10,7 @@ equation
   x = superSample(1.0);
   z = superSample({1,2});
   y = superSample(z, 2);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end SuperSampleTest;
 
 // Result:

@@ -10,7 +10,7 @@
 loadModel(SiemensPower, {"2.1.0-beta"});getErrorString();
 
 // test jacobians
-setCommandLineOptions("--generateSymbolicJacobian"); getErrorString();
+setCommandLineOptions("--generateDynamicJacobian=symbolic"); getErrorString();
 simulate(SiemensPower.Components.SolidComponents.Tests.wall_test, stopTime=25, method="dassl", simflags="-jacobian=symbolical"); getErrorString();
 
 res := OpenModelica.Scripting.compareSimulationResults("SiemensPower.Components.SolidComponents.Tests.wall_test_res.mat",getEnvironmentVar("REFERENCEFILES")+"/SiemensPower/wall_test.mat","SiemensPower.Components.SolidComponents.Tests.wall_test_diff.csv",0.01,0.00001,
@@ -41,7 +41,7 @@ res := OpenModelica.Scripting.compareSimulationResults("SiemensPower.Components.
 // ""
 // record SimulationResult
 //     resultFile = "SiemensPower.Components.SolidComponents.Tests.wall_test_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 25.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'SiemensPower.Components.SolidComponents.Tests.wall_test', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-jacobian=symbolical'",
+//     simulationOptions = "startTime = 0.0, stopTime = 25.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'SiemensPower.Components.SolidComponents.Tests.wall_test', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-jacobian=symbolical'",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "

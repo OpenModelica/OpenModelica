@@ -1,7 +1,6 @@
 // name:     InnerOuterWithExtends
 // keywords: dynamic scope, lookup
 // status:   correct
-// cflags: -d=-newInst
 //
 //  components with inner prefix references an outer component with
 //  the same name and one variable is generated for all of them.
@@ -32,6 +31,7 @@ end InnerOuterWithExtends;
 model InnerOuterWithExtendsTest
   import InnerOuterWithExtends.*;
   extends C1;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end InnerOuterWithExtendsTest;
 
 

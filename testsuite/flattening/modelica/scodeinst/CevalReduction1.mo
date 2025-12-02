@@ -1,7 +1,6 @@
 // name: CevalReduction1
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 //
 
@@ -45,8 +44,8 @@ end CevalReduction1;
 //   constant Real r3 = 110.0;
 //   constant Real r4 = 14400.0;
 //   constant Real r5 = 420.0;
-//   constant Real r6 = 8.777798510069901e+304;
-//   constant Real r7 = -8.777798510069901e+304;
+//   constant Real r6 = 8.777798510069901e304;
+//   constant Real r7 = -8.777798510069901e304;
 //   constant Real r8 = 0.0;
 //   constant Real r9 = 1.0;
 //   constant Integer i1 = 0;

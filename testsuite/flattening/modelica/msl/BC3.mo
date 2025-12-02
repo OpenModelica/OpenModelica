@@ -1,7 +1,6 @@
 // name:     BC3 - FirstOrder component
 // keywords: FirstOrder
 // status:   correct
-// cflags: -d=-newInst
 //
 // Testing instantiation of the FirstOrder component.
 //
@@ -970,6 +969,7 @@ model BC3
 
 equation
   connect(constant1.outPort,firstOrder1.inPort) annotation(Line(visible=true,points={{-13.21,11.11},{1.46,11.11}}));
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end BC3;
 
 // class BC3

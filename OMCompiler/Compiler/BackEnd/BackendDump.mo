@@ -1815,6 +1815,15 @@ algorithm
   end match;
 end timeEventString;
 
+public function simIteratorString
+  input BackendDAE.SimIterator iter;
+  output String str;
+algorithm
+  str := match iter
+    case BackendDAE.SIM_ITERATOR_RANGE()  then ComponentReference.printComponentRefStr(iter.name) + " in " + ExpressionDump.printExpStr(iter.start) + ":" + ExpressionDump.printExpStr(iter.step) + ":" + ExpressionDump.printExpStr(iter.stop);
+    case BackendDAE.SIM_ITERATOR_LIST()   then ComponentReference.printComponentRefStr(iter.name) + " in " + List.toString(iter.lst, intString, "", "{", ", ", "}", true, 10);
+  end match;
+end simIteratorString;
 
 // =============================================================================
 // section for all debug* functions
@@ -4225,7 +4234,7 @@ algorithm
   e := 1;
   eAbs := 1;
   size := 1;
-  while e<=numEqs loop
+  while e <= numEqs loop
     //print("check e "+intString(e)+"\n");
     eq := BackendEquation.get(eqs,e);
     size := BackendEquation.equationSize(eq);
@@ -4668,7 +4677,7 @@ algorithm
     case (BackendDAE.STATEORDER(ht,_))
       equation
         (tplLst) = BaseHashTable.hashTableList(ht);
-        if listLength(tplLst) > 0 then
+        if not listEmpty(tplLst) then
           print("State Order: (");
           str = stringDelimitList(List.map(tplLst,printStateOrderStr),"\n");
           len = listLength(tplLst);

@@ -1,7 +1,6 @@
 // name:     BS14 - IntegerStep component
 // keywords: IntegerStep
 // status:   correct
-// cflags: -d=-newInst
 //
 // Testing instantiation of the IntegerStep component.
 //
@@ -987,6 +986,7 @@ model BS14
 
 equation
   connect(integerToReal1.inPort,integerStep1.outPort) annotation(Line(visible=true,points={{11.15,15.01},{-29.3,13.79}}));
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end BS14;
 // class BS14
 // parameter Integer integerToReal1.n = 1 "Number of input signals (= number of output signals)";

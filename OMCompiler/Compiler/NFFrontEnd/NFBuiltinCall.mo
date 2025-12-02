@@ -83,6 +83,13 @@ public
         then
           ();
 
+      // for retyping
+      case Call.TYPED_CALL()
+        algorithm
+          special := Function.isSpecialBuiltin(call.fn);
+        then
+          ();
+
       else
         algorithm
           Error.assertion(false, getInstanceName() + " got unknown call: " +
@@ -234,7 +241,7 @@ public
     Integer maxn, pos;
     Dimension sumDim;
   algorithm
-    Error.assertion(listLength(args)==listLength(tys) and listLength(args)>=1, getInstanceName() + " got wrong input sizes", sourceInfo());
+    Error.assertion(listLength(args)==listLength(tys) and not listEmpty(args), getInstanceName() + " got wrong input sizes", sourceInfo());
 
     // First: Get the number of dimensions and the element type
 
@@ -270,7 +277,7 @@ public
       ty::tys2 := tys2;
       pos := pos-1;
       ty2 := Type.setArrayElementType(ty, resTy);
-      (arg2, ty1, mk) := TypeCheck.matchTypes(ty, ty2, arg, allowUnknown = true);
+      (arg2, ty1, mk) := TypeCheck.matchTypes(ty, ty2, arg, NFTypeCheck.ALLOW_UNKNOWN);
       if TypeCheck.isIncompatibleMatch(mk) then
         Error.addSourceMessageAndFail(Error.ARG_TYPE_MISMATCH, {String(pos), "cat", "arg", Expression.toString(arg), Type.toString(ty), Type.toString(ty2)}, info);
       end if;
@@ -317,7 +324,7 @@ public
     for arg in args2 loop
       ty::tys2 := tys2;
       pos := pos-1;
-      (arg2, ty1, mk) := TypeCheck.matchTypes(ty, resTyToMatch, arg, allowUnknown=true);
+      (arg2, ty1, mk) := TypeCheck.matchTypes(ty, resTyToMatch, arg, NFTypeCheck.ALLOW_UNKNOWN);
       if TypeCheck.isIncompatibleMatch(mk) then
         Error.addSourceMessageAndFail(Error.ARG_TYPE_MISMATCH, {String(pos), "cat", "arg", Expression.toString(arg), Type.toString(ty), Type.toString(resTyToMatch)}, info);
       end if;
@@ -339,7 +346,7 @@ protected
     input SourceInfo info;
   algorithm
     if not listEmpty(namedArgs) then
-      Error.addSourceMessage(Error.NO_SUCH_PARAMETER,
+      Error.addSourceMessage(Error.NO_SUCH_INPUT_PARAMETER,
         {fnName, Util.tuple21(listHead(namedArgs))}, info);
       fail();
     end if;
@@ -464,7 +471,7 @@ protected
     output Expression callExp;
     output Type ty;
     output Variability var = Variability.DISCRETE;
-    output Purity purity = Purity.IMPURE;
+    output Purity purity;
   protected
     Call argtycall;
     Function fn;
@@ -473,6 +480,7 @@ protected
   algorithm
     argtycall := Call.typeMatchNormalCall(call, context, info);
     ty := Call.typeOf(argtycall);
+    purity := Call.purity(argtycall);
     callExp := Expression.CALL(Call.unboxArgs(argtycall));
   end typeDiscreteCall;
 
@@ -512,9 +520,9 @@ protected
     output Expression callExp;
     output Type ty;
     output Variability variability;
-    output Purity purity = Purity.IMPURE;
+    output Purity purity;
   algorithm
-    (callExp, ty, variability) := typePreChangeCall("pre", call, context, info);
+    (callExp, ty, variability, purity) := typePreChangeCall("pre", call, context, info);
   end typePreCall;
 
   function typeChangeCall
@@ -524,9 +532,9 @@ protected
     output Expression callExp;
     output Type ty;
     output Variability variability;
-    output Purity purity = Purity.IMPURE;
+    output Purity purity;
   algorithm
-    (callExp, ty, variability) := typePreChangeCall("change", call, context, info);
+    (callExp, ty, variability, purity) := typePreChangeCall("change", call, context, info);
     ty := Type.setArrayElementType(ty, Type.BOOLEAN());
   end typeChangeCall;
 
@@ -538,6 +546,7 @@ protected
     output Expression callExp;
     output Type ty;
     output Variability variability = Variability.DISCRETE;
+    output Purity purity;
   protected
     ComponentRef fn_ref;
     list<Expression> args;
@@ -561,7 +570,7 @@ protected
         {ComponentRef.toString(fn_ref)}, info);
     end if;
 
-    (arg, ty, var) := Typing.typeExp(listHead(args), context, info);
+    (arg, ty, var, purity) := Typing.typeExp(listHead(args), context, info);
 
     if not Expression.isCref(arg) then
       Error.addSourceMessage(Error.ARGUMENT_MUST_BE_VARIABLE,
@@ -576,7 +585,7 @@ protected
     end if;
 
     {fn} := Function.typeRefCache(fn_ref);
-    callExp := Expression.CALL(Call.makeTypedCall(fn, {arg}, var, Purity.IMPURE, ty));
+    callExp := Expression.CALL(Call.makeTypedCall(fn, {arg}, var, purity, ty));
   end typePreChangeCall;
 
   function typeDerCall
@@ -586,7 +595,7 @@ protected
     output Expression callExp;
     output Type ty;
     output Variability variability;
-    output Purity purity = Purity.IMPURE;
+    output Purity purity;
   protected
     ComponentRef fn_ref;
     list<Expression> args;
@@ -610,7 +619,7 @@ protected
     end if;
 
     {arg} := args;
-    (arg, ty, variability) := Typing.typeExp(arg, context, info);
+    (arg, ty, variability, purity) := Typing.typeExp(arg, context, info);
 
     // The argument of der must be a Real scalar or array.
     ety := Type.arrayElementType(ty);
@@ -647,7 +656,7 @@ protected
     output Expression callExp;
     output Type ty;
     output Variability variability = Variability.DISCRETE;
-    output Purity purity = Purity.IMPURE;
+    output Purity purity;
   protected
     Call argtycall;
     Function fn;
@@ -665,6 +674,7 @@ protected
     argtycall as Call.ARG_TYPED_CALL(ComponentRef.CREF(node = fn_node), args, _) := Call.typeNormalCall(call, context, info);
     argtycall := Call.matchTypedNormalCall(argtycall, context, info);
     ty := Call.typeOf(argtycall);
+    purity := Call.purity(argtycall);
     callExp := Expression.CALL(Call.unboxArgs(argtycall));
 
     {arg} := args;
@@ -821,7 +831,7 @@ protected
          Expression.toString(n_arg), Prefixes.variabilityString(n_var)}, info);
     end if;
 
-    n_arg := Ceval.evalExp(n_arg, Ceval.EvalTarget.GENERIC(info));
+    n_arg := Ceval.evalExp(n_arg, Ceval.EvalTarget.new(info, context));
     n := Expression.integerValue(n_arg);
 
     if n < Type.dimensionCount(exp_ty) then
@@ -839,7 +849,7 @@ protected
     output Expression callExp;
     output Type ty;
     output Variability variability;
-    output Purity purity = Purity.IMPURE;
+    output Purity purity;
   protected
     ComponentRef fn_ref;
     list<Expression> args;
@@ -860,7 +870,7 @@ protected
 
     {arg1, arg2} := args;
     (arg1, ty1, var) := Typing.typeExp(arg1, context, info);
-    (arg2, ty2, variability) := Typing.typeExp(arg2, context, info);
+    (arg2, ty2, variability, purity) := Typing.typeExp(arg2, context, info);
 
     // First argument must be Integer.
     if not Type.isInteger(ty1) then
@@ -879,7 +889,7 @@ protected
     // Second argument must be Real, array of allowed expressions or record
     // containing only components of allowed expressions.
     // TODO: Also handle records here.
-    (arg2, ty, mk) := TypeCheck.matchTypes(ty2, Type.setArrayElementType(ty2, Type.REAL()), arg2, true);
+    (arg2, ty, mk) := TypeCheck.matchTypes(ty2, Type.setArrayElementType(ty2, Type.REAL()), arg2, NFTypeCheck.ALLOW_UNKNOWN);
 
     if not TypeCheck.isValidArgumentMatch(mk) then
       Error.addSourceMessageAndFail(Error.ARG_TYPE_MISMATCH,
@@ -953,7 +963,7 @@ protected
       (arg, arg_ty, arg_var, arg_pur) := Typing.typeExp(arg, context, info);
 
       if not (InstContext.inAlgorithm(context) or InstContext.inFunction(context)) then
-        if arg_var > Variability.PARAMETER then
+        if arg_var > Variability.PARAMETER and not (InstContext.inInstanceAPI(context) or Expression.contains(arg, Expression.isResizableCref)) then
           Error.addSourceMessageAndFail(Error.NON_PARAMETER_EXPRESSION_DIMENSION,
             {Expression.toString(arg), String(index),
              List.toString(fillArg :: dimensionArgs, Expression.toString,
@@ -962,7 +972,7 @@ protected
 
         if arg_pur == Purity.PURE and not Structural.isExpressionNotFixed(arg) then
           Structural.markExp(arg);
-          arg := Ceval.evalExp(arg);
+          arg := if InstContext.inInstanceAPI(context) then Ceval.tryEvalExp(arg) else Ceval.evalExp(arg);
           arg_ty := Expression.typeOf(arg);
         end if;
       end if;
@@ -1218,7 +1228,7 @@ protected
     if variability > Variability.PARAMETER or purity <> Purity.PURE then
       Error.addSourceMessageAndFail(Error.NF_CAT_FIRST_ARG_EVAL, {Expression.toString(arg), Prefixes.variabilityString(variability)}, info);
     end if;
-    Expression.INTEGER(n) := Ceval.evalExp(arg, Ceval.EvalTarget.GENERIC(info));
+    Expression.INTEGER(n) := Ceval.evalExp(arg, Ceval.EvalTarget.new(info, context));
 
     res := {};
     tys := {};
@@ -1468,7 +1478,7 @@ protected
       if name == "priority" then
         args := List.appendElt(arg2, args);
       else
-        Error.addSourceMessageAndFail(Error.NO_SUCH_PARAMETER,
+        Error.addSourceMessageAndFail(Error.NO_SUCH_INPUT_PARAMETER,
           {ComponentRef.toString(fn_ref), name}, info);
       end if;
     end for;
@@ -1613,7 +1623,7 @@ protected
       if name == "message" then
         args := List.appendElt(arg2, args);
       else
-        Error.addSourceMessageAndFail(Error.NO_SUCH_PARAMETER,
+        Error.addSourceMessageAndFail(Error.NO_SUCH_INPUT_PARAMETER,
           {ComponentRef.toString(fn_ref), name}, info);
       end if;
     end for;
@@ -1686,7 +1696,7 @@ protected
       if name == "message" then
         args := List.appendElt(arg3, args);
       else
-        Error.addSourceMessageAndFail(Error.NO_SUCH_PARAMETER,
+        Error.addSourceMessageAndFail(Error.NO_SUCH_INPUT_PARAMETER,
           {ComponentRef.toString(fn_ref), name}, info);
       end if;
     end for;
@@ -1849,17 +1859,13 @@ protected
     output Purity purity = Purity.PURE;
   protected
     InstNode scope;
-    Call ty_call;
   algorithm
     Call.UNTYPED_CALL(call_scope = scope) := call;
-    ty_call := Call.typeMatchNormalCall(call, context, info);
+    _ := Call.typeMatchNormalCall(call, context, info);
     // getInstanceName is normally derived from the prefix during the flattening,
     // but sometimes the call is constant evaluated instead (e.g. when it's used
-    // in a package). So we add the scope as an argument here to have it
-    // available later if needed.
-    ty_call := Call.setArguments(ty_call,
-      {Expression.fromCref(ComponentRef.fromNode(scope, Type.UNKNOWN()))});
-    result := Expression.CALL(ty_call);
+    // in a package). So we create an expression here that contains the scope.
+    result := Expression.INSTANCE_NAME(scope);
   end typeGetInstanceName;
 
   function typeClockCall

@@ -664,6 +664,7 @@ PlainTextEdit::PlainTextEdit(BaseEditor *pBaseEditor)
   : QPlainTextEdit(pBaseEditor), mpBaseEditor(pBaseEditor)
 {
   setObjectName("BaseEditor");
+  setMouseTracking(true);
   QTextDocument *pTextDocument = document();
   pTextDocument->setDocumentMargin(2);
   BaseEditorDocumentLayout *pModelicaTextDocumentLayout = new BaseEditorDocumentLayout(pTextDocument);
@@ -875,7 +876,7 @@ int PlainTextEdit::lineNumberAreaWidth()
     ++digits;
   }
   const QFontMetrics fm(document()->defaultFont());
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 11, 0))
+#if QT_VERSION >= QT_VERSION_CHECK(5, 11, 0)
   int space = fm.horizontalAdvance(QLatin1Char('9')) * digits;
 #else // QT_VERSION_CHECK
   int space = fm.width(QLatin1Char('9')) * digits;
@@ -1061,7 +1062,11 @@ void PlainTextEdit::lineNumberAreaMouseEvent(QMouseEvent *event)
         QMenu menu(this);
         mpBaseEditor->getToggleBreakpointAction()->setData(QStringList() << fileName << QString::number(lineNumber));
         menu.addAction(mpBaseEditor->getToggleBreakpointAction());
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+        menu.exec(event->globalPosition().toPoint());
+#else
         menu.exec(event->globalPos());
+#endif
       }
     }
   }
@@ -1371,7 +1376,6 @@ void PlainTextEdit::toggleBlockVisible(const QTextBlock &block)
   pBaseEditorDocumentLayout->emitDocumentSizeChanged();
 }
 
-
 /*!
  * \brief BaseEditor::updateLineNumberAreaWidth
  * Updates the width of LineNumberArea.
@@ -1648,7 +1652,7 @@ void PlainTextEdit::keyPressEvent(QKeyEvent *pEvent)
   bool shiftModifier = pEvent->modifiers().testFlag(Qt::ShiftModifier);
   bool controlModifier = pEvent->modifiers().testFlag(Qt::ControlModifier);
   bool isCompleterShortcut = controlModifier && (pEvent->key() == Qt::Key_Space); // CTRL+space
-  bool isCompleterChar = mCompletionCharacters.indexOf(pEvent->key()) != -1;
+  bool isCompleterChar = !pEvent->text().isEmpty() && mCompletionCharacters.indexOf(pEvent->text().front()) != -1;
   /* Ticket #4404. hide the completer on Esc and enter text based on Tab */
   if (mpCompleter && mpCompleter->popup()->isVisible()) {
     // The following keys are forwarded by the completer to the widget
@@ -1793,7 +1797,7 @@ QMimeData* PlainTextEdit::createMimeDataFromSelection() const
     const int selectionStart = cursor.selectionStart();
     const int endOfDocument = tempDocument->characterCount() - 1;
     for (QTextBlock current = start; current.isValid() && current != end; current = current.next()) {
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 6, 0))
+#if QT_VERSION >= QT_VERSION_CHECK(5, 6, 0)
   foreach (const QTextLayout::FormatRange &range, current.layout()->formats()) {
 #else // QT_VERSION_CHECK
   foreach (const QTextLayout::FormatRange &range, current.layout()->additionalFormats()) {
@@ -1858,8 +1862,8 @@ bool PlainTextEdit::canInsertFromMimeData(const QMimeData *source) const
 {
   // check mimeData to see if we can insert from it
   if (source->hasFormat(Helper::modelicaComponentFormat)) {
-    return mpBaseEditor->getModelWidget() && !mpBaseEditor->getModelWidget()->getLibraryTreeItem()->isSystemLibrary()
-        && mpBaseEditor->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica;
+    return mpBaseEditor->getModelWidget() && !mpBaseEditor->getModelWidget()->getLibraryTreeItem()->isSystemLibrary() && !mpBaseEditor->getModelWidget()->isElementMode()
+        && mpBaseEditor->getModelWidget()->getLibraryTreeItem()->isModelica();
   } else {
     return QPlainTextEdit::canInsertFromMimeData(source);
   }
@@ -1900,7 +1904,7 @@ void PlainTextEdit::focusInEvent(QFocusEvent *event)
   MainWindow::instance()->getAutoSaveTimer()->stop();
   // Issue #8723. If we are editing the documentation then save and close the documentation editing when focus moves to text view.
   if (dynamic_cast<ModelicaEditor*>(mpBaseEditor)
-      && mpBaseEditor->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica
+      && mpBaseEditor->getModelWidget()->getLibraryTreeItem()->isModelica()
       && MainWindow::instance()->getDocumentationDockWidget()->isVisible()
       && MainWindow::instance()->getDocumentationWidget()->isEditingDocumentation()) {
     MainWindow::instance()->getDocumentationWidget()->showDocumentation(mpBaseEditor->getModelWidget()->getLibraryTreeItem());
@@ -1988,7 +1992,7 @@ void PlainTextEdit::paintEvent(QPaintEvent *e)
         QString rectReplacement = QLatin1String(" ") + replacement + QLatin1String("); ");
 
         const QFontMetrics fm(document()->defaultFont());
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 11, 0))
+#if QT_VERSION >= QT_VERSION_CHECK(5, 11, 0)
         QRectF collapseRect(lineRect.right() + 12, lineRect.top(), fm.horizontalAdvance(rectReplacement), lineRect.height());
 #else // QT_VERSION_CHECK
         QRectF collapseRect(lineRect.right() + 12, lineRect.top(), fm.width(rectReplacement), lineRect.height());
@@ -2036,7 +2040,7 @@ void PlainTextEdit::paintEvent(QPaintEvent *e)
 void PlainTextEdit::wheelEvent(QWheelEvent *event)
 {
   if (event->modifiers() & Qt::ControlModifier) {
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 6, 0))
+#if QT_VERSION >= QT_VERSION_CHECK(5, 6, 0)
   if (event->angleDelta().x() > 0 || event->angleDelta().y() > 0) {
 #else // QT_VERSION_CHECK
   if (event->delta() > 0) {
@@ -2047,6 +2051,38 @@ void PlainTextEdit::wheelEvent(QWheelEvent *event)
     }
   }
   QPlainTextEdit::wheelEvent(event);
+}
+
+/*!
+ * \brief PlainTextEdit::mousePressEvent
+ * Reimplementation of QPlainTextEdit::mousePressEvent
+ * \param event
+ */
+void PlainTextEdit::mousePressEvent(QMouseEvent *event)
+{
+  bool controlModifier = event->modifiers().testFlag(Qt::ControlModifier);
+  if (controlModifier) {
+    mpBaseEditor->symbolAtPosition(event->pos());
+    viewport()->unsetCursor();
+  }
+  QPlainTextEdit::mousePressEvent(event);
+}
+
+/*!
+ * \brief PlainTextEdit::mouseMoveEvent
+ * Reimplementation of QPlainTextEdit::mouseMoveEvent
+ * \param event
+ */
+void PlainTextEdit::mouseMoveEvent(QMouseEvent *event)
+{
+  bool controlModifier = event->modifiers().testFlag(Qt::ControlModifier);
+  if (controlModifier) {
+    viewport()->setCursor(Qt::PointingHandCursor);
+  } else {
+    viewport()->unsetCursor();
+  }
+
+  QPlainTextEdit::mouseMoveEvent(event);
 }
 
 /*!
@@ -2070,6 +2106,7 @@ BaseEditor::BaseEditor(QWidget *pParent)
 
 /*!
  * \brief BaseEditor::wordUnderCursor
+ * Returns the word under cursor.
  */
 QString BaseEditor::wordUnderCursor()
 {
@@ -2078,11 +2115,39 @@ QString BaseEditor::wordUnderCursor()
   return cursor.selectedText();
 }
 
+/*!
+ * \brief BaseEditor::symbolAtPosition
+ * Navigates to the symbol at position.\n
+ * The default implementation does nothing.\n
+ * Reimplement in the child class to navigate to the correct symbol based on the language.
+ * \param pos
+ */
+void BaseEditor::symbolAtPosition(const QPoint &pos)
+{
+  Q_UNUSED(pos);
+  // Do nothing. Reimplement in the child class.
+}
+
 bool BaseEditor::isModelicaModelInPackageOneFile()
 {
   return (mpModelWidget && mpModelWidget->getLibraryTreeItem() &&
           mpModelWidget->getLibraryTreeItem()->isInPackageOneFile() &&
-          mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica);
+          mpModelWidget->getLibraryTreeItem()->isModelica());
+}
+
+/*!
+ * \brief BaseEditor::completerItemsToStringList
+ * Converts the CompleterItem list to QStringList using the CompleterItem::mValue.
+ * \param items
+ * \return
+ */
+QStringList BaseEditor::completerItemsToStringList(const QList<CompleterItem> &items)
+{
+  QStringList list;
+  for (const CompleterItem &item : items) {
+    list.append(item.mValue);
+  }
+  return list;
 }
 
 /*!
@@ -2093,6 +2158,11 @@ void BaseEditor::initialize()
 {
   mpInfoBar = new InfoBar(this);
   mpInfoBar->hide();
+  mpReloadAsModelicaInfoBar = new ReloadAsModelicaInfoBar(this);
+  // Show the Reload as Modelica info bar only for text files which are internal.
+  if (!(mpModelWidget && mpModelWidget->getLibraryTreeItem() && mpModelWidget->getLibraryTreeItem()->isText() && mpModelWidget->getLibraryTreeItem()->isModelicaFile())) {
+    mpReloadAsModelicaInfoBar->hide();
+  }
   mpPlainTextEdit = new PlainTextEdit(this);
   mpFindReplaceWidget = new FindReplaceWidget(this);
   mpFindReplaceWidget->hide();
@@ -2103,6 +2173,7 @@ void BaseEditor::initialize()
   pMainLayout->setContentsMargins(0, 0, 0, 0);
   pMainLayout->setAlignment(Qt::AlignLeft | Qt::AlignTop);
   pMainLayout->addWidget(mpInfoBar, 0, Qt::AlignTop);
+  pMainLayout->addWidget(mpReloadAsModelicaInfoBar, 0, Qt::AlignTop);
   pMainLayout->addWidget(mpPlainTextEdit, 1);
   pMainLayout->addWidget(mpFindReplaceWidget, 0, Qt::AlignBottom);
   setLayout(pMainLayout);
@@ -2157,6 +2228,10 @@ void BaseEditor::createActions()
     connect(mpZoomOutAction, SIGNAL(triggered()), mpPlainTextEdit, SLOT(zoomOut()));
     mpPlainTextEdit->addAction(mpZoomOutAction);
   }
+  // open class action
+  mpOpenClassAction = new QAction(Helper::openClass, this);
+  mpOpenClassAction->setStatusTip(Helper::openClassTip);
+  connect(mpOpenClassAction, SIGNAL(triggered()), SLOT(openClass()));
   // toggle comment action
   mpToggleCommentSelectionAction = new QAction(tr("Toggle Comment Selection"), this);
   mpToggleCommentSelectionAction->setShortcut(QKeySequence("Ctrl+k"));
@@ -2319,6 +2394,17 @@ void BaseEditor::showGotoLineNumberDialog()
 {
   GotoLineDialog *pGotoLineWidget = new GotoLineDialog(this);
   pGotoLineWidget->exec();
+}
+
+/*!
+ * \brief BaseEditor::openClass
+ * Slot activated when open class is seleteted from context menu.
+ */
+void BaseEditor::openClass()
+{
+  if (mContextMenuStartPositionValid) {
+    symbolAtPosition(mContextMenuStartPosition);
+  }
 }
 
 /*!
@@ -2511,6 +2597,22 @@ void BaseEditor::toggleCommentSelection()
 }
 
 /*!
+ * \brief BaseEditor::reloadAsModelica
+ * Slot activated when reload button is clicked.
+ * Saves all files and reload them as Modelica model(s).
+ */
+void BaseEditor::reloadAsModelica()
+{
+  if (mpModelWidget && mpModelWidget->getLibraryTreeItem()) {
+    LibraryTreeItem *pTopLevelLibraryTreeItem = LibraryTreeModel::getTopLevelLibraryTreeItem(mpModelWidget->getLibraryTreeItem());
+    if (pTopLevelLibraryTreeItem) {
+      MainWindow::instance()->getLibraryWidget()->saveLibraryTreeItem(pTopLevelLibraryTreeItem);
+    }
+    MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->reloadClass(mpModelWidget->getLibraryTreeItem(), false);
+  }
+}
+
+/*!
  * \class FindReplaceWidget
  * Creates a widget within editor for find and replace.
  */
@@ -2562,8 +2664,7 @@ FindReplaceWidget::FindReplaceWidget(BaseEditor *pBaseEditor)
   pOptionsHorizontalLayout->addWidget(mpReplaceAllButton);
   // set main layout
   QGridLayout *pMainLayout = new QGridLayout;
-  pMainLayout->setContentsMargins(0, 0, 0, 0);
-  pMainLayout->setMargin(2);
+  pMainLayout->setContentsMargins(2, 2, 2, 2);
   pMainLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
   pMainLayout->addWidget(mpFindLabel, 0, 0);
   pMainLayout->addWidget(mpFindComboBox, 0, 1);
@@ -2665,7 +2766,7 @@ void FindReplaceWidget::findText(bool forward)
   }
 
   if (mpRegularExpressionCheckBox->isChecked()) {
-    QRegExp reg(textToFind, (mpCaseSensitiveCheckBox->isChecked() ? Qt::CaseSensitive : Qt::CaseInsensitive));
+    QRegularExpression reg(textToFind, (mpCaseSensitiveCheckBox->isChecked() ? QRegularExpression::CaseInsensitiveOption : QRegularExpression::NoPatternOption));
     currentTextCursor = mpBaseEditor->getPlainTextEdit()->document()->find(reg, currentTextCursor, flags);
     mpBaseEditor->getPlainTextEdit()->setTextCursor(currentTextCursor);
   }
@@ -2893,8 +2994,7 @@ InfoBar::InfoBar(QWidget *pParent)
   connect(mpCloseButton, SIGNAL(clicked()), SLOT(hide()));
   // set the layout
   QHBoxLayout *pMainLayout = new QHBoxLayout;
-  pMainLayout->setContentsMargins(0, 0, 0, 0);
-  pMainLayout->setMargin(2);
+  pMainLayout->setContentsMargins(2, 2, 2, 2);
   pMainLayout->addWidget(mpInfoLabel);
   pMainLayout->addWidget(mpCloseButton, 0, Qt::AlignTop);
   setLayout(pMainLayout);
@@ -2909,4 +3009,47 @@ void InfoBar::showMessage(QString message)
 {
   mpInfoLabel->setText(message);
   show();
+}
+
+/*!
+ * \class ReloadAsModelicaInfoBar
+ * \brief Display message to reload as Modelica model above the BaseEditor.
+ */
+/*!
+ * \brief ReloadAsModelicaInfoBar::ReloadAsModelicaInfoBar
+ * \param pBaseEditor
+ */
+ReloadAsModelicaInfoBar::ReloadAsModelicaInfoBar(BaseEditor *pBaseEditor)
+  : QFrame(pBaseEditor)
+{
+  QPalette pal = palette();
+  pal.setColor(QPalette::Window, QColor(255, 255, 225));
+  pal.setColor(QPalette::WindowText, Qt::black);
+  setPalette(pal);
+  setFrameStyle(QFrame::StyledPanel);
+  setAutoFillBackground(true);
+  mpInfoLabel = new Label;
+  mpInfoLabel->setWordWrap(true);
+  if (pBaseEditor->getModelWidget() && pBaseEditor->getModelWidget()->getLibraryTreeItem()) {
+    LibraryTreeItem *pTopLevelLibraryTreeItem = LibraryTreeModel::getTopLevelLibraryTreeItem(pBaseEditor->getModelWidget()->getLibraryTreeItem());
+    if (pTopLevelLibraryTreeItem) {
+      const QString saveAndReload(tr("Once they have all been fixed, you can save and reload it in Modelica mode"));
+      QFileInfo fileInfo(pTopLevelLibraryTreeItem->getFileName());
+      if (fileInfo.isDir()) {
+        mpInfoLabel->setText(tr("The Modelica package %1 is open in text mode because of syntax errors in the code. %2.")
+                             .arg(pTopLevelLibraryTreeItem->getName(), saveAndReload));
+      } else {
+        mpInfoLabel->setText(tr("This Modelica file is open in text mode because of syntax errors in the code. %1.")
+                             .arg(saveAndReload));
+      }
+    }
+  }
+  mpReloadButton = new QPushButton(ResourceCache::getIcon(":/Resources/icons/refresh.svg"), tr("Save && Reload"));
+  connect(mpReloadButton, &QPushButton::clicked, pBaseEditor, &BaseEditor::reloadAsModelica);
+  // set the layout
+  QHBoxLayout *pMainLayout = new QHBoxLayout;
+  pMainLayout->setContentsMargins(2, 2, 2, 2);
+  pMainLayout->addWidget(mpInfoLabel);
+  pMainLayout->addWidget(mpReloadButton, 0, Qt::AlignRight);
+  setLayout(pMainLayout);
 }

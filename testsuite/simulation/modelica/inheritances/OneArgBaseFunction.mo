@@ -5,7 +5,6 @@
 // Tests inheritance in many steps
 //
 // Drmodelica: 9.2 Partial Base Function (p. 308)
-// cflags: -d=-newInst
 //
 partial function OneArgBaseFunction
   input Real x;
@@ -29,4 +28,5 @@ class myTanCall
 equation
   t = myTan(1.0);
   t1 = addTen(t);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end myTanCall;

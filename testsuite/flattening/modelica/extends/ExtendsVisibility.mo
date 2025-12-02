@@ -1,7 +1,6 @@
 // name:     ExtendsVisibility
 // keywords: extends
 // status:   correct
-// cflags: -d=-newInst
 //
 // Testing propagation of visibility for extends.
 
@@ -16,6 +15,7 @@ end B;
 
 model ExtendsVisibility
   protected extends B;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ExtendsVisibility;
 
 // Result:

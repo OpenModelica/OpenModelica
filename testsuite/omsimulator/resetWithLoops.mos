@@ -66,8 +66,8 @@ readFile("resetWithLoops_systemCall.log");
 // Simulate
 // Terminate and Delete
 // info:    Final Statistics for 'model.root':
-//          NumSteps = 23 NumRhsEvals  = 42 NumLinSolvSetups = 14
-//          NumNonlinSolvIters = 41 NumNonlinSolvConvFails = 0 NumErrTestFails = 4
+//          NumSteps = 22 NumRhsEvals  = 32 NumLinSolvSetups = 11
+//          NumNonlinSolvIters = 31 NumNonlinSolvConvFails = 0 NumErrTestFails = 1
 // Success
 // "
 // endResult

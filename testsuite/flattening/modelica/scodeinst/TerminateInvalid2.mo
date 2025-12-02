@@ -1,7 +1,6 @@
 // name: TerminateInvalid2
 // keywords:
 // status: incorrect
-// cflags: -d=newInst
 //
 //
 
@@ -17,7 +16,7 @@ end TerminateInvalid2;
 
 // Result:
 // Error processing file: TerminateInvalid2.mo
-// [flattening/modelica/scodeinst/TerminateInvalid2.mo:11:3-11:27:writable] Error: terminate is not allowed in a function.
+// [flattening/modelica/scodeinst/TerminateInvalid2.mo:10:3-10:27:writable] Error: terminate is not allowed in a function.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

@@ -38,12 +38,34 @@
 #include "MainWindow.h"
 #include "Util/Utilities.h"
 
+#ifndef GC_THREADS
 #define GC_THREADS
+#endif
 extern "C" {
 #include "meta/meta_modelica.h"
 }
 
 OMEDITTEST_MAIN(UtilitiesTest)
+
+void UtilitiesTest::extractArrayParts()
+{
+  QFETCH(QString, input);
+  QFETCH(QStringList, expected);
+
+  QCOMPARE(Utilities::extractArrayParts(input), expected);
+}
+
+void UtilitiesTest::extractArrayParts_data()
+{
+  QTest::addColumn<QString>("input");
+  QTest::addColumn<QStringList>("expected");
+
+  QTest::newRow("Simple array") << "{1, 2, 3}" << (QStringList{"1", "2", "3"});
+  QTest::newRow("Quoted strings") << "{\"one\", \"two, three\"}" << (QStringList{"one", "two, three"});
+  QTest::newRow("Mixed values") << "{1.2, \"hello\", var}" << (QStringList{"1.2", "hello", "var"});
+  QTest::newRow("Non-array string") << "hello" << (QStringList{"hello"});
+  QTest::newRow("Exponential form") << "{1e-09 , 2e-3 , 0.456e7}" << (QStringList{"1e-09", "2e-3", "0.456e7"});
+}
 
 void UtilitiesTest::literalConstant()
 {
@@ -68,6 +90,26 @@ void UtilitiesTest::literalConstant_data()
   QTest::newRow("Decimal array with whitespace") << "{7.89 , 2.2 , 567.8}";
   QTest::newRow("Exponential form") << "1e-09";
   QTest::newRow("Exponential form array with whitespace") << "{1e-09 , 2e-3 , 0.456e7}";
+}
+
+void UtilitiesTest::scalarLiteralConstant()
+{
+  QFETCH(QString, string);
+
+  if (!Utilities::isValueScalarLiteralConstant(string)) {
+    QFAIL(QString("The value %1 is not a scalar literal constant.").arg(string).toStdString().c_str());
+  }
+}
+
+void UtilitiesTest::scalarLiteralConstant_data()
+{
+  QTest::addColumn<QString>("string");
+
+  QTest::newRow("Integer") << "123";
+  QTest::newRow("Negative integer value") << "-23";
+  QTest::newRow("Decimal") << "56.7";
+  QTest::newRow("Negative decimal value") << "-10.00";
+  QTest::newRow("Exponential form") << "1e-09";
 }
 
 void UtilitiesTest::cleanupTestCase()

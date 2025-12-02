@@ -39,6 +39,7 @@ encapsulated package NFRecord
 "
 
 import Attributes = NFAttributes;
+import BaseModelica;
 import Binding = NFBinding;
 import Class = NFClass;
 import Component = NFComponent;
@@ -54,9 +55,11 @@ import IOStream;
 
 protected
 import Inst = NFInst;
+import NFInst.InstSettings;
 import Lookup = NFLookup;
 import TypeCheck = NFTypeCheck;
 import Typing = NFTyping;
+import EvalConstants = NFEvalConstants;
 import NFPrefixes.Direction;
 import NFPrefixes.Variability;
 import NFPrefixes.Visibility;
@@ -125,9 +128,10 @@ algorithm
   end try;
 
   next_context := InstContext.set(context, NFInstContext.RELAXED);
+  next_context := InstContext.set(next_context, NFInstContext.FUNCTION);
   recordNode := InstNode.setNodeType(NFInstNode.InstNodeType.ROOT_CLASS(InstNode.parent(node)), recordNode);
   recordNode := Inst.instantiate(recordNode, context = next_context);
-  Inst.instExpressions(recordNode, context = next_context);
+  Inst.instExpressions(recordNode, context = next_context, settings = InstSettings.create());
 end instRecord;
 
 function instDefaultConstructor
@@ -160,7 +164,7 @@ algorithm
   // Create the output record element, using the instance created above as both parent and type.
   out_comp := Component.COMPONENT(ctor_node, Type.UNTYPED(node, listArray({})),
                 NFBinding.EMPTY_BINDING, NFBinding.EMPTY_BINDING,
-                NFAttributes.OUTPUT_ATTR, NONE(), NONE(),
+                NFAttributes.OUTPUT_ATTR, SCode.noComment,
                 ComponentState.FullyInstantiated, AbsynUtil.dummyInfo);
   out_rec := InstNode.fromComponent("$out" + InstNode.name(ctor_node), out_comp, ctor_node);
 
@@ -359,14 +363,20 @@ end foldInputFields;
 
 function toFlatDeclarationStream
   input InstNode recordNode;
+  input BaseModelica.OutputFormat format;
   input String indent;
   input output IOStream.IOStream s;
 protected
   InstNode node;
+  InstNodeType node_ty;
 algorithm
+  node_ty := InstNode.nodeType(recordNode);
   node := instRecord(recordNode);
   Typing.typeClass(node, NFInstContext.RELAXED);
-  s := IOStream.append(s, InstNode.toFlatString(node, indent));
+  // Keep the node type from the original node to get the correct name.
+  node := InstNode.setNodeType(node_ty, node);
+  EvalConstants.evaluateRecordDeclaration(node);
+  s := IOStream.append(s, InstNode.toFlatString(node, format, indent));
 end toFlatDeclarationStream;
 
 annotation(__OpenModelica_Interface="frontend");

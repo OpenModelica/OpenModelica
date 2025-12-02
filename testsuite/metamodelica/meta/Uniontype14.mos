@@ -17,7 +17,7 @@ e2 := Uniontype14.func(e1,-4);
 // record Uniontype14.Exp.CALL
 //     args = {record Uniontype14.Exp.INT
 //     int = 17
-// end Uniontype14.Exp.INT;,record Uniontype14.Exp.INT
+// end Uniontype14.Exp.INT;, record Uniontype14.Exp.INT
 //     int = -4
 // end Uniontype14.Exp.INT;}
 // end Uniontype14.Exp.CALL;

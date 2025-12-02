@@ -3,13 +3,13 @@
 // status:   correct
 //
 // Drmodelica: 7.6 Arithmetic Array Operators (p. 223)
-// cflags: -d=-newInst
 //
 
 class ArrayDiv
   Real Div1[3];
 equation
   Div1 = {2, 4, 6} / 2;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ArrayDiv;
 
 // Result:

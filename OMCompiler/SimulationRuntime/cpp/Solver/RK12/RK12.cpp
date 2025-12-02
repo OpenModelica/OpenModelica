@@ -312,7 +312,7 @@ void RK12::RK12Integration(bool *activeStates, double time, double *z0, double *
 
 	for(int i = 0; i < _dimSys; ++i){
 		//calculate the activated states only
-		if (activeStates[i] == true){
+		if (activeStates[i]){
 			//do a forward euler step as predictor
 			_zPred[i] = _z0[i] + h * _zDot0[i];
 		}
@@ -323,7 +323,7 @@ void RK12::RK12Integration(bool *activeStates, double time, double *z0, double *
 
 	//final modified euler step
 	for(int i = 0; i < _dimSys; ++i){
-		if (activeStates[i] == true){
+		if (activeStates[i]){
 			z1[i] = z0[i] + 0.5*h *(_zDot0[i] + _zDotPred[i]);
 			//calculate error
 			if (!toleranceOK(z0[i], z1[i], relTol, absTol)) {
@@ -332,20 +332,19 @@ void RK12::RK12Integration(bool *activeStates, double time, double *z0, double *
 		}
 	}
 	//printing
-	for (int i=0;i < _dimSys; i++) {
-		if (activeStates[i] == true){
+	for (int i = 0; i < _dimSys; i++) {
+		if (activeStates[i]){
 		 //std::cout<<"state"<<i<<" at "<<time<<"   z0  "<<z0[i]<<"  _zDot0	"<<_zDot0[i]<<"  _zPred  "<<_zPred[i]<<"  _zDotPred  "<<_zDotPred[i]<<"	 z1	"<<z1[i]<<" relError "<<relError(z0[i],z1[i])<<"  correct?  "<<toleranceOK(z0[i], z1[i], relTol, absTol)<<std::endl;
 	 	 }
 	}
 }
 
 
-void RK12::RK12InterpolateStates(bool *activeStates, double *leftIntervalStates, double *rightIntervalStates,double leftTime,double rightTime, double *interpolStates, double interpolTime){
-	for (int i; i<_dimSys;i++)
-	{
-		if (activeStates[i] == false)
+void RK12::RK12InterpolateStates(bool *activeStates, double *leftIntervalStates, double *rightIntervalStates, double leftTime, double rightTime, double *interpolStates, double interpolTime)
+{
+	for (int i = 0; i < _dimSys; i++)
+		if (!activeStates[i])
 			interpolStates[i] = ( (rightIntervalStates[i]-leftIntervalStates[i]) * (interpolTime-leftTime) / (rightTime-leftTime) ) +  leftIntervalStates[i];
-	}
 }
 
 

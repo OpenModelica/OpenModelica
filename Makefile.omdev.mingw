@@ -3,6 +3,15 @@ PREVIOUS_GCC_VERSION = "5.3.0"
 GCC_VERSION := "`gcc -dumpversion`"
 OLD_OMDEV := $(shell expr "$(GCC_VERSION)" "==" "$(PREVIOUS_GCC_VERSION)")
 
+ifeq ($(OM_QT_MAJOR_VERSION),6)
+	OM_OMEDIT_ENABLE_QTWEBENGINE = ON
+	QT5_EXTRA_DLLS =
+else
+	OM_QT_MAJOR_VERSION = 5
+	OM_OMEDIT_ENABLE_QTWEBENGINE = OFF
+	QT5_EXTRA_DLLS = Qt5QmlModels.dll
+endif
+
 ifeq "$(OLD_OMDEV)" "1"
 	IS_NEW_OMDEV = false
 	CC = gcc
@@ -12,8 +21,8 @@ else # new OMDev, use clang
 	IS_NEW_OMDEV = true
 	CC = clang
 	CXX = clang++
-	QT_EXTRA_DLLS=libdouble-conversion.dll libzstd.dll libwoff2dec.dll libwoff2common.dll Qt5QmlModels.dll libnghttp2-14.dll \
-	              libunistring-2.dll libgraphite2.dll libbrotlidec.dll libbrotlicommon.dll libfontconfig-1.dll
+	QT_EXTRA_DLLS=libdouble-conversion.dll libzstd.dll libwoff2dec.dll libwoff2common.dll $(QT5_EXTRA_DLLS) libnghttp2-14.dll \
+	              libgraphite2.dll libbrotlidec.dll libbrotlicommon.dll libfontconfig-1.dll
 endif
 
 # CFLAGS=-g -O2
@@ -40,6 +49,8 @@ builddir_build=$(OMBUILDDIR)
 builddir_bin=$(OMBUILDDIR)/bin
 builddir_lib=$(OMBUILDDIR)/lib/omc
 builddir_inc=$(OMBUILDDIR)/include/omc
+builddir_bin_share_qt5_translations=$(OMBUILDDIR)/bin/share/qt5/translations
+builddir_bin_share_qt6_translations=$(OMBUILDDIR)/bin/share/qt6/translations
 
 PKG_CONFIG_PATH=$(OM_MSYS_ENV_DIR)/lib/pkgconfig
 
@@ -50,8 +61,7 @@ ifeq ($(BUILDTYPE),)
 	BUILDTYPE=Debug
 endif
 
-
-.PHONY: omc omc-diff omlibrary omplot omedit omedit-testsuite omparser omsimulator omnotebook omshell omoptim omsens omsens_qt qtclientsDLLs qtclientsDLLs simulationruntimecmsvc runtimeCPPinstall runtimeCPPmsvcinstall OMSICPPinstall all-runtimes test fast-test testsuite-depends libs-for-testing
+.PHONY: omc omc-diff omlibrary omplot omedit omedit-testsuite omparser omsimulator omnotebook omshell omoptim omsens_qt qtclientsDLLs simulationruntimecmsvc runtimeCPPinstall runtimeCPPmsvcinstall OMSICPPinstall all-runtimes test fast-test testsuite-depends libs-for-testing
 
 all: omc testsuite-depends
 
@@ -85,13 +95,13 @@ omlibrary: omc
 	$(MAKE) -C libraries lib-for-installing
 
 omplot: omc qtclientsDLLs
-	$(MAKE) -C OMPlot -f $(defaultMakefileTarget) OMBUILDDIR=$(OMBUILDDIR) CC="$(CC)" CXX="$(CXX)"
+	$(MAKE) -C OMPlot -f $(defaultMakefileTarget) OMBUILDDIR=$(OMBUILDDIR) CC="$(CC)" CXX="$(CXX)" OM_QT_MAJOR_VERSION=$(OM_QT_MAJOR_VERSION)
 
 omedit: omparser omplot omsimulator qtclientsDLLs
-	$(MAKE) -f $(defaultMakefileTarget) -C OMEdit OMBUILDDIR=$(OMBUILDDIR) OM_ENABLE_ENCRYPTION=$(OM_ENABLE_ENCRYPTION) CC="$(CC)" CXX="$(CXX)"
+	$(MAKE) -f $(defaultMakefileTarget) -C OMEdit OMBUILDDIR=$(OMBUILDDIR) OM_ENABLE_ENCRYPTION=$(OM_ENABLE_ENCRYPTION) CC="$(CC)" CXX="$(CXX)" OM_QT_MAJOR_VERSION=$(OM_QT_MAJOR_VERSION) OM_OMEDIT_ENABLE_QTWEBENGINE=$(OM_OMEDIT_ENABLE_QTWEBENGINE)
 
 omedit-testsuite: omedit testsuite-depends
-	$(MAKE) -f $(defaultMakefileTarget) -C OMEdit/Testsuite OMBUILDDIR=$(OMBUILDDIR)
+	$(MAKE) -f $(defaultMakefileTarget) -C OMEdit/Testsuite OMBUILDDIR=$(OMBUILDDIR) OM_QT_MAJOR_VERSION=$(OM_QT_MAJOR_VERSION) OM_OMEDIT_ENABLE_QTWEBENGINE=$(OM_OMEDIT_ENABLE_QTWEBENGINE)
 
 omparser:
 	$(MAKE) -C OMParser OMBUILDDIR=$(OMBUILDDIR) CC="$(CC)" CXX="$(CXX)"
@@ -101,6 +111,7 @@ omsimulator:
 	cd OMSimulator/build && cmake .. \
 		-G $(CMAKE_TARGET) \
 		-DCMAKE_VERBOSE_MAKEFILE=ON \
+		-DOPENMODELICA_MAKEFILE_BUILD=true \
 		-DCMAKE_INSTALL_PREFIX=../install
 	$(MAKE) -C OMSimulator/build/ install
 	cp -vpPR OMSimulator/install/include/OMSimulator/ $(OMBUILDDIR)/include/omc
@@ -110,22 +121,16 @@ omsimulator:
 
 
 omnotebook: omc omplot qtclientsDLLs
-	$(MAKE) -f $(defaultMakefileTarget) -C OMNotebook/OMNotebook/OMNotebookGUI OMBUILDDIR=$(OMBUILDDIR) CC="$(CC)" CXX="$(CXX)"
+	$(MAKE) -f $(defaultMakefileTarget) -C OMNotebook/OMNotebook/OMNotebookGUI OMBUILDDIR=$(OMBUILDDIR) CC="$(CC)" CXX="$(CXX)" OM_QT_MAJOR_VERSION=$(OM_QT_MAJOR_VERSION)
 
 omshell: omc qtclientsDLLs
-	$(MAKE) -f $(defaultMakefileTarget) -C OMShell/OMShell/OMShellGUI OMBUILDDIR=$(OMBUILDDIR) CC="$(CC)" CXX="$(CXX)"
+	$(MAKE) -f $(defaultMakefileTarget) -C OMShell/OMShell/OMShellGUI OMBUILDDIR=$(OMBUILDDIR) CC="$(CC)" CXX="$(CXX)" OM_QT_MAJOR_VERSION=$(OM_QT_MAJOR_VERSION)
 
 omoptim: omc omplot qtclientsDLLs
-	$(MAKE) -f $(defaultMakefileTarget) -C OMOptim OMBUILDDIR=$(OMBUILDDIR) CC="$(CC)" CXX="$(CXX)"
+	$(MAKE) -f $(defaultMakefileTarget) -C OMOptim OMBUILDDIR=$(OMBUILDDIR) CC="$(CC)" CXX="$(CXX)" OM_QT_MAJOR_VERSION=$(OM_QT_MAJOR_VERSION)
 
-omsens:
-	$(MAKE) -f $(defaultMakefileTarget) -C OMSens OMBUILDDIR=$(OMBUILDDIR)
-
-omsens-clean:
-	$(MAKE) -f $(defaultMakefileTarget) -C OMSens OMBUILDDIR=$(OMBUILDDIR) clean
-
-omsens_qt: omsens
-	$(MAKE) -f $(defaultMakefileTarget) -C OMSens_Qt OMBUILDDIR=$(OMBUILDDIR) CC="$(CC)" CXX="$(CXX)"
+omsens_qt:
+	$(MAKE) -f $(defaultMakefileTarget) -C OMSens_Qt OMBUILDDIR=$(OMBUILDDIR) CC="$(CC)" CXX="$(CXX)" OM_QT_MAJOR_VERSION=$(OM_QT_MAJOR_VERSION)
 
 qtclients: omplot omedit omnotebook omshell omoptim omsens_qt
 
@@ -133,9 +138,60 @@ qtclientsDLLs:
 	echo Copying needed .dlls
 	mkdir -p $(builddir_bin)/
 
-	cp -puf $(OM_MSYS_ENV_DIR)/bin/libgcc_s*.dll $(builddir_bin)/
 	cp -puf $(OM_MSYS_ENV_DIR)/bin/libintl-8.dll $(builddir_bin)/
 	cp -puf $(OM_MSYS_ENV_DIR)/bin/libiconv-2.dll $(builddir_bin)/
+	cp -puf $(OM_MSYS_ENV_DIR)/bin/libxslt-1.dll $(builddir_bin)/
+	cp -puf $(OM_MSYS_ENV_DIR)/bin/liblzma-5.dll $(builddir_bin)/
+	cp -puf $(OM_MSYS_ENV_DIR)/bin/libxml2-2.dll $(builddir_bin)/
+	cp -puf $(OM_MSYS_ENV_DIR)/bin/libwebp-*.dll $(builddir_bin)/
+	cp -puf $(OM_MSYS_ENV_DIR)/bin/libsqlite3-0.dll $(builddir_bin)/
+	cp -puf $(OM_MSYS_ENV_DIR)/bin/zlib1.dll $(builddir_bin)/
+	cp -puf $(OM_MSYS_ENV_DIR)/bin/libsz*.dll $(builddir_bin)/
+	cp -puf $(OM_MSYS_ENV_DIR)/bin/libhdf5-*.dll $(builddir_bin)/
+	cp -puf $(OM_MSYS_ENV_DIR)/bin/libpng16-16.dll $(builddir_bin)/
+	cp -puf $(OM_MSYS_ENV_DIR)/bin/libjpeg-8.dll $(builddir_bin)/
+	cp -puf $(OM_MSYS_ENV_DIR)/bin/libfreetype-6.dll $(builddir_bin)/
+	cp -puf $(OM_MSYS_ENV_DIR)/bin/libglib-2.0-0.dll $(builddir_bin)/
+	cp -puf $(OM_MSYS_ENV_DIR)/bin/libbz2-1.dll $(builddir_bin)/
+	cp -puf $(OM_MSYS_ENV_DIR)/bin/libicuin*.dll $(builddir_bin)/
+	cp -puf $(OM_MSYS_ENV_DIR)/bin/libicuuc*.dll $(builddir_bin)/
+	cp -puf $(OM_MSYS_ENV_DIR)/bin/libicudt*.dll $(builddir_bin)/
+	cp -puf $(OM_MSYS_ENV_DIR)/bin/libpcre*.dll $(builddir_bin)/
+	cp -puf $(OM_MSYS_ENV_DIR)/bin/libharfbuzz-0.dll $(builddir_bin)/
+	cp -puf $(OM_MSYS_ENV_DIR)/bin/libOpenThreads.dll $(builddir_bin)/
+	cp -puf $(OM_MSYS_ENV_DIR)/bin/libosg.dll $(builddir_bin)/
+	cp -puf $(OM_MSYS_ENV_DIR)/bin/libosgViewer.dll $(builddir_bin)/
+	cp -puf $(OM_MSYS_ENV_DIR)/bin/libosgDB.dll $(builddir_bin)/
+	cp -puf $(OM_MSYS_ENV_DIR)/bin/libosgUtil.dll $(builddir_bin)/
+	cp -puf $(OM_MSYS_ENV_DIR)/bin/libosgGA.dll $(builddir_bin)/
+	cp -puf $(OM_MSYS_ENV_DIR)/bin/libosgText.dll $(builddir_bin)/
+	cp -puf $(OM_MSYS_ENV_DIR)/bin/libmd4c.dll $(builddir_bin)/
+	cp -puf $(OM_MSYS_ENV_DIR)/bin/libsharpyuv-0.dll $(builddir_bin)/
+	cp -puf $(OM_MSYS_ENV_DIR)/bin/libcurl-4.dll $(builddir_bin)/
+	cp -puf $(OM_MSYS_ENV_DIR)/bin/libcrypto-3-x64.dll $(builddir_bin)/
+	cp -puf $(OM_MSYS_ENV_DIR)/bin/libidn2-0.dll $(builddir_bin)/
+	cp -puf $(OM_MSYS_ENV_DIR)/bin/libunistring-5.dll $(builddir_bin)/
+	cp -puf $(OM_MSYS_ENV_DIR)/bin/libpsl-5.dll $(builddir_bin)/
+	cp -puf $(OM_MSYS_ENV_DIR)/bin/libssh2-1.dll  $(builddir_bin)/
+	cp -puf $(OM_MSYS_ENV_DIR)/bin/libssl-3-x64.dll  $(builddir_bin)/
+
+ifeq ($(OM_QT_MAJOR_VERSION),6)
+	cp -puf $(OM_MSYS_ENV_DIR)/bin/libb2-1.dll $(builddir_bin)/
+	cp -puf $(OM_MSYS_ENV_DIR)/bin/Qt6Core.dll $(builddir_bin)/
+	cp -puf $(OM_MSYS_ENV_DIR)/bin/Qt6Gui.dll $(builddir_bin)/
+	cp -puf $(OM_MSYS_ENV_DIR)/bin/Qt6Xml.dll $(builddir_bin)/
+	cp -puf $(OM_MSYS_ENV_DIR)/bin/Qt6Widgets.dll $(builddir_bin)/
+	cp -puf $(OM_MSYS_ENV_DIR)/bin/Qt6Core5Compat.dll $(builddir_bin)/
+	cp -puf $(OM_MSYS_ENV_DIR)/bin/Qt6PrintSupport.dll $(builddir_bin)/
+	cp -puf $(OM_MSYS_ENV_DIR)/bin/Qt6Svg.dll $(builddir_bin)/
+	cp -puf $(OM_MSYS_ENV_DIR)/bin/Qt6Network.dll $(builddir_bin)/
+	cp -puf $(OM_MSYS_ENV_DIR)/bin/Qt6OpenGLWidgets.dll $(builddir_bin)/
+	cp -puf $(OM_MSYS_ENV_DIR)/bin/Qt6OpenGL.dll $(builddir_bin)/
+	cp -puf $(OM_MSYS_ENV_DIR)/bin/Qt6Concurrent.dll $(builddir_bin)/
+	cp -pufr $(OM_MSYS_ENV_DIR)/share/qt6/plugins/* $(builddir_bin)/
+	mkdir -p $(builddir_bin_share_qt6_translations)/
+	cp -pufr $(OM_MSYS_ENV_DIR)/share/qt6/translations/* $(builddir_bin_share_qt6_translations)/
+else
 	cp -puf $(OM_MSYS_ENV_DIR)/bin/Qt5Core.dll $(builddir_bin)/
 	cp -puf $(OM_MSYS_ENV_DIR)/bin/Qt5Gui.dll $(builddir_bin)/
 	cp -puf $(OM_MSYS_ENV_DIR)/bin/Qt5Network.dll $(builddir_bin)/
@@ -155,42 +211,14 @@ qtclientsDLLs:
 	cp -puf $(OM_MSYS_ENV_DIR)/bin/Qt5WebChannel.dll $(builddir_bin)/
 	cp -puf $(OM_MSYS_ENV_DIR)/bin/Qt5Sql.dll $(builddir_bin)/
 	cp -puf $(OM_MSYS_ENV_DIR)/bin/Qt5OpenGL.dll $(builddir_bin)/
-	cp -puf $(OM_MSYS_ENV_DIR)/bin/libxslt-1.dll $(builddir_bin)/
-	cp -puf $(OM_MSYS_ENV_DIR)/bin/liblzma-5.dll $(builddir_bin)/
-	cp -puf $(OM_MSYS_ENV_DIR)/bin/libxml2-2.dll $(builddir_bin)/
-	cp -puf $(OM_MSYS_ENV_DIR)/bin/libwebp-*.dll $(builddir_bin)/
-	cp -puf $(OM_MSYS_ENV_DIR)/bin/libsqlite3-0.dll $(builddir_bin)/
-	cp -puf $(OM_MSYS_ENV_DIR)/bin/zlib1.dll $(builddir_bin)/
-	cp -puf $(OM_MSYS_ENV_DIR)/bin/libsz*.dll $(builddir_bin)/
-	cp -puf $(OM_MSYS_ENV_DIR)/bin/libhdf5-*.dll $(builddir_bin)/
-	cp -puf $(OM_MSYS_ENV_DIR)/bin/libpng16-16.dll $(builddir_bin)/
-	cp -puf $(OM_MSYS_ENV_DIR)/bin/libjpeg-8.dll $(builddir_bin)/
-	cp -puf $(OM_MSYS_ENV_DIR)/bin/libfreetype-6.dll $(builddir_bin)/
-	cp -puf $(OM_MSYS_ENV_DIR)/bin/libglib-2.0-0.dll $(builddir_bin)/
-	cp -puf $(OM_MSYS_ENV_DIR)/bin/libbz2-1.dll $(builddir_bin)/
-	cp -puf $(OM_MSYS_ENV_DIR)/bin/libicuin*.dll $(builddir_bin)/
-	cp -puf $(OM_MSYS_ENV_DIR)/bin/libicuuc*.dll $(builddir_bin)/
-	cp -puf $(OM_MSYS_ENV_DIR)/bin/libicudt*.dll $(builddir_bin)/
-	cp -puf $(OM_MSYS_ENV_DIR)/bin/libpcre*.dll $(builddir_bin)/
-	cp -puf $(OM_MSYS_ENV_DIR)/bin/libharfbuzz-0.dll $(builddir_bin)/
 	cp -pufr $(OM_MSYS_ENV_DIR)/share/qt5/plugins/* $(builddir_bin)/
-	cp -puf $(OM_MSYS_ENV_DIR)/bin/libOpenThreads.dll $(builddir_bin)/
-	cp -puf $(OM_MSYS_ENV_DIR)/bin/libosg.dll $(builddir_bin)/
-	cp -puf $(OM_MSYS_ENV_DIR)/bin/libosgViewer.dll $(builddir_bin)/
-	cp -puf $(OM_MSYS_ENV_DIR)/bin/libosgDB.dll $(builddir_bin)/
-	cp -puf $(OM_MSYS_ENV_DIR)/bin/libosgUtil.dll $(builddir_bin)/
-	cp -puf $(OM_MSYS_ENV_DIR)/bin/libosgGA.dll $(builddir_bin)/
-	cp -puf $(OM_MSYS_ENV_DIR)/bin/libosgText.dll $(builddir_bin)/
-	cp -puf $(OM_MSYS_ENV_DIR)/bin/libmd4c.dll $(builddir_bin)/
-	cp -puf $(OM_MSYS_ENV_DIR)/bin/libsharpyuv-0.dll $(builddir_bin)/
-	cp -puf $(OM_MSYS_ENV_DIR)/bin/libcurl-4.dll $(builddir_bin)/
-	cp -puf $(OM_MSYS_ENV_DIR)/bin/libcrypto-3-x64.dll $(builddir_bin)/
-	cp -puf $(OM_MSYS_ENV_DIR)/bin/libidn2-0.dll $(builddir_bin)/
-	cp -puf $(OM_MSYS_ENV_DIR)/bin/libunistring-5.dll $(builddir_bin)/
-	cp -puf $(OM_MSYS_ENV_DIR)/bin/libpsl-5.dll $(builddir_bin)/
-	cp -puf $(OM_MSYS_ENV_DIR)/bin/libssh2-1.dll  $(builddir_bin)/
-	cp -puf $(OM_MSYS_ENV_DIR)/bin/libssl-3-x64.dll  $(builddir_bin)/
+	mkdir -p $(builddir_bin_share_qt5_translations)/
+	cp -pufr $(OM_MSYS_ENV_DIR)/share/qt5/translations/* $(builddir_bin_share_qt5_translations)/
+endif
+
 	for f in $(QT_EXTRA_DLLS); do cp -puf $(OM_MSYS_ENV_DIR)/bin/$$f $(builddir_bin)/; done
+	mkdir -p $(builddir_bin)/osgPlugins-3.6.5/
+	cp -pufr $(OM_MSYS_ENV_DIR)/bin/osgPlugins-3.6.5/* $(builddir_bin)/osgPlugins-3.6.5/
 
 clean-qtclients:
 	rm -f $(OMBUILDDIR)/bin/OMPlot.exe $(OMBUILDDIR)/bin/OMEdit.exe $(OMBUILDDIR)/bin/OMNotebook.exe $(OMBUILDDIR)/bin/OMShell.exe $(OMBUILDDIR)/bin/OMOptim.exe
@@ -231,51 +259,10 @@ testlogwindows:
 	cat testsuite/testsuite-trace.txt | grep "==== Log" | wc -l
 	cat testsuite/testsuite-trace.txt | grep "==== Log" ; echo DONE!
 
-builddir_lib=$(OMBUILDDIR)/lib
-builddir_share=$(OMBUILDDIR)/share
-IDLPYTHON = $(OMDEV)/lib/omniORBpy-4.2.0-mingw64/bin/x86_win32/omniidl -bpython -Wbglobal=_OMCIDL -Wbpackage=OMPythonIDL
-IDLPYTHONTARGET = $(builddir_share)/omc/scripts/PythonInterface/OMPythonIDL/omc_communication_idl.py
-IDLFILE=OMCompiler/Compiler/runtime/omc_communication.idl
-
-install-python: script-files-python # $(IDLPYTHONTARGET)
-
-.PHONY: script-files-python
-
-script-files-python: mkbuilddirs-python
-	# copy library files neeeded by OMPython
-	(cp -puf $(OMDEV)/lib/omniORB-4.2.0-mingw64/bin/x86_win32/omni*_rt.dll $(builddir_lib)/python)
-	(cp -puf $(OMDEV)/lib/omniORB-4.2.0-mingw64/bin/x86_win32/COS*_rt.dll $(builddir_lib)/python)
-	(cp -puf $(OMDEV)/lib/omniORB-4.2.0-mingw64/bin/x86_win32/lib*.dll $(builddir_lib)/python)
-	#(cp -puf $(OMDEV)/lib/omniORBpy-4.2.0-mingw64/lib/x86_win32/_omnipy.pyd $(builddir_lib)/python)
-	#(cp -puf $(OMDEV)/lib/omniORBpy-4.2.0-mingw64/lib/python/omniORB/__init__.py $(builddir_lib)/python/omniORB/)
-	#(cp -puf $(OMDEV)/lib/omniORBpy-4.2.0-mingw64/lib/python/omniORB/boxes_idl.py $(builddir_lib)/python/omniORB/)
-	#(cp -puf $(OMDEV)/lib/omniORBpy-4.2.0-mingw64/lib/python/omniORB/CORBA.py $(builddir_lib)/python/omniORB/)
-	#(cp -puf $(OMDEV)/lib/omniORBpy-4.2.0-mingw64/lib/python/omniORB/corbaidl_idl.py $(builddir_lib)/python/omniORB/)
-	#(cp -puf $(OMDEV)/lib/omniORBpy-4.2.0-mingw64/lib/python/omniORB/minorCodes.py $(builddir_lib)/python/omniORB/)
-	#(cp -puf $(OMDEV)/lib/omniORBpy-4.2.0-mingw64/lib/python/omniORB/PortableServer.py $(builddir_lib)/python/omniORB/)
-	#(cp -puf $(OMDEV)/lib/omniORBpy-4.2.0-mingw64/lib/python/omniORB/tcInternal.py $(builddir_lib)/python/omniORB/)
-	#(cp -puf $(OMDEV)/lib/omniORBpy-4.2.0-mingw64/lib/python/omniORB/omniPolicy.py $(builddir_lib)/python/omniORB/)
-	#(cp -puf $(OMDEV)/lib/omniORBpy-4.2.0-mingw64/lib/python/omniORB/pollable_idl.py $(builddir_lib)/python/omniORB/)
-	#(cp -puf $(OMDEV)/lib/omniORBpy-4.2.0-mingw64/lib/python/omniORB/messaging_idl.py $(builddir_lib)/python/omniORB/)
-	# copy OMPython files
-	cp -rfp OMPython/setup.py $(builddir_share)/omc/scripts/PythonInterface
-	cp -rfp OMPython/OMPython/* $(builddir_share)/omc/scripts/PythonInterface/OMPython
-
-$(IDLPYTHONTARGET) : $(IDLFILE)
-	$(IDLPYTHON) -C$(builddir_share)/omc/scripts/PythonInterface $(IDLFILE)
-
-mkbuilddirs-python:
-	# create directories
-	mkdir -p $(builddir_lib)/python/omniORB
-	mkdir -p $(builddir_share)/omc/scripts/PythonInterface/OMPython/OMParser
-
-clean-python:
-	rm -rf $(builddir_share)/omc/scripts/PythonInterface $(builddir_lib)/python
-
 clean:
 	$(MAKE) -f $(defaultMakefileTarget) -C OMCompiler clean OMBUILDDIR=$(OMBUILDDIR)
 	test ! -d $(OMBUILDDIR) || rm -rf $(OMBUILDDIR)
 
 gitclean:
-	git submodule foreach --recursive 'git clean -fdx -e /git -e /svn'
+	git submodule foreach --recursive 'git clean -fdx -e /git -e /svn -e .vscode/'
 	git clean -fdx -e OpenModelicaSetup -e OMSetup -e OMEncryption -e .project -e *.launch -e .vscode/

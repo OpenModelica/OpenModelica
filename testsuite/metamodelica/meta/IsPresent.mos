@@ -41,6 +41,6 @@ g(1.5);getErrorString();
 // b1 false
 // b2 true
 // b3 true
-// ({true,true,true},{true,true,false},{false,true,true})
+// ({true, true, true}, {true, true, false}, {false, true, true})
 // ""
 // endResult

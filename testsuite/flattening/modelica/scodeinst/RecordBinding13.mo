@@ -1,7 +1,6 @@
 // name: RecordBinding13
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 
 record R
@@ -33,8 +32,8 @@ end RecordBinding13;
 //   final parameter Integer Np = 2;
 //   final parameter Integer r1.n = 1;
 //   final parameter Integer r2.n = 1;
-//   parameter Integer k[1,1] = 0;
-//   parameter Integer k[1,2] = 0;
+//   final parameter Integer k[1,1] = 0;
+//   final parameter Integer k[1,2] = 0;
 //   parameter Integer r3[1,1].n = 1;
 //   parameter Integer r3[1,2].n = 1;
 // end RecordBinding13;

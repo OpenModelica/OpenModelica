@@ -140,15 +140,25 @@ public
   protected
     Component comp;
     Connector c;
+    DAE.ElementSource src;
   algorithm
     // Collect all flow variables.
     for var in flatModel.variables loop
       comp := InstNode.component(ComponentRef.node(var.name));
 
       if Component.isFlow(comp) then
-        c := Connector.fromFacedCref(var.name, var.ty,
-          NFConnector.Face.INSIDE, ElementSource.createElementSource(Component.info(comp)));
+        // Add all flow variables as inside connectors, to generate default
+        // equations if they're not connected.
+        src := ElementSource.createElementSource(Component.info(comp));
+        c := Connector.fromFacedCref(var.name, var.ty, NFConnector.Face.INSIDE, src);
         conns := addFlow(c, conns);
+
+        // Also add outside connectors for flow variables that were added during
+        // augmentation of expandable connectors.
+        if ConnectorType.isAugmented(var.attributes.connectorType) then
+          c := Connector.fromFacedCref(var.name, var.ty, NFConnector.Face.OUTSIDE, src);
+          conns := addFlow(c, conns);
+        end if;
       end if;
     end for;
   end collectFlows;
@@ -174,8 +184,16 @@ public
       return;
     end if;
 
-    cl1 := makeConnectors(lhsCref, lhsType, source);
-    cl2 := makeConnectors(rhsCref, rhsType, source);
+    if InstNode.isName(ComponentRef.node(lhsCref)) or InstNode.isName(ComponentRef.node(rhsCref)) then
+      // Keep the connectors unexpanded if either connector refers to a not
+      // declared component in an expandable connector, since we can't expand
+      // such connectors here.
+      cl1 := {Connector.fromCref(lhsCref, lhsType, source)};
+      cl2 := {Connector.fromCref(rhsCref, rhsType, source)};
+    else
+      cl1 := makeConnectors(lhsCref, lhsType, source);
+      cl2 := makeConnectors(rhsCref, rhsType, source);
+    end if;
 
     for c1 in cl1 loop
       c2 :: cl2 := cl2;
@@ -246,7 +264,7 @@ public
 
         if count == 0 then
           flows := f :: flows;
-        elseif count > 1 then
+        elseif count > 1 or count == -1 then
           flows := listAppend(Connector.scalarize(f), flows);
         end if;
       end for;
@@ -290,13 +308,16 @@ public
       output Integer outCount;
     algorithm
       outCount := match count
-        case SOME(outCount) then outCount + 1;
+        case SOME(outCount) then if outCount >= 0 then outCount + 1 else -1;
         else 1;
       end match;
     end update;
   algorithm
-    if Connector.isArray(conn) or ComponentRef.hasSubscripts(conn.name) then
+    if Connector.isArray(conn) then
       UnorderedMap.addUpdate(conn, update, connectCounts);
+    elseif ComponentRef.hasSubscripts(conn.name) then
+      // Always scalarize connector arrays that are partially connected.
+      UnorderedMap.add(conn, -1, connectCounts);
     end if;
   end analyseArrayConnector;
 

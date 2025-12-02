@@ -58,10 +58,16 @@ template ModelExchange(SimCode simCode, list<String> sourceFiles)
 match simCode
 case SIMCODE(__) then
   let modelIdentifier = modelNamePrefix(simCode)
-  let pdd = if providesDirectionalDerivative(simCode) then ' providesDirectionalDerivative="true"' else ''
   <<
   <ModelExchange
-    modelIdentifier="<%modelIdentifier%>"<%pdd%>>
+    modelIdentifier="<%modelIdentifier%>"
+    needsExecutionTool="false"
+    completedIntegratorStepNotNeeded="false"
+    canBeInstantiatedOnlyOncePerProcess="false"
+    canNotUseMemoryManagementFunctions="false"
+    <% if Flags.isSet(FMU_EXPERIMENTAL) then 'canGetAndSetFMUstate="true"' else 'canGetAndSetFMUstate="false"'%>
+    <% if Flags.isSet(FMU_EXPERIMENTAL) then 'canSerializeFMUstate="true"' else 'canSerializeFMUstate="false"'%>
+    <% if providesDirectionalDerivative(simCode) then 'providesDirectionalDerivative="true"' else 'providesDirectionalDerivative="false"'%>>
     <%SourceFiles(sourceFiles)%>
   </ModelExchange>
   >>
@@ -248,11 +254,11 @@ template StartString(SimVar simvar)
 match simvar
 case SIMVAR(initialValue = initialValue, causality = causality, type_ = type_) then
   match initialValue
-    case SOME(e as ICONST(__)) then ' start="<%initValXml(e)%>"'
-    case SOME(e as RCONST(__)) then ' start="<%initValXml(e)%>"'
-    case SOME(e as SCONST(__)) then ' start="<%initValXml(e)%>"'
-    case SOME(e as BCONST(__)) then ' start="<%initValXml(e)%>"'
-    case SOME(e as ENUM_LITERAL(__)) then ' start="<%initValXml(e)%>"'
+    case SOME(e as ICONST(__)) then ' start="<%initValXml(e, "")%>"'
+    case SOME(e as RCONST(__)) then ' start="<%initValXml(e, "")%>"'
+    case SOME(e as SCONST(__)) then ' start="<%initValXml(e, "")%>"'
+    case SOME(e as BCONST(__)) then ' start="<%initValXml(e, "")%>"'
+    case SOME(e as ENUM_LITERAL(__)) then ' start="<%initValXml(e, "")%>"'
     else
       match causality
         case SOME(INPUT(__)) then ' start="<%initDefaultValXml(type_)%>"'
@@ -262,8 +268,8 @@ end StartString;
 template ScalarVariableTypeRealAttribute(String unit, String displayUnit)
  "Generates code for ScalarVariable Type Real file for FMU target."
 ::=
-  let unit_ = if unit then 'unit="<%unit%>"'
-  let displayUnit_ = if displayUnit then 'displayUnit="<%displayUnit%>"'
+  let unit_ = if unit then 'unit="<%Util.escapeModelicaStringToXmlString(unit)%>"'
+  let displayUnit_ = if displayUnit then 'displayUnit="<%Util.escapeModelicaStringToXmlString(displayUnit)%>"'
   <<
    <%unit_%> <%displayUnit_%>
   >>
@@ -475,16 +481,17 @@ template ScalarVariableAttribute2(SimVar simVar, SimCode simCode)
 ::=
 match simVar
   case SIMVAR(__) then
+  let name = Util.escapeModelicaStringToXmlString(System.stringReplace(crefStrNoUnderscore(Util.getOption(exportVar)),"$", "_D_"))
   let defaultValueReference = '<%System.tmpTick()%>'
   let valueReference = getValueReference(simVar, simCode, false)
   let description = if comment then 'description="<%Util.escapeModelicaStringToXmlString(comment)%>"'
   let variability_ = if getClockIndex(simVar, simCode) then "discrete" else getVariability2(variability)
   let clockIndex = getClockIndex(simVar, simCode)
-  let previous = match varKind case CLOCKED_STATE(__) then '<%getVariableIndex(cref2simvar(previousName, simCode))%>'
+  let previous = match varKind case CLOCKED_STATE(__) then '<%getVariableFMIIndex(cref2simvar(previousName, simCode))%>'
   let caus = getCausality2(causality)
   let initial = getFmiInitialAttributeStr(simVar)
   <<
-  name="<%System.stringReplace(crefStrNoUnderscore(Util.getOption(exportVar)),"$", "_D_")%>"
+  name="<%name%>"
   valueReference="<%valueReference%>"
   <%description%>
   <%if boolNot(stringEq(variability_, "")) then 'variability="'+variability_+'"' %>
@@ -554,7 +561,7 @@ template ScalarVariableTypeCommonAttribute2(SimVar simvar, list<SimVar> stateVar
 match simvar
 case SIMVAR(__) then
   let startString = StartString2(simvar)
-  let extraAttributes = '<%DerivativeVarIndex(simvar,stateVars)%><%MinString2(simvar)%><%MaxString2(simvar)%><%NominalString2(simvar)%><%UnitString2(simvar)%>'
+  let extraAttributes = '<%DerivativeVarIndex(simvar,stateVars)%><%MinString2(simvar)%><%MaxString2(simvar)%><%NominalString2(simvar)%><%UnitString2(simvar)%><%relativeQuantity(simvar)%>'
   <<
   <%startString%><%extraAttributes%>
   >>
@@ -598,18 +605,18 @@ template startString3(SimVar simvar)
 match simvar
 case SIMVAR(initialValue = initialValue) then
   match initialValue
-    case SOME(e as ICONST(__)) then ' start="<%initValXml(e)%>"'
-    case SOME(e as RCONST(__)) then ' start="<%initValXml(e)%>"'
-    case SOME(e as SCONST(__)) then ' start="<%initValXml(e)%>"'
-    case SOME(e as BCONST(__)) then ' start="<%initValXml(e)%>"'
-    case SOME(e as ENUM_LITERAL(__)) then ' start="<%initValXml(e)%>"'
+    case SOME(e as ICONST(__)) then ' start="<%initValXml(e, "")%>"'
+    case SOME(e as RCONST(__)) then ' start="<%initValXml(e, "")%>"'
+    case SOME(e as SCONST(__)) then ' start="<%initValXml(e, "")%>"'
+    case SOME(e as BCONST(__)) then ' start="<%initValXml(e, "")%>"'
+    case SOME(e as ENUM_LITERAL(__)) then ' start="<%initValXml(e, "")%>"'
     else ''
 end startString3;
 
 template startString2Helper(Option<Exp> exp, DAE.Type type_)
 ::=
 match exp
-    case SOME((e as exp)) then '<%initValXml(e)%>'
+    case SOME((e as exp)) then '<%initValXml(e, "")%>'
     // if start expression is none then assigne defaultvalues for start attribute based on Type
     else '<%initDefaultValXml(type_)%>'
 end startString2Helper;
@@ -619,11 +626,11 @@ template MinString2(SimVar simvar)
 match simvar
 case SIMVAR(minValue = minValue) then
   match minValue
-    case SOME(e as ICONST(__)) then ' min="<%initValXml(e)%>"'
-    case SOME(e as RCONST(__)) then ' min="<%initValXml(e)%>"'
-    case SOME(e as SCONST(__)) then ' min="<%initValXml(e)%>"'
-    case SOME(e as BCONST(__)) then ' min="<%initValXml(e)%>"'
-    case SOME(e as ENUM_LITERAL(__)) then ' min="<%initValXml(e)%>"'
+    case SOME(e as ICONST(__)) then ' min="<%initValXml(e, "")%>"'
+    case SOME(e as RCONST(__)) then ' min="<%initValXml(e, "")%>"'
+    case SOME(e as SCONST(__)) then ' min="<%initValXml(e, "")%>"'
+    case SOME(e as BCONST(__)) then ' min="<%initValXml(e, "")%>"'
+    case SOME(e as ENUM_LITERAL(__)) then ' min="<%initValXml(e, "")%>"'
     else ''
 end MinString2;
 
@@ -632,11 +639,11 @@ template MaxString2(SimVar simvar)
 match simvar
 case SIMVAR(maxValue = maxValue) then
   match maxValue
-    case SOME(e as ICONST(__)) then ' max="<%initValXml(e)%>"'
-    case SOME(e as RCONST(__)) then ' max="<%initValXml(e)%>"'
-    case SOME(e as SCONST(__)) then ' max="<%initValXml(e)%>"'
-    case SOME(e as BCONST(__)) then ' max="<%initValXml(e)%>"'
-    case SOME(e as ENUM_LITERAL(__)) then ' max="<%initValXml(e)%>"'
+    case SOME(e as ICONST(__)) then ' max="<%initValXml(e, "")%>"'
+    case SOME(e as RCONST(__)) then ' max="<%initValXml(e, "")%>"'
+    case SOME(e as SCONST(__)) then ' max="<%initValXml(e, "")%>"'
+    case SOME(e as BCONST(__)) then ' max="<%initValXml(e, "")%>"'
+    case SOME(e as ENUM_LITERAL(__)) then ' max="<%initValXml(e, "")%>"'
     else ''
 end MaxString2;
 
@@ -645,7 +652,7 @@ template NominalString2(SimVar simvar)
 match simvar
 case SIMVAR(nominalValue = nominalValue) then
   match nominalValue
-    case SOME(e as RCONST(__)) then ' nominal="<%initValXml(e)%>"'
+    case SOME(e as RCONST(__)) then ' nominal="<%initValXml(e, "")%>"'
     else ''
 end NominalString2;
 
@@ -653,11 +660,20 @@ template UnitString2(SimVar simvar)
 ::=
 match simvar
 case SIMVAR(unit = unit, displayUnit = displayUnit) then
-  let unitString = if unit then ' unit="<%unit%>"'
-  let displayUnitString = if displayUnit then ' displayUnit="<%displayUnit%>"'
+  let unitString = if unit then ' unit="<%Util.escapeModelicaStringToXmlString(unit)%>"'
+  let displayUnitString = if displayUnit then ' displayUnit="<%Util.escapeModelicaStringToXmlString(displayUnit)%>"'
   //'<%unitString%><%displayUnitString%>' skip displayUnit because FMI2XML fails for e.g. bar
   '<%unitString%>'
 end UnitString2;
+
+template relativeQuantity(SimVar simvar)
+::=
+match simvar
+case SIMVAR(relativeQuantity = relativeQuantity) then
+  match relativeQuantity
+    case true then ' relativeQuantity="true"'
+    else ''
+end relativeQuantity;
 
 template statesnumwithDummy(list<SimVar> vars)
 " return number of states without dummy vars"

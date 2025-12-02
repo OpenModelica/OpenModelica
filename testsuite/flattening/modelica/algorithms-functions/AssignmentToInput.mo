@@ -1,7 +1,6 @@
 // name: AssignmentToInput
 // keywords: assignment input bug1819
 // status: correct
-// cflags: -d=-newInst
 //
 // Tests assignment to input in model scope.
 //
@@ -16,6 +15,7 @@ model AssignmentToInput
 algorithm
   x := 2;
   m.x := x;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end AssignmentToInput;
 
 // Result:

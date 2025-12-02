@@ -1,7 +1,6 @@
 // name: FunctionRestriction3
 // keywords:
 // status: incorrect
-// cflags: -d=newInst
 //
 
 function f
@@ -18,7 +17,7 @@ end FunctionRestriction3;
 
 // Result:
 // Error processing file: FunctionRestriction3.mo
-// [flattening/modelica/declarations/FunctionRestriction3.mo:10:3-10:9:writable] Error: Invalid public variable z, function variables that are not input/output must be protected.
+// [flattening/modelica/declarations/FunctionRestriction3.mo:9:3-9:9:writable] Error: Invalid public variable z, function variables that are not input/output must be protected.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

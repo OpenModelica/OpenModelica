@@ -33,9 +33,16 @@
  */
 
 #include "PlotPicker.h"
-#include "qwt_symbol.h"
+#include "OMPlot.h"
+#include "PlotCurve.h"
+#include "PlotGrid.h"
+#include "ScaleDraw.h"
+
+#include "qwt_text.h"
+#include "qwt_scale_map.h"    // for canvasMap()
 
 #include <QToolTip>
+#include <QtMath>
 
 using namespace OMPlot;
 
@@ -103,7 +110,9 @@ PlotPicker::PlotPicker(QWidget *pCanvas, Plot *pPlot)
  */
 QList<PlotCurve*> PlotPicker::curvesAtPosition(const QPoint pos, QList<int> *indexes) const
 {
-  QPointF posF = invTransform(pos);
+  double xTrans =  mpPlot->canvasMap(QwtPlot::xBottom).invTransform(pos.x());
+  QPointF posL(xTrans, mpPlot->canvasMap(QwtPlot::yLeft).invTransform(pos.y()));
+  QPointF posR(xTrans, mpPlot->canvasMap(QwtPlot::yRight).invTransform(pos.y()));
   int index = -1;
   QList<PlotCurve*> plotCurvesList;
   PlotCurve *pPlotCurve = 0;
@@ -116,6 +125,7 @@ QList<PlotCurve*> PlotPicker::curvesAtPosition(const QPoint pos, QList<int> *ind
       index = pPlotCurve->closestPoint(pos);
       if (index > -1) {
         int index1, previousIndex, nextIndex;
+        QPointF posF = pPlotCurve->isYAxisRight() ? posR : posL;
         if (index == 0) {
           index1 = 1;
         } else if (index == pPlotCurve->mXAxisVector.size() - 1 || index == pPlotCurve->mYAxisVector.size() - 1) {
@@ -138,11 +148,12 @@ QList<PlotCurve*> PlotPicker::curvesAtPosition(const QPoint pos, QList<int> *ind
             index1 = nextIndex;
           }
         }
-        QList<double> xMajorTicks = mpPlot->getPlotGrid()->xScaleDiv().ticks(QwtScaleDiv::MajorTick);
-        QList<double> yMajorTicks = mpPlot->getPlotGrid()->yScaleDiv().ticks(QwtScaleDiv::MajorTick);
+        QList<double> xMajorTicks = mpPlot->axisScaleDiv(QwtPlot::xBottom).ticks(QwtScaleDiv::MajorTick);
+        auto yAxis = pPlotCurve->yAxis();
+        QList<double> yMajorTicks = mpPlot->axisScaleDiv(yAxis).ticks(QwtScaleDiv::MajorTick);
         if (xMajorTicks.size() > 1 && yMajorTicks.size() > 1) {
           double x = (xMajorTicks[1] - xMajorTicks[0]) / mpPlot->axisMaxMinor(QwtPlot::xBottom);
-          double y = (yMajorTicks[1] - yMajorTicks[0]) / mpPlot->axisMaxMinor(QwtPlot::yLeft);
+          double y = (yMajorTicks[1] - yMajorTicks[0]) / mpPlot->axisMaxMinor(yAxis);
           if (pPlotCurve->mXAxisVector.size() <= index || pPlotCurve->mYAxisVector.size() <= index
               || pPlotCurve->mXAxisVector.size() <= index1 || pPlotCurve->mYAxisVector.size() <= index1) {
             continue;
@@ -173,8 +184,8 @@ QwtText PlotPicker::trackerText(const QPoint &pos) const
   QList<PlotCurve*> plotCurves = curvesAtPosition(pos, &indexes);
   if (!plotCurves.isEmpty()) {
     QString timeUnit = "";
-    if (mpPlot->getParentPlotWindow()->getPlotType() != PlotWindow::PLOTPARAMETRIC
-        && mpPlot->getParentPlotWindow()->getPlotType() != PlotWindow::PLOTARRAYPARAMETRIC
+    if (!mpPlot->getParentPlotWindow()->isPlotParametric()
+        && !mpPlot->getParentPlotWindow()->isPlotArrayParametric()
         && !mpPlot->getParentPlotWindow()->getTimeUnit().isEmpty()) {
       timeUnit = QString("%1%2").arg(mpPlot->getXScaleDraw()->getUnitPrefix(), mpPlot->getParentPlotWindow()->getTimeUnit());
     }
@@ -186,11 +197,14 @@ QwtText PlotPicker::trackerText(const QPoint &pos) const
       double x = pPlotCurve->mXAxisVector.at(index);
       double y = pPlotCurve->mYAxisVector.at(index);
 
+      pPlotCurve->getPointMarker()->setYAxis(pPlotCurve->yAxis());
       pPlotCurve->getPointMarker()->setValue(x, y);
       pPlotCurve->getPointMarker()->setVisible(true);
 
-      x = x / qPow(10, mpPlot->getXScaleDraw()->getExponent());
-      y = y / qPow(10, mpPlot->getYScaleDraw()->getExponent());
+      // ScaleDraw::getExponent is only useable when time is on x-axis
+      if (!mpPlot->getParentPlotWindow()->isPlotParametric() && !mpPlot->getParentPlotWindow()->isPlotArrayParametric()) {
+        x = x / qPow(10, mpPlot->getXScaleDraw()->getExponent());
+      }
 
       if (i > 0) {
         toolTip += QString("<br /><br />");

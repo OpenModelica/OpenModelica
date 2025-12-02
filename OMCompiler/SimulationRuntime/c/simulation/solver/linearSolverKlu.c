@@ -115,54 +115,40 @@ int freeKluData(void **voiddata)
  *  \author wbraun
  *
  */
-static int getAnalyticalJacobian(DATA* data, threadData_t *threadData,
-                                 int sysNumber)
+static void getAnalyticalJacobian(DATA* data, threadData_t *threadData,
+                                 LINEAR_SYSTEM_DATA* systemData)
 {
-  int i,ii,j,k,l;
+  int i,j,l,nth;
+  JACOBIAN* jacobian = systemData->parDynamicData[omc_get_thread_num()].jacobian;
+  JACOBIAN* parentJacobian = systemData->parDynamicData[omc_get_thread_num()].parentJacobian;
+  const SPARSE_PATTERN* sp = jacobian->sparsePattern;
 
-  LINEAR_SYSTEM_DATA* systemData = &(((DATA*)data)->simulationInfo->linearSystemData[sysNumber]);
-
-  const int index = systemData->jacobianIndex;
-  ANALYTIC_JACOBIAN* jacobian = systemData->parDynamicData[omc_get_thread_num()].jacobian;
-  ANALYTIC_JACOBIAN* parentJacobian = systemData->parDynamicData[omc_get_thread_num()].parentJacobian;
-
-  int nth = 0;
-  int nnz = jacobian->sparsePattern->numberOfNonZeros;
-
+  /* evaluate constant equations of Jacobian */
   if (jacobian->constantEqns != NULL) {
     jacobian->constantEqns(data, threadData, jacobian, parentJacobian);
   }
 
-  for(i=0; i < jacobian->sparsePattern->maxColors; i++)
-  {
+  /* evaluate Jacobian */
+  for (i = 0; i < sp->maxColors; i++) {
     /* activate seed variable for the corresponding color */
-    for(ii=0; ii < jacobian->sizeCols; ii++)
-    {
-      if(jacobian->sparsePattern->colorCols[ii]-1 == i)
-      {
-        jacobian->seedVars[ii] = 1;
-      }
-    }
+    for (j = 0; j < jacobian->sizeCols; j++)
+      if (sp->colorCols[j]-1 == i)
+        jacobian->seedVars[j] = 1.0;
 
-    ((systemData->analyticalJacobianColumn))(data, threadData, jacobian, parentJacobian);
+    /* Evaluate Jacobian column */
+    jacobian->evalColumn(data, threadData, jacobian, parentJacobian);
 
-    for(j = 0; j < jacobian->sizeCols; j++)
-    {
-      if(jacobian->seedVars[j] == 1)
-      {
-        nth = jacobian->sparsePattern->leadindex[j];
-        while(nth < jacobian->sparsePattern->leadindex[j+1])
-        {
-          l  = jacobian->sparsePattern->index[nth];
-          systemData->setAElement(j, l, -jacobian->resultVars[l], nth, (void*) systemData, threadData);
-          nth++;
+    for (j = 0; j < jacobian->sizeCols; j++) {
+      if (sp->colorCols[j]-1 == i) {
+        for (nth = sp->leadindex[j]; nth < sp->leadindex[j+1]; nth++) {
+          l = sp->index[nth];
+          systemData->setAElement(j, l, -jacobian->resultVars[l], nth, systemData, threadData);
         }
         /* de-activate seed variable for the corresponding color */
-        jacobian->seedVars[j] = 0;
+        jacobian->seedVars[j] = 0.0;
       }
     }
   }
-  return 0;
 }
 
 /*! \fn residual_wrapper for the residual function
@@ -194,7 +180,7 @@ int solveKlu(DATA *data, threadData_t *threadData, int sysNumber, double* aux_x)
   double tmpJacEvalTime;
   int reuseMatrixJac = (data->simulationInfo->currentContext == CONTEXT_SYM_JACOBIAN && data->simulationInfo->currentJacobianEval > 0);
 
-  infoStreamPrintWithEquationIndexes(LOG_LS, omc_dummyFileInfo, 0, indexes,
+  infoStreamPrintWithEquationIndexes(OMC_LOG_LS, omc_dummyFileInfo, 0, indexes,
     "Start solving Linear System %d (size %d) at time %g with Klu Solver",
     eqSystemNumber, (int) systemData->size, data->localData[0]->timeValue);
 
@@ -216,7 +202,7 @@ int solveKlu(DATA *data, threadData_t *threadData, int sysNumber, double* aux_x)
       solverData->Ap[0] = 0;
       /* calculate jacobian -> matrix A*/
       if(systemData->jacobianIndex != -1){
-        getAnalyticalJacobian(data, threadData, sysNumber);
+        getAnalyticalJacobian(data, threadData, systemData);
       } else {
         assertStreamPrint(threadData, 1, "jacobian function pointer is invalid" );
       }
@@ -230,28 +216,28 @@ int solveKlu(DATA *data, threadData_t *threadData, int sysNumber, double* aux_x)
   }
   tmpJacEvalTime = rt_ext_tp_tock(&(solverData->timeClock));
   systemData->jacobianTime += tmpJacEvalTime;
-  infoStreamPrint(LOG_LS_V, 0, "###  %f  time to set Matrix A and vector b.", tmpJacEvalTime);
+  infoStreamPrint(OMC_LOG_LS_V, 0, "###  %f  time to set Matrix A and vector b.", tmpJacEvalTime);
 
-  if (ACTIVE_STREAM(LOG_LS_V))
+  if (OMC_ACTIVE_STREAM(OMC_LOG_LS_V))
   {
-    infoStreamPrint(LOG_LS_V, 1, "Old solution x:");
+    infoStreamPrint(OMC_LOG_LS_V, 1, "Old solution x:");
     for(i = 0; i < solverData->n_row; ++i)
-      infoStreamPrint(LOG_LS_V, 0, "[%d] %s = %g", i+1, modelInfoGetEquation(&data->modelData->modelDataXml,eqSystemNumber).vars[i], aux_x[i]);
-    messageClose(LOG_LS_V);
+      infoStreamPrint(OMC_LOG_LS_V, 0, "[%d] %s = %g", i+1, modelInfoGetEquation(&data->modelData->modelDataXml,eqSystemNumber).vars[i], aux_x[i]);
+    messageClose(OMC_LOG_LS_V);
 
-    infoStreamPrint(LOG_LS_V, 1, "Matrix A n_rows = %d", solverData->n_row);
+    infoStreamPrint(OMC_LOG_LS_V, 1, "Matrix A n_rows = %d", solverData->n_row);
     for (i=0; i<solverData->n_row; i++){
-      infoStreamPrint(LOG_LS_V, 0, "%d. Ap => %d -> %d", i, solverData->Ap[i], solverData->Ap[i+1]);
+      infoStreamPrint(OMC_LOG_LS_V, 0, "%d. Ap => %d -> %d", i, solverData->Ap[i], solverData->Ap[i+1]);
       for (j=solverData->Ap[i]; j<solverData->Ap[i+1]; j++){
-        infoStreamPrint(LOG_LS_V, 0, "A[%d,%d] = %f", i, solverData->Ai[j], solverData->Ax[j]);
+        infoStreamPrint(OMC_LOG_LS_V, 0, "A[%d,%d] = %f", i, solverData->Ai[j], solverData->Ax[j]);
       }
     }
-    messageClose(LOG_LS_V);
+    messageClose(OMC_LOG_LS_V);
 
     for (i=0; i<solverData->n_row; i++)
     {
       // ToDo Rework stream prints like this one to work in parallel regions
-      infoStreamPrint(LOG_LS_V, 0, "b[%d] = %e", i, systemData->parDynamicData[omc_get_thread_num()].b[i]);
+      infoStreamPrint(OMC_LOG_LS_V, 0, "b[%d] = %e", i, systemData->parDynamicData[omc_get_thread_num()].b[i]);
     }
   }
   rt_ext_tp_tick(&(solverData->timeClock));
@@ -259,7 +245,7 @@ int solveKlu(DATA *data, threadData_t *threadData, int sysNumber, double* aux_x)
   /* symbolic pre-ordering of A to reduce fill-in of L and U */
   if (0 == solverData->numberSolving)
   {
-    infoStreamPrint(LOG_LS_V, 0, "Perform analyze settings:\n - ordering used: %d\n - current status: %d", solverData->common.ordering, solverData->common.status);
+    infoStreamPrint(OMC_LOG_LS_V, 0, "Perform analyze settings:\n - ordering used: %d\n - current status: %d", solverData->common.ordering, solverData->common.status);
     solverData->symbolic = klu_analyze(solverData->n_col, solverData->Ap, solverData->Ai, &solverData->common);
   }
 
@@ -272,12 +258,12 @@ int solveKlu(DATA *data, threadData_t *threadData, int sysNumber, double* aux_x)
         /* Just refactor using the same pivots, but check that the refactor is still accurate */
         klu_refactor(solverData->Ap, solverData->Ai, solverData->Ax, solverData->symbolic, solverData->numeric, &solverData->common);
         klu_rgrowth(solverData->Ap, solverData->Ai, solverData->Ax, solverData->symbolic, solverData->numeric, &solverData->common);
-        infoStreamPrint(LOG_LS_V, 0, "Klu rgrowth after refactor: %f", solverData->common.rgrowth);
+        infoStreamPrint(OMC_LOG_LS_V, 0, "Klu rgrowth after refactor: %f", solverData->common.rgrowth);
         /* If rgrowth is small then do a whole factorization with new pivots (What should this tolerance be?) */
         if (solverData->common.rgrowth < 1e-3){
           klu_free_numeric(&solverData->numeric, &solverData->common);
           solverData->numeric = klu_factor(solverData->Ap, solverData->Ai, solverData->Ax, solverData->symbolic, &solverData->common);
-          infoStreamPrint(LOG_LS_V, 0, "Klu new factorization performed.");
+          infoStreamPrint(OMC_LOG_LS_V, 0, "Klu new factorization performed.");
         }
       } else {
         solverData->numeric = klu_factor(solverData->Ap, solverData->Ai, solverData->Ax, solverData->symbolic, &solverData->common);
@@ -297,7 +283,7 @@ int solveKlu(DATA *data, threadData_t *threadData, int sysNumber, double* aux_x)
     }
   }
 
-  infoStreamPrint(LOG_LS_V, 0, "Solve System: %f", rt_ext_tp_tock(&(solverData->timeClock)));
+  infoStreamPrint(OMC_LOG_LS_V, 0, "Solve System: %f", rt_ext_tp_tock(&(solverData->timeClock)));
 
   /* print solution */
   if (1 == success){
@@ -312,7 +298,7 @@ int solveKlu(DATA *data, threadData_t *threadData, int sysNumber, double* aux_x)
       residualNorm = _omc_gen_euclideanVectorNorm(solverData->work, solverData->n_row);
 
       if ((isnan(residualNorm)) || (residualNorm>1e-4)) {
-        warningStreamPrintWithLimit(LOG_LS, 0, ++(systemData->numberOfFailures) /* Update counter */, data->simulationInfo->maxWarnDisplays,
+        warningStreamPrintWithLimit(OMC_LOG_LS, 0, ++(systemData->numberOfFailures) /* Update counter */, data->simulationInfo->maxWarnDisplays,
                                     "Failed to solve linear system of equations (no. %d) at time %f. Residual norm is %.15g.",
                                     (int)systemData->equationIndex, data->localData[0]->timeValue, residualNorm);
         success = 0;
@@ -322,24 +308,24 @@ int solveKlu(DATA *data, threadData_t *threadData, int sysNumber, double* aux_x)
       memcpy(aux_x, systemData->parDynamicData[omc_get_thread_num()].b, sizeof(double)*systemData->size);
     }
 
-    if (ACTIVE_STREAM(LOG_LS_V))
+    if (OMC_ACTIVE_STREAM(OMC_LOG_LS_V))
     {
       if (1 == systemData->method) {
-        infoStreamPrint(LOG_LS_V, 1, "Residual Norm %.15g of solution x:", residualNorm);
+        infoStreamPrint(OMC_LOG_LS_V, 1, "Residual Norm %.15g of solution x:", residualNorm);
       } else {
-        infoStreamPrint(LOG_LS_V, 1, "Solution x:");
+        infoStreamPrint(OMC_LOG_LS_V, 1, "Solution x:");
       }
-      infoStreamPrint(LOG_LS_V, 0, "System %d numVars %d.", eqSystemNumber, modelInfoGetEquation(&data->modelData->modelDataXml,eqSystemNumber).numVar);
+      infoStreamPrint(OMC_LOG_LS_V, 0, "System %d numVars %d.", eqSystemNumber, modelInfoGetEquation(&data->modelData->modelDataXml,eqSystemNumber).numVar);
 
       for(i = 0; i < systemData->size; ++i)
-        infoStreamPrint(LOG_LS_V, 0, "[%d] %s = %g", i+1, modelInfoGetEquation(&data->modelData->modelDataXml,eqSystemNumber).vars[i], aux_x[i]);
+        infoStreamPrint(OMC_LOG_LS_V, 0, "[%d] %s = %g", i+1, modelInfoGetEquation(&data->modelData->modelDataXml,eqSystemNumber).vars[i], aux_x[i]);
 
-      messageClose(LOG_LS_V);
+      messageClose(OMC_LOG_LS_V);
     }
   }
   else
   {
-    warningStreamPrintWithLimit(LOG_STDOUT, 0, ++(systemData->numberOfFailures) /* Update counter */, data->simulationInfo->maxWarnDisplays,
+    warningStreamPrintWithLimit(OMC_LOG_STDOUT, 0, ++(systemData->numberOfFailures) /* Update counter */, data->simulationInfo->maxWarnDisplays,
                                 "Failed to solve linear system of equations (no. %d) at time %f, system status %d.",
                                 (int)systemData->equationIndex, data->localData[0]->timeValue, status);
   }
@@ -378,7 +364,7 @@ void printMatrixCSC(int* Ap, int* Ai, double* Ax, int n)
   }
   for (l = 0; l < n; l++)
   {
-    infoStreamPrint(LOG_LS_V, 0, "%s", buffer[l]);
+    infoStreamPrint(OMC_LOG_LS_V, 0, "%s", buffer[l]);
     free(buffer[l]);
   }
   free(buffer);
@@ -405,7 +391,7 @@ void printMatrixCSR(int* Ap, int* Ai, double* Ax, int n)
         sprintf(buffer, "%s %5.2g ", buffer, 0.0);
       }
     }
-    infoStreamPrint(LOG_LS_V, 0, "%s", buffer);
+    infoStreamPrint(OMC_LOG_LS_V, 0, "%s", buffer);
   }
   free(buffer);
 }

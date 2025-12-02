@@ -1,7 +1,6 @@
 // name:     BM3 -  Add component
 // keywords: Add
 // status:   correct
-// cflags: -d=-newInst
 //
 // Testing instantiation of the Math.Add component.
 //
@@ -993,6 +992,7 @@ model BM3
 equation
   connect(constant2.outPort,add1.inPort2) annotation(Line(visible=true,points={{-35.38,-6.59},{5.98,9.23}}));
   connect(constant1.outPort,add1.inPort1) annotation(Line(visible=true,points={{-31.13,29.6},{4.15,22.31}}));
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end BM3;
 
 // class BM3

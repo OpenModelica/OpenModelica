@@ -13,6 +13,7 @@ model SlowFastDynamics
   Real y[2](start = {1,1}, each fixed=true);
 equation
   der(y) = {-y[1] - corr*y[2] + fast*sin(fast*time), corr*y[1] - epsilon*y[2] - cos(slow*time)};
+  annotation(experiment(StopTime=20));
 end SlowFastDynamics;");
 getErrorString();
 
@@ -26,36 +27,38 @@ rkMethods := {"expl_euler",
              "rk1012",
              "rk1214"};
 
-errCtrls := {"const", "i"};
+errCtrls := {"default", "richardson", "embedded"};
 
-setCommandLineOptions("--generateSymbolicJacobian"); getErrorString();
+setCommandLineOptions("--generateDynamicJacobian=symbolic"); getErrorString();
 
 // Build model
 buildModel(SlowFastDynamics);
 getErrorString();
 
 // Create reference results
-system(realpath(".") + "/SlowFastDynamics -override=stopTime=20 -s=dassl -r SlowFastDynamics_ref.mat ", "refSimulation.log");
+system(realpath(".") + "/SlowFastDynamics -s=dassl -r SlowFastDynamics_ref.mat ", "refSimulation.log");
 print(readFile("refSimulation.log"));
 
 // Test all RK methods
 for rkMethod in rkMethods loop
   for errCtrl in errCtrls loop
     print("\n--------------------------------------------------------\n");
-    print("Running RK " + rkMethod + ":\n");
+    print("Running RK " + rkMethod + " with errCtrl " + errCtrl + ":\n");
     logFile := "SlowFastDynamics_"+ rkMethod + "_" + errCtrl + ".log";
     system("rm -f SlowFastDynamics_res.mat");
-    system(realpath(".") + "/SlowFastDynamics -override=stopTime=20 -s=gbode -gbint=hermite -gbm=" + rkMethod + " -gberr=" + errCtrl, logFile);
+    system(realpath(".") + "/SlowFastDynamics -s=gbode -gbint=hermite -gbm=" + rkMethod + " -gberr=" + errCtrl, logFile);
     print(readFile(logFile) + "\n");
 
     (success, failVars) := diffSimulationResults(actualFile = "SlowFastDynamics_res.mat",
                                 expectedFile = "SlowFastDynamics_ref.mat",
                                 diffPrefix = "diff_" + rkMethod + "_",
                                 vars = {"der(y[1])", "der(y[2])"});
-    print("Failed vars:\n");
-    for var in failVars loop
-      print("\t" + var + "\n");
-    end for;
+    if size(failVars, 1) > 0 then
+      print("Failed vars:\n");
+      for var in failVars loop
+        print("\t" + var + "\n");
+      end for;
+    end if;
     if not success then
       print("Failed to compare simulation results\n");
       print(getErrorString() + "\n");
@@ -66,198 +69,177 @@ end for;
 // Result:
 // true
 // ""
-// {"expl_euler","dopri45","merson","fehlberg12","fehlberg45","fehlberg78","rk810","rk1012","rk1214"}
-// {"const","i"}
+// {"expl_euler", "dopri45", "merson", "fehlberg12", "fehlberg45", "fehlberg78", "rk810", "rk1012", "rk1214"}
+// {"default", "richardson", "embedded"}
 // true
 // ""
-// {"SlowFastDynamics","SlowFastDynamics_init.xml"}
+// {"SlowFastDynamics", "SlowFastDynamics_init.xml"}
 // ""
 // 0
-// LOG_STDOUT        | warning | Start or stop time was overwritten, but no new integrator step size was provided.
-// |                 | info    | | Re-calculating step size for 500 intervals.
-// |                 | |       | | Add `stepSize=<value>` to `-override=` or override file to silence this warning.
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 //
 //
 // --------------------------------------------------------
-// Running RK expl_euler:
-// LOG_STDOUT        | warning | Start or stop time was overwritten, but no new integrator step size was provided.
-// |                 | info    | | Re-calculating step size for 500 intervals.
-// |                 | |       | | Add `stepSize=<value>` to `-override=` or override file to silence this warning.
+// Running RK expl_euler with errCtrl default:
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 //
-// Failed vars:
 //
 // --------------------------------------------------------
-// Running RK expl_euler:
-// LOG_STDOUT        | warning | Start or stop time was overwritten, but no new integrator step size was provided.
-// |                 | info    | | Re-calculating step size for 500 intervals.
-// |                 | |       | | Add `stepSize=<value>` to `-override=` or override file to silence this warning.
+// Running RK expl_euler with errCtrl richardson:
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 //
-// Failed vars:
 //
 // --------------------------------------------------------
-// Running RK dopri45:
-// LOG_STDOUT        | warning | Start or stop time was overwritten, but no new integrator step size was provided.
-// |                 | info    | | Re-calculating step size for 500 intervals.
-// |                 | |       | | Add `stepSize=<value>` to `-override=` or override file to silence this warning.
+// Running RK expl_euler with errCtrl embedded:
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 //
-// Failed vars:
 //
 // --------------------------------------------------------
-// Running RK dopri45:
-// LOG_STDOUT        | warning | Start or stop time was overwritten, but no new integrator step size was provided.
-// |                 | info    | | Re-calculating step size for 500 intervals.
-// |                 | |       | | Add `stepSize=<value>` to `-override=` or override file to silence this warning.
+// Running RK dopri45 with errCtrl default:
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 //
-// Failed vars:
 //
 // --------------------------------------------------------
-// Running RK merson:
-// LOG_STDOUT        | warning | Start or stop time was overwritten, but no new integrator step size was provided.
-// |                 | info    | | Re-calculating step size for 500 intervals.
-// |                 | |       | | Add `stepSize=<value>` to `-override=` or override file to silence this warning.
+// Running RK dopri45 with errCtrl richardson:
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 //
-// Failed vars:
 //
 // --------------------------------------------------------
-// Running RK merson:
-// LOG_STDOUT        | warning | Start or stop time was overwritten, but no new integrator step size was provided.
-// |                 | info    | | Re-calculating step size for 500 intervals.
-// |                 | |       | | Add `stepSize=<value>` to `-override=` or override file to silence this warning.
+// Running RK dopri45 with errCtrl embedded:
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 //
-// Failed vars:
 //
 // --------------------------------------------------------
-// Running RK fehlberg12:
-// LOG_STDOUT        | warning | Start or stop time was overwritten, but no new integrator step size was provided.
-// |                 | info    | | Re-calculating step size for 500 intervals.
-// |                 | |       | | Add `stepSize=<value>` to `-override=` or override file to silence this warning.
+// Running RK merson with errCtrl default:
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 //
-// Failed vars:
 //
 // --------------------------------------------------------
-// Running RK fehlberg12:
-// LOG_STDOUT        | warning | Start or stop time was overwritten, but no new integrator step size was provided.
-// |                 | info    | | Re-calculating step size for 500 intervals.
-// |                 | |       | | Add `stepSize=<value>` to `-override=` or override file to silence this warning.
+// Running RK merson with errCtrl richardson:
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 //
-// Failed vars:
 //
 // --------------------------------------------------------
-// Running RK fehlberg45:
-// LOG_STDOUT        | warning | Start or stop time was overwritten, but no new integrator step size was provided.
-// |                 | info    | | Re-calculating step size for 500 intervals.
-// |                 | |       | | Add `stepSize=<value>` to `-override=` or override file to silence this warning.
+// Running RK merson with errCtrl embedded:
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 //
-// Failed vars:
 //
 // --------------------------------------------------------
-// Running RK fehlberg45:
-// LOG_STDOUT        | warning | Start or stop time was overwritten, but no new integrator step size was provided.
-// |                 | info    | | Re-calculating step size for 500 intervals.
-// |                 | |       | | Add `stepSize=<value>` to `-override=` or override file to silence this warning.
+// Running RK fehlberg12 with errCtrl default:
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 //
-// Failed vars:
 //
 // --------------------------------------------------------
-// Running RK fehlberg78:
-// LOG_STDOUT        | warning | Start or stop time was overwritten, but no new integrator step size was provided.
-// |                 | info    | | Re-calculating step size for 500 intervals.
-// |                 | |       | | Add `stepSize=<value>` to `-override=` or override file to silence this warning.
+// Running RK fehlberg12 with errCtrl richardson:
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 //
-// Failed vars:
 //
 // --------------------------------------------------------
-// Running RK fehlberg78:
-// LOG_STDOUT        | warning | Start or stop time was overwritten, but no new integrator step size was provided.
-// |                 | info    | | Re-calculating step size for 500 intervals.
-// |                 | |       | | Add `stepSize=<value>` to `-override=` or override file to silence this warning.
+// Running RK fehlberg12 with errCtrl embedded:
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 //
-// Failed vars:
 //
 // --------------------------------------------------------
-// Running RK rk810:
-// LOG_STDOUT        | warning | Start or stop time was overwritten, but no new integrator step size was provided.
-// |                 | info    | | Re-calculating step size for 500 intervals.
-// |                 | |       | | Add `stepSize=<value>` to `-override=` or override file to silence this warning.
+// Running RK fehlberg45 with errCtrl default:
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 //
-// Failed vars:
 //
 // --------------------------------------------------------
-// Running RK rk810:
-// LOG_STDOUT        | warning | Start or stop time was overwritten, but no new integrator step size was provided.
-// |                 | info    | | Re-calculating step size for 500 intervals.
-// |                 | |       | | Add `stepSize=<value>` to `-override=` or override file to silence this warning.
+// Running RK fehlberg45 with errCtrl richardson:
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 //
-// Failed vars:
 //
 // --------------------------------------------------------
-// Running RK rk1012:
-// LOG_STDOUT        | warning | Start or stop time was overwritten, but no new integrator step size was provided.
-// |                 | info    | | Re-calculating step size for 500 intervals.
-// |                 | |       | | Add `stepSize=<value>` to `-override=` or override file to silence this warning.
+// Running RK fehlberg45 with errCtrl embedded:
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 //
-// Failed vars:
 //
 // --------------------------------------------------------
-// Running RK rk1012:
-// LOG_STDOUT        | warning | Start or stop time was overwritten, but no new integrator step size was provided.
-// |                 | info    | | Re-calculating step size for 500 intervals.
-// |                 | |       | | Add `stepSize=<value>` to `-override=` or override file to silence this warning.
+// Running RK fehlberg78 with errCtrl default:
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 //
-// Failed vars:
 //
 // --------------------------------------------------------
-// Running RK rk1214:
-// LOG_STDOUT        | warning | Start or stop time was overwritten, but no new integrator step size was provided.
-// |                 | info    | | Re-calculating step size for 500 intervals.
-// |                 | |       | | Add `stepSize=<value>` to `-override=` or override file to silence this warning.
+// Running RK fehlberg78 with errCtrl richardson:
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 //
-// Failed vars:
 //
 // --------------------------------------------------------
-// Running RK rk1214:
-// LOG_STDOUT        | warning | Start or stop time was overwritten, but no new integrator step size was provided.
-// |                 | info    | | Re-calculating step size for 500 intervals.
-// |                 | |       | | Add `stepSize=<value>` to `-override=` or override file to silence this warning.
+// Running RK fehlberg78 with errCtrl embedded:
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 //
-// Failed vars:
+//
+// --------------------------------------------------------
+// Running RK rk810 with errCtrl default:
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+//
+//
+// --------------------------------------------------------
+// Running RK rk810 with errCtrl richardson:
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+//
+//
+// --------------------------------------------------------
+// Running RK rk810 with errCtrl embedded:
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+//
+//
+// --------------------------------------------------------
+// Running RK rk1012 with errCtrl default:
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+//
+//
+// --------------------------------------------------------
+// Running RK rk1012 with errCtrl richardson:
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+//
+//
+// --------------------------------------------------------
+// Running RK rk1012 with errCtrl embedded:
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+//
+//
+// --------------------------------------------------------
+// Running RK rk1214 with errCtrl default:
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+//
+//
+// --------------------------------------------------------
+// Running RK rk1214 with errCtrl richardson:
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+//
+//
+// --------------------------------------------------------
+// Running RK rk1214 with errCtrl embedded:
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+//
 //
 // endResult

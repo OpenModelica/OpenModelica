@@ -1,7 +1,6 @@
 // name: ActualStreamMinMax2
 // keywords: stream actualStream connector
 // status: correct
-// cflags: -d=newInst
 //
 // Checks that actualStream is simplified when the flow direction can be
 // determined from the min/max attributes.
@@ -30,7 +29,7 @@ end ActualStreamMinMax2;
 
 // Result:
 // class ActualStreamMinMax2
-//   parameter Boolean a.cond = true;
+//   final parameter Boolean a.cond = true;
 //   Real a.s1.r;
 //   Real a.s1.f(min = 0.0);
 //   Real a.s1.s;

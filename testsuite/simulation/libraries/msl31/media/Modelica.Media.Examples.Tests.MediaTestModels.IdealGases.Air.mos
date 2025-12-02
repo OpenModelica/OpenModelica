@@ -15,5 +15,5 @@ buildModel(Modelica.Media.Examples.Tests.MediaTestModels.IdealGases.Air);
 // ""
 // true
 // Evaluating: buildModel(Modelica.Media.Examples.Tests.MediaTestModels.IdealGases.Air)
-// {"Modelica.Media.Examples.Tests.MediaTestModels.IdealGases.Air","Modelica.Media.Examples.Tests.MediaTestModels.IdealGases.Air_init.xml"}
+// {"Modelica.Media.Examples.Tests.MediaTestModels.IdealGases.Air", "Modelica.Media.Examples.Tests.MediaTestModels.IdealGases.Air_init.xml"}
 // endResult

@@ -4,5 +4,5 @@
 getClassNames(OpenModelica);
 
 // Result:
-// {$Code,threadData,Internal,Scripting,UsersGuide,AutoCompletion}
+// {$Code, threadData, Internal, Scripting, UsersGuide, AutoCompletion}
 // endResult

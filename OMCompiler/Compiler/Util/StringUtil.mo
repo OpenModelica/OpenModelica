@@ -53,14 +53,14 @@ public function headline_1
   input String title;
   output String header;
 algorithm
-  header := repeat("#", stringLength(title) + 8) + "\n\n\t" + title + "\n\n" + repeat("#", stringLength(title) + 8) + "\n";
+  header := repeat("#", stringLength(title) + 8) + "\n\n    " + title + "\n\n" + repeat("#", stringLength(title) + 8) + "\n";
 end headline_1;
 
 public function headline_2
   input String title;
   output String header;
 algorithm
-  header := repeat("=", stringLength(title) + 4) + "\n" + title + "\n" + repeat("=", stringLength(title) + 4) + "\n";
+  header := repeat("=", stringLength(title) + 4) + "\n  " + title + "\n" + repeat("=", stringLength(title) + 4) + "\n";
 end headline_2;
 
 public function headline_3

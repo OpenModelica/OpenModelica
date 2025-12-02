@@ -1,0 +1,30 @@
+// name:     CopyClass7
+// keywords:
+// status:   correct
+//
+
+loadString("
+  package PowerGridsMC
+    package Electrical
+      model System
+      end System;
+
+      package BaseClasses
+        partial model OnePortAC
+          Electrical.System systemPowerGrids;
+        end OnePortAC;
+      end BaseClasses;
+    end Electrical;
+  end PowerGridsMC;
+");
+
+copyClass(PowerGridsMC.Electrical.BaseClasses.OnePortAC, "OnePortAC2", PowerGridsMC.Electrical.BaseClasses);
+list(PowerGridsMC.Electrical.BaseClasses.OnePortAC2);
+
+// Result:
+// true
+// true
+// "partial model OnePortAC2
+//   Electrical.System systemPowerGrids;
+// end OnePortAC2;"
+// endResult

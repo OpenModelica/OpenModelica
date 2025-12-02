@@ -1,7 +1,6 @@
 // name:     BS17 - BooleanStep component
 // keywords: BooleanStep
 // status:   correct
-// cflags: -d=-newInst
 //
 // Testing instantiation of the BooleanStep component.
 //
@@ -976,6 +975,7 @@ model BS17
 
 equation
   connect(booleanStep1.outPort,booleanChange1.inPort) annotation(Line(visible=true,points={{-20.48,14.7},{-2.54,10.14}}));
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end BS17;
 // class BS17
 // parameter Integer booleanChange1.n = 1 "Number of inputs (= number of outputs)";

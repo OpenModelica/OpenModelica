@@ -10,6 +10,8 @@
 
 namespace OpenModelica::Absyn
 {
+  struct ElementVisitor;
+
   class Element
   {
     public:
@@ -20,41 +22,24 @@ namespace OpenModelica::Absyn
       static constexpr int DEFINEUNIT = 4;
 
     public:
-      class Base
-      {
-        public:
-          Base(SourceInfo info);
-          virtual ~Base() = default;
+      static std::unique_ptr<Element> fromSCode(MetaModelica::Record value);
+      virtual ~Element();
 
-          virtual MetaModelica::Value toSCode() const noexcept = 0;
+      virtual std::unique_ptr<Element> clone() const noexcept = 0;
+      friend void swap(Element &first, Element &second) noexcept;
+      virtual MetaModelica::Value toSCode() const noexcept = 0;
 
-          const SourceInfo& info() const noexcept { return _info; }
+      virtual void apply(ElementVisitor &visitor) = 0;
 
-          virtual std::unique_ptr<Base> clone() const noexcept = 0;
-          virtual void print(std::ostream &os, Each each = Each()) const noexcept = 0;
+      const SourceInfo& info() const noexcept { return _info; }
 
-        protected:
-          SourceInfo _info;
-      };
+      virtual void print(std::ostream &os, Each each = Each()) const noexcept = 0;
 
-    public:
-      Element(MetaModelica::Record value);
-      Element(const Element &element) noexcept;
-      Element(Element &&other) = default;
-
-      Element& operator= (const Element &other) noexcept;
-      Element& operator= (Element &&other) = default;
-
-      MetaModelica::Value toSCode() const noexcept;
-      static MetaModelica::Value toSCodeList(const std::vector<Element> &elements) noexcept;
-
-      const SourceInfo& info() const noexcept { return _impl->info(); }
-
-      void print(std::ostream &os, Each each = Each()) const noexcept;
+    protected:
+      Element(SourceInfo info);
 
     private:
-      std::unique_ptr<Base> _impl;
-
+      SourceInfo _info;
   };
 
   std::ostream& operator<< (std::ostream &os, const Element &element) noexcept;

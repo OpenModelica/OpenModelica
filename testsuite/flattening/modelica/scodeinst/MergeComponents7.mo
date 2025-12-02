@@ -2,7 +2,6 @@
 // keywords:
 // status: correct
 // teardown_command: rm MergeComponents7_merged_table.json
-// cflags: -d=newInst,mergeComponents,-nfScalarize
 //
 
 model A
@@ -39,6 +38,7 @@ equation
   b1.u = a2.u;
   b2.u = b1.y;
   b3.u = b2.y;
+  annotation(__OpenModelica_commandLineOptions="-d=mergeComponents,-nfScalarize");
 end MergeComponents7;
 
 // Result:
@@ -62,17 +62,17 @@ end MergeComponents7;
 //   Real a2.u;
 //   Real a2.y;
 //   Real a2.x;
-//   Real[2] $B1.ab.x;
-//   Real[2] $B1.ab.y;
-//   Real[2] $B1.ab.u;
-//   parameter Real[2] $B1.ab.p = fill($B1.q * 3.0, 2);
-//   Real[2] $B1.aa.x;
-//   Real[2] $B1.aa.y;
-//   Real[2] $B1.aa.u;
-//   parameter Real[2] $B1.aa.p = fill($B1.q * 2.0, 2);
-//   Real[2] $B1.y;
-//   Real[2] $B1.u;
 //   parameter Real[2] $B1.q = {3.0, 4.0};
+//   Real[2] $B1.u;
+//   Real[2] $B1.y;
+//   parameter Real[2] $B1.aa.p = fill($B1.q * 2.0, 2);
+//   Real[2] $B1.aa.u;
+//   Real[2] $B1.aa.y;
+//   Real[2] $B1.aa.x;
+//   parameter Real[2] $B1.ab.p = fill($B1.q * 3.0, 2);
+//   Real[2] $B1.ab.u;
+//   Real[2] $B1.ab.y;
+//   Real[2] $B1.ab.x;
 // equation
 //   der(b2.aa.x) = b2.aa.u - b2.aa.p * b2.aa.x;
 //   b2.aa.y = 2.0 * b2.aa.p * b2.aa.x;
@@ -85,17 +85,17 @@ end MergeComponents7;
 //   a1.y = 2.0 * a1.p * a1.x;
 //   der(a2.x) = a2.u - a2.p * a2.x;
 //   a2.y = 2.0 * a2.p * a2.x;
-//   for $i1 in 1:2 loop
-//     der($B1[$i1].aa.x) = $B1[$i1].aa.u - $B1[$i1].aa.p * $B1[$i1].aa.x;
+//   for $i3 in 1:2 loop
+//     der($B1[$i3].aa.x) = $B1[$i3].aa.u - $B1[$i3].aa.p * $B1[$i3].aa.x;
 //   end for;
-//   for $i1 in 1:2 loop
-//     $B1[$i1].aa.y = 2.0 * $B1[$i1].aa.p * $B1[$i1].aa.x;
+//   for $i2 in 1:2 loop
+//     $B1[$i2].aa.y = 2.0 * $B1[$i2].aa.p * $B1[$i2].aa.x;
 //   end for;
 //   for $i1 in 1:2 loop
 //     der($B1[$i1].ab.x) = $B1[$i1].ab.u - $B1[$i1].ab.p * $B1[$i1].ab.x;
 //   end for;
-//   for $i1 in 1:2 loop
-//     $B1[$i1].ab.y = 2.0 * $B1[$i1].ab.p * $B1[$i1].ab.x;
+//   for $i0 in 1:2 loop
+//     $B1[$i0].ab.y = 2.0 * $B1[$i0].ab.p * $B1[$i0].ab.x;
 //   end for;
 //   $B1.aa.u = $B1.u;
 //   $B1.ab.u = $B1.aa.y;

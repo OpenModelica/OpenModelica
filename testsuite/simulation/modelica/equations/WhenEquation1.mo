@@ -1,7 +1,6 @@
 // name:     WhenEquation1
 // keywords: when
 // status:   correct
-// cflags: -d=-newInst
 //
 // Conditional Equations with when-Equations and elsewhen-Equations
 //
@@ -22,6 +21,7 @@ model WhenEquation1
       toggle=1;
       pos=pre(pos)+1;
     end when;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end WhenEquation1;
 
 // class WhenEquation1

@@ -1,14 +1,13 @@
 // name: FuncUnknownDim3
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 
 function f
   input Real[n] v;
   output Real[n] result = fill(1.0, n);
 protected
-  parameter Integer n = size(v, 1);
+  Integer n = size(v, 1);
 end f;
 
 model FuncUnknownDim3
@@ -19,7 +18,7 @@ end FuncUnknownDim3;
 // function f
 //   input Real[n] v;
 //   output Real[n] result = fill(1.0, n);
-//   protected parameter Integer n = size(v, 1);
+//   protected Integer n = size(v, 1);
 // end f;
 //
 // class FuncUnknownDim3

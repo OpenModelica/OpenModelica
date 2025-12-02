@@ -1,0 +1,37 @@
+// name: minimalTearing_simple1
+// keywords: minimal tearing, mixed system
+// status: correct
+// cflags:
+// teardown_command: rm -rf minimalTearing_simple1* _minimalTearing_simple1* output.log
+// cflags: --newBackend
+//
+// Tearing with discrete variables inside loop.
+
+loadString("
+model minimalTearing_simple1
+  Real a(start=0);
+  Integer b;
+  Boolean c;
+equation
+  a = b * time;
+  c = a > 0;
+  b = if c then integer(time*10) else -integer(time*10);
+end minimalTearing_simple1;
+"); getErrorString();
+
+setTearingMethod("minimalTearing"); getErrorString();
+simulate(minimalTearing_simple1); getErrorString();
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "minimalTearing_simple1_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'minimalTearing_simple1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// endResult

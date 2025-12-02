@@ -1,7 +1,6 @@
 // name: CyclicBindingConditional
 // keywords: cyclic
 // status: incorrect
-// cflags: -d=-newInst
 //
 // Tests cyclic binding of parameters
 //
@@ -11,6 +10,7 @@ model CyclicBindingConditional
   Boolean a = true if b;
   parameter
   Boolean b = true if a;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end CyclicBindingConditional;
 
 // Result:

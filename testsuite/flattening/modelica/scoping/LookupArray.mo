@@ -1,7 +1,6 @@
 // name:     Lookup with arrays
 // keywords: Lookup array
 // status:   correct
-// cflags: -d=-newInst
 //
 //
 // To test that the lookup of model vars with arrays works correctly.
@@ -19,6 +18,7 @@ model A
   Boolean b4[3,1,2,2];
   equation
     b4 = C[1,:,:].g.setdg;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end A;
 
 // Result:

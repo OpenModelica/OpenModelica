@@ -1,7 +1,6 @@
 // name: BindingArray7
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 
 operator record Complex

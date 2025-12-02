@@ -1,7 +1,6 @@
 // name:     Redeclare4
 // keywords: redeclare, bug #36
 // status:   correct
-// cflags: -d=-newInst
 //
 
 package A
@@ -29,6 +28,7 @@ end F;
 
 model D
   F.C c(b=5, redeclare E.BB d);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end D;
 
 

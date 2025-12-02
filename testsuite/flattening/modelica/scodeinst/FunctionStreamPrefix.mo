@@ -1,7 +1,6 @@
 // name: FunctionStreamPrefix
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 
 function f
@@ -16,6 +15,6 @@ end FunctionStreamPrefix;
 // Result:
 // class FunctionStreamPrefix
 // end FunctionStreamPrefix;
-// [flattening/modelica/scodeinst/FunctionStreamPrefix.mo:8:3-8:22:writable] Warning: Prefix 'stream' used outside connector declaration.
+// [flattening/modelica/scodeinst/FunctionStreamPrefix.mo:7:3-7:22:writable] Warning: Prefix 'stream' used outside connector declaration.
 //
 // endResult

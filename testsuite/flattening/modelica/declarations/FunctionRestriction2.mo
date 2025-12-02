@@ -1,7 +1,6 @@
 // name: FunctionRestriction2
 // keywords:
 // status: incorrect
-// cflags: -d=newInst
 //
 
 function f
@@ -17,7 +16,7 @@ end FunctionRestriction2;
 
 // Result:
 // Error processing file: FunctionRestriction2.mo
-// [flattening/modelica/declarations/FunctionRestriction2.mo:11:3-11:9:writable] Error: Initial algorithm sections are not allowed in function.
+// [flattening/modelica/declarations/FunctionRestriction2.mo:10:3-10:9:writable] Error: Initial algorithm sections are not allowed in function.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

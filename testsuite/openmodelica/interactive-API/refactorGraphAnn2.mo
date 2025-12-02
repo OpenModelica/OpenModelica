@@ -1,11 +1,3 @@
-// name:     refactorGraphAnn2
-// keywords: annotation
-// status:   correct
-// cflags: -d=-newInst
-//
-// Graphical  class annotations of old standard to be refactored into a new on.
-//
-
 model connecttest
 
   annotation (uses(Modelica(version="1.6"), ModelicaAdditions(version="1.5")),Diagram);

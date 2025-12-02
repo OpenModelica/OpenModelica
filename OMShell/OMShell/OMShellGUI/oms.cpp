@@ -223,13 +223,8 @@ OMS::OMS( QWidget* parent )
     QSizePolicy::Expanding, QSizePolicy::Expanding ));
   setCentralWidget( mainFrame_ );
 
-  // set frame backgroundcolor
-  QPalette palette;
-  palette.setColor( QPalette::Base, QColor(255,255,255) );
-  mainFrame_->setPalette( palette );
-
   layout_ = new QVBoxLayout( mainFrame_ );
-  layout_->setMargin( 0 );
+  layout_->setContentsMargins(0, 0, 0, 0);
   layout_->setSpacing( 5 );
 
   mpSettings->sync();
@@ -260,7 +255,7 @@ OMS::OMS( QWidget* parent )
   // create command compleation instance
   QString openmodelica( delegate_->OpenModelicaHome() );
   if( openmodelica.isEmpty() )
-    QMessageBox::critical( 0, "OMShell Error", "Could not find installation directory path, command completion will not work. Please make sure OpenModelica is installed properly." );
+    QMessageBox::critical(nullptr, "OMShell Error", "Could not find installation directory path, command completion will not work. Please make sure OpenModelica is installed properly." );
 
   try
   {
@@ -276,11 +271,15 @@ OMS::OMS( QWidget* parent )
   {
     QString msg = e.what();
     msg += "\nCould not create command completion class!";
-    QMessageBox::warning( 0, "Error", msg, "OK" );
+    QMessageBox::warning(nullptr, "Error", msg);
   }
 
   // command stuff
+#if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
+  commandSignFormat_.setFontFamilies({"Arial"});
+#else
   commandSignFormat_.setFontFamily( "Arial" );
+#endif
   commandSignFormat_.setFontWeight( QFont::Bold );
   commandSignFormat_.setFontPointSize( fontSize_ );
 
@@ -445,7 +444,11 @@ void OMS::addCommandLine()
 
   // set original text settings
   moshEdit_->document()->setDefaultFont(QFont("Courier New", fontSize_, QFont::Normal));
+#if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
+  textFormat_.setFontFamilies({"Courier New"});
+#else
   textFormat_.setFontFamily( "Courier New" );
+#endif
   textFormat_.setFontWeight( QFont::Normal );
   textFormat_.setFontPointSize( fontSize_ );
 
@@ -839,7 +842,9 @@ QSettings* OMS::getApplicationSettings()
   if (!init) {
     init = 1;
     pSettings = new QSettings(QSettings::IniFormat, QSettings::UserScope, organization, application);
+#if (QT_VERSION < QT_VERSION_CHECK(6, 0, 0))
     pSettings->setIniCodec(utf8.toStdString().data());
+#endif
   }
   return pSettings;
 }

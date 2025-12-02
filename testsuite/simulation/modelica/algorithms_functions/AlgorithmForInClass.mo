@@ -1,7 +1,6 @@
 // name:     AlgorithmForInClass
 // keywords: algorithm, for, class
 // status:   correct
-// cflags: -d=-newInst
 //
 // Tests for-loops in algorithm sections in classes.
 //
@@ -31,6 +30,7 @@ algorithm
       sum3[i, j] := v2[i] + v1[j];
     end for;
   end for;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end AlgorithmForInClass;
 
 // class AlgorithmForInClass

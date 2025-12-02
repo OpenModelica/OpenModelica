@@ -31,7 +31,10 @@
 #ifndef __FMU2_MODEL_INTERFACE_H__
 #define __FMU2_MODEL_INTERFACE_H__
 
+#include "fmi2TypesPlatform.h"
+#include "fmi2FunctionTypes.h"
 #include "../simulation_data.h"
+#include "../simulation/solver/solver_main.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -96,8 +99,8 @@ typedef struct {
   int _need_update;
   int _has_jacobian;
   int _has_jacobian_intialization;
-  ANALYTIC_JACOBIAN* fmiDerJac;
-  ANALYTIC_JACOBIAN* fmiDerJacInitialization;
+  JACOBIAN* fmiDerJac;
+  JACOBIAN* fmiDerJacInitialization;
 
   fmi2Real* states;
   fmi2Real* states_der;
@@ -114,6 +117,29 @@ typedef struct {
   modelica_string* stringParameter;
 } INTERNAL_FMU_STATE;
 
+fmi2Boolean isCategoryLogged(ModelInstance *comp, int categoryIndex);
+
+static fmi2String logCategoriesNames[] = {"logEvents", "logSingularLinearSystems", "logNonlinearSystems", "logDynamicStateSelection",
+    "logStatusWarning", "logStatusDiscard", "logStatusError", "logStatusFatal", "logStatusPending", "logAll", "logFmi2Call"};
+
+#ifndef FILTERED_LOG
+/**
+ * @brief Macro to be used to log messages.
+ *
+ * The macro check if current log category is active and, if true, call the
+ * logger provided by simulator. Prevents evaluation of arguments if logging
+ * category is disabled.
+ *
+ * @param instance        FMU instance.
+ * @param status          FMI2 status.
+ * @param categoryIndex   Category name index of array `logCategoriesNames`.
+ * @param message         Pointer to null-terminated format string to log.
+ * @param ...             Arguments specifying data to log.
+ */
+#define FILTERED_LOG(instance, status, categoryIndex, message, ...) if (isCategoryLogged(instance, categoryIndex)) { \
+    instance->functions->logger(instance->functions->componentEnvironment, instance->instanceName, status, \
+        logCategoriesNames[categoryIndex], message, ##__VA_ARGS__); }
+#endif
 
 /* reset alignment policy to the one set before reading this file */
 #if defined _MSC_VER || defined __GNUC__

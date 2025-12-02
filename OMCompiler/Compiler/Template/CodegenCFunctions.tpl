@@ -62,7 +62,7 @@ static int rml_execution_failed()
   return 1;
 }
 
-DLLExport int __omc_main(int argc, char **argv)
+DLLDirection int __omc_main(int argc, char **argv)
 {
   MMC_INIT(0);
   {
@@ -249,7 +249,7 @@ case FUNCTIONCODE(makefileParams=MAKEFILE_PARAMS(__)) then
   LINK=<%makefileParams.linker%>
   EXEEXT=<%makefileParams.exeext%>
   DLLEXT=<%makefileParams.dllext%>
-  DEBUG_FLAGS=<% if boolOr(acceptMetaModelicaGrammar(), Flags.isSet(Flags.GEN_DEBUG_SYMBOLS)) then " -g" else "$(SIM_OR_DYNLOAD_OPT_LEVEL)" %>
+  DEBUG_FLAGS=<% if Flags.isSet(Flags.GEN_DEBUG_SYMBOLS) then " -g" else "$(SIM_OR_DYNLOAD_OPT_LEVEL)" %>
   CFLAGS= $(DEBUG_FLAGS) <%makefileParams.cflags%>
   CPPFLAGS= <%makefileParams.includes ; separator=" "%> -I"<%makefileParams.omhome%>/include/omc/c" -I"<%makefileParams.omhome%>/include/omc" <%
     if Flags.isSet(Flags.OMC_RELOCATABLE_FUNCTIONS) then " -DOMC_GENERATE_RELOCATABLE_CODE"
@@ -366,7 +366,7 @@ template functionHeader(Function fn, Boolean inFunc, Boolean isSimulation, Text 
     case RECORD_CONSTRUCTOR(__) then
       let fname = underscorePath(name)
       let funArgsStr = (funArgs |> var as VARIABLE(__) => ', <%varType(var)%> omc_<%crefStr(name)%>')
-      let vis = (match visibility case PUBLIC() then "DLLExport")
+      let vis = (match visibility case PUBLIC() then "DLLDirection")
       <<
       <% if Flags.isSet(Flags.OMC_RELOCATABLE_FUNCTIONS)
         then
@@ -963,7 +963,7 @@ template functionHeaderImpl(String fname, list<Variable> fargs, list<Variable> o
   let prototype = functionPrototype(fname, fargs, outVars, boxed, visibility, isSimulation, true, dummy)
   let inFnStr = if boolAnd(boxed,inFunc) then
     <<
-    DLLExport
+    DLLDirection
     int in_<%fname%>(threadData_t *threadData, type_description * inArgs, type_description * outVar);
     >>
   match visibility
@@ -976,7 +976,7 @@ template functionHeaderImpl(String fname, list<Variable> fargs, list<Variable> o
     else
       <<
       <%inFnStr%>
-      <%if dynamicLoad then '' else 'DLLExport<%\n%><%prototype%>;'%>
+      <%if dynamicLoad then '' else 'DLLDirection<%\n%><%prototype%>;'%>
       >>
 end functionHeaderImpl;
 
@@ -999,7 +999,7 @@ template functionPrototype(String fname, list<Variable> fargs, list<Variable> ou
   let fn_name_typedef = (if Flags.isSet(Flags.OMC_RELOCATABLE_FUNCTIONS) then '<%boxPtrStr%>td_<%fname%>' else fn_name)
   let fn_name_ptr_typedef = (if Flags.isSet(Flags.OMC_RELOCATABLE_FUNCTIONS) then (if isPrototype then '(*<%fn_name_typedef%>)' else fn_name_impl) else fn_name)
   let res = (if outVars then
-    let outargs = List.rest(outVars) |> var => ", " + (match var
+    let outargs = listRest(outVars) |> var => ", " + (match var
       case var as VARIABLE(__) then '<%if boxed then varTypeBoxed(var) else varType(var)%> *out<%funArgName(var)%>'
       case FUNCTION_PTR(__) then 'modelica_fnptr *out<%funArgName(var)%>')
     '<%outarg%> <%fn_name_ptr_typedef%>(threadData_t *threadData<%fargsStr%><%outargs%>)'
@@ -1482,7 +1482,7 @@ case FUNCTION(__) then
   let prototype = functionPrototype(fname, functionArguments, outVars, false, visibility, isSimulation, false, afterBody)
   <<
   <%auxFunction%>
-  <% match visibility case PUBLIC(__) then "DLLExport" %>
+  <% match visibility case PUBLIC(__) then "DLLDirection" %>
   <%prototype%>
   {
     <%varDecls%>
@@ -1508,7 +1508,7 @@ end functionBodyRegularFunction;
 template generateInFunc(Text fname, list<Variable> functionArguments, list<Variable> outVars)
 ::=
   <<
-  DLLExport
+  DLLDirection
   int in_<%fname%>(threadData_t *threadData, type_description * inArgs, type_description * outVar)
   {
     //if (!mmc_GC_state) mmc_GC_init();
@@ -1579,8 +1579,8 @@ case KERNEL_FUNCTION(__) then
   // This odd arrangment and call is to get the commas in the right places
   // between the argumetns.
   // This puts correct comma placment even when the 'outvar' list is empty
-  let argStr = (functionArguments |> var => '<%funArgDefinitionKernelFunctionBody(var)%>' ;separator=", \n    ")
-  //let &argStr += (outVars |> var => '<%parFunArgDefinition(var)%>' ;separator=", \n")
+  let argStr = (functionArguments |> var => '<%funArgDefinitionKernelFunctionBody(var)%>' ;separator=",\n    ")
+  //let &argStr += (outVars |> var => '<%parFunArgDefinition(var)%>' ;separator=",\n")
   let _ = (outVars |> var =>
      funArgDefinitionKernelFunctionBody2(var, &argStr) ;separator=",\n")
 
@@ -2487,10 +2487,20 @@ case EXTERNAL_FUNCTION(__) then
       '<%extVarName(c)%> = '
     else
       ""
+  /*https://github.com/OpenModelica/OpenModelica/issues/9681
+   * ModelicaError should be handled as assert failing with AssertionLevel = error
+  */
+  let modelicaError = match extName
+    case "ModelicaError" then
+      <<
+      FILE_INFO info = {<%infoArgs(info)%>};
+      omc_assert(threadData, info, <%args%>);
+      >> else ""
+
   <<
   <%match extReturn case SIMEXTARG(__) then extFunCallVardecl(extReturn, &varDecls, &auxFunction, true)%>
   <%dynamicCheck%>
-  <%returnAssign%><%fname%>(<%args%>);
+  <%if modelicaError then '<%modelicaError%>' else '<%returnAssign%><%fname%>(<%args%>);'%>
   <%extArgs |> arg => extFunCallVarcopy(arg, &auxFunction) ;separator="\n"%>
   <%match extReturn case SIMEXTARG(__) then extFunCallVarcopy(extReturn, &auxFunction)%>
   >>
@@ -3210,7 +3220,7 @@ match stmt
     let &preExp = buffer ""
     let &postExp = buffer ""
 
-    let lhsCrefs = (List.rest(expExpLst) |> e => " ," + tupleReturnVariableUpdates(e, context, varDecls, preExp, postExp, &auxFunction))
+    let lhsCrefs = (listRest(expExpLst) |> e => " ," + tupleReturnVariableUpdates(e, context, varDecls, preExp, postExp, &auxFunction))
     // The tuple expressions might take fewer variables than the number of outputs. No worries.
     let lhsCrefs2 = lhsCrefs + List.fill(", NULL", intMax(0,intSub(listLength(ntys),listLength(expExpLst))))
 
@@ -3361,7 +3371,7 @@ case STMT_PARFOR(range=rng as RANGE(__)) then
       reconstructKernelArraysFromLooptupleVars(var, &reconstrucedArrays)
     )
 
-  let argStr = (loopPrlVars |> var => '<%parFunArgDefinitionFromLooptupleVar(var)%>' ;separator=", \n")
+  let argStr = (loopPrlVars |> var => '<%parFunArgDefinitionFromLooptupleVar(var)%>' ;separator=",\n")
 
   <<
 
@@ -3687,9 +3697,12 @@ let &sub = buffer ""
     case SIMULATION_CONTEXT(__) then
       match when
         case STMT_WHEN(__) then
-          let if_conditions = if not listEmpty(conditions) then (conditions |> e => '(<%cref(e, &sub)%> && !<%crefPre(e)%> /* edge */)';separator=" || ") else '0'
+          let if_conditions = if not listEmpty(conditions) then (conditions |> e =>
+            let cond = daeExp(crefExp(e), context, &sub, &varDecls, &auxFunction)
+            let condPre = daeExp(crefExp(crefPrefixPre(e)), context, &sub, &varDecls, &auxFunction)
+            '(<%cond%> && !<%condPre%> /* edge */)';separator=" || ") else '0'
           let statements = (statementLst |> stmt => algStatement(stmt, context, &varDecls, &auxFunction);separator="\n")
-          let else_clause = algStatementWhenElse(elseWhen, &varDecls, &auxFunction)
+          let else_clause = algStatementWhenElse(elseWhen, context, &varDecls, &auxFunction)
           <<
           if(data->simulationInfo->discreteCall == 1)
           {
@@ -3704,16 +3717,18 @@ let &sub = buffer ""
   end match
 end algStmtWhen;
 
-
-template algStatementWhenElse(Option<DAE.Statement> stmt, Text &varDecls, Text &auxFunction)
+template algStatementWhenElse(Option<DAE.Statement> stmt, Context context, Text &varDecls, Text &auxFunction)
  "Helper to algStmtWhen."
 ::=
 let &sub = buffer ""
 match stmt
 case SOME(when as STMT_WHEN(__)) then
-  let else_conditions = if not listEmpty(when.conditions) then (when.conditions |> e => '(<%cref(e, &sub)%> && !<%crefPre(e)%> /* edge */)';separator=" || ") else '0'
+  let else_conditions = if not listEmpty(when.conditions) then (when.conditions |> e =>
+    let cond = daeExp(crefExp(e), context, &sub, &varDecls, &auxFunction)
+    let condPre = daeExp(crefExp(crefPrefixPre(e)), context, &sub, &varDecls, &auxFunction)
+    '(<%cond%> && !<%condPre%> /* edge */)';separator=" || ") else '0'
   let statements = (when.statementLst |> stmt => algStatement(stmt, contextSimulationDiscrete, &varDecls, &auxFunction);separator="\n")
-  let else = algStatementWhenElse(when.elseWhen, &varDecls, &auxFunction)
+  let else = algStatementWhenElse(when.elseWhen, context, &varDecls, &auxFunction)
   <<
   else if(<%else_conditions%>)
   {
@@ -3734,7 +3749,7 @@ template algStmtReinit(DAE.Statement stmt, Context context, Text &varDecls, Text
     <<
     <%preExp%>
     <%expPart1%> = <%expPart2%>;
-    infoStreamPrint(LOG_EVENTS, 0, "reinit <%expPart1%> = %f", <%expPart1%>);
+    infoStreamPrint(OMC_LOG_EVENTS, 0, "reinit <%expPart1%> = %f", <%expPart1%>);
     data->simulationInfo->needToIterate = 1;
     >>
 end algStmtReinit;
@@ -3829,6 +3844,19 @@ template literalExpConst(Exp lit, Integer litindex) "These should all be declare
   let meta = 'static modelica_metatype const <%name%>'
 
   match lit
+  case RECORD(__) then
+    let &preExp = buffer ""
+    let &varDecls = buffer ""
+    let &auxFunction = buffer ""
+    let elements = (exps |> e => daeExp(e, contextOther, &preExp, &varDecls, &auxFunction);separator=", ")
+    <<
+    #if (defined(__clang__)  && __clang_major__ >= 17) || (defined(__GNUC__) && __GNUC__ >= 8)
+    static const <%expTypeFlag(ty, 2)%> <%name%> = {<%elements%>};
+    #else
+    /* handle joke compilers */
+    #define <%name%> (<%expTypeFlag(ty, 2)%>){<%elements%>}
+    #endif
+    >>
   case SCONST(__) then
     let escstr = Util.escapeModelicaStringToCString(string)
       /* TODO: Change this when OMC takes constant input arguments (so we cannot write to them)
@@ -3845,23 +3873,32 @@ template literalExpConst(Exp lit, Integer litindex) "These should all be declare
   case lit as MATRIX(ty=ty as T_ARRAY(__))
   case lit as ARRAY(ty=ty as T_ARRAY(__)) then
     let ndim = listLength(getDimensionSizes(ty))
-    let sty = expTypeShort(ty)
     let dims = (getDimensionSizes(ty) |> dim => dim ;separator=", ")
     let data = flattenArrayExpToList(lit) |> exp => literalExpConstArrayVal(exp) ; separator=", "
     <<
     static _index_t <%name%>_dims[<%ndim%>] = {<%dims%>};
     <% match data case "" then
     <<
+    #if (defined(__clang__)  && __clang_major__ >= 17) || (defined(__GNUC__) && __GNUC__ >= 8)
     static base_array_t const <%name%> = {
       <%ndim%>, <%name%>_dims, (void*) 0, (modelica_boolean) 0
     };
+    #else
+    /* handle joke compilers */
+    #define <%name%> (base_array_t){<%ndim%>, <%name%>_dims, (void*) 0, (modelica_boolean) 0}
+    #endif
     >>
     else
     <<
-    static const modelica_<%sty%> <%name%>_data[] = {<%data%>};
-    static <%sty%>_array const <%name%> = {
+    static const <%expTypeFlag(ty, 2)%> <%name%>_data[] = {<%data%>};
+    #if (defined(__clang__)  && __clang_major__ >= 17) || (defined(__GNUC__) && __GNUC__ >= 8)
+    static <%expTypeFlag(ty, 4)%> const <%name%> = {
       <%ndim%>, <%name%>_dims, (void*) <%name%>_data, (modelica_boolean) 0
     };
+    #else
+    /* handle joke compilers */
+    #define <%name%> (base_array_t){<%ndim%>, <%name%>_dims, (void*) <%name%>_data, (modelica_boolean) 0}
+    #endif
     >>
     %>
     >>
@@ -3968,11 +4005,12 @@ end literalExpConstBoxedValPreLit;
 template literalExpConstArrayVal(Exp lit)
 ::=
   match lit
+    case SCONST(__) then '"<%Util.escapeModelicaStringToCString(string)%>"'
     case ICONST(__) then integer
-    case lit as BCONST(__) then boolStrC(lit.bool)
+    case BCONST(__) then boolStrC(bool)
     case RCONST(__) then real
     case ENUM_LITERAL(__) then index
-    case lit as SHARED_LITERAL(__) then '_OMC_LIT<%lit.index%>'
+    case SHARED_LITERAL(__) then '_OMC_LIT<%index%>'
     else error(sourceInfo(), 'literalExpConstArrayVal failed: <%ExpressionDumpTpl.dumpExp(lit,"\"")%>')
 end literalExpConstArrayVal;
 
@@ -4535,7 +4573,7 @@ template assertCommon(Exp condition, list<Exp> messages, Exp level, Context cont
     const char* assert_cond = "(<%assertExpStr%>)";
     if (data->simulationInfo->noThrowAsserts) {
       FILE_INFO info = {<%infoArgs(info)%>};
-      infoStreamPrintWithEquationIndexes(LOG_ASSERT, info, 0, equationIndexes, <%infoTextContext%>);<%rethrow%>
+      infoStreamPrintWithEquationIndexes(OMC_LOG_ASSERT, info, 0, equationIndexes, <%infoTextContext%>);<%rethrow%>
     } else {
       FILE_INFO info = {<%infoArgs(info)%>};
       <%omcAssertFunc%>info, equationIndexes, <%infoTextContext%>);
@@ -4597,7 +4635,7 @@ template assertCommonVar(Text condVar, Text msgVar, Context context, Text &varDe
     {
       if (data->simulationInfo->noThrowAsserts) {
         FILE_INFO info = {<%infoArgs(info)%>};
-        infoStreamPrintWithEquationIndexes(LOG_ASSERT, info, 0, equationIndexes, "The following assertion has been violated %sat time %f", initial() ? "during initialization " : "", data->localData[0]->timeValue);
+        infoStreamPrintWithEquationIndexes(OMC_LOG_ASSERT, info, 0, equationIndexes, "The following assertion has been violated %sat time %f", initial() ? "during initialization " : "", data->localData[0]->timeValue);
         data->simulationInfo->needToReThrow = 1;
       } else {
         FILE_INFO info = {<%infoArgs(info)%>};
@@ -4786,19 +4824,6 @@ end contextIteratorName;
   else crefToCStr(cr, 0, false, false, &sub)
 end cref;
 
-/* public */ template crefOrStartCref(ComponentRef cr, Context context, Text &preExp, Text &varDecls, Text &auxFunction)
- "Only during intialization and if the start expression cannot be
-  evaluated to a constant use the full expression. Otherwise return the
-  cref itself. Used to resolve Ticket: #5807"
-::=
-let &sub = buffer ""
-  match cref2simvar(cr, getSimCode())
-  case SIMVAR(initialValue = SOME(startExp)) then
-    if boolNot(Expression.isConst(startExp)) then daeExp(startExp, context, &preExp, &varDecls, &auxFunction)
-    else cref(cr, &sub)
-  else cref(cr, &sub)
-end crefOrStartCref;
-
 /* public */ template crefOld(ComponentRef cr, Integer ix)
  "Generates C equivalent name for component reference.
   used in Compiler/Template/CodegenFMU.tpl"
@@ -4857,27 +4882,27 @@ template crefToCStr(ComponentRef cr, Integer ix, Boolean isPre, Boolean isStart,
   match cr
   case CREF_IDENT(ident = "time") then "data->localData[0]->timeValue"
   case CREF_IDENT(ident = "$DAE_CJ") then "jacobian->dae_cj"
-  case CREF_QUAL(ident="$PRE", subscriptLst={}) then
+  case CREF_QUAL(ident = "$PRE", subscriptLst = {}) then
     (if isPre then error(sourceInfo(), 'Got $PRE for something that is already pre: <%crefStrNoUnderscore(cr)%>')
     else crefToCStr(componentRef, ix, true, isStart, &sub))
-  case CREF_QUAL(ident="$START") then
+  case CREF_QUAL(ident = "$START") then
     crefToCStr(componentRef, ix, isPre, true, &sub)
   else match cref2simvar(cr, getSimCode())
-    case SIMVAR(varKind=ALG_STATE_OLD(), index=index) then '(data->simulationInfo->inlineData->algOldVars[<%index%>])<%&sub%>'
-    case SIMVAR(aliasvar=ALIAS(varName=varName)) then crefToCStr(varName, ix, isPre, isStart, &sub)
-    case SIMVAR(aliasvar=NEGATEDALIAS(varName=varName), type_=T_BOOL()) then '!(<%crefToCStr(varName, ix, isPre, isStart, &sub)%>)'
-    case SIMVAR(aliasvar=NEGATEDALIAS(varName=varName)) then '-(<%crefToCStr(varName, ix, isPre, isStart, &sub)%>)'
-    case v as SIMVAR(varKind=JAC_VAR()) then '(parentJacobian->resultVars[<%index%>])<%&sub%><%crefCCommentWithVariability(v)%>'
-    case v as SIMVAR(varKind=JAC_TMP_VAR()) then '(parentJacobian->tmpVars[<%index%>])<%&sub%><%crefCCommentWithVariability(v)%>'
-    case v as SIMVAR(varKind=SEED_VAR()) then '(parentJacobian->seedVars[<%index%>])<%&sub%><%crefCCommentWithVariability(v)%>'
-    case v as SIMVAR(varKind=DAE_RESIDUAL_VAR()) then '(data->simulationInfo->daeModeData->residualVars[<%index%>])<%&sub%><%crefCCommentWithVariability(v)%>'
-    case v as SIMVAR(varKind=DAE_AUX_VAR()) then '(data->simulationInfo->daeModeData->auxiliaryVars[<%index%>])<%&sub%><%crefCCommentWithVariability(v)%>'
-    case SIMVAR(index=-2) then
+    case SIMVAR(varKind = ALG_STATE_OLD(), index = index) then '(data->simulationInfo->inlineData->algOldVars[<%index%>])<%&sub%>'
+    case SIMVAR(aliasvar = ALIAS(varName = varName)) then crefToCStr(varName, ix, isPre, isStart, &sub)
+    case SIMVAR(aliasvar = NEGATEDALIAS(varName = varName), type_=T_BOOL()) then '!(<%crefToCStr(varName, ix, isPre, isStart, &sub)%>)'
+    case SIMVAR(aliasvar = NEGATEDALIAS(varName = varName)) then '-(<%crefToCStr(varName, ix, isPre, isStart, &sub)%>)'
+    case v as SIMVAR(varKind = JAC_VAR()) then '(parentJacobian->resultVars[<%index%>])<%&sub%><%crefCCommentWithVariability(v)%>'
+    case v as SIMVAR(varKind = JAC_TMP_VAR()) then '(parentJacobian->tmpVars[<%index%>])<%&sub%><%crefCCommentWithVariability(v)%>'
+    case v as SIMVAR(varKind = SEED_VAR()) then '(parentJacobian->seedVars[<%index%>])<%&sub%><%crefCCommentWithVariability(v)%>'
+    case v as SIMVAR(varKind = DAE_RESIDUAL_VAR()) then '(data->simulationInfo->daeModeData->residualVars[<%index%>])<%&sub%><%crefCCommentWithVariability(v)%>'
+    case v as SIMVAR(varKind = DAE_AUX_VAR()) then '(data->simulationInfo->daeModeData->auxiliaryVars[<%index%>])<%&sub%><%crefCCommentWithVariability(v)%>'
+    case SIMVAR(index = -2) then
       (let s = (if isPre then crefNonSimVar(crefPrefixPre(cr)) else crefNonSimVar(cr))
       if intEq(ix,0) then s
       else '_<%s%>(<%ix%>)')
-    case var as SIMVAR(index=-1) then error(sourceInfo(), 'crefToCStr got index=-1 for <%variabilityString(varKind)%> <%crefStrNoUnderscore(name)%>')
-    case var as SIMVAR(__) then '<%varArrayNameValues(var, ix, isPre, isStart, &sub)%>'
+    case SIMVAR(index = -1) then error(sourceInfo(), 'crefToCStr got index=-1 for <%variabilityString(varKind)%> <%crefStrNoUnderscore(name)%>')
+    case v as SIMVAR(__) then varArrayNameValues(v, ix, isPre, isStart, &sub)
     else "CREF_NOT_IDENT_OR_QUAL"
 end crefToCStr;
 
@@ -4958,7 +4983,7 @@ template modelicaLine(builtin.SourceInfo info)
 ::=
   match info
   case SOURCEINFO(fileName="") then ""
-  else if boolOr(acceptMetaModelicaGrammar(), Flags.isSet(Flags.GEN_DEBUG_SYMBOLS))
+  else if Flags.isSet(Flags.GEN_DEBUG_SYMBOLS)
     then (if Flags.isSet(OMC_RECORD_ALLOC_WORDS)
     then '/*#modelicaLine <%infoStr(info)%>*/<%\n%><% match info case SOURCEINFO() then (if intEq(-1, stringFind(fileName,".interface.mo")) then 'mmc_set_current_pos("<%infoStr(info)%>");<%\n%>') %>'
     else '/*#modelicaLine <%infoStr(info)%>*/<%\n%>'
@@ -4967,7 +4992,7 @@ end modelicaLine;
 
 template endModelicaLine()
 ::=
-  if boolOr(acceptMetaModelicaGrammar(), Flags.isSet(Flags.GEN_DEBUG_SYMBOLS)) then '/*#endModelicaLine*/<%\n%>'
+  if Flags.isSet(Flags.GEN_DEBUG_SYMBOLS) then '/*#endModelicaLine*/<%\n%>'
 end endModelicaLine;
 
 template tempDecl(String ty, Text &varDecls)
@@ -5120,6 +5145,7 @@ end daeExp;
      '((<%int_type%>) <%integer%>)' /* Yes, we need to cast int to long on 64-bit arch... */
   case e as RCONST(__)          then real
   case e as BCONST(__)          then boolStrC(bool)
+  case e as SCONST(__)          then '"<%string%>"'
   case e as ENUM_LITERAL(__)    then index
   else error(sourceInfo(), 'Not a simple literal expression: <%ExpressionDumpTpl.dumpExp(exp,"\"")%>')
 end daeExpSimpleLiteral;
@@ -5576,7 +5602,7 @@ template daeExpCrefLhsSimContext(Exp ecr, Context context, Text &preExp,
 
   case ecr as CREF(componentRef=cr, ty=ty) then
     if crefIsScalarWithAllConstSubs(cr) then
-        contextCrefIsPre(cr,context, &auxFunction, isPre)
+      contextCrefIsPre(cr,context, &auxFunction, isPre)
     else if crefIsScalarWithVariableSubs(cr) then
       '(&<%contextCrefIsPre(crefStripSubs(cr),context, &auxFunction, isPre)%>)<%indexSubs(crefDims(cr), crefSubs(crefArrayGetFirstCref(cr)), context, &preExp, &varDecls, &auxFunction)%>'
     else
@@ -5600,7 +5626,7 @@ template indexSubRecursive(list<Dimension> dims, list<Subscript> subs, Context c
       '<%daeSubscript(sub, context, &preExp, &varDecls, &auxFunction)%> - 1'
     case sub :: sub_rest then
       let recurse = indexSubRecursive(List.restOrEmpty(dims), sub_rest, context, preExp, varDecls, auxFunction)
-      let dim1 = dimension(List.first(dims), context, &preExp, &varDecls, &auxFunction)
+      let dim1 = dimension(listHead(dims), context, &preExp, &varDecls, &auxFunction)
       let sub1 = daeSubscript(sub, context, &preExp, &varDecls, &auxFunction)
       '(<%recurse%>) * <%dim1%> + (<%sub1%>-1)'
 end indexSubRecursive;
@@ -5905,10 +5931,10 @@ case BINARY(__) then
                         case T_ARRAY(ty = T_ENUMERATION(__)) then "integer_array"
                         else "real_array"
     'pow_alloc_<%type%>_scalar(<%e1%>, <%e2%>)'
-  case POW_ARRAY_SCALAR(__) then 'daeExpBinary:ERR for POW_ARRAY_SCALAR'
-  case POW_SCALAR_ARRAY(__) then 'daeExpBinary:ERR for POW_SCALAR_ARRAY'
-  case POW_ARR(__) then 'daeExpBinary:ERR for POW_ARR'
-  case POW_ARR2(__) then 'daeExpBinary:ERR for POW_ARR2'
+  case POW_ARRAY_SCALAR(__) then error(sourceInfo(),"daeExpBinary:ERR for POW_ARRAY_SCALAR not implemented")
+  case POW_SCALAR_ARRAY(__) then error(sourceInfo(),"daeExpBinary:ERR for POW_SCALAR_ARRAY not implemented")
+  case POW_ARR(__)          then error(sourceInfo(),"daeExpBinary:ERR for POW_ARR not implemented")
+  case POW_ARR2(__)         then error(sourceInfo(),"daeExpBinary:ERR for POW_ARR2 not implemented")
   else error(sourceInfo(), 'daeExpBinary:ERR')
 end daeExpBinary;
 
@@ -7118,7 +7144,7 @@ template daeExpRsub(Exp inExp, Context context, Text &preExp,
     let res = daeExp(exp, context, &preExp, &varDecls, &auxFunction)
     let offset = intAdd(ix,1) // 1-based
     '(MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(<%res%>), <%offset%>)))'
-  case RSUB(__) then
+  else
     error(sourceInfo(), '<%ExpressionDumpTpl.dumpExp(inExp,"\"")%>: failed')
 end daeExpRsub;
 
@@ -7192,8 +7218,11 @@ template daeExpAsub(Exp inExp, Context context, Text &preExp,
     match Expression.typeof(inExp)
     case T_ARRAY(__) then
       error(sourceInfo(),'ASUB non-scalar <%ExpressionDumpTpl.dumpExp(inExp,"\"")%>. The inner exp has type: <%unparseType(Expression.typeof(e))%>. After ASUB it is still an array: <%unparseType(Expression.typeof(inExp))%>.')
+    case T_COMPLEX(complexClassType = ClassInf.RECORD(__)) then
+      let expIndexes = (indexes |> index => daeSubscriptExp(index, context, &preExp, &varDecls, &auxFunction) ;separator=", ")
+      '<%typeShort%>_array_get(<%exp%>, <%listLength(indexes)%>, <%expIndexes%>)'
     else
-      let expIndexes = (indexes |> index => '<%daeExpASubIndex(index, context, &preExp, &varDecls, &auxFunction)%>' ;separator=", ")
+      let expIndexes = (indexes |> index => daeExpASubIndex(index, context, &preExp, &varDecls, &auxFunction) ;separator=", ")
       '<%typeShort%>_get<%match listLength(indexes) case 1 then "" case i then '_<%i%>D'%>(<%exp%>, <%expIndexes%>)'
 
   else
@@ -7816,25 +7845,39 @@ template varArrayNameValues(SimVar var, Integer ix, Boolean isPre, Boolean isSta
           "ERROR: Not implemented in varArrayNameValues"
         case SIMVAR(__) then
           let c_comment = CodegenUtil.crefCCommentWithVariability(var)
-          <<
-          <%if isStart then '<%varAttributes(var, &sub)%>.start'
-            else if isPre then '(<%arr%>this_function->pre_vars-><%crefTypeOMSIC(name)%>[<%index%>]<%c_comment%>)<%&sub%>'
-            else '(<%arr%>this_function->function_vars-><%crefTypeOMSIC(name)%>[<%index%>]<%c_comment%>)<%&sub%>'
-          %>
-          >>
+          if isStart then
+            '<%varAttributes(var, &sub)%>.start'
+          else if isPre then
+            '(<%arr%>this_function->pre_vars-><%crefTypeOMSIC(name)%>[<%index%>]<%c_comment%>)<%&sub%>'
+          else
+            '(<%arr%>this_function->function_vars-><%crefTypeOMSIC(name)%>[<%index%>]<%c_comment%>)<%&sub%>'
       end match
     else
       match var
+        case SIMVAR(varKind=CONST(), initialValue = SOME(value)) then
+          let c_comment = CodegenUtil.crefCCommentWithVariability(var)
+          '<%daeExpSimpleLiteral(value)%><%c_comment%>'
         case SIMVAR(varKind=PARAM())
         case SIMVAR(varKind=OPT_TGRID()) then
-          '(<%arr%>data->simulationInfo-><%crefShortType(name)%>Parameter[<%index%>]<%crefCCommentWithVariability(var)%>)<%&sub%>'
+          let c_comment = CodegenUtil.crefCCommentWithVariability(var)
+          let ty = crefShortType(name)
+          '(<%arr%>data->simulationInfo-><%crefShortType(name)%>Parameter[data->simulationInfo-><%ty%>ParamsIndex[<%index%>]]<%c_comment%>)<%&sub%>'
         case SIMVAR(varKind=EXTOBJ()) then
           '(<%arr%>data->simulationInfo->extObjs[<%index%>])<%&sub%>'
         case SIMVAR(__) then
           let c_comment = CodegenUtil.crefCCommentWithVariability(var)
-          '<%if isStart then '<%varAttributes(var, &sub)%>.start'
-             else if isPre then '(<%arr%>data->simulationInfo-><%crefShortType(name)%>VarsPre[<%index%>]<%c_comment%>)<%&sub%>'
-             else '(<%arr%>data->localData[<%ix%>]-><%crefShortType(name)%>Vars[<%index%>]<%c_comment%>)<%sub%>'%>'
+          let ty = crefShortType(name)
+          if isStart then
+            // TODO: How to handle array case?
+            match ty
+              case "real" then
+                '((modelica_real *)(<%varAttributes(var, &sub)%>.start.data))[0]'
+              else
+                '<%varAttributes(var, &sub)%>.start'
+          else if isPre then
+            '(<%arr%>data->simulationInfo-><%ty%>VarsPre[<%index%>]<%c_comment%>)<%&sub%>'
+          else
+            '(<%arr%>data->localData[<%ix%>]-><%ty%>Vars[data->simulationInfo-><%ty%>VarsIndex[<%index%>]]<%c_comment%>)<%sub%>'
       end match
   end match
 end varArrayNameValues;
@@ -7842,8 +7885,8 @@ end varArrayNameValues;
 template varArrayName(SimVar var)
 ::=
   match var
-  case SIMVAR(varKind=PARAM()) then '<%crefShortType(name)%>Parameter'
-  case SIMVAR(__) then '<%crefShortType(name)%>Vars'
+    case SIMVAR(varKind=PARAM()) then '<%crefShortType(name)%>Parameter'
+    case SIMVAR(__)              then '<%crefShortType(name)%>Vars'
 end varArrayName;
 
 template crefVarInfo(ComponentRef cr)
@@ -7856,11 +7899,13 @@ end crefVarInfo;
 template initializeStaticLSVars(list<SimVar> vars, Integer index)
 ::=
   let len = listLength(vars)
-  let indices = (vars |> var => varIndexWithComment(var) ;separator=", ")
+  let indices = (vars |> var => varIndexWithComment(var) ;separator=",\n")
   <<
   void initializeStaticLSData<%index%>(DATA* data, threadData_t* threadData, LINEAR_SYSTEM_DATA* linearSystemData, modelica_boolean initSparsePattern)
   {
-    const int indices[<%len%>] = {<%indices%>};
+    const int indices[<%len%>] = {
+      <%indices%>
+    };
     for (int i = 0; i < <%len%>; ++i) {
       linearSystemData->nominal[i] = data->modelData->realVarsData[indices[i]].attribute.nominal;
       linearSystemData->min[i]     = data->modelData->realVarsData[indices[i]].attribute.min;
@@ -7874,8 +7919,15 @@ template varIndexWithComment(SimVar var)
 ::=
   match var
   case SIMVAR(index=-1) then varIndexWithComment(cref2simvar(crefRemovePrePrefix(name), getSimCode()))
-  case SIMVAR(__) then '<%index%>/* <%crefCComment(var, crefStrNoUnderscore(name))%> */'
+  case SIMVAR(__) then '<%index%> /* <%crefCComment(var, crefStrNoUnderscore(name))%> */'
 end varIndexWithComment;
+
+template crefIndexWithComment(ComponentRef cr)
+::=
+  match cref2simvar(crefRemovePrePrefix(cr), getSimCode())
+    case SIMVAR(index=-1) then crefIndexWithComment(crefRemovePrePrefix(name))
+    case var as SIMVAR(__) then '<%index%> /* <%crefCComment(var, crefStrNoUnderscore(name))%> */'
+end crefIndexWithComment;
 
 template varAttributes(SimVar var, Text &sub)
 ::=

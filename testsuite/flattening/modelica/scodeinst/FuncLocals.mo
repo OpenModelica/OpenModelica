@@ -1,7 +1,6 @@
 // name: FuncLocals
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 // Checks that functions can have local parameters.
 //

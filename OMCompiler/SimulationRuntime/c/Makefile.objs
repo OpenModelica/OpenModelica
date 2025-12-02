@@ -167,8 +167,9 @@ ifeq ($(OMC_MINIMAL_RUNTIME),)
               gbode_tableau$(OBJ_EXT) \
               gbode_util$(OBJ_EXT) \
               ida_solver$(OBJ_EXT) \
-              irksco$(OBJ_EXT) \
+              jacobian_analysis$(OBJ_EXT) \
               jacobianSymbolical$(OBJ_EXT) \
+              kinsol_b$(OBJ_EXT) \
               kinsolSolver$(OBJ_EXT) \
               linearSolverKlu$(OBJ_EXT) \
               linearSolverLis$(OBJ_EXT) \
@@ -176,7 +177,6 @@ ifeq ($(OMC_MINIMAL_RUNTIME),)
               newton_diagnostics$(OBJ_EXT) \
               newtonIteration$(OBJ_EXT) \
               nonlinearSolverNewton$(OBJ_EXT) \
-              radau$(OBJ_EXT) \
               sundials_error$(OBJ_EXT) \
               sundials_util$(OBJ_EXT) \
               sym_solver_ssc$(OBJ_EXT)
@@ -198,7 +198,6 @@ SOLVER_HFILES = cvode_solver.h \
                 model_help.h \
                 nonlinearSystem.h \
                 nonlinearValuesList.h \
-                radau.h \
                 solver_main.h \
                 spatialDistribution.h \
                 stateset.h \
@@ -262,6 +261,7 @@ else
   SIM_OBJS_C_FMI=
 endif
 SIM_OBJS_C = $(SIM_OBJS_C_FMI) \
+             arrayIndex$(OBJ_EXT) \
              jacobian_util$(OBJ_EXT) \
              omc_simulation_util$(OBJ_EXT) \
              options$(OBJ_EXT) \
@@ -269,15 +269,16 @@ SIM_OBJS_C = $(SIM_OBJS_C_FMI) \
              simulation_omc_assert$(OBJ_EXT)
 SIM_HFILES = ../dataReconciliation/dataReconciliation.h \
              ../linearization/linearize.h \
+             arrayIndex.h \
+             jacobian_util.h \
              modelinfo.h \
              omc_simulation_util.h \
+             options.h \
              simulation_info_json.h \
              simulation_input_xml.h \
              simulation_omc_assert.h \
              simulation_runtime.h \
-             socket.h \
-             options.h \
-             jacobian_util.h
+             socket.h
 
 FMIPATH = ./fmi/
 FMI_OBJS = FMICommon$(OBJ_EXT) FMI1Common$(OBJ_EXT) FMI1ModelExchange$(OBJ_EXT) FMI1CoSimulation$(OBJ_EXT) FMI2Common$(OBJ_EXT) FMI2ModelExchange$(OBJ_EXT)
@@ -338,9 +339,10 @@ endif
 
 ifneq ($(OMC_NUM_LINEAR_SYSTEMS)$(OMC_NUM_NONLINEAR_SYSTEMS),00)
 ifneq ($(NEED_DGESV),)
-LAPACK_OBJS = dgesv dgetrf dlamch ilaenv xerbla dgetf2 dgetrs dlaswp ieeeck iparmq
-BLAS_OBJS = dgemm dger dscal dswap dtrsm idamax lsame
-LIBF2C_OBJS = i_nint pow_di s_cmp s_copy
+LAPACK_OBJS = dgesv dgetrf dgetri dtrtri dtrti2 dlamch ilaenv xerbla dgetf2 dgetrs dlaswp ieeeck iparmq
+BLAS_OBJS = dgemm dger dgemv dscal dswap dtrsm dtrmm dtrmv idamax lsame
+## order matters exit_.c should be last
+LIBF2C_OBJS = i_nint pow_di s_cmp s_copy s_cat F77_aloc exit_
 DGESV_OBJS = $(LAPACK_OBJS) $(BLAS_OBJS) $(LIBF2C_OBJS)
 endif
 endif

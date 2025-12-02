@@ -1,7 +1,6 @@
 // name:     Skew
 // keywords: skew
 // status:   correct
-// cflags: -d=-newInst
 //
 // Tests the builtin skew function.
 //
@@ -11,6 +10,7 @@ model Skew
   output Real rm[3,3];
 equation
   rm = skew(rv);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Skew;
 
 // Result:

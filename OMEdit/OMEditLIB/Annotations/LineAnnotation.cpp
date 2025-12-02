@@ -42,7 +42,7 @@
 #include <QMessageBox>
 
 LineAnnotation::LineAnnotation(QString annotation, GraphicsView *pGraphicsView)
-  : ShapeAnnotation(false, pGraphicsView, 0, 0)
+  : ShapeAnnotation(false, pGraphicsView, 0)
 {
   mpOriginItem = new OriginItem(this);
   mpOriginItem->setPassive();
@@ -75,7 +75,7 @@ LineAnnotation::LineAnnotation(QString annotation, GraphicsView *pGraphicsView)
 }
 
 LineAnnotation::LineAnnotation(ModelInstance::Line *pLine, bool inherited, GraphicsView *pGraphicsView)
-  : ShapeAnnotation(inherited, pGraphicsView, 0, 0)
+  : ShapeAnnotation(inherited, pGraphicsView, 0)
 {
   mpOriginItem = new OriginItem(this);
   mpOriginItem->setPassive();
@@ -106,33 +106,6 @@ LineAnnotation::LineAnnotation(ModelInstance::Line *pLine, bool inherited, Graph
   ShapeAnnotation::setUserDefaults();
   parseShapeAnnotation();
   setShapeFlags(true);
-}
-
-LineAnnotation::LineAnnotation(ShapeAnnotation *pShapeAnnotation, Element *pParent)
-  : ShapeAnnotation(pShapeAnnotation, pParent)
-{
-  mpOriginItem = 0;
-  updateShape(pShapeAnnotation);
-  setLineType(LineAnnotation::ComponentType);
-  setStartElement(0);
-  setStartElementName("");
-  setEndElement(0);
-  setEndElementName("");
-  mStartAndEndElementsSelected = false;
-  setCondition("");
-  setImmediate(true);
-  setReset(true);
-  setSynchronize(false);
-  setPriority(1);
-  mpTextAnnotation = 0;
-  setOldAnnotation("");
-  setDelay("");
-  setZf("");
-  setZfr("");
-  setAlpha("");
-  setOMSConnectionType(oms_connection_single);
-  setActiveState(false);
-  applyTransformation();
 }
 
 LineAnnotation::LineAnnotation(ModelInstance::Line *pLine, Element *pParent)
@@ -168,19 +141,8 @@ LineAnnotation::LineAnnotation(ModelInstance::Line *pLine, Element *pParent)
   applyTransformation();
 }
 
-LineAnnotation::LineAnnotation(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView)
-  : ShapeAnnotation(true, pGraphicsView, pShapeAnnotation, 0)
-{
-  mpOriginItem = new OriginItem(this);
-  mpOriginItem->setPassive();
-  updateShape(pShapeAnnotation);
-  setShapeFlags(true);
-  mpGraphicsView->addItem(this);
-  mpGraphicsView->addItem(mpOriginItem);
-}
-
 LineAnnotation::LineAnnotation(LineAnnotation::LineType lineType, Element *pStartElement, GraphicsView *pGraphicsView)
-  : ShapeAnnotation(false, pGraphicsView, 0, 0)
+  : ShapeAnnotation(false, pGraphicsView, 0)
 {
   mpOriginItem = 0;
   mLineType = lineType;
@@ -208,7 +170,7 @@ LineAnnotation::LineAnnotation(LineAnnotation::LineType lineType, Element *pStar
      * Or use black color if no shape is found even in inheritance.
      * Dymola is doing it the way explained above. The Modelica specification doesn't say anything about it.
      */
-    if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
+    if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isModelica()) {
       if (pStartElement->getShapesList().size() > 0) {
         mLineColor = pStartElement->getShapesList().at(0)->getLineColor();
       } else {
@@ -228,33 +190,10 @@ LineAnnotation::LineAnnotation(LineAnnotation::LineType lineType, Element *pStar
   // set the graphics view
   mpGraphicsView->addItem(this);
   setOldAnnotation("");
-
-  ElementInfo *pInfo = getStartElement()->getElementInfo();
-  if (pInfo) {
-    bool tlm = (pInfo->getTLMCausality() == "Bidirectional");
-    int dimensions = pInfo->getDimensions();
-
-    setDelay("1e-4");
-    if(tlm && dimensions>1) {         //3D connection, use Zf and Zfr
-      setZf("10000");
-      setZfr("100");
-      setAlpha("0.2");
-    }
-    else if(tlm && dimensions == 1) { //1D connection, only Zf
-      setZf("10000");
-      setZfr("");
-      setAlpha("0.2");
-    }
-    else {                            //Signal connection, no TLM parameters
-      setZf("");
-      setZfr("");
-      setAlpha("");
-    }
-  }
 }
 
 LineAnnotation::LineAnnotation(QString annotation, Element *pStartComponent, Element *pEndComponent, GraphicsView *pGraphicsView)
-  : ShapeAnnotation(false, pGraphicsView, 0, 0)
+  : ShapeAnnotation(false, pGraphicsView, 0)
 {
   mpOriginItem = 0;
   setFlag(QGraphicsItem::ItemIsSelectable);
@@ -297,7 +236,7 @@ LineAnnotation::LineAnnotation(QString annotation, Element *pStartComponent, Ele
 }
 
 LineAnnotation::LineAnnotation(ModelInstance::Connection *pConnection, Element *pStartComponent, Element *pEndComponent, bool inherited, GraphicsView *pGraphicsView)
-  : ShapeAnnotation(inherited, pGraphicsView, 0, 0)
+  : ShapeAnnotation(inherited, pGraphicsView, 0)
 {
   mpOriginItem = 0;
   setFlag(QGraphicsItem::ItemIsSelectable);
@@ -342,7 +281,7 @@ LineAnnotation::LineAnnotation(ModelInstance::Connection *pConnection, Element *
 
 LineAnnotation::LineAnnotation(QString annotation, QString text, Element *pStartComponent, Element *pEndComponent, QString condition,
                                QString immediate, QString reset, QString synchronize, QString priority, GraphicsView *pGraphicsView)
-  : ShapeAnnotation(false, pGraphicsView, 0, 0)
+  : ShapeAnnotation(false, pGraphicsView, 0)
 {
   mpOriginItem = 0;
   setFlag(QGraphicsItem::ItemIsSelectable);
@@ -385,7 +324,7 @@ LineAnnotation::LineAnnotation(QString annotation, QString text, Element *pStart
 }
 
 LineAnnotation::LineAnnotation(ModelInstance::Transition *pTransition, Element *pStartComponent, Element *pEndComponent, bool inherited, GraphicsView *pGraphicsView)
-  : ShapeAnnotation(inherited, pGraphicsView, 0, 0)
+  : ShapeAnnotation(inherited, pGraphicsView, 0)
 {
   mpOriginItem = 0;
   setFlag(QGraphicsItem::ItemIsSelectable);
@@ -433,7 +372,7 @@ LineAnnotation::LineAnnotation(ModelInstance::Transition *pTransition, Element *
 }
 
 LineAnnotation::LineAnnotation(QString annotation, Element *pComponent, GraphicsView *pGraphicsView)
-  : ShapeAnnotation(false, pGraphicsView, 0, 0)
+  : ShapeAnnotation(false, pGraphicsView, 0)
 {
   mpOriginItem = 0;
   setFlag(QGraphicsItem::ItemIsSelectable);
@@ -476,7 +415,7 @@ LineAnnotation::LineAnnotation(QString annotation, Element *pComponent, Graphics
 }
 
 LineAnnotation::LineAnnotation(ModelInstance::InitialState *pInitialState, Element *pComponent, bool inherited, GraphicsView *pGraphicsView)
-  : ShapeAnnotation(inherited, pGraphicsView, 0, 0)
+  : ShapeAnnotation(inherited, pGraphicsView, 0)
 {
   mpOriginItem = 0;
   setFlag(QGraphicsItem::ItemIsSelectable);
@@ -520,7 +459,7 @@ LineAnnotation::LineAnnotation(ModelInstance::InitialState *pInitialState, Eleme
 }
 
 LineAnnotation::LineAnnotation(Element *pParent)
-  : ShapeAnnotation(0, pParent)
+  : ShapeAnnotation(pParent)
 {
   mpOriginItem = 0;
   setLineType(LineAnnotation::ComponentType);
@@ -561,7 +500,7 @@ LineAnnotation::LineAnnotation(Element *pParent)
 }
 
 LineAnnotation::LineAnnotation(GraphicsView *pGraphicsView)
-  : ShapeAnnotation(true, pGraphicsView, 0, 0)
+  : ShapeAnnotation(true, pGraphicsView, 0)
 {
   mpOriginItem = 0;
   setLineType(LineAnnotation::ShapeType);
@@ -637,26 +576,27 @@ void LineAnnotation::parseShapeAnnotation(QString annotation)
 
 void LineAnnotation::parseShapeAnnotation()
 {
-  GraphicItem::parseShapeAnnotation(mpLine);
+  GraphicsView *pGraphicsView = getContainingGraphicsView();
+  GraphicItem::parseShapeAnnotation(mpLine, pGraphicsView);
 
   mPoints = mpLine->getPoints();
   // add geometries for points
   for (int i = 0 ; i < mPoints.size() ; i++) {
     addGeometry();
   }
-  mPoints.evaluate(mpLine->getParentModel());
+  mPoints.evaluate(pGraphicsView->getModelWidget()->getModelInstance());
   mLineColor = mpLine->getColor();
-  mLineColor.evaluate(mpLine->getParentModel());
+  mLineColor.evaluate(pGraphicsView->getModelWidget()->getModelInstance());
   mLinePattern = mpLine->getPattern();
-  mLinePattern.evaluate(mpLine->getParentModel());
+  mLinePattern.evaluate(pGraphicsView->getModelWidget()->getModelInstance());
   mLineThickness = mpLine->getThickness();
-  mLineThickness.evaluate(mpLine->getParentModel());
+  mLineThickness.evaluate(pGraphicsView->getModelWidget()->getModelInstance());
   mArrow = mpLine->getArrow();
-  mArrow.evaluate(mpLine->getParentModel());
+  mArrow.evaluate(pGraphicsView->getModelWidget()->getModelInstance());
   mArrowSize = mpLine->getArrowSize();
-  mArrowSize.evaluate(mpLine->getParentModel());
+  mArrowSize.evaluate(pGraphicsView->getModelWidget()->getModelInstance());
   mSmooth = mpLine->getSmooth();
-  mSmooth.evaluate(mpLine->getParentModel());
+  mSmooth.evaluate(pGraphicsView->getModelWidget()->getModelInstance());
 }
 
 QPainterPath LineAnnotation::getShape() const
@@ -721,6 +661,8 @@ void LineAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsItem *op
       if ((mpStartElement && mpStartElement->getModelComponent() && !mpStartElement->getModelComponent()->getCondition())
           || (mpEndElement && mpEndElement->getModelComponent() && !mpEndElement->getModelComponent()->getCondition())) {
         painter->setOpacity(0.3);
+      } else {
+        painter->setOpacity(1.0);
       }
     }
     drawAnnotation(painter);
@@ -740,23 +682,38 @@ void LineAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsItem *op
       foreach (LineAnnotation *pConnection, mCollidingConnections) {
         if (pConnection) {
           PointArrayAnnotation points = pConnection->getPoints();
-          for (int i = 0; i < mPoints.size(); ++i) {
-            for (int j = 0; j < points.size(); ++j) {
-              if ((mPoints.size() > i + 1) && (points.size() > j + 1)) {
-                QLineF line1(mPoints.at(i), mPoints.at(i + 1));
-                QLineF line2(points.at(j), points.at(j + 1));
-                QPointF intersectionPoint;
-  #if (QT_VERSION >= QT_VERSION_CHECK(5, 14, 0))
-                QLineF::IntersectionType type = line1.intersects(line2, &intersectionPoint);
-  #else // < Qt 5.14
-                QLineF::IntersectType type = line1.intersect(line2, &intersectionPoint);
-  #endif // QT_VERSION_CHECK
-                if (type == QLineF::BoundedIntersection) {
-                  painter->save();
-                  painter->setPen(Qt::NoPen);
-                  painter->setBrush(QBrush(mLineColor));
-                  painter->drawEllipse(intersectionPoint, 0.75, 0.75);
-                  painter->restore();
+          if (mPoints.size() > 1 && points.size() > 1) {
+            const QPointF firstPoint1 = mPoints.at(0);
+            const QPointF lastPoint1 = mPoints.at(mPoints.size() - 1);
+            const QPointF firstPoint2 = points.at(0);
+            const QPointF lastPoint2 = points.at(points.size() - 1);
+            for (int i = 0; i < mPoints.size(); ++i) {
+              for (int j = 0; j < points.size(); ++j) {
+                if ((mPoints.size() > i + 1) && (points.size() > j + 1)) {
+                  QLineF line1(mPoints.at(i), mPoints.at(i + 1));
+                  QLineF line2(points.at(j), points.at(j + 1));
+                  QPointF intersectionPoint;
+    #if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
+                  QLineF::IntersectionType type = line1.intersects(line2, &intersectionPoint);
+    #else // < Qt 5.14
+                  QLineF::IntersectType type = line1.intersect(line2, &intersectionPoint);
+    #endif // QT_VERSION_CHECK
+                  /* Issue #12399. Exclude first and last points.
+                   * Do not draw the node on colliding connection when the intersectionPoint is same as first or last point of connection.
+                   */
+                  if (type == QLineF::BoundedIntersection
+                      && intersectionPoint != firstPoint1
+                      && intersectionPoint != lastPoint1
+                      && intersectionPoint != firstPoint2
+                      && intersectionPoint != lastPoint2) {
+                    // draw the intersection point node with 50% increased width
+                    int radii = qCeil(painter->pen().widthF() * 1.5);
+                    painter->save();
+                    painter->setPen(Qt::NoPen);
+                    painter->setBrush(QBrush(mLineColor));
+                    painter->drawEllipse(intersectionPoint, radii, radii);
+                    painter->restore();
+                  }
                 }
               }
             }
@@ -1078,30 +1035,31 @@ QString LineAnnotation::getShapeAnnotation()
 }
 
 /*!
- * \brief LineAnnotation::getCompositeModelShapeAnnotation
+ * \brief LineAnnotation::getShapeAnnotationJSON
+ * Returns Line annotation in JSON format.
  * \return
  */
-QString LineAnnotation::getCompositeModelShapeAnnotation()
+QJsonObject LineAnnotation::getShapeAnnotationJSON()
 {
-  QStringList annotationString;
-  annotationString.append(GraphicItem::getShapeAnnotation());
-  // get points
-  QString pointsString;
-  if (mPoints.size() > 0) {
-    pointsString.append("{");
-  }
-  for (int i = 0 ; i < mPoints.size() ; i++) {
-    pointsString.append("{").append(QString::number(mPoints[i].x())).append(",");
-    pointsString.append(QString::number(mPoints[i].y())).append("}");
-    if (i < mPoints.size() - 1) {
-      pointsString.append(",");
+  QJsonObject lineAttributes;
+  lineAttributes.insert("points", mPoints.serialize());
+  lineAttributes.insert("color", mLineColor.serialize());
+  lineAttributes.insert("pattern", mLinePattern.serialize());
+  lineAttributes.insert("thickness", mLineThickness.serialize());
+  lineAttributes.insert("arrow", mArrow.serialize());
+  lineAttributes.insert("arrowSize", mArrowSize.serialize());
+  lineAttributes.insert("smooth", mSmooth.serialize());
+
+  QJsonObject shapeAnnotationJson;
+  shapeAnnotationJson.insert("Line", lineAttributes);
+
+  if (mpTextAnnotation) {
+    QJsonObject textAnnotationJson = mpTextAnnotation->getShapeAnnotationJSON();
+    if (!textAnnotationJson.isEmpty()) {
+      shapeAnnotationJson.insert("Text", textAnnotationJson);
     }
   }
-  if (mPoints.size() > 0) {
-    pointsString.append("}");
-    annotationString.append(pointsString);
-  }
-  return annotationString.join(",");
+  return shapeAnnotationJson;
 }
 
 void LineAnnotation::addPoint(QPointF point)
@@ -1166,7 +1124,7 @@ void LineAnnotation::clearPoints()
 void LineAnnotation::updateStartPoint(QPointF point)
 {
   prepareGeometryChange();
-  manhattanizeShape();
+  manhattanizeShape(false);
   removeRedundantPointsGeometriesAndCornerItems();
   qreal dx = point.x() - mPoints[0].x();
   qreal dy = point.y() - mPoints[0].y();
@@ -1282,11 +1240,13 @@ void LineAnnotation::setShapeFlags(bool enable)
        || mLineType == LineAnnotation::InitialStateType || mLineType == LineAnnotation::ShapeType)
       && mpGraphicsView) {
     /* Only set the ItemIsMovable & ItemSendsGeometryChanges flags on Line if the class is not a system library class
+     * AND model not in element mode
      * AND not a visualization view
      * AND Line is not an inherited Line AND Line type is not ConnectionType.
      */
     bool isSystemLibrary = mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isSystemLibrary();
-    if (!isSystemLibrary && !mpGraphicsView->isVisualizationView() && !isInheritedShape() && mLineType != LineAnnotation::ConnectionType &&
+    bool isElementMode = mpGraphicsView->getModelWidget()->isElementMode();
+    if (!isSystemLibrary && !isElementMode && !mpGraphicsView->isVisualizationView() && !isInheritedShape() && mLineType != LineAnnotation::ConnectionType &&
         mLineType != LineAnnotation::TransitionType && mLineType != LineAnnotation::InitialStateType) {
       setFlag(QGraphicsItem::ItemIsMovable, enable);
       setFlag(QGraphicsItem::ItemSendsGeometryChanges, enable);
@@ -1406,10 +1366,6 @@ void LineAnnotation::showOMSConnection()
       && (mpEndElement && mpEndElement->getLibraryTreeItem()->getOMSBusConnector())) {
     BusConnectionDialog *pBusConnectionDialog = new BusConnectionDialog(mpGraphicsView, this, false);
     pBusConnectionDialog->exec();
-  } else if ((mpStartElement && mpStartElement->getLibraryTreeItem()->getOMSTLMBusConnector())
-             && (mpEndElement && mpEndElement->getLibraryTreeItem()->getOMSTLMBusConnector())) {
-    TLMConnectionDialog *pTLMBusConnectionDialog = new TLMConnectionDialog(mpGraphicsView, this, false);
-    pTLMBusConnectionDialog->exec();
   }
 }
 
@@ -1453,14 +1409,18 @@ void LineAnnotation::handleCollidingConnections()
   QList<QGraphicsItem*> items = collidingItems(Qt::IntersectsItemShape);
   for (int i = 0; i < items.size(); ++i) {
     if (Element *pElement = dynamic_cast<Element*>(items.at(i))) {
-      if ((mpGraphicsView->getModelWidget()->isNewApi() && pElement->getModel() && pElement->getModel()->isConnector())
-          || (pElement->getLibraryTreeItem() && pElement->getLibraryTreeItem()->isConnector())) {
+      if (pElement->isConnector()
+          || (pElement->getLibraryTreeItem() && (pElement->getLibraryTreeItem()->getOMSConnector() || pElement->getLibraryTreeItem()->getOMSBusConnector()))) {
         mCollidingConnectorElements.append(pElement);
       }
     } else if (LineAnnotation *pConnectionAnnotation = dynamic_cast<LineAnnotation*>(items.at(i))) {
+      /* Issue #14335
+       * We check start and end element names to avoid adding connections which are not connected to the same component as colliding connections.
+       * We have array elements as connectors so we cannot compare the pointers of start and end elements.
+       */
       if (mSmooth != StringHandler::SmoothBezier && pConnectionAnnotation->getSmooth() != StringHandler::SmoothBezier && pConnectionAnnotation->isConnection()
-          && (mpStartElement == pConnectionAnnotation->getStartElement() || mpStartElement == pConnectionAnnotation->getEndElement()
-              || mpEndElement == pConnectionAnnotation->getStartElement() || mpEndElement == pConnectionAnnotation->getEndElement())) {
+          && (mStartElementName == pConnectionAnnotation->getStartElementName() || mStartElementName == pConnectionAnnotation->getEndElementName()
+              || mEndElementName == pConnectionAnnotation->getStartElementName() || mEndElementName == pConnectionAnnotation->getEndElementName())) {
         mCollidingConnections.append(pConnectionAnnotation);
       }
     }
@@ -1485,21 +1445,6 @@ PointArrayAnnotation LineAnnotation::adjustPointsForDrawing() const
     }
   }
   return points;
-}
-
-QVariant LineAnnotation::itemChange(GraphicsItemChange change, const QVariant &value)
-{
-  ShapeAnnotation::itemChange(change, value);
-#if !defined(WITHOUT_OSG)
-  if (change == QGraphicsItem::ItemSelectedHasChanged) {
-
-    // if connection selection is changed in CompositeModel
-    if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::CompositeModel) {
-      MainWindow::instance()->getModelWidgetContainer()->updateThreeDViewer(mpGraphicsView->getModelWidget());
-    }
-  }
-#endif
-  return value;
 }
 
 /*!
@@ -1569,20 +1514,11 @@ void LineAnnotation::handleComponentMoved(bool positionChanged)
  */
 void LineAnnotation::updateConnectionAnnotation()
 {
-  if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getLibraryType()== LibraryTreeItem::CompositeModel) {
-    CompositeModelEditor *pCompositeModelEditor = dynamic_cast<CompositeModelEditor*>(mpGraphicsView->getModelWidget()->getEditor());
-    pCompositeModelEditor->updateConnection(this);
-  } else {
-    // update the ModelInstance::Line with new annotation
-    if (mpGraphicsView->getModelWidget()->isNewApi()) {
-      updateLine();
-    }
-    // get the connection line annotation.
-    QString annotationString = QString("annotate=$annotation(%1)").arg(getShapeAnnotation());
-    // update the connection
-    OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
-    pOMCProxy->updateConnection(mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure(), getStartElementName(), getEndElementName(), annotationString);
-  }
+  // get the connection line annotation.
+  QString annotationString = QString("annotate=$annotation(%1)").arg(getShapeAnnotation());
+  // update the connection
+  OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
+  pOMCProxy->updateConnection(mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure(), getStartElementName(), getEndElementName(), annotationString);
 }
 
 /*!
@@ -1604,7 +1540,7 @@ void LineAnnotation::updateConnectionTransformation()
     mStartAndEndElementsSelected = false;
   }
 
-  if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
+  if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isSSP()) {
     updateOMSConnection();
   } else {
     if (!mOldAnnotation.isEmpty()) {
@@ -1648,27 +1584,6 @@ void LineAnnotation::updateInitialStateAnnotation()
   pOMCProxy->updateInitialState(mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure(), getStartElementName(), annotationString);
 }
 
-/*!
- * \brief LineAnnotation::duplicate
- * Duplicates the shape.
- */
-void LineAnnotation::duplicate()
-{
-  LineAnnotation *pLineAnnotation = new LineAnnotation("", mpGraphicsView);
-  pLineAnnotation->updateShape(this);
-  QPointF gridStep(mpGraphicsView->mMergedCoOrdinateSystem.getHorizontalGridStep() * 5,
-                   mpGraphicsView->mMergedCoOrdinateSystem.getVerticalGridStep() * 5);
-  pLineAnnotation->setOrigin(mOrigin + gridStep);
-  pLineAnnotation->drawCornerItems();
-  pLineAnnotation->setCornerItemsActiveOrPassive();
-  pLineAnnotation->applyTransformation();
-  pLineAnnotation->update();
-  mpGraphicsView->getModelWidget()->getUndoStack()->push(new AddShapeCommand(pLineAnnotation));
-  mpGraphicsView->getModelWidget()->getLibraryTreeItem()->emitShapeAdded(pLineAnnotation, mpGraphicsView);
-  setSelected(false);
-  pLineAnnotation->setSelected(true);
-}
-
 void LineAnnotation::redraw(const QString& annotation, std::function<void()> updateAnnotationFunction)
 {
   prepareGeometryChange();
@@ -1678,7 +1593,6 @@ void LineAnnotation::redraw(const QString& annotation, std::function<void()> upd
   applyTransformation();
   adjustGeometries();
   setCornerItemsActiveOrPassive();
-  emitChanged();
   updateAnnotationFunction();
 }
 
@@ -1699,6 +1613,7 @@ ExpandableConnectorTreeItem::ExpandableConnectorTreeItem()
   setArrayIndexes(QStringList());
   setRestriction(StringHandler::Model);
   setNewVariable(false);
+  setInherited(false);
 }
 
 /*!
@@ -1709,10 +1624,11 @@ ExpandableConnectorTreeItem::ExpandableConnectorTreeItem()
  * \param arrayIndex
  * \param restriction
  * \param newVariable
+ * \param inherited
  * \param pParentExpandableConnectorTreeItem
  */
 ExpandableConnectorTreeItem::ExpandableConnectorTreeItem(QString name, bool array, QStringList arrayIndexes, StringHandler::ModelicaClasses restriction, bool newVariable,
-                                                         ExpandableConnectorTreeItem *pParentExpandableConnectorTreeItem)
+                                                         bool inherited, ExpandableConnectorTreeItem *pParentExpandableConnectorTreeItem)
 {
   mIsRootItem = false;
   mpParentExpandableConnectorTreeItem = pParentExpandableConnectorTreeItem;
@@ -1721,6 +1637,7 @@ ExpandableConnectorTreeItem::ExpandableConnectorTreeItem(QString name, bool arra
   setArrayIndexes(arrayIndexes);
   setRestriction(restriction);
   setNewVariable(newVariable);
+  setInherited(inherited);
 }
 
 /*!
@@ -1923,7 +1840,6 @@ QVariant ExpandableConnectorTreeModel::data(const QModelIndex &index, int role) 
     return QVariant();
   }
 
-
   ExpandableConnectorTreeItem *pExpandableConnectorTreeItem = static_cast<ExpandableConnectorTreeItem*>(index.internalPointer());
   return pExpandableConnectorTreeItem->data(index.column(), role);
 }
@@ -1937,9 +1853,10 @@ QVariant ExpandableConnectorTreeModel::data(const QModelIndex &index, int role) 
 Qt::ItemFlags ExpandableConnectorTreeModel::flags(const QModelIndex &index) const
 {
   ExpandableConnectorTreeItem *pExpandableConnectorTreeItem = static_cast<ExpandableConnectorTreeItem*>(index.internalPointer());
-  if (pExpandableConnectorTreeItem &&
-      ((pExpandableConnectorTreeItem->getRestriction() == StringHandler::ExpandableConnector) ||
-      (pExpandableConnectorTreeItem->parent() && pExpandableConnectorTreeItem->parent()->getRestriction() == StringHandler::ExpandableConnector))) {
+  if (pExpandableConnectorTreeItem
+      && !pExpandableConnectorTreeItem->isInherited()
+      && ((pExpandableConnectorTreeItem->getRestriction() == StringHandler::ExpandableConnector)
+          || (pExpandableConnectorTreeItem->parent() && pExpandableConnectorTreeItem->parent()->getRestriction() == StringHandler::ExpandableConnector))) {
     return Qt::ItemIsEnabled | Qt::ItemIsSelectable;
   } else {
     return Qt::ItemFlags();
@@ -1983,70 +1900,41 @@ QModelIndex ExpandableConnectorTreeModel::expandableConnectorTreeItemIndex(const
  * Creates the ExpandableConnectorTreeItem
  * \param pModelElement
  * \param pParentExpandableConnectorTreeItem
+ * \param inherited
  */
-void ExpandableConnectorTreeModel::createExpandableConnectorTreeItem(ModelInstance::Component *pModelComponent, ExpandableConnectorTreeItem *pParentExpandableConnectorTreeItem)
+void ExpandableConnectorTreeModel::createExpandableConnectorTreeItem(ModelInstance::Element *pModelElement, bool inherited,
+                                                                     ExpandableConnectorTreeItem *pParentExpandableConnectorTreeItem)
 {
   StringHandler::ModelicaClasses restriction = StringHandler::Model;
-  if (pModelComponent->getModel()) {
-    restriction = StringHandler::getModelicaClassType(pModelComponent->getModel()->getRestriction());
+  if (pModelElement->getModel()) {
+    restriction = StringHandler::getModelicaClassType(pModelElement->getModel()->getRestriction());
   }
-  ExpandableConnectorTreeItem *pExpandableConnectorTreeItem = new ExpandableConnectorTreeItem(pModelComponent->getName(), pModelComponent->getDimensions().isArray(),
-                                                                                              pModelComponent->getDimensions().getTypedDimensions(),
-                                                                                              restriction, false, pParentExpandableConnectorTreeItem);
-  int row = pParentExpandableConnectorTreeItem->getChildren().size();
-  QModelIndex index = expandableConnectorTreeItemIndex(pParentExpandableConnectorTreeItem);
-  beginInsertRows(index, row, row);
-  pParentExpandableConnectorTreeItem->insertChild(row, pExpandableConnectorTreeItem);
-  endInsertRows();
-  if (pModelComponent->getModel()) {
-    QList<ModelInstance::Element*> elements = pModelComponent->getModel()->getElements();
+  ExpandableConnectorTreeItem *pExpandableConnectorTreeItem = 0;
+  if (pModelElement->isComponent()) {
+    pExpandableConnectorTreeItem = new ExpandableConnectorTreeItem(pModelElement->getName(), pModelElement->getDimensions().isArray(),
+                                                                   pModelElement->getDimensions().getTypedDimensions(), restriction, false, inherited,
+                                                                   pParentExpandableConnectorTreeItem);
+    int row = pParentExpandableConnectorTreeItem->getChildren().size();
+    QModelIndex index = expandableConnectorTreeItemIndex(pParentExpandableConnectorTreeItem);
+    beginInsertRows(index, row, row);
+    pParentExpandableConnectorTreeItem->insertChild(row, pExpandableConnectorTreeItem);
+    endInsertRows();
+  }
+  if (pModelElement->getModel()) {
+    QList<ModelInstance::Element*> elements = pModelElement->getModel()->getElements();
     foreach (auto pChildModelElement, elements) {
-      if (pChildModelElement->isComponent()) {
-        auto pChildModelComponent = dynamic_cast<ModelInstance::Component*>(pChildModelElement);
-        createExpandableConnectorTreeItem(pChildModelComponent, pExpandableConnectorTreeItem);
+      // Issue #12548. List the elements of expandable connector class and all the expandable connectors of the class including the inherited ones.
+      if (pModelElement->getModel()->isExpandableConnector() || pChildModelElement->isExtend()
+          || (pChildModelElement->getModel() && pChildModelElement->getModel()->isExpandableConnector())) {
+        createExpandableConnectorTreeItem(pChildModelElement, inherited || pChildModelElement->isExtend(),
+                                          pExpandableConnectorTreeItem ? pExpandableConnectorTreeItem : pParentExpandableConnectorTreeItem);
       }
     }
   }
   // create add variable item only if item is expandable connector
-  if (pExpandableConnectorTreeItem->getRestriction() == StringHandler::ExpandableConnector) {
+  if (pExpandableConnectorTreeItem && !pExpandableConnectorTreeItem->isInherited() && pExpandableConnectorTreeItem->getRestriction() == StringHandler::ExpandableConnector) {
     ExpandableConnectorTreeItem *pNewVariableExpandableConnectorTreeItem = new ExpandableConnectorTreeItem(Helper::newVariable, false, QStringList(), StringHandler::Model,
-                                                                                                           true, pExpandableConnectorTreeItem);
-    int row = pExpandableConnectorTreeItem->getChildren().size();
-    QModelIndex index = expandableConnectorTreeItemIndex(pExpandableConnectorTreeItem);
-    beginInsertRows(index, row, row);
-    pExpandableConnectorTreeItem->insertChild(row, pNewVariableExpandableConnectorTreeItem);
-    endInsertRows();
-  }
-}
-
-/*!
- * \brief ExpandableConnectorTreeModel::createExpandableConnectorTreeItem
- * Creates the ExpandableConnectorTreeItem
- * \param pElement
- * \param pParentExpandableConnectorTreeItem
- */
-void ExpandableConnectorTreeModel::createExpandableConnectorTreeItem(Element *pElement, ExpandableConnectorTreeItem *pParentExpandableConnectorTreeItem)
-{
-  StringHandler::ModelicaClasses restriction = StringHandler::Model;
-  if (pElement->getLibraryTreeItem()) {
-    restriction = pElement->getLibraryTreeItem()->getRestriction();
-  }
-  ExpandableConnectorTreeItem *pExpandableConnectorTreeItem = new ExpandableConnectorTreeItem(pElement->getName(), pElement->isArray(), pElement->getTypedArrayIndexes(), restriction,
-                                                                                              false, pParentExpandableConnectorTreeItem);
-  int row = pParentExpandableConnectorTreeItem->getChildren().size();
-  QModelIndex index = expandableConnectorTreeItemIndex(pParentExpandableConnectorTreeItem);
-  beginInsertRows(index, row, row);
-  pParentExpandableConnectorTreeItem->insertChild(row, pExpandableConnectorTreeItem);
-  endInsertRows();
-  if (pElement->getLibraryTreeItem() && pElement->getLibraryTreeItem()->getModelWidget()) {
-    foreach (Element *pChildElement, pElement->getLibraryTreeItem()->getModelWidget()->getDiagramGraphicsView()->getElementsList()) {
-      createExpandableConnectorTreeItem(pChildElement, pExpandableConnectorTreeItem);
-    }
-  }
-  // create add variable item only if item is expandable connector
-  if (pExpandableConnectorTreeItem->getRestriction() == StringHandler::ExpandableConnector) {
-    ExpandableConnectorTreeItem *pNewVariableExpandableConnectorTreeItem = new ExpandableConnectorTreeItem(Helper::newVariable, false, QStringList(), StringHandler::Model,
-                                                                                                           true, pExpandableConnectorTreeItem);
+                                                                                                           true, false, pExpandableConnectorTreeItem);
     int row = pExpandableConnectorTreeItem->getChildren().size();
     QModelIndex index = expandableConnectorTreeItemIndex(pExpandableConnectorTreeItem);
     beginInsertRows(index, row, row);
@@ -2108,8 +1996,8 @@ ExpandableConnectorTreeView::ExpandableConnectorTreeView(CreateConnectionDialog 
  * \param pConnectionLineAnnotation
  * \param pParent
  */
-CreateConnectionDialog::CreateConnectionDialog(GraphicsView *pGraphicsView, LineAnnotation *pConnectionLineAnnotation, QWidget *pParent)
-  : QDialog(pParent), mpGraphicsView(pGraphicsView), mpConnectionLineAnnotation(pConnectionLineAnnotation)
+CreateConnectionDialog::CreateConnectionDialog(GraphicsView *pGraphicsView, LineAnnotation *pConnectionLineAnnotation, bool createConnector, QWidget *pParent)
+    : QDialog(pParent), mpGraphicsView(pGraphicsView), mpConnectionLineAnnotation(pConnectionLineAnnotation), mCreateConnector(createConnector)
 {
   setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::createConnection));
   setAttribute(Qt::WA_DeleteOnClose);
@@ -2128,13 +2016,8 @@ CreateConnectionDialog::CreateConnectionDialog(GraphicsView *pGraphicsView, Line
     mpStartExpandableConnectorTreeProxyModel->setSourceModel(mpStartExpandableConnectorTreeModel);
     mpStartExpandableConnectorTreeView = new ExpandableConnectorTreeView(this);
     mpStartExpandableConnectorTreeView->setModel(mpStartExpandableConnectorTreeProxyModel);
-    if (mpGraphicsView->getModelWidget()->isNewApi()) {
-      mpStartExpandableConnectorTreeModel->createExpandableConnectorTreeItem(mpStartElement->getRootParentElement()->getModelComponent(),
-                                                                             mpStartExpandableConnectorTreeModel->getRootExpandableConnectorTreeItem());
-    } else {
-      mpStartExpandableConnectorTreeModel->createExpandableConnectorTreeItem(mpStartElement->getRootParentElement(),
-                                                                             mpStartExpandableConnectorTreeModel->getRootExpandableConnectorTreeItem());
-    }
+    mpStartExpandableConnectorTreeModel->createExpandableConnectorTreeItem(mpStartElement->getRootParentElement()->getModelComponent(), false,
+                                                                           mpStartExpandableConnectorTreeModel->getRootExpandableConnectorTreeItem());
     mpStartExpandableConnectorTreeView->expandAll();
     mpStartExpandableConnectorTreeView->setSortingEnabled(true);
     mpStartExpandableConnectorTreeView->sortByColumn(0, Qt::AscendingOrder);
@@ -2151,13 +2034,8 @@ CreateConnectionDialog::CreateConnectionDialog(GraphicsView *pGraphicsView, Line
     mpEndExpandableConnectorTreeProxyModel->setSourceModel(mpEndExpandableConnectorTreeModel);
     mpEndExpandableConnectorTreeView = new ExpandableConnectorTreeView(this);
     mpEndExpandableConnectorTreeView->setModel(mpEndExpandableConnectorTreeProxyModel);
-    if (mpGraphicsView->getModelWidget()->isNewApi()) {
-      mpEndExpandableConnectorTreeModel->createExpandableConnectorTreeItem(mpEndElement->getRootParentElement()->getModelComponent(),
-                                                                           mpEndExpandableConnectorTreeModel->getRootExpandableConnectorTreeItem());
-    } else {
-      mpEndExpandableConnectorTreeModel->createExpandableConnectorTreeItem(mpEndElement->getRootParentElement(),
-                                                                           mpEndExpandableConnectorTreeModel->getRootExpandableConnectorTreeItem());
-    }
+    mpEndExpandableConnectorTreeModel->createExpandableConnectorTreeItem(mpEndElement->getRootParentElement()->getModelComponent(), false,
+                                                                         mpEndExpandableConnectorTreeModel->getRootExpandableConnectorTreeItem());
     mpEndExpandableConnectorTreeView->expandAll();
     mpEndExpandableConnectorTreeView->setSortingEnabled(true);
     mpEndExpandableConnectorTreeView->sortByColumn(0, Qt::AscendingOrder);
@@ -2597,29 +2475,19 @@ void CreateConnectionDialog::createConnection()
                                                                             mpStartElement, mpStartRootElement, mStartElementSpinBoxList, mStartRootElementSpinBoxList);
   mpConnectionLineAnnotation->setStartElementName(startElementName);
   mpConnectionLineAnnotation->setEndElementName(endElementName);
-  if (mpGraphicsView->getModelWidget()->isNewApi()) {
-    if (mpGraphicsView->getModelWidget()->getModelInstance()->isValidConnection(startElementName, endElementName)) {
-      mpConnectionLineAnnotation->setLine(new ModelInstance::Line(mpGraphicsView->getModelWidget()->getModelInstance()));
-      mpConnectionLineAnnotation->updateLine();
-      mpConnectionLineAnnotation->drawCornerItems();
-      mpConnectionLineAnnotation->setCornerItemsActiveOrPassive();
-      ModelInfo oldModelInfo = mpGraphicsView->getModelWidget()->createModelInfo();
-      mpGraphicsView->addConnectionToView(mpConnectionLineAnnotation, false);
-      mpGraphicsView->addConnectionToClass(mpConnectionLineAnnotation);
-      ModelInfo newModelInfo = mpGraphicsView->getModelWidget()->createModelInfo();
-      mpGraphicsView->getModelWidget()->getUndoStack()->push(new OMCUndoCommand(mpGraphicsView->getModelWidget()->getLibraryTreeItem(), oldModelInfo, newModelInfo, "Add Connection"));
-      mpGraphicsView->getModelWidget()->updateModelText();
-    } else {
-      QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::error),
-                            GUIMessages::getMessage(GUIMessages::MISMATCHED_CONNECTORS_IN_CONNECT).arg(startElementName, endElementName), Helper::ok);
-      reject();
-    }
+  /* Issue #12163. Do not check connection validity when called from GraphicsView::createConnector
+   * GraphicsView::createConnector creates an incomplete connector. We do this for performance reasons. Avoid calling getModelInstance API.
+   * We know for sure that both connectors are compatible in this case so its okay not to check for validity.
+   */
+  if (mCreateConnector) {
+    mpGraphicsView->addConnectionToView(mpConnectionLineAnnotation, false);
+    mpGraphicsView->addConnectionToClass(mpConnectionLineAnnotation);
+    accept();
+  } else if (!mpGraphicsView->addConnectionHelper(mpConnectionLineAnnotation)) {
+    reject();
   } else {
-    mpGraphicsView->getModelWidget()->getUndoStack()->push(new AddConnectionCommand(mpConnectionLineAnnotation, true));
-    mpGraphicsView->getModelWidget()->getLibraryTreeItem()->emitConnectionAdded(mpConnectionLineAnnotation);
-    mpGraphicsView->getModelWidget()->updateModelText();
+    accept();
   }
-  accept();
 }
 
 /*!
@@ -2670,7 +2538,7 @@ CreateOrEditTransitionDialog::CreateOrEditTransitionDialog(GraphicsView *pGraphi
   // Create the buttons
   mpOkButton = new QPushButton(Helper::ok);
   mpOkButton->setAutoDefault(true);
-  if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isSystemLibrary()) {
+  if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->isSystemLibrary() || mpGraphicsView->getModelWidget()->isElementMode()) {
     mpOkButton->setDisabled(true);
   }
   connect(mpOkButton, SIGNAL(clicked()), SLOT(createOrEditTransition()));
@@ -2709,7 +2577,7 @@ void CreateOrEditTransitionDialog::createOrEditTransition()
 {
   if (mpConditionTextBox->text().isEmpty()) {
     QMessageBox::critical(mpGraphicsView, QString("%1 - %2").arg(Helper::applicationName).arg(Helper::error),
-                          GUIMessages::getMessage(GUIMessages::INVALID_TRANSITION_CONDITION), Helper::ok);
+                          GUIMessages::getMessage(GUIMessages::INVALID_TRANSITION_CONDITION), QMessageBox::Ok);
     mpConditionTextBox->setFocus(Qt::ActiveWindowFocusReason);
     return;
   }
@@ -2725,32 +2593,17 @@ void CreateOrEditTransitionDialog::createOrEditTransition()
   mpTransitionLineAnnotation->setPriority(mpPrioritySpinBox->value());
   mpTransitionLineAnnotation->getTextAnnotation()->setVisible(true);
   if (mEditCase) {
-    mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateTransitionCommand(mpTransitionLineAnnotation, oldCondition, oldImmediate,
-                                                                                       oldReset, oldSynchronize, oldPriority,
-                                                                                       mpTransitionLineAnnotation->getOMCShapeAnnotation(),
-                                                                                       mpConditionTextBox->text(),
-                                                                                       mpImmediateCheckBox->isChecked(),
-                                                                                       mpResetCheckBox->isChecked(),
-                                                                                       mpSynchronizeCheckBox->isChecked(),
-                                                                                       mpPrioritySpinBox->value(),
-                                                                                       mpTransitionLineAnnotation->getOMCShapeAnnotation()));
+    mpTransitionLineAnnotation->updateTransistion();
+    mpTransitionLineAnnotation->updateTransitionAnnotation(oldCondition, oldImmediate, oldReset, oldSynchronize, oldPriority);
+    if (!mpGraphicsView->updateTransition(mpTransitionLineAnnotation)) {
+      reject();
+    }
   } else {
-    if (mpGraphicsView->getModelWidget()->isNewApi()) {
-      mpTransitionLineAnnotation->setLine(new ModelInstance::Line(mpGraphicsView->getModelWidget()->getModelInstance()));
-      mpTransitionLineAnnotation->updateLine();
-      mpTransitionLineAnnotation->drawCornerItems();
-      mpTransitionLineAnnotation->setCornerItemsActiveOrPassive();
-      ModelInfo oldModelInfo = mpGraphicsView->getModelWidget()->createModelInfo();
-      mpGraphicsView->addTransitionToView(mpTransitionLineAnnotation, false);
-      mpGraphicsView->addTransitionToClass(mpTransitionLineAnnotation);
-      ModelInfo newModelInfo = mpGraphicsView->getModelWidget()->createModelInfo();
-      mpGraphicsView->getModelWidget()->getUndoStack()->push(new OMCUndoCommand(mpGraphicsView->getModelWidget()->getLibraryTreeItem(), oldModelInfo, newModelInfo, "Add Transition"));
-    } else {
-      mpGraphicsView->getModelWidget()->getUndoStack()->push(new AddTransitionCommand(mpTransitionLineAnnotation, true));
-      //mpGraphicsView->getModelWidget()->getLibraryTreeItem()->emitConnectionAdded(mpTransitionLineAnnotation);
+    mpTransitionLineAnnotation->updateTransistion();
+    if (!mpGraphicsView->addTransitionHelper(mpTransitionLineAnnotation)) {
+      reject();
     }
   }
-  mpGraphicsView->getModelWidget()->updateModelText();
   accept();
 }
 
@@ -2764,25 +2617,9 @@ void LineAnnotation::setProperties(const QString& condition, const bool immediat
   getTextAnnotation()->setTextString("%condition");
 }
 
-/*!
- * \brief LineAnnotation::updateLine
- * Updates the Line object with the annotation.
- */
-void LineAnnotation::updateLine()
-{
-  mpLine->setPoints(mPoints);
-  mpLine->setColor(mLineColor);
-  mpLine->setPattern(mLinePattern);
-  mpLine->setThickness(mLineThickness);
-  mpLine->setArrow(mArrow);
-  mpLine->setArrowSize(mArrowSize);
-  mpLine->setSmooth(mSmooth);
-}
-
-void LineAnnotation::updateTransistion(const QString& condition, const bool immediate, const bool rest, const bool synchronize, const int priority)
+void LineAnnotation::updateTransistion()
 {
   getTextAnnotation()->updateTextString();
   updateTransitionTextPosition();
-  updateTransitionAnnotation(condition, immediate, rest, synchronize, priority);
   updateToolTip();
 }

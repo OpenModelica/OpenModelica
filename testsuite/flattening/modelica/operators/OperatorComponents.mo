@@ -1,7 +1,6 @@
 // name: OperatorComponents
 // keywords: operator
 // status: correct
-// cflags: -d=-newInst
 //
 // Tests operator overloading, operators can only contain function declarations
 //
@@ -27,6 +26,7 @@ equation
   r1 = Rec(r = 2.0);
   r2 = Rec(r = 3.0);
   r3 = r1 + r2;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end OperatorComplex;
 
 // Result:

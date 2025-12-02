@@ -119,36 +119,6 @@ private:
   bool mMoveConnectorsTogether;
 };
 
-class UpdateElementAttributesCommand : public UndoCommand
-{
-public:
-  UpdateElementAttributesCommand(Element *pComponent, const ElementInfo &oldComponentInfo, const ElementInfo &newComponentInfo, UndoCommand *pParent = 0);
-  void redoInternal();
-  void undo();
-  static void updateComponentAttributes(Element *pComponent, const ElementInfo &componentInfo);
-  static void updateComponentModifiers(Element *pComponent, const ElementInfo &componentInfo);
-private:
-  Element *mpComponent;
-  ElementInfo mOldComponentInfo;
-  ElementInfo mNewComponentInfo;
-};
-
-class UpdateElementParametersCommand : public UndoCommand
-{
-public:
-  UpdateElementParametersCommand(Element *pComponent, QMap<QString, QString> oldComponentModifiersMap,
-                                   QMap<QString, QString> oldComponentExtendsModifiersMap, QMap<QString, QString> newComponentModifiersMap,
-                                   QMap<QString, QString> newComponentExtendsModifiersMap, UndoCommand *pParent = 0);
-  void redoInternal();
-  void undo();
-private:
-  Element *mpComponent;
-  QMap<QString, QString> mOldComponentModifiersMap;
-  QMap<QString, QString> mOldComponentExtendsModifiersMap;
-  QMap<QString, QString> mNewComponentModifiersMap;
-  QMap<QString, QString> mNewComponentExtendsModifiersMap;
-};
-
 class DeleteComponentCommand : public UndoCommand
 {
 public:
@@ -158,19 +128,6 @@ public:
 private:
   Element *mpComponent;
   GraphicsView *mpGraphicsView;
-  QStringList mParameterNames;
-  QStringList mParameterValues;
-};
-
-class AddConnectionCommand : public UndoCommand
-{
-public:
-  AddConnectionCommand(LineAnnotation *pConnectionLineAnnotation, bool addConnection, UndoCommand *pParent = 0);
-  void redoInternal();
-  void undo();
-private:
-  LineAnnotation *mpConnectionLineAnnotation;
-  bool mAddConnection;
 };
 
 class UpdateConnectionCommand : public UndoCommand
@@ -184,40 +141,6 @@ private:
   LineAnnotation *mpConnectionLineAnnotation;
   QString mOldAnnotation;
   QString mNewAnnotation;
-};
-
-class UpdateCompositeModelConnection : public UndoCommand
-{
-public:
-  UpdateCompositeModelConnection(LineAnnotation *pConnectionLineAnnotation, CompositeModelConnection oldCompositeModelConnection,
-                                 CompositeModelConnection newCompositeModelConnection, UndoCommand *pParent = 0);
-  void redoInternal();
-  void undo();
-private:
-  LineAnnotation *mpConnectionLineAnnotation;
-  CompositeModelConnection mOldCompositeModelConnection;
-  CompositeModelConnection mNewCompositeModelConnection;
-};
-
-class DeleteConnectionCommand : public UndoCommand
-{
-public:
-  DeleteConnectionCommand(LineAnnotation *pConnectionLineAnnotation, UndoCommand *pParent = 0);
-  void redoInternal();
-  void undo();
-private:
-  LineAnnotation *mpConnectionLineAnnotation;
-};
-
-class AddTransitionCommand : public UndoCommand
-{
-public:
-  AddTransitionCommand(LineAnnotation *pTransitionLineAnnotation, bool addTransition, UndoCommand *pParent = 0);
-  void redoInternal();
-  void undo();
-private:
-  LineAnnotation *mpTransitionLineAnnotation;
-  bool mAddTransition;
 };
 
 class UpdateTransitionCommand : public UndoCommand
@@ -247,27 +170,6 @@ private:
   QString mNewAnnotation;
 };
 
-class DeleteTransitionCommand : public UndoCommand
-{
-public:
-  DeleteTransitionCommand(LineAnnotation *pTransitionLineAnnotation, UndoCommand *pParent = 0);
-  void redoInternal();
-  void undo();
-private:
-  LineAnnotation *mpTransitionLineAnnotation;
-};
-
-class AddInitialStateCommand : public UndoCommand
-{
-public:
-  AddInitialStateCommand(LineAnnotation *pInitialStateLineAnnotation, bool addInitialState, UndoCommand *pParent = 0);
-  void redoInternal();
-  void undo();
-private:
-  LineAnnotation *mpInitialStateLineAnnotation;
-  bool mAddInitialState;
-};
-
 class UpdateInitialStateCommand : public UndoCommand
 {
 public:
@@ -281,35 +183,25 @@ private:
   QString mNewAnnotation;
 };
 
-class DeleteInitialStateCommand : public UndoCommand
+class UpdateCoordinateSystemCommand : public UndoCommand
 {
 public:
-  DeleteInitialStateCommand(LineAnnotation *pInitialStateLineAnnotation, UndoCommand *pParent = 0);
-  void redoInternal();
-  void undo();
-private:
-  LineAnnotation *mpInitialStateLineAnnotation;
-};
-
-class UpdateCoOrdinateSystemCommand : public UndoCommand
-{
-public:
-  UpdateCoOrdinateSystemCommand(GraphicsView *pGraphicsView, const CoOrdinateSystem oldCoOrdinateSystem, const CoOrdinateSystem newCoOrdinateSystem,
-                                const bool copyProperties, const QString &oldVersion, const QString &newVersion, const QString &oldUsesAnnotationString,
-                                const QString &newUsesAnnotationString, UndoCommand *pParent = 0);
+  UpdateCoordinateSystemCommand(GraphicsView *pGraphicsView, const ModelInstance::CoordinateSystem oldCoordinateSystem,
+                                const ModelInstance::CoordinateSystem newCoordinateSystem, const bool copyProperties, const QString &oldVersion,
+                                const QString &newVersion, const QString &oldUsesAnnotationString, const QString &newUsesAnnotationString, UndoCommand *pParent = 0);
   void redoInternal();
   void undo();
 private:
   GraphicsView *mpGraphicsView;
-  CoOrdinateSystem mOldCoOrdinateSystem;
-  CoOrdinateSystem mNewCoOrdinateSystem;
+  ModelInstance::CoordinateSystem mOldCoordinateSystem;
+  ModelInstance::CoordinateSystem mNewCoordinateSystem;
   bool mCopyProperties;
   QString mOldVersion;
   QString mNewVersion;
   QString mOldUsesAnnotationString;
   QString mNewUsesAnnotationString;
 
-  void updateReferencedShapes(GraphicsView *pGraphicsView);
+  void updateCoordinateSystem(const ModelInstance::CoordinateSystem coordinateSystem);
 };
 
 class UpdateClassAnnotationCommand : public UndoCommand
@@ -337,70 +229,6 @@ private:
   QString mNewSimulationFlags;
 };
 
-class UpdateSubModelAttributesCommand : public UndoCommand
-{
-public:
-  UpdateSubModelAttributesCommand(Element *pComponent, const ElementInfo &oldComponentInfo, const ElementInfo &newComponentInfo,
-                                  QStringList &parameterNames, QStringList &oldParameterValues,
-                                  QStringList &newParameterValues, UndoCommand *pParent = 0);
-  void redoInternal();
-  void undo();
-private:
-  Element *mpComponent;
-  ElementInfo mOldComponentInfo;
-  ElementInfo mNewComponentInfo;
-  QStringList mParameterNames;
-  QStringList mOldParameterValues;
-  QStringList mNewParameterValues;
-};
-
-class UpdateSimulationParamsCommand : public UndoCommand
-{
-public:
-  UpdateSimulationParamsCommand(LibraryTreeItem *pLibraryTreeItem, QString oldStartTime, QString newStartTime, QString oldStopTime,
-                                QString newStopTime, UndoCommand *pParent = 0);
-  void redoInternal();
-  void undo();
-private:
-  LibraryTreeItem *mpLibraryTreeItem;
-  QString mOldStartTime;
-  QString mNewStartTime;
-  QString mOldStopTime;
-  QString mNewStopTime;
-};
-
-class AlignInterfacesCommand : public UndoCommand
-{
-public:
-  AlignInterfacesCommand(CompositeModelEditor *pCompositeModelEditor, QString fromInterface, QString toInterface,
-                         QGenericMatrix<3,1,double> oldPos, QGenericMatrix<3,1,double> oldRot, QGenericMatrix<3,1,double> newPos,
-                         QGenericMatrix<3,1,double> newRot, LineAnnotation *pConnectionLineAnnotation, UndoCommand *pParent = 0);
-  void redoInternal();
-  void undo();
-private:
-  CompositeModelEditor *mpCompositeModelEditor;
-  QString mFromInterface;
-  QString mToInterface;
-  QGenericMatrix<3,1,double> mOldPos;
-  QGenericMatrix<3,1,double> mOldRot;
-  QGenericMatrix<3,1,double> mNewPos;
-  QGenericMatrix<3,1,double> mNewRot;
-  LineAnnotation *mpConnectionLineAnnotation;
-};
-
-class RenameCompositeModelCommand : public UndoCommand
-{
-public:
-  RenameCompositeModelCommand(CompositeModelEditor *pCompositeModelEditor, QString oldCompositeModelName, QString newCompositeModelName,
-                              UndoCommand *pParent = 0);
-  void redoInternal();
-  void undo();
-private:
-  CompositeModelEditor *mpCompositeModelEditor;
-  QString mOldCompositeModelName;
-  QString mNewCompositeModelName;
-};
-
 class OMSimulatorUndoCommand : public UndoCommand
 {
 public:
@@ -418,18 +246,16 @@ private:
   QString mOldEditedCref;
   QString mNewEditedCref;
   QStringList mExpandedLibraryTreeItemsList;
-  QStringList mOpenedModelWidgetsList;
-  QStringList mIconSelectedItemsList;
-  QStringList mDiagramSelectedItemsList;
+  QHash<QString, QPair<QStringList, QStringList> > mOpenedModelWidgetsAndSelectedElements;
 
-  void restoreClosedModelWidgets();
   void switchToEditedModelWidget();
 };
 
 class OMCUndoCommand : public UndoCommand
 {
 public:
-  OMCUndoCommand(LibraryTreeItem *pLibraryTreeItem, const ModelInfo &oldModelInfo, const ModelInfo &newModelInfo, const QString &commandText, UndoCommand *pParent = 0);
+  OMCUndoCommand(LibraryTreeItem *pLibraryTreeItem, const ModelInfo &oldModelInfo, const ModelInfo &newModelInfo, const QString &commandText,
+                 bool skipGetModelInstance = false, UndoCommand *pParent = 0);
   void redoInternal();
   void undo();
 private:
@@ -439,6 +265,8 @@ private:
   ModelInfo mOldModelInfo;
   QString mNewModelText;
   ModelInfo mNewModelInfo;
+  bool mSkipGetModelInstance = false;
+  bool mUndoCalledOnce = false;
 };
 
 #endif // COMMANDS_H

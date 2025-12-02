@@ -23,6 +23,7 @@ ArrayConnect2.mo \
 ArrayConnect3.mo \
 ArrayConnect4.mo \
 ArrayConnect5.mo \
+ArrayConnect6.mo \
 ArrayConstructorComplex1.mo \
 ArrayConstructorRecord1.mo \
 ArrayConstructorRecord2.mo \
@@ -89,6 +90,9 @@ BuiltinAttribute20.mo \
 BuiltinAttribute21.mo \
 BuiltinAttribute22.mo \
 BuiltinAttribute23.mo \
+BuiltinAttribute24.mo \
+BuiltinAttribute25.mo \
+BuiltinAttribute26.mo \
 BuiltinLookup1.mo \
 BuiltinTime.mo \
 BuiltinTimeSubscripted.mo \
@@ -204,6 +208,7 @@ CevalRecordArray7.mo \
 CevalRecordArray8.mo \
 CevalRecordArray9.mo \
 CevalRecordArray10.mo \
+CevalRecordArray11.mo \
 CevalRelation1.mo \
 CevalRem1.mo \
 CevalScalar1.mo \
@@ -275,11 +280,10 @@ Condition6.mo \
 Condition7.mo \
 Condition8.mo \
 Condition9.mo \
+Condition10.mo \
 ConditionInvalid1.mo \
 ConditionInvalidBinding1.mo \
 ConditionInvalidBinding2.mo \
-ConditionInvalidContext1.mo \
-ConditionInvalidContext2.mo \
 ConditionInvalidType1.mo \
 conn9.mo \
 conngraph1.mo \
@@ -313,6 +317,8 @@ ConnectStream1.mo \
 ConstantConnector1.mo \
 ConstantConnector2.mo \
 ConstantConnector3.mo \
+ConstantMissingBinding1.mo \
+ConstantMissingBinding2.mo \
 const1.mo \
 const10.mo \
 const11.mo \
@@ -367,6 +373,9 @@ DimUnknown12.mo \
 DimUnknown13.mo \
 DimUnknown14.mo \
 DimUnknown15.mo \
+DimUnknown16.mo \
+DimUnknown17.mo \
+DimUnknown18.mo \
 dim1.mo \
 dim13.mo \
 dim16.mo \
@@ -383,6 +392,7 @@ DuplicateElements4.mo \
 DuplicateElements5.mo \
 DuplicateElements9.mo \
 DuplicateElements10.mo \
+DuplicateElements11.mo \
 DuplicateElementsValid1.mo \
 DuplicateElementsValid2.mo \
 DuplicateMod1.mo \
@@ -450,6 +460,8 @@ ExpandableConnector9.mo \
 ExpandableConnector10.mo \
 ExpandableConnector11.mo \
 ExpandableConnector12.mo \
+ExpandableConnector13.mo \
+ExpandableConnector14.mo \
 ExpandableConnectorComplex1.mo \
 ExpandableConnectorFlow1.mo \
 ExpandableConnectorFlow2.mo \
@@ -537,6 +549,7 @@ ForStatement1.mo \
 ForStatement2.mo \
 ForStatement3.mo \
 ForStatementArray.mo \
+ForStatementAssign1.mo \
 ForStatementNonVector.mo \
 ForStatementPrefix.mo \
 func1.mo \
@@ -698,6 +711,7 @@ FunctionRecordArg2.mo \
 FunctionRecordArg3.mo \
 FunctionRecordArg4.mo \
 FunctionRecordArg5.mo \
+FunctionRecordArg6.mo \
 FunctionRecursive1.mo \
 FunctionRecursive2.mo \
 FunctionSections1.mo \
@@ -722,10 +736,13 @@ IfEquation5.mo \
 IfEquation6.mo \
 IfEquation7.mo \
 IfEquation8.mo \
+IfEquation9.mo \
+IfEquation10.mo \
 IfEquationEval1.mo \
 IfEquationEval2.mo \
 IfEquationEval3.mo \
 IfEquationEval4.mo \
+IfEquationEval5.mo \
 IfEquationImpure1.mo \
 IfExpression1.mo \
 IfExpression2.mo \
@@ -739,6 +756,8 @@ IfExpression11.mo \
 IfExpression12.mo \
 IfExpression14.mo \
 IfExpression15.mo \
+IfExpression16.mo \
+IfExpression17.mo \
 IfEquationInvalidCond1.mo \
 ih1.mo \
 ih2.mo \
@@ -773,6 +792,7 @@ ImportSubPackage2.mo \
 ImportUnqualified1.mo \
 ImportUnqualified2.mo \
 ImportUnqualified3.mo \
+ImportUnqualified4.mo \
 ImpureCall1.mo \
 Inline1.mo \
 Inline2.mo \
@@ -819,6 +839,7 @@ InnerOuterReplaceable3.mo \
 InstanceRestriction1.mo \
 InstanceRestriction2.mo \
 InStreamArray.mo \
+InStreamArray2.mo \
 InStreamFlowThreshold.mo \
 InStreamInsideOutside.mo \
 InStreamNominalThreshold.mo \
@@ -841,6 +862,7 @@ lookup2.mo \
 lookup3.mo \
 lookup4.mo \
 LookupLibrary1.mo \
+LookupLibrary2.mo \
 loop1.mo \
 loop2.mo \
 loop3.mo \
@@ -855,6 +877,7 @@ MergeComponents5.mo \
 MergeComponents6.mo \
 MergeComponents7.mo \
 MergeComponents8.mo \
+MergeComponents9.mo \
 MinInvalidArg1.mo \
 MinInvalidArg2.mo \
 MinInvalidArg3.mo \
@@ -889,6 +912,7 @@ NoScalarize1.mo \
 NoScalarize2.mo \
 NoScalarizeConnect1.mo \
 NoScalarizeConnect2.mo \
+NoScalarizeConnect3.mo \
 OperationAdd1.mo \
 OperationAddEW1.mo \
 OperationDiv1.mo \
@@ -925,6 +949,7 @@ OperatorOverloadBinaryAmbiguousTwoRecords.mo \
 OperatorOverloadBinaryWithBuiltin.mo \
 OperatorOverloadComplex.mo \
 OperatorOverloadConstructor1.mo \
+OperatorOverloadConstructor2.mo \
 OperatorOverloadConstructorDefault1.mo \
 OperatorOverloadConstructorDefault2.mo \
 OperatorOverloadConstructorHideDefault.mo \
@@ -944,6 +969,7 @@ ParameterBug.mos \
 ParameterDer.mo \
 PartialApplication1.mo \
 PartialApplication2.mo \
+PartialApplication3.mo \
 PartialApplicationInvalidArg1.mo \
 PartialApplicationInvalidArg2.mo \
 PartialClass1.mo \
@@ -988,11 +1014,20 @@ RecordBinding10.mo \
 RecordBinding11.mo \
 RecordBinding12.mo \
 RecordBinding13.mo \
+RecordBinding14.mo \
+RecordBinding15.mo \
+RecordBinding16.mo \
+RecordBinding17.mo \
+RecordBinding18.mo \
 RecordConstructor1.mo \
 RecordConstructor2.mo \
 RecordConstructor3.mo \
+RecordConstructor4.mo \
 RecordExtends1.mo \
 RecordExtends2.mo \
+RecordOrder1.mo \
+RecordOrder2.mo \
+RecordOrder3.mo \
 RecordUnknownDim1.mo \
 RecursiveConstants1.mo \
 RecursiveExtends1.mo \
@@ -1042,6 +1077,7 @@ RedeclareMod8.mo \
 RedeclareMod9.mo \
 RedeclareMod10.mo \
 RedeclareMod11.mo \
+RedeclareMod12.mo \
 RedeclareNonReplaceable1.mo \
 redeclare10.mo \
 redeclare11.mo \
@@ -1068,6 +1104,7 @@ ReinitInvalid4.mo \
 ReinitInvalid5.mo \
 ReinitInvalid6.mo \
 ReinitInvalid7.mo \
+ReinitInvalid8.mo \
 Return1.mo \
 Return2.mo \
 Size1.mo \
@@ -1076,6 +1113,7 @@ Size3.mo \
 Size4.mo \
 Size5.mo \
 Size6.mo \
+Size7.mo \
 SizeInvalidArgs1.mo \
 SizeInvalidArgs2.mo \
 SizeInvalidIndex1.mo \
@@ -1144,12 +1182,18 @@ TypeDim4.mo \
 TypeDimNonType1.mo \
 TypeExtends1.mo \
 TypeExtends2.mo \
+TypeExtends3.mo \
 TypeMissingBaseType1.mo \
 TypenameInvalid1.mo \
 TypenameInvalid2.mo \
 TypenameInvalid3.mo \
 UnboundParameter1.mo \
 UnboundParameter2.mo \
+UnboundParameter3.mo \
+UnboundParameter4.mo \
+UnboundParameter5.mo \
+UnboundParameter6.mo \
+UnboundParameter7.mo \
 usertype1.mo \
 usertype2.mo \
 usertype3.mo \
@@ -1159,6 +1203,9 @@ usertype6.mo \
 VectorizeBindings1.mo \
 VectorizeBindings2.mo \
 VectorizeBindings3.mo \
+VectorizeBindings4.mo \
+VectorizeBindings5.mo \
+VectorizeBindings6.mo \
 VectorTest.mo \
 Visibility1.mo \
 Visibility2.mo \

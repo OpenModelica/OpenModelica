@@ -1539,25 +1539,28 @@ public function pathStripSamePrefix
   "strips the same prefix paths and returns the stripped path. e.g pathStripSamePrefix(P.M.A, P.M.B) => A"
   input Absyn.Path inPath1;
   input Absyn.Path inPath2;
-  output Absyn.Path outPath;
+  output Option<Absyn.Path> outPath;
+protected
+  Absyn.Path path1 = inPath1, path2 = inPath2;
 algorithm
-  outPath := matchcontinue(inPath1, inPath2)
-    local
-      Absyn.Ident ident1, ident2;
-      Absyn.Path path1, path2;
+  while pathFirstIdent(path1) == pathFirstIdent(path2) loop
+    if pathIsIdent(path1) then
+      // The whole first path is a prefix of the second.
+      outPath := NONE();
+      return;
+    end if;
 
-    case (_, _)
-      equation
-        ident1 = pathFirstIdent(inPath1);
-        ident2 = pathFirstIdent(inPath2);
-        true = stringEq(ident1, ident2);
-        path1 = pathRest(inPath1);
-        path2 = pathRest(inPath2);
-      then
-        pathStripSamePrefix(path1, path2);
+    path1 := pathRest(path1);
 
-    else inPath1;
-  end matchcontinue;
+    if pathIsIdent(path2) then
+      // The whole second path is a prefix of the first.
+      break;
+    end if;
+
+    path2 := pathRest(path2);
+  end while;
+
+  outPath := SOME(path1);
 end pathStripSamePrefix;
 
 public function pathPrefix
@@ -2295,6 +2298,20 @@ algorithm
   end match;
 end crefToPathIgnoreSubs;
 
+public function crefToTypeSpec
+  "Converts a ComponentRef to a TypeSpec, treating subscripts on the last
+   identifier as dimensions and failing if any other identifier is subscripted."
+  input Absyn.ComponentRef cref;
+  output Absyn.TypeSpec ty;
+protected
+  list<Absyn.Subscript> subs;
+  Absyn.Path path;
+algorithm
+  subs := crefGetLastSubs(cref);
+  path := crefToPath(crefStripLastSubs(cref));
+  ty := Absyn.TypeSpec.TPATH(path, if listEmpty(subs) then NONE() else SOME(subs));
+end crefToTypeSpec;
+
 public function pathToCref "This function converts a Absyn.Path to a Absyn.ComponentRef."
   input Absyn.Path inPath;
   output Absyn.ComponentRef outComponentRef;
@@ -2525,17 +2542,22 @@ algorithm
 end getString;
 
 public function stripCommentExpressions
+  "Strips comment expressions from the given expression. If onlyComments is
+   false it also strips parentheses (represented by tuples)."
   input output Absyn.Exp exp;
+  input Boolean onlyComments = false;
 algorithm
-  (exp,_) := traverseExp(exp, stripCommentExpressionsHelper, true);
+  (exp,_) := traverseExp(exp, stripCommentExpressionsHelper, onlyComments);
 end stripCommentExpressions;
 
-protected function stripCommentExpressionsHelper<T>
+protected function stripCommentExpressionsHelper
   input output Absyn.Exp exp;
-  input output T extra;
+  input output Boolean onlyComments;
+protected
+  Absyn.Exp e;
 algorithm
   exp := match exp
-    case Absyn.TUPLE({exp}) then exp;
+    case Absyn.TUPLE({e}) guard not onlyComments then e;
     case Absyn.EXPRESSIONCOMMENT() then exp.exp;
     else exp;
   end match;
@@ -2885,6 +2907,83 @@ algorithm
     else false;
   end match;
 end crefEqualNoSubs;
+
+public function crefCompare
+  input Absyn.ComponentRef cr1;
+  input Absyn.ComponentRef cr2;
+  output Integer comp;
+protected
+  String name;
+  Absyn.ComponentRef cr;
+  list<Absyn.Subscript> subs;
+algorithm
+  if referenceEq(cr1, cr2) then
+    comp := 0;
+    return;
+  end if;
+
+  comp := Util.intCompare(valueConstructor(cr1), valueConstructor(cr2));
+
+  if comp <> 0 then
+    return;
+  end if;
+
+  comp := match cr1
+    case Absyn.ComponentRef.CREF_FULLYQUALIFIED()
+      algorithm
+        Absyn.ComponentRef.CREF_FULLYQUALIFIED(cr) := cr2;
+      then
+        crefCompare(cr1.componentRef, cr);
+
+    case Absyn.ComponentRef.CREF_QUAL()
+      algorithm
+        Absyn.ComponentRef.CREF_QUAL(name, subs, cr) := cr2;
+        comp := stringCompare(cr1.name, name);
+
+        if comp == 0 then
+          comp := List.compare(cr1.subscripts, subs, subscriptCompare);
+        end if;
+      then
+        if comp == 0 then crefCompare(cr1.componentRef, cr) else comp;
+
+    case Absyn.ComponentRef.CREF_IDENT()
+      algorithm
+        Absyn.ComponentRef.CREF_IDENT(name, subs) := cr2;
+        comp := stringCompare(cr1.name, name);
+      then
+        if comp == 0 then List.compare(cr1.subscripts, subs, subscriptCompare) else comp;
+
+    else 0;
+  end match;
+end crefCompare;
+
+public function subscriptCompare
+  input Absyn.Subscript sub1;
+  input Absyn.Subscript sub2;
+  output Integer comp;
+protected
+  Absyn.Exp exp;
+algorithm
+  if referenceEq(sub1, sub2) then
+    comp := 0;
+  end if;
+
+  comp := Util.intCompare(valueConstructor(sub1), valueConstructor(sub2));
+
+  if comp <> 0 then
+    return;
+  end if;
+
+  comp := match sub1
+    case Absyn.Subscript.NOSUB() then 0;
+    case Absyn.Subscript.SUBSCRIPT()
+      algorithm
+        Absyn.Subscript.SUBSCRIPT(exp) := sub2;
+      then
+        // TODO: Implement compare for Absyn.Exp instead of converting to strings.
+        stringCompare(Dump.printExpStr(sub1.subscript), Dump.printExpStr(exp));
+  end match;
+end subscriptCompare;
 
 public function isPackageRestriction "checks if the provided parameter is a package or not"
   input Absyn.Restriction inRestriction;
@@ -3535,7 +3634,7 @@ public function allFieldsAreCrefs
   input list<Absyn.Exp> expLst;
   output Boolean b;
 algorithm
-  b := List.mapAllValueBool(expLst, complexIsCref, true);
+  b := List.all(expLst, complexIsCref);
 end allFieldsAreCrefs;
 
 public function complexIsCref
@@ -3750,6 +3849,8 @@ algorithm
       algorithm
         elts as _ :: _ := List.fold(listReverse(def.classParts), getFunctionInterfaceParts, {});
         cl.body := Absyn.PARTS(def.typeVars, def.classAttrs, {Absyn.PUBLIC(elts)}, {}, NONE());
+        cl.commentsBeforeEnd := {};
+        cl.commentsAfterEnd := {};
       then
         ();
   end match;
@@ -3942,6 +4043,18 @@ algorithm
   end match;
 end importPath;
 
+public function setImportPath
+  input output Absyn.Import imp;
+  input Absyn.Path path;
+algorithm
+  () := match imp
+    case Absyn.NAMED_IMPORT()  algorithm imp.path := path;   then ();
+    case Absyn.QUAL_IMPORT()   algorithm imp.path := path;   then ();
+    case Absyn.UNQUAL_IMPORT() algorithm imp.path := path;   then ();
+    case Absyn.GROUP_IMPORT()  algorithm imp.prefix := path; then ();
+  end match;
+end setImportPath;
+
 public function importName
   "Returns the import name of a named or qualified import."
   input Absyn.Import inImport;
@@ -3955,53 +4068,122 @@ algorithm
   end match;
 end importName;
 
-public function mergeAnnotations
-" This function takes an old annotation as first argument and a new
-   annotation as  second argument and merges the two.
-   Absyn.Annotation \"parts\" that exist in both the old and the new annotation
-   will be changed according to the new definition. For instance,
-   merge_annotations(annotation(x=1,y=2),annotation(x=3))
-   => annotation(x=3,y=2)"
-  input Absyn.Annotation inAnnotation1;
-  input Absyn.Annotation inAnnotation2;
-  output Absyn.Annotation outAnnotation;
+public function mergeAnnotationsList
+  input Absyn.Annotation oldAnnotation;
+  input list<Absyn.Annotation> newAnnotations;
+  output Absyn.Annotation outAnnotation = oldAnnotation;
 algorithm
-  outAnnotation:=
-  match (inAnnotation1,inAnnotation2)
-    local
-      list<Absyn.ElementArg> oldmods,newmods;
-      Absyn.Annotation a;
-    case (Absyn.ANNOTATION(elementArgs = {}),a) then a;
+  for ann in newAnnotations loop
+    outAnnotation := mergeAnnotations(ann, outAnnotation);
+  end for;
+end mergeAnnotationsList;
 
-    case (Absyn.ANNOTATION(elementArgs = oldmods),Absyn.ANNOTATION(elementArgs = newmods))
-      then Absyn.ANNOTATION(mergeAnnotations2(oldmods, newmods));
+public function mergeAnnotations
+  "Merges an old annotation with a new. If mergeSubMods is true it merges the
+   annotations recursively, otherwise it only merges the first level of the
+   annotation. Example:
+     mergeAnnotations(a(x = 1, y = 2), a(x = 3)) =>
+       mergeSubMods = false: a(x = 3)
+       mergeSubMods = true:  a(x = 3, y = 2)
+
+   If mergeEqMods is true it tries to concatenate binding equation expression
+   such as Icon/Diagram graphics arrays, otherwise the new binding overwrites
+   the old one.
+  "
+  input Absyn.Annotation oldAnnotation;
+  input Absyn.Annotation newAnnotation;
+  input Boolean mergeSubMods = false;
+  input Boolean mergeEqMods = false;
+  output Absyn.Annotation outAnnotation;
+protected
+  list<Absyn.ElementArg> args1, args2;
+algorithm
+  outAnnotation := match (oldAnnotation, newAnnotation)
+    case (Absyn.ANNOTATION(elementArgs = {}), _) then newAnnotation;
+    case (_, Absyn.ANNOTATION(elementArgs = {})) then oldAnnotation;
+    else Absyn.ANNOTATION(mergeAnnotations2(oldAnnotation.elementArgs, newAnnotation.elementArgs,
+                                            mergeSubMods, mergeEqMods));
   end match;
 end mergeAnnotations;
 
+protected function mergeAnnotations2
+  input list<Absyn.ElementArg> oldArgs;
+  input list<Absyn.ElementArg> newArgs;
+  input Boolean mergeSubMods = false;
+  input Boolean mergeEqMods = false;
+  output list<Absyn.ElementArg> outArgs = oldArgs;
 protected
-
-function mergeAnnotations2
-  input list<Absyn.ElementArg> oldmods;
-  input list<Absyn.ElementArg> newmods;
-  output list<Absyn.ElementArg> res = listReverse(oldmods);
-protected
-  list<Absyn.ElementArg> mods;
-  Boolean b;
-  Absyn.Path p;
-  Absyn.ElementArg mod1,mod2;
+  Boolean found;
+  list<Absyn.ElementArg> new_args = {};
 algorithm
-  for mod in newmods loop
-    Absyn.MODIFICATION(path=p) := mod;
-    try
-      mod2 := List.find(res, function isModificationOfPath(path=p));
-      mod1 := subModsInSameOrder(mod2, mod);
-      (res, true) := List.replaceOnTrue(mod1, res, function isModificationOfPath(path=p));
-    else
-      res := mod::res;
-    end try;
+  for arg in newArgs loop
+    // Try to merge the annotation with an existing one.
+    (outArgs, found) := List.findAndMap(outArgs,
+      function isModificationOfPath(path = elementArgName(arg)),
+      if mergeSubMods then
+        function mergeAnnotations3(newArg = arg, mergeEqMods = mergeEqMods) else
+        function subModsInSameOrder(newmod = arg));
+
+    if not found then
+      new_args := arg :: new_args;
+    end if;
   end for;
-  res := listReverse(res);
+
+  // Add any completely new annotations to the end of the list.
+  outArgs := listAppend(outArgs, listReverseInPlace(new_args)) annotation(__OpenModelica_DisableListAppendWarning = true);
 end mergeAnnotations2;
+
+protected function mergeAnnotations3
+  input Absyn.ElementArg oldArg;
+  input Absyn.ElementArg newArg;
+  input Boolean mergeEqMods;
+  output Absyn.ElementArg outArg;
+protected
+  list<Absyn.ElementArg> old_args, new_args;
+  Absyn.EqMod old_eq, new_eq;
+  Option<String> cmt;
+algorithm
+  outArg := match (oldArg, newArg)
+    case (Absyn.ElementArg.MODIFICATION(modification = NONE()), _) then newArg;
+    case (_, Absyn.ElementArg.MODIFICATION(modification = NONE())) then oldArg;
+    case (Absyn.ElementArg.MODIFICATION(modification = SOME(Absyn.Modification.CLASSMOD(old_args, old_eq))),
+          Absyn.ElementArg.MODIFICATION(modification = SOME(Absyn.Modification.CLASSMOD(new_args, new_eq))))
+      algorithm
+        new_eq := mergeAnnotationEqMods(old_eq, new_eq, mergeEqMods);
+        new_args := mergeAnnotations2(old_args, new_args, true, mergeEqMods);
+        cmt := if isSome(newArg.comment) then newArg.comment else oldArg.comment;
+      then
+        Absyn.ElementArg.MODIFICATION(false, Absyn.NON_EACH(), oldArg.path,
+          SOME(Absyn.Modification.CLASSMOD(new_args, new_eq)), cmt, oldArg.info);
+    else newArg;
+  end match;
+end mergeAnnotations3;
+
+protected function mergeAnnotationEqMods
+  input Absyn.EqMod oldEq;
+  input Absyn.EqMod newEq;
+  input Boolean mergeExpressions = false;
+  output Absyn.EqMod outEq;
+protected
+  Absyn.Exp new_exp, old_exp;
+algorithm
+  outEq := match (oldEq, newEq)
+    case (Absyn.EqMod.NOMOD(), _) then newEq;
+    case (_, Absyn.EqMod.NOMOD()) then oldEq;
+    case (Absyn.EqMod.EQMOD(exp = old_exp), Absyn.EqMod.EQMOD(exp = new_exp))
+      guard mergeExpressions
+      algorithm
+        new_exp := match (old_exp, new_exp)
+          case (Absyn.Exp.ARRAY(arrayExp = Absyn.Exp.CALL() :: _),
+                Absyn.Exp.ARRAY(arrayExp = Absyn.Exp.CALL() :: _))
+            then Absyn.Exp.ARRAY(listAppend(old_exp.arrayExp, new_exp.arrayExp));
+          else new_exp;
+        end match;
+      then
+        Absyn.EqMod.EQMOD(new_exp, newEq.info);
+    else newEq;
+  end match;
+end mergeAnnotationEqMods;
 
 public function mergeCommentAnnotation
   "Merges an annotation into a Absyn.Comment option."
@@ -4088,7 +4270,7 @@ algorithm
         res := {};
         for arg1 in args1 loop
           Absyn.MODIFICATION(path=p) := arg1;
-          if List.exist(args2, function isModificationOfPath(path=p)) then
+          if List.any(args2, function isModificationOfPath(path=p)) then
             res := arg1::res;
           end if;
         end for;
@@ -4393,6 +4575,94 @@ algorithm
     case ((_ :: xs),_,_) then getNamedAnnotationStr(xs,id,f);
   end matchcontinue;
 end getNamedAnnotationStr;
+
+public function transformAnnotationArg
+  "Looks up an ElementArg in an annotation and applies a function to it.
+   If the ElementArg doesn't exist it will be created if insert = true,
+   otherwise the function will fail."
+  input output Absyn.Annotation ann;
+  input Absyn.Path path;
+  input Func func;
+  input Boolean insert = true;
+
+  partial function Func
+    input output Absyn.ElementArg arg;
+  end Func;
+algorithm
+  ann.elementArgs := transformAnnotationInArgs(ann.elementArgs, path, func, insert);
+end transformAnnotationArg;
+
+function transformAnnotationInArgs
+  input output list<Absyn.ElementArg> args;
+  input Absyn.Path path;
+  input Fn fn;
+  input Boolean insert = true;
+
+  partial function Fn
+    input output Absyn.ElementArg arg;
+  end Fn;
+protected
+  String name;
+  Boolean found;
+  Absyn.ElementArg arg;
+
+  function is_named
+    input Absyn.ElementArg arg;
+    input String name;
+    output Boolean result;
+  protected
+    String arg_name;
+  algorithm
+    result := match arg
+      case Absyn.ElementArg.MODIFICATION(path = Absyn.Path.IDENT(name = arg_name)) then name == arg_name;
+      else false;
+    end match;
+  end is_named;
+
+  function apply_fn
+    input output Absyn.ElementArg arg;
+    input Absyn.Path path;
+    input Fn fn;
+    input Boolean insert;
+  protected
+    Absyn.Modification mod;
+  algorithm
+    if pathIsIdent(path) then
+      arg := fn(arg);
+    else
+      () := match arg
+        case Absyn.ElementArg.MODIFICATION()
+          algorithm
+            if isSome(arg.modification) then
+              SOME(mod) := arg.modification;
+            elseif insert then
+              mod := Absyn.Modification.CLASSMOD({}, Absyn.EqMod.NOMOD());
+            else
+              fail();
+            end if;
+
+            mod.elementArgLst := transformAnnotationInArgs(mod.elementArgLst, pathRest(path), fn, insert);
+            arg.modification := SOME(mod);
+          then
+            ();
+      end match;
+    end if;
+  end apply_fn;
+algorithm
+  name := pathFirstIdent(path);
+  (args, found) := List.findAndMap(args, function is_named(name = name),
+                                         function apply_fn(path = path, fn = fn, insert = insert));
+
+  if not found then
+    if insert then
+      arg := Absyn.ElementArg.MODIFICATION(false, Absyn.Each.NON_EACH(), Absyn.IDENT(name), NONE(), NONE(), dummyInfo);
+      arg := apply_fn(arg, path, fn, insert);
+      args := arg :: args;
+    else
+      fail();
+    end if;
+  end if;
+end transformAnnotationInArgs;
 
 public function mapCrefParts
   "This function splits each part of a cref into CREF_IDENTs and applies the
@@ -4816,6 +5086,16 @@ algorithm
   end match;
 end isEmptySubMod;
 
+function isEmptyEqMod
+  input Absyn.EqMod eqMod;
+  output Boolean isEmpty;
+algorithm
+  isEmpty := match eqMod
+    case Absyn.EqMod.NOMOD() then true;
+    else false;
+  end match;
+end isEmptyEqMod;
+
 public function elementArgName
   input Absyn.ElementArg inArg;
   output Absyn.Path outName;
@@ -5099,6 +5379,16 @@ algorithm
   end match;
 end isElementItemClass;
 
+public function isElementItemExtends
+  input Absyn.ElementItem item;
+  output Boolean isExtends;
+algorithm
+  isExtends := match item
+    case Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.EXTENDS())) then true;
+    else false;
+  end match;
+end isElementItemExtends;
+
 public function isElementItem
   input Absyn.ElementItem inElement;
   output Boolean outIsClass;
@@ -5164,7 +5454,7 @@ algorithm
   res := match elementSpec
     case Absyn.ElementSpec.CLASSDEF() then isClassNamed(name, elementSpec.class_);
     case Absyn.ElementSpec.COMPONENTS()
-      then List.exist(elementSpec.components, function isComponentItemNamed(name = name));
+      then List.any(elementSpec.components, function isComponentItemNamed(name = name));
     else false;
   end match;
 end isElementSpecNamed;
@@ -5704,6 +5994,16 @@ algorithm
   end match;
 end getElementSpecificationFromElementItemOpt;
 
+public function getComponentItemsFromElement
+  input Absyn.Element element;
+  output list<Absyn.ComponentItem> items;
+algorithm
+  items := match element
+    case Absyn.Element.ELEMENT(specification = Absyn.ElementSpec.COMPONENTS(components = items)) then items;
+    else {};
+  end match;
+end getComponentItemsFromElement;
+
 public function getComponentItemsFromElementSpec
 "@auhtor: johti
  Get the componentItems from a given elemSpec otherwise returns an empty list"
@@ -6061,22 +6361,36 @@ algorithm
   end match;
 end setClassDefAnnotation;
 
+function setCommentString
+  "Overwrites the comment string in an optional comment."
+  input output Option<Absyn.Comment> comment;
+  input Option<String> commentString;
+protected
+  Option<Absyn.Annotation> ann;
+  Option<String> str, new_str;
+algorithm
+  if isSome(comment) then
+    SOME(Absyn.COMMENT(ann, str)) := comment;
+    comment := if isSome(ann) or isSome(str) then SOME(Absyn.COMMENT(ann, commentString)) else NONE();
+  elseif isSome(commentString) then
+    comment := SOME(Absyn.COMMENT(NONE(), commentString));
+  end if;
+end setCommentString;
+
 function setCommentAnnotation
   "Overwrites the annotation in an optional comment."
   input output Option<Absyn.Comment> comment;
   input Option<Absyn.Annotation> ann;
 protected
-  Option<String> cmt;
+  Option<Absyn.Annotation> old_ann;
+  Option<String> str;
 algorithm
-  comment := match (comment, ann)
-    // No comment, no annotation => no comment
-    case (NONE(), NONE()) then comment;
-    // No comment, some annotation => new comment
-    case (NONE(), _) then SOME(Absyn.Comment.COMMENT(ann, NONE()));
-    // Some comment => overwrite annotation in comment
-    case (SOME(Absyn.Comment.COMMENT(_, cmt)), _)
-      then SOME(Absyn.Comment.COMMENT(ann, cmt));
-  end match;
+  if isSome(comment) then
+    SOME(Absyn.COMMENT(old_ann, str)) := comment;
+    comment := if isSome(ann) or isSome(str) then SOME(Absyn.COMMENT(ann, str)) else NONE();
+  elseif isSome(ann) then
+    comment := SOME(Absyn.COMMENT(ann, NONE()));
+  end if;
 end setCommentAnnotation;
 
 function mapAnnotationBinding
@@ -6339,6 +6653,26 @@ algorithm
   end match;
 end isBlock;
 
+function isConnector
+  input Absyn.Class cls;
+  output Boolean res;
+algorithm
+  res := match cls
+    case Absyn.Class.CLASS(restriction = Absyn.Restriction.R_CONNECTOR()) then true;
+    else false;
+  end match;
+end isConnector;
+
+function isExpandableConnector
+  input Absyn.Class cls;
+  output Boolean res;
+algorithm
+  res := match cls
+    case Absyn.Class.CLASS(restriction = Absyn.Restriction.R_EXP_CONNECTOR()) then true;
+    else false;
+  end match;
+end isExpandableConnector;
+
 function eachBool
   input Absyn.Each eachPrefix;
   output Boolean res;
@@ -6405,6 +6739,17 @@ algorithm
     outAnnotation := NONE();
   end if;
 end getCommentOptAnnotation;
+
+function getCommentOptComment
+  input Option<Absyn.Comment> commentOpt;
+  output Option<String> outComment;
+algorithm
+  if isSome(commentOpt) then
+    SOME(Absyn.Comment.COMMENT(comment = outComment)) := commentOpt;
+  else
+    outComment := NONE();
+  end if;
+end getCommentOptComment;
 
 function setElementAnnotation
   "Sets the annotation on an element. The name argument is used to select a
@@ -6537,6 +6882,128 @@ algorithm
     else false;
   end match;
 end isAlgorithmSection;
+
+function setElementType
+  "Sets the type of a component or short class definition. If the element
+   contains multiple components the type is only changed if
+   allowMultipleComponents = true, otherwise the function will fail."
+  input output Absyn.Element element;
+  input Absyn.TypeSpec typeSpec;
+  input Boolean allowMultipleComponents = false;
+algorithm
+  () := match element
+    case Absyn.Element.ELEMENT()
+      algorithm
+        element.specification := setElementSpecType(element.specification, typeSpec, allowMultipleComponents);
+      then
+        ();
+
+    else ();
+  end match;
+end setElementType;
+
+function setElementSpecType
+  input output Absyn.ElementSpec spec;
+  input Absyn.TypeSpec typeSpec;
+  input Boolean allowMultipleComponents = false;
+protected
+  Absyn.Class cls;
+algorithm
+  () := match spec
+    case Absyn.ElementSpec.CLASSDEF()
+      algorithm
+        spec.class_ := setClassType(spec.class_, typeSpec);
+      then
+        ();
+
+    case Absyn.ElementSpec.COMPONENTS()
+      guard allowMultipleComponents or listLength(spec.components) == 1
+      algorithm
+        spec.typeSpec := typeSpec;
+      then
+        ();
+  end match;
+end setElementSpecType;
+
+function setClassType
+  input output Absyn.Class cls;
+  input Absyn.TypeSpec typeSpec;
+algorithm
+  cls.body := setClassDefType(cls.body, typeSpec);
+end setClassType;
+
+function setClassDefType
+  input output Absyn.ClassDef cdef;
+  input Absyn.TypeSpec typeSpec;
+algorithm
+  () := match cdef
+    case Absyn.ClassDef.DERIVED()
+      algorithm
+        cdef.typeSpec := typeSpec;
+      then
+        ();
+  end match;
+end setClassDefType;
+
+function isLiteralExp
+  input Absyn.Exp exp;
+  output Boolean literal;
+algorithm
+  literal := match exp
+    case Absyn.Exp.INTEGER() then true;
+    case Absyn.Exp.REAL() then true;
+    case Absyn.Exp.STRING() then true;
+    case Absyn.Exp.BOOL() then true;
+    case Absyn.Exp.ARRAY() then List.all(exp.arrayExp, isLiteralExp);
+
+    case Absyn.Exp.MATRIX()
+      algorithm
+        literal := true;
+        for row in exp.matrix loop
+          literal := literal and List.all(row, isLiteralExp);
+          if not literal then
+            break;
+          end if;
+        end for;
+      then
+        literal;
+
+    case Absyn.Exp.RANGE()
+      then isLiteralExp(exp.start) and
+           Util.applyOptionOrDefault(exp.step, isLiteralExp, true) and
+           isLiteralExp(exp.stop);
+
+    else false;
+  end match;
+end isLiteralExp;
+
+function enumLiteralName
+  input Absyn.EnumLiteral literal;
+  output String name = literal.literal;
+end enumLiteralName;
+
+public function elementItemClass
+  input Absyn.ElementItem item;
+  output Absyn.Class cls;
+algorithm
+  Absyn.ElementItem.ELEMENTITEM(element = Absyn.Element.ELEMENT(specification =
+    Absyn.ElementSpec.CLASSDEF(class_ = cls))) := item;
+end elementItemClass;
+
+function classDefStringComment
+  input Absyn.ClassDef def;
+  output String comment;
+algorithm
+  comment := match def
+    case Absyn.ClassDef.PARTS(comment = SOME(comment)) then comment;
+    case Absyn.ClassDef.DERIVED(comment = SOME(Absyn.Comment.COMMENT(comment = SOME(comment)))) then comment;
+    case Absyn.ClassDef.ENUMERATION(comment = SOME(Absyn.Comment.COMMENT(comment = SOME(comment)))) then comment;
+    case Absyn.ClassDef.OVERLOAD(comment = SOME(Absyn.Comment.COMMENT(comment = SOME(comment)))) then comment;
+    case Absyn.ClassDef.CLASS_EXTENDS(comment = SOME(comment)) then comment;
+    case Absyn.ClassDef.PDER(comment = SOME(Absyn.Comment.COMMENT(comment = SOME(comment)))) then comment;
+    else "";
+  end match;
+end classDefStringComment;
 
 annotation(__OpenModelica_Interface="frontend");
 end AbsynUtil;

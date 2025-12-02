@@ -36,6 +36,8 @@
 #include "Util/Helper.h"
 #include "MessagesWidget.h"
 #include "Options/OptionsDialog.h"
+#include "MainWindow.h"
+#include "OMC/OMCProxy.h"
 
 #include <QRectF>
 #include <QtMath>
@@ -59,18 +61,18 @@ namespace ModelInstance
 
   /*!
    * \brief CoordinateSystem::CoordinateSystem
-   * \param coOrdinateSystem
+   * \param CoordinateSystem
    */
-  CoordinateSystem::CoordinateSystem(const CoordinateSystem &coOrdinateSystem)
+  CoordinateSystem::CoordinateSystem(const CoordinateSystem &coordinateSystem)
   {
-    setExtent(coOrdinateSystem.getExtent());
-    setHasExtent(coOrdinateSystem.hasExtent());
-    setPreserveAspectRatio(coOrdinateSystem.getPreserveAspectRatio());
-    setHasPreserveAspectRatio(coOrdinateSystem.hasPreserveAspectRatio());
-    setInitialScale(coOrdinateSystem.getInitialScale());
-    setHasInitialScale(coOrdinateSystem.hasInitialScale());
-    setGrid(coOrdinateSystem.getGrid());
-    setHasGrid(coOrdinateSystem.hasGrid());
+    setExtent(coordinateSystem.getExtent());
+    setHasExtent(coordinateSystem.hasExtent());
+    setPreserveAspectRatio(coordinateSystem.getPreserveAspectRatio());
+    setHasPreserveAspectRatio(coordinateSystem.hasPreserveAspectRatio());
+    setInitialScale(coordinateSystem.getInitialScale());
+    setHasInitialScale(coordinateSystem.hasInitialScale());
+    setGrid(coordinateSystem.getGrid());
+    setHasGrid(coordinateSystem.hasGrid());
   }
 
   void CoordinateSystem::setExtent(const QVector<QPointF> extent)
@@ -490,6 +492,30 @@ namespace ModelInstance
     }
   }
 
+  void IconDiagramMap::deserialize(const QJsonObject &jsonObject)
+  {
+    if (jsonObject.contains("extent")) {
+      mHasExtent = true;
+      mExtent.deserialize(jsonObject.value("extent"));
+    }
+
+    if (jsonObject.contains("primitivesVisible")) {
+      mPrimitivesVisible.deserialize(jsonObject.value("primitivesVisible"));
+    }
+  }
+
+  void ExperimentAnnotation::deserialize(const QJsonObject &jsonObject)
+  {
+    /* We only use this to check if the model has Interval defined in experiment annotation.
+     * The simulation still uses getSimulationOptions() API.
+     * We might change this in future.
+     */
+    if (jsonObject.contains("Interval")) {
+      mHasInterval = true;
+      //mInterval.deserialize(jsonObject.value("extent"));
+    }
+  }
+
   Annotation Annotation::defaultAnnotation{nullptr};
 
   Annotation::Annotation(Model *pParentModel)
@@ -606,6 +632,10 @@ namespace ModelInstance
     if (jsonObject.contains("DiagramMap")) {
       mDiagramMap.deserialize(jsonObject.value("DiagramMap").toObject());
     }
+    // experiment annotation
+    if (jsonObject.contains("experiment")) {
+      mExperimentAnnotation.deserialize(jsonObject.value("experiment").toObject());
+    }
   }
 
   /*!
@@ -637,16 +667,11 @@ namespace ModelInstance
   {
     if (jsonObject.contains("coordinateSystem")) {
       mCoordinateSystem.deserialize(jsonObject.value("coordinateSystem").toObject());
-      mMergedCoOrdinateSystem = mCoordinateSystem;
+      mMergedCoordinateSystem = mCoordinateSystem;
     }
 
     if (jsonObject.contains("graphics")) {
-      if (jsonObject.value("graphics").isObject()) {
-        QJsonObject graphicsObject = jsonObject.value("graphics").toObject();
-        if (graphicsObject.contains("$error")) {
-          MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, graphicsObject.value("$error").toString(), Helper::scriptingKind, Helper::errorLevel));
-        }
-      } else if (jsonObject.value("graphics").isArray()) {
+      if (jsonObject.value("graphics").isArray()) {
         QJsonArray graphicsArray = jsonObject.value("graphics").toArray();
         for (int i = 0; i < graphicsArray.size(); ++i) {
           QJsonObject graphicObject = graphicsArray.at(i).toObject();
@@ -677,6 +702,8 @@ namespace ModelInstance
               pBitmap->deserialize(graphicObject.value("elements").toArray());
               mGraphics.append(pBitmap);
             }
+          } else if (graphicObject.contains("$error")) {
+            MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, graphicObject.value("$error").toString(), Helper::scriptingKind, Helper::errorLevel));
           }
         }
       }
@@ -692,15 +719,13 @@ namespace ModelInstance
   void Dimensions::deserialize(const QJsonObject &jsonObject)
   {
     if (jsonObject.contains("absyn")) {
-      QJsonArray absynDimsArray = jsonObject.value("absyn").toArray();
-      foreach (auto absynDim, absynDimsArray) {
+      for (const QJsonValue &absynDim: jsonObject.value("absyn").toArray()) {
         mAbsynDims.append(absynDim.toString());
       }
     }
 
     if (jsonObject.contains("typed")) {
-      QJsonArray typedDimsArray = jsonObject.value("typed").toArray();
-      foreach (auto typedDim, typedDimsArray) {
+      for (const QJsonValue &typedDim: jsonObject.value("typed").toArray()) {
         mTypedDims.append(typedDim.toString());
       }
     }
@@ -736,6 +761,8 @@ namespace ModelInstance
           mFinal = true;
         } else if (modifierKey.compare(QStringLiteral("each")) == 0) {
           mEach = true;
+        } else if (modifierKey.compare(QStringLiteral("comment")) == 0) {
+          mComment = modifierValue.toString();
         } else if (modifierKey.compare(QStringLiteral("$value")) == 0) {
           if (modifierValue.isObject()) {
             QJsonObject valueObject = modifierValue.toObject();
@@ -762,7 +789,7 @@ namespace ModelInstance
     }
   }
 
-  QString Modifier::toString(bool skipTopLevel) const
+  QString Modifier::toString(bool skipTopLevel, bool includeComment) const
   {
     if (mpElement) {
       return mpElement->toString(skipTopLevel);
@@ -780,15 +807,14 @@ namespace ModelInstance
       if (!subModifiers.isEmpty()) {
         value.append("(" % subModifiers.join(", ") % ")");
       }
-      if (mValue.isEmpty()) {
-        if (value.compare(mName) != 0) {
-          return value;
-        } else {
-          return "";
-        }
-      } else {
-        return value.append(mName.isEmpty() ? mValue : " = " % mValue);
+      if (!mValue.isEmpty()) {
+        value.append(mName.isEmpty() ? mValue : " = " % mValue);
       }
+      if (includeComment && !mComment.isEmpty()) {
+        value.append(" \"" % mComment % "\"");
+      }
+
+      return value.compare(mName) == 0 ? "" : value;
     }
   }
 
@@ -816,6 +842,38 @@ namespace ModelInstance
   {
     Modifier *pModifier = getModifier(modifier);
     return pModifier && pModifier->getName().compare(modifier) == 0;
+  }
+
+  /*!
+   * \brief createModifier
+   * Creates the Modifier from another Modifier.\n
+   * See issue #13301 and #13516.\n
+   * Dump the modifier as string and use OMCProxy::modifierToJSON to convert it to JSON.\n
+   * Contruct new Modifier instance with JSON.
+   * \param pModifier
+   * \return
+   */
+  Modifier *createModifier(const Modifier *pModifier, Model *pParentModel)
+  {
+    // If value is defined then we wrap within parenthesis otherwise its not needed.
+    if (pModifier->isValueDefined()) {
+      QJsonObject jsonObject = MainWindow::instance()->getOMCProxy()->modifierToJSON("(" % pModifier->toString() % ")");
+      return new Modifier(pModifier->getName(), jsonObject.value(pModifier->getName()), pParentModel);
+    } else {
+      QJsonObject jsonObject;
+      jsonObject.insert("modifiers", MainWindow::instance()->getOMCProxy()->modifierToJSON(pModifier->toString()));
+      return new Modifier(pModifier->getName(), jsonObject.value("modifiers"), pParentModel);
+    }
+  }
+
+  void Modifier::addModifier(const Modifier *pModifier)
+  {
+    mModifiers.append(createModifier(pModifier, mpParentModel));
+  }
+
+  bool Modifier::isBreak() const
+  {
+    return mValue.compare(Helper::BREAK) == 0 ? true : false;
   }
 
   bool Modifier::isRedeclare() const
@@ -970,12 +1028,22 @@ namespace ModelInstance
   {
     QStringList value;
 
-    if (mRedeclare) {
-      value.append("redeclare");
-    }
     if (mFinal && !skipTopLevel) {
       value.append("final");
     }
+
+    if (mRedeclare) {
+      value.append("redeclare");
+    }
+
+    if (mInner) {
+      value.append("inner");
+    }
+
+    if (mOuter) {
+      value.append("outer");
+    }
+
     if (mpReplaceable) {
       value.append("replaceable");
     }
@@ -1041,8 +1109,13 @@ namespace ModelInstance
 
   Model::~Model()
   {
+    qDeleteAll(mGeneratedInnerComponents);
+    mGeneratedInnerComponents.clear();
+
     qDeleteAll(mElements);
     mElements.clear();
+
+    mImports.clear();
 
     qDeleteAll(mConnections);
     mConnections.clear();
@@ -1077,22 +1150,7 @@ namespace ModelInstance
       mpPrefixes->deserialize(mModelJson.value("prefixes").toObject());
     }
 
-    QJsonArray elements = mModelJson.value("elements").toArray();
-
-    foreach (const QJsonValue &element, elements) {
-      QJsonObject elementObject = element.toObject();
-      QString kind = elementObject.value("$kind").toString();
-
-      if (kind.compare(QStringLiteral("extends")) == 0) {
-        mElements.append(new Extend(this, elementObject));
-      } else if (kind.compare(QStringLiteral("component")) == 0) {
-        mElements.append(new Component(this, elementObject));
-      } else if (kind.compare(QStringLiteral("class")) == 0) {
-        mElements.append(new ReplaceableClass(this, elementObject));
-      } else {
-        qDebug() << "Model::deserialize() unhandled kind of element" << kind;
-      }
-    }
+    deserializeElements(mModelJson.value("elements").toArray());
 
     if (mModelJson.contains("comment")) {
       mComment = mModelJson.value("comment").toString();
@@ -1102,26 +1160,19 @@ namespace ModelInstance
       mpAnnotation->deserialize(mModelJson.value("annotation").toObject());
     }
 
-    /* From Modelica Specification Version 3.5-dev
-     * The coordinate system (including preserveAspectRatio) of a class is defined by the following priority:
-     * 1. The coordinate system annotation given in the class (if specified).
-     * 2. The coordinate systems of the first base-class where the extent on the extends-clause specifies a
-     *    null-region (if any). Note that null-region is the default for base-classes, see section 18.6.3.
-     * 3. The default coordinate system CoordinateSystem(extent={{-100, -100}, {100, 100}}).
-     *
-     * Following is the second case. First case is covered when we read the annotation of the class. Third case is handled by default values of IconDiagramAnnotation class.
-     */
-    if (!getAnnotation()->getIconAnnotation()->mMergedCoOrdinateSystem.isComplete()) {
-      readCoordinateSystemFromExtendsClass(&getAnnotation()->getIconAnnotation()->mMergedCoOrdinateSystem, true);
-    }
+    updateMergedCoordinateSystem();
 
-    if (!getAnnotation()->getDiagramAnnotation()->mMergedCoOrdinateSystem.isComplete()) {
-      readCoordinateSystemFromExtendsClass(&getAnnotation()->getDiagramAnnotation()->mMergedCoOrdinateSystem, false);
+    if (mModelJson.contains("imports")) {
+      for (const QJsonValue &import: mModelJson.value("imports").toArray()) {
+        QJsonObject importObject = import.toObject();
+        if (!importObject.isEmpty()) {
+          mImports.append(Import(importObject));
+        }
+      }
     }
 
     if (mModelJson.contains("connections")) {
-      QJsonArray connections = mModelJson.value("connections").toArray();
-      foreach (QJsonValue connection, connections) {
+      for (const QJsonValue &connection: mModelJson.value("connections").toArray()) {
         QJsonObject connectionObject = connection.toObject();
         if (!connectionObject.isEmpty()) {
           Connection *pConnection = new Connection(this);
@@ -1132,8 +1183,7 @@ namespace ModelInstance
     }
 
     if (mModelJson.contains("transitions")) {
-      QJsonArray transitions = mModelJson.value("transitions").toArray();
-      foreach (QJsonValue transition, transitions) {
+      for (const QJsonValue &transition: mModelJson.value("transitions").toArray()) {
         QJsonObject transitionObject = transition.toObject();
         if (!transitionObject.isEmpty()) {
           Transition *pTransition = new Transition(this);
@@ -1144,8 +1194,7 @@ namespace ModelInstance
     }
 
     if (mModelJson.contains("initialStates")) {
-      QJsonArray initialStates = mModelJson.value("initialStates").toArray();
-      foreach (QJsonValue initialState, initialStates) {
+      for (const QJsonValue &initialState: mModelJson.value("initialStates").toArray()) {
         QJsonObject initialStateObject = initialState.toObject();
         if (!initialStateObject.isEmpty()) {
           InitialState *pInitialState = new InitialState(this);
@@ -1158,6 +1207,63 @@ namespace ModelInstance
     if (mModelJson.contains("source")) {
       mSource.deserialize(mModelJson.value("source").toObject());
     }
+  }
+
+  /*!
+   * \brief Model::deserializeElements
+   * Deserializes the elements JSON and adds the elements to the model.
+   * \param elements
+   */
+  void Model::deserializeElements(const QJsonArray elements)
+  {
+    for (const QJsonValue &element: elements) {
+      QJsonObject elementObject = element.toObject();
+      QString kind = elementObject.value("$kind").toString();
+
+      if (kind.compare(QStringLiteral("extends")) == 0) {
+        mElements.append(new Extend(this, elementObject));
+      } else if (kind.compare(QStringLiteral("component")) == 0) {
+        // store generated inner components separately
+        if (elementObject.contains("generated") && elementObject.value("generated").toBool(false)) {
+          mGeneratedInnerComponents.append(new Component(this, elementObject));
+        } else {
+          mElements.append(new Component(this, elementObject));
+        }
+      } else if (kind.compare(QStringLiteral("class")) == 0) {
+        mElements.append(new ReplaceableClass(this, elementObject));
+      } else {
+        qDebug() << "Model::deserialize() unhandled kind of element" << kind;
+      }
+    }
+  }
+
+  void Model::updateMergedCoordinateSystem()
+  {
+    /* From Modelica Specification Version 3.5-dev
+     * The coordinate system (including preserveAspectRatio) of a class is defined by the following priority:
+     * 1. The coordinate system annotation given in the class (if specified).
+     * 2. The coordinate systems of the first base-class where the extent on the extends-clause specifies a
+     *    null-region (if any). Note that null-region is the default for base-classes, see section 18.6.3.
+     * 3. The default coordinate system CoordinateSystem(extent={{-100, -100}, {100, 100}}).
+     *
+     * Following is the second case. First case is covered when we read the annotation of the class. Third case is handled by default values of IconDiagramAnnotation class.
+     */
+    if (!getAnnotation()->getIconAnnotation()->mMergedCoordinateSystem.isComplete()) {
+      readCoordinateSystemFromExtendsClass(&getAnnotation()->getIconAnnotation()->mMergedCoordinateSystem, true);
+    }
+
+    if (!getAnnotation()->getDiagramAnnotation()->mMergedCoordinateSystem.isComplete()) {
+      readCoordinateSystemFromExtendsClass(&getAnnotation()->getDiagramAnnotation()->mMergedCoordinateSystem, false);
+    }
+  }
+
+  Element *Model::getRootParentElement() const
+  {
+    Element *pElement = getParentElement();
+    while (pElement && pElement->getParentModel() && pElement->getParentModel()->getParentElement()) {
+      pElement = pElement->getParentModel()->getParentElement();
+    }
+    return pElement;
   }
 
   Extend *Model::getParentExtend() const
@@ -1178,12 +1284,34 @@ namespace ModelInstance
     }
   }
 
+  /*!
+   * \brief Model::getNameIfReplaceable
+   * Returns the name of first extends model if the model is replaceable and has only one element which is an extends element.
+   * For example,
+   *  replaceable model MyCustomType = Modelica.Blocks.Sources.Constant;
+   *  Here, MyCustomType is replaceable and has only one element which is an extends element.
+   *  So, this function returns "Modelica.Blocks.Sources.Constant" as the name in this case.
+   * \return
+   */
+  QString Model::getNameIfReplaceable() const
+  {
+    if (getReplaceable() && mElements.size() == 1 && mElements.first()->isExtend() && mElements.first()->getModel()) {
+      return mElements.first()->getModel()->getName();
+    }
+    return QString();
+  }
+
   const QString &Model::getRootType() const
   {
     if (isDerivedType() && mElements.size() > 0) {
       return mElements.at(0)->getRootType();
     }
     return mName;
+  }
+
+  Replaceable *Model::getReplaceable() const
+  {
+    return mpPrefixes ? mpPrefixes.get()->getReplaceable() : nullptr;
   }
 
   bool Model::isConnector() const
@@ -1202,6 +1330,11 @@ namespace ModelInstance
   bool Model::isEnumeration() const
   {
     return getRootType() == QLatin1String("enumeration");
+  }
+
+  bool Model::isRecord() const
+  {
+    return (mRestriction.compare(QStringLiteral("record")) == 0);
   }
 
   bool Model::isType() const
@@ -1300,6 +1433,22 @@ namespace ModelInstance
   }
 
   /*!
+   * \brief Model::removeElement
+   * Removes the element from the model and deletes it.
+   * \param name
+   */
+  void Model::removeElement(const QString &name)
+  {
+    foreach (auto pElement, mElements) {
+      if (pElement->getName().compare(name) == 0) {
+        mElements.removeOne(pElement);
+        delete pElement;
+        break;
+      }
+    }
+  }
+
+  /*!
    * \brief Model::getComponents
    * Returns all components of the model, including inherited ones.
    */
@@ -1316,6 +1465,55 @@ namespace ModelInstance
     }
 
     return comps;
+  }
+
+  /*!
+   * \brief Model::removeConnection
+   * Removes the connection from the model and deletes it.
+   * \param pConnection
+   */
+  void Model::removeConnection(const QString &startConnectorName, const QString &endConnectorName)
+  {
+    foreach (auto pConnection, mConnections) {
+      if (pConnection->getStartConnector()->getName().compare(startConnectorName) == 0 && pConnection->getEndConnector()->getName().compare(endConnectorName) == 0) {
+        mConnections.removeOne(pConnection);
+        delete pConnection;
+        break;
+      }
+    }
+  }
+
+  /*!
+   * \brief Model::removeTransition
+   * Removes the transition from the model and deletes it.
+   * \param startConnectorName
+   * \param endConnectorName
+   */
+  void Model::removeTransition(const QString &startConnectorName, const QString &endConnectorName)
+  {
+    foreach (auto pTransition, mTransitions) {
+      if (pTransition->getStartConnector()->getName().compare(startConnectorName) == 0 && pTransition->getEndConnector()->getName().compare(endConnectorName) == 0) {
+        mTransitions.removeOne(pTransition);
+        delete pTransition;
+        break;
+      }
+    }
+  }
+
+  /*!
+   * \brief Model::removeInitialState
+   * Removes the initial state from the model and deletes it.
+   * \param startConnectorName
+   */
+  void Model::removeInitialState(const QString &startConnectorName)
+  {
+    foreach (auto pInitialSate, mInitialStates) {
+      if (pInitialSate->getStartConnector()->getName().compare(startConnectorName) == 0) {
+        mInitialStates.removeOne(pInitialSate);
+        delete pInitialSate;
+        break;
+      }
+    }
   }
 
   bool Model::isParameterConnectorSizing(const QString &parameter)
@@ -1338,7 +1536,7 @@ namespace ModelInstance
     if (connector.size() == 1) return true;
 
     auto elem = model.lookupElement(connector.first().getName(false));
-    return elem && elem->getModel() && elem->getModel()->isConnector();
+    return elem && elem->isConnector();
   }
 
   bool isCompatibleConnectorDirection(const Element &lhs, bool lhsOutside, const Element &rhs, bool rhsOutside)
@@ -1367,6 +1565,18 @@ namespace ModelInstance
       return true;
     }
 
+    // Issue #12163. Skip checking for compatibility if any of the component is conditional.
+    const Component *lhs_component = dynamic_cast<const Component*>(lhs);
+    const Component *rhs_component = dynamic_cast<const Component*>(rhs);
+    if ((lhs_component && !lhs_component->getCondition()) || (rhs_component && !rhs_component->getCondition())) {
+      return true;
+    }
+
+    Model *lhs_model = lhs->getModel();
+    Model *rhs_model = rhs->getModel();
+
+    if (!lhs_model || !rhs_model) return true;
+
     auto lhs_outside = isOutsideConnector(lhsConnector, *this);
     auto rhs_outside = isOutsideConnector(rhsConnector, *this);
 
@@ -1375,11 +1585,6 @@ namespace ModelInstance
     }
 
     // Check that the connectors are type compatible.
-    Model *lhs_model = lhs->getModel();
-    Model *rhs_model = rhs->getModel();
-
-    if (!lhs_model || !rhs_model) return false;
-
     return lhs_model->isTypeCompatibleWith(*rhs_model, lhs_outside, rhs_outside);
   }
 
@@ -1448,54 +1653,37 @@ namespace ModelInstance
     return true;
   }
 
-  QPair<QString, bool> Model::getParameterValue(const QString &parameter, QString &typeName)
+  QPair<QString, bool> Model::getVariableValue(QStringList variables)
   {
     QPair<QString, bool> value("", false);
     foreach (auto pElement, mElements) {
-      if (pElement->isComponent()) {
-        auto pComponent = dynamic_cast<Component*>(pElement);
-        if (pComponent->getName().compare(StringHandler::getFirstWordBeforeDot(parameter)) == 0) {
-          if (pComponent->getModifier() && pComponent->getModifier()->isValueDefined()) {
-            value = qMakePair(pComponent->getModifier()->getValueWithoutQuotes(), true);
-          }
-          // Fixes issue #7493. Handles the case where value is from instance name e.g., %instanceName.parameterName
-          if (!value.second && pComponent->getModel()) {
-            value = pComponent->getModel()->getParameterValue(StringHandler::getLastWordAfterDot(parameter), typeName);
-          }
-          typeName = pComponent->getType();
-          break;
-        }
+      value = pElement->getVariableValue(variables);
+      if (value.second) { // If we found the value, break the loop.
+        break;
       }
     }
     return value;
   }
 
-  QPair<QString, bool> Model::getParameterValueFromExtendsModifiers(const QString &parameter)
+  QString Model::getVariableType(QStringList variables)
   {
-    QPair<QString, bool> value("", false);
+    QString value;
     foreach (auto pElement, mElements) {
-      if (pElement->isExtend()) {
-        auto pExtend = dynamic_cast<Extend*>(pElement);
-        if (pExtend->getModifier()) {
-          value = pExtend->getModifier()->getModifierValue(QStringList() << parameter);
-        }
-        if (value.second) {
-          return value;
+      if (!variables.isEmpty() && pElement->getName().compare(variables.at(0)) == 0) {
+        variables.removeFirst();
+        if (variables.isEmpty()) {
+          return pElement->getType();
+        } else if (pElement->getModel()) {
+          return pElement->getModel()->getVariableType(variables);
         } else {
-          if (pExtend->getModel()) {
-            value = pExtend->getModel()->getParameterValueFromExtendsModifiers(parameter);
-            if (value.second) {
-              return value;
-            }
-          }
+          return "";
         }
       }
     }
-
     return value;
   }
 
-  FlatModelica::Expression* Model::getVariableBinding(const QString &variableName)
+  FlatModelica::Expression* Model::getVariableValueOrBinding(const QString &variableName, bool value) const
   {
     QString curName;
     bool last;
@@ -1511,20 +1699,29 @@ namespace ModelInstance
       last = true;
     }
 
-    foreach (auto pElement, mElements) {
+    /* https://github.com/OpenModelica/OpenModelica/issues/13992#issuecomment-2969807849
+     * We need the generated inner component to be able to evaluate the expressions.
+     * We don't store the generated inner components together with the other components
+     * So we need to add it here.
+     */
+    QList<Element*> elements;
+    elements.append(mGeneratedInnerComponents);
+    elements.append(mElements);
+
+    foreach (auto pElement, elements) {
       if (pElement->isComponent()) {
         if (pElement->getName().compare(curName) == 0) {
           if (last) {
-            return &pElement->getBinding();
+            return value ? &pElement->getValue() : &pElement->getBinding();
           } else {
             if (!pElement->getModel()) {
               return nullptr;
             }
-            return pElement->getModel()->getVariableBinding(StringHandler::removeFirstWordAfterDot(variableName));
+            return pElement->getModel()->getVariableValueOrBinding(StringHandler::removeFirstWordAfterDot(variableName), value);
           }
         }
       } else if (pElement->isExtend() && pElement->getModel()) {
-        auto expression = pElement->getModel()->getVariableBinding(variableName);
+        auto expression = pElement->getModel()->getVariableValueOrBinding(variableName, value);
         if (expression) {
           return expression;
         }
@@ -1580,6 +1777,7 @@ namespace ModelInstance
     mMissing = false;
     mRestriction = "";
     mComment = "";
+    mGeneratedInnerComponents.clear();
     mElements.clear();
     mConnections.clear();
     mTransitions.clear();
@@ -1619,7 +1817,10 @@ namespace ModelInstance
   void PlacementAnnotation::deserialize(const QJsonObject &jsonObject)
   {
     if (jsonObject.contains("visible")) {
-      mVisible.deserialize(jsonObject.value("visible"));
+      if (!mVisible.deserialize(jsonObject.value("visible"))) {
+        // if we fail to deserialize the visible value then set it to true.
+        mVisible = true;
+      }
     } else {
       // if there is no visible then assume it to be true.
       mVisible = true;
@@ -1630,7 +1831,10 @@ namespace ModelInstance
     }
 
     if (jsonObject.contains("iconVisible")) {
-      mIconVisible.deserialize(jsonObject.value("iconVisible"));
+      if (mIconVisible.deserialize(jsonObject.value("iconVisible"))) {
+        // if we fail to deserialize the iconVisible value then set it to true.
+        mIconVisible = true;
+      }
     } else {
       mIconVisible = mVisible;
     }
@@ -1685,6 +1889,7 @@ namespace ModelInstance
     }
 
     if (jsonObject.contains("showStartAttribute")) {
+      mHasShowStartAttribute = true;
       mShowStartAttribute.deserialize(jsonObject.value("showStartAttribute"));
     }
 
@@ -1739,18 +1944,26 @@ namespace ModelInstance
     }
 
     if (jsonObject.contains("choice")) {
-      QJsonArray choices = jsonObject.value("choice").toArray();
-      foreach (auto choice, choices) {
+      for (const auto& choice: jsonObject.value("choice").toArray()) {
         mChoices.append(new Modifier("", choice, mpParentModel));
       }
     }
   }
 
-  QStringList Choices::getChoicesStringList() const
+  QStringList Choices::getChoicesValueStringList() const
   {
     QStringList choices;
     foreach (auto *pChoice, mChoices) {
       choices.append(pChoice->toString());
+    }
+    return choices;
+  }
+
+  QStringList Choices::getChoicesCommentStringList() const
+  {
+    QStringList choices;
+    foreach (auto *pChoice, mChoices) {
+      choices.append(pChoice->toString(false, true));
     }
     return choices;
   }
@@ -1782,6 +1995,10 @@ namespace ModelInstance
       mComment = jsonObject.value("comment").toString();
     }
 
+    if (jsonObject.contains("$error")) {
+      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, jsonObject.value("$error").toString(), Helper::scriptingKind, Helper::errorLevel));
+    }
+
     deserialize_impl(jsonObject);
   }
 
@@ -1795,6 +2012,36 @@ namespace ModelInstance
     return pElement;
   }
 
+  QPair<QString, bool> Element::getVariableValue(QStringList variables)
+  {
+    QPair<QString, bool> value("", false);
+
+    if (isComponent() && variables.size() > 1 && getName().compare(variables.at(0)) == 0) {
+      variables.removeFirst();
+    }
+
+    if (mpModifier) {
+      // if we found the variable in the modifier and its value is defined then use it.
+      if (mpModifier->isValueDefined() && variables.size() == 1 && getName().compare(variables.at(0)) == 0) {
+        value = qMakePair(mpModifier->getValueWithoutQuotes(), true);
+      } else {
+        value = mpModifier->getModifierValue(variables);
+      }
+      if (value.second) {
+        return value;
+      }
+    }
+
+    if (mpModel) {
+      value = mpModel->getVariableValue(variables);
+      if (value.second) {
+        return value;
+      }
+    }
+
+    return value;
+  }
+
   /*!
    * \brief Element::getTopLevelExtendName
    * Returns the top level extend name where the element is located.
@@ -1804,7 +2051,7 @@ namespace ModelInstance
   {
     Element *pElement = getTopLevelExtendElement();
 
-    if (pElement->getModel()) {
+    if (pElement && pElement->getModel()) {
       return pElement->getModel()->getName();
     } else {
       return mpParentModel->getName();
@@ -1848,14 +2095,40 @@ namespace ModelInstance
     return mpPrefixes ? mpPrefixes.get()->isOuter() : false;
   }
 
+  bool Element::isParameter() const
+  {
+    return mpPrefixes ? mpPrefixes.get()->getVariability().compare(QStringLiteral("parameter")) == 0 : false;
+  }
+
+  bool Element::isInput() const
+  {
+    return mpPrefixes ? mpPrefixes.get()->getDirection().compare(QStringLiteral("input")) == 0 : false;
+  }
+
   Replaceable *Element::getReplaceable() const
   {
-    return mpPrefixes ? mpPrefixes.get()->getReplaceable() : nullptr;
+    if (mpPrefixes) {
+      return mpPrefixes.get()->getReplaceable();
+    } else if (mpModel) {
+      return mpModel->getReplaceable();
+    } else {
+      return nullptr;
+    }
   }
 
   bool Element::isRedeclare() const
   {
     return mpPrefixes ? mpPrefixes.get()->isRedeclare() : false;
+  }
+
+  bool Element::isConnector() const
+  {
+    return mpModel && mpModel->isConnector();
+  }
+
+  bool Element::isExpandableConnector() const
+  {
+    return mpModel && mpModel->isExpandableConnector();
   }
 
   QString Element::getConnector() const
@@ -1974,8 +2247,9 @@ namespace ModelInstance
     }
   }
 
-  QString Element::toString(bool skipTopLevel) const
+  QString Element::toString(bool skipTopLevel, bool mergeExtendsModifiers) const
   {
+    Q_UNUSED(mergeExtendsModifiers);
     if (mpPrefixes) {
       return mpPrefixes->toString(skipTopLevel);
     }
@@ -2052,15 +2326,25 @@ namespace ModelInstance
 
   /*!
    * \brief Extend::getQualifiedName
-   * Returns the qualified name of component.
+   * Returns the qualified name of extend.
+   * \param includeBaseName
    * \return
    */
-  QString Extend::getQualifiedName() const
+  QString Extend::getQualifiedName(bool includeBaseName) const
   {
     if (mpParentModel && mpParentModel->getParentElement()) {
-      return mpParentModel->getParentElement()->getQualifiedName();
+      if (includeBaseName) {
+        QString name = mpParentModel->getParentElement()->getQualifiedName(includeBaseName);
+        if (name.isEmpty()) {
+          return mBaseClass;
+        } else {
+          return name % "." % mBaseClass;
+        }
+      } else {
+        return mpParentModel->getParentElement()->getQualifiedName(includeBaseName);
+      }
     } else {
-      return "";
+      return includeBaseName ? mBaseClass : "";
     }
   }
 
@@ -2072,9 +2356,9 @@ namespace ModelInstance
     return mBaseClass;
   }
 
-  QString Extend::toString(bool skipTopLevel) const
+  QString Extend::toString(bool skipTopLevel, bool mergeExtendsModifiers) const
   {
-    return Element::toString(skipTopLevel);
+    return Element::toString(skipTopLevel, mergeExtendsModifiers);
   }
 
   Component::Component(Model *pParentModel)
@@ -2113,13 +2397,14 @@ namespace ModelInstance
 
       if (valueObject.contains("value")) {
         try {
-          mBinding.deserialize(valueObject.value("value"));
-          mBindingForReset = mBinding;
+          mValue.deserialize(valueObject.value("value"));
         } catch (const std::exception &e) {
           qDebug() << "Failed to deserialize json: " << valueObject.value("value");
           qDebug() << e.what();
         }
-      } else if (valueObject.contains("binding")) {
+      }
+
+      if (valueObject.contains("binding")) {
         try {
           mBinding.deserialize(valueObject.value("binding"));
           mBindingForReset = mBinding;
@@ -2146,14 +2431,82 @@ namespace ModelInstance
   }
 
   /*!
-   * \brief Component::getQualifiedName
-   * Returns the qualified name of the component.
+   * \brief Component::getExtendsModifiers
+   * Makes a list of all extends modifiers.
+   * \param pParentModel
    * \return
    */
-  QString Component::getQualifiedName() const
+  QList<Modifier*> Component::getExtendsModifiers(const Model *pParentModel) const
+  {
+    QList<Modifier*> modifiers;
+    if (pParentModel && pParentModel->getParentElement() && pParentModel->getParentElement()->getModifier()) {
+      Modifier *pExtentElementModifier = pParentModel->getParentElement()->getModifier();
+      foreach (auto *pSubModifier, pExtentElementModifier->getModifiers()) {
+        if (pSubModifier->getName().compare(mName) == 0) {
+          modifiers.append(pSubModifier);
+        }
+      }
+      modifiers.append(getExtendsModifiers(pExtentElementModifier->getParentModel()));
+    }
+    return modifiers;
+  }
+
+  /*!
+   * \brief Component::mergeModifiersIntoOne
+   * Merges the list of all extends modifiers into one modifier.
+   * \param extendsModifiers
+   * \return
+   */
+  Modifier *Component::mergeModifiersIntoOne(QList<Modifier *> extendsModifiers) const
+  {
+    Modifier *pModifier = nullptr;
+    if (!extendsModifiers.isEmpty()) {
+      pModifier = createModifier(extendsModifiers.last(), mpParentModel);
+      for (int i = extendsModifiers.size() - 2 ; i >= 0 ; i--) {
+        Component::mergeModifiers(pModifier, extendsModifiers.at(i));
+      }
+    }
+    return pModifier;
+  }
+
+  /*!
+   * \brief Component::mergeModifiers
+   * Merges pModifier2 into pModifier1
+   * \param pModifier1
+   * \param pModifier2
+   */
+  void Component::mergeModifiers(Modifier *pModifier1, Modifier *pModifier2)
+  {
+    foreach (auto pSubModifier2, pModifier2->getModifiers()) {
+      bool subModifierFound = false;
+      foreach (auto pSubModifier1, pModifier1->getModifiers()) {
+        /* if modifier exists then check if its value is defined
+         * if the value is not defined then merge sub modifiers
+         */
+        if (pSubModifier2->getName().compare(pSubModifier1->getName()) == 0) {
+          subModifierFound = true;
+          if (!pSubModifier1->isValueDefined()) {
+            Component::mergeModifiers(pSubModifier1, pSubModifier2);
+          }
+        }
+      }
+      // if modifier doesn't exist then add it
+      if (!subModifierFound) {
+        pModifier1->addModifier(pSubModifier2);
+      }
+    }
+  }
+
+  /*!
+   * \brief Component::getQualifiedName
+   * Returns the qualified name of the component.
+   * \param includeBaseName
+   * \return
+   */
+  QString Component::getQualifiedName(bool includeBaseName) const
   {
     if (mpParentModel && mpParentModel->getParentElement()) {
-      QString name = mpParentModel->getParentElement()->getQualifiedName();
+      QString name = mpParentModel->getParentElement()->getQualifiedName(includeBaseName);
       if (name.isEmpty()) {
         return mName;
       } else {
@@ -2172,11 +2525,11 @@ namespace ModelInstance
     return mType;
   }
 
-  QString Component::toString(bool skipTopLevel) const
+  QString Component::toString(bool skipTopLevel, bool mergeExtendsModifiers) const
   {
     QStringList value;
 
-    value.append(Element::toString(skipTopLevel));
+    value.append(Element::toString(skipTopLevel, mergeExtendsModifiers));
 
     if (mpPrefixes) {
       auto prefixes = mpPrefixes->typePrefixes();
@@ -2185,10 +2538,42 @@ namespace ModelInstance
 
     value.append(mType);
     value.append(mName);
-    if (mpModifier) {
+    const QString dims = getDimensions().getAbsynDimensionsString();
+    if (!dims.isEmpty()) {
+      value.append("[" % dims % "]");
+    }
+    // modifiers
+    Modifier *pModifier = nullptr;
+    if (mergeExtendsModifiers) {
+      // Merge extends modifiers. See issue #13301 and #13516.
+      QList<Modifier *> extendsModifiers = getExtendsModifiers(mpParentModel);
+      pModifier = mergeModifiersIntoOne(extendsModifiers);
+    }
+    // if merge modifiers
+    if (pModifier) {
+      // if this modifier exists then merge it
+      if (mpModifier) {
+        Component::mergeModifiers(pModifier, mpModifier);
+      }
+      // we don't need the name coming from the extend modification
+      pModifier->setName("");
+      value.append(pModifier->toString());
+      delete pModifier;
+    } else if (mpModifier) {
+      // if there are no merged modifiers then just use this modifier if exists.
       value.append(mpModifier->toString());
     }
-    if (!mComment.isEmpty()) {
+    // constrainedby issue #13300
+    if (mpPrefixes && mpPrefixes->getReplaceable() && !mpPrefixes->getReplaceable()->getConstrainedby().isEmpty()) {
+      value.append("constrainedby " % mpPrefixes->getReplaceable()->getConstrainedby());
+      if (mpPrefixes->getReplaceable()->getModifier()) {
+        value.append(mpPrefixes->getReplaceable()->getModifier()->toString());
+      }
+    }
+    // comment
+    if (mpPrefixes && mpPrefixes->getReplaceable() && !mpPrefixes->getReplaceable()->getComment().isEmpty()) {
+      value.append("\"" % mpPrefixes->getReplaceable()->getComment() % "\"");
+    } else if (!mComment.isEmpty()) {
       value.append("\"" % mComment % "\"");
     }
 
@@ -2237,10 +2622,16 @@ namespace ModelInstance
     }
   }
 
-  QString ReplaceableClass::getQualifiedName() const
+  /*!
+   * \brief ReplaceableClass::getQualifiedName
+   * Returns the qualified name of the replaceable class.
+   * \param includeBaseName
+   * \return
+   */
+  QString ReplaceableClass::getQualifiedName(bool includeBaseName) const
   {
     if (mpParentModel && mpParentModel->getParentElement()) {
-      QString name = mpParentModel->getParentElement()->getQualifiedName();
+      QString name = mpParentModel->getParentElement()->getQualifiedName(includeBaseName);
       if (name.isEmpty()) {
         return mName;
       } else {
@@ -2251,11 +2642,11 @@ namespace ModelInstance
     }
   }
 
-  QString ReplaceableClass::toString(bool skipTopLevel) const
+  QString ReplaceableClass::toString(bool skipTopLevel, bool mergeExtendsModifiers) const
   {
     QStringList value;
 
-    value.append(Element::toString(skipTopLevel));
+    value.append(Element::toString(skipTopLevel, mergeExtendsModifiers));
     value.append(mType);
     value.append(mName);
     if (!mBaseClass.isEmpty()) {
@@ -2294,7 +2685,11 @@ namespace ModelInstance
     } else {
       mName = str.left(i);
 
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+      for (const auto& sub: QStringView(str).mid(i + 1, str.size() - i - 2).split(',')) {
+#else
       for (const auto& sub: str.midRef(i + 1, str.size() - i - 2).split(',')) {
+#endif
         mSubScripts.append(sub.toString());
       }
     }
@@ -2307,8 +2702,7 @@ namespace ModelInstance
     }
 
     if (jsonObject.contains("subscripts")) {
-      QJsonArray subscripts = jsonObject.value("subscripts").toArray();
-      foreach (QJsonValue subscript, subscripts) {
+      for (const QJsonValue &subscript: jsonObject.value("subscripts").toArray()) {
         mSubScripts.append(QString::number(subscript.toInt()));
       }
     }
@@ -2335,7 +2729,7 @@ namespace ModelInstance
 
   void Name::deserialize(const QJsonArray &jsonArray)
   {
-    foreach (QJsonValue part, jsonArray) {
+    for (const QJsonValue &part: jsonArray) {
       Part partObject;
       partObject.deserialize(part.toObject());
       mParts.append(partObject);
@@ -2361,6 +2755,18 @@ namespace ModelInstance
     mKind = "";
   }
 
+  /*!
+   * \brief Connector::Connector
+   * Constructor for Connector.
+   * \param kind
+   * \param name
+   */
+  Connector::Connector(const QString &kind, const QString &name)
+  {
+    mKind = kind;
+    mName = name;
+  }
+
   void Connector::deserialize(const QJsonObject &jsonObject)
   {
     if (jsonObject.contains("$kind")) {
@@ -2382,9 +2788,37 @@ namespace ModelInstance
     return mName.getNameParts();
   }
 
+  Import::Import(const QJsonObject &jsonObject)
+  {
+    if (jsonObject.contains("path")) {
+      mPath = jsonObject.value("path").toString();
+    }
+
+    if (jsonObject.contains("shortName")) {
+      mShortName = jsonObject.value("shortName").toString();
+    }
+  }
+
   Connection::Connection(Model *pParentModel)
   {
     mpParentModel = pParentModel;
+  }
+
+  /*!
+   * \brief Connection::Connection
+   * Constructor for Connection.
+   * \param pParentModel
+   * \param startConnector
+   * \param endConnector
+   * \param annotationJsonObject
+   */
+  Connection::Connection(Model *pParentModel, const QString &startConnector, const QString &endConnector, const QJsonObject &annotationJsonObject)
+  {
+    mpParentModel = pParentModel;
+    mpStartConnector = std::make_unique<Connector>("cref", startConnector);
+    mpEndConnector = std::make_unique<Connector>("cref", endConnector);
+    mpAnnotation = std::make_unique<Annotation>(mpParentModel);
+    mpAnnotation->deserialize(annotationJsonObject);
   }
 
   void Connection::deserialize(const QJsonObject &jsonObject)
@@ -2423,6 +2857,34 @@ namespace ModelInstance
     mReset = true;
     mSynchronize = false;
     mPriority = 1;
+  }
+
+  /*!
+   * \brief Transition::Transition
+   * Constructor for Transition.
+   * \param pParentModel
+   * \param startConnector
+   * \param endConnector
+   * \param condition
+   * \param immediate
+   * \param reset
+   * \param synchronize
+   * \param priority
+   * \param annotationJsonObject
+   */
+  Transition::Transition(Model *pParentModel, const QString &startConnector, const QString &endConnector, bool condition, bool immediate, bool reset,
+                         bool synchronize, int priority, const QJsonObject &annotationJsonObject)
+  {
+    mpParentModel = pParentModel;
+    mpStartConnector = std::make_unique<Connector>("cref", startConnector);
+    mpEndConnector = std::make_unique<Connector>("cref", endConnector);
+    mCondition = condition;
+    mImmediate = immediate;
+    mReset = reset;
+    mSynchronize = synchronize;
+    mPriority = priority;
+    mpAnnotation = std::make_unique<Annotation>(mpParentModel);
+    mpAnnotation->deserialize(annotationJsonObject);
   }
 
   void Transition::deserialize(const QJsonObject &jsonObject)
@@ -2478,6 +2940,21 @@ namespace ModelInstance
     mpParentModel = pParentModel;
   }
 
+  /*!
+   * \brief InitialState::InitialState
+   * Constructor for InitialState.
+   * \param pParentModel
+   * \param startConnector
+   * \param annotationJsonObject
+   */
+  InitialState::InitialState(Model *pParentModel, const QString &startConnector, const QJsonObject &annotationJsonObject)
+  {
+    mpParentModel = pParentModel;
+    mpStartConnector = std::make_unique<Connector>("cref", startConnector);
+    mpAnnotation = std::make_unique<Annotation>(mpParentModel);
+    mpAnnotation->deserialize(annotationJsonObject);
+  }
+
   void InitialState::deserialize(const QJsonObject &jsonObject)
   {
     if (jsonObject.contains("arguments")) {
@@ -2504,18 +2981,6 @@ namespace ModelInstance
   QString InitialState::toString() const
   {
     return "initialState(" % mpStartConnector->getName() % ")";
-  }
-
-  void IconDiagramMap::deserialize(const QJsonObject &jsonObject)
-  {
-    if (jsonObject.contains("extent")) {
-      mHasExtent = true;
-      mExtent.deserialize(jsonObject.value("extent"));
-    }
-
-    if (jsonObject.contains("primitivesVisible")) {
-      mPrimitivesVisible.deserialize(jsonObject.value("primitivesVisible"));
-    }
   }
 
 }

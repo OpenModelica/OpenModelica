@@ -2,7 +2,7 @@
 // keywords: nonlinear system start values newton diagnostics
 // status: correct
 //
-// Testing if flag LOG_NEWTON_DIAGNOSTICS is working
+// Testing if flag LOG_NLS_NEWTON_DIAGNOSTICS is working
 
 loadString("
   model problem4
@@ -15,7 +15,7 @@ loadString("
   end problem4;
 "); getErrorString();
 
-simulate(problem4, simflags="-newtonDiagnostics -lv=LOG_NLS_NEWTON_DIAG"); getErrorString();
+simulate(problem4, simflags="-lv=LOG_NLS_NEWTON_DIAGNOSTICS"); getErrorString();
 
 
 // Result:
@@ -23,80 +23,44 @@ simulate(problem4, simflags="-newtonDiagnostics -lv=LOG_NLS_NEWTON_DIAG"); getEr
 // ""
 // record SimulationResult
 //     resultFile = "problem4_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'problem4', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-newtonDiagnostics -lv=LOG_NLS_NEWTON_DIAG'",
-//     messages = "LOG_NLS_NEWTON_DIAG | info    | Newton diagnostics (version Teus 17-02-2023) starting ....
-//
-//    ****** Model name: problem4
-//    ****** Initial                         : 1
-//    ****** Number of integer parameters    : 0
-//    ****** Number of discrete real params  : 0
-//    ****** Number of real parameters       : 0
-//    ****** Number of integer variables     : 0
-//    ****** Number of real variables        : 4
-//    ******  1: id=1000, name=     $cse3, value=  0.000000
-//    ******  2: id=1001, name=     $cse4, value=  0.000000
-//    ******  3: id=1002, name=        x1, value=10000.000000
-//    ******  4: id=1003, name=        x2, value= -5.000000
-//
-//    Information about equations from non-linear pattern ....
-//
-//                Total number of equations    = 2
-//                Number of independents       = 2
-//                Number of non-linear entries = 4
-//
-//    Vector x0: all dependents ....
-//
-//                x0[0] =  -5.0000000000  (x2)
-//                x0[1] = 10000.0000000000  (x1)
-//
-//    Function values of all equations f(x0) ....
-//
-//                f^1 = 147.4130591026
-//                f^2 = -500000001.0000000000
-//
-//    Function values of non-linear equations n(w0) ....
-//
-//                n^1 = f^1 = 147.4130591026
-//                n^2 = f^2 = -500000001.0000000000
-//
-//    Vector w0: non-linear dependents .... 
-//
-//                w0[0] = x0[0] =  -5.0000000000  (x2)
-//                w0[1] = x0[1] = 10000.0000000000  (x1)
-//
-//    Damping factor lambda =      1
-//
-//
-//   
-//    ========================================================  
-//    Final results   
-//    ========================================================
-//
-//       alpha_i > 1e-02
-//       ------------------------
-//
-//       Gamma_ijk > 1e-02
-//       ------------------------
-//       Gamma_2_1_2 =     0.080
-//
-//       |Sigma_jj| > 1e-02
-//       ------------------------
-//       Sigma_1_1 =     0.993
-//       Sigma_2_2 =     0.199
-//
-//       Variables    Initial guess         |max(Gamma,Sigma)|
-//       ---------    ------------------    ------------------
-//       var_1          x2 =      -5        0.993
-//       var_2          x1 =   10000        0.199
-//
-//       Equations    max(alpha,Gamma)
-//       ---------    ------------------
-//       eqn_2        0.080
-//
-//    ========================================================
-//
-//
-// LOG_NLS_NEWTON_DIAG | info    | Newton diagnostics (version Teus 17-02-2023) finished!!
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'problem4', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_NLS_NEWTON_DIAGNOSTICS'",
+//     messages = "LOG_NLS_NEWTON_DIAGNOSTICS | info    | Running newton diagnostics for system 7
+// LOG_NLS_NEWTON_DIAGNOSTICS | info    | Information about the system from non-linear pattern
+// |                 | |       | | Total number of equations    = 2
+// |                 | |       | | Number of unknowns           = 2
+// |                 | |       | | Number of non-linear entries = 4
+// LOG_NLS_NEWTON_DIAGNOSTICS | info    | Information about the initial guess
+// |                 | |       | | Vector x0 of unknowns
+// |                 | |       | | | x0[1] =  -5.0000000000  (x2)
+// |                 | |       | | | x0[2] = 10000.0000000000  (x1)
+// |                 | |       | | Residual function values of all equations f(x0)
+// |                 | |       | | | f[1] = 147.4130591026
+// |                 | |       | | | f[2] = -500000001.0000000000
+// |                 | |       | | Vector w0 of nonlinear unknowns
+// |                 | |       | | | w0[1] = x0[1] =  -5.0000000000  (x2)
+// |                 | |       | | | w0[2] = x0[2] = 10000.0000000000  (x1)
+// |                 | |       | | Residual function values of all nonlinear equations n(w0)
+// |                 | |       | | | n[1] = f[1] = 147.4130591026
+// |                 | |       | | | n[2] = f[2] = -500000001.0000000000
+// |                 | |       | | Final damping factor lambda = 1
+// LOG_NLS_NEWTON_DIAGNOSTICS | info    | Values of relevant indicators
+// |                 | |       | | alpha_i > 0.010
+// |                 | |       | | Gamma_ijk > 0.010
+// |                 | |       | | | Gamma_2   _1   _2    =   0.08
+// |                 | |       | | sigma_jj > 0.010
+// |                 | |       | | | sigma_1   _1    =  0.99
+// |                 | |       | | | sigma_2   _2    =  0.20
+// LOG_NLS_NEWTON_DIAGNOSTICS | info    | Ranked indicators
+// |                 | |       | | By variable
+// |                 | |       | | | Var no.  Var name                                  Initial guess  max(Gamma,sigma)
+// |                 | |       | | | -------  ----------------------------------------  -------------  ----------------
+// |                 | |       | | |       1                                        x2             -5     0.99
+// |                 | |       | | |       2                                        x1          10000     0.20
+// |                 | |       | | By equation
+// |                 | |       | | | Eq no.  Eq idx    max(alpha,Gamma)
+// |                 | |       | | | ------  ------    ----------------
+// |                 | |       | | |      2       1   0.08
+// LOG_NLS_NEWTON_DIAGNOSTICS | info    | Newton diagnostics complete!
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "

@@ -1,7 +1,6 @@
 // name: FuncBuiltinSign
 // keywords: sign
 // status: correct
-// cflags: -d=newInst
 //
 // Tests the builtin sign function.
 //

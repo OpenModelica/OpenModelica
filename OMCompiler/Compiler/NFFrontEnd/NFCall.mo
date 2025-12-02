@@ -33,6 +33,7 @@ encapsulated uniontype NFCall
 
 import Absyn;
 import AbsynUtil;
+import BaseModelica;
 import DAE;
 import Expression = NFExpression;
 import NFCallAttributes;
@@ -68,6 +69,7 @@ import Prefixes = NFPrefixes;
 import Restriction = NFRestriction;
 import SCodeUtil;
 import SimplifyExp = NFSimplifyExp;
+import Structural = NFStructural;
 import Subscript = NFSubscript;
 import TypeCheck = NFTypeCheck;
 import Typing = NFTyping;
@@ -157,18 +159,19 @@ public
     input Expression callExp;
     input InstContext.Type context;
     input SourceInfo info;
+    input Boolean retype = false;
     output Expression outExp;
     output Type ty;
     output Variability var;
     output Purity pur;
   protected
     NFCall call, ty_call;
-    list<Expression> args;
     ComponentRef cref;
   algorithm
     Expression.CALL(call = call) := callExp;
 
     outExp := match call
+      // 1. typing all the untyped calls
       case UNTYPED_CALL(ref = cref)
         algorithm
           if BuiltinCall.needSpecialHandling(call) then
@@ -176,20 +179,7 @@ public
           else
             checkNotPartial(cref, context, info);
             ty_call := typeMatchNormalCall(call, context, info);
-            ty := typeOf(ty_call);
-            var := variability(ty_call);
-            pur := purity(ty_call);
-
-            if isRecordConstructor(ty_call) then
-              outExp := toRecordExpression(ty_call, ty);
-            else
-              if Function.hasUnboxArgs(typedFunction(ty_call)) then
-                outExp := Expression.CALL(unboxArgs(ty_call));
-              else
-                outExp := Expression.CALL(ty_call);
-              end if;
-              outExp := Inline.inlineCallExp(outExp);
-            end if;
+            (outExp, ty, var, pur)  := typeCallExp(ty_call);
           end if;
         then
           outExp;
@@ -207,6 +197,15 @@ public
         then
           Expression.CALL(ty_call);
 
+      // 2. retyping already typed calls
+      case TYPED_CALL() guard(retype and not BuiltinCall.needSpecialHandling(call))
+        algorithm
+          ty_call := retypeCall(call, context, info);
+          (outExp, ty, var, pur)  := typeCallExp(ty_call);
+        then
+          outExp;
+
+      // 3. not retyping already typed calls
       case TYPED_CALL()
         algorithm
           ty := call.ty;
@@ -249,6 +248,28 @@ public
       fail();
     end if;
   end checkNotPartial;
+
+  function typeCallExp
+    input Call ty_call;
+    output Expression outExp;
+    output Type ty;
+    output Variability var;
+    output Purity pur;
+  algorithm
+    ty := typeOf(ty_call);
+    var := variability(ty_call);
+    pur := purity(ty_call);
+    if isRecordConstructor(ty_call) then
+      outExp := toRecordExpression(ty_call, ty);
+    else
+      if Function.hasUnboxArgs(typedFunction(ty_call)) then
+        outExp := Expression.CALL(unboxArgs(ty_call));
+      else
+        outExp := Expression.CALL(ty_call);
+      end if;
+      outExp := Inline.inlineCallExp(outExp);
+    end if;
+  end typeCallExp;
 
   function typeNormalCall
     input output NFCall call;
@@ -400,6 +421,43 @@ public
       updateExternalRecordArgsInType(ty);
     end if;
   end matchTypedNormalCall;
+
+  function retypeCall
+    input Call call;
+    input InstContext.Type context;
+    input SourceInfo info;
+    output Call ty_call;
+  protected
+    InstContext.Type next_context;
+    Type ty, arg_ty;
+    Variability arg_var;
+    Purity arg_pur;
+    list<TypedArg> typed_args = {};
+    list<Expression> args = {};
+  algorithm
+    ty_call := match call
+      case TYPED_CALL() algorithm
+        next_context := InstContext.set(context, NFInstContext.SUBEXPRESSION);
+        for arg in listReverse(call.arguments) loop
+          (arg, arg_ty, arg_var, arg_pur) := Typing.typeExp(arg, next_context, info, true);
+          typed_args := TypedArg.TYPED_ARG(NONE(), arg, arg_ty, arg_var, arg_pur) :: typed_args;
+          args := arg :: args;
+        end for;
+
+        ty := Function.returnType(call.fn);
+        ty := resolvePolymorphicReturnType(call.fn, typed_args, ty);
+
+        ty := evaluateCallType(ty, call.fn, args);
+        ty_call := makeTypedCall(call.fn, args, call.var, call.purity, ty);
+      then ty_call;
+
+      else
+        algorithm
+          Error.assertion(false, getInstanceName() + " got invalid function call expression", sourceInfo());
+        then
+          fail();
+    end match;
+  end retypeCall;
 
   function typeOf
     input NFCall call;
@@ -560,6 +618,63 @@ public
       else false;
     end match;
   end isExternalObjectConstructor;
+
+  function isLiteral
+    input Call call;
+    output Boolean literal;
+  protected
+    function is_literal_iter
+      input tuple<InstNode, Expression> iter;
+      output Boolean literal = Expression.isLiteral(Util.tuple22(iter));
+    end is_literal_iter;
+  algorithm
+    literal := match call
+      case TYPED_CALL() then List.all(call.arguments, Expression.isLiteral);
+
+      case TYPED_REDUCTION()
+        then Expression.isLiteral(call.exp) and List.all(call.iters, is_literal_iter);
+
+      case TYPED_ARRAY_CONSTRUCTOR()
+        then Expression.isLiteral(call.exp) and List.all(call.iters, is_literal_iter);
+
+      else false;
+    end match;
+  end isLiteral;
+
+  function isKnownSizeFill
+    input Call call;
+    output Boolean res;
+  protected
+    function is_literal_iter
+      input tuple<InstNode, Expression> iter;
+      output Boolean literal = Expression.isLiteral(Util.tuple22(iter));
+    end is_literal_iter;
+  algorithm
+    res := match call
+      case TYPED_CALL() then isNamed(call, "fill") and List.all(listRest(call.arguments), Expression.isLiteral);
+      case TYPED_ARRAY_CONSTRUCTOR() then List.all(call.iters, is_literal_iter);
+      else false;
+    end match;
+  end isKnownSizeFill;
+
+  function isReduction
+    "returns true if the call is a typed reduction or if the call is a typed
+    call of a function that represents an array reduction"
+    input Call call;
+    output Boolean b;
+  algorithm
+    b := match call
+      case TYPED_REDUCTION() then true;
+      case TYPED_CALL() then match AbsynUtil.pathString(Function.nameConsiderBuiltin(call.fn))
+          case "min" then true;
+          case "max" then true;
+          case "sum" then true;
+          case "product" then true;
+          else false;
+        end match;
+      else false;
+    end match;
+  end isReduction;
 
   function inlineType
     input NFCall call;
@@ -759,6 +874,7 @@ public
 
   function toFlatString
     input NFCall call;
+    input BaseModelica.OutputFormat format;
     output String str;
   protected
     String name, arg_str,c;
@@ -769,12 +885,12 @@ public
       case TYPED_CALL()
         algorithm
           name := AbsynUtil.pathString(Function.nameConsiderBuiltin(call.fn));
-          arg_str := stringDelimitList(list(Expression.toFlatString(arg) for arg in call.arguments), ", ");
+          arg_str := toFlatStringArgs(call.arguments, name, format);
         then
           if Function.isBuiltin(call.fn) then
             stringAppendList({name, "(", arg_str, ")"})
           elseif isExternalObjectConstructor(call) then
-            stringAppendList({Type.toFlatString(call.ty), "(", arg_str, ")"})
+            stringAppendList({Type.toFlatString(call.ty, format), "(", arg_str, ")"})
           else
             stringAppendList({Util.makeQuotedIdentifier(name), "(", arg_str, ")"});
 
@@ -784,12 +900,12 @@ public
             // Vectorized calls contains iterators with illegal Modelica names
             // (to avoid name conflicts), to make the flat output legal such
             // calls are reverted to their original form here.
-            str := toFlatString(devectorizeCall(call));
+            str := Expression.toFlatString(devectorizeCall(call), format);
           else
             name := AbsynUtil.pathString(Function.nameConsiderBuiltin(NFBuiltinFuncs.ARRAY_FUNC));
-            arg_str := Expression.toFlatString(call.exp);
+            arg_str := Expression.toFlatString(call.exp, format);
             c := stringDelimitList(list(Util.makeQuotedIdentifier(InstNode.name(Util.tuple21(iter))) + " in " +
-              Expression.toFlatString(Util.tuple22(iter)) for iter in call.iters), ", ");
+              Expression.toFlatString(Util.tuple22(iter), format) for iter in call.iters), ", ");
             str := stringAppendList({"{", arg_str, " for ", c, "}"});
           end if;
         then
@@ -798,9 +914,9 @@ public
       case TYPED_REDUCTION()
         algorithm
           name := AbsynUtil.pathString(Function.nameConsiderBuiltin(call.fn));
-          arg_str := Expression.toFlatString(call.exp);
+          arg_str := Expression.toFlatString(call.exp, format);
           c := stringDelimitList(list(Util.makeQuotedIdentifier(InstNode.name(Util.tuple21(iter))) + " in " +
-            Expression.toFlatString(Util.tuple22(iter)) for iter in call.iters), ", ");
+            Expression.toFlatString(Util.tuple22(iter), format) for iter in call.iters), ", ");
         then
           if Function.isBuiltin(call.fn) then
             stringAppendList({name, "(", arg_str, " for ", c, ")"})
@@ -809,6 +925,50 @@ public
 
     end match;
   end toFlatString;
+
+  function toFlatStringArgs
+    input list<Expression> args;
+    input String fnName;
+    input BaseModelica.OutputFormat format;
+    output String argsString;
+  protected
+    Expression arg1, arg2;
+    list<Expression> rest_args;
+  algorithm
+    argsString := match fnName
+      case "String"
+        then match args
+          case {arg1, arg2}
+            then Expression.toFlatString(arg1, format) + ", format = " + Expression.toFlatString(arg2, format);
+
+          else
+            algorithm
+              arg1 :: rest_args := args;
+              argsString := Expression.toFlatString(arg1, format);
+
+              if listLength(rest_args) == 3 then
+                arg1 :: rest_args := rest_args;
+                if not Expression.isIntegerValue(arg1, 6) then
+                  argsString := argsString + ", significantDigits = " + Expression.toFlatString(arg1, format);
+                end if;
+              end if;
+
+              arg1 :: rest_args := rest_args;
+              if not Expression.isZero(arg1) then
+                argsString := argsString + ", minimumLength = " + Expression.toFlatString(arg1, format);
+              end if;
+
+              arg1 :: rest_args := rest_args;
+              if not Expression.isTrue(arg1) then
+                argsString := argsString + ", leftJustified = " + Expression.toFlatString(arg1, format);
+              end if;
+            then
+              argsString;
+         end match;
+
+      else stringDelimitList(list(Expression.toFlatString(arg, format) for arg in args), ", ");
+    end match;
+  end toFlatStringArgs;
 
   function typedString
     "Like toString, but prefixes each argument with its type as a comment."
@@ -846,7 +1006,7 @@ public
 
   function toJSON
     input Call call;
-    output JSON json = JSON.emptyObject();
+    output JSON json = JSON.emptyListObject();
 
     function iterators_json
       input list<tuple<InstNode, Expression>> iters;
@@ -855,7 +1015,7 @@ public
       JSON j;
     algorithm
       for i in iters loop
-        j := JSON.emptyObject();
+        j := JSON.emptyListObject();
         j := JSON.addPair("name", JSON.makeString(InstNode.name(Util.tuple21(i))), j);
         j := JSON.addPair("range", Expression.toJSON(Util.tuple22(i)), j);
         json := JSON.addElement(j, json);
@@ -1021,10 +1181,10 @@ public
               Function.name(call.fn),
               Absyn.COMBINE(),
               Type.toDAE(call.ty),
-              Expression.toDAEValueOpt(call.defaultExp),
+              Util.applyOption(call.defaultExp, Expression.toDAEValue),
               fold_id,
               res_id,
-              Expression.toDAEOpt(fold_exp)),
+              Util.applyOption(fold_exp, Expression.toDAE)),
             Expression.toDAE(call.exp),
             list(iteratorToDAE(iter) for iter in call.iters));
 
@@ -1246,7 +1406,7 @@ public
 
       case UNTYPED_CALL()
         algorithm
-          res := List.exist(call.arguments, func);
+          res := List.any(call.arguments, func);
 
           if not res then
             for arg in call.named_args loop
@@ -1279,7 +1439,7 @@ public
         then
           false;
 
-      case TYPED_CALL() then List.exist(call.arguments, func);
+      case TYPED_CALL() then List.any(call.arguments, func);
       case UNTYPED_ARRAY_CONSTRUCTOR() then func(call.exp);
       case TYPED_ARRAY_CONSTRUCTOR() then func(call.exp);
       case UNTYPED_REDUCTION() then func(call.exp);
@@ -1628,7 +1788,7 @@ public
         algorithm
           e := Expression.map(call.exp, func);
           iters := mapIteratorsExp(call.iters, func);
-          default_exp := Expression.mapOpt(call.defaultExp, func);
+          default_exp := Util.applyOption(call.defaultExp, function Expression.map(func = func));
           fold_exp := Util.applyTuple31(call.foldExp, function Expression.mapOpt(func = func));
         then
           TYPED_REDUCTION(call.fn, call.ty, call.var, call.purity, e, iters, default_exp, fold_exp);
@@ -2041,6 +2201,7 @@ public
   function toArrayConstructor
     "tries to make an array constructor from any call"
     input Call iCall;
+    input Pointer<Integer> index_ptr;
     output Call oCall;
   algorithm
     oCall := match iCall
@@ -2050,19 +2211,30 @@ public
         Option<Expression> step;
         list<Expression> rest;
         list<tuple<InstNode, Expression>> iterators = {};
-        Integer index = 1;
+        Call body_call;
+        Integer index;
 
       case TYPED_CALL() then match AbsynUtil.pathString(Function.nameConsiderBuiltin(iCall.fn))
         case "fill" algorithm
+          index         := Pointer.access(index_ptr);
           body :: rest  := iCall.arguments;
           start         := Expression.INTEGER(1);
           step          := NONE();
-          for stop in rest loop
-            iter_name   := InstNode.newIndexedIterator(index);
+          for stop in listReverse(rest) loop
+            iter_name   := InstNode.newIndexedIterator(index, "f");
             iter_range  := Expression.makeRange(start, step, stop);
             iterators   := (iter_name, iter_range) :: iterators;
             index       := index + 1;
           end for;
+
+          // if there are nested calls, combine them
+          (body, iterators) := match body
+            case Expression.CALL(call = body_call as TYPED_ARRAY_CONSTRUCTOR()) algorithm
+            then (body_call.exp, listAppend(iterators, body_call.iters));
+            else (body, iterators);
+          end match;
+
+          Pointer.update(index_ptr, index);
         then TYPED_ARRAY_CONSTRUCTOR(iCall.ty, iCall.var, iCall.purity, body, listReverse(iterators));
         else iCall;
       end match;
@@ -2076,7 +2248,7 @@ public
   algorithm
     isOp := match call
       case TYPED_CALL()
-        then Function.isBuiltin(call.fn) and functionNameFirst(call) == "Connections";
+        then Function.isBuiltin(call.fn) and AbsynUtil.pathFirstIdent(Function.name(call.fn)) == "Connections";
       else false;
     end match;
   end isConnectionsOperator;
@@ -2098,6 +2270,17 @@ public
       else false;
     end match;
   end isStreamOperator;
+
+  function isCardinality
+    input Call call;
+    output Boolean isCardinality;
+  algorithm
+    isCardinality := match call
+      case TYPED_CALL() guard Function.isBuiltin(call.fn)
+        then functionNameFirst(call) == "cardinality";
+      else false;
+    end match;
+  end isCardinality;
 
 protected
   function instNormalCall
@@ -2328,7 +2511,7 @@ protected
               if InstContext.inRelaxed(context) then
                 range := Ceval.tryEvalExp(range);
               else
-                range := Ceval.evalExp(range, Ceval.EvalTarget.RANGE(info));
+                range := Ceval.evalExp(range, Ceval.EvalTarget.new(info, NFInstContext.ITERATION_RANGE));
               end if;
               iter_ty := Expression.typeOf(range);
             end if;
@@ -2695,7 +2878,7 @@ protected
             exp := Expression.RANGE(ty, Expression.INTEGER(1), NONE(), Dimension.sizeExp(dim));
 
             // Create the iterator.
-            iter := InstNode.newIterator("$i" + intString(i), Type.INTEGER(), info);
+            iter := InstNode.newUniqueIterator(info);
             iters := (iter, exp) :: iters;
 
             // Now that iterator is ready apply it, as a subscript, to each argument that is supposed to be vectorized
@@ -2704,7 +2887,7 @@ protected
             sub := Subscript.INDEX(exp);
 
             call_args := List.mapIndices(call_args, mk.vectorizedArgs,
-              function Expression.applySubscript(subscript = sub, restSubscripts = {}));
+              function Expression.applySubscript(subscript = sub, restSubscripts = {}, applyToScope = false));
 
             i := i + 1;
           end for;
@@ -2741,7 +2924,7 @@ protected
      used as a helper to output valid flat Modelica, and should probably not
      be used where e.g. correct types are required."
     input NFCall call;
-    output NFCall outCall;
+    output Expression result;
   protected
     Expression exp, iter_exp;
     list<tuple<InstNode, Expression>> iters;
@@ -2754,34 +2937,65 @@ protected
       exp := Expression.replaceIterator(exp, iter_node, iter_exp);
     end for;
 
-    exp := SimplifyExp.simplify(exp);
-    Expression.CALL(call = outCall) := exp;
+    result := SimplifyExp.simplify(exp);
   end devectorizeCall;
 
   function evaluateCallType
+    "Replaces references to inputs in a call's return type with the call's
+     arguments, in order to determine e.g. the sizes of output arrays."
     input output Type ty;
     input Function fn;
     input list<Expression> args;
+    input Integer outputIndex = 1;
     input output ParameterTree ptree = ParameterTree.EMPTY();
+  protected
+    list<Dimension> dims;
+    list<Type> tys;
+    Binding binding;
+    Expression binding_exp;
+    Type t;
+    Integer output_index;
   algorithm
     ty := match ty
-      local
-        list<Dimension> dims;
-        list<Type> tys;
-
       case Type.ARRAY()
         algorithm
-          (dims, ptree) := List.map1Fold(ty.dimensions, evaluateCallTypeDim, (fn, args), ptree);
+          (dims, ptree) := List.mapFold(ty.dimensions, function evaluateCallTypeDim(fn = fn, args = args), ptree);
           ty.dimensions := dims;
         then
           ty;
 
       case Type.TUPLE()
         algorithm
-          (tys, ptree) := List.map2Fold(ty.types, evaluateCallType, fn, args, ptree);
-          ty.types := tys;
+          tys := {};
+          output_index := 1;
+
+          for t in ty.types loop
+            (t, ptree) := evaluateCallType(t, fn, args, output_index, ptree);
+            tys := t :: tys;
+            output_index := output_index + 1;
+          end for;
+
+          ty.types := listReverseInPlace(tys);
         then
           ty;
+
+      // A normal record output
+      case Type.COMPLEX()
+        guard Type.isRecord(ty) and not Function.isNonDefaultRecordConstructor(fn)
+        algorithm
+          binding := Component.getBinding(InstNode.component(listGet(fn.outputs, outputIndex)));
+
+          if Binding.isBound(binding) then
+            // If the output has a binding, replace inputs in it and update the type of the output.
+            binding_exp := Binding.getExp(binding);
+            ptree := buildParameterTree(fn, args, ptree);
+            binding_exp := Expression.map(binding_exp, function evaluateCallTypeDimExp(ptree = ptree));
+            t := Expression.typeOf(binding_exp);
+          else
+            t := ty;
+          end if;
+        then
+          t;
 
       else ty;
     end match;
@@ -2789,7 +3003,8 @@ protected
 
   function evaluateCallTypeDim
     input output Dimension dim;
-    input tuple<Function, list<Expression>> fnArgs;
+    input Function fn;
+    input list<Expression> args;
     input output ParameterTree ptree;
   algorithm
     dim := match dim
@@ -2798,12 +3013,13 @@ protected
 
       case Dimension.EXP()
         algorithm
-          ptree := buildParameterTree(fnArgs, ptree);
+          ptree := buildParameterTree(fn, args, ptree);
           exp := Expression.map(dim.exp, function evaluateCallTypeDimExp(ptree = ptree));
 
           ErrorExt.setCheckpoint(getInstanceName());
           try
-            exp := Ceval.evalExp(exp, Ceval.EvalTarget.IGNORE_ERRORS());
+            Structural.markExp(exp);
+            exp := Ceval.evalExp(exp);
           else
           end try;
           ErrorExt.rollBack(getInstanceName());
@@ -2815,21 +3031,19 @@ protected
   end evaluateCallTypeDim;
 
   function buildParameterTree
-    input tuple<Function, list<Expression>> fnArgs;
+    input Function fn;
+    input list<Expression> args;
     input output ParameterTree ptree;
   protected
-    Function fn;
-    list<Expression> args;
     Expression arg;
+    list<Expression> rest_args = args;
   algorithm
     if not ParameterTree.isEmpty(ptree) then
       return;
     end if;
 
-    (fn, args) := fnArgs;
-
     for i in fn.inputs loop
-      arg :: args := args;
+      arg :: rest_args := rest_args;
       ptree := ParameterTree.add(ptree, InstNode.name(i), arg);
     end for;
 
@@ -2840,20 +3054,25 @@ protected
     input Expression exp;
     input ParameterTree ptree;
     output Expression outExp;
+  protected
+    list<ComponentRef> cref_parts;
+    ComponentRef cref;
+    Option<Expression> oexp;
   algorithm
     outExp := match exp
-      local
-        InstNode node;
-        Option<Expression> oexp;
-        Expression e;
-
-      case Expression.CREF(cref = ComponentRef.CREF(node = node, restCref = ComponentRef.EMPTY()))
+      case Expression.CREF(cref = ComponentRef.CREF())
         algorithm
-          oexp := ParameterTree.getOpt(ptree, InstNode.name(node));
+          cref :: cref_parts := ComponentRef.toListReverse(exp.cref);
+          oexp := ParameterTree.getOpt(ptree, InstNode.name(ComponentRef.node(cref)));
 
           if isSome(oexp) then
             SOME(outExp) := oexp;
-            // TODO: Apply subscripts.
+            outExp := Expression.applySubscripts(ComponentRef.getSubscripts(cref), outExp);
+
+            for cr in cref_parts loop
+              outExp := Expression.recordElement(InstNode.name(ComponentRef.node(cr)), outExp);
+              outExp := Expression.applySubscripts(ComponentRef.getSubscripts(cr), outExp);
+            end for;
           else
             outExp := exp;
           end if;

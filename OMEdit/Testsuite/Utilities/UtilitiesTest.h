@@ -45,8 +45,12 @@ class UtilitiesTest: public QObject
   Q_OBJECT
 
 private slots:
+  void extractArrayParts();
+  void extractArrayParts_data();
   void literalConstant();
   void literalConstant_data();
+  void scalarLiteralConstant();
+  void scalarLiteralConstant_data();
   void cleanupTestCase();
 };
 

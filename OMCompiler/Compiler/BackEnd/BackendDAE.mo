@@ -253,6 +253,7 @@ uniontype Var "variables"
     .DAE.VarInnerOuter innerOuter "inner, outer, inner outer or unspecified";
     Boolean unreplaceable "indicates if it is allowed to replace this variable";
     Boolean initNonlinear "indicates if the variable is a nonlinear iteration variable during initialization";
+    Boolean encrypted "true if the variable belongs to an encrypted class";
   end VAR;
 end Var;
 
@@ -440,15 +441,15 @@ end WhenEquation;
 public
 uniontype WhenOperator
   record ASSIGN " left_cr = right_exp"
-    .DAE.Exp left     "left hand side of equation";
-    .DAE.Exp right             "right hand side of equation";
-    .DAE.ElementSource source  "origin of equation";
+    .DAE.Exp left             "left hand side of equation";
+    .DAE.Exp right            "right hand side of equation";
+    .DAE.ElementSource source "origin of equation";
   end ASSIGN;
 
   record REINIT "Reinit Statement"
     .DAE.ComponentRef stateVar "State variable to reinit";
-    .DAE.Exp value             "Value after reinit";
-    .DAE.ElementSource source  "origin of equation";
+    .DAE.Exp value            "Value after reinit";
+    .DAE.ElementSource source "origin of equation";
   end REINIT;
 
   record ASSERT
@@ -660,17 +661,26 @@ uniontype ZeroCrossing
     Integer index                           "zero crossing index";
     .DAE.Exp relation_                      "function";
     list<Integer> occurEquLst               "list of equations where the function occurs";
-    Option<list<SimIterator>> iter  "optional iterator for for-loops";
+    Option<list<SimIterator>> iter          "optional iterator for for-loops";
   end ZERO_CROSSING;
 end ZeroCrossing;
 
 public uniontype SimIterator
-  record SIM_ITERATOR
+  record SIM_ITERATOR_RANGE
     .DAE.ComponentRef name;
-    Integer start;
-    Integer step;
+    .DAE.Exp start;
+    .DAE.Exp step;
+    .DAE.Exp stop;
+    .DAE.Exp size;
+    Integer non_resizable_size;
+    list<tuple<.DAE.ComponentRef, array<.DAE.Exp>>> sub_iter;
+  end SIM_ITERATOR_RANGE;
+  record SIM_ITERATOR_LIST
+    .DAE.ComponentRef name;
+    list<Integer> lst;
     Integer size;
-  end SIM_ITERATOR;
+    list<tuple<.DAE.ComponentRef, array<.DAE.Exp>>> sub_iter;
+  end SIM_ITERATOR_LIST;
 end SimIterator;
 
 public

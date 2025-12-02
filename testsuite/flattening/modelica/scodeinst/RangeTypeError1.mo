@@ -1,7 +1,6 @@
 // name: RangeTypeError1.mo
 // keywords:
 // status: incorrect
-// cflags: -d=newInst
 //
 //
 
@@ -12,7 +11,7 @@ end RangeTypeError1;
 
 // Result:
 // Error processing file: RangeTypeError1.mo
-// [flattening/modelica/scodeinst/RangeTypeError1.mo:10:3-10:20:writable] Error: Type mismatch in range: '1' of type
+// [flattening/modelica/scodeinst/RangeTypeError1.mo:9:3-9:20:writable] Error: Type mismatch in range: '1' of type
 //   Integer
 // is not type compatible with '"3"' of type
 //   String

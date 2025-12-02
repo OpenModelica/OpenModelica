@@ -1,7 +1,6 @@
 // name: WhenNestedEquation
 // keywords: when, nested, equation
 // status: incorrect
-// cflags: -d=-newInst
 //
 // Test detection of nested when-equations, which are not allowed.
 // Fix for bug 1189: http://openmodelica.ida.liu.se:8080/cb/issue/1189
@@ -15,11 +14,12 @@ equation
       y2=sin(x);
     end when;
   end when;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ErrorNestedWhen;
 
 // Result:
 // Error processing file: WhenNestedEquation.mo
-// [flattening/modelica/equations/WhenNestedEquation.mo:14:5-16:13:writable] Error: Nested when statements are not allowed.
+// [flattening/modelica/equations/WhenNestedEquation.mo:13:5-15:13:writable] Error: Nested when statements are not allowed.
 // Error: Error occurred while flattening model ErrorNestedWhen
 //
 // # Error encountered! Exiting...

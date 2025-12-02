@@ -29,6 +29,6 @@ diffPrefix = "diff", vars = {"Inductor3.i","Capacitor1.v","Capacitor2.v"}); getE
 // "
 // end SimulationResult;
 // ""
-// (true,{})
+// (true, {})
 // ""
 // endResult

@@ -1,7 +1,6 @@
 //name:        ExpandableVariableUsed.mo [BUG: #2385]
 //keyword:     expandable
 //status:      correct
-// cflags: -d=-newInst
 //
 // instantiate/check model example
 //
@@ -36,6 +35,7 @@ end ExpandablePack;
 
 model ExpandableVariableUsed
   extends ExpandablePack.Test;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ExpandableVariableUsed;
 
 // Result:

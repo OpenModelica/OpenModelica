@@ -1,7 +1,6 @@
 // name:     LogCall1
 // keywords: external function, equation
 // status:   correct
-// cflags: -d=-newInst
 //
 // Drmodelica:
 //
@@ -16,6 +15,7 @@ model LogCall1
   Real res;
 equation
   res = mylog(100);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end LogCall1;
 
 

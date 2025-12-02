@@ -29,7 +29,7 @@ updateComponent(wrong, Modelica.Electrical.Analog.Basic.EMF, model1, comment="Ne
 // ""
 // {{Modelica.Electrical.Analog.Basic.EMF, emf1, "", "public", false, false, false, false, "unspecified", "none", "unspecified", {}}}
 // ""
-// Ok
+// true
 // ""
 // "model model1
 //   Modelica.Electrical.Analog.Basic.EMF emf1 \"An EMF Component\";

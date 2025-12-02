@@ -1,7 +1,6 @@
 // name: DimUnknown12
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 //
 
@@ -40,9 +39,9 @@ end DimUnknown12;
 //   parameter Real perCHWPum.pressure.V_flow[1] = 0.1;
 //   parameter Real perCHWPum.pressure.V_flow[2] = 1.0;
 //   parameter Real perCHWPum.pressure.V_flow[3] = 1.2;
-//   parameter Real perCHWPum.pressure.dp[1] = 240000.0;
-//   parameter Real perCHWPum.pressure.dp[2] = 200000.0;
-//   parameter Real perCHWPum.pressure.dp[3] = 20000.0;
+//   parameter Real perCHWPum.pressure.dp[1] = 2.4e5;
+//   parameter Real perCHWPum.pressure.dp[2] = 2e5;
+//   parameter Real perCHWPum.pressure.dp[3] = 2e4;
 //   final parameter Integer cooPla.numChi = 2;
 //   final parameter Real cooPla.perChi.mEva_flow_nominal = 1000.0;
 //   parameter Real cooPla.perCHWPum.pressure.V_flow[1] = perCHWPum.pressure.V_flow[1];

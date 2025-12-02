@@ -130,11 +130,11 @@ void GitCommands::createGitRepository(QString repositoryPath)
   if(!isGitInstalled()) {
     // Todo get Git path from settings
     QMessageBox::warning(0, QString(Helper::applicationName).append(" - ").append(tr("Repository Creation Failed")),
-                         QString("A version control repository could not be created in %1").arg(repositoryPath), Helper::ok);
+                         QString("A version control repository could not be created in %1").arg(repositoryPath), QMessageBox::Ok);
   }
   else {
     QString createRepo = getGitStdout(repositoryPath, QStringList() << "init");
-    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::CompositeModel, createRepo,
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, createRepo,
                                               Helper::scriptingKind, Helper::notificationLevel));
 
     addStructuresToRepository(repositoryPath);

@@ -41,6 +41,7 @@ encapsulated package System
 protected
 import Autoconf;
 import Error;
+import Settings;
 
 public function trim
 "removes chars in charsToRemove from begin and end of inString"
@@ -193,6 +194,18 @@ public function strtokIncludingDelimiters
   external "C" strings=System_strtokIncludingDelimiters(string,token) annotation(Library = "omcruntime");
 end strtokIncludingDelimiters;
 
+public function splitOnNewline
+  "Splits a string on new lines (\n and \r\n). If includeDelimiter is true then
+   the new line delimiters are included in the list as separate tokens.
+     splitOnNewline(a\nb\r\nc) = {a, b, c}
+     splitOnNewline(a\nb\r\nc, true) = {a, \n, b, \r\n, c}"
+  input String str;
+  input Boolean includeDelimiter = false;
+  output list<String> strings;
+
+  external "C" strings=System_splitOnNewline(str, includeDelimiter) annotation(Library = "omcruntime");
+end splitOnNewline;
+
 public function setCCompiler
   input String inString;
 
@@ -311,6 +324,77 @@ public function readFile
   output String outString;
   external "C" outString = System_readFile(inString) annotation(Library = "omcruntime");
 end readFile;
+
+public function systemCallRestrictedEnv
+"@author: adrpo
+ This function will call system with restricted environment to make sure we do not pick executables or dlls from the PATH.
+ Only keep the OM or OMDev directories and the Windows ones in the PATH for the system call.
+ After the execution the PATH will be set back."
+  input String command;
+  input String outFile = "" "empty file means no redirection unless it is part of the command";
+  output Integer outInteger;
+protected
+  String savedPATH = "", newPATH = "", windowsPath = "", omInstallPath = "", omDevPath = "", pfix = "";
+algorithm
+  if Autoconf.os == "Windows_NT" then
+    // save path
+    try
+      savedPATH := readEnv("PATH");
+    else
+      savedPATH := "";
+      Error.addInternalError(getInstanceName() + " failed for: " + command + "! Could not read PATH environment variable.", sourceInfo());
+      fail();
+    end try;
+    // construct restricted path
+    newPATH := "";
+    // keep the OM or OMDev directories and the Windows ones
+    windowsPath := System.stringReplace(winGetSystemDirectory(), "\\", "/");
+    omInstallPath := System.stringReplace(Settings.getInstallationDirectoryPath(), "\\", "/");
+    try
+      omDevPath := System.stringReplace(readEnv("OMDEV"), "\\", "/");
+    else
+      omDevPath := "";
+    end try;
+    for p in listReverse(strtok(savedPATH, ";")) loop
+      pfix := System.stringReplace(p, "\\", "/");
+      if (0 == stringFind(pfix, windowsPath)) or
+         (0 == stringFind(pfix, omInstallPath)) or
+         (0 == stringFind(pfix, omDevPath))
+      then
+        newPATH := p + ";" + newPATH;
+      end if;
+    end for;
+    if stringEqual(newPATH, "") then
+      Error.addInternalError(getInstanceName() + " failed for: " + command + "! Failed to filter the PATH: " + savedPATH, sourceInfo());
+      fail();
+    end if;
+    setEnv("PATH", newPATH, true);
+    try
+      outInteger := systemCall(command, outFile);
+    else
+      Error.addInternalError(getInstanceName() + " failed for: " + command + "! Failed in the system call with restricted PATH: " + newPATH, sourceInfo());
+      setEnv("PATH", savedPATH, true);
+      fail();
+    end try;
+    setEnv("PATH", savedPATH, true);
+  else
+    outInteger := systemCall(command, outFile);
+  end if;
+end systemCallRestrictedEnv;
+
+public function winGetSystemDirectory "returns the Windows system directory on Windows and empty string on Linux"
+  output String outDirectory = "";
+algorithm
+  outDirectory := "";
+  if Autoconf.os == "Windows_NT" then
+    outDirectory := winGetSystemDirectoryA();
+  end if;
+end winGetSystemDirectory;
+
+protected function winGetSystemDirectoryA
+  output String str;
+  external "C" str=SystemImpl__winGetSystemDirectoryA() annotation(Library = "omcruntime");
+end winGetSystemDirectoryA;
 
 public function systemCall
   input String command;
@@ -556,12 +640,6 @@ using the asctime() function in time.h (libc)
   external "C" timeStr=System_getCurrentTimeStr() annotation(Library = "omcruntime");
 end getCurrentTimeStr;
 
-public function readFileNoNumeric
-  input String inString;
-  output String outString;
-  external "C" outString=SystemImpl__readFileNoNumeric(inString) annotation(Library = "omcruntime");
-end readFileNoNumeric;
-
 public function setHasExpandableConnectors
 "@author: adrpo
  sets the external flag that signals the
@@ -718,14 +796,14 @@ public function getuid
 end getuid;
 
 public function realtimeTick
-"Tock returns the time since the last tock; undefined if tick was never called.
+"Store current time in timer.
 The clock index is 0-31. The function fails if the number is out of range."
   input Integer clockIndex;
   external "C" System_realtimeTick(clockIndex) annotation(Library = "omcruntime");
 end realtimeTick;
 
 public function realtimeTock
-"Tock returns the time since the last tock, undefined if tick was never called.
+"Tock returns the time since the last tick, undefined if tick was never called.
 The clock index is 0-31. The function fails if the number is out of range."
   input Integer clockIndex;
   output Real outTime;
@@ -738,6 +816,22 @@ The clock index is 0-31. The function fails if the number is out of range."
   input Integer clockIndex;
   external "C" System_realtimeClear(clockIndex) annotation(Library = "omcruntime");
 end realtimeClear;
+
+public function realtimeAccumulate
+"Accumulates the timer.
+The clock index is 0-31. The function fails if the number is out of range."
+  input Integer clockIndex;
+  output Real outTime;
+  external "C" outTime = System_realtimeAccumulate(clockIndex) annotation(Library = "omcruntime");
+end realtimeAccumulate;
+
+public function realtimeAccumulated
+"Returns the time accumulated from intervals between ticks and tocks.
+The clock index is 0-31. The function fails if the number is out of range."
+  input Integer clockIndex;
+  output Real outTime;
+  external "C" outTime = System_realtimeAccumulated(clockIndex) annotation(Library = "omcruntime");
+end realtimeAccumulated;
 
 public function realtimeNtick
 "Returns the number of ticks since last clear.
@@ -924,11 +1018,18 @@ end modelicaPlatform;
 
 public function openModelicaPlatform "
   Returns uname -sm (with spaces replaced by dashes and only lower-case letters) on Unix platforms
-  mingw32 or mingw64 is returned for OMDev mingw
+  ucrt64 or mingw32 or mingw64 is returned for OMDev mingw
   "
   output String platform;
   external "C" platform=System_openModelicaPlatform() annotation(Library = "omcruntime");
 end openModelicaPlatform;
+
+public function openModelicaPlatformAlternative "
+  in case openModelicaPlatform is ucrt64 then mingw64 is returned, else nothing
+  "
+  output String platform;
+  external "C" platform=System_openModelicaPlatformAlternative() annotation(Library = "omcruntime");
+end openModelicaPlatformAlternative;
 
 public function gccDumpMachine "
   Returns gcc -dumpmachine
@@ -995,7 +1096,9 @@ function iconv "The iconv() function converts one multibyte characters from one 
 external "C" result=SystemImpl__iconv(string,from,to,true /* Print errors */) annotation(Library = {"omcruntime"});
 end iconv;
 
-function snprintff "sprintf format string that takes one double as argument"
+function snprintff
+  "snprintf format string that takes one double as argument
+   and the maximum length of the formatted string as another argument."
   input String format;
   input Integer maxlen;
   input Real val;
@@ -1004,8 +1107,8 @@ external "C" str=System_snprintff(format,maxlen,val) annotation(Library = {"omcr
 end snprintff;
 
 function sprintff
-  "sprintf format string that takes one double as argument, but unlike snprintff
-   it takes no buffer size as argument.
+  "sprintf format string that takes one double as argument,
+   but unlike snprintff it takes no string length as argument.
 
    NOTE: This function doesn't actually call sprintf, since that would be unsafe.
          It instead calls snprintf with a fixed buffer size that should be enough

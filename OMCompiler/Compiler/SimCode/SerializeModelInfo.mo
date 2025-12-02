@@ -61,6 +61,7 @@ import SimCodeUtil;
 import SimCodeFunctionUtil;
 import SCodeDump;
 import Util;
+import UnorderedSet;
 
 function serializeWork "Always succeeds in order to clean-up external objects"
   input SimCode.SimCode code;
@@ -195,7 +196,7 @@ algorithm
         File.write(file,"\":{\"comment\":\"");
         File.writeEscape(file,var.comment,escape=JSON);
         File.write(file,"\",\"kind\":\"");
-        serializeVarKind(file,var.varKind);
+        serializeVarKind(file,var.varKind, var);
         File.write(file,"\"");
         serializeTypeName(file,var.type_);
         File.write(file,",\"unit\":\"");
@@ -535,6 +536,28 @@ algorithm
       File.write(file, "}");
     then true;
 
+    case SimCode.SES_RESIZABLE_ASSIGN() equation
+      File.write(file, "\n{\"eqIndex\":");
+      File.writeInt(file, eq.index);
+      if parent <> 0 then
+        File.write(file, ",\"parent\":");
+        File.writeInt(file, parent);
+      end if;
+      File.write(file, ",\"section\":\"");
+      File.write(file, section);
+      File.write(file, "\"");
+      if (assign_type==1) then
+        File.write(file, ",\"tag\":\"torn\",\"defines\":[\"");
+      elseif (assign_type==2) then
+        File.write(file, ",\"tag\":\"jacobian\",\"defines\":[\"");
+      else
+        File.write(file, ",\"tag\":\"assign\",\"defines\":[\"");
+      end if;
+      File.write(file, "\"],\"source\":");
+      serializeSource(file,eq.source,withOperations);
+      File.write(file, "}");
+    then true;
+
     case SimCode.SES_GENERIC_ASSIGN() equation
       File.write(file, "\n{\"eqIndex\":");
       File.writeInt(file, eq.index);
@@ -638,7 +661,7 @@ algorithm
       eqs = SimCodeUtil.sortEqSystems(lSystem.residual);
       if not listEmpty(eqs) then
         serializeEquation(file,listHead(eqs),section,withOperations,parent=lSystem.index,first=true,assign_type=if lSystem.tornSystem then 1 else 0);
-        min(serializeEquation(file,e,section,withOperations,parent=lSystem.index,assign_type=if lSystem.tornSystem then 1 else 0) for e in List.rest(eqs));
+        min(serializeEquation(file,e,section,withOperations,parent=lSystem.index,assign_type=if lSystem.tornSystem then 1 else 0) for e in listRest(eqs));
       end if;
 
       jeqs = match lSystem.jacobianMatrix
@@ -648,7 +671,7 @@ algorithm
       if not listEmpty(jeqs) then
         File.write(file, ",");
         serializeEquation(file,listHead(jeqs),section,withOperations,parent=lSystem.index,first=true,assign_type=2);
-        min(serializeEquation(file,e,section,withOperations,parent=lSystem.index,assign_type=2) for e in List.rest(jeqs));
+        min(serializeEquation(file,e,section,withOperations,parent=lSystem.index,assign_type=2) for e in listRest(jeqs));
       end if;
 
       if listEmpty(eqs) and listEmpty(jeqs) then
@@ -696,7 +719,7 @@ algorithm
       eqs = SimCodeUtil.sortEqSystems(lSystem.residual);
       if not listEmpty(eqs) then
         serializeEquation(file,listHead(eqs),section,withOperations,parent=lSystem.index,first=true,assign_type=if lSystem.tornSystem then 1 else 0);
-        min(serializeEquation(file,e,section,withOperations,parent=lSystem.index,assign_type=if lSystem.tornSystem then 1 else 0) for e in List.rest(eqs));
+        min(serializeEquation(file,e,section,withOperations,parent=lSystem.index,assign_type=if lSystem.tornSystem then 1 else 0) for e in listRest(eqs));
       end if;
 
       jeqs = match lSystem.jacobianMatrix
@@ -706,7 +729,7 @@ algorithm
       if not listEmpty(jeqs) then
         File.write(file, ",");
         serializeEquation(file,listHead(jeqs),section,withOperations,parent=lSystem.index,first=true,assign_type=2);
-        min(serializeEquation(file,e,section,withOperations,parent=lSystem.index,assign_type=2) for e in List.rest(jeqs));
+        min(serializeEquation(file,e,section,withOperations,parent=lSystem.index,assign_type=2) for e in listRest(jeqs));
       end if;
 
       if listEmpty(eqs) and listEmpty(jeqs) then
@@ -751,7 +774,7 @@ algorithm
       eqs = SimCodeUtil.sortEqSystems(atL.residual);
       if not listEmpty(eqs) then
         serializeEquation(file,listHead(eqs),section,withOperations,parent=atL.index,first=true,assign_type=if atL.tornSystem then 1 else 0);
-        min(serializeEquation(file,e,section,withOperations,parent=atL.index,assign_type=if atL.tornSystem then 1 else 0) for e in List.rest(eqs));
+        min(serializeEquation(file,e,section,withOperations,parent=atL.index,assign_type=if atL.tornSystem then 1 else 0) for e in listRest(eqs));
       end if;
 
       jeqs = match atL.jacobianMatrix
@@ -761,7 +784,7 @@ algorithm
       if not listEmpty(jeqs) then
         File.write(file, ",");
         serializeEquation(file,listHead(jeqs),section,withOperations,parent=atL.index,first=true,assign_type=2);
-        min(serializeEquation(file,e,section,withOperations,parent=atL.index,assign_type=2) for e in List.rest(jeqs));
+        min(serializeEquation(file,e,section,withOperations,parent=atL.index,assign_type=2) for e in listRest(jeqs));
       end if;
 
       if listEmpty(eqs) and listEmpty(jeqs) then
@@ -853,7 +876,7 @@ algorithm
     case SimCode.SES_NONLINEAR(nlSystem = nlSystem as SimCode.NONLINEARSYSTEM(), alternativeTearing = NONE()) equation
       eqs = SimCodeUtil.sortEqSystems(nlSystem.eqs);
       serializeEquation(file,listHead(eqs),section,withOperations,parent=nlSystem.index,first=true,assign_type=if nlSystem.tornSystem then 1 else 0);
-      min(serializeEquation(file,e,section,withOperations,parent=nlSystem.index,assign_type=if nlSystem.tornSystem then 1 else 0) for e in List.rest(eqs));
+      min(serializeEquation(file,e,section,withOperations,parent=nlSystem.index,assign_type=if nlSystem.tornSystem then 1 else 0) for e in listRest(eqs));
 
       jeqs = match nlSystem.jacobianMatrix
         case SOME(SimCode.JAC_MATRIX(columns={SimCode.JAC_COLUMN(columnEqns=jeqs,constantEqns=constantEqns)})) then SimCodeUtil.sortEqSystems(listAppend(jeqs,constantEqns));
@@ -862,7 +885,7 @@ algorithm
       if not listEmpty(jeqs) then
         File.write(file, ",");
         serializeEquation(file,listHead(jeqs),section,withOperations,parent=nlSystem.index,first=true,assign_type=2);
-        min(serializeEquation(file,e,section,withOperations,parent=nlSystem.index,assign_type=2) for e in List.rest(jeqs));
+        min(serializeEquation(file,e,section,withOperations,parent=nlSystem.index,assign_type=2) for e in listRest(jeqs));
       end if;
 
       File.write(file, ",\n{\"eqIndex\":");
@@ -894,7 +917,7 @@ algorithm
       // for strict tearing set
       eqs = SimCodeUtil.sortEqSystems(nlSystem.eqs);
       serializeEquation(file,listHead(eqs),section,withOperations,parent=nlSystem.index,first=true,assign_type=if nlSystem.tornSystem then 1 else 0);
-      min(serializeEquation(file,e,section,withOperations,parent=nlSystem.index,assign_type=if nlSystem.tornSystem then 1 else 0) for e in List.rest(eqs));
+      min(serializeEquation(file,e,section,withOperations,parent=nlSystem.index,assign_type=if nlSystem.tornSystem then 1 else 0) for e in listRest(eqs));
 
       jeqs = match nlSystem.jacobianMatrix
         case SOME(SimCode.JAC_MATRIX(columns={SimCode.JAC_COLUMN(columnEqns=jeqs,constantEqns=constantEqns)})) then SimCodeUtil.sortEqSystems(listAppend(jeqs,constantEqns));
@@ -903,7 +926,7 @@ algorithm
       if not listEmpty(jeqs) then
         File.write(file, ",");
         serializeEquation(file,listHead(jeqs),section,withOperations,parent=nlSystem.index,first=true,assign_type=2);
-        min(serializeEquation(file,e,section,withOperations,parent=nlSystem.index,assign_type=2) for e in List.rest(jeqs));
+        min(serializeEquation(file,e,section,withOperations,parent=nlSystem.index,assign_type=2) for e in listRest(jeqs));
       end if;
 
       File.write(file, ",\n{\"eqIndex\":");
@@ -932,7 +955,7 @@ algorithm
       // for casual tearing set
       eqs = SimCodeUtil.sortEqSystems(atNL.eqs);
       serializeEquation(file,listHead(eqs),section,withOperations,parent=atNL.index,first=true,assign_type=if atNL.tornSystem then 1 else 0);
-      min(serializeEquation(file,e,section,withOperations,parent=atNL.index,assign_type=if atNL.tornSystem then 1 else 0) for e in List.rest(eqs));
+      min(serializeEquation(file,e,section,withOperations,parent=atNL.index,assign_type=if atNL.tornSystem then 1 else 0) for e in listRest(eqs));
 
       jeqs = match atNL.jacobianMatrix
         case SOME(SimCode.JAC_MATRIX(columns={SimCode.JAC_COLUMN(columnEqns=jeqs,constantEqns=constantEqns)})) then SimCodeUtil.sortEqSystems(listAppend(jeqs,constantEqns));
@@ -941,7 +964,7 @@ algorithm
       if not listEmpty(jeqs) then
         File.write(file, ",");
         serializeEquation(file,listHead(jeqs),section,withOperations,parent=atNL.index,first=true,assign_type=2);
-        min(serializeEquation(file,e,section,withOperations,parent=atNL.index,assign_type=2) for e in List.rest(jeqs));
+        min(serializeEquation(file,e,section,withOperations,parent=atNL.index,assign_type=2) for e in listRest(jeqs));
       end if;
 
       File.write(file, ",\n{\"eqIndex\":");
@@ -971,7 +994,7 @@ algorithm
     case SimCode.SES_IFEQUATION() equation
       eqs = listAppend(List.flatten(list(Util.tuple22(e) for e in eq.ifbranches)), eq.elsebranch);
       serializeEquation(file,listHead(eqs),section,withOperations,first=true);
-      min(serializeEquation(file,e,section,withOperations) for e in List.rest(eqs));
+      min(serializeEquation(file,e,section,withOperations) for e in listRest(eqs));
       File.write(file, ",\n{\"eqIndex\":");
       File.writeInt(file, eq.index);
       if parent <> 0 then
@@ -1025,7 +1048,7 @@ algorithm
             File.write(file, "\",\"tag\":\"when\",\"defines\":[");
             serializeExp(file,whenOp.left);
             File.write(file, "],\"uses\":[");
-            serializeUses(file,List.union(eq.conditions,Expression.extractUniqueCrefsFromExpDerPreStart(whenOp.right)));
+            serializeUses(file, getWhenUses(eq.conditions, whenOp.right));
             File.write(file, "],\"equation\":[");
             serializeExp(file,whenOp.right);
             File.write(file, "],\"source\":");
@@ -1036,7 +1059,7 @@ algorithm
             File.write(file, "\",\"tag\":\"when\",\"defines\":[");
             serializeCref(file,whenOp.stateVar);
             File.write(file, "],\"uses\":[");
-            serializeUses(file,List.union(eq.conditions,Expression.extractUniqueCrefsFromExpDerPreStart(whenOp.value)));
+            serializeUses(file, getWhenUses(eq.conditions, whenOp.value));
             File.write(file, "],\"equation\":[");
             serializeExp(file,whenOp.value);
             File.write(file, "],\"source\":");
@@ -1046,8 +1069,8 @@ algorithm
           case whenOp as BackendDAE.ASSERT() equation
             File.write(file, "\",\"tag\":\"when\"");
             File.write(file, ",\"uses\":[");
-            crefs = listAppend(Expression.extractUniqueCrefsFromExpDerPreStart(whenOp.condition), Expression.extractUniqueCrefsFromExpDerPreStart(whenOp.message));
-            serializeUses(file,List.union(eq.conditions,crefs));
+            crefs = Expression.extractCrefsFromExpDerPreStart(whenOp.condition);
+            serializeUses(file, getWhenUses(crefs, whenOp.message));
             File.write(file, "],\"equation\":[");
             serializeExp(file,whenOp.message);
             File.write(file, "],\"source\":");
@@ -1057,7 +1080,7 @@ algorithm
           case whenOp as BackendDAE.TERMINATE() equation
             File.write(file, "\",\"tag\":\"when\"");
             File.write(file, ",\"uses\":[");
-            serializeUses(file,List.union(eq.conditions,Expression.extractUniqueCrefsFromExpDerPreStart(whenOp.message)));
+            serializeUses(file, getWhenUses(eq.conditions, whenOp.message));
             File.write(file, "],\"equation\":[");
             serializeExp(file,whenOp.message);
             File.write(file, "],\"source\":");
@@ -1067,7 +1090,7 @@ algorithm
           case whenOp as BackendDAE.NORETCALL() equation
             File.write(file, "\",\"tag\":\"when\"");
             File.write(file, ",\"uses\":[");
-            serializeUses(file,List.union(eq.conditions,Expression.extractUniqueCrefsFromExpDerPreStart(whenOp.exp)));
+            serializeUses(file, getWhenUses(eq.conditions, whenOp.exp));
             File.write(file, "],\"equation\":[");
             serializeExp(file,whenOp.exp);
             File.write(file, "],\"source\":");
@@ -1157,6 +1180,7 @@ end serializeLinearCell;
 function serializeVarKind
   input File.File file;
   input BackendDAE.VarKind varKind;
+  input SimCodeVar.SimVar var;
 algorithm
   _ := match varKind
     case BackendDAE.VARIABLE()
@@ -1243,9 +1267,13 @@ algorithm
       equation
         File.write(file,"iteration variable for solving an algebraic loop");
       then ();
+    case BackendDAE.DAE_RESIDUAL_VAR()
+      equation
+        File.write(file,"residual variable for dae mode");
+      then ();
     else
       equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"serializeVarKind failed"});
+        Error.addMessage(Error.INTERNAL_ERROR, {"serializeVarKind failed for " + SimCodeUtil.simVarString(var)});
       then fail();
   end match;
 end serializeVarKind;
@@ -1274,6 +1302,17 @@ algorithm
       then ();
   end match;
 end serializeUses;
+
+function getWhenUses
+  input list<DAE.ComponentRef> conditions;
+  input DAE.Exp value;
+  output list<DAE.ComponentRef> uses;
+protected
+  list<DAE.ComponentRef> crefs;
+algorithm
+  uses := listAppend(conditions, Expression.extractCrefsFromExpDerPreStart(value));
+  uses := UnorderedSet.unique_list(uses, ComponentReference.hashComponentRef, ComponentReference.crefEqual);
+end getWhenUses;
 
 function serializeStatement
   input File.File file;

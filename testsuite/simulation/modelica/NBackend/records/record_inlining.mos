@@ -6,12 +6,18 @@ loadModel(Complex); getErrorString();
 
 loadString("
   model record_inlining
-    Complex a,b,c,d;
+    Complex a,b,c,d,e,f;
   equation
     a = Complex(sin(time), cos(time));
     b = Complex(time, tan(time));
     c = a * b;
     d = a^b;
+    e = if time > 0.5 then Complex(0, 1) else Complex(1, 0);
+    if time > 0.5 then
+      f = Complex(0, 1);
+    else
+      f = Complex(1, 0);
+    end if;
   end record_inlining;
 "); getErrorString();
 
@@ -31,25 +37,30 @@ simulate(record_inlining); getErrorString();
 // [NBReplacements.applyFuncExp] Inlining: Complex.'*'.multiply(a, b)
 // -- Result: Complex.'constructor'.fromReal(a.re * b.re - a.im * b.im, a.re * b.im + a.im * b.re)
 //
-// [NBReplacements.applyFuncExp] Inlining: Complex.'^'(a, b)
+// [NBReplacements.applyFuncExp] Inlining: Complex.'^'.complexPower(a, b)
 // -- Result: Complex.'constructor'.fromReal(exp(0.5 * log(a.re * a.re + a.im * a.im) * b.re - atan2(a.im, a.re) * b.im) * cos(0.5 * log(a.re * a.re + a.im * a.im) * b.im + atan2(a.im, a.re) * b.re), exp(0.5 * log(a.re * a.re + a.im * a.im) * b.re - atan2(a.im, a.re) * b.im) * sin(0.5 * log(a.re * a.re + a.im * a.im) * b.im + atan2(a.im, a.re) * b.re))
 //
-// [NBInline.inlineRecordEquation] Inlining: [RECD] (2) a = Complex.'constructor'.fromReal($FUN_1, $FUN_2) ($RES_SIM_3)
-// -- Result: [SCAL] (1) a.re = $FUN_1 ($RES_SIM_7)
-// -- Result: [SCAL] (1) a.im = $FUN_2 ($RES_SIM_8)
-//
-// [NBInline.inlineRecordEquation] Inlining: [RECD] (2) b = Complex.'constructor'.fromReal(time, $FUN_3) ($RES_SIM_2)
-// -- Result: [SCAL] (1) b.re = time ($RES_SIM_9)
-// -- Result: [SCAL] (1) b.im = $FUN_3 ($RES_SIM_10)
-//
-// [NBInline.inlineRecordEquation] Inlining: [RECD] (2) c = Complex.'constructor'.fromReal(a.re * b.re - a.im * b.im, a.re * b.im + a.im * b.re) ($RES_SIM_1)
-// -- Result: [SCAL] (1) c.re = a.re * b.re - a.im * b.im ($RES_SIM_11)
-// -- Result: [SCAL] (1) c.im = a.re * b.im + a.im * b.re ($RES_SIM_12)
-//
-// [NBInline.inlineRecordEquation] Inlining: [RECD] (2) d = Complex.'constructor'.fromReal(exp(0.5 * log(a.re * a.re + a.im * a.im) * b.re - atan2(a.im, a.re) * b.im) * cos(0.5 * log(a.re * a.re + a.im * a.im) * b.im + atan2(a.im, a.re) * b.re), exp(0.5 * log(a.re * a.re + a.im * a.im) * b.re - atan2(a.im, a.re) * b.im) * sin(0.5 * log(a.re * a.re + a.im * a.im) * b.im + atan2(a.im, a.re) * b.re)) ($RES_SIM_0)
-// -- Result: [SCAL] (1) d.re = exp(0.5 * log(a.re * a.re + a.im * a.im) * b.re - atan2(a.im, a.re) * b.im) * cos(0.5 * log(a.re * a.re + a.im * a.im) * b.im + atan2(a.im, a.re) * b.re) ($RES_SIM_13)
-// -- Result: [SCAL] (1) d.im = exp(0.5 * log(a.re * a.re + a.im * a.im) * b.re - atan2(a.im, a.re) * b.im) * sin(0.5 * log(a.re * a.re + a.im * a.im) * b.im + atan2(a.im, a.re) * b.re) ($RES_SIM_14)
-//
+// [NBInline.inlineRecordEquation] Inlining: [RECD] (2) a = Complex.'constructor'.fromReal($FUN_1, $FUN_2) ($RES_SIM_7)
+// -- Result: [SCAL] (1) a.re = $FUN_1 ($RES_SIM_11)
+// -- Result: [SCAL] (1) a.im = $FUN_2 ($RES_SIM_12)
+// [NBInline.inlineRecordEquation] Inlining: [RECD] (2) b = Complex.'constructor'.fromReal(time, $FUN_3) ($RES_SIM_6)
+// -- Result: [SCAL] (1) b.re = time ($RES_SIM_13)
+// -- Result: [SCAL] (1) b.im = $FUN_3 ($RES_SIM_14)
+// [NBInline.inlineRecordEquation] Inlining: [RECD] (2) c = Complex.'constructor'.fromReal(a.re * b.re - a.im * b.im, a.re * b.im + a.im * b.re) ($RES_SIM_5)
+// -- Result: [SCAL] (1) c.re = a.re * b.re - a.im * b.im ($RES_SIM_15)
+// -- Result: [SCAL] (1) c.im = a.re * b.im + a.im * b.re ($RES_SIM_16)
+// [NBInline.inlineRecordEquation] Inlining: [RECD] (2) d = Complex.'constructor'.fromReal(exp(0.5 * log(a.re * a.re + a.im * a.im) * b.re - atan2(a.im, a.re) * b.im) * cos(0.5 * log(a.re * a.re + a.im * a.im) * b.im + atan2(a.im, a.re) * b.re), exp(0.5 * log(a.re * a.re + a.im * a.im) * b.re - atan2(a.im, a.re) * b.im) * sin(0.5 * log(a.re * a.re + a.im * a.im) * b.im + atan2(a.im, a.re) * b.re)) ($RES_SIM_4)
+// -- Result: [SCAL] (1) d.re = exp(0.5 * log(a.re * a.re + a.im * a.im) * b.re - atan2(a.im, a.re) * b.im) * cos(0.5 * log(a.re * a.re + a.im * a.im) * b.im + atan2(a.im, a.re) * b.re) ($RES_SIM_17)
+// -- Result: [SCAL] (1) d.im = exp(0.5 * log(a.re * a.re + a.im * a.im) * b.re - atan2(a.im, a.re) * b.im) * sin(0.5 * log(a.re * a.re + a.im * a.im) * b.im + atan2(a.im, a.re) * b.re) ($RES_SIM_18)
+// [NBInline.inlineRecordEquation] Inlining: [RECD] (2) e = if time > 0.5 then Complex(0.0, 1.0) else Complex(1.0, 0.0) ($RES_SIM_3)
+// -- Result: [SCAL] (1) e.re = if time > 0.5 then 0.0 else 1.0 ($RES_SIM_19)
+// -- Result: [SCAL] (1) e.im = if time > 0.5 then 1.0 else 0.0 ($RES_SIM_20)
+// [NBInline.inlineRecordEquation] Inlining: [RECD] (2) f = Complex(0.0, 1.0) ($RES_SIM_1)
+// -- Result: [SCAL] (1) f.re = 0.0 ($RES_SIM_21)
+// -- Result: [SCAL] (1) f.im = 1.0 ($RES_SIM_22)
+// [NBInline.inlineRecordEquation] Inlining: [RECD] (2) f = Complex(1.0, 0.0) ($RES_SIM_2)
+// -- Result: [SCAL] (1) f.re = 1.0 ($RES_SIM_23)
+// -- Result: [SCAL] (1) f.im = 0.0 ($RES_SIM_24)
 //
 // [dumpBackendInline] Inlining operatations for: {AFTER_INDEX_RED}
 // ******************************************************************
@@ -59,7 +70,7 @@ simulate(record_inlining); getErrorString();
 //
 // record SimulationResult
 //     resultFile = "record_inlining_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'record_inlining', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'record_inlining', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "

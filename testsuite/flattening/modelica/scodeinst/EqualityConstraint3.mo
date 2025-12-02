@@ -1,7 +1,6 @@
 // name: EqualityConstraint3
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 
 type Real2 = Real[2];
@@ -25,10 +24,11 @@ end C;
 
 model Source
   C c;
+  parameter Boolean coRoot = Connections.isRoot(c.o);
 equation
   c.e = 1;
   Connections.potentialRoot(c.o);
-  if Connections.isRoot(c.o) then
+  if coRoot then
     c.o = {1, 0};
   end if;
 end Source;
@@ -57,6 +57,7 @@ end EqualityConstraint3;
 //   Real source.c.o[1];
 //   Real source.c.o[2];
 //   Real source.c.g;
+//   parameter Boolean source.coRoot = true;
 //   Real sink1.c.e;
 //   Real sink1.c.f;
 //   Real sink1.c.o[1];
@@ -77,8 +78,10 @@ end EqualityConstraint3;
 //   sink2.c.f + sink1.c.f + source.c.f = 0.0;
 //   sink2.c.g + sink1.c.g + source.c.g = 0.0;
 //   source.c.e = 1.0;
-//   source.c.o[1] = 1.0;
-//   source.c.o[2] = 0.0;
+//   if source.coRoot then
+//     source.c.o[1] = 1.0;
+//     source.c.o[2] = 0.0;
+//   end if;
 //   sink1.c.f = 1.0;
 //   sink1.c.g = 1.0;
 //   sink2.c.f = 1.0;

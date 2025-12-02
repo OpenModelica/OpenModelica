@@ -78,7 +78,7 @@ void ModelicaEditor::popUpCompleter()
   mpPlainTextEdit->clearCompleter();
 
   QList<CompleterItem> annotations;
-  bool inAnnotation = getCompletionAnnotations(stringAfterWord("annotation"), annotations);
+  bool inAnnotation = ModelicaEditor::getCompletionAnnotations(stringAfterWord("annotation"), annotations);
   mpPlainTextEdit->insertCompleterSymbols(annotations, ":/Resources/icons/completerAnnotation.svg");
 
   bool startsWithUpperCase = !word.isEmpty() && word[0].isUpper();
@@ -97,13 +97,7 @@ void ModelicaEditor::popUpCompleter()
   }
   if (!inAnnotation) {
     QList<CompleterItem> classes, components;
-    getCompletionSymbols(word, classes, components);
-
-    std::sort(classes.begin(), classes.end());
-    classes.erase(std::unique(classes.begin(), classes.end()), classes.end());
-
-    std::sort(components.begin(), components.end());
-    components.erase(std::unique(components.begin(), components.end()), components.end());
+    ModelicaEditor::getCompletionSymbols(getModelWidget()->getLibraryTreeItem(), word, classes, components);
 
     mpPlainTextEdit->insertCompleterSymbols(classes, ":/Resources/icons/completerClass.svg");
     mpPlainTextEdit->insertCompleterSymbols(components, ":/Resources/icons/completerComponent.svg");
@@ -149,14 +143,20 @@ LibraryTreeItem *ModelicaEditor::deepResolve(LibraryTreeItem *pItem, QStringList
   return pCurrentItem;
 }
 
-QList<LibraryTreeItem*> ModelicaEditor::getCandidateContexts(QStringList nameComponents)
+/*!
+ * \brief ModelicaEditor::getCandidateContexts
+ * \param pLibraryTreeItem
+ * \param nameComponents
+ * \return
+ */
+QList<LibraryTreeItem*> ModelicaEditor::getCandidateContexts(LibraryTreeItem *pLibraryTreeItem, QStringList nameComponents)
 {
   QList<LibraryTreeItem*> result;
   QList<LibraryTreeItem*> roots;
-  LibraryTreeItem *pItem = getModelWidget()->getLibraryTreeItem();
-  while (pItem) {
-    roots.append(pItem->getInheritedClassesDeepList());
-    pItem = pItem->parent();
+
+  while (pLibraryTreeItem) {
+    roots.append(pLibraryTreeItem->getInheritedClassesDeepList());
+    pLibraryTreeItem = pLibraryTreeItem->parent();
   }
 
   for (int i = 0; i < roots.size(); ++i) {
@@ -186,6 +186,40 @@ QString ModelicaEditor::wordUnderCursor()
 }
 
 /*!
+ * \brief ModelicaEditor::symbolAtPosition
+ * Navigate to the Modelica class at position.
+ * \param pos
+ */
+void ModelicaEditor::symbolAtPosition(const QPoint &pos)
+{
+  if (mpModelWidget) {
+    QTextCursor cursor = mpPlainTextEdit->cursorForPosition(pos);
+    cursor.select(QTextCursor::WordUnderCursor);
+
+    int mid = cursor.position();
+    int end = mid;
+
+    while (end < cursor.block().length()) {
+      QChar ch = mpPlainTextEdit->document()->characterAt(end);
+      if (!(ch.isLetterOrNumber() || ch == '.' || ch == '_'))
+        break;
+      end++;
+    }
+
+    int begin = mid - 1;
+    while (begin >= 0) {
+      QChar ch = mpPlainTextEdit->document()->characterAt(begin);
+      if (!(ch.isLetterOrNumber() || ch == '.' || ch == '_'))
+        break;
+      begin--;
+    }
+    begin++;
+
+    mpModelWidget->navigateToClass(mpPlainTextEdit->document()->toPlainText().mid(begin, end - begin));
+  }
+}
+
+/*!
  * \brief Returns the substring from the last occurrence of `word` to the cursor position
  * \param word Starting word of the substring
  * \return Resulting substring or Null QString if no `word` occurrence found up to the cursor position
@@ -201,7 +235,14 @@ QString ModelicaEditor::stringAfterWord(const QString &word)
     return plainText.mid(index, pos - index);
 }
 
-void ModelicaEditor::getCompletionSymbols(QString word, QList<CompleterItem> &classes, QList<CompleterItem> &components)
+/*!
+ * \brief ModelicaEditor::getCompletionSymbols
+ * \param pLibraryTreeItem
+ * \param word
+ * \param classes
+ * \param components
+ */
+void ModelicaEditor::getCompletionSymbols(LibraryTreeItem *pLibraryTreeItem, QString word, QList<CompleterItem> &classes, QList<CompleterItem> &components)
 {
   QStringList nameComponents = word.split('.');
   QString lastPart;
@@ -212,11 +253,17 @@ void ModelicaEditor::getCompletionSymbols(QString word, QList<CompleterItem> &cl
     lastPart = "";
   }
 
-  QList<LibraryTreeItem*> contexts = getCandidateContexts(nameComponents);
+  QList<LibraryTreeItem*> contexts = ModelicaEditor::getCandidateContexts(pLibraryTreeItem, nameComponents);
 
   for (int i = 0; i < contexts.size(); ++i) {
     contexts[i]->tryToComplete(classes, components, lastPart);
   }
+
+  std::sort(classes.begin(), classes.end());
+  classes.erase(std::unique(classes.begin(), classes.end()), classes.end());
+
+  std::sort(components.begin(), components.end());
+  components.erase(std::unique(components.begin(), components.end()), components.end());
 }
 
 /*!
@@ -224,12 +271,14 @@ void ModelicaEditor::getCompletionSymbols(QString word, QList<CompleterItem> &cl
  */
 LibraryTreeItem *ModelicaEditor::getAnnotationCompletionRoot()
 {
-  LibraryTreeItem *pLibraryRoot = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->getRootLibraryTreeItem();
+  LibraryTreeItem *pLibraryRoot = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItemOneLevel(Helper::OMEditInternal);
   LibraryTreeItem *pModelicaReference = 0;
 
   for (int i = 0; i < pLibraryRoot->childrenSize(); ++i) {
-    if (pLibraryRoot->childAt(i)->getName() == "OpenModelica")
+    if (pLibraryRoot->childAt(i)->getName() == "OpenModelica") {
       pModelicaReference = pLibraryRoot->childAt(i);
+      break;
+    }
   }
 
   if (pModelicaReference) {
@@ -246,7 +295,7 @@ LibraryTreeItem *ModelicaEditor::getAnnotationCompletionRoot()
  */
 void ModelicaEditor::getCompletionAnnotations(const QStringList &stack, QList<CompleterItem> &annotations)
 {
-  LibraryTreeItem *pReference = getAnnotationCompletionRoot();
+  LibraryTreeItem *pReference = ModelicaEditor::getAnnotationCompletionRoot();
   if (pReference) {
     LibraryTreeItem *pAnnotation = deepResolve(pReference, stack);
     if (pAnnotation) {
@@ -254,12 +303,11 @@ void ModelicaEditor::getCompletionAnnotations(const QStringList &stack, QList<Co
         QString name = pAnnotation->childAt(i)->getName();
         annotations << CompleterItem(name, name + "(", name, pAnnotation->childAt(i)->getHTMLDescription());
       }
-      QList<ElementInfo *> components = pAnnotation->getComponentsList();
+      QList<ElementInfo> components = pAnnotation->getComponentsList();
       for (int i = 0; i < components.size(); ++i) {
-        QString componentName = components[i]->getName();
-        QString componentValue = components[i]->getParameterValue(MainWindow::instance()->getOMCProxy(), pAnnotation->getNameStructure());
-        annotations << CompleterItem(componentName, QString("%1 = %2").arg(componentName, componentValue), componentName,
-                                     components[i]->getHTMLDescription());
+        QString componentName = components[i].getName();
+        QString componentValue = components[i].getParameterValue(MainWindow::instance()->getOMCProxy(), pAnnotation->getNameStructure());
+        annotations << CompleterItem(componentName, QString("%1 = %2").arg(componentName, componentValue), componentName, components[i].getHTMLDescription());
       }
     }
   }
@@ -289,13 +337,16 @@ bool ModelicaEditor::getCompletionAnnotations(const QString &str, QList<Complete
 
     // First, handle string literals
     if (ch == '"') {
-      for (++i; i < str.size() && str[i] != '"'; ++i) {
-        if (str[i] == '\\')
-          ++i;
+      ++i;
+      while (i < str.size()) {
+        if (str[i] == '\\') {
+          ++i; // skip escaped character
+        } else if (str[i] == '"') {
+          break; // end of quoted string
+        }
+        ++i;
       }
-      // skipped, restarting as usual
-      --i;
-      continue;
+      continue; // don't treat quoted string contents as syntax
     }
 
     // Now, handle the stack of annotations
@@ -321,7 +372,7 @@ bool ModelicaEditor::getCompletionAnnotations(const QString &str, QList<Complete
     return false;
   }
   stack.pop_front(); // pop 'annotation'
-  getCompletionAnnotations(stack, annotations);
+  ModelicaEditor::getCompletionAnnotations(stack, annotations);
   return true;
 }
 
@@ -409,26 +460,49 @@ bool ModelicaEditor::validateText(LibraryTreeItem **pLibraryTreeItem)
                                                                             MainWindow::instance());
         pNotificationsDialog->setNotificationLabelString(GUIMessages::getMessage(GUIMessages::ERROR_IN_TEXT).arg("Modelica")
                                                          .append(GUIMessages::getMessage(GUIMessages::CHECK_MESSAGE_BROWSER))
-                                                         .append(GUIMessages::getMessage(GUIMessages::REVERT_PREVIOUS_OR_FIX_ERRORS_MANUALLY)));
+                                                         .append(GUIMessages::getMessage(GUIMessages::REVERT_PREVIOUS_OR_FIX_ERRORS_MANUALLY))
+                                                         .append("<br /><br />")
+                                                         .append(tr("You can save to file with errors, it will reopen class in text mode.")));
         pNotificationsDialog->getOkButton()->setText(Helper::revertToLastCorrectVersion);
-        pNotificationsDialog->getOkButton()->setAutoDefault(false);
         pNotificationsDialog->getCancelButton()->setText(Helper::fixErrorsManually);
         pNotificationsDialog->getCancelButton()->setAutoDefault(true);
+        pNotificationsDialog->getSaveWithErrorsButton()->setText(Helper::saveWithErrors);
         pNotificationsDialog->getButtonBox()->removeButton(pNotificationsDialog->getOkButton());
         pNotificationsDialog->getButtonBox()->removeButton(pNotificationsDialog->getCancelButton());
+        pNotificationsDialog->getButtonBox()->removeButton(pNotificationsDialog->getSaveWithErrorsButton());
         pNotificationsDialog->getButtonBox()->addButton(pNotificationsDialog->getCancelButton(), QDialogButtonBox::ActionRole);
         pNotificationsDialog->getButtonBox()->addButton(pNotificationsDialog->getOkButton(), QDialogButtonBox::ActionRole);
+        pNotificationsDialog->getButtonBox()->addButton(pNotificationsDialog->getSaveWithErrorsButton(), QDialogButtonBox::ActionRole);
         // we set focus to this widget here so when the error dialog is closed Qt gives back the focus to this widget.
         mpPlainTextEdit->setFocus(Qt::ActiveWindowFocusReason);
         answer = pNotificationsDialog->exec();
       }
       switch (answer) {
-        case QMessageBox::RejectRole:
+        case 2: { // save with errors
+            // for package saved in one file update the containing package text
+            LibraryTreeModel *pLibraryTreeModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel();
+            LibraryTreeItem *pContainingLibraryTreeItem = pLibraryTreeModel->getContainingFileParentLibraryTreeItem(*pLibraryTreeItem);
+            if (pContainingLibraryTreeItem && pContainingLibraryTreeItem != *pLibraryTreeItem) {
+              const QString stringToLoad = (*pLibraryTreeItem)->getClassTextBefore() + StringHandler::trimmedEnd(getPlainText()) + "\n" + (*pLibraryTreeItem)->getClassTextAfter();
+              pContainingLibraryTreeItem->setClassText(stringToLoad);
+              pContainingLibraryTreeItem->setIsSaved(false);
+            }
+            // save and reload
+            LibraryTreeItem *pTopLevelLibraryTreeItem = LibraryTreeModel::getTopLevelLibraryTreeItem(*pLibraryTreeItem);
+            if (pTopLevelLibraryTreeItem) {
+              MainWindow::instance()->getLibraryWidget()->saveLibraryTreeItem(pTopLevelLibraryTreeItem, true);
+              pLibraryTreeModel->reloadClass(pTopLevelLibraryTreeItem, false);
+            }
+            setTextChanged(false);
+            return false;
+          }
+        case QMessageBox::RejectRole: // revert to last correct version
           setTextChanged(false);
           // revert back to last correct version
           setPlainText(mLastValidText);
           return true;
-        case QMessageBox::AcceptRole:
+        case QMessageBox::AcceptRole: // fix errors manually
+          return false;
         default:
           setTextChanged(true);
           return false;
@@ -511,11 +585,16 @@ void ModelicaEditor::showContextMenu(QPoint point)
 {
   QMenu *pMenu = BaseEditor::createStandardContextMenu();
   pMenu->addSeparator();
+  pMenu->addAction(mpOpenClassAction);
+  pMenu->addSeparator();
   pMenu->addAction(mpToggleCommentSelectionAction);
   pMenu->addSeparator();
   pMenu->addAction(mpFoldAllAction);
   pMenu->addAction(mpUnFoldAllAction);
+  mContextMenuStartPosition = point;
+  mContextMenuStartPositionValid = true;
   pMenu->exec(mapToGlobal(point));
+  mContextMenuStartPositionValid = false;
   delete pMenu;
 }
 
@@ -574,6 +653,8 @@ void ModelicaEditor::contentsHasChanged(int position, int charsRemoved, int char
     /* if user is changing the system library class. */
     if (mpModelWidget->getLibraryTreeItem()->isSystemLibrary() && !mForceSetPlainText) {
       mpInfoBar->showMessage(tr("<b>Warning: </b>You are changing a system library class. System libraries are always read-only. Your changes will not be saved."));
+    } else if (mpModelWidget->isElementMode() && !mForceSetPlainText) {
+      mpInfoBar->showMessage(tr("<b>Warning: </b>Cannot modify the text in the element mode. Your changes will not be saved."));
     } else if (mpModelWidget->getLibraryTreeItem()->isReadOnly() && !mForceSetPlainText) {
       /* if user is changing the read-only class. */
       mpInfoBar->showMessage(tr("<b>Warning: </b>You are changing a read-only class."));
@@ -629,7 +710,7 @@ void ModelicaHighlighter::initializeSettings()
   font.setFamily(mpModelicaEditorPage->getOptionsDialog()->getTextEditorPage()->getFontFamilyComboBox()->currentFont().family());
   font.setPointSizeF(mpModelicaEditorPage->getOptionsDialog()->getTextEditorPage()->getFontSizeSpinBox()->value());
   mpPlainTextEdit->document()->setDefaultFont(font);
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 11, 0))
+#if QT_VERSION >= QT_VERSION_CHECK(5, 11, 0)
   mpPlainTextEdit->setTabStopDistance((qreal)(mpModelicaEditorPage->getOptionsDialog()->getTextEditorPage()->getTabSizeSpinBox()->value() * QFontMetrics(font).horizontalAdvance(QLatin1Char(' '))));
 #else // QT_VERSION_CHECK
   mpPlainTextEdit->setTabStopWidth(mpModelicaEditorPage->getOptionsDialog()->getTextEditorPage()->getTabSizeSpinBox()->value() * QFontMetrics(font).width(QLatin1Char(' ')));

@@ -10,7 +10,7 @@ getErrorString();
 
 cd("tmp");
 
-setCommandLineOptions("--generateSymbolicJacobian");
+setCommandLineOptions("--generateDynamicJacobian=symbolic");
 
 simulate(TestAnalytic, stopTime=20, simflags = "-lv=LOG_SOLVER -s=gbode -rkOpt=esdirk2");
 getErrorString();

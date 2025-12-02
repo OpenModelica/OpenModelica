@@ -33,9 +33,7 @@ val(i3,0.0); getErrorString();
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// "[simulation/modelica/tearing/tearingSelect.mo:7:33-7:67:writable] Warning: 'avoid' is deprecated, use 'TearingSelect.avoid' instead.
-// [simulation/modelica/tearing/tearingSelect.mo:3:23-3:58:writable] Warning: 'prefer' is deprecated, use 'TearingSelect.prefer' instead.
-// Notification: Model statistics after passing the front-end and creating the data structures used by the back-end:
+// "Notification: Model statistics after passing the front-end and creating the data structures used by the back-end:
 //  * Number of equations: 7
 //  * Number of variables: 7
 // Notification: Model statistics after passing the back-end for initialization:

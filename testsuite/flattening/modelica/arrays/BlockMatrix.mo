@@ -3,7 +3,6 @@
 // status:   correct
 //
 // Drmodelica: 7.5 Array Concatenation and Slice Operations (p. 219)
-// cflags: -d=-newInst
 //
 
 class BlockMatrix
@@ -21,6 +20,7 @@ equation
   // Lower left block
   Q[4:6, 4:6] = P;
   // Lower right block
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end BlockMatrix;
 
 // Result:

@@ -14,7 +14,6 @@ project(OpenModelica
 # Any custom Find* modules should be placed here.
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules/")
 
-
 #########################################################################################################
 ## Enable verbose Makefiles if you want to debug. (you can also instead use 'make VERBOSE=1')
 # set(CMAKE_VERBOSE_MAKEFILE ON)
@@ -122,11 +121,20 @@ if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
 endif()
 omc_add_to_report(CMAKE_INSTALL_PREFIX)
 
-# We prefer to install libs to "<library architecture>/omc" dir inside lib directory (e.g lib/x86_64-linux-gnu/omc/).
-set(CMAKE_INSTALL_LIBDIR "${CMAKE_INSTALL_LIBDIR}/${CMAKE_LIBRARY_ARCHITECTURE}/omc/")
+if(CMAKE_VERSION VERSION_GREATER_EQUAL "3.20")
+  cmake_path(APPEND CMAKE_INSTALL_LIBDIR "${CMAKE_LIBRARY_ARCHITECTURE}" "omc")
+else()
+  set(CMAKE_INSTALL_LIBDIR "${CMAKE_INSTALL_LIBDIR}/${CMAKE_LIBRARY_ARCHITECTURE}/omc/")
+endif()
+message(STATUS "CMAKE_INSTALL_LIBDIR: ${CMAKE_INSTALL_LIBDIR}")
 
 # We prefer to install headers to "include/omc" dir inside.
-set(CMAKE_INSTALL_INCLUDEDIR "${CMAKE_INSTALL_INCLUDEDIR}/omc/")
+if(CMAKE_VERSION VERSION_GREATER_EQUAL "3.20")
+  cmake_path(APPEND CMAKE_INSTALL_INCLUDEDIR "omc")
+else()
+  set(CMAKE_INSTALL_INCLUDEDIR "${CMAKE_INSTALL_INCLUDEDIR}/omc/")
+endif()
+message(STATUS "CMAKE_INSTALL_INCLUDEDIR: ${CMAKE_INSTALL_INCLUDEDIR}")
 
 # On macOS we want BUNDLEs (.app) to go to an 'Applications/' directory instead of a 'bin/' directory
 if(APPLE)
@@ -158,9 +166,17 @@ if(OM_ENABLE_ENCRYPTION)
   omc_add_subdirectory(OMEncryption)
 endif()
 
+## Include and enable testing
+set(CMAKE_CTEST_ARGUMENTS "--output-on-failure" "--output-junit" "junit.xml")
+include(CTest)
+enable_testing()
+
 omc_add_subdirectory(OMCompiler)
 
 if(OM_ENABLE_GUI_CLIENTS)
+  # select qt version 5/6
+  set (OM_QT_MAJOR_VERSION 5 CACHE STRING "Qt version")
+
   omc_add_subdirectory(OMParser)
   omc_add_subdirectory(OMPlot)
   omc_add_subdirectory(OMShell)
@@ -170,8 +186,6 @@ if(OM_ENABLE_GUI_CLIENTS)
   omc_add_subdirectory(OMSens_Qt)
 endif()
 
-## do not add OMSens to cmake list as it does not have cmake support yet
-## omc_add_subdirectory(OMSens)
 omc_add_subdirectory(libraries)
 omc_add_subdirectory(testsuite)
 
@@ -183,7 +197,6 @@ configure_file(cmake/packaging/OpenModelicaCPackOptions.in.cmake ${CMAKE_CURRENT
 set(CPACK_PROJECT_CONFIG_FILE ${CMAKE_CURRENT_BINARY_DIR}/OpenModelicaCPackOptions.cmake)
 # Tell CPack about our components (dispaly names, descriptions, dependencies ...)
 include(cmake/packaging/components.cmake)
-
 
 ## Report some status info.
 message(STATUS "--------------------------------------------------------------------------")

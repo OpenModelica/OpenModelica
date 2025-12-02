@@ -24,6 +24,9 @@ list(m1); getErrorString();
 renameComponent(m1, emf2, emf3); getErrorString();
 list(m1); getErrorString();
 
+renameClass(Pck.TestRename, TestRenamed); getErrorString();
+list(Pck.TestRenamed);
+
 loadFile("RenameRO.mo"); getErrorString();
 list(m1RO); getErrorString();
 renameComponent(m1RO, emf1, emf2); getErrorString();
@@ -38,7 +41,7 @@ renameComponent(m1RO, emf1, emf2); getErrorString();
 //   x = 0.2;
 // end TestRename;"
 // ""
-// {.TestRenameComp2,.Pck2.TestRenameComp,.TestRenameExt3,.Pck.TestRenameExt,.Pck.TestRenameExt2,Pck.TestRename}
+// {.TestRenameComp2, .Pck2.TestRenameComp, .TestRenameExt3, .Pck.TestRenameExt, .Pck.TestRenameExt2, Pck.TestRename}
 // ""
 // "model TestRename
 //   flow Real RENAMED_X;
@@ -71,6 +74,14 @@ renameComponent(m1RO, emf1, emf2); getErrorString();
 //   Modelica.Electrical.Analog.Basic.EMF emf3;
 // end m1;"
 // ""
+// {Pck.TestRenameExt2, Pck.TestRenameExt, Pck.TestRenamed}
+// ""
+// "model TestRenamed
+//   flow Real RENAMED_X;
+//   Real y;
+// equation
+//   RENAMED_X = 0.2;
+// end TestRenamed;"
 // true
 // ""
 // "model m1RO

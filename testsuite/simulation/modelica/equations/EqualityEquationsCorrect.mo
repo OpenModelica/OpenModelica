@@ -4,7 +4,6 @@
 //
 // Not yet implemented
 // Drmodelica: 8.2 Simple Equality Equations (p. 240)
-// cflags: -d=-newInst
 //
 
 function f
@@ -29,6 +28,7 @@ class EqualityEquationsCorrect
 equation
   u = v;                    // Equality equations between two expressions
   (x, y, z) = f(1.0, 2.0);        // Correct!
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end EqualityEquationsCorrect;
 
 

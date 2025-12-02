@@ -36,7 +36,7 @@
 #include "Modeling/Commands.h"
 
 PolygonAnnotation::PolygonAnnotation(QString annotation, GraphicsView *pGraphicsView)
-  : ShapeAnnotation(false, pGraphicsView, 0, 0)
+  : ShapeAnnotation(false, pGraphicsView, 0)
 {
   mpOriginItem = new OriginItem(this);
   mpOriginItem->setPassive();
@@ -51,7 +51,7 @@ PolygonAnnotation::PolygonAnnotation(QString annotation, GraphicsView *pGraphics
 }
 
 PolygonAnnotation::PolygonAnnotation(ModelInstance::Polygon *pPolygon, bool inherited, GraphicsView *pGraphicsView)
-  : ShapeAnnotation(inherited, pGraphicsView, 0, 0)
+  : ShapeAnnotation(inherited, pGraphicsView, 0)
 {
   mpOriginItem = new OriginItem(this);
   mpOriginItem->setPassive();
@@ -64,14 +64,6 @@ PolygonAnnotation::PolygonAnnotation(ModelInstance::Polygon *pPolygon, bool inhe
   ShapeAnnotation::setUserDefaults();
   parseShapeAnnotation();
   setShapeFlags(true);
-}
-
-PolygonAnnotation::PolygonAnnotation(ShapeAnnotation *pShapeAnnotation, Element *pParent)
-  : ShapeAnnotation(pShapeAnnotation, pParent)
-{
-  mpOriginItem = 0;
-  updateShape(pShapeAnnotation);
-  applyTransformation();
 }
 
 PolygonAnnotation::PolygonAnnotation(ModelInstance::Polygon *pPolygon, Element *pParent)
@@ -89,19 +81,16 @@ PolygonAnnotation::PolygonAnnotation(ModelInstance::Polygon *pPolygon, Element *
   applyTransformation();
 }
 
-PolygonAnnotation::PolygonAnnotation(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView)
-  : ShapeAnnotation(true, pGraphicsView, pShapeAnnotation, 0)
+PolygonAnnotation::PolygonAnnotation(ShapeAnnotation *pShapeAnnotation, Element *pParent)
+  : ShapeAnnotation(pParent)
 {
-  mpOriginItem = new OriginItem(this);
-  mpOriginItem->setPassive();
+  mpOriginItem = 0;
   updateShape(pShapeAnnotation);
-  setShapeFlags(true);
-  mpGraphicsView->addItem(this);
-  mpGraphicsView->addItem(mpOriginItem);
+  applyTransformation();
 }
 
 PolygonAnnotation::PolygonAnnotation(Element *pParent)
-  : ShapeAnnotation(0, pParent)
+  : ShapeAnnotation(pParent)
 {
   mpOriginItem = 0;
   // set the default values
@@ -141,8 +130,9 @@ void PolygonAnnotation::parseShapeAnnotation(QString annotation)
 
 void PolygonAnnotation::parseShapeAnnotation()
 {
-  GraphicItem::parseShapeAnnotation(mpPolygon);
-  FilledShape::parseShapeAnnotation(mpPolygon);
+  GraphicsView *pGraphicsView = getContainingGraphicsView();
+  GraphicItem::parseShapeAnnotation(mpPolygon, pGraphicsView);
+  FilledShape::parseShapeAnnotation(mpPolygon, pGraphicsView);
 
   mPoints = mpPolygon->getPoints();
   /* The polygon is automatically closed, if the first and the last points are not identical. */
@@ -157,9 +147,9 @@ void PolygonAnnotation::parseShapeAnnotation()
       mPoints.append(mPoints.at(0));
     }
   }
-  mPoints.evaluate(mpPolygon->getParentModel());
+  mPoints.evaluate(pGraphicsView->getModelWidget()->getModelInstance());
   mSmooth = mpPolygon->getSmooth();
-  mSmooth.evaluate(mpPolygon->getParentModel());
+  mSmooth.evaluate(pGraphicsView->getModelWidget()->getModelInstance());
 }
 
 QPainterPath PolygonAnnotation::getShape() const
@@ -328,25 +318,4 @@ void PolygonAnnotation::updateShape(ShapeAnnotation *pShapeAnnotation)
 ModelInstance::Extend *PolygonAnnotation::getExtend() const
 {
   return mpPolygon->getParentExtend();
-}
-
-/*!
- * \brief PolygonAnnotation::duplicate
- * Duplicates the shape.
- */
-void PolygonAnnotation::duplicate()
-{
-  PolygonAnnotation *pPolygonAnnotation = new PolygonAnnotation("", mpGraphicsView);
-  pPolygonAnnotation->updateShape(this);
-  QPointF gridStep(mpGraphicsView->mMergedCoOrdinateSystem.getHorizontalGridStep() * 5,
-                   mpGraphicsView->mMergedCoOrdinateSystem.getVerticalGridStep() * 5);
-  pPolygonAnnotation->setOrigin(mOrigin + gridStep);
-  pPolygonAnnotation->drawCornerItems();
-  pPolygonAnnotation->setCornerItemsActiveOrPassive();
-  pPolygonAnnotation->applyTransformation();
-  pPolygonAnnotation->update();
-  mpGraphicsView->getModelWidget()->getUndoStack()->push(new AddShapeCommand(pPolygonAnnotation));
-  mpGraphicsView->getModelWidget()->getLibraryTreeItem()->emitShapeAdded(pPolygonAnnotation, mpGraphicsView);
-  setSelected(false);
-  pPolygonAnnotation->setSelected(true);
 }

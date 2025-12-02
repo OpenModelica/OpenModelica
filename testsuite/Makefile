@@ -56,12 +56,21 @@ simulationasserts.log \
 simulationbuilt-in-functions.log \
 simulationconnectors.log \
 simulationdaemode.log \
+simulationnewbackend-alias.log \
 simulationnewbackend-arrayhandling.log \
 simulationnewbackend-basics.log \
+simulationnewbackend-differentation.log \
 simulationnewbackend-event_handling.log \
 simulationnewbackend-functions.log \
+simulationnewbackend-index_reduction.log \
+simulationnewbackend-ModelicaTest.log \
+simulationnewbackend-msl.log \
 simulationnewbackend-records.log \
 simulationnewbackend-ScalableTestsuite.log \
+simulationnewbackend-simplification.log \
+simulationnewbackend-solve.log \
+simulationnewbackend-tearing.log \
+simulationnewbackend-tickets.log \
 simulationdeclarations.log \
 simulationenums.log \
 simulationequations.log \
@@ -82,6 +91,7 @@ simulationothers.log \
 simulationpackages.log \
 simulationrecords.log \
 simulationsolver.log \
+simulationsolver_gbode.log \
 simulationBuiltin_delay.log \
 simulationBuiltin_spatialDistribution.log \
 simulationtypes.log \
@@ -330,11 +340,23 @@ simulationconnectors.log: omc-diff
 simulationdaemode.log: omc-diff
 	$(MAKE) -C simulation/modelica/daemode -f Makefile test > $@
 	@echo $@ done
+simulationnewbackend-alias.log: omc-diff
+	$(MAKE) -C simulation/modelica/NBackend/alias/ -f Makefile test > $@
+	@echo $@ done
 simulationnewbackend-arrayhandling.log: omc-diff
 	$(MAKE) -C simulation/modelica/NBackend/array_handling/ -f Makefile test > $@
 	@echo $@ done
 simulationnewbackend-basics.log: omc-diff
 	$(MAKE) -C simulation/modelica/NBackend/basics/ -f Makefile test > $@
+	@echo $@ done
+simulationnewbackend-clocked.log: omc-diff
+	$(MAKE) -C simulation/modelica/NBackend/clocked/ -f Makefile test > $@
+	@echo $@ done
+simulationnewbackend-daemode.log: omc-diff
+	$(MAKE) -C simulation/modelica/NBackend/daemode/ -f Makefile test > $@
+	@echo $@ done
+simulationnewbackend-differentation.log: omc-diff
+	$(MAKE) -C simulation/modelica/NBackend/differentation/ -f Makefile test > $@
 	@echo $@ done
 simulationnewbackend-event_handling.log: omc-diff
 	$(MAKE) -C simulation/modelica/NBackend/event_handling/ -f Makefile test > $@
@@ -342,11 +364,32 @@ simulationnewbackend-event_handling.log: omc-diff
 simulationnewbackend-functions.log: omc-diff
 	$(MAKE) -C simulation/modelica/NBackend/functions/ -f Makefile test > $@
 	@echo $@ done
+simulationnewbackend-index_reduction.log: omc-diff
+	$(MAKE) -C simulation/modelica/NBackend/index_reduction/ -f Makefile test > $@
+	@echo $@ done
+simulationnewbackend-ModelicaTest.log: omc-diff
+	$(MAKE) -C simulation/modelica/NBackend/ModelicaTest/ -f Makefile test > $@
+	@echo $@ done
+simulationnewbackend-msl.log: omc-diff
+	$(MAKE) -C simulation/modelica/NBackend/msl/ -f Makefile test > $@
+	@echo $@ done
 simulationnewbackend-records.log: omc-diff
 	$(MAKE) -C simulation/modelica/NBackend/records/ -f Makefile test > $@
 	@echo $@ done
 simulationnewbackend-ScalableTestsuite.log: omc-diff
 	$(MAKE) -C simulation/modelica/NBackend/ScalableTestsuite/ -f Makefile test > $@
+	@echo $@ done
+simulationnewbackend-simplification.log: omc-diff
+	$(MAKE) -C simulation/modelica/NBackend/simplification/ -f Makefile test > $@
+	@echo $@ done
+simulationnewbackend-solve.log: omc-diff
+	$(MAKE) -C simulation/modelica/NBackend/solve/ -f Makefile test > $@
+	@echo $@ done
+simulationnewbackend-tearing.log: omc-diff
+	$(MAKE) -C simulation/modelica/NBackend/tearing/ -f Makefile test > $@
+	@echo $@ done
+simulationnewbackend-tickets.log: omc-diff
+	$(MAKE) -C simulation/modelica/NBackend/tickets/ -f Makefile test > $@
 	@echo $@ done
 simulationdeclarations.log: omc-diff
 	$(MAKE) -C simulation/modelica/declarations -f Makefile test > $@
@@ -410,6 +453,9 @@ simulationrecords.log: omc-diff
 	@echo $@ done
 simulationsolver.log: omc-diff
 	$(MAKE) -C simulation/modelica/solver -f Makefile test > $@
+	@echo $@ done
+simulationsolver_gbode.log: omc-diff
+	$(MAKE) -C simulation/modelica/solver/gbode -f Makefile test > $@
 	@echo $@ done
 simulationBuiltin_delay.log: omc-diff
 	$(MAKE) -C simulation/modelica/built_in_functions/delay -f Makefile test > $@

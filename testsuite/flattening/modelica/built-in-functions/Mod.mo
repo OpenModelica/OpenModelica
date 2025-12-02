@@ -1,7 +1,6 @@
 // name: Mod
 // keywords: mod
 // status: correct
-// cflags: -d=-newInst
 //
 // Tests the built-in mod function
 //
@@ -10,6 +9,7 @@ model Mod
   Real r;
 equation
   r = mod(8, 3);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Mod;
 
 // Result:

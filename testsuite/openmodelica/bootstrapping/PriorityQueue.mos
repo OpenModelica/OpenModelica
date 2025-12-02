@@ -38,287 +38,287 @@ PriorityQueue.findMin(q);getErrorString();
 // {}
 // ""
 // {record PriorityQueue.Tree.NODE
-//     elt = (1,{}),
+//     elt = (1, {}),
 //     rank = 0,
 //     trees = {}
 // end PriorityQueue.Tree.NODE;}
 // ""
-// (1,{})
+// (1, {})
 // ""
 // {record PriorityQueue.Tree.NODE
-//     elt = (1,{}),
+//     elt = (1, {}),
 //     rank = 1,
 //     trees = {record PriorityQueue.Tree.NODE
-//     elt = (3,{}),
+//     elt = (3, {}),
 //     rank = 0,
 //     trees = {}
 // end PriorityQueue.Tree.NODE;}
 // end PriorityQueue.Tree.NODE;}
 // ""
-// (1,{})
+// (1, {})
 // ""
 // {record PriorityQueue.Tree.NODE
-//     elt = (2,{}),
+//     elt = (2, {}),
 //     rank = 0,
 //     trees = {}
-// end PriorityQueue.Tree.NODE;,record PriorityQueue.Tree.NODE
-//     elt = (1,{}),
+// end PriorityQueue.Tree.NODE;, record PriorityQueue.Tree.NODE
+//     elt = (1, {}),
 //     rank = 1,
 //     trees = {record PriorityQueue.Tree.NODE
-//     elt = (3,{}),
+//     elt = (3, {}),
 //     rank = 0,
 //     trees = {}
 // end PriorityQueue.Tree.NODE;}
 // end PriorityQueue.Tree.NODE;}
 // ""
-// (1,{})
+// (1, {})
 // ""
 // {record PriorityQueue.Tree.NODE
-//     elt = (1,{}),
+//     elt = (1, {}),
 //     rank = 2,
 //     trees = {record PriorityQueue.Tree.NODE
-//     elt = (2,{}),
+//     elt = (2, {}),
 //     rank = 1,
 //     trees = {record PriorityQueue.Tree.NODE
-//     elt = (4,{}),
+//     elt = (4, {}),
 //     rank = 0,
 //     trees = {}
 // end PriorityQueue.Tree.NODE;}
-// end PriorityQueue.Tree.NODE;,record PriorityQueue.Tree.NODE
-//     elt = (3,{}),
+// end PriorityQueue.Tree.NODE;, record PriorityQueue.Tree.NODE
+//     elt = (3, {}),
 //     rank = 0,
 //     trees = {}
 // end PriorityQueue.Tree.NODE;}
 // end PriorityQueue.Tree.NODE;}
 // ""
-// (1,{})
+// (1, {})
 // ""
 // {record PriorityQueue.Tree.NODE
-//     elt = (7,{}),
+//     elt = (7, {}),
 //     rank = 0,
 //     trees = {}
-// end PriorityQueue.Tree.NODE;,record PriorityQueue.Tree.NODE
-//     elt = (1,{}),
+// end PriorityQueue.Tree.NODE;, record PriorityQueue.Tree.NODE
+//     elt = (1, {}),
 //     rank = 2,
 //     trees = {record PriorityQueue.Tree.NODE
-//     elt = (2,{}),
+//     elt = (2, {}),
 //     rank = 1,
 //     trees = {record PriorityQueue.Tree.NODE
-//     elt = (4,{}),
+//     elt = (4, {}),
 //     rank = 0,
 //     trees = {}
 // end PriorityQueue.Tree.NODE;}
-// end PriorityQueue.Tree.NODE;,record PriorityQueue.Tree.NODE
-//     elt = (3,{}),
+// end PriorityQueue.Tree.NODE;, record PriorityQueue.Tree.NODE
+//     elt = (3, {}),
 //     rank = 0,
 //     trees = {}
 // end PriorityQueue.Tree.NODE;}
 // end PriorityQueue.Tree.NODE;}
 // ""
-// (1,{})
+// (1, {})
 // ""
 // {record PriorityQueue.Tree.NODE
-//     elt = (-2,{}),
+//     elt = (-2, {}),
 //     rank = 1,
 //     trees = {record PriorityQueue.Tree.NODE
-//     elt = (7,{}),
+//     elt = (7, {}),
 //     rank = 0,
 //     trees = {}
 // end PriorityQueue.Tree.NODE;}
-// end PriorityQueue.Tree.NODE;,record PriorityQueue.Tree.NODE
-//     elt = (1,{}),
+// end PriorityQueue.Tree.NODE;, record PriorityQueue.Tree.NODE
+//     elt = (1, {}),
 //     rank = 2,
 //     trees = {record PriorityQueue.Tree.NODE
-//     elt = (2,{}),
+//     elt = (2, {}),
 //     rank = 1,
 //     trees = {record PriorityQueue.Tree.NODE
-//     elt = (4,{}),
+//     elt = (4, {}),
 //     rank = 0,
 //     trees = {}
 // end PriorityQueue.Tree.NODE;}
-// end PriorityQueue.Tree.NODE;,record PriorityQueue.Tree.NODE
-//     elt = (3,{}),
+// end PriorityQueue.Tree.NODE;, record PriorityQueue.Tree.NODE
+//     elt = (3, {}),
 //     rank = 0,
 //     trees = {}
 // end PriorityQueue.Tree.NODE;}
 // end PriorityQueue.Tree.NODE;}
 // ""
-// (-2,{})
+// (-2, {})
 // ""
 // {record PriorityQueue.Tree.NODE
-//     elt = (11,{}),
+//     elt = (11, {}),
 //     rank = 0,
 //     trees = {}
-// end PriorityQueue.Tree.NODE;,record PriorityQueue.Tree.NODE
-//     elt = (-2,{}),
+// end PriorityQueue.Tree.NODE;, record PriorityQueue.Tree.NODE
+//     elt = (-2, {}),
 //     rank = 1,
 //     trees = {record PriorityQueue.Tree.NODE
-//     elt = (7,{}),
+//     elt = (7, {}),
 //     rank = 0,
 //     trees = {}
 // end PriorityQueue.Tree.NODE;}
-// end PriorityQueue.Tree.NODE;,record PriorityQueue.Tree.NODE
-//     elt = (1,{}),
+// end PriorityQueue.Tree.NODE;, record PriorityQueue.Tree.NODE
+//     elt = (1, {}),
 //     rank = 2,
 //     trees = {record PriorityQueue.Tree.NODE
-//     elt = (2,{}),
+//     elt = (2, {}),
 //     rank = 1,
 //     trees = {record PriorityQueue.Tree.NODE
-//     elt = (4,{}),
+//     elt = (4, {}),
 //     rank = 0,
 //     trees = {}
 // end PriorityQueue.Tree.NODE;}
-// end PriorityQueue.Tree.NODE;,record PriorityQueue.Tree.NODE
-//     elt = (3,{}),
+// end PriorityQueue.Tree.NODE;, record PriorityQueue.Tree.NODE
+//     elt = (3, {}),
 //     rank = 0,
 //     trees = {}
 // end PriorityQueue.Tree.NODE;}
 // end PriorityQueue.Tree.NODE;}
 // ""
-// (-2,{})
+// (-2, {})
 // ""
 // {record PriorityQueue.Tree.NODE
-//     elt = (-2,{}),
+//     elt = (-2, {}),
 //     rank = 3,
 //     trees = {record PriorityQueue.Tree.NODE
-//     elt = (1,{}),
+//     elt = (1, {}),
 //     rank = 2,
 //     trees = {record PriorityQueue.Tree.NODE
-//     elt = (2,{}),
+//     elt = (2, {}),
 //     rank = 1,
 //     trees = {record PriorityQueue.Tree.NODE
-//     elt = (4,{}),
+//     elt = (4, {}),
 //     rank = 0,
 //     trees = {}
 // end PriorityQueue.Tree.NODE;}
-// end PriorityQueue.Tree.NODE;,record PriorityQueue.Tree.NODE
-//     elt = (3,{}),
+// end PriorityQueue.Tree.NODE;, record PriorityQueue.Tree.NODE
+//     elt = (3, {}),
 //     rank = 0,
 //     trees = {}
 // end PriorityQueue.Tree.NODE;}
-// end PriorityQueue.Tree.NODE;,record PriorityQueue.Tree.NODE
-//     elt = (11,{}),
+// end PriorityQueue.Tree.NODE;, record PriorityQueue.Tree.NODE
+//     elt = (11, {}),
 //     rank = 1,
 //     trees = {record PriorityQueue.Tree.NODE
-//     elt = (35,{}),
+//     elt = (35, {}),
 //     rank = 0,
 //     trees = {}
 // end PriorityQueue.Tree.NODE;}
-// end PriorityQueue.Tree.NODE;,record PriorityQueue.Tree.NODE
-//     elt = (7,{}),
+// end PriorityQueue.Tree.NODE;, record PriorityQueue.Tree.NODE
+//     elt = (7, {}),
 //     rank = 0,
 //     trees = {}
 // end PriorityQueue.Tree.NODE;}
 // end PriorityQueue.Tree.NODE;}
 // ""
-// (-2,{})
+// (-2, {})
 // ""
 // {record PriorityQueue.Tree.NODE
-//     elt = (26,{}),
+//     elt = (26, {}),
 //     rank = 0,
 //     trees = {}
-// end PriorityQueue.Tree.NODE;,record PriorityQueue.Tree.NODE
-//     elt = (-2,{}),
+// end PriorityQueue.Tree.NODE;, record PriorityQueue.Tree.NODE
+//     elt = (-2, {}),
 //     rank = 3,
 //     trees = {record PriorityQueue.Tree.NODE
-//     elt = (1,{}),
+//     elt = (1, {}),
 //     rank = 2,
 //     trees = {record PriorityQueue.Tree.NODE
-//     elt = (2,{}),
+//     elt = (2, {}),
 //     rank = 1,
 //     trees = {record PriorityQueue.Tree.NODE
-//     elt = (4,{}),
+//     elt = (4, {}),
 //     rank = 0,
 //     trees = {}
 // end PriorityQueue.Tree.NODE;}
-// end PriorityQueue.Tree.NODE;,record PriorityQueue.Tree.NODE
-//     elt = (3,{}),
+// end PriorityQueue.Tree.NODE;, record PriorityQueue.Tree.NODE
+//     elt = (3, {}),
 //     rank = 0,
 //     trees = {}
 // end PriorityQueue.Tree.NODE;}
-// end PriorityQueue.Tree.NODE;,record PriorityQueue.Tree.NODE
-//     elt = (11,{}),
+// end PriorityQueue.Tree.NODE;, record PriorityQueue.Tree.NODE
+//     elt = (11, {}),
 //     rank = 1,
 //     trees = {record PriorityQueue.Tree.NODE
-//     elt = (35,{}),
+//     elt = (35, {}),
 //     rank = 0,
 //     trees = {}
 // end PriorityQueue.Tree.NODE;}
-// end PriorityQueue.Tree.NODE;,record PriorityQueue.Tree.NODE
-//     elt = (7,{}),
+// end PriorityQueue.Tree.NODE;, record PriorityQueue.Tree.NODE
+//     elt = (7, {}),
 //     rank = 0,
 //     trees = {}
 // end PriorityQueue.Tree.NODE;}
 // end PriorityQueue.Tree.NODE;}
 // ""
-// (-2,{})
+// (-2, {})
 // ""
 // {record PriorityQueue.Tree.NODE
-//     elt = (1,{}),
+//     elt = (1, {}),
 //     rank = 3,
 //     trees = {record PriorityQueue.Tree.NODE
-//     elt = (7,{}),
+//     elt = (7, {}),
 //     rank = 2,
 //     trees = {record PriorityQueue.Tree.NODE
-//     elt = (11,{}),
+//     elt = (11, {}),
 //     rank = 1,
 //     trees = {record PriorityQueue.Tree.NODE
-//     elt = (35,{}),
+//     elt = (35, {}),
 //     rank = 0,
 //     trees = {}
 // end PriorityQueue.Tree.NODE;}
-// end PriorityQueue.Tree.NODE;,record PriorityQueue.Tree.NODE
-//     elt = (26,{}),
+// end PriorityQueue.Tree.NODE;, record PriorityQueue.Tree.NODE
+//     elt = (26, {}),
 //     rank = 0,
 //     trees = {}
 // end PriorityQueue.Tree.NODE;}
-// end PriorityQueue.Tree.NODE;,record PriorityQueue.Tree.NODE
-//     elt = (2,{}),
+// end PriorityQueue.Tree.NODE;, record PriorityQueue.Tree.NODE
+//     elt = (2, {}),
 //     rank = 1,
 //     trees = {record PriorityQueue.Tree.NODE
-//     elt = (4,{}),
+//     elt = (4, {}),
 //     rank = 0,
 //     trees = {}
 // end PriorityQueue.Tree.NODE;}
-// end PriorityQueue.Tree.NODE;,record PriorityQueue.Tree.NODE
-//     elt = (3,{}),
+// end PriorityQueue.Tree.NODE;, record PriorityQueue.Tree.NODE
+//     elt = (3, {}),
 //     rank = 0,
 //     trees = {}
 // end PriorityQueue.Tree.NODE;}
 // end PriorityQueue.Tree.NODE;}
 // ""
-// (1,{})
+// (1, {})
 // ""
 // {record PriorityQueue.Tree.NODE
-//     elt = (3,{}),
+//     elt = (3, {}),
 //     rank = 0,
 //     trees = {}
-// end PriorityQueue.Tree.NODE;,record PriorityQueue.Tree.NODE
-//     elt = (2,{}),
+// end PriorityQueue.Tree.NODE;, record PriorityQueue.Tree.NODE
+//     elt = (2, {}),
 //     rank = 1,
 //     trees = {record PriorityQueue.Tree.NODE
-//     elt = (4,{}),
+//     elt = (4, {}),
 //     rank = 0,
 //     trees = {}
 // end PriorityQueue.Tree.NODE;}
-// end PriorityQueue.Tree.NODE;,record PriorityQueue.Tree.NODE
-//     elt = (7,{}),
+// end PriorityQueue.Tree.NODE;, record PriorityQueue.Tree.NODE
+//     elt = (7, {}),
 //     rank = 2,
 //     trees = {record PriorityQueue.Tree.NODE
-//     elt = (11,{}),
+//     elt = (11, {}),
 //     rank = 1,
 //     trees = {record PriorityQueue.Tree.NODE
-//     elt = (35,{}),
+//     elt = (35, {}),
 //     rank = 0,
 //     trees = {}
 // end PriorityQueue.Tree.NODE;}
-// end PriorityQueue.Tree.NODE;,record PriorityQueue.Tree.NODE
-//     elt = (26,{}),
+// end PriorityQueue.Tree.NODE;, record PriorityQueue.Tree.NODE
+//     elt = (26, {}),
 //     rank = 0,
 //     trees = {}
 // end PriorityQueue.Tree.NODE;}
 // end PriorityQueue.Tree.NODE;}
 // ""
-// (2,{})
+// (2, {})
 // ""
 // endResult

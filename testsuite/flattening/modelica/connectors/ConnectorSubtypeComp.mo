@@ -1,7 +1,6 @@
 // name:     ConnectorSubtypeComp
 // keywords: connect, connector, #2741
 // status:   correct
-// cflags: -d=-newInst
 //
 // Checks that subtype components are counted correctly in connectors.
 //
@@ -19,6 +18,7 @@ end C;
 
 model ConnectorSubtypeComp
   C c;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ConnectorSubtypeComp;
 
 // Result:

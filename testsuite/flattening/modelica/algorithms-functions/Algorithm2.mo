@@ -1,7 +1,6 @@
 // name:     Algorithm2
 // keywords: algorithm
 // status:   incorrect
-// cflags: -d=-newInst
 //
 // Type checks in algorithms.
 //
@@ -11,10 +10,11 @@ class Algorithm2
   Real x;
 algorithm
   i := x;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Algorithm2;
 // Result:
 // Error processing file: Algorithm2.mo
-// [flattening/modelica/algorithms-functions/Algorithm2.mo:13:3-13:9:writable] Error: Type mismatch in assignment in i := x of Integer := Real
+// [flattening/modelica/algorithms-functions/Algorithm2.mo:12:3-12:9:writable] Error: Type mismatch in assignment in i := x of Integer := Real
 // Error: Error occurred while flattening model Algorithm2
 //
 // # Error encountered! Exiting...

@@ -1,7 +1,6 @@
 // name:     ConnectHierarchical1
 // keywords: connect
 // status:   correct
-// cflags: -d=-newInst
 //
 // All effort variables are equal to 1. The unknown flow 'a.b.c.f'
 // evaluates to -1.
@@ -29,6 +28,7 @@ class ConnectHierarchical1
 equation
   connect(a.c1, a.c2);
   connect(c, a.c1);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ConnectHierarchical1;
 
 // Result:

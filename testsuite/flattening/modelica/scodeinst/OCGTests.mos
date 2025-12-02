@@ -1,6 +1,5 @@
 // name: OCGTests.mos [OCG]
 // status: correct
-// cflags: -d=newInst
 //
 //
 // tests the overconstrained connection graph
@@ -217,9 +216,7 @@ checkModel(PowerSystems.Examples.AC3ph.Inverters.Rectifier); getErrorString();
 // "Check of Transformer.SC2 completed successfully.
 // Class Transformer.SC2 has 393 equation(s) and 393 variable(s).
 // 183 of these are trivial equation(s)."
-// "[flattening/modelica/scodeinst/Transformer.mo:42:5-42:94:writable] Warning: Parameter singlePhaseTransformerQS1.TRef has no binding, and is fixed during initialization (fixed=true), using available start value (start=288.15) as default value.
-// [flattening/modelica/scodeinst/Transformer.mo:427:13-427:88:writable] Warning: Parameter voltageSource1.phi has no binding, and is fixed during initialization (fixed=true), using available start value (start=0.0) as default value.
-// "
+// ""
 // true
 // ""
 // "Check of PowerSystems.Examples.AC3ph.Inverters.Rectifier completed successfully.

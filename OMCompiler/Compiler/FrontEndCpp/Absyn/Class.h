@@ -12,17 +12,28 @@
 
 namespace OpenModelica::Absyn
 {
-  class Class : public Element::Base
+  class Class : public Element
   {
     public:
       Class(MetaModelica::Record value);
+      Class(std::string name, ElementPrefixes prefixes, Encapsulated enc, Partial partial, Restriction res, std::unique_ptr<ClassDef> cdef, Comment cmt = {}, SourceInfo info = SourceInfo::dummyInfo());
+      Class(const Class &other);
+      Class(Class &&other) = default;
+
+      Class& operator= (Class other) noexcept;
+      Class& operator= (Class &&other) = default;
+      friend void swap(Class &first, Class &second) noexcept;
+
+      void apply(ElementVisitor &visitor) override;
 
       MetaModelica::Value toSCode() const noexcept override;
 
       const std::string& name() const noexcept;
+      const ElementPrefixes& prefixes() const noexcept;
       const Comment& comment() const noexcept;
+      const ClassDef& definition() const noexcept;
 
-      std::unique_ptr<Element::Base> clone() const noexcept override;
+      std::unique_ptr<Element> clone() const noexcept override;
       void print(std::ostream &os, Each each) const noexcept override;
 
     private:
@@ -31,7 +42,7 @@ namespace OpenModelica::Absyn
       Encapsulated _encapsulated;
       Partial _partial;
       Restriction _restriction;
-      ClassDef _classDef;
+      std::unique_ptr<ClassDef> _classDef;
       Comment _comment;
   };
 }

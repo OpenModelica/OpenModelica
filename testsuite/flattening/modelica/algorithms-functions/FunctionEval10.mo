@@ -1,7 +1,6 @@
 // name:     FunctionEval10
 // keywords: function, ceval, resizing
 // status:   correct
-// cflags: +d=nogen -d=-newInst
 //
 // Tests constant evaluation of functions with protected variables with flexible
 // dimension sizes.
@@ -19,6 +18,7 @@ end fun;
 
 model FunctionEval10
   Real r[:] = fun(5);
+  annotation(__OpenModelica_commandLineOptions="+d=nogen -d=-newInst");
 end FunctionEval10;
 
 // Result:

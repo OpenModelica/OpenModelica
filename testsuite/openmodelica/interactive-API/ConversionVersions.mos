@@ -16,15 +16,15 @@ getConversionsFromVersions(P3);getErrorString();
 
 // Result:
 // true
-// ({},{})
+// ({}, {})
 // "[<interactive>:2:30-2:45:writable] Warning: Conversion-annotation contains unknown element: version.
 // [<interactive>:2:25-2:46:writable] Warning: Conversion-annotation is missing version for from-conversion: from(version = {x, y, z}).
 // "
 // true
-// ({},{})
+// ({}, {})
 // "[<interactive>:2:25-2:32:writable] Warning: Conversion-annotation contains unknown element: xfrom.
 // "
 // true
-// ({"1.2.3","1.2.7"},{"1.2.4","1.2.5","1.2.6"})
+// ({"1.2.3", "1.2.7"}, {"1.2.4", "1.2.5", "1.2.6"})
 // ""
 // endResult

@@ -1313,7 +1313,8 @@ algorithm
         true = isLayerAnnInList(listAppend(res,rest))/*Fails the case if we have a coordsys without a layer definition*/;
         res = Absyn.MODIFICATION(fi, e, Absyn.IDENT("Coordsys"), SOME(Absyn.CLASSMOD(args, eqMod)),com,mod_info) :: res;
         res = transformClassAnnList(rest,context,res,p);
-      then List.deleteMember(res,Absyn.MODIFICATION(fi, e, Absyn.IDENT("Coordsys"), SOME(Absyn.CLASSMOD(args, eqMod)),com,mod_info));
+        res = List.deleteMemberOnTrue(Absyn.MODIFICATION(fi, e, Absyn.IDENT("Coordsys"), SOME(Absyn.CLASSMOD(args, eqMod)),com,mod_info), res, valueEq);
+      then res;
 
     case(Absyn.MODIFICATION(finalPrefix = fi, eachPrefix = e, path = Absyn.IDENT(name = "Coordsys"), modification = SOME(Absyn.CLASSMOD(elementArgLst = args, eqMod = eqMod)), comment = com, info = mod_info) :: rest,context,res,p)
       equation
@@ -1322,7 +1323,8 @@ algorithm
         res = Absyn.MODIFICATION(false, Absyn.NON_EACH(), Absyn.IDENT("Diagram"), SOME(Absyn.CLASSMOD({coord},Absyn.NOMOD())),NONE(),mod_info)
               :: Absyn.MODIFICATION(false, Absyn.NON_EACH(), Absyn.IDENT("Icon"), SOME(Absyn.CLASSMOD({coord},Absyn.NOMOD())),NONE(),mod_info) :: res;
         res = transformClassAnnList(rest,context,res,p);
-      then List.deleteMember(res,Absyn.MODIFICATION(fi, e, Absyn.IDENT("Coordsys"), SOME(Absyn.CLASSMOD(args, eqMod)),com,mod_info));
+        res = List.deleteMemberOnTrue(Absyn.MODIFICATION(fi, e, Absyn.IDENT("Coordsys"), SOME(Absyn.CLASSMOD(args, eqMod)),com,mod_info), res, valueEq);
+      then res;
 
     case(Absyn.MODIFICATION(finalPrefix = fi, eachPrefix = e, path = Absyn.IDENT(name = "extent"), modification = SOME(Absyn.CLASSMOD(elementArgLst = args, eqMod = Absyn.EQMOD(Absyn.MATRIX(matrix = {{x1,y1},{x2,y2}} ),info))), comment = com, info = mod_info) :: rest,context as ("Coordsys" :: _),res,p)
       equation

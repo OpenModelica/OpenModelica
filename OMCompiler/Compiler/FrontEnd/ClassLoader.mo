@@ -178,10 +178,13 @@ algorithm
       if version=="default" or version=="" then
         commands := {"  installPackage("+id+")"};
       else
-        commands := {
-          "  installPackage("+id+", \""+version+"\", exactMatch=false)",
-          "  installPackage("+id+", \""+version+"\", exactMatch="+String(listMember(version,versionsThatProvideTheWanted))+")"
-        };
+        commands := {};
+
+        if listMember(version, versionsThatProvideTheWanted) then
+          commands := "  installPackage("+id+", \""+version+"\", exactMatch=true)" :: commands;
+        end if;
+
+        commands := "  installPackage("+id+", \""+version+"\", exactMatch=false)" :: commands;
       end if;
       if listHead(versionsThatProvideTheWanted) <> version then
         commands := "  installPackage("+id+", \""+listHead(versionsThatProvideTheWanted)+"\", exactMatch=true)" :: commands;

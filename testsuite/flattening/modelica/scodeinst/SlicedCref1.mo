@@ -1,7 +1,6 @@
 // name: SlicedCref1
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 
 record R
@@ -32,7 +31,7 @@ end SlicedCref1;
 //   input R[2] v;
 //   output Real[2] t;
 // algorithm
-//   t := array(v[$i1].x for $i1 in 1:2);
+//   t := array(v[$i0].x for $i0 in 1:2);
 // end extract;
 //
 // class SlicedCref1

@@ -1,7 +1,6 @@
 // name: FunctionSections2
 // keywords:
 // status: incorrect
-// cflags: -d=newInst
 //
 //
 
@@ -24,7 +23,7 @@ end FunctionSections2;
 
 // Result:
 // Error processing file: FunctionSections2.mo
-// [flattening/modelica/scodeinst/FunctionSections2.mo:15:1-19:6:writable] Error: Function f has more than one algorithm section or external declaration.
+// [flattening/modelica/scodeinst/FunctionSections2.mo:14:1-18:6:writable] Error: Function f has more than one algorithm section or external declaration.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

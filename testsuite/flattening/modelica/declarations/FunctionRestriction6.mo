@@ -1,7 +1,6 @@
 // name: FunctionRestriction6
 // keywords:
 // status: incorrect
-// cflags: -d=newInst
 //
 
 function f
@@ -19,7 +18,7 @@ end FunctionRestriction6;
 
 // Result:
 // Error processing file: FunctionRestriction6.mo
-// [flattening/modelica/declarations/FunctionRestriction6.mo:11:3-11:15:writable] Error: Invalid prefix outer on formal parameter z.
+// [flattening/modelica/declarations/FunctionRestriction6.mo:10:3-10:15:writable] Error: Invalid prefix outer on formal parameter z.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

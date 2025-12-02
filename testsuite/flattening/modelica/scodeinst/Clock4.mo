@@ -1,7 +1,6 @@
 // name: Clock4
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 
 model Clock4

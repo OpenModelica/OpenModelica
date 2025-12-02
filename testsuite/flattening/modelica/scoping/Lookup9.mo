@@ -1,7 +1,6 @@
 // name:     Lookup9
 // keywords: scoping
 // status:   correct
-// cflags: -d=-newInst
 //
 
 package A
@@ -19,6 +18,7 @@ package A
 end A;
 model C
    A.AB h(R_0=0.7);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end C;
 
 // Result:

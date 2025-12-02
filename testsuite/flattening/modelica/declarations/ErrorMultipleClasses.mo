@@ -1,6 +1,5 @@
 // name: ErrorMultipleClasses
 // status: incorrect
-// cflags: -d=-newInst
 
 class A
 end A;
@@ -9,6 +8,7 @@ class A
 end A;
 
 class sin
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end sin;
 // Result:
 // Error processing file: ErrorMultipleClasses.mo

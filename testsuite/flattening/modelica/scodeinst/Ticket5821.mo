@@ -2,7 +2,6 @@
 // keywords: tests Connections.branch/Connections.uniqueRoot/Connections.uniqueRootIndices
 // status:   correct
 //
-// cflags:   -d=newInst --std=3.2
 //
 
 
@@ -2139,6 +2138,7 @@ end YD;
 model Test_total
   extends YD.Test;
  annotation(experiment(StopTime = 2.5));
+  annotation(__OpenModelica_commandLineOptions="--std=3.2");
 end Test_total;
 
 
@@ -2244,7 +2244,7 @@ end Test_total;
 //   parameter Real booleanTable.table[7](quantity = "Time", unit = "s") = 2.05 "Vector of time points. At every time point, the output y gets its opposite value (e.g., table={0,1})";
 //   parameter Real booleanTable.table[8](quantity = "Time", unit = "s") = 2.1 "Vector of time points. At every time point, the output y gets its opposite value (e.g., table={0,1})";
 //   parameter Boolean booleanTable.startValue = false "Start value of y. At time = table[1], y changes to 'not startValue'";
-//   parameter enumeration(HoldLastPoint, LastTwoPoints, Periodic, NoExtrapolation) booleanTable.extrapolation = Modelica.Blocks.Types.Extrapolation.HoldLastPoint "Extrapolation of data outside the definition range";
+//   final parameter enumeration(HoldLastPoint, LastTwoPoints, Periodic, NoExtrapolation) booleanTable.extrapolation = Modelica.Blocks.Types.Extrapolation.HoldLastPoint "Extrapolation of data outside the definition range";
 //   parameter Real booleanTable.startTime(quantity = "Time", unit = "s") = 0.1 "Output = false for time < startTime";
 //   parameter Real booleanTable.shiftTime(quantity = "Time", unit = "s") = 0.0 "Shift time of table";
 //   Boolean booleanTable.y "Connector of Boolean output signal";
@@ -2276,7 +2276,7 @@ end Test_total;
 //   final parameter enumeration(LinearSegments, ContinuousDerivative, ConstantSegments, MonotoneContinuousDerivative1, MonotoneContinuousDerivative2) booleanTable.combiTimeTable.smoothness = Modelica.Blocks.Types.Smoothness.ConstantSegments "Smoothness of table interpolation";
 //   final parameter enumeration(HoldLastPoint, LastTwoPoints, Periodic, NoExtrapolation) booleanTable.combiTimeTable.extrapolation = Modelica.Blocks.Types.Extrapolation.HoldLastPoint "Extrapolation of data outside the definition range";
 //   final parameter Real booleanTable.combiTimeTable.timeScale(quantity = "Time", unit = "s", min = 1e-15) = 1.0 "Time scale of first table column";
-//   final parameter Real booleanTable.combiTimeTable.offset[1] = 0.0 "Offsets of output signals";
+//   parameter Real booleanTable.combiTimeTable.offset[1] = 0.0 "Offsets of output signals";
 //   final parameter Real booleanTable.combiTimeTable.startTime(quantity = "Time", unit = "s") = booleanTable.startTime "Output = offset for time < startTime";
 //   final parameter Real booleanTable.combiTimeTable.shiftTime(quantity = "Time", unit = "s") = booleanTable.shiftTime "Shift time of first table column";
 //   parameter enumeration(Always, AtDiscontinuities, NoTimeEvents) booleanTable.combiTimeTable.timeEvents = Modelica.Blocks.Types.TimeEvents.Always "Time event handling of table interpolation";
@@ -2285,8 +2285,8 @@ end Test_total;
 //   final parameter Real booleanTable.combiTimeTable.t_max(quantity = "Time", unit = "s") = booleanTable.combiTimeTable.t_maxScaled "Maximum abscissa value defined in table";
 //   final parameter Real booleanTable.combiTimeTable.t_minScaled = Modelica.Blocks.Tables.Internal.getTimeTableTmin(booleanTable.combiTimeTable.tableID) "Minimum (scaled) abscissa value defined in table";
 //   final parameter Real booleanTable.combiTimeTable.t_maxScaled = Modelica.Blocks.Tables.Internal.getTimeTableTmax(booleanTable.combiTimeTable.tableID) "Maximum (scaled) abscissa value defined in table";
-//   protected final parameter Real booleanTable.combiTimeTable.p_offset[1] = 0.0 "Offsets of output signals";
-//   protected parameter Modelica.Blocks.Types.ExternalCombiTimeTable booleanTable.combiTimeTable.tableID = Modelica.Blocks.Types.ExternalCombiTimeTable.constructor("NoName", "NoName", booleanTable.combiTimeTable.table, booleanTable.combiTimeTable.startTime, {2}, Modelica.Blocks.Types.Smoothness.ConstantSegments, Modelica.Blocks.Types.Extrapolation.HoldLastPoint, booleanTable.combiTimeTable.shiftTime, Modelica.Blocks.Types.TimeEvents.Always, false) "External table object";
+//   protected final parameter Real booleanTable.combiTimeTable.p_offset[1] = booleanTable.combiTimeTable.offset[1] "Offsets of output signals";
+//   protected parameter Modelica.Blocks.Types.ExternalCombiTimeTable booleanTable.combiTimeTable.tableID = Modelica.Blocks.Types.ExternalCombiTimeTable.constructor("NoName", "NoName", booleanTable.combiTimeTable.table, booleanTable.combiTimeTable.startTime, booleanTable.combiTimeTable.columns, Modelica.Blocks.Types.Smoothness.ConstantSegments, Modelica.Blocks.Types.Extrapolation.HoldLastPoint, booleanTable.combiTimeTable.shiftTime, Modelica.Blocks.Types.TimeEvents.Always, false) "External table object";
 //   protected discrete Real booleanTable.combiTimeTable.nextTimeEvent(quantity = "Time", unit = "s", start = 0.0, fixed = true) "Next time event instant";
 //   protected discrete Real booleanTable.combiTimeTable.nextTimeEventScaled(start = 0.0, fixed = true) "Next scaled time event instant";
 //   protected Real booleanTable.combiTimeTable.timeScaled "Scaled time";
@@ -2536,11 +2536,10 @@ end Test_total;
 //   booleanTable.combiTimeTable.timeScaled = time;
 //   when {time >= pre(booleanTable.combiTimeTable.nextTimeEvent), initial()} then
 //     booleanTable.combiTimeTable.nextTimeEventScaled = Modelica.Blocks.Tables.Internal.getNextTimeEvent(booleanTable.combiTimeTable.tableID, booleanTable.combiTimeTable.timeScaled);
-//     booleanTable.combiTimeTable.nextTimeEvent = if booleanTable.combiTimeTable.nextTimeEventScaled < 9.999999999999999e+59 then booleanTable.combiTimeTable.nextTimeEventScaled else 9.999999999999999e+59;
+//     booleanTable.combiTimeTable.nextTimeEvent = if booleanTable.combiTimeTable.nextTimeEventScaled < 1e60 then booleanTable.combiTimeTable.nextTimeEventScaled else 1e60;
 //   end when;
 //   booleanTable.combiTimeTable.y[1] = booleanTable.combiTimeTable.p_offset[1] + Modelica.Blocks.Tables.Internal.getTimeTableValueNoDer(booleanTable.combiTimeTable.tableID, 1, booleanTable.combiTimeTable.timeScaled, booleanTable.combiTimeTable.nextTimeEventScaled, pre(booleanTable.combiTimeTable.nextTimeEventScaled));
 //   booleanTable.realToBoolean.y = booleanTable.realToBoolean.u >= booleanTable.realToBoolean.threshold;
-//   assert(booleanTable.extrapolation <> Modelica.Blocks.Types.Extrapolation.LastTwoPoints, "Unsuitable extrapolation setting.");
 //   when {logicalDelayEquations.u, not logicalDelayEquations.u} then
 //     logicalDelayEquations.tSwitch = time;
 //   end when;
@@ -2626,17 +2625,17 @@ end Test_total;
 //   logicalDelayStateGraph.T4.outPort.node = logicalDelayStateGraph.T4.inPort.node;
 //   assert(logicalDelayStateGraph.T4.waitTime > 1e-13, "Either set delayTransition = false, or set waitTime (= " + String(logicalDelayStateGraph.T4.waitTime, 6, 0, true) + ") > " + String(1e-13, 6, 0, true));
 // end Test_total;
-// [flattening/modelica/scodeinst/Ticket5821.mo:39:7-39:47:writable] Warning: The second argument 'logicalDelayStateGraph.Y1D0.node' of Connections.branch must have the form A.R, where A is a connector and R an over-determined type/record.
-// [flattening/modelica/scodeinst/Ticket5821.mo:43:7-49:9:writable] Warning: Usage of non-standard operator (not specified in the Modelica specification): Connections.uniqueRoot. Functionality might be partially supported but is not guaranteed.
-// [flattening/modelica/scodeinst/Ticket5821.mo:43:7-49:9:writable] Warning: The first argument 'logicalDelayStateGraph.Y1D0.node' of Connections.uniqueRoot must have the form A.R, where A is a connector and R an over-determined type/record.
-// [flattening/modelica/scodeinst/Ticket5821.mo:60:7-60:48:writable] Warning: The first argument 'logicalDelayStateGraph.Y1D0.node' of Connections.branch must have the form A.R, where A is a connector and R an over-determined type/record.
-// [flattening/modelica/scodeinst/Ticket5821.mo:39:7-39:47:writable] Warning: The second argument 'logicalDelayStateGraph.Y0D0.node' of Connections.branch must have the form A.R, where A is a connector and R an over-determined type/record.
-// [flattening/modelica/scodeinst/Ticket5821.mo:43:7-49:9:writable] Warning: Usage of non-standard operator (not specified in the Modelica specification): Connections.uniqueRoot. Functionality might be partially supported but is not guaranteed.
-// [flattening/modelica/scodeinst/Ticket5821.mo:43:7-49:9:writable] Warning: The first argument 'logicalDelayStateGraph.Y0D0.node' of Connections.uniqueRoot must have the form A.R, where A is a connector and R an over-determined type/record.
-// [flattening/modelica/scodeinst/Ticket5821.mo:60:7-60:48:writable] Warning: The first argument 'logicalDelayStateGraph.Y0D0.node' of Connections.branch must have the form A.R, where A is a connector and R an over-determined type/record.
-// [flattening/modelica/scodeinst/Ticket5821.mo:39:7-39:47:writable] Warning: The second argument 'logicalDelayStateGraph.Y0D1.node' of Connections.branch must have the form A.R, where A is a connector and R an over-determined type/record.
-// [flattening/modelica/scodeinst/Ticket5821.mo:43:7-49:9:writable] Warning: Usage of non-standard operator (not specified in the Modelica specification): Connections.uniqueRoot. Functionality might be partially supported but is not guaranteed.
-// [flattening/modelica/scodeinst/Ticket5821.mo:43:7-49:9:writable] Warning: The first argument 'logicalDelayStateGraph.Y0D1.node' of Connections.uniqueRoot must have the form A.R, where A is a connector and R an over-determined type/record.
-// [flattening/modelica/scodeinst/Ticket5821.mo:60:7-60:48:writable] Warning: The first argument 'logicalDelayStateGraph.Y0D1.node' of Connections.branch must have the form A.R, where A is a connector and R an over-determined type/record.
+// [flattening/modelica/scodeinst/Ticket5821.mo:38:7-38:47:writable] Warning: The second argument 'logicalDelayStateGraph.Y1D0.node' of Connections.branch must have the form A.R, where A is a connector and R an over-determined type/record.
+// [flattening/modelica/scodeinst/Ticket5821.mo:42:7-48:9:writable] Warning: Usage of non-standard operator (not specified in the Modelica specification): Connections.uniqueRoot. Functionality might be partially supported but is not guaranteed.
+// [flattening/modelica/scodeinst/Ticket5821.mo:42:7-48:9:writable] Warning: The first argument 'logicalDelayStateGraph.Y1D0.node' of Connections.uniqueRoot must have the form A.R, where A is a connector and R an over-determined type/record.
+// [flattening/modelica/scodeinst/Ticket5821.mo:59:7-59:48:writable] Warning: The first argument 'logicalDelayStateGraph.Y1D0.node' of Connections.branch must have the form A.R, where A is a connector and R an over-determined type/record.
+// [flattening/modelica/scodeinst/Ticket5821.mo:38:7-38:47:writable] Warning: The second argument 'logicalDelayStateGraph.Y0D0.node' of Connections.branch must have the form A.R, where A is a connector and R an over-determined type/record.
+// [flattening/modelica/scodeinst/Ticket5821.mo:42:7-48:9:writable] Warning: Usage of non-standard operator (not specified in the Modelica specification): Connections.uniqueRoot. Functionality might be partially supported but is not guaranteed.
+// [flattening/modelica/scodeinst/Ticket5821.mo:42:7-48:9:writable] Warning: The first argument 'logicalDelayStateGraph.Y0D0.node' of Connections.uniqueRoot must have the form A.R, where A is a connector and R an over-determined type/record.
+// [flattening/modelica/scodeinst/Ticket5821.mo:59:7-59:48:writable] Warning: The first argument 'logicalDelayStateGraph.Y0D0.node' of Connections.branch must have the form A.R, where A is a connector and R an over-determined type/record.
+// [flattening/modelica/scodeinst/Ticket5821.mo:38:7-38:47:writable] Warning: The second argument 'logicalDelayStateGraph.Y0D1.node' of Connections.branch must have the form A.R, where A is a connector and R an over-determined type/record.
+// [flattening/modelica/scodeinst/Ticket5821.mo:42:7-48:9:writable] Warning: Usage of non-standard operator (not specified in the Modelica specification): Connections.uniqueRoot. Functionality might be partially supported but is not guaranteed.
+// [flattening/modelica/scodeinst/Ticket5821.mo:42:7-48:9:writable] Warning: The first argument 'logicalDelayStateGraph.Y0D1.node' of Connections.uniqueRoot must have the form A.R, where A is a connector and R an over-determined type/record.
+// [flattening/modelica/scodeinst/Ticket5821.mo:59:7-59:48:writable] Warning: The first argument 'logicalDelayStateGraph.Y0D1.node' of Connections.branch must have the form A.R, where A is a connector and R an over-determined type/record.
 //
 // endResult

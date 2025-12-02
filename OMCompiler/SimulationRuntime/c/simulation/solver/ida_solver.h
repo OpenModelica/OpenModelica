@@ -64,7 +64,7 @@ typedef struct IDA_SOLVER
 {
   /* ### configuration  ### */
   int setInitialSolution;
-  enum JACOBIAN_METHOD jacobianMethod;  /* specifies the method to calculate the Jacobian matrix */
+  JACOBIAN_METHOD jacobianMethod;  /* specifies the method to calculate the Jacobian matrix */
   enum IDA_LS linearSolverMethod;       /* specifies the method to solve the linear problem */
   int internalSteps;                    /* if = 1 internal step of the integrator are used  */
   unsigned int stepsFreq;               /* value specifies the output frequency regarding to time steps. Used in internal steps mode. */
@@ -116,7 +116,7 @@ typedef struct IDA_SOLVER
   N_Vector* ySResult;
 
 #ifdef USE_PARJAC
-  ANALYTIC_JACOBIAN* jacColumns;
+  JACOBIAN* jacColumns;
 #endif
   int allocatedParMem; /* indicated if parallel memory was allocated, 0=false, 1=true*/
 } IDA_SOLVER;

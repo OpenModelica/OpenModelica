@@ -1,7 +1,6 @@
 // name: RecordClassModOutput.mo
 // keywords: record, submod
 // status: correct
-// cflags: -d=-newInst
 //
 // Checks that output records from functions with classmod modification get bindings
 //
@@ -28,6 +27,7 @@ model test
    R1 m3 = m2;
    R1 m4 = out1();
    R1 m5 = out2();
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end test;
 
 

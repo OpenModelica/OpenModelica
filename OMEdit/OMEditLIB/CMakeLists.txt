@@ -11,7 +11,6 @@ if(MINGW)
   find_package(binutils REQUIRED)
 endif()
 
-
 omc_add_subdirectory(Debugger/Parser)
 
 set(CMAKE_AUTOMOC ON)
@@ -22,18 +21,20 @@ set(OMEDITLIB_SOURCES Util/Helper.cpp
                       Util/Utilities.cpp
                       Util/StringHandler.cpp
                       Util/OutputPlainTextEdit.cpp
+                      Util/DirectoryOrFileSelector.cpp
                       MainWindow.cpp
                       OMC/OMCProxy.cpp
                       Modeling/Model.cpp
                       Modeling/MessagesWidget.cpp
                       Modeling/ItemDelegate.cpp
                       Modeling/LibraryTreeWidget.cpp
+                      Modeling/ElementTreeWidget.cpp
                       Modeling/Commands.cpp
-                      Modeling/CoOrdinateSystem.cpp
                       Modeling/ModelWidgetContainer.cpp
                       Modeling/ModelicaClassDialog.cpp
                       Modeling/FunctionArgumentDialog.cpp
                       Modeling/InstallLibraryDialog.cpp
+                      Modeling/QuickInsertWidget.cpp
                       Search/SearchWidget.cpp
                       Options/OptionsDialog.cpp
                       Editors/BaseEditor.cpp
@@ -41,7 +42,8 @@ set(OMEDITLIB_SOURCES Util/Helper.cpp
                       Editors/TransformationsEditor.cpp
                       Editors/TextEditor.cpp
                       Editors/CEditor.cpp
-                      Editors/CompositeModelEditor.cpp
+                      Editors/CRMLEditor.cpp
+                      Editors/MOSEditor.cpp
                       Editors/OMSimulatorEditor.cpp
                       Editors/MetaModelicaEditor.cpp
                       Editors/HTMLEditor.cpp
@@ -80,13 +82,9 @@ set(OMEDITLIB_SOURCES Util/Helper.cpp
                       Simulation/SimulationOutputHandler.cpp
                       Simulation/OpcUaClient.cpp
                       Simulation/ArchivedSimulationsWidget.cpp
-                      TLM/FetchInterfaceDataDialog.cpp
-                      TLM/FetchInterfaceDataThread.cpp
-                      TLM/TLMCoSimulationDialog.cpp
-                      TLM/TLMCoSimulationOutputWidget.cpp
-                      TLM/TLMCoSimulationThread.cpp
                       FMI/ImportFMUDialog.cpp
                       FMI/ImportFMUModelDescriptionDialog.cpp
+                      FMI/FMUExportOutputWidget.cpp
                       Plotting/VariablesWidget.cpp
                       Plotting/DiagramWindow.cpp
                       Options/NotificationsDialog.cpp
@@ -108,6 +106,8 @@ set(OMEDITLIB_SOURCES Util/Helper.cpp
                       CrashReport/backtrace.c
                       CrashReport/GDBBacktrace.cpp
                       CrashReport/CrashReportDialog.cpp
+                      CRML/CRMLTranslateAsDialog.cpp
+                      CRML/CRMLTranslatorOutputWidget.cpp
                       Git/GitCommands.cpp
                       Git/CommitChangesDialog.cpp
                       Git/RevertCommitsDialog.cpp
@@ -125,6 +125,7 @@ set(OMEDITLIB_SOURCES Util/Helper.cpp
                       Animation/TimeManager.cpp
                       Util/ResourceCache.cpp
                       Util/NetworkAccessManager.cpp
+                      Util/GitHubArtifactDownloader.cpp
                       FlatModelica/Expression.cpp
                       FlatModelica/ExpressionFuncs.cpp
                       FlatModelica/Parser.cpp
@@ -132,7 +133,6 @@ set(OMEDITLIB_SOURCES Util/Helper.cpp
                       Animation/AbstractAnimationWindow.cpp
                       Animation/ViewerWidget.cpp
                       Animation/AnimationWindow.cpp
-                      Animation/ThreeDViewer.cpp
                       Animation/ExtraShapes.cpp
                       Animation/Visualization.cpp
                       Animation/VisualizationMAT.cpp
@@ -145,23 +145,24 @@ set(OMEDITLIB_SOURCES Util/Helper.cpp
                       Animation/Vector.cpp
                       resource_omedit.qrc)
 
-
 set(OMEDITLIB_HEADERS Util/Helper.h
                       Util/Utilities.h
                       Util/StringHandler.h
                       Util/OutputPlainTextEdit.h
+                      Util/DirectoryOrFileSelector.h
                       MainWindow.h
                       OMC/OMCProxy.h
                       Modeling/Model.h
                       Modeling/MessagesWidget.h
                       Modeling/ItemDelegate.h
                       Modeling/LibraryTreeWidget.h
+                      Modeling/ElementTreeWidget.h
                       Modeling/Commands.h
-                      Modeling/CoOrdinateSystem.h
                       Modeling/ModelWidgetContainer.h
                       Modeling/ModelicaClassDialog.h
                       Modeling/FunctionArgumentDialog.h
                       Modeling/InstallLibraryDialog.h
+                      Modeling/QuickInsertWidget.h
                       Search/SearchWidget.h
                       Options/OptionsDefaults.h
                       Options/OptionsDialog.h
@@ -170,7 +171,8 @@ set(OMEDITLIB_HEADERS Util/Helper.h
                       Editors/TransformationsEditor.h
                       Editors/TextEditor.h
                       Editors/CEditor.h
-                      Editors/CompositeModelEditor.h
+                      Editors/CRMLEditor.h
+                      Editors/MOSEditor.h
                       Editors/OMSimulatorEditor.h
                       Editors/MetaModelicaEditor.h
                       Editors/HTMLEditor.h
@@ -210,14 +212,9 @@ set(OMEDITLIB_HEADERS Util/Helper.h
                       Simulation/SimulationOutputHandler.h
                       Simulation/OpcUaClient.h
                       Simulation/ArchivedSimulationsWidget.h
-                      TLM/FetchInterfaceDataDialog.h
-                      TLM/FetchInterfaceDataThread.h
-                      TLM/TLMCoSimulationOptions.h
-                      TLM/TLMCoSimulationDialog.h
-                      TLM/TLMCoSimulationOutputWidget.h
-                      TLM/TLMCoSimulationThread.h
                       FMI/ImportFMUDialog.h
                       FMI/ImportFMUModelDescriptionDialog.h
+                      FMI/FMUExportOutputWidget.h
                       Plotting/VariablesWidget.h
                       Plotting/DiagramWindow.h
                       Options/NotificationsDialog.h
@@ -239,6 +236,9 @@ set(OMEDITLIB_HEADERS Util/Helper.h
                       CrashReport/backtrace.h
                       CrashReport/GDBBacktrace.h
                       CrashReport/CrashReportDialog.h
+                      CRML/CRMLTranslateAsDialog.h
+                      CRML/CRMLTranslatorOptions.h
+                      CRML/CRMLTranslatorOutputWidget.h
                       Git/GitCommands.h
                       Git/CommitChangesDialog.h
                       Git/RevertCommitsDialog.h
@@ -258,6 +258,7 @@ set(OMEDITLIB_HEADERS Util/Helper.h
                       Interfaces/ModelInterface.h
                       Util/ResourceCache.h
                       Util/NetworkAccessManager.h
+                      Util/GitHubArtifactDownloader.h
                       FlatModelica/Expression.h
                       FlatModelica/ExpressionFuncs.h
                       FlatModelica/Parser.h
@@ -265,7 +266,6 @@ set(OMEDITLIB_HEADERS Util/Helper.h
                       Animation/AbstractAnimationWindow.h
                       Animation/ViewerWidget.h
                       Animation/AnimationWindow.h
-                      Animation/ThreeDViewer.h
                       Animation/AnimationUtil.h
                       Animation/ExtraShapes.h
                       Animation/Visualization.h
@@ -279,6 +279,26 @@ set(OMEDITLIB_HEADERS Util/Helper.h
                       Animation/Vector.h
                       Animation/rapidxml.hpp)
 
+set(TS_FILES Resources/nls/OMEdit_de.ts
+             Resources/nls/OMEdit_es.ts
+             Resources/nls/OMEdit_fr.ts
+             Resources/nls/OMEdit_it.ts
+             Resources/nls/OMEdit_ja.ts
+             Resources/nls/OMEdit_ro.ts
+             Resources/nls/OMEdit_ru.ts
+             Resources/nls/OMEdit_sv.ts
+             Resources/nls/OMEdit_zh_CN.ts)
+
+# Add the translation files.
+find_package(Qt${OM_QT_MAJOR_VERSION} REQUIRED COMPONENTS LinguistTools)
+# Create the output folder, lrelease doesn't do it automatically.
+file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/Resources/nls)
+set_source_files_properties(${TS_FILES} PROPERTIES OUTPUT_LOCATION "Resources/nls")
+if (OM_QT_MAJOR_VERSION VERSION_GREATER_EQUAL 6)
+  qt_add_translation(OMEDITLIB_TRANSLATIONS ${TS_FILES})
+else()
+  qt5_add_translation(OMEDITLIB_TRANSLATIONS ${TS_FILES})
+endif()
 
 # Add the OpenModelica generated files to sources
 set(OMEDITLIB_HEADERS ${OMEDITLIB_HEADERS} ${OMCompiler_SOURCE_DIR}/Compiler/Script/OpenModelicaScriptingAPIQt.h)
@@ -288,7 +308,7 @@ set(OMEDITLIB_SOURCES ${OMEDITLIB_SOURCES} ${OMCompiler_SOURCE_DIR}/Compiler/Scr
 set_source_files_properties(${OMCompiler_SOURCE_DIR}/Compiler/Script/OpenModelicaScriptingAPIQt.cpp GENERATED)
 set_source_files_properties(${OMCompiler_SOURCE_DIR}/Compiler/Script/OpenModelicaScriptingAPIQt.h GENERATED)
 
-add_library(OMEditLib STATIC ${OMEDITLIB_SOURCES} ${OMEDITLIB_HEADERS})
+add_library(OMEditLib STATIC ${OMEDITLIB_SOURCES} ${OMEDITLIB_HEADERS} ${OMEDITLIB_TRANSLATIONS})
 
 target_include_directories(OMEditLib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 # OpenSceneGraph does not provide imported targets yet. Add includes manually.
@@ -322,11 +342,15 @@ else ()
   target_link_libraries(OMEditLib PUBLIC Qt${OM_QT_MAJOR_VERSION}::WebKitWidgets)
 endif ()
 
-if (OM_OMEDIT_ENABLE_LIBXML2 OR OM_QT_MAJOR_VERSION VERSION_GREATER_EQUAL 6)
-  target_link_libraries(OMEditLib PUBLIC LibXml2::LibXml2)
-  target_compile_definitions(OMEditLib PUBLIC OM_OMEDIT_ENABLE_LIBXML2)
-else ()
-  target_link_libraries(OMEditLib PUBLIC Qt${OM_QT_MAJOR_VERSION}::XmlPatterns)
+target_link_libraries(OMEditLib PUBLIC Qt${OM_QT_MAJOR_VERSION}::OpenGL)
+if (OM_QT_MAJOR_VERSION VERSION_GREATER_EQUAL 6)
+  target_link_libraries(OMEditLib PUBLIC Qt${OM_QT_MAJOR_VERSION}::OpenGLWidgets)
+endif ()
+target_link_libraries(OMEditLib PUBLIC Qt${OM_QT_MAJOR_VERSION}::Network)
+target_link_libraries(OMEditLib PUBLIC Qt${OM_QT_MAJOR_VERSION}::Svg)
+
+if (OM_QT_MAJOR_VERSION VERSION_GREATER_EQUAL 6)
+  target_link_libraries(OMEditLib PUBLIC Qt6::Core5Compat)
 endif ()
 
 target_link_libraries(OMEditLib PUBLIC omc::3rd::opcua)
@@ -346,3 +370,8 @@ if(MINGW)
 endif()
 
 target_include_directories(OMEditLib PUBLIC ${OMCompiler_SOURCE_DIR}/Compiler/Script)
+
+# Install the translation files
+install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/Resources/nls
+        DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/omedit
+        FILES_MATCHING PATTERN "*.qm")

@@ -1,7 +1,6 @@
 // name: PartialApplicationInvalidArg1
 // keywords:
 // status: incorrect
-// cflags: -d=newInst
 //
 
 function f1
@@ -32,7 +31,7 @@ end PartialApplicationInvalidArg1;
 
 // Result:
 // Error processing file: PartialApplicationInvalidArg1.mo
-// [flattening/modelica/scodeinst/PartialApplicationInvalidArg1.mo:30:3-30:45:writable] Error: Type mismatch for named argument in f1(y="fish"). The argument has type:
+// [flattening/modelica/scodeinst/PartialApplicationInvalidArg1.mo:29:3-29:45:writable] Error: Type mismatch for named argument in f1(y="fish"). The argument has type:
 //   String
 // expected type:
 //   Real

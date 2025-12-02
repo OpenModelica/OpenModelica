@@ -1,7 +1,6 @@
 // name:     ArraySlice2
 // keywords: array slice bug1602
 // status:   correct
-// cflags: -d=-newInst
 //
 // Slice subscripting of parameter arrays.
 //
@@ -12,6 +11,7 @@ model ArraySlice2
   parameter Real B[:,:] = ABCD[1:end-1,end:end];
   parameter Real C[:,:] = ABCD[end:end,1:end-1];
   parameter Real D[:,:] = matrix(ABCD[end,end]);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ArraySlice2;
 
 // Result:

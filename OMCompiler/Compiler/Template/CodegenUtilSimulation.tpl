@@ -79,11 +79,11 @@ template equationIndex(SimEqSystem eq)
   case SES_SIMPLE_ASSIGN(__)
   case SES_SIMPLE_ASSIGN_CONSTRAINTS(__)
   case SES_ARRAY_CALL_ASSIGN(__)
+  case SES_RESIZABLE_ASSIGN(__)
   case SES_GENERIC_ASSIGN(__)
   case SES_ENTWINED_ASSIGN(__)
   case SES_IFEQUATION(__)
   case SES_ALGORITHM(__)
-    then index
   case SES_INVERSE_ALGORITHM(__)
     then index
   case SES_LINEAR(lSystem=ls as LINEARSYSTEM(__))
@@ -93,6 +93,8 @@ template equationIndex(SimEqSystem eq)
   case SES_MIXED(__)
   case SES_WHEN(__)
   case SES_FOR_LOOP(__)
+    then index
+  case SES_FOR_EQUATION(__)
     then index
   case SES_ALIAS(__)
     then aliasOf
@@ -110,6 +112,17 @@ template equationIndexAlternativeTearing(SimEqSystem eq)
   case SES_NONLINEAR(alternativeTearing=SOME(at as NONLINEARSYSTEM(__)))
     then at.index
 end equationIndexAlternativeTearing;
+
+template equationIndexGeneral(SimEqSystem eq)
+::=
+  match eq
+  case SES_LINEAR(alternativeTearing = SOME(LINEARSYSTEM))
+  case SES_NONLINEAR(alternativeTearing = SOME(NONLINEARSYSTEM)) then
+    equationIndexAlternativeTearing(eq)
+  else
+    equationIndex(eq)
+  end match
+end equationIndexGeneral;
 
 template dumpEqs(list<SimEqSystem> eqs)
 ::= match getConfigString(OBFUSCATE)
@@ -141,13 +154,13 @@ template dumpEqsWork(list<SimEqSystem> eqs)
       <<
       equation index: <%equationIndex(eq)%>
       type: SIMPLE_ASSIGN
-      <%dumpCref(e.cref)%> = <%escapeCComments(dumpExp(e.exp,"\""))%>
+      <%escapeCComments(dumpCref(e.cref))%> = <%escapeCComments(dumpExp(e.exp,"\""))%>
       >>
     case e as SES_SIMPLE_ASSIGN_CONSTRAINTS(__) then
       <<
       equation index: <%equationIndex(eq)%>
       type: SIMPLE_ASSIGN_CONSTRAINTS
-      <%dumpCref(e.cref)%> = <%escapeCComments(dumpExp(e.exp,"\""))%>
+      <%escapeCComments(dumpCref(e.cref))%> = <%escapeCComments(dumpExp(e.exp,"\""))%>
       constraints: <%escapeCComments(dumpConstraints(e.cons))%>
       >>
     case e as SES_ARRAY_CALL_ASSIGN(lhs=lhs as CREF(__)) then
@@ -155,7 +168,12 @@ template dumpEqsWork(list<SimEqSystem> eqs)
       equation index: <%equationIndex(eq)%>
       type: ARRAY_CALL_ASSIGN
 
-      <%dumpCref(lhs.componentRef)%> = <%escapeCComments(dumpExp(e.exp,"\""))%>
+      <%escapeCComments(dumpCref(lhs.componentRef))%> = <%escapeCComments(dumpExp(e.exp,"\""))%>
+      >>
+    case e as SES_RESIZABLE_ASSIGN(__) then
+      <<
+      equation index: <%equationIndex(eq)%>
+      type: SES_RESIZABLE_ASSIGN call index: <%e.call_index%>
       >>
     case e as SES_GENERIC_ASSIGN(__) then
       <<
@@ -185,7 +203,7 @@ template dumpEqsWork(list<SimEqSystem> eqs)
       equation index: <%equationIndex(eq)%>
       type: LINEAR
 
-      <%ls.vars |> SIMVAR(name=cr) => '<var><%dumpCref(cr)%></var>' ; separator = "\n" %>
+      <%ls.vars |> SIMVAR(name=cr) => '<var><%escapeCComments(dumpCref(cr))%></var>' ; separator = "\n" %>
       <row>
         <%ls.beqs |> exp => '<cell><%escapeCComments(dumpExp(exp,"\""))%></cell>' ; separator = "\n" %><%\n%>
       </row>
@@ -218,7 +236,7 @@ template dumpEqsWork(list<SimEqSystem> eqs)
       indexNonlinear: <%nls.indexNonLinearSystem%>
       type: NONLINEAR
 
-      vars: {<%nls.crefs |> cr => '<%dumpCref(cr)%>' ; separator = ", "%>}
+      vars: {<%nls.crefs |> cr => '<%escapeCComments(dumpCref(cr))%>' ; separator = ", "%>}
       eqns: {<%nls.eqs |> eq => '<%equationIndex(eq)%>' ; separator = ", "%>}
       >>
     case e as SES_MIXED(__) then
@@ -231,7 +249,7 @@ template dumpEqsWork(list<SimEqSystem> eqs)
 
       <mixed>
         <continuous index="<%equationIndex(e.cont)%>" />
-        <%e.discVars |> SIMVAR(name=cr) => '<var><%dumpCref(cr)%></var>' ; separator = ","%>
+        <%e.discVars |> SIMVAR(name=cr) => '<var><%escapeCComments(dumpCref(cr))%></var>' ; separator = ","%>
         <%e.discEqs |> eq => '<discrete index="<%equationIndex(eq)%>" />'%>
       </mixed>
       >>
@@ -251,7 +269,7 @@ template dumpEqsWork(list<SimEqSystem> eqs)
       equation index: <%equationIndex(eq)%>
       type: WHEN
 
-      when {<%conditions |> cond => '<%dumpCref(cond)%>' ; separator=", " %>} then
+      when {<%conditions |> cond => '<%escapeCComments(dumpCref(cond))%>' ; separator=", " %>} then
         <%body%>
       end when;
       >>
@@ -269,11 +287,22 @@ template dumpEqsWork(list<SimEqSystem> eqs)
       let &forstatement = buffer ""
       let &forstatement += 'for ' + escapeCComments(dumpExp(e.iter,"\"")) + ' in ' + escapeCComments(dumpExp(e.startIt,"\""))
       let &forstatement += ' : ' + escapeCComments(dumpExp(e.endIt,"\"")) + ' loop<%\n%>'
-      let &forstatement += '  <%dumpCref(e.cref)%> = <%escapeCComments(dumpExp(e.exp,"\""))%>; '
+      let &forstatement += '  <%escapeCComments(dumpCref(e.cref))%> = <%escapeCComments(dumpExp(e.exp,"\""))%>; '
       let &forstatement += 'end for'
       <<
       equation index: <%equationIndex(e)%>
       type: FOR_LOOP
+      <%forstatement%>
+      >>
+    case e as SES_FOR_EQUATION(__) then
+      let &forstatement = buffer ""
+      let &forstatement += 'for ' + escapeCComments(dumpExp(e.iter,"\"")) + ' in ' + escapeCComments(dumpExp(e.startIt,"\""))
+      let &forstatement += ' : ' + escapeCComments(dumpExp(e.endIt,"\"")) + ' loop<%\n%>'
+      let &forstatement += '  <%dumpEqs(e.body)%>;'
+      let &forstatement += 'end for'
+      <<
+      equation index: <%equationIndex(e)%>
+      type: FOR_EQUATION
       <%forstatement%>
       >>
     else

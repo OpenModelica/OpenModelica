@@ -1,7 +1,6 @@
 // name:     ImportConflict2
 // keywords: import conflict
 // status:   correct
-// cflags:   -d=newInst
 //
 // Checks that conflicting imports are ok as long as they're not used.
 //

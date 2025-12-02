@@ -3,7 +3,6 @@
 // status:   correct
 //
 // Drmodelica: 7.1 Type Checking (p. 209)
-// cflags: -d=-newInst
 //
 type Point = Real[3];
 
@@ -15,6 +14,7 @@ class PointInst
   Real rsum = r[1]+r[3];
 //equation
   //p2[5, :] = p1[2, :] + p1[4, :];  // Equivalent to p2[5] = p1[2] + p2[4]
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end PointInst;
 
 // model PointInst

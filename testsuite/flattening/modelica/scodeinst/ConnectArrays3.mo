@@ -1,7 +1,6 @@
 // name: ConnectArrays3
 // keywords:
 // status: correct
-// cflags:   -d=newInst
 //
 //
 

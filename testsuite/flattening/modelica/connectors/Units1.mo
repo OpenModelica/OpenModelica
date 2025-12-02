@@ -1,7 +1,6 @@
 // name:     Units1
 // keywords: connect,modification
 // status:   incorrect
-// cflags: -d=-newInst
 //
 // Conversion between units is not supported within the Modelica
 // language. Consequently in the following example the generation
@@ -29,6 +28,7 @@ equation
   connect(p1,p2);
   p1.v=0;
   p2.i=1;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Units1;
 
 // Result:

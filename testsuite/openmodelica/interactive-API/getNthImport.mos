@@ -1,0 +1,28 @@
+// name: getNthImport
+// keywords:
+// status: correct
+// cflags: -d=newInst
+
+loadString("
+  model M
+    import A;
+    import B = C;
+    import D.*;
+    import E.{F, G};
+  end M;
+");
+
+getNthImport(M, 1);
+getNthImport(M, 2);
+getNthImport(M, 3);
+getNthImport(M, 4);
+getNthImport(M, 5);
+
+// Result:
+// true
+// {"A", "", "qualified"}
+// {"C", "B", "named"}
+// {"D.*", "", "unqualified"}
+// {"E.{F,G}", "", "multiple"}
+// {}
+// endResult

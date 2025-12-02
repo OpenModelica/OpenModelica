@@ -461,25 +461,18 @@ on the value of the second input (the String content) prints:
   input list<Absyn.Path> absynPathLst;
   input String Content;
 algorithm
-  _ := matchcontinue (absynPathLst,Content)
+  _ := match (absynPathLst,Content)
     local
       Integer len;
     case ({},_)
       then();
     case (_,_)
       equation
-        len = listLength(absynPathLst);
-        len >= 1 = false;
-      then ();
-    case (_,_)
-      equation
-        len = listLength(absynPathLst);
-        len >= 1 = true;
         dumpStrOpenTag(Content);
         dumpAbsynPathLst2(absynPathLst);
         dumpStrCloseTag(Content);
       then();
-  end matchcontinue;
+  end match;
 end dumpAbsynPathLst;
 
 
@@ -514,24 +507,18 @@ is present the output is:
 "
   input list<DAE.Constraint> constrs;
 algorithm
-  _:= matchcontinue(constrs)
+  _:= match(constrs)
     local
       Integer len;
     case {} then ();
     case _
       equation
         len = listLength(constrs);
-        len >= 1 = false;
-    then();
-    case _
-      equation
-        len = listLength(constrs);
-        len >= 1 = true;
         dumpStrOpenTagAttr(CONSTRAINTS,DIMENSION,intString(len));
         dumpConstraints2(constrs,0);
         dumpStrCloseTag(CONSTRAINTS);
     then();
-  end matchcontinue;
+  end match;
 end dumpConstraints;
 
 
@@ -746,14 +733,11 @@ algorithm
   _:=
   matchcontinue (crefIdxLstArr,Content,inInteger)
     local String error_msg;
-    case (_,_,_)
-      equation
-        listLength(crefIdxLstArr[inInteger]) >= 1  = true;
-        dumpCrefIdxLst(crefIdxLstArr[inInteger],Content);
+    case (_,_,_) guard listEmpty(crefIdxLstArr[inInteger])
       then ();
     case (_,_,_)
       equation
-        listLength(crefIdxLstArr[inInteger]) >= 1  = false;
+        dumpCrefIdxLst(crefIdxLstArr[inInteger],Content);
       then ();
     case (_,_,_)
       equation
@@ -778,24 +762,17 @@ See dumpCrefIdxLst2 for details.
   input list<BackendDAE.CrefIndex> crefIdxLst;
   input String Content;
 algorithm
-  _ := matchcontinue (crefIdxLst,Content)
+  _ := match(crefIdxLst,Content)
    local Integer len;
     case ({},_)
       then ();
-    case (_,_)
-      equation
-        len = listLength(crefIdxLst);
-        len >= 1 = false;
-      then ();
     else
       equation
-        len = listLength(crefIdxLst);
-        len >= 1 = true;
         dumpStrOpenTag(Content);
         dumpCrefIdxLst2(crefIdxLst);
         dumpStrCloseTag(Content);
       then();
-  end matchcontinue;
+  end match;
 end dumpCrefIdxLst;
 
 
@@ -842,15 +819,10 @@ content of the list. The output could be something like:
 algorithm
     _ := matchcontinue (arry_Dim,Content)
    local Integer len;
-    case (_,_)
-      equation
-        len = listLength(arry_Dim);
-        len >= 1 = false;
+    case ({},_)
       then ();
     else
       equation
-        len = listLength(arry_Dim);
-        len >= 1 = true;
         dumpStrOpenTag(Content);
         dumpDAEInstDims2(arry_Dim);
         dumpStrCloseTag(Content);
@@ -1412,8 +1384,6 @@ algorithm
       then();
     case ((eqnsLst,varLst)::rest,_,_,addMMLCode,_,_)
       equation
-        len = listLength(eqnsLst);
-        len >= 1 = true;
         dumpEqns2(eqnsLst, varLst, inCount, addMMLCode,dumpResiduals,dumpSolved);
         dumpSolvedEqns(rest, inCount+1, inContent, addMathMLCode,dumpResiduals,dumpSolved);
       then ();
@@ -1435,25 +1405,19 @@ The output is:
   input Boolean dumpSolved;
 algorithm
   _:=
-  matchcontinue (eqns,inContent,addMathMLCode,dumpResiduals,dumpSolved)
+  match(eqns,inContent,addMathMLCode,dumpResiduals,dumpSolved)
     local
       Boolean addMMLCode;
       Integer len;
     case ({},_,_,_,_) then ();
-    case (_,_,_,_,_)
-      equation
-        len = listLength(eqns);
-        len >= 1 = false;
-      then();
     case (_,_,addMMLCode,_,_)
       equation
         len = listLength(eqns);
-        len >= 1 = true;
         dumpStrOpenTagAttr(inContent, DIMENSION, intString(len));
         dumpEqns2(eqns, {}, 1,addMMLCode,dumpResiduals,dumpSolved);
         dumpStrCloseTag(inContent);
       then ();
-  end matchcontinue;
+  end match;
 end dumpEqns;
 
 
@@ -2115,7 +2079,7 @@ xml Modelica classes.
 input BackendDAE.ExternalObjectClasses cls;
 input String Content;
 algorithm
-  _ := matchcontinue(cls,Content)
+  _ := match(cls,Content)
    local
      Integer len;
      BackendDAE.ExternalObjectClasses xs;
@@ -2123,17 +2087,11 @@ algorithm
     case (xs,_)
       equation
         len = listLength(xs);
-        len >= 1 = false;
-      then ();
-    case (xs,_)
-      equation
-        len = listLength(xs);
-        len >= 1 = true;
         dumpStrOpenTagAttr(stringAppend(stringAppend(EXTERNAL,CLASSES_),LIST_),DIMENSION,intString(len));
         dumpExtObjCls2(xs,stringAppend(EXTERNAL,CLASS_));
         dumpStrCloseTag(stringAppend(stringAppend(EXTERNAL,CLASSES_),LIST_));
       then ();
-  end matchcontinue;
+  end match;
 end dumpExtObjCls;
 
 
@@ -3117,13 +3075,10 @@ The output is very simple and is like:
 algorithm
     _ := matchcontinue (crefIdxLstArr,i)
     local String error_msg;
-    case (_,_)
-      equation
-        listLength(crefIdxLstArr[1]) >= 1  = false;
+    case (_,_) guard listEmpty(crefIdxLstArr[1])
       then ();
     case (_,_)
       equation
-        listLength(crefIdxLstArr[1]) >= 1  = true;
         dumpStrOpenTag(ADDITIONAL_INFO);
         dumpCrefIdxLstArr(crefIdxLstArr,HASH_TB_CREFS_LIST,i);
         dumpStrCloseTag(ADDITIONAL_INFO);
@@ -3158,16 +3113,9 @@ algorithm
       Boolean addMMLCode;
     case ({},_,_,_)
       then();
-    case (_,_,_,_)
+    case (_,_,_,addMMLCode) guard not listEmpty(crefIdxLstArr[1])
       equation
         len = listLength(vars);
-        len >= 1 = false;
-      then ();
-    case (_,_,_,addMMLCode)
-      equation
-        len = listLength(vars);
-        len >= 1 = true;
-        listLength(crefIdxLstArr[1]) >= 1  = true;
         dumpStrOpenTagAttr(Content,DIMENSION,intString(len));
         dumpStrOpenTag(stringAppend(VARIABLES,LIST_));
         // uncomment because it is not correct implemented,crefIdxLstArr and strIdxLstArr
@@ -3180,19 +3128,12 @@ algorithm
     case (_,_,_,addMMLCode)
       equation
         len = listLength(vars);
-        len >= 1 = true;
-        listLength(crefIdxLstArr[1]) >= 1  = false;
         dumpStrOpenTagAttr(Content,DIMENSION,intString(len));
         dumpStrOpenTag(stringAppend(VARIABLES,LIST_));
         dumpVars2(vars,1,addMMLCode);
         dumpStrCloseTag(stringAppend(VARIABLES,LIST_));
         dumpStrCloseTag(Content);
       then ();
-    case (_,_,_,_)
-      equation
-        len = listLength(vars);
-        len >= 1 = false;
-    then ();
   end matchcontinue;
 end dumpVars;
 
@@ -3383,7 +3324,7 @@ the zero crossing list. The output is:
   input Boolean addMathMLCode;
 algorithm
   _:=
-  matchcontinue (inWhenOperators,inContent,addMathMLCode)
+  match(inWhenOperators,inContent,addMathMLCode)
     local
       Integer len;
       DAE.Exp condition;
@@ -3395,19 +3336,12 @@ algorithm
     case (lst, _, _)
       equation
         len = listLength(lst);
-        len >= 1 = false;
-      then ();
-
-    case (lst, _, _)
-      equation
-        len = listLength(lst);
-        len >= 1 = true;
         dumpStrOpenTagAttr(inContent, DIMENSION, intString(len));
         dumpWhenOperatorLst(lst, addMathMLCode);
         dumpStrCloseTag(inContent);
       then ();
 
-  end matchcontinue;
+  end match;
 end dumpWhenOperators;
 
 protected function dumpWhenOperatorLst "
@@ -3557,7 +3491,7 @@ the zero crossing list. The output is:
   input Boolean addMathMLCode;
 algorithm
   _:=
-  matchcontinue (inTimeEvents,inContent,addMathMLCode)
+  match(inTimeEvents,inContent,addMathMLCode)
     local
       Integer len;
       list<tuple<Integer, .DAE.Exp, .DAE.Exp>> samples;
@@ -3568,19 +3502,12 @@ algorithm
     case (_,_,_)
       equation
         len = listLength(inTimeEvents);
-        len >= 1 = false;
-      then();
-
-    case (_,_,_)
-      equation
-        len = listLength(inTimeEvents);
-        len >= 1 = true;
         dumpStrOpenTagAttr(inContent, DIMENSION, intString(len));
         dumpSampleLst(inTimeEvents, addMathMLCode);
         dumpStrCloseTag(inContent);
       then ();
 
-  end matchcontinue;
+  end match;
 end dumpTimeEvents;
 
 protected function dumpSampleLst "
@@ -3646,24 +3573,18 @@ protected function dumpZeroCrossing "
   input Boolean addMathMLCode;
 algorithm
   _:=
-  matchcontinue (zeroCross,inContent,addMathMLCode)
+  match(zeroCross,inContent,addMathMLCode)
     local
       Integer len;
     case ({},_,_) then ();
     case (_,_,_)
       equation
         len = listLength(zeroCross);
-        len >= 1 = false;
-      then();
-    case (_,_,_)
-      equation
-        len = listLength(zeroCross);
-        len >= 1 = true;
         dumpStrOpenTagAttr(inContent, DIMENSION, intString(len));
         dumpZcLst(zeroCross,addMathMLCode);
         dumpStrCloseTag(inContent);
       then ();
-  end matchcontinue;
+  end match;
 end dumpZeroCrossing;
 
 protected function dumpZcLst "

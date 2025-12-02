@@ -77,43 +77,13 @@ package linear_system
     parameter Integer N = 40;
     parameter Integer seed[3] = {12,1627,7218};
     Real x[N,1];
-    Real x_res[N,1];
+    Real x_res[N,1](each min = -1e-14, each max = 1e-14);
     Real A[N,N] = getMatrix1(N, seed);
     Real b[N,1] = getRHS(N, seed);
   equation
     x_res = A*x - b;
     A*x = b;
   end problem1;
-
-  model problem4 "A*x = b , where A is simple const random dense matrix"
-    constant Integer N = 20;
-    constant Integer seed[3] = {12,1627,7218};
-    Real x[N,1];
-    Real x_res[N,1];
-    constant Real A[N,N] = getMatrix1(N, seed);
-    Real b[N,1] = getRHSt(N, seed, time);
-    Real max_res(start = 1.0, fixed=true);
-  equation
-    x_res = A*x - b;
-    A*x = b;
-    der(max_res) = abs(max(x_res))+abs(min(x_res));
-  end problem4;
-
-  model ConstantSingularConsistent
-    Real a, b, c;
-  equation
-    a + b = 3;
-    b + c = 2;
-    a - c = 1;
-  end ConstantSingularConsistent;
-
-  model ConstantSingularInconsistent
-    Real a, b, c;
-  equation
-    a + b = 3;
-    b + c = 2;
-    a - c = 4;
-  end ConstantSingularInconsistent;
 
   model problem2
     Real u0;
@@ -135,8 +105,24 @@ package linear_system
   model problem3
     Real x[2], b[2] = {59.17, 46.78};
     Real A[2,2] = [[0.003,59.14+time];[5.291, -6.130]];
+    Real x_ref[2] = {10*(467800*time + 31292813)/(529100*time + 31292813), 31292813/(529100*time + 31292813)};
+    Real err(min = 0, max = 1e-14) = max(abs((x_ref[1] - x[1])/x_ref[1]), abs((x_ref[2] - x[2])/x_ref[2]));
   equation
     A * x = b;
   end problem3;
+
+  model problem4 "A*x = b , where A is simple const random dense matrix"
+    constant Integer N = 20;
+    constant Integer seed[3] = {12,1627,7218};
+    Real x[N,1];
+    Real x_res[N,1];
+    constant Real A[N,N] = getMatrix1(N, seed);
+    Real b[N,1] = getRHSt(N, seed, time);
+    Real max_res(start = 1.0, fixed=true);
+  equation
+    x_res = A*x - b;
+    A*x = b;
+    der(max_res) = abs(max(x_res))+abs(min(x_res));
+  end problem4;
 
 end linear_system;

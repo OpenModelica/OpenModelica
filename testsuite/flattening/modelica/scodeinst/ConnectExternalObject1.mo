@@ -1,7 +1,6 @@
 // name: ConnectExternalObject1
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 //
 

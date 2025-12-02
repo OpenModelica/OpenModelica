@@ -1,7 +1,6 @@
 // name: InheritanceProtected
 // keywords: inheritance
 // status: correct
-// cflags: -d=-newInst
 //
 // Tests protected inheritance
 //
@@ -12,6 +11,7 @@ end A;
 
 class B
   protected extends A;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end B;
 
 // Result:

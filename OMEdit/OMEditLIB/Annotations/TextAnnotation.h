@@ -47,10 +47,9 @@ public:
   TextAnnotation(QString annotation, GraphicsView *pGraphicsView);
   TextAnnotation(ModelInstance::Text *pText, bool inherited, GraphicsView *pGraphicsView);
   // Used for shape inside a component
-  TextAnnotation(ShapeAnnotation *pShapeAnnotation, Element *pParent);
   TextAnnotation(ModelInstance::Text *pText, Element *pParent);
-  // Used for icon/diagram inherited shape
-  TextAnnotation(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView);
+  // Used for OMS Element shape
+  TextAnnotation(ShapeAnnotation *pShapeAnnotation, Element *pParent);
   // Used for default component
   TextAnnotation(Element *pParent);
   // Used for transition text
@@ -59,7 +58,7 @@ public:
   // Used for OMSimulator FMU
   TextAnnotation(GraphicsView *pGraphicsView);
   void parseShapeAnnotation(QString annotation) override;
-  void parseShapeAnnotation();
+  void parseShapeAnnotation() override;
   QRectF boundingRect() const override;
   QPainterPath shape() const override;
   void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = 0) override;
@@ -67,6 +66,7 @@ public:
   QString getOMCShapeAnnotation() override;
   QString getOMCShapeAnnotationWithShapeName() override;
   QString getShapeAnnotation() override;
+  QJsonObject getShapeAnnotationJSON();
   void updateShape(ShapeAnnotation *pShapeAnnotation) override;
   ModelInstance::Extend *getExtend() const override;
   void setText(ModelInstance::Text *pText) {mpText = pText;}
@@ -77,8 +77,7 @@ private:
   void initUpdateTextString();
   void updateTextStringHelper(QRegExp regExp);
 public slots:
-  void updateTextString();
-  void duplicate() override;
+  void updateTextString(const QString &textString = QString());
 };
 
 #endif // TEXTANNOTATION_H

@@ -136,7 +136,6 @@ algorithm
   evalExp := match exp
     local
       Call call;
-      Boolean expanded;
 
     case Expression.CALL(call = call)
       then match call
@@ -146,7 +145,7 @@ algorithm
               then evaluateInStream(Expression.toCref(listHead(call.arguments)), sets, setsArray, variables, ctable);
             case Absyn.IDENT("actualStream")
               algorithm
-                evalExp :=
+                (evalExp, _) :=
                 evaluateActualStream(Expression.toCref(listHead(call.arguments)), sets, setsArray, variables, ctable);
               then
                 evalExp;
@@ -212,7 +211,7 @@ algorithm
   if Connector.variability(c1) > Variability.PARAMETER then
     equations := list(makeEqualityEquation(c1.name, c1.source, c2.name, c2.source)
       for c2 in listRest(elements));
-    // collect inputs and outputs that are inside in connections if --nonStdExposeLocalIOs > 0
+    // collect inputs and outputs that are inside in connections if --exposeLocalIOs > 0
     // strip array indices so that the variables will be found later
     if Flags.getConfigInt(Flags.EXPOSE_LOCAL_IOS) > 0 then
       for c in elements loop
@@ -321,10 +320,10 @@ algorithm
     // somewhat valid we use 'abs(lhs - rhs) <= 0' instead.
     exp := Expression.BINARY(lhs_exp, Operator.makeSub(elem_ty), rhs_exp);
     exp := Expression.CALL(Call.makeTypedCall(NFBuiltinFuncs.ABS_REAL, {exp}, Expression.variability(exp), Purity.PURE));
-    exp := Expression.RELATION(exp, Operator.makeLessEq(elem_ty), Expression.REAL(0.0));
+    exp := Expression.RELATION(exp, Operator.makeLessEq(elem_ty), Expression.REAL(0.0), -1);
   else
     // For any other type, generate assertion for 'lhs == rhs'.
-    exp := Expression.RELATION(lhs_exp, Operator.makeEqual(elem_ty), rhs_exp);
+    exp := Expression.RELATION(lhs_exp, Operator.makeEqual(elem_ty), rhs_exp, -1);
   end if;
 
   equalityAssert := Equation.ASSERT(exp, EQ_ASSERT_STR, NFBuiltin.ASSERTIONLEVEL_ERROR, InstNode.EMPTY_NODE(), source);
@@ -487,13 +486,7 @@ algorithm
   for e in outsideElements loop
     cref_exp := Expression.fromCref(e.name);
     outside := removeStreamSetElement(e.name, reduced_outside);
-
-    if listEmpty(outside) and listEmpty(insideElements) then
-      res := Expression.INTEGER(0);
-    else
-      res := streamSumEquationExp(outside, insideElements, flowThreshold, variables);
-    end if;
-
+    res := streamSumEquationExp(outside, insideElements, flowThreshold, Expression.INTEGER(0), variables);
     src := ElementSource.addAdditionalComment(e.source, " equation generated from stream connection");
     equations := Equation.EQUALITY(cref_exp, res, Type.REAL(), InstNode.EMPTY_NODE(), src) :: equations;
   end for;
@@ -513,32 +506,44 @@ function streamSumEquationExp
   input list<Connector> outsideElements;
   input list<Connector> insideElements;
   input Expression flowThreshold;
+  input Expression fallback;
   input UnorderedMap<ComponentRef, Variable> variables;
   output Expression sumExp;
 protected
   Expression outside_sum1, outside_sum2, inside_sum1, inside_sum2, res;
 algorithm
-  if listEmpty(outsideElements) then
-    // No outside components.
-    inside_sum1 := sumMap(insideElements, sumInside1, flowThreshold, variables);
-    inside_sum2 := sumMap(insideElements, sumInside2, flowThreshold, variables);
-    sumExp := Expression.BINARY(inside_sum1, Operator.makeDiv(Type.REAL()), inside_sum2);
-  elseif listEmpty(insideElements) then
-    // No inside components.
-    outside_sum1 := sumMap(outsideElements, sumOutside1, flowThreshold, variables);
-    outside_sum2 := sumMap(outsideElements, sumOutside2, flowThreshold, variables);
-    sumExp := Expression.BINARY(outside_sum1, Operator.makeDiv(Type.REAL()), outside_sum2);
-  else
-    // Both outside and inside components.
-    outside_sum1 := sumMap(outsideElements, sumOutside1, flowThreshold, variables);
-    outside_sum2 := sumMap(outsideElements, sumOutside2, flowThreshold, variables);
-    inside_sum1 := sumMap(insideElements, sumInside1, flowThreshold, variables);
-    inside_sum2 := sumMap(insideElements, sumInside2, flowThreshold, variables);
-    sumExp := Expression.BINARY(
-      Expression.BINARY(outside_sum1, Operator.makeAdd(Type.REAL()), inside_sum1),
-      Operator.makeDiv(Type.REAL()),
-      Expression.BINARY(outside_sum2, Operator.makeAdd(Type.REAL()), inside_sum2));
-  end if;
+  sumExp := match (listEmpty(outsideElements), listEmpty(insideElements))
+    case (true, true) then fallback;
+
+    case (true, false)
+      algorithm
+        // No outside components.
+        inside_sum1 := sumMap(insideElements, sumInside1, flowThreshold, variables);
+        inside_sum2 := sumMap(insideElements, sumInside2, flowThreshold, variables);
+        sumExp := Expression.BINARY(inside_sum1, Operator.makeDiv(Type.REAL()), inside_sum2);
+      then makeInStreamDivCall(sumExp, fallback);
+
+    case (false, true)
+      algorithm
+        // No inside components.
+        outside_sum1 := sumMap(outsideElements, sumOutside1, flowThreshold, variables);
+        outside_sum2 := sumMap(outsideElements, sumOutside2, flowThreshold, variables);
+        sumExp := Expression.BINARY(outside_sum1, Operator.makeDiv(Type.REAL()), outside_sum2);
+      then makeInStreamDivCall(sumExp, fallback);
+
+    case (false, false)
+      algorithm
+        // Both outside and inside components.
+        outside_sum1 := sumMap(outsideElements, sumOutside1, flowThreshold, variables);
+        outside_sum2 := sumMap(outsideElements, sumOutside2, flowThreshold, variables);
+        inside_sum1 := sumMap(insideElements, sumInside1, flowThreshold, variables);
+        inside_sum2 := sumMap(insideElements, sumInside2, flowThreshold, variables);
+        sumExp := Expression.BINARY(
+          Expression.BINARY(outside_sum1, Operator.makeAdd(Type.REAL()), inside_sum1),
+          Operator.makeDiv(Type.REAL()),
+          Expression.BINARY(outside_sum2, Operator.makeAdd(Type.REAL()), inside_sum2));
+      then makeInStreamDivCall(sumExp, fallback);
+  end match;
 end streamSumEquationExp;
 
 function sumMap
@@ -599,7 +604,7 @@ protected
   Expression stream_exp, flow_exp;
 algorithm
   (stream_exp, flow_exp) := streamFlowExp(element);
-  exp := Expression.BINARY(makePositiveMaxCall(flow_exp, element, flowThreshold, variables),
+  exp := Expression.BINARY(makePositiveMaxCall(flow_exp, stream_exp, element, flowThreshold, variables),
     Operator.makeMul(Type.REAL()), makeInStreamCall(stream_exp));
 end sumOutside1;
 
@@ -616,7 +621,7 @@ protected
 algorithm
   (stream_exp, flow_exp) := streamFlowExp(element);
   flow_exp := Expression.UNARY(Operator.makeUMinus(Type.REAL()), flow_exp);
-  exp := Expression.BINARY(makePositiveMaxCall(flow_exp, element, flowThreshold, variables),
+  exp := Expression.BINARY(makePositiveMaxCall(flow_exp, stream_exp, element, flowThreshold, variables),
     Operator.makeMul(Type.REAL()), stream_exp);
 end sumInside1;
 
@@ -629,10 +634,10 @@ function sumOutside2
   input UnorderedMap<ComponentRef, Variable> variables;
   output Expression exp;
 protected
-  Expression flow_exp;
+  Expression flow_exp, stream_exp;
 algorithm
-  flow_exp := flowExp(element);
-  exp := makePositiveMaxCall(flow_exp, element, flowThreshold, variables);
+  (stream_exp, flow_exp) := streamFlowExp(element);
+  exp := makePositiveMaxCall(flow_exp, stream_exp, element, flowThreshold, variables);
 end sumOutside2;
 
 function sumInside2
@@ -644,11 +649,11 @@ function sumInside2
   input UnorderedMap<ComponentRef, Variable> variables;
   output Expression exp;
 protected
-  Expression flow_exp;
+  Expression flow_exp, stream_exp;
 algorithm
-  flow_exp := flowExp(element);
+  (stream_exp, flow_exp) := streamFlowExp(element);
   flow_exp := Expression.UNARY(Operator.makeUMinus(Type.REAL()), flow_exp);
-  exp := makePositiveMaxCall(flow_exp, element, flowThreshold, variables);
+  exp := makePositiveMaxCall(flow_exp, stream_exp, element, flowThreshold, variables);
 end sumInside2;
 
 function makeInStreamCall
@@ -664,15 +669,17 @@ end makeInStreamCall;
 function makePositiveMaxCall
   "Generates a max(flow_exp, eps) call."
   input Expression flowExp;
+  input Expression streamExp;
   input Connector element;
   input Expression flowThreshold;
   input UnorderedMap<ComponentRef, Variable> variables;
   output Expression positiveMaxCall;
 protected
-  //InstNode flow_node;
   ComponentRef flow_name;
   Option<Expression> nominal_oexp;
   Expression nominal_exp, flow_threshold;
+  InstNode fn_node;
+  Function fn;
 algorithm
   flow_name := associatedFlowCref(Connector.name(element));
   nominal_oexp := lookupVarAttr(flow_name, "nominal", variables);
@@ -684,11 +691,38 @@ algorithm
     flow_threshold := flowThreshold;
   end if;
 
-  positiveMaxCall := Expression.CALL(Call.makeTypedCall(NFBuiltinFuncs.POSITIVE_MAX_REAL,
-    {flowExp, flow_threshold}, Connector.variability(element), Purity.PURE));
+  if Flags.getConfigBool(Flags.BASE_MODELICA) then
+    fn_node := Class.lookupElement("$OMC$PositiveMax",
+      InstNode.getClass(InstNode.topScope(ComponentRef.node(flow_name))));
+    fn_node := Function.instFunctionNode(fn_node, NFInstContext.NO_CONTEXT, AbsynUtil.dummyInfo);
+    {fn} := Function.typeNodeCache(fn_node);
+    positiveMaxCall := Expression.CALL(Call.makeTypedCall(fn,
+      {flowExp, flow_threshold}, Connector.variability(element), Purity.PURE));
+  else
+    positiveMaxCall := Expression.CALL(Call.makeTypedCall(NFBuiltinFuncs.POSITIVE_MAX_REAL,
+      {flowExp, flow_threshold}, Connector.variability(element), Purity.PURE));
+  end if;
 
   setGlobalRoot(Global.isInStream, SOME(true));
 end makePositiveMaxCall;
+
+function makeInStreamDivCall
+  "Generates the call `inStreamDiv(sum_exp, fallback)`. This is a wrapper around
+  `sum_exp = streamSumEquationExp`, which is removed in the backend once all
+  calls to `positiveMax` can be simplified. If they are all zero this call is
+  reduced to `fallback`, otherwise it is `sum_exp`."
+  input Expression sum_exp;
+  input Expression fallback;
+  output Expression inStreamDivCall;
+algorithm
+  if Flags.getConfigBool(Flags.BASE_MODELICA) then
+    // TODO maybe do the same as for `positiveMax`?
+    inStreamDivCall := sum_exp;
+  else
+    inStreamDivCall := Expression.CALL(Call.makeTypedCall(NFBuiltinFuncs.INSTREAM_DIV_REAL,
+      {sum_exp, fallback}, Expression.variability(fallback), Purity.PURE));
+  end if;
+end makeInStreamDivCall;
 
 function isStreamCall
   input Expression exp;
@@ -852,7 +886,7 @@ algorithm
       algorithm
         (outside, inside) := List.splitOnTrue(reducedStreams, Connector.isOutside);
         inside := removeStreamSetElement(streamCref, inside);
-        exp := streamSumEquationExp(outside, inside, Expression.REAL(flowThreshold), variables);
+        exp := streamSumEquationExp(outside, inside, Expression.REAL(flowThreshold), Expression.fromCref(streamCref), variables);
         // Evaluate any inStream calls that were generated.
         exp := evaluateOperators(exp, sets, setsArray, variables, ctable);
       then
@@ -972,7 +1006,7 @@ algorithm
 
     exp := Expression.IF(
       Type.REAL(),
-      Expression.RELATION(flow_exp, op, Expression.REAL(0.0)),
+      Expression.RELATION(flow_exp, op, Expression.REAL(0.0), -1),
       instream_exp, stream_exp);
   end if;
 end evaluateActualStream;
@@ -1012,9 +1046,9 @@ protected
   Real min_val, max_val;
 algorithm
   omin := lookupVarAttr(flowCref, "min", variables);
-  omin := SimplifyExp.simplifyOpt(omin);
+  omin := Util.applyOption(omin, function SimplifyExp.simplify(includeScope = false));
   omax := lookupVarAttr(flowCref, "max", variables);
-  omax := SimplifyExp.simplifyOpt(omax);
+  omax := Util.applyOption(omax, function SimplifyExp.simplify(includeScope = false));
 
   direction := match (omin, omax)
     // No attributes, flow direction can't be decided.

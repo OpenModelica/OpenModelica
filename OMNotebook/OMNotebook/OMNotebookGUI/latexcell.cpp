@@ -170,7 +170,7 @@ namespace IAEX {
     else if(event->modifiers() == Qt::ControlModifier && event->key() == Qt::Key_K)
     {
       QTextCursor tc(textCursor());
-      int i = toPlainText().indexOf(QRegExp("\\n|$"), tc.position());
+      int i = toPlainText().indexOf(QRegularExpression("\\n|$"), tc.position());
 
       if(i -tc.position() > 0)
         tc.setPosition(i, QTextCursor::KeepAnchor);
@@ -245,7 +245,7 @@ namespace IAEX {
     setMainWidget(main);
 
     layout_ = new QGridLayout(mainWidget());
-    layout_->setMargin(0);
+    layout_->setContentsMargins(0, 0, 0, 0);
     layout_->setSpacing(0);
 
     setTreeWidget(new InputTreeView(this));
@@ -373,7 +373,7 @@ namespace IAEX {
     else
     {
       // 2006-01-30 AF, add message box
-      QMessageBox::warning( 0, tr("Warning"), tr("No Output style defined, please define an Output style in stylesheet.xml"), "OK" );
+      QMessageBox::warning(nullptr, tr("Warning"), tr("No Output style defined, please define an Output style in stylesheet.xml"));
     }
 
     QTextCursor cursor = output_->textCursor();
@@ -486,7 +486,7 @@ namespace IAEX {
     tmp.replace( "&nbsp;&nbsp;&nbsp;&nbsp;", "  " );
 
     // 2005-12-08 AF, remove any <span style tag
-    QRegExp spanEnd( "</span>" );
+    QRegularExpression spanEnd( "</span>" );
     tmp.remove( spanEnd );
     int pos = 0;
     while( true )
@@ -878,9 +878,11 @@ void LatexCell::eval(bool silent)
     evaluated_ = true;
     QString tempdir=OmcInteractiveEnvironment::TmpPath();
     QTemporaryFile tfile;
-    tfile.open();
-    QString uniquefilename= tfile.fileName().section("/",-1,-1);
-    tfile.close();
+    QString uniquefilename;
+    if (tfile.open()) {
+      uniquefilename= tfile.fileName().section("/",-1,-1);
+      tfile.close();
+    }
     //qDebug()<<"checktempdir"<<tempdir1;
     QString tempfname = tempdir + "/latexfile" + uniquefilename;
 
@@ -898,10 +900,18 @@ void LatexCell::eval(bool silent)
             expr.append("\\end{document}");
         }
         QFile file(Tex);
-        file.open(QIODevice::WriteOnly);
-        QTextStream stream(&file);
-        stream <<expr;
-        file.close();
+        if (file.open(QIODevice::WriteOnly)) {
+          QTextStream stream(&file);
+          stream <<expr;
+          file.close();
+        } else {
+          if (!silent) {
+            input_->clear();
+            input_->textCursor().insertText(tr("Error: unable to write to %1").arg(Tex));
+            setClosed(false);
+            setState(Error_l);
+          }
+        }
 
         QProcess *process = new QProcess(this);
         process->setWorkingDirectory(tempdir);
@@ -917,7 +927,7 @@ void LatexCell::eval(bool silent)
         {
           setState(Error_l);
           if (!silent)
-            QMessageBox::warning( 0, tr("Error"), tr("Latex is not installed in your System. This cell cannot be evaluated."), "OK" );
+            QMessageBox::warning(nullptr, tr("Error"), tr("Latex is not installed in your System. This cell cannot be evaluated."));
         }
         /*Generate the DVI file from tex through latex */
         else
@@ -925,17 +935,18 @@ void LatexCell::eval(bool silent)
             process->start("latex", QStringList() << "-halt-on-error" << Tex);
             process->waitForFinished();
             QFile logfile(log);
-            logfile.open(QIODevice::ReadOnly);
-            QStringList lines;
-            while(!logfile.atEnd())
-            {
-                QString line=logfile.readLine();
-                lines.append(line);
-            }
+            if (logfile.open(QIODevice::ReadOnly)) {
+              QStringList lines;
+              while(!logfile.atEnd())
+              {
+                  QString line=logfile.readLine();
+                  lines.append(line);
+              }
 
-            if(lines.last().contains("1 page"))
-            {
-                setpage=true;
+              if(lines.last().contains("1 page"))
+              {
+                  setpage=true;
+              }
             }
 
             QString texoutput=process->readAllStandardOutput();
@@ -985,7 +996,7 @@ void LatexCell::eval(bool silent)
             }
             else
             {
-                QMessageBox::warning( 0, tr("Warning"), tr("Maximum of 1 page document generation is supported per Latexcell.\nThe script generates more than 1 page."), "OK" );
+                QMessageBox::warning(nullptr, tr("Warning"), tr("Maximum of 1 page document generation is supported per Latexcell.\nThe script generates more than 1 page."));
             }
         }
     }

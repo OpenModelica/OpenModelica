@@ -1,6 +1,5 @@
 // name: ArrayAddition2
 // status: correct
-// cflags: -d=-newInst
 
 model ArrayAddition2
   Real Stock1[1,1,1](each fixed = false, each start = 0.0);
@@ -10,6 +9,7 @@ model ArrayAddition2
 equation
   der(Stock1) = Valve1 + Valve2;
   der(Stock2) = Valve1 - Valve2;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ArrayAddition2;
 
 // Result:

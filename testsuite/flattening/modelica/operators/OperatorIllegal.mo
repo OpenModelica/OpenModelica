@@ -1,7 +1,6 @@
 // name: OperatorIllegal
 // keywords: operator
 // status: incorrect
-// cflags: -d=-newInst
 //
 // extending from a record containing operator overloads should be illegal
 //
@@ -29,4 +28,5 @@ model OperatorIllegal
 equation
   mr.r = 1.0;
   mr.k = 2.0;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end OperatorIllegal;

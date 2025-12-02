@@ -1,0 +1,93 @@
+// name: static_IR
+// keywords: NewBackend
+// status: correct
+
+loadString("
+  model static_IR
+    Real x, y, z;
+    Real a, b;
+  equation
+    der(x) = 2 * z;
+    der(z) = 2 * x + a;
+    der(y) = 4 * y + b;
+    y = sin(z) + x^2;
+    y = z^2 + x + sin(time);
+  end static_IR;
+
+  model static_IR_1
+    extends static_IR(x(start=1.0, fixed=true), y(stateSelect = StateSelect.prefer), z(stateSelect = StateSelect.never));
+  end static_IR_1;
+
+  model static_IR_2
+    extends static_IR(x(start=1.0, stateSelect = StateSelect.always), y(stateSelect = StateSelect.prefer), z(stateSelect = StateSelect.prefer));
+  end static_IR_2;
+"); getErrorString();
+
+setCommandLineOptions("--newBackend -d=stateselection");
+simulate(static_IR_1); getErrorString();
+simulate(static_IR_2); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// [stateselection] (0) Forced states by StateSelect.ALWAYS:
+// ***********************************************************
+// 	<no states>
+//
+// [stateselection] (3) Natural states before index reduction:
+// *************************************************************
+// 	[STAT] (1) Real x (fixed = true, start = 1.0)
+// 	[STAT] (1) Real z (StateSelect = never)
+// 	[STAT] (1) Real y (StateSelect = prefer)
+//
+// [stateselection] (2) State Derivatives Created by Differentiation
+// *******************************************************************
+// 	[DDER] (1) Real $DER.$FUN_1
+// 	[DDER] (1) Real $DER.$FUN_2
+//
+// [stateselection] (4) Selected Dummy States
+// ********************************************
+// 	[DSTA] (1) Real z (StateSelect = never);
+// 	[DSTA] (1) Real $FUN_2;
+// 	[DSTA] (1) Real x (fixed = true, start = 1.0);
+// 	[DSTA] (1) Real $FUN_1;
+//
+// record SimulationResult
+//     resultFile = "static_IR_1_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'static_IR_1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// [stateselection] (1) Forced states by StateSelect.ALWAYS:
+// ***********************************************************
+// 	[STAT] (1) Real x (start = 1.0, StateSelect = always)
+//
+// [stateselection] (2) Natural states before index reduction:
+// *************************************************************
+// 	[STAT] (1) Real z (StateSelect = prefer)
+// 	[STAT] (1) Real y (StateSelect = prefer)
+//
+// [stateselection] (2) State Derivatives Created by Differentiation
+// *******************************************************************
+// 	[DDER] (1) Real $DER.$FUN_1
+// 	[DDER] (1) Real $DER.$FUN_2
+//
+// [stateselection] (4) Selected Dummy States
+// ********************************************
+// 	[DSTA] (1) Real z (StateSelect = prefer);
+// 	[DSTA] (1) Real y (StateSelect = prefer);
+// 	[DSTA] (1) Real $FUN_2;
+// 	[DSTA] (1) Real $FUN_1;
+//
+// record SimulationResult
+//     resultFile = "static_IR_2_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'static_IR_2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// endResult

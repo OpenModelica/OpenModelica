@@ -55,15 +55,19 @@ buildModel(MinimalModel); getErrroString();
 // BackendDAEType: simulation
 //
 //
-// Known variables only depending on parameters and constants - globalKnownVars (5)
+// Known variables only depending on parameters and constants - globalKnownVars (2)
 // ========================================
 // 1: const_k:PARAM(start = 1.0 )  = -15.0  type: Real
-// 2: a:PARAM(fixed = true )  = const_k  type: Real
-// 3: c:PARAM(fixed = true )  = -const_k  type: Real
-// 4: d:PARAM(fixed = true )  = const_k  type: Real
-// 5: b:VARIABLE(fixed = true )  = 0.0  type: Real
+// 2: b:VARIABLE(fixed = true final = true )  = 0.0  type: Real
 //
 //
-// {"MinimalModel","MinimalModel_init.xml"}
+// Alias Variables (3)
+// ========================================
+// 1: d:VARIABLE()  = -(-const_k)  type: Real
+// 2: c:VARIABLE()  = -const_k  type: Real
+// 3: a:VARIABLE()  = const_k  type: Real
+//
+//
+// {"MinimalModel", "MinimalModel_init.xml"}
 //
 // endResult

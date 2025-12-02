@@ -15,5 +15,5 @@ buildModel(Modelica.Media.Examples.Tests.MediaTestModels.Water.IdealSteam);
 // ""
 // true
 // Evaluating: buildModel(Modelica.Media.Examples.Tests.MediaTestModels.Water.IdealSteam)
-// {"Modelica.Media.Examples.Tests.MediaTestModels.Water.IdealSteam","Modelica.Media.Examples.Tests.MediaTestModels.Water.IdealSteam_init.xml"}
+// {"Modelica.Media.Examples.Tests.MediaTestModels.Water.IdealSteam", "Modelica.Media.Examples.Tests.MediaTestModels.Water.IdealSteam_init.xml"}
 // endResult

@@ -1,6 +1,5 @@
 // name: ArrayCall
 // status: correct
-// cflags: -d=-newInst
 // Tests that there are no ASUB expressions in the function
 
 class ArrayCall
@@ -12,6 +11,7 @@ class ArrayCall
     array := cos(r*(1.0:10.0));
   end fn;
   Real x[10] = fn(time);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ArrayCall;
 
 // Result:

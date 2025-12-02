@@ -11,6 +11,7 @@ INCLUDE_DIRECTORIES("${OMCTRUNCHOME}/OMCompiler/3rdParty/FMIL/ThirdParty/Expat/e
 
 # sources and headers
 SET(simulation_sources ../linearization/linearize.cpp
+                       arrayIndex.c
                        jacobian_util.c
                        modelinfo.c
                        options.c
@@ -26,6 +27,7 @@ SET(simulation_headers ../linearization/linearize.h
                        ../openmodelica_func.h
                        ../simulation_data.h
                        ../util/omc_msvc.h
+                       arrayIndex.h
                        jacobian_util.h
                        modelinfo.h
                        simulation_info_json.h

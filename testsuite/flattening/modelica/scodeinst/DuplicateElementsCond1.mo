@@ -1,7 +1,6 @@
 // name: DuplicateElementsCond1.mo
 // keywords:
 // status: incorrect
-// cflags: -d=newInst
 //
 //
 

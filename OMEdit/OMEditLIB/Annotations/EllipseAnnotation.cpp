@@ -36,7 +36,7 @@
 #include "Modeling/Commands.h"
 
 EllipseAnnotation::EllipseAnnotation(QString annotation, GraphicsView *pGraphicsView)
-  : ShapeAnnotation(false, pGraphicsView, 0, 0)
+  : ShapeAnnotation(false, pGraphicsView, 0)
 {
   mpOriginItem = new OriginItem(this);
   mpOriginItem->setPassive();
@@ -51,7 +51,7 @@ EllipseAnnotation::EllipseAnnotation(QString annotation, GraphicsView *pGraphics
 }
 
 EllipseAnnotation::EllipseAnnotation(ModelInstance::Ellipse *pEllipse, bool inherited, GraphicsView *pGraphicsView)
-  : ShapeAnnotation(inherited, pGraphicsView, 0, 0)
+  : ShapeAnnotation(inherited, pGraphicsView, 0)
 {
   mpOriginItem = new OriginItem(this);
   mpOriginItem->setPassive();
@@ -64,14 +64,6 @@ EllipseAnnotation::EllipseAnnotation(ModelInstance::Ellipse *pEllipse, bool inhe
   ShapeAnnotation::setUserDefaults();
   parseShapeAnnotation();
   setShapeFlags(true);
-}
-
-EllipseAnnotation::EllipseAnnotation(ShapeAnnotation *pShapeAnnotation, Element *pParent)
-  : ShapeAnnotation(pShapeAnnotation, pParent)
-{
-  mpOriginItem = 0;
-  updateShape(pShapeAnnotation);
-  applyTransformation();
 }
 
 EllipseAnnotation::EllipseAnnotation(ModelInstance::Ellipse *pEllipse, Element *pParent)
@@ -87,17 +79,6 @@ EllipseAnnotation::EllipseAnnotation(ModelInstance::Ellipse *pEllipse, Element *
   ShapeAnnotation::setUserDefaults();
   parseShapeAnnotation();
   applyTransformation();
-}
-
-EllipseAnnotation::EllipseAnnotation(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView)
-  : ShapeAnnotation(true, pGraphicsView, pShapeAnnotation, 0)
-{
-  mpOriginItem = new OriginItem(this);
-  mpOriginItem->setPassive();
-  updateShape(pShapeAnnotation);
-  setShapeFlags(true);
-  mpGraphicsView->addItem(this);
-  mpGraphicsView->addItem(mpOriginItem);
 }
 
 void EllipseAnnotation::parseShapeAnnotation(QString annotation)
@@ -121,17 +102,18 @@ void EllipseAnnotation::parseShapeAnnotation(QString annotation)
 
 void EllipseAnnotation::parseShapeAnnotation()
 {
-  GraphicItem::parseShapeAnnotation(mpEllipse);
-  FilledShape::parseShapeAnnotation(mpEllipse);
+  GraphicsView *pGraphicsView = getContainingGraphicsView();
+  GraphicItem::parseShapeAnnotation(mpEllipse, pGraphicsView);
+  FilledShape::parseShapeAnnotation(mpEllipse, pGraphicsView);
 
   mExtent = mpEllipse->getExtent();
-  mExtent.evaluate(mpEllipse->getParentModel());
+  mExtent.evaluate(pGraphicsView->getModelWidget()->getModelInstance());
   mStartAngle = mpEllipse->getStartAngle();
-  mStartAngle.evaluate(mpEllipse->getParentModel());
+  mStartAngle.evaluate(pGraphicsView->getModelWidget()->getModelInstance());
   mEndAngle = mpEllipse->getEndAngle();
-  mEndAngle.evaluate(mpEllipse->getParentModel());
+  mEndAngle.evaluate(pGraphicsView->getModelWidget()->getModelInstance());
   mClosure = mpEllipse->getClosure();
-  mClosure.evaluate(mpEllipse->getParentModel());
+  mClosure.evaluate(pGraphicsView->getModelWidget()->getModelInstance());
 }
 
 QRectF EllipseAnnotation::boundingRect() const
@@ -258,25 +240,4 @@ void EllipseAnnotation::updateShape(ShapeAnnotation *pShapeAnnotation)
 ModelInstance::Extend *EllipseAnnotation::getExtend() const
 {
   return mpEllipse->getParentExtend();
-}
-
-/*!
- * \brief EllipseAnnotation::duplicate
- * Duplicates the shape.
- */
-void EllipseAnnotation::duplicate()
-{
-  EllipseAnnotation *pEllipseAnnotation = new EllipseAnnotation("", mpGraphicsView);
-  pEllipseAnnotation->updateShape(this);
-  QPointF gridStep(mpGraphicsView->mMergedCoOrdinateSystem.getHorizontalGridStep() * 5,
-                   mpGraphicsView->mMergedCoOrdinateSystem.getVerticalGridStep() * 5);
-  pEllipseAnnotation->setOrigin(mOrigin + gridStep);
-  pEllipseAnnotation->drawCornerItems();
-  pEllipseAnnotation->setCornerItemsActiveOrPassive();
-  pEllipseAnnotation->applyTransformation();
-  pEllipseAnnotation->update();
-  mpGraphicsView->getModelWidget()->getUndoStack()->push(new AddShapeCommand(pEllipseAnnotation));
-  mpGraphicsView->getModelWidget()->getLibraryTreeItem()->emitShapeAdded(pEllipseAnnotation, mpGraphicsView);
-  setSelected(false);
-  pEllipseAnnotation->setSelected(true);
 }

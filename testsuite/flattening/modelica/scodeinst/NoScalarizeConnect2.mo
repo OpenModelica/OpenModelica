@@ -1,7 +1,6 @@
 // name: NoScalarizeConnect2
 // keywords:
 // status: correct
-// cflags: -d=newInst --newBackend
 //
 
 connector C
@@ -17,17 +16,18 @@ equation
   for i in 1:3 loop
     x = actualStream(c[i].s);
   end for;
+  annotation(__OpenModelica_commandLineOptions="--newBackend");
 end NoScalarizeConnect2;
 
 // Result:
 // class NoScalarizeConnect2
-//   Real[3] c.s;
-//   Real[3] c.f;
 //   Real[3] c.e;
+//   Real[3] c.f;
+//   Real[3] c.s;
 //   Real x;
 // equation
-//   for $i1 in 1:3 loop
-//     c[$i1].f = 0.0;
+//   for $i0 in 1:3 loop
+//     c[$i0].f = 0.0;
 //   end for;
 //   x = c[1].s;
 //   x = c[2].s;

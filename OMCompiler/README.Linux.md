@@ -49,7 +49,7 @@ echo \
  $(lsb_release -cs) nightly" | sudo tee /etc/apt/sources.list.d/openmodelica.list > /dev/null
 echo \
  "deb-src [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/openmodelica-keyring.gpg] https://build.openmodelica.org/apt \
- nightly contrib" | sudo tee -a /etc/apt/sources.list.d/openmodelica.list > /dev/null
+ $(lsb_release -cs) nightly" | sudo tee -a /etc/apt/sources.list.d/openmodelica.list > /dev/null
 ```
 
 To verify that the correct key is installed (optional):

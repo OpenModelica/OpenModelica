@@ -1,0 +1,46 @@
+// name: multary_simplifications
+// keywords: NewBackend
+// status: correct
+
+loadString("
+  model multary_simplification
+    Real x, y, z;
+  equation
+    x = 2 * (time + (-4) - 3);
+    y = time * (-2) * 4 * 1;
+    z = (time + y - time)/(y);
+  end multary_simplification;
+"); getErrorString();
+
+setCommandLineOptions("--newBackend -d=dumpSimplify");
+simulate(multary_simplification); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ### dumpSimplify | NBackendDAE.simplify ###
+// [BEFORE] ((y + time) - time) / y
+// [AFTER ] 1.0
+//
+// ### dumpSimplify | NBackendDAE.simplify ###
+// [BEFORE] (-2.0) * time * 4.0
+// [AFTER ] -8.0 * time
+//
+// ### dumpSimplify | NBackendDAE.simplify ###
+// [BEFORE] 2.0 * (time - (3.0 + 4.0))
+// [AFTER ] 2.0 * ((-7.0) + time)
+//
+// ### dumpSimplify | NBEquation.Equation.generateBindingEquation ###
+// [BEFORE] 2.0 * ((-7.0) + time)
+// [AFTER ] 2.0 * (time - 7.0)
+//
+// record SimulationResult
+//     resultFile = "multary_simplification_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'multary_simplification', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// endResult

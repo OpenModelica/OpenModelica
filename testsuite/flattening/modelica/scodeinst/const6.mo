@@ -1,7 +1,6 @@
 // name: const6.mo
 // keywords:
 // status: incorrect
-// cflags: -d=newInst
 //
 //
 
@@ -14,7 +13,7 @@ end M;
 
 // Result:
 // Error processing file: const6.mo
-// [flattening/modelica/scodeinst/const6.mo:11:3-11:25:writable] Error: Component j of variability constant has binding 'x' of higher variability parameter.
+// [flattening/modelica/scodeinst/const6.mo:10:3-10:25:writable] Error: Component j of variability constant has binding 'x' of higher variability parameter.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

@@ -131,7 +131,7 @@ algorithm
       end if;
 
       //partition graph
-      partitions = arrayList(partitionBipartiteGraph(m,mT));
+      partitions = partitionBipartiteGraph(m,mT);
       partitions = List.filterOnTrue(partitions,List.hasSeveralElements);
         //print("the partitions for system "+intString(inSysIdx)+" : \n"+stringDelimitList(List.map(partitions,HpcOmTaskGraph.intLstString),"\n")+"\n");
 
@@ -813,8 +813,8 @@ algorithm
         nextPaths2 = List.filter1OnTrue(allPathsIn, lastInListIsEqual, startNode);
         nextPaths2 = listAppend(nextPaths1,nextPaths2);
         nextPath = listHead(nextPaths2);
-        rest = List.deleteMember(allPathsIn,nextPath);
-        nextPath = List.deleteMember(nextPath,startNode);
+        rest = List.deleteMemberOnTrue(nextPath,allPathsIn, function List.isEqualOnTrue(inCompFunc = intEq));
+        nextPath = List.deleteMemberOnTrue(startNode,nextPath,intEq);
         path = listAppend(nextPath,loopIn);
         path = connectPathsToOneLoop(rest,path);
       then
@@ -826,7 +826,7 @@ algorithm
         nextPaths2 = List.filter1OnTrue(rest, lastInListIsEqual, startNode);
         nextPaths2 = listAppend(nextPaths1,nextPaths2);
         nextPath = listHead(nextPaths2);
-        rest = List.deleteMember(rest,nextPath);
+        rest = List.deleteMemberOnTrue(nextPath,rest, function List.isEqualOnTrue(inCompFunc = intEq));
         path = listAppend(nextPath,restPath);
         path = connectPathsToOneLoop(rest,path);
       then
@@ -886,7 +886,7 @@ algorithm
         pos = -1;
       end if;
 
-      eqs = List.deleteMember(loop1,pos);
+      eqs = List.deleteMemberOnTrue(pos,loop1,intEq);
         //print("contract eqs: "+stringDelimitList(List.map(eqs,intString),",")+" to eq "+intString(pos)+"\n");
 
       // get the corresponding vars
@@ -935,7 +935,7 @@ algorithm
       pos = if not listEmpty(replEqs) then listHead(replEqs) else -1;
       pos = if not listEmpty(eqs) then listHead(eqs) else pos;
 
-      eqs = List.deleteMember(loop1,pos);
+      eqs = List.deleteMemberOnTrue(pos,loop1,intEq);
         //print("contract eqs: "+stringDelimitList(List.map(eqs,intString),",")+" to eq "+intString(pos)+"\n");
 
       // get the corresponding vars
@@ -1128,7 +1128,7 @@ algorithm
       equation
         elemR = listReverse(elem);
         elemR = List.getMember(elemR,elemLst);
-        foldLst = List.deleteMember(foldLstIn,elem);
+        foldLst = List.deleteMemberOnTrue(elem,foldLstIn,function List.isEqualOnTrue(inCompFunc = intEq));
       then
         elemR::foldLst;
     else
@@ -1338,11 +1338,11 @@ algorithm
         eqs := List.unique(eqs);
         eqs := List.intersectionOnTrue(eqs,loopIn,intEq);
         if listEmpty(eqs) then
-          next := List.first(loopIn);
+          next := listHead(loopIn);
         else
-          next := List.first(eqs);
+          next := listHead(eqs);
         end if;
-        rest := List.deleteMember(loopIn,next);
+        rest := List.deleteMemberOnTrue(next,loopIn,intEq);
       then sortLoop(rest,m,mT,next::sortLoopIn);
   end matchcontinue;
 end sortLoop;
@@ -1500,7 +1500,7 @@ algorithm
         // check the next eqNode of the crossEq whether the paths is finished here or the path goes on to another crossEq
         adjVars = arrayGet(mIn,crossEq);
         adjEqs = List.map1(adjVars,Array.getIndexFirst,mTIn);
-        adjEqs = List.map1(adjEqs,List.deleteMember,crossEq);// REMARK: this works only if there are no varCrossNodes
+        adjEqs = list(List.deleteMemberOnTrue(crossEq, eq, intEq) for eq in adjEqs); // REMARK: this works only if there are no varCrossNodes
         adjEqs = List.filterOnFalse(adjEqs,listEmpty);
         nextEqs = List.flatten(adjEqs);
         (endEqs,unfinEqs,_) = List.intersection1OnTrue(nextEqs,allEqCrossNodes,intEq);
@@ -1517,7 +1517,7 @@ algorithm
         prevEq = List.second(pathStart);
         adjVars = arrayGet(mIn,lastEq);
         adjEqs = List.map1(adjVars,Array.getIndexFirst,mTIn);
-        adjEqs = List.map1(adjEqs,List.deleteMember,lastEq);// REMARK: this works only if there are no varCrossNodes
+        adjEqs = list(List.deleteMemberOnTrue(lastEq, eq, intEq) for eq in adjEqs); // REMARK: this works only if there are no varCrossNodes
         adjEqs = List.filterOnFalse(adjEqs,listEmpty);
         nextEqs = List.map(adjEqs,listHead);
         (nextEqs,_) = List.deleteMemberOnTrue(prevEq,nextEqs,intEq); //do not take the path back to the previous node
@@ -1579,12 +1579,12 @@ protected function priorizeEqsWithVarCrosses "author:Waurich TUD 2014-02
   output list<Integer> eqsOut;
 protected
   array<list<Integer>> priorities; //[0]eqs with no adjVarCross, [1] eqs with one adjVarCross, [2]rest
-  list<list<Integer>> priorityLst;
 algorithm
   priorities := arrayCreate(3,{});
-  List.map3_0(eqsIn,priorizeEqsWithVarCrosses2,mIn,varCrossLst,priorities);
-  priorityLst := arrayList(priorities);
-  eqsOut := List.flatten(priorityLst);
+  for eq in eqsIn loop
+    priorizeEqsWithVarCrosses2(eq, mIn, varCrossLst, priorities);
+  end for;
+  eqsOut := List.flatten(arrayList(priorities));
 end priorizeEqsWithVarCrosses;
 
 protected function priorizeEqsWithVarCrosses2
@@ -1594,17 +1594,15 @@ protected function priorizeEqsWithVarCrosses2
   input array<list<Integer>> priorities;
 protected
   Boolean b0,b1,b2;
-  Integer numCrossVars;
   list<Integer> eqVars,crossVars;
 algorithm
   eqVars := arrayGet(mIn,eq);
   crossVars := List.intersectionOnTrue(eqVars,varCrossLst,intEq);
-  numCrossVars := listLength(crossVars);
-  if numCrossVars == 0 then
+  if listEmpty(crossVars) then
     arrayGetAppendLst(1,{eq},priorities);
-  elseif numCrossVars == 1 then
+  elseif List.hasOneElement(crossVars) then
     arrayGetAppendLst(2,{eq},priorities);
-  elseif numCrossVars >= 2 then
+  else
     arrayGetAppendLst(3,{eq},priorities);
   end if;
 end priorizeEqsWithVarCrosses2;
@@ -1842,21 +1840,20 @@ public function partitionBipartiteGraph "author: Waurich TUD 2013-12
   indeces refer to the equation indeces (rows in the adjacencyMatrix)."
   input BackendDAE.AdjacencyMatrix m;
   input BackendDAE.AdjacencyMatrixT mT;
-  output array<list<Integer>> partitionsOut;
+  output list<list<Integer>> partitions;
 protected
   Integer numEqs, numVars;
   array<Integer> markEqs, markVars;
-  list<list<Integer>> partitions;
 algorithm
-    numEqs := arrayLength(m);
-    numVars := arrayLength(mT);
-  if intEq(numEqs,0) or intEq(numVars,0) then
-    partitionsOut := arrayCreate(1,{});
+  numEqs := arrayLength(m);
+  numVars := arrayLength(mT);
+
+  if numEqs == 0 or numVars == 0 then
+    partitions := {{}};
   else
     markEqs := arrayCreate(numEqs,-1);
     markVars := arrayCreate(numVars,-1);
     (_,partitions) := colorNodePartitions(m,mT,{1},markEqs,markVars,1,{});
-    partitionsOut := listArray(partitions);
   end if;
 end partitionBipartiteGraph;
 
@@ -1870,67 +1867,74 @@ protected function colorNodePartitions "author:Waurich TUD 2013-12
   input array<Integer> markVars;
   input Integer currNumberIn;
   input list<list<Integer>> partitionsIn;
+  input Integer nextIndex = 1;
   output Integer currNumberOut;
   output list<list<Integer>> partitionsOut;
 protected
   Boolean hasChanged;
-  Integer eq, currNumber;
+  Integer eq, currNumber, next_index;
   array<Integer> markNodes;
   list<Integer> rest, vars, addEqs, eqs, part;
   list<list<Integer>> restPart, partitions;
 algorithm
-  (currNumberOut,partitionsOut) := match (m,mT,checkNextIn,markEqs,markVars,currNumberIn,partitionsIn)
-    local
-    case(_,_,{0},_,_,_,_)
-      equation
-        //found no unassigned eqnode
-        currNumber = currNumberIn-1;
-        then
-          (currNumber, partitionsIn);
-    case(_,_,eq::rest,_,_,_,partitions)
-      equation
+  (currNumberOut,partitionsOut) := match checkNextIn
+    //found no unassigned eqnode
+    case {0}
+      then (currNumberIn - 1, partitionsIn);
+
+    case eq::rest
+      algorithm
         //check unassigned node
         if arrayGetIsNotPositive(eq,markEqs) then
           //mark this eq and add to partition
           arrayUpdate(markEqs, eq, currNumberIn);
-          if listEmpty(partitions) then
-            partitions = {{eq}};
+          if listEmpty(partitionsIn) then
+            partitions := {{eq}};
           else
-            part::restPart = partitions;
-            part = eq::part;
-            partitions = part::restPart;
+            part::restPart := partitionsIn;
+            part := eq::part;
+            partitions := part::restPart;
           end if;
 
           // get adjacent equation nodes
-          vars = arrayGet(m,eq);
-          true = not listEmpty(vars);
+          vars := arrayGet(m,eq);
+          true := not listEmpty(vars);
 
           //all vars that havent been traversed
-          vars = List.filter1OnTrue(vars,arrayGetIsNotPositive,markVars);
+          vars := List.filter1OnTrue(vars,arrayGetIsNotPositive,markVars);
           List.map2_0(vars,Array.updateIndexFirst,currNumberIn,markVars);
 
           //all eqs that havent been traversed
-          eqs = List.fold1(vars,getArrayEntryAndAppend,mT,{});
-          eqs = List.filter1OnTrue(eqs,arrayGetIsNegative,markEqs); // all new equations which havent been queued
+          eqs := List.fold1(vars,getArrayEntryAndAppend,mT,{});
+          eqs := List.filter1OnTrue(eqs,arrayGetIsNegative,markEqs); // all new equations which havent been queued
           List.map2_0(eqs,Array.updateIndexFirst,0,markEqs);
 
           // check them later
-          rest = listAppend(rest,eqs) annotation(__OpenModelica_DisableListAppendWarning=true);
+          rest := listAppend(rest,eqs) annotation(__OpenModelica_DisableListAppendWarning=true);
         else
           //the node has been investigated already
-          partitions = partitionsIn;
+          partitions := partitionsIn;
         end if;
-        (currNumber,partitions) = colorNodePartitions(m,mT,rest,markEqs,markVars,currNumberIn,partitions);
       then
-        (currNumber,partitions);
+        colorNodePartitions(m,mT,rest,markEqs,markVars,currNumberIn,partitions,nextIndex);
 
-    case(_,_,{},_,_,_,_)
-      equation
+    case {}
+      algorithm
         //nothing left in this partition
-        eq = Array.position(markEqs,-1);
-        (currNumber,partitions) = colorNodePartitions(m,mT,{eq},markEqs,markVars,currNumberIn+1,{}::partitionsIn);
-        then
-          (currNumber,partitions);
+        eq := 0;
+        next_index := nextIndex;
+
+        // Search for the next unmarked equation, starting from the next unsearched index.
+        for i in nextIndex:arrayLength(markEqs) loop
+          if markEqs[i] == -1 then
+            eq := i;
+            next_index := i + 1;
+            break;
+          end if;
+        end for;
+      then
+        colorNodePartitions(m,mT,{eq},markEqs,markVars,currNumberIn+1,{}::partitionsIn, next_index);
+
   end match;
 end colorNodePartitions;
 
@@ -2135,7 +2139,7 @@ algorithm
         path = listHead(allPaths);
         endNode = if not listEmpty(allPaths) then List.last(path) else -1;
         endNode = if not listEmpty(paths2) then listHead(path) else -1;
-        rest = List.deleteMember(pathsIn,path);
+        rest = List.deleteMemberOnTrue(path,pathsIn,function List.isEqualOnTrue(inCompFunc = intEq));
         sortedPaths = listAppend(sortedPathsIn,{path});
         sortedPaths = sortPathsAsChain1(rest,firstNode,endNode,sortedPaths);
 
@@ -2151,7 +2155,7 @@ algorithm
         path = listHead(allPaths);
         startNode = if not listEmpty(allPaths) then List.last(path) else -1;
         startNode = if not listEmpty(paths2) then listHead(path) else -1;
-        rest = List.deleteMember(pathsIn,path);
+        rest = List.deleteMemberOnTrue(path,pathsIn,function List.isEqualOnTrue(inCompFunc = intEq));
         sortedPaths = path::sortedPathsIn;
         sortedPaths = sortPathsAsChain1(rest,startNode,lastNode,sortedPaths);
       then
@@ -2241,7 +2245,7 @@ algorithm
         endPaths = List.filter1OnTrue(rest,firstInListIsEqual,endNode);
         endPaths = List.filter1OnTrue(endPaths,lastInListIsEqual,startNode);
         endPaths = listAppend(startPaths,endPaths);
-        closedALoop = intGe(listLength(endPaths),1);
+        closedALoop = not listEmpty(endPaths);
         newLoops = if closedALoop then connectPaths(path,endPaths) else {};
         restPaths = if closedALoop then restPathsIn else (path::restPathsIn);
         loops = listAppend(newLoops,loopsIn);

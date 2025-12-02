@@ -1,7 +1,6 @@
 // name:     FunctionInverse
 // keywords: function bug2056
 // status:   correct
-// cflags: -d=-newInst
 //
 // This test checks that output parameters with dimensions given by the input
 // arguments works.
@@ -51,6 +50,7 @@ model FunctionInverse
   Real[N, N] C;
 equation
   C = inv(A) * B;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end FunctionInverse;
 
 // Result:

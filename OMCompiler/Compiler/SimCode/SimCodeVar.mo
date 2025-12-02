@@ -102,12 +102,14 @@ public uniontype SimVar "Information about a variable in a Modelica model."
     Boolean isValueChangeable;
     Boolean isProtected;
     Option<Boolean> hideResult;
+    Boolean isEncrypted;
     Option<array<Integer>> inputIndex;
     Boolean initNonlinear               "true if the variable is a nonlinear jacobian var";
     Option<String> matrixName           "if the varibale is a jacobian var, this is the corresponding matrix";
     Option<Variability> variability     "FMI-2.0 variabilty attribute";
     Option<Initial> initial_            "FMI-2.0 initial attribute";
     Option<DAE.ComponentRef> exportVar  "variables will only be exported to the modelDescription.xml if this attribute is SOME(cref) and this cref is only used in ModelDescription.xml for FMI-2.0 export";
+    Boolean relativeQuantity            "annotation(absoluteValue=false) If false, then the variable defines a relativeQuantity=true else relativeQuantity=false";
   end SIMVAR;
 end SimVar;
 

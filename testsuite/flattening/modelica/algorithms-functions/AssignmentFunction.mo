@@ -1,7 +1,6 @@
 // name: AssignmentFunction
 // keywords: assignment, function
 // status: correct
-// cflags: -d=-newInst
 //
 // Tests assignment to a simple function call
 //
@@ -19,6 +18,7 @@ model AssignmentFunction
 algorithm
   x := 2;
   y := F(x);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end AssignmentFunction;
 
 // Result:

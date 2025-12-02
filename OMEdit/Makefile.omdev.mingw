@@ -16,7 +16,11 @@ endif
 AR = ar
 CMAKE = cmake
 CMAKE_TARGET = "MSYS Makefiles"
-QMAKE=qmake
+ifeq ($(OM_QT_MAJOR_VERSION),6)
+	QMAKE=qmake6
+else
+	QMAKE=qmake
+endif
 
 builddir_bin=$(OMBUILDDIR)/bin
 builddir_lib=$(OMBUILDDIR)/lib/omc

@@ -70,7 +70,7 @@ private:
   QDialogButtonBox *mpButtonBox;
 private slots:
   void filterChanged(bool checked);
-  void libraryIndexChanged(const QString &text);
+  void libraryIndexChanged(int index);
   void installLibrary();
 };
 

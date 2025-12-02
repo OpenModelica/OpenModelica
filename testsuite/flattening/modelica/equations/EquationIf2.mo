@@ -1,7 +1,6 @@
 // name:     EquationIf2
 // keywords: equation
 // status:   correct
-// cflags: -d=-newInst
 //
 // Testing `if' clauses in equations.
 // The branches need not have the same
@@ -17,6 +16,7 @@ equation
   else
     x = 2.0;
   end if;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end EquationIf2;
 
 // Result:

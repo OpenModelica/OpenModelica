@@ -3,7 +3,6 @@
 // status:   correct
 //
 // Drmodelica: 7.6 Arithmetic Array Operators (p. 223)
-// cflags: -d=-newInst
 //
 
 class Exp
@@ -16,6 +15,7 @@ equation
 
   e2 = [1, 2; 1, 2] ^ 2;
   // Result: {{3, 6}, {3, 6}}
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Exp;
 
 // Result:

@@ -1,0 +1,78 @@
+// name: ModelicaError.mos
+// keywords:
+// status: correct
+
+loadString("
+  package ModelicaError
+    function f1
+      input Real x;
+      output Real y;
+    algorithm
+      y := (x - 1)*(x - 10)*(x - 30);
+      if x < 0.8 then
+        Modelica.Utilities.Streams.error(\"x is too small\");
+      end if;
+    end f1;
+
+    function f2
+      input Real x;
+      output Real y;
+    algorithm
+      y := (x - 1)*(x - 10)*(x - 30);
+      assert(x > 0.8, \"x is too small\");
+    end f2;
+
+    model M1
+      Real x(start = 0.7);
+    equation
+      f1(x) = 0;
+    end M1;
+
+    model M2
+      Real x(start = 0.7);
+    equation
+      f2(x) = 0;
+    end M2;
+  end ModelicaError;
+"); getErrorString();
+
+simulate(ModelicaError.M1);getErrorString();
+simulate(ModelicaError.M2);getErrorString();
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "ModelicaError.M1_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'ModelicaError.M1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_ASSERT        | error   | [Modelica 4.1.0+maint.om/Utilities/Streams.mo:113:5-113:48:writable]
+// |                 | |       | x is too small
+// LOG_STDOUT        | warning | Non-Linear Solver try to handle a problem with a called assert.
+// LOG_STDOUT        | warning | While solving non-linear system an assertion failed during initialization.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS_V
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Notification: Automatically loaded package Complex 4.1.0 due to uses annotation from Modelica.
+// Notification: Automatically loaded package ModelicaServices 4.1.0 due to uses annotation from Modelica.
+// Notification: Automatically loaded package Modelica 4.1.0 due to usage.
+// "
+// record SimulationResult
+//     resultFile = "ModelicaError.M2_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'ModelicaError.M2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_ASSERT        | error   | [<interactive>:18:7-18:40:writable]
+// |                 | |       | x is too small
+// LOG_STDOUT        | warning | Non-Linear Solver try to handle a problem with a called assert.
+// LOG_STDOUT        | warning | While solving non-linear system an assertion failed during initialization.
+// |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
+// |                 | |       | | It could help to provide better start-values for the iteration variables.
+// |                 | |       | | For more information simulate with -lv LOG_NLS_V
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// endResult

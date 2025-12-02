@@ -42,6 +42,7 @@
 
 #include <locale.h>
 #include <QMessageBox>
+#include <QTextCodec>
 
 #include "../../OMCompiler/Compiler/runtime/settingsimpl.h"
 
@@ -64,12 +65,14 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
   QTextCodec::setCodecForLocale(QTextCodec::codecForName(Helper::utf8.toUtf8().constData()));
 #endif
   setAttribute(Qt::AA_DontShowIconsInMenus, false);
+#if QT_VERSION >= QT_VERSION_CHECK(5, 6, 0) && QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
   setAttribute(Qt::AA_UseHighDpiPixmaps);
+#endif
   // Localization
   //*a.severin/ add localization
   const char *installationDirectoryPath = SettingsImpl__getInstallationDirectoryPath();
   if (!installationDirectoryPath) {
-    QMessageBox::critical(0, QString("%1 - %2").arg(Helper::applicationName, Helper::error), GUIMessages::getMessage(GUIMessages::INSTALLATIONDIRECTORY_NOT_FOUND), Helper::ok);
+    QMessageBox::critical(0, QString("%1 - %2").arg(Helper::applicationName, Helper::error), GUIMessages::getMessage(GUIMessages::INSTALLATIONDIRECTORY_NOT_FOUND), QMessageBox::Ok);
     quit();
     exit(1);
   }
@@ -79,19 +82,34 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
   // Set OMEdit locale to C so that we get dot as decimal separator instead of comma.
   QLocale::setDefault(QLocale::c());
 
-  QString translationDirectory = installationDirectoryPath + QString("/share/omedit/nls");
-  // install Qt's default translations
-  QTranslator *pQtTranslator = new QTranslator(this);
-#ifdef Q_OS_WIN
-  pQtTranslator->load("qt_" + locale, translationDirectory);
+  QString qtTranslatorLoadError, translatorLoadError;
+  QMap<QString, QLocale> languagesMap = Utilities::supportedLanguages();
+  for (auto i = languagesMap.cbegin(), end = languagesMap.cend(); i != end; ++i) {
+    if (i.value() == settingsLocale) {
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+      QString qtTranslationsLocation = QLibraryInfo::path(QLibraryInfo::TranslationsPath);
 #else
-  pQtTranslator->load("qt_" + locale, QLibraryInfo::location(QLibraryInfo::TranslationsPath));
+      QString qtTranslationsLocation = QLibraryInfo::location(QLibraryInfo::TranslationsPath);
 #endif
-  installTranslator(pQtTranslator);
-  // install application translations
-  QTranslator *pTranslator = new QTranslator(this);
-  pTranslator->load("OMEdit_" + locale, translationDirectory);
-  installTranslator(pTranslator);
+      // install Qt's default translations
+      if (mQtTranslator.load("qt_" + locale, qtTranslationsLocation)) {
+        installTranslator(&mQtTranslator);
+      } else {
+        qtTranslatorLoadError = QString("Failed to load Qt translation file %1 from location %2").arg("qt_" + locale, qtTranslationsLocation);
+      }
+      // install application translations
+      QString translationsLocation = installationDirectoryPath + QString("/share/omedit/nls");
+      // skip loading OMEdit translation file if locale language is QLocale::English. We don't have any OMEdit_en*.qm file.
+      if (settingsLocale.language() != QLocale::English) {
+        if (mTranslator.load("OMEdit_" + locale, translationsLocation)) {
+          installTranslator(&mTranslator);
+        } else {
+          translatorLoadError = QString("Failed to load translation file %1 from location %2").arg("OMEdit_" + locale, translationsLocation);
+        }
+      }
+      break;
+    }
+  }
   // Splash Screen
   QPixmap pixmap(":/Resources/icons/omedit_splashscreen.png");
   SplashScreen *pSplashScreen = SplashScreen::instance();
@@ -104,9 +122,7 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
   setlocale(LC_NUMERIC, "C");
   // if user has requested to open the file by passing it in argument then,
   bool debug = false;
-  bool newApi = false;
   bool newApiProfiling = false;
-  bool newApiCommandLine = false;
   QString fileName = "";
   QStringList fileNames, invalidFlags;
   if (arguments().size() > 1 && !testsuiteRunning) {
@@ -116,13 +132,6 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
         debugArg.remove("--Debug=");
         if (0 == strcmp("true", debugArg.toUtf8().constData())) {
           debug = true;
-        }
-      } else if (strncmp(arguments().at(i).toUtf8().constData(), "--NAPI=",7) == 0) {
-        newApiCommandLine = true;
-        QString napiArg = arguments().at(i);
-        napiArg.remove("--NAPI=");
-        if (0 == strcmp("true", napiArg.toUtf8().constData())) {
-          newApi = true;
         }
       } else if (strncmp(arguments().at(i).toUtf8().constData(), "--NAPIProfiling=",16) == 0) {
         QString napiProfilingArg = arguments().at(i);
@@ -152,8 +161,6 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
   // MainWindow Initialization
   MainWindow *pMainwindow = MainWindow::instance();
   pMainwindow->setDebug(debug);
-  pMainwindow->setNewApi(newApi);
-  pMainwindow->setNewApiCommandLine(newApiCommandLine);
   pMainwindow->setNewApiProfiling(newApiProfiling);
   pMainwindow->setTestsuiteRunning(testsuiteRunning);
   pMainwindow->setUpMainWindow(threadData);
@@ -165,6 +172,14 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
   if (!invalidFlags.isEmpty()) {
     MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, QString("Invalid command line argument(s): %1").arg(invalidFlags.join(", ")),
                                                           Helper::scriptingKind, Helper::errorLevel));
+  }
+  // show qt translator load error
+  if (!qtTranslatorLoadError.isEmpty()) {
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, qtTranslatorLoadError, Helper::scriptingKind, Helper::warningLevel));
+  }
+  // show translator load error
+  if (!translatorLoadError.isEmpty()) {
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, translatorLoadError, Helper::scriptingKind, Helper::warningLevel));
   }
   // open the files passed as command line arguments
   foreach (QString fileName, fileNames) {

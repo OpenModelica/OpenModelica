@@ -51,7 +51,6 @@ import Absyn.{Path, TypeSpec};
 import SCode;
 import SCode.{Mod, Comment};
 import DAE;
-import Builtin = NFBuiltin;
 import NFBinding;
 import Pointer;
 import NFPrefixes.Visibility;
@@ -81,7 +80,7 @@ constant SCode.Element DUMMY_ELEMENT = SCode.CLASS(
 // Default Integer parameter.
 constant Component INT_COMPONENT = Component.COMPONENT(NFInstNode.EMPTY_NODE(),
   Type.INTEGER(), NFBinding.EMPTY_BINDING, NFBinding.EMPTY_BINDING,
-  NFAttributes.DEFAULT_ATTR, NONE(), NONE(), ComponentState.TypeChecked, AbsynUtil.dummyInfo);
+  NFAttributes.DEFAULT_ATTR, SCode.noComment, ComponentState.TypeChecked, AbsynUtil.dummyInfo);
 
 constant InstNode INT_PARAM = InstNode.COMPONENT_NODE("i",
   NONE(), Visibility.PUBLIC,
@@ -91,7 +90,7 @@ constant InstNode INT_PARAM = InstNode.COMPONENT_NODE("i",
 // Default Real parameter.
 constant Component REAL_COMPONENT = Component.COMPONENT(NFInstNode.EMPTY_NODE(),
   Type.REAL(), NFBinding.EMPTY_BINDING, NFBinding.EMPTY_BINDING,
-  NFAttributes.DEFAULT_ATTR, NONE(), NONE(), ComponentState.TypeChecked, AbsynUtil.dummyInfo);
+  NFAttributes.DEFAULT_ATTR, SCode.noComment, ComponentState.TypeChecked, AbsynUtil.dummyInfo);
 
 constant InstNode REAL_PARAM = InstNode.COMPONENT_NODE("r",
   NONE(), Visibility.PUBLIC,
@@ -101,7 +100,7 @@ constant InstNode REAL_PARAM = InstNode.COMPONENT_NODE("r",
 // Default Boolean parameter.
 constant Component BOOL_COMPONENT = Component.COMPONENT(NFInstNode.EMPTY_NODE(),
   Type.BOOLEAN(), NFBinding.EMPTY_BINDING, NFBinding.EMPTY_BINDING,
-  NFAttributes.DEFAULT_ATTR, NONE(), NONE(), ComponentState.TypeChecked, AbsynUtil.dummyInfo);
+  NFAttributes.DEFAULT_ATTR, SCode.noComment, ComponentState.TypeChecked, AbsynUtil.dummyInfo);
 
 constant InstNode BOOL_PARAM = InstNode.COMPONENT_NODE("b",
   NONE(), Visibility.PUBLIC,
@@ -111,7 +110,7 @@ constant InstNode BOOL_PARAM = InstNode.COMPONENT_NODE("b",
 // Default String parameter.
 constant Component STRING_COMPONENT = Component.COMPONENT(NFInstNode.EMPTY_NODE(),
   Type.STRING(), NFBinding.EMPTY_BINDING, NFBinding.EMPTY_BINDING,
-  NFAttributes.DEFAULT_ATTR, NONE(), NONE(), ComponentState.TypeChecked, AbsynUtil.dummyInfo);
+  NFAttributes.DEFAULT_ATTR, SCode.noComment, ComponentState.TypeChecked, AbsynUtil.dummyInfo);
 
 constant InstNode STRING_PARAM = InstNode.COMPONENT_NODE("s",
   NONE(), Visibility.PUBLIC,
@@ -121,7 +120,7 @@ constant InstNode STRING_PARAM = InstNode.COMPONENT_NODE("s",
 // Default enumeration(:) parameter.
 constant Component ENUM_COMPONENT = Component.COMPONENT(NFInstNode.EMPTY_NODE(),
   Type.ENUMERATION(Absyn.Path.IDENT(":"), {}), NFBinding.EMPTY_BINDING, NFBinding.EMPTY_BINDING,
-  NFAttributes.DEFAULT_ATTR, NONE(), NONE(), ComponentState.TypeChecked, AbsynUtil.dummyInfo);
+  NFAttributes.DEFAULT_ATTR, SCode.noComment, ComponentState.TypeChecked, AbsynUtil.dummyInfo);
 
 constant InstNode ENUM_PARAM = InstNode.COMPONENT_NODE("e",
   NONE(), Visibility.PUBLIC,
@@ -259,6 +258,21 @@ constant Function TAN_REAL = Function.FUNCTION(Path.IDENT("tan"),
     Type.REAL(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, {}, {}, listArray({}),
     Pointer.createImmutable(FunctionStatus.BUILTIN), Pointer.createImmutable(0));
 
+constant Function ACOS_REAL = Function.FUNCTION(Path.IDENT("acos"),
+  InstNode.EMPTY_NODE(), {REAL_PARAM}, {REAL_PARAM}, {}, {},
+    Type.REAL(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, {}, {}, listArray({}),
+    Pointer.createImmutable(FunctionStatus.BUILTIN), Pointer.createImmutable(0));
+
+constant Function ASIN_REAL = Function.FUNCTION(Path.IDENT("asin"),
+  InstNode.EMPTY_NODE(), {REAL_PARAM}, {REAL_PARAM}, {}, {},
+    Type.REAL(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, {}, {}, listArray({}),
+    Pointer.createImmutable(FunctionStatus.BUILTIN), Pointer.createImmutable(0));
+
+constant Function ATAN_REAL = Function.FUNCTION(Path.IDENT("atan"),
+  InstNode.EMPTY_NODE(), {REAL_PARAM}, {REAL_PARAM}, {}, {},
+    Type.REAL(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, {}, {}, listArray({}),
+    Pointer.createImmutable(FunctionStatus.BUILTIN), Pointer.createImmutable(0));
+
 constant Function COSH_REAL = Function.FUNCTION(Path.IDENT("cosh"),
   InstNode.EMPTY_NODE(), {REAL_PARAM}, {REAL_PARAM}, {}, {},
     Type.REAL(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, {}, {}, listArray({}),
@@ -270,6 +284,21 @@ constant Function SINH_REAL = Function.FUNCTION(Path.IDENT("sinh"),
     Pointer.createImmutable(FunctionStatus.BUILTIN), Pointer.createImmutable(0));
 
 constant Function TANH_REAL = Function.FUNCTION(Path.IDENT("tanh"),
+  InstNode.EMPTY_NODE(), {REAL_PARAM}, {REAL_PARAM}, {}, {},
+    Type.REAL(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, {}, {}, listArray({}),
+    Pointer.createImmutable(FunctionStatus.BUILTIN), Pointer.createImmutable(0));
+
+constant Function ACOSH_REAL = Function.FUNCTION(Path.IDENT("acosh"),
+  InstNode.EMPTY_NODE(), {REAL_PARAM}, {REAL_PARAM}, {}, {},
+    Type.REAL(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, {}, {}, listArray({}),
+    Pointer.createImmutable(FunctionStatus.BUILTIN), Pointer.createImmutable(0));
+
+constant Function ASINH_REAL = Function.FUNCTION(Path.IDENT("asinh"),
+  InstNode.EMPTY_NODE(), {REAL_PARAM}, {REAL_PARAM}, {}, {},
+    Type.REAL(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, {}, {}, listArray({}),
+    Pointer.createImmutable(FunctionStatus.BUILTIN), Pointer.createImmutable(0));
+
+constant Function ATANH_REAL = Function.FUNCTION(Path.IDENT("atanh"),
   InstNode.EMPTY_NODE(), {REAL_PARAM}, {REAL_PARAM}, {}, {},
     Type.REAL(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, {}, {}, listArray({}),
     Pointer.createImmutable(FunctionStatus.BUILTIN), Pointer.createImmutable(0));
@@ -294,9 +323,9 @@ constant Function ABS_REAL = Function.FUNCTION(Path.IDENT("abs"),
     Type.REAL(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, {}, {}, listArray({}),
     Pointer.createImmutable(FunctionStatus.BUILTIN), Pointer.createImmutable(0));
 
-constant Function SIGN_REAL = Function.FUNCTION(Path.IDENT("sign"),
+constant Function SIGN = Function.FUNCTION(Path.IDENT("sign"),
   InstNode.EMPTY_NODE(), {REAL_PARAM}, {REAL_PARAM}, {}, {},
-    Type.REAL(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, {}, {}, listArray({}),
+    Type.INTEGER(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, {}, {}, listArray({}),
     Pointer.createImmutable(FunctionStatus.BUILTIN), Pointer.createImmutable(0));
 
 constant Function MAX_INT = Function.FUNCTION(Path.IDENT("max"),
@@ -306,6 +335,26 @@ constant Function MAX_INT = Function.FUNCTION(Path.IDENT("max"),
 
 constant Function MAX_REAL = Function.FUNCTION(Path.IDENT("max"),
   InstNode.EMPTY_NODE(), {REAL_PARAM, REAL_PARAM}, {REAL_PARAM}, {}, {},
+    Type.REAL(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, {}, {}, listArray({}),
+    Pointer.createImmutable(FunctionStatus.BUILTIN), Pointer.createImmutable(0));
+
+constant Function MIN_INT = Function.FUNCTION(Path.IDENT("min"),
+  InstNode.EMPTY_NODE(), {INT_PARAM, INT_PARAM}, {INT_PARAM}, {}, {},
+    Type.INTEGER(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, {}, {}, listArray({}),
+    Pointer.createImmutable(FunctionStatus.BUILTIN), Pointer.createImmutable(0));
+
+constant Function MIN_REAL = Function.FUNCTION(Path.IDENT("min"),
+  InstNode.EMPTY_NODE(), {REAL_PARAM, REAL_PARAM}, {REAL_PARAM}, {}, {},
+    Type.REAL(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, {}, {}, listArray({}),
+    Pointer.createImmutable(FunctionStatus.BUILTIN), Pointer.createImmutable(0));
+
+constant Function ARG_MIN_ARR_REAL = Function.FUNCTION(Path.IDENT("argmin"),
+  InstNode.EMPTY_NODE(), {REAL_PARAM}, {INT_PARAM}, {}, {},
+    Type.REAL(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, {}, {}, listArray({}),
+    Pointer.createImmutable(FunctionStatus.BUILTIN), Pointer.createImmutable(0));
+
+constant Function ARG_MAX_ARR_REAL = Function.FUNCTION(Path.IDENT("argmax"),
+  InstNode.EMPTY_NODE(), {REAL_PARAM}, {INT_PARAM}, {}, {},
     Type.REAL(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, {}, {}, listArray({}),
     Pointer.createImmutable(FunctionStatus.BUILTIN), Pointer.createImmutable(0));
 
@@ -335,6 +384,11 @@ constant Function INTEGER_ENUM = Function.FUNCTION(Path.IDENT("Integer"),
     Pointer.createImmutable(FunctionStatus.BUILTIN), Pointer.createImmutable(0));
 
 constant Function POSITIVE_MAX_REAL = Function.FUNCTION(Path.IDENT("$OMC$PositiveMax"),
+  InstNode.EMPTY_NODE(), {REAL_PARAM, REAL_PARAM}, {REAL_PARAM}, {}, {},
+    Type.REAL(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, {}, {}, listArray({}),
+    Pointer.createImmutable(FunctionStatus.BUILTIN), Pointer.createImmutable(0));
+
+constant Function INSTREAM_DIV_REAL = Function.FUNCTION(Path.IDENT("$OMC$inStreamDiv"),
   InstNode.EMPTY_NODE(), {REAL_PARAM, REAL_PARAM}, {REAL_PARAM}, {}, {},
     Type.REAL(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, {}, {}, listArray({}),
     Pointer.createImmutable(FunctionStatus.BUILTIN), Pointer.createImmutable(0));
@@ -384,6 +438,11 @@ constant Function SUM = Function.FUNCTION(Path.IDENT("sum"),
     Type.UNKNOWN(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, {}, {}, listArray({}),
     Pointer.createImmutable(FunctionStatus.BUILTIN), Pointer.createImmutable(0));
 
+constant Function FMU_LOAD_RESOURCE = Function.FUNCTION(Path.IDENT("OpenModelica_fmuLoadResource"),
+  InstNode.EMPTY_NODE(), {STRING_PARAM}, {STRING_PARAM}, {}, {},
+    Type.STRING(), DAE.FUNCTION_ATTRIBUTES_BUILTIN_IMPURE, {}, {}, listArray({}),
+    Pointer.createImmutable(FunctionStatus.BUILTIN), Pointer.createImmutable(0));
+
 constant Function SAMPLE = Function.FUNCTION(Path.QUALIFIED("OMC_NO_CLOCK", Path.IDENT("sample")),
   InstNode.EMPTY_NODE(), {REAL_PARAM, REAL_PARAM}, {REAL_PARAM}, {}, {},
     Type.BOOLEAN(), DAE.FUNCTION_ATTRIBUTES_BUILTIN_IMPURE, {}, {}, listArray({}),
@@ -391,7 +450,7 @@ constant Function SAMPLE = Function.FUNCTION(Path.QUALIFIED("OMC_NO_CLOCK", Path
 
 constant Component CLOCK_COMPONENT = Component.COMPONENT(NFInstNode.EMPTY_NODE(),
   Type.CLOCK(), NFBinding.EMPTY_BINDING, NFBinding.EMPTY_BINDING,
-  NFAttributes.DEFAULT_ATTR, NONE(), NONE(), ComponentState.TypeChecked, AbsynUtil.dummyInfo);
+  NFAttributes.DEFAULT_ATTR, SCode.noComment, ComponentState.TypeChecked, AbsynUtil.dummyInfo);
 
 constant InstNode CLOCK_PARAM = InstNode.COMPONENT_NODE("s",
   NONE(), Visibility.PUBLIC,
@@ -454,7 +513,6 @@ constant Function CLOCK_SOLVER = Function.FUNCTION(Path.IDENT("Clock"),
   }, Type.CLOCK(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, {}, {}, listArray({}),
   Pointer.createImmutable(FunctionStatus.BUILTIN), Pointer.createImmutable(0));
 
-
 constant InstNode CLOCK_NODE = InstNode.CLASS_NODE("Clock",
   DUMMY_ELEMENT, Visibility.PUBLIC,
   Pointer.createImmutable(Class.PARTIAL_BUILTIN(Type.CLOCK(), ClassTree.EMPTY_TREE(),
@@ -475,6 +533,98 @@ constant InstNode CLOCK_NODE = InstNode.CLASS_NODE("Clock",
 
 constant ComponentRef CLOCK_CREF =
   ComponentRef.CREF(CLOCK_NODE, {}, Type.INTEGER(), Origin.CREF, ComponentRef.EMPTY());
+
+constant Function GET_PART_REAL = Function.FUNCTION(Path.IDENT("$getPart"),
+  InstNode.EMPTY_NODE(), {REAL_PARAM}, {REAL_PARAM}, {}, {},
+    Type.REAL(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, {}, {}, listArray({}),
+    Pointer.createImmutable(FunctionStatus.BUILTIN), Pointer.createImmutable(0));
+
+constant Function GET_PART_INT = Function.FUNCTION(Path.IDENT("$getPart"),
+  InstNode.EMPTY_NODE(), {INT_PARAM}, {INT_PARAM}, {}, {},
+    Type.INTEGER(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, {}, {}, listArray({}),
+    Pointer.createImmutable(FunctionStatus.BUILTIN), Pointer.createImmutable(0));
+
+constant Function GET_PART_BOOL = Function.FUNCTION(Path.IDENT("$getPart"),
+  InstNode.EMPTY_NODE(), {BOOL_PARAM}, {BOOL_PARAM}, {}, {},
+    Type.BOOLEAN(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, {}, {}, listArray({}),
+    Pointer.createImmutable(FunctionStatus.BUILTIN), Pointer.createImmutable(0));
+
+constant Function GET_PART_CLOCK = Function.FUNCTION(Path.IDENT("$getPart"),
+  InstNode.EMPTY_NODE(), {CLOCK_PARAM}, {CLOCK_PARAM}, {}, {},
+    Type.BOOLEAN(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, {}, {}, listArray({}),
+    Pointer.createImmutable(FunctionStatus.BUILTIN), Pointer.createImmutable(0));
+
+constant Function CLOCK_FIRE = Function.FUNCTION(Path.IDENT("$_clkfire"),
+  InstNode.EMPTY_NODE(), {INT_PARAM}, {}, {}, {},
+    Type.UNKNOWN(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, {}, {}, listArray({}),
+    Pointer.createImmutable(FunctionStatus.BUILTIN), Pointer.createImmutable(0));
+
+constant SCode.Element BASE_MODELICA_POSITIVE_MAX_SIMPLE = SCode.Element.CLASS(
+  "$OMC$PositiveMax",
+  SCode.defaultPrefixes,
+  SCode.Encapsulated.ENCAPSULATED(),
+  SCode.Partial.NOT_PARTIAL(),
+  SCode.Restriction.R_FUNCTION(SCode.FunctionRestriction.FR_NORMAL_FUNCTION(Absyn.FunctionPurity.NO_PURITY())),
+  SCode.ClassDef.PARTS(
+    {
+      // input Real flowValue;
+      SCode.Element.COMPONENT(
+        "flowValue",
+        SCode.defaultPrefixes,
+        SCode.defaultInputAttr,
+        Absyn.TPATH(Absyn.IDENT("Real"), NONE()),
+        SCode.Mod.NOMOD(),
+        SCode.noComment,
+        NONE(),
+        AbsynUtil.dummyInfo
+      ),
+      // input Real eps;
+      SCode.Element.COMPONENT(
+        "eps",
+        SCode.defaultPrefixes,
+        SCode.defaultInputAttr,
+        Absyn.TPATH(Absyn.IDENT("Real"), NONE()),
+        SCode.Mod.NOMOD(),
+        SCode.noComment,
+        NONE(),
+        AbsynUtil.dummyInfo
+      ),
+      // output Real positiveMax;
+      SCode.Element.COMPONENT(
+        "positiveMax",
+        SCode.defaultPrefixes,
+        SCode.defaultOutputAttr,
+        Absyn.TPATH(Absyn.IDENT("Real"), NONE()),
+        SCode.Mod.NOMOD(),
+        SCode.noComment,
+        NONE(),
+        AbsynUtil.dummyInfo
+      )
+    },
+    {}, {},
+    // algorithm
+    {
+      SCode.AlgorithmSection.ALGORITHM({
+        // positiveMax := max(flowValue, eps);
+        SCode.Statement.ALG_ASSIGN(
+          Absyn.Exp.CREF(Absyn.ComponentRef.CREF_IDENT("positiveMax", {})),
+          Absyn.Exp.CALL(Absyn.ComponentRef.CREF_IDENT("max", {}),
+            Absyn.FunctionArgs.FUNCTIONARGS({
+              Absyn.Exp.CREF(Absyn.ComponentRef.CREF_IDENT("flowValue", {})),
+              Absyn.Exp.CREF(Absyn.ComponentRef.CREF_IDENT("eps", {}))
+            }, {}),
+            {}
+          ),
+          SCode.noComment,
+          AbsynUtil.dummyInfo
+        )
+      })
+    },
+    {}, {}, {}, NONE()
+  ),
+  SCode.noComment,
+  AbsynUtil.dummyInfo
+);
 
 annotation(__OpenModelica_Interface="frontend");
 end NFBuiltinFuncs;

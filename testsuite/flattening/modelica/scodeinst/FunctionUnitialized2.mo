@@ -1,7 +1,6 @@
 // name: FunctionUnitialized2
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 //
 
@@ -43,6 +42,6 @@ end FunctionUnitialized2;
 // class FunctionUnitialized2
 //   Real y = FunctionUnitialized2.f(time);
 // end FunctionUnitialized2;
-// [flattening/modelica/scodeinst/FunctionUnitialized2.mo:23:5-23:19:writable] Warning: w was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [flattening/modelica/scodeinst/FunctionUnitialized2.mo:22:5-22:19:writable] Warning: w was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
 //
 // endResult

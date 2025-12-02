@@ -1,7 +1,6 @@
 // name:     ScopeDeclaration3
 // keywords: scoping,declaration
 // status:   correct
-// cflags: -d=-newInst
 //
 // Modelica is a strict define-before-use language. A variable must be
 // fully instantiated (defined after end of declaration, semicolon)
@@ -15,6 +14,7 @@ equation
   x = y;
 public
   Real y;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ScopeDeclaration3;
 
 // Result:

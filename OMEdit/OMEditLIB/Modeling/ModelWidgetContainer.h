@@ -35,16 +35,16 @@
 #ifndef MODELWIDGETCONTAINER_H
 #define MODELWIDGETCONTAINER_H
 
-#include "CoOrdinateSystem.h"
 #include "Element/Element.h"
 #include "Util/StringHandler.h"
 #include "Util/Helper.h"
 #include "Model.h"
 #include "Editors/BaseEditor.h"
 #include "Editors/ModelicaEditor.h"
-#include "Editors/CompositeModelEditor.h"
 #include "Editors/OMSimulatorEditor.h"
 #include "Editors/CEditor.h"
+#include "Editors/CRMLEditor.h"
+#include "Editors/MOSEditor.h"
 #include "Editors/TextEditor.h"
 #include "Editors/MetaModelicaEditor.h"
 #include "LibraryTreeWidget.h"
@@ -56,9 +56,11 @@
 #include <QStatusBar>
 #include <QListWidget>
 #include <QMdiArea>
+#ifndef OM_DISABLE_DOCUMENTATION
 #ifndef OM_OMEDIT_ENABLE_QTWEBENGINE
 #include <QtWebKit>
-#endif
+#endif // #ifndef OM_OMEDIT_ENABLE_QTWEBENGINE
+#endif // #ifndef OM_DISABLE_DOCUMENTATION
 #include <QSplitter>
 #include <QUndoStack>
 #include <QUndoView>
@@ -105,12 +107,6 @@ class GraphicsView : public QGraphicsView
 private:
   StringHandler::ViewType mViewType;
   ModelWidget *mpModelWidget;
-  CoOrdinateSystem mCoOrdinateSystem;
-public:
-  CoOrdinateSystem mMergedCoOrdinateSystem;
-  CoOrdinateSystem getCoOrdinateSystem() const {return mCoOrdinateSystem;}
-  void setCoOrdinateSystem(CoOrdinateSystem coOrdinateSystem) {mCoOrdinateSystem = std::move(coOrdinateSystem);}
-private:
   bool mVisualizationView;
   bool mIsCustomScale;
   bool mAddClassAnnotationNeeded;
@@ -153,9 +149,9 @@ private:
   TextAnnotation *mpTextShapeAnnotation;
   TextAnnotation *mpErrorTextShapeAnnotation;
   BitmapAnnotation *mpBitmapShapeAnnotation;
+  QAction *mpParametersAction;
   QAction *mpPropertiesAction;
   QAction *mpRenameAction;
-  QAction *mpSimulationParamsAction;
   QAction *mpManhattanizeAction;
   QAction *mpDeleteAction;
   QAction *mpBringToFrontAction;
@@ -179,10 +175,15 @@ private:
 public:
   GraphicsView(StringHandler::ViewType viewType, ModelWidget *pModelWidget);
   ~GraphicsView();
+  ModelInstance::CoordinateSystem mCoordinateSystem;
+  ModelInstance::CoordinateSystem mMergedCoordinateSystem;
   bool mSkipBackground; /* Do not draw the background rectangle */
   QPointF mContextMenuStartPosition;
   bool mContextMenuStartPositionValid;
-  StringHandler::ViewType getViewType() {return mViewType;}
+  void initializeCoordinateSystem();
+  void resetCoordinateSystem();
+  bool isIconView() const {return mViewType == StringHandler::Icon;}
+  bool isDiagramView() const {return mViewType == StringHandler::Diagram;}
   ModelWidget* getModelWidget() {return mpModelWidget;}
   void setIsVisualizationView(bool visualizationView);
   bool isVisualizationView() {return mVisualizationView;}
@@ -227,6 +228,7 @@ public:
   void setRenderingLibraryPixmap(bool renderingLibraryPixmap) {mRenderingLibraryPixmap = renderingLibraryPixmap;}
   bool isRenderingLibraryPixmap() {return mRenderingLibraryPixmap;}
   QList<ShapeAnnotation*> getShapesList() {return mShapesList;}
+  void setShapesList(QList<ShapeAnnotation*> shapesList) {mShapesList = shapesList;}
   QList<ShapeAnnotation*> getInheritedShapesList() {return mInheritedShapesList;}
   QAction* getManhattanizeAction() {return mpManhattanizeAction;}
   QAction* getDeleteAction() {return mpDeleteAction;}
@@ -243,15 +245,16 @@ public:
   QAction* getFlipHorizontalAction() {return mpFlipHorizontalAction;}
   QAction* getFlipVerticalAction() {return mpFlipVerticalAction;}
   bool performElementCreationChecks(const QString &nameStructure, bool partial, QString *name, QString *defaultPrefix);
+  static ModelInstance::Component* createModelInstanceComponent(ModelInstance::Model *pModelInstance, const QString &name, const QString &className);
   static ModelInstance::Component* createModelInstanceComponent(ModelInstance::Model *pModelInstance, const QString &name, const QString &className, bool isConnector);
   bool addComponent(QString className, QPointF position);
-  void addComponentToView(QString name, LibraryTreeItem *pLibraryTreeItem, QString annotation, QPointF position,
-                          ElementInfo *pComponentInfo, bool addObject, bool openingClass, bool emitComponentAdded);
-  void addElementToView(ModelInstance::Component *pComponent, bool inherited, bool addElementToOMC, bool createTransformation, QPointF position, const QString &placementAnnotation, bool clearSelection);
+  void addElementToView(ModelInstance::Component *pComponent, bool inherited, bool addElementToOMC, bool createTransformation, QPointF position,
+                        const QString &placementAnnotation, bool clearSelection);
   void addElementToList(Element *pElement) {mElementsList.append(pElement);}
   void addElementToOutOfSceneList(Element *pElement) {mOutOfSceneElementsList.append(pElement);}
   void addInheritedElementToList(Element *pElement) {mInheritedElementsList.append(pElement);}
   void addElementToClass(Element *pElement);
+  static void addUsesAnnotation(const QString &insertedClassName, const QString &containingClassName, bool updateParentText);
   void addElementItem(Element *pElement);
   void removeElementItem(Element *pElement);
   void deleteElement(Element *pElement);
@@ -260,30 +263,33 @@ public:
   void deleteElementFromOutOfSceneList(Element *pElement) {mOutOfSceneElementsList.removeOne(pElement);}
   void deleteInheritedElementFromList(Element *pElement) {mInheritedElementsList.removeOne(pElement);}
   Element* getElementObject(QString elementName);
+  Element* getElementObjectFromQualifiedName(QString elementQualifiedName);
   QString getUniqueElementName(const QString &nameStructure, const QString &name, QString *defaultName);
   QString getUniqueElementName(const QString &nameStructure, QString elementName, int number = 0);
   bool checkElementName(const QString &nameStructure, QString elementName);
   QList<Element*> getElementsList() {return mElementsList;}
   QList<Element*> getInheritedElementsList() {return mInheritedElementsList;}
   QList<LineAnnotation*> getConnectionsList() {return mConnectionsList;}
+  static ModelInstance::Connection* createModelInstanceConnection(ModelInstance::Model *pModelInstance, LineAnnotation *pConnectionLineAnnotation);
+  bool addConnectionHelper(LineAnnotation *pConnectionLineAnnotation);
   bool connectionExists(const QString &startElementName, const QString &endElementName, bool inherited);
   void addConnectionDetails(LineAnnotation *pConnectionLineAnnotation);
   void addConnectionToView(LineAnnotation *pConnectionLineAnnotation, bool inherited);
   bool addConnectionToClass(LineAnnotation *pConnectionLineAnnotation, bool deleteUndo = false);
   void deleteConnectionFromClass(LineAnnotation *pConnectionLineAnnotation);
-  void updateConnectionInClass(LineAnnotation *pConnectionLineAnnotation);
   void addConnectionToList(LineAnnotation *pConnectionLineAnnotation) {mConnectionsList.append(pConnectionLineAnnotation);}
   void addConnectionToOutOfSceneList(LineAnnotation *pConnectionLineAnnotation) {mOutOfSceneConnectionsList.append(pConnectionLineAnnotation);}
   void addInheritedConnectionToList(LineAnnotation *pConnectionLineAnnotation) {mInheritedConnectionsList.append(pConnectionLineAnnotation);}
   void deleteConnectionFromList(LineAnnotation *pConnectionLineAnnotation) {mConnectionsList.removeOne(pConnectionLineAnnotation);}
   void deleteConnectionFromOutOfSceneList(LineAnnotation *pConnectionLineAnnotation) {mOutOfSceneConnectionsList.removeOne(pConnectionLineAnnotation);}
   void removeConnectionDetails(LineAnnotation *pConnectionLineAnnotation);
-  void removeConnectionFromView(LineAnnotation *pConnectionLineAnnotation);
-  void removeConnectionsFromView();
   void deleteInheritedConnectionFromList(LineAnnotation *pConnectionLineAnnotation) {mInheritedConnectionsList.removeOne(pConnectionLineAnnotation);}
   int numberOfElementConnections(Element *pElement, LineAnnotation *pExcludeConnectionLineAnnotation = 0);
   QString getConnectorName(Element *pConnector);
   QList<LineAnnotation*> getTransitionsList() {return mTransitionsList;}
+  static ModelInstance::Transition* createModelInstanceTransition(ModelInstance::Model *pModelInstance, LineAnnotation *pTransitionLineAnnotation);
+  bool addTransitionHelper(LineAnnotation *pTransitionLineAnnotation);
+  bool updateTransition(LineAnnotation *pTransitionLineAnnotation);
   void addTransitionToView(LineAnnotation *pTransitionLineAnnotation, bool inherited);
   void addTransitionToClass(LineAnnotation *pTransitionLineAnnotation);
   void removeTransitionFromView(LineAnnotation *pTransitionLineAnnotation);
@@ -296,6 +302,7 @@ public:
   void removeTransitionsFromView();
   void deleteInheritedTransitionFromList(LineAnnotation *pTransitionLineAnnotation) {mInheritedTransitionsList.removeOne(pTransitionLineAnnotation);}
   QList<LineAnnotation*> getInitialStatesList() {return mInitialStatesList;}
+  static ModelInstance::InitialState* createModelInstanceInitialState(ModelInstance::Model *pModelInstance, LineAnnotation *pInitialStateLineAnnotation);
   void addInitialStateToView(LineAnnotation *pInitialStateLineAnnotation, bool inherited);
   void addInitialStateToClass(LineAnnotation *pInitialStateLineAnnotation);
   void removeInitialStateFromView(LineAnnotation *pInitialStateLineAnnotation);
@@ -320,7 +327,9 @@ public:
   void sendToBack(ShapeAnnotation *pShape);
   void sendBackward(ShapeAnnotation *pShape);
   void clearGraphicsView();
+  void clearGraphicsViewsExceptOutOfSceneItems();
   void removeClassComponents();
+  void removeShapesFromScene();
   void removeElementsFromScene();
   void removeOutOfSceneClassComponents();
   void removeInheritedClassShapes();
@@ -345,7 +354,7 @@ public:
   void createEllipseShape(QPointF point);
   void createTextShape(QPointF point);
   void createBitmapShape(QPointF point);
-  QRectF itemsBoundingRect();
+  QRectF itemsBoundingRect(bool onlySelected = false);
   QPointF snapPointToGrid(QPointF point);
   QPointF movePointByGrid(QPointF point, QPointF origin = QPointF(0, 0), bool useShiftModifier = false);
   QPointF roundPoint(QPointF point);
@@ -387,18 +396,14 @@ private:
   void modelicaOneShapeContextMenu(ShapeAnnotation *pShapeAnnotation, QMenu *pMenu);
   void modelicaOneComponentContextMenu(Element *pComponent, QMenu *pMenu);
   void modelicaMultipleItemsContextMenu(QMenu *pMenu);
-  void compositeModelGraphicsViewContextMenu(QMenu *pMenu);
-  void compositeModelOneShapeContextMenu(ShapeAnnotation *pShapeAnnotation, QMenu *pMenu);
-  void compositeModelOneComponentContextMenu(Element *pComponent, QMenu *pMenu);
-  void compositeModelMultipleItemsContextMenu(QMenu *pMenu);
   void omsGraphicsViewContextMenu(QMenu *pMenu);
   void omsOneShapeContextMenu(ShapeAnnotation *pShapeAnnotation, QMenu *pMenu);
   void omsOneComponentContextMenu(Element *pComponent, QMenu *pMenu);
   void omsMultipleItemsContextMenu(QMenu *pMenu);
+  void getCoordinateSystemAndGraphics(QStringList &coOrdinateSystemList, QStringList &graphicsList);
 signals:
   void manhattanize();
   void deleteSignal();
-  void duplicate();
   void mouseRotateClockwise();
   void mouseRotateAntiClockwise();
   void mouseFlipHorizontal();
@@ -435,12 +440,12 @@ public slots:
   void selectAll();
   void cutItems();
   void copyItems();
-  void pasteItems();
+  void pasteItems(QPointF positionOffset = QPointF(0, 0));
   void clearSelection(QGraphicsItem *pSelectGraphicsItem = 0);
-  void addClassAnnotation(bool alwaysAdd = true);
+  void addClassAnnotation();
+  void showParameters();
   void showGraphicsViewProperties();
   void showRenameDialog();
-  void showSimulationParamsDialog();
   void manhattanizeItems();
   void deleteItems();
   void duplicateItems();
@@ -522,23 +527,8 @@ private:
   bool mEnabled;
 };
 
-class IconDiagramMap
-{
-public:
-  IconDiagramMap()
-  {
-    mExtent.clear();
-    mExtent << QPointF(0, 0) << QPointF(0, 0);
-    mPrimitivesVisible = true;
-  }
-
-  QVector<QPointF> mExtent;
-  bool mPrimitivesVisible;
-};
-
 class ModelWidgetContainer;
 class ModelicaHighlighter;
-class CompositeModelHighlighter;
 class Label;
 class ModelWidget : public QWidget
 {
@@ -550,6 +540,7 @@ public:
   ModelInstance::Model *getModelInstance() const {return mpModelInstance;}
   void setLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem) {mpLibraryTreeItem = pLibraryTreeItem;}
   LibraryTreeItem* getLibraryTreeItem() {return mpLibraryTreeItem;}
+  LibraryTreeItem* getRootLibraryTreeItem() {return mpRootLibraryTreeItem;}
   QToolButton* getIconViewToolButton() {return mpIconViewToolButton;}
   QToolButton* getDiagramViewToolButton() {return mpDiagramViewToolButton;}
   QToolButton* getTextViewToolButton() {return mpTextViewToolButton;}
@@ -565,47 +556,33 @@ public:
   void setModelFilePathLabel(QString path) {mpModelFilePathLabel->setText(path);}
   QVBoxLayout* getMainLayout() {return mpMainLayout;}
   bool isLoadedWidgetComponents() {return mCreateModelWidgetComponents;}
-  void addInheritedClass(LibraryTreeItem *pLibraryTreeItem) {mInheritedClassesList.append(pLibraryTreeItem);}
-  void removeInheritedClass(LibraryTreeItem *pLibraryTreeItem) {mInheritedClassesList.removeOne(pLibraryTreeItem);}
-  void clearInheritedClasses() {mInheritedClassesList.clear();}
   QList<LibraryTreeItem*> getInheritedClassesList() {return mInheritedClassesList;}
-  QMap<int, IconDiagramMap> getInheritedClassIconMap() {return mInheritedClassesIconMap;}
-  QMap<int, IconDiagramMap> getInheritedClassDiagramMap() {return mInheritedClassesDiagramMap;}
-  const QList<ElementInfo*> &getComponentsList() {return mElementsList;}
-  QMap<QString, QString> getExtendsModifiersMap(QString extendsClass);
-  QMap<QString, QString> getDerivedClassModifiersMap();
 
-  bool isNewApi();
   void addDependsOnModel(const QString &dependsOnModel);
   void clearDependsOnModels() {mDependsOnModelsList.clear();}
   void setHandleCollidingConnectionsNeeded(bool needed) {mHandleCollidingConnectionsNeeded = needed;}
   bool isHandleCollidingConnectionsNeeded() {return mHandleCollidingConnectionsNeeded;}
+  void setRequiresUpdate(bool requiresUpdate) {mRequiresUpdate = requiresUpdate;}
+  bool requiresUpdate() {return mRequiresUpdate;}
+  bool isElementMode() const {return !mModelInstanceList.isEmpty();}
+  void setComponentModified(bool modified) {mComponentModified = modified;}
+  bool isComponentModified() const {return mComponentModified;}
+  void setRestoringModel(bool restoring) {mRestoringModel = restoring;}
+  bool isRestoringModel() const {return mRestoringModel;}
 
-  void fetchExtendsModifiers(QString extendsClass);
-  void reDrawModelWidgetInheritedClasses();
-  void drawModelCoOrdinateSystem(GraphicsView *pGraphicsView);
   void drawModelIconDiagramShapes(QStringList shapes, GraphicsView *pGraphicsView, bool select);
-  ShapeAnnotation* createNonExistingInheritedShape(GraphicsView *pGraphicsView);
-  static ShapeAnnotation* createInheritedShape(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView);
-  Element* createInheritedComponent(Element *pComponent, GraphicsView *pGraphicsView);
-  LineAnnotation* createInheritedConnection(LineAnnotation *pConnectionLineAnnotation);
-  void loadElements();
 
   void drawModel(const ModelInfo &modelInfo);
   void drawModelIconDiagram(ModelInstance::Model *pModelInstance, bool inherited, const ModelInfo &modelInfo);
-
   void loadModelInstance(bool icon, const ModelInfo &modelInfo);
   void loadDiagramViewNAPI();
-  void loadDiagramView();
-  void loadConnections();
-  void getModelConnections();
   void detectMultipleDeclarations();
-  void addConnection(QStringList connectionList, QString connectionAnnotationString, bool addToOMC, bool select);
   void createModelWidgetComponents();
   ShapeAnnotation* drawOMSModelElement();
   void addUpdateDeleteOMSElementIcon(const QString &iconPath);
   Element* getConnectorElement(Element *pConnectorComponent, QString connectorName);
   void clearGraphicsViews();
+  void clearGraphicsViewsExceptOutOfSceneItems();
   void reDrawModelWidget();
   void reDrawModelWidget(const ModelInfo &modelInfo);
   bool validateText(LibraryTreeItem **pLibraryTreeItem);
@@ -617,13 +594,9 @@ public:
   void updateModelText();
   void callHandleCollidingConnectionsIfNeeded();
   void updateUndoRedoActions();
-  bool writeCoSimulationResultFile(QString fileName);
-  bool writeVisualXMLFile(QString fileName, bool canWriteVisualXMLFile = false);
   void beginMacro(const QString &text);
   void endMacro();
   void updateViewButtonsBasedOnAccess();
-  void associateBusWithConnector(QString busName, QString connectorName);
-  void dissociateBusWithConnector(QString busName, QString connectorName);
   void associateBusWithConnectors(QString busName);
   QList<QVariant> toOMSensData();
   void createOMSimulatorUndoCommand(const QString &commandText, const bool doSnapShot = true, const bool switchToEdited = true,
@@ -631,6 +604,9 @@ public:
   void createOMSimulatorRenameModelUndoCommand(const QString &commandText, const QString &cref, const QString &newCref);
   void processPendingModelUpdate();
   ModelInfo createModelInfo() const;
+  void showElement(ModelInstance::Model *pModelInstance, bool addToList);
+  void selectDeselectElement(const QString &name, bool selected);
+  void navigateToClass(const QString &className);
 private:
   ModelWidgetContainer *mpModelWidgetContainer;
   ModelInstance::Model *mpModelInstance;
@@ -640,6 +616,10 @@ private:
   QToolButton *mpTextViewToolButton;
   QToolButton *mpDocumentationViewToolButton;
   QButtonGroup *mpViewsButtonGroup;
+  QToolButton *mpBackToolButton;
+  QToolButton *mpForwardToolButton;
+  QToolButton *mpExitToolButton;
+  Label *mpElementModeLabel;
   Label *mpReadOnlyLabel;
   Label *mpModelicaTypeLabel;
   Label *mpViewTypeLabel;
@@ -654,68 +634,49 @@ private:
   QUndoView *mpUndoView;
   BaseEditor *mpEditor;
   QStatusBar *mpModelStatusBar;
-  bool mElementsLoaded;
   bool mDiagramViewLoaded;
-  bool mConnectionsLoaded;
   bool mCreateModelWidgetComponents;
   QVBoxLayout *mpMainLayout;
-  QString mIconAnnotationString;
-  QString mDiagramAnnotationString;
-  bool mExtendsModifiersLoaded;
-  QMap<QString, QMap<QString, QString> > mExtendsModifiersMap;
-  bool mDerivedClassModifiersLoaded;
-  QMap<QString, QString> mDerivedClassModifiersMap;
   QList<LibraryTreeItem*> mInheritedClassesList;
-  QMap<int, IconDiagramMap> mInheritedClassesIconMap;
-  QMap<int, IconDiagramMap> mInheritedClassesDiagramMap;
-  QList<ElementInfo*> mElementsList;
-  QStringList mElementsAnnotationsList;
   QTimer mUpdateModelTimer;
   QStringList mDependsOnModelsList;
-  bool mHasMissingType = false;
   bool mHandleCollidingConnectionsNeeded = false;
+  bool mRequiresUpdate = false;
+  ModelInstance::Model *mpRootModelInstance;
+  QList<ModelInstance::Model*> mModelInstanceList;
+  int mModelInstancesPos = -1;
+  LibraryTreeItem *mpRootLibraryTreeItem;
+  QList<LibraryTreeItem*> mLibraryTreeItemList;
+  QList<ShapeAnnotation*> mPreservedIconShapesList;
+  QList<ShapeAnnotation*> mPreservedDiagramShapesList;
+  ModelInfo mModelInfo;
+  bool mComponentModified = false;
+  bool mRestoringModel = false;
 
   void createUndoStack();
   void handleCanUndoRedoChanged();
-  IconDiagramMap getIconDiagramMap(QString mapAnnotation);
-  void getModelInheritedClasses();
-  void drawModelInheritedClassShapes(ModelWidget *pModelWidget, StringHandler::ViewType viewType);
-
-  void getModelIconDiagramShapes(StringHandler::ViewType viewType);
-  void readCoOrdinateSystemFromInheritedClass(ModelWidget *pModelWidget, GraphicsView *pGraphicsView);
-  void drawModelInheritedClassComponents(ModelWidget *pModelWidget, StringHandler::ViewType viewType);
-  void getModelElements();
-  void drawModelIconElements();
-  void drawModelDiagramElements();
-  void drawModelInheritedClassConnections(ModelWidget *pModelWidget);
-  void getModelTransitions();
-  void getModelInitialStates();
-  void getMetaModelSubModels();
-  void getMetaModelConnections();
-  QString getCompositeModelName();
-  void getCompositeModelSubModels();
-  void getCompositeModelConnections();
   void drawOMSModelIconElements();
   void drawOMSModelDiagramElements();
   void drawOMSElement(LibraryTreeItem *pLibraryTreeItem, const QString &annotation);
   void drawOMSModelConnections();
-  void associateBusWithConnector(QString busName, QString connectorName, GraphicsView *pGraphicsView);
-  void dissociateBusWithConnector(QString busName, QString connectorName, GraphicsView *pGraphicsView);
   void associateBusWithConnectors(Element *pBusComponent, GraphicsView *pGraphicsView);
-  static void removeInheritedClasses(LibraryTreeItem *pLibraryTreeItem);
-  bool dependsOnModel(const QString &modelName);
+  bool dependsOnModel(const QString &modelName, bool unload);
+  void updateElementModeButtons();
+  void reDrawModelWidgetHelper();
 private slots:
   void showIconView(bool checked);
   void showDiagramView(bool checked);
   void showTextView(bool checked);
+  void backElement();
+  void forwardElement();
+  void exitElement();
   void updateModel();
 public slots:
   void makeFileWritAble();
   void showDocumentationView();
-  bool compositeModelEditorTextChanged();
   void handleCanUndoChanged(bool canUndo);
   void handleCanRedoChanged(bool canRedo);
-  void updateModelIfDependsOn(const QString &modelName);
+  void updateModelIfDependsOn(const QString &modelName, bool unload);
 protected:
   virtual void closeEvent(QCloseEvent *event) override;
 };
@@ -738,13 +699,12 @@ public:
   bool isShowGridLines() {return mShowGridLines;}
   bool eventFilter(QObject *object, QEvent *event);
   void changeRecentModelsListSelection(bool moveDown);
-#if !defined(WITHOUT_OSG)
-  void updateThreeDViewer(ModelWidget *pModelWidget);
-#endif
   bool validateText();
-  void getOpenedModelWidgetsOfOMSimulatorModel(const QString &modelName, QStringList *pOpenedModelWidgetsList);
-  void getCurrentModelWidgetSelectedComponents(QStringList *pIconSelectedItemsList, QStringList *pDiagramSelectedItemsList);
-  void selectCurrentModelWidgetComponents(QStringList iconSelectedItemsList, QStringList diagramSelectedItemsList);
+  void getOpenedModelWidgetsAndSelectedElementsOfClass(LibraryTreeItem *pLibraryTreeItem, QHash<QString, QPair<QStringList, QStringList> > *pOpenedModelWidgetsAndSelectedElements);
+  void openModelWidgetsAndSelectElement(QHash<QString, QPair<QStringList, QStringList> > closedModelWidgetsAndSelectedElements, bool skipSelection = false);
+
+  QRect mCopiedItemsBoundingRect;
+  QPointF mCursorPositionAtCopy;
 private:
   StringHandler::ViewType mPreviousViewType;
   bool mShowGridLines;
@@ -755,20 +715,16 @@ private:
 public slots:
   bool openRecentModelWidget(QListWidgetItem *pListWidgetItem);
   void currentModelWidgetChanged(QMdiSubWindow *pSubWindow);
-  void updateThreeDViewer(QMdiSubWindow *pSubWindow);
   void saveModelWidget();
   void saveAsModelWidget();
   void saveTotalModelWidget();
   void printModel();
   void fitToDiagram();
-  void showSimulationParams();
-  void alignInterfaces();
   void addSystem();
   void addOrEditIcon();
   void deleteIcon();
   void addConnector();
   void addBus();
-  void addTLMBus();
   void addSubModel();
 };
 

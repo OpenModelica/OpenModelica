@@ -1,7 +1,6 @@
 // name:     Each1
 // keywords: Each modifier
 // status:   correct
-// cflags: -d=-newInst
 //
 // Testcase from Modelica specification.
 //
@@ -11,6 +10,7 @@ model C
 end C;
 model B
   C c[5](each a={1,2,3},d={1,2,3,4,5});
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end B;
 // Result:
 // class B

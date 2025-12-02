@@ -71,6 +71,7 @@ import FlatModel = NFFlatModel;
 import ComponentRef = NFComponentRef;
 import Equation = NFEquation;
 import NFConnections;
+import Variable = NFVariable;
 
 type FlatEdge = NFConnections.BrokenEdge
 "a tuple with two crefs and equation(s) for calling the equalityConstraint function call";
@@ -81,6 +82,7 @@ type FlatEdges = NFConnections.BrokenEdges
 protected
 import Absyn;
 import NFBuiltin;
+import Binding = NFBinding;
 import Call = NFCall;
 import Ceval = NFCeval;
 import Class = NFClass;
@@ -184,26 +186,21 @@ function handleOverconstrainedConnections
   input output FlatModel flatModel;
   input Connections conns;
   input IsDeletedFn isDeleted;
-  output FlatEdges outBroken;
+  output FlatEdges broken;
 protected
   NFOCConnectionGraph graph = EMPTY;
-  list<Equation> eql = {}, ieql;
-  FlatEdges broken, connected;
+  FlatEdges connected;
+  list<Equation> eql;
   Boolean print_trace = Flags.isSet(Flags.CGRAPH);
 algorithm
   // Add roots and branches from the model to the graph.
   graph := addBreakableBranches(conns.connections, isDeleted, print_trace, graph);
   (eql, graph) := addRootsAndBranches(flatModel.equations, print_trace, graph);
+  flatModel.equations := eql;
 
   // now we have the graph, remove the broken connects and evaluate the equation operators
-  ieql := flatModel.initialEquations;
-  (eql, ieql, connected, broken) := handleOverconstrainedConnections_dispatch(graph, FlatModel.fullName(flatModel), eql, ieql);
-
-  eql := removeBrokenConnects(eql, connected, broken, isDeleted);
-
-  flatModel.equations := eql;
-  flatModel.initialEquations := ieql;
-  outBroken := broken;
+  (flatModel, connected, broken) := handleOverconstrainedConnections_dispatch(graph, flatModel);
+  flatModel.equations := removeBrokenConnects(flatModel.equations, connected, broken, isDeleted);
 end handleOverconstrainedConnections;
 
 protected
@@ -382,55 +379,42 @@ function handleOverconstrainedConnections_dispatch
  - evaluates Connections.isRoot in the input DAE
  - evaluates Connections.uniqueRootIndices in the input DAE
  - evaluates the rooted operator in the input DAE"
-  input NFOCConnectionGraph inGraph;
-  input String modelNameQualified;
-  input list<Equation> inEquations;
-  input list<Equation> inInitialEquations;
-  output list<Equation> outEquations;
-  output list<Equation> outInitialEquations;
-  output FlatEdges outConnected;
-  output FlatEdges outBroken;
+  input NFOCConnectionGraph graph;
+  input output FlatModel flatModel;
+        output FlatEdges connected;
+        output FlatEdges broken;
+protected
+  list<Equation> eqs, ieqs;
+  list<ComponentRef> roots;
+  CrefIndexTable rooted;
 algorithm
-  (outEquations, outInitialEquations, outConnected, outBroken) := matchcontinue(inGraph, modelNameQualified, inEquations, inInitialEquations)
-    local
-      NFOCConnectionGraph graph;
-      list<Equation> eqs, ieqs;
-      list<ComponentRef> roots;
-      FlatEdges broken, connected;
+  try
+    if Flags.isSet(Flags.CGRAPH) then
+      print("Summary:\n\t" +
+       "Nr Roots:           " + intString(listLength(getDefiniteRoots(graph))) + "\n\t" +
+       "Nr Potential Roots: " + intString(listLength(getPotentialRoots(graph))) + "\n\t" +
+       "Nr Unique Roots:    " + intString(listLength(getUniqueRoots(graph))) + "\n\t" +
+       "Nr Branches:        " + intString(listLength(getBranches(graph))) + "\n\t" +
+       "Nr Connections:     " + intString(listLength(getConnections(graph))) + "\n");
+    end if;
 
-    // handle the connection breaking
-    case (graph, _, eqs, ieqs)
-      algorithm
-        if Flags.isSet(Flags.CGRAPH) then
-          print("Summary: \n\t" +
-           "Nr Roots:           " + intString(listLength(getDefiniteRoots(graph))) + "\n\t" +
-           "Nr Potential Roots: " + intString(listLength(getPotentialRoots(graph))) + "\n\t" +
-           "Nr Unique Roots:    " + intString(listLength(getUniqueRoots(graph))) + "\n\t" +
-           "Nr Branches:        " + intString(listLength(getBranches(graph))) + "\n\t" +
-           "Nr Connections:     " + intString(listLength(getConnections(graph))) + "\n");
-        end if;
+    (roots, connected, broken) := findResultGraph(graph, FlatModel.fullName(flatModel));
 
-        (roots, connected, broken) := findResultGraph(graph, modelNameQualified);
+    if Flags.isSet(Flags.CGRAPH) then
+      print("Roots: " + stringDelimitList(List.map(roots, ComponentRef.toString), ", ") + "\n");
+      print("Broken connections: " + stringDelimitList(List.map1(broken, printConnectionStr, "broken"), ", ") + "\n");
+      print("Allowed connections: " + stringDelimitList(List.map1(connected, printConnectionStr, "allowed"), ", ") + "\n");
+    end if;
 
-        if Flags.isSet(Flags.CGRAPH) then
-          print("Roots: " + stringDelimitList(List.map(roots, ComponentRef.toString), ", ") + "\n");
-          print("Broken connections: " + stringDelimitList(List.map1(broken, printConnectionStr, "broken"), ", ") + "\n");
-          print("Allowed connections: " + stringDelimitList(List.map1(connected, printConnectionStr, "allowed"), ", ") + "\n");
-        end if;
-
-        eqs := evalConnectionsOperators(roots, graph, eqs);
-        ieqs := evalConnectionsOperators(roots, graph, ieqs);
-      then
-        (eqs, ieqs, connected, broken);
-
-    // handle the connection breaking
-    else
-      algorithm
-        true := Flags.isSet(Flags.CGRAPH);
-        print("- NFOCConnectionGraph.handleOverconstrainedConnections failed for model: " + modelNameQualified + "\n");
-      then
-        fail();
-  end matchcontinue;
+    rooted := buildRootedTable(roots, graph);
+    flatModel.variables := list(evalConnectionsOperatorsVar(roots, rooted, graph, v) for v in flatModel.variables);
+    flatModel.equations := evalConnectionsOperatorsEqs(roots, rooted, graph, flatModel.equations);
+    flatModel.initialEquations := evalConnectionsOperatorsEqs(roots, rooted, graph, flatModel.initialEquations);
+  else
+    true := Flags.isSet(Flags.CGRAPH);
+    print("- NFOCConnectionGraph.handleOverconstrainedConnections failed for model: " + FlatModel.fullName(flatModel) + "\n");
+    fail();
+  end try;
 end handleOverconstrainedConnections_dispatch;
 
 function addDefiniteRoot
@@ -915,6 +899,24 @@ algorithm
   end match;
 end printPotentialRootTuple;
 
+protected function buildRootedTable
+  input list<ComponentRef> roots;
+  input NFOCConnectionGraph graph;
+  output CrefIndexTable rooted;
+protected
+  CrefRootsTable table;
+algorithm
+  table := UnorderedMap.new<DefiniteRoots>(ComponentRef.hash, ComponentRef.isEqual);
+
+  // Add branches and connections to table.
+  List.map1_0(getBranches(graph), addBranches, table);
+  List.map1_0(getConnections(graph), addConnectionsRooted, table);
+
+  // Get distance to root.
+  rooted := UnorderedMap.new<Integer>(ComponentRef.hash, ComponentRef.isEqual);
+  setRootDistance(roots, table, 0, {}, rooted);
+end buildRootedTable;
+
 protected function setRootDistance
   input list<ComponentRef> finalRoots;
   input CrefRootsTable table;
@@ -922,7 +924,7 @@ protected function setRootDistance
   input list<ComponentRef> nextLevel;
   input CrefIndexTable rooted;
 algorithm
-  () := matchcontinue(finalRoots,nextLevel)
+  () := match(finalRoots,nextLevel)
     local
       list<ComponentRef> rest,next;
       ComponentRef cr;
@@ -933,39 +935,29 @@ algorithm
       then
         ();
     case(cr::rest,_)
+      guard not UnorderedMap.contains(cr, rooted)
       equation
-        UnorderedMap.addUnique(cr,distance,rooted);
-        next = UnorderedMap.getOrFail(cr, table);
+        UnorderedMap.addNew(cr,distance,rooted);
         //print("- NFOCConnectionGraph.setRootDistance: Set Distance " +
         //   ComponentRef.toString(cr) + " , " + intString(distance) + "\n");
-        //print("- NFOCConnectionGraph.setRootDistance: add " +
-        //   stringDelimitList(List.map(next,ComponentRef.toString),"\n") + " to the queue\n");
-        next = listAppend(nextLevel,next);
+        next = match UnorderedMap.get(cr, table)
+          case SOME(next)
+            //algorithm
+              //print("- NFOCConnectionGraph.setRootDistance: Add " +
+              //   stringDelimitList(List.map(next,ComponentRef.toString),"\n") + " to the queue\n");
+            then listAppend(nextLevel,next);
+          else nextLevel;
+        end match;
         setRootDistance(rest,table,distance,next,rooted);
       then
         ();
-    case(cr::rest,_)
-      equation
-        UnorderedMap.addUnique(cr,distance,rooted);
-        //print("- NFOCConnectionGraph.setRootDistance: Set Distance " +
-        //   ComponentRef.toString(cr) + " , " + intString(distance) + "\n");
-        setRootDistance(rest,table,distance,nextLevel,rooted);
-      then
-        ();
-/*    case(cr::rest,_,_,_,_)
-      equation
-        print("- NFOCConnectionGraph.setRootDistance: found " +
-           ComponentRef.toString(cr) + " twice, value is " + intString(i) + "\n");
-      then
-        setRootDistance(rest,table,distance,nextLevel,rooted);
-*/
     case (_::rest,_)
       algorithm
-      //  print("- NFOCConnectionGraph.setRootDistance: cannot found " + ComponentRef.toString(cr) + "\n");
+        //print("- NFOCConnectionGraph.setRootDistance: found " + ComponentRef.toString(cr) + "\n");
         setRootDistance(rest,table,distance,nextLevel,rooted);
       then
         ();
-  end matchcontinue;
+  end match;
 end setRootDistance;
 
 protected function addBranches
@@ -1006,53 +998,37 @@ algorithm
   UnorderedMap.addUpdate(cref1, function updateRooted(newRoot = cref2), table);
 end addConnectionRooted;
 
-protected function evalConnectionsOperators
-"evaluation of Connections.rooted, Connections.isRoot, Connections.uniqueRootIndices
- - replaces all [Connections.]rooted calls by true or false depending on wheter branche frame_a or frame_b is closer to root
- - return true or false for Connections.isRoot operator if is a root or not
- - return an array of indices for Connections.uniqueRootIndices, see Modelica_StateGraph2
-   See Modelica_StateGraph2:
-    https://github.com/modelica/Modelica_StateGraph2 and
-    https://trac.modelica.org/Modelica/ticket/984 and
-    http://www.ep.liu.se/ecp/043/041/ecp09430108.pdf
-   for a specification of this operator"
+protected function evalConnectionsOperatorsEqs
   input list<ComponentRef> inRoots;
+  input CrefIndexTable rooted;
   input NFOCConnectionGraph graph;
-  input list<Equation> inEquations;
-  output list<Equation> outEquations;
+  input output list<Equation> equations;
 algorithm
-  outEquations := matchcontinue(inRoots,graph,inEquations)
-    local
-      CrefIndexTable rooted;
-      CrefRootsTable table;
-      Edges branches;
-      FlatEdges connections;
+  equations := list(Equation.mapExpShallow(eq,
+      function evaluateOperators(rooted = rooted, roots = inRoots, graph = graph, info = Equation.info(eq)))
+    for eq in equations);
+end evalConnectionsOperatorsEqs;
 
-    case (_,_, {}) then {};
-
-    else
-      equation
-        // built table
-        table = newCrefRootsTable();
-        // add branches to table
-        branches = getBranches(graph);
-        List.map1_0(branches, addBranches, table);
-        // add connections to table
-        connections = getConnections(graph);
-        List.map1_0(connections, addConnectionsRooted, table);
-        // get distance to root
-        //  print("Roots: " + stringDelimitList(List.map(inRoots,ComponentRef.toString),"\n") + "\n");
-        rooted = newCrefIndexTable();
-        setRootDistance(inRoots, table, 0, {}, rooted);
-        outEquations = list(Equation.mapExp(eq,
-            function evaluateOperators(rooted = rooted, roots = inRoots, graph = graph, info = Equation.info(eq)))
-          for eq in inEquations);
-      then outEquations;
-
-  end matchcontinue;
-end evalConnectionsOperators;
+protected function evalConnectionsOperatorsVar
+  input list<ComponentRef> roots;
+  input CrefIndexTable rooted;
+  input NFOCConnectionGraph graph;
+  input output Variable var;
+algorithm
+  var.binding := Binding.mapExpShallow(var.binding,
+    function evaluateOperators(rooted = rooted, roots = roots, graph = graph, info = var.info));
+end evalConnectionsOperatorsVar;
 
 function evaluateOperators
+  "evaluation of Connections.rooted, Connections.isRoot, Connections.uniqueRootIndices
+   - replaces all [Connections.]rooted calls by true or false depending on wheter branche frame_a or frame_b is closer to root
+   - return true or false for Connections.isRoot operator if is a root or not
+   - return an array of indices for Connections.uniqueRootIndices, see Modelica_StateGraph2
+     See Modelica_StateGraph2:
+      https://github.com/modelica/Modelica_StateGraph2 and
+      https://trac.modelica.org/Modelica/ticket/984 and
+      http://www.ep.liu.se/ecp/043/041/ecp09430108.pdf
+     for a specification of this operator"
   input output Expression exp;
   input CrefIndexTable rooted;
   input list<ComponentRef> roots;
@@ -1543,10 +1519,10 @@ algorithm
 
         infoNode =
         {
-          "// Generated by OpenModelica. \n",
-          "// Overconstrained connection graph for model: \n//    ", modelNameQualified, "\n",
-          "// \n",
-          "// Summary: \n",
+          "// Generated by OpenModelica.\n",
+          "// Overconstrained connection graph for model:\n//    ", modelNameQualified, "\n",
+          "//\n",
+          "// Summary:\n",
           "//   Roots:              ", nrDR, "\n",
           "//   Potential Roots:    ", nrPR, "\n",
           "//   Unique Roots:       ", nrUR, "\n",
@@ -1761,18 +1737,6 @@ function newCrefCrefTable
 algorithm
   table := UnorderedMap.new<ComponentRef>(ComponentRef.hash, ComponentRef.isEqual);
 end newCrefCrefTable;
-
-function newCrefIndexTable
-  output CrefIndexTable table;
-algorithm
-  table := UnorderedMap.new<Integer>(ComponentRef.hash, ComponentRef.isEqual);
-end newCrefIndexTable;
-
-function newCrefRootsTable
-  output CrefRootsTable table;
-algorithm
-  table := UnorderedMap.new<DefiniteRoots>(ComponentRef.hash, ComponentRef.isEqual);
-end newCrefRootsTable;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFOCConnectionGraph;

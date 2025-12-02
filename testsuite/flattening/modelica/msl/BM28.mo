@@ -1,7 +1,6 @@
 // name:     BM28 -  TwoOutputs component
 // keywords: TwoOutputs
 // status:   correct
-// cflags: -d=-newInst
 //
 // Testing instantiation of the Math.TwoOutputs component.
 //
@@ -762,6 +761,7 @@ end Modelica;
 model BM28
   Modelica.Blocks.Math.TwoOutputs twoOutputs1 annotation(Placement(visible=true,
         transformation(                                                                        x=-14.712,y=14.1932,scale=0.1)));
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end BM28;
 
 // class BM28

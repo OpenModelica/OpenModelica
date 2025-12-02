@@ -39,7 +39,9 @@
 
 #include "OMEditApplication.h"
 #include "CrashReport/CrashReportDialog.h"
+#ifndef GC_THREADS
 #define GC_THREADS
+#endif
 
 extern "C" {
 #include "meta/meta_modelica.h"
@@ -114,7 +116,7 @@ void signalHandler(int signalNumber)
       stackTrace.append(QString("%1\n").arg(symbollist[i]));
 
       char syscom[PATH_MAX];
-      sprintf(syscom,"addr2line %p -e %s > addr2lineOutput.txt", addrlist[i], qApp->applicationFilePath().toStdString().c_str());
+      snprintf(syscom,PATH_MAX, "addr2line %p -e %s > addr2lineOutput.txt", addrlist[i], qApp->applicationFilePath().toStdString().c_str());
       system(syscom);
       QFile file(QString("addr2lineOutput.txt"));
       if (file.open(QIODevice::ReadOnly)) {
@@ -140,7 +142,6 @@ void printOMEditUsage()
 {
   printf("Usage: OMEdit --Debug=true|false] [files]\n");
   printf("    --Debug=[true|false]            Enables the debugging features like QUndoView, diffModelicaFileListings view. Default is false.\n");
-  printf("    --NAPI=[true|false]             Enables the use of new json based api.\n");
   printf("    --NAPIProfiling=[true|false]    Enables the profiling of new json based api.\n");
   printf("    files                       List of Modelica files(*.mo) to open.\n");
 }
@@ -165,7 +166,7 @@ int main(int argc, char *argv[])
     }
   }
   Q_INIT_RESOURCE(resource_omedit);
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 6, 0))
+#if QT_VERSION >= QT_VERSION_CHECK(5, 6, 0) && QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
   QApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
 #endif
   OMEditApplication a(argc, argv, threadData);

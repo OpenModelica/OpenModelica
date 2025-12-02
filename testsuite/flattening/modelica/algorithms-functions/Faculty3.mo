@@ -1,7 +1,6 @@
 // name:     Faculty3
 // keywords: algorithm
 // status:   correct
-// cflags: -d=-newInst
 //
 // Definition of faculty using a while loop. The while loop can not be
 // unrolled.
@@ -26,6 +25,7 @@ model Faculty3Model
   Integer y;
 equation
   y = Faculty3(x);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Faculty3Model;
 
 // Result:

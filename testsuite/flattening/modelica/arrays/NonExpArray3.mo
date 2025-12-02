@@ -1,7 +1,6 @@
 // name:     Non-expanded Array3
 // keywords: array
 // status:   correct
-// cflags:   +a -d=-newInst
 //
 // A test of non-expanded arrays for the case of array containing arrays with bindings.
 //
@@ -15,6 +14,7 @@ model Array3
   end A;
 
   A[2] a (x = {{1,2,3},{4,5,6}}, y = {{1,2,3},{4,5,6}});
+  annotation(__OpenModelica_commandLineOptions="+a -d=-newInst");
 end Array3;
 
 // Result:

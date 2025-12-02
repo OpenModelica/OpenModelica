@@ -1,7 +1,6 @@
 // name: ProtectedAccess2
 // keywords: protected, access
 // status: correct
-// cflags: -d=-newInst
 //
 // Tests access to protected elements of another class
 // THIS TEST SHOULD FAIL!
@@ -16,6 +15,7 @@ model ProtectedAccess2
   TestModel tm;
 equation
   tm.x = 3;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ProtectedAccess2;
 
 // Result:

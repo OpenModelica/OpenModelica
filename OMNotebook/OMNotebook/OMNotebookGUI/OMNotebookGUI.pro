@@ -4,13 +4,13 @@
 # Adrian Pop [adrpo@ida.liu.se] 2008-10-02
 # Adeel Asghar [adeel.asghar@ida.liu.se] 2011-03-05
 
-QT += network core gui xml svg
-greaterThan(QT_MAJOR_VERSION, 4) {
-    QT *= printsupport widgets webkitwidgets
+QT += network core gui xml svg printsupport widgets
+equals(QT_MAJOR_VERSION, 6) {
+  QT += core5compat
 }
 
 # Set the C++ standard.
-CONFIG += c++1z
+CONFIG += c++17
 
 TRANSLATIONS = Resources/nls/OMNotebook_de_DE.ts
 
@@ -170,7 +170,7 @@ win32 {
   PLOTLIBS = -L$$(OMBUILDDIR)/build/lib/omc -lOMPlot -lomqwt
   PLOTINC = $$(OMBUILDDIR)/include/omplot \
             $$(OMBUILDDIR)/include/omplot/qwt
-  OMCLIBS = -L$$(OMBUILDDIR)/lib/omc -lOpenModelicaCompiler -lomcruntime -lOpenModelicaRuntimeC -lfmilib -lomcgc -lpthread
+  OMCLIBS = -L$$(OMBUILDDIR)/lib/omc -lOpenModelicaCompiler -lOpenModelicaRuntimeC -lomcgc
   OMCINC = $$(OMBUILDDIR)/include/omc/c
 } else {
   include(OMNotebook.config)

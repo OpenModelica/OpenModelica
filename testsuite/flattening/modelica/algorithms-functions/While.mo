@@ -1,7 +1,6 @@
 // name: While
 // keywords: while
 // status: correct
-// cflags: -d=-newInst
 //
 // Tests a simple while-loop
 //
@@ -14,6 +13,7 @@ algorithm
   while y < x loop
     y := y + 1;
   end while;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end While;
 
 // Result:

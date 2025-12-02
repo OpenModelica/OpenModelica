@@ -1,7 +1,6 @@
 // name:     Function12
 // keywords: function, short class def
 // status:   correct
-// cflags: -d=-newInst
 //
 // This tests function as short class definition.
 
@@ -32,6 +31,7 @@ equation
   when doSample then
     x=f(pre(x), u);
   end when;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end BaseSampler;
 // Result:
 // class BaseSampler

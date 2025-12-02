@@ -1,7 +1,6 @@
 // name: InheritanceMultiple
 // keywords: inheritance:
 // status: correct
-// cflags: -d=-newInst
 //
 // tests multiple inheritance
 //
@@ -18,6 +17,7 @@ class InheritanceMultiple
   extends Base1(baseReal1 = 2.0);
   extends Base2(baseReal2 = 3.0);
   parameter Real finalReal;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end InheritanceMultiple;
 
 // Result:

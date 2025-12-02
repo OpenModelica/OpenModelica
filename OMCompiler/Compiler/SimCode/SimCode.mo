@@ -161,6 +161,7 @@ uniontype SimCode
     Option<DaeModeData> daeModeData;
     list<SimEqSystem> inlineEquations;
     Option<OMSIData> omsiData "used for OMSI to generate equations code";
+    Boolean scalarized;
   end SIMCODE;
 end SimCode;
 
@@ -262,9 +263,13 @@ end BaseUnit;
 uniontype ModelInfo "Container for metadata about a Modelica model."
   record MODELINFO
     Absyn.Path name;
-    String fileName;
     String description;
+    String version;
+    String author;
+    String license;
+    String copyright;
     String directory;
+    String fileName;
     VarInfo varInfo;
     SimCodeVar.SimVars vars;
     list<SimCodeFunction.Function> functions;
@@ -440,6 +445,15 @@ uniontype SimEqSystem
     BackendDAE.EquationAttributes eqAttr;
   end SES_ARRAY_CALL_ASSIGN;
 
+  record SES_RESIZABLE_ASSIGN
+    "a resizable assignment calling a for loop body function."
+    Integer index;
+    Integer call_index;
+    list<BackendDAE.SimIterator> iters;
+    DAE.ElementSource source;
+    BackendDAE.EquationAttributes eqAttr;
+  end SES_RESIZABLE_ASSIGN;
+
   record SES_GENERIC_ASSIGN
     "a generic assignment calling a for loop body function with an index list."
     Integer index;
@@ -522,6 +536,16 @@ uniontype SimEqSystem
     BackendDAE.EquationAttributes eqAttr;
   end SES_FOR_LOOP;
 
+  record SES_FOR_EQUATION
+    Integer index;
+    DAE.Exp iter;
+    DAE.Exp startIt;
+    DAE.Exp endIt;
+    list<SimEqSystem> body;
+    DAE.ElementSource source;
+    BackendDAE.EquationAttributes eqAttr;
+  end SES_FOR_EQUATION;
+
   record SES_ALIAS
     Integer index;
     Integer aliasOf;
@@ -560,18 +584,21 @@ public uniontype SimGenericCall
     list<BackendDAE.SimIterator> iters;
     DAE.Exp lhs;
     DAE.Exp rhs;
+    Boolean resizable;
   end SINGLE_GENERIC_CALL;
 
   record IF_GENERIC_CALL
     Integer index;
     list<BackendDAE.SimIterator> iters;
     list<SimBranch> branches;
+    Boolean resizable;
   end IF_GENERIC_CALL;
 
   record WHEN_GENERIC_CALL
     Integer index;
     list<BackendDAE.SimIterator> iters;
     list<SimBranch> branches;
+    Boolean resizable;
   end WHEN_GENERIC_CALL;
 end SimGenericCall;
 

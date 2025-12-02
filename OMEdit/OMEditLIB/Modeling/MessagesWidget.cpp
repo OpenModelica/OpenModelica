@@ -41,6 +41,8 @@
 #include "Simulation/SimulationDialog.h"
 #include "Simulation//SimulationOutputWidget.h"
 #include "OMS/OMSSimulationOutputWidget.h"
+#include "FMI/FMUExportOutputWidget.h"
+#include "CRML/CRMLTranslatorOutputWidget.h"
 
 #include <QMenu>
 #include <QMessageBox>
@@ -234,20 +236,15 @@ void MessageWidget::addGUIMessage(MessageItem messageItem)
   QString linkFormat = QString("[%1: %2]: <a href=\"omeditmessagesbrowser:///%3?lineNumber=%4\">%5</a>");
   QString errorMessage;
   QString message;
-  if(messageItem.getMessageItemType()== MessageItem::Modelica) {
-    // if message already have tags then just use it.
-    if (Qt::mightBeRichText(messageItem.getMessage())) {
-      message = messageItem.getMessage();
-    } else {
-      message = Qt::convertFromPlainText(messageItem.getMessage()).remove("<p>").remove("</p>");
-    }
-  } else if(messageItem.getMessageItemType()== MessageItem::CompositeModel) {
-    message = messageItem.getMessage().remove("<p>").remove("</p>");
+  // if message already have tags then just use it.
+  if (Qt::mightBeRichText(messageItem.getMessage())) {
+    message = messageItem.getMessage();
+  } else {
+    message = Qt::convertFromPlainText(messageItem.getMessage()).remove("<p>").remove("</p>");
   }
   if (messageItem.getFileName().isEmpty()) { // if custom error message
     errorMessage = message;
-  } else if (messageItem.getMessageItemType()== MessageItem::CompositeModel ||
-             MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem(messageItem.getFileName())) {
+  } else if (MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem(messageItem.getFileName())) {
     // If the class is only loaded in AST via loadString then create link for the error message.
     errorMessage = linkFormat.arg(messageItem.getFileName())
         .arg(messageItem.getLocation())
@@ -327,7 +324,7 @@ void MessageWidget::openErrorMessageClass(QUrl url)
   } else {
     QMessageBox::information(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::information),
                              GUIMessages::getMessage(GUIMessages::CLASS_NOT_FOUND)
-                             .arg(className), Helper::ok);
+                             .arg(className), QMessageBox::Ok);
   }
 }
 
@@ -576,6 +573,22 @@ bool MessagesWidget::closeTab(int index)
   // Close OMSSimulationOutputWidget
   OMSSimulationOutputWidget *pOMSSimulationOutputWidget = qobject_cast<OMSSimulationOutputWidget*>(mpMessagesTabWidget->widget(index));
   if (pOMSSimulationOutputWidget && !pOMSSimulationOutputWidget->isSimulationProcessRunning()) {
+    mpMessagesTabWidget->removeTab(index);
+    emit messageTabClosed(index);
+    return true;
+  }
+  // Close FMUExportOutputWidget
+  FmuExportOutputWidget *pFmuExportOutputWidget = qobject_cast<FmuExportOutputWidget*>(mpMessagesTabWidget->widget(index));
+  if (pFmuExportOutputWidget
+      && !pFmuExportOutputWidget->isCompilationProcessRunning()
+      && !pFmuExportOutputWidget->isPostCompilationProcessRunning()) {
+    mpMessagesTabWidget->removeTab(index);
+    emit messageTabClosed(index);
+    return true;
+  }
+  // Close CRMLTranslatorOutputWidget
+  CRMLTranslatorOutputWidget *pCRMLTranslatorOutputWidget = qobject_cast<CRMLTranslatorOutputWidget*>(mpMessagesTabWidget->widget(index));
+  if (pCRMLTranslatorOutputWidget && !pCRMLTranslatorOutputWidget->isTranslationProcessRunning()) {
     mpMessagesTabWidget->removeTab(index);
     emit messageTabClosed(index);
     return true;

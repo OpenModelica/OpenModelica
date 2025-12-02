@@ -80,17 +80,17 @@ private:
   Label *mpStopTimeLabel;
   QLineEdit *mpStopTimeTextBox;
   QRadioButton *mpNumberofIntervalsRadioButton;
-  QSpinBox *mpNumberofIntervalsSpinBox;
+  SpinBox *mpNumberofIntervalsSpinBox;
   QRadioButton *mpIntervalRadioButton;
   QLineEdit *mpIntervalTextBox;
   QGroupBox *mpIntegrationGroupBox;
   Label *mpMethodLabel;
-  QComboBox *mpMethodComboBox;
+  ComboBox *mpMethodComboBox;
   QToolButton *mpMehtodHelpButton;
   Label *mpToleranceLabel;
   QLineEdit *mpToleranceTextBox;
   Label *mpJacobianLabel;
-  QComboBox *mpJacobianComboBox;
+  ComboBox *mpJacobianComboBox;
   QGroupBox *mpOptionsGroupBox;
   QCheckBox *mpRootFindingCheckBox;
   QCheckBox *mpRestartAfterEventCheckBox;
@@ -99,11 +99,11 @@ private:
   Label *mpMaxStepSizeLabel;
   QLineEdit *mpMaxStepSizeTextBox;
   Label *mpMaxIntegrationOrderLabel;
-  QSpinBox *mpMaxIntegrationOrderSpinBox;
+  SpinBox *mpMaxIntegrationOrderSpinBox;
   Label *mpCflagsLabel;
   QLineEdit *mpCflagsTextBox;
   Label *mpNumberOfProcessorsLabel;
-  QSpinBox *mpNumberOfProcessorsSpinBox;
+  SpinBox *mpNumberOfProcessorsSpinBox;
   Label *mpNumberOfProcessorsNoteLabel;
   QCheckBox *mpBuildOnlyCheckBox;
   QCheckBox *mpLaunchTransformationalDebuggerCheckBox;
@@ -123,26 +123,24 @@ private:
   QLineEdit *mpModelSetupFileTextBox;
   QPushButton *mpModelSetupFileBrowseButton;
   Label *mpInitializationMethodLabel;
-  QComboBox *mpInitializationMethodComboBox;
-  Label *mpOptimizationMethodLabel;
-  QComboBox *mpOptimizationMethodComboBox;
+  ComboBox *mpInitializationMethodComboBox;
   Label *mpEquationSystemInitializationFileLabel;
   QLineEdit *mpEquationSystemInitializationFileTextBox;
   QPushButton *mpEquationSystemInitializationFileBrowseButton;
   Label *mpEquationSystemInitializationTimeLabel;
   QLineEdit *mpEquationSystemInitializationTimeTextBox;
   Label *mpClockLabel;
-  QComboBox *mpClockComboBox;
+  ComboBox *mpClockComboBox;
   Label *mpLinearSolverLabel;
-  QComboBox *mpLinearSolverComboBox;
+  ComboBox *mpLinearSolverComboBox;
   Label *mpNonLinearSolverLabel;
-  QComboBox *mpNonLinearSolverComboBox;
+  ComboBox *mpNonLinearSolverComboBox;
   Label *mpLinearizationTimeLabel;
   QLineEdit *mpLinearizationTimeTextBox;
   Label *mpOutputVariablesLabel;
   QLineEdit *mpOutputVariablesTextBox;
   Label  *mpProfilingLabel;
-  QComboBox *mpProfilingComboBox;
+  ComboBox *mpProfilingComboBox;
   QCheckBox *mpCPUTimeCheckBox;
   QCheckBox *mpEnableAllWarningsCheckBox;
   QGroupBox *mpLoggingGroupBox;
@@ -157,7 +155,7 @@ private:
   // Output Tab
   QWidget *mpOutputTab;
   Label *mpOutputFormatLabel;
-  QComboBox *mpOutputFormatComboBox;
+  ComboBox *mpOutputFormatComboBox;
   QCheckBox *mpSinglePrecisionCheckBox;
   Label *mpFileNameLabel;
   QLineEdit *mpFileNameTextBox;
@@ -211,7 +209,7 @@ public:
 public slots:
   void numberOfIntervalsRadioToggled(bool toggle);
   void intervalRadioToggled(bool toggle);
-  void enableDisableOptions(QString method);
+  void enableDisableOptions(int index);
   void showIntegrationHelp();
   void buildOnly(bool checked);
   void interactiveSimulation(bool checked);
@@ -221,7 +219,7 @@ public slots:
   void simulate();
   void reject();
 private slots:
-  void resultFileNameChanged(QString text);
+  void resultFileNameChanged(int index);
   void showVariableFilterHelp();
 };
 
@@ -233,7 +231,7 @@ public:
 private:
   LibraryTreeItem *mpLibraryTreeItem;
   Label *mpDataReconciliationAlgorithmLabel;
-  QComboBox *mpDataReconciliationAlgorithmComboBox;
+  ComboBox *mpDataReconciliationAlgorithmComboBox;
   Label *mpDataReconciliationMeasurementInputFileLabel;
   QLineEdit *mpDataReconciliationMeasurementInputFileTextBox;
   QPushButton *mpDataReconciliationMeasurementInputFileBrowseButton;

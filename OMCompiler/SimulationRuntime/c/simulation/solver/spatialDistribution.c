@@ -94,7 +94,7 @@ int pruneSpatialDistribution(SPATIAL_DISTRIBUTION_DATA* spatialDistribution, int
  */
 SPATIAL_DISTRIBUTION_DATA* allocSpatialDistribution(unsigned int nSpatialDistributions) {
   /* Debug info */
-  infoStreamPrint(LOG_SPATIALDISTR, 0, "Allocating memory for %i spatial distribution(s).", nSpatialDistributions);
+  infoStreamPrint(OMC_LOG_SPATIALDISTR, 0, "Allocating memory for %i spatial distribution(s).", nSpatialDistributions);
 
   /* Variables */
   int i;
@@ -126,7 +126,7 @@ SPATIAL_DISTRIBUTION_DATA* allocSpatialDistribution(unsigned int nSpatialDistrib
  */
 void freeSpatialDistribution(SPATIAL_DISTRIBUTION_DATA* spatialDistributionData, unsigned int nSpatialDistributions) {
   /* Debug info */
-  infoStreamPrint(LOG_SPATIALDISTR, 0, "Freeing %i spatial distribution(s).", nSpatialDistributions);
+  infoStreamPrint(OMC_LOG_SPATIALDISTR, 0, "Freeing %i spatial distribution(s).", nSpatialDistributions);
 
   /* Variables */
   int i;
@@ -154,7 +154,7 @@ void freeSpatialDistribution(SPATIAL_DISTRIBUTION_DATA* spatialDistributionData,
  */
 void initSpatialDistribution(DATA* data, threadData_t* threadData, unsigned int index, real_array* initialPoints, real_array* initialValues, unsigned int length) {
   /* Debug info */
-  infoStreamPrint(LOG_SPATIALDISTR, 1, "Initializing spatial distributions (index=%i)", index);
+  infoStreamPrint(OMC_LOG_SPATIALDISTR, 1, "Initializing spatial distributions (index=%i)", index);
 
   /* Variables */
   int i;
@@ -169,23 +169,23 @@ void initSpatialDistribution(DATA* data, threadData_t* threadData, unsigned int 
 
   /* Error checking */
   if (fabs(initPnts[0]) > SPATIAL_EPS ) {
-    errorStreamPrint(LOG_STDOUT, 1, "Initialization of spatial distribution with index %i failed.", index);
-    errorStreamPrint(LOG_STDOUT, 0, "initialPoints[0] = %e is not zero.", initPnts[0]);
-    messageClose(LOG_STDOUT);
+    errorStreamPrint(OMC_LOG_STDOUT, 1, "Initialization of spatial distribution with index %i failed.", index);
+    errorStreamPrint(OMC_LOG_STDOUT, 0, "initialPoints[0] = %e is not zero.", initPnts[0]);
+    messageClose(OMC_LOG_STDOUT);
     omc_throw_function(threadData);
   }
   else if (fabs(initPnts[length-1] - 1.0) > SPATIAL_EPS) {
-    errorStreamPrint(LOG_STDOUT, 1, "Initialization of spatial distribution with index %i failed.", index);
-    errorStreamPrint(LOG_STDOUT, 0, "initialPoints[end] = %e is not one.", initPnts[length-1]);
-    messageClose(LOG_STDOUT);
+    errorStreamPrint(OMC_LOG_STDOUT, 1, "Initialization of spatial distribution with index %i failed.", index);
+    errorStreamPrint(OMC_LOG_STDOUT, 0, "initialPoints[end] = %e is not one.", initPnts[length-1]);
+    messageClose(OMC_LOG_STDOUT);
     omc_throw_function(threadData);
   }
   for (i=0; i<length-2; i++) {
     if (initPnts[i] > initPnts[i+1]) {
-      errorStreamPrint(LOG_STDOUT, 1, "Initialization of spatial distribution with index %i failed.", index);
-      errorStreamPrint(LOG_STDOUT, 0, "initialPoints[%i] > initialPoints[%i]", i, i+1);
-      errorStreamPrint(LOG_STDOUT, 0, "%f > %f", initVals[i], initPnts[i+1]);
-      messageClose(LOG_STDOUT);
+      errorStreamPrint(OMC_LOG_STDOUT, 1, "Initialization of spatial distribution with index %i failed.", index);
+      errorStreamPrint(OMC_LOG_STDOUT, 0, "initialPoints[%i] > initialPoints[%i]", i, i+1);
+      errorStreamPrint(OMC_LOG_STDOUT, 0, "%f > %f", initVals[i], initPnts[i+1]);
+      messageClose(OMC_LOG_STDOUT);
       omc_throw_function(threadData);
     }
   }
@@ -201,10 +201,10 @@ void initSpatialDistribution(DATA* data, threadData_t* threadData, unsigned int 
     if (initPnts[i] == initPnts[i+1]) {
       numSamePos += 1;
       if (numSamePos > 1) {
-        errorStreamPrint(LOG_STDOUT, 1, "Initialization of spatial distribution with index %i failed.", index);
-        errorStreamPrint(LOG_STDOUT, 0, "initialPoints[%i] = initialPoints[%i] = initialPoints[%i]", i-1, i, i+1);
-        errorStreamPrint(LOG_STDOUT, 0, "Only events with one pre-value and one value are allowed.");
-        messageClose(LOG_STDOUT);
+        errorStreamPrint(OMC_LOG_STDOUT, 1, "Initialization of spatial distribution with index %i failed.", index);
+        errorStreamPrint(OMC_LOG_STDOUT, 0, "initialPoints[%i] = initialPoints[%i] = initialPoints[%i]", i-1, i, i+1);
+        errorStreamPrint(OMC_LOG_STDOUT, 0, "Only events with one pre-value and one value are allowed.");
+        messageClose(OMC_LOG_STDOUT);
         omc_throw_function(threadData);
       }
       eventData.position = initPnts[i];
@@ -222,11 +222,11 @@ void initSpatialDistribution(DATA* data, threadData_t* threadData, unsigned int 
   spatialDistributionData->isInitialized = 1 /* true */;
 
   /* Debug info */
-  doubleEndedListPrint(transportedQuantityList, LOG_SPATIALDISTR, &printTransportedQuantity);
-  infoStreamPrint(LOG_SPATIALDISTR, 0, "List of events");
-  doubleEndedListPrint(spatialDistributionData->storedEvents, LOG_SPATIALDISTR, &printTransportedQuantity);
-  messageClose(LOG_SPATIALDISTR);
-  infoStreamPrint(LOG_SPATIALDISTR, 0, "Finished initializing spatial distribution (index=%i)", index);
+  doubleEndedListPrint(transportedQuantityList, OMC_LOG_SPATIALDISTR, &printTransportedQuantity);
+  infoStreamPrint(OMC_LOG_SPATIALDISTR, 0, "List of events");
+  doubleEndedListPrint(spatialDistributionData->storedEvents, OMC_LOG_SPATIALDISTR, &printTransportedQuantity);
+  messageClose(OMC_LOG_SPATIALDISTR);
+  infoStreamPrint(OMC_LOG_SPATIALDISTR, 0, "Finished initializing spatial distribution (index=%i)", index);
 }
 
 
@@ -263,14 +263,14 @@ void storeSpatialDistribution(DATA* data, threadData_t *threadData, unsigned int
   storedEventsList = spatialDistribution->storedEvents;
 
   /* Debug log */
-  infoStreamPrint(LOG_SPATIALDISTR, 1, "Calling storeSpatialDistribution (index=%i, time=%e)", index, data->localData[0]->timeValue);
-  infoStreamPrint(LOG_SPATIALDISTR, 0, "spatialDistribution(%f, %f, %f, %s)", in0, in1, posX, isPositiveVelocity?"true":"false");
-  doubleEndedListPrint(transportedQuantityList, LOG_SPATIALDISTR, &printTransportedQuantity);
-  infoStreamPrint(LOG_SPATIALDISTR, 0, "List of events");
-  doubleEndedListPrint(storedEventsList, LOG_SPATIALDISTR, &printTransportedQuantity);
+  infoStreamPrint(OMC_LOG_SPATIALDISTR, 1, "Calling storeSpatialDistribution (index=%i, time=%e)", index, data->localData[0]->timeValue);
+  infoStreamPrint(OMC_LOG_SPATIALDISTR, 0, "spatialDistribution(%f, %f, %f, %s)", in0, in1, posX, isPositiveVelocity?"true":"false");
+  doubleEndedListPrint(transportedQuantityList, OMC_LOG_SPATIALDISTR, &printTransportedQuantity);
+  infoStreamPrint(OMC_LOG_SPATIALDISTR, 0, "List of events");
+  doubleEndedListPrint(storedEventsList, OMC_LOG_SPATIALDISTR, &printTransportedQuantity);
 
   if (data->simulationInfo->discreteCall) {
-    errorStreamPrint(LOG_STDOUT, 0, "Discrete call of storeSpatialDistribution");
+    errorStreamPrint(OMC_LOG_STDOUT, 0, "Discrete call of storeSpatialDistribution");
     omc_throw_function(threadData);
   }
 
@@ -317,14 +317,14 @@ void storeSpatialDistribution(DATA* data, threadData_t *threadData, unsigned int
   /* Remove nodes that droppen of spatial distribution */
   walkedOverEvents = pruneSpatialDistribution(spatialDistribution, isPositiveVelocity);
   if (walkedOverEvents > 1) {
-    warningStreamPrint(LOG_STDOUT, 0, "Removed more then one event from spatialDistribution. Step size to big!");
-    warningStreamPrint(LOG_STDOUT, 0, "time: %f, spatialDistribution index: %i, number of events: %i", data->localData[0]->timeValue, index, walkedOverEvents);
-    messageClose(LOG_STDOUT);
+    warningStreamPrint(OMC_LOG_STDOUT, 1, "Removed more then one event from spatialDistribution. Step size to big!");
+    warningStreamPrint(OMC_LOG_STDOUT, 0, "time: %f, spatialDistribution index: %i, number of events: %i", data->localData[0]->timeValue, index, walkedOverEvents);
+    messageCloseWarning(OMC_LOG_STDOUT);
   }
 
   /* Update oldPosX */
   spatialDistribution->oldPosX = posX;
-  messageClose(LOG_SPATIALDISTR);
+  messageClose(OMC_LOG_SPATIALDISTR);
   return;
 }
 
@@ -370,10 +370,10 @@ double spatialDistribution(DATA* data, threadData_t *threadData, unsigned int in
   transportedQuantityList = spatialDistribution->transportedQuantity;
 
   /* Debug log */
-  infoStreamPrint(LOG_SPATIALDISTR, 1, "Calling spatialDistribution (index=%i, time=%e)", index, data->localData[0]->timeValue);
-  infoStreamPrint(LOG_SPATIALDISTR, 0, "(out0,out1) = spatialDistribution(%f, %f, %f, %s)", in0, in1, posX, isPositiveVelocity?"true":"false");
-  infoStreamPrint(LOG_SPATIALDISTR, 0, "                                     in0        in1        x     isPositiveVelocity");
-  doubleEndedListPrint(transportedQuantityList, LOG_SPATIALDISTR, &printTransportedQuantity);
+  infoStreamPrint(OMC_LOG_SPATIALDISTR, 1, "Calling spatialDistribution (index=%i, time=%e)", index, data->localData[0]->timeValue);
+  infoStreamPrint(OMC_LOG_SPATIALDISTR, 0, "(out0,out1) = spatialDistribution(%f, %f, %f, %s)", in0, in1, posX, isPositiveVelocity?"true":"false");
+  infoStreamPrint(OMC_LOG_SPATIALDISTR, 0, "                                     in0        in1        x     isPositiveVelocity");
+  doubleEndedListPrint(transportedQuantityList, OMC_LOG_SPATIALDISTR, &printTransportedQuantity);
 
   /* Get deltaX */
   deltaX = spatialDistribution->oldPosX - posX;
@@ -395,7 +395,7 @@ double spatialDistribution(DATA* data, threadData_t *threadData, unsigned int in
 
   /* Check if x was reinitialized */
   if (deltaX > SPATIAL_ZERO_DELTA_X && data->simulationInfo->discreteCall) {
-    errorStreamPrint(LOG_STDOUT, 0, "x got reinitialized during an event at time %f. OpenModelica can't handle that.", data->localData[0]->timeValue);
+    errorStreamPrint(OMC_LOG_STDOUT, 0, "x got reinitialized during an event at time %f. OpenModelica can't handle that.", data->localData[0]->timeValue);
     omc_throw_function(threadData);
   }
 
@@ -405,8 +405,8 @@ double spatialDistribution(DATA* data, threadData_t *threadData, unsigned int in
     lastNodeData = (TRANSPORTED_QUANTITY_DATA*) lastDataDoubleEndedList(transportedQuantityList);
     out0 = firstNodeData->value;
     *out1 = lastNodeData->value;
-    infoStreamPrint(LOG_SPATIALDISTR, 0, "(out0,out1) = (%f, %f)", out0, *out1);
-    messageClose(LOG_SPATIALDISTR);
+    infoStreamPrint(OMC_LOG_SPATIALDISTR, 0, "(out0,out1) = (%f, %f)", out0, *out1);
+    messageClose(OMC_LOG_SPATIALDISTR);
     return out0;
   }
 
@@ -415,12 +415,12 @@ double spatialDistribution(DATA* data, threadData_t *threadData, unsigned int in
 
   /* Handle events that would come out of spatialDistribution */
   if (walkedOverEvents > 1) {
-    warningStreamPrint(LOG_STDOUT, 1, "Need to output more then one event from spatialDistribution. Step size to big!");
-    warningStreamPrint(LOG_STDOUT, 0, "time: %f, spatialDistribution index: %i, number of events: %i", data->localData[0]->timeValue, index, walkedOverEvents);
-    messageClose(LOG_STDOUT);
+    warningStreamPrint(OMC_LOG_STDOUT, 1, "Need to output more then one event from spatialDistribution. Step size to big!");
+    warningStreamPrint(OMC_LOG_STDOUT, 0, "time: %f, spatialDistribution index: %i, number of events: %i", data->localData[0]->timeValue, index, walkedOverEvents);
+    messageCloseWarning(OMC_LOG_STDOUT);
   }
   if (walkedOverEvents>0 && !data->simulationInfo->discreteCall) {
-    infoStreamPrint(LOG_SPATIALDISTR, 0, "Found event in spatial distribution at time %f", data->localData[0]->timeValue);
+    infoStreamPrint(OMC_LOG_SPATIALDISTR, 0, "Found event in spatial distribution at time %f", data->localData[0]->timeValue);
     outValue = eventPreValue;
   }
 
@@ -449,8 +449,8 @@ double spatialDistribution(DATA* data, threadData_t *threadData, unsigned int in
     }
   }
 
-  infoStreamPrint(LOG_SPATIALDISTR, 0, "(out0,out1) = (%f, %f)", out0, *out1);
-  messageClose(LOG_SPATIALDISTR);
+  infoStreamPrint(OMC_LOG_SPATIALDISTR, 0, "(out0,out1) = (%f, %f)", out0, *out1);
+  messageClose(OMC_LOG_SPATIALDISTR);
   return out0;
 }
 
@@ -491,7 +491,7 @@ double spatialDistributionZeroCrossing(DATA* data, threadData_t *threadData, uns
 
   if (doubleEndedListLen(storedEventsList) == 0) {
     zeroCrossingValue = data->simulationInfo->zeroCrossingsPre[relationIndex];
-    infoStreamPrint(LOG_SPATIALDISTR, 0, "List of events for spatialDistributionZeroCrossing(%e) = %e\n", posX, zeroCrossingValue);
+    infoStreamPrint(OMC_LOG_SPATIALDISTR, 0, "List of events for spatialDistributionZeroCrossing(%e) = %e\n", posX, zeroCrossingValue);
     return zeroCrossingValue;
   }
 
@@ -560,8 +560,8 @@ double spatialDistributionZeroCrossing(DATA* data, threadData_t *threadData, uns
   }
 
 
-  infoStreamPrint(LOG_SPATIALDISTR, 0, "List of events for spatialDistributionZeroCrossing(%e) = %e\n", posX, zeroCrossingValue);
-  doubleEndedListPrint(storedEventsList, LOG_SPATIALDISTR, &printTransportedQuantity);
+  infoStreamPrint(OMC_LOG_SPATIALDISTR, 0, "List of events for spatialDistributionZeroCrossing(%e) = %e\n", posX, zeroCrossingValue);
+  doubleEndedListPrint(storedEventsList, OMC_LOG_SPATIALDISTR, &printTransportedQuantity);
 
   return zeroCrossingValue;
 }
@@ -657,7 +657,7 @@ void addNewNodeSpatialDistribution(SPATIAL_DISTRIBUTION_DATA* spatialDistributio
   newEventNodeData.position = position;
 
   /* Add node to transported quantity list */
-  infoStreamPrint(LOG_SPATIALDISTR, 0, "Adding (%e,%e) at %s.", newNodeData.position, newNodeData.value, front?"front":"back");
+  infoStreamPrint(OMC_LOG_SPATIALDISTR, 0, "Adding (%e,%e) at %s.", newNodeData.position, newNodeData.value, front?"front":"back");
   if (front) {
     // Make sure new first node is smaller then previous first node
     TRANSPORTED_QUANTITY_DATA* oldFront = (TRANSPORTED_QUANTITY_DATA*) firstDataDoubleEndedList(transportedQuantityList);
@@ -697,13 +697,13 @@ void addNewNodeSpatialDistribution(SPATIAL_DISTRIBUTION_DATA* spatialDistributio
       }
       pushBackDoubleEndedList(storedEventsList, (const void*) &newEventNodeData);
     }
-    infoStreamPrint(LOG_SPATIALDISTR, 0, "Adding event (%e,%e) at %s.", newEventNodeData.position, newEventNodeData.zeroCrossValue, front?"front":"back");
+    infoStreamPrint(OMC_LOG_SPATIALDISTR, 0, "Adding event (%e,%e) at %s.", newEventNodeData.position, newEventNodeData.zeroCrossValue, front?"front":"back");
   }
 
   /* Debug prints */
-  doubleEndedListPrint(transportedQuantityList, LOG_SPATIALDISTR, &printTransportedQuantity);
-  infoStreamPrint(LOG_SPATIALDISTR, 0, "List of events");
-  doubleEndedListPrint(storedEventsList, LOG_SPATIALDISTR, &printTransportedQuantity);
+  doubleEndedListPrint(transportedQuantityList, OMC_LOG_SPATIALDISTR, &printTransportedQuantity);
+  infoStreamPrint(OMC_LOG_SPATIALDISTR, 0, "List of events");
+  doubleEndedListPrint(storedEventsList, OMC_LOG_SPATIALDISTR, &printTransportedQuantity);
 }
 
 
@@ -778,7 +778,7 @@ int findOppositeEndSpatialDistribution(SPATIAL_DISTRIBUTION_DATA* spatialDistrib
 
   currentDistance = fabs(currentNodeData->position - edgeNodePosition);
   if (currentDistance + SPATIAL_EPS < 1) {
-    errorStreamPrint(LOG_STDOUT, 0, "Error for spatialDistribution in function findOppositeEndSpatialDistribution.\nThis case should not be possible. Please open a bug reoprt about it.");
+    errorStreamPrint(OMC_LOG_STDOUT, 0, "Error for spatialDistribution in function findOppositeEndSpatialDistribution.\nThis case should not be possible. Please open a bug reoprt about it.");
     omc_throw_function(NULL);
     return walkedOverEvents;
   }
@@ -880,7 +880,7 @@ int pruneSpatialDistribution(SPATIAL_DISTRIBUTION_DATA* spatialDistribution, int
 
   currentDistance = fabs(currentNodeData->position - edgeNodeData->position);
   if (currentDistance + SPATIAL_EPS < 1) {
-    errorStreamPrint(LOG_STDOUT, 0, "Error for spatialDistribution in function pruneSpatialDistribution.\nThis case should not be possible. Please open a bug reoprt about it.");
+    errorStreamPrint(OMC_LOG_STDOUT, 0, "Error for spatialDistribution in function pruneSpatialDistribution.\nThis case should not be possible. Please open a bug reoprt about it.");
     omc_throw_function(NULL);
   }
 
@@ -924,13 +924,13 @@ int pruneSpatialDistribution(SPATIAL_DISTRIBUTION_DATA* spatialDistribution, int
       prevVisitedNodeData->value = interpolateTransportedQuantity(prevVisitedNodeData, currentNodeData, edgeNodeData->position - 1);
       prevVisitedNodeData->position = edgeNodeData->position - 1;
     }
-    infoStreamPrint(LOG_SPATIALDISTR, 0, "Interpolate at %s", isPositiveVelocity?"end":"front");
+    infoStreamPrint(OMC_LOG_SPATIALDISTR, 0, "Interpolate at %s", isPositiveVelocity?"end":"front");
   }
 
   /* Step 3
    * Remove all nodes that have a distance to edge > 1.
    */
-  infoStreamPrint(LOG_SPATIALDISTR, 0, "Removing nodes %s node %p", isPositiveVelocity?"after":"before", prevVisitedNode);
+  infoStreamPrint(OMC_LOG_SPATIALDISTR, 0, "Removing nodes %s node %p", isPositiveVelocity?"after":"before", prevVisitedNode);
   if (isPositiveVelocity) {
     clearAfterNodeDoubleEndedList(transportedQuantityList, prevVisitedNode);
   } else {
@@ -967,9 +967,9 @@ int pruneSpatialDistribution(SPATIAL_DISTRIBUTION_DATA* spatialDistribution, int
   }
 
   /* Debug prints */
-  doubleEndedListPrint(transportedQuantityList, LOG_SPATIALDISTR, &printTransportedQuantity);
-  infoStreamPrint(LOG_SPATIALDISTR, 0, "List of events");
-  doubleEndedListPrint(storedEventsList, LOG_SPATIALDISTR, &printTransportedQuantity);
+  doubleEndedListPrint(transportedQuantityList, OMC_LOG_SPATIALDISTR, &printTransportedQuantity);
+  infoStreamPrint(OMC_LOG_SPATIALDISTR, 0, "List of events");
+  doubleEndedListPrint(storedEventsList, OMC_LOG_SPATIALDISTR, &printTransportedQuantity);
 
   return walkedOverEvents;
 }
@@ -982,7 +982,7 @@ int pruneSpatialDistribution(SPATIAL_DISTRIBUTION_DATA* spatialDistribution, int
  *
  * @param data          Void pointer to transportedQuantityData.
  *                      Will be casted to TRANSPORTED_QUANTITY_DATA*.
- * @param stream        Stream of LOG_STREAM type.
+ * @param stream        Stream of OMC_LOG_STREAM type.
  * @param nodePointer   Address of node storing this data.
  */
 void printTransportedQuantity(void* data, int stream, void* nodePointer) {

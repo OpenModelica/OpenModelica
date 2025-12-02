@@ -2,6 +2,9 @@ TEST = ../../rtest -v
 
 TESTFILES = \
 AddClassAnnotation.mos \
+addComponent1.mos \
+addComponent2.mos \
+addConnection1.mos \
 ArraySlicing.mos \
 Bug2871.mos \
 Bug2882.mos \
@@ -13,7 +16,6 @@ Bug3520.mos \
 Bug3783.mos \
 Bug3974.mos \
 Bug3979.mos \
-Bug4209.mos \
 Bug4248.mos \
 Buildings.PartialFlowMachine.mos \
 checkAllModelsRecursive1.mos \
@@ -28,6 +30,8 @@ CopyClass2.mos \
 CopyClass3.mos \
 CopyClass4.mos \
 CopyClass5.mos \
+CopyClass6.mos \
+CopyClass7.mos \
 CopyClassInvalid1.mos \
 CopyClassRedeclare1.mos \
 DefaultComponentName.mos \
@@ -44,18 +48,32 @@ ForStatement7.mos \
 ForStatement8.mos \
 GetAllSubtypeOf1.mos \
 GetAllSubtypeOf2.mos \
+GetAllSubtypeOf3.mos \
+GetAllSubtypeOf4.mos \
+GetAllSubtypeOf5.mos \
 getClassComment.mos \
 getClassNames.mos \
 getCommandLineOptions.mos \
 GetComponents.mos \
 getComponentsTestNF.mos \
 getComponentsTestOF.mos \
+getConnectorCount.mos \
 getDefinitions.mos \
 getDialogAnnotation.mos \
 getElementAnnotation.mos \
+getElements1.mos \
+getExtendsModifierNames.mos \
 getIconAnnotation.mos \
+getInheritedClasses1.mos \
+getInheritedClasses2.mos \
+getNthComponentAnnotation.mos \
+getNthConnector.mos \
+getNthConnectorIconAnnotation.mos \
+getNthImport.mos \
+GetReplaceableChoices1.mos \
 getSimulationOptions1.mos \
 getSimulationOptions2.mos \
+getSimulationOptions3.mos \
 IfStatementIllegal.mos \
 IfStatement.mos\
 IllegalGraphics.mos\
@@ -68,7 +86,11 @@ interactive_api_loadsave.mos \
 interactive_api_param.mos \
 interactive_api_simulations.mos \
 interactive_test.mos \
+isConstant.mos \
 isExperiment.mos \
+isParameter.mos \
+isPrimitive.mos \
+isProtected.mos \
 isRedeclare.mos \
 isReplaceable.mos \
 Issue7544.mos \
@@ -78,11 +100,13 @@ ListExpressions.mos \
 ListImport.mos \
 ListMultilineComment.mos \
 loadClassContentString1.mos \
+loadClassContentString2.mos \
 loadFileInteractiveQualified.mos \
 matrices.mos \
 Modelica.Media.Examples.getComponents.mos \
 MoveClass2.mos \
 MoveClass.mos \
+ModelicaError.mos \
 Obfuscation1.mos \
 Obfuscation2.mos \
 Obfuscation3.mos \
@@ -90,6 +114,7 @@ Obfuscation4.mos \
 Obfuscation5.mos \
 ProtectedHandlingBug2917.mos \
 ReadOnlyPkg.mos \
+readSimulationResult1.mos \
 refactorGraphAnn1.mos \
 refactorGraphAnn2.mos \
 regex.mos \
@@ -100,8 +125,11 @@ saveTotalModel.mos \
 setComponentComment.mos \
 setComponentModifierValue.mos \
 setElementAnnotation.mos \
+setElementType.mos \
 setElementModifierValue.mos \
 setExtendsModifierValue.mos \
+setExtendsModifier.mos \
+setParameterValue.mos \
 setSourceFileListFile.mos \
 showDoc.mos \
 showStructuralAnnotations.mos \
@@ -128,7 +156,8 @@ UsesAnnotation1.mos \
 UsesAnnotation2.mos \
 variables.mos \
 VendorAnnotation.mos \
-
+TestSpace.mos \
+Issue14178.mos
 
 # test that currently fail. Move up when fixed.
 # Run make testfailing

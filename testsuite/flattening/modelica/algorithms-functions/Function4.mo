@@ -1,7 +1,6 @@
 // name:     Function4
 // keywords: function
 // status:   incorrect
-// cflags: -d=-newInst
 //
 // This tests for illegal parts of a function definition.
 //
@@ -18,4 +17,5 @@ model Function4
   Real x, y;
 equation
   x = f(y);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Function4;

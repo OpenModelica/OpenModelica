@@ -1,0 +1,23 @@
+// name: getNthComponentAnnotation
+// keywords:
+// status: correct
+// cflags: -d=newInst
+
+loadString("
+  model M
+    Real x annotation(Icon(), Evaluate = true);
+    Real y annotation(Placement(), Evaluate=false), w annotation(Placement());
+    Real z;
+  end M;
+");
+
+getNthComponentAnnotation(M, 1);
+getNthComponentAnnotation(M, 2);
+getNthComponentAnnotation(M, 3);
+
+// Result:
+// true
+// {Icon(-,-,-,-,-,-,-,), Evaluate=true}
+// {{Placement(true,-,-,-,-,-,-,-,-,-,-,-,-,-,)}, {Placement(true,-,-,-,-,-,-,-,-,-,-,-,-,-,), Evaluate=false}}
+// {}
+// endResult

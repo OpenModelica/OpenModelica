@@ -1,5 +1,4 @@
 // status: correct
-// cflags: -d=-newInst
 
 model MatrixMulVector
   Real x[4];
@@ -7,6 +6,7 @@ model MatrixMulVector
   Real b[:] = {1,2,3,time};
 equation
   A*x = b;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end MatrixMulVector;
 
 // Result:

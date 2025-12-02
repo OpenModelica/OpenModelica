@@ -1,0 +1,28 @@
+// name: LoadResource1
+// status: correct
+//
+// Checks that loadResource calls are inlined.
+//
+
+loadModel(Modelica, {"3.2.3"}); getErrorString();
+loadString("
+  model M
+    String filename = \"modelica://test\";
+    String s1 = Modelica.Utilities.Files.loadResource(filename);
+  end M;
+");
+getErrorString();
+instantiateModel(M); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// "class M
+//   String filename = \"modelica://test\";
+//   String s1 = OpenModelica_uriToFilename(filename);
+// end M;
+// "
+// ""
+// endResult

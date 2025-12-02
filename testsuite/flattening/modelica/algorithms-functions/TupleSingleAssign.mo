@@ -1,7 +1,6 @@
 // name:     TupleSingleAssign
 // keywords: tuple single assign statement equation
 // status:   correct
-// cflags: -d=-newInst
 //
 // Tests that tuple assignment to a single variable works correctly in both
 // equations and algorithm sections.
@@ -24,6 +23,7 @@ algorithm
   a := tuple_ret(time);
 equation
   b = tuple_ret(time);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end TupleSingleAssign;
 
 // Result:

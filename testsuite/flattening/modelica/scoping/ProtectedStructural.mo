@@ -1,7 +1,6 @@
 // name:     ProtectedStructural
 // keywords: protected #2503
 // status:   correct
-// cflags: -d=-newInst
 //
 // Checks that the protected attribute is propagated to the components of a
 // structured component.
@@ -13,6 +12,7 @@ model ProtectedStructural
   end A;
 
   protected A a;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ProtectedStructural;
 
 // Result:

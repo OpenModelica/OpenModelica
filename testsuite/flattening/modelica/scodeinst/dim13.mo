@@ -1,7 +1,6 @@
 // name: dim13
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 
 

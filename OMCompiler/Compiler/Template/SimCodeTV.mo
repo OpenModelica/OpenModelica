@@ -198,6 +198,22 @@ package builtin
     output TypeVar head;
   end listHead;
 
+  function listRest
+    replaceable type TypeVar subtypeof Any;
+    input list<TypeVar> lst;
+    output list<TypeVar> rest;
+  end listRest;
+
+  function intString
+    input Integer i;
+    output String s;
+  end intString;
+
+  function stringHashDjb2
+    input String str;
+    output Integer hash;
+  end stringHashDjb2;
+
   function stringHashDjb2Mod
     input String str;
     input Integer mod;
@@ -279,12 +295,14 @@ package SimCodeVar
       Option<Integer> fmi_index "index of variable in modelDescription.xml";
       list<String> numArrayElement;
       Boolean isValueChangeable;
+      Boolean isEncrypted;
       Boolean isProtected;
       Option<Boolean> hideResult;
       Option<String> matrixName;
       Option<Variability> variability "FMI-2.0 variabilty attribute";
       Option<Initial> initial_ "FMI-2.0 initial attribute";
       Option<DAE.ComponentRef> exportVar "variables will only be exported to the modelDescription.xml if this attribute is SOME(cref)";
+      Boolean relativeQuantity           "annotation(absoluteValue=false) If false, then the variable defines a relativeQuantity=true else relativeQuantity=false";
     end SIMVAR;
   end SimVar;
 
@@ -601,6 +619,15 @@ package SimCode
       BackendDAE.EquationAttributes eqAttr;
     end SES_ARRAY_CALL_ASSIGN;
 
+  record SES_RESIZABLE_ASSIGN
+    "a resizable assignment calling a for loop body function."
+    Integer index;
+    Integer call_index;
+    list<BackendDAE.SimIterator> iters;
+    DAE.ElementSource source;
+    BackendDAE.EquationAttributes eqAttr;
+  end SES_RESIZABLE_ASSIGN;
+
     record SES_GENERIC_ASSIGN
       "a generic assignment calling a for loop body function with an index list."
       Integer index;
@@ -682,6 +709,16 @@ package SimCode
       DAE.ElementSource source;
       BackendDAE.EquationAttributes eqAttr;
     end SES_FOR_LOOP;
+
+    record SES_FOR_EQUATION
+      Integer index;
+      DAE.Exp iter;
+      DAE.Exp startIt;
+      DAE.Exp endIt;
+      list<SimEqSystem> body;
+      DAE.ElementSource source;
+      BackendDAE.EquationAttributes eqAttr;
+    end SES_FOR_EQUATION;
 
     record SES_ALIAS
       Integer aliasOf;
@@ -766,9 +803,13 @@ package SimCode
   uniontype ModelInfo
     record MODELINFO
       Absyn.Path name;
-      String fileName;
       String description;
+      String version;
+      String author;
+      String license;
+      String copyright;
       String directory;
+      String fileName;
       VarInfo varInfo;
       SimCodeVar.SimVars vars;
       list<SimCodeFunction.Function> functions;
@@ -854,18 +895,21 @@ package SimCode
       list<BackendDAE.SimIterator> iters;
       DAE.Exp lhs;
       DAE.Exp rhs;
+      Boolean resizable;
     end SINGLE_GENERIC_CALL;
 
     record IF_GENERIC_CALL
       Integer index;
       list<BackendDAE.SimIterator> iters;
       list<SimBranch> branches;
+      Boolean resizable;
     end IF_GENERIC_CALL;
 
     record WHEN_GENERIC_CALL
       Integer index;
       list<BackendDAE.SimIterator> iters;
       list<SimBranch> branches;
+      Boolean resizable;
     end WHEN_GENERIC_CALL;
   end SimGenericCall;
 
@@ -1419,11 +1463,6 @@ package SimCodeUtil
     output Boolean b ;
   end jacobianColumnsAreEmpty;
 
-  function getSimIteratorSize
-    input list<BackendDAE.SimIterator> iters;
-    output Integer size ;
-  end getSimIteratorSize;
-
   function getFmiInitialAttributeStr
     input SimCodeVar.SimVar simVar;
     output String out_string;
@@ -1434,10 +1473,10 @@ package SimCodeUtil
     output DAE.Exp nom;
   end getExpNominal;
 
-  function isMocFile
-    input String fileName;
-    output Integer result;
-  end isMocFile;
+  function simGenericCallString
+    input SimCode.SimGenericCall call;
+    output String str;
+  end simGenericCallString;
 end SimCodeUtil;
 
 package SimCodeFunctionUtil
@@ -1659,12 +1698,21 @@ package BackendDAE
   end ZeroCrossing;
 
   uniontype SimIterator
-    record SIM_ITERATOR
+    record SIM_ITERATOR_RANGE
       DAE.ComponentRef name;
-      Integer start;
-      Integer step;
+      DAE.Exp start;
+      DAE.Exp step;
+      DAE.Exp stop;
+      DAE.Exp size;
+      Integer non_resizable_size;
+      list<tuple<DAE.ComponentRef, array<DAE.Exp>>> sub_iter;
+    end SIM_ITERATOR_RANGE;
+    record SIM_ITERATOR_LIST
+      DAE.ComponentRef name;
+      list<Integer> lst;
       Integer size;
-    end SIM_ITERATOR;
+      list<tuple<DAE.ComponentRef, array<DAE.Exp>>> sub_iter;
+    end SIM_ITERATOR_LIST;
   end SimIterator;
 
   uniontype TimeEvent
@@ -1769,6 +1817,13 @@ package BackendDAE
     end EQUATION_ATTRIBUTES;
   end EquationAttributes;
 end BackendDAE;
+
+package BackendDAEUtil
+  function getSimIteratorSize
+    input list<BackendDAE.SimIterator> iters;
+    output Integer size ;
+  end getSimIteratorSize;
+end BackendDAEUtil;
 
 package System
   function substring
@@ -3500,6 +3555,11 @@ package Util
   output Boolean outBoolean;
   end stringBool;
 
+  function hashFileNamePrefix
+    input String inFileNamePrefix;
+    output String hashStr;
+  end hashFileNamePrefix;
+
 end Util;
 
 package List
@@ -3570,12 +3630,6 @@ package List
     output list<list<Type_a>> outParts;
   end splitEqualParts;
 
-  function rest
-    replaceable type Type_a subtypeof Any;
-    input list<Type_a> inList;
-    output list<Type_a> outParts;
-  end rest;
-
   function restOrEmpty
     replaceable type Type_a subtypeof Any;
     input list<Type_a> inList;
@@ -3609,12 +3663,6 @@ package List
     output list<Type_b> outTypeALst;
     replaceable type Type_a subtypeof Any;
   end unzipSecond;
-
-  function first
-    replaceable type ElementType subtypeof Any;
-    input list<ElementType> inList;
-    output ElementType val;
-  end first;
 
   function last
     replaceable type ElementType subtypeof Any;
@@ -3920,6 +3968,11 @@ package Expression
     output Boolean hasUnkown;
   end hasUnknownDims;
 
+  function isSimpleLiteralValue
+    input DAE.Exp exp;
+    input Boolean allow_arrays;
+    output Boolean b;
+  end isSimpleLiteralValue;
 end Expression;
 
 package ExpressionDump
@@ -3991,6 +4044,10 @@ package Config
     output Boolean outBoolean;
   end globalHomotopy;
 
+  function replacedHomotopy
+    output Boolean outBoolean;
+  end replacedHomotopy;
+
   function adaptiveHomotopy
     output Boolean outBoolean;
   end adaptiveHomotopy;
@@ -4033,7 +4090,7 @@ package Flags
   constant DebugFlag MULTIRATE_PARTITION;
   constant ConfigFlag DAE_MODE;
   constant ConfigFlag EQUATIONS_PER_FILE;
-  constant ConfigFlag GENERATE_SYMBOLIC_JACOBIAN;
+  constant ConfigFlag GENERATE_DYNAMIC_JACOBIAN;
   constant ConfigFlag HOMOTOPY_APPROACH;
   constant ConfigFlag GENERATE_LABELED_SIMCODE;
   constant ConfigFlag REDUCE_TERMS;
@@ -4052,6 +4109,7 @@ package Flags
   constant DebugFlag DUMP_FORCE_FMI_ATTRIBUTES;
   constant ConfigFlag EXPORT_CLOCKS_IN_MODELDESCRIPTION;
   constant ConfigFlag OBFUSCATE;
+  constant ConfigFlag MAX_SIZE_LINEARIZATION;
 
   function isSet
     input DebugFlag inFlag;
@@ -4165,6 +4223,10 @@ package DAEUtil
     output Boolean b;
   end statementsContainTryBlock;
 
+  function typeExp
+    input DAE.Type tp;
+    output DAE.Exp exp;
+  end typeExp;
 end DAEUtil;
 
 package Types

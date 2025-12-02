@@ -458,8 +458,8 @@ void Array::print(std::ostream &os) const noexcept
 }
 
 Matrix::Matrix(MetaModelica::Record value)
-  : _matrix{value[0].mapVector<Array>([](MetaModelica::Value row) {
-      return row.mapVector<Expression>();
+  : _matrix{value[0].mapVector([](MetaModelica::Value row) {
+      return Array(row.mapVector<Expression>());
      })}
 {
 

@@ -5,7 +5,6 @@
 // <insert description here>
 //
 // Drmodelica: 13.3 Hybrid Tank Model with a Discrete Controller (p. 460)
-// cflags: -d=-newInst
 //
 function LimitValue
   input Real pMin;
@@ -113,6 +112,7 @@ equation
   connect(source.qOut, tank.qIn);
   connect(tank.tActuator, pidDiscrete.cOut );
   connect(tank.tSensor, pidDiscrete.cIn );
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end TankHybridPID;
 
 // insert expected flat file here. Can be done by issuing the command

@@ -1,7 +1,6 @@
 // name: OperatorSimple
 // keywords: operator
 // status: correct
-// cflags: -d=-newInst
 //
 // Tests simple operator overloading
 //
@@ -28,6 +27,7 @@ equation
   c1 = Complex(re=2.0,im=3.0);
   c2 = Complex(re=7.0,im=3.14);
   c3 = c1 * c2;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end OperatorSimple;
 
 // Result:

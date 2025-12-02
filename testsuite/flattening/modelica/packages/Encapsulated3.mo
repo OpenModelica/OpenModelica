@@ -1,7 +1,6 @@
 // name:     Encapsulated3
 // keywords: encapsulated
 // status:   incorrect
-// cflags: -d=-newInst
 //
 // An encapsulated class cannot access
 // elements in enclosing scopes.
@@ -26,10 +25,11 @@ encapsulated model Encapsulated3
   import A.B1.C2;
   C c(x=1);
   C2 c2; // Causes infitite loop
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Encapsulated3;
 // Result:
 // Error processing file: Encapsulated3.mo
-// [flattening/modelica/packages/Encapsulated3.mo:18:7-18:23:writable] Error: Base class B.C not found in scope A.B1.C2.
+// [flattening/modelica/packages/Encapsulated3.mo:17:7-17:23:writable] Error: Base class B.C not found in scope A.B1.C2.
 // Error: Error occurred while flattening model Encapsulated3
 //
 // # Error encountered! Exiting...

@@ -1,7 +1,6 @@
 // name: FuncVectorizationMap1
 // keywords: vectorization function map array reduction
 // status: correct
-// cflags: -d=newInst
 //
 // Checks vectorization mixed with mapping function.
 //
@@ -64,8 +63,8 @@ end FuncVectorizationMap1;
 //   Real g[2,2];
 //   Real g[2,3];
 // equation
-//   g = array(array(FuncVectorizationMap1.F(b[$i1,$i2], 1.0) for $i2 in 1:3) for $i1 in 1:2);
-//   g = array(array(FuncVectorizationMap1.F(b[i,$i1], 1.0) for $i1 in 1:3) for i in 1:2);
+//   g = array(array(FuncVectorizationMap1.F(b[$i0,$i1], 1.0) for $i1 in 1:3) for $i0 in 1:2);
+//   g = array(array(FuncVectorizationMap1.F(b[i,$i2], 1.0) for $i2 in 1:3) for i in 1:2);
 //   g = array(array(FuncVectorizationMap1.F(b[i,j], 1.0) for j in 1:3) for i in 1:2);
 // end FuncVectorizationMap1;
 // endResult

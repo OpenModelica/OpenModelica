@@ -47,7 +47,7 @@ protected
   import NBEquation.{Equation, EqData, EquationPointer, EquationPointers};
   import Module = NBModule;
   import ResolveSingularities = NBResolveSingularities;
-  import System = NBSystem;
+  import Partition = NBPartition;
   import BVariable = NBVariable;
   import NBVariable.{VarData, VariablePointer, VariablePointers};
 
@@ -64,8 +64,8 @@ public
   //                MATCHING
   // =======================================
   record MATCHING
-    array<Integer> var_to_eqn;
-    array<Integer> eqn_to_var;
+    array<Integer> var_to_eqn   "eqn := var_to_eqn[var]";
+    array<Integer> eqn_to_var   "var := eqn_to_var[eqn]";
   end MATCHING;
 
   constant Matching EMPTY_MATCHING = MATCHING(listArray({}), listArray({}));
@@ -79,6 +79,16 @@ public
     str := str + toStringSingle(matching.eqn_to_var, true) + "\n";
   end toString;
 
+  function trivial
+    "produces a trivial soluation where e1 matches v1 etc."
+    input Integer n;
+    output Matching matching;
+  protected
+    array<Integer> arr = Array.createIntRange(n);
+  algorithm
+    matching := MATCHING(arr, arr);
+  end trivial;
+
   function regular
     "author: kabdelhak
     Regular matching algorithm for bipartite graphs by Constantinos C. Pantelides.
@@ -86,14 +96,14 @@ public
     input output Matching matching;
     input Adjacency.Matrix adj;
     input Boolean transposed = false        "transpose matching if true";
-    input Boolean partially = false         "do not fail on singular systems and return partial matching if true";
+    input Boolean partially = false         "do not fail on singular partitions and return partial matching if true";
     input Boolean clear = true              "start from scratch if true";
   protected
     list<list<Integer>> marked_eqns;
   algorithm
     (matching, marked_eqns, _, _) := continue_(matching, adj, transposed, clear);
     if not partially and not listEmpty(List.flatten(marked_eqns)) then
-      Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because the system is structurally singular."});
+      Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because the partition is structurally singular."});
       fail();
     end if;
   end regular;
@@ -102,7 +112,7 @@ public
     "author: kabdelhak
     Matching algorithm for bipartite graphs by Constantinos C. Pantelides.
     First published in doi:10.1137/0909014
-    In the case of singular systems in tries to resolve it by applying index reduction
+    In the case of singular partitions in tries to resolve it by applying index reduction
     using the dummy derivative method by Sven E. Mattsson and Gustaf Söderlind
     First published in doi:10.1137/0914043
 
@@ -110,18 +120,18 @@ public
       1. apply pantelides but carry list of singular markings (eqs)
          whenever singular - add all current marks to singular markings
       2. if done and not everything is matched -> index reduction / balance initialization
-      3. restart matching if step 2. changed the system
+      3. restart matching if step 2. changed the partition
     "
     input output Matching matching;
     input output Adjacency.Matrix adj;
+    input output Adjacency.Matrix full;
     input output VariablePointers vars;
     input output EquationPointers eqns;
     input output FunctionTree funcTree;
     input output VarData varData;
     input output EqData eqData;
-    input System.SystemType systemType;
+    input Partition.Kind Kind;
     input Boolean transposed = false        "transpose matching if true";
-    input Boolean partially = false         "do not resolve singular systems and return partial matching if true";
     input Boolean clear = true              "start from scratch if true";
   protected
     list<list<Integer>> marked_eqns;
@@ -129,36 +139,38 @@ public
     Adjacency.MatrixStrictness matrixStrictness;
     Boolean changed;
   algorithm
-    // 1. match the system
+    // 1. match the partition
     try
       (matching, marked_eqns, mapping, matrixStrictness) := continue_(matching, adj, transposed, clear);
     else
-      Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed to match system:\n"
-        + VariablePointers.toString(vars, "system vars") + "\n"
-        + EquationPointers.toString(eqns, "system eqns") + "\n"
+      Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed to match partition:\n"
+        + VariablePointers.toString(vars, "partition vars") + "\n"
+        + EquationPointers.toString(eqns, "partition eqns") + "\n"
         + Adjacency.Matrix.toString(adj)});
       fail();
     end try;
 
-    // 2. Resolve singular systems if necessary
-    changed := match systemType
-      case NBSystem.SystemType.INI algorithm
-        // ####### BALANCE INITIALIZATION #######
-        (vars, eqns, varData, eqData, funcTree, changed) := ResolveSingularities.balanceInitialization(vars, eqns, varData, eqData, funcTree, adj, matching, mapping);
-      then changed;
-
-      else algorithm
-        // ####### INDEX REDUCTION ######
-        // for now no index reduction
-        (vars, eqns, varData, eqData, funcTree, changed) := ResolveSingularities.noIndexReduction(vars, eqns, varData, eqData, funcTree, adj, matching, mapping);
-      then changed;
-    end match;
+    // 2. Resolve singular partitions if necessary
+    if Kind == NBPartition.Kind.INI then
+      // ####### BALANCE INITIALIZATION #######
+      (adj, full, vars, eqns, varData, eqData, funcTree, changed) := ResolveSingularities.balanceInitialization(adj, full, vars, eqns, varData, eqData, funcTree, matching, mapping);
+    else
+      // ####### INDEX REDUCTION #######
+      (adj, full, vars, eqns, varData, eqData, funcTree, changed) := ResolveSingularities.indexReduction(adj, full, vars, eqns, varData, eqData, funcTree, matching, mapping);
+    end if;
 
     // 3. Recompute adjacency and restart matching if something changed in step 2.
     if changed then
       // ToDo: keep more of old information by only updating changed stuff
-      adj := Adjacency.Matrix.create(vars, eqns, matrixStrictness);
-      (matching, adj, vars, eqns, funcTree, varData, eqData) := singular(EMPTY_MATCHING, adj, vars, eqns, funcTree, varData, eqData, systemType, false, true);
+      full  := Adjacency.Matrix.createFull(vars, eqns);
+      adj   := Adjacency.Matrix.fromFull(full, vars.map, eqns.map, eqns, matrixStrictness);
+      if Kind == NBPartition.Kind.INI then
+        // ####### DO NOT REDO BALANCING INITIALIZATION #######
+        matching := regular(EMPTY_MATCHING, adj);
+      else
+        // ####### REDO INDEX REDUCTION IF NECESSARY #######
+        (matching, adj, full, vars, eqns, funcTree, varData, eqData) := singular(EMPTY_MATCHING, adj, full, vars, eqns, funcTree, varData, eqData, Kind, transposed);
+      end if;
     end if;
   end singular;
 
@@ -173,25 +185,43 @@ public
   protected
     array<Integer> var_to_eqn, eqn_to_var;
   algorithm
-    // 1. Match the system
+    // 1. Match the partition
     (matching, marked_eqns, mapping, matrixStrictness) := match adj
       // PSEUDO ARRAY
-      case Adjacency.Matrix.PSEUDO_ARRAY_ADJACENCY_MATRIX() algorithm
+      case Adjacency.Matrix.FINAL() algorithm
         (var_to_eqn, eqn_to_var) := getAssignments(matching, adj.m, adj.mT);
         (var_to_eqn, eqn_to_var, marked_eqns) := PFPlusExternal(adj.m, var_to_eqn, eqn_to_var, clear);
         matching := MATCHING(var_to_eqn, eqn_to_var);
       then (matching, marked_eqns, SOME(adj.mapping), adj.st);
 
       // EMPTY
-      case Adjacency.Matrix.EMPTY_ADJACENCY_MATRIX()
+      case Adjacency.Matrix.EMPTY()
       then (EMPTY_MATCHING, {}, NONE(), NBAdjacency.MatrixStrictness.FULL);
 
       // FAIL
       else algorithm
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed."});
+        Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed."});
       then fail();
     end match;
   end continue_;
+
+  function isEmpty
+    input Matching matching;
+    output Boolean b = arrayEmpty(matching.eqn_to_var) and arrayEmpty(matching.var_to_eqn);
+  end isEmpty;
+
+  function isPerfect
+    "returns true if all variables OR equations have been matched
+    Note: if it's not a square problem, it returns true if one of the two is fully matched"
+    input Matching matching;
+    output Boolean b;
+  algorithm
+    if arrayLength(matching.var_to_eqn) > arrayLength(matching.eqn_to_var) then
+      b := Array.all(matching.eqn_to_var, function intGt(i2 = 0));
+    else
+      b := Array.all(matching.var_to_eqn, function intGt(i2 = 0));
+    end if;
+  end isPerfect;
 
   function getAssignments
     "expands the assignments with -1 if needed"
@@ -255,10 +285,10 @@ public
       end for;
 
       // get the slice lists while sorting indices and simplifying whole slices to {}
-      matched_vars    := list(Slice.simplify(slice, BVariable.size) for slice in Slice.fromMap(var_map_matched));
-      unmatched_vars  := list(Slice.simplify(slice, BVariable.size) for slice in Slice.fromMap(var_map_unmatched));
-      matched_eqns    := list(Slice.simplify(slice, Equation.size) for slice in Slice.fromMap(eqn_map_matched));
-      unmatched_eqns  := list(Slice.simplify(slice, Equation.size) for slice in Slice.fromMap(eqn_map_unmatched));
+      matched_vars    := list(Slice.simplify(slice, function BVariable.size(resize = true)) for slice in Slice.fromMap(var_map_matched));
+      unmatched_vars  := list(Slice.simplify(slice, function BVariable.size(resize = true)) for slice in Slice.fromMap(var_map_unmatched));
+      matched_eqns    := list(Slice.simplify(slice, function Equation.size(resize = true)) for slice in Slice.fromMap(eqn_map_matched));
+      unmatched_eqns  := list(Slice.simplify(slice, function Equation.size(resize = true)) for slice in Slice.fromMap(eqn_map_unmatched));
     else
       // check if variables are matched and sort them accordingly
       for var in 1:arrayLength(matching.var_to_eqn) loop
@@ -303,10 +333,10 @@ protected
     input array<list<Integer>> m;
     input array<list<Integer>> mT;
     input Boolean transposed = false        "transpose matching if true";
-    input Boolean partially = false         "do not fail on singular systems and return partial matching if true";
+    input Boolean partially = false         "do not fail on singular partitions and return partial matching if true";
     output Matching matching;
-    // this needs partially = true to get computed. Otherwise it fails on singular systems
-    output list<list<Integer>> marked_eqns = {}   "marked equations for index reduction in the case of a singular system";
+    // this needs partially = true to get computed. Otherwise it fails on singular partitions
+    output list<list<Integer>> marked_eqns = {}   "marked equations for index reduction in the case of a singular partition";
   protected
     Integer nVars = arrayLength(mT), nEqns = arrayLength(m);
     array<Integer> var_to_eqn;
@@ -325,7 +355,7 @@ protected
       // if it is not possible index reduction needs to be applied
       if not pathFound then
         if not partially then
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because the system is structurally singular. Index Reduction is not yet supported"});
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because the partition is structurally singular. Index Reduction is not yet supported"});
         elseif transposed then
           // if transposed the variable marks represent equations
           marked_eqns := BackendUtil.findTrueIndices(var_marks) :: marked_eqns;
@@ -392,8 +422,8 @@ protected
     input output array<Integer> ass1;
     input output array<Integer> ass2;
     input Boolean clear;
-    // this needs partially = true to get computed. Otherwise it fails on singular systems
-    output list<list<Integer>> marked_eqns = {}   "marked equations for index reduction in the case of a singular system";
+    // this needs partially = true to get computed. Otherwise it fails on singular partitions
+    output list<list<Integer>> marked_eqns = {}   "marked equations for index reduction in the case of a singular partition";
   protected
     Integer n1 = arrayLength(ass1), n2 = arrayLength(ass2), nonZero = BackendUtil.countElem(m);
     Integer cheap = 0, algIndx = 5 "PFPlusExternal index";

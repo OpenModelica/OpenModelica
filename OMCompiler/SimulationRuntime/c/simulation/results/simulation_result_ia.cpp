@@ -90,7 +90,7 @@ void ia_init(simulation_result *self, DATA *data, threadData_t *threadData)
     iaData->nReal++;
     strLength += strlen(mData->realVarsData[i].info.name) + 1;
   }
-  for(i=0; i<mData->nAliasReal; i++) if(!mData->realAlias[i].filterOutput && data->modelData->realAlias[i].aliasType != 1)
+  for(i=0; i<mData->nAliasReal; i++) if(!mData->realAlias[i].filterOutput && data->modelData->realAlias[i].aliasType != ALIAS_TYPE_PARAMETER)
   {
     iaData->nReal++;
     strLength += strlen(mData->realAlias[i].info.name) + 1;
@@ -102,7 +102,7 @@ void ia_init(simulation_result *self, DATA *data, threadData_t *threadData)
     iaData->nInteger++;
     strLength += strlen(mData->integerVarsData[i].info.name) + 1;
   }
-  for(i=0; i<mData->nAliasInteger; i++) if(!mData->integerAlias[i].filterOutput && data->modelData->integerAlias[i].aliasType != 1)
+  for(i=0; i<mData->nAliasInteger; i++) if(!mData->integerAlias[i].filterOutput && data->modelData->integerAlias[i].aliasType != ALIAS_TYPE_PARAMETER)
   {
     iaData->nInteger++;
     strLength += strlen(mData->integerAlias[i].info.name) + 1;
@@ -114,7 +114,7 @@ void ia_init(simulation_result *self, DATA *data, threadData_t *threadData)
     iaData->nBoolean++;
     strLength += strlen(mData->booleanVarsData[i].info.name) + 1;
   }
-  for(i=0; i<mData->nAliasBoolean; i++) if(!mData->booleanAlias[i].filterOutput && data->modelData->booleanAlias[i].aliasType != 1)
+  for(i=0; i<mData->nAliasBoolean; i++) if(!mData->booleanAlias[i].filterOutput && data->modelData->booleanAlias[i].aliasType != ALIAS_TYPE_PARAMETER)
   {
     iaData->nBoolean++;
     strLength += strlen(mData->booleanAlias[i].info.name) + 1;
@@ -126,7 +126,7 @@ void ia_init(simulation_result *self, DATA *data, threadData_t *threadData)
     iaData->nString++;
     strLength += strlen(mData->stringVarsData[i].info.name) + 1;
   }
-  for(i=0; i<mData->nAliasString; i++) if(!mData->stringAlias[i].filterOutput && data->modelData->stringAlias[i].aliasType != 1)
+  for(i=0; i<mData->nAliasString; i++) if(!mData->stringAlias[i].filterOutput && data->modelData->stringAlias[i].aliasType != ALIAS_TYPE_PARAMETER)
   {
     iaData->nString++;
     strLength += strlen(mData->stringAlias[i].info.name) + 1;
@@ -150,7 +150,7 @@ void ia_init(simulation_result *self, DATA *data, threadData_t *threadData)
     strLength = strlen(mData->realVarsData[i].info.name) + 1;
     memcpy(msgDATA+offset, mData->realVarsData[i].info.name, strLength); offset += strLength;
   }
-  for(i=0; i<mData->nAliasReal; i++) if(!mData->realAlias[i].filterOutput && data->modelData->realAlias[i].aliasType != 1)
+  for(i=0; i<mData->nAliasReal; i++) if(!mData->realAlias[i].filterOutput && data->modelData->realAlias[i].aliasType != ALIAS_TYPE_PARAMETER)
   {
     strLength = strlen(mData->realAlias[i].info.name) + 1;
     memcpy(msgDATA+offset, mData->realAlias[i].info.name, strLength); offset += strLength;
@@ -162,7 +162,7 @@ void ia_init(simulation_result *self, DATA *data, threadData_t *threadData)
     strLength = strlen(mData->integerVarsData[i].info.name) + 1;
     memcpy(msgDATA+offset, mData->integerVarsData[i].info.name, strLength); offset += strLength;
   }
-  for(i=0; i<mData->nAliasInteger; i++) if(!mData->integerAlias[i].filterOutput && data->modelData->integerAlias[i].aliasType != 1)
+  for(i=0; i<mData->nAliasInteger; i++) if(!mData->integerAlias[i].filterOutput && data->modelData->integerAlias[i].aliasType != ALIAS_TYPE_PARAMETER)
   {
     strLength = strlen(mData->integerAlias[i].info.name) + 1;
     memcpy(msgDATA+offset, mData->integerAlias[i].info.name, strLength); offset += strLength;
@@ -174,7 +174,7 @@ void ia_init(simulation_result *self, DATA *data, threadData_t *threadData)
     strLength = strlen(mData->booleanVarsData[i].info.name) + 1;
     memcpy(msgDATA+offset, mData->booleanVarsData[i].info.name, strLength); offset += strLength;
   }
-  for(i=0; i<mData->nAliasBoolean; i++) if(!mData->booleanAlias[i].filterOutput && data->modelData->booleanAlias[i].aliasType != 1)
+  for(i=0; i<mData->nAliasBoolean; i++) if(!mData->booleanAlias[i].filterOutput && data->modelData->booleanAlias[i].aliasType != ALIAS_TYPE_PARAMETER)
   {
     strLength = strlen(mData->booleanAlias[i].info.name) + 1;
     memcpy(msgDATA+offset, mData->booleanAlias[i].info.name, strLength); offset += strLength;
@@ -186,7 +186,7 @@ void ia_init(simulation_result *self, DATA *data, threadData_t *threadData)
     strLength = strlen(mData->stringVarsData[i].info.name) + 1;
     memcpy(msgDATA+offset, mData->stringVarsData[i].info.name, strLength); offset += strLength;
   }
-  for(i=0; i<mData->nAliasString; i++) if(!mData->stringAlias[i].filterOutput && data->modelData->stringAlias[i].aliasType != 1)
+  for(i=0; i<mData->nAliasString; i++) if(!mData->stringAlias[i].filterOutput && data->modelData->stringAlias[i].aliasType != ALIAS_TYPE_PARAMETER)
   {
     strLength = strlen(mData->stringAlias[i].info.name) + 1;
     memcpy(msgDATA+offset, mData->stringAlias[i].info.name, strLength); offset += strLength;
@@ -211,7 +211,7 @@ void ia_emit(simulation_result *self, DATA *data, threadData_t *threadData)
   for(i=0; i<data->modelData->nVariablesString; i++) if(!data->modelData->stringVarsData[i].filterOutput) {
     strLength += MMC_STRLEN(data->localData[0]->stringVars[i]) + 1;
   }
-  for(i=0; i<data->modelData->nAliasString; i++) if(!data->modelData->stringAlias[i].filterOutput && data->modelData->stringAlias[i].aliasType != 1) {
+  for(i=0; i<data->modelData->nAliasString; i++) if(!data->modelData->stringAlias[i].filterOutput && data->modelData->stringAlias[i].aliasType != ALIAS_TYPE_PARAMETER) {
     strLength += MMC_STRLEN(data->localData[0]->stringVars[data->modelData->stringAlias[i].nameID]) + 1;
   }
 
@@ -227,9 +227,9 @@ void ia_emit(simulation_result *self, DATA *data, threadData_t *threadData)
   }
 
   modelica_real value = 0;
-  for(i=0; i<data->modelData->nAliasReal; i++) if(!data->modelData->realAlias[i].filterOutput && data->modelData->realAlias[i].aliasType != 1)
+  for(i=0; i<data->modelData->nAliasReal; i++) if(!data->modelData->realAlias[i].filterOutput && data->modelData->realAlias[i].aliasType != ALIAS_TYPE_PARAMETER)
   {
-    if (data->modelData->realAlias[i].aliasType == 2)
+    if (data->modelData->realAlias[i].aliasType == ALIAS_TYPE_TIME)
       value = (data->localData[0])->timeValue;
     else
       value = (data->localData[0])->realVars[data->modelData->realAlias[i].nameID];
@@ -247,7 +247,7 @@ void ia_emit(simulation_result *self, DATA *data, threadData_t *threadData)
   }
 
   modelica_integer intValue = 0;
-  for(i=0; i<data->modelData->nAliasInteger; i++) if(!data->modelData->integerAlias[i].filterOutput && data->modelData->integerAlias[i].aliasType != 1)
+  for(i=0; i<data->modelData->nAliasInteger; i++) if(!data->modelData->integerAlias[i].filterOutput && data->modelData->integerAlias[i].aliasType != ALIAS_TYPE_PARAMETER)
   {
     if (data->modelData->integerAlias[i].negate)
       intValue = -(data->localData[0]->integerVars[data->modelData->integerAlias[i].nameID]);
@@ -264,7 +264,7 @@ void ia_emit(simulation_result *self, DATA *data, threadData_t *threadData)
   }
 
   modelica_boolean boolValue;
-  for(i=0; i<data->modelData->nAliasBoolean; i++) if(!data->modelData->booleanAlias[i].filterOutput && data->modelData->booleanAlias[i].aliasType != 1)
+  for(i=0; i<data->modelData->nAliasBoolean; i++) if(!data->modelData->booleanAlias[i].filterOutput && data->modelData->booleanAlias[i].aliasType != ALIAS_TYPE_PARAMETER)
   {
     if (data->modelData->booleanAlias[i].negate)
       boolValue = (data->localData[0])->booleanVars[data->modelData->booleanAlias[i].nameID]==1?0:1;
@@ -281,7 +281,7 @@ void ia_emit(simulation_result *self, DATA *data, threadData_t *threadData)
     memcpy(msgDATA+offset, MMC_STRINGDATA((data->localData[0])->stringVars[i]), strLength); offset += strLength;
   }
 
-  for(i=0; i<data->modelData->nAliasString; i++) if(!data->modelData->stringAlias[i].filterOutput && data->modelData->stringAlias[i].aliasType != 1)
+  for(i=0; i<data->modelData->nAliasString; i++) if(!data->modelData->stringAlias[i].filterOutput && data->modelData->stringAlias[i].aliasType != ALIAS_TYPE_PARAMETER)
   {
     strLength = MMC_STRLEN((data->localData[0])->stringVars[data->modelData->stringAlias[i].nameID]) + 1;
     memcpy(msgDATA+offset, MMC_STRINGDATA((data->localData[0])->stringVars[data->modelData->stringAlias[i].nameID]), strLength); offset += strLength;

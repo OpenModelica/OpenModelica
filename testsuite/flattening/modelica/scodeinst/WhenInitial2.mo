@@ -1,7 +1,6 @@
 // name: WhenInitial2
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 
 model WhenInitial2

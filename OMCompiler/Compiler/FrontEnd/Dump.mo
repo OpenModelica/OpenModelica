@@ -1292,7 +1292,7 @@ algorithm
       Absyn.Restriction restriction;
       Absyn.ClassDef    body;
       SourceInfo info;
-    case Absyn.CLASS(name,partialPrefix,finalPrefix,encapsulatedPrefix,restriction,body,_,_,info)
+    case Absyn.CLASS(name,partialPrefix,finalPrefix,encapsulatedPrefix,restriction,body,_,_,_,info)
       equation
         Print.printBuf("record Absyn.CLASS name = \"");
         Print.printBuf(name);

@@ -1,6 +1,5 @@
 // name: InStreamFlowThreshold
 // keywords: stream instream connector outside
-// cflags: --flowThreshold=2 -d=newInst
 // status: correct
 //
 // Checks that the --flowThreshold flag works.
@@ -33,6 +32,7 @@ model InStreamFlowThreshold
 equation
   instream_a_s1 = inStream(a.s1.s);
   instream_a_s2 = inStream(a.s2.s);
+  annotation(__OpenModelica_commandLineOptions="--flowThreshold=2");
 end InStreamFlowThreshold;
 
 // Result:
@@ -55,9 +55,9 @@ end InStreamFlowThreshold;
 //   a.s2.r = a.s3.r;
 //   a.s2.r = a.s1.r;
 //   -(a.s2.f + a.s3.f + a.s1.f) = 0.0;
-//   a.s1.s = ($OMC$PositiveMax(a.s3.f, 2.0) * a.s3.s + $OMC$PositiveMax(a.s2.f, 2.0) * a.s2.s) / ($OMC$PositiveMax(a.s3.f, 2.0) + $OMC$PositiveMax(a.s2.f, 2.0)) " equation generated from stream connection";
-//   a.s3.s = ($OMC$PositiveMax(a.s1.f, 2.0) * a.s1.s + $OMC$PositiveMax(a.s2.f, 2.0) * a.s2.s) / ($OMC$PositiveMax(a.s1.f, 2.0) + $OMC$PositiveMax(a.s2.f, 2.0)) " equation generated from stream connection";
-//   a.s2.s = ($OMC$PositiveMax(a.s1.f, 2.0) * a.s1.s + $OMC$PositiveMax(a.s3.f, 2.0) * a.s3.s) / ($OMC$PositiveMax(a.s1.f, 2.0) + $OMC$PositiveMax(a.s3.f, 2.0)) " equation generated from stream connection";
+//   a.s1.s = $OMC$inStreamDiv(($OMC$PositiveMax(a.s3.f, 2.0) * a.s3.s + $OMC$PositiveMax(a.s2.f, 2.0) * a.s2.s) / ($OMC$PositiveMax(a.s3.f, 2.0) + $OMC$PositiveMax(a.s2.f, 2.0)), 0) " equation generated from stream connection";
+//   a.s3.s = $OMC$inStreamDiv(($OMC$PositiveMax(a.s1.f, 2.0) * a.s1.s + $OMC$PositiveMax(a.s2.f, 2.0) * a.s2.s) / ($OMC$PositiveMax(a.s1.f, 2.0) + $OMC$PositiveMax(a.s2.f, 2.0)), 0) " equation generated from stream connection";
+//   a.s2.s = $OMC$inStreamDiv(($OMC$PositiveMax(a.s1.f, 2.0) * a.s1.s + $OMC$PositiveMax(a.s3.f, 2.0) * a.s3.s) / ($OMC$PositiveMax(a.s1.f, 2.0) + $OMC$PositiveMax(a.s3.f, 2.0)), 0) " equation generated from stream connection";
 //   a.s1.f = 0.0;
 //   a.s2.f = 0.0;
 //   a.s3.f = 0.0;

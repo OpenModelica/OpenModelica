@@ -39,7 +39,7 @@
 #include <QMessageBox>
 
 BitmapAnnotation::BitmapAnnotation(QString classFileName, QString annotation, GraphicsView *pGraphicsView)
-  : ShapeAnnotation(false, pGraphicsView, 0, 0)
+  : ShapeAnnotation(false, pGraphicsView, 0)
 {
   mpOriginItem = new OriginItem(this);
   mpOriginItem->setPassive();
@@ -54,7 +54,7 @@ BitmapAnnotation::BitmapAnnotation(QString classFileName, QString annotation, Gr
 }
 
 BitmapAnnotation::BitmapAnnotation(ModelInstance::Bitmap *pBitmap, const QString &classFileName, bool inherited, GraphicsView *pGraphicsView)
-  : ShapeAnnotation(inherited, pGraphicsView, 0, 0)
+  : ShapeAnnotation(inherited, pGraphicsView, 0)
 {
   mpOriginItem = new OriginItem(this);
   mpOriginItem->setPassive();
@@ -68,14 +68,6 @@ BitmapAnnotation::BitmapAnnotation(ModelInstance::Bitmap *pBitmap, const QString
   ShapeAnnotation::setUserDefaults();
   parseShapeAnnotation();
   setShapeFlags(true);
-}
-
-BitmapAnnotation::BitmapAnnotation(ShapeAnnotation *pShapeAnnotation, Element *pParent)
-  : ShapeAnnotation(pShapeAnnotation, pParent)
-{
-  mpOriginItem = 0;
-  updateShape(pShapeAnnotation);
-  applyTransformation();
 }
 
 BitmapAnnotation::BitmapAnnotation(ModelInstance::Bitmap *pBitmap, const QString &classFileName, Element *pParent)
@@ -94,15 +86,12 @@ BitmapAnnotation::BitmapAnnotation(ModelInstance::Bitmap *pBitmap, const QString
   applyTransformation();
 }
 
-BitmapAnnotation::BitmapAnnotation(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView)
-  : ShapeAnnotation(true, pGraphicsView, pShapeAnnotation, 0)
+BitmapAnnotation::BitmapAnnotation(ShapeAnnotation *pShapeAnnotation, Element *pParent)
+  : ShapeAnnotation(pParent)
 {
-  mpOriginItem = new OriginItem(this);
-  mpOriginItem->setPassive();
+  mpOriginItem = 0;
   updateShape(pShapeAnnotation);
-  setShapeFlags(true);
-  mpGraphicsView->addItem(this);
-  mpGraphicsView->addItem(mpOriginItem);
+  applyTransformation();
 }
 
 /*!
@@ -113,7 +102,7 @@ BitmapAnnotation::BitmapAnnotation(ShapeAnnotation *pShapeAnnotation, GraphicsVi
  * \param pGraphicsView
  */
 BitmapAnnotation::BitmapAnnotation(QString classFileName, GraphicsView *pGraphicsView)
-  : ShapeAnnotation(true, pGraphicsView, 0, 0)
+  : ShapeAnnotation(true, pGraphicsView, 0)
 {
   mpOriginItem = new OriginItem(this);
   mpOriginItem->setPassive();
@@ -165,10 +154,11 @@ void BitmapAnnotation::parseShapeAnnotation(QString annotation)
 
 void BitmapAnnotation::parseShapeAnnotation()
 {
-  GraphicItem::parseShapeAnnotation(mpBitmap);
+  GraphicsView *pGraphicsView = getContainingGraphicsView();
+  GraphicItem::parseShapeAnnotation(mpBitmap, pGraphicsView);
 
   mExtent = mpBitmap->getExtent();
-  mExtent.evaluate(mpBitmap->getParentModel());
+  mExtent.evaluate(pGraphicsView->getModelWidget()->getModelInstance());
   setFileName(StringHandler::removeFirstLastQuotes(stripDynamicSelect(mpBitmap->getFileName())));
   mImageSource = StringHandler::removeFirstLastQuotes(stripDynamicSelect(mpBitmap->getImageSource()));
   if (!mImageSource.isEmpty()) {
@@ -213,7 +203,11 @@ void BitmapAnnotation::drawAnnotation(QPainter *painter)
   QPointF centerPoint = rect.center() - image.rect().center();
   QRectF target(centerPoint.x(), centerPoint.y(), image.width(), image.height());
 
+#if QT_VERSION >= QT_VERSION_CHECK(6, 9, 0)
+  painter->drawImage(target, mImage.flipped());
+#else
   painter->drawImage(target, mImage.mirrored());
+#endif
 }
 
 /*!
@@ -279,25 +273,4 @@ void BitmapAnnotation::updateShape(ShapeAnnotation *pShapeAnnotation)
 ModelInstance::Extend *BitmapAnnotation::getExtend() const
 {
   return mpBitmap->getParentExtend();
-}
-
-/*!
- * \brief BitmapAnnotation::duplicate
- * Duplicates the shape.
- */
-void BitmapAnnotation::duplicate()
-{
-  BitmapAnnotation *pBitmapAnnotation = new BitmapAnnotation(mClassFileName, "", mpGraphicsView);
-  pBitmapAnnotation->updateShape(this);
-  QPointF gridStep(mpGraphicsView->mMergedCoOrdinateSystem.getHorizontalGridStep() * 5,
-                   mpGraphicsView->mMergedCoOrdinateSystem.getVerticalGridStep() * 5);
-  pBitmapAnnotation->setOrigin(mOrigin + gridStep);
-  pBitmapAnnotation->drawCornerItems();
-  pBitmapAnnotation->setCornerItemsActiveOrPassive();
-  pBitmapAnnotation->applyTransformation();
-  pBitmapAnnotation->update();
-  mpGraphicsView->getModelWidget()->getUndoStack()->push(new AddShapeCommand(pBitmapAnnotation));
-  mpGraphicsView->getModelWidget()->getLibraryTreeItem()->emitShapeAdded(pBitmapAnnotation, mpGraphicsView);
-  setSelected(false);
-  pBitmapAnnotation->setSelected(true);
 }

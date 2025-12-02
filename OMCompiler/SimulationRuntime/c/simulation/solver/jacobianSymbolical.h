@@ -51,14 +51,14 @@
  */
 typedef void (*setJacElementFunc)(int row, int column, int nth, double value, void* Jac, int nRows);
 
-void allocateThreadLocalJacobians(DATA* data, ANALYTIC_JACOBIAN** jacColumns);
+void allocateThreadLocalJacobians(DATA* data, JACOBIAN** jacColumns);
 
 void genericColoredSymbolicJacobianEvaluation(int rows, int columns, SPARSE_PATTERN* spp,
-                                              void* matrixA, ANALYTIC_JACOBIAN* jacColumns,
+                                              void* matrixA, JACOBIAN* jacColumns,
                                               DATA* data,
                                               threadData_t* threadData,
                                               setJacElementFunc setJacElement);
 
-void freeAnalyticalJacobian(ANALYTIC_JACOBIAN** jacColumns);
+void freeAnalyticalJacobian(JACOBIAN** jacColumns);
 
 #endif

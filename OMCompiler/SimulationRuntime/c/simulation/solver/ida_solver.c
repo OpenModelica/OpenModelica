@@ -168,7 +168,7 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
     idaData->daeMode = FALSE;
     idaData->N = (long int) data->modelData->nStates;
   }
-  infoStreamPrint(LOG_SOLVER, 1, "## IDA ## Initializing solver of size %ld %s.", idaData->N, idaData->daeMode?"in DAE mode":"");
+  infoStreamPrint(OMC_LOG_SOLVER, 1, "## IDA ## Initializing solver of size %ld %s.", idaData->N, idaData->daeMode?"in DAE mode":"");
   idaData->NNZ = -1;
 
   /* initialize states and der(states) */
@@ -218,13 +218,13 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
   checkReturnFlag_SUNDIALS(flag, SUNDIALS_IDA_FLAG, "IDASetErrHandlerFn");
 
   /* Set nominal values of the states for absolute tolerances */
-  infoStreamPrint(LOG_SOLVER, 1, "The relative tolerance is %g. Following absolute tolerances are used for the states: ", data->simulationInfo->tolerance);
+  infoStreamPrint(OMC_LOG_SOLVER, 1, "The relative tolerance is %g. Following absolute tolerances are used for the states: ", data->simulationInfo->tolerance);
 
   /* Allocate memory for initialization process */
   tmp = (double*) malloc(idaData->N*sizeof(double));
   for(i=0; i < data->modelData->nStates; ++i) {
     tmp[i] = fmax(fabs(data->modelData->realVarsData[i].attribute.nominal), 1e-32);   /* TODO: Use some macro for 1e-32?? */
-    infoStreamPrint(LOG_SOLVER_V, 0, "%ld. %s -> %g", i+1, data->modelData->realVarsData[i].info.name, tmp[i]);
+    infoStreamPrint(OMC_LOG_SOLVER_V, 0, "%ld. %s -> %g", i+1, data->modelData->realVarsData[i].info.name, tmp[i]);
   }
 
   /* daeMode: set nominal values for algebraic variables */
@@ -235,7 +235,7 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
   for(i=0; i < idaData->N; ++i) {
     tmp[i] *= data->simulationInfo->tolerance;
   }
-  messageClose(LOG_SOLVER);
+  messageClose(OMC_LOG_SOLVER);
   flag = IDASVtolerances(idaData->ida_mem, data->simulationInfo->tolerance,
                          N_VMake_Serial(idaData->N, tmp));
   checkReturnFlag_SUNDIALS(flag, SUNDIALS_IDA_FLAG, "IDASVtolerances");
@@ -259,11 +259,11 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
         idaData->ypScale[i] = 1.0;
       }
     }
-    infoStreamPrint(LOG_SOLVER_V, 1, "The scale factors for all ida states: ");
+    infoStreamPrint(OMC_LOG_SOLVER_V, 1, "The scale factors for all ida states: ");
     for (i=0; i < idaData->N; ++i) {
-      infoStreamPrint(LOG_SOLVER_V, 0, "%ld. scaleFactor: %g", i+1, idaData->yScale[i]);
+      infoStreamPrint(OMC_LOG_SOLVER_V, 0, "%ld. scaleFactor: %g", i+1, idaData->yScale[i]);
     }
-    messageClose(LOG_SOLVER_V);
+    messageClose(OMC_LOG_SOLVER_V);
   } else {
     idaData->yScale   = NULL;
     idaData->ypScale  = NULL;
@@ -281,7 +281,7 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
   else {
     solverInfo->solverRootFinding = 0;
   }
-  infoStreamPrint(LOG_SOLVER, 0, "IDA uses internal root finding method %s", solverInfo->solverRootFinding?"YES":"NO");
+  infoStreamPrint(OMC_LOG_SOLVER, 0, "IDA uses internal root finding method %s", solverInfo->solverRootFinding?"YES":"NO");
 
   /* Define maximum integration order of IDA */
   if (omc_flag[FLAG_MAX_ORDER]) {
@@ -292,16 +292,16 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
   } else {
     maxOrder = 5; /* Default max order for IDA */
   }
-  infoStreamPrint(LOG_SOLVER, 0, "Maximum integration order %d", maxOrder);
+  infoStreamPrint(OMC_LOG_SOLVER, 0, "Maximum integration order %d", maxOrder);
 
   /* if FLAG_NOEQUIDISTANT_GRID is set, choose ida step method */
   if (omc_flag[FLAG_NOEQUIDISTANT_GRID]) {
     idaData->internalSteps = 1; /* TRUE */
-    solverInfo->solverNoEquidistantGrid = 1;
+    solverInfo->solverNoEquidistantGrid = TRUE;
   } else {
     idaData->internalSteps = 0; /* FALSE */
   }
-  infoStreamPrint(LOG_SOLVER, 0, "use equidistant time grid %s", idaData->internalSteps?"NO":"YES");
+  infoStreamPrint(OMC_LOG_SOLVER, 0, "use equidistant time grid %s", idaData->internalSteps?"NO":"YES");
 
   /* check if Flags FLAG_NOEQUIDISTANT_OUT_FREQ or FLAG_NOEQUIDISTANT_OUT_TIME are set */
   if (idaData->internalSteps) {
@@ -311,36 +311,36 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
       idaData->stepsTime = atof(omc_flagValue[FLAG_NOEQUIDISTANT_OUT_TIME]);
       flag = IDASetMaxStep(idaData->ida_mem, idaData->stepsTime);
       checkReturnFlag_SUNDIALS(flag, SUNDIALS_IDA_FLAG, "IDASetMaxStep");
-      infoStreamPrint(LOG_SOLVER, 0, "maximum step size %g", idaData->stepsTime);
+      infoStreamPrint(OMC_LOG_SOLVER, 0, "maximum step size %g", idaData->stepsTime);
     } else {
       idaData->stepsFreq = 1;
       idaData->stepsTime = 0.0;
     }
 
     if (omc_flag[FLAG_NOEQUIDISTANT_OUT_FREQ] && omc_flag[FLAG_NOEQUIDISTANT_OUT_TIME]) {
-      warningStreamPrint(LOG_STDOUT, 0, "The flags are  \"noEquidistantOutputFrequency\" "
+      warningStreamPrint(OMC_LOG_STDOUT, 0, "The flags are  \"noEquidistantOutputFrequency\" "
                                      "and \"noEquidistantOutputTime\" are in opposition "
                                      "to each other. The flag \"noEquidistantOutputFrequency\" superiors.");
      }
-     infoStreamPrint(LOG_SOLVER, 0, "as the output frequency control is used: %d", idaData->stepsFreq);
-     infoStreamPrint(LOG_SOLVER, 0, "as the output frequency time step control is used: %f", idaData->stepsTime);
+     infoStreamPrint(OMC_LOG_SOLVER, 0, "as the output frequency control is used: %d", idaData->stepsFreq);
+     infoStreamPrint(OMC_LOG_SOLVER, 0, "as the output frequency time step control is used: %f", idaData->stepsTime);
   }
 
   /* if FLAG_IDA_LS is set, choose ida linear solver method */
   if (omc_flag[FLAG_IDA_LS]) {
     for (i=1; i< IDA_LS_MAX; i++) {
-      if (!strcmp((const char*)omc_flagValue[FLAG_IDA_LS], IDA_LS_METHOD[i])) {
+      if (!strcmp((const char*)omc_flagValue[FLAG_IDA_LS], IDA_LS_METHOD_NAME[i])) {
         idaData->linearSolverMethod = (enum IDA_LS)i;
         break;
       }
     }
     if (idaData->linearSolverMethod == IDA_LS_UNKNOWN) {
-      if (ACTIVE_WARNING_STREAM(LOG_SOLVER)) {
-        warningStreamPrint(LOG_SOLVER, 1, "unrecognized ida linear solver method %s, current options are:", (const char*)omc_flagValue[FLAG_IDA_LS]);
+      if (OMC_ACTIVE_WARNING_STREAM(OMC_LOG_SOLVER)) {
+        warningStreamPrint(OMC_LOG_SOLVER, 1, "unrecognized ida linear solver method %s, current options are:", (const char*)omc_flagValue[FLAG_IDA_LS]);
         for(i=1; i < IDA_LS_MAX; ++i) {
-          warningStreamPrint(LOG_SOLVER, 0, "%-15s [%s]", IDA_LS_METHOD[i], IDA_LS_METHOD_DESC[i]);
+          warningStreamPrint(OMC_LOG_SOLVER, 0, "%-15s [%s]", IDA_LS_METHOD_NAME[i], IDA_LS_METHOD_DESC[i]);
         }
-        messageClose(LOG_SOLVER);
+        messageCloseWarning(OMC_LOG_SOLVER);
       }
       throwStreamPrint(threadData,"unrecognized ida linear solver method %s", (const char*)omc_flagValue[FLAG_IDA_LS]);
     }
@@ -348,13 +348,13 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
     idaData->linearSolverMethod = IDA_LS_KLU;
   }
 
-  ANALYTIC_JACOBIAN* jacobian = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
+  JACOBIAN* jacobian = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
   data->callback->initialAnalyticJacobianA(data, threadData, jacobian);
   if(jacobian->availability == JACOBIAN_AVAILABLE || jacobian->availability == JACOBIAN_ONLY_SPARSITY) {
-    infoStreamPrint(LOG_SIMULATION, 1, "Initialized Jacobian:");
-    infoStreamPrint(LOG_SIMULATION, 0, "columns: %d rows: %d", jacobian->sizeCols, jacobian->sizeRows);
-    infoStreamPrint(LOG_SIMULATION, 0, "NNZ:  %d colors: %d", jacobian->sparsePattern->numberOfNonZeros, jacobian->sparsePattern->maxColors);
-    messageClose(LOG_SIMULATION);
+    infoStreamPrint(OMC_LOG_SIMULATION, 1, "Initialized Jacobian:");
+    infoStreamPrint(OMC_LOG_SIMULATION, 0, "columns: %zu rows: %zu", jacobian->sizeCols, jacobian->sizeRows);
+    infoStreamPrint(OMC_LOG_SIMULATION, 0, "NNZ:  %u colors: %u", jacobian->sparsePattern->numberOfNonZeros, jacobian->sparsePattern->maxColors);
+    messageClose(OMC_LOG_SIMULATION);
   }
 
   // Compare user flag to availabe Jacobian methods
@@ -368,15 +368,15 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
 
   // change IDA specific jacobian method
   if(idaData->jacobianMethod == SYMJAC) {
-    warningStreamPrint(LOG_STDOUT, 0, "Symbolic Jacobians without coloring are currently not supported by IDA."
+    warningStreamPrint(OMC_LOG_STDOUT, 0, "Symbolic Jacobians without coloring are currently not supported by IDA."
                                       " Colored symbolical Jacobian will be used.");
     idaData->jacobianMethod = COLOREDSYMJAC;
   }else if(idaData->jacobianMethod == NUMJAC) {
-    warningStreamPrint(LOG_STDOUT, 0, "Numerical Jacobians without coloring are currently not supported by IDA."
+    warningStreamPrint(OMC_LOG_STDOUT, 0, "Numerical Jacobians without coloring are currently not supported by IDA."
                                       " Colored numerical Jacobian will be used.");
     idaData->jacobianMethod = COLOREDNUMJAC;
   }else if(idaData->jacobianMethod == INTERNALNUMJAC && idaData->linearSolverMethod == IDA_LS_KLU) {
-    warningStreamPrint(LOG_STDOUT, 0, "Internal Numerical Jacobians without coloring are currently not supported by IDA with KLU."
+    warningStreamPrint(OMC_LOG_STDOUT, 0, "Internal Numerical Jacobians without coloring are currently not supported by IDA with KLU."
                                       " Colored numerical Jacobian will be used.");
     idaData->jacobianMethod = COLOREDNUMJAC;
   }
@@ -438,7 +438,7 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
 
   flag = IDASetLinearSolver(idaData->ida_mem, idaData->linSol, idaData->J);
   checkReturnFlag_SUNDIALS(flag, SUNDIALS_IDALS_FLAG, "IDASetLinearSolver");
-  infoStreamPrint(LOG_SOLVER, 0, "IDA linear solver method selected %s", IDA_LS_METHOD_DESC[idaData->linearSolverMethod]);
+  infoStreamPrint(OMC_LOG_SOLVER, 0, "IDA linear solver method selected %s", IDA_LS_METHOD_DESC[idaData->linearSolverMethod]);
 
   /* Set Jacobian function */
   /* Use sparse jacobian evaluation */
@@ -465,7 +465,7 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
 #endif
       break;
     default:
-      throwStreamPrint(threadData,"For the klu solver jacobian calculation method has to be %s or %s", JACOBIAN_METHOD[COLOREDSYMJAC], JACOBIAN_METHOD[COLOREDNUMJAC]);
+      throwStreamPrint(threadData,"For the klu solver jacobian calculation method has to be %s or %s", JACOBIAN_METHOD_NAME[COLOREDSYMJAC], JACOBIAN_METHOD_NAME[COLOREDNUMJAC]);
       break;
     }
   /* Use dense jacobian evaluation */
@@ -490,7 +490,7 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
       break;
     }
   }
-  infoStreamPrint(LOG_SOLVER, 0, "Jacobian is calculated by \"%s\"", JACOBIAN_METHOD_DESC[idaData->jacobianMethod]);
+  infoStreamPrint(OMC_LOG_SOLVER, 0, "Jacobian is calculated by \"%s\"", JACOBIAN_METHOD_DESC[idaData->jacobianMethod]);
 
   /* Set max error test fails */
   if (omc_flag[FLAG_IDA_MAXERRORTESTFAIL])
@@ -546,9 +546,9 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
 
     flag = IDASetInitStep(idaData->ida_mem, initialStepSize);
     checkReturnFlag_SUNDIALS(flag, SUNDIALS_IDA_FLAG, "IDASetInitStep");
-    infoStreamPrint(LOG_SOLVER, 0, "initial step size: %g", initialStepSize);
+    infoStreamPrint(OMC_LOG_SOLVER, 0, "initial step size: %g", initialStepSize);
   } else {
-    infoStreamPrint(LOG_SOLVER, 0, "initial step size is set automatically.");
+    infoStreamPrint(OMC_LOG_SOLVER, 0, "initial step size is set automatically.");
   }
 
   /* Initialize sensitivities analysis */
@@ -589,7 +589,7 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
     idaDataGlobal = idaData;
     data->callback->functionDAE = ida_event_update;
   }
-  messageClose(LOG_SOLVER);
+  messageClose(OMC_LOG_SOLVER);
 
   if (measure_time_flag) rt_clear(SIM_TIMER_SOLVER); /* TODO Initialization should not add to this timer... */
 
@@ -688,7 +688,7 @@ int ida_event_update(DATA* data, threadData_t *threadData)
   getAlgebraicDAEVars(data, idaData->states + data->modelData->nStates);
   if (measure_time_flag) rt_tick(SIM_TIMER_SOLVER);
 
-  infoStreamPrint(LOG_SOLVER, 0, "##IDA## do event update at %.15g", data->localData[0]->timeValue);
+  infoStreamPrint(OMC_LOG_SOLVER, 0, "##IDA## do event update at %.15g", data->localData[0]->timeValue);
   memcpy(idaData->states, data->localData[0]->realVars, sizeof(double)*data->modelData->nStates);
   memcpy(idaData->statesDer, data->localData[0]->realVars + data->modelData->nStates, sizeof(double)*data->modelData->nStates);
   memcpy(NV_DATA_S(idaData->y), idaData->states, idaData->N);
@@ -707,7 +707,7 @@ int ida_event_update(DATA* data, threadData_t *threadData)
     init_h = DBL_EPSILON;
     flag = IDASetInitStep(idaData->ida_mem, init_h);
     checkReturnFlag_SUNDIALS(flag, SUNDIALS_IDA_FLAG, "IDASetInitStep");
-    infoStreamPrint(LOG_SOLVER, 0, "##IDA## corrected step-size at %.15g", init_h);
+    infoStreamPrint(OMC_LOG_SOLVER, 0, "##IDA## corrected step-size at %.15g", init_h);
   }
 
   /* increase limits of the non-linear solver */
@@ -719,15 +719,15 @@ int ida_event_update(DATA* data, threadData_t *threadData)
 
   /* debug */
   IDAGetNumNonlinSolvIters(idaData->ida_mem, &nonLinIters);
-  infoStreamPrint(LOG_SOLVER, 0, "##IDA## IDACalcIC run status %d.\nIterations : %ld\n", flag, nonLinIters);
+  infoStreamPrint(OMC_LOG_SOLVER, 0, "##IDA## IDACalcIC run status %d.\nIterations : %ld\n", flag, nonLinIters);
 
   /* try again without line search if first try fails */
   if (!IDAflagIsSuccess(flag)){
-    infoStreamPrint(LOG_SOLVER, 0, "##IDA## first event iteration failed. Start next try without line search!");
+    infoStreamPrint(OMC_LOG_SOLVER, 0, "##IDA## first event iteration failed. Start next try without line search!");
     IDASetLineSearchOffIC(idaData->ida_mem, 1 /* TRUE */);
     flag = IDACalcIC(idaData->ida_mem, IDA_YA_YDP_INIT, data->localData[0]->timeValue+data->simulationInfo->tolerance);
     IDAGetNumNonlinSolvIters(idaData->ida_mem, &nonLinIters);
-    infoStreamPrint(LOG_SOLVER, 0, "##IDA## IDACalcIC run status %d.\nIterations : %ld\n", flag, nonLinIters);
+    infoStreamPrint(OMC_LOG_SOLVER, 0, "##IDA## IDACalcIC run status %d.\nIterations : %ld\n", flag, nonLinIters);
     checkReturnFlag_SUNDIALS(flag, SUNDIALS_IDA_FLAG, "IDAGetNumNonlinSolvIters");
   }
   /* obtain consistent values of y_algebraic and y_prime */
@@ -795,8 +795,6 @@ int ida_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInf
   /* reinit solver */
   if (!idaData->setInitialSolution)
   {
-    debugStreamPrint(LOG_SOLVER, 0, "Re-initialized IDA Solver");
-
     /* initialize states and der(states) */
     if (idaData->daeMode)
     {
@@ -812,9 +810,9 @@ int ida_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInf
       getScalingFactors(data, idaData, NULL);
 
       /* scale idaData->y and idaData->yp */
-      infoStreamPrint(LOG_SOLVER_V, 1, "Scale y and yp");
+      infoStreamPrint(OMC_LOG_SOLVER_V, 1, "Scale y and yp");
       idaScaleData(idaData);
-      messageClose(LOG_SOLVER_V);
+      messageClose(OMC_LOG_SOLVER_V);
     }
 
     flag = IDAReInit(idaData->ida_mem,
@@ -861,8 +859,8 @@ int ida_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInf
    * If that is the case we skip the current step. */
   if (solverInfo->currentStepSize < DASSL_STEP_EPS)
   {
-    infoStreamPrint(LOG_SOLVER, 0, "Desired step to small try next one");
-    infoStreamPrint(LOG_SOLVER, 0, "Interpolate linear");
+    infoStreamPrint(OMC_LOG_SOLVER, 0, "Desired step to small try next one");
+    infoStreamPrint(OMC_LOG_SOLVER, 0, "Interpolate linear");
 
     /* linear extrapolation */
     for(i = 0; i < idaData->N; i++)
@@ -904,7 +902,7 @@ int ida_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInf
 
   do
   {
-    infoStreamPrint(LOG_SOLVER, 1, "##IDA## new step from %.15g to %.15g", solverInfo->currentTime, tout);
+    infoStreamPrint(OMC_LOG_SOLVER, 1, "##IDA## new step from %.15g to %.15g", solverInfo->currentTime, tout);
 
     if (measure_time_flag) rt_accumulate(SIM_TIMER_SOLVER);
     /* read input vars */
@@ -932,21 +930,21 @@ int ida_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInf
     /* error handling */
     if (IDAflagIsSuccess(flag) && solverInfo->currentTime >= tout)
     {
-      infoStreamPrint(LOG_SOLVER, 0, "##IDA## step done to time = %.15g", solverInfo->currentTime);
+      infoStreamPrint(OMC_LOG_SOLVER, 0, "##IDA## step done to time = %.15g", solverInfo->currentTime);
       finished = 1 /* TRUE */;
     }
     else if (flag == IDA_ROOT_RETURN)
     {
-      infoStreamPrint(LOG_SOLVER, 0, "##IDA## root found at time = %.15g", solverInfo->currentTime);
+      infoStreamPrint(OMC_LOG_SOLVER, 0, "##IDA## root found at time = %.15g", solverInfo->currentTime);
       finished = 1 /* TRUE */;
     }
     else if (flag == IDA_SUCCESS || flag == IDA_TSTOP_RETURN)
     {
-      infoStreamPrint(LOG_SOLVER, 0, "##IDA## continue integration time = %.15g", solverInfo->currentTime);
+      infoStreamPrint(OMC_LOG_SOLVER, 0, "##IDA## continue integration time = %.15g", solverInfo->currentTime);
     }
     else if (flag == IDA_TOO_MUCH_WORK)
     {
-      warningStreamPrint(LOG_SOLVER, 0, "##IDA## has done too much work with small steps at time = %.15g", solverInfo->currentTime);
+      warningStreamPrint(OMC_LOG_SOLVER, 0, "##IDA## has done too much work with small steps at time = %.15g", solverInfo->currentTime);
     }
     else if (flag == IDA_LSETUP_FAIL && !restartAfterLSFail)
     {
@@ -955,22 +953,22 @@ int ida_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInf
           idaData->y,
           idaData->yp);
       restartAfterLSFail = 1;
-      warningStreamPrint(LOG_SOLVER, 0, "##IDA## linear solver failed try once again = %.15g", solverInfo->currentTime);
+      warningStreamPrint(OMC_LOG_SOLVER, 0, "##IDA## linear solver failed try once again = %.15g", solverInfo->currentTime);
     }
     else
     {
       if (IDAflagIsSuccess(flag))
       {
-        infoStreamPrint(LOG_SOLVER, 0, "##IDA## continue integration time = %.15g", solverInfo->currentTime);
+        infoStreamPrint(OMC_LOG_SOLVER, 0, "##IDA## continue integration time = %.15g", solverInfo->currentTime);
       }
       else if (flag == IDA_ROOT_RETURN)
       {
-        infoStreamPrint(LOG_SOLVER, 0, "##IDA## root found at time = %.15g", solverInfo->currentTime);
+        infoStreamPrint(OMC_LOG_SOLVER, 0, "##IDA## root found at time = %.15g", solverInfo->currentTime);
         finished = 1 /* TRUE */;
       }
       else if (flag == IDA_TOO_MUCH_WORK)
       {
-        warningStreamPrint(LOG_SOLVER, 0, "##IDA## has done too much work with small steps at time = %.15g", solverInfo->currentTime);
+        warningStreamPrint(OMC_LOG_SOLVER, 0, "##IDA## has done too much work with small steps at time = %.15g", solverInfo->currentTime);
       }
       else if (flag == IDA_LSETUP_FAIL && !restartAfterLSFail )
       {
@@ -979,28 +977,28 @@ int ida_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInf
             idaData->y,
             idaData->yp);
         restartAfterLSFail = 1;
-        warningStreamPrint(LOG_SOLVER, 0, "##IDA## linear solver failed try once again = %.15g", solverInfo->currentTime);
+        warningStreamPrint(OMC_LOG_SOLVER, 0, "##IDA## linear solver failed try once again = %.15g", solverInfo->currentTime);
       }
       else
       {
-        infoStreamPrint(LOG_STDOUT, 0, "##IDA## %d error occurred at time = %.15g", flag, solverInfo->currentTime);
+        infoStreamPrint(OMC_LOG_STDOUT, 0, "##IDA## %d error occurred at time = %.15g", flag, solverInfo->currentTime);
         finished = 1 /* TRUE */;
         retVal = flag;
       }
     }
 
     /* closing new step message */
-    messageClose(LOG_SOLVER);
+    messageClose(OMC_LOG_SOLVER);
 
     /* emit step, if step mode is selected */
     if (idaData->internalSteps)
     {
-      infoStreamPrint(LOG_SOLVER, 0, "##IDA## noEquadistant stepsOutputCounter %d by freq %d at time = %.15g", stepsOutputCounter, idaData->stepsFreq, solverInfo->currentTime);
+      infoStreamPrint(OMC_LOG_SOLVER, 0, "##IDA## noEquadistant stepsOutputCounter %d by freq %d at time = %.15g", stepsOutputCounter, idaData->stepsFreq, solverInfo->currentTime);
       if (omc_flag[FLAG_NOEQUIDISTANT_OUT_FREQ]){
         /* output every n-th time step */
         if (stepsOutputCounter >= idaData->stepsFreq){
           stepsOutputCounter = 1; /* next line set it to one */
-          infoStreamPrint(LOG_SOLVER, 0, "##IDA## noEquadistant output %d by freq at time = %.15g", stepsOutputCounter, solverInfo->currentTime);
+          infoStreamPrint(OMC_LOG_SOLVER, 0, "##IDA## noEquadistant output %d by freq at time = %.15g", stepsOutputCounter, solverInfo->currentTime);
           break;
         }
         stepsOutputCounter++;
@@ -1008,7 +1006,7 @@ int ida_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInf
         /* output when time>=k*timeValue */
         if (solverInfo->currentTime > stepsOutputCounter * idaData->stepsTime){
           stepsOutputCounter++;
-          infoStreamPrint(LOG_SOLVER, 0, "##IDA## noEquadistant output %d by time freq at time = %.15g", stepsOutputCounter, solverInfo->currentTime);
+          infoStreamPrint(OMC_LOG_SOLVER, 0, "##IDA## noEquadistant output %d by time freq at time = %.15g", stepsOutputCounter, solverInfo->currentTime);
           break;
         }
       } else {
@@ -1078,29 +1076,29 @@ int ida_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInf
   solverInfo->solverStatsTmp.nConvergenveTestFailures = tmp;
 
   /* get more statistics */
-  if (useStream[LOG_SOLVER_V])
+  if (omc_useStream[OMC_LOG_SOLVER_V])
   {
     long int tmp1,tmp2;
     double dtmp;
 
-    infoStreamPrint(LOG_SOLVER_V, 1, "### IDAStats ###");
+    infoStreamPrint(OMC_LOG_SOLVER_V, 1, "### IDAStats ###");
     /* nonlinear stats */
     tmp1 = tmp2 = 0;
     flag = IDAGetNonlinSolvStats(idaData->ida_mem, &tmp1, &tmp2);
-    infoStreamPrint(LOG_SOLVER_V, 0, " ## Cumulative number of nonlinear iterations performed: %ld", tmp1);
-    infoStreamPrint(LOG_SOLVER_V, 0, " ## Cumulative number of nonlinear convergence failures that have occurred: %ld", tmp2);
+    infoStreamPrint(OMC_LOG_SOLVER_V, 0, " ## Cumulative number of nonlinear iterations performed: %ld", tmp1);
+    infoStreamPrint(OMC_LOG_SOLVER_V, 0, " ## Cumulative number of nonlinear convergence failures that have occurred: %ld", tmp2);
 
     /* others */
     flag = IDAGetTolScaleFactor(idaData->ida_mem, &dtmp);
-    infoStreamPrint(LOG_SOLVER_V, 0, " ## Suggested scaling factor for user tolerances: %g", dtmp);
+    infoStreamPrint(OMC_LOG_SOLVER_V, 0, " ## Suggested scaling factor for user tolerances: %g", dtmp);
 
     flag = IDAGetNumLinSolvSetups(idaData->ida_mem, &tmp1);
-    infoStreamPrint(LOG_SOLVER_V, 0, " ## Number of calls made to the linear solver setup function: %ld", tmp1);
+    infoStreamPrint(OMC_LOG_SOLVER_V, 0, " ## Number of calls made to the linear solver setup function: %ld", tmp1);
 
-    messageClose(LOG_SOLVER_V);
+    messageClose(OMC_LOG_SOLVER_V);
   }
 
-  infoStreamPrint(LOG_SOLVER, 0, "##IDA## Finished Integrator step.");
+  infoStreamPrint(OMC_LOG_SOLVER, 0, "##IDA## Finished Integrator step.");
   if (measure_time_flag) rt_accumulate(SIM_TIMER_SOLVER);
 
   TRACE_POP
@@ -1135,7 +1133,7 @@ static int residualFunctionIDA(double time, N_Vector yy, N_Vector yp, N_Vector r
   double *statesDer = N_VGetArrayPointer_Serial(yp);
   double *delta  = N_VGetArrayPointer_Serial(rr);
 
-  infoStreamPrint(LOG_SOLVER_V, 1, "### eval residualFunctionIDA ###");
+  infoStreamPrint(OMC_LOG_SOLVER_V, 1, "### eval residualFunctionIDA ###");
   /* rescale idaData->y and idaData->yp */
   if ((omc_flag[FLAG_IDA_SCALING] && idaData->useScaling))
   {
@@ -1173,12 +1171,12 @@ static int residualFunctionIDA(double time, N_Vector yy, N_Vector yp, N_Vector r
   }
 
   /* debug */
-  if (ACTIVE_STREAM(LOG_SOLVER_V)){
-    printCurrentStatesVector(LOG_SOLVER_V, data->localData[0]->realVars, data, time);
-    printVector(LOG_SOLVER_V, "yprime", data->localData[0]->realVars + data->modelData->nStates, data->modelData->nStates, time);
+  if (OMC_ACTIVE_STREAM(OMC_LOG_SOLVER_V)){
+    printCurrentStatesVector(OMC_LOG_SOLVER_V, data->localData[0]->realVars, data, time);
+    printVector(OMC_LOG_SOLVER_V, "yprime", data->localData[0]->realVars + data->modelData->nStates, data->modelData->nStates, time);
     if (idaData->daeMode)
     {
-      printVector(LOG_SOLVER_V, "yalg", states + data->modelData->nStates, data->simulationInfo->daeModeData->nAlgebraicDAEVars, time);
+      printVector(OMC_LOG_SOLVER_V, "yalg", states + data->modelData->nStates, data->simulationInfo->daeModeData->nAlgebraicDAEVars, time);
     }
   }
 
@@ -1198,7 +1196,7 @@ static int residualFunctionIDA(double time, N_Vector yy, N_Vector yp, N_Vector r
     for(i=0; i < idaData->N; i++)
     {
       NV_Ith_S(rr, i) = data->simulationInfo->daeModeData->residualVars[i];
-      infoStreamPrint(LOG_SOLVER_V, 0, "%ld. residual = %e", i, NV_Ith_S(rr, i));
+      infoStreamPrint(OMC_LOG_SOLVER_V, 0, "%ld. residual = %e", i, NV_Ith_S(rr, i));
     }
   }
   else
@@ -1210,20 +1208,20 @@ static int residualFunctionIDA(double time, N_Vector yy, N_Vector yp, N_Vector r
     for(i=0; i < idaData->N; i++)
     {
       NV_Ith_S(rr, i) = data->localData[0]->realVars[data->modelData->nStates + i] - NV_Ith_S(yp, i);
-      infoStreamPrint(LOG_SOLVER_V, 0, "%ld. residual = %e", i, NV_Ith_S(rr, i));
+      infoStreamPrint(OMC_LOG_SOLVER_V, 0, "%ld. residual = %e", i, NV_Ith_S(rr, i));
     }
   }
 
   /* scale ressidual rr */
   if ((omc_flag[FLAG_IDA_SCALING] && idaData->useScaling))
   {
-    infoStreamPrint(LOG_SOLVER_V, 1, "scale residuals");
+    infoStreamPrint(OMC_LOG_SOLVER_V, 1, "scale residuals");
     idaScaleVector(rr, idaData->resScale, idaData->N);
-    messageClose(LOG_SOLVER_V);
+    messageClose(OMC_LOG_SOLVER_V);
     idaScaleData(idaData);
   }
 
-  printVector(LOG_DASSL_STATES, "delta", delta, idaData->N, time);
+  printVector(OMC_LOG_DASSL_STATES, "delta", delta, idaData->N, time);
   success = 1;
 #if !defined(OMC_EMCC)
   MMC_CATCH_INTERNAL(simulationJumpBuffer)
@@ -1238,7 +1236,7 @@ static int residualFunctionIDA(double time, N_Vector yy, N_Vector yp, N_Vector r
   if (data->simulationInfo->currentContext == CONTEXT_ODE){
     unsetContext(data);
   }
-  messageClose(LOG_SOLVER_V);
+  messageClose(OMC_LOG_SOLVER_V);
   if (measure_time_flag) rt_accumulate(SIM_TIMER_SOLVER);
 
   TRACE_POP
@@ -1269,7 +1267,7 @@ static int rootsFunctionIDA(double time, N_Vector yy, N_Vector yp, double *gout,
 
   int saveJumpState;
 
-  infoStreamPrint(LOG_SOLVER_V, 1, "### eval rootsFunctionIDA ###");
+  infoStreamPrint(OMC_LOG_SOLVER_V, 1, "### eval rootsFunctionIDA ###");
 
   if (data->simulationInfo->currentContext == CONTEXT_ALGEBRAIC)
   {
@@ -1321,7 +1319,7 @@ static int rootsFunctionIDA(double time, N_Vector yy, N_Vector yp, double *gout,
   if (data->simulationInfo->currentContext == CONTEXT_EVENTS){
     unsetContext(data);
   }
-  messageClose(LOG_SOLVER_V);
+  messageClose(OMC_LOG_SOLVER_V);
   if (measure_time_flag) rt_tick(SIM_TIMER_SOLVER);   // TODO: Why do we have two rt_tick calls? Keep only this one?
 
   TRACE_POP
@@ -1466,7 +1464,7 @@ static int jacColoredSymbolicalDense(double currentTime, double cj, N_Vector yy,
   const int index = data->callback->INDEX_JAC_A;
   unsigned int i,ii,j, nth;
   SPARSE_PATTERN* sparsePattern = data->simulationInfo->analyticJacobians[index].sparsePattern;
-  ANALYTIC_JACOBIAN* jac = &(data->simulationInfo->analyticJacobians[index]);
+  JACOBIAN* jac = &(data->simulationInfo->analyticJacobians[index]);
   jac->dae_cj = cj;
 
   /* prepare variables */
@@ -1496,9 +1494,9 @@ static int jacColoredSymbolicalDense(double currentTime, double cj, N_Vector yy,
   }
   // ToDo Use always a thread local analyticJacobians (replace simulationInfo->analyticaJacobians)
   // These are not the Jacobians of the linear systems! (SimulationInfo->linearSystemData[idx].jacobian)
-  ANALYTIC_JACOBIAN* t_jac = &(idaData->jacColumns[omc_get_thread_num()]);
+  JACOBIAN* t_jac = &(idaData->jacColumns[omc_get_thread_num()]);
 #else
-  ANALYTIC_JACOBIAN* t_jac = jac;
+  JACOBIAN* t_jac = jac;
 #endif
 
 #pragma omp for
@@ -1523,7 +1521,7 @@ static int jacColoredSymbolicalDense(double currentTime, double cj, N_Vector yy,
         while(nth < sparsePattern->leadindex[ii+1])
         {
           j  =  sparsePattern->index[nth];
-          infoStreamPrint(LOG_JAC, 0, "### symbolical jacobian  at [%d,%d] = %f ###", j, ii, t_jac->resultVars[j]);
+          infoStreamPrint(OMC_LOG_JAC, 0, "### symbolical jacobian  at [%d,%d] = %f ###", j, ii, t_jac->resultVars[j]);
           SM_ELEMENT_D(Jac, j, ii) = t_jac->resultVars[j];
           nth++;
         };
@@ -1591,9 +1589,9 @@ static int callDenseJacobian(realtype tt, realtype cj, N_Vector yy,
   }
 
   /* debug */
-  if (ACTIVE_STREAM(LOG_JAC)){
+  if (OMC_ACTIVE_STREAM(OMC_LOG_JAC)){
     _omc_matrix* dumpJac = _omc_createMatrix(idaData->N, idaData->N, SM_DATA_D(Jac));
-    _omc_printMatrix(dumpJac, "IDA-Solver: Matrix A", LOG_JAC);
+    _omc_printMatrix(dumpJac, "IDA-Solver: Matrix A", OMC_LOG_JAC);
     _omc_destroyMatrix(dumpJac);
   }
 
@@ -1623,7 +1621,7 @@ static void finishSparseColPtr(SUNMatrix A, int nnz)
   /* TODO: Remove this check for performance reasons? */
   if (SM_SPARSETYPE_S(A) != CSC_MAT) {
     errorStreamPrint(
-        LOG_STDOUT, 0,
+        OMC_LOG_STDOUT, 0,
         "In function finishSparseColPtr: Wrong sparse format of SUNMatrix A.");
   }
 
@@ -1675,7 +1673,7 @@ static int jacoColoredNumericalSparse(double currentTime, N_Vector yy,
 
   double currentStep;
 
-  infoStreamPrint(LOG_SOLVER_V, 1, "### eval jacobianSparseNumIDA ###");
+  infoStreamPrint(OMC_LOG_SOLVER_V, 1, "### eval jacobianSparseNumIDA ###");
   /* set values */
   IDAGetCurrentStep(ida_mem, &currentStep);
   if (idaData->useScaling){
@@ -1768,7 +1766,7 @@ static int jacoColoredNumericalSparse(double currentTime, N_Vector yy,
   }
 
   unsetContext(data);
-  messageClose(LOG_SOLVER_V);
+  messageClose(OMC_LOG_SOLVER_V);
 
   TRACE_POP
   return 0;
@@ -1788,7 +1786,7 @@ int jacColoredSymbolicalSparse(double currentTime, N_Vector yy, N_Vector yp,
   DATA* data = (DATA*)(((IDA_USERDATA*)idaData->userData)->data);
   threadData_t* threadData = (threadData_t*)(((IDA_USERDATA*)idaData->userData)->threadData);
   const int index = data->callback->INDEX_JAC_A;
-  ANALYTIC_JACOBIAN* jac = &(data->simulationInfo->analyticJacobians[index]);
+  JACOBIAN* jac = &(data->simulationInfo->analyticJacobians[index]);
   jac->dae_cj = cj;
 
   /* prepare variables */
@@ -1796,9 +1794,9 @@ int jacColoredSymbolicalSparse(double currentTime, N_Vector yy, N_Vector yp,
   double *yprime = N_VGetArrayPointer_Serial(yp);
 
 #ifdef USE_PARJAC
-  ANALYTIC_JACOBIAN* t_jac = (idaData->jacColumns);
+  JACOBIAN* t_jac = (idaData->jacColumns);
 #else
-  ANALYTIC_JACOBIAN* t_jac = jac;
+  JACOBIAN* t_jac = jac;
 #endif
   unsigned int columns = jac->sizeCols;
   unsigned int rows = jac->sizeRows;
@@ -1854,12 +1852,12 @@ static int callSparseJacobian(double currentTime, double cj,
   }
 
   /* debug */
-  if (ACTIVE_STREAM(LOG_JAC)) {
-    infoStreamPrint(LOG_JAC, 0, "##IDA## Sparse Matrix A.");
+  if (OMC_ACTIVE_STREAM(OMC_LOG_JAC)) {
+    infoStreamPrint(OMC_LOG_JAC, 0, "##IDA## Sparse Matrix A.");
     SUNSparseMatrix_Print(Jac, stdout);
   }
-  if (ACTIVE_STREAM(LOG_DEBUG)) {
-    sundialsPrintSparseMatrix(Jac, "A", LOG_JAC);
+  if (OMC_ACTIVE_STREAM(OMC_LOG_DEBUG)) {
+    sundialsPrintSparseMatrix(Jac, "A", OMC_LOG_JAC);
   }
 
   /* add cj to diagonal elements and store in Jac */
@@ -1896,7 +1894,7 @@ static int getScalingFactors(DATA* data, IDA_SOLVER* idaData, SUNMatrix inScaleM
 
   if (inScaleMatrix == NULL)
   {
-    infoStreamPrint(LOG_SOLVER_V, 1, "##IDA## get new scaling matrix.");
+    infoStreamPrint(OMC_LOG_SOLVER_V, 1, "##IDA## get new scaling matrix.");
 
     /* use y scale to scale jacobian, but y and yp are not scaled */
     idaData->useScaling = FALSE;
@@ -1927,7 +1925,7 @@ static int getScalingFactors(DATA* data, IDA_SOLVER* idaData, SUNMatrix inScaleM
       idaData->scaleMatrix = SUNSparseFromDenseMatrix(denseMatrix, DBL_MIN, CSC_MAT);
       if (idaData->scaleMatrix == NULL) {
         errorStreamPrint(
-            LOG_STDOUT, 0,
+            OMC_LOG_STDOUT, 0,
             "##IDA## In function SUNSparseFromDenseMatrix: Requirements are "
             "violated, or matrix storage request cannot be satisfied.");
       }
@@ -1938,7 +1936,7 @@ static int getScalingFactors(DATA* data, IDA_SOLVER* idaData, SUNMatrix inScaleM
   }
   else
   {
-    infoStreamPrint(LOG_SOLVER_V, 1, "##IDA## use given scaling matrix.");
+    infoStreamPrint(OMC_LOG_SOLVER_V, 1, "##IDA## use given scaling matrix.");
     idaData->scaleMatrix = inScaleMatrix;
   }
 
@@ -1950,11 +1948,11 @@ static int getScalingFactors(DATA* data, IDA_SOLVER* idaData, SUNMatrix inScaleM
     }
   }
 
-  printVector(LOG_SOLVER_V, "Prime scale factors", idaData->ypScale, idaData->N, 0.0);
-  printVector(LOG_SOLVER_V, "Residual scale factors", idaData->resScale, idaData->N, 0.0);
+  printVector(OMC_LOG_SOLVER_V, "Prime scale factors", idaData->ypScale, idaData->N, 0.0);
+  printVector(OMC_LOG_SOLVER_V, "Residual scale factors", idaData->resScale, idaData->N, 0.0);
 
   /* Free memory */
-  messageClose(LOG_SOLVER_V);
+  messageClose(OMC_LOG_SOLVER_V);
   N_VDestroy_Serial(tmp1);
   N_VDestroy_Serial(tmp2);
   N_VDestroy_Serial(tmp3);
@@ -1974,12 +1972,12 @@ static void idaScaleVector(N_Vector vec, double* factors, unsigned int size)
 {
   int i;
   double *data = N_VGetArrayPointer_Serial(vec);
-  printVector(LOG_SOLVER_V, "un-scaled", data, size, 0.0);
+  printVector(OMC_LOG_SOLVER_V, "un-scaled", data, size, 0.0);
   for(i=0; i < size; ++i)
   {
     data[i] = data[i] / factors[i];
   }
-  printVector(LOG_SOLVER_V, "scaled", data, size, 0.0);
+  printVector(OMC_LOG_SOLVER_V, "scaled", data, size, 0.0);
 }
 
 /**
@@ -1990,12 +1988,12 @@ static void idaScaleVector(N_Vector vec, double* factors, unsigned int size)
  */
 static void idaScaleData(IDA_SOLVER *idaData)
 {
-  infoStreamPrint(LOG_SOLVER_V, 1, "Scale y");
+  infoStreamPrint(OMC_LOG_SOLVER_V, 1, "Scale y");
   idaScaleVector(idaData->y, idaData->yScale, idaData->N);
-  messageClose(LOG_SOLVER_V);
-  infoStreamPrint(LOG_SOLVER_V, 1, "Scale yp");
+  messageClose(OMC_LOG_SOLVER_V);
+  infoStreamPrint(OMC_LOG_SOLVER_V, 1, "Scale yp");
   idaScaleVector(idaData->yp, idaData->ypScale, idaData->N);
-  messageClose(LOG_SOLVER_V);
+  messageClose(OMC_LOG_SOLVER_V);
 }
 
 /**
@@ -2010,12 +2008,12 @@ static void idaReScaleVector(N_Vector vec, double* factors, unsigned int size)
   int i;
   double *data = N_VGetArrayPointer_Serial(vec);
 
-  printVector(LOG_SOLVER_V, "scaled", data, size, 0.0);
+  printVector(OMC_LOG_SOLVER_V, "scaled", data, size, 0.0);
   for(i=0; i < size; ++i)
   {
     data[i] = data[i] * factors[i];
   }
-  printVector(LOG_SOLVER_V, "un-scaled", data, size, 0.0);
+  printVector(OMC_LOG_SOLVER_V, "un-scaled", data, size, 0.0);
 }
 
 /**
@@ -2027,12 +2025,12 @@ static void idaReScaleVector(N_Vector vec, double* factors, unsigned int size)
  */
 static void idaReScaleData(IDA_SOLVER *idaData)
 {
-  infoStreamPrint(LOG_SOLVER_V, 1, "Re-Scale y");
+  infoStreamPrint(OMC_LOG_SOLVER_V, 1, "Re-Scale y");
   idaReScaleVector(idaData->y, idaData->yScale, idaData->N);
-  messageClose(LOG_SOLVER_V);
-  infoStreamPrint(LOG_SOLVER_V, 1, "Re-Scale yp");
+  messageClose(OMC_LOG_SOLVER_V);
+  infoStreamPrint(OMC_LOG_SOLVER_V, 1, "Re-Scale yp");
   idaReScaleVector(idaData->yp, idaData->ypScale, idaData->N);
-  messageClose(LOG_SOLVER_V);
+  messageClose(OMC_LOG_SOLVER_V);
 }
 
 #endif /* #ifdef WITH_SUNDIALS */

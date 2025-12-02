@@ -121,8 +121,9 @@ uniontype Class
     Boolean     encapsulatedPrefix "true if encapsulated" ;
     Restriction restriction  "Restriction" ;
     ClassDef    body;
-    list<String> commentsBeforeEnd;
-    list<String> commentsAfterEnd;
+    list<String> commentsBeforeClass "when a class is the first one in the file and has a comment before it";
+    list<String> commentsBeforeEnd "when a class has comments before its end";
+    list<String> commentsAfterEnd "when the class has comments after its end, before the next class or the end of the file";
     Info       info    "Information: FileName is the class is defined in +
                isReadOnly bool + start line no + start column no +
                end line no + end column no";
@@ -566,6 +567,8 @@ uniontype Algorithm "The Algorithm type describes one algorithm statement in an
 end Algorithm;
 
 public
+constant Modification emptyMod = Modification.CLASSMOD({}, EqMod.NOMOD());
+
 uniontype Modification "Modifications are described by the `Modification\' type.  There
   are two forms of modifications: redeclarations and component
   modifications.
@@ -610,6 +613,12 @@ uniontype ElementArg "Wrapper for things that modify elements, modifications and
   record ELEMENTARGCOMMENT "A lexer comment"
     String comment;
   end ELEMENTARGCOMMENT;
+
+  record INHERITANCEBREAK "break is either an ident or an equation
+    we save the ident as connect(ident, break) to keep it simple"
+    Equation cnct;
+    Info info;
+  end INHERITANCEBREAK;
 
 end ElementArg;
 

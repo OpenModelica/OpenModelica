@@ -1,7 +1,6 @@
 // name: CevalAdd1
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 
 model CevalAdd1

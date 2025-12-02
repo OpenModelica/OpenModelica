@@ -61,7 +61,7 @@ public
     input list<SBInterval> ints;
     output SBMultiInterval outMI;
   algorithm
-    if List.exist(ints, SBInterval.isEmpty) then
+    if List.any(ints, SBInterval.isEmpty) then
       outMI := newEmpty();
     else
       outMI := MULTI_INTERVAL(listArray(ints), listLength(ints));
@@ -72,7 +72,7 @@ public
     input array<SBInterval> ints;
     output SBMultiInterval outMI;
   algorithm
-    if Array.exist(ints, SBInterval.isEmpty) then
+    if Array.any(ints, SBInterval.isEmpty) then
       outMI := newEmpty();
     else
       outMI := MULTI_INTERVAL(arrayCopy(ints), arrayLength(ints));

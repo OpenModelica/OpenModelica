@@ -1,7 +1,6 @@
 // name: MatrixBrackets
 // keywords: array, matrix
 // status: correct
-// cflags: -d=-newInst
 //
 // Tests matrix construction with [] syntax
 //
@@ -10,6 +9,7 @@ model MatrixBrackets
   Integer intMatrix[4,4];
 equation
   intMatrix = [1,2,3,4; 5,6,7,8; 8,7,6,5; 4,3,2,1];
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end MatrixBrackets;
 
 // Result:

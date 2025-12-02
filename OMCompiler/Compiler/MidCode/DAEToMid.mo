@@ -1530,8 +1530,8 @@ algorithm
         midvar := RValueToVar(MidCode.METAFIELD(scrutinee,fieldNr,listHead(listTypes)),state);
         moreMatches := (midvar, listHead(iterator)) :: moreMatches;
         fieldNr := fieldNr + 1;
-        iterator := List.rest(iterator);
-        listTypes := List.rest(listTypes);
+        iterator := listRest(iterator);
+        listTypes := listRest(listTypes);
       end while;
       moreMatches := listReverse(moreMatches);
       patternToMidCode2(matches = listAppend(moreMatches, restMatches), state=state, assignBlock=assignBlock, labelNoMatch=labelNoMatch);
@@ -1610,8 +1610,8 @@ algorithm
         midvar := RValueToVar(MidCode.METAFIELD(scrutinee,fieldNr,listHead(listTypes)),state);
         moreMatches := (midvar, listHead(iterator)) :: moreMatches;
         fieldNr := fieldNr + 1;
-        iterator := List.rest(iterator);
-        listTypes := List.rest(listTypes);
+        iterator := listRest(iterator);
+        listTypes := listRest(listTypes);
       end while;
       moreMatches := listReverse(moreMatches);
 

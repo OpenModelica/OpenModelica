@@ -1,7 +1,6 @@
 // name:     BM27 -  TwoInputs component
 // keywords: TwoInputs
 // status:   correct
-// cflags: -d=-newInst
 //
 // Testing instantiation of the Math.TwoInputs component.
 //
@@ -948,6 +947,7 @@ model BM27
 equation
   connect(twoInputs1.inPort2,constant2.outPort) annotation(Line(visible=true,points={{34.57,20.68},{70.89,44.02}}));
   connect(twoInputs1.inPort1,constant1.outPort) annotation(Line(visible=true,points={{9.93,21.46},{0.07,20.68}}));
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end BM27;
 // class BM27
 // parameter Integer constant1.nout(min = 1) = 1 "Number of outputs";

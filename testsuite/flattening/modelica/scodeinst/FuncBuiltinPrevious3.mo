@@ -1,7 +1,6 @@
 // name: FuncBuiltinPrevious3
 // keywords: pre
 // status: correct
-// cflags: -d=newInst
 //
 // Tests the builtin previous operator.
 //
@@ -28,6 +27,6 @@ end FuncBuiltinPrevious3;
 //   Real x[2];
 //   Real x[3];
 // equation
-//   x = f(array(previous(x[$i1]) for $i1 in 1:3));
+//   x = f(array(previous(x[$i0]) for $i0 in 1:3));
 // end FuncBuiltinPrevious3;
 // endResult

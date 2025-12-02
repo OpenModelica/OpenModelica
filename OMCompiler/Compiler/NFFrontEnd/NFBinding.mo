@@ -32,10 +32,11 @@
 encapsulated uniontype NFBinding
 
 public
+  import BaseModelica;
   import Expression = NFExpression;
   import NFInstNode.InstNode;
   import Type = NFType;
-  import NFPrefixes.Variability;
+  import NFPrefixes.{Variability, Purity};
   import ErrorTypes;
   import Mutable;
   import Subscript = NFSubscript;
@@ -91,6 +92,7 @@ public
     Expression bindingExp;
     Type bindingType;
     Variability variability;
+    Purity purity;
     EachType eachType;
     Mutable<EvalState> evalState;
     Boolean isFlattened;
@@ -186,16 +188,6 @@ public
       else false;
     end match;
   end isInvalid;
-
-  function untypedExp
-    input Binding binding;
-    output Option<Expression> exp;
-  algorithm
-    exp := match binding
-      case UNTYPED_BINDING() then SOME(binding.bindingExp);
-      else NONE();
-    end match;
-  end untypedExp;
 
   function typedExp
     input Binding binding;
@@ -335,6 +327,7 @@ public
     Expression exp;
     Type ty;
     Variability var;
+    Purity purity;
     String field_name = InstNode.name(fieldNode);
   algorithm
     fieldBinding := match fieldBinding
@@ -348,9 +341,10 @@ public
         algorithm
           exp := Expression.recordElement(field_name, fieldBinding.bindingExp);
           ty := Expression.typeOf(exp);
+          purity := Expression.purity(exp);
           var := Expression.variability(exp);
         then
-          TYPED_BINDING(exp, ty, var, fieldBinding.eachType, fieldBinding.evalState,
+          TYPED_BINDING(exp, ty, var, purity, fieldBinding.eachType, fieldBinding.evalState,
                         fieldBinding.isFlattened, fieldBinding.source, fieldBinding.info);
 
       case FLAT_BINDING()
@@ -383,6 +377,16 @@ public
           fail();
     end match;
   end variability;
+
+  function purity
+    input Binding binding;
+    output Purity purity;
+  algorithm
+    purity := match binding
+      case TYPED_BINDING() then binding.purity;
+      else Purity.PURE;
+    end match;
+  end purity;
 
   function getInfo
     input Binding binding;
@@ -447,22 +451,25 @@ public
       case FLAT_BINDING() then prefix + Expression.toString(binding.bindingExp);
       case CEVAL_BINDING() then prefix + Expression.toString(binding.bindingExp);
       case INVALID_BINDING() then toString(binding.binding, prefix);
+      else "";
     end match;
   end toString;
 
   function toFlatString
     input Binding binding;
+    input BaseModelica.OutputFormat format;
     input String prefix = "";
     output String string;
   algorithm
     string := match binding
       case UNBOUND() then "";
       case RAW_BINDING() then prefix + Dump.printExpStr(binding.bindingExp);
-      case UNTYPED_BINDING() then prefix + Expression.toFlatString(binding.bindingExp);
-      case TYPED_BINDING() then prefix + Expression.toFlatString(binding.bindingExp);
-      case FLAT_BINDING() then prefix + Expression.toFlatString(binding.bindingExp);
-      case CEVAL_BINDING() then prefix + Expression.toFlatString(binding.bindingExp);
-      case INVALID_BINDING() then toFlatString(binding.binding, prefix);
+      case UNTYPED_BINDING() then prefix + Expression.toFlatString(binding.bindingExp, format);
+      case TYPED_BINDING() then prefix + Expression.toFlatString(binding.bindingExp, format);
+      case FLAT_BINDING() then prefix + Expression.toFlatString(binding.bindingExp, format);
+      case CEVAL_BINDING() then prefix + Expression.toFlatString(binding.bindingExp, format);
+      case INVALID_BINDING() then toFlatString(binding.binding, format, prefix);
+      else "";
     end match;
   end toFlatString;
 
@@ -471,6 +478,7 @@ public
     output String string;
   algorithm
     string := match binding
+      case WILD() then "WILD";
       case UNBOUND() then "UNBOUND";
       case RAW_BINDING() then "RAW_BINDING";
       case UNTYPED_BINDING() then "UNTYPED_BINDING";
@@ -478,6 +486,7 @@ public
       case FLAT_BINDING() then "FLAT_BINDING";
       case CEVAL_BINDING() then "CEVAL_BINDING";
       case INVALID_BINDING() then "INVALID_BINDING";
+      else "UNKNOWN";
     end match;
   end toDebugString;
 
@@ -508,6 +517,7 @@ public
     output DAE.Binding outBinding;
   algorithm
     outBinding := match binding
+      case WILD()    then DAE.UNBOUND();
       case UNBOUND() then DAE.UNBOUND();
       case TYPED_BINDING() then makeDAEBinding(binding.bindingExp, binding.variability);
       case FLAT_BINDING() then makeDAEBinding(binding.bindingExp, binding.variability);
@@ -714,6 +724,7 @@ public
           bindingExp  = exp,
           bindingType = Expression.typeOf(exp),
           variability = Expression.variability(exp),
+          purity      = Expression.purity(exp),
           eachType    = EachType.NOT_EACH,
           evalState   = if Expression.isConstNumber(exp)
                         then Mutable.create(EvalState.EVALUATED)
@@ -748,7 +759,7 @@ public
       then fail();
 
       else algorithm
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed."});
+        Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed."});
       then fail();
 
     end match;
@@ -788,6 +799,21 @@ public
     end match;
   end propagate;
 
+  function unpropagate
+    input output Binding binding;
+    input InstNode node;
+  algorithm
+    () := match binding
+      case RAW_BINDING()
+        algorithm
+          binding.subs := list(s for s guard not Subscript.isSplitFromOrigin(s, node) in binding.subs);
+        then
+          ();
+
+      else ();
+    end match;
+  end unpropagate;
+
   function source
     input Binding binding;
     output Source source;
@@ -801,6 +827,17 @@ public
     end match;
   end source;
 
+  function makeUntyped
+    input Expression exp;
+    input InstNode scope;
+    input EachType eachType;
+    input Source source;
+    input SourceInfo info;
+    output Binding binding;
+  algorithm
+    binding := UNTYPED_BINDING(exp, false, scope, eachType, source, info);
+  end makeUntyped;
+
   function makeTyped
     input Expression exp;
     input EachType eachType;
@@ -810,7 +847,8 @@ public
     output Binding binding;
   algorithm
     binding := TYPED_BINDING(exp, Expression.typeOf(exp),
-      Expression.variability(exp), eachType, Mutable.create(state), false, source, info);
+      Expression.variability(exp), Expression.purity(exp),
+      eachType, Mutable.create(state), false, source, info);
   end makeTyped;
 
   function makeFlat
@@ -833,6 +871,61 @@ public
       else false;
     end match;
   end isEvaluated;
+
+  function hasTypeOrigin
+    input Binding binding;
+    output Boolean res;
+  algorithm
+    res := match binding
+      case RAW_BINDING()
+        guard not listEmpty(binding.subs)
+        then Subscript.isSplitClassProxy(listHead(binding.subs));
+
+      else false;
+    end match;
+  end hasTypeOrigin;
+
+  function expandEach
+    "Expands the raw binding with each for a component x into
+     fill(binding, size(x, 1), size(x, 2), ...)"
+    input output Binding binding;
+    input InstNode node;
+  protected
+    list<Absyn.Exp> args;
+    Absyn.Exp node_exp;
+    constant Absyn.ComponentRef size_name = Absyn.ComponentRef.CREF_IDENT("size", {});
+    constant Absyn.ComponentRef fill_name = Absyn.ComponentRef.CREF_IDENT("fill", {});
+  algorithm
+    () := match binding
+      case RAW_BINDING(eachType = EachType.EACH)
+        algorithm
+          node_exp := Absyn.Exp.CREF(Absyn.ComponentRef.CREF_IDENT(InstNode.name(node), {}));
+          args := {};
+
+          for i in InstNode.dimensionCount(node):-1:1 loop
+            args := AbsynUtil.makeCall(size_name, {node_exp, Absyn.Exp.INTEGER(i)}) :: args;
+          end for;
+
+          args := binding.bindingExp :: args;
+          binding.bindingExp := AbsynUtil.makeCall(fill_name, args);
+        then
+          ();
+
+      else ();
+    end match;
+  end expandEach;
+
+  function isClockOrSampleFunction
+    input Binding binding;
+    output Boolean b;
+  algorithm
+    b := match getExpOpt(binding)
+      local
+        Expression exp;
+      case SOME(exp) then Expression.isClockOrSampleFunction(exp);
+      else false;
+    end match;
+  end isClockOrSampleFunction;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFBinding;

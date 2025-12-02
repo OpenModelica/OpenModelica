@@ -1,7 +1,6 @@
 // name: RealRangeBinding1
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 
 model RealRangeBinding1

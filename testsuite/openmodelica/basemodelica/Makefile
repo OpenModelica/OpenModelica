@@ -9,13 +9,40 @@ else
 endif
 
 TESTFILES = \
+  ArrayBinding1.mo \
 	Comments.mo \
   DoublePendulum.mos \
+	Enum1.mo \
 	Expression1.mo \
+	Functional1.mo \
+	InStreamNominalThreshold.mo \
+	MoveBindings1.mo \
+	NonScalarizedWithRecords1.mo \
+	NonScalarizedWithoutRecords1.mo \
+	PartiallyScalarizedWithRecords1.mo \
+	PartiallyScalarizedWithoutRecords1.mo \
 	Record1.mo \
+	Record2.mo \
+	Record3.mo \
+	Record4.mo \
+	Record5.mo \
+	Record6.mo \
+	Scalarize1.mo \
+	Scalarize2.mo \
+	Scalarize3.mo \
+	Scalarize4.mo \
+	Scalarize5.mo \
+	Scalarize6.mo \
+	Scalarize7.mo \
+	ScalarizedWithRecords1.mo \
+	ScalarizedWithoutRecords1.mo \
 	SD.mo \
 	SimpleCoolingCycle.mo \
+	StateSelect1.mo \
+	String1.mo \
   Tables.mos \
+	Tuple1.mo \
+	Tuple2.mo \
 
 
 # test that currently fail. Move up when fixed.

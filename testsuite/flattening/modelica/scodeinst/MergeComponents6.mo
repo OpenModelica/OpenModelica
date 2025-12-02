@@ -2,7 +2,6 @@
 // keywords:
 // status: correct
 // teardown_command: rm MergeComponents6_merged_table.json
-// cflags: -d=newInst,mergeComponents,-nfScalarize
 //
 
 model A
@@ -15,13 +14,14 @@ model MergeComponents6
   parameter A a2(x = 3, y = 4);
   A a3(x = 5, y = 6);
   parameter A a4(x = 7, y = 8);
+  annotation(__OpenModelica_commandLineOptions="-d=mergeComponents,-nfScalarize");
 end MergeComponents6;
 
 // Result:
 // class MergeComponents6
-//   parameter Real[2] $A1.y = {4.0, 8.0};
 //   parameter Real[2] $A1.x = {3.0, 7.0};
-//   Real[2] $A2.y = {2.0, 6.0};
+//   parameter Real[2] $A1.y = {4.0, 8.0};
 //   Real[2] $A2.x = {1.0, 5.0};
+//   Real[2] $A2.y = {2.0, 6.0};
 // end MergeComponents6;
 // endResult

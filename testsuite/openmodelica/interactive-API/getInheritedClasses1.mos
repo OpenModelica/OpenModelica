@@ -1,0 +1,21 @@
+// name: getInheritedClasses1
+// keywords:
+// status: correct
+// cflags: -d=newInst
+//
+
+loadModel(Modelica, {"3.2.3"}); getErrorString();
+loadModel(ModelicaServices, {"3.2.3"}); getErrorString();
+getInheritedClasses(Modelica.Mechanics.MultiBody.Visualizers.Advanced.Shape); getErrorString();
+getInheritedClasses(ModelicaServices.Animation.Shape); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// {ModelicaServices.Animation.Shape, Modelica.Utilities.Internal.PartialModelicaServices.Animation.PartialShape}
+// ""
+// {Modelica.Utilities.Internal.PartialModelicaServices.Animation.PartialShape}
+// ""
+// endResult

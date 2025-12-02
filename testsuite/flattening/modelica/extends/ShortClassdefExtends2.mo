@@ -1,7 +1,6 @@
 // name:     ShortClassdefExtends2
 // keywords: extends
 // status:   correct
-// cflags: -d=-newInst
 //
 // Checks that a short class definition is allowed to extend a replaceable
 // class.
@@ -14,6 +13,7 @@ model ShortClassdefExtends2
 
   model D = A;
   D d;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ShortClassdefExtends2;
 
 // Result:

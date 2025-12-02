@@ -1,6 +1,5 @@
 // name:     AddReal1
 // keywords: external function, equation
-// cflags:   +d=nogen -d=-newInst
 // status:   correct
 
 
@@ -17,6 +16,7 @@ model AddReal1
   Real c;
 equation
   c = addReal1_(a, b);
+  annotation(__OpenModelica_commandLineOptions="+d=nogen -d=-newInst");
 end AddReal1;
 
 // Result:

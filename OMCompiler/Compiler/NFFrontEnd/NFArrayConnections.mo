@@ -53,7 +53,6 @@ protected
   import MetaModelica.Dangerous.*;
   import NFInstNode.InstNode;
   import NFPrefixes.Purity;
-  import NFPrefixes.Variability;
   import Operator = NFOperator;
   import Op = NFOperator.Op;
   import SBFunctions;
@@ -228,7 +227,7 @@ protected
 
         case Equation.FOR(range = SOME(range))
           algorithm
-            range := Ceval.evalExp(range, Ceval.EvalTarget.RANGE(Equation.info(eq)));
+            range := Ceval.evalExp(range, Ceval.EvalTarget.new(Equation.info(eq), NFInstContext.ITERATION_RANGE));
             body := Equation.replaceIteratorList(eq.body, eq.iterator, range);
             addConnectionsToGraph(body, graph, vCount, eCount, nmvTable);
           then
@@ -411,7 +410,7 @@ protected
 
     iterators := arrayCreate(Vector.size(vCount), InstNode.EMPTY_NODE());
     for i in 1:arrayLength(iterators) loop
-      iterators[i] := InstNode.newIndexedIterator(i);
+      iterators[i] := InstNode.newUniqueIterator();
     end for;
 
     iter_expl := list(Expression.fromCref(ComponentRef.makeIterator(i, Type.INTEGER())) for i in iterators);

@@ -1,7 +1,6 @@
 // name:     Algorithm1
 // keywords: algorithm
 // status:   correct
-// cflags: -d=-newInst
 //
 // Simple algorithms
 
@@ -35,6 +34,7 @@ algorithm
   when y>0.9 then
     z := 0.0;
   end when;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Algorithm1;
 
 // Result:

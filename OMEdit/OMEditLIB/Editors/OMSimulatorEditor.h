@@ -36,6 +36,7 @@
 
 #include "Editors/BaseEditor.h"
 
+#include <QRegExp>
 #include <QSyntaxHighlighter>
 
 class OMSimulatorEditor : public BaseEditor

@@ -3,13 +3,17 @@
 
 OPENMODELICA_ROOT = $(CURDIR)/../..
 # OMPython needs this
-OPENMODELICAHOME := $(shell                                 \
-	if [ -d $(OPENMODELICA_ROOT)/build_cmake/install ];       \
-		then echo '$(OPENMODELICA_ROOT)/build_cmake/install';   \
-	elif [ -d $(OPENMODELICA_ROOT)/install_cmake ];           \
-		then echo '$(OPENMODELICA_ROOT)/install_cmake';         \
-	else                                                      \
+OPENMODELICAHOME := $(shell                                     \
+	if [ -d $(OPENMODELICA_ROOT)/build_cmake/install ];           \
+		then echo '$(OPENMODELICA_ROOT)/build_cmake/install';       \
+	elif [ -d $(OPENMODELICA_ROOT)/build_cmake/install_cmake ];   \
+		then echo '$(OPENMODELICA_ROOT)/build_cmake/install_cmake'; \
+	elif [ -d $(OPENMODELICA_ROOT)/install_cmake ];               \
+		then echo '$(OPENMODELICA_ROOT)/install_cmake';             \
+	else                                                          \
 		echo '$(OPENMODELICA_ROOT)/build/'; fi)
+
+OPENMODELICAHOME := $(shell realpath $(OPENMODELICAHOME))
 
 OMSUSERSGUIDE = $(OPENMODELICA_ROOT)/OMSimulator/doc/UsersGuide
 
@@ -242,7 +246,7 @@ source/interface.inc: interface.mos
 	$(OPENMODELICAHOME)/bin/omc -g=MetaModelica -d=nogen interface.mos
 	mv interface.inc $@
 
-OMEDIT_ICONS_BASE=connect-mode.svg transition-mode.svg parametric-plot-window.svg plot-window.svg array-parametric-plot-window.svg array-plot-window.svg re-simulate.svg tlm-simulate.svg interface-data.svg simulation-parameters.svg
+OMEDIT_ICONS_BASE=connect-mode.svg transition-mode.svg parametric-plot-window.svg plot-window.svg array-parametric-plot-window.svg array-plot-window.svg re-simulate.svg interface-data.svg simulation-parameters.svg
 OMEDIT_ICONS_SVG=$(OMEDIT_ICONS_BASE:%=source/media/omedit-icons/%)
 OMEDIT_ICONS_PDF=$(OMEDIT_ICONS_SVG:%.svg=%.pdf)
 OMEDIT_ICONS_PNG=$(OMEDIT_ICONS_SVG:%.svg=%.png)

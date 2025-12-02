@@ -1,7 +1,6 @@
 // name:     EnumArrayMod1
 // keywords: enumeration enum array mod
 // status:   correct
-// cflags: -d=-newInst
 //
 // Tests that enumeration arrays with modifiers work correctly.
 //
@@ -15,6 +14,7 @@ model EnumArrayMod1
   type E = enumeration(a, b, c);
 
   R[E] re(e = {i for i in E});
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end EnumArrayMod1;
 
 // Result:

@@ -92,7 +92,11 @@ QString& StringAnnotation::replace(int position, int n, QChar after)
 
 QString& StringAnnotation::replace(const QRegExp &rx, const QString &after)
 {
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+  mValue = rx.replaceIn(mValue, after);
+#else
   mValue.replace(rx, after);
+#endif
   setExp();
   return mValue;
 }

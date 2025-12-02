@@ -1,7 +1,6 @@
 // name: FuncOverloadNoMatch
 // keywords: overload
 // status: incorrect
-// cflags: -d=newInst
 //
 // Tests that proper error messages are printed for no overload match
 //
@@ -27,7 +26,7 @@ end FuncOverloadNoMatch;
 
 // Result:
 // Error processing file: FuncOverloadNoMatch.mo
-// [flattening/modelica/scodeinst/FuncOverloadNoMatch.mo:25:3-25:23:writable] Error: No matching function found for FuncOverloadNoMatch.OV(/*Boolean*/ true).
+// [flattening/modelica/scodeinst/FuncOverloadNoMatch.mo:24:3-24:23:writable] Error: No matching function found for FuncOverloadNoMatch.OV(/*Boolean*/ true).
 // Candidates are:
 //   FuncOverloadNoMatch.F(Integer f1) => Integer
 //   FuncOverloadNoMatch.G(Real g1) => Integer

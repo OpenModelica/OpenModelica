@@ -1,7 +1,6 @@
 // name: CevalCross1
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 //
 

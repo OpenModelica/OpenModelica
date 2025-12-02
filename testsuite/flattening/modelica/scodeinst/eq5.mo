@@ -1,7 +1,6 @@
 // name: eq5.mo
 // keywords:
 // status: correct
-// cflags:   -d=newInst
 //
 
 model A

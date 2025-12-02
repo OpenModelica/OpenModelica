@@ -1,7 +1,6 @@
 // name:     BM6 -  Atan component
 // keywords: Atan
 // status:   correct
-// cflags: -d=-newInst
 //
 // Testing instantiation of the Math.Atan component.
 //
@@ -1065,6 +1064,7 @@ model BM6
 
 equation
   connect(atan1.inPort,constant1.outPort) annotation(Line(visible=true,points={{-7.71,20.79},{-24.74,22.0}}));
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end BM6;
 // function Modelica.Math.atan
 // input Real u;

@@ -36,7 +36,7 @@ encapsulated package NBBackendUtil
 
 public
   // NF imports
-  import BackendExtension = NFBackendExtension;
+  import NFBackendExtension.BackendInfo;
   import ComponentRef = NFComponentRef;
   import Expression = NFExpression;
   import Operator = NFOperator;
@@ -46,11 +46,76 @@ public
   // backend imports
   import BEquation = NBEquation;
   import NBEquation.{Equation, Frame, FrameLocation};
-  import System = NBSystem;
+  import Matching = NBMatching;
   import BVariable = NBVariable;
 
   // Util imports
   import Util;
+
+  // old imports
+  import MMath;
+
+  uniontype Rational
+    record RATIONAL
+      Integer n;
+      Integer d;
+    end RATIONAL;
+
+    function toString
+      input Rational r;
+      output String str = intString(r.n) + "/" + intString(r.d);
+    end toString;
+
+    function normalize
+      input output Rational r;
+    algorithm
+      if r.n == 0 then
+        r.d := 1;
+      end if;
+    end normalize;
+
+    function add
+      input Rational r1;
+      input Rational r2;
+      output Rational r = finalize(r1.n*r2.d + r2.n*r1.d, r1.d*r2.d);
+    end add;
+
+    function multiply
+      input Rational r1;
+      input Rational r2;
+      output Rational r = finalize(r1.n*r2.n, r1.d*r2.d);
+    end multiply;
+
+    function isEqual
+      input Rational r1;
+      input Rational r2;
+      output Boolean b = r1.n == r2.n and r1.d == r2.d;
+    end isEqual;
+
+    function convert
+      input Rational r;
+      output MMath.Rational oldR = MMath.RATIONAL(r.n, r.d);
+    end convert;
+
+  protected
+    function finalize
+      input Integer i1;
+      input Integer i2;
+      output Rational r;
+    protected
+      Integer d = intGcd(i1,i2);
+    algorithm
+      r := normalize(RATIONAL(intDiv(i1,d), intDiv(i2,d)));
+    end finalize;
+
+    function intGcd "returns the greatest common divisor for two Integers"
+      input Integer i1;
+      input Integer i2;
+      output Integer i;
+    algorithm
+      i := if i2 == 0 then i1 else intGcd(i2, intMod(i1,i2));
+    end intGcd;
+  end Rational;
 
   function findTrueIndices
     "returns all indices of elements that are true"
@@ -60,11 +125,7 @@ public
 
   function countElem
     input array<list<Integer>> m;
-    output Integer count = 0;
-  algorithm
-    for lst in m loop
-      count := count + listLength(lst);
-    end for;
+    output Integer count = sum(listLength(lst) for lst in m);
   end countElem;
 
   function indexTplGt<T>
@@ -77,24 +138,8 @@ public
   algorithm
     (i1, _) := tpl1;
     (i2, _) := tpl2;
-    gt := if i1 > i2 then true else false;
+    gt := i1 > i2;
   end indexTplGt;
-
-  function compareCombine
-    "combines two integer values for tree management.
-    Only returns 0 if both are 0"
-    input Integer i1;
-    input Integer i2;
-    output Integer comp;
-  algorithm
-    if i1 == 0 and i2 == 0 then
-      comp := 0;
-    elseif i1 > i2 then
-      comp := 1;
-    else
-      comp := -1;
-    end if;
-  end compareCombine;
 
   public function noNameHashEq
     input BEquation.Equation eq;
@@ -119,10 +164,10 @@ public
       case Expression.STRING() then stringHashDjb2Mod(exp.value, mod);
       case Expression.BOOLEAN() then Util.boolInt(exp.value);
       case Expression.ENUM_LITERAL() then exp.index; // ty !!
-      case Expression.CLKCONST () then 0; // clk !!
+      case Expression.CLKCONST() then 0; // clk !!
       case Expression.CREF() algorithm
-        var := BVariable.getVar(exp.cref);
-      then stringHashDjb2Mod(BackendExtension.BackendInfo.toString(var.backendinfo), mod);
+        var := BVariable.getVar(exp.cref, sourceInfo());
+      then stringHashDjb2Mod(BackendInfo.toString(var.backendinfo), mod);
       case Expression.TYPENAME() then 1; // ty !!
       case Expression.ARRAY() algorithm // ty !!
         for elem in exp.elements loop
@@ -232,7 +277,7 @@ public
   algorithm
     if b then
       b := match exp
-        case Expression.CREF() then ComponentRef.isTime(exp.cref) or BVariable.checkCref(exp.cref, BVariable.isParamOrConst);
+        case Expression.CREF() then ComponentRef.isTime(exp.cref) or BVariable.checkCref(exp.cref, BVariable.isParamOrConst, sourceInfo());
         else true;
       end match;
     end if;
@@ -240,22 +285,70 @@ public
 
   function isContinuous
     input Expression exp;
+    input Boolean init;
     output Boolean b;
   algorithm
-    b := Expression.fold(exp, isContinuousFold, true);
+    b := Expression.fold(exp, function isContinuousFold(init = init), true);
   end isContinuous;
 
   function isContinuousFold
     input Expression exp;
+    input Boolean init;
     input output Boolean b;
   algorithm
     if b then
       b := match exp
-        case Expression.CREF() then BVariable.checkCref(exp.cref, BVariable.isContinuous);
+        case Expression.CREF() then BVariable.checkCref(exp.cref, function BVariable.isContinuous(init = init), sourceInfo());
         else true;
       end match;
     end if;
   end isContinuousFold;
 
+  function getLocalSystem
+    input array<list<Integer>> m          "global adjacency matrix";
+    input Matching matching               "global matching";
+    input list<Integer> eqn_indices       "global equation indices to keep";
+    output array<list<Integer>> m_loc     "local adjacency matrix";
+    output Matching matching_loc          "local matching";
+    output array<Integer> map_back        "local to global equation indices";
+  protected
+    constant Integer N = listLength(eqn_indices);
+    array<Integer> var_to_eqn = arrayCreate(N, -1);
+    array<Integer> eqn_to_var = arrayCreate(N, -1);
+    UnorderedMap<Integer, Integer> var_loc = UnorderedMap.new<Integer>(Util.id, intEq, N) "global to local variable indices";
+    Integer j = 1;
+  algorithm
+    // map matching from full system and save eqn map back
+    map_back := arrayCreate(N, -1);
+    for i in eqn_indices loop
+      // set equation map (local -> global)
+      map_back[j] := i;
+
+      // set var from matching (global -> local)
+      UnorderedMap.addUnique(matching.eqn_to_var[i], j, var_loc);
+
+      // set local matching
+      eqn_to_var[j] := j;
+      var_to_eqn[j] := j;
+
+      j := j + 1;
+    end for;
+    matching_loc := MATCHING(var_to_eqn, eqn_to_var);
+
+    // filter only local edges of adjacency matrix
+    m_loc := arrayCreate(N, {});
+    for j in 1:N loop
+      m_loc[j] := UnorderedMap.getList(m[map_back[j]], var_loc);
+    end for;
+  end getLocalSystem;
+
+  public function makeFDerString
+    input output String str;
+    input Option<Integer> i_opt = NONE();
+  protected
+    String i = if Util.isSome(i_opt) then intString(Util.getOption(i_opt)) else "";
+  algorithm
+    str := NBVariable.FUNCTION_DERIVATIVE_STR + i + "_" + str;
+  end makeFDerString;
   annotation(__OpenModelica_Interface="backend");
 end NBBackendUtil;

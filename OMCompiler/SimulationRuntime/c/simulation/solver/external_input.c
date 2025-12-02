@@ -71,7 +71,7 @@ int externalInputallocate(DATA* data)
 
   externalInputallocate2(data, csv_input_file);
 
-  if(ACTIVE_STREAM(LOG_SIMULATION))
+  if(OMC_ACTIVE_STREAM(OMC_LOG_SIMULATION))
   {
     printf("\nExternal Input");
     printf("\n========================================================");

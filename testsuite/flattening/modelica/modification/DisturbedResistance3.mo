@@ -1,7 +1,6 @@
 // name:     DisturbedResistance3
 // keywords: modification
 // status:   incorrect
-// cflags: -d=-newInst
 //
 // This is an example of replacing a variable without using
 // redeclaration syntax.
@@ -20,12 +19,13 @@ end Resistor;
 model DisturbedResistance3
   Real R = 1.0 + 0.1*sin(time);
   extends Resistor;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end DisturbedResistance3;
 
 // Result:
 // Error processing file: DisturbedResistance3.mo
-// [flattening/modelica/modification/DisturbedResistance3.mo:21:3-21:31:writable] Notification: From here:
-// [flattening/modelica/modification/DisturbedResistance3.mo:15:3-15:25:writable] Error: Duplicate elements (due to inherited elements) not identical:
+// [flattening/modelica/modification/DisturbedResistance3.mo:20:3-20:31:writable] Notification: From here:
+// [flattening/modelica/modification/DisturbedResistance3.mo:14:3-14:25:writable] Error: Duplicate elements (due to inherited elements) not identical:
 //   first element is:  Real R = 1.0 + 0.1*sin(time)
 //   second element is: parameter .Real R = 1.0
 // Error: Error occurred while flattening model DisturbedResistance3

@@ -104,7 +104,7 @@ int cvodeRightHandSideODEFunction(realtype time, N_Vector y, N_Vector ydot, void
   data = cvodeData->simData->data;
   threadData = cvodeData->simData->threadData;
 
-  infoStreamPrint(LOG_SOLVER_V, 1, "### eval cvodeRightHandSideODEFunction ###");
+  infoStreamPrint(OMC_LOG_SOLVER_V, 1, "### eval cvodeRightHandSideODEFunction ###");
 
   /* TODO: Add scaling of y and ydot */
 
@@ -123,15 +123,23 @@ int cvodeRightHandSideODEFunction(realtype time, N_Vector y, N_Vector ydot, void
   MMC_TRY_INTERNAL(simulationJumpBuffer)
 #endif
 
-  /* Debug print for states (input) */
-  if (ACTIVE_STREAM(LOG_SOLVER_V))
+  /*
+   fix issue https://github.com/OpenModelica/OpenModelica/issues/13582
+   Update y*/
+  for (i = 0; i < cvodeData->N; i++)
   {
-    infoStreamPrint(LOG_SOLVER_V, 1, "y at time=%f", time);
+    data->localData[0]->realVars[i] = NV_Ith_S(y, i);
+  }
+
+  /* Debug print for states (input) */
+  if (OMC_ACTIVE_STREAM(OMC_LOG_SOLVER_V))
+  {
+    infoStreamPrint(OMC_LOG_SOLVER_V, 1, "y at time=%f", time);
     for (i = 0; i < cvodeData->N; i++)
     {
-      infoStreamPrint(LOG_SOLVER_V, 0, "y[%ld] = %e", i, NV_Ith_S(y, i));
+      infoStreamPrint(OMC_LOG_SOLVER_V, 0, "y[%ld] = %e", i, NV_Ith_S(y, i));
     }
-    messageClose(LOG_SOLVER_V);
+    messageClose(OMC_LOG_SOLVER_V);
   }
 
   /* Read input vars (exclude from timer) */
@@ -158,14 +166,14 @@ int cvodeRightHandSideODEFunction(realtype time, N_Vector y, N_Vector ydot, void
   }
 
   /* Debug print for derived states (output) */
-  if (ACTIVE_STREAM(LOG_SOLVER_V))
+  if (OMC_ACTIVE_STREAM(OMC_LOG_SOLVER_V))
   {
-    infoStreamPrint(LOG_SOLVER_V, 1, "ydot at time=%f", time);
+    infoStreamPrint(OMC_LOG_SOLVER_V, 1, "ydot at time=%f", time);
     for (i = 0; i < cvodeData->N; i++)
     {
-      infoStreamPrint(LOG_SOLVER_V, 0, "ydot[%ld] = %e", i, NV_Ith_S(ydot, i));
+      infoStreamPrint(OMC_LOG_SOLVER_V, 0, "ydot[%ld] = %e", i, NV_Ith_S(ydot, i));
     }
-    messageClose(LOG_SOLVER_V);
+    messageClose(OMC_LOG_SOLVER_V);
   }
 
   /* TODO: Scale result */
@@ -188,7 +196,7 @@ int cvodeRightHandSideODEFunction(realtype time, N_Vector y, N_Vector ydot, void
   {
     unsetContext(data);
   }
-  messageClose(LOG_SOLVER_V);
+  messageClose(OMC_LOG_SOLVER_V);
   if (measure_time_flag)
     rt_accumulate(SIM_TIMER_SOLVER);
 
@@ -262,10 +270,10 @@ static int callDenseJacobian(double t, N_Vector y, N_Vector fy,
   }
 
   /* debug */
-  if (ACTIVE_STREAM(LOG_JAC))
+  if (OMC_ACTIVE_STREAM(OMC_LOG_JAC))
   {
     dumpJac = _omc_createMatrix(cvodeData->N, cvodeData->N, SM_DATA_D(Jac));
-    _omc_printMatrix(dumpJac, "CVODE-Solver: Matrix A", LOG_JAC);
+    _omc_printMatrix(dumpJac, "CVODE-Solver: Matrix A", OMC_LOG_JAC);
     _omc_destroyMatrix(dumpJac);
   }
 
@@ -295,7 +303,7 @@ int rootsFunctionCVODE(double time, N_Vector y, double *gout, void *userData)
 
   int saveJumpState;
 
-  infoStreamPrint(LOG_SOLVER_V, 1, "### eval rootsFunctionCVODE ###");
+  infoStreamPrint(OMC_LOG_SOLVER_V, 1, "### eval rootsFunctionCVODE ###");
 
   if (data->simulationInfo->currentContext == CONTEXT_ALGEBRAIC)
   {
@@ -330,7 +338,7 @@ int rootsFunctionCVODE(double time, N_Vector y, double *gout, void *userData)
   {
     unsetContext(data);
   }
-  messageClose(LOG_SOLVER_V);
+  messageClose(OMC_LOG_SOLVER_V);
   if (measure_time_flag)
     rt_tick(SIM_TIMER_SOLVER);
 
@@ -368,14 +376,14 @@ void cvodeGetConfig(CVODE_CONFIG *config, threadData_t *threadData, booleantype 
     }
     else
     {
-      if (ACTIVE_WARNING_STREAM(LOG_SOLVER))
+      if (OMC_ACTIVE_WARNING_STREAM(OMC_LOG_SOLVER))
       {
-        warningStreamPrint(LOG_SOLVER, 1, "Unrecognized linear multistep method %s for CVODE, current options are:", (const char *)omc_flagValue[FLAG_CVODE_LMM]);
+        warningStreamPrint(OMC_LOG_SOLVER, 1, "Unrecognized linear multistep method %s for CVODE, current options are:", (const char *)omc_flagValue[FLAG_CVODE_LMM]);
         for (i = 1; i <= CVODE_LMM_MAX; ++i)
         {
-          warningStreamPrint(LOG_SOLVER, 0, "%s [%s]", CVODE_LMM_NAME[i], CVODE_LMM_DESC[i]);
+          warningStreamPrint(OMC_LOG_SOLVER, 0, "%s [%s]", CVODE_LMM_NAME[i], CVODE_LMM_DESC[i]);
         }
-        messageClose(LOG_SOLVER);
+        messageClose(OMC_LOG_SOLVER);
       }
       throwStreamPrint(threadData, "Unrecognized linear multistep method %s for CVODE.", (const char *)omc_flagValue[FLAG_CVODE_LMM]);
     }
@@ -398,14 +406,14 @@ void cvodeGetConfig(CVODE_CONFIG *config, threadData_t *threadData, booleantype 
     }
     else
     {
-      if (ACTIVE_WARNING_STREAM(LOG_SOLVER))
+      if (OMC_ACTIVE_WARNING_STREAM(OMC_LOG_SOLVER))
       {
-        warningStreamPrint(LOG_SOLVER, 1, "Unrecognized type of nonlinear solver iteration %s for CVODE, current options are:", (const char *)omc_flagValue[FLAG_CVODE_ITER]);
+        warningStreamPrint(OMC_LOG_SOLVER, 1, "Unrecognized type of nonlinear solver iteration %s for CVODE, current options are:", (const char *)omc_flagValue[FLAG_CVODE_ITER]);
         for (i = 1; i <= CVODE_ITER_MAX; ++i)
         {
-          warningStreamPrint(LOG_SOLVER, 0, "%s [%s]", CVODE_ITER_NAME[i], CVODE_ITER_DESC[i]);
+          warningStreamPrint(OMC_LOG_SOLVER, 0, "%s [%s]", CVODE_ITER_NAME[i], CVODE_ITER_DESC[i]);
         }
-        messageClose(LOG_SOLVER);
+        messageClose(OMC_LOG_SOLVER);
       }
       throwStreamPrint(threadData, "Unrecognized type of nonlinear solver iteration %s for CVODE.", (const char *)omc_flagValue[FLAG_CVODE_LMM]);
     }
@@ -426,30 +434,30 @@ void cvodeGetConfig(CVODE_CONFIG *config, threadData_t *threadData, booleantype 
   if ((config->lmm == CV_ADAMS && config->iter != CV_ITER_FIXED_POINT) ||
       (config->lmm == CV_BDF && config->iter != CV_ITER_NEWTON))
   {
-    if (ACTIVE_WARNING_STREAM(LOG_SOLVER))
+    if (OMC_ACTIVE_WARNING_STREAM(OMC_LOG_SOLVER))
     {
-      warningStreamPrint(LOG_SOLVER, 1, "Combination of %s and %s not recommended.", CVODE_LMM_NAME[config->lmm], CVODE_ITER_NAME[config->iter]);
-      warningStreamPrint(LOG_SOLVER, 0, "Use simflags %s and %s to set.", FLAG_NAME[FLAG_CVODE_LMM], FLAG_NAME[FLAG_CVODE_ITER]);
-      warningStreamPrint(LOG_SOLVER, 0, "Use (CV_BDF, CV_NEWTON) for stiff problems (Default) or");
-      warningStreamPrint(LOG_SOLVER, 0, "Use (CV_ADAMS, CV_FUNCTIONAL) for nonstiff problems.");
-      messageClose(LOG_SOLVER);
+      warningStreamPrint(OMC_LOG_SOLVER, 1, "Combination of %s and %s not recommended.", CVODE_LMM_NAME[config->lmm], CVODE_ITER_NAME[config->iter]);
+      warningStreamPrint(OMC_LOG_SOLVER, 0, "Use simflags %s and %s to set.", FLAG_NAME[FLAG_CVODE_LMM], FLAG_NAME[FLAG_CVODE_ITER]);
+      warningStreamPrint(OMC_LOG_SOLVER, 0, "Use (CV_BDF, CV_NEWTON) for stiff problems (Default) or");
+      warningStreamPrint(OMC_LOG_SOLVER, 0, "Use (CV_ADAMS, CV_FUNCTIONAL) for nonstiff problems.");
+      messageClose(OMC_LOG_SOLVER);
     }
   }
-  infoStreamPrint(LOG_SOLVER, 0, "CVODE linear multistep method %s", CVODE_LMM_NAME[config->lmm]);
-  infoStreamPrint(LOG_SOLVER, 0, "CVODE maximum integration order %s", CVODE_ITER_NAME[config->iter]);
+  infoStreamPrint(OMC_LOG_SOLVER, 0, "CVODE linear multistep method %s", CVODE_LMM_NAME[config->lmm]);
+  infoStreamPrint(OMC_LOG_SOLVER, 0, "CVODE maximum integration order %s", CVODE_ITER_NAME[config->iter]);
 
   /* if FLAG_NOEQUIDISTANT_GRID is set, choose ida step method */
   if (omc_flag[FLAG_NOEQUIDISTANT_GRID])
   {
-    warningStreamPrint(LOG_SOLVER, 0, "Ignoring user supplied flag \"%s\", using equidistant time grid.", omc_flagValue[FLAG_NOEQUIDISTANT_GRID]);
+    warningStreamPrint(OMC_LOG_SOLVER, 0, "Ignoring user supplied flag \"%s\", using equidistant time grid.", omc_flagValue[FLAG_NOEQUIDISTANT_GRID]);
   }
   config->internalSteps = FALSE;    // TODO: Setting not used yet
-  infoStreamPrint(LOG_SOLVER, 0, "CVODE use equidistant time grid %s", config->internalSteps ? "NO" : "YES");
+  infoStreamPrint(OMC_LOG_SOLVER, 0, "CVODE use equidistant time grid %s", config->internalSteps ? "NO" : "YES");
 
   /* Set jacobian method */
   if (omc_flag[FLAG_JACOBIAN])
   {
-    warningStreamPrint(LOG_SOLVER, 0, "Ignoring user supplied flag \"%s\", using internal dense Jacobian of CVODE.", omc_flagValue[FLAG_JACOBIAN]);
+    warningStreamPrint(OMC_LOG_SOLVER, 0, "Ignoring user supplied flag \"%s\", using internal dense Jacobian of CVODE.", omc_flagValue[FLAG_JACOBIAN]);
   }
   config->jacobianMethod = INTERNALNUMJAC;
   //config->jacobianMethod = COLOREDNUMJAC; // Not implemented yet!
@@ -526,10 +534,10 @@ int cvode_solver_initial(DATA *data, threadData_t *threadData, SOLVER_INFO *solv
   int flag;
   int i;
   double *abstol_tmp;
-  ANALYTIC_JACOBIAN *jacobian;
+  JACOBIAN *jacobian;
 
   /* Log cvode_initial */
-  infoStreamPrint(LOG_SOLVER_V, 0, "### Start initialize of CVODE solver ###");
+  infoStreamPrint(OMC_LOG_SOLVER_V, 0, "### Start initialize of CVODE solver ###");
 
   /* Set simData */
   cvodeData->simData = (CVODE_USERDATA *)malloc(sizeof(CVODE_USERDATA));
@@ -573,7 +581,7 @@ int cvode_solver_initial(DATA *data, threadData_t *threadData, SOLVER_INFO *solv
   assertStreamPrint(threadData, NULL != cvodeData->absoluteTolerance, "SUNDIALS_ERROR: N_VMake_Serial failed - returned NULL pointer.");
   flag = CVodeSVtolerances(cvodeData->cvode_mem, data->simulationInfo->tolerance, cvodeData->absoluteTolerance);
   checkReturnFlag_SUNDIALS(flag, SUNDIALS_CV_FLAG, "CVodeSVtolerances");
-  infoStreamPrint(LOG_SOLVER, 0, "CVODE Using relative error tolerance %e", data->simulationInfo->tolerance);
+  infoStreamPrint(OMC_LOG_SOLVER, 0, "CVODE Using relative error tolerance %e", data->simulationInfo->tolerance);
 
   /* Provide cvodeData as user data */
   flag = CVodeSetUserData(cvodeData->cvode_mem, cvodeData);
@@ -594,11 +602,11 @@ int cvode_solver_initial(DATA *data, threadData_t *threadData, SOLVER_INFO *solv
     assertStreamPrint(threadData, NULL != cvodeData->linSol, "##CVODE## SUNLinSol_Dense failed.");
     break;
   default:
-    throwStreamPrint(threadData, "##CVODE## Unknown linear solver method %s for CVODE.", JACOBIAN_METHOD[cvodeData->config.jacobianMethod]);
+    throwStreamPrint(threadData, "##CVODE## Unknown linear solver method %s for CVODE.", JACOBIAN_METHOD_NAME[cvodeData->config.jacobianMethod]);
   }
   flag = CVodeSetLinearSolver(cvodeData->cvode_mem, cvodeData->linSol, cvodeData->J);
   checkReturnFlag_SUNDIALS(flag, SUNDIALS_CVLS_FLAG, "CVodeSetLinearSolver");
-  infoStreamPrint(LOG_SOLVER, 0, "CVODE Using dense internal linear solver SUNLinSol_Dense.");
+  infoStreamPrint(OMC_LOG_SOLVER, 0, "CVODE Using dense internal linear solver SUNLinSol_Dense.");
 
   /* Set Jacobian function */
   jacobian = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
@@ -616,16 +624,16 @@ int cvode_solver_initial(DATA *data, threadData_t *threadData, SOLVER_INFO *solv
   case INTERNALNUMJAC:
     flag = CVodeSetJacFn(cvodeData->cvode_mem, NULL);
     checkReturnFlag_SUNDIALS(flag, SUNDIALS_CVLS_FLAG, "CVodeSetJacFn");
-    infoStreamPrint(LOG_SOLVER, 0, "CVODE Use internal dense numeric jacobian method.");
+    infoStreamPrint(OMC_LOG_SOLVER, 0, "CVODE Use internal dense numeric jacobian method.");
     break;
   case COLOREDNUMJAC:
-    throwStreamPrint(threadData, "##CVODE## LJacobian method %s not yet implemented.", JACOBIAN_METHOD[cvodeData->config.jacobianMethod]);
+    throwStreamPrint(threadData, "##CVODE## LJacobian method %s not yet implemented.", JACOBIAN_METHOD_NAME[cvodeData->config.jacobianMethod]);
     //flag = CVodeSetJacFn(cvodeData->cvode_mem, callDenseJacobian);
     //checkReturnFlag_SUNDIALS(flag, SUNDIALS_CVLS_FLAG, "CVodeSetJacFn");
-    //infoStreamPrint(LOG_SOLVER, 0, "CVODE Use colored dense numeric jacobian method.");
+    //infoStreamPrint(OMC_LOG_SOLVER, 0, "CVODE Use colored dense numeric jacobian method.");
     break;
   default:
-    throwStreamPrint(threadData, "##CVODE## Jacobian method %s not yet implemented.", JACOBIAN_METHOD[cvodeData->config.jacobianMethod]);
+    throwStreamPrint(threadData, "##CVODE## Jacobian method %s not yet implemented.", JACOBIAN_METHOD_NAME[cvodeData->config.jacobianMethod]);
   }
 
   /* Set optional non-linear solver module */
@@ -655,7 +663,7 @@ int cvode_solver_initial(DATA *data, threadData_t *threadData, SOLVER_INFO *solv
     flag = CVodeRootInit(cvodeData->cvode_mem, data->modelData->nZeroCrossings, rootsFunctionCVODE);
     checkReturnFlag_SUNDIALS(flag, SUNDIALS_CV_FLAG, "CVodeRootInit");
   }
-  infoStreamPrint(LOG_SOLVER, 0, "CVODE uses internal root finding method %s", solverInfo->solverRootFinding ? "YES" : "NO");
+  infoStreamPrint(OMC_LOG_SOLVER, 0, "CVODE uses internal root finding method %s", solverInfo->solverRootFinding ? "YES" : "NO");
 
   /* ### Set optional settings ### */
   /* Minimum absolute step size */
@@ -665,34 +673,34 @@ int cvode_solver_initial(DATA *data, threadData_t *threadData, SOLVER_INFO *solv
   /* Maximum absolute step size */
   flag = CVodeSetMaxStep(cvodeData->cvode_mem, cvodeData->config.maxStepSize);
   checkReturnFlag_SUNDIALS(flag, SUNDIALS_CV_FLAG, "CVodeSetMaxStep");
-  infoStreamPrint(LOG_SOLVER, 0, "CVODE maximum absolut step size %g", cvodeData->config.maxStepSize);
+  infoStreamPrint(OMC_LOG_SOLVER, 0, "CVODE maximum absolut step size %g", cvodeData->config.maxStepSize);
 
   /* Initial step size */
   flag = CVodeSetInitStep(cvodeData->cvode_mem, cvodeData->config.initStepSize);
   checkReturnFlag_SUNDIALS(flag, SUNDIALS_CV_FLAG, "CVodeSetInitStep");
   if (cvodeData->config.initStepSize == 0)
   {
-    infoStreamPrint(LOG_SOLVER, 0, "CVODE initial step size is set automatically");
+    infoStreamPrint(OMC_LOG_SOLVER, 0, "CVODE initial step size is set automatically");
   }
   else
   {
-    infoStreamPrint(LOG_SOLVER, 0, "CVODE initial step size %g", cvodeData->config.initStepSize);
+    infoStreamPrint(OMC_LOG_SOLVER, 0, "CVODE initial step size %g", cvodeData->config.initStepSize);
   }
 
   /* Maximum integration order */
   flag = CVodeSetMaxOrd(cvodeData->cvode_mem, cvodeData->config.maxOrderLinearMultistep);
   checkReturnFlag_SUNDIALS(flag, SUNDIALS_CV_FLAG, "CVodeSetMaxOrd");
-  infoStreamPrint(LOG_SOLVER, 0, "CVODE maximum integration order %d", cvodeData->config.maxOrderLinearMultistep);
+  infoStreamPrint(OMC_LOG_SOLVER, 0, "CVODE maximum integration order %d", cvodeData->config.maxOrderLinearMultistep);
 
   /* Maximum number of nonlinear convergence failures */
   flag = CVodeSetMaxConvFails(cvodeData->cvode_mem, cvodeData->config.maxConvFailPerStep);
   checkReturnFlag_SUNDIALS(flag, SUNDIALS_CV_FLAG, "CVodeSetMaxConvFails");
-  infoStreamPrint(LOG_SOLVER, 0, "CVODE maximum number of nonlinear convergence failures permitted during one step %d", cvodeData->config.maxConvFailPerStep);
+  infoStreamPrint(OMC_LOG_SOLVER, 0, "CVODE maximum number of nonlinear convergence failures permitted during one step %d", cvodeData->config.maxConvFailPerStep);
 
   /* BDF stability limit detection */
   flag = CVodeSetStabLimDet(cvodeData->cvode_mem, cvodeData->config.BDFStabDetect);
   checkReturnFlag_SUNDIALS(flag, SUNDIALS_CV_FLAG, "CVodeSetStabLimDet");
-  infoStreamPrint(LOG_SOLVER, 0, "CVODE BDF stability limit detection algorithm %s", cvodeData->config.BDFStabDetect ? "ON" : "OFF");
+  infoStreamPrint(OMC_LOG_SOLVER, 0, "CVODE BDF stability limit detection algorithm %s", cvodeData->config.BDFStabDetect ? "ON" : "OFF");
 
   /* TODO: Add stuff in cvodeGetConfig for this */
   flag = CVodeSetMaxNonlinIters(cvodeData->cvode_mem, 5); /* Maximum number of iterations */
@@ -703,7 +711,7 @@ int cvode_solver_initial(DATA *data, threadData_t *threadData, SOLVER_INFO *solv
   checkReturnFlag_SUNDIALS(flag, SUNDIALS_CV_FLAG, "CVodeSetMaxNumSteps");
 
   /* Log cvode_initial */
-  infoStreamPrint(LOG_SOLVER_V, 0, "### Finished initialize of CVODE solver successfully ###");
+  infoStreamPrint(OMC_LOG_SOLVER_V, 0, "### Finished initialize of CVODE solver successfully ###");
 
   if (measure_time_flag)
   {
@@ -729,7 +737,7 @@ int cvode_solver_reinit(DATA *data, threadData_t *threadData, SOLVER_INFO *solve
   /* Variables */
   int flag, i;
 
-  infoStreamPrint(LOG_SOLVER, 0, "Re-initialized CVODE Solver");
+  infoStreamPrint(OMC_LOG_SOLVER, 0, "Re-initialized CVODE Solver");
 
   /* Calculate matrix for residual scaling */
   /* TODO: Add scaling */
@@ -774,14 +782,14 @@ int cvode_solver_deinitial(CVODE_SOLVER *cvodeData)
   free(cvodeData);
 
   /* Log cvode_solver_deinitial */
-  infoStreamPrint(LOG_SOLVER_V, 1, "### Finished deinitialization of CVODE solver successfully ###");
+  infoStreamPrint(OMC_LOG_SOLVER_V, 1, "### Finished deinitialization of CVODE solver successfully ###");
   return 0;
 }
 
 /**
  * @brief Save solver statistics.
  *
- * If flag LOG_SOLVER_V is provided even more statistics will be collected.
+ * If flag OMC_LOG_SOLVER_V is provided even more statistics will be collected.
  *
  * @param cvode_mem         Pointer to CVODE memory block.
  * @param solverStats       Pointer to solverStats of solverInfo.
@@ -826,23 +834,23 @@ void cvode_save_statistics(void *cvode_mem, SOLVERSTATS *solverStats, threadData
   solverStats->nConvergenveTestFailures = tmp1;
 
   /* Get even more statistics */
-  if (useStream[LOG_SOLVER_V])
+  if (omc_useStream[OMC_LOG_SOLVER_V])
   {
-    infoStreamPrint(LOG_SOLVER_V, 1, "### CVODEStats ###");
+    infoStreamPrint(OMC_LOG_SOLVER_V, 1, "### CVODEStats ###");
     /* Nonlinear stats */
     tmp1 = tmp2 = 0;
     flag = CVodeGetNonlinSolvStats(cvode_mem, &tmp1, &tmp2);
-    infoStreamPrint(LOG_SOLVER_V, 0, " ## Cumulative number of nonlinear iterations performed: %ld", tmp1);
-    infoStreamPrint(LOG_SOLVER_V, 0, " ## Cumulative number of nonlinear convergence failures that have occurred: %ld", tmp2);
+    infoStreamPrint(OMC_LOG_SOLVER_V, 0, " ## Cumulative number of nonlinear iterations performed: %ld", tmp1);
+    infoStreamPrint(OMC_LOG_SOLVER_V, 0, " ## Cumulative number of nonlinear convergence failures that have occurred: %ld", tmp2);
 
     /* Others stats */
     flag = CVodeGetTolScaleFactor(cvode_mem, &dtmp);
-    infoStreamPrint(LOG_SOLVER_V, 0, " ## Suggested scaling factor for user tolerances: %g", dtmp);
+    infoStreamPrint(OMC_LOG_SOLVER_V, 0, " ## Suggested scaling factor for user tolerances: %g", dtmp);
 
     flag = CVodeGetNumLinSolvSetups(cvode_mem, &tmp1);
-    infoStreamPrint(LOG_SOLVER_V, 0, " ## Number of calls made to the linear solver setup function: %ld", tmp1);
+    infoStreamPrint(OMC_LOG_SOLVER_V, 0, " ## Number of calls made to the linear solver setup function: %ld", tmp1);
 
-    messageClose(LOG_SOLVER_V);
+    messageClose(OMC_LOG_SOLVER_V);
   }
 }
 
@@ -904,7 +912,7 @@ int cvode_solver_step(DATA *data, threadData_t *threadData, SOLVER_INFO *solverI
   if (solverInfo->currentStepSize < DASSL_STEP_EPS)
   {
     throwStreamPrint(threadData, "##CVODE## Desired step to small!");
-    infoStreamPrint(LOG_SOLVER, 0, "Interpolate constant");
+    infoStreamPrint(OMC_LOG_SOLVER, 0, "Interpolate constant");
 
     /* Constant extrapolation */
     /* TODO: Interpolate linear solution */
@@ -924,7 +932,7 @@ int cvode_solver_step(DATA *data, threadData_t *threadData, SOLVER_INFO *solverI
   /* Integrator loop */
   do
   {
-    infoStreamPrint(LOG_SOLVER, 1, "##CVODE## new step from %.15g to %.15g", solverInfo->currentTime, tout);
+    infoStreamPrint(OMC_LOG_SOLVER, 1, "##CVODE## new step from %.15g to %.15g", solverInfo->currentTime, tout);
 
     /* Read input vars (exclude from timer) */
     if (measure_time_flag)
@@ -948,23 +956,23 @@ int cvode_solver_step(DATA *data, threadData_t *threadData, SOLVER_INFO *solverI
     /* Error handling */
     if ((flag == CV_SUCCESS || flag == CV_TSTOP_RETURN) && solverInfo->currentTime >= tout)
     {
-      infoStreamPrint(LOG_SOLVER, 0, "##CVODE## step done to time = %.15g", solverInfo->currentTime);
+      infoStreamPrint(OMC_LOG_SOLVER, 0, "##CVODE## step done to time = %.15g", solverInfo->currentTime);
       finished = TRUE;
     }
     else if (flag == CV_ROOT_RETURN)
     {
-      infoStreamPrint(LOG_SOLVER, 0, "##CVODE## root found at time = %.15g", solverInfo->currentTime);
+      infoStreamPrint(OMC_LOG_SOLVER, 0, "##CVODE## root found at time = %.15g", solverInfo->currentTime);
       finished = TRUE;
     }
     else
     {
-      infoStreamPrint(LOG_STDOUT, 0, "##CVODE## %d error occurred at time = %.15g", flag, solverInfo->currentTime);
+      infoStreamPrint(OMC_LOG_STDOUT, 0, "##CVODE## %d error occurred at time = %.15g", flag, solverInfo->currentTime);
       finished = TRUE;
       retVal = flag;
     }
 
     /* Closing new step message */
-    messageClose(LOG_SOLVER);
+    messageClose(OMC_LOG_SOLVER); // TODO make sure this is called even if something in between fails
 
     /* Set time to current time */
     simulationData->timeValue = solverInfo->currentTime;
@@ -985,7 +993,7 @@ int cvode_solver_step(DATA *data, threadData_t *threadData, SOLVER_INFO *solverI
   /* Save statistics */
   cvode_save_statistics(cvodeData->cvode_mem, &solverInfo->solverStatsTmp, threadData);
 
-  infoStreamPrint(LOG_SOLVER, 0, "##CVODE## Finished Integrator step.");
+  infoStreamPrint(OMC_LOG_SOLVER, 0, "##CVODE## Finished Integrator step.");
   /* Measure time */
   if (measure_time_flag)
     rt_accumulate(SIM_TIMER_SOLVER);
@@ -993,21 +1001,21 @@ int cvode_solver_step(DATA *data, threadData_t *threadData, SOLVER_INFO *solverI
   return retVal;
 }
 
-
+#ifdef OMC_FMI_RUNTIME
 
 /**
  * @brief Integration step with CVODE for fmi2DoStep
  *
- * @param data              Runtime data struct
- * @param threadData        Thread data for error handling.
- * @param solverInfo        CVODE solver data struct.
- * @param tNext             Next desired time step for integrator to end.
- * @param states            States vector.
- * @param fmuComponent      FMU Data for fmu callback functions.
- * @return int              Returns 0 on success and -1 else.
+ * @param comp          Pointer to FMU component.
+ * @param tNext         Next desired time step for integrator to end.
+ * @param states        States vector.
+ * @return int          Returns 0 on success and -1 else.
  */
-int cvode_solver_fmi_step(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo, double tNext, double* states, void* fmuComponent)
+int cvode_solver_fmi_step(ModelInstance *comp, double tNext, double* states)
 {
+  DATA* data = comp->fmuData;
+  threadData_t* threadData = comp->threadData;
+  SOLVER_INFO* solverInfo = comp->solverInfo;
   /* Variables */
   int flag;
   int retVal = 0;
@@ -1025,8 +1033,7 @@ int cvode_solver_fmi_step(DATA* data, threadData_t* threadData, SOLVER_INFO* sol
   }
   flag = CVodeSetStopTime(cvodeData->cvode_mem, tNext);
   if (flag < 0) {
-    // TODO: Add logging
-    //FILTERED_LOG(comp, fmi2Fatal, LOG_STATUSFATAL, "fmi2DoStep: ##CVODE## CVodeSetStopTime failed with flag %i.", flag)
+    FILTERED_LOG(comp, fmi2Fatal, LOG_STATUSFATAL, "fmi2DoStep: ##CVODE## CVodeSetStopTime failed with flag %i.", flag)
     return -1;
   }
   flag = CVode(cvodeData->cvode_mem,
@@ -1037,17 +1044,57 @@ int cvode_solver_fmi_step(DATA* data, threadData_t* threadData, SOLVER_INFO* sol
   /* Error handling */
   if ((flag == CV_SUCCESS || flag == CV_TSTOP_RETURN) && solverInfo->currentTime >= tNext)
   {
-    //FILTERED_LOG(comp, fmi2OK, LOG_ALL, "fmi2DoStep:##CVODE## step done to time = %.15g.", comp->solverInfo->currentTime)
+    FILTERED_LOG(comp, fmi2OK, LOG_ALL, "fmi2DoStep:##CVODE## step done to time = %.15g.", comp->solverInfo->currentTime)
   }
   else
   {
-    //FILTERED_LOG(comp, fmi2Fatal, LOG_STATUSFATAL, "fmi2DoStep: ##CVODE## %d error occurred at time = %.15g.", flag, fmuComponent->solverInfo->currentTime)
-    // TODO: Add logging
-    printf("fmi2DoStep: ##CVODE## %d error occurred at time = %.15g.", flag, solverInfo->currentTime);
+    FILTERED_LOG(comp, fmi2Fatal, LOG_STATUSFATAL, "fmi2DoStep: ##CVODE## %d error occurred at time = %.15g.", flag, solverInfo->currentTime)
     return -1;
   }
 
   return 0;
 }
+
+#endif /* OMC_FMI_RUNTIME */
+
+#else /* WITH_SUNDIALS */
+
+int cvode_solver_initial(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, CVODE_SOLVER *cvodeData, int isFMI)
+{
+#ifdef OMC_FMI_RUNTIME
+  printf("##CVODE## SUNDIALS not available in FMU. See OpenModelica command line flag \"--fmiFlags\" from \"omc --help\" on how to enable CVODE in FMUs.\n");
+  return -1;
+#else
+  throwStreamPrint(threadData, "##CVODE## SUNDIALS not available. Reconfigure omc with SUNDIALS.\n");
+#endif
+}
+
+int cvode_solver_deinitial(CVODE_SOLVER *cvodeData)
+{
+#ifdef OMC_FMI_RUNTIME
+  printf("##CVODE## SUNDIALS not available in FMU. See OpenModelica command line flag \"--fmiFlags\" from \"omc --help\" on how to enable CVODE in FMUs.\n");
+  return -1;
+#else
+  throwStreamPrint(NULL, "##CVODE## SUNDIALS not available. Reconfigure omc with SUNDIALS.\n");
+#endif
+}
+
+int cvode_solver_step(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
+{
+#ifdef OMC_FMI_RUNTIME
+  printf("##CVODE## SUNDIALS not available in FMU. See OpenModelica command line flag \"--fmiFlags\" from \"omc --help\" on how to enable CVODE in FMUs.\n");
+  return -1;
+#else
+  throwStreamPrint(threadData, "##CVODE## SUNDIALS not available. Reconfigure omc with SUNDIALS.\n");
+#endif
+}
+
+#ifdef OMC_FMI_RUNTIME
+int cvode_solver_fmi_step(ModelInstance *comp, double tNext, double* states)
+{
+  printf("##CVODE## SUNDIALS not available in FMU. See OpenModelica command line flag \"--fmiFlags\" from \"omc --help\" on how to enable CVODE in FMUs.\n");
+  return -1;
+}
+#endif
 
 #endif /* #ifdef WITH_SUNDIALS */

@@ -818,6 +818,23 @@ algorithm
   end match;
 end powElementwiseArrayelt;
 
+public function absynExpValue
+  input Absyn.Exp exp;
+  output Values.Value value;
+algorithm
+  value := match exp
+    case Absyn.Exp.INTEGER() then Values.Value.INTEGER(exp.value);
+    case Absyn.Exp.REAL() then Values.Value.REAL(stringReal(exp.value));
+    case Absyn.Exp.CREF() then Values.Value.CODE(Absyn.CodeNode.C_VARIABLENAME(exp.componentRef));
+    case Absyn.Exp.STRING() then Values.Value.STRING(exp.value);
+    case Absyn.Exp.BOOL() then Values.Value.BOOL(exp.value);
+    case Absyn.Exp.ARRAY() then makeArray(list(absynExpValue(e) for e in exp.arrayExp));
+    case Absyn.Exp.TUPLE() then makeTuple(list(absynExpValue(e) for e in exp.expressions));
+    case Absyn.Exp.CODE() then Values.Value.CODE(exp.code);
+    else Values.Value.CODE(Absyn.CodeNode.C_EXPRESSION(exp));
+  end match;
+end absynExpValue;
+
 public function expValue "Returns the value of constant expressions in DAE.Exp"
   input DAE.Exp inExp;
   output Values.Value outValue;
@@ -1694,6 +1711,10 @@ algorithm
   end matchcontinue;
 end makeArray;
 
+function makeEmptyArray
+  output Values.Value outValue = Values.Value.ARRAY({}, {0});
+end makeEmptyArray;
+
 public function makeStringArray
   "Creates a Values.ARRAY from a list of Strings."
   input list<String> inReals;
@@ -1870,7 +1891,7 @@ algorithm
 
     case (Values.CODE(A = c))
       equation
-        Print.printBuf("Code(");
+        Print.printBuf("$Code(");
         Print.printBuf(Dump.printCodeStr(c));
         Print.printBuf(")");
       then
@@ -2005,7 +2026,7 @@ end valRecordString;
 
 protected function valListString "
   This function returns a textual representation of a list of
-  values, separating each value with a comman.
+  values, separating each value with a comma.
 "
   input list<Values.Value> inValueLst;
 algorithm
@@ -2022,7 +2043,7 @@ algorithm
     case (v :: vs)
       equation
         valString2(v);
-        Print.printBuf(",");
+        Print.printBuf(", ");
         valListString(vs);
       then
         ();
@@ -2244,6 +2265,20 @@ algorithm
   val := Values.CODE(Absyn.C_TYPENAME(path));
 end makeCodeTypeName;
 
+public function makeCodeTypeNameStr
+  input String str;
+  output Values.Value val;
+algorithm
+  val := Values.CODE(Absyn.C_TYPENAME(Absyn.IDENT(str)));
+end makeCodeTypeNameStr;
+
+public function makeCodeTypeNameArray
+  input list<Absyn.Path> paths;
+  output Values.Value val;
+algorithm
+  val := makeArray(list(makeCodeTypeName(p) for p in paths));
+end makeCodeTypeNameArray;
+
 public function getCode
   input Values.Value val;
   output Absyn.CodeNode code;
@@ -2400,6 +2435,17 @@ algorithm
     else e;
   end match;
 end fixZeroSizeArray;
+
+public function arraySize
+  input Values.Value value;
+  output Integer size;
+algorithm
+  size := match value
+    case Values.Value.ARRAY() then listHead(value.dimLst);
+    case Values.Value.META_ARRAY() then listLength(value.valueLst);
+    else 0;
+  end match;
+end arraySize;
 
 annotation(__OpenModelica_Interface="frontend");
 end ValuesUtil;

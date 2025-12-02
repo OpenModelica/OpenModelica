@@ -1,7 +1,6 @@
 // name: ConnectAlgorithm
 // keywords:
 // status: incorrect
-// cflags:   -d=newInst
 //
 // Checks that connect isn't allowed in an algorithm section.
 //
@@ -21,7 +20,7 @@ end ConnectAlgorithm;
 // Error processing file: ConnectAlgorithm.mo
 // Failed to parse file: ConnectAlgorithm.mo!
 //
-// [flattening/modelica/scodeinst/ConnectAlgorithm.mo:17:3-17:9:writable] Error: No viable alternative near token: connect
+// [flattening/modelica/scodeinst/ConnectAlgorithm.mo:16:3-16:9:writable] Error: No viable alternative near token: connect
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

@@ -76,6 +76,7 @@ import ExpressionSimplify;
 import Error;
 import Flags;
 import GCExt;
+import HashSet;
 import HashTableExpToIndex;
 import HpcOmTaskGraph;
 import List;
@@ -115,7 +116,7 @@ end simplifyAllExpressions;
 // =============================================================================
 // simplifyInStream
 //
-// OM introduces $OMC$PosetiveMax which can simplified using min or max attribute
+// OM introduces $OMC$PositiveMax which can simplified using min or max attribute
 // see Modelica spec for inStream
 // author: Vitalij Ruge
 // see. #3885, 4441, 5104
@@ -179,7 +180,7 @@ algorithm
     case DAE.CALL(path = Absyn.IDENT("$OMC$PositiveMax"), expLst = {e as DAE.UNARY(DAE.UMINUS(tp), DAE.CREF(componentRef = cr)), expr}) algorithm
       (eMin, eMax) := simplifyInStreamGetMinMaxAttributes(cr, outVars);
       ret := if Util.applyOptionOrDefault(eMin, Expression.isPositiveOrZero, false) then Expression.createZeroExpression(tp)
-        elseif Util.applyOptionOrDefault(eMax, function Expression.isGreaterOrEqual(exp1 = expr), false) then e
+        elseif Util.applyOptionOrDefault(eMax, function Expression.isGreaterOrEqual(exp1 = Expression.negate(expr)), false) then e
         else Expression.makePureBuiltinCall("max", {e, expr}, tp);
     then ret;
 
@@ -292,8 +293,14 @@ algorithm
       (zero, _) = Expression.makeZeroExpression(Expression.arrayDimension(tp));
     then (zero, (globalKnownVars, aliasvars, true));
 
-    case (DAE.CALL(path=Absyn.IDENT(name=idn), expLst={e as DAE.CREF(componentRef=cr)}), (globalKnownVars, aliasvars, _)) guard idn=="pre" or idn=="previous" equation
-      (_, _) = BackendVariable.getVarSingle(cr, globalKnownVars);
+    case (DAE.CALL(path=Absyn.IDENT(name=idn), expLst={e as DAE.CREF(componentRef=cr)}), (globalKnownVars, aliasvars, _)) guard idn=="pre" or idn=="previous"
+      equation
+        (var, _) = BackendVariable.getVarSingle(cr, globalKnownVars);
+        /* https://github.com/OpenModelica/OpenModelica/issues/13811
+        * check if var is a top level input and keep the expression as it pre(param) = pre(param)
+        * for parameter and constat apply pre(param) = param
+        */
+        false = BackendVariable.isInput(var);
     then(e, (globalKnownVars, aliasvars, true));
 
     case (DAE.CALL(path=Absyn.IDENT(name=idn), expLst={e as DAE.CREF(componentRef=DAE.CREF_IDENT(ident="time"))}), (globalKnownVars, aliasvars, _)) guard idn=="pre" or idn=="previous"
@@ -420,7 +427,7 @@ algorithm
     case (e as DAE.CREF(cr,_), (_,vars,globalKnownVars,b1,b2))
       equation
         (vlst,_::_)= BackendVariable.getVar(cr, globalKnownVars) "input variables stored in known variables are input on top level";
-        false = List.mapAllValueBool(vlst,toplevelInputOrUnfixed,false);
+        false = List.none(vlst, toplevelInputOrUnfixed);
       then (e,false,(true,vars,globalKnownVars,b1,b2));
     case (e as DAE.CALL(path = Absyn.IDENT(name = "sample"), expLst = {_,_,_}), (_,vars,globalKnownVars,b1,b2)) then (e,false,(true,vars,globalKnownVars,b1,b2));
     case (e as DAE.CALL(path = Absyn.IDENT(name = "pre"), expLst = {_}), (_,vars,globalKnownVars,b1,b2)) then (e,false,(true,vars,globalKnownVars,b1,b2));
@@ -2489,7 +2496,7 @@ algorithm
         iHt;
     case (c::explst,eqns::rest,_)
       equation
-        ht = simplifySolvedIfEqns1(c,eqns,iHt);
+        ht = simplifySolvedIfEqns1(c,eqns,iHt, HashSet.emptyHashSet());
       then
         simplifySolvedIfEqns(explst,rest,ht);
   end match;
@@ -2501,14 +2508,24 @@ protected function simplifySolvedIfEqns1
   input DAE.Exp condition;
   input list<BackendDAE.Equation> brancheqns;
   input HashTable2.HashTable iHt;
+  input HashSet.HashSet iHs;
   output HashTable2.HashTable oHt;
 algorithm
+  // ticket #13927
+  // Only proceed if `cr` was not already assigned within current branch.
+  // This is checked by collecting all `cr` in `hs`.
+  // Prevents errors like:
+  // if b then a = r1; a = r2; else a = r3; c = r4; end if;
+  // to
+  // a = if b then r2 else if b then r1 else r3; c = r4;
+
   oHt := match(condition,brancheqns,iHt)
     local
       DAE.ComponentRef cr;
       DAE.Exp e,exp;
       DAE.ElementSource source;
       HashTable2.HashTable ht;
+      HashSet.HashSet hs;
       list<BackendDAE.Equation> rest;
     case (_,{},_)
       then
@@ -2516,20 +2533,22 @@ algorithm
     case (_,BackendDAE.EQUATION(exp=DAE.CREF(componentRef=cr), scalar=e)::rest,_)
       equation
         false = Expression.expHasCref(e, cr);
+        hs = BaseHashSet.addUnique(cr, iHs);
         exp = BaseHashTable.get(cr, iHt);
         exp = DAE.IFEXP(condition, e, exp);
         ht = BaseHashTable.add((cr,exp), iHt);
       then
-        simplifySolvedIfEqns1(condition,rest,ht);
+        simplifySolvedIfEqns1(condition,rest,ht, hs);
     case (_,BackendDAE.EQUATION(exp=DAE.UNARY(operator=DAE.UMINUS(), exp=DAE.CREF(componentRef=cr)), scalar=e)::rest,_)
       equation
         false = Expression.expHasCref(e, cr);
+        hs = BaseHashSet.addUnique(cr, iHs);
         exp = BaseHashTable.get(cr, iHt);
         e = Expression.negate(e);
         exp = DAE.IFEXP(condition, e, exp);
         ht = BaseHashTable.add((cr,exp), iHt);
       then
-        simplifySolvedIfEqns1(condition,rest,ht);
+        simplifySolvedIfEqns1(condition,rest,ht, hs);
   end match;
 end simplifySolvedIfEqns1;
 
@@ -2795,12 +2814,12 @@ algorithm
 
     case (_,tbs,{})
       equation
-        List.map_0(tbs, List.assertIsEmpty);
+        true = List.all(tbs, listEmpty);
       then {};
 
     case (conds,tbs,fb::fbs)
       equation
-        tbsRest = List.map(tbs,List.rest);
+        tbsRest = List.map(tbs, listRest);
         rest_res = makeResidualIfExpLst(conds, tbsRest, fbs);
 
         tbsFirst = List.map(tbs,listHead);
@@ -2902,13 +2921,13 @@ algorithm
 
     case (_, _, {}, _, _)
       equation
-        List.map_0(inExpLst2, List.assertIsEmpty);
+        true = List.all(inExpLst2, listEmpty);
       then {};
 
     case (_, _, fb::fbs, _, _)
       equation
         size = Expression.sizeOf(Expression.typeof(fb));
-        tbsRest = List.map(inExpLst2, List.rest);
+        tbsRest = List.map(inExpLst2, listRest);
         rest_res = makeEquationsFromResiduals(inExp1, tbsRest, fbs, inSource, inEqAttr);
         tbsFirst = List.map(inExpLst2, listHead);
         ifexp = Expression.makeNestedIf(inExp1,tbsFirst,fb);
@@ -2975,7 +2994,7 @@ algorithm
         // ..
         // sn = sn-1
         // y = semiLinear(x,sa,sb)
-        eqnslst := List.fold(arrayList(eqnsarray), semiLinearOptimize, {});
+        eqnslst := Array.fold(eqnsarray, semiLinearOptimize, {});
         // replace the equations in the system
         syst.orderedEqs := List.fold(eqnslst, semiLinearReplaceEqns, eqns);
       then (BackendDAEUtil.clearEqSyst(syst), ishared);
@@ -4324,59 +4343,59 @@ algorithm
               end if; //isScalar
             end if; // isWild
           end for;
-      elseif Expression.isArray(left) and Expression.isArray(right)
-      then // array{} = array{} // not work with arrayType
-          //print(BackendDump.equationString(eqn) + "--In--\n");
-        try
-          left_lst := Expression.getArrayOrRangeContents(left);
-          right_lst := Expression.getArrayOrRangeContents(right);
-          update := true;
-          indRemove := i :: indRemove;
-          for e1 in left_lst loop
-          e2 :: right_lst := right_lst;
-          //print("=>" +  ExpressionDump.printExpStr(e2) + " = " +  ExpressionDump.printExpStr(e1) + "\n");
-          if not Expression.isWild(e1) then
-            if Expression.isScalar(e2) then
-            eqn1 := BackendEquation.generateEquation(e1, e2, source, attr);
-            eqns := BackendEquation.add(eqn1, eqns);
-            //print(BackendDump.equationString(eqn1) + "--new--\n");
-            else
-            expLst := simplifyComplexFunction2(e1);
-            arrayLst := simplifyComplexFunction2(e2);
-            for e_asub in arrayLst loop
-              e3 :: expLst := expLst;
-              eqn1 := BackendEquation.generateEquation(e_asub, e3, source, attr);
+        elseif Expression.isArray(left) and Expression.isArray(right)
+        then // array{} = array{} // not work with arrayType
+            //print(BackendDump.equationString(eqn) + "--In--\n");
+          try
+            left_lst := Expression.getArrayOrRangeContents(left);
+            right_lst := Expression.getArrayOrRangeContents(right);
+            update := true;
+            indRemove := i :: indRemove;
+            for e1 in left_lst loop
+            e2 :: right_lst := right_lst;
+            //print("=>" +  ExpressionDump.printExpStr(e2) + " = " +  ExpressionDump.printExpStr(e1) + "\n");
+            if not Expression.isWild(e1) then
+              if Expression.isScalar(e2) then
+              eqn1 := BackendEquation.generateEquation(e1, e2, source, attr);
               eqns := BackendEquation.add(eqn1, eqns);
               //print(BackendDump.equationString(eqn1) + "--new--\n");
+              else
+              expLst := simplifyComplexFunction2(e1);
+              arrayLst := simplifyComplexFunction2(e2);
+              for e_asub in arrayLst loop
+                e3 :: expLst := expLst;
+                eqn1 := BackendEquation.generateEquation(e_asub, e3, source, attr);
+                eqns := BackendEquation.add(eqn1, eqns);
+                //print(BackendDump.equationString(eqn1) + "--new--\n");
+              end for;
+              end if; //isScalar
+            end if; // isWild
             end for;
-            end if; //isScalar
-          end if; // isWild
-          end for;
-        else
-          continue;
-        end try;
-      elseif withTmpVars and  Expression.isTuple(left) and Expression.isCall(right)  //tuple() = call()
-      then
-        DAE.TUPLE(PR = left_lst) := left;
-        DAE.CALL(path=path,expLst = expLst, attr= cattr) := right;
-        expLst := {};
-        for e1 in left_lst loop
-          if Expression.isCref(e1) then
-            DAE.CREF(componentRef = cr) := e1;
-            if Expression.expHasCrefNoPreOrStart(right, cr) then
-              update := true;
-              cr  := ComponentReference.makeCrefIdent(tmpVarPrefix + intString(idx), Expression.typeof(e1) , {});
-              idx := idx + 1;
-              e := Expression.crefExp(cr);
-              tmpvar := BackendVariable.makeVar(cr);
-              tmpvar := BackendVariable.setVarTS(tmpvar,SOME(BackendDAE.AVOID()));
-              vars := BackendVariable.addVar(tmpvar, vars);
+          else
+            continue;
+          end try;
+        elseif withTmpVars and  Expression.isTuple(left) and Expression.isCall(right)  //tuple() = call()
+        then
+          DAE.TUPLE(PR = left_lst) := left;
+          DAE.CALL(path=path,expLst = expLst, attr= cattr) := right;
+          expLst := {};
+          for e1 in left_lst loop
+            if Expression.isCref(e1) then
+              DAE.CREF(componentRef = cr) := e1;
+              if Expression.expHasCrefNoPreOrStart(right, cr) then
+                update := true;
+                cr  := ComponentReference.makeCrefIdent(tmpVarPrefix + intString(idx), Expression.typeof(e1) , {});
+                idx := idx + 1;
+                e := Expression.crefExp(cr);
+                tmpvar := BackendVariable.makeVar(cr);
+                tmpvar := BackendVariable.setVarTS(tmpvar,SOME(BackendDAE.AVOID()));
+                vars := BackendVariable.addVar(tmpvar, vars);
 
-              eqn1 := BackendDAE.EQUATION(e, e1, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC);
-              eqns := BackendEquation.add(eqn1, eqns);
-            else
-              e := e1;
-            end if;
+                eqn1 := BackendDAE.EQUATION(e, e1, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC);
+                eqns := BackendEquation.add(eqn1, eqns);
+              else
+                e := e1;
+              end if;
             elseif Expression.isUnaryCref(e1) then
               update := true;
               cr  := ComponentReference.makeCrefIdent(tmpVarPrefix + intString(idx), Expression.typeof(e1) , {});
@@ -4388,7 +4407,7 @@ algorithm
               eqn1 := BackendDAE.EQUATION(e, e1, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC);
               //print(BackendDump.equationString(eqn1) + "--new--\n");
               eqns := BackendEquation.add(eqn1, eqns);
-             elseif Expression.isArray(e1) then
+            elseif Expression.isArray(e1) then
               update := true;
               DAE.ARRAY(array=arrayLst, scalar=sc) := e1;
               m := listLength(arrayLst);
@@ -5664,7 +5683,7 @@ protected
 algorithm
   (BackendDAE.DAE(eqs, shared), _) := BackendDAEUtil.mapEqSystemAndFold(inDAE, addTimeAsState1, 0);
   orderedVars := BackendVariable.emptyVars();
-  var := BackendDAE.VAR(DAE.crefTimeState, BackendDAE.STATE(1, NONE(), true), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), NONE(), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), true, false);
+  var := BackendDAE.VAR(DAE.crefTimeState, BackendDAE.STATE(1, NONE(), true), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), NONE(), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), true, false, false);
   var := BackendVariable.setVarFixed(var, true);
   var := BackendVariable.setVarStartValue(var, DAE.CREF(DAE.crefTime, DAE.T_REAL_DEFAULT));
   orderedVars := BackendVariable.addVar(var, orderedVars);
@@ -5835,7 +5854,7 @@ algorithm
           //get their predecessor tasks, the corresponding comps and add their equations
           predecessors := HpcOmTaskGraph.getAllSuccessors(stateTasks1,taskGraphT);
           addComps := List.map1(listAppend(stateTasks1,predecessors),List.getIndexFirst,comps);
-          eqLstNew := List.unique(listAppend(eqLstNew,BackendDAEUtil.getStrongComponentEquations(addComps,eqs,vars)));
+          eqLstNew := listAppend(BackendDAEUtil.getStrongComponentEquations(addComps,eqs,vars), eqLstNew);
         end if;
       end while;
       stateTasks := Dangerous.listReverseInPlace(stateTasks);
@@ -6170,7 +6189,7 @@ algorithm
 
   if homotopyLoopBeginning > 0 then
     // Add homotopy lambda to system
-    lambda := BackendDAE.VAR(ComponentReference.makeCrefIdent(BackendDAE.homotopyLambda, DAE.T_REAL_DEFAULT, {}), BackendDAE.VARIABLE(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), NONE(), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), true, false);
+    lambda := BackendDAE.VAR(ComponentReference.makeCrefIdent(BackendDAE.homotopyLambda, DAE.T_REAL_DEFAULT, {}), BackendDAE.VARIABLE(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), NONE(), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), true, false, false);
     system.orderedVars := BackendVariable.addVar(lambda, system.orderedVars);
     lambdaIdx := BackendVariable.varsSize(system.orderedVars);
 
@@ -6356,7 +6375,7 @@ algorithm
 
   if hasAnyHomotopy then
     // Add homotopy lambda to system
-    lambda := BackendDAE.VAR(ComponentReference.makeCrefIdent(BackendDAE.homotopyLambda, DAE.T_REAL_DEFAULT, {}), BackendDAE.VARIABLE(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), NONE(), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), true, false);
+    lambda := BackendDAE.VAR(ComponentReference.makeCrefIdent(BackendDAE.homotopyLambda, DAE.T_REAL_DEFAULT, {}), BackendDAE.VARIABLE(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), NONE(), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), true, false, false);
     system.orderedVars := BackendVariable.addVar(lambda, system.orderedVars);
   end if;
   comps := listReverse(newComps);

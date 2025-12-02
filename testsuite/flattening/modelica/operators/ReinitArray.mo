@@ -1,7 +1,6 @@
 // name:     ReinitArray
 // keywords: reinit array
 // status:   correct
-// cflags: -d=-newInst
 //
 // Tests reinit operator on an array.
 //
@@ -12,6 +11,7 @@ equation
    reinit(x,zeros(3));
  end when;
 der(x)={-x[1],x[2],1};
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ReinitArray;
 
 // Result:

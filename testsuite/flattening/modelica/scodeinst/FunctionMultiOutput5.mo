@@ -1,7 +1,6 @@
 // name:     FunctionMultiOutput5
 // keywords:
 // status:   correct
-// cflags: -d=-newInst
 //
 
 function f
@@ -35,8 +34,8 @@ end FunctionMultiOutput5;
 //   output Real y;
 //   output Real z;
 // algorithm
-//   y := 2.0 * x;
-//   z := 3.0 * x;
+//   y := x * 2.0;
+//   z := x * 3.0;
 // end f;
 //
 // class FunctionMultiOutput5

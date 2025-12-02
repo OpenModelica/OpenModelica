@@ -1,7 +1,6 @@
 // name: FuncBuiltinLinspace
 // keywords: linspace
 // status: correct
-// cflags: -d=newInst
 //
 // Tests the builtin linspace operator.
 //

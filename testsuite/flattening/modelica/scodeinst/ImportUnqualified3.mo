@@ -1,6 +1,5 @@
 // name: ImportUnqualified3.mo
 // status: correct
-// cflags: -d=newInst
 
 package A
   package B

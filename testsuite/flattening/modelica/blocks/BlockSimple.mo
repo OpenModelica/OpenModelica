@@ -1,7 +1,6 @@
 // name: BlockSimple
 // keywords: block
 // status: correct
-// cflags: -d=-newInst
 //
 // Tests simple block declaration and instantiation
 //
@@ -11,6 +10,7 @@ end TestBlock;
 
 model BlockSimple
   TestBlock tb;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end BlockSimple;
 
 // Result:

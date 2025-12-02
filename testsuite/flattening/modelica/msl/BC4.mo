@@ -1,7 +1,6 @@
 // name:     BC4 - Integrator component
 // keywords: Integrator
 // status:   correct
-// cflags: -d=-newInst
 //
 // Testing instantiation of the Integrator component.
 //
@@ -938,6 +937,7 @@ model BC4
 
 equation
   connect(constant1.outPort,integrator1.inPort) annotation(Line(visible=true,points={{-4.04,14.0},{13.25,16.62}}));
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end BC4;
 
 // class BC4

@@ -1,7 +1,6 @@
 // name: EnumConversion3
 // keywords:
 // status: correct
-// cflags: -d=newInst
 
 model A
   replaceable type AE = enumeration(:);

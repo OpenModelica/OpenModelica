@@ -36,6 +36,7 @@ encapsulated uniontype NFVariable
   import Component = NFComponent;
   import ComponentRef = NFComponentRef;
   import Dimension = NFDimension;
+  import Equation = NFEquation;
   import Expression = NFExpression;
   import NFInstNode.InstNode;
   import NFPrefixes.Visibility;
@@ -44,17 +45,19 @@ encapsulated uniontype NFVariable
   import NFPrefixes.Direction;
   import NFPrefixes.AccessLevel;
   import Type = NFType;
-  import BackendExtension = NFBackendExtension;
-  import NFBackendExtension.BackendInfo;
+  import NFBackendExtension.{BackendInfo, VariableKind, VariableAttributes};
 
 protected
+  import Ceval = NFCeval;
   import ExpandExp = NFExpandExp;
   import FlatModelicaUtil = NFFlatModelicaUtil;
+  import Inst = NFInst;
   import IOStream;
+  import MetaModelica.Dangerous.listReverseInPlace;
   import StringUtil;
+  import Typing = NFTyping;
   import Util;
   import Variable = NFVariable;
-  import MetaModelica.Dangerous.listReverseInPlace;
 
 public
   record VARIABLE
@@ -65,7 +68,7 @@ public
     Attributes attributes;
     list<tuple<String, Binding>> typeAttributes;
     list<Variable> children;
-    Option<SCode.Comment> comment;
+    SCode.Comment comment;
     SourceInfo info;
     BackendInfo backendinfo "NFBackendExtension.DUMMY_BACKEND_INFO for all of frontend. Only used in Backend.";
   end VARIABLE;
@@ -77,17 +80,17 @@ public
     output Variable variable;
   protected
     list<ComponentRef> crefs;
-    InstNode node, child_node;
+    InstNode node, class_node;
     Component comp;
     Type ty;
     Binding binding;
     Visibility vis;
     Attributes attr;
-    Option<SCode.Comment> cmt;
+    SCode.Comment cmt;
     SourceInfo info;
-    BackendExtension.BackendInfo binfo = NFBackendExtension.DUMMY_BACKEND_INFO;
+    BackendInfo binfo = NFBackendExtension.DUMMY_BACKEND_INFO;
+    array<InstNode> child_nodes;
     list<Variable> children = {};
-    Option<Integer> complexSize;
   algorithm
     node := ComponentRef.node(cref);
     comp := InstNode.component(node);
@@ -101,18 +104,20 @@ public
     // conversion to backend process (except for iterators). NBackendDAE.lower
     if ComponentRef.isIterator(cref) then
       binding := NFBinding.EMPTY_BINDING;
-      binfo.varKind := BackendExtension.ITERATOR();
+      binfo.varKind := VariableKind.ITERATOR();
     else
-      binding := Component.getImplicitBinding(comp);
+      binding := Component.getImplicitBinding(comp, InstNode.instanceParent(node));
     end if;
 
     // get the record children if the variable is a record
-    complexSize := Type.complexSize(ty);
-    if Util.isSome(complexSize) then
-      for i in Util.getOption(complexSize):-1:1 loop
-        child_node := Class.nthComponent(i, InstNode.getClass(node));
-        children := fromCref(ComponentRef.fromNode(child_node, InstNode.getType(child_node))) :: children;
-      end for;
+    if not Type.isExternalObject(ty) then
+      children := match Type.arrayElementType(ty)
+        case Type.COMPLEX(cls = class_node) algorithm
+          child_nodes := Class.getComponents(InstNode.getClass(class_node));
+          children := list(fromCref(ComponentRef.prefixCref(c, InstNode.getType(c), {}, cref)) for c in child_nodes);
+        then children;
+        else {};
+      end match;
     end if;
 
     variable := VARIABLE(cref, ty, binding, vis, attr, {}, children, cmt, info, binfo);
@@ -120,7 +125,8 @@ public
 
   function size
     input Variable var;
-    output Integer s = Type.sizeOf(var.ty);
+    input Boolean resize = false;
+    output Integer s = Type.sizeOf(var.ty, resize);
   end size;
 
   function hash
@@ -204,24 +210,20 @@ public
   function expandChildren
     "Expands a variable into itself and its children if its complex."
     input Variable var;
+    input list<Dimension> arrayDims = {};
+    input Boolean addDimensions = true;
     output list<Variable> children;
   protected
-    function expandChildType
-      "helper function to inherit the array type dimensions"
-      input output Variable child;
-      input list<Dimension> dimensions;
-    algorithm
-      child.ty := Type.liftArrayLeftList(child.ty, dimensions);
-    end expandChildType;
+    list<Dimension> newArrayDims;
   algorithm
-    // for non-complex variables the children are empty therefore it will be returned itself
-    var.children := List.flatten(list(expandChildren(v) for v in var.children));
-    if isComplexArray(var) then
-      // if the variable is an array, inherit the array dimensions
-      var.children := list(expandChildType(v, Type.arrayDims(var.ty)) for v in var.children);
+    // add dimensions of surrounding record
+    if addDimensions and not listEmpty(arrayDims) then
+      var.ty := Type.liftArrayLeftList(var.ty, arrayDims);
     end if;
+    newArrayDims := Type.arrayDims(var.ty);
+
     // return all children and the variable itself
-    children := var :: var.children;
+    children := var :: List.flatten(list(expandChildren(v, newArrayDims, addDimensions) for v in var.children));
   end expandChildren;
 
   function typeOf
@@ -238,6 +240,17 @@ public
     input Variable variable;
     output Variability variability = variable.attributes.variability;
   end variability;
+
+  function setVariability
+    input output Variable variable;
+    input Variability variability;
+  protected
+    Attributes attr;
+  algorithm
+    attr := variable.attributes;
+    attr.variability := variability;
+    variable.attributes := attr;
+  end setVariability;
 
   function visibility
     input Variable variable;
@@ -302,7 +315,7 @@ public
 
   function isTopLevelInput
     input Variable variable;
-    output Boolean topInput = ComponentRef.isSimple(variable.name) and
+    output Boolean topInput = ComponentRef.isTopLevel(variable.name) and
                               variable.attributes.direction == Direction.INPUT;
   end isTopLevelInput;
 
@@ -318,7 +331,25 @@ public
 
   function isEncrypted
     input Variable variable;
-    output Boolean isEncrypted = StringUtil.endsWith(variable.info.fileName, ".moc");
+    output Boolean isEncrypted;
+  protected
+    ComponentRef name;
+    SourceInfo info;
+  algorithm
+    name := variable.name;
+
+    while ComponentRef.isCref(name) loop
+      info := InstNode.info(ComponentRef.node(name));
+
+      if StringUtil.endsWith(info.fileName, ".moc") then
+        isEncrypted := true;
+        return;
+      end if;
+
+      name := ComponentRef.rest(name);
+    end while;
+
+    isEncrypted := false;
   end isEncrypted;
 
   function isAccessible
@@ -360,37 +391,65 @@ public
     binding := NFBinding.EMPTY_BINDING;
   end lookupTypeAttribute;
 
+  function applyToType
+    input output Variable var;
+    input typeFunc func;
+    partial function typeFunc
+      input output Type ty;
+    end typeFunc;
+  algorithm
+    var.ty := func(var.ty);
+    var.name := ComponentRef.applyToType(var.name, func);
+  end applyToType;
+
   function propagateAnnotation
     input String name;
     input Boolean overwrite;
+    input Boolean evaluate = false;
     input output Variable var;
   protected
     InstNode node;
-    Option<SCode.SubMod> mod;
+    SCode.Mod mod;
+    Absyn.Exp aexp;
+    Expression exp;
   protected
     SCode.Annotation anno;
+    InstNode scope;
   algorithm
     if ComponentRef.isCref(var.name) then
       node := ComponentRef.node(var.name);
       // InstNode.getAnnotation is recursive and returns the first annotation found.
       // if the original is supposed to be overwritten, skip the node itself and look at the parent
-      if overwrite then
-        mod := match node
-          case InstNode.COMPONENT_NODE() then InstNode.getAnnotation(name, node.parent);
-          else NONE();
-        end match;
-      else
-        mod := InstNode.getAnnotation(name, node);
+      if overwrite and InstNode.isComponent(node) then
+        node := InstNode.parent(node);
       end if;
 
-      if isSome(mod) then
+      (mod, scope) := InstNode.getAnnotation(name, node);
+
+      if not SCodeUtil.isEmptyMod(mod) then
+        if evaluate then
+          () := matchcontinue mod
+            case SCode.Mod.MOD(binding = SOME(aexp))
+              algorithm
+                exp := Inst.instExp(aexp, scope, NFInstContext.ANNOTATION, mod.info);
+                exp := Typing.typeExp(exp, NFInstContext.ANNOTATION, mod.info);
+                exp := Ceval.evalExp(exp);
+                mod.binding := SOME(Expression.toAbsyn(exp));
+              then
+                ();
+
+            else ();
+          end matchcontinue;
+        end if;
+
         anno := SCode.ANNOTATION(modification = SCode.MOD(
           finalPrefix = SCode.NOT_FINAL(),
           eachPrefix  = SCode.NOT_EACH(),
-          subModLst   = {Util.getOption(mod)},
+          subModLst   = {SCode.SubMod.NAMEMOD(name, mod)},
           binding     = NONE(),
+          comment     = NONE(),
           info        = sourceInfo()));
-        var.comment := SCodeUtil.appendAnnotationToCommentOption(anno, var.comment, true);
+        var.comment := SCodeUtil.appendAnnotationToComment(anno, var.comment, true);
       end if;
     end if;
   end propagateAnnotation;
@@ -398,24 +457,14 @@ public
   function removeNonTopLevelDirection
     "Removes input/output prefixes from a variable that's not a top-level
      component, a component in a top-level connector, or a component in a
-     top-level input component. exposeLocalIOs can be used to keep the direction
-     for variables at lower levels as well, where 0 means top-level, 1 the level
-     below that, and so on."
+     top-level input component."
     input output Variable var;
-    input Integer exposeLocalIOs;
   protected
     ComponentRef rest_name;
     InstNode node;
     Attributes attr;
   algorithm
     if var.attributes.direction == Direction.NONE then
-      return;
-    end if;
-
-    if exposeLocalIOs > 0 and
-       var.attributes.connectorType <> ConnectorType.NON_CONNECTOR and
-       var.visibility == Visibility.PUBLIC and
-       ComponentRef.depth(var.name) < exposeLocalIOs then
       return;
     end if;
 
@@ -446,7 +495,9 @@ public
     var.typeAttributes := list(
       (Util.tuple21(a), Binding.mapExp(Util.tuple22(a), fn)) for a in var.typeAttributes);
     var.children := list(mapExp(v, fn) for v in var.children);
-    var.backendinfo := BackendExtension.BackendInfo.map(var.backendinfo, fn);
+    var.backendinfo := BackendInfo.map(var.backendinfo, fn);
+    var.ty := Type.applyToDims(var.ty, func = function Dimension.mapExp(func = fn));
+    var.name := ComponentRef.mapTypes(var.name, function Type.applyToDims(func = function Dimension.mapExp(func = fn)));
   end mapExp;
 
   function mapExpShallow
@@ -533,6 +584,7 @@ public
 
   function toFlatStream
     input Variable var;
+    input BaseModelica.OutputFormat format;
     input String indent = "";
     input Boolean printBindingType = false;
     input output IOStream.IOStream s;
@@ -544,25 +596,110 @@ public
     s := IOStream.append(s, indent);
 
     s := Attributes.toFlatStream(var.attributes, var.ty, s, ComponentRef.isSimple(var.name));
-    s := IOStream.append(s, Type.toFlatString(var.ty));
+    s := IOStream.append(s, Type.toFlatString(var.ty, format));
     s := IOStream.append(s, " ");
-    s := IOStream.append(s, ComponentRef.toFlatString(var.name));
-    s := Component.typeAttrsToFlatStream(var.typeAttributes, var.ty, s);
+    s := IOStream.append(s, ComponentRef.toFlatString(var.name, format));
 
-    if Binding.isBound(var.binding) then
+    if not listEmpty(var.typeAttributes) then
+      s := Component.typeAttrsToFlatStream(var.typeAttributes, var.ty, format, s);
+    elseif not listEmpty(var.children) then
+      s := toFlatStreamModifier(var.children, format.moveBindings or Binding.isBound(var.binding), printBindingType, format, s);
+    end if;
+
+    s := toFlatStreamBinding(var.binding, printBindingType, format, s);
+    s := FlatModelicaUtil.appendComment(var.comment, NFFlatModelicaUtil.ElementType.COMPONENT, s);
+  end toFlatStream;
+
+  function toFlatStreamBinding
+    input Binding binding;
+    input Boolean printBindingType;
+    input BaseModelica.OutputFormat format;
+    input output IOStream.IOStream s;
+  algorithm
+    if Binding.isBound(binding) then
       s := IOStream.append(s, " = ");
 
       if printBindingType then
         s := IOStream.append(s, "(");
-        s := IOStream.append(s, Type.toFlatString(Binding.getType(var.binding)));
+        s := IOStream.append(s, Type.toFlatString(Binding.getType(binding), format));
         s := IOStream.append(s, ") ");
       end if;
 
-      s := IOStream.append(s, Binding.toFlatString(var.binding));
+      s := IOStream.append(s, Binding.toFlatString(binding, format));
     end if;
+  end toFlatStreamBinding;
 
-    s := FlatModelicaUtil.appendComment(var.comment, s);
-  end toFlatStream;
+  function toFlatStreamModifier
+    input list<Variable> children;
+    input Boolean overwrittenBinding;
+    input Boolean printBindingType;
+    input BaseModelica.OutputFormat format;
+    input output IOStream.IOStream s;
+  protected
+    Boolean empty = true;
+    Boolean overwritten_binding;
+    IOStream.IOStream ss;
+    Binding.Source src;
+  algorithm
+    for child in children loop
+      ss := IOStream.create(getInstanceName(), IOStream.IOStreamType.LIST());
+
+      if not listEmpty(child.typeAttributes) then
+        ss := Component.typeAttrsToFlatStream(child.typeAttributes, child.ty, format, ss);
+      elseif not listEmpty(child.children) then
+        overwritten_binding := overwrittenBinding or Binding.isBound(child.binding);
+        ss := toFlatStreamModifier(child.children, overwritten_binding, printBindingType, format, ss);
+      end if;
+
+      if not overwrittenBinding then
+        src := Binding.source(child.binding);
+        if src == NFBinding.Source.MODIFIER or src == NFBinding.Source.GENERATED then
+          ss := toFlatStreamBinding(child.binding, printBindingType, format, ss);
+        end if;
+      end if;
+
+      if not IOStream.empty(ss) then
+        if empty then
+          s := IOStream.append(s, "(");
+          empty := false;
+        else
+          s := IOStream.append(s, ", ");
+        end if;
+
+        s := IOStream.append(s, Util.makeQuotedIdentifier(ComponentRef.firstName(child.name)));
+        s := IOStream.appendListStream(ss, s);
+      end if;
+    end for;
+
+    if not empty then
+      s := IOStream.append(s, ")");
+    end if;
+  end toFlatStreamModifier;
+
+  function moveBinding
+    "Removes the binding of the variable, if it has one and it has at least
+     discrete variability, and creates an equation from it."
+    input output Variable var;
+    input output list<Equation> equations;
+  algorithm
+    if variability(var) >= Variability.DISCRETE and Binding.isBound(var.binding) then
+      equations := Equation.makeEquality(Expression.fromCref(var.name),
+        Binding.getExp(var.binding), var.ty, InstNode.EMPTY_NODE(),
+        ElementSource.createElementSource(var.info)) :: equations;
+      var.binding := NFBinding.EMPTY_BINDING;
+    end if;
+  end moveBinding;
+
+  function getVariableAttributes
+    input Variable var;
+    output VariableAttributes variableAttributes = var.backendinfo.attributes;
+  end getVariableAttributes;
+
+  function getNominal
+    input Variable var;
+    output Option<Expression> nominal = VariableAttributes.getNominal(getVariableAttributes(var));
+  end getNominal;
+
 
   annotation(__OpenModelica_Interface="frontend");
 end NFVariable;

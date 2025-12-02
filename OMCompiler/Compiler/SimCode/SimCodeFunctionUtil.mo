@@ -795,7 +795,7 @@ algorithm
         // failure
     case (_, fn, _, _, _,_)
       equation
-        Error.addInternalError("function elaborateFunction failed for function: \n" + DAEDump.dumpFunctionStr(fn), sourceInfo());
+        Error.addInternalError("function elaborateFunction failed for function:\n" + DAEDump.dumpFunctionStr(fn), sourceInfo());
       then
         fail();
   end matchcontinue;
@@ -1222,7 +1222,7 @@ algorithm
       list<DAE.Exp> es;
     case (exp, t)
       equation
-        failure(isLiteralExp(exp));
+        failure(isLiteralExp(exp)); // exit if the expression is not literal
       then (exp, t);
     case (exp, t)
       equation
@@ -1947,6 +1947,7 @@ algorithm
       libPaths := {uri,
                    uri + "/" + System.modelicaPlatform(),
                    uri + "/" + System.openModelicaPlatform(),
+                   uri + "/" + System.openModelicaPlatformAlternative(),
                    (Settings.getHomeDir(false) + "/.openmodelica/binaries/" + AbsynUtil.pathFirstIdent(path)),
                    (installationDir + "/lib/"),
                    (installationDir + "/lib/" + Autoconf.triple + "/omc")};
@@ -2029,7 +2030,7 @@ protected function generateExtFunctionLibraryDirectoryPaths
 algorithm
   outLibs := matchcontinue (program, path, inMod)
     local
-      String str, str1, str2, str3, platform1, platform2,target;
+      String str, str1, str2, str3, platform1, platform2, platform3, target;
       list<String> libs;
       Boolean isLinux;
     case (_, _, _)
@@ -2038,10 +2039,12 @@ algorithm
           Mod.getUnelabedSubMod(inMod, "LibraryDirectory");
         str = CevalScript.getFullPathFromUri(program, str, false);
         platform1 = System.openModelicaPlatform();
-        platform2 = System.modelicaPlatform();
+        platform2 = System.openModelicaPlatformAlternative();
+        platform3 = System.modelicaPlatform();
         isLinux = stringEq("linux",Autoconf.os);
         // please, take care about ordering these libraries, the most specific should go first (in reverse here)
         libs = generateExtFunctionLibraryDirectoryPaths2(true, str, isLinux, {} );
+        libs = generateExtFunctionLibraryDirectoryPaths2(not stringEq(platform3,""), str + "/" + platform3, isLinux, libs);
         libs = generateExtFunctionLibraryDirectoryPaths2(not stringEq(platform2,""), str + "/" + platform2, isLinux, libs);
         libs = generateExtFunctionLibraryDirectoryPaths2(not stringEq(platform1,""), str + "/" + platform1, isLinux, libs);
       then libs;
@@ -2050,10 +2053,12 @@ algorithm
         str = "modelica://" + AbsynUtil.pathFirstIdent(path) + "/Resources/Library";
         str = CevalScript.getFullPathFromUri(program, str, false);
         platform1 = System.openModelicaPlatform();
-        platform2 = System.modelicaPlatform();
+        platform2 = System.openModelicaPlatformAlternative();
+        platform3 = System.modelicaPlatform();
         isLinux = stringEq("linux",Autoconf.os);
         // please, take care about ordering these libraries, the most specific should go first (in reverse here)
         libs = generateExtFunctionLibraryDirectoryPaths2(true, str, isLinux, {} );
+        libs = generateExtFunctionLibraryDirectoryPaths2(not stringEq(platform3,""), str + "/" + platform3, isLinux, libs);
         libs = generateExtFunctionLibraryDirectoryPaths2(not stringEq(platform2,""), str + "/" + platform2, isLinux, libs);
         libs = generateExtFunctionLibraryDirectoryPaths2(not stringEq(platform1,""), str + "/" + platform1, isLinux, libs);
       then libs;
@@ -2302,7 +2307,7 @@ algorithm
           Mod.getUnelabedSubMod(inMod, "Include");
         str = "#line "+intString(lineNumberStart)+" \""+fileName+"\"";
         inc_1 = System.unescapedString(inc);
-        includes = if Config.acceptMetaModelicaGrammar() or Flags.isSet(Flags.GEN_DEBUG_SYMBOLS) then {str,inc_1} else {inc_1};
+        includes = if /*Config.acceptMetaModelicaGrammar() or*/ Flags.isSet(Flags.GEN_DEBUG_SYMBOLS) then {str,inc_1} else {inc_1};
       then includes;
     else {};
   end matchcontinue;
@@ -2453,7 +2458,7 @@ protected function addDestructor2
   output HashTableStringToPath.HashTable ht = inHt;
 algorithm
   if not BaseHashTable.hasKey(pathstr, ht) then
-    BaseHashTable.add((pathstr, path), ht);
+    ht := BaseHashTable.add((pathstr, path), ht);
   end if;
 end addDestructor2;
 
@@ -2573,7 +2578,7 @@ algorithm
   cflags := if stringEq(Config.simCodeTarget(),"JavaScript") then "-Os -Wno-warn-absolute-paths" else cflags;
   ldflags := System.getLDFlags();
   if Flags.getConfigBool(Flags.PARMODAUTO) then
-    ldflags := " -lParModelicaAuto -ltbb_static -lboost_system " + ldflags;
+    ldflags := " -lParModelicaAuto -ltbb_static " + ldflags;
   end if;
   rtlibs := if isFunction then Autoconf.ldflags_runtime else (if isFMU then Autoconf.ldflags_runtime_fmu else Autoconf.ldflags_runtime_sim);
   platform := System.modelicaPlatform();

@@ -1,7 +1,6 @@
 // name: CevalArrayConstructor1
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 //
 

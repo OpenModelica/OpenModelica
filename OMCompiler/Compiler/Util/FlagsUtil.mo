@@ -103,8 +103,8 @@ constant list<Flags.DebugFlag> allDebugFlags = {
   Flags.TEARING_DUMP,
   Flags.JAC_DUMP,
   Flags.JAC_DUMP2,
-  Flags.JAC_DUMP_EQN,
-  Flags.JAC_WARNINGS,
+  Flags.DUMP_BINDINGS,
+  Flags.DUMP_SORTING,
   Flags.DUMP_SPARSE,
   Flags.DUMP_SPARSE_VERBOSE,
   Flags.BLT_DUMP,
@@ -250,8 +250,9 @@ constant list<Flags.DebugFlag> allDebugFlags = {
   Flags.DUMP_SLICE,
   Flags.VECTORIZE_BINDINGS,
   Flags.DUMP_EVENTS,
-  Flags.DUMP_BINDINGS,
-  Flags.DUMP_SORTING
+  Flags.DUMP_RESIZABLE,
+  Flags.DUMP_SOLVE,
+  Flags.FORCE_SCALARIZE
 };
 
 protected
@@ -309,7 +310,7 @@ constant list<Flags.ConfigFlag> allConfigFlags = {
   Flags.HPCOM_CODE,
   Flags.REWRITE_RULES_FILE,
   Flags.REPLACE_HOMOTOPY,
-  Flags.GENERATE_SYMBOLIC_JACOBIAN,
+  Flags.GENERATE_DYNAMIC_JACOBIAN,
   Flags.GENERATE_SYMBOLIC_LINEARIZATION,
   Flags.INT_ENUM_CONVERSION,
   Flags.PROFILING_LEVEL,
@@ -410,7 +411,16 @@ constant list<Flags.ConfigFlag> allConfigFlags = {
   Flags.OBFUSCATE,
   Flags.FMU_RUNTIME_DEPENDS,
   Flags.FRONTEND_INLINE,
-  Flags.EXPOSE_LOCAL_IOS
+  Flags.EXPOSE_LOCAL_IOS,
+  Flags.BASE_MODELICA_FORMAT,
+  Flags.BASE_MODELICA_OPTIONS,
+  Flags.DEBUG_FOLLOW_EQUATIONS,
+  Flags.MAX_SIZE_LINEARIZATION,
+  Flags.RESIZABLE_ARRAYS,
+  Flags.EVALUATE_STRUCTURAL_PARAMETERS,
+  Flags.LOAD_MISSING_LIBRARIES,
+  Flags.CAUSALIZE_DAE_MODE,
+  Flags.SIM_CODE_SCALARIZE
 };
 
 public function new
@@ -1456,7 +1466,7 @@ algorithm
   Print.printBuf(System.gettext("Copyright © 2019 Open Source Modelica Consortium (OSMC)\n"));
   Print.printBuf(System.gettext("Distributed under OMSC-PL and GPL, see www.openmodelica.org\n\n"));
   //Print.printBuf("Please check the System Guide for full information about flags.\n");
-  Print.printBuf(System.gettext("Usage: omc [Options] (Model.mo | Script.mos) [Libraries | .mo-files] \n* Libraries: Fully qualified names of libraries to load before processing Model or Script.\n             The libraries should be separated by spaces: Lib1 Lib2 ... LibN.\n"));
+  Print.printBuf(System.gettext("Usage: omc [Options] (Model.mo | Script.mos) [Libraries | .mo-files]\n* Libraries: Fully qualified names of libraries to load before processing Model or Script.\n             The libraries should be separated by spaces: Lib1 Lib2 ... LibN.\n"));
   Print.printBuf(System.gettext("\n* Options:\n"));
   Print.printBuf(printAllConfigFlags());
   Print.printBuf(System.gettext("\nFor more details on a specific topic, use --help=topics or help(\"topics\")\n\n"));
@@ -1469,10 +1479,10 @@ algorithm
   Print.printBuf(System.gettext("                            * Model_init.xml    The initial values.\n"));
   //Print.printBuf("\tomc Model.mof            will produce flattened Model on standard output\n");
   Print.printBuf(System.gettext("  omc Script.mos           will run the commands from Script.mos.\n"));
-  Print.printBuf(System.gettext("  omc Model.mo Modelica    will first load the Modelica library and then produce \n                            flattened Model on standard output.\n"));
-  Print.printBuf(System.gettext("  omc Model1.mo Model2.mo  will load both Model1.mo and Model2.mo, and produce \n                            flattened Model1 on standard output.\n"));
-  Print.printBuf(System.gettext("  *.mo (Modelica files) \n"));
-  //Print.printBuf("\t*.mof (Flat Modelica files) \n");
+  Print.printBuf(System.gettext("  omc Model.mo Modelica    will first load the Modelica library and then produce\n                            flattened Model on standard output.\n"));
+  Print.printBuf(System.gettext("  omc Model1.mo Model2.mo  will load both Model1.mo and Model2.mo, and produce\n                            flattened Model1 on standard output.\n"));
+  Print.printBuf(System.gettext("  *.mo (Modelica files)\n"));
+  //Print.printBuf("\t*.mof (Flat Modelica files)\n");
   Print.printBuf(System.gettext("  *.mos (Modelica Script files)\n\n"));
   Print.printBuf(System.gettext("For available simulation flags, use --help=simulation.\n\n"));
   Print.printBuf(System.gettext("Documentation is available in the built-in package OpenModelica.Scripting or\nonline <https://build.openmodelica.org/Documentation/OpenModelica.Scripting.html>.\n"));

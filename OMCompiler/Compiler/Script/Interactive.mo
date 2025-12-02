@@ -58,6 +58,7 @@ import AbsynToSCode;
 import Settings;
 import Values;
 
+
 // protected imports
 protected
 
@@ -69,7 +70,6 @@ import Config;
 import DAE.Connect;
 import DAEDump;
 import DAEUtil;
-import Debug;
 import Dump;
 import Error;
 import ErrorExt;
@@ -77,7 +77,6 @@ import ExpressionDump;
 import ExpressionSimplify;
 import FGraph;
 import Flags;
-import FlagsUtil;
 import GCExt;
 import GlobalScriptDump;
 import InnerOuter;
@@ -136,6 +135,8 @@ public uniontype GraphicEnvCache
   end GRAPHIC_ENV_FULL_CACHE;
 end GraphicEnvCache;
 
+type Access = enumeration(hide, icon, documentation, diagram, nonPackageText, nonPackageDuplicate, packageText, packageDuplicate, all);
+
 public function evaluate
 "This function evaluates expressions or statements feed interactively to the compiler.
   inputs:   (GlobalScript.Statements, bool /* verbose */)
@@ -157,6 +158,7 @@ algorithm
     res := evaluate2(stmt);
 
     if getEcho() and (verbose or not semicolon) then
+      res := stringAppend(res, "\n");
       resl := res :: resl;
     end if;
 
@@ -185,6 +187,7 @@ algorithm
 
     if getEcho() and (verbose or not semicolon) then
       print(res);
+      print("\n");
     end if;
 
     showStatement(stmt, semicolon, false);
@@ -276,53 +279,32 @@ algorithm
   outBoolean := 0 <> Settings.getEcho();
 end getEcho;
 
-public function evaluate2
+protected function evaluate2
 "Helper function to evaluate."
   input GlobalScript.Statement inStatement;
   output String outString;
 protected
   String str, str_1;
+  Absyn.AlgorithmItem algitem;
+  Absyn.Exp exp;
+  SourceInfo info;
 algorithm
   try /* Stack overflow */
-  outString := matchcontinue inStatement
-    local
-      Absyn.AlgorithmItem algitem;
-      Boolean outres;
-      Absyn.Exp exp;
-      Boolean partialInst, gen, evalfunc, keepArrays;
-      SourceInfo info;
+    outString := match inStatement
+      // Evaluate algorithm statements in evaluateAlgStmt()
+      case GlobalScript.IALG(algItem = algitem as Absyn.ALGORITHMITEM())
+        equation
+          InstHashTable.init();
+        then
+          evaluateAlgItem(algitem);
 
-    // evaluate graphical API
-    case GlobalScript.IEXP(exp = Absyn.CALL())
-      equation
-        // adrpo: always evaluate the graphicalAPI with these options so instantiation is faster!
-        partialInst = System.getPartialInstantiation();
-        System.setPartialInstantiation(true);
-        gen = FlagsUtil.set(Flags.GEN, false);
-        evalfunc = FlagsUtil.set(Flags.EVAL_FUNC, false);
-        keepArrays = Flags.getConfigBool(Flags.KEEP_ARRAYS);
-        FlagsUtil.setConfigBool(Flags.KEEP_ARRAYS, false);
-        InstHashTable.init();
-        str = evaluateGraphicalApi(inStatement, partialInst, gen, evalfunc, keepArrays);
-        str_1 = stringAppend(str, "\n");
-      then str_1;
-
-    // Evaluate algorithm statements in evaluateAlgStmt()
-    case GlobalScript.IALG(algItem = (algitem as Absyn.ALGORITHMITEM()))
-      equation
-        InstHashTable.init();
-        str = evaluateAlgItem(algitem);
-        str_1 = stringAppend(str, "\n");
-      then str_1;
-
-    // Evaluate expressions in evaluate_exprToStr()
-    case GlobalScript.IEXP(exp = exp, info = info)
-      equation
-        InstHashTable.init();
-        str = evaluateExprToStr(exp, info);
-        str_1 = stringAppend(str, "\n");
-      then str_1;
-  end matchcontinue;
+      // Evaluate expressions in evaluate_exprToStr()
+      case GlobalScript.IEXP(exp = exp, info = info)
+        equation
+          InstHashTable.init();
+        then
+          evaluateExprToStr(exp, info);
+    end match;
   else
     str := "";
     str_1 := "";
@@ -336,7 +318,7 @@ algorithm
     end if;
     Error.addMessage(Error.STACK_OVERFLOW_DETAILED, {GlobalScriptDump.printIstmtStr(inStatement), str});
     Error.clearCurrentComponent();
-    outString := "\n";
+    outString := "";
   end try annotation(__OpenModelica_stackOverflowCheckpoint=true);
 end evaluate2;
 
@@ -720,22 +702,11 @@ protected function evaluateExprToStr
   input SourceInfo info;
   output String outString;
 algorithm
-  outString:=
-  matchcontinue (inExp,info)
-    local
-      Values.Value value;
-      String str;
-      Absyn.Exp exp;
-
-    case (exp,_)
-      equation
-        value = evaluateExpr(exp, info);
-        str = ValuesUtil.valString(value);
-      then str;
-
-    else "";
-
-  end matchcontinue;
+  try
+    outString := ValuesUtil.valString(evaluateExpr(inExp, info));
+  else
+    outString := "";
+  end try;
 end evaluateExprToStr;
 
 protected function makeTupleCrefs
@@ -746,7 +717,7 @@ protected function makeTupleCrefs
   input SourceInfo inInfo;
   output list<DAE.ComponentRef> outCrefs;
 algorithm
-  outCrefs := List.threadMap3(inCrefs, inTypes, makeTupleCref, inEnv, inCache, inInfo);
+  outCrefs := list(makeTupleCref(c, t, inEnv, inCache, inInfo) threaded for c in inCrefs, t in inTypes);
 end makeTupleCrefs;
 
 protected function makeTupleCref
@@ -802,811 +773,33 @@ algorithm
   fail();
 end getTypeOfVariable;
 
-protected function getApiFunctionNameInfo
-  "Returns the name of the called API function."
-  input GlobalScript.Statement inStmt;
-  output String outName;
-  output SourceInfo outInfo;
-algorithm
-  GlobalScript.IEXP(
-      exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = outName)),
-      info = outInfo
-    ) := inStmt;
-end getApiFunctionNameInfo;
-
-protected function getApiFunctionArgs
-  "Returns a list of arguments to the function in the interactive statement list."
-  input GlobalScript.Statement inStmt;
-  output list<Absyn.Exp> outArgs;
-algorithm
-  outArgs := match(inStmt)
-    local
-      list<Absyn.Exp> args;
-
-    case GlobalScript.IEXP(exp = Absyn.CALL(functionArgs =
-      Absyn.FUNCTIONARGS(args = args))) then list(AbsynUtil.stripCommentExpressions(arg) for arg in args);
-    else {};
-  end match;
-end getApiFunctionArgs;
-
-protected function getApiFunctionNamedArgs
-  "Returns a list of named arguments to the function in the interactive statement list."
-  input GlobalScript.Statement inStmt;
-  output list<Absyn.NamedArg> outArgs;
-algorithm
-  GlobalScript.IEXP(exp = Absyn.CALL(functionArgs = Absyn.FUNCTIONARGS(argNames = outArgs))) := inStmt;
-end getApiFunctionNamedArgs;
-
-protected function evaluateGraphicalApi
-"Evaluating graphical api.
-  NOTE: the graphical API is always evaluated with checkModel ON and -d=nogen,noevalfunc ON"
-  input GlobalScript.Statement inStatement;
-  input Boolean isPartialInst;
-  input Boolean flagGen;
-  input Boolean flagEvalFunc;
-  input Boolean flagKeepArrays;
-  output String outResult;
-protected
-  String fn_name;
-  SourceInfo info;
-  Boolean failed = false;
-algorithm
-  try
-    outResult := evaluateGraphicalApi_dispatch(inStatement);
-  else
-    failed := true;
-  end try;
-
-  // Reset the flags!
-  System.setPartialInstantiation(isPartialInst);
-  FlagsUtil.set(Flags.GEN, flagGen);
-  FlagsUtil.set(Flags.EVAL_FUNC, flagEvalFunc);
-  FlagsUtil.setConfigBool(Flags.KEEP_ARRAYS, flagKeepArrays);
-
-  if failed then fail(); end if;
-end evaluateGraphicalApi;
-
-protected function evaluateGraphicalApi_dispatch
-"This function evaluates all primitives in the graphical api."
-  input GlobalScript.Statement inStatement;
-  output String outResult;
-protected
-  String fn_name, name;
-  Absyn.Program old_p, p, p_1;
-  SCode.Program s;
-  list<Absyn.Exp> args, expl;
-  Absyn.ComponentRef cr, cr1, cr2, tp, model_, class_, old_cname, new_cname;
-  Absyn.ComponentRef crident, subident;
-  Absyn.Path path;
-  list<Absyn.NamedArg> nargs;
-  Integer n, access;
-  String cmt, variability, causality/*, isField*/;
-  Absyn.Class cls;
-  Absyn.Modification mod;
-  Boolean finalPrefix, flowPrefix, streamPrefix, protected_, repl, dref1, dref2, evalParamAnn;
-  Boolean addFunctions, graphicsExpMode, warningsAsErrors;
-  FCore.Graph env;
-  GraphicEnvCache genv;
-  Absyn.Exp exp;
-  list<Absyn.Exp> dimensions;
-  Absyn.CodeNode cn;
-  Absyn.Element el;
-algorithm
-  fn_name := getApiFunctionNameInfo(inStatement);
-  p := SymbolTable.getAbsyn();
-  args := getApiFunctionArgs(inStatement);
-
-  outResult := match(fn_name)
-    case "setParameterValue"
-      algorithm
-        {Absyn.CREF(componentRef = class_), Absyn.CREF(componentRef = crident), exp} := args;
-        (p, outResult) := setParameterValue(class_, crident, exp, p);
-        SymbolTable.setAbsyn(p);
-      then
-        outResult;
-
-    case "setComponentDimensions"
-      algorithm
-        {Absyn.CREF(componentRef = class_),
-         Absyn.CREF(componentRef = cr),
-         Absyn.ARRAY(dimensions)} := args;
-        (p, outResult) := setComponentDimensions(class_, cr, dimensions, p);
-        SymbolTable.setAbsyn(p);
-      then
-        outResult;
-
-    case "createModel"
-      algorithm
-        {Absyn.CREF(componentRef = cr)} := args;
-        p := createModel(cr, p);
-        SymbolTable.setAbsyn(p);
-      then
-        "true";
-
-    case "newModel"
-      algorithm
-        {Absyn.CREF(componentRef = Absyn.CREF_IDENT(name = name)),
-         Absyn.CREF(componentRef = cr)} := args;
-        path := AbsynUtil.crefToPath(cr);
-        p := InteractiveUtil.updateProgram(
-          Absyn.PROGRAM({
-          Absyn.CLASS(name,false,false,false,Absyn.R_MODEL(),AbsynUtil.dummyParts,{},{},AbsynUtil.dummyInfo)
-          }, Absyn.WITHIN(path)), p);
-        SymbolTable.setAbsyn(p);
-      then
-        "true";
-
-    // Not moving this yet as it could break things...
-    case "deleteClass"
-      algorithm
-        {Absyn.CREF(componentRef = cr)} := args;
-        (outResult, p) := deleteClass(cr, p);
-        SymbolTable.setAbsyn(p);
-      then
-        outResult;
-
-    case "addComponent"
-      algorithm
-        {Absyn.CREF(componentRef = Absyn.CREF_IDENT(name = name)),
-         Absyn.CREF(componentRef = tp),
-         Absyn.CREF(componentRef = model_)} := args;
-        nargs := getApiFunctionNamedArgs(inStatement);
-        p := addComponent(name, tp, model_, nargs, p);
-        SymbolTable.setAbsyn(p);
-        Print.clearBuf();
-      then
-        "true";
-
-    case "updateComponent"
-      algorithm
-        {Absyn.CREF(componentRef = Absyn.CREF_IDENT(name = name)),
-         Absyn.CREF(componentRef = tp),
-         Absyn.CREF(componentRef = model_)} := args;
-        nargs := getApiFunctionNamedArgs(inStatement);
-        (p, outResult) := updateComponent(name, tp, model_, nargs, p);
-        SymbolTable.setAbsyn(p);
-      then
-        outResult;
-
-    case "deleteComponent"
-      algorithm
-        {Absyn.CREF(componentRef = Absyn.CREF_IDENT(name = name)),
-         Absyn.CREF(componentRef = model_)} := args;
-        {} := getApiFunctionNamedArgs(inStatement);
-        p := deleteOrUpdateComponent(name, model_, p, NONE());
-        SymbolTable.setAbsyn(p);
-        Print.clearBuf();
-      then "true";
-
-    case "deleteComponent"
-      then "false";
-
-    case "getComponentCount"
-      algorithm
-        {Absyn.CREF(componentRef = cr)} := args;
-      then
-        intString(getComponentCount(cr, p));
-
-    case "getNthComponent"
-      algorithm
-        {Absyn.CREF(componentRef = cr),Absyn.INTEGER(value = n)} := args;
-      then
-        getNthComponent(cr, p, n);
-
-    case "getComponents"
-      algorithm
-        {Absyn.CREF(componentRef = cr)} := args;
-        Values.ENUM_LITERAL(index=access) := checkAccessAnnotationAndEncryption(AbsynUtil.crefToPath(cr), p);
-        if (access >= 2) then // i.e., Access.icon
-          nargs := getApiFunctionNamedArgs(inStatement);
-          if not Flags.isSet(Flags.NF_API_NOISE) then
-            ErrorExt.setCheckpoint("getComponents");
-          end if;
-          outResult := getComponents(cr, useQuotes(nargs), access);
-          if not Flags.isSet(Flags.NF_API_NOISE) then
-            ErrorExt.rollBack("getComponents");
-          end if;
-        else
-          Error.addMessage(Error.ACCESS_ENCRYPTED_PROTECTED_CONTENTS, {});
-          outResult := "";
-        end if;
-      then
-        outResult;
-
-    case "getElements"
-      algorithm
-        {Absyn.CREF(componentRef = cr)} := args;
-        Values.ENUM_LITERAL(index=access) := checkAccessAnnotationAndEncryption(AbsynUtil.crefToPath(cr), p);
-        if (access >= 2) then // i.e., Access.icon
-          nargs := getApiFunctionNamedArgs(inStatement);
-          if not Flags.isSet(Flags.NF_API_NOISE) then
-            ErrorExt.setCheckpoint("getElements");
-          end if;
-          outResult := InteractiveUtil.getElements(cr, useQuotes(nargs), access);
-          if not Flags.isSet(Flags.NF_API_NOISE) then
-            ErrorExt.rollBack("getElements");
-          end if;
-        else
-          Error.addMessage(Error.ACCESS_ENCRYPTED_PROTECTED_CONTENTS, {});
-          outResult := "";
-        end if;
-      then
-        outResult;
-
-    case "getComponentAnnotations"
-      algorithm
-        {Absyn.CREF(componentRef = cr)} := args;
-        Values.ENUM_LITERAL(index=access) := checkAccessAnnotationAndEncryption(AbsynUtil.crefToPath(cr), p);
-        if (access >= 2) then // i.e., Access.icon
-          if not Flags.isSet(Flags.NF_API_NOISE) then
-            ErrorExt.setCheckpoint("getComponentAnnotations");
-          end if;
-          evalParamAnn := Config.getEvaluateParametersInAnnotations();
-          Config.setEvaluateParametersInAnnotations(true);
-          outResult := getComponentAnnotations(cr, p, access);
-          Config.setEvaluateParametersInAnnotations(evalParamAnn);
-          if not Flags.isSet(Flags.NF_API_NOISE) then
-            ErrorExt.rollBack("getComponentAnnotations");
-          end if;
-        else
-          Error.addMessage(Error.ACCESS_ENCRYPTED_PROTECTED_CONTENTS, {});
-          outResult := "";
-        end if;
-      then
-        outResult;
-
-    case "getElementAnnotations"
-      algorithm
-        {Absyn.CREF(componentRef = cr)} := args;
-        Values.ENUM_LITERAL(index=access) := checkAccessAnnotationAndEncryption(AbsynUtil.crefToPath(cr), p);
-        if (access >= 2) then // i.e., Access.icon
-          if not Flags.isSet(Flags.NF_API_NOISE) then
-            ErrorExt.setCheckpoint("getElementAnnotations");
-          end if;
-          evalParamAnn := Config.getEvaluateParametersInAnnotations();
-          Config.setEvaluateParametersInAnnotations(true);
-          outResult := InteractiveUtil.getElementAnnotations(cr, p, access);
-          Config.setEvaluateParametersInAnnotations(evalParamAnn);
-          if not Flags.isSet(Flags.NF_API_NOISE) then
-            ErrorExt.rollBack("getElementAnnotations");
-          end if;
-        else
-          Error.addMessage(Error.ACCESS_ENCRYPTED_PROTECTED_CONTENTS, {});
-          outResult := "";
-        end if;
-      then
-        outResult;
-
-    case "getNthComponentAnnotation"
-      algorithm
-        {Absyn.CREF(componentRef = cr), Absyn.INTEGER(value = n)} := args;
-        if not Flags.isSet(Flags.NF_API_NOISE) then
-          ErrorExt.setCheckpoint("getNthComponentAnnotation");
-        end if;
-        evalParamAnn := Config.getEvaluateParametersInAnnotations();
-        Config.setEvaluateParametersInAnnotations(true);
-        outResult := getNthComponentAnnotation(cr, p, n);
-        Config.setEvaluateParametersInAnnotations(evalParamAnn);
-        if not Flags.isSet(Flags.NF_API_NOISE) then
-          ErrorExt.rollBack("getNthComponentAnnotation");
-        end if;
-      then
-        outResult;
-
-    case "getNthComponentModification"
-      algorithm
-        {Absyn.CREF(componentRef = cr), Absyn.INTEGER(value = n)} := args;
-      then
-        getNthComponentModification(cr, p, n);
-
-    case "getNthComponentCondition"
-      algorithm
-        {Absyn.CREF(componentRef = cr), Absyn.INTEGER(value = n)} := args;
-      then
-        getNthComponentCondition(cr, p, n);
-
-    case "getInheritanceCount"
-      algorithm
-        {Absyn.CREF(componentRef = cr)} := args;
-      then
-        intString(getInheritanceCount(cr, p));
-
-    case "getNthInheritedClass"
-      algorithm
-        {Absyn.CREF(componentRef = cr), Absyn.INTEGER(value = n)} := args;
-        outResult := getNthInheritedClass(cr, n);
-      then
-        outResult;
-
-    case "setConnectionComment"
-      algorithm
-        {Absyn.CREF(componentRef = cr),
-         Absyn.CREF(componentRef = cr1),
-         Absyn.CREF(componentRef = cr2),
-         Absyn.STRING(value = cmt)} := args;
-        (p, outResult) := setConnectionComment(cr, cr1, cr2, cmt, p);
-        SymbolTable.setAbsyn(p);
-      then
-        outResult;
-
-    case "addConnection"
-      algorithm
-        {Absyn.CREF(componentRef = cr1),
-         Absyn.CREF(componentRef = cr2),
-         Absyn.CREF(componentRef = cr)} := args;
-        nargs := getApiFunctionNamedArgs(inStatement);
-        (outResult, p) := addConnection(cr, cr1, cr2, nargs, p);
-        SymbolTable.setAbsyn(p);
-      then
-        outResult;
-
-    case "deleteConnection"
-      algorithm
-        {Absyn.CREF(componentRef = cr1),
-         Absyn.CREF(componentRef = cr2),
-         Absyn.CREF(componentRef = cr)} := args;
-        (outResult, p) := deleteConnection(cr, cr1, cr2, p);
-        SymbolTable.setAbsyn(p);
-      then
-        outResult;
-
-    case "getNthConnectionAnnotation"
-      algorithm
-        {Absyn.CREF(componentRef = cr), Absyn.INTEGER(value = n)} := args;
-        Values.ENUM_LITERAL(index=access) := checkAccessAnnotationAndEncryption(AbsynUtil.crefToPath(cr), p);
-        if (access >= 4) then // i.e., Access.diagram
-          ErrorExt.setCheckpoint("getNthConnectionAnnotation");
-          path := AbsynUtil.crefToPath(cr);
-          evalParamAnn := Config.getEvaluateParametersInAnnotations();
-          Config.setEvaluateParametersInAnnotations(true);
-          outResult := getNthConnectionAnnotation(path, p, n);
-          Config.setEvaluateParametersInAnnotations(evalParamAnn);
-          ErrorExt.rollBack("getNthConnectionAnnotation");
-        else
-          Error.addMessage(Error.ACCESS_ENCRYPTED_PROTECTED_CONTENTS, {});
-          outResult := "";
-        end if;
-      then
-        outResult;
-
-    case "getConnectorCount"
-      algorithm
-        {Absyn.CREF(componentRef = cr)} := args;
-      then
-        getConnectorCount(cr, p);
-
-    case "getNthConnector"
-      algorithm
-        {Absyn.CREF(componentRef = cr), Absyn.INTEGER(value = n)} := args;
-      then
-        getNthConnector(AbsynUtil.crefToPath(cr), p, n);
-
-    case "getNthConnectorIconAnnotation"
-      algorithm
-        {Absyn.CREF(componentRef = cr), Absyn.INTEGER(value = n)} := args;
-        if not Flags.isSet(Flags.NF_API_NOISE) then
-          ErrorExt.setCheckpoint("getNthConnectorIconAnnotation");
-        end if;
-        evalParamAnn := Config.getEvaluateParametersInAnnotations();
-        Config.setEvaluateParametersInAnnotations(true);
-        outResult := getNthConnectorIconAnnotation(AbsynUtil.crefToPath(cr), p, n);
-        Config.setEvaluateParametersInAnnotations(evalParamAnn);
-        if not Flags.isSet(Flags.NF_API_NOISE) then
-          ErrorExt.rollBack("getNthConnectorIconAnnotation");
-        end if;
-      then
-        outResult;
-
-    case "getIconAnnotation"
-      algorithm
-        {Absyn.CREF(componentRef = cr)} := args;
-        Values.ENUM_LITERAL(index=access) := checkAccessAnnotationAndEncryption(AbsynUtil.crefToPath(cr), p);
-        if (access >= 2) then // i.e., Access.icon
-          if not Flags.isSet(Flags.NF_API_NOISE) then
-            ErrorExt.setCheckpoint("getIconAnnotation");
-          end if;
-          evalParamAnn := Config.getEvaluateParametersInAnnotations();
-          graphicsExpMode := Config.getGraphicsExpMode();
-          Config.setEvaluateParametersInAnnotations(true);
-          Config.setGraphicsExpMode(true);
-          outResult := getIconAnnotation(AbsynUtil.crefToPath(cr), p);
-          Config.setEvaluateParametersInAnnotations(evalParamAnn);
-          Config.setGraphicsExpMode(graphicsExpMode);
-          if not Flags.isSet(Flags.NF_API_NOISE) then
-            ErrorExt.rollBack("getIconAnnotation");
-          end if;
-        else
-          Error.addMessage(Error.ACCESS_ENCRYPTED_PROTECTED_CONTENTS, {});
-          outResult := "";
-        end if;
-      then
-        outResult;
-
-    case "getDiagramAnnotation"
-      algorithm
-        {Absyn.CREF(componentRef = cr)} := args;
-        Values.ENUM_LITERAL(index=access) := checkAccessAnnotationAndEncryption(AbsynUtil.crefToPath(cr), p);
-        if (access >= 4) then // i.e., Access.diagram
-          if not Flags.isSet(Flags.NF_API_NOISE) then
-            ErrorExt.setCheckpoint("getDiagramAnnotation");
-          end if;
-          evalParamAnn := Config.getEvaluateParametersInAnnotations();
-          graphicsExpMode := Config.getGraphicsExpMode();
-          Config.setEvaluateParametersInAnnotations(true);
-          Config.setGraphicsExpMode(true);
-          outResult := getDiagramAnnotation(AbsynUtil.crefToPath(cr), p);
-          Config.setEvaluateParametersInAnnotations(evalParamAnn);
-          Config.setGraphicsExpMode(graphicsExpMode);
-          if not Flags.isSet(Flags.NF_API_NOISE) then
-            ErrorExt.rollBack("getDiagramAnnotation");
-          end if;
-        else
-          Error.addMessage(Error.ACCESS_ENCRYPTED_PROTECTED_CONTENTS, {});
-          outResult := "";
-        end if;
-      then
-        outResult;
-
-    case "getNthInheritedClassIconMapAnnotation"
-      algorithm
-        {Absyn.CREF(componentRef = cr), Absyn.INTEGER(value = n)} := args;
-        if not Flags.isSet(Flags.NF_API_NOISE) then
-          ErrorExt.setCheckpoint("getNthInheritedClassIconMapAnnotation");
-        end if;
-        evalParamAnn := Config.getEvaluateParametersInAnnotations();
-        Config.setEvaluateParametersInAnnotations(true);
-        outResult := getNthInheritedClassMapAnnotation(AbsynUtil.crefToPath(cr), n, p, "IconMap");
-        Config.setEvaluateParametersInAnnotations(evalParamAnn);
-        if not Flags.isSet(Flags.NF_API_NOISE) then
-          ErrorExt.rollBack("getNthInheritedClassIconMapAnnotation");
-        end if;
-      then
-        outResult;
-
-    case "getNthInheritedClassDiagramMapAnnotation"
-      algorithm
-        {Absyn.CREF(componentRef = cr), Absyn.INTEGER(value = n)} := args;
-        if not Flags.isSet(Flags.NF_API_NOISE) then
-          ErrorExt.setCheckpoint("getNthInheritedClassDiagramMapAnnotation");
-        end if;
-        evalParamAnn := Config.getEvaluateParametersInAnnotations();
-        Config.setEvaluateParametersInAnnotations(true);
-        outResult := getNthInheritedClassMapAnnotation(AbsynUtil.crefToPath(cr), n, p, "DiagramMap");
-        Config.setEvaluateParametersInAnnotations(evalParamAnn);
-        if not Flags.isSet(Flags.NF_API_NOISE) then
-          ErrorExt.rollBack("getNthInheritedClassDiagramMapAnnotation");
-        end if;
-      then
-        outResult;
-
-    case "getNamedAnnotation"
-      algorithm
-        {Absyn.CREF(componentRef = cr),
-         Absyn.CREF(componentRef = Absyn.CREF_IDENT(name, {}))} := args;
-        if not Flags.isSet(Flags.NF_API_NOISE) then
-          ErrorExt.setCheckpoint("getNamedAnnotation");
-        end if;
-        evalParamAnn := Config.getEvaluateParametersInAnnotations();
-        Config.setEvaluateParametersInAnnotations(true);
-        outResult := getNamedAnnotation(AbsynUtil.crefToPath(cr), p,
-            Absyn.IDENT(name), SOME("{}"), getAnnotationValue);
-        Config.setEvaluateParametersInAnnotations(evalParamAnn);
-        if not Flags.isSet(Flags.NF_API_NOISE) then
-          ErrorExt.rollBack("getNamedAnnotation");
-        end if;
-      then
-        outResult;
-
-    case "refactorClass"
-      algorithm
-        {Absyn.CREF(componentRef = cr)} := args;
-
-        try
-          cls := InteractiveUtil.getPathedClassInProgram(AbsynUtil.crefToPath(cr), p);
-          cls := Refactor.refactorGraphicalAnnotation(p, cls);
-          p := InteractiveUtil.updateProgram(Absyn.PROGRAM({cls}, Absyn.TOP()), p);
-          SymbolTable.setAbsyn(p);
-          outResult := Dump.unparseStr(Absyn.PROGRAM({cls}, Absyn.TOP()), false);
-        else
-          outResult := "Failed in translating " + Dump.printComponentRefStr(cr)
-                     + " to Modelica v2.0 graphical annotations";
-        end try;
-      then
-        outResult;
-
-    case "refactorIconAnnotation"
-      algorithm
-        {Absyn.CREF(componentRef = cr)} := args;
-        path := AbsynUtil.crefToPath(cr);
-        cls := InteractiveUtil.getPathedClassInProgram(path, p);
-        cls := Refactor.refactorGraphicalAnnotation(p, cls);
-      then
-        getAnnotationInClass(cls, ICON_ANNOTATION(), p, path);
-
-    case "refactorDiagramAnnotation"
-      algorithm
-        {Absyn.CREF(componentRef = cr)} := args;
-        path := AbsynUtil.crefToPath(cr);
-        cls := InteractiveUtil.getPathedClassInProgram(path, p);
-        cls := Refactor.refactorGraphicalAnnotation(p, cls);
-      then
-        getAnnotationInClass(cls, DIAGRAM_ANNOTATION(), p, path);
-
-    case "getShortDefinitionBaseClassInformation"
-      algorithm
-        {Absyn.CREF(componentRef = cr)} := args;
-      then
-        getShortDefinitionBaseClassInformation(cr, p);
-
-    case "getExternalFunctionSpecification"
-      algorithm
-        {Absyn.CREF(componentRef = cr)} := args;
-      then
-        getExternalFunctionSpecification(cr, p);
-
-    case "isPrimitive"
-      algorithm
-        {Absyn.CREF(componentRef = cr)} := args;
-      then
-        boolString(isPrimitive(cr, p));
-
-    case "isParameter"
-      algorithm
-        {Absyn.CREF(componentRef = cr), Absyn.CREF(componentRef = class_)} := args;
-      then
-        boolString(isParameter(cr, class_, p));
-
-    case "isProtected"
-      algorithm
-        {Absyn.CREF(componentRef = cr), Absyn.CREF(componentRef = class_)} := args;
-      then
-        boolString(isProtected(cr, class_, p));
-
-    case "isConstant"
-      algorithm
-        {Absyn.CREF(componentRef = cr), Absyn.CREF(componentRef = class_)} := args;
-      then
-        boolString(isConstant(cr, class_, p));
-
-    case "getEnumerationLiterals"
-      algorithm
-        {Absyn.CREF(componentRef = cr)} := args;
-        path := AbsynUtil.crefToPath(cr);
-        cls := InteractiveUtil.getPathedClassInProgram(path, p);
-      then
-        getEnumLiterals(cls);
-
-    case "existClass"
-      algorithm
-        {Absyn.CREF(componentRef = cr)} := args;
-      then
-        boolString(existClass(cr, p));
-
-    case "existModel"
-      algorithm
-        {Absyn.CREF(componentRef = cr)} := args;
-        path := AbsynUtil.crefToPath(cr);
-      then
-        boolString(existClass(cr, p) and isModel(path, p));
-
-    case "existPackage"
-      algorithm
-        {Absyn.CREF(componentRef = cr)} := args;
-      then
-        boolString(existClass(cr, p) and isPackage(AbsynUtil.crefToPath(cr), p));
-
-    case "renameClass"
-      algorithm
-        {Absyn.CREF(componentRef = old_cname), Absyn.CREF(componentRef = new_cname)} := args;
-        // For now, renaming a class clears all caches...
-        // Substantial analysis required to find out what to keep in cache and what must be thrown out
-        (outResult, p) := renameClass(p, old_cname, new_cname);
-        SymbolTable.setAbsyn(p);
-      then
-        outResult;
-
-    case "renameComponent"
-      algorithm
-        {Absyn.CREF(componentRef = cr),
-         Absyn.CREF(componentRef = old_cname),
-         Absyn.CREF(componentRef = new_cname)} := args;
-        (outResult, p) := renameComponent(p, cr, old_cname, new_cname);
-        SymbolTable.setAbsyn(p);
-      then outResult;
-
-    case "renameComponentInClass"
-      algorithm
-        {Absyn.CREF(componentRef = cr),
-         Absyn.CREF(componentRef = old_cname),
-         Absyn.CREF(componentRef = new_cname)} := args;
-        (outResult, p) := renameComponentOnlyInClass(p, cr, old_cname, new_cname);
-        SymbolTable.setAbsyn(p);
-      then outResult;
-
-    case "getCrefInfo"
-      algorithm
-        {Absyn.CREF(componentRef = cr)} := args;
-      then
-        getCrefInfo(cr, p);
-
-    case "getExtendsModifierNames"
-      algorithm
-        {Absyn.CREF(componentRef = class_), Absyn.CREF(componentRef = cr)} := args;
-        nargs := getApiFunctionNamedArgs(inStatement);
-        if not Flags.isSet(Flags.NF_API_NOISE) then
-          ErrorExt.setCheckpoint("getExtendsModifierNames");
-        end if;
-        outResult := getExtendsModifierNames(class_, cr, useQuotes(nargs), p);
-        if not Flags.isSet(Flags.NF_API_NOISE) then
-          ErrorExt.rollBack("getExtendsModifierNames");
-        end if;
-      then
-        outResult;
-
-    case "getExtendsModifierValue"
-      algorithm
-        {Absyn.CREF(componentRef = class_),
-         Absyn.CREF(componentRef = crident),
-         Absyn.CREF(componentRef = subident)} := args;
-      then
-        getExtendsModifierValue(class_, crident, subident, p);
-
-    case "isExtendsModifierFinal"
-      algorithm
-        {Absyn.CREF(componentRef = class_),
-         Absyn.CREF(componentRef = crident),
-         Absyn.CREF(componentRef = subident)} := args;
-      then
-        isExtendsModifierFinal(class_, crident, subident, p);
-
-    case "getDefaultComponentName"
-      algorithm
-        {Absyn.CREF(componentRef = class_)} := args;
-      then
-        getDefaultComponentName(AbsynUtil.crefToPath(class_), p);
-
-    case "getDefaultComponentPrefixes"
-      algorithm
-        {Absyn.CREF(componentRef = class_)} := args;
-      then
-        getDefaultComponentPrefixes(AbsynUtil.crefToPath(class_), p);
-
-    case "getComponentComment"
-      algorithm
-        {Absyn.CREF(componentRef = class_),Absyn.CREF(componentRef = cr)} := args;
-        outResult := getComponentComment(class_, cr, p);
-        outResult := stringAppendList({"\"", outResult, "\""});
-      then
-        outResult;
-
-    case "setComponentComment"
-      algorithm
-        {Absyn.CREF(componentRef = class_),
-         Absyn.CREF(componentRef = cr),
-         Absyn.STRING(value = cmt)} := args;
-        (outResult, p) := setComponentComment(class_, cr, cmt, p);
-        SymbolTable.setAbsyn(p);
-      then
-        outResult;
-
-    case "setComponentProperties"
-      algorithm
-        {Absyn.CREF(componentRef = class_),
-         Absyn.CREF(componentRef = cr),
-         Absyn.ARRAY(arrayExp = expl),
-         // Absyn.ARRAY(arrayExp = {Absyn.STRING(value = parallelism)}),
-         Absyn.ARRAY(arrayExp = {Absyn.STRING(value = variability)}),
-         Absyn.ARRAY(arrayExp = {Absyn.BOOL(value = dref1),Absyn.BOOL(value = dref2)}),
-         Absyn.ARRAY(arrayExp = {Absyn.STRING(value = causality)})/*,
-         Absyn.ARRAY(arrayExp = {Absyn.STRING(value = isField)})*/} := args;
-
-        if listLength(expl) == 5 then
-          {Absyn.BOOL(value = finalPrefix),
-           Absyn.BOOL(value = flowPrefix),
-           Absyn.BOOL(value = streamPrefix),
-           Absyn.BOOL(value = protected_),
-           Absyn.BOOL(value = repl)} := expl;
-        else // Old version of setComponentProperties, without stream.
-          {Absyn.BOOL(value = finalPrefix),
-           Absyn.BOOL(value = flowPrefix),
-           Absyn.BOOL(value = protected_),
-           Absyn.BOOL(value = repl)} := expl;
-          streamPrefix := false;
-        end if;
-
-        (outResult, p) := setComponentProperties(AbsynUtil.crefToPath(class_), cr,
-            finalPrefix, flowPrefix, streamPrefix, protected_, repl,
-            /*parallelism,*/ variability, {dref1,dref2}, causality, p/*, isField*/);
-        SymbolTable.setAbsyn(p);
-      then
-        outResult;
-
-    case "getElementsInfo"
-      algorithm
-        {Absyn.CREF(componentRef = cr)} := args;
-      then
-        getElementsInfo(cr, p);
-
-    case "getElementsOfVisType"
-      algorithm
-        {Absyn.CREF(componentRef = cr)} := args;
-        (_, outResult) := getElementsOfVisType(AbsynUtil.crefToPath(cr), p);
-      then
-        outResult;
-
-    case "getDefinitions"
-      algorithm
-        {Absyn.BOOL(addFunctions)} := args;
-      then
-        getDefinitions(p, addFunctions);
-
-    case "getLocalVariables"
-      algorithm
-        {Absyn.CREF(componentRef = cr)} := args;
-        nargs := getApiFunctionNamedArgs(inStatement);
-        path := AbsynUtil.crefToPath(cr);
-        cls := InteractiveUtil.getPathedClassInProgram(path, p);
-        env := SymbolTable.buildEnv();
-        if Flags.isSet(Flags.NF_API) then
-          genv := GRAPHIC_ENV_FULL_CACHE(p, path, FCore.emptyCache(), FGraph.empty());
-        else
-          genv := GRAPHIC_ENV_FULL_CACHE(p, path, FCore.emptyCache(), env);
-        end if;
-      then
-        InteractiveUtil.getLocalVariables(cls, useQuotes(nargs), genv);
-
-    // adrpo added 2006-10-16 - i think this function is needed here!
-    //             2020-06-11 - remove this after 1.16 to use the one in Ceval*
-    case "getErrorString"
-      algorithm
-        warningsAsErrors := match args
-          case {Absyn.BOOL(warningsAsErrors)} then warningsAsErrors;
-          else false;
-        end match;
-        outResult := Error.printMessagesStr(warningsAsErrors);
-        outResult := System.escapedString(outResult,false);
-      then
-        stringAppendList({"\"", outResult, "\""});
-
-  end match;
-end evaluateGraphicalApi_dispatch;
-
 protected function extractAllComponentreplacements
 "author: x02lucpo
   extracts all the componentreplacementrules from program.
   This is done by extracting all the components and then
   extracting the rules"
   input Absyn.Program p;
-  input Absyn.ComponentRef class_;
-  input Absyn.ComponentRef cref1;
-  input Absyn.ComponentRef cref2;
+  input Absyn.Path classPath;
+  input Absyn.ComponentRef oldName;
+  input Absyn.ComponentRef newName;
   output GlobalScript.ComponentReplacementRules comp_reps;
+protected
+  GlobalScript.Components comps;
+  GlobalScript.ComponentReplacementRules comp_repsrules;
 algorithm
-  comp_reps := matchcontinue(p,class_,cref1,cref2)
-    local
-      GlobalScript.Components comps;
-      Absyn.Path class_path;
-      GlobalScript.ComponentReplacementRules comp_repsrules;
-
-    case(_,_,_,_)
-      equation
-        ErrorExt.setCheckpoint("Interactive.extractAllComponentreplacements");
-        comps = extractAllComponents(p, AbsynUtil.crefToPath(class_)) "class in package" ;
-        // rollback errors if we succeed
-        ErrorExt.rollBack("Interactive.extractAllComponentreplacements");
-        false = isClassReadOnly(InteractiveUtil.getPathedClassInProgram(AbsynUtil.crefToPath(class_),p));
-        class_path = AbsynUtil.crefToPath(class_);
-        comp_repsrules = GlobalScript.COMPONENTREPLACEMENTRULES({GlobalScript.COMPONENTREPLACEMENT(class_path,cref1,cref2)},1);
-        comp_reps = getComponentreplacementsrules(comps, comp_repsrules, 0);
-      then comp_reps;
-
-    else
-      equation
-        // keep errors if we fail!
-        ErrorExt.delCheckpoint("Interactive.extractAllComponentreplacements");
-      then
-        fail();
-  end matchcontinue;
+  try
+    ErrorExt.setCheckpoint("Interactive.extractAllComponentreplacements");
+    comps := extractAllComponents(p, classPath) "class in package" ;
+    // rollback errors if we succeed
+    ErrorExt.rollBack("Interactive.extractAllComponentreplacements");
+    false := isClassReadOnly(InteractiveUtil.getPathedClassInProgram(classPath,p));
+    comp_repsrules := GlobalScript.COMPONENTREPLACEMENTRULES({GlobalScript.COMPONENTREPLACEMENT(classPath,oldName,newName)},1);
+    comp_reps := getComponentreplacementsrules(comps, comp_repsrules, 0);
+  else
+    // keep errors if we fail!
+    ErrorExt.delCheckpoint("Interactive.extractAllComponentreplacements");
+    fail();
+  end try;
 end extractAllComponentreplacements;
 
 protected function isClassReadOnly
@@ -1619,180 +812,75 @@ algorithm
   end match;
 end isClassReadOnly;
 
-protected function renameComponent
-"author: x02lucpo
-  This function renames a component in a class
-  inputs:  (Absyn.Program,
-              Absyn.ComponentRef, /* old class as qualified name */
-              Absyn.ComponentRef) /* new class, as identifier */
-  outputs:  Absyn.Program"
-  input Absyn.Program inProgram1;
-  input Absyn.ComponentRef inComponentRef2;
-  input Absyn.ComponentRef inComponentRef3;
-  input Absyn.ComponentRef inComponentRef4;
-  output String outString;
-  output Absyn.Program outProgram;
+public function renameComponent
+  "This function renames a component in a class."
+  input Absyn.Path classPath;
+  input Absyn.ComponentRef oldName;
+  input Absyn.ComponentRef newName;
+  input output Absyn.Program program;
+        output Values.Value result;
+protected
+  GlobalScript.ComponentReplacementRules comp_reps;
+  list<Absyn.Path> paths;
 algorithm
-  (outString,outProgram) := matchcontinue (inProgram1,inComponentRef2,inComponentRef3,inComponentRef4)
-    local
-      Absyn.Path class_path;
-      GlobalScript.ComponentReplacementRules comp_reps;
-      Absyn.Program p_1,p;
-      list<String> paths;
-      String paths_1,paths_2;
-      Absyn.ComponentRef class_,old_comp,new_comp;
-      Absyn.Path model_path;
-      String str;
+  try
+    if isClassReadOnly(InteractiveUtil.getPathedClassInProgram(classPath, program)) then
+      result := ValuesUtil.makeCodeTypeNameStr("Error: class: " + AbsynUtil.pathString(classPath) + " is in a read only file!");
+      return;
+    end if;
 
-    case (p,class_,_,_)
-      equation
-        model_path = AbsynUtil.crefToPath(class_);
-        true = isClassReadOnly(InteractiveUtil.getPathedClassInProgram(model_path,p));
-        str = AbsynUtil.pathString(model_path);
-        str = "Error: class: " + str + " is in a read only file!";
-      then
-        (str, p);
-
-    case (p,class_,old_comp,new_comp)
-      equation
-        comp_reps = extractAllComponentreplacements(p, class_, old_comp, new_comp);
-        p_1 = renameComponentFromComponentreplacements(p, comp_reps);
-        paths = extractRenamedClassesAsStringList(comp_reps);
-        paths_1 = stringDelimitList(paths, ",");
-        paths_2 = stringAppendList({"{",paths_1,"}"});
-      then
-        (paths_2,p_1);
-
-    else
-      equation
-        if Flags.isSet(Flags.FAILTRACE) then
-          Debug.trace("rename_component failed\n");
-        end if;
-      then
-        ("Error",inProgram1);
-  end matchcontinue;
+    comp_reps := extractAllComponentreplacements(program, classPath, oldName, newName);
+    program := renameComponentFromComponentreplacements(program, comp_reps);
+    paths := extractRenamedClassesAsStringList(comp_reps);
+    result := ValuesUtil.makeCodeTypeNameArray(paths);
+  else
+    result := ValuesUtil.makeBoolean(false);
+  end try;
 end renameComponent;
 
-protected function renameComponentOnlyInClass
-"@author: adrpo
-  This function renames a component ONLY in the given class"
-  input Absyn.Program inProgram1;
-  input Absyn.ComponentRef inComponentRef2;
-  input Absyn.ComponentRef inComponentRef3;
-  input Absyn.ComponentRef inComponentRef4;
-  output String outString;
-  output Absyn.Program outProgram;
+public function renameComponentOnlyInClass
+  "This function renames a component ONLY in the given class"
+  input Absyn.Path classPath;
+  input Absyn.ComponentRef oldName;
+  input Absyn.ComponentRef newName;
+  input output Absyn.Program program;
+        output Values.Value result;
+protected
+  Absyn.Class cl;
+  Absyn.Within w;
 algorithm
-  (outString,outProgram) := matchcontinue (inProgram1,inComponentRef2,inComponentRef3,inComponentRef4)
-    local
-      Absyn.Program p;
-      String paths_2;
-      Absyn.ComponentRef class_,old_comp,new_comp;
-      Absyn.Class cl;
-      Absyn.Path model_path;
-      String str;
-      Absyn.Within w;
+  try
+    if isClassReadOnly(InteractiveUtil.getPathedClassInProgram(classPath, program)) then
+      result := ValuesUtil.makeCodeTypeNameStr("Error: class: " + AbsynUtil.pathString(classPath) + " is in a read only file!");
+      return;
+    end if;
 
-    case (p,class_,_,_)
-      equation
-        model_path = AbsynUtil.crefToPath(class_);
-        true = isClassReadOnly(InteractiveUtil.getPathedClassInProgram(model_path,p));
-        str = AbsynUtil.pathString(model_path);
-        str = "Error: class: " + str + " is in a read only file!";
-      then
-        (str, p);
-
-    case (p,class_,old_comp,new_comp)
-      equation
-        model_path = AbsynUtil.crefToPath(class_) "class in package" ;
-        cl = InteractiveUtil.getPathedClassInProgram(model_path, p);
-        cl = renameComponentInClass(cl, old_comp, new_comp);
-        w = InteractiveUtil.buildWithin(AbsynUtil.makeFullyQualified(model_path));
-        p = InteractiveUtil.updateProgram(Absyn.PROGRAM({cl}, w), p);
-        str = AbsynUtil.pathString(model_path);
-        paths_2 = stringAppendList({"{",str,"}"});
-      then
-        (paths_2,p);
-
-    else
-      equation
-        if Flags.isSet(Flags.FAILTRACE) then
-          Debug.trace("renameComponentOnlyInClass failed\n");
-        end if;
-      then
-        ("Error",inProgram1);
-  end matchcontinue;
+    cl := InteractiveUtil.getPathedClassInProgram(classPath, program);
+    cl := renameComponentInClass(cl, oldName, newName);
+    w := InteractiveUtil.buildWithin(AbsynUtil.makeFullyQualified(classPath));
+    program := InteractiveUtil.updateProgram(Absyn.PROGRAM({cl}, w), program);
+    result := ValuesUtil.makeCodeTypeNameArray({classPath});
+  else
+    result := ValuesUtil.makeBoolean(false);
+  end try;
 end renameComponentOnlyInClass;
 
 protected function extractRenamedClassesAsStringList
-"author: x02lucpo
-  this iterates through the Componentreplacementrules and
-  returns the string list with all the changed classes"
-  input GlobalScript.ComponentReplacementRules inComponentReplacementRules;
-  output list<String> outStringLst;
+  "Returns the list of classes changed by the given component replacement rules."
+  input GlobalScript.ComponentReplacementRules rules;
+  output list<Absyn.Path> outPaths = {};
 algorithm
-  outStringLst:=
-  matchcontinue (inComponentReplacementRules)
-    local
-      GlobalScript.ComponentReplacementRules comp_reps,res;
-      Absyn.Path path;
-      String path_str;
-      list<String> res_1,res_2;
-    case (comp_reps)
-      equation
-        true = emptyComponentReplacementRules(comp_reps);
-      then
-        {};
-    case (comp_reps)
-      equation
-        GlobalScript.COMPONENTREPLACEMENT(path,_,_) = firstComponentReplacement(comp_reps);
-        path_str = AbsynUtil.pathString(path);
-        res = restComponentReplacementRules(comp_reps);
-        res_1 = extractRenamedClassesAsStringList(res);
-        res_2 = List.union({path_str}, res_1);
-      then
-        res_2;
-    else
-      equation
-        print("-extract_renamed_classes_as_string_list failed\n");
-      then
-        fail();
-  end matchcontinue;
+  outPaths := list(rule.which1 for rule in rules.componentReplacementLst);
+  outPaths := List.uniqueOnTrue(outPaths, AbsynUtil.pathEqual);
 end extractRenamedClassesAsStringList;
 
 protected function renameComponentFromComponentreplacements
-"author: x02lucpo
-  this iterates through the Componentreplacementrules and
-  renames the componentes by traversing all the classes"
-  input Absyn.Program inProgram;
-  input GlobalScript.ComponentReplacementRules inComponentReplacementRules;
-  output Absyn.Program outProgram;
+  input output Absyn.Program program;
+  input GlobalScript.ComponentReplacementRules rules;
 algorithm
-  outProgram:=
-  matchcontinue (inProgram,inComponentReplacementRules)
-    local
-      Absyn.Program p,p_1,p_2;
-      GlobalScript.ComponentReplacementRules comp_reps,res;
-      GlobalScript.ComponentReplacement comp_rep;
-    case (p,comp_reps)
-      equation
-        true = emptyComponentReplacementRules(comp_reps);
-      then
-        p;
-    case (p,comp_reps)
-      equation
-        comp_rep = firstComponentReplacement(comp_reps);
-        ((p_1,_,_)) = AbsynUtil.traverseClasses(p,NONE(), renameComponentVisitor, comp_rep, true) "traverse protected" ;
-        res = restComponentReplacementRules(comp_reps);
-        p_2 = renameComponentFromComponentreplacements(p_1, res);
-      then
-        p_2;
-    else
-      equation
-        print("-rename_component_from_componentreplacements failed\n");
-      then
-        fail();
-  end matchcontinue;
+  for rule in rules.componentReplacementLst loop
+    ((program, _, _)) := AbsynUtil.traverseClasses(program, NONE(), renameComponentVisitor, rule, true);
+  end for;
 end renameComponentFromComponentreplacements;
 
 protected function renameComponentVisitor
@@ -1835,48 +923,29 @@ algorithm
 end renameComponentVisitor;
 
 protected function renameComponentInClass
-"author: x02lucpo
-  helper function to renameComponentVisitor"
-  input Absyn.Class inClass1;
-  input Absyn.ComponentRef inComponentRef2;
-  input Absyn.ComponentRef inComponentRef3;
-  output Absyn.Class outClass;
+  input output Absyn.Class cls;
+  input Absyn.ComponentRef oldName;
+  input Absyn.ComponentRef newName;
+protected
+  Absyn.ClassDef body;
 algorithm
-  outClass:=
-  matchcontinue (inClass1,inComponentRef2,inComponentRef3)
-    local
-      list<Absyn.ClassPart> parts_1,parts;
-      String name,baseClassName;
-      Boolean partialPrefix,finalPrefix,encapsulatedPrefix;
-      Absyn.Restriction restriction;
-      Option<String> a,c;
-      SourceInfo file_info;
-      Absyn.ComponentRef old_comp,new_comp;
-      list<Absyn.ElementArg> b;
-      Absyn.Class class_;
-      list<String> typeVars;
-      list<Absyn.NamedArg> classAttrs;
-      list<Absyn.Annotation> ann;
+  () := match cls
+    case Absyn.CLASS(body = body as Absyn.PARTS())
+      algorithm
+        body.classParts := renameComponentInParts(body.classParts, oldName, newName);
+        cls.body := body;
+      then
+        ();
 
-    /* the class with the component the old name for the component */
-    case (outClass as Absyn.CLASS(name = name,partialPrefix = partialPrefix,finalPrefix = finalPrefix,encapsulatedPrefix = encapsulatedPrefix,restriction = restriction,
-          body = Absyn.PARTS(typeVars = typeVars,classAttrs = classAttrs,classParts = parts,ann=ann,comment = a),info = file_info),old_comp,new_comp)
-      equation
-        parts_1 = renameComponentInParts(parts, old_comp, new_comp);
-        outClass.body = Absyn.PARTS(typeVars,classAttrs,parts_1,ann,a);
-      then outClass;
+    case Absyn.CLASS(body = body as Absyn.CLASS_EXTENDS())
+      algorithm
+        body.parts := renameComponentInParts(body.parts, oldName, newName);
+        cls.body := body;
+      then
+        ();
 
-    /* the class with the component the old name for the component for model extends X end X; */
-    case (outClass as Absyn.CLASS(name = name,partialPrefix = partialPrefix,finalPrefix = finalPrefix,encapsulatedPrefix = encapsulatedPrefix,restriction = restriction,
-                      body = Absyn.CLASS_EXTENDS(baseClassName = baseClassName,modifications = b,comment = c,parts = parts,ann=ann),
-                      info = file_info),old_comp,new_comp)
-      equation
-        parts_1 = renameComponentInParts(parts, old_comp, new_comp);
-        outClass.body = Absyn.CLASS_EXTENDS(baseClassName,b,c,parts_1,ann);
-      then outClass;
-
-    else inClass1;
-  end matchcontinue;
+    else ();
+  end match;
 end renameComponentInClass;
 
 protected function renameComponentInParts
@@ -3522,19 +2591,6 @@ algorithm
   end match;
 end restComponents;
 
-protected function lengthComponents
-"author: x02lucpo
-  return the number of the components"
-  input GlobalScript.Components inComponents;
-  output Integer outInteger;
-algorithm
-  outInteger:=
-  match (inComponents)
-    local Integer len;
-    case (GlobalScript.COMPONENTS(the = len)) then len;
-  end match;
-end lengthComponents;
-
 protected function addComponentToComponents
 "author: x02lucpo
   add a component to components"
@@ -3587,7 +2643,7 @@ algorithm
     case (_,p)
       equation
         cdef = InteractiveUtil.getPathedClassInProgram(path, p);
-        comps = getComponentsInClass(cdef);
+        comps = InteractiveUtil.getComponentsInClass(cdef);
         compelts = list(InteractiveUtil.getComponentitemsInElement(c) for c guard isParameterElement(c) in comps);
         compelts_1 = List.flatten(compelts);
         names = List.map(compelts_1, getComponentitemName);
@@ -3674,7 +2730,7 @@ algorithm
   matches := AbsynUtil.pathEqual(po, p);
 end matchPath;
 
-public function getClassEnv_dispatch
+protected function getClassEnv_dispatch
 " Retrieves the environment of the class,
    including the frame of the class itself
    by partially instantiating it."
@@ -3717,335 +2773,190 @@ algorithm
   end matchcontinue;
 end getClassEnv_dispatch;
 
-protected function setComponentProperties
-"Sets the following \"properties\" of a component.
-  - final
-  - flow
-  - stream
-  - protected(true) or public(false)
-  - replaceable
-  - variablity: \"constant\" or \"discrete\" or \"parameter\" or \"\"
-  - dynamic_ref: {inner, outer} - two boolean values.
-  - causality: \"input\" or \"output\" or \"\"
+uniontype ComponentProperties
+  record PROPERTIES
+    Boolean isFinal;
+    Boolean isFlow;
+    Boolean isStream;
+    Boolean isProtected;
+    Boolean isReplaceable;
+    Absyn.Variability variability;
+    Absyn.InnerOuter innerOuter;
+    Absyn.Direction direction;
+  end PROPERTIES;
+end ComponentProperties;
 
-  inputs:  (Absyn.Path, /* class */
-            Absyn.ComponentRef, /* component_ref */
-            bool, /* final = true */
-            bool, /* flow = true */
-            bool, /* stream = true */
-            bool, /* protected = true, public=false */
-            bool,  /* replaceable = true */
-            string, /* parallelism */
-            string, /* variability */
-            bool list, /* dynamic_ref, two booleans */
-            string, /* causality */
-            Absyn.Program,
-            //string, /*isField*/)
-  outputs: (string, Absyn.Program)"
-  input Absyn.Path inPath1;
-  input Absyn.ComponentRef inComponentRef2;
-  input Boolean inFinal;
-  input Boolean inFlow;
-  input Boolean inStream;
-  input Boolean inProtected;
-  input Boolean inReplaceable;
-  // input String inString6;  //parallelism removed for now
-  input String inString7;
-  input list<Boolean> inBooleanLst8;
-  input String inString9;
-  input Absyn.Program inProgram10;
-  // input String inString11;  //isField also removed
-  output String outString;
-  output Absyn.Program outProgram;
+public function setComponentProperties
+  input Absyn.Path classPath;
+  input String component;
+  input list<Boolean> prefixes; // final, flow, [stream], protected, replaceable
+  input String variability;
+  input Boolean innerPrefix;
+  input Boolean outerPrefix;
+  input String direction;
+  input output Absyn.Program program;
+        output Values.Value result;
+protected
+  Boolean is_final, is_flow, is_stream, is_protected, is_replaceable;
+  Absyn.Variability var;
+  Absyn.InnerOuter io;
+  Absyn.Direction dir;
+  ComponentProperties props;
 algorithm
-  (outString,outProgram):=
-  matchcontinue (inPath1,inComponentRef2,inFinal,inFlow,inStream,inProtected,inReplaceable,/*inString6,*/inString7,inBooleanLst8,inString9,inProgram10/*,inString11*/)
-    local
-      Absyn.Within within_;
-      Absyn.Class cdef,cdef_1;
-      Absyn.Program newp,p;
-      Absyn.Path p_class;
-      String varname,variability,causality,isField;
-      Boolean finalPrefix,flowPrefix,streamPrefix,prot,repl;
-      list<Boolean> dyn_ref;
-    case (p_class,Absyn.CREF_IDENT(name = varname),finalPrefix,flowPrefix,streamPrefix,prot,repl, /*parallelism,*/ variability,dyn_ref,causality,p as Absyn.PROGRAM()/*,isField*/)
-      equation
-        within_ = InteractiveUtil.buildWithin(p_class);
-        cdef = InteractiveUtil.getPathedClassInProgram(p_class, p);
-        cdef_1 = setComponentPropertiesInClass(cdef, varname, finalPrefix, flowPrefix, streamPrefix, prot, repl, "" /*parallelism*/, variability, dyn_ref, causality, "" /*isField*/);
-        newp = InteractiveUtil.updateProgram(Absyn.PROGRAM({cdef_1},within_), p);
-      then
-        ("Ok",newp);
-    else ("Error",inProgram10);
-  end matchcontinue;
+  try
+    if listLength(prefixes) == 5 then
+      {is_final, is_flow, is_stream, is_protected, is_replaceable} := prefixes;
+      // Creating a component that is both flow and stream will cause the Absyn
+      // to SCode translation to fail, which breaks the scripting environment.
+      false := is_flow and is_stream;
+    else
+      {is_final, is_flow, is_protected, is_replaceable} := prefixes;
+      is_stream := false;
+    end if;
+
+    props := ComponentProperties.PROPERTIES(
+      is_final, is_flow, is_stream, is_protected, is_replaceable,
+      setElementVariability(variability),
+      setInnerOuterAttributes(innerPrefix, outerPrefix),
+      setElementCausality(direction)
+    );
+
+    program := transformPathedClassInProgram(classPath, program,
+      function setComponentPropertiesInClass(component = component, properties = props));
+    result := ValuesUtil.makeBoolean(true);
+  else
+    result := ValuesUtil.makeBoolean(false);
+  end try;
 end setComponentProperties;
 
 protected function setComponentPropertiesInClass
-"Helper function to setComponentProperties.
-  inputs:  (Absyn.Class,
-              string, /* comp_name */
-              bool, /* final */
-              bool, /* flow */
-              bool, /* stream */
-              bool, /* prot */
-              bool, /* repl */
-              string, /* parallelism */
-              string, /* variability */
-              bool list, /* dynamic_ref, two booleans */
-              string) /* causality */
-  outputs: Absyn.Class "
-  input Absyn.Class inClass1;
-  input String inString2;
-  input Boolean inFinal;
-  input Boolean inFlow;
-  input Boolean inStream;
-  input Boolean inProtected;
-  input Boolean inReplaceable;
-  input String inString6;
-  input String inString7;
-  input list<Boolean> inBooleanLst8;
-  input String inString9;
-  input String inString10; /*isField*/
-  output Absyn.Class outClass;
+  input output Absyn.Class cls;
+  input String component;
+  input ComponentProperties properties;
+protected
+  Absyn.ClassDef body;
 algorithm
-  outClass:=
-  match (inClass1,inString2,inFinal,inFlow,inStream,inProtected,inReplaceable,inString6,inString7,inBooleanLst8,inString9, inString10)
-    local
-      list<Absyn.ClassPart> parts_1,parts;
-      String id,varname,parallelism,variability,causality,bcname,isField;
-      Boolean p,f,e,finalPrefix,flowPrefix,streamPrefix,prot,repl;
-      Absyn.Restriction r;
-      Option<String> cmt;
-      SourceInfo file_info;
-      list<Boolean> dyn_ref;
-      list<Absyn.ElementArg> mod;
-      list<String> typeVars;
-      list<Absyn.NamedArg> classAttrs;
-      list<Absyn.Annotation> ann;
+  body := cls.body;
 
-    /* a class with parts! */
-    case (outClass as Absyn.CLASS(name = id,
-                      partialPrefix = p,
-                      finalPrefix = f,
-                      encapsulatedPrefix = e,
-                      restriction = r,
-                      body = Absyn.PARTS(typeVars = typeVars,classAttrs = classAttrs,classParts = parts,ann = ann,comment = cmt),
-                      info = file_info),varname,finalPrefix,flowPrefix,streamPrefix, prot,repl,parallelism,variability,dyn_ref,causality,isField)
-      equation
-        parts_1 = setComponentPropertiesInClassparts(parts, varname, finalPrefix, flowPrefix, streamPrefix, prot, repl, parallelism, variability, dyn_ref, causality, isField);
-        outClass.body = Absyn.PARTS(typeVars,classAttrs,parts_1,ann,cmt);
-      then outClass;
+  cls.body := match body
+    case Absyn.ClassDef.PARTS()
+      algorithm
+        body.classParts := setComponentPropertiesInClassparts(body.classParts, component, properties);
+      then
+        body;
 
-    /* adrpo: handle also an extended class with parts! */
-    case (outClass as Absyn.CLASS(name = id,
-                      partialPrefix = p,
-                      finalPrefix = f,
-                      encapsulatedPrefix = e,
-                      restriction = r,
-                      body = Absyn.CLASS_EXTENDS(baseClassName=bcname, modifications=mod, parts = parts,ann = ann,comment = cmt),
-                      info = file_info),varname,finalPrefix,flowPrefix,streamPrefix, prot,repl,parallelism,variability,dyn_ref,causality,isField)
-      equation
-        parts_1 = setComponentPropertiesInClassparts(parts, varname, finalPrefix, flowPrefix, streamPrefix, prot, repl, parallelism, variability, dyn_ref, causality, isField);
-        outClass.body = Absyn.CLASS_EXTENDS(bcname,mod,cmt,parts_1,ann);
-      then outClass;
-
+    case Absyn.ClassDef.CLASS_EXTENDS()
+      algorithm
+        body.parts := setComponentPropertiesInClassparts(body.parts, component, properties);
+      then
+        body;
   end match;
 end setComponentPropertiesInClass;
 
 protected function setComponentPropertiesInClassparts
-" Helper function to setComponentPropertiesInClass.
-   inputs: (Absyn.ClassPart list,
-              Absyn.Ident, /* comp_name */
-              bool, /* final */
-              bool, /* flow */
-              bool, /* stream */
-              bool, /* prot */
-              bool, /* repl */
-              string, /* parallelism */
-              string, /* variability */
-              bool list, /* dynamic_ref, two booleans */
-              string) /* causality */
-   outputs: Absyn.ClassPart list"
-  input list<Absyn.ClassPart> inAbsynClassPartLst1;
-  input Absyn.Ident inIdent2;
-  input Boolean inFinal;
-  input Boolean inFlow;
-  input Boolean inStream;
-  input Boolean inProtected;
-  input Boolean inReplaceable;
-  input String inString6;
-  input String inString7;
-  input list<Boolean> inBooleanLst8;
-  input String inString9;
-  input String inString10; /*isField*/
-  output list<Absyn.ClassPart> outAbsynClassPartLst;
+  input list<Absyn.ClassPart> inParts;
+  input String component;
+  input ComponentProperties properties;
+  output list<Absyn.ClassPart> outParts;
 algorithm
-  outAbsynClassPartLst:=
-  matchcontinue (inAbsynClassPartLst1,inIdent2,inFinal,inFlow,inStream,inProtected,inReplaceable,inString6,inString7,inBooleanLst8,inString9,inString10)
+  outParts := matchcontinue inParts
     local
-      list<Absyn.ElementItem> publst,publst_1,protlst,protlst_1,elts_1,elts;
-      Absyn.Element elt,elt_1;
-      list<Absyn.ClassPart> parts_1,parts_2,parts,rest,rest_1;
-      String cr,parallelism,variability,causality,isField;
-      Boolean finalPrefix,flowPrefix,streamPrefix,repl,prot;
-      list<Boolean> dyn_ref;
+      list<Absyn.ElementItem> publst, protlst, elts;
+      Absyn.Element elt;
+      list<Absyn.ClassPart> parts, rest;
       Absyn.ClassPart part;
 
-    case ({},_,_,_,_,_,_,_,_,_,_,_) then {};
-    case (parts,cr,finalPrefix,flowPrefix,streamPrefix,true,repl,parallelism,variability,dyn_ref,causality,isField) /* public moved to protected protected moved to public */
-      equation
-        publst = InteractiveUtil.getPublicList(parts);
-        Absyn.ELEMENTITEM(elt) = getElementitemContainsName(Absyn.CREF_IDENT(cr,{}), publst);
-        elt_1 = setComponentPropertiesInElement(elt, cr, finalPrefix, flowPrefix, streamPrefix, repl, parallelism, variability, dyn_ref, causality, isField);
-        publst_1 = deleteOrUpdateComponentFromElementitems(cr, publst, NONE()); // TODO: Do not move the component...
-        protlst = InteractiveUtil.getProtectedList(parts);
-        protlst_1 = listAppend(protlst, {Absyn.ELEMENTITEM(elt_1)});
-        parts_1 = InteractiveUtil.replaceProtectedList(parts, protlst_1);
-        parts_2 = InteractiveUtil.replacePublicList(parts_1, publst_1);
+    case {} then {};
+    case parts guard properties.isProtected /* public moved to protected protected moved to public */
+      algorithm
+        publst := InteractiveUtil.getPublicList(parts);
+        Absyn.ELEMENTITEM(elt) := List.getMemberOnTrue(component, publst, AbsynUtil.isElementItemNamed);
+        elt := setComponentPropertiesInElement(elt, component, properties);
+        publst := deleteOrUpdateComponentFromElementitems(component, publst, NONE()); // TODO: Do not move the component...
+        protlst := InteractiveUtil.getProtectedList(parts);
+        protlst := List.appendElt(Absyn.ELEMENTITEM(elt), protlst);
+        parts := InteractiveUtil.replaceProtectedList(parts, protlst);
+        parts := InteractiveUtil.replacePublicList(parts, publst);
       then
-        parts_2;
+        parts;
 
-    case (parts,cr,finalPrefix,flowPrefix,streamPrefix,false,repl,parallelism,variability,dyn_ref,causality,isField) /* protected moved to public protected attr not changed. */
-      equation
-        protlst = InteractiveUtil.getProtectedList(parts);
-        Absyn.ELEMENTITEM(elt) = getElementitemContainsName(Absyn.CREF_IDENT(cr,{}), protlst);
-        elt_1 = setComponentPropertiesInElement(elt, cr, finalPrefix, flowPrefix, streamPrefix, repl, parallelism, variability, dyn_ref, causality, isField);
-        protlst_1 = deleteOrUpdateComponentFromElementitems(cr, protlst, NONE()); // TODO: Do not move the component...
-        publst = InteractiveUtil.getPublicList(parts);
-        publst_1 = listAppend(publst, {Absyn.ELEMENTITEM(elt_1)});
-        parts_1 = InteractiveUtil.replacePublicList(parts, publst_1);
-        parts_2 = InteractiveUtil.replaceProtectedList(parts_1, protlst_1);
+    case parts guard not properties.isProtected /* protected moved to public protected attr not changed. */
+      algorithm
+        protlst := InteractiveUtil.getProtectedList(parts);
+        Absyn.ELEMENTITEM(elt) := List.getMemberOnTrue(component, protlst, AbsynUtil.isElementItemNamed);
+        elt := setComponentPropertiesInElement(elt, component, properties);
+        protlst := deleteOrUpdateComponentFromElementitems(component, protlst, NONE()); // TODO: Do not move the component...
+        publst := InteractiveUtil.getPublicList(parts);
+        publst := List.appendElt(Absyn.ELEMENTITEM(elt), publst);
+        parts := InteractiveUtil.replacePublicList(parts, publst);
+        parts := InteractiveUtil.replaceProtectedList(parts, protlst);
       then
-        parts_2;
+        parts;
 
-    case ((Absyn.PUBLIC(contents = elts) :: rest),cr,finalPrefix,flowPrefix,streamPrefix,prot,repl,parallelism,variability,dyn_ref,causality,isField) /* protected attr not changed. protected attr not changed, 2. */
-      equation
-        rest = setComponentPropertiesInClassparts(rest, cr, finalPrefix, flowPrefix, streamPrefix, prot, repl, parallelism, variability, dyn_ref, causality,isField);
-        elts_1 = setComponentPropertiesInElementitems(elts, cr, finalPrefix, flowPrefix, streamPrefix, repl, parallelism, variability, dyn_ref, causality,isField);
+    case Absyn.PUBLIC(contents = elts) :: rest /* protected attr not changed. protected attr not changed, 2. */
+      algorithm
+        rest := setComponentPropertiesInClassparts(rest, component, properties);
+        elts := setComponentPropertiesInElementitems(elts, component, properties);
       then
-        (Absyn.PUBLIC(elts_1) :: rest);
+        Absyn.PUBLIC(elts) :: rest;
 
-    case ((Absyn.PROTECTED(contents = elts) :: rest),cr,finalPrefix,flowPrefix,streamPrefix, prot,repl,parallelism,variability,dyn_ref,causality,isField) /* protected attr not changed, 2. */
-      equation
-        rest = setComponentPropertiesInClassparts(rest, cr, finalPrefix, flowPrefix, streamPrefix, prot, repl, parallelism, variability, dyn_ref, causality, isField);
-        elts_1 = setComponentPropertiesInElementitems(elts, cr, finalPrefix, flowPrefix, streamPrefix, repl, parallelism, variability, dyn_ref, causality, isField);
+    case Absyn.PROTECTED(contents = elts) :: rest /* protected attr not changed, 2. */
+      algorithm
+        rest := setComponentPropertiesInClassparts(rest, component, properties);
+        elts := setComponentPropertiesInElementitems(elts, component, properties);
       then
-        (Absyn.PROTECTED(elts_1) :: rest);
+        Absyn.PROTECTED(elts) :: rest;
 
-    case ((part :: rest),cr,finalPrefix,flowPrefix,streamPrefix, prot,repl,parallelism,variability,dyn_ref,causality,isField) /* protected attr not changed, 3. */
-      equation
-        rest_1 = setComponentPropertiesInClassparts(rest, cr, finalPrefix, flowPrefix, streamPrefix, prot, repl, parallelism, variability, dyn_ref, causality, isField);
+    case part :: rest /* protected attr not changed, 3. */
+      algorithm
+        rest := setComponentPropertiesInClassparts(rest, component, properties);
       then
-        (part :: rest_1);
+        part :: rest;
 
   end matchcontinue;
 end setComponentPropertiesInClassparts;
 
 protected function setComponentPropertiesInElementitems
-"Helper function to setComponentPropertiesInClassparts.
-  inputs:  (Absyn.ElementItem list,
-              Absyn.Ident, /* comp_name */
-              bool, /* final */
-              bool, /* flow */
-              bool, /* stream */
-              bool, /* repl */
-              string, /* parallelism */
-              string, /* variability */
-              bool list, /* dynamic_ref, two booleans */
-              string, /* causality */
-              string) /* isField */
-  outputs:  Absyn.ElementItem list"
-  input list<Absyn.ElementItem> inAbsynElementItemLst1;
-  input Absyn.Ident inIdent2;
-  input Boolean inFinal;
-  input Boolean inFlow;
-  input Boolean inStream;
-  input Boolean inReplaceable;
-  input String inString5;
-  input String inString6;
-  input list<Boolean> inBooleanLst7;
-  input String inString8;
-  input String inString9; /*isfield*/
-  output list<Absyn.ElementItem> outAbsynElementItemLst;
+  input output list<Absyn.ElementItem> items;
+  input String component;
+  input ComponentProperties properties;
 algorithm
-  outAbsynElementItemLst:=
-  matchcontinue (inAbsynElementItemLst1,inIdent2,inFinal,inFlow,inStream,inReplaceable,inString5,inString6,inBooleanLst7,inString8,inString9)
-    local
-      list<Absyn.ElementItem> res,rest;
-      Absyn.Element elt_1,elt;
-      String cr,prl,va,cau,isf;
-      Boolean finalPrefix,flowPrefix,streamPrefix,repl;
-      list<Boolean> dr;
-      Absyn.ElementItem elitem;
-
-    case ({},_,_,_,_,_,_,_,_,_,_) then {};
-    case ((Absyn.ELEMENTITEM(element = elt) :: rest),cr,finalPrefix,flowPrefix,streamPrefix, repl,prl,va,dr,cau, isf)
-      equation
-        res = setComponentPropertiesInElementitems(rest, cr, finalPrefix, flowPrefix, streamPrefix, repl, prl, va, dr, cau, isf);
-        elt_1 = setComponentPropertiesInElement(elt, cr, finalPrefix, flowPrefix, streamPrefix, repl, prl, va, dr, cau, isf);
-      then
-        (Absyn.ELEMENTITEM(elt_1) :: res);
-
-    case ((elitem :: rest),cr,finalPrefix,flowPrefix,streamPrefix,repl,prl,va,dr,cau,isf)
-      equation
-        res = setComponentPropertiesInElementitems(rest, cr, finalPrefix, flowPrefix, streamPrefix, repl, prl, va, dr, cau, isf);
-      then
-        (elitem :: res);
-  end matchcontinue;
+  items := List.findAndMap(items, function AbsynUtil.isElementItemNamed(name = component),
+    function setComponentPropertiesInElementItem(component = component, properties = properties));
 end setComponentPropertiesInElementitems;
 
-protected function setComponentPropertiesInElement
-"Helper function to e.g. setComponentPropertiesInElementitems.
-  inputs:  (Absyn.Element,
-              Absyn.Ident,
-              bool, /* final */
-              bool, /* flow */
-              bool, /* stream */
-              bool, /* repl */
-              string, /* parallelism */
-              string, /* variability */
-              bool list, /* dynamic_ref, two booleans */
-              string,  /* causality */
-              string)  /* isField */
-  outputs: Absyn.Element"
-  input Absyn.Element inElement1;
-  input Absyn.Ident inIdent2;
-  input Boolean inFinal;
-  input Boolean inFlow;
-  input Boolean inStream;
-  input Boolean inReplaceable;
-  input String inString5;
-  input String inString6;
-  input list<Boolean> inBooleanLst7;
-  input String inString8;
-  input String inString9; /* isField*/
-  output Absyn.Element outElement;
+protected function setComponentPropertiesInElementItem
+  input output Absyn.ElementItem item;
+  input String component;
+  input ComponentProperties properties;
 algorithm
-  outElement:=
-  matchcontinue (inElement1,inIdent2,inFinal,inFlow,inStream,inReplaceable,inString5,inString6,inBooleanLst7,inString8,inString9)
-    local
-      Option<Absyn.RedeclareKeywords> redeclkw_1,redeclkw;
-      Absyn.InnerOuter inout_1,inout;
-      Absyn.ElementSpec spec_1,spec;
-      String cr,va,cau,prl,isf;
-      list<Absyn.ComponentItem> ellst;
-      SourceInfo info;
-      Option<Absyn.ConstrainClass> constr;
-      Boolean finalPrefix,flowPrefix,streamPrefix,repl;
-      list<Boolean> dr;
-      Absyn.Element elt;
-    case (Absyn.ELEMENT(redeclareKeywords = redeclkw,
-          specification = (spec as Absyn.COMPONENTS(components = ellst)),info = info,constrainClass = constr),
-          cr,finalPrefix,flowPrefix,streamPrefix,repl,prl,va,dr,cau,isf)
-      equation
-        getCompitemNamed(Absyn.CREF_IDENT(cr,{}), ellst);
-        redeclkw_1 = setReplaceableKeywordAttributes(redeclkw, repl);
-        inout_1 = setInnerOuterAttributes(dr);
-        spec_1 = setComponentPropertiesInElementspec(spec, cr, flowPrefix, streamPrefix, prl, va, cau, isf);
+  () := match item
+    case Absyn.ElementItem.ELEMENTITEM()
+      algorithm
+        item.element := setComponentPropertiesInElement(item.element, component, properties);
       then
-        Absyn.ELEMENT(finalPrefix,redeclkw_1,inout_1,spec_1,info,constr);
-    else inElement1;
-  end matchcontinue;
+        ();
+  end match;
+end setComponentPropertiesInElementItem;
+
+protected function setComponentPropertiesInElement
+  input output Absyn.Element element;
+  input String component;
+  input ComponentProperties properties;
+protected
+  Absyn.ElementSpec spec;
+algorithm
+  () := match element
+    case Absyn.Element.ELEMENT(specification = spec as Absyn.ElementSpec.COMPONENTS())
+      algorithm
+        element.finalPrefix := properties.isFinal;
+        element.redeclareKeywords := setReplaceableKeywordAttributes(element.redeclareKeywords, properties.isReplaceable);
+        element.innerOuter := properties.innerOuter;
+        spec.attributes := setElementAttributes(spec.attributes, properties);
+        element.specification := spec;
+      then
+        ();
+  end match;
 end setComponentPropertiesInElement;
 
 protected function setReplaceableKeywordAttributes
@@ -4071,147 +2982,28 @@ algorithm
 end setReplaceableKeywordAttributes;
 
 protected function setInnerOuterAttributes
-"Sets InnerOuter according to a list of two booleans, {inner, outer}."
-  input list<Boolean> inBooleanLst;
+  input Boolean isInner;
+  input Boolean isOuter;
   output Absyn.InnerOuter outInnerOuter;
 algorithm
-  outInnerOuter:=
-  match (inBooleanLst)
-    case ({false,false}) then Absyn.NOT_INNER_OUTER();
-    case ({true,false}) then Absyn.INNER();
-    case ({false,true}) then Absyn.OUTER();
-    case ({true,true}) then Absyn.INNER_OUTER();
+  outInnerOuter := match (isInner, isOuter)
+    case (false, false) then Absyn.NOT_INNER_OUTER();
+    case (true , false) then Absyn.INNER();
+    case (false, true)  then Absyn.OUTER();
+    else Absyn.INNER_OUTER();
   end match;
 end setInnerOuterAttributes;
-
-protected function setComponentPropertiesInElementspec
-"Sets component attributes on an elements spec if identifier matches.
-  inputs:  (Absyn.ElementSpec,
-              Absyn.Ident,
-              bool, /* flow */
-              bool, /* stream */
-              string, /* parallelism */
-              string, /* variability */
-              string /* causality */
-              string /* IsField */
-  outputs:  Absyn.ElementSpec"
-  input Absyn.ElementSpec inElementSpec1;
-  input Absyn.Ident inIdent2;
-  input Boolean inFlow;
-  input Boolean inStream;
-  input String inString3;
-  input String inString4;
-  input String inString5;
-  input String inString6;
-  output Absyn.ElementSpec outElementSpec;
-algorithm
-  outElementSpec:=
-  matchcontinue (inElementSpec1,inIdent2,inFlow,inStream,inString3,inString4,inString5,inString6)
-    local
-      Absyn.ElementAttributes attr_1,attr;
-      Absyn.TypeSpec path;
-      list<Absyn.ComponentItem> items;
-      String cr,va,cau,prl,isf;
-      Boolean flowPrefix,streamPrefix;
-      Absyn.ElementSpec spec;
-    case (Absyn.COMPONENTS(attributes = attr,typeSpec = path,components = items),cr,flowPrefix,streamPrefix,prl,va,cau,isf)
-      equation
-        itemsContainCompname(items, cr);
-        attr_1 = setElementAttributes(attr, flowPrefix, streamPrefix, prl, va, cau, isf);
-      then
-        Absyn.COMPONENTS(attr_1,path,items);
-
-    else inElementSpec1;
-  end matchcontinue;
-end setComponentPropertiesInElementspec;
-
-protected function itemsContainCompname
-"Checks if a list of ElementItems contain a component named \'cr\'."
-  input list<Absyn.ComponentItem> inAbsynComponentItemLst;
-  input Absyn.Ident inIdent;
-algorithm
-  _:=
-  matchcontinue (inAbsynComponentItemLst,inIdent)
-    local
-      String cr1,cr2,cr;
-      list<Absyn.ComponentItem> rest;
-    case ((Absyn.COMPONENTITEM(component = Absyn.COMPONENT(name = cr1)) :: _),cr2)
-      equation
-        true = stringEq(cr1, cr2);
-      then
-        ();
-    case ((_ :: rest),cr)
-      equation
-        itemsContainCompname(rest, cr);
-      then
-        ();
-  end matchcontinue;
-end itemsContainCompname;
-
-protected function setElementAttributes
-"Sets  attributes associated with ElementAttribues.
-  inputs: (Absyn.ElementAttributes,
-             bool, /* flow */
-             bool, /* stream */
-             string, /* parallelism */
-             string, /* variability */
-             string, /* causality */
-             string) /* nonfield/field */
-  outputs: Absyn.ElementAttributes"
-  input Absyn.ElementAttributes inElementAttributes1;
-  input Boolean inFlow;
-  input Boolean inStream;
-  input String inString2;
-  input String inString3;
-  input String inString4;
-  input String inString5;
-  output Absyn.ElementAttributes outElementAttributes;
-algorithm
-  outElementAttributes:=
-  match (inElementAttributes1,inFlow,inStream,inString2,inString3,inString4,inString5)
-    local
-      Absyn.Parallelism pa_1;
-      Absyn.Variability va_1;
-      Absyn.Direction cau_1;
-      Absyn.IsField fi_1;
-      list<Absyn.Subscript> dim;
-      Boolean flowPrefix,streamPrefix;
-      String va,cau,prl,fi;
-    case (Absyn.ATTR(arrayDim = dim),flowPrefix,streamPrefix,prl,va,cau,fi)
-      equation
-        pa_1 = setElementParallelism(prl);
-        va_1 = setElementVariability(va);
-        cau_1 = setElementCausality(cau);
-        fi_1 = setElementIsField(fi);
-      then
-        Absyn.ATTR(flowPrefix,streamPrefix,pa_1,va_1,cau_1,fi_1,dim);
-  end match;
-end setElementAttributes;
-
-protected function setElementParallelism
-"Sets Parallelism according to string value."
-  input String inString;
-  output Absyn.Parallelism outParallelism;
-algorithm
-  outParallelism:=
-  match (inString)
-    case ("") then Absyn.NON_PARALLEL();
-    case ("parglobal") then Absyn.PARGLOBAL();
-    case ("parlocal") then Absyn.PARLOCAL();
-  end match;
-end setElementParallelism;
 
 protected function setElementVariability
 "Sets Variability according to string value."
   input String inString;
   output Absyn.Variability outVariability;
 algorithm
-  outVariability:=
-  match (inString)
-    case ("") then Absyn.VAR();
-    case ("discrete") then Absyn.DISCRETE();
-    case ("parameter") then Absyn.PARAM();
-    case ("constant") then Absyn.CONST();
+  outVariability := match inString
+    case ""          then Absyn.VAR();
+    case "discrete"  then Absyn.DISCRETE();
+    case "parameter" then Absyn.PARAM();
+    case "constant"  then Absyn.CONST();
   end match;
 end setElementVariability;
 
@@ -4220,100 +3012,57 @@ protected function setElementCausality
   input String inString;
   output Absyn.Direction outDirection;
 algorithm
-  outDirection:=
-  match (inString)
-    case ("") then Absyn.BIDIR();
-    case ("input") then Absyn.INPUT();
-    case ("output") then Absyn.OUTPUT();
+  outDirection := match inString
+    case ""       then Absyn.BIDIR();
+    case "input"  then Absyn.INPUT();
+    case "output" then Absyn.OUTPUT();
   end match;
 end setElementCausality;
 
-protected function setElementIsField
-"Sets isField attribute according to string value."
-  input String inString;
-  output Absyn.IsField outIsField;
+protected function setElementAttributes
+  input output Absyn.ElementAttributes attributes;
+  input ComponentProperties properties;
 algorithm
-  outIsField:=
-  match (inString)
-    case ("") then Absyn.NONFIELD();
-    case ("nonfield") then Absyn.NONFIELD();
-    case ("field")
-      equation
-        if not Flags.getConfigEnum(Flags.GRAMMAR) == Flags.PDEMODELICA then
-          Error.addMessage(Error.PDEModelica_ERROR,
-            {"Fields not supported in standard modelica. Enable PDEModelica usign flag --grammar=\"PDEModelica\"."});
-          fail();
-        end if;
-      then Absyn.FIELD();
-  end match;
-end setElementIsField;
+  attributes := Absyn.ElementAttributes.ATTR(
+    properties.isFlow,
+    properties.isStream,
+    attributes.parallelism,
+    properties.variability,
+    properties.direction,
+    attributes.isField,
+    attributes.arrayDim
+  );
+end setElementAttributes;
 
-protected function selectString
-" author: adrpo@ida
-   date  : 2006-02-05
-   if bool is true select first string, otherwise the second one"
-  input Boolean inSelector;
-  input String inString2;
-  input String inString3;
-  output String outString;
-algorithm
-  outString:=
-  match (inSelector,inString2,inString3)
-    local String s1,s2;
-    case (true,s1,_) then s1;
-    case (false,_,s2) then s2;
-  end match;
-end selectString;
-
-protected function getCrefInfo
+public function getCrefInfo
 " author: adrpo@ida
    date  : 2005-11-03, changed 2006-02-05 to match new SOURCEINFO
    Retrieves the Info attribute of a Class.
    When parsing classes, the source:
    file name + isReadOnly + start lineno + start columnno + end lineno + end columnno is added to the Class
    definition and to all Elements, see SourceInfo. This function retrieves the
-   Info contents.
-   inputs:   (Absyn.ComponentRef, /* class */
-                Absyn.Program)
-   outputs:   string"
-  input Absyn.ComponentRef inComponentRef;
-  input Absyn.Program inProgram;
-  output String outString;
+   Info contents."
+  input Absyn.Path classPath;
+  input Absyn.Program program;
+  output Values.Value result;
+protected
+  Absyn.Class cls;
+  SourceInfo info;
 algorithm
-  outString:=
-  matchcontinue (inComponentRef,inProgram)
-    local
-      Absyn.Path p_class;
-      Absyn.Class cdef;
-      String id,filename,str_sline,str_scol,str_eline,str_ecol,s,str_readonly;
-      Boolean isReadOnly;
-      Integer sline,scol,eline,ecol;
-      Absyn.ComponentRef class_;
-      Absyn.Program p;
-    case (class_,p)
-      equation
-        p_class = AbsynUtil.crefToPath(class_);
-        cdef = InteractiveUtil.getPathedClassInProgram(p_class, p);
-        Absyn.CLASS(info = SOURCEINFO(fileName = filename,isReadOnly = isReadOnly,lineNumberStart = sline,columnNumberStart = scol,lineNumberEnd = eline,columnNumberEnd = ecol)) = cdef;
-        filename = Testsuite.friendly(filename);
-        str_sline = intString(sline);
-        str_scol = intString(scol);
-        str_eline = intString(eline);
-        str_ecol = intString(ecol);
-        str_readonly = selectString(isReadOnly, "readonly", "writable");
-        s = stringAppendList({
-               "{",
-               filename, ",",
-               str_readonly, ",",
-               str_sline, ",",
-               str_scol, ",",
-               str_eline, ",",
-               str_ecol,
-               "}"});
-      then
-        s;
-    else "Error";
-  end matchcontinue;
+  try
+    cls := InteractiveUtil.getPathedClassInProgram(classPath, program);
+    info := cls.info;
+    result := ValuesUtil.makeArray({
+      ValuesUtil.makeCodeTypeNameStr(Testsuite.friendly(info.fileName)),
+      ValuesUtil.makeCodeTypeNameStr(if info.isReadOnly then "readonly" else "writable"),
+      ValuesUtil.makeInteger(info.lineNumberStart),
+      ValuesUtil.makeInteger(info.columnNumberStart),
+      ValuesUtil.makeInteger(info.lineNumberEnd),
+      ValuesUtil.makeInteger(info.columnNumberEnd)
+    });
+  else
+    result := ValuesUtil.makeBoolean(false);
+  end try;
 end getCrefInfo;
 
 protected function getImportString
@@ -4382,14 +3131,14 @@ algorithm
     case (Absyn.COMPONENTS(attributes = attr,typeSpec = typeSpec,components = lst))
       equation
         typename = Dump.unparseTypeSpec(typeSpec);
-        names = InteractiveUtil.getComponentItemsNameAndComment(lst, inElement, false);
+        {names} = InteractiveUtil.getComponentItemsNameAndComment(lst, inElement);
         flowPrefixstr = InteractiveUtil.attrFlowStr(attr);
         streamPrefixstr = InteractiveUtil.attrStreamStr(attr);
         variability_str = InteractiveUtil.attrVariabilityStr(attr);
         dir_str = InteractiveUtil.attrDirectionStr(attr);
         names_str = stringDelimitList(names, ", ");
         str = stringAppendList({"elementtype=component, typename=",typename,", names={", names_str,"}, flow=",flowPrefixstr,
-        ", stream=",streamPrefixstr,", variability=",variability_str,", direction=", dir_str});
+        ", stream=",streamPrefixstr,", variability=\"",variability_str,"\", direction=\"", dir_str, "\""});
       then
         str;
   end match;
@@ -4430,12 +3179,12 @@ algorithm
         scol_str = intString(scol);
         eline_str = intString(eline);
         ecol_str = intString(ecol);
-        readonly_str = selectString(isReadOnly, "readonly", "writable");
+        readonly_str = if isReadOnly then "readonly" else "writable";
         str = stringAppendList(
           {"elementfile=\"",file,"\", elementreadonly=\"",
           readonly_str,"\", elementStartLine=",sline_str,", elementStartColumn=",scol_str,
           ", elementEndLine=",eline_str,", elementEndColumn=",ecol_str,", final=",finalPrefix,
-          ", replaceable=",repl,", inout=",inout_str,", ",element_str});
+          ", replaceable=",repl,", inout=\"",inout_str,"\", ",element_str});
       then
         str;
     case (Absyn.ELEMENTITEM(element = el as Absyn.ELEMENT(finalPrefix = f,redeclareKeywords = r,innerOuter = inout,specification = elementSpec,info = SOURCEINFO(fileName = file,isReadOnly = isReadOnly,lineNumberStart = sline,columnNumberStart = scol,lineNumberEnd = eline,columnNumberEnd = ecol)))) /* if is not a classdef, just follow the normal stuff */
@@ -4449,13 +3198,13 @@ algorithm
         scol_str = intString(scol);
         eline_str = intString(eline);
         ecol_str = intString(ecol);
-        readonly_str = selectString(isReadOnly, "readonly", "writable");
+        readonly_str = if isReadOnly then "readonly" else "writable";
         file = Testsuite.friendly(file);
         str = stringAppendList(
           {"elementfile=\"",file,"\", elementreadonly=\"",
           readonly_str,"\", elementStartLine=",sline_str,", elementStartColumn=",scol_str,
           ", elementEndLine=",eline_str,", elementEndColumn=",ecol_str,", final=",finalPrefix,
-          ", replaceable=",repl,", inout=",inout_str,", ",element_str});
+          ", replaceable=",repl,", inout=\"",inout_str,"\", ",element_str});
       then
         str;
     case (Absyn.LEXER_COMMENT()) then "elementtype=comment";
@@ -4469,33 +3218,25 @@ protected function constructElementsInfo
    helperfunction to getElementsInfo
    inputs:  (string /* \"public\" or \"protected\" */, Absyn.ElementItem list)
    outputs:  string"
-  input String inString;
-  input list<Absyn.ElementItem> inAbsynElementItemLst;
-  output String outString;
+  input String visibility;
+  input list<Absyn.ElementItem> elements;
+  output String result;
+protected
+  list<String> elements_strl = {};
+  String element_str;
 algorithm
-  outString:=
-  matchcontinue (inString,inAbsynElementItemLst)
-    local
-      String visibility_str,s1,element_str,res,s2;
-      Absyn.ElementItem current;
-      list<Absyn.ElementItem> rest;
-    case (_,{}) then "";
-    case (visibility_str,(current :: {})) /* deal with the last element */
-      equation
-        s1 = getElementInfo(current);
-        element_str = stringAppendList({"{ rec(elementvisibility=",visibility_str,", ",s1,") }"});
-        res = stringAppendList({element_str,"\n"});
-      then
-        res;
-    case (visibility_str,(current :: rest))
-      equation
-        s1 = getElementInfo(current);
-        element_str = stringAppendList({"{ rec(elementvisibility=",visibility_str,", ",s1,") }"});
-        s2 = constructElementsInfo(visibility_str, rest);
-        res = stringAppendList({element_str,",\n",s2});
-      then
-        res;
-  end matchcontinue;
+  for e in elements loop
+    element_str := getElementInfo(e);
+    element_str := stringAppendList({"{ rec(elementvisibility=", visibility, ", ", element_str, ") }"});
+    elements_strl := element_str :: elements_strl;
+  end for;
+
+  elements_strl := Dangerous.listReverseInPlace(elements_strl);
+  result := stringDelimitList(elements_strl, ",\n");
+
+  if not listEmpty(elements) then
+    result := result + "\n";
+  end if;
 end constructElementsInfo;
 
 protected function appendNonEmptyStrings
@@ -4505,26 +3246,21 @@ protected function appendNonEmptyStrings
    input: \"\", \"\", \",\" => \"\"
           \"some\", \"\", \",\" => \"some\"
           \"some\", \"some\", \",\" => \"some, some\""
-  input String inString1;
-  input String inString2;
-  input String inString3;
+  input String str1;
+  input String str2;
+  input String delim;
   output String outString;
 algorithm
-  outString:=
-  match (inString1,inString2,inString3)
-    local String s1,s2,str,delimiter;
-    case ("","",_) then "";
-    case (s1,"",_) then s1;
-    case ("",s2,_) then s2;
-    case (s1,s2,delimiter)
-      equation
-        str = stringAppendList({s1,delimiter,s2});
-      then
-        str;
-  end match;
+  if stringEmpty(str1) then
+    outString := str2;
+  elseif stringEmpty(str2) then
+    outString := str1;
+  else
+    outString := stringAppendList({str1, delim, str2});
+  end if;
 end appendNonEmptyStrings;
 
-protected function getElementsInfo
+public function getElementsInfo
 " author: adrpo@ida
    date  : 2005-11-11, changed 2006-02-06 to mirror the new SOURCEINFO
    Retrieves the Info attribute of an element.
@@ -4532,57 +3268,28 @@ protected function getElementsInfo
     -> file name + readonly + start lineno + start columnno + end lineno + end columnno is added to the Element
    and to the Class definition, see SourceInfo.
    This function retrieves the Info contents of the elements of a class."
-  input Absyn.ComponentRef inComponentRef;
-  input Absyn.Program inProgram;
-  output String outString;
+  input Absyn.Path classPath;
+  input Absyn.Program program;
+  output Values.Value result;
+protected
+  String result_str, public_str, protected_str;
+  Absyn.Class cls;
+  list<Absyn.ClassPart> parts;
+  list<Absyn.ElementItem> public_elems, protected_elems;
 algorithm
-  outString:=
-  matchcontinue (inComponentRef,inProgram)
-    local
-      Absyn.Path modelpath;
-      String i,public_str,protected_str,elements_str,str;
-      Boolean f,e;
-      Absyn.Restriction r;
-      list<Absyn.ClassPart> parts;
-      list<Absyn.ElementItem> public_elementitem_list,protected_elementitem_list;
-      Absyn.ComponentRef model_;
-      Absyn.Program p;
-    /* a class with parts */
-    case (model_,p)
-      equation
-        modelpath = AbsynUtil.crefToPath(model_);
-        Absyn.CLASS(_,_,_,_,_,Absyn.PARTS(classParts=parts),_) = InteractiveUtil.getPathedClassInProgram(modelpath, p);
-        public_elementitem_list = InteractiveUtil.getPublicList(parts);
-        protected_elementitem_list = InteractiveUtil.getProtectedList(parts);
-        public_str = constructElementsInfo("public", public_elementitem_list);
-        protected_str = constructElementsInfo("protected", protected_elementitem_list);
-        elements_str = appendNonEmptyStrings(public_str, protected_str, ", ");
-        str = stringAppendList({"{ ",elements_str," }"});
-      then
-        str;
-    /* an extended class with parts: model extends M end M; */
-    case (model_,p)
-      equation
-        modelpath = AbsynUtil.crefToPath(model_);
-        Absyn.CLASS(_,_,_,_,_,Absyn.CLASS_EXTENDS(parts=parts),_) = InteractiveUtil.getPathedClassInProgram(modelpath, p);
-        public_elementitem_list = InteractiveUtil.getPublicList(parts);
-        protected_elementitem_list = InteractiveUtil.getProtectedList(parts);
-        public_str = constructElementsInfo("public", public_elementitem_list);
-        protected_str = constructElementsInfo("protected", protected_elementitem_list);
-        elements_str = appendNonEmptyStrings(public_str, protected_str, ", ");
-        str = stringAppendList({"{ ",elements_str," }"});
-      then
-        str;
-    /* otherwise */
-    case (model_,p)
-      equation
-        modelpath = AbsynUtil.crefToPath(model_);
-        Absyn.CLASS(_,_,_,_,_,_,_) = InteractiveUtil.getPathedClassInProgram(modelpath, p) "there are no elements in DERIVED, ENUMERATION, OVERLOAD, CLASS_EXTENDS and PDER
-        maybe later we can give info about that also" ;
-      then
-        "{ }";
-    else "Error";
-  end matchcontinue;
+  try
+    cls := InteractiveUtil.getPathedClassInProgram(classPath, program);
+    parts := AbsynUtil.getClassPartsInClass(cls);
+    public_str := constructElementsInfo("public", InteractiveUtil.getPublicList(parts));
+    protected_str := constructElementsInfo("protected", InteractiveUtil.getProtectedList(parts));
+    result_str := appendNonEmptyStrings(public_str, protected_str, ", ");
+    result_str := stringAppendList({"{ ", result_str, " }"});
+  else
+    result_str := "Error";
+  end try;
+
+  // getElementsInfo uses a format that can't be represented as a Value, fake it with a CodeType.
+  result := ValuesUtil.makeCodeTypeNameStr(result_str);
 end getElementsInfo;
 
 public function getSourceFile
@@ -4830,6 +3537,7 @@ end removeExtendsModifiersInElement;
 public function mkFullyQual
   input GraphicEnvCache env;
   input Absyn.Path ipath;
+  input Boolean failOnError = false;
   output FCore.Cache ocache;
   output Absyn.Path opath;
 protected
@@ -4839,91 +3547,53 @@ algorithm
   if Flags.isSet(Flags.NF_API) then
     ocache := cacheFromGraphicEnvCache(env);
     (program, cpath) := cacheProgramAndPath(env);
-    opath := NFApi.mkFullyQual(program, cpath, ipath);
+    opath := NFApi.mkFullyQual(program, cpath, ipath, failOnError);
   else
     (ocache, opath) := Inst.makeFullyQualified(cacheFromGraphicEnvCache(env), envFromGraphicEnvCache(env), ipath);
   end if;
 end mkFullyQual;
 
-protected function getExtendsModifierValue
+public function getExtendsModifierValue
 " Return the submodifier value of an extends clause
    for instance,
    model test extends A(p1=3,p2(z=3));end test;
-   getExtendsModifierValue(test,A,p1) => =3
-   inputs:  (Absyn.ComponentRef, /* class */
-               Absyn.ComponentRef, /* ident */
-               Absyn.ComponentRef, /* subident */
-               Absyn.Program)
-   outputs:  string"
-  input Absyn.ComponentRef classRef;
-  input Absyn.ComponentRef extendsRef;
-  input Absyn.ComponentRef varRef;
+   getExtendsModifierValue(test,A,p1) => 3"
+  input Absyn.Path classPath;
+  input Absyn.Path extendsPath;
+  input Absyn.Path modifierPath;
   input Absyn.Program program;
-  output String valueStr;
+  output Values.Value result;
 protected
-  Absyn.Path cls_path, name;
-  Absyn.Class cls;
-  list<Absyn.ElementArg> args;
-  GraphicEnvCache env;
-  list<Absyn.ElementSpec> exts;
+  list<Absyn.ElementArg> ext_mod;
 algorithm
   try
-    cls_path := AbsynUtil.crefToPath(classRef);
-    name := AbsynUtil.crefToPath(extendsRef);
-    cls := InteractiveUtil.getPathedClassInProgram(cls_path, program);
-    env := getClassEnv(program, cls_path);
-    exts := list(makeExtendsFullyQualified(e, env) for e in InteractiveUtil.getExtendsElementspecInClass(cls));
-    {Absyn.EXTENDS(elementArg = args)} := List.select1(exts, extendsElementspecNamed, name);
-    valueStr := Dump.printExpStr(getModificationValue(args, AbsynUtil.crefToPath(varRef)));
+    SOME(Absyn.EXTENDS(elementArg = ext_mod)) :=
+      InteractiveUtil.getPathedExtendsInProgram(classPath, extendsPath, program);
+    result := ValuesUtil.makeCodeTypeNameStr(Dump.printExpStr(getModificationValue(ext_mod, modifierPath)));
   else
-    valueStr := "";
+    result := ValuesUtil.makeCodeTypeNameStr("");
   end try;
 end getExtendsModifierValue;
 
-protected function isExtendsModifierFinal
-" Return true if the modifier of an extends clause has final prefix.
-   for instance,
-   model test extends A(final p1=3);end test;
-   isExtendsModifierFinal(test,A,p1) => true
-   inputs:  (Absyn.ComponentRef, /* class */
-               Absyn.ComponentRef, /* ident */
-               Absyn.ComponentRef, /* subident */
-               Absyn.Program)
-   outputs:  boolean"
-  input Absyn.ComponentRef inComponentRef1;
-  input Absyn.ComponentRef inComponentRef2;
-  input Absyn.ComponentRef inComponentRef3;
-  input Absyn.Program inProgram4;
-  output String outString;
+public function isExtendsModifierFinal
+  "Returns true if the given modifier on an extends clause is final, for instance:
+     model test extends A(final p1 = 3); end test;
+     isExtendsModifierFinal(test, A, p1) => true"
+  input Absyn.Path classPath;
+  input Absyn.Path extendsPath;
+  input Absyn.Path modifierPath;
+  input Absyn.Program program;
+  output Values.Value result;
+protected
+  list<Absyn.ElementArg> ext_mod;
 algorithm
-  outString:=
-  matchcontinue (inComponentRef1,inComponentRef2,inComponentRef3,inProgram4)
-    local
-      Absyn.Path p_class,name,extpath;
-      Absyn.Class cdef;
-      GraphicEnvCache env;
-      list<Absyn.ElementSpec> exts,exts_1;
-      list<Absyn.ElementArg> extmod;
-      Absyn.Modification mod;
-      String res;
-      Boolean finalPrefix;
-      Absyn.ComponentRef class_,inherit_name,subident;
-      Absyn.Program p;
-    case (class_,inherit_name,subident,p)
-      equation
-        p_class = AbsynUtil.crefToPath(class_);
-        name = AbsynUtil.crefToPath(inherit_name);
-        cdef = InteractiveUtil.getPathedClassInProgram(p_class, p);
-        env = getClassEnv(p, p_class);
-        exts = InteractiveUtil.getExtendsElementspecInClass(cdef);
-        exts_1 = List.map1(exts, makeExtendsFullyQualified, env);
-        {Absyn.EXTENDS(_,extmod,_)} = List.select1(exts_1, extendsElementspecNamed, name);
-        finalPrefix = isModifierfinal(extmod, AbsynUtil.crefToPath(subident));
-        res = boolString(finalPrefix);
-      then
-        res;
-    else "Error";
-  end matchcontinue;
+  try
+    SOME(Absyn.EXTENDS(elementArg = ext_mod)) :=
+      InteractiveUtil.getPathedExtendsInProgram(classPath, extendsPath, program);
+    result := ValuesUtil.makeBoolean(isModifierfinal(ext_mod, modifierPath));
+  else
+    result := ValuesUtil.makeBoolean(false);
+  end try;
 end isExtendsModifierFinal;
 
 public function isModifierfinal
@@ -4959,7 +3629,7 @@ algorithm
   end match;
 end isModifierfinal;
 
-protected function makeExtendsFullyQualified
+function makeExtendsFullyQualified
 " Makes an EXTENDS ElementSpec having a
    fully qualified extends path."
   input Absyn.ElementSpec inElementSpec;
@@ -4981,106 +3651,6 @@ algorithm
         Absyn.EXTENDS(path_1,earg,annOpt);
   end match;
 end makeExtendsFullyQualified;
-
-protected function getExtendsModifierNames
-" Return the modifier names of a
-   modification on an extends clause.
-   For instance,
-     model test extends A(p1=3,p2(z=3));end test;
-     getExtendsModifierNames(test,A) => {p1,p2.z}
-   inputs:  (Absyn.ComponentRef, /* class */
-               Absyn.ComponentRef, /* inherited class */
-               Absyn.Program)
-   outputs: (string)"
-  input Absyn.ComponentRef inComponentRef1;
-  input Absyn.ComponentRef inComponentRef2;
-  input Boolean inBoolean;
-  input Absyn.Program inProgram3;
-  output String outString;
-algorithm
-  outString:=
-  matchcontinue (inComponentRef1,inComponentRef2,inBoolean,inProgram3)
-    local
-      Absyn.Path p_class,name,extpath;
-      Absyn.Class cdef;
-      list<Absyn.ElementSpec> exts,exts_1;
-      GraphicEnvCache env;
-      list<Absyn.ElementArg> extmod;
-      list<String> res,res1;
-      String res_1,res_2;
-      Boolean b;
-      Absyn.ComponentRef class_,inherit_name;
-      Absyn.Program p;
-    case (class_,inherit_name,b,p)
-      equation
-        p_class = AbsynUtil.crefToPath(class_);
-        name = AbsynUtil.crefToPath(inherit_name);
-        cdef = InteractiveUtil.getPathedClassInProgram(p_class, p);
-        exts = InteractiveUtil.getExtendsElementspecInClass(cdef);
-        if hasModifiers(exts) then
-          env = getClassEnv(p, p_class);
-          exts_1 = List.map1(exts, makeExtendsFullyQualified, env);
-          {Absyn.EXTENDS(_,extmod,_)} = List.select1(exts_1, extendsElementspecNamed, name);
-          res = getModificationNames(extmod);
-          res1 = if b then insertQuotesToList(res) else res;
-          res_1 = stringDelimitList(res1, ", ");
-        else
-          res_1 = "";
-        end if;
-        res_2 = stringAppendList({"{",res_1,"}"});
-      then
-        res_2;
-    else "Error";
-  end matchcontinue;
-end getExtendsModifierNames;
-
-function hasModifiers
-  input list<Absyn.ElementSpec> exts;
-  output Boolean b = false;
-protected
-   Absyn.ElementSpec ext;
-algorithm
-  for e in exts loop
-    b := match e
-      case ext as Absyn.EXTENDS() then not listEmpty(ext.elementArg);
-      else false;
-    end match;
-    if b then
-      break;
-    end if;
-  end for;
-end hasModifiers;
-
-protected function extendsElementspecNamed
-"the name given as path, false otherwise."
-  input Absyn.ElementSpec inElementSpec;
-  input Absyn.Path inPath;
-  output Boolean outBoolean;
-algorithm
-  outBoolean:=
-  match (inElementSpec,inPath)
-    local
-      Boolean res;
-      Absyn.Path extpath,path;
-    case (Absyn.EXTENDS(path = extpath),path)
-      equation
-        res = AbsynUtil.pathEqual(path, extpath);
-      then
-        res;
-  end match;
-end extendsElementspecNamed;
-
-protected function extendsName
-"Return the class name of an EXTENDS element spec."
-  input Absyn.ElementSpec inElementSpec;
-  output Absyn.Path outPath;
-algorithm
-  outPath:=
-  match (inElementSpec)
-    local Absyn.Path path;
-    case (Absyn.EXTENDS(path = path)) then path;
-  end match;
-end extendsName;
 
 public function removeComponentModifiers
   "Removes all the modifiers of a component."
@@ -5190,7 +3760,7 @@ algorithm
         p_class = AbsynUtil.crefToPath(class_);
         Absyn.IDENT(name) = AbsynUtil.crefToPath(ident);
         cdef = InteractiveUtil.getPathedClassInProgram(p_class, p);
-        comps = getComponentsInClass(cdef);
+        comps = InteractiveUtil.getComponentsInClass(cdef);
         compelts = List.map(comps, InteractiveUtil.getComponentitemsInElement);
         compelts_1 = List.flatten(compelts);
         {Absyn.COMPONENTITEM(component=Absyn.COMPONENT(modification=SOME(Absyn.CLASSMOD(elementArgLst=elementArgLst))))} = List.select1(compelts_1, InteractiveUtil.componentitemNamed, name);
@@ -5256,7 +3826,7 @@ algorithm
     case (_,_,p)
       equation
         cdef = InteractiveUtil.getPathedClassInProgram(path, p);
-        comps = getComponentsInClass(cdef);
+        comps = InteractiveUtil.getComponentsInClass(cdef);
         compelts = List.map(comps, InteractiveUtil.getComponentitemsInElement);
         compelts_1 = List.flatten(compelts);
         {Absyn.COMPONENTITEM(Absyn.COMPONENT(_,_,SOME(Absyn.CLASSMOD(mod,_))),_,_)} = List.select1(compelts_1, InteractiveUtil.componentitemNamed, inComponentName);
@@ -5343,257 +3913,6 @@ algorithm
   end try;
 end getComponentBinding;
 
-protected function setParameterValue
-" Sets the parameter value of a class and returns the updated program.
-   inputs:  (Absyn.ComponentRef, /* class */
-               Absyn.ComponentRef, /* ident */
-               Absyn.Exp,          /* exp */
-               Absyn.Program)
-   outputs: (Absyn.Program,string)"
-  input Absyn.ComponentRef inComponentRefClass;
-  input Absyn.ComponentRef inComponentRefComponentName;
-  input Absyn.Exp inBindingExp;
-  input Absyn.Program inFullProgram;
-  output Absyn.Program outProgram;
-  output String outString;
-algorithm
-  (outProgram,outString) := matchcontinue (inComponentRefClass,inComponentRefComponentName,inBindingExp,inFullProgram)
-    local
-      Absyn.Path p_class;
-      String varname, str;
-      Absyn.Within within_;
-      Absyn.Class cdef,cdef_1;
-      Absyn.Program newp,p;
-      Absyn.ComponentRef class_,name;
-      Absyn.Exp exp;
-      Boolean b;
-
-    case (class_,name,exp,p as Absyn.PROGRAM())
-      equation
-        p_class = AbsynUtil.crefToPath(class_);
-        Absyn.IDENT(varname) = AbsynUtil.crefToPath(name);
-        within_ = InteractiveUtil.buildWithin(p_class);
-        cdef = InteractiveUtil.getPathedClassInProgram(p_class, p);
-        (cdef_1, b) = setVariableBindingInClass(cdef, varname, exp);
-        newp = InteractiveUtil.updateProgram(Absyn.PROGRAM({cdef_1},within_), p);
-        str = if b then "Ok" else ("Error: component with name: " + varname + " in class: " + AbsynUtil.pathString(p_class) + " not found.");
-      then
-        (newp,str);
-
-    case (class_,name,_,p as Absyn.PROGRAM())
-      equation
-        p_class = AbsynUtil.crefToPath(class_);
-        Absyn.IDENT(_) = AbsynUtil.crefToPath(name);
-        failure(_ = InteractiveUtil.getPathedClassInProgram(p_class, p));
-        str = "Error: class: " + AbsynUtil.pathString(p_class) + " not found.";
-      then
-        (p,str);
-
-    else (inFullProgram,"Error");
-  end matchcontinue;
-end setParameterValue;
-
-protected function setVariableBindingInClass
-" Takes a class and an identifier and value an
-   sets the variable binding to the passed expression."
-  input Absyn.Class inClass;
-  input Absyn.Ident inIdent;
-  input Absyn.Exp inExp;
-  output Absyn.Class outClass;
-  output Boolean outChangeMade;
-algorithm
-  (outClass, outChangeMade) := match (inClass,inIdent,inExp)
-    local
-      list<Absyn.ClassPart> parts_1,parts;
-      String id,id2,bcname;
-      Boolean p,f,e;
-      Absyn.Restriction r;
-      Option<String> cmt;
-      SourceInfo file_info;
-      Absyn.Exp exp;
-      list<Absyn.ElementArg> modif;
-      list<String> typeVars;
-      list<Absyn.NamedArg> classAttrs;
-      Boolean b;
-      list<Absyn.Annotation> ann;
-
-    // a class with parts
-    case (outClass as Absyn.CLASS(name = id,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
-                      body = Absyn.PARTS(typeVars = typeVars,classAttrs = classAttrs,classParts = parts,ann = ann,comment = cmt),info = file_info),
-          id2,exp)
-      equation
-        (parts_1, b) = setVariableBindingInClassparts(parts, id2, exp);
-        outClass.body = Absyn.PARTS(typeVars,classAttrs,parts_1,ann,cmt);
-      then
-        (outClass, b);
-
-    // adrpo: handle also model extends M end M;
-    case (outClass as Absyn.CLASS(name = id,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
-                      body = Absyn.CLASS_EXTENDS(baseClassName=bcname,modifications=modif,parts = parts,ann = ann,comment = cmt),info = file_info),
-          id2,exp)
-      equation
-        (parts_1,b) = setVariableBindingInClassparts(parts, id2, exp);
-        outClass.body = Absyn.CLASS_EXTENDS(bcname,modif,cmt,parts_1,ann);
-      then (outClass,b);
-  end match;
-end setVariableBindingInClass;
-
-protected function setVariableBindingInClassparts
-" Sets a binding of a variable in a ClassPart
-   list, named by the passed argument."
-  input list<Absyn.ClassPart> inAbsynClassPartLst;
-  input Absyn.Ident inIdent;
-  input Absyn.Exp inExp;
-  output list<Absyn.ClassPart> outAbsynClassPartLst;
-  output Boolean outChangeMade;
-algorithm
-  (outAbsynClassPartLst, outChangeMade) := matchcontinue (inAbsynClassPartLst,inIdent,inExp)
-    local
-      list<Absyn.ClassPart> res,rest;
-      list<Absyn.ElementItem> elts_1,elts;
-      String id;
-      Absyn.Exp exp;
-      Absyn.ClassPart elt;
-      Boolean b1, b2, b;
-
-    case ({},_,_) then ({}, false);
-
-    case ((Absyn.PUBLIC(contents = elts) :: rest),id,exp)
-      equation
-        (res, b1) = setVariableBindingInClassparts(rest, id, exp);
-        (elts_1, b2) = setVariableBindingInElementitems(elts, id, exp);
-        b = boolOr(b1, b2);
-      then
-        (Absyn.PUBLIC(elts_1) :: res, b);
-
-    case ((Absyn.PROTECTED(contents = elts) :: rest),id,exp)
-      equation
-        (res, b1) = setVariableBindingInClassparts(rest, id, exp);
-        (elts_1, b2) = setVariableBindingInElementitems(elts, id, exp);
-        b = boolOr(b1, b2);
-      then
-        (Absyn.PROTECTED(elts_1) :: res, b);
-
-    case ((elt :: rest),id,exp)
-      equation
-        (res, b) = setVariableBindingInClassparts(rest, id, exp);
-      then
-        (elt :: res, b);
-  end matchcontinue;
-end setVariableBindingInClassparts;
-
-protected function setVariableBindingInElementitems
-" Sets a variable binding in a list of ElementItems"
-  input list<Absyn.ElementItem> inAbsynElementItemLst;
-  input Absyn.Ident inIdent;
-  input Absyn.Exp inExp;
-  output list<Absyn.ElementItem> outAbsynElementItemLst;
-  output Boolean outChangeMade;
-algorithm
-  (outAbsynElementItemLst, outChangeMade) :=
-  matchcontinue (inAbsynElementItemLst,inIdent,inExp)
-    local
-      list<Absyn.ElementItem> res,rest;
-      Absyn.Element elt_1,elt;
-      String id;
-      Absyn.Exp exp;
-      Absyn.ElementItem elitem;
-      Boolean b1, b2, b;
-
-    case ({},_,_) then ({}, false);
-
-    case ((Absyn.ELEMENTITEM(element = elt) :: rest),id,exp)
-      equation
-        (res, b1) = setVariableBindingInElementitems(rest, id, exp);
-        (elt_1, b2) = setVariableBindingInElement(elt, id, exp);
-        b = boolOr(b1, b2);
-      then
-        (Absyn.ELEMENTITEM(elt_1) :: res, b);
-
-    case ((elitem :: rest),id,exp)
-      equation
-        (res, b) = setVariableBindingInElementitems(rest, id, exp);
-      then
-        (elitem :: res, b);
-  end matchcontinue;
-end setVariableBindingInElementitems;
-
-protected function setVariableBindingInElement
-" Sets a variable binding in an Element."
-  input Absyn.Element inElement;
-  input Absyn.Ident inIdent;
-  input Absyn.Exp inExp;
-  output Absyn.Element outElement;
-  output Boolean outChangeMade;
-algorithm
-  (outElement, outChangeMade) :=
-  matchcontinue (inElement,inIdent,inExp)
-    local
-      list<Absyn.ComponentItem> compitems_1,compitems;
-      Boolean f,b;
-      Option<Absyn.RedeclareKeywords> r;
-      Absyn.InnerOuter i;
-      String id;
-      Absyn.ElementAttributes attr;
-      Absyn.TypeSpec tp;
-      SourceInfo info;
-      Option<Absyn.ConstrainClass> constr;
-      Absyn.Exp exp;
-      Absyn.Element elt;
-
-    case (Absyn.ELEMENT(finalPrefix = f,redeclareKeywords = r,innerOuter = i,specification = Absyn.COMPONENTS(attributes = attr,typeSpec = tp,components = compitems),info = info,constrainClass = constr),id,exp)
-      equation
-        (compitems_1, b) = setVariableBindingInCompitems(compitems, id, exp);
-      then
-        (Absyn.ELEMENT(f,r,i,Absyn.COMPONENTS(attr,tp,compitems_1),info,constr), b);
-
-    else (inElement, false);
-  end matchcontinue;
-end setVariableBindingInElement;
-
-protected function setVariableBindingInCompitems
-" Sets a variable binding in a ComponentItem list
-   and returns true if it found it"
-  input list<Absyn.ComponentItem> inAbsynComponentItemLst;
-  input Absyn.Ident inIdent;
-  input Absyn.Exp inExp;
-  output list<Absyn.ComponentItem> outAbsynComponentItemLst;
-  output Boolean outChangeMade;
-algorithm
-  (outAbsynComponentItemLst,outChangeMade) := match (inAbsynComponentItemLst,inIdent,inExp)
-    local
-      String id,id2;
-      list<Absyn.Subscript> dim;
-      list<Absyn.ElementArg> arg;
-      Option<Absyn.Exp> cond;
-      Option<Absyn.Comment> cmt;
-      list<Absyn.ComponentItem> rest,res;
-      Absyn.Exp exp;
-      Absyn.ComponentItem item;
-      Boolean b;
-
-    case ({},_,_) then ({}, false);
-
-    case ((Absyn.COMPONENTITEM(component = Absyn.COMPONENT(name = id,arrayDim = dim,modification = SOME(Absyn.CLASSMOD(arg,_))),condition = cond,comment = cmt) :: rest),id2,exp)
-      guard
-        stringEq(id, id2)
-      then
-        ((Absyn.COMPONENTITEM(Absyn.COMPONENT(id,dim,SOME(Absyn.CLASSMOD(arg,Absyn.EQMOD(exp,AbsynUtil.dummyInfo)))),cond,cmt) :: rest), true);
-
-    case ((Absyn.COMPONENTITEM(component = Absyn.COMPONENT(name = id,arrayDim = dim,modification = NONE()),condition = cond,comment = cmt) :: rest),id2,exp)
-      guard
-        stringEq(id, id2)
-      then
-        ((Absyn.COMPONENTITEM(Absyn.COMPONENT(id,dim,SOME(Absyn.CLASSMOD({},Absyn.EQMOD(exp,AbsynUtil.dummyInfo)))),cond,cmt) :: rest), true);
-
-    case (item :: rest,id,exp)
-      equation
-        (res, b) = setVariableBindingInCompitems(rest, id, exp);
-      then
-        (item :: res, b);
-  end match;
-end setVariableBindingInCompitems;
-
 protected function getComponentitemName
 " Returns the name of a ComponentItem"
   input Absyn.ComponentItem inComponentItem;
@@ -5605,66 +3924,37 @@ algorithm
   end match;
 end getComponentitemName;
 
-protected function renameClass
-" This function renames a class (given as a qualified path name) to a
+public function renameClass
+  "This function renames a class (given as a qualified path name) to a
    new name -in the same scope-. All references to the class name in the
-   program is updated to the new name. Thefunction does not allow a
-   renaming that will move the class to antoher package. To do this, the
-   class must be copied.
-   inputs:  (Absyn.Program,
-               Absyn.ComponentRef, /* old class as qualified name A.B.C */
-               Absyn.ComponentRef) /* new class, as identifier D */
-   outputs:  Absyn.Program"
-  input Absyn.Program inProgram1;
-  input Absyn.ComponentRef inComponentRef2;
-  input Absyn.ComponentRef inComponentRef3;
-  output String outString;
-  output Absyn.Program outProgram;
+   program is updated to the new name. The function does not allow a
+   renaming that will move the class to another package. To do this, the
+   class must be copied."
+  input Absyn.Path oldName;
+  input Absyn.Path newName;
+  input output Absyn.Program program;
+        output Values.Value result;
+protected
+  FCore.Graph env;
+  Absyn.Path new_name;
+  list<Absyn.Path> paths;
 algorithm
-  (outString,outProgram) := matchcontinue (inProgram1,inComponentRef2,inComponentRef3)
-    local
-      Absyn.Path new_path,old_path,new_path_1,old_path_no_last;
-      String tmp_str,path_str_lst_no_empty,res;
-      Absyn.Program p,p_1;
-      Absyn.ComponentRef old_class,new_name;
-      list<SCode.Element> pa_1;
-      FCore.Graph env;
-      list<String> path_str_lst;
-    case (p,_,(new_name as Absyn.CREF_QUAL()))
-      equation
-        new_path = AbsynUtil.crefToPath(new_name) "class in package" ;
-        tmp_str = AbsynUtil.pathString(new_path);
-        print(tmp_str);
-        print("\n") "the path is qualified so it cannot be renamed" ;
-      then
-        ("error",p);
-    case (p,(old_class as Absyn.CREF_IDENT()),new_name)
-      equation
-        old_path = AbsynUtil.crefToPath(old_class) "class in package" ;
-        new_path = AbsynUtil.crefToPath(new_name);
-        pa_1 = AbsynToSCode.translateAbsyn2SCode(p);
-        (_,env) = Inst.makeEnvFromProgram(pa_1);
-        ((p_1,_,(_,_,_,path_str_lst,_))) = AbsynUtil.traverseClasses(p, NONE(), renameClassVisitor, (old_path,new_path,p,{},env),
-          true) "traverse protected" ;
-        path_str_lst_no_empty = Util.stringDelimitListNonEmptyElts(path_str_lst, ",");
-        res = stringAppendList({"{",path_str_lst_no_empty,"}"});
-      then
-        (res,p_1);
-    case (p,(old_class as Absyn.CREF_QUAL()),new_name)
-      equation
-        old_path = AbsynUtil.crefToPath(old_class) "class in package" ;
-        new_path_1 = AbsynUtil.crefToPath(new_name);
-        old_path_no_last = AbsynUtil.stripLast(old_path);
-        new_path = AbsynUtil.joinPaths(old_path_no_last, new_path_1);
-        pa_1 = AbsynToSCode.translateAbsyn2SCode(p);
-        (_,env) = Inst.makeEnvFromProgram(pa_1);
-        ((p_1,_,(_,_,_,path_str_lst,_))) = AbsynUtil.traverseClasses(p,NONE(), renameClassVisitor, (old_path,new_path,p,{},env),
-          true) "traverse protected" ;
-        path_str_lst_no_empty = Util.stringDelimitListNonEmptyElts(path_str_lst, ",");
-        res = stringAppendList({"{",path_str_lst_no_empty,"}"});
-      then
-        (res,p_1);
-  end matchcontinue;
+  if AbsynUtil.pathIsQual(newName) then
+    result := ValuesUtil.makeBoolean(false);
+  end if;
+
+  if AbsynUtil.pathIsQual(oldName) then
+    new_name := AbsynUtil.joinPaths(AbsynUtil.stripLast(oldName), newName);
+  else
+    new_name := newName;
+  end if;
+
+  // For now, renaming a class clears all caches...
+  // Substantial analysis required to find out what to keep in cache and what must be thrown out
+  (_, env) := Inst.makeEnvFromProgram(SymbolTable.getSCode());
+  ((program, _, (_, _, _, paths, _))) :=
+    AbsynUtil.traverseClasses(program, NONE(), renameClassVisitor, (oldName, new_name, program, {}, env), true);
+  result := ValuesUtil.makeCodeTypeNameArray(paths);
 end renameClass;
 
 protected function renameClassVisitor
@@ -5672,341 +3962,276 @@ protected function renameClassVisitor
    It returns a list of strings of renamed classes.
    The 'traversal-tuple' is therefore
    tuple<oldname, newname, program, string list, env>."
-  input tuple<Absyn.Class, Option<Absyn.Path>, tuple<Absyn.Path, Absyn.Path, Absyn.Program, list<String>, FCore.Graph>> inTplAbsynClassAbsynPathOptionTplAbsynPathAbsynPathAbsynProgramStringLstEnvEnv;
-  output tuple<Absyn.Class, Option<Absyn.Path>, tuple<Absyn.Path, Absyn.Path, Absyn.Program, list<String>, FCore.Graph>> outTplAbsynClassAbsynPathOptionTplAbsynPathAbsynPathAbsynProgramStringLstEnvEnv;
+  input output tuple<Absyn.Class, Option<Absyn.Path>, tuple<Absyn.Path, Absyn.Path, Absyn.Program, list<Absyn.Path>, FCore.Graph>> tup;
 algorithm
-  outTplAbsynClassAbsynPathOptionTplAbsynPathAbsynPathAbsynProgramStringLstEnvEnv:=
-  matchcontinue (inTplAbsynClassAbsynPathOptionTplAbsynPathAbsynPathAbsynProgramStringLstEnvEnv)
+  tup := matchcontinue tup
     local
       Absyn.Path path_1,pa,old_class_path,new_class_path;
-      String new_name,path_str,id,path_str_1;
-      Boolean a,b,c,changed;
-      Absyn.Restriction d;
-      Absyn.ClassDef e;
+      String new_name,id;
+      Boolean changed;
       SourceInfo file_info;
       Absyn.Program p;
-      list<String> path_str_lst;
+      list<Absyn.Path> path_lst;
       FCore.Graph env,cenv;
       Absyn.Class class_1,class_;
-      tuple<Absyn.Path, Absyn.Path, Absyn.Program, list<String>, FCore.Graph> args;
-      Option<Absyn.Path> opath;
+      tuple<Absyn.Path, Absyn.Path, Absyn.Program, list<Absyn.Path>, FCore.Graph> args;
 
     // Skip readonly classes.
-    case ((class_ as Absyn.CLASS(info = file_info),opath,args))
-      equation
-        true = isReadOnly(file_info);
-      then
-        ((class_,opath,args));
+    case ((class_ as Absyn.CLASS(info = file_info), _, _))
+      guard isReadOnly(file_info)
+      then tup;
 
-    case ((class_ as Absyn.CLASS(name = id),SOME(pa),(old_class_path,new_class_path,p,path_str_lst,env)))
-      equation
-        path_1 = AbsynUtil.joinPaths(pa, Absyn.IDENT(id));
-        true = AbsynUtil.pathEqual(old_class_path, path_1);
-        new_name = AbsynUtil.pathLastIdent(new_class_path);
-        path_str = AbsynUtil.pathString(new_class_path);
-        class_.name = new_name;
+    case ((class_ as Absyn.CLASS(name = id), SOME(pa), (old_class_path,new_class_path,p,path_lst,env)))
+      algorithm
+        path_1 := AbsynUtil.joinPaths(pa, Absyn.IDENT(id));
+        true := AbsynUtil.pathEqual(old_class_path, path_1);
+        new_name := AbsynUtil.pathLastIdent(new_class_path);
+        class_.name := new_name;
       then
-        ((class_,SOME(pa),
-          (old_class_path,new_class_path,p,(path_str :: path_str_lst),
-          env)));
+        ((class_,SOME(pa), (old_class_path,new_class_path,p, new_class_path :: path_lst, env)));
 
-    case ((class_ as Absyn.CLASS(name = id),NONE(),(old_class_path,new_class_path,p,path_str_lst,env)))
-      equation
-        path_1 = Absyn.IDENT(id);
-        true = AbsynUtil.pathEqual(old_class_path, path_1);
-        new_name = AbsynUtil.pathLastIdent(new_class_path);
-        path_str = AbsynUtil.pathString(new_class_path);
-        class_.name = new_name;
+    case ((class_ as Absyn.CLASS(name = id), NONE(), (old_class_path,new_class_path,p,path_lst,env)))
+      algorithm
+        path_1 := Absyn.IDENT(id);
+        true := AbsynUtil.pathEqual(old_class_path, path_1);
+        new_name := AbsynUtil.pathLastIdent(new_class_path);
+        class_.name := new_name;
       then
-        ((class_,NONE(),
-          (old_class_path,new_class_path,p,(path_str :: path_str_lst),
-          env)));
+        ((class_,NONE(), (old_class_path,new_class_path,p, new_class_path :: path_lst, env)));
 
-    case (((class_ as Absyn.CLASS(name = id)),SOME(pa),(old_class_path,new_class_path,p,path_str_lst,env)))
-      equation
-        path_1 = AbsynUtil.joinPaths(pa, Absyn.IDENT(id));
-        cenv = getClassEnvNoElaboration(p, path_1, env) "get_class_env(p,path\') => cenv &" ;
-        (class_1,changed) = renameClassInClass(class_, old_class_path, new_class_path, cenv);
-        path_str = if changed then AbsynUtil.pathString(path_1) else "";
-      then
-        ((class_1,SOME(pa),
-          (old_class_path,new_class_path,p,(path_str :: path_str_lst),
-          env)));
+    case (((class_ as Absyn.CLASS(name = id)), SOME(pa), (old_class_path,new_class_path,p,path_lst,env)))
+      algorithm
+        path_1 := AbsynUtil.joinPaths(pa, Absyn.IDENT(id));
+        cenv := getClassEnvNoElaboration(p, path_1, env) "get_class_env(p,path\') => cenv &" ;
+        (class_1,changed) := renameClassInClass(class_, old_class_path, new_class_path, cenv);
 
-    case (((class_ as Absyn.CLASS(name = id)),NONE(),(old_class_path,new_class_path,p,path_str_lst,env)))
-      equation
-        path_1 = Absyn.IDENT(id);
-        cenv = getClassEnvNoElaboration(p, path_1, env) "get_class_env(p,path\') => cenv &" ;
-        (class_1,changed) = renameClassInClass(class_, old_class_path, new_class_path, cenv);
-        path_str = if changed then AbsynUtil.pathString(path_1) else "";
+        if changed then
+          path_lst := path_1 :: path_lst;
+        end if;
       then
-        ((class_1,NONE(),
-          (old_class_path,new_class_path,p,(path_str :: path_str_lst),
-          env)));
+        ((class_1,SOME(pa), (old_class_path,new_class_path,p, path_lst, env)));
 
-    case ((class_,opath,args))
+    case (((class_ as Absyn.CLASS(name = id)), NONE(), (old_class_path,new_class_path,p,path_lst,env)))
+      algorithm
+        path_1 := Absyn.IDENT(id);
+        cenv := getClassEnvNoElaboration(p, path_1, env) "get_class_env(p,path\') => cenv &" ;
+        (class_1,changed) := renameClassInClass(class_, old_class_path, new_class_path, cenv);
+
+        if changed then
+          path_lst := path_1 :: path_lst;
+        end if;
       then
-        ((class_,opath,args));
+        ((class_1,NONE(), (old_class_path,new_class_path,p, path_lst, env)));
+
+    else tup;
   end matchcontinue;
 end renameClassVisitor;
 
 protected function renameClassInClass
-"author: x02lucpo
-  helper function to renameClassVisitor
-  renames all the references to a class to another"
-  input Absyn.Class inClass1;
-  input Absyn.Path inPath2;
-  input Absyn.Path inPath3;
-  input FCore.Graph inEnv4;
-  output Absyn.Class outClass;
-  output Boolean outBoolean;
+  "helper function to renameClassVisitor
+   renames all the references to a class to another"
+  input output Absyn.Class cls;
+  input Absyn.Path oldName;
+  input Absyn.Path newName;
+  input FCore.Graph env;
+        output Boolean changed;
+protected
+  list<Absyn.ClassPart> parts;
+  String name;
+  Absyn.Path path;
+  FCore.Graph cenv;
+  FCore.Cache cache;
+  Absyn.ClassDef body;
+  Absyn.TypeSpec ty;
 algorithm
-  (outClass,outBoolean):=
-  matchcontinue (inClass1,inPath2,inPath3,inEnv4)
-    local
-      list<Absyn.ClassPart> parts_1,parts;
-      Boolean changed,partialPrefix,finalPrefix,encapsulatedPrefix;
-      String name, baseClassName;
-      Absyn.Restriction restriction;
-      Option<String> comment;
-      SourceInfo file_info;
-      Absyn.Path old_comp,new_comp,path_1,path,new_path;
-      FCore.Graph env,cenv;
-      list<Absyn.ElementArg> modifications,elementarg;
-      Option<Absyn.Comment> co;
-      Absyn.Class class_;
-      Option<list<Absyn.Subscript>> subscripts;
-      Absyn.ElementAttributes attrs;
-      FCore.Cache cache;
-      list<String> typeVars;
-      list<Absyn.NamedArg> classAttrs;
-      list<Absyn.Annotation> ann;
+  body := cls.body;
 
-    /* the class with the component the old name for the component signal if something in class have been changed */
-    case (outClass as Absyn.CLASS(name = name,partialPrefix = partialPrefix,finalPrefix = finalPrefix,encapsulatedPrefix = encapsulatedPrefix,restriction = restriction,
-                      body = Absyn.PARTS(typeVars = typeVars,classAttrs = classAttrs,classParts = parts,ann = ann,comment = comment),info = file_info),old_comp,new_comp,env)
-      equation
-        (parts_1,changed) = renameClassInParts(parts, old_comp, new_comp, env);
-        outClass.body = Absyn.PARTS(typeVars,classAttrs,parts_1,ann,comment);
+  changed := matchcontinue body
+    case Absyn.PARTS(classParts = parts)
+      algorithm
+        (parts, changed) := renameClassInParts(parts, oldName, newName, env);
+        body.classParts := parts;
+        cls.body := body;
       then
-        (outClass,changed);
-    /* model extends M end M; */
-    case (outClass as Absyn.CLASS(name = name,partialPrefix = partialPrefix,finalPrefix = finalPrefix,encapsulatedPrefix = encapsulatedPrefix,restriction = restriction,
-                      body = Absyn.CLASS_EXTENDS(baseClassName = baseClassName,modifications = modifications,ann=ann,comment = comment,parts = parts),
-                      info = file_info),old_comp,new_comp,env)
-      equation
-        (parts_1,changed) = renameClassInParts(parts, old_comp, new_comp, env);
-        outClass.body = Absyn.CLASS_EXTENDS(baseClassName,modifications,comment,parts_1,ann);
-      then (outClass,changed);
-    /* a derived class */
-    case (outClass as Absyn.CLASS(name = name,partialPrefix = partialPrefix,finalPrefix = finalPrefix,encapsulatedPrefix = encapsulatedPrefix,restriction = restriction,
-                      body = Absyn.DERIVED(typeSpec=Absyn.TPATH(path_1,subscripts),attributes = attrs,arguments = elementarg,comment = co),
-                      info = file_info),old_comp,new_comp,env)
-      equation
-        (cache,SCode.CLASS(name=name),cenv) = Lookup.lookupClass(FCore.emptyCache(), env, path_1);
-        path_1 = Absyn.IDENT(name);
-        (_,path) = Inst.makeFullyQualified(cache, cenv, path_1);
-        true = AbsynUtil.pathEqual(path, old_comp);
-        new_path = changeLastIdent(path_1, new_comp);
-        outClass.body = Absyn.DERIVED(Absyn.TPATH(new_path,subscripts),attrs,elementarg,co);
-      then
-        (outClass,true);
-    /* otherwise */
-    else (inClass1,false);
+        changed;
 
+    case Absyn.CLASS_EXTENDS(parts = parts)
+      algorithm
+        (parts, changed) := renameClassInParts(parts, oldName, newName, env);
+        body.parts := parts;
+        cls.body := body;
+      then
+        changed;
+
+    case Absyn.DERIVED(typeSpec = ty as Absyn.TPATH())
+      algorithm
+        (cache, SCode.CLASS(name=name),cenv) := Lookup.lookupClass(FCore.emptyCache(), env, ty.path);
+        path := Absyn.IDENT(name);
+        (_, path) := Inst.makeFullyQualified(cache, cenv, path);
+        true := AbsynUtil.pathEqual(path, oldName);
+        ty.path := changeLastIdent(path, newName);
+        body.typeSpec := ty;
+        cls.body := body;
+      then
+        true;
+
+    else false;
   end matchcontinue;
 end renameClassInClass;
 
 protected function renameClassInParts
 "author: x02lucpo
   helper function to renameClassVisitor"
-  input list<Absyn.ClassPart> inAbsynClassPartLst1;
-  input Absyn.Path inPath2;
-  input Absyn.Path inPath3;
-  input FCore.Graph inEnv4;
-  output list<Absyn.ClassPart> outAbsynClassPartLst;
-  output Boolean outBoolean;
+  input list<Absyn.ClassPart> parts;
+  input Absyn.Path oldName;
+  input Absyn.Path newName;
+  input FCore.Graph env;
+  output list<Absyn.ClassPart> outParts = {};
+  output Boolean changed = false;
+protected
+  Boolean c;
+  list<Absyn.ElementItem> elems;
 algorithm
-  (outAbsynClassPartLst,outBoolean):=
-  matchcontinue (inAbsynClassPartLst1,inPath2,inPath3,inEnv4)
-    local
-      FCore.Graph env;
-      list<Absyn.ClassPart> res_1,res;
-      Boolean changed1,changed2,changed;
-      list<Absyn.ElementItem> elements_1,elements;
-      Absyn.Path old_comp,new_comp;
-      Absyn.ClassPart a;
+  for part in parts loop
+    part := match part
+      case Absyn.ClassPart.PUBLIC()
+        algorithm
+          (elems, c) := renameClassInElements(part.contents, oldName, newName, env);
+          part.contents := elems;
+          changed := changed or c;
+        then
+          part;
 
-    case ({},_,_,_) then ({},false);  // the old name for the component signal if something in class have been changed rule
+      case Absyn.ClassPart.PROTECTED()
+        algorithm
+          (elems, c) := renameClassInElements(part.contents, oldName, newName, env);
+          part.contents := elems;
+          changed := changed or c;
+        then
+          part;
 
-    case ((Absyn.PUBLIC(contents = elements) :: res),old_comp,new_comp,env)
-      equation
-        (res_1,changed1) = renameClassInParts(res, old_comp, new_comp, env);
-        (elements_1,changed2) = renameClassInElements(elements, old_comp, new_comp, env);
-        changed = boolOr(changed1,changed2);
-      then
-        ((Absyn.PUBLIC(elements_1) :: res_1),changed);
+      else part;
+    end match;
 
-    case ((Absyn.PROTECTED(contents = elements) :: res),old_comp,new_comp,env)
-      equation
-        (res_1,changed1) = renameClassInParts(res, old_comp, new_comp, env);
-        (elements_1,changed2) = renameClassInElements(elements, old_comp, new_comp, env);
-        changed = boolOr(changed1,changed2);
-      then
-        ((Absyn.PROTECTED(elements_1) :: res_1),changed);
+    outParts := part :: outParts;
+  end for;
 
-    case ((a :: res),old_comp,new_comp,env)
-      equation
-        (res_1,changed) = renameClassInParts(res, old_comp, new_comp, env);
-      then
-        ((a :: res_1),changed);
-
-  end matchcontinue;
+  outParts := Dangerous.listReverseInPlace(outParts);
 end renameClassInParts;
 
 protected function renameClassInElements
-"author: x02lucpo
-  helper function to renameClassVisitor"
-  input list<Absyn.ElementItem> inAbsynElementItemLst1;
-  input Absyn.Path inPath2;
-  input Absyn.Path inPath3;
-  input FCore.Graph inEnv4;
-  output list<Absyn.ElementItem> outAbsynElementItemLst;
-  output Boolean outBoolean;
+  input list<Absyn.ElementItem> items;
+  input Absyn.Path oldName;
+  input Absyn.Path newName;
+  input FCore.Graph env;
+  output list<Absyn.ElementItem> outItems = {};
+  output Boolean changed = false;
+protected
+  Absyn.Element elem;
+  Absyn.ElementSpec spec;
+  Boolean c;
 algorithm
-  (outAbsynElementItemLst,outBoolean):=
-  matchcontinue (inAbsynElementItemLst1,inPath2,inPath3,inEnv4)
-    local
-      list<Absyn.ElementItem> res_1,res;
-      Boolean changed1,changed2,changed,finalPrefix;
-      Absyn.ElementSpec elementspec_1,elementspec;
-      Absyn.ElementItem element_1,element;
-      Option<Absyn.RedeclareKeywords> redeclare_;
-      Absyn.InnerOuter inner_outer;
-      SourceInfo info;
-      Option<Absyn.ConstrainClass> constrainClass;
-      Absyn.Path old_comp,new_comp;
-      FCore.Graph env;
-    case ({},_,_,_) then ({},false);  /* the old name for the component signal if something in class have been changed */
-    case ((Absyn.ELEMENTITEM(element = Absyn.ELEMENT(finalPrefix = finalPrefix,redeclareKeywords = redeclare_,innerOuter = inner_outer,specification = elementspec,info = info,constrainClass = constrainClass)) :: res),old_comp,new_comp,env)
-      equation
-        (res_1,changed1) = renameClassInElements(res, old_comp, new_comp, env);
-        (elementspec_1,changed2) = renameClassInElementSpec(elementspec, old_comp, new_comp, env);
-        element_1 = Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(finalPrefix,redeclare_,inner_outer,elementspec_1,info,
-          constrainClass));
-        changed = boolOr(changed1,changed2);
-      then
-        ((element_1 :: res_1),changed);
-    case ((element :: res),old_comp,new_comp,env)
-      equation
-        (res_1,changed) = renameClassInElements(res, old_comp, new_comp, env);
-        element_1 = element;
-      then
-        ((element_1 :: res_1),changed);
-  end matchcontinue;
+  for item in items loop
+    (outItems, changed) := matchcontinue item
+      case Absyn.ElementItem.ELEMENTITEM(element = elem as Absyn.Element.ELEMENT())
+        algorithm
+          (spec, c) := renameClassInElementSpec(elem.specification, oldName, newName, env);
+          elem.specification := spec;
+          item.element := elem;
+        then
+          (item :: outItems, changed or c);
+
+      else (item :: outItems, changed);
+    end matchcontinue;
+  end for;
+
+  outItems := Dangerous.listReverseInPlace(outItems);
 end renameClassInElements;
 
 protected function renameClassInElementSpec
-"author: x02lucpo
-  helper function to renameClassVisitor"
-  input Absyn.ElementSpec inElementSpec1;
-  input Absyn.Path inPath2;
-  input Absyn.Path inPath3;
-  input FCore.Graph inEnv4;
-  output Absyn.ElementSpec outElementSpec;
-  output Boolean outBoolean;
+  input output Absyn.ElementSpec spec;
+  input Absyn.Path oldName;
+  input Absyn.Path newName;
+  input FCore.Graph env;
+        output Boolean changed = false;
+protected
+  Absyn.TypeSpec ty;
+  FCore.Cache cache;
+  String id;
+  FCore.Graph cenv;
+  Absyn.Path path, qpath;
+  Absyn.Import imp;
 algorithm
-  (outElementSpec,outBoolean):=
-  matchcontinue (inElementSpec1,inPath2,inPath3,inEnv4)
-    local
-      String id;
-      FCore.Graph cenv,env;
-      Absyn.Path path_1,path,new_path,old_comp,new_comp,comps;
-      Absyn.ElementAttributes a;
-      list<Absyn.ComponentItem> comp_items;
-      Absyn.Import import_1,import_;
-      Boolean changed;
-      Option<Absyn.ArrayDim> x;
-      Option<Absyn.Annotation> annOpt;
-      FCore.Cache cache;
-      Absyn.ElementSpec spec;
-      Option<Absyn.Comment> cmt;
-      list<Absyn.ElementArg> elargs;
-      SourceInfo info;
+  changed := matchcontinue spec
+    case Absyn.COMPONENTS(typeSpec = ty as Absyn.TPATH())
+      algorithm
+        (cache, SCode.CLASS(name = id), cenv) := Lookup.lookupClass(FCore.emptyCache(), env, ty.path);
+        (_, qpath) := Inst.makeFullyQualified(cache, cenv, Absyn.IDENT(id));
 
-    case (Absyn.COMPONENTS(attributes = a,typeSpec = Absyn.TPATH(path_1,x),components = comp_items),old_comp,new_comp,env) /* the old name for the component signal if something in class have been changed rule */
-      equation
-        (cache,SCode.CLASS(name=id),cenv) = Lookup.lookupClass(FCore.emptyCache(),env, path_1);
-        path_1 = Absyn.IDENT(id);
-        (_,path) = Inst.makeFullyQualified(cache, cenv, path_1);
-        true = AbsynUtil.pathEqual(path, old_comp);
-        new_path = changeLastIdent(path, new_comp);
+        if AbsynUtil.pathEqual(qpath, oldName) then
+          ty.path := changeLastIdent(qpath, newName);
+          spec.typeSpec := ty;
+          changed := true;
+        end if;
       then
-        (Absyn.COMPONENTS(a,Absyn.TPATH(new_path,x),comp_items),true);
-    case (Absyn.EXTENDS(path = path_1,elementArg = elargs, annotationOpt=annOpt),old_comp,new_comp,env)
-      equation
-        (cache,_,cenv) = Lookup.lookupClass(FCore.emptyCache(),env, path_1) "print \"rename_class_in_element_spec Absyn.EXTENDS(path,_) not implemented yet\"" ;
-        (_,path) = Inst.makeFullyQualified(cache,cenv, path_1);
-        true = AbsynUtil.pathEqual(path, old_comp);
-        new_path = changeLastIdent(path_1, new_comp);
+        changed;
+
+    case Absyn.EXTENDS()
+      algorithm
+        (cache, _, cenv) := Lookup.lookupClass(FCore.emptyCache(), env, spec.path);
+        (_, qpath) := Inst.makeFullyQualified(cache, cenv, spec.path);
+
+        if AbsynUtil.pathEqual(qpath, oldName) then
+          spec.path := changeLastIdent(spec.path, newName);
+          changed := true;
+        end if;
       then
-        (Absyn.EXTENDS(new_path,elargs,annOpt),true);
-    case (Absyn.IMPORT(import_ = import_,comment = cmt, info = info),old_comp,new_comp,env)
-      equation
-        (import_1,changed) = renameClassInImport(import_, old_comp, new_comp, env);
+        changed;
+
+    case Absyn.IMPORT()
+      algorithm
+        path := AbsynUtil.importPath(spec.import_);
+        (cache, _, cenv) := Lookup.lookupClass(FCore.emptyCache(), env, path);
+        (_, qpath) := Inst.makeFullyQualified(cache, cenv, path);
+
+        if AbsynUtil.pathEqual(qpath, oldName) then
+          path := changeLastIdent(path, newName);
+          spec.import_ := AbsynUtil.setImportPath(spec.import_, path);
+          changed := true;
+        end if;
       then
-        (Absyn.IMPORT(import_1,cmt,info),changed);
-    else (inElementSpec1,false);
+        changed;
+
+    else false;
   end matchcontinue;
 end renameClassInElementSpec;
 
-protected function renameClassInImport
-"author: x02lucpo
-  helper function to renameClassVisitor"
-  input Absyn.Import inImport1;
-  input Absyn.Path inPath2;
-  input Absyn.Path inPath3;
-  input FCore.Graph inEnv4;
-  output Absyn.Import outImport;
-  output Boolean outBoolean;
+public function refactorClass
+  input Absyn.Path classPath;
+  input Absyn.Program program;
+  output Values.Value result;
+protected
+  function impl
+    input Absyn.Path classPath;
+    input Absyn.Program program;
+    input Access accessLevel;
+    output Values.Value result;
+  protected
+    Absyn.Class cls;
+    Absyn.Program p;
+    String str;
+  algorithm
+    cls := InteractiveUtil.getPathedClassInProgram(classPath, program);
+    cls := Refactor.refactorGraphicalAnnotation(program, cls);
+    p := InteractiveUtil.updateProgram(Absyn.PROGRAM({cls}, Absyn.TOP()), program);
+    SymbolTable.setAbsyn(p);
+    str := Dump.unparseStr(Absyn.PROGRAM({cls}, Absyn.TOP()), false);
+    result := ValuesUtil.makeString(str);
+  end impl;
 algorithm
-  (outImport,outBoolean):=
-  matchcontinue (inImport1,inPath2,inPath3,inEnv4)
-    local
-      FCore.Graph cenv,env;
-      Absyn.Path path,new_path,path_1,old_comp,new_comp;
-      String id;
-      Absyn.Import import_;
-      FCore.Cache cache;
-
-    case (Absyn.NAMED_IMPORT(name = id,path = path_1),old_comp,new_comp,env) /* the old name for the component signal if something in class have been changed */
-      equation
-        (cache,_,cenv) = Lookup.lookupClass(FCore.emptyCache(),env, path_1);
-        (_,path) = Inst.makeFullyQualified(cache,cenv, path_1);
-        true = AbsynUtil.pathEqual(path, old_comp);
-        new_path = changeLastIdent(path_1, new_comp);
-      then
-        (Absyn.NAMED_IMPORT(id,new_path),true);
-    case (Absyn.QUAL_IMPORT(path = path_1),old_comp,new_comp,env)
-      equation
-        (cache,_,cenv) = Lookup.lookupClass(FCore.emptyCache(),env, path_1);
-        (_,path) = Inst.makeFullyQualified(cache,cenv, path_1);
-        true = AbsynUtil.pathEqual(path, old_comp);
-        new_path = changeLastIdent(path_1, new_comp);
-      then
-        (Absyn.QUAL_IMPORT(new_path),true);
-    case (Absyn.NAMED_IMPORT(path = path_1),old_comp,new_comp,env)
-      equation
-        (cache,_,cenv) = Lookup.lookupClass(FCore.emptyCache(),env, path_1);
-        (_,path) = Inst.makeFullyQualified(cache,cenv, path_1);
-        true = AbsynUtil.pathEqual(path, old_comp);
-        new_path = changeLastIdent(path_1, new_comp);
-      then
-        (Absyn.UNQUAL_IMPORT(new_path),true);
-    else (inImport1,false);
-  end matchcontinue;
-end renameClassInImport;
+  result := InteractiveUtil.accessClass(classPath, program, impl,
+    evaluateParams = true, graphicsExpMode = true, accessLevel = Access.icon);
+end refactorClass;
 
 protected function changeLastIdent
 "author: x02lucpo
@@ -6047,35 +4272,29 @@ public function isPrimitive
 "Thisfunction takes a component reference and a program.
   It returns the true if the refrenced type is a primitive
   type, otherwise it returns false."
-  input Absyn.ComponentRef inComponentRef;
+  input Absyn.Path className;
   input Absyn.Program inProgram;
   output Boolean outBoolean;
 algorithm
-  outBoolean:=
-  match (inComponentRef,inProgram)
+  outBoolean := match className
     local
-      Absyn.Path path;
       Absyn.Class class_;
-      Boolean res;
-      Absyn.ComponentRef cr;
-      Absyn.Program p;
-    case (Absyn.CREF_IDENT(name = "Real"),_) then true;  /* Instead of elaborating and lookup these in env, we optimize a bit and just return true for these */
-    case (Absyn.CREF_IDENT(name = "Integer"),_) then true;
-    case (Absyn.CREF_IDENT(name = "String"),_) then true;
-    case (Absyn.CREF_IDENT(name = "Boolean"),_) then true;
-    case (cr,p)
-      equation
-        path = AbsynUtil.crefToPath(cr);
-        class_ = InteractiveUtil.getPathedClassInProgram(path, p);
-        res = isPrimitiveClass(class_, p);
+    /* Instead of elaborating and lookup these in env, we optimize a bit and just return true for these */
+    case Absyn.IDENT(name = "Real") then true;
+    case Absyn.IDENT(name = "Integer") then true;
+    case Absyn.IDENT(name = "String") then true;
+    case Absyn.IDENT(name = "Boolean") then true;
+    case _
+      algorithm
+        class_ := InteractiveUtil.getPathedClassInProgram(className, inProgram);
       then
-        res;
+        isPrimitiveClass(class_, inProgram);
     else false;
   end match;
 end isPrimitive;
 
-protected function createModel
-  input Absyn.ComponentRef inComponentRef;
+public function createModel
+  input Absyn.Path className;
   input Absyn.Program inProgram;
   output Absyn.Program outProgram;
 protected
@@ -6083,95 +4302,72 @@ protected
   Absyn.Within w;
   Absyn.Path wp;
 algorithm
-  if AbsynUtil.crefIsIdent(inComponentRef) then
-    name := AbsynUtil.crefFirstIdent(inComponentRef);
+  if AbsynUtil.pathIsIdent(className) then
+    name := AbsynUtil.pathFirstIdent(className);
     w := Absyn.TOP();
   else
-    wp := AbsynUtil.crefToPath(inComponentRef);
-    (wp, Absyn.IDENT(name)) := AbsynUtil.splitQualAndIdentPath(wp);
+    (wp, Absyn.IDENT(name)) := AbsynUtil.splitQualAndIdentPath(className);
     w := Absyn.WITHIN(wp);
   end if;
 
   outProgram := InteractiveUtil.updateProgram(Absyn.PROGRAM({
     Absyn.CLASS(name, false, false, false, Absyn.R_MODEL(), AbsynUtil.dummyParts,
-        {}, {}, AbsynUtil.dummyInfo)}, w), inProgram);
+        {}, {}, {}, AbsynUtil.dummyInfo)}, w), inProgram);
 end createModel;
 
-protected function deleteClass
-" This function takes a component reference and a program.
-   It deletes the class specified by the component reference from the
-   given program."
-  input Absyn.ComponentRef inComponentRef;
-  input Absyn.Program inProgram;
-  output String outString;
-  output Absyn.Program outProgram;
+public function newModel
+  input Absyn.Path className;
+  input Absyn.Path withinPath;
+  input output Absyn.Program program;
 algorithm
-  (outString,outProgram) := matchcontinue (inComponentRef,inProgram)
-    local
-      Absyn.Path cpath,parentcpath,parentparentcpath;
-      Absyn.Class cdef,parentcdef,parentcdef_1;
-      Absyn.Program newp,p;
-      Absyn.ComponentRef class_;
-      list<Absyn.Class> clist,clist_1;
-      Absyn.Within w;
+  program := createModel(AbsynUtil.joinPaths(withinPath, className), program);
+end newModel;
 
-    case (class_,(p as Absyn.PROGRAM()))
+public function deleteClass
+  "Deletes the given class from the program."
+  input Absyn.Path classPath;
+  input Absyn.Program inProgram;
+  output Boolean success;
+  output Absyn.Program outProgram = inProgram;
+algorithm
+  (success, outProgram) := matchcontinue inProgram
+    local
+      Absyn.Path parentcpath,parentparentcpath;
+      Absyn.Class cdef,parentcdef,parentcdef_1;
+
+    case _
       equation
-        cpath = AbsynUtil.crefToPath(class_) "Class inside another class, inside another class" ;
-        parentcpath = AbsynUtil.stripLast(cpath);
+        //Class inside another class, inside another class
+        parentcpath = AbsynUtil.stripLast(classPath);
         parentparentcpath = AbsynUtil.stripLast(parentcpath);
-        cdef = InteractiveUtil.getPathedClassInProgram(cpath, p);
-        parentcdef = InteractiveUtil.getPathedClassInProgram(parentcpath, p);
+        cdef = InteractiveUtil.getPathedClassInProgram(classPath, inProgram);
+        parentcdef = InteractiveUtil.getPathedClassInProgram(parentcpath, inProgram);
         parentcdef_1 = InteractiveUtil.removeInnerClass(cdef, parentcdef);
-        newp = InteractiveUtil.updateProgram(Absyn.PROGRAM({parentcdef_1},Absyn.WITHIN(parentparentcpath)), p);
+        outProgram = InteractiveUtil.updateProgram(Absyn.PROGRAM({parentcdef_1},Absyn.WITHIN(parentparentcpath)), inProgram);
       then
-        ("true",newp);
-    case (class_,(p as Absyn.PROGRAM()))
+        (true, outProgram);
+    case _
       equation
-        cpath = AbsynUtil.crefToPath(class_) "Class inside other class" ;
-        parentcpath = AbsynUtil.stripLast(cpath);
-        cdef = InteractiveUtil.getPathedClassInProgram(cpath, p);
-        parentcdef = InteractiveUtil.getPathedClassInProgram(parentcpath, p);
+        // Class inside other class
+        parentcpath = AbsynUtil.stripLast(classPath);
+        cdef = InteractiveUtil.getPathedClassInProgram(classPath, inProgram);
+        parentcdef = InteractiveUtil.getPathedClassInProgram(parentcpath, inProgram);
         parentcdef_1 = InteractiveUtil.removeInnerClass(cdef, parentcdef);
-        newp = InteractiveUtil.updateProgram(Absyn.PROGRAM({parentcdef_1},Absyn.TOP()), p);
+        outProgram = InteractiveUtil.updateProgram(Absyn.PROGRAM({parentcdef_1},Absyn.TOP()), inProgram);
       then
-        ("true",newp);
-    case (class_,(p as Absyn.PROGRAM()))
-      equation
-        cpath = AbsynUtil.crefToPath(class_) "Top level class" ;
-        cdef = InteractiveUtil.getPathedClassInProgram(cpath, p);
-        p.classes = deleteClassFromList(cdef, p.classes);
+        (true, outProgram);
+    case _
+      algorithm
+        // Top level class
+        cdef := InteractiveUtil.getPathedClassInProgram(classPath, inProgram);
+        outProgram.classes := List.deleteMemberOnTrue(AbsynUtil.className(cdef),
+          outProgram.classes, AbsynUtil.isClassNamed);
       then
-        ("true",p);
-    else ("false",inProgram);
+        (true, outProgram);
+
+    else (false,inProgram);
   end matchcontinue;
 end deleteClass;
-
-protected function deleteClassFromList
-"Helper function to deleteClass."
-  input Absyn.Class inClass;
-  input list<Absyn.Class> inAbsynClassLst;
-  output list<Absyn.Class> outAbsynClassLst;
-algorithm
-  outAbsynClassLst := match (inClass,inAbsynClassLst)
-    local
-      String name1,name2;
-      list<Absyn.Class> xs,res;
-      Absyn.Class cdef,x;
-
-    case (_,{}) then {};  /* Empty list */
-
-    case (Absyn.CLASS(name = name1),(Absyn.CLASS(name = name2) :: xs)) guard stringEq(name1, name2)
-      then
-        xs;
-
-    case ((cdef as Absyn.CLASS()),(x :: xs))
-      equation
-        res = deleteClassFromList(cdef, xs);
-      then
-        (x :: res);
-  end match;
-end deleteClassFromList;
 
 public function setClassComment
 "author: PA
@@ -6204,175 +4400,113 @@ algorithm
 end setClassComment;
 
 protected function setClassCommentInClass
-"author: PA
-  Helper function to setClassComment"
-  input Absyn.Class inClass;
-  input String inString;
-  output Absyn.Class outClass;
+  "Helper function to setClassComment"
+  input output Absyn.Class cls;
+  input String commentString;
 algorithm
-  outClass := match (inClass,inString)
-    local
-      Absyn.ClassDef cdef_1,cdef;
-      String id,cmt;
-      Boolean p,f,e;
-      Absyn.Restriction r;
-      SourceInfo info;
-
-    case (outClass as Absyn.CLASS(name = id,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,body = cdef,info = info),cmt)
-      equation
-        cdef_1 = setClassCommentInClassdef(cdef, cmt);
-        outClass.body = cdef_1;
-      then outClass;
-  end match;
+  cls.body := setClassCommentInClassdef(cls.body, commentString);
 end setClassCommentInClass;
 
 protected function setClassCommentInClassdef
-"author: PA
-  Helper function to setClassCommentInClass"
-  input Absyn.ClassDef inClassDef;
-  input String inString;
-  output Absyn.ClassDef outClassDef;
+  "Helper function to setClassCommentInClass"
+  input output Absyn.ClassDef classDef;
+  input String commentString;
+protected
+  Option<String> cmt_str;
 algorithm
-  outClassDef:=
-  matchcontinue (inClassDef,inString)
-    local
-      list<Absyn.ClassPart> p;
-      String strcmt,id;
-      Option<Absyn.Comment> cmt_1;
-      Option<list<Absyn.Subscript>> ad;
-      Absyn.ElementAttributes attr;
-      list<Absyn.ElementArg> arg,args;
-      Absyn.EnumDef edef;
-      list<Absyn.Path> plst;
-      Absyn.ClassDef c;
-      Absyn.Path path;
-      Option<Absyn.Comment> cmt;
-      list<String> typeVars;
-      list<Absyn.NamedArg> classAttrs;
-      list<Absyn.Annotation> ann;
-    case (Absyn.PARTS(typeVars=typeVars,classAttrs=classAttrs,classParts = p,ann=ann),"") then Absyn.PARTS(typeVars,classAttrs,p,ann,NONE());
-    case (Absyn.PARTS(typeVars=typeVars,classAttrs=classAttrs,classParts = p,ann=ann),strcmt) then Absyn.PARTS(typeVars,classAttrs,p,ann,SOME(strcmt));
-    case (Absyn.DERIVED(typeSpec = Absyn.TPATH(path,ad),attributes = attr,arguments = arg,comment = cmt),strcmt)
-      equation
-        cmt_1 = setClassCommentInCommentOpt(cmt, strcmt);
+  cmt_str := if stringEmpty(commentString) then NONE() else SOME(commentString);
+
+  () := match classDef
+    case Absyn.ClassDef.PARTS()
+      algorithm
+        classDef.comment := cmt_str;
       then
-        Absyn.DERIVED(Absyn.TPATH(path,ad),attr,arg,cmt_1);
-    case (Absyn.ENUMERATION(enumLiterals = edef,comment = cmt),strcmt)
-      equation
-        cmt_1 = setClassCommentInCommentOpt(cmt, strcmt);
+        ();
+
+    case Absyn.ClassDef.DERIVED()
+      algorithm
+        classDef.comment := AbsynUtil.setCommentString(classDef.comment, cmt_str);
       then
-        Absyn.ENUMERATION(edef,cmt_1);
-    case (Absyn.OVERLOAD(functionNames = plst,comment = cmt),strcmt)
-      equation
-        cmt_1 = setClassCommentInCommentOpt(cmt, strcmt);
+        ();
+
+    case Absyn.ClassDef.ENUMERATION()
+      algorithm
+        classDef.comment := AbsynUtil.setCommentString(classDef.comment, cmt_str);
       then
-        Absyn.OVERLOAD(plst,cmt_1);
-    case (Absyn.CLASS_EXTENDS(baseClassName = id,modifications = args,ann = ann,parts = p),"") then Absyn.CLASS_EXTENDS(id,args,NONE(),p,ann);
-    case (Absyn.CLASS_EXTENDS(baseClassName = id,modifications = args,ann = ann,parts = p),strcmt) then Absyn.CLASS_EXTENDS(id,args,SOME(strcmt),p,ann);
-    else inClassDef;
-  end matchcontinue;
+        ();
+
+    case Absyn.ClassDef.OVERLOAD()
+      algorithm
+        classDef.comment := AbsynUtil.setCommentString(classDef.comment, cmt_str);
+      then
+        ();
+
+    case Absyn.ClassDef.CLASS_EXTENDS()
+      algorithm
+        classDef.comment := cmt_str;
+      then
+        ();
+
+    case Absyn.ClassDef.PDER()
+      algorithm
+        classDef.comment := AbsynUtil.setCommentString(classDef.comment, cmt_str);
+      then
+        ();
+
+    else ();
+  end match;
 end setClassCommentInClassdef;
 
-protected function setClassCommentInCommentOpt
-"author: PA
-  Sets the string comment in an Comment option."
-  input Option<Absyn.Comment> inAbsynCommentOption;
-  input String inString;
-  output Option<Absyn.Comment> outAbsynCommentOption;
+public function getShortDefinitionBaseClassInformation
+  input Absyn.Path classPath;
+  input Absyn.Program program;
+  output Values.Value result;
+protected
+  Absyn.TypeSpec ty;
+  Absyn.ElementAttributes attr;
+  list<Values.Value> vals = {};
 algorithm
-  outAbsynCommentOption:=
-  match (inAbsynCommentOption,inString)
-    local
-      Option<Absyn.Annotation> ann;
-      String cmt;
-    case (SOME(Absyn.COMMENT(ann,_)),"") then SOME(Absyn.COMMENT(ann,NONE()));
-    case (SOME(Absyn.COMMENT(ann,_)),cmt) then SOME(Absyn.COMMENT(ann,SOME(cmt)));
-    case (NONE(),cmt) then SOME(Absyn.COMMENT(NONE(),SOME(cmt)));
-  end match;
-end setClassCommentInCommentOpt;
+  try
+    Absyn.CLASS(body = Absyn.DERIVED(typeSpec = ty, attributes = attr as Absyn.ATTR())) :=
+      InteractiveUtil.getPathedClassInProgram(classPath, program);
+    vals := ValuesUtil.makeArray(InteractiveUtil.dimensionListValues(AbsynUtil.typeSpecDimensions(ty))) :: vals;
+    vals := ValuesUtil.makeString(InteractiveUtil.attrDirectionStr(attr)) :: vals;
+    vals := ValuesUtil.makeString(InteractiveUtil.attrVariabilityStr(attr)) :: vals;
+    vals := ValuesUtil.makeString(if attr.streamPrefix then "stream" else "") :: vals;
+    vals := ValuesUtil.makeString(if attr.flowPrefix then "flow" else "") :: vals;
+    vals := ValuesUtil.makeCodeTypeName(AbsynUtil.typeSpecPath(ty)) :: vals;
+  else
+    vals := {};
+  end try;
 
-protected function getShortDefinitionBaseClassInformation
-"author: adrpo
-  Returns all the prefixes of the base class and the base class array dimensions.
-  {{bool,bool,bool}}"
-  input Absyn.ComponentRef cr;
-  input Absyn.Program p;
-  output String res_1;
-algorithm
-  res_1 := matchcontinue(cr, p)
-    local
-      Absyn.Path path, baseClassPath;
-      String name,strFlow,strStream,strVariability,strDirection,str,dim_str,strBaseClassPath;
-      Boolean flowPrefix,streamPrefix;
-      Absyn.Variability variability;
-      Absyn.Direction direction;
-      Absyn.ArrayDim arrayDim;
-      Absyn.ClassDef cdef;
-      Absyn.ElementAttributes attr;
-      Absyn.Parallelism parallelism;
-
-    case (_, _)
-      equation
-        path = AbsynUtil.crefToPath(cr);
-        Absyn.CLASS(
-
-          body = cdef as Absyn.DERIVED(typeSpec = Absyn.TPATH(baseClassPath, _),
-                                       attributes = attr as Absyn.ATTR(flowPrefix, streamPrefix, _, _, _, _)) )
-        = InteractiveUtil.getPathedClassInProgram(path, p);
-        dim_str = getClassDimensions(cdef);
-        strBaseClassPath = AbsynUtil.pathString(baseClassPath);
-        strFlow = if flowPrefix then "\"flow\"" else "\"\"";
-        strStream = if streamPrefix then "\"stream\"" else "\"\"";
-        strVariability = InteractiveUtil.attrVariabilityStr(attr);
-        strDirection = InteractiveUtil.attrDirectionStr(attr);
-        str = stringAppendList({"{",strBaseClassPath, ",", strFlow,",", strStream, ",", strVariability, ",", strDirection, ",", dim_str,"}"});
-      then
-        str;
-
-    else "{}";
-
-  end matchcontinue;
+  result := ValuesUtil.makeArray(vals);
 end getShortDefinitionBaseClassInformation;
 
-protected function getExternalFunctionSpecification
-"author: adrpo
-  Returns the external declaration from the function definition"
-  input Absyn.ComponentRef cr;
-  input Absyn.Program p;
-  output String res_1;
+public function getExternalFunctionSpecification
+  input Absyn.Path functionName;
+  input Absyn.Program program;
+  output Values.Value result;
+protected
+  Absyn.Class cls;
+  Absyn.ExternalDecl ext_decl;
+  Option<Absyn.Annotation> ann;
+  list<Values.Value> vals = {};
 algorithm
-  res_1 := matchcontinue(cr, p)
-    local
-      Absyn.Path path;
-      String strLanguage,strFuncName,strOutput,strArguments,strAnn1,strAnn2,str;
-      Absyn.Class cls;
-      Option<Absyn.Ident> funcName "The name of the external function" ;
-      Option<String>      lang     "Language of the external function" ;
-      Option<Absyn.ComponentRef> output_  "output parameter as return value" ;
-      list<Absyn.Exp>            args     "only positional arguments, i.e. expression list" ;
-      Option<Absyn.Annotation>   ann1, ann2;
+  try
+    cls := InteractiveUtil.getPathedClassInProgram(functionName, program);
+    Absyn.EXTERNAL(ext_decl, ann) := AbsynUtil.getExternalDecl(cls);
 
-    case (_, _)
-      equation
-        path = AbsynUtil.crefToPath(cr);
-        cls = InteractiveUtil.getPathedClassInProgram(path, p);
-        Absyn.EXTERNAL(Absyn.EXTERNALDECL(funcName, lang, output_, args, ann1), ann2) = AbsynUtil.getExternalDecl(cls);
-        strLanguage  = "\"" + Util.getOptionOrDefault(lang, "") + "\"";
-        strOutput  = "\"" + Dump.printComponentRefStr(
-                                Util.getOptionOrDefault(
-                                  output_,
-                                  Absyn.CREF_IDENT("", {}))) + "\"";
-        strFuncName  = "\"" + Util.getOptionOrDefault(funcName, "") + "\"";
-        strArguments = "\"" + Dump.printExpLstStr(args) + "\"";
-        strAnn1 = "\"" + Dump.unparseAnnotationOption(ann1) + "\"";
-        strAnn2 = "\"" + Dump.unparseAnnotationOption(ann2) + "\"";
-        str = stringAppendList({"{", strLanguage, ",", strOutput, ",", strFuncName, ",", strArguments, ",", strAnn1, ",", strAnn2, "}"});
-      then
-        str;
+    vals := ValuesUtil.makeString(Dump.unparseAnnotationOption(ann)) :: vals;
+    vals := ValuesUtil.makeString(Dump.unparseAnnotationOption(ext_decl.annotation_)) :: vals;
+    vals := ValuesUtil.makeString(Dump.printExpLstStr(ext_decl.args)) :: vals;
+    vals := ValuesUtil.makeString(Util.getOptionOrDefault(ext_decl.funcName, "")) :: vals;
+    vals := ValuesUtil.makeString(Util.applyOptionOrDefault(ext_decl.output_, Dump.printComponentRefStr, "")) :: vals;
+    vals := ValuesUtil.makeString(Util.getOptionOrDefault(ext_decl.lang, "")) :: vals;
+  else
+    vals := {};
+  end try;
 
-    else "{}";
-
-  end matchcontinue;
+  result := ValuesUtil.makeArray(vals);
 end getExternalFunctionSpecification;
 
 protected function getClassDimensions
@@ -6592,11 +4726,11 @@ algorithm
   end try;
 end isRedeclare;
 
-protected function isParameter
+public function isParameter
   "This function takes a class and a component reference and a program
    and returns true if the component referenced is a parameter."
-  input Absyn.ComponentRef componentName;
-  input Absyn.ComponentRef className;
+  input Absyn.Path componentName;
+  input Absyn.Path className;
   input Absyn.Program program;
   output Boolean res;
 protected
@@ -6604,7 +4738,7 @@ protected
   Absyn.Element elem;
 algorithm
   try
-    path := AbsynUtil.joinPaths(AbsynUtil.crefToPath(className), AbsynUtil.crefToPath(componentName));
+    path := AbsynUtil.joinPaths(className, componentName);
     Absyn.ELEMENT(specification = Absyn.COMPONENTS(attributes = Absyn.ATTR(variability = Absyn.PARAM()))) :=
       InteractiveUtil.getPathedElementInProgram(path, program);
     res := true;
@@ -6613,11 +4747,11 @@ algorithm
   end try;
 end isParameter;
 
-protected function isConstant
+public function isConstant
   "This function takes a class and a component reference and a program
    and returns true if the component referenced is a constant."
-  input Absyn.ComponentRef componentName;
-  input Absyn.ComponentRef className;
+  input Absyn.Path componentName;
+  input Absyn.Path className;
   input Absyn.Program program;
   output Boolean res;
 protected
@@ -6625,7 +4759,7 @@ protected
   Absyn.Element elem;
 algorithm
   try
-    path := AbsynUtil.joinPaths(AbsynUtil.crefToPath(className), AbsynUtil.crefToPath(componentName));
+    path := AbsynUtil.joinPaths(className, componentName);
     Absyn.ELEMENT(specification = Absyn.COMPONENTS(attributes = Absyn.ATTR(variability = Absyn.CONST()))) :=
       InteractiveUtil.getPathedElementInProgram(path, program);
     res := true;
@@ -6634,23 +4768,21 @@ algorithm
   end try;
 end isConstant;
 
-protected function isProtected
+public function isProtected
   "This function takes a class and a component reference and a program
    and returns true if the component referenced is in a protected section."
-  input Absyn.ComponentRef componentName;
-  input Absyn.ComponentRef className;
+  input Absyn.Path componentName;
+  input Absyn.Path className;
   input Absyn.Program program;
   output Boolean res;
 protected
-  Absyn.Path path;
   list<Absyn.ClassPart> parts;
   list<Absyn.ElementItem> items;
 algorithm
   try
-    path := AbsynUtil.crefToPath(className);
-    parts := AbsynUtil.getClassPartsInClass(InteractiveUtil.getPathedClassInProgram(path, program));
+    parts := AbsynUtil.getClassPartsInClass(InteractiveUtil.getPathedClassInProgram(className, program));
     items := InteractiveUtil.getProtectedList(parts);
-    getComponentsContainsName(componentName, items);
+    getComponentsContainsName(AbsynUtil.pathToCref(componentName), items);
     res := true;
   else
     res := false;
@@ -6714,26 +4846,24 @@ algorithm
   end for;
 end isProtectedClassInElements;
 
-protected function getEnumLiterals
-"Returns the enum literals as a list of string."
-  input Absyn.Class inClass;
-  output String outString;
+public function getEnumerationLiterals
+  input Absyn.Path classPath;
+  input Absyn.Program program;
+  output Values.Value result;
+protected
+  list<Absyn.EnumLiteral> literals;
+  list<String> names;
 algorithm
-  outString:= match (inClass)
-    local
-      list<Absyn.EnumLiteral> literals;
-      String str;
-      list<String> enumList;
-    case (Absyn.CLASS(restriction = Absyn.R_TYPE(), body = Absyn.ENUMERATION(enumLiterals = Absyn.ENUMLITERALS(enumLiterals = literals))))
-      equation
-        enumList = List.map(literals, getEnumerationLiterals);
-        str = stringDelimitList(enumList, ",");
-        str = stringAppendList({"{",str,"}"});
-      then
-        str;
-    case (_) then "{}";
-  end match;
-end getEnumLiterals;
+  try
+    Absyn.CLASS(body = Absyn.ENUMERATION(enumLiterals = Absyn.ENUMLITERALS(enumLiterals = literals))) :=
+      InteractiveUtil.getPathedClassInProgram(classPath, program);
+    names := list(AbsynUtil.enumLiteralName(l) for l in literals);
+  else
+    names := {};
+  end try;
+
+  result := ValuesUtil.makeStringArray(names);
+end getEnumerationLiterals;
 
 public function getDerivedClassModifierNames
   "Returns the derived class modifier names."
@@ -6874,28 +5004,17 @@ algorithm
 end getCompitemNamed;
 
 public function existClass
-" This function takes a component reference and a program.
-   It returns true if the refrenced class exists in the
-   symbol table, otherwise it returns false."
-  input Absyn.ComponentRef inComponentRef;
-  input Absyn.Program inProgram;
-  output Boolean outBoolean;
+  "Returns true if the referenced class exists in the program, otherwise false."
+  input Absyn.Path classPath;
+  input Absyn.Program program;
+  output Boolean res;
 algorithm
-  outBoolean := matchcontinue (inComponentRef,inProgram)
-    local
-      Absyn.Path path;
-      Absyn.ComponentRef cr;
-      Absyn.Program p;
-
-    case (cr,p)
-      equation
-        path = AbsynUtil.crefToPath(cr);
-        InteractiveUtil.getPathedClassInProgram(path, p);
-      then
-        true;
-
-    else false;
-  end matchcontinue;
+  try
+    InteractiveUtil.getPathedClassInProgram(classPath, program);
+    res := true;
+  else
+    res := false;
+  end try;
 end existClass;
 
 public function isPrimitiveClass
@@ -6928,22 +5047,9 @@ algorithm
         res = isPrimitiveClass(cdef, p);
       then
         res;
+    else false;
   end match;
 end isPrimitiveClass;
-
-public function mergeProgram
-  "Merges two programs into one."
-  input Absyn.Program newProgram;
-  input Absyn.Program oldProgram;
-  output Absyn.Program program;
-protected
-  list<Absyn.Class> cl1, cl2;
-  Absyn.Within w;
-algorithm
-  Absyn.PROGRAM(classes = cl1, within_ = w) := newProgram;
-  Absyn.PROGRAM(classes = cl2) := oldProgram;
-  program := Absyn.PROGRAM(listAppend(cl1, cl2), w);
-end mergeProgram;
 
 public function addScope
 " This function adds the scope of the scope variable to
@@ -7099,22 +5205,22 @@ algorithm
         (cdef,path);
 
     case (Absyn.IDENT(name = "Real"),_,_) then (Absyn.CLASS("Real",false,false,false,Absyn.R_PREDEFINED_REAL(),
-          AbsynUtil.dummyParts,{},{},AbsynUtil.dummyInfo),Absyn.IDENT("Real"));
+          AbsynUtil.dummyParts,{},{},{},AbsynUtil.dummyInfo),Absyn.IDENT("Real"));
 
     case (Absyn.IDENT(name = "Integer"),_,_) then (Absyn.CLASS("Integer",false,false,false,Absyn.R_PREDEFINED_INTEGER(),
-          AbsynUtil.dummyParts,{},{},AbsynUtil.dummyInfo),Absyn.IDENT("Integer"));
+          AbsynUtil.dummyParts,{},{},{},AbsynUtil.dummyInfo),Absyn.IDENT("Integer"));
 
     case (Absyn.IDENT(name = "String"),_,_) then (Absyn.CLASS("String",false,false,false,Absyn.R_PREDEFINED_STRING(),
-          AbsynUtil.dummyParts,{},{},AbsynUtil.dummyInfo),Absyn.IDENT("String"));
+          AbsynUtil.dummyParts,{},{},{},AbsynUtil.dummyInfo),Absyn.IDENT("String"));
 
     case (Absyn.IDENT(name = "Boolean"),_,_) then (Absyn.CLASS("Boolean",false,false,false,Absyn.R_PREDEFINED_BOOLEAN(),
-          AbsynUtil.dummyParts,{},{},AbsynUtil.dummyInfo),Absyn.IDENT("Boolean"));
+          AbsynUtil.dummyParts,{},{},{},AbsynUtil.dummyInfo),Absyn.IDENT("Boolean"));
     // BTH
     case (Absyn.IDENT(name = "Clock"),_,_)
       equation
         true = Config.synchronousFeaturesAllowed();
       then (Absyn.CLASS("Clock",false,false,false,Absyn.R_PREDEFINED_CLOCK(),
-          AbsynUtil.dummyParts,{},{},AbsynUtil.dummyInfo),Absyn.IDENT("Clock"));
+          AbsynUtil.dummyParts,{},{},{},AbsynUtil.dummyInfo),Absyn.IDENT("Clock"));
 
     case (path,inmodel,_)
       equation
@@ -7131,39 +5237,18 @@ protected function deleteOrUpdateComponent
 " This function deletes a component from a class given the name of the
    component instance, the model in which the component is instantiated in,
    and the Program. Both public and protected lists are searched."
-  input String inString;
-  input Absyn.ComponentRef inComponentRef;
-  input Absyn.Program inProgram;
-  input Option<tuple<Absyn.Path,Absyn.ComponentItem>> item;
-  output Absyn.Program outProgram;
+  input String componentName;
+  input Absyn.Path classPath;
+  input output Absyn.Program program;
+  input Option<tuple<Absyn.Path, Absyn.ComponentItem>> item;
+protected
+  Absyn.Within w;
+  Absyn.Class cls;
 algorithm
-  outProgram := match (inString,inComponentRef,inProgram)
-    local
-      Absyn.Path modelpath,modelwithin;
-      String name;
-      Absyn.ComponentRef model_;
-      Absyn.Program p,newp;
-      Absyn.Class cdef,newcdef;
-      Absyn.Within w;
-
-    case (name,(model_ as Absyn.CREF_QUAL()),(p as Absyn.PROGRAM()))
-      equation
-        modelpath = AbsynUtil.crefToPath(model_);
-        modelwithin = AbsynUtil.stripLast(modelpath);
-        cdef = InteractiveUtil.getPathedClassInProgram(modelpath, p);
-        newcdef = deleteOrUpdateComponentFromClass(name, cdef, item);
-        newp = InteractiveUtil.updateProgram(Absyn.PROGRAM({newcdef},Absyn.WITHIN(modelwithin)), p);
-      then newp;
-
-    case (name,(model_ as Absyn.CREF_IDENT()),(p as Absyn.PROGRAM()))
-      equation
-        modelpath = AbsynUtil.crefToPath(model_);
-        cdef = InteractiveUtil.getPathedClassInProgram(modelpath, p);
-        newcdef = deleteOrUpdateComponentFromClass(name, cdef, item);
-        newp = InteractiveUtil.updateProgram(Absyn.PROGRAM({newcdef},Absyn.TOP()), p);
-      then newp;
-
-  end match;
+  w := if AbsynUtil.pathIsIdent(classPath) then Absyn.Within.TOP() else Absyn.Within.WITHIN(AbsynUtil.stripLast(classPath));
+  cls := InteractiveUtil.getPathedClassInProgram(classPath, program);
+  cls := deleteOrUpdateComponentFromClass(componentName, cls, item);
+  program := InteractiveUtil.updateProgram(Absyn.PROGRAM({cls}, w), program);
 end deleteOrUpdateComponent;
 
 protected function deleteOrUpdateComponentFromClass
@@ -7201,7 +5286,7 @@ algorithm
         l2 = listLength(publst2);
         l1 = listLength(publst);
         l1_1 = l1 - 1;
-        if (/*delete case*/(intEq(l1_1, l2) and boolNot(isSome(item)) and success) or
+        if (/*delete case*/(intEq(l1_1, l2) and isNone(item) and success) or
             /*update case*/(boolNot(intEq(l1_1, l2)) and isSome(item)) and success) then
           parts2 = InteractiveUtil.replacePublicList(parts, publst2);
         else
@@ -7222,7 +5307,7 @@ algorithm
         l2 = listLength(publst2);
         l1 = listLength(publst);
         l1_1 = l1 - 1;
-        if (/*delete case*/(intEq(l1_1, l2) and boolNot(isSome(item)) and success) or
+        if (/*delete case*/(intEq(l1_1, l2) and isNone(item) and success) or
             /*update case*/(boolNot(intEq(l1_1, l2)) and isSome(item)) and success) then
           parts2 = InteractiveUtil.replacePublicList(parts, publst2);
         else
@@ -7330,71 +5415,63 @@ algorithm
   end match;
 end deleteOrUpdateComponentFromElementitems;
 
-public function addComponent " This function takes:
-   arg1 - string giving the instancename,
-   arg2 - `ComponentRef\' giving the component type
-   arg3 - ComponentRef giving the model to instantiate the component within,
-   arg4 - `NamedArg\' list of annotations
-   arg5 - a Program.
-   The result is an updated program with the component and its annotations
-   inserted, and a string \"OK\" for success. If the insertion fails, a
-   suitable error string is given along with the input Program.
-"
-  input String inString1;
-  input Absyn.ComponentRef inComponentRef2;
-  input Absyn.ComponentRef inComponentRef3;
-  input list<Absyn.NamedArg> inAbsynNamedArgLst4;
-  input Absyn.Program inProgram5;
-  output Absyn.Program outProgram;
-  output String outString;
+public function addComponent
+  "Adds a component to the program."
+  input String componentName;
+  input Absyn.Path typeName;
+  input Absyn.Path classPath;
+  input Absyn.Exp bindingExp;
+  input Absyn.Modification modifier;
+  input Absyn.Exp commentExp;
+  input Absyn.Exp annotationExp;
+  input output Absyn.Program program;
+  output Boolean success = true;
+protected
+  String name, filename;
+  Absyn.Class cdef;
+  Option<Absyn.Comment> annotation_;
+  Option<Absyn.Modification> modification;
+  Absyn.Within w;
+  Absyn.InnerOuter io;
+  Option<Absyn.RedeclareKeywords> redecl;
+  Absyn.ElementAttributes attr;
+  SourceInfo info;
+  Absyn.Path ty_path;
 algorithm
-  (outProgram,outString):=
-  matchcontinue (inString1,inComponentRef2,inComponentRef3,inAbsynNamedArgLst4,inProgram5)
-    local
-      Absyn.Path modelpath,modelwithin,tppath;
-      String name, filename;
-      Absyn.ComponentRef tp,model_;
-      list<Absyn.NamedArg> nargs;
-      Absyn.Program p,newp;
-      Absyn.Class cdef,newcdef;
-      Option<Absyn.Comment> annotation_;
-      Option<Absyn.Modification> modification;
-      Absyn.Within w;
-      Absyn.InnerOuter io;
-      Option<Absyn.RedeclareKeywords> redecl;
-      Absyn.ElementAttributes attr;
+  try
+    w := match classPath
+      case Absyn.IDENT() then Absyn.TOP();
+      else Absyn.WITHIN(AbsynUtil.stripLast(classPath));
+    end match;
 
-    // class cannot be found
-    case (_,_,model_,_,p)
-      equation
-        modelpath = AbsynUtil.crefToPath(model_);
-        failure(_ = InteractiveUtil.getPathedClassInProgram(modelpath, p));
-      then
-        (p,"false\n");
+    (cdef as Absyn.CLASS(info=SOURCEINFO(fileName=filename))) :=
+      InteractiveUtil.getPathedClassInProgram(classPath, program);
+    info := SOURCEINFO(filename, false, 0, 0, 0, 0, 0.0);
 
-    // adding component to model that resides inside package
-    case (name,tp,model_,nargs,(p as Absyn.PROGRAM()))
-      equation
-        modelpath = AbsynUtil.crefToPath(model_);
-        w = match modelpath case Absyn.IDENT() then Absyn.TOP(); else Absyn.WITHIN(AbsynUtil.stripLast(modelpath)); end match;
-        (cdef as Absyn.CLASS(info=SOURCEINFO(fileName=filename))) = InteractiveUtil.getPathedClassInProgram(modelpath, p);
-        tppath = AbsynUtil.crefToPath(tp);
-        annotation_ = annotationListToAbsynComment(nargs,NONE());
-        modification = modificationToAbsyn(nargs,NONE());
-        (io,redecl,attr) = getDefaultPrefixes(p,tppath);
-        newcdef = addToPublic(cdef,
-          Absyn.ELEMENTITEM(
-          Absyn.ELEMENT(false,redecl,io,
-          Absyn.COMPONENTS(attr,Absyn.TPATH(AbsynUtil.pathStripSamePrefix(tppath,modelpath),NONE()),{
-          Absyn.COMPONENTITEM(Absyn.COMPONENT(name,{},modification),NONE(),annotation_)}),
-          SOURCEINFO(filename,false,0,0,0,0,0.0),NONE())));
-        newp = InteractiveUtil.updateProgram(Absyn.PROGRAM({newcdef},w), p);
-      then
-        (newp,"Ok\n");
+    annotation_ := InteractiveUtil.makeCommentFromArgs(commentExp, annotationExp);
+    modification := InteractiveUtil.makeModifierFromArgs(bindingExp, modifier, info);
+    (io, redecl, attr) := getDefaultPrefixes(program, typeName);
 
-    else (inProgram5,"Error");
+    SOME(ty_path) := AbsynUtil.pathStripSamePrefix(typeName, classPath);
 
-  end matchcontinue;
+    if AbsynUtil.pathContains(classPath, AbsynUtil.pathFirstIdent(ty_path)) then
+      // Keep the full type name if the first identifier of the stripped name
+      // is part of the class path, to avoid name collisions.
+      ty_path := typeName;
+    end if;
+
+    cdef := addToPublic(cdef,
+      Absyn.ELEMENTITEM(
+        Absyn.ELEMENT(false, redecl, io,
+          Absyn.COMPONENTS(attr, Absyn.TPATH(ty_path, NONE()),
+            {Absyn.COMPONENTITEM(Absyn.COMPONENT(componentName, {}, modification), NONE(), annotation_)}),
+          info, NONE())
+      )
+    );
+    program := InteractiveUtil.updateProgram(Absyn.PROGRAM({cdef}, w), program);
+  else
+    success := false;
+  end try;
 end addComponent;
 
 protected function getDefaultPrefixes "Retrieves default prefixes by looking at the defaultComponentPrefixes annotation"
@@ -7407,7 +5484,7 @@ algorithm
   (io,redecl,attr) := match(p,className)
   local String str;
     case(_,_) equation
-      str = getNamedAnnotation(className,p,Absyn.IDENT("defaultComponentPrefixes"),SOME("{}"),getDefaultComponentPrefixesModStr);
+      str = getNamedAnnotationExp(className,p,Absyn.IDENT("defaultComponentPrefixes"),SOME("{}"),getDefaultComponentPrefixesModStr);
       io = getDefaultInnerOuter(str);
       redecl = getDefaultReplaceable(str);
       redecl = makeReplaceableIfPartial(p, className, redecl);
@@ -7493,7 +5570,7 @@ algorithm
   end matchcontinue;
 end getDefaultAttr;
 
-protected function getDefaultComponentPrefixesModStr "Extractor function for defaultComponentPrefixes modifier"
+public function getDefaultComponentPrefixesModStr "Extractor function for defaultComponentPrefixes modifier"
   input Option<Absyn.Modification> mod;
   output String docStr;
 algorithm
@@ -7506,65 +5583,57 @@ algorithm
   end matchcontinue;
 end getDefaultComponentPrefixesModStr;
 
-protected function updateComponent
+public function updateComponent
 " This function updates a component in a class. The reason for having
    thisfunction is that a deletion followed by an addition would mean that
    all optional arguments must be present to the add_componentfunction
    in order to get the same component attributes,etc. as previous."
-  input String inString1;
-  input Absyn.ComponentRef inTypeCref;
-  input Absyn.ComponentRef inComponentRef3;
-  input list<Absyn.NamedArg> inAbsynNamedArgLst4;
-  input Absyn.Program inProgram5;
-  output Absyn.Program outProgram;
-  output String outString;
+  input String componentName;
+  input Absyn.Path typeName;
+  input Absyn.Path classPath;
+  input Absyn.Exp bindingExp;
+  input Absyn.Modification modifier;
+  input Absyn.Exp commentExp;
+  input Absyn.Exp annotationExp;
+  input output Absyn.Program program;
+  output Boolean success = true;
+protected
+  list<Absyn.ClassPart> parts;
+  list<Absyn.ElementItem> publst, protlst;
+  list<Absyn.ComponentItem> items;
+  Absyn.ArrayDim arrayDimensions;
+  Option<Absyn.Modification> mod, modification;
+  Option<Absyn.Exp> cond;
+  Option<Absyn.Comment> ann, annotation_;
 algorithm
-  (outProgram,outString) := matchcontinue (inString1,inComponentRef3,inAbsynNamedArgLst4,inProgram5)
-    local
-      Absyn.ComponentRef tp;
-      Absyn.Path modelpath,modelwithin,tppath,tppath2;
-      Option<Absyn.ArrayDim> x;
-      Absyn.Program p_1,newp,p;
-      list<Absyn.ClassPart> parts;
-      Absyn.Class cdef,newcdef;
-      list<Absyn.ElementItem> publst,protlst;
-      Boolean finalPrefix;
-      Option<Absyn.RedeclareKeywords> repl;
-      Absyn.InnerOuter inout;
-      String name;
-      Absyn.ElementAttributes attr;
-      list<Absyn.ComponentItem> items;
-      SourceInfo info;
-      Option<Absyn.ConstrainClass> constr;
-      Absyn.ArrayDim arrayDimensions;
-      Option<Absyn.Modification> mod,modification;
-      Option<Absyn.Exp> cond;
-      Option<Absyn.Comment> ann,annotation_;
-      Absyn.ComponentRef model_;
-      list<Absyn.NamedArg> nargs;
-      Absyn.Within w;
-
-    // Updating a component to a model
-    case (name,model_,nargs,(p as Absyn.PROGRAM()))
-      equation
-        modelpath = AbsynUtil.crefToPath(model_);
-        tppath2 = AbsynUtil.crefToPath(inTypeCref);
-        Absyn.CLASS(body = Absyn.PARTS(classParts = parts)) = InteractiveUtil.getPathedClassInProgram(modelpath, p);
-        publst = InteractiveUtil.getPublicList(parts);
-        protlst = InteractiveUtil.getProtectedList(parts);
-        Absyn.ELEMENT(_,_,_,Absyn.COMPONENTS(_,Absyn.TPATH(_,_),items),_,_) = getElementContainsName(Absyn.CREF_IDENT(name,{}), listAppend(publst, protlst));
-        Absyn.COMPONENTITEM(Absyn.COMPONENT(_,arrayDimensions,mod),cond,ann) = getCompitemNamed(Absyn.CREF_IDENT(name,{}), items);
-        annotation_ = annotationListToAbsynComment(nargs, ann);
-        modification = modificationToAbsyn(nargs, mod);
-        newp = deleteOrUpdateComponent(name, model_, p, SOME((tppath2, Absyn.COMPONENTITEM(Absyn.COMPONENT(name,arrayDimensions,modification),cond,annotation_))));
-      then
-        (newp,"true");
-
-    // failure
-    else (inProgram5,"false");
+  try
+    Absyn.CLASS(body = Absyn.PARTS(classParts = parts)) := InteractiveUtil.getPathedClassInProgram(classPath, program);
+    publst := InteractiveUtil.getPublicList(parts);
+    protlst := InteractiveUtil.getProtectedList(parts);
+    Absyn.ELEMENT(_,_,_,Absyn.COMPONENTS(_,Absyn.TPATH(_,_),items),_,_) := getElementContainsName(Absyn.CREF_IDENT(componentName,{}), listAppend(publst, protlst));
+    Absyn.COMPONENTITEM(Absyn.COMPONENT(_,arrayDimensions,mod),cond,ann) := getCompitemNamed(Absyn.CREF_IDENT(componentName,{}), items);
+    annotation_ := InteractiveUtil.makeCommentFromArgs(commentExp, annotationExp, ann);
+    modification := InteractiveUtil.makeModifierFromArgs(bindingExp, modifier, AbsynUtil.dummyInfo, mod);
+    program := deleteOrUpdateComponent(componentName, classPath, program, SOME((typeName, Absyn.COMPONENTITEM(Absyn.COMPONENT(componentName,arrayDimensions,modification),cond,annotation_))));
+  else
+    success := false;
     /* adrpo: TODO!: handle also model extends M end M; i.e. CLASS_EXTENDS */
-  end matchcontinue;
+  end try;
 end updateComponent;
+
+public function deleteComponent
+  "Deletes a component from the program."
+  input String componentName;
+  input Absyn.Path classPath;
+  input output Absyn.Program program;
+  output Boolean success = true;
+algorithm
+  try
+    program := deleteOrUpdateComponent(componentName, classPath, program, NONE());
+  else
+    success := false;
+  end try;
+end deleteComponent;
 
 public function addClassAnnotation
   "Adds an annotation to the referenced class."
@@ -7598,7 +5667,7 @@ algorithm
   body := match body
     case Absyn.PARTS()
       algorithm
-        body.ann := {List.fold(body.ann, AbsynUtil.mergeAnnotations, inAnnotation)};
+        body.ann := {AbsynUtil.mergeAnnotationsList(inAnnotation, body.ann)};
       then
         body;
 
@@ -7622,7 +5691,7 @@ algorithm
 
     case Absyn.CLASS_EXTENDS()
       algorithm
-        body.ann := {List.fold(body.ann, AbsynUtil.mergeAnnotations, inAnnotation)};
+        body.ann := {AbsynUtil.mergeAnnotationsList(inAnnotation, body.ann)};
       then
         body;
 
@@ -7641,11 +5710,11 @@ protected function getInheritedClassesHelper
   input SCode.Element inClass1;
   input Absyn.Class inClass2;
   input FCore.Graph inEnv4;
-  output list<Absyn.ComponentRef> outAbsynComponentRefLst;
+  output list<Absyn.Path> outAbsynComponentRefLst;
 algorithm
   outAbsynComponentRefLst := matchcontinue (inClass1,inClass2,inEnv4)
     local
-      list<Absyn.ComponentRef> lst;
+      list<Absyn.Path> lst;
       Integer n_1,n;
       Absyn.ComponentRef cref;
       Absyn.Path path;
@@ -7670,7 +5739,7 @@ algorithm
           (_,env_2,_,_,_) :=
             Inst.partialInstClassIn(FCore.emptyCache(),env2,InnerOuter.emptyInstHierarchy,
             DAE.NOMOD(), DAE.NOPRE(), ci_state, c, SCode.PUBLIC(), {}, 0);
-          end if;
+        end if;
         lst := getBaseClasses(cdef, env_2);
         ErrorExt.rollBack("getInheritedClassesHelper");
       then
@@ -7708,7 +5777,7 @@ try
       list<SCode.Element> p_1;
       FCore.Graph env,env_1;
       SCode.Element c;
-      list<Absyn.ComponentRef> lst;
+      list<Absyn.Path> lst;
       Absyn.Program p;
       list<Absyn.ElementSpec> extendsLst;
       FCore.Cache cache;
@@ -7720,9 +5789,8 @@ try
         p_1 = SymbolTable.getSCode();
         (cache,env) = Inst.makeEnvFromProgram(p_1);
         (_,(c as SCode.CLASS()),env_1) = Lookup.lookupClass(cache,env, modelpath);
-        lst = getInheritedClassesHelper(c, cdef, env_1);
-        failure({} = lst);
-        paths = List.map(lst, AbsynUtil.crefToPath);
+        paths = getInheritedClassesHelper(c, cdef, env_1);
+        failure({} = paths);
       then
         paths;
     case (modelpath) /* if above fails, baseclass not defined. return its name */
@@ -7747,76 +5815,53 @@ end try;
 
 end getInheritedClasses;
 
-protected function getInheritanceCount
-"This function takes a ComponentRef and a Program and
+public function getInheritanceCount
+"This function takes a Path and a Program and
   returns the number of inherited classes in the class
-  referenced by the ComponentRef."
-  input Absyn.ComponentRef inComponentRef;
-  input Absyn.Program inProgram;
-  output Integer outInteger;
+  referenced by the Path."
+  input Absyn.Path classPath;
+  input Absyn.Program program;
+  output Values.Value result;
+protected
+  Absyn.Class cls;
+  Integer count;
 algorithm
-  outInteger := matchcontinue (inComponentRef,inProgram)
-    local
-      Absyn.Path modelpath;
-      Absyn.Class cdef;
-      Integer count;
-      Absyn.ComponentRef model_;
-      Absyn.Program p;
-    case (model_,p)
-      equation
-        modelpath = AbsynUtil.crefToPath(model_);
-        cdef = InteractiveUtil.getPathedClassInProgram(modelpath, p);
-        count = countBaseClasses(cdef);
-      then
-        count;
-    else 0;
-  end matchcontinue;
+  try
+    cls := InteractiveUtil.getPathedClassInProgram(classPath, program);
+    result := ValuesUtil.makeInteger(countBaseClasses(cls));
+  else
+    result := ValuesUtil.makeInteger(0);
+  end try;
 end getInheritanceCount;
 
-protected function getNthInheritedClass
-"This function takes a ComponentRef, an integer and a Program and returns
-  the nth inherited class in the class referenced by the ComponentRef."
-  input Absyn.ComponentRef inComponentRef;
-  input Integer inInteger;
-  output String outString;
+public function getNthInheritedClass
+"This function takes a Path, an integer and a Program and returns
+  the nth inherited class in the class referenced by the Path."
+  input Absyn.Path classPath;
+  input Integer n;
+  output Values.Value result;
+protected
+  Absyn.Class cls;
+  FCore.Graph env;
+  FCore.Cache cache;
+  SCode.Element elem;
+  Absyn.Path path;
 algorithm
-  outString := matchcontinue (inComponentRef,inInteger)
-    local
-      Absyn.Path modelpath,path;
-      Absyn.Class cdef;
-      list<SCode.Element> p_1;
-      FCore.Graph env,env_1;
-      SCode.Element c;
-      String id,str,s;
-      SCode.Encapsulated encflag;
-      SCode.Restriction restr;
-      Absyn.ComponentRef model_;
-      Integer n,n_1;
-      Absyn.Program p;
-      list<Absyn.ElementSpec> extends_;
-      FCore.Cache cache;
+  try
+    cls := InteractiveUtil.getPathedClassInProgram(classPath, SymbolTable.getAbsyn());
+    (cache, env) := Inst.makeEnvFromProgram(SymbolTable.getSCode());
 
-    case (model_,n)
-      equation
-        modelpath = AbsynUtil.crefToPath(model_);
-        cdef = InteractiveUtil.getPathedClassInProgram(modelpath, SymbolTable.getAbsyn());
-        p_1 = SymbolTable.getSCode();
-        (cache,env) = Inst.makeEnvFromProgram(p_1);
-        (_,(c as SCode.CLASS()),env_1) = Lookup.lookupClass(cache,env, modelpath);
-        str = getNthInheritedClass2(c, cdef, n, env_1);
-      then
-        str;
-    case (model_,n) /* if above fails, baseclass not defined. return its name */
-      equation
-        modelpath = AbsynUtil.crefToPath(model_);
-        cdef = InteractiveUtil.getPathedClassInProgram(modelpath, SymbolTable.getAbsyn());
-        extends_ = getExtendsInClass(cdef);
-        Absyn.EXTENDS(path,_,_) = listGet(extends_, n);
-        s = AbsynUtil.pathString(path);
-      then
-        s;
-    else "Error";
-  end matchcontinue;
+    try
+      (_, elem as SCode.CLASS(), env) := Lookup.lookupClass(cache, env, classPath);
+      result := ValuesUtil.makeCodeTypeName(getNthInheritedClass2(elem, cls, n, env));
+    else
+      // if above fails, baseclass not defined. return its name
+      Absyn.EXTENDS(path = path) := listGet(getExtendsInClass(cls), n);
+      result := ValuesUtil.makeCodeTypeName(path);
+    end try;
+  else
+    result := ValuesUtil.makeBoolean(false);
+  end try;
 end getNthInheritedClass;
 
 protected function getNthInheritedClassAnnotationOpt
@@ -7900,194 +5945,148 @@ algorithm
   end matchcontinue;
 end getMapAnnotationStr;
 
-protected function getNthInheritedClassMapAnnotation
-"This function takes a ComponentRef, an integer and a Program and returns
-  the ANNOTATION on the extends of the nth inherited class in the class referenced by the ComponentRef."
-  input Absyn.Path inModelPath;
-  input Integer inInteger;
-  input Absyn.Program inProgram;
-  input String inMapType "IconMap or DiagramMap";
-  output String outString;
+public function getNthInheritedClassIconMapAnnotation
+  input Absyn.Path classPath;
+  input Integer n;
+  input Absyn.Program program;
+  output Values.Value result;
+protected
+  function impl
+    input Absyn.Path classPath;
+    input Integer n;
+    input Absyn.Program program;
+    input Access accessLevel;
+    output Values.Value result;
+  algorithm
+    result := getNthInheritedClassMapAnnotation(classPath, n, program, "IconMap");
+  end impl;
 algorithm
-  outString := matchcontinue (inModelPath,inInteger,inProgram,inMapType)
-    local
-      Absyn.Path modelpath;
-      Absyn.Class cdef;
-      String s,annStr;
-      Integer n;
-      Absyn.Program p;
-      list<Absyn.ElementArg> elArgs;
+  result := InteractiveUtil.accessClass(classPath, program, function impl(n = n), evaluateParams = true);
+end getNthInheritedClassIconMapAnnotation;
 
-    case (modelpath,n,p,_)
-      equation
-        cdef = InteractiveUtil.getPathedClassInProgram(modelpath, p);
-        (s, SOME(Absyn.ANNOTATION(elArgs))) = getNthInheritedClassAnnotationOpt(modelpath, n, cdef, p);
-        annStr = getMapAnnotationStr(elArgs,inMapType, cdef, p, modelpath);
-        s = "{" + s + ", " + annStr + "}";
-      then
-        s;
-    case (modelpath,n,p,_)
-      equation
-        cdef = InteractiveUtil.getPathedClassInProgram(modelpath, p);
-        (s, NONE()) = getNthInheritedClassAnnotationOpt(modelpath, n, cdef, p);
-        s = "{" + s + ",{}}";
-      then
-        s;
-    else "Error";
-  end matchcontinue;
+public function getNthInheritedClassDiagramMapAnnotation
+  input Absyn.Path classPath;
+  input Integer n;
+  input Absyn.Program program;
+  output Values.Value result;
+protected
+  function impl
+    input Absyn.Path classPath;
+    input Integer n;
+    input Absyn.Program program;
+    input Access accessLevel;
+    output Values.Value result;
+  algorithm
+    result := getNthInheritedClassMapAnnotation(classPath, n, program, "DiagramMap");
+  end impl;
+algorithm
+  result := InteractiveUtil.accessClass(classPath, program, function impl(n = n), evaluateParams = true);
+end getNthInheritedClassDiagramMapAnnotation;
+
+protected function getNthInheritedClassMapAnnotation
+"This function takes a Path, an integer and a Program and returns
+  the ANNOTATION on the extends of the nth inherited class in the class referenced by the ComponentRef."
+  input Absyn.Path classPath;
+  input Integer n;
+  input Absyn.Program program;
+  input String mapType "IconMap or DiagramMap";
+  output Values.Value result;
+protected
+  Absyn.Class cls;
+  String s, annStr;
+  Option<Absyn.Annotation> opt_ann;
+  list<Absyn.ElementArg> args;
+algorithm
+  cls := InteractiveUtil.getPathedClassInProgram(classPath, program);
+  (s, opt_ann) := getNthInheritedClassAnnotationOpt(classPath, n, cls, program);
+
+  annStr := match opt_ann
+    case SOME(Absyn.ANNOTATION(args)) then getMapAnnotationStr(args, mapType, cls, program, classPath);
+    else "{}";
+  end match;
+
+  result := InteractiveUtil.makeAnnotationArrayValue({s, annStr});
 end getNthInheritedClassMapAnnotation;
 
 protected function getExtendsInClass
-"Returns all ElementSpec of EXTENDS in a class."
+  "Returns all ElementSpec of EXTENDS in a class."
   input Absyn.Class inClass;
-  output list<Absyn.ElementSpec> outAbsynElementSpecLst;
+  output list<Absyn.ElementSpec> outExtends;
+protected
+  list<Absyn.ClassPart> parts;
 algorithm
-  outAbsynElementSpecLst := match (inClass)
-    local
-      list<Absyn.ElementSpec> res;
-      String n;
-      Boolean p,f,e;
-      Absyn.Restriction r;
-      list<Absyn.ClassPart> parts;
-    /* a class with parts */
-    case (Absyn.CLASS(
-                      body = Absyn.PARTS(classParts = parts)))
-      equation
-        res = getExtendsInParts(parts);
-      then
-        res;
-    /* an extended class with parts: model extends M end M; */
-    case (Absyn.CLASS(
-                      body = Absyn.CLASS_EXTENDS(parts = parts)))
-      equation
-        res = getExtendsInParts(parts);
-      then
-        res;
+  outExtends := match inClass
+    case Absyn.CLASS(body = Absyn.PARTS(classParts = parts)) then getExtendsInParts(parts);
     /* adrpo: TODO! how about model extends M(modifications) end M??
                     should we report EXTENDS(IDENT(M), modifications)? */
+    case Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = parts)) then getExtendsInParts(parts);
+    else {};
   end match;
 end getExtendsInClass;
 
 protected function getExtendsInParts
-"author: PA
-  Helper function to getExtendsInElass."
-  input list<Absyn.ClassPart> inAbsynClassPartLst;
-  output list<Absyn.ElementSpec> outAbsynElementSpecLst;
+  input list<Absyn.ClassPart> parts;
+  output list<Absyn.ElementSpec> outExtends = {};
+protected
+  Absyn.ElementSpec spec;
 algorithm
-  outAbsynElementSpecLst := matchcontinue (inAbsynClassPartLst)
-    local
-      list<Absyn.ElementSpec> l1,l2,res;
-      list<Absyn.ElementItem> elts;
-      list<Absyn.ClassPart> parts;
+  for part in parts loop
+    for el in AbsynUtil.getElementItemsInClassPart(part) loop
+      outExtends := match el
+        case Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = spec as Absyn.EXTENDS()))
+          then spec :: outExtends;
+        else outExtends;
+      end match;
+    end for;
+  end for;
 
-    case {} then {};
-
-    case ((Absyn.PUBLIC(contents = elts) :: parts))
-      equation
-        l1 = getExtendsInParts(parts);
-        l2 = getExtendsInElementitems(elts);
-        res = listAppend(l1, l2);
-      then
-        res;
-
-    case ((Absyn.PROTECTED(contents = elts) :: parts))
-      equation
-        l1 = getExtendsInParts(parts);
-        l2 = getExtendsInElementitems(elts);
-        res = listAppend(l1, l2);
-      then
-        res;
-
-    case ((_ :: parts))
-      equation
-        res = getExtendsInParts(parts);
-      then
-        res;
-
-  end matchcontinue;
+  outExtends := Dangerous.listReverseInPlace(outExtends);
 end getExtendsInParts;
-
-protected function getExtendsInElementitems
-"author: PA
-  Helper function to getExtendsInParts."
-  input list<Absyn.ElementItem> inAbsynElementItemLst;
-  output list<Absyn.ElementSpec> outAbsynElementSpecLst;
-algorithm
-  outAbsynElementSpecLst:=
-  matchcontinue (inAbsynElementItemLst)
-    local
-      list<Absyn.ElementSpec> res;
-      Absyn.ElementSpec e;
-      list<Absyn.ElementItem> es;
-    case ({}) then {};
-    case ((Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = (e as Absyn.EXTENDS()))) :: es))
-      equation
-        res = getExtendsInElementitems(es);
-      then
-        (e :: res);
-    case ((_ :: es))
-      equation
-        res = getExtendsInElementitems(es);
-      then
-        res;
-  end matchcontinue;
-end getExtendsInElementitems;
 
 protected function getNthInheritedClass2
 "Helper function to getNthInheritedClass."
-  input SCode.Element inClass1;
-  input Absyn.Class inClass2;
-  input Integer inInteger3;
-  input FCore.Graph inEnv4;
-  output String outString;
+  input SCode.Element element;
+  input Absyn.Class cls;
+  input Integer n;
+  input FCore.Graph env;
+  output Absyn.Path baseClass;
+protected
+  String id;
+  SCode.Encapsulated enc;
+  SCode.Restriction restr;
+  list<Absyn.Path> extends_lst;
+  FCore.Graph cenv;
+  ClassInf.State ci_state;
+  Absyn.Class c;
 algorithm
-  outString := match (inClass1,inClass2,inInteger3,inEnv4)
-    local
-      list<Absyn.ComponentRef> lst;
-      Integer n_1,n;
-      Absyn.ComponentRef cref;
-      Absyn.Path path;
-      String str,id;
-      SCode.Element c;
-      Absyn.Class cdef;
-      FCore.Graph env,env2,env_2;
-      ClassInf.State ci_state;
-      SCode.Encapsulated encflag;
-      SCode.Restriction restr;
+  SCode.CLASS(name = id, encapsulatedPrefix = enc, restriction = restr) := element;
 
-    case ((c as SCode.CLASS(name = id,encapsulatedPrefix = encflag,restriction = restr)),cdef,n,env)
-      algorithm
-        // for derived classes, search in parents
-        if SCodeUtil.isDerivedClass(c) then
-          lst := getBaseClasses(cdef, env);
-        else // for non-derived classes, search from inside the class
-          env2 := FGraph.openScope(env, encflag, id, FGraph.restrictionToScopeType(restr));
-          ci_state := ClassInf.start(restr, FGraph.getGraphName(env2));
-          (_,env_2,_,_,_) :=
-            Inst.partialInstClassIn(FCore.emptyCache(),env2,InnerOuter.emptyInstHierarchy,
-              DAE.NOMOD(), DAE.NOPRE(), ci_state, c, SCode.PUBLIC(), {}, 0);
-          lst := getBaseClasses(cdef, env_2);
-        end if;
-        cref := listGet(lst, n);
-        path := AbsynUtil.crefToPath(cref);
-        str := AbsynUtil.pathString(path);
-      then
-        str;
-  end match;
+  if SCodeUtil.isDerivedClass(element) then
+    // for derived classes, search in parents
+    extends_lst := getBaseClasses(cls, env);
+  else
+    // for non-derived classes, search from inside the class
+    cenv := FGraph.openScope(env, enc, id, FGraph.restrictionToScopeType(restr));
+    ci_state := ClassInf.start(restr, FGraph.getGraphName(cenv));
+    (_, cenv, _, _, _) := Inst.partialInstClassIn(FCore.emptyCache(), cenv,
+      InnerOuter.emptyInstHierarchy, DAE.NOMOD(), DAE.NOPRE(), ci_state,
+      element, SCode.PUBLIC(), {}, 0);
+    extends_lst := getBaseClasses(cls, cenv);
+  end if;
+
+  baseClass := listGet(extends_lst, n);
 end getNthInheritedClass2;
 
 public function getComponentCount
 " This function takes a ComponentRef and a Program and returns the
    number of public components in the class referenced by the ComponentRef."
-  input Absyn.ComponentRef model_;
+  input Absyn.Path model_;
   input Absyn.Program p;
   output Integer count;
 protected
-  Absyn.Path modelpath;
   Absyn.Class cdef;
 algorithm
-  modelpath := AbsynUtil.crefToPath(model_);
-  cdef := InteractiveUtil.getPathedClassInProgram(modelpath, p);
+  cdef := InteractiveUtil.getPathedClassInProgram(model_, p);
   count := countComponents(cdef);
 end getComponentCount;
 
@@ -8195,73 +6194,45 @@ algorithm
   end match;
 end countComponentsInElts;
 
-protected function getNthComponent "
-   This function takes a `ComponentRef\', a `Program\' and an int and
-   returns a comma separated string of names containing the name, type
-   and comment of that component.
-"
-  input Absyn.ComponentRef inComponentRef;
-  input Absyn.Program inProgram;
-  input Integer inInteger;
-  output String outString;
+public function getNthComponent
+  "This function takes a class path, a program, and an int and returns the name,
+   type and comment of that component."
+  input Absyn.Path classPath;
+  input Absyn.Program program;
+  input Integer n;
+  output Values.Value result;
+protected
+  GraphicEnvCache genv;
+  Absyn.Class cdef;
 algorithm
-  outString:=
-  matchcontinue (inComponentRef,inProgram,inInteger)
-    local
-      Absyn.Path modelpath;
-      list<SCode.Element> p_1;
-      FCore.Graph env,env_1;
-      GraphicEnvCache genv;
-      SCode.Element c;
-      String id,str;
-      SCode.Encapsulated encflag;
-      SCode.Restriction restr;
-      Absyn.Class cdef;
-      Absyn.ComponentRef model_;
-      Absyn.Program p;
-      Integer n;
-      FCore.Cache cache;
-
-    case (model_,p,n)
-      equation
-        modelpath = AbsynUtil.crefToPath(model_);
-        p_1 = AbsynToSCode.translateAbsyn2SCode(p);
-        genv = InteractiveUtil.createEnvironment(SymbolTable.getAbsyn(), SOME(p_1), modelpath);
-        cdef = InteractiveUtil.getPathedClassInProgram(modelpath, p);
-        str = getNthComponent2(cdef, n, genv);
-      then
-        str;
-    else "Error";
-  end matchcontinue;
+  try
+    genv := InteractiveUtil.createEnvironment(SymbolTable.getAbsyn(), SOME(SymbolTable.getSCode()), classPath);
+    cdef := InteractiveUtil.getPathedClassInProgram(classPath, program);
+    result := getNthComponent2(cdef, n, genv);
+  else
+    result := ValuesUtil.makeBoolean(false);
+  end try;
 end getNthComponent;
 
 protected function getNthComponent2
-"Helper function to get_nth_component."
-  input Absyn.Class inClass2;
-  input Integer inInteger3;
+  "Helper function to getNthComponent."
+  input Absyn.Class inClass;
+  input Integer n;
   input GraphicEnvCache genv;
-  output String outString;
+  output Values.Value result;
+protected
+  Absyn.Element comp;
+  String comp_name, cmt;
+  Absyn.Path ty;
 algorithm
-  outString:=
-  matchcontinue (inClass2,inInteger3,genv)
-    local
-      GraphicEnvCache env;
-      Absyn.Element comp;
-      Absyn.Class cdef;
-      Integer n;
-      String s1, str;
+  comp := InteractiveUtil.getNthComponentInClass(inClass, n);
+  (comp_name, ty, cmt) := getComponentInfoOld(comp, genv);
 
-    case (cdef,n,env)
-      equation
-        comp = getNthComponentInClass(cdef, n);
-        {s1} = getComponentInfoOld(comp, env);
-        str = stringAppendList({"{", s1, "}"});
-      then
-        str;
-    else
-      then
-        fail();
-  end matchcontinue;
+  result := Values.ARRAY({
+    ValuesUtil.makeCodeTypeName(ty),
+    Values.CODE(Absyn.CodeNode.C_VARIABLENAME(Absyn.ComponentRef.CREF_IDENT(comp_name, {}))),
+    ValuesUtil.makeString(cmt)
+  }, {3});
 end getNthComponent2;
 
 protected function useQuotes
@@ -8283,7 +6254,7 @@ algorithm
   end match;
 end useQuotes;
 
-protected function insertQuotesToList
+public function insertQuotesToList
   input list<String> inStringList;
   output list<String> outStringList;
 algorithm
@@ -8302,190 +6273,200 @@ algorithm
 end insertQuotesToList;
 
 public function getComponents
-" This function takes a `ComponentRef\', a `Program\' and an int and  returns
-   a list of all components, as returned by get_nth_component."
-  input Absyn.ComponentRef cr;
-  input Boolean inBoolean;
-  input Integer inAccess;
-  output String outString;
+  input Absyn.Path classPath;
+  input Boolean useQuotes;
+  input Absyn.Program program;
+  output Values.Value result;
 algorithm
-  outString := getComponents2(cr,inBoolean,inAccess);
+  result := getElements(classPath, useQuotes, program, onlyComponents = true);
 end getComponents;
 
-protected function getComponents2
-" This function takes a `ComponentRef\', a `Program\' and an int and  returns
-   a list of all components, as returned by get_nth_component."
-  input Absyn.ComponentRef inComponentRef;
-  input Boolean inBoolean;
-  input Integer inAccess;
-  output String outString;
+public function getElements
+  input Absyn.Path classPath;
+  input Boolean useQuotes;
+  input Absyn.Program program;
+  input Boolean onlyComponents = false;
+  output Values.Value result;
+protected
+  Access access;
+  Absyn.Class cls;
+  Interactive.GraphicEnvCache env;
+  Boolean silent;
+  list<Values.Value> infos;
+  list<Absyn.Element> elems;
 algorithm
-  outString := matchcontinue (inComponentRef,inBoolean,inAccess)
-    local
-      Absyn.Path modelpath;
-      Absyn.Class cdef;
-      list<SCode.Element> p_1;
-      FCore.Graph env,env_1,env2;
-      SCode.Element c;
-      String id,s1,s2,str,res;
-      SCode.Encapsulated encflag;
-      SCode.Restriction restr;
-      ClassInf.State ci_state;
-      list<Absyn.Element> comps1,comps2;
-      Absyn.ComponentRef model_;
-      Absyn.Program p;
-      FCore.Cache cache;
-      Boolean b, permissive;
-      GraphicEnvCache genv;
-      Integer access;
+  try
+    access := checkAccessAnnotationAndEncryption(classPath, program);
 
-    case (model_,b,access)
-      equation
-        modelpath = AbsynUtil.crefToPath(model_);
-        cdef = InteractiveUtil.getPathedClassInProgram(modelpath, SymbolTable.getAbsyn());
-        genv = InteractiveUtil.createEnvironment(SymbolTable.getAbsyn(), SOME(SymbolTable.getSCode()), modelpath);
-        comps1 = getPublicComponentsInClass(cdef);
-        s1 = getComponentsInfo(comps1, b, "\"public\"", genv);
-        if (access >= 4) then // i.e., Access.diagram
-          comps2 = getProtectedComponentsInClass(cdef);
-          s2 = getComponentsInfo(comps2, b, "\"protected\"", genv);
-        else
-          s2 = "";
-        end if;
-        str = Util.stringDelimitListNonEmptyElts({s1,s2}, ",");
-        res = stringAppendList({"{",str,"}"});
-      then res;
-    else "Error";
-  end matchcontinue;
-end getComponents2;
+    if access < Access.icon then // Access.icon
+      Error.addMessage(Error.ACCESS_ENCRYPTED_PROTECTED_CONTENTS, {});
+      result := ValuesUtil.makeBoolean(false);
+      return;
+    end if;
 
-protected function getComponentAnnotations " This function takes a `ComponentRef\', a `Program\' and
+    silent := not Flags.isSet(Flags.NF_API_NOISE);
+    if silent then
+      ErrorExt.setCheckpoint(getInstanceName());
+    end if;
+
+    cls := InteractiveUtil.getPathedClassInProgram(classPath, program);
+    env := InteractiveUtil.createEnvironment(program, SOME(SymbolTable.getSCode()), classPath);
+
+    if access >= Access.diagram then // Access.diagram
+      elems := InteractiveUtil.getProtectedElementsInClass(cls);
+      infos := InteractiveUtil.getElementsInfo(elems, false, useQuotes, onlyComponents, env);
+    end if;
+
+    elems := InteractiveUtil.getPublicElementsInClass(cls);
+    infos := InteractiveUtil.getElementsInfo(elems, true, useQuotes, onlyComponents, env, infos);
+
+    result := ValuesUtil.makeArray(infos);
+  else
+    result := ValuesUtil.makeBoolean(false);
+  end try;
+
+  if silent then
+    ErrorExt.rollBack(getInstanceName());
+  end if;
+end getElements;
+
+public function getComponentAnnotations " This function takes a `Path\', a `Program\' and
    returns a list of all component annotations, as returned by
    get_nth_component_annotation.
    Both public and protected components are returned, but they need to
    be in the same order as get_componentsfunctions, i.e. first public
    components then protected ones."
-  input Absyn.ComponentRef inClassPath;
-  input Absyn.Program inProgram;
-  input Integer inAccess;
-  output String outString;
+  input Absyn.Path classPath;
+  input Absyn.Program program;
+  output Values.Value result;
 protected
-  Absyn.Path model_path;
-  Absyn.Class cdef;
-  list<Absyn.Element> comps1, comps2, comps;
-algorithm
-  try
-    model_path := AbsynUtil.crefToPath(inClassPath);
-    cdef := InteractiveUtil.getPathedClassInProgram(model_path, inProgram);
-    comps1 := getPublicComponentsInClass(cdef);
-    if (inAccess >= 4) then // i.e., Access.diagram
-      comps2 := getProtectedComponentsInClass(cdef);
-    else
-      comps2 := {};
+  function impl
+    input Absyn.Path classPath;
+    input Absyn.Program program;
+    input Access accessLevel;
+    output Values.Value result;
+  protected
+    Absyn.Class cdef;
+    list<Absyn.Element> comps;
+
+    OpenModelica.AutoCompletion.Annotations.Access access;
+  algorithm
+    cdef := InteractiveUtil.getPathedClassInProgram(classPath, program);
+
+    if accessLevel >= Access.diagram then
+      comps := InteractiveUtil.getProtectedComponentsInClass(cdef);
     end if;
-    comps := listAppend(comps1, comps2);
-    outString := getComponentAnnotationsFromElts(comps, cdef, inProgram, model_path);
-    outString := stringAppendList({"{", outString, "}"});
-  else
-    outString := "Error";
-  end try;
+
+    comps := listAppend(InteractiveUtil.getPublicComponentsInClass(cdef), comps);
+    result := InteractiveUtil.getElementAnnotationsFromElts(comps, cdef, program, classPath);
+  end impl;
+algorithm
+  result := InteractiveUtil.accessClass(classPath, program, impl, evaluateParams = true);
 end getComponentAnnotations;
 
-protected function getNthComponentAnnotation "
-   This function takes a `ComponentRef\', a `Program\' and an int and
+public function getElementAnnotations " This function takes a `Path\', a `Program\' and
+   returns a list of all element annotations.
+   Both public and protected components are returned, but they need to
+   be in the same order as get_componentsfunctions, i.e. first public
+   components then protected ones."
+  input Absyn.Path classPath;
+  input Absyn.Program program;
+  output Values.Value result;
+protected
+  function impl
+    input Absyn.Path classPath;
+    input Absyn.Program program;
+    input Access accessLevel;
+    output Values.Value result;
+  protected
+    Absyn.Class cdef;
+    list<Absyn.Element> elts;
+  algorithm
+    cdef := InteractiveUtil.getPathedClassInProgram(classPath, program);
+
+    if accessLevel >= Access.diagram then
+      elts := InteractiveUtil.getProtectedElementsInClass(cdef);
+    end if;
+
+    elts := listAppend(InteractiveUtil.getPublicElementsInClass(cdef), elts);
+    result := InteractiveUtil.getElementAnnotationsFromElts(elts, cdef, program, classPath);
+  end impl;
+algorithm
+  result := InteractiveUtil.accessClass(classPath, program, impl, evaluateParams = true);
+end getElementAnnotations;
+
+public function getNthComponentAnnotation "
+   This function takes a `Path\', a `Program\' and an int and
    returns a comma separated string of values corresponding to the flat
    record for component annotations.
 "
-  input Absyn.ComponentRef inComponentRef;
-  input Absyn.Program inProgram;
-  input Integer inInteger;
-  output String outString;
+  input Absyn.Path classPath;
+  input Integer n;
+  input Absyn.Program program;
+  output Values.Value result;
+protected
+  function impl
+    input Absyn.Path classPath;
+    input Integer n;
+    input Absyn.Program program;
+    input Access accessLevel;
+    output Values.Value result;
+  protected
+    Absyn.Class cdef;
+    Absyn.Element comp;
+  algorithm
+    cdef := InteractiveUtil.getPathedClassInProgram(classPath, program);
+    comp := InteractiveUtil.getNthComponentInClass(cdef, n);
+    result := InteractiveUtil.getElementAnnotationsFromElts({comp}, cdef, program, classPath);
+
+    // Only return an array of arrays if there are multiple components in the same declaration.
+    if ValuesUtil.isArray(result) and ValuesUtil.arraySize(result) == 1 then
+      result := ValuesUtil.arrayScalar(result);
+    end if;
+  end impl;
 algorithm
-  outString := matchcontinue (inComponentRef,inProgram,inInteger)
-    local
-      Absyn.Path modelpath;
-      Absyn.Class cdef;
-      Absyn.Element comp;
-      String s1,str;
-      Absyn.ComponentRef model_;
-      Absyn.Program p;
-      Integer n;
-    case (model_,p,n)
-      equation
-        modelpath = AbsynUtil.crefToPath(model_);
-        cdef = InteractiveUtil.getPathedClassInProgram(modelpath, p);
-        comp = getNthComponentInClass(cdef, n);
-        s1 = getComponentAnnotation(comp, cdef, p, modelpath);
-        str = stringAppendList({"{", s1, "}"});
-      then
-        str;
-    else "Error";
-  end matchcontinue;
+  result := InteractiveUtil.accessClass(classPath, program, function impl(n = n), evaluateParams = true);
 end getNthComponentAnnotation;
 
-protected function getNthComponentModification "
-  This function takes a `ComponentRef\', a `Program\' and an int and
-  returns a comma separated string of values corresponding to the
-  flat record for component annotations.
-"
-  input Absyn.ComponentRef inComponentRef;
-  input Absyn.Program inProgram;
-  input Integer inInteger;
-  output String outString;
+public function getNthComponentModification
+  "Returns the modifier for the n:th component in the given class."
+  input Absyn.Path classPath;
+  input Integer n;
+  input Absyn.Program program;
+  output Values.Value result;
+protected
+  Absyn.Class cls;
+  Absyn.Element comp;
 algorithm
-  outString:=
-  matchcontinue (inComponentRef,inProgram,inInteger)
-    local
-      Absyn.Path modelpath;
-      Absyn.Class cdef;
-      Absyn.Element comp;
-      String str,str_1;
-      Absyn.ComponentRef model_;
-      Absyn.Program p;
-      Integer n;
-    case (model_,p,n)
-      equation
-        modelpath = AbsynUtil.crefToPath(model_);
-        cdef = InteractiveUtil.getPathedClassInProgram(modelpath, p);
-        comp = getNthComponentInClass(cdef, n);
-        str = getComponentModification(comp);
-        str_1 = stringAppendList({"{",str,"}"});
-      then
-        str_1;
-    else "Error";
-  end matchcontinue;
+  try
+    cls := InteractiveUtil.getPathedClassInProgram(classPath, program);
+    comp := InteractiveUtil.getNthComponentInClass(cls, n);
+    result := getComponentModification(comp);
+  else
+    result := ValuesUtil.makeBoolean(false);
+  end try;
 end getNthComponentModification;
 
-protected function getNthComponentCondition
-"This function takes a `ComponentRef\', a `Program\' and an int and
-  returns a component condition."
-  input Absyn.ComponentRef inComponentRef;
-  input Absyn.Program inProgram;
-  input Integer inInteger;
-  output String outString;
+public function getNthComponentCondition
+  "Returns the condition of the n:th component in the given class as a string."
+  input Absyn.Path classPath;
+  input Integer n;
+  input Absyn.Program program;
+  output Values.Value result;
+protected
+  Absyn.Class cls;
+  Absyn.Element comp;
+  String str;
 algorithm
-  outString:=
-  matchcontinue (inComponentRef,inProgram,inInteger)
-    local
-      Absyn.Path modelpath;
-      Absyn.Class cdef;
-      Absyn.Element comp;
-      String str,str_1;
-      Absyn.ComponentRef model_;
-      Absyn.Program p;
-      Integer n;
-    case (model_,p,n)
-      equation
-        modelpath = AbsynUtil.crefToPath(model_);
-        cdef = InteractiveUtil.getPathedClassInProgram(modelpath, p);
-        comp = getNthComponentInClass(cdef, n);
-        str = getComponentCondition(comp);
-        str = System.trim(str, " ");
-        str_1 = stringAppendList({"\"",str,"\""});
-      then
-        str_1;
-    else "Error";
-  end matchcontinue;
+  try
+    cls := InteractiveUtil.getPathedClassInProgram(classPath, program);
+    comp := InteractiveUtil.getNthComponentInClass(cls, n);
+    str := getComponentCondition(comp);
+    str := System.trim(str, " ");
+    result := ValuesUtil.makeString(str);
+  else
+    result := ValuesUtil.makeBoolean(false);
+  end try;
 end getNthComponentCondition;
 
 protected function getComponentCondition
@@ -8572,165 +6553,78 @@ algorithm
   end match;
 end getStringComment;
 
-protected function addConnection "
-  Adds a connect equation to the model, i..e connect(c1,c2)
-
-  inputs: (Absyn.ComponentRef, /* model name */
-             Absyn.ComponentRef, /* c1 */
-             Absyn.ComponentRef, /* c2 */
-             Absyn.NamedArg list, /* annotations */
-             Absyn.Program) =>
-  outputs: (string, Absyn.Program)
-"
-  input Absyn.ComponentRef inComponentRef1;
-  input Absyn.ComponentRef inComponentRef2;
-  input Absyn.ComponentRef inComponentRef3;
-  input list<Absyn.NamedArg> inAbsynNamedArgLst4;
-  input Absyn.Program inProgram5;
-  output String outString;
-  output Absyn.Program outProgram;
+public function addConnection
+  "Adds a connect equation to the model, i.e. connect(c1,c2)"
+  input Absyn.Path classPath;
+  input Absyn.ComponentRef connector1;
+  input Absyn.ComponentRef connector2;
+  input Absyn.Exp commentExp;
+  input Absyn.Exp annotationExp;
+  input output Absyn.Program program;
+        output Boolean success;
+protected
+  Absyn.EquationItem eq;
+  Option<Absyn.Comment> cmt;
 algorithm
-  (outString,outProgram):=
-  matchcontinue (inComponentRef1,inComponentRef2,inComponentRef3,inAbsynNamedArgLst4,inProgram5)
-    local
-      Absyn.Path modelpath,package_;
-      Absyn.Class cdef,newcdef;
-      Absyn.Program newp,p;
-      Absyn.ComponentRef model_,c1,c2;
-      Absyn.Within w;
-      Option<Absyn.Comment> cmt;
-      list<Absyn.NamedArg> nargs;
-
-    case ((model_ as Absyn.CREF_IDENT()),c1,c2,{},(p as Absyn.PROGRAM()))
-      equation
-        modelpath = AbsynUtil.crefToPath(model_);
-        cdef = InteractiveUtil.getPathedClassInProgram(modelpath, p);
-        newcdef = addToEquation(cdef, Absyn.EQUATIONITEM(Absyn.EQ_CONNECT(c1,c2),NONE(),AbsynUtil.dummyInfo));
-        newp = InteractiveUtil.updateProgram(Absyn.PROGRAM({newcdef},p.within_), p);
-      then
-        ("Ok",newp);
-
-    case ((model_ as Absyn.CREF_QUAL()),c1,c2,{},(p as Absyn.PROGRAM()))
-      equation
-        modelpath = AbsynUtil.crefToPath(model_);
-        cdef = InteractiveUtil.getPathedClassInProgram(modelpath, p);
-        package_ = AbsynUtil.stripLast(modelpath);
-        newcdef = addToEquation(cdef, Absyn.EQUATIONITEM(Absyn.EQ_CONNECT(c1,c2),NONE(),AbsynUtil.dummyInfo));
-        newp = InteractiveUtil.updateProgram(Absyn.PROGRAM({newcdef},Absyn.WITHIN(package_)), p);
-      then
-        ("Ok",newp);
-    case ((model_ as Absyn.CREF_IDENT()),c1,c2,nargs,(p as Absyn.PROGRAM()))
-      equation
-        modelpath = AbsynUtil.crefToPath(model_);
-        cdef = InteractiveUtil.getPathedClassInProgram(modelpath, p);
-        cmt = annotationListToAbsynComment(nargs,NONE());
-        newcdef = addToEquation(cdef, Absyn.EQUATIONITEM(Absyn.EQ_CONNECT(c1,c2),cmt,AbsynUtil.dummyInfo));
-        newp = InteractiveUtil.updateProgram(Absyn.PROGRAM({newcdef},p.within_), p);
-      then
-        ("Ok",newp);
-    case ((model_ as Absyn.CREF_QUAL()),c1,c2,nargs,(p as Absyn.PROGRAM()))
-      equation
-        modelpath = AbsynUtil.crefToPath(model_);
-        cdef = InteractiveUtil.getPathedClassInProgram(modelpath, p);
-        package_ = AbsynUtil.stripLast(modelpath);
-        cmt = annotationListToAbsynComment(nargs,NONE());
-        newcdef = addToEquation(cdef, Absyn.EQUATIONITEM(Absyn.EQ_CONNECT(c1,c2),cmt,AbsynUtil.dummyInfo));
-        newp = InteractiveUtil.updateProgram(Absyn.PROGRAM({newcdef},Absyn.WITHIN(package_)), p);
-      then
-        ("Ok",newp);
-  end matchcontinue;
+  try
+    cmt := InteractiveUtil.makeCommentFromArgs(commentExp, annotationExp);
+    eq := Absyn.EquationItem.EQUATIONITEM(Absyn.Equation.EQ_CONNECT(connector1, connector2),
+      cmt, AbsynUtil.dummyInfo);
+    program := transformPathedClassInProgram(classPath, program,
+      function addToEquation(inEquationItem = eq));
+    success := true;
+  else
+    success := false;
+  end try;
 end addConnection;
 
-protected function deleteConnection "
-  Delete the connection connect(c1,c2) from a model.
-
-  inputs:  (Absyn.ComponentRef, /* model name */
-              Absyn.ComponentRef, /* c1 */
-              Absyn.ComponentRef, /* c2 */
-              Absyn.Program)
-  outputs:  (string,Absyn.Program)
-"
-  input Absyn.ComponentRef inComponentRef1;
-  input Absyn.ComponentRef inComponentRef2;
-  input Absyn.ComponentRef inComponentRef3;
-  input Absyn.Program inProgram4;
-  output String outString;
-  output Absyn.Program outProgram;
+public function deleteConnection
+  "Deletes the connection connect(c1,c2) from a model."
+  input Absyn.Path classPath;
+  input Absyn.ComponentRef connector1;
+  input Absyn.ComponentRef connector2;
+  input output Absyn.Program program;
+        output Boolean success;
 algorithm
-  (outString,outProgram):=
-  matchcontinue (inComponentRef1,inComponentRef2,inComponentRef3,inProgram4)
-    local
-      Absyn.Path modelpath,modelwithin;
-      Absyn.Class cdef,newcdef;
-      Absyn.Program newp,p;
-      Absyn.ComponentRef model_,c1,c2;
-      Absyn.Within w;
-
-    case (model_,c1,c2,(p as Absyn.PROGRAM()))
-      equation
-        modelpath = AbsynUtil.crefToPath(model_);
-        modelwithin = AbsynUtil.stripLast(modelpath);
-        cdef = InteractiveUtil.getPathedClassInProgram(modelpath, p);
-        newcdef = deleteEquationInClass(cdef, c1, c2);
-        newp = InteractiveUtil.updateProgram(Absyn.PROGRAM({newcdef},Absyn.WITHIN(modelwithin)), p);
-      then
-        ("Ok",newp);
-    case (model_,c1,c2,(p as Absyn.PROGRAM()))
-      equation
-        modelpath = AbsynUtil.crefToPath(model_);
-        cdef = InteractiveUtil.getPathedClassInProgram(modelpath, p);
-        newcdef = deleteEquationInClass(cdef, c1, c2);
-        newp = InteractiveUtil.updateProgram(Absyn.PROGRAM({newcdef},Absyn.TOP()), p);
-      then
-        ("Ok",newp);
-    case (_,_,_,(p as Absyn.PROGRAM())) then ("Error",p);
-  end matchcontinue;
+  try
+    program := transformPathedClassInProgram(classPath, program,
+      function deleteConnectionInClass(connector1 = connector1, connector2 = connector2));
+    success := true;
+  else
+    success := false;
+  end try;
 end deleteConnection;
 
-protected function deleteEquationInClass
+protected function deleteConnectionInClass
 "Helper function to deleteConnection."
-  input Absyn.Class inClass1;
-  input Absyn.ComponentRef inComponentRef2;
-  input Absyn.ComponentRef inComponentRef3;
-  output Absyn.Class outClass;
+  input output Absyn.Class cls;
+  input Absyn.ComponentRef connector1;
+  input Absyn.ComponentRef connector2;
+protected
+  list<Absyn.EquationItem> eqlst;
+  Absyn.ClassDef cdef;
 algorithm
-  outClass:=
-  match (inClass1,inComponentRef2,inComponentRef3)
-    local
-      list<Absyn.EquationItem> eqlst,eqlst_1;
-      list<Absyn.ClassPart> parts2,parts;
-      String i, bcname;
-      Boolean p,f,e;
-      Absyn.Restriction r;
-      Option<String> cmt;
-      SourceInfo file_info;
-      Absyn.ComponentRef c1,c2;
-      list<Absyn.ElementArg> modif;
-      list<String> typeVars;
-      list<Absyn.NamedArg> classAttrs;
-      list<Absyn.Annotation> ann;
+  () := match cls
     /* a class with parts */
-    case (outClass as Absyn.CLASS(name = i,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
-                      body = Absyn.PARTS(typeVars = typeVars,classAttrs = classAttrs,classParts = parts,ann=ann,comment = cmt),info = file_info),c1,c2)
-      equation
-        eqlst = InteractiveUtil.getEquationList(parts);
-        eqlst_1 = deleteEquationInEqlist(eqlst, c1, c2);
-        parts2 = InteractiveUtil.replaceEquationList(parts, eqlst_1);
-        outClass.body = Absyn.PARTS(typeVars,classAttrs,parts2,ann,cmt);
+    case Absyn.CLASS(body = cdef as Absyn.PARTS())
+      algorithm
+        eqlst := InteractiveUtil.getEquationList(cdef.classParts);
+        eqlst := deleteEquationInEqlist(eqlst, connector1, connector2);
+        cdef.classParts := InteractiveUtil.replaceEquationList(cdef.classParts, eqlst);
+        cls.body := cdef;
       then
-        outClass;
+        ();
     /* an extended class with parts: model extends M end M;  */
-    case (outClass as Absyn.CLASS(name = i,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
-                      body = Absyn.CLASS_EXTENDS(baseClassName = bcname,modifications=modif,parts = parts,ann = ann,comment = cmt),info = file_info),c1,c2)
-      equation
-        eqlst = InteractiveUtil.getEquationList(parts);
-        eqlst_1 = deleteEquationInEqlist(eqlst, c1, c2);
-        parts2 = InteractiveUtil.replaceEquationList(parts, eqlst_1);
-        outClass.body = Absyn.CLASS_EXTENDS(bcname,modif,cmt,parts2,ann);
+    case Absyn.CLASS(body = cdef as Absyn.CLASS_EXTENDS())
+      algorithm
+        eqlst := InteractiveUtil.getEquationList(cdef.parts);
+        eqlst := deleteEquationInEqlist(eqlst, connector1, connector2);
+        cdef.parts := InteractiveUtil.replaceEquationList(cdef.parts, eqlst);
+        cls.body := cdef;
       then
-        outClass;
+        ();
   end match;
-end deleteEquationInClass;
+end deleteConnectionInClass;
 
 protected function deleteEquationInEqlist
 "Helper function to deleteConnection."
@@ -8757,7 +6651,7 @@ algorithm
         res = deleteEquationInEqlist(xs, c1, c2);
         loopRes = deleteEquationInEqlist(forEqList, c1, c2);
 
-        if listLength(loopRes) > 0 then
+        if not listEmpty(loopRes) then
           loopRes = { Absyn.EQUATIONITEM(Absyn.EQ_FOR(forIterator, loopRes), NONE(), AbsynUtil.dummyInfo) };
         end if;
       then
@@ -9104,690 +6998,407 @@ algorithm
   end matchcontinue;
 end compareTransitionFuncArgs;
 
-protected function getComponentComment
-"Get the component commment."
-  input Absyn.ComponentRef inComponentRef1;
-  input Absyn.ComponentRef inComponentRef2;
-  input Absyn.Program inProgram4;
-  output String outString;
+public function getComponentComment
+  "Get the component commment."
+  input Absyn.Path classPath;
+  input Absyn.Path componentName;
+  input Absyn.Program program;
+  output Values.Value comment;
+protected
+  Absyn.Path path;
+  Absyn.Element elem;
+  list<Absyn.ComponentItem> comps;
+  Absyn.ComponentItem comp;
+  String cmt, comp_name;
 algorithm
-  (outString) :=  match (inComponentRef1,inComponentRef2,inProgram4)
-    local
-      Absyn.Path p_class;
-      Absyn.Class cdef;
-      Absyn.Program p;
-      Absyn.ComponentRef class_,cr1;
-      String cmt;
-    case (class_,cr1,p as Absyn.PROGRAM())
-      equation
-        p_class = AbsynUtil.crefToPath(class_);
-        cdef = InteractiveUtil.getPathedClassInProgram(p_class, p);
-        cmt = getComponentCommentInClass(cdef, cr1);
-      then
-        cmt;
-  end match;
+  path := AbsynUtil.joinPaths(classPath, componentName);
+  comp_name := AbsynUtil.pathLastIdent(componentName);
+  elem := InteractiveUtil.getPathedElementInProgram(path, program);
+  comps := AbsynUtil.getComponentItemsFromElement(elem);
+  comp := List.find(comps, function AbsynUtil.isComponentItemNamed(name = comp_name));
+  cmt := InteractiveUtil.getClassCommentInCommentOpt(comp.comment);
+  comment := ValuesUtil.makeString(cmt);
 end getComponentComment;
 
-protected function getComponentCommentInClass
-"Helper function to getComponentComment."
-  input Absyn.Class inClass;
-  input Absyn.ComponentRef inComponentRef;
-  output String outString;
+public function setComponentComment
+  input Absyn.Path classPath;
+  input Absyn.Path componentName;
+  input String comment;
+  input output Absyn.Program program;
+        output Boolean success;
+protected
+  Absyn.Path path;
+  String comp_name;
 algorithm
-  outString := match (inClass,inComponentRef)
-    local
-      list<Absyn.ClassPart> parts;
-      String cmt;
-      Absyn.ComponentRef cr1;
-    /* a class with parts */
-    case (Absyn.CLASS(body = Absyn.PARTS(classParts = parts)),cr1)
-      equation
-        cmt = getComponentCommentInParts(parts, cr1);
-      then
-        cmt;
-    /* an extended class with parts: model extends M end M; */
-    case (Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = parts)),cr1)
-      equation
-        cmt = getComponentCommentInParts(parts, cr1);
-      then
-        cmt;
-  end match;
-end getComponentCommentInClass;
-
-protected function getComponentCommentInParts
-"Helper function to getComponentComment."
-  input list<Absyn.ClassPart> inAbsynClassPartLst;
-  input Absyn.ComponentRef inComponentRef;
-  output String outString;
-algorithm
-  outString := matchcontinue (inAbsynClassPartLst,inComponentRef)
-    local
-      list<Absyn.ElementItem> elts,e;
-      list<Absyn.ClassPart> xs;
-      Absyn.ComponentRef cr1;
-      String cmt;
-      Absyn.ClassPart p;
-
-    case ((Absyn.PUBLIC(contents = elts) :: _),cr1)
-      equation
-        cmt = getComponentCommentInElementitems(elts, cr1);
-      then
-        cmt;
-
-    // rule above failed
-    case ((Absyn.PUBLIC() :: xs),cr1)
-      equation
-        cmt = getComponentCommentInParts(xs, cr1);
-      then
-        cmt;
-
-    case ((Absyn.PROTECTED(contents = elts) :: _),cr1)
-      equation
-        cmt = getComponentCommentInElementitems(elts, cr1);
-      then
-        cmt;
-
-    // rule above failed
-    case ((Absyn.PROTECTED() :: xs),cr1)
-      equation
-        cmt = getComponentCommentInParts(xs, cr1);
-      then
-        cmt;
-
-    case ((_ :: xs),cr1)
-      equation
-        cmt = getComponentCommentInParts(xs, cr1);
-      then
-        cmt;
-  end matchcontinue;
-end getComponentCommentInParts;
-
-protected function getComponentCommentInElementitems
-"Helper function to getComponentComment."
-  input list<Absyn.ElementItem> inAbsynElementItemLst;
-  input Absyn.ComponentRef inComponentRef;
-  output String outString;
-algorithm
-  outString := matchcontinue (inAbsynElementItemLst,inComponentRef)
-    local
-      Absyn.ElementSpec spec;
-      Boolean f;
-      Option<Absyn.RedeclareKeywords> r;
-      Absyn.InnerOuter inout;
-      String cmt;
-      SourceInfo info;
-      Option<Absyn.ConstrainClass> constr;
-      list<Absyn.ElementItem> es;
-      Absyn.ComponentRef cr1;
-      Absyn.ElementItem e;
-    case ((Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = spec)) :: _),cr1)
-      equation
-        cmt = getComponentCommentInElementspec(spec, cr1);
-      then
-        cmt;
-    case ((_ :: es),cr1)
-      equation
-        cmt = getComponentCommentInElementitems(es, cr1);
-      then
-        cmt;
-  end matchcontinue;
-end getComponentCommentInElementitems;
-
-protected function getComponentCommentInElementspec
-"Helper function to getComponentComment."
-  input Absyn.ElementSpec inElementSpec;
-  input Absyn.ComponentRef inComponentRef;
-  output String outString;
-algorithm
-  outString := match (inElementSpec,inComponentRef)
-    local
-      list<Absyn.ComponentItem> citems;
-      Absyn.ElementAttributes attr;
-      Absyn.TypeSpec tp;
-      Absyn.ComponentRef cr;
-      String cmt;
-    case (Absyn.COMPONENTS(components = citems),cr)
-      equation
-        cmt = getComponentCommentInCompitems(citems, cr);
-      then
-        cmt;
-  end match;
-end getComponentCommentInElementspec;
-
-protected function getComponentCommentInCompitems
-"Helper function to getComponentComment."
-  input list<Absyn.ComponentItem> inAbsynComponentItemLst;
-  input Absyn.ComponentRef inComponentRef;
-  output String outString;
-algorithm
-  outString := matchcontinue (inAbsynComponentItemLst,inComponentRef)
-    local
-      Option<Absyn.Comment> compcmt;
-      String id,cmt;
-      list<Absyn.Subscript> ad;
-      Option<Absyn.Modification> mod;
-      Option<Absyn.Exp> cond;
-      list<Absyn.ComponentItem> cs;
-      Absyn.ComponentRef cr;
-      Absyn.ComponentItem c;
-    case ((Absyn.COMPONENTITEM(component = Absyn.COMPONENT(name = id,arrayDim = ad),comment = compcmt) :: _),cr)
-      equation
-        true = AbsynUtil.crefEqual(Absyn.CREF_IDENT(id,ad), cr);
-        cmt = InteractiveUtil.getClassCommentInCommentOpt(compcmt);
-      then
-        cmt;
-    case ((_ :: cs),cr)
-      equation
-        cmt = getComponentCommentInCompitems(cs, cr);
-      then
-        cmt;
-  end matchcontinue;
-end getComponentCommentInCompitems;
-
-protected function setComponentComment
-"author :PA
-  Sets the component commment given by class name and ComponentRef."
-  input Absyn.ComponentRef inComponentRef1;
-  input Absyn.ComponentRef inComponentRef2;
-  input String inString3;
-  input Absyn.Program inProgram4;
-  output String outString;
-  output Absyn.Program outProgram;
-algorithm
-  (outString,outProgram):=
-  matchcontinue (inComponentRef1,inComponentRef2,inString3,inProgram4)
-    local
-      Absyn.Path p_class;
-      Absyn.Within within_;
-      Absyn.Class cdef,cdef_1;
-      Absyn.Program newp,p;
-      Absyn.ComponentRef class_,cr1;
-      String cmt;
-
-    case (class_,cr1,cmt,p as Absyn.PROGRAM())
-      equation
-        p_class = AbsynUtil.crefToPath(class_);
-        within_ = InteractiveUtil.buildWithin(p_class);
-        cdef = InteractiveUtil.getPathedClassInProgram(p_class, p);
-        cdef_1 = setComponentCommentInClass(cdef, cr1, cmt);
-        newp = InteractiveUtil.updateProgram(Absyn.PROGRAM({cdef_1},within_), p);
-      then
-        ("Ok",newp);
-
-    else ("Error",inProgram4);
-  end matchcontinue;
+  try
+    path := AbsynUtil.joinPaths(classPath, componentName);
+    comp_name := AbsynUtil.pathLastIdent(componentName);
+    (program, _, success) := InteractiveUtil.transformPathedElementInProgram(path,
+      function setComponentCommentInElement(componentName = comp_name, comment = comment), program);
+  else
+    success := false;
+  end try;
 end setComponentComment;
 
-protected function setComponentCommentInClass
-"author: PA
-  Helper function to setComponentComment."
-  input Absyn.Class inClass;
-  input Absyn.ComponentRef inComponentRef;
-  input String inString;
-  output Absyn.Class outClass;
+protected function setComponentCommentInElement
+  input output Absyn.Element element;
+  input String componentName;
+  input String comment;
+protected
+  Absyn.ElementSpec spec;
+  list<Absyn.ComponentItem> comps;
+
+  function set_comment
+    input output Absyn.ComponentItem item;
+    input String comment;
+  algorithm
+    item.comment := AbsynUtil.setCommentString(item.comment, if stringEmpty(comment) then NONE() else SOME(comment));
+  end set_comment;
 algorithm
-  outClass := match (inClass,inComponentRef,inString)
-    local
-      list<Absyn.ClassPart> parts_1,parts;
-      String name,cmt,bcname;
-      Boolean p,f,e;
-      Absyn.Restriction restr;
-      Option<String> pcmt;
-      SourceInfo info;
-      Absyn.ComponentRef cr1;
-      list<Absyn.ElementArg> modif;
-      list<String> typeVars;
-      list<Absyn.NamedArg> classAttrs;
-      list<Absyn.Annotation> ann;
-    /* a class with parts */
-    case (outClass as Absyn.CLASS(name = name,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = restr,
-                      body = Absyn.PARTS(typeVars = typeVars,classAttrs = classAttrs,classParts = parts,ann=ann,comment = pcmt),info = info),cr1,cmt)
-      equation
-        parts_1 = setComponentCommentInParts(parts, cr1, cmt);
-        outClass.body = Absyn.PARTS(typeVars,classAttrs,parts_1,ann,pcmt);
+  () := match element
+    case Absyn.Element.ELEMENT(specification = spec as Absyn.ElementSpec.COMPONENTS())
+      algorithm
+        (comps, true) := List.findAndMap(spec.components,
+          function AbsynUtil.isComponentItemNamed(name = componentName),
+          function set_comment(comment = comment));
+        spec.components := comps;
+        element.specification := spec;
       then
-        outClass;
-    /* an extended class with parts: model extends M end M; */
-    case (outClass as Absyn.CLASS(name = name,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = restr,
-                      body = Absyn.CLASS_EXTENDS(baseClassName=bcname,modifications=modif,parts = parts,ann=ann,comment = pcmt),info = info),cr1,cmt)
-      equation
-        parts_1 = setComponentCommentInParts(parts, cr1, cmt);
-        outClass.body = Absyn.CLASS_EXTENDS(bcname,modif,pcmt,parts_1,ann);
-      then
-        outClass;
+        ();
   end match;
-end setComponentCommentInClass;
+end setComponentCommentInElement;
 
-protected function setComponentCommentInParts
-"author: PA
-  Helper function to setComponentCommentInClass."
-  input list<Absyn.ClassPart> inAbsynClassPartLst;
-  input Absyn.ComponentRef inComponentRef;
-  input String inString;
-  output list<Absyn.ClassPart> outAbsynClassPartLst;
+public function setConnectionComment
+  input Absyn.Path classPath;
+  input Absyn.ComponentRef connector1;
+  input Absyn.ComponentRef connector2;
+  input String comment;
+  input output Absyn.Program program;
+        output Boolean success;
 algorithm
-  outAbsynClassPartLst:=
-  matchcontinue (inAbsynClassPartLst,inComponentRef,inString)
-    local
-      list<Absyn.ElementItem> elts_1,elts,e;
-      list<Absyn.ClassPart> xs,xs_1;
-      Absyn.ComponentRef cr1;
-      String cmt;
-      Absyn.ClassPart p;
-
-    case ((Absyn.PUBLIC(contents = elts) :: xs),cr1,cmt)
-      equation
-        elts_1 = setComponentCommentInElementitems(elts, cr1, cmt);
-      then
-        (Absyn.PUBLIC(elts_1) :: xs);
-
-    // rule above failed
-    case ((Absyn.PUBLIC(contents = e) :: xs),cr1,cmt)
-      equation
-        xs_1 = setComponentCommentInParts(xs, cr1, cmt);
-      then
-        (Absyn.PUBLIC(e) :: xs_1);
-
-    case ((Absyn.PROTECTED(contents = elts) :: xs),cr1,cmt)
-      equation
-        elts_1 = setComponentCommentInElementitems(elts, cr1, cmt);
-      then
-        (Absyn.PROTECTED(elts_1) :: xs);
-
-    // rule above failed
-    case ((Absyn.PROTECTED(contents = e) :: xs),cr1,cmt)
-      equation
-        xs_1 = setComponentCommentInParts(xs, cr1, cmt);
-      then
-        (Absyn.PROTECTED(e) :: xs_1);
-
-    case ((p :: xs),cr1,cmt)
-      equation
-        xs_1 = setComponentCommentInParts(xs, cr1, cmt);
-      then
-        (p :: xs_1);
-  end matchcontinue;
-end setComponentCommentInParts;
-
-protected function setComponentCommentInElementitems
-"author: PA
-  Helper function to setComponentParts. "
-  input list<Absyn.ElementItem> inAbsynElementItemLst;
-  input Absyn.ComponentRef inComponentRef;
-  input String inString;
-  output list<Absyn.ElementItem> outAbsynElementItemLst;
-algorithm
-  outAbsynElementItemLst:=
-  matchcontinue (inAbsynElementItemLst,inComponentRef,inString)
-    local
-      Absyn.ElementSpec spec_1,spec;
-      Boolean f;
-      Option<Absyn.RedeclareKeywords> r;
-      Absyn.InnerOuter inout;
-      String cmt;
-      SourceInfo info;
-      Option<Absyn.ConstrainClass> constr;
-      list<Absyn.ElementItem> es,es_1;
-      Absyn.ComponentRef cr1;
-      Absyn.ElementItem e;
-    case ((Absyn.ELEMENTITEM(element = Absyn.ELEMENT(finalPrefix = f,redeclareKeywords = r,innerOuter = inout,specification = spec,info = info,constrainClass = constr)) :: es),cr1,cmt)
-      equation
-        spec_1 = setComponentCommentInElementspec(spec, cr1, cmt);
-      then
-        (Absyn.ELEMENTITEM(Absyn.ELEMENT(f,r,inout,spec_1,info,constr)) :: es);
-    case ((e :: es),cr1,cmt)
-      equation
-        es_1 = setComponentCommentInElementitems(es, cr1, cmt);
-      then
-        (e :: es_1);
-  end matchcontinue;
-end setComponentCommentInElementitems;
-
-protected function setComponentCommentInElementspec
-"author: PA
-  Helper function to setComponentElementitems."
-  input Absyn.ElementSpec inElementSpec;
-  input Absyn.ComponentRef inComponentRef;
-  input String inString;
-  output Absyn.ElementSpec outElementSpec;
-algorithm
-  outElementSpec:=
-  match (inElementSpec,inComponentRef,inString)
-    local
-      list<Absyn.ComponentItem> citems_1,citems;
-      Absyn.ElementAttributes attr;
-      Absyn.TypeSpec tp;
-      Absyn.ComponentRef cr;
-      String cmt;
-    case (Absyn.COMPONENTS(attributes = attr,typeSpec=tp,components = citems),cr,cmt)
-      equation
-        citems_1 = setComponentCommentInCompitems(citems, cr, cmt);
-      then
-        Absyn.COMPONENTS(attr,tp,citems_1);
-  end match;
-end setComponentCommentInElementspec;
-
-protected function setComponentCommentInCompitems
-"author: PA
-  Helper function to set_component_elementspec."
-  input list<Absyn.ComponentItem> inAbsynComponentItemLst;
-  input Absyn.ComponentRef inComponentRef;
-  input String inString;
-  output list<Absyn.ComponentItem> outAbsynComponentItemLst;
-algorithm
-  outAbsynComponentItemLst:=
-  matchcontinue (inAbsynComponentItemLst,inComponentRef,inString)
-    local
-      Option<Absyn.Comment> compcmt_1,compcmt;
-      String id,cmt;
-      list<Absyn.Subscript> ad;
-      Option<Absyn.Modification> mod;
-      Option<Absyn.Exp> cond;
-      list<Absyn.ComponentItem> cs,cs_1;
-      Absyn.ComponentRef cr;
-      Absyn.ComponentItem c;
-    case ((Absyn.COMPONENTITEM(component = Absyn.COMPONENT(name = id,arrayDim = ad,modification = mod),condition = cond,comment = compcmt) :: cs),cr,cmt)
-      equation
-        true = AbsynUtil.crefEqual(Absyn.CREF_IDENT(id,{}), cr);
-        compcmt_1 = setClassCommentInCommentOpt(compcmt, cmt);
-      then
-        (Absyn.COMPONENTITEM(Absyn.COMPONENT(id,ad,mod),cond,compcmt_1) :: cs);
-    case ((c :: cs),cr,cmt)
-      equation
-        cs_1 = setComponentCommentInCompitems(cs, cr, cmt);
-      then
-        (c :: cs_1);
-  end matchcontinue;
-end setComponentCommentInCompitems;
-
-protected function setConnectionComment
-"author: PA
-  Sets the nth connection comment."
-  input Absyn.ComponentRef inComponentRef1;
-  input Absyn.ComponentRef inComponentRef2;
-  input Absyn.ComponentRef inComponentRef3;
-  input String inString4;
-  input Absyn.Program inProgram5;
-  output Absyn.Program outProgram;
-  output String outString;
-algorithm
-  (outProgram,outString):=
-  matchcontinue (inComponentRef1,inComponentRef2,inComponentRef3,inString4,inProgram5)
-    local
-      Absyn.Path p_class;
-      Absyn.Within within_;
-      Absyn.Class cdef,cdef_1;
-      Absyn.Program newp,p;
-      Absyn.ComponentRef class_,cr1,cr2;
-      String cmt;
-    case (class_,cr1,cr2,cmt,p as Absyn.PROGRAM())
-      equation
-        p_class = AbsynUtil.crefToPath(class_);
-        within_ = InteractiveUtil.buildWithin(p_class);
-        cdef = InteractiveUtil.getPathedClassInProgram(p_class, p);
-        cdef_1 = setConnectionCommentInClass(cdef, cr1, cr2, cmt);
-        newp = InteractiveUtil.updateProgram(Absyn.PROGRAM({cdef_1},within_), p);
-      then
-        (newp,"Ok");
-    else (inProgram5,"Error");
-  end matchcontinue;
+  try
+    (program, _, success) := InteractiveUtil.transformPathedElementInProgram(classPath,
+      function setConnectionCommentInElement(connector1 = connector1, connector2 = connector2, comment = comment),
+      program);
+  else
+    success := false;
+  end try;
 end setConnectionComment;
 
-protected function setConnectionCommentInClass
-"author: PA
-  Sets a connection comment in a Absyn.Class given two Absyn,ComponentRef"
-  input Absyn.Class inClass1;
-  input Absyn.ComponentRef inComponentRef2;
-  input Absyn.ComponentRef inComponentRef3;
-  input String inString4;
-  output Absyn.Class outClass;
+protected function setConnectionCommentInElement
+  input output Absyn.Element element;
+  input Absyn.ComponentRef connector1;
+  input Absyn.ComponentRef connector2;
+  input String comment;
+protected
+  Absyn.ElementSpec spec;
+  Absyn.Class cls;
 algorithm
-  outClass:=
-  match (inClass1,inComponentRef2,inComponentRef3,inString4)
-    local
-      list<Absyn.ClassPart> parts_1,parts;
-      String name,cmt,bcname;
-      Boolean p,f,e;
-      Absyn.Restriction restr;
-      Option<String> pcmt;
-      SourceInfo info;
-      Absyn.ComponentRef cr1,cr2;
-      list<Absyn.ElementArg> modif;
-      list<String> typeVars;
-      list<Absyn.NamedArg> classAttrs;
-      list<Absyn.Annotation> ann;
-    /* a class with parts */
-    case (outClass as Absyn.CLASS(name = name,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = restr,
-                      body = Absyn.PARTS(typeVars = typeVars,classAttrs = classAttrs,classParts = parts,ann=ann,comment = pcmt),info = info),cr1,cr2,cmt)
-      equation
-        parts_1 = setConnectionCommentInParts(parts, cr1, cr2, cmt);
-        outClass.body = Absyn.PARTS(typeVars,classAttrs,parts_1,ann,pcmt);
+  () := match element
+    case Absyn.Element.ELEMENT(specification = spec as Absyn.ElementSpec.CLASSDEF())
+      algorithm
+        cls := setConnectionCommentInClass(spec.class_, connector1, connector2, comment);
+        spec.class_ := cls;
+        element.specification := spec;
       then
-        outClass;
-    /* an extended class with parts: model extends M end M; */
-    case (outClass as Absyn.CLASS(name = name,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = restr,
-                      body = Absyn.CLASS_EXTENDS(baseClassName=bcname,modifications=modif,parts = parts,ann=ann,comment = pcmt),info = info),cr1,cr2,cmt)
-      equation
-        parts_1 = setConnectionCommentInParts(parts, cr1, cr2, cmt);
-        outClass.body = Absyn.CLASS_EXTENDS(bcname,modif,pcmt,parts_1,ann);
-      then outClass;
+        ();
+  end match;
+end setConnectionCommentInElement;
+
+protected function setConnectionCommentInClass
+  "Sets the comment on the connection of two connectors in a class."
+  input output Absyn.Class cls;
+  input Absyn.ComponentRef connector1;
+  input Absyn.ComponentRef connector2;
+  input String comment;
+algorithm
+  () := match cls
+    local
+      Absyn.ClassDef cdef;
+      list<Absyn.ClassPart> parts;
+
+    case Absyn.CLASS(body = cdef as Absyn.PARTS())
+      algorithm
+        parts := setConnectionCommentInParts(cdef.classParts, connector1, connector2, comment);
+        cdef.classParts := parts;
+        cls.body := cdef;
+      then
+        ();
+
+    case Absyn.CLASS(body = cdef as Absyn.CLASS_EXTENDS())
+      algorithm
+        parts := setConnectionCommentInParts(cdef.parts, connector1, connector2, comment);
+        cdef.parts := parts;
+        cls.body := cdef;
+      then
+        ();
   end match;
 end setConnectionCommentInClass;
 
 protected function setConnectionCommentInParts
-"author: PA
-  Helper function to setConnectionCommentInClass."
-  input list<Absyn.ClassPart> inAbsynClassPartLst1;
-  input Absyn.ComponentRef inComponentRef2;
-  input Absyn.ComponentRef inComponentRef3;
-  input String inString4;
-  output list<Absyn.ClassPart> outAbsynClassPartLst;
+  input output list<Absyn.ClassPart> parts;
+  input Absyn.ComponentRef connector1;
+  input Absyn.ComponentRef connector2;
+  input String comment;
 algorithm
-  outAbsynClassPartLst:=
-  matchcontinue (inAbsynClassPartLst1,inComponentRef2,inComponentRef3,inString4)
-    local
-      list<Absyn.EquationItem> e_1,e;
-      list<Absyn.ClassPart> xs,xs_1;
-      Absyn.ComponentRef cr1,cr2;
-      String cmt;
-      Absyn.ClassPart p;
-    case ((Absyn.EQUATIONS(contents = e) :: xs),cr1,cr2,cmt)
-      equation
-        e_1 = setConnectionCommentInEquations(e, cr1, cr2, cmt);
-      then
-        (Absyn.EQUATIONS(e_1) :: xs);
-    case ((Absyn.EQUATIONS(contents = e) :: xs),cr1,cr2,cmt) /* rule above failed */
-      equation
-        xs_1 = setConnectionCommentInParts(xs, cr1, cr2, cmt);
-      then
-        (Absyn.EQUATIONS(e) :: xs_1);
-    case ((p :: xs),cr1,cr2,cmt)
-      equation
-        xs_1 = setConnectionCommentInParts(xs, cr1, cr2, cmt);
-      then
-        (p :: xs_1);
-  end matchcontinue;
+  (parts, true) := List.findMap(parts, function setConnectionCommentInEquationsPart(connector1 = connector1,
+    connector2 = connector2, comment = comment));
 end setConnectionCommentInParts;
 
-protected function setConnectionCommentInEquations
-"author: PA
-  Helper function to setConnectionCommentInParts"
-  input list<Absyn.EquationItem> inAbsynEquationItemLst1;
-  input Absyn.ComponentRef inComponentRef2;
-  input Absyn.ComponentRef inComponentRef3;
-  input String inString4;
-  output list<Absyn.EquationItem> outAbsynEquationItemLst;
+protected function setConnectionCommentInEquationsPart
+  input output Absyn.ClassPart part;
+  input Absyn.ComponentRef connector1;
+  input Absyn.ComponentRef connector2;
+  input String comment;
+        output Boolean found;
+protected
+  list<Absyn.EquationItem> eql;
 algorithm
-  outAbsynEquationItemLst:=
-  matchcontinue (inAbsynEquationItemLst1,inComponentRef2,inComponentRef3,inString4)
-    local
-      Option<Absyn.Comment> eqcmt_1,eqcmt;
-      Absyn.ComponentRef c1,c2,cr1,cr2;
-      list<Absyn.EquationItem> es,es_1;
-      String cmt;
-      Absyn.EquationItem e;
-      SourceInfo info;
-    case ((Absyn.EQUATIONITEM(equation_ = Absyn.EQ_CONNECT(connector1 = c1,connector2 = c2),comment = eqcmt, info = info) :: es),cr1,cr2,cmt)
-      equation
-        true = AbsynUtil.crefEqual(cr1, c1);
-        true = AbsynUtil.crefEqual(cr2, c2);
-        eqcmt_1 = setClassCommentInCommentOpt(eqcmt, cmt);
+  (part, found) := match part
+    case Absyn.EQUATIONS()
+      algorithm
+        (eql, found) := List.findMap(part.contents, function setConnectionCommentInEquation(
+          connector1 = connector1, connector2 = connector2, comment = comment));
+        part.contents := eql;
       then
-        (Absyn.EQUATIONITEM(Absyn.EQ_CONNECT(c1,c2),eqcmt_1,info) :: es);
-    case ((e :: es),cr1,cr2,cmt)
-      equation
-        es_1 = setConnectionCommentInEquations(es, cr1, cr2, cmt);
-      then
-        (e :: es_1);
-  end matchcontinue;
-end setConnectionCommentInEquations;
+        (part, found);
 
-protected function getNthConnectionAnnotation
+    else (part, false);
+  end match;
+end setConnectionCommentInEquationsPart;
+
+protected function setConnectionCommentInEquation
+  input output Absyn.EquationItem eq;
+  input Absyn.ComponentRef connector1;
+  input Absyn.ComponentRef connector2;
+  input String comment;
+        output Boolean success;
+protected
+  Absyn.ComponentRef c1, c2;
+algorithm
+  success := match eq
+    case Absyn.EQUATIONITEM(equation_ = Absyn.EQ_CONNECT(connector1 = c1, connector2 = c2))
+      guard AbsynUtil.crefEqual(connector1, c1) and AbsynUtil.crefEqual(connector2, c2)
+      algorithm
+        eq.comment := AbsynUtil.setCommentString(eq.comment, if stringEmpty(comment) then NONE() else SOME(comment));
+      then
+        true;
+
+    else false;
+  end match;
+end setConnectionCommentInEquation;
+
+public function getNthConnectionAnnotation
 "This function takes a ComponentRef and a Program and an int and
   returns a comma separated string  of values for the annotation of
   the nth connection."
-  input Absyn.Path inModelPath;
-  input Absyn.Program inProgram;
-  input Integer inInteger;
-  output String outString;
+  input Absyn.Path classPath;
+  input Integer n;
+  input Absyn.Program program;
+  output Values.Value result;
+protected
+  function impl
+    input Absyn.Path classPath;
+    input Integer n;
+    input Absyn.Program program;
+    input Access accessLevel;
+    output Values.Value result;
+  protected
+    Absyn.Class cdef;
+    Absyn.EquationItem conn;
+  algorithm
+    cdef := InteractiveUtil.getPathedClassInProgram(classPath, program);
+    conn := listGet(getConnections(cdef), n);
+    result := getConnectionAnnotationStr(conn, cdef, program, classPath);
+  end impl;
 algorithm
-  outString := matchcontinue (inModelPath,inProgram,inInteger)
-    local
-      Absyn.Path modelpath;
-      Absyn.Class cdef;
-      Absyn.EquationItem citem;
-      String s1,str;
-      Absyn.Program p;
-      Integer n;
-    case (modelpath,p,n)
-      equation
-        cdef = InteractiveUtil.getPathedClassInProgram(modelpath, p);
-        citem = listGet(getConnections(cdef), n);
-        s1 = getConnectionAnnotationStr(citem, cdef, p, modelpath);
-        str = stringAppendList({"{", s1, "}"});
-      then
-        str;
-    else "{}";
-  end matchcontinue;
+  result := InteractiveUtil.accessClass(classPath, program, function impl(n = n),
+    evaluateParams = true, accessLevel = Access.diagram);
 end getNthConnectionAnnotation;
 
-protected function getConnectorCount
+public function getConnectorCount
 "This function takes a ComponentRef and a Program and returns the number
   of connector components in the class given by the classname in the
   ComponentRef. A partial instantiation of the inheritance structure is
   performed in order to find all connectors of the class.
   inputs:  (Absyn.ComponentRef, Absyn.Program)
   outputs: string"
-  input Absyn.ComponentRef inComponentRef;
-  input Absyn.Program inProgram;
-  output String outString;
+  input Absyn.Path classPath;
+  input Absyn.Program program;
+  output Values.Value result;
+protected
+  Absyn.Class cdef;
 algorithm
-  outString:=
-  matchcontinue (inComponentRef,inProgram)
-    local
-      Absyn.Path modelpath;
-      Absyn.Class cdef;
-      Integer count;
-      String countstr;
-      Absyn.ComponentRef model_;
-      Absyn.Program p;
-    case (model_,p)
-      equation
-        modelpath = AbsynUtil.crefToPath(model_) "A complete instantiation is far too expensive. Instead we only
-    look through the components of the class for types declared using
-    the \"connector\" restricted class keyword. We also look in
-    base classes  (recursively)
-  " ;
-        cdef = InteractiveUtil.getPathedClassInProgram(modelpath, p);
-        count = countPublicConnectors(modelpath, p, cdef);
-        countstr = intString(count);
-      then
-        countstr;
-    else "Error";
-  end matchcontinue;
+  try
+    //A complete instantiation is far too expensive. Instead we only
+    //look through the components of the class for types declared using
+    //the "connector" restricted class keyword. We also look in
+    //base classes (recursively).
+    cdef := InteractiveUtil.getPathedClassInProgram(classPath, program);
+    result := ValuesUtil.makeInteger(countPublicConnectors(classPath, program, cdef));
+  else
+    result := ValuesUtil.makeBoolean(false);
+  end try;
 end getConnectorCount;
 
-protected function getNthConnector
-"This function takes a ComponentRef and a Program and an int and returns
-  a string with the name of the nth
-  connector component in the class given by ComponentRef in the Program."
-  input Absyn.Path inModelPath;
-  input Absyn.Program inProgram;
-  input Integer inInteger;
-  output String outString;
+public function getNthConnector
+  "Returns the name and type of the n:th connector in the given class."
+  input Absyn.Path classPath;
+  input Integer n;
+  input Absyn.Program program;
+  output Values.Value result;
+protected
+  Absyn.Class cls;
+  String name;
+  Absyn.Path ty;
 algorithm
-  outString := matchcontinue (inModelPath,inProgram,inInteger)
-    local
-      Absyn.Path modelpath,tp;
-      Absyn.Class cdef;
-      String str,tpstr,resstr;
-      Absyn.Program p;
-      Integer n;
-
-    case (modelpath,p,n)
-      equation
-        cdef = InteractiveUtil.getPathedClassInProgram(modelpath, p);
-        (str,tp) = getNthPublicConnectorStr(modelpath, cdef, p, n);
-        tpstr = AbsynUtil.pathString(tp);
-        resstr = stringAppendList({str, ",", tpstr});
-      then
-        resstr;
-    else "Error";
-  end matchcontinue;
+  try
+    cls := InteractiveUtil.getPathedClassInProgram(classPath, program);
+    (SOME((name, ty)), _) := getNthPublicConnectorStr(classPath, cls, program, n);
+    result := ValuesUtil.makeCodeTypeNameArray({Absyn.Path.IDENT(name), ty});
+  else
+    result := ValuesUtil.makeBoolean(false);
+  end try;
 end getNthConnector;
 
-protected function getNthConnectorIconAnnotation
-" This function takes a ComponentRef and a Program and an int and returns
-   a string with the name of the nth connectors icon annotation in the
-   class given by ComponentRef in the Program."
-  input Absyn.Path inModelPath;
-  input Absyn.Program inProgram;
-  input Integer inInteger;
-  output String outString;
+public function getNthConnectorIconAnnotation
+  "Returns the Icon annotation of the type of the n:th public connector in the
+   given class."
+  input Absyn.Path classPath;
+  input Integer n;
+  input Absyn.Program program;
+  output Values.Value result;
+protected
+  function impl
+    input Absyn.Path classPath;
+    input Integer n;
+    input Absyn.Program program;
+    input Access accessLevel;
+    output Values.Value result;
+  protected
+    Absyn.Class cls;
+    Absyn.Element comp;
+    Absyn.Path ty;
+    String str;
+  algorithm
+    cls := InteractiveUtil.getPathedClassInProgram(classPath, program);
+    (SOME((_, ty)), _) := getNthPublicConnectorStr(classPath, cls, program, n);
+    result := getIconAnnotation(ty, program);
+  end impl;
 algorithm
-  outString := matchcontinue (inModelPath,inProgram,inInteger)
-    local
-      Absyn.Path modelpath,tp;
-      Absyn.Class cdef;
-      String resstr;
-      Absyn.Program p;
-      Integer n;
-    case (modelpath,p,n)
-      equation
-        cdef = InteractiveUtil.getPathedClassInProgram(modelpath, p);
-        (_,tp) = getNthPublicConnectorStr(modelpath, cdef, p, n);
-        resstr = getIconAnnotation(tp, p);
-      then
-        resstr;
-    else "Error";
-  end matchcontinue;
+  result := InteractiveUtil.accessClass(classPath, program, function impl(n = n), evaluateParams = true);
 end getNthConnectorIconAnnotation;
 
-protected function getDiagramAnnotation
+public function getIconAnnotation
 "This function takes a Path and a Program and returns a comma separated
-  string of values for the diagram annotation for the class named by the
+  string of values for the icon annotation for the class named by the
   first argument."
-  input Absyn.Path inPath;
-  input Absyn.Program inProgram;
-  output String outString;
+  input Absyn.Path classPath;
+  input Absyn.Program program;
+  output Values.Value result;
+protected
+  function impl
+    input Absyn.Path classPath;
+    input Absyn.Program program;
+    input Access accessLevel;
+    output Values.Value result;
+  algorithm
+    result := getNamedAnnotationValue(classPath, program, "Icon");
+  end impl;
 algorithm
-  outString := matchcontinue (inPath,inProgram)
-    local
-      Absyn.Class cdef;
-      String str;
-      Absyn.Path modelpath;
-      Absyn.Program p;
-    case (modelpath,p)
-      equation
-        cdef = InteractiveUtil.getPathedClassInProgram(modelpath, p);
-        str = getAnnotationInClass(cdef, DIAGRAM_ANNOTATION(), p, modelpath);
-      then
-        str;
-    else "{}";
-  end matchcontinue;
+  result := InteractiveUtil.accessClass(classPath, program, impl,
+    evaluateParams = true, graphicsExpMode = true, accessLevel = Access.icon);
+end getIconAnnotation;
+
+public function refactorIconAnnotation
+  input Absyn.Path classPath;
+  input Absyn.Program program;
+  output Values.Value result;
+protected
+  function impl
+    input Absyn.Path classPath;
+    input Absyn.Program program;
+    input Access accessLevel;
+    output Values.Value result;
+  protected
+    Absyn.Class cls;
+  algorithm
+    cls := InteractiveUtil.getPathedClassInProgram(classPath, program);
+    cls := Refactor.refactorGraphicalAnnotation(program, cls);
+    result := getNamedAnnotationValue(classPath, program, "Icon");
+  end impl;
+algorithm
+  result := InteractiveUtil.accessClass(classPath, program, impl,
+    evaluateParams = true, graphicsExpMode = true, accessLevel = Access.icon);
+end refactorIconAnnotation;
+
+public function getDiagramAnnotation
+"This function takes a Path and a Program and returns a comma separated
+  string of values for the icon annotation for the class named by the
+  first argument."
+  input Absyn.Path classPath;
+  input Absyn.Program program;
+  output Values.Value result;
+protected
+  function impl
+    input Absyn.Path classPath;
+    input Absyn.Program program;
+    input Access accessLevel;
+    output Values.Value result;
+  algorithm
+    result := getNamedAnnotationValue(classPath, program, "Diagram");
+  end impl;
+algorithm
+  result := InteractiveUtil.accessClass(classPath, program, impl,
+    evaluateParams = true, graphicsExpMode = true, accessLevel = Access.icon);
 end getDiagramAnnotation;
 
+public function refactorDiagramAnnotation
+  input Absyn.Path classPath;
+  input Absyn.Program program;
+  output Values.Value result;
+protected
+  function impl
+    input Absyn.Path classPath;
+    input Absyn.Program program;
+    input Access accessLevel;
+    output Values.Value result;
+  protected
+    Absyn.Class cls;
+  algorithm
+    cls := InteractiveUtil.getPathedClassInProgram(classPath, program);
+    cls := Refactor.refactorGraphicalAnnotation(program, cls);
+    result := getNamedAnnotationValue(classPath, program, "Diagram");
+  end impl;
+algorithm
+  result := InteractiveUtil.accessClass(classPath, program, impl,
+    evaluateParams = true, graphicsExpMode = true, accessLevel = Access.icon);
+end refactorDiagramAnnotation;
+
 public function getNamedAnnotation
+  input Absyn.Path classPath;
+  input Absyn.Path annotationPath;
+  input Absyn.Program program;
+  output Values.Value result;
+protected
+  function impl
+    input Absyn.Path classPath;
+    input Absyn.Path annotationPath;
+    input Absyn.Program program;
+    input Access accessLevel;
+    output Values.Value result;
+  protected
+    String str;
+  algorithm
+    str := getNamedAnnotationExp(classPath, program, annotationPath, SOME("{}"), getAnnotationValue);
+    result := ValuesUtil.makeCodeTypeNameStr(str);
+  end impl;
+algorithm
+  result := InteractiveUtil.accessClass(classPath, program,
+    function impl(annotationPath = annotationPath), evaluateParams = true);
+end getNamedAnnotation;
+
+public function getNamedAnnotationExp
 "This function takes a Path and a Program and returns a comma separated
   string of values for the Documentation annotation for the class named by the
   first argument."
@@ -9819,17 +7430,17 @@ algorithm
 
     case (_,_,_,SOME(str),_) then str;
   end matchcontinue;
-end getNamedAnnotation;
+end getNamedAnnotationExp;
 
 public function getStringNamedAnnotation
-"Calls getNamedAnnotation and makes sure we don't fail if annotation is not String type."
+"Calls getNamedAnnotationExp and makes sure we don't fail if annotation is not String type."
   input Absyn.Path inPath;
   input Absyn.Program inProgram;
   input Absyn.Path id;
   output String outString;
 algorithm
   try
-    Absyn.STRING(outString) := getNamedAnnotation(inPath, inProgram, id, SOME(Absyn.STRING("")), getAnnotationExp);
+    Absyn.STRING(outString) := getNamedAnnotationExp(inPath, inProgram, id, SOME(Absyn.STRING("")), getAnnotationExp);
   else
     outString := "";
   end try;
@@ -9859,6 +7470,44 @@ algorithm
     outString := "";
   end try;
 end getIntegerNamedAnnotation;
+
+function getNamedAnnotationValue
+  input Absyn.Path classPath;
+  input Absyn.Program program;
+  input String name;
+  output Values.Value result;
+protected
+  Absyn.Class cls;
+algorithm
+  cls := InteractiveUtil.getPathedClassInProgram(classPath, program);
+  result := getNamedAnnotationValueInClass(classPath, cls, program, name);
+end getNamedAnnotationValue;
+
+function getNamedAnnotationValueInClass
+  input Absyn.Path classPath;
+  input Absyn.Class cls;
+  input Absyn.Program program;
+  input String name;
+  output Values.Value result;
+protected
+  Option<Absyn.Modification> mod;
+  Absyn.ElementArg arg;
+  String str;
+algorithm
+  mod := AbsynUtil.lookupClassAnnotation(cls, name);
+
+  result := match mod
+    case SOME(Absyn.Modification.CLASSMOD())
+      algorithm
+        arg := Absyn.ElementArg.MODIFICATION(false, Absyn.Each.NON_EACH(),
+          Absyn.Path.IDENT(name), mod, NONE(), AbsynUtil.dummyInfo);
+        str := getAnnotationString(Absyn.ANNOTATION({arg}), cls, program, classPath);
+      then
+        InteractiveUtil.makeAnnotationArrayValue({str});
+
+    else ValuesUtil.makeEmptyArray();
+  end match;
+end getNamedAnnotationValueInClass;
 
 constant Absyn.Path USES_PATH = Absyn.Path.IDENT("uses");
 
@@ -9901,9 +7550,6 @@ algorithm
   paths := List.map(usesStr,Util.tuple41);
   fromVersions := List.map(usesStr,Util.tuple42);
   strs := List.map(usesStr,Util.tuple43);
-  if not requireExactVersion then
-    strs := List.map1(strs,listAppend,{"default"});
-  end if;
   usesStr := list((p,f,s,false) threaded for p in paths, f in fromVersions, s in strs);
 end getUsesAnnotationOrDefault;
 
@@ -10166,40 +7812,6 @@ algorithm
   end match;
 end parseConversionAnnotationElement;
 
-protected function filterIsVersionElement
-  input Absyn.ElementArg eltArg;
-  output Boolean b;
-algorithm
-  b := match eltArg
-    case Absyn.MODIFICATION(path = Absyn.IDENT(name = "version")) then true;
-    else false;
-  end match;
-end filterIsVersionElement;
-
-protected function getIconAnnotation
-"This function takes a Path and a Program and returns a comma separated
-  string of values for the icon annotation for the class named by the
-  first argument."
-  input Absyn.Path inPath;
-  input Absyn.Program inProgram;
-  output String outString;
-algorithm
-  outString := matchcontinue (inPath,inProgram)
-    local
-      Absyn.Class cdef;
-      String str;
-      Absyn.Path modelpath;
-      Absyn.Program p;
-    case (modelpath,p)
-      equation
-        cdef = InteractiveUtil.getPathedClassInProgram(modelpath, p);
-        str = getAnnotationInClass(cdef, ICON_ANNOTATION(), p, modelpath);
-      then
-        str;
-    else "{}";
-  end matchcontinue;
-end getIconAnnotation;
-
 public function getPackagesInPath
 " This function takes a Path and a Program and returns a list of the
    names of the packages found in the Path."
@@ -10450,352 +8062,115 @@ end getTopQualifiedClassnames;
 protected function getBaseClasses
 " This function gets all base classes of a class, NOT Recursive.
    It uses the environment to get the fully qualified names of the classes."
-  input Absyn.Class inClass;
-  input FCore.Graph inEnv;
-  output list<Absyn.ComponentRef> outAbsynComponentRefLst;
+  input Absyn.Class cls;
+  input FCore.Graph env;
+  output list<Absyn.Path> baseClasses;
+protected
+  String base_class_name;
+  list<Absyn.ClassPart> parts;
+  FCore.Graph cenv;
+  Option<Absyn.Path> env_path_opt;
+  Absyn.Path env_path, path;
 algorithm
-  outAbsynComponentRefLst := matchcontinue (inClass,inEnv)
-    local
-      list<Absyn.ComponentRef> res;
-      list<Absyn.ClassPart> parts;
-      FCore.Graph env;
-      Absyn.Path tp;
-      String baseClassName;
-      Option<String> comment;
-      list<Absyn.ElementArg> modifications;
-      FCore.Graph cenv;
-      Absyn.Path envpath,p1;
-      String tpname,str;
-      Absyn.ComponentRef cref;
-      SCode.Element c;
-      FCore.Cache cache;
-
-    case (Absyn.CLASS(body = Absyn.PARTS(classParts = parts)),env)
-      equation
-        res = getBaseClassesFromParts(parts, env);
-      then
-        res;
+  baseClasses := matchcontinue cls
+    case Absyn.CLASS(body = Absyn.PARTS(classParts = parts))
+      then getBaseClassesFromParts(parts, env);
 
     // adrpo: handle the case for model extends baseClassName end baseClassName;
-    case (Absyn.CLASS(body = Absyn.CLASS_EXTENDS(baseClassName=baseClassName, parts = parts)),env)
-      equation
-        (_,_,cenv) = Lookup.lookupClassIdent(FCore.emptyCache(), env, baseClassName, SOME(inClass.info));
-        SOME(envpath) = FGraph.getScopePath(cenv);
-        p1 = AbsynUtil.joinPaths(envpath, Absyn.IDENT(baseClassName));
-        cref = AbsynUtil.pathToCref(p1);
-        res = getBaseClassesFromParts(parts, env);
-      then cref::res;
+    case Absyn.CLASS(body = Absyn.CLASS_EXTENDS(baseClassName = base_class_name, parts = parts))
+      algorithm
+        (_, _, cenv) := Lookup.lookupClassIdent(FCore.emptyCache(), env, base_class_name, SOME(cls.info));
+        SOME(env_path) := FGraph.getScopePath(cenv);
+        path := AbsynUtil.suffixPath(env_path, base_class_name);
+      then
+        path :: getBaseClassesFromParts(parts, env);
 
-    case (Absyn.CLASS(body = Absyn.DERIVED(typeSpec = Absyn.TPATH(tp,_))),env)
-      equation
-        (_,_,cenv) = Lookup.lookupClass(FCore.emptyCache(), env, tp, SOME(inClass.info));
-        SOME(envpath) = FGraph.getScopePath(cenv);
-        tpname = AbsynUtil.pathLastIdent(tp);
-        p1 = AbsynUtil.joinPaths(envpath, Absyn.IDENT(tpname));
-        cref = AbsynUtil.pathToCref(p1);
-        // str = AbsynUtil.pathString(p1);
-      then {cref};
+    case Absyn.CLASS(body = Absyn.DERIVED(typeSpec = Absyn.TPATH(path = path)))
+      algorithm
+        (_, _, cenv) := Lookup.lookupClass(FCore.emptyCache(), env, path, SOME(cls.info));
+        env_path_opt := FGraph.getScopePath(cenv);
 
-    case (Absyn.CLASS(body = Absyn.DERIVED(typeSpec=Absyn.TPATH(tp,_))),env)
-      equation
-        (_,_,cenv) = Lookup.lookupClass(FCore.emptyCache(), env, tp, SOME(inClass.info));
-        NONE() = FGraph.getScopePath(cenv);
-        cref = AbsynUtil.pathToCref(tp);
-        then {cref};
+        if isSome(env_path_opt) then
+          path := AbsynUtil.suffixPath(Util.getOption(env_path_opt), AbsynUtil.pathLastIdent(path));
+        end if;
+      then
+        {path};
 
     else {};
-
   end matchcontinue;
 end getBaseClasses;
 
 protected function getBaseClassesFromParts
 "Helper function to getBaseClasses."
-  input list<Absyn.ClassPart> inAbsynClassPartLst;
-  input FCore.Graph inEnv;
-  output list<Absyn.ComponentRef> outAbsynComponentRefLst;
+  input list<Absyn.ClassPart> parts;
+  input FCore.Graph env;
+  output list<Absyn.Path> baseClasses = {};
 algorithm
-  outAbsynComponentRefLst := matchcontinue (inAbsynClassPartLst,inEnv)
-    local
-      list<Absyn.ComponentRef> c1,c2,res;
-      list<Absyn.ElementItem> elts;
-      list<Absyn.ClassPart> rest;
-      FCore.Graph env;
+  for part in parts loop
+    for el in AbsynUtil.getElementItemsInClassPart(part) loop
+      baseClasses := getBaseClassesFromElt(el, env, baseClasses);
+    end for;
+  end for;
 
-    case ((Absyn.PUBLIC(contents = elts) :: rest),env)
-      equation
-        c1 = getBaseClassesFromElts(elts, env);
-        c2 = getBaseClassesFromParts(rest, env);
-        res = listAppend(c1, c2);
-      then
-        res;
-
-    case ((Absyn.PROTECTED(contents = elts) :: rest),env)
-      equation
-        c1 = getBaseClassesFromElts(elts, env);
-        c2 = getBaseClassesFromParts(rest, env);
-        res = listAppend(c1, c2);
-      then
-        res;
-
-    case ((_ :: rest),env)
-      equation
-        res = getBaseClassesFromParts(rest, env);
-      then
-        res;
-
-    case ({},_) then {};
-
-  end matchcontinue;
+  baseClasses := Dangerous.listReverseInPlace(baseClasses);
 end getBaseClassesFromParts;
 
-protected function getBaseClassesFromElts
+protected function getBaseClassesFromElt
 "Helper function to getBaseClassesFromParts."
-  input list<Absyn.ElementItem> inAbsynElementItemLst;
-  input FCore.Graph inEnv;
-  output list<Absyn.ComponentRef> outAbsynComponentRefLst;
+  input Absyn.ElementItem element;
+  input FCore.Graph env;
+  input output list<Absyn.Path> baseClasses;
+protected
+  Absyn.Path path;
+  SourceInfo info;
+  FCore.Graph cenv;
+  Option<Absyn.Path> env_path_opt;
 algorithm
-  outAbsynComponentRefLst := matchcontinue (inAbsynElementItemLst,inEnv)
-    local
-      FCore.Graph env,env_1;
-      list<Absyn.ComponentRef> cl;
-      SCode.Element c;
-      Absyn.Path envpath,p_1,path;
-      String tpname;
-      Absyn.ComponentRef cref;
-      list<Absyn.ElementItem> rest;
-      Absyn.Element e;
+  baseClasses := matchcontinue element
+    case Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.EXTENDS(path = path), info = info))
+      algorithm
+        (_, _, cenv) := Lookup.lookupClass(FCore.emptyCache(), env, path, SOME(info));
+        env_path_opt := FGraph.getScopePath(cenv);
 
-    case ({},_) then {};
-
-    case ((Absyn.ELEMENTITEM(element = e as Absyn.ELEMENT(specification = Absyn.EXTENDS(path = path))) :: rest),env)
-      equation
-        cl = getBaseClassesFromElts(rest, env) "Inherited class is defined inside package" ;
-        (_,_,env_1) = Lookup.lookupClass(FCore.emptyCache(),env, path, SOME(e.info));
-        SOME(envpath) = FGraph.getScopePath(env_1);
-        tpname = AbsynUtil.pathLastIdent(path);
-        p_1 = AbsynUtil.joinPaths(envpath, Absyn.IDENT(tpname));
-        cref = AbsynUtil.pathToCref(p_1);
+        if isSome(env_path_opt) then
+          path := AbsynUtil.suffixPath(Util.getOption(env_path_opt), AbsynUtil.pathLastIdent(path));
+        end if;
       then
-        (cref :: cl);
+        path :: baseClasses;
 
-    case ((Absyn.ELEMENTITEM(element = e as Absyn.ELEMENT(specification = Absyn.EXTENDS(path = path))) :: rest),env)
-      equation
-        cl = getBaseClassesFromElts(rest, env) "Inherited class defined on top level scope" ;
-        (_,_,env_1) = Lookup.lookupClass(FCore.emptyCache(),env, path, SOME(e.info));
-        NONE() = FGraph.getScopePath(env_1);
-        cref = AbsynUtil.pathToCref(path);
-      then
-        (cref :: cl);
-
-    case ((_ :: rest),env)
-      equation
-        cl = getBaseClassesFromElts(rest, env);
-      then
-        cl;
-
+    else baseClasses;
   end matchcontinue;
-end getBaseClassesFromElts;
+end getBaseClassesFromElt;
 
 protected function countBaseClasses
 " This function counts the number of base classes of a class"
   input Absyn.Class inClass;
-  output Integer outInteger;
+  output Integer count;
+protected
+  list<Absyn.ClassPart> parts;
 algorithm
-  outInteger := matchcontinue (inClass)
-    local
-      Integer res;
-      list<Absyn.ClassPart> parts;
-
-    case (Absyn.CLASS(body = Absyn.PARTS(classParts = parts)))
-      equation
-        res = countBaseClassesFromParts(parts);
-      then
-        res;
-
+  count := match inClass
+    case Absyn.CLASS(body = Absyn.PARTS(classParts = parts)) then countBaseClassesFromParts(parts);
     // adrpo: add the case for model extends baseClassName extends SomeElseClass; end baseClassName;
-    case (Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = parts)))
-      equation
-        res = countBaseClassesFromParts(parts);
-      then
-        res + 1;
-
-    case (Absyn.CLASS(body = Absyn.DERIVED())) then 1;
-
+    case Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = parts)) then countBaseClassesFromParts(parts);
+    case Absyn.CLASS(body = Absyn.DERIVED()) then 1;
     else 0;
-
-  end matchcontinue;
+  end match;
 end countBaseClasses;
 
 protected function countBaseClassesFromParts
 "Helper function to countBaseClasses."
-  input list<Absyn.ClassPart> inAbsynClassPartLst;
-  output Integer outInteger;
+  input list<Absyn.ClassPart> parts;
+  output Integer count = 0;
 algorithm
-  outInteger := matchcontinue (inAbsynClassPartLst)
-    local
-      Integer c1,c2,res;
-      list<Absyn.ElementItem> elts;
-      list<Absyn.ClassPart> rest;
-
-    case ((Absyn.PUBLIC(contents = elts) :: rest))
-      equation
-        c1 = countBaseClassesFromElts(elts);
-        c2 = countBaseClassesFromParts(rest);
-      then
-        c1 + c2;
-
-    case ((Absyn.PROTECTED(contents = elts) :: rest))
-      equation
-        c1 = countBaseClassesFromElts(elts);
-        c2 = countBaseClassesFromParts(rest);
-      then
-        c1 + c2;
-
-    case ((_ :: rest))
-      equation
-        res = countBaseClassesFromParts(rest);
-      then
-        res;
-
-    case ({}) then 0;
-
-  end matchcontinue;
+  for part in parts loop
+    for el in AbsynUtil.getElementItemsInClassPart(part) loop
+      if AbsynUtil.isElementItemExtends(el) then
+        count := count + 1;
+      end if;
+    end for;
+  end for;
 end countBaseClassesFromParts;
-
-protected function countBaseClassesFromElts
-"Helper function to countBaseClassesFromParts."
-  input list<Absyn.ElementItem> inAbsynElementItemLst;
-  output Integer outInteger;
-algorithm
-  outInteger := matchcontinue (inAbsynElementItemLst)
-    local
-      Integer cl;
-      Absyn.Path path;
-      list<Absyn.ElementItem> rest;
-
-    case ({}) then 0;
-
-    case ((Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.EXTENDS())) :: rest))
-      equation
-        cl = countBaseClassesFromElts(rest) "Inherited class" ;
-      then
-        cl + 1;
-
-    case ((_ :: rest))
-      equation
-        cl = countBaseClassesFromElts(rest);
-      then
-        cl;
-
-  end matchcontinue;
-end countBaseClassesFromElts;
-
-protected function getAnnotationInClass
-  "Helper function to getIconAnnotation."
-  input Absyn.Class inClass;
-  input AnnotationType annotationType;
-  input Absyn.Program inProgram;
-  input Absyn.Path inModelPath;
-  output String annotationStr;
-protected
-  Absyn.ClassDef body;
-  list<Absyn.ElementArg> ann;
-algorithm
-  Absyn.CLASS(body = body) := inClass;
-
-  ann := match body
-    case Absyn.PARTS()
-      then List.flatten(list(AbsynUtil.annotationToElementArgs(a) for a in body.ann));
-
-    case Absyn.CLASS_EXTENDS()
-      then List.flatten(list(AbsynUtil.annotationToElementArgs(a) for a in body.ann));
-
-    case Absyn.DERIVED(comment = SOME(Absyn.COMMENT(annotation_ = SOME(Absyn.ANNOTATION(ann)))))
-      then ann;
-
-    case Absyn.ENUMERATION(comment = SOME(Absyn.COMMENT(annotation_ = SOME(Absyn.ANNOTATION(ann)))))
-      then ann;
-
-    case Absyn.OVERLOAD(comment = SOME(Absyn.COMMENT(annotation_ = SOME(Absyn.ANNOTATION(ann)))))
-      then ann;
-
-    case Absyn.PDER(comment = SOME(Absyn.COMMENT(annotation_ = SOME(Absyn.ANNOTATION(ann)))))
-      then ann;
-  end match;
-
-  annotationStr := getAnnotationStr(ann, annotationType, inClass, inProgram, inModelPath);
-  annotationStr := "{" + annotationStr + "}";
-end getAnnotationInClass;
-
-protected function isAnnotationType
-  "Checks if the name of an annotation matches the annotation type given."
-  input String annotationStr;
-  input AnnotationType annotationType;
-algorithm
-  _ := match(annotationStr, annotationType)
-    case ("Icon", ICON_ANNOTATION()) then ();
-    case ("Diagram", DIAGRAM_ANNOTATION()) then ();
-  end match;
-end isAnnotationType;
-
-protected function containAnnotation
-"Helper function to getAnnotationFromElts."
-  input list<Absyn.ElementArg> inAbsynElementArgLst;
-  input AnnotationType annotationType;
-algorithm
-  _ := matchcontinue (inAbsynElementArgLst, annotationType)
-    local
-      list<Absyn.ElementArg> lst;
-      String ann_name;
-
-    case ((Absyn.MODIFICATION(path = Absyn.IDENT(name = ann_name)) :: _), _)
-      equation
-        isAnnotationType(ann_name, annotationType);
-      then
-        ();
-
-    case ((_ :: lst), _)
-      equation
-        containAnnotation(lst, annotationType);
-      then
-        ();
-  end matchcontinue;
-end containAnnotation;
-
-protected function getAnnotationStr
-"Helper function to getIconAnnotationInClass."
-  input list<Absyn.ElementArg> inAbsynElementArgLst;
-  input AnnotationType annotationType;
-  input Absyn.Class inClass;
-  input Absyn.Program inProgram;
-  input Absyn.Path inModelPath;
-  output String outString;
-algorithm
-  outString := matchcontinue (inAbsynElementArgLst, annotationType, inClass, inProgram, inModelPath)
-    local
-      String str, ann_name;
-      Absyn.ElementArg ann;
-      Option<Absyn.Modification> mod;
-      list<Absyn.ElementArg> xs;
-      Absyn.Program fullProgram;
-      Absyn.Class c;
-      Absyn.Path p;
-
-    case (((ann as Absyn.MODIFICATION(path = Absyn.IDENT(name = ann_name))) :: _), _, c, fullProgram, p)
-      equation
-        isAnnotationType(ann_name, annotationType);
-        str = getAnnotationString(Absyn.ANNOTATION({ann}), c, fullProgram, p);
-      then
-        str;
-
-    case ((_ :: xs), _, c, fullProgram, p)
-      equation
-        str = getAnnotationStr(xs, annotationType, c, fullProgram, p);
-      then
-        str;
-
-  end matchcontinue;
-end getAnnotationStr;
 
 public function getDocumentationClassAnnotation
 "Returns the documentation class annotation of a class.
@@ -10810,7 +8185,7 @@ algorithm
       String docStr;
     case(_,_)
       equation
-        docStr = getNamedAnnotation(className,p,Absyn.IDENT("DocumentationClass"),SOME("false"),getDocumentationClassAnnotationModStr);
+        docStr = getNamedAnnotationExp(className,p,Absyn.IDENT("DocumentationClass"),SOME("false"),getDocumentationClassAnnotationModStr);
       then
         stringEq(docStr, "true");
   end match;
@@ -10835,75 +8210,37 @@ algorithm
   end matchcontinue;
 end getDocumentationClassAnnotationModStr;
 
-protected function getDefaultComponentName
-"Returns the default component name of a class.
-  This is annotated with the annotation:
-  annotation(defaultComponentName=\"name\"); in the class definition"
-  input Absyn.Path className;
-  input Absyn.Program p;
-  output String compName;
+public function getDefaultComponentName
+  input Absyn.Path classPath;
+  input Absyn.Program program;
+  output Values.Value result;
+protected
+  String str;
 algorithm
-  compName := match(className,p)
-    case(_,_)
-      equation
-        compName = getNamedAnnotation(className,p,Absyn.IDENT("defaultComponentName"),SOME("{}"),getDefaultComponentNameModStr);
-      then
-        compName;
-  end match;
+  str := getStringNamedAnnotation(classPath, program, Absyn.IDENT("defaultComponentName"));
+  result := ValuesUtil.makeString(str);
 end getDefaultComponentName;
 
-protected function getDefaultComponentNameModStr
-"Extractor function for defaultComponentName modifier"
-  input Option<Absyn.Modification> mod;
-  output String docStr;
+public function getDefaultComponentPrefixes
+  input Absyn.Path classPath;
+  input Absyn.Program program;
+  output Values.Value result;
+protected
+  String str;
 algorithm
-  docStr := matchcontinue(mod)
-    local Absyn.Exp e;
-
-    case(SOME(Absyn.CLASSMOD(eqMod = Absyn.EQMOD(exp=e))))
-      equation
-        docStr = Dump.printExpStr(e);
-      then
-        docStr;
-
-    else "";
-
-  end matchcontinue;
-end getDefaultComponentNameModStr;
-
-protected function getDefaultComponentPrefixes
-"Returns the default component prefixes of a class.
-  This is annotated with the annotation
-    annotation(defaultComponentPrefixes=\"<prefixes>\");
-  in the class definition"
-  input Absyn.Path className;
-  input Absyn.Program p;
-  output String compName;
-algorithm
-  compName := match(className,p)
-    case(_,_)
-      equation
-        compName = getNamedAnnotation(className,p,Absyn.IDENT("defaultComponentPrefixes"),SOME("{}"),getDefaultComponentPrefixesModStr);
-      then
-        compName;
-  end match;
+  str := getStringNamedAnnotation(classPath, program, Absyn.IDENT("defaultComponentPrefixes"));
+  result := ValuesUtil.makeString(str);
 end getDefaultComponentPrefixes;
 
-public function getAnnotationValue
+protected function getAnnotationValue
   input Option<Absyn.Modification> mod;
   output String str;
+protected
+  Absyn.Exp exp;
 algorithm
-  str := matchcontinue (mod)
-    local
-      String s;
-      Absyn.Exp exp;
-
-    case (SOME(Absyn.CLASSMOD(elementArgLst = {}, eqMod=Absyn.EQMOD(exp=exp))))
-      equation
-        s = Dump.printExpStr(exp);
-        s = stringAppendList({"{", s, "}"});
-      then
-        s;
+  str := matchcontinue mod
+    case SOME(Absyn.CLASSMOD(elementArgLst = {}, eqMod=Absyn.EQMOD(exp=exp)))
+      then "{" + Dump.printExpStr(exp) + "}";
 
     // adrpo: empty if no value
     else "{}";
@@ -11081,328 +8418,156 @@ algorithm
 end getDocumentationAnnotationInfoHeader;
 
 protected function getNthPublicConnectorStr
-"Helper function to getNthConnector."
-  input Absyn.Path inPath;
-  input Absyn.Class inClass;
-  input Absyn.Program inProgram;
-  input Integer inInteger;
-  output String outString;
-  output Absyn.Path outPath;
+  "Returns the n:th connector's name and type in the given class, or n minus
+   the number of connectors found if n is too large."
+  input Absyn.Path classPath;
+  input Absyn.Class cls;
+  input Absyn.Program program;
+        output Option<tuple<String, Absyn.Path>> conn = NONE();
+  input output Integer n;
+protected
+  list<Absyn.ClassPart> parts;
 algorithm
-  (outString,outPath) := matchcontinue (inPath,inClass,inProgram,inInteger)
-    local
-      String str,a;
-      Absyn.Path tp,modelpath;
-      Boolean b,c,d;
-      Absyn.Restriction e;
-      list<Absyn.ElementItem> elt;
-      list<Absyn.ClassPart> lst;
-      Absyn.Program p;
-      Integer n,c1,c2;
-      Option<String> cmt;
-      SourceInfo file_info;
-      list<Absyn.Annotation> ann;
-      Absyn.Class cdef;
+  parts := AbsynUtil.getClassPartsInClass(cls);
 
-    case (modelpath,Absyn.CLASS(body = Absyn.PARTS(classParts = (Absyn.PUBLIC(contents = elt) :: _))),p,n)
-      equation
-        (str,tp) = getNthConnectorStr(p, modelpath, elt, n);
-      then
-        (str,tp);
+  for part in parts loop
+    (conn, n) := match part
+      case Absyn.PUBLIC() then getNthConnectorInfo(program, classPath, part.contents, n);
+      else (conn, n);
+    end match;
 
-    /*
-     * The rule above failed, count the number of connectors in the first
-     * public list, subtract the number and try the rest of the list
-     */
-    case (modelpath,
-      cdef as Absyn.CLASS(body = Absyn.PARTS(classParts = (Absyn.PUBLIC(contents = elt) :: lst),ann=ann,comment = cmt)),p,n)
-      equation
-        cdef.body = Absyn.PARTS({},{},{Absyn.PUBLIC(elt)},ann,cmt);
-        c1 = countPublicConnectors(modelpath, p, cdef);
-        c2 = n - c1;
-        cdef.body = Absyn.PARTS({},{},lst,ann,cmt);
-        (str,tp) = getNthPublicConnectorStr(modelpath, cdef, p, c2);
-      then
-        (str,tp);
-
-    case (modelpath,
-      cdef as Absyn.CLASS(body = Absyn.PARTS(classParts = _ :: lst,ann=ann,comment = cmt)),p,n)
-      equation
-        cdef.body = Absyn.PARTS({},{},lst,ann,cmt);
-        (str,tp) = getNthPublicConnectorStr(modelpath, cdef, p, n);
-      then
-        (str,tp);
-
-    /***********   adrpo: handle also the case of model extends name end name; **********/
-    case (modelpath,Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = (Absyn.PUBLIC(contents = elt) :: _))),p,n)
-      equation
-        (str,tp) = getNthConnectorStr(p, modelpath, elt, n);
-      then
-        (str,tp);
-
-    /*
-     * The rule above failed, count the number of connectors in the first
-     * public list, subtract the number and try the rest of the list
-     */
-    case (modelpath,
-      cdef as Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = Absyn.PUBLIC(contents = elt) :: lst,ann=ann,comment = cmt)),p,n)
-      equation
-        cdef.body = Absyn.PARTS({},{},{Absyn.PUBLIC(elt)},ann,cmt);
-        c1 = countPublicConnectors(modelpath, p, cdef);
-        c2 = n - c1;
-        cdef.body = Absyn.PARTS({},{},lst,ann,cmt);
-        (str,tp) = getNthPublicConnectorStr(modelpath, cdef, p, c2);
-      then
-        (str,tp);
-
-    case (modelpath,
-      cdef as Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = (_ :: lst),ann=ann,comment = cmt)),p,n)
-      equation
-        cdef.body = Absyn.PARTS({},{},lst,ann,cmt);
-        (str,tp) = getNthPublicConnectorStr(modelpath, cdef, p, n);
-      then
-        (str,tp);
-
-  end matchcontinue;
+    if n <= 0 then
+      break;
+    end if;
+  end for;
 end getNthPublicConnectorStr;
 
-protected function getNthConnectorStr
-" This function takes an ElementItem list and an int and
-   returns the name of the nth connector component in that list."
-  input Absyn.Program inProgram;
-  input Absyn.Path inPath;
-  input list<Absyn.ElementItem> inAbsynElementItemLst;
-  input Integer inInteger;
-  output String outString;
-  output Absyn.Path outPath;
+protected function getNthConnectorInfo
+  "Returns the n:th connector's name and type in the given list of element
+   items, or n minus the number of connectors found if n is too large."
+  input Absyn.Program program;
+  input Absyn.Path classPath;
+  input list<Absyn.ElementItem> items;
+        output Option<tuple<String, Absyn.Path>> conn = NONE();
+  input output Integer n;
+protected
+  Absyn.Path tp, cls_path;
+  Absyn.Class cls;
+  list<Absyn.ComponentItem> comps;
+  Integer comp_count;
+  String name;
 algorithm
-  (outString,outPath) := matchcontinue (inProgram,inPath,inAbsynElementItemLst,inInteger)
-    local
-      Absyn.Class cdef;
-      Absyn.Path newmodelpath,tp,modelpath;
-      String str;
-      Absyn.Program p;
-      list<Absyn.ElementItem> lst;
-      Integer n,c1,c2,newn;
-      list<Absyn.ComponentItem> complst;
+  for item in items loop
+    (conn, n) := match item
+      case Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.EXTENDS(path = tp)))
+        algorithm
+          (cls, cls_path) := lookupClassdef(tp, classPath, program);
+        then
+          getNthPublicConnectorStr(cls_path, cls, program, n);
 
-    case (p,modelpath,(Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.EXTENDS(path = tp))) :: _),n)
-      equation
-        (cdef,newmodelpath) = lookupClassdef(tp, modelpath, p);
-        (str,tp) = getNthPublicConnectorStr(newmodelpath, cdef, p, n);
-      then
-        (str,tp);
+      case Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.COMPONENTS(
+             typeSpec = Absyn.TPATH(path = tp), components = comps)))
+        algorithm
+          (cls, _) := lookupClassdef(tp, classPath, program);
 
-    case (p,modelpath,(Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.EXTENDS(path = tp))) :: lst),n)
-      equation
-        (cdef,newmodelpath) = lookupClassdef(tp, modelpath, p);
-        c1 = countPublicConnectors(newmodelpath, p, cdef);
-        c2 = n - c1;
-        (str,tp) = getNthConnectorStr(p, modelpath, lst, c2);
-      then
-        (str,tp);
+          if AbsynUtil.isConnector(cls) or AbsynUtil.isExpandableConnector(cls) then
+            comp_count := listLength(comps);
 
-    case (p,modelpath,(Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.COMPONENTS(typeSpec = Absyn.TPATH(tp,_),components = complst))) :: _),n)
-      equation
-        (Absyn.CLASS(_,_,_,_,Absyn.R_CONNECTOR(),_,_),_) = lookupClassdef(tp, modelpath, p);
-        str = getNthCompname(complst, n);
-      then
-        (str,tp);
+            if n <= comp_count then
+              name := AbsynUtil.componentName(listGet(comps, n));
+              conn := SOME((name, tp));
+            end if;
 
-    case (p,modelpath,(Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.COMPONENTS(typeSpec = Absyn.TPATH(tp,_),components = complst))) :: lst),n)
-      equation
-        (Absyn.CLASS(_,_,_,_,Absyn.R_CONNECTOR(),_,_),_) = lookupClassdef(tp, modelpath, p)
-        "Not so fast, since we lookup and instantiate two times just because this was not the connector we were looking for." ;
-        c1 = listLength(complst);
-        newn = n - c1;
-        (str,tp) = getNthConnectorStr(p, modelpath, lst, newn);
-      then
-        (str,tp);
+            n := n - comp_count;
+          end if;
+        then
+          (conn, n);
 
-    case (p,modelpath,(Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.COMPONENTS(typeSpec = Absyn.TPATH(tp,_),components = complst))) :: _),n)
-      equation
-        (Absyn.CLASS(_,_,_,_,Absyn.R_EXP_CONNECTOR(),_,_),_) = lookupClassdef(tp, modelpath, p);
-        str = getNthCompname(complst, n);
-      then
-        (str,tp);
+      else (conn, n);
+    end match;
 
-    case (p,modelpath,(Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.COMPONENTS(typeSpec = Absyn.TPATH(tp,_),components = complst))) :: lst),n)
-      equation
-        (Absyn.CLASS(_,_,_,_,Absyn.R_EXP_CONNECTOR(),_,_),_) = lookupClassdef(tp, modelpath, p)
-        "Not so fast, since we lookup and instantiate two times just because this was not the connector we were looking for." ;
-        c1 = listLength(complst);
-        newn = n - c1;
-        (str,tp) = getNthConnectorStr(p, modelpath, lst, newn);
-      then
-        (str,tp);
-
-    case (p,modelpath,(_ :: lst),n)
-      equation
-        (str,tp) = getNthConnectorStr(p, modelpath, lst, n);
-      then
-        (str,tp);
-
-    case (_,_,{},_) then fail();
-
-  end matchcontinue;
-end getNthConnectorStr;
-
-protected function getNthCompname
-"Returns the nth component name from a list of ComponentItems.
-  Index is from 1..n."
-  input list<Absyn.ComponentItem> inAbsynComponentItemLst;
-  input Integer inInteger;
-  output String outString;
-algorithm
-  outString := match (inAbsynComponentItemLst,inInteger)
-    local
-      String id,res;
-      list<Absyn.ComponentItem> lst,xs;
-      Integer n1,n;
-
-    case ((Absyn.COMPONENTITEM(component = Absyn.COMPONENT(name = id)) :: _),1) then id;
-
-    case ((_ :: xs),n)
-      equation
-        n1 = n - 1;
-        res = getNthCompname(xs, n1);
-      then
-        res;
-
-    case ({},_) then fail();
-
-  end match;
-end getNthCompname;
+    if n <= 0 then
+      break;
+    end if;
+  end for;
+end getNthConnectorInfo;
 
 protected function countPublicConnectors
 "This function takes a Class and counts the number of connector
   components in the class. This also includes counting in inherited classes."
-  input Absyn.Path inPath;
-  input Absyn.Program inProgram;
-  input Absyn.Class inClass;
-  output Integer outInteger;
+  input Absyn.Path classPath;
+  input Absyn.Program program;
+  input Absyn.Class cls;
+  output Integer count;
+protected
+  list<Absyn.ClassPart> parts;
+  Absyn.Class cdef;
+  Absyn.Path cls_name;
 algorithm
-  outInteger := matchcontinue (inPath,inProgram,inClass)
-    local
-      Integer c1,c2,res;
-      Absyn.Path modelpath,newmodelpath,cname;
-      Absyn.Program p;
-      String a;
-      Boolean b,c,d;
-      Absyn.Restriction e;
-      list<Absyn.ElementItem> elt;
-      list<Absyn.ClassPart> lst;
-      Option<String> cmt;
-      SourceInfo file_info;
-      Absyn.Class cdef;
-      list<Absyn.Annotation> ann;
+  count := match cls
+    case Absyn.CLASS(body = Absyn.PARTS(classParts = parts))
+      then countPublicConnectorsInParts(parts, classPath, program);
 
-    case (modelpath,p,
-      cdef as Absyn.CLASS(body = Absyn.PARTS(classParts = (Absyn.PUBLIC(contents = elt) :: lst),ann=ann,comment = cmt)))
-      equation
-        cdef.body = Absyn.PARTS({},{},lst,ann,cmt);
-        c1 = countPublicConnectors(modelpath, p, cdef);
-        c2 = countConnectors(modelpath, p, elt);
+    case Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = parts))
+      then countPublicConnectorsInParts(parts, classPath, program);
+
+    case Absyn.CLASS(body = Absyn.DERIVED(typeSpec = Absyn.TPATH(path = cls_name)))
+      algorithm
+        (cdef, _) := lookupClassdef(cls_name, classPath, program);
       then
-        c1 + c2;
+        countPublicConnectors(classPath, program, cdef);
 
-    case (modelpath,p,
-      cdef as Absyn.CLASS(body = Absyn.PARTS(classParts = (_ :: lst),ann = ann,comment = cmt)))
-      equation
-        cdef.body = Absyn.PARTS({},{},lst,ann,cmt);
-        res = countPublicConnectors(modelpath, p, cdef);
-      then
-        res;
-
-    case (_,_,Absyn.CLASS(body = Absyn.PARTS(classParts = {})))
-      then 0;
-
-    // adrpo: handle also the case of model extends name end name;
-    case (modelpath,p,
-      cdef as Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = (Absyn.PUBLIC(contents = elt) :: lst),ann = ann,comment = cmt)))
-      equation
-        cdef.body = Absyn.PARTS({},{},lst,ann,cmt);
-        c1 = countPublicConnectors(modelpath, p, cdef);
-        c2 = countConnectors(modelpath, p, elt);
-      then
-        c1 + c2;
-
-    // adrpo: handle also the case of model extends name end name;
-    case (modelpath,p,
-      cdef as Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = (_ :: lst),ann=ann,comment = cmt)))
-      equation
-        cdef.body = Absyn.PARTS({},{},lst,ann,cmt);
-        res = countPublicConnectors(modelpath, p, cdef);
-      then
-        res;
-
-    // adrpo: handle also the case of model extends name end name;
-    case (_,_,Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = {})))
-      then 0;
-
-    // the case model name = OtherName;
-    case (modelpath,p,Absyn.CLASS(body = Absyn.DERIVED(typeSpec = Absyn.TPATH(cname, _))))
-      equation
-        (cdef,newmodelpath) = lookupClassdef(cname, modelpath, p);
-        res = countPublicConnectors(newmodelpath, p, cdef);
-      then
-        res;
-
-  end matchcontinue;
+    else 0;
+  end match;
 end countPublicConnectors;
+
+protected function countPublicConnectorsInParts
+  input list<Absyn.ClassPart> parts;
+  input Absyn.Path classPath;
+  input Absyn.Program program;
+  output Integer count = 0;
+algorithm
+  for part in parts loop
+    count := match part
+      case Absyn.ClassPart.PUBLIC() then count + countConnectors(classPath, program, part.contents);
+      else count;
+    end match;
+  end for;
+end countPublicConnectorsInParts;
 
 protected function countConnectors
 "This function takes a Path to the current model and a ElementItem
   list and returns the number of connector components in that list."
-  input Absyn.Path inPath;
-  input Absyn.Program inProgram;
-  input list<Absyn.ElementItem> inAbsynElementItemLst;
-  output Integer outInteger;
+  input Absyn.Path classPath;
+  input Absyn.Program program;
+  input list<Absyn.ElementItem> items;
+  output Integer count = 0;
+protected
+  Absyn.Class cls;
+  Absyn.Path tp, cls_path;
+  list<Absyn.ComponentItem> comps;
+  Integer c;
 algorithm
-  outInteger := matchcontinue (inPath,inProgram,inAbsynElementItemLst)
-    local
-      Absyn.Class cdef;
-      Absyn.Path newmodelpath,modelpath,tp;
-      Integer c1,c2,res;
-      Absyn.Program p;
-      list<Absyn.ElementItem> lst;
-      list<Absyn.ComponentItem> complst;
+  for item in items loop
+    c := matchcontinue item
+      case Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.EXTENDS(path = tp)))
+        algorithm
+          (cls, cls_path) := lookupClassdef(tp, classPath, program);
+        then
+          countPublicConnectors(cls_path, program, cls);
 
-    case (modelpath,p,(Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.EXTENDS(path = tp))) :: lst))
-      equation
-        (cdef,newmodelpath) = lookupClassdef(tp, modelpath, p);
-        c1 = countPublicConnectors(newmodelpath, p, cdef);
-        c2 = countConnectors(modelpath, p, lst);
-      then
-        c1 + c2;
+      case Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification =
+             Absyn.COMPONENTS(typeSpec = Absyn.TPATH(tp), components = comps)))
+        algorithm
+          (cls, _) := lookupClassdef(tp, classPath, program);
+        then
+          if AbsynUtil.isConnector(cls) or AbsynUtil.isExpandableConnector(cls) then listLength(comps) else 0;
 
-    case (modelpath,p,(Absyn.ELEMENTITEM(element =
-      Absyn.ELEMENT(specification = Absyn.COMPONENTS(typeSpec = Absyn.TPATH(tp, _),components = complst))) :: lst))
-      equation
-        (Absyn.CLASS(_,_,_,_,Absyn.R_CONNECTOR(),_,_),_) = lookupClassdef(tp, modelpath, p);
-        c1 = listLength(complst);
-        c2 = countConnectors(modelpath, p, lst);
-      then
-        c1 + c2;
+      else 0;
+    end matchcontinue;
 
-    case (modelpath,p,(Absyn.ELEMENTITEM(element =
-      Absyn.ELEMENT(specification = Absyn.COMPONENTS(typeSpec = Absyn.TPATH(tp, _),components = complst))) :: lst))
-      equation
-        (Absyn.CLASS(_,_,_,_,Absyn.R_EXP_CONNECTOR(),_,_),_) = lookupClassdef(tp, modelpath, p);
-        c1 = listLength(complst);
-        c2 = countConnectors(modelpath, p, lst);
-      then
-        c1 + c2;
-
-    case (modelpath,p,(_ :: lst)) /* Rule above didn\'t match => element not connector components, try rest of list */
-      equation
-        res = countConnectors(modelpath, p, lst);
-      then
-        res;
-
-    case (_,_,{}) then 0;
-
-  end matchcontinue;
+    count := count + c;
+  end for;
 end countConnectors;
 
 protected function getConnectionAnnotationStrElArgs
@@ -11459,27 +8624,20 @@ protected function getConnectionAnnotationStr
   input Absyn.Class inClass;
   input Absyn.Program inFullProgram;
   input Absyn.Path inModelPath;
-  output String outString;
+  output Values.Value result;
+protected
+  String gexpstr;
+  list<String> res;
+  list<Absyn.ElementArg> annotations;
+  SourceInfo info;
 algorithm
-  outString := match (inEquationItem, inClass, inFullProgram, inModelPath)
-    local
-      String gexpstr;
-      list<String> res;
-      list<Absyn.ElementArg>  annotations;
-      SourceInfo info;
-
-    case (Absyn.EQUATIONITEM(info=info, equation_ = Absyn.EQ_CONNECT(),
-      comment = SOME(Absyn.COMMENT(SOME(Absyn.ANNOTATION(annotations)),_))),
-      _, _, _)
-    equation
-        res = getConnectionAnnotationStrElArgs(annotations, info, inClass, inFullProgram, inModelPath);
-        gexpstr = stringDelimitList(res, ", ");
-    then
-      gexpstr;
-    case (Absyn.EQUATIONITEM(equation_ = Absyn.EQ_CONNECT(),comment = NONE()),
-          _, _, _)
+  result := match inEquationItem
+    case Absyn.EQUATIONITEM(info=info, equation_ = Absyn.EQ_CONNECT(),
+        comment = SOME(Absyn.COMMENT(annotation_ = SOME(Absyn.ANNOTATION(annotations)))))
+      algorithm
+        res := getConnectionAnnotationStrElArgs(annotations, info, inClass, inFullProgram, inModelPath);
       then
-        fail();
+        InteractiveUtil.makeAnnotationArrayValue(res);
   end match;
 end getConnectionAnnotationStr;
 
@@ -11538,29 +8696,11 @@ end getConnectionStr;
 public function getConnections
 "This function takes a Class and returns a list of connections in the Class."
   input Absyn.Class inClass;
-  output list<Absyn.EquationItem> outList;
+  output list<Absyn.EquationItem> connections;
+protected
+  Absyn.ClassDef body = inClass.body;
 algorithm
-  outList := match (inClass)
-    local
-      list<Absyn.EquationItem> connectionsList;
-      list<Absyn.ClassPart> parts;
-
-    case Absyn.CLASS(body = Absyn.PARTS(classParts = parts))
-      equation
-        connectionsList = getConnectionsInClassparts(parts);
-      then
-        connectionsList;
-
-    // adrpo: handle also the case model extends X end X;
-    case Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = parts))
-      equation
-        connectionsList = getConnectionsInClassparts(parts);
-      then
-        connectionsList;
-
-    case Absyn.CLASS(body = Absyn.DERIVED()) then {};
-
-  end match;
+  connections := getConnectionsInClassparts(AbsynUtil.getClassPartsInClass(inClass));
 end getConnections;
 
 protected function getConnectionsInClassparts
@@ -11630,253 +8770,33 @@ algorithm
   end match;
 end getConnectionsInEquations;
 
-protected function getComponentAnnotationsFromElts
-"Helper function to getComponentAnnotations."
-  input list<Absyn.Element> comps;
-  input Absyn.Class inClass;
-  input Absyn.Program inFullProgram;
-  input Absyn.Path inModelPath;
-  output String resStr;
-protected
-  list<SCode.Element> graphicProgramSCode;
-  FCore.Graph env;
-  list<String> res;
-  Absyn.Program placementProgram;
-  GraphicEnvCache cache;
-algorithm
-  if not Flags.isSet(Flags.NF_API) then
-    placementProgram := InteractiveUtil.modelicaAnnotationProgram(Config.getAnnotationVersion());
-    graphicProgramSCode := AbsynToSCode.translateAbsyn2SCode(placementProgram);
-    (_,env) := Inst.makeEnvFromProgram(graphicProgramSCode);
-  else
-    env := FGraph.emptyGraph;
-  end if;
-  cache := GRAPHIC_ENV_NO_CACHE(inFullProgram, inModelPath);
-  res := getComponentitemsAnnotations(comps, env, inClass, cache);
-  resStr := stringDelimitList(res, ",");
-end getComponentAnnotationsFromElts;
-
-protected function getComponentitemsAnnotations
-"Helper function to getComponentAnnotationsFromElts"
-  input list<Absyn.Element> inElements;
-  input FCore.Graph inEnv;
-  input Absyn.Class inClass;
-  input GraphicEnvCache inCache;
-  output list<String> outStringLst = {};
-protected
-  list<String> res;
-  GraphicEnvCache cache = inCache;
-  list<Absyn.ComponentItem> items;
-  Option<Absyn.ConstrainClass> cc;
-  Absyn.Program fullProgram;
-  Absyn.Path modelPath;
-algorithm
-  if Flags.isSet(Flags.NF_API) then
-    (fullProgram, modelPath) := cacheProgramAndPath(inCache);
-    outStringLst := NFApi.evaluateAnnotations(fullProgram, modelPath, inElements);
-    return;
-  end if;
-
-  for e in listReverse(inElements) loop
-    outStringLst := matchcontinue e
-      case Absyn.ELEMENT(specification = Absyn.COMPONENTS(components = items), constrainClass = cc)
-        algorithm
-          (res, cache) := getComponentitemsAnnotationsFromItems(items,
-            AbsynUtil.getAnnotationsFromConstraintClass(cc), inEnv, inClass, cache);
-        then
-          listAppend(res, outStringLst);
-
-      case Absyn.ELEMENT(specification = Absyn.COMPONENTS())
-        then "{}" :: outStringLst;
-
-      else outStringLst;
-    end matchcontinue;
-  end for;
-end getComponentitemsAnnotations;
-
-protected function getComponentitemsAnnotationsElArgs
-"Helper function to getComponentitemsAnnotationsFromItems."
-  input list<Absyn.ElementArg> inElementArgs;
-  input FCore.Graph inEnv;
-  input Absyn.Class inClass;
-  input GraphicEnvCache inCache;
-  input Boolean addAnnotationName = true;
-  output list<String> outStringLst = {};
-  output GraphicEnvCache outCache = inCache;
-algorithm
-  (outStringLst, outCache) := InteractiveUtil.getElementitemsAnnotationsElArgs(inElementArgs, inEnv, inClass, inCache, addAnnotationName);
-end getComponentitemsAnnotationsElArgs;
-
-protected function getComponentitemsAnnotationsFromItems
-"Helper function to getComponentitemsAnnotations."
-  input list<Absyn.ComponentItem> inComponentItems;
-  input list<Absyn.ElementArg> ccAnnotations;
-  input FCore.Graph inEnv;
-  input Absyn.Class inClass;
-  input GraphicEnvCache inCache;
-  output list<String> outStringLst = {};
-  output GraphicEnvCache outCache = inCache;
-protected
-  list<Absyn.ElementArg> annotations;
-  list<String> res;
-  String str;
-algorithm
-  for comp in listReverse(inComponentItems) loop
-    annotations := match comp
-      case Absyn.COMPONENTITEM(comment = SOME(Absyn.COMMENT(annotation_ =
-          SOME(Absyn.ANNOTATION(annotations)))))
-        then listAppend(annotations, ccAnnotations);
-      else ccAnnotations;
-    end match;
-
-    (res, outCache) := getComponentitemsAnnotationsElArgs(annotations, inEnv, inClass, outCache);
-    str := stringDelimitList(res, ", ");
-    outStringLst := stringAppendList({"{", str, "}"}) :: outStringLst;
-  end for;
-end getComponentitemsAnnotationsFromItems;
-
-protected function getComponentAnnotation
-"This function takes an Element and returns a comma separated string
-  of values corresponding to the flat record for a component annotation.
-  If several components are declared within the eleement, a list of values
-  is given for each of them."
-  input Absyn.Element inElement;
-  input Absyn.Class inClass;
-  input Absyn.Program inFullProgram;
-  input Absyn.Path inModelPath;
-  output String outString;
-algorithm
-  outString := matchcontinue (inElement,inClass,inFullProgram,inModelPath)
-    local
-      String str;
-      list<Absyn.ComponentItem> lst;
-
-    case (Absyn.ELEMENT(specification = Absyn.COMPONENTS(components = lst)),
-          _,_,_)
-      equation
-        str = getComponentitemsAnnotation(lst, inClass,inFullProgram,inModelPath);
-      then
-        str;
-
-    else "";
-  end matchcontinue;
-end getComponentAnnotation;
-
-protected function getComponentitemsAnnotation
-"Helper function to get_component_annotation."
-  input list<Absyn.ComponentItem> inAbsynComponentItemLst;
-  input Absyn.Class inClass;
-  input Absyn.Program inFullProgram;
-  input Absyn.Path inModelPath;
-  output String outString;
-algorithm
-  outString := match (inAbsynComponentItemLst,inClass,inFullProgram,inModelPath)
-    local
-      String s1,str,res;
-      list<Absyn.ElementArg> mod;
-      list<Absyn.ComponentItem> rest;
-
-    case ((Absyn.COMPONENTITEM(comment = SOME(Absyn.COMMENT(SOME(Absyn.ANNOTATION((mod as (Absyn.MODIFICATION(path = Absyn.IDENT("Placement")) :: _)))),_))) ::
-      (rest as (_ :: _))),
-      _,_,_)
-      equation
-        s1 = getAnnotationString(Absyn.ANNOTATION(mod), inClass, inFullProgram, inModelPath);
-        str = getComponentitemsAnnotation(rest, inClass, inFullProgram, inModelPath);
-        res = stringAppendList({"{", s1, "},", str});
-      then
-        res;
-    case ({Absyn.COMPONENTITEM(comment = SOME(Absyn.COMMENT(SOME(Absyn.ANNOTATION((mod as (Absyn.MODIFICATION(path = Absyn.IDENT("Placement")) :: _)))),_)))},
-      _,_,_)
-      equation
-        s1 = getAnnotationString(Absyn.ANNOTATION(mod),inClass,inFullProgram,inModelPath);
-        res = stringAppendList({"{", s1, "}"});
-      then
-        res;
-    case ((Absyn.COMPONENTITEM(comment = SOME(Absyn.COMMENT(NONE(),_))) :: (rest as (_ :: _))),
-      _,_,_)
-      equation
-        str = getComponentitemsAnnotation(rest,inClass,inFullProgram,inModelPath);
-        res = stringAppend("{nada},", str);
-      then
-        res;
-    case ((Absyn.COMPONENTITEM(comment = NONE()) :: (rest as (_ :: _))),
-      _,_,_)
-      equation
-        str = getComponentitemsAnnotation(rest,inClass,inFullProgram,inModelPath);
-        res = stringAppend("{},", str);
-      then
-        res;
-    case ({Absyn.COMPONENTITEM(comment = NONE())},_,_,_)
-      equation
-        res = "{}";
-      then
-        res;
-  end match;
-end getComponentitemsAnnotation;
-
 public function getComponentModification
 " This function takes an Element and returns a comma separated
    list of Code expression for the modification of the component."
-  input Absyn.Element inElement;
-  output String outString;
+  input Absyn.Element element;
+  output Values.Value result;
+protected
+  list<Absyn.ComponentItem> comps;
+  Option<Absyn.Modification> opt_mod;
+  Absyn.Modification mod;
+  list<Values.Value> vals = {};
 algorithm
-  outString:=
-  matchcontinue (inElement)
-    local
-      String str;
-      list<Absyn.ComponentItem> lst;
-    case (Absyn.ELEMENT(specification = Absyn.COMPONENTS(components = lst)))
-      equation
-        str = getComponentitemsModification(lst);
+  result := match element
+    case Absyn.ELEMENT(specification = Absyn.COMPONENTS(components = comps))
+      algorithm
+        for c in comps loop
+          opt_mod := c.component.modification;
+          mod := if isSome(opt_mod) then Util.getOption(opt_mod) else Absyn.emptyMod;
+          vals := Values.Value.CODE(Absyn.CodeNode.C_MODIFICATION(mod)) :: vals;
+        end for;
+
+        vals := Dangerous.listReverseInPlace(vals);
       then
-        str;
-    else "";
-  end matchcontinue;
+        ValuesUtil.makeArray(vals);
+
+    else ValuesUtil.makeEmptyArray();
+  end match;
 end getComponentModification;
-
-protected function getComponentitemsModification
-"Helper function to get_component_modification."
-  input list<Absyn.ComponentItem> inAbsynComponentItemLst;
-  output String outString;
-algorithm
-  outString:=
-  matchcontinue (inAbsynComponentItemLst)
-    local
-      String s1,s2,res,str;
-      Absyn.Modification mod;
-      list<Absyn.ComponentItem> rest;
-    case ((Absyn.COMPONENTITEM(component = Absyn.COMPONENT(modification = SOME(mod))) :: (rest as (_ :: _))))
-      equation
-        s1 = Dump.printExpStr(Absyn.CODE(Absyn.C_MODIFICATION(mod)));
-        s2 = getComponentitemsModification(rest);
-        res = stringAppendList({s1,",",s2});
-      then
-        res;
-    case ({Absyn.COMPONENTITEM(component = Absyn.COMPONENT(modification = SOME(mod)))})
-      equation
-        res = Dump.printExpStr(Absyn.CODE(Absyn.C_MODIFICATION(mod)));
-      then
-        res;
-    case ((Absyn.COMPONENTITEM(component = Absyn.COMPONENT(modification = NONE())) :: (rest as (_ :: _))))
-      equation
-        str = getComponentitemsModification(rest);
-        res = stringAppend("$Code(),", str);
-      then
-        res;
-    case ((Absyn.COMPONENTITEM(component = Absyn.COMPONENT(modification = NONE())) :: (rest as (_ :: _))))
-      equation
-        str = getComponentitemsModification(rest);
-        res = stringAppend("$Code(),", str);
-      then
-        res;
-    case ({Absyn.COMPONENTITEM(comment = NONE())})
-      equation
-        res = "$Code()";
-      then
-        res;
-  end matchcontinue;
-end getComponentitemsModification;
-
 
 public function cacheProgramAndPath
   input GraphicEnvCache inCache;
@@ -11937,343 +8857,6 @@ algorithm
   end matchcontinue;
 end getAnnotationString;
 
-public function getComponentsInClass
-" Both public and protected lists are searched."
-  input Absyn.Class inClass;
-  output list<Absyn.Element> outAbsynElementLst;
-algorithm
-  outAbsynElementLst:=
-  match (inClass)
-    local
-      list<Absyn.Element> lst1,res;
-      list<Absyn.ElementItem> elts;
-      list<Absyn.ClassPart> lst;
-
-    case (Absyn.CLASS(body = Absyn.PARTS(classParts = {}))) then {};
-    case (Absyn.CLASS(body = Absyn.PARTS(classParts = lst)))
-      algorithm
-        res := {};
-        for elt in lst loop
-          _ := match elt
-              case Absyn.PUBLIC(contents = elts)
-                algorithm
-                  lst1 := getComponentsInElementitems(elts);
-                  res := List.append_reverse(lst1, res);
-                then ();
-                case Absyn.PROTECTED(contents = elts)
-                  algorithm
-                    lst1 := getComponentsInElementitems(elts);
-                    res := List.append_reverse(lst1, res);
-                  then ();
-              else ();
-            end match;
-        end for;
-        res := Dangerous.listReverseInPlace(res);
-      then
-        res;
-
-    // adrpo: handle also the case model extends X end X;
-    case (Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = {}))) then {};
-    case (Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = lst)))
-      algorithm
-        res := {};
-        for elt in lst loop
-          _ := match elt
-              case Absyn.PUBLIC(contents = elts)
-                algorithm
-                  lst1 := getComponentsInElementitems(elts);
-                  res := List.append_reverse(lst1, res);
-                then ();
-                case Absyn.PROTECTED(contents = elts)
-                  algorithm
-                    lst1 := getComponentsInElementitems(elts);
-                    res := List.append_reverse(lst1, res);
-                  then ();
-              else ();
-            end match;
-        end for;
-        res := Dangerous.listReverseInPlace(res);
-      then
-        res;
-
-    else {};
-
-  end match;
-end getComponentsInClass;
-
-public function getPublicComponentsInClass
-" Public lists are searched."
-  input Absyn.Class inClass;
-  output list<Absyn.Element> outAbsynElementLst;
-algorithm
-  outAbsynElementLst:=
-  match (inClass)
-    local
-      list<Absyn.Element> lst1,res;
-      list<Absyn.ElementItem> elts;
-      list<Absyn.ClassPart> lst;
-
-    case (Absyn.CLASS(body = Absyn.PARTS(classParts = {}))) then {};
-    case (Absyn.CLASS(body = Absyn.PARTS(classParts = lst)))
-      algorithm
-        res := {};
-        for elt in lst loop
-          _ := match elt
-              case Absyn.PUBLIC(contents = elts)
-                algorithm
-                  lst1 := getComponentsInElementitems(elts);
-                  res := List.append_reverse(lst1, res);
-                then ();
-              else ();
-            end match;
-        end for;
-        res := Dangerous.listReverseInPlace(res);
-      then
-        res;
-
-    // adrpo: handle also the case model extends X end X;
-    case (Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = {}))) then {};
-    case (Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = lst)))
-      algorithm
-        res := {};
-        for elt in lst loop
-          _ := match elt
-              case Absyn.PUBLIC(contents = elts)
-                algorithm
-                  lst1 := getComponentsInElementitems(elts);
-                  res := List.append_reverse(lst1, res);
-                then ();
-              else ();
-            end match;
-        end for;
-        res := Dangerous.listReverseInPlace(res);
-      then
-        res;
-
-    else {};
-  end match;
-end getPublicComponentsInClass;
-
-public function getProtectedComponentsInClass
-" Protected lists are searched."
-  input Absyn.Class inClass;
-  output list<Absyn.Element> outAbsynElementLst;
-algorithm
-  outAbsynElementLst:=
-  match (inClass)
-    local
-      list<Absyn.Element> lst1,res;
-      list<Absyn.ElementItem> elts;
-      list<Absyn.ClassPart> lst;
-
-    case (Absyn.CLASS(body = Absyn.PARTS(classParts = {}))) then {};
-    case (Absyn.CLASS(body = Absyn.PARTS(classParts = lst)))
-      algorithm
-        res := {};
-        for elt in lst loop
-          _ := match elt
-              case Absyn.PROTECTED(contents = elts)
-                algorithm
-                  lst1 := getComponentsInElementitems(elts);
-                  res := List.append_reverse(lst1, res);
-                then ();
-              else ();
-            end match;
-        end for;
-        res := Dangerous.listReverseInPlace(res);
-      then
-        res;
-
-    // adrpo: handle also the case model extends X end X;
-    case (Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = {}))) then {};
-    case (Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = lst)))
-      algorithm
-        res := {};
-        for elt in lst loop
-          _ := match elt
-              case Absyn.PROTECTED(contents = elts)
-                algorithm
-                  lst1 := getComponentsInElementitems(elts);
-                  res := List.append_reverse(lst1, res);
-                then ();
-              else ();
-            end match;
-        end for;
-        res := Dangerous.listReverseInPlace(res);
-      then
-        res;
-
-    else {};
-  end match;
-end getProtectedComponentsInClass;
-
-public function getComponentsInElementitems
-"Helper function to getComponentsInClass."
-  input list<Absyn.ElementItem> inAbsynElementItemLst;
-  output list<Absyn.Element> outAbsynElementLst = {};
-algorithm
-  for el in inAbsynElementItemLst loop
-    _ := match (el)
-        local
-          Absyn.Element elt;
-        case Absyn.ELEMENTITEM(element = elt as Absyn.ELEMENT(specification = Absyn.COMPONENTS()))
-          algorithm
-            outAbsynElementLst := elt :: outAbsynElementLst;
-          then ();
-
-        else ();
-      end match;
-  end for;
-  outAbsynElementLst := Dangerous.listReverseInPlace(outAbsynElementLst);
-end getComponentsInElementitems;
-
-protected function getNthComponentInClass
-"Returns the nth GlobalScript.Component of a class. Indexed from 1..n."
-  input Absyn.Class inClass;
-  input Integer nth;
-  output Absyn.Element outElement;
-protected
-  list<Absyn.Element> pub, pro, lst;
-  Integer n;
-algorithm
-  pub := getPublicComponentsInClass(inClass);
-  n := listLength(pub);
-  if nth <= n then
-    outElement := listGet(pub, nth);
-  else
-    // !TODO, check access annotation
-    pro := getProtectedComponentsInClass(inClass);
-    outElement := listGet(pro, nth-n);
-  end if;
-end getNthComponentInClass;
-
-protected function getComponentInfo
-" This function takes an Element and returns a list of strings
-   of comma separated values of the type and name and comment,
-   and attributes of  of the component, If Element is not a
-   component, the empty string is returned.
-   inputs: (Absyn.Element, string, /* public or protected */, FCore.Graph)
-   outputs: string list"
-  input Absyn.Element inElement;
-  input Boolean inQuoteNames;
-  input String inVisibility;
-  input GraphicEnvCache inEnv;
-  output list<String> outStringLst;
-algorithm
-  outStringLst := match inElement
-    local
-      Absyn.ElementAttributes attr;
-      Absyn.Path p, env_path, pkg_path, tp_path, qpath;
-      list<Absyn.ComponentItem> comps;
-      FCore.Graph env;
-      list<String> names, dims;
-      Option<Absyn.Path> oenv_path;
-      String tp_name, typename, final_str, repl_str, io_str;
-      String flow_str, stream_str, var_str, dir_str, dim_str, str, cc_cmt;
-
-    case Absyn.ELEMENT(specification = Absyn.COMPONENTS(
-        attributes = attr, typeSpec = Absyn.TPATH(path = p), components = comps))
-      algorithm
-        typename := AbsynUtil.pathString(InteractiveUtil.qualifyPath(inEnv, p));
-
-        names := InteractiveUtil.getComponentItemsNameAndComment(comps, inElement, inQuoteNames);
-        dims := InteractiveUtil.getComponentitemsDimension(comps);
-        final_str := boolString(inElement.finalPrefix);
-        repl_str := boolString(keywordReplaceable(inElement.redeclareKeywords));
-        io_str := InteractiveUtil.innerOuterStr(inElement.innerOuter);
-        flow_str := InteractiveUtil.attrFlowStr(attr);
-        stream_str := InteractiveUtil.attrStreamStr(attr);
-        var_str := InteractiveUtil.attrVariabilityStr(attr);
-        dir_str := InteractiveUtil.attrDirectionStr(attr);
-        dim_str := InteractiveUtil.attrDimensionStr(attr);
-
-        if inQuoteNames then
-          typename := StringUtil.quote(typename);
-          final_str := StringUtil.quote(final_str);
-          repl_str := StringUtil.quote(repl_str);
-          flow_str := StringUtil.quote(flow_str);
-          stream_str := StringUtil.quote(stream_str);
-        end if;
-
-        names := InteractiveUtil.prefixTypename(typename, names);
-        str := stringDelimitList({inVisibility, final_str, flow_str,
-          stream_str, repl_str, var_str, io_str, dir_str}, ", ");
-      then
-        InteractiveUtil.suffixInfos(names, dims, dim_str, str, inQuoteNames);
-
-    else {};
-
-  end match;
-end getComponentInfo;
-
-public function getComponentsInfo
-"Helper function to get_components.
-  Return all the info as a comma separated list of values.
-  get_component_info => {{name, type, comment, access, final, flow, stream, replaceable, variability,innerouter,vardirection},..}
-  where access is one of: \"public\", \"protected\"
-  where final is one of: true, false
-  where flow is one of: true, false
-  where flow is one of: true, false
-  where stream is one of: true, false
-  where replaceable is one of: true, false
-  where parallelism is one of: \"parglobal\", \"parlocal\", \"unspecified\"
-  where variability is one of: \"constant\", \"parameter\", \"discrete\" or \"unspecified\"
-  where innerouter is one of: \"inner\", \"outer\", (\"innerouter\") or \"none\"
-  where vardirection is one of: \"input\", \"output\" or \"unspecified\".
-  inputs:  (Absyn.Element list, string /* \"public\" or \"protected\" */, FCore.Graph)
-  outputs:  string"
-  input list<Absyn.Element> inAbsynElementLst;
-  input Boolean inBoolean;
-  input String inString;
-  input GraphicEnvCache inEnv;
-  output String outString;
-algorithm
-  outString:=
-  matchcontinue (inAbsynElementLst,inBoolean,inString,inEnv)
-    local
-      list<String> lst;
-      String lst_1,res,access;
-      list<Absyn.Element> elts;
-      GraphicEnvCache env;
-      Boolean b;
-    case (elts,_,access,env)
-      equation
-        ((lst as (_ :: _))) = getComponentsInfo2(elts, inBoolean, access, env, {});
-        lst_1 = stringDelimitList(lst, "},{");
-        res = stringAppendList({"{",lst_1,"}"});
-      then
-        res;
-    else "";
-  end matchcontinue;
-end getComponentsInfo;
-
-protected function getComponentsInfo2
-"Helper function to getComponentsInfo
-  inputs: (Absyn.Element list, string /* \"public\" or \"protected\" */, FCore.Graph)
-  outputs: string list"
-  input list<Absyn.Element> inAbsynElementLst;
-  input Boolean inBoolean;
-  input String inString;
-  input GraphicEnvCache inEnv;
-  input list<String> acc;
-  output list<String> outStringLst;
-algorithm
-  outStringLst := match (inAbsynElementLst,inBoolean,inString,inEnv,acc)
-    local
-      list<String> res;
-      Absyn.Element elt;
-      list<Absyn.Element> rest;
-      String access;
-      GraphicEnvCache env;
-      Boolean b;
-    case ({},_,_,_,_) then listReverse(acc);
-    case ((elt :: rest),b,access,env,_)
-      equation
-        res = getComponentInfo(elt, b, access, env);
-      then getComponentsInfo2(rest, b, access, env, List.append_reverse(res,acc));
-  end match;
-end getComponentsInfo2;
-
 public function keywordReplaceable
 "Returns true if RedeclareKeywords contains replaceable."
   input Option<Absyn.RedeclareKeywords> inAbsynRedeclareKeywordsOption;
@@ -12295,50 +8878,21 @@ protected function getComponentInfoOld
    If Element is not a component, the empty string is returned"
   input Absyn.Element inElement;
   input GraphicEnvCache inEnv;
-  output list<String> outStringLst;
+  output String componentName;
+  output Absyn.Path typeName;
+  output String comment;
+protected
+  Absyn.ComponentItem comp;
 algorithm
-  outStringLst:=
-  matchcontinue (inElement,inEnv)
-    local
-      SCode.Element c;
-      GraphicEnvCache env;
-      Absyn.Path envpath,p_1,p;
-      String tpname,typename;
-      list<Absyn.ComponentItem> lst;
-      list<String> names,strList;
-      Boolean f;
-      Option<Absyn.RedeclareKeywords> r;
-      Absyn.InnerOuter inout;
-      Absyn.ElementAttributes attr;
-
-    case (Absyn.ELEMENT(
-                        specification = Absyn.COMPONENTS(typeSpec = Absyn.TPATH(p, _),components = lst)),
-          env)
-      equation
-        typename = AbsynUtil.pathString(InteractiveUtil.qualifyPath(env, p));
-        names = InteractiveUtil.getComponentItemsNameAndComment(lst, inElement, false);
-        strList = InteractiveUtil.prefixTypename(typename, names);
+  (componentName, typeName, comment) := match inElement
+    case Absyn.ELEMENT(specification = Absyn.COMPONENTS(typeSpec = Absyn.TPATH(typeName, _), components = comp :: _))
+      algorithm
+        componentName := comp.component.name;
+        typeName := InteractiveUtil.qualifyPath(inEnv, typeName);
+        comment := InteractiveUtil.getComponentComment(comp, inElement);
       then
-        strList;
-
-    case (Absyn.ELEMENT(
-                        specification = Absyn.COMPONENTS(typeSpec = Absyn.TPATH(p, _),components = lst)),
-          env)
-      equation
-        typename = AbsynUtil.pathString(InteractiveUtil.qualifyPath(env, p));
-        names = InteractiveUtil.getComponentItemsNameAndComment(lst, inElement, false);
-        strList = InteractiveUtil.prefixTypename(typename, names);
-      then
-        strList;
-
-    case (_,_) then {};
-
-    else
-      equation
-        print("Interactive.getComponentInfoOld failed\n");
-      then
-        fail();
-  end matchcontinue;
+        (componentName, typeName, comment);
+  end match;
 end getComponentInfoOld;
 
 public function addToPublic
@@ -12563,66 +9117,6 @@ algorithm
 
   end matchcontinue;
 end addToEquation;
-
-protected function getInitialEquationList "This function takes a ClassPart List and returns the first InitialEquationItem
-  list of the class."
-  input list<Absyn.ClassPart> inAbsynClassPartLst;
-  output list<Absyn.EquationItem> outAbsynInitialEquationItemLst;
-algorithm
-  outAbsynInitialEquationItemLst := match (inAbsynClassPartLst)
-    local
-      list<Absyn.EquationItem> lst,ys;
-      list<Absyn.ClassPart> rest,xs;
-      Absyn.ClassPart x;
-    case (Absyn.INITIALEQUATIONS(contents = lst) :: _) then lst;
-    case ((_ :: xs))
-      equation
-        ys = getInitialEquationList(xs);
-      then
-        ys;
-    else fail();
-  end match;
-end getInitialEquationList;
-
-protected function getAlgorithmList "This function takes a ClassPart List and returns the first AlgorithmItem
-  list of the class."
-  input list<Absyn.ClassPart> inAbsynClassPartLst;
-  output list<Absyn.AlgorithmItem> outAbsynAlgorithmItemLst;
-algorithm
-  outAbsynAlgorithmItemLst := match (inAbsynClassPartLst)
-    local
-      list<Absyn.AlgorithmItem> lst,ys;
-      list<Absyn.ClassPart> rest,xs;
-      Absyn.ClassPart x;
-    case (Absyn.ALGORITHMS(contents = lst) :: _) then lst;
-    case ((_ :: xs))
-      equation
-        ys = getAlgorithmList(xs);
-      then
-        ys;
-    else fail();
-  end match;
-end getAlgorithmList;
-
-protected function getInitialAlgorithmList "This function takes a ClassPart List and returns the first InitialAlgorithmItem
-  list of the class."
-  input list<Absyn.ClassPart> inAbsynClassPartLst;
-  output list<Absyn.AlgorithmItem> outAbsynInitialAlgorithmItemLst;
-algorithm
-  outAbsynInitialAlgorithmItemLst := match (inAbsynClassPartLst)
-    local
-      list<Absyn.AlgorithmItem> lst,ys;
-      list<Absyn.ClassPart> rest,xs;
-      Absyn.ClassPart x;
-    case (Absyn.INITIALALGORITHMS(contents = lst) :: _) then lst;
-    case ((_ :: xs))
-      equation
-        ys = getInitialAlgorithmList(xs);
-      then
-        ys;
-    else fail();
-  end match;
-end getInitialAlgorithmList;
 
 public function transformPathedClassInProgram
   "Transforms a referenced class in a program by applying the given function to it."
@@ -12852,158 +9346,6 @@ algorithm
     else false;
   end match;
 end transformClassInElementSpec;
-
-protected function modificationToAbsyn
-" This function takes a list of NamedArg and returns an Absyn.Modification option.
-   It collects binding equation from the named argument binding=<expr> and creates
-   corresponding Modification option Absyn node.
-   Future extension: add general modifiers. Problem: how to express this using named
-   arguments. This is not possible. Instead we need a new data type for storing AST,
-   and a constructor function for AST,
-   e.g. AST x = ASTModification(redeclare R2 r, x=4.2); // new datatype AST
-             // new constructor operator ASTModification"
-  input list<Absyn.NamedArg> inAbsynNamedArgLst;
-  input Option<Absyn.Modification> inAbsynModificationOption;
-  output Option<Absyn.Modification> outAbsynModificationOption;
-algorithm
-  outAbsynModificationOption:=
-  matchcontinue (inAbsynNamedArgLst,inAbsynModificationOption)
-    local
-      Absyn.Modification mod;
-      list<Absyn.NamedArg> nargs;
-      Option<Absyn.Modification> oldmod;
-    case (nargs,_)
-      equation
-        SOME(mod) = modificationToAbsyn2(nargs);
-      then
-        SOME(mod);
-    else inAbsynModificationOption;
-  end matchcontinue;
-end modificationToAbsyn;
-
-protected function modificationToAbsyn2
-"Helper function to modificationToAbsyn."
-  input list<Absyn.NamedArg> inAbsynNamedArgLst;
-  output Option<Absyn.Modification> outAbsynModificationOption;
-algorithm
-  outAbsynModificationOption:=
-  match (inAbsynNamedArgLst)
-    local
-      Absyn.Exp exp;
-      list<Absyn.NamedArg> xs;
-      Absyn.Modification mod;
-      Option<Absyn.Modification> res;
-      Absyn.NamedArg x;
-    case ({}) then NONE();
-    case ((Absyn.NAMEDARG(argName = "binding",argValue = exp) :: _)) then SOME(Absyn.CLASSMOD({},Absyn.EQMOD(exp,AbsynUtil.dummyInfo)));
-    case ((Absyn.NAMEDARG(argName = "modification",argValue = Absyn.CODE(code = Absyn.C_MODIFICATION(modification = mod))) :: _)) then SOME(mod);
-    case ((_ :: xs)) equation res = modificationToAbsyn2(xs); then res;
-  end match;
-end modificationToAbsyn2;
-
-protected function selectAnnotation
-"@author: adrpo
-  Selects either the new annotation if is SOME or the old one"
-  input Option<Absyn.Annotation> newAnn;
-  input Option<Absyn.Annotation> oldAnn;
-  output Option<Absyn.Annotation> outAnn = if isSome(newAnn) then newAnn else oldAnn;
-end selectAnnotation;
-
-protected function annotationListToAbsynComment
-" This function takes a list of NamedArg and returns an absyn Comment.
-   for instance {annotation = Placement( ...), comment=\"stringcomment\" }
-   is converted to SOME(COMMENT(ANNOTATION(Placement(...), SOME(\"stringcomment\"))))"
-  input list<Absyn.NamedArg> inAbsynNamedArgLst;
-  input Option<Absyn.Comment> inAbsynCommentOption;
-  output Option<Absyn.Comment> outAbsynCommentOption;
-algorithm
-  outAbsynCommentOption := matchcontinue (inAbsynNamedArgLst,inAbsynCommentOption)
-    local
-      Absyn.Comment ann;
-      list<Absyn.NamedArg> nargs;
-      String oldcmt,newcmt;
-      Option<String> cmtOpt;
-      Option<Absyn.Annotation> annOptOld, annOptNew, annOpt;
-
-    // old annotation is NONE! take the new one.
-    case (nargs,NONE())
-      equation
-        SOME(ann) = annotationListToAbsynComment2(nargs);
-      then
-        SOME(ann);
-
-    // old annotation comment is NONE! take the new one.
-    case (nargs,SOME(Absyn.COMMENT(annOptOld, NONE())))
-      equation
-        SOME(Absyn.COMMENT(annOptNew, cmtOpt)) = annotationListToAbsynComment2(nargs);
-        annOpt = selectAnnotation(annOptNew, annOptOld);
-      then
-        SOME(Absyn.COMMENT(annOpt, cmtOpt));
-
-    // old annotation comment is SOME and new is NONE! take the old one.
-    case (nargs,SOME(Absyn.COMMENT(annOptOld, SOME(oldcmt))))
-      equation
-        SOME(Absyn.COMMENT(annOptNew, NONE())) = annotationListToAbsynComment2(nargs);
-        annOpt = selectAnnotation(annOptNew, annOptOld);
-      then
-        SOME(Absyn.COMMENT(annOpt, SOME(oldcmt)));
-
-    // old annotation comment is SOME and new is SOME! take the new one.
-    case (nargs,SOME(Absyn.COMMENT(annOptOld, SOME(_))))
-      equation
-        SOME(Absyn.COMMENT(annOptNew, SOME(newcmt))) = annotationListToAbsynComment2(nargs);
-        annOpt = selectAnnotation(annOptNew, annOptOld);
-      then
-        SOME(Absyn.COMMENT(annOpt, SOME(newcmt)));
-
-    // no annotations from nargs
-    else inAbsynCommentOption;
-  end matchcontinue;
-end annotationListToAbsynComment;
-
-protected function annotationListToAbsynComment2
-"Helper function to annotationListToAbsynComment2."
-  input list<Absyn.NamedArg> inNamedArgs;
-  output Option<Absyn.Comment> outComment;
-protected
-  list<Absyn.ElementArg> annargs;
-  Option<String> ostrcmt;
-  Absyn.Annotation ann;
-algorithm
-  ann as Absyn.ANNOTATION(annargs) := InteractiveUtil.annotationListToAbsyn(inNamedArgs);
-  ostrcmt := commentToAbsyn(inNamedArgs);
-
-  outComment := match(ostrcmt, annargs)
-    case (SOME(""), {}) then NONE();
-    case (SOME(_), {}) then SOME(Absyn.COMMENT(NONE(), ostrcmt));
-    case (NONE(), {}) then NONE();
-    else SOME(Absyn.COMMENT(SOME(ann), ostrcmt));
-  end match;
-end annotationListToAbsynComment2;
-
-protected function commentToAbsyn
-"Helper function to annotationListToAbsynComment2."
-  input list<Absyn.NamedArg> inAbsynNamedArgLst;
-  output Option<String> outStringOption;
-algorithm
-  outStringOption:=
-  match (inAbsynNamedArgLst)
-    local
-      String str;
-      Option<String> res;
-      list<Absyn.NamedArg> rest;
-    case ((Absyn.NAMEDARG(argName = "comment",argValue = Absyn.STRING(value = str)) :: _))
-        guard not stringEq(str, "")
-      then
-        SOME(str);
-    case ((_ :: rest))
-      equation
-        res = commentToAbsyn(rest);
-      then
-        res;
-    else NONE();
-  end match;
-end commentToAbsyn;
 
 public function getContainedClassAndFile
 " author: PA
@@ -13759,62 +10101,33 @@ end transformFlatElseIfAlgorithm;
 
 /* Start getDefinitions */
 
-protected function getDefinitions
+public function getDefinitions
 "This function dumps the defined packages, classes and functions to a string.
  The function is used by org.openmodelica.corba.parser.DefinitionsCreator."
   input  Absyn.Program ast "The AST to dump";
   input  Boolean addFunctions;
-  output String res "An easily parsed string containing all definitions";
+  output Values.Value res "An easily parsed string containing all definitions";
+protected
+  list<Absyn.Class> classes;
+  list<String> toPrint;
+  Integer handle;
+  Absyn.Class cl;
 algorithm
-  res := match (ast,addFunctions)
-    local
-      list<Absyn.Class> classes;
-      list<String> toPrint;
-      Integer handle;
-      Absyn.Class cl;
+  Absyn.PROGRAM(classes = classes) := MetaUtil.createMetaClassesInProgram(ast);
+  handle := Print.saveAndClearBuf();
+  Print.printBuf("(\n");
 
-    case (_,_)
-      equation
-        Absyn.PROGRAM(classes = classes) = MetaUtil.createMetaClassesInProgram(ast);
-        handle = Print.saveAndClearBuf();
-        Print.printBuf("\"(\n");
-        toPrint = getDefinitions2(classes,addFunctions);
-        List.map_0(toPrint, printWithNewline);
-        cl = InteractiveUtil.getPathedClassInProgram(Absyn.IDENT("SourceInfo"), ast);
-        toPrint = getDefinitions2({cl},false);
-        List.map_0(toPrint, printWithNewline);
-        Print.printBuf("\n)\"");
-        res = Print.getString();
-        Print.restoreBuf(handle);
-      then res;
+  for c in classes loop
+    Print.printBuf(getDefinitionsClass(c, addFunctions));
+    Print.printBufNewLine();
+  end for;
 
-  end match;
+  cl := InteractiveUtil.getPathedClassInProgram(Absyn.IDENT("SourceInfo"), ast);
+  Print.printBuf(getDefinitionsClass(cl, false));
+  Print.printBuf("\n\n)");
+  res := ValuesUtil.makeString(Print.getString());
+  Print.restoreBuf(handle);
 end getDefinitions;
-
-protected function printWithNewline
-  input String s;
-algorithm
-  Print.printBuf(s);
-  Print.printBuf("\n");
-end printWithNewline;
-
-protected function getDefinitions2
-  input  list<Absyn.Class> classes;
-  input  Boolean addFunctions;
-  output list<String> res;
-algorithm
-  res := match (classes,addFunctions)
-    local
-      list<Absyn.Class> rest;
-      Absyn.Class class_;
-      String str;
-    case ({},_) then {};
-    case (class_::rest,_) equation
-      str = getDefinitionsClass(class_, addFunctions);
-      res = getDefinitions2(rest, addFunctions);
-    then str::res;
-  end match;
-end getDefinitions2;
 
 protected function getDefinitionsClass
   input Absyn.Class class_;
@@ -13905,28 +10218,13 @@ algorithm
   end match;
 end getDefinitionsReplaceableClass;
 
-protected function getEnumerationLiterals
-  input Absyn.EnumLiteral el;
-  output String out;
-algorithm
-  out := match el
-    case Absyn.ENUMLITERAL(literal = out)
-      equation
-        out = stringAppendList({"\"",out,"\""});
-      then
-        out;
-  end match;
-end getEnumerationLiterals;
-
 protected function getDefinitionPathString
   input Absyn.Path path;
   output String out;
 algorithm
-  out := match (path)
-    // Doesn't work because we only know the AST after parsing... case (Absyn.FULLYQUALIFIED(path)) then "#" + AbsynUtil.pathString(path);
-    // Thus, scope/lookup is done by the application recieving this information
-    case _ then AbsynUtil.pathString(path);
-  end match;
+  // Doesn't work because we only know the AST after parsing... case (Absyn.FULLYQUALIFIED(path)) then "#" + AbsynUtil.pathString(path);
+  // Thus, scope/lookup is done by the application recieving this information
+  out := AbsynUtil.pathString(path);
 end getDefinitionPathString;
 
 public function getDefinitionTypeSpecPathString
@@ -14034,10 +10332,10 @@ protected function getDefinitionDirString
   input Boolean isFunction;
   output String res;
 algorithm
-  res := match (dir, variability, isFunction)
-    case (Absyn.INPUT(),_,true) then "input ";
-    case (Absyn.OUTPUT(),_,true) then "output ";
-    case (_, _,false)
+  res := match (dir, isFunction)
+    case (Absyn.INPUT(),true) then "input ";
+    case (Absyn.OUTPUT(),true) then "output ";
+    case (_, false)
       equation
         failure(Absyn.CONST() = variability);
       then "";
@@ -14051,21 +10349,21 @@ protected function getDefinitionComponents
   input list<Absyn.ComponentItem> components;
   output list<String> res;
 algorithm
-  res := matchcontinue (typeStr,dirStr,numDim,components)
+  res := matchcontinue components
   local
     list<Absyn.ComponentItem> rest;
     String ident;
     list<Absyn.Subscript> l;
     Integer sumDim;
 
-    case (_,_,_,{}) then {};
-    case (_,_,_,Absyn.COMPONENTITEM(component = Absyn.COMPONENT(name = ident, arrayDim = l))::rest) equation
+    case {} then {};
+    case Absyn.COMPONENTITEM(component = Absyn.COMPONENT(name = ident, arrayDim = l))::rest equation
       sumDim = numDim + listLength(l);
       ident = dirStr + (if numDim == 0 then "" else ("[" + intString(sumDim))) + typeStr + " " + ident;
       ident = "(" + ident + ")";
       res = getDefinitionComponents(typeStr,dirStr,numDim,rest);
     then ident :: res;
-    case (_,_,_,_::rest) then getDefinitionComponents(typeStr,dirStr,numDim,rest);
+    case rest then getDefinitionComponents(typeStr,dirStr,numDim,rest);
   end matchcontinue;
 end getDefinitionComponents;
 
@@ -14121,306 +10419,6 @@ algorithm
   end if;
 end parseFile;
 
-//he-mag begin
-protected function getElementName
-"returns the element name"
-  input Absyn.ElementSpec inElementSpec;
-  input Absyn.Element inElement;
-  output String outString;
-algorithm
-  outString := match (inElementSpec)
-    local
-      String str;
-      Absyn.TypeSpec typeSpec;
-      list<String> names;
-      Absyn.ElementAttributes attr;
-      list<Absyn.ComponentItem> lst;
-
-    case (Absyn.COMPONENTS(components = lst))
-      equation
-        names = InteractiveUtil.getComponentItemsNameAndComment(lst, inElement, false);
-        str = stringDelimitList(names, ", ");
-        //print("names: " + str + "\n");
-      then
-        str;
-  end match;
-end getElementName;
-
-protected function getElementTypeName
-"get the name of the type of the element"
-  input Absyn.ElementSpec inElementSpec;
-  output String outString;
-algorithm
-  outString:=
-  match (inElementSpec)
-    local
-      String str;
-      Absyn.TypeSpec typeSpec;
-      Absyn.ElementAttributes attr;
-      list<Absyn.ComponentItem> lst;
- /*   case (Absyn.EXTENDS(path = path))
-      equation
-        path_str = AbsynUtil.pathString(path);
-        str = stringAppendList({"elementtype=extends, path=",path_str});
-      then
-        str;
-    case (Absyn.IMPORT(import_ = import_))
-      equation
-        import_str = getImportString(import_);
-        str = stringAppendList({"elementtype=import, ",import_str});
-      then
-        str;*/
-    case (Absyn.COMPONENTS(typeSpec = typeSpec))
-      equation
-        str = Dump.unparseTypeSpec(typeSpec);
-//        names = getComponentItemsNameAndComment(lst);
-      then
-        str;
-  end match;
-end getElementTypeName;
-
-public function getElementVisString ""
-  input Absyn.ElementItem inElement;
-  input Absyn.Program inProgram;
-  output String outString;
-algorithm
-  outString:= match (inElement,inProgram)
-    local
-      String desc;
-      Absyn.Element el;
-      list<Absyn.ComponentItem> comps;
-      Absyn.ElementSpec elementSpec;
-      Absyn.Program p;
-    case (Absyn.ELEMENTITEM(element = el),_)
-      equation
-        Absyn.ELEMENT(specification = elementSpec) = el;
-        //p_class = AbsynUtil.crefToPath(id);
-//        Absyn.IDENT(name) = AbsynUtil.crefToPath(ident);
-        //cl = InteractiveUtil.getPathedClassInProgram(p_class, p);
-        //comps = getComponentsInClass(cl);
-        Absyn.COMPONENTS() = elementSpec;
-//        Absyn.CLASSDEF(class_ = cl) = elementSpec;
-        //comps = getComponentsInClass(cl);
-        desc = getElementName(elementSpec, el);
-        desc = desc + ":" + getElementTypeName(elementSpec);//getElementInfo(elitem);
-      then
-        desc;
-  end match;
-end getElementVisString;
-
-protected function getDescIfVis ""
-  input String in_type;
-  input Absyn.ElementItem inElement;
-  input Absyn.Program inProgram;
-  //output Absyn.ElementItem outElement;
-  output String outString;
-algorithm
-  outString:=
-  match (in_type, inElement, inProgram)
-    local
-      Absyn.ElementItem tmp;
-      Absyn.Program p;
-      String res;
-    case ("SimpleVisual.Position", tmp, p)
-      equation
-        res = getElementVisString(tmp, p);
-      then
-        res;
-    case ("SimpleVisual.PositionSize", tmp, p)
-      equation
-        res = getElementVisString(tmp, p);
-      then
-        res;
-    case ("SimpleVisual.PositionRotation", tmp,p)
-      equation
-        res = getElementVisString(tmp,p);
-      then
-        res;
-    case ("SimpleVisual.PositionRotationSize", tmp,p)
-      equation
-        res = getElementVisString(tmp,p);
-      then
-        res;
-    case ("SimpleVisual.PositionRotationSizeOffset", tmp,p)
-      equation
-        res = getElementVisString(tmp,p);
-      then
-        res;
-/*
-    case ("SimpleVisual.Cube", tmp,p)
-      equation
-        res = getElementVisString(tmp,p);
-      then
-        res;
-    case ("SimpleVisual.Sphere", tmp,p)
-      equation
-        res = getElementVisString(tmp,p);
-      then
-        res;
-*/
-  end match;
-end getDescIfVis;
-
-protected function getNameFromElementIfVisType
-""
-  input Absyn.ElementItem inElementItem;
-  input Absyn.Program inProgram;
-  output String outString;
-algorithm
-  outString:= matchcontinue (inElementItem, inProgram)
-    local
-      String str,typename_str,varname_str;
-      Absyn.ElementSpec elementSpec;
-      list<String> tmp;
-      Absyn.Program prog;
-      Absyn.Element el;
-
-    case (Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.CLASSDEF(class_ = Absyn.CLASS()))),_) /* ok, first see if is a classdef if is not a classdef, just follow the normal stuff */
-      then
-       "";
-    case (Absyn.ELEMENTITEM(element = el as Absyn.ELEMENT(specification = elementSpec)),prog) /* if is not a classdef, just follow the normal stuff */
-      equation
-        typename_str = getElementTypeName(elementSpec);
-        varname_str = getElementName(elementSpec, el);
-        (_::_) = Util.stringSplitAtChar(varname_str, ",");
-        str = getDescIfVis(typename_str, inElementItem,prog);
-      then
-        str;
-    else "";  /* for annotations we don\'t care */
-  end matchcontinue;
-end getNameFromElementIfVisType;
-
-protected function constructVisTypesList
-"visualization /he-mag"
-  input list<Absyn.ElementItem> inAbsynElementItemLst;
-  input Absyn.Program inProgram;
-  output list<String> outList;
-algorithm
-  outList:=
-  matchcontinue (inAbsynElementItemLst, inProgram)
-    local
-      String  s1;
-      list<String> res_list, list2;
-      Absyn.ElementItem current;
-      list<Absyn.ElementItem> rest;//, res_list, list2;
-      Absyn.Program p;
-    case ({}, _)
-      equation
-      then
-        {};
-    case ((current :: {}),p) /* deal with the last element */
-      equation
-        s1 = getNameFromElementIfVisType(current,p);
-        res_list = List.create(s1);//, res_list);
-      then
-        res_list;
-    case ((current :: rest),p)
-      equation
-        s1 = getNameFromElementIfVisType(current,p);
-        res_list = List.create(s1);
-        list2 = constructVisTypesList(rest,p);
-        res_list = List.union(list2, res_list);
-      then
-        res_list;
-  end matchcontinue;
-end constructVisTypesList;
-
-public function getElementsOfVisType
-"For visualization! /he-mag"
-  //input Absyn.ComponentRef inComponentRef;
-  input Absyn.Path inPath;
-  input Absyn.Program inProgram;
-  output list<String> names;
-  output String res;
-algorithm
-  (names,res) := match (inPath,inProgram)
-    local
-//      Absyn.Path modelpath;
-      String i;
-      Boolean p,f,e;
-      Absyn.Restriction r;
-      list<Absyn.ClassPart> parts;
-      list<Absyn.ElementItem> public_elementitem_list,protected_elementitem_list;
-      Absyn.Path modelPath_;
-      list<String> public_list, protected_list;
-      list<String>  all_list;
-      Absyn.Program prog;
-    case (modelPath_,prog)
-      equation
-//        modelpath = AbsynUtil.crefToPath(model_);
-//        Absyn.CLASS(i,p,f,e,r,Absyn.PARTS(parts,_),_) = InteractiveUtil.getPathedClassInProgram(modelpath, p);
-        Absyn.CLASS(_,_,_,_,_,Absyn.PARTS(classParts=parts),_) = InteractiveUtil.getPathedClassInProgram(modelPath_, prog);
-        public_elementitem_list = InteractiveUtil.getPublicList(parts);
-        protected_elementitem_list = InteractiveUtil.getProtectedList(parts);
-        public_list = constructVisTypesList(public_elementitem_list, prog);
-        protected_list = constructVisTypesList(protected_elementitem_list, prog);
-        all_list = List.union(listAppend(public_list, protected_list), {});
-      then (List.map(all_list, getVisElementNameFromStr),stringDelimitList(all_list,"\n"));
-
-  end match;
-end getElementsOfVisType;
-
-protected function getVisElementNameFromStr
-  input String str;
-  output String outStr;
-protected
-  list<String> strs;
-algorithm
-  (_,strs as (_::outStr::_)) := System.regex(str,"([A-Za-z0-9().]*),",3,true,false);
-end getVisElementNameFromStr;
-
-protected function getComponentBindingMapable
-"Returns the value of a component in a class.
-  For example, the component
-   Real x=1; returns 1.
-  This can be used for both parameters, constants and variables.
-   inputs: (Absyn.ComponentRef /* variable name */, Absyn.ComponentRef /* class name */, Absyn.Program)
-   outputs: string"
-  input Absyn.ComponentRef inComponentRef1;
-  input Absyn.ComponentRef inComponentRef2;
-  input Absyn.Program inProgram3;
-  output String outString;
-algorithm
-  outString:= matchcontinue (inComponentRef1,inComponentRef2,inProgram3)
-    local
-      Absyn.Path p_class;
-      String name,res;
-      Absyn.Class cdef;
-      list<Absyn.Element> comps,comps_1;
-      list<list<Absyn.ComponentItem>> compelts;
-      list<Absyn.ComponentItem> compelts_1;
-      Absyn.ComponentItem compitem;
-      Absyn.Exp exp;
-      Absyn.ComponentRef cr,class_;
-      Absyn.Program p;
-    case (cr,class_,p)
-      equation
-        p_class = AbsynUtil.crefToPath(class_);
-        Absyn.IDENT(name) = AbsynUtil.crefToPath(cr);
-        cdef = InteractiveUtil.getPathedClassInProgram(p_class, p);
-        comps = getComponentsInClass(cdef);
-        compelts = List.map(comps, InteractiveUtil.getComponentitemsInElement);
-        compelts_1 = List.flatten(compelts);
-        {compitem} = List.select1(compelts_1, InteractiveUtil.componentitemNamed, name);
-        exp = InteractiveUtil.getVariableBindingInComponentitem(compitem);
-        res = Dump.printExpStr(exp);
-      then
-        res;
-    case (cr,class_,p)
-      equation
-        p_class = AbsynUtil.crefToPath(class_);
-        Absyn.IDENT(name) = AbsynUtil.crefToPath(cr);
-        cdef = InteractiveUtil.getPathedClassInProgram(p_class, p);
-        comps = getComponentsInClass(cdef);
-        compelts = List.map(comps, InteractiveUtil.getComponentitemsInElement);
-        compelts_1 = List.flatten(compelts);
-        {compitem} = List.select1(compelts_1, InteractiveUtil.componentitemNamed, name);
-        failure(_ = InteractiveUtil.getVariableBindingInComponentitem(compitem));
-      then "";
-    else "Error";
-  end matchcontinue;
-end getComponentBindingMapable;
-
 public function getSCodeClassNamesRecursive
 "Returns a string with all the classes for a given path."
   input SCode.Program inProgram;
@@ -14459,86 +10457,6 @@ algorithm
     else inAcc;
   end match;
 end getSCodeClassNamesRecursiveWork;
-
-public function getPathedComponentElementInProgram "Returns a component given a path and a program. See also getPathedClassInProgram"
-  input Absyn.Path path;
-  input Absyn.Program prg;
-  output Absyn.ElementSpec comp;
-algorithm
-  comp := match(path,prg)
-  local Absyn.Class cl;
-    case(_,_) equation
-      cl = InteractiveUtil.getPathedClassInProgram(AbsynUtil.stripLast(path),prg);
-      comp = getComponentElementInClass(cl,AbsynUtil.pathLastIdent(path));
-    then comp;
-  end match;
-end getPathedComponentElementInProgram;
-
-protected function getComponentElementInClass
-  input Absyn.Class cl;
-  input Absyn.Ident compName;
-  output Absyn.ElementSpec comp;
-algorithm
- comp := match(cl,compName)
-   local
-     list<Absyn.ClassPart> parts;
-     list<Absyn.ElementItem> publst;
-   /* a class with parts */
-   case(Absyn.CLASS(body=Absyn.PARTS(classParts=parts)), _) equation
-     publst = InteractiveUtil.getPublicList(parts);
-     comp = getComponentsContainsName(Absyn.CREF_IDENT(compName,{}), publst);
-   then comp;
-   /* an extended class with parts: model extends M end M; */
-   case(Absyn.CLASS(body=Absyn.CLASS_EXTENDS(parts=parts)), _) equation
-     publst = InteractiveUtil.getPublicList(parts);
-     comp = getComponentsContainsName(Absyn.CREF_IDENT(compName,{}), publst);
-   then comp;
- end match;
-end getComponentElementInClass;
-
-public function getFunctionsInProgram
-  input Absyn.Program prog;
-  output list<Absyn.Class> funcs;
-protected
-  list<Absyn.Class> classes;
-  list<list<Absyn.Class>> classesList;
-algorithm
-  Absyn.PROGRAM(classes = classes) := prog;
-  classesList := List.map(classes, getAllClassesInClass);
-  funcs := List.fold(classes::classesList, getFunctionsInClasses, {});
-end getFunctionsInProgram;
-
-protected function getFunctionsInClasses
-  input list<Absyn.Class> classes;
-  input list<Absyn.Class> acc;
-  output list<Absyn.Class> funcs;
-algorithm
-  funcs := match (classes,acc)
-    local
-      Absyn.Class cl;
-      list<Absyn.Class> rest;
-
-    case ({},_) then acc;
-    case ((cl as Absyn.CLASS(restriction = Absyn.R_FUNCTION(_)))::rest,_)
-      equation
-        funcs = getFunctionsInClasses(rest,cl::acc);
-      then funcs;
-    case (_::rest,_) then getFunctionsInClasses(rest,acc);
-  end match;
-end getFunctionsInClasses;
-
-protected function getAllClassesInClass
-  input Absyn.Class class_;
-  output list<Absyn.Class> outClasses;
-algorithm
-  outClasses := matchcontinue class_
-    local
-      list<Absyn.ClassPart> classParts;
-    case Absyn.CLASS(body = Absyn.PARTS(classParts = classParts))
-      then InteractiveUtil.getClassesInParts(classParts);
-    else {};
-  end matchcontinue;
-end getAllClassesInClass;
 
 public function getAllInheritedClasses
   input Absyn.Path inClassName;
@@ -14616,36 +10534,35 @@ algorithm
   end try;
 end getClassEnvNoElaboration;
 
-protected function setComponentDimensions
+public function setComponentDimensions
   "Sets a component dimensions."
-  input Absyn.ComponentRef inClass;
-  input Absyn.ComponentRef inComponentName;
+  input Absyn.Path inClass;
+  input Absyn.Path inComponentName;
   input list<Absyn.Exp> inDimensions;
   input Absyn.Program inProgram;
   output Absyn.Program outProgram;
-  output String outResult;
+  output Boolean outResult;
 protected
   Absyn.Path p_class;
   Absyn.Within within_;
   Absyn.Class cls;
 algorithm
   try
-    p_class := AbsynUtil.crefToPath(inClass);
-    within_ := InteractiveUtil.buildWithin(p_class);
-    cls := InteractiveUtil.getPathedClassInProgram(p_class, inProgram);
+    within_ := InteractiveUtil.buildWithin(inClass);
+    cls := InteractiveUtil.getPathedClassInProgram(inClass, inProgram);
     cls := setComponentDimensionsInClass(cls, inComponentName, inDimensions);
     outProgram := InteractiveUtil.updateProgram(Absyn.PROGRAM({cls}, within_), inProgram);
-    outResult := "Ok";
+    outResult := true;
   else
     outProgram := inProgram;
-    outResult := "Error";
+    outResult := false;
   end try;
 end setComponentDimensions;
 
 protected function setComponentDimensionsInClass
 " Sets the dimensions on a component in a class."
   input Absyn.Class inClass;
-  input Absyn.ComponentRef inComponentName;
+  input Absyn.Path inComponentName;
   input list<Absyn.Exp> inDimensions;
   output Absyn.Class outClass = inClass;
 algorithm
@@ -14658,7 +10575,7 @@ protected function setComponentDimensionsInCompitems
  Sets the dimensions in a ComponentItem."
   input list<Absyn.ComponentItem> inComponents;
   input Boolean inFound;
-  input Absyn.ComponentRef inComponentName;
+  input Absyn.Path inComponentName;
   input list<Absyn.Exp> inDimensions;
   output list<Absyn.ComponentItem> outComponents = {};
   output Boolean outFound;
@@ -14671,7 +10588,7 @@ protected
   Absyn.EqMod eqmod_old, eqmod_new;
   String comp_id;
 algorithm
-  comp_id := AbsynUtil.crefFirstIdent(inComponentName);
+  comp_id := AbsynUtil.pathFirstIdent(inComponentName);
 
   // Try to find the component we're looking for.
   while not listEmpty(rest_items) loop
@@ -14745,7 +10662,7 @@ algorithm
       String accessStr;
     case(_,_)
       equation
-        accessStr = getNamedAnnotation(className, p, Absyn.IDENT("Protection"), SOME(""), getAccessAnnotationString);
+        accessStr = getNamedAnnotationExp(className, p, Absyn.IDENT("Protection"), SOME(""), getAccessAnnotationString);
       then
         accessStr;
     else "";
@@ -14798,42 +10715,36 @@ end getAccessAnnotationString2;
 public function checkAccessAnnotationAndEncryption
   input Absyn.Path path;
   input Absyn.Program p;
-  output Values.Value val;
+  output Access access;
 protected
-  String access, fileName;
+  String access_str, fileName;
   Boolean encryptedClass;
 algorithm
   try
     Absyn.CLASS(info=SOURCEINFO(fileName=fileName)) := InteractiveUtil.getPathedClassInProgram(path, p);
     encryptedClass := StringUtil.endsWith(fileName, ".moc");
     if encryptedClass then
-      access := getAccessAnnotation(path, p);
-      if access == "Access.hide" then
-        val := Values.ENUM_LITERAL(Absyn.FULLYQUALIFIED(Absyn.QUALIFIED("Access", Absyn.IDENT("hide"))), 1);
-      elseif access == "Access.icon" then
-        val := Values.ENUM_LITERAL(Absyn.FULLYQUALIFIED(Absyn.QUALIFIED("Access", Absyn.IDENT("icon"))), 2);
-      elseif access == "Access.documentation" then
-        val := Values.ENUM_LITERAL(Absyn.FULLYQUALIFIED(Absyn.QUALIFIED("Access", Absyn.IDENT("documentation"))), 3);
-      elseif access == "Access.diagram" then
-        val := Values.ENUM_LITERAL(Absyn.FULLYQUALIFIED(Absyn.QUALIFIED("Access", Absyn.IDENT("diagram"))), 4);
-      elseif access == "Access.nonPackageText" then
-        val := Values.ENUM_LITERAL(Absyn.FULLYQUALIFIED(Absyn.QUALIFIED("Access", Absyn.IDENT("nonPackageText"))), 5);
-      elseif access == "Access.nonPackageDuplicate" then
-        val := Values.ENUM_LITERAL(Absyn.FULLYQUALIFIED(Absyn.QUALIFIED("Access", Absyn.IDENT("nonPackageDuplicate"))), 6);
-      elseif access == "Access.packageText" then
-        val := Values.ENUM_LITERAL(Absyn.FULLYQUALIFIED(Absyn.QUALIFIED("Access", Absyn.IDENT("packageText"))), 7);
-      elseif access == "Access.packageDuplicate" then
-        val := Values.ENUM_LITERAL(Absyn.FULLYQUALIFIED(Absyn.QUALIFIED("Access", Absyn.IDENT("packageDuplicate"))), 8);
-      elseif not AbsynUtil.pathIsIdent(path) then // if the class doesn't have the access annotation then look for it in the parent class.
-        val := checkAccessAnnotationAndEncryption(AbsynUtil.stripLast(path), p);
-      else // if a class is encrypted and no Protection annotation is defined, the access annotation has the default value Access.documentation
-        val := Values.ENUM_LITERAL(Absyn.FULLYQUALIFIED(Absyn.QUALIFIED("Access", Absyn.IDENT("documentation"))), 3);
-      end if;
+      access := match getAccessAnnotation(path, p)
+        case "Access.hide" then Access.hide;
+        case "Access.icon" then Access.icon;
+        case "Access.documentation" then Access.documentation;
+        case "Access.diagram" then Access.diagram;
+        case "Access.nonPackageText" then Access.nonPackageText;
+        case "Access.nonPackageDuplicate" then Access.nonPackageDuplicate;
+        case "Access.packageText" then Access.packageText;
+        case "Access.packageDuplicate" then Access.packageDuplicate;
+        // If the class doesn't have the access annotation then look for it in the parent class.
+        case _ guard not AbsynUtil.pathIsIdent(path)
+          then checkAccessAnnotationAndEncryption(AbsynUtil.stripLast(path), p);
+        // if a class is encrypted and no Protection annotation is defined, the
+        // access annotation has the default value Access.documentation
+        else Access.documentation;
+      end match;
     else
-      val := Values.ENUM_LITERAL(Absyn.FULLYQUALIFIED(Absyn.QUALIFIED("Access", Absyn.IDENT("all"))), 9);
+      access := Access.all;
     end if;
   else
-   val := Values.ENUM_LITERAL(Absyn.FULLYQUALIFIED(Absyn.QUALIFIED("Access", Absyn.IDENT("all"))), 9);
+    access := Access.all;
   end try;
 end checkAccessAnnotationAndEncryption;
 

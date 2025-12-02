@@ -483,7 +483,8 @@ ShapePropertiesDialog::ShapePropertiesDialog(ShapeAnnotation *pShapeAnnotation, 
   mpApplyButton = new QPushButton(Helper::apply);
   mpApplyButton->setAutoDefault(false);
   connect(mpApplyButton, SIGNAL(clicked()), this, SLOT(applyShapeProperties()));
-  if (mpShapeAnnotation->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->isSystemLibrary() || mpShapeAnnotation->isInheritedShape()) {
+  if (mpShapeAnnotation->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->isSystemLibrary()
+      || mpShapeAnnotation->getGraphicsView()->getModelWidget()->isElementMode() || mpShapeAnnotation->isInheritedShape()) {
     mpOkButton->setDisabled(true);
     mpApplyButton->setDisabled(true);
   }
@@ -747,7 +748,6 @@ void ShapePropertiesDialog::removePoint()
 void ShapePropertiesDialog::saveShapeProperties()
 {
   if (applyShapeProperties()) {
-    mpShapeAnnotation->emitChanged();
     accept();
   }
 }
@@ -765,7 +765,7 @@ bool ShapePropertiesDialog::applyShapeProperties()
     pTableWidgetItem->text().toDouble(&Ok);
     if (!Ok || pTableWidgetItem->text().isEmpty()) {
       QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::error),
-                            GUIMessages::getMessage(GUIMessages::ENTER_VALID_NUMBER).arg("points item ("+  QString::number(i+1) +",0)"), Helper::ok);
+                            GUIMessages::getMessage(GUIMessages::ENTER_VALID_NUMBER).arg("points item ("+  QString::number(i+1) +",0)"), QMessageBox::Ok);
       mpPointsTableWidget->editItem(pTableWidgetItem);
       return false;
     }
@@ -773,7 +773,7 @@ bool ShapePropertiesDialog::applyShapeProperties()
     pTableWidgetItem->text().toDouble(&Ok);
     if (!Ok || pTableWidgetItem->text().isEmpty()) {
       QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::error),
-                            GUIMessages::getMessage(GUIMessages::ENTER_VALID_NUMBER).arg("points table ["+  QString::number(i+1) +",1]"), Helper::ok);
+                            GUIMessages::getMessage(GUIMessages::ENTER_VALID_NUMBER).arg("points table ["+  QString::number(i+1) +",1]"), QMessageBox::Ok);
       mpPointsTableWidget->editItem(pTableWidgetItem);
       return false;
     }
@@ -783,14 +783,14 @@ bool ShapePropertiesDialog::applyShapeProperties()
     if (mpStoreImageInModelCheckBox->isChecked() && mpShapeAnnotation->getImageSource().isEmpty()) {
       if (mpFileTextBox->text().isEmpty()) {
         QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::error),
-                              GUIMessages::getMessage(GUIMessages::ENTER_NAME).arg(Helper::fileLabel), Helper::ok);
+                              GUIMessages::getMessage(GUIMessages::ENTER_NAME).arg(Helper::fileLabel), QMessageBox::Ok);
         mpFileTextBox->setFocus();
         return false;
       }
     } else if (!mpStoreImageInModelCheckBox->isChecked()) {
       if (mpFileTextBox->text().isEmpty()) {
         QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::error),
-                              GUIMessages::getMessage(GUIMessages::ENTER_NAME).arg(Helper::fileLabel), Helper::ok);
+                              GUIMessages::getMessage(GUIMessages::ENTER_NAME).arg(Helper::fileLabel), QMessageBox::Ok);
         mpFileTextBox->setFocus();
         return false;
       }
@@ -870,11 +870,12 @@ bool ShapePropertiesDialog::applyShapeProperties()
           fileName = "";
         }
         QFile imageFile(fileName);
-        imageFile.open(QIODevice::ReadOnly);
-        QByteArray imageByteArray = imageFile.readAll();
-        mpShapeAnnotation->setImageSource(imageByteArray.toBase64());
+        if (imageFile.open(QIODevice::ReadOnly)) {
+          QByteArray imageByteArray = imageFile.readAll();
+          mpShapeAnnotation->setImageSource(imageByteArray.toBase64());
+        }
       }
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 15, 0))
+#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
       mpShapeAnnotation->setImage(mpPreviewImageLabel->pixmap(Qt::ReturnByValue).toImage());
 #else // QT_VERSION_CHECK
       mpShapeAnnotation->setImage(mpPreviewImageLabel->pixmap()->toImage());
@@ -891,7 +892,7 @@ bool ShapePropertiesDialog::applyShapeProperties()
       QString relativeImagePath = classDirectory.relativeFilePath(mpFileTextBox->text());
       mpShapeAnnotation->setFileName(QString("modelica://").append(pLibraryTreeItem->getNameStructure()).append("/").append(relativeImagePath));
       mpShapeAnnotation->setImageSource("");
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 15, 0))
+#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
       mpShapeAnnotation->setImage(mpPreviewImageLabel->pixmap(Qt::ReturnByValue).toImage());
 #else // QT_VERSION_CHECK
       mpShapeAnnotation->setImage(mpPreviewImageLabel->pixmap()->toImage());

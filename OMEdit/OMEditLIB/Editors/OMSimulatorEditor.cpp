@@ -99,7 +99,7 @@ bool OMSimulatorEditor::validateText()
 }
 
 /*!
- * \brief OMSCompositeModelEditor::popUpCompleter()
+ * \brief OMSimulatorEditor::popUpCompleter()
  * \we do not have completer for this
  */
 void OMSimulatorEditor::popUpCompleter()
@@ -201,7 +201,7 @@ void OMSimulatorHighlighter::initializeSettings()
   font.setFamily(mpOMSimulatorEditorPage->getOptionsDialog()->getTextEditorPage()->getFontFamilyComboBox()->currentFont().family());
   font.setPointSizeF(mpOMSimulatorEditorPage->getOptionsDialog()->getTextEditorPage()->getFontSizeSpinBox()->value());
   mpPlainTextEdit->document()->setDefaultFont(font);
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 11, 0))
+#if QT_VERSION >= QT_VERSION_CHECK(5, 11, 0)
   mpPlainTextEdit->setTabStopDistance((qreal)(mpOMSimulatorEditorPage->getOptionsDialog()->getTextEditorPage()->getTabSizeSpinBox()->value() * QFontMetrics(font).horizontalAdvance(QLatin1Char(' '))));
 #else // QT_VERSION_CHECK
   mpPlainTextEdit->setTabStopWidth(mpOMSimulatorEditorPage->getOptionsDialog()->getTextEditorPage()->getTabSizeSpinBox()->value() * QFontMetrics(font).width(QLatin1Char(' ')));
@@ -219,21 +219,21 @@ void OMSimulatorHighlighter::initializeSettings()
   rule.mFormat = mTextFormat;
   mHighlightingRules.append(rule);
 
-  // CompositeModel Tags
-  QStringList compositeModelTags;
-  compositeModelTags << "<\\?"
-                << "<"
-                << "</"
-                << "\\?>"
-                << ">"
-                << "/>";
-  foreach (const QString &compositeModelTag, compositeModelTags) {
-    rule.mPattern = QRegExp(compositeModelTag);
+  // Tags
+  QStringList tags;
+  tags << "<\\?"
+       << "<"
+       << "</"
+       << "\\?>"
+       << ">"
+       << "/>";
+  foreach (const QString &tag, tags) {
+    rule.mPattern = QRegExp(tag);
     rule.mFormat = mTagFormat;
     mHighlightingRules.append(rule);
   }
 
-  // CompositeModel Elements
+  // Elements
   QStringList elementPatterns;
   elementPatterns << "\\bxml\\b"
                   << "\\bssd:SystemStructureDescription\\b"
@@ -265,7 +265,7 @@ void OMSimulatorHighlighter::initializeSettings()
     mHighlightingRules.append(rule);
   }
 
-  // CompositeModel Comments
+  // Comments
   mCommentStartExpression = QRegExp("<!--");
   mCommentEndExpression = QRegExp("-->");
 }

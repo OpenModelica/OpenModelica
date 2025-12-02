@@ -1,7 +1,6 @@
 // name: FuncBuiltinInitial1
 // keywords: initial
 // status: correct
-// cflags: -d=newInst
 //
 // Tests the builtin initial operator.
 //

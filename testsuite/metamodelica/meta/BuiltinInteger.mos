@@ -18,14 +18,14 @@ BuiltinInteger.func(-1047483648);getErrorString();
 
 // Result:
 // true
-// (-14,-20,-51,-5,1,3,-17)
+// (-14, -20, -51, -5, 1, 3, -17)
 // ""
-// (false,true,true,false,true,false)
+// (false, true, true, false, true, false)
 // ""
-// (true,true,false,true,false,false)
+// (true, true, false, true, false, false)
 // ""
-// (false,false,false,true,true,true)
+// (false, false, false, true, true, true)
 // ""
-// (1047483648,1047483648,-1047483648.0,"-1047483648")
+// (1047483648, 1047483648, -1.047483648e9, "-1047483648")
 // ""
 // endResult

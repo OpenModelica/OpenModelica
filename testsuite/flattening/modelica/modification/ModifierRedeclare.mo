@@ -1,7 +1,6 @@
 // name: ModifierRedeclare
 // keywords: modifier, redeclare, replaceable
 // status: correct
-// cflags: -d=-newInst
 //
 // Tests redeclarations
 //
@@ -20,6 +19,7 @@ end C;
 
 class D
   extends C(redeclare B a(y = 2.0));
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end D;
 
 // Result:

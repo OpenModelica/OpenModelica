@@ -1,7 +1,7 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2024, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
@@ -84,25 +84,25 @@ import ValuesUtil;
 // section for postOptModule >>symbolicJacobian<<
 //
 // Detects the sparse pattern of the ODE system and calculates also the symbolic
-// Jacobian if flag "--generateSymbolicJacobian" is enabled.
+// Jacobian if flag "--generateDynamicJacobian=symbolic".
 // =============================================================================
 
 // From User Documentation for ida v5.4.0 equation (2.5) aka Alpha
-// is the scalar in the system Jacobian, proportional to the inverse of the step size
-// used for DAE_Mode symbolic jacobians
+// is the scalar in the system Jacobian, proportional to the inverse of the step
+// size used for DAE_Mode symbolic jacobians
 public constant String DAE_CJ = "$DAE_CJ";
 
 public function symbolicJacobian "author: lochel
   Detects the sparse pattern of the ODE system and calculates also the symbolic
-  Jacobian if flag '--generateSymbolicJacobian' is enabled."
+  Jacobian if flag '--generateDynamicJacobian=symbolic'."
   input BackendDAE.BackendDAE inDAE;
   output BackendDAE.BackendDAE outDAE;
 algorithm
-  if Flags.getConfigBool(Flags.GENERATE_SYMBOLIC_JACOBIAN) then
-    outDAE := generateSymbolicJacobianPast(inDAE);
-  else
-    outDAE := detectSparsePatternODE(inDAE);
-  end if;
+  outDAE := match Flags.getConfigString(Flags.GENERATE_DYNAMIC_JACOBIAN)
+    case "none"     then inDAE;
+    case "numeric"  then detectSparsePatternODE(inDAE);
+    case "symbolic" then generateSymbolicJacobianPast(inDAE);
+  end match;
 end symbolicJacobian;
 
 // =============================================================================
@@ -248,7 +248,7 @@ algorithm
 
     if debug then execStat(getInstanceName() + "-> get all vars "); end if;
 
-    if Flags.getConfigBool(Flags.GENERATE_SYMBOLIC_JACOBIAN) then
+    if Flags.getConfigString(Flags.GENERATE_DYNAMIC_JACOBIAN) == "symbolic" then
       // generate symbolic jacobian and sparsity pattern
       (symjac, funcs, sparsePattern, coloredCols, nonlinearPattern) := generateGenericJacobian(
         inBackendDAE          = DAE,
@@ -544,7 +544,7 @@ protected
   list<DAE.Exp> exps;
 algorithm
   eqs := List.map(jac, Util.tuple33);
-  isConst := not List.exist(eqs, variableResidual);
+  isConst := not List.any(eqs, variableResidual);
 end jacobianIsConstant;
 
 protected function variableResidual
@@ -569,15 +569,14 @@ protected
   BackendDAE.Variables orderedVars;
   BackendDAE.EquationArray orderedEqs;
   BackendDAE.Matching matching;
-  array<Integer> ass1, ass2, ass1add, ass2add;
+  array<Integer> ass1, ass2, assAdd;
   BackendDAE.StrongComponents comps;
 algorithm
   BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(ass1=ass1, ass2=ass2, comps=comps)) := systIn;
   if not listEmpty(compsAdd) then
-    ass1add := arrayCreate(listLength(compsAdd), 0);
-    ass2add := arrayCreate(listLength(compsAdd), 0);
-    ass1 := arrayAppend(ass1, ass1add);
-    ass2 := arrayAppend(ass2, ass1add);
+    assAdd := arrayCreate(listLength(compsAdd), 0);
+    ass1 := arrayAppend(ass1, assAdd);
+    ass2 := arrayAppend(ass2, assAdd);
     List.map2_0(compsAdd, updateAssignment, ass1, ass2);
   end if;
   List.map2_0(compsNew, updateAssignment, ass1, ass2);
@@ -624,14 +623,14 @@ protected
     BackendDAE.EquationArray eqns,eqns1, eqns2;
     list<DAE.Exp> beqs;
     list<DAE.ElementSource> sources;
-    list<list<Real>> jacVals;
     BackendDAE.Matching matching;
     DAE.FunctionTree funcs;
     BackendDAE.Shared shared;
     BackendDAE.StateSets stateSets;
     BackendDAE.BaseClockPartitionKind partitionKind;
 
-    array<Real> A,b;
+    array<array<Real>> A;
+    array<Real> b;
     Real entry;
     Integer row,col,n, systIdx;
     array<Integer> order;
@@ -644,26 +643,24 @@ algorithm
   (beqs,sources) := BackendDAEUtil.getEqnSysRhs(eqns1,v,SOME(funcs));
   beqs := listReverse(beqs);
     //print("bside: \n"+ExpressionDump.printExpListStr(beqs)+"\n");
-  jacVals := evaluateConstantJacobian(listLength(var_lst),jac);
+  A := evaluateConstantJacobianArray(listLength(var_lst),jac);
     //print("JacVals\n"+stringDelimitList(List.map(jacVals,rListStr),"\n")+"\n\n");
 
-  A := arrayCreate(n*n,0.0);
-  b :=  arrayCreate(n*n,0.0);  // i.e. a matrix for the b-vars to get their coefficients independently [(b1,0,0);(0,b2,0),(0,0,b3)]
+  b := arrayCreate(n*n,0.0);  // i.e. a matrix for the b-vars to get their coefficients independently [(b1,0,0);(0,b2,0),(0,0,b3)]
   order := arrayCreate(n,0);
   for row in 1:n loop
-    for col in 1:n loop
-      entry := listGet(listGet(jacVals,row),col);
-      arrayUpdate(A,((row-1)*n+col),entry);
-    end for;
     arrayUpdate(b,(row-1)*n+row,1.0);
   end for;
-    //print("b\n"+stringDelimitList(List.map(arrayList(b),realString),", ")+"\n\n");
-    //print("A\n"+stringDelimitList(List.map(arrayList(A),realString),", ")+"\n\n");
+    //print("b\n"+stringDelimitList(List.mapArray(b,realString),", ")+"\n\n");
+    //print("A\n"+stringDelimitList(List.mapArray(A,realString),", ")+"\n\n");
   gauss(A,b,1,n,List.intRange(n),order);
-    //print("the order: "+stringDelimitList(List.map(arrayList(order),intString),",")+"\n");
+    //print("the order: "+stringDelimitList(List.mapArray(order,intString),",")+"\n");
 
   (bVarsOut,bEqsOut) := createBVecVars(sysIdxIn,compIdxIn,n,DAE.T_REAL_DEFAULT,beqs);
   sysEqsOut := createSysEquations(A,b,n,order,var_lst,bVarsOut);
+  for a in A loop
+    GCExt.free(a);
+  end for;
   GCExt.free(A);
   GCExt.free(b);
   sysIdxOut := sysIdxIn+1;
@@ -672,7 +669,7 @@ end solveConstJacLinearSystem;
 
 protected function createSysEquations "creates new equations for a linear system with constant Jacobian matrix.
   author: Waurich TUD 2015-03"
-  input array<Real> A;
+  input array<array<Real>> A;
   input array<Real> b;
   input Integer n;
   input array<Integer> order;
@@ -691,7 +688,7 @@ algorithm
   bExps := List.map(bVars, BackendVariable.varExp2);
   for i in 1:n loop
     row := arrayGet(order,i);
-    coeffs := Array.getRange((row-1)*n+1,(row*n),A);
+    coeffs := arrayList(A[row]);
     coeffExps := List.map(coeffs,Expression.makeRealExp);
     xProds := List.threadMap1(coeffExps,xExps,makeBinaryExp,DAE.MUL(DAE.T_REAL_DEFAULT));
     lhs := List.fold1(xProds,Expression.makeBinaryExp,DAE.ADD(DAE.T_REAL_DEFAULT),DAE.RCONST(0.0));
@@ -742,7 +739,7 @@ algorithm
 end createBVecVars;
 
 protected function gauss
-  input array<Real> A;
+  input array<array<Real>> A;
   input array<Real> b;
   input Integer indxIn;
   input Integer n;
@@ -760,15 +757,14 @@ algorithm
       (pivotIdx,pivot) := getPivotElement(A,rangeIn,indxIn,n);
         //print("pivot: "+intString(pivotIdx)+" has value: "+realString(pivot)+"\n");
       arrayUpdate(permutation,indxIn,pivotIdx);
-      range := List.deleteMember(rangeIn,pivotIdx);
+      range := List.deleteMemberOnTrue(pivotIdx,rangeIn,intEq);
 
       // the pivot row in the A-matrix divided by the pivot element
       for ic in indxIn:n loop
-        pos := (pivotIdx-1)*n+ic;
-        entry := arrayGet(A,pos);
+        entry := arrayGet(A[pivotIdx],ic);
         entry := realDiv(entry,pivot); //divide column entry with pivot element
           //print(" pos "+intString(pos)+" entry "+realString(arrayGet(A,pos))+"\n");
-        arrayUpdate(A,pos,entry);
+        arrayUpdate(A[pivotIdx],ic,entry);
       end for;
       // the complete pivot row of the b-vector divided by the pivot element
       for ic in 1:n loop
@@ -780,27 +776,27 @@ algorithm
 
        // the remaining rows
        for ir in range loop
-       first := arrayGet(A,(ir-1)*n+indxIn); //the first row element, that is going to be zero
+         first := arrayGet(A[ir],indxIn); //the first row element, that is going to be zero
          //print("first "+realString(first)+"\n");
           for ic in indxIn:n loop
-          pos := (ir-1)*n+ic;
-          entry := arrayGet(A,pos);  // the current entry
-          pivot := arrayGet(A,(pivotIdx-1)*n+ic);  // the element from the column in the pivot row
+            pos := (ir-1)*n+ic;
+            entry := arrayGet(A[ir],ic);  // the current entry
+            pivot := arrayGet(A[pivotIdx],ic);  // the element from the column in the pivot row
             //print("pivot "+realString(pivot)+"\n");
             //print("ir "+intString(ir)+" pos "+intString(pos)+" entry0 "+realString(entry)+" entry1 "+realString(realSub(entry,realDiv(first,pivot)))+"\n");
-          entry := realSub(entry,realMul(first,pivot));
-          arrayUpdate(A,pos,entry);
-          b_entry := arrayGet(b,pos);
-          pivot := arrayGet(b,(pivotIdx-1)*n+ic);
-          b_entry := b_entry - realMul(first,pivot);
-          arrayUpdate(b,pos,b_entry);
+            entry := realSub(entry,realMul(first,pivot));
+            arrayUpdate(A[ir],ic,entry);
+            b_entry := arrayGet(b,pos);
+            pivot := arrayGet(b,(pivotIdx-1)*n+ic);
+            b_entry := b_entry - realMul(first,pivot);
+            arrayUpdate(b,pos,b_entry);
           end for;
       end for;
-        //print("A\n"+stringDelimitList(List.map(arrayList(A),realString),", ")+"\n\n");
-        //print("b\n"+stringDelimitList(List.map(arrayList(b),realString),", ")+"\n\n");
+        //print("A\n"+stringDelimitList(List.mapArray(A, realString),", ")+"\n\n");
+        //print("b\n"+stringDelimitList(List.mapArray(b, realString),", ")+"\n\n");
 
-      //print("new permutation: "+stringDelimitList(List.map(arrayList(permutation),intString),",")+"\n");
-      //print("JACB "+intString(indxIn)+" \n"+stringDelimitList(List.map(arrayList(jacB),rListStr),"\n ")+"\n\n");
+      //print("new permutation: "+stringDelimitList(List.mapArray(permutation, intString),",")+"\n");
+      //print("JACB "+intString(indxIn)+" \n"+stringDelimitList(List.mapArray(jacB, rListStr),"\n ")+"\n\n");
       gauss(A,b,indxIn+1,n,range,permutation);
     then();
   else ();
@@ -808,7 +804,7 @@ algorithm
 end gauss;
 
 protected function getPivotElement "gets the highest element in the startIdx'th to n'th rows and the startidx'th column"
-  input array<Real> A;
+  input array<array<Real>> A;
   input list<Integer> rangeIn;
   input Integer startIdx;
   input Integer n;
@@ -819,7 +815,7 @@ protected
   Real entry;
 algorithm
   for i in rangeIn loop
-    entry := arrayGet(A,(i-1)*n+startIdx);
+    entry := arrayGet(A[i],startIdx);
     //print("i "+intString(i)+" pi "+intString(p_i)+" entry "+realString(entry)+"\n");
     if realAbs(entry) > value then
       value := entry;
@@ -1116,6 +1112,19 @@ public function evaluateConstantJacobian
   output list<list<Real>> vals;
 protected
   array<array<Real>> valarr;
+  list<array<Real>> tmp2;
+algorithm
+  valarr := evaluateConstantJacobianArray(size, jac);
+  tmp2 := arrayList(valarr);
+  vals := List.map(tmp2,arrayList);
+end evaluateConstantJacobian;
+
+protected function evaluateConstantJacobianArray
+  "Evaluate a constant Jacobian so we can solve a linear system during runtime"
+  input Integer size;
+  input list<tuple<Integer,Integer,BackendDAE.Equation>> jac;
+  output array<array<Real>> valarr;
+protected
   array<Real> tmp;
   list<array<Real>> tmp2;
 algorithm
@@ -1123,9 +1132,7 @@ algorithm
   tmp2 := List.map(List.fill(tmp,size),arrayCopy);
   valarr := listArray(tmp2);
   List.map1_0(jac,evaluateConstantJacobian2,valarr);
-  tmp2 := arrayList(valarr);
-  vals := List.map(tmp2,arrayList);
-end evaluateConstantJacobian;
+end evaluateConstantJacobianArray;
 
 protected function evaluateConstantJacobian2
   input tuple<Integer,Integer,BackendDAE.Equation> jac;
@@ -2471,7 +2478,7 @@ algorithm
 
     else
      equation
-      Error.addInternalError("function generateSymbolicJacobian failed", sourceInfo());
+      Error.addInternalError(getInstanceName() + " failed", sourceInfo());
     then fail();
   end matchcontinue;
 end generateSymbolicJacobian;
@@ -2484,7 +2491,7 @@ protected
   DAE.ComponentRef derivedCref;
 algorithm
   derivedCref := Differentiate.createSeedCrefName(indiffVar, inMatrixName);
-  outSeedVar := BackendDAE.VAR(derivedCref, BackendDAE.STATE_DER(), DAE.INPUT(), DAE.NON_PARALLEL(), ComponentReference.crefLastType(derivedCref), NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), NONE(), NONE(),DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), true, false);
+  outSeedVar := BackendDAE.VAR(derivedCref, BackendDAE.STATE_DER(), DAE.INPUT(), DAE.NON_PARALLEL(), ComponentReference.crefLastType(derivedCref), NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), NONE(), NONE(),DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), true, false, false);
 end createSeedVars;
 
 protected function createAllDiffedVars "author: wbraun"
@@ -2578,20 +2585,9 @@ algorithm
   try
     BackendDAE.DIFFINPUTDATA(allVars=SOME(allVars)) := inDiffData;
     for currEquation in inEquations loop
-      if Flags.isSet(Flags.JAC_DUMP_EQN) then
-        print("Derive Equation!\n");
-        BackendDump.printEquationList({currEquation});
-        print("\n");
-      end if;
-
       (currDerivedEquation, outFunctions) := Differentiate.differentiateEquation(currEquation, inDiffCref, inDiffData, BackendDAE.GENERIC_GRADIENT(daeMode), outFunctions);
       tmpEquations := BackendEquation.scalarComplexEquations(currDerivedEquation, outFunctions);
       outDerivedEquations := listAppend(tmpEquations, outDerivedEquations);
-
-      if Flags.isSet(Flags.JAC_DUMP_EQN) then
-        BackendDump.printEquationList(outDerivedEquations);
-        print("\n");
-      end if;
     end for;
 
     outDerivedEquations := listReverse(outDerivedEquations);
@@ -2657,7 +2653,7 @@ protected
   BackendDAE.EqSystem syst;
 algorithm
   (BackendDAE.DAE(systems, shared), _, _, _, _, _) := jacobian;
-  syst := List.first(systems);  // Only the first system contains directional derivative,
+  syst := listHead(systems);  // Only the first system contains directional derivative,
                                 // the others contain optional constant equations
   dependencies := BackendEquation.getCrefsFromEquations(syst.orderedEqs, syst.orderedVars, shared.globalKnownVars);
 end calcJacobianDependencies;
@@ -2765,7 +2761,7 @@ try
   // create  residual equations
   (_, reqns) := BackendEquation.traverseEquationArray(outResidualEqns, BackendEquation.traverseEquationToScalarResidualForm, (funcTree, {}));
   reqns := listReverse(reqns);
-  (reqns, resVarsLst) := BackendEquation.convertResidualsIntoSolvedEquations(reqns, "$res_" + name + "_", BackendVariable.makeVar(DAE.emptyCref), 1);
+  (reqns, resVarsLst) := BackendEquation.convertResidualsIntoSolvedEquations(reqns, "$res_" + name + "_", 1);
   outResidualVars := BackendVariable.listVar1(resVarsLst);
   outResidualEqns := BackendEquation.listEquation(reqns);
 
@@ -2968,7 +2964,7 @@ algorithm
           // create  residual equations
           (_, reqns) = BackendEquation.traverseEquationArray(eqns, BackendEquation.traverseEquationToScalarResidualForm, (inShared.functionTree, {}));
           reqns = listReverse(reqns);
-          (reqns, resVarsLst) = BackendEquation.convertResidualsIntoSolvedEquations(reqns, "$res_" + name + "_", BackendVariable.makeVar(DAE.emptyCref), 1);
+          (reqns, resVarsLst) = BackendEquation.convertResidualsIntoSolvedEquations(reqns, "$res_" + name + "_", 1);
           resVars = BackendVariable.listVar1(resVarsLst);
           eqns = BackendEquation.listEquation(reqns);
 
@@ -3265,7 +3261,7 @@ algorithm
     case DAE.T_ARRAY(ty=ty) then isRecordInvoled(ty);
     case DAE.T_FUNCTION(funcResultType=ty) then isRecordInvoled(ty);
     case DAE.T_TUPLE(types)
-    then List.mapBoolOr(types, isRecordInvoled);
+    then List.any(types, isRecordInvoled);
     else false;
   end match;
 end isRecordInvoled;
@@ -3756,8 +3752,8 @@ algorithm
       equation
         var_indxs = fvarsInEqn(m, eqn_indx);
         // Remove duplicates and get in correct order: ascending index
-        var_indxs_1 = List.unionOnTrue(var_indxs, {}, intEq);
-        var_indxs_1 = List.sort(var_indxs_1,intGt);
+        var_indxs_1 = List.sort(var_indxs,intGt);
+        var_indxs_1 = List.sortedUnique(var_indxs_1, intEq);
         (eqns, shared) = calculateJacobianRow2(Expression.expSub(e1,e2), vars, scalar_eqn_indx, var_indxs_1,differentiateIfExp,iShared,source,iAcc);
       then
         (eqns, 1, shared);
@@ -3767,8 +3763,8 @@ algorithm
       equation
         var_indxs = fvarsInEqn(m, eqn_indx);
         // Remove duplicates and get in correct order: ascending index
-        var_indxs_1 = List.unionOnTrue(var_indxs, {}, intEq);
-        var_indxs_1 = List.sort(var_indxs_1,intGt);
+        var_indxs_1 = List.sort(var_indxs,intGt);
+        var_indxs_1 = List.sortedUnique(var_indxs_1, intEq);
         (eqns, shared) = calculateJacobianRow2(e, vars, scalar_eqn_indx, var_indxs_1,differentiateIfExp,iShared,source,iAcc);
       then
         (eqns, 1, shared);
@@ -3780,8 +3776,8 @@ algorithm
 
         var_indxs = fvarsInEqn(m, eqn_indx);
         // Remove duplicates and get in correct order: ascending index
-        var_indxs_1 = List.unionOnTrue(var_indxs, {}, intEq);
-        var_indxs_1 = List.sort(var_indxs_1,intGt);
+        var_indxs_1 = List.sort(var_indxs,intGt);
+        var_indxs_1 = List.sortedUnique(var_indxs_1, intEq);
         (eqns, shared) = calculateJacobianRow2(Expression.expSub(e1,e2), vars, scalar_eqn_indx, var_indxs_1,differentiateIfExp,iShared,source,iAcc);
       then
         (eqns, 1, shared);
@@ -3798,8 +3794,8 @@ algorithm
 
         var_indxs = fvarsInEqn(m, eqn_indx);
         // Remove duplicates and get in correct order: ascending index
-        var_indxs_1 = List.unionOnTrue(var_indxs, {}, intEq);
-        var_indxs_1 = List.sort(var_indxs_1,intGt);
+        var_indxs_1 = List.sort(var_indxs,intGt);
+        var_indxs_1 = List.sortedUnique(var_indxs_1, intEq);
         (eqns, shared) = calculateJacobianRowLst(expl, vars, scalar_eqn_indx, var_indxs_1,differentiateIfExp,iShared,source,iAcc);
         size = List.fold(ds,intMul,1);
       then
@@ -4647,7 +4643,7 @@ uniontype LinearJacobian
         // ToDo: updating the pivot row would also need an update for the rhs!
 
         for j in i+1:arrayLength(linJac.rows) loop
-          row_value := getElementValue(linJac.rows[j], col_index);
+          row_value := UnorderedMap.getOrDefault(col_index, linJac.rows[j], 0.0);
           if not realEq(row_value, 0.0) then
             // set row to processed and perform pivot step
             linJac.eq_marks[j] := true;
@@ -4725,7 +4721,7 @@ uniontype LinearJacobian
   algorithm
     if not realEq(piv_value, 1.0) then
       for idx in UnorderedMap.keyList(pivot_row) loop
-        SOME(value) := UnorderedMap.get(idx, pivot_row);
+        value := UnorderedMap.getOrFail(idx, pivot_row);
         UnorderedMap.add(idx, value/piv_value, pivot_row);
       end for;
     end if;
@@ -4735,31 +4731,17 @@ uniontype LinearJacobian
   "author: kabdelhak FHB 03-2021
    Returns the first element that can be chosen as pivot, fails if none can be chosen."
     input LinearJacobianRow pivot_row;
-    output tuple<Integer, Real> pivot_elem;
-  protected
-    Integer idx;
+    output Integer idx;
+    output Real value;
   algorithm
     if Vector.isEmpty(pivot_row.keys) then
       /* singular row */
       fail();
     else
       idx := UnorderedMap.firstKey(pivot_row);
-      pivot_elem := (idx, Util.getOption(UnorderedMap.get(idx, pivot_row)));
+      value := UnorderedMap.getOrFail(idx, pivot_row);
     end if;
   end getPivot;
-
-  protected function getElementValue
-  "author: kabdelhak FHB 03-2021
-   Returns the value at given column and zero if it does not exist in sparse structure."
-    input LinearJacobianRow row;
-    input Integer col_index;
-    output Real value;
-  algorithm
-    value := match UnorderedMap.get(col_index, row)
-      case SOME(value) then value;
-      else 0.0;
-    end match;
-  end getElementValue;
 
   public function resolveASSC
   "author: kabdelhak FHB 03-2021

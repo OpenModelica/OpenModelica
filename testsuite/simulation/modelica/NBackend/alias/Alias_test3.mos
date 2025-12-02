@@ -1,0 +1,55 @@
+// name: Alias_test3
+// keywords: NewBackend, Alias
+// status: correct
+// function: Throws an error if multiple variables have StateSelect = always.
+
+loadString("
+  model Test3
+    Real y;                                        // not simple
+    Real x(stateSelect=StateSelect.always);
+    Real z(stateSelect=StateSelect.always);        // regular simple
+  equation
+    x = -2*z;
+    y = time + 3.0;
+    z = sin(time);
+  end Test3;
+"); getErrorString();
+setCommandLineOptions("--newBackend -d=dumprepl");
+simulate(Test3); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// =====================================
+//   [dumprepl] Simulation Alias Sets:
+// =====================================
+//
+// Alias Set 1:
+// **************
+// 	Constant/Parameter Binding: [SCAL] (1) y = 3.0 + time ($RES_SIM_1)
+// 	###<No Set Equations>
+//
+// Alias Set 2:
+// **************
+// 	<No Constant/Parameter Binding>
+// 	### Set Equations:
+// 	[SCAL] (1) z = $FUN_1 ($RES_SIM_0)
+// 	[SCAL] (1) x = -2.0 * z ($RES_SIM_2)
+//
+// record SimulationResult
+//     resultFile = "",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Test3', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "Failed to build model: Test3"
+// end SimulationResult;
+// "Error: Internal error NBAlias.stateSelectAlways failed because multiple variables have StateSelect = always!
+// 	<No Constant/Parameter Binding>
+// 	### Set Equations:
+// 	[SCAL] (1) z = $FUN_1 ($RES_SIM_0)
+// 	[SCAL] (1) x = -2.0 * z ($RES_SIM_2)
+//
+// 	StateSelect map after replacements:
+// 	(x, StateSelect = always)
+// 	(z, StateSelect = always)
+// "
+// endResult

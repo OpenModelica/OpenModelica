@@ -210,8 +210,9 @@ namespace OpenModelica
 
       void swap(Replaceable<ConstrainingClass> &other)
       {
-        std::swap(_value, other._value);
-        std::swap(_cc, other._cc);
+        using std::swap;
+        swap(_value, other._value);
+        swap(_cc, other._cc);
       }
 
       MetaModelica::Value toSCode() const noexcept

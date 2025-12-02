@@ -29,8 +29,16 @@
  *
  */
 
+#include "OMPlot.h"
 #include "PlotWindow.h"
+#include "Legend.h"
+#include "PlotGrid.h"
 #include "LinearScaleEngine.h"
+#include "ScaleDraw.h"
+#include "PlotZoomer.h"
+#include "PlotPanner.h"
+#include "PlotPicker.h"
+#include "PlotCurve.h"
 
 #include "qwt_plot_canvas.h"
 #include "qwt_plot_layout.h"
@@ -40,6 +48,8 @@
 #endif
 #include "qwt_text_label.h"
 
+#include <QtMath>
+
 namespace OMPlot{
 
 Plot::Plot(PlotWindow *pParent)
@@ -47,6 +57,7 @@ Plot::Plot(PlotWindow *pParent)
 {
   setAutoReplot(false);
   mpParentPlotWindow = pParent;
+  enableAxis(QwtPlot::yRight);
   // create an instance of legend
   mpLegend = new Legend(this);
   insertLegend(mpLegend, QwtPlot::TopLegend);
@@ -59,11 +70,14 @@ Plot::Plot(PlotWindow *pParent)
   LinearScaleEngine *pYLinearScaleEngine = new LinearScaleEngine;
   setAxisScaleEngine(QwtPlot::yLeft, pYLinearScaleEngine);
   setAxisAutoScale(QwtPlot::yLeft);
+  setAxisVisible(QwtPlot::yRight, false);   // y axis initially hidden
   // create the scale draw
-  mpXScaleDraw = new ScaleDraw(QwtPlot::xBottom, this);
+  mpXScaleDraw = new ScaleDraw(true, this);
   setAxisScaleDraw(QwtPlot::xBottom, mpXScaleDraw);
-  mpYScaleDraw = new ScaleDraw(QwtPlot::yLeft, this);
+  mpYScaleDraw = new ScaleDraw(false, this);
   setAxisScaleDraw(QwtPlot::yLeft, mpYScaleDraw);
+  mpYRightScaleDraw = new ScaleDraw(false, this);
+  setAxisScaleDraw(QwtPlot::yRight, mpYRightScaleDraw);
   // create an instance of zoomer
   mpPlotZoomer = new PlotZoomer(QwtPlot::xBottom, QwtPlot::yLeft, canvas());
   // create an instance of panner
@@ -94,10 +108,13 @@ Plot::Plot(PlotWindow *pParent)
   QwtText bottomTitle = axisTitle(QwtPlot::xBottom);
   bottomTitle.setFont(QFont(monospaceFont.family(), 11));
   setAxisTitle(QwtPlot::xBottom, bottomTitle);
-  // set the left axis title font size small.
+  // set the left and right axis title font size small.
   QwtText leftTitle = axisTitle(QwtPlot::yLeft);
   leftTitle.setFont(QFont(monospaceFont.family(), 11));
   setAxisTitle(QwtPlot::yLeft, leftTitle);
+  QwtText rightTitle = axisTitle(QwtPlot::yRight);
+  rightTitle.setFont(QFont(monospaceFont.family(), 11));
+  setAxisTitle(QwtPlot::yRight, rightTitle);
   // fill colors list
   fillColorsList();
   setAutoReplot(true);
@@ -193,7 +210,8 @@ QColor Plot::getUniqueColor(int index, int total)
     return mColorsList.at(index);
 }
 
-void Plot::setFontSizes(double titleFontSize, double verticalAxisTitleFontSize, double verticalAxisNumbersFontSize, double horizontalAxisTitleFontSize,
+void Plot::setFontSizes(double titleFontSize, double verticalAxisTitleFontSize, double verticalAxisNumbersFontSize,
+                        double rightVerticalAxisTitleFontSize, double rightVerticalAxisNumbersFontSize, double horizontalAxisTitleFontSize,
                         double horizontalAxisNumbersFontSize, double footerFontSize, double legendFontSize)
 {
   // title
@@ -210,6 +228,16 @@ void Plot::setFontSizes(double titleFontSize, double verticalAxisTitleFontSize, 
   font = axisWidget(QwtPlot::yLeft)->font();
   font.setPointSizeF(verticalAxisNumbersFontSize);
   axisWidget(QwtPlot::yLeft)->setFont(font);
+  // right vertical axis title
+  QwtText verticalRightTitle = axisWidget(QwtPlot::yRight)->title();
+  font = verticalRightTitle.font();
+  font.setPointSizeF(rightVerticalAxisTitleFontSize);
+  verticalRightTitle.setFont(font);
+  axisWidget(QwtPlot::yRight)->setTitle(verticalRightTitle);
+  // right vertical axis numbers
+  font = axisWidget(QwtPlot::yRight)->font();
+  font.setPointSizeF(rightVerticalAxisNumbersFontSize);
+  axisWidget(QwtPlot::yRight)->setFont(font);
   // horizontal axis title
   QwtText horizontalTitle = axisWidget(QwtPlot::xBottom)->title();
   font = horizontalTitle.font();
@@ -238,69 +266,170 @@ void Plot::setFontSizes(double titleFontSize, double verticalAxisTitleFontSize, 
  */
 bool Plot::prefixableUnit(const QString &unit)
 {
-  QStringList prefixableUnits;
-  prefixableUnits << "s"
-                  << "m"
-                  << "m/s"
-                  << "m/s2"
-                  << "rad"
-                  << "rad/s"
-                  << "rad/s2"
-                  << "rpm"
-                  << "Hz"
-                  << "N"
-                  << "N.m"
-                  << "Pa"
-                  << "Pa.s"
-                  << "J"
-                  << "J/kg"
-                  << "J/(kg.K)"
-                  << "K"
-                  << "V"
-                  << "V/m"
-                  << "A"
-                  << "C"
-                  << "F"
-                  << "T"
-                  << "Wb"
-                  << "Wb/m"
-                  << "H"
-                  << "Ohm"
-                  << "S"
-                  << "W"
-                  << "W/m"
-                  << "W/m2"
-                  << "Wh"
-                  << "var";
-
+  static const QSet<QString> prefixableUnits = {
+    "s",
+    "m",
+    "m/s",
+    "m/s2",
+    "rad",
+    "rad/s",
+    "rad/s2",
+    "rpm",
+    "Hz",
+    "N",
+    "N.m",
+    "Pa",
+    "Pa.s",
+    "J",
+    "J/kg",
+    "J/(kg.K)",
+    "K",
+    "V",
+    "V/m",
+    "A",
+    "C",
+    "F",
+    "T",
+    "Wb",
+    "Wb/m",
+    "H",
+    "Ohm",
+    "S",
+    "W",
+    "W/m",
+    "W/m2",
+    "Wh",
+    "var"
+  };
   return prefixableUnits.contains(unit);
+}
+
+/*!
+ * \brief Plot::convertUnitToSymbol
+ * Converts the unit to a symbol.
+ * \param displayUnit
+ * \return
+ */
+QString Plot::convertUnitToSymbol(const QString &displayUnit)
+{
+  QString symbol = displayUnit;
+  // if symbol startswith u then convert it to QChar(0x03BC)
+  if (symbol.startsWith("u")) {
+    symbol.replace(0, 1, QChar(0x03BC));
+  }
+  // if symbol contains "Ohm" then convert it to QChar(937) i.e., Greek Omega
+  if (symbol.contains("Ohm")) {
+    symbol.replace("Ohm", QChar(937));
+  }
+  // if symbol contains "degC" then convert it to QString("%1C").arg(QChar(176))
+  if (symbol.contains("degC")) {
+    symbol.replace("degC", QString("%1C").arg(QChar(176)));
+  }
+
+  return symbol;
+}
+
+/*!
+ * \brief Plot::convertSymbolToUnit
+ * Converts the symbol to a unit.
+ * \param symbol
+ * \return
+ */
+QString Plot::convertSymbolToUnit(const QString &symbol)
+{
+  QString unit = symbol;
+  // if unit startswith QChar(0x03BC) then convert it to u
+  if (unit.startsWith(QChar(0x03BC))) {
+    unit.replace(0, 1, "u");
+  }
+  // if unit contains QChar(937) i.e., Greek Omega then convert it to "Ohm"
+  if (unit.contains(QChar(937))) {
+    unit.replace(QChar(937), "Ohm");
+  }
+  // if unit contains QString("%1C").arg(QChar(176)) then convert it to "degC"
+  if (unit.contains(QString("%1C").arg(QChar(176)))) {
+    unit.replace(QString("%1C").arg(QChar(176)), "degC");
+  }
+
+  return unit;
+}
+
+/*!
+ * \brief Plot::getUnitPrefixAndExponent
+ * \param lowerBound
+ * \param upperBound
+ * \param unitPrefix
+ * \param exponent
+ */
+void Plot::getUnitPrefixAndExponent(double lowerBound, double upperBound, QString &unitPrefix, int &exponent)
+{
+  /* Since log(1900) returns 3.278 so we need to round down for positive values to make it 3
+   * And log(0.0011) return -2.95 so we also need to round down for negative value to make it -3
+   * log(0) is undefined so avoid it
+   */
+
+  if (!(qFuzzyCompare(lowerBound, 0.0) && qFuzzyCompare(upperBound, 0.0))) {
+    if (fabs(lowerBound) > fabs(upperBound)) {
+      exponent = qFloor(std::log10(fabs(lowerBound)));
+    } else {
+      exponent = qFloor(std::log10(fabs(upperBound)));
+    }
+
+    // We don't do anything for exponent values between -1 and 2.
+    if ((exponent < -1) || (exponent > 2)) {
+      if (exponent > 2) {
+        if (exponent >= 3 && exponent < 6) {
+          unitPrefix = "k";
+          exponent = 3;
+        } else if (exponent >= 6 && exponent < 9) {
+          unitPrefix = "M";
+          exponent = 6;
+        } else if (exponent >= 9 && exponent < 12) {
+          unitPrefix = "G";
+          exponent = 9;
+        } else if (exponent >= 12 && exponent < 15) {
+          unitPrefix = "T";
+          exponent = 12;
+        } else {
+          unitPrefix = "P";
+          exponent = 15;
+        }
+      } else if (exponent < -1) {
+        if (exponent <= -2 && exponent > -6) {
+          unitPrefix = "m";
+          exponent = -3;
+        } else if (exponent <= -6 && exponent > -9) {
+          unitPrefix = "u";
+          exponent = -6;
+        } else if (exponent <= -9 && exponent > -12) {
+          unitPrefix = "n";
+          exponent = -9;
+        } else if (exponent <= -12 && exponent > -15) {
+          unitPrefix = "p";
+          exponent = -12;
+        } else {
+          unitPrefix = "f";
+          exponent = -15;
+        }
+      }
+    } else {
+      unitPrefix = "";
+      exponent = 0;
+    }
+  }
 }
 
 // just overloaded this function to get colors for curves.
 void Plot::replot()
 {
-  bool canUseXPrefixUnits = true;
-  bool canUseYPrefixUnits = true;
-
-  // we need to loop through curves to find the prefix for units
-  for (int i = 0 ; i < mPlotCurvesList.length() ; i++) {
-    if ((mpParentPlotWindow->getPlotType() == PlotWindow::PLOTPARAMETRIC || mpParentPlotWindow->getPlotType() == PlotWindow::PLOTARRAYPARAMETRIC)
-        && canUseXPrefixUnits && !Plot::prefixableUnit(mPlotCurvesList[i]->getXDisplayUnit())) {
-      canUseXPrefixUnits = false;
-    }
-    if (canUseYPrefixUnits && !Plot::prefixableUnit(mPlotCurvesList[i]->getYDisplayUnit())) {
-      canUseYPrefixUnits = false;
-    }
-  }
-
-  mpParentPlotWindow->setCanUseXPrefixUnits(canUseXPrefixUnits);
   mpXScaleDraw->invalidateCache();
-  mpParentPlotWindow->setCanUseYPrefixUnits(canUseYPrefixUnits);
   mpYScaleDraw->invalidateCache();
-
+  mpYRightScaleDraw->invalidateCache();
   QwtPlot::replot();
 
   // Now we need to again loop through curves to set the color and title.
+  // Also display y-axis (left or right) only if axis is assigned to at least one curve
+  bool leftAxisVisible = false, rightAxisVisible = false;
   for (int i = 0 ; i < mPlotCurvesList.length() ; i++) {
     // if user has set the custom color for the curve then dont get automatic color for it
     if (!mPlotCurvesList[i]->hasCustomColor()) {
@@ -309,19 +438,20 @@ void Plot::replot()
       mPlotCurvesList[i]->setPen(pen);
     }
     mPlotCurvesList[i]->setTitleLocal();
+    rightAxisVisible = rightAxisVisible || mPlotCurvesList[i]->isYAxisRight();
+    leftAxisVisible = leftAxisVisible || (!mPlotCurvesList[i]->isYAxisRight());
   }
+  setAxisVisible(QwtPlot::yLeft, leftAxisVisible);
+  setAxisVisible(QwtPlot::yRight, rightAxisVisible);
 
   if (mpParentPlotWindow->getXCustomLabel().isEmpty()) {
-    QString timeUnit = mpParentPlotWindow->getTimeUnit();
-    if (mpParentPlotWindow->getPlotType() == PlotWindow::PLOT
-        || mpParentPlotWindow->getPlotType() == PlotWindow::PLOTALL
-        || mpParentPlotWindow->getPlotType() == PlotWindow::PLOTINTERACTIVE) {
-      if (mpXScaleDraw->getUnitPrefix().isEmpty()) {
-        setAxisTitle(QwtPlot::xBottom, QString("%1 (%2)").arg(mpParentPlotWindow->getXLabel(), timeUnit));
-      } else {
-        setAxisTitle(QwtPlot::xBottom, QString("%1 (%2%3)").arg(mpParentPlotWindow->getXLabel(), mpXScaleDraw->getUnitPrefix(), timeUnit));
-      }
-    } else if (mpParentPlotWindow->getPlotType() == PlotWindow::PLOTARRAY) {
+    // ScaleDraw::getUnitPrefix is only set when time is on x-axis
+    const QString timeUnit = mpXScaleDraw->getUnitPrefix() + mpParentPlotWindow->getTimeUnit();
+    if (mpParentPlotWindow->isPlot()
+        || mpParentPlotWindow->isPlotAll()
+        || mpParentPlotWindow->isPlotInteractive()) {
+      setAxisTitle(QwtPlot::xBottom, QString("%1 (%2)").arg(mpParentPlotWindow->getXLabel(), timeUnit));
+    } else if (mpParentPlotWindow->isPlotArray()) {
       setAxisTitle(QwtPlot::xBottom, mpParentPlotWindow->getXLabel());
     } else {
       setAxisTitle(QwtPlot::xBottom, "");
@@ -335,6 +465,13 @@ void Plot::replot()
   } else {
     setAxisTitle(QwtPlot::yLeft, mpParentPlotWindow->getYCustomLabel());
   }
+
+  if (mpParentPlotWindow->getYRightCustomLabel().isEmpty()) {
+    setAxisTitle(QwtPlot::yRight, "");
+  } else {
+    setAxisTitle(QwtPlot::yRight, mpParentPlotWindow->getYRightCustomLabel());
+  }
+
 }
 
 } // namespace OMPlot

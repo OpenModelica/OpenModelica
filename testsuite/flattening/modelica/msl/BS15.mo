@@ -1,7 +1,6 @@
 // name:     BS15 - BooleanConstant component
 // keywords: BooleanConstant
 // status:   correct
-// cflags: -d=-newInst
 //
 // Testing instantiation of the BooleanConstant component.
 //
@@ -967,6 +966,7 @@ model BS15
 
 equation
   connect(booleanConstant1.outPort,booleanChange1.inPort) annotation(Line(visible=true,points={{-26.87,25.35},{-12.27,25.35}}));
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end BS15;
 // class BS15
 // parameter Integer booleanConstant1.nout(min = 1) = 1 "Number of Boolean outputs";

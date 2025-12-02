@@ -1,7 +1,6 @@
 // name:     BM19 -  Product component
 // keywords: Product
 // status:   correct
-// cflags: -d=-newInst
 //
 // Testing instantiation of the Math.Product component.
 //
@@ -982,6 +981,7 @@ model BM19
 equation
   connect(constant2.outPort,product1.inPort2) annotation(Line(visible=true,points={{-35.38,-4.76},{-1.32,8.01}}));
   connect(constant1.outPort,product1.inPort1) annotation(Line(visible=true,points={{-31.43,30.52},{-4.67,22.0},{-2.54,20.79}}));
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end BM19;
 
 // class BM19

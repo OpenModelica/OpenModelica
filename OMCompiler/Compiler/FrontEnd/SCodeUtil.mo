@@ -51,19 +51,16 @@ constant SourceInfo dummyInfo = SOURCEINFO("", false, 0, 0, 0, 0, 0.0);
 
 function stripSubmod
   "Removes all submodifiers from the Mod."
-  input SCode.Mod inMod;
-  output SCode.Mod outMod;
+  input output SCode.Mod mod;
 algorithm
-  outMod := match(inMod)
-    local
-      SCode.Final fp;
-      SCode.Each ep;
-      Option<Absyn.Exp> binding;
-      SourceInfo info;
+  () := match mod
+    case SCode.MOD()
+      algorithm
+        mod.subModLst := {};
+      then
+        ();
 
-    case SCode.MOD(fp, ep, _, binding, info)
-      then SCode.MOD(fp, ep, {}, binding, info);
-    else inMod;
+    else ();
   end match;
 end stripSubmod;
 
@@ -329,6 +326,18 @@ algorithm
 
   end match;
 end elementInfo;
+
+function setElementName
+  input output SCode.Element e;
+  input String name;
+algorithm
+  e := match e
+    case SCode.CLASS()      algorithm e.name := name; then e;
+    case SCode.COMPONENT()  algorithm e.name := name; then e;
+    case SCode.DEFINEUNIT() algorithm e.name := name; then e;
+    else e;
+  end match;
+end setElementName;
 
 function elementName ""
   input SCode.Element e;
@@ -1088,6 +1097,11 @@ algorithm
       then
         true;
 
+    case (SCode.BREAK_COMPONENT(), SCode.BREAK_COMPONENT()) then true;
+
+    case (SCode.BREAK_CONNECT(), SCode.BREAK_CONNECT())
+      then AbsynUtil.crefEqual(mod1.lhs, mod2.lhs) and AbsynUtil.crefEqual(mod1.rhs, mod2.lhs);
+
     else false;
 
   end matchcontinue;
@@ -1651,7 +1665,7 @@ algorithm
 
     case SCode.EQ_IF()
       algorithm
-        outArg := List.foldList1(inEquation.thenBranch, foldEquations, inFunc, outArg);
+        outArg := List.foldList(inEquation.thenBranch, function foldEquations(inFunc = inFunc), outArg);
       then
         List.fold1(inEquation.elseBranch, foldEquations, inFunc, outArg);
 
@@ -1694,7 +1708,7 @@ algorithm
     case SCode.EQ_IF()
       algorithm
         outArg := List.fold(inEquation.condition, inFunc, outArg);
-        outArg := List.foldList1(inEquation.thenBranch, foldEquationsExps, inFunc, outArg);
+        outArg := List.foldList(inEquation.thenBranch, function foldEquationsExps(inFunc = inFunc), outArg);
       then
         List.fold1(inEquation.elseBranch, foldEquationsExps, inFunc, outArg);
 
@@ -2595,7 +2609,7 @@ public function prependSubModToMod
 algorithm
   mod := match mod
     case SCode.NOMOD()
-      then SCode.MOD(SCode.NOT_FINAL(), SCode.NOT_EACH(), {subMod}, NONE(), Error.dummyInfo);
+      then SCode.MOD(SCode.NOT_FINAL(), SCode.NOT_EACH(), {subMod}, NONE(), NONE(), Error.dummyInfo);
     case SCode.MOD()
       algorithm
         mod.subModLst := subMod :: mod.subModLst;
@@ -3271,6 +3285,21 @@ algorithm
   end match;
 end lookupBooleanAnnotation;
 
+public function lookupBooleanAnnotationMod
+  input SCode.Mod mod;
+  output Option<Boolean> value;
+protected
+  Option<Absyn.Exp> binding;
+  Boolean bval;
+algorithm
+  binding := getModifierBinding(mod);
+
+  value := match binding
+    case SOME(Absyn.Exp.BOOL(value = bval)) then SOME(bval);
+    else NONE();
+  end match;
+end lookupBooleanAnnotationMod;
+
 public function lookupAnnotations
   "Returns a list of modifiers with the given name found in the annotation."
   input SCode.Annotation ann;
@@ -3347,6 +3376,11 @@ algorithm
   end match;
 end hasBooleanNamedAnnotationInComponent;
 
+public function commentAnnotation
+  input SCode.Comment cmt;
+  output Option<SCode.Annotation> ann = cmt.annotation_;
+end commentAnnotation;
+
 public function optCommentAnnotation
   input Option<SCode.Comment> cmt;
   output Option<SCode.Annotation> ann;
@@ -3404,17 +3438,49 @@ algorithm
   end match;
 end hasBooleanNamedAnnotation;
 
+public function optCommentHasBooleanNamedAnnotationFalse
+"check if the named annotation is present and has value false"
+  input Option<SCode.Comment> comm;
+  input String annotationName;
+  output Boolean outB;
+algorithm
+  outB := match (comm,annotationName)
+    local
+      SCode.Annotation ann;
+    case (SOME(SCode.COMMENT(annotation_=SOME(ann))),_)
+      then hasBooleanNamedAnnotationFalse(ann, annotationName);
+    else false;
+  end match;
+end optCommentHasBooleanNamedAnnotationFalse;
+
+public function hasBooleanNamedAnnotationFalse
+  "Checks if the given annotation contains an entry with the given name with the
+   value False."
+  input SCode.Annotation inAnnotation;
+  input String inName;
+  output Boolean outHasEntry;
+protected
+  Option<Absyn.Exp> binding;
+algorithm
+  binding := lookupAnnotationBinding(inAnnotation, inName);
+
+  outHasEntry := match binding
+    case SOME(Absyn.BOOL(value = false)) then true;
+  else false;
+  end match;
+end hasBooleanNamedAnnotationFalse;
+
 public function getEvaluateAnnotation
   "Looks up the Evaluate annotation and returns the value if the annotation
    exists and has a boolean value, otherwise NONE()."
-  input Option<SCode.Comment> cmt;
+  input SCode.Comment cmt;
   output Option<Boolean> value;
 protected
   SCode.Annotation ann;
   Option<Absyn.Exp> binding;
 algorithm
   value := match cmt
-    case SOME(SCode.COMMENT(annotation_ = SOME(ann)))
+    case SCode.COMMENT(annotation_ = SOME(ann))
       then lookupBooleanAnnotation(ann, "Evaluate");
     else NONE();
   end match;
@@ -3456,25 +3522,22 @@ algorithm
   outComment := match(inAnnotation, inComment)
     local
       Option<String> cmt;
-      SCode.Final fp;
-      SCode.Each ep;
-      list<SCode.SubMod> mods1, mods2;
-      Option<Absyn.Exp> b;
-      SourceInfo info;
+      list<SCode.SubMod> mods1;
+      SCode.Mod mod;
 
     case (_, SCode.COMMENT(NONE(), cmt))
       then SCode.COMMENT(SOME(inAnnotation), cmt);
 
     case (SCode.ANNOTATION(modification = SCode.MOD(subModLst = mods1)),
-          SCode.COMMENT(SOME(SCode.ANNOTATION(SCode.MOD(fp, ep, mods2, b, info))), cmt))
+          SCode.COMMENT(SOME(SCode.ANNOTATION(modification = mod as SCode.MOD())), cmt))
       algorithm
         if not check_replace then
-          mods2 := listAppend(mods1, mods2);
+          mod.subModLst := listAppend(mods1, mod.subModLst);
         else
-          mods2 := listAppend(mods1, List.filterOnTrue(mods2, function isNotElem(mods = mods1)));
+          mod.subModLst := listAppend(mods1, List.filterOnTrue(mod.subModLst, function isNotElem(mods = mods1)));
         end if;
       then
-        SCode.COMMENT(SOME(SCode.ANNOTATION(SCode.MOD(fp, ep, mods2, b, info))), cmt);
+        SCode.COMMENT(SOME(SCode.ANNOTATION(mod)), cmt);
 
   end match;
 end appendAnnotationToComment;
@@ -3490,6 +3553,8 @@ algorithm
 
     case SCode.MOD(info = info) then info;
     case SCode.REDECL(element = el) then elementInfo(el);
+    case SCode.BREAK_COMPONENT() then inMod.info;
+    case SCode.BREAK_CONNECT() then inMod.info;
     else AbsynUtil.dummyInfo;
   end match;
 end getModifierInfo;
@@ -4254,6 +4319,37 @@ algorithm
   end match;
 end isRedeclareSubMod;
 
+public function isBreakSubMod
+  input SCode.SubMod subMod;
+  output Boolean isBreak;
+algorithm
+  isBreak := match subMod.mod
+    case SCode.Mod.BREAK_COMPONENT() then true;
+    case SCode.Mod.BREAK_CONNECT() then true;
+    else false;
+  end match;
+end isBreakSubMod;
+
+public function isBreakComponentSubMod
+  input SCode.SubMod subMod;
+  output Boolean isBreak;
+algorithm
+  isBreak := match subMod
+    case SCode.NAMEMOD(mod = SCode.Mod.BREAK_COMPONENT()) then true;
+    else false;
+  end match;
+end isBreakComponentSubMod;
+
+public function isBreakConnectSubMod
+  input SCode.SubMod subMod;
+  output Boolean isBreak;
+algorithm
+  isBreak := match subMod
+    case SCode.NAMEMOD(mod = SCode.Mod.BREAK_CONNECT()) then true;
+    else false;
+  end match;
+end isBreakConnectSubMod;
+
 public function componentMod
   input SCode.Element inElement;
   output SCode.Mod outMod;
@@ -4724,12 +4820,13 @@ algorithm
       Option<Absyn.Exp> b1, b2, b;
       SourceInfo i1, i2;
       SCode.Mod m;
+      Option<String> cmt;
 
     case (_, SCode.NOMOD()) then inNewMod;
     case (SCode.NOMOD(), _) then inOldMod;
     case (SCode.REDECL(), _) then inNewMod;
 
-    case (SCode.MOD(f1, e1, sl1, b1, i1),
+    case (SCode.MOD(f1, e1, sl1, b1, cmt, i1),
           SCode.MOD(f2, e2, sl2, b2, _))
       equation
         b = mergeBindings(b1, b2);
@@ -4739,7 +4836,7 @@ algorithm
         elseif referenceEq(b, b2) and referenceEq(sl, sl2) and valueEq(f1, f2) and valueEq(e1, e2) then
           m = inOldMod;
         else
-          m = SCode.MOD(f1, e1, sl, b, i1);
+          m = SCode.MOD(f1, e1, sl, b, cmt, i1);
         end if;
       then
         m;
@@ -5690,22 +5787,20 @@ public function mergeSCodeMods
 algorithm
   outMod := match (inModOuter, inModInner)
     local
-      SCode.Final f1, f2;
-      SCode.Each e1, e2;
-      list<SCode.SubMod> subMods1, subMods2;
-      Option<Absyn.Exp> b1, b2;
-      SourceInfo info;
+      list<SCode.SubMod> subMods;
+      Option<Absyn.Exp> binding;
 
     case (SCode.NOMOD(), _) then inModInner;
     case (_, SCode.NOMOD()) then inModOuter;
 
-    case (SCode.MOD(f1, e1, subMods1, b1, info),
-          SCode.MOD(_, _, subMods2, b2, _))
+    case (SCode.MOD(),
+          SCode.MOD())
       equation
-        subMods2 = listAppend(subMods1, subMods2);
-        b1 = if isSome(b1) then b1 else b2;
+        subMods = listAppend(inModOuter.subModLst, inModInner.subModLst);
+        binding = if isSome(inModOuter.binding) then inModOuter.binding else inModInner.binding;
       then
-        SCode.MOD(f1, e1, subMods2, b1, info);
+        SCode.MOD(inModOuter.finalPrefix, inModOuter.eachPrefix, subMods,
+          binding, inModOuter.comment, inModOuter.info);
 
   end match;
 end mergeSCodeMods;

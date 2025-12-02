@@ -1,7 +1,6 @@
 // name: DumpFlatModel1
 // keywords:
 // status: correct
-// cflags: -d=newInst --dumpFlatModel
 //
 
 model A
@@ -18,6 +17,7 @@ model DumpFlatModel1
   A a2(x = {4, 5, 6});
 algorithm
   a1.x := ones(size(a1.x, 1));
+  annotation(__OpenModelica_commandLineOptions="--dumpFlatModel");
 end DumpFlatModel1;
 
 // Result:

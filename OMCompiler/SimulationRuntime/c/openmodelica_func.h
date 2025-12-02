@@ -165,8 +165,9 @@ struct OpenModelicaGeneratedFunctionCallbacks {
   * 1: global homotopy approach (equidistant lambda steps)
   * 2: new global homotopy approach (adaptive lambda steps)
   * 3: new local homotopy approach (adaptive lambda steps)
+  * 4: no homotopy
   */
-  int useHomotopy;
+  HOMOTOPY_METHOD homotopyMethod;
 
   /*! \fn functionInitialEquations_lambda0
   *
@@ -190,7 +191,6 @@ struct OpenModelicaGeneratedFunctionCallbacks {
   *
   *  This function calculates bound parameters that depend on other parameters,
   *  e.g. parameter Real n=1/m;
-  *  obsolete: bound_parameters
   *
   *  \param [ref] [data]
   */
@@ -261,22 +261,22 @@ struct OpenModelicaGeneratedFunctionCallbacks {
   * Return-value 0: jac is present
   * Return-value 1: jac is not present
   */
-  int (*initialAnalyticJacobianA)(DATA* data, threadData_t *threadData, ANALYTIC_JACOBIAN* thisJacobian);
-  int (*initialAnalyticJacobianB)(DATA* data, threadData_t *threadData, ANALYTIC_JACOBIAN* thisJacobian);
-  int (*initialAnalyticJacobianC)(DATA* data, threadData_t *threadData, ANALYTIC_JACOBIAN* thisJacobian);
-  int (*initialAnalyticJacobianD)(DATA* data, threadData_t *threadData, ANALYTIC_JACOBIAN* thisJacobian);
-  int (*initialAnalyticJacobianF)(DATA* data, threadData_t *threadData, ANALYTIC_JACOBIAN* thisJacobian);
-  int (*initialAnalyticJacobianH)(DATA* data, threadData_t *threadData, ANALYTIC_JACOBIAN* thisJacobian);
+  initialAnalyticalJacobian_func_ptr initialAnalyticJacobianA;
+  initialAnalyticalJacobian_func_ptr initialAnalyticJacobianB;
+  initialAnalyticalJacobian_func_ptr initialAnalyticJacobianC;
+  initialAnalyticalJacobian_func_ptr initialAnalyticJacobianD;
+  initialAnalyticalJacobian_func_ptr initialAnalyticJacobianF;
+  initialAnalyticalJacobian_func_ptr initialAnalyticJacobianH;
 
   /*
   * These functions calculate specific jacobian column.
   */
-  analyticalJacobianColumn_func_ptr functionJacA_column;
-  analyticalJacobianColumn_func_ptr functionJacB_column;
-  analyticalJacobianColumn_func_ptr functionJacC_column;
-  analyticalJacobianColumn_func_ptr functionJacD_column;
-  analyticalJacobianColumn_func_ptr functionJacF_column;
-  analyticalJacobianColumn_func_ptr functionJacH_column;
+  jacobianColumn_func_ptr functionJacA_column;
+  jacobianColumn_func_ptr functionJacB_column;
+  jacobianColumn_func_ptr functionJacC_column;
+  jacobianColumn_func_ptr functionJacD_column;
+  jacobianColumn_func_ptr functionJacF_column;
+  jacobianColumn_func_ptr functionJacH_column;
   /*#endif*/
 
   const char *(*linear_model_frame)(void); /* printf format-string with holes for 6 strings */
@@ -295,6 +295,11 @@ struct OpenModelicaGeneratedFunctionCallbacks {
   * a dummy function is added which return -1.
   */
   int (*lagrange)(DATA* data, modelica_real** res, short *, short *);
+
+  /*
+  * This function fills a buffer with all set control variable indices.
+  */
+  int (*getInputVarIndicesInOptimization)(DATA* data, int* input_var_indices);
 
   /*
   * This function is used only for optimization purpose
@@ -369,15 +374,15 @@ struct OpenModelicaGeneratedFunctionCallbacks {
   /*
   * FMU continuous partial derivative functions
   */
-  int (*initialPartialFMIDER)(void* data, threadData_t *threadData, ANALYTIC_JACOBIAN* thisJacobian);
-  analyticalJacobianColumn_func_ptr functionJacFMIDER_column;
+  initialAnalyticalJacobian_func_ptr initialPartialFMIDER;
+  jacobianColumn_func_ptr functionJacFMIDER_column;
   const int INDEX_JAC_FMIDER;
 
   /*
   * FMU partial derivative functions for initilization DAE
   */
-  int (*initialPartialFMIDERINIT)(void* data, threadData_t *threadData, ANALYTIC_JACOBIAN* thisJacobian);
-  analyticalJacobianColumn_func_ptr functionJacFMIDERINIT_column;
+  initialAnalyticalJacobian_func_ptr initialPartialFMIDERINIT;
+  jacobianColumn_func_ptr functionJacFMIDERINIT_column;
   const int INDEX_JAC_FMIDERINIT;
 };
 

@@ -1,7 +1,6 @@
 // name: CevalFuncArray4
 // keywords:
 // status: correct
-// cflags: -d=newInst
 //
 // Checks that the function evaluation can handle outputs whose type depends on
 // the input.
@@ -40,9 +39,9 @@ end CevalFuncArray4;
 // class CevalFuncArray4
 //   constant Real x[1] = 0.0;
 //   constant Real x[2] = 0.05;
-//   constant Real x[3] = 0.15;
+//   constant Real x[3] = 0.15000000000000002;
 //   constant Real x[4] = 0.25;
-//   constant Real x[5] = 0.35;
+//   constant Real x[5] = 0.35000000000000003;
 //   constant Real x[6] = 0.45;
 //   constant Real x[7] = 0.55;
 //   constant Real x[8] = 0.65;

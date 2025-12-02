@@ -1,7 +1,6 @@
 // name:     Modification14
 // keywords: modification
 // status:   correct
-// cflags: -d=-newInst
 //
 // This file tests modification precedence.
 // This is currently(2008-03-05) not working.
@@ -19,6 +18,7 @@ model Modification6
   M m1(redeclare model Foo=myFoo(q=3.0), f(q=4.0,z=3));
   M m2(f(q=4.0), redeclare model Foo=myFoo(q=3.0));
   M m3(redeclare model Foo=myFoo(q=333));
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Modification6;
 
 // Instantiating element: m1

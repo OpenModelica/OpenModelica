@@ -23,7 +23,7 @@ y := getComponentsTest(Modelica.Thermal.HeatTransfer.Examples.TwoMasses); getErr
 //     innerOuter = "",
 //     inputOutput = "",
 //     dimensions = {}
-// end OpenModelica.Scripting.getComponentsTest.Component;,record OpenModelica.Scripting.getComponentsTest.Component
+// end OpenModelica.Scripting.getComponentsTest.Component;, record OpenModelica.Scripting.getComponentsTest.Component
 //     className = ".Modelica.Thermal.HeatTransfer.Components.HeatCapacitor",
 //     name = "mass1",
 //     comment = "",
@@ -36,7 +36,7 @@ y := getComponentsTest(Modelica.Thermal.HeatTransfer.Examples.TwoMasses); getErr
 //     innerOuter = "",
 //     inputOutput = "",
 //     dimensions = {}
-// end OpenModelica.Scripting.getComponentsTest.Component;,record OpenModelica.Scripting.getComponentsTest.Component
+// end OpenModelica.Scripting.getComponentsTest.Component;, record OpenModelica.Scripting.getComponentsTest.Component
 //     className = ".Modelica.Thermal.HeatTransfer.Components.HeatCapacitor",
 //     name = "mass2",
 //     comment = "",
@@ -49,7 +49,7 @@ y := getComponentsTest(Modelica.Thermal.HeatTransfer.Examples.TwoMasses); getErr
 //     innerOuter = "",
 //     inputOutput = "",
 //     dimensions = {}
-// end OpenModelica.Scripting.getComponentsTest.Component;,record OpenModelica.Scripting.getComponentsTest.Component
+// end OpenModelica.Scripting.getComponentsTest.Component;, record OpenModelica.Scripting.getComponentsTest.Component
 //     className = ".Modelica.Thermal.HeatTransfer.Components.ThermalConductor",
 //     name = "conduction",
 //     comment = "",
@@ -62,7 +62,7 @@ y := getComponentsTest(Modelica.Thermal.HeatTransfer.Examples.TwoMasses); getErr
 //     innerOuter = "",
 //     inputOutput = "",
 //     dimensions = {}
-// end OpenModelica.Scripting.getComponentsTest.Component;,record OpenModelica.Scripting.getComponentsTest.Component
+// end OpenModelica.Scripting.getComponentsTest.Component;, record OpenModelica.Scripting.getComponentsTest.Component
 //     className = ".Modelica.Thermal.HeatTransfer.Celsius.TemperatureSensor",
 //     name = "Tsensor1",
 //     comment = "",
@@ -75,7 +75,7 @@ y := getComponentsTest(Modelica.Thermal.HeatTransfer.Examples.TwoMasses); getErr
 //     innerOuter = "",
 //     inputOutput = "",
 //     dimensions = {}
-// end OpenModelica.Scripting.getComponentsTest.Component;,record OpenModelica.Scripting.getComponentsTest.Component
+// end OpenModelica.Scripting.getComponentsTest.Component;, record OpenModelica.Scripting.getComponentsTest.Component
 //     className = ".Modelica.Thermal.HeatTransfer.Celsius.TemperatureSensor",
 //     name = "Tsensor2",
 //     comment = "",

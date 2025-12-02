@@ -13,7 +13,7 @@ loadString("package p1
   protected
   package p2
     model m1 end m1;
-  end p2;  
+  end p2;
 end p1;");
 getErrorString();
 
@@ -54,7 +54,7 @@ getErrorString();
 //   protected
 //   package p2
 //     model m1 end m1;
-//   end p2;  
+//   end p2;
 // end p1;")
 // true
 // Evaluating: getErrorString()

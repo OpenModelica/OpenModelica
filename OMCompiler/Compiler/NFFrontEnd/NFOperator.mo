@@ -158,24 +158,30 @@ public
   protected
     MathClassification mc = getMathClassification(operator);
     SizeClassification sc;
-    list<Integer> lst;
-    Integer i2;
+    list<tuple<Integer, Type>> lst;
+    tuple<Integer, Type> min_, max_;
     Type ty;
+    function tplLt
+      input tuple<Integer, Type> tpl1;
+      input tuple<Integer, Type> tpl2;
+      output Boolean b = Util.tuple21(tpl1) < Util.tuple21(tpl2);
+    end tplLt;
   algorithm
-    lst := list(typeRestriction(i) for i in types);
-    i2 := List.first(lst);
-    if List.all(lst, function intEq(i2=i2)) then
-      ty := List.first(types);
-      sc := match i2
-        case 0 then SizeClassification.SCALAR;
-        case 1 then SizeClassification.ELEMENT_WISE;
-        else getSizeClassification(operator);
-      end match;
-    else
-      Error.assertion(false, getInstanceName() + " failed because the multary arguments have incompatible sizes: "
-       + List.toString(types, Type.toString), sourceInfo());
-      fail();
-    end if;
+    lst := list((typeRestriction(t), t) for t in types);
+    min_ := List.minElement(lst, tplLt);
+    max_ := List.maxElement(lst, tplLt);
+    (sc, ty) := match (min_, max_)
+      case ((0, _), (0, ty))  then (SizeClassification.SCALAR, ty);
+      case ((0, _), (_ ,ty))  then (SizeClassification.SCALAR_ARRAY, ty);
+      case ((1, _), (1, ty))  then (SizeClassification.ELEMENT_WISE, ty);
+      case ((1, _), (2, ty))  then (SizeClassification.VECTOR_MATRIX, ty);
+      case ((2, _), (2, ty))  then (SizeClassification.ELEMENT_WISE, ty);
+      case ((3, _), (3, ty))  then (SizeClassification.ELEMENT_WISE, ty);
+      else algorithm
+        Error.assertion(false, getInstanceName() + " failed because the multary arguments have incompatible sizes: "
+        + List.toString(types, Type.toString), sourceInfo());
+      then fail();
+    end match;
     operator := fromClassification((mc, sc), ty);
   end repairMultary;
 
@@ -231,6 +237,16 @@ public
                         else false;
     end match;
   end isRelational;
+
+  function isScalarProduct
+    input Operator operator;
+    output Boolean b;
+  algorithm
+    b := match operator.op
+      case Op.SCALAR_PRODUCT then true;
+      else false;
+    end match;
+  end isScalarProduct;
 
   function fromAbsyn
     input Absyn.Operator inOperator;
@@ -339,6 +355,8 @@ public
       case Op.MUL_VECTOR_MATRIX then DAE.MUL_MATRIX_PRODUCT(ty);
       case Op.MUL_MATRIX_VECTOR then DAE.MUL_MATRIX_PRODUCT(ty);
       case Op.SCALAR_PRODUCT    then DAE.MUL_SCALAR_PRODUCT(ty);
+      case Op.ADD_EW            then DAE.ADD_ARR(ty);
+      case Op.SUB_EW            then DAE.SUB_ARR(ty);
       case Op.MATRIX_PRODUCT    then DAE.MUL_MATRIX_PRODUCT(ty);
       case Op.DIV_SCALAR_ARRAY  then DAE.DIV_SCALAR_ARRAY(ty);
       case Op.DIV_ARRAY_SCALAR  then DAE.DIV_ARRAY_SCALAR(ty);
@@ -772,6 +790,13 @@ public
     end match;
   end classify;
 
+  function classifyAddition
+    "used to create an addition of the resulting type.
+    Note: not to be used for logical or relations"
+    input Operator op;
+    output SizeClassification sz = if Type.isScalar(op.ty) then SizeClassification.SCALAR else SizeClassification.ELEMENT_WISE;
+  end classifyAddition;
+
   function fromClassification
     "Only works for non-logical operators!"
     input Classification cl "mathematical and size classification";
@@ -794,7 +819,6 @@ public
       case (MathClassification.MULTIPLICATION,  SizeClassification.ELEMENT_WISE)            then Op.MUL_EW;
       case (MathClassification.DIVISION,        SizeClassification.ELEMENT_WISE)            then Op.DIV_EW;
       case (MathClassification.POWER,           SizeClassification.ELEMENT_WISE)            then Op.POW_EW;
-      case (MathClassification.MULTIPLICATION,  SizeClassification.ARRAY_SCALAR)            then Op.MUL_ARRAY_SCALAR;
 
       case (MathClassification.ADDITION,        SizeClassification.ARRAY_SCALAR)            then Op.ADD_ARRAY_SCALAR;
       case (MathClassification.SUBTRACTION,     SizeClassification.ARRAY_SCALAR)            then Op.SUB_ARRAY_SCALAR;
@@ -808,6 +832,8 @@ public
       case (MathClassification.DIVISION,        SizeClassification.SCALAR_ARRAY)            then Op.DIV_SCALAR_ARRAY;
       case (MathClassification.POWER,           SizeClassification.SCALAR_ARRAY)            then Op.POW_SCALAR_ARRAY;
 
+      case (MathClassification.ADDITION,        SizeClassification.MATRIX)                  then Op.ADD_EW;
+      case (MathClassification.SUBTRACTION,     SizeClassification.MATRIX)                  then Op.SUB_EW;
       case (MathClassification.POWER,           SizeClassification.MATRIX)                  then Op.POW_MATRIX;
       case (MathClassification.MULTIPLICATION,  SizeClassification.MATRIX)                  then Op.MATRIX_PRODUCT;
       case (MathClassification.MULTIPLICATION,  SizeClassification.VECTOR_MATRIX)           then Op.MUL_VECTOR_MATRIX;
@@ -832,6 +858,19 @@ public
   algorithm
     (_, scl) := classify(op);
   end getSizeClassification;
+
+  function combineSizeClassification
+    input SizeClassification scl1;
+    input SizeClassification scl2;
+    output SizeClassification scl;
+  algorithm
+    scl := match (scl1, scl2)
+      // Todo: more cases?
+      case (SizeClassification.ELEMENT_WISE, SizeClassification.SCALAR) then SizeClassification.ARRAY_SCALAR;
+      case (SizeClassification.SCALAR, SizeClassification.ELEMENT_WISE) then SizeClassification.SCALAR_ARRAY;
+      else scl1;
+    end match;
+  end combineSizeClassification;
 
   function isDashClassification
     input MathClassification mcl;
@@ -892,18 +931,34 @@ public
     end match;
   end isSoftCommutative;
 
-  function isRepetition
+  function repetition
+    input Operator operator;
+    output tuple<Boolean, Boolean> b;
+  algorithm
+    b := match operator.op
+      case Op.ADD_SCALAR_ARRAY  then (true, false);
+      case Op.ADD_ARRAY_SCALAR  then (false, true);
+      case Op.MUL_SCALAR_ARRAY  then (true, false);
+      case Op.MUL_ARRAY_SCALAR  then (false, true);
+      case Op.MUL_VECTOR_MATRIX then (true, true);
+      case Op.MUL_MATRIX_VECTOR then (true, true);
+      case Op.MATRIX_PRODUCT    then (true, true);
+                                else (false, false);
+    end match;
+  end repetition;
+
+  function reduction
     input Operator operator;
     output Boolean b;
   algorithm
     b := match operator.op
-      case Op.ADD_SCALAR_ARRAY  then true;
-      case Op.ADD_ARRAY_SCALAR  then true;
-      case Op.MUL_SCALAR_ARRAY  then true;
-      case Op.MUL_ARRAY_SCALAR  then true;
+      case Op.MUL_MATRIX_VECTOR then true;
+      case Op.MUL_VECTOR_MATRIX then true;
+      case Op.MATRIX_PRODUCT    then true;
+      case Op.SCALAR_PRODUCT    then true;
                                 else false;
     end match;
-  end isRepetition;
+  end reduction;
 
   function isCombineable
     input Operator op1;
@@ -916,6 +971,9 @@ public
     (mcl1, scl1) := classify(op1);
     (mcl2, scl2) := classify(op2);
     b := isCombineableMath(mcl1, mcl2) and isCombineableSize(scl1, scl2);
+    if b then
+      b := not (isScalarProduct(op1) or isScalarProduct(op2));
+    end if;
   end isCombineable;
 
   function isCombineableMath

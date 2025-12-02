@@ -34,7 +34,7 @@
 
 #include "Visualization.h"
 
-#if (QT_VERSION < QT_VERSION_CHECK(5, 2, 0))
+#if QT_VERSION < QT_VERSION_CHECK(5, 2, 0)
 #include <QGLWidget>
 #endif
 
@@ -1686,13 +1686,13 @@ osg::Image* UpdateVisitor::convertImage(const QImage& iImage)
 {
   osg::Image* osgImage = new osg::Image();
   if (!iImage.isNull()) {
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 2, 0))
+#if QT_VERSION >= QT_VERSION_CHECK(5, 2, 0)
     QImage glImage = iImage.convertToFormat(QImage::Format_RGBA8888_Premultiplied);
 #else
     QImage glImage = QGLWidget::convertToGLFormat(iImage);
 #endif
     if (!glImage.isNull()) {
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 10, 0))
+#if QT_VERSION >= QT_VERSION_CHECK(5, 10, 0)
       int bytesSize = glImage.sizeInBytes();
 #else // QT_VERSION_CHECK
       int bytesSize = glImage.byteCount();

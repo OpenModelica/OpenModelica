@@ -401,7 +401,7 @@ protected
 algorithm
   name := Expression.reductionIterName(iter);
   cr := ComponentReference.makeCrefIdent(name,DAE.T_INTEGER_DEFAULT,{});
-  backendVar := BackendDAE.VAR(cr, BackendDAE.VARIABLE(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_INTEGER_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), NONE(), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), false, false);
+  backendVar := BackendDAE.VAR(cr, BackendDAE.VARIABLE(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_INTEGER_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), NONE(), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), false, false, false);
 end makeIterVariable;
 
 protected function checkEquationSize"author: Frenkel TUD 2010-12
@@ -593,6 +593,18 @@ algorithm
   BackendDAE.EQSYSTEM(orderedVars=vars) := syst;
   osyst := setEqSystVars(syst, BackendVariable.addVars(varlst, vars));
 end addVarsToEqSystem;
+
+public function getSimIteratorSize
+  input list<BackendDAE.SimIterator> iters;
+  output Integer size = 1;
+protected
+  Integer local_size;
+algorithm
+  for iter in iters loop
+    local_size := match iter case BackendDAE.SIM_ITERATOR_RANGE() then iter.non_resizable_size; case BackendDAE.SIM_ITERATOR_LIST() then iter.size; end match;
+    size := size * local_size;
+  end for;
+end getSimIteratorSize;
 
 public function numberOfZeroCrossings "author: lochel"
   input BackendDAE.BackendDAE inBackendDAE;
@@ -1174,7 +1186,7 @@ algorithm
   tearingSelect := lookupTearingSelectMember(name);
 
   if isNone(tearingSelect) then
-    Error.addSourceMessage(Error.UNKNOWN_ANNOTATION_VALUE, {Dump.printExpStr(val)}, info);
+    Error.addSourceMessage(Error.UNKNOWN_ANNOTATION_VALUE, {Dump.printExpStr(val), "__OpenModelica_tearingSelect"}, info);
   end if;
 end setTearingSelectAttribute;
 
@@ -1190,12 +1202,12 @@ algorithm
              Absyn.ComponentRef.CREF_IDENT(name = name, subscripts = {})))
       then name;
 
-    // Single name without the TearingSelect prefix is deprecated but still accepted.
+    // Single name without the TearingSelect prefix is deprecated and no longer accepted.
     case Absyn.Exp.CREF(componentRef = Absyn.ComponentRef.CREF_IDENT(name = name, subscripts = {}))
       algorithm
         Error.addSourceMessage(Error.DEPRECATED_EXPRESSION, {name, "TearingSelect." + name}, info);
       then
-        name;
+        "";
 
     else "";
   end match;
@@ -1375,7 +1387,7 @@ algorithm
     if oMark[eqn] == 0 then // "Mark an unmarked node/equation"
       arrayUpdate(oMark, eqn, 1);
       for i in m[eqn] loop
-        if i>0 and i<=len then
+        if i>0 and i <= len then
           // We already did bounds checking above
           j := Dangerous.arrayGetNoBoundsChecking(ass1, i);
           positiveAndUnmarked := (if j>0 then arrayGet(oMark, j) == 0 else false);
@@ -1905,8 +1917,12 @@ algorithm
         newVar := BackendVariable.setVarDirection(newVar, DAE.BIDIR());
         newVars := BackendVariable.addVar(newVar, newVars);
 
-        // update output to ordinary variable
-        v := BackendVariable.setVarKind(v, BackendDAE.VARIABLE());
+        /*fix issue https://github.com/OpenModelica/OpenModelica/issues/13342
+         *do not change the varkind of the output variable, except if var = BackendDAE.STATE()
+        */
+        if BackendVariable.isStateVar(v) then
+          v := BackendVariable.setVarKind(v, BackendDAE.VARIABLE());
+        end if;
         v := BackendVariable.removeFixedAttribute(v);
         v := BackendVariable.removeStartAttribute(v);
         newVars := BackendVariable.addVar(v, newVars);
@@ -2376,6 +2392,7 @@ algorithm
   outLst := match(inLst, inIndexType)
     // transform to absolute indexes
     case (_, BackendDAE.ABSOLUTE())
+      guard not AvlSetInt.isEmpty(inLst) and AvlSetInt.smallestKey(inLst) < 0
       algorithm
         outLst := AvlSetInt.EMPTY();
         for key in AvlSetInt.listKeys(inLst) loop
@@ -2717,17 +2734,21 @@ algorithm
           Discrete output variables that do not occur get computed by pre().
           Ticket #5659
         */
-        if indexTypeSolvable(inIndexType) then
-          crefLst := CheckModel.algorithmStatementListOutputs(statementLst, DAE.EXPAND()); // expand as we're in an algorithm
-          for cr in crefLst loop
-            try
-              (varslst, p) := BackendVariable.getVar(cr, vars);
-              res := adjacencyRowExp1Discrete(varslst, p, res);
-            else
-              /* Nothing to do, BackendVariable.getVar fails for $START, $PRE, time etc. */
-            end try;
-          end for;
-        end if;
+        crefLst := CheckModel.algorithmStatementListOutputs(statementLst, DAE.EXPAND()); // expand as we're in an algorithm
+        for cr in crefLst loop
+          try
+            (varslst, p) := BackendVariable.getVar(cr, vars);
+            res := adjacencyRowExp1DiscreteOrArray(varslst, p, res);
+          else
+            /* Nothing to do, BackendVariable.getVar fails for $START, $PRE, time etc. */
+          end try;
+          try
+            (varslst, p) := BackendVariable.getVar(ComponentReference.crefPrefixStart(cr), vars);
+            res := adjacencyRowExp1DiscreteOrArray(varslst, p, res);
+          else
+            /* Nothing to do, BackendVariable.getVar fails for $START, $PRE, time etc. */
+          end try;
+        end for;
       then
         (res,size);
 
@@ -3607,7 +3628,7 @@ algorithm
   end match;
 end adjacencyRowExp1;
 
-protected function adjacencyRowExp1Discrete
+protected function adjacencyRowExp1DiscreteOrArray
   "Adds an adjacency matrix entry for all variables in the inVarLst, if they are discrete."
   input list<BackendDAE.Var> inVarLst;
   input list<Integer> inIntegerLst;
@@ -3621,14 +3642,14 @@ algorithm
        AvlSetInt.Tree vars;
        Integer i;
     case ({}, {}) then inVarIndxLst;
-    case (BackendDAE.VAR(varKind = BackendDAE.DISCRETE())::rest, i::irest)
+    case (BackendDAE.VAR()::rest, i::irest)
       equation
         vars = AvlSetInt.add(inVarIndxLst, i);
-      then adjacencyRowExp1Discrete(rest,irest,vars);
+      then adjacencyRowExp1DiscreteOrArray(rest,irest,vars);
     case (_::rest, _::irest)
-      then adjacencyRowExp1Discrete(rest,irest,inVarIndxLst);
+      then adjacencyRowExp1DiscreteOrArray(rest,irest,inVarIndxLst);
   end match;
-end adjacencyRowExp1Discrete;
+end adjacencyRowExp1DiscreteOrArray;
 
 public function traversingadjacencyRowExpFinderwithInput "Helper for statesAndVarsExp"
   input DAE.Exp inExp;
@@ -4300,21 +4321,6 @@ protected function traverseStmts<ArgT> "Author: Frenkel TUD 2012-06
   end FuncExpType;
 
 protected
-  function removeSubscripts
-    "kabdelhak: remove left hand side subscripts
-     (Modelica Specification v3.5 : 11.1.2)
-     Fix: Do not do if it is a scalar variable with all constant subscripts.
-          It leads to a massive number of hash table accesses for big tensors."
-    input output DAE.Exp exp;
-  algorithm
-    exp := match exp
-      case DAE.CREF() guard(not ComponentReference.crefIsScalarWithAllConstSubs(exp.componentRef)) algorithm
-        exp.componentRef := ComponentReference.crefStripSubsExceptModelSubs(exp.componentRef);
-      then exp;
-      else exp;
-    end match;
-  end removeSubscripts;
-
   DAE.Exp e,e2;
   list<DAE.Exp> expl1;
   DAE.ComponentRef cr;
@@ -4333,7 +4339,7 @@ algorithm
           // (Modelica Specification v3.5 : 11.1.2)
           // solves ticket #7832
           extraArg = func(e, extraArg);
-          extraArg = func(removeSubscripts(e2), extraArg);
+          extraArg = func(e2, extraArg);
         then
           extraArg;
 
@@ -4343,7 +4349,7 @@ algorithm
           // (Modelica Specification v3.5 : 11.1.2)
           // solves ticket #7832
           extraArg = func(e, extraArg);
-          extraArg = List.fold(list(removeSubscripts(ex) for ex in expl1),func,extraArg);
+          extraArg = List.fold(expl1,func,extraArg);
         then
           extraArg;
 
@@ -4353,7 +4359,7 @@ algorithm
           // (Modelica Specification v3.5 : 11.1.2)
           // solves ticket #7832
           extraArg = func(e, extraArg);
-          extraArg = func(removeSubscripts(e2), extraArg);
+          extraArg = func(e2, extraArg);
         then
           extraArg;
 
@@ -4571,7 +4577,7 @@ algorithm
             Integer i;
           case(i,_,_) then i;
         end match for adjacencyElemT in adjacencyRowT);
-      eqns := List.deleteMember(eqns,eqn);
+      eqns := List.deleteMemberOnTrue(eqn,eqns,intEq);
       for e in eqns loop
         adjacencyRow := m[e];
         adjacencyRow := list(
@@ -4927,22 +4933,24 @@ algorithm
     // 2. vars occur in all branches: check how they are occur
     // 3. vars occur not in all branches: mark as unsolvable
     case(vars, BackendDAE.IF_EQUATION(conditions=expl,eqnstrue=eqnslst,eqnsfalse=eqnselse),_,_,_)
-      equation
+      algorithm
         //print("Warning: BackendDAEUtil.adjacencyRowEnhanced does not handle if-equations propper!\n");
         // mark all negative because the when condition cannot used to solve a variable
-        lst = List.fold4(expl, adjacencyRowExpEnhanced, vars, mark, rowmark, isInitial, {});
-        _ = List.fold1(lst,markNegativ,rowmark,mark);
-        row1 = adjacencyRowEnhanced1(lst,DAE.RCONST(0.0),DAE.RCONST(0.0),vars,globalKnownVars,mark,rowmark,{},trytosolve,1,shared);
+        lst := List.fold4(expl, adjacencyRowExpEnhanced, vars, mark, rowmark, isInitial, {});
+        _ := List.fold1(lst,markNegativ,rowmark,mark);
+        row1 := adjacencyRowEnhanced1(lst,DAE.RCONST(0.0),DAE.RCONST(0.0),vars,globalKnownVars,mark,rowmark,{},trytosolve,1,shared);
 
-        (row, size) = adjacencyRowEnhancedEqnLst(eqnselse, vars, mark, rowmark, globalKnownVars, trytosolve,shared);
-        lst = List.map(row,Util.tuple31);
+        (row, size) := adjacencyRowEnhancedEqnLst(eqnselse, vars, mark, rowmark, globalKnownVars, trytosolve,shared);
+        lst := List.map(row,Util.tuple31);
 
-        (lst, row, _) = List.fold6(eqnslst, adjacencyRowEnhancedEqnLstIfBranches, vars, mark, rowmark, globalKnownVars, trytosolve, shared, (lst, row, size));
+        for eq in eqnslst loop
+          (lst, row, _) := adjacencyRowEnhancedEqnLstIfBranches(eq, vars, mark, rowmark, globalKnownVars, trytosolve, shared, (lst, row, size));
+        end for;
 
-        lstall = List.map(row, Util.tuple31);
-        (_, lst, _) = List.intersection1OnTrue(lstall, lst, intEq);
-        _ = List.fold1(lst, markNegativ, rowmark, mark);
-        row = listAppend(row1,row);
+        lstall := List.map(row, Util.tuple31);
+        (_, lst, _) := List.intersection1OnTrue(lstall, lst, intEq);
+        _ := List.fold1(lst, markNegativ, rowmark, mark);
+        row := listAppend(row1,row);
       then
         (row,size);
 
@@ -5769,21 +5777,20 @@ end getEqnAndVarsFromInnerEquation;
 
 public function getEqnAndVarsFromInnerEquationLst
   input BackendDAE.InnerEquations innerEquations;
-  output tuple<list<Integer>,list<list<Integer>>,list<BackendDAE.Constraints>> eqnVarConstTpl;
+  output list<Integer> eqns = {};
+  output list<list<Integer>> allVars = {};
+  output list<BackendDAE.Constraints> allConstraints = {};
 protected
   Integer eqn;
-  list<Integer> eqns = {}, vars;
-  list<list<Integer>> allVars = {};
+  list<Integer> vars;
   BackendDAE.Constraints constraints;
-  list<BackendDAE.Constraints> allConstraints = {};
 algorithm
   for innerEq in innerEquations loop
     (eqn,vars,constraints) := getEqnAndVarsFromInnerEquation(innerEq);
     eqns := eqn::eqns;
-    allVars := vars::allVars;
-    allConstraints := constraints::allConstraints;
+    if isPresent(allVars) then allVars := vars::allVars; end if;
+    if isPresent(allConstraints) then allConstraints := constraints::allConstraints; end if;
   end for;
-  eqnVarConstTpl := (eqns,allVars,allConstraints);
 end getEqnAndVarsFromInnerEquationLst;
 
 protected function transformSolvabilityForCasualTearingSet
@@ -7271,7 +7278,7 @@ algorithm
       Option<SCode.Comment> comment;
       DAE.ConnectorType ct;
       DAE.VarInnerOuter io;
-      Boolean unreplaceable, initNonlinear;
+      Boolean unreplaceable, initNonlinear, encrypted;
       String name;
       Option<BackendDAE.Var> v;
       Option<DAE.Exp> tplExp;
@@ -7279,22 +7286,22 @@ algorithm
     case NONE()
     then (NONE(), inTypeA);
 
-    case SOME(BackendDAE.VAR(cref, varKind, varDirection, varParallelism, varType, SOME(e1), tplExp, instdims, source, attr, ts, hideResult, comment, ct, io, unreplaceable, initNonlinear)) equation
+    case SOME(BackendDAE.VAR(cref, varKind, varDirection, varParallelism, varType, SOME(e1), tplExp, instdims, source, attr, ts, hideResult, comment, ct, io, unreplaceable, initNonlinear, encrypted)) equation
       (e1_, ext_arg_1) = func(e1, inTypeA);
       (attr_, ext_arg_2) = traverseBackendDAEVarAttr(attr, func, ext_arg_1);
       if referenceEq(e1,e1_) and referenceEq(attr,attr_) then
         v = inVar;
       else
-        v = SOME(BackendDAE.VAR(cref, varKind, varDirection, varParallelism, varType, SOME(e1_), tplExp, instdims, source, attr_, ts, hideResult, comment, ct, io, unreplaceable, initNonlinear));
+        v = SOME(BackendDAE.VAR(cref, varKind, varDirection, varParallelism, varType, SOME(e1_), tplExp, instdims, source, attr_, ts, hideResult, comment, ct, io, unreplaceable, initNonlinear, encrypted));
       end if;
     then (v, ext_arg_2);
 
-    case SOME(BackendDAE.VAR(cref, varKind, varDirection, varParallelism, varType, NONE(), tplExp, instdims, source, attr, ts, hideResult, comment, ct, io, unreplaceable, initNonlinear)) equation
+    case SOME(BackendDAE.VAR(cref, varKind, varDirection, varParallelism, varType, NONE(), tplExp, instdims, source, attr, ts, hideResult, comment, ct, io, unreplaceable, initNonlinear, encrypted)) equation
       (attr_, ext_arg_2) = traverseBackendDAEVarAttr(attr, func, inTypeA);
       if referenceEq(attr,attr_) then
         v = inVar;
       else
-        v = SOME(BackendDAE.VAR(cref, varKind, varDirection, varParallelism, varType, NONE(), tplExp, instdims, source, attr_, ts, hideResult, comment, ct, io, unreplaceable, initNonlinear));
+        v = SOME(BackendDAE.VAR(cref, varKind, varDirection, varParallelism, varType, NONE(), tplExp, instdims, source, attr_, ts, hideResult, comment, ct, io, unreplaceable, initNonlinear, encrypted));
       end if;
     then (v, ext_arg_2);
 
@@ -10302,16 +10309,6 @@ algorithm
     else (inExp, inHomotopy, true);
   end match;
 end containsHomotopyCall2;
-
-protected function indexTypeSolvable
-  input BackendDAE.IndexType indexType;
-  output Boolean b;
-algorithm
-  b := match indexType
-    case BackendDAE.SOLVABLE() then true;
-    else false;
-  end match;
-end indexTypeSolvable;
 
 public function doIndexReduction
   input BackendDAE.MatchingOptions opt;

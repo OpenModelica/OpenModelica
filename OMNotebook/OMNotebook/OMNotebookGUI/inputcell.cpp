@@ -298,7 +298,7 @@ namespace IAEX
     setMainWidget(main);
 
     layout_ = new QGridLayout(mainWidget());
-    layout_->setMargin(0);
+    layout_->setContentsMargins(0, 0, 0, 0);
     layout_->setSpacing(0);
 
     setTreeWidget(new InputTreeView(this));
@@ -457,7 +457,7 @@ namespace IAEX
     else
     {
       // 2006-01-30 AF, add message box
-      QMessageBox::warning( 0, tr("Warning"), tr("No Output style defined, please define an Output style in stylesheet.xml"), "OK" );
+      QMessageBox::warning(nullptr, tr("Warning"), tr("No Output style defined, please define an Output style in stylesheet.xml"));
     }
 
     QTextCursor cursor = output_->textCursor();
@@ -608,7 +608,7 @@ namespace IAEX
     tmp.replace( "&nbsp;&nbsp;&nbsp;&nbsp;", "  " );
 
     // 2005-12-08 AF, remove any <span style tag
-    QRegExp spanEnd( "</span>" );
+    QRegularExpression spanEnd("</span>");
     tmp.remove( spanEnd );
     int pos = 0;
     while( true )

@@ -52,10 +52,11 @@ public:
   static QString organization;
   static QString application;
   static QString OpenModelicaVersion;
-  static QString OpenModelicaUsersGuideVersion;
   static QString OpenModelicaHome;
   static QString ModelicaPath;
   static QString userHomeDirectory;
+  static QString OpenModelicaUsersGuideVersion;
+  static QString OMEditInternal;
   static QString OMCServerName;
   static QString omFileTypes;
   static QString omEncryptedFileTypes;
@@ -73,9 +74,9 @@ public:
   static QString exeFileTypes;
   static QString txtFileTypes;
   static QString figaroFileTypes;
+  static QString jarFileTypes;
   static QString visualizationFileTypes;
   static QString subModelFileTypes;
-  static QString omScriptTypes;
   static int treeIndentation;
   static QSize iconSize;
   static int tabWidth;
@@ -130,16 +131,26 @@ public:
   static QString BOOLEAN;
   static QString INTEGER;
   static QString REAL;
+  static QString BREAK;
   /* OMSimulator system types */
   static QString systemTLM;
   static QString systemWC;
   static QString systemSC;
+  static QString displayLimit;
+  static QString displayLimitMsg;
+  static QString arrayIndexRegularExpression;
   /* Global translated variables */
   static QString newModelicaClass;
+  static QString newModelicaClassLibraryBrowser;
   static QString createNewModelicaClass;
   static QString openModelicaFiles;
   static QString openConvertModelicaFiles;
+  static QString newCRMLModel;
+  static QString newCRMLModelTip;
+  static QString newMOSScript;
+  static QString newMOSScriptTip;
   static QString libraries;
+  static QString elements;
   static QString clearRecentFiles;
   static QString encoding;
   static QString fileLabel;
@@ -170,6 +181,10 @@ public:
   static QString saveTotalTip;
   static QString apply;
   static QString chooseDirectory;
+  static QString addPath;
+  static QString removePath;
+  static QString addItem;
+  static QString removeItem;
   static QString general;
   static QString output;
   static QString parameters;
@@ -192,6 +207,7 @@ public:
   static QString FMU;
   static QString exportt;
   static QString exportFMUTip;
+  static QString sensitivityOptimization;
   static QString exportReadonlyPackage;
   static QString exportRealonlyPackageTip;
   static QString exportEncryptedPackage;
@@ -226,7 +242,11 @@ public:
   static QString duplicateTip;
   static QString unloadClass;
   static QString unloadClassTip;
-  static QString unloadCompositeModelOrTextTip;
+  static QString reloadClass;
+  static QString reloadClassTip;
+  static QString unloadTextFileTip;
+  static QString unloadCRMLTip;
+  static QString unloadMOSTip;
   static QString unloadOMSModelTip;
   static QString refresh;
   static QString simulate;
@@ -249,6 +269,12 @@ public:
   static QString simulation;
   static QString reSimulation;
   static QString interactiveSimulation;
+  static QString translateCRML;
+  static QString translateCRMLTip;
+  static QString translateAsCRML;
+  static QString translateAsCRMLTip;
+  static QString runScript;
+  static QString runScriptTip;
   static QString options;
   static QString extent;
   static QString bottom;
@@ -287,6 +313,7 @@ public:
   static QString endAngle;
   static QString curveStyle;
   static QString figaro;
+  static QString crml;
   static QString remove;
   static QString errorLocation;
   static QString fileLocation;
@@ -298,6 +325,7 @@ public:
   static QString textView;
   static QString documentationView;
   static QString filterClasses;
+  static QString filterElements;
   static QString findReplaceModelicaText;
   static QString left;
   static QString center;
@@ -365,13 +393,6 @@ public:
   static QString unlimited;
   static QString simulationOutput;
   static QString cancelSimulation;
-  static QString fetchInterfaceData;
-  static QString fetchInterfaceDataTip;
-  static QString alignInterfaces;
-  static QString alignInterfacesTip;
-  static QString tlmCoSimulationSetup;
-  static QString tlmCoSimulationSetupTip;
-  static QString tlmCoSimulation;
   static QString animationChooseFile;
   static QString animationChooseFileTip;
   static QString animationInitialize;
@@ -411,6 +432,7 @@ public:
   static QString moveDown;
   static QString fixErrorsManually;
   static QString revertToLastCorrectVersion;
+  static QString saveWithErrors;
   static QString translationFlagsTip;
   static QString saveExperimentAnnotation;
   static QString saveOpenModelicaSimulationFlagsAnnotation;
@@ -440,6 +462,9 @@ public:
   static QString upgradeInstalledLibraries;
   static QString updateLibraryIndex;
   static QString dataReconciliation;
+  static QString replaceSubModel;
+  static QString modelicaPathTip;
+  static QString selectParentClassName;
 };
 
 class GUIMessages : public QObject
@@ -491,6 +516,7 @@ public:
     ENCRYPTED_PACKAGE_GENERATED,
     READONLY_PACKAGE_GENERATED,
     UNLOAD_CLASS_MSG,
+    RELOAD_CLASS_MSG,
     DELETE_CLASS_MSG,
     UNLOAD_TEXT_FILE_MSG,
     DELETE_TEXT_FILE_MSG,
@@ -503,9 +529,6 @@ public:
     CLASS_NOT_FOUND,
     BREAKPOINT_INSERT_NOT_SAVED,
     BREAKPOINT_INSERT_NOT_MODELICA_CLASS,
-    TLMMANAGER_NOT_SET,
-    COMPOSITEMODEL_UNSAVED,
-    TLMCOSIMULATION_ALREADY_RUNNING,
     TERMINAL_COMMAND_NOT_SET,
     UNABLE_FIND_COMPONENT_IN_CONNECTION,
     UNABLE_FIND_COMPONENT_IN_CONNECTION_NEW,
@@ -521,6 +544,7 @@ public:
     ENTER_SCRIPT,
     LIBRARY_INDEX_FILE_NOT_FOUND,
     VISUALIZATION_VECTORS_SCALING_ZOOMED_OUT_SCENE_TOO_MUCH,
+    CRML_SUPPORT
   };
 
   static QString getMessage(int type);

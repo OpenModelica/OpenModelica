@@ -43,6 +43,8 @@ extern double nonlinearSparseSolverMaxDensity;
 extern int nonlinearSparseSolverMinSize;
 extern double newtonXTol;
 extern double newtonFTol;
+extern int newtonMaxSteps;
+extern int maxJacUpdate[4];
 extern double maxStepFactor;
 extern double steadyStateTol;
 extern const size_t SIZERINGBUFFER;
@@ -64,24 +66,23 @@ extern double homTauMin;
 extern double homTauStart;
 extern int homBacktraceStrategy;
 
+void allocModelDataVars(MODEL_DATA* modelData, modelica_boolean allocAlias, threadData_t* threadData);
+
+void freeModelDataVars(MODEL_DATA* modelData);
+
+void scalarAllocArrayAttributes(MODEL_DATA* modelData);
+
 void initializeDataStruc(DATA *data, threadData_t *threadData);
 
 void deInitializeDataStruc(DATA *data);
+
+void allocIndexMap(MODEL_DATA* modelData, SIMULATION_INFO* simulationInfo);
 
 void updateDiscreteSystem(DATA *data, threadData_t *threadData);
 
 void saveZeroCrossings(DATA *data, threadData_t *threadData);
 
 void copyStartValuestoInitValues(DATA *data);
-
-/* functions that are only used in USE_DEBUG_OUTPUT mode */
-#ifdef USE_DEBUG_OUTPUT
-  void printAllVarsDebug(DATA *data, int ringSegment, int stream);
-  void printRelationsDebug(DATA *data, int stream);
-#else
-  #define printAllVarsDebug(data, ringSegment, stream) {}
-  #define printRelationsDebug(data, stream) {}
-#endif
 
 void printAllVars(DATA *data, int ringSegment, int stream);
 void printRelations(DATA *data, int stream);
@@ -97,7 +98,6 @@ void printRingBufferSimulationData(RINGBUFFER* rb, DATA* data);
 void restoreExtrapolationDataOld(DATA *data);
 
 void setAllVarsToStart(DATA* data);
-void setAllStartToVars(DATA* data);
 void setAllParamsToStart(DATA *data);
 
 void restoreOldValues(DATA *data);

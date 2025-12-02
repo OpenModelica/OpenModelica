@@ -47,12 +47,9 @@ public:
   EllipseAnnotation(QString annotation, GraphicsView *pGraphicsView);
   EllipseAnnotation(ModelInstance::Ellipse *pEllipse, bool inherited, GraphicsView *pGraphicsView);
   // Used for shape inside a component
-  EllipseAnnotation(ShapeAnnotation *pShapeAnnotation, Element *pParent);
   EllipseAnnotation(ModelInstance::Ellipse *pEllipse, Element *pParent);
-  // Used for icon/diagram inherited shape
-  EllipseAnnotation(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView);
   void parseShapeAnnotation(QString annotation) override;
-  void parseShapeAnnotation();
+  void parseShapeAnnotation() override;
   QRectF boundingRect() const override;
   QPainterPath shape() const override;
   void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = 0) override;
@@ -65,8 +62,6 @@ public:
   void setEllipse(ModelInstance::Ellipse *pEllipse) {mpEllipse = pEllipse;}
 private:
   ModelInstance::Ellipse *mpEllipse;
-public slots:
-  void duplicate() override;
 };
 
 #endif // ELLIPSEANNOTATION_H

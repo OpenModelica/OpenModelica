@@ -1,7 +1,6 @@
 // name: When7
 // keywords:
 // status: incorrect
-// cflags:   -d=newInst
 //
 //
 
@@ -17,7 +16,7 @@ end When7;
 
 // Result:
 // Error processing file: When7.mo
-// [flattening/modelica/scodeinst/When7.mo:11:3-15:11:writable] Error: The same variables must be solved in elsewhen clause as in the when clause.
+// [flattening/modelica/scodeinst/When7.mo:10:3-14:11:writable] Error: The same variables must be solved in elsewhen clause as in the when clause.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

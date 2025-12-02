@@ -4,7 +4,6 @@
 //
 // Test the public and protected access keywords
 // Drmodelica: 3.4 Access Control (p. 88)
-// cflags: -d=-newInst
 
 class AccessDemo "Illustration of access prefixes"
       parameter Real a = 2;
@@ -27,6 +26,7 @@ class B
 equation
   u2 = p;  // Legal, since AccessDemo is inherited
   u3 = q;    // Legal, since u3 is public
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end B;
 
 // Result:

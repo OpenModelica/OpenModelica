@@ -1,7 +1,6 @@
 // name:     WhenWithArray
 // keywords: when
 // status:   correct
-// cflags: -d=-newInst
 //
 // check if we support conditions with cref arrays
 //
@@ -22,6 +21,7 @@ equation
   when e then
     v = pre(v) + 1;
   end when;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end WhenWithArray;
 
 // Result:

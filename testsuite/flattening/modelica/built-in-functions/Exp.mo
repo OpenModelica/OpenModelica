@@ -1,7 +1,6 @@
 // name: Exp
 // keywords: exp
 // status: correct
-// cflags: -d=-newInst
 //
 // Tests the built-in exp function
 //
@@ -10,6 +9,7 @@ model Exp
   Real r;
 equation
   r = exp(45);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Exp;
 
 // Result:

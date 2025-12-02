@@ -1,5 +1,4 @@
 // name: StringPool
-// cflags: -d=noevalfunc,gen -d=-newInst
 // status: correct
 // teardown_command: rm -f StringPool_*
 //
@@ -29,6 +28,7 @@ algorithm
 end weirdStrStuff1;
 
   constant String str1 = weirdStrStuff1("abc");
+  annotation(__OpenModelica_commandLineOptions="-d=noevalfunc,gen -d=-newInst");
 end StringPool;
 
 // Result:

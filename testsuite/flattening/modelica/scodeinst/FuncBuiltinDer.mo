@@ -1,7 +1,6 @@
 // name: FuncBuiltinDer
 // keywords: der
 // status: correct
-// cflags: -d=newInst
 //
 // Tests the builtin der operator.
 //

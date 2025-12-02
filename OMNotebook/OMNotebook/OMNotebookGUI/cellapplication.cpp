@@ -119,22 +119,29 @@ namespace IAEX
 
     const char *installationDirectoryPath = SettingsImpl__getInstallationDirectoryPath();
     if (!installationDirectoryPath) {
-      QMessageBox::critical(0, tr("Error"), tr("Could not find installation directory path. Please make sure OpenModelica is installed properly."), "OK");
+      QMessageBox::critical(nullptr, tr("Error"), tr("Could not find installation directory path. Please make sure OpenModelica is installed properly."));
       app_->quit();
       exit(1);
     }
 
-    QString translationDirectory = installationDirectoryPath + QString("/share/omnotebook/nls");
-    // install Qt's default translations
-  #ifdef Q_OS_WIN
-    qtTranslator.load("qt_" + QLocale::system().name(), translationDirectory);
+    QString locale = QLocale::system().name();
+
+  #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+    QString qtTranslationDirectory = QLibraryInfo::path(QLibraryInfo::TranslationsPath);
   #else
-    qtTranslator.load("qt_" + QLocale::system().name(), QLibraryInfo::location(QLibraryInfo::TranslationsPath));
+    QString qtTranslationDirectory = QLibraryInfo::location(QLibraryInfo::TranslationsPath);
   #endif
-    app_->installTranslator(&qtTranslator);
+
+    // install Qt's default translations
+    if (qtTranslator.load("qt_" + locale, qtTranslationDirectory)) {
+      app_->installTranslator(&qtTranslator);
+    }
+
+    QString translationDirectory = installationDirectoryPath + QString("/share/omnotebook/nls");
     // install application translations
-    translator.load("OMNotebook_" + QLocale::system().name(), translationDirectory);
-    app_->installTranslator(&translator);
+    if (translator.load("OMNotebook_" + QLocale::system().name(), translationDirectory)) {
+      app_->installTranslator(&translator);
+    }
 
     mainWindow = new QMainWindow();
     QDir dir;
@@ -165,7 +172,7 @@ namespace IAEX
     QString cdRes = env->getResult();
     cdRes.remove("\"");
     if (0 != tmpDir.compare(cdRes)) {
-      QMessageBox::critical( 0, "OpenModelica Error", tr("Could not create or cd to temp-dir\nCommand:\n  %1\nReturned:\n  %2").arg(tmpDir).arg(cdRes));
+      QMessageBox::critical(nullptr, "OpenModelica Error", tr("Could not create or cd to temp-dir\nCommand:\n  %1\nReturned:\n  %2").arg(tmpDir).arg(cdRes));
       exit(1);
     }
 
@@ -184,7 +191,7 @@ namespace IAEX
     }
     catch( std::exception &e )
     {
-      QMessageBox::warning( 0, tr("Error"), e.what(), "OK" );
+      QMessageBox::warning(nullptr, tr("Error"), e.what());
       exit(-1);
     }
 
@@ -204,7 +211,7 @@ namespace IAEX
     {
       QString msg = e.what();
       msg += "\nCould not create command completion class, exiting OMNotebook";
-      QMessageBox::warning( 0, tr("Error"), msg, "OK" );
+      QMessageBox::warning(nullptr, tr("Error"), msg);
       std::exit(-1);
     }
 
@@ -290,7 +297,7 @@ namespace IAEX
     {
       if( !dir.remove( removeList_.at(i) ))
       {
-        QMessageBox::warning( 0, tr("Warning"), tr("Could not remove temporary image %1 from harddrive.").arg(removeList_.at(i)), "OK" );
+        QMessageBox::warning(nullptr, tr("Warning"), tr("Could not remove temporary image %1 from harddrive.").arg(removeList_.at(i)));
       }
     }
   }
@@ -431,9 +438,14 @@ namespace IAEX
         ++v_iter;
       }
 
+     v->move(0, 0);
+#if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
+      QScreen *screen = QGuiApplication::primaryScreen();
+      v->resize(screen->geometry().width(), screen->geometry().height());
+#else
       QDesktopWidget dw;
-      v->move(0, 0);
       v->resize(dw.geometry().width(),dw.geometry().height());
+#endif
 
       // 2005-11-30 AF, apply hide() and show() to closed groupcells
       // childs in the documentview

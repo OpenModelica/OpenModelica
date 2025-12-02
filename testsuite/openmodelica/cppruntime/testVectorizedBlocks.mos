@@ -64,8 +64,8 @@ val(y[10], 1.0);
 // Variables (5)
 // ========================================
 // 1: output y:VARIABLE(flow=false )  type: Real[10] [10]
-// 2: integrator1.u:VARIABLE(flow=false )  "Connector of Real input signal" type: Real[10] [10]
-// 3: integrator1.y:VARIABLE(flow=false start = integrator1.y_start )  "Connector of Real output signal" type: Real[10] [10]
+// 2: integrator1.y:VARIABLE(flow=false start = integrator1.y_start )  "Connector of Real output signal" type: Real[10] [10]
+// 3: integrator1.u:VARIABLE(flow=false )  "Connector of Real input signal" type: Real[10] [10]
 // 4: assignClock1.y:VARIABLE(flow=false )  "Connector of clocked, Real output signal" type: Real[10] [10]
 // 5: assignClock1.u:VARIABLE(flow=false )  "Connector of clocked, Real input signal" type: Real[10] [10]
 //
@@ -76,8 +76,8 @@ val(y[10], 1.0);
 // 2/11 (10): assignClock1.y = integrator1.u   [dynamic |0|0|0|0|]
 // 3/21 (10): integrator1.y = y   [dynamic |0|0|0|0|]
 // 4/31 (10): assignClock1.y = assignClock1.u   [dynamic |0|0|0|0|]
-// 5/41 (10): for $i1 in 1 : 10 loop
-//     der(integrator1[$i1].y) = integrator1[$i1].k * integrator1[$i1].u; end for;    [dynamic |0|0|0|0|]
+// 5/41 (10): for $i0 in 1 : 10 loop
+//     der(integrator1[$i0].y) = integrator1[$i0].k * integrator1[$i0].u; end for;    [dynamic |0|0|0|0|]
 //
 //
 // no matching
@@ -95,9 +95,9 @@ val(y[10], 1.0);
 // 4: periodicClock1.useSolver:PARAM(final = true )  = true  "= true, if solverMethod shall be explicitly defined" type: Boolean
 // 5: periodicClock1.solverMethod:PARAM()  = "ImplicitEuler"  "Integration method used for discretized continuous-time partitions" type: String
 // 6: assignClock1.n:PARAM(min = 1 final = true )  = 10  "Size of input signal vector u (= size of output signal vector y)" type: Integer
-// 7: integrator1.y_start:PARAM()  = 1.0:10.0  "Initial or guess value of output (= state)" type: Real[10] [10]
-// 8: integrator1.initType:PARAM(final = true )  = {Modelica.Blocks.Types.Init.InitialState, Modelica.Blocks.Types.Init.InitialState, Modelica.Blocks.Types.Init.InitialState, Modelica.Blocks.Types.Init.InitialState, Modelica.Blocks.Types.Init.InitialState, Modelica.Blocks.Types.Init.InitialState, Modelica.Blocks.Types.Init.InitialState, Modelica.Blocks.Types.Init.InitialState, Modelica.Blocks.Types.Init.InitialState, Modelica.Blocks.Types.Init.InitialState}  "Type of initialization (1: no init, 2: steady state, 3,4: initial output)" type: enumeration(NoInit, SteadyState, InitialState, InitialOutput)[10] [10]
-// 9: integrator1.k:PARAM(unit = fill("1", 10) )  = {1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0}  "Integrator gain" type: Real[10] [10]
+// 7: integrator1.k:PARAM(unit = "1" )  = 1.0  "Integrator gain" type: Real[10] [10]
+// 8: integrator1.initType:PARAM(final = true )  = Modelica.Blocks.Types.Init.InitialState  "Type of initialization (1: no init, 2: steady state, 3,4: initial output)" type: enumeration(NoInit, SteadyState, InitialState, InitialOutput)[10] [10]
+// 9: integrator1.y_start:PARAM()  = 1.0:10.0  "Initial or guess value of output (= state)" type: Real[10] [10]
 //
 //
 // Initial Equations (1, 1)
@@ -127,8 +127,8 @@ val(y[10], 1.0);
 // Variables (6)
 // ========================================
 // 1: output y:VARIABLE(flow=false )  type: Real[10] [10]
-// 2: integrator1.u:VARIABLE(flow=false )  "Connector of Real input signal" type: Real[10] [10]
-// 3: integrator1.y:CLOCKED_STATE(flow=false start = integrator1.y_start fixed = true )  "Connector of Real output signal" type: Real[10] [10]
+// 2: integrator1.y:CLOCKED_STATE(flow=false start = integrator1.y_start fixed = true )  "Connector of Real output signal" type: Real[10] [10]
+// 3: integrator1.u:VARIABLE(flow=false )  "Connector of Real input signal" type: Real[10] [10]
 // 4: assignClock1.y:VARIABLE(flow=false )  "Connector of clocked, Real output signal" type: Real[10] [10]
 // 5: assignClock1.u:VARIABLE(flow=false )  "Connector of clocked, Real input signal" type: Real[10] [10]
 // 6: $DER.integrator1.y:VARIABLE()  type: Real[10] [10]
@@ -140,8 +140,8 @@ val(y[10], 1.0);
 // 2/11 (10): assignClock1.y = integrator1.u   [dynamic |0|0|0|0|]
 // 3/21 (10): integrator1.y = y   [dynamic |0|0|0|0|]
 // 4/31 (10): assignClock1.y = assignClock1.u   [dynamic |0|0|0|0|]
-// 5/41 (10): for $i1 in 1 : 10 loop
-//     $DER.integrator1[$i1].y = integrator1[$i1].k * integrator1[$i1].u; end for;    [dynamic |0|0|0|0|]
+// 5/41 (10): for $i0 in 1 : 10 loop
+//     $DER.integrator1[$i0].y = integrator1[$i0].k * integrator1[$i0].u; end for;    [dynamic |0|0|0|0|]
 // 6/51 (10): for i in 1 : 10 loop
 //     (integrator1[i].y - previous(integrator1[i].y)) / interval() = if firstTick() then 0.0 else $DER.integrator1[i].y; end for;    [dynamic |0|0|0|0|]
 //
@@ -150,8 +150,8 @@ val(y[10], 1.0);
 // ========================================
 // 6 variables and equations
 // var 1 is solved in eqn 3
-// var 2 is solved in eqn 2
-// var 3 is solved in eqn 6
+// var 2 is solved in eqn 6
+// var 3 is solved in eqn 2
 // var 4 is solved in eqn 4
 // var 5 is solved in eqn 1
 // var 6 is solved in eqn 5
@@ -161,9 +161,9 @@ val(y[10], 1.0);
 // ========================================
 // Array  {{1:5}}
 // Array  {{4:4}}
-// Array  {{2:2}}
+// Array  {{2:3}}
 // {5:6}
-// {6:3}
+// {6:2}
 // Array  {{3:1}}
 //
 //
@@ -173,14 +173,14 @@ val(y[10], 1.0);
 //
 // Known variables only depending on parameters and constants - globalKnownVars (9)
 // ========================================
-// 1: integrator1.k:PARAM(unit = {"1", "1", "1", "1", "1", "1", "1", "1", "1", "1"} )  = {1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0}  "Integrator gain" type: Real[10] [10]
-// 2: integrator1.initType:PARAM(final = true )  = {Modelica.Blocks.Types.Init.InitialState, Modelica.Blocks.Types.Init.InitialState, Modelica.Blocks.Types.Init.InitialState, Modelica.Blocks.Types.Init.InitialState, Modelica.Blocks.Types.Init.InitialState, Modelica.Blocks.Types.Init.InitialState, Modelica.Blocks.Types.Init.InitialState, Modelica.Blocks.Types.Init.InitialState, Modelica.Blocks.Types.Init.InitialState, Modelica.Blocks.Types.Init.InitialState}  "Type of initialization (1: no init, 2: steady state, 3,4: initial output)" type: enumeration(NoInit, SteadyState, InitialState, InitialOutput)[10] [10]
-// 3: integrator1.y_start:PARAM()  = 1.0:10.0  "Initial or guess value of output (= state)" type: Real[10] [10]
+// 1: integrator1.y_start:PARAM()  = 1.0:10.0  "Initial or guess value of output (= state)" type: Real[10] [10]
+// 2: integrator1.initType:PARAM(final = true )  = Modelica.Blocks.Types.Init.InitialState  "Type of initialization (1: no init, 2: steady state, 3,4: initial output)" type: enumeration(NoInit, SteadyState, InitialState, InitialOutput)[10] [10]
+// 3: integrator1.k:PARAM(unit = "1" )  = 1.0  "Integrator gain" type: Real[10] [10]
 // 4: assignClock1.n:PARAM(min = 1 final = true )  = 10  "Size of input signal vector u (= size of output signal vector y)" type: Integer
 // 5: periodicClock1.solverMethod:PARAM()  = "ImplicitEuler"  "Integration method used for discretized continuous-time partitions" type: String
 // 6: periodicClock1.useSolver:PARAM(final = true )  = true  "= true, if solverMethod shall be explicitly defined" type: Boolean
 // 7: periodicClock1.period:PARAM(unit = "s" final = true )  = 0.1  "Period of clock (defined as Real number)" type: Real
-// 8: input u:VARIABLE(flow=false start = 1.0:10.0 fixed = true )  type: Real[10] [10]
+// 8: input u:VARIABLE(flow=false start = 1.0:10.0 fixed = true final = true )  type: Real[10] [10]
 // 9: n:PARAM(final = true )  = 10  type: Integer
 //
 //

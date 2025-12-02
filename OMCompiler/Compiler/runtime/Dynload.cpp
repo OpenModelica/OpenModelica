@@ -199,7 +199,7 @@ static int execute_function(threadData_t* threadData,
   init_type_description(&retarg);
   init_type_description(&crashbuf[5]);
 
-  retarg.retval = 1;
+  retarg.retval = -1; // 1 == -1 for one-bit wide bit-field  (prevent -Wsingle-bit-bitfield-constant-conversion)
 
   if (printDebug) { fprintf(stderr, "[dynload]: calling the function\n"); fflush(stderr); }
 

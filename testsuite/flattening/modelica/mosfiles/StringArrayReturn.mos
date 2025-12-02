@@ -19,6 +19,6 @@ StringArrayReturn.f(3);getErrorString();
 // true
 // true
 // ""
-// {"test","test","test"}
+// {"test", "test", "test"}
 // ""
 // endResult

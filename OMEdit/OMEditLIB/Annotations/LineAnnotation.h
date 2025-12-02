@@ -41,7 +41,6 @@
 #include <QTreeView>
 #include <QSortFilterProxyModel>
 #include <QSpinBox>
-#include <QUndoCommand>
 #include<functional>
 
 class Label;
@@ -63,10 +62,7 @@ public:
   LineAnnotation(QString annotation, GraphicsView *pGraphicsView);
   LineAnnotation(ModelInstance::Line *pLine, bool inherited, GraphicsView *pGraphicsView);
   // Used for shape inside a component
-  LineAnnotation(ShapeAnnotation *pShapeAnnotation, Element *pParent);
   LineAnnotation(ModelInstance::Line *pLine, Element *pParent);
-  // Used for icon/diagram inherited shape
-  LineAnnotation(ShapeAnnotation *pShapeAnnotation, GraphicsView *pGraphicsView);
   // Used for creating connection/transition
   LineAnnotation(LineAnnotation::LineType lineType, Element *pStartElement, GraphicsView *pGraphicsView);
   // Used for reading a connection
@@ -84,7 +80,7 @@ public:
   // Used for non-existing class
   LineAnnotation(GraphicsView *pGraphicsView);
   void parseShapeAnnotation(QString annotation) override;
-  void parseShapeAnnotation();
+  void parseShapeAnnotation() override;
   QPainterPath getShape() const;
   QRectF boundingRect() const override;
   QPainterPath shape() const override;
@@ -95,7 +91,7 @@ public:
   QString getOMCShapeAnnotation() override;
   QString getOMCShapeAnnotationWithShapeName() override;
   QString getShapeAnnotation() override;
-  QString getCompositeModelShapeAnnotation();
+  QJsonObject getShapeAnnotationJSON();
   void addPoint(QPointF point) override;
   void addGeometry();
   void removePoint(int index);
@@ -151,9 +147,8 @@ public:
   void updateOMSConnection();
   void updateToolTip();
   void showOMSConnection();
-  void updateTransistion(const QString& condition, const bool immediate, const bool rest, const bool synchronize, const int priority);
+  void updateTransistion();
   void setProperties(const QString& condition, const bool immediate, const bool rest, const bool synchronize, const int priority);
-  void updateLine();
 
   static QColor findLineColorForConnection(Element *pComponent);
   void clearCollidingConnections();
@@ -162,9 +157,6 @@ private:
   ModelInstance::Line *mpLine;
 
   PointArrayAnnotation adjustPointsForDrawing() const;
-protected:
-  QVariant itemChange(GraphicsItemChange change, const QVariant &value) override;
-
   private:
   LineType mLineType;
   Element *mpStartElement;
@@ -178,7 +170,6 @@ protected:
   bool mSynchronize;
   int mPriority;
   TextAnnotation *mpTextAnnotation;
-  // MetaModel attributes
   QString mOldAnnotation;
   // CompositeModel attributes
   QString mDelay;
@@ -196,7 +187,6 @@ public slots:
   void updateTransitionAnnotation(QString oldCondition, bool oldImmediate, bool oldReset, bool oldSynchronize, int oldPriority);
   void redraw(const QString& annotation, std::function<void()> updateAnnotationFunction);
   void updateInitialStateAnnotation();
-  void duplicate() override;
 };
 
 class ExpandableConnectorTreeItem : public QObject
@@ -204,7 +194,7 @@ class ExpandableConnectorTreeItem : public QObject
   Q_OBJECT
 public:
   ExpandableConnectorTreeItem();
-  ExpandableConnectorTreeItem(QString name, bool array, QStringList arrayIndexes, StringHandler::ModelicaClasses restriction, bool newVariable,
+  ExpandableConnectorTreeItem(QString name, bool array, QStringList arrayIndexes, StringHandler::ModelicaClasses restriction, bool newVariable, bool inherited,
                               ExpandableConnectorTreeItem *pParentExpandableConnectorTreeItem);
   ~ExpandableConnectorTreeItem();
   bool isRootItem() {return mIsRootItem;}
@@ -219,6 +209,8 @@ public:
   StringHandler::ModelicaClasses getRestriction() {return mRestriction;}
   void setNewVariable(bool newVariable) {mNewVariable = newVariable;}
   bool isNewVariable() {return mNewVariable;}
+  void setInherited(bool inherited) {mInherited = inherited;}
+  bool isInherited() {return mInherited;}
   void insertChild(int position, ExpandableConnectorTreeItem *pExpandableConnectorTreeItem) {mChildren.insert(position, pExpandableConnectorTreeItem);}
   ExpandableConnectorTreeItem* child(int row) {return mChildren.value(row);}
   QVariant data(int column, int role = Qt::DisplayRole) const;
@@ -233,6 +225,7 @@ private:
   QStringList mArrayIndexes;
   StringHandler::ModelicaClasses mRestriction;
   bool mNewVariable;
+  bool mInherited;
 };
 
 class CreateConnectionDialog;
@@ -261,8 +254,7 @@ public:
   Qt::ItemFlags flags(const QModelIndex &index) const override;
   QModelIndex findFirstEnabledItem(ExpandableConnectorTreeItem *pExpandableConnectorTreeItem);
   QModelIndex expandableConnectorTreeItemIndex(const ExpandableConnectorTreeItem *pExpandableConnectorTreeItem) const;
-  void createExpandableConnectorTreeItem(ModelInstance::Component *pModelComponent, ExpandableConnectorTreeItem *pParentExpandableConnectorTreeItem);
-  void createExpandableConnectorTreeItem(Element *pElement, ExpandableConnectorTreeItem *pParentExpandableConnectorTreeItem);
+  void createExpandableConnectorTreeItem(ModelInstance::Element *pModelElement, bool inherited, ExpandableConnectorTreeItem *pParentExpandableConnectorTreeItem);
 private:
   CreateConnectionDialog *mpCreateConnectionDialog;
   ExpandableConnectorTreeItem *mpRootExpandableConnectorTreeItem;
@@ -285,10 +277,11 @@ class CreateConnectionDialog : public QDialog
 {
   Q_OBJECT
 public:
-  CreateConnectionDialog(GraphicsView *pGraphicsView, LineAnnotation *pConnectionLineAnnotation, QWidget *pParent = 0);
+  CreateConnectionDialog(GraphicsView *pGraphicsView, LineAnnotation *pConnectionLineAnnotation, bool createConnector, QWidget *pParent = 0);
 private:
   GraphicsView *mpGraphicsView;
   LineAnnotation *mpConnectionLineAnnotation;
+  bool mCreateConnector;
   Element *mpStartElement;
   Element *mpStartRootElement;
   Element *mpEndElement;

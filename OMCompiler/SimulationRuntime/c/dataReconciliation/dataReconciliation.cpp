@@ -192,11 +192,11 @@ void createErrorHtmlReport(DATA * data, int status = 0)
   std::stringstream htmlfile;
   if (omc_flag[FLAG_OUTPUT_PATH])
   {
-    htmlfile << string(omc_flagValue[FLAG_OUTPUT_PATH]) << "/" << data->modelData->modelName << ".html";
+    htmlfile << string(omc_flagValue[FLAG_OUTPUT_PATH]) << "/" << data->modelData->modelFilePrefix << ".html";
   }
   else
   {
-    htmlfile << data->modelData->modelName << ".html";
+    htmlfile << data->modelData->modelFilePrefix << ".html";
   }
   string html = htmlfile.str();
   myfile.open(html.c_str());
@@ -205,7 +205,7 @@ void createErrorHtmlReport(DATA * data, int status = 0)
   myfile << "<!DOCTYPE html><html>\n <head> <h1> Data Reconciliation Report</h1></head> \n <body> \n ";
   myfile << "<h2> Overview: </h2>\n";
   myfile << "<table> \n";
-  myfile << "<tr> \n" << "<th align=right> Model file: </th> \n" << "<td>" << data->modelData->modelFilePrefix << ".mo" << "</td> </tr>\n";
+  myfile << "<tr> \n" << "<th align=right> Model file: </th> \n" << "<td>" << data->modelData->modelFileName << "</td> </tr>\n";
   myfile << "<tr> \n" << "<th align=right> Model name: </th> \n" << "<td>" << data->modelData->modelName << "</td> </tr>\n";
   myfile << "<tr> \n" << "<th align=right> Model directory: </th> \n" << "<td>" << data->modelData->modelDir << "</td> </tr>\n";
   if (omc_flagValue[FLAG_DATA_RECONCILE_Sx])
@@ -256,7 +256,7 @@ void createErrorHtmlReport(DATA * data, int status = 0)
   // debug log
   if (status == 0)
   {
-    myfile << "<h2> <a href=" << data->modelData->modelName << "_debug.txt" << " target=_blank> Debug log </a> </h2>\n";
+    myfile << "<h2> <a href=" << data->modelData->modelFilePrefix << "_debug.txt" << " target=_blank> Debug log </a> </h2>\n";
   }
 
   myfile << "</table>\n";
@@ -275,11 +275,11 @@ void createHtmlReportFordataReconciliation(DATA *data, csvData &csvinputs, matri
   std::stringstream htmlfile;
   if (omc_flag[FLAG_OUTPUT_PATH])
   {
-    htmlfile << string(omc_flagValue[FLAG_OUTPUT_PATH]) << "/" << data->modelData->modelName << ".html";
+    htmlfile << string(omc_flagValue[FLAG_OUTPUT_PATH]) << "/" << data->modelData->modelFilePrefix << ".html";
   }
   else
   {
-    htmlfile << data->modelData->modelName << ".html";
+    htmlfile << data->modelData->modelFilePrefix << ".html";
   }
   string html = htmlfile.str();
   myfile.open(html.c_str());
@@ -289,11 +289,11 @@ void createHtmlReportFordataReconciliation(DATA *data, csvData &csvinputs, matri
   std::stringstream csv_file;
   if (omc_flag[FLAG_OUTPUT_PATH])
   {
-    csv_file << string(omc_flagValue[FLAG_OUTPUT_PATH]) << "/" << data->modelData->modelName << "_Outputs.csv";
+    csv_file << string(omc_flagValue[FLAG_OUTPUT_PATH]) << "/" << data->modelData->modelFilePrefix << "_Outputs.csv";
   }
   else
   {
-    csv_file << data->modelData->modelName << "_Outputs.csv";
+    csv_file << data->modelData->modelFilePrefix << "_Outputs.csv";
   }
 
   string tmpcsv = csv_file.str();
@@ -302,12 +302,6 @@ void createHtmlReportFordataReconciliation(DATA *data, csvData &csvinputs, matri
   // check for nonReconciledVars.txt file exists to map the nonReconciled Vars failing with condition-2 of extraction algorithm
   std::string nonReconciledVarsFilename = string(data->modelData->modelFilePrefix) +  "_NonReconcilcedVars.txt";
   vector<std::string> nonReconciledVars;
-
-  if (omc_flag[FLAG_OUTPUT_PATH])
-  {
-    nonReconciledVarsFilename = string(omc_flagValue[FLAG_OUTPUT_PATH]) + "/" + nonReconciledVarsFilename;
-    copyReferenceFile(data, "_NonReconcilcedVars.txt");
-  }
 
   ifstream nonreconcilevarsip(nonReconciledVarsFilename);
   string line;
@@ -323,14 +317,14 @@ void createHtmlReportFordataReconciliation(DATA *data, csvData &csvinputs, matri
       }
     }
     nonreconcilevarsip.close();
-    omc_unlink(nonReconciledVarsFilename.c_str());
+    //omc_unlink(nonReconciledVarsFilename.c_str());
   }
 
   /* Add Overview Data */
   myfile << "<!DOCTYPE html><html>\n <head> <h1> Data Reconciliation Report</h1></head> \n <body> \n ";
   myfile << "<h2> Overview: </h2>\n";
   myfile << "<table> \n";
-  myfile << "<tr> \n" << "<th align=right> Model file: </th> \n" << "<td>" << data->modelData->modelFilePrefix << ".mo" << "</td> </tr>\n";
+  myfile << "<tr> \n" << "<th align=right> Model file: </th> \n" << "<td>" << data->modelData->modelFileName << "</td> </tr>\n";
   myfile << "<tr> \n" << "<th align=right> Model name: </th> \n" << "<td>" << data->modelData->modelName << "</td> </tr>\n";
   myfile << "<tr> \n" << "<th align=right> Model directory: </th> \n" << "<td>" << data->modelData->modelDir << "</td> </tr>\n";
   myfile << "<tr> \n" << "<th align=right> Measurement input file: </th> \n" << "<td>" << omc_flagValue[FLAG_DATA_RECONCILE_Sx] << "</td> </tr>\n";
@@ -395,22 +389,22 @@ void createHtmlReportFordataReconciliation(DATA *data, csvData &csvinputs, matri
     myfile << "<h3> <a href=" << data->modelData->modelFilePrefix << "_relatedBoundaryConditionsEquations.html" << " target=_blank> Related boundary conditions </a> </h3>\n";
 
   // Debug log
-  myfile << "<h3> <a href=" << data->modelData->modelName << "_debug.txt" << " target=_blank> Debug log </a> </h3>\n";
+  myfile << "<h3> <a href=" << data->modelData->modelFilePrefix << "_debug.txt" << " target=_blank> Debug log </a> </h3>\n";
 
   // create a warning log for correlation input file
   if (!warningCorrelationData.aboveDiagonalEntry.empty() || !warningCorrelationData.diagonalEntry.empty())
   {
-    myfile << "<h3> <a href=" << data->modelData->modelName << "_warning.txt" << " target=_blank> Warnings </a> </h3>\n";
+    myfile << "<h3> <a href=" << data->modelData->modelFilePrefix << "_warning.txt" << " target=_blank> Warnings </a> </h3>\n";
     /* create a warning log file */
     ofstream warningfile;
     std::stringstream warning_file;
     if (omc_flag[FLAG_OUTPUT_PATH])
     {
-      warning_file << string(omc_flagValue[FLAG_OUTPUT_PATH]) << "/" << data->modelData->modelName << "_warning.txt";
+      warning_file << string(omc_flagValue[FLAG_OUTPUT_PATH]) << "/" << data->modelData->modelFilePrefix << "_warning.txt";
     }
     else
     {
-      warning_file << data->modelData->modelName << "_warning.txt";
+      warning_file << data->modelData->modelFilePrefix << "_warning.txt";
     }
 
     warningfile.open(warning_file.str().c_str());
@@ -599,11 +593,11 @@ void createErrorHtmlReportForBoundaryConditions(DATA * data, int status = 0)
   std::stringstream htmlfile;
   if (omc_flag[FLAG_OUTPUT_PATH])
   {
-    htmlfile << string(omc_flagValue[FLAG_OUTPUT_PATH]) << "/" << data->modelData->modelName << "_BoundaryConditions.html";
+    htmlfile << string(omc_flagValue[FLAG_OUTPUT_PATH]) << "/" << data->modelData->modelFilePrefix << "_BoundaryConditions.html";
   }
   else
   {
-    htmlfile << data->modelData->modelName << "_BoundaryConditions.html";
+    htmlfile << data->modelData->modelFilePrefix << "_BoundaryConditions.html";
   }
   string html = htmlfile.str();
   myfile.open(html.c_str());
@@ -612,7 +606,7 @@ void createErrorHtmlReportForBoundaryConditions(DATA * data, int status = 0)
   myfile << "<!DOCTYPE html><html>\n <head> <h1> Boundary Conditions Report </h1></head> \n <body> \n ";
   myfile << "<h2> Overview: </h2>\n";
   myfile << "<table> \n";
-  myfile << "<tr> \n" << "<th align=right> Model file: </th> \n" << "<td>" << data->modelData->modelFilePrefix << ".mo" << "</td> </tr>\n";
+  myfile << "<tr> \n" << "<th align=right> Model file: </th> \n" << "<td>" << data->modelData->modelFileName << "</td> </tr>\n";
   myfile << "<tr> \n" << "<th align=right> Model name: </th> \n" << "<td>" << data->modelData->modelName << "</td> </tr>\n";
   myfile << "<tr> \n" << "<th align=right> Model directory: </th> \n" << "<td>" << data->modelData->modelDir << "</td> </tr>\n";
   // Sx input file
@@ -659,7 +653,7 @@ void createErrorHtmlReportForBoundaryConditions(DATA * data, int status = 0)
   // debug log
   if (status == 0)
   {
-    myfile << "<h2> <a href=" << data->modelData->modelName << "_BoundaryConditions_debug.txt" << " target=_blank> Debug log </a> </h2>\n";
+    myfile << "<h2> <a href=" << data->modelData->modelFilePrefix << "_BoundaryConditions_debug.txt" << " target=_blank> Debug log </a> </h2>\n";
   }
 
   myfile << "</table>\n";
@@ -678,11 +672,11 @@ void createHtmlReportForBoundaryConditions(DATA * data, std::vector<std::string>
   std::stringstream htmlfile;
   if (omc_flag[FLAG_OUTPUT_PATH])
   {
-    htmlfile << string(omc_flagValue[FLAG_OUTPUT_PATH]) << "/" << data->modelData->modelName << "_BoundaryConditions.html";
+    htmlfile << string(omc_flagValue[FLAG_OUTPUT_PATH]) << "/" << data->modelData->modelFilePrefix << "_BoundaryConditions.html";
   }
   else
   {
-    htmlfile << data->modelData->modelName << "_BoundaryConditions.html";
+    htmlfile << data->modelData->modelFilePrefix << "_BoundaryConditions.html";
   }
   string html = htmlfile.str();
   myfile.open(html.c_str());
@@ -692,11 +686,11 @@ void createHtmlReportForBoundaryConditions(DATA * data, std::vector<std::string>
   std::stringstream csv_file;
   if (omc_flag[FLAG_OUTPUT_PATH])
   {
-    csv_file << string(omc_flagValue[FLAG_OUTPUT_PATH]) << "/" << data->modelData->modelName << "_BoundaryConditions_Outputs.csv";
+    csv_file << string(omc_flagValue[FLAG_OUTPUT_PATH]) << "/" << data->modelData->modelFilePrefix << "_BoundaryConditions_Outputs.csv";
   }
   else
   {
-    csv_file << data->modelData->modelName << "_BoundaryConditions_Outputs.csv";
+    csv_file << data->modelData->modelFilePrefix << "_BoundaryConditions_Outputs.csv";
   }
 
   string tmpcsv = csv_file.str();
@@ -706,7 +700,7 @@ void createHtmlReportForBoundaryConditions(DATA * data, std::vector<std::string>
   myfile << "<!DOCTYPE html><html>\n <head> <h1> Boundary Conditions Report </h1></head> \n <body> \n ";
   myfile << "<h2> Overview: </h2>\n";
   myfile << "<table> \n";
-  myfile << "<tr> \n" << "<th align=right> Model file: </th> \n" << "<td>" << data->modelData->modelFilePrefix << ".mo" << "</td> </tr>\n";
+  myfile << "<tr> \n" << "<th align=right> Model file: </th> \n" << "<td>" << data->modelData->modelFileName << "</td> </tr>\n";
   myfile << "<tr> \n" << "<th align=right> Model name: </th> \n" << "<td>" << data->modelData->modelName << "</td> </tr>\n";
   myfile << "<tr> \n" << "<th align=right> Model directory: </th> \n" << "<td>" << data->modelData->modelDir << "</td> </tr>\n";
   myfile << "<tr> \n" << "<th align=right> Reconciled values input file: </th> \n" << "<td>" << omc_flagValue[FLAG_DATA_RECONCILE_Sx] << "</td> </tr>\n";
@@ -735,7 +729,7 @@ void createHtmlReportForBoundaryConditions(DATA * data, std::vector<std::string>
   myfile << "<h3> <a href=" << data->modelData->modelFilePrefix << "_BoundaryConditionIntermediateEquations.html" << " target=_blank> Intermediate equations </a> </h3>\n";
 
   // Debug log
-  myfile << "<h3> <a href=" << data->modelData->modelName << "_BoundaryConditions_debug.txt" << " target=_blank> Debug log </a> </h3>\n";
+  myfile << "<h3> <a href=" << data->modelData->modelFilePrefix << "_BoundaryConditions_debug.txt" << " target=_blank> Debug log </a> </h3>\n";
 
   /* Add Results data */
   myfile << "<h2> Results: </h2>\n";
@@ -836,14 +830,14 @@ bool isUnmeasuredVariables(DATA* data, const char* name)
  * and stores the initial measured value X and HalfWidth confidence
  * interval Wx and also the input variable names
  */
-csvData readMeasurementInputFile(ofstream & logfile, DATA * data, bool boundaryConditions = false)
+csvData readMeasurementInputFile(ofstream & logfile, DATA * data, threadData_t * threadData, bool boundaryConditions = false)
 {
   char * filename = NULL;
   filename = (char*) omc_flagValue[FLAG_DATA_RECONCILE_Sx];
 
   if (filename == NULL && !boundaryConditions)
   {
-    errorStreamPrint(LOG_STDOUT, 0, "Measurement input file not provided (eg:-sx=filename.csv), DataReconciliation cannot be computed!.");
+    errorStreamPrint(OMC_LOG_STDOUT, 0, "Measurement input file not provided (eg:-sx=filename.csv), DataReconciliation cannot be computed!.");
     logfile << "|  error   |   " << "Measurement input file not provided (eg:-sx=filename.csv), DataReconciliation cannot be computed!.\n";
     logfile.close();
     createErrorHtmlReport(data);
@@ -852,14 +846,21 @@ csvData readMeasurementInputFile(ofstream & logfile, DATA * data, bool boundaryC
 
   if (filename == NULL && boundaryConditions)
   {
-    errorStreamPrint(LOG_STDOUT, 0, "Reconciled values input file not provided (eg:-sx=filename.csv), Boundary conditions cannot be computed!.");
+    errorStreamPrint(OMC_LOG_STDOUT, 0, "Reconciled values input file not provided (eg:-sx=filename.csv), Boundary conditions cannot be computed!.");
     logfile << "|  error   |   " << "Reconciled values input file not provided (eg:-sx=filename.csv), Boundary conditions cannot be computed!.\n";
     logfile.close();
     createErrorHtmlReportForBoundaryConditions(data);
     exit(1);
   }
+  /*
+  * fix issue https://github.com/OpenModelica/OpenModelica/issues/13797
+  * check if filepath uses uri format and convert it to absolute path
+  * eg: modelica://Modelica/Resources/Files/filename.csv => /absolute/path/to/filename.csv
+  */
+  modelica_string uri = OpenModelica_uriToFilename(mmc_mk_scon(filename));
+  std::string filenameStr = MMC_STRINGDATA(uri);
 
-  ifstream ip(filename);
+  ifstream ip(filenameStr.c_str());
   string line;
   vector<double> xdata;
   vector<double> sxdata;
@@ -875,7 +876,7 @@ csvData readMeasurementInputFile(ofstream & logfile, DATA * data, bool boundaryC
 
   if (!ip.good() && !boundaryConditions)
   {
-    errorStreamPrint(LOG_STDOUT, 0, "Measurement input file path not found %s.",filename);
+    errorStreamPrint(OMC_LOG_STDOUT, 0, "Measurement input file path not found %s.",filename);
     logfile << "|  error   |   " << "Measurement input file path not found " << filename << "\n";
     logfile.close();
     createErrorHtmlReport(data);
@@ -884,7 +885,7 @@ csvData readMeasurementInputFile(ofstream & logfile, DATA * data, bool boundaryC
 
   if (!ip.good() && boundaryConditions)
   {
-    errorStreamPrint(LOG_STDOUT, 0, "Reconciled values input file path not found %s.", filename);
+    errorStreamPrint(OMC_LOG_STDOUT, 0, "Reconciled values input file path not found %s.", filename);
     logfile << "|  error   |   " << "Reconciled values input file path not found " << filename << "\n";
     logfile.close();
     createErrorHtmlReportForBoundaryConditions(data);
@@ -934,7 +935,7 @@ csvData readMeasurementInputFile(ofstream & logfile, DATA * data, bool boundaryC
           col0 = true;
           names.push_back(temp.c_str());
           Sxrowcount++;
-          if (flag == false)
+          if (!flag)
           {
             Sxcolscount++;
           }
@@ -945,7 +946,7 @@ csvData readMeasurementInputFile(ofstream & logfile, DATA * data, bool boundaryC
           //logfile << "xdata" << temp << " double" << atof(temp.c_str()) <<"\n";
           col1 = true;
           xdata.push_back(atof(temp.c_str()));
-          if (flag == false)
+          if (!flag)
           {
             Sxcolscount++;
           }
@@ -956,7 +957,7 @@ csvData readMeasurementInputFile(ofstream & logfile, DATA * data, bool boundaryC
           //logfile << "sxdata" << temp << " double" << atof(temp.c_str()) <<"\n";
           col2 = true;
           sxdata.push_back(atof(temp.c_str()));
-          if (flag == false)
+          if (!flag)
           {
             Sxcolscount++;
           }
@@ -997,7 +998,7 @@ csvData readMeasurementInputFile(ofstream & logfile, DATA * data, bool boundaryC
   {
     for (const auto &line : errorInfoHeaders)
     {
-      errorStreamPrint(LOG_STDOUT, 0, "the name of the variable of interest in measurement input file  %s is missing in line #%d ", filename, line);
+      errorStreamPrint(OMC_LOG_STDOUT, 0, "the name of the variable of interest in measurement input file  %s is missing in line #%d ", filename, line);
       logfile << "|  error   |   " << "the name of the variable of interest in measurement input file " << filename << " is missing in line #" << line << "\n";
     }
     logfile.close();
@@ -1010,7 +1011,7 @@ csvData readMeasurementInputFile(ofstream & logfile, DATA * data, bool boundaryC
   {
     for (const auto & info : errorInfo)
     {
-      errorStreamPrint(LOG_STDOUT, 0, "Entry for variable of interest %s in measurement input file %s is incorrect because of (no-Value/wrong-Type), with following data: [%s, %s, %s] ", info.name.c_str(), filename, info.name.c_str(), info.x.c_str(), info.sx.c_str());
+      errorStreamPrint(OMC_LOG_STDOUT, 0, "Entry for variable of interest %s in measurement input file %s is incorrect because of (no-Value/wrong-Type), with following data: [%s, %s, %s] ", info.name.c_str(), filename, info.name.c_str(), info.x.c_str(), info.sx.c_str());
       logfile << "|  error   |   " << "Entry for variable of interest " <<  info.name << " in measurement input file " << filename << " is incorrect because of (no-Value/wrong-Type), with following data: " << "[" << info.name << ", " << info.x << ", " << info.sx  << "]" <<"\n";
     }
     logfile.close();
@@ -1152,11 +1153,11 @@ void dumpReconciledSxToCSV(double * matrix, int rows, int cols, vector<string> h
   std::stringstream csv_file;
   if (omc_flag[FLAG_OUTPUT_PATH])
   {
-    csv_file << string(omc_flagValue[FLAG_OUTPUT_PATH]) << "/" << data->modelData->modelName << "_Reconciled_Sx.csv";
+    csv_file << string(omc_flagValue[FLAG_OUTPUT_PATH]) << "/" << data->modelData->modelFilePrefix << "_Reconciled_Sx.csv";
   }
   else
   {
-    csv_file << data->modelData->modelName << "_Reconciled_Sx.csv";
+    csv_file << data->modelData->modelFilePrefix << "_Reconciled_Sx.csv";
   }
 
   string tmpcsv = csv_file.str();
@@ -1291,7 +1292,7 @@ void solveMatrixMultiplication(double *matrixA, double *matrixB, int rowsa, int 
   if (colsA != rowsB)
   {
     //cout << "\n Error: Column of First Matrix not equal to Rows  of Second Matrix \n ";
-    errorStreamPrint(LOG_STDOUT, 0, "solveMatrixMultiplication() Failed!, Column of First Matrix not equal to Rows of Second Matrix %i != %i.",colsA,rowsB);
+    errorStreamPrint(OMC_LOG_STDOUT, 0, "solveMatrixMultiplication() Failed!, Column of First Matrix not equal to Rows of Second Matrix %i != %i.",colsA,rowsB);
     logfile << "|  error   |   " << "solveMatrixMultiplication() Failed!, Column of First Matrix not equal to Rows of Second Matrix " << colsA << " != " << rowsB << "\n";
     logfile.close();
     createErrorHtmlReport(data);
@@ -1319,7 +1320,7 @@ void solveSystemFstar(int n, int nhrs, double *tmpMatrixD, double *tmpMatrixC, o
   if (info > 0)
   {
     //cout << "The solution could not be computed, The info satus is : " << info;
-    errorStreamPrint(LOG_STDOUT, 0, "solveSystemFstar() Failed !, The solution could not be computed, The info satus is %i ", info);
+    errorStreamPrint(OMC_LOG_STDOUT, 0, "solveSystemFstar() Failed !, The solution could not be computed, The info satus is %i ", info);
     logfile << "|  error   |   " << "solveSystemFstar() Failed !, The solution could not be computed, The info satus is " << info << "\n";
     logfile.close();
     createErrorHtmlReport(data);
@@ -1335,7 +1336,7 @@ void solveMatrixSubtraction(matrixData A, matrixData B, double *result, ofstream
   if (A.rows != B.rows && A.column != B.column)
   {
     //cout << "The Matrix Dimensions are not equal to Compute ! \n";
-    errorStreamPrint(LOG_STDOUT, 0, "solveMatrixSubtraction() Failed !, The Matrix Dimensions are not equal to Compute ! %i != %i.", A.rows,B.rows);
+    errorStreamPrint(OMC_LOG_STDOUT, 0, "solveMatrixSubtraction() Failed !, The Matrix Dimensions are not equal to Compute ! %i != %i.", A.rows,B.rows);
     logfile << "|  error   |   " << "solveMatrixSubtraction() Failed !, The Matrix Dimensions are not equal to Compute" << A.rows << " != " << B.rows << "\n";
     logfile.close();
     createErrorHtmlReport(data);
@@ -1361,7 +1362,7 @@ matrixData solveMatrixAddition(matrixData A, matrixData B, ofstream &logfile, DA
   if (A.rows != B.rows && A.column != B.column)
   {
     //cout << "The Matrix Dimensions are not equal to Compute ! \n";
-    errorStreamPrint(LOG_STDOUT, 0, "solveMatrixAddition() Failed !, The Matrix Dimensions are not equal to Compute ! %i != %i.", A.rows,B.rows);
+    errorStreamPrint(OMC_LOG_STDOUT, 0, "solveMatrixAddition() Failed !, The Matrix Dimensions are not equal to Compute ! %i != %i.", A.rows,B.rows);
     logfile << "|  error   |   " << "solveMatrixAddition() Failed !, The Matrix Dimensions are not equal to Compute" << A.rows << " != " << B.rows << "\n";
     logfile.close();
     createErrorHtmlReport(data);
@@ -1425,7 +1426,7 @@ matrixData solveReconciledX(matrixData x, matrixData Sx, matrixData Ft, matrixDa
   solveMatrixSubtraction(x, rhs, reconciledX, logfile, data);
   //printMatrix(reconciledX,x.rows,x.column,"reconciled X^cap ===> (x - (Sx*Ft*fstar))");
 
-  if (ACTIVE_STREAM(LOG_JAC))
+  if (OMC_ACTIVE_STREAM(OMC_LOG_JAC))
   {
     logfile << "Calculations of Reconciled_x ==> (x - (Sx*Ft*f*))" << "\n";
     logfile << "====================================================";
@@ -1465,7 +1466,7 @@ matrixData solveReconciledSx(matrixData Sx, matrixData Ft, matrixData Fstar, ofs
   solveMatrixSubtraction(Sx, rhs, reconciledSx, logfile, data);
   //printMatrix(reconciledSx,Sx.rows,Sx.column,"reconciled Sx ===> (Sx - (Sx*Ft*Fstar))");
 
-  if (ACTIVE_STREAM(LOG_JAC))
+  if (OMC_ACTIVE_STREAM(OMC_LOG_JAC))
   {
     logfile << "Calculations of Reconciled_Sx ===> (Sx - (Sx*Ft*F*))" << "\n";
     logfile << "============================================";
@@ -1489,13 +1490,13 @@ matrixData getJacobianMatrixF(DATA * data, threadData_t * threadData, ofstream &
 {
   // initialize the jacobian call
   const int index = data->callback->INDEX_JAC_F;
-  ANALYTIC_JACOBIAN *jacobian = &(data->simulationInfo->analyticJacobians[index]);
+  JACOBIAN *jacobian = &(data->simulationInfo->analyticJacobians[index]);
   data->callback->initialAnalyticJacobianF(data, threadData, jacobian);
   int cols = jacobian->sizeCols;
   int rows = jacobian->sizeRows;
   if (cols == 0)
   {
-    errorStreamPrint(LOG_STDOUT, 0, "Cannot Compute Jacobian Matrix F");
+    errorStreamPrint(OMC_LOG_STDOUT, 0, "Cannot Compute Jacobian Matrix F");
     logfile << "|  error   |   " << "Cannot Compute Jacobian Matrix F" << "\n";
     logfile.close();
     if (!boundaryConditions)
@@ -1533,14 +1534,14 @@ matrixData getJacobianMatrixH(DATA * data, threadData_t * threadData, ofstream &
 {
   // initialize the jacobian call
   const int index = data->callback->INDEX_JAC_H;
-  ANALYTIC_JACOBIAN *jacobian = &(data->simulationInfo->analyticJacobians[index]);
+  JACOBIAN *jacobian = &(data->simulationInfo->analyticJacobians[index]);
   data->callback->initialAnalyticJacobianH(data, threadData, jacobian);
   int cols = jacobian->sizeCols;
   int rows = jacobian->sizeRows;
   //std::cout << "\n check jacobian H :" << rows << "==>" << cols;
   if (cols == 0)
   {
-    errorStreamPrint(LOG_STDOUT, 0, "Cannot Compute Jacobian Matrix H");
+    errorStreamPrint(OMC_LOG_STDOUT, 0, "Cannot Compute Jacobian Matrix H");
     logfile << "|  error   |   " << "Cannot Compute Jacobian Matrix H" << "\n";
     logfile.close();
     if (!boundaryConditions)
@@ -1638,7 +1639,7 @@ void validateCorelationInputs(csvData Sx_result, DATA * data, ofstream &logfile,
     }
 
     // user error variable of interest in correlation input file does not correspond to variable of interest
-    if (flag == false)
+    if (!flag)
     {
       noEntry.push_back(headers[i]);
     }
@@ -1649,12 +1650,12 @@ void validateCorelationInputs(csvData Sx_result, DATA * data, ofstream &logfile,
   {
     if (!boundaryConditions)
     {
-      errorStreamPrint(LOG_STDOUT, 0, "variable of interest %s, at %s has multiple entries in correlation input file %s ", multipleEntry[i].c_str(), comments.c_str(), omc_flagValue[FLAG_DATA_RECONCILE_Cx]);
+      errorStreamPrint(OMC_LOG_STDOUT, 0, "variable of interest %s, at %s has multiple entries in correlation input file %s ", multipleEntry[i].c_str(), comments.c_str(), omc_flagValue[FLAG_DATA_RECONCILE_Cx]);
       logfile << "|  error   |   " << "variable of interest " << multipleEntry[i] << " at " << comments << " has multiple entries in correlation input file " << omc_flagValue[FLAG_DATA_RECONCILE_Cx] << "\n";
     }
     else
     {
-      errorStreamPrint(LOG_STDOUT, 0, "variable of interest %s, at %s has multiple entries in reconciled covariance matrix input file %s ", multipleEntry[i].c_str(), comments.c_str(), omc_flagValue[FLAG_DATA_RECONCILE_Cx]);
+      errorStreamPrint(OMC_LOG_STDOUT, 0, "variable of interest %s, at %s has multiple entries in reconciled covariance matrix input file %s ", multipleEntry[i].c_str(), comments.c_str(), omc_flagValue[FLAG_DATA_RECONCILE_Cx]);
       logfile << "|  error   |   " << "variable of interest " << multipleEntry[i] << " at " << comments << " has multiple entries in reconciled covariance matrix input file " << omc_flagValue[FLAG_DATA_RECONCILE_Cx] << "\n";
     }
   }
@@ -1664,12 +1665,12 @@ void validateCorelationInputs(csvData Sx_result, DATA * data, ofstream &logfile,
   {
     if (!boundaryConditions)
     {
-      errorStreamPrint(LOG_STDOUT, 0, "variable of interest %s, at %s entry in correlation input file %s does not correspond to a variable of interest ", noEntry[i].c_str(), comments.c_str(), omc_flagValue[FLAG_DATA_RECONCILE_Cx]);
+      errorStreamPrint(OMC_LOG_STDOUT, 0, "variable of interest %s, at %s entry in correlation input file %s does not correspond to a variable of interest ", noEntry[i].c_str(), comments.c_str(), omc_flagValue[FLAG_DATA_RECONCILE_Cx]);
       logfile << "|  error   |   " << "variable of interest " << noEntry[i]  << ", at " << comments << " entry in correlation input file " << omc_flagValue[FLAG_DATA_RECONCILE_Cx] << " does not correspond to a variable of interest" << "\n";
     }
     else
     {
-      errorStreamPrint(LOG_STDOUT, 0, "variable of interest %s, at %s entry in reconciled covariance matrix input file %s does not correspond to a variable of interest ", noEntry[i].c_str(), comments.c_str(), omc_flagValue[FLAG_DATA_RECONCILE_Cx]);
+      errorStreamPrint(OMC_LOG_STDOUT, 0, "variable of interest %s, at %s entry in reconciled covariance matrix input file %s does not correspond to a variable of interest ", noEntry[i].c_str(), comments.c_str(), omc_flagValue[FLAG_DATA_RECONCILE_Cx]);
       logfile << "|  error   |   " << "variable of interest " << noEntry[i]  << ", at " << comments << " entry in reconciled covariance matrix input file " << omc_flagValue[FLAG_DATA_RECONCILE_Cx] << " does not correspond to a variable of interest" << "\n";
     }
   }
@@ -1700,12 +1701,12 @@ void validateCorelationInputsSquareMatrix(DATA * data, ofstream &logfile, vector
   {
     if (!boundaryConditions)
     {
-      errorStreamPrint(LOG_STDOUT, 0, "Lines and columns of correlation matrix in correlation input file  %s, do not have identical names in the same order.", omc_flagValue[FLAG_DATA_RECONCILE_Cx]);
+      errorStreamPrint(OMC_LOG_STDOUT, 0, "Lines and columns of correlation matrix in correlation input file  %s, do not have identical names in the same order.", omc_flagValue[FLAG_DATA_RECONCILE_Cx]);
       logfile << "|  error   |   " << "Lines and columns of correlation matrix in correlation input file " << omc_flagValue[FLAG_DATA_RECONCILE_Cx] << " do not have identical names in the same order." << "\n";
     }
     else
     {
-      errorStreamPrint(LOG_STDOUT, 0, "Lines and columns of covariance matrix in reconciled covariance matrix input file  %s, do not have identical names in the same order.", omc_flagValue[FLAG_DATA_RECONCILE_Cx]);
+      errorStreamPrint(OMC_LOG_STDOUT, 0, "Lines and columns of covariance matrix in reconciled covariance matrix input file  %s, do not have identical names in the same order.", omc_flagValue[FLAG_DATA_RECONCILE_Cx]);
       logfile << "|  error   |   " << "Lines and columns of covariance matrix in reconciled covariance matrix input file " << omc_flagValue[FLAG_DATA_RECONCILE_Cx] << " do not have identical names in the same order." << "\n";
     }
 
@@ -1715,7 +1716,7 @@ void validateCorelationInputsSquareMatrix(DATA * data, ofstream &logfile, vector
       auto it = std::find(rowHeaders.begin(), rowHeaders.end(), index);
       if (it == rowHeaders.end())
       {
-        errorStreamPrint(LOG_STDOUT, 0, "Line %s is missing", index.c_str());
+        errorStreamPrint(OMC_LOG_STDOUT, 0, "Line %s is missing", index.c_str());
         logfile << "|  error   |   " << "Line " << index << " is missing " << "\n";
       }
     }
@@ -1726,7 +1727,7 @@ void validateCorelationInputsSquareMatrix(DATA * data, ofstream &logfile, vector
       auto it = find(columnHeaders.begin(), columnHeaders.end(), index);
       if (it == columnHeaders.end())
       {
-        errorStreamPrint(LOG_STDOUT, 0, "Column %s is missing", index.c_str());
+        errorStreamPrint(OMC_LOG_STDOUT, 0, "Column %s is missing", index.c_str());
         logfile << "|  error   |   " << "Column " << index << " is missing " << "\n";
       }
     }
@@ -1737,7 +1738,7 @@ void validateCorelationInputsSquareMatrix(DATA * data, ofstream &logfile, vector
       //std::cout << "\n " << i << rowHeaders[i] << " Vs " << columnHeaders[i];
       if (rowHeaders[i] != columnHeaders[i])
       {
-        errorStreamPrint(LOG_STDOUT, 0, "Lines and columns are in different orders %s Vs %s", rowHeaders[i].c_str(), columnHeaders[i].c_str());
+        errorStreamPrint(OMC_LOG_STDOUT, 0, "Lines and columns are in different orders %s Vs %s", rowHeaders[i].c_str(), columnHeaders[i].c_str());
         logfile << "|  error   |   " << "Lines and columns are in different orders " << rowHeaders[i] << " Vs " << columnHeaders[i] << "\n";
       }
     }
@@ -1759,7 +1760,7 @@ void validateCorelationInputsSquareMatrix(DATA * data, ofstream &logfile, vector
  * Function which reads the correlation coefficient input file
  * and stores the correlation coefficient matrix Cx for DataReconciliation
  */
-correlationData readCorrelationCoefficientFile(csvData Sx_result, ofstream & logfile, DATA * data, bool boundaryConditions = false)
+correlationData readCorrelationCoefficientFile(csvData Sx_result, ofstream & logfile, DATA * data, threadData_t * threadData, bool boundaryConditions = false)
 {
   char * filename = NULL;
   filename = (char*) omc_flagValue[FLAG_DATA_RECONCILE_Cx];
@@ -1778,19 +1779,27 @@ correlationData readCorrelationCoefficientFile(csvData Sx_result, ofstream & log
 
   if (filename == NULL && boundaryConditions)
   {
-    errorStreamPrint(LOG_STDOUT, 0, "Reconciled covariance matrix input file not provided (eg:-cx=filename.csv), Boundary conditions cannot be computed!.");
+    errorStreamPrint(OMC_LOG_STDOUT, 0, "Reconciled covariance matrix input file not provided (eg:-cx=filename.csv), Boundary conditions cannot be computed!.");
     logfile << "|  error   |   " << "Reconciled covariance matrix input file not provided (eg:-cx=filename.csv), Boundary conditions cannot be computed!.\n";
     logfile.close();
     createErrorHtmlReportForBoundaryConditions(data);
     exit(1);
   }
 
+  /*
+  * fix issue https://github.com/OpenModelica/OpenModelica/issues/13797
+  * check if filepath uses uri format and convert it to absolute path
+  * eg: modelica://Modelica/Resources/Files/filename.csv => /absolute/path/to/filename.csv
+  */
+  modelica_string uri = OpenModelica_uriToFilename(mmc_mk_scon(filename));
+  std::string filenameStr = MMC_STRINGDATA(uri);
+
   // read the file
-  ifstream ip(filename);
+  ifstream ip(filenameStr.c_str());
   string line;
   if (!ip.good() && !boundaryConditions)
   {
-    errorStreamPrint(LOG_STDOUT, 0, "correlation coefficient input file path not found %s.", filename);
+    errorStreamPrint(OMC_LOG_STDOUT, 0, "correlation coefficient input file path not found %s.", filename);
     logfile << "|  error   |   " << "correlation coefficient input file path not found " << filename << "\n";
     logfile.close();
     createErrorHtmlReport(data);
@@ -1799,7 +1808,7 @@ correlationData readCorrelationCoefficientFile(csvData Sx_result, ofstream & log
 
   if (!ip.good() && boundaryConditions)
   {
-    errorStreamPrint(LOG_STDOUT, 0, "Reconciled covariance matrix input file path not found %s.", filename);
+    errorStreamPrint(OMC_LOG_STDOUT, 0, "Reconciled covariance matrix input file path not found %s.", filename);
     logfile << "|  error   |   " << "Reconciled covariance matrix input file path not found " << filename << "\n";
     logfile.close();
     createErrorHtmlReportForBoundaryConditions(data);
@@ -1895,12 +1904,12 @@ correlationData readCorrelationCoefficientFile(csvData Sx_result, ofstream & log
     {
       if (!boundaryConditions)
       {
-        errorStreamPrint(LOG_STDOUT, 0, "the name of the variable of interest in correlation input file  %s is missing in line #%d ", filename, line);
+        errorStreamPrint(OMC_LOG_STDOUT, 0, "the name of the variable of interest in correlation input file  %s is missing in line #%d ", filename, line);
         logfile << "|  error   |   " << "the name of the variable of interest in correlation input file " << filename << " is missing in line #" << line << "\n";
       }
       else
       {
-        errorStreamPrint(LOG_STDOUT, 0, "the name of the variable of interest in reconciled covariance matrix input file  %s is missing in line #%d ", filename, line);
+        errorStreamPrint(OMC_LOG_STDOUT, 0, "the name of the variable of interest in reconciled covariance matrix input file  %s is missing in line #%d ", filename, line);
         logfile << "|  error   |   " << "the name of the variable of interest in reconciled covariance matrix input file " << filename << " is missing in line #" << line << "\n";
       }
     }
@@ -1923,12 +1932,12 @@ correlationData readCorrelationCoefficientFile(csvData Sx_result, ofstream & log
     {
       if (!boundaryConditions)
       {
-        errorStreamPrint(LOG_STDOUT, 0, "Entry for variable of interest %s and variable of interest %s in correlation input file %s is incorrect because of wrong-Type: [%s] ", info.name.c_str(), info.x.c_str(), filename, info.sx.c_str());
+        errorStreamPrint(OMC_LOG_STDOUT, 0, "Entry for variable of interest %s and variable of interest %s in correlation input file %s is incorrect because of wrong-Type: [%s] ", info.name.c_str(), info.x.c_str(), filename, info.sx.c_str());
         logfile << "|  error   |   " << "Entry for variable of interest " <<  info.name << " and variable of interest " << info.x << " in correlation input file " << filename <<  " is incorrect because of wrong-Type: " << "[" << info.sx  << "]" <<"\n";
       }
       else
       {
-        errorStreamPrint(LOG_STDOUT, 0, "Entry for variable of interest %s and variable of interest %s in reconciled covariance matrix input file %s is incorrect because of wrong-Type: [%s] ", info.name.c_str(), info.x.c_str(), filename, info.sx.c_str());
+        errorStreamPrint(OMC_LOG_STDOUT, 0, "Entry for variable of interest %s and variable of interest %s in reconciled covariance matrix input file %s is incorrect because of wrong-Type: [%s] ", info.name.c_str(), info.x.c_str(), filename, info.sx.c_str());
         logfile << "|  error   |   " << "Entry for variable of interest " <<  info.name << " and variable of interest " << info.x << " in reconciled covariance matrix input file " << filename <<  " is incorrect because of wrong-Type: " << "[" << info.sx  << "]" <<"\n";
       }
     }
@@ -2036,7 +2045,7 @@ csvData validateMeasurementInputs(csvData Sx_result, DATA * data, ofstream &logf
 {
   if (data->modelData->ndataReconVars != Sx_result.headers.size())
   {
-    errorStreamPrint(LOG_STDOUT, 0, "invalid input file %s, number of variable of interest(%li) != (%zu)number of variables in measurement input file", omc_flagValue[FLAG_DATA_RECONCILE_Sx], data->modelData->ndataReconVars, Sx_result.headers.size());
+    errorStreamPrint(OMC_LOG_STDOUT, 0, "invalid input file %s, number of variable of interest(%li) != (%zu)number of variables in measurement input file", omc_flagValue[FLAG_DATA_RECONCILE_Sx], data->modelData->ndataReconVars, Sx_result.headers.size());
     logfile << "|  error   |   " << "invalid input file "<< omc_flagValue[FLAG_DATA_RECONCILE_Sx] << ", number of variable of interest(" << data->modelData->ndataReconVars << ")" << " != " << "(" << Sx_result.headers.size() << ")" << "number of variables in measurement input file";
     logfile.close();
     if (!boundaryConditions)
@@ -2071,7 +2080,7 @@ csvData validateMeasurementInputs(csvData Sx_result, DATA * data, ofstream &logf
     }
 
     // user error variable of interest , has no entry in measurement input file
-    if (flag == false)
+    if (!flag)
     {
       noEntry.push_back(knowns[i]);
     }
@@ -2085,14 +2094,14 @@ csvData validateMeasurementInputs(csvData Sx_result, DATA * data, ofstream &logf
   // dump user error #3: variable of interest, has no entry in measurement input file
   for (int i = 0; i < noEntry.size(); i++)
   {
-    errorStreamPrint(LOG_STDOUT, 0, "variable of interest %s, has no entry in measurement input file %s ", noEntry[i].c_str(), omc_flagValue[FLAG_DATA_RECONCILE_Sx]);
+    errorStreamPrint(OMC_LOG_STDOUT, 0, "variable of interest %s, has no entry in measurement input file %s ", noEntry[i].c_str(), omc_flagValue[FLAG_DATA_RECONCILE_Sx]);
     logfile << "|  error   |   " << "variable of interest " << noEntry[i] << ", has no entry in measurement input file" << omc_flagValue[FLAG_DATA_RECONCILE_Sx] << "\n";
   }
 
   // dump user error #4: variable of interest , has multiple entry in measurement input file
   for (int i = 0; i < multipleEntry.size(); i++)
   {
-    errorStreamPrint(LOG_STDOUT, 0, "variable of interest %s, has multiple entries in measurement input file %s ", multipleEntry[i].c_str(), omc_flagValue[FLAG_DATA_RECONCILE_Sx]);
+    errorStreamPrint(OMC_LOG_STDOUT, 0, "variable of interest %s, has multiple entries in measurement input file %s ", multipleEntry[i].c_str(), omc_flagValue[FLAG_DATA_RECONCILE_Sx]);
     logfile << "|  error   |   " << "variable of interest " << multipleEntry[i] << ", has multiple entries in measurement input file " << omc_flagValue[FLAG_DATA_RECONCILE_Sx] << "\n";
   }
 
@@ -2105,7 +2114,7 @@ csvData validateMeasurementInputs(csvData Sx_result, DATA * data, ofstream &logf
     {
       //std::cout << "\n not found" << i;
       userError5 = true;
-      errorStreamPrint(LOG_STDOUT, 0, "variable of interest %s, entry in measurement input file %s does not correspond to a variable of interest ", Sx_result.headers[i].c_str(), omc_flagValue[FLAG_DATA_RECONCILE_Sx]);
+      errorStreamPrint(OMC_LOG_STDOUT, 0, "variable of interest %s, entry in measurement input file %s does not correspond to a variable of interest ", Sx_result.headers[i].c_str(), omc_flagValue[FLAG_DATA_RECONCILE_Sx]);
       logfile << "|  error   |   " << "variable of interest " << Sx_result.headers[i] << ", entry in measurement input file " << omc_flagValue[FLAG_DATA_RECONCILE_Sx] << " does not correspond to a variable of interest" << "\n";
     }
   }
@@ -2483,7 +2492,7 @@ int RunReconciliation(DATA *data, threadData_t *threadData, inputData x, matrixD
   matrixData tmpmatrixC1 = copyMatrix(cpytmpmatrixC);
   matrixData tmpmatrixD1 = copyMatrix(cpytmpmatrixD);
 
-  if(ACTIVE_STREAM(LOG_JAC))
+  if(OMC_ACTIVE_STREAM(OMC_LOG_JAC))
   {
     logfile << "Calculations of Matrix (F*Sx*Ft) f* = c(x,y) " << "\n";
     logfile << "============================================\n";
@@ -2501,7 +2510,7 @@ int RunReconciliation(DATA *data, threadData_t *threadData, inputData x, matrixD
    */
   solveSystemFstar(jacF.rows, 1, tmpmatrixD, setc, logfile, data);
 
-  if(ACTIVE_STREAM(LOG_JAC))
+  if(OMC_ACTIVE_STREAM(OMC_LOG_JAC))
   {
     printMatrix(setc, jacF.rows, 1, "f*", logfile);
     logfile << "***** Completed ****** \n\n";
@@ -2512,7 +2521,7 @@ int RunReconciliation(DATA *data, threadData_t *threadData, inputData x, matrixD
   matrixData reconciled_X = solveReconciledX(tmpxcap, Sx, jacFt, tmpfstar, logfile, data);
   //printMatrix(reconciled_X.data,reconciled_X.rows,reconciled_X.column,"reconciled_X ===> (x - (Sx*Ft*fstar))");
 
-  if (ACTIVE_STREAM(LOG_JAC))
+  if (OMC_ACTIVE_STREAM(OMC_LOG_JAC))
   {
     logfile << "Calculations of Matrix (F*Sx*Ft) F* = F*Sx " << "\n";
     logfile << "===============================================\n";
@@ -2531,7 +2540,7 @@ int RunReconciliation(DATA *data, threadData_t *threadData, inputData x, matrixD
    */
   solveSystemFstar(jacF.rows, Sx.column, tmpmatrixD1.data, tmpmatrixC1.data, logfile, data);
 
-  if (ACTIVE_STREAM(LOG_JAC))
+  if (OMC_ACTIVE_STREAM(OMC_LOG_JAC))
   {
     printMatrix(tmpmatrixC1.data, jacF.rows, Sx.column, "F*", logfile);
     logfile << "***** Completed ****** \n\n";
@@ -2604,7 +2613,7 @@ int RunReconciliation(DATA *data, threadData_t *threadData, inputData x, matrixD
   matrixData copyreconSx_diag = {reconciled_Sx.rows, 1, reconSx_diag};
   matrixData tmpcopyreconSx_diag = copyMatrix(copyreconSx_diag);
 
-  if (ACTIVE_STREAM(LOG_JAC))
+  if (OMC_ACTIVE_STREAM(OMC_LOG_JAC))
   {
     logfile << "Calculations of HalfWidth Confidence Interval " << "\n";
     logfile << "===============================================\n";
@@ -2613,7 +2622,7 @@ int RunReconciliation(DATA *data, threadData_t *threadData, inputData x, matrixD
 
   calculateSquareRoot(copyreconSx_diag.data, reconciled_Sx.rows);
 
-  if (ACTIVE_STREAM(LOG_JAC))
+  if (OMC_ACTIVE_STREAM(OMC_LOG_JAC))
   {
     printMatrix(copyreconSx_diag.data, reconciled_Sx.rows, 1, "reconciled-Sx_SquareRoot", logfile);
     logfile << "*****Completed***********\n";
@@ -2629,7 +2638,7 @@ int RunReconciliation(DATA *data, threadData_t *threadData, inputData x, matrixD
   double *newSx_diag = (double*) calloc (reconciled_Sx.rows * 1, sizeof(double));
   solveMatrixSubtraction(sxdiag, tmpcopyreconSx_diag, newSx_diag, logfile, data);
 
-  if (ACTIVE_STREAM(LOG_JAC))
+  if (OMC_ACTIVE_STREAM(OMC_LOG_JAC))
   {
     logfile << "Calculations of Individual Tests " << "\n";
     logfile << "===============================================\n";
@@ -2638,7 +2647,7 @@ int RunReconciliation(DATA *data, threadData_t *threadData, inputData x, matrixD
 
   calculateSquareRoot(newSx_diag, reconciled_Sx.rows);
 
-  if (ACTIVE_STREAM(LOG_JAC))
+  if (OMC_ACTIVE_STREAM(OMC_LOG_JAC))
   {
     printMatrix (newSx_diag, sxdiag.rows, sxdiag.column, "squareroot-newSx", logfile);
   }
@@ -2652,7 +2661,7 @@ int RunReconciliation(DATA *data, threadData_t *threadData, inputData x, matrixD
     newX[a] = fabs (newX[a]);
   }
 
-  if (ACTIVE_STREAM(LOG_JAC))
+  if (OMC_ACTIVE_STREAM(OMC_LOG_JAC))
   {
     printMatrix(newX, xdiag.rows, xdiag.column, "recon_X - X", logfile);
     logfile << "*********Completed***********\n";
@@ -2765,7 +2774,7 @@ int reconcileBoundaryConditions(DATA * data, threadData_t * threadData, inputDat
   double *reconSt_diag = (double*) calloc (jacF.rows * 1, sizeof(double));
   getDiagonalElements(S_t, jacF.rows, jacFt.column, reconSt_diag);
 
-  if (ACTIVE_STREAM(LOG_JAC))
+  if (OMC_ACTIVE_STREAM(OMC_LOG_JAC))
   {
     logfile << "Calculations of half-width confidence interval" << "\n";
     logfile << "===============================================\n";
@@ -2774,7 +2783,7 @@ int reconcileBoundaryConditions(DATA * data, threadData_t * threadData, inputDat
 
   calculateSquareRoot(reconSt_diag, jacF.rows);
 
-  if (ACTIVE_STREAM(LOG_JAC))
+  if (OMC_ACTIVE_STREAM(OMC_LOG_JAC))
   {
     printMatrix(reconSt_diag, jacF.rows, 1, "S_t_SquareRoot", logfile);
   }
@@ -2784,12 +2793,6 @@ int reconcileBoundaryConditions(DATA * data, threadData_t * threadData, inputDat
   // check for BoundaryConditionVars.txt file exists to generate the html report
   std::string boundaryConditionsVarsFilename = std::string(data->modelData->modelFilePrefix) +  "_BoundaryConditionVars.txt";
   vector<std::string> boundaryConditionVars;
-
-  if (omc_flag[FLAG_OUTPUT_PATH])
-  {
-    boundaryConditionsVarsFilename = string(omc_flagValue[FLAG_OUTPUT_PATH]) + "/" + boundaryConditionsVarsFilename;
-    copyReferenceFile(data, "_BoundaryConditionVars.txt");
-  }
 
   ifstream boundaryConditionVarsip(boundaryConditionsVarsFilename);
   std::string line;
@@ -2805,11 +2808,11 @@ int reconcileBoundaryConditions(DATA * data, threadData_t * threadData, inputDat
       }
     }
     boundaryConditionVarsip.close();
-    omc_unlink(boundaryConditionsVarsFilename.c_str());
+    //omc_unlink(boundaryConditionsVarsFilename.c_str());
   }
   else
   {
-    errorStreamPrint(LOG_STDOUT, 0, "Boundary conditions vars filename not found: %s.", boundaryConditionsVarsFilename.c_str());
+    errorStreamPrint(OMC_LOG_STDOUT, 0, "Boundary conditions vars filename not found: %s.", boundaryConditionsVarsFilename.c_str());
     logfile << "|  error   |   " << "Boundary conditions vars filename not found: " << boundaryConditionsVarsFilename << "\n";
     logfile.close();
     createErrorHtmlReportForBoundaryConditions(data);
@@ -2952,11 +2955,11 @@ int dataReconciliation(DATA * data, threadData_t * threadData, int status)
   std::stringstream logfilename;
   if (omc_flag[FLAG_OUTPUT_PATH])
   {
-    logfilename << omc_flagValue[FLAG_OUTPUT_PATH] << "/" << data->modelData->modelName << "_debug.txt";
+    logfilename << omc_flagValue[FLAG_OUTPUT_PATH] << "/" << data->modelData->modelFilePrefix << "_debug.txt";
   }
   else
   {
-    logfilename << data->modelData->modelName << "_debug.txt";
+    logfilename << data->modelData->modelFilePrefix << "_debug.txt";
   }
 
   string tmplogfilename = logfilename.str();
@@ -2980,7 +2983,7 @@ int dataReconciliation(DATA * data, threadData_t * threadData, int status)
   }
 
   // read the measurement input data provide by user
-  csvData csvdata = readMeasurementInputFile(logfile, data);
+  csvData csvdata = readMeasurementInputFile(logfile, data, threadData);
 
   // validate the input data read from measurement input file
   csvData Sx_data = validateMeasurementInputs(csvdata, data, logfile);
@@ -2989,7 +2992,7 @@ int dataReconciliation(DATA * data, threadData_t * threadData, int status)
   inputData x = getInputData(Sx_data, logfile);
 
   // read the correlation coefficient input data provide by user
-  correlationData Cx_data = readCorrelationCoefficientFile(Sx_data, logfile, data);
+  correlationData Cx_data = readCorrelationCoefficientFile(Sx_data, logfile, data, threadData);
 
   // Compute the covariance matrix (Sx) from csvData
   matrixData Sx = computeCovarianceMatrixSx(Sx_data, Cx_data, logfile, data);
@@ -3060,11 +3063,11 @@ int boundaryConditions(DATA * data, threadData_t * threadData, int status)
   std::stringstream logfilename;
   if (omc_flag[FLAG_OUTPUT_PATH])
   {
-    logfilename << omc_flagValue[FLAG_OUTPUT_PATH] << "/" << data->modelData->modelName << "_BoundaryConditions_debug.txt";
+    logfilename << omc_flagValue[FLAG_OUTPUT_PATH] << "/" << data->modelData->modelFilePrefix << "_BoundaryConditions_debug.txt";
   }
   else
   {
-    logfilename << data->modelData->modelName << "_BoundaryConditions_debug.txt";
+    logfilename << data->modelData->modelFilePrefix << "_BoundaryConditions_debug.txt";
   }
 
   string tmplogfilename = logfilename.str();
@@ -3073,7 +3076,7 @@ int boundaryConditions(DATA * data, threadData_t * threadData, int status)
   logfile << "|  info    |   " << data->modelData->modelName << "\n";
 
   // read the measurement input data provide by user
-  csvData csvdata = readMeasurementInputFile(logfile, data, true);
+  csvData csvdata = readMeasurementInputFile(logfile, data, threadData, true);
 
   // validate the input data read from measurement input file
   csvData Sx_data = validateMeasurementInputs(csvdata, data, logfile, true);
@@ -3082,7 +3085,7 @@ int boundaryConditions(DATA * data, threadData_t * threadData, int status)
   inputData reconciled_x = getReconciledX(Sx_data, logfile);
 
   // read the reconciled covariance matrix input file provided by user
-  correlationData cx_data = readCorrelationCoefficientFile(Sx_data, logfile, data, true);
+  correlationData cx_data = readCorrelationCoefficientFile(Sx_data, logfile, data, threadData, true);
 
   // create the column matrix from the covariance matrix
   int rowsize = cx_data.rowHeaders.size();

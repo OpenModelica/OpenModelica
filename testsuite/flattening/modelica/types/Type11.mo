@@ -1,7 +1,6 @@
 // name:     Type11
 // keywords: types
 // status:   correct
-// cflags: -d=-newInst
 //
 // Checks that subscripts are handled in a correct manner int the component clause.
 //
@@ -14,6 +13,7 @@ class Type11
   Real ok[3];
 equation
   ok[1]=3.0;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end Type11;
 
 // Result:

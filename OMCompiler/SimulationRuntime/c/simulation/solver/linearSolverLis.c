@@ -118,8 +118,8 @@ void printLisMatrixCSR(LIS_MATRIX A, int n)
 {
   int i, j;
   /* A matrix */
-  infoStreamPrint(LOG_LS_V, 1, "A matrix [%dx%d] nnz = %d", n, n, A->nnz);
-  infoStreamPrint(LOG_LS_V, 0, "Column Sparse Row format. Print tuple (index,value) for each row:");
+  infoStreamPrint(OMC_LOG_LS_V, 1, "A matrix [%dx%d] nnz = %d", n, n, A->nnz);
+  infoStreamPrint(OMC_LOG_LS_V, 0, "Column Sparse Row format. Print tuple (index,value) for each row:");
   for(i=0; i<n; i++)
   {
     char *buffer = (char*)malloc(sizeof(char)*A->ptr[i+1]*50);
@@ -129,11 +129,11 @@ void printLisMatrixCSR(LIS_MATRIX A, int n)
     {
        sprintf(buffer, "%s(%d,%g) ", buffer, A->index[j], A->value[j]);
     }
-    infoStreamPrint(LOG_LS_V, 0, "%s", buffer);
+    infoStreamPrint(OMC_LOG_LS_V, 0, "%s", buffer);
     free(buffer);
   }
 
-  messageClose(LOG_LS_V);
+  messageClose(OMC_LOG_LS_V);
 }
 
 /*! \fn getAnalyticalJacobian
@@ -146,38 +146,39 @@ void printLisMatrixCSR(LIS_MATRIX A, int n)
  *  \author wbraun
  *
  */
-int getAnalyticalJacobianLis(DATA* data, threadData_t *threadData, int sysNumber)
+void getAnalyticalJacobianLis(DATA* data, threadData_t *threadData, LINEAR_SYSTEM_DATA* systemData)
 {
-  int i,j,k,l,ii;
-  LINEAR_SYSTEM_DATA* systemData = &(((DATA*)data)->simulationInfo->linearSystemData[sysNumber]);
+  int i,j,l,nth;
+  JACOBIAN* jacobian = systemData->parDynamicData[omc_get_thread_num()].jacobian;
+  JACOBIAN* parentJacobian = systemData->parDynamicData[omc_get_thread_num()].parentJacobian;
+  const SPARSE_PATTERN* sp = jacobian->sparsePattern;
 
-  const int index = systemData->jacobianIndex;
-  ANALYTIC_JACOBIAN* jacobian = systemData->parDynamicData[omc_get_thread_num()].jacobian;
-  ANALYTIC_JACOBIAN* parentJacobian = systemData->parDynamicData[omc_get_thread_num()].parentJacobian;
-
-  int nth = 0;
-  int nnz = jacobian->sparsePattern->numberOfNonZeros;
-
-  for(i=0; i < jacobian->sizeRows; i++) {
-    jacobian->seedVars[i] = 1;
-    ((systemData->analyticalJacobianColumn))(data, threadData, jacobian, parentJacobian);
-
-    for(j = 0; j < jacobian->sizeCols; j++) {
-      if(jacobian->seedVars[j] == 1) {
-        ii = jacobian->sparsePattern->leadindex[j];
-        while(ii < jacobian->sparsePattern->leadindex[j+1]) {
-          l  = jacobian->sparsePattern->index[ii];
-          /*infoStreamPrint(LOG_LS_V, 0, "set on Matrix A (%d, %d)(%d) = %f", l, i, nth, -jacobian->resultVars[l]); */
-          systemData->setAElement(l, i, -jacobian->resultVars[l], nth, (void*) systemData, threadData);
-          nth++;
-          ii++;
-        };
-      }
-    }
-    jacobian->seedVars[i] = 0;
+  /* evaluate constant equations of Jacobian */
+  if (jacobian->constantEqns != NULL) {
+    jacobian->constantEqns(data, threadData, jacobian, parentJacobian);
   }
 
-  return 0;
+  /* evaluate Jacobian */
+  for (i = 0; i < sp->maxColors; i++) {
+    /* activate seed variable for the corresponding color */
+    for (j = 0; j < jacobian->sizeCols; j++)
+      if (sp->colorCols[j]-1 == i)
+        jacobian->seedVars[j] = 1.0;
+
+    /* evaluate Jacobian column */
+    jacobian->evalColumn(data, threadData, jacobian, parentJacobian);
+
+    for (j = 0; j < jacobian->sizeCols; j++) {
+      if (sp->colorCols[j]-1 == i) {
+        for (nth = sp->leadindex[j]; nth < sp->leadindex[j+1]; nth++) {
+          l = sp->index[nth];
+          systemData->setAElement(l, j, -jacobian->resultVars[l], nth, systemData, threadData);
+        }
+        /* de-activate seed variable for the corresponding color */
+        jacobian->seedVars[j] = 0.0;
+      }
+    }
+  }
 }
 
 /*! \fn wrapper_fvec_lis for the residual function
@@ -211,7 +212,7 @@ int solveLis(DATA *data, threadData_t *threadData, int sysNumber, double* aux_x)
 
   int indexes[2] = {1,eqSystemNumber};
   double tmpJacEvalTime;
-  infoStreamPrintWithEquationIndexes(LOG_LS, omc_dummyFileInfo, 0, indexes,
+  infoStreamPrintWithEquationIndexes(OMC_LOG_LS, omc_dummyFileInfo, 0, indexes,
     "Start solving Linear System %d (size %d) at time %g with Lis Solver",
     eqSystemNumber, (int) systemData->size, data->localData[0]->timeValue);
 
@@ -235,7 +236,7 @@ int solveLis(DATA *data, threadData_t *threadData, int sysNumber, double* aux_x)
   } else {
     /* calculate jacobian -> matrix A*/
     if(systemData->jacobianIndex != -1){
-      getAnalyticalJacobianLis(data, threadData, sysNumber);
+      getAnalyticalJacobianLis(data, threadData, systemData);
     } else {
       assertStreamPrint(threadData, 1, "jacobian function pointer is invalid" );
     }
@@ -252,35 +253,35 @@ int solveLis(DATA *data, threadData_t *threadData, int sysNumber, double* aux_x)
   }
   tmpJacEvalTime = rt_ext_tp_tock(&(solverData->timeClock));
   systemData->jacobianTime += tmpJacEvalTime;
-  infoStreamPrint(LOG_LS_V, 0, "###  %f  time to set Matrix A and vector b.", tmpJacEvalTime);
+  infoStreamPrint(OMC_LOG_LS_V, 0, "###  %f  time to set Matrix A and vector b.", tmpJacEvalTime);
 
   rt_ext_tp_tick(&(solverData->timeClock));
   err = lis_solve(solverData->A,solverData->b,solverData->x,solverData->solver);
-  infoStreamPrint(LOG_LS_V, 0, "Solve System: %f", rt_ext_tp_tock(&(solverData->timeClock)));
+  infoStreamPrint(OMC_LOG_LS_V, 0, "Solve System: %f", rt_ext_tp_tock(&(solverData->timeClock)));
 
   if (err){
-    warningStreamPrint(LOG_LS_V, 0, "lis_solve : %s(code=%d)\n\n ", lis_returncode[err], err);
+    warningStreamPrint(OMC_LOG_LS_V, 0, "lis_solve : %s(code=%d)\n\n ", lis_returncode[err], err);
     printLisMatrixCSR(solverData->A, solverData->n_row);
     success = 0;
   }
 
 
   /* Log A*x=b */
-  if(ACTIVE_STREAM(LOG_LS_V))
+  if(OMC_ACTIVE_STREAM(OMC_LOG_LS_V))
   {
     char *buffer = (char*)malloc(sizeof(char)*n*25);
 
     printLisMatrixCSR(solverData->A, n);
 
     /* b vector */
-    infoStreamPrint(LOG_LS_V, 1, "b vector [%d]", n);
+    infoStreamPrint(OMC_LOG_LS_V, 1, "b vector [%d]", n);
     for(i=0; i<n; i++)
     {
       buffer[0] = 0;
       sprintf(buffer, "%s%20.12g ", buffer, solverData->b->value[i]);
-      infoStreamPrint(LOG_LS_V, 0, "%s", buffer);
+      infoStreamPrint(OMC_LOG_LS_V, 0, "%s", buffer);
     }
-    messageClose(LOG_LS_V);
+    messageClose(OMC_LOG_LS_V);
     free(buffer);
   }
 
@@ -298,7 +299,7 @@ int solveLis(DATA *data, threadData_t *threadData, int sysNumber, double* aux_x)
       residualNorm = _omc_gen_euclideanVectorNorm(solverData->work, solverData->n_row);
 
       if ((isnan(residualNorm)) || (residualNorm>1e-4)){
-        warningStreamPrintWithLimit(LOG_LS, 0, ++(systemData->numberOfFailures) /* Update counter */, data->simulationInfo->maxWarnDisplays,
+        warningStreamPrintWithLimit(OMC_LOG_LS, 0, ++(systemData->numberOfFailures) /* Update counter */, data->simulationInfo->maxWarnDisplays,
                                     "Failed to solve linear system of equations (no. %d) at time %f. Residual norm is %.15g.",
                                     (int)systemData->equationIndex, data->localData[0]->timeValue, residualNorm);
         success = 0;
@@ -308,24 +309,24 @@ int solveLis(DATA *data, threadData_t *threadData, int sysNumber, double* aux_x)
       lis_vector_get_values(solverData->x, 0, solverData->n_row, aux_x);
     }
 
-    if (ACTIVE_STREAM(LOG_LS_V))
+    if (OMC_ACTIVE_STREAM(OMC_LOG_LS_V))
     {
       if (1 == systemData->method) {
-        infoStreamPrint(LOG_LS_V, 1, "Residual Norm %.15g of solution x:", residualNorm);
+        infoStreamPrint(OMC_LOG_LS_V, 1, "Residual Norm %.15g of solution x:", residualNorm);
       } else {
-        infoStreamPrint(LOG_LS_V, 1, "Solution x:");
+        infoStreamPrint(OMC_LOG_LS_V, 1, "Solution x:");
       }
-      infoStreamPrint(LOG_LS_V, 0, "System %d numVars %d.", eqSystemNumber, modelInfoGetEquation(&data->modelData->modelDataXml,eqSystemNumber).numVar);
+      infoStreamPrint(OMC_LOG_LS_V, 0, "System %d numVars %d.", eqSystemNumber, modelInfoGetEquation(&data->modelData->modelDataXml,eqSystemNumber).numVar);
 
       for(i = 0; i < systemData->size; ++i)
-        infoStreamPrint(LOG_LS_V, 0, "[%d] %s = %g", i+1, modelInfoGetEquation(&data->modelData->modelDataXml,eqSystemNumber).vars[i], aux_x[i]);
+        infoStreamPrint(OMC_LOG_LS_V, 0, "[%d] %s = %g", i+1, modelInfoGetEquation(&data->modelData->modelDataXml,eqSystemNumber).vars[i], aux_x[i]);
 
-      messageClose(LOG_LS_V);
+      messageClose(OMC_LOG_LS_V);
     }
   }
   else
   {
-    warningStreamPrintWithLimit(LOG_LS, 0, ++(systemData->numberOfFailures) /* Update counter */, data->simulationInfo->maxWarnDisplays,
+    warningStreamPrintWithLimit(OMC_LOG_LS, 0, ++(systemData->numberOfFailures) /* Update counter */, data->simulationInfo->maxWarnDisplays,
                                 "Failed to solve linear system of equations (no. %d) at time %f, system status %d.",
                                   (int)systemData->equationIndex, data->localData[0]->timeValue, err);
   }

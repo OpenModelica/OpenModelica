@@ -1,7 +1,6 @@
 // name:     RedeclareNoCC1
 // keywords: redeclare, constraining class, #3528
 // status:   correct
-// cflags: -d=-newInst
 //
 // Checks that redeclares are applied correctly when no constraining class is
 // given.
@@ -30,6 +29,7 @@ end E;
 
 model F
   extends E(redeclare replaceable C a(x = 4.0));
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end F;
 
 // Result:

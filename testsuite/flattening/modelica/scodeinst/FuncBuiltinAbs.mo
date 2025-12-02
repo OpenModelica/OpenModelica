@@ -1,7 +1,6 @@
 // name: FuncBuiltinAbs
 // keywords: abs
 // status: correct
-// cflags: -d=newInst
 //
 // Tests the builtin abs function.
 //

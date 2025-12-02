@@ -241,15 +241,15 @@ algorithm
   File.writeReal(file, s.tolerance);
   File.write(file, "\"\n");
 
-  File.write(file, "    solver        = \"");
+  File.write(file, "    solver         = \"");
   File.write(file, s.method);
   File.write(file, "\"\n");
 
-  File.write(file, "    outputFormat      = \"");
+  File.write(file, "    outputFormat   = \"");
   File.write(file, s.outputFormat);
   File.write(file, "\"\n");
 
-  File.write(file, "    variableFilter      = \"");
+  File.write(file, "    variableFilter = \"");
   File.write(file, s.variableFilter);
   File.write(file, "\" />\n\n");
 
@@ -330,13 +330,15 @@ function scalarVariable
   input String classType;
   input Integer valueReference;
   input Integer classIndex;
+protected
+  String type_name = if DAEUtil.expTypeArray(var.type_) then "ArrayVariable" else "ScalarVariable";
 algorithm
-  File.write(file, "  <ScalarVariable\n");
+  File.write(file, "  <" + type_name + "\n");
   scalarVariableAttribute(file, var, classType, valueReference, classIndex);
   File.write(file, "    ");
   // TODO: Convert ScalarVariableType to File.mo?
   File.write(file, Tpl.textString(CodegenUtil.ScalarVariableType(Tpl.emptyTxt, var.unit, var.displayUnit, var.minValue, var.maxValue, var.initialValue, var.nominalValue, var.isFixed, var.type_)));
-  File.write(file, "\n  </ScalarVariable>\n");
+  File.write(file, "\n  </" + type_name + ">\n");
 end scalarVariable;
 
 function scalarVariableAttribute "Generates code for ScalarVariable Attribute file for FMU target."
@@ -347,12 +349,8 @@ function scalarVariableAttribute "Generates code for ScalarVariable Attribute fi
   input Integer classIndex;
 protected
   Integer inputIndex = SimCodeUtil.getInputIndex(simVar);
-  DAE.ElementSource source;
-  SourceInfo info;
-  String hideResult;
+  SourceInfo info = simVar.source.info;
 algorithm
-  source := simVar.source;
-  info := source.info;
 
   File.write(file, "    name = \"");
   CR.writeCref(file, simVar.name, XML);
@@ -399,13 +397,9 @@ algorithm
   File.write(file, "    isProtected = \"");
   File.write(file, String(simVar.isProtected));
   File.write(file, "\" hideResult = \"");
-  hideResult := match (simVar.hideResult)
-    local
-      Boolean bval;
-    case SOME(bval) then String(bval);
-    else "";
-  end match;
-  File.write(file, hideResult);
+  File.write(file, Util.applyOptionOrDefault(simVar.hideResult, boolString, ""));
+  File.write(file, "\" isEncrypted = \"");
+  File.write(file, boolString(simVar.isEncrypted));
   File.write(file, "\" initNonlinear = \"");
   File.write(file, boolString(simVar.initNonlinear));
   File.write(file, "\"\n");
@@ -423,6 +417,10 @@ algorithm
   File.write(file, "\" fileWritable = \"");
   File.write(file, String(not info.isReadOnly));
   File.write(file, "\">\n");
+
+  for dim in Expression.arrayDimension(simVar.type_) loop
+    File.write(file, "    <Dimension start=\"" + intString(Expression.dimensionSize(dim)) + "\"/>\n");
+  end for;
 end scalarVariableAttribute;
 
 function scalarVariableType "Generates code for ScalarVariable Type file for FMU target."

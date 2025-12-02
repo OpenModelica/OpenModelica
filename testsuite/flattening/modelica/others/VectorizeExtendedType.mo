@@ -1,7 +1,6 @@
 // name:     VectorizeExtendedType
 // keywords: vectorization extends
 // status:   correct
-// cflags: -d=-newInst
 //
 // Fixed bug #1119: http://openmodelica.ida.liu.se:8080/cb/issue/1119?navigation=true
 // Fixed bug #1138: http://openmodelica.ida.liu.se:8080/cb/issue/1138?navigation=true
@@ -22,6 +21,7 @@ model VectorizeExtendedType
   Real3 r2[3] = {3,2,1};
   parameter Real2 r3[2,2] = {{1,2},{3,4}};
   parameter Axis n = {0, -1, 0};
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end VectorizeExtendedType;
 
 // Result:

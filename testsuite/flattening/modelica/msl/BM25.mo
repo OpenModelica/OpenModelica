@@ -1,7 +1,6 @@
 // name:     BM25 -  Tan component
 // keywords: Tan
 // status:   correct
-// cflags: -d=-newInst
 //
 // Testing instantiation of the Math.Tan component.
 //
@@ -1065,6 +1064,7 @@ model BM25
 
 equation
   connect(tan1.inPort,constant1.outPort) annotation(Line(visible=true,points={{-27.87,16.95},{-49.71,16.95}}));
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end BM25;
 // function Modelica.Math.tan
 // input Real u(quantity = "Angle", unit = "rad", displayUnit = "deg");

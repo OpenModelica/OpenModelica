@@ -102,7 +102,7 @@ We are now ready to configure OpenModelica for Visual Studio. Open a `Developer 
 
 ```powershell
 cd OpenModelica
-cmake -S . -B build_msvc_ninja -Wno-dev -DOM_WITH_VCPKG=ON -DOM_USE_CCACHE=OFF -DOM_ENABLE_GUI_CLIENTS=OFF -DOM_OMC_ENABLE_FORTRAN=OFF -DOM_OMC_ENABLE_IPOPT=OFF -G "Ninja"
+cmake -S . -B build_msvc_ninja -Wno-dev -DOM_WITH_VCPKG=ON -DOM_USE_CCACHE=OFF -DOM_ENABLE_GUI_CLIENTS=OFF -DOM_OMC_ENABLE_FORTRAN=OFF -DOM_OMC_ENABLE_OPTIMIZATION=OFF -DOM_OMC_ENABLE_MOO=OFF -G "Ninja"
 ```
 
 We have

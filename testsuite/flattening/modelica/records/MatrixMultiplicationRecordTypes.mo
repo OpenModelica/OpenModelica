@@ -1,7 +1,6 @@
 // name: MatrixMultiplicationRecordTypes
 // keywords: operator overloading, matrix, Complex, record
 // status: correct
-// cflags: -d=-newInst
 //
 // We have a matrix multiplication of records. According to Spec. 3.2 Section 14.4 and 10.6.4, this should be handled
 // the same way as matrix multilication of numeric matrics.
@@ -62,6 +61,7 @@ model ComplexTest
   Complex c2[3, 3] = {{c1, c1, c1}, {c1, c1, c1}, {c1, c1, c1}};
   Complex c3[3, 1] = {{c1}, {c1}, {c1}};
   Complex c4[3, 1] = c2 * c3;
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end ComplexTest;
 
 // Result:

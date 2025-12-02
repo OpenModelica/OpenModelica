@@ -181,12 +181,7 @@ The browser also contains the slider and animation buttons. These controls
 are used for variable graphics and schematic animation of models i.e.,
 DynamicSelect annotation. They are also used for debugging of state machines.
 Open the :ref:`omedit-diagram-window` for animation. It is only possible
-to animate one model at a time. This is achieved by marking the result
-file active in the Variables Browser. The animation only read the values
-from the active result file. It is possible to simulate several models.
-In that case, the user will see a list of result files in the Variables Browser.
-The user can switch between different result files by right clicking
-on the result file and selecting **Set Active** in the context menu.
+to animate one model at a time.
 
 .. figure :: media/omedit-variables-browser.png
 
@@ -304,13 +299,6 @@ File Menu
 -  *Open Transformations File* - Opens a transformational debugger file.
 
 -  *Unload All* - Unloads all loaded classes.
-
--  *New Composite Model* - Creates a new composite model.
-
--  *Open Composite Model(s)* - Loads an existing composite model.
-
--  *Load External Model(s)* - Loads the external models that can be used within
-   composite model.
 
 -  *Open Directory* - Loads the files of a directory recursively. The files
    are loaded as text files.
@@ -505,9 +493,6 @@ Help Menu
 -  *Modelica Documentation* - Opens the Modelica Documentation.
 
 -  *OMSimulator User's Guide* - Opens the OMSimulator User's Guide.
-
--  *OpenModelica TLM Simulator Documentation* - Opens the OpenModelica TLM Simulator
-   Documentation.
 
 -  *About OMEdit* - Shows the information about OpenModelica Connection Editor.
 
@@ -805,7 +790,7 @@ Simulation Flags
 
   -  *LOG_NLS_JAC_TEST* - tests the analytical jacobian of nonlinear systems.
 
-  -  *LOG_NLS_NEWTON_DIAG* - Log Newton diagnostics. A Diagnostic method to figure out
+  -  *LOG_NLS_NEWTON_DIAGNOSTICS* - Log Newton diagnostics. A Diagnostic method to figure out
      which individual initial guess values are more likely to be causing the convergence
      failure of Newton-type iterative nonlinear solvers.
 
@@ -1008,6 +993,7 @@ Array Plot
 
 Plots an array variable so that the array elements' indexes are on the x-axis and corresponding
 elements' values are on the y-axis. The time is controlled by the slider above the variable tree.
+Right click the result file in variable browser and select `Enable Time Controls` to enable the slider.
 When an array is present in the model, it has a principal array node in the variable tree.
 To plot this array as an Array Plot, match the principal node. The principal node may be expanded
 into particular array elements. To plot a single element in the Time Plot, match the element.
@@ -1023,8 +1009,9 @@ Array Parametric Plot
 ^^^^^^^^^^^^^^^^^^^^^
 
 Plots the first array elements' values on the x-axis versus the second array elements'
-values on the y-axis. The time is controlled by the slider above the variable tree. To
-create a new Array Parametric Plot, press the New Array Parametric Plot Window toolbar
+values on the y-axis. The time is controlled by the slider above the variable tree.
+Right click the result file in variable browser and select `Enable Time Controls` to enable the slider.
+To create a new Array Parametric Plot, press the New Array Parametric Plot Window toolbar
 button (|array-parametric-plot-window|), then match the principle array node in the
 variable tree view to be plotted on the x-axis and match the principle array node to be
 plotted on the y-axis.
@@ -1097,6 +1084,8 @@ Plot Window Menu
       -  *Hide* - Hide/Show the curve.
 
       -  *Toggle Sign* - Toggles the sign of curve.
+
+      -  *Plot on Right Y-Axis* - Display curve on right-side y-axis.
 
   -  *Titles* - Plot, axes and footer titles settings.
 
@@ -1437,6 +1426,9 @@ General Options
   -  *Display errors/warnings when instantiating the graphical annotations* - if true then the errors/warnings
      are shown when using OMC API for graphical annotations.
 
+  -  *Enable CRML Support* - Enables the CRML support.
+     The user can create/open .crml files and translate them to Modelica.
+
 -  Libraries Browser
 
   -  *Library Icon Size* - Sets the size for library icons.
@@ -1548,6 +1540,17 @@ Modelica Editor Options
 
   -  *Preview* - Shows the demo of the syntax highlighting.
 
+Modelica Script Editor Options
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+-  Colors
+
+  -  *Items* - List of categories used of syntax highlighting the code.
+
+  -  *Item Color* - Sets the color for the selected item.
+
+  -  *Preview* - Shows the demo of the syntax highlighting.
+
 MetaModelica Editor Options
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -1559,8 +1562,8 @@ MetaModelica Editor Options
 
   -  *Preview* - Shows the demo of the syntax highlighting.
 
-CompositeModel Editor Options
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+SSP Editor Options
+~~~~~~~~~~~~~~~~~~
 
 -  Colors
 
@@ -1570,8 +1573,8 @@ CompositeModel Editor Options
 
   -  *Preview* - Shows the demo of the syntax highlighting.
 
-SSP Editor Options
-~~~~~~~~~~~~~~~~~~
+CRML Editor Options
+~~~~~~~~~~~~~~~~~~~
 
 -  Colors
 
@@ -1620,34 +1623,6 @@ Graphical Views Options
        Libraries Browser.
 
   -  *Move connectors together on both icon and diagram layers*
-
-- Graphics
-
-  - Icon/Diagram View
-
-    -  Extent
-
-      -  *Left* - Defines the left extent point for the view.
-
-      -  *Bottom* - Defines the bottom extent point for the view.
-
-      -  *Right* - Defines the right extent point for the view.
-
-      -  *Top* - Defines the top extent point for the view.
-
-    -  Grid
-
-      -  *Horizontal* - Defines the horizontal size of the view grid.
-
-      -  *Vertical* - Defines the vertical size of the view grid.
-
-    -  Component
-
-      -  *Scale factor* - Defines the initial scale factor for the component
-         dragged on the view.
-
-      -  *Preserve aspect ratio* - If true then the component's aspect ratio
-         is preserved while scaling.
 
 .. _omedit-options-simulation :
 
@@ -1877,6 +1852,19 @@ Figaro Options
 
   -  *Figaro Processor* - the Figaro processor location.
 
+CRML Options
+~~~~~~~~~~~~
+
+-  CRML
+
+  -  *Compiler Jar* - the compiler jar file of CRML.
+
+  -  *Compiler Arguments* - arugments to the compiler process.
+
+  -  *Processor* - the CRML translator.
+
+  -  *Modelica Library Paths* - list of Modelica library paths that are needed to run the translated model.
+
 .. _omedit-options-debugger :
 
 Debugger Options
@@ -1957,17 +1945,6 @@ FMI Options
   -  *Delete FMU directory and generated model when OMEdit is closed* - If true
      then the temporary FMU directory that is created for importing the FMU will be deleted.
 
-OMTLMSimulator Options
-~~~~~~~~~~~~~~~~~~~~~~
-
--  General
-
-  -  *Path* - path to OMTLMSimulator bin directory.
-
-  -  *Manager Process* - path to OMTLMSimulator manager process.
-
-  -  *Monitor Process* - path to OMTLMSimulator monitor process.
-
 OMSimulator/SSP Options
 ~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -1976,6 +1953,15 @@ OMSimulator/SSP Options
   -  *Command Line Options* - sets the OMSimulator command line options.
 
   -  *Logging Level* - OMSimulator logging level.
+
+Sensitivity Optimization Options
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+-  General
+
+  -  *OMSens Backend Path* - sets the OMSens backend.
+
+  -  *python* - sets the Python executable to run OMSens scripts.
 
 __OpenModelica_commandLineOptions Annotation
 --------------------------------------------
@@ -2009,7 +1995,7 @@ default DASSL and would also like to see the cpu time then you can write the fol
 .. code-block :: modelica
 
   model Test
-    annotation(__OpenModelica_simulationFlags(s = "heun", cpu = "()"));
+    annotation(__OpenModelica_simulationFlags(s = "ida", cpu = "()"));
   end Test;
 
 The annotation is a comma separated list of options where each option is a simulation flag
@@ -2191,13 +2177,6 @@ The controls allows the easy manipulation of the visualization,
 The visualization is based on the simulation result file.
 All three formats of the simulation result file are supported i.e., mat, csv and plt
 where mat is a matlab file format, csv is a comma separated file and plt is an ordered text file.
-
-It is only possible to debug one state machine at a time.
-This is achieved by marking the result file active in the Variables Browser.
-The visualization only read the values from the active result file.
-It is possible to simulate several state machine models.
-In that case, the user will see a list of result files in the Variables Browser.
-The user can switch between different result files by right clicking on the result file and selecting *Set Active* in the context menu.
 
 Using OMEdit as Text Editor
 ---------------------------

@@ -8,7 +8,7 @@ buildModel(TestSine);getErrorString();
 // Result:
 // true
 // ""
-// {"TestSine","TestSine_init.xml"}
+// {"TestSine", "TestSine_init.xml"}
 // "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // "
 // endResult

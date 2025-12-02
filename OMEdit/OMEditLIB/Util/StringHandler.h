@@ -39,6 +39,7 @@
 #include <QComboBox>
 #include <QProcessEnvironment>
 
+class ComboBox;
 class StringHandler : public QObject
 {
   Q_OBJECT
@@ -68,15 +69,7 @@ public:
     Debug,
     OMEditInfo  /* used internally by OMEdit to mark message blue. */
   };
-  enum TLMCausality { TLMBidirectional, TLMInput, TLMOutput };
   enum ResultType {String, Integer};
-  static QString getTLMCausality(int causality);
-  enum TLMDomain { Mechanical, Electric, Hydraulic, Pneumatic, Magnetic, Signal };
-  static QString getTLMDomain(int domain);
-  enum SimulationTools {Adams, Beast, Dymola, OpenModelica, Simulink, WolframSystemModeler, Other};
-  static QString getSimulationTool(int tool);
-  static QString getSimulationToolStartCommand(QString tool, QString simulationToolStartCommand);
-  static StringHandler::SimulationTools getSimulationTool(QString simulationToolStartCommand);
   static QString getModelicaClassType(int type);
   static StringHandler::ModelicaClasses getModelicaClassType(QString type);
   static QString getViewType(int type);
@@ -88,11 +81,11 @@ public:
   static Qt::PenStyle getLinePatternType(StringHandler::LinePattern type);
   static StringHandler::LinePattern getLinePatternType(QString type);
   static QString getLinePatternString(StringHandler::LinePattern type);
-  static QComboBox* getLinePatternComboBox();
+  static ComboBox *getLinePatternComboBox();
   static Qt::BrushStyle getFillPatternType(StringHandler::FillPattern type);
   static StringHandler::FillPattern getFillPatternType(QString type);
   static QString getFillPatternString(StringHandler::FillPattern type);
-  static QComboBox* getFillPatternComboBox();
+  static ComboBox *getFillPatternComboBox();
   static StringHandler::BorderPattern getBorderPatternType(QString type);
   static QString getBorderPatternString(StringHandler::BorderPattern type);
   static StringHandler::Smooth getSmoothType(QString type);
@@ -101,8 +94,8 @@ public:
   static QString getClosureString(StringHandler::EllipseClosure type);
   static StringHandler::Arrow getArrowType(QString type);
   static QString getArrowString(StringHandler::Arrow type);
-  static QComboBox* getStartArrowComboBox();
-  static QComboBox* getEndArrowComboBox();
+  static ComboBox *getStartArrowComboBox();
+  static ComboBox *getEndArrowComboBox();
   static int getFontWeight(QVector<TextStyle> styleList);
   static bool getFontItalic(QVector<StringHandler::TextStyle> styleList);
   static bool getFontUnderline(QVector<StringHandler::TextStyle> styleList);
@@ -154,6 +147,7 @@ public:
   static bool naturalSort(const QString &s1, const QString &s2);
 #if defined(_WIN32)
   static QProcessEnvironment simulationProcessEnvironment();
+  static QProcessEnvironment modelicaSimulationProcessEnvironment(const QString pathsFileName, QString *errorMsg);
 #endif
   static StringHandler::SimulationMessageType getSimulationMessageType(QString type);
   static QString getSimulationMessageTypeString(StringHandler::SimulationMessageType type);
@@ -162,7 +156,7 @@ public:
   static QMap<int, int> getLeadingSpaces(QString contents);
   static int getLeadingSpacesSize(QString str);
   static bool isFileWritAble(QString filePath);
-  static bool containsSpace(QString str);
+  static bool nameContainsComma(const QString &name);
   static QString trimmedEnd(const QString &str);
   static QString joinDerivativeAndPreviousVariable(QString fullVariableName, QString variableName, QString derivativeOrPrevious);
   static QString removeLeadingSpaces(QString contents);

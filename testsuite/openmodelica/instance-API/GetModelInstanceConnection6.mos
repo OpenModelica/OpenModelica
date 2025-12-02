@@ -1,0 +1,218 @@
+// name: GetModelInstanceConnection6
+// keywords:
+// status: correct
+// cflags: -d=newInst
+//
+//
+
+loadString("
+  model B
+    C c;
+  end B;
+
+  connector C
+  end C;
+
+  model D
+    extends E;
+    B b;
+    C c;
+  equation
+    connect(b.c, c);
+  end D;
+
+  model E
+    C c1;
+    C c2;
+  equation
+    connect(c1, c2);
+  end E;
+
+  model M
+    D d;
+  end M;
+");
+
+getModelInstance(M, prettyPrint = true);
+
+// Result:
+// true
+// "{
+//   \"name\": \"M\",
+//   \"restriction\": \"model\",
+//   \"elements\": [
+//     {
+//       \"$kind\": \"component\",
+//       \"name\": \"d\",
+//       \"type\": {
+//         \"name\": \"D\",
+//         \"restriction\": \"model\",
+//         \"elements\": [
+//           {
+//             \"$kind\": \"extends\",
+//             \"baseClass\": {
+//               \"name\": \"E\",
+//               \"restriction\": \"model\",
+//               \"elements\": [
+//                 {
+//                   \"$kind\": \"component\",
+//                   \"name\": \"c1\",
+//                   \"type\": {
+//                     \"name\": \"C\",
+//                     \"restriction\": \"connector\",
+//                     \"source\": {
+//                       \"filename\": \"<interactive>\",
+//                       \"lineStart\": 6,
+//                       \"columnStart\": 3,
+//                       \"lineEnd\": 7,
+//                       \"columnEnd\": 8
+//                     }
+//                   }
+//                 },
+//                 {
+//                   \"$kind\": \"component\",
+//                   \"name\": \"c2\",
+//                   \"type\": {
+//                     \"name\": \"C\",
+//                     \"restriction\": \"connector\",
+//                     \"source\": {
+//                       \"filename\": \"<interactive>\",
+//                       \"lineStart\": 6,
+//                       \"columnStart\": 3,
+//                       \"lineEnd\": 7,
+//                       \"columnEnd\": 8
+//                     }
+//                   }
+//                 }
+//               ],
+//               \"connections\": [
+//                 {
+//                   \"lhs\": {
+//                     \"$kind\": \"cref\",
+//                     \"parts\": [
+//                       {
+//                         \"name\": \"d\"
+//                       },
+//                       {
+//                         \"name\": \"c1\"
+//                       }
+//                     ]
+//                   },
+//                   \"rhs\": {
+//                     \"$kind\": \"cref\",
+//                     \"parts\": [
+//                       {
+//                         \"name\": \"d\"
+//                       },
+//                       {
+//                         \"name\": \"c2\"
+//                       }
+//                     ]
+//                   }
+//                 }
+//               ],
+//               \"source\": {
+//                 \"filename\": \"<interactive>\",
+//                 \"lineStart\": 10,
+//                 \"columnStart\": 5,
+//                 \"lineEnd\": 10,
+//                 \"columnEnd\": 14
+//               }
+//             }
+//           },
+//           {
+//             \"$kind\": \"component\",
+//             \"name\": \"b\",
+//             \"type\": {
+//               \"name\": \"B\",
+//               \"restriction\": \"model\",
+//               \"elements\": [
+//                 {
+//                   \"$kind\": \"component\",
+//                   \"name\": \"c\",
+//                   \"type\": {
+//                     \"name\": \"C\",
+//                     \"restriction\": \"connector\",
+//                     \"source\": {
+//                       \"filename\": \"<interactive>\",
+//                       \"lineStart\": 6,
+//                       \"columnStart\": 3,
+//                       \"lineEnd\": 7,
+//                       \"columnEnd\": 8
+//                     }
+//                   }
+//                 }
+//               ],
+//               \"source\": {
+//                 \"filename\": \"<interactive>\",
+//                 \"lineStart\": 2,
+//                 \"columnStart\": 3,
+//                 \"lineEnd\": 4,
+//                 \"columnEnd\": 8
+//               }
+//             }
+//           },
+//           {
+//             \"$kind\": \"component\",
+//             \"name\": \"c\",
+//             \"type\": {
+//               \"name\": \"C\",
+//               \"restriction\": \"connector\",
+//               \"source\": {
+//                 \"filename\": \"<interactive>\",
+//                 \"lineStart\": 6,
+//                 \"columnStart\": 3,
+//                 \"lineEnd\": 7,
+//                 \"columnEnd\": 8
+//               }
+//             }
+//           }
+//         ],
+//         \"connections\": [
+//           {
+//             \"lhs\": {
+//               \"$kind\": \"cref\",
+//               \"parts\": [
+//                 {
+//                   \"name\": \"d\"
+//                 },
+//                 {
+//                   \"name\": \"b\"
+//                 },
+//                 {
+//                   \"name\": \"c\"
+//                 }
+//               ]
+//             },
+//             \"rhs\": {
+//               \"$kind\": \"cref\",
+//               \"parts\": [
+//                 {
+//                   \"name\": \"d\"
+//                 },
+//                 {
+//                   \"name\": \"c\"
+//                 }
+//               ]
+//             }
+//           }
+//         ],
+//         \"source\": {
+//           \"filename\": \"<interactive>\",
+//           \"lineStart\": 9,
+//           \"columnStart\": 3,
+//           \"lineEnd\": 15,
+//           \"columnEnd\": 8
+//         }
+//       }
+//     }
+//   ],
+//   \"source\": {
+//     \"filename\": \"<interactive>\",
+//     \"lineStart\": 24,
+//     \"columnStart\": 3,
+//     \"lineEnd\": 26,
+//     \"columnEnd\": 8
+//   }
+// }"
+// endResult

@@ -1,7 +1,7 @@
 dnl Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.63])
-AC_INIT([OMCompiler],[dev],[https://trac.openmodelica.org/OpenModelica],[openmodelica],[https://openmodelica.org])
+AC_INIT([OMCompiler],[dev],[https://github.com/OpenModelica/OpenModelica/issues],[openmodelica],[https://openmodelica.org])
 AC_SUBST(date)
 AC_SUBST(host_short)
 AC_SUBST(omc_antlr_jar)
@@ -36,9 +36,11 @@ AC_SUBST(RT_LDFLAGS_SHARED)
 AC_SUBST(OMCRUNTIME_SHARED_LDFLAGS)
 AC_SUBST(SUNDIALS_LDFLAGS)
 AC_SUBST(SUNDIALS_TARGET)
-AC_SUBST(IPOPT_LDFLAGS)
-AC_SUBST(IPOPT_CFLAGS)
-AC_SUBST(IPOPT_TARGET)
+AC_SUBST(PRIMME_LDFLAGS)
+AC_SUBST(PRIMME_TARGET)
+AC_SUBST(MOO_LDFLAGS)
+AC_SUBST(MOO_CFLAGS)
+AC_SUBST(MOO_TARGET)
 AC_SUBST(QMAKE)
 AC_SUBST(EXE)
 AC_SUBST(SOURCE_REVISION)
@@ -54,6 +56,7 @@ AC_SUBST(HAVE_LAPACK)
 AC_SUBST(HAVE_LAPACK_DEPRECATED)
 AC_SUBST(LD_LAPACK)
 AC_SUBST(OMC_HAVE_IPOPT)
+AC_SUBST(OMC_HAVE_PRIMME)
 AC_SUBST(WITH_SUITESPARSE)
 AC_SUBST(SUITESPARSE_TARGET)
 AC_SUBST(SUITESPARSE_LDFLAGS)
@@ -177,7 +180,7 @@ AC_ARG_WITH(msys, [  --with-msys[=no]              Point to an msys installation
 CFLAGS_BEFORE="$CFLAGS"
 CFLAGS="$CFLAGS -Werror"
 AC_MSG_CHECKING([if -Werror works])
-AC_TRY_LINK([void abc() {}], [abc();], [AC_MSG_RESULT([ok])], [AC_MSG_ERROR([failed (check your CFLAGS)])])
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[void abc() {}]], [[abc();]])],[AC_MSG_RESULT([ok])],[AC_MSG_ERROR([failed (check your CFLAGS)])])
 CFLAGS="$CFLAGS_BEFORE"
 
 dnl Disables the default CFLAGS="-g -O2"
@@ -188,7 +191,7 @@ else
 CFLAGS_BEFORE="$CFLAGS"
 CFLAGS="-O3 -march=native"
 AC_MSG_CHECKING([looking for -march=native])
-AC_TRY_LINK([void abc() {}], [abc();], [AC_MSG_RESULT([yes])], [AC_MSG_RESULT([no]);CFLAGS="-O3"])
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[void abc() {}]], [[abc();]])],[AC_MSG_RESULT([yes])],[AC_MSG_RESULT([no]);CFLAGS="-O3"])
 fi
 fi
 
@@ -196,7 +199,7 @@ LDFLAGS_BEFORE="$LDFLAGS"
 LIBS_BEFORE="$LIBS"
 LDFLAGS="$LDFLAGS -Wl,--no-undefined"
 AC_MSG_CHECKING([looking for --no-undefined])
-AC_TRY_LINK([void abc() {}], [abc();], [AC_MSG_RESULT([yes]);LD_NOUNDEFINED=" -Wl,--no-undefined"], [AC_MSG_RESULT([no])])
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[void abc() {}]], [[abc();]])],[AC_MSG_RESULT([yes]);LD_NOUNDEFINED=" -Wl,--no-undefined"],[AC_MSG_RESULT([no])])
 LDFLAGS="$LDFLAGS_BEFORE"
 LIBS="$LIBS_BEFORE"
 
@@ -222,7 +225,7 @@ AC_MSG_CHECKING([for flags to append to CFLAGS ($TRY_FLAGS)])
 for flag in $TRY_FLAGS; do
   OLD_CFLAGS="$CFLAGS"
   CFLAGS="$RUNTIMECFLAGS $flag -Werror"
-  AC_TRY_LINK([], [return 0;], [CFLAGS="$OLD_CFLAGS $flag"],[CFLAGS="$OLD_CFLAGS"])
+  AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[return 0;]])],[CFLAGS="$OLD_CFLAGS $flag"],[CFLAGS="$OLD_CFLAGS"])
 done
 AC_MSG_RESULT([$CFLAGS])
 
@@ -230,21 +233,21 @@ AC_MSG_CHECKING([for flags to append to LDFLAGS ($TRY_FLAGS_LD)])
 for flag in $TRY_FLAGS_LD; do
   OLD_LDFLAGS="$LDFLAGS"
   LDFLAGS="$flag -Werror"
-  AC_TRY_LINK([], [return 0;], [LDFLAGS="$OLD_LDFLAGS $flag"],[LDFLAGS="$OLD_LDFLAGS"])
+  AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[return 0;]])],[LDFLAGS="$OLD_LDFLAGS $flag"],[LDFLAGS="$OLD_LDFLAGS"])
 done
 AC_MSG_RESULT([$LDFLAGS])
 
 OLD_CFLAGS="$CFLAGS"
 for flag in -Wno-parentheses-equality -Wno-unused-variable; do
   CFLAGS="$RUNTIMECFLAGS $flag -Werror"
-  AC_TRY_LINK([], [return 0;], [
+  AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[return 0;]])],[
     CHECK_C_ERRORS="$CHECK_C_ERRORS $flag"
     EXTRA_CFLAGS_GENERATED_CODE="$EXTRA_CFLAGS_GENERATED_CODE $flag"
   ],[])
 done
 for flag in -Werror=implicit-function-declaration -Werror=incompatible-pointer-types; do
   CFLAGS="$RUNTIMECFLAGS $flag -Werror"
-  AC_TRY_LINK([], [return 0;], [
+  AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[return 0;]])],[
     CHECK_C_ERRORS="$CHECK_C_ERRORS $flag"
     EXTRA_CFLAGS_GENERATED_CODE="$EXTRA_CFLAGS_GENERATED_CODE $flag"
   ],[])
@@ -257,7 +260,7 @@ EXTRA_FCFLAGS=""
 AC_MSG_CHECKING([for flags to append to FCFLAGS])
 for flag in -fallow-argument-mismatch; do
   FCFLAGS="$flag -Werror"
-  AC_TRY_LINK([], [], [
+  AC_LINK_IFELSE([AC_LANG_PROGRAM([], [[]])],[
     EXTRA_FCFLAGS="$EXTRA_FCFLAGS $flag"
   ],[])
 done
@@ -276,7 +279,7 @@ if echo $CFLAGS | grep -q -- -fPIC; then
 else
   CFLAGS_BEFORE="$CFLAGS"
   CFLAGS="$CFLAGS -fPIC -Werror"
-  AC_TRY_LINK([void abc() {}], [abc();], [AC_MSG_RESULT([adding -fPIC]); CFLAGS="$CFLAGS_BEFORE -fPIC"; FPIC="-fPIC"], [AC_MSG_RESULT([does not need -fPIC]); CFLAGS="$CFLAGS_BEFORE"])
+  AC_LINK_IFELSE([AC_LANG_PROGRAM([[void abc() {}]], [[abc();]])],[AC_MSG_RESULT([adding -fPIC]); CFLAGS="$CFLAGS_BEFORE -fPIC"; FPIC="-fPIC"],[AC_MSG_RESULT([does not need -fPIC]); CFLAGS="$CFLAGS_BEFORE"])
 fi
 
 else
@@ -288,7 +291,7 @@ if echo $CFLAGS | grep -q -- -fPIC; then
 else
   CFLAGS_BEFORE="$CFLAGS"
   CFLAGS="$CFLAGS -fPIC -Werror"
-  AC_TRY_LINK([void abc() {}], [abc();], [AC_MSG_RESULT([adding -fPIC]); CFLAGS="$CFLAGS_BEFORE -fPIC"; FPIC="-fPIC"], [AC_MSG_RESULT([does not need -fPIC]); CFLAGS="$CFLAGS_BEFORE"])
+  AC_LINK_IFELSE([AC_LANG_PROGRAM([[void abc() {}]], [[abc();]])],[AC_MSG_RESULT([adding -fPIC]); CFLAGS="$CFLAGS_BEFORE -fPIC"; FPIC="-fPIC"],[AC_MSG_RESULT([does not need -fPIC]); CFLAGS="$CFLAGS_BEFORE"])
 fi
 
 fi
@@ -299,11 +302,7 @@ AC_LANG_PUSH([C++])
 OLD_CXXFLAGS=$CXXFLAGS
 for flag in -stdlib=libstdc++; do
   CXXFLAGS="$OLD_CXXFLAGS $flag"
-  AC_TRY_LINK(
-    [#include <regex>],
-    [int main() {return 0;}],
-    [LDFLAGS_LIBSTDCXX="$flag"],
-    [CXXFLAGS="$OLD_CXXFLAGS"])
+  AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <regex>]], [[int main() {return 0;}]])],[LDFLAGS_LIBSTDCXX="$flag"],[CXXFLAGS="$OLD_CXXFLAGS"])
 done
 AC_LANG_POP([C++])
 
@@ -318,7 +317,7 @@ dnl Simulations spin forever unless -msse2 -mfpmath=sse is set
 CFLAGS_BEFORE=$CFLAGS
 CFLAGS="-mfpmath=sse -Werror"
 AC_MSG_CHECKING([for floating point bugs])
-AC_TRY_LINK([int abc() {}], [abc();], [AC_MSG_RESULT([force SSE2]); FPMATHFORTRAN="-msse -mfpmath=sse"], [AC_MSG_RESULT([no]); FPMATHFORTRAN=-ffloat-store])
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[int abc() {}]], [[abc();]])],[AC_MSG_RESULT([force SSE2]); FPMATHFORTRAN="-msse -mfpmath=sse"],[AC_MSG_RESULT([no]); FPMATHFORTRAN=-ffloat-store])
 CFLAGS=$CFLAGS_BEFORE
 
 fi # End x86-specific CFLAGS
@@ -370,10 +369,6 @@ else
   BOOST_INCLUDE=""
 fi
 
-
-dnl Checks for header files.
-AC_HEADER_STDC
-
 AC_CHECK_HEADERS(sys/time.h, [], [AC_MSG_ERROR(Missing header file sys/time.h)])
 # AC_CHECK_HEADERS(sqlite3.h, [], [AC_MSG_ERROR(Missing header file sqlite3.h)])
 
@@ -405,9 +400,9 @@ AC_CHECK_FUNCS(getcwd select strdup strerror)
 dnl Check if scandir is available
 AC_MSG_CHECKING([for scandir])
 
-AC_TRY_LINK([
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[
 #include <dirent.h>
-], [
+]], [[
 int file_select_directories(const struct dirent *entry) {
  return 0;
 }
@@ -419,8 +414,7 @@ struct dirent **files;
 scandir(dir, &files, file_select_directories, 0);
 return 0;
 }
-], [AC_MSG_RESULT([yes]); AC_DEFINE([HAVE_SCANDIR])],
-      [AC_MSG_RESULT([no])])
+]])],[AC_MSG_RESULT([yes]); AC_DEFINE([HAVE_SCANDIR])],[AC_MSG_RESULT([no])])
 
 dnl Check if OpenMP is available
 AC_MSG_CHECKING([for OpenMP])
@@ -431,20 +425,20 @@ for OMPCCTEST in "-fopenmp=libomp" "-fopenmp=libiomp5" "-fopenmp"; do
     CFLAGS_OLD="$CFLAGS"
     CFLAGS="$OMPCCTEST"
 
-    AC_TRY_LINK([
+    AC_LINK_IFELSE([AC_LANG_PROGRAM([[
     #if !defined(_OPENMP)
       #error "Not an OpenMP compiler"
     #endif
     #include <omp.h>
     #include <stdio.h>
-    ], [
+    ]], [[
       int i;
     #pragma omp parallel for private(i) schedule(dynamic)
       for (i=0; i<16; i++)
         printf("Thread %d doing work %d\n", omp_get_thread_num(), i);
       return 0;
-    ], [OMPCFLAGS="$CFLAGS"; CONFIG_WITH_OPENMP=1]
-    )
+    ]])],[OMPCFLAGS="$CFLAGS"; CONFIG_WITH_OPENMP=1
+    ],[])
     CFLAGS="$CFLAGS_OLD"
   fi
 done
@@ -468,17 +462,17 @@ fi
 AC_MSG_CHECKING([runtime compiler])
 if test -z "$RUNTIMECFLAGS"; then
   CFLAGS="$FPIC -Werror"
-  AC_TRY_LINK([], [return 0;], [AC_MSG_RESULT($CC ok);],[AC_MSG_ERROR($CC failed)])
+  AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[return 0;]])],[AC_MSG_RESULT($CC ok);],[AC_MSG_ERROR($CC failed)])
   CFLAGS="$FPIC"
   AC_MSG_CHECKING([runtime compiler CFLAGS])
   RUNTIMECFLAGS="$FPIC"
   for flag in -falign-functions -mfpmath=sse -fno-dollars-in-identifiers -Wno-parentheses-equality; do
     CFLAGS="$FPIC $flag -Werror"
-    AC_TRY_LINK([], [return 0;], [RUNTIMECFLAGS="$RUNTIMECFLAGS $flag"],[])
+    AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[return 0;]])],[RUNTIMECFLAGS="$RUNTIMECFLAGS $flag"],[])
   done
 else
   CFLAGS="$RUNTIMECFLAGS $FPIC -Werror"
-  AC_TRY_LINK([], [return 0;], [RUNTIMECFLAGS="$RUNTIMECFLAGS $FPIC"],[AC_MSG_ERROR([$CC $CFLAGS -Werror failed])])
+  AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[return 0;]])],[RUNTIMECFLAGS="$RUNTIMECFLAGS $FPIC"],[AC_MSG_ERROR([$CC $CFLAGS -Werror failed])])
 fi
 AC_MSG_RESULT([$RUNTIMECFLAGS])
 
@@ -540,7 +534,7 @@ AC_CHECK_LIB(sqlite3,sqlite3_libversion,[],[AC_MSG_ERROR([sqlite3 not found])])
 if test "$WANT_STATIC_SQLITE" = "no"; then
   OMC_LIBS=$LIBS
 elif test ! -f "$WANT_STATIC_SQLITE" ; then
-  AC_ERROR([File not found: $WANT_STATIC_SQLITE])
+  AC_MSG_ERROR(File not found: $WANT_STATIC_SQLITE)
 else
   OMC_LIBS=$WANT_STATIC_SQLITE
 fi
@@ -554,10 +548,9 @@ SUNDIALS_SUNMATRIX_LDFLAGS="-lsundials_sunmatrixdense -lsundials_sunmatrixsparse
 SUNDIALS_SUNLINSOL_LDFLAGS="-lsundials_sunlinsoldense -lsundials_sunlinsolklu -lsundials_sunlinsollapackdense -lsundials_sunlinsolspbcgs -lsundials_sunlinsolspfgmr -lsundials_sunlinsolspgmr -lsundials_sunlinsolsptfqmr"
 SUNDIALS_SUNNONLINSOL_LDFLAGS="-lsundials_sunnonlinsolnewton"
 SUNDIALS_CVODE_LDFLAGS="-lsundials_cvode -lsundials_cvodes"
-SUNDIALS_ARKODE_LDFLAGS=""
 SUNDIALS_IDA_LDFLAGS="-lsundials_idas"
 SUNDIALS_KINSOL_LDFLAGS="-lsundials_kinsol"
-SUNDIALS_LDFLAGS="$SUNDIALS_NVECTOR_LDFLAGS $SUNDIALS_SUNMATRIX_LDFLAGS $SUNDIALS_SUNLINSOL_LDFLAGS $SUNDIALS_SUNNONLINSOL_LDFLAGS $SUNDIALS_CVODE_LDFLAGS $SUNDIALS_ARKODE_LDFLAGS $SUNDIALS_IDA_LDFLAGS $SUNDIALS_KINSOL_LDFLAGS $LD_LAPACK"
+SUNDIALS_LDFLAGS="$SUNDIALS_NVECTOR_LDFLAGS $SUNDIALS_SUNMATRIX_LDFLAGS $SUNDIALS_SUNLINSOL_LDFLAGS $SUNDIALS_SUNNONLINSOL_LDFLAGS $SUNDIALS_CVODE_LDFLAGS $SUNDIALS_IDA_LDFLAGS $SUNDIALS_KINSOL_LDFLAGS $LD_LAPACK"
 FINAL_MESSAGES="$FINAL_MESSAGES\nSimulations may use sundials suite: Yes"
 SUNDIALS_TARGET="sundials"
 
@@ -571,18 +564,18 @@ AC_CHECK_HEADERS(locale.h libintl.h,[],[HAVE_GETTEXT="#define NO_GETTEXT 1"])
 if test -z "$HAVE_GETTEXT"; then
   AC_MSG_CHECKING([gettext linking])
 
-  AC_TRY_LINK([
+  AC_LINK_IFELSE([AC_LANG_PROGRAM([[
     #include <libintl.h>
-  ], [
+  ]], [[
   gettext("");
-  ], [AC_MSG_RESULT([in C-library])],
+  ]])], [AC_MSG_RESULT([in C-library])],
   [
     LIBS="-lintl";
-    AC_TRY_LINK([
+    AC_LINK_IFELSE([AC_LANG_PROGRAM([[
       #include <libintl.h>
-    ], [
+    ]], [[
       gettext("");
-    ], [AC_MSG_RESULT([in intl]); GETTEXT_LIBS="-lintl"], [HAVE_GETTEXT="#define NO_GETTEXT 1"])
+    ]])], [AC_MSG_RESULT([in intl]); GETTEXT_LIBS="-lintl"], [HAVE_GETTEXT="#define NO_GETTEXT 1"])
   ])
 
   LIBS=""
@@ -591,22 +584,21 @@ if test -z "$HAVE_GETTEXT"; then
 
   AC_MSG_CHECKING([setlocale linking])
 
-  AC_TRY_LINK([
+  AC_LINK_IFELSE([AC_LANG_PROGRAM([[
     /* Also include libintl.h as MacOS then uses a different setlocale... */
     #include <libintl.h>
     #include <locale.h>
-  ], [
+  ]], [[
     setlocale(LC_ALL, "");
-  ], [AC_MSG_RESULT([in C-library])],
-  [
+  ]])],[AC_MSG_RESULT([in C-library])],[
     LIBS="-lintl";
-    AC_TRY_LINK([
+    AC_LINK_IFELSE([AC_LANG_PROGRAM([[
       /* Also include libintl.h as MacOS then uses a different setlocale... */
       #include <libintl.h>
       #include <locale.h>
-    ], [
+    ]], [[
       setlocale(LC_ALL, "");
-    ], [AC_MSG_RESULT([in intl]); GETTEXT_LIBS="-lintl"], [AC_MSG_RESULT([no]); HAVE_GETTEXT="#define NO_GETTEXT 1"])
+    ]])], [AC_MSG_RESULT([in intl]); GETTEXT_LIBS="-lintl"], [AC_MSG_RESULT([no]); HAVE_GETTEXT="#define NO_GETTEXT 1"])
   ])
 
   fi
@@ -646,7 +638,8 @@ AC_CHECK_LIB(pthread,pthread_self,[RT_LDFLAGS="$RT_LDFLAGS $LIBS"],[AC_MSG_ERROR
 
 LIBS=""
 
-IPOPT_LDFLAGS="-lipopt -lcoinmumps"
+PRIMME_LDFLAGS="-lprimme"
+MOO_LDFLAGS="-lipopt -ldmumps -lmumps_common -lseq"
 
 # check for SuiteSparse
 AC_ARG_WITH(SUITESPARSE, [  --without-SUITESPARSE              Disable compilation with SUITESPARSE (UMFPACK, KLU)],
@@ -667,7 +660,7 @@ AS_IF([test "x$with_SUITESPARSE" = xyes],
 
 OLD_LDFLAGS="$LDFLAGS"
 LDFLAGS="$LDFLAGS -Wl,-Bstatic  -Wl,-Bdynamic"
-AC_TRY_LINK([], [return 0;], [BSTATIC="true"],[BSTATIC="false"; AC_MSG_RESULT(["Don't know the flags to force static linking"])])
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[return 0;]])],[BSTATIC="true"],[BSTATIC="false"; AC_MSG_RESULT(["Don't know the flags to force static linking"])])
 LDFLAGS="$OLD_LDFLAGS"
 
 # check for ipopt
@@ -676,11 +669,24 @@ AC_ARG_WITH(ipopt, [  --without-ipopt              Disable compilation with IPOP
 
 AS_IF([test "x$with_ipopt" = xyes],
 [
-  IPOPT_TARGET="ipopt";
+  MOO_TARGET="moo";
   OMC_HAVE_IPOPT="#define OMC_HAVE_IPOPT"
 ],[
-  IPOPT_TARGET=""
+  MOO_TARGET=""
   OMC_HAVE_IPOPT="/* #define OMC_HAVE_IPOPT */ /* Without Ipopt*/"
+])
+
+# check for primme
+AC_ARG_WITH(primme, [  --without-primme              Disable compilation with PRIMME (only for bootstrapping; required for simulations)],
+[],[with_primme=yes])
+
+AS_IF([test "x$with_primme" = xyes],
+[
+  PRIMME_TARGET="primme";
+  OMC_HAVE_PRIMME="#define OMC_HAVE_PRIMME"
+],[
+  PRIMME_TARGET=""
+  OMC_HAVE_PRIMME="/* #define OMC_HAVE_PRIMME */ /* Without Ipopt*/"
 ])
 
 m4_include([common/m4/corba.m4])
@@ -709,7 +715,7 @@ if test "$DARWIN" = "1"; then
   LIBZMQLIB=libzmq.dylib
   CMINPACKLIB_SHARED=ON
   RT_LDFLAGS_SIM="$LDFLAGS $RT_LDFLAGS -lexpat -lomcgc -lryu -lpthread -lm $LIBDL -lstdc++"
-  RT_LDFLAGS_SIM_OPTIONAL="$SUNDIALS_LDFLAGS $IPOPT_LDFLAGS $SUITESPARSE_LDFLAGS -llis -lcdaskr -lcminpack -liconv"
+  RT_LDFLAGS_SIM_OPTIONAL="$SUNDIALS_LDFLAGS $MOO_LDFLAGS $PRIMME_LDFLAGS $SUITESPARSE_LDFLAGS -llis -lcdaskr -lcminpack -liconv"
   RT_LDFLAGS="$LDFLAGS $RT_LDFLAGS -lomcgc -lryu -lm -lpthread $LIBDL -lstdc++"
   RT_LDFLAGS_OPTIONAL="$RT_LDFLAGS_OPTIONAL -liconv"
   # All libraries are dynamically linked; we don't need anything else
@@ -743,7 +749,7 @@ elif echo "$host" | grep -iq "mingw"; then
   LIBZMQLIB=libzmq.a
   CMINPACKLIB_SHARED=OFF
   RT_LDFLAGS_SIM="$LDFLAGS $RT_LDFLAGS -lstdc++ -lomcgc -lryu -lexpat -lm"
-  RT_LDFLAGS_SIM_OPTIONAL="$SUNDIALS_LDFLAGS $IPOPT_LDFLAGS $SUITESPARSE_LDFLAGS -llis -lcminpack"
+  RT_LDFLAGS_SIM_OPTIONAL="$SUNDIALS_LDFLAGS $MOO_LDFLAGS $PRIMME_LDFLAGS $SUITESPARSE_LDFLAGS -llis -lcminpack"
   RT_LDFLAGS="$LDFLAGS $RT_LDFLAGS -lomcgc -lryu -lexpat -Wl,-Bstatic -lpthread -Wl,-Bdynamic -static-libgcc -lm"
   RT_LDFLAGS_OPTIONAL="$RT_LDFLAGS_OPTIONAL"
   RT_LDFLAGS_GENERATED_CODE="$LDFLAGS -lOpenModelicaRuntimeC $RT_LDFLAGS"
@@ -778,7 +784,7 @@ else
   # For static runtime on Linux:
   # -Wl,-whole-archive -lSimulationRuntimeC -Wl,-no-whole-archive
   RT_LDFLAGS_SIM="$LDFLAGS -Wl,-z,origin -Wl,-rpath,'\$\$ORIGIN' $RT_LDFLAGS $LIBRT -lexpat -lomcgc -lryu -lpthread -lm $LIBDL -lstdc++ -rdynamic"
-  RT_LDFLAGS_SIM_OPTIONAL="$SUNDIALS_LDFLAGS $IPOPT_LDFLAGS $SUITESPARSE_LDFLAGS -llis -lcdaskr -lcminpack"
+  RT_LDFLAGS_SIM_OPTIONAL="$SUNDIALS_LDFLAGS $MOO_LDFLAGS $PRIMME_LDFLAGS $SUITESPARSE_LDFLAGS -llis -lcdaskr -lcminpack"
   RT_LDFLAGS="$LDFLAGS $RT_LDFLAGS -lomcgc -lryu $LIBRT -lpthread -lm $LIBDL -lstdc++ -rdynamic"
   RT_LDFLAGS_OPTIONAL="$RT_LDFLAGS_OPTIONAL"
   # All libraries are dynamically linked; we don't need anything else
@@ -906,7 +912,7 @@ AC_MSG_NOTICE(["Given CMAKE: $OMC_CMAKE_EXE])
 OLD_CXXFLAGS="$CXXFLAGS"
 CXXFLAGS="$CFLAGS $CXXFLAGS -Werror"
 AC_LANG_PUSH([C++])
-AC_TRY_LINK([], [], [CXXFLAGS="$CFLAGS $OLD_CXXFLAGS"], [CXXFLAGS="$OLD_CXXFLAGS"])
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[]])],[CXXFLAGS="$CFLAGS $OLD_CXXFLAGS"],[CXXFLAGS="$OLD_CXXFLAGS"])
 AC_LANG_POP([C++])
 
 date=`date "+%Y-%m-%d %H:%M:%S"`
@@ -921,6 +927,7 @@ Compiler/Makefile \
 Compiler/Script/Makefile \
 Compiler/Template/Makefile \
 Compiler/runtime/Makefile \
+Compiler/FrontEndCpp/Makefile \
 Parser/Makefile \
 SimulationRuntime/OMSICpp/Makefile.env \
 SimulationRuntime/cpp/Makefile.env \
@@ -962,6 +969,7 @@ done
 
 AC_CONFIG_COMMANDS([omc_config.unix.h.fix],[./configure-post.sh $ac_cs_config])
 
-AC_OUTPUT(${GENERATED_AUTOCONF_FILES})
+AC_CONFIG_FILES([${GENERATED_AUTOCONF_FILES}])
+AC_OUTPUT
 
 echo -e "$FINAL_MESSAGES"

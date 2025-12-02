@@ -37,6 +37,7 @@ protected
   import ExpandExp = NFExpandExp;
   import SimplifyExp = NFSimplifyExp;
   import MetaModelica.Dangerous.listReverseInPlace;
+  import Array;
 
 public
   import Expression = NFExpression;
@@ -69,12 +70,15 @@ public
     output String str;
   algorithm
     str := match iter
-      case ARRAY_ITERATOR() algorithm
-        str := "[ARRY] array iterator:\n";
-        for arr in iter.arrays loop
-          str := str + List.toString(arrayList(arr), Expression.toString) + "\n";
-        end for;
-      then str;
+      case ARRAY_ITERATOR()
+      then List.toString(iter.arrays, function Array.toString(
+        inPrintFunc   = Expression.toString,
+        inNameStr     = "",
+        inBeginStr    = "{",
+        inDelimitStr  = ", ",
+        inEndStr      = "}",
+        inPrintEmpty  = false,
+        maxLength     = 0), "[ARRY] array iterator:\n", "", "\n", "");
 
       case REPEAT_ITERATOR() then "[REAP] repeat iterator:\n" + List.toString(iter.all, Expression.toString);
       case SCALAR_ITERATOR() then "[SCAL] scalar iterator: " + Expression.toString(iter.exp) + "\n";
@@ -122,7 +126,7 @@ public
           (e, expanded) := ExpandExp.expand(exp, backend);
         then
           if expanded then
-            (if referenceEq(e, exp) then SCALAR_ITERATOR(exp) else fromExp(e, backend)) else
+            (if Expression.isEqual(e, exp) then SCALAR_ITERATOR(exp) else fromExp(e, backend)) else
             NONE_ITERATOR();
 
     end match;

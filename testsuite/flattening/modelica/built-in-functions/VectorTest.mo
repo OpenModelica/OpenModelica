@@ -1,7 +1,6 @@
 // name:     VectorTest
 // keywords: vector wholedim bug1170
 // status:   correct
-// cflags: -d=-newInst
 // Tests the vector function, and determination of unspecified vector dimensions
 // from a function call.
 //
@@ -24,6 +23,7 @@ model VectorTest
   constant Real H[4,4] = diagonal(ones(4));
   constant Real ply[3,4] = [1.0, 0.0, 0.0, 1.0; 1.0, 0.0, 1.0, 0.0; 0.0, 0.0, 1.0, 1.0];
   constant Real plyprime[3,:] = PolyToRelCoord(H,ply);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end VectorTest;
 
 // function VectorTest.PolyToRelCoord

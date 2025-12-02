@@ -1,7 +1,6 @@
 // name: InStreamUnconnected
 // keywords: stream inStream connector unconnected
 // status: correct
-// cflags: -d=-newInst
 //
 // Checks that inStream of an unconnected stream connector is correctly
 // evaluated.
@@ -18,6 +17,7 @@ model InStreamUnconnected
   Real instream_s;
 equation
   instream_s = inStream(s.s);
+  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end InStreamUnconnected;
 
 // Result:

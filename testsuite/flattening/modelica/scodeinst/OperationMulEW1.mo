@@ -1,7 +1,6 @@
 // name: OperationMulEW1
 // keywords: 
 // status: correct
-// cflags: -d=newInst
 //
 
 model OperationMulEW1

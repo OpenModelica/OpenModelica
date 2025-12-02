@@ -1,7 +1,6 @@
 // name: WhenIllegalContext1
 // keywords:
 // status: incorrect
-// cflags: -d=newInst
 //
 
 function f
@@ -19,7 +18,7 @@ end WhenIllegalContext1;
 
 // Result:
 // Error processing file: WhenIllegalContext1.mo
-// [flattening/modelica/scodeinst/WhenIllegalContext1.mo:11:3-13:11:writable] Error: A when-statement may not be used inside a function or a while, if, or for-clause.
+// [flattening/modelica/scodeinst/WhenIllegalContext1.mo:10:3-12:11:writable] Error: A when-statement may not be used inside a function or a while, if, or for-clause.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

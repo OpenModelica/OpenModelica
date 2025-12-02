@@ -1,12 +1,15 @@
 #include <ostream>
 
+#include "ElementVisitor.h"
 #include "DefineUnit.h"
 
 using namespace OpenModelica;
 using namespace OpenModelica::Absyn;
 
+extern record_description SCode_Element_DEFINEUNIT__desc;
+
 DefineUnit::DefineUnit(MetaModelica::Record value)
-  : Element::Base(SourceInfo(value[4])),
+  : Element(SourceInfo(value[4])),
     _name{value[0].toString()},
     _visibility{value[1]},
     _exp{value[2].toOptional<std::string>()},
@@ -15,12 +18,23 @@ DefineUnit::DefineUnit(MetaModelica::Record value)
 
 }
 
-MetaModelica::Value DefineUnit::toSCode() const noexcept
+void DefineUnit::apply(ElementVisitor &visitor)
 {
-  return MetaModelica::Value(4);
+  visitor.visit(*this);
 }
 
-std::unique_ptr<Element::Base> DefineUnit::clone() const noexcept
+MetaModelica::Value DefineUnit::toSCode() const noexcept
+{
+  return MetaModelica::Record{Element::DEFINEUNIT, SCode_Element_DEFINEUNIT__desc, {
+    MetaModelica::Value{_name},
+    _visibility.toSCode(),
+    MetaModelica::Option(_exp),
+    MetaModelica::Option(_weight),
+    info()
+  }};
+}
+
+std::unique_ptr<Element> DefineUnit::clone() const noexcept
 {
   return std::make_unique<DefineUnit>(*this);
 }
