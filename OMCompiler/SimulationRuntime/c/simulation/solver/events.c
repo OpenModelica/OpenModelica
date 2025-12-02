@@ -92,32 +92,16 @@ int checkForStateEvent(DATA* data, LIST *eventList)
   TRACE_PUSH
   long i=0;
 
-  debugStreamPrint(OMC_LOG_EVENTS, 1, "check state-event zerocrossing at time %g", data->localData[0]->timeValue);
-
   for(i=0; i<data->modelData->nZeroCrossings; i++)
   {
     int *eq_indexes;
-    if (OMC_DEBUG_STREAM(OMC_LOG_EVENTS))
-    {
-      const char *exp_str = data->callback->zeroCrossingDescription(i,&eq_indexes);
-      debugStreamPrintWithEquationIndexes(OMC_LOG_EVENTS, omc_dummyFileInfo, 1, eq_indexes, "%s", exp_str);
-    }
 
+    // Check if sign of zero crossing changed
     if(sign(data->simulationInfo->zeroCrossings[i]) != sign(data->simulationInfo->zeroCrossingsPre[i]))
     {
-      debugStreamPrint(OMC_LOG_EVENTS, 0, "changed:   %s", (data->simulationInfo->zeroCrossingsPre[i] > 0) ? "TRUE -> FALSE" : "FALSE -> TRUE");
       listPushFront(eventList, &(data->simulationInfo->zeroCrossingIndex[i]));
     }
-    else
-    {
-      debugStreamPrint(OMC_LOG_EVENTS, 0, "unchanged: %s", (data->simulationInfo->zeroCrossingsPre[i] > 0) ? "TRUE -- TRUE" : "FALSE -- FALSE");
-    }
-
-    if (OMC_DEBUG_STREAM(OMC_LOG_EVENTS))
-      messageClose(OMC_LOG_EVENTS);
   }
-  if (OMC_DEBUG_STREAM(OMC_LOG_EVENTS))
-    messageClose(OMC_LOG_EVENTS);
 
   if(listLen(eventList) > 0)
   {
@@ -265,13 +249,13 @@ void handleEvents(DATA* data, threadData_t *threadData, LIST* eventLst, double *
       }
     }
 
-    for(i=0; i<data->modelData->nSamples; ++i)
-      if((i == 0) || (data->simulationInfo->nextSampleTimes[i] < data->simulationInfo->nextSampleEvent))
+    for(i=0; i<data->modelData->nSamples; ++i) {
+      if((i == 0) || (data->simulationInfo->nextSampleTimes[i] < data->simulationInfo->nextSampleEvent)) {
         data->simulationInfo->nextSampleEvent = data->simulationInfo->nextSampleTimes[i];
+      }
+    }
 
     data->simulationInfo->sampleActivated = 0;
-
-    debugStreamPrint(OMC_LOG_EVENTS, 0, "next sample-event at t = %g", data->simulationInfo->nextSampleEvent);
 
     solverInfo->sampleEvents++;
   }
@@ -340,15 +324,12 @@ double findRoot(DATA* data, threadData_t* threadData, LIST* eventList, double ti
 
   listClear(eventList);
 
-  debugStreamPrint(OMC_LOG_EVENTS, 0, (listLen(tmpEventList) == 1) ? "found event: " : "found events: ");
   while(listLen(tmpEventList) > 0)
   {
     long event_id = *((long*)listFirstData(tmpEventList));
     listPushFrontNodeNoCopy(eventList, listPopFrontNode(tmpEventList));
     infoStreamPrint(OMC_LOG_ZEROCROSSINGS, 0, "Event id: %ld", event_id);
   }
-
-  debugStreamPrint(OMC_LOG_EVENTS, 0, "time: %.10e", time_right);
 
   data->localData[0]->timeValue = time_left;
   memcpy(data->localData[0]->realVars, states_left, data->modelData->nStates * sizeof(double));

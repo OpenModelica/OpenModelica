@@ -117,22 +117,11 @@ void updateDiscreteSystem(DATA *data, threadData_t *threadData)
   storeRelations(data);
 
   data->callback->functionDAE(data, threadData);
-  debugStreamPrint(OMC_LOG_EVENTS_V, 0, "updated discrete System");
 
   relationChanged = checkRelations(data);
   discreteChanged = checkForDiscreteChanges(data, threadData);
   while(discreteChanged || data->simulationInfo->needToIterate || relationChanged)
   {
-    if(data->simulationInfo->needToIterate) {
-      debugStreamPrint(OMC_LOG_EVENTS_V, 0, "reinit() call. Iteration needed!");
-    }
-    if(relationChanged) {
-      debugStreamPrint(OMC_LOG_EVENTS_V, 0, "relations changed. Iteration needed.");
-    }
-    if(discreteChanged) {
-      debugStreamPrint(OMC_LOG_EVENTS_V, 0, "discrete Variable changed. Iteration needed.");
-    }
-
     storePreValues(data);
     updateRelationsPre(data);
 
@@ -164,8 +153,6 @@ void saveZeroCrossings(DATA* data, threadData_t *threadData)
 {
   TRACE_PUSH
   long i = 0;
-
-  debugStreamPrint(OMC_LOG_ZEROCROSSINGS, 0, "save all zero-crossings");
 
   for(i=0;i<data->modelData->nZeroCrossings;i++)
     data->simulationInfo->zeroCrossingsPre[i] = data->simulationInfo->zeroCrossings[i];
@@ -253,60 +240,6 @@ void printAllVars(DATA *data, int ringSegment, int stream)
 
   TRACE_POP
 }
-
-#ifdef USE_DEBUG_OUTPUT
-/*! \fn printAllVarsDebug
- *
- *  prints all variable values
- *
- *  \param [in]  [data]
- *  \param [in]  [ringSegment]
- */
-void printAllVarsDebug(DATA *data, int ringSegment, int stream)
-{
-  TRACE_PUSH
-  long i;
-  MODEL_DATA      *mData = data->modelData;
-  SIMULATION_INFO *sInfo = data->simulationInfo;
-
-  debugStreamPrint(stream, 1, "Print values for buffer segment %d regarding point in time : %e", ringSegment, data->localData[ringSegment]->timeValue);
-
-  debugStreamPrint(stream, 1, "states variables");
-  for(i=0; i<mData->nStates; ++i)
-    debugStreamPrint(stream, 0, "%ld: %s = %g (pre: %g)", i+1, mData->realVarsData[i].info.name, data->localData[ringSegment]->realVars[i], sInfo->realVarsPre[i]);
-  messageClose(stream);
-
-  debugStreamPrint(stream, 1, "derivatives variables");
-  for(i=mData->nStates; i<2*mData->nStates; ++i)
-    debugStreamPrint(stream, 0, "%ld: %s = %g (pre: %g)", i+1, mData->realVarsData[i].info.name, data->localData[ringSegment]->realVars[i], sInfo->realVarsPre[i]);
-  messageClose(stream);
-
-  debugStreamPrint(stream, 1, "other real values");
-  for(i=2*mData->nStates; i<mData->nVariablesReal; ++i)
-    debugStreamPrint(stream, 0, "%ld: %s = %g (pre: %g)", i+1, mData->realVarsData[i].info.name, data->localData[ringSegment]->realVars[i], sInfo->realVarsPre[i]);
-  messageClose(stream);
-
-  debugStreamPrint(stream, 1, "integer variables");
-  for(i=0; i<mData->nVariablesInteger; ++i)
-    debugStreamPrint(stream, 0, "%ld: %s = %ld (pre: %ld)", i+1, mData->integerVarsData[i].info.name, data->localData[ringSegment]->integerVars[i], sInfo->integerVarsPre[i]);
-  messageClose(stream);
-
-  debugStreamPrint(stream, 1, "boolean variables");
-  for(i=0; i<mData->nVariablesBoolean; ++i)
-    debugStreamPrint(stream, 0, "%ld: %s = %s (pre: %s)", i+1, mData->booleanVarsData[i].info.name, data->localData[ringSegment]->booleanVars[i] ? "true" : "false", sInfo->booleanVarsPre[i] ? "true" : "false");
-  messageClose(stream);
-
-#if !defined(OMC_NVAR_STRING) || OMC_NVAR_STRING>0
-  debugStreamPrint(stream, 1, "string variables");
-  for(i=0; i<mData->nVariablesString; ++i)
-    debugStreamPrint(stream, 0, "%ld: %s = %s (pre: %s)", i+1, mData->stringVarsData[i].info.name, data->localData[ringSegment]->stringVars[i], sInfo->stringVarsPre[i]);
-  messageClose(stream);
-#endif
-  messageClose(stream);
-
-  TRACE_POP
-}
-#endif
 
 /*! \fn printParameters
  *
@@ -492,29 +425,6 @@ modelica_boolean sparsitySanityCheck(SPARSE_PATTERN *sparsePattern, int nlsSize,
   free(colCheck);
   return TRUE;
 }
-
-
-#ifdef USE_DEBUG_OUTPUT
-/*! \fn printRelationsDebug
- *
- *  print all relations
- *
- *  \param [in]  [data]
- *  \param [in]  [stream]
- */
-void printRelationsDebug(DATA *data, int stream)
-{
-  TRACE_PUSH
-  long i;
-
-  debugStreamPrint(stream, 1, "status of relations at time=%.12g", data->localData[0]->timeValue);
-  for(i=0; i<data->modelData->nRelations; i++)
-    debugStreamPrint(stream, 0, "[%ld] %s = %c | pre(%s) = %c", i, data->callback->relationDescription(i), data->simulationInfo->relations[i] ? 'T' : 'F', data->callback->relationDescription(i), data->simulationInfo->relationsPre[i] ? 'T' : 'F');
-  messageClose(stream);
-
-  TRACE_POP
-}
-#endif
 
 /*! \fn printRelations
  *
@@ -726,34 +636,27 @@ void setAllVarsToStart(DATA *data)
 
   for (array_idx = 0; array_idx < mData->nVariablesRealArray; ++array_idx)
   {
-    // FIXME there is no messageCloseDebug so we use infoStreamPrint here
-    infoStreamPrint(OMC_LOG_DEBUG, 1, "set Real var %s:", mData->realVarsData[array_idx].info.name);
     for (dim_idx = 0; dim_idx < mData->realVarsData[array_idx].attribute.start.dim_size[0]; dim_idx++)
     {
       sData->realVars[scalar_idx] = real_get(mData->realVarsData[array_idx].attribute.start, dim_idx);
-      debugStreamPrint(OMC_LOG_DEBUG, 0, "%g", sData->realVars[scalar_idx]);
       scalar_idx++;
     }
-    messageClose(OMC_LOG_DEBUG);
   }
 
   for (array_idx = 0; array_idx < mData->nVariablesInteger; ++array_idx)
   {
     sData->integerVars[array_idx] = mData->integerVarsData[array_idx].attribute.start;
-    debugStreamPrint(OMC_LOG_DEBUG, 0, "set Integer var %s = %ld", mData->integerVarsData[array_idx].info.name, sData->integerVars[array_idx]);
   }
 
   for (array_idx = 0; array_idx < mData->nVariablesBoolean; ++array_idx)
   {
     sData->booleanVars[array_idx] = mData->booleanVarsData[array_idx].attribute.start;
-    debugStreamPrint(OMC_LOG_DEBUG, 0, "set Boolean var %s = %s", mData->booleanVarsData[array_idx].info.name, sData->booleanVars[array_idx] ? "true" : "false");
   }
 
 #if !defined(OMC_NVAR_STRING) || OMC_NVAR_STRING > 0
   for (array_idx = 0; array_idx < mData->nVariablesString; ++array_idx)
   {
     sData->stringVars[array_idx] = mmc_mk_scon_persist(mData->stringVarsData[array_idx].attribute.start);
-    debugStreamPrint(OMC_LOG_DEBUG, 0, "set String var %s = %s", mData->stringVarsData[array_idx].info.name, MMC_STRINGDATA(sData->stringVars[array_idx]));
   }
 #endif
   TRACE_POP
@@ -783,7 +686,6 @@ void setAllParamsToStart(DATA *data)
     for (dim_idx = 0; dim_idx < mData->realParameterData[array_idx].attribute.start.dim_size[0]; dim_idx++)
     {
       sInfo->realParameter[scalar_idx] = real_get(mData->realParameterData[array_idx].attribute.start, dim_idx);
-      debugStreamPrint(OMC_LOG_DEBUG, 0, "%g", sInfo->realParameter[scalar_idx]);
       scalar_idx++;
     }
     messageClose(OMC_LOG_DEBUG);
@@ -792,19 +694,16 @@ void setAllParamsToStart(DATA *data)
   for (array_idx = 0; array_idx < mData->nParametersInteger; ++array_idx)
   {
     sInfo->integerParameter[array_idx] = mData->integerParameterData[array_idx].attribute.start;
-    debugStreamPrint(OMC_LOG_DEBUG, 0, "set Integer var %s = %ld", mData->integerParameterData[array_idx].info.name, sInfo->integerParameter[array_idx]);
   }
 
   for (array_idx = 0; array_idx < mData->nParametersBoolean; ++array_idx)
   {
     sInfo->booleanParameter[array_idx] = mData->booleanParameterData[array_idx].attribute.start;
-    debugStreamPrint(OMC_LOG_DEBUG, 0, "set Boolean var %s = %s", mData->booleanParameterData[array_idx].info.name, sInfo->booleanParameter[array_idx] ? "true" : "false");
   }
 
   for (array_idx = 0; array_idx < mData->nParametersString; ++array_idx)
   {
     sInfo->stringParameter[array_idx] = mData->stringParameterData[array_idx].attribute.start;
-    debugStreamPrint(OMC_LOG_DEBUG, 0, "set String var %s = %s", mData->stringParameterData[array_idx].info.name, MMC_STRINGDATA(sInfo->stringParameter[array_idx]));
   }
 
   TRACE_POP

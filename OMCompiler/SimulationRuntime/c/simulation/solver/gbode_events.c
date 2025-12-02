@@ -180,15 +180,12 @@ double findRoot_gb(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
 
   listClear(eventList);
 
-  debugStreamPrint(OMC_LOG_EVENTS, 0, (listLen(tmpEventList) == 1) ? "found event: " : "found events: ");
   while(listLen(tmpEventList) > 0)
   {
     long event_id = *((long*)listFirstData(tmpEventList));
     listPushFrontNodeNoCopy(eventList, listPopFrontNode(tmpEventList));
     infoStreamPrint(OMC_LOG_ZEROCROSSINGS, 0, "Event id: %ld", event_id);
   }
-
-  debugStreamPrint(OMC_LOG_EVENTS, 0, "time: %.10e", time_right);
 
   data->localData[0]->timeValue = time_left;
   memcpy(data->localData[0]->realVars, states_left, data->modelData->nStates * sizeof(double));
