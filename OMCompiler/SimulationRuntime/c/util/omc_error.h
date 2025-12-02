@@ -75,8 +75,6 @@ void omc_assert_warning_function(FILE_INFO info,  const char *msg, ...);
 void omc_terminate_function(FILE_INFO info, const char *msg, ...);
 void omc_throw_function(threadData_t*) __attribute__ ((noreturn));
 
-/* #define USE_DEBUG_OUTPUT */
-
 enum OMC_LOG_STREAM
 {
   OMC_LOG_UNKNOWN = 0,
@@ -164,12 +162,6 @@ extern int omc_showAllWarnings;
 #define OMC_ACTIVE_STREAM(stream)    (omc_useStream[stream])
 #define OMC_ACTIVE_WARNING_STREAM(stream)    (omc_showAllWarnings || omc_useStream[stream])
 
-#ifdef USE_DEBUG_OUTPUT
-  #define OMC_DEBUG_STREAM(stream)    (omc_useStream[stream])
-#else
-  #define OMC_DEBUG_STREAM(stream)    (0)
-#endif
-
 extern void (*messageFunction)(int type, int stream, FILE_INFO info, int indentNext, char *msg, int subline, const int *indexes);
 extern void (*messageClose)(int stream);
 extern void (*messageCloseWarning)(int stream);
@@ -230,16 +222,6 @@ static void OMC_INLINE assertStreamPrint(threadData_t *threadData, int cond, con
     throwStreamPrint(NULL, "%s:%d: %s: Assertion `%s` failed.\n",  __FILE__, __LINE__, OMC_FUNCTION, #expr); \
     exit(1); \
   }
-
-#ifdef USE_DEBUG_OUTPUT
-void debugStreamPrint(int stream, FILE_INFO info, int indentNext, const char *format, ...) __attribute__ ((format (printf, 3, 4)));
-void debugStreamPrintWithEquationIndexes(int stream, FILE_INFO info, int indentNext, const int *indexes, const char *format, ...) __attribute__ ((format (printf, 5, 6)));
-#else
-static OMC_INLINE void debugStreamPrint(int stream __attribute__((unused)), int indentNext __attribute__((unused)), const char *format __attribute__((unused)), ...) __attribute__ ((format (printf, 3, 4)));
-static OMC_INLINE void debugStreamPrint(int stream __attribute__((unused)), int indentNext __attribute__((unused)), const char *format __attribute__((unused)), ...) {/* Do nothing */}
-static OMC_INLINE void debugStreamPrintWithEquationIndexes(int stream __attribute__((unused)), FILE_INFO info, int indentNext __attribute__((unused)), const int *indexes __attribute__((unused)), const char *format __attribute__((unused)), ...) __attribute__ ((format (printf, 5, 6)));
-static OMC_INLINE void debugStreamPrintWithEquationIndexes(int stream  __attribute__((unused)), FILE_INFO info __attribute__((unused)), int indentNext __attribute__((unused)), const int *indexes __attribute__((unused)), const char *format __attribute__((unused)), ...)  {/* Do nothing */}
-#endif
 
 #ifdef __cplusplus
 }

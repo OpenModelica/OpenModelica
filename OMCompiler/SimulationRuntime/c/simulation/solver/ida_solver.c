@@ -789,8 +789,6 @@ int ida_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInf
   /* reinit solver */
   if (!idaData->setInitialSolution)
   {
-    debugStreamPrint(OMC_LOG_SOLVER, 0, "Re-initialized IDA Solver");
-
     /* initialize states and der(states) */
     if (idaData->daeMode)
     {

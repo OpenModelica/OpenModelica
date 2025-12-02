@@ -308,8 +308,6 @@ static void fmtEmitStep(DATA* data, threadData_t *threadData, MEASURE_TIME* mt, 
       data->real_time_sync.maxLate = res;
     }
   }
-
-  printAllVarsDebug(data, 0, OMC_LOG_DEBUG);  /* ??? */
 #endif
 }
 
@@ -398,7 +396,6 @@ int prefixedName_performSimulation(DATA* data, threadData_t *threadData, SOLVER_
   MEASURE_TIME fmt;
   fmtInit(data, &fmt);
 
-  printAllVarsDebug(data, 0, OMC_LOG_DEBUG); /* ??? */
   if (!compiledInDAEMode)
   {
     printSparseStructure(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A].sparsePattern,
