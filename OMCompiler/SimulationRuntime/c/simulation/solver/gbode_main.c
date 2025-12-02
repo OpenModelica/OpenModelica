@@ -377,6 +377,10 @@ int gbode_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solver
 
   gbData->isFirstStep = TRUE;
 
+  /* mark initial extrapolation data as invalid () */
+  gbData->extrapolationBaseTime = INFINITY;
+  gbData->extrapolationStepSize = 0.0;
+
   /* Allocate internal memory */
   gbData->y         = malloc(sizeof(double) * gbData->nStates);
   gbData->yOld      = malloc(sizeof(double) * gbData->nStates);
