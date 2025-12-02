@@ -370,6 +370,21 @@ algorithm
   end match;
 end getClassList;
 
+public function getEmptyVarAttr
+  input DAE.Type ty;
+  output Option<DAE.VariableAttributes> attr;
+algorithm
+  attr := match Types.getBasicType(ty)
+    case DAE.Type.T_REAL()        then SOME(DAE.emptyVarAttrReal);
+    case DAE.Type.T_INTEGER()     then SOME(DAE.emptyVarAttrInt);
+    case DAE.Type.T_BOOL()        then SOME(DAE.emptyVarAttrBool);
+    case DAE.Type.T_STRING()      then SOME(DAE.emptyVarAttrString);
+    case DAE.Type.T_ENUMERATION() then SOME(DAE.emptyVarAttrEnum);
+    case DAE.Type.T_CLOCK()       then SOME(DAE.emptyVarAttrClock);
+    else NONE();
+  end match;
+end getEmptyVarAttr;
+
 public function getBoundStartEquation "
 Returned bound equation"
   input DAE.VariableAttributes attr;
