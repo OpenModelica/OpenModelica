@@ -55,7 +55,7 @@ pipeline {
         stage('gcc') {
           agent {
             docker {
-              image 'ghcr.io/openmodelica/build-deps:v1.26.0-dev'
+              image 'ghcr.io/openmodelica/build-deps:v1.26.0'
               label 'linux'
               alwaysPull true
               args '''
@@ -75,7 +75,7 @@ pipeline {
         stage('clang') {
           agent {
             docker {
-              image 'ghcr.io/openmodelica/build-deps:v1.26.0-dev'
+              image 'ghcr.io/openmodelica/build-deps:v1.26.0'
               label 'linux'
               alwaysPull true
               args '''
@@ -151,7 +151,7 @@ pipeline {
         stage('cmake-noble-gcc') {
           agent {
             docker {
-              image 'ghcr.io/openmodelica/build-deps:v1.26.0-dev'
+              image 'ghcr.io/openmodelica/build-deps:v1.26.0'
               label 'linux'
               alwaysPull true
               args '''
@@ -233,7 +233,7 @@ pipeline {
         stage('checks') {
           agent {
             docker {
-              image 'ghcr.io/openmodelica/build-deps:v1.26.0-dev'
+              image 'ghcr.io/openmodelica/build-deps:v1.26.0'
               label 'linux'
               alwaysPull true
               args '''
@@ -560,7 +560,7 @@ pipeline {
         stage('10 build-gui-clang-qt5') {
           agent {
             docker {
-              image 'ghcr.io/openmodelica/build-deps:v1.26.0-dev'
+              image 'ghcr.io/openmodelica/build-deps:v1.26.0'
               label 'linux'
               alwaysPull true
               args "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary"
@@ -577,7 +577,7 @@ pipeline {
         stage('11 build-gui-clang-qt6') {
           agent {
             docker {
-              image 'ghcr.io/openmodelica/build-deps:v1.26.0-dev'
+              image 'ghcr.io/openmodelica/build-deps:v1.26.0'
               label 'linux'
               alwaysPull true
               args "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary"
@@ -594,7 +594,7 @@ pipeline {
         stage('12 testsuite-clang-parmod') {
           agent {
             docker {
-              image 'ghcr.io/openmodelica/build-deps:v1.26.0-dev'
+              image 'ghcr.io/openmodelica/build-deps:v1.26.0'
               label 'linux'
               alwaysPull true
               // No runtest.db cache necessary; the tests run in serial and do not load libraries!
@@ -616,7 +616,7 @@ pipeline {
         stage('13 testsuite-clang-metamodelica') {
           agent {
             docker {
-              image 'ghcr.io/openmodelica/build-deps:v1.26.0-dev'
+              image 'ghcr.io/openmodelica/build-deps:v1.26.0'
               label 'linux'
             }
           }
@@ -634,7 +634,7 @@ pipeline {
         stage('14 testsuite-matlab-translator') {
           agent {
             docker {
-              image 'ghcr.io/openmodelica/build-deps:v1.26.0-dev'
+              image 'ghcr.io/openmodelica/build-deps:v1.26.0'
               label 'linux'
               alwaysPull true
             }
@@ -656,7 +656,7 @@ pipeline {
         stage('15 test-clang-icon-generator') {
           agent {
             docker {
-              image 'ghcr.io/openmodelica/build-deps:v1.26.0-dev'
+              image 'ghcr.io/openmodelica/build-deps:v1.26.0'
               label 'linux'
               args '''
                 --mount type=volume,source=runtest-clang-icon-generator,target=/cache/runtest \
@@ -686,7 +686,7 @@ pipeline {
         stage('16 testsuite-unit-test-C') {
           agent {
             docker {
-              image 'ghcr.io/openmodelica/build-deps:v1.26.0-dev'
+              image 'ghcr.io/openmodelica/build-deps:v1.26.0'
               label 'linux'
               alwaysPull true
               args '''
@@ -826,7 +826,7 @@ pipeline {
         stage('clang-qt5-omedit-testsuite') {
           agent {
             docker {
-              image 'ghcr.io/openmodelica/build-deps:v1.26.0-dev'
+              image 'ghcr.io/openmodelica/build-deps:v1.26.0'
               label 'linux'
               alwaysPull true
               args "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary"
@@ -845,7 +845,7 @@ pipeline {
         stage('clang-qt6-omedit-testsuite') {
           agent {
             docker {
-              image 'ghcr.io/openmodelica/build-deps:v1.26.0-dev'
+              image 'ghcr.io/openmodelica/build-deps:v1.26.0'
               label 'linux'
               alwaysPull true
               args "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary"
@@ -868,7 +868,7 @@ pipeline {
         stage('fmuchecker-results') {
           agent {
             docker {
-              image 'ghcr.io/openmodelica/build-deps:v1.26.0-dev'
+              image 'ghcr.io/openmodelica/build-deps:v1.26.0'
               label 'linux'
               alwaysPull true
             }
@@ -896,7 +896,7 @@ pipeline {
         stage('upload-compliance') {
           agent {
             docker {
-              image 'ghcr.io/openmodelica/build-deps:v1.26.0-dev'
+              image 'ghcr.io/openmodelica/build-deps:v1.26.0'
               label 'linux'
               alwaysPull true
             }
@@ -914,7 +914,7 @@ pipeline {
         stage('upload-doc') {
           agent {
             docker {
-              image 'ghcr.io/openmodelica/build-deps:v1.26.0-dev'
+              image 'ghcr.io/openmodelica/build-deps:v1.26.0'
               label 'linux'
               alwaysPull true
             }

@@ -25,7 +25,7 @@ pipeline {
         stage('autoconf-noble-gcc') {
           agent {
             docker {
-              image 'ghcr.io/openmodelica/build-deps:v1.26.0-dev'
+              image 'ghcr.io/openmodelica/build-deps:v1.26.0'
               label 'linux'
               alwaysPull true
               args "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary " +

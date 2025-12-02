@@ -7,7 +7,7 @@
   "build": {
     "dockerfile": "Dockerfile",
     "args": {
-        "BASE_IMAGE": "ghcr.io/openmodelica/build-deps:v1.26.0-dev",
+        "BASE_IMAGE": "ghcr.io/openmodelica/build-deps:v1.26.0",
         // On Windows USERNAME is set, on Linux USER is set
         // We hope only one is set
         "USERNAME": "${localEnv:USER}${localEnv:USERNAME}"
