@@ -2003,7 +2003,7 @@ void getButcherTableau_RKSSC(BUTCHER_TABLEAU* tableau)
   tableau->nStages = 5;
   tableau->order_b = 1;
   tableau->order_bt = 2;
-  tableau->fac = 1e0;
+  tableau->fac = 7;
 
   const double c[] = {                              0,               0.041324301621055,                    0.1611647763,                    0.3608883044,                      0.64049984};
   const double A[] = {
