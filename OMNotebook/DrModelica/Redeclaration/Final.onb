@@ -90,8 +90,8 @@ p, li { white-space: pre-wrap; }
     messages = ""
 end SimulationResult;
 OMC-ERROR:
-"[&lt;interactive>:2:3-2:46:writable] Warning: Parameter a1 has no value, and is fixed during initialization (fixed=true), using available start value (start=0.0) as default value.
-[&lt;interactive>:3:3-3:54:writable] Warning: Parameter a2 has no value, and is fixed during initialization (fixed=true), using available start value (start=0.0) as default value.
+"[&lt;interactive>:2:3-2:46:writable] Warning: Parameter a1 has no binding, and is fixed during initialization (fixed=true), using available start value (start=0.0) as default value.
+[&lt;interactive>:3:3-3:54:writable] Warning: Parameter a2 has no binding, and is fixed during initialization (fixed=true), using available start value (start=0.0) as default value.
 "</Output>
         </GraphCell>
         <TextCell style="Output">

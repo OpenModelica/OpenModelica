@@ -414,7 +414,7 @@ writeFile("files/" + typeNameString(library) + ".classes",sum(typeNameString(c) 
 {system("iconv -f utf8 -t utf8 -c BuildModelRecursive." + phase + ".xml.tmp -o BuildModelRecursive." + phase + ".xml") for phase in {"flat","compile","sim","verify"}};getErrorString();
 
 system("cp '" + dygraphs + "' files/");getErrorString();
-system("rm -f tidy.err; for f in files/*.err; do (grep -v 'Duplicate modification of element' $f | sed s,^.*omlibrary/,[, | grep -v 'Error building simulator' | grep -v 'has no value, and is fixed during initialization' | grep -5E '(Warning|Error|Notification):' > tmp.tidy && test -s tmp.tidy && (basename $f && cat tmp.tidy)) >> tidy.err; done");
+system("rm -f tidy.err; for f in files/*.err; do (grep -v 'Duplicate modification of element' $f | sed s,^.*omlibrary/,[, | grep -v 'Error building simulator' | grep -v 'has no binding, and is fixed during initialization' | grep -5E '(Warning|Error|Notification):' > tmp.tidy && test -s tmp.tidy && (basename $f && cat tmp.tidy)) >> tidy.err; done");
 system("chmod -R go+r BuildModelRecursive.html files tidy.err");getErrorString();
 system("chmod go+x files");getErrorString();
 system("tar czf BuildModelRecursive.tar.gz BuildModelRecursive.html files tidy.err");getErrorString();

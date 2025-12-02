@@ -19,10 +19,10 @@ initFileContent := readFile("ArrayAttributes_init.tmp.xml");
 // true
 // ""
 // {"ArrayAttributes", "ArrayAttributes_init.xml"}
-// "[simulation/modelica/NBackend/init_xml/ArrayAttributes.mo:4:3-13:67:writable] Warning: Parameter r_each has no value, and is fixed during initialization (fixed=true), using available start value (start=1.0) as default value.
-// [simulation/modelica/NBackend/init_xml/ArrayAttributes.mo:38:3-42:49:writable] Warning: Parameter i_each has no value, and is fixed during initialization (fixed=true), using available start value (start=0) as default value.
-// [simulation/modelica/NBackend/init_xml/ArrayAttributes.mo:55:3-57:49:writable] Warning: Parameter b_each has no value, and is fixed during initialization (fixed=true), using available start value (start=false) as default value.
-// [simulation/modelica/NBackend/init_xml/ArrayAttributes.mo:66:3-68:48:writable] Warning: Parameter s_each has no value, and is fixed during initialization (fixed=true), using available start value (start=\"init\") as default value.
+// "[simulation/modelica/NBackend/init_xml/ArrayAttributes.mo:4:3-13:67:writable] Warning: Parameter r_each has no binding, and is fixed during initialization (fixed=true), using available start value (start=1.0) as default value.
+// [simulation/modelica/NBackend/init_xml/ArrayAttributes.mo:38:3-42:49:writable] Warning: Parameter i_each has no binding, and is fixed during initialization (fixed=true), using available start value (start=0) as default value.
+// [simulation/modelica/NBackend/init_xml/ArrayAttributes.mo:55:3-57:49:writable] Warning: Parameter b_each has no binding, and is fixed during initialization (fixed=true), using available start value (start=false) as default value.
+// [simulation/modelica/NBackend/init_xml/ArrayAttributes.mo:66:3-68:48:writable] Warning: Parameter s_each has no binding, and is fixed during initialization (fixed=true), using available start value (start=\"init\") as default value.
 // "
 // 0
 // "  <ModelVariables>

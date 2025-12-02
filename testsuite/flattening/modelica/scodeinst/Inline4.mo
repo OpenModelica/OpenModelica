@@ -47,6 +47,6 @@ end Inline4;
 //   final parameter Real port.vStart.re = port.UStart / 1.7320508075688772 * cos(port.UStart);
 //   final parameter Real port.vStart.im = port.UStart / 1.7320508075688772 * sin(port.UStart);
 // end Inline4;
-// [flattening/modelica/scodeinst/Inline4.mo:32:3-32:37:writable] Warning: Parameter port.UNom has no value, and is fixed during initialization (fixed=true), using available start value (start=400e3) as default value.
+// [flattening/modelica/scodeinst/Inline4.mo:32:3-32:37:writable] Warning: Parameter port.UNom has no binding, and is fixed during initialization (fixed=true), using available start value (start=400e3) as default value.
 //
 // endResult
