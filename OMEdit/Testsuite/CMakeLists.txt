@@ -38,18 +38,25 @@ macro(add_omedit_test test_name test_source_files)
   message(STATUS "Added OMEdit test ${test_name}.")
 endmacro()
 
+set(OMEDIT_TEST_AUTOCOMPLETION_SOURCES AutoCompletion/AutoCompletionTest.cpp
+                                        AutoCompletion/AutoCompletionTest.h)
+add_omedit_test(AutoCompletion "${OMEDIT_TEST_AUTOCOMPLETION_SOURCES}")
 
 set(OMEDIT_TEST_BROWSEMSL_SOURCES BrowseMSL/BrowseMSL.cpp
-                                  BrowseMSL/BrowseMSL.cpp)
+                                  BrowseMSL/BrowseMSL.h)
 add_omedit_test(BrowseMSL "${OMEDIT_TEST_BROWSEMSL_SOURCES}")
 
 set(OMEDIT_TEST_DIAGRAM_SOURCES Diagram/Diagram.cpp
                                 Diagram/Diagram.h)
 add_omedit_test(Diagram "${OMEDIT_TEST_DIAGRAM_SOURCES}")
 
-set(OMEDIT_TEST_TRANSFORMATION_SOURCES Transformation/TransformationTest.cpp
-                                       Transformation/TransformationTest.h)
-add_omedit_test(Transformation "${OMEDIT_TEST_TRANSFORMATION_SOURCES}")
+set(OMEDIT_TEST_DYNAMICANNOTATION_SOURCES DynamicAnnotation/DynamicAnnotationTest.cpp
+                                           DynamicAnnotation/DynamicAnnotationTest.h)
+add_omedit_test(DynamicAnnotation "${OMEDIT_TEST_DYNAMICANNOTATION_SOURCES}")
+
+set(OMEDIT_TEST_EXPRESSION_SOURCES Expression/ExpressionTest.cpp
+                                   Expression/ExpressionTest.h)
+add_omedit_test(Expression "${OMEDIT_TEST_EXPRESSION_SOURCES}")
 
 set(OMEDIT_TEST_HOMOTOPY_SOURCES Homotopy/HomotopyTest.cpp
                                  Homotopy/HomotopyTest.h)
@@ -58,10 +65,22 @@ add_omedit_test(Homotopy "${OMEDIT_TEST_HOMOTOPY_SOURCES}")
 # to figure out why it takes so long in the first place.
 # set_tests_properties(Homotopy PROPERTIES TIMEOUT 300)
 
-set(OMEDIT_TEST_EXPRESSION_SOURCES Expression/ExpressionTest.cpp
-                                   Expression/ExpressionTest.h)
-add_omedit_test(Expression "${OMEDIT_TEST_EXPRESSION_SOURCES}")
-
 set(OMEDIT_TEST_MODELINSTANCE_SOURCES ModelInstance/ModelInstanceTest.cpp
                                       ModelInstance/ModelInstanceTest.h)
 add_omedit_test(ModelInstance "${OMEDIT_TEST_MODELINSTANCE_SOURCES}")
+
+set(OMEDIT_TEST_STRINGHANDLER_SOURCES StringHandler/StringHandlerTest.cpp
+                                       StringHandler/StringHandlerTest.h)
+add_omedit_test(StringHandler "${OMEDIT_TEST_STRINGHANDLER_SOURCES}")
+
+set(OMEDIT_TEST_TRANSFORMATION_SOURCES Transformation/TransformationTest.cpp
+                                       Transformation/TransformationTest.h)
+add_omedit_test(Transformation "${OMEDIT_TEST_TRANSFORMATION_SOURCES}")
+
+set(OMEDIT_TEST_UTILITIES_SOURCES Utilities/UtilitiesTest.cpp
+                                  Utilities/UtilitiesTest.h)
+add_omedit_test(Utilities "${OMEDIT_TEST_UTILITIES_SOURCES}")
+
+set(OMEDIT_TEST_VARIABLEVALUE_SOURCES VariableValue/VariableValueTest.cpp
+                                      VariableValue/VariableValueTest.h)
+add_omedit_test(VariableValue "${OMEDIT_TEST_VARIABLEVALUE_SOURCES}")
