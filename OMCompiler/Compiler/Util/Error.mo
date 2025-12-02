@@ -1743,7 +1743,7 @@ algorithm
 end failOnErrorMsg;
 
 public function addCompilerError "
-  Used to make a compiler warning"
+  Used to make a compiler error"
   input String message;
 algorithm
   addMessage(COMPILER_ERROR, {message});
