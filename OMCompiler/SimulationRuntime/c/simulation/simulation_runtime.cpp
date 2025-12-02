@@ -436,8 +436,6 @@ void initializeOutputFilter(MODEL_DATA *modelData, const char *variableFilter, i
  */
 int startNonInteractiveSimulation(int argc, char**argv, DATA* data, threadData_t *threadData)
 {
-  TRACE_PUSH
-
   int retVal = -1;
 
   /* linear model option is set : <-l lintime> */
@@ -680,7 +678,6 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data, threadData_t
     retVal = printModelInfoJSON(data, threadData, output_path.c_str(), jsonInfo.c_str(), data->modelData->resultFileName) && retVal;
   }
 
-  TRACE_POP
   return retVal;
 }
 
@@ -753,7 +750,6 @@ int initializeResultData(DATA* simData, threadData_t *threadData, int cpuTime)
 static int callSolver(DATA* simData, threadData_t *threadData, string init_initMethod, string init_file,
       double init_time, string outputVariablesAtEnd, int cpuTime, const char *argv_0)
 {
-  TRACE_PUSH
   int retVal = -1;
   mmc_sint_t i;
   enum SOLVER_METHOD solverID = S_UNKNOWN;
@@ -762,7 +758,6 @@ static int callSolver(DATA* simData, threadData_t *threadData, string init_initM
   MMC_TRY_INTERNAL(globalJumpBuffer)
 
   if (initializeResultData(simData, threadData, cpuTime)) {
-    TRACE_POP
     return -1;
   }
   simData->real_time_sync.scaling = getFlagReal(FLAG_RT, 0.0);
@@ -841,7 +836,6 @@ static int callSolver(DATA* simData, threadData_t *threadData, string init_initM
 
   sim_result.free(&sim_result, simData, threadData);
 
-  TRACE_POP
   return retVal;
 }
 

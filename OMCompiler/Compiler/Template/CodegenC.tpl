@@ -277,11 +277,7 @@ template functionSavePreSynchronous(list<SimCode.SubPartition> subPartitions, St
   /* %v% = pre(%v%)*/
   void <%symbolName(modelNamePrefix,"function_savePreSynchronous")%>(DATA *data, threadData_t *threadData)
   {
-    TRACE_PUSH
-
     <%preVars%>
-
-    TRACE_POP
   }
   >>
 end functionSavePreSynchronous;
@@ -335,12 +331,10 @@ template functionInitSynchronous(list<ClockedPartition> clockedPartitions, Strin
   /* Initializes the clocks of model. */
   void <%symbolName(modelNamePrefix,"function_initSynchronous")%>(DATA *data, threadData_t *threadData)
   {
-    TRACE_PUSH
     assertStreamPrint(threadData, data->modelData->nBaseClocks==<%listLength(clockedPartitions)%>, "Number of base clocks doesn't match number of clocks that are initialized! Code generation error!");
     data->simulationInfo->baseClocks = calloc(<%listLength(clockedPartitions)%>, sizeof(BASECLOCK_DATA));
 
     <%body%>
-    TRACE_POP
   }
   >>
 end functionInitSynchronous;
@@ -455,7 +449,6 @@ template functionUpdateSynchronous(list<ClockedPartition> clockedPartitions, Str
   /* Update base-clock. */
   void <%symbolName(modelNamePrefix,"function_updateSynchronous")%>(DATA *data, threadData_t *threadData, long base_idx)
   {
-    TRACE_PUSH
     <%varDecls%>
     modelica_boolean ret;
     switch (base_idx) {
@@ -464,7 +457,6 @@ template functionUpdateSynchronous(list<ClockedPartition> clockedPartitions, Str
         throwStreamPrint(NULL, "Internal Error: unknown base partition %ld", base_idx);
         break;
     }
-    TRACE_POP
   }
   >>
 end functionUpdateSynchronous;
@@ -567,10 +559,8 @@ template functionSystemsSynchronous(list<ClockedPartition> clockedPartitions, St
         <<
         int <%symbolName(modelNamePrefix, 'functionEquationsSynchronous_system_<%base_idx%>_0')%>(DATA *data, threadData_t *threadData)
         {
-          TRACE_PUSH
           int i;
           // do nothing, this is a fake function for CLOCKED_PARTITION(subPartitions = {})
-          TRACE_POP
           return 0;
         }
         >>
@@ -583,7 +573,6 @@ template functionSystemsSynchronous(list<ClockedPartition> clockedPartitions, St
   /* Clocked systems equations */
   int <%symbolName(modelNamePrefix,"function_equationsSynchronous")%>(DATA *data, threadData_t *threadData, long base_idx, long sub_idx)
   {
-    TRACE_PUSH
     int ret;
 
     switch (base_idx) {
@@ -594,7 +583,6 @@ template functionSystemsSynchronous(list<ClockedPartition> clockedPartitions, St
         break;
     }
 
-    TRACE_POP
     return ret;
   }
   >>
@@ -608,14 +596,12 @@ template functionEquationsSynchronous(Integer base_idx, Integer sub_idx, list<tu
 
   int <%symbolName(modelNamePrefix, 'functionEquationsSynchronous_system_<%base_idx%>_<%sub_idx%>')%>(DATA *data, threadData_t *threadData)
   {
-    TRACE_PUSH
     int i;
 
     <%addRootsTempArray()%>
 
     <%equations_call(equations, modelNamePrefix, contextSimulationDiscrete)%>
 
-    TRACE_POP
     return 0;
   }
   >>
@@ -1172,12 +1158,8 @@ template simulationFile_inl(SimCode simCode)
 
       /* inline equations*/
       int <%symbolName(modelNamePrefixStr,"symbolicInlineSystem")%>(DATA *data, threadData_t *threadData){
-
-        TRACE_PUSH
-
         <%funcNames%>
 
-        TRACE_POP
         return 0;
       }
 
@@ -1908,21 +1890,16 @@ let &sub = buffer ""
     <<
     int <%symbolName(modelNamePrefix,"input_function")%>(DATA *data, threadData_t *threadData)
     {
-      TRACE_PUSH
-
       <%vars.inputVars |> SIMVAR(name=name) hasindex i0 =>
         '<%cref(name, &sub)%> = data->simulationInfo->inputVars[<%i0%>];'
         ;separator="\n"
       %>
 
-      TRACE_POP
       return 0;
     }
 
     int <%symbolName(modelNamePrefix,"input_function_init")%>(DATA *data, threadData_t *threadData)
     {
-      TRACE_PUSH
-
       <%vars.inputVars |> SIMVAR(name=name) hasindex i0 =>
         match cref2simvar(name, simCode)
         case SIMVAR(aliasvar=NOALIAS(), type_=T_REAL()) then
@@ -1938,14 +1915,11 @@ let &sub = buffer ""
         ;separator="\n"
       %>
 
-      TRACE_POP
       return 0;
     }
 
     int <%symbolName(modelNamePrefix,"input_function_updateStartValues")%>(DATA *data, threadData_t *threadData)
     {
-      TRACE_PUSH
-
       <%vars.inputVars |> SIMVAR(name=name) hasindex i0 =>
         match cref2simvar(name, simCode)
 
@@ -1963,13 +1937,10 @@ let &sub = buffer ""
         ;separator="\n"
       %>
 
-      TRACE_POP
       return 0;
     }
 
     int <%symbolName(modelNamePrefix,"inputNames")%>(DATA *data, char ** names){
-      TRACE_PUSH
-
       <%vars.inputVars |> simVar as SIMVAR(__) hasindex i0 =>
         match cref2simvar(name, simCode)
         case SIMVAR(aliasvar=NOALIAS()) then
@@ -1978,7 +1949,6 @@ let &sub = buffer ""
         ;separator="\n"
       %>
 
-      TRACE_POP
       return 0;
     }
     >>
@@ -1994,19 +1964,14 @@ let &sub = buffer ""
     <<
     int <%symbolName(modelNamePrefix,"data_function")%>(DATA *data, threadData_t *threadData)
     {
-      TRACE_PUSH
-
       <%vars.dataReconinputVars |> SIMVAR(name=name, type_=T_REAL()) hasindex i0 =>
         '<%cref(name, &sub)%> = data->simulationInfo->datainputVars[<%i0%>];'
         ;separator="\n"
       %>
-      TRACE_POP
       return 0;
     }
 
     int <%symbolName(modelNamePrefix,"dataReconciliationInputNames")%>(DATA *data, char ** names){
-      TRACE_PUSH
-
       <%vars.dataReconinputVars |> simVar as SIMVAR(__) hasindex i0 =>
         match cref2simvar(name, simCode)
         case SIMVAR(aliasvar=NOALIAS()) then
@@ -2015,14 +1980,11 @@ let &sub = buffer ""
         ;separator="\n"
       %>
 
-      TRACE_POP
       return 0;
     }
 
     int <%symbolName(modelNamePrefix,"dataReconciliationUnmeasuredVariables")%>(DATA *data, char ** names)
     {
-      TRACE_PUSH
-
       <%vars.dataReconSetBVars |> simVar as SIMVAR(__) hasindex i0 =>
         match cref2simvar(name, simCode)
         case SIMVAR(aliasvar=NOALIAS()) then
@@ -2031,7 +1993,6 @@ let &sub = buffer ""
         ;separator="\n"
       %>
 
-      TRACE_POP
       return 0;
     }
    >>
@@ -2047,14 +2008,11 @@ let &sub = buffer ""
     <<
     int <%symbolName(modelNamePrefix,"output_function")%>(DATA *data, threadData_t *threadData)
     {
-      TRACE_PUSH
-
       <%vars.outputVars |> SIMVAR(name=name, type_=T_REAL()) hasindex i0 =>
         'data->simulationInfo->outputVars[<%i0%>] = <%cref(name, &sub)%>;'
         ;separator="\n"
       %>
 
-      TRACE_POP
       return 0;
     }
     >>
@@ -2071,14 +2029,11 @@ let &sub = buffer ""
     <<
     int <%symbolName(modelNamePrefix,"setc_function")%>(DATA *data, threadData_t *threadData)
     {
-      TRACE_PUSH
-
       <%vars.dataReconSetcVars |> SIMVAR(name=name, type_=T_REAL()) hasindex i0 =>
         'data->simulationInfo->setcVars[<%i0%>] = <%cref(name, &sub)%>;'
         ;separator="\n"
       %>
 
-      TRACE_POP
       return 0;
     }
     >>
@@ -2094,14 +2049,11 @@ let &sub = buffer ""
     <<
     int <%symbolName(modelNamePrefix,"setb_function")%>(DATA *data, threadData_t *threadData)
     {
-      TRACE_PUSH
-
       <%vars.dataReconSetBVars |> SIMVAR(name=name, type_=T_REAL()) hasindex i0 =>
         'data->simulationInfo->setbVars[<%i0%>] = <%cref(name, &sub)%>;'
         ;separator="\n"
       %>
 
-      TRACE_POP
       return 0;
     }
     >>
@@ -2442,7 +2394,6 @@ template functionSetupLinearSystems(list<SimEqSystem> linearSystems, String mode
 
           void residualFunc<%ls.index%>(RESIDUAL_USERDATA* userData, const double* xloc, double* res, const int* iflag)
           {
-            TRACE_PUSH
             DATA *data = userData->data;
             threadData_t *threadData = userData->threadData;
             const int equationIndexes[2] = {1,<%ls.index%>};
@@ -2452,7 +2403,6 @@ template functionSetupLinearSystems(list<SimEqSystem> linearSystems, String mode
             JACOBIAN* jacobian = NULL;
             <%varDeclsRes%>
             <%equation_withProfile(ls.index, eqnbody)%>
-            TRACE_POP
           }
           OMC_DISABLE_OPT
           <%initializeStaticLSVars(ls.vars, ls.index)%>
@@ -2532,7 +2482,6 @@ template functionSetupLinearSystems(list<SimEqSystem> linearSystems, String mode
 
        void residualFunc<%ls.index%>(RESIDUAL_USERDATA* userData, const double* xloc, double* res, const int* iflag)
        {
-         TRACE_PUSH
          DATA *data = userData->data;
          threadData_t *threadData = userData->threadData;
          const int equationIndexes[2] = {1,<%ls.index%>};
@@ -2548,7 +2497,6 @@ template functionSetupLinearSystems(list<SimEqSystem> linearSystems, String mode
          <%body%>
          <% if profileAll() then 'SIM_PROF_ACC_EQ(<%ls.index%>);' %>
          threadData->lastEquationSolved = <%ls.index%>;
-         TRACE_POP
        }
        OMC_DISABLE_OPT
        <%initializeStaticLSVars(ls.vars, ls.index)%>
@@ -2558,7 +2506,6 @@ template functionSetupLinearSystems(list<SimEqSystem> linearSystems, String mode
 
        void residualFunc<%at.index%>(RESIDUAL_USERDATA* userData, const double* xloc, double* res, const int* iflag)
        {
-         TRACE_PUSH
          DATA *data = userData->data;
          threadData_t *threadData = userData->threadData;
          const int equationIndexes[2] = {1,<%at.index%>};
@@ -2574,7 +2521,6 @@ template functionSetupLinearSystems(list<SimEqSystem> linearSystems, String mode
          <%body2%>
          <% if profileAll() then 'SIM_PROF_ACC_EQ(<%at.index%>);' %>
          threadData->lastEquationSolved = <%at.index%>;
-         TRACE_POP
        }
        OMC_DISABLE_OPT
        <%initializeStaticLSVars(at.vars, at.index)%>
@@ -3144,7 +3090,6 @@ match system
 
     <%residualFunctionHeader%>
     {
-      TRACE_PUSH
       DATA *data = userData->data;
       threadData_t *threadData = userData->threadData;
       const int equationIndexes[2] = {1,<%nls.index%>};
@@ -3177,7 +3122,6 @@ match system
       <%restoreKnownOutputs%>
       <% if profileAll() then 'SIM_PROF_ACC_EQ(<%nls.index%>);' %>
       threadData->lastEquationSolved = <%nls.index%>;
-      TRACE_POP
       <%returnValue%>
     }
     >>
@@ -3433,7 +3377,6 @@ let &sub = buffer ""
   OMC_DISABLE_OPT
   int <%symbolName(modelNamePrefix,"updateBoundVariableAttributes")%>(DATA *data, threadData_t *threadData)
   {
-    TRACE_PUSH
     /* min ******************************************************** */
     infoStreamPrint(OMC_LOG_INIT, 1, "updating min-values");
     <%minValueEquations |> eq as SES_SIMPLE_ASSIGN(__) => equation_call(eq, modelNamePrefix, contextOther)%>
@@ -3454,7 +3397,6 @@ let &sub = buffer ""
     <%(startValueEquations |> eq as SES_SIMPLE_ASSIGN(__) => equation_call(eq, modelNamePrefix, contextOther) ; separator="\n")%>
     messageClose(OMC_LOG_INIT);
 
-    TRACE_POP
     return 0;
   }
   >>
@@ -3483,11 +3425,9 @@ template functionUpdateBoundVariableAttributesFunctions(SimEqSystem eq, String a
       */
       <%OMC_NO_OPT%><% if static then "static "%>void <%symbolName(modelNamePrefix,"eqFunction")%>_<%ix%>(DATA *data, threadData_t *threadData)
       {
-        TRACE_PUSH
         const int equationIndexes[2] = {1,<%ix%>};
         <%&varDecls%>
         <%equation_withProfile(ix, body)%>
-        TRACE_POP
       }
 
       >>
@@ -3537,7 +3477,6 @@ template functionUpdateBoundParameters(list<SimEqSystem> simpleParameterEquation
   OMC_DISABLE_OPT
   int <%symbolName(modelNamePrefix,"updateBoundParameters")%>(DATA *data, threadData_t *threadData)
   {
-    TRACE_PUSH
     <%sortSimpleAssignmentBasedOnLhs(simpleParameterEquations) |> eq as SES_SIMPLE_ASSIGN(__) =>
       <<
       <%cref(cref, &sub)%> = <%daeExpSimpleLiteral(exp)%>;
@@ -3549,7 +3488,6 @@ template functionUpdateBoundParameters(list<SimEqSystem> simpleParameterEquation
         else error(sourceInfo(), 'Cannot get attributes of alias variable <%crefStr(cref)%>. Alias variables should have been replaced by the compiler before SimCode')%>
       >> ; separator="\n" %>
     <%fncalls%>
-    TRACE_POP
     return 0;
   }
   >>
@@ -3580,9 +3518,7 @@ template functionEquationsMultiFiles(list<SimEqSystem> inEqs, Integer numEqs, In
                   OMC_DISABLE_OPT
                   void <%name%>(DATA *data, threadData_t *threadData)
                   {
-                    TRACE_PUSH
                     <%equations_call(eqs, modelNamePrefix, contextOther)%>
-                    TRACE_POP
                   }
                   >>
                   +
@@ -3618,13 +3554,10 @@ template functionInitialEquations(list<SimEqSystem> initalEquations, Integer num
 
   int <%symbolName(modelNamePrefix,"functionInitialEquations")%>(DATA *data, threadData_t *threadData)
   {
-    TRACE_PUSH
-
     data->simulationInfo->discreteCall = 1;
     <%fncalls %>
     data->simulationInfo->discreteCall = 0;
 
-    TRACE_POP
     return 0;
   }
   >>
@@ -3649,13 +3582,10 @@ template functionInitialEquations_lambda0(list<SimEqSystem> initalEquations_lamb
 
     int <%symbolName(modelNamePrefix,"functionInitialEquations_lambda0")%>(DATA *data, threadData_t *threadData)
     {
-      TRACE_PUSH
-
       data->simulationInfo->discreteCall = 1;
       <%equations_call(initalEquations_lambda0, modelNamePrefix, contextSimulationDiscrete)%>
       data->simulationInfo->discreteCall = 0;
 
-      TRACE_POP
       return 0;
     }
     >>
@@ -3705,14 +3635,12 @@ template functionRemovedInitialEquations(list<SimEqSystem> removedInitalEquation
   <%tmp%>
   int <%symbolName(modelNamePrefix,"functionRemovedInitialEquations")%>(DATA *data, threadData_t *threadData)
   {
-    TRACE_PUSH
     const int *equationIndexes = NULL;
     double res = 0.0;
     <%varDecls%>
 
     <%body%>
 
-    TRACE_POP
     return 0;
   }
   >>
@@ -3738,13 +3666,10 @@ template functionStoreDelayed(DelayedExpression delayed, String modelNamePrefix)
   <%auxFunction%>
   int <%symbolName(modelNamePrefix,"function_storeDelayed")%>(DATA *data, threadData_t *threadData)
   {
-    TRACE_PUSH
-
     int equationIndexes[2] = {1,-1};
     <%varDecls%>
     <%storePart%>
 
-    TRACE_POP
     return 0;
   }
   >>
@@ -3776,7 +3701,6 @@ template functionStoreSpatialDistribution(SpatialDistributionInfo spatialInfo, S
     <%varDecls%>
     <%storePart%>
 
-    TRACE_POP
     return 0;
   }
   >>
@@ -3800,11 +3724,9 @@ template functionInitSpatialDistribution(SpatialDistributionInfo spatialInfo, St
   <%auxFunction%>
   int <%symbolName(modelNamePrefix,"function_initSpatialDistribution")%>(DATA *data, threadData_t *threadData)
   {
-
     <%varDecls%>
     <%storePart%>
 
-    TRACE_POP
     return 0;
   }
   >>
@@ -4590,7 +4512,6 @@ template functionODE(list<list<SimEqSystem>> derivativEquations, Text method, Op
 
   int <%symbolName(modelNamePrefix,"functionODE")%>(DATA *data, threadData_t *threadData)
   {
-    TRACE_PUSH
   #if !defined(OMC_MINIMAL_RUNTIME)
     <% if profileFunctions() then "" else "if (measure_time_flag) " %>rt_tick(SIM_TIMER_FUNCTION_ODE);
   #endif
@@ -4607,7 +4528,6 @@ template functionODE(list<list<SimEqSystem>> derivativEquations, Text method, Op
     <% if profileFunctions() then "" else "if (measure_time_flag) " %>rt_accumulate(SIM_TIMER_FUNCTION_ODE);
   #endif
 
-    TRACE_POP
     return 0;
   }
   >>
@@ -4624,7 +4544,6 @@ template functionAlgebraic(list<list<SimEqSystem>> algebraicEquations, String mo
   /* for continuous time variables */
   int <%symbolName(modelNamePrefix,"functionAlgebraics")%>(DATA *data, threadData_t *threadData)
   {
-    TRACE_PUSH
     <%varDecls%>
 
   #if !defined(OMC_MINIMAL_RUNTIME)
@@ -4640,7 +4559,6 @@ template functionAlgebraic(list<list<SimEqSystem>> algebraicEquations, String mo
     <% if profileFunctions() then "" else "if (measure_time_flag) " %>rt_accumulate(SIM_TIMER_ALGEBRAICS);
   #endif
 
-    TRACE_POP
     return 0;
   }
   >>
@@ -4662,7 +4580,6 @@ template evaluateDAEResiduals(list<list<SimEqSystem>> resEquations, String fileN
   OMC_DISABLE_OPT
   int <%symbolName(modelNamePrefix,"evaluateDAEResiduals")%>(DATA *data, threadData_t *threadData, int currentEvalStage)
   {
-    TRACE_PUSH
     int evalStages;
     data->simulationInfo->callStatistics.functionEvalDAE++;
 
@@ -4676,7 +4593,6 @@ template evaluateDAEResiduals(list<list<SimEqSystem>> resEquations, String fileN
     <% if profileFunctions() then "" else "if (measure_time_flag) " %>rt_accumulate(SIM_TIMER_DAE);
   #endif
 
-    TRACE_POP
     return 0;
   }
   >>
@@ -4712,7 +4628,6 @@ template initializeDAEmodeData(Integer nResVars, list<SimVar> algVars, Integer n
   OMC_DISABLE_OPT
   int <%symbolName(modelNamePrefix,"initializeDAEmodeData")%>(DATA* data, DAEMODE_DATA* daeModeData)
   {
-    TRACE_PUSH
     /* sparse patterns */
     <%colPtr%>
     <%rowIndex%>
@@ -4745,7 +4660,6 @@ template initializeDAEmodeData(Integer nResVars, list<SimVar> algVars, Integer n
 
     /* write color array */
     <%colorString%>
-    TRACE_POP
     return 0;
   }
   >>
@@ -4762,7 +4676,6 @@ template functionDAE(list<SimEqSystem> allEquationsPlusWhen, String modelNamePre
   OMC_DISABLE_OPT
   int <%symbolName(modelNamePrefix,"functionDAE")%>(DATA *data, threadData_t *threadData)
   {
-    TRACE_PUSH
     int equationIndexes[1] = {0};<%/*reinits may use equation indexes, even though it has no equation...*/%>
     <%addRootsTempArray()%>
   #if !defined(OMC_MINIMAL_RUNTIME)
@@ -4778,7 +4691,6 @@ template functionDAE(list<SimEqSystem> allEquationsPlusWhen, String modelNamePre
   #if !defined(OMC_MINIMAL_RUNTIME)
     <% if profileFunctions() then "" else "if (measure_time_flag) " %>rt_accumulate(SIM_TIMER_DAE);
   #endif
-    TRACE_POP
     return 0;
   }
   >>
@@ -4795,11 +4707,8 @@ template functionLocalKnownVars(list<SimEqSystem> localKnownVars, String modelNa
 
   int <%symbolName(modelNamePrefix,"functionLocalKnownVars")%>(DATA *data, threadData_t *threadData)
   {
-    TRACE_PUSH
-
     <%equations_call(localKnownVars, modelNamePrefix, contextSimulationDiscrete)%>
 
-    TRACE_POP
     return 0;
   }
   >>
@@ -4851,19 +4760,15 @@ template functionZeroCrossing(list<ZeroCrossing> zeroCrossings, list<SimEqSystem
 
   int <%symbolName(modelNamePrefix,"function_ZeroCrossingsEquations")%>(DATA *data, threadData_t *threadData)
   {
-    TRACE_PUSH
-
     data->simulationInfo->callStatistics.functionZeroCrossingsEquations++;
 
     <%equations_call(equationsForZeroCrossings, modelNamePrefix, contextZeroCross)%>
 
-    TRACE_POP
     return 0;
   }
 
   int <%symbolName(modelNamePrefix,"function_ZeroCrossings")%>(DATA *data, threadData_t *threadData, double *gout)
   {
-    TRACE_PUSH
     const int *equationIndexes = NULL;
 
     <%varDecls2%>
@@ -4881,7 +4786,6 @@ template functionZeroCrossing(list<ZeroCrossing> zeroCrossings, list<SimEqSystem
     <% if profileFunctions() then "" else "if (measure_time_flag) " %>rt_accumulate(SIM_TIMER_ZC);
   #endif
 
-    TRACE_POP
     return 0;
   }
   >>
@@ -5066,7 +4970,6 @@ template functionRelations(list<ZeroCrossing> relations, String modelNamePrefix)
 
   int <%symbolName(modelNamePrefix,"function_updateRelations")%>(DATA *data, threadData_t *threadData, int evalforZeroCross)
   {
-    TRACE_PUSH
     const int *equationIndexes = NULL;
 
     <%varDecls%>
@@ -5079,7 +4982,6 @@ template functionRelations(list<ZeroCrossing> relations, String modelNamePrefix)
       <%relationsCodeElse%>
     }
 
-    TRACE_POP
     return 0;
   }
   >>
@@ -5178,11 +5080,8 @@ template functionAssertsforCheck(list<SimEqSystem> algAndEqAssertsEquations, Str
   OMC_DISABLE_OPT
   int <%symbolName(modelNamePrefix,"checkForAsserts")%>(DATA *data, threadData_t *threadData)
   {
-    TRACE_PUSH
-
     <%equations_call(algAndEqAssertsEquations, modelNamePrefix, contextSimulationDiscrete)%>
 
-    TRACE_POP
     return 0;
   }
   >>
@@ -5555,9 +5454,7 @@ match sparsepattern
     <<
     int <%symbolName(modelNamePrefix,"initialAnalyticJacobian")%><%matrixname%>(DATA* data, threadData_t *threadData, JACOBIAN *jacobian)
     {
-      TRACE_PUSH
       jacobian->availability = JACOBIAN_NOT_AVAILABLE;
-      TRACE_POP
       return 1;
     }
     >>
@@ -5576,7 +5473,6 @@ match sparsepattern
     OMC_DISABLE_OPT
     int <%symbolName(modelNamePrefix,"initialAnalyticJacobian")%><%matrixname%>(DATA* data, threadData_t *threadData, JACOBIAN *jacobian)
     {
-      TRACE_PUSH
       size_t count;
 
       FILE* pFile = openSparsePatternFile(data, threadData, "<%fileNamePrefix%>_Jac<%matrixname%>.bin");
@@ -5602,7 +5498,6 @@ match sparsepattern
 
       omc_fclose(pFile);
 
-      TRACE_POP
       return 0;
     }
     >>
@@ -5619,8 +5514,6 @@ template generateMatrix(list<JacobianColumn> jacobianColumn, list<SimVar> seedVa
     <<
     int <%symbolName(modelNamePrefix,"functionJac")%><%matrixname%>_column(DATA* data, threadData_t *threadData, JACOBIAN *jacobian, JACOBIAN *parentJacobian)
     {
-      TRACE_PUSH
-      TRACE_POP
       return 0;
     }
     >>
@@ -5630,8 +5523,6 @@ template generateMatrix(list<JacobianColumn> jacobianColumn, list<SimVar> seedVa
         <<
         int <%symbolName(modelNamePrefix,"functionJac")%><%matrixname%>_column(DATA* data, threadData_t *threadData, JACOBIAN *jacobian, JACOBIAN *parentJacobian)
         {
-          TRACE_PUSH
-          TRACE_POP
           return 0;
         }
         >>
@@ -5656,13 +5547,10 @@ template generateConstantEqns(list<SimEqSystem> constantEqns, String matrixName,
   OMC_DISABLE_OPT
   int <%symbolName(modelNamePrefix,"functionJac")%><%matrixName%>_constantEqns(DATA* data, threadData_t *threadData, JACOBIAN *jacobian, JACOBIAN *parentJacobian)
   {
-    TRACE_PUSH
-
     int index = <%symbolName(modelNamePrefix,"INDEX_JAC_")%><%matrixName%>;
 
     <%equations_call(constantEqns, modelNamePrefix, contextJacobian)%>
 
-    TRACE_POP
     return 0;
   }
   >>
@@ -5684,13 +5572,10 @@ template functionJac(list<SimEqSystem> jacEquations, list<SimEqSystem> constantE
 
   int <%symbolName(modelNamePrefix,"functionJac")%><%matrixName%>_column(DATA* data, threadData_t *threadData, JACOBIAN *jacobian, JACOBIAN *parentJacobian)
   {
-    TRACE_PUSH
-
     int index = <%symbolName(modelNamePrefix,"INDEX_JAC_")%><%matrixName%>;
 
     <%equations_call(jacEquations, modelNamePrefix, contextJacobian)%>
 
-    TRACE_POP
     return 0;
   }
   >>
@@ -5832,11 +5717,9 @@ template equation_arrayFormat(SimEqSystem eq, String name, Context context, Inte
    */
   <%OMC_DISABLE_OPT%>void <%symbolName(modelNamePrefix,"eqFunction")%>_<%ix%>(DATA *data, threadData_t *threadData)
   {
-    TRACE_PUSH
     const int equationIndexes[2] = {1,<%ix%>};
     <%&varD%>
     <%equation_withProfile(ix, x)%>
-    TRACE_POP
   }
   >>
   <<
@@ -5962,13 +5845,11 @@ template equation_impl2(Integer base_idx, Integer sub_idx, SimEqSystem eq, Conte
         */
         <%OMC_NO_OPT%><% if static then "static "%>int <%symbolName(modelNamePrefix,"eqFunction")%>_<%ix%>(DATA *data, threadData_t *threadData)
         {
-          TRACE_PUSH
           <%baseClockIndex_%>
           <%subClockIndex_%>
           const int equationIndexes[2] = {1,<%ix%>};
           <%&varD%>
           <%equation_withProfile(ix, x)%>
-          TRACE_POP
         }
 
         <%tempeqns2%>
@@ -5977,13 +5858,11 @@ template equation_impl2(Integer base_idx, Integer sub_idx, SimEqSystem eq, Conte
         */
         <%OMC_NO_OPT%><% if static then "static "%>void <%symbolName(modelNamePrefix,"eqFunction")%>_<%ix2%>(DATA *data, threadData_t *threadData)
         {
-          TRACE_PUSH
           <%baseClockIndex_%>
           <%subClockIndex_%>
           const int equationIndexes[2] = {1,<%ix2%>};
           <%&varD%>
           <%equation_withProfile(ix2, x2)%>
-          TRACE_POP
         }
         >>
 
@@ -6000,13 +5879,11 @@ template equation_impl2(Integer base_idx, Integer sub_idx, SimEqSystem eq, Conte
         */
         <%OMC_NO_OPT%><% if static then "static "%>void <%symbolName(modelNamePrefix,"eqFunction")%>_<%ix%>(DATA *data, threadData_t *threadData, JACOBIAN *jacobian, JACOBIAN *parentJacobian)
         {
-          TRACE_PUSH
           <%baseClockIndex_%>
           <%subClockIndex_%>
           const int equationIndexes[2] = {1,<%ix%>};
           <%&varD%>
           <%equation_withProfile(ix, x)%>
-          TRACE_POP
         }
         >>
         else
@@ -6018,13 +5895,11 @@ template equation_impl2(Integer base_idx, Integer sub_idx, SimEqSystem eq, Conte
         */
         <%OMC_NO_OPT%><% if static then "static "%>void <%symbolName(modelNamePrefix,"eqFunction")%>_<%ix%>(DATA *data, threadData_t *threadData)
         {
-          TRACE_PUSH
           <%baseClockIndex_%>
           <%subClockIndex_%>
           const int equationIndexes[2] = {1,<%ix%>};
           <%&varD%>
           <%equation_withProfile(ix, x)%>
-          TRACE_POP
         }
         >>
   )
@@ -7232,9 +7107,7 @@ template optimizationComponents1(ClassAttributes classAttribute, SimCode simCode
 
       int <%symbolName(modelNamePrefixStr,"setInputData")%>(DATA *data, const modelica_boolean file)
       {
-        TRACE_PUSH
         <%setInput%>
-        TRACE_POP
         return 0;
       }
       int <%symbolName(modelNamePrefixStr,"getTimeGrid")%>(DATA *data, modelica_integer * nsi, modelica_real**t){

@@ -103,9 +103,6 @@ const char *OMC_LOG_STREAM_NAME[OMC_SIM_LOG_MAX] = {
   "LOG_STATS_V",
   "LOG_SUCCESS",
   "LOG_SYNCHRONOUS",
-#ifdef USE_DEBUG_TRACE
-  "LOG_TRACE",
-#endif
   "LOG_ZEROCROSSINGS",
 };
 
@@ -167,9 +164,6 @@ const char *OMC_LOG_STREAM_DESC[OMC_SIM_LOG_MAX] = {
   "additional statistics for OMC_LOG_STATS",                                    /* OMC_LOG_STATS_V */
   "this stream is always active, unless deactivated with -lv=-LOG_SUCCESS",     /* OMC_LOG_SUCCESS */
   "log clocks and sub-clocks for synchronous features",                         /* OMC_LOG_SYNCHRONOUS */
-#ifdef USE_DEBUG_TRACE
-  "enables additional output to trace call stack",                              /* OMC_LOG_TRACE */
-#endif
   "additional information about the zerocrossings"                              /* OMC_LOG_ZEROCROSSINGS */
 };
 
@@ -189,11 +183,6 @@ static int omc_lastType[OMC_SIM_LOG_MAX];
 static int omc_lastStream = OMC_LOG_UNKNOWN;
 int omc_showAllWarnings = 0;
 static int streamsActive = 1;              /* 1 if info streams from omc_useStream are active, 0 if deactivated */
-
-#ifdef USE_DEBUG_TRACE
-  int DEBUG_TRACE_PUSH_HELPER(const char* pFnc, const char* pFile, const long ln){if(omc_useStream[OMC_LOG_TRACE]) printf("TRACE: push %s (%s:%d)\n", pFnc, pFile, ln); return 0;}
-  int DEBUG_TRACE_POP_HELPER(int traceID){if(omc_useStream[OMC_LOG_TRACE]) printf("TRACE: pop\n"); return 0;}
-#endif
 
 void initDumpSystem()
 {

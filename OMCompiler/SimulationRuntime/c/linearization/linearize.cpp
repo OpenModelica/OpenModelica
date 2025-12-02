@@ -115,8 +115,6 @@ extern "C" {
 
 int functionODE_residual(DATA* data, threadData_t *threadData, double *dx, double *dy, double *dz)
 {
-    TRACE_PUSH
-
     long i;
 
     /* debug */
@@ -152,7 +150,6 @@ int functionODE_residual(DATA* data, threadData_t *threadData, double *dx, doubl
         }
     }
 
-    TRACE_POP
     return 0;
 }
 
@@ -513,7 +510,6 @@ int functionJacD(DATA* data, threadData_t *threadData, double* jac){
 
 int linearize(DATA* data, threadData_t *threadData)
 {
-    TRACE_PUSH
     /* Check if data recovery is requested */
     int do_data_recovery = omc_flag[FLAG_L_DATA_RECOVERY] ? 1 : 0;
 
@@ -557,13 +553,11 @@ int linearize(DATA* data, threadData_t *threadData)
         if(functionJacAC_num(data, threadData, matrixA, matrixC, matrixCz))
         {
             throwStreamPrint(threadData, "Error, can not get Matrix A or C ");
-            TRACE_POP
             return 1;
         }
         if(functionJacBD_num(data, threadData, matrixB, matrixD, matrixDz))
         {
             throwStreamPrint(threadData, "Error, can not get Matrix B or D ");
-            TRACE_POP
             return 1;
         }
     }
@@ -710,7 +704,6 @@ int linearize(DATA* data, threadData_t *threadData)
         infoStreamPrint(OMC_LOG_STDOUT, 0, "The output format can be changed with the command line option --linearizationDumpLanguage.");
         infoStreamPrint(OMC_LOG_STDOUT, 0, "The options are: --linearizationDumpLanguage=modelica, matlab, julia, python.");
     }
-    TRACE_POP
     return 0;
   }
 

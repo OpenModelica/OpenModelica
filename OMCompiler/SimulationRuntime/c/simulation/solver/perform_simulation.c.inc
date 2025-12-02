@@ -66,8 +66,6 @@
  */
 static void prefixedName_updateContinuousSystem(DATA *data, threadData_t *threadData)
 {
-  TRACE_PUSH
-
   externalInputUpdate(data);
   data->callback->input_function(data, threadData);
 
@@ -86,8 +84,6 @@ static void prefixedName_updateContinuousSystem(DATA *data, threadData_t *thread
   data->callback->function_storeDelayed(data, threadData);
   data->callback->function_storeSpatialDistribution(data, threadData);
   storePreValues(data);
-
-  TRACE_POP
 }
 
 static fire_timer_t simulationUpdate(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
@@ -388,8 +384,6 @@ static void saveIntegratorStats(SOLVER_INFO* solverInfo)
  */
 int prefixedName_performSimulation(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
 {
-  TRACE_PUSH
-
   int retValIntegrator=0;
   int retValue=0;
   int i, retry=0, steadStateReached=0;
@@ -444,12 +438,6 @@ int prefixedName_performSimulation(DATA* data, threadData_t *threadData, SOLVER_
       {
         deactivateLogging();
       }
-
-#ifdef USE_DEBUG_TRACE
-      if(omc_useStream[OMC_LOG_TRACE]) {
-        printf("TRACE: push loop step=%u, time=%.12g\n", __currStepNo, solverInfo->currentTime);
-      }
-#endif
 
       /* check for steady state */
       if (omc_flag[FLAG_STEADY_STATE])
@@ -607,8 +595,6 @@ int prefixedName_performSimulation(DATA* data, threadData_t *threadData, SOLVER_
           break;
         }
       }
-
-      TRACE_POP /* pop loop */
     } /* end while solver */
   } /* end else */
 
@@ -618,6 +604,5 @@ int prefixedName_performSimulation(DATA* data, threadData_t *threadData, SOLVER_
     warningStreamPrint(OMC_LOG_STDOUT, 0, "Steady state has not been reached.\nThis may be due to too restrictive relative tolerance (%g) or short stopTime (%g).", steadyStateTol, simInfo->stopTime);
   }
 
-  TRACE_POP
   return retValue;
 }

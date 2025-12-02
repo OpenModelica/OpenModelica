@@ -75,8 +75,6 @@ void omc_assert_warning_function(FILE_INFO info,  const char *msg, ...);
 void omc_terminate_function(FILE_INFO info, const char *msg, ...);
 void omc_throw_function(threadData_t*) __attribute__ ((noreturn));
 
-/* #define USE_DEBUG_TRACE */
-
 enum OMC_LOG_STREAM
 {
   OMC_LOG_UNKNOWN = 0,
@@ -136,9 +134,6 @@ enum OMC_LOG_STREAM
   OMC_LOG_STATS_V,
   OMC_LOG_SUCCESS,
   OMC_LOG_SYNCHRONOUS,
-#ifdef USE_DEBUG_TRACE
-  OMC_LOG_TRACE,
-#endif
   OMC_LOG_ZEROCROSSINGS,
 
   OMC_SIM_LOG_MAX
@@ -166,16 +161,6 @@ extern int omc_showAllWarnings;
 
 #define OMC_ACTIVE_STREAM(stream)    (omc_useStream[stream])
 #define OMC_ACTIVE_WARNING_STREAM(stream)    (omc_showAllWarnings || omc_useStream[stream])
-
-#ifdef USE_DEBUG_TRACE
-  extern int DEBUG_TRACE_PUSH_HELPER(const char* pFnc, const char* pFile, const long ln);
-  extern int DEBUG_TRACE_POP_HELPER(int traceID);
-  #define TRACE_PUSH int __DEBUG_TRACE_HANDLE = DEBUG_TRACE_PUSH_HELPER(__FUNCTION__, __FILE__, __LINE__);
-  #define TRACE_POP DEBUG_TRACE_POP_HELPER(__DEBUG_TRACE_HANDLE);
-#else
-  #define TRACE_PUSH
-  #define TRACE_POP
-#endif
 
 extern void (*messageFunction)(int type, int stream, FILE_INFO info, int indentNext, char *msg, int subline, const int *indexes);
 extern void (*messageClose)(int stream);
