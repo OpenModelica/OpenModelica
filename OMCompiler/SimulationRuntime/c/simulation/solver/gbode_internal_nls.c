@@ -760,7 +760,7 @@ static void scaled_blockdiag_matvec(T_TRANSFORM *transform,
   // 1x1 real blocks: out_i += a_i * v
   for (int real_eig = 0; real_eig < transform->nRealEigenvalues; real_eig++)
   {
-    daxpy_(&block_size, &gammas_scaled[0], &v[real_eig * block_size], &INT_ONE, &out[real_eig * block_size], &INT_ONE);
+    daxpy_(&block_size, &gammas_scaled[real_eig], &v[real_eig * block_size], &INT_ONE, &out[real_eig * block_size], &INT_ONE);
   }
 
   int offset = transform->nRealEigenvalues * block_size;
@@ -1147,7 +1147,7 @@ void *gbInternalNlsAllocate(int size,
     nls->klu_internals_real = (KLUInternals *) malloc(sizeof(KLUInternals));
     nls->klu_internals_real->numeric = NULL;
     nls->klu_internals_cmplx = NULL;
-    nls->real_nls_jacs = (double **) malloc(sizeof(double));
+    nls->real_nls_jacs = (double **) malloc(sizeof(double *));
     nls->real_nls_jacs[0] = (double *) malloc(nls->sparsePattern->numberOfNonZeros * sizeof(double));
 
     // auxiliary memory
@@ -1165,10 +1165,10 @@ void *gbInternalNlsAllocate(int size,
     nls->klu_internals_real = (KLUInternals *) malloc(trfm->nRealEigenvalues * sizeof(KLUInternals));
     nls->klu_internals_cmplx = (KLUInternals *) malloc(trfm->nComplexEigenpairs * sizeof(KLUInternals));
 
-    nls->real_nls_jacs = (double **) malloc(trfm->nRealEigenvalues * sizeof(double));
-    nls->real_nls_res = (double **) malloc(trfm->nRealEigenvalues * sizeof(double));
-    nls->cmplx_nls_jacs = (double **) malloc(trfm->nComplexEigenpairs * sizeof(double));
-    nls->cmplx_nls_res = (double **) malloc(trfm->nComplexEigenpairs * sizeof(double));
+    nls->real_nls_jacs = (double **) malloc(trfm->nRealEigenvalues * sizeof(double *));
+    nls->real_nls_res = (double **) malloc(trfm->nRealEigenvalues * sizeof(double *));
+    nls->cmplx_nls_jacs = (double **) malloc(trfm->nComplexEigenpairs * sizeof(double *));
+    nls->cmplx_nls_res = (double **) malloc(trfm->nComplexEigenpairs * sizeof(double *));
 
     if (!(nls->klu_internals_real && nls->klu_internals_cmplx && nls->real_nls_jacs
           && nls->real_nls_res && nls->cmplx_nls_jacs && nls->cmplx_nls_res))
@@ -1251,15 +1251,15 @@ void gbInternalNlsFree(void *nls_ptr)
     {
       free(nls->real_nls_jacs[sys_real]);
       free(nls->real_nls_res[sys_real]);
-      if (nls->klu_internals_real[sys_real].numeric) klu_free_numeric(&nls->klu_internals_real[sys_real].numeric, &nls->klu_internals_real->common);
-      if (nls->klu_internals_real[sys_real].symbolic) klu_free_symbolic(&nls->klu_internals_real[sys_real].symbolic, &nls->klu_internals_real->common);
+      if (nls->klu_internals_real[sys_real].numeric) klu_free_numeric(&nls->klu_internals_real[sys_real].numeric, &nls->klu_internals_real[sys_real].common);
+      if (nls->klu_internals_real[sys_real].symbolic) klu_free_symbolic(&nls->klu_internals_real[sys_real].symbolic, &nls->klu_internals_real[sys_real].common);
     }
     for (int sys_cmplx = 0; sys_cmplx < nls->tabl->t_transform->nComplexEigenpairs; sys_cmplx++)
     {
       free(nls->cmplx_nls_jacs[sys_cmplx]);
       free(nls->cmplx_nls_res[sys_cmplx]);
-      if (nls->klu_internals_cmplx[sys_cmplx].numeric) klu_free_numeric(&nls->klu_internals_cmplx[sys_cmplx].numeric, &nls->klu_internals_cmplx->common);
-      if (nls->klu_internals_cmplx[sys_cmplx].symbolic) klu_free_symbolic(&nls->klu_internals_cmplx[sys_cmplx].symbolic, &nls->klu_internals_cmplx->common);
+      if (nls->klu_internals_cmplx[sys_cmplx].numeric) klu_free_numeric(&nls->klu_internals_cmplx[sys_cmplx].numeric, &nls->klu_internals_cmplx[sys_cmplx].common);
+      if (nls->klu_internals_cmplx[sys_cmplx].symbolic) klu_free_symbolic(&nls->klu_internals_cmplx[sys_cmplx].symbolic, &nls->klu_internals_cmplx[sys_cmplx].common);
     }
 
     free(nls->real_nls_jacs);
