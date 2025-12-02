@@ -5208,7 +5208,7 @@ template functionlinearmodelMatlab(ModelInfo modelInfo, String modelNamePrefix) 
       "end";
     }
     const char *<%symbolName(modelNamePrefix,"linear_model_datarecovery_frame")%>()
-    { /* not implemented */ }
+    { return "";  /* not implemented */ }
     >>
   end match
 end functionlinearmodelMatlab;
@@ -5250,7 +5250,7 @@ template functionlinearmodelJulia(ModelInfo modelInfo, String modelNamePrefix) "
       "end";
     }
     const char *<%symbolName(modelNamePrefix,"linear_model_datarecovery_frame")%>()
-    { /* not implemented */ }
+    { return "";  /* not implemented */ }
     >>
   end match
 end functionlinearmodelJulia;
@@ -5292,7 +5292,7 @@ template functionlinearmodelPython(ModelInfo modelInfo, String modelNamePrefix) 
       "    return (n, m, p, x0, u0, A, B, C, D, stateVars, inputVars, outputVars)\n";
     }
     const char *<%symbolName(modelNamePrefix,"linear_model_datarecovery_frame")%>()
-    { /* not implemented */ }
+    { return "";  /* not implemented */ }
     >>
   end match
 end functionlinearmodelPython;
