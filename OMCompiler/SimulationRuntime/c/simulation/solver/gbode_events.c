@@ -53,8 +53,6 @@
  */
 void bisection_gb(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo, double* a, double* b, double* states_a, double* states_b, LIST *tmpEventList, LIST *eventList, modelica_boolean isInnerIntegration)
 {
-  TRACE_PUSH
-
   DATA_GBODE *gbData = (DATA_GBODE *)solverInfo->solverData;
   DATA_GBODEF *gbfData;
 
@@ -117,7 +115,6 @@ void bisection_gb(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo,
     }
   }
 
-  TRACE_POP
 }
 
 /*! \fn findRoot
@@ -133,8 +130,6 @@ void bisection_gb(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo,
  */
 double findRoot_gb(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo, LIST* eventList, double time_left, double* values_left, double time_right, double* values_right, modelica_boolean isInnerIntegration)
 {
-  TRACE_PUSH
-
   LIST_NODE* it;
   fortran_integer i=0;
   LIST *tmpEventList = allocList(eventListAlloc, eventListFree, eventListCopy);
@@ -203,7 +198,6 @@ double findRoot_gb(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo
 
   freeList(tmpEventList);
 
-  TRACE_POP
   return time_right;
 }
 

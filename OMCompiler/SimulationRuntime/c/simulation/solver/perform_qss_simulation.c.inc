@@ -70,8 +70,6 @@ static uinteger minStep( const modelica_real* tqp, const uinteger size );
  */
 int prefixedName_performQSSSimulation(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
 {
-  TRACE_PUSH
-
   SIMULATION_INFO *simInfo = data->simulationInfo;
   MODEL_DATA *mData = data->modelData;
   uinteger currStepNo = 0;
@@ -225,11 +223,6 @@ int prefixedName_performQSSSimulation(DATA* data, threadData_t *threadData, SOLV
     /* try */
     MMC_TRY_INTERNAL(simulationJumpBuffer)
     {
-#endif
-
-#ifdef USE_DEBUG_TRACE
-    if (omc_useStream[OMC_LOG_TRACE])
-      printf("TRACE: push loop step=%u, time=%.12g\n", currStepNo, solverInfo->currentTime);
 #endif
 
 #ifdef D
@@ -419,8 +412,6 @@ int prefixedName_performQSSSimulation(DATA* data, threadData_t *threadData, SOLV
       infoStreamPrint(OMC_LOG_STDOUT, 0, "model terminate | Simulation terminated by an assert at time: %g", data->localData[0]->timeValue);
       break;
     }
-
-    TRACE_POP /* pop loop */
   }
   /* End of main loop */
 
@@ -449,7 +440,6 @@ int prefixedName_performQSSSimulation(DATA* data, threadData_t *threadData, SOLV
    free(dQ);
    /* end - free memory */
 
-  TRACE_POP
   return retValue;
 }
 

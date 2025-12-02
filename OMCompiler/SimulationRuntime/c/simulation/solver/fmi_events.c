@@ -36,7 +36,6 @@ extern "C" {
 
 modelica_boolean checkForDiscreteChanges(DATA *data, threadData_t *threadData)
 {
-  TRACE_PUSH
   MODEL_DATA *modelData = data->modelData;
   long i=0, realStartIndex=modelData->nVariablesReal - modelData->nDiscreteReal, realStopIndex=modelData->nVariablesReal;
 
@@ -133,7 +132,6 @@ modelica_boolean checkForDiscreteChanges(DATA *data, threadData_t *threadData)
   }
 
 
-  TRACE_POP
 }
 
 #ifdef __cplusplus

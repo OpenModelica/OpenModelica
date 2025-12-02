@@ -259,7 +259,6 @@ void log_homotopy_lambda_vars(DATA *data, threadData_t *threadData, const char* 
  */
 static int symbolic_initialization(DATA *data, threadData_t *threadData)
 {
-  TRACE_PUSH
   int retVal;
   FILE *pFile = NULL;
   char fileName[4096];
@@ -455,7 +454,6 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData)
   /* check for over-determined systems */
   retVal = data->callback->functionRemovedInitialEquations(data, threadData);
 
-  TRACE_POP
   return retVal;
 }
 
@@ -705,7 +703,6 @@ int importStartValues(DATA *data, threadData_t *threadData, const char *pInitFil
  */
 void initSample(DATA* data, threadData_t *threadData, double startTime, double stopTime)
 {
-  TRACE_PUSH
   long i;
 
   data->callback->function_initSample(data, threadData);              /* set-up sample */
@@ -727,8 +724,6 @@ void initSample(DATA* data, threadData_t *threadData, double startTime, double s
   } else {
     debugStreamPrint(OMC_LOG_EVENTS, 0, "first sample-event at t = %g", data->simulationInfo->nextSampleEvent);
   }
-
-  TRACE_POP
 }
 
 /*! \fn int initialization(DATA *data, const char* pInitMethod, const char* pOptiMethod, const char* pInitFile, double initTime)
@@ -742,7 +737,6 @@ void initSample(DATA* data, threadData_t *threadData, double startTime, double s
  */
 int initialization(DATA *data, threadData_t *threadData, const char* pInitMethod, const char* pInitFile, double initTime)
 {
-  TRACE_PUSH
   int initMethod = IIM_SYMBOLIC; /* default method */
   int retVal = -1;
   int i;
@@ -764,7 +758,6 @@ int initialization(DATA *data, threadData_t *threadData, const char* pInitMethod
     data->callback->updateBoundVariableAttributes(data, threadData);
 
     if(importStartValues(data, threadData, pInitFile, initTime)) {
-      TRACE_POP
       return 1;
     }
   }
@@ -896,6 +889,5 @@ int initialization(DATA *data, threadData_t *threadData, const char* pInitMethod
   data->callback->checkForAsserts(data, threadData);
 
   /* valid system for the first time! */
-  TRACE_POP
   return retVal;
 }

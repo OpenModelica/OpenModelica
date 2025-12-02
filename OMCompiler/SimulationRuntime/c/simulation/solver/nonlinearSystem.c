@@ -613,7 +613,6 @@ void initializeNonlinearSystemData(DATA *data, threadData_t *threadData, NONLINE
  */
 int initializeNonlinearSystems(DATA *data, threadData_t *threadData)
 {
-  TRACE_PUSH
   int i;
   modelica_boolean someSmallDensity = FALSE;  /* pretty dumping of flag info */
   modelica_boolean someBigSize = FALSE;       /* analogous to someSmallDensity */
@@ -657,7 +656,6 @@ int initializeNonlinearSystems(DATA *data, threadData_t *threadData)
 
   messageClose(OMC_LOG_NLS);
 
-  TRACE_POP
   return 0;
 }
 
@@ -673,7 +671,6 @@ int initializeNonlinearSystems(DATA *data, threadData_t *threadData)
  */
 int updateStaticDataOfNonlinearSystems(DATA *data, threadData_t *threadData)
 {
-  TRACE_PUSH
   int i;
   int size;
   NONLINEAR_SYSTEM_DATA *nonlinsys = data->simulationInfo->nonlinearSystemData;
@@ -687,7 +684,6 @@ int updateStaticDataOfNonlinearSystems(DATA *data, threadData_t *threadData)
 
   messageClose(OMC_LOG_NLS);
 
-  TRACE_POP
   return 0;
 }
 
@@ -795,7 +791,6 @@ void freeNonlinearSyst(DATA* data, threadData_t* threadData, NONLINEAR_SYSTEM_DA
  */
 void freeNonlinearSystems(DATA *data, threadData_t *threadData)
 {
-  TRACE_PUSH
   int i;
   NONLINEAR_SYSTEM_DATA* nonlinsys = data->simulationInfo->nonlinearSystemData;
 
@@ -807,7 +802,6 @@ void freeNonlinearSystems(DATA *data, threadData_t *threadData)
 
   messageClose(OMC_LOG_NLS);
 
-  TRACE_POP
   return;
 }
 

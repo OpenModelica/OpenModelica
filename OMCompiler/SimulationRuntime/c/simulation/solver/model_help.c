@@ -104,7 +104,6 @@ static double tolZC;
  */
 void updateDiscreteSystem(DATA *data, threadData_t *threadData)
 {
-  TRACE_PUSH
   int numEventIterations = 0;
   modelica_boolean discreteChanged = FALSE;
   modelica_boolean relationChanged = FALSE;
@@ -151,7 +150,6 @@ void updateDiscreteSystem(DATA *data, threadData_t *threadData)
   }
   storeRelations(data);
 
-  TRACE_POP
 }
 
 /*! \fn saveZeroCrossings
@@ -162,7 +160,6 @@ void updateDiscreteSystem(DATA *data, threadData_t *threadData)
  */
 void saveZeroCrossings(DATA* data, threadData_t *threadData)
 {
-  TRACE_PUSH
   long i = 0;
 
   debugStreamPrint(OMC_LOG_ZEROCROSSINGS, 0, "save all zero-crossings");
@@ -171,8 +168,6 @@ void saveZeroCrossings(DATA* data, threadData_t *threadData)
     data->simulationInfo->zeroCrossingsPre[i] = data->simulationInfo->zeroCrossings[i];
 
   data->callback->function_ZeroCrossings(data, threadData, data->simulationInfo->zeroCrossings);
-
-  TRACE_POP
 }
 
 /*! \fn copyStartValuestoInitValues
@@ -183,15 +178,11 @@ void saveZeroCrossings(DATA* data, threadData_t *threadData)
  */
 void copyStartValuestoInitValues(DATA *data)
 {
-  TRACE_PUSH
-
   /* just copy all start values to initial */
   setAllParamsToStart(data);
   setAllVarsToStart(data);
   storePreValues(data);
   overwriteOldSimulationData(data);
-
-  TRACE_POP
 }
 
 /*! \fn printAllVars
@@ -206,7 +197,6 @@ void copyStartValuestoInitValues(DATA *data)
  */
 void printAllVars(DATA *data, int ringSegment, int stream)
 {
-  TRACE_PUSH
   long i;
   MODEL_DATA      *mData = data->modelData;
   SIMULATION_INFO *sInfo = data->simulationInfo;
@@ -250,8 +240,6 @@ void printAllVars(DATA *data, int ringSegment, int stream)
   messageClose(stream);
 #endif
   messageClose(stream);
-
-  TRACE_POP
 }
 
 #ifdef USE_DEBUG_OUTPUT
@@ -264,7 +252,6 @@ void printAllVars(DATA *data, int ringSegment, int stream)
  */
 void printAllVarsDebug(DATA *data, int ringSegment, int stream)
 {
-  TRACE_PUSH
   long i;
   MODEL_DATA      *mData = data->modelData;
   SIMULATION_INFO *sInfo = data->simulationInfo;
@@ -303,8 +290,6 @@ void printAllVarsDebug(DATA *data, int ringSegment, int stream)
   messageClose(stream);
 #endif
   messageClose(stream);
-
-  TRACE_POP
 }
 #endif
 
@@ -319,7 +304,6 @@ void printAllVarsDebug(DATA *data, int ringSegment, int stream)
  */
 void printParameters(DATA *data, int stream)
 {
-  TRACE_PUSH
   long i;
   MODEL_DATA *mData = data->modelData;
 
@@ -375,8 +359,6 @@ void printParameters(DATA *data, int stream)
   }
 
   messageClose(stream);
-
-  TRACE_POP
 }
 
 /**
@@ -504,15 +486,12 @@ modelica_boolean sparsitySanityCheck(SPARSE_PATTERN *sparsePattern, int nlsSize,
  */
 void printRelationsDebug(DATA *data, int stream)
 {
-  TRACE_PUSH
   long i;
 
   debugStreamPrint(stream, 1, "status of relations at time=%.12g", data->localData[0]->timeValue);
   for(i=0; i<data->modelData->nRelations; i++)
     debugStreamPrint(stream, 0, "[%ld] %s = %c | pre(%s) = %c", i, data->callback->relationDescription(i), data->simulationInfo->relations[i] ? 'T' : 'F', data->callback->relationDescription(i), data->simulationInfo->relationsPre[i] ? 'T' : 'F');
   messageClose(stream);
-
-  TRACE_POP
 }
 #endif
 
@@ -525,12 +504,10 @@ void printRelationsDebug(DATA *data, int stream)
  */
 void printRelations(DATA *data, int stream)
 {
-  TRACE_PUSH
   long i;
 
   if (!OMC_ACTIVE_STREAM(stream))
   {
-    TRACE_POP
     return;
   }
 
@@ -540,8 +517,6 @@ void printRelations(DATA *data, int stream)
     infoStreamPrint(stream, 0, "[%ld] (pre: %s) %s = %s", i+1, data->simulationInfo->relationsPre[i] ? " true" : "false", data->simulationInfo->relations[i] ? " true" : "false", data->callback->relationDescription(i));
   }
   messageClose(stream);
-
-  TRACE_POP
 }
 
 /*! \fn printZeroCrossings
@@ -553,12 +528,10 @@ void printRelations(DATA *data, int stream)
  */
 void printZeroCrossings(DATA *data, int stream)
 {
-  TRACE_PUSH
   long i;
 
   if (!OMC_ACTIVE_STREAM(stream))
   {
-    TRACE_POP
     return;
   }
 
@@ -570,8 +543,6 @@ void printZeroCrossings(DATA *data, int stream)
     infoStreamPrintWithEquationIndexes(stream, omc_dummyFileInfo, 0, eq_indexes, "[%ld] (pre: %2.g) %2.g = %s", i+1, data->simulationInfo->zeroCrossingsPre[i], data->simulationInfo->zeroCrossings[i], exp_str);
   }
   messageClose(stream);
-
-  TRACE_POP
 }
 
 /*! \fn overwriteOldSimulationData
@@ -588,7 +559,6 @@ void printZeroCrossings(DATA *data, int stream)
  */
 void overwriteOldSimulationData(DATA *data)
 {
-  TRACE_PUSH
   long i;
 
   for(i=1; i<ringBufferLength(data->simulationData); ++i)
@@ -599,8 +569,6 @@ void overwriteOldSimulationData(DATA *data)
     memcpy(data->localData[i]->booleanVars, data->localData[i-1]->booleanVars, sizeof(modelica_boolean)*data->modelData->nVariablesBoolean);
     memcpy(data->localData[i]->stringVars, data->localData[i-1]->stringVars, sizeof(modelica_string)*data->modelData->nVariablesString);
   }
-
-  TRACE_POP
 }
 
 /*! \fn copyRingBufferSimulationData
@@ -618,7 +586,6 @@ void overwriteOldSimulationData(DATA *data)
  */
 void copyRingBufferSimulationData(DATA *data, threadData_t *threadData, SIMULATION_DATA **destData, RINGBUFFER* destRing)
 {
-  TRACE_PUSH
   long i;
 
   assertStreamPrint(threadData, ringBufferLength(data->simulationData) == ringBufferLength(destRing), "copy ring buffer failed, because of different sizes.");
@@ -633,9 +600,6 @@ void copyRingBufferSimulationData(DATA *data, threadData_t *threadData, SIMULATI
     memcpy(destData[i]->stringVars, data->localData[i]->stringVars, sizeof(modelica_string)*data->modelData->nVariablesString);
 #endif
   }
-
-
-  TRACE_POP
 }
 
 /*
@@ -643,8 +607,6 @@ void copyRingBufferSimulationData(DATA *data, threadData_t *threadData, SIMULATI
 */
 void printRingBufferSimulationData(RINGBUFFER *rb, DATA* data)
 {
-  TRACE_PUSH
-
   for (int i = 0; i < ringBufferLength(rb); i++)
   {
     messageClose(OMC_LOG_STDOUT); // FIXME what does this belong to?
@@ -672,8 +634,6 @@ void printRingBufferSimulationData(RINGBUFFER *rb, DATA* data)
     }
     messageClose(OMC_LOG_STDOUT);
   }
-
-  TRACE_POP
 }
 
 /* \fn restoreExtrapolationDataOld
@@ -690,7 +650,6 @@ void printRingBufferSimulationData(RINGBUFFER *rb, DATA* data)
  */
 void restoreExtrapolationDataOld(DATA *data)
 {
-  TRACE_PUSH
   long i;
 
   for(i=1; i<ringBufferLength(data->simulationData); ++i)
@@ -703,8 +662,6 @@ void restoreExtrapolationDataOld(DATA *data)
     memcpy(data->localData[i-1]->stringVars, data->localData[i]->stringVars, sizeof(modelica_string)*data->modelData->nVariablesString);
 #endif
   }
-
-  TRACE_POP
 }
 
 /*! \fn setAllVarsToStart
@@ -717,7 +674,6 @@ void restoreExtrapolationDataOld(DATA *data)
  */
 void setAllVarsToStart(DATA *data)
 {
-  TRACE_PUSH
   SIMULATION_DATA *sData = data->localData[0];
   MODEL_DATA *mData = data->modelData;
   long array_idx;
@@ -756,7 +712,6 @@ void setAllVarsToStart(DATA *data)
     debugStreamPrint(OMC_LOG_DEBUG, 0, "set String var %s = %s", mData->stringVarsData[array_idx].info.name, MMC_STRINGDATA(sData->stringVars[array_idx]));
   }
 #endif
-  TRACE_POP
 }
 
 /*! \fn setAllParamsToStart
@@ -769,7 +724,6 @@ void setAllVarsToStart(DATA *data)
  */
 void setAllParamsToStart(DATA *data)
 {
-  TRACE_PUSH
   SIMULATION_INFO *sInfo = data->simulationInfo;
   MODEL_DATA *mData = data->modelData;
   long array_idx;
@@ -806,8 +760,6 @@ void setAllParamsToStart(DATA *data)
     sInfo->stringParameter[array_idx] = mData->stringParameterData[array_idx].attribute.start;
     debugStreamPrint(OMC_LOG_DEBUG, 0, "set String var %s = %s", mData->stringParameterData[array_idx].info.name, MMC_STRINGDATA(sInfo->stringParameter[array_idx]));
   }
-
-  TRACE_POP
 }
 
 /*! \fn storeOldValues
@@ -820,7 +772,6 @@ void setAllParamsToStart(DATA *data)
  */
 void storeOldValues(DATA *data)
 {
-  TRACE_PUSH
   SIMULATION_DATA *sData = data->localData[0];
   MODEL_DATA      *mData = data->modelData;
   SIMULATION_INFO *sInfo = data->simulationInfo;
@@ -832,7 +783,6 @@ void storeOldValues(DATA *data)
 #if !defined(OMC_NVAR_STRING) || OMC_NVAR_STRING>0
   memcpy(sInfo->stringVarsOld, sData->stringVars, sizeof(modelica_string)*mData->nVariablesString);
 #endif
-  TRACE_POP
 }
 
 /*! \fn restoreOldValues
@@ -845,7 +795,6 @@ void storeOldValues(DATA *data)
  */
 void restoreOldValues(DATA *data)
 {
-  TRACE_PUSH
   SIMULATION_DATA *sData = data->localData[0];
   MODEL_DATA      *mData = data->modelData;
   SIMULATION_INFO *sInfo = data->simulationInfo;
@@ -857,7 +806,6 @@ void restoreOldValues(DATA *data)
 #if !defined(OMC_NVAR_STRING) || OMC_NVAR_STRING>0
   memcpy( sData->stringVars, sInfo->stringVarsOld, sizeof(modelica_string)*mData->nVariablesString);
 #endif
-  TRACE_POP
 }
 
 /*! \fn storePreValues
@@ -870,7 +818,6 @@ void restoreOldValues(DATA *data)
  */
 void storePreValues(DATA *data)
 {
-  TRACE_PUSH
   SIMULATION_DATA *sData = data->localData[0];
   MODEL_DATA      *mData = data->modelData;
   SIMULATION_INFO *sInfo = data->simulationInfo;
@@ -881,7 +828,6 @@ void storePreValues(DATA *data)
 #if !defined(OMC_NVAR_STRING) || OMC_NVAR_STRING>0
   memcpy(sInfo->stringVarsPre, sData->stringVars, sizeof(modelica_string)*mData->nVariablesString);
 #endif
-  TRACE_POP
 }
 
 /*! \fn checkRelations
@@ -894,14 +840,12 @@ void storePreValues(DATA *data)
  */
 modelica_boolean checkRelations(DATA *data)
 {
-  TRACE_PUSH
   int i;
 
   for(i=0; i<data->modelData->nRelations; ++i)
     if(data->simulationInfo->relationsPre[i] != data->simulationInfo->relations[i])
       return 1;
 
-  TRACE_POP
   return 0;
 }
 
@@ -915,11 +859,7 @@ modelica_boolean checkRelations(DATA *data)
  */
 void updateRelationsPre(DATA *data)
 {
-  TRACE_PUSH
-
   memcpy(data->simulationInfo->relationsPre, data->simulationInfo->relations, sizeof(modelica_boolean)*data->modelData->nRelations);
-
-  TRACE_POP
 }
 
 /*! \fn storeRelations
@@ -933,11 +873,7 @@ void updateRelationsPre(DATA *data)
  */
 void storeRelations(DATA* data)
 {
-  TRACE_PUSH
-
   memcpy(data->simulationInfo->storedRelations, data->simulationInfo->relations, sizeof(modelica_boolean)*data->modelData->nRelations);
-
-  TRACE_POP
 }
 
 /**
@@ -951,17 +887,13 @@ void storeRelations(DATA* data)
  */
 int getNextSampleTimeFMU(DATA *data, double *nextSampleEvent)
 {
-  TRACE_PUSH
-
   if(0 < data->modelData->nSamples)
   {
     infoStreamPrint(OMC_LOG_EVENTS, 0, "Next event time = %f", data->simulationInfo->nextSampleEvent);
-    TRACE_POP
     *nextSampleEvent = data->simulationInfo->nextSampleEvent;
     return 1 /* TRUE */;
   }
 
-  TRACE_POP
   return 0 /* FALSE */;
 }
 
@@ -1176,7 +1108,6 @@ void scalarAllocArrayAttributes(MODEL_DATA* modelData) {
   */
 void initializeDataStruc(DATA *data, threadData_t *threadData)
 {
-  TRACE_PUSH
   SIMULATION_DATA tmpSimData = {0};
   size_t i = 0;
 
@@ -1418,8 +1349,6 @@ void initializeDataStruc(DATA *data, threadData_t *threadData)
   /* allocate memory for state selection */
   initializeStateSetJacobians(data, threadData);
 #endif
-
-  TRACE_POP
 }
 
 /*! \fn deInitializeDataStruc
@@ -1431,7 +1360,6 @@ void initializeDataStruc(DATA *data, threadData_t *threadData)
  */
 void deInitializeDataStruc(DATA *data)
 {
-  TRACE_PUSH
   size_t i = 0;
   int needToFree = !data->callback->read_input_fmu;
 
@@ -1566,8 +1494,6 @@ void deInitializeDataStruc(DATA *data)
 
   /* Free model info xml data */
   modelInfoDeinit(&(data->modelData->modelDataXml));
-
-  TRACE_POP
 }
 
 /* relation functions used in zero crossing detection
@@ -1577,13 +1503,9 @@ void deInitializeDataStruc(DATA *data)
 
 void setZCtol(double relativeTol)
 {
-  TRACE_PUSH
-
   /* lochel: force tolZC > 0 */
   tolZC = TOL_HYSTERESIS_ZEROCROSSINGS * fmax(relativeTol, MINIMAL_STEP_SIZE);
   infoStreamPrint(OMC_LOG_EVENTS_V, 0, "Set tolerance for zero-crossing hysteresis to: %e", tolZC);
-
-  TRACE_POP
 }
 
 /* TODO: fix this */

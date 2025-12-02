@@ -84,7 +84,6 @@ void printStateSelectionInfo(DATA *data, STATE_SET_DATA *set)
  */
 void initializeStateSetJacobians(DATA *data, threadData_t *threadData)
 {
-  TRACE_PUSH
   long i = 0;
   STATE_SET_DATA *set = NULL;
   JACOBIAN* jacobian;
@@ -101,7 +100,6 @@ void initializeStateSetJacobians(DATA *data, threadData_t *threadData)
     }
   }
   initializeStateSetPivoting(data);
-  TRACE_POP
 }
 
 /*! \fn initializeStateSetPivoting
@@ -114,7 +112,6 @@ void initializeStateSetJacobians(DATA *data, threadData_t *threadData)
  */
 void initializeStateSetPivoting(DATA *data)
 {
-  TRACE_PUSH
   long i = 0;
   long n = 0;
   STATE_SET_DATA *set = NULL;
@@ -140,7 +137,6 @@ void initializeStateSetPivoting(DATA *data)
     for(n=0; n<set->nStates; n++)
       A[n*set->nCandidates + n] = 1;  /* set A[row, col] */
   }
-  TRACE_POP
 }
 
 /*! \fn freeStateSetData
@@ -153,7 +149,6 @@ void initializeStateSetPivoting(DATA *data)
  */
 void freeStateSetData(DATA *data)
 {
-  TRACE_PUSH
   long i=0;
 
   /* go through all state sets */
@@ -166,7 +161,6 @@ void freeStateSetData(DATA *data)
      free(set->colPivot);
      free(set->J);
   }
-  TRACE_POP
 }
 
 /*! \fn getAnalyticalJacobianSet
@@ -180,7 +174,6 @@ void freeStateSetData(DATA *data)
  */
 static void getAnalyticalJacobianSet(DATA* data, threadData_t *threadData, unsigned int index)
 {
-  TRACE_PUSH
   unsigned int i, j, k, l, ii;
   const unsigned int jacIndex = data->simulationInfo->stateSetData[index].jacobianIndex;
   JACOBIAN* jacobian = &(data->simulationInfo->analyticJacobians[jacIndex]);
@@ -207,8 +200,6 @@ static void getAnalyticalJacobianSet(DATA* data, threadData_t *threadData, unsig
     messageClose(OMC_LOG_DSS_JAC);
     free(buffer);
   }
-
-  TRACE_POP
 }
 
 /*! \fn setAMatrix
@@ -225,7 +216,6 @@ static void getAnalyticalJacobianSet(DATA* data, threadData_t *threadData, unsig
  */
 static void setAMatrix(modelica_integer* newEnable, modelica_integer nCandidates, modelica_integer nStates, VAR_INFO* Ainfo, VAR_INFO** states, VAR_INFO** statecandidates, DATA *data)
 {
-  TRACE_PUSH
   modelica_integer col;
   modelica_integer row=0;
   /* clear old values */
@@ -247,7 +237,6 @@ static void setAMatrix(modelica_integer* newEnable, modelica_integer nCandidates
       row++;
     }
   }
-  TRACE_POP
 }
 
 /*! \fn comparePivot
@@ -263,7 +252,6 @@ static void setAMatrix(modelica_integer* newEnable, modelica_integer nCandidates
  */
 static int comparePivot(modelica_integer *oldPivot, STATE_SET_DATA *set, long setIndex, DATA *data, int switchStates)
 {
-  TRACE_PUSH
   modelica_integer i;
   int ret = 0;
   modelica_integer *newPivot = set->colPivot;
@@ -305,7 +293,6 @@ static int comparePivot(modelica_integer *oldPivot, STATE_SET_DATA *set, long se
   free(oldEnable);
   free(newEnable);
 
-  TRACE_POP
   return ret;
 }
 
@@ -393,7 +380,6 @@ int stateSelectionSet(DATA *data, threadData_t *threadData, char reportError, in
  */
 int stateSelection(DATA *data, threadData_t *threadData, char reportError, int switchStates)
 {
-  TRACE_PUSH
   long i=0;
   int globalres=0;
 
@@ -403,7 +389,6 @@ int stateSelection(DATA *data, threadData_t *threadData, char reportError, int s
     globalres = stateSelectionSet(data, threadData, reportError, switchStates, i, globalres);
   }
 
-  TRACE_POP
   return globalres;
 }
 

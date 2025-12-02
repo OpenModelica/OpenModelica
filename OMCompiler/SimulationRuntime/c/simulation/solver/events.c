@@ -65,7 +65,6 @@ void saveZeroCrossingsAfterEvent(DATA *data, threadData_t *threadData);
  */
 void checkForSampleEvent(DATA *data, SOLVER_INFO* solverInfo)
 {
-  TRACE_PUSH
   double nextTimeStep = solverInfo->currentTime + solverInfo->currentStepSize;
 
   if ((data->simulationInfo->nextSampleEvent <= nextTimeStep + SAMPLE_EPS) && (data->simulationInfo->nextSampleEvent >= solverInfo->currentTime))
@@ -75,7 +74,6 @@ void checkForSampleEvent(DATA *data, SOLVER_INFO* solverInfo)
     infoStreamPrint(OMC_LOG_EVENTS_V, 0, "Adjust step-size to %.15g at time %.15g to get next sample event at %.15g", solverInfo->currentStepSize, solverInfo->currentTime, data->simulationInfo->nextSampleEvent );
   }
 
-  TRACE_POP
 }
 
 /*! \fn checkForStateEvent
@@ -89,7 +87,6 @@ void checkForSampleEvent(DATA *data, SOLVER_INFO* solverInfo)
  */
 int checkForStateEvent(DATA* data, LIST *eventList)
 {
-  TRACE_PUSH
   long i=0;
 
   debugStreamPrint(OMC_LOG_EVENTS, 1, "check state-event zerocrossing at time %g", data->localData[0]->timeValue);
@@ -121,11 +118,9 @@ int checkForStateEvent(DATA* data, LIST *eventList)
 
   if(listLen(eventList) > 0)
   {
-    TRACE_POP
     return 1;
   }
 
-  TRACE_POP
   return 0;
 }
 
@@ -146,8 +141,6 @@ int checkForStateEvent(DATA* data, LIST *eventList)
  */
 int checkEvents(DATA* data, threadData_t *threadData, LIST* eventLst, modelica_boolean useRootFinding, double *eventTime)
 {
-  TRACE_PUSH
-
   int found = checkForStateEvent(data, eventLst);
   if(found && useRootFinding)
   {
@@ -156,17 +149,14 @@ int checkEvents(DATA* data, threadData_t *threadData, LIST* eventLst, modelica_b
 
   if(data->simulationInfo->sampleActivated == 1)
   {
-    TRACE_POP
     return 1;
   }
 
   if(listLen(eventLst) > 0)
   {
-    TRACE_POP
     return 2;
   }
 
-  TRACE_POP
   return 0;
 }
 
@@ -180,7 +170,6 @@ int checkEvents(DATA* data, threadData_t *threadData, LIST* eventLst, modelica_b
  */
 void handleEvents(DATA* data, threadData_t *threadData, LIST* eventLst, double *eventTime, SOLVER_INFO* solverInfo)
 {
-  TRACE_PUSH
   double time = data->localData[0]->timeValue;
   long i;
   LIST_NODE* it;
@@ -276,7 +265,6 @@ void handleEvents(DATA* data, threadData_t *threadData, LIST* eventLst, double *
     solverInfo->sampleEvents++;
   }
 
-  TRACE_POP
 }
 
 /*! \fn findRoot
@@ -292,8 +280,6 @@ void handleEvents(DATA* data, threadData_t *threadData, LIST* eventLst, double *
  */
 double findRoot(DATA* data, threadData_t* threadData, LIST* eventList, double time_left, double* values_left, double time_right, double* values_right)
 {
-  TRACE_PUSH
-
   LIST_NODE* it;
   fortran_integer i=0;
   LIST *tmpEventList = allocList(eventListAlloc, eventListFree, eventListCopy);
@@ -363,7 +349,6 @@ double findRoot(DATA* data, threadData_t* threadData, LIST* eventList, double ti
 
   freeList(tmpEventList);
 
-  TRACE_POP
   return time_right;
 }
 
@@ -381,8 +366,6 @@ double findRoot(DATA* data, threadData_t* threadData, LIST* eventList, double ti
  */
 void bisection(DATA* data, threadData_t *threadData, double* a, double* b, double* states_a, double* states_b, LIST *tmpEventList, LIST *eventList)
 {
-  TRACE_PUSH
-
   double TTOL = MINIMAL_STEP_SIZE + MINIMAL_STEP_SIZE*fabs(*b-*a); /* absTol + relTol*abs(b-a) */
   double c;
   long i=0;
@@ -429,7 +412,6 @@ void bisection(DATA* data, threadData_t *threadData, double* a, double* b, doubl
     }
   }
 
-  TRACE_POP
 }
 
 /*! \fn checkZeroCrossings
@@ -443,7 +425,6 @@ void bisection(DATA* data, threadData_t *threadData, double* a, double* b, doubl
  */
 int checkZeroCrossings(DATA *data, LIST *tmpEventList, LIST *eventList)
 {
-  TRACE_PUSH
   LIST_NODE *it;
 
   listClear(tmpEventList);
@@ -467,11 +448,9 @@ int checkZeroCrossings(DATA *data, LIST *tmpEventList, LIST *eventList)
 
   if(listLen(tmpEventList) > 0)
   {
-    TRACE_POP
     return 1;   /* event in left section */
   }
 
-  TRACE_POP
   return 0;     /* event in right section */
 }
 
@@ -483,7 +462,6 @@ int checkZeroCrossings(DATA *data, LIST *tmpEventList, LIST *eventList)
  */
 void saveZeroCrossingsAfterEvent(DATA *data, threadData_t *threadData)
 {
-  TRACE_PUSH
   long i=0;
 
   infoStreamPrint(OMC_LOG_ZEROCROSSINGS, 0, "save all zerocrossings after an event at time=%g", data->localData[0]->timeValue); /* ??? */
@@ -492,7 +470,6 @@ void saveZeroCrossingsAfterEvent(DATA *data, threadData_t *threadData)
   for(i=0; i<data->modelData->nZeroCrossings; i++)
     data->simulationInfo->zeroCrossingsPre[i] = data->simulationInfo->zeroCrossings[i];
 
-  TRACE_POP
 }
 
 /**
