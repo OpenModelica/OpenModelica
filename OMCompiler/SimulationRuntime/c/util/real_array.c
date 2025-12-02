@@ -123,7 +123,7 @@ modelica_real real_get_5D(const real_array a, size_t i, size_t j, size_t k, size
  * };
  * real_array mat;
  * real_array_create(&mat, matrix_data, 2, 3, 4);
- * ```c
+ * ```
  */
 void real_array_create(real_array *dest, modelica_real *data, int ndims, ...)
 {

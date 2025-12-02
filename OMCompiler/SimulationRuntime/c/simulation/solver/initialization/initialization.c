@@ -334,7 +334,7 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData)
       if (!kinsol)
         warningStreamPrint(OMC_LOG_ASSERT, 0, "Failed to solve the initialization problem without homotopy method. If homotopy is available the homotopy method is used now.");
       omc_flag[FLAG_HOMOTOPY_ON_FIRST_TRY] = 1;
-      setAllParamsToStart(data);
+      setAllParamsToStart(data->simulationInfo, data->modelData);
       setAllVarsToStart(data->localData[0], data->simulationInfo, data->modelData);
       data->callback->updateBoundParameters(data, threadData);
       data->callback->updateBoundVariableAttributes(data, threadData);
@@ -741,8 +741,9 @@ int initialization(DATA *data, threadData_t *threadData, const char* pInitMethod
 
   infoStreamPrint(OMC_LOG_INIT, 0, "### START INITIALIZATION ###");
 
-  if (!fmi_init_method)
-    setAllParamsToStart(data);
+  if (!fmi_init_method) {
+    setAllParamsToStart(data->simulationInfo, data->modelData);
+  }
 
 #if !defined(OMC_MINIMAL_RUNTIME)
   /* import start values from extern mat-file */

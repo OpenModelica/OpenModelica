@@ -166,7 +166,7 @@ void saveZeroCrossings(DATA* data, threadData_t *threadData)
 void copyStartValuestoInitValues(DATA *data)
 {
   /* just copy all start values to initial */
-  setAllParamsToStart(data);
+  setAllParamsToStart(data->simulationInfo, data->modelData);
   setAllVarsToStart(data->localData[0], data->simulationInfo, data->modelData);
   storePreValues(data);
   overwriteOldSimulationData(data);
@@ -591,7 +591,6 @@ void restoreExtrapolationDataOld(DATA *data)
 void setAllVarsToStart(SIMULATION_DATA *simulationData, const SIMULATION_INFO *simulationInfo, const MODEL_DATA *modelData)
 {
   long array_idx;
-  long scalar_idx;
 
   for (array_idx = 0; array_idx < modelData->nVariablesRealArray; ++array_idx)
   {
@@ -618,47 +617,37 @@ void setAllVarsToStart(SIMULATION_DATA *simulationData, const SIMULATION_INFO *s
 #endif
 }
 
-/*! \fn setAllParamsToStart
- *
- *  This function sets all parameters and their initial values to their start-attribute.
- *
- *  \param [ref] [data]
- *
- *  \author wbraun
- */
-void setAllParamsToStart(DATA *data)
+/**
+  * @brief Set all parameters to their start attribute.
+  *
+  * @param simulationInfo Simulation info with parameter start values to update
+  *                       and array variable mapping to scalar representation.
+  * @param modelData      Model data with start attributes.
+  */
+void setAllParamsToStart(SIMULATION_INFO *simulationInfo, const MODEL_DATA *modelData)
 {
-  SIMULATION_INFO *sInfo = data->simulationInfo;
-  MODEL_DATA *mData = data->modelData;
   long array_idx;
-  long scalar_idx = 0;
-  long dim_idx;
 
-  for (array_idx = 0; array_idx < mData->nParametersRealArray; ++array_idx)
+  for (array_idx = 0; array_idx < modelData->nParametersRealArray; ++array_idx)
   {
-    // FIXME there is no messageCloseDebug so we use infoStreamPrint here
-    infoStreamPrint(OMC_LOG_DEBUG, 1, "set Real var %s:", mData->realParameterData[array_idx].info.name);
-    for (dim_idx = 0; dim_idx < mData->realParameterData[array_idx].attribute.start.dim_size[0]; dim_idx++)
-    {
-      sInfo->realParameter[scalar_idx] = real_get(mData->realParameterData[array_idx].attribute.start, dim_idx);
-      scalar_idx++;
-    }
-    messageClose(OMC_LOG_DEBUG);
+    copy_real_array_data_mem(
+      modelData->realParameterData[array_idx].attribute.start,
+      &simulationInfo->realParameter[simulationInfo->realParamsIndex[array_idx]]);
   }
 
-  for (array_idx = 0; array_idx < mData->nParametersInteger; ++array_idx)
+  for (array_idx = 0; array_idx < modelData->nParametersInteger; ++array_idx)
   {
-    sInfo->integerParameter[array_idx] = mData->integerParameterData[array_idx].attribute.start;
+    simulationInfo->integerParameter[array_idx] = modelData->integerParameterData[array_idx].attribute.start;
   }
 
-  for (array_idx = 0; array_idx < mData->nParametersBoolean; ++array_idx)
+  for (array_idx = 0; array_idx < modelData->nParametersBoolean; ++array_idx)
   {
-    sInfo->booleanParameter[array_idx] = mData->booleanParameterData[array_idx].attribute.start;
+    simulationInfo->booleanParameter[array_idx] = modelData->booleanParameterData[array_idx].attribute.start;
   }
 
-  for (array_idx = 0; array_idx < mData->nParametersString; ++array_idx)
+  for (array_idx = 0; array_idx < modelData->nParametersString; ++array_idx)
   {
-    sInfo->stringParameter[array_idx] = mData->stringParameterData[array_idx].attribute.start;
+    simulationInfo->stringParameter[array_idx] = modelData->stringParameterData[array_idx].attribute.start;
   }
 }
 

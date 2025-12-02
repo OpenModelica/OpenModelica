@@ -46,7 +46,7 @@ int main(void)
   SIMULATION_DATA simulationData = {0};
   simulationData.realVars = (modelica_real *)calloc(6, sizeof(modelica_real));
 
-  // Execute funciton under test
+  // Execute function under test
   setAllVarsToStart(&simulationData, &simulationInfo, &modelData);
 
   // Check simulation data

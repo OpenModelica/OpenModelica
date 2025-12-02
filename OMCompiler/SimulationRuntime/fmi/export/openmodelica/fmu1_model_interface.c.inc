@@ -190,7 +190,7 @@ fmiComponent fmiInstantiateModel(fmiString instanceName, fmiString GUID, fmiCall
   /* setup model data with default start data */
   setDefaultStartValues(comp);
   setAllVarsToStart(comp->fmuData->localData[0], comp->fmuData->simulationInfo ,comp->fmuData->modelData);
-  setAllParamsToStart(comp->fmuData);
+  setAllParamsToStart(comp->fmuData->simulationInfo, comp->fmuData->modelData);
   comp->fmuData->callback->read_input_fmu(comp->fmuData->modelData, comp->fmuData->simulationInfo);
   modelInfoInit(&(comp->fmuData->modelData->modelDataXml));
 
