@@ -73,7 +73,6 @@ void checkForSampleEvent(DATA *data, SOLVER_INFO* solverInfo)
     data->simulationInfo->sampleActivated = 1;
     infoStreamPrint(OMC_LOG_EVENTS_V, 0, "Adjust step-size to %.15g at time %.15g to get next sample event at %.15g", solverInfo->currentStepSize, solverInfo->currentTime, data->simulationInfo->nextSampleEvent );
   }
-
 }
 
 /*! \fn checkForStateEvent
@@ -248,7 +247,6 @@ void handleEvents(DATA* data, threadData_t *threadData, LIST* eventLst, double *
 
     solverInfo->sampleEvents++;
   }
-
 }
 
 /*! \fn findRoot
@@ -392,7 +390,6 @@ void bisection(DATA* data, threadData_t *threadData, double* a, double* b, doubl
       memcpy(data->simulationInfo->zeroCrossings, data->simulationInfo->zeroCrossingsBackup, data->modelData->nZeroCrossings * sizeof(modelica_real));
     }
   }
-
 }
 
 /*! \fn checkZeroCrossings
@@ -448,9 +445,9 @@ void saveZeroCrossingsAfterEvent(DATA *data, threadData_t *threadData)
   infoStreamPrint(OMC_LOG_ZEROCROSSINGS, 0, "save all zerocrossings after an event at time=%g", data->localData[0]->timeValue); /* ??? */
 
   data->callback->function_ZeroCrossings(data, threadData, data->simulationInfo->zeroCrossings);
-  for(i=0; i<data->modelData->nZeroCrossings; i++)
+  for(i=0; i<data->modelData->nZeroCrossings; i++) {
     data->simulationInfo->zeroCrossingsPre[i] = data->simulationInfo->zeroCrossings[i];
-
+  }
 }
 
 /**

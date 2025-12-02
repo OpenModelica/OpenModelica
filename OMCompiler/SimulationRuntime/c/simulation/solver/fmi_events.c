@@ -130,8 +130,6 @@ modelica_boolean checkForDiscreteChanges(DATA *data, threadData_t *threadData)
     }
     return FALSE;
   }
-
-
 }
 
 #ifdef __cplusplus

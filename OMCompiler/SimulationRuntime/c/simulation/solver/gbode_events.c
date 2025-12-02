@@ -114,7 +114,6 @@ void bisection_gb(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo,
       memcpy(data->simulationInfo->zeroCrossings, data->simulationInfo->zeroCrossingsBackup, data->modelData->nZeroCrossings * sizeof(modelica_real));
     }
   }
-
 }
 
 /*! \fn findRoot
