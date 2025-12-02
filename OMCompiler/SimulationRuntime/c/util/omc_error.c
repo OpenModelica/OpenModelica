@@ -561,32 +561,6 @@ void va_errorStreamPrintWithEquationIndexes(int stream, FILE_INFO info, int inde
 }
 #endif
 
-#ifdef USE_DEBUG_OUTPUT
-void debugStreamPrint(int stream, int indentNext, const char *format, ...)
-{
-  if (omc_useStream[stream]) {
-    char logBuffer[SIZE_LOG_BUFFER];
-    va_list args;
-    va_start(args, format);
-    vsnprintf(logBuffer, SIZE_LOG_BUFFER, format, args);
-    va_end(args);
-    messageFunction(OMC_LOG_TYPE_DEBUG, stream, omc_dummyFileInfo, indentNext, logBuffer, 0, NULL);
-  }
-}
-
-void debugStreamPrintWithEquationIndexes(int stream, FILE_INFO info, int indentNext, const int *indexes, const char *format, ...)
-{
-  if (omc_useStream[stream]) {
-    char logBuffer[SIZE_LOG_BUFFER];
-    va_list args;
-    va_start(args, format);
-    vsnprintf(logBuffer, SIZE_LOG_BUFFER, format, args);
-    va_end(args);
-    messageFunction(OMC_LOG_TYPE_DEBUG, stream, info, indentNext, logBuffer, 0, indexes);
-  }
-}
-#endif
-
 static inline jmp_buf* getBestJumpBuffer(threadData_t *threadData)
 {
   switch (threadData->currentErrorStage) {

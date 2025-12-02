@@ -722,12 +722,6 @@ void initSample(DATA* data, threadData_t *threadData, double startTime, double s
     }
   }
 
-  if(stopTime < data->simulationInfo->nextSampleEvent) {
-    debugStreamPrint(OMC_LOG_EVENTS, 0, "there are no sample-events");
-  } else {
-    debugStreamPrint(OMC_LOG_EVENTS, 0, "first sample-event at t = %g", data->simulationInfo->nextSampleEvent);
-  }
-
   TRACE_POP
 }
 

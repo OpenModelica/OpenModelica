@@ -90,17 +90,6 @@ int checkCommandLineArguments(int argc, char **argv)
     omc_flagValue[i] = NULL;
   }
 
-#ifdef USE_DEBUG_OUTPUT
-  // FIXME there is no messageCloseDebug so we use infoStreamPrint here
-  infoStreamPrint(OMC_LOG_STDOUT, 1, "used command line options");
-  for(i=1; i<argc; ++i)
-    debugStreamPrint(OMC_LOG_STDOUT, 0, "%s", argv[i]);
-  messageClose(OMC_LOG_STDOUT);
-
-  // FIXME there is no messageCloseDebug so we use infoStreamPrint here
-  infoStreamPrint(OMC_LOG_STDOUT, 1, "interpreted command line options");
-#endif
-
   for(i=1; i<argc; ++i)
   {
     int found=0;
@@ -122,10 +111,6 @@ int checkCommandLineArguments(int argc, char **argv)
         // All good.
         found=1;
 
-#ifdef USE_DEBUG_OUTPUT
-        debugStreamPrint(OMC_LOG_STDOUT, 0, "-%s", FLAG_NAME[j]);
-#endif
-
         break;
       }
       else if((FLAG_TYPE[j] == FLAG_TYPE_OPTION) && flagSet(FLAG_NAME[j], 1, argv+i) && (i+1 < argc))
@@ -144,10 +129,6 @@ int checkCommandLineArguments(int argc, char **argv)
         // All good.
         found = 1;
         i++;
-
-#ifdef USE_DEBUG_OUTPUT
-        debugStreamPrint(OMC_LOG_STDOUT, 0, "-%s %s", FLAG_NAME[j], omc_flagValue[j]);
-#endif
 
         break;
       }
@@ -168,26 +149,16 @@ int checkCommandLineArguments(int argc, char **argv)
         // All good.
         found = 1;
 
-#ifdef USE_DEBUG_OUTPUT
-        debugStreamPrint(OMC_LOG_STDOUT, 0, "-%s=%s", FLAG_NAME[j], omc_flagValue[j]);
-#endif
         break;
       }
     }
 
     if(!found)
     {
-#ifdef USE_DEBUG_OUTPUT
-      messageClose(OMC_LOG_STDOUT);
-#endif
       warningStreamPrint(OMC_LOG_STDOUT, 0, "invalid command line option: %s", argv[i]);
       return 1;
     }
   }
-
-#ifdef USE_DEBUG_OUTPUT
-  messageClose(OMC_LOG_STDOUT);
-#endif
 
   return 0;
 }

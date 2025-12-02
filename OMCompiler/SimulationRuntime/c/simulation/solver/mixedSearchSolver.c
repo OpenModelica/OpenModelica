@@ -207,19 +207,17 @@ int solveMixedSearch(DATA *data, int sysNumber)
     systemData->updateIterationExps(data);
 
     /* set new values of boolean variable */
-    for(i=0;i<systemData->size;++i)
+    for(i=0;i<systemData->size;++i) {
       solverData->iterationVars2[i] = *(systemData->iterationVarsPtr[i]);
-
+    }
 
     found_solution = systemData->continuous_solution;
-    debugStreamPrint(OMC_LOG_MIXED, 0, "####  continuous system solution status = %d", found_solution);
 
     /* restart if any relation has changed */
     if(checkRelations(data))
     {
       updateRelationsPre(data);
       systemData->updateIterationExps(data);
-      debugStreamPrint(OMC_LOG_MIXED, 0, "#### System relation changed restart iteration");
       if(mixedIterations++ > 200)
         found_solution = -4; /* mixedIterations++ > 200 */
     }
@@ -228,21 +226,18 @@ int solveMixedSearch(DATA *data, int sysNumber)
     {
       /* system of equations failed */
       found_solution = -2;
-      debugStreamPrint(OMC_LOG_MIXED, 0, "####  NO SOLUTION ");
     }
     else
     {
       found_solution = 1;
       for(i = 0; i < systemData->size; i++)
       {
-        debugStreamPrint(OMC_LOG_MIXED, 0, " check iterationVar[%d] = %d <-> %d", i, solverData->iterationVars[i], solverData->iterationVars2[i]);
         if(solverData->iterationVars[i] != solverData->iterationVars2[i])
         {
           found_solution  = 0;
           break;
         }
       }
-      debugStreamPrint(OMC_LOG_MIXED, 0, "#### SOLUTION = %c", found_solution  ? 'T' : 'F');
     }
 
     if(!found_solution )
@@ -250,7 +245,6 @@ int solveMixedSearch(DATA *data, int sysNumber)
       /* try next set of values*/
       if(nextVar(solverData->stateofSearch, systemData->size))
       {
-        debugStreamPrint(OMC_LOG_MIXED, 0, "#### set next STATE ");
         for(i = 0; i < systemData->size; i++)
           *(systemData->iterationVarsPtr[i]) = *(systemData->iterationPreVarsPtr[i]) != solverData->stateofSearch[i];
 
@@ -262,7 +256,6 @@ int solveMixedSearch(DATA *data, int sysNumber)
           {
             ix = (systemData->iterationVarsPtr[i]-data->localData[0]->booleanVars);
             __name = data->modelData->booleanVarsData[ix].info.name;
-            debugStreamPrint(OMC_LOG_MIXED, 0, "%s changed : %d -> %d", __name, solverData->iterationVars[i], *(systemData->iterationVarsPtr[i]));
           }
         }
       }
@@ -287,13 +280,10 @@ int solveMixedSearch(DATA *data, int sysNumber)
       if(OMC_ACTIVE_STREAM(OMC_LOG_MIXED))
       {
         const char * __name;
-        debugStreamPrint(OMC_LOG_MIXED, 0, "#### SOLUTION FOUND! (system %d)", eqSystemNumber);
         for(i = 0; i < systemData->size; i++)
         {
           ix = (systemData->iterationVarsPtr[i]-data->localData[0]->booleanVars);
           __name = data->modelData->booleanVarsData[ix].info.name;
-          debugStreamPrint(OMC_LOG_MIXED, 0, "%s = %d  pre(%s)= %d", __name, *systemData->iterationVarsPtr[i], __name,
-              *systemData->iterationPreVarsPtr[i]);
         }
       }
     }
@@ -304,6 +294,5 @@ int solveMixedSearch(DATA *data, int sysNumber)
   }while(!found_solution);
 
   messageClose(OMC_LOG_MIXED);
-  debugStreamPrint(OMC_LOG_MIXED, 0, "####  Finished mixed equation system in steps %d.\n", stepCount);
   return success;
 }

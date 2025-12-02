@@ -409,18 +409,7 @@ static void read_var_info(omc_ModelVariable *var, VAR_INFO *info)
   info->info.colEnd = read_value_long(findHashStringString(var,"endColumn"), 0);
   info->info.readonly = read_value_long(findHashStringString(var,"fileWritable"), 0);
 
-  // FIXME there is no messageCloseDebug so we use infoStreamPrint here
-  infoStreamPrint(OMC_LOG_DEBUG, 1, "read var %s from setup file", info->name);
-  debugStreamPrint(OMC_LOG_DEBUG, 0, "read input index %d from setup file", info->inputIndex);
-  debugStreamPrint(OMC_LOG_DEBUG, 0, "read for %s id %d from setup file", info->name, info->id);
-  debugStreamPrint(OMC_LOG_DEBUG, 0, "read for %s description \"%s\" from setup file", info->name, info->comment);
-  debugStreamPrint(OMC_LOG_DEBUG, 0, "read for %s filename %s from setup file", info->name, info->info.filename);
-  debugStreamPrint(OMC_LOG_DEBUG, 0, "read for %s lineStart %d from setup file", info->name, info->info.lineStart);
-  debugStreamPrint(OMC_LOG_DEBUG, 0, "read for %s colStart %d from setup file", info->name, info->info.colStart);
-  debugStreamPrint(OMC_LOG_DEBUG, 0, "read for %s lineEnd %d from setup file", info->name, info->info.lineEnd);
-  debugStreamPrint(OMC_LOG_DEBUG, 0, "read for %s colEnd %d from setup file", info->name, info->info.colEnd);
-  debugStreamPrint(OMC_LOG_DEBUG, 0, "read for %s readonly %d from setup file", info->name, info->info.readonly);
-  messageClose(OMC_LOG_DEBUG);
+  infoStreamPrint(OMC_LOG_DEBUG, 0, "read var %s from setup file", info->name);
 }
 
 
@@ -676,7 +665,7 @@ static void read_variables(SIMULATION_INFO* simulationInfo,
   mmc_sint_t i, j;
   omc_ModelVariable *v;
 
-  infoStreamPrint(OMC_LOG_DEBUG, 1, "read xml file for %s", debugName);
+  infoStreamPrint(OMC_LOG_DEBUG, 0, "read xml file for %s", debugName);
   for (i = 0; i < numVariables; i++) {
     j = start + i;
     v = *findHashLongVar(in, i);
@@ -747,7 +736,6 @@ static void read_variables(SIMULATION_INFO* simulationInfo,
 
     /* create a mapping for Alias variable to get the correct index */
     addHashStringLong(mapAlias, info->name, j);
-    debugStreamPrint(OMC_LOG_DEBUG, 0, "%s %s: mapAlias[%s] = %ld", type_name, debugName, info->name, (long)(j));
     if (omc_flag[FLAG_IDAS] && 0 == strcmp(debugName, "real sensitivities")) {
       if (0 == strcmp(findHashStringString(v, "isValueChangeable"), "true")) {
         long *it = findHashStringLongPtr(*mapAliasParam, info->name);
@@ -758,7 +746,6 @@ static void read_variables(SIMULATION_INFO* simulationInfo,
       }
     }
   }
-  messageClose(OMC_LOG_DEBUG);
 }
 
 /**
