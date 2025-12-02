@@ -335,7 +335,7 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData)
         warningStreamPrint(OMC_LOG_ASSERT, 0, "Failed to solve the initialization problem without homotopy method. If homotopy is available the homotopy method is used now.");
       omc_flag[FLAG_HOMOTOPY_ON_FIRST_TRY] = 1;
       setAllParamsToStart(data);
-      setAllVarsToStart(data);
+      setAllVarsToStart(data->localData[0], data->simulationInfo, data->modelData);
       data->callback->updateBoundParameters(data, threadData);
       data->callback->updateBoundVariableAttributes(data, threadData);
     }
@@ -757,8 +757,9 @@ int initialization(DATA *data, threadData_t *threadData, const char* pInitMethod
   }
 #endif
   /* set up all variables with their start-values */
-  if (!fmi_init_method)
-    setAllVarsToStart(data);
+  if (!fmi_init_method) {
+    setAllVarsToStart(data->localData[0], data->simulationInfo, data->modelData);
+  }
 
   if(!read_init_from_file) {
     data->callback->updateBoundParameters(data, threadData);

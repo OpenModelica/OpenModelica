@@ -650,7 +650,7 @@ fmi2Component fmi2Instantiate(fmi2String instanceName, fmi2Type fmuType, fmi2Str
   initializeDataStruc(comp->fmuData, comp->threadData);
 
   setAllParamsToStart(comp->fmuData);
-  setAllVarsToStart(comp->fmuData);
+  setAllVarsToStart(comp->fmuData->localData[0], comp->fmuData->simulationInfo ,comp->fmuData->modelData);;
   comp->fmuData->callback->read_input_fmu(comp->fmuData->modelData);
 
 
@@ -1015,7 +1015,7 @@ fmi2Status fmi2Reset(fmi2Component c)
   /* reset model data with default start data */
   setDefaultStartValues(comp);
   setAllParamsToStart(comp->fmuData);
-  setAllVarsToStart(comp->fmuData);
+  setAllVarsToStart(comp->fmuData->localData[0], comp->fmuData->simulationInfo ,comp->fmuData->modelData);
   comp->fmuData->callback->read_input_fmu(comp->fmuData->modelData);
 #if !defined(OMC_MINIMAL_METADATA)
   modelInfoInit(&(comp->fmuData->modelData->modelDataXml));

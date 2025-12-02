@@ -97,7 +97,7 @@ void printRingBufferSimulationData(RINGBUFFER* rb, DATA* data);
 
 void restoreExtrapolationDataOld(DATA *data);
 
-void setAllVarsToStart(DATA* data);
+void setAllVarsToStart(SIMULATION_DATA *simulationData, const SIMULATION_INFO *simulationInfo, const MODEL_DATA *modelData);
 void setAllParamsToStart(DATA *data);
 
 void restoreOldValues(DATA *data);
