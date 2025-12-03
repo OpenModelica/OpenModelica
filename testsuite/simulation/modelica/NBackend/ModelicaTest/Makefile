@@ -16,6 +16,7 @@ ModelicaTest.Media.TestOnly.IdealGasN2Mix.mos \
 ModelicaTest.Media.TestOnly.R134a_setState_phX.mos \
 ModelicaTest.Media.TestAllProperties.IncompleteMedia.Essotherm650.mos \
 ModelicaTest.Utilities.TestExamplesCalculator.mos \
+ModelicaTest.Media.TestAllProperties.IncompleteMedia.ReferenceAir_dT.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make failingtest
