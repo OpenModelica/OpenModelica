@@ -1310,25 +1310,33 @@ public
     for interface reasons they have to be a single cref without restCref (gets converted to InstNode)"
     input output ComponentRef cref    "old component reference to new component reference";
   algorithm
-    cref := match ComponentRef.node(cref)
-      local
-        InstNode qual;
+    cref := match cref
+      // add the $FDER to the deepest cref
+      case ComponentRef.CREF(restCref = ComponentRef.EMPTY()) then match ComponentRef.node(cref)
+        local
+          InstNode qual;
 
-      // inside a function body
-      case qual as InstNode.COMPONENT_NODE() algorithm
-        qual.name := BackendUtil.makeFDerString(ComponentRef.toString(cref));
-        cref := ComponentRef.fromNode(qual, ComponentRef.nodeType(cref));
+        // inside a function body
+        case qual as InstNode.COMPONENT_NODE() algorithm
+          qual.name := BackendUtil.makeFDerString(ComponentRef.toString(cref));
+        then ComponentRef.fromNode(qual, ComponentRef.nodeType(cref));
+
+        // partial function application (passing function pointers)
+        case qual as InstNode.CLASS_NODE() algorithm
+          qual.name := BackendUtil.makeFDerString(ComponentRef.toString(cref));
+        then ComponentRef.fromNode(qual, ComponentRef.nodeType(cref));
+
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + ComponentRef.toString(cref)});
+        then fail();
+      end match;
+
+      // recurse deeper
+      case ComponentRef.CREF() algorithm
+        cref.restCref := makeFDerVar(cref.restCref);
       then cref;
 
-      // partial function application (passing function pointers)
-      case qual as InstNode.CLASS_NODE() algorithm
-        qual.name := BackendUtil.makeFDerString(ComponentRef.toString(cref));
-        cref := ComponentRef.fromNode(qual, ComponentRef.nodeType(cref));
-      then cref;
-
-      else algorithm
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + ComponentRef.toString(cref)});
-      then fail();
+      else cref;
     end match;
   end makeFDerVar;
 
