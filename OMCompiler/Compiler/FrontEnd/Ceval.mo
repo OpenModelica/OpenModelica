@@ -3336,7 +3336,7 @@ algorithm
     case (cache,env,{arr},impl,msg,_)
       algorithm
         (cache, Values.ARRAY(valueLst = vals)) := ceval(cache,env, arr, impl, msg, numIter+1);
-        if Types.isInteger(Expression.typeof(arr)) then
+        if Types.isInteger(Expression.typeof(Expression.unboxExp(arr))) then
           if listEmpty(vals) then
             v := Values.INTEGER(0);
           else

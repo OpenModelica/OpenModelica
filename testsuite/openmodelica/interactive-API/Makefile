@@ -137,6 +137,7 @@ StateMachine.mos \
 StoreAST.mos \
 strings.mos  \
 stringSplit.mos \
+Sum1.mos \
 TestChoices.mos \
 Ticket4674.mos \
 Ticket5506.mos \
