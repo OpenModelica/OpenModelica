@@ -677,10 +677,13 @@ int linearize(DATA* data, threadData_t *threadData)
     FILE *fout = omc_fopen(filename.c_str(),"wb");
     assertStreamPrint(threadData,0!=fout,"Cannot open File %s",filename.c_str());
 
+    const char* frame = NULL;
     if(do_data_recovery > 0){
-        fprintf(fout, data->callback->linear_model_datarecovery_frame(), strX.c_str(), strU.c_str(), strZ0.c_str(), strA.c_str(), strB.c_str(), strC.c_str(), strD.c_str(), strCz.c_str(), strDz.c_str());
+        frame = data->callback->linear_model_datarecovery_frame();
+        fprintf(fout, frame, strX.c_str(), strU.c_str(), strZ0.c_str(), strA.c_str(), strB.c_str(), strC.c_str(), strD.c_str(), strCz.c_str(), strDz.c_str());
     }else{
-        fprintf(fout, data->callback->linear_model_frame(), strX.c_str(), strU.c_str(), strA.c_str(), strB.c_str(), strC.c_str(), strD.c_str(), (double) data->simulationInfo->stopTime);
+        frame = data->callback->linear_model_frame();
+        fprintf(fout, frame, strX.c_str(), strU.c_str(), strA.c_str(), strB.c_str(), strC.c_str(), strD.c_str(), (double) data->simulationInfo->stopTime);
     }
     if(OMC_ACTIVE_STREAM(OMC_LOG_STATS)) {
       infoStreamPrint(OMC_LOG_STATS, 0, data->callback->linear_model_frame(), strX.c_str(), strU.c_str(), strA.c_str(), strB.c_str(), strC.c_str(), strD.c_str(), (double) data->simulationInfo->stopTime);
@@ -689,21 +692,25 @@ int linearize(DATA* data, threadData_t *threadData)
     fflush(fout);
     fclose(fout);
 
-    if (data->modelData->runTestsuite) {
-        infoStreamPrint(OMC_LOG_STDOUT, 0, "Linear model is created.");
-    }
-    else {
-        char* cwd = getcwd(NULL, 0); /* call with NULL and 0 to allocate the buffer dynamically (no pathmax needed) */
-        if(!cwd) {
-          infoStreamPrint(OMC_LOG_STDOUT, 0, "Linear model %s is created, but getting the full path failed.", filename.c_str());
+    if (0 == strcmp(frame, "")) {
+        errorStreamPrint(OMC_LOG_STDOUT, 0, "Linear model could not be created.");
+    } else {
+        if (data->modelData->runTestsuite) {
+            infoStreamPrint(OMC_LOG_STDOUT, 0, "Linear model is created.");
         }
         else {
-          infoStreamPrint(OMC_LOG_STDOUT, 0, "Linear model is created at %s/%s", cwd, filename.c_str());
-          free(cwd);
+            char* cwd = getcwd(NULL, 0); /* call with NULL and 0 to allocate the buffer dynamically (no pathmax needed) */
+            if(!cwd) {
+              infoStreamPrint(OMC_LOG_STDOUT, 0, "Linear model %s is created, but getting the full path failed.", filename.c_str());
+            }
+            else {
+              infoStreamPrint(OMC_LOG_STDOUT, 0, "Linear model is created at %s/%s", cwd, filename.c_str());
+              free(cwd);
+            }
+            infoStreamPrint(OMC_LOG_STDOUT, 0, "The output format can be changed with the command line option --linearizationDumpLanguage.");
+            infoStreamPrint(OMC_LOG_STDOUT, 0, "The options are: --linearizationDumpLanguage=none, modelica, matlab, julia, python.");
         }
-        infoStreamPrint(OMC_LOG_STDOUT, 0, "The output format can be changed with the command line option --linearizationDumpLanguage.");
-        infoStreamPrint(OMC_LOG_STDOUT, 0, "The options are: --linearizationDumpLanguage=modelica, matlab, julia, python.");
-    }
+      }
     return 0;
   }
 

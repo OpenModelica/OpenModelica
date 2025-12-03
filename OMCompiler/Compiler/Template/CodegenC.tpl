@@ -978,20 +978,46 @@ template simulationFile_lnz(SimCode simCode)
     #if defined(__cplusplus)
     extern "C" {
     #endif
+
     <%
     if stringEq(Flags.getConfigString(LINEARIZATION_DUMP_LANGUAGE),"none") then
       <<
       const char *<%symbolName(modelNamePrefix(simCode),"linear_model_frame")%>()
-      { return "";  /* disabled, use compiler flag `--linearizationDumpLanguage` to change target language */ }
+      {
+        errorStreamPrint(OMC_LOG_STDOUT, 0, "Linearization disabled. Use compiler flag `--linearizationDumpLanguage` to change target language.");
+        return "";
+      }
       const char *<%symbolName(modelNamePrefix(simCode),"linear_model_datarecovery_frame")%>()
-      { return "";  /* disabled, use compiler flag `--linearizationDumpLanguage` to change target language */ }
+      {
+        errorStreamPrint(OMC_LOG_STDOUT, 0, "Linearization disabled. Use compiler flag `--linearizationDumpLanguage` to change target language.");
+        return "";
+      }
       >>
     else if intLt(Flags.getConfigInt(MAX_SIZE_LINEARIZATION), intAdd(intAdd(intAdd(ns,ni),no),na)) then
       <<
       const char *<%symbolName(modelNamePrefix(simCode),"linear_model_frame")%>()
-      { return "";  /* system too big, use compiler flag `--maxSizeLinearization` to change threshold */ }
+      {
+        errorStreamPrint(OMC_LOG_STDOUT, 0, "System too big. Use compiler flag `--maxSizeLinearization` to change threshold.");
+        return "";
+      }
       const char *<%symbolName(modelNamePrefix(simCode),"linear_model_datarecovery_frame")%>()
-      { return "";  /* system too big, use compiler flag `--maxSizeLinearization` to change threshold */ }
+      {
+        errorStreamPrint(OMC_LOG_STDOUT, 0, "System too big. Use compiler flag `--maxSizeLinearization` to change threshold.");
+        return "";
+      }
+      >>
+    else if Flags.getConfigBool(Flags.DAE_MODE) then
+      <<
+      const char *<%symbolName(modelNamePrefix(simCode),"linear_model_frame")%>()
+      {
+        errorStreamPrint(OMC_LOG_STDOUT, 0, "Linearization not available with `--daeMode`.");
+        return "";
+      }
+      const char *<%symbolName(modelNamePrefix(simCode),"linear_model_datarecovery_frame")%>()
+      {
+        errorStreamPrint(OMC_LOG_STDOUT, 0, "Linearization not available with `--daeMode`.");
+        return "";
+      }
       >>
     else if stringEq(Flags.getConfigString(LINEARIZATION_DUMP_LANGUAGE),"modelica")
       then functionlinearmodel(modelInfo, modelNamePrefix(simCode))
@@ -1004,6 +1030,7 @@ template simulationFile_lnz(SimCode simCode)
     else
       error(sourceInfo(), 'Unknown linearization language <%Flags.getConfigString(LINEARIZATION_DUMP_LANGUAGE)%>.')
     %>
+
     #if defined(__cplusplus)
     }
     #endif<%\n%>
@@ -5208,7 +5235,10 @@ template functionlinearmodelMatlab(ModelInfo modelInfo, String modelNamePrefix) 
       "end";
     }
     const char *<%symbolName(modelNamePrefix,"linear_model_datarecovery_frame")%>()
-    { return "";  /* not implemented */ }
+    {
+      errorStreamPrint(OMC_LOG_STDOUT, 0, "Linearization with data recovery not implemented for Matlab.");
+      return "";
+    }
     >>
   end match
 end functionlinearmodelMatlab;
@@ -5250,7 +5280,10 @@ template functionlinearmodelJulia(ModelInfo modelInfo, String modelNamePrefix) "
       "end";
     }
     const char *<%symbolName(modelNamePrefix,"linear_model_datarecovery_frame")%>()
-    { return "";  /* not implemented */ }
+    {
+      errorStreamPrint(OMC_LOG_STDOUT, 0, "Linearization with data recovery not implemented for Julia.");
+      return "";
+    }
     >>
   end match
 end functionlinearmodelJulia;
@@ -5292,7 +5325,10 @@ template functionlinearmodelPython(ModelInfo modelInfo, String modelNamePrefix) 
       "    return (n, m, p, x0, u0, A, B, C, D, stateVars, inputVars, outputVars)\n";
     }
     const char *<%symbolName(modelNamePrefix,"linear_model_datarecovery_frame")%>()
-    { return "";  /* not implemented */ }
+    {
+      errorStreamPrint(OMC_LOG_STDOUT, 0, "Linearization with data recovery not implemented for Python.");
+      return "";
+    }
     >>
   end match
 end functionlinearmodelPython;
