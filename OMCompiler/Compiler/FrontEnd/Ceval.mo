@@ -1761,9 +1761,15 @@ algorithm
       list<Integer> il;
     case (v,0) then Values.ARRAY({v},{1});
     case (Values.ARRAY(valueLst = vs, dimLst = i::_),n)
-      equation
-        n_1 = n - 1;
-        (vs_1 as (Values.ARRAY(dimLst = il)::_)) = List.map1(vs, cevalBuiltinPromote2, n_1);
+      algorithm
+        n_1 := n - 1;
+        if listEmpty(vs) then
+          vs_1 := vs;
+          il := listRest(inValue.dimLst);
+          il := listAppend(List.fill(0, n-listLength(il)), il);
+        else
+          (vs_1 as (Values.ARRAY(dimLst = il)::_)) := List.map1(vs, cevalBuiltinPromote2, n_1);
+        end if;
       then Values.ARRAY(vs_1,i::il);
     case (v,n)
       equation
