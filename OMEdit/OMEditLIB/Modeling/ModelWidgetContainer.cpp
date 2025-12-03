@@ -6457,8 +6457,7 @@ bool ModelWidget::modelicaEditorTextChanged(LibraryTreeItem **pLibraryTreeItem)
       pParentLibraryTreeItem->setClassText(stringToLoad);
     }
     if (!errorString.isEmpty()) {
-      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, errorString, Helper::syntaxKind,
-                                                            Helper::errorLevel));
+      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, errorString, Helper::syntaxKind, Helper::errorLevel));
     }
     return false;
   }
