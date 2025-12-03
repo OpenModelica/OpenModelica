@@ -411,6 +411,11 @@ void ModelicaClassDialog::createModelicaClass()
   } else {
     pLibraryTreeItem->setSaveContentsType(LibraryTreeItem::SaveFolderStructure);
   }
+  // if we add a new class in folder strucutre then we should mark its parent unsaved so new package.order can be saved.
+  if (pParentLibraryTreeItem->isSaveFolderStructure()) {
+    pParentLibraryTreeItem->setIsSaved(false);
+    pLibraryTreeModel->updateLibraryTreeItem(pParentLibraryTreeItem);
+  }
   pLibraryTreeItem->setExpanded(true);
   // show the ModelWidget
   pLibraryTreeModel->showModelWidget(pLibraryTreeItem, true);

@@ -4796,54 +4796,54 @@ bool LibraryWidget::saveModelicaLibraryTreeItemFolder(LibraryTreeItem *pLibraryT
     } else {
       return false;
     }
-  }
-  // read the package.order file if it already exists and rename any removed classes as class.bak-mo
-  QFileInfo fileInfo(pLibraryTreeItem->getFileName());
-  QFile file(QString("%1/package.order").arg(fileInfo.absoluteDir().absolutePath()));
-  if (file.open(QIODevice::ReadOnly)) {
-    QTextStream textStream(&file);
-    while (!textStream.atEnd()) {
-      QString currentLine = textStream.readLine();
-      if (!currentLine.isEmpty()) { // ignore empty lines in package.order
-        bool classExists = false;
-        for (int i = 0; i < pLibraryTreeItem->childrenSize(); i++) {
-          // Issue #12567. Compare case insensitive on Windows as `a` and `A` means the same thing.
-  #ifdef Q_OS_WIN
-          if (pLibraryTreeItem->child(i)->getName().compare(currentLine, Qt::CaseInsensitive) == 0) {
-  #else // #ifdef Q_OS_WIN
-          if (pLibraryTreeItem->child(i)->getName().compare(currentLine) == 0) {
-  #endif // #ifdef Q_OS_WIN
-            classExists = true;
-            break;
-          }
-        }
-        if (!classExists) {
-          if (QDir().exists(QString("%1/%2").arg(fileInfo.absoluteDir().absolutePath()).arg(currentLine))) {
-            if (OptionsDialog::instance()->getGeneralSettingsPage()->getCreateBackupFileCheckbox()->isChecked()) {
-              QFile::rename(QString("%1/%2/package.mo").arg(fileInfo.absoluteDir().absolutePath()).arg(currentLine),
-                            QString("%1/%2/package.bak-mo").arg(fileInfo.absoluteDir().absolutePath()).arg(currentLine));
-            } else {
-              Utilities::removeDirectoryRecursively(QString("%1/%2").arg(fileInfo.absoluteDir().absolutePath()).arg(currentLine));
+    // read the package.order file if it already exists and rename any removed classes as class.bak-mo
+    QFileInfo fileInfo(pLibraryTreeItem->getFileName());
+    QFile file(QString("%1/package.order").arg(fileInfo.absoluteDir().absolutePath()));
+    if (file.open(QIODevice::ReadOnly)) {
+      QTextStream textStream(&file);
+      while (!textStream.atEnd()) {
+        QString currentLine = textStream.readLine();
+        if (!currentLine.isEmpty()) { // ignore empty lines in package.order
+          bool classExists = false;
+          for (int i = 0; i < pLibraryTreeItem->childrenSize(); i++) {
+            // Issue #12567. Compare case insensitive on Windows as `a` and `A` means the same thing.
+#ifdef Q_OS_WIN
+            if (pLibraryTreeItem->child(i)->getName().compare(currentLine, Qt::CaseInsensitive) == 0) {
+#else // #ifdef Q_OS_WIN
+            if (pLibraryTreeItem->child(i)->getName().compare(currentLine) == 0) {
+#endif // #ifdef Q_OS_WIN
+              classExists = true;
+              break;
             }
-          } else {
-            if (OptionsDialog::instance()->getGeneralSettingsPage()->getCreateBackupFileCheckbox()->isChecked()) {
-              QFile::rename(QString("%1/%2.mo").arg(fileInfo.absoluteDir().absolutePath()).arg(currentLine),
-                            QString("%1/%2.bak-mo").arg(fileInfo.absoluteDir().absolutePath()).arg(currentLine));
+          }
+          if (!classExists) {
+            if (QDir().exists(QString("%1/%2").arg(fileInfo.absoluteDir().absolutePath()).arg(currentLine))) {
+              if (OptionsDialog::instance()->getGeneralSettingsPage()->getCreateBackupFileCheckbox()->isChecked()) {
+                QFile::rename(QString("%1/%2/package.mo").arg(fileInfo.absoluteDir().absolutePath()).arg(currentLine),
+                              QString("%1/%2/package.bak-mo").arg(fileInfo.absoluteDir().absolutePath()).arg(currentLine));
+              } else {
+                Utilities::removeDirectoryRecursively(QString("%1/%2").arg(fileInfo.absoluteDir().absolutePath()).arg(currentLine));
+              }
             } else {
-              QFile::remove(QString("%1/%2.mo").arg(fileInfo.absoluteDir().absolutePath()).arg(currentLine));
+              if (OptionsDialog::instance()->getGeneralSettingsPage()->getCreateBackupFileCheckbox()->isChecked()) {
+                QFile::rename(QString("%1/%2.mo").arg(fileInfo.absoluteDir().absolutePath()).arg(currentLine),
+                              QString("%1/%2.bak-mo").arg(fileInfo.absoluteDir().absolutePath()).arg(currentLine));
+              } else {
+                QFile::remove(QString("%1/%2.mo").arg(fileInfo.absoluteDir().absolutePath()).arg(currentLine));
+              }
             }
           }
         }
       }
+      file.close();
     }
-    file.close();
+    // create a package.order file
+    /* Ticket #4152. package.order should contain constants and classes.*/
+    QStringList childClasses = MainWindow::instance()->getOMCProxy()->getClassNames(pLibraryTreeItem->getNameStructure(), false, false, false, false, true, true);
+    const QString classesOrder = childClasses.isEmpty() ? "" : childClasses.join("\n") + "\n";
+    // create a new package.order file
+    saveFile(QString("%1/package.order").arg(fileInfo.absoluteDir().absolutePath()), classesOrder);
   }
-  // create a package.order file
-  /* Ticket #4152. package.order should contain constants and classes.*/
-  QStringList childClasses = MainWindow::instance()->getOMCProxy()->getClassNames(pLibraryTreeItem->getNameStructure(), false, false, false, false, true, true);
-  const QString contents = childClasses.isEmpty() ? "" : childClasses.join("\n") + "\n";
-  // create a new package.order file
-  saveFile(QString("%1/package.order").arg(fileInfo.absoluteDir().absolutePath()), contents);
   return true;
 }
 
