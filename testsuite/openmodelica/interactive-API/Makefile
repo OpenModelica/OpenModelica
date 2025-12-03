@@ -112,6 +112,7 @@ Obfuscation2.mos \
 Obfuscation3.mos \
 Obfuscation4.mos \
 Obfuscation5.mos \
+Promote1.mos \
 ProtectedHandlingBug2917.mos \
 ReadOnlyPkg.mos \
 readSimulationResult1.mos \
