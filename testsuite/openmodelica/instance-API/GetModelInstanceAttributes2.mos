@@ -75,6 +75,14 @@ getModelInstance(M, prettyPrint = true);
 //               \"replaceable\": true,
 //               \"redeclare\": true
 //             }
+//           },
+//           {
+//             \"$kind\": \"component\",
+//             \"name\": \"z\",
+//             \"type\": \"Real\",
+//             \"prefixes\": {
+//               \"inner\": true
+//             }
 //           }
 //         ],
 //         \"source\": {

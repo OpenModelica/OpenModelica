@@ -26,6 +26,18 @@ getModelInstance(P.M, prettyPrint=true);
 //     {
 //       \"$kind\": \"component\",
 //       \"name\": \"x\",
+//       \"type\": {
+//         \"$kind\": \"class\",
+//         \"name\": \"Real\",
+//         \"restriction\": \"type\"
+//       },
+//       \"prefixes\": {
+//         \"outer\": true
+//       }
+//     },
+//     {
+//       \"$kind\": \"component\",
+//       \"name\": \"x\",
 //       \"type\": \"Real\",
 //       \"prefixes\": {
 //         \"inner\": true

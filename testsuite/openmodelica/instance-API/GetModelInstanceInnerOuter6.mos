@@ -1,4 +1,4 @@
-// name: GetModelInstanceBinding1
+// name: GetModelInstanceInnerOuter6
 // keywords:
 // status: correct
 // cflags: -d=newInst
@@ -6,51 +6,53 @@
 //
 
 loadString("
-  model World
-    parameter Configuration conf1;
-    parameter Configuration conf2 = conf1;
-  end World;
+  package P
+    model World
+      parameter Configuration conf1;
+      parameter Configuration conf2 = conf1;
+    end World;
 
-  record Configuration
-  end Configuration;
+    record Configuration
+    end Configuration;
 
-  model A
-    outer World world;
-  end A;
+    model A
+      outer World world;
+    end A;
 
-  model M
-    inner World world;
-    A a;
-  end M;
+    model M
+      inner World world;
+      A a;
+    end M;
+  end P;
 ");
 
-getModelInstance(M, prettyPrint = true);
+getModelInstance(P.M, prettyPrint = true);
 
 // Result:
 // true
 // "{
-//   \"name\": \"M\",
+//   \"name\": \"P.M\",
 //   \"restriction\": \"model\",
 //   \"elements\": [
 //     {
 //       \"$kind\": \"component\",
 //       \"name\": \"world\",
 //       \"type\": {
-//         \"name\": \"World\",
+//         \"name\": \"P.World\",
 //         \"restriction\": \"model\",
 //         \"elements\": [
 //           {
 //             \"$kind\": \"component\",
 //             \"name\": \"conf1\",
 //             \"type\": {
-//               \"name\": \"Configuration\",
+//               \"name\": \"P.Configuration\",
 //               \"restriction\": \"record\",
 //               \"source\": {
 //                 \"filename\": \"<interactive>\",
-//                 \"lineStart\": 7,
-//                 \"columnStart\": 3,
-//                 \"lineEnd\": 8,
-//                 \"columnEnd\": 20
+//                 \"lineStart\": 8,
+//                 \"columnStart\": 5,
+//                 \"lineEnd\": 9,
+//                 \"columnEnd\": 22
 //               }
 //             },
 //             \"prefixes\": {
@@ -61,14 +63,14 @@ getModelInstance(M, prettyPrint = true);
 //             \"$kind\": \"component\",
 //             \"name\": \"conf2\",
 //             \"type\": {
-//               \"name\": \"Configuration\",
+//               \"name\": \"P.Configuration\",
 //               \"restriction\": \"record\",
 //               \"source\": {
 //                 \"filename\": \"<interactive>\",
-//                 \"lineStart\": 7,
-//                 \"columnStart\": 3,
-//                 \"lineEnd\": 8,
-//                 \"columnEnd\": 20
+//                 \"lineStart\": 8,
+//                 \"columnStart\": 5,
+//                 \"lineEnd\": 9,
+//                 \"columnEnd\": 22
 //               }
 //             },
 //             \"modifiers\": \"conf1\",
@@ -86,7 +88,7 @@ getModelInstance(M, prettyPrint = true);
 //               },
 //               \"value\": {
 //                 \"$kind\": \"record\",
-//                 \"name\": \"Configuration\",
+//                 \"name\": \"P.Configuration\",
 //                 \"elements\": [
 //
 //                 ]
@@ -99,10 +101,10 @@ getModelInstance(M, prettyPrint = true);
 //         ],
 //         \"source\": {
 //           \"filename\": \"<interactive>\",
-//           \"lineStart\": 2,
-//           \"columnStart\": 3,
-//           \"lineEnd\": 5,
-//           \"columnEnd\": 12
+//           \"lineStart\": 3,
+//           \"columnStart\": 5,
+//           \"lineEnd\": 6,
+//           \"columnEnd\": 14
 //         }
 //       },
 //       \"prefixes\": {
@@ -113,7 +115,7 @@ getModelInstance(M, prettyPrint = true);
 //       \"$kind\": \"component\",
 //       \"name\": \"a\",
 //       \"type\": {
-//         \"name\": \"A\",
+//         \"name\": \"P.A\",
 //         \"restriction\": \"model\",
 //         \"elements\": [
 //           {
@@ -121,7 +123,7 @@ getModelInstance(M, prettyPrint = true);
 //             \"name\": \"world\",
 //             \"type\": {
 //               \"$kind\": \"class\",
-//               \"name\": \"World\",
+//               \"name\": \"P.World\",
 //               \"restriction\": \"model\"
 //             },
 //             \"prefixes\": {
@@ -131,20 +133,20 @@ getModelInstance(M, prettyPrint = true);
 //         ],
 //         \"source\": {
 //           \"filename\": \"<interactive>\",
-//           \"lineStart\": 10,
-//           \"columnStart\": 3,
-//           \"lineEnd\": 12,
-//           \"columnEnd\": 8
+//           \"lineStart\": 11,
+//           \"columnStart\": 5,
+//           \"lineEnd\": 13,
+//           \"columnEnd\": 10
 //         }
 //       }
 //     }
 //   ],
 //   \"source\": {
 //     \"filename\": \"<interactive>\",
-//     \"lineStart\": 14,
-//     \"columnStart\": 3,
-//     \"lineEnd\": 17,
-//     \"columnEnd\": 8
+//     \"lineStart\": 15,
+//     \"columnStart\": 5,
+//     \"lineEnd\": 18,
+//     \"columnEnd\": 10
 //   }
 // }"
 // endResult

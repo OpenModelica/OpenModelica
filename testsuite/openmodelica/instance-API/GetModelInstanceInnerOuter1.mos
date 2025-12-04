@@ -30,6 +30,20 @@ getModelInstance(B, prettyPrint=true);
 //       \"type\": {
 //         \"name\": \"A\",
 //         \"restriction\": \"model\",
+//         \"elements\": [
+//           {
+//             \"$kind\": \"component\",
+//             \"name\": \"x\",
+//             \"type\": {
+//               \"$kind\": \"class\",
+//               \"name\": \"Real\",
+//               \"restriction\": \"type\"
+//             },
+//             \"prefixes\": {
+//               \"outer\": true
+//             }
+//           }
+//         ],
 //         \"source\": {
 //           \"filename\": \"<interactive>\",
 //           \"lineStart\": 2,
