@@ -585,9 +585,10 @@ void UpdateCoordinateSystemCommand::updateCoordinateSystem(const ModelInstance::
   }
   mpGraphicsView->getModelWidget()->getModelInstance()->updateMergedCoordinateSystem();
 
-  mpGraphicsView->drawCoordinateSystem();
+  // set custom scale to true so that fitInViewInternal does not call fitInView
+  mpGraphicsView->setIsCustomScale(true);
+  mpGraphicsView->drawCoordinateSystem(false);
   mpGraphicsView->addClassAnnotation();
-  mpGraphicsView->fitInViewInternal();
   // if copy properties is true
   if (mCopyProperties) {
     GraphicsView *pGraphicsView;
@@ -596,9 +597,9 @@ void UpdateCoordinateSystemCommand::updateCoordinateSystem(const ModelInstance::
     } else {
       pGraphicsView = mpGraphicsView->getModelWidget()->getIconGraphicsView();
     }
-    pGraphicsView->drawCoordinateSystem();
+    mpGraphicsView->setIsCustomScale(true);
+    pGraphicsView->drawCoordinateSystem(false);
     pGraphicsView->addClassAnnotation();
-    pGraphicsView->fitInViewInternal();
   }
 }
 

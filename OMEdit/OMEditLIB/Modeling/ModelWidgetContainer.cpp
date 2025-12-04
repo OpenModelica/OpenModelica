@@ -253,18 +253,17 @@ void GraphicsView::setIsVisualizationView(bool visualizationView)
  * \brief GraphicsView::drawCoordinateSystem
  * Draws the coordinate system.
  */
-void GraphicsView::drawCoordinateSystem()
+void GraphicsView::drawCoordinateSystem(bool openingModel)
 {
   if (isIconView() && mpModelWidget->getLibraryTreeItem()->getAccess() >= LibraryTreeItem::icon) {
     mCoordinateSystem = mpModelWidget->getModelInstance()->getAnnotation()->getIconAnnotation()->mCoordinateSystem;
     mMergedCoordinateSystem = mpModelWidget->getModelInstance()->getAnnotation()->getIconAnnotation()->mMergedCoordinateSystem;
-    setExtentRectangle(mMergedCoordinateSystem.getExtentRectangle(), false);
+    setExtentRectangle(mMergedCoordinateSystem.getExtentRectangle(), openingModel);
   } else if (isDiagramView() && mpModelWidget->getLibraryTreeItem()->getAccess() >= LibraryTreeItem::diagram) {
     mCoordinateSystem = mpModelWidget->getModelInstance()->getAnnotation()->getDiagramAnnotation()->mCoordinateSystem;
     mMergedCoordinateSystem = mpModelWidget->getModelInstance()->getAnnotation()->getDiagramAnnotation()->mMergedCoordinateSystem;
-    setExtentRectangle(mMergedCoordinateSystem.getExtentRectangle(), false);
+    setExtentRectangle(mMergedCoordinateSystem.getExtentRectangle(), openingModel);
   }
-  resize(size());
 }
 
 /*!
@@ -627,15 +626,18 @@ bool GraphicsView::isCreatingShape()
  * \brief GraphicsView::setExtentRectangle
  * Increases the size of the extent rectangle by 25%.
  * \param rectangle
- * \param moveToCenter
+ * \param openingModel
  */
-void GraphicsView::setExtentRectangle(const QRectF rectangle, bool moveToCenter)
+void GraphicsView::setExtentRectangle(const QRectF rectangle, bool openingModel)
 {
   QRectF sceneRectangle = Utilities::adjustSceneRectangle(rectangle, 0.25);
-  setSceneRect(sceneRectangle);
-  if (moveToCenter) {
-    centerOn(sceneRectangle.center());
+  if (openingModel) {
+    setSceneRect(sceneRectangle);
+  } else {
+    updateSceneRect(sceneRectangle);
   }
+  viewport()->update();
+  updateGeometry();
 }
 
 void GraphicsView::setIsCreatingConnection(const bool enable)
@@ -2812,7 +2814,7 @@ void GraphicsView::removeItem(QGraphicsItem *pGraphicsItem)
 }
 
 /*!
- * \brief GraphicsView::fitInView
+ * \brief GraphicsView::fitInViewInternal
  * Fits the view.
  */
 void GraphicsView::fitInViewInternal()
@@ -5778,8 +5780,8 @@ void ModelWidget::drawModelIconDiagramShapes(QStringList shapes, GraphicsView *p
 
 void ModelWidget::drawModel(const ModelInfo &modelInfo)
 {
-  mpIconGraphicsView->drawCoordinateSystem();
-  mpDiagramGraphicsView->drawCoordinateSystem();
+  mpIconGraphicsView->drawCoordinateSystem(modelInfo.mName.isEmpty());
+  mpDiagramGraphicsView->drawCoordinateSystem(modelInfo.mName.isEmpty());
   clearDependsOnModels();
   disconnect(MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel(), SIGNAL(modelStateChanged(QString,bool)), this, SLOT(updateModelIfDependsOn(QString,bool)));
   // if we are drawing the model inside the element mode and the parent element is extends so draw the element as inherited.
@@ -6398,9 +6400,6 @@ void ModelWidget::reDrawModelWidget(const ModelInfo &modelInfo)
     updateElementModeButtons();
   }
   loadModelInstance(false, modelInfo);
-  // update the coordinate system according to new values
-  mpIconGraphicsView->resetZoom();
-  mpDiagramGraphicsView->resetZoom();
   reDrawModelWidgetHelper();
   QApplication::restoreOverrideCursor();
 }
@@ -7776,7 +7775,7 @@ void ModelWidgetContainer::addModelWidget(ModelWidget *pModelWidget, bool checkP
     }
   }
   if (!hasModelWidget) {
-    int subWindowsSize = subWindowList(QMdiArea::ActivationHistoryOrder).size();
+    int subWindowsSize = subWindowsList.size();
     QMdiSubWindow *pSubWindow = addSubWindow(pModelWidget);
     addCloseActionsToSubWindowSystemMenu(pSubWindow);
     pSubWindow->setWindowIcon(ResourceCache::getIcon(":/Resources/icons/modeling.png"));
