@@ -2049,6 +2049,7 @@ public
       "Creates a residual equation from a regular equation.
       Example (for DAEMode): $RES_DAE_idx := rhs."
       input output Pointer<Equation> eqn_ptr;
+      input Option<ComponentRef> residualCref_opt = NONE();
       input Boolean new = false               "set to true if the resulting pointer should be a new one";
       input Boolean allowFail = false;
     protected
@@ -2065,10 +2066,15 @@ public
 
       // TODO: future improvement - save the residual in [INI] -> re-use for [ODE] tearing
       // get name cref which is the residual
-      residualCref := match eqn
+      residualCref := match (eqn, residualCref_opt)
         local
           list<Subscript> subs;
-        case FOR_EQUATION() algorithm
+
+        // some residual cref given
+        case (_, SOME(residualCref)) then residualCref;
+
+        // no residual cref given
+        case (FOR_EQUATION(), NONE()) algorithm
           residualCref := getEqnName(eqn_ptr);
           subs := Iterator.normalizedSubscripts(eqn.iter);
           subs := listAppend(List.fill(Subscript.WHOLE(), Type.dimensionCount(Equation.getType(listHead(eqn.body)))), subs);
@@ -2079,8 +2085,11 @@ public
 
       (eqn, failed) := match eqn
         case IF_EQUATION() algorithm
-          eqn.body := IfEquationBody.createResidual(eqn.body, residualCref);
+          eqn.body := IfEquationBody.createResidual(eqn.body, residualCref, new, allowFail);
         then (IfEquationBody.inline(eqn.body, eqn), false);
+        case FOR_EQUATION() algorithm
+          eqn.body := list(Pointer.access(createResidual(Pointer.create(body_eqn), SOME(residualCref), new, allowFail)) for body_eqn in eqn.body);
+        then (eqn, false);
         else algorithm
           // update RHS and LHS
           lhs := Expression.fromCref(residualCref);
@@ -2105,7 +2114,6 @@ public
 
       // update pointer or create new
       if new then eqn_ptr := Pointer.create(eqn); else Pointer.update(eqn_ptr, eqn); end if;
-
     end createResidual;
 
     function getResidualExp
@@ -3011,20 +3019,18 @@ public
       "needs the if equation to be split"
       input IfEquationBody body;
       input ComponentRef res;
+      input Boolean new = false               "set to true if the resulting pointer should be a new one";
+      input Boolean allowFail = false;
       output IfEquationBody body_res;
     protected
       Pointer<Equation> eqn_ptr;
       Equation eqn;
       Expression exp;
     algorithm
-      body_res := IF_EQUATION_BODY(body.condition, {}, Util.applyOption(body.else_if, function createResidual(res = res)));
+      body_res := IF_EQUATION_BODY(body.condition, {}, Util.applyOption(body.else_if, function createResidual(res = res, new = new, allowFail = allowFail)));
       body_res := match body.then_eqns
         case {eqn_ptr} algorithm
-          eqn := Pointer.access(eqn_ptr);
-          exp := Equation.getResidualExp(eqn);
-          eqn := Equation.setLHS(eqn, Expression.fromCref(res));
-          eqn := Equation.setRHS(eqn, exp);
-          body_res.then_eqns := Pointer.create(eqn) :: body_res.then_eqns;
+          body_res.then_eqns := Equation.createResidual(eqn_ptr, SOME(res), new, allowFail) :: body_res.then_eqns;
         then body_res;
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for:\n" + toString(body)});
