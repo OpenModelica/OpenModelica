@@ -576,11 +576,15 @@ public
       then (Expression.TUPLE_ELEMENT(elem1, exp.index, exp.ty), diffArguments);
 
       // REC(i, ...)' = REC(i', ...)
-      // ToDo: does this suffice? Check with old backend RSUB()!
       case Expression.RECORD_ELEMENT() algorithm
-        (elem1, diffArguments) := differentiateExpression(exp.recordExp, diffArguments);
-      then (Expression.RECORD_ELEMENT(elem1, exp.index, exp.fieldName, exp.ty), diffArguments);
-
+        // check if differentiating for simple cref and if it contains it
+        if diffArguments.diffType == DifferentiationType.SIMPLE and not Expression.containsCref(exp.recordExp, diffArguments.diffCref) then
+          elem1 := Expression.makeZero(Expression.typeOf(exp));
+        else
+          (elem1, diffArguments) := differentiateExpression(exp.recordExp, diffArguments);
+          elem1 := Expression.RECORD_ELEMENT(elem1, exp.index, exp.fieldName, exp.ty);
+        end if;
+      then (elem1, diffArguments);
 
       // differentiate a passed function pointer
       case Expression.PARTIAL_FUNCTION_APPLICATION() algorithm
