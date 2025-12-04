@@ -78,11 +78,53 @@ modelica_real real_get_5D(const real_array a, size_t i, size_t j, size_t k, size
   return real_get(a, getIndex_5D(a.dim_size,i,j,k,l,m));
 }
 
-/** function: real_array_create
- **
- ** sets all fields in a real_array, i.e. data, ndims and dim_size.
- **/
-
+/**
+ * @brief Create a real array from existing data and dimension information.
+ *
+ * This function initializes a real_array structure by setting all its fields:
+ * data pointer, number of dimensions (ndims), and dimension sizes.
+ * The dimension sizes are passed as variable arguments and must match the ndims parameter.
+ *
+ * @param[out] dest     Pointer to the real_array structure to be initialized.
+ * @param[in]  data     Pointer to the array data (modelica_real values).
+ *                      Must be allocated and large enough to hold all elements.
+ * @param[in]  ndims    Number of dimensions for the array.
+ * @param[in]  ...      Variable arguments specifying the size of each dimension.
+ *                      Must provide exactly ndims values, one for each dimension.
+ *
+ * @note The function does not allocate memory for the data; it only wraps
+ *       existing data with dimension information. The caller is responsible
+ *       for allocating the data buffer and ensuring it has sufficient size.
+ *
+ * @warning The number and order of dimension size arguments must exactly match ndims.
+ *
+ * See `alloc_real_array()` for allocation combined with initialization.
+ * See `real_array_create()` for alternative creation methods.
+ *
+ * #### Vector Example (1D array)
+ *
+ * Create a vector with 5 elements:
+ *
+ * ```c
+ * modelica_real data[5] = {1.0, 2.0, 3.0, 4.0, 5.0};
+ * real_array vec;
+ * real_array_create(&vec, data, 1, 5);
+ * ```
+ *
+ * #### Matrix Example (2D array)
+ *
+ * Create a 3x4 matrix in row-major order:
+ *
+ * ```c
+ * modelica_real matrix_data[12] = {
+ *     1.0,  2.0,  3.0,  4.0,
+ *     5.0,  6.0,  7.0,  8.0,
+ *     9.0, 10.0, 11.0, 12.0
+ * };
+ * real_array mat;
+ * real_array_create(&mat, matrix_data, 2, 3, 4);
+ * ```
+ */
 void real_array_create(real_array *dest, modelica_real *data, int ndims, ...)
 {
     va_list ap;
@@ -116,6 +158,52 @@ void alloc_real_array_data(real_array *a)
     a->data = real_alloc(base_array_nr_of_elements(*a));
 }
 
+/**
+ * @brief Copy all elements from a real array into a pre-allocated memory buffer.
+ *
+ * Copies all elements from a real_array structure into a flat memory buffer.
+ * The destination buffer must be pre-allocated with sufficient space to hold
+ * all array elements (num_elements * sizeof(modelica_real)).
+ *
+ * @param[in] source  The source real array to copy from.
+ * @param[out] dest   Pointer to pre-allocated memory buffer where elements will be copied.
+ *
+ * @pre source must be a valid real_array structure (checked via base_array_ok).
+ * @pre dest must point to valid memory large enough to hold all elements of source.
+ * @pre The memory pointed to by dest must not overlap with source.data.
+ *
+ * @note This function performs element-by-element copying. For large arrays,
+ *       consider the performance implications. The function is safe for arrays
+ *       of any dimensionality as it copies all elements sequentially.
+ *
+ * @attention The caller is responsible for allocating and managing the dest buffer.
+ *            This function does not allocate or free memory for dest.
+ *
+ * #### Example: Copy vector elements to buffer
+ *
+ * ```c
+ * real_array vec;
+ * simple_alloc_1d_real_array(&vec, 5);
+ * // ... populate vec with data ...
+ *
+ * modelica_real buffer[5];
+ * copy_real_array_data_mem(vec, buffer);
+ * // buffer now contains all elements from vec
+ * ```
+ *
+ * #### Example: Copy matrix elements to buffer
+ *
+ * ```c
+ * real_array mat;
+ * alloc_real_array(&mat, 2, 3, 4);  // 3x4 matrix
+ * // ... populate mat with data ...
+ *
+ * modelica_real *buffer = (modelica_real *)malloc(12 * sizeof(modelica_real));
+ * copy_real_array_data_mem(mat, buffer);
+ * // buffer now contains all 12 elements from the 3x4 matrix
+ * free(buffer);
+ * ```
+ */
 void copy_real_array_data_mem(const real_array source, modelica_real *dest)
 {
     size_t i, nr_of_elements;
