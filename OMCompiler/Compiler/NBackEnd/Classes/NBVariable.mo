@@ -404,6 +404,7 @@ public
       case VariableKind.ITERATOR()        then false;
       case VariableKind.EXTOBJ()          then false;
       case VariableKind.PARAMETER()       then init and Type.isContinuous(var.ty);
+      case VariableKind.RECORD()          then List.all(getRecordChildren(var_ptr), function isContinuous(init = init));
       else true;
     end match;
   end isContinuous;
@@ -414,6 +415,19 @@ public
   algorithm
     b := not isContinuous(var_ptr, init);
   end isDiscontinuous;
+
+  function isContinuousRecordAware
+    "acts like isContinous, but returns false if it is part of a record that has a discrete variable"
+    extends checkVar;
+    input Boolean init  "true if it's an initial system";
+  algorithm
+    b := match getParent(var_ptr)
+      local
+        Pointer<Variable> parent;
+      case SOME(parent) then isContinuousRecordAware(parent, init);
+      else isContinuous(var_ptr, init);
+    end match;
+  end isContinuousRecordAware;
 
   function isDiscreteState
     extends checkVar;

@@ -2256,11 +2256,24 @@ public
       b := attr.kind == EquationKind.CONTINUOUS;
     end isContinuous;
 
-    function isDiscontinuous "only for function interface purposes"
+    function isDiscontinuous
+      "only for function interface purposes"
       extends checkEqn;
     algorithm
       b := not isContinuous(eqn_ptr);
     end isDiscontinuous;
+
+    function isContinousRecordAware
+      "acts like isContinous, but returns false if it is part of a record that has a discrete variable"
+      extends checkEqn;
+    protected
+      Equation eqn = Pointer.access(eqn_ptr);
+    algorithm
+      b := match eqn
+        case RECORD_EQUATION() then Type.isContinuous(eqn.ty);
+        else isContinuous(eqn_ptr);
+      end match;
+    end isContinousRecordAware;
 
     function isInitial extends checkEqn;
     protected
