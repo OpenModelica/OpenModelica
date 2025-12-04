@@ -188,7 +188,7 @@ public:
   void setIsVisualizationView(bool visualizationView);
   bool isVisualizationView() {return mVisualizationView;}
 
-  void drawCoordinateSystem();
+  void drawCoordinateSystem(bool openingModel);
   void drawShapes(ModelInstance::Model *pModelInstance, bool inhertied, bool openingModel);
   void drawElements(ModelInstance::Model *pModelInstance, bool inherited, const ModelInfo &modelInfo);
   void drawConnections(ModelInstance::Model *pModelInstance, bool inherited, const ModelInfo &modelInfo);
@@ -196,7 +196,7 @@ public:
   void drawInitialStates(ModelInstance::Model *pModelInstance, bool inherited, const ModelInfo &modelInfo);
   void handleCollidingConnections();
 
-  void setExtentRectangle(const QRectF rectangle, bool moveToCenter);
+  void setExtentRectangle(const QRectF rectangle, bool openingModel);
   void setIsCustomScale(bool enable) {mIsCustomScale = enable;}
   bool isCustomScale() {return mIsCustomScale;}
   void setAddClassAnnotationNeeded(bool needed) {mAddClassAnnotationNeeded = needed;}
