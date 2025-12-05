@@ -711,7 +711,16 @@ void computeVarReverseIndices(SIMULATION_INFO *simulationInfo,
   computeVarsReverseIndex(modelData->realVarsData, T_REAL, modelData->nVariablesReal, simulationInfo->realVarsReverseIndex);
 }
 
-
+/**
+ * @brief Get nominal attribute by scalar (flattened) index
+ *
+ * Look up array index and dimension from reverse index map.
+ *
+ * @param simulationInfo  Simulation info with revers map.
+ * @param modelData       Model data containing nominal.
+ * @param scalar_idx      Scalar index.
+ * @return modelica_real  Nominal value
+ */
 modelica_real getNominalFromScalarIdx(const SIMULATION_INFO *simulationInfo,
                                       const MODEL_DATA *modelData,
                                       size_t scalar_idx) {

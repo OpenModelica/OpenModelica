@@ -36,6 +36,7 @@
 #include "openmodelica_func.h"
 
 #include "util/omc_error.h"
+#include "simulation/arrayIndex.h"
 #include "simulation/options.h"
 
 
