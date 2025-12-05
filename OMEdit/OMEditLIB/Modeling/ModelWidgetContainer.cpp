@@ -3931,7 +3931,7 @@ void GraphicsView::getCoordinateSystemAndGraphics(QStringList &coOrdinateSystemL
   }
   // add the initial scale
   if (mCoordinateSystem.hasInitialScale()) {
-    coOrdinateSystemList.append(QString("initialScale=%1").arg(mCoordinateSystem.getInitialScale()));
+    coOrdinateSystemList.append(QString("initialScale=%1").arg(static_cast<qreal>(mCoordinateSystem.getInitialScale())));
   }
   // add the grid
   if (mCoordinateSystem.hasGrid()) {
