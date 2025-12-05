@@ -178,7 +178,7 @@ double computeGamma(double err_now, double err_prev, double h_now, double h_prev
  */
 double GenericController(double* err_values, double* step_values, unsigned int err_order, enum GB_CTRL_METHOD ctrl_method)
 {
-  double fac    = 0.85;
+  double fac    = 0.9;
   double facmax = 2.5;
   double facmin = 0.2;
 
@@ -236,7 +236,7 @@ double GenericController(double* err_values, double* step_values, unsigned int e
   }
 
   // Keep step size constant, if there are only small changes
-  if ((0.95 < h_fac) && (h_fac < 1.05)) {
+  if ((0.99 < h_fac) && (h_fac < 1.2)) {
     return 1.0;
   } else
     return fmin(facmax, fmax(facmin, fac*h_fac));

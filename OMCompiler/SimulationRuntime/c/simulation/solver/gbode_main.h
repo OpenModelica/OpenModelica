@@ -50,7 +50,6 @@
 #include "../results/simulation_result.h"
 #include "epsilon.h"
 #include "jacobianSymbolical.h"
-#include "kinsolSolver.h"
 #include "model_help.h"
 #include "newtonIteration.h"
 #include "nonlinearSystem.h"
@@ -131,6 +130,8 @@ typedef struct DATA_GBODE{
   double *yLeft, *kLeft, *yRight, *kRight;          /* Needed for interpolation of the slow states and emitting to the result files */
   double *yOld;                                     /* State vector of last Runge-Kutta step */
   double *f;                                        /* State derivatives of ODE for initialization */
+  double *yLast;                                    /* Vector y of states at start of previous interval */
+  double *kLast;                                    /* Vector k of stage updates for the previous interval */
   double *k;                                        /* Vector k of derivatives of states with result of intermediate steps of Runge-Kutta method */
   double *x;                                        /* Vector x of states with result of intermediate steps of Runge-Kutta method */
                                                         // k_{i}=f(t_{n}+c_{i}*h, y_{n}+h\sum _{j=1}^{s}a_{ij}*k_{j}),    i=1, ... ,s
@@ -145,6 +146,8 @@ typedef struct DATA_GBODE{
   double err_slow, err_fast, err_int;               /* error of the slow, fast states and a preiction of the interpolation error */
   double percentage;                                /* percentage of fast states */
   double time, timeLeft, timeRight, eventTime;      /* actual time values and the time values of the current interpolation interval and for dense output */
+  double extrapolationStepSize;                     /* last step size for extrapolation / in sync with yLast and kLast */
+  double extrapolationBaseTime;                     /* base time for extrapolation / in sync with yLast and kLast */
   double stepSize, lastStepSize, optStepSize;       /* actual, last, and optimal step size of integration */
   double maxStepSize;                               /* maximal step size of integration */
   double initialStepSize;                           /* initial step size of integration */

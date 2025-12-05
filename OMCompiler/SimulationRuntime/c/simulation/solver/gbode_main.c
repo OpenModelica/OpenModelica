@@ -45,6 +45,7 @@
 #include "gbode_ctrl.h"
 #include "gbode_events.h"
 #include "gbode_nls.h"
+#include "gbode_internal_nls.h"
 #include "gbode_sparse.h"
 #include "gbode_step.h"
 #include "gbode_util.h"
@@ -376,6 +377,10 @@ int gbode_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solver
 
   gbData->isFirstStep = TRUE;
 
+  /* mark initial extrapolation data as invalid () */
+  gbData->extrapolationBaseTime = INFINITY;
+  gbData->extrapolationStepSize = 0.0;
+
   /* Allocate internal memory */
   gbData->y         = malloc(sizeof(double) * gbData->nStates);
   gbData->yOld      = malloc(sizeof(double) * gbData->nStates);
@@ -383,6 +388,8 @@ int gbode_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solver
   gbData->kLeft     = malloc(sizeof(double) * gbData->nStates);
   gbData->yRight    = malloc(sizeof(double) * gbData->nStates);
   gbData->kRight    = malloc(sizeof(double) * gbData->nStates);
+  gbData->kLast     = malloc(sizeof(double) * gbData->nStates * gbData->tableau->nStages);
+  gbData->yLast     = malloc(sizeof(double) * gbData->nStates);
   gbData->yt        = malloc(sizeof(double) * gbData->nStates);
   gbData->y1        = malloc(sizeof(double) * gbData->nStates);
   gbData->y2        = malloc(sizeof(double) * gbData->nStates);
@@ -619,8 +626,10 @@ void gbode_freeData(DATA* data, DATA_GBODE *gbData)
   /* Free remaining arrays */
   free(gbData->y);
   free(gbData->yOld);
+  free(gbData->yLast);
   free(gbData->yLeft);
   free(gbData->kLeft);
+  free(gbData->kLast);
   free(gbData->yRight);
   free(gbData->kRight);
   free(gbData->yt);
@@ -879,10 +888,10 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
 
       // error handling: try half of the step size!
       if (integrator_step_info != 0) {
-        (gbfData->stats).nConvergenveTestFailures++;
-        infoStreamPrint(OMC_LOG_SOLVER, 0, "gbodef_main: Failed to calculate step at time = %5g.", gbfData->time);
+        (gbfData->stats).nConvergenceTestFailures++;
+        if (OMC_ACTIVE_STREAM(OMC_LOG_SOLVER)) infoStreamPrint(OMC_LOG_SOLVER, 0, "gbodef_main: Failed to calculate step at time = %5g with step size h = %5g.", gbData->time, gbData->stepSize);
         gbfData->stepSize *= 0.5;
-        infoStreamPrint(OMC_LOG_SOLVER, 0, "Try half of the step size = %g", gbfData->stepSize);
+        if (OMC_ACTIVE_STREAM(OMC_LOG_SOLVER)) infoStreamPrint(OMC_LOG_SOLVER, 0, "Try half of the step size = %g", gbfData->stepSize);
         if (gbfData->stepSize < GB_MINIMAL_STEP_SIZE) {
           errorStreamPrint(OMC_LOG_STDOUT, 0, "Simulation aborted! Minimum step size %g reached, but error still to large.", GB_MINIMAL_STEP_SIZE);
           messageClose(OMC_LOG_SOLVER);  // FIXME what does this belong to?
@@ -892,15 +901,16 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
         continue;
       }
 
+      /* use same error estimate (scaled 2-norm) as for the SR case */
       for (i = 0, err=0; i < nFastStates; i++) {
         ii = gbData->fastStatesIdx[i];
         // calculate corresponding values for the error estimator and step size control
-        gbfData->errtol[ii] = Rtol * fmax(fabs(gbfData->y[ii]), fabs(gbfData->yt[ii])) + Atol;
+        gbfData->errtol[ii] = Atol * data->modelData->realVarsData[ii].attribute.nominal + fmax(fabs(gbfData->y[ii]), fabs(gbfData->yt[ii])) * Rtol;
         gbfData->errest[ii] = fabs(gbfData->y[ii] - gbfData->yt[ii]);
-        gbfData->err[ii] = gbfData->tableau->fac * gbfData->errest[ii] / gbfData->errtol[ii];
-        err = fmax(err, gbfData->err[ii]);
+        gbfData->err[ii] = gbData->tableau->fac * gbfData->errest[ii] / gbfData->errtol[ii];
+        err += gbfData->err[ii] * gbfData->err[ii];
       }
-
+      err = sqrt(err / (double) nFastStates);
       gbData->err_fast = err;
 
       // Rotate and update buffer
@@ -1104,6 +1114,15 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
   double stopTime = data->simulationInfo->stopTime;
   double Atol = data->simulationInfo->tolerance;
   double Rtol = Atol;
+
+  if (gbData->nlsSolverMethod == GB_NLS_INTERNAL)
+  {
+    // use internal tolerances, beneficial for superconvergent methods Gauss, Radau, Lobatto
+    // TODO: How does this work for Richardson????
+    Tolerances *internal_tolerances = gbInternalNlsGetScaledTolerances(((struct dataSolver *)gbData->nlsData->solverData)->ordinaryData);
+    Atol = internal_tolerances->atol;
+    Rtol = internal_tolerances->rtol;
+  }
 
   int nStates = gbData->nStates;
   int nStages = gbData->tableau->nStages;
@@ -1332,10 +1351,10 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
       //
       // If none of the abort conditions occur, the loop continues to retry with the reduced step size.
       if (gb_step_info != 0) {
-        gbData->stats.nConvergenveTestFailures++;
-        infoStreamPrint(OMC_LOG_STDOUT, 0, "gbode_main: Failed to calculate step at time = %5g.", gbData->time + gbData->stepSize);
+        gbData->stats.nConvergenceTestFailures++;
+        if (OMC_ACTIVE_STREAM(OMC_LOG_SOLVER)) infoStreamPrint(OMC_LOG_SOLVER, 0, "gbode_main: Failed to calculate step at time = %5g with step size h = %5g.", gbData->time, gbData->stepSize);
         if (gbData->ctrl_method == GB_CTRL_CNST) {
-          errorStreamPrint(OMC_LOG_STDOUT, 0, "Simulation aborted since gbode is running with fixed step size!");
+          errorStreamPrint(OMC_LOG_STDOUT, 0, "Simulation aborted since gbode is running with fixed step size and step calculation has failed at time = %5g with step size h = %5g.", gbData->time, gbData->stepSize);
           messageClose(OMC_LOG_SOLVER);
           return -1;
         } else {
@@ -1347,7 +1366,7 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
             // dump fast states in file
             dumpFastStates_gb(gbData, FALSE, gbData->time + gbData->stepSize, 3);
           }
-          infoStreamPrint(OMC_LOG_STDOUT, 0, "Try half of the step size = %g", gbData->stepSize);
+          if (OMC_ACTIVE_STREAM(OMC_LOG_SOLVER)) infoStreamPrint(OMC_LOG_SOLVER, 0, "Try half of the step size = %g", gbData->stepSize);
           if (gbData->stepSize < GB_MINIMAL_STEP_SIZE) {
             errorStreamPrint(OMC_LOG_STDOUT, 0, "Simulation aborted! Minimum step size %g reached, but error still to large.", GB_MINIMAL_STEP_SIZE);
             messageClose(OMC_LOG_SOLVER);
@@ -1358,19 +1377,20 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
       }
 
       // Calculate error estimators and tolerance scaling for each state variable
-      for (i = 0; i < nStates; i++) {
-        // Compute error tolerance for the i-th state based on relative and absolute tolerances:
-        // errtol = Rtol * max(|current state|, |previous state|) + Atol
-        gbData->errtol[i] = Rtol * fmax(fabs(gbData->y[i]), fabs(gbData->yOld[i])) + Atol;
-        // TODO make errtol and errest local variables
+      // Compute error tolerance for the i-th state based on relative and absolute tolerances:
+      // errtol = Rtol * max(|current state|, |previous state|) + Atol * nominal(state)
+      // TODO: make errtol and errest local variables
 
-        // Calculate the estimated local error as the absolute difference between
-        // the current state approximation and its second approximation.
+      for (i = 0, err=0; i < nStates; i++) {
+        // calculate corresponding values for the error estimator and step size control
+        gbData->errtol[i] = Atol * data->modelData->realVarsData[i].attribute.nominal + fmax(fabs(gbData->y[i]), fabs(gbData->yt[i])) * Rtol;
         gbData->errest[i] = fabs(gbData->y[i] - gbData->yt[i]);
-
-        // Compute the scaled error using a tableau-specific factor, to be used in step size control.
         gbData->err[i] = gbData->tableau->fac * gbData->errest[i] / gbData->errtol[i];
+        err += gbData->err[i] * gbData->err[i];
       }
+
+      err = sqrt(err / (double) nStates);
+
       if (gbData->multi_rate) {
         // Multi-rate integration enabled:
         //
@@ -1422,10 +1442,6 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
             gbData->err_slow = fmax(gbData->err_slow, gbData->err[i]);
           }
         }
-      } else {
-        // If multi-rate is not enabled, use the maximum norm of the error vector over all states.
-        err_states = _omc_gen_maximumVectorNorm(gbData->err, nStates);
-        err = err_states;
       }
 
       // Reject the current integration step if the estimated error exceeds the tolerance,
@@ -1583,6 +1599,10 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
         retries = 0;
       }
 
+      /* remember last time values for dense output extrapolation with yLast, kLast */
+      gbData->extrapolationBaseTime = gbData->time;
+      gbData->extrapolationStepSize = gbData->stepSize;
+
       // Rotate the error and step size ring buffers to make room for the latest values.
       // The oldest entries are shifted one position towards the end,
       // and the newest error and step size values are stored at the front (index 0).
@@ -1597,7 +1617,6 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
 
       // Update the step size using the step size controller
       gbData->lastStepSize = gbData->stepSize;  // Save the current step size before updating
-
       // Calculate a new step size based on recent error and step size history,
       // the method’s error order, and the control method in use
       gbData->stepSize *= GenericController(gbData->errValues, gbData->stepSizeValues, gbData->tableau->error_order, gbData->ctrl_method);
@@ -1734,6 +1753,10 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
     /* update time with performed stepSize */
     gbData->time = gbData->timeRight;
 
+    /* remember kLast and yLast for dense output extrapolation */
+    memcpy(gbData->kLast, gbData->k, nStates * nStages * sizeof(double));
+    memcpy(gbData->yLast, gbData->yOld, nStates * sizeof(double));
+
     /* step is accepted and yOld needs to be updated */
     memcpy(gbData->yOld, gbData->yRight, nStates * sizeof(double));
 
@@ -1857,7 +1880,7 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
                                           && solverInfo->currentTime >= data->simulationInfo->nextSampleEvent;
 
   /* Solver statistics */
-  if (!gbData->isExplicit)
+  if (!gbData->isExplicit && gbData->nlsSolverMethod != GB_NLS_INTERNAL)
     gbData->stats.nCallsJacobian = gbData->nlsData->numberOfJEval;
   if (!solverInfo->solverNoEquidistantGrid && fabs(targetTime - stopTime) < GB_MINIMAL_STEP_SIZE && OMC_ACTIVE_STREAM(OMC_LOG_STATS)) {
     if (gbData->multi_rate) {
@@ -1874,5 +1897,6 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
   memcpy(&solverInfo->solverStatsTmp, &gbData->stats, sizeof(SOLVERSTATS));
 
   messageClose(OMC_LOG_SOLVER);
+
   return 0;
 }

@@ -1066,7 +1066,7 @@ int ida_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInf
   tmp = 0;
   flag = IDAGetNumNonlinSolvConvFails(idaData->ida_mem, &tmp);
   checkReturnFlag_SUNDIALS(flag, SUNDIALS_IDA_FLAG, "IDAGetNumNonlinSolvConvFails");
-  solverInfo->solverStatsTmp.nConvergenveTestFailures = tmp;
+  solverInfo->solverStatsTmp.nConvergenceTestFailures = tmp;
 
   /* get more statistics */
   if (omc_useStream[OMC_LOG_SOLVER_V])

@@ -978,6 +978,7 @@ const char *GB_METHOD_NAME[RK_MAX] = {
   /* RK_TRAPEZOID */     "trapezoid",
   /* RK_SDIRK2 */        "sdirk2",
   /* RK_SDIRK3 */        "sdirk3",
+  /* RK_SDIRK4 */        "sdirk4",
   /* RK_ESDIRK2 */       "esdirk2",
   /* RK_ESDIRK3 */       "esdirk3",
   /* RK_ESDIRK4 */       "esdirk4",
@@ -1026,6 +1027,7 @@ const char *GB_METHOD_DESC[RK_MAX] = {
   /* RK_TRAPEZOID */     "Implicit Runge-Kutta trapezoid method (order 2)",
   /* RK_SDIRK2 */        "Singly-diagonal implicit Runge-Kutta (order 2)",
   /* RK_SDIRK3 */        "Singly-diagonal implicit Runge-Kutta (order 3)",
+  /* RK_SDIRK4 */        "Singly-diagonal implicit Runge-Kutta (order 4)",
   /* RK_ESDIRK2 */       "Explicit singly-diagonal implicit Runge-Kutta (order 2)",
   /* RK_ESDIRK3 */       "Explicit singly-diagonal implicit Runge-Kutta (order 3)",
   /* RK_ESDIRK4 */       "Explicit singly-diagonal implicit Runge-Kutta (order 4)",
@@ -1070,14 +1072,16 @@ const char *GB_NLS_METHOD_NAME[GB_NLS_MAX] = {
   /* GB_NLS_UNKNOWN = 0*/ "unknown",
   /* GB_NLS_NEWTON */     "newton",
   /* GB_NLS_KINSOL */     "kinsol",
-  /* GB_NLS_KINSOL_B */   "experimental-kinsol"
+  /* GB_NLS_KINSOL_B */   "experimental-kinsol",
+  /* GB_NLS_INTERNAL */   "internal"
 };
 
 const char *GB_NLS_METHOD_DESC[GB_NLS_MAX] = {
   /* GB_NLS_UNKNOWN = 0*/ "unknown",
   /* GB_NLS_NEWTON */     "Newton method, dense",
   /* GB_NLS_KINSOL */     "SUNDIALS KINSOL: Inexact Newton, sparse",
-  /* GB_NLS_KINSOL_B */   "experimental kinsol"
+  /* GB_NLS_KINSOL_B */   "experimental kinsol",
+  /* GB_NLS_INTERNAL */   "Internal simplified Newton iteration with decoupling transformation (uses KLU)"
 };
 
 const char *GB_CTRL_METHOD_NAME[GB_CTRL_MAX] = {
