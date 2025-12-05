@@ -32,6 +32,7 @@
 #include "util/omc_file.h"
 #include "simulation_data.h"
 #include "openmodelica_func.h"
+#include "simulation/arrayIndex.h"
 #include "simulation/solver/external_input.h"
 #include "simulation/options.h"
 #include "simulation/solver/model_help.h"
@@ -199,8 +200,9 @@ int functionJacAC_num(DATA* data, threadData_t *threadData, double *matrixA, dou
     x = data->localData[0]->realVars;
 
     /* use actually value for xScaling */
-    for (i=0;i<size_A;i++){
-        xScaling[i] = fmax(data->modelData->realVarsData[i].attribute.nominal,fabs(x[i]));
+    for (i = 0; i < size_A; i++) {
+        modelica_real nominal = getNominalFromScalarIdx(data->simulationInfo, data->modelData, i);
+        xScaling[i] = fmax(nominal, fabs(x[i]));
     }
 
     /* solverData->f1 must be set outside this function based on x */

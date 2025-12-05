@@ -28,6 +28,8 @@
  *
  */
 
+#include "arrayIndex.h"
+
 #include "dae_mode.h"
 
 #ifdef __cplusplus
@@ -83,7 +85,7 @@ void getAlgebraicDAEVarNominals(DATA* data, double *algebraicNominals)
 
   DAEMODE_DATA* daeModeData = data->simulationInfo->daeModeData;
   for(i=0; i < daeModeData->nAlgebraicDAEVars; i++){
-    algebraicNominals[i] = data->modelData->realVarsData[daeModeData->algIndexes[i]].attribute.nominal;
+    algebraicNominals[i] = getNominalFromScalarIdx(data->simulationInfo, data->modelData, daeModeData->algIndexes[i]);
   }
 }
 

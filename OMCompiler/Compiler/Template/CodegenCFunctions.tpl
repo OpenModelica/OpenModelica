@@ -7907,7 +7907,7 @@ template initializeStaticLSVars(list<SimVar> vars, Integer index)
       <%indices%>
     };
     for (int i = 0; i < <%len%>; ++i) {
-      linearSystemData->nominal[i] = data->modelData->realVarsData[indices[i]].attribute.nominal;
+      linearSystemData->nominal[i] = getNominalFromScalarIdx(data->simulationInfo, data->modelData, indices[i]);
       linearSystemData->min[i]     = data->modelData->realVarsData[indices[i]].attribute.min;
       linearSystemData->max[i]     = data->modelData->realVarsData[indices[i]].attribute.max;
     }

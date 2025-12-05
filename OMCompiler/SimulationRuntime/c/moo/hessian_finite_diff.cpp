@@ -33,6 +33,8 @@
 #include <iomanip>
 #include <vector>
 
+#include "simulation/arrayIndex.h"
+
 #include "hessian_finite_diff.h"
 
 /**
@@ -302,7 +304,7 @@ void eval_hessian_fwd_differences(DATA* data, threadData_t* threadData, HESSIAN_
             ws_oldX[col] = data->localData[0]->realVars[realVarsIndex];
 
             /* create perturbation size based on nominals and current entry */
-            const modelica_real nom = data->modelData->realVarsData[realVarsIndex].attribute.nominal;
+            const modelica_real nom = getNominalFromScalarIdx(data->simulationInfo, data->modelData, realVarsIndex);
             ws_h[col] = h * (1.0 + fmax(ws_oldX[col], nom));
             if (ws_oldX[col] + ws_h[col] > data->modelData->realVarsData[realVarsIndex].attribute.max) {
                 ws_h[col] *= -1.0;

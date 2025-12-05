@@ -518,7 +518,6 @@ size_t read_str(const char* str,  real_array* array, size_t num_elements) {
  * @param default_value
  */
 void read_array_var_real(real_array* array, const char* str, modelica_real default_value) {
-
   size_t length;
 
   length = read_str(str, NULL, 0);
@@ -543,18 +542,19 @@ static void read_var_attribute_real(omc_ModelVariable *var_map, REAL_ATTRIBUTE *
   read_array_var_real(&attribute->start, findHashStringStringEmpty(var_map, "start"), 0.0);
   attribute->fixed = read_value_bool(findHashStringString(var_map, "fixed"));
   attribute->useNominal = read_value_bool(findHashStringString(var_map, "useNominal"));
-  attribute->nominal = read_value_real_default(findHashStringStringEmpty(var_map, "nominal"), 1.0);
+  read_array_var_real(&attribute->nominal, findHashStringStringEmpty(var_map, "nominal"), 1.0);
   attribute->min = read_value_real_default(findHashStringStringEmpty(var_map, "min"), REAL_MIN);
   attribute->max = read_value_real_default(findHashStringStringEmpty(var_map, "max"), REAL_MAX);
   attribute->unit = read_value_string(findHashStringStringEmpty(var_map, "unit"));
   attribute->displayUnit = read_value_string(findHashStringStringEmpty(var_map, "displayUnit"));
 
   infoStreamPrint(OMC_LOG_DEBUG, 0,
-                  "Real %s(start=%s, fixed=%s, %snominal=%g%s, min=%g, max=%g)",
+                  "Real %s(start=%s, fixed=%s, useNominal=%s, nominal=%s, min=%g, max=%g)",
                   findHashStringString(var_map, "name"),
                   real_vector_to_string(&attribute->start, isArrayVar),
                   (attribute->fixed) ? "true" : "false",
-                  (attribute->useNominal) ? "" : "{", attribute->nominal, attribute->useNominal ? "" : "}",
+                  (attribute->useNominal) ? "true" : "false",
+                  real_vector_to_string(&attribute->nominal, isArrayVar),
                   attribute->min,
                   attribute->max);
 }

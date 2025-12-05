@@ -154,7 +154,8 @@ int prefixedName_performQSSSimulation(DATA* data, threadData_t *threadData, SOLV
   diffQ = 0.0; dTnextQ = 0.0; nextQ = 0.0;
   for (i = 0; i < STATES; i++)
   {
-    dQ[i] = 0.0001 * data->modelData->realVarsData[i].attribute.nominal;
+    const modelica_real nominal = getNominalFromScalarIdx(data->simulationInfo, data->modelData, i);
+    dQ[i] = 0.0001 * nominal;
     tx[i] = tq[i] = simInfo->startTime;
     qik[i] = state[i];
     xik[i] = state[i];
