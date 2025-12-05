@@ -39,6 +39,7 @@
 #include "../../util/context.h"
 #include "../options.h"
 #include "../solver/external_input.h"
+#include "arrayIndex.h"
 #include "model_help.h"
 #include "omc_math.h"
 
@@ -573,7 +574,8 @@ int cvode_solver_initial(DATA *data, threadData_t *threadData, SOLVER_INFO *solv
   assertStreamPrint(threadData, abstol_tmp != NULL, "Out of memory.");
   for (i = 0; i < cvodeData->N; ++i)
   {
-    abstol_tmp[i] = fmax(fabs(data->modelData->realVarsData[i].attribute.nominal), 1e-32) * data->simulationInfo->tolerance;
+    const modelica_real nominal = getNominalFromScalarIdx(data->simulationInfo, data->modelData, i);
+    abstol_tmp[i] = fmax(fabs(nominal), 1e-32) * data->simulationInfo->tolerance;
   }
   cvodeData->absoluteTolerance = N_VMake_Serial(cvodeData->N, abstol_tmp);
   assertStreamPrint(threadData, NULL != cvodeData->absoluteTolerance, "SUNDIALS_ERROR: N_VMake_Serial failed - returned NULL pointer.");

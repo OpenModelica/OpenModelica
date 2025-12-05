@@ -34,9 +34,11 @@
 #include "../../meta/meta_modelica.h"
 #include "../../openmodelica_types.h"
 #include "../../openmodelica.h"
+#include "../../simulation/arrayIndex.h"
 #include "../../simulation/options.h"
 #include "../../simulation/results/simulation_result.h"
 #include "../../simulation/solver/model_help.h"
+#include "../../util/real_array.h"
 #include "../../util/context.h"
 #include "../../util/omc_file.h"
 #include "../OptimizerData.h"
@@ -379,12 +381,14 @@ static inline void pickUpBounds(OptDataBounds * bounds, OptDataDim * dim, DATA* 
   for(i = 0; i < nx; ++i){
     min = data->modelData->realVarsData[i].attribute.min;
     max = data->modelData->realVarsData[i].attribute.max;
-    nominal = data->modelData->realVarsData[i].attribute.nominal;
+    nominal = getNominalFromScalarIdx(data->simulationInfo, data->modelData, i);
     nominalWasSet = data->modelData->realVarsData[i].attribute.useNominal;
     x0 = data->localData[1]->realVars[i];
 
     check_nominal(bounds, min, max, nominal, nominalWasSet, i, x0);
-    data->modelData->realVarsData[i].attribute.nominal = bounds->vnom[i];
+    // TODO: modelData shouldn't be updated, use a copy of the nominal values instead
+    array_index_t* revIndex = &data->simulationInfo->realVarsReverseIndex[i];
+    put_real_element(bounds->vnom[i], revIndex->dim_idx, &data->modelData->realVarsData[revIndex->array_idx].attribute.nominal);
     bounds->scalF[i] = 1.0/bounds->vnom[i];
     bounds->vmin[i] = min * bounds->scalF[i];
     bounds->vmax[i] = max * bounds->scalF[i];

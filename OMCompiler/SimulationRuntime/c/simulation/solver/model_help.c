@@ -1027,6 +1027,10 @@ void initializeDataStruc(DATA *data, threadData_t *threadData)
   data->modelData->nAliasBoolean = data->simulationInfo->booleanAliasIndex[data->modelData->nAliasBooleanArray];
   data->modelData->nAliasString  = data->simulationInfo->stringAliasIndex[data->modelData->nAliasStringArray];
 
+  /* Reverse map for scalarized variables */
+  allocateArrayReverseIndexMaps(data->modelData, data->simulationInfo, threadData);
+  computeVarReverseIndices(data->simulationInfo, data->modelData);
+
   /* prepare RingBuffer */
   for (i = 0; i < SIZERINGBUFFER; i++) {
     /* set time value */
@@ -1293,6 +1297,7 @@ void deInitializeDataStruc(DATA *data)
   free(data->simulationInfo->states_right);
 
   freeArrayIndexMaps(data->simulationInfo);
+  freeArrayReverseIndexMaps(data->simulationInfo);
 
   /* free buffer for old state variables */
   free(data->simulationInfo->realVarsOld);

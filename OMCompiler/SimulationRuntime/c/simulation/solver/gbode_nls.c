@@ -39,6 +39,7 @@
 
 #include "../../simulation_data.h"
 
+#include "arrayIndex.h"
 #include "solver_main.h"
 #include "kinsolSolver.h"
 #include "kinsol_b.h"
@@ -82,7 +83,8 @@ void initializeStaticNLSData_SR(DATA* data, threadData_t *threadData, NONLINEAR_
 {
   for (int i = 0; i < nonlinsys->size; i++) {
     // Get the nominal values of the states
-    nonlinsys->nominal[i] = fmax(fabs(data->modelData->realVarsData[i].attribute.nominal), 1e-32);
+    const modelica_real nominal = getNominalFromScalarIdx(data->simulationInfo, data->modelData, i);
+    nonlinsys->nominal[i] = fmax(fabs(nominal), 1e-32);
     nonlinsys->min[i]     = data->modelData->realVarsData[i].attribute.min;
     nonlinsys->max[i]     = data->modelData->realVarsData[i].attribute.max;
   }
@@ -109,7 +111,8 @@ void initializeStaticNLSData_MR(DATA* data, threadData_t *threadData, NONLINEAR_
   // This needs to be done each time, the fast states change!
   for (int i = 0; i < nonlinsys->size; i++) {
     // Get the nominal values of the states
-    nonlinsys->nominal[i] = fmax(fabs(data->modelData->realVarsData[i].attribute.nominal), 1e-32);
+    const modelica_real nominal = getNominalFromScalarIdx(data->simulationInfo, data->modelData, i);
+    nonlinsys->nominal[i] = fmax(fabs(nominal), 1e-32);
     nonlinsys->min[i]     = data->modelData->realVarsData[i].attribute.min;
     nonlinsys->max[i]     = data->modelData->realVarsData[i].attribute.max;
   }
@@ -137,7 +140,8 @@ void initializeStaticNLSData_IRK(DATA* data, threadData_t *threadData, NONLINEAR
   for (int i = 0; i < nonlinsys->size; i++) {
     // Get the nominal values of the states, the non-linear system has size stages*nStates, i.e. [states, states, ...]
     int ii = i % data->modelData->nStates;
-    nonlinsys->nominal[i] = fmax(fabs(data->modelData->realVarsData[ii].attribute.nominal), 1e-32);
+    const modelica_real nominal = getNominalFromScalarIdx(data->simulationInfo, data->modelData, ii);
+    nonlinsys->nominal[i] = fmax(fabs(nominal), 1e-32);
     nonlinsys->min[i]     = data->modelData->realVarsData[ii].attribute.min;
     nonlinsys->max[i]     = data->modelData->realVarsData[ii].attribute.max;
   }

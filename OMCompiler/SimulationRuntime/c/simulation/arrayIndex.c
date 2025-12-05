@@ -111,6 +111,79 @@ void freeArrayIndexMaps(SIMULATION_INFO *simulationInfo)
 }
 
 /**
+ * @brief Allocate memory for reverse index maps.
+ *
+ * Free with `freeArrayReverseIndexMaps`.
+ *
+ * @param modelData         Model data containing number of scalarized variables.
+ * @param simulationInfo    Simulation information with reverse index arrays to
+ *                          allocate memory for.
+ * @param threadData        Thread data for error handling.
+ */
+void allocateArrayReverseIndexMaps(MODEL_DATA *modelData,
+                                   SIMULATION_INFO *simulationInfo,
+                                   threadData_t *threadData)
+{
+  // Variables
+  simulationInfo->realVarsReverseIndex = (array_index_t *)calloc(modelData->nVariablesReal, sizeof(array_index_t));
+  assertStreamPrint(threadData, simulationInfo->realVarsReverseIndex != NULL, "Out of memory");
+  simulationInfo->integerVarsReverseIndex = (array_index_t *)calloc(modelData->nVariablesInteger, sizeof(array_index_t));
+  assertStreamPrint(threadData, simulationInfo->integerVarsReverseIndex != NULL, "Out of memory");
+  simulationInfo->booleanVarsReverseIndex = (array_index_t *)calloc(modelData->nVariablesBoolean, sizeof(array_index_t));
+  assertStreamPrint(threadData, simulationInfo->booleanVarsReverseIndex != NULL, "Out of memory");
+  simulationInfo->stringVarsReverseIndex = (array_index_t *)calloc(modelData->nVariablesString, sizeof(array_index_t));
+  assertStreamPrint(threadData, simulationInfo->stringVarsReverseIndex != NULL, "Out of memory");
+
+  // Parameters
+  simulationInfo->realParamsReverseIndex = (array_index_t *)calloc(modelData->nParametersReal, sizeof(array_index_t));
+  assertStreamPrint(threadData, simulationInfo->realParamsReverseIndex != NULL, "Out of memory");
+  simulationInfo->integerParamsReverseIndex = (array_index_t *)calloc(modelData->nParametersInteger, sizeof(array_index_t));
+  assertStreamPrint(threadData, simulationInfo->integerParamsReverseIndex != NULL, "Out of memory");
+  simulationInfo->booleanParamsReverseIndex = (array_index_t *)calloc(modelData->nParametersBoolean, sizeof(array_index_t));
+  assertStreamPrint(threadData, simulationInfo->booleanParamsReverseIndex != NULL, "Out of memory");
+  simulationInfo->stringParamsReverseIndex = (array_index_t *)calloc(modelData->nParametersString, sizeof(array_index_t));
+  assertStreamPrint(threadData, simulationInfo->stringParamsReverseIndex != NULL, "Out of memory");
+
+  // Alias variables
+  simulationInfo->realAliasReverseIndex = (array_index_t *)calloc(modelData->nAliasReal, sizeof(array_index_t));
+  assertStreamPrint(threadData, simulationInfo->realAliasReverseIndex != NULL, "Out of memory");
+  simulationInfo->integerAliasReverseIndex = (array_index_t *)calloc(modelData->nAliasInteger, sizeof(array_index_t));
+  assertStreamPrint(threadData, simulationInfo->integerAliasReverseIndex != NULL, "Out of memory");
+  simulationInfo->booleanAliasReverseIndex = (array_index_t *)calloc(modelData->nAliasBoolean, sizeof(array_index_t));
+  assertStreamPrint(threadData, simulationInfo->booleanAliasReverseIndex != NULL, "Out of memory");
+  simulationInfo->stringAliasReverseIndex = (array_index_t *)calloc(modelData->nAliasString, sizeof(array_index_t));
+  assertStreamPrint(threadData, simulationInfo->stringAliasReverseIndex != NULL, "Out of memory");
+}
+
+/**
+ * @brief Free memory of reverse variable index maps.
+ *
+ * Free memory allocated by `allocateArrayReverseIndexMaps`.
+ *
+ * @param simulationInfo    Simulation info with reverse index arrays to free.
+ */
+void freeArrayReverseIndexMaps(SIMULATION_INFO *simulationInfo)
+{
+  // Variables
+  free(simulationInfo->realVarsReverseIndex);
+  free(simulationInfo->integerVarsReverseIndex);
+  free(simulationInfo->booleanVarsReverseIndex);
+  free(simulationInfo->stringVarsReverseIndex);
+
+  // Parameters
+  free(simulationInfo->realParamsReverseIndex);
+  free(simulationInfo->integerParamsReverseIndex);
+  free(simulationInfo->booleanParamsReverseIndex);
+  free(simulationInfo->stringParamsReverseIndex);
+
+  // Alias variables
+  free(simulationInfo->realAliasReverseIndex);
+  free(simulationInfo->integerAliasReverseIndex);
+  free(simulationInfo->booleanAliasReverseIndex);
+  free(simulationInfo->stringAliasReverseIndex);
+}
+
+/**
  * @brief Get parameter by ID.
  *
  * @param id                    Identifier (value reference) to search for.
@@ -572,4 +645,76 @@ void computeVarIndices(SIMULATION_INFO *simulationInfo,
   computeAliasIndex(simulationInfo->integerAliasIndex, modelData->nAliasIntegerArray);
   computeAliasIndex(simulationInfo->booleanAliasIndex, modelData->nAliasBooleanArray);
   computeAliasIndex(simulationInfo->stringAliasIndex, modelData->nAliasStringArray);
+}
+
+/**
+ * @brief Compute variable reverse index map of one type.
+ *
+ * Compute where a variable `SIMULATION_DATA-><TYPE>Vars` originates from in
+ * `MODEL_DATA-><TYPE>VarsData`. So for every scalarized index this functions
+ * computes a look up to get the index of the corresponding scalar/ array
+ * varible and the index inside the array variable.
+ *
+ * @param variableData    Model variable data. Is of type `STATIC_REAL_DATA*`,
+ *                        `STATIC_INTEGER_DATA*`, `STATIC_BOOLEAN_DATA*` or
+ *                        `STATIC_STRING_DATA*`.
+ * @param type            Specifies type of model variable `variableData`.
+ * @param num_variables   Number of variables after flattening.
+ * @param reverseIndex    Variable reverse index to compute.
+ */
+void computeVarsReverseIndex(void *variableData,
+                             enum var_type type,
+                             size_t num_variables,
+                             array_index_t* reverseIndex) {
+
+  size_t scalar_length;
+  size_t i = 0;
+
+  for (size_t var_count = 0; var_count < num_variables; var_count++)
+  {
+    switch (type)
+    {
+    case T_REAL:
+      scalar_length = ((STATIC_REAL_DATA *)variableData)[i].dimension.scalar_length;
+      break;
+    case T_INTEGER:
+      scalar_length = ((STATIC_INTEGER_DATA *)variableData)[i].dimension.scalar_length;
+      break;
+    case T_BOOLEAN:
+      scalar_length = ((STATIC_BOOLEAN_DATA *)variableData)[i].dimension.scalar_length;
+      break;
+    case T_STRING:
+      scalar_length = ((STATIC_STRING_DATA *)variableData)[i].dimension.scalar_length;
+      break;
+    default:
+      throwStreamPrint(NULL, "computeVarsIndex: Illegal variable type case.");
+    }
+
+    for (size_t dim = 0; dim < scalar_length; dim++, i++) {
+      reverseIndex[i].array_idx = var_count;
+      reverseIndex[i].dim_idx = dim;
+    }
+  }
+}
+/**
+ * @brief Compute all mappings for scalarized variables to array variables.
+ *
+ * TODO: Add rest
+ *
+ * @param simulationInfo  Simulation info with index maps to set.
+ * @param modelData       Model data with number of variables.
+ */
+void computeVarReverseIndices(SIMULATION_INFO *simulationInfo,
+                              MODEL_DATA *modelData) {
+
+  // Variables
+  computeVarsReverseIndex(modelData->realVarsData, T_REAL, modelData->nVariablesReal, simulationInfo->realVarsReverseIndex);
+}
+
+
+modelica_real getNominalFromScalarIdx(const SIMULATION_INFO *simulationInfo,
+                                      const MODEL_DATA *modelData,
+                                      size_t scalar_idx) {
+  array_index_t* revIndex = &simulationInfo->realVarsReverseIndex[scalar_idx];
+  return real_get(modelData->realVarsData[revIndex->array_idx].attribute.nominal, revIndex->dim_idx);
 }

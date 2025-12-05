@@ -46,7 +46,7 @@
 #include "util/omc_error.h"
 #include "util/parallel_helper.h"
 
-#include "dassl.h"
+#include "arrayIndex.h"
 #include "epsilon.h"
 #include "external_input.h"
 #include "jacobianSymbolical.h"
@@ -57,6 +57,8 @@
 #include "simulation/results/simulation_result.h"
 #include "simulation/simulation_runtime.h"
 #include "solver_main.h"
+
+#include "dassl.h"
 
 #define UNUSED(x) (void)(x)   /* Surpress compiler warnings for unused function input */
 
@@ -219,8 +221,9 @@ int dassl_initial(DATA* data, threadData_t *threadData,
   infoStreamPrint(OMC_LOG_SOLVER, 1, "The relative tolerance is %g. Following absolute tolerances are used for the states: ", data->simulationInfo->tolerance);
   for(i=0; i<dasslData->N; ++i)
   {
+    const modelica_real nominal = getNominalFromScalarIdx(data->simulationInfo, data->modelData, i);
     dasslData->rtol[i] = data->simulationInfo->tolerance;
-    dasslData->atol[i] = data->simulationInfo->tolerance * fmax(fabs(data->modelData->realVarsData[i].attribute.nominal), 1e-32);
+    dasslData->atol[i] = data->simulationInfo->tolerance * fmax(fabs(nominal), 1e-32);
     infoStreamPrint(OMC_LOG_SOLVER_V, 0, "%d. %s -> %g", i+1, data->modelData->realVarsData[i].info.name, dasslData->atol[i]);
   }
   messageClose(OMC_LOG_SOLVER);

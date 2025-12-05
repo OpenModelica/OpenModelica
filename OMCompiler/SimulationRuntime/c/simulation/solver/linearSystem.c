@@ -756,10 +756,11 @@ int check_linear_solution(DATA *data, int printFailingSystems, int sysNumber)
         if (!strcmp(mData->realVarsData[k].info.name, modelInfoGetEquation(&data->modelData->modelDataXml, (linsys[i]).equationIndex).vars[j]))
         {
         done = 1;
-        warningStreamPrint(OMC_LOG_LS, 0, "[%ld] Real %s(start=%s, nominal=%g)", j+1,
+        warningStreamPrint(OMC_LOG_LS, 0, "[%ld] Real %s(start=%s, nominal=%s)",
+                                     j+1,
                                      mData->realVarsData[k].info.name,
                                      real_vector_to_string(&mData->realVarsData[k].attribute.start, mData->realVarsData[k].dimension.numberOfDimensions == 0),
-                                     mData->realVarsData[k].attribute.nominal);
+                                     real_vector_to_string(&mData->realVarsData[k].attribute.nominal, mData->realVarsData[k].dimension.numberOfDimensions == 0));
         }
       }
       if (!done)

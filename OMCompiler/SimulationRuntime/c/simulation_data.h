@@ -260,6 +260,12 @@ enum var_type {
   T_STRING    /* Variable is of string type */
 };
 
+/* Index (i-th variable, j-th index in array variable)*/
+typedef struct array_index_t {
+  size_t array_idx;   /* Index of scalar/ array variable */
+  size_t dim_idx;     /* Index inside array as 1D representaiton */
+} array_index_t;
+
 /* collect all attributes from one variable in one struct */
 typedef struct REAL_ATTRIBUTE
 {
@@ -269,8 +275,8 @@ typedef struct REAL_ATTRIBUTE
   modelica_real max;                   /* = +Inf */
   modelica_boolean fixed;              /* depends on the type */
   modelica_boolean useNominal;         /* = false */
-  modelica_real nominal;               /* = 1.0 */
-  real_array start;                    /* = 0.0 */
+  real_array nominal;                  /* = {1.0} */
+  real_array start;                    /* = {0.0} */
 } REAL_ATTRIBUTE;
 
 typedef struct INTEGER_ATTRIBUTE
@@ -850,8 +856,12 @@ typedef struct SIMULATION_INFO
   modelica_real* states_left;          /* work array for findRoot in event.c */
   modelica_real* states_right;         /* work array for findRoot in event.c */
 
-  /* Index maps: arr_idx -> start_idx */
-  size_t* realVarsIndex;
+  /* Index maps: arr_idx -> start_idx
+   * Maps index from modelData-><Type>VarsData (array + scalar variables) to
+   * start index in simulationData-><Type>Vars (scalarized version).
+   */
+
+  size_t* realVarsIndex;    /**< Maps real array/scalar variables to start indices in scalarized version */
   size_t* integerVarsIndex;
   size_t* booleanVarsIndex;
   size_t* stringVarsIndex;
@@ -865,6 +875,25 @@ typedef struct SIMULATION_INFO
   size_t* integerAliasIndex;
   size_t* booleanAliasIndex;
   size_t* stringAliasIndex;
+
+  /* Reverse index maps: scalar_idx -> array_idx
+   * Maps index from simulationData-><Type>Vars (scalarized version) to
+   * index in modelData-><Type>VarsData (array + scalar variables).
+   */
+  array_index_t* realVarsReverseIndex;
+  array_index_t* integerVarsReverseIndex;
+  array_index_t* booleanVarsReverseIndex;
+  array_index_t* stringVarsReverseIndex;
+
+  array_index_t* realParamsReverseIndex;
+  array_index_t* integerParamsReverseIndex;
+  array_index_t* booleanParamsReverseIndex;
+  array_index_t* stringParamsReverseIndex;
+
+  array_index_t* realAliasReverseIndex;
+  array_index_t* integerAliasReverseIndex;
+  array_index_t* booleanAliasReverseIndex;
+  array_index_t* stringAliasReverseIndex;
 
   /* old vars for event handling */
   modelica_real timeValueOld;
