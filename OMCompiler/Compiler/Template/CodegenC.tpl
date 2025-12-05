@@ -639,6 +639,7 @@ template simulationFile_nls(SimCode simCode)
     <%simulationFileHeader(simCode.fileNamePrefix)%>
     #include "<%simCode.fileNamePrefix%>_12jac.h"
     #include "simulation/jacobian_util.h"
+    #include "simulation/arrayIndex.h"
     #if defined(__cplusplus)
     extern "C" {
     #endif
@@ -913,7 +914,29 @@ template simulationFile_jac_header(SimCode simCode)
     case simCode as SIMCODE(__) then
     <<
     /* Jacobians */
-    static const REAL_ATTRIBUTE dummyREAL_ATTRIBUTE = omc_dummyRealAttribute;
+    static const _index_t one_dim[1] = { 1 };
+    static const modelica_real nominal_data[1] = { 1.0 };
+    static const modelica_real start_data[1]   = { 0.0 };
+    static const REAL_ATTRIBUTE dummyREAL_ATTRIBUTE = {
+      .unit = NULL,
+      .displayUnit = NULL,
+      .min = -DBL_MAX,
+      .max = DBL_MAX,
+      .fixed = FALSE,
+      .useNominal = FALSE,
+      .nominal = {
+        .ndims     = 1,
+        .dim_size  = ( _index_t* )one_dim,
+        .data      = ( void* )nominal_data,
+        .flexible  = FALSE
+      },
+      .start = {
+        .ndims     = 1,
+        .dim_size  = ( _index_t* )one_dim,
+        .data      = ( void* )start_data,
+        .flexible  = FALSE
+      }
+    };
 
     <%symJacDefinition(jacobianMatrices, modelNamePrefix(simCode))%><%\n%>
     >>
@@ -3289,7 +3312,7 @@ template generateStaticInitialData(list<ComponentRef> crefs, String indexName)
   let bodyStaticData = (crefs |> cr hasindex i0 =>
     <<
     /* static nls data for <%crefStrNoUnderscore(cr)%> */
-    sysData->nominal[i] = <%crefAttributes(cr)%>.nominal;
+    sysData->nominal[i] = getNominalFromScalarIdx(data->simulationInfo, data->modelData, <%crefIndexWithComment(cr)%>);
     sysData->min[i]     = <%crefAttributes(cr)%>.min;
     sysData->max[i++]   = <%crefAttributes(cr)%>.max;
     >>

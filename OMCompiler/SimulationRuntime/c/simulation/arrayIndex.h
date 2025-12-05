@@ -28,7 +28,14 @@
  *
  */
 
+#ifndef OMC_ARRAY_INDEX_H
+#define OMC_ARRAY_INDEX_H
+
 #include "../simulation_data.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 void allocateArrayIndexMaps(MODEL_DATA *modelData, SIMULATION_INFO *simulationInfo, threadData_t *threadData);
 
@@ -55,3 +62,9 @@ void computeVarIndices(SIMULATION_INFO *simulationInfo, MODEL_DATA *modelData);
 void computeVarReverseIndices(SIMULATION_INFO *simulationInfo, MODEL_DATA *modelData);
 
 modelica_real getNominalFromScalarIdx(const SIMULATION_INFO *simulationInfo, const MODEL_DATA *modelData, size_t scalar_idx);
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif

@@ -49,7 +49,6 @@
 #define omc_dummyVarInfo {-1,-1,"","",omc_dummyFileInfo_val}
 #define omc_dummyEquationInfo {-1,0,0,-1,NULL}
 #define omc_dummyFunctionInfo {-1,"",omc_dummyFileInfo_val}
-#define omc_dummyRealAttribute {NULL,NULL,-DBL_MAX,DBL_MAX,0,0,1.0,0.0}
 
 #define OMC_LINEARIZE_DUMP_LANGUAGE_MODELICA 0
 #define OMC_LINEARIZE_DUMP_LANGUAGE_MATLAB 1
