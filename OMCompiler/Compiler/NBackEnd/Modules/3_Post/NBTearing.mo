@@ -454,7 +454,7 @@ protected
 
           // create residuals equations and iteration variables
           strict.residual_eqns  := list(Slice.SLICE(eqn, {}) for eqn in cont_eqns);
-          strict.iteration_vars := iteration_vars;
+          strict.iteration_vars := listReverse(iteration_vars);
           comp.strict := strict;
         end if;
       then comp;
