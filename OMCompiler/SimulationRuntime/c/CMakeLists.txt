@@ -1,39 +1,45 @@
 cmake_minimum_required(VERSION 3.14)
 
-find_package(LAPACK REQUIRED)
+project(OpenModelicaSimulationRuntimeC LANGUAGES C CXX)
 
-file(GLOB OMC_SIMRT_UTIL_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/util/*.c)
-file(GLOB OMC_SIMRT_UTIL_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/util/*.h)
+# ######################################################################################################################
+# INTERFACE target
+# Other targets can link to this interface to get the include path transitively.
+add_library(OpenModelicaRuntimeCInterface INTERFACE)
+add_library(omc::simrt::runtime::headers ALIAS OpenModelicaRuntimeCInterface)
 
-file(GLOB OMC_SIMRT_META_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/meta/*.c)
-file(GLOB OMC_SIMRT_META_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/meta/*.h)
+set(OMC_SIMRT_PUBLIC_HEADERS
+    ModelicaUtilities.h
+    omc_inline.h
+    omc_simulation_settings.h
+    openmodelica.h
+    openmodelica_func.h
+    openmodelica_types.h
+    simulation_data.h
+)
 
-file(GLOB OMC_SIMRT_GC_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/gc/*.c)
-file(GLOB OMC_SIMRT_GC_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/gc/*.h)
+target_include_directories(OpenModelicaRuntimeCInterface
+    INTERFACE
+        ${CMAKE_CURRENT_SOURCE_DIR}
+        ${CMAKE_CURRENT_SOURCE_DIR}/gc
+)
 
-file(GLOB_RECURSE OMC_SIMRT_SIMULATION_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/simulation/*.c
-                                               ${CMAKE_CURRENT_SOURCE_DIR}/simulation/*.cpp)
-file(GLOB_RECURSE OMC_SIMRT_SIMULATION_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/simulation/*.h
-                                               ${CMAKE_CURRENT_SOURCE_DIR}/simulation/*.hpp)
+target_link_libraries(OpenModelicaRuntimeCInterface
+    INTERFACE
+        omc::3rd::omcgc
+)
 
-file(GLOB OMC_SIMRT_MATH_SUPPORT_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/math-support/pivot.c)
-
-file(GLOB OMC_SIMRT_LINEARIZATION_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/linearization/linearize.cpp)
-file(GLOB OMC_SIMRT_LINEARIZATION_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/linearization/linearize.h)
-
-file(GLOB_RECURSE OMC_SIMRT_DATA_RECONCILIATION_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/dataReconciliation/*.cpp)
-file(GLOB_RECURSE OMC_SIMRT_DATA_RECONCILIATION_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/dataReconciliation/*.h)
-
-
-file(GLOB_RECURSE OMC_SIMRT_OPTIMIZATION_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/optimization/*.c)
-file(GLOB_RECURSE OMC_SIMRT_OPTIMIZATION_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/optimization/*.h)
-
-file(GLOB_RECURSE OMC_SIMRT_MOO_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/moo/*.cpp)
-file(GLOB_RECURSE OMC_SIMRT_MOO_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/moo/*.h)
-
+set_target_properties(OpenModelicaRuntimeCInterface PROPERTIES
+    PUBLIC_HEADER "${OMC_SIMRT_PUBLIC_HEADERS}"
+)
 
 # ######################################################################################################################
 # Library: OpenModelicaRuntimeC
+
+add_subdirectory(gc)
+add_subdirectory(meta)
+add_subdirectory(util)
+
 # For the moment, we build OpenModelicaRuntimeC as a static library with MSVC.
 # It has some dll exporting issues in it that need to be resolved.
 if(MSVC)
@@ -44,12 +50,12 @@ endif()
 
 add_library(omc::simrt::runtime ALIAS OpenModelicaRuntimeC)
 
-target_sources(OpenModelicaRuntimeC PRIVATE ${OMC_SIMRT_GC_SOURCES} ${OMC_SIMRT_UTIL_SOURCES} ${OMC_SIMRT_META_SOURCES})
-target_include_directories(OpenModelicaRuntimeC
-  PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}
-  PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/simulation
-  PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/simulation/solver
-  PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/util)
+target_link_libraries(OpenModelicaRuntimeC
+  PUBLIC
+    omc::simrt::runtime::gc
+    omc::simrt::runtime::meta
+    omc::simrt::runtime::util
+)
 
 # Add the define WIN32_LEAN_AND_MEAN to this lib and anything that links to it.
 # The reason is that the define tells windows.h not to include winsock.h. We want
@@ -59,14 +65,12 @@ target_compile_definitions(OpenModelicaRuntimeC PUBLIC WIN32_LEAN_AND_MEAN)
 
 target_link_libraries(OpenModelicaRuntimeC PUBLIC OMCPThreads::OMCPThreads)
 target_link_libraries(OpenModelicaRuntimeC PUBLIC omc::3rd::omcgc)
-target_link_libraries(OpenModelicaRuntimeC PUBLIC omc::3rd::ryu)
+target_link_libraries(OpenModelicaRuntimeC PUBLIC omc::simrt::runtime::headers)
 
 if(MINGW)
   target_link_libraries(OpenModelicaRuntimeC PUBLIC dbghelp)
-  target_link_libraries(OpenModelicaRuntimeC PUBLIC regex)
   target_link_options(OpenModelicaRuntimeC PRIVATE  -Wl,--export-all-symbols)
 elseif(MSVC)
-  target_link_libraries(OpenModelicaRuntimeC PUBLIC omc::3rd::regex)
   set_target_properties(OpenModelicaRuntimeC PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS true)
 endif()
 
@@ -76,32 +80,28 @@ install(TARGETS OpenModelicaRuntimeC
 
 # ######################################################################################################################
 # Library: SimulationRuntimeC
+
+add_subdirectory(dataReconciliation)
+add_subdirectory(linearization)
+add_subdirectory(math-support)
+if(OM_OMC_ENABLE_MOO)
+  add_subdirectory(moo)
+endif()
+if(OM_OMC_ENABLE_OPTIMIZATION)
+  add_subdirectory(optimization)
+endif()
+add_subdirectory(simulation)
+
 add_library(SimulationRuntimeC SHARED)
 add_library(omc::simrt::simruntime ALIAS SimulationRuntimeC)
 
-target_sources(SimulationRuntimeC PRIVATE ${OMC_SIMRT_SIMULATION_SOURCES}
-                                          ${OMC_SIMRT_MATH_SUPPORT_SOURCES}
-                                          ${OMC_SIMRT_LINEARIZATION_SOURCES}
-                                          ${OMC_SIMRT_DATA_RECONCILIATION_SOURCES})
-
-target_link_libraries(SimulationRuntimeC PUBLIC omc::config)
-target_link_libraries(SimulationRuntimeC PUBLIC omc::simrt::runtime)
-target_link_libraries(SimulationRuntimeC PUBLIC omc::3rd::FMIL::expat)
-target_link_libraries(SimulationRuntimeC PUBLIC omc::3rd::sundials::cvode)
-target_link_libraries(SimulationRuntimeC PUBLIC omc::3rd::sundials::idas)
-target_link_libraries(SimulationRuntimeC PUBLIC omc::3rd::sundials::kinsol)
-target_link_libraries(SimulationRuntimeC PUBLIC omc::3rd::sundials::sunlinsolklu)
-target_link_libraries(SimulationRuntimeC PUBLIC omc::3rd::sundials::sunlinsollapackdense)
-target_link_libraries(SimulationRuntimeC PUBLIC omc::3rd::suitesparse::klu)
-target_link_libraries(SimulationRuntimeC PUBLIC omc::3rd::suitesparse::amd)
-target_link_libraries(SimulationRuntimeC PUBLIC omc::3rd::suitesparse::btf)
-target_link_libraries(SimulationRuntimeC PUBLIC omc::3rd::suitesparse::colamd)
-target_link_libraries(SimulationRuntimeC PUBLIC omc::3rd::suitesparse::umfpack)
-target_link_libraries(SimulationRuntimeC PUBLIC omc::3rd::suitesparse::config)
-target_link_libraries(SimulationRuntimeC PUBLIC omc::3rd::cminpack)
-target_link_libraries(SimulationRuntimeC PUBLIC omc::3rd::cdaskr)
-target_link_libraries(SimulationRuntimeC PUBLIC omc::3rd::lis)
-target_link_libraries(SimulationRuntimeC PUBLIC ${LAPACK_LIBRARIES})
+target_link_libraries(SimulationRuntimeC
+  PUBLIC
+    omc::simrt::simruntime::dataReconciliation
+    omc::simrt::simruntime::linearization
+    omc::simrt::simruntime::math-support
+    omc::simrt::simruntime::simulation
+)
 
 if(WIN32)
   target_link_libraries(SimulationRuntimeC PUBLIC wsock32)
@@ -113,22 +113,13 @@ elseif(MSVC)
   set_target_properties(SimulationRuntimeC PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS true)
 endif(MINGW)
 
-if(OM_OMC_ENABLE_OPTIMIZATION)
-  target_sources(SimulationRuntimeC PRIVATE ${OMC_SIMRT_OPTIMIZATION_SOURCES})
-  target_compile_definitions(SimulationRuntimeC PRIVATE OMC_HAVE_IPOPT)
-  target_link_libraries(SimulationRuntimeC PUBLIC omc::3rd::ipopt)
-endif()
-
-if(OM_OMC_ENABLE_MOO)
-  target_sources(SimulationRuntimeC PRIVATE ${OMC_SIMRT_MOO_SOURCES})
-  target_compile_definitions(SimulationRuntimeC PRIVATE OMC_HAVE_MOO)
-  target_link_libraries(SimulationRuntimeC PUBLIC omc::3rd::moo)
-endif()
-
 if(OM_OMC_ENABLE_PRIMME)
   target_compile_definitions(SimulationRuntimeC PRIVATE OMC_HAVE_PRIMME)
   target_link_libraries(SimulationRuntimeC PUBLIC omc::3rd::primme)
 endif()
+
+target_include_directories(SimulationRuntimeC
+  PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
 install(TARGETS SimulationRuntimeC)
 

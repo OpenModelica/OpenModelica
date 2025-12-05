@@ -43,13 +43,4 @@ int linearize(DATA* data, threadData_t *threadData);
 }
 #endif
 
-/*int argc, char** argv, string method, double start,
-//double stop, double stepSize , long outputSteps, double tolerance);
-
-// dummy
-//int linear_model_frame(string& out, string A, string x_startvalues, string u_startvalues);
-//{
-//  return 0;
-//}
-*/
 #endif
