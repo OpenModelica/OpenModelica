@@ -5,7 +5,7 @@
 // cflags: -d=-newInst
 //
 // Tests that code generation works for arrays with enumeration dimensions.
-// 
+//
 
 loadString("
   type E = enumeration(one, two, three);
@@ -37,8 +37,8 @@ getErrorString();
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// "[<interactive>:5:5-5:24:writable] Warning: Parameter m.p[E.three] has no value, and is fixed during initialization (fixed=true), using available start value (start=0.0) as default value.
-// [<interactive>:5:5-5:24:writable] Warning: Parameter m.p[E.two] has no value, and is fixed during initialization (fixed=true), using available start value (start=0.0) as default value.
-// [<interactive>:5:5-5:24:writable] Warning: Parameter m.p[E.one] has no value, and is fixed during initialization (fixed=true), using available start value (start=0.0) as default value.
+// "[<interactive>:5:5-5:24:writable] Warning: Parameter m.p[E.three] has no binding, and is fixed during initialization (fixed=true), using available start value (start=0.0) as default value.
+// [<interactive>:5:5-5:24:writable] Warning: Parameter m.p[E.two] has no binding, and is fixed during initialization (fixed=true), using available start value (start=0.0) as default value.
+// [<interactive>:5:5-5:24:writable] Warning: Parameter m.p[E.one] has no binding, and is fixed during initialization (fixed=true), using available start value (start=0.0) as default value.
 // "
 // endResult

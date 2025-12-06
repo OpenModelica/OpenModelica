@@ -32,15 +32,15 @@ end UnboundParameter5;
 //   parameter enumeration(a, b, c, d) e1 = E.a;
 //   parameter enumeration(a, b, c, d) e2(min = E.c) = E.c;
 // end UnboundParameter5;
-// [flattening/modelica/scodeinst/UnboundParameter5.mo:9:3-9:20:writable] Error: Parameter r1 has neither value nor start value, and is fixed during initialization (fixed=true).
-// [flattening/modelica/scodeinst/UnboundParameter5.mo:10:3-10:42:writable] Error: Parameter r2 has neither value nor start value, and is fixed during initialization (fixed=true).
-// [flattening/modelica/scodeinst/UnboundParameter5.mo:11:3-11:44:writable] Error: Parameter r3 has neither value nor start value, and is fixed during initialization (fixed=true).
-// [flattening/modelica/scodeinst/UnboundParameter5.mo:12:3-12:23:writable] Error: Parameter i1 has neither value nor start value, and is fixed during initialization (fixed=true).
-// [flattening/modelica/scodeinst/UnboundParameter5.mo:13:3-13:41:writable] Error: Parameter i2 has neither value nor start value, and is fixed during initialization (fixed=true).
-// [flattening/modelica/scodeinst/UnboundParameter5.mo:14:3-14:43:writable] Error: Parameter i3 has neither value nor start value, and is fixed during initialization (fixed=true).
-// [flattening/modelica/scodeinst/UnboundParameter5.mo:15:3-15:23:writable] Error: Parameter b1 has neither value nor start value, and is fixed during initialization (fixed=true).
-// [flattening/modelica/scodeinst/UnboundParameter5.mo:16:3-16:22:writable] Error: Parameter s1 has neither value nor start value, and is fixed during initialization (fixed=true).
-// [flattening/modelica/scodeinst/UnboundParameter5.mo:17:3-17:17:writable] Error: Parameter e1 has neither value nor start value, and is fixed during initialization (fixed=true).
-// [flattening/modelica/scodeinst/UnboundParameter5.mo:18:3-18:28:writable] Error: Parameter e2 has neither value nor start value, and is fixed during initialization (fixed=true).
+// [flattening/modelica/scodeinst/UnboundParameter5.mo:9:3-9:20:writable] Error: Parameter r1 has neither binding nor start value, and is fixed during initialization (fixed=true).
+// [flattening/modelica/scodeinst/UnboundParameter5.mo:10:3-10:42:writable] Error: Parameter r2 has neither binding nor start value, and is fixed during initialization (fixed=true).
+// [flattening/modelica/scodeinst/UnboundParameter5.mo:11:3-11:44:writable] Error: Parameter r3 has neither binding nor start value, and is fixed during initialization (fixed=true).
+// [flattening/modelica/scodeinst/UnboundParameter5.mo:12:3-12:23:writable] Error: Parameter i1 has neither binding nor start value, and is fixed during initialization (fixed=true).
+// [flattening/modelica/scodeinst/UnboundParameter5.mo:13:3-13:41:writable] Error: Parameter i2 has neither binding nor start value, and is fixed during initialization (fixed=true).
+// [flattening/modelica/scodeinst/UnboundParameter5.mo:14:3-14:43:writable] Error: Parameter i3 has neither binding nor start value, and is fixed during initialization (fixed=true).
+// [flattening/modelica/scodeinst/UnboundParameter5.mo:15:3-15:23:writable] Error: Parameter b1 has neither binding nor start value, and is fixed during initialization (fixed=true).
+// [flattening/modelica/scodeinst/UnboundParameter5.mo:16:3-16:22:writable] Error: Parameter s1 has neither binding nor start value, and is fixed during initialization (fixed=true).
+// [flattening/modelica/scodeinst/UnboundParameter5.mo:17:3-17:17:writable] Error: Parameter e1 has neither binding nor start value, and is fixed during initialization (fixed=true).
+// [flattening/modelica/scodeinst/UnboundParameter5.mo:18:3-18:28:writable] Error: Parameter e2 has neither binding nor start value, and is fixed during initialization (fixed=true).
 //
 // endResult
