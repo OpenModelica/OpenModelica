@@ -710,7 +710,7 @@ public
 
           if not listEmpty(subscripts) then
             (cref_subs, subscripts) :=
-              Subscript.mergeList(subscripts, cref_subs, Type.dimensionCount(cref.ty), backend);
+              Subscript.mergeList(subscripts, cref_subs, Type.dimensionCount(cref.ty), backend, reverse);
           end if;
 
           if reverse then
@@ -735,7 +735,7 @@ public
       local
         list<Dimension> dims;
         Option<list<ComponentRef>> iter_crefs;
-        ComponentRef new_cref;
+        ComponentRef new_cref = cref;
         list<Subscript> new_subs, rest_subs;
         Type ty = getSubscriptedType(cref);
 
@@ -743,15 +743,15 @@ public
       case CREF() guard(Type.isArray(ty)) algorithm
         // get dimensions and check in map
         dims          := Type.arrayDims(ty);
-        iter_crefs    := UnorderedMap.get(dims, dims_map);
-        if Util.isSome(iter_crefs) then
-          // dimension configuration was found, map to subscripts and apply in reverse
-          new_subs    := list(UnorderedMap.getSafe(iter_name, iter_map, sourceInfo()) for iter_name in Util.getOption(iter_crefs));
-          new_cref    := mergeSubscripts(new_subs, cref, true, true, true);
-        else
-          // not found, just keep current cref
-          new_cref    := cref;
-        end if;
+        while(not listEmpty(dims)) loop
+          iter_crefs    := UnorderedMap.get(dims, dims_map);
+          if Util.isSome(iter_crefs) then
+            // dimension configuration was found, map to subscripts and apply in reverse
+            new_subs    := list(UnorderedMap.getSafe(iter_name, iter_map, sourceInfo()) for iter_name in Util.getOption(iter_crefs));
+            new_cref    := mergeSubscripts(new_subs, new_cref, true, true, true);
+          end if;
+          dims := listReverse(listRest(listReverse(dims)));
+        end while;
 
         // apply to restCref afterwards such that the outermost dimensions are handled first
         // this is important because the full dimension list is considered when checking in the map

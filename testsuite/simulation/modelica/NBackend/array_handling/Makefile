@@ -17,6 +17,7 @@ MultiDimensionalArrays1.mos\
 MultiDimensionalArrays2.mos\
 MultiDimensionalArrays3.mos\
 MultiDimensionalArrays4.mos\
+MultiDimensionalArrays5.mos\
 subscripted_expression.mos\
 matrix_vector_product.mos\
 scalar_product.mos\
