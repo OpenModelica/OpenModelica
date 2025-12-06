@@ -1693,6 +1693,8 @@ public
         case IF_EQUATION()            algorithm
           (exp, success) := IfEquationBody.getLHS(eq.body);
         then if success then SOME(exp) else NONE();
+        case WHEN_EQUATION(body = WhenEquationBody.WHEN_EQUATION_BODY(
+          when_stmts = {WhenStatement.ASSIGN(lhs = exp)}, else_when = NONE())) then SOME(exp);
         else NONE();
       end match;
     end getLHS;
@@ -1703,11 +1705,15 @@ public
       output Option<Expression> rhs;
     algorithm
       rhs := match(eq)
+        local
+          Expression exp;
         case SCALAR_EQUATION()        then SOME(eq.rhs);
         case ARRAY_EQUATION()         then SOME(eq.rhs);
         case RECORD_EQUATION()        then SOME(eq.rhs);
         case FOR_EQUATION(body = {_}) then getRHS(listHead(eq.body));
         case IF_EQUATION()            then SOME(IfEquationBody.getRHS(eq.body));
+        case WHEN_EQUATION(body = WhenEquationBody.WHEN_EQUATION_BODY(
+          when_stmts = {WhenStatement.ASSIGN(rhs = exp)}, else_when = NONE())) then SOME(exp);
         else NONE();
       end match;
     end getRHS;
