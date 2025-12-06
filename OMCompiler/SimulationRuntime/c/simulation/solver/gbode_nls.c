@@ -38,6 +38,7 @@
 
 #include "../../simulation_data.h"
 
+#include "model_help.h"
 #include "solver_main.h"
 #include "kinsolSolver.h"
 #include "kinsol_b.h"
@@ -500,14 +501,11 @@ NLS_SOLVER_STATUS solveNLS_gb(DATA *data, threadData_t *threadData, NONLINEAR_SY
   NLS_SOLVER_STATUS solved = NLS_FAILED;
 
   // Debug nonlinear solution process
-  rtclock_t clock;
   double cpu_time_used;
   double newtonTol = fmax(newtonFTol, newtonXTol);
   double newtonMaxStepsValue = fmax(newtonMaxSteps, 10*nlsData->size);
 
-  if (OMC_ACTIVE_STREAM(OMC_LOG_GBODE_NLS)) {
-    rt_ext_tp_tick(&clock);
-  }
+  if (measure_time_flag) rt_push(SIM_TIMER_SOLVER);
 
   if (gbData->nlsSolverMethod == GB_NLS_KINSOL || gbData->nlsSolverMethod == GB_NLS_KINSOL_B) {
     // Get kinsol data object
@@ -551,9 +549,10 @@ NLS_SOLVER_STATUS solveNLS_gb(DATA *data, threadData_t *threadData, NONLINEAR_SY
   if (solved)
     infoStreamPrint(OMC_LOG_GBODE_NLS_V, 0, "GBODE: NLS solved.");
 
+  if (measure_time_flag) rt_pop(SIM_TIMER_SOLVER);
+
   if (OMC_ACTIVE_STREAM(OMC_LOG_GBODE_NLS)) {
-    cpu_time_used = rt_ext_tp_tock(&clock);
-    infoStreamPrint(OMC_LOG_GBODE_NLS, 0, "Time needed for solving the NLS:  %20.16g", cpu_time_used);
+    infoStreamPrint(OMC_LOG_GBODE_NLS, 0, "Time needed for solving the NLS:  %20.16g", rt_accumulated(SIM_TIMER_SOLVER));
   }
 
   return solved;
@@ -844,6 +843,8 @@ int jacobian_SR_column(DATA* data, threadData_t *threadData, JACOBIAN *jacobian,
 
   JACOBIAN* jacobian_ODE = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
 
+  if (measure_time_flag) rt_push(SIM_TIMER_JACOBIAN);
+
   /* Evaluate column of Jacobian ODE */
   memcpy(jacobian_ODE->seedVars, jacobian->seedVars, sizeof(modelica_real)*jacobian->sizeCols);
   data->callback->functionJacA_column(data, threadData, jacobian_ODE, NULL);
@@ -859,6 +860,8 @@ int jacobian_SR_column(DATA* data, threadData_t *threadData, JACOBIAN *jacobian,
     assertStreamPrint(threadData, !isnan(jacobian_ODE->resultVars[i]), "jacobian_SR_column: jacobian_ODE is NAN");
     jacobian->resultVars[i] = fac * jacobian_ODE->resultVars[i] - jacobian->seedVars[i];
   }
+
+  if (measure_time_flag) rt_pop(SIM_TIMER_JACOBIAN);
 
   return 0;
 }
@@ -887,6 +890,8 @@ int jacobian_MR_column(DATA* data, threadData_t *threadData, JACOBIAN *jacobian,
   const int stage_ = gbfData->act_stage;
   modelica_real fac;
 
+  if (measure_time_flag) rt_push(SIM_TIMER_JACOBIAN);
+
   for (i = 0; i < jacobian_ODE->sizeCols; i++) {
     jacobian_ODE->seedVars[i] = 0;
   }
@@ -913,6 +918,8 @@ int jacobian_MR_column(DATA* data, threadData_t *threadData, JACOBIAN *jacobian,
     assertStreamPrint(threadData, !isnan(jacobian_ODE->resultVars[i]), "jacobian_MR_column: jacobian_ODE is NAN");
     jacobian->resultVars[ii] = fac * jacobian_ODE->resultVars[i] - jacobian->seedVars[ii];
   }
+
+  if (measure_time_flag) rt_pop(SIM_TIMER_JACOBIAN);
 
   return 0;
 }
@@ -941,6 +948,8 @@ int jacobian_IRK_column(DATA* data, threadData_t *threadData, JACOBIAN *jacobian
 
   /* Evaluate column of Jacobian ODE */
   JACOBIAN* jacobian_ODE = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
+
+  if (measure_time_flag) rt_push(SIM_TIMER_JACOBIAN);
 
   // Map the jacobian->seedVars to the jacobian_ODE->seedVars
   // and find out which stage is active; different stages have different colors
@@ -975,6 +984,8 @@ int jacobian_IRK_column(DATA* data, threadData_t *threadData, JACOBIAN *jacobian
       jacobian->resultVars[stage * nStates + i] = gbData->stepSize * gbData->tableau->A[stage * nStages + stage_]  * jacobian_ODE->resultVars[i] - jacobian->seedVars[stage * nStates + i];
     }
   }
+
+  if (measure_time_flag) rt_pop(SIM_TIMER_JACOBIAN);
 
   return 0;
 }
