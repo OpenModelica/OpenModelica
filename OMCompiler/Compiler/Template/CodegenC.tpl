@@ -7103,7 +7103,7 @@ template optimizationComponents1(ClassAttributes classAttribute, SimCode simCode
                 <<
                 min[<%i0%>] = <%crefAttributes(name)%>.min;
                 max[<%i0%>] = <%crefAttributes(name)%>.max;
-                nominal[<%i0%>] = <%crefAttributes(name)%>.nominal;
+                nominal[<%i0%>] = getNominalFromScalarIdx(data->simulationInfo, data->modelData, <%crefIndexWithComment(name)%>);
                 useNominal[<%i0%>] = <%crefAttributes(name)%>.useNominal;
                 name[<%i0%>] =(char *) <%crefVarInfo(name)%>.name;
                 <%match type_ case T_REAL() then
