@@ -1,8 +1,11 @@
 cmake_minimum_required(VERSION 3.14)
 
-# Define sources with a local glob
-file(GLOB OMC_SIMRT_LINEARIZATION_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp)
-file(GLOB OMC_SIMRT_LINEARIZATION_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/*.h)
+set(OMC_SIMRT_LINEARIZATION_SOURCES
+  linearize.cpp
+)
+set(OMC_SIMRT_LINEARIZATION_HEADERS
+  linearize.h
+)
 
 add_library(OpenModelicaRuntimeCLinearization OBJECT ${OMC_SIMRT_LINEARIZATION_SOURCES})
 add_library(omc::simrt::simruntime::linearization ALIAS OpenModelicaRuntimeCLinearization)

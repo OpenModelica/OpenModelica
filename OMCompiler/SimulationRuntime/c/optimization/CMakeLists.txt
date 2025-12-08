@@ -1,8 +1,20 @@
 cmake_minimum_required(VERSION 3.14)
 
-# Define sources with a recursive glob
-file(GLOB_RECURSE OMC_SIMRT_OPTIMIZATION_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/*.c)
-file(GLOB_RECURSE OMC_SIMRT_OPTIMIZATION_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/*.h)
+set( OMC_SIMRT_OPTIMIZATION_SOURCES
+  optimizer_main.c
+  eval_all/EvalG.c
+  eval_all/EvalL.c
+  eval_all/EvalF.c
+  DataManagement/InitialGuess.c
+  DataManagement/DerStructure.c
+  DataManagement/DebugeOptimization.c
+  DataManagement/MoveData.c
+)
+set(OMC_SIMRT_OPTIMIZATION_HEADERS
+  OptimizerData.h
+  OptimizerInterface.h
+  OptimizerLocalFunction.h
+)
 
 add_library(OpenModelicaRuntimeCOptimization OBJECT ${OMC_SIMRT_OPTIMIZATION_SOURCES})
 add_library(omc::simrt::simruntime::optimization ALIAS OpenModelicaRuntimeCOptimization)

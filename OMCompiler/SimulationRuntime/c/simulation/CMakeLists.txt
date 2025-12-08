@@ -2,10 +2,147 @@ cmake_minimum_required(VERSION 3.14)
 
 find_package(LAPACK REQUIRED)
 
-# Define sources with a recursive glob
-file(GLOB_RECURSE OMC_SIMRT_SIMULATION_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/*.c
-                                               ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp)
-file(GLOB_RECURSE OMC_SIMRT_SIMULATION_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/*.h)
+set(OMC_SIMRT_SIMULATION_SOURCES
+  simulation_omc_assert.c
+  results/simulation_result_csv.cpp
+  results/simulation_result_ia.cpp
+  results/simulation_result_wall.cpp
+  results/MatVer4.cpp
+  results/simulation_result_plt.cpp
+  results/simulation_result.cpp
+  results/simulation_result_mat4.cpp
+  simulation_runtime.cpp
+  simulation_input_xml.c
+  omc_simulation_util.c
+  solver/nonlinearValuesList.c
+  solver/gbode_nls.c
+  solver/gbode_conf.c
+  solver/events.c
+  solver/embedded_server.c
+  solver/model_help.c
+  solver/kinsolSolver.c
+  solver/fmi_events.c
+  solver/gbode_main.c
+  solver/sundials_error.c
+  solver/gbode_step.c
+  solver/jacobianSymbolical.c
+  solver/sym_solver_ssc.c
+  solver/linearSolverUmfpack.c
+  solver/dae_mode.c
+  solver/nonlinearSolverHomotopy.c
+  solver/linearSolverTotalPivot.c
+  solver/real_time_sync.c
+  solver/gbode_util.c
+  solver/gbode_events.c
+  solver/newton_diagnostics.c
+  solver/nonlinearSolverNewton.c
+  solver/mixedSearchSolver.c
+  solver/spatialDistribution.c
+  solver/dassl.c
+  solver/sundials_util.c
+  solver/linearSystem.c
+  solver/gbode_sparse.c
+  solver/cvode_solver.c
+  solver/external_input.c
+  solver/linearSolverLapack.c
+  solver/linearSolverLis.c
+  solver/delay.c
+  solver/omc_math.c
+  solver/gbode_tableau.c
+  solver/nonlinearSolverHybrd.c
+  solver/kinsol_b.c
+  solver/ida_solver.c
+  solver/nonlinearSystem.c
+  solver/solver_main.c
+  solver/gbode_ctrl.c
+  solver/stateset.c
+  solver/initialization/initialization.c
+  solver/newtonIteration.c
+  solver/jacobian_analysis.c
+  solver/linearSolverKlu.c
+  solver/synchronous.c
+  solver/mixedSystem.c
+  arrayIndex.c
+  options.c
+  socket.cpp
+  simulation_info_json.c
+  jacobian_util.c
+  modelinfo.c
+)
+
+set(OMC_SIMRT_SIMULATION_CINC
+  solver/perform_simulation.c.inc
+  solver/perform_qss_simulation.c.inc
+)
+
+set(OMC_SIMRT_SIMULATION_HEADERS
+  arrayIndex.h
+  socket.h
+  results/simulation_result_wall.h
+  results/simulation_result_csv.h
+  results/simulation_result_plt.h
+  results/simulation_result_ia.h
+  results/MatVer4.h
+  results/simulation_result.h
+  results/simulation_result_mat4.h
+  solver/external_input.h
+  solver/sundials_util.h
+  solver/linearSolverUmfpack.h
+  solver/linearSystem.h
+  solver/newton_diagnostics.h
+  solver/jacobian_analysis.h
+  solver/events.h
+  solver/mixedSystem.h
+  solver/jacobianSymbolical.h
+  solver/ida_solver.h
+  solver/dae_mode.h
+  solver/linearSolverKlu.h
+  solver/gbode_sparse.h
+  solver/model_help.h
+  solver/omc_math.h
+  solver/cvode_solver.h
+  solver/nonlinearValuesList.h
+  solver/newtonIteration.h
+  solver/gbode_step.h
+  solver/gbode_tableau.h
+  solver/real_time_sync.h
+  solver/spatialDistribution.h
+  solver/gbode_conf.h
+  solver/gbode_main.h
+  solver/kinsol_b.h
+  solver/kinsolSolver.h
+  solver/sym_solver_ssc.h
+  solver/nonlinearSolverNewton.h
+  solver/fmi_events.h
+  solver/linearSolverLapack.h
+  solver/linearSolverTotalPivot.h
+  solver/gbode_events.h
+  solver/linearSolverLis.h
+  solver/solver_main.h
+  solver/stateset.h
+  solver/epsilon.h
+  solver/mixedSearchSolver.h
+  solver/embedded_server.h
+  solver/nonlinearSystem.h
+  solver/gbode_nls.h
+  solver/initialization/initialization.h
+  solver/delay.h
+  solver/dassl.h
+  solver/gbode_util.h
+  solver/nonlinearSolverHomotopy.h
+  solver/sundials_error.h
+  solver/synchronous.h
+  solver/nonlinearSolverHybrd.h
+  solver/gbode_ctrl.h
+  simulation_runtime.h
+  options.h
+  simulation_omc_assert.h
+  modelinfo.h
+  omc_simulation_util.h
+  jacobian_util.h
+  simulation_input_xml.h
+  simulation_info_json.h
+)
 
 add_library(OpenModelicaRuntimeCSimulation OBJECT ${OMC_SIMRT_SIMULATION_SOURCES})
 add_library(omc::simrt::simruntime::simulation ALIAS OpenModelicaRuntimeCSimulation)
@@ -13,9 +150,9 @@ add_library(omc::simrt::simruntime::simulation ALIAS OpenModelicaRuntimeCSimulat
 target_include_directories(OpenModelicaRuntimeCSimulation
   PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>/results
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>/solver
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>/solver/initialization
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/results>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/solver>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/solver/initialization>
 
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/c/simulation>
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/c/simulation/results>

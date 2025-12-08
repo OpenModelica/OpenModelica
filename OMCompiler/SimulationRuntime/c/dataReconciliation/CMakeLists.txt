@@ -2,9 +2,12 @@ cmake_minimum_required(VERSION 3.14)
 
 find_package(LAPACK REQUIRED)
 
-# Define sources with a local glob
-file(GLOB OMC_SIMRT_DATA_RECONCILIATION_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp)
-file(GLOB OMC_SIMRT_DATA_RECONCILIATION_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/*.h)
+set(OMC_SIMRT_DATA_RECONCILIATION_SOURCES
+  dataReconciliation.cpp
+)
+set(OMC_SIMRT_DATA_RECONCILIATION_HEADERS
+  dataReconciliation.h
+)
 
 add_library(OpenModelicaRuntimeCDataReconciliation OBJECT ${OMC_SIMRT_DATA_RECONCILIATION_SOURCES})
 add_library(omc::simrt::simruntime::dataReconciliation ALIAS OpenModelicaRuntimeCDataReconciliation)

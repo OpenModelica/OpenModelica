@@ -1,8 +1,24 @@
 cmake_minimum_required(VERSION 3.14)
 
-# Define sources with a local glob
-file(GLOB OMC_SIMRT_MOO_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp)
-file(GLOB OMC_SIMRT_MOO_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/*.h)
+set(OMC_SIMRT_MOO_SOURCES
+  debug.cpp
+  strategies.cpp
+  hessian_finite_diff.cpp
+  evaluations.cpp
+  streamlog.cpp
+  info.cpp
+  main_opt.cpp
+  problem.cpp
+)
+set(OMC_SIMRT_MOO_HEADERS
+  debug.h
+  hessian_finite_diff.h
+  problem.h
+  strategies.h
+  streamlog.h
+  info.h
+  evaluations.h
+)
 
 add_library(OpenModelicaRuntimeCMoo OBJECT ${OMC_SIMRT_MOO_SOURCES})
 add_library(omc::simrt::simruntime::moo ALIAS OpenModelicaRuntimeCMoo)
@@ -11,13 +27,6 @@ target_include_directories(OpenModelicaRuntimeCMoo
   PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/c/moo>
-)
-
-target_include_directories(OpenModelicaRuntimeCMoo
-  PRIVATE
-    omc::simrt::simruntime::simulation
-    omc::3rd::suitesparse::klu
-    omc::3rd::suitesparse::config
 )
 
 target_link_libraries(OpenModelicaRuntimeCMoo
