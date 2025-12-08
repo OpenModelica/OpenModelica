@@ -47,6 +47,7 @@ public
   import Binding = NFBinding;
   import Call = NFCall;
   import Class = NFClass;
+  import ComplexType = NFComplexType;
   import ComponentRef = NFComponentRef;
   import Dimension = NFDimension;
   import Expression = NFExpression;
@@ -1380,6 +1381,8 @@ public
       Type ty = Expression.typeOf(lhs);
     algorithm
       e := match ty
+        local
+          ComplexType ct;
         case Type.ARRAY() then ARRAY_EQUATION(
             ty          = ty,
             lhs         = lhs,
@@ -1396,13 +1399,13 @@ public
             attr        = attr,
             recordSize  = Type.sizeOf(ty)
           );
-        case Type.COMPLEX() then RECORD_EQUATION(
+        case Type.COMPLEX(complexTy = ct as ComplexType.RECORD()) then RECORD_EQUATION(
             ty          = ty,
             lhs         = lhs,
             rhs         = rhs,
             source      = DAE.emptyElementSource,
             attr        = attr,
-            recordSize  = Type.sizeOf(ty)
+            recordSize  = arrayLength(ct.fields)
           );
         else SCALAR_EQUATION(
             ty      = ty,

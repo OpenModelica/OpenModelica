@@ -341,8 +341,13 @@ public
         if not List.all(input_crefs, ComponentRef.sizeKnown) then
           body_exp := Typing.typeExp(body_exp, NFInstContext.RHS, sourceInfo(), true);
         end if;
+
+        // combine binaries and simplify
         body_exp := SimplifyExp.combineBinaries(body_exp);
         body_exp := SimplifyExp.simplifyDump(body_exp, true, getInstanceName());
+
+        // replace body with possible nested functions
+        body_exp := Expression.map(body_exp, function applyFuncExp(replacements = replacements, variables = variables));
 
         if Flags.isSet(Flags.DUMPBACKENDINLINE) then
           print("[" + getInstanceName() + "] Inlining: " + Expression.toString(exp) + "\n");
