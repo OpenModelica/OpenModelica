@@ -662,6 +662,8 @@ template simulationFile_lsy(SimCode simCode)
     case simCode as SIMCODE(modelInfo=MODELINFO(varInfo=varInfo as VARINFO(__),linearSystems=linearSystems)) then
     <<
     /* Linear Systems */
+    #include "simulation/arrayIndex.h"
+
     <%simulationFileHeader(simCode.fileNamePrefix)%>
     #include "<%simCode.fileNamePrefix%>_12jac.h"
     #if defined(__cplusplus)
