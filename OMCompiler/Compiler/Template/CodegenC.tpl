@@ -3431,17 +3431,17 @@ let &sub = buffer ""
   {
     /* min ******************************************************** */
     infoStreamPrint(OMC_LOG_INIT, 1, "updating min-values");
-    <%minValueEquations |> eq as SES_SIMPLE_ASSIGN(__) => equation_call(eq, modelNamePrefix, contextOther)%>
+    <%(minValueEquations |> eq as SES_SIMPLE_ASSIGN(__) => equation_call(eq, modelNamePrefix, contextOther) ; separator="\n")%>
     messageClose(OMC_LOG_INIT);
 
     /* max ******************************************************** */
     infoStreamPrint(OMC_LOG_INIT, 1, "updating max-values");
-    <%maxValueEquations |> eq as SES_SIMPLE_ASSIGN(__) => equation_call(eq, modelNamePrefix, contextOther)%>
+    <%(maxValueEquations |> eq as SES_SIMPLE_ASSIGN(__) => equation_call(eq, modelNamePrefix, contextOther) ; separator="\n")%>
     messageClose(OMC_LOG_INIT);
 
     /* nominal **************************************************** */
     infoStreamPrint(OMC_LOG_INIT, 1, "updating nominal-values");
-    <%nominalValueEquations |> eq as SES_SIMPLE_ASSIGN(__) => equation_call(eq, modelNamePrefix, contextOther)%>
+    <%(nominalValueEquations |> eq as SES_SIMPLE_ASSIGN(__) => equation_call(eq, modelNamePrefix, contextOther) ; separator="\n")%>
     messageClose(OMC_LOG_INIT);
 
     /* start ****************************************************** */
@@ -3508,12 +3508,15 @@ template functionUpdateBoundVariableAttributesFunctionsSimpleAssign(SimEqSystem 
 
       let updateEqs = match attribute
         case "nominal" then
-          // TODO AHeu: Prevent evaluation of real_vector_to_string if OMC_LOG_INIT_V isn't active.
           <<
           put_real_element(<%expPart%>, 0, &<%crefAttributes(cref)%>.nominal);
-          infoStreamPrint(OMC_LOG_INIT_V, 0, "%s(nominal=%s)",
-            <%crefVarInfo(cref)%>.name,
-            real_vector_to_string(&<%crefAttributes(cref)%>.nominal, <%crefVarDimension(cref)%>.numberOfDimensions == 0));
+          if (omc_useStream[OMC_LOG_INIT_V]) {
+            char nominal_buffer[2048];
+            real_vector_to_string(&<%crefAttributes(cref)%>.nominal, <%crefVarDimension(cref)%>.numberOfDimensions == 0, nominal_buffer, 2048);
+            infoStreamPrint(OMC_LOG_INIT_V, 0, "%s(nominal=%s)",
+              <%crefVarInfo(cref)%>.name,
+              nominal_buffer);
+          }
           >>
         else
           <<
@@ -6088,7 +6091,7 @@ case SES_SIMPLE_ASSIGN_CONSTRAINTS(__) then
   <%modelicaLine(eqInfo(eq))%>
   <%preExp%>
   <%contextCref(cref, context, &preExp, &varDecls, auxFunction, &sub)%> = <%expPart%>;
-    <%postExp%>
+  <%postExp%>
   <%endModelicaLine()%>
   >>
 end equationSimpleAssign;

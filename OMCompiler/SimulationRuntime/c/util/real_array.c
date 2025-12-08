@@ -534,15 +534,15 @@ void print_real_array(const real_array *source)
 /**
  * @brief Write real vector into null-terminated string.
  *
- * @param source        Real vector to write to buffer.
- * @param isScalar      Treat vector as scalar.
- * @return const char*  Pointer to static buffer. Not thread-safe!
+ * @param source    Real vector to write to `buffer`.
+ * @param isScalar  Treat vector as scalar.
+ * @param buffer    Buffer to write into.
+ * @param bufsize   Length of `buffer`.
  */
-const char *real_vector_to_string(const real_array *source, modelica_boolean isScalar)
+void real_vector_to_string(const real_array *source, modelica_boolean isScalar, char *buffer, size_t bufsize)
 {
     _index_t i;
     modelica_real *data;
-    static char buffer[2048];
     size_t pos = 0;
 
     omc_assert_macro(base_array_ok(source));
@@ -552,25 +552,22 @@ const char *real_vector_to_string(const real_array *source, modelica_boolean isS
 
     if (isScalar && source->ndims == 1 && source->dim_size[0] == 1)
     {
-        pos += snprintf(buffer + pos, sizeof(buffer) - pos,
-                        "%g", data[0]);
+        pos += snprintf(buffer + pos, bufsize - pos, "%g", data[0]);
     }
     else
     {
-        pos += snprintf(buffer + pos, sizeof(buffer) - pos, "{");
+        pos += snprintf(buffer + pos, bufsize - pos, "{");
         for (i = 0; i < source->dim_size[0]; i++)
         {
-            pos += snprintf(buffer + pos, sizeof(buffer) - pos,
+            pos += snprintf(buffer + pos, bufsize - pos,
                             "%g%s", data[i], (i < source->dim_size[0] - 1) ? ", " : "");
-            if (pos >= sizeof(buffer))
+            if (pos >= bufsize)
             {
                 break;
             }
         }
-        snprintf(buffer + pos, sizeof(buffer) - pos, "}");
+        snprintf(buffer + pos, bufsize - pos, "}");
     }
-
-    return buffer;
 }
 
 /**

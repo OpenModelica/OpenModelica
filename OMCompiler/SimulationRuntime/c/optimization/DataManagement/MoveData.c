@@ -543,10 +543,12 @@ static inline void printSomeModelInfos(OptDataBounds * bounds, OptDataDim * dim,
     else
       sprintf(buffer, ", min = -Inf");
 
+    char start_buffer[2048];
+    real_vector_to_string(&data->modelData->realVarsData[i].attribute.start, data->modelData->realVarsData[i].dimension.numberOfDimensions == 0, start_buffer, 2048);
     printf("\nState[%i]:%s(start = %s, nominal = %g%s",
            i,
            data->modelData->realVarsData[i].info.name,
-           real_vector_to_string(&data->modelData->realVarsData[i].attribute.start, data->modelData->realVarsData[i].dimension.numberOfDimensions == 0),
+           start_buffer,
            xnom[i],
            buffer);
 

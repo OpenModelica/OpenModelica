@@ -734,6 +734,8 @@ int check_linear_solution(DATA *data, int printFailingSystems, int sysNumber)
   LINEAR_SYSTEM_DATA* linsys = data->simulationInfo->linearSystemData;
   long j, i = sysNumber;
 
+  const size_t buff_size = 2048;
+
   if(linsys[i].solved == 0)
   {
     int index = linsys[i].equationIndex, indexes[2] = {1,index};
@@ -756,11 +758,15 @@ int check_linear_solution(DATA *data, int printFailingSystems, int sysNumber)
         if (!strcmp(mData->realVarsData[k].info.name, modelInfoGetEquation(&data->modelData->modelDataXml, (linsys[i]).equationIndex).vars[j]))
         {
         done = 1;
+        char start_buffer[buff_size];
+        char nominal_buffer[buff_size];
+        real_vector_to_string(&mData->realVarsData[k].attribute.start, mData->realVarsData[k].dimension.numberOfDimensions == 0, start_buffer, buff_size);
+        real_vector_to_string(&mData->realVarsData[k].attribute.nominal, mData->realVarsData[k].dimension.numberOfDimensions == 0, nominal_buffer, buff_size);
         warningStreamPrint(OMC_LOG_LS, 0, "[%ld] Real %s(start=%s, nominal=%s)",
-                                     j+1,
-                                     mData->realVarsData[k].info.name,
-                                     real_vector_to_string(&mData->realVarsData[k].attribute.start, mData->realVarsData[k].dimension.numberOfDimensions == 0),
-                                     real_vector_to_string(&mData->realVarsData[k].attribute.nominal, mData->realVarsData[k].dimension.numberOfDimensions == 0));
+                           j+1,
+                           mData->realVarsData[k].info.name,
+                           start_buffer,
+                           nominal_buffer);
         }
       }
       if (!done)
