@@ -10,6 +10,7 @@ add_library(omc::simrt::simruntime::optimization ALIAS OpenModelicaRuntimeCOptim
 target_include_directories(OpenModelicaRuntimeCOptimization
   PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/c/optimization>
 )
 
 target_link_libraries(OpenModelicaRuntimeCOptimization
@@ -24,4 +25,4 @@ target_compile_definitions(OpenModelicaRuntimeCOptimization PUBLIC OMC_HAVE_IPOP
 # Install headers
 install(
   FILES ${OMC_SIMRT_OPTIMIZATION_HEADERS}
-  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/SimulationRuntime/c/optimization)
+  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/c/optimization)

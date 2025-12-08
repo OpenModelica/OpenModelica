@@ -12,6 +12,7 @@ add_library(omc::simrt::simruntime::dataReconciliation ALIAS OpenModelicaRuntime
 target_include_directories(OpenModelicaRuntimeCDataReconciliation
   PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/c/dataReconciliation>
 )
 
 target_link_libraries(OpenModelicaRuntimeCDataReconciliation
@@ -30,4 +31,4 @@ endif()
 # Install headers
 install(
   FILES ${OMC_SIMRT_DATA_RECONCILIATION_HEADERS}
-  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/SimulationRuntime/c/dataReconciliation)
+  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/c/dataReconciliation)

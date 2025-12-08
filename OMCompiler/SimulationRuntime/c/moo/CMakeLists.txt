@@ -10,12 +10,12 @@ add_library(omc::simrt::simruntime::moo ALIAS OpenModelicaRuntimeCMoo)
 target_include_directories(OpenModelicaRuntimeCMoo
   PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/c/moo>
 )
 
 target_include_directories(OpenModelicaRuntimeCMoo
   PRIVATE
-    omc::simrt::simruntime # TODO: Update to omc::simrt::simulation::solver
-    sundials_interface # TODO: The simulation/solver stuff needs to link this...
+    omc::simrt::simruntime::simulation
     omc::3rd::suitesparse::klu
     omc::3rd::suitesparse::config
 )
@@ -35,4 +35,4 @@ target_compile_definitions(OpenModelicaRuntimeCMoo PUBLIC OMC_HAVE_MOO)
 # Install headers
 install(
   FILES ${OMC_SIMRT_MOO_HEADERS}
-  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/SimulationRuntime/c/moo)
+  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/c/moo)

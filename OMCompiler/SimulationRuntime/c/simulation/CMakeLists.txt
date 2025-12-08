@@ -5,8 +5,7 @@ find_package(LAPACK REQUIRED)
 # Define sources with a recursive glob
 file(GLOB_RECURSE OMC_SIMRT_SIMULATION_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/*.c
                                                ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp)
-file(GLOB_RECURSE OMC_SIMRT_SIMULATION_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/*.h
-                                               ${CMAKE_CURRENT_SOURCE_DIR}/*.hpp)
+file(GLOB_RECURSE OMC_SIMRT_SIMULATION_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/*.h)
 
 add_library(OpenModelicaRuntimeCSimulation OBJECT ${OMC_SIMRT_SIMULATION_SOURCES})
 add_library(omc::simrt::simruntime::simulation ALIAS OpenModelicaRuntimeCSimulation)
@@ -14,6 +13,14 @@ add_library(omc::simrt::simruntime::simulation ALIAS OpenModelicaRuntimeCSimulat
 target_include_directories(OpenModelicaRuntimeCSimulation
   PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>/results
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>/solver
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>/solver/initialization
+
+    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/c/simulation>
+    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/c/simulation/results>
+    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/c/simulation/solver>
+    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/c/simulation/solver/initialization>
 )
 
 target_link_libraries(OpenModelicaRuntimeCSimulation
@@ -57,7 +64,13 @@ elseif(MSVC)
   target_link_libraries(OpenModelicaRuntimeCSimulation PUBLIC omc::3rd::regex)
 endif()
 
-# Install headers
-install(
-  FILES ${OMC_SIMRT_SIMULATION_HEADERS}
-  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/SimulationRuntime/c/simulation)
+# Install the header files.
+# This installs the whole directory structure of simulation/ folder which means
+# all headers will be installed keeping the directory structure intact. It might
+# install some unneeded headers but it suffices for now.
+install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/c
+  FILES_MATCHING
+    PATTERN "*.h"
+    PATTERN "*.c.inc"
+)

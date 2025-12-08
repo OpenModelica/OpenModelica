@@ -9,28 +9,33 @@ add_library(OpenModelicaRuntimeCInterface INTERFACE)
 add_library(omc::simrt::runtime::headers ALIAS OpenModelicaRuntimeCInterface)
 
 set(OMC_SIMRT_PUBLIC_HEADERS
-    ModelicaUtilities.h
-    omc_inline.h
-    omc_simulation_settings.h
-    openmodelica.h
-    openmodelica_func.h
-    openmodelica_types.h
-    simulation_data.h
+  ModelicaUtilities.h
+  omc_inline.h
+  omc_simulation_settings.h
+  openmodelica.h
+  openmodelica_func.h
+  openmodelica_types.h
+  simulation_data.h
 )
 
 target_include_directories(OpenModelicaRuntimeCInterface
-    INTERFACE
-        ${CMAKE_CURRENT_SOURCE_DIR}
-        ${CMAKE_CURRENT_SOURCE_DIR}/gc
+  INTERFACE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/gc
 )
 
 target_link_libraries(OpenModelicaRuntimeCInterface
-    INTERFACE
-        omc::3rd::omcgc
+  INTERFACE
+    omc::3rd::omcgc
 )
 
 set_target_properties(OpenModelicaRuntimeCInterface PROPERTIES
-    PUBLIC_HEADER "${OMC_SIMRT_PUBLIC_HEADERS}"
+  PUBLIC_HEADER "${OMC_SIMRT_PUBLIC_HEADERS}"
+)
+
+install(
+  FILES ${OMC_SIMRT_PUBLIC_HEADERS}
+  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/c
 )
 
 # ######################################################################################################################
@@ -75,7 +80,7 @@ elseif(MSVC)
 endif()
 
 install(TARGETS OpenModelicaRuntimeC
-        COMPONENT omc)
+  COMPONENT omc)
 
 
 # ######################################################################################################################
@@ -102,6 +107,18 @@ target_link_libraries(SimulationRuntimeC
     omc::simrt::simruntime::math-support
     omc::simrt::simruntime::simulation
 )
+if(OM_OMC_ENABLE_MOO)
+  target_link_libraries(SimulationRuntimeC
+    PUBLIC
+      omc::simrt::simruntime::moo
+  )
+endif()
+if(OM_OMC_ENABLE_OPTIMIZATION)
+  target_link_libraries(SimulationRuntimeC
+    PUBLIC
+      omc::simrt::simruntime::optimization
+  )
+endif()
 
 if(WIN32)
   target_link_libraries(SimulationRuntimeC PUBLIC wsock32)
@@ -119,7 +136,8 @@ if(OM_OMC_ENABLE_PRIMME)
 endif()
 
 target_include_directories(SimulationRuntimeC
-  PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+  PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}
+)
 
 install(TARGETS SimulationRuntimeC)
 
@@ -130,24 +148,6 @@ install(TARGETS SimulationRuntimeC)
 # it can be brought back here.
 include(cmake/source_code_fmu_config.cmake)
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/RuntimeSources.mo.cmake ${CMAKE_CURRENT_SOURCE_DIR}/RuntimeSources.mo)
-
-
-
-# ######################################################################################################################
-## Install the header files. This installs the whole directory structure of c/ folder
-## which means all headers will be installed keeping the directory structure intact.
-## It might install some unneeded headers but it suffices for now.
-install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-        TYPE INCLUDE
-        FILES_MATCHING
-        PATTERN "*.h"
-        PATTERN "*.c.inc"
-        # To skip the build dir created by the normal Makefiles build system.
-        PATTERN "build" EXCLUDE
-        # This is skipped by the makefiles and instead some header files from SimulationRuntime/fmi
-        # are instead added to c/fmi folders. Until we fix those we keep this for now :(
-        PATTERN "fmi" EXCLUDE
-)
 
 # ######################################################################################################################
 # Add C Simulation Runtime unit tests

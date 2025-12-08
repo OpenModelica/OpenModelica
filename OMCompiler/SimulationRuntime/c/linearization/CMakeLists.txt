@@ -10,6 +10,7 @@ add_library(omc::simrt::simruntime::linearization ALIAS OpenModelicaRuntimeCLine
 target_include_directories(OpenModelicaRuntimeCLinearization
   PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/c/linearization>
 )
 
 target_link_libraries(OpenModelicaRuntimeCLinearization
@@ -20,4 +21,4 @@ target_link_libraries(OpenModelicaRuntimeCLinearization
 # Install headers
 install(
   FILES ${OMC_SIMRT_LINEARIZATION_HEADERS}
-  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/SimulationRuntime/c/linearization)
+  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/c/linearization)

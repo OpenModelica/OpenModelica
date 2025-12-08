@@ -10,6 +10,7 @@ add_library(omc::simrt::runtime::util ALIAS OpenModelicaRuntimeCUtil)
 target_include_directories(OpenModelicaRuntimeCUtil
   PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/c/util>
 )
 
 target_link_libraries(OpenModelicaRuntimeCUtil
@@ -25,4 +26,4 @@ endif()
 # Install headers
 install(
   FILES ${OMC_SIMRT_UTIL_HEADERS}
-  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/SimulationRuntime/c/util)
+  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/c/util)

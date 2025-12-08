@@ -10,6 +10,7 @@ add_library(omc::simrt::runtime::meta ALIAS OpenModelicaRuntimeCMeta)
 target_include_directories(OpenModelicaRuntimeCMeta
   PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/c/meta>
 )
 
 target_link_libraries(OpenModelicaRuntimeCMeta
@@ -21,4 +22,4 @@ target_link_libraries(OpenModelicaRuntimeCMeta
 # Install headers
 install(
   FILES ${OMC_SIMRT_META_HEADERS}
-  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/SimulationRuntime/c/meta)
+  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/c/meta)
