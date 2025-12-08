@@ -3490,26 +3490,44 @@ template functionUpdateBoundVariableAttributesFunctionsSimpleAssign(SimEqSystem 
  "Generates an equation that is just a simple assignment for an arribute binding. The attribute type is given by the
  function argument 'attibute' (e.g min, max ...)"
 ::=
-match eq
-case SES_SIMPLE_ASSIGN(__)
-case SES_SIMPLE_ASSIGN_CONSTRAINTS(__) then
-  let &sub = buffer ""
-  let &preExp = buffer ""
-  let expPart = daeExp(exp, context, &preExp, &varDecls, &auxFunction)
-  let postExp = if isStartCref(cref) then
-    <<
-    <%cref(popCref(cref), &sub)%> = <%cref(cref, &sub)%>;
-    infoStreamPrint(OMC_LOG_INIT_V, 0, "updated start value: %s(start=<%crefToPrintfArg(popCref(cref))%>)", <%crefVarInfo(popCref(cref))%>.name, (<%crefType(popCref(cref))%>) <%cref(popCref(cref), &sub)%>);
-    >>
-  <<
-  <%modelicaLine(eqInfo(eq))%>
-  <%preExp%>
-  <%crefAttributes(cref)%>.<%attribute%> = <%expPart%>;
-  infoStreamPrint(OMC_LOG_INIT_V, 0, "%s(<%attribute%>=<%crefToPrintfArg(cref)%>)", <%crefVarInfo(cref)%>.name,
-        (<%crefType(cref)%>) <%crefAttributes(cref)%>.<%attribute%>);
-  <%postExp%>
-  <%endModelicaLine()%>
-  >>
+  match eq
+    case SES_SIMPLE_ASSIGN(__)
+    case SES_SIMPLE_ASSIGN_CONSTRAINTS(__) then
+      let &sub = buffer ""
+      let &preExp = buffer ""
+      let expPart = daeExp(exp, context, &preExp, &varDecls, &auxFunction)
+      let postExp = if isStartCref(cref) then
+        <<
+        <%cref(popCref(cref), &sub)%> = <%cref(cref, &sub)%>;
+        infoStreamPrint(OMC_LOG_INIT_V, 0, "updated start value: %s(start=<%crefToPrintfArg(popCref(cref))%>)",
+          <%crefVarInfo(popCref(cref))%>.name,
+          (<%crefType(popCref(cref))%>) <%cref(popCref(cref), &sub)%>);
+        >>
+
+      let updateEqs = match attribute
+        case "nominal" then
+          // TODO AHeu: Prevent evaluation of real_vector_to_string if OMC_LOG_INIT_V isn't active.
+          <<
+          put_real_element(<%expPart%>, 0, &<%crefAttributes(cref)%>.nominal);
+          infoStreamPrint(OMC_LOG_INIT_V, 0, "%s(nominal=%s)",
+            <%crefVarInfo(cref)%>.name,
+            real_vector_to_string(&<%crefAttributes(cref)%>.nominal, <%crefVarDimension(cref)%>.numberOfDimensions == 0));
+          >>
+        else
+          <<
+          <%crefAttributes(cref)%>.<%attribute%> = <%expPart%>;
+          infoStreamPrint(OMC_LOG_INIT_V, 0, "%s(<%attribute%>=<%crefToPrintfArg(cref)%>)",
+            <%crefVarInfo(cref)%>.name,
+            (<%crefType(cref)%>) <%crefAttributes(cref)%>.<%attribute%>);
+          >>
+
+      <<
+      <%modelicaLine(eqInfo(eq))%>
+      <%preExp%>
+      <%updateEqs%>
+      <%postExp%>
+      <%endModelicaLine()%>
+      >>
 end functionUpdateBoundVariableAttributesFunctionsSimpleAssign;
 
 
