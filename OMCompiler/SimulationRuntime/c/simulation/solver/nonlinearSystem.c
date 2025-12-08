@@ -1515,6 +1515,8 @@ int check_nonlinear_solution(DATA *data, int printFailingSystems, int sysNumber)
   long j;
   int i = sysNumber;
 
+  const size_t buff_size = 2048;
+
   if(nonlinsys[i].solved == NLS_FAILED)
   {
     int index = nonlinsys[i].equationIndex, indexes[2] = {1,index};
@@ -1533,16 +1535,23 @@ int check_nonlinear_solution(DATA *data, int printFailingSystems, int sysNumber)
         if (!strcmp(mData->realVarsData[k].info.name, modelInfoGetEquation(&data->modelData->modelDataXml, (nonlinsys[i]).equationIndex).vars[j]))
         {
         done = 1;
+        char start_buffer[buff_size];
+        char nominal_buffer[buff_size];
+        real_vector_to_string(&mData->realVarsData[k].attribute.start, mData->realVarsData[k].dimension.numberOfDimensions == 0, start_buffer, buff_size);
+        real_vector_to_string(&mData->realVarsData[k].attribute.nominal, mData->realVarsData[k].dimension.numberOfDimensions == 0, nominal_buffer, buff_size);
         warningStreamPrint(OMC_LOG_INIT, 0, "[%ld] Real %s(start=%s, nominal=%s)",
-                                     j+1,
-                                     mData->realVarsData[k].info.name,
-                                     real_vector_to_string(&mData->realVarsData[k].attribute.start, mData->realVarsData[k].dimension.numberOfDimensions == 0),
-                                     real_vector_to_string(&mData->realVarsData[k].attribute.nominal, mData->realVarsData[k].dimension.numberOfDimensions == 0));
+                           j+1,
+                           mData->realVarsData[k].info.name,
+                           start_buffer,
+                           nominal_buffer);
         }
       }
       if (!done)
       {
-        warningStreamPrint(OMC_LOG_INIT, 0, "[%ld] Real %s(start=?, nominal=?)", j+1, modelInfoGetEquation(&data->modelData->modelDataXml, (nonlinsys[i]).equationIndex).vars[j]);
+        warningStreamPrint(OMC_LOG_INIT, 0, "[%ld] Real %s(start=?, nominal=?)",
+                           j+1,
+                           modelInfoGetEquation(&data->modelData->modelDataXml,
+                           (nonlinsys[i]).equationIndex).vars[j]);
       }
     }
     if(data->simulationInfo->initial)

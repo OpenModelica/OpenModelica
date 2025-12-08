@@ -90,22 +90,33 @@ void dumpInitialSolution(DATA *simData)
   const MODEL_DATA      *mData = simData->modelData;
   const SIMULATION_INFO *sInfo = simData->simulationInfo;
 
+  const size_t buff_size = 2048;
+  char start_buffer[buff_size];
+  char nominal_buffer[buff_size];
+
   if (OMC_ACTIVE_STREAM(OMC_LOG_INIT_V))
     printParameters(simData, OMC_LOG_INIT_V);
 
-  if (!OMC_ACTIVE_STREAM(OMC_LOG_SOTI)) return;
+  if (!OMC_ACTIVE_STREAM(OMC_LOG_SOTI)) {
+    return;
+  }
+
   infoStreamPrint(OMC_LOG_SOTI, 1, "### SOLUTION OF THE INITIALIZATION ###");
 
   if (0 < mData->nStatesArray)
   {
     infoStreamPrint(OMC_LOG_SOTI, 1, "states variables");
-    for(i=0; i<mData->nStatesArray; ++i)
+    for(i=0; i<mData->nStatesArray; ++i) {
+      real_vector_to_string(&mData->realVarsData[i].attribute.start, mData->realVarsData[i].dimension.numberOfDimensions == 0, start_buffer, buff_size);
+      real_vector_to_string(&mData->realVarsData[i].attribute.nominal, mData->realVarsData[i].dimension.numberOfDimensions == 0, nominal_buffer, buff_size);
       infoStreamPrint(OMC_LOG_SOTI, 0, "[%ld] Real %s(start=%s, nominal=%s) = %g (pre: %g)", i+1,
-                                   mData->realVarsData[i].info.name,
-                                   real_vector_to_string(&mData->realVarsData[i].attribute.start, mData->realVarsData[i].dimension.numberOfDimensions == 0),
-                                   real_vector_to_string(&mData->realVarsData[i].attribute.nominal, mData->realVarsData[i].dimension.numberOfDimensions == 0),
-                                   simData->localData[0]->realVars[i],
-                                   sInfo->realVarsPre[i]);
+                      mData->realVarsData[i].info.name,
+                      start_buffer,
+                      nominal_buffer,
+                      simData->localData[0]->realVars[i],
+                      sInfo->realVarsPre[i]);
+    }
+
     messageClose(OMC_LOG_SOTI);
   }
 
@@ -123,13 +134,18 @@ void dumpInitialSolution(DATA *simData)
   if (2*mData->nStatesArray < mData->nVariablesRealArray)
   {
     infoStreamPrint(OMC_LOG_SOTI, 1, "other real variables");
-    for(i=2*mData->nStatesArray; i<mData->nVariablesRealArray; ++i)
+    for(i=2*mData->nStatesArray; i<mData->nVariablesRealArray; ++i) {
+      real_vector_to_string(&mData->realVarsData[i].attribute.start, mData->realVarsData[i].dimension.numberOfDimensions == 0, start_buffer, buff_size);
+      real_vector_to_string(&mData->realVarsData[i].attribute.nominal, mData->realVarsData[i].dimension.numberOfDimensions == 0, nominal_buffer, buff_size);
+
       infoStreamPrint(OMC_LOG_SOTI, 0, "[%ld] Real %s(start=%s, nominal=%s) = %g (pre: %g)", i+1,
-                                   mData->realVarsData[i].info.name,
-                                   real_vector_to_string(&mData->realVarsData[i].attribute.start, mData->realVarsData[i].dimension.numberOfDimensions == 0),
-                                   real_vector_to_string(&mData->realVarsData[i].attribute.nominal, mData->realVarsData[i].dimension.numberOfDimensions == 0),
-                                   simData->localData[0]->realVars[i],
-                                   sInfo->realVarsPre[i]);
+                      mData->realVarsData[i].info.name,
+                      start_buffer,
+                      nominal_buffer,
+                      simData->localData[0]->realVars[i],
+                      sInfo->realVarsPre[i]);
+    }
+
     messageClose(OMC_LOG_SOTI);
   }
 

@@ -548,15 +548,24 @@ static void read_var_attribute_real(omc_ModelVariable *var_map, REAL_ATTRIBUTE *
   attribute->unit = read_value_string(findHashStringStringEmpty(var_map, "unit"));
   attribute->displayUnit = read_value_string(findHashStringStringEmpty(var_map, "displayUnit"));
 
-  infoStreamPrint(OMC_LOG_DEBUG, 0,
-                  "Real %s(start=%s, fixed=%s, useNominal=%s, nominal=%s, min=%g, max=%g)",
-                  findHashStringString(var_map, "name"),
-                  real_vector_to_string(&attribute->start, isArrayVar),
-                  (attribute->fixed) ? "true" : "false",
-                  (attribute->useNominal) ? "true" : "false",
-                  real_vector_to_string(&attribute->nominal, isArrayVar),
-                  attribute->min,
-                  attribute->max);
+  if (omc_useStream[OMC_LOG_DEBUG])
+  {
+    const size_t buff_size = 2048;
+    char start_buffer[buff_size];
+    char nominal_buffer[buff_size];
+    real_vector_to_string(&attribute->start, isArrayVar, start_buffer, buff_size);
+    real_vector_to_string(&attribute->nominal, isArrayVar, nominal_buffer, buff_size);
+
+    infoStreamPrint(OMC_LOG_DEBUG, 0,
+                    "Real %s(start=%s, fixed=%s, useNominal=%s, nominal=%s, min=%g, max=%g)",
+                    findHashStringString(var_map, "name"),
+                    start_buffer,
+                    (attribute->fixed) ? "true" : "false",
+                    (attribute->useNominal) ? "true" : "false",
+                    nominal_buffer,
+                    attribute->min,
+                    attribute->max);
+  }
 }
 
 static void read_var_attribute_int(omc_ModelVariable *v, INTEGER_ATTRIBUTE *attribute)
