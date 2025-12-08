@@ -3,10 +3,10 @@ cmake_minimum_required(VERSION 3.14)
 find_package(LAPACK REQUIRED)
 
 set(OMC_SIMRT_DATA_RECONCILIATION_SOURCES
-  dataReconciliation.cpp
+  "dataReconciliation.cpp"
 )
 set(OMC_SIMRT_DATA_RECONCILIATION_HEADERS
-  dataReconciliation.h
+  "dataReconciliation.h"
 )
 
 add_library(OpenModelicaRuntimeCDataReconciliation OBJECT ${OMC_SIMRT_DATA_RECONCILIATION_SOURCES})

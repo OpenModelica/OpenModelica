@@ -1,23 +1,23 @@
 cmake_minimum_required(VERSION 3.14)
 
 set(OMC_SIMRT_MOO_SOURCES
-  debug.cpp
-  strategies.cpp
-  hessian_finite_diff.cpp
-  evaluations.cpp
-  streamlog.cpp
-  info.cpp
-  main_opt.cpp
-  problem.cpp
+  "debug.cpp"
+  "evaluations.cpp"
+  "hessian_finite_diff.cpp"
+  "info.cpp"
+  "main_opt.cpp"
+  "problem.cpp"
+  "strategies.cpp"
+  "streamlog.cpp"
 )
 set(OMC_SIMRT_MOO_HEADERS
-  debug.h
-  hessian_finite_diff.h
-  problem.h
-  strategies.h
-  streamlog.h
-  info.h
-  evaluations.h
+  "debug.h"
+  "evaluations.h"
+  "hessian_finite_diff.h"
+  "info.h"
+  "problem.h"
+  "strategies.h"
+  "streamlog.h"
 )
 
 add_library(OpenModelicaRuntimeCMoo OBJECT ${OMC_SIMRT_MOO_SOURCES})

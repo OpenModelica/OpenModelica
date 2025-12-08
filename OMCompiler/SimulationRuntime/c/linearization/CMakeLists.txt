@@ -1,10 +1,10 @@
 cmake_minimum_required(VERSION 3.14)
 
 set(OMC_SIMRT_LINEARIZATION_SOURCES
-  linearize.cpp
+  "linearize.cpp"
 )
 set(OMC_SIMRT_LINEARIZATION_HEADERS
-  linearize.h
+  "linearize.h"
 )
 
 add_library(OpenModelicaRuntimeCLinearization OBJECT ${OMC_SIMRT_LINEARIZATION_SOURCES})

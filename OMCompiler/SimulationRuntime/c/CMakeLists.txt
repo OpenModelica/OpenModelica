@@ -9,13 +9,13 @@ add_library(OpenModelicaRuntimeCInterface INTERFACE)
 add_library(omc::simrt::runtime::headers ALIAS OpenModelicaRuntimeCInterface)
 
 set(OMC_SIMRT_PUBLIC_HEADERS
-  ModelicaUtilities.h
-  omc_inline.h
-  omc_simulation_settings.h
-  openmodelica.h
-  openmodelica_func.h
-  openmodelica_types.h
-  simulation_data.h
+  "ModelicaUtilities.h"
+  "omc_inline.h"
+  "omc_simulation_settings.h"
+  "openmodelica_func.h"
+  "openmodelica_types.h"
+  "openmodelica.h"
+  "simulation_data.h"
 )
 
 target_include_directories(OpenModelicaRuntimeCInterface

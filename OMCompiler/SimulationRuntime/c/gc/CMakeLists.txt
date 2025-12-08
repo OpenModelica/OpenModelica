@@ -1,12 +1,12 @@
 cmake_minimum_required(VERSION 3.14)
 
 set(OMC_SIMRT_GC_SOURCES
-  memory_pool.c
-  omc_gc.c
+  "memory_pool.c"
+  "omc_gc.c"
 )
 set(OMC_SIMRT_GC_HEADERS
-  memory_pool.h
-  omc_gc.h
+  "memory_pool.h"
+  "omc_gc.h"
 )
 
 add_library(OpenModelicaRuntimeCGC OBJECT ${OMC_SIMRT_GC_SOURCES})

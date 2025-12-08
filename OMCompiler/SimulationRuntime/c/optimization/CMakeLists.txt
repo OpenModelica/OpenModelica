@@ -1,19 +1,19 @@
 cmake_minimum_required(VERSION 3.14)
 
 set( OMC_SIMRT_OPTIMIZATION_SOURCES
-  optimizer_main.c
-  eval_all/EvalG.c
-  eval_all/EvalL.c
-  eval_all/EvalF.c
-  DataManagement/InitialGuess.c
-  DataManagement/DerStructure.c
-  DataManagement/DebugeOptimization.c
-  DataManagement/MoveData.c
+  "DataManagement/DebugeOptimization.c"
+  "DataManagement/DerStructure.c"
+  "DataManagement/InitialGuess.c"
+  "DataManagement/MoveData.c"
+  "eval_all/EvalF.c"
+  "eval_all/EvalG.c"
+  "eval_all/EvalL.c"
+  "optimizer_main.c"
 )
 set(OMC_SIMRT_OPTIMIZATION_HEADERS
-  OptimizerData.h
-  OptimizerInterface.h
-  OptimizerLocalFunction.h
+  "OptimizerData.h"
+  "OptimizerInterface.h"
+  "OptimizerLocalFunction.h"
 )
 
 add_library(OpenModelicaRuntimeCOptimization OBJECT ${OMC_SIMRT_OPTIMIZATION_SOURCES})
