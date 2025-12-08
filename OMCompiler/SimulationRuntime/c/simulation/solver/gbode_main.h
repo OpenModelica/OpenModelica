@@ -167,6 +167,7 @@ typedef struct DATA_GBODE{
   int *slowStatesIdx;                               /* Indices of slow states */
   int *sortedStatesIdx;                             /* Indices of all states sorted for highest error */
   modelica_boolean isFirstStep;                     /* True during first Runge-Kutta integrator step, false otherwise */
+  modelica_boolean eventHappened;                   /* True if an event happened in the last iteration - will be reset to FALSE on successful step */
   unsigned int nlSystemSize;                        /* Size of non-linear system to solve in a RK step. */
   modelica_boolean symJacAvailable;                 /* Boolean stating if a symbolic Jacobian is available */
   gm_step_function step_fun;                        /* Step function of the integrator */

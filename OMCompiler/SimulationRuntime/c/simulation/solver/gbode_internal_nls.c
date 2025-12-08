@@ -574,7 +574,7 @@ static NLS_SOLVER_STATUS gbInternalSolveNls_DIRK(DATA *data,
   {
     nls->retry = 0;
 
-    if (nls->call_jac)
+    if (nls->call_jac || gbData->eventHappened)
     {
       /* set values for known last point (simplified Newton) */
       memcpy(data->localData[0]->realVars, gbData->yOld, size * sizeof(double));
@@ -597,6 +597,9 @@ static NLS_SOLVER_STATUS gbInternalSolveNls_DIRK(DATA *data,
       if (ret < 0) return NLS_FAILED;
     }
   }
+
+  /* invalidate eta of stage if an event happened */
+  if (gbData->eventHappened) nls->etas[stage] = DBL_MAX;
 
   memcpy(x, x_start, size * sizeof(double));
 
@@ -823,7 +826,7 @@ static NLS_SOLVER_STATUS gbInternalSolveNls_T_Transform(DATA *data,
 
   modelica_boolean jac_called = FALSE;
 
-  if (nls->call_jac || transform->firstRowZero)
+  if (nls->call_jac || transform->firstRowZero || gbData->eventHappened)
   {
     /* set values for known last point (simplified Newton) */
     memcpy(data->localData[0]->realVars, gbData->yOld, size * sizeof(double));
@@ -838,7 +841,7 @@ static NLS_SOLVER_STATUS gbInternalSolveNls_T_Transform(DATA *data,
       memcpy(gbData->k, &data->localData[0]->realVars[size], size * sizeof(double));
     }
 
-    if (nls->call_jac)
+    if (nls->call_jac || gbData->eventHappened)
     {
       gbInternal_evalJacobian(data, threadData, gbData, nls);
 
@@ -885,6 +888,9 @@ static NLS_SOLVER_STATUS gbInternalSolveNls_T_Transform(DATA *data,
   double nrm_delta = 0;
   double nrm_delta_prev = 0;
   double theta = 0;
+
+  /* invalidate eta if an event happened */
+  if (gbData->eventHappened) *nls->etas = DBL_MAX;
 
   // Newton iteration count - we start with newt_it = 1, because we need this for the step size selection and conditions below
   for (int newt_it = 1 ;; newt_it++)
@@ -1107,7 +1113,7 @@ void *gbInternalNlsAllocate(int size,
 
   for (int i = 0; i < tabl->nStages; i++)
   {
-    nls->etas[i] = 1e300;
+    nls->etas[i] = DBL_MAX;
   }
 
   nls->tol_integrator = (Tolerances){ userData->data->simulationInfo->tolerance, userData->data->simulationInfo->tolerance };

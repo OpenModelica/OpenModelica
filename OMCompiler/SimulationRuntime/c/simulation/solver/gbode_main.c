@@ -376,6 +376,7 @@ int gbode_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solver
   infoStreamPrint(OMC_LOG_SOLVER, 0, "gbode performs a restart after an event occurs %s", gbData->noRestart?"NO":"YES");
 
   gbData->isFirstStep = TRUE;
+  gbData->eventHappened = FALSE;
 
   /* mark initial extrapolation data as invalid () */
   gbData->extrapolationBaseTime = INFINITY;
@@ -983,6 +984,7 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
     if (foundEvent) {
       solverInfo->currentTime = eventTime;
       sData->timeValue = solverInfo->currentTime;
+      gbData->eventHappened = TRUE;
 
       // sData->realVars are the "numerical" values on the right hand side of the event
       gbData->time = eventTime;
@@ -1602,6 +1604,7 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
       /* remember last time values for dense output extrapolation with yLast, kLast */
       gbData->extrapolationBaseTime = gbData->time;
       gbData->extrapolationStepSize = gbData->stepSize;
+      gbData->eventHappened = FALSE;
 
       // Rotate the error and step size ring buffers to make room for the latest values.
       // The oldest entries are shifted one position towards the end,
@@ -1719,6 +1722,7 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
 
         // Update the current integration time to the event time.
         gbData->time = gbData->eventTime;
+        gbData->eventHappened = TRUE;
 
         // Perform interpolation at the event time to estimate states and derivatives accurately.
         gb_interpolation(gbData->interpolation,

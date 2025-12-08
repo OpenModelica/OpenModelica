@@ -297,7 +297,7 @@ int expl_diag_impl_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
       memcpy(nlsData->nlsx,    gbData->yOld, nStates*sizeof(modelica_real));
       memcpy(nlsData->nlsxExtrapolation,    gbData->yOld, nStates*sizeof(modelica_real));
 
-      if (gbData->time != data->simulationInfo->startTime && gbData->time != gbData->eventTime
+      if (gbData->time != data->simulationInfo->startTime && !gbData->eventHappened
           && gbData->tableau->dense_output != NULL && gbData->nlsSolverMethod == GB_NLS_INTERNAL
           && gbData->extrapolationBaseTime != INFINITY)
       {
@@ -539,7 +539,7 @@ int full_implicit_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
     extrapolation_gb(gbData, nlsData->nlsxExtrapolation + stage_*nStates, gbData->time + gbData->tableau->c[stage_] * gbData->stepSize);
   }
 
-  if (gbData->time != data->simulationInfo->startTime && gbData->time != gbData->eventTime
+  if (gbData->time != data->simulationInfo->startTime && !gbData->eventHappened
       && gbData->tableau->dense_output != NULL && gbData->nlsSolverMethod == GB_NLS_INTERNAL
       && gbData->extrapolationBaseTime != INFINITY)
   {
