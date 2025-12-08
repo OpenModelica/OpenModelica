@@ -9,6 +9,96 @@
 
 #include "simulation_input_xml.h"
 #include "model_help.h"
+#include "base_array.h"
+#include "real_array.h"
+
+/**
+ * @brief Validate dimension of array variable `x`.
+ *
+ * @param dimension Ponter to dimension info.
+ * @return int      Return `1` on succes, `0` otherwise.
+ */
+int validateDimensionX(const DIMENSION_INFO *dimension) {
+  if (dimension->numberOfDimensions != 1)
+  {
+    fprintf(stderr, "Test failed: Real variable dimension mismatch. Expected '1', got '%lu'\n", dimension->numberOfDimensions);
+    return 0;
+  }
+  if (dimension->dimensions[0].type != DIMENSION_BY_START)
+  {
+    fprintf(stderr, "Test failed: Real variable dimension mismatch. Expected <dimension> to contain 'start'\n");
+    return 0;
+  }
+  if (dimension->dimensions[0].start != 4)
+  {
+    fprintf(stderr, "Test failed: Real variable dimension mismatch. Expected 'start=4', got '%lu'\n", dimension->dimensions[0].start);
+    return 0;
+  }
+  if (dimension->dimensions[0].valueReference != -1)
+  {
+    fprintf(stderr, "Test failed: Real variable dimension mismatch. Expected <dimension> to not contain 'valueReference'\n");
+    return 0;
+  }
+  if (dimension->scalar_length != 4)
+  {
+    fprintf(stderr, "Test failed: Array length is wrong. Expected '4', got '%lu'\n", dimension->scalar_length);
+    return 0;
+  }
+
+  return 1;
+}
+
+/**
+ * @brief Validate start attribute of array variable `x`.
+ *
+ * @param start Pointer to start attribute.
+ * @return int  Return `1` on succes, `0` otherwise.
+ */
+int validateStartX(const real_array *start) {
+  const _index_t numElements = base_array_nr_of_elements(*start);
+  const _index_t expectedNumElements = 1;
+  if (numElements != expectedNumElements)
+  {
+    fprintf(stderr, "Test failed: Real variable start attribute wrong number of elements. Expected %ld, got %ld\n", expectedNumElements, numElements);
+    return 0;
+  }
+
+  const modelica_real startValue = real_get(*start, 0);
+  const modelica_real expectedStartValue = 7;
+  if (startValue != expectedStartValue)
+  {
+    fprintf(stderr, "Test failed: Real variable start attribute mismatched. Expected %f, got %f\n", expectedStartValue, startValue);
+    return 0;
+  }
+
+  return 1;
+}
+
+/**
+ * @brief Validate nominal attribute of array variable `x`.
+ *
+ * @param nominal Pointer to nominal attribute.
+ * @return int    Return `1` on succes, `0` otherwise.
+ */
+int validateNominalX(const real_array *nominal) {
+  const _index_t numElements = base_array_nr_of_elements(*nominal);
+  const _index_t expectedNumElements = 1;
+  if (numElements != expectedNumElements)
+  {
+    fprintf(stderr, "Test failed: Real variable nominal attribute wrong number of elements. Expected %ld, got %ld\n", expectedNumElements, numElements);
+    return 0;
+  }
+
+  const modelica_real nominalValue = real_get(*nominal, 0);
+  const modelica_real expectedNominalValue = 1;
+  if (nominalValue != expectedNominalValue)
+  {
+    fprintf(stderr, "Test failed: Real variable nominal attribute mismatched. Expected %f, got %f\n", expectedNominalValue, nominalValue);
+    return 0;
+  }
+
+  return 1;
+}
 
 /**
  * @brief Test parsing of init XML
@@ -80,37 +170,17 @@ int main(int argc, char *argv[])
     MMC_CATCH_TOP(fprintf(stderr, "Test throw!\n"); test_success = 0);
   }
 
-  // Validate
+  // Validate array variable x
   if (test_success && strcmp(modelData.realVarsData[0].info.name, "x"))
   {
     fprintf(stderr, "Test failed: Real variable name mismatch. Expected 'x', got '%s'\n", modelData.realVarsData[0].info.name);
     test_success = 0;
   }
-  if (test_success && modelData.realVarsData[0].dimension.numberOfDimensions != 1)
-  {
-    fprintf(stderr, "Test failed: Real variable dimension mismatch. Expected '1', got '%lu'\n", modelData.realVarsData[0].dimension.numberOfDimensions);
-    test_success = 0;
-  }
-  if (test_success && modelData.realVarsData[0].dimension.dimensions[0].type != DIMENSION_BY_START)
-  {
-    fprintf(stderr, "Test failed: Real variable dimension mismatch. Expected <dimension> to contain 'start'\n");
-    test_success = 0;
-  }
-  if (test_success && modelData.realVarsData[0].dimension.dimensions[0].start != 4)
-  {
-    fprintf(stderr, "Test failed: Real variable dimension mismatch. Expected 'start=4', got '%lu'\n", modelData.realVarsData[0].dimension.dimensions[0].start);
-    test_success = 0;
-  }
-  if (test_success && modelData.realVarsData[0].dimension.dimensions[0].valueReference != -1)
-  {
-    fprintf(stderr, "Test failed: Real variable dimension mismatch. Expected <dimension> to not contain 'valueReference'\n");
-    test_success = 0;
-  }
-  if (test_success && modelData.realVarsData[0].dimension.scalar_length != 4)
-  {
-    fprintf(stderr, "Test failed: Array length is wrong. Expected '4', got '%lu'\n", modelData.realVarsData[0].dimension.scalar_length);
-    test_success = 0;
-  }
+  test_success = test_success && validateDimensionX(&modelData.realVarsData[0].dimension);
+  test_success = test_success && validateStartX(&modelData.realVarsData[0].attribute.start);
+  test_success = test_success && validateNominalX(&modelData.realVarsData[0].attribute.nominal);
+
+  // Test scalar variable p
   if (test_success && strcmp(modelData.integerParameterData[0].info.name, "p"))
   {
     fprintf(stderr, "Test failed: integer parameter name mismatch. Expected p, got %s\n", modelData.integerParameterData[0].info.name);

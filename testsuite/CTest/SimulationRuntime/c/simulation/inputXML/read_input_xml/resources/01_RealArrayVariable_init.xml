@@ -67,7 +67,7 @@
     isProtected = "false" hideResult = "false" isEncrypted = "false" initNonlinear = "false"
     fileName = "" startLine = "0" startColumn = "0" endLine = "0" endColumn = "0" fileWritable = "true">
       <Dimension start="4"/>
-      <Real fixed="false" useNominal="false" />
+      <Real start="7" fixed="false" useNominal="false" />
     </ArrayVariable>
     <ScalarVariable
     name = "p"
