@@ -5022,12 +5022,12 @@ algorithm
         if Util.isSome(shared.dataReconciliationData) then
           BackendDAE.DATA_RECON(_, _, _, _, jacH) := Util.getOption(shared.dataReconciliationData);
           if isSome(jacH) then // check for matrix H is present which means state estimation algorithm is choosed and jacobian F and H are generated earlier
-            matrixnames := {"A", "B", "C", "D"};
+            matrixnames := {"A", "ADJ", "B", "C", "D"};
           else
-            matrixnames := {"A", "B", "C", "D", "H"};
+            matrixnames := {"A", "ADJ", "B", "C", "D", "H"};
           end if;
         else
-           matrixnames := {"A", "B", "C", "D", "F", "H"};
+           matrixnames := {"A", "ADJ", "B", "C", "D", "F", "H"};
         end if;
         (res, ouniqueEqIndex) := createSymbolicJacobianssSimCode(inSymjacs, crefSimVarHT, iuniqueEqIndex, matrixnames, {});
         // _ := FlagsUtil.set(Flags.EXEC_STAT, b);
