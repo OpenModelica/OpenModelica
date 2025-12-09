@@ -47,6 +47,7 @@ protected
   // NF imports
   import Call = NFCall;
   import ComponentRef = NFComponentRef;
+  import Dimension = NFDimension;
   import Expression = NFExpression;
   import NFFunction.Function;
   import NFFlatten.FunctionTree;
@@ -344,6 +345,7 @@ public
           Equation new_eqn, body;
           Expression lhs, rhs;
           Call call;
+          Dimension dim;
           list<Expression> elements;
           Integer size;
 
@@ -366,12 +368,14 @@ public
 
         // CREF = {...} array equation
         case Equation.ARRAY_EQUATION(lhs = lhs as Expression.CREF(), rhs = rhs as Expression.ARRAY()) algorithm
-          elements := list(NFExpression.applySubscripts({Subscript.INDEX(Expression.INTEGER(i))}, lhs, true) for i in 1:arrayLength(rhs.elements));
+          dim       := listHead(Type.arrayDims(lhs.ty));
+          elements  := list(NFExpression.applySubscripts({Subscript.nth(dim, i)}, lhs, true) for i in 1:arrayLength(rhs.elements));
         then inlineArrayEquation(eqn, listArray(elements), rhs.elements, eqn.attr, iter, variables, new_eqns, set, index);
 
         // {...} = CREF array equation
         case Equation.ARRAY_EQUATION(lhs = lhs as Expression.ARRAY(), rhs = rhs as Expression.CREF()) algorithm
-          elements := list(NFExpression.applySubscripts({Subscript.INDEX(Expression.INTEGER(i))}, rhs, true) for i in 1:arrayLength(lhs.elements));
+          dim       := listHead(Type.arrayDims(rhs.ty));
+          elements  := list(NFExpression.applySubscripts({Subscript.nth(dim, i)}, rhs, true) for i in 1:arrayLength(lhs.elements));
         then inlineArrayEquation(eqn, lhs.elements, listArray(elements), eqn.attr, iter, variables, new_eqns, set, index);
 
         // CREF = {... for i in []} array constructor equation
