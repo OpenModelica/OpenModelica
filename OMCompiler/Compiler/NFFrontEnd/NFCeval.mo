@@ -1150,14 +1150,8 @@ function evalBinaryDiv
   output Expression exp;
 algorithm
   exp := match (exp1, exp2)
-    // while technically not allowed to devide integers, it occurs when solving in the new backend
-    case (_, Expression.INTEGER(1)) then exp1;
-    case (Expression.REAL(), Expression.INTEGER()) then Expression.REAL(exp1.value / exp2.value);
-    case (Expression.INTEGER(), Expression.REAL()) then Expression.REAL(exp1.value / exp2.value);
-    case (Expression.INTEGER(), Expression.INTEGER()) then
-      if intMod(exp1.value, exp2.value) == 0 then Expression.INTEGER(intDiv(exp1.value, exp2.value)) else Expression.REAL(exp1.value / exp2.value);
-
-    case (_, Expression.REAL(0.0))
+    // Division by zero
+    case (_, _) guard Expression.isZero(exp2)
       algorithm
         if EvalTarget.hasInfo(target) then
           Error.addSourceMessage(Error.DIVISION_BY_ZERO,
@@ -1168,6 +1162,14 @@ algorithm
         end if;
       then
         exp;
+
+    // while technically not allowed to divide integers, it occurs when solving in the new backend
+    case (_, Expression.INTEGER(1)) then exp1;
+    case (Expression.REAL(), Expression.INTEGER()) then Expression.REAL(exp1.value / exp2.value);
+    case (Expression.INTEGER(), Expression.REAL()) then Expression.REAL(exp1.value / exp2.value);
+
+    case (Expression.INTEGER(), Expression.INTEGER()) then
+      if intMod(exp1.value, exp2.value) == 0 then Expression.INTEGER(intDiv(exp1.value, exp2.value)) else Expression.REAL(exp1.value / exp2.value);
 
     case (Expression.REAL(), Expression.REAL())
       then Expression.REAL(exp1.value / exp2.value);
