@@ -67,7 +67,7 @@
     fileName = "" startLine = "0" startColumn = "0" endLine = "0" endColumn = "0" fileWritable = "true">
       <Dimension start="3"/>
       <Dimension start="2"/>
-      <Real start="0.0 0.1 1.0 1.1 2.0 2.1" fixed="false" useNominal="false" />
+      <Real start="0.0 0.1 1.0 1.1 2.0 2.1" fixed="false" useNominal="false" nominal="10.1, 10.2, 10.3, 10.4, 10.5, 10.6"/>
     </ArrayVariable>
   </ModelVariables>
 
