@@ -4650,7 +4650,7 @@ public
       case STRING() then true;
       case BOOLEAN() then true;
       case ENUM_LITERAL() then true;
-      case ARRAY() then exp.literal or Array.all(exp.elements, isLiteralXML);
+      case ARRAY() then Array.all(exp.elements, isLiteralXML);
       case RECORD() then List.all(exp.elements, isLiteralXML);
       case RANGE() then isLiteralXML(exp.start) and isLiteralXML(exp.stop) and
                         Util.applyOptionOrDefault(exp.step, isLiteralXML, true);
