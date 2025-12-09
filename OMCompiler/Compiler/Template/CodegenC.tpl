@@ -639,6 +639,8 @@ template simulationFile_nls(SimCode simCode)
     <%simulationFileHeader(simCode.fileNamePrefix)%>
     #include "<%simCode.fileNamePrefix%>_12jac.h"
     #include "simulation/jacobian_util.h"
+    #include "simulation/arrayIndex.h"
+
     #if defined(__cplusplus)
     extern "C" {
     #endif
@@ -663,6 +665,8 @@ template simulationFile_lsy(SimCode simCode)
     /* Linear Systems */
     <%simulationFileHeader(simCode.fileNamePrefix)%>
     #include "<%simCode.fileNamePrefix%>_12jac.h"
+    #include "simulation/arrayIndex.h"
+
     #if defined(__cplusplus)
     extern "C" {
     #endif
@@ -913,7 +917,29 @@ template simulationFile_jac_header(SimCode simCode)
     case simCode as SIMCODE(__) then
     <<
     /* Jacobians */
-    static const REAL_ATTRIBUTE dummyREAL_ATTRIBUTE = omc_dummyRealAttribute;
+    static const _index_t one_dim[1] = { 1 };
+    static const modelica_real nominal_data[1] = { 1.0 };
+    static const modelica_real start_data[1]   = { 0.0 };
+    static const REAL_ATTRIBUTE dummyREAL_ATTRIBUTE = {
+      .unit = NULL,
+      .displayUnit = NULL,
+      .min = -DBL_MAX,
+      .max = DBL_MAX,
+      .fixed = FALSE,
+      .useNominal = FALSE,
+      .nominal = {
+        .ndims     = 1,
+        .dim_size  = ( _index_t* )one_dim,
+        .data      = ( void* )nominal_data,
+        .flexible  = FALSE
+      },
+      .start = {
+        .ndims     = 1,
+        .dim_size  = ( _index_t* )one_dim,
+        .data      = ( void* )start_data,
+        .flexible  = FALSE
+      }
+    };
 
     <%symJacDefinition(jacobianMatrices, modelNamePrefix(simCode))%><%\n%>
     >>
@@ -931,6 +957,8 @@ template simulationFile_opt(SimCode simCode)
     /* Optimization */
     <%simulationFileHeader(simCode.fileNamePrefix)%>
     #include "<%fileNamePrefix%>_12jac.h"
+    #include "simulation/arrayIndex.h"
+
     #if defined(__cplusplus)
     extern "C" {
     #endif
@@ -3289,7 +3317,7 @@ template generateStaticInitialData(list<ComponentRef> crefs, String indexName)
   let bodyStaticData = (crefs |> cr hasindex i0 =>
     <<
     /* static nls data for <%crefStrNoUnderscore(cr)%> */
-    sysData->nominal[i] = <%crefAttributes(cr)%>.nominal;
+    sysData->nominal[i] = getNominalFromScalarIdx(data->simulationInfo, data->modelData, <%crefIndexWithComment(cr)%>);
     sysData->min[i]     = <%crefAttributes(cr)%>.min;
     sysData->max[i++]   = <%crefAttributes(cr)%>.max;
     >>
@@ -3406,17 +3434,17 @@ let &sub = buffer ""
   {
     /* min ******************************************************** */
     infoStreamPrint(OMC_LOG_INIT, 1, "updating min-values");
-    <%minValueEquations |> eq as SES_SIMPLE_ASSIGN(__) => equation_call(eq, modelNamePrefix, contextOther)%>
+    <%(minValueEquations |> eq as SES_SIMPLE_ASSIGN(__) => equation_call(eq, modelNamePrefix, contextOther) ; separator="\n")%>
     messageClose(OMC_LOG_INIT);
 
     /* max ******************************************************** */
     infoStreamPrint(OMC_LOG_INIT, 1, "updating max-values");
-    <%maxValueEquations |> eq as SES_SIMPLE_ASSIGN(__) => equation_call(eq, modelNamePrefix, contextOther)%>
+    <%(maxValueEquations |> eq as SES_SIMPLE_ASSIGN(__) => equation_call(eq, modelNamePrefix, contextOther) ; separator="\n")%>
     messageClose(OMC_LOG_INIT);
 
     /* nominal **************************************************** */
     infoStreamPrint(OMC_LOG_INIT, 1, "updating nominal-values");
-    <%nominalValueEquations |> eq as SES_SIMPLE_ASSIGN(__) => equation_call(eq, modelNamePrefix, contextOther)%>
+    <%(nominalValueEquations |> eq as SES_SIMPLE_ASSIGN(__) => equation_call(eq, modelNamePrefix, contextOther) ; separator="\n")%>
     messageClose(OMC_LOG_INIT);
 
     /* start ****************************************************** */
@@ -3467,26 +3495,47 @@ template functionUpdateBoundVariableAttributesFunctionsSimpleAssign(SimEqSystem 
  "Generates an equation that is just a simple assignment for an arribute binding. The attribute type is given by the
  function argument 'attibute' (e.g min, max ...)"
 ::=
-match eq
-case SES_SIMPLE_ASSIGN(__)
-case SES_SIMPLE_ASSIGN_CONSTRAINTS(__) then
-  let &sub = buffer ""
-  let &preExp = buffer ""
-  let expPart = daeExp(exp, context, &preExp, &varDecls, &auxFunction)
-  let postExp = if isStartCref(cref) then
-    <<
-    <%cref(popCref(cref), &sub)%> = <%cref(cref, &sub)%>;
-    infoStreamPrint(OMC_LOG_INIT_V, 0, "updated start value: %s(start=<%crefToPrintfArg(popCref(cref))%>)", <%crefVarInfo(popCref(cref))%>.name, (<%crefType(popCref(cref))%>) <%cref(popCref(cref), &sub)%>);
-    >>
-  <<
-  <%modelicaLine(eqInfo(eq))%>
-  <%preExp%>
-  <%crefAttributes(cref)%>.<%attribute%> = <%expPart%>;
-  infoStreamPrint(OMC_LOG_INIT_V, 0, "%s(<%attribute%>=<%crefToPrintfArg(cref)%>)", <%crefVarInfo(cref)%>.name,
-        (<%crefType(cref)%>) <%crefAttributes(cref)%>.<%attribute%>);
-  <%postExp%>
-  <%endModelicaLine()%>
-  >>
+  match eq
+    case SES_SIMPLE_ASSIGN(__)
+    case SES_SIMPLE_ASSIGN_CONSTRAINTS(__) then
+      let &sub = buffer ""
+      let &preExp = buffer ""
+      let expPart = daeExp(exp, context, &preExp, &varDecls, &auxFunction)
+      let postExp = if isStartCref(cref) then
+        <<
+        <%cref(popCref(cref), &sub)%> = <%cref(cref, &sub)%>;
+        infoStreamPrint(OMC_LOG_INIT_V, 0, "updated start value: %s(start=<%crefToPrintfArg(popCref(cref))%>)",
+          <%crefVarInfo(popCref(cref))%>.name,
+          (<%crefType(popCref(cref))%>) <%cref(popCref(cref), &sub)%>);
+        >>
+
+      let updateEqs = match attribute
+        case "nominal" then
+          <<
+          put_real_element(<%expPart%>, 0, &<%crefAttributes(cref)%>.nominal);
+          if (omc_useStream[OMC_LOG_INIT_V]) {
+            char nominal_buffer[2048];
+            real_vector_to_string(&<%crefAttributes(cref)%>.nominal, <%crefVarDimension(cref)%>.numberOfDimensions == 0, nominal_buffer, 2048);
+            infoStreamPrint(OMC_LOG_INIT_V, 0, "%s(nominal=%s)",
+              <%crefVarInfo(cref)%>.name,
+              nominal_buffer);
+          }
+          >>
+        else
+          <<
+          <%crefAttributes(cref)%>.<%attribute%> = <%expPart%>;
+          infoStreamPrint(OMC_LOG_INIT_V, 0, "%s(<%attribute%>=<%crefToPrintfArg(cref)%>)",
+            <%crefVarInfo(cref)%>.name,
+            (<%crefType(cref)%>) <%crefAttributes(cref)%>.<%attribute%>);
+          >>
+
+      <<
+      <%modelicaLine(eqInfo(eq))%>
+      <%preExp%>
+      <%updateEqs%>
+      <%postExp%>
+      <%endModelicaLine()%>
+      >>
 end functionUpdateBoundVariableAttributesFunctionsSimpleAssign;
 
 
@@ -6045,7 +6094,7 @@ case SES_SIMPLE_ASSIGN_CONSTRAINTS(__) then
   <%modelicaLine(eqInfo(eq))%>
   <%preExp%>
   <%contextCref(cref, context, &preExp, &varDecls, auxFunction, &sub)%> = <%expPart%>;
-    <%postExp%>
+  <%postExp%>
   <%endModelicaLine()%>
   >>
 end equationSimpleAssign;
@@ -7080,7 +7129,7 @@ template optimizationComponents1(ClassAttributes classAttribute, SimCode simCode
                 <<
                 min[<%i0%>] = <%crefAttributes(name)%>.min;
                 max[<%i0%>] = <%crefAttributes(name)%>.max;
-                nominal[<%i0%>] = <%crefAttributes(name)%>.nominal;
+                nominal[<%i0%>] = getNominalFromScalarIdx(data->simulationInfo, data->modelData, <%crefIndexWithComment(name)%>);
                 useNominal[<%i0%>] = <%crefAttributes(name)%>.useNominal;
                 name[<%i0%>] =(char *) <%crefVarInfo(name)%>.name;
                 <%match type_ case T_REAL() then

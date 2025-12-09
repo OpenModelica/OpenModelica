@@ -46,6 +46,7 @@
 #include "../../util/omc_file.h"
 #include "external_input.h"
 #include "../options.h"
+#include "../arrayIndex.h"
 #include <math.h>
 #include <string.h>
 #include <errno.h>
@@ -449,7 +450,8 @@ int prefixedName_performSimulation(DATA* data, threadData_t *threadData, SOLVER_
           double currDer;
           for(i=data->modelData->nStates; i<2*data->modelData->nStates; ++i)
           {
-            currDer = fabs(data->localData[0]->realVars[i] / data->modelData->realVarsData[i].attribute.nominal);
+            modelica_real nominal = getNominalFromScalarIdx(data->simulationInfo, data->modelData, i);
+            currDer = fabs(data->localData[0]->realVars[i] / nominal);
             if(maxDer < currDer)
               maxDer = currDer;
           }
