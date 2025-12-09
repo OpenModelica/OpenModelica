@@ -3351,7 +3351,7 @@ template ScalarVariableTypeFMU(String attrstr, String unit, String displayUnit, 
       <%attrstr%>.max = <%optInitValFMU(maxValue,"DBL_MAX")%>;
       <%attrstr%>.fixed = <%if isFixed then 1 else 0%>;
       <%attrstr%>.useNominal = <%if nominalValue then 1 else 0%>;
-      put_real_element(<%optInitValFMU(startValue,"1.0")%>, 0, &<%attrstr%>.nominal);
+      put_real_element(<%optInitValFMU(nominalValue,"1.0")%>, 0, &<%attrstr%>.nominal);
       put_real_element(<%optInitValFMU(startValue,"0.0")%>, 0, &<%attrstr%>.start);
       >>
     case T_INTEGER(__) then

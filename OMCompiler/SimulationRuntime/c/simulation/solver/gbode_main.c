@@ -54,7 +54,7 @@
 #include <math.h>
 #include <string.h>
 
-#include "arrayIndex.h"
+#include "../arrayIndex.h"
 #include "external_input.h"
 #include "kinsolSolver.h"
 #include "kinsol_b.h"

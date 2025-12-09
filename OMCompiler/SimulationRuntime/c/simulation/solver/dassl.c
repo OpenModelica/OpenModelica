@@ -46,7 +46,7 @@
 #include "util/omc_error.h"
 #include "util/parallel_helper.h"
 
-#include "arrayIndex.h"
+#include "../arrayIndex.h"
 #include "epsilon.h"
 #include "external_input.h"
 #include "jacobianSymbolical.h"

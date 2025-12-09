@@ -39,7 +39,7 @@
 #include "../../util/context.h"
 #include "../options.h"
 #include "../solver/external_input.h"
-#include "arrayIndex.h"
+#include "../arrayIndex.h"
 #include "model_help.h"
 #include "omc_math.h"
 

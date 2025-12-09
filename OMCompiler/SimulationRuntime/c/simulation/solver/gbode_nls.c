@@ -39,7 +39,7 @@
 
 #include "../../simulation_data.h"
 
-#include "arrayIndex.h"
+#include "../arrayIndex.h"
 #include "solver_main.h"
 #include "kinsolSolver.h"
 #include "kinsol_b.h"
