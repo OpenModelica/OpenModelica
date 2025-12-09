@@ -1,0 +1,40 @@
+// name: isChangeableTuple
+// keywords: xml, init, changeable value, tuple
+// status: correct
+// teardown_command: rm isChangeableTuple.xml
+
+loadString("
+model isChangeableTuple
+  Real x,y1,y2;
+protected
+  function f
+    input Real x;
+    output Real y1;
+    output Real y2;
+  algorithm
+    y1 := x + x;
+    y2 := x*x;
+  end f;
+equation
+  x = 2;
+  (y1, y2) = f(x);
+end isChangeableTuple;
+"); getErrorString();
+
+translateModel(isChangeableTuple); getErrorString();
+system("grep -o \"isValueChangeable\\s*=\\s*\\\"\\w*\\\"\" isChangeableTuple_init.xml > isChangeableTuple.xml"); getErrorString();
+readFile("isChangeableTuple.xml"); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// 0
+// ""
+// "isValueChangeable = \"false\"
+// isValueChangeable = \"false\"
+// isValueChangeable = \"false\"
+// "
+// ""
+// endResult

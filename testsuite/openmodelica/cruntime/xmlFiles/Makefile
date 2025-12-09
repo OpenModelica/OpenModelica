@@ -5,6 +5,7 @@ TESTFILES = \
 testxmlInfoAllEqnsCorrectOrder.mos \
 testxmlInitForChangeableparameter.mos \
 isChangeable1.mos \
+isChangeableTuple.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make testfailing

@@ -548,6 +548,7 @@ algorithm
             // Save the rhs (call) as bind expression and set fixed=true
             var := BackendVariable.setBindExp(var, SOME(call));
             var := BackendVariable.makeParam(var);
+            var := BackendVariable.setVarFinal(var, true)   "make final so var is not changeable after compilation";
 
             // If it is a tuple or a record (or record within tuple)
             if intGt(listLength(varList), 1) or Expression.isTuple(cse) then
