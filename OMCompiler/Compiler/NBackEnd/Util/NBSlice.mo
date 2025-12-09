@@ -1809,6 +1809,7 @@ protected
 
       // just a single element
       case Expression.INTEGER() then {rep.value};
+      case Expression.ENUM_LITERAL() then {rep.index};
 
       // build list from range
       case Expression.RANGE() algorithm

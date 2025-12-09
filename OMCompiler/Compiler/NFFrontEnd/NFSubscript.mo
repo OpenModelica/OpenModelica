@@ -1250,16 +1250,46 @@ public
     outSubs := listReverseInPlace(outSubs);
   end mergeList;
 
+  function nth
+    input Dimension dim;
+    input Integer i;
+    output Subscript sub;
+  algorithm
+    sub := match dim
+      case Dimension.INTEGER()                then INDEX(Expression.INTEGER(i));
+      case Dimension.BOOLEAN() guard(i == 1)  then INDEX(Expression.BOOLEAN(false));
+      case Dimension.BOOLEAN() guard(i == 2)  then INDEX(Expression.BOOLEAN(true));
+      case Dimension.ENUM()                   then INDEX(Expression.nthEnumLiteral(dim.enumType, i));
+      case Dimension.RESIZABLE()              then INDEX(Expression.INTEGER(i));
+      else algorithm
+        Error.assertion(false, getInstanceName() + " got an incorrect dimension type " + Dimension.toString(dim) + ".", sourceInfo());
+      then fail();
+    end match;
+  end nth;
+
   function first
     input Dimension dim;
     output Subscript sub;
   algorithm
     sub := match dim
-      case Dimension.INTEGER() then INDEX(Expression.INTEGER(1));
-      case Dimension.BOOLEAN() then INDEX(Expression.BOOLEAN(false));
-      case Dimension.ENUM()    then INDEX(Expression.nthEnumLiteral(dim.enumType, 1));
+      case Dimension.INTEGER()    then INDEX(Expression.INTEGER(1));
+      case Dimension.BOOLEAN()    then INDEX(Expression.BOOLEAN(false));
+      case Dimension.ENUM()       then INDEX(Expression.nthEnumLiteral(dim.enumType, 1));
+      case Dimension.RESIZABLE()  then INDEX(Expression.INTEGER(1));
     end match;
   end first;
+
+  function isFirst
+    input Subscript sub;
+    output Boolean b;
+  algorithm
+    b := match sub
+      case INDEX(Expression.INTEGER(1))               then true;
+      case INDEX(Expression.BOOLEAN(false))           then true;
+      case INDEX(Expression.ENUM_LITERAL(index = 1))  then true;
+      else false;
+    end match;
+  end isFirst;
 
   function isSplit
     input Subscript sub;

@@ -2360,7 +2360,7 @@ public
       if listEmpty(subs) then
         // do not do it for scalar variables
         arr := NONE();
-      elseif List.all(subs, function Subscript.isEqual(subscript1 = Subscript.INDEX(Expression.INTEGER(1)))) then
+      elseif List.all(subs, Subscript.isFirst) then
         // if it is the first element, save the array var
         arr := SOME(stripSubscriptsAll(scal));
       else
