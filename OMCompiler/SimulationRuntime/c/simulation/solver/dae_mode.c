@@ -28,7 +28,7 @@
  *
  */
 
-#include "arrayIndex.h"
+#include "../arrayIndex.h"
 
 #include "dae_mode.h"
 

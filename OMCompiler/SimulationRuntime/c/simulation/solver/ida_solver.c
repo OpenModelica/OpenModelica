@@ -55,7 +55,7 @@
 #include "sundials_error.h"
 #include "sundials_util.h"
 
-#include "arrayIndex.h"
+#include "../arrayIndex.h"
 #include "dae_mode.h"
 #include "dassl.h"
 #include "epsilon.h"
