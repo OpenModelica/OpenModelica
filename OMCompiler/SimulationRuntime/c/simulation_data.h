@@ -262,7 +262,7 @@ enum var_type {
 /* Index (i-th variable, j-th index in array variable)*/
 typedef struct array_index_t {
   size_t array_idx;   /* Index of scalar/ array variable */
-  size_t dim_idx;     /* Index inside array as 1D representaiton */
+  size_t dim_idx;     /* Index inside array as 1D representation */
 } array_index_t;
 
 /* collect all attributes from one variable in one struct */

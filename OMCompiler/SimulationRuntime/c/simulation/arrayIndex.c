@@ -659,7 +659,7 @@ void computeVarIndices(SIMULATION_INFO *simulationInfo,
  *                        `STATIC_INTEGER_DATA*`, `STATIC_BOOLEAN_DATA*` or
  *                        `STATIC_STRING_DATA*`.
  * @param type            Specifies type of model variable `variableData`.
- * @param num_variables   Number of variables after flattening.
+ * @param num_variables   Number of scalar + array variables (before flattening).
  * @param reverseIndex    Variable reverse index to compute.
  */
 void computeVarsReverseIndex(void *variableData,
@@ -675,16 +675,16 @@ void computeVarsReverseIndex(void *variableData,
     switch (type)
     {
     case T_REAL:
-      scalar_length = ((STATIC_REAL_DATA *)variableData)[i].dimension.scalar_length;
+      scalar_length = ((STATIC_REAL_DATA *)variableData)[var_count].dimension.scalar_length;
       break;
     case T_INTEGER:
-      scalar_length = ((STATIC_INTEGER_DATA *)variableData)[i].dimension.scalar_length;
+      scalar_length = ((STATIC_INTEGER_DATA *)variableData)[var_count].dimension.scalar_length;
       break;
     case T_BOOLEAN:
-      scalar_length = ((STATIC_BOOLEAN_DATA *)variableData)[i].dimension.scalar_length;
+      scalar_length = ((STATIC_BOOLEAN_DATA *)variableData)[var_count].dimension.scalar_length;
       break;
     case T_STRING:
-      scalar_length = ((STATIC_STRING_DATA *)variableData)[i].dimension.scalar_length;
+      scalar_length = ((STATIC_STRING_DATA *)variableData)[var_count].dimension.scalar_length;
       break;
     default:
       throwStreamPrint(NULL, "computeVarsIndex: Illegal variable type case.");
@@ -708,7 +708,7 @@ void computeVarReverseIndices(SIMULATION_INFO *simulationInfo,
                               MODEL_DATA *modelData) {
 
   // Variables
-  computeVarsReverseIndex(modelData->realVarsData, T_REAL, modelData->nVariablesReal, simulationInfo->realVarsReverseIndex);
+  computeVarsReverseIndex(modelData->realVarsData, T_REAL, modelData->nVariablesRealArray, simulationInfo->realVarsReverseIndex);
 }
 
 /**
@@ -724,6 +724,12 @@ void computeVarReverseIndices(SIMULATION_INFO *simulationInfo,
 modelica_real getNominalFromScalarIdx(const SIMULATION_INFO *simulationInfo,
                                       const MODEL_DATA *modelData,
                                       size_t scalar_idx) {
+
+  if (scalar_idx >= modelData->nVariablesReal) {
+    throwStreamPrint(NULL, "getNominalFromScalarIdx: scalar_idx %zu out of bounds [0, %zu)",
+                     scalar_idx, modelData->nVariablesReal);
+  }
+
   array_index_t* revIndex = &simulationInfo->realVarsReverseIndex[scalar_idx];
   return real_get(modelData->realVarsData[revIndex->array_idx].attribute.nominal, revIndex->dim_idx);
 }

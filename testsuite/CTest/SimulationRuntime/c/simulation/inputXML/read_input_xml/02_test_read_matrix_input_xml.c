@@ -14,8 +14,8 @@
 /**
  * @brief Validate dimension of array variable `A`.
  *
- * @param dimension Ponter to dimension info.
- * @return int      Return `1` on succes, `0` otherwise.
+ * @param dimension Pointer to dimension info.
+ * @return int      Return `1` on success, `0` otherwise.
  */
 int validateDimensionA(const DIMENSION_INFO *dimension) {
   if (dimension->numberOfDimensions != 2)
@@ -71,7 +71,7 @@ int validateDimensionA(const DIMENSION_INFO *dimension) {
  * @brief Validate start attribute of array variable `A`.
  *
  * @param start Pointer to start attribute.
- * @return int  Return `1` on succes, `0` otherwise.
+ * @return int  Return `1` on success, `0` otherwise.
  */
 int validateStartA(const real_array *start) {
   const _index_t numElements = base_array_nr_of_elements(*start);
@@ -99,7 +99,7 @@ int validateStartA(const real_array *start) {
  * @brief Validate nominal attribute of array variable `A`.
  *
  * @param nominal Pointer to nominal attribute.
- * @return int  Return `1` on succes, `0` otherwise.
+ * @return int  Return `1` on success, `0` otherwise.
  */
 int validateNominalA(const real_array *nominal) {
   const _index_t numElements = base_array_nr_of_elements(*nominal);

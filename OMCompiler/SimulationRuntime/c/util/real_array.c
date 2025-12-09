@@ -545,6 +545,12 @@ void real_vector_to_string(const real_array *source, modelica_boolean isScalar, 
     modelica_real *data;
     size_t pos = 0;
 
+    /* Validate input parameters */
+    if (buffer == NULL || bufsize == 0) {
+        return;
+    }
+    buffer[0] = '\0';
+
     omc_assert_macro(base_array_ok(source));
     assert(source->ndims == 1);
 
@@ -552,21 +558,51 @@ void real_vector_to_string(const real_array *source, modelica_boolean isScalar, 
 
     if (isScalar && source->ndims == 1 && source->dim_size[0] == 1)
     {
-        pos += snprintf(buffer + pos, bufsize - pos, "%g", data[0]);
+        /* Write scalar into buffer */
+        snprintf(buffer + pos, bufsize - pos, "%g", data[0]);
     }
     else
     {
-        pos += snprintf(buffer + pos, bufsize - pos, "{");
+        /* Start brace */
+        int ret = snprintf(buffer + pos, (bufsize > pos) ? bufsize - pos : 0, "{");
+        if (ret < 0) ret = 0;
+        if ((size_t)ret >= bufsize - pos) {
+            return;
+        }
+        pos += (size_t)ret;
+
         for (i = 0; i < source->dim_size[0]; i++)
         {
-            pos += snprintf(buffer + pos, bufsize - pos,
-                            "%g%s", data[i], (i < source->dim_size[0] - 1) ? ", " : "");
-            if (pos >= bufsize)
-            {
-                break;
+            size_t remaining = (bufsize > pos) ? bufsize - pos : 0;
+
+            /* If not enough room to write an element, try to append "...}" and stop */
+            if (remaining <= 4) {
+                snprintf(buffer + pos, remaining, "...}");
+                return;
             }
+
+            /* Format element: use comma+space for non-last elements */
+            if (i < source->dim_size[0] - 1) {
+                ret = snprintf(buffer + pos, remaining, "%g, ", data[i]);
+            } else {
+                ret = snprintf(buffer + pos, remaining, "%g", data[i]);
+            }
+
+            if (ret < 0) ret = 0;
+            if (ret >= remaining - 4) {
+                /* Not enough space for more elements; try to write "...}" instead */
+                remaining = (bufsize > pos) ? bufsize - pos : 0;
+                snprintf(buffer + pos, remaining, "...}");
+                return;
+            }
+            pos += (size_t)ret;
         }
-        snprintf(buffer + pos, bufsize - pos, "}");
+
+        /* Append closing brace */
+        size_t remaining = (bufsize > pos) ? bufsize - pos : 0;
+        if (remaining > 0) {
+            snprintf(buffer + pos, remaining, "}");
+        }
     }
 }
 
