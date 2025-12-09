@@ -972,11 +972,13 @@ void scalarAllocArrayAttributes(MODEL_DATA* modelData) {
   // Variables
   for(i = 0; i < modelData->nVariablesRealArray; i++) {
     simple_alloc_1d_real_array(&modelData->realVarsData[i].attribute.start, 1);
+    simple_alloc_1d_real_array(&modelData->realVarsData[i].attribute.nominal, 1);
   }
 
   // Parameter
   for(i = 0; i < modelData->nParametersRealArray; i++) {
     simple_alloc_1d_real_array(&modelData->realParameterData[i].attribute.start, 1);
+    simple_alloc_1d_real_array(&modelData->realParameterData[i].attribute.nominal, 1);
   }
 }
 
