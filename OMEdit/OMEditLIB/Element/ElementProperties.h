@@ -188,6 +188,7 @@ private:
 
   void createEditClassButton();
   void createValueWidget();
+  void createValueComboBox();
   void enableDisableUnitComboBox(const QString &value);
   void updateValueBinding(const FlatModelica::Expression expression);
   bool isValueModifiedHelper() const;
