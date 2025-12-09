@@ -640,6 +640,7 @@ template simulationFile_nls(SimCode simCode)
     #include "<%simCode.fileNamePrefix%>_12jac.h"
     #include "simulation/jacobian_util.h"
     #include "simulation/arrayIndex.h"
+
     #if defined(__cplusplus)
     extern "C" {
     #endif
@@ -662,10 +663,10 @@ template simulationFile_lsy(SimCode simCode)
     case simCode as SIMCODE(modelInfo=MODELINFO(varInfo=varInfo as VARINFO(__),linearSystems=linearSystems)) then
     <<
     /* Linear Systems */
-    #include "simulation/arrayIndex.h"
-
     <%simulationFileHeader(simCode.fileNamePrefix)%>
     #include "<%simCode.fileNamePrefix%>_12jac.h"
+    #include "simulation/arrayIndex.h"
+
     #if defined(__cplusplus)
     extern "C" {
     #endif
@@ -956,6 +957,8 @@ template simulationFile_opt(SimCode simCode)
     /* Optimization */
     <%simulationFileHeader(simCode.fileNamePrefix)%>
     #include "<%fileNamePrefix%>_12jac.h"
+    #include "simulation/arrayIndex.h"
+
     #if defined(__cplusplus)
     extern "C" {
     #endif
