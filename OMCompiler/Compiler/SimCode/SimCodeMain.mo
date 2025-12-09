@@ -938,12 +938,12 @@ algorithm
         if not Flags.getConfigBool(Flags.FMI_SOURCES) or Flags.getConfigEnum(Flags.FMI_FILTER) == Flags.FMI_BLACKBOX then
           model_desc_src_files := {}; // set the sourceFiles to empty, to remove the sources in modeldescription.xml
         else
-          model_desc_src_files := List.flatten({model_gen_files,      //  order matters
-                                                shared_source_files,
-                                                dgesv_sources,
-                                                cminpack_sources,
-                                                simrt_c_sundials_sources,
-                                                modelica_standard_table_sources
+          model_desc_src_files := List.flatten({List.sort(model_gen_files, Util.strcmpNoCaseBool),      //  order matters
+                                                List.sort(shared_source_files, Util.strcmpNoCaseBool),
+                                                List.sort(dgesv_sources, Util.strcmpNoCaseBool),
+                                                List.sort(cminpack_sources, Util.strcmpNoCaseBool),
+                                                List.sort(simrt_c_sundials_sources, Util.strcmpNoCaseBool),
+                                                List.sort(modelica_standard_table_sources, Util.strcmpNoCaseBool)
                                     });
         end if;
 
@@ -1022,10 +1022,21 @@ algorithm
         modelDefinesHeaderStr := System.stringReplace(modelDefinesHeaderStr, "fmu2_dummy_model_defines.h", "../" + simCode.fileNamePrefix + "_FMU.h");
         System.writeFile(fmu_tmp_sources_dir + "fmi-export/fmu2_model_interface.c", modelDefinesHeaderStr);
 
-        Tpl.closeFile(Tpl.tplCallWithFailErrorNoArg(function CodegenFMU.fmuMakefile(a_target=Config.simulationCodeTarget(), a_simCode=simCode, a_FMUVersion=FMUVersion, a_sourceFiles=model_all_gen_files, a_runtimeObjectFiles=list(System.stringReplace(f,".c",".o") for f in shared_source_files), a_dgesvObjectFiles=list(System.stringReplace(f,".c",".o") for f in dgesv_sources), a_cminpackObjectFiles=list(System.stringReplace(f,".c",".o") for f in cminpack_sources), a_sundialsObjectFiles=list(System.stringReplace(f,".c",".o") for f in simrt_c_sundials_sources)),
-                      txt=Tpl.redirectToFile(Tpl.emptyTxt, fmutmp+"/sources/Makefile.in")));
-        Tpl.closeFile(Tpl.tplCallWithFailError(CodegenFMU.settingsfile, simCode,
-                      txt=Tpl.redirectToFile(Tpl.emptyTxt, fmutmp+"/sources/omc_simulation_settings.h")));
+        Tpl.closeFile(Tpl.tplCallWithFailErrorNoArg(
+          function CodegenFMU.fmuMakefile(
+            a_target=Config.simulationCodeTarget(),
+            a_simCode=simCode,
+            a_FMUVersion=FMUVersion,
+            a_sourceFiles=model_all_gen_files,
+            a_runtimeObjectFiles=list(System.stringReplace(f,".c",".o") for f in shared_source_files),
+            a_dgesvObjectFiles=list(System.stringReplace(f,".c",".o") for f in dgesv_sources),
+            a_cminpackObjectFiles=list(System.stringReplace(f,".c",".o") for f in cminpack_sources),
+            a_sundialsObjectFiles=list(System.stringReplace(f,".c",".o") for f in simrt_c_sundials_sources)),
+          txt=Tpl.redirectToFile(Tpl.emptyTxt, fmutmp+"/sources/Makefile.in")));
+        Tpl.closeFile(Tpl.tplCallWithFailError(
+          CodegenFMU.settingsfile,
+          simCode,
+          txt=Tpl.redirectToFile(Tpl.emptyTxt, fmutmp+"/sources/omc_simulation_settings.h")));
         /*Temporary generate extra files for omsicpp simcodetarget, additionaly to C-fmu code*/
         if Config.simCodeTarget() ==  "omsicpp" then
          runTpl(func = function CodegenOMSICpp.translateModel(a_simCode=simCode, a_FMUVersion=FMUVersion, a_FMUType=FMUType));
