@@ -261,6 +261,13 @@ public
     end match;
   end getModule;
 
+  function getVariables
+    input Tearing tearing;
+    output list<Pointer<Variable>> variables;
+  algorithm
+     variables := listAppend(var for var in list(Slice.getT(var) for var in tearing.iteration_vars) :: list(StrongComponent.getVariables(comp) for comp in tearing.innerEquations));
+  end getVariables;
+
   function getResidualVars
     input Tearing tearing;
     output list<Pointer<Variable>> residuals;
@@ -386,7 +393,7 @@ protected
         acc := list(Inline.inlineRecordSliceEquation(eqn, variables, dummy_set, eq_index, true) for eqn in strict.residual_eqns);
 
         // create residual equations
-        strict.residual_eqns  := list(Slice.apply(eqn, function Equation.createResidual(new = true, allowFail = false)) for eqn in List.flatten(acc));
+        strict.residual_eqns  := list(Slice.apply(eqn, function Equation.createResidual(residualCref_opt = NONE(), new = true, allowFail = false)) for eqn in List.flatten(acc));
         comp.strict := strict;
 
         if Flags.isSet(Flags.TEARING_DUMP) then
@@ -404,35 +411,26 @@ protected
     list<Pointer<Variable>> vars_lst, cont_vars, disc_vars;
     list<Pointer<Equation>> eqns_lst, cont_eqns, disc_eqns;
     Integer num_vars, num_eqns;
+    list<Slice<VariablePointer>> matched_vars, iteration_vars = {};
     list<Slice<EquationPointer>> residual_lst;
     Adjacency.Matrix adj;
     Matching matching;
     list<StrongComponent> inner_comps;
-    UnorderedMap<ComponentRef, Integer> v, e  "discrete variables and equations we have to refine";
+    UnorderedMap<ComponentRef, Integer> v, e;
+    UnorderedSet<ComponentRef> matched_set = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
   algorithm
     comp := match comp
       case StrongComponent.ALGEBRAIC_LOOP(strict = strict) algorithm
         // split equations and variables for discretes and continuous
         vars_lst := list(Slice.getT(var) for var in strict.iteration_vars);
         eqns_lst := list(Slice.getT(eqn) for eqn in strict.residual_eqns);
-        (cont_vars, disc_vars) := List.splitOnTrue(vars_lst, function BVariable.isContinuous(init = kind == NBPartition.Kind.INI));
-        (cont_eqns, disc_eqns) := List.splitOnTrue(eqns_lst, Equation.isContinuous);
+        (cont_vars, disc_vars) := filterDiscreteVariables(vars_lst, kind == NBPartition.Kind.INI);
+        (cont_eqns, disc_eqns) := List.splitOnTrue(eqns_lst, Equation.isContinousRecordAware);
         num_vars := sum(BVariable.size(var) for var in disc_vars);
         num_eqns := sum(Equation.size(eqn) for eqn in disc_eqns);
 
-        if num_vars <> num_eqns then
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName()
-            + " failed because number of discrete variables " + intString(num_vars) + " differs from number of discrete equations: " + intString(num_eqns)
-            + ".\n" + StringUtil.headline_4("(" + intString(listLength(disc_vars)) + "|"
-            + intString(num_vars) + ") Discrete Variables")
-            + List.toString(disc_vars, BVariable.pointerToString, "", "\t", "\n\t", "\n", true) + "\n"
-            + StringUtil.headline_4("(" + intString(listLength(disc_eqns)) + "|"
-            + intString(num_eqns) + ") Discrete Equations")
-            + List.toString(disc_eqns, function Equation.pointerToString(str=""), "", "\t", "\n\t", "\n", true) + "\n"});
-          fail();
-        end if;
-
-        if not listEmpty(disc_vars) then
+        // do nothing if there are no discrete equations
+        if not listEmpty(disc_eqns) then
           comp.mixed := true;
 
           // the sets of discrete variables and discrete equations
@@ -442,13 +440,28 @@ protected
           // match the discretes to create inner components
           adj         := Adjacency.Matrix.fromFull(full, v, e, equations, NBAdjacency.MatrixStrictness.MATCHING);
           matching    := Matching.regular(NBMatching.EMPTY_MATCHING, adj, true, true);
+
+          // get matched vars and remove them from the iteration variable list
+          (matched_vars, _, _, _) := Matching.getMatches(matching, Adjacency.Matrix.getMappingOpt(adj), variables, equations);
+          // build the matched variables set
+          for var in matched_vars loop
+            UnorderedSet.add(BVariable.getVarName(Slice.getT(var)), matched_set);
+          end for;
+          // only take variables that are not in the set
+          for var in strict.iteration_vars loop
+            if not UnorderedSet.contains(BVariable.getVarName(Slice.getT(var)), matched_set) then
+              iteration_vars := var :: iteration_vars;
+            end if;
+          end for;
+
+          // upgrade adjacency matrix and sort the system creating inner equation components
           adj         := Adjacency.Matrix.upgrade(adj, full, v, e, equations, NBAdjacency.MatrixStrictness.SORTING);
           inner_comps := Sorting.tarjan(adj, matching, variables, equations); // probably need other variables and equations here?
           strict.innerEquations := listArray(inner_comps);
 
           // create residuals equations and iteration variables
           strict.residual_eqns  := list(Slice.SLICE(eqn, {}) for eqn in cont_eqns);
-          strict.iteration_vars := list(Slice.SLICE(var, {}) for var in cont_vars);
+          strict.iteration_vars := listReverse(iteration_vars);
           comp.strict := strict;
         end if;
       then comp;
@@ -614,6 +627,58 @@ protected
       then fail();
     end match;
   end checkLinearity;
+
+  function filterDiscreteVariables
+    "splits off all discrete variables. also splits off variables that belong to a record with a discrete variable in this algebraic loop"
+    input list<Pointer<Variable>> vars_lst;
+    input Boolean init;
+    output list<Pointer<Variable>> cont_vars;
+    output list<Pointer<Variable>> disc_vars;
+  protected
+    UnorderedSet<ComponentRef> discrete_records = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
+    list<Pointer<Variable>> rec_disc_vars;
+
+    function addDiscreteRecord
+      "checks if it has a record parent that needs to be added"
+      input Pointer<Variable> var;
+      input UnorderedSet<ComponentRef> discrete_records;
+    algorithm
+      _ := match BVariable.getParent(var)
+        local
+          Pointer<Variable> parent;
+        case SOME(parent) algorithm
+          UnorderedSet.add(BVariable.getVarName(parent), discrete_records);
+          addDiscreteRecord(parent, discrete_records);
+        then ();
+        else ();
+      end match;
+    end addDiscreteRecord;
+
+    function checkDiscreteRecord
+      "checks if continuous variable is part of records of which discretes are in this loop"
+      input Pointer<Variable> var;
+      input UnorderedSet<ComponentRef> discrete_records;
+      input Boolean is_parent;
+      output Boolean b;
+    algorithm
+      b := match BVariable.getParent(var)
+        local
+          Pointer<Variable> parent;
+        case SOME(parent) then checkDiscreteRecord(parent, discrete_records, true);
+        else is_parent and UnorderedSet.contains(BVariable.getVarName(var), discrete_records);
+      end match;
+    end checkDiscreteRecord;
+  algorithm
+    // basic filter all discrete variables
+    (cont_vars, disc_vars) := List.splitOnTrue(vars_lst, function BVariable.isContinuous(init = init));
+    // add all records that contain discrete variables
+    for var in disc_vars loop addDiscreteRecord(var, discrete_records); end for;
+    // split off all variables that are part of records of which discretes are in this loop
+    (rec_disc_vars, cont_vars) := List.splitOnTrue(cont_vars, function checkDiscreteRecord(discrete_records = discrete_records, is_parent = false));
+
+    // add the continous record variables that might be solved alongside discretes to the list
+    disc_vars := listReverse(listAppend(rec_disc_vars, disc_vars));
+  end filterDiscreteVariables;
 
   annotation(__OpenModelica_Interface="backend");
 end NBTearing;

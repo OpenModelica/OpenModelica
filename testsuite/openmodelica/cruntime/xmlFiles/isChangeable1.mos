@@ -1,0 +1,26 @@
+// name: isChangeable1
+// keywords: xml, init, changeable value
+// status: correct
+// teardown_command: rm isChangeable1.xml
+
+loadString("
+model isChangeable1
+  Real x = 1;
+end isChangeable1;
+"); getErrorString();
+
+translateModel(isChangeable1); getErrorString();
+system("grep -o \"isValueChangeable\\s*=\\s*\\\"\\w*\\\"\" isChangeable1_init.xml > isChangeable1.xml"); getErrorString();
+readFile("isChangeable1.xml"); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// 0
+// ""
+// "isValueChangeable = \"false\"
+// "
+// ""
+// endResult

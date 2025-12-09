@@ -672,7 +672,6 @@ $(builddir_lib_omc)/libsundials_ida.a: 3rdParty/sundials-5.4.0/CMakeLists.txt
 	# this is rather weird, only the file with full version number is the actual lib all the other ones are symlinks
 	# strange stuff is that *install_name_tool* on a symlink will replace the symlink with the changed dylib
 	# see http://mac-os-forge.2317878.n4.nabble.com/install-name-tool-problem-with-symlinks-on-Xcode-12-2-td406984.html
-	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_arkode.4.4.0.dylib "$(builddir_lib_omc)/libsundials_arkode.4.4.0.dylib"
 	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_cvode.5.4.0.dylib "$(builddir_lib_omc)/libsundials_cvode.5.4.0.dylib"
 	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_cvodes.5.4.0.dylib "$(builddir_lib_omc)/libsundials_cvodes.5.4.0.dylib"
 	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_ida.5.4.0.dylib "$(builddir_lib_omc)/libsundials_ida.5.4.0.dylib"

@@ -376,6 +376,7 @@ if true then /* Suppress output */
     "../NFFrontEnd/NFComplexType.mo",
     "../NFFrontEnd/NFComponent.mo",
     "../NFFrontEnd/NFComponentRef.mo",
+    "../NFFrontEnd/NFConnectBreakTree.mo",
     "../NFFrontEnd/NFConnectEquations.mo",
     "../NFFrontEnd/NFConnection.mo",
     "../NFFrontEnd/NFConnectionSets.mo",

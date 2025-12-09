@@ -277,7 +277,7 @@ static void B_kinsolErrorHandlerFunction(int errorCode, const char* module,
       warningStreamPrint(OMC_LOG_NLS, 0, "%s", msg);
     }
 
-    messageClose(OMC_LOG_NLS);
+    messageCloseWarning(OMC_LOG_NLS);
   }
 }
 
@@ -300,8 +300,7 @@ static void B_kinsolInfoHandlerFunction(const char *module, const char *function
     if (msg) {
       warningStreamPrint(OMC_LOG_NLS_V, 0, "%s", msg);
     }
-
-    messageClose(OMC_LOG_NLS_V);
+    messageCloseWarning(OMC_LOG_NLS_V);
   }
 }
 

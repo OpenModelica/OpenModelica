@@ -1097,6 +1097,11 @@ algorithm
       then
         true;
 
+    case (SCode.BREAK_COMPONENT(), SCode.BREAK_COMPONENT()) then true;
+
+    case (SCode.BREAK_CONNECT(), SCode.BREAK_CONNECT())
+      then AbsynUtil.crefEqual(mod1.lhs, mod2.lhs) and AbsynUtil.crefEqual(mod1.rhs, mod2.lhs);
+
     else false;
 
   end matchcontinue;
@@ -3548,6 +3553,8 @@ algorithm
 
     case SCode.MOD(info = info) then info;
     case SCode.REDECL(element = el) then elementInfo(el);
+    case SCode.BREAK_COMPONENT() then inMod.info;
+    case SCode.BREAK_CONNECT() then inMod.info;
     else AbsynUtil.dummyInfo;
   end match;
 end getModifierInfo;
@@ -3946,6 +3953,16 @@ algorithm
   end match;
 end getElementName;
 
+public function getElementTypePath
+  input SCode.Element element;
+  output Absyn.Path path;
+algorithm
+  path := match element
+    case SCode.COMPONENT() then AbsynUtil.typeSpecPath(element.typeSpec);
+    case SCode.EXTENDS() then element.baseClassPath;
+  end match;
+end getElementTypePath;
+
 public function setBaseClassPath
 "@auhtor: adrpo
  set the base class path in extends"
@@ -4311,6 +4328,37 @@ algorithm
     else false;
   end match;
 end isRedeclareSubMod;
+
+public function isBreakSubMod
+  input SCode.SubMod subMod;
+  output Boolean isBreak;
+algorithm
+  isBreak := match subMod.mod
+    case SCode.Mod.BREAK_COMPONENT() then true;
+    case SCode.Mod.BREAK_CONNECT() then true;
+    else false;
+  end match;
+end isBreakSubMod;
+
+public function isBreakComponentSubMod
+  input SCode.SubMod subMod;
+  output Boolean isBreak;
+algorithm
+  isBreak := match subMod
+    case SCode.NAMEMOD(mod = SCode.Mod.BREAK_COMPONENT()) then true;
+    else false;
+  end match;
+end isBreakComponentSubMod;
+
+public function isBreakConnectSubMod
+  input SCode.SubMod subMod;
+  output Boolean isBreak;
+algorithm
+  isBreak := match subMod
+    case SCode.NAMEMOD(mod = SCode.Mod.BREAK_CONNECT()) then true;
+    else false;
+  end match;
+end isBreakConnectSubMod;
 
 public function componentMod
   input SCode.Element inElement;

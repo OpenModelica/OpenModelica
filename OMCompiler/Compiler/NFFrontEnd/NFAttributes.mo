@@ -644,10 +644,6 @@ public
     input output IOStream.IOStream s;
     input Boolean isTopLevel = true;
   algorithm
-    if attr.isFinal then
-      s := IOStream.append(s, "final ");
-    end if;
-
     s := IOStream.append(s, Prefixes.unparseVariability(attr.variability, ty));
 
     if isTopLevel then

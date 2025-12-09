@@ -106,7 +106,7 @@ public:
   QString getOriginalFixedValue() const {return mOriginalFixedValue;}
   FinalEachToolButton *getFixedFinalEachMenu() const {return mpFixedFinalEachMenuButton;}
   void setValueType(ValueType valueType) {mValueType = valueType;}
-  void setValueWidget(QString value, bool defaultValue, QString fromUnit, bool valueModified = false, bool adjustSize = true, bool unitComboBoxChanged = false);
+  void setValueWidget(QString value, bool defaultValue, QString fromUnit, bool valueModified = false, bool unitComboBoxChanged = false);
   bool isEnumeration() const {return mValueType == Enumeration;}
   bool isReplaceableComponent() const {return mValueType == ReplaceableComponent;}
   bool isReplaceableClass() const {return mValueType == ReplaceableClass;}

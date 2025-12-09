@@ -253,6 +253,8 @@ Parameter::Parameter(ModelInstance::Element *pElement, bool defaultValue, Elemen
   // comment
   const QString comment = mpModelInstanceElement->getComment();
   mpCommentLabel = new Label(comment);
+  mpCommentLabel->useMinimumSize(true);
+  mpCommentLabel->setElideMode(Qt::ElideMiddle);
 
   if (isReplaceableClass()) {
     auto pReplaceableClass = dynamic_cast<ModelInstance::ReplaceableClass*>(mpModelInstanceElement);
@@ -305,10 +307,9 @@ void Parameter::updateNameLabel()
  * \param defaultValue
  * \param fromUnit
  * \param valueModified
- * \param adjustSize
  * \param unitComboBoxChanged
  */
-void Parameter::setValueWidget(QString value, bool defaultValue, QString fromUnit, bool valueModified, bool adjustSize, bool unitComboBoxChanged)
+void Parameter::setValueWidget(QString value, bool defaultValue, QString fromUnit, bool valueModified, bool unitComboBoxChanged)
 {
   /* ticket:5618 if we don't have a literal constant and array of constants
    * then we assume its an expression and don't do any conversions.
@@ -397,17 +398,6 @@ void Parameter::setValueWidget(QString value, bool defaultValue, QString fromUni
         mpValueComboBox->lineEdit()->setModified(valueModified);
         mpValueComboBox->blockSignals(state);
       }
-      if (adjustSize) {
-        /* Set the minimum width so that the value text will be readable.
-         * If the items width is greater than the value text than use it.
-         */
-        fm = QFontMetrics(mpValueComboBox->lineEdit()->font());
-#if QT_VERSION >= QT_VERSION_CHECK(5, 11, 0)
-        mpValueComboBox->setMinimumWidth(qMin(qMax(fm.horizontalAdvance(value), mpValueComboBox->minimumSizeHint().width()), screenWidth) + 50);
-#else // QT_VERSION_CHECK
-        mpValueComboBox->setMinimumWidth(qMin(qMax(fm.width(value), mpValueComboBox->minimumSizeHint().width()), screenWidth) + 50);
-#endif // QT_VERSION_CHECK
-      }
       break;
     case Parameter::CheckBox:
       signalsState = mpValueCheckBox->blockSignals(true);
@@ -423,15 +413,6 @@ void Parameter::setValueWidget(QString value, bool defaultValue, QString fromUni
       } else {
         mpValueTextBox->setText(value);
         mpValueTextBox->setModified(valueModified);
-      }
-      if (adjustSize) {
-        /* Set the minimum width so that the value text will be readable */
-        fm = QFontMetrics(mpValueTextBox->font());
-#if QT_VERSION >= QT_VERSION_CHECK(5, 11, 0)
-        mpValueTextBox->setMinimumWidth(qMin(fm.horizontalAdvance(value), screenWidth) + 50);
-#else // QT_VERSION_CHECK
-        mpValueTextBox->setMinimumWidth(qMin(fm.width(value), screenWidth) + 50);
-#endif // QT_VERSION_CHECK
       }
       mpValueTextBox->setCursorPosition(0); /* move the cursor to start so that parameter value will show up from start instead of end. */
       break;
@@ -631,9 +612,9 @@ void Parameter::createValueWidget()
       mpValueComboBox = new ComboBox;
       mpValueComboBox->setEditable(true);
       mpValueComboBox->setInsertPolicy(QComboBox::NoInsert);
-      mpValueComboBox->addItem("", "");
-      mpValueComboBox->addItem("true", "true");
-      mpValueComboBox->addItem("false", "false");
+      mpValueComboBox->addElidedItem("", "");
+      mpValueComboBox->addElidedItem("true", "true");
+      mpValueComboBox->addElidedItem("false", "false");
       connect(mpValueComboBox, SIGNAL(currentIndexChanged(int)), SLOT(valueComboBoxChanged(int)));
       break;
 
@@ -641,16 +622,16 @@ void Parameter::createValueWidget()
       mpValueComboBox = new ComboBox;
       mpValueComboBox->setEditable(true);
       mpValueComboBox->setInsertPolicy(QComboBox::NoInsert);
-      mpValueComboBox->addItem("", "");
+      mpValueComboBox->addElidedItem("", "");
       foreach (auto pModelInstanceElement, mpModelInstanceElement->getModel()->getElements()) {
         if (pModelInstanceElement->isComponent()) {
           auto pModelInstanceComponent = dynamic_cast<ModelInstance::Component*>(pModelInstanceElement);
           enumerationLiterals.append(pModelInstanceComponent->getName());
-          enumerationLiteralsDisplay.append(pModelInstanceComponent->getName() % " " % pModelInstanceComponent->getComment());
+          enumerationLiteralsDisplay.append(pModelInstanceComponent->getName() % " - " % pModelInstanceComponent->getComment());
         }
       }
       for (i = 0 ; i < enumerationLiterals.size(); i++) {
-        mpValueComboBox->addItem(enumerationLiteralsDisplay[i], className + "." + enumerationLiterals[i]);
+        mpValueComboBox->addElidedItem(enumerationLiteralsDisplay[i], className + "." + enumerationLiterals[i]);
       }
       connect(mpValueComboBox, SIGNAL(currentIndexChanged(int)), SLOT(valueComboBoxChanged(int)));
       break;
@@ -692,12 +673,12 @@ void Parameter::createValueWidget()
       mpValueComboBox = new ComboBox;
       mpValueComboBox->setEditable(true);
       mpValueComboBox->setInsertPolicy(QComboBox::NoInsert);
-      mpValueComboBox->addItem("", "");
+      mpValueComboBox->addElidedItem("", "");
       // add choices if there are any
       for (i = 0; i < choices.size(); i++) {
         QString choice = choices[i];
         QString comment = i < choicesComment.size() ? choicesComment[i] : choice;
-        mpValueComboBox->addItem(comment, choice);
+        mpValueComboBox->addElidedItem(comment, choice);
       }
 
       // choicesAllMatching
@@ -721,9 +702,9 @@ void Parameter::createValueWidget()
           } else {
             replaceable = QString("redeclare %1 %2").arg(replaceableChoice[0], elementName);
           }
-          mpValueComboBox->addItem(replaceableText, replaceable);
+          mpValueComboBox->addElidedItem(replaceableText, replaceable);
         } else {
-          mpValueComboBox->addItem(replaceableChoice[0], replaceableChoice[0]);
+          mpValueComboBox->addElidedItem(replaceableChoice[0], replaceableChoice[0]);
         }
       }
 
@@ -978,7 +959,7 @@ void Parameter::fileSelectorButtonClicked()
   if (fileName.isEmpty()) {
     return;
   }
-  setValueWidget(QString("\"%1\"").arg(fileName), false, mUnit, true, false);
+  setValueWidget(QString("\"%1\"").arg(fileName), false, mUnit, true);
 }
 
 /*!
@@ -990,11 +971,11 @@ void Parameter::fileSelectorButtonClicked()
 void Parameter::unitComboBoxChanged(int index)
 {
   if (!mDefaultValue.isEmpty()) {
-    setValueWidget(mDefaultValue, true, mPreviousUnit, false, true, true);
+    setValueWidget(mDefaultValue, true, mPreviousUnit, false, true);
   }
   QString value = getValue();
   if (!value.isEmpty()) {
-    setValueWidget(value, false, mPreviousUnit, true, true, true);
+    setValueWidget(value, false, mPreviousUnit, true, true);
   }
   mPreviousUnit = mpUnitComboBox->itemData(index).toString();
 }
@@ -1526,10 +1507,6 @@ void ElementParameters::setUpDialog()
     pParametersScrollArea->getLayout()->addWidget(mpComponentGroupBox);
   }
   pParametersScrollArea->getLayout()->addWidget(mpComponentClassGroupBox);
-  GroupBox *pParametersGroupBox = new GroupBox("Parameters");
-  pParametersScrollArea->addGroupBox(pParametersGroupBox);
-  GroupBox *pInitializationGroupBox = new GroupBox("Initialization");
-  pParametersScrollArea->addGroupBox(pInitializationGroupBox);
   mTabsMap.insert("General", mpParametersTabWidget->addTab(pParametersScrollArea, "General"));
   // create parameters tabs and groupboxes
   createTabsGroupBoxesAndParameters(getModel(), hasElement());
@@ -1562,46 +1539,46 @@ void ElementParameters::setUpDialog()
           /* We hide the groupbox when we create it. Show the groupbox now since it has a parameter. */
           pGroupBox->show();
           QGridLayout *pGroupBoxGridLayout = pGroupBox->getGridLayout();
-          int layoutIndex = pGroupBoxGridLayout->rowCount();
+          int rowIndex = pGroupBoxGridLayout->rowCount();
           int columnIndex = 0;
           pParameter->updateNameLabel();
-          pGroupBoxGridLayout->addWidget(pParameter->getNameLabel(), layoutIndex, columnIndex++);
+          pGroupBoxGridLayout->addWidget(pParameter->getNameLabel(), rowIndex, columnIndex++);
           if (pParameter->isShowStartAndFixed()) {
-            pGroupBoxGridLayout->addWidget(pParameter->getFixedCheckBox(), layoutIndex, columnIndex++);
-            pGroupBoxGridLayout->addWidget(pParameter->getFixedFinalEachMenu(), layoutIndex, columnIndex++);
+            pGroupBoxGridLayout->addWidget(pParameter->getFixedCheckBox(), rowIndex, columnIndex++);
+            pGroupBoxGridLayout->addWidget(pParameter->getFixedFinalEachMenu(), rowIndex, columnIndex++);
           } else {
-            pGroupBoxGridLayout->addItem(new QSpacerItem(1, 1), layoutIndex, columnIndex++);
-            pGroupBoxGridLayout->addItem(new QSpacerItem(1, 1), layoutIndex, columnIndex++);
+            pGroupBoxGridLayout->addItem(new QSpacerItem(0, 0), rowIndex, columnIndex++);
+            pGroupBoxGridLayout->addItem(new QSpacerItem(0, 0), rowIndex, columnIndex++);
           }
-          pGroupBoxGridLayout->addWidget(pParameter->getValueWidget(), layoutIndex, columnIndex++);
+          pGroupBoxGridLayout->addWidget(pParameter->getValueWidget(), rowIndex, columnIndex++);
 
           if (pParameter->getEditClassButton()) {
-            pGroupBoxGridLayout->addWidget(pParameter->getEditClassButton(), layoutIndex, columnIndex++);
+            pGroupBoxGridLayout->addWidget(pParameter->getEditClassButton(), rowIndex, columnIndex++);
           } else {
-            pGroupBoxGridLayout->addItem(new QSpacerItem(1, 1), layoutIndex, columnIndex++);
+            pGroupBoxGridLayout->addItem(new QSpacerItem(0, 0), rowIndex, columnIndex++);
           }
-          pGroupBoxGridLayout->addWidget(pParameter->getFinalEachMenu(), layoutIndex, columnIndex++);
+          pGroupBoxGridLayout->addWidget(pParameter->getFinalEachMenu(), rowIndex, columnIndex++);
           if (pParameter->getLoadSelectorFilter().compare("-") != 0 || pParameter->getLoadSelectorCaption().compare("-") != 0 ||
               pParameter->getSaveSelectorFilter().compare("-") != 0 || pParameter->getSaveSelectorCaption().compare("-") != 0) {
-            pGroupBoxGridLayout->addWidget(pParameter->getFileSelectorButton(), layoutIndex, columnIndex++);
+            pGroupBoxGridLayout->addWidget(pParameter->getFileSelectorButton(), rowIndex, columnIndex++);
           } else {
-            pGroupBoxGridLayout->addItem(new QSpacerItem(1, 1), layoutIndex, columnIndex++);
+            pGroupBoxGridLayout->addItem(new QSpacerItem(0, 0), rowIndex, columnIndex++);
           }
           if (pParameter->getUnitComboBox()->count() > 0) { // only add the unit combobox if we really have a unit
             /* ticket:4421
              * Show a fixed value when there is only one unit.
              */
             if (pParameter->getUnitComboBox()->count() == 1) {
-              pGroupBoxGridLayout->addWidget(new Label(pParameter->getUnitComboBox()->currentText()), layoutIndex, columnIndex++);
+              pGroupBoxGridLayout->addWidget(new Label(pParameter->getUnitComboBox()->currentText()), rowIndex, columnIndex++);
             } else {
-              pGroupBoxGridLayout->addWidget(pParameter->getUnitComboBox(), layoutIndex, columnIndex++);
+              pGroupBoxGridLayout->addWidget(pParameter->getUnitComboBox(), rowIndex, columnIndex++);
             }
-            pGroupBoxGridLayout->addWidget(pParameter->getDisplayUnitFinalEachMenu(), layoutIndex, columnIndex++);
+            pGroupBoxGridLayout->addWidget(pParameter->getDisplayUnitFinalEachMenu(), rowIndex, columnIndex++);
           } else {
-            pGroupBoxGridLayout->addItem(new QSpacerItem(1, 1), layoutIndex, columnIndex++);
-            pGroupBoxGridLayout->addItem(new QSpacerItem(1, 1), layoutIndex, columnIndex++);
+            pGroupBoxGridLayout->addItem(new QSpacerItem(0, 0), rowIndex, columnIndex++);
+            pGroupBoxGridLayout->addItem(new QSpacerItem(0, 0), rowIndex, columnIndex++);
           }
-          pGroupBoxGridLayout->addWidget(pParameter->getCommentLabel(), layoutIndex, columnIndex++);
+          pGroupBoxGridLayout->addWidget(pParameter->getCommentLabel(), rowIndex, columnIndex++);
         }
       }
     }

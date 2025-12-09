@@ -12,6 +12,7 @@
 
 #ifndef BOOST_EXTENSION_EXTENSION_HPP
 #define BOOST_EXTENSION_EXTENSION_HPP
+
 #ifdef BOOST_EXTENSION_DOXYGEN_INVOKED
 /** Macro to place in a function definition to cause it
   * to be exported, if necessary on the given platform and
@@ -19,13 +20,14 @@
   * for MSVC and other compilers, but only required depending on
   * compiler settings for GCC and other compilers.
   */
-#define BOOST_EXTENSION_EXPORT_DECL
+  #define BOOST_EXTENSION_EXPORT_DECL
 #else
-#include <Core/Utils/extension/impl/decl.hpp>
-#define BOOST_EXTENSION_TYPE_MAP_FUNCTION \
-extern "C" \
-void BOOST_EXTENSION_EXPORT_DECL \
-boost_extension_exported_type_map_function \
-  (boost::extensions::type_map& types)
+  #include <Core/Utils/extension/impl/decl.hpp>
+  #define BOOST_EXTENSION_TYPE_MAP_FUNCTION \
+  extern "C" \
+  void BOOST_EXTENSION_EXPORT_DECL \
+  boost_extension_exported_type_map_function \
+    (boost::extensions::type_map& types)
 #endif  // BOOST_EXTENSION_EXPORT_DECL
+
 #endif  // BOOST_EXTENSION_EXTENSION_HPP

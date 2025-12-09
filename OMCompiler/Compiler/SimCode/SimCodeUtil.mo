@@ -5350,11 +5350,9 @@ algorithm
   local
     BackendDAE.Var v, v1;
     SimCodeVar.SimVar simVar;
-    DAE.ComponentRef currVar, cref, derivedCref;
+    DAE.ComponentRef currVar, derivedCref;
     list<BackendDAE.Var> restVar;
     Option<DAE.VariableAttributes> dae_var_attr;
-    Boolean isProtected;
-    Boolean hideResult = false;
     Integer resIndex=inResIndex, tmpIndex=inTmpIndex;
     BackendDAE.VarKind varkind;
 
@@ -8603,11 +8601,22 @@ algorithm
   // if it is an array parameter split it up. Do not do it for Cpp runtime, they can handle array parameters
   if Types.isArray(dlowVar.varType) then
     scalar_crefs := ComponentReference.expandCref(dlowVar.varName, false);
-    scalar_bindings := match dlowVar.bindExp
-      case SOME(binding as DAE.ARRAY())   then list(SOME(b) for b in Expression.expandArray(binding));
-      case SOME(binding as DAE.MATRIX())  then list(SOME(b) for b in Expression.expandArray(binding));
-      else List.fill(dlowVar.bindExp, listLength(scalar_crefs));
-    end match;
+
+    // try to scalarize bindings
+    try
+      scalar_bindings := match dlowVar.bindExp
+        case SOME(binding as DAE.ARRAY())  then list(SOME(b) for b in Expression.expandArray(binding));
+        case SOME(binding as DAE.MATRIX()) then list(SOME(b) for b in Expression.expandArray(binding));
+        else List.fill(dlowVar.bindExp, listLength(scalar_crefs));
+      end match;
+
+      // fail if they are not of equal length
+      if listLength(scalar_bindings) <> listLength(scalar_crefs) then fail(); end if;
+    else
+      scalar_bindings := List.fill(dlowVar.bindExp, listLength(scalar_crefs));
+    end try;
+
+
     if Config.simCodeTarget() <> "Cpp" then
       // Make sure the array does not get expanded again. The check for existence is made by the caller
       // of this function, extractVarsFromList. Which checks for the whole unxpanded array, which is never
@@ -9497,10 +9506,10 @@ algorithm
   str := "SubPartition Vars:\n"+UNDERLINE+"\n";
   str := str + stringDelimitList(simVarStrings,"\n")+"\n";
   str := str + "partition equations:\n"+UNDERLINE+"\n";
-  str := str + stringDelimitList(List.map(subPart.equations,simEqSystemString),"\n");
+  str := str + stringDelimitList(List.map(subPart.equations,simEqSystemString),"\n") + "\n";
   str := str + "removedEquations equations:\n"+UNDERLINE+"\n";
   str := str + stringDelimitList(List.map(subPart.removedEquations,simEqSystemString),"\n");
-  str := str + "SubClock:\n"+ BackendDump.subClockString(subPart.subClock);
+  str := str + "SubClock:\n"+ BackendDump.subClockString(subPart.subClock) + "\n";
   str := str + "Hold Events: "+boolString(subPart.holdEvents);
 end subPartitionString;
 

@@ -905,6 +905,12 @@ public constant ErrorTypes.Message ASSIGN_ITERATOR_ERROR = ErrorTypes.MESSAGE(41
   Gettext.gettext("Assignment to iterator '%s'."));
 public constant ErrorTypes.Message INVALID_CONNECTOR_VARIABILITY = ErrorTypes.MESSAGE(416, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   Gettext.gettext("Invalid variability %s on connector '%s'."));
+public constant ErrorTypes.Message NON_BREAKABLE_ELEMENT = ErrorTypes.MESSAGE(417, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
+  Gettext.gettext("Invalid use of break on non-component '%s'."));
+public constant ErrorTypes.Message NON_BREAKABLE_COMPONENT = ErrorTypes.MESSAGE(418, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
+  Gettext.gettext("Invalid use of break on component '%s', component must be a model, block, or connector."));
+public constant ErrorTypes.Message UNMATCHED_BREAK_CONNECT = ErrorTypes.MESSAGE(419, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
+  Gettext.gettext("No matching element found for 'break connect(%s, %s)'."));
 
 public constant ErrorTypes.Message INITIALIZATION_NOT_FULLY_SPECIFIED = ErrorTypes.MESSAGE(496, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
   Gettext.gettext("The initial conditions are not fully specified. %s."));

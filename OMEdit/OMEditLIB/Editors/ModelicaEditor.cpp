@@ -460,26 +460,49 @@ bool ModelicaEditor::validateText(LibraryTreeItem **pLibraryTreeItem)
                                                                             MainWindow::instance());
         pNotificationsDialog->setNotificationLabelString(GUIMessages::getMessage(GUIMessages::ERROR_IN_TEXT).arg("Modelica")
                                                          .append(GUIMessages::getMessage(GUIMessages::CHECK_MESSAGE_BROWSER))
-                                                         .append(GUIMessages::getMessage(GUIMessages::REVERT_PREVIOUS_OR_FIX_ERRORS_MANUALLY)));
+                                                         .append(GUIMessages::getMessage(GUIMessages::REVERT_PREVIOUS_OR_FIX_ERRORS_MANUALLY))
+                                                         .append("<br /><br />")
+                                                         .append(tr("You can save to file with errors, it will reopen class in text mode.")));
         pNotificationsDialog->getOkButton()->setText(Helper::revertToLastCorrectVersion);
-        pNotificationsDialog->getOkButton()->setAutoDefault(false);
         pNotificationsDialog->getCancelButton()->setText(Helper::fixErrorsManually);
         pNotificationsDialog->getCancelButton()->setAutoDefault(true);
+        pNotificationsDialog->getSaveWithErrorsButton()->setText(Helper::saveWithErrors);
         pNotificationsDialog->getButtonBox()->removeButton(pNotificationsDialog->getOkButton());
         pNotificationsDialog->getButtonBox()->removeButton(pNotificationsDialog->getCancelButton());
+        pNotificationsDialog->getButtonBox()->removeButton(pNotificationsDialog->getSaveWithErrorsButton());
         pNotificationsDialog->getButtonBox()->addButton(pNotificationsDialog->getCancelButton(), QDialogButtonBox::ActionRole);
         pNotificationsDialog->getButtonBox()->addButton(pNotificationsDialog->getOkButton(), QDialogButtonBox::ActionRole);
+        pNotificationsDialog->getButtonBox()->addButton(pNotificationsDialog->getSaveWithErrorsButton(), QDialogButtonBox::ActionRole);
         // we set focus to this widget here so when the error dialog is closed Qt gives back the focus to this widget.
         mpPlainTextEdit->setFocus(Qt::ActiveWindowFocusReason);
         answer = pNotificationsDialog->exec();
       }
       switch (answer) {
-        case QMessageBox::RejectRole:
+        case 2: { // save with errors
+            // for package saved in one file update the containing package text
+            LibraryTreeModel *pLibraryTreeModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel();
+            LibraryTreeItem *pContainingLibraryTreeItem = pLibraryTreeModel->getContainingFileParentLibraryTreeItem(*pLibraryTreeItem);
+            if (pContainingLibraryTreeItem && pContainingLibraryTreeItem != *pLibraryTreeItem) {
+              const QString stringToLoad = (*pLibraryTreeItem)->getClassTextBefore() + StringHandler::trimmedEnd(getPlainText()) + "\n" + (*pLibraryTreeItem)->getClassTextAfter();
+              pContainingLibraryTreeItem->setClassText(stringToLoad);
+              pContainingLibraryTreeItem->setIsSaved(false);
+            }
+            // save and reload
+            LibraryTreeItem *pTopLevelLibraryTreeItem = LibraryTreeModel::getTopLevelLibraryTreeItem(*pLibraryTreeItem);
+            if (pTopLevelLibraryTreeItem) {
+              MainWindow::instance()->getLibraryWidget()->saveLibraryTreeItem(pTopLevelLibraryTreeItem, true);
+              pLibraryTreeModel->reloadClass(pTopLevelLibraryTreeItem, false);
+            }
+            setTextChanged(false);
+            return false;
+          }
+        case QMessageBox::RejectRole: // revert to last correct version
           setTextChanged(false);
           // revert back to last correct version
           setPlainText(mLastValidText);
           return true;
-        case QMessageBox::AcceptRole:
+        case QMessageBox::AcceptRole: // fix errors manually
+          return false;
         default:
           setTextChanged(true);
           return false;

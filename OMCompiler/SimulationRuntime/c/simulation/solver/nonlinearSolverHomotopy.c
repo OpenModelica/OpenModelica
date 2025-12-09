@@ -296,8 +296,7 @@ void printUnknowns(int logName, DATA_HOMOTOPY *solverData)
 
   if (!OMC_ACTIVE_STREAM(logName)) return;
   infoStreamPrint(logName, 1, "nls status");
-  infoStreamPrint(logName, 1, "variables");
-  messageClose(logName);
+  infoStreamPrint(logName, 0, "variables");
 
   for(i=0; i<solverData->n; i++)
     infoStreamPrint(logName, 0, "[%2ld] %30s  = %16.8g\t\t nom = %16.8g\t\t min = %16.8g\t\t max = %16.8g", i+1,
@@ -314,8 +313,7 @@ void printNewtonStep(int logName, DATA_HOMOTOPY *solverData)
 
   if (!OMC_ACTIVE_STREAM(logName)) return;
   infoStreamPrint(logName, 1, "newton step");
-  infoStreamPrint(logName, 1, "variables");
-  messageClose(logName);
+  infoStreamPrint(logName, 0, "variables");
 
   for(i=0; i<solverData->n; i++)
     infoStreamPrint(logName, 0, "[%2ld] %30s  = %16.8g\t\t step = %16.8g\t\t old = %16.8g", i+1,
@@ -332,8 +330,7 @@ void printHomotopyUnknowns(int logName, DATA_HOMOTOPY *solverData)
 
   if (!OMC_ACTIVE_STREAM(logName)) return;
   infoStreamPrint(logName, 1, "homotopy status");
-  infoStreamPrint(logName, 1, "variables");
-  messageClose(logName);
+  infoStreamPrint(logName, 0, "variables");
 
   for(i=0; i<solverData->n; i++)
     infoStreamPrint(logName, 0, "[%2ld] %30s  = %16.8g\t\t nom = %16.8g\t\t min = %16.8g\t\t max = %16.8g", i+1,
@@ -360,8 +357,7 @@ void printHomotopyPredictorStep(int logName, DATA_HOMOTOPY *solverData)
 
   if (!OMC_ACTIVE_STREAM(logName)) return;
   infoStreamPrint(logName, 1, "predictor status");
-  infoStreamPrint(logName, 1, "variables");
-  messageClose(logName);
+  infoStreamPrint(logName, 0, "variables");
 
   for(i=0; i<solverData->n; i++)
     infoStreamPrint(logName, 0, "[%2ld] %30s  = %16.8g\t\t dy = %16.8g\t\t old = %16.8g\t\t tau = %16.8g", i+1,
@@ -387,8 +383,7 @@ void printHomotopyCorrectorStep(int logName, DATA_HOMOTOPY *solverData)
 
   if (!OMC_ACTIVE_STREAM(logName)) return;
   infoStreamPrint(logName, 1, "corrector status");
-  infoStreamPrint(logName, 1, "variables");
-  messageClose(logName);
+  infoStreamPrint(logName, 0, "variables");
 
   for(i=0; i<solverData->n; i++)
     infoStreamPrint(logName, 0, "[%2ld] %30s  = %16.8g\t\t dy = %16.8g\t\t old = %16.8g\t\t tau = %16.8g", i+1,
@@ -504,7 +499,7 @@ void debugVectorDouble(int logName, char* vectorName, double* vector, int n)
 
 void debugVectorBool(int logName, char* vectorName, modelica_boolean* vector, int n)
 {
-   if(OMC_ACTIVE_STREAM(logName))
+  if(OMC_ACTIVE_STREAM(logName))
   {
     int i;
     char *buffer = (char*)malloc(sizeof(char)*n*20);
@@ -971,7 +966,7 @@ static int wrapper_fvec_der(DATA_HOMOTOPY* solverData, double* x, double* fJac)
     debugDouble(OMC_LOG_NLS_JAC_TEST,"error between analytical and numerical jacobian = ", vecMaxNorm(n*n, solverData->debug_fJac));
     vecDivScaling(n*(n+1), solverData->debug_fJac , fJac, solverData->debug_fJac);
     debugDouble(OMC_LOG_NLS_JAC_TEST,"relative error between analytical and numerical jacobian = ", vecMaxNorm(n*n, solverData->debug_fJac));
-    messageClose(OMC_LOG_NLS_JAC_TEST);
+    messageClose(OMC_LOG_NLS_JAC_TEST); // FIXME what does this belong to?
   }
   /* performance measurement and statistics */
   nlsData->jacobianTime += rt_ext_tp_tock(&(nlsData->jacobianTimeClock));
@@ -1284,7 +1279,7 @@ int linearSolverWrapper(DATA *data, int n, double* x, double* A, int* indRow, in
     debugVectorDouble(OMC_LOG_NLS_JAC,"test solution:", res, n);
     debugDouble(OMC_LOG_NLS_JAC,"error of linear system = ", vec2Norm(n, res));
     free(res);
-    messageClose(OMC_LOG_NLS_JAC);
+    messageClose(OMC_LOG_NLS_JAC); // FIXME what does this belong to?
   }
 
   return returnValue;
@@ -2499,7 +2494,9 @@ NLS_SOLVER_STATUS solveHomotopy(DATA *data, threadData_t *threadData, NONLINEAR_
   }
   free(relationsPreBackup);
 
-  messageClose(OMC_LOG_NLS_V);
+  if (!homotopyData->initHomotopy) {
+    messageClose(OMC_LOG_NLS_V);
+  }
 
   /* write statistics */
   nlsData->numberOfFEval = homotopyData->numberOfFunctionEvaluations;

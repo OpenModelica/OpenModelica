@@ -19,6 +19,8 @@ superSample.mos \
 shiftSample.mos \
 backSample.mos \
 splitPartition.mos \
+implicitSignal.mos \
+MSL_timeBasedStep.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make failingtest
