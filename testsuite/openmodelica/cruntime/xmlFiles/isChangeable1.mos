@@ -1,6 +1,7 @@
 // name: isChangeable1
 // keywords: xml, init, changeable value
 // status: correct
+// teardown_command: rm isChangeable1.xml
 
 loadString("
 model isChangeable1
