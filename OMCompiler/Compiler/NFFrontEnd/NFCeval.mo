@@ -1078,6 +1078,7 @@ function evalMultaryAddSub
   input list<Expression> inv_arguments;
   input Type operator_ty;
   output Expression exp = Expression.EMPTY(operator_ty);
+  output Boolean isNeutral;
 algorithm
   // add up all arguments
   for arg in arguments loop
@@ -1089,8 +1090,8 @@ algorithm
     exp := evalBinarySub(exp, arg);
   end for;
 
-  // fix expression if its still empty at the end
-  exp := if Expression.isEmpty(exp) then Expression.makeZero(operator_ty) else exp;
+  // return a boolean that is set to true if its the neutral element
+  isNeutral := Expression.isEmpty(exp) or Expression.isZero(exp);
 end evalMultaryAddSub;
 
 function evalBinaryMul
@@ -1207,6 +1208,7 @@ function evalMultaryMulDiv
   input list<Expression> inv_arguments;
   input Type operator_ty;
   output Expression exp = Expression.EMPTY(operator_ty);
+  output Boolean isNeutral;
 algorithm
   // multiply all arguments
   for arg in arguments loop
@@ -1218,8 +1220,8 @@ algorithm
     exp := evalBinaryDiv(exp, arg, noTarget);
   end for;
 
-  // fix expression if its still empty at the end
-  exp := if Expression.isEmpty(exp) then Expression.makeOne(operator_ty) else exp;
+  // return a boolean that is set to true if its the neutral element
+  isNeutral := Expression.isEmpty(exp) or Expression.isOne(exp);
 end evalMultaryMulDiv;
 
 function evalBinaryPow
