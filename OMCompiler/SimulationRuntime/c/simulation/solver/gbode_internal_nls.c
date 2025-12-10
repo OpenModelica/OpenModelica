@@ -33,7 +33,7 @@
 #include "gbode_main.h"
 #include "gbode_internal_nls.h"
 
-// TODO: How to choose TOL for Richardson???
+// TODO: How to choose TOL for Richardson??
 // TODO: Calibrate safety factor for internal tolerances
 // TODO: update guess routines (stage value predictors for (E)SDIRK)
 // TODO: update embedded for FIRK with real eigenvalue: we have the contractive error, but
