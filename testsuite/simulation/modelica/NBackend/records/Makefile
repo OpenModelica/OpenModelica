@@ -8,6 +8,7 @@ ComplexTest.mos \
 NonTopLevelInputs.mos \
 record_arrays.mos \
 RecordCausality.mos \
+AliasRecord.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make failingtest

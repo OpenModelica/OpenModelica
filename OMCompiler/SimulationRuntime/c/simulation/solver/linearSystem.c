@@ -67,7 +67,6 @@ int check_linear_solution(DATA *data, int printFailingSystems, int sysNumber);
  */
 int initializeLinearSystems(DATA *data, threadData_t *threadData)
 {
-  TRACE_PUSH
   int i, nnz;
   int size;
   int res;
@@ -314,7 +313,6 @@ int initializeLinearSystems(DATA *data, threadData_t *threadData)
 
   messageClose(OMC_LOG_LS);
 
-  TRACE_POP
   return 0;
 }
 
@@ -359,7 +357,6 @@ void freeLinSystThreadData(LINEAR_SYSTEM_DATA *linsys)
  */
 int updateStaticDataOfLinearSystems(DATA *data, threadData_t *threadData)
 {
-  TRACE_PUSH
   int i, nnz;
   int size;
   LINEAR_SYSTEM_DATA *linsys = data->simulationInfo->linearSystemData;
@@ -378,7 +375,6 @@ int updateStaticDataOfLinearSystems(DATA *data, threadData_t *threadData)
 
   messageClose(OMC_LOG_LS_V);
 
-  TRACE_POP
   return 0;
 }
 
@@ -410,7 +406,6 @@ void printLinearSystemSolvingStatistics(DATA *data, int sysNumber, int logLevel)
  */
 int freeLinearSystems(DATA *data, threadData_t *threadData)
 {
-  TRACE_PUSH
   int i,j;
   LINEAR_SYSTEM_DATA* linsys = data->simulationInfo->linearSystemData;
 
@@ -550,7 +545,6 @@ int freeLinearSystems(DATA *data, threadData_t *threadData)
 
   messageClose(OMC_LOG_LS_V);
 
-  TRACE_POP
   return 0;
 }
 
@@ -563,7 +557,6 @@ int freeLinearSystems(DATA *data, threadData_t *threadData)
  */
 int solve_linear_system(DATA *data, threadData_t *threadData, int sysNumber, double* aux_x)
 {
-  TRACE_PUSH
   int retVal;
   int success;
   int logLevel;
@@ -696,7 +689,6 @@ int solve_linear_system(DATA *data, threadData_t *threadData, int sysNumber, dou
     reactivateLogging();
   }
 
-  TRACE_POP
   return retVal;
 }
 
@@ -713,19 +705,16 @@ int solve_linear_system(DATA *data, threadData_t *threadData, int sysNumber, dou
  */
 int check_linear_solutions(DATA *data, int printFailingSystems)
 {
-  TRACE_PUSH
   long i;
 
   for(i=0; i<data->modelData->nLinearSystems; ++i)
   {
     if(check_linear_solution(data, printFailingSystems, i))
     {
-      TRACE_POP
       return 1;
     }
   }
 
-  TRACE_POP
   return 0;
 }
 
@@ -742,7 +731,6 @@ int check_linear_solutions(DATA *data, int printFailingSystems)
  */
 int check_linear_solution(DATA *data, int printFailingSystems, int sysNumber)
 {
-  TRACE_PUSH
   LINEAR_SYSTEM_DATA* linsys = data->simulationInfo->linearSystemData;
   long j, i = sysNumber;
 
@@ -751,7 +739,6 @@ int check_linear_solution(DATA *data, int printFailingSystems, int sysNumber)
     int index = linsys[i].equationIndex, indexes[2] = {1,index};
     if (!printFailingSystems)
     {
-      TRACE_POP
       return 1;
     }
 #ifdef USE_PARJAC
@@ -782,7 +769,6 @@ int check_linear_solution(DATA *data, int printFailingSystems, int sysNumber)
     }
     messageCloseWarning(OMC_LOG_STDOUT);
 
-    TRACE_POP
     return 1;
   }
 
@@ -792,7 +778,6 @@ int check_linear_solution(DATA *data, int printFailingSystems, int sysNumber)
     return 2;
   }
 
-  TRACE_POP
   return 0;
 }
 

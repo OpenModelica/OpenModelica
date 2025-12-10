@@ -40,23 +40,86 @@
 #include <stdarg.h>
 
 
+/**
+ * @brief Calculate flat index for 2D array element access.
+ *
+ * Converts 2D subscripts (i, j) to a flat 1D index using row-major order.
+ *
+ * @param dim  Pointer to dimension sizes array (at least 2 elements).
+ * @param i    Row index (0-based).
+ * @param j    Column index (0-based).
+ *
+ * @return Flat 1D index for row-major storage.
+ *
+ * @note Uses row-major (C-style) array layout: index = i * dim[1] + j
+ */
 _index_t getIndex_2D(_index_t * dim, int i, int j) {
   return i * dim[1] + j;
 }
 
+/**
+ * @brief Calculate flat index for 3D array element access.
+ *
+ * Converts 3D subscripts (i, j, k) to a flat 1D index using row-major order.
+ *
+ * @param dim  Pointer to dimension sizes array (at least 3 elements).
+ * @param i    First dimension index (0-based).
+ * @param j    Second dimension index (0-based).
+ * @param k    Third dimension index (0-based).
+ *
+ * @return Flat 1D index for row-major storage.
+ *
+ * @note Uses row-major array layout: index = (i * dim[1] + j) * dim[2] + k
+ */
 _index_t getIndex_3D(_index_t * dim, int i, int j, int k) {
   return (i * dim[1] + j) * dim[2] + k;
 }
 
+/**
+ * @brief Calculate flat index for 4D array element access.
+ *
+ * Converts 4D subscripts (i, j, k, l) to a flat 1D index using row-major order.
+ *
+ * @param dim  Pointer to dimension sizes array (at least 4 elements).
+ * @param i    First dimension index (0-based).
+ * @param j    Second dimension index (0-based).
+ * @param k    Third dimension index (0-based).
+ * @param l    Fourth dimension index (0-based).
+ *
+ * @return Flat 1D index for row-major storage.
+ */
 _index_t getIndex_4D(_index_t * dim, int i, int j, int k, int l) {
   return ((i * dim[1] + j) * dim[2] + k) * dim[3] + l;
 }
 
+/**
+ * @brief Calculate flat index for 5D array element access.
+ *
+ * Converts 5D subscripts (i, j, k, l, m) to a flat 1D index using row-major
+ * order.
+ *
+ * @param dim  Pointer to dimension sizes array (at least 5 elements).
+ * @param i    First dimension index (0-based).
+ * @param j    Second dimension index (0-based).
+ * @param k    Third dimension index (0-based).
+ * @param l    Fourth dimension index (0-based).
+ * @param m    Fifth dimension index (0-based).
+ *
+ * @return Flat 1D index for row-major storage.
+ */
 _index_t getIndex_5D(_index_t * dim, int i, int j, int k, int l, int m) {
   return (((i * dim[1] + j) * dim[2] + k) * dim[3] + l) * dim[4] + m;
 }
 
-/* Number of elements in array. */
+/**
+ * @brief Calculate total number of elements in an array.
+ *
+ * Computes the product of all dimension sizes to get the total element count.
+ *
+ * @param a  The base array structure.
+ *
+ * @return Total number of elements in the array.
+ */
 _index_t base_array_nr_of_elements(const base_array_t a)
 {
   int i;
@@ -67,7 +130,19 @@ _index_t base_array_nr_of_elements(const base_array_t a)
   return nr_of_elements;
 }
 
-/* size of the ith dimension of an array */
+/**
+ * @brief Get the size of a specific dimension in an array.
+ *
+ * Returns the size of the i-th dimension (1-based indexing).
+ *
+ * @param a  The base array structure.
+ * @param i  Dimension index (1-based: 1 to ndims).
+ *
+ * @return Size of the specified dimension, or 0 if dimension index is out of bounds
+ *         or any prior dimension has size 0.
+ *
+ * @attention Uses 1-based indexing for dimensions (Modelica convention).
+ */
 _index_t size_of_dimension_base_array(const base_array_t a, int i)
 {
   /* assert(base_array_ok(&a)); */
@@ -87,13 +162,28 @@ _index_t size_of_dimension_base_array(const base_array_t a, int i)
   abort();
 }
 
-
-
-/** function: base_array_create
- **
- ** sets all fields in a base_array, i.e. data, ndims and dim_size.
- **/
-
+/**
+ * @brief Initialize a base array structure with existing data and dimension information.
+ *
+ * Sets all fields in a base_array structure: data pointer, number of dimensions
+ * (ndims), and dimension sizes. The dimension sizes are extracted from a variable
+ * argument list passed as a va_list.
+ *
+ * @param dest   Pointer to the base_array structure to initialize.
+ * @param data   Pointer to the pre-allocated data buffer for array elements.
+ * @param ndims  Number of dimensions.
+ * @param ap     Variable argument list containing ndims dimension size values
+ *               (each of type _index_t).
+ *
+ * @pre data pointer should be valid (typically allocated via malloc or gc).
+ * @pre ap must contain exactly ndims dimension size arguments of type _index_t.
+ *
+ * @note This is the low-level initialization function. Type-specific wrappers
+ *       like real_array_create() typically call this function internally.
+ *
+ * @attention Sets dest->flexible to 0. The caller is responsible for ensuring
+ *            the data buffer is large enough to hold all array elements.
+ */
 void base_array_create(base_array_t *dest, void *data, int ndims, va_list ap)
 {
     int i;
@@ -108,16 +198,21 @@ void base_array_create(base_array_t *dest, void *data, int ndims, va_list ap)
     }
 
     dest->flexible = 0;
-
-    /* uncomment for debugging!
-    fprintf(stderr, "created array ndims[%d] (", ndims);
-    for(i = 0; i < ndims; ++i) {
-      fprintf(stderr, "size(%d)=[%d], ", i, (int)dest->dim_size[i]);
-    }
-    fprintf(stderr, ")\n"); fflush(stderr);
-    */
 }
 
+/**
+ * @brief Validate that a base_array structure is well-formed.
+ *
+ * Performs comprehensive validity checks on all fields of the base_array structure.
+ *
+ * @param a  Pointer to the base_array to validate.
+ *
+ * @return 1 if array is valid, 0 otherwise. Prints error messages to stderr for each
+ *         validation failure.
+ *
+ * @attention This function performs diagnostic output to stderr. Failures indicate
+ *            critical structural problems with the array.
+ */
 int base_array_ok(const base_array_t *a)
 {
     int i;
@@ -142,9 +237,20 @@ int base_array_ok(const base_array_t *a)
     return 1;
 }
 
-/* help function to e.g. array_alloc_real_array
- * Checks that all arrays have the same number of dimensions and same
- * dimension sizes.
+/**
+ * @brief Verify that multiple arrays have identical dimensions.
+ *
+ * Helper function for operations like concatenation. Asserts that all provided
+ * arrays have the same number of dimensions and matching dimension sizes.
+ *
+ * @param elts  Array of base_array pointers to check.
+ * @param n     Number of arrays in the elts array.
+ *
+ * @pre All pointers in elts must be valid and non-NULL.
+ *
+ * @note This function uses assertions and will abort if validation fails.
+ *
+ * @attention Used internally by array allocation and concatenation functions.
  */
 void check_base_array_dim_sizes(const base_array_t *elts, int n)
 {
@@ -162,9 +268,23 @@ void check_base_array_dim_sizes(const base_array_t *elts, int n)
     }
 }
 
-/* help function to e.g. cat_alloc_real_array.
- * Checks that all arrays have the same number of dimensions and same
- * dimension sizes  for all sizes except for dimension k.
+/**
+ * @brief Verify that multiple arrays have identical dimensions except one.
+ *
+ * Helper function for concatenation operations. Asserts that all provided arrays
+ * have the same number of dimensions and matching dimension sizes for all dimensions
+ * except dimension k (1-based).
+ *
+ * @param k     Dimension to exclude from comparison (1-based indexing).
+ * @param elts  Array of base_array pointers to check.
+ * @param n     Number of arrays in the elts array.
+ *
+ * @pre All pointers in elts must be valid and non-NULL.
+ *
+ * @note This function uses assertions and will abort if validation fails.
+ * @note Dimension k is allowed to differ in size across arrays.
+ *
+ * @attention Used internally by array concatenation functions like cat_alloc_real_array().
  */
 void check_base_array_dim_sizes_except(int k, const base_array_t *elts, int n)
 {
@@ -188,6 +308,18 @@ void check_base_array_dim_sizes_except(int k, const base_array_t *elts, int n)
     }
 }
 
+/**
+ * @brief Compare the shapes (dimensions) of two arrays for equality.
+ *
+ * Checks if two arrays have the same number of dimensions and all matching
+ * dimension sizes.
+ *
+ * @param a  First array to compare.
+ * @param b  Second array to compare.
+ *
+ * @return 1 if arrays have identical shapes, 0 otherwise. Prints diagnostic
+ *         messages to stderr if shapes differ.
+ */
 int base_array_shape_eq(const base_array_t *a, const base_array_t *b)
 {
     int i;
@@ -208,6 +340,16 @@ int base_array_shape_eq(const base_array_t *a, const base_array_t *b)
     return 1;
 }
 
+/**
+ * @brief Check if an array contains exactly one element.
+ *
+ * Verifies that all dimensions have size 1, indicating a single-element array
+ * (equivalent to a scalar in array form).
+ *
+ * @param a  The array to check.
+ *
+ * @return 1 if array has exactly one element (all dims = 1), 0 otherwise.
+ */
 int base_array_one_element_ok(const base_array_t *a)
 {
     int i;
@@ -220,6 +362,20 @@ int base_array_one_element_ok(const base_array_t *a)
     return 1;
 }
 
+/**
+ * @brief Validate that an index specification fits a base array.
+ *
+ * Checks that an index_spec_t structure is compatible with a base_array structure,
+ * verifying that dimensions agree and all indices are within valid bounds.
+ *
+ * @param s  Index specification to validate.
+ * @param a  Base array to validate against.
+ *
+ * @return 1 if index spec fits the array, 0 otherwise. Prints diagnostic error
+ *         messages to stderr if validation fails.
+ *
+ * @attention Used to validate array indexing operations before execution.
+ */
 int index_spec_fit_base_array(const index_spec_t *s, const base_array_t *a)
 {
     int i, j;
@@ -258,6 +414,15 @@ int index_spec_fit_base_array(const index_spec_t *s, const base_array_t *a)
     return 1;
 }
 
+/**
+ * @brief Initialize a 1D base array with existing data.
+ *
+ * Convenience function for creating a simple 1D array structure with pre-allocated data.
+ *
+ * @param dest  Pointer to the base_array structure to initialize.
+ * @param n     Size of the 1D array (number of elements).
+ * @param data  Pointer to the pre-allocated data buffer.
+ */
 void simple_alloc_1d_base_array(base_array_t *dest, int n, void *data)
 {
     dest->ndims = 1;
@@ -267,6 +432,16 @@ void simple_alloc_1d_base_array(base_array_t *dest, int n, void *data)
     dest->flexible = 0;
 }
 
+/**
+ * @brief Initialize a 2D base array with existing data.
+ *
+ * Convenience function for creating a simple 2D array structure with pre-allocated data.
+ *
+ * @param dest  Pointer to the base_array structure to initialize.
+ * @param r     Number of rows.
+ * @param c     Number of columns.
+ * @param data  Pointer to the pre-allocated data buffer.
+ */
 void simple_alloc_2d_base_array(base_array_t *dest, int r, int c, void *data)
 {
     dest->ndims = 2;
@@ -277,6 +452,29 @@ void simple_alloc_2d_base_array(base_array_t *dest, int r, int c, void *data)
     dest->flexible = 0;
 }
 
+/**
+ * @brief Allocate and initialize a base array structure with variable dimensions.
+ *
+ * Initializes a base_array structure by setting the number of dimensions and
+ * allocating space for dimension sizes. The dimension sizes are extracted from
+ * a variable argument list. Computes the total number of elements needed.
+ *
+ * @param dest   Pointer to the base_array structure to initialize.
+ * @param ndims  Number of dimensions.
+ * @param ap     Variable argument list containing ndims dimension size values
+ *               (each of type _index_t).
+ *
+ * @return Total number of elements in the array (product of all dimension sizes).
+ *
+ * @pre ap must contain exactly ndims dimension size arguments of type _index_t.
+ *
+ * @note The caller is responsible for allocating the actual data buffer separately
+ *       and assigning it to dest->data. This function only allocates the metadata
+ *       (dimension information).
+ *
+ * @attention Sets dest->flexible to 0. Used internally by type-specific allocation
+ *            functions like alloc_real_array().
+ */
 size_t alloc_base_array(base_array_t *dest, int ndims, va_list ap)
 {
     int i;
@@ -292,17 +490,23 @@ size_t alloc_base_array(base_array_t *dest, int ndims, va_list ap)
 
     dest->flexible = 0;
 
-    /* uncomment for debugging!
-    fprintf(stderr, "alloc array ndims[%d] (", ndims);
-    for(i = 0; i < ndims; ++i) {
-        fprintf(stderr, "size(%d)=[%d], ", i, (int)dest->dim_size[i]);
-    }
-    fprintf(stderr, ")\n"); fflush(stderr);
-    */
-
     return nr_of_elements;
 }
 
+/**
+ * @brief Copy dimension specification from one array to another.
+ *
+ * Creates a copy of the dimension metadata (number of dimensions and dimension sizes)
+ * from source array to destination array. Does not copy the data pointer.
+ *
+ * @param source  Source array to copy specification from.
+ * @param dest    Destination array to copy specification to.
+ *
+ * @pre source must be a valid base_array structure.
+ *
+ * @note The destination array should have an uninitialized dim_size pointer,
+ *       as new memory will be allocated for it.
+ */
 void clone_base_array_spec(const base_array_t *source, base_array_t *dest)
 {
     int i;
@@ -319,15 +523,28 @@ void clone_base_array_spec(const base_array_t *source, base_array_t *dest)
     dest->flexible = source->flexible;
 }
 
-/*
- a[1:3] := b;
-*/
-
+/**
+ * @brief Calculate flat index using index specification.
+ *
+ * Converts multi-dimensional indices with an index specification into a flat 1D index.
+ * Handles both scalar indexing and array slicing specifications.
+ *
+ * @param ndims    Number of dimensions.
+ * @param idx_vec  Array of indices (0-based).
+ * @param arr      Base array containing dimension information.
+ * @param spec     Index specification defining how to map indices.
+ *
+ * @return Flat 1D index for array element access.
+ *
+ * @pre idx_vec must have exactly ndims elements.
+ * @pre spec and arr dimensions must be compatible.
+ * @pre All indices and specifications must be valid and within bounds.
+ *
+ * @note idx_vec uses 0-based indexing while spec uses 1-based indexing.
+ */
 size_t calc_base_index_spec(int ndims, const _index_t *idx_vec,
                             const base_array_t *arr, const index_spec_t *spec)
 {
-    /* idx_vec is zero based */
-    /* spec is one based */
     int i;
     int d2;
     size_t index = 0;
@@ -351,7 +568,20 @@ size_t calc_base_index_spec(int ndims, const _index_t *idx_vec,
     return index;
 }
 
-/* Uses zero based indexing */
+/**
+ * @brief Calculate flat index from 0-based multi-dimensional indices.
+ *
+ * Converts multi-dimensional indices (0-based) into a flat 1D index using row-major order.
+ *
+ * @param ndims    Number of dimensions.
+ * @param idx_vec  Array of 0-based indices.
+ * @param arr      Base array containing dimension information.
+ *
+ * @return Flat 1D index for array element access.
+ *
+ * @pre idx_vec must have exactly ndims elements.
+ * @pre All indices must be within valid bounds.
+ */
 size_t calc_base_index(int ndims, const _index_t *idx_vec, const base_array_t *arr)
 {
     int i;
@@ -366,6 +596,21 @@ size_t calc_base_index(int ndims, const _index_t *idx_vec, const base_array_t *a
     return index;
 }
 
+/**
+ * @brief Calculate flat index from dimension sizes and 1-based subscripts.
+ *
+ * Calculates a flat 1D index from variable argument lists containing dimension
+ * sizes followed by 1-based subscripts. Includes bounds checking with assertions.
+ *
+ * @param ndims  Number of dimensions.
+ * @param ...    Variable arguments: first ndims values are dimension sizes,
+ *               next ndims values are 1-based subscripts.
+ *
+ * @return Flat 1D index for array element access.
+ *
+ * @attention Asserts on any out-of-bounds subscript.
+ * @attention Subscripts are converted from 1-based to 0-based internally.
+ */
 size_t calc_base_index_dims_subs(int ndims,...)
 {
 
@@ -397,7 +642,23 @@ size_t calc_base_index_dims_subs(int ndims,...)
     return index;
 }
 
-/* 0-based index*/
+/**
+ * @brief Calculate flat index from 1-based subscripts in a variable argument list.
+ *
+ * Converts 1-based subscripts from a va_list into a flat 0-based index.
+ * Includes bounds checking with assertions.
+ *
+ * @param source  Base array containing dimension information.
+ * @param ndims   Number of dimensions.
+ * @param ap      Variable argument list containing ndims 1-based subscripts.
+ *
+ * @return Flat 1D (0-based) index for array element access.
+ *
+ * @pre ap must contain exactly ndims subscript values (1-based).
+ *
+ * @attention Asserts on any out-of-bounds subscript.
+ * @attention Input subscripts are 1-based; output index is 0-based.
+ */
 size_t calc_base_index_va(const base_array_t *source, int ndims, va_list ap)
 {
     int i;
@@ -415,12 +676,35 @@ size_t calc_base_index_va(const base_array_t *source, int ndims, va_list ap)
     return index;
 }
 
+/**
+ * @brief Get the number of dimensions in an array.
+ *
+ * @param[in] a  The base array structure.
+ *
+ * @return Number of dimensions (ndims).
+ *
+ * @pre a must be a valid base_array structure.
+ */
 int ndims_base_array(const base_array_t* a)
 {
     assert(base_array_ok(a));
     return a->ndims;
 }
 
+/**
+ * @brief Clone array dimensions in reversed order.
+ *
+ * Creates a copy of the source array's dimension specification but with
+ * dimensions in reverse order. For example, a 2x3x4 array becomes 4x3x2.
+ *
+ * @param source  The source array with dimensions to reverse.
+ * @param dest    The destination array where reversed dimensions are stored.
+ *
+ * @pre source must be a valid base_array structure.
+ * @pre dest must not be NULL.
+ * @attention Allocates new memory for dest->dim_size; caller is responsible
+ *            for cleanup.
+ */
 void clone_reverse_base_array_spec(const base_array_t* source, base_array_t* dest)
 {
     int i;
@@ -435,6 +719,25 @@ void clone_reverse_base_array_spec(const base_array_t* source, base_array_t* des
     }
 }
 
+/**
+ * @brief Allocate and compute destination array dimensions from indexed access.
+ *
+ * Determines the resulting array dimensions when an index_spec is applied to
+ * a source array, handling 'A' (all) and 'W' (wildcard) index dimensions.
+ * Only counts non-zero dimension sizes.
+ *
+ * #### Example
+ * For a 3x4x5 source array with index spec that selects [2, :, :],
+ * the destination array will have dimensions 4x5 (skipping the indexed dimension).
+ *
+ * @param source       The source array to index into.
+ * @param source_spec  The index specification defining which dimensions/indices to access.
+ * @param dest         The destination array where computed dimensions are stored.
+ *
+ * @pre source must be a valid base_array structure.
+ * @pre source_spec must be valid and fit the source array.
+ * @pre dest must not be NULL.
+ */
 void index_alloc_base_array_size(const real_array * source,
                                  const index_spec_t* source_spec,
                                  base_array_t* dest)
@@ -471,6 +774,28 @@ void index_alloc_base_array_size(const real_array * source,
     }
 }
 
+/**
+ * @brief Allocate and initialize index vectors for indexed assignment.
+ *
+ * Prepares index iteration structures for assigning elements to a destination
+ * array via an index specification. Allocates vectors for tracking current
+ * indices and dimension sizes in the indexed assignment operation.
+ *
+ * #### Example
+ * For assigning a 4x5 source array to elements dest[2, :, :] of a 3x4x5 array,
+ * this initializes the iteration indices and size boundaries.
+ *
+ * @param source      The source array being assigned.
+ * @param dest        The destination array being assigned to.
+ * @param dest_spec   The index specification defining target locations in dest.
+ * @param _idx_vec1   Output: current iteration indices for destination.
+ * @param _idx_size   Output: dimension size boundaries for destination iteration.
+ *
+ * @pre source must be a valid base_array with dimensions matching indexed dest.
+ * @pre dest must be a valid base_array structure.
+ * @pre dest_spec must be valid and fit the dest array.
+ * @pre _idx_vec1 and _idx_size must be valid pointers to _index_t*.
+ */
 void indexed_assign_base_array_size_alloc(const base_array_t *source, base_array_t *dest, const index_spec_t *dest_spec, _index_t** _idx_vec1, _index_t** _idx_size)
 {
     _index_t* idx_vec1;

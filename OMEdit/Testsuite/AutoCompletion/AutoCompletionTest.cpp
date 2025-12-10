@@ -39,7 +39,9 @@
 #include "Editors/ModelicaEditor.h"
 #include "Modeling/LibraryTreeWidget.h"
 
+#ifndef GC_THREADS
 #define GC_THREADS
+#endif
 extern "C" {
 #include "meta/meta_modelica.h"
 }

@@ -65,9 +65,9 @@ translateModel(SynchronousFeatures.ControlledMass); getErrorString();
 //
 // Variables (3)
 // ========================================
-// 1: f:VARIABLE(unit = "N" )  "Force" type: Real 
-// 2: v:STATE(1)(start = 0.0 unit = "m/s" fixed = true )  "Velocity" type: Real 
-// 3: x:STATE(1)(start = 1.0 unit = "m" fixed = true )  "Position" type: Real 
+// 1: f:VARIABLE(unit = "N" )  "Force" type: Real
+// 2: v:STATE(1)(start = 0.0 unit = "m/s" fixed = true )  "Velocity" type: Real
+// 3: x:STATE(1)(start = 1.0 unit = "m" fixed = true )  "Position" type: Real
 //
 //
 // Equations (3, 3)
@@ -85,8 +85,8 @@ translateModel(SynchronousFeatures.ControlledMass); getErrorString();
 //
 // Variables (2)
 // ========================================
-// 1: xdFast:DISCRETE()  type: Real 
-// 2: $var2:VARIABLE()  type: Real 
+// 1: xdFast:DISCRETE()  type: Real
+// 2: $var2:VARIABLE(protected = true )  type: Real
 //
 //
 // Equations (2, 2)
@@ -103,9 +103,9 @@ translateModel(SynchronousFeatures.ControlledMass); getErrorString();
 //
 // Variables (3)
 // ========================================
-// 1: uInner:DISCRETE(start = 0.0 )  type: Real 
-// 2: vref:DISCRETE()  type: Real 
-// 3: vd:DISCRETE()  type: Real 
+// 1: uInner:DISCRETE(start = 0.0 )  type: Real
+// 2: vref:DISCRETE()  type: Real
+// 3: vd:DISCRETE()  type: Real
 //
 //
 // Equations (3, 3)
@@ -123,10 +123,10 @@ translateModel(SynchronousFeatures.ControlledMass); getErrorString();
 //
 // Variables (4)
 // ========================================
-// 1: uOuter:DISCRETE(start = 0.0 )  type: Real 
-// 2: intE:DISCRETE(start = 0.0 )  type: Real 
-// 3: eOuter:DISCRETE()  type: Real 
-// 4: xd:DISCRETE()  type: Real 
+// 1: uOuter:DISCRETE(start = 0.0 )  type: Real
+// 2: intE:DISCRETE(start = 0.0 )  type: Real
+// 3: eOuter:DISCRETE()  type: Real
+// 4: xd:DISCRETE()  type: Real
 //
 //
 // Equations (4, 4)
@@ -145,7 +145,7 @@ translateModel(SynchronousFeatures.ControlledMass); getErrorString();
 //
 // Variables (1)
 // ========================================
-// 1: $var3:VARIABLE()  type: Real 
+// 1: $var3:VARIABLE(protected = true )  type: Real
 //
 //
 // Equations (1, 1)
@@ -182,9 +182,9 @@ translateModel(SynchronousFeatures.ControlledMass); getErrorString();
 //
 // Variables (3)
 // ========================================
-// 1: f:VARIABLE(unit = "N" )  "Force" type: Real 
-// 2: v:STATE(1)(start = 0.0 unit = "m/s" fixed = true )  "Velocity" type: Real 
-// 3: x:STATE(1,v)(start = 1.0 unit = "m" fixed = true )  "Position" type: Real 
+// 1: f:VARIABLE(unit = "N" )  "Force" type: Real
+// 2: v:STATE(1)(start = 0.0 unit = "m/s" fixed = true )  "Velocity" type: Real
+// 3: x:STATE(1,v)(start = 1.0 unit = "m" fixed = true )  "Position" type: Real
 //
 //
 // Equations (3, 3)
@@ -214,8 +214,8 @@ translateModel(SynchronousFeatures.ControlledMass); getErrorString();
 //
 // Variables (2)
 // ========================================
-// 1: xdFast:CLOCKED_STATE(fixed = true )  type: Real 
-// 2: $var2:VARIABLE()  type: Real 
+// 1: xdFast:CLOCKED_STATE(fixed = true )  type: Real
+// 2: $var2:VARIABLE(protected = true )  type: Real
 //
 //
 // Equations (2, 2)
@@ -232,9 +232,9 @@ translateModel(SynchronousFeatures.ControlledMass); getErrorString();
 //
 // Variables (3)
 // ========================================
-// 1: uInner:DISCRETE(start = 0.0 )  type: Real 
-// 2: vref:DISCRETE()  type: Real 
-// 3: vd:DISCRETE()  type: Real 
+// 1: uInner:DISCRETE(start = 0.0 )  type: Real
+// 2: vref:DISCRETE()  type: Real
+// 3: vd:DISCRETE()  type: Real
 //
 //
 // Equations (3, 3)
@@ -252,10 +252,10 @@ translateModel(SynchronousFeatures.ControlledMass); getErrorString();
 //
 // Variables (4)
 // ========================================
-// 1: uOuter:DISCRETE(start = 0.0 )  type: Real 
-// 2: intE:CLOCKED_STATE(start = 0.0 fixed = true )  type: Real 
-// 3: eOuter:DISCRETE()  type: Real 
-// 4: xd:DISCRETE()  type: Real 
+// 1: uOuter:DISCRETE(start = 0.0 )  type: Real
+// 2: intE:CLOCKED_STATE(start = 0.0 fixed = true )  type: Real
+// 3: eOuter:DISCRETE()  type: Real
+// 4: xd:DISCRETE()  type: Real
 //
 //
 // Equations (4, 4)
@@ -274,7 +274,7 @@ translateModel(SynchronousFeatures.ControlledMass); getErrorString();
 //
 // Variables (1)
 // ========================================
-// 1: $var3:VARIABLE()  type: Real 
+// 1: $var3:VARIABLE(protected = true )  type: Real
 //
 //
 // Equations (1, 1)

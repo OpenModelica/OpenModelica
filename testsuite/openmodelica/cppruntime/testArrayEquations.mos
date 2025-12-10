@@ -129,10 +129,12 @@ val(y4, 1.0);
 // x4[i]=(if firstTick() then 0.0 else $DER.x4[i]) * interval() + previous(x4[i])[Real]
 // end for;
 // 21: y4=sum(x4) [Real]
-// 22: y3=sum(x3) [Real]removedEquations equations:
+// 22: y3=sum(x3) [Real]
+// removedEquations equations:
 // ========================================
 // SubClock:
-// factor(1/1) shift(0/1) Hold Events: false
+// factor(1/1) shift(0/1)
+// Hold Events: false
 //
 // ========================================
 //

@@ -276,12 +276,12 @@ int solveLapack(DATA *data, threadData_t *threadData, int sysNumber, double* aux
       _omc_copyVector(solverData->x, solverData->b);
     }
 
-    if (OMC_ACTIVE_STREAM(OMC_LOG_LS_V)){
-        if (1 == systemData->method) {
-          infoStreamPrint(OMC_LOG_LS_V, 1, "Residual Norm %.15g of solution x:", residualNorm);
-        } else {
-          infoStreamPrint(OMC_LOG_LS_V, 1, "Solution x:");
-        }
+    if (OMC_ACTIVE_STREAM(OMC_LOG_LS_V)) {
+      if (1 == systemData->method) {
+        infoStreamPrint(OMC_LOG_LS_V, 1, "Residual Norm %.15g of solution x:", residualNorm);
+      } else {
+        infoStreamPrint(OMC_LOG_LS_V, 1, "Solution x:");
+      }
       infoStreamPrint(OMC_LOG_LS_V, 0, "System %d numVars %d.", eqSystemNumber, modelInfoGetEquation(&data->modelData->modelDataXml,eqSystemNumber).numVar);
 
       for(i = 0; i < systemData->size; ++i) {

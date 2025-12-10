@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8.9)
+cmake_minimum_required(VERSION 3.5)
 
 project(${RK12Name})
 
@@ -17,4 +17,3 @@ add_precompiled_header(${RK12Name} runtime/include/Core/Modelica.h)
 
 
 install(TARGETS ${RK12Name} DESTINATION ${LIBINSTALLEXT})
-

@@ -296,7 +296,6 @@ static int callDenseJacobian(double t, N_Vector y, N_Vector fy,
  */
 int rootsFunctionCVODE(double time, N_Vector y, double *gout, void *userData)
 {
-  TRACE_PUSH
   CVODE_SOLVER *cvodeData = (CVODE_SOLVER *)userData;
   DATA *data = (DATA *)(((CVODE_USERDATA *)cvodeData->simData)->data);
   threadData_t *threadData = (threadData_t *)(((CVODE_USERDATA *)((CVODE_SOLVER *)userData)->simData)->threadData);
@@ -342,7 +341,6 @@ int rootsFunctionCVODE(double time, N_Vector y, double *gout, void *userData)
   if (measure_time_flag)
     rt_tick(SIM_TIMER_SOLVER);
 
-  TRACE_POP
   return 0;
 }
 
@@ -972,7 +970,7 @@ int cvode_solver_step(DATA *data, threadData_t *threadData, SOLVER_INFO *solverI
     }
 
     /* Closing new step message */
-    messageClose(OMC_LOG_SOLVER);
+    messageClose(OMC_LOG_SOLVER); // TODO make sure this is called even if something in between fails
 
     /* Set time to current time */
     simulationData->timeValue = solverInfo->currentTime;

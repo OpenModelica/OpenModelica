@@ -504,17 +504,12 @@ public
     Equation eqn = Pointer.access(Slice.getT(eqn_slice));
   algorithm
     (eqn_slice, funcTree, status) := match eqn
-
       local
-        list<Pointer<Variable>> vars = list(Slice.getT(v) for v in var_slices);
         Equation solved_eqn;
         IfEquationBody if_body;
-        Expression lhs, rhs;
-        ComponentRef var_cref;
-        UnorderedSet<ComponentRef> record_crefs;
 
       case Equation.IF_EQUATION() algorithm
-        (if_body, funcTree, status, implicit_index) := solveIfBody(eqn.body, VariablePointers.fromList(vars), funcTree, kind, implicit_index, slicing_map, iter, varData, eqData);
+        (if_body, funcTree, status, implicit_index) := solveIfBody(eqn.body, VariablePointers.fromList(list(Slice.getT(v) for v in var_slices)), funcTree, kind, implicit_index, slicing_map, iter, varData, eqData);
         eqn.body := if_body;
       then (Slice.SLICE(Pointer.create(eqn), eqn_slice.indices), funcTree, status);
 
@@ -526,34 +521,14 @@ public
       case Equation.WHEN_EQUATION()
       then (Slice.SLICE(Pointer.clone(Slice.getT(eqn_slice)), eqn_slice.indices), funcTree, Status.EXPLICIT);
 
-      // solve tuple equations
+      // solve record and tuple equations
       case Equation.RECORD_EQUATION() algorithm
-        (solved_eqn, status) := match (eqn.lhs, eqn.rhs)
-          local
-            Expression exp;
-          case (exp as Expression.TUPLE(), _) guard(tupleSolvable(exp.elements, vars)) then (eqn, Status.EXPLICIT);
-          case (_, exp as Expression.TUPLE()) guard(tupleSolvable(exp.elements, vars)) algorithm
-            eqn.rhs := eqn.lhs;
-            eqn.lhs := exp;
-          then (eqn, Status.EXPLICIT);
-          else algorithm
-            // check if all belong to the same record
-            record_crefs := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
-            for var_slice in var_slices loop
-              (var_cref, status) := getVarSlice(BVariable.getVarName(Slice.getT(var_slice)), eqn);
-              UnorderedSet.add(var_cref, record_crefs);
-              if status == Status.UNSOLVABLE then break; end if;
-            end for;
+        (solved_eqn, funcTree, status) := solveMultiRecordStrongComponent(eqn, var_slices, funcTree);
+      then (Slice.SLICE(Pointer.create(solved_eqn), eqn_slice.indices), funcTree, status);
 
-            solved_eqn := match (UnorderedSet.toList(record_crefs), status)
-              case ({var_cref}, Status.UNPROCESSED) algorithm
-                (solved_eqn, funcTree, status, _) := solveBody(eqn, var_cref, funcTree);
-              then solved_eqn;
-              else eqn;
-            end match;
-
-          then (solved_eqn, status);
-        end match;
+      // solve arrays of record and tuple equations
+      case Equation.ARRAY_EQUATION() algorithm
+        (solved_eqn, funcTree, status) := solveMultiRecordStrongComponent(eqn, var_slices, funcTree);
       then (Slice.SLICE(Pointer.create(solved_eqn), eqn_slice.indices), funcTree, status);
 
       // dummy equation implies removed equation (occurs only in simulation systems)
@@ -564,6 +539,51 @@ public
       then fail();
     end match;
   end solveMultiStrongComponent;
+
+  function solveMultiRecordStrongComponent
+    input Equation eqn "has to be RECORD_EQUATION or ARRAY_EQUATION";
+    input list<Slice<Pointer<Variable>>> var_slices;
+    output Equation solved_eqn = eqn;
+    input output FunctionTree funcTree;
+    output Status status;
+  protected
+    list<Pointer<Variable>> vars = list(Slice.getT(v) for v in var_slices);
+    Expression lhs = Util.getOption(Equation.getLHS(eqn));
+    Expression rhs = Util.getOption(Equation.getRHS(eqn));
+    UnorderedSet<ComponentRef> record_crefs;
+    ComponentRef var_cref;
+  algorithm
+    (solved_eqn, status) := match (lhs, rhs)
+      local
+        Expression exp;
+
+      // handle tuples
+      case (exp as Expression.TUPLE(), _) guard(tupleSolvable(exp.elements, vars)) then (solved_eqn, Status.EXPLICIT);
+      case (_, exp as Expression.TUPLE()) guard(tupleSolvable(exp.elements, vars)) algorithm
+        solved_eqn := Equation.setRHS(solved_eqn, lhs);
+        solved_eqn := Equation.setLHS(solved_eqn, rhs);
+      then (solved_eqn, Status.EXPLICIT);
+
+      // handle records
+      else algorithm
+        // check if all belong to the same record
+        record_crefs := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
+        for var_slice in var_slices loop
+          (var_cref, status) := getVarSlice(BVariable.getVarName(Slice.getT(var_slice)), eqn);
+          UnorderedSet.add(var_cref, record_crefs);
+          if status == Status.UNSOLVABLE then break; end if;
+        end for;
+
+        solved_eqn := match (UnorderedSet.toList(record_crefs), status)
+          case ({var_cref}, Status.UNPROCESSED) algorithm
+            (solved_eqn, funcTree, status, _) := solveBody(eqn, var_cref, funcTree);
+          then solved_eqn;
+          else eqn;
+        end match;
+
+      then (solved_eqn, status);
+    end match;
+  end solveMultiRecordStrongComponent;
 
   function solveEquation
     input output Equation eqn;

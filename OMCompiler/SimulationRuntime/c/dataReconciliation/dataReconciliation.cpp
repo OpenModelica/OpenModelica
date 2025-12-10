@@ -2714,8 +2714,6 @@ int RunReconciliation(DATA *data, threadData_t *threadData, inputData x, matrixD
 */
 int reconcileBoundaryConditions(DATA * data, threadData_t * threadData, inputData reconciled_x, matrixData reconciled_Sx, boundaryConditionData& boundaryconditiondata, ofstream& logfile)
 {
-  TRACE_PUSH
-
   // set the inputs from csv file to simulationInfo datainputVars
   for (int i = 0; i < reconciled_x.rows * reconciled_x.column; i++)
   {
@@ -2875,7 +2873,6 @@ int reconcileBoundaryConditions(DATA * data, threadData_t * threadData, inputDat
     free(jacFt.data);
   }
 
-  TRACE_POP
   return 0;
 }
 
@@ -2930,8 +2927,6 @@ int stateEstimation(DATA *data, threadData_t *threadData, inputData x, matrixDat
 */
 int dataReconciliation(DATA * data, threadData_t * threadData, int status)
 {
-  TRACE_PUSH
-
   // copy the reference files "AuxiliaryConditions and IntermediateEquations.html to output path"
   if (omc_flag[FLAG_OUTPUT_PATH])
   {
@@ -3038,7 +3033,6 @@ int dataReconciliation(DATA * data, threadData_t * threadData, int status)
   free(jacFt.data);
   free(tmpSx_diag.data);
   free(x_diag.data);
-  TRACE_POP
   return 0;
 }
 

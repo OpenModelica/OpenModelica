@@ -432,6 +432,7 @@ public:
   static QString moveDown;
   static QString fixErrorsManually;
   static QString revertToLastCorrectVersion;
+  static QString saveWithErrors;
   static QString translationFlagsTip;
   static QString saveExperimentAnnotation;
   static QString saveOpenModelicaSimulationFlagsAnnotation;

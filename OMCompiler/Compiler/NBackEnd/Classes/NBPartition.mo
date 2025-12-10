@@ -43,6 +43,7 @@ public
 protected
   // NF imports
   import Call = NFCall;
+  import ClockKind = NFClockKind;
   import ComponentRef = NFComponentRef;
   import Expression = NFExpression;
   import Type = NFType;
@@ -241,6 +242,7 @@ public
           else
             clock_opt := NONE();
           end if;
+
           _ := match (clock_opt, Pointer.access(clock_ptr))
             local
               BClock new, old;
@@ -250,6 +252,14 @@ public
 
             // old base clock getting updated to new sub clock
             case (SOME(new as BClock.SUB_CLOCK()), SOME((_, old as BClock.BASE_CLOCK()))) algorithm
+              Pointer.update(clock_ptr, SOME((exp.cref, new)));
+            then ();
+
+            // new base clock that is inferred --> nothing happens
+            case (SOME(new as BClock.BASE_CLOCK(clock = ClockKind.INFERRED_CLOCK())), _) then ();
+
+            // old base clock is inferred --> always take new clock
+            case (SOME(new), SOME((_, old as BClock.BASE_CLOCK(clock = ClockKind.INFERRED_CLOCK())))) algorithm
               Pointer.update(clock_ptr, SOME((exp.cref, new)));
             then ();
 

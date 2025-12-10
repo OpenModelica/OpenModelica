@@ -4114,8 +4114,7 @@ algorithm
   // treat: type Real3 = Real[3]; comp(redeclare Real3 x);
   // in the same way as: comp(redeclare Real x[3]).
   if SCodeUtil.isArrayComponent(inOldComponent) and not SCodeUtil.isArrayComponent(inNewComponent) then
-    (outCache, is_array) := Lookup.isArrayType(outCache, inEnv,
-      AbsynUtil.typeSpecPath(SCodeUtil.getComponentTypeSpec(inNewComponent)));
+    (outCache, is_array) := Lookup.isArrayType(outCache, inEnv, SCodeUtil.getElementTypePath(inNewComponent));
   end if;
 
   outComponent := SCodeUtil.propagateAttributesVar(inOldComponent, inNewComponent, is_array);

@@ -109,7 +109,7 @@ int gbodef_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solve
   gbfData->tableau = initButcherTableau(gbfData->GM_method, FLAG_MR_ERR);
   if (gbfData->tableau == NULL) {
     // ERROR
-    messageClose(OMC_LOG_STDOUT);
+    messageClose(OMC_LOG_STDOUT);  // FIXME what does this belong to?
     omc_throw_function(threadData);
   }
 
@@ -443,7 +443,7 @@ int gbode_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solver
     if (!gbData->nlsData) {
       return -1;
     } else {
-      infoStreamPrint(OMC_LOG_SOLVER, 1, "Nominal values of  the states:");
+      infoStreamPrint(OMC_LOG_SOLVER, 1, "Nominal values of the states:");
       for (int i = 0; i < gbData->nStates; i++) {
         infoStreamPrint(OMC_LOG_SOLVER, 0, "%s = %g", data->modelData->realVarsData[i].info.name, gbData->nlsData->nominal[i]);
       }
@@ -839,7 +839,7 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
       // if (gbfData->time - gbfData->stepSize > gbData->timeLeft) {
       //   gbData->timeRight = gbfData->timeRight;
       //   gbData->lastStepSize = gbData->timeRight - gbData->timeLeft;
-      //   messageClose(OMC_LOG_SOLVER);
+      //   messageClose(OMC_LOG_SOLVER);  // FIXME what does this belong to?
       //   return 0;
       // } else {
         gbfData->stepSize = gbData->timeRight - gbfData->time;
@@ -885,7 +885,7 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
         infoStreamPrint(OMC_LOG_SOLVER, 0, "Try half of the step size = %g", gbfData->stepSize);
         if (gbfData->stepSize < GB_MINIMAL_STEP_SIZE) {
           errorStreamPrint(OMC_LOG_STDOUT, 0, "Simulation aborted! Minimum step size %g reached, but error still to large.", GB_MINIMAL_STEP_SIZE);
-          messageClose(OMC_LOG_SOLVER);
+          messageClose(OMC_LOG_SOLVER);  // FIXME what does this belong to?
           return -1;
         }
         err = 100;
@@ -996,7 +996,7 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
       }
 
       // Get out of the integration routine for event handling
-      messageClose(OMC_LOG_SOLVER);
+      messageClose(OMC_LOG_SOLVER);  // FIXME what does this belong to?
       return 1;
     }
 
@@ -1079,7 +1079,7 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
     gbfData->stats.nCallsJacobian = gbfData->nlsData->numberOfJEval;
 
   infoStreamPrint(OMC_LOG_SOLVER, 0, "gbodef finished (inner steps).");
-  messageClose(OMC_LOG_SOLVER);
+  messageClose(OMC_LOG_SOLVER);  // FIXME what does this belong to?
 
   return 0;
 }
@@ -1799,11 +1799,12 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
       printVector_gb(OMC_LOG_GBODE, " y", sData->realVars, nStates, sData->timeValue);
       messageClose(OMC_LOG_GBODE);
     }
-    // return to solver main routine for proper event handling (iteration)
-    messageClose(OMC_LOG_SOLVER);
 
     listClear(solverInfo->eventLst);
     gbData->eventTime = DBL_MAX; // reset event time, if eventTime is reached
+
+    // return to solver main routine for proper event handling (iteration)
+    messageClose(OMC_LOG_SOLVER);
 
     return 0;
   }

@@ -966,7 +966,7 @@ protected
   Class cls;
   Boolean is_import, scope_is_class;
 algorithm
-  if LookupState.isError(state) then
+  if LookupState.isError(state) or (InstContext.inConnect(context) and InstNode.isEmpty(node)) then
     return;
   end if;
 

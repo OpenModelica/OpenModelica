@@ -37,7 +37,9 @@
 #include "OMEditApplication.h"
 #include "MainWindow.h"
 
+#ifndef GC_THREADS
 #define GC_THREADS
+#endif
 extern "C" {
 #include "meta/meta_modelica.h"
 }

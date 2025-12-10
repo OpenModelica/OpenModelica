@@ -425,6 +425,7 @@ QString Helper::moveUp;
 QString Helper::moveDown;
 QString Helper::fixErrorsManually;
 QString Helper::revertToLastCorrectVersion;
+QString Helper::saveWithErrors;
 QString Helper::translationFlagsTip;
 QString Helper::saveExperimentAnnotation;
 QString Helper::saveOpenModelicaSimulationFlagsAnnotation;
@@ -753,6 +754,7 @@ void Helper::initHelperVariables()
   Helper::moveDown = tr("Move Down");
   Helper::fixErrorsManually = tr("Fix error(s) manually");
   Helper::revertToLastCorrectVersion = tr("Revert to last correct version");
+  Helper::saveWithErrors = tr("Save with Errors");
   Helper::translationFlagsTip = tr("Space separated list of OMC command line options e.g., -d=initialization --cheapmatchingAlgorithm=3");
   Helper::saveExperimentAnnotation = tr("Save experiment annotation inside model i.e., experiment annotation");
   Helper::saveOpenModelicaSimulationFlagsAnnotation = tr("Save simulation flags inside model i.e., __OpenModelica_simulationFlags annotation");
@@ -882,7 +884,7 @@ QString GUIMessages::getMessage(int type)
     case UNLOAD_CLASS_MSG:
       return tr("Are you sure you want to unload <b>%1</b>? Everything contained inside this class will also be unloaded.");
     case RELOAD_CLASS_MSG:
-      return tr("Are you sure you want to reload <b>%1</b>? Any unsaved changes to the class and its containing classes will be lost.");
+      return tr("Are you sure you want to reload <b>%1</b>? Any unsaved changes will be lost.");
     case DELETE_CLASS_MSG:
       return tr("Are you sure you want to delete <b>%1</b>? Everything contained inside this class will also be deleted.");
     case UNLOAD_TEXT_FILE_MSG:

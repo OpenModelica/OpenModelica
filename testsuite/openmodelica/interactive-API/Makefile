@@ -112,6 +112,7 @@ Obfuscation2.mos \
 Obfuscation3.mos \
 Obfuscation4.mos \
 Obfuscation5.mos \
+Promote1.mos \
 ProtectedHandlingBug2917.mos \
 ReadOnlyPkg.mos \
 readSimulationResult1.mos \
@@ -137,6 +138,7 @@ StateMachine.mos \
 StoreAST.mos \
 strings.mos  \
 stringSplit.mos \
+Sum1.mos \
 TestChoices.mos \
 Ticket4674.mos \
 Ticket5506.mos \
@@ -157,7 +159,7 @@ UsesAnnotation2.mos \
 variables.mos \
 VendorAnnotation.mos \
 TestSpace.mos \
-
+Issue14178.mos
 
 # test that currently fail. Move up when fixed.
 # Run make testfailing

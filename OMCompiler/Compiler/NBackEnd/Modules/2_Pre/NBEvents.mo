@@ -491,13 +491,12 @@ public
     algorithm
       (failed, clocked) := match (AbsynUtil.pathLastIdent(Call.functionName(call)), Call.arguments(call))
         local
-          Type ty;
           Integer value;
-          Expression start, interval;
+          Expression clock, start, interval;
           TimeEvent timeEvent;
 
         // don't create samples for clocks
-        case ("sample", {_, Expression.CREF(ty = ty)}) guard(Type.isClock(ty)) then (false, true);
+        case ("sample", {_, clock})    guard(Type.isClock(Expression.typeOf(clock))) then (false, true);
 
         case ("sample", {start, interval}) algorithm
           timeEvent := SAMPLE(UnorderedSet.size(bucket.time_set), start, interval);
