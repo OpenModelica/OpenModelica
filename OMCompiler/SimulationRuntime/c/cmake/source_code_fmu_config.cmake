@@ -13,54 +13,54 @@ set(SOURCE_FMU_SOURCES_DIR ${CMAKE_INSTALL_DATAROOTDIR}/omc/sources/c)
 
 ######################################################################################################################
 # Common source files for all source-code-FMUs
-set(SOURCE_FMU_COMMON_FILES_LIST ./gc/memory_pool.c
-                                 ./gc/omc_gc.c
-                                 ./util/base_array.c
-                                 ./util/boolean_array.c
-                                 ./util/context.c
-                                 ./util/division.c
-                                 ./util/doubleEndedList.c
-                                 ./util/generic_array.c
-                                 ./util/index_spec.c
-                                 ./util/integer_array.c
-                                 ./util/list.c
-                                 ./util/modelica_string_lit.c
-                                 ./util/modelica_string.c
-                                 ./util/ModelicaUtilities.c
-                                 ./util/omc_error.c
-                                 ./util/omc_file.c
-                                 ./util/omc_init.c
-                                 ./util/omc_mmap.c
-                                 ./util/omc_msvc.c
-                                 ./util/omc_numbers.c
-                                 ./util/parallel_helper.c
-                                 ./util/rational.c
-                                 ./util/real_array.c
-                                 ./util/ringbuffer.c
-                                 ./util/simulation_options.c
-                                 ./util/string_array.c
-                                 ./util/utility.c
-                                 ./util/varinfo.c
-                                 ./math-support/pivot.c
-                                 ./simulation/arrayIndex.c
-                                 ./simulation/jacobian_util.c
-                                 ./simulation/omc_simulation_util.c
-                                 ./simulation/options.c
-                                 ./simulation/simulation_info_json.c
-                                 ./simulation/simulation_omc_assert.c
-                                 ./simulation/solver/delay.c
-                                 ./simulation/solver/fmi_events.c
-                                 ./simulation/solver/model_help.c
-                                 ./simulation/solver/omc_math.c
-                                 ./simulation/solver/spatialDistribution.c
-                                 ./simulation/solver/stateset.c
-                                 ./simulation/solver/synchronous.c
-                                 ./simulation/solver/initialization/initialization.c
-                                 ./meta/meta_modelica_catch.c)
+set(SOURCE_FMU_COMMON_FILES_LIST "gc/memory_pool.c"
+                                 "gc/omc_gc.c"
+                                 "util/base_array.c"
+                                 "util/boolean_array.c"
+                                 "util/context.c"
+                                 "util/division.c"
+                                 "util/doubleEndedList.c"
+                                 "util/generic_array.c"
+                                 "util/index_spec.c"
+                                 "util/integer_array.c"
+                                 "util/list.c"
+                                 "util/modelica_string_lit.c"
+                                 "util/modelica_string.c"
+                                 "util/ModelicaUtilities.c"
+                                 "util/omc_error.c"
+                                 "util/omc_file.c"
+                                 "util/omc_init.c"
+                                 "util/omc_mmap.c"
+                                 "util/omc_msvc.c"
+                                 "util/omc_numbers.c"
+                                 "util/parallel_helper.c"
+                                 "util/rational.c"
+                                 "util/real_array.c"
+                                 "util/ringbuffer.c"
+                                 "util/simulation_options.c"
+                                 "util/string_array.c"
+                                 "util/utility.c"
+                                 "util/varinfo.c"
+                                 "math-support/pivot.c"
+                                 "simulation/arrayIndex.c"
+                                 "simulation/jacobian_util.c"
+                                 "simulation/omc_simulation_util.c"
+                                 "simulation/options.c"
+                                 "simulation/simulation_info_json.c"
+                                 "simulation/simulation_omc_assert.c"
+                                 "simulation/solver/delay.c"
+                                 "simulation/solver/fmi_events.c"
+                                 "simulation/solver/model_help.c"
+                                 "simulation/solver/omc_math.c"
+                                 "simulation/solver/spatialDistribution.c"
+                                 "simulation/solver/stateset.c"
+                                 "simulation/solver/synchronous.c"
+                                 "simulation/solver/initialization/initialization.c"
+                                 "meta/meta_modelica_catch.c")
 
 # Install the files keeping the folder structure. While also created a quoted string list for use by MM code.
 foreach(source_file ${SOURCE_FMU_COMMON_FILES_LIST})
-  list(APPEND SOURCE_FMU_COMMON_FILES_LIST_QUOTED \"${source_file}\")
+  list(APPEND SOURCE_FMU_COMMON_FILES_LIST_QUOTED "\"${source_file}\"")
   get_filename_component(DEST_DIR ${source_file} DIRECTORY)
   if(CMAKE_VERSION VERSION_GREATER_EQUAL "3.20")
     set(SOURCE_FMU_SOURCES_DEST_DIR "${SOURCE_FMU_SOURCES_DIR}")
@@ -74,114 +74,123 @@ foreach(source_file ${SOURCE_FMU_COMMON_FILES_LIST})
           DESTINATION ${SOURCE_FMU_SOURCES_DEST_DIR}
           COMPONENT fmu)
 endforeach()
-string(REPLACE ";" ",\n                                         " SOURCE_FMU_COMMON_FILES "${SOURCE_FMU_COMMON_FILES_LIST_QUOTED}")
+list(JOIN SOURCE_FMU_COMMON_FILES_LIST_QUOTED ",\n                                         " SOURCE_FMU_COMMON_FILES)
 
 
-set(SOURCE_FMU_COMMON_HEADERS \"./omc_inline.h\",
-                              \"./openmodelica_func.h\",
-                              \"./openmodelica.h\",
-                              \"./omc_simulation_settings.h\",
-                              \"./openmodelica_types.h\",
-                              \"./simulation_data.h\",
-                              \"./ModelicaUtilities.h\",
-                              \"./linearization/linearize.h\",
-                              \"./optimization/OptimizerData.h\",
-                              \"./optimization/OptimizerLocalFunction.h\",
-                              \"./optimization/OptimizerInterface.h\",
-                              \"./simulation/arrayIndex.h\",
-                              \"./simulation/jacobian_util.h\",
-                              \"./simulation/modelinfo.h\",
-                              \"./simulation/options.h\",
-                              \"./simulation/simulation_info_json.h\",
-                              \"./simulation/simulation_input_xml.h\",
-                              \"./simulation/simulation_omc_assert.h\",
-                              \"./simulation/simulation_runtime.h\",
-                              \"./simulation/omc_simulation_util.h\",
-                              \"./simulation/results/simulation_result.h\",
-                              \"./simulation/solver/cvode_solver.h\",
-                              \"./simulation/solver/dae_mode.h\",
-                              \"./simulation/solver/dassl.h\",
-                              \"./simulation/solver/delay.h\",
-                              \"./simulation/solver/embedded_server.h\",
-                              \"./simulation/solver/epsilon.h\",
-                              \"./simulation/solver/events.h\",
-                              \"./simulation/solver/external_input.h\",
-                              \"./simulation/solver/fmi_events.h\",
-                              \"./simulation/solver/ida_solver.h\",
-                              \"./simulation/solver/linearSolverLapack.h\",
-                              \"./simulation/solver/linearSolverTotalPivot.h\",
-                              \"./simulation/solver/linearSystem.h\",
-                              \"./simulation/solver/mixedSearchSolver.h\",
-                              \"./simulation/solver/mixedSystem.h\",
-                              \"./simulation/solver/model_help.h\",
-                              \"./simulation/solver/nonlinearSolverHomotopy.h\",
-                              \"./simulation/solver/nonlinearSolverHybrd.h\",
-                              \"./simulation/solver/nonlinearSystem.h\",
-                              \"./simulation/solver/nonlinearValuesList.h\",
-                              \"./simulation/solver/omc_math.h\",
-                              \"./simulation/solver/perform_qss_simulation.c.inc\",
-                              \"./simulation/solver/perform_simulation.c.inc\",
-                              \"./simulation/solver/real_time_sync.h\",
-                              \"./simulation/solver/solver_main.h\",
-                              \"./simulation/solver/spatialDistribution.h\",
-                              \"./simulation/solver/stateset.h\",
-                              \"./simulation/solver/sundials_error.h\",
-                              \"./simulation/solver/sundials_util.h\",
-                              \"./simulation/solver/synchronous.h\",
-                              \"./simulation/solver/initialization/initialization.h\",
-                              \"./meta/meta_modelica_builtin_boxptr.h\",
-                              \"./meta/meta_modelica_builtin_boxvar.h\",
-                              \"./meta/meta_modelica_builtin.h\",
-                              \"./meta/meta_modelica.h\",
-                              \"./meta/meta_modelica_data.h\",
-                              \"./meta/meta_modelica_mk_box.h\",
-                              \"./meta/meta_modelica_segv.h\",
-                              \"./gc/omc_gc.h\",
-                              \"./gc/memory_pool.h\",
-                              \"./util/base_array.h\",
-                              \"./util/boolean_array.h\",
-                              \"./util/context.h\",
-                              \"./util/division.h\",
-                              \"./util/generic_array.h\",
-                              \"./util/index_spec.h\",
-                              \"./util/integer_array.h\",
-                              \"./util/java_interface.h\",
-                              \"./util/modelica.h\",
-                              \"./util/modelica_string.h\",
-                              \"./util/omc_error.h\",
-                              \"./util/omc_file.h\",
-                              \"./util/omc_mmap.h\",
-                              \"./util/omc_msvc.h\",
-                              \"./util/omc_numbers.h\",
-                              \"./util/omc_spinlock.h\",
-                              \"./util/parallel_helper.h\",
-                              \"./util/read_matlab4.h\",
-                              \"./util/read_csv.h\",
-                              \"./util/libcsv.h\",
-                              \"./util/read_write.h\",
-                              \"./util/real_array.h\",
-                              \"./util/ringbuffer.h\",
-                              \"./util/rtclock.h\",
-                              \"./util/simulation_options.h\",
-                              \"./util/string_array.h\",
-                              \"./util/uthash.h\",
-                              \"./util/utility.h\",
-                              \"./util/varinfo.h\",
-                              \"./util/list.h\",
-                              \"./util/doubleEndedList.h\",
-                              \"./util/rational.h\",
-                              \"./util/modelica_string_lit.h\",
-                              \"./util/omc_init.h\",
-                              \"./dataReconciliation/dataReconciliation.h\")
+set(SOURCE_FMU_COMMON_HEADERS "omc_inline.h"
+                              "openmodelica_func.h"
+                              "openmodelica.h"
+                              "omc_simulation_settings.h"
+                              "openmodelica_types.h"
+                              "simulation_data.h"
+                              "ModelicaUtilities.h"
+                              "linearization/linearize.h"
+                              "optimization/OptimizerData.h"
+                              "optimization/OptimizerLocalFunction.h"
+                              "optimization/OptimizerInterface.h"
+                              "simulation/arrayIndex.h"
+                              "simulation/jacobian_util.h"
+                              "simulation/modelinfo.h"
+                              "simulation/options.h"
+                              "simulation/simulation_info_json.h"
+                              "simulation/simulation_input_xml.h"
+                              "simulation/simulation_omc_assert.h"
+                              "simulation/simulation_runtime.h"
+                              "simulation/omc_simulation_util.h"
+                              "simulation/results/simulation_result.h"
+                              "simulation/solver/cvode_solver.h"
+                              "simulation/solver/dae_mode.h"
+                              "simulation/solver/dassl.h"
+                              "simulation/solver/delay.h"
+                              "simulation/solver/embedded_server.h"
+                              "simulation/solver/epsilon.h"
+                              "simulation/solver/events.h"
+                              "simulation/solver/external_input.h"
+                              "simulation/solver/fmi_events.h"
+                              "simulation/solver/ida_solver.h"
+                              "simulation/solver/linearSolverLapack.h"
+                              "simulation/solver/linearSolverTotalPivot.h"
+                              "simulation/solver/linearSystem.h"
+                              "simulation/solver/mixedSearchSolver.h"
+                              "simulation/solver/mixedSystem.h"
+                              "simulation/solver/model_help.h"
+                              "simulation/solver/nonlinearSolverHomotopy.h"
+                              "simulation/solver/nonlinearSolverHybrd.h"
+                              "simulation/solver/nonlinearSystem.h"
+                              "simulation/solver/nonlinearValuesList.h"
+                              "simulation/solver/omc_math.h"
+                              "simulation/solver/perform_qss_simulation.c.inc"
+                              "simulation/solver/perform_simulation.c.inc"
+                              "simulation/solver/real_time_sync.h"
+                              "simulation/solver/solver_main.h"
+                              "simulation/solver/spatialDistribution.h"
+                              "simulation/solver/stateset.h"
+                              "simulation/solver/sundials_error.h"
+                              "simulation/solver/sundials_util.h"
+                              "simulation/solver/synchronous.h"
+                              "simulation/solver/initialization/initialization.h"
+                              "meta/meta_modelica_builtin_boxptr.h"
+                              "meta/meta_modelica_builtin_boxvar.h"
+                              "meta/meta_modelica_builtin.h"
+                              "meta/meta_modelica.h"
+                              "meta/meta_modelica_data.h"
+                              "meta/meta_modelica_mk_box.h"
+                              "meta/meta_modelica_segv.h"
+                              "gc/omc_gc.h"
+                              "gc/memory_pool.h"
+                              "util/base_array.h"
+                              "util/boolean_array.h"
+                              "util/context.h"
+                              "util/division.h"
+                              "util/generic_array.h"
+                              "util/index_spec.h"
+                              "util/integer_array.h"
+                              "util/java_interface.h"
+                              "util/modelica.h"
+                              "util/modelica_string.h"
+                              "util/omc_error.h"
+                              "util/omc_file.h"
+                              "util/omc_mmap.h"
+                              "util/omc_msvc.h"
+                              "util/omc_numbers.h"
+                              "util/omc_spinlock.h"
+                              "util/parallel_helper.h"
+                              "util/read_matlab4.h"
+                              "util/read_csv.h"
+                              "util/libcsv.h"
+                              "util/read_write.h"
+                              "util/real_array.h"
+                              "util/ringbuffer.h"
+                              "util/rtclock.h"
+                              "util/simulation_options.h"
+                              "util/string_array.h"
+                              "util/uthash.h"
+                              "util/utility.h"
+                              "util/varinfo.h"
+                              "util/list.h"
+                              "util/doubleEndedList.h"
+                              "util/rational.h"
+                              "util/modelica_string_lit.h"
+                              "util/omc_init.h"
+                              "dataReconciliation/dataReconciliation.h")
 
-string(REPLACE ";" "\n                                         " SOURCE_FMU_COMMON_HEADERS "${SOURCE_FMU_COMMON_HEADERS}")
-
+set(SOURCE_FMU_COMMON_QUOTED_HEADERS)
+foreach(source_file IN LISTS SOURCE_FMU_COMMON_HEADERS)
+  list(APPEND SOURCE_FMU_COMMON_QUOTED_HEADERS "\"${source_file}\"")
+endforeach()
+list(JOIN SOURCE_FMU_COMMON_QUOTED_HEADERS ",\n                                         " SOURCE_FMU_COMMON_HEADERS)
 
 ######################################################################################################################
 # Lapack files
-file(GLOB_RECURSE 3RD_DGESV_FILES   ${OMCompiler_3rdParty_SOURCE_DIR}/dgesv/blas/*.c
-                                    ${OMCompiler_3rdParty_SOURCE_DIR}/dgesv/lapack/*.c
-                                    ${OMCompiler_3rdParty_SOURCE_DIR}/dgesv/libf2c/*.c)
+file(GLOB_RECURSE 3RD_DGESV_FILES ${OMCompiler_3rdParty_SOURCE_DIR}/dgesv/blas/*.c
+                                  ${OMCompiler_3rdParty_SOURCE_DIR}/dgesv/lapack/*.c
+                                  ${OMCompiler_3rdParty_SOURCE_DIR}/dgesv/libf2c/*.c)
+
+# Not used by C runtime
+list(REMOVE_ITEM 3RD_DGESV_FILES "${OMCompiler_3rdParty_SOURCE_DIR}/dgesv/lapack/dgesc2.c"
+                                 "${OMCompiler_3rdParty_SOURCE_DIR}/dgesv/lapack/dgetc2.c"
+                                 "${OMCompiler_3rdParty_SOURCE_DIR}/dgesv/lapack/dlabad.c"
+)
 
 file(GLOB_RECURSE 3RD_DGESV_HEADERS ${OMCompiler_3rdParty_SOURCE_DIR}/dgesv/include/*.h)
 
@@ -193,24 +202,26 @@ install(FILES ${3RD_DGESV_HEADERS}
 
 foreach(source_file_full_path ${3RD_DGESV_FILES})
   get_filename_component(source_file ${source_file_full_path} NAME)
-  list(APPEND SOURCE_FMU_DGESV_FILES_LIST_QUOTED \"./external_solvers/${source_file}\")
+  list(APPEND SOURCE_FMU_DGESV_FILES_LIST_QUOTED "\"external_solvers/${source_file}\"")
 endforeach()
-string(REPLACE ";" "," SOURCE_FMU_DGESV_FILES "${SOURCE_FMU_DGESV_FILES_LIST_QUOTED}")
-
+list(JOIN SOURCE_FMU_DGESV_FILES_LIST_QUOTED ",\n                                       " SOURCE_FMU_DGESV_FILES)
 
 ######################################################################################################################
 ## Non-linear system files
 
-set(SOURCE_FMU_NLS_FILES_LIST simulation/solver/nonlinearSolverHomotopy.c simulation/solver/nonlinearSolverHybrd.c simulation/solver/nonlinearValuesList.c simulation/solver/nonlinearSystem.c)
+set(SOURCE_FMU_NLS_FILES_LIST simulation/solver/nonlinearSolverHybrd.c
+                              simulation/solver/nonlinearSystem.c
+                              simulation/solver/nonlinearValuesList.c
+                              simulation/solver/nonlinearSolverHomotopy.c)
 
 foreach(source_file ${SOURCE_FMU_NLS_FILES_LIST})
-  list(APPEND SOURCE_FMU_NLS_FILES_LIST_QUOTED \"${source_file}\")
+  list(APPEND SOURCE_FMU_NLS_FILES_LIST_QUOTED "\"${source_file}\"")
   get_filename_component(DEST_DIR ${source_file} DIRECTORY)
   install(FILES ${source_file}
           DESTINATION ${SOURCE_FMU_SOURCES_DIR}/${DEST_DIR}
           COMPONENT fmu)
 endforeach()
-string(REPLACE ";" "," SOURCE_FMU_NLS_FILES "${SOURCE_FMU_NLS_FILES_LIST_QUOTED}")
+list(JOIN SOURCE_FMU_NLS_FILES_LIST_QUOTED ",\n                                         " SOURCE_FMU_NLS_FILES)
 
 
 # CMinPack files for NLS
@@ -235,57 +246,55 @@ install(FILES ${3RD_CMINPACK_HEADERS}
 
 foreach(source_file_full_path ${3RD_CMINPACK_FMU_FILES})
   get_filename_component(source_file ${source_file_full_path} NAME)
-  list(APPEND SOURCE_FMU_CMINPACK_FILES_LIST_QUOTED \"./external_solvers/${source_file}\")
+  list(APPEND SOURCE_FMU_CMINPACK_FILES_LIST_QUOTED "\"external_solvers/${source_file}\"")
 endforeach()
-string(REPLACE ";" "," SOURCE_FMU_CMINPACK_FILES "${SOURCE_FMU_CMINPACK_FILES_LIST_QUOTED}")
-
+list(JOIN SOURCE_FMU_CMINPACK_FILES_LIST_QUOTED ",\n                                            " SOURCE_FMU_CMINPACK_FILES)
 
 
 ######################################################################################################################
 ## Linear system files
-set(SOURCE_FMU_LS_FILES_LIST simulation/solver/linearSystem.c simulation/solver/linearSolverLapack.c simulation/solver/linearSolverTotalPivot.c)
+set(SOURCE_FMU_LS_FILES_LIST simulation/solver/linearSolverLapack.c
+                             simulation/solver/linearSolverTotalPivot.c
+                             simulation/solver/linearSystem.c)
 
 foreach(source_file ${SOURCE_FMU_LS_FILES_LIST})
-  list(APPEND SOURCE_FMU_LS_FILES_LIST_QUOTED \"${source_file}\")
+  list(APPEND SOURCE_FMU_LS_FILES_LIST_QUOTED "\"${source_file}\"")
   get_filename_component(DEST_DIR ${source_file} DIRECTORY)
   install(FILES ${source_file}
           DESTINATION ${SOURCE_FMU_SOURCES_DIR}/${DEST_DIR}
           COMPONENT fmu)
 endforeach()
-string(REPLACE ";" "," SOURCE_FMU_LS_FILES "${SOURCE_FMU_LS_FILES_LIST_QUOTED}")
+list(JOIN SOURCE_FMU_LS_FILES_LIST_QUOTED ",\n                                                     " SOURCE_FMU_LS_FILES)
 
 
 ######################################################################################################################
 ## Mixed system files
-set(SOURCE_FMU_MIXED_FILES_LIST simulation/solver/mixedSearchSolver.c simulation/solver/mixedSystem.c)
+set(SOURCE_FMU_MIXED_FILES_LIST simulation/solver/mixedSystem.c
+                                simulation/solver/mixedSearchSolver.c)
 
 foreach(source_file ${SOURCE_FMU_MIXED_FILES_LIST})
-  list(APPEND SOURCE_FMU_MIXED_FILES_LIST_QUOTED \"${source_file}\")
+  list(APPEND SOURCE_FMU_MIXED_FILES_LIST_QUOTED "\"${source_file}\"")
   get_filename_component(DEST_DIR ${source_file} DIRECTORY)
   install(FILES ${source_file}
           DESTINATION ${SOURCE_FMU_SOURCES_DIR}/${DEST_DIR}
           COMPONENT fmu)
 endforeach()
-string(REPLACE ";" "," SOURCE_FMU_MIXED_FILES "${SOURCE_FMU_MIXED_FILES_LIST_QUOTED}")
-
+list(JOIN SOURCE_FMU_MIXED_FILES_LIST_QUOTED ",\n                                                    " SOURCE_FMU_MIXED_FILES)
 
 
 ######################################################################################################################
 ## CVODE files
-set(SOURCE_FMU_CVODE_RUNTIME_FILES_LIST simulation/solver/cvode_solver.c simulation/solver/sundials_error.c)
+set(SOURCE_FMU_CVODE_RUNTIME_FILES_LIST simulation/solver/cvode_solver.c
+                                        simulation/solver/sundials_error.c)
 
 foreach(source_file ${SOURCE_FMU_CVODE_RUNTIME_FILES_LIST})
-  list(APPEND SOURCE_FMU_CVODE_RUNTIME_FILES_LIST_QUOTED \"${source_file}\")
+  list(APPEND SOURCE_FMU_CVODE_RUNTIME_FILES_LIST_QUOTED "\"${source_file}\"")
   get_filename_component(DEST_DIR ${source_file} DIRECTORY)
   install(FILES ${source_file}
           DESTINATION ${SOURCE_FMU_SOURCES_DIR}/${DEST_DIR}
           COMPONENT fmu)
 endforeach()
-string(REPLACE ";" "," SOURCE_FMU_CVODE_RUNTIME_FILES "${SOURCE_FMU_CVODE_RUNTIME_FILES_LIST_QUOTED}")
-
-
-
-
+list(JOIN SOURCE_FMU_CVODE_RUNTIME_FILES_LIST_QUOTED ",\n                                                  " SOURCE_FMU_CVODE_RUNTIME_FILES)
 
 
 # ######################################################################################################################
