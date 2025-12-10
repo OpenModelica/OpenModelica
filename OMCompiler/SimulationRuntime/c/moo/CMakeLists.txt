@@ -34,9 +34,6 @@ target_link_libraries(OpenModelicaRuntimeCMoo
     omc::config
     omc::simrt::runtime::headers
     omc::3rd::moo
-    sundials_interface
-    omc::3rd::suitesparse::klu
-    omc::3rd::suitesparse::config
 )
 
 target_compile_definitions(OpenModelicaRuntimeCMoo PUBLIC OMC_HAVE_MOO)

@@ -226,6 +226,7 @@ enum GB_METHOD {
   RK_TRAPEZOID,       /* trapezoid */
   RK_SDIRK2,          /* sdirk2*/
   RK_SDIRK3,          /* sdirk3*/
+  RK_SDIRK4,          /* sdirk4*/
   RK_ESDIRK2,         /* esdirk2*/
   RK_ESDIRK3,         /* esdirk3*/
   RK_ESDIRK4,         /* esdirk4*/
@@ -277,6 +278,7 @@ enum GB_NLS_METHOD {
   GB_NLS_NEWTON,
   GB_NLS_KINSOL,
   GB_NLS_KINSOL_B,
+  GB_NLS_INTERNAL,
 
   GB_NLS_MAX
 };
@@ -409,6 +411,11 @@ typedef enum NONLINEAR_SOLVER
   NLS_MIXED_DOESNT_EXIST,
 #endif
   NLS_HOMOTOPY,
+
+  NLS_GB_INTERNAL,
+#if !defined(OMC_MINIMAL_RUNTIME)
+  NLS_GB_INTERNAL_DOESNT_EXIST,
+#endif
 
   NLS_MAX
 } NONLINEAR_SOLVER;

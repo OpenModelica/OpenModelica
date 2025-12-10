@@ -717,7 +717,7 @@ int dassl_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
   solverInfo->solverStatsTmp.nCallsODE                = dasslData->iwork[11];
   solverInfo->solverStatsTmp.nCallsJacobian           = dasslData->iwork[12];
   solverInfo->solverStatsTmp.nErrorTestFailures       = dasslData->iwork[13];
-  solverInfo->solverStatsTmp.nConvergenveTestFailures = dasslData->iwork[14];
+  solverInfo->solverStatsTmp.nConvergenceTestFailures = dasslData->iwork[14];
 
   if(OMC_ACTIVE_STREAM(OMC_LOG_DASSL))
   {
@@ -732,8 +732,8 @@ int dassl_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
     infoStreamPrint(OMC_LOG_DASSL, 0, "number of steps taken so far: %d", solverInfo->solverStatsTmp.nStepsTaken);
     infoStreamPrint(OMC_LOG_DASSL, 0, "number of calls of functionODE() : %d", solverInfo->solverStatsTmp.nCallsODE);
     infoStreamPrint(OMC_LOG_DASSL, 0, "number of calculation of jacobian : %d", solverInfo->solverStatsTmp.nCallsJacobian);
-    infoStreamPrint(OMC_LOG_DASSL, 0, "total number of convergence test failures: %d", solverInfo->solverStatsTmp.nErrorTestFailures);
-    infoStreamPrint(OMC_LOG_DASSL, 0, "total number of error test failures: %d", solverInfo->solverStatsTmp.nConvergenveTestFailures);
+    infoStreamPrint(OMC_LOG_DASSL, 0, "total number of convergence test failures: %d", solverInfo->solverStatsTmp.nConvergenceTestFailures);
+    infoStreamPrint(OMC_LOG_DASSL, 0, "total number of error test failures: %d", solverInfo->solverStatsTmp.nErrorTestFailures);
     messageClose(OMC_LOG_DASSL);
   }
 

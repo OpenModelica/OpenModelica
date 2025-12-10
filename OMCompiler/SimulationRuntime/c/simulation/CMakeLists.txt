@@ -33,6 +33,7 @@ set(OMC_SIMRT_SIMULATION_SOURCES
   "solver/gbode_events.c"
   "solver/gbode_main.c"
   "solver/gbode_nls.c"
+  "solver/gbode_internal_nls.c"
   "solver/gbode_sparse.c"
   "solver/gbode_step.c"
   "solver/gbode_tableau.c"
