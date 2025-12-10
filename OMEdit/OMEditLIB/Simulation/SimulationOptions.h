@@ -114,6 +114,8 @@ public:
     setEquidistantTimeGrid(true);
     setStoreVariablesAtEvents(true);
     setShowGeneratedFiles(false);
+    // Linearize
+    setLinearizationDumpLanguage("none");
 
     setSimulationFlags(QStringList());
     setIsValid(false);
@@ -258,6 +260,9 @@ public:
   void setShowGeneratedFiles(bool showGeneratedFiles) {mShowGeneratedFiles = showGeneratedFiles;}
   bool getShowGeneratedFiles() const {return mShowGeneratedFiles;}
 
+  void setLinearizationDumpLanguage(const QString &linearizationDumpLanguage) {mLinearizationDumpLanguage = linearizationDumpLanguage;}
+  QString getLinearizationDumpLanguage() const {return mLinearizationDumpLanguage;}
+
   void setSimulationFlags(QStringList simulationFlags) {mSimulationFlags = simulationFlags;}
   QStringList getSimulationFlags() const {return mSimulationFlags;}
   void setIsValid(bool isValid) {mValid = isValid;}
@@ -340,6 +345,8 @@ private:
   bool mEquidistantTimeGrid;
   bool mStoreVariablesAtEvents;
   bool mShowGeneratedFiles;
+  // linearize
+  QString mLinearizationDumpLanguage;
 
   QStringList mSimulationFlags;
   bool mValid;
