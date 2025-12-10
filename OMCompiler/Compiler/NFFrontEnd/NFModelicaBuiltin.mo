@@ -2920,7 +2920,7 @@ annotation(Documentation(info="<html>
 end importFMUModelDescription;
 
 function translateModelFMU
-  "Deprecated: Translates a model into C code for a FMU without building it."
+  "Translates a model into C code for a FMU without building it."
   input TypeName className "the class that should translated";
   input String version = "2.0" "FMU version, 1.0 or 2.0.";
   input String fmuType = "me" "FMU type, me (model exchange), cs (co-simulation), me_cs (both model exchange and co-simulation)";
@@ -2934,13 +2934,12 @@ function translateModelFMU
   output Boolean success;
 external "builtin";
 annotation(Documentation(info="<html>
-<p><b>Deprecated: Use buildModelFMU instead.</b></p>
 <p>The only required argument is the className, while all others have some default values.</p>
 <p>Example command:
 <pre>translateModelFMU(className, version=\"2.0\");</pre>
 </p>
 </html>"),
-  preferredView="text", version="Deprecated");
+  preferredView="text");
 end translateModelFMU;
 
 function buildModelFMU
