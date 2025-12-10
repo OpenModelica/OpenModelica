@@ -2249,7 +2249,7 @@ void Element::showParameters()
   pMainWindow->getStatusBar()->showMessage(tr("Opening %1 %2 parameters window").arg(mpModel->getName()).arg(getName()));
   pMainWindow->getProgressBar()->setRange(0, 0);
   pMainWindow->showProgressBar();
-  bool inherited = false;
+  bool inherited = isInheritedElement();
   if (mpGraphicsView && mpGraphicsView->getModelWidget() && mpGraphicsView->getModelWidget()->isElementMode()
       && mpGraphicsView->getModelWidget()->getModelInstance() && mpGraphicsView->getModelWidget()->getModelInstance()->getRootParentElement()) {
     inherited = mpGraphicsView->getModelWidget()->getModelInstance()->getRootParentElement()->isExtend();
