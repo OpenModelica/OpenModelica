@@ -477,7 +477,7 @@ void SimulationDialog::setUpForm()
   pSimulationFlagsTabLayout->addWidget(mpAdditionalSimulationFlagsLabel, 13, 0);
   pSimulationFlagsTabLayout->addLayout(pAdditionalSimulationFlagsTabLayout, 13, 1, 1, 2);
   mpSimulationFlagsTab->setLayout(pSimulationFlagsTabLayout);
-  // add Output Tab to Simulation TabWidget
+  // add SimulationFlags Tab to Simulation TabWidget
   mpSimulationTabWidget->addTab(mpSimulationFlagsTabScrollArea, tr("Simulation Flags"));
   // Output Tab
   mpOutputTab = new QWidget;
@@ -533,6 +533,23 @@ void SimulationDialog::setUpForm()
   mpOutputTab->setLayout(pOutputTabLayout);
   // add Output Tab to Simulation TabWidget
   mpSimulationTabWidget->addTab(mpOutputTab, Helper::output);
+  // Linearize Tab
+  mpLinearizeTab = new QWidget;
+  // Linearization dump language combo box
+  mpLinearizationDumpLanguageComboBox = new ComboBox;
+  OMCInterface::getConfigFlagValidOptions_res linearizationLanguages = MainWindow::instance()->getOMCProxy()->getConfigFlagValidOptions("linearizationDumpLanguage");
+  mpLinearizationDumpLanguageComboBox->addItems(linearizationLanguages.validOptions);
+  mpLinearizationDumpLanguageComboBox->setCurrentIndex(0);
+  Utilities::setToolTip(mpLinearizationDumpLanguageComboBox, linearizationLanguages.mainDescription, linearizationLanguages.descriptions);
+  // set Linearize Tab Layout
+  QGridLayout *pLinearizeTabLayout = new QGridLayout;
+  pLinearizeTabLayout->setAlignment(Qt::AlignTop);
+  pLinearizeTabLayout->addWidget(new Label(tr("Linearize model at time = StopTime")), 0, 0, 1, 2);
+  pLinearizeTabLayout->addWidget(new Label(tr("Target language for linearized model:")), 1, 0);
+  pLinearizeTabLayout->addWidget(mpLinearizationDumpLanguageComboBox, 1, 1);
+  mpLinearizeTab->setLayout(pLinearizeTabLayout);
+  // add Linearize Tab to Simulation TabWidget
+  mpSimulationTabWidget->addTab(mpLinearizeTab, tr("Linearize"));
   // Add the validators
   QDoubleValidator *pDoubleValidator = new QDoubleValidator(this);
   mpStartTimeTextBox->setValidator(pDoubleValidator);
@@ -1054,6 +1071,11 @@ void SimulationDialog::applySimulationOptions(SimulationOptions simulationOption
   mpStoreVariablesAtEventsCheckBox->setChecked(simulationOptions.getStoreVariablesAtEvents());
   // show generated files checkbox
   mpShowGeneratedFilesCheckBox->setChecked(simulationOptions.getShowGeneratedFiles());
+  // linearization dump language
+  currentIndex = mpLinearizationDumpLanguageComboBox->findText(simulationOptions.getLinearizationDumpLanguage(), Qt::MatchExactly);
+  if (currentIndex > -1) {
+    mpLinearizationDumpLanguageComboBox->setCurrentIndex(currentIndex);
+  }
 }
 
 /*!
@@ -1110,6 +1132,10 @@ bool SimulationDialog::translateModel(QString simulationParameters)
       // select dataReconciliationStateEstimation preOptModules for both dataReconciliation and stateEstimation
       MainWindow::instance()->getOMCProxy()->setCommandLineOptions(QString("--preOptModules+=%1").arg("dataReconciliationStateEstimation"));
     }
+  }
+  // set linearization dump language
+  if (mpLinearizationDumpLanguageComboBox->currentText() != QStringLiteral("none")) {
+    MainWindow::instance()->getOMCProxy()->setCommandLineOptions("+linearizationDumpLanguage=" + mpLinearizationDumpLanguageComboBox->currentText());
   }
   bool result = MainWindow::instance()->getOMCProxy()->translateModel(mClassName, simulationParameters);
   // reset simulation settings
@@ -1225,6 +1251,8 @@ SimulationOptions SimulationDialog::createSimulationOptions()
   simulationOptions.setEquidistantTimeGrid(mpEquidistantTimeGridCheckBox->isChecked());
   simulationOptions.setStoreVariablesAtEvents(mpStoreVariablesAtEventsCheckBox->isChecked());
   simulationOptions.setShowGeneratedFiles(mpShowGeneratedFilesCheckBox->isChecked());
+
+  simulationOptions.setLinearizationDumpLanguage(mpLinearizationDumpLanguageComboBox->currentText());
   // create a folder with model name to dump the files in it.
   QString modelDirectoryPath = QString("%1/%2").arg(OptionsDialog::instance()->getGeneralSettingsPage()->getWorkingDirectory(), mClassName);
   if (!QDir().exists(modelDirectoryPath)) {
@@ -1367,6 +1395,10 @@ SimulationOptions SimulationDialog::createSimulationOptions()
   // setup Logging flags
   if (logStreams.size() > 0) {
     simulationFlags.append(QString("-lv=").append(logStreams.join(",")));
+  }
+  // linearization dump language
+  if (mpLinearizationDumpLanguageComboBox->currentText() != QStringLiteral("none")) {
+    simulationFlags.append(QString("-l=").append(simulationOptions.getStopTime()));
   }
   if (!mpAdditionalSimulationFlagsTextBox->text().isEmpty()) {
     simulationFlags.append(StringHandler::splitStringWithSpaces(mpAdditionalSimulationFlagsTextBox->text()));
