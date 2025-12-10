@@ -130,6 +130,7 @@ public
     array<StrongComponent> comps      "the sorted equations";
     SparsityPattern sparsityPattern   "Sparsity pattern for the jacobian";
     SparsityColoring sparsityColoring "Coloring information";
+    Boolean isAdjoint                 "is this an adjoint jacobian?";
   end JACOBIAN;
 
   record HESSIAN
@@ -214,6 +215,18 @@ public
       then fail();
     end match;
   end setVarData;
+
+  function getJacType
+    input BackendDAE bdae;
+    output JacobianType jacType;
+  algorithm
+    jacType := match bdae
+      case JACOBIAN(jacType = jacType) then jacType;
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed! Only the record type JACOBIAN() has a jacobian type."});
+      then fail();
+    end match;
+  end getJacType;
 
   function getFunctionTree
     input BackendDAE bdae;

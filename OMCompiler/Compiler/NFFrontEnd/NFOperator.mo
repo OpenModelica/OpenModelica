@@ -200,8 +200,8 @@ public
       case (0, 0)                 then (SizeClassification.SCALAR, ty1);
       case (0, i2) guard(i2>0)    then (SizeClassification.SCALAR_ARRAY, ty2);
       case (i1, 0) guard(i1>0)    then (SizeClassification.ARRAY_SCALAR, ty1);
-      case (1, 2)                 then (SizeClassification.VECTOR_MATRIX, ty2);
-      case (2, 1)                 then (SizeClassification.MATRIX_VECTOR, ty1);
+      case (1, 2)                 then (SizeClassification.VECTOR_MATRIX, ty1);
+      case (2, 1)                 then (SizeClassification.MATRIX_VECTOR, ty2);
       case (i1, i2) guard(i1==i2) then (getSizeClassification(operator), ty1);
       else algorithm
         Error.assertion(false, getInstanceName() + " failed because the binary arguments have incompatible sizes: "
@@ -237,6 +237,17 @@ public
                         else false;
     end match;
   end isRelational;
+
+  function isAdd
+    input Operator operator;
+    output Boolean b;
+  algorithm
+    b := match operator.op
+      case Op.ADD   then true;
+      case Op.ADD_EW then true;
+                    else false;
+    end match;
+  end isAdd;
 
   function isScalarProduct
     input Operator operator;
@@ -357,6 +368,7 @@ public
       case Op.SCALAR_PRODUCT    then DAE.MUL_SCALAR_PRODUCT(ty);
       case Op.ADD_EW            then DAE.ADD_ARR(ty);
       case Op.SUB_EW            then DAE.SUB_ARR(ty);
+      case Op.MUL_EW            then DAE.MUL_ARR(ty);
       case Op.MATRIX_PRODUCT    then DAE.MUL_MATRIX_PRODUCT(ty);
       case Op.DIV_SCALAR_ARRAY  then DAE.DIV_SCALAR_ARRAY(ty);
       case Op.DIV_ARRAY_SCALAR  then DAE.DIV_ARRAY_SCALAR(ty);
@@ -375,7 +387,7 @@ public
       case Op.NEQUAL            then DAE.NEQUAL(ty);
       else
         algorithm
-          Error.assertion(false, getInstanceName() + " got unknown type.", sourceInfo());
+          Error.assertion(false, getInstanceName() + " got unknown type: " + opToString(op.op), sourceInfo());
         then
           fail();
     end match;
@@ -536,6 +548,11 @@ public
     input Type ty;
     output Operator op = OPERATOR(ty, Op.MUL);
   end makeMul;
+
+  function makeScalarProduct
+    input Type ty;
+    output Operator op = OPERATOR(ty, Op.SCALAR_PRODUCT);
+  end makeScalarProduct;
 
   function makeDiv
     input Type ty;
