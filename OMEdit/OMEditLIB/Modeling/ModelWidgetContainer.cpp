@@ -6524,6 +6524,7 @@ bool ModelWidget::modelicaEditorTextChanged(LibraryTreeItem **pLibraryTreeItem)
       pNewLibraryTreeItem->setClassText(stringToLoad);
       updateModelText();
     }
+    pLibraryTreeModel->showModelWidget(pNewLibraryTreeItem);
     *pLibraryTreeItem = pNewLibraryTreeItem;
   }
   return true;
