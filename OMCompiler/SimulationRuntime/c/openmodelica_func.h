@@ -248,8 +248,8 @@ struct OpenModelicaGeneratedFunctionCallbacks {
 
   /* function for calculation Jacobian */
   /*#ifdef D_OMC_JACOBIAN*/
-  const int INDEX_JAC_A;
   const int INDEX_JAC_ADJ;
+  const int INDEX_JAC_A;
   const int INDEX_JAC_B;
   const int INDEX_JAC_C;
   const int INDEX_JAC_D;
@@ -262,8 +262,8 @@ struct OpenModelicaGeneratedFunctionCallbacks {
   * Return-value 0: jac is present
   * Return-value 1: jac is not present
   */
-  initialAnalyticalJacobian_func_ptr initialAnalyticJacobianA;
   initialAnalyticalJacobian_func_ptr initialAnalyticJacobianADJ;
+  initialAnalyticalJacobian_func_ptr initialAnalyticJacobianA;
   initialAnalyticalJacobian_func_ptr initialAnalyticJacobianB;
   initialAnalyticalJacobian_func_ptr initialAnalyticJacobianC;
   initialAnalyticalJacobian_func_ptr initialAnalyticJacobianD;
@@ -273,8 +273,8 @@ struct OpenModelicaGeneratedFunctionCallbacks {
   /*
   * These functions calculate specific jacobian column.
   */
-  jacobianColumn_func_ptr functionJacA_column;
   jacobianColumn_func_ptr functionJacADJ_column;
+  jacobianColumn_func_ptr functionJacA_column;
   jacobianColumn_func_ptr functionJacB_column;
   jacobianColumn_func_ptr functionJacC_column;
   jacobianColumn_func_ptr functionJacD_column;

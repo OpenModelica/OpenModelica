@@ -1,6 +1,9 @@
 TEST = ../../../../rtest -v
 
 TESTFILES = \
+adjoint_jacobian1.mos \
+adjoint_jacobian2.mos \
+adjoint_jacobian3.mos \
 allTheBuildins.mos \
 diff_subs.mos \
 arrayDiff.mos \

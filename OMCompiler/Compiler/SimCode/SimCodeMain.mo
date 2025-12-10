@@ -1706,12 +1706,12 @@ algorithm
       if Util.isSome(inBackendDAE.shared.dataReconciliationData) then
         BackendDAE.DATA_RECON(_, _, _, _, jacH) := Util.getOption(inBackendDAE.shared.dataReconciliationData);
         if isSome(jacH) then
-          matrixnames := {"A", "ADJ", "B", "C", "D"};
+          matrixnames := {"ADJ", "A", "B", "C", "D"};
         else
-          matrixnames := {"A", "ADJ", "B", "C", "D", "H"};
+          matrixnames := {"ADJ", "A", "B", "C", "D", "H"};
         end if;
       else
-        matrixnames := {"A", "ADJ", "B", "C", "D", "F", "H"};
+        matrixnames := {"ADJ", "A", "B", "C", "D", "F", "H"};
       end if;
       (symJacs, uniqueEqIndex) := SimCodeUtil.createSymbolicJacobianssSimCode({}, crefToSimVarHT, uniqueEqIndex, matrixnames, {});
     end if;

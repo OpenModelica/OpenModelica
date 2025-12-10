@@ -5022,12 +5022,12 @@ algorithm
         if Util.isSome(shared.dataReconciliationData) then
           BackendDAE.DATA_RECON(_, _, _, _, jacH) := Util.getOption(shared.dataReconciliationData);
           if isSome(jacH) then // check for matrix H is present which means state estimation algorithm is choosed and jacobian F and H are generated earlier
-            matrixnames := {"A", "ADJ", "B", "C", "D"};
+            matrixnames := {"ADJ", "A", "B", "C", "D"};
           else
-            matrixnames := {"A", "ADJ", "B", "C", "D", "H"};
+            matrixnames := {"ADJ", "A", "B", "C", "D", "H"};
           end if;
         else
-           matrixnames := {"A", "ADJ", "B", "C", "D", "F", "H"};
+           matrixnames := {"ADJ", "A", "B", "C", "D", "F", "H"};
         end if;
         (res, ouniqueEqIndex) := createSymbolicJacobianssSimCode(inSymjacs, crefSimVarHT, iuniqueEqIndex, matrixnames, {});
         // _ := FlagsUtil.set(Flags.EXEC_STAT, b);
@@ -5075,7 +5075,7 @@ algorithm
       Integer uniqueEqIndex, nRows;
 
       list<String> restnames;
-      String name, dummyVar;
+      String name, dummyVar, jacName;
 
       SimCodeVar.SimVars simvars;
       list<SimCode.SimEqSystem> allEquations = {}, constantEqns = {};
@@ -5119,6 +5119,16 @@ algorithm
         linearModelMatrices = tmpJac::inJacobianMatrices;
         (linearModelMatrices, uniqueEqIndex) = createSymbolicJacobianssSimCode(rest, inSimVarHT, iuniqueEqIndex, restnames, linearModelMatrices);
      then
+        (linearModelMatrices, uniqueEqIndex);
+
+    case ((SOME((_, jacName, _, _, _, _)), _, _, _) :: _, _, _, name::restnames)
+      guard  jacName <> name // create empty jacobian if names do not match
+      equation
+        tmpJac = SimCode.emptyJacobian;
+        tmpJac.matrixName = name;
+        linearModelMatrices = tmpJac::inJacobianMatrices;
+        (linearModelMatrices, uniqueEqIndex) = createSymbolicJacobianssSimCode(inSymJacobians, inSimVarHT, iuniqueEqIndex, restnames, linearModelMatrices);
+      then
         (linearModelMatrices, uniqueEqIndex);
 
     // if only sparsity pattern is generated
