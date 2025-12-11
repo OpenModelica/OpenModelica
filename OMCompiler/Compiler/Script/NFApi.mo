@@ -1383,7 +1383,7 @@ algorithm
         try
           ty_node := Lookup.lookupName(path, scope, InstContext.set(NFInstContext.RELAXED, NFInstContext.FAST_LOOKUP),
             checkAccessViolations = false);
-          json := JSON.addPair("type", dumpJSONSCodeClass(InstNode.definition(ty_node), ty_node, scope, isRedeclare = false), json);
+          json := JSON.addPair("type", dumpJSONSCodeClass(InstNode.definition(ty_node), ty_node, InstNode.resolveInner(component), isRedeclare = false), json);
         else
           json := JSON.addPair("type", dumpJSONPath(path), json);
         end try;
