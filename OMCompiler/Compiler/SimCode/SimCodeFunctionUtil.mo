@@ -166,6 +166,29 @@ algorithm
   end matchcontinue;
 end buildCrefExpFromAsub;
 
+public function buildCrefExpFromSubs
+"Used by templates to convert an ASUB expression to a component reference
+ with subscripts."
+  input DAE.Exp cref;
+  input list<DAE.Subscript> subs;
+  output DAE.Exp cRefOut;
+algorithm
+  cRefOut := matchcontinue(cref, subs)
+    local
+      DAE.Exp crefExp;
+      DAE.Type ty;
+      DAE.ComponentRef crNew;
+
+    case (_, {}) then cref;
+    case (DAE.CREF(componentRef=crNew, ty=ty), _)
+      equation
+        crNew = ComponentReference.subscriptCref(crNew, subs);
+        crefExp = Expression.makeCrefExp(crNew, ty);
+      then
+        crefExp;
+  end matchcontinue;
+end buildCrefExpFromSubs;
+
 public function incrementInt
 "Used by templates to create new integers that are increments of another."
   input Integer inInt;

@@ -832,7 +832,7 @@ public
         // ToDo: add all other cases!
 
         else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for\n" + Equation.toString(eqn)});
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for\n" + Slice.toString(slice, function Equation.pointerToString(str = ""))});
         then fail();
 
       end match;

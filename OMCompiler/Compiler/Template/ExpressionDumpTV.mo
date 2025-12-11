@@ -333,7 +333,7 @@ package DAE
 
     record ASUB
       Exp exp;
-      list<Exp> sub;
+      list<Subscript> sub;
     end ASUB;
 
     record TSUB

@@ -777,22 +777,6 @@ public
     end match;
   end toDAE;
 
-  function toDAEExp
-    input Subscript subscript;
-    output DAE.Exp daeExp;
-  algorithm
-    daeExp := match subscript
-      case INDEX() then Expression.toDAE(subscript.index);
-      case SLICE() then Expression.toDAE(subscript.slice);
-      else
-        algorithm
-          Error.assertion(false, getInstanceName() + " failed on unknown subscript '" +
-            toString(subscript) + "'", sourceInfo());
-        then
-          fail();
-    end match;
-  end toDAEExp;
-
   function toString
     input Subscript subscript;
     output String string;
