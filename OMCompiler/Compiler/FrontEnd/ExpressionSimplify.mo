@@ -2457,6 +2457,7 @@ algorithm
       list<DAE.Exp> expl, expl1, expl2;
       DAE.Exp exp;
       Type   tp;
+      ComponentRef cr1, cr2;
 
     // Both arrays are empty. The result is defined in the spec by sum, so we
     // return the default value which is 0.
@@ -2467,6 +2468,17 @@ algorithm
     case (DAE.ARRAY(array = expl1), DAE.ARRAY(array = expl2))
       equation
         true = Expression.isVector(inVector1) and Expression.isVector(inVector2);
+        expl = List.threadMap(expl1, expl2, Expression.expMul);
+        exp = List.reduce(expl, Expression.expAdd);
+      then
+        exp;
+
+    // scalar product with two crefs: expand both! (issue #13853)
+    case (DAE.CREF(componentRef = cr1), DAE.CREF(componentRef = cr2))
+      equation
+        expl1 = list(Expression.crefToExp(c) for c in ComponentReference.expandCref(cr1, true));
+        expl2 = list(Expression.crefToExp(c) for c in ComponentReference.expandCref(cr2, true));
+        true = listLength(expl1) == listLength(expl2);
         expl = List.threadMap(expl1, expl2, Expression.expMul);
         exp = List.reduce(expl, Expression.expAdd);
       then
