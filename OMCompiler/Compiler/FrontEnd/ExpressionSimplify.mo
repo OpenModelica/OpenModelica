@@ -2473,6 +2473,7 @@ algorithm
 
     // scalar product with two crefs: expand both! (issue #13853)
     case (DAE.CREF(componentRef = cr1), DAE.CREF(componentRef = cr2))
+      guard Config.simCodeTarget() <> "Cpp"
       equation
         expl1 = list(Expression.crefToExp(c) for c in ComponentReference.expandCref(cr1, true));
         expl2 = list(Expression.crefToExp(c) for c in ComponentReference.expandCref(cr2, true));
