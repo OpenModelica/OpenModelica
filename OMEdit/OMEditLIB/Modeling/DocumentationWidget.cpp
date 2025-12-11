@@ -1505,11 +1505,9 @@ DocumentationViewer::DocumentationViewer(DocumentationWidget *pDocumentationWidg
   mpDocumentationPage = new DocumentationPage(this);
   setPage(mpDocumentationPage);
   settings()->setFontFamily(QWebEngineSettings::StandardFont, Helper::systemFontInfo.family());
-  settings()->setFontSize(QWebEngineSettings::DefaultFontSize, Helper::systemFontInfo.pointSize());
   settings()->setAttribute(QWebEngineSettings::LocalStorageEnabled, true);
 #else // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
   settings()->setFontFamily(QWebSettings::StandardFont, Helper::systemFontInfo.family());
-  settings()->setFontSize(QWebSettings::DefaultFontSize, Helper::systemFontInfo.pointSize());
   settings()->setAttribute(QWebSettings::LocalStorageEnabled, true);
 #endif // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
   settings()->setDefaultTextEncoding(Helper::utf8.toUtf8().constData());

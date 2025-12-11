@@ -110,13 +110,10 @@ MainWindow::MainWindow(QWidget *parent)
 {
   // Make sure we honor the system's proxy settings
   QNetworkProxyFactory::setUseSystemConfiguration(true);
-  // This is a very convoluted way of asking for the default system font in Qt
-  QFont systmFont("Monospace");
-  systmFont.setStyleHint(QFont::System);
-  Helper::systemFontInfo = QFontInfo(systmFont);
-  // This is a very convoluted way of asking for the default monospace font in Qt
-  QFont monospaceFont("Monospace");
-  monospaceFont.setStyleHint(QFont::TypeWriter);
+  // Default system font
+  Helper::systemFontInfo = QFontInfo(font());
+  // Default monospace font
+  QFont monospaceFont = QFontDatabase::systemFont(QFontDatabase::FixedFont);
   Helper::monospacedFontInfo = QFontInfo(monospaceFont);
   /*! @note Register the RecentFile, FindTextOM and DebuggerConfiguration struct in the Qt's meta system
    * Don't remove/move the following lines.
