@@ -134,7 +134,7 @@ BoundarySweep::BoundarySweep(GDOP::BoundarySweepLayout&& layout_mr,
                                    InfoGDOP& info)
     : GDOP::BoundarySweep(std::move(layout_mr), pc), info(info) {}
 
-void BoundarySweep::callback_eval(const f64* x0_nlp, const f64* xuf_nlp, const f64* p, const f64 t0, const f64 tf) {
+void BoundarySweep::callback_eval(const f64* xu0_nlp, const f64* xuf_nlp, const f64* p, const f64 t0, const f64 tf) {
     set_parameters(info, p);
     set_states_inputs(info, xuf_nlp);
     set_time(info, tf);
@@ -142,7 +142,7 @@ void BoundarySweep::callback_eval(const f64* x0_nlp, const f64* xuf_nlp, const f
     eval_mr_write(info, get_eval_buffer());
 }
 
-void BoundarySweep::callback_jac(const f64* x0_nlp, const f64* xuf_nlp, const f64* p, const f64 t0, const f64 tf) {
+void BoundarySweep::callback_jac(const f64* xu0_nlp, const f64* xuf_nlp, const f64* p, const f64 t0, const f64 tf) {
     f64* jac_buf = get_jac_buffer();
     set_parameters(info, p);
     set_states_inputs(info, xuf_nlp);
@@ -162,7 +162,7 @@ void BoundarySweep::callback_jac(const f64* x0_nlp, const f64* xuf_nlp, const f6
     }
 }
 
-void BoundarySweep::callback_hes(const f64* x0_nlp, const f64* xuf_nlp, const f64* p, const f64 t0, const f64 tf, const f64 mayer_factor, const f64* lambda) {
+void BoundarySweep::callback_hes(const f64* xu0_nlp, const f64* xuf_nlp, const f64* p, const f64 t0, const f64 tf, const f64 mayer_factor, const f64* lambda) {
     set_parameters(info, p);
     set_states_inputs(info, xuf_nlp);
     set_time(info, tf);
@@ -312,8 +312,8 @@ GDOP::Problem create_gdop(InfoGDOP& info, Mesh& mesh) {
      * and also ignore x0 non fixed, since too complicated
      * => assume x(t_0) = x0 fixed, x(t_f) free to r constraint / maybe the old BE can do that already?!
      * option: generate fixed final states individually */
-    FixedVector<std::optional<f64>> x0_fixed(info.x_size);
-    FixedVector<std::optional<f64>> xf_fixed(info.x_size);
+    FixedVector<std::optional<f64>> xu0_fixed(info.xu_size);
+    FixedVector<std::optional<f64>> xuf_fixed(info.xu_size);
 
     /* fix time horizon for now to [t0, tf] */
     std::array<Bounds, 2> T_bounds = { Bounds{ info.t0, info.t0 }, Bounds{ info.tf, info.tf } };
@@ -326,8 +326,10 @@ GDOP::Problem create_gdop(InfoGDOP& info, Mesh& mesh) {
             abort();
         }
 
-        x0_fixed[x] = real_get(data->modelData->realVarsData[x].attribute.start, 0);
+        xu0_fixed[x] = real_get(data->modelData->realVarsData[x].attribute.start, 0);
     }
+
+    /* u0 never fixed for now - let the solver calculate it from u_{0,1} ... u_{0, m} */
 
     /* create CSC <-> COO exchange, init jacobians */
     info.exc_jac = std::make_unique<ExchangeJacobians>(info);
@@ -351,8 +353,8 @@ GDOP::Problem create_gdop(InfoGDOP& info, Mesh& mesh) {
         std::move(u_bounds),
         std::move(p_bounds),
         std::move(T_bounds),
-        std::move(x0_fixed),
-        std::move(xf_fixed),
+        std::move(xu0_fixed),
+        std::move(xuf_fixed),
         std::move(T_fixed),
         std::move(r_bounds),
         std::move(g_bounds),

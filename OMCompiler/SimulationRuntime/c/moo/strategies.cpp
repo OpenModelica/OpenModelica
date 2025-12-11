@@ -364,20 +364,15 @@ std::shared_ptr<NLP::Scaling> NominalScalingFactory::operator()(const GDOP::GDOP
         f_nominal = real_vars_data[info.index_mayer_real_vars].attribute.nominal;
     }
 
-    // x(t_0)
-    for (int x = 0; x < info.x_size; x++) {
-        x_nominal[x] = real_vars_data[x].attribute.nominal;
-    }
-
     // (x, u)_(t_node)
-    for (int node = 0; node < gdop.get_mesh().node_count; node++) {
+    for (int node = 0; node < 1 + gdop.get_mesh().node_count; node++) {
         for (int x = 0; x < x_size; x++) {
-            x_nominal[x_size + node * xu_size + x] = real_vars_data[x].attribute.nominal;
+            x_nominal[node * xu_size + x] = real_vars_data[x].attribute.nominal;
         }
 
         for (int u = 0; u < u_size; u++) {
             int u_real_vars = info.u_indices_real_vars[u];
-            x_nominal[2 * x_size + node * xu_size + u] = real_vars_data[u_real_vars].attribute.nominal;
+            x_nominal[node * xu_size + x_size + u] = real_vars_data[u_real_vars].attribute.nominal;
         }
     }
 
@@ -393,6 +388,12 @@ std::shared_ptr<NLP::Scaling> NominalScalingFactory::operator()(const GDOP::GDOP
 
     for (int r = 0; r < r_size; r++) {
         g_nominal[gdop.get_off_fg_total() + r] = real_vars_data[info.index_r_real_vars + r].attribute.nominal;
+    }
+
+    // artificial constraints are O(u)
+    for (int u = 0; u < info.u_size; u++) {
+        int u_real_vars = info.u_indices_real_vars[u];
+        g_nominal[gdop.get_off_fgr_total() + u] = real_vars_data[u_real_vars].attribute.nominal;
     }
 
     return std::make_shared<NLP::NominalScaling>(std::move(x_nominal), std::move(g_nominal), f_nominal);
