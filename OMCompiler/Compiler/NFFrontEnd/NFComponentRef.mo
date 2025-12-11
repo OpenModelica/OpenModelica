@@ -1823,22 +1823,23 @@ public
   function simplifySubscripts
     input output ComponentRef cref;
     input Boolean trim = false;
+  protected
+    list<Subscript> subs;
+    ComponentRef rest_cref;
+    Boolean dirty = false;
   algorithm
     cref := match cref
-      local
-        list<Subscript> subs;
-
-      case CREF(subscripts = {}, origin = Origin.CREF)
+      case CREF(subscripts = subs)
         algorithm
-          cref.restCref := simplifySubscripts(cref.restCref, trim);
-        then
-          cref;
+          if not listEmpty(subs) then
+            subs := Subscript.simplifyList(cref.subscripts, Type.arrayDims(cref.ty), trim);
+            dirty := true;
+          end if;
 
-      case CREF(origin = Origin.CREF)
-        algorithm
-          subs := Subscript.simplifyList(cref.subscripts, Type.arrayDims(cref.ty), trim);
+          rest_cref := simplifySubscripts(cref.restCref, trim);
+          dirty := dirty or not referenceEq(rest_cref, cref.restCref);
         then
-          CREF(cref.node, subs, cref.ty, cref.origin, simplifySubscripts(cref.restCref, trim));
+          if dirty then CREF(cref.node, subs, cref.ty, cref.origin, rest_cref) else cref;
 
       else cref;
     end match;
