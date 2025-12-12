@@ -458,7 +458,8 @@ algorithm
       list<DAE.ComponentRef> allInputCrefs, outputCrefs, allOutputCrefs, constInputCrefs, constCrefs, varScalarCrefsInFunc,constComplexCrefs,varComplexCrefs,varScalarCrefs,constScalarCrefs;
       list<list<DAE.ComponentRef>> scalarInputs, scalarOutputs;
       list<DAE.Element> elements, protectVars, algs, allInputs, allOutputs;
-      list<DAE.Exp> exps, exps0, sub, allInputExps, constInputExps, constExps, constComplexExps, constScalarExps;
+      list<DAE.Exp> exps, exps0, allInputExps, constInputExps, constExps, constComplexExps, constScalarExps;
+      list<DAE.Subscript> sub;
       list<list<DAE.Exp>> scalarExp;
 
   case(DAE.CALL(path=path, expLst=exps0),_)
@@ -680,7 +681,8 @@ protected
   list<BackendDAE.Equation> constEqs;
   list<DAE.ComponentRef> inputCrefs, outputCrefs, allInputCrefs, allOutputCrefs, constInputCrefs, constCrefs, varScalarCrefsInFunc, constScalarCrefsLhs,constComplexCrefs,varComplexCrefs,varScalarCrefs,constScalarCrefs;
   list<DAE.Element> elements, algs, allInputs, protectVars, allOutputs, updatedVarOutputs, newOutputVars;
-  list<DAE.Exp> exps, expsIn, inputExps, complexExp, allInputExps, constInputExps, constExps, constComplexExps, constScalarExps, lhsExps, sub;
+  list<DAE.Exp> exps, expsIn, inputExps, complexExp, allInputExps, constInputExps, constExps, constComplexExps, constScalarExps, lhsExps;
+  list<DAE.Subscript> sub;
   list<list<DAE.Exp>> scalarExp;
   list<DAE.Statement> stmts;
   list<DAE.Type> outputVarTypes;
