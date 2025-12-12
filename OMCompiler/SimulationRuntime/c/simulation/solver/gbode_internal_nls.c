@@ -272,7 +272,7 @@ static void gbInternal_evalJacobian(DATA *data, threadData_t *threadData, DATA_G
   else
   {
     // base perturbation
-    const double delta_h = sqrt(DBL_EPSILON * 2e1);
+    const double delta_h = numericalDifferentiationDeltaXsolver; // == 1e-8
 
     // der_x_ref base point, x_save previous x to restore, delta_hh perturbation
     double *der_x_ref = nls->work;
@@ -292,19 +292,31 @@ static void gbInternal_evalJacobian(DATA *data, threadData_t *threadData, DATA_G
       {
         if (jacobian_ODE->sparsePattern->colorCols[state] - 1 == color)
         {
-          x_save[state] = x[state];
-          delta_hh[state] = delta_h * (fabs(x_save[state]) + 1.0);
-          if ((x_save[state] + delta_hh[state] >= data->modelData->realVarsData[state].attribute.max))
+          // we follow the procedure of DASSL for the selection of perturbation h_i
+
+          // h * f'(x)_i
+          double delta_hhh = delta_h * der_x_ref[state];
+
+          // scal_raw = ATOL * NOMINAL + RTOL * abs(Y_i), we use the real (un-transformed) integrator tolerances though
+          double raw_weight = nls->tol_integrator.atol * data->modelData->realVarsData[state].attribute.nominal + nls->tol_integrator.rtol * fabs(x[state]);
+
+          // choose h_i := h * max(of all these)
+          delta_hh[state] = delta_h * fmax(fmax(fabs(x[state]) /* x_i */, fabs(delta_hhh) /* h * f_i */), fabs(raw_weight)  /* 1 / wt_i */);
+
+          // some floating point magic
+          delta_hh[state] = x[state] + delta_hh[state] - x[state];
+
+          if ((x[state] + delta_hh[state] >= data->modelData->realVarsData[state].attribute.max))
           {
             delta_hh[state] *= -1;
           }
-          x[state] += delta_hh[state];
 
+          x_save[state] = x[state];
+          x[state] += delta_hh[state];
           delta_hh[state] = 1. / delta_hh[state];
         }
       }
-
-      gbode_fODE(data, threadData, &(gbData->stats.nCallsODE));
+      gbode_fODE(data, threadData, NULL);
 
       for (int state = 0; state < nStates; state++)
       {

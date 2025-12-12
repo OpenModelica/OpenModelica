@@ -81,7 +81,10 @@ extern void communicateStatus(const char *phase, double completionPercent, doubl
  */
 void gbode_fODE(DATA *data, threadData_t *threadData, unsigned int* counter)
 {
-  (*counter)++;
+  if (counter)
+  {
+    (*counter)++;
+  }
 
   externalInputUpdate(data);
   data->callback->input_function(data, threadData);
@@ -1175,7 +1178,9 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
                     solverInfo->currentTime, targetTime);
   }
 
-    /*
+  gbData->eventHappened = solverInfo->didEventStep;
+
+ /*
   * Handle step initialization after an event step or at the very first solver step.
   *
   * This section ensures that the solver’s time, step size, and related buffers
@@ -1601,11 +1606,6 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
         retries = 0;
       }
 
-      /* remember last time values for dense output extrapolation with yLast, kLast */
-      gbData->extrapolationBaseTime = gbData->time;
-      gbData->extrapolationStepSize = gbData->stepSize;
-      gbData->eventHappened = FALSE;
-
       // Rotate the error and step size ring buffers to make room for the latest values.
       // The oldest entries are shifted one position towards the end,
       // and the newest error and step size values are stored at the front (index 0).
@@ -1697,6 +1697,15 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
       }
     } while (err > 1 && gbData->ctrl_method != GB_CTRL_CNST);
 
+    /* remember last time values for dense output extrapolation with yLast, kLast */
+    gbData->extrapolationBaseTime = gbData->time;
+    gbData->extrapolationStepSize = gbData->stepSize;
+    gbData->eventHappened = FALSE;
+
+    /* remember kLast and yLast for dense output extrapolation */
+    memcpy(gbData->kLast, gbData->k, nStates * nStages * sizeof(double));
+    memcpy(gbData->yLast, gbData->yOld, nStates * sizeof(double));
+
     // count processed steps
     gbData->stats.nStepsTaken++;
 
@@ -1756,10 +1765,6 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
 
     /* update time with performed stepSize */
     gbData->time = gbData->timeRight;
-
-    /* remember kLast and yLast for dense output extrapolation */
-    memcpy(gbData->kLast, gbData->k, nStates * nStages * sizeof(double));
-    memcpy(gbData->yLast, gbData->yOld, nStates * sizeof(double));
 
     /* step is accepted and yOld needs to be updated */
     memcpy(gbData->yOld, gbData->yRight, nStates * sizeof(double));
