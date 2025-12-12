@@ -168,9 +168,9 @@ int main(int argc, char *argv[])
   Q_INIT_RESOURCE(resource_omedit);
 #if QT_VERSION >= QT_VERSION_CHECK(5, 6, 0) && QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
   QApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
+  QApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
 #endif
   OMEditApplication a(argc, argv, threadData);
-
 // Do not use the signal handler OR exception filter if user is building a debug version.
 // Perhaps the user wants to use gdb.
 // moved the setting of the handler *after* OMEditApplication application definition
