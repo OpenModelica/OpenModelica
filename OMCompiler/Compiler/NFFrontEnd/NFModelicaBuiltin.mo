@@ -5670,6 +5670,19 @@ annotation(preferredView="text",Documentation(info="<html>
 </html>"));
 end getDefinitions;
 
+function reverseLookup
+  input TypeName name;
+  input TypeName scope = $TypeName(AllLoadedClasses);
+  input Boolean exactMatch = true;
+  input Boolean prettyPrint = false;
+  output String matches;
+external "builtin";
+annotation(preferredView="text",Documentation(info="<html>
+<p>Searches for uses of the given name in either all loaded classes or a given class. Returns a JSON array containing the name and source location for each match.</p>
+<p>If exactMatch is true then only names that reference the same element is considered a match, otherwise names that reference elements inside that element are also included. I.e. reverseLookup(A, exactMatch = false) will match both A and A.B, while reverseLookup(A, exactMatch = true) will match A but not A.B.</p>
+</html>"));
+end reverseLookup;
+
 // OMSimulator API calls
 type oms_system = enumeration(oms_system_none,oms_system_tlm, oms_system_wc,oms_system_sc) "OMSimulator enumeration for system type.";
 type oms_causality = enumeration(oms_causality_input, oms_causality_output, oms_causality_parameter, oms_causality_bidir, oms_causality_undefined) "OMSimulator enumeration for casuality.";
