@@ -186,13 +186,13 @@ void BoundarySweep::callback_hes(const f64* xu0_nlp, const f64* xuf_nlp, const f
 
     if (pc.r_size != 0) {
         /* set duals and precomputed Jacobian D */
-        info.exc_hes->C.args.lambda = lambda;
-        info.exc_hes->C.args.jac_csc = jac_buf + info.exc_jac->D.sparsity.nnz_offset;
+        info.exc_hes->D.args.lambda = lambda;
+        info.exc_hes->D.args.jac_csc = jac_buf + info.exc_jac->D.sparsity.nnz_offset;
 
-        richardson_extrapolation(info.exc_hes->C.extr, hessian_fwd_differences_wrapper, &info.exc_hes->C.args,
-                                NUM_HES_FD_STEP, NUM_HES_DF_EXTR_STEPS, NUM_HES_EXTR_DIV, 1, info.exc_hes->C.buffer.raw());
-        for (auto& [index_D, index_buffer] : info.exc_hes->C_to_Mr_buffer) {
-            hes_buffer[index_buffer] += info.exc_hes->C.buffer[index_D];
+        richardson_extrapolation(info.exc_hes->D.extr, hessian_fwd_differences_wrapper, &info.exc_hes->D.args,
+                                NUM_HES_FD_STEP, NUM_HES_DF_EXTR_STEPS, NUM_HES_EXTR_DIV, 1, info.exc_hes->D.buffer.raw());
+        for (auto& [index_D, index_buffer] : info.exc_hes->D_to_Mr_buffer) {
+            hes_buffer[index_buffer] += info.exc_hes->D.buffer[index_D];
         }
     }
 }
