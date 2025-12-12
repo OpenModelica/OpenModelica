@@ -233,6 +233,11 @@ HESSIAN_PATTERN* generate_hessian_pattern(JACOBIAN* jac) {
 /**
  * @brief Compute Hessian-vector product λᵗH(x) using forward finite differences of the Jacobian.
  *
+ * @note I found out that this is very shady and only works well for well-scaled / posed problems, as
+ *       h can not be taken differently within a color. Therefore, we choose the geometric mean of the
+ *       nominal h as the h for a given color.
+ *       => TODO: add safe, single colored Hessian
+ *
  * Approximates the entries of the Hessian matrix H(x) using first-order directional derivatives.
  * The method uses seed vector coloring for efficient evaluation and exploits sparse Hessian structure.
  * Assumes the current point x has all controls and states set in `data->localData[0]->realVars`.
@@ -255,8 +260,16 @@ HESSIAN_PATTERN* generate_hessian_pattern(JACOBIAN* jac) {
  * @param[in]  jac_csc        (Optional) Jacobian values in CSC format, used to speed up Hessian calculation. NULL -> compute from scratch.
  * @param[out] hes            Output sparse Hessian values (COO format of hes_pattern, length = hes_pattern->nnz).
  */
-void eval_hessian_fwd_differences(DATA* data, threadData_t* threadData, HESSIAN_PATTERN* hes_pattern, modelica_real h,
-                                   int* u_indices, const modelica_real* lambda, modelica_real* jac_csc, modelica_real* hes) {
+void eval_hessian_fwd_differences(
+    DATA* data,
+    threadData_t* threadData,
+    HESSIAN_PATTERN* hes_pattern,
+    modelica_real h,
+    int* u_indices,
+    const modelica_real* lambda,
+    modelica_real* jac_csc,
+    modelica_real* hes)
+{
     /* 0. retrieve pointers */
     JACOBIAN*       jacobian     = hes_pattern->jac;
     modelica_real** ws_baseJac   = hes_pattern->ws_baseJac;
@@ -295,20 +308,25 @@ void eval_hessian_fwd_differences(DATA* data, threadData_t* threadData, HESSIAN_
     for (int c1 = 0; c1 < hes_pattern->numColors; c1++) {
         /* 3. define seed vector s_{c_1} with all cols in c_1 active (implicitly) */
         /* 4. peturbate current x_{c_1} := x + h * s_{c_1} */
+        modelica_real c1_h = 0;
+        for (int columnIndex = 0; columnIndex < hes_pattern->colorSizes[c1]; columnIndex++) {
+            int col = hes_pattern->colsForColor[c1][columnIndex];
+            int realVarsIndex = (col < nStates ? col : u_indices[col - nStates]);
+
+            /* create perturbation size based on nominals and current entry */
+            const modelica_real nom = data->modelData->realVarsData[realVarsIndex].attribute.nominal;
+            c1_h += log(1.0 + fmax(ws_oldX[col], nom));
+        }
+
+        // geometric mean of h
+        c1_h = h / (1 + hes_pattern->colorSizes[c1]) * exp(c1_h);
+
         for (int columnIndex = 0; columnIndex < hes_pattern->colorSizes[c1]; columnIndex++) {
             int col = hes_pattern->colsForColor[c1][columnIndex];
             int realVarsIndex = (col < nStates ? col : u_indices[col - nStates]);
             /* remember the current realVars (to be perturbed) and perturbate */
             ws_oldX[col] = data->localData[0]->realVars[realVarsIndex];
-
-            /* create perturbation size based on nominals and current entry */
-            const modelica_real nom = data->modelData->realVarsData[realVarsIndex].attribute.nominal;
-            ws_h[col] = h * (1.0 + fmax(ws_oldX[col], nom));
-            if (ws_oldX[col] + ws_h[col] > data->modelData->realVarsData[realVarsIndex].attribute.max) {
-                ws_h[col] *= -1.0;
-            }
-
-            data->localData[0]->realVars[realVarsIndex] += ws_h[col];
+            data->localData[0]->realVars[realVarsIndex] += c1_h;
         }
 
         /* evaluate perturbed system (needed for Jacobian columns) */
@@ -348,7 +366,7 @@ void eval_hessian_fwd_differences(DATA* data, threadData_t* threadData, HESSIAN_
 
                     /* store and divide by step size, retrieve step size via nz col index / same as for the perturbation (step 4) */
                     int col = hes_pattern->col[nz];
-                    hes[nz] = der / ws_h[col];
+                    hes[nz] = der / c1_h;
                 }
             }
 
