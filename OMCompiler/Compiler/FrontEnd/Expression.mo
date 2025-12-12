@@ -2268,9 +2268,8 @@ algorithm
     case DAE.CAST(ty = tp) then tp;
     case DAE.ASUB(exp = e,sub=subs)
       equation
-        explist = list(Expression.getSubscriptExp(sub) for sub in subs);
         // Count the number of scalar subscripts, and remove as many dimensions.
-        i = sum(1 for e guard(isScalar(e)) in explist);
+        i = sum(1 for sub guard(subscriptConstant(sub)) in subs);
         tp = unliftArrayX(typeof(e), i);
       then
         tp;
@@ -10102,19 +10101,25 @@ algorithm
   end match;
 end subscriptEqual;
 
+public function subscriptConstant
+  input DAE.Subscript sub;
+  output Boolean b;
+algorithm
+  b := match(sub)
+    case DAE.INDEX(exp = DAE.ICONST()) then true;
+    case DAE.INDEX(exp = DAE.ENUM_LITERAL()) then true;
+    case DAE.INDEX(exp = DAE.BCONST()) then true;
+    else false;
+  end match;
+end subscriptConstant;
+
 public function subscriptConstants "
 returns true if all subscripts are known (i.e no cref) constant values (no slice or wholedim)"
   input list<DAE.Subscript> inSubs;
   output Boolean areConstant = true;
 algorithm
   for sub in inSubs loop
-    areConstant := match(sub)
-      case DAE.INDEX(exp = DAE.ICONST()) then true;
-      case DAE.INDEX(exp = DAE.ENUM_LITERAL()) then true;
-      case DAE.INDEX(exp = DAE.BCONST()) then true;
-      else false;
-    end match;
-
+    areConstant := subscriptConstant(sub);
     if not areConstant then return; end if;
   end for;
 end subscriptConstants;
