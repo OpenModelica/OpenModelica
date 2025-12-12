@@ -5612,7 +5612,7 @@ end daeExpCrefLhsSimContext;
 template indexSubs(list<Dimension> dims, list<Subscript> subs, Context context, Text &preExp, Text &varDecls, Text &auxFunction)
 ::=
   if intNe(listLength(dims),listLength(subs)) then
-    error(sourceInfo(),'indexSubs got different number of dimensions and subscripts')
+    error(sourceInfo(),'indexSubs got different number of dimensions(' + intString(listLength(dims)) + ') and subscripts(' + intString(listLength(subs)) + ')')
   else '[<%indexSubRecursive(listReverse(List.restOrEmpty(dims)), listReverse(subs), context, preExp, varDecls, auxFunction)%>]'
 end indexSubs;
 
@@ -7216,11 +7216,13 @@ template daeExpAsub(Exp inExp, Context context, Text &preExp,
     let exp = daeExp(e, context, &preExp, &varDecls, &auxFunction)
     let typeShort = expTypeFromExpShort(e)
     match Expression.typeof(inExp)
-    case T_ARRAY(__) then
-      error(sourceInfo(),'ASUB non-scalar <%ExpressionDumpTpl.dumpExp(inExp,"\"")%>. The inner exp has type: <%unparseType(Expression.typeof(e))%>. After ASUB it is still an array: <%unparseType(Expression.typeof(inExp))%>.')
     case T_COMPLEX(complexClassType = ClassInf.RECORD(__)) then
       let expIndexes = (indexes |> index => daeSubscript(index, context, &preExp, &varDecls, &auxFunction) ;separator=", ")
       '<%typeShort%>_array_get(<%exp%>, <%listLength(indexes)%>, <%expIndexes%>)'
+    case T_ARRAY() then
+      let expIndexes = daeExpCrefIndexSpec(indexes, context, &preExp, &varDecls, &auxFunction)
+      '<%typeShort%>_get<%match listLength(indexes) case 1 then "" case i then '_<%i%>D'%>(<%exp%>, <%expIndexes%>)'
+
     else
       let expIndexes = (indexes |> index => daeSubscriptASubIndex(index, context, &preExp, &varDecls, &auxFunction) ;separator=", ")
       '<%typeShort%>_get<%match listLength(indexes) case 1 then "" case i then '_<%i%>D'%>(<%exp%>, <%expIndexes%>)'

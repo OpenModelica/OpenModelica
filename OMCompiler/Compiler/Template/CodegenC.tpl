@@ -7200,7 +7200,7 @@ template functionXXX_systemsPartial(list<list<SimEqSystem>> eqs, String name, Te
     /* Text before the function head */
     <<
     <%funcs%>
-    static void (*function<%name%>_systems[<%nFuncs%>])(DATA *, threadData_t *threadData) = {
+    static void (*function<%name%>_systems[<%nFuncs%>])(DATA *data, threadData_t *threadData) = {
       <%funcNames%>
     };
     >>
