@@ -207,7 +207,7 @@ void PlotWindow::initializePlot(QStringList arguments)
   if (plotRightYAxis.size() > 0) {
     QStringList variablesPlotted;
     QString label;
-    int i = 0; 
+    int i = 0;
     while (i < variablesToRead.size()) {
         if (isPlotParametric()) {
             label = variablesToRead[i] + "|" + variablesToRead[i+1];
@@ -235,7 +235,7 @@ void PlotWindow::initializePlot(QStringList arguments)
     }
     updatePlot();
   }
-  
+
 }
 
 void PlotWindow::setVariablesList(QStringList variables)

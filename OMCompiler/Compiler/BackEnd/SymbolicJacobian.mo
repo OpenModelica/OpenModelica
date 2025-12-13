@@ -1773,7 +1773,7 @@ try
   varlst := BackendVariable.varList(v);
   knvarlst := BackendVariable.varList(globalKnownVars);
 
-  states := if Config.languageStandardAtLeast(Config.LanguageStandard.'3.3') then
+  states := if Config.synchronousFeaturesAllowed() then
     BackendVariable.getAllClockedStatesFromVariables(v) else {};
 
   states := listAppend(BackendVariable.getAllStateVarFromVariables(v), states);
@@ -1872,7 +1872,7 @@ try
     if BackendVariable.isParam(var) and not BackendVariable.varHasConstantBindExp(var) then
       //print("\n PARAM_CHECK: " + ComponentReference.printComponentRefStr(var.varName));
       lhs := BackendVariable.varExp(var);
-      rhs := BackendVariable.varBindExpStartValueNoFail(var) "bindings are optional";
+      rhs := BackendVariable.varBindExpStartValueNoFail(var, sourceInfo()) "bindings are optional";
       eqn := BackendDAE.EQUATION(lhs, rhs, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_BINDING);
       //BackendDump.printEquation(eqn);
       BackendEquation.add(eqn, currentSystem.orderedEqs);
@@ -1932,7 +1932,7 @@ try
   eqSyst::{} := backendDAE.eqs;
   v := eqSyst.orderedVars;
   // get state var from simulation DAE
-  states := if Config.languageStandardAtLeast(Config.LanguageStandard.'3.3') then
+  states := if Config.synchronousFeaturesAllowed() then
     BackendVariable.getAllClockedStatesFromVariables(v) else {};
   states := listAppend(BackendVariable.getAllStateVarFromVariables(v), states);
 
@@ -4363,8 +4363,8 @@ algorithm
     diffExp := Differentiate.differentiateExpSolve(exp,seedVar,NONE());
     for var in diffVars loop
       if not ComponentReference.crefEqual(var.varName, state.varName) and Expression.expContains(diffExp,Expression.crefExp(var.varName)) then
-        // Heuristic to punish vars with a value of zero
-        if Expression.isZero(BackendVariable.varStartValue(var)) then
+        // Heuristic to punish vars without start attribute
+        if not BackendVariable.varHasStartValue(var) then
           nonlinearCount := nonlinearCount + 2;
         else
           nonlinearCount := nonlinearCount + 1;

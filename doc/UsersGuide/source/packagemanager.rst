@@ -44,7 +44,7 @@ the Modelica Specification, `Section 18.8.3
 <https://specification.modelica.org/maint/3.6/annotations.html#mapping-of-versions-to-file-system>`_. For example,
 if MoonShot contains ``annotation(uses(Rockets(version = "2.0.0"));``, OpenModelica will try to load
 ``/home/John/ModelicaPackages/Rockets 2.0.0/package.mo`` or ``/home/John/ModelicaPackages/Rockets 2.0.0.mo``;
-in this case, packages without the version number in their root directory, such as 
+in this case, packages without the version number in their root directory, such as
 ``/home/John/ModelicaPackages/Rockets/package.mo``, will be ignored. All installed packages in the MODELICAPATH
 include version numbers in their directory name, which also allows to install multiple versions of the same library.
 

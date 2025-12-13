@@ -49,7 +49,7 @@ val(angSpeed, {0, 5, 10});
 // "
 // end SimulationResult;
 // "Warning: The model contains alias variables with redundant start and/or conflicting nominal values. It is recommended to resolve the conflicts, because otherwise the system could be hard to solve. To print the conflicting alias sets and the chosen candidates please use -d=aliasConflicts.
-// [Modelica 3.2.3+maint.om/Mechanics/Rotational.mo:2471:7-2471:65:writable] Warning: Parameter inertia1.J has no value, and is fixed during initialization (fixed=true), using available start value (start=1.0) as default value.
+// [Modelica 3.2.3+maint.om/Mechanics/Rotational.mo:2471:7-2471:65:writable] Warning: Parameter inertia1.J has no binding, and is fixed during initialization (fixed=true), using available start value (start=1.0) as default value.
 // Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // "
 // {90.0,90.0,55.0241047740795,41.04075758706323,34.60242216404257,-32.98585607543826,-37.96855887785219,-44.74608487310016,-56.17425575296937,-90.0,-90.0}

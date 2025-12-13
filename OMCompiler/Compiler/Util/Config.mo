@@ -422,22 +422,12 @@ end setLanguageStandard;
 
 public function languageStandardAtLeast
   input LanguageStandard inStandard;
-  output Boolean outRes;
-protected
-  LanguageStandard std;
-algorithm
-  std := getLanguageStandard();
-  outRes := intGe(languageStandardInt(std), languageStandardInt(inStandard));
+  output Boolean outRes = getLanguageStandard() >= inStandard;
 end languageStandardAtLeast;
 
 public function languageStandardAtMost
   input LanguageStandard inStandard;
-  output Boolean outRes;
-protected
-  LanguageStandard std;
-algorithm
-  std := getLanguageStandard();
-  outRes := intLe(languageStandardInt(std), languageStandardInt(inStandard));
+  output Boolean outRes = getLanguageStandard() <= inStandard;
 end languageStandardAtMost;
 
 protected function languageStandardInt
@@ -524,20 +514,10 @@ algorithm
 end hasLanguageStandardChanged;
 
 public function versionStringToStd
-  input String inVersion;
-  output LanguageStandard outStandard;
-protected
-  list<String> version;
-algorithm
-  version := System.strtok(inVersion, ".");
-  outStandard := versionStringToStd2(version);
-end versionStringToStd;
-
-protected function versionStringToStd2
-  input list<String> inVersion;
+  input String inVersion "MSL version string";
   output LanguageStandard outStandard;
 algorithm
-  outStandard := match(inVersion)
+  outStandard := match System.strtok(inVersion, ".")
     case "1" :: _ then LanguageStandard.'1.x';
     case "2" :: _ then LanguageStandard.'2.x';
     case "3" :: "0" :: _ then LanguageStandard.'3.0';
@@ -547,7 +527,7 @@ algorithm
     case "4" :: "1" :: _ then LanguageStandard.'3.6';
     case _ then LanguageStandard.latest;
   end match;
-end versionStringToStd2;
+end versionStringToStd;
 
 public function showErrorMessages
   output Boolean outShowErrorMessages;
@@ -645,6 +625,10 @@ public function synchronousFeaturesAllowed
  checks returns true if language standard is above or equal to Modelica 3.3"
   output Boolean outRes = getLanguageStandard() >= LanguageStandard.'3.3';
 end synchronousFeaturesAllowed;
+
+public function defaultStartValueAvailable
+  output Boolean b = getLanguageStandard() < LanguageStandard.'3.3';
+end defaultStartValueAvailable;
 
 public function flatModelica
   output Boolean value;
