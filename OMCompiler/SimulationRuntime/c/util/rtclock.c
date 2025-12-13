@@ -61,6 +61,30 @@ static rtclock_t *max_tp = default_max_tp;
 static rtclock_t *acc_tp = default_acc_tp;
 static rtclock_t *tick_tp = default_tick_tp;
 
+static int rt_stack[NUM_RT_CLOCKS] = { 0 };
+static size_t rt_stack_size = 0;
+
+static const char *rt_clock_string[SIM_TIMER_FIRST_FUNCTION+1] = {
+  "SIM_TIMER_TOTAL",
+  "SIM_TIMER_INIT",
+  "SIM_TIMER_STEP",
+  "SIM_TIMER_OUTPUT",
+  "SIM_TIMER_EVENT",
+  "SIM_TIMER_JACOBIAN",
+  "SIM_TIMER_PREINIT",
+  "SIM_TIMER_OVERHEAD",
+  "SIM_TIMER_FUNCTION_ODE",
+  "SIM_TIMER_RESIDUALS",
+  "SIM_TIMER_ALGEBRAICS",
+  "SIM_TIMER_ZC",
+  "SIM_TIMER_SOLVER",
+  "SIM_TIMER_INIT_XML",
+  "SIM_TIMER_INFO_XML",
+  "SIM_TIMER_DAE",
+  "SIM_TIMER_FIRST_FUNCTION"
+};
+
+
 static int rtclock_compare(rtclock_t, rtclock_t);
 
 static rtclock_t max_rtclock(rtclock_t t1, rtclock_t t2) {
@@ -507,6 +531,53 @@ void rt_clear_total(int ix)
     acc_tp[ix].time.tv_nsec = 0;
     rt_clock_ncall[ix] = 0;
   }
+}
+
+/**
+ * @brief Push timer ix on stack
+ *
+ * Pause running timer and start new timer ix.
+ *
+ * @param ix  timer to push
+ */
+void rt_push(int ix)
+{
+  if (ix < SIM_TIMER_FIRST_FUNCTION) {
+    assertStreamPrint(NULL, NUM_RT_CLOCKS > rt_stack_size, "Trying to push timer %s on full stack", rt_clock_string[ix]);
+  } else {
+    assertStreamPrint(NULL, NUM_RT_CLOCKS > rt_stack_size, "Trying to push timer %d on full stack", ix);
+  }
+
+  if (rt_stack_size > 0)
+    rt_accumulate(rt_stack[rt_stack_size-1]);
+  rt_stack[rt_stack_size++] = ix;
+  rt_tick(ix);
+}
+
+/**
+ * @brief Pop timer ix from stack
+ *
+ * Stop current timer ix and resume previous timer.
+ *
+ * @param ix  timer to pop (for debug only)
+ */
+void rt_pop(int ix)
+{
+  if (ix < SIM_TIMER_FIRST_FUNCTION) {
+    assertStreamPrint(NULL, 0 < rt_stack_size, "Trying to pop timer %s from empty stack", rt_clock_string[ix]);
+    if (rt_stack[rt_stack_size-1] < SIM_TIMER_FIRST_FUNCTION) {
+      assertStreamPrint(NULL, ix == rt_stack[rt_stack_size-1], "Trying to pop timer %s but timer %s is on stack", rt_clock_string[ix], rt_clock_string[rt_stack[rt_stack_size-1]]);
+    } else {
+      assertStreamPrint(NULL, ix == rt_stack[rt_stack_size-1], "Trying to pop timer %s but timer %d is on stack", rt_clock_string[ix], rt_stack[rt_stack_size-1]);
+    }
+  } else {
+    assertStreamPrint(NULL, 0 < rt_stack_size, "Trying to pop timer %d from empty stack", ix);
+    assertStreamPrint(NULL, ix == rt_stack[rt_stack_size-1], "Trying to pop timer %d but timer %d is on stack", ix, rt_stack[rt_stack_size-1]);
+  }
+  rt_accumulate(ix);
+  rt_stack_size--;
+  if (rt_stack_size > 0)
+    rt_tick(rt_stack[rt_stack_size-1]);
 }
 
 static inline struct timespec timeSpecAdd(struct timespec t1, struct timespec t2)
