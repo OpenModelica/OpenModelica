@@ -52,7 +52,7 @@ protected
   // Backend Imports
   import BackendDAE = NBackendDAE;
   import BEquation = NBEquation;
-  import NBEquation.{Equation, EquationKind};
+  import NBEquation.{Equation, EquationKind, WhenEquationBody, WhenStatement};
   import BJacobian = NBJacobian;
   import NBEquation.EquationPointers;
   import NBPartitioning.{BClock, ClockedInfo};
@@ -130,7 +130,10 @@ public
       Option<ClockTpl> clock_tpl;
       ComponentRef name, base_name;
       BClock clock;
+      Pointer<Boolean> hasInferredClock = Pointer.create(false);
     algorithm
+      // find all clocks
+      EquationPointers.map(equations, function replaceClockedWhen(info = info, clock_ptr = clock_ptr, failed_set = failed_set));
       EquationPointers.mapExp(equations, function expClocked(info = info, clock_ptr = clock_ptr, failed_set = failed_set, clock_deps = clock_deps), NONE(), Expression.fakeMap);
       clock_tpl := Pointer.access(clock_ptr);
 
@@ -145,6 +148,20 @@ public
         end if;
 
         if BClock.isBaseClock(clock) then
+          // inferred clock with no clock to follow leads to a default clock
+          if BClock.isInferredClock(clock) then
+            if UnorderedMap.isEmpty(info.baseClocks) then
+              clock := BClock.BASE_CLOCK(ClockKind.RATIONAL_CLOCK(Expression.INTEGER(1), Expression.INTEGER(1)));
+            else
+              // Todo: WRONG? how do i know which clock to follow here?
+              clock := UnorderedMap.getSafe(Vector.get(info.baseClocks.keys, 1), info.baseClocks, sourceInfo());
+            end if;
+          end if;
+          // when equation clocks might introduce entirely new clocks
+          if not UnorderedMap.contains(name, info.baseClocks) then
+            UnorderedMap.add(name, clock, info.baseClocks);
+            UnorderedMap.add(name, {}, info.baseToSub);
+          end if;
           association := CLOCKED(clock, NONE(), clock_deps, false);
         else
           base_name := UnorderedMap.getSafe(name, info.subToBase, sourceInfo());
@@ -165,22 +182,22 @@ public
           BackendDAE jac1, jac2;
 
         // merging jacobians
-        case (CONTINUOUS(jacobian = SOME(jac1 as BackendDAE.JACOBIAN())), CONTINUOUS(jacobian = SOME(jac2))) guard(ass1.kind == ass2.kind or not strict) algorithm
+        case (CONTINUOUS(jacobian = SOME(jac1 as BackendDAE.JACOBIAN())), CONTINUOUS(jacobian = SOME(jac2))) guard(not strict or ass1.kind == ass2.kind) algorithm
           ass1.jacobian := SOME(BJacobian.combine({jac1, jac2}, jac1.name));
         then ass1;
 
         // no jacobians to merge
-        case (CONTINUOUS(), CONTINUOUS()) guard(ass1.kind == ass2.kind or not strict) then ass1;
+        case (CONTINUOUS(), CONTINUOUS()) guard(not strict or ass1.kind == ass2.kind) then ass1;
 
         // merging clocked partitions
-        case (CLOCKED(), CLOCKED()) guard(not strict or (BClock.isEqual(ass1.clock, ass2.clock) and Util.optionEqual(ass1.baseClock, ass2.baseClock, BClock.isEqual))) algorithm
+        case (CLOCKED(), CLOCKED()) guard(not strict or BClock.isMergable((ass1.clock, ass1.baseClock), (ass2.clock, ass2.baseClock))) algorithm
           ass1.clock_deps := UnorderedSet.union(ass1.clock_deps, ass2.clock_deps);
           ass1.holdEvents := ass1.holdEvents or ass2.holdEvents;
         then ass1;
 
         // unmergable
         else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed. Cannot merge " + toString(ass1) + " and " + toString(ass2) + "."});
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed. Cannot merge\n" + toString(ass1) + "\n" + toString(ass2) + "."});
         then fail();
       end match;
     end merge;
@@ -216,6 +233,33 @@ public
     end isEqualClockTpl;
 
   protected
+    function replaceClockedWhen
+      input output Equation eqn;
+      input ClockedInfo info                    "contains all base- and sub-clocks";
+      input Pointer<Option<ClockTpl>> clock_ptr "the first found clock";
+      input UnorderedSet<ClockTpl> failed_set   "clocks that are not equal to the first found clock";
+    algorithm
+      eqn := match eqn
+        local
+          Expression cond;
+          WhenStatement stmt;
+
+        case Equation.WHEN_EQUATION(body = WhenEquationBody.WHEN_EQUATION_BODY(condition = cond, when_stmts = {stmt}, else_when = NONE()))
+        guard(Type.isClock(Expression.typeOf(cond))) algorithm
+          // check if it contains inferred clock -> update potential new clocks
+          _ := match cond
+            case Expression.CLKCONST() algorithm
+              addClock(Equation.getEqnName(Pointer.create(eqn)), SOME(BClock.BASE_CLOCK(cond.clk)), clock_ptr, failed_set);
+            then ();
+            else ();
+          end match;
+        then WhenStatement.toEquation(stmt, eqn.attr, false);
+
+        // nothing happens
+        else eqn;
+      end match;
+    end replaceClockedWhen;
+
     function expClocked
       "checks if an expression is a clock and collects it. Also finds all other clock dependencies"
       input output Expression exp               "the examined expression";
@@ -231,48 +275,16 @@ public
 
         // check if its a variable that defines a clock
         case Expression.CREF() guard(BVariable.isClockOrClocked(BVariable.getVarPointer(exp.cref, sourceInfo()))) algorithm
+          // get the clock if it exists
           if UnorderedMap.contains(exp.cref, info.baseClocks) then
             clock_opt := SOME(UnorderedMap.getSafe(exp.cref, info.baseClocks, sourceInfo()));
           elseif UnorderedMap.contains(exp.cref, info.subClocks) then
-            clock_opt := SOME( UnorderedMap.getSafe(exp.cref, info.subClocks, sourceInfo()));
+            clock_opt := SOME(UnorderedMap.getSafe(exp.cref, info.subClocks, sourceInfo()));
           else
             clock_opt := NONE();
           end if;
-
-          _ := match (clock_opt, Pointer.access(clock_ptr))
-            local
-              BClock new, old;
-
-            // old sub clock and new base clock -> no conflict
-            case (SOME(new as BClock.BASE_CLOCK()), SOME((_, old as BClock.SUB_CLOCK()))) then ();
-
-            // old base clock getting updated to new sub clock
-            case (SOME(new as BClock.SUB_CLOCK()), SOME((_, old as BClock.BASE_CLOCK()))) algorithm
-              Pointer.update(clock_ptr, SOME((exp.cref, new)));
-            then ();
-
-            // new base clock that is inferred --> nothing happens
-            case (SOME(new as BClock.BASE_CLOCK(clock = ClockKind.INFERRED_CLOCK())), _) then ();
-
-            // old base clock is inferred --> always take new clock
-            case (SOME(new), SOME((_, old as BClock.BASE_CLOCK(clock = ClockKind.INFERRED_CLOCK())))) algorithm
-              Pointer.update(clock_ptr, SOME((exp.cref, new)));
-            then ();
-
-            // clocks -> equal: success / different: fail
-            case (SOME(new), SOME((_, old))) algorithm
-              if not BClock.isEqual(new, old) then
-                UnorderedSet.add((exp.cref, new), failed_set);
-              end if;
-            then ();
-
-            // new clock
-            case (SOME(new), NONE()) algorithm
-              Pointer.update(clock_ptr, SOME((exp.cref, new)));
-            then ();
-
-            else ();
-          end match;
+          // update the partition clock or add to failed
+          addClock(exp.cref, clock_opt, clock_ptr, failed_set);
         then exp;
 
         // only look for clock dependencies on sample functions
@@ -286,6 +298,55 @@ public
         else Expression.mapShallow(exp, function expClocked(info = info, clock_ptr = clock_ptr, failed_set = failed_set, clock_deps = clock_deps));
       end match;
     end expClocked;
+
+    function addClock
+      "checks if the clock to be added is consistent with the previously found clocks.
+      updates clock_ptr if correct, adds to failed_set if not."
+      input ComponentRef cref;
+      input Option<BClock> clock_opt;
+      input Pointer<Option<ClockTpl>> clock_ptr "the first found clock";
+      input UnorderedSet<ClockTpl> failed_set   "clocks that are not equal to the first found clock";
+    algorithm
+      _ := match (clock_opt, Pointer.access(clock_ptr))
+        local
+          BClock new, old;
+
+        // old sub clock and new base clock -> no conflict
+        case (SOME(new as BClock.BASE_CLOCK()), SOME((_, old as BClock.SUB_CLOCK()))) then ();
+
+        // old base clock getting updated to new sub clock
+        case (SOME(new as BClock.SUB_CLOCK()), SOME((_, old as BClock.BASE_CLOCK()))) algorithm
+          Pointer.update(clock_ptr, SOME((cref, new)));
+        then ();
+
+        // new base clock that is inferred and no old clock --> add it
+        case (SOME(new as BClock.BASE_CLOCK(clock = ClockKind.INFERRED_CLOCK())), NONE()) algorithm
+          Pointer.update(clock_ptr, SOME((cref, new)));
+        then ();
+
+        // new base clock that is inferred with existing old clock --> nothing happens
+        case (SOME(new as BClock.BASE_CLOCK(clock = ClockKind.INFERRED_CLOCK())), SOME(_)) then ();
+
+        // old base clock is inferred --> always take new clock
+        case (SOME(new), SOME((_, old as BClock.BASE_CLOCK(clock = ClockKind.INFERRED_CLOCK())))) algorithm
+          Pointer.update(clock_ptr, SOME((cref, new)));
+        then ();
+
+        // clocks -> equal: success / different: fail
+        case (SOME(new), SOME((_, old))) algorithm
+          if not BClock.isEqual(new, old) then
+            UnorderedSet.add((cref, new), failed_set);
+          end if;
+        then ();
+
+        // new clock
+        case (SOME(new), NONE()) algorithm
+          Pointer.update(clock_ptr, SOME((cref, new)));
+        then ();
+
+        else ();
+      end match;
+    end addClock;
   end Association;
 
   uniontype Partition
