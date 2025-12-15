@@ -535,18 +535,26 @@ void SimulationDialog::setUpForm()
   mpSimulationTabWidget->addTab(mpOutputTab, Helper::output);
   // Linearize Tab
   mpLinearizeTab = new QWidget;
+  // Linearize group box
+  mpLinearizeGroupBox = new QGroupBox(tr("Linearize model at time = StopTime"));
+  mpLinearizeGroupBox->setCheckable(true);
+  mpLinearizeGroupBox->setChecked(false);
   // Linearization dump language combo box
   mpLinearizationDumpLanguageComboBox = new ComboBox;
   OMCInterface::getConfigFlagValidOptions_res linearizationLanguages = MainWindow::instance()->getOMCProxy()->getConfigFlagValidOptions("linearizationDumpLanguage");
   mpLinearizationDumpLanguageComboBox->addItems(linearizationLanguages.validOptions);
   mpLinearizationDumpLanguageComboBox->setCurrentIndex(0);
   Utilities::setToolTip(mpLinearizationDumpLanguageComboBox, linearizationLanguages.mainDescription, linearizationLanguages.descriptions);
+  // set Linearize group box layout
+  QGridLayout *pLinearizeGroupBoxGridLayout = new QGridLayout;
+  pLinearizeGroupBoxGridLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
+  pLinearizeGroupBoxGridLayout->addWidget(new Label(tr("Target language for linearized model:")), 0, 0);
+  pLinearizeGroupBoxGridLayout->addWidget(mpLinearizationDumpLanguageComboBox, 0, 1);
+  mpLinearizeGroupBox->setLayout(pLinearizeGroupBoxGridLayout);
   // set Linearize Tab Layout
   QGridLayout *pLinearizeTabLayout = new QGridLayout;
   pLinearizeTabLayout->setAlignment(Qt::AlignTop);
-  pLinearizeTabLayout->addWidget(new Label(tr("Linearize model at time = StopTime")), 0, 0, 1, 2);
-  pLinearizeTabLayout->addWidget(new Label(tr("Target language for linearized model:")), 1, 0);
-  pLinearizeTabLayout->addWidget(mpLinearizationDumpLanguageComboBox, 1, 1);
+  pLinearizeTabLayout->addWidget(mpLinearizeGroupBox, 0, 0);
   mpLinearizeTab->setLayout(pLinearizeTabLayout);
   // add Linearize Tab to Simulation TabWidget
   mpSimulationTabWidget->addTab(mpLinearizeTab, tr("Linearize"));
@@ -1071,6 +1079,8 @@ void SimulationDialog::applySimulationOptions(SimulationOptions simulationOption
   mpStoreVariablesAtEventsCheckBox->setChecked(simulationOptions.getStoreVariablesAtEvents());
   // show generated files checkbox
   mpShowGeneratedFilesCheckBox->setChecked(simulationOptions.getShowGeneratedFiles());
+  // linearize
+  mpLinearizeGroupBox->setChecked(simulationOptions.getLinearize());
   // linearization dump language
   currentIndex = mpLinearizationDumpLanguageComboBox->findText(simulationOptions.getLinearizationDumpLanguage(), Qt::MatchExactly);
   if (currentIndex > -1) {
@@ -1134,7 +1144,7 @@ bool SimulationDialog::translateModel(QString simulationParameters)
     }
   }
   // set linearization dump language
-  if (mpLinearizationDumpLanguageComboBox->currentText() != QStringLiteral("none")) {
+  if (mpLinearizeGroupBox->isChecked()) {
     MainWindow::instance()->getOMCProxy()->setCommandLineOptions("+linearizationDumpLanguage=" + mpLinearizationDumpLanguageComboBox->currentText());
   }
   bool result = MainWindow::instance()->getOMCProxy()->translateModel(mClassName, simulationParameters);
@@ -1252,6 +1262,7 @@ SimulationOptions SimulationDialog::createSimulationOptions()
   simulationOptions.setStoreVariablesAtEvents(mpStoreVariablesAtEventsCheckBox->isChecked());
   simulationOptions.setShowGeneratedFiles(mpShowGeneratedFilesCheckBox->isChecked());
 
+  simulationOptions.setLinearize(mpLinearizeGroupBox->isChecked());
   simulationOptions.setLinearizationDumpLanguage(mpLinearizationDumpLanguageComboBox->currentText());
   // create a folder with model name to dump the files in it.
   QString modelDirectoryPath = QString("%1/%2").arg(OptionsDialog::instance()->getGeneralSettingsPage()->getWorkingDirectory(), mClassName);
@@ -1397,7 +1408,7 @@ SimulationOptions SimulationDialog::createSimulationOptions()
     simulationFlags.append(QString("-lv=").append(logStreams.join(",")));
   }
   // linearization dump language
-  if (mpLinearizationDumpLanguageComboBox->currentText() != QStringLiteral("none")) {
+  if (mpLinearizeGroupBox->isChecked()) {
     simulationFlags.append(QString("-l=").append(simulationOptions.getStopTime()));
   }
   if (!mpAdditionalSimulationFlagsTextBox->text().isEmpty()) {
