@@ -1606,6 +1606,17 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
         retries = 0;
       }
 
+      /* Step is accepted from here on, as err <= 1 */
+
+      /* remember last time values for dense output extrapolation with yLast, kLast */
+      gbData->extrapolationBaseTime = gbData->time;
+      gbData->extrapolationStepSize = gbData->stepSize;
+      gbData->eventHappened = FALSE;
+
+      /* remember kLast and yLast for dense output extrapolation */
+      memcpy(gbData->kLast, gbData->k, nStates * nStages * sizeof(double));
+      memcpy(gbData->yLast, gbData->yOld, nStates * sizeof(double));
+
       // Rotate the error and step size ring buffers to make room for the latest values.
       // The oldest entries are shifted one position towards the end,
       // and the newest error and step size values are stored at the front (index 0).
@@ -1696,15 +1707,6 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
         messageClose(OMC_LOG_GBODE_V);
       }
     } while (err > 1 && gbData->ctrl_method != GB_CTRL_CNST);
-
-    /* remember last time values for dense output extrapolation with yLast, kLast */
-    gbData->extrapolationBaseTime = gbData->time;
-    gbData->extrapolationStepSize = gbData->stepSize;
-    gbData->eventHappened = FALSE;
-
-    /* remember kLast and yLast for dense output extrapolation */
-    memcpy(gbData->kLast, gbData->k, nStates * nStages * sizeof(double));
-    memcpy(gbData->yLast, gbData->yOld, nStates * sizeof(double));
 
     // count processed steps
     gbData->stats.nStepsTaken++;
