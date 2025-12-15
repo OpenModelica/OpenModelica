@@ -2475,9 +2475,9 @@ algorithm
 
     // scalar product with two crefs: expand both! (issue #13853)
     case (DAE.CREF(componentRef = cr1), DAE.CREF(componentRef = cr2))
-      guard Config.simCodeTarget() <> "Cpp"
       equation
         expl1 = list(Expression.crefToExp(c) for c in ComponentReference.expandCref(cr1, true));
+        true = listLength(expl1) <= 3;
         expl2 = list(Expression.crefToExp(c) for c in ComponentReference.expandCref(cr2, true));
         true = listLength(expl1) == listLength(expl2);
         expl = List.threadMap(expl1, expl2, Expression.expMul);
