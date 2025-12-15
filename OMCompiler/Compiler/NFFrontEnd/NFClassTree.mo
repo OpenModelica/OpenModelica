@@ -2534,7 +2534,7 @@ public
       SCode.Restriction restriction;
     algorithm
       try
-        ty_path := AbsynUtil.typeSpecPath(SCodeUtil.getComponentTypeSpec(InstNode.definition(node)));
+        ty_path := SCodeUtil.getElementTypePath(InstNode.definition(node));
         cls_node := Lookup.lookupName(ty_path, scope, NFInstContext.NO_CONTEXT, false);
         restriction := SCodeUtil.getClassRestriction(InstNode.definition(cls_node));
       else

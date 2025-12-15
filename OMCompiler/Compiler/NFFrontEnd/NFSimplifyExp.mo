@@ -791,7 +791,7 @@ algorithm
       list<Expression> arguments, inv_arguments, const_args, inv_const_args;
       Expression new_const, tmp, result;
       Operator.MathClassification mcl;
-      Boolean useConst, isNegative;
+      Boolean neutralConst, isNegative;
 
     // empty multary with addition -> 0
     case Expression.MULTARY(arguments = {}, inv_arguments = {}, operator = operator)
@@ -822,9 +822,9 @@ algorithm
 
       // combine the constants
       if mcl == NFOperator.MathClassification.ADDITION then
-        new_const := Ceval.evalMultaryAddSub(const_args, inv_const_args, Operator.typeOf(operator));
+        (new_const, neutralConst) := Ceval.evalMultaryAddSub(const_args, inv_const_args, Operator.typeOf(operator));
       elseif mcl == NFOperator.MathClassification.MULTIPLICATION then
-        new_const := Ceval.evalMultaryMulDiv(const_args, inv_const_args, Operator.typeOf(operator));
+        (new_const, neutralConst) := Ceval.evalMultaryMulDiv(const_args, inv_const_args, Operator.typeOf(operator));
       else
         Error.assertion(false, getInstanceName() + " detected non-commutative operator in MULTARY(): [" + Operator.mathSymbol(mcl) +
           "]\n with following arguments: " + stringDelimitList(list(Expression.toString(e) for e in const_args), ", ") +
@@ -835,33 +835,28 @@ algorithm
       // remove expressions that are in both arguments and inv_arguments
       (arguments, inv_arguments) := cancelTermsInMultary(arguments, inv_arguments);
 
-      // return combined multary expression and check for trivial replacements
-
-      // check if the constant is used
-      useConst := match mcl
-        case NFOperator.MathClassification.ADDITION guard(Expression.isZero(new_const)) then false;
-        case NFOperator.MathClassification.MULTIPLICATION guard(Expression.isOne(new_const)) then false;
-        else true;
-      end match;
-
       result := match (mcl, arguments, inv_arguments)
         // const + {} - {} = const
+        case (NFOperator.MathClassification.ADDITION, {}, {})
+        then if Expression.isEmpty(new_const) then Expression.makeZero(Expression.typeOf(new_const)) else new_const;
+
         // const * {} / {} = const
-        case (_, {}, {}) then new_const;
+        case (NFOperator.MathClassification.MULTIPLICATION, {}, {})
+        then if Expression.isEmpty(new_const) then Expression.makeOne(Expression.typeOf(new_const)) else new_const;
 
         // 0 + {cr} - {} = cr
         // 1 * {cr} / {} = cr
-        case (_, {tmp}, {}) guard(not useConst) then tmp;
+        case (_, {tmp}, {}) guard(neutralConst) then tmp;
 
         // 0 + {} - {cr} = - cr
-        case (NFOperator.MathClassification.ADDITION, {}, {tmp}) guard(not useConst)
+        case (NFOperator.MathClassification.ADDITION, {}, {tmp}) guard(neutralConst)
         then Expression.negate(tmp);
 
         // 0 * {...} / {...} = 0
         case (NFOperator.MathClassification.MULTIPLICATION, _, _) guard(Expression.isZero(new_const)) then new_const;
 
         else Expression.MULTARY(
-            arguments     = if useConst then new_const :: arguments else arguments,
+            arguments     = if neutralConst then arguments else new_const :: arguments,
             inv_arguments = inv_arguments,
             operator      = operator
           );
@@ -1360,7 +1355,7 @@ algorithm
   subscriptedExp := simplify(e);
   subs := Subscript.simplifyList(subs, Type.arrayDims(Expression.typeOf(e)));
 
-  if not split and not List.all(subs, Subscript.isLiteral) then
+  if not split and not List.all(subs, Subscript.isLiteral) and Type.isScalar(ty) then
     // Select the first element as long as the subscripted expression is an
     // array where all elements are equal, unless all the subscripts are literal
     // in which case it's cheaper to just apply them.

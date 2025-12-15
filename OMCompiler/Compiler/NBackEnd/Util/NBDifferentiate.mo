@@ -576,11 +576,15 @@ public
       then (Expression.TUPLE_ELEMENT(elem1, exp.index, exp.ty), diffArguments);
 
       // REC(i, ...)' = REC(i', ...)
-      // ToDo: does this suffice? Check with old backend RSUB()!
       case Expression.RECORD_ELEMENT() algorithm
-        (elem1, diffArguments) := differentiateExpression(exp.recordExp, diffArguments);
-      then (Expression.RECORD_ELEMENT(elem1, exp.index, exp.fieldName, exp.ty), diffArguments);
-
+        // check if differentiating for simple cref and if it contains it
+        if diffArguments.diffType == DifferentiationType.SIMPLE and not Expression.containsCref(exp.recordExp, diffArguments.diffCref) then
+          elem1 := Expression.makeZero(Expression.typeOf(exp));
+        else
+          (elem1, diffArguments) := differentiateExpression(exp.recordExp, diffArguments);
+          elem1 := Expression.RECORD_ELEMENT(elem1, exp.index, exp.fieldName, exp.ty);
+        end if;
+      then (elem1, diffArguments);
 
       // differentiate a passed function pointer
       case Expression.PARTIAL_FUNCTION_APPLICATION() algorithm
@@ -2025,6 +2029,7 @@ public
         list<Expression> diff_arguments, diff_inv_arguments;
         Operator operator, addOp, powOp;
         Operator.SizeClassification sizeClass, powSizeClass;
+        Type powTy;
 
       // Dash calculations (ADD, SUB, ADD_EW, SUB_EW, ...)
       // NOTE: Multary always contains ADDITION
@@ -2068,12 +2073,24 @@ public
       case Expression.MULTARY(arguments = arguments, inv_arguments = inv_arguments, operator = operator)
         guard(Operator.getMathClassification(operator) == NFOperator.MathClassification.MULTIPLICATION)
         algorithm
-          // create addition and power operator
-          (_, sizeClass) := Operator.classify(operator);
-          // the frontend treats multiplication equally for element and nen elementwise, but pow needs to have the correct operator
-          powSizeClass := if Type.isArray(Expression.typeOf(listHead(inv_arguments))) then NFOperator.SizeClassification.ARRAY_SCALAR else NFOperator.SizeClassification.SCALAR;
+          // the frontend treats multiplication equally for elementwise and non-elementwise, but pow needs to have the correct operator
+          if not listEmpty(inv_arguments) and Type.isArray(Expression.typeOf(listHead(inv_arguments))) then
+            powSizeClass := NFOperator.SizeClassification.ARRAY_SCALAR;
+            powTy := operator.ty;
+          else
+            powSizeClass := NFOperator.SizeClassification.SCALAR;
+            powTy := Type.REAL();
+          end if;
+
+          // check if the addition size class has to be element wise
+          if not listEmpty(arguments) and Type.isArray(Expression.typeOf(listHead(arguments))) then
+            sizeClass := NFOperator.SizeClassification.ELEMENT_WISE;
+          else
+            (_, sizeClass) := Operator.classify(operator);
+          end if;
+
           addOp := Operator.fromClassification((NFOperator.MathClassification.ADDITION, sizeClass), operator.ty);
-          powOp := Operator.fromClassification((NFOperator.MathClassification.POWER, powSizeClass), operator.ty);
+          powOp := Operator.fromClassification((NFOperator.MathClassification.POWER, powSizeClass), powTy);
           // f'
           (diff_arguments, diffArguments) := differentiateMultaryMultiplicationArgs(arguments, diffArguments, operator);
           diff_enumerator := Expression.MULTARY(diff_arguments, {}, addOp);

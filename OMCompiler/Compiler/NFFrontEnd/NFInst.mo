@@ -1892,7 +1892,7 @@ algorithm
     return;
   end if;
 
-  checkOuterComponentMod(node);
+  checkOuterComponentMod(node, context);
   comp_node := InstNode.resolveInner(node);
   comp := InstNode.component(comp_node);
   parent := InstNode.parent(comp_node);
@@ -2255,6 +2255,7 @@ end redeclareComponent;
 function checkOuterComponentMod
   "Prints an error message and fails if it gets an outer component with a modifier."
   input InstNode node;
+  input InstContext.Type context;
 protected
   InstNode outer_node;
   SCode.Element elem;
@@ -2269,7 +2270,10 @@ algorithm
     if not SCodeUtil.isEmptyMod(smod) then
       Error.addSourceMessage(Error.OUTER_ELEMENT_MOD,
         {SCodeDump.printModStr(smod), InstNode.name(outer_node)}, InstNode.info(outer_node));
-      fail();
+
+      if not InstContext.inInstanceAPI(context) then
+        fail();
+      end if;
     end if;
   end if;
 end checkOuterComponentMod;

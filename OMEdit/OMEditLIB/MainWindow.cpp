@@ -110,13 +110,10 @@ MainWindow::MainWindow(QWidget *parent)
 {
   // Make sure we honor the system's proxy settings
   QNetworkProxyFactory::setUseSystemConfiguration(true);
-  // This is a very convoluted way of asking for the default system font in Qt
-  QFont systmFont("Monospace");
-  systmFont.setStyleHint(QFont::System);
-  Helper::systemFontInfo = QFontInfo(systmFont);
-  // This is a very convoluted way of asking for the default monospace font in Qt
-  QFont monospaceFont("Monospace");
-  monospaceFont.setStyleHint(QFont::TypeWriter);
+  // Default system font
+  Helper::systemFontInfo = QFontInfo(font());
+  // Default monospace font
+  QFont monospaceFont = QFontDatabase::systemFont(QFontDatabase::FixedFont);
   Helper::monospacedFontInfo = QFontInfo(monospaceFont);
   /*! @note Register the RecentFile, FindTextOM and DebuggerConfiguration struct in the Qt's meta system
    * Don't remove/move the following lines.
@@ -1414,16 +1411,20 @@ void MainWindow::exportModelToOMNotebook(LibraryTreeItem *pLibraryTreeItem)
   mpProgressBar->setValue(value++);
   // create a file object and write the xml in it.
   QFile omnotebookFile(omnotebookFileName);
-  omnotebookFile.open(QIODevice::WriteOnly);
-  QTextStream textStream(&omnotebookFile);
+  if (omnotebookFile.open(QIODevice::WriteOnly)) {
+    QTextStream textStream(&omnotebookFile);
 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
-  textStream.setEncoding(QStringConverter::Utf8);
+    textStream.setEncoding(QStringConverter::Utf8);
 #else
-  textStream.setCodec(Helper::utf8.toUtf8().constData());
+    textStream.setCodec(Helper::utf8.toUtf8().constData());
 #endif
-  textStream.setGenerateByteOrderMark(false);
-  textStream << xmlDocument.toString();
-  omnotebookFile.close();
+    textStream.setGenerateByteOrderMark(false);
+    textStream << xmlDocument.toString();
+    omnotebookFile.close();
+  } else {
+    QString msg = tr("Unable to open %1").arg(omnotebookFileName);
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, msg, Helper::scriptingKind, Helper::errorLevel));
+  }
   mpProgressBar->setValue(value++);
   // hide the progressbar and clear the message in status bar
   mpStatusBar->clearMessage();

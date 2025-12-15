@@ -404,6 +404,7 @@ public
       case VariableKind.ITERATOR()        then false;
       case VariableKind.EXTOBJ()          then false;
       case VariableKind.PARAMETER()       then init and Type.isContinuous(var.ty);
+      case VariableKind.RECORD()          then List.all(getRecordChildren(var_ptr), function isContinuous(init = init));
       else true;
     end match;
   end isContinuous;
@@ -414,6 +415,19 @@ public
   algorithm
     b := not isContinuous(var_ptr, init);
   end isDiscontinuous;
+
+  function isContinuousRecordAware
+    "acts like isContinous, but returns false if it is part of a record that has a discrete variable"
+    extends checkVar;
+    input Boolean init  "true if it's an initial system";
+  algorithm
+    b := match getParent(var_ptr)
+      local
+        Pointer<Variable> parent;
+      case SOME(parent) then isContinuousRecordAware(parent, init);
+      else isContinuous(var_ptr, init);
+    end match;
+  end isContinuousRecordAware;
 
   function isDiscreteState
     extends checkVar;
@@ -1310,25 +1324,33 @@ public
     for interface reasons they have to be a single cref without restCref (gets converted to InstNode)"
     input output ComponentRef cref    "old component reference to new component reference";
   algorithm
-    cref := match ComponentRef.node(cref)
-      local
-        InstNode qual;
+    cref := match cref
+      // add the $FDER to the deepest cref
+      case ComponentRef.CREF(restCref = ComponentRef.EMPTY()) then match ComponentRef.node(cref)
+        local
+          InstNode qual;
 
-      // inside a function body
-      case qual as InstNode.COMPONENT_NODE() algorithm
-        qual.name := BackendUtil.makeFDerString(ComponentRef.toString(cref));
-        cref := ComponentRef.fromNode(qual, ComponentRef.nodeType(cref));
+        // inside a function body
+        case qual as InstNode.COMPONENT_NODE() algorithm
+          qual.name := BackendUtil.makeFDerString(ComponentRef.toString(cref));
+        then ComponentRef.fromNode(qual, ComponentRef.nodeType(cref));
+
+        // partial function application (passing function pointers)
+        case qual as InstNode.CLASS_NODE() algorithm
+          qual.name := BackendUtil.makeFDerString(ComponentRef.toString(cref));
+        then ComponentRef.fromNode(qual, ComponentRef.nodeType(cref));
+
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + ComponentRef.toString(cref)});
+        then fail();
+      end match;
+
+      // recurse deeper
+      case ComponentRef.CREF() algorithm
+        cref.restCref := makeFDerVar(cref.restCref);
       then cref;
 
-      // partial function application (passing function pointers)
-      case qual as InstNode.CLASS_NODE() algorithm
-        qual.name := BackendUtil.makeFDerString(ComponentRef.toString(cref));
-        cref := ComponentRef.fromNode(qual, ComponentRef.nodeType(cref));
-      then cref;
-
-      else algorithm
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + ComponentRef.toString(cref)});
-      then fail();
+      else cref;
     end match;
   end makeFDerVar;
 
@@ -2232,15 +2254,26 @@ public
       Pointer<Variable> var;
       Integer arr, start, size;
       Type ty;
+      list<Dimension> dims;
       list<Integer> sizes, vals;
+      list<Subscript> subs;
     algorithm
+      // get array index, start of scalar index and size
       arr := mapping.var_StA[scal];
       (start, size) := mapping.var_AtS[arr];
+
+      // get the variable, name and type
       var := VariablePointers.getVarAt(vars, arr);
       Variable.VARIABLE(name = cref, ty = ty) := Pointer.access(var);
-      sizes := list(Dimension.size(dim) for dim in Type.arrayDims(ty));
-      vals := listReverse(Slice.indexToLocation(scal-start, sizes));
-      cref := ComponentRef.mergeSubscripts(list(Subscript.INDEX(Expression.INTEGER(val+1)) for val in vals), cref, true, true);
+
+      // get the dimensions, their sizes and the respective index values for the subscripts
+      dims  := Type.arrayDims(ty);
+      sizes := list(Dimension.size(dim) for dim in dims);
+      vals  := listReverse(Slice.indexToLocation(scal-start, sizes));
+
+      // thread them to the apropriate subscripts and merge them to the cref
+      subs := list(Subscript.nth(dim, val+1) threaded for dim in dims, val in vals);
+      cref := ComponentRef.mergeSubscripts(subs, cref, true, true);
     end varSlice;
 
   protected

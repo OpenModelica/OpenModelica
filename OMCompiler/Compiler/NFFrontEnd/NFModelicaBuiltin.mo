@@ -2920,7 +2920,7 @@ annotation(Documentation(info="<html>
 end importFMUModelDescription;
 
 function translateModelFMU
-  "Deprecated: Translates a model into C code for a FMU without building it."
+  "Translates a model into C code for a FMU without building it."
   input TypeName className "the class that should translated";
   input String version = "2.0" "FMU version, 1.0 or 2.0.";
   input String fmuType = "me" "FMU type, me (model exchange), cs (co-simulation), me_cs (both model exchange and co-simulation)";
@@ -2934,13 +2934,12 @@ function translateModelFMU
   output Boolean success;
 external "builtin";
 annotation(Documentation(info="<html>
-<p><b>Deprecated: Use buildModelFMU instead.</b></p>
 <p>The only required argument is the className, while all others have some default values.</p>
 <p>Example command:
 <pre>translateModelFMU(className, version=\"2.0\");</pre>
 </p>
 </html>"),
-  preferredView="text", version="Deprecated");
+  preferredView="text");
 end translateModelFMU;
 
 function buildModelFMU
@@ -5670,6 +5669,19 @@ annotation(preferredView="text",Documentation(info="<html>
 <p>Used by org.openmodelica.corba.parser.DefinitionsCreator.</p>
 </html>"));
 end getDefinitions;
+
+function reverseLookup
+  input TypeName name;
+  input TypeName scope = $TypeName(AllLoadedClasses);
+  input Boolean exactMatch = true;
+  input Boolean prettyPrint = false;
+  output String matches;
+external "builtin";
+annotation(preferredView="text",Documentation(info="<html>
+<p>Searches for uses of the given name in either all loaded classes or a given class. Returns a JSON array containing the name and source location for each match.</p>
+<p>If exactMatch is true then only names that reference the same element is considered a match, otherwise names that reference elements inside that element are also included. I.e. reverseLookup(A, exactMatch = false) will match both A and A.B, while reverseLookup(A, exactMatch = true) will match A but not A.B.</p>
+</html>"));
+end reverseLookup;
 
 // OMSimulator API calls
 type oms_system = enumeration(oms_system_none,oms_system_tlm, oms_system_wc,oms_system_sc) "OMSimulator enumeration for system type.";

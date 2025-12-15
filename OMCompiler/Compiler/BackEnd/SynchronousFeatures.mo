@@ -2389,7 +2389,7 @@ algorithm
                   varDirection = DAE.BIDIR(), varParallelism = DAE.NON_PARALLEL(),
                   varType = inType, bindExp = NONE(), tplExp = NONE(),
                   arryDim = {}, source = DAE.emptyElementSource,
-                  values = NONE(), tearingSelectOption = SOME(BackendDAE.DEFAULT()),
+                  values = DAEUtil.setProtectedAttr(DAEUtil.getEmptyVarAttr(inType), true), tearingSelectOption = SOME(BackendDAE.DEFAULT()),
                   hideResult = NONE(),
                   comment = NONE(), connectorType = DAE.NON_CONNECTOR(),
                   innerOuter = DAE.NOT_INNER_OUTER(), unreplaceable = false, initNonlinear = false, encrypted = false);

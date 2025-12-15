@@ -1456,12 +1456,15 @@ protected
     UnorderedMap<Key, Val2> map2;
     list<ComponentRef> scalarized;
     list<Integer> scal_lst;
+    Integer size_comp;
+    list<Boolean> eq_reg;
   algorithm
     // 1. get the cref subscripts and dimensions as well as the equation dimensions (they have to match in length)
     subs    := ComponentRef.subscriptsAllWithWholeFlat(cref);
     dims    := Type.arrayDims(ComponentRef.getSubscriptedType(cref));
     eq_dims := Type.arrayDims(ty);
-    if List.compareLength(subs, dims) == 0 and List.compareLength(subs, regulars) == 0 and List.compareLength(subs, eq_dims) == 0 then
+
+    if List.compareLength(subs, dims) == 0 and List.compareLength(subs, regulars) == 0 then
       // 2. create a map that maps a configuration key to the corresponding scalar crefs
       stripped  := ComponentRef.stripSubscriptsAll(cref);
       key       := arrayCreate(listLength(subs), 0);
@@ -1476,9 +1479,28 @@ protected
         UnorderedMap.add(k, scal_lst, map2);
       end for;
 
-      // 4. iterate over all equation dimensions and use the map to get the correct dependencies
+      // 4. check if equation and variable are of same length, if not: fixup the lists to be of equal length
+      size_comp := List.compareLength(eq_dims, regulars);
+      if size_comp > 0 then
+        // bigger equation than variable
+        eq_reg := listAppend(regulars, List.fill(false, listLength(eq_dims) - listLength(regulars)));
+      elseif size_comp < 0 then
+        // bigger variable than equation
+        eq_reg := List.filterOnTrue(regulars, Util.id);
+        size_comp := List.compareLength(eq_dims, eq_reg);
+
+        if size_comp > 0 then
+          eq_reg := listAppend(eq_reg, List.fill(false, listLength(eq_dims) - listLength(eq_reg))) annotation(__OpenModelica_DisableListAppendWarning=true);
+        elseif size_comp < 0 then
+          eq_reg := List.firstN(eq_reg, listLength(eq_dims));
+        end if;
+      else
+        eq_reg := regulars;
+      end if;
+
+      // 5. iterate over all equation dimensions and use the map to get the correct dependencies
       key := arrayCreate(listLength(subs), 0);
-      resolveEquationDimensions(List.zip(eq_dims, regulars), map2, key, m, modes, Mode.create(eqn_name, {original_cref}, false), Pointer.create(skip_idx));
+      resolveEquationDimensions(List.zip(eq_dims, eq_reg), map2, key, m, modes, Mode.create(eqn_name, {original_cref}, false), Pointer.create(skip_idx));
     else
       Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because subscripts, dimensions and dependencies were not of equal length.\n"
         + "variable subscripts(" + intString(listLength(subs)) + "): " + List.toString(subs, Subscript.toString) + "\n"
@@ -1787,6 +1809,7 @@ protected
 
       // just a single element
       case Expression.INTEGER() then {rep.value};
+      case Expression.ENUM_LITERAL() then {rep.index};
 
       // build list from range
       case Expression.RANGE() algorithm

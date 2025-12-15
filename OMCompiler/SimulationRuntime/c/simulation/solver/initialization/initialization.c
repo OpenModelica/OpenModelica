@@ -259,7 +259,6 @@ void log_homotopy_lambda_vars(DATA *data, threadData_t *threadData, const char* 
  */
 static int symbolic_initialization(DATA *data, threadData_t *threadData)
 {
-  TRACE_PUSH
   int retVal;
   FILE *pFile = NULL;
   char fileName[4096];
@@ -335,8 +334,8 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData)
       if (!kinsol)
         warningStreamPrint(OMC_LOG_ASSERT, 0, "Failed to solve the initialization problem without homotopy method. If homotopy is available the homotopy method is used now.");
       omc_flag[FLAG_HOMOTOPY_ON_FIRST_TRY] = 1;
-      setAllParamsToStart(data);
-      setAllVarsToStart(data);
+      setAllParamsToStart(data->simulationInfo, data->modelData);
+      setAllVarsToStart(data->localData[0], data->simulationInfo, data->modelData);
       data->callback->updateBoundParameters(data, threadData);
       data->callback->updateBoundVariableAttributes(data, threadData);
     }
@@ -409,16 +408,17 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData)
 #ifndef OMC_EMCC
   MMC_CATCH_INTERNAL(simulationJumpBuffer)
 #endif
+
+    messageClose(OMC_LOG_INIT_HOMOTOPY);
+
     /* Error handling in case an assert was thrown */
     if (!success)
     {
-      messageClose(OMC_LOG_INIT_HOMOTOPY);
       errorStreamPrint(OMC_LOG_ASSERT, 0, "Failed to solve the initialization problem with global homotopy with equidistant step size.");
       throwStreamPrint(threadData, "Unable to solve initialization problem.");
     }
 
     data->simulationInfo->homotopySteps += init_lambda_steps;
-    messageClose(OMC_LOG_INIT_HOMOTOPY);
   }
 
   /* If there is homotopy in the model and the adaptive global homotopy approach is activated
@@ -454,7 +454,6 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData)
   /* check for over-determined systems */
   retVal = data->callback->functionRemovedInitialEquations(data, threadData);
 
-  TRACE_POP
   return retVal;
 }
 
@@ -704,7 +703,6 @@ int importStartValues(DATA *data, threadData_t *threadData, const char *pInitFil
  */
 void initSample(DATA* data, threadData_t *threadData, double startTime, double stopTime)
 {
-  TRACE_PUSH
   long i;
 
   data->callback->function_initSample(data, threadData);              /* set-up sample */
@@ -720,14 +718,6 @@ void initSample(DATA* data, threadData_t *threadData, double startTime, double s
       data->simulationInfo->nextSampleEvent = data->simulationInfo->nextSampleTimes[i];
     }
   }
-
-  if(stopTime < data->simulationInfo->nextSampleEvent) {
-    debugStreamPrint(OMC_LOG_EVENTS, 0, "there are no sample-events");
-  } else {
-    debugStreamPrint(OMC_LOG_EVENTS, 0, "first sample-event at t = %g", data->simulationInfo->nextSampleEvent);
-  }
-
-  TRACE_POP
 }
 
 /*! \fn int initialization(DATA *data, const char* pInitMethod, const char* pOptiMethod, const char* pInitFile, double initTime)
@@ -741,7 +731,6 @@ void initSample(DATA* data, threadData_t *threadData, double startTime, double s
  */
 int initialization(DATA *data, threadData_t *threadData, const char* pInitMethod, const char* pInitFile, double initTime)
 {
-  TRACE_PUSH
   int initMethod = IIM_SYMBOLIC; /* default method */
   int retVal = -1;
   int i;
@@ -752,8 +741,9 @@ int initialization(DATA *data, threadData_t *threadData, const char* pInitMethod
 
   infoStreamPrint(OMC_LOG_INIT, 0, "### START INITIALIZATION ###");
 
-  if (!fmi_init_method)
-    setAllParamsToStart(data);
+  if (!fmi_init_method) {
+    setAllParamsToStart(data->simulationInfo, data->modelData);
+  }
 
 #if !defined(OMC_MINIMAL_RUNTIME)
   /* import start values from extern mat-file */
@@ -763,14 +753,14 @@ int initialization(DATA *data, threadData_t *threadData, const char* pInitMethod
     data->callback->updateBoundVariableAttributes(data, threadData);
 
     if(importStartValues(data, threadData, pInitFile, initTime)) {
-      TRACE_POP
       return 1;
     }
   }
 #endif
   /* set up all variables with their start-values */
-  if (!fmi_init_method)
-    setAllVarsToStart(data);
+  if (!fmi_init_method) {
+    setAllVarsToStart(data->localData[0], data->simulationInfo, data->modelData);
+  }
 
   if(!read_init_from_file) {
     data->callback->updateBoundParameters(data, threadData);
@@ -895,6 +885,5 @@ int initialization(DATA *data, threadData_t *threadData, const char* pInitMethod
   data->callback->checkForAsserts(data, threadData);
 
   /* valid system for the first time! */
-  TRACE_POP
   return retVal;
 }

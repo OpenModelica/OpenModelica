@@ -5350,11 +5350,9 @@ algorithm
   local
     BackendDAE.Var v, v1;
     SimCodeVar.SimVar simVar;
-    DAE.ComponentRef currVar, cref, derivedCref;
+    DAE.ComponentRef currVar, derivedCref;
     list<BackendDAE.Var> restVar;
     Option<DAE.VariableAttributes> dae_var_attr;
-    Boolean isProtected;
-    Boolean hideResult = false;
     Integer resIndex=inResIndex, tmpIndex=inTmpIndex;
     BackendDAE.VarKind varkind;
 
@@ -9508,10 +9506,10 @@ algorithm
   str := "SubPartition Vars:\n"+UNDERLINE+"\n";
   str := str + stringDelimitList(simVarStrings,"\n")+"\n";
   str := str + "partition equations:\n"+UNDERLINE+"\n";
-  str := str + stringDelimitList(List.map(subPart.equations,simEqSystemString),"\n");
+  str := str + stringDelimitList(List.map(subPart.equations,simEqSystemString),"\n") + "\n";
   str := str + "removedEquations equations:\n"+UNDERLINE+"\n";
   str := str + stringDelimitList(List.map(subPart.removedEquations,simEqSystemString),"\n");
-  str := str + "SubClock:\n"+ BackendDump.subClockString(subPart.subClock);
+  str := str + "SubClock:\n"+ BackendDump.subClockString(subPart.subClock) + "\n";
   str := str + "Hold Events: "+boolString(subPart.holdEvents);
 end subPartitionString;
 
@@ -10182,6 +10180,7 @@ algorithm
           case DAE.NEVER() guard(BackendVariable.isNaturalState(dlowVar))
             algorithm
               Error.addSourceMessage(Error.STATE_STATESELECT_NEVER, {ComponentReference.printComponentRefStr(cr)}, source.info);
+              fail();
             then ();
           else ();
         end match;

@@ -747,6 +747,7 @@ algorithm
       Option<FuncTypeExp_ExpToBoolean> cond;
       DAE.Operator op;
       list<DAE.Exp> expl_1,expl;
+      list<DAE.Subscript> subs;
       Absyn.Path path;
       Boolean c,c1,c2,c3;
       Integer b,i;
@@ -943,9 +944,10 @@ algorithm
         (e1_1,true) = replaceExp(e1, repl, cond);
       then
         (DAE.CAST(tp,e1_1),true);
-    case ((e as DAE.ASUB(exp = e1,sub = expl)),repl,cond)
+    case ((e as DAE.ASUB(exp = e1,sub = subs)),repl,cond)
         guard replaceExpCond(cond, e)
       equation
+        expl = List.map(subs, Expression.getSubscriptExp);
         (e1_1,c1) = replaceExp(e1, repl, cond);
         (expl,c2) = replaceExpList(expl, repl, cond);
         true = c1 or c2;

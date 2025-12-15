@@ -372,26 +372,28 @@ public
     Pointer<Variable> parent;
     Boolean skip;
   algorithm
-    // check if the variable is a record element with bound parent or a record without binding
-    // if the parent is not fully unknown also create individual bindings
-    skip := match BVariable.getParent(var)
-      case SOME(parent) then BVariable.isBound(parent) and BVariable.isKnownRecord(parent);
-      else BVariable.isRecord(var) and not BVariable.isBound(var);
-    end match;
+    if BVariable.isConst(var) then
+      // skip this variable if it is constant
+      skip := true;
+    else
+      // check if the variable is a record element with bound parent or a record without binding
+      // if the parent is not fully unknown also create individual bindings
+      skip := match BVariable.getParent(var)
+        case SOME(parent) then BVariable.isBound(parent) and BVariable.isKnownRecord(parent);
+        else (BVariable.isRecord(var) and not BVariable.isBound(var));
+      end match;
+    end if;
 
-    // parse records slightly different
-    if BVariable.isKnownRecord(var) and not skip then
+    // do nothing if skipped
+    if skip then return; end if;
+
+    // parse known records
+    if BVariable.isKnownRecord(var) then
       // only consider non-evaluable parameter bindings
-      if not BVariable.hasEvaluableBinding(var) then
-        initial_param_vars := listAppend(BVariable.getRecordChildren(var), initial_param_vars);
-        // if the record is bound or has a start value, create an equation from it, otherwise create from its children
-        if BVariable.isBound(var) or BVariable.hasStartAttr(var) then
-          parameter_eqs := Equation.generateBindingEquation(var, idx, true, new_iters) :: parameter_eqs;
-        else
-          for c_var in BVariable.getRecordChildren(var) loop
-            (parameter_eqs, initial_param_vars) := createParameterEquation(c_var, new_iters, idx, parameter_eqs, initial_param_vars);
-          end for;
-        end if;
+      // if the record is bound or has a start value, create an equation from it, otherwise create from its children
+      if not BVariable.hasEvaluableBinding(var) and (BVariable.isBound(var) or BVariable.hasStartAttr(var)) then
+        initial_param_vars  := listAppend(BVariable.getRecordChildren(var), initial_param_vars);
+        parameter_eqs       := Equation.generateBindingEquation(var, idx, true, new_iters) :: parameter_eqs;
       else
         for c_var in BVariable.getRecordChildren(var) loop
           if BVariable.isBound(c_var) then
@@ -401,8 +403,8 @@ public
         end for;
       end if;
 
-    // all other variables that are not records and not record elements to be skipped
-    elseif not (BVariable.isRecord(var) or skip) then
+    // all other variables that are not records
+    elseif not BVariable.isRecord(var) then
       // only consider non-evaluable parameter bindings
       if not BVariable.hasEvaluableBinding(var) then
         // add variable to initial unknowns

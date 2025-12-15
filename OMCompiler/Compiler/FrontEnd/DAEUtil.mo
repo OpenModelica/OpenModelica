@@ -370,6 +370,21 @@ algorithm
   end match;
 end getClassList;
 
+public function getEmptyVarAttr
+  input DAE.Type ty;
+  output Option<DAE.VariableAttributes> attr;
+algorithm
+  attr := match Types.getBasicType(ty)
+    case DAE.Type.T_REAL()        then SOME(DAE.emptyVarAttrReal);
+    case DAE.Type.T_INTEGER()     then SOME(DAE.emptyVarAttrInt);
+    case DAE.Type.T_BOOL()        then SOME(DAE.emptyVarAttrBool);
+    case DAE.Type.T_STRING()      then SOME(DAE.emptyVarAttrString);
+    case DAE.Type.T_ENUMERATION() then SOME(DAE.emptyVarAttrEnum);
+    case DAE.Type.T_CLOCK()       then SOME(DAE.emptyVarAttrClock);
+    else NONE();
+  end match;
+end getEmptyVarAttr;
+
 public function getBoundStartEquation "
 Returned bound equation"
   input DAE.VariableAttributes attr;
@@ -2752,6 +2767,7 @@ algorithm
       Option<DAE.Exp> eopt_1,eopt;
       DAE.CallAttributes attr;
       Option<tuple<DAE.Exp,Integer,Integer>> optionExpisASUB;
+      list<DAE.Subscript> subs;
 
     case (DAE.CREF(componentRef = cr,ty = t))
       equation
@@ -2814,9 +2830,10 @@ algorithm
         e_1 = toModelicaFormExp(e);
       then
         DAE.CAST(t,e_1);
-    case (DAE.ASUB(exp = e,sub = expl))
+    case (DAE.ASUB(exp = e,sub = subs))
       equation
         e_1 = toModelicaFormExp(e);
+        expl = list(Expression.getSubscriptExp(sub) for sub in subs);
       then
         Expression.makeASUB(e_1,expl);
     case (DAE.SIZE(exp = e,sz = eopt))

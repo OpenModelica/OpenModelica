@@ -460,7 +460,7 @@ public
       else
         error_msg := getInstanceName()
           + " failed because following non-fixable variables could not be solved:\n"
-          + List.toString(failed_vars, BVariable.pointerToString, "", "\t", ", ", "\n", true);
+          + List.toString(failed_vars, BVariable.pointerToString, "", "\t", "\n\t", "\n", true);
         if Flags.isSet(Flags.INITIALIZATION) then
           error_msg := error_msg + "\nFollowing equations were created by fixing variables:\n"
             + List.toString(Pointer.access(ptr_start_eqns), function Equation.pointerToString(str = "\t"), "", "", "\n", "\n", true);

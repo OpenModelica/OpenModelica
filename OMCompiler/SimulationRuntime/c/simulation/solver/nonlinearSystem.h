@@ -95,29 +95,17 @@ extern void debugVectorInt(int logName, char* vectorName, int* vector, int n);
 
 static inline void debugString(int logName, char* message)
 {
-  if(OMC_ACTIVE_STREAM(logName))
-  {
-    infoStreamPrint(logName, 1, "%s", message);
-    messageClose(logName);
-  }
+  infoStreamPrint(logName, 0, "%s", message);
 }
 
 static inline void debugInt(int logName, char* message, int value)
 {
-  if(OMC_ACTIVE_STREAM(logName))
-  {
-    infoStreamPrint(logName, 1, "%s %d", message, value);
-    messageClose(logName);
-  }
+  infoStreamPrint(logName, 0, "%s %d", message, value);
 }
 
 static inline void debugDouble(int logName, char* message, double value)
 {
-  if(OMC_ACTIVE_STREAM(logName))
-  {
-    infoStreamPrint(logName, 1, "%s %18.10e", message, value);
-    messageClose(logName);
-  }
+  infoStreamPrint(logName, 0, "%s %18.10e", message, value);
 }
 
 #ifdef __cplusplus

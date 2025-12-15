@@ -3953,6 +3953,16 @@ algorithm
   end match;
 end getElementName;
 
+public function getElementTypePath
+  input SCode.Element element;
+  output Absyn.Path path;
+algorithm
+  path := match element
+    case SCode.COMPONENT() then AbsynUtil.typeSpecPath(element.typeSpec);
+    case SCode.EXTENDS() then element.baseClassPath;
+  end match;
+end getElementTypePath;
+
 public function setBaseClassPath
 "@auhtor: adrpo
  set the base class path in extends"

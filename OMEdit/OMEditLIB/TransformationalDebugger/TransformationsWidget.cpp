@@ -1238,10 +1238,9 @@ void TransformationsWidget::fetchEquationData(int equationIndex)
     }
   }
   QFile file(fileName);
-  if (file.exists()) {
+  if (file.open(QIODevice::ReadOnly)) {
     mpTSourceEditorFileLabel->setText(file.fileName());
     mpTSourceEditorFileLabel->show();
-    file.open(QIODevice::ReadOnly);
     mpTransformationsEditor->getPlainTextEdit()->setPlainText(QString(file.readAll()));
     mpTSourceEditorInfoBar->hide();
     file.close();
@@ -1385,10 +1384,9 @@ void TransformationsWidget::fetchVariableData(const QModelIndex &index)
     }
   }
   QFile file(fileName);
-  if (file.exists()) {
+  if (file.open(QIODevice::ReadOnly)) {
     mpTSourceEditorFileLabel->setText(file.fileName());
     mpTSourceEditorFileLabel->show();
-    file.open(QIODevice::ReadOnly);
     mpTransformationsEditor->getPlainTextEdit()->setPlainText(QString(file.readAll()));
     mpTSourceEditorInfoBar->hide();
     file.close();

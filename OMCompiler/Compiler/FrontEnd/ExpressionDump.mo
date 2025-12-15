@@ -483,6 +483,7 @@ algorithm
       Absyn.CodeNode code;
       DAE.ReductionIterators riters;
       String  scope, tyStr;
+      list<DAE.Subscript> subs;
 
     case (DAE.EMPTY(scope = scope, name = name, tyStr = tyStr), _, _, _)
       then "<EMPTY(scope: " + scope + ", name: " + ComponentReference.printComponentRefStr(name) + ", ty: " + tyStr + ")>";
@@ -695,8 +696,9 @@ algorithm
       then
         res;
 
-    case (e as DAE.ASUB(exp = e1,sub = aexpl), _, _, _)
+    case (e as DAE.ASUB(exp = e1,sub = subs), _, _, _)
       equation
+        aexpl = list(Expression.getSubscriptExp(sub) for sub in subs);
         p = expPriority(e);
         pe1 = expPriority(e1);
         s1 = printExp2Str(e1, stringDelimiter, opcreffunc, opcallfunc);
@@ -1139,7 +1141,7 @@ algorithm
       then
         Graphviz.LNODE("CAST",{tystr},{},{ct});
 
-    case (DAE.ASUB(exp = e,sub = ((DAE.ICONST(i))::{})))
+    case (DAE.ASUB(exp = e,sub = (DAE.INDEX((DAE.ICONST(i)))::{})))
       equation
         ct = dumpExpGraphviz(e);
         istr = intString(i);
@@ -1417,7 +1419,7 @@ algorithm
       then
         res_str;
 
-    case (DAE.ASUB(exp = e,sub = ((DAE.ICONST(i))::{})),level)
+    case (DAE.ASUB(exp = e,sub = ((DAE.INDEX(DAE.ICONST(i)))::{})),level)
       equation
         gen_str = genStringNTime("   |", level);
         new_level1 = level + 1;

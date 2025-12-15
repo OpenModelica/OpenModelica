@@ -1,8 +1,14 @@
-cmake_minimum_required(VERSION 2.8.9)
+cmake_minimum_required(VERSION 3.5)
 
 project(${SimControllerName})
 include_directories (${OMCCAPI_INCLUDE_DIR})
-add_library(${SimControllerName} Configuration.cpp  FactoryExport.cpp Initialization.cpp SimController.cpp SimManager.cpp SimObjects.cpp)
+add_library(${SimControllerName}
+  Configuration.cpp
+  FactoryExport.cpp
+  Initialization.cpp
+  SimController.cpp
+  SimManager.cpp
+  SimObjects.cpp)
 
 if(NOT BUILD_SHARED_LIBS)
   set_target_properties(${SimControllerName} PROPERTIES COMPILE_DEFINITIONS "RUNTIME_STATIC_LINKING;ENABLE_SUNDIALS_STATIC")

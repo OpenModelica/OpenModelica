@@ -832,7 +832,7 @@ void logSolverStats(enum OMC_LOG_STREAM stream, const char* name, double timeVal
     infoStreamPrint(stream, 0, "number of calls of functionODE() : %d", stats->nCallsODE);
     infoStreamPrint(stream, 0, "number of calculation of jacobian : %d", stats->nCallsJacobian);
     infoStreamPrint(stream, 0, "error test failure : %d", stats->nErrorTestFailures);
-    infoStreamPrint(stream, 0, "convergence failure : %d", stats->nConvergenveTestFailures);
+    infoStreamPrint(stream, 0, "convergence failure : %d", stats->nConvergenceTestFailures);
     messageClose(stream);
   }
 }
@@ -891,6 +891,6 @@ void deprecationWarningGBODE(enum SOLVER_METHOD method)
   }
 
   infoStreamPrint(OMC_LOG_STDOUT, 0 , "See OpenModelica User's Guide section on GBODE for more details: https://www.openmodelica.org/doc/OpenModelicaUsersGuide/latest/solving.html#gbode");
-  messageClose(OMC_LOG_STDOUT);
+  messageCloseWarning(OMC_LOG_STDOUT);
   return;
 }

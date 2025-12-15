@@ -1,0 +1,54 @@
+// name: AliasRecord
+// keywords: NewBackend
+// status: correct
+
+/* ticket: #14191 */
+loadString("
+model AliasRecord
+  record R
+    Real x;
+    Real y;
+    Real z;
+  end R;
+
+  function f
+    input Real x;
+    output R r;
+  algorithm
+    r.x := x;
+    r.y := 2*x;
+    r.z := 3*x;
+  annotation(Inline=false);
+  end f;
+
+  Real x, y;
+  R r;
+equation
+  r = f(x);
+  r.y = y;
+  r.z = 3;
+end AliasRecord;
+"); getErrorString();
+
+setCommandLineOptions("--newBackend"); getErrorString();
+
+simulate(AliasRecord); getErrorString();
+
+diffSimulationResults("AliasRecord_res.mat", "ReferenceFiles/AliasRecord_res.mat", "AliasRecord_diff.csv", 1e-8);
+
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "AliasRecord_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'AliasRecord', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// (true, {})
+// endResult

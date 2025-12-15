@@ -112,21 +112,14 @@ void debugVectorDoubleLS(int logName, char* vectorName, double* vector, int n)
 
 void debugStringLS(int logName, char* message)
 {
-  if(OMC_ACTIVE_STREAM(logName))
-  {
-    infoStreamPrint(logName, 1, "%s", message);
-    messageClose(logName);
-  }
+  infoStreamPrint(logName, 0, "%s", message);
 }
 
 void debugIntLS(int logName, char* message, int value)
 {
-  if(OMC_ACTIVE_STREAM(logName))
-  {
-    infoStreamPrint(logName, 1, "%s %d", message, value);
-    messageClose(logName);
-  }
+  infoStreamPrint(logName, 1, "%s %d", message, value);
 }
+
 void vecMultScalingLS(int n, double *a, double *b, double *c)
 {
   int i;

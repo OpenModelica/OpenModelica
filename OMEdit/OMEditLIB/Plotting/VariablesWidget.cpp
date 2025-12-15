@@ -1848,16 +1848,20 @@ void VariablesWidget::updateInitXmlFile(VariablesTreeItem *pVariablesTreeItem, S
                                                             .arg(initFile.fileName()), Helper::scriptingKind, Helper::errorLevel));
     }
     initFile.close();
-    initFile.open(QIODevice::WriteOnly | QIODevice::Truncate);
-    QTextStream textStream(&initFile);
+    if (initFile.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
+      QTextStream textStream(&initFile);
 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
-    textStream.setEncoding(QStringConverter::Utf8);
+      textStream.setEncoding(QStringConverter::Utf8);
 #else
-    textStream.setCodec(Helper::utf8.toUtf8().constData());
+      textStream.setCodec(Helper::utf8.toUtf8().constData());
 #endif
-    textStream.setGenerateByteOrderMark(false);
-    textStream << initXmlDocument.toString();
-    initFile.close();
+      textStream.setGenerateByteOrderMark(false);
+      textStream << initXmlDocument.toString();
+      initFile.close();
+    } else {
+      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, GUIMessages::getMessage(GUIMessages::ERROR_OPENING_FILE).arg(initFile.fileName())
+                                                            .arg(initFile.errorString()), Helper::scriptingKind, Helper::errorLevel));
+    }
   } else {
     MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, GUIMessages::getMessage(GUIMessages::ERROR_OPENING_FILE).arg(initFile.fileName())
                                                           .arg(initFile.errorString()), Helper::scriptingKind, Helper::errorLevel));

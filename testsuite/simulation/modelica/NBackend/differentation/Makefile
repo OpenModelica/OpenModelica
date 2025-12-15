@@ -4,6 +4,7 @@ TESTFILES = \
 allTheBuildins.mos \
 diff_subs.mos \
 arrayDiff.mos \
+arrayScalar.mos \
 algebraicLoop.mos \
 
 # test that currently fail. Move up when fixed.

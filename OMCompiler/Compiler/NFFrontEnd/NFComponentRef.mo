@@ -730,6 +730,24 @@ public
     input output ComponentRef cref;
     input UnorderedMap<list<Dimension>, list<ComponentRef>> dims_map;
     input UnorderedMap<ComponentRef, Subscript> iter_map;
+  protected
+    function checkLocalDimensions
+      "checks if the current dimension configuration results in new subscripts for the cref"
+      input output ComponentRef cref;
+      input list<Dimension> dims;
+      input UnorderedMap<list<Dimension>, list<ComponentRef>> dims_map;
+      input UnorderedMap<ComponentRef, Subscript> iter_map;
+    protected
+      Option<list<ComponentRef>> iter_crefs;
+      list<Subscript> new_subs;
+    algorithm
+      iter_crefs    := UnorderedMap.get(dims, dims_map);
+      if Util.isSome(iter_crefs) then
+        // dimension configuration was found, map to subscripts and apply in reverse
+        new_subs  := list(UnorderedMap.getSafe(iter_name, iter_map, sourceInfo()) for iter_name in Util.getOption(iter_crefs));
+        cref      := mergeSubscripts(new_subs, cref, true, true, true);
+      end if;
+    end checkLocalDimensions;
   algorithm
     cref := match cref
       local
@@ -738,20 +756,22 @@ public
         ComponentRef new_cref;
         list<Subscript> new_subs, rest_subs;
         Type ty = getSubscriptedType(cref);
+        Integer num_local_dims;
 
       // local array type -> try to find the current dimension configuration in the map and add subscripts
       case CREF() guard(Type.isArray(ty)) algorithm
         // get dimensions and check in map
-        dims          := Type.arrayDims(ty);
-        iter_crefs    := UnorderedMap.get(dims, dims_map);
-        if Util.isSome(iter_crefs) then
-          // dimension configuration was found, map to subscripts and apply in reverse
-          new_subs    := list(UnorderedMap.getSafe(iter_name, iter_map, sourceInfo()) for iter_name in Util.getOption(iter_crefs));
-          new_cref    := mergeSubscripts(new_subs, cref, true, true, true);
-        else
-          // not found, just keep current cref
-          new_cref    := cref;
-        end if;
+        dims            := Type.arrayDims(ty);
+        num_local_dims  := listLength(Type.arrayDims(cref.ty));
+
+        // check if the dimension configuration exists in the map
+        // and iteratively remove one dimension to check all local configurations
+        new_cref := cref;
+        while num_local_dims > 0 loop
+          new_cref := checkLocalDimensions(new_cref, dims, dims_map, iter_map);
+          dims := List.stripLast(dims);
+          num_local_dims := num_local_dims - 1;
+        end while;
 
         // apply to restCref afterwards such that the outermost dimensions are handled first
         // this is important because the full dimension list is considered when checking in the map
@@ -1803,22 +1823,23 @@ public
   function simplifySubscripts
     input output ComponentRef cref;
     input Boolean trim = false;
+  protected
+    list<Subscript> subs;
+    ComponentRef rest_cref;
+    Boolean dirty = false;
   algorithm
     cref := match cref
-      local
-        list<Subscript> subs;
-
-      case CREF(subscripts = {}, origin = Origin.CREF)
+      case CREF(subscripts = subs)
         algorithm
-          cref.restCref := simplifySubscripts(cref.restCref, trim);
-        then
-          cref;
+          if not listEmpty(subs) then
+            subs := Subscript.simplifyList(cref.subscripts, Type.arrayDims(cref.ty), trim);
+            dirty := true;
+          end if;
 
-      case CREF(origin = Origin.CREF)
-        algorithm
-          subs := Subscript.simplifyList(cref.subscripts, Type.arrayDims(cref.ty), trim);
+          rest_cref := simplifySubscripts(cref.restCref, trim);
+          dirty := dirty or not referenceEq(rest_cref, cref.restCref);
         then
-          CREF(cref.node, subs, cref.ty, cref.origin, simplifySubscripts(cref.restCref, trim));
+          if dirty then CREF(cref.node, subs, cref.ty, cref.origin, rest_cref) else cref;
 
       else cref;
     end match;
@@ -2340,7 +2361,7 @@ public
       if listEmpty(subs) then
         // do not do it for scalar variables
         arr := NONE();
-      elseif List.all(subs, function Subscript.isEqual(subscript1 = Subscript.INDEX(Expression.INTEGER(1)))) then
+      elseif List.all(subs, Subscript.isFirst) then
         // if it is the first element, save the array var
         arr := SOME(stripSubscriptsAll(scal));
       else

@@ -839,8 +839,10 @@ algorithm
         subscript_exprs = List.map(subscripts, Expression.subscriptIndexExp);
         true = isLoopDependentHelper(subscript_exprs, iteratorExp);
       then true;
-    case (DAE.ASUB(sub = subscript_exprs), _)
-      then isLoopDependentHelper(subscript_exprs, iteratorExp);
+    case (DAE.ASUB(sub = subscripts), _)
+      equation
+        subscript_exprs = List.map(subscripts, Expression.getSubscriptExp);
+    then isLoopDependentHelper(subscript_exprs, iteratorExp);
     else false;
   end matchcontinue;
 end isLoopDependent;
@@ -872,7 +874,7 @@ algorithm
     local
       DAE.ComponentRef cr;
       DAE.Type ty;
-      list<DAE.Exp> subs;
+      list<DAE.Subscript> subs;
       DAE.Exp e;
 
     case (DAE.ASUB(exp = DAE.ARRAY(array = (DAE.CREF(componentRef = cr)::_)), sub = subs))
@@ -882,7 +884,7 @@ algorithm
       then
         // adrpo: TODO! FIXME! check if this is TYPE correct!
         //        shouldn't we change the type using the subs?
-        Expression.makeASUB(e, subs);
+        Expression.makeASUB(e, list(Expression.getSubscriptExp(s) for s in subs));
 
     case (DAE.ASUB(exp = DAE.MATRIX(matrix = (((DAE.CREF(componentRef = cr))::_)::_)), sub = subs))
       equation
@@ -891,7 +893,7 @@ algorithm
       then
         // adrpo: TODO! FIXME! check if this is TYPE correct!
         //        shouldn't we change the type using the subs?
-        Expression.makeASUB(e, subs);
+        Expression.makeASUB(e, list(Expression.getSubscriptExp(s) for s in subs));
 
     case (_) then arrayVar;
   end matchcontinue;
@@ -1105,8 +1107,9 @@ algorithm
         newCrefExp;
 
     // An ASUB => convert to CREF if only constant subscripts.
-    case (DAE.ASUB(DAE.CREF(DAE.CREF_IDENT(varIdent, arrayType, _), varType), subExprs))
+    case (DAE.ASUB(DAE.CREF(DAE.CREF_IDENT(varIdent, arrayType, _), varType), subscripts))
       equation
+        subExprs = List.map(subscripts, Expression.getSubscriptExp);
         {} = List.select(subExprs, Expression.isNotConst);
         // If a subscript is not a single constant value it needs to be
         // simplified, e.g. cref[3+4] => cref[7], otherwise some subscripts
@@ -3094,8 +3097,9 @@ algorithm
     case (DAE.RANGE(), tpl)
     then (inExp, false, tpl);
 
-    case (DAE.ASUB(exp=DAE.CREF(componentRef=cr), sub=explst), (vars, pa, visitedPaths, isInitial, ofunctionTree))
+    case (DAE.ASUB(exp=DAE.CREF(componentRef=cr), sub=subs), (vars, pa, visitedPaths, isInitial, ofunctionTree))
       algorithm
+        explst := List.map(subs, Expression.getSubscriptExp);
         {e1 as DAE.RANGE()} := ExpressionSimplify.simplifyList(explst);
         subs := list(DAE.INDEX(e) for e in extendRange(e1, vars));
         crlst := list(ComponentReference.subscriptCref(cr, {s}) for s in subs);
@@ -3104,7 +3108,7 @@ algorithm
       then
         (inExp, false, (vars, pa, visitedPaths, isInitial, ofunctionTree));
 
-    case (DAE.ASUB(exp=e1, sub={DAE.ICONST(i)}), tpl) equation
+    case (DAE.ASUB(exp=e1, sub={DAE.INDEX(DAE.ICONST(i))}), tpl) equation
       e1 = Expression.nthArrayExp(e1, i);
       (_, tpl) = Expression.traverseExpTopDown(e1, traversingadjacencyRowExpSolvableFinder, tpl);
     then (inExp, false, tpl);
@@ -3569,14 +3573,14 @@ algorithm
         (_, _, tpl) := traversingadjacencyRowExpFinder(e2, inTpl);
     then traversingadjacencyRowExpFinder(e1, tpl);
 
-    case (DAE.ASUB(exp=DAE.CREF(componentRef=cr), sub={DAE.ICONST(i)}), (vars, pa, isInitial))
+    case (DAE.ASUB(exp=DAE.CREF(componentRef=cr), sub={DAE.INDEX(DAE.ICONST(i))}), (vars, pa, isInitial))
       equation
         cr = ComponentReference.subscriptCrefWithInt(cr, i);
         (varslst, p) = BackendVariable.getVar(cr, vars);
         pa = adjacencyRowExp1(varslst, p, pa, 0);
     then (inExp, false, (vars, pa, isInitial));
 
-    case (DAE.ASUB(exp = e1, sub={DAE.ICONST(i)}),(vars,_,isInitial))
+    case (DAE.ASUB(exp = e1, sub={DAE.INDEX(DAE.ICONST(i))}),(vars,_,isInitial))
       equation
         e1 = Expression.nthArrayExp(e1, i);
         (_, (_, res, _)) = Expression.traverseExpTopDown(e1, traversingadjacencyRowExpFinder, inTpl);
@@ -6032,7 +6036,7 @@ algorithm
       (_, (vars, _, _, _, _, pa)) = Expression.traverseExpTopDown(e3, traversingAdjacencyRowExpSolvableEnhancedFinder, (vars, true, isInitial, it, at, pa));
     then (inExp, false, (vars, bs, isInitial, it, at, pa));
 
-    case (DAE.ASUB(exp=e1, sub={DAE.ICONST(i)}), (vars, bs, isInitial, it, at, pa)) equation
+    case (DAE.ASUB(exp=e1, sub={DAE.INDEX(DAE.ICONST(i))}), (vars, bs, isInitial, it, at, pa)) equation
       e1 = Expression.nthArrayExp(e1, i);
       (_, (vars, _, _, _, _, pa)) = Expression.traverseExpTopDown(e1, traversingAdjacencyRowExpSolvableEnhancedFinder, (vars, bs, isInitial, it, at, pa));
     then (inExp, false, (vars, bs, isInitial, it, at, pa));

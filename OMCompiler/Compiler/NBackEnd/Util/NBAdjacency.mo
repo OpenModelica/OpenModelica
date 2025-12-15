@@ -1282,26 +1282,42 @@ public
     protected
       Option<Dependency> opt_dep = UnorderedMap.get(cref, map);
       Dependency dep;
+      list<Kind> kinds;
+      Integer res;
+
       function makeNewKinds
         input output list<Kind> kinds;
-        input Integer num;
+        input output Integer num;
       algorithm
-        kinds := match (kinds, num)
+        (kinds, num) := match (kinds, num)
           local
             list<Kind> rest;
-          case (_, 0) then kinds;
-          case (_::rest, _) then Kind.REDUCTION :: makeNewKinds(rest, num-1);
-          else kinds;
+          case (_, 0) then (kinds, num);
+          case (_::rest, _) algorithm
+            (kinds, num) := makeNewKinds(rest, num-1);
+          then (Kind.REDUCTION :: kinds, num);
+          else (kinds, num);
         end match;
       end makeNewKinds;
     algorithm
       if Util.isSome(opt_dep) then
         SOME(dep) := opt_dep;
+
+        // turn to reductions
         if reverse then
-          dep.kinds := listReverse(makeNewKinds(listReverse(dep.kinds), num));
+          (kinds, res) := makeNewKinds(listReverse(dep.kinds), num);
+          dep.kinds := listReverse(kinds);
         else
-          dep.kinds := makeNewKinds(dep.kinds, num);
+          (kinds, res) := makeNewKinds(dep.kinds, num);
+          dep.kinds := kinds;
         end if;
+
+        // if any remain, remove from skips
+        if res > 0 then
+          removeSkips(cref, map, res, reverse);
+        end if;
+
+        // add the updated dependency back to the map
         UnorderedMap.add(cref, dep, map);
       else
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because cref "
@@ -1342,15 +1358,42 @@ public
     function removeSkips
       input ComponentRef cref;
       input UnorderedMap<ComponentRef, Dependency> map;
+      input Integer num = -1        "number of skips to remove. negative implys all";
+      input Boolean reverse = false "if num > 0 this removes true->from right, false->from left";
     protected
       Option<Dependency> opt_dep = UnorderedMap.get(cref, map);
       Dependency dep;
+      Integer rest = num;
+      Integer i, len;
     algorithm
       if Util.isSome(opt_dep) then
         SOME(dep) := opt_dep;
-        for i in 1:arrayLength(dep.skips) loop
-          arrayUpdate(dep.skips, i, {});
-        end for;
+        if num < 0 then
+          // remove all skips
+          for i in 1:arrayLength(dep.skips) loop
+            arrayUpdate(dep.skips, i, {});
+          end for;
+        else
+          // remove specific number
+          i := if reverse then arrayLength(dep.skips) else 1;
+          while rest > 0 and i > 0 and i < arrayLength(dep.skips)+1 loop
+            len := listLength(dep.skips[i]);
+            if len <= rest then
+              // can remove full list
+              arrayUpdate(dep.skips, i, {});
+            elseif len > 0 then
+              // list needs to be reduced
+              if reverse then
+                arrayUpdate(dep.skips, i, List.firstN(dep.skips[i], len - rest));
+              else
+                arrayUpdate(dep.skips, i, List.lastN(dep.skips[i], len - rest));
+              end if;
+            end if;
+            // update rest to remove and move iterator
+            rest := rest - len;
+            i := if reverse then i - 1 else i + 1;
+          end while;
+        end if;
         UnorderedMap.add(cref, dep, map);
       else
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because cref "

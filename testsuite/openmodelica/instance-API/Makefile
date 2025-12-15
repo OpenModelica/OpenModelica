@@ -71,6 +71,8 @@ GetModelInstanceInnerOuter2.mos \
 GetModelInstanceInnerOuter3.mos \
 GetModelInstanceInnerOuter4.mos \
 GetModelInstanceInnerOuter5.mos \
+GetModelInstanceInnerOuter6.mos \
+GetModelInstanceInnerOuter7.mos \
 GetModelInstanceMissingClass1.mos \
 GetModelInstanceMissingClass2.mos \
 GetModelInstanceMissingClass3.mos \

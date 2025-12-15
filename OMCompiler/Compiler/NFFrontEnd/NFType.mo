@@ -305,9 +305,19 @@ public
   end isClock;
 
   function isContinuous
-    "update for records?"
     input Type ty;
-    output Boolean b = isReal(elementType(ty));
+    output Boolean b;
+  algorithm
+    b := match ty
+      local
+        ComplexType ct;
+
+      // check if all fields are continuous
+      case COMPLEX(complexTy = ct as ComplexType.RECORD())
+      then List.all(list(lookupRecordFieldType(Record.Field.name(field), ty) for field in ct.fields), isContinuous);
+
+      else isReal(elementType(ty));
+    end match;
   end isContinuous;
 
   function isScalar

@@ -262,6 +262,11 @@ QSize Label::minimumSizeHint() const
 #else // QT_VERSION_CHECK
   QSize size(fm.width("..."), fm.height()+5);
 #endif // QT_VERSION_CHECK
+  // use minimum size width 200 if mUseMinimumSize is true
+  // this is used in parameter dialogs
+  if (mUseMinimumSize && !mText.isEmpty()) {
+    size.setWidth(qMax(size.width(), 200));
+  }
   return size;
 }
 
@@ -315,6 +320,24 @@ ComboBox::ComboBox(QWidget *parent)
   : QComboBox(parent)
 {
   setFocusPolicy(Qt::StrongFocus);
+}
+
+/*!
+ * \brief ComboBox::addItemWithToolTip
+ * Adds an item with tooltip.
+ * \param text
+ * \param value
+ * \param toolTip
+ */
+void ComboBox::addItemWithToolTip(const QString &text, const QString &value, const QString &toolTip)
+{
+  // Calculate the text size and set the minimum width accordingly.
+  // We use qMax to retain the previous minimum width if it is greater.
+  QFontMetrics fm = fontMetrics();
+  int textWidth = fm.boundingRect(value).width() + 30; // add extra for dropdown arrow
+  setMinimumWidth(qMax(textWidth, minimumWidth()));
+  addItem(text, value);
+  setItemData(count() - 1, toolTip, Qt::ToolTipRole);
 }
 
 void ComboBox::wheelEvent(QWheelEvent *event)

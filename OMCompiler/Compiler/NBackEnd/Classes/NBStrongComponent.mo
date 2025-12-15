@@ -644,7 +644,7 @@ public
           dae_type := DAEType.REMOVED;
         end if;
       else
-        new_eqn := Equation.createResidual(eqn, false, true);
+        new_eqn := Equation.createResidual(eqn, NONE(), false, true);
         if Equation.isResidual(new_eqn) then
           // add to residuals
           new_comp := SINGLE_COMPONENT(Equation.getResidualVar(new_eqn), new_eqn, NBSolve.Status.UNPROCESSED);

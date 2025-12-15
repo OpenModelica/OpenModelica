@@ -1,0 +1,34 @@
+// name: arrayScalar
+// keywords: NewBackend, differentiation, jacobian
+// status: correct
+
+loadString("
+model MWE_14636
+  Real q;
+  Real e[3];
+equation
+  der(e) = e / q;
+  der(q) = q;
+end MWE_14636;
+"); getErrorString();
+
+setCommandLineOptions("--newBackend --generateDynamicJacobian=symbolic -d=debugDifferentiation"); getErrorString();
+
+buildModel(MWE_14636); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// ### debugDifferentiation | NBJacobian.jacobianSymbolic ###
+// [BEFORE] [SCAL] (1) $DER.q = q ($RES_SIM_0)
+// [AFTER ] [SCAL] (1) $pDER_ODE_JAC.$DER.q = $SEED_ODE_JAC.q ($RES_SIM_0)
+//
+// ### debugDifferentiation | NBJacobian.jacobianSymbolic ###
+// [BEFORE] [ARRY] (3) $DER.e = e / q ($RES_SIM_1)
+// [AFTER ] [ARRY] (3) $pDER_ODE_JAC.$DER.e = ($SEED_ODE_JAC.e .* q .- $SEED_ODE_JAC.q .* e) / q ^ 2.0 ($RES_SIM_1)
+//
+// {"MWE_14636", "MWE_14636_init.xml"}
+// ""
+// endResult
