@@ -171,6 +171,7 @@ private:
   QCheckBox *mpShowGeneratedFilesCheckBox;
   // Linearize Tab
   QWidget *mpLinearizeTab;
+  QGroupBox *mpLinearizeGroupBox;
   ComboBox *mpLinearizationDumpLanguageComboBox;
   // checkboxes
   QCheckBox *mpSaveExperimentAnnotationCheckBox;

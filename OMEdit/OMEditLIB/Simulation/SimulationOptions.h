@@ -115,7 +115,8 @@ public:
     setStoreVariablesAtEvents(true);
     setShowGeneratedFiles(false);
     // Linearize
-    setLinearizationDumpLanguage("none");
+    setLinearize(false);
+    setLinearizationDumpLanguage("modelica");
 
     setSimulationFlags(QStringList());
     setIsValid(false);
@@ -260,6 +261,8 @@ public:
   void setShowGeneratedFiles(bool showGeneratedFiles) {mShowGeneratedFiles = showGeneratedFiles;}
   bool getShowGeneratedFiles() const {return mShowGeneratedFiles;}
 
+  void setLinearize(bool linearize) {mLinearize = linearize;}
+  bool getLinearize() const {return mLinearize;}
   void setLinearizationDumpLanguage(const QString &linearizationDumpLanguage) {mLinearizationDumpLanguage = linearizationDumpLanguage;}
   QString getLinearizationDumpLanguage() const {return mLinearizationDumpLanguage;}
 
@@ -346,6 +349,7 @@ private:
   bool mStoreVariablesAtEvents;
   bool mShowGeneratedFiles;
   // linearize
+  bool mLinearize;
   QString mLinearizationDumpLanguage;
 
   QStringList mSimulationFlags;
