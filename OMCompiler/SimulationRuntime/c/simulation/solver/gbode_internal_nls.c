@@ -294,14 +294,14 @@ static void gbInternal_evalJacobian(DATA *data, threadData_t *threadData, DATA_G
         {
           // we follow the procedure of DASSL for the selection of perturbation h_i
 
-          // h * f'(x)_i
+          // h * f(x)_i
           double delta_hhh = delta_h * der_x_ref[state];
 
-          // scal_raw = ATOL * NOMINAL + RTOL * abs(Y_i), we use the real (un-transformed) integrator tolerances though
+          // scal_raw = ATOL * NOMINAL + RTOL * abs(x_i), we use the real (un-transformed) integrator tolerances though
           double raw_weight = nls->tol_integrator.atol * data->modelData->realVarsData[state].attribute.nominal + nls->tol_integrator.rtol * fabs(x[state]);
 
-          // choose h_i := h * max(of all these)
-          delta_hh[state] = delta_h * fmax(fmax(fabs(x[state]) /* x_i */, fabs(delta_hhh) /* h * f_i */), fabs(raw_weight)  /* 1 / wt_i */);
+          // choose h_i := h * max(abs(x_i), h * f(x)_i, 1 / (ATOL * NOMINAL + RTOL * abs(x_i)), 1e-3)
+          delta_hh[state] = delta_h * fmax(fmax(fmax(fabs(x[state]) /* x_i */, 1e-3), fabs(delta_hhh) /* h * f_i */), fabs(raw_weight)  /* 1 / wt_i */);
 
           // some floating point magic
           delta_hh[state] = x[state] + delta_hh[state] - x[state];
