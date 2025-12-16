@@ -829,7 +829,7 @@ void cvode_save_statistics(void *cvode_mem, SOLVERSTATS *solverStats, threadData
   tmp1 = 0;
   flag = CVodeGetNumNonlinSolvConvFails(cvode_mem, &tmp1);
   checkReturnFlag_SUNDIALS(flag, SUNDIALS_CV_FLAG, "CVodeGetNumNonlinSolvConvFails");
-  solverStats->nConvergenveTestFailures = tmp1;
+  solverStats->nConvergenceTestFailures = tmp1;
 
   /* Get even more statistics */
   if (omc_useStream[OMC_LOG_SOLVER_V])

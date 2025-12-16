@@ -4104,6 +4104,8 @@ algorithm
       Boolean b;
       Absyn.Path path;
       list<DAE.Exp> expLst;
+      list<DAE.Subscript> subs;
+
     case (DAE.IFEXP(cond,t,f),(vars,b))
       equation
         // check if vars not in condition
@@ -4138,8 +4140,9 @@ algorithm
         // check if vars not in condition
         (_,tpl) = Expression.traverseExpTopDown(exp, BackendDAEUtil.getEqnsysRhsExp2, tpl);
       then (exp,false,tpl);
-    case (DAE.ASUB(exp=e1,sub=expLst),_)
+    case (DAE.ASUB(exp=e1,sub=subs),_)
       equation
+        expLst = list(Expression.getSubscriptExp(sub) for sub in subs);
         // check if vars not in condition
         (_,tpl as (_,b)) = Expression.traverseExpTopDown(e1, varsNotInRelations, tpl);
         if b then

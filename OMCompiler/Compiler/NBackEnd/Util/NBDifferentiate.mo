@@ -2814,6 +2814,7 @@ public
         Boolean hasArray, hasArrayNum;
         Expression local_grad, localUpF, localUpG;
         Integer i;
+        Type powTy;
 
       // Dash calculations (ADD, SUB, ADD_EW, SUB_EW, ...)
       // NOTE: Multary always contains ADDITION
@@ -3003,12 +3004,24 @@ public
         guard(Operator.getMathClassification(operator) == NFOperator.MathClassification.MULTIPLICATION
               and (not listEmpty(inv_arguments)))
         algorithm
-          // create addition and power operator
-          (_, sizeClass) := Operator.classify(operator);
-          // the frontend treats multiplication equally for element and nen elementwise, but pow needs to have the correct operator
-          powSizeClass := if Type.isArray(Expression.typeOf(listHead(inv_arguments))) then NFOperator.SizeClassification.ARRAY_SCALAR else NFOperator.SizeClassification.SCALAR;
+          // the frontend treats multiplication equally for elementwise and non-elementwise, but pow needs to have the correct operator
+          if not listEmpty(inv_arguments) and Type.isArray(Expression.typeOf(listHead(inv_arguments))) then
+            powSizeClass := NFOperator.SizeClassification.ARRAY_SCALAR;
+            powTy := operator.ty;
+          else
+            powSizeClass := NFOperator.SizeClassification.SCALAR;
+            powTy := Type.REAL();
+          end if;
+
+          // check if the addition size class has to be element wise
+          if not listEmpty(arguments) and Type.isArray(Expression.typeOf(listHead(arguments))) then
+            sizeClass := NFOperator.SizeClassification.ELEMENT_WISE;
+          else
+            (_, sizeClass) := Operator.classify(operator);
+          end if;
+
           addOp := Operator.fromClassification((NFOperator.MathClassification.ADDITION, sizeClass), operator.ty);
-          powOp := Operator.fromClassification((NFOperator.MathClassification.POWER, powSizeClass), operator.ty);
+          powOp := Operator.fromClassification((NFOperator.MathClassification.POWER, powSizeClass), powTy);
           // f'
           (diff_arguments, diffArguments) := differentiateMultaryMultiplicationArgs(arguments, diffArguments, operator);
           diff_enumerator := Expression.MULTARY(diff_arguments, {}, addOp);

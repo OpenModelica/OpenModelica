@@ -1204,7 +1204,6 @@ constant ConfigFlag INITIAL_STATE_SELECTION = CONFIG_FLAG(121, "initialStateSele
 constant ConfigFlag LINEARIZATION_DUMP_LANGUAGE = CONFIG_FLAG(122, "linearizationDumpLanguage",
   NONE(), EXTERNAL(), STRING_FLAG("modelica"),
   SOME(STRING_DESC_OPTION({
-    ("none", Gettext.gettext("Don't generate code for linearization.")),
     ("modelica", Gettext.gettext("Generate linearized Modelica model.")),
     ("matlab", Gettext.gettext("Generate matlab function that returns linearization matrices A,B,C,D.")),
     ("julia", Gettext.gettext("Generate julia function that returns linearization matrices A,B,C,D.")),

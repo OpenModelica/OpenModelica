@@ -395,7 +395,7 @@ algorithm
         varIndex := match exp1.sub
           local
             DAE.Exp indexexp;
-          case {indexexp} then RValueToVar(ExpToMid(indexexp, state), state);
+          case {DAE.INDEX(indexexp)} then RValueToVar(ExpToMid(indexexp, state), state);
         end match;
         varValue := RValueToVar(ExpToMid(exp, state), state);
 
@@ -640,8 +640,9 @@ algorithm
       then MidCode.VARIABLE(varTmp);
     end match;
   then rvalue;
-  case DAE.ASUB(exp1, expLst)
+  case DAE.ASUB(exp1, subscripts)
   algorithm
+    expLst := list(Expression.getSubscriptExp(sub) for sub in subscripts);
     varExp := RValueToVar(ExpToMid(exp1, state), state);
     varExp2 := match expLst
       local

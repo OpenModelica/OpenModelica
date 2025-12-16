@@ -1093,7 +1093,7 @@ public constant ErrorTypes.Message COMMA_OPERATOR_DIFFERENT_SIZES = ErrorTypes.M
   Gettext.gettext("Arguments of concatenation comma operator have different sizes for the first dimension: %s has dimension %s and %s has dimension %s."));
 public constant ErrorTypes.Message NON_STATE_STATESELECT_ALWAYS = ErrorTypes.MESSAGE(592, ErrorTypes.SYMBOLIC(), ErrorTypes.WARNING(),
   Gettext.gettext("Variable %s has attribute stateSelect=StateSelect.always, but can't be selected as a state."));
-public constant ErrorTypes.Message STATE_STATESELECT_NEVER = ErrorTypes.MESSAGE(593, ErrorTypes.SYMBOLIC(), ErrorTypes.WARNING(),
+public constant ErrorTypes.Message STATE_STATESELECT_NEVER = ErrorTypes.MESSAGE(593, ErrorTypes.SYMBOLIC(), ErrorTypes.ERROR(),
   Gettext.gettext("Variable %s has attribute stateSelect=StateSelect.never, but was selected as a state"));
 public constant ErrorTypes.Message FUNCTION_HIGHER_VARIABILITY_BINDING = ErrorTypes.MESSAGE(594, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
   Gettext.gettext("Component '%s' of variability %s has binding %s of higher variability %s."));

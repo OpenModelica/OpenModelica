@@ -2264,15 +2264,26 @@ public
       Pointer<Variable> var;
       Integer arr, start, size;
       Type ty;
+      list<Dimension> dims;
       list<Integer> sizes, vals;
+      list<Subscript> subs;
     algorithm
+      // get array index, start of scalar index and size
       arr := mapping.var_StA[scal];
       (start, size) := mapping.var_AtS[arr];
+
+      // get the variable, name and type
       var := VariablePointers.getVarAt(vars, arr);
       Variable.VARIABLE(name = cref, ty = ty) := Pointer.access(var);
-      sizes := list(Dimension.size(dim) for dim in Type.arrayDims(ty));
-      vals := listReverse(Slice.indexToLocation(scal-start, sizes));
-      cref := ComponentRef.mergeSubscripts(list(Subscript.INDEX(Expression.INTEGER(val+1)) for val in vals), cref, true, true);
+
+      // get the dimensions, their sizes and the respective index values for the subscripts
+      dims  := Type.arrayDims(ty);
+      sizes := list(Dimension.size(dim) for dim in dims);
+      vals  := listReverse(Slice.indexToLocation(scal-start, sizes));
+
+      // thread them to the apropriate subscripts and merge them to the cref
+      subs := list(Subscript.nth(dim, val+1) threaded for dim in dims, val in vals);
+      cref := ComponentRef.mergeSubscripts(subs, cref, true, true);
     end varSlice;
 
   protected

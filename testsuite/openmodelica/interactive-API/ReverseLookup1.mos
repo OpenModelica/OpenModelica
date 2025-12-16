@@ -1,0 +1,88 @@
+// name: ReverseLookup1
+// keywords:
+// status: correct
+
+loadString("
+  package P1
+    model M
+      model M1
+      end M1;
+    end M;
+
+    model A
+      extends P1.M;
+    end A;
+
+    model B
+      extends M;
+    end B;
+  end P1;
+
+  package P2
+    model A
+      extends P1.M;
+    end A;
+
+    model B
+      replaceable class M1 = P1.M;
+      replaceable class M2 = .P1.M;
+    end B;
+
+    package P1
+      model M end M;
+
+      model A
+        P1.M m;
+      end A;
+    end P1;
+  end P2;
+
+  package P3
+    model A
+      P1.M m;
+      P1.M.M1 m1;
+    end A;
+  end P3;
+");
+
+reverseLookup(P1.M, exactMatch = true, prettyPrint = true);
+getErrorString();
+
+// Result:
+// true
+// "[
+//   {
+//     \"filename\": \"<interactive>\",
+//     \"lineStart\": 9,
+//     \"columnStart\": 7,
+//     \"lineEnd\": 9,
+//     \"columnEnd\": 19,
+//     \"name\": \"P1.M\"
+//   },
+//   {
+//     \"filename\": \"<interactive>\",
+//     \"lineStart\": 13,
+//     \"columnStart\": 7,
+//     \"lineEnd\": 13,
+//     \"columnEnd\": 16,
+//     \"name\": \"M\"
+//   },
+//   {
+//     \"filename\": \"<interactive>\",
+//     \"lineStart\": 24,
+//     \"columnStart\": 19,
+//     \"lineEnd\": 24,
+//     \"columnEnd\": 35,
+//     \"name\": \".P1.M\"
+//   },
+//   {
+//     \"filename\": \"<interactive>\",
+//     \"lineStart\": 38,
+//     \"columnStart\": 7,
+//     \"lineEnd\": 38,
+//     \"columnEnd\": 13,
+//     \"name\": \"P1.M\"
+//   }
+// ]"
+// ""
+// endResult

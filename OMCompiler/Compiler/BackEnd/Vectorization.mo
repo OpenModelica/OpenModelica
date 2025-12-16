@@ -415,11 +415,12 @@ algorithm
       Absyn.Path p;
       DAE.Exp e, e1, e2;
       Option<DAE.Exp> oe;
-      list<DAE.Exp> expl;
+      list<DAE.Exp> expl, expl2;
       list<list<DAE.Exp>> mexpl;
       DAE.Operator op;
       DAE.ComponentRef cr;
       DAE.Type ty;
+      list<DAE.Subscript> subs;
 
     case DAE.ICONST()
       algorithm
@@ -558,9 +559,11 @@ algorithm
 
     case DAE.ASUB()
       algorithm
-        DAE.ASUB(exp = e, sub = expl) := inExp2;
+        expl := list(Expression.getSubscriptExp(sub) for sub in inExp1.sub);
+        DAE.ASUB(exp = e, sub = subs) := inExp2;
+        expl2 := list(Expression.getSubscriptExp(sub) for sub in subs);
       then
-        expEqualNoCrefSubs(inExp1.exp, e) and expEqualNoCrefSubsList(inExp1.sub, expl);
+        expEqualNoCrefSubs(inExp1.exp, e) and expEqualNoCrefSubsList(expl, expl2);
 
     case DAE.SIZE()
       algorithm

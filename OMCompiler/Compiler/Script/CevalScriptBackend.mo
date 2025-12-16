@@ -115,6 +115,7 @@ import PackageManagement;
 import Parser;
 import Print;
 import Refactor;
+import ReverseLookup;
 import RewriteRules;
 import SCode;
 import SCodeDump;
@@ -3394,6 +3395,9 @@ algorithm
 
     case ("getDefaultOpenCLDevice", {})
       then ValuesUtil.makeInteger(Config.getDefaultOpenCLDevice());
+
+    case ("reverseLookup", {Values.CODE(Absyn.C_TYPENAME(path)), Values.CODE(Absyn.C_TYPENAME(classpath)), Values.BOOL(b1), Values.BOOL(b2)})
+      then ValuesUtil.makeString(ReverseLookup.lookup(path, classpath, SymbolTable.getAbsyn(), b1, b2));
 
  end matchcontinue;
 end cevalInteractiveFunctions4;
