@@ -1278,14 +1278,13 @@ SimulationOptions SimulationDialog::createSimulationOptions()
   }
   // setup simulation flags
   QStringList simulationFlags;
-  simulationFlags.append(QString("-override=%1=%2,%3=%4,%5=%6,%7=%8,%9=%10,%11=%12,%13=%14")
-                         .arg("startTime").arg(simulationOptions.getStartTime())
-                         .arg("stopTime").arg(simulationOptions.getStopTime())
-                         .arg("stepSize").arg(simulationOptions.getStepSize())
-                         .arg("tolerance").arg(simulationOptions.getTolerance())
-                         .arg("solver").arg(simulationOptions.getMethod())
-                         .arg("outputFormat").arg(simulationOptions.getOutputFormat())
-                         .arg("variableFilter").arg(simulationOptions.getVariableFilter()));
+  simulationFlags.append(QString("-startTime=").append(simulationOptions.getStartTime()));
+  simulationFlags.append(QString("-stopTime=").append(simulationOptions.getStopTime()));
+  simulationFlags.append(QString("-stepSize=").append(QString::number(simulationOptions.getStepSize())));
+  simulationFlags.append(QString("-tolerance=").append(simulationOptions.getTolerance()));
+  simulationFlags.append(QString("-s=").append(simulationOptions.getMethod()));
+  simulationFlags.append(QString("-outputFormat=").append(simulationOptions.getOutputFormat()));
+  simulationFlags.append(QString("-variableFilter=").append(simulationOptions.getVariableFilter()));
   simulationFlags.append(QString("-r=%1/%2").arg(simulationOptions.getWorkingDirectory(), simulationOptions.getFullResultFileName()));
   // jacobian
   if (!mpJacobianComboBox->currentText().isEmpty()) {
