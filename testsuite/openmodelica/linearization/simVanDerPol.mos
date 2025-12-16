@@ -8,6 +8,7 @@
 //
 //linearize with numeric linearization and data recovery
 loadFile("modelVanDerPol.mo");
+setCommandLineOptions("--linearizationDumpLanguage=modelica");
 simulate(VanDerPol, simflags="-l=0 -l_datarec");
 getErrorString();
 loadFile("linearized_model.mo");
@@ -30,6 +31,7 @@ getErrorString();
 readFile("linearized_model.log"); // Check that output log is empty
 
 // Result:
+// true
 // true
 // record SimulationResult
 //     resultFile = "VanDerPol_res.mat",

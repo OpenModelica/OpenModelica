@@ -1503,6 +1503,11 @@ algorithm
     case ("linearize",(vals as Values.CODE(Absyn.C_TYPENAME(className))::_))
       equation
         System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_TOTAL);
+        // Ensure that the linearization dump language is set to modelica if it is none
+        str = Flags.getConfigString(Flags.LINEARIZATION_DUMP_LANGUAGE);
+        if (stringEq(str,"none")) then
+          FlagsUtil.setConfigString(Flags.LINEARIZATION_DUMP_LANGUAGE, "modelica");
+        end if;
 
         (b,outCache,compileDir,executable,_,outputFormat_str,_,simflags,resultValues,vals,dirs) = buildModel(outCache,inEnv,vals,msg);
         if b then
