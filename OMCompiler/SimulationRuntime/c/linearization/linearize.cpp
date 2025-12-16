@@ -712,6 +712,9 @@ int linearize(DATA* data, threadData_t *threadData)
               free(cwd);
             }
           }
+          infoStreamPrint(OMC_LOG_STDOUT, 0, "The output format can be changed with the command line option --linearizationDumpLanguage.");
+          infoStreamPrint(OMC_LOG_STDOUT, 0, "The options are: --linearizationDumpLanguage=none, modelica, matlab, julia, python.");
+          infoStreamPrint(OMC_LOG_STDOUT, 0, "In OMEdit Simulation Setup->Linearize->Target language for linearized model.");
         }
       }
     return 0;
