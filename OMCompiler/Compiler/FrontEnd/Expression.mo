@@ -2269,7 +2269,16 @@ algorithm
     case DAE.ASUB(exp = e,sub=subs)
       equation
         // Count the number of scalar subscripts, and remove as many dimensions.
-        i = sum(1 for sub guard(subscriptConstant(sub)) in subs);
+        // adrpo: for some reason we need to handle this differenlty for MetaModelica grammar
+        // as if not we get errors such as:
+        // [Types.mo:8694:9-8694:125:writable] Error: Internal error Types.getMetaRecordFields
+        //   called on a non-singleton uniontype: array<BackendDAE.SubPartition>
+        if Config.acceptMetaModelicaGrammar() then
+          explist = list(Expression.getSubscriptExp(sub) for sub in subs);
+          i = sum(1 for e guard(isScalar(e)) in explist);
+        else
+          i = sum(1 for sub guard(subscriptConstant(sub)) in subs);
+        end if;
         tp = unliftArrayX(typeof(e), i);
       then
         tp;
