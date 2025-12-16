@@ -9,6 +9,7 @@
 
 //linearize with numeric linearization and data recovery at time 0
 loadFile("modelextfunction.mo");
+setCommandLineOptions("--linearizationDumpLanguage=modelica");
 setCommandLineOptions("--generateSymbolicLinearization");
 getErrorString();
 simulate(extfunction, simflags="-l=0 -l_datarec");
@@ -56,7 +57,6 @@ getErrorString();
 readFile("linearized_model.log"); // Check that output log is empty
 
 // Result:
-// true
 // true
 // ""
 // record SimulationResult
