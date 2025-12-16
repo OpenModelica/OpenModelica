@@ -58,6 +58,8 @@ readFile("linearized_model.log"); // Check that output log is empty
 
 // Result:
 // true
+// true
+// true
 // ""
 // record SimulationResult
 //     resultFile = "extfunction_res.mat",
