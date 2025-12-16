@@ -23,6 +23,7 @@ equation
 end mathFuncsTest;
 ");
 
+setCommandLineOptions("--linearizationDumpLanguage=modelica");
 //
 //  Case for numeric linearization of mathFuncsTest model
 //
@@ -47,6 +48,7 @@ readFile("linearized_model.log"); // Check that output log is empty
 
 
 // Result:
+// true
 // true
 // record SimulationResult
 //     resultFile = "mathFuncsTest_res.mat",
