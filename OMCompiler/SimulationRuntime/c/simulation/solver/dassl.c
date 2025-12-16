@@ -347,7 +347,9 @@ int dassl_initial(DATA* data, threadData_t *threadData,
   }
 
   JACOBIAN* jacobian = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
+  //infoStreamPrint(OMC_LOG_SIMULATION, 0, "%d", data->callback->INDEX_JAC_A);
   data->callback->initialAnalyticJacobianA(data, threadData, jacobian);
+  //infoStreamPrint(OMC_LOG_SIMULATION, 0, "Jacobian availability: %d", (int)jacobian->availability);
   if(jacobian->availability == JACOBIAN_AVAILABLE || jacobian->availability == JACOBIAN_ONLY_SPARSITY) {
     infoStreamPrint(OMC_LOG_SIMULATION, 1, "Initialized Jacobian:");
     infoStreamPrint(OMC_LOG_SIMULATION, 0, "columns: %zu rows: %zu", jacobian->sizeCols, jacobian->sizeRows);

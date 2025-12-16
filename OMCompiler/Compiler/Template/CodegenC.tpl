@@ -5519,6 +5519,7 @@ match sparsepattern
     <<
     int <%symbolName(modelNamePrefix,"initialAnalyticJacobian")%><%matrixname%>(DATA* data, threadData_t *threadData, JACOBIAN *jacobian)
     {
+      //infoStreamPrint(OMC_LOG_SIMULATION, 0, "initialAnalyticJacobian for matrix '%s' called (no sparsity)", "<%matrixname%>");
       jacobian->availability = JACOBIAN_NOT_AVAILABLE;
       return 1;
     }
@@ -5539,6 +5540,8 @@ match sparsepattern
     int <%symbolName(modelNamePrefix,"initialAnalyticJacobian")%><%matrixname%>(DATA* data, threadData_t *threadData, JACOBIAN *jacobian)
     {
       size_t count;
+
+      //infoStreamPrint(OMC_LOG_SIMULATION, 0, "initialAnalyticJacobian for matrix '%s' called", "<%matrixname%>");
 
       FILE* pFile = openSparsePatternFile(data, threadData, "<%fileNamePrefix%>_Jac<%matrixname%>.bin");
 

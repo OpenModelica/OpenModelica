@@ -14191,7 +14191,7 @@ algorithm
     // discreteStates
     if not checkForEmptyBDAE(optcontPartDer) then
       contPartDer := {(optcontPartDer,spPattern,spColors, nlPattern)};
-      ({contSimJac}, uniqueEqIndex) := createSymbolicJacobianssSimCode(contPartDer, crefSimVarHT, uniqueEqIndex, {"FMIDer"}, {});
+      ({contSimJac}, uniqueEqIndex) := createSymbolicJacobianssSimCode(contPartDer, crefSimVarHT, uniqueEqIndex, {"FMIDER"}, {});
       // collect algebraic loops and symjacs for FMIDer
       ({contSimJac}, outModelInfo, symJacs) := addAlgebraicLoopsModelInfoSymJacs({contSimJac}, inModelInfo);
       contPartSimDer := SOME(contSimJac);
