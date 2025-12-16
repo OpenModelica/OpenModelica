@@ -1267,14 +1267,13 @@ SimulationOptions SimulationDialog::createSimulationOptions()
   }
   // setup simulation flags
   QStringList simulationFlags;
-  simulationFlags.append(QString("-startTime=%1 -stopTime=%2 -stepSize=%3 -tolerance=%4 -s=%5 -outputFormat=%6 -variableFilter=%7")
-                         .arg(simulationOptions.getStartTime())
-                         .arg(simulationOptions.getStopTime())
-                         .arg(simulationOptions.getStepSize())
-                         .arg(simulationOptions.getTolerance())
-                         .arg(simulationOptions.getMethod())
-                         .arg(simulationOptions.getOutputFormat())
-                         .arg(simulationOptions.getVariableFilter()));
+  simulationFlags.append(QString("-startTime=").append(simulationOptions.getStartTime()));
+  simulationFlags.append(QString("-stopTime=").append(simulationOptions.getStopTime()));
+  simulationFlags.append(QString("-stepSize=").append(QString::number(simulationOptions.getStepSize())));
+  simulationFlags.append(QString("-tolerance=").append(simulationOptions.getTolerance()));
+  simulationFlags.append(QString("-s=").append(simulationOptions.getMethod()));
+  simulationFlags.append(QString("-outputFormat=").append(simulationOptions.getOutputFormat()));
+  simulationFlags.append(QString("-variableFilter=").append(simulationOptions.getVariableFilter()));
   simulationFlags.append(QString("-r=%1/%2").arg(simulationOptions.getWorkingDirectory(), simulationOptions.getFullResultFileName()));
   // jacobian
   if (!mpJacobianComboBox->currentText().isEmpty()) {
