@@ -209,7 +209,7 @@ typedef hash_string_string omc_CommandLineOverrides;
 typedef hash_string_long omc_CommandLineOverridesUses;
 
 // function to handle command line settings override
-modelica_boolean doOverride(omc_ModelInput *mi, MODEL_DATA *modelData, const char *override, const char *overrideFile);
+void doOverride(omc_ModelInput *mi, MODEL_DATA *modelData, const char *override, const char *overrideFile);
 
 static const double REAL_MIN = -DBL_MAX;
 static const double REAL_MAX = DBL_MAX;
@@ -855,10 +855,11 @@ omc_ModelInput* parse_input_xml(const char *filename, const char* initXMLData, t
  *
  * @param simulationInfo    Contains read values after return.
  * @param de                Default experiment hash map.
- * @param reCalcStepSize    If true step size is recalculated instead of read from hash map.
  */
-void read_experiment(SIMULATION_INFO* simulationInfo, omc_DefaultExperiment *de, modelica_boolean reCalcStepSize)
+void read_experiment(SIMULATION_INFO* simulationInfo, omc_DefaultExperiment *de)
 {
+  modelica_boolean reCalcStepSize = FALSE;  // If true step size is recalculated instead of read from hash map.
+
   if (omc_flag[FLAG_START_TIME]) {
     simulationInfo->startTime = atof(omc_flagValue[FLAG_START_TIME]);
     reCalcStepSize = TRUE;
@@ -1060,10 +1061,10 @@ void read_input_xml(MODEL_DATA* modelData,
   /* Update inital values from override flag */
   override = omc_flagValue[FLAG_OVERRIDE];
   overrideFile = omc_flagValue[FLAG_OVERRIDE_FILE];
-  modelica_boolean reCalcStepSize = doOverride(mi, modelData, override, overrideFile);
+  doOverride(mi, modelData, override, overrideFile);
 
   /* Read initial values from hash map */
-  read_experiment(simulationInfo, mi->de, reCalcStepSize);
+  read_experiment(simulationInfo, mi->de);
 
   simulationInfo->OPENMODELICAHOME = GC_strdup(findHashStringString(mi->md,"OPENMODELICAHOME")); // Can be set by generated code
   infoStreamPrint(OMC_LOG_SIMULATION, 0, "OPENMODELICAHOME: %s", simulationInfo->OPENMODELICAHOME);
@@ -1300,16 +1301,12 @@ static void singleOverride(omc_CommandLineOverrides *mOverrides,
  * @param mi                    Model input from info XML file.
  * @param modelData             Pointer to model data containing variable values to override.
  * @param overrideFile          Path to override file given by `-overrideFile`.
- * @return modelica_boolean     True if integrator step size should be re-caclualted.
  */
-modelica_boolean doOverride(omc_ModelInput *mi, MODEL_DATA *modelData, const char *override, const char *overrideFile)
+void doOverride(omc_ModelInput *mi, MODEL_DATA *modelData, const char *override, const char *overrideFile)
 {
   omc_CommandLineOverrides *mOverrides = NULL;
   omc_CommandLineOverridesUses *mOverridesUses = NULL, *it = NULL, *ittmp = NULL;
   mmc_sint_t i;
-  modelica_boolean changedStartStop = 0 /* false */;
-  modelica_boolean changedStepSize = 0 /* false */;
-  modelica_boolean reCalcStepSize = 0 /* false */;
   char* overrideStr1 = NULL, *overrideStr2 = NULL, *overrideStr = NULL;
   if((override != NULL) && (overrideFile != NULL)) {
     infoStreamPrint(OMC_LOG_SOLVER, 0, "using -override=%s and -overrideFile=%s", override, overrideFile);
@@ -1370,7 +1367,6 @@ modelica_boolean doOverride(omc_ModelInput *mi, MODEL_DATA *modelData, const cha
 
   if (overrideStr1 != NULL || overrideStr2 != NULL) {
     char *value, *p, *ov;
-    const char *strs[] = {"solver","startTime","stopTime","stepSize","tolerance","outputFormat","variableFilter"};
     /* read override values */
     infoStreamPrint(OMC_LOG_SOLVER, 0, "-override=%s", overrideStr1 ? overrideStr1 : "[not given]");
     infoStreamPrint(OMC_LOG_SOLVER, 0, "-overrideFile=%s", overrideStr2 ? overrideStr2 : "[not given]");
@@ -1444,21 +1440,6 @@ modelica_boolean doOverride(omc_ModelInput *mi, MODEL_DATA *modelData, const cha
       free(overrideStr2);
     }
 
-    // Now we have all overrides in mOverrides, override mi now
-    // Also check if we need to re-calculate stepSize (start / stop time changed, but stepSize not)
-    for (i=0; i<sizeof(strs)/sizeof(char*); i++) {
-      if (findHashStringStringNull(mOverrides, strs[i])) {
-        addHashStringString(&mi->de, strs[i], getOverrideValue(mOverrides, &mOverridesUses, strs[i]));
-        if (i==1 /* startTime */ || i ==2 /* stopTime */ ) {
-          changedStartStop = 1 /* true */;
-        }
-        if (i==3 /* stepSize */) {
-          changedStepSize = 1 /* true */;
-        }
-      }
-    }
-    reCalcStepSize = changedStartStop && !changedStepSize;
-
     // override all found!
     for(i=0; i<modelData->nStatesArray; i++) {
       singleOverride(mOverrides, &mOverridesUses, mi->rSta, i, 0);
@@ -1516,8 +1497,6 @@ modelica_boolean doOverride(omc_ModelInput *mi, MODEL_DATA *modelData, const cha
   } else {
     infoStreamPrint(OMC_LOG_SOLVER, 0, "NO override given on the command line.");
   }
-
-  return reCalcStepSize;
 }
 
 void parseVariableStr(char* variableStr)
