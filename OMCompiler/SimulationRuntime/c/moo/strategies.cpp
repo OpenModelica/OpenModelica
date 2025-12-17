@@ -430,7 +430,14 @@ GDOP::Strategies default_strategies(InfoGDOP& info, GDOP::Problem& problem, bool
                                                                                         Linalg::Norm::NORM_INF,
                                                                                         std::move(verifier_tolerances)));
 
-    strategies.initialization          = simulation_initialization_strategy;
+    if (std::string(omc_flagValue[FLAG_IPOPT_INIT]) == "CONST")
+    {
+        strategies.initialization = const_initialization_strategy;
+    }
+    else {
+        strategies.initialization = simulation_initialization_strategy;
+    }
+
     strategies.simulation              = simulation_strategy;
     strategies.simulation_step         = simulation_step_strategy;
     strategies.mesh_refinement         = std::make_shared<GDOP::L2BoundaryNorm>(info.l2bn_phase_one_iterations, info.l2bn_phase_two_iterations, info.l2bn_phase_two_level);
