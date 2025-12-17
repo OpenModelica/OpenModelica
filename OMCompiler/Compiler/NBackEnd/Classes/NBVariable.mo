@@ -1161,6 +1161,7 @@ public
         // also update the derivative to be a dummy derivative
         der_var := Pointer.access(derivative);
         der_var.backendinfo := BackendInfo.setVarKind(der_var.backendinfo, VariableKind.DUMMY_DER(varPointer));
+        der_var.backendinfo := BackendInfo.setStateSelect(der_var.backendinfo, NFBackendExtension.StateSelect.AVOID);
         Pointer.update(derivative, der_var);
       then BackendInfo.setVarKind(var.backendinfo, VariableKind.DUMMY_STATE(derivative));
 
@@ -1509,8 +1510,9 @@ public
     else
       var := fromCref(cref);
     end if;
-    // update the variable to be a seed and pass the pointer to the original variable
-    var.backendinfo := BackendInfo.setVarKind(var.backendinfo, VariableKind.ALGEBRAIC());
+    // update the variable to have StateSelect.AVOID as it has no good start values
+    var.backendinfo := BackendInfo.setStateSelect(var.backendinfo, NFBackendExtension.StateSelect.AVOID);
+
     // create the new variable pointer and safe it to the component reference
     (var_ptr, cref) := makeVarPtrCyclic(var, cref);
     (der_cref, der_var) := makeDerVar(cref);

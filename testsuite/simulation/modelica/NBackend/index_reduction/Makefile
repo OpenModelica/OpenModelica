@@ -4,6 +4,7 @@ TESTFILES = \
 basic_IR.mos\
 static_IR.mos\
 static_index_3.mos\
+aux_states.mos\
 
 # test that currently fail. Move up when fixed.
 # Run make failingtest
