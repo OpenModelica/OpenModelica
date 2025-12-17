@@ -2277,7 +2277,7 @@ algorithm
           explist = list(Expression.getSubscriptExp(sub) for sub in subs);
           i = sum(1 for e guard(isScalar(e)) in explist);
         else
-          i = sum(1 for sub guard(subscriptConstant(sub)) in subs);
+          i = sum(1 for sub guard(isScalarSubscript(sub)) in subs);
         end if;
         tp = unliftArrayX(typeof(e), i);
       then
@@ -12631,6 +12631,18 @@ algorithm
 
   end match;
 end expandRange;
+
+public function isScalarSubscript
+  input DAE.Subscript sub;
+  output Boolean b;
+algorithm
+  b := match sub
+    case DAE.SLICE()        then isScalar(sub.exp);
+    case DAE.INDEX()        then isScalar(sub.exp);
+    case DAE.WHOLE_NONEXP() then isScalar(sub.exp);
+    else false;
+  end match;
+end isScalarSubscript;
 
 public function isScalar
   input DAE.Exp inExp;
