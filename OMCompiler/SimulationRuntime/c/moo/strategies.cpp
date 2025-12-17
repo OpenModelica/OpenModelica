@@ -430,7 +430,7 @@ GDOP::Strategies default_strategies(InfoGDOP& info, GDOP::Problem& problem, bool
                                                                                         Linalg::Norm::NORM_INF,
                                                                                         std::move(verifier_tolerances)));
 
-    if (std::string(omc_flagValue[FLAG_IPOPT_INIT]) == "CONST")
+    if (std::string(omc_flagValue[FLAG_IPOPT_INIT] ? omc_flagValue[FLAG_IPOPT_INIT] : "") == "CONST")
     {
         strategies.initialization = const_initialization_strategy;
     }
