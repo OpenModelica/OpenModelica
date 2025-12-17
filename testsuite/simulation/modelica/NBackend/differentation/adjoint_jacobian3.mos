@@ -1,6 +1,6 @@
 // name: scalarAdjointJacobian3
 // keywords: NewBackend
-// status: erroneous
+// status: correct
 // cflags: -d=dumpSimCode
 
 loadString("
