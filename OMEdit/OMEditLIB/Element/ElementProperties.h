@@ -201,6 +201,7 @@ public slots:
   void unitComboBoxChanged(int index);
   void valueComboBoxChanged(int index);
   void valueCheckBoxChanged(bool toggle);
+  void valueTextBoxChanged(const QString &text);
   void showFixedMenu();
   void trueFixedClicked();
   void falseFixedClicked();
