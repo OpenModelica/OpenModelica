@@ -310,6 +310,8 @@ public
       variables := VariablePointers.addList(diffArguments.new_vars, variables);
       // add all dummy states
       variables := VariablePointers.addList(sliced_dummy_states, variables);
+      // remove all states
+      variables := VariablePointers.removeList(sliced_states, variables);
       // add new equations (after cleanup because equation names are added there)
       equations := EquationPointers.addList(new_eqns, equations);
     else
