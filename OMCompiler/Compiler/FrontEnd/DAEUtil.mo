@@ -2767,6 +2767,7 @@ algorithm
       Option<DAE.Exp> eopt_1,eopt;
       DAE.CallAttributes attr;
       Option<tuple<DAE.Exp,Integer,Integer>> optionExpisASUB;
+      list<DAE.Subscript> subs;
 
     case (DAE.CREF(componentRef = cr,ty = t))
       equation
@@ -2829,9 +2830,10 @@ algorithm
         e_1 = toModelicaFormExp(e);
       then
         DAE.CAST(t,e_1);
-    case (DAE.ASUB(exp = e,sub = expl))
+    case (DAE.ASUB(exp = e,sub = subs))
       equation
         e_1 = toModelicaFormExp(e);
+        expl = list(Expression.getSubscriptExp(sub) for sub in subs);
       then
         Expression.makeASUB(e_1,expl);
     case (DAE.SIZE(exp = e,sz = eopt))

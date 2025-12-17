@@ -110,48 +110,42 @@ public
         String name                                     "Context name for jacobian";
         VariablePointers knowns                         "Variable array of knowns";
         FunctionTree funcTree                           "Function call bodies";
-        list<Partition.Partition> oldPartitions, newPartitions = {}               "Equation partitions before and afterwards";
-        list<Partition.Partition> newEvents = {}, newAlg = {}, newAlgEvents = {}  "Event/Algebraic Equation partitions afterwards";
+        list<Partition.Partition> newPartitions               "Equation partitions before and afterwards";
 
       case BackendDAE.MAIN(varData = BVariable.VAR_DATA_SIM(knowns = knowns), funcTree = funcTree)
         algorithm
-          (oldPartitions, name) := match kind
-            case NBPartition.Kind.ODE then (bdae.ode, "ODE_JAC");
-            case NBPartition.Kind.DAE then (Util.getOption(bdae.dae), "DAE_JAC");
+          if Flags.isSet(Flags.JAC_DUMP) then
+            print(StringUtil.headline_1("[symjacdump] Creating symbolic Jacobians:") + "\n");
+          end if;
+
+          name := match kind
+            case NBPartition.Kind.ODE algorithm
+              name := "ODE_JAC";
+              (newPartitions, funcTree) := applyToPartitions(bdae.ode, funcTree, knowns, name, func);
+              bdae.ode := newPartitions;
+            then name;
+            case NBPartition.Kind.DAE algorithm
+              name := "DAE_JAC";
+              (newPartitions, funcTree) := applyToPartitions(Util.getOption(bdae.dae), funcTree, knowns, name, func);
+              bdae.dae := SOME(newPartitions);
+            then name;
             else algorithm
               Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for: " + Partition.Partition.kindToString(kind)});
             then fail();
           end match;
 
-          if Flags.isSet(Flags.JAC_DUMP) then
-            print(StringUtil.headline_1("[symjacdump] Creating symbolic Jacobians:") + "\n");
+          (newPartitions, funcTree) := applyToPartitions(bdae.ode_event, funcTree, knowns, name, func);
+          bdae.ode_event := newPartitions;
+          (newPartitions, funcTree) := applyToPartitions(bdae.algebraic, funcTree, knowns, name, func);
+          bdae.algebraic := newPartitions;
+          (newPartitions, funcTree) := applyToPartitions(bdae.alg_event, funcTree, knowns, name, func);
+          bdae.alg_event := newPartitions;
+          (newPartitions, funcTree) := applyToPartitions(bdae.init, funcTree, knowns, name, func);
+          bdae.init := newPartitions;
+          if Util.isSome(bdae.init_0) then
+            (newPartitions, funcTree) := applyToPartitions(Util.getOption(bdae.init_0), funcTree, knowns, name, func);
+            bdae.init_0 := SOME(newPartitions);
           end if;
-
-          for part in listReverse(oldPartitions) loop
-            (part, funcTree) := partJacobian(part, funcTree, knowns, name, func);
-            newPartitions := part::newPartitions;
-          end for;
-
-          for part in listReverse(bdae.ode_event) loop
-            (part, funcTree) := partJacobian(part, funcTree, knowns, name, func);
-            newEvents := part::newEvents;
-          end for;
-          for part in listReverse(bdae.algebraic) loop
-            (part, funcTree) := partJacobian(part, funcTree, knowns, name, func);
-            newAlg := part::newAlg;
-          end for;
-          for part in listReverse(bdae.alg_event) loop
-            (part, funcTree) := partJacobian(part, funcTree, knowns, name, func);
-            newAlgEvents := part::newAlgEvents;
-          end for;
-          () := match kind
-            case NBPartition.Kind.ODE algorithm bdae.ode := newPartitions; then ();
-            case NBPartition.Kind.DAE algorithm bdae.dae := SOME(newPartitions); then ();
-            else ();
-          end match;
-          bdae.ode_event := newEvents;
-          bdae.algebraic := newAlg;
-          bdae.alg_event := newAlgEvents;
           bdae.funcTree := funcTree;
       then bdae;
 
@@ -162,6 +156,22 @@ public
 
     end match;
   end main;
+
+  function applyToPartitions
+    input output list<Partition.Partition> partitions;
+    input output FunctionTree funcTree;
+    input VariablePointers knowns;
+    input String name;
+    input Module.jacobianInterface func;
+  protected
+    list<Partition.Partition> new_partitions = {};
+  algorithm
+    for part in listReverse(partitions) loop
+      (part, funcTree) := partJacobian(part, funcTree, knowns, name, func);
+      new_partitions := part::new_partitions;
+    end for;
+    partitions := new_partitions;
+  end applyToPartitions;
 
   function nonlinear
     input VariablePointers seedCandidates;

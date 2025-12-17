@@ -23,7 +23,7 @@ system(realpath(".") + "/burgerEq -s=dassl -r burgerEq_ref.mat", "refSimulation.
 print(readFile("refSimulation.log"));
 
 // Simulate with ESDIRK3 and KINSOL+KLU
-system(realpath(".") + "/burgerEq -s=gbode -gbm=esdirk3 -gbnls=kinsol -override=\"tolerance=1e-3\"", "burgerEq_esdirk3.log");
+system(realpath(".") + "/burgerEq -s=gbode -gbm=esdirk3 -gbnls=kinsol -tolerance=1e-3", "burgerEq_esdirk3.log");
 print(readFile("burgerEq_esdirk3.log"));
 
 diffSimulationResults(actualFile = "burgerEq_res.mat",
@@ -34,7 +34,7 @@ diffSimulationResults(actualFile = "burgerEq_res.mat",
 getErrorString();
 
 // Simulate with expl euler
-system(realpath(".") + "/burgerEq -s=gbode -gbm=expl_euler -gbnls=kinsol -gbratio=0.05 -override=\"tolerance=1e-6\"", "burgerEq_adams_test.log");
+system(realpath(".") + "/burgerEq -s=gbode -gbm=expl_euler -gbnls=kinsol -gbratio=0.05 -tolerance=1e-6", "burgerEq_adams_test.log");
 print(readFile("burgerEq_adams_test.log"));
 
 diffSimulationResults(actualFile = "burgerEq_res.mat",
@@ -45,7 +45,7 @@ diffSimulationResults(actualFile = "burgerEq_res.mat",
 getErrorString();
 
 // Simulate with fehlberg78
-system(realpath(".") + "/burgerEq -s=gbode -gbm=fehlberg78 -gbnls=kinsol -gbratio=0 -override=\"tolerance=1e-8\"", "burgerEq_esdirk3_mr.log");
+system(realpath(".") + "/burgerEq -s=gbode -gbm=fehlberg78 -gbnls=kinsol -gbratio=0 -tolerance=1e-8", "burgerEq_esdirk3_mr.log");
 print(readFile("burgerEq_esdirk3_mr.log"));
 
 diffSimulationResults(actualFile = "burgerEq_res.mat",

@@ -169,6 +169,10 @@ private:
   QCheckBox *mpEquidistantTimeGridCheckBox;
   QCheckBox *mpStoreVariablesAtEventsCheckBox;
   QCheckBox *mpShowGeneratedFilesCheckBox;
+  // Linearize Tab
+  QWidget *mpLinearizeTab;
+  QGroupBox *mpLinearizeGroupBox;
+  ComboBox *mpLinearizationDumpLanguageComboBox;
   // checkboxes
   QCheckBox *mpSaveExperimentAnnotationCheckBox;
   QCheckBox *mpSaveSimulationFlagsAnnotationCheckBox;

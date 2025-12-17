@@ -10190,6 +10190,7 @@ algorithm
           case DAE.NEVER() guard(BackendVariable.isNaturalState(dlowVar))
             algorithm
               Error.addSourceMessage(Error.STATE_STATESELECT_NEVER, {ComponentReference.printComponentRefStr(cr)}, source.info);
+              fail();
             then ();
           else ();
         end match;

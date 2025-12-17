@@ -1525,6 +1525,15 @@ let &preExp +=
 params
 end daeExpArray2;
 
+template daeSubscript(Subscript sub, Context context, Text &preExp, Text &varDecls, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl,
+                    Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
+::=
+  match sub
+  case sub as INDEX() then daeExp(exp, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+  else error(sourceInfo(), 'non INDEX(_) (i.e., slice) subscripts probably should not reach here. Check indexedAssign template.')
+  end match
+end daeSubscript;
+
 template daeExpAsub(Exp inExp, Context context, Text &preExp, Text &varDecls, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl,
                     Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
  "Generates code for an asub expression."
@@ -1534,7 +1543,7 @@ template daeExpAsub(Exp inExp, Context context, Text &preExp, Text &varDecls, Si
   // MetaModelica Array
     (match inExp case ASUB(exp=e, sub={idx}) then
       let e1 = daeExp(e, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-      let idx1 = daeExp(idx, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+      let idx1 = daeSubscript(idx, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
       'arrayGet(<%e1%>,<%idx1%>) /* DAE.ASUB */')
   // Modelica Array
   else
@@ -1546,7 +1555,7 @@ template daeExpAsub(Exp inExp, Context context, Text &preExp, Text &varDecls, Si
   // Faster asub: Do not construct a whole new array just to access one subscript
   case ASUB(exp=exp as ARRAY(scalar=true), sub={idx}) then
     let res = tempDecl(expTypeFromExpModelica(exp),&varDecls)
-    let idx1 = daeExp(idx, context, &preExp, &varDecls,simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+    let idx1 = daeSubscript(idx, context, &preExp, &varDecls,simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
     let expl = (exp.array |> e hasindex i1 fromindex 1 =>
       let &caseVarDecls = buffer ""
       let &casePreExp = buffer ""
@@ -1570,7 +1579,7 @@ template daeExpAsub(Exp inExp, Context context, Text &preExp, Text &varDecls, Si
    '<%res%>'
 
   case ASUB(exp=ecr as CREF(__), sub=subs) then
-    let arrName =  daeExpCrefRhs(buildCrefExpFromAsub(ecr, subs), context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+    let arrName =  daeExpCrefRhs(buildCrefExpFromSubs(ecr, subs), context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
     match context case FUNCTION_CONTEXT(__)  then
       arrName
     else
@@ -1579,7 +1588,7 @@ template daeExpAsub(Exp inExp, Context context, Text &preExp, Text &varDecls, Si
   case ASUB(exp=e, sub=indexes) then
     let exp = daeExp(e, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
     // let typeShort = expTypeFromExpShort(e)
-    let expIndexes = (indexes |> index => '<%daeExpASubIndex(index, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>' ;separator=",")
+    let expIndexes = (indexes |> index => '<%daeSubscriptASubIndex(index, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>' ;separator=",")
     //'<%typeShort%>_get<%match listLength(indexes) case 1 then "" case i then '_<%i%>D'%>(&<%exp%>, <%expIndexes%>)'
     '(<%exp%>)(<%expIndexes%>)'
 
@@ -1587,6 +1596,13 @@ template daeExpAsub(Exp inExp, Context context, Text &preExp, Text &varDecls, Si
     error(sourceInfo(),'OTHER_ASUB <%ExpressionDumpTpl.dumpExp(exp,"\"")%>')
 end daeExpAsub;
 
+template daeSubscriptASubIndex(Subscript sub, Context context, Text &preExp, Text &varDecls, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl,
+                         Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
+::=
+match sub
+  case INDEX(__) then daeExpASubIndex(exp, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+  else daeSubscript(sub, context, &preExp, &varDecls, simCode ,&extraFuncs ,&extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+end daeSubscriptASubIndex;
 
 template daeExpASubIndex(Exp exp, Context context, Text &preExp, Text &varDecls, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl,
                          Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
@@ -1598,7 +1614,7 @@ match exp
 end daeExpASubIndex;
 
 
-template arrayScalarRhs(Type ty, list<Exp> subs, String arrName, Context context,
+template arrayScalarRhs(Type ty, list<Subscript> subs, String arrName, Context context,
                Text &preExp, Text &varDecls, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
  "Helper to daeExpAsub."
 ::=
@@ -1606,8 +1622,8 @@ template arrayScalarRhs(Type ty, list<Exp> subs, String arrName, Context context
    case ASUB(exp=ecr as CREF(__)) then*/
   let arrayType = expTypeShort(ty)
   let dimsLenStr = listLength(subs)
-  let dimsValuesStr = (subs |> exp =>
-      daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation) ;separator=",")
+  let dimsValuesStr = (subs |> sub =>
+      daeSubscript(sub, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation) ;separator=",")
     //previous multi_array ;separator="][")
 
 

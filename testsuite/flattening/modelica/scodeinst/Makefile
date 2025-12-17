@@ -119,6 +119,7 @@ CevalArrayConstant2.mo \
 CevalArrayConstant3.mo \
 CevalArrayConstructor1.mo \
 CevalArrayConstructor2.mo \
+CevalArrayConstructor3.mo \
 CevalAsin1.mo \
 CevalAtan1.mo \
 CevalAtan21.mo \

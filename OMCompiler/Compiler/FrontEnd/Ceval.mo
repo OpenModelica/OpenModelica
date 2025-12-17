@@ -197,6 +197,7 @@ algorithm
       list<String> comp;
       DAE.ClockKind ck;
       Absyn.ReductionIterType iterType;
+      list<DAE.Subscript> subs;
 
     // uncomment for debugging
     // case (cache,env,inExp,_,_,_)
@@ -748,7 +749,7 @@ algorithm
         (cache,v);
 
     // indexing for array[integer index]
-    case (cache,env,DAE.ASUB(exp = e,sub = ((DAE.ICONST(indx))::{})),impl,msg,_)
+    case (cache,env,DAE.ASUB(exp = e,sub = ((DAE.INDEX(DAE.ICONST(indx)))::{})),impl,msg,_)
       equation
         (cache,Values.ARRAY(vals,_)) = ceval(cache,env, e, impl, msg,numIter+1) "asub" ;
         v = listGet(vals, indx);
@@ -756,8 +757,9 @@ algorithm
         (cache,v);
 
     // indexing for array[subscripts]
-    case (cache, env, DAE.ASUB(exp = e,sub = expl ), impl, msg,_)
+    case (cache, env, DAE.ASUB(exp = e,sub = subs ), impl, msg,_)
       equation
+        expl = list(Expression.getSubscriptExp(sub) for sub in subs);
         (cache,Values.ARRAY(vals,dims)) = ceval(cache,env, e, impl, msg,numIter+1);
         (cache,es_1) = cevalList(cache,env, expl, impl, msg,numIter);
         v = listHead(es_1);

@@ -1458,7 +1458,7 @@ uniontype Exp "Expressions
 
   record ASUB "Array subscripts"
     Exp exp;
-    list<Exp> sub;
+    list<Subscript> sub;
   end ASUB;
 
   record TSUB "Tuple 'subscript' (accessing only single values in calls)"

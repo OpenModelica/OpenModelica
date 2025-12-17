@@ -1601,6 +1601,13 @@ package SimCodeFunctionUtil
     output DAE.Exp cRefOut;
   end buildCrefExpFromAsub;
 
+
+  function buildCrefExpFromSubs
+    input DAE.Exp cref;
+    input list<DAE.Subscript> subs;
+    output DAE.Exp cRefOut;
+  end buildCrefExpFromSubs;
+
   function codegenResetTryThrowIndex
   end codegenResetTryThrowIndex;
 
@@ -2183,7 +2190,7 @@ package DAE
     end CAST;
     record ASUB
       Exp exp;
-      list<Exp> sub;
+      list<Subscript> sub;
     end ASUB;
     record TSUB
       Exp exp;
