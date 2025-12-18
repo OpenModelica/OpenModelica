@@ -82,6 +82,7 @@ OMCProxy::OMCProxy(threadData_t* threadData, QWidget *pParent)
   mpOMCLoggerTextBox->setReadOnly(true);
   mpOMCLoggerTextBox->setLineWrapMode(QPlainTextEdit::WidgetWidth);
   mpOMCLoggerTextBox->setUseTimer(false);
+  mpOMCLoggerTextBox->setFont(QFont(Helper::monospacedFontInfo.family()));
   mpExpressionTextBox = new CustomExpressionBox(this);
   connect(mpExpressionTextBox, SIGNAL(returnPressed()), SLOT(sendCustomExpression()));
   mpOMCLoggerSendButton = new QPushButton(Helper::send);
@@ -416,7 +417,8 @@ void OMCProxy::logCommand(QString command, bool saveToHistory)
   if (isLoggingEnabled()) {
     if (saveToHistory || MainWindow::instance()->isDebug()) {
       // insert the command to the logger window.
-      QFont font(Helper::monospacedFontInfo.family(), Helper::monospacedFontInfo.pointSize() - 2, QFont::Bold, false);
+      QFont font = mpOMCLoggerTextBox->font();
+      font.setBold(true);
       QTextCharFormat format;
       format.setFont(font);
       mpOMCLoggerTextBox->appendOutput(command + "\n", format);
@@ -468,10 +470,7 @@ void OMCProxy::logResponse(QString command, QString response, double elapsed, bo
     }
     if (customCommand || MainWindow::instance()->isDebug()) {
       // insert the response to the logger window.
-      QFont font(Helper::monospacedFontInfo.family(), Helper::monospacedFontInfo.pointSize() - 2, QFont::Normal, false);
-      QTextCharFormat format;
-      format.setFont(font);
-      mpOMCLoggerTextBox->appendOutput(response + "\n\n", format);
+      mpOMCLoggerTextBox->appendOutput(response + "\n\n");
     }
     // write the log to communication log file
     if (mpCommunicationLogFile) {
