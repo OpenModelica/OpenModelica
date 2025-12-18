@@ -950,7 +950,7 @@ algorithm
     opt_varlst := listAppend(conVarsList, listAppend(fconVarsList, listAppend(objMayer, objLagrange)));
 
     if not listEmpty(opt_varlst) then
-      newsyst := BackendDAEUtil.tryReduceEqSystem(syst, shared, opt_varlst) :: newsyst;
+      newsyst := BackendDAEUtil.tryReduceEqSystem(syst, shared, opt_varlst, false) :: newsyst;
     end if;
   end for;
 
