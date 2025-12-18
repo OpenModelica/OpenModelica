@@ -739,6 +739,9 @@ public
     output RelationInversion invertRelation;
   algorithm
     (eqn, status, invertRelation) := match eqn
+      local
+        Equation body;
+        IfEquationBody if_body;
 
       // check lhs and rhs for simple structure
       case Equation.SCALAR_EQUATION() then solveSimpleLhsRhs(eqn.lhs, eqn.rhs, cref, eqn);
@@ -747,6 +750,24 @@ public
 
       // ToDo: need to check if implicit
       case Equation.WHEN_EQUATION() then solveSimpleWhen(eqn.body, cref, eqn);
+
+      case Equation.FOR_EQUATION(body = {body}) algorithm
+        (body, status, invertRelation) := solveSimple(body, cref);
+        if status == Status.EXPLICIT then
+          eqn.body := {body};
+        else
+          status := Status.UNPROCESSED;
+        end if;
+      then (eqn, status, invertRelation);
+
+      case Equation.IF_EQUATION() algorithm
+        (if_body, status, invertRelation) := solveSimpleIf(eqn.body, cref);
+        if status == Status.EXPLICIT then
+          eqn.body := if_body;
+        else
+          status := Status.UNPROCESSED;
+        end if;
+      then (eqn, status, invertRelation);
 
       // ToDo: more cases
       // ToDo: tuples, record elements, array constructors
@@ -839,6 +860,33 @@ protected
       end if;
     end for;
   end solveSimpleWhen;
+
+  function solveSimpleIf
+    input output IfEquationBody body;
+    input ComponentRef cref;
+    output Status status = Status.EXPLICIT;
+    output RelationInversion invertRelation = RelationInversion.FALSE;
+  protected
+    IfEquationBody else_if;
+    Equation eqn;
+  algorithm
+    if Util.isSome(body.else_if) then
+      (else_if, status, _) := solveSimpleIf(Util.getOption(body.else_if), cref);
+      if status == Status.EXPLICIT then
+        body.else_if := SOME(else_if);
+      end if;
+    end if;
+
+    if status == Status.EXPLICIT and listLength(body.then_eqns) == 1 then
+      eqn := Pointer.access(listHead(body.then_eqns));
+      (eqn, status, _) := solveSimple(eqn, cref);
+      if status == Status.EXPLICIT then
+        Pointer.update(listHead(body.then_eqns), eqn);
+      end if;
+    else
+      status := Status.UNPROCESSED;
+    end if;
+  end solveSimpleIf;
 
   function solveLinear
     "author: kabdelhak, phannebohm
