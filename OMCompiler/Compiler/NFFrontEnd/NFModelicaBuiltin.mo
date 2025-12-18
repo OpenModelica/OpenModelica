@@ -3222,7 +3222,8 @@ annotation(Documentation(info="<html>
 <p>The only required argument is the className, while all others have some default values.</p>
 <h2>Usage:</h2>
 <p><b>linearize</b>(<em>A</em>, stopTime=0.0);</p>
-<p>Creates the file \"linear_A.mo\" that contains the linearized matrices at stopTime.</p>
+<p>Creates the file in the selected linearization output language (modelica by default) that contains the linearized matrices at stopTime.</p>
+<p>The output language can be changed with the command line option <em>--linearizationDumpLanguage</em> e.g., <b>setCommandLineOptions(\"--linearizationDumpLanguage=modelica\")</b></p>
 </html>", revisions="<html>
 <table>
 <tr><th>Revision</th><th>Author</th><th>Comment</th></tr>

@@ -822,7 +822,7 @@ namespace FlatModelica
       Expression eval(const Expression::VariableEvaluator &var_eval, int recursion_level) const override;
 
       bool isLiteral() const override { return false; }
-      int priority(bool lhs) const override { return 11; }
+      int priority(bool /*lhs*/) const override { return 11; }
       void print(std::ostream &os) const override;
       QJsonValue serialize() const override;
 
@@ -2251,6 +2251,9 @@ namespace FlatModelica
   Expression Expression::parse(std::string string)
   {
     Tokenizer tokenizer(std::move(string));
+    if (tokenizer.peekToken().type == Token::END_OF_DATA) {
+      return Expression();
+    }
     return parseExp(tokenizer);
   }
 

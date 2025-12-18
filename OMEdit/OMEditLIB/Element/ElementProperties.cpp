@@ -716,6 +716,7 @@ void Parameter::createValueWidget()
     default:
       mpValueTextBox = new QLineEdit;
       mpValueTextBox->installEventFilter(this);
+      connect(mpValueTextBox, &QLineEdit::textEdited, this, &Parameter::valueTextBoxChanged);
       break;
   }
 }
@@ -1038,6 +1039,16 @@ void Parameter::valueCheckBoxChanged(bool toggle)
 {
   mValueCheckBoxModified = true;
   updateValueBinding(FlatModelica::Expression(toggle));
+}
+
+/*!
+ * \brief Parameter::valueTextBoxChanged
+ * SLOT activated when mpValueTextkBox textEdited SIGNAL is raised.\n
+ * \param text
+ */
+void Parameter::valueTextBoxChanged(const QString &text)
+{
+  updateValueBinding(FlatModelica::Expression::parse(text));
 }
 
 void Parameter::showFixedMenu()

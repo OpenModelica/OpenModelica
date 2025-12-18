@@ -557,6 +557,7 @@ vector<const char *> OMCFactory::handleComplexCRuntimeArguments(int argc, const 
       else if ((oit = opts.find(arg)) != opts.end() && i < argc - 1)
           opts[oit->first] = argv[++i]; // regular override
       else if (strncmp(argv[i], "-override=", 10) == 0) {
+          // FIXME startTime, stopTime, ... are no longer used with override
           map<string, string> supported = MAP_LIST_OF
             "startTime", "-S" MAP_LIST_SEP "stopTime", "-E" MAP_LIST_SEP
             "stepSize", "-H" MAP_LIST_SEP "numberOfIntervals", "-G" MAP_LIST_SEP

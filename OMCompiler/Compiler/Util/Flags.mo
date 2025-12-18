@@ -1199,7 +1199,7 @@ constant ConfigFlag INITIAL_STATE_SELECTION = CONFIG_FLAG(121, "initialStateSele
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   Gettext.gettext("Activates the state selection inside initialization to avoid singularities."));
 constant ConfigFlag LINEARIZATION_DUMP_LANGUAGE = CONFIG_FLAG(122, "linearizationDumpLanguage",
-  NONE(), EXTERNAL(), STRING_FLAG("modelica"),
+  NONE(), EXTERNAL(), STRING_FLAG("none"),
   SOME(STRING_DESC_OPTION({
     ("none", Gettext.gettext("Don't generate code for linearization.")),
     ("modelica", Gettext.gettext("Generate linearized Modelica model.")),
