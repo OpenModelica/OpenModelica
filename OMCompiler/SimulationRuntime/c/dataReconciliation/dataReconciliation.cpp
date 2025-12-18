@@ -253,6 +253,11 @@ void createErrorHtmlReport(DATA * data, int status = 0)
     copyReferenceFile(data, ".log");
   }
 
+  // iteration vars file
+  if (status == 0)
+  {
+    myfile << "<h2> <a href=" << data->modelData->modelFilePrefix << "_iterationVars.txt" << " target=_blank> Iteration vars </a> </h2>\n";
+  }
   // debug log
   if (status == 0)
   {
@@ -387,6 +392,9 @@ void createHtmlReportFordataReconciliation(DATA *data, csvData &csvinputs, matri
 
   if (data->modelData->nRelatedBoundaryConditions > 0)
     myfile << "<h3> <a href=" << data->modelData->modelFilePrefix << "_relatedBoundaryConditionsEquations.html" << " target=_blank> Related boundary conditions </a> </h3>\n";
+
+  // iteration vars file
+  myfile << "<h3> <a href=" << data->modelData->modelFilePrefix << "_iterationVars.txt" << " target=_blank> Iteration vars </a> </h3>\n";
 
   // Debug log
   myfile << "<h3> <a href=" << data->modelData->modelFilePrefix << "_debug.txt" << " target=_blank> Debug log </a> </h3>\n";
@@ -650,6 +658,11 @@ void createErrorHtmlReportForBoundaryConditions(DATA * data, int status = 0)
     copyReferenceFile(data, ".log");
   }
 
+  // iteration vars file
+  if (status == 0)
+  {
+    myfile << "<h2> <a href=" << data->modelData->modelFilePrefix << "_iterationVars.txt" << " target=_blank> Iteration vars </a> </h2>\n";
+  }
   // debug log
   if (status == 0)
   {
@@ -727,6 +740,9 @@ void createHtmlReportForBoundaryConditions(DATA * data, std::vector<std::string>
 
   // Intermediate Conditions
   myfile << "<h3> <a href=" << data->modelData->modelFilePrefix << "_BoundaryConditionIntermediateEquations.html" << " target=_blank> Intermediate equations </a> </h3>\n";
+
+  // iteration vars file
+  myfile << "<h3> <a href=" << data->modelData->modelFilePrefix << "_iterationVars.txt" << " target=_blank> Iteration vars </a> </h3>\n";
 
   // Debug log
   myfile << "<h3> <a href=" << data->modelData->modelFilePrefix << "_BoundaryConditions_debug.txt" << " target=_blank> Debug log </a> </h3>\n";
