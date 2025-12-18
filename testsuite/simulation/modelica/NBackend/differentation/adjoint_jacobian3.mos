@@ -21,11 +21,6 @@ buildModel(scalarAdjointJacobian3); getErrorString();
 // ""
 // true
 // ""
-// tmp vars in symbolic:
-// Tmp Vars Variables (0/0)
-// **************************
-//
-//
 // ########################################
 //
 //     SimCode (scalarAdjointJacobian3)
