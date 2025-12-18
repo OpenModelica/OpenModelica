@@ -376,10 +376,9 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
                                       " Colored numerical Jacobian will be used.");
     idaData->jacobianMethod = COLOREDNUMJAC;
   }else if(idaData->jacobianMethod == INTERNALNUMJAC && idaData->linearSolverMethod == IDA_LS_KLU) {
-    if (jacobian->sparsePattern == NULL) {
+    if ((!idaData->daeMode && jacobian->sparsePattern == NULL) || (idaData->daeMode && data->simulationInfo->daeModeData->sparsePattern == NULL)) {
       throwStreamPrint(threadData, "##IDA## Internal Numerical Jacobians require a sparse pattern for the jacobian but no sparse pattern is generated.");
-    }
-    else {
+    } else {
       warningStreamPrint(OMC_LOG_STDOUT, 0, "Internal Numerical Jacobians without coloring are currently not supported by IDA with KLU."
                                         " Colored numerical Jacobian will be used.");
       idaData->jacobianMethod = COLOREDNUMJAC;
