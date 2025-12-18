@@ -376,16 +376,20 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
                                       " Colored numerical Jacobian will be used.");
     idaData->jacobianMethod = COLOREDNUMJAC;
   }else if(idaData->jacobianMethod == INTERNALNUMJAC && idaData->linearSolverMethod == IDA_LS_KLU) {
-    warningStreamPrint(OMC_LOG_STDOUT, 0, "Internal Numerical Jacobians without coloring are currently not supported by IDA with KLU."
-                                      " Colored numerical Jacobian will be used.");
-    idaData->jacobianMethod = COLOREDNUMJAC;
+    if ((!idaData->daeMode && jacobian->sparsePattern == NULL) || (idaData->daeMode && data->simulationInfo->daeModeData->sparsePattern == NULL)) {
+      throwStreamPrint(threadData, "##IDA## Internal Numerical Jacobians require a sparse pattern for the jacobian but no sparse pattern is generated.");
+    } else {
+      warningStreamPrint(OMC_LOG_STDOUT, 0, "Internal Numerical Jacobians without coloring are currently not supported by IDA with KLU."
+                                        " Colored numerical Jacobian will be used.");
+      idaData->jacobianMethod = COLOREDNUMJAC;
+    }
   }
 
   /* Set NNZ */
   if (idaData->daeMode) {
     idaData->NNZ = data->simulationInfo->daeModeData->sparsePattern->numberOfNonZeros;
   } else {
-    idaData->NNZ = data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A].sparsePattern->numberOfNonZeros;
+    idaData->NNZ = jacobian->sparsePattern->numberOfNonZeros;
   }
 
   switch (idaData->linearSolverMethod){
