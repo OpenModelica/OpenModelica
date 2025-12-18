@@ -76,6 +76,13 @@ struct csvData
   vector< vector<string> > rx;
 };
 
+struct errorData
+{
+  string name;
+  string x;
+  string sx;
+};
+
 struct correlationData
 {
   vector<double> data;
@@ -87,6 +94,7 @@ struct correlationDataWarning
 {
   vector<string> diagonalEntry;
   vector<string> aboveDiagonalEntry;
+  vector<errorData> warningInfo; // to warn user about entries closer to 1
 };
 
 struct matrixData
@@ -102,13 +110,6 @@ struct inputData
   int column;
   double * data;
   vector<int> index;
-};
-
-struct errorData
-{
-  string name;
-  string x;
-  string sx;
 };
 
 struct dataReconciliationData
@@ -400,7 +401,7 @@ void createHtmlReportFordataReconciliation(DATA *data, csvData &csvinputs, matri
   myfile << "<h3> <a href=" << data->modelData->modelFilePrefix << "_debug.txt" << " target=_blank> Debug log </a> </h3>\n";
 
   // create a warning log for correlation input file
-  if (!warningCorrelationData.aboveDiagonalEntry.empty() || !warningCorrelationData.diagonalEntry.empty())
+  if (!warningCorrelationData.aboveDiagonalEntry.empty() || !warningCorrelationData.diagonalEntry.empty() || !warningCorrelationData.warningInfo.empty())
   {
     myfile << "<h3> <a href=" << data->modelData->modelFilePrefix << "_warning.txt" << " target=_blank> Warnings </a> </h3>\n";
     /* create a warning log file */
@@ -425,6 +426,11 @@ void createHtmlReportFordataReconciliation(DATA *data, csvData &csvinputs, matri
     for (const auto &index : warningCorrelationData.aboveDiagonalEntry)
     {
       warningfile << "|  warning  |   " << "Above diagonal entry for variable of interest " << index << " in correlation input file " << omc_flagValue[FLAG_DATA_RECONCILE_Cx] << " is ignored" << "\n";
+    }
+    // user warning #3 : Entries in correlation matrix closer to 1 for variable of interest <variable name> in correlation input file <input file name>
+    for (const auto &info : warningCorrelationData.warningInfo)
+    {
+      warningfile << "|  warning  |   " << "Entry for variable of interest " <<  info.name << " and variable of interest " << info.x << " in correlation input file " << omc_flagValue[FLAG_DATA_RECONCILE_Cx] <<  " is closer to 1: " << "[" << info.sx  << "]" <<"\n";
     }
     warningfile.close();
   }
@@ -1776,7 +1782,7 @@ void validateCorelationInputsSquareMatrix(DATA * data, ofstream &logfile, vector
  * Function which reads the correlation coefficient input file
  * and stores the correlation coefficient matrix Cx for DataReconciliation
  */
-correlationData readCorrelationCoefficientFile(csvData Sx_result, ofstream & logfile, DATA * data, threadData_t * threadData, bool boundaryConditions = false)
+correlationData readCorrelationCoefficientFile(csvData Sx_result, ofstream & logfile, DATA * data, threadData_t * threadData, correlationDataWarning & warningCorrelationData, bool boundaryConditions = false)
 {
   char * filename = NULL;
   filename = (char*) omc_flagValue[FLAG_DATA_RECONCILE_Cx];
@@ -1889,6 +1895,12 @@ correlationData readCorrelationCoefficientFile(csvData Sx_result, ofstream & log
             errorData info = {rowHeaders.back(), columnHeaders[columnCount-2], temp};
             errorInfo.push_back(info);
           }
+          // warn users if value is closer to 1
+          else if (atof(temp.c_str()) > 0.99 && atof(temp.c_str()) < 1.01)
+          {
+            errorData info = {rowHeaders.back(), columnHeaders[columnCount-2], temp};
+            warningCorrelationData.warningInfo.push_back(info);
+          }
           else
           {
             cx_data.push_back(atof(temp.c_str()));
@@ -1967,6 +1979,15 @@ correlationData readCorrelationCoefficientFile(csvData Sx_result, ofstream & log
       createErrorHtmlReportForBoundaryConditions(data);
     }
     exit(1);
+  }
+
+  // user warning : Entry for variable of interest <variable name> and variable of interest <variable name> in correlation input file <input file name> is closer to 1.
+  if (!warningCorrelationData.warningInfo.empty())
+  {
+    for (const auto & info : warningCorrelationData.warningInfo)
+    {
+      warningStreamPrint(OMC_LOG_STDOUT, 0, "Entry for variable of interest %s and variable of interest %s in correlation input file %s is closer to 1: [%s] ", info.name.c_str(), info.x.c_str(), filename, info.sx.c_str());
+    }
   }
 
   // validate correlation input column headers
@@ -3003,7 +3024,9 @@ int dataReconciliation(DATA * data, threadData_t * threadData, int status)
   inputData x = getInputData(Sx_data, logfile);
 
   // read the correlation coefficient input data provide by user
-  correlationData Cx_data = readCorrelationCoefficientFile(Sx_data, logfile, data, threadData);
+  correlationDataWarning warningCorrelationData;
+
+  correlationData Cx_data = readCorrelationCoefficientFile(Sx_data, logfile, data, threadData, warningCorrelationData);
 
   // Compute the covariance matrix (Sx) from csvData
   matrixData Sx = computeCovarianceMatrixSx(Sx_data, Cx_data, logfile, data);
@@ -3021,7 +3044,6 @@ int dataReconciliation(DATA * data, threadData_t * threadData, int status)
   matrixData tmp_x = {x.rows, x.column, x.data};
   matrixData x_diag = copyMatrix(tmp_x);
 
-  correlationDataWarning warningCorrelationData;
   // Print the initial information
   logfile << "\n\nInitial Data \n" << "=============\n";
   printMatrixWithHeaders(x.data, x.rows, x.column, Sx_data.headers, "X", logfile);
@@ -3095,7 +3117,8 @@ int boundaryConditions(DATA * data, threadData_t * threadData, int status)
   inputData reconciled_x = getReconciledX(Sx_data, logfile);
 
   // read the reconciled covariance matrix input file provided by user
-  correlationData cx_data = readCorrelationCoefficientFile(Sx_data, logfile, data, threadData, true);
+  correlationDataWarning warningCorrelationData;
+  correlationData cx_data = readCorrelationCoefficientFile(Sx_data, logfile, data, threadData, warningCorrelationData, true);
 
   // create the column matrix from the covariance matrix
   int rowsize = cx_data.rowHeaders.size();
