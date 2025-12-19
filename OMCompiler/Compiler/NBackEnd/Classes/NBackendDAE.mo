@@ -1557,14 +1557,9 @@ public
 
   function lowerFunctions
     input output UnorderedMap<Path, Function> funcMap;
-  protected
-    Path path;
-    Function fn;
   algorithm
-    for tpl in UnorderedMap.toList(funcMap) loop
-      (path, fn) := tpl;
-      fn := Differentiate.resolvePartialDerivatives(fn, funcMap);
-      UnorderedMap.add(path, fn, funcMap);
+    for fn in UnorderedMap.valueList(funcMap) loop
+      Differentiate.resolvePartialDerivatives(fn, funcMap);
     end for;
   end lowerFunctions;
 
