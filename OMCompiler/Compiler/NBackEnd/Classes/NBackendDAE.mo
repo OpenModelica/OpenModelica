@@ -41,7 +41,6 @@ public
   import NBVariable.{VariablePointer, VariablePointers, VarData};
   import Evaluation = NBEvaluation;
   import Events = NBEvents;
-  import NFFlatten.FunctionTree;
   import Jacobian = NBJacobian;
   import Partitioning = NBPartitioning;
   import NBJacobian.{SparsityPattern, SparsityColoring};
@@ -111,30 +110,30 @@ public
     list<Partition> alg_event             "Partitions for algebraic event iteration";
     list<Partition> clocked               "Clocked Partitions";
     list<Partition> init                  "Partitions for initialization";
-    Option<list<Partition>> init_0        "Partitions for lambda 0 (homotopy) Initialization";
-    // add init_1 for lambda = 1 (test for efficency)
+    Option<list<Partition>> init_0        "Partitions for initialization with lambda = 0 (homotopy)";
+    // add init_1 for lambda = 1? (test for efficency)
     Option<list<Partition>> dae           "Partitions for dae mode";
 
-    VarData varData                       "Variable data.";
-    EqData eqData                         "Equation data.";
+    VarData varData                       "Variable data";
+    EqData eqData                         "Equation data";
 
     Events.EventInfo eventInfo            "contains time and state events";
     Partitioning.ClockedInfo clockedInfo  "contains information about clocked partitions";
-    FunctionTree funcTree                 "Function bodies.";
+    UnorderedMap<Path, Function> funcMap  "Function bodies";
   end MAIN;
 
   record JACOBIAN
     String name                       "unique matrix name";
     JacobianType jacType              "type of jacobian";
-    VarData varData                   "Variable data.";
+    VarData varData                   "Variable data";
     array<StrongComponent> comps      "the sorted equations";
     SparsityPattern sparsityPattern   "Sparsity pattern for the jacobian";
     SparsityColoring sparsityColoring "Coloring information";
   end JACOBIAN;
 
   record HESSIAN
-    VarData varData     "Variable data.";
-    EqData eqData       "Equation data.";
+    VarData varData "Variable data";
+    EqData eqData   "Equation data";
   end HESSIAN;
 
   function toString
@@ -215,17 +214,17 @@ public
     end match;
   end setVarData;
 
-  function getFunctionTree
+  function getFunctionMap
     input BackendDAE bdae;
-    output FunctionTree funcTree;
+    output UnorderedMap<Path, Function> funcMap;
   algorithm
-    funcTree := match bdae
-      case MAIN(funcTree = funcTree) then funcTree;
+    funcMap := match bdae
+      case MAIN() then bdae.funcMap;
       else algorithm
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed! Only the record type MAIN() has a function tree."});
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed! Only the record type MAIN() has a function map."});
       then fail();
     end match;
-  end getFunctionTree;
+  end getFunctionMap;
 
   function sizes
     input BackendDAE bdae;
@@ -241,18 +240,17 @@ public
   function lower
     "This function transforms the FlatModel structure to BackendDAE."
     input FlatModel flatModel;
-    input FunctionTree funcTree;
+    input UnorderedMap<Path, Function> funcMap;
     output BackendDAE bdae;
   protected
     VarData variableData;
     EqData equationData;
     Events.EventInfo eventInfo = Events.EventInfo.empty();
     Partitioning.ClockedInfo clockedInfo = Partitioning.ClockedInfo.new();
-    UnorderedMap<Path, Function> functions;
   algorithm
     variableData := lowerVariableData(flatModel.variables);
     (equationData, variableData) := lowerEquationData(flatModel.equations, flatModel.algorithms, flatModel.initialEquations, flatModel.initialAlgorithms, variableData);
-    bdae := MAIN({}, {}, {}, {}, {}, {}, NONE(), NONE(), variableData, equationData, eventInfo, clockedInfo, lowerFunctions(funcTree));
+    bdae := MAIN({}, {}, {}, {}, {}, {}, NONE(), NONE(), variableData, equationData, eventInfo, clockedInfo, lowerFunctions(funcMap));
   end lower;
 
   function main
@@ -1558,18 +1556,15 @@ public
   end lowerIteratorExp;
 
   function lowerFunctions
-    input output FunctionTree funcTree;
-  protected
-    // ToDo: replace all function trees with this UnorderedMap
-    UnorderedMap<Path, Function> functions = UnorderedMap.new<Function>(AbsynUtil.pathHash, AbsynUtil.pathEqual);
+    input output UnorderedMap<Path, Function> funcMap;
   protected
     Path path;
     Function fn;
   algorithm
-    for tpl in FunctionTree.toList(funcTree) loop
+    for tpl in UnorderedMap.toList(funcMap) loop
       (path, fn) := tpl;
-      (fn, funcTree) := Differentiate.resolvePartialDerivatives(fn, funcTree);
-      UnorderedMap.add(path, fn, functions);
+      fn := Differentiate.resolvePartialDerivatives(fn, funcMap);
+      UnorderedMap.add(path, fn, funcMap);
     end for;
   end lowerFunctions;
 

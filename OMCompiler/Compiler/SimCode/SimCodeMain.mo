@@ -82,7 +82,8 @@ import ErrorExt;
 import ExecStat;
 import Flags;
 import FlatModel = NFFlatModel;
-import FunctionTree = NFFlatten.FunctionTree;
+import NFFunction;
+import NFFlatten.{FunctionTree, FunctionTreeImpl};
 import FMI;
 import GCExt;
 import HashTable;
@@ -1149,6 +1150,7 @@ protected
   list<Option<Integer>> allRoots;
   FlatModel flatModel;
   FunctionTree funcTree;
+  UnorderedMap<Absyn.Path, NFFunction.Function> funcMap;
   NBackendDAE bdae;
   Boolean dumpValidFlatModelicaNF;
   String flatString = "", NFFlatString = "";
@@ -1173,7 +1175,8 @@ algorithm
     ExecStat.execStat("FrontEnd");
 
     if runBackend then
-      (outLibs, outFileDir, resultValues, funcs) := translateModelCallBackendNB(flatModel, funcTree, className, inFileNamePrefix, inSimSettingsOpt);
+      funcMap := UnorderedMap.fromLists(FunctionTreeImpl.listKeys(funcTree), FunctionTreeImpl.listValues(funcTree), AbsynUtil.pathHash, AbsynUtil.pathEqual);
+      (outLibs, outFileDir, resultValues, funcs) := translateModelCallBackendNB(flatModel, funcMap, className, inFileNamePrefix, inSimSettingsOpt);
     else
       funcs := NFConvertDAE.convertFunctionTree(funcTree);
     end if;
@@ -1472,7 +1475,7 @@ end translateModelCallBackendOBDAEMode;
 
 protected function translateModelCallBackendNB
   input FlatModel inFlatModel;
-  input FunctionTree inFuncTree;
+  input UnorderedMap<Absyn.Path, NFFunction.Function> funcMap;
   input Absyn.Path inClassName "path for the model";
   input String inFileNamePrefix;
   input Option<SimCode.SimulationSettings> inSimSettingsOpt;
@@ -1489,7 +1492,7 @@ algorithm
   // ToDo: set permanently matching -> SBGraphs
 
   System.realtimeTick(ClockIndexes.RT_CLOCK_BACKEND);
-  bdae := NBackendDAE.lower(inFlatModel, inFuncTree);
+  bdae := NBackendDAE.lower(inFlatModel, funcMap);
   if Flags.isSet(Flags.OPT_DAE_DUMP) then
     print(NBackendDAE.toString(bdae, "(After Lowering)"));
   end if;

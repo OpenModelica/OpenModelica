@@ -126,24 +126,6 @@ encapsulated package FunctionTreeImpl
     outResult := AbsynUtil.pathCompareNoQual(inKey1, inKey2);
   end keyCompare;
 
-  function mapExp
-    "maps the expressions of all functions in the tree"
-    input output Tree tree;
-    input MapFunc func;
-    partial function MapFunc
-      input output NFExpression exp;
-    end MapFunc;
-    function mapBody
-      input Key key;
-      input output Value val;
-      input MapFunc func;
-    algorithm
-      val := Function.mapExp(val, func);
-    end mapBody;
-  algorithm
-    tree := map(tree, function mapBody(func = func));
-  end mapExp;
-
   redeclare function addConflictDefault = addConflictKeep;
 end FunctionTreeImpl;
 

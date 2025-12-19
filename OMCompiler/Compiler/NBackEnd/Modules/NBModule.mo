@@ -61,10 +61,11 @@ public
 
 protected
   // OF imports
+  import Absyn.Path;
   import DAE;
 
   // NF imports
-  import NFFlatten.FunctionTree;
+  import NFFunction.Function;
 
   // Backend imports
   import Adjacency = NBAdjacency;
@@ -128,7 +129,7 @@ public
     input output Partition.Partition partition;
     input output VarData varData;
     input output EqData eqData;
-    input output FunctionTree funcTree;
+    input UnorderedMap<Path, Function> funcMap;
   end causalizeInterface;
 
 //                           RESOLVING SINGULARITIES
@@ -141,7 +142,7 @@ public
     input output EquationPointers equations;
     input output VarData varData;
     input output EqData eqData;
-    input output FunctionTree funcTree;
+    input UnorderedMap<Path, Function> funcMap;
     input Matching matching;
     input Option<Adjacency.Mapping> mapping_opt;
     output Boolean changed;
@@ -168,10 +169,10 @@ public
      This function is only allowed to read and change equations and create new
      discrete zero crossing equations and variables. ($TEV, $SEV)
      It also fills the EventInfo object."
-    input output VarData varData          "Data containing variable pointers";
-    input output EqData eqData            "Data containing equation pointers";
-    input output EventInfo eventInfo      "object containing all zero crossings";
-    input FunctionTree funcTree           "function tree for differentiation (solve)";
+    input output VarData varData                "Data containing variable pointers";
+    input output EqData eqData                  "Data containing equation pointers";
+    input output EventInfo eventInfo            "object containing all zero crossings";
+    input UnorderedMap<Path, Function> funcMap  "function tree for differentiation (solve)";
   end eventsInterface;
 
 //                               DETECT STATES
@@ -184,8 +185,8 @@ public
      Sub-Modules:
       - DetectContinuousStates
       - DetectDiscreteStates"
-    input output VarData varData                "Data containing variable pointers";
-    input output EqData eqData                  "Data containing equation pointers";
+    input output VarData varData                          "Data containing variable pointers";
+    input output EqData eqData                            "Data containing equation pointers";
     input detectContinuousStatesInterface continuousFunc  "Subroutine for continuous states";
     input detectDiscreteStatesInterface discreteFunc      "Subroutine for discrete states";
   end detectStatesInterface;
@@ -253,11 +254,11 @@ public
     "Inline
      This module is allowed to read, change and add equations. It uses the
      function tree to evaluate and inline functions."
-    input output EqData eqData                "Data containing equation pointers";
-    input output VarData varData              "Data containing variable pointers, for lowering purposes";
-    input FunctionTree funcTree               "function tree for differentiation (solve)";
-    input list<DAE.InlineType> inline_types   "Inline types for which to inline at the current state";
-    input Boolean init                        "true if for initial partition";
+    input output EqData eqData                  "Data containing equation pointers";
+    input output VarData varData                "Data containing variable pointers, for lowering purposes";
+    input UnorderedMap<Path, Function> funcMap  "function tree for differentiation (solve)";
+    input list<DAE.InlineType> inline_types     "Inline types for which to inline at the current state";
+    input Boolean init                          "true if for initial partition";
   end inlineInterface;
 
 // =========================================================================
@@ -280,7 +281,7 @@ public
     input VariablePointers knowns                         "Variable array of knowns";
     input Option<array<StrongComponent>> strongComponents "Strong Components";
     output Option<Jacobian> jacobian                      "Resulting jacobian";
-    input output FunctionTree funcTree                    "Function call bodies";
+    input UnorderedMap<Path, Function> funcMap            "Function call bodies";
     input Boolean init;
   end jacobianInterface;
 
@@ -295,14 +296,14 @@ public
      The tearing module analyzes each strong component and applies tearing if
      necessary. Only has access to the strong component itself, everything else
      accessable with pointers."
-    input output StrongComponent comp     "the suspected algebraic loop.";
-    input output Adjacency.Matrix full    "the full adjacency matrix containing solvability info";
-    input output FunctionTree funcTree    "Function call bodies";
-    input output Integer index            "current unique loop index";
-    input VariablePointers variables      "all variables";
-    input EquationPointers equations      "all equations";
-    input Pointer<Integer> eq_index       "equation index";
-    input Partition.Kind kind = NBPartition.Kind.ODE   "partition type";
+    input output StrongComponent comp                 "the suspected algebraic loop.";
+    input output Adjacency.Matrix full                "the full adjacency matrix containing solvability info";
+    input UnorderedMap<Path, Function> funcMap        "Function call bodies";
+    input output Integer index                        "current unique loop index";
+    input VariablePointers variables                  "all variables";
+    input EquationPointers equations                  "all equations";
+    input Pointer<Integer> eq_index                   "equation index";
+    input Partition.Kind kind = NBPartition.Kind.ODE  "partition type";
   end tearingInterface;
 
   annotation(__OpenModelica_Interface="backend");
