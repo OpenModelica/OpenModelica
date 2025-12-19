@@ -272,6 +272,48 @@ void createErrorHtmlReport(DATA * data, int status = 0)
 }
 
 /*
+* create warning report for correlation coefficients data
+*/
+void createCorrelationWarningReport(DATA * data, ofstream &myfile, correlationDataWarning &warningCorrelationData)
+{
+    // create a warning log for correlation input file
+  if (!warningCorrelationData.aboveDiagonalEntry.empty() || !warningCorrelationData.diagonalEntry.empty() || !warningCorrelationData.warningInfo.empty())
+  {
+    myfile << "<h3> <a href=" << data->modelData->modelFilePrefix << "_warning.txt" << " target=_blank> Warnings </a> </h3>\n";
+    /* create a warning log file */
+    ofstream warningfile;
+    std::stringstream warning_file;
+    if (omc_flag[FLAG_OUTPUT_PATH])
+    {
+      warning_file << string(omc_flagValue[FLAG_OUTPUT_PATH]) << "/" << data->modelData->modelFilePrefix << "_warning.txt";
+    }
+    else
+    {
+      warning_file << data->modelData->modelFilePrefix << "_warning.txt";
+    }
+
+    warningfile.open(warning_file.str().c_str());
+    // user warning #1 : Diagonal entry for variable of interest <variable name> in correlation input file <input file name> is ignored
+    for (const auto &index : warningCorrelationData.diagonalEntry)
+    {
+      warningfile << "|  warning  |   " << "Diagonal entry for variable of interest " << index << " in correlation input file " << omc_flagValue[FLAG_DATA_RECONCILE_Cx] << " is ignored" << "\n";
+    }
+    // user warning #2 : Above diagonal entry for variable of interest <variable name> in correlation input file <input file name> is ignored
+    for (const auto &index : warningCorrelationData.aboveDiagonalEntry)
+    {
+      warningfile << "|  warning  |   " << "Above diagonal entry for variable of interest " << index << " in correlation input file " << omc_flagValue[FLAG_DATA_RECONCILE_Cx] << " is ignored" << "\n";
+    }
+    // user warning #3 : Entries in correlation matrix closer to 1 for variable of interest <variable name> in correlation input file <input file name>
+    for (const auto &info : warningCorrelationData.warningInfo)
+    {
+      warningfile << "|  warning  |   " << "Entry for variable of interest " <<  info.name << " and variable of interest " << info.x << " in correlation input file " << omc_flagValue[FLAG_DATA_RECONCILE_Cx] <<  " is closer to 1: " << "[" << info.sx  << "]" <<"\n";
+    }
+    warningfile.close();
+  }
+}
+
+
+/*
 * create html report for data Reconciliation D.1
 */
 void createHtmlReportFordataReconciliation(DATA *data, csvData &csvinputs, matrixData &xdiag, matrixData &reconciled_X, matrixData &copyreconSx_diag, double *newX, double &eps, int &iterationcount, double &value, double &J, correlationDataWarning &warningCorrelationData, boundaryConditionData& boundaryconditiondata)
@@ -401,39 +443,8 @@ void createHtmlReportFordataReconciliation(DATA *data, csvData &csvinputs, matri
   myfile << "<h3> <a href=" << data->modelData->modelFilePrefix << "_debug.txt" << " target=_blank> Debug log </a> </h3>\n";
 
   // create a warning log for correlation input file
-  if (!warningCorrelationData.aboveDiagonalEntry.empty() || !warningCorrelationData.diagonalEntry.empty() || !warningCorrelationData.warningInfo.empty())
-  {
-    myfile << "<h3> <a href=" << data->modelData->modelFilePrefix << "_warning.txt" << " target=_blank> Warnings </a> </h3>\n";
-    /* create a warning log file */
-    ofstream warningfile;
-    std::stringstream warning_file;
-    if (omc_flag[FLAG_OUTPUT_PATH])
-    {
-      warning_file << string(omc_flagValue[FLAG_OUTPUT_PATH]) << "/" << data->modelData->modelFilePrefix << "_warning.txt";
-    }
-    else
-    {
-      warning_file << data->modelData->modelFilePrefix << "_warning.txt";
-    }
+  createCorrelationWarningReport(data, myfile, warningCorrelationData);
 
-    warningfile.open(warning_file.str().c_str());
-    // user warning #1 : Diagonal entry for variable of interest <variable name> in correlation input file <input file name> is ignored
-    for (const auto &index : warningCorrelationData.diagonalEntry)
-    {
-      warningfile << "|  warning  |   " << "Diagonal entry for variable of interest " << index << " in correlation input file " << omc_flagValue[FLAG_DATA_RECONCILE_Cx] << " is ignored" << "\n";
-    }
-    // user warning #2 : Above diagonal entry for variable of interest <variable name> in correlation input file <input file name> is ignored
-    for (const auto &index : warningCorrelationData.aboveDiagonalEntry)
-    {
-      warningfile << "|  warning  |   " << "Above diagonal entry for variable of interest " << index << " in correlation input file " << omc_flagValue[FLAG_DATA_RECONCILE_Cx] << " is ignored" << "\n";
-    }
-    // user warning #3 : Entries in correlation matrix closer to 1 for variable of interest <variable name> in correlation input file <input file name>
-    for (const auto &info : warningCorrelationData.warningInfo)
-    {
-      warningfile << "|  warning  |   " << "Entry for variable of interest " <<  info.name << " and variable of interest " << info.x << " in correlation input file " << omc_flagValue[FLAG_DATA_RECONCILE_Cx] <<  " is closer to 1: " << "[" << info.sx  << "]" <<"\n";
-    }
-    warningfile.close();
-  }
 
   /* Add Results data */
   myfile << "<h2> Results: </h2>\n";
@@ -684,7 +695,7 @@ void createErrorHtmlReportForBoundaryConditions(DATA * data, int status = 0)
 /*
  * create HTML Report for Boundary Conditions D.2
  */
-void createHtmlReportForBoundaryConditions(DATA * data, std::vector<std::string> & boundaryConditionVars, double* values, double* uncertaintyValues)
+void createHtmlReportForBoundaryConditions(DATA * data, std::vector<std::string> & boundaryConditionVars, double* values, double* uncertaintyValues, correlationDataWarning &warningCorrelationData)
 {
   ofstream myfile;
   time_t now = time(0);
@@ -752,6 +763,9 @@ void createHtmlReportForBoundaryConditions(DATA * data, std::vector<std::string>
 
   // Debug log
   myfile << "<h3> <a href=" << data->modelData->modelFilePrefix << "_BoundaryConditions_debug.txt" << " target=_blank> Debug log </a> </h3>\n";
+
+  // create a warning log for correlation input file
+  createCorrelationWarningReport(data, myfile, warningCorrelationData);
 
   /* Add Results data */
   myfile << "<h2> Results: </h2>\n";
@@ -2749,7 +2763,7 @@ int RunReconciliation(DATA *data, threadData_t *threadData, inputData x, matrixD
 /*
  * Runs the numerical procedure to compute Boundary conditions (D.2)
 */
-int reconcileBoundaryConditions(DATA * data, threadData_t * threadData, inputData reconciled_x, matrixData reconciled_Sx, boundaryConditionData& boundaryconditiondata, ofstream& logfile)
+int reconcileBoundaryConditions(DATA * data, threadData_t * threadData, inputData reconciled_x, matrixData reconciled_Sx, boundaryConditionData& boundaryconditiondata, correlationDataWarning& warningCorrelationData, ofstream& logfile)
 {
   // set the inputs from csv file to simulationInfo datainputVars
   for (int i = 0; i < reconciled_x.rows * reconciled_x.column; i++)
@@ -2883,7 +2897,7 @@ int reconcileBoundaryConditions(DATA * data, threadData_t * threadData, inputDat
 
   // create html report for boundary conditions
   if (omc_flag[FLAG_DATA_RECONCILE_BOUNDARY])
-    createHtmlReportForBoundaryConditions(data, boundaryConditionVars, boundaryConditionVarsResults, reconSt_diag);
+    createHtmlReportForBoundaryConditions(data, boundaryConditionVars, boundaryConditionVarsResults, reconSt_diag, warningCorrelationData);
 
   // copy the results for state estimation
   if (omc_flag[FLAG_DATA_RECONCILE_STATE])
@@ -2937,7 +2951,7 @@ int stateEstimation(DATA *data, threadData_t *threadData, inputData x, matrixDat
     matrixData reconciled_Sx = {datareconciliationdata.reconciled_SX.rows, datareconciliationdata.reconciled_SX.column, datareconciliationdata.reconciled_SX.data};
 
     logfile << "\n\nCalculation of Boundary condition \n" << "====================================\n";
-    reconcileBoundaryConditions(data, threadData, reconciled_x, reconciled_Sx, boundaryconditiondata, logfile);
+    reconcileBoundaryConditions(data, threadData, reconciled_x, reconciled_Sx, boundaryconditiondata, warningCorrelationData, logfile);
     // printBoundaryConditionsResults(boundaryconditiondata.boundaryConditionVarsResults, boundaryconditiondata.reconSt_diag,  boundaryconditiondata.boundaryConditionVars.size(), 1, boundaryconditiondata.boundaryConditionVars, "Final Results Copied", logfile);
   }
 
@@ -3133,7 +3147,7 @@ int boundaryConditions(DATA * data, threadData_t * threadData, int status)
   //printCorelationMatrix(reconciled_Sx.data, reconciled_Sx.rowHeaders, reconciled_Sx.columnHeaders, "Reconciled_Sx", logfile, warningCorrelationData);
   printMatrixWithHeaders(reconciled_Sx.data, reconciled_Sx.rows, reconciled_Sx.column, Sx_data.headers, "Reconciled_Sx", logfile);
   boundaryConditionData boundaryconditiondata;
-  reconcileBoundaryConditions(data, threadData, reconciled_x, reconciled_Sx, boundaryconditiondata, logfile);
+  reconcileBoundaryConditions(data, threadData, reconciled_x, reconciled_Sx, boundaryconditiondata, warningCorrelationData, logfile);
 
   logfile << "*****Completed***********\n";
   logfile << "|  info    |   " << "Reconcile Boundary Conditions Completed! \n";
