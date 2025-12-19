@@ -1558,9 +1558,7 @@ public
   function lowerFunctions
     input output UnorderedMap<Path, Function> funcMap;
   algorithm
-    for fn in UnorderedMap.valueList(funcMap) loop
-      Differentiate.resolvePartialDerivatives(fn, funcMap);
-    end for;
+    UnorderedMap.apply(funcMap, function Differentiate.resolvePartialDerivatives(funcMap = funcMap));
   end lowerFunctions;
 
   function backenddaeinfo
