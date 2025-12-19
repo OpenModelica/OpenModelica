@@ -1167,7 +1167,7 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
     targetTime = fmin(targetTime, stopTime);
 
     // Also ensure we don't skip over an event time.
-    targetTime = fmin(gbData->eventTime + MINIMAL_STEP_SIZE, targetTime);
+    targetTime = fmin(gbData->eventTime, targetTime);
   }
 
   if (gbData->multi_rate) {
