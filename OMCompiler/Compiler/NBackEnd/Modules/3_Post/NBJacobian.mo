@@ -162,14 +162,8 @@ public
     input VariablePointers knowns;
     input String name;
     input Module.jacobianInterface func;
-  protected
-    list<Partition.Partition> new_partitions = {};
   algorithm
-    for part in listReverse(partitions) loop
-      part := partJacobian(part, funcMap, knowns, name, func);
-      new_partitions := part::new_partitions;
-    end for;
-    partitions := new_partitions;
+    partitions := list(partJacobian(part, funcMap, knowns, name, func) for part in partitions);
   end applyToPartitions;
 
   function nonlinear
