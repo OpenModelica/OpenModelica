@@ -1851,7 +1851,7 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
 
   if (!solverInfo->solverNoEquidistantGrid) {
     /* Integrator does large steps and needs to interpolate results with respect to the output grid */
-    sData->timeValue = fmin(solverInfo->currentTime + solverInfo->currentStepSize, gbData->eventTime);
+    sData->timeValue = fmin(solverInfo->currentTime + solverInfo->currentStepSize, targetTime);
     sData->timeValue = fmin(sData->timeValue, stopTime);
     solverInfo->currentTime = sData->timeValue;
 
