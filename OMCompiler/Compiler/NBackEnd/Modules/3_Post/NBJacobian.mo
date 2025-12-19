@@ -402,8 +402,10 @@ public
     algorithm
       (sparsityPattern, map) := match strongComponents
         local
-          Mapping seed_mapping, partial_mapping;
+          Mapping seed_mapping, row_mapping;
           array<StrongComponent> comps;
+          list<list<Pointer<Variable>>> inner_vars;
+          VariablePointers rowVars;
           list<ComponentRef> seed_vars, seed_vars_array, partial_vars, partial_vars_array, tmp, row_vars = {}, col_vars = {};
           UnorderedSet<ComponentRef> set;
           list<SparsityPatternCol> cols = {};
@@ -414,10 +416,6 @@ public
         then (EMPTY_SPARSITY_PATTERN, UnorderedMap.new<CrefLst>(ComponentRef.hash, ComponentRef.isEqual));
 
         case SOME(comps) algorithm
-          // create index mapping only for variables
-          seed_mapping    := Mapping.create(EquationPointers.empty(), seedCandidates);
-          partial_mapping := Mapping.create(EquationPointers.empty(), partialCandidates);
-
           // get all relevant crefs
           partial_vars        := VariablePointers.getScalarVarNames(partialCandidates);
           seed_vars           := VariablePointers.getScalarVarNames(seedCandidates);
@@ -435,9 +433,17 @@ public
           for cref in seed_vars_array loop UnorderedSet.add(cref, set); end for;
           for cref in partial_vars_array loop UnorderedSet.add(cref, set); end for;
 
+          // get the inner variables
+          inner_vars := list(StrongComponent.getVariables(comps[i]) for i in 1:arrayLength(comps));
+          rowVars := VariablePointers.addList(List.flatten(inner_vars), VariablePointers.clone(partialCandidates));
+
+          // create index mapping only for variables
+          seed_mapping  := Mapping.create(EquationPointers.empty(), seedCandidates);
+          row_mapping   := Mapping.create(EquationPointers.empty(), rowVars);
+
           // traverse all components and save cref dependencies (only column-wise)
           for i in 1:arrayLength(comps) loop
-            StrongComponent.collectCrefs(comps[i], seedCandidates, partialCandidates, seed_mapping, partial_mapping, map, set, jacType);
+            StrongComponent.collectCrefs(comps[i], seedCandidates, rowVars, seed_mapping, row_mapping, map, set, jacType);
           end for;
 
           // create row-wise sparsity pattern
