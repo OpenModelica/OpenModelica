@@ -452,9 +452,7 @@ protected
       then fail();
     end match;
     pre_cref := getPreVar(state_cref, state_var, acc_previous, scalarized);
-    if not scalarized then
-      pre_cref := ComponentRef.copySubscripts(state_cref, pre_cref);
-    end if;
+
     new_exp := Expression.fromCref(pre_cref);
     if negated then
       new_exp := Expression.logicNegate(new_exp);
