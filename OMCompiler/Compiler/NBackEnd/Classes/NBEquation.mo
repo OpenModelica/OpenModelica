@@ -1131,14 +1131,14 @@ public
       String tupl_recd_str;
     algorithm
       str := match eq
-        case SCALAR_EQUATION() then str + "[SCAL] " + s + " " + Expression.toString(eq.lhs) + " = " + Expression.toString(eq.rhs) + EquationAttributes.toString(eq.attr, " ");
-        case ARRAY_EQUATION()  then str + "[ARRY] " + s + " " + Expression.toString(eq.lhs) + " = " + Expression.toString(eq.rhs) + EquationAttributes.toString(eq.attr, " ");
+        case SCALAR_EQUATION() then str + "[SCAL] " + s + " " + Expression.toString(eq.lhs) + " = " + Expression.toString(eq.rhs) + ";" + EquationAttributes.toString(eq.attr, " ");
+        case ARRAY_EQUATION()  then str + "[ARRY] " + s + " " + Expression.toString(eq.lhs) + " = " + Expression.toString(eq.rhs) + ";" + EquationAttributes.toString(eq.attr, " ");
         case RECORD_EQUATION() algorithm
           tupl_recd_str := if Type.isTuple(eq.ty) then "[TUPL] " else "[RECD] ";
-        then str + tupl_recd_str + s + " " + Expression.toString(eq.lhs) + " = " + Expression.toString(eq.rhs) + EquationAttributes.toString(eq.attr, " ");
+        then str + tupl_recd_str + s + " " + Expression.toString(eq.lhs) + " = " + Expression.toString(eq.rhs) + ";" + EquationAttributes.toString(eq.attr, " ");
         case ALGORITHM()       then str + "[ALGO] " + s + EquationAttributes.toString(eq.attr, " ") + "\n" + Algorithm.toString(eq.alg, str + "[----] ");
         case IF_EQUATION()     then str + IfEquationBody.toString(eq.body, str + "[----] ", "[-IF-] " + s + EquationAttributes.toString(eq.attr, " ") + "\n");
-        case FOR_EQUATION()    then str + forEquationToString(eq.iter, eq.body, "", str + "[----] ", "[FOR-] " + s + EquationAttributes.toString(eq.attr, " "));
+        case FOR_EQUATION()    then str + forEquationToString(eq.iter, eq.body, str + "[----] ", "[FOR-] " + s + EquationAttributes.toString(eq.attr, " "));
         case WHEN_EQUATION()   then str + WhenEquationBody.toString(eq.body, str + "[----] ", "[WHEN] " + s + EquationAttributes.toString(eq.attr, " ") + "\n");
         case AUX_EQUATION()    then str + "[AUX-] " + s + "Auxiliary equation for " + Variable.toString(Pointer.access(eq.auxiliary));
         case DUMMY_EQUATION()  then str + "[DUMY] (0) Dummy equation.";
@@ -1444,9 +1444,9 @@ public
     function forEquationToString
       input Iterator iter             "the iterator variable(s)";
       input list<Equation> body       "iterated equations";
-      input output String str = "";
       input String indent = "";
       input String indicator = "";
+      output String str = "";
     protected
       String iterators;
     algorithm
