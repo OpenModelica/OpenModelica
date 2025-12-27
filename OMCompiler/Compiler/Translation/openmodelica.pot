@@ -1835,14 +1835,14 @@ msgstr ""
 #: ../Util/Error.mo:743
 #, c-format
 msgid ""
-"Parameter %s has no value, and is fixed during initialization (fixed=true), "
+"Parameter %s has no binding, and is fixed during initialization (fixed=true), "
 "using available start value (start=%s) as default value."
 msgstr ""
 
 #: ../Util/Error.mo:745
 #, c-format
 msgid ""
-"Parameter %s has neither value nor start value, and is fixed during "
+"Parameter %s has neither binding nor start value, and is fixed during "
 "initialization (fixed=true)."
 msgstr ""
 

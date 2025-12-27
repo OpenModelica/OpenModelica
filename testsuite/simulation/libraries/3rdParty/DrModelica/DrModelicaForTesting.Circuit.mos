@@ -4,7 +4,7 @@
 // teardown_command: rm -rf _DrModelicaForTesting.Circuit.* DrModelicaForTesting.Circuit_* DrModelicaForTesting.Circuit DrModelicaForTesting.Circuit.exe DrModelicaForTesting.Circuit.cpp DrModelicaForTesting.Circuit.makefile DrModelicaForTesting.Circuit.libs DrModelicaForTesting.Circuit.log DrModelicaForTesting.Circuit.c DrModelicaForTesting.Circuit.o output.log
 // cflags: -d=-newInst
 //
-// Simulation Results 
+// Simulation Results
 // Modelica Standard Library
 //
 
@@ -17,7 +17,7 @@ simulate(DrModelicaForTesting.Circuit, numberOfIntervals=200, stopTime=1.0); get
 res := OpenModelica.Scripting.compareSimulationResults("DrModelicaForTesting.Circuit_res.mat",
   "ReferenceFiles/Circuit_ref.mat","DrModelicaForTesting.Circuit_diff.csv",0.01,0.013,
   {"d.p.v","d.p.i","G.p.v","G.p.i"});
-  
+
 // Result:
 // true
 // ""
@@ -30,9 +30,9 @@ res := OpenModelica.Scripting.compareSimulationResults("DrModelicaForTesting.Cir
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// "[Modelica 3.1.0+maint.om/Electrical/Analog/Sources.mo:361:5-361:68:writable] Warning: Parameter src.freqHz has no value, and is fixed during initialization (fixed=true), using available start value (start=1.0) as default value.
-// [Modelica 3.1.0+maint.om/Electrical/Analog/Sources.mo:359:5-359:61:writable] Warning: Parameter src.V has no value, and is fixed during initialization (fixed=true), using available start value (start=1.0) as default value.
-// [Modelica 3.1.0+maint.om/Electrical/Analog/Basic.mo:68:3-69:40:writable] Warning: Parameter R1.R has no value, and is fixed during initialization (fixed=true), using available start value (start=1.0) as default value.
+// "[Modelica 3.1.0+maint.om/Electrical/Analog/Sources.mo:361:5-361:68:writable] Warning: Parameter src.freqHz has no binding, and is fixed during initialization (fixed=true), using available start value (start=1.0) as default value.
+// [Modelica 3.1.0+maint.om/Electrical/Analog/Sources.mo:359:5-359:61:writable] Warning: Parameter src.V has no binding, and is fixed during initialization (fixed=true), using available start value (start=1.0) as default value.
+// [Modelica 3.1.0+maint.om/Electrical/Analog/Basic.mo:68:3-69:40:writable] Warning: Parameter R1.R has no binding, and is fixed during initialization (fixed=true), using available start value (start=1.0) as default value.
 // "
 // {"Files Equal!"}
 // endResult

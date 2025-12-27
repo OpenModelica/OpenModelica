@@ -2043,7 +2043,7 @@ algorithm
     if BackendVariable.isRealParam(var) and (BackendVariable.hasOpenModelicaBoundaryConditionAnnotation(var) or BackendVariable.varHasUncertainValueRefine(var) or BackendVariable.varHasUncertainValuePropagate(var)) then
       //print("\n knownsVars :" + anyString(var.bindExp));
       lhs := BackendVariable.varExp(var);
-      rhs := BackendVariable.varBindExpStartValueNoFail(var);
+      rhs := BackendVariable.varBindExpStartValueNoFail(var, sourceInfo());
       eqn := BackendDAE.EQUATION(lhs, rhs, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_BINDING);
       eqnLst := eqn :: eqnLst;
       var := BackendVariable.setVarKind(var, BackendDAE.VARIABLE());

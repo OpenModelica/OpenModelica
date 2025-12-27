@@ -221,8 +221,8 @@ void init_hes_mr(InfoGDOP& info, GDOP::BoundarySweepLayout& layout_mr) {
     if (hes_c) {
         int hes_c_index = 0;
         for (const auto& mayer_hess : M_sparsities) {
-            while (hes_c_index < hes_c->lnnz && 
-                (hes_c->row[hes_c_index] < mayer_hess.row || 
+            while (hes_c_index < hes_c->lnnz &&
+                (hes_c->row[hes_c_index] < mayer_hess.row ||
                 (hes_c->row[hes_c_index] == mayer_hess.row && hes_c->col[hes_c_index] < mayer_hess.col))) {
                 hes_c_index++;
             }

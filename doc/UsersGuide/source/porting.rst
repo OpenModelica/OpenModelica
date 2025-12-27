@@ -141,7 +141,7 @@ with this restriction, causing compatibility issues, e.g.:
 
 Although this restriction makes identifying structurally inconsistent models easier, it requires to
 write code that can be pretty obscure when handling use cases that would be very straightforward to handle othewise.
-Hence, this restriction will be removed in Modelica 3.7. In particular, the current 
+Hence, this restriction will be removed in Modelica 3.7. In particular, the current
 `draft of Modelica 3.7 <https://specification.modelica.org/master/class-predefined-types-and-declarations.html#conditional-component-declaration>`_
 explicitly states that if the Boolean expression activating the component is true, there are no
 restrictions on the use of such component. Since version 1.26.0, OpenModelica complies with
