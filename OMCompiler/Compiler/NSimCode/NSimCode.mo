@@ -48,7 +48,7 @@ protected
   import NFTyping.ExpOrigin;
   import Expression = NFExpression;
   import NFFunction.Function;
-  import NFFlatten.{FunctionTree, FunctionTreeImpl};
+  import NFFlatten.FunctionTree;
   import NFInstNode.InstNode;
   import Type = NFType;
 
@@ -281,7 +281,7 @@ public
           // auxillaries
           VarData varData;
           EqData eqData;
-          FunctionTree funcTree;
+          UnorderedMap<Absyn.Path, Function> funcMap;
           VariablePointers residual_vars;
           SimVars vars;
           // old SimCode strcutures
@@ -318,11 +318,11 @@ public
           algorithm
             // somehow this cannot be set at definition (metamodelica bug?)
             simCodeIndices := EMPTY_SIM_CODE_INDICES();
-            funcTree := BackendDAE.getFunctionTree(bdae);
+            funcMap := BackendDAE.getFunctionMap(bdae);
 
             // get and replace all literals in functions
-            collect_literals    := function Expression.fakeMap(func = function Expression.replaceLiteral(map = literals_map, idx_ptr = literals_idx));
-            funcTree            := FunctionTreeImpl.mapExp(funcTree, collect_literals);
+            collect_literals := function Expression.fakeMap(func = function Expression.replaceLiteral(map = literals_map, idx_ptr = literals_idx));
+            UnorderedMap.apply(funcMap, function Function.mapExp(mapFn = collect_literals, mapFnFields = collect_literals, mapParameters = true, mapBody = true));
 
             // create sim vars before everything else
             residual_vars                       := BackendDAE.getLoopResiduals(bdae);
@@ -403,7 +403,7 @@ public
             directory := CevalScriptBackend.getFileDir(AbsynUtil.pathToCref(name), program);
             // The OB function tree is needed both here and when dumping the flat model,
             // but converting it is destructive so return it to avoid doing it again.
-            oldFunctionTree := ConvertDAE.convertFunctionTree(funcTree);
+            oldFunctionTree := ConvertDAE.convertFunctionTree(FunctionTree.fromList(UnorderedMap.toList(funcMap)));
             (libs, libPaths, _, includeDirs, recordDecls, functions, _) := OldSimCodeUtil.createFunctions(program, oldFunctionTree);
             makefileParams := OldSimCodeFunctionUtil.createMakefileParams(includeDirs, libs, libPaths, false, false);
 

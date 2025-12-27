@@ -44,7 +44,6 @@ protected
   import Expression = NFExpression;
   import Flatten = NFFlatten;
   import NFFunction.Function;
-  import NFFlatten.{FunctionTree, FunctionTreeImpl};
   import NFInstNode.InstNode;
   import Operator = NFOperator;
   import Statement = NFStatement;

@@ -92,7 +92,7 @@ public
             print(StringUtil.headline_4("[dumpBackendInline] Inlining operatations for: "
               + List.toString(inline_types, DAEDump.dumpInlineTypeBackendStr)));
           end if;
-          (eqData, varData) := inline(bdae.eqData, bdae.varData, bdae.funcTree, inline_types, init);
+          (eqData, varData) := inline(bdae.eqData, bdae.varData, bdae.funcMap, inline_types, init);
           bdae.eqData := eqData;
           bdae.varData := varData;
           if Flags.isSet(Flags.DUMPBACKENDINLINE) then
@@ -265,10 +265,18 @@ protected
     UnorderedMap<Absyn.Path, Function> replacements "rules for replacements are stored inside here";
     UnorderedSet<VariablePointer> set "new iterators from function bodies";
     VariablePointers variables = VarData.getVariables(varData);
+    Absyn.Path key;
+    Function value;
   algorithm
     // collect functions
     replacements := UnorderedMap.new<Function>(AbsynUtil.pathHash, AbsynUtil.pathEqual);
-    replacements := FunctionTree.fold(funcTree, function collectInlineFunctions(inline_types = inline_types), replacements);
+    for tpl in UnorderedMap.toList(funcMap) loop
+      (key, value) := tpl;
+      // only add to the map if the function has one of the inline types and is inlineable
+      if List.contains(inline_types, Function.inlineBuiltin(value), DAEUtil.inlineTypeEqual) and functionInlineable(value) then
+        UnorderedMap.add(key, value, replacements);
+      end if;
+    end for;
 
     // apply replacements
     eqData  := Replacements.replaceFunctions(eqData, variables, replacements);
@@ -287,20 +295,6 @@ protected
     varData := VarData.addTypedList(varData, UnorderedSet.toList(set), NBVariable.VarData.VarType.ITERATOR);
     eqData  := EqData.mapExp(eqData, function BackendDAE.lowerComponentReferenceExp(variables = variables, complete = true));
   end inline;
-
-  function collectInlineFunctions
-    "collects all functions that have one of the inline types,
-    use with FunctionTree.fold()"
-    input Absyn.Path key;
-    input Function value;
-    input output UnorderedMap<Absyn.Path, Function> replacements;
-    input list<DAE.InlineType> inline_types;
-  algorithm
-    // only add to the map if the function has one of the inline types and is inlineable
-    if List.contains(inline_types, Function.inlineBuiltin(value), DAEUtil.inlineTypeEqual) and functionInlineable(value) then
-      UnorderedMap.add(key, value, replacements);
-    end if;
-  end collectInlineFunctions;
 
   function inlineRecordsTuplesArrays
     "does not inline simple record equalities"
