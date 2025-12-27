@@ -133,6 +133,9 @@ uint32_t rt_ncall_max(int ix);
 uint32_t rt_ncall_total(int ix);
 void rt_add_ncall(int ix, int n);
 
+void rt_push(int ix); /* pause previous timer, start ix */
+void rt_pop(int ix); /* stop ix, resume previous timer */
+
 void rt_measure_overhead(int ix);
 
 /* tick() ... tock() with external rtclock_t -> returns the number of seconds since the tick */
