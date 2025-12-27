@@ -266,6 +266,15 @@ public
     end match;
   end size;
 
+  function sizes
+    "Returns the sizes of the given dimension sizes."
+    input list<Dimension> dims;
+    input Boolean resize = false;
+    output list<Integer> outSizes;
+  algorithm
+    outSizes := list(Dimension.size(d, resize) for d in dims);
+  end sizes;
+
   function sizesProduct
     "Returns the product of the given dimension sizes."
     input list<Dimension> dims;
