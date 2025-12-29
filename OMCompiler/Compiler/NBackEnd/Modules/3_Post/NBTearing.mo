@@ -147,26 +147,22 @@ public
         list<Partition.Partition> partitions;
         Pointer<Integer> eq_index;
 
-      case (NBPartition.Kind.ODE, BackendDAE.MAIN(ode = partitions, eqData = BEquation.EQ_DATA_SIM(uniqueIndex = eq_index)))
+      case (NBPartition.Kind.ODE, BackendDAE.MAIN(eqData = BEquation.EQ_DATA_SIM(uniqueIndex = eq_index)))
         algorithm
-          partitions := tearingTraverser(partitions, funcs, bdae.funcMap, eq_index, kind);
-          bdae.ode := partitions;
+          bdae.ode := tearingTraverser(bdae.ode, funcs, bdae.funcMap, eq_index, kind);
       then bdae;
 
-      case (NBPartition.Kind.INI, BackendDAE.MAIN(init = partitions, eqData = BEquation.EQ_DATA_SIM(uniqueIndex = eq_index)))
+      case (NBPartition.Kind.INI, BackendDAE.MAIN(eqData = BEquation.EQ_DATA_SIM(uniqueIndex = eq_index)))
         algorithm
-          partitions := tearingTraverser(partitions, funcs, bdae.funcMap, eq_index, kind);
-          bdae.init := partitions;
+          bdae.init := tearingTraverser(bdae.init, funcs, bdae.funcMap, eq_index, kind);
           if Util.isSome(bdae.init_0) then
-            partitions := tearingTraverser(Util.getOption(bdae.init_0), funcs, bdae.funcMap, eq_index, kind);
-            bdae.init_0 := SOME(partitions);
+            bdae.init_0 := SOME(tearingTraverser(Util.getOption(bdae.init_0), funcs, bdae.funcMap, eq_index, kind));
           end if;
       then bdae;
 
       case (NBPartition.Kind.DAE, BackendDAE.MAIN(dae = SOME(partitions), eqData = BEquation.EQ_DATA_SIM(uniqueIndex = eq_index)))
         algorithm
-          partitions := tearingTraverser(partitions, funcs, bdae.funcMap, eq_index, kind);
-          bdae.dae := SOME(partitions);
+          bdae.dae := SOME(tearingTraverser(partitions, funcs, bdae.funcMap, eq_index, kind));
           // recursively call this function to also apply to the ODE section (used for events)
           // ToDo: only create event partitions, disregard rest
       then main(bdae, NBPartition.Kind.ODE);

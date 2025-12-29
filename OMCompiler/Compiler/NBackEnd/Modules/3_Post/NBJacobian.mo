@@ -108,9 +108,8 @@ public
   algorithm
     bdae := match bdae
       local
-        String name                             "Context name for jacobian";
-        VariablePointers knowns                 "Variable array of knowns";
-        list<Partition.Partition> newPartitions "Equation partitions before and afterwards";
+        String name             "Context name for jacobian";
+        VariablePointers knowns "Variable array of knowns";
 
       case BackendDAE.MAIN(varData = BVariable.VAR_DATA_SIM(knowns = knowns))
         algorithm
@@ -121,30 +120,23 @@ public
           name := match kind
             case NBPartition.Kind.ODE algorithm
               name := "ODE_JAC";
-              newPartitions := applyToPartitions(bdae.ode, bdae.funcMap, knowns, name, func);
-              bdae.ode := newPartitions;
+              bdae.ode := applyToPartitions(bdae.ode, bdae.funcMap, knowns, name, func);
             then name;
             case NBPartition.Kind.DAE algorithm
               name := "DAE_JAC";
-              newPartitions := applyToPartitions(Util.getOption(bdae.dae), bdae.funcMap, knowns, name, func);
-              bdae.dae := SOME(newPartitions);
+              bdae.dae := SOME(applyToPartitions(Util.getOption(bdae.dae), bdae.funcMap, knowns, name, func));
             then name;
             else algorithm
               Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for: " + Partition.Partition.kindToString(kind)});
             then fail();
           end match;
 
-          newPartitions := applyToPartitions(bdae.ode_event, bdae.funcMap, knowns, name, func);
-          bdae.ode_event := newPartitions;
-          newPartitions := applyToPartitions(bdae.algebraic, bdae.funcMap, knowns, name, func);
-          bdae.algebraic := newPartitions;
-          newPartitions := applyToPartitions(bdae.alg_event, bdae.funcMap, knowns, name, func);
-          bdae.alg_event := newPartitions;
-          newPartitions := applyToPartitions(bdae.init, bdae.funcMap, knowns, name, func);
-          bdae.init := newPartitions;
+          bdae.ode_event := applyToPartitions(bdae.ode_event, bdae.funcMap, knowns, name, func);
+          bdae.algebraic := applyToPartitions(bdae.algebraic, bdae.funcMap, knowns, name, func);
+          bdae.alg_event := applyToPartitions(bdae.alg_event, bdae.funcMap, knowns, name, func);
+          bdae.init := applyToPartitions(bdae.init, bdae.funcMap, knowns, name, func);
           if Util.isSome(bdae.init_0) then
-            newPartitions := applyToPartitions(Util.getOption(bdae.init_0), bdae.funcMap, knowns, name, func);
-            bdae.init_0 := SOME(newPartitions);
+            bdae.init_0 := SOME(applyToPartitions(Util.getOption(bdae.init_0), bdae.funcMap, knowns, name, func));
           end if;
       then bdae;
 
@@ -713,7 +705,6 @@ protected
     VariablePointers unknowns;
     list<Pointer<Variable>> derivative_vars, state_vars;
     VariablePointers seedCandidates, partialCandidates;
-    Option<Jacobian> jacobian                             "Resulting jacobian";
     Partition.Kind kind = Partition.Partition.getKind(part);
     Boolean updated;
   algorithm
@@ -741,8 +732,10 @@ protected
       state_vars := list(Util.getOption(BVariable.getVarState(var)) for var in derivative_vars);
       seedCandidates := VariablePointers.fromList(state_vars, partialCandidates.scalarized);
 
-      jacobian := func(name, jacType, seedCandidates, partialCandidates, part.equations, knowns, part.strongComponents, funcMap, kind ==  NBPartition.Kind.INI);
-      part.association := Partition.Association.CONTINUOUS(kind, jacobian);
+      part.association := Partition.Association.CONTINUOUS(
+        kind      = kind,
+        jacobian  = func(name, jacType, seedCandidates, partialCandidates, part.equations, knowns, part.strongComponents, funcMap, kind == NBPartition.Kind.INI)
+      );
       if Flags.isSet(Flags.JAC_DUMP) then
         print(Partition.Partition.toString(part, 2));
       end if;
@@ -758,7 +751,6 @@ protected
     Tearing strict;
     list<StrongComponent> residual_comps;
     list<VariablePointer> seed_candidates, residual_vars, inner_vars;
-    Option<Jacobian> jacobian;
     constant Boolean init = kind == NBPartition.Kind.INI;
   algorithm
     (comp, updated) := match comp
@@ -772,7 +764,7 @@ protected
         inner_vars      := listAppend(list(var for var guard(BVariable.isContinuous(var, init)) in StrongComponent.getVariables(comp)) for comp in strict.innerEquations);
 
         // update jacobian to take slices (just to have correct inner variables and such)
-        jacobian := nonlinear(
+        strict.jac := nonlinear(
           seedCandidates    = VariablePointers.fromList(seed_candidates),
           partialCandidates = VariablePointers.fromList(listAppend(residual_vars, inner_vars)),
           equations         = EquationPointers.fromList(list(Slice.getT(eqn) for eqn in strict.residual_eqns)),
@@ -780,7 +772,6 @@ protected
           funcMap           = funcMap,
           name              = Partition.Partition.kindToString(kind) + (if comp.linear then "_LS_JAC_" else "_NLS_JAC_") + intString(comp.idx),
           init              = kind == NBPartition.Kind.INI);
-        strict.jac := jacobian;
         comp.strict := strict;
 
         if Flags.isSet(Flags.JAC_DUMP) then
