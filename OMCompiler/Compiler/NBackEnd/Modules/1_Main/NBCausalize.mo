@@ -38,11 +38,14 @@ public
   import Module = NBModule;
 
 protected
+  // OF imports
+  import Absyn.Path;
+
   // NF imports
   import ComponentRef = NFComponentRef;
   import Dimension = NFDimension;
   import Expression = NFExpression;
-  import NFFlatten.{FunctionTree, FunctionTreeImpl};
+  import NFFunction.Function;
   import InstNode = NFInstNode.InstNode;
   import Prefixes = NFPrefixes;
   import Subscript = NFSubscript;
@@ -87,42 +90,38 @@ public
         list<Partition> partitions, clocked;
         VarData varData;
         EqData eqData;
-        FunctionTree funcTree;
 
-      case (NBPartition.Kind.ODE, BackendDAE.MAIN(ode = partitions, clocked = clocked, varData = varData, eqData = eqData, funcTree = funcTree))
+      case (NBPartition.Kind.ODE, BackendDAE.MAIN(ode = partitions, clocked = clocked, varData = varData, eqData = eqData))
         algorithm
-          (partitions, varData, eqData, funcTree) := applyModule(partitions, kind, varData, eqData, funcTree, func);
-          (clocked, varData, eqData, funcTree) := applyModule(clocked, kind, varData, eqData, funcTree, func);
+          (partitions, varData, eqData) := applyModule(partitions, kind, varData, eqData, bdae.funcMap, func);
+          (clocked, varData, eqData) := applyModule(clocked, kind, varData, eqData, bdae.funcMap, func);
           bdae.ode := partitions;
           bdae.clocked := clocked;
           bdae.varData := varData;
           bdae.eqData := eqData;
-          bdae.funcTree := funcTree;
       then bdae;
 
-      case (NBPartition.Kind.INI, BackendDAE.MAIN(init = partitions, varData = varData, eqData = eqData, funcTree = funcTree))
+      case (NBPartition.Kind.INI, BackendDAE.MAIN(init = partitions, varData = varData, eqData = eqData))
         algorithm
           if Flags.isSet(Flags.INITIALIZATION) then
             print(StringUtil.headline_1("Balance Initialization") + "\n");
           end if;
-          (partitions, varData, eqData, funcTree) := applyModule(partitions, kind, varData, eqData, funcTree, func);
+          (partitions, varData, eqData) := applyModule(partitions, kind, varData, eqData, bdae.funcMap, func);
           bdae.init := partitions;
           if Util.isSome(bdae.init_0) then
-            (partitions, varData, eqData, funcTree) := applyModule(Util.getOption(bdae.init_0), kind, varData, eqData, funcTree, func);
+            (partitions, varData, eqData) := applyModule(Util.getOption(bdae.init_0), kind, varData, eqData, bdae.funcMap, func);
             bdae.init_0 := SOME(partitions);
           end if;
           bdae.varData := varData;
           bdae.eqData := eqData;
-          bdae.funcTree := funcTree;
       then bdae;
 
-      case (NBPartition.Kind.DAE, BackendDAE.MAIN(dae = SOME(partitions), varData = varData, eqData = eqData, funcTree = funcTree))
+      case (NBPartition.Kind.DAE, BackendDAE.MAIN(dae = SOME(partitions), varData = varData, eqData = eqData))
         algorithm
-          (partitions, varData, eqData, funcTree) := applyModule(partitions, kind, varData, eqData, funcTree, causalizeDAEMode);
+          (partitions, varData, eqData) := applyModule(partitions, kind, varData, eqData, bdae.funcMap, causalizeDAEMode);
           bdae.dae := SOME(partitions);
           bdae.varData := varData;
           bdae.eqData := eqData;
-          bdae.funcTree := funcTree;
       then bdae;
 
       else algorithm
@@ -137,14 +136,14 @@ public
     output list<Partition> new_partitions = {};
     input output VarData varData;
     input output EqData eqData;
-    input output FunctionTree funcTree;
+    input UnorderedMap<Path, Function> funcMap;
     input Module.causalizeInterface func;
   protected
     Partition new_partition;
     Boolean violated = false "true if any partition violated variability consistency";
   algorithm
     for partition in partitions loop
-      (new_partition, varData, eqData, funcTree) := func(partition, varData, eqData, funcTree);
+      (new_partition, varData, eqData) := func(partition, varData, eqData, funcMap);
       new_partitions := new_partition :: new_partitions;
     end for;
     new_partitions := listReverse(new_partitions);
@@ -288,7 +287,7 @@ protected
         vn := UnorderedMap.subMap(partition.unknowns.map, list(BVariable.getVarName(var) for var in fixable));
         en := UnorderedMap.new<Integer>(ComponentRef.hash, ComponentRef.isEqual);
         (adj_matching, full) := Adjacency.Matrix.expand(adj_matching, full, vo, vn, eo, en, partition.unknowns, partition.equations);
-        (matching, adj_matching, full, variables, equations, funcTree, varData, eqData) := Matching.singular(matching, adj_matching, full, partition.unknowns, partition.equations, funcTree, varData, eqData, kind, false, false);
+        (matching, adj_matching, full, variables, equations, varData, eqData) := Matching.singular(matching, adj_matching, full, partition.unknowns, partition.equations, funcMap, varData, eqData, kind, false, false);
 
         // create all occurence adjacency matrix for sorting, upgrading the matching matrix
         adj_sorting := Adjacency.Matrix.upgrade(adj_matching, full, variables.map, equations.map, equations, NBAdjacency.MatrixStrictness.SORTING);
@@ -310,7 +309,7 @@ protected
         adj_matching := Adjacency.Matrix.fromFull(full, variables.map, equations.map, equations, NBAdjacency.MatrixStrictness.MATCHING);
 
         // perform matching
-        (matching, adj_matching, full, variables, equations, funcTree, varData, eqData) := Matching.singular(NBMatching.EMPTY_MATCHING, adj_matching, full, variables, equations, funcTree, varData, eqData, kind, false);
+        (matching, adj_matching, full, variables, equations, varData, eqData) := Matching.singular(NBMatching.EMPTY_MATCHING, adj_matching, full, variables, equations, funcMap, varData, eqData, kind, false);
 
         // create all occurence adjacency matrix for sorting, upgrading the matching matrix
         adj_sorting := Adjacency.Matrix.upgrade(adj_matching, full, variables.map, equations.map, equations, NBAdjacency.MatrixStrictness.SORTING);

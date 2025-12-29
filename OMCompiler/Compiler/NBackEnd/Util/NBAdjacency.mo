@@ -38,12 +38,15 @@ public
   import Adjacency = NBAdjacency;
 
 protected
+  // OF imports
+  import Absyn.Path;
+
   // NF imports
   import Call = NFCall;
   import ComponentRef = NFComponentRef;
   import Dimension = NFDimension;
   import Expression = NFExpression;
-  import FunctionTree = NFFlatten.FunctionTree;
+  import NFFunction.Function;
   import SimplifyExp = NFSimplifyExp;
   import Statement = NFStatement;
   import Subscript = NFSubscript;
@@ -703,7 +706,7 @@ public
       "refines the solvability kind using differentiation
       Note: only updates the solvabilites of the variables and equations from the maps v and e"
       input output Matrix full;
-      input output FunctionTree funcTree;
+      input UnorderedMap<Path, Function> funcMap;
       input UnorderedMap<ComponentRef, Integer> v    "variables to refine";
       input UnorderedMap<ComponentRef, Integer> e    "equations to refine";
       input VariablePointers vars                    "all variables";
@@ -711,9 +714,9 @@ public
       input UnorderedSet<ComponentRef> vars_set      "context variables to determine solvability";
       input Boolean init                             "true if initial";
     algorithm
-      (full, funcTree) := match full
+      full := match full
         local
-          DifferentiationArguments diffArgs = DifferentiationArguments.default(NBDifferentiate.DifferentiationType.SIMPLE, funcTree);
+          DifferentiationArguments diffArgs = DifferentiationArguments.default(NBDifferentiate.DifferentiationType.SIMPLE, funcMap);
           Pointer<Equation> eqn_ptr;
           Expression residual, exp;
           Solve.Status status;
@@ -770,7 +773,7 @@ public
               end if;
             end for;
           end for;
-        then (full, diffArgs.funcTree);
+        then full;
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " expected type full, got type " + strictnessString(getStrictness(full)) + "."});
         then fail();

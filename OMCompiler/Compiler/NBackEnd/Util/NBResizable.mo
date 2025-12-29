@@ -42,7 +42,6 @@ protected
   import ComponentRef = NFComponentRef;
   import Dimension = NFDimension;
   import Expression = NFExpression;
-  import NFFlatten.FunctionTreeImpl;
   import SimplifyExp = NFSimplifyExp;
   import Subscript = NFSubscript;
   import Type = NFType;
@@ -809,7 +808,7 @@ protected
           for cref in crefs loop
             failed := false;
             // solve the artificial equation for cref
-            (solved_eqn, _, status, _) := Solve.solveBody(eqn, cref, FunctionTreeImpl.EMPTY());
+            (solved_eqn, status, _) := Solve.solveBody(eqn, cref);
             if status == NBSolve.Status.EXPLICIT then
               // try to used solved value as new parameter value to fulfill constraint
               _ := match checkConstraint(Util.getOption(Equation.getRHS(solved_eqn)), optimal_values)

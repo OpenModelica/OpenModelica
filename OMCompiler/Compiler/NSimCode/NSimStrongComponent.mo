@@ -37,13 +37,14 @@ encapsulated package NSimStrongComponent
 
 protected
   // OF imports
+  import AbsynUtil;
   import DAE;
 
   // NF imports
   import ComponentRef = NFComponentRef;
   import ConvertDAE = NFConvertDAE;
   import Expression = NFExpression;
-  import NFFlatten.{FunctionTree, FunctionTreeImpl};
+  import NFFunction.Function;
   import InstNode = NFInstNode.InstNode;
   import Operator = NFOperator;
   import Scalarize = NFScalarize;
@@ -915,11 +916,11 @@ public
       StrongComponent comp;
       Integer index;
     algorithm
-      (comp, _, index)  := Tearing.implicit(
-        comp        = StrongComponent.SINGLE_COMPONENT(Pointer.create(var), Pointer.create(eqn), NBSolve.Status.IMPLICIT),
-        funcTree    = FunctionTreeImpl.EMPTY(),
-        index       = simCodeIndices.implicitIndex,
-        kind  = kind
+      (comp, index) := Tearing.implicit(
+        comp    = StrongComponent.SINGLE_COMPONENT(Pointer.create(var), Pointer.create(eqn), NBSolve.Status.IMPLICIT),
+        funcMap = UnorderedMap.new<Function>(AbsynUtil.pathHash, AbsynUtil.pathEqual),
+        index   = simCodeIndices.implicitIndex,
+        kind    = kind
       );
       simCodeIndices.implicitIndex := index;
       (blck, simCodeIndices) := fromStrongComponent(comp, simCodeIndices, kind, simcode_map, equation_map);
