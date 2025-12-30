@@ -437,8 +437,8 @@ public
     Slice<EquationPointer> solved_slice;
     UnorderedMap<ComponentRef, Expression> replacements;
   algorithm
-    if listLength(eqn_slice.indices) == 1 then
-      replacements    := UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual);
+    if List.hasOneElement(eqn_slice.indices) then
+      replacements := UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual);
       (eqn, solve_status) := Equation.singleSlice(eqn_ptr, listHead(eqn_slice.indices), Equation.sizes(eqn_ptr), cref, replacements, functions);
     else
       (eqn, solve_status, implicit_index, _) := solveEquation(Pointer.access(eqn_ptr), cref, functions, kind, implicit_index, slicing_map, varData, eqData);
@@ -870,7 +870,7 @@ protected
       end if;
     end if;
 
-    if status == Status.EXPLICIT and listLength(body.then_eqns) == 1 then
+    if status == Status.EXPLICIT and List.hasOneElement(body.then_eqns) then
       eqn := Pointer.access(listHead(body.then_eqns));
       (eqn, status, _) := solveSimple(eqn, cref);
       if status == Status.EXPLICIT then
