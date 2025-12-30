@@ -782,7 +782,7 @@ public
           occs    := Equation.collectCrefs(tmpEqn, function Equation.collectFromMap(check_map = iter_map));
 
 
-          if listLength(occs) == 1 then
+          if List.hasOneElement(occs) then
             // get the only occuring iterator cref and solve the body for it
             cref := listHead(occs);
             (tmpEqn, status, invert) := Solve.solveBody(tmpEqn, cref);
@@ -2670,7 +2670,7 @@ public
       Iterator new_iter;
     algorithm
       // get the sizes of the 'return value' of the equation
-      if listLength(indices) == 1 then
+      if List.hasOneElement(indices) then
         // perform a single replacement for the one index
         location      := Slice.indexToLocation(listHead(indices), sizes);
         replacements  := UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual);

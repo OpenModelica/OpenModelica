@@ -157,7 +157,7 @@ public
           occ_lst := UnorderedSet.toList(var_occurences);
           (iterators, _)  := Iterator.getFrames(Equation.getForIterator(eqn));
           order := UnorderedMap.fromLists(iterators, list(EvalOrder.INDEPENDENT for i in iterators), ComponentRef.hash, ComponentRef.isEqual);
-          if listLength(occ_lst) <> 1 then
+          if not List.hasOneElement(occ_lst) then
             subs  := list(ComponentRef.subscriptsAllWithWholeFlat(cref) for cref in occ_lst);
             subs  := List.transposeList(subs);
             subs_to_solve := ComponentRef.subscriptsAllWithWholeFlat(cref_to_solve);

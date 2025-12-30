@@ -365,10 +365,10 @@ public
         case WHEN() :: rest then filterWhen(rest, out_blcks, new_blcks, indices);
         case (blck as ALGORITHM()) :: rest algorithm
           stmts := Statement.filterDiscrete(blck.stmts);
-          if listLength(stmts) == 0 then
+          if listEmpty(stmts) then
             // filtered everything out, skip entire block
             (out_blcks, new_blcks, indices) := filterWhen(rest, out_blcks, new_blcks, indices);
-          elseif listLength(stmts) <> listLength(blck.stmts) then
+          elseif List.compareLength(stmts, blck.stmts) <> 0 then
             // filtered part of it out, create new block
             new_blck := ALGORITHM(indices.equationIndex, stmts, blck.attr);
             indices.equationIndex := indices.equationIndex + 1;
