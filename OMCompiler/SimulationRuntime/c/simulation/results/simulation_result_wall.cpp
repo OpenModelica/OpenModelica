@@ -310,6 +310,7 @@ void recon_wall_init(simulation_result *self,DATA *data, threadData_t *threadDat
   static char header[14] = {0x72, 0x65, 0x63, 0x6f, 0x6e, 0x3a, 0x77,
           0x61, 0x6c, 0x6c, 0x3a, 0x76, 0x30, 0x31};
   static char blank_length[4] = {0x00, 0x00, 0x00, 0x00};
+  //rt_tick(SIM_TIMER_OUTPUT);
   self->storage = (void *)storage;
   try {
     storage->fp.open(self->filename, std::ofstream::binary|std::ofstream::trunc);

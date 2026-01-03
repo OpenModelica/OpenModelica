@@ -256,6 +256,7 @@ static void fmtEmitStep(DATA* data, threadData_t *threadData, MEASURE_TIME* mt, 
       flag = flag && 1 == fwrite(&tmpdbl, sizeof(double), 1, mt->fmtReal);
     }
     rt_accumulate(SIM_TIMER_OVERHEAD);
+    //rt_tick(SIM_TIMER_STEP);
 
     if(!flag)
     {
@@ -349,7 +350,6 @@ static void clear_rt_step(DATA* data)
       rt_clear(i + SIM_TIMER_FIRST_FUNCTION);
     }
     rt_clear(SIM_TIMER_STEP);
-    rt_tick(SIM_TIMER_STEP);
   }
 }
 
@@ -473,6 +473,7 @@ int prefixedName_performSimulation(DATA* data, threadData_t *threadData, SOLVER_
         printAllVars(data, 0, OMC_LOG_SOLVER_V);
 
         clear_rt_step(data);
+        rt_push(SIM_TIMER_STEP);
         if (!compiledInDAEMode || data->modelData->nStates == 0) { /* do not use ringbuffer for daeMode */
           rotateRingBuffer(data->simulationData, 1);
           lookupRingBuffer(data->simulationData, (void**) data->localData);
