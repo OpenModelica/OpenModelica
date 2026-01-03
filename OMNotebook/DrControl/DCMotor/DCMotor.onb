@@ -86,7 +86,7 @@ p, li { white-space: pre-wrap; }
         </GraphCell>
         <GraphCell style="Graph" closed="false">
           <Input>model DCMotorCircuit
-  Modelica.Electrical.Analog.Basic.Resistor     resistor1(R = 10); 
+  Modelica.Electrical.Analog.Basic.Resistor     resistor1(R = 10);
   //Observe the difference between MSL 2.2 and 3.1 regarding the default values, in 3.1 there are no default values set, only start values
   Modelica.Electrical.Analog.Basic.Inductor     inductor1(L = 0.2);
   Modelica.Electrical.Analog.Basic.Ground       ground1;
@@ -127,7 +127,7 @@ p, li { white-space: pre-wrap; }
     messages = ""
 end SimulationResult;
 OMC-ERROR:
-"[C:/OPENMODELICAGIT/OpenModelica/build/lib/omlibrary/Modelica 3.2.1/Electrical/Analog/Basic.mo:838:5-839:35:writable] Warning: Parameter emf1.k has no value, and is fixed during initialization (fixed=true), using available start value (start=1.0) as default value.
+"[C:/OPENMODELICAGIT/OpenModelica/build/lib/omlibrary/Modelica 3.2.1/Electrical/Analog/Basic.mo:838:5-839:35:writable] Warning: Parameter emf1.k has no binding, and is fixed during initialization (fixed=true), using available start value (start=1.0) as default value.
 Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
 "</Output>
         </GraphCell>

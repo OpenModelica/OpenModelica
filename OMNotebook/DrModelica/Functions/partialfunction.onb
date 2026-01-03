@@ -142,7 +142,7 @@ end QuadratureSine2;</Input>
     messages = ""
 end SimulationResult;
 OMC-ERROR:
-"[&lt;interactive>:2:4-2:23:writable] Warning: Parameter N has no value, and is fixed during initialization (fixed=true), using available start value (start=0) as default value.
+"[&lt;interactive>:2:4-2:23:writable] Warning: Parameter N has no binding, and is fixed during initialization (fixed=true), using available start value (start=0) as default value.
 "</Output>
     </GraphCell>
     <GraphCell style="Graph" closed="false">

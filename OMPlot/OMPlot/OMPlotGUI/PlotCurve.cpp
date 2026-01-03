@@ -98,7 +98,7 @@ void PlotCurve::setTitleLocal()
     }
      // Append right arrow if curve is plotted on right axis
     if (isYAxisRight()) {
-      titleStr.append(QChar(0x2794)); 
+      titleStr.append(QChar(0x2794));
     }
     setTitle(titleStr);
     // visibility
