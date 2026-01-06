@@ -1253,16 +1253,12 @@ template simulationFile(SimCode simCode, String guid, String isModelExchangeFMU)
     <%simulationFileHeader(simCode.fileNamePrefix)%>
     #include "simulation/solver/events.h"
     #include "util/real_array.h"
+    #include "simulation/options.h"
 
     <% if stringEq("",isModelExchangeFMU) then
     <<
-    /* FIXME these defines are ugly and hard to read, why not use direct function pointers instead? */
-    #define prefixedName_performSimulation <%symbolName(modelNamePrefixStr,"performSimulation")%>
-    #define prefixedName_updateContinuousSystem <%symbolName(modelNamePrefixStr,"updateContinuousSystem")%>
-    #include <simulation/solver/perform_simulation.c.inc>
-
-    #define prefixedName_performQSSSimulation <%symbolName(modelNamePrefixStr,"performQSSSimulation")%>
-    #include <simulation/solver/perform_qss_simulation.c.inc>
+    #include <simulation/solver/perform_simulation.h>
+    #include <simulation/solver/perform_qss_simulation.h>
     >>
     %>
 
@@ -1299,9 +1295,9 @@ template simulationFile(SimCode simCode, String guid, String isModelExchangeFMU)
     #include "<%simCode.fileNamePrefix%>_13opt.h"
 
     struct OpenModelicaGeneratedFunctionCallbacks <%symbolName(modelNamePrefixStr,"callback")%> = {
-      <% if isModelExchangeFMU then "NULL" else '(int (*)(DATA *, threadData_t *, void *)) <%symbolName(modelNamePrefixStr,"performSimulation")%>'%>,    /* performSimulation */
-      <% if isModelExchangeFMU then "NULL" else '(int (*)(DATA *, threadData_t *, void *)) <%symbolName(modelNamePrefixStr,"performQSSSimulation")%>'%>,    /* performQSSSimulation */
-      <% if isModelExchangeFMU then "NULL" else '<%symbolName(modelNamePrefixStr,"updateContinuousSystem")%>'%>,    /* updateContinuousSystem */
+      <% if isModelExchangeFMU then "NULL" else '(int (*)(DATA *, threadData_t *, void *)) omc_performSimulation'%>,    /* performSimulation */
+      <% if isModelExchangeFMU then "NULL" else '(int (*)(DATA *, threadData_t *, void *)) omc_performQSSSimulation'%>,    /* performQSSSimulation */
+      <% if isModelExchangeFMU then "NULL" else 'omc_updateContinuousSystem'%>,    /* updateContinuousSystem */
       <%symbolName(modelNamePrefixStr,"callExternalObjectDestructors")%>,    /* callExternalObjectDestructors */
       <%if intEq(varInfo.numNonLinearSystems,0) then "NULL" else symbolName(modelNamePrefixStr,"initialNonLinearSystem")%>,    /* initialNonLinearSystem */
       <%if intEq(varInfo.numLinearSystems,0) then "NULL" else symbolName(modelNamePrefixStr,"initialLinearSystem")%>,    /* initialLinearSystem */

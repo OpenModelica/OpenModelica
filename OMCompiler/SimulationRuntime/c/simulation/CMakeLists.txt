@@ -61,6 +61,8 @@ set(OMC_SIMRT_SIMULATION_SOURCES
   "solver/nonlinearSystem.c"
   "solver/nonlinearValuesList.c"
   "solver/omc_math.c"
+  "solver/perform_qss_simulation.c"
+  "solver/perform_simulation.c"
   "solver/real_time_sync.c"
   "solver/solver_main.c"
   "solver/spatialDistribution.c"
@@ -69,11 +71,6 @@ set(OMC_SIMRT_SIMULATION_SOURCES
   "solver/sundials_util.c"
   "solver/sym_solver_ssc.c"
   "solver/synchronous.c"
-)
-
-set(OMC_SIMRT_SIMULATION_CINC
-  "solver/perform_qss_simulation.c.inc"
-  "solver/perform_simulation.c.inc"
 )
 
 set(OMC_SIMRT_SIMULATION_HEADERS
@@ -135,6 +132,8 @@ set(OMC_SIMRT_SIMULATION_HEADERS
   "solver/nonlinearSystem.h"
   "solver/nonlinearValuesList.h"
   "solver/omc_math.h"
+  "solver/perform_qss_simulation.h"
+  "solver/perform_simulation.h"
   "solver/real_time_sync.h"
   "solver/solver_main.h"
   "solver/spatialDistribution.h"
