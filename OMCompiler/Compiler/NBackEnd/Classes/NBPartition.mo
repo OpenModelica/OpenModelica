@@ -71,8 +71,9 @@ public
     record CONTINUOUS
       Kind kind;
       Option<Jacobian> jacobian     "Analytic jacobian for the integrator";
-      Option<Jacobian> Lfg_jacobian "Analytic jacobian of Lagrange term (L), ODE (f), Path Constraints (g) for MOO";
-      Option<Jacobian> Mr_jacobian  "Analytic jacobian of Mayer term (M), Boundary Constraints (r) for MOO";
+      Option<Jacobian> LFG_jacobian "Analytic jacobian of Lagrange term (L), ODE (f), Path Constraints (g) for MOO";
+      Option<Jacobian> MRF_jacobian "Analytic jacobian of Mayer term (Mf), Final Constraints (rf) for MOO";
+      Option<Jacobian> R0_jacobian  "Analytic jacobian of Initial Constraints (r0) for MOO";
     end CONTINUOUS;
 
     record CLOCKED
@@ -105,8 +106,9 @@ public
             str := StringUtil.headline_1("No Jacobian");
             // TODO: fix this
             //str := "[ODE]:\n" + BJacobian.toString(Util.getOption(association.jacobian), Partition.kindToString(association.kind)) + "\n";
-            str := "[OPTIMIZATION - LFG]:\n" + BJacobian.toString(Util.getOption(association.Lfg_jacobian), Partition.kindToString(association.kind)) + "\n";
-            str := str + "[OPTIMIZATION - MRf]:\n" + BJacobian.toString(Util.getOption(association.Mr_jacobian), Partition.kindToString(association.kind)) + "\n";
+            str := "[OPTIMIZATION - LFG]:\n" + BJacobian.toString(Util.getOption(association.LFG_jacobian), Partition.kindToString(association.kind)) + "\n";
+            str := str + "[OPTIMIZATION - MRf]:\n" + BJacobian.toString(Util.getOption(association.MRF_jacobian), Partition.kindToString(association.kind)) + "\n";
+            str := str + "[OPTIMIZATION - R0]:\n" + BJacobian.toString(Util.getOption(association.R0_jacobian), Partition.kindToString(association.kind)) + "\n";
           end if;
         then str;
         case CLOCKED() algorithm
@@ -158,7 +160,7 @@ public
           association := CLOCKED(clock, SOME(UnorderedMap.getSafe(base_name, info.baseClocks, sourceInfo())), clock_deps, false);
         end if;
       else
-        association := CONTINUOUS(kind, NONE(), NONE(), NONE());
+        association := CONTINUOUS(kind, NONE(), NONE(), NONE(), NONE());
       end if;
     end create;
 

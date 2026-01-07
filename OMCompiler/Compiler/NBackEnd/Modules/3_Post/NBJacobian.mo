@@ -83,7 +83,7 @@ protected
   import Util;
 
 public
-  type JacobianType = enumeration(ODE, DAE, LS, NLS, OPT_LFG, OPT_MRf, OPT_R0);
+  type JacobianType = enumeration(ODE, DAE, LS, NLS, OPT_LFG, OPT_MRF, OPT_R0);
 
   function isDynamic
     "is the jacobian used for integration (-> true)
@@ -95,7 +95,7 @@ public
       case JacobianType.ODE     then true;
       case JacobianType.DAE     then true;
       case JacobianType.OPT_LFG then true;
-      case JacobianType.OPT_MRf then true;
+      case JacobianType.OPT_MRF then true;
       case JacobianType.OPT_R0  then true;
       else false;
     end match;
@@ -306,9 +306,9 @@ public
       case JacobianType.DAE     then "[DAE]";
       case JacobianType.LS      then "[LS-]";
       case JacobianType.NLS     then "[NLS]";
-      case JacobianType.OPT_LFG then "[OPT-Lfg]";
-      case JacobianType.OPT_MRf then "[OPT-Mr(tf)]";
-      case JacobianType.OPT_R0  then "[OPT-r(0)]";
+      case JacobianType.OPT_LFG then "[OPT-LFG]";
+      case JacobianType.OPT_MRF then "[OPT-MRF]";
+      case JacobianType.OPT_R0  then "[OPT-R0]";
                                 else "[ERR]";
     end match;
   end jacobianTypeString;
@@ -450,9 +450,10 @@ public
             // only create rows for derivatives
             if jacType == JacobianType.NLS
                or BVariable.checkCref(cref, BVariable.isResidual, sourceInfo())
-               or (BVariable.checkCref(cref, BVariable.isStateDerivative, sourceInfo()) and jacType <> JacobianType.OPT_MRf)
+               or (BVariable.checkCref(cref, BVariable.isStateDerivative, sourceInfo()) and jacType <> JacobianType.OPT_MRF and jacType <> JacobianType.OPT_R0)
                or (jacType == JacobianType.OPT_LFG and BVariable.checkCref(cref, BVariable.isLagrangeOrPathConstraint, sourceInfo()))
-               or (jacType == JacobianType.OPT_MRf and BVariable.checkCref(cref, BVariable.isMayerOrFinalConstraint, sourceInfo())) then
+               or (jacType == JacobianType.OPT_MRF and BVariable.checkCref(cref, BVariable.isMayerOrFinalConstraint, sourceInfo()))
+               or (jacType == JacobianType.OPT_R0 and BVariable.checkCref(cref, BVariable.isInitialConstraint, sourceInfo())) then
               if UnorderedMap.contains(cref, map) then
                 tmp := UnorderedSet.unique_list(UnorderedMap.getOrFail(cref, map), ComponentRef.hash, ComponentRef.isEqual);
                 rows := (cref, tmp) :: rows;
@@ -472,7 +473,7 @@ public
 
           // create column-wise sparsity pattern
           for cref in listReverse(seed_vars) loop
-            if (jacType == JacobianType.OPT_LFG or jacType == JacobianType.OPT_MRf) or jacType == JacobianType.NLS or BVariable.checkCref(cref, BVariable.isState, sourceInfo()) then
+            if (jacType == JacobianType.OPT_LFG or jacType == JacobianType.OPT_MRF or jacType == JacobianType.OPT_R0) or jacType == JacobianType.NLS or BVariable.checkCref(cref, BVariable.isState, sourceInfo()) then
               tmp := UnorderedSet.unique_list(UnorderedMap.getSafe(cref, map, sourceInfo()), ComponentRef.hash, ComponentRef.isEqual);
               cols := (cref, tmp) :: cols;
               col_vars := cref :: col_vars;
@@ -588,7 +589,7 @@ public
     algorithm
       // create index -> cref arrays
       seeds := listArray(sparsityPattern.seed_vars);
-      if jacType == JacobianType.NLS or jacType == JacobianType.OPT_LFG or jacType == JacobianType.OPT_MRf then
+      if jacType == JacobianType.NLS or jacType == JacobianType.OPT_LFG or jacType == JacobianType.OPT_MRF or jacType == JacobianType.OPT_R0 then
         partials := listArray(sparsityPattern.partial_vars);
       else
         partials := listArray(list(cref for cref guard(BVariable.checkCref(cref, BVariable.isStateDerivative, sourceInfo()) or
@@ -763,6 +764,18 @@ protected
     end for;
   end getMayerFinalEquations;
 
+  function getInitialEquations
+    input Partition.Partition part;
+    input VariablePointers variables;
+    output list<Pointer<Variable>> out = {};
+  algorithm
+    for var_ptr in VariablePointers.toList(variables) loop
+      if BVariable.isInitialConstraint(var_ptr) then
+        out := var_ptr :: out;
+      end if;
+    end for;
+  end getInitialEquations;
+
   function getSeedCandidatesDynamicOptimization
     input Partition.Partition part;
     input VariablePointers all_knowns;
@@ -797,14 +810,25 @@ protected
     // sort?
   end getMrfPartialCandidates;
 
+  function getr0PartialCandidates
+    input Partition.Partition part;
+    input VariablePointers all_knowns;
+    output list<Pointer<Variable>> partialCandidates;
+  algorithm
+    partialCandidates := VariablePointers.toList(part.unknowns);
+    partialCandidates := listAppend(getInitialEquations(part, all_knowns), partialCandidates);
+    // sort?
+  end getr0PartialCandidates;
+
   function partJacobianDynamicOptimization
     input Partition.Partition part;
     input VariablePointers all_knowns;
     input String name;
     input Module.jacobianInterface func;
     input UnorderedMap<Path, Function> funcMap;
-    output Option<Jacobian> Lfg_jacobian;
-    output Option<Jacobian> Mr_jacobian;
+    output Option<Jacobian> LFG_jacobian;
+    output Option<Jacobian> MRF_jacobian;
+    output Option<Jacobian> R0_jacobian;
   protected
     Boolean init = true; // TODO for parameter seed?
     VariablePointers seedCandidates, partialCandidates;
@@ -818,13 +842,14 @@ protected
     seedCandidates := VariablePointers.fromList(getSeedCandidatesDynamicOptimization(part, all_knowns), partialCandidates.scalarized);
     print("[DEBUG] seedCandidates:\n" + VariablePointers.toString(seedCandidates));
 
-    Lfg_jacobian := func(name, JacobianType.OPT_LFG, seedCandidates, partialCandidates,
+    // TODO: add _OPT to name?
+    LFG_jacobian := func(name, JacobianType.OPT_LFG, seedCandidates, partialCandidates,
                          part.equations, all_knowns, part.strongComponents, funcMap, init);
     print("[DEBUG] JACOBIAN DONE\n");
 
-    print("[DEBUG] MR\n");
+    print("[DEBUG] MRf\n");
 
-    // Lfg Jacobian (Lagrange (L), ODE (f), Path Constraints (g))
+    // Mrf Jacobian (Mayer (M), Final Constraints (rf))
     partialCandidates := VariablePointers.fromList(getMrfPartialCandidates(part, all_knowns), part.unknowns.scalarized);
     print("[DEBUG] Partial candidates:\n" + VariablePointers.toString(partialCandidates));
 
@@ -832,9 +857,22 @@ protected
     print("[DEBUG] seedCandidates:\n" + VariablePointers.toString(seedCandidates));
 
     // TODO: add _OPT to name?
-    Mr_jacobian := func(name, JacobianType.OPT_MRf, seedCandidates, partialCandidates,
-                                     part.equations, all_knowns, part.strongComponents, funcMap, init);
+    MRF_jacobian := func(name, JacobianType.OPT_MRF, seedCandidates, partialCandidates,
+                         part.equations, all_knowns, part.strongComponents, funcMap, init);
     print("[DEBUG] JACOBIAN DONE\n");
+
+    print("[DEBUG] R0\n");
+
+    // r0 Jacobian (Initial Constraints (r0))
+    partialCandidates := VariablePointers.fromList(getr0PartialCandidates(part, all_knowns), part.unknowns.scalarized);
+    print("[DEBUG] Partial candidates:\n" + VariablePointers.toString(partialCandidates));
+
+    seedCandidates := VariablePointers.fromList(getSeedCandidatesDynamicOptimization(part, all_knowns), partialCandidates.scalarized);
+    print("[DEBUG] seedCandidates:\n" + VariablePointers.toString(seedCandidates));
+
+    // TODO: add _OPT to name?
+    R0_jacobian := func(name, JacobianType.OPT_R0, seedCandidates, partialCandidates,
+                        part.equations, all_knowns, part.strongComponents, funcMap, init);
 
   end partJacobianDynamicOptimization;
 
@@ -849,7 +887,7 @@ protected
     VariablePointers unknowns;
     list<Pointer<Variable>> derivative_vars, state_vars;
     VariablePointers seedCandidates, partialCandidates;
-    Option<Jacobian> jacobian, Lfg_jacobian = NONE(), Mr_jacobian = NONE()  "Resulting jacobian";
+    Option<Jacobian> jacobian, LFG_jacobian = NONE(), MRF_jacobian = NONE(), R0_jacobian = NONE()  "Resulting jacobian";
     Partition.Kind kind = Partition.Partition.getKind(part);
     Boolean updated;
   algorithm
@@ -883,10 +921,10 @@ protected
 
       if Flags.getConfigBool(Flags.MOO_DYNAMIC_OPTIMIZATION) then
         /* Add Lfg + Mr Jacobians for MOO dynamic optimization */
-        (Lfg_jacobian, Mr_jacobian) := partJacobianDynamicOptimization(part, knowns, name, func, funcMap);
+        (LFG_jacobian, MRF_jacobian, R0_jacobian) := partJacobianDynamicOptimization(part, knowns, name, func, funcMap);
       end if;
 
-      part.association := Partition.Association.CONTINUOUS(kind, jacobian, Lfg_jacobian, Mr_jacobian);
+      part.association := Partition.Association.CONTINUOUS(kind, jacobian, LFG_jacobian, MRF_jacobian, R0_jacobian);
       if Flags.isSet(Flags.JAC_DUMP) then
         print(Partition.Partition.toString(part, 2));
       end if;
@@ -1079,7 +1117,7 @@ protected
       case JacobianType.LS      then BVariable.isResidual;
       case JacobianType.NLS     then BVariable.isResidual;
       case JacobianType.OPT_LFG then BVariable.isStateDerivative;
-      case JacobianType.OPT_MRf then BVariable.isStateDerivative;
+      case JacobianType.OPT_MRF then BVariable.isStateDerivative;
       case JacobianType.OPT_R0  then BVariable.isStateDerivative;
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because jacobian type is not known: " + jacobianTypeString(jacType)});
