@@ -1048,7 +1048,10 @@ void Parameter::valueCheckBoxChanged(bool toggle)
  */
 void Parameter::valueTextBoxChanged(const QString &text)
 {
-  updateValueBinding(FlatModelica::Expression::parse(text));
+  try {
+    updateValueBinding(FlatModelica::Expression::parse(text));
+  } catch (...) {
+  }
 }
 
 void Parameter::showFixedMenu()
