@@ -65,119 +65,114 @@ IPOPT_HEADERS := Interfaces Common Linalg Apps Algorithm
 IPOPT_INCLUDES := $(addprefix -I$(IPOPTDIR)/,$(IPOPT_HEADERS))
 
 RUNTIME_HEADERS = \
-./omc_inline.h \
-./openmodelica_func.h \
-./openmodelica.h \
-./omc_simulation_settings.h \
-./openmodelica_types.h \
-./simulation_data.h \
-./ModelicaUtilities.h
+omc_inline.h \
+openmodelica_func.h \
+openmodelica.h \
+omc_simulation_settings.h \
+openmodelica_types.h \
+simulation_data.h \
+ModelicaUtilities.h
 
-RUNTIMELINEAR_HEADERS = ./linearization/linearize.h
+RUNTIMELINEAR_HEADERS = linearization/linearize.h
 
-RUNTIMEDATARECONCILE_HEADERS = ./dataReconciliation/dataReconciliation.h
+RUNTIMEDATARECONCILE_HEADERS = dataReconciliation/dataReconciliation.h
 
-RUNTIMEOPTIMZ_HEADERS = ./optimization/OptimizerData.h ./optimization/OptimizerLocalFunction.h ./optimization/OptimizerInterface.h
+RUNTIMEOPTIMZ_HEADERS = optimization/OptimizerData.h optimization/OptimizerLocalFunction.h optimization/OptimizerInterface.h
 
-RUNTIMESIMULATION_HEADERS = ./simulation/modelinfo.h \
-./simulation/arrayIndex.h \
-./simulation/jacobian_util.h \
-./simulation/options.h \
-./simulation/simulation_info_json.h \
-./simulation/simulation_input_xml.h \
-./simulation/simulation_omc_assert.h \
-./simulation/simulation_runtime.h \
-./simulation/omc_simulation_util.h \
-./simulation/socket.h
+RUNTIMESIMULATION_HEADERS = simulation/modelinfo.h \
+simulation/arrayIndex.h \
+simulation/jacobian_util.h \
+simulation/options.h \
+simulation/simulation_info_json.h \
+simulation/simulation_input_xml.h \
+simulation/simulation_omc_assert.h \
+simulation/simulation_runtime.h \
+simulation/omc_simulation_util.h \
+simulation/socket.h
 
-RUNTIMESIMRESULTS_HEADERS = ./simulation/results/simulation_result.h
+RUNTIMESIMRESULTS_HEADERS = simulation/results/simulation_result.h
 
-RUNTIMESIMSOLVER_HEADERS = ./simulation/solver/cvode_solver.h \
-./simulation/solver/dae_mode.h \
-./simulation/solver/dassl.h \
-./simulation/solver/delay.h \
-./simulation/solver/embedded_server.h \
-./simulation/solver/epsilon.h \
-./simulation/solver/events.h \
-./simulation/solver/external_input.h \
-./simulation/solver/fmi_events.h \
-./simulation/solver/ida_solver.h \
-./simulation/solver/linearSolverLapack.h \
-./simulation/solver/linearSolverTotalPivot.h \
-./simulation/solver/linearSystem.h \
-./simulation/solver/mixedSearchSolver.h \
-./simulation/solver/mixedSystem.h \
-./simulation/solver/model_help.h \
-./simulation/solver/nonlinearSolverHomotopy.h \
-./simulation/solver/nonlinearSolverHybrd.h \
-./simulation/solver/nonlinearSystem.h \
-./simulation/solver/nonlinearValuesList.h \
-./simulation/solver/omc_math.h \
-./simulation/solver/perform_qss_simulation.c.inc \
-./simulation/solver/perform_simulation.c.inc \
-./simulation/solver/real_time_sync.h \
-./simulation/solver/solver_main.h \
-./simulation/solver/spatialDistribution.h \
-./simulation/solver/stateset.h \
-./simulation/solver/sundials_error.h \
-./simulation/solver/sundials_util.h \
-./simulation/solver/sym_solver_ssc.h \
-./simulation/solver/synchronous.h
+RUNTIMESIMSOLVER_HEADERS = simulation/solver/cvode_solver.h \
+simulation/solver/dae_mode.h \
+simulation/solver/dassl.h \
+simulation/solver/delay.h \
+simulation/solver/embedded_server.h \
+simulation/solver/epsilon.h \
+simulation/solver/events.h \
+simulation/solver/external_input.h \
+simulation/solver/fmi_events.h \
+simulation/solver/ida_solver.h \
+simulation/solver/linearSolverLapack.h \
+simulation/solver/linearSolverTotalPivot.h \
+simulation/solver/linearSystem.h \
+simulation/solver/mixedSearchSolver.h \
+simulation/solver/mixedSystem.h \
+simulation/solver/model_help.h \
+simulation/solver/nonlinearSolverHomotopy.h \
+simulation/solver/nonlinearSolverHybrd.h \
+simulation/solver/nonlinearSystem.h \
+simulation/solver/nonlinearValuesList.h \
+simulation/solver/omc_math.h \
+simulation/solver/perform_qss_simulation.c.inc \
+simulation/solver/perform_simulation.c.inc \
+simulation/solver/real_time_sync.h \
+simulation/solver/solver_main.h \
+simulation/solver/spatialDistribution.h \
+simulation/solver/stateset.h \
+simulation/solver/sundials_error.h \
+simulation/solver/sundials_util.h \
+simulation/solver/sym_solver_ssc.h \
+simulation/solver/synchronous.h
 
-RUNTIMEMETA_HEADERS = ./meta/meta_modelica_builtin_boxptr.h \
-./meta/meta_modelica_builtin_boxvar.h \
-./meta/meta_modelica_builtin.h \
-./meta/meta_modelica.h \
-./meta/meta_modelica_data.h \
-./meta/meta_modelica_mk_box.h \
-./meta/meta_modelica_segv.h
+RUNTIMEMETA_HEADERS = meta/meta_modelica_builtin_boxptr.h \
+meta/meta_modelica_builtin_boxvar.h \
+meta/meta_modelica_builtin.h \
+meta/meta_modelica.h \
+meta/meta_modelica_data.h \
+meta/meta_modelica_mk_box.h \
+meta/meta_modelica_segv.h
 
-RUNTIMEMETAGC_HEADERS = ./gc/omc_gc.h ./gc/memory_pool.h
+RUNTIMEMETAGC_HEADERS = gc/omc_gc.h gc/memory_pool.h
 
 RUNTIMEUTIL_HEADERS = \
-./util/base_array.h \
-./util/boolean_array.h \
-./util/context.h \
-./util/division.h \
-./util/generic_array.h \
-./util/index_spec.h \
-./util/integer_array.h \
-./util/java_interface.h \
-./util/modelica.h \
-./util/modelica_string.h \
-./util/omc_error.h \
-./util/omc_file.h \
-./util/omc_mmap.h \
-./util/omc_msvc.h \
-./util/omc_numbers.h \
-./util/omc_spinlock.h \
-./util/parallel_helper.h \
-./util/read_matlab4.h \
-./util/read_csv.h \
-./util/libcsv.h \
-./util/read_write.h \
-./util/real_array.h \
-./util/ringbuffer.h \
-./util/rtclock.h \
-./util/simulation_options.h \
-./util/string_array.h \
-./util/uthash.h \
-./util/utility.h \
-./util/varinfo.h \
-./util/list.h \
-./util/doubleEndedList.h \
-./util/rational.h \
-./util/modelica_string_lit.h \
-./util/omc_init.h
+util/base_array.h \
+util/boolean_array.h \
+util/context.h \
+util/division.h \
+util/generic_array.h \
+util/index_spec.h \
+util/integer_array.h \
+util/java_interface.h \
+util/modelica.h \
+util/modelica_string.h \
+util/omc_error.h \
+util/omc_file.h \
+util/omc_mmap.h \
+util/omc_msvc.h \
+util/omc_numbers.h \
+util/omc_spinlock.h \
+util/parallel_helper.h \
+util/read_matlab4.h \
+util/read_csv.h \
+util/libcsv.h \
+util/read_write.h \
+util/real_array.h \
+util/ringbuffer.h \
+util/rtclock.h \
+util/simulation_options.h \
+util/string_array.h \
+util/uthash.h \
+util/utility.h \
+util/varinfo.h \
+util/list.h \
+util/doubleEndedList.h \
+util/rational.h \
+util/modelica_string_lit.h \
+util/omc_init.h
 
 RUNTIMEINITIALIZATION_HEADERS = \
-./simulation/solver/initialization/initialization.h
+simulation/solver/initialization/initialization.h
 
-# RUNTIME_HEADERS_FMU = \
-# ./simulation/solver/initialization/initialization.h \
-# ./simulation/solver/events.h \
-# ./simulation/solver/solver_main.h \
-# ./util/list.h \
 
 ALL_RUNTIME_HEADERS = $(RUNTIME_HEADERS) $(RUNTIMELINEAR_HEADERS) $(RUNTIMEOPTIMZ_HEADERS) $(RUNTIMESIMULATION_HEADERS) $(RUNTIMESIMRESULTS_HEADERS) $(RUNTIMESIMSOLVER_HEADERS) $(RUNTIMEINITIALIZATION_HEADERS) $(RUNTIMEMETA_HEADERS) $(RUNTIMEMETAGC_HEADERS) $(RUNTIMEUTIL_HEADERS) $(RUNTIMEDATARECONCILE_HEADERS)
 
@@ -254,7 +249,7 @@ $(METAOBJSPATH):$(BUILDPATH)/%$(OBJ_EXT): %.c $(METAHFILESPATH) $(COMMON_HEADERS
 	$(MKBUILDDIR)
 	$(CC) -c $(CFLAGS) -o $@ $<
 
-$(BUILDPATH)/./meta/meta_modelica_catch$(OBJ_EXT): meta/meta_modelica_catch.c
+$(BUILDPATH)/meta/meta_modelica_catch$(OBJ_EXT): meta/meta_modelica_catch.c
 	$(MKBUILDDIR)
 	$(CC) -c $(CFLAGS) -o $@ $< -g
 
