@@ -818,7 +818,6 @@ protected
     seedCandidates := VariablePointers.fromList(getSeedCandidatesDynamicOptimization(part, all_knowns), partialCandidates.scalarized);
     print("[DEBUG] seedCandidates:\n" + VariablePointers.toString(seedCandidates));
 
-    // TODO: add _OPT to name?
     Lfg_jacobian := func(name, JacobianType.OPT_LFG, seedCandidates, partialCandidates,
                          part.equations, all_knowns, part.strongComponents, funcMap, init);
     print("[DEBUG] JACOBIAN DONE\n");
@@ -833,8 +832,8 @@ protected
     print("[DEBUG] seedCandidates:\n" + VariablePointers.toString(seedCandidates));
 
     // TODO: add _OPT to name?
-    (Mr_jacobian, funcTree) := func(name, JacobianType.OPT_MRf, seedCandidates, partialCandidates,
-                                     part.equations, all_knowns, part.strongComponents, funcTree, init);
+    Mr_jacobian := func(name, JacobianType.OPT_MRf, seedCandidates, partialCandidates,
+                                     part.equations, all_knowns, part.strongComponents, funcMap, init);
     print("[DEBUG] JACOBIAN DONE\n");
 
   end partJacobianDynamicOptimization;
