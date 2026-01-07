@@ -94,9 +94,9 @@ system("rm -f ./ReferenceFiles/CSE.wrapFunctionCalls10_res.mat");
 // 1: p1:PARAM()  = 5  type: Integer
 // 2: p2:PARAM()  = 10  type: Integer
 // 3: p3:PARAM()  = 1.0  type: Real
-// 4: $cse1.d2 in $cse1:PARAM(protected = true )  = CSE.wrapFunctionCalls10.f2(p1, p2)  type: Integer unreplaceable
-// 5: $cse1.d1 in $cse1:PARAM(protected = true )  = CSE.wrapFunctionCalls10.f2(p1, p2)  type: Integer unreplaceable
-// 6: z1:PARAM()  = CSE.wrapFunctionCalls10.f1($cse1, p3)  type: Real
+// 4: $cse1.d2 in $cse1:PARAM(protected = true final = true )  = CSE.wrapFunctionCalls10.f2(p1, p2)  type: Integer unreplaceable
+// 5: $cse1.d1 in $cse1:PARAM(protected = true final = true )  = CSE.wrapFunctionCalls10.f2(p1, p2)  type: Integer unreplaceable
+// 6: z1:PARAM(final = true )  = CSE.wrapFunctionCalls10.f1($cse1, p3)  type: Real
 //
 //
 // ########### CSE Replacements (3/44)
@@ -106,7 +106,7 @@ system("rm -f ./ReferenceFiles/CSE.wrapFunctionCalls10_res.mat");
 // 3: z2 - CSE.wrapFunctionCalls10.f1($cse1, time) - {}
 // record SimulationResult
 //     resultFile = "CSE.wrapFunctionCalls10_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'CSE.wrapFunctionCalls10', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'CSE.wrapFunctionCalls10', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "

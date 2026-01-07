@@ -1078,6 +1078,7 @@ function evalMultaryAddSub
   input list<Expression> inv_arguments;
   input Type operator_ty;
   output Expression exp = Expression.EMPTY(operator_ty);
+  output Boolean isNeutral;
 algorithm
   // add up all arguments
   for arg in arguments loop
@@ -1089,8 +1090,8 @@ algorithm
     exp := evalBinarySub(exp, arg);
   end for;
 
-  // fix expression if its still empty at the end
-  exp := if Expression.isEmpty(exp) then Expression.makeZero(operator_ty) else exp;
+  // return a boolean that is set to true if its the neutral element
+  isNeutral := Expression.isEmpty(exp) or Expression.isZero(exp);
 end evalMultaryAddSub;
 
 function evalBinaryMul
@@ -1149,14 +1150,8 @@ function evalBinaryDiv
   output Expression exp;
 algorithm
   exp := match (exp1, exp2)
-    // while technically not allowed to devide integers, it occurs when solving in the new backend
-    case (_, Expression.INTEGER(1)) then exp1;
-    case (Expression.REAL(), Expression.INTEGER()) then Expression.REAL(exp1.value / exp2.value);
-    case (Expression.INTEGER(), Expression.REAL()) then Expression.REAL(exp1.value / exp2.value);
-    case (Expression.INTEGER(), Expression.INTEGER()) then
-      if intMod(exp1.value, exp2.value) == 0 then Expression.INTEGER(intDiv(exp1.value, exp2.value)) else Expression.REAL(exp1.value / exp2.value);
-
-    case (_, Expression.REAL(0.0))
+    // Division by zero
+    case (_, _) guard Expression.isZero(exp2)
       algorithm
         if EvalTarget.hasInfo(target) then
           Error.addSourceMessage(Error.DIVISION_BY_ZERO,
@@ -1167,6 +1162,14 @@ algorithm
         end if;
       then
         exp;
+
+    // while technically not allowed to divide integers, it occurs when solving in the new backend
+    case (_, Expression.INTEGER(1)) then exp1;
+    case (Expression.REAL(), Expression.INTEGER()) then Expression.REAL(exp1.value / exp2.value);
+    case (Expression.INTEGER(), Expression.REAL()) then Expression.REAL(exp1.value / exp2.value);
+
+    case (Expression.INTEGER(), Expression.INTEGER()) then
+      if intMod(exp1.value, exp2.value) == 0 then Expression.INTEGER(intDiv(exp1.value, exp2.value)) else Expression.REAL(exp1.value / exp2.value);
 
     case (Expression.REAL(), Expression.REAL())
       then Expression.REAL(exp1.value / exp2.value);
@@ -1207,6 +1210,7 @@ function evalMultaryMulDiv
   input list<Expression> inv_arguments;
   input Type operator_ty;
   output Expression exp = Expression.EMPTY(operator_ty);
+  output Boolean isNeutral;
 algorithm
   // multiply all arguments
   for arg in arguments loop
@@ -1218,8 +1222,8 @@ algorithm
     exp := evalBinaryDiv(exp, arg, noTarget);
   end for;
 
-  // fix expression if its still empty at the end
-  exp := if Expression.isEmpty(exp) then Expression.makeOne(operator_ty) else exp;
+  // return a boolean that is set to true if its the neutral element
+  isNeutral := Expression.isEmpty(exp) or Expression.isOne(exp);
 end evalMultaryMulDiv;
 
 function evalBinaryPow
