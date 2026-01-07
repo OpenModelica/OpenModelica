@@ -105,8 +105,8 @@ public
             str := StringUtil.headline_1("No Jacobian");
             // TODO: fix this
             //str := "[ODE]:\n" + BJacobian.toString(Util.getOption(association.jacobian), Partition.kindToString(association.kind)) + "\n";
-            str := "[OPTIMIZATION]:\n" + BJacobian.toString(Util.getOption(association.Lfg_jacobian), Partition.kindToString(association.kind)) + "\n";
-            //str := str + BJacobian.toString(Util.getOption(association.Mr_jacobian), Partition.kindToString(association.kind)) + "\n";
+            str := "[OPTIMIZATION - LFG]:\n" + BJacobian.toString(Util.getOption(association.Lfg_jacobian), Partition.kindToString(association.kind)) + "\n";
+            str := str + "[OPTIMIZATION - MRf]:\n" + BJacobian.toString(Util.getOption(association.Mr_jacobian), Partition.kindToString(association.kind)) + "\n";
           end if;
         then str;
         case CLOCKED() algorithm

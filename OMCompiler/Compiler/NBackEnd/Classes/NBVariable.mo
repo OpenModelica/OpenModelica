@@ -715,6 +715,30 @@ public
     end match;
   end isLagrangeOrPathConstraint;
 
+  function isMayerOrFinalConstraint
+    extends checkVar;
+  protected
+    OptimizerExpression optExp;
+  algorithm
+    b := match (var.backendinfo)
+      case BackendExtension.BACKEND_INFO(annotations = BackendExtension.ANNOTATIONS(optimizerExpression = SOME(optExp)))
+        then (optExp == OptimizerExpression.MAYER or optExp == OptimizerExpression.FINAL_CONSTRAINT);
+      else false;
+    end match;
+  end isMayerOrFinalConstraint;
+
+  function isInitialConstraint
+    extends checkVar;
+  protected
+    OptimizerExpression optExp;
+  algorithm
+    b := match (var.backendinfo)
+      case BackendExtension.BACKEND_INFO(annotations = BackendExtension.ANNOTATIONS(optimizerExpression = SOME(optExp)))
+        then (optExp == OptimizerExpression.INITIAL_CONSTRAINT);
+      else false;
+    end match;
+  end isInitialConstraint;
+
   function isStateOrOptimizable
     extends checkVar;
   algorithm

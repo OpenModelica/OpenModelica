@@ -1545,8 +1545,11 @@ public
               case SCode.NAMEMOD(ident = "isConstraint", mod = SCode.MOD(binding = SOME(Absyn.BOOL(b)))) algorithm
                 annotations.optimizerExpression := SOME(OptimizerExpression.PATH_CONSTRAINT);
               then ();
-              case SCode.NAMEMOD(ident = "isBoundaryConstraint", mod = SCode.MOD(binding = SOME(Absyn.BOOL(b)))) algorithm
-                annotations.optimizerExpression := SOME(OptimizerExpression.BOUNDARY_CONSTRAINT);
+              case SCode.NAMEMOD(ident = "isInitialConstraint", mod = SCode.MOD(binding = SOME(Absyn.BOOL(b)))) algorithm
+                annotations.optimizerExpression := SOME(OptimizerExpression.INITIAL_CONSTRAINT);
+              then ();
+              case SCode.NAMEMOD(ident = "isFinalConstraint", mod = SCode.MOD(binding = SOME(Absyn.BOOL(b)))) algorithm
+                annotations.optimizerExpression := SOME(OptimizerExpression.FINAL_CONSTRAINT);
               then ();
               case SCode.NAMEMOD(ident = "isInitialTime", mod = SCode.MOD(binding = SOME(Absyn.BOOL(b)))) algorithm
                 annotations.optimizerExpression := SOME(OptimizerExpression.INITIAL_TIME);
@@ -1564,7 +1567,7 @@ public
   end Annotations;
 
   // TODO: how to use Initial or Final state? - better state-pair Real x_0 = x (initialState = true);  -> binding only for initial time / optimizer?
-  type OptimizerExpression = enumeration(MAYER, LAGRANGE, PATH_CONSTRAINT, BOUNDARY_CONSTRAINT, INITIAL_TIME, FINAL_TIME);
+  type OptimizerExpression = enumeration(MAYER, LAGRANGE, PATH_CONSTRAINT, INITIAL_CONSTRAINT, FINAL_CONSTRAINT, INITIAL_TIME, FINAL_TIME);
 
   constant Annotations EMPTY_ANNOTATIONS = ANNOTATIONS(false, false, false, NONE());
 
