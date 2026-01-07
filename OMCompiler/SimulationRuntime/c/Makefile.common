@@ -408,11 +408,11 @@ RuntimeSources.mo: Makefile.common Makefile.objs RuntimeSources.mo.tpl
 	sed \
 	    -e "s#COMMON_HEADERS#`cat headers.tmp`#" \
 	    -e "s#COMMON_FILES#`cat sources.tmp`#" \
-	    -e "s#DGESV_FILES#`echo $(DGESV_OBJS:%=\\\"./external_solvers/%.c\\\") | tr " " ,`#" \
-	    -e "s#NLS_FILES#`echo $(SOLVER_OBJS_NONLINEAR_SYSTEMS:%.o=\\\"./simulation/solver/%.c\\\") | tr " " ,`#" \
-	    -e "s#CMINPACK_FILES#`echo $(CMINPACK_OBJS:%=\\\"./external_solvers/%.c\\\") | tr " " ,`#" \
-	    -e "s#LS_FILES#`echo $(SOLVER_OBJS_LINEAR_SYSTEMS:%.o=\\\"./simulation/solver/%.c\\\") | tr " " ,`#" \
-	    -e "s#MIXED_FILES#`echo $(SOLVER_OBJS_MIXED_SYSTEMS:%.o=\\\"./simulation/solver/%.c\\\") | tr " " ,`#" \
+	    -e "s#DGESV_FILES#`echo $(DGESV_OBJS:%=\\\"external_solvers/%.c\\\") | tr " " ,`#" \
+	    -e "s#NLS_FILES#`echo $(SOLVER_OBJS_NONLINEAR_SYSTEMS:%.o=\\\"simulation/solver/%.c\\\") | tr " " ,`#" \
+	    -e "s#CMINPACK_FILES#`echo $(CMINPACK_OBJS:%=\\\"external_solvers/%.c\\\") | tr " " ,`#" \
+	    -e "s#LS_FILES#`echo $(SOLVER_OBJS_LINEAR_SYSTEMS:%.o=\\\"simulation/solver/%.c\\\") | tr " " ,`#" \
+	    -e "s#MIXED_FILES#`echo $(SOLVER_OBJS_MIXED_SYSTEMS:%.o=\\\"simulation/solver/%.c\\\") | tr " " ,`#" \
 	    RuntimeSources.mo.tpl > $@.tmp
 	mv $@.tmp $@
 sources.tmp: Makefile.common Makefile.objs
