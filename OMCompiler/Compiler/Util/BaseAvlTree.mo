@@ -337,6 +337,29 @@ algorithm
   end match;
 end toList;
 
+function listKeys
+  "Constructs a list of all the keys in the tree."
+  input Tree tree;
+  input output list<Key> lst = {};
+algorithm
+  lst := match tree
+    local
+      Key key;
+
+    case NODE(key = key)
+      algorithm
+        lst := listKeys(tree.right, lst);
+        lst := key :: lst;
+        lst := listKeys(tree.left, lst);
+      then lst;
+
+    case LEAF(key = key) then key :: lst;
+
+    else lst;
+
+  end match;
+end listKeys;
+
 function listValues
   "Constructs a list of all the values in the tree."
   input Tree tree;

@@ -728,6 +728,7 @@ algorithm
       DAE.CallAttributes attr;
       list<String> fieldNames;
       DAE.ClockKind clk;
+      list<DAE.Subscript> subs;
 
     // no prefix, return the input expression
     case (e,DAE.NOPRE())
@@ -767,8 +768,9 @@ algorithm
       then
         (cache, DAE.CLKCONST(clk));
 
-    case ((DAE.ASUB(exp = e1, sub = expl)),_)
+    case ((DAE.ASUB(exp = e1, sub = subs)),_)
       equation
+        expl = list(Expression.getSubscriptExp(sub) for sub in subs);
         (cache, es_1) = prefixExpList(cache, env, ih, expl, pre);
         (cache, e1) = prefixExpWork(cache, env, ih, e1, pre);
         e2 = Expression.makeASUB(e1,es_1);

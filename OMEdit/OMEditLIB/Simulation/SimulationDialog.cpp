@@ -394,9 +394,6 @@ void SimulationDialog::setUpForm()
   mpNonLinearSolverComboBox = new ComboBox;
   mpNonLinearSolverComboBox->addItems(nonLinearSolverMethods);
   Utilities::setToolTip(mpNonLinearSolverComboBox, "Non Linear Solvers", nonLinearSolverMethodsDesc);
-  // time where the linearization of the model should be performed
-  mpLinearizationTimeLabel = new Label(tr("Linearization Time (Optional):"));
-  mpLinearizationTimeTextBox = new QLineEdit;
   // output variables
   mpOutputVariablesLabel = new Label(tr("Output Variables (Optional):"));
   mpOutputVariablesLabel->setToolTip(tr("Comma separated list of variables. Output the variables at the end of the simulation to the standard output."));
@@ -465,19 +462,17 @@ void SimulationDialog::setUpForm()
   pSimulationFlagsTabLayout->addWidget(mpLinearSolverComboBox, 5, 1, 1, 2);
   pSimulationFlagsTabLayout->addWidget(mpNonLinearSolverLabel, 6, 0);
   pSimulationFlagsTabLayout->addWidget(mpNonLinearSolverComboBox, 6, 1, 1, 2);
-  pSimulationFlagsTabLayout->addWidget(mpLinearizationTimeLabel, 7, 0);
-  pSimulationFlagsTabLayout->addWidget(mpLinearizationTimeTextBox, 7, 1, 1, 2);
-  pSimulationFlagsTabLayout->addWidget(mpOutputVariablesLabel, 8, 0);
-  pSimulationFlagsTabLayout->addWidget(mpOutputVariablesTextBox, 8, 1, 1, 2);
-  pSimulationFlagsTabLayout->addWidget(mpProfilingLabel, 9, 0);
-  pSimulationFlagsTabLayout->addWidget(mpProfilingComboBox, 9, 1, 1, 2);
-  pSimulationFlagsTabLayout->addWidget(mpCPUTimeCheckBox, 10, 0, 1, 3);
-  pSimulationFlagsTabLayout->addWidget(mpEnableAllWarningsCheckBox, 11, 0, 1, 3);
-  pSimulationFlagsTabLayout->addWidget(mpLoggingGroupBox, 12, 0, 1, 3);
-  pSimulationFlagsTabLayout->addWidget(mpAdditionalSimulationFlagsLabel, 13, 0);
-  pSimulationFlagsTabLayout->addLayout(pAdditionalSimulationFlagsTabLayout, 13, 1, 1, 2);
+  pSimulationFlagsTabLayout->addWidget(mpOutputVariablesLabel, 7, 0);
+  pSimulationFlagsTabLayout->addWidget(mpOutputVariablesTextBox, 7, 1, 1, 2);
+  pSimulationFlagsTabLayout->addWidget(mpProfilingLabel, 8, 0);
+  pSimulationFlagsTabLayout->addWidget(mpProfilingComboBox, 8, 1, 1, 2);
+  pSimulationFlagsTabLayout->addWidget(mpCPUTimeCheckBox, 9, 0, 1, 3);
+  pSimulationFlagsTabLayout->addWidget(mpEnableAllWarningsCheckBox, 10, 0, 1, 3);
+  pSimulationFlagsTabLayout->addWidget(mpLoggingGroupBox, 11, 0, 1, 3);
+  pSimulationFlagsTabLayout->addWidget(mpAdditionalSimulationFlagsLabel, 12, 0);
+  pSimulationFlagsTabLayout->addLayout(pAdditionalSimulationFlagsTabLayout, 12, 1, 1, 2);
   mpSimulationFlagsTab->setLayout(pSimulationFlagsTabLayout);
-  // add Output Tab to Simulation TabWidget
+  // add SimulationFlags Tab to Simulation TabWidget
   mpSimulationTabWidget->addTab(mpSimulationFlagsTabScrollArea, tr("Simulation Flags"));
   // Output Tab
   mpOutputTab = new QWidget;
@@ -533,6 +528,23 @@ void SimulationDialog::setUpForm()
   mpOutputTab->setLayout(pOutputTabLayout);
   // add Output Tab to Simulation TabWidget
   mpSimulationTabWidget->addTab(mpOutputTab, Helper::output);
+  // Linearize Tab
+  mpLinearizeTab = new QWidget;
+  // Linearization dump language combo box
+  mpLinearizationDumpLanguageComboBox = new ComboBox;
+  OMCInterface::getConfigFlagValidOptions_res linearizationLanguages = MainWindow::instance()->getOMCProxy()->getConfigFlagValidOptions("linearizationDumpLanguage");
+  mpLinearizationDumpLanguageComboBox->addItems(linearizationLanguages.validOptions);
+  mpLinearizationDumpLanguageComboBox->setCurrentIndex(0);
+  Utilities::setToolTip(mpLinearizationDumpLanguageComboBox, linearizationLanguages.mainDescription, linearizationLanguages.descriptions);
+  // set Linearize Tab Layout
+  QGridLayout *pLinearizeTabLayout = new QGridLayout;
+  pLinearizeTabLayout->setAlignment(Qt::AlignTop);
+  pLinearizeTabLayout->addWidget(new Label(tr("Linearize model at time = StopTime")), 0, 0, 1, 2);
+  pLinearizeTabLayout->addWidget(new Label(tr("Target language for linearized model:")), 1, 0);
+  pLinearizeTabLayout->addWidget(mpLinearizationDumpLanguageComboBox, 1, 1);
+  mpLinearizeTab->setLayout(pLinearizeTabLayout);
+  // add Linearize Tab to Simulation TabWidget
+  mpSimulationTabWidget->addTab(mpLinearizeTab, tr("Linearize"));
   // Add the validators
   QDoubleValidator *pDoubleValidator = new QDoubleValidator(this);
   mpStartTimeTextBox->setValidator(pDoubleValidator);
@@ -765,8 +777,6 @@ void SimulationDialog::initializeFields(bool isReSimulate, SimulationOptions sim
             mpInitialStepSizeTextBox->setText(value);
           } else if (simulationFlag.compare("jacobian") == 0) {
             mpJacobianComboBox->setCurrentIndex(mpJacobianComboBox->findText(value));
-          } else if (simulationFlag.compare("l") == 0) {
-            mpLinearizationTimeTextBox->setText(value);
           } else if (simulationFlag.compare("ls") == 0) {
             mpLinearSolverComboBox->setCurrentIndex(mpLinearSolverComboBox->findText(value));
           } else if (simulationFlag.compare("maxIntegrationOrder") == 0) {
@@ -993,8 +1003,6 @@ void SimulationDialog::applySimulationOptions(SimulationOptions simulationOption
   if (currentIndex > -1) {
     mpNonLinearSolverComboBox->setCurrentIndex(currentIndex);
   }
-  // time where the linearization of the model should be performed
-  mpLinearizationTimeTextBox->setText(simulationOptions.getLinearizationTime());
   // output variables
   mpOutputVariablesTextBox->setText(simulationOptions.getOutputVariables());
   // measure simulation time checkbox
@@ -1054,6 +1062,11 @@ void SimulationDialog::applySimulationOptions(SimulationOptions simulationOption
   mpStoreVariablesAtEventsCheckBox->setChecked(simulationOptions.getStoreVariablesAtEvents());
   // show generated files checkbox
   mpShowGeneratedFilesCheckBox->setChecked(simulationOptions.getShowGeneratedFiles());
+  // linearization dump language
+  currentIndex = mpLinearizationDumpLanguageComboBox->findText(simulationOptions.getLinearizationDumpLanguage(), Qt::MatchExactly);
+  if (currentIndex > -1) {
+    mpLinearizationDumpLanguageComboBox->setCurrentIndex(currentIndex);
+  }
 }
 
 /*!
@@ -1110,6 +1123,10 @@ bool SimulationDialog::translateModel(QString simulationParameters)
       // select dataReconciliationStateEstimation preOptModules for both dataReconciliation and stateEstimation
       MainWindow::instance()->getOMCProxy()->setCommandLineOptions(QString("--preOptModules+=%1").arg("dataReconciliationStateEstimation"));
     }
+  }
+  // set linearization dump language
+  if (mpLinearizationDumpLanguageComboBox->currentText() != QStringLiteral("none")) {
+    MainWindow::instance()->getOMCProxy()->setCommandLineOptions("+linearizationDumpLanguage=" + mpLinearizationDumpLanguageComboBox->currentText());
   }
   bool result = MainWindow::instance()->getOMCProxy()->translateModel(mClassName, simulationParameters);
   // reset simulation settings
@@ -1176,7 +1193,6 @@ SimulationOptions SimulationDialog::createSimulationOptions()
   simulationOptions.setClock(mpClockComboBox->currentText());
   simulationOptions.setLinearSolver(mpLinearSolverComboBox->currentText());
   simulationOptions.setNonLinearSolver(mpNonLinearSolverComboBox->currentText());
-  simulationOptions.setLinearizationTime(mpLinearizationTimeTextBox->text());
   simulationOptions.setOutputVariables(mpOutputVariablesTextBox->text());
   simulationOptions.setProfiling(mpProfilingComboBox->currentText());
   simulationOptions.setCPUTime(mpCPUTimeCheckBox->isChecked());
@@ -1225,6 +1241,8 @@ SimulationOptions SimulationDialog::createSimulationOptions()
   simulationOptions.setEquidistantTimeGrid(mpEquidistantTimeGridCheckBox->isChecked());
   simulationOptions.setStoreVariablesAtEvents(mpStoreVariablesAtEventsCheckBox->isChecked());
   simulationOptions.setShowGeneratedFiles(mpShowGeneratedFilesCheckBox->isChecked());
+
+  simulationOptions.setLinearizationDumpLanguage(mpLinearizationDumpLanguageComboBox->currentText());
   // create a folder with model name to dump the files in it.
   QString modelDirectoryPath = QString("%1/%2").arg(OptionsDialog::instance()->getGeneralSettingsPage()->getWorkingDirectory(), mClassName);
   if (!QDir().exists(modelDirectoryPath)) {
@@ -1239,14 +1257,13 @@ SimulationOptions SimulationDialog::createSimulationOptions()
   }
   // setup simulation flags
   QStringList simulationFlags;
-  simulationFlags.append(QString("-override=%1=%2,%3=%4,%5=%6,%7=%8,%9=%10,%11=%12,%13=%14")
-                         .arg("startTime").arg(simulationOptions.getStartTime())
-                         .arg("stopTime").arg(simulationOptions.getStopTime())
-                         .arg("stepSize").arg(simulationOptions.getStepSize())
-                         .arg("tolerance").arg(simulationOptions.getTolerance())
-                         .arg("solver").arg(simulationOptions.getMethod())
-                         .arg("outputFormat").arg(simulationOptions.getOutputFormat())
-                         .arg("variableFilter").arg(simulationOptions.getVariableFilter()));
+  simulationFlags.append(QString("-startTime=").append(simulationOptions.getStartTime()));
+  simulationFlags.append(QString("-stopTime=").append(simulationOptions.getStopTime()));
+  simulationFlags.append(QString("-stepSize=").append(QString::number(simulationOptions.getStepSize())));
+  simulationFlags.append(QString("-tolerance=").append(simulationOptions.getTolerance()));
+  simulationFlags.append(QString("-s=").append(simulationOptions.getMethod()));
+  simulationFlags.append(QString("-outputFormat=").append(simulationOptions.getOutputFormat()));
+  simulationFlags.append(QString("-variableFilter=").append(simulationOptions.getVariableFilter()));
   simulationFlags.append(QString("-r=%1/%2").arg(simulationOptions.getWorkingDirectory(), simulationOptions.getFullResultFileName()));
   // jacobian
   if (!mpJacobianComboBox->currentText().isEmpty()) {
@@ -1325,10 +1342,6 @@ SimulationOptions SimulationDialog::createSimulationOptions()
   if (!mpNonLinearSolverComboBox->currentText().isEmpty()) {
     simulationFlags.append(QString("-nls=").append(mpNonLinearSolverComboBox->currentText()));
   }
-  // time where the linearization of the model should be performed
-  if (!mpLinearizationTimeTextBox->text().isEmpty()) {
-    simulationFlags.append(QString("-l=").append(mpLinearizationTimeTextBox->text()));
-  }
   // output variables
   if (!mpOutputVariablesTextBox->text().isEmpty()) {
     simulationFlags.append(QString("-output=").append(mpOutputVariablesTextBox->text()));
@@ -1367,6 +1380,10 @@ SimulationOptions SimulationDialog::createSimulationOptions()
   // setup Logging flags
   if (logStreams.size() > 0) {
     simulationFlags.append(QString("-lv=").append(logStreams.join(",")));
+  }
+  // linearization dump language
+  if (mpLinearizationDumpLanguageComboBox->currentText() != QStringLiteral("none")) {
+    simulationFlags.append(QString("-l=").append(simulationOptions.getStopTime()));
   }
   if (!mpAdditionalSimulationFlagsTextBox->text().isEmpty()) {
     simulationFlags.append(StringHandler::splitStringWithSpaces(mpAdditionalSimulationFlagsTextBox->text()));
@@ -1546,9 +1563,6 @@ void SimulationDialog::saveSimulationFlagsAnnotation()
   }
   if (!mpNonLinearSolverComboBox->currentText().isEmpty()) {
     simulationFlags.insert("nls", mpNonLinearSolverComboBox->currentText());
-  }
-  if (!mpLinearizationTimeTextBox->text().isEmpty()) {
-    simulationFlags.insert("l", mpLinearizationTimeTextBox->text());
   }
   if (!mpOutputVariablesTextBox->text().isEmpty()) {
     simulationFlags.insert("output", mpOutputVariablesTextBox->text());

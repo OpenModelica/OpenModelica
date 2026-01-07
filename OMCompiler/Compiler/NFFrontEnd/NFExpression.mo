@@ -2455,7 +2455,7 @@ public
       case UNBOX() then DAE.UNBOX(toDAE(exp.exp), Type.toDAE(exp.ty));
 
       case SUBSCRIPTED_EXP()
-        then DAE.ASUB(toDAE(exp.exp), list(Subscript.toDAEExp(s) for s in exp.subscripts));
+        then DAE.ASUB(toDAE(exp.exp), list(Subscript.toDAE(s) for s in exp.subscripts));
 
       case TUPLE_ELEMENT()
         then DAE.TSUB(toDAE(exp.tupleExp), exp.index, Type.toDAE(exp.ty));
@@ -4650,7 +4650,7 @@ public
       case STRING() then true;
       case BOOLEAN() then true;
       case ENUM_LITERAL() then true;
-      case ARRAY() then exp.literal or Array.all(exp.elements, isLiteralXML);
+      case ARRAY() then Array.all(exp.elements, isLiteralXML);
       case RECORD() then List.all(exp.elements, isLiteralXML);
       case RANGE() then isLiteralXML(exp.start) and isLiteralXML(exp.stop) and
                         Util.applyOptionOrDefault(exp.step, isLiteralXML, true);

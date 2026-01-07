@@ -1355,7 +1355,7 @@ algorithm
   subscriptedExp := simplify(e);
   subs := Subscript.simplifyList(subs, Type.arrayDims(Expression.typeOf(e)));
 
-  if not split and not List.all(subs, Subscript.isLiteral) then
+  if not split and not List.all(subs, Subscript.isLiteral) and Type.isScalar(ty) then
     // Select the first element as long as the subscripted expression is an
     // array where all elements are equal, unless all the subscripts are literal
     // in which case it's cheaper to just apply them.

@@ -274,12 +274,15 @@ protected
   list<BackendDAE.Var> vars = inVars;
   list<DAE.ComponentRef> varCrefLst;
   Boolean recursiveStrongComponentRun;
-  Boolean isStateVarInvoled;
+  Boolean isStateVarInvolved, isDiscrete;
 algorithm
   varCrefLst := list(v.varName for v in inVars);
-  isStateVarInvoled := not Flags.getConfigBool(Flags.CAUSALIZE_DAE_MODE) or List.any(inVars, BackendVariable.isStateVar);
+
+  isStateVarInvolved := not Flags.getConfigBool(Flags.CAUSALIZE_DAE_MODE) or List.any(inVars, BackendVariable.isStateVar);
+  isDiscrete := List.any(inVars, BackendVariable.isVarDiscrete);
+
   (traverserArgs) :=
-  matchcontinue(inEqns, traverserArgs.recursiveStrongComponentRun, isStateVarInvoled)
+  matchcontinue(inEqns, traverserArgs.recursiveStrongComponentRun, isStateVarInvolved, isDiscrete)
     local
       BackendDAE.EqSystem syst;
       BackendDAE.AdjacencyMatrix adjMatrix;
@@ -305,7 +308,7 @@ algorithm
 
       constant Boolean debug = false;
 
-    case ({eq}, false, false)
+    case ({eq}, false, false, _)
       guard(List.all(vars, BackendVariable.isCSEVar))
       equation
         newResVars = list(BackendVariable.setVarKind(v, BackendDAE.DAE_AUX_VAR()) for v in vars);
@@ -319,7 +322,29 @@ algorithm
       then
         (traverserArgs);
 
-    case ({eq as BackendDAE.EQUATION()}, false, false)
+    case ({eq}, false, _, true)
+      equation
+        new_eq = BackendEquation.setEquationAttributes(eq, BackendDAE.EQ_ATTR_DEFAULT_DISCRETE);
+        traverserArgs.newDAEVars = BackendVariable.addNewVars(vars, traverserArgs.newDAEVars);
+        traverserArgs.newDAEEquations = BackendEquation.addList({new_eq}, traverserArgs.newDAEEquations);
+        if debug then print("[DAEmode] Create solved discrete equation. vars:\n" +
+                      BackendDump.varListString(vars, "") + "eq:\n" +
+                      BackendDump.equationListString({new_eq}, "") + "\n"); end if;
+      then
+        (traverserArgs);
+
+    case ({eq as BackendDAE.WHEN_EQUATION()}, false, _, _)
+      equation
+        new_eq = BackendEquation.setEquationAttributes(eq, BackendDAE.EQ_ATTR_DEFAULT_DISCRETE);
+        traverserArgs.newDAEVars = BackendVariable.addNewVars(vars, traverserArgs.newDAEVars);
+        traverserArgs.newDAEEquations = BackendEquation.addList({new_eq}, traverserArgs.newDAEEquations);
+        if debug then print("[DAEmode] Create solved when equation. vars:\n" +
+                      BackendDump.varListString(vars, "") + "eq:\n" +
+                      BackendDump.equationListString({new_eq}, "") + "\n"); end if;
+      then
+        (traverserArgs);
+
+    case ({eq as BackendDAE.EQUATION()}, false, false, _)
       equation
         {var} = vars;
         eq.exp = ExpressionSolve.solve(eq.exp, eq.scalar, Expression.crefExp(var.varName));
@@ -333,7 +358,7 @@ algorithm
       then
         (traverserArgs);
 
-    case ({eq as BackendDAE.COMPLEX_EQUATION()}, false, false)
+    case ({eq as BackendDAE.COMPLEX_EQUATION()}, false, false, _)
       equation
         new_eq = BackendEquation.setEquationAttributes(eq, BackendDAE.EQ_ATTR_DEFAULT_AUX);
         traverserArgs.newDAEVars = BackendVariable.addNewVars(vars, traverserArgs.newDAEVars);
@@ -344,7 +369,7 @@ algorithm
       then
         (traverserArgs);
 
-    case ({eq as BackendDAE.ARRAY_EQUATION()}, false, false)
+    case ({eq as BackendDAE.ARRAY_EQUATION()}, false, false, _)
       equation
         new_eq = BackendEquation.setEquationAttributes(eq, BackendDAE.EQ_ATTR_DEFAULT_AUX);
         traverserArgs.newDAEVars = BackendVariable.addNewVars(vars, traverserArgs.newDAEVars);
@@ -355,18 +380,7 @@ algorithm
       then
         (traverserArgs);
 
-    case ({eq as BackendDAE.WHEN_EQUATION()}, false, _)
-      equation
-        new_eq = BackendEquation.setEquationAttributes(eq, BackendDAE.EQ_ATTR_DEFAULT_DISCRETE);
-        traverserArgs.newDAEVars = BackendVariable.addNewVars(vars, traverserArgs.newDAEVars);
-        traverserArgs.newDAEEquations = BackendEquation.addList({new_eq}, traverserArgs.newDAEEquations);
-        if debug then print("[DAEmode] Create solved when equation. vars:\n" +
-                      BackendDump.varListString(vars, "") + "eq:\n" +
-                      BackendDump.equationListString({new_eq}, "") + "\n"); end if;
-      then
-        (traverserArgs);
-
-    case ({eq as BackendDAE.ALGORITHM(alg=alg, source=source, expand=crefExpand)}, false, false)
+    case ({eq as BackendDAE.ALGORITHM(alg=alg, source=source, expand=crefExpand)}, false, false, _)
       equation
         // check that all vars
         true = CheckModel.isCrefListAlgorithmOutput(varCrefLst, alg, source, crefExpand);
@@ -380,7 +394,7 @@ algorithm
         (traverserArgs);
 
     // a = f(...) and a is an array
-    case ({eq as BackendDAE.ARRAY_EQUATION(left=exp)}, b1, b2)
+    case ({eq as BackendDAE.ARRAY_EQUATION(left=exp)}, b1, b2, _)
       guard ( Expression.isCref(exp) and (b1 or b2))
       equation
         globalDAEData = traverserArgs.globalDAEData;
@@ -423,7 +437,7 @@ algorithm
       then
         (traverserArgs);
 
-    case ({eq}, b1, b2)
+    case ({eq}, b1, b2, _)
       guard ( b1 or b2)
       equation
         globalDAEData = traverserArgs.globalDAEData;
@@ -444,7 +458,7 @@ algorithm
         (traverserArgs);
 
     // recordCref = f(...)
-    case ({eq as BackendDAE.COMPLEX_EQUATION(left=exp)}, _, _)
+    case ({eq as BackendDAE.COMPLEX_EQUATION(left=exp)}, _, _, _)
       guard(Expression.isCref(exp))
       //guard( List.all(list(ComponentReference.crefTypeFull(v.varName) for v in vars), Expression.isRecordType))
       equation
@@ -490,7 +504,7 @@ algorithm
       then
         (traverserArgs);
 
-    case(_, false, _)
+    case(_, false, _, _)
       algorithm
 
         (discVars, contVars) := List.splitOnTrue(inVars, BackendVariable.isVarDiscrete);
@@ -515,7 +529,6 @@ algorithm
         end for;
       then
         (traverserArgs);
-
 
     else equation
       Error.addInternalError("DAEMode.traverserStrongComponents failed on equation:\n" +

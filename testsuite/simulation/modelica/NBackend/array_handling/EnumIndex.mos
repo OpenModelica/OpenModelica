@@ -1,0 +1,33 @@
+// name: EnumIndex
+// keywords: NewBackend
+// status: correct
+
+loadString("
+model EnumIndex
+  type Enum = enumeration(A, B, C);
+  final constant Real[Enum] x = {1, 2, 3};
+  Real[Enum] y = x * 2;
+end EnumIndex;
+"); getErrorString();
+
+simulate(EnumIndex); getErrorString();
+
+val(y[Enum.A], 0.0);
+val(y[Enum.B], 0.0);
+val(y[Enum.C], 0.0);
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "EnumIndex_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'EnumIndex', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 2.0
+// 4.0
+// 6.0
+// endResult

@@ -3931,7 +3931,7 @@ void GraphicsView::getCoordinateSystemAndGraphics(QStringList &coOrdinateSystemL
   }
   // add the initial scale
   if (mCoordinateSystem.hasInitialScale()) {
-    coOrdinateSystemList.append(QString("initialScale=%1").arg(mCoordinateSystem.getInitialScale()));
+    coOrdinateSystemList.append(QString("initialScale=%1").arg(mCoordinateSystem.getInitialScale().toQString()));
   }
   // add the grid
   if (mCoordinateSystem.hasGrid()) {
@@ -6524,6 +6524,7 @@ bool ModelWidget::modelicaEditorTextChanged(LibraryTreeItem **pLibraryTreeItem)
       pNewLibraryTreeItem->setClassText(stringToLoad);
       updateModelText();
     }
+    pLibraryTreeModel->showModelWidget(pNewLibraryTreeItem);
     *pLibraryTreeItem = pNewLibraryTreeItem;
   }
   return true;

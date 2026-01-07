@@ -38,7 +38,6 @@ public
   // NF imports
   import ComponentRef = NFComponentRef;
   import NFInstNode.InstNode;
-  import FunctionTree = NFFlatten.FunctionTree;
   import Subscript = NFSubscript;
   import Type = NFType;
 

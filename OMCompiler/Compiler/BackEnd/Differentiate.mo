@@ -592,6 +592,7 @@ algorithm
       list<DAE.Exp> sub, expl;
       list<list<DAE.Exp>> matrix, dmatrix;
       DAE.ComponentRef cref;
+      list<DAE.Subscript> subs;
 
     // types that are not differentiated
     case DAE.SCONST()       then (inExp, inFunctionTree);
@@ -696,9 +697,9 @@ algorithm
       (res, _) := ExpressionSimplify.simplify1(res);
     then (DAE.CAST(tp, res), functionTree);
 
-    case DAE.ASUB(exp=e1, sub=sub) algorithm
+    case DAE.ASUB(exp=e1, sub=subs) algorithm
       (res1, functionTree) := differentiateExp(e1, inDiffwrtCref, inInputData, inDiffType, inFunctionTree, maxIter-1);
-      res := Expression.makeASUB(res1,sub);
+      res := Expression.makeASUB(res1, list(Expression.getSubscriptExp(s) for s in subs));
       (res, _) := ExpressionSimplify.simplify1(res);
     then (res, functionTree);
 

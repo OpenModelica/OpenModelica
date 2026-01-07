@@ -1762,6 +1762,8 @@ algorithm
       Absyn.Path fcn;
       list<DAE.Exp> args,es;
       list<list<DAE.Exp>> ebs;
+      list<DAE.Subscript> subs;
+
     case (DAE.ICONST(integer = x))
       equation
         dumpStrMathMLNumberAttr(intString(x),MathMLType,MathMLInteger);
@@ -2029,8 +2031,9 @@ algorithm
         dumpStrCloseTag(MathMLOperator);
         dumpStrCloseTag(MathMLApply);
       then ();
-    case (DAE.ASUB(exp = e1,sub = args))
+    case (DAE.ASUB(exp = e1,sub = subs))
       equation
+        args = list(Expression.getSubscriptExp(sub) for sub in subs);
         dumpStrOpenTag(MathMLApply);
         dumpStrVoidTag(MathMLSelector);
         dumpExp2(e1);

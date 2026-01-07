@@ -1599,6 +1599,13 @@ package SimCodeFunctionUtil
     output DAE.Exp cRefOut;
   end buildCrefExpFromAsub;
 
+
+  function buildCrefExpFromSubs
+    input DAE.Exp cref;
+    input list<DAE.Subscript> subs;
+    output DAE.Exp cRefOut;
+  end buildCrefExpFromSubs;
+
   function codegenResetTryThrowIndex
   end codegenResetTryThrowIndex;
 
@@ -2181,7 +2188,7 @@ package DAE
     end CAST;
     record ASUB
       Exp exp;
-      list<Exp> sub;
+      list<Subscript> sub;
     end ASUB;
     record TSUB
       Exp exp;
@@ -3921,6 +3928,11 @@ package Expression
     input list<DAE.Exp> iExpressions;
     output Boolean oCrefWithEqualIdents;
   end isCrefListWithEqualIdents;
+
+  function expDimensions
+    input DAE.Exp inExp;
+    output DAE.Dimensions outDims;
+  end expDimensions;
 
   function dimensionsList
     input DAE.Dimensions inDims;

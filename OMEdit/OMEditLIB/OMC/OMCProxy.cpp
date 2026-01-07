@@ -82,6 +82,7 @@ OMCProxy::OMCProxy(threadData_t* threadData, QWidget *pParent)
   mpOMCLoggerTextBox->setReadOnly(true);
   mpOMCLoggerTextBox->setLineWrapMode(QPlainTextEdit::WidgetWidth);
   mpOMCLoggerTextBox->setUseTimer(false);
+  mpOMCLoggerTextBox->setFont(QFont(Helper::monospacedFontInfo.family()));
   mpExpressionTextBox = new CustomExpressionBox(this);
   connect(mpExpressionTextBox, SIGNAL(returnPressed()), SLOT(sendCustomExpression()));
   mpOMCLoggerSendButton = new QPushButton(Helper::send);
@@ -416,7 +417,8 @@ void OMCProxy::logCommand(QString command, bool saveToHistory)
   if (isLoggingEnabled()) {
     if (saveToHistory || MainWindow::instance()->isDebug()) {
       // insert the command to the logger window.
-      QFont font(Helper::monospacedFontInfo.family(), Helper::monospacedFontInfo.pointSize() - 2, QFont::Bold, false);
+      QFont font = mpOMCLoggerTextBox->font();
+      font.setBold(true);
       QTextCharFormat format;
       format.setFont(font);
       mpOMCLoggerTextBox->appendOutput(command + "\n", format);
@@ -468,10 +470,7 @@ void OMCProxy::logResponse(QString command, QString response, double elapsed, bo
     }
     if (customCommand || MainWindow::instance()->isDebug()) {
       // insert the response to the logger window.
-      QFont font(Helper::monospacedFontInfo.family(), Helper::monospacedFontInfo.pointSize() - 2, QFont::Normal, false);
-      QTextCharFormat format;
-      format.setFont(font);
-      mpOMCLoggerTextBox->appendOutput(response + "\n\n", format);
+      mpOMCLoggerTextBox->appendOutput(response + "\n\n");
     }
     // write the log to communication log file
     if (mpCommunicationLogFile) {
@@ -1548,10 +1547,8 @@ QString OMCProxy::getDocumentationAnnotation(LibraryTreeItem *pLibraryTreeItem)
   QString documentation = QString("<html>\n"
                                   "  <head>\n"
                                   "    <style>\n"
-                                  "      div.htmlDoc {font-family:\"" % Helper::systemFontInfo.family() % "\";\n"
-                                  "                   font-size:" % QString::number(Helper::systemFontInfo.pointSize()) % "px;}\n"
-                                  "      pre div.textDoc, div.textDoc p {font-family:\"" % Helper::monospacedFontInfo.family() % "\";\n"
-                                  "                   font-size:" % QString::number(Helper::monospacedFontInfo.pointSize()) % "px;}\n"
+                                  "      div.htmlDoc {font-family:\"" % Helper::systemFontInfo.family() % "\";}\n"
+                                  "      pre div.textDoc, div.textDoc p {font-family:\"" % Helper::monospacedFontInfo.family() % "\";}\n"
                                   "    </style>\n"
                                   "    " % infoHeader % "\n"
                                   "  </head>\n"

@@ -18,7 +18,7 @@ setCommandLineOptions("-d=newInst"); getErrorString();
 buildModel(testSolver.problem6); getErrorString();
 
 // Test default settings
-system(realpath(".") + "/testSolver.problem6 -s=cvode -override=stopTime=3.0,stepSize=0.006", "testSolver_problem6_default.log"); getErrorString();
+system(realpath(".") + "/testSolver.problem6 -s=cvode -stopTime=3.0 -stepSize=0.006", "testSolver_problem6_default.log"); getErrorString();
 readFile("testSolver_problem6_default.log"); remove("testSolver_problem6_default.log");
 
 echo(false);  /* Silence readSimulationResult */
@@ -31,7 +31,7 @@ res[1,s];
 if res2[1,s] > -1e-2 then 1 else 0;
 
 // Test CVODE with BDF method and Newton integrator
-system(realpath(".") + "/testSolver.problem6 -s=cvode -cvodeLinearMultistepMethod=CV_BDF -cvodeNonlinearSolverIteration=CV_NEWTON -override stopTime=3.0,stepSize=0.006 ", "testSolver_problem6_BDF.log"); getErrorString();
+system(realpath(".") + "/testSolver.problem6 -s=cvode -cvodeLinearMultistepMethod=CV_BDF -cvodeNonlinearSolverIteration=CV_NEWTON -stopTime=3.0 -stepSize=0.006 ", "testSolver_problem6_BDF.log"); getErrorString();
 readFile("testSolver_problem6_BDF.log"); remove("testSolver_problem6_BDF.log");
 
 echo(false);  /* Silence readSimulationResult */
@@ -44,7 +44,7 @@ res[1,s];
 if res2[1,s] > -1e-2 then 1 else 0;
 
 // Test CVODE with Adams method and Newton integrator
-system(realpath(".") + "/testSolver.problem6 -s=cvode -cvodeLinearMultistepMethod=CV_ADAMS -cvodeNonlinearSolverIteration=CV_FUNCTIONAL -override stopTime=3.0,stepSize=0.006 ", "testSolver_problem6_ADAMS.log"); getErrorString();
+system(realpath(".") + "/testSolver.problem6 -s=cvode -cvodeLinearMultistepMethod=CV_ADAMS -cvodeNonlinearSolverIteration=CV_FUNCTIONAL -stopTime=3.0 -stepSize=0.006 ", "testSolver_problem6_ADAMS.log"); getErrorString();
 readFile("testSolver_problem6_ADAMS.log"); remove("testSolver_problem6_ADAMS.log");
 
 echo(false);  /* Silence readSimulationResult */

@@ -179,7 +179,6 @@ public
     input SourceInfo info;
     output Expression callExp;
   protected
-    Integer argc = listLength(posArgs);
     Expression arg1, arg2;
   algorithm
     assertNoNamedParams("size", namedArgs, info);

@@ -47,8 +47,11 @@ protected
   // selfimport
   import Tearing = NBTearing;
 
+  // OF imports
+  import Absyn.Path;
+
   // NF imports
-  import NFFlatten.FunctionTree;
+  import NFFunction.Function;
   import Variable = NFVariable;
   import ComponentRef = NFComponentRef;
 
@@ -135,7 +138,6 @@ public
     input Partition.Kind kind;
   protected
     constant list<Module.tearingInterface> funcs = getModule();
-    FunctionTree funcTree;
   algorithm
     if Flags.isSet(Flags.TEARING_DUMP) then
       print(StringUtil.headline_1("[" + Partition.Partition.kindToString(kind) + "] Tearing") + "\n");
@@ -145,29 +147,22 @@ public
         list<Partition.Partition> partitions;
         Pointer<Integer> eq_index;
 
-      case (NBPartition.Kind.ODE, BackendDAE.MAIN(ode = partitions, funcTree = funcTree, eqData = BEquation.EQ_DATA_SIM(uniqueIndex = eq_index)))
+      case (NBPartition.Kind.ODE, BackendDAE.MAIN(eqData = BEquation.EQ_DATA_SIM(uniqueIndex = eq_index)))
         algorithm
-          (partitions, funcTree) := tearingTraverser(partitions, funcs, funcTree, eq_index, kind);
-          bdae.ode := partitions;
-          bdae.funcTree := funcTree;
+          bdae.ode := tearingTraverser(bdae.ode, funcs, bdae.funcMap, eq_index, kind);
       then bdae;
 
-      case (NBPartition.Kind.INI, BackendDAE.MAIN(init = partitions, funcTree = funcTree, eqData = BEquation.EQ_DATA_SIM(uniqueIndex = eq_index)))
+      case (NBPartition.Kind.INI, BackendDAE.MAIN(eqData = BEquation.EQ_DATA_SIM(uniqueIndex = eq_index)))
         algorithm
-          (partitions, funcTree) := tearingTraverser(partitions, funcs, funcTree, eq_index, kind);
-          bdae.init := partitions;
+          bdae.init := tearingTraverser(bdae.init, funcs, bdae.funcMap, eq_index, kind);
           if Util.isSome(bdae.init_0) then
-            (partitions, funcTree) := tearingTraverser(Util.getOption(bdae.init_0), funcs, funcTree, eq_index, kind);
-            bdae.init_0 := SOME(partitions);
+            bdae.init_0 := SOME(tearingTraverser(Util.getOption(bdae.init_0), funcs, bdae.funcMap, eq_index, kind));
           end if;
-          bdae.funcTree := funcTree;
       then bdae;
 
-      case (NBPartition.Kind.DAE, BackendDAE.MAIN(dae = SOME(partitions), funcTree = funcTree, eqData = BEquation.EQ_DATA_SIM(uniqueIndex = eq_index)))
+      case (NBPartition.Kind.DAE, BackendDAE.MAIN(dae = SOME(partitions), eqData = BEquation.EQ_DATA_SIM(uniqueIndex = eq_index)))
         algorithm
-          (partitions, funcTree) := tearingTraverser(partitions, funcs, funcTree, eq_index, kind);
-          bdae.dae := SOME(partitions);
-          bdae.funcTree := funcTree;
+          bdae.dae := SOME(tearingTraverser(partitions, funcs, bdae.funcMap, eq_index, kind));
           // recursively call this function to also apply to the ODE section (used for events)
           // ToDo: only create event partitions, disregard rest
       then main(bdae, NBPartition.Kind.ODE);
@@ -177,17 +172,17 @@ public
   end main;
 
   function implicit
-    input output StrongComponent comp     "the suspected algebraic loop.";
-    input output FunctionTree funcTree    "Function call bodies";
-    input output Integer index            "current unique loop index";
-    input Partition.Kind kind = NBPartition.Kind.ODE   "partition type";
+    input output StrongComponent comp                 "suspected algebraic loop";
+    input UnorderedMap<Path, Function> funcMap        "Function call bodies";
+    input output Integer index                        "current unique loop index";
+    input Partition.Kind kind = NBPartition.Kind.ODE  "partition type";
   protected
     // dummy adjacency matrix, don't need it for implicit
     Adjacency.Matrix dummy = Adjacency.EMPTY(NBAdjacency.MatrixStrictness.FULL);
     StrongComponent new_comp;
     Pointer<Boolean> homotopy = Pointer.create(false);
   algorithm
-    (comp, dummy, funcTree, index) := match comp
+    (comp, dummy, index) := match comp
       // create implicit equations
       case StrongComponent.SINGLE_COMPONENT() algorithm
         Equation.map(Pointer.access(comp.eqn), function Initialization.containsHomotopyCall(b = homotopy));
@@ -199,7 +194,7 @@ public
           mixed   = false,
           homotopy = Pointer.access(homotopy),
           status  = NBSolve.Status.IMPLICIT);
-      then finalize(new_comp, dummy, funcTree, index, VariablePointers.empty(), EquationPointers.empty(), Pointer.create(0), kind);
+      then finalize(new_comp, dummy, funcMap, index, VariablePointers.empty(), EquationPointers.empty(), Pointer.create(0), kind);
 
       case StrongComponent.MULTI_COMPONENT() algorithm
         Equation.map(Pointer.access(Slice.getT(comp.eqn)), function Initialization.containsHomotopyCall(b = homotopy));
@@ -211,7 +206,7 @@ public
           mixed   = false,
           homotopy = Pointer.access(homotopy),
           status  = NBSolve.Status.IMPLICIT);
-      then finalize(new_comp, dummy, funcTree, index, VariablePointers.empty(), EquationPointers.empty(), Pointer.create(0), kind);
+      then finalize(new_comp, dummy, funcMap, index, VariablePointers.empty(), EquationPointers.empty(), Pointer.create(0), kind);
 
       case StrongComponent.RESIZABLE_COMPONENT() algorithm
         Equation.map(Pointer.access(Slice.getT(comp.eqn)), function Initialization.containsHomotopyCall(b = homotopy));
@@ -223,10 +218,10 @@ public
           mixed   = false,
           homotopy = Pointer.access(homotopy),
           status  = NBSolve.Status.IMPLICIT);
-      then finalize(new_comp, dummy, funcTree, index, VariablePointers.empty(), EquationPointers.empty(), Pointer.create(0), kind);
+      then finalize(new_comp, dummy, funcMap, index, VariablePointers.empty(), EquationPointers.empty(), Pointer.create(0), kind);
 
       // do nothing otherwise
-      else (comp, dummy, funcTree, index);
+      else (comp, dummy, index);
     end match;
   end implicit;
 
@@ -293,7 +288,7 @@ protected
     input list<Partition.Partition> partitions;
     input list<Module.tearingInterface> funcs;
     output list<Partition.Partition> new_partitions = {};
-    input output FunctionTree funcTree;
+    input UnorderedMap<Path, Function> funcMap;
     input Pointer<Integer> eq_index;
     input Partition.Kind kind;
   protected
@@ -310,7 +305,7 @@ protected
           // each module has a list of functions that need to be applied
           tmp := strongComponents[i];
           for func in funcs loop
-            (tmp, full, funcTree, idx) := func(tmp, full, funcTree, idx, part.unknowns, part.equations, eq_index, kind);
+            (tmp, full, idx) := func(tmp, full, funcMap, idx, part.unknowns, part.equations, eq_index, kind);
           end for;
           // only update if it changed
           if not referenceEq(tmp, strongComponents[i]) then
@@ -346,8 +341,8 @@ protected
   protected
     Tearing strict;
     list<ComponentRef> vars_lst, eqns_lst;
-    UnorderedSet<ComponentRef> vars_set         "all loop vars, used to determine solvability";
-    UnorderedMap<ComponentRef, Integer> v, e    "all loop vars and equations map";
+    UnorderedSet<ComponentRef> vars_set       "all loop vars, used to determine solvability";
+    UnorderedMap<ComponentRef, Integer> v, e  "all loop vars and equations map";
     constant Boolean init = kind == NBPartition.Kind.INI;
   algorithm
     (comp, full, index) := match comp
@@ -367,8 +362,8 @@ protected
         e := UnorderedMap.subMap(equations.map, eqns_lst);
 
         // refine the adjacency matrix by updating solvability information
-        (full, funcTree)  := Adjacency.Matrix.refine(full, funcTree, v, e, variables, equations, vars_set, kind == NBPartition.Kind.INI);
-        comp.linear       := checkLinearity(full, v, e);
+        full := Adjacency.Matrix.refine(full, funcMap, v, e, variables, equations, vars_set, kind == NBPartition.Kind.INI);
+        comp.linear := checkLinearity(full, v, e);
       then (comp, full, index);
       else (comp, full, index);
     end match;

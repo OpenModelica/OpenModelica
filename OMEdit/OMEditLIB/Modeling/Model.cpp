@@ -789,10 +789,20 @@ namespace ModelInstance
     }
   }
 
-  QString Modifier::toString(bool skipTopLevel, bool includeComment) const
+  QString Modifier::toString(bool skipTopLevel, bool includeComment, bool onlyType) const
   {
     if (mpElement) {
-      return mpElement->toString(skipTopLevel);
+      if (onlyType) {
+        if (mpElement->isClass()) {
+          auto pReplaceableClass = dynamic_cast<ModelInstance::ReplaceableClass*>(mpElement);
+          return pReplaceableClass->getBaseClass();
+        } else {
+          return mpElement->getType();
+        }
+
+      } else {
+        return mpElement->toString(skipTopLevel, false, includeComment);
+      }
     } else {
       QString value;
       if (!skipTopLevel) {
@@ -802,7 +812,7 @@ namespace ModelInstance
       value.append(mName);
       QStringList subModifiers;
       foreach (auto *pSubModifier, mModifiers) {
-        subModifiers.append(pSubModifier->toString());
+        subModifiers.append(pSubModifier->toString(skipTopLevel, includeComment));
       }
       if (!subModifiers.isEmpty()) {
         value.append("(" % subModifiers.join(", ") % ")");
@@ -1950,11 +1960,24 @@ namespace ModelInstance
     }
   }
 
+  QStringList Choices::getChoicesDisplayStringList() const
+  {
+    QStringList choices;
+    foreach (auto *pChoice, mChoices) {
+      choices.append(pChoice->toString(false, false, true));
+    }
+    return choices;
+  }
+
   QStringList Choices::getChoicesValueStringList() const
   {
     QStringList choices;
     foreach (auto *pChoice, mChoices) {
-      choices.append(pChoice->toString());
+      if (pChoice->hasElement()) { // include comment in choice has element
+        choices.append(pChoice->toString(false, true));
+      } else {
+        choices.append(pChoice->toString(false, false));
+      }
     }
     return choices;
   }
@@ -1963,7 +1986,7 @@ namespace ModelInstance
   {
     QStringList choices;
     foreach (auto *pChoice, mChoices) {
-      choices.append(pChoice->toString(false, true));
+      choices.append(pChoice->toString(false, true, false));
     }
     return choices;
   }
@@ -2247,9 +2270,10 @@ namespace ModelInstance
     }
   }
 
-  QString Element::toString(bool skipTopLevel, bool mergeExtendsModifiers) const
+  QString Element::toString(bool skipTopLevel, bool mergeExtendsModifiers, bool includeComment) const
   {
     Q_UNUSED(mergeExtendsModifiers);
+    Q_UNUSED(includeComment);
     if (mpPrefixes) {
       return mpPrefixes->toString(skipTopLevel);
     }
@@ -2356,9 +2380,9 @@ namespace ModelInstance
     return mBaseClass;
   }
 
-  QString Extend::toString(bool skipTopLevel, bool mergeExtendsModifiers) const
+  QString Extend::toString(bool skipTopLevel, bool mergeExtendsModifiers, bool includeComment) const
   {
-    return Element::toString(skipTopLevel, mergeExtendsModifiers);
+    return Element::toString(skipTopLevel, mergeExtendsModifiers, includeComment);
   }
 
   Component::Component(Model *pParentModel)
@@ -2525,11 +2549,11 @@ namespace ModelInstance
     return mType;
   }
 
-  QString Component::toString(bool skipTopLevel, bool mergeExtendsModifiers) const
+  QString Component::toString(bool skipTopLevel, bool mergeExtendsModifiers, bool includeComment) const
   {
     QStringList value;
 
-    value.append(Element::toString(skipTopLevel, mergeExtendsModifiers));
+    value.append(Element::toString(skipTopLevel, mergeExtendsModifiers, includeComment));
 
     if (mpPrefixes) {
       auto prefixes = mpPrefixes->typePrefixes();
@@ -2571,10 +2595,12 @@ namespace ModelInstance
       }
     }
     // comment
-    if (mpPrefixes && mpPrefixes->getReplaceable() && !mpPrefixes->getReplaceable()->getComment().isEmpty()) {
-      value.append("\"" % mpPrefixes->getReplaceable()->getComment() % "\"");
-    } else if (!mComment.isEmpty()) {
-      value.append("\"" % mComment % "\"");
+    if (includeComment) {
+      if (mpPrefixes && mpPrefixes->getReplaceable() && !mpPrefixes->getReplaceable()->getComment().isEmpty()) {
+        value.append("\"" % mpPrefixes->getReplaceable()->getComment() % "\"");
+      } else if (!mComment.isEmpty()) {
+        value.append("\"" % mComment % "\"");
+      }
     }
 
     value.removeAll(QString(""));
@@ -2642,11 +2668,11 @@ namespace ModelInstance
     }
   }
 
-  QString ReplaceableClass::toString(bool skipTopLevel, bool mergeExtendsModifiers) const
+  QString ReplaceableClass::toString(bool skipTopLevel, bool mergeExtendsModifiers, bool includeComment) const
   {
     QStringList value;
 
-    value.append(Element::toString(skipTopLevel, mergeExtendsModifiers));
+    value.append(Element::toString(skipTopLevel, mergeExtendsModifiers, includeComment));
     value.append(mType);
     value.append(mName);
     if (!mBaseClass.isEmpty()) {
@@ -2661,7 +2687,7 @@ namespace ModelInstance
       if (mpModifier) {
         value.append(mpModifier->toString());
       }
-      if (!mComment.isEmpty()) {
+      if (includeComment && !mComment.isEmpty()) {
         value.append("\"" % mComment % "\"");
       }
     }

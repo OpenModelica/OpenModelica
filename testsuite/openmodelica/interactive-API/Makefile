@@ -120,6 +120,9 @@ refactorGraphAnn1.mos \
 refactorGraphAnn2.mos \
 regex.mos \
 Rename.mos \
+ReverseLookup1.mos \
+ReverseLookup2.mos \
+ReverseLookup3.mos \
 RunScript.mos \
 saveShort.mos \
 saveTotalModel.mos \

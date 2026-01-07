@@ -323,19 +323,21 @@ ComboBox::ComboBox(QWidget *parent)
 }
 
 /*!
- * \brief ComboBox::addElidedItem
- * Adds an item with elided text if it exceeds maximum width.
- * Sets the full text as tooltip.
+ * \brief ComboBox::addItemWithToolTip
+ * Adds an item with tooltip.
  * \param text
- * \param userData
+ * \param value
+ * \param toolTip
  */
-void ComboBox::addElidedItem(const QString &text, const QVariant &userData)
+void ComboBox::addItemWithToolTip(const QString &text, const QString &value, const QString &toolTip)
 {
+  // Calculate the text size and set the minimum width accordingly.
+  // We use qMax to retain the previous minimum width if it is greater.
   QFontMetrics fm = fontMetrics();
-  // use elided text for the item with maximum width of 500 pixels
-  const QString elidedText = fm.elidedText(text, Qt::ElideMiddle, 500);
-  addItem(elidedText, userData);
-  setItemData(count() - 1, text, Qt::ToolTipRole);
+  int textWidth = fm.boundingRect(value).width() + 30; // add extra for dropdown arrow
+  setMinimumWidth(qMax(textWidth, minimumWidth()));
+  addItem(text, value);
+  setItemData(count() - 1, toolTip, Qt::ToolTipRole);
 }
 
 void ComboBox::wheelEvent(QWheelEvent *event)

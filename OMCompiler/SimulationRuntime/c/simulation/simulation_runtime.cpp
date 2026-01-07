@@ -1030,19 +1030,19 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data, threadData_t *thr
             break;
 
           case FLAG_NEWTON_STRATEGY:
-            for(j=firstOMCErrorStream; j<NEWTON_MAX; ++j) {
+            for(j=1; j<NEWTON_MAX; ++j) {
               infoStreamPrint(OMC_LOG_STDOUT, 0, "%-18s [%s]", NEWTONSTRATEGY_NAME[j], NEWTONSTRATEGY_DESC[j]);
             }
             break;
 
           case FLAG_NLS:
-            for(j=firstOMCErrorStream; j<NLS_MAX; ++j) {
+            for(j=1; j<NLS_MAX; ++j) {
               infoStreamPrint(OMC_LOG_STDOUT, 0, "%-18s [%s]", NLS_NAME[j], NLS_DESC[j]);
             }
             break;
 
           case FLAG_NLS_LS:
-            for(j=firstOMCErrorStream; j<NLS_LS_MAX; ++j) {
+            for(j=1; j<NLS_LS_MAX; ++j) {
               infoStreamPrint(OMC_LOG_STDOUT, 0, "%-18s [%s]", NLS_LS_METHOD_NAME[j], NLS_LS_METHOD_DESC[j]);
             }
             break;

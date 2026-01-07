@@ -137,6 +137,7 @@ const char *FLAG_NAME[FLAG_MAX+1] = {
   /* FLAG_OPTIMIZER_NP */                 "optimizerNP",
   /* FLAG_OPTIMIZER_TGRID */              "optimizerTimeGrid",
   /* FLAG_OUTPUT */                       "output",
+  /* FLAG_OUTPUT_FORMAT */                "outputFormat",
   /* FLAG_OUTPUT_PATH */                  "outputPath",
   /* FLAG_OVERRIDE */                     "override",
   /* FLAG_OVERRIDE_FILE */                "overrideFile",
@@ -163,13 +164,18 @@ const char *FLAG_NAME[FLAG_MAX+1] = {
   /* FLAG_SAVE_INITIAL_GUESS_SYSTEM */    "saveInitialGuess_system",
   /* FLAG_SINGLE_PRECISION */             "single",
   /* FLAG_SOLVER_STEPS */                 "steps",
+  /* FLAG_START_TIME */                   "startTime",
   /* FLAG_STEADY_STATE */                 "steadyState",
   /* FLAG_STEADY_STATE_TOL */             "steadyStateTol",
+  /* FLAG_STEP_SIZE */                    "stepSize",
   /* FLAG_STOP_AT_SYSTEM */               "stopAtSystem",
+  /* FLAG_STOP_TIME */                    "stopTime",
   /* FLAG_SVD_SPARSE_COUNT */             "svdCount",
   /* FLAG_SVD_SPARSE_SIGMA */             "svdSigma",
   /* FLAG_DATA_RECONCILE_Sx */            "sx",
+  /* FLAG_TOLERANCE */                    "tolerance",
   /* FLAG_UP_HESSIAN */                   "keepHessian",
+  /* FLAG_VARIABLE_FILTER */              "variableFilter",
   /* FLAG_W */                            "w",
   /* FLAG_PARMODNUMTHREADS */             "parmodNumThreads",
 
@@ -283,9 +289,10 @@ const char *FLAG_DESC[FLAG_MAX+1] = {
   /* FLAG_OPTIMIZER_NP */                 "value specifies the number of points in a subinterval",
   /* FLAG_OPTIMIZER_TGRID */              "value specifies external file with time points.",
   /* FLAG_OUTPUT */                       "output the variables a, b and c at the end of the simulation to the standard output",
+  /* FLAG_OUTPUT_FORMAT */                "changes the output format (mat/csv/plt/empty)",
   /* FLAG_OUTPUT_PATH */                  "value specifies a path for writing the output files i.e., model_res.mat, model_prof.intdata, model_prof.realdata etc.",
-  /* FLAG_OVERRIDE */                     "override the variables or the simulation settings in the XML setup file",
-  /* FLAG_OVERRIDE_FILE */                "will override the variables or the simulation settings in the XML setup file with the values from the file",
+  /* FLAG_OVERRIDE */                     "override the variables in the XML setup file",
+  /* FLAG_OVERRIDE_FILE */                "will override the variables in the XML setup file with the values from the file",
   /* FLAG_PORT */                         "value specifies the port for simulation status (default disabled)",
   /* FLAG_R */                            "value specifies a new result file than the default Model_res.mat",
   /* FLAG_DATA_RECONCILE */               "Run the Data Reconciliation numerical computation algorithm for constrained equations",
@@ -309,13 +316,18 @@ const char *FLAG_DESC[FLAG_MAX+1] = {
   /* FLAG_SAVE_INITIAL_GUESS_SYSTEM */    "[string (.mat file), uint (NLS index)] debug flag that performs standard initialization until the specified system is reached, computes only the torn part and saves the results obtained so far to a .mat file",
   /* FLAG_SINGLE */                       "output in single precision",
   /* FLAG_SOLVER_STEPS */                 "dumps the number of integration steps into the result file",
+  /* FLAG_START_TIME */                   "sets startTime",
   /* FLAG_STEADY_STATE */                 "aborts if steady state is reached",
   /* FLAG_STEADY_STATE_TOL */             "[double (default 1e-3)] This relative tolerance is used to detect steady state.",
+  /* FLAG_STEP_SIZE */                    "sets stepSize",
   /* FLAG_STOP_AT_SYSTEM */               "[uint (NLS index)] performs standard initialization until the specified system is reached, then aborts the simulation.",
+  /* FLAG_STOP_TIME */                    "sets stopTime",
   /* FLAG_SVD_SPARSE_COUNT */             "[int (default 0)] Number of extremal singular values and vectors computed for LOG_NLS_SVD (0 disables).",
   /* FLAG_SVD_SPARSE_SIGMA */             "[double (default 1e-8, > 0)] Estimated smallest singular value for the preconditioner in SVD analysis.",
   /* FLAG_DATA_RECONCILE_Sx */            "value specifies a csv-file with inputs as covariance matrix Sx for DataReconciliation",
+  /* FLAG_TOLERANCE */                    "sets tolerance",
   /* FLAG_UP_HESSIAN */                   "value specifies the number of steps, which keep hessian matrix constant",
+  /* FLAG_VARIABLE_FILTER */              "sets variableFilter",
   /* FLAG_W */                            "shows all warnings even if a related log-stream is inactive",
   /* FLAG_PARMODNUMTHREADS */             "[int default: 0] value specifies the number of threads for simulation using parmodauto. If not specified (or is 0) it will use the systems max number of threads. Note that this option is ignored if the model is not compiled with --parmodauto",
 
@@ -493,8 +505,8 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   "  Default value " EXPANDSTRING(DEFAULT_FLAG_LV_MAX_WARN) ".",
   /* FLAG_LV_TIME */
   "  Interval (a comma-separated Double list with two elements) specifies in which\n"
-  "  time interval logging is active. Doesn't affect OMC_LOG_STDOUT, OMC_LOG_ASSERT, and\n"
-  "  OMC_LOG_SUCCESS, OMC_LOG_STATS, OMC_LOG_STATS_V.",
+  "  time interval logging is active. Doesn't affect LOG_STDOUT, LOG_ASSERT, and\n"
+  "  LOG_SUCCESS, LOG_STATS, LOG_STATS_V.",
   /* FLAG_LV_SYSTEM */
   "  Value is a comma-separated list of equation indices (available in the transformational debugger) for which solver logs are shown (by default logs for all systems are shown)",
   /* FLAG_MAX_BISECTION_ITERATIONS */
@@ -589,17 +601,19 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   /* FLAG_OUTPUT */
   "  Output the variables a, b and c at the end of the simulation to the standard\n"
   "  output: time = value, a = value, b = value, c = value",
+  /* FLAG_OUTPUT_FORMAT */
+  "  Sets file format of the result file.",
   /* FLAG_OUTPUT_PATH */
   "  Value specifies a path for writing the output files i.e., model_res.mat, model_prof.intdata, model_prof.realdata etc.",
   /* FLAG_OVERRIDE */
-  "  Override the variables or the simulation settings in the XML setup file\n"
-  "  For example: var1=start1,var2=start2,par3=start3,startTime=val1,stopTime=val2",
+  "  Override the variables in the XML setup file\n"
+  "  For example: var1=start1,var2=start2,par3=start3",
   /* FLAG_OVERRIDE_FILE */
-  "  Will override the variables or the simulation settings in the XML setup file\n"
+  "  Will override the variables in the XML setup file\n"
   "  with the values from the file.\n"
   "  Note that: -overrideFile CANNOT be used with -override.\n"
   "  Use when variables for -override are too many.\n"
-  "  overrideFileName contains lines of the form: var1=start1",
+  "  overrideFileName contains lines of the form: var=start",
   /* FLAG_PORT */
   "  Value specifies the port for simulation status (default disabled).",
   /* FLAG_R */
@@ -658,20 +672,30 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   "  Output results in single precision (mat-format only).",
   /* FLAG_SOLVER_STEPS */
   "  Dumps the number of integration steps into the result file.",
+  /* FLAG_START_TIME */
+  "  Sets startTime for the simulation.",
   /* FLAG_STEADY_STATE */
   "  Aborts the simulation if steady state is reached.",
   /* FLAG_STEADY_STATE_TOL */
   "  This relative tolerance is used to detect steady state: max(|d(x_i)/dt|/nominal(x_i)) < steadyStateTol",
+  /* FLAG_STEP_SIZE */
+  "  Sets stepSize for the simulation.",
   /* FLAG_STOP_AT_SYSTEM */
   "  Performs standard initialization until the specified system is reached, then aborts the simulation.",
+  /* FLAG_STOP_TIME */
+  "  Sets stopTime for the simulation.",
   /* FLAG_SVD_SPARSE_COUNT */
   "  Number of extremal singular values and vectors computed for LOG_NLS_SVD (0 disables).",
   /* FLAG_SVD_SPARSE_SIGMA */
   "  Estimated smallest singular value for the preconditioner in SVD analysis.",
   /* FLAG_DATA_RECONCILE_Sx */
   "  Value specifies an csv-file with inputs as covariance matrix Sx for DataReconciliation",
+  /* FLAG_TOLERANCE */
+  "  Specifies solver tolerance.",
   /* FLAG_UP_HESSIAN */
   "  Value specifies the number of steps, which keep Hessian matrix constant.",
+  /* FLAG_VARIABLE_FILTER */
+  "  Specifies which variables should be present in the result-file using POSIX Extended Regular Expressions. The given expression must match the full variable name.",
   /* FLAG_W */
   "  Shows all warnings even if a related log-stream is inactive.",
   /* FLAG_PARMODNUMTHREADS */
@@ -788,6 +812,7 @@ const flag_repeat_policy FLAG_REPEAT_POLICIES[FLAG_MAX] = {
   /* FLAG_OPTIMIZER_NP */                 FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_OPTIMIZER_TGRID */              FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_OUTPUT */                       FLAG_REPEAT_POLICY_FORBID,
+  /* FLAG_OUTPUT_FORMAT */                FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_OUTPUT_PATH */                  FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_OVERRIDE */                     FLAG_REPEAT_POLICY_COMBINE,
   /* FLAG_OVERRIDE_FILE */                FLAG_REPEAT_POLICY_COMBINE,
@@ -814,13 +839,18 @@ const flag_repeat_policy FLAG_REPEAT_POLICIES[FLAG_MAX] = {
   /* FLAG_SAVE_INITIAL_GUESS_SYSTEM */    FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_SINGLE_PRECISION */             FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_SOLVER_STEPS */                 FLAG_REPEAT_POLICY_FORBID,
+  /* FLAG_START_TIME */                   FLAG_REPEAT_POLICY_REPLACE,
   /* FLAG_STEADY_STATE */                 FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_STEADY_STATE_TOL */             FLAG_REPEAT_POLICY_FORBID,
+  /* FLAG_STEP_SIZE */                    FLAG_REPEAT_POLICY_REPLACE,
   /* FLAG_STOP_AT_SYSTEM */               FLAG_REPEAT_POLICY_FORBID,
+  /* FLAG_STOP_TIME */                    FLAG_REPEAT_POLICY_REPLACE,
   /* FLAG_SVD_SPARSE_COUNT */             FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_SVD_SPARSE_SIGMA */             FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_DATA_RECONCILE_Sx */            FLAG_REPEAT_POLICY_FORBID,
+  /* FLAG_TOLERANCE */                    FLAG_REPEAT_POLICY_REPLACE,
   /* FLAG_UP_HESSIAN */                   FLAG_REPEAT_POLICY_FORBID,
+  /* FLAG_VARIABLE_FILTER */              FLAG_REPEAT_POLICY_COMBINE,
   /* FLAG_W */                            FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_PARMODNUMTHREADS */             FLAG_REPEAT_POLICY_FORBID,
 };
@@ -933,6 +963,7 @@ const int FLAG_TYPE[FLAG_MAX] = {
   /* FLAG_OPTIZER_NP */                   FLAG_TYPE_OPTION,
   /* FLAG_OPTIZER_TGRID */                FLAG_TYPE_OPTION,
   /* FLAG_OUTPUT */                       FLAG_TYPE_OPTION,
+  /* FLAG_OUTPUT_FORMAT */                FLAG_TYPE_OPTION,
   /* FLAG_OUTPUT_PATH */                  FLAG_TYPE_OPTION,
   /* FLAG_OVERRIDE */                     FLAG_TYPE_OPTION,
   /* FLAG_OVERRIDE_FILE */                FLAG_TYPE_OPTION,
@@ -959,13 +990,18 @@ const int FLAG_TYPE[FLAG_MAX] = {
   /* FLAG_SAVE_INITIAL_GUESS_SYSTEM */    FLAG_TYPE_OPTION,
   /* FLAG_SINGLE */                       FLAG_TYPE_FLAG,
   /* FLAG_SOLVER_STEPS */                 FLAG_TYPE_FLAG,
+  /* FLAG_START_TIME */                   FLAG_TYPE_OPTION,
   /* FLAG_STEADY_STATE */                 FLAG_TYPE_FLAG,
   /* FLAG_STEADY_STATE_TOL */             FLAG_TYPE_OPTION,
+  /* FLAG_STEP_SIZE */                    FLAG_TYPE_OPTION,
   /* FLAG_STOP_AT_SYSTEM */               FLAG_TYPE_OPTION,
+  /* FLAG_STOP_TIME */                    FLAG_TYPE_OPTION,
   /* FLAG_SVD_SPARSE_COUNT */             FLAG_TYPE_OPTION,
   /* FLAG_SVD_SPARSE_SIGMA */             FLAG_TYPE_OPTION,
   /* FLAG_DATA_RECONCILE_Sx */            FLAG_TYPE_OPTION,
+  /* FLAG_TOLERANCE */                    FLAG_TYPE_OPTION,
   /* FLAG_UP_HESSIAN */                   FLAG_TYPE_OPTION,
+  /* FLAG_VARIABLE_FILTER */              FLAG_TYPE_OPTION,
   /* FLAG_W */                            FLAG_TYPE_FLAG,
   /* FLAG_PARMODNUMTHREADS */             FLAG_TYPE_OPTION,
 };
@@ -978,6 +1014,7 @@ const char *GB_METHOD_NAME[RK_MAX] = {
   /* RK_TRAPEZOID */     "trapezoid",
   /* RK_SDIRK2 */        "sdirk2",
   /* RK_SDIRK3 */        "sdirk3",
+  /* RK_SDIRK4 */        "sdirk4",
   /* RK_ESDIRK2 */       "esdirk2",
   /* RK_ESDIRK3 */       "esdirk3",
   /* RK_ESDIRK4 */       "esdirk4",
@@ -1026,6 +1063,7 @@ const char *GB_METHOD_DESC[RK_MAX] = {
   /* RK_TRAPEZOID */     "Implicit Runge-Kutta trapezoid method (order 2)",
   /* RK_SDIRK2 */        "Singly-diagonal implicit Runge-Kutta (order 2)",
   /* RK_SDIRK3 */        "Singly-diagonal implicit Runge-Kutta (order 3)",
+  /* RK_SDIRK4 */        "Singly-diagonal implicit Runge-Kutta (order 4)",
   /* RK_ESDIRK2 */       "Explicit singly-diagonal implicit Runge-Kutta (order 2)",
   /* RK_ESDIRK3 */       "Explicit singly-diagonal implicit Runge-Kutta (order 3)",
   /* RK_ESDIRK4 */       "Explicit singly-diagonal implicit Runge-Kutta (order 4)",
@@ -1070,14 +1108,16 @@ const char *GB_NLS_METHOD_NAME[GB_NLS_MAX] = {
   /* GB_NLS_UNKNOWN = 0*/ "unknown",
   /* GB_NLS_NEWTON */     "newton",
   /* GB_NLS_KINSOL */     "kinsol",
-  /* GB_NLS_KINSOL_B */   "experimental-kinsol"
+  /* GB_NLS_KINSOL_B */   "experimental-kinsol",
+  /* GB_NLS_INTERNAL */   "internal"
 };
 
 const char *GB_NLS_METHOD_DESC[GB_NLS_MAX] = {
   /* GB_NLS_UNKNOWN = 0*/ "unknown",
   /* GB_NLS_NEWTON */     "Newton method, dense",
   /* GB_NLS_KINSOL */     "SUNDIALS KINSOL: Inexact Newton, sparse",
-  /* GB_NLS_KINSOL_B */   "experimental kinsol"
+  /* GB_NLS_KINSOL_B */   "experimental kinsol",
+  /* GB_NLS_INTERNAL */   "Internal simplified Newton iteration with decoupling transformation (uses KLU)"
 };
 
 const char *GB_CTRL_METHOD_NAME[GB_CTRL_MAX] = {

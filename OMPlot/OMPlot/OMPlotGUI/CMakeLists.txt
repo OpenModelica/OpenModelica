@@ -42,6 +42,7 @@ target_include_directories(OMPlotLib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
 target_link_libraries(OMPlotLib PUBLIC Qt${OM_QT_MAJOR_VERSION}::Widgets)
 target_link_libraries(OMPlotLib PUBLIC Qt${OM_QT_MAJOR_VERSION}::PrintSupport)
+target_link_libraries(OMPlotLib PUBLIC Qt${OM_QT_MAJOR_VERSION}::Svg)
 
 if (OM_QT_MAJOR_VERSION VERSION_GREATER_EQUAL 6)
   target_link_libraries(OMPlotLib PUBLIC Qt6::Core5Compat)

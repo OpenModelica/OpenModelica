@@ -202,7 +202,7 @@ class ComboBox : public QComboBox
   Q_OBJECT
 public:
   ComboBox(QWidget *parent = nullptr);
-  void addElidedItem(const QString &text, const QVariant &userData);
+  void addItemWithToolTip(const QString &text, const QString &value, const QString &toolTip);
 protected:
   virtual void wheelEvent(QWheelEvent *event) override;
 };

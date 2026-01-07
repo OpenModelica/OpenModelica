@@ -107,6 +107,14 @@ public
       binfo.varKind := varKind;
     end setVarKind;
 
+    function setStateSelect
+      input output BackendInfo info;
+      input StateSelect stateSelect_val;
+      input Boolean overwrite = false;
+    algorithm
+      info.attributes := VariableAttributes.setStateSelect(info.attributes, stateSelect_val, overwrite);
+    end setStateSelect;
+
     function setParent
       input output BackendInfo binfo;
       input Pointer<Variable> parent;

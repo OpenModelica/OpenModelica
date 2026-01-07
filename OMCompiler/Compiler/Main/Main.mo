@@ -401,7 +401,6 @@ algorithm
       GlobalScript.Statements stmts;
       FCore.Cache cache;
       FCore.Graph env;
-      DAE.FunctionTree funcs;
       String cls, fileNamePrefix;
       SimCode.SimulationSettings sim_settings;
 

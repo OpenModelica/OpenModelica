@@ -208,7 +208,8 @@ algorithm
       Type t,tp;
       Boolean b,b2;
       String idn,str;
-      list<DAE.Exp> expl,matrix,subs;
+      list<DAE.Exp> expl,matrix;
+      list<DAE.Subscript> subs;
       list<Subscript> s;
       ComponentRef c_1;
       Operator op;
@@ -229,7 +230,8 @@ algorithm
 
     case (DAE.ASUB(exp = e, sub = subs),_)
       equation
-        e = simplifyAsubExp(inExp,e,subs);
+        expl = list(Expression.getSubscriptExp(sub) for sub in subs);
+        e = simplifyAsubExp(inExp,e,expl);
       then (e,options);
 
     case (DAE.TSUB(), _) then (simplifyTSub(inExp),options);
@@ -349,7 +351,7 @@ algorithm
     case (_, DAE.CAST(tp,e), _)
       equation
         tp = Expression.unliftArray(tp);
-        e = DAE.CAST(tp, DAE.ASUB(e, inSubs));
+        e = DAE.CAST(tp, DAE.ASUB(e, list(Expression.makeIndexSubscript(s) for s in inSubs)));
       then e;
 
     // Simplify asubs which result from function calls
@@ -384,7 +386,7 @@ algorithm
           else exp; end match
            for exp in inSubs);
         true := hasRange;
-      then DAE.ASUB(inExp, subs);
+      then DAE.ASUB(inExp, list(Expression.makeIndexSubscript(s) for s in subs));
 
     else origExp;
   end matchcontinue;
@@ -2162,12 +2164,12 @@ algorithm
     case DAE.CREF_IDENT()
       algorithm
         exp := simplifyCrefMM_index(inExp, inCref.ident, inType);
-        exp := if listEmpty(inCref.subscriptLst) then exp else DAE.ASUB(exp, list(Expression.subscriptIndexExp(s) for s in inCref.subscriptLst));
+        exp := if listEmpty(inCref.subscriptLst) then exp else DAE.ASUB(exp, inCref.subscriptLst);
       then exp;
     case DAE.CREF_QUAL()
       algorithm
         exp := simplifyCrefMM_index(inExp, inCref.ident, inType);
-        exp := if listEmpty(inCref.subscriptLst) then exp else DAE.ASUB(exp, list(Expression.subscriptIndexExp(s) for s in inCref.subscriptLst));
+        exp := if listEmpty(inCref.subscriptLst) then exp else DAE.ASUB(exp, inCref.subscriptLst);
         exp := simplifyCrefMM(exp, Expression.typeof(exp), inCref.componentRef);
       then exp;
   end match;
@@ -2181,7 +2183,7 @@ protected function simplifyCrefMM1
 algorithm
   outExp := match (ssl)
     case {} then DAE.CREF(DAE.CREF_IDENT(ident,ty,{}),ty);
-    else DAE.ASUB(DAE.CREF(DAE.CREF_IDENT(ident,ty,{}),ty), list(Expression.subscriptIndexExp(s) for s in ssl));
+    else DAE.ASUB(DAE.CREF(DAE.CREF_IDENT(ident,ty,{}),ty), ssl);
   end match;
 end simplifyCrefMM1;
 
@@ -2455,6 +2457,7 @@ algorithm
       list<DAE.Exp> expl, expl1, expl2;
       DAE.Exp exp;
       Type   tp;
+      ComponentRef cr1, cr2;
 
     // Both arrays are empty. The result is defined in the spec by sum, so we
     // return the default value which is 0.
@@ -2465,6 +2468,19 @@ algorithm
     case (DAE.ARRAY(array = expl1), DAE.ARRAY(array = expl2))
       equation
         true = Expression.isVector(inVector1) and Expression.isVector(inVector2);
+        expl = List.threadMap(expl1, expl2, Expression.expMul);
+        exp = List.reduce(expl, Expression.expAdd);
+      then
+        exp;
+
+    // scalar product with two crefs: expand both! (issue #13853)
+    case (DAE.CREF(componentRef = cr1), DAE.CREF(componentRef = cr2))
+      guard Config.simCodeTarget() <> "Cpp"
+      equation
+        expl1 = list(Expression.crefToExp(c) for c in ComponentReference.expandCref(cr1, true));
+        true = listLength(expl1) <= 3;
+        expl2 = list(Expression.crefToExp(c) for c in ComponentReference.expandCref(cr2, true));
+        true = listLength(expl1) == listLength(expl2);
         expl = List.threadMap(expl1, expl2, Expression.expMul);
         exp = List.reduce(expl, Expression.expAdd);
       then

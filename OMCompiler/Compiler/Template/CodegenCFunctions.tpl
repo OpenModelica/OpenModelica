@@ -2917,7 +2917,7 @@ template algStmtAssign(DAE.Statement stmt, Context context, Text &varDecls, Text
         (match exp1 case ASUB(exp=arr, sub={idx}) then
         let &preExp = buffer ""
         let arr1 = daeExp(arr, context, &preExp, &varDecls, &auxFunction)
-        let idx1 = daeExp(idx, context, &preExp, &varDecls, &auxFunction)
+        let idx1 = daeSubscript(idx, context, &preExp, &varDecls, &auxFunction)
         let val1 = daeExp(val, context, &preExp, &varDecls, &auxFunction)
         <<
         <%preExp%>
@@ -5612,7 +5612,7 @@ end daeExpCrefLhsSimContext;
 template indexSubs(list<Dimension> dims, list<Subscript> subs, Context context, Text &preExp, Text &varDecls, Text &auxFunction)
 ::=
   if intNe(listLength(dims),listLength(subs)) then
-    error(sourceInfo(),'indexSubs got different number of dimensions and subscripts')
+    error(sourceInfo(),'indexSubs got different number of dimensions(' + intString(listLength(dims)) + ') and subscripts(' + intString(listLength(subs)) + ')')
   else '[<%indexSubRecursive(listReverse(List.restOrEmpty(dims)), listReverse(subs), context, preExp, varDecls, auxFunction)%>]'
 end indexSubs;
 
@@ -7157,7 +7157,7 @@ template daeExpAsub(Exp inExp, Context context, Text &preExp,
   // MetaModelica Array
     (match inExp case ASUB(exp=e, sub={idx}) then
       let e1 = daeExp(e, context, &preExp, &varDecls, &auxFunction)
-      let idx1 = daeExp(idx, context, &preExp, &varDecls, &auxFunction)
+      let idx1 = daeSubscript(idx, context, &preExp, &varDecls, &auxFunction)
       'arrayGet(<%e1%>,<%idx1%>) /* DAE.ASUB */')
   // Modelica Array
   else
@@ -7168,7 +7168,7 @@ template daeExpAsub(Exp inExp, Context context, Text &preExp,
   // Faster asub: Do not construct a whole new array just to access one subscript
   case ASUB(exp=exp as ARRAY(scalar=true), sub={idx}) then
     let res = tempDecl(expTypeFromExpModelica(exp),&varDecls)
-    let idx1 = daeExp(idx, context, &preExp, &varDecls, &auxFunction)
+    let idx1 = daeSubscript(idx, context, &preExp, &varDecls, &auxFunction)
     let expl = (exp.array |> e hasindex i1 fromindex 1 =>
       let &caseVarDecls = buffer ""
       let &casePreExp = buffer ""
@@ -7195,7 +7195,7 @@ template daeExpAsub(Exp inExp, Context context, Text &preExp,
 
   case ASUB(exp=range as RANGE(ty=T_ARRAY(ty = T_INTEGER()),step=NONE()), sub={idx}) then
     let res = tempDecl("modelica_integer", &varDecls)
-    let idx1 = daeExp(idx, context, &preExp, &varDecls, &auxFunction)
+    let idx1 = daeSubscript(idx, context, &preExp, &varDecls, &auxFunction)
     let start = daeExp(range.start, context, &preExp, &varDecls, &auxFunction)
     let stop = daeExp(range.stop, context, &preExp, &varDecls, &auxFunction)
     let &preExp += <<
@@ -7207,27 +7207,36 @@ template daeExpAsub(Exp inExp, Context context, Text &preExp,
     res
 
   case ASUB(exp=RANGE(ty=t), sub={idx}) then
-    error(sourceInfo(),'ASUB_EASY_CASE type:<%unparseType(t)%> range:<%ExpressionDumpTpl.dumpExp(exp,"\"")%> index:<%ExpressionDumpTpl.dumpExp(idx,"\"")%>')
+    error(sourceInfo(),'ASUB_EASY_CASE type:<%unparseType(t)%> range:<%ExpressionDumpTpl.dumpExp(exp,"\"")%> index:<%ExpressionDumpTpl.dumpSubscript(idx)%>')
 
   case ASUB(exp=ecr as CREF(__), sub=subs) then
-    daeExpCrefLhs(buildCrefExpFromAsub(ecr, subs), context, &preExp, &varDecls, &auxFunction, false)
+    daeExpCrefLhs(buildCrefExpFromSubs(ecr, subs), context, &preExp, &varDecls, &auxFunction, false)
 
   case ASUB(exp=e, sub=indexes) then
     let exp = daeExp(e, context, &preExp, &varDecls, &auxFunction)
     let typeShort = expTypeFromExpShort(e)
     match Expression.typeof(inExp)
-    case T_ARRAY(__) then
-      error(sourceInfo(),'ASUB non-scalar <%ExpressionDumpTpl.dumpExp(inExp,"\"")%>. The inner exp has type: <%unparseType(Expression.typeof(e))%>. After ASUB it is still an array: <%unparseType(Expression.typeof(inExp))%>.')
     case T_COMPLEX(complexClassType = ClassInf.RECORD(__)) then
-      let expIndexes = (indexes |> index => daeSubscriptExp(index, context, &preExp, &varDecls, &auxFunction) ;separator=", ")
+      let expIndexes = (indexes |> index => daeSubscript(index, context, &preExp, &varDecls, &auxFunction) ;separator=", ")
       '<%typeShort%>_array_get(<%exp%>, <%listLength(indexes)%>, <%expIndexes%>)'
+    case T_ARRAY() then
+      let expIndexes = daeExpCrefIndexSpec(indexes, context, &preExp, &varDecls, &auxFunction)
+      '<%typeShort%>_get<%match listLength(indexes) case 1 then "" case i then '_<%i%>D'%>(<%exp%>, <%expIndexes%>)'
+
     else
-      let expIndexes = (indexes |> index => daeExpASubIndex(index, context, &preExp, &varDecls, &auxFunction) ;separator=", ")
+      let expIndexes = (indexes |> index => daeSubscriptASubIndex(index, context, &preExp, &varDecls, &auxFunction) ;separator=", ")
       '<%typeShort%>_get<%match listLength(indexes) case 1 then "" case i then '_<%i%>D'%>(<%exp%>, <%expIndexes%>)'
 
   else
     error(sourceInfo(),'OTHER_ASUB <%ExpressionDumpTpl.dumpExp(inExp,"\"")%>')
 end daeExpAsub;
+
+template daeSubscriptASubIndex(Subscript sub, Context context, Text &preExp, Text &varDecls, Text &auxFunction)
+::=
+match sub
+  case INDEX(__) then daeExpASubIndex(exp, context, &preExp, &varDecls, &auxFunction)
+  else daeSubscript(sub, context, &preExp, &varDecls, &auxFunction)
+end daeSubscriptASubIndex;
 
 template daeExpASubIndex(Exp exp, Context context, Text &preExp, Text &varDecls, Text &auxFunction)
 ::=
@@ -7804,7 +7813,7 @@ end daeExpSharedLiteral;
 template daeSubscript(Subscript sub, Context context, Text &preExp, Text &varDecls, Text &auxFunction)
 ::=
   match sub
-  case sub as INDEX() then daeSubscriptExp(sub.exp,context,&preExp,&varDecls,&auxFunction)
+  case sub as INDEX() then daeSubscriptExp(exp,context,&preExp,&varDecls,&auxFunction)
   else error(sourceInfo(), 'non INDEX(_) (i.e., slice) subscripts probably should not reach here. Check indexedAssign template.')
   end match
 end daeSubscript;

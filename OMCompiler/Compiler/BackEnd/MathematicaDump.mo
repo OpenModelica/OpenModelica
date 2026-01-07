@@ -182,7 +182,7 @@ algorithm
       list<list<DAE.Exp>> matrix;
       list<DAE.Exp> ae1,expLst;
       DAE.CallAttributes call_attr;
-
+      list<DAE.Subscript> subs;
 
     //case (DAE.END(),_,_) then "-1"; // Part[exp,-1] Returns last element in Mathematica.
     case (DAE.ICONST(integer = i),_,_) equation
@@ -412,9 +412,9 @@ algorithm
         s = printExpMmaStr(e,vars,knvars);
       then
         s;
-    case (e as DAE.ASUB(exp = e1,sub = ae1),_,_)
-
+    case (e as DAE.ASUB(exp = e1,sub = subs),_,_)
       equation
+        ae1 = list(Expression.getSubscriptExp(sub) for sub in subs);
         p = ExpressionDump.expPriority(e);
         pe1 = ExpressionDump.expPriority(e1);
         s1 = printExp2MmaStr(e1,vars,knvars);

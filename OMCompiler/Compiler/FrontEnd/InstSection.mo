@@ -5521,7 +5521,7 @@ algorithm
       list<DAE.Subscript> subscriptLst;
       Boolean alreadyInList;
       DAE.Exp debugExp;
-
+      list<DAE.Subscript> subs;
 
     case(_,{},_) then inCrefInfos;
 
@@ -5545,8 +5545,9 @@ algorithm
       then crefInfoList;
 
     // Array subscripting
-    case(crefInfoList, DAE.ASUB(exp1,expLst1)::restExps,_)
+    case(crefInfoList, DAE.ASUB(exp1,subs)::restExps,_)
       equation
+        expLst1 = list(Expression.getSubscriptExp(sub) for sub in subs);
         //check the ASUB specific expressions
         crefInfoList = collectParallelVariablesinExps(crefInfoList,exp1::expLst1,inInfo);
 

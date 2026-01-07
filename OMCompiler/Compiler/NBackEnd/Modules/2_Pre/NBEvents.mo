@@ -38,6 +38,9 @@ public
   import Module = NBModule;
 
 protected
+  // OF imports
+  import Absyn.Path;
+
   // NF
   import Algorithm = NFAlgorithm;
   import Builtin = NFBuiltin;
@@ -45,7 +48,7 @@ protected
   import ClockKind = NFClockKind;
   import ComponentRef = NFComponentRef;
   import Expression = NFExpression;
-  import NFFlatten.FunctionTree;
+  import NFFunction.Function;
   import Operator = NFOperator;
   import Prefixes = NFPrefixes;
   import Statement = NFStatement;
@@ -95,7 +98,7 @@ public
 
       case BackendDAE.MAIN()
         algorithm
-          (varData, eqData, eventInfo) := func(bdae.varData, bdae.eqData, bdae.eventInfo, bdae.funcTree);
+          (varData, eqData, eventInfo) := func(bdae.varData, bdae.eqData, bdae.eventInfo, bdae.funcMap);
           bdae.varData := varData;
           bdae.eqData := eqData;
           bdae.eventInfo := eventInfo;
@@ -366,7 +369,7 @@ public
       input output Bucket bucket;
       input Iterator iter;
       input Pointer<Equation> eqn;
-      input FunctionTree funcTree;
+      input UnorderedMap<Path, Function> funcMap;
       input Boolean createEqn;
       output Boolean failed = false "returns true if time event list could not be created";
     algorithm
@@ -378,8 +381,8 @@ public
         case Expression.LBINARY()
           guard(Operator.getMathClassification(exp.operator) == NFOperator.MathClassification.LOGICAL)
           algorithm
-            (exp1, bucket, b1) := create(exp.exp1, bucket, iter, eqn, funcTree, createEqn);
-            (exp2, bucket, b2) := create(exp.exp2, bucket, iter, eqn, funcTree, createEqn);
+            (exp1, bucket, b1) := create(exp.exp1, bucket, iter, eqn, funcMap, createEqn);
+            (exp2, bucket, b2) := create(exp.exp2, bucket, iter, eqn, funcMap, createEqn);
             failed := (b1 or b2);
             if not failed then
               // we could simplify here
@@ -388,7 +391,7 @@ public
             end if;
         then (exp, bucket, failed);
 
-        else createSingleOrSample(exp, bucket, iter, eqn, funcTree);
+        else createSingleOrSample(exp, bucket, iter, eqn, funcMap);
       end match;
 
       if not failed then
@@ -403,12 +406,12 @@ public
       2. creates a sample time event from a sample operator
       3. fails for anything else
       NOTE: create sample from sin and cos functions?"
-      input output Expression exp         "has to be LBINARY() with comparing operator or a sample CALL()";
-      input output Bucket bucket          "bucket containing the events";
+      input output Expression exp                 "has to be LBINARY() with comparing operator or a sample CALL()";
+      input output Bucket bucket                  "bucket containing the events";
       input Iterator iter;
       input Pointer<Equation> eqn;
-      input FunctionTree funcTree         "function tree for differentiation (solve)";
-      output Boolean failed               "true if it did not work to create a compact time event";
+      input UnorderedMap<Path, Function> funcMap  "function map for differentiation (solve)";
+      output Boolean failed                       "true if it did not work to create a compact time event";
     algorithm
       (exp, failed) := match exp
           local
@@ -435,7 +438,7 @@ public
             tmpEqn := Pointer.access(Equation.makeAssignment(exp.exp1, exp.exp2, Pointer.create(0), NBVariable.TEMPORARY_STR, Iterator.EMPTY(), EquationAttributes.default(EquationKind.UNKNOWN, false)));
             _ := Equation.map(tmpEqn, function containsTimeTraverseExp(b = containsTime), SOME(function containsTimeTraverseCref(b = containsTime)));
             if Pointer.access(containsTime) then
-              (tmpEqn, _, status, invert) := Solve.solveBody(tmpEqn, NFBuiltin.TIME_CREF, funcTree);
+              (tmpEqn, status, invert) := Solve.solveBody(tmpEqn, NFBuiltin.TIME_CREF, funcMap);
               if status == NBSolve.Status.EXPLICIT and invert <> NBSolve.RelationInversion.UNKNOWN then
                 SOME(trigger) := Equation.getRHS(tmpEqn);
                 // only cases for RelationInversion == TRUE or FALSE can be present
@@ -620,7 +623,7 @@ public
       input Pointer<Bucket> bucket_ptr;
       input Pointer<Equation> eqn;
       input VariablePointers variables;
-      input FunctionTree funcTree;
+      input UnorderedMap<Path, Function> funcMap;
       input list<Frame> frames = {};
     algorithm
       stmt := match stmt
@@ -638,7 +641,7 @@ public
           name := BackendDAE.lowerComponentReference(name, variables);
           new_frames := (name, range, NONE()) :: frames;
           for elem in stmt.body loop
-            new_stmt := fromStatement(elem, bucket_ptr, eqn, variables, funcTree, new_frames);
+            new_stmt := fromStatement(elem, bucket_ptr, eqn, variables, funcMap, new_frames);
             new_stmts := new_stmt :: new_stmts;
             new_stmts := EventInfo.createAuxStatements(new_stmts, bucket_ptr, variables);
           end for;
@@ -652,7 +655,7 @@ public
                 bucket_ptr  = bucket_ptr,
                 iter        = iter,
                 eqn         = eqn,
-                funcTree    = funcTree,
+                funcMap     = funcMap,
                 createEqn   = false)));
         then stmt;
       end match;
@@ -979,9 +982,9 @@ protected
       case (BVariable.VAR_DATA_SIM(), BEquation.EQ_DATA_SIM()) algorithm
         // collect event info and replace all conditions with auxiliary variables
         bucket_ptr := Pointer.create(bucket);
-        EquationPointers.mapPtr(eqData.simulation, function collectEvents(bucket_ptr = bucket_ptr, variables = varData.variables, funcTree = funcTree));
-        EquationPointers.mapPtr(eqData.clocked, function collectEvents(bucket_ptr = bucket_ptr, variables = varData.variables, funcTree = funcTree));
-        EquationPointers.mapPtr(eqData.removed, function collectEvents(bucket_ptr = bucket_ptr, variables = varData.variables, funcTree = funcTree));
+        EquationPointers.mapPtr(eqData.simulation, function collectEvents(bucket_ptr = bucket_ptr, variables = varData.variables, funcMap = funcMap));
+        EquationPointers.mapPtr(eqData.clocked, function collectEvents(bucket_ptr = bucket_ptr, variables = varData.variables, funcMap = funcMap));
+        EquationPointers.mapPtr(eqData.removed, function collectEvents(bucket_ptr = bucket_ptr, variables = varData.variables, funcMap = funcMap));
         bucket := Pointer.access(bucket_ptr);
 
         (eventInfo, auxiliary_vars, auxiliary_eqns) := EventInfo.create(bucket, varData.variables, eqData.uniqueIndex);
@@ -1010,7 +1013,7 @@ protected
     input output Pointer<Equation> eqn_ptr;
     input Pointer<Bucket> bucket_ptr;
     input VariablePointers variables;
-    input FunctionTree funcTree;
+    input UnorderedMap<Path, Function> funcMap;
   protected
     Equation eqn = Pointer.access(eqn_ptr), body_eqn;
     Iterator iter;
@@ -1025,14 +1028,14 @@ protected
           bucket_ptr  = bucket_ptr,
           iter        = iter,
           eqn         = eqn_ptr,
-          funcTree    = funcTree,
+          funcMap     = funcMap,
           createEqn   = createEqn);
 
     eqn := match eqn
       case Equation.ALGORITHM(alg = alg) algorithm
         new_stmts := {};
         for stmt in alg.statements loop
-          stmt := StateEvent.fromStatement(stmt, bucket_ptr, eqn_ptr, variables, funcTree);
+          stmt := StateEvent.fromStatement(stmt, bucket_ptr, eqn_ptr, variables, funcMap);
           new_stmts := EventInfo.createAuxStatements(new_stmts, bucket_ptr, variables);
           new_stmts := stmt :: new_stmts;
         end for;
@@ -1056,7 +1059,7 @@ protected
       // Map if equation body with this function to ensure that when equation bodies are not traversed
       case Equation.IF_EQUATION() algorithm
         eqn.body := IfEquationBody.mapEqnExpCref(eqn.body,
-          func        = function collectEvents(bucket_ptr = bucket_ptr, variables = variables, funcTree = funcTree),
+          func        = function collectEvents(bucket_ptr = bucket_ptr, variables = variables, funcMap = funcMap),
           funcExp     = collector,
           funcCrefOpt = NONE(),
           mapFunc     = Expression.mapReverse);
@@ -1078,7 +1081,7 @@ protected
     input Pointer<Bucket> bucket_ptr;
     input Iterator iter;
     input Pointer<Equation> eqn;
-    input FunctionTree funcTree;
+    input UnorderedMap<Path, Function> funcMap;
     input Boolean createEqn;
   algorithm
     exp := match exp
@@ -1092,32 +1095,32 @@ protected
       // logical unarys: e.g. not a
       // FIXME this is wrong for `not initial()`
       case Expression.LUNARY() algorithm
-        (exp, bucket) := collectEventsCondition(exp, Pointer.access(bucket_ptr), iter, eqn, funcTree, createEqn);
+        (exp, bucket) := collectEventsCondition(exp, Pointer.access(bucket_ptr), iter, eqn, funcMap, createEqn);
         Pointer.update(bucket_ptr, bucket);
       then exp;
 
       // logical binarys: e.g. (a and b)
       // Todo: this might not always be correct -> check with something like "contains relation?"
       case Expression.LBINARY() algorithm
-        (exp, bucket) := collectEventsCondition(exp, Pointer.access(bucket_ptr), iter, eqn, funcTree, createEqn);
+        (exp, bucket) := collectEventsCondition(exp, Pointer.access(bucket_ptr), iter, eqn, funcMap, createEqn);
         Pointer.update(bucket_ptr, bucket);
       then exp;
 
       // relations: e.g. (a > b)
       case Expression.RELATION() algorithm
-        (exp, bucket) := collectEventsCondition(exp, Pointer.access(bucket_ptr), iter, eqn, funcTree, createEqn);
+        (exp, bucket) := collectEventsCondition(exp, Pointer.access(bucket_ptr), iter, eqn, funcMap, createEqn);
         Pointer.update(bucket_ptr, bucket);
       then exp;
 
       // sample functions
       case Expression.CALL() guard(Call.isNamed(exp.call, "sample")) algorithm
-        (exp, bucket) := collectEventsCondition(exp, Pointer.access(bucket_ptr), iter, eqn, funcTree, createEqn);
+        (exp, bucket) := collectEventsCondition(exp, Pointer.access(bucket_ptr), iter, eqn, funcMap, createEqn);
         Pointer.update(bucket_ptr, bucket);
       then exp;
 
       // event clocks
       case Expression.CLKCONST(clk = clk as ClockKind.EVENT_CLOCK(condition = condition)) algorithm
-        clk.condition := collectEventsTraverse(condition, bucket_ptr, iter, eqn, funcTree, createEqn);
+        clk.condition := collectEventsTraverse(condition, bucket_ptr, iter, eqn, funcMap, createEqn);
         exp.clk := clk;
       then exp;
 
@@ -1136,7 +1139,7 @@ protected
       // ToDo: if they are not ranges we need to normalize them
       case Expression.CALL(call = call as Call.TYPED_REDUCTION()) algorithm
         new_frames := list((ComponentRef.fromNode(Util.tuple21(tpl), Type.INTEGER()), Util.tuple22(tpl), NONE()) for tpl in call.iters);
-        call.exp := collectEventsTraverse(call.exp, bucket_ptr, Iterator.addFrames(iter, new_frames), eqn, funcTree, createEqn);
+        call.exp := collectEventsTraverse(call.exp, bucket_ptr, Iterator.addFrames(iter, new_frames), eqn, funcMap, createEqn);
         exp.call := call;
       then exp;
 
@@ -1152,7 +1155,7 @@ protected
         bucket_ptr  = bucket_ptr,
         iter        = iter,
         eqn         = eqn,
-        funcTree    = funcTree,
+        funcMap     = funcMap,
         createEqn   = createEqn));
     end match;
   end collectEventsTraverse;
@@ -1165,14 +1168,14 @@ protected
     input output Bucket bucket;
     input Iterator iter;
     input Pointer<Equation> eqn;
-    input FunctionTree funcTree;
+    input UnorderedMap<Path, Function> funcMap;
     input Boolean createEqn;
   protected
     Boolean failed = true;
   algorithm
     // try to create time event or composite time event
     if BackendUtil.isOnlyTimeDependent(exp) then
-      (exp, bucket, failed) := TimeEvent.create(exp, bucket, iter, eqn, funcTree, createEqn);
+      (exp, bucket, failed) := TimeEvent.create(exp, bucket, iter, eqn, funcMap, createEqn);
     else
       (exp, bucket, failed) := CompositeEvent.create(exp, bucket, iter, createEqn);
     end if;

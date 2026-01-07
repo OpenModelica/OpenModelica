@@ -367,6 +367,7 @@ private:
     bool isCheckBox() const {return mCheckBox;}
     bool isDymolaCheckBox() const {return mDymolaCheckBox;}
     const QList<Modifier*> &getChoices() const {return mChoices;}
+    QStringList getChoicesDisplayStringList() const;
     QStringList getChoicesValueStringList() const;
     QStringList getChoicesCommentStringList() const;
   private:
@@ -488,7 +489,7 @@ private:
     const QString &getType() const {return mType;}
     QString getValueWithoutQuotes() const {return StringHandler::removeFirstLastQuotes(getValue());}
     bool isValueDefined() const {return mValueDefined;}
-    QString toString(bool skipTopLevel = false, bool includeComment = false) const;
+    QString toString(bool skipTopLevel = false, bool includeComment = false, bool onlyType = false) const;
     Modifier *getModifier(const QString &modifier) const;
     QPair<QString, bool> getModifierValue(const QString &modifier) const;
     bool hasModifier(const QString &modifier) const;
@@ -501,6 +502,7 @@ private:
     bool isReplaceable() const;
     const QString &getValue() const {return mValue;}
     const QString &getComment() const {return mComment;}
+    bool hasElement() const {return mpElement != 0;}
     QPair<QString, bool> getModifierValue(QStringList qualifiedModifierName) const;
   private:
     Model *mpParentModel;
@@ -727,7 +729,7 @@ private:
     virtual bool isComponent() const = 0;
     virtual bool isExtend() const = 0;
     virtual bool isClass() const = 0;
-    virtual QString toString(bool skipTopLevel = false, bool mergeExtendsModifiers = false) const;
+    virtual QString toString(bool skipTopLevel = false, bool mergeExtendsModifiers = false, bool includeComment = true) const;
 
     QString getDirection() const;
   private:
@@ -766,7 +768,7 @@ private:
     virtual bool isComponent() const override {return false;}
     virtual bool isExtend() const override {return true;}
     virtual bool isClass() const override {return false;}
-    virtual QString toString(bool skipTopLevel = false, bool mergeExtendsModifiers = false) const override;
+    virtual QString toString(bool skipTopLevel = false, bool mergeExtendsModifiers = false, bool includeComment = true) const override;
   };
 
   class Component : public Element
@@ -798,7 +800,7 @@ private:
     virtual bool isComponent() const override {return true;}
     virtual bool isExtend() const override {return false;}
     virtual bool isClass() const override {return false;}
-    virtual QString toString(bool skipTopLevel = false, bool mergeExtendsModifiers = false) const override;
+    virtual QString toString(bool skipTopLevel = false, bool mergeExtendsModifiers = false, bool includeComment = true) const override;
   };
 
   class ReplaceableClass : public Element
@@ -826,7 +828,7 @@ private:
     virtual bool isComponent() const override {return false;}
     virtual bool isExtend() const override {return false;}
     virtual bool isClass() const override {return true;}
-    virtual QString toString(bool skipTopLevel = false, bool mergeExtendsModifiers = false) const override;
+    virtual QString toString(bool skipTopLevel = false, bool mergeExtendsModifiers = false, bool includeComment = true) const override;
   };
 
   class Part

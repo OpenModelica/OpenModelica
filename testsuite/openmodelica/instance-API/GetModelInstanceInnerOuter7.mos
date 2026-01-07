@@ -1,0 +1,252 @@
+// name: GetModelInstanceInnerOuter6
+// keywords:
+// status: correct
+// cflags: -d=newInst
+//
+//
+
+loadString("
+  model A
+    parameter String s = \"str\";
+    annotation(Icon(graphics = {Text(textString = s)}));
+  end A;
+
+  model B
+    outer A a;
+  end B;
+
+  model M
+    B b;
+    inner A a;
+  end M;
+");
+
+getModelInstance(M, prettyPrint = true);
+
+// Result:
+// true
+// "{
+//   \"name\": \"M\",
+//   \"restriction\": \"model\",
+//   \"elements\": [
+//     {
+//       \"$kind\": \"component\",
+//       \"name\": \"b\",
+//       \"type\": {
+//         \"name\": \"B\",
+//         \"restriction\": \"model\",
+//         \"elements\": [
+//           {
+//             \"$kind\": \"component\",
+//             \"name\": \"a\",
+//             \"type\": {
+//               \"$kind\": \"class\",
+//               \"name\": \"A\",
+//               \"restriction\": \"model\",
+//               \"annotation\": {
+//                 \"Icon\": {
+//                   \"graphics\": [
+//                     {
+//                       \"$kind\": \"record\",
+//                       \"name\": \"Text\",
+//                       \"elements\": [
+//                         true,
+//                         [
+//                           0,
+//                           0
+//                         ],
+//                         0,
+//                         [
+//                           0,
+//                           0,
+//                           0
+//                         ],
+//                         [
+//                           0,
+//                           0,
+//                           0
+//                         ],
+//                         {
+//                           \"$kind\": \"enum\",
+//                           \"name\": \"LinePattern.Solid\",
+//                           \"index\": 2
+//                         },
+//                         {
+//                           \"$kind\": \"enum\",
+//                           \"name\": \"FillPattern.None\",
+//                           \"index\": 1
+//                         },
+//                         0.25,
+//                         [
+//                           [
+//                             -10,
+//                             -10
+//                           ],
+//                           [
+//                             10,
+//                             10
+//                           ]
+//                         ],
+//                         {
+//                           \"$kind\": \"cref\",
+//                           \"parts\": [
+//                             {
+//                               \"name\": \"a\"
+//                             },
+//                             {
+//                               \"name\": \"s\"
+//                             }
+//                           ]
+//                         },
+//                         0,
+//                         [
+//                           -1,
+//                           -1,
+//                           -1
+//                         ],
+//                         \"\",
+//                         [
+//
+//                         ],
+//                         {
+//                           \"$kind\": \"enum\",
+//                           \"name\": \"TextAlignment.Center\",
+//                           \"index\": 2
+//                         }
+//                       ]
+//                     }
+//                   ]
+//                 }
+//               }
+//             },
+//             \"prefixes\": {
+//               \"outer\": true
+//             }
+//           }
+//         ],
+//         \"source\": {
+//           \"filename\": \"<interactive>\",
+//           \"lineStart\": 7,
+//           \"columnStart\": 3,
+//           \"lineEnd\": 9,
+//           \"columnEnd\": 8
+//         }
+//       }
+//     },
+//     {
+//       \"$kind\": \"component\",
+//       \"name\": \"a\",
+//       \"type\": {
+//         \"name\": \"A\",
+//         \"restriction\": \"model\",
+//         \"annotation\": {
+//           \"Icon\": {
+//             \"graphics\": [
+//               {
+//                 \"$kind\": \"record\",
+//                 \"name\": \"Text\",
+//                 \"elements\": [
+//                   true,
+//                   [
+//                     0,
+//                     0
+//                   ],
+//                   0,
+//                   [
+//                     0,
+//                     0,
+//                     0
+//                   ],
+//                   [
+//                     0,
+//                     0,
+//                     0
+//                   ],
+//                   {
+//                     \"$kind\": \"enum\",
+//                     \"name\": \"LinePattern.Solid\",
+//                     \"index\": 2
+//                   },
+//                   {
+//                     \"$kind\": \"enum\",
+//                     \"name\": \"FillPattern.None\",
+//                     \"index\": 1
+//                   },
+//                   0.25,
+//                   [
+//                     [
+//                       -10,
+//                       -10
+//                     ],
+//                     [
+//                       10,
+//                       10
+//                     ]
+//                   ],
+//                   {
+//                     \"$kind\": \"cref\",
+//                     \"parts\": [
+//                       {
+//                         \"name\": \"a\"
+//                       },
+//                       {
+//                         \"name\": \"s\"
+//                       }
+//                     ]
+//                   },
+//                   0,
+//                   [
+//                     -1,
+//                     -1,
+//                     -1
+//                   ],
+//                   \"\",
+//                   [
+//
+//                   ],
+//                   {
+//                     \"$kind\": \"enum\",
+//                     \"name\": \"TextAlignment.Center\",
+//                     \"index\": 2
+//                   }
+//                 ]
+//               }
+//             ]
+//           }
+//         },
+//         \"elements\": [
+//           {
+//             \"$kind\": \"component\",
+//             \"name\": \"s\",
+//             \"type\": \"String\",
+//             \"modifiers\": \"\\\"str\\\"\",
+//             \"value\": {
+//               \"binding\": \"str\"
+//             },
+//             \"prefixes\": {
+//               \"variability\": \"parameter\"
+//             }
+//           }
+//         ],
+//         \"source\": {
+//           \"filename\": \"<interactive>\",
+//           \"lineStart\": 2,
+//           \"columnStart\": 3,
+//           \"lineEnd\": 5,
+//           \"columnEnd\": 8
+//         }
+//       },
+//       \"prefixes\": {
+//         \"inner\": true
+//       }
+//     }
+//   ],
+//   \"source\": {
+//     \"filename\": \"<interactive>\",
+//     \"lineStart\": 11,
+//     \"columnStart\": 3,
+//     \"lineEnd\": 14,
+//     \"columnEnd\": 8
+//   }
+// }"
+// endResult
