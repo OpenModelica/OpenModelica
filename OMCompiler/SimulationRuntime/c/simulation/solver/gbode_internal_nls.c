@@ -33,6 +33,8 @@
 #include "gbode_main.h"
 #include "gbode_internal_nls.h"
 
+#include "../arrayIndex.h"
+
 // TODO: How to choose TOL for Richardson??
 // TODO: Calibrate safety factor for internal tolerances
 // TODO: update guess routines (stage value predictors for (E)SDIRK)
@@ -298,7 +300,8 @@ static void gbInternal_evalJacobian(DATA *data, threadData_t *threadData, DATA_G
           double delta_hhh = delta_h * der_x_ref[state];
 
           // scal_raw = ATOL * NOMINAL + RTOL * abs(x_i), we use the real (un-transformed) integrator tolerances though
-          double raw_weight = nls->tol_integrator.atol * data->modelData->realVarsData[state].attribute.nominal + nls->tol_integrator.rtol * fabs(x[state]);
+          const modelica_real nominal = getNominalFromScalarIdx(data->simulationInfo, data->modelData, state);
+          double raw_weight = nls->tol_integrator.atol * nominal + nls->tol_integrator.rtol * fabs(x[state]);
 
           // choose h_i := h * max(abs(x_i), h * f(x)_i, 1 / (ATOL * NOMINAL + RTOL * abs(x_i)), 1e-3)
           delta_hh[state] = delta_h * fmax(fmax(fmax(fabs(x[state]) /* x_i */, 1e-3), fabs(delta_hhh) /* h * f_i */), fabs(raw_weight)  /* 1 / wt_i */);
@@ -532,7 +535,8 @@ static void createGbScales(GB_INTERNAL_NLS_DATA *nls, double *y1, double *y2)
 {
   for (int i = 0; i < nls->size; i++)
   {
-    nls->scal[i] = 1. / (nls->tol_scaled.atol * nls->nls_user_data->data->modelData->realVarsData[i].attribute.nominal + fmax(fabs(y1[i]), fabs(y2[i])) * nls->tol_scaled.rtol);
+    const modelica_real nominal = getNominalFromScalarIdx(nls->nls_user_data->data->simulationInfo, nls->nls_user_data->data->modelData, i);
+    nls->scal[i] = 1. / (nls->tol_scaled.atol * nominal + fmax(fabs(y1[i]), fabs(y2[i])) * nls->tol_scaled.rtol);
   }
 }
 
