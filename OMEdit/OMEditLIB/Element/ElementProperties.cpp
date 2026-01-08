@@ -700,7 +700,7 @@ void Parameter::createValueWidget()
             replaceableChoice[0].remove(0, parentClassName.size() + 1);
           }
           if (isReplaceableClass()) {
-            replaceableValue = QString("redeclare %1 %2 + %3").arg(restriction, elementName, replaceableChoice[0]);
+            replaceableValue = QString("redeclare %1 %2 = %3").arg(restriction, elementName, replaceableChoice[0]);
           } else {
             replaceableValue = QString("redeclare %1 %2").arg(replaceableChoice[0], elementName);
           }
