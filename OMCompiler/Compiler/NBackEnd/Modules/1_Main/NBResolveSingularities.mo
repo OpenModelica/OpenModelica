@@ -40,7 +40,6 @@ protected
   // NF imports
   import NFBackendExtension.{BackendInfo, VariableAttributes, StateSelect};
   import ComponentRef = NFComponentRef;
-  import NFFlatten.FunctionTree;
 
   // NB imports
   import Adjacency = NBAdjacency;
@@ -172,9 +171,9 @@ public
       end if;
 
       // Build differentiation argument structure
-      diffArguments           := Differentiate.DifferentiationArguments.default(NBDifferentiate.DifferentiationType.TIME, funcTree);
+      diffArguments           := Differentiate.DifferentiationArguments.default(NBDifferentiate.DifferentiationType.TIME, funcMap);
       diffArguments.diff_map  := SOME(VarData.getStateOrder(varData));
-      diffArguments_ptr := Pointer.create(diffArguments);
+      diffArguments_ptr       := Pointer.create(diffArguments);
 
       if Flags.isSet(Flags.DUMMY_SELECT) then
         print(StringUtil.headline_3("[dummyselect] 1. Differentiate the constraint equations"));
@@ -310,6 +309,8 @@ public
       variables := VariablePointers.addList(diffArguments.new_vars, variables);
       // add all dummy states
       variables := VariablePointers.addList(sliced_dummy_states, variables);
+      // remove all states
+      variables := VariablePointers.removeList(sliced_states, variables);
       // add new equations (after cleanup because equation names are added there)
       equations := EquationPointers.addList(new_eqns, equations);
     else

@@ -264,7 +264,7 @@ protected
   DoubleEnded.MutableList<BackendDAE.ZeroCrossing> de_relations;
   list<BackendDAE.ZeroCrossing> zeroCrossings, sampleZC, relations;
   list<DAE.ClassAttributes> classAttributes;
-  list<DAE.ComponentRef> discreteModelVars;
+  list<DAE.ComponentRef> discreteModelVars, iterationVarsLst1, iterationVarsLst2;
   list<DAE.Constraint> constraints;
   list<DAE.Exp> lits;
   list<SimCode.ClockedPartition> clockedPartitions;
@@ -311,7 +311,7 @@ protected
   list<SimCodeVar.SimVar> tmpsetcVars, tmpdatareconinputvars, tmpsetBVars;
   SimCode.JacobianMatrix dataReconSimJac, dataReconSimJacH;
   Integer numRelatedBoundaryConditions;
-  String fullPathPrefix, fileNamePrefixHash;
+  String fullPathPrefix, fileNamePrefixHash, iterationVarsStr;
 
   SimCode.OMSIFunction omsiInitEquations, omsiSimEquations;
   Option<SimCode.OMSIData> omsiOptData;
@@ -581,6 +581,20 @@ algorithm
       end if;
       SymbolicJacsNLS := listAppend(SymbolicJacsTemp, SymbolicJacsNLS);
       //SymbolicJacsNLS := dataReconSimJac::SymbolicJacsNLS;
+      // write iteration variables to file for data reconciliation report
+      (_, iterationVarsLst1) := BackendDAEOptimize.listAllIterationVariables0(inInitDAE.eqs);
+      (_, iterationVarsLst2) := BackendDAEOptimize.listAllIterationVariables0(inBackendDAE.eqs);
+      iterationVarsLst1 := List.unique(listAppend(iterationVarsLst1, iterationVarsLst2));
+
+      iterationVarsStr := "List of iteration variables(" + intString(listLength(iterationVarsLst1)) + "):"  + "\n=============================\n";
+      if listEmpty(iterationVarsLst1) then
+        iterationVarsStr := iterationVarsStr + "No iteration variables found.\n";
+      else
+        for var in iterationVarsLst1 loop
+          iterationVarsStr := iterationVarsStr + ComponentReference.crefStr(var) + "\n";
+        end for;
+      end if;
+      System.writeFile(shared.info.fileNamePrefix + "_iterationVars.txt", iterationVarsStr);
     end if;
 
     // collect symbolic jacobians from state selection

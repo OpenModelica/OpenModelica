@@ -37,6 +37,7 @@ encapsulated package NBEquation
 
 public
   // Old Frontend imports
+  import Absyn.Path;
   import DAE;
   import ElementSource;
 
@@ -51,7 +52,7 @@ public
   import ComponentRef = NFComponentRef;
   import Dimension = NFDimension;
   import Expression = NFExpression;
-  import NFFlatten.FunctionTree;
+  import NFFunction.Function;
   import InstNode = NFInstNode.InstNode;
   import Operator = NFOperator;
   import NFPrefixes.{Variability, Purity};
@@ -781,10 +782,10 @@ public
           occs    := Equation.collectCrefs(tmpEqn, function Equation.collectFromMap(check_map = iter_map));
 
 
-          if listLength(occs) == 1 then
+          if List.hasOneElement(occs) then
             // get the only occuring iterator cref and solve the body for it
             cref := listHead(occs);
-            (tmpEqn, _, status, invert) := Solve.solveBody(tmpEqn, cref, FunctionTree.EMPTY());
+            (tmpEqn, status, invert) := Solve.solveBody(tmpEqn, cref);
             operator := if invert == NBSolve.RelationInversion.TRUE then Operator.invert(condition.operator) else condition.operator;
 
             // if its solvable, get the corresponding iterator range and adapt it with the information of the if-condition
@@ -2669,7 +2670,7 @@ public
       Iterator new_iter;
     algorithm
       // get the sizes of the 'return value' of the equation
-      if listLength(indices) == 1 then
+      if List.hasOneElement(indices) then
         // perform a single replacement for the one index
         location      := Slice.indexToLocation(listHead(indices), sizes);
         replacements  := UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual);
@@ -2725,7 +2726,7 @@ public
       input ComponentRef cref_to_solve                            "the cref to solve the body for (EMPTY() for already solved)";
       input UnorderedMap<ComponentRef, Expression> replacements   "prepared replacement map";
       output Equation sliced_eqn                                  "scalar sliced equation";
-      input output FunctionTree funcTree                          "func tree for solving";
+      input UnorderedMap<Path, Function> funcMap                  "func map for solving";
       output Solve.Status solve_status                            "solve success status";
     protected
       Equation eqn;
@@ -2744,7 +2745,7 @@ public
           sliced_eqn := map(listHead(eqn.body), function Replacements.applySimpleExp(replacements = replacements));
           // solve the body if necessary
           if not ComponentRef.isEmpty(cref_to_solve) then
-            (sliced_eqn, funcTree, solve_status, _) := Solve.solveBody(sliced_eqn, cref_to_solve, funcTree);
+            (sliced_eqn, solve_status, _) := Solve.solveBody(sliced_eqn, cref_to_solve, funcMap);
           end if;
         then (sliced_eqn, solve_status);
 

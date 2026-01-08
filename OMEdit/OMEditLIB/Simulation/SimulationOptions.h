@@ -88,7 +88,6 @@ public:
     setClock("");
     setLinearSolver("");
     setNonLinearSolver("");
-    setLinearizationTime("");
     setOutputVariables("");
     setProfiling("none");
     setCPUTime(false);
@@ -115,8 +114,7 @@ public:
     setStoreVariablesAtEvents(true);
     setShowGeneratedFiles(false);
     // Linearize
-    setLinearize(false);
-    setLinearizationDumpLanguage("modelica");
+    setLinearizationDumpLanguage("none");
 
     setSimulationFlags(QStringList());
     setIsValid(false);
@@ -207,8 +205,6 @@ public:
   QString getLinearSolver() const {return mLinearSolver;}
   void setNonLinearSolver(const QString &nonLinearSolver) {mNonLinearSolver = nonLinearSolver;}
   QString getNonLinearSolver() const {return mNonLinearSolver;}
-  void setLinearizationTime(const QString &linearizationTime) {mLinearizationTime = linearizationTime;}
-  QString getLinearizationTime() const {return mLinearizationTime;}
   void setOutputVariables(const QString &outputVariables) {mOutputVariables = outputVariables;}
   QString getOutputVariables() const {return mOutputVariables;}
   void setProfiling(const QString &profiling) {mProfiling = profiling;}
@@ -261,8 +257,6 @@ public:
   void setShowGeneratedFiles(bool showGeneratedFiles) {mShowGeneratedFiles = showGeneratedFiles;}
   bool getShowGeneratedFiles() const {return mShowGeneratedFiles;}
 
-  void setLinearize(bool linearize) {mLinearize = linearize;}
-  bool getLinearize() const {return mLinearize;}
   void setLinearizationDumpLanguage(const QString &linearizationDumpLanguage) {mLinearizationDumpLanguage = linearizationDumpLanguage;}
   QString getLinearizationDumpLanguage() const {return mLinearizationDumpLanguage;}
 
@@ -322,7 +316,6 @@ private:
   QString mClock;
   QString mLinearSolver;
   QString mNonLinearSolver;
-  QString mLinearizationTime;
   QString mOutputVariables;
   QString mProfiling;
   bool mCPUTime;
@@ -349,7 +342,6 @@ private:
   bool mStoreVariablesAtEvents;
   bool mShowGeneratedFiles;
   // linearize
-  bool mLinearize;
   QString mLinearizationDumpLanguage;
 
   QStringList mSimulationFlags;

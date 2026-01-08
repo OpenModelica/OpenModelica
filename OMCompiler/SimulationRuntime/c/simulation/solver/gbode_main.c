@@ -201,6 +201,9 @@ int gbodef_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solve
         infoStreamPrint(OMC_LOG_SOLVER, 0, "NNZ:  %u colors: %u", jacobian->sparsePattern->numberOfNonZeros, jacobian->sparsePattern->maxColors);
         messageClose(OMC_LOG_SOLVER);
       }
+      else {
+        throwStreamPrint(threadData, "##GBODE## Implicit method requires a sparse pattern for the jacobian but no sparse pattern is generated.");
+      }
 
       // Compare user flag to availabe Jacobian methods
       const char* flagValue;
@@ -426,6 +429,9 @@ int gbode_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solver
       infoStreamPrint(OMC_LOG_SOLVER, 0, "columns: %zu rows: %zu", jacobian->sizeCols, jacobian->sizeRows);
       infoStreamPrint(OMC_LOG_SOLVER, 0, "NNZ:  %u colors: %u", jacobian->sparsePattern->numberOfNonZeros, jacobian->sparsePattern->maxColors);
       messageClose(OMC_LOG_SOLVER);
+    }
+    else {
+      throwStreamPrint(threadData, "##GBODE## Implicit method requires a sparse pattern for the jacobian but no sparse pattern is generated.");
     }
 
     // Compare user flag to availabe Jacobian methods
@@ -1845,7 +1851,7 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
 
   if (!solverInfo->solverNoEquidistantGrid) {
     /* Integrator does large steps and needs to interpolate results with respect to the output grid */
-    sData->timeValue = fmin(solverInfo->currentTime + solverInfo->currentStepSize, gbData->eventTime);
+    sData->timeValue = fmin(solverInfo->currentTime + solverInfo->currentStepSize, targetTime);
     sData->timeValue = fmin(sData->timeValue, stopTime);
     solverInfo->currentTime = sData->timeValue;
 

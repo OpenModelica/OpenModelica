@@ -135,8 +135,6 @@ private:
   ComboBox *mpLinearSolverComboBox;
   Label *mpNonLinearSolverLabel;
   ComboBox *mpNonLinearSolverComboBox;
-  Label *mpLinearizationTimeLabel;
-  QLineEdit *mpLinearizationTimeTextBox;
   Label *mpOutputVariablesLabel;
   QLineEdit *mpOutputVariablesTextBox;
   Label  *mpProfilingLabel;
@@ -171,7 +169,6 @@ private:
   QCheckBox *mpShowGeneratedFilesCheckBox;
   // Linearize Tab
   QWidget *mpLinearizeTab;
-  QGroupBox *mpLinearizeGroupBox;
   ComboBox *mpLinearizationDumpLanguageComboBox;
   // checkboxes
   QCheckBox *mpSaveExperimentAnnotationCheckBox;

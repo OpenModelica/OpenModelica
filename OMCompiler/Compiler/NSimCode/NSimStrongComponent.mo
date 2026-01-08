@@ -37,13 +37,14 @@ encapsulated package NSimStrongComponent
 
 protected
   // OF imports
+  import AbsynUtil;
   import DAE;
 
   // NF imports
   import ComponentRef = NFComponentRef;
   import ConvertDAE = NFConvertDAE;
   import Expression = NFExpression;
-  import NFFlatten.{FunctionTree, FunctionTreeImpl};
+  import NFFunction.Function;
   import InstNode = NFInstNode.InstNode;
   import Operator = NFOperator;
   import Scalarize = NFScalarize;
@@ -364,10 +365,10 @@ public
         case WHEN() :: rest then filterWhen(rest, out_blcks, new_blcks, indices);
         case (blck as ALGORITHM()) :: rest algorithm
           stmts := Statement.filterDiscrete(blck.stmts);
-          if listLength(stmts) == 0 then
+          if listEmpty(stmts) then
             // filtered everything out, skip entire block
             (out_blcks, new_blcks, indices) := filterWhen(rest, out_blcks, new_blcks, indices);
-          elseif listLength(stmts) <> listLength(blck.stmts) then
+          elseif List.compareLength(stmts, blck.stmts) <> 0 then
             // filtered part of it out, create new block
             new_blck := ALGORITHM(indices.equationIndex, stmts, blck.attr);
             indices.equationIndex := indices.equationIndex + 1;
@@ -915,11 +916,11 @@ public
       StrongComponent comp;
       Integer index;
     algorithm
-      (comp, _, index)  := Tearing.implicit(
-        comp        = StrongComponent.SINGLE_COMPONENT(Pointer.create(var), Pointer.create(eqn), NBSolve.Status.IMPLICIT),
-        funcTree    = FunctionTreeImpl.EMPTY(),
-        index       = simCodeIndices.implicitIndex,
-        kind  = kind
+      (comp, index) := Tearing.implicit(
+        comp    = StrongComponent.SINGLE_COMPONENT(Pointer.create(var), Pointer.create(eqn), NBSolve.Status.IMPLICIT),
+        funcMap = UnorderedMap.new<Function>(AbsynUtil.pathHash, AbsynUtil.pathEqual),
+        index   = simCodeIndices.implicitIndex,
+        kind    = kind
       );
       simCodeIndices.implicitIndex := index;
       (blck, simCodeIndices) := fromStrongComponent(comp, simCodeIndices, kind, simcode_map, equation_map);

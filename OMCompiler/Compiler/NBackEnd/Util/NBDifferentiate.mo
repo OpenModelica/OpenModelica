@@ -36,10 +36,8 @@ encapsulated package NBDifferentiate
 "
 public
   // OF imports
-  import Absyn;
+  import Absyn.Path;
   import AbsynUtil;
-  import BaseAvlTree;
-  import AvlSetPath;
   import DAE;
 
   // NF imports
@@ -55,7 +53,6 @@ public
   import Expression = NFExpression;
   import InstContext = NFInstContext;
   import NFInstNode.{InstNode, CachedData};
-  import NFFlatten.{FunctionTree, FunctionTreeImpl};
   import NFFunction.{Function, Slot};
   import FunctionDerivative = NFFunctionDerivative;
   import Operator = NFOperator;
@@ -91,12 +88,12 @@ public
 
   uniontype DifferentiationArguments
     record DIFFERENTIATION_ARGUMENTS
-      ComponentRef diffCref                                       "The input will be differentiated w.r.t. this cref (only SIMPLE).";
-      list<Pointer<Variable>> new_vars                            "contains all new variables that need to be added to the system";
-      Option<UnorderedMap<ComponentRef,ComponentRef>> diff_map    "seed and temporary cref map x --> $SEED.MATRIX.x, y --> $pDer.MATRIX.y. Can be used for any differentiation rules";
-      DifferentiationType diffType                                "Differentiation use case (time, simple, function, jacobian)";
-      FunctionTree funcTree                                       "Function tree containing all functions and their known derivatives";
-      Boolean scalarized                                          "true if the variables are scalarized";
+      ComponentRef diffCref                                     "The input will be differentiated w.r.t. this cref (only SIMPLE).";
+      list<Pointer<Variable>> new_vars                          "contains all new variables that need to be added to the system";
+      Option<UnorderedMap<ComponentRef, ComponentRef>> diff_map "seed and temporary cref map x --> $SEED.MATRIX.x, y --> $pDer.MATRIX.y. Can be used for any differentiation rules";
+      DifferentiationType diffType                              "Differentiation use case (time, simple, function, jacobian)";
+      UnorderedMap<Path, Function> funcMap                      "Function tree containing all functions and their known derivatives";
+      Boolean scalarized                                        "true if the variables are scalarized";
       Option<UnorderedMap<ComponentRef, ExpressionList>> adjoint_map    "map for accumulating adjoint gradients for component refs";
       Expression current_grad                                     "current gradient expression, used in reverse mode";
       Boolean collectAdjoints                                     "If false, skip writing into adjoint_map (used for LHS traversal in reverse/Jacobian).";
@@ -104,13 +101,13 @@ public
 
     function default
       input DifferentiationType ty = DifferentiationType.TIME;
-      input FunctionTree funcTree = FunctionTreeImpl.EMPTY();
+      input UnorderedMap<Path, Function> funcMap = UnorderedMap.new<Function>(AbsynUtil.pathHash, AbsynUtil.pathEqual);
       output DifferentiationArguments diffArgs = DIFFERENTIATION_ARGUMENTS(
         diffCref    = ComponentRef.EMPTY(),
         new_vars    = {},
         diff_map    = NONE(),
         diffType    = ty,
-        funcTree    = funcTree,
+        funcMap     = funcMap,
         scalarized  = false,
         adjoint_map = NONE(),
         current_grad= Expression.EMPTY(Type.REAL()),
@@ -120,13 +117,13 @@ public
 
     function simpleCref "Differentiate w.r.t. cref"
       input ComponentRef cref;
-      input FunctionTree funcTree = FunctionTreeImpl.EMPTY();
+      input UnorderedMap<Path, Function> funcMap = UnorderedMap.new<Function>(AbsynUtil.pathHash, AbsynUtil.pathEqual);
       output DifferentiationArguments diffArgs = DIFFERENTIATION_ARGUMENTS(
         diffCref    = cref,
         new_vars    = {},
         diff_map    = NONE(),
         diffType    = DifferentiationType.SIMPLE,
-        funcTree    = funcTree,
+        funcMap     = funcMap,
         scalarized  = false,
         adjoint_map = NONE(),
         current_grad = Expression.EMPTY(Type.REAL()),
@@ -1148,7 +1145,7 @@ public
 
       // user defined functions
       case Expression.CALL(call = call as Call.TYPED_CALL()) algorithm
-        func_opt := FunctionTreeImpl.getOpt(diffArguments.funcTree, call.fn.path);
+        func_opt := UnorderedMap.get(call.fn.path, diffArguments.funcMap);
         if Util.isSome(func_opt) then
           // The function is in the function tree
           SOME(func) := func_opt;
@@ -2047,7 +2044,6 @@ public
         DifferentiationArguments funcDiffArgs;
         UnorderedMap<ComponentRef, ComponentRef> diff_map = UnorderedMap.new<ComponentRef>(ComponentRef.hash, ComponentRef.isEqual);
         list<Algorithm> algorithms;
-        Absyn.Path new_path;
         FunctionDerivative funcDer;
         Function dummy_func;
         CachedData cachedData;
@@ -2065,7 +2061,7 @@ public
             // prepare differentiation arguments
             funcDiffArgs          := DifferentiationArguments.default();
             funcDiffArgs.diffType := DifferentiationType.FUNCTION;
-            funcDiffArgs.funcTree := diffArguments.funcTree;
+            funcDiffArgs.funcMap  := diffArguments.funcMap;
             createInterfaceDerivatives(der_func.inputs, interface_map, diff_map);
             createInterfaceDerivatives(der_func.locals, interface_map, diff_map);
             createInterfaceDerivatives(der_func.outputs, interface_map, diff_map);
@@ -2109,8 +2105,8 @@ public
             );
 
             // add fake derivative to function tree
-            dummy_func.derivatives  := funcDer :: dummy_func.derivatives;
-            funcDiffArgs.funcTree   := FunctionTreeImpl.add(funcDiffArgs.funcTree, dummy_func.path, dummy_func, FunctionTreeImpl.addConflictReplace);
+            dummy_func.derivatives := funcDer :: dummy_func.derivatives;
+            UnorderedMap.add(dummy_func.path, dummy_func, funcDiffArgs.funcMap);
 
             // differentiate function statements (if there are any. empty for function pointer arguments)
             funcDiffArgs := match new_cls.sections
@@ -2120,8 +2116,8 @@ public
                 (algorithms, funcDiffArgs) := List.mapFold(sections.algorithms, differentiateAlgorithm, funcDiffArgs);
 
                 // add them to new node
-                sections.algorithms   := algorithms;
-                new_cls.sections      := sections;
+                sections.algorithms := algorithms;
+                new_cls.sections    := sections;
               then funcDiffArgs;
               else funcDiffArgs;
             end match;
@@ -2132,7 +2128,7 @@ public
             der_func.derivatives  := {};
 
             // save the function tree
-            diffArguments.funcTree := funcDiffArgs.funcTree;
+            diffArguments.funcMap := funcDiffArgs.funcMap;
           then new_cls;
 
           else algorithm
@@ -2141,7 +2137,7 @@ public
         end match;
 
         // add function to function tree
-        diffArguments.funcTree := FunctionTreeImpl.add(diffArguments.funcTree, der_func.path, der_func);
+        UnorderedMap.add(der_func.path, der_func, diffArguments.funcMap);
         // add new function as derivative to original function
         funcDer := FunctionDerivative.FUNCTION_DER(
           derivativeFn          = der_func.node,
@@ -2151,7 +2147,7 @@ public
           lowerOrderDerivatives = {}  // possibly needs updating
         );
         func.derivatives := List.appendElt(funcDer, func.derivatives);
-        diffArguments.funcTree := FunctionTreeImpl.add(diffArguments.funcTree, func.path, func, FunctionTreeImpl.addConflictReplace);
+        UnorderedMap.add(func.path, func, diffArguments.funcMap);
       then der_func;
 
       else algorithm
@@ -2282,7 +2278,7 @@ public
 
   function resolvePartialDerivatives
     input output Function func;
-    input output FunctionTree funcTree;
+    input UnorderedMap<Path, Function> funcMap;
   protected
     Function der_func;
     InstNode node;
@@ -2308,7 +2304,7 @@ public
               case new_cls as Class.INSTANCED_CLASS(sections = sections as Sections.SECTIONS(algorithms = algorithms)) algorithm
                 // prepare differentiation arguments
                 diffArgs.diffType     := DifferentiationType.FUNCTION;
-                diffArgs.funcTree     := funcTree;
+                diffArgs.funcMap      := funcMap;
 
                 interface_map := UnorderedMap.fromLists(list(InstNode.name(var) for var in der_func.inputs), List.fill(false, listLength(der_func.inputs)), stringHashDjb2, stringEqual);
 
@@ -2365,7 +2361,7 @@ public
             print("\n[BEFORE] " + Function.toFlatString(func) + "\n");
             print("\n[AFTER ] " + Function.toFlatString(der_func) + "\n\n");
           end if;
-          funcTree := FunctionTreeImpl.add(funcTree, der_func.path, der_func, FunctionTreeImpl.addConflictReplace);
+          UnorderedMap.add(der_func.path, der_func, funcMap);
         end if;
       then der_func;
 

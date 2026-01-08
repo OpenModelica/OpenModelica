@@ -672,7 +672,11 @@ int linearize(DATA* data, threadData_t *threadData)
       case OMC_LINEARIZE_DUMP_LANGUAGE_PYTHON:    ext = ".py";  break;
     }
     /* ticket #5927: Don't use the model name to prevent bad names for certain languages. */
-    filename = "linearized_model" + string(ext);
+    if (omc_flag[FLAG_OUTPUT_PATH]) {
+      filename = string(omc_flagValue[FLAG_OUTPUT_PATH]) + "/" + "linearized_model" + string(ext);
+    } else {
+      filename = "linearized_model" + string(ext);
+    }
 
     FILE *fout = omc_fopen(filename.c_str(),"wb");
     assertStreamPrint(threadData,0!=fout,"Cannot open File %s",filename.c_str());
@@ -685,9 +689,6 @@ int linearize(DATA* data, threadData_t *threadData)
         frame = data->callback->linear_model_frame();
         fprintf(fout, frame, strX.c_str(), strU.c_str(), strA.c_str(), strB.c_str(), strC.c_str(), strD.c_str(), (double) data->simulationInfo->stopTime);
     }
-    if(OMC_ACTIVE_STREAM(OMC_LOG_STATS)) {
-      infoStreamPrint(OMC_LOG_STATS, 0, data->callback->linear_model_frame(), strX.c_str(), strU.c_str(), strA.c_str(), strB.c_str(), strC.c_str(), strD.c_str(), (double) data->simulationInfo->stopTime);
-    }
 
     fflush(fout);
     fclose(fout);
@@ -699,6 +700,9 @@ int linearize(DATA* data, threadData_t *threadData)
             infoStreamPrint(OMC_LOG_STDOUT, 0, "Linear model is created.");
         }
         else {
+          if (omc_flag[FLAG_OUTPUT_PATH]) {
+            infoStreamPrint(OMC_LOG_STDOUT, 0, "Linear model is created at %s", filename.c_str());
+          } else {
             char* cwd = getcwd(NULL, 0); /* call with NULL and 0 to allocate the buffer dynamically (no pathmax needed) */
             if(!cwd) {
               infoStreamPrint(OMC_LOG_STDOUT, 0, "Linear model %s is created, but getting the full path failed.", filename.c_str());
@@ -707,8 +711,10 @@ int linearize(DATA* data, threadData_t *threadData)
               infoStreamPrint(OMC_LOG_STDOUT, 0, "Linear model is created at %s/%s", cwd, filename.c_str());
               free(cwd);
             }
-            infoStreamPrint(OMC_LOG_STDOUT, 0, "The output format can be changed with the command line option --linearizationDumpLanguage.");
-            infoStreamPrint(OMC_LOG_STDOUT, 0, "The options are: --linearizationDumpLanguage=none, modelica, matlab, julia, python.");
+          }
+          infoStreamPrint(OMC_LOG_STDOUT, 0, "The output format can be changed with the command line option --linearizationDumpLanguage.");
+          infoStreamPrint(OMC_LOG_STDOUT, 0, "The options are: --linearizationDumpLanguage=none, modelica, matlab, julia, python.");
+          infoStreamPrint(OMC_LOG_STDOUT, 0, "In OMEdit Simulation Setup->Linearize->Target language for linearized model.");
         }
       }
     return 0;

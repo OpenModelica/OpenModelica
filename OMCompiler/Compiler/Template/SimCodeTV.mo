@@ -3931,6 +3931,11 @@ package Expression
     output Boolean oCrefWithEqualIdents;
   end isCrefListWithEqualIdents;
 
+  function expDimensions
+    input DAE.Exp inExp;
+    output DAE.Dimensions outDims;
+  end expDimensions;
+
   function dimensionsList
     input DAE.Dimensions inDims;
     output list<Integer> outValues;

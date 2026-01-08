@@ -85,9 +85,9 @@ getErrorString();
 // OrderedEquation (48, 48)
 // ========================================
 // 1/1 (1): Q04 = 0.0   [dynamic |0|0|0|0|]
-// 2/2 (1): V_h4 = 100000.0   [dynamic |0|0|0|0|]
+// 2/2 (1): V_h4 = 1e5   [dynamic |0|0|0|0|]
 // 3/3 (1): Q05 = 0.0   [dynamic |0|0|0|0|]
-// 4/4 (1): V_h5 = 100000.0   [dynamic |0|0|0|0|]
+// 4/4 (1): V_h5 = 1e5   [dynamic |0|0|0|0|]
 // 5/5 (1): V_Q4 = Q04   [dynamic |0|0|0|0|]
 // 6/6 (1): V_Q5 = Q05   [dynamic |0|0|0|0|]
 // 7/7 (1): T1_P1 = P01   [dynamic |0|0|0|0|]
@@ -129,9 +129,9 @@ getErrorString();
 // 43/43 (1): P01 = 10.0   [binding |0|0|0|0|]
 // 44/44 (1): Q02 = 1.0   [binding |0|0|0|0|]
 // 45/45 (1): Q03 = 1.0   [binding |0|0|0|0|]
-// 46/46 (1): h01 = 100000.0   [binding |0|0|0|0|]
-// 47/47 (1): h02 = 100000.0   [binding |0|0|0|0|]
-// 48/48 (1): h03 = 100000.0   [binding |0|0|0|0|]
+// 46/46 (1): h01 = 1e5   [binding |0|0|0|0|]
+// 47/47 (1): h02 = 1e5   [binding |0|0|0|0|]
+// 48/48 (1): h03 = 1e5   [binding |0|0|0|0|]
 //
 // Matching
 // ========================================
@@ -201,9 +201,9 @@ getErrorString();
 // 38: P01: (43/43): (1): P01 = 10.0
 // 37: Q02: (44/44): (1): Q02 = 1.0
 // 36: Q03: (45/45): (1): Q03 = 1.0
-// 35: h01: (46/46): (1): h01 = 100000.0
-// 34: h02: (47/47): (1): h02 = 100000.0
-// 33: h03: (48/48): (1): h03 = 100000.0
+// 35: h01: (46/46): (1): h01 = 1e5
+// 34: h02: (47/47): (1): h02 = 1e5
+// 33: h03: (48/48): (1): h03 = 1e5
 // 32: Q04: (1/1): (1): Q04 = 0.0
 // 31: Q05: (3/3): (1): Q05 = 0.0
 // 30: T1_P1: (7/7): (1): T1_P1 = P01
@@ -231,8 +231,8 @@ getErrorString();
 // 8: V_h1: (30/30): (1): V_h1 = T1_h
 // 7: V_h2: (29/29): (1): 0.0 = V_h1 * V_Q1 + W - V_h5 * V_Q5 - V_h4 * V_Q4 - V_h3 * V_Q3 - V_h2 * V_Q2
 // 6: V_h3: (32/32): (1): V_h3 = T3_h
-// 5: V_h4: (2/2): (1): V_h4 = 100000.0
-// 4: V_h5: (4/4): (1): V_h5 = 100000.0
+// 5: V_h4: (2/2): (1): V_h4 = 1e5
+// 4: V_h5: (4/4): (1): V_h5 = 1e5
 // 3: T1_h: (33/33): (1): T1_h = h01
 // 2: T2_h: (31/31): (1): V_h2 = T2_h
 // 1: T3_h: (35/35): (1): T3_h = V_h
@@ -265,9 +265,9 @@ getErrorString();
 // Binding equations:(6)
 // ============================================================
 //
-// 33: h03: (48/48): (1): h03 = 100000.0
-// 34: h02: (47/47): (1): h02 = 100000.0
-// 35: h01: (46/46): (1): h01 = 100000.0
+// 33: h03: (48/48): (1): h03 = 1e5
+// 34: h02: (47/47): (1): h02 = 1e5
+// 35: h01: (46/46): (1): h01 = 1e5
 // 36: Q03: (45/45): (1): Q03 = 1.0
 // 37: Q02: (44/44): (1): Q02 = 1.0
 // 38: P01: (43/43): (1): P01 = 10.0
@@ -329,8 +329,8 @@ getErrorString();
 // 9: V_h: (34/34): (1): T2_h = V_h
 // 2: T2_h: (31/31): (1): V_h2 = T2_h
 // 7: V_h2: (29/29): (1): 0.0 = V_h1 * V_Q1 + W - V_h5 * V_Q5 - V_h4 * V_Q4 - V_h3 * V_Q3 - V_h2 * V_Q2
-// 4: V_h5: (4/4): (1): V_h5 = 100000.0
-// 5: V_h4: (2/2): (1): V_h4 = 100000.0
+// 4: V_h5: (4/4): (1): V_h5 = 1e5
+// 5: V_h4: (2/2): (1): V_h4 = 1e5
 // 6: V_h3: (32/32): (1): V_h3 = T3_h
 // 8: V_h1: (30/30): (1): V_h1 = T1_h
 // 3: T1_h: (33/33): (1): T1_h = h01
@@ -340,8 +340,8 @@ getErrorString();
 // >>>44: T2: (37/37): (1): T2_h = cp * T2 + b * P2
 // 2: T2_h: (31/31): (1): V_h2 = T2_h
 // 7: V_h2: (29/29): (1): 0.0 = V_h1 * V_Q1 + W - V_h5 * V_Q5 - V_h4 * V_Q4 - V_h3 * V_Q3 - V_h2 * V_Q2
-// 4: V_h5: (4/4): (1): V_h5 = 100000.0
-// 5: V_h4: (2/2): (1): V_h4 = 100000.0
+// 4: V_h5: (4/4): (1): V_h5 = 1e5
+// 5: V_h4: (2/2): (1): V_h4 = 1e5
 // 6: V_h3: (32/32): (1): V_h3 = T3_h
 // 1: T3_h: (35/35): (1): T3_h = V_h
 // 9: V_h: (34/34): (1): T2_h = V_h
@@ -440,9 +440,9 @@ getErrorString();
 // 3/3 (1): Q3 = 0.0   [binding |0|0|0|0|]
 // 4/4 (1): Q2 = 0.0   [binding |0|0|0|0|]
 // 5/5 (1): Q04 = 0.0   [dynamic |0|0|0|0|]
-// 6/6 (1): V_h4 = 100000.0   [dynamic |0|0|0|0|]
+// 6/6 (1): V_h4 = 1e5   [dynamic |0|0|0|0|]
 // 7/7 (1): Q05 = 0.0   [dynamic |0|0|0|0|]
-// 8/8 (1): V_h5 = 100000.0   [dynamic |0|0|0|0|]
+// 8/8 (1): V_h5 = 1e5   [dynamic |0|0|0|0|]
 // 9/9 (1): V_Q4 = Q04   [dynamic |0|0|0|0|]
 // 10/10 (1): V_Q5 = Q05   [dynamic |0|0|0|0|]
 // 11/11 (1): T1_P1 - T1_P2 = Q1 ^ 2.0   [dynamic |0|0|0|0|]
@@ -480,9 +480,9 @@ getErrorString();
 // 43/43 (1): P01 = 10.0   [binding |0|0|0|0|]
 // 44/44 (1): Q02 = 1.0   [binding |0|0|0|0|]
 // 45/45 (1): Q03 = 1.0   [binding |0|0|0|0|]
-// 46/46 (1): h01 = 100000.0   [binding |0|0|0|0|]
-// 47/47 (1): h02 = 100000.0   [binding |0|0|0|0|]
-// 48/48 (1): h03 = 100000.0   [binding |0|0|0|0|]
+// 46/46 (1): h01 = 1e5   [binding |0|0|0|0|]
+// 47/47 (1): h02 = 1e5   [binding |0|0|0|0|]
+// 48/48 (1): h03 = 1e5   [binding |0|0|0|0|]
 //
 // Matching
 // ========================================
@@ -552,9 +552,9 @@ getErrorString();
 // 38: P01: (43/43): (1): P01 = 10.0
 // 37: Q02: (44/44): (1): Q02 = 1.0
 // 36: Q03: (45/45): (1): Q03 = 1.0
-// 35: h01: (46/46): (1): h01 = 100000.0
-// 34: h02: (47/47): (1): h02 = 100000.0
-// 33: h03: (48/48): (1): h03 = 100000.0
+// 35: h01: (46/46): (1): h01 = 1e5
+// 34: h02: (47/47): (1): h02 = 1e5
+// 33: h03: (48/48): (1): h03 = 1e5
 // 32: Q04: (5/5): (1): Q04 = 0.0
 // 31: Q05: (7/7): (1): Q05 = 0.0
 // 30: T1_P1: (11/11): (1): T1_P1 - T1_P2 = Q1 ^ 2.0
@@ -582,8 +582,8 @@ getErrorString();
 // 8: V_h1: (30/30): (1): 0.0 = V_h1 * V_Q1 + W - V_h5 * V_Q5 - V_h4 * V_Q4 - V_h3 * V_Q3 - V_h2 * V_Q2
 // 7: V_h2: (32/32): (1): V_h2 = T2_h
 // 6: V_h3: (33/33): (1): V_h3 = T3_h
-// 5: V_h4: (6/6): (1): V_h4 = 100000.0
-// 4: V_h5: (8/8): (1): V_h5 = 100000.0
+// 5: V_h4: (6/6): (1): V_h4 = 1e5
+// 4: V_h5: (8/8): (1): V_h5 = 1e5
 // 3: T1_h: (31/31): (1): V_h1 = T1_h
 // 2: T2_h: (34/34): (1): T2_h = V_h
 // 1: T3_h: (38/38): (1): T3_h = cp * T3 + b * P3
@@ -616,9 +616,9 @@ getErrorString();
 // Binding equations:(10)
 // ============================================================
 //
-// 33: h03: (48/48): (1): h03 = 100000.0
-// 34: h02: (47/47): (1): h02 = 100000.0
-// 35: h01: (46/46): (1): h01 = 100000.0
+// 33: h03: (48/48): (1): h03 = 1e5
+// 34: h02: (47/47): (1): h02 = 1e5
+// 35: h01: (46/46): (1): h01 = 1e5
 // 36: Q03: (45/45): (1): Q03 = 1.0
 // 37: Q02: (44/44): (1): Q02 = 1.0
 // 38: P01: (43/43): (1): P01 = 10.0
@@ -680,8 +680,8 @@ getErrorString();
 // >>>45: T1: (36/36): (1): T1_h = cp * T1 + b * P1
 // 3: T1_h: (31/31): (1): V_h1 = T1_h
 // 8: V_h1: (30/30): (1): 0.0 = V_h1 * V_Q1 + W - V_h5 * V_Q5 - V_h4 * V_Q4 - V_h3 * V_Q3 - V_h2 * V_Q2
-// 4: V_h5: (8/8): (1): V_h5 = 100000.0
-// 5: V_h4: (6/6): (1): V_h4 = 100000.0
+// 4: V_h5: (8/8): (1): V_h5 = 1e5
+// 5: V_h4: (6/6): (1): V_h4 = 1e5
 // 6: V_h3: (33/33): (1): V_h3 = T3_h
 // 1: T3_h: (38/38): (1): T3_h = cp * T3 + b * P3
 // 7: V_h2: (32/32): (1): V_h2 = T2_h
@@ -746,8 +746,8 @@ getErrorString();
 // >>>T1_h = h01
 // 3: T1_h: (31/31): (1): V_h1 = T1_h
 // 8: V_h1: (30/30): (1): 0.0 = V_h1 * V_Q1 + W - V_h5 * V_Q5 - V_h4 * V_Q4 - V_h3 * V_Q3 - V_h2 * V_Q2
-// 4: V_h5: (8/8): (1): V_h5 = 100000.0
-// 5: V_h4: (6/6): (1): V_h4 = 100000.0
+// 4: V_h5: (8/8): (1): V_h5 = 1e5
+// 5: V_h4: (6/6): (1): V_h4 = 1e5
 // 6: V_h3: (33/33): (1): V_h3 = T3_h
 // 1: T3_h: (38/38): (1): T3_h = cp * T3 + b * P3
 // 7: V_h2: (32/32): (1): V_h2 = T2_h
@@ -789,8 +789,8 @@ getErrorString();
 // 2/2 (1): T3_Q2 = Q3   [dynamic |0|0|0|0|]
 // 3/3 (1): V_h1 = T1_h   [dynamic |0|0|0|0|]
 // 4/4 (1): 0.0 = V_h1 * V_Q1 + W - V_h5 * V_Q5 - V_h4 * V_Q4 - V_h3 * V_Q3 - V_h2 * V_Q2   [dynamic |0|0|0|0|]
-// 5/5 (1): V_h5 = 100000.0   [dynamic |0|0|0|0|]
-// 6/6 (1): V_h4 = 100000.0   [dynamic |0|0|0|0|]
+// 5/5 (1): V_h5 = 1e5   [dynamic |0|0|0|0|]
+// 6/6 (1): V_h4 = 1e5   [dynamic |0|0|0|0|]
 // 7/7 (1): V_h3 = T3_h   [dynamic |0|0|0|0|]
 // 8/8 (1): T3_h = cp * T3 + b * P3   [dynamic |0|0|0|0|]
 // 9/9 (1): V_h2 = T2_h   [dynamic |0|0|0|0|]
@@ -866,15 +866,16 @@ getErrorString();
 // ========================================
 // 1: cp:PARAM()  = 5000.0  type: Real
 // 2: b:PARAM()  = -0.01  type: Real
-// 3: W:PARAM()  = 1000000.0  type: Real
+// 3: W:PARAM()  = 1e6  type: Real
 //
 // record SimulationResult
 //     resultFile = "econcileBoundaryConditions",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'NewDataReconciliationSimpleTests.Splitter5g', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-reconcileBoundaryConditions -sx=./NewDataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.Splitter5f_Outputs.csv -cx=./NewDataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.Splitter5f_Reconciled_Sx.csv -lv=LOG_JAC'",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'NewDataReconciliationSimpleTests.Splitter5g', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-reconcileBoundaryConditions -sx=./NewDataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.Splitter5f_Outputs.csv -cx=./NewDataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.Splitter5f_Reconciled_Sx.csv -lv=LOG_JAC'",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // LOG_STDOUT        | info    | Reconcile Boundary Conditions Starting!
 // LOG_STDOUT        | info    | NewDataReconciliationSimpleTests.Splitter5g
+// LOG_STDOUT        | warning | Entry for variable of interest T1 and variable of interest T1 in correlation input file ./NewDataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.Splitter5f_Reconciled_Sx.csv is closer to 1: [0.99721]
 // LOG_STDOUT        | info    | Reconcile Boundary Conditions Completed!
 // "
 // end SimulationResult;
