@@ -2,13 +2,13 @@
 #include <string.h>
 #include <stdlib.h>
 
+#include "model_help.h"
 #include "omc_error.h"
 #include "omc_init.h"
 #include "options.h"
 #include "simulation_omc_assert.h"
 
 #include "simulation_input_xml.h"
-#include "model_help.h"
 
 /**
  * @brief Test parsing of init XML

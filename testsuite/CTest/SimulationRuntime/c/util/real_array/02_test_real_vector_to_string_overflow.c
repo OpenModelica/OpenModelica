@@ -30,7 +30,7 @@ int main(void)
   // Test
   size_t buffer_size = 22;
   char buffer[buffer_size];
-  real_vector_to_string(&test_array, TRUE, buffer, buffer_size);
+  real_vector_to_string(&test_array, FALSE, buffer, buffer_size);
 
   // Validate
   if (test_success && strcmp(buffer, expected_print))

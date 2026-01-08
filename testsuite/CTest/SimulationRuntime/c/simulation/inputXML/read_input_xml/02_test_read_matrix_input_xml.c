@@ -2,13 +2,15 @@
 #include <string.h>
 #include <stdlib.h>
 
+#include "base_array.h"
+#include "model_help.h"
 #include "omc_error.h"
 #include "omc_init.h"
 #include "options.h"
+#include "real_array.h"
 #include "simulation_omc_assert.h"
 
 #include "simulation_input_xml.h"
-#include "model_help.h"
 
 
 /**

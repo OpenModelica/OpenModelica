@@ -23,9 +23,8 @@ int main(void)
   const char *expected_print = "{1, 1e+11, -2, -1.23457e-07}";
 
   // Test
-  size_t buffer_size = 2048;
-  char buffer[buffer_size];
-  real_vector_to_string(&test_array, TRUE, buffer, buffer_size);
+  char buffer[2048];
+  real_vector_to_string(&test_array, TRUE, buffer, sizeof(buffer));
 
   // Validate
   if (test_success && strcmp(buffer, expected_print))
