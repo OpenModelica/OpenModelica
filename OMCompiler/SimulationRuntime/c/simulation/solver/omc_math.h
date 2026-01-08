@@ -31,7 +31,8 @@
 #ifndef OMCMATH_H_
 #define OMCMATH_H_
 
-#include "../simulation_info_json.h"
+#include "../../util/omc_error.h"
+#include "simulation_data.h"
 
 typedef double _omc_scalar;
 

@@ -34,7 +34,15 @@
 #include "simulation_data.h"
 #include "solver_main.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 void omc_updateContinuousSystem(DATA *data, threadData_t *threadData);
 int omc_performSimulation(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
