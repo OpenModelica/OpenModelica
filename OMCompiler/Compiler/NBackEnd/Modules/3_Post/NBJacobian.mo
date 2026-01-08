@@ -839,6 +839,7 @@ protected
     VariablePointers unknowns;
     list<Pointer<Variable>> derivative_vars, state_vars;
     VariablePointers seedCandidates, partialCandidates;
+    Option<Jacobian> jacobian                             "Resulting jacobian";
     Partition.Kind kind = Partition.Partition.getKind(part);
     Boolean updated;
   algorithm
@@ -866,7 +867,7 @@ protected
       state_vars := list(Util.getOption(BVariable.getVarState(var)) for var in derivative_vars);
       seedCandidates := VariablePointers.fromList(state_vars, partialCandidates.scalarized);
 
-      (jacobian, funcTree) := func(name, jacType, seedCandidates, partialCandidates, part.equations, knowns, part.strongComponents, funcMap, kind ==  NBPartition.Kind.INI);
+      jacobian := func(name, jacType, seedCandidates, partialCandidates, part.equations, knowns, part.strongComponents, funcMap, kind ==  NBPartition.Kind.INI);
 
       if Flags.getConfigString(Flags.GENERATE_DYNAMIC_JACOBIAN) == "symbolicadjoint" and Util.isSome(jacobian) then
         part.association := Partition.Association.CONTINUOUS(kind, NONE(), jacobian);
@@ -1136,14 +1137,12 @@ protected
     input Expression residual;
     input Expression seed; // current_grad, typically a lambda_i cref
     input UnorderedMap<ComponentRef,ComponentRef> diff_map;
-    input NFFlatten.FunctionTree funcTreeIn;
+    input UnorderedMap<Path, Function> funcMapIn;
     input Boolean scalarized;
     input UnorderedMap<ComponentRef, ExpressionList> adjoint_map_in;
     output Differentiate.DifferentiationArguments diffArgumentsOut;
   protected
     Differentiate.DifferentiationArguments dargs;
-    UnorderedMap<ComponentRef, ExpressionList> amap;
-    NFFlatten.FunctionTree ft;
   algorithm
     // Prepare args to collect adjoints into the incoming map
     dargs := Differentiate.DIFFERENTIATION_ARGUMENTS(
@@ -1151,7 +1150,7 @@ protected
       new_vars        = {},
       diff_map        = SOME(diff_map),
       diffType        = NBDifferentiate.DifferentiationType.JACOBIAN,
-      funcTree        = funcTreeIn,
+      funcMap         = funcMapIn,
       scalarized      = scalarized,
       adjoint_map     = SOME(adjoint_map_in),
       current_grad    = seed,
@@ -1159,9 +1158,7 @@ protected
     );
 
     // Run reverse-mode on the residual expression.
-    (_, dargs) := NBDifferentiate.differentiateExpression(residual, dargs);
-
-    diffArgumentsOut := dargs;
+    (_, diffArgumentsOut) := NBDifferentiate.differentiateExpression(residual, dargs);
   end accumulateAdjointForResidual;
 
   // Reusable builder for a SINGLE_COMPONENT adjoint assignment (tmp or result var).
@@ -1496,13 +1493,12 @@ protected
                 residual_i,
                 Expression.fromCref(listGet(lambdaCrefs, iRes)),  // current_grad = lambda_i
                 diff_map_union,                                    // union: { y-> $SEED(y), x-> $pDER(x) }
-                funcTree,
+                funcMap,
                 seedCandidates.scalarized,
                 loop_product_adjoint_map
               );
 
               // Thread state
-              funcTree := diffArguments.funcTree;
               loop_product_adjoint_map := Util.getOption(diffArguments.adjoint_map);
 
               iRes := iRes + 1;
@@ -1612,7 +1608,7 @@ protected
       new_vars        = {},
       diff_map        = SOME(diff_map),         // seed and temporary cref map
       diffType        = NBDifferentiate.DifferentiationType.JACOBIAN,
-      funcTree        = funcTree,
+      funcMap         = funcMap,
       scalarized      = seedCandidates.scalarized,
       adjoint_map     = SOME(adjoint_map),
       current_grad    = Expression.EMPTY(Type.REAL()),
@@ -1621,7 +1617,6 @@ protected
 
     // differentiate all strong components
     (_, diffArguments) := Differentiate.differentiateStrongComponentListAdjoint(comps, diffArguments, idx, newName, getInstanceName());
-    funcTree := diffArguments.funcTree;
 
     if Flags.isSet(Flags.DEBUG_ADJOINT) then
       print("Adjoint map after differentiation:\n" + adjointMapToString(diffArguments.adjoint_map) + "\n");
