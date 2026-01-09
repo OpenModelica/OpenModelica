@@ -498,7 +498,7 @@ static int gbInternal_dKLU_factorize(KLUInternals *internals, int size, int *Ap,
 }
 
 /** @brief Solve a real linear system using KLU. */
-static int gbInternal_dKLU_solve(KLUInternals *internals, int size, int *Ap, int *Ai, double *rhs)
+static int gbInternal_dKLU_solve(KLUInternals *internals, int size, double *rhs)
 {
   int nrhs = 1; /* we could solve all of ESDIRK at once this way */
   int ok = klu_solve(internals->symbolic, internals->numeric, size, nrhs, rhs, &internals->common);
@@ -520,7 +520,7 @@ static int gbInternal_zKLU_factorize(KLUInternals *internals, int size, int *Ap,
 }
 
 /** @brief Solve a complex linear system using KLU (values packed as struct {double real, double imag}). */
-static int gbInternal_zKLU_solve(KLUInternals *internals, int size, int *Ap, int *Ai, double *rhs)
+static int gbInternal_zKLU_solve(KLUInternals *internals, int size, double *rhs)
 {
   int nrhs = 1;
   int ok = klu_z_solve(internals->symbolic, internals->numeric, size, nrhs, rhs, &internals->common);
@@ -605,7 +605,7 @@ static NLS_SOLVER_STATUS gbInternalSolveNls_DIRK(DATA *data,
       jacobian_SR_DIRK_assemble(data, threadData, gbData, nls, jacobian_ODE, nls->jacobian_callback, nls->real_nls_jacs[0]);
 
       /* perform factorization */
-      ret = gbInternal_dKLU_factorize(nls->klu_internals_real, size, nonlinsys->sparsePattern->leadindex, nonlinsys->sparsePattern->index, nls->real_nls_jacs[0]);
+      ret = gbInternal_dKLU_factorize(nls->klu_internals_real, size, (int *)nonlinsys->sparsePattern->leadindex, (int *)nonlinsys->sparsePattern->index, nls->real_nls_jacs[0]);
       if (ret < 0) return NLS_FAILED;
     }
   }
@@ -630,7 +630,7 @@ static NLS_SOLVER_STATUS gbInternalSolveNls_DIRK(DATA *data,
     {
       nonlinsys->residualFunc(&resUserData, x, res, &flag);
 
-      ret = gbInternal_dKLU_solve(nls->klu_internals_real, size, nonlinsys->sparsePattern->leadindex, nonlinsys->sparsePattern->index, res);
+      ret = gbInternal_dKLU_solve(nls->klu_internals_real, size, res);
       if (ret < 0) return NLS_FAILED;
       daxpy_(&size, &DBL_MINUS_ONE, res, &INT_ONE, x, &INT_ONE);
 
@@ -696,8 +696,8 @@ static NLS_SOLVER_STATUS gbInternalSolveNls_DIRK(DATA *data,
                                 nls->jacobian_callback, nls->real_nls_jacs[0]);
 
       ret = gbInternal_dKLU_factorize(nls->klu_internals_real, size,
-                                      nonlinsys->sparsePattern->leadindex,
-                                      nonlinsys->sparsePattern->index,
+                                      (int *)nonlinsys->sparsePattern->leadindex,
+                                      (int *)nonlinsys->sparsePattern->index,
                                       nls->real_nls_jacs[0]);
       if (ret < 0) return NLS_FAILED;
 
@@ -868,8 +868,11 @@ static NLS_SOLVER_STATUS gbInternalSolveNls_T_Transform(DATA *data,
       /* create Jacobian real: gamma/h * I - J_f */
       jacobian_SR_real_assemble(data, threadData, gbData, nls, nls->tabl->t_transform->gamma[sys_real],
                                 jacobian_ODE, nls->jacobian_callback, nls->real_nls_jacs[sys_real]);
-      ret = gbInternal_dKLU_factorize(&nls->klu_internals_real[sys_real], size, nls->sparsePattern->leadindex,
-                                      nls->sparsePattern->index, nls->real_nls_jacs[sys_real]);
+      ret = gbInternal_dKLU_factorize(&nls->klu_internals_real[sys_real],
+                                      size,
+                                      (int *)nls->sparsePattern->leadindex,
+                                      (int *)nls->sparsePattern->index,
+                                      nls->real_nls_jacs[sys_real]);
       if (ret < 0) return NLS_FAILED;
     }
     for (int sys_cmplx = 0; sys_cmplx < nls->tabl->t_transform->nComplexEigenpairs; sys_cmplx++)
@@ -877,8 +880,11 @@ static NLS_SOLVER_STATUS gbInternalSolveNls_T_Transform(DATA *data,
       /* create Jacobian complex: (alpha + i * beta)/h * I - J_f */
       jacobian_SR_cmplx_assemble(data, threadData, gbData, nls, nls->tabl->t_transform->alpha[sys_cmplx], nls->tabl->t_transform->beta[sys_cmplx],
                                 jacobian_ODE, nls->jacobian_callback, nls->cmplx_nls_jacs[sys_cmplx]);
-      ret = gbInternal_zKLU_factorize(&nls->klu_internals_cmplx[sys_cmplx], size, nls->sparsePattern->leadindex,
-                                      nls->sparsePattern->index, nls->cmplx_nls_jacs[sys_cmplx]);
+      ret = gbInternal_zKLU_factorize(&nls->klu_internals_cmplx[sys_cmplx],
+                                      size,
+                                      (int *)nls->sparsePattern->leadindex,
+                                      (int *)nls->sparsePattern->index,
+                                      nls->cmplx_nls_jacs[sys_cmplx]);
       if (ret < 0) return NLS_FAILED;
     }
   }
@@ -953,15 +959,13 @@ static NLS_SOLVER_STATUS gbInternalSolveNls_T_Transform(DATA *data,
     // solve linear systems
     for (int sys_real = 0; sys_real < nls->tabl->t_transform->nRealEigenvalues; sys_real++)
     {
-      ret = gbInternal_dKLU_solve(&nls->klu_internals_real[sys_real], size, nls->sparsePattern->leadindex,
-                                  nls->sparsePattern->index, &flat_res[sys_real * size]);
+      ret = gbInternal_dKLU_solve(&nls->klu_internals_real[sys_real], size, &flat_res[sys_real * size]);
       if (ret < 0) return NLS_FAILED;
     }
 
     for (int sys_cmplx = 0; sys_cmplx < nls->tabl->t_transform->nComplexEigenpairs; sys_cmplx++)
     {
-      ret = gbInternal_zKLU_solve(&nls->klu_internals_cmplx[sys_cmplx], size, nls->sparsePattern->leadindex,
-                                  nls->sparsePattern->index, &nls->cmplx_nls_res[sys_cmplx][0]);
+      ret = gbInternal_zKLU_solve(&nls->klu_internals_cmplx[sys_cmplx], size, &nls->cmplx_nls_res[sys_cmplx][0]);
       if (ret < 0) return NLS_FAILED;
     }
 
@@ -1176,7 +1180,7 @@ void *gbInternalNlsAllocate(int size,
       throwStreamPrint(NULL, "Memory allocation in gbInternalNlsAllocate failed.");
     }
 
-    gbInternal_KLU_analyze(nls->klu_internals_real, nls->size, nls->sparsePattern->leadindex, nls->sparsePattern->index);
+    gbInternal_KLU_analyze(nls->klu_internals_real, nls->size, (int *)nls->sparsePattern->leadindex, (int *)nls->sparsePattern->index);
   }
   else
   {
@@ -1205,7 +1209,7 @@ void *gbInternalNlsAllocate(int size,
         throwStreamPrint(NULL, "Memory allocation in gbInternalNlsAllocate failed.");
       }
 
-      gbInternal_KLU_analyze(&nls->klu_internals_real[sys_real], nls->size, nls->sparsePattern->leadindex, nls->sparsePattern->index);
+      gbInternal_KLU_analyze(&nls->klu_internals_real[sys_real], nls->size, (int *)nls->sparsePattern->leadindex, (int *)nls->sparsePattern->index);
       nls->klu_internals_real[sys_real].numeric = NULL;
     }
     for (int sys_cmplx = 0; sys_cmplx < trfm->nComplexEigenpairs; sys_cmplx++)
@@ -1218,7 +1222,7 @@ void *gbInternalNlsAllocate(int size,
         throwStreamPrint(NULL, "Memory allocation in gbInternalNlsAllocate failed.");
       }
 
-      gbInternal_KLU_analyze(&nls->klu_internals_cmplx[sys_cmplx], nls->size, nls->sparsePattern->leadindex, nls->sparsePattern->index);
+      gbInternal_KLU_analyze(&nls->klu_internals_cmplx[sys_cmplx], nls->size, (int *)nls->sparsePattern->leadindex, (int *)nls->sparsePattern->index);
       nls->klu_internals_cmplx[sys_cmplx].numeric = NULL;
     }
 
@@ -1347,6 +1351,7 @@ void gbInternalContraction(DATA *data,
 
   double factors[MAX_GBODE_FIRK_STAGES];
   int size = nls->size;
+  int nStages_i = (int)tabl->nStages;
 
   // compute y
   if (tabl->c[tabl->nStages - 1] == 1.0)
@@ -1365,9 +1370,9 @@ void gbInternalContraction(DATA *data,
     dgemm_(&CHAR_NO_TRANS, &CHAR_NO_TRANS,
            &size,
            &INT_ONE,
-           &tabl->nStages,
+           &nStages_i,
            &DBL_ONE, gbData->k, &size,
-           factors, &tabl->nStages,
+           factors, &nStages_i,
            &DBL_ONE, y, &size);
   }
 
@@ -1381,14 +1386,13 @@ void gbInternalContraction(DATA *data,
   dgemm_(&CHAR_NO_TRANS, &CHAR_NO_TRANS,
          &size,
          &INT_ONE,
-         &tabl->nStages,
+         &nStages_i,
          &DBL_ONE, gbData->k, &size,
-         factors, &tabl->nStages,
+         factors, &nStages_i,
          &DBL_ZERO, yt, &size);
 
   // yt := (gamma / h * I - J)^{-1} * yt = (gamma / h * I - J)^{-1} * (gamma * sum (b_j - bt_j) * k_j)
-  gbInternal_dKLU_solve(&nls->klu_internals_real[0], nls->size, nls->sparsePattern->leadindex,
-                        nls->sparsePattern->index, yt);
+  gbInternal_dKLU_solve(&nls->klu_internals_real[0], nls->size, yt);
 
   // yt := y + yt = y + (gamma / h * I - J)^{-1} * (gamma * sum (b_j - bt_j) * k_j)
   daxpy_(&size, &DBL_ONE, y, &INT_ONE, yt, &INT_ONE);
