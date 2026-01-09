@@ -238,17 +238,6 @@ public
     end match;
   end isRelational;
 
-  function isAdd
-    input Operator operator;
-    output Boolean b;
-  algorithm
-    b := match operator.op
-      case Op.ADD   then true;
-      case Op.ADD_EW then true;
-                    else false;
-    end match;
-  end isAdd;
-
   function isScalarProduct
     input Operator operator;
     output Boolean b;

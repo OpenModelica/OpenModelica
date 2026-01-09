@@ -107,21 +107,5 @@ public
     old_ht := List.fold(SimVar.convertList(vars), HashTableCrefSimVar.addSimVarToHashTable, old_ht);
   end convertSimCodeMap;
 
-  function simCodeMapToString
-    input UnorderedMap<ComponentRef, SimVar> simcode_map;
-    output String str;
-  protected
-    list<tuple<ComponentRef, SimVar>> entries;
-    ComponentRef cr;
-    SimVar sv;
-  algorithm
-    entries := UnorderedMap.toList(simcode_map);
-    str := "SimCodeMap(size=" + intString(UnorderedMap.size(simcode_map)) + ")\n";
-    for e in entries loop
-      (cr, sv) := e;
-      str := str + "  " + ComponentRef.toString(cr) + " -> " + SimVar.toString(sv) + "\n";
-    end for;
-  end simCodeMapToString;
-
 annotation(__OpenModelica_Interface="backend");
 end NSimCodeUtil;

@@ -232,13 +232,12 @@ public
           ComponentRef cref;
           list<Subscript> subscripts;
           SparsityPattern sparsity, sparsityT;
-          Jacobian.SparsityPattern Bpattern;
           SparsityColoring coloring, rowColoring;
           SimJacobian jac;
           UnorderedMap<Identifier, Integer> sim_map;
           list<SimGenericCall> generic_loop_calls;
 
-        case BackendDAE.JACOBIAN(varData = varData as BVariable.VAR_DATA_JAC(), sparsityPattern = Bpattern) algorithm
+        case BackendDAE.JACOBIAN(varData = varData as BVariable.VAR_DATA_JAC()) algorithm
           // temporarily save the generic call map from simcode to recover it afterwards
           // we use a local map to have seperated generic call lists for each jacobian
           sim_map := indices.generic_call_map;
@@ -421,12 +420,11 @@ public
       (sparsity, sparsityT, coloring, rowColoring) := match jacobian
         local
           Jacobian.SparsityPattern Bpattern;
-          Jacobian.SparsityColoring Bcoloring;
 
-        case BackendDAE.JACOBIAN(sparsityPattern = Bpattern, sparsityColoring = Bcoloring) algorithm
+        case BackendDAE.JACOBIAN(sparsityPattern = Bpattern) algorithm
           sparsity  := createSparsityPattern(Bpattern.col_wise_pattern, idx_map);
           sparsityT := createSparsityPattern(Bpattern.row_wise_pattern, idx_map);
-          (coloring, rowColoring) := createSparsityColoring(Bcoloring, idx_map);
+          (coloring, rowColoring) := createSparsityColoring(jacobian.sparsityColoring, idx_map);
         then (sparsity, sparsityT, coloring, rowColoring);
 
         else algorithm

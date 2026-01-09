@@ -1062,7 +1062,7 @@ public
     end match;
   end isAlias;
 
-  public function isSingleComponent
+  function isSingleComponent
     input StrongComponent comp;
     output Boolean b;
   algorithm
@@ -1072,7 +1072,7 @@ public
     end match;
   end isSingleComponent;
 
-  public function isAlgebraicLoop
+  function isAlgebraicLoop
     input StrongComponent comp;
     output Boolean b;
   algorithm
