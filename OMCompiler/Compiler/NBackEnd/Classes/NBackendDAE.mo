@@ -215,18 +215,6 @@ public
     end match;
   end setVarData;
 
-  function getJacType
-    input BackendDAE bdae;
-    output JacobianType jacType;
-  algorithm
-    jacType := match bdae
-      case JACOBIAN(jacType = jacType) then jacType;
-      else algorithm
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed! Only the record type JACOBIAN() has a jacobian type."});
-      then fail();
-    end match;
-  end getJacType;
-
   function getFunctionMap
     input BackendDAE bdae;
     output UnorderedMap<Path, Function> funcMap;
