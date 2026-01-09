@@ -2840,7 +2840,16 @@ int reconcileBoundaryConditions(DATA * data, threadData_t * threadData, inputDat
   scaleVector(jacF.rows, 1, 1.96, reconSt_diag);
 
   // check for BoundaryConditionVars.txt file exists to generate the html report
-  std::string boundaryConditionsVarsFilename = std::string(data->modelData->modelFilePrefix) +  "_BoundaryConditionVars.txt";
+  std::string boundaryConditionsVarsFilename;
+  if (omc_flag[FLAG_OUTPUT_PATH])
+  {
+    boundaryConditionsVarsFilename = std::string(omc_flagValue[FLAG_OUTPUT_PATH]) + "/" + std::string(data->modelData->modelFilePrefix) + "_BoundaryConditionVars.txt";
+  }
+  else
+  {
+    boundaryConditionsVarsFilename = std::string(data->modelData->modelFilePrefix) +  "_BoundaryConditionVars.txt";
+  }
+
   vector<std::string> boundaryConditionVars;
 
   ifstream boundaryConditionVarsip(boundaryConditionsVarsFilename);
