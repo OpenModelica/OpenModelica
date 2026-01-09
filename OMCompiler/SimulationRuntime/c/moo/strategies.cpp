@@ -282,7 +282,7 @@ std::unique_ptr<Trajectory> Simulation::operator()(const ControlTrajectory& cont
     eval_current_point_dae(info);
     trajectory_xut_emit(&sim_result, data, threadData);
 
-    // ensure realVars stay consistent across ring buffer rotation (prefixedName_performSimulation line 491ff):
+    // ensure realVars stay consistent across ring buffer rotation (omc_performSimulation line 491ff):
     // copy current slot (localData[0]) into the upcoming slots (localData[1], localData[2])
     // after rotateRingBuffer() + lookupRingBuffer(), the new "current slot"
     // (localData[0]) will already contain our enforced values.

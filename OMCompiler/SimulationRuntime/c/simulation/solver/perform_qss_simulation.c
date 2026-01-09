@@ -1,7 +1,7 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
@@ -28,12 +28,19 @@
  *
  */
 
+#include "perform_qss_simulation.h"
+
 #include <stdio.h>
 #include "solver_main.h"
+#include "external_input.h"
+#include "model_help.h"
 
 #include "simulation/simulation_runtime.h"
 #include "simulation/results/simulation_result.h"
 #include "openmodelica_func.h"
+#include "linearSystem.h"
+#include "nonlinearSystem.h"
+#include "mixedSystem.h"
 
 #include "util/omc_error.h"
 #include "simulation/options.h"
@@ -68,7 +75,7 @@ static uinteger minStep( const modelica_real* tqp, const uinteger size );
  *
  *  This function performs the simulation controlled by solverInfo.
  */
-int prefixedName_performQSSSimulation(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
+int omc_performQSSSimulation(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
 {
   SIMULATION_INFO *simInfo = data->simulationInfo;
   MODEL_DATA *mData = data->modelData;
