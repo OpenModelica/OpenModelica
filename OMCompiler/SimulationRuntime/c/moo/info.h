@@ -88,11 +88,10 @@ struct InfoGDOP {
     std::unique_ptr<ExchangeHessians> exc_hes;
 
     /* time horizon */
-    f64 model_start_time; // model start_time
-    f64 model_stop_time;  // model stop_time
-    f64 tf;               // tf = start - stop, since t0 = 0 for MOO
-    int intervals;        // model interval count
-    int stages;           // stage count
+    f64 t0;         // model start_time
+    f64 tf;         // model stop_time
+    int intervals;  // model interval count
+    int stages;     // stage count
 
     /* L2BN mesh settings -> move to YAML */
     int l2bn_phase_one_iterations = 0;

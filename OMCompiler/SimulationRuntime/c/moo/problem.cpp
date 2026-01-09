@@ -40,7 +40,7 @@
 
 #include "problem.h"
 
-#define NUM_HES_FD_STEP 1e-6      // base step size for numerical Hessian perturbation
+#define NUM_HES_FD_STEP 1e-8      // base step size for numerical Hessian perturbation
 #define NUM_HES_DF_EXTR_STEPS 1   // number of extrapolation steps
 #define NUM_HES_EXTR_DIV 2        // divisor for new step size in extrapolation
 
@@ -134,19 +134,19 @@ BoundarySweep::BoundarySweep(GDOP::BoundarySweepLayout&& layout_mr,
                                    InfoGDOP& info)
     : GDOP::BoundarySweep(std::move(layout_mr), pc), info(info) {}
 
-void BoundarySweep::callback_eval(const f64* x0_nlp, const f64* xuf_nlp, const f64* p) {
+void BoundarySweep::callback_eval(const f64* xu0_nlp, const f64* xuf_nlp, const f64* p, const f64 t0, const f64 tf) {
     set_parameters(info, p);
     set_states_inputs(info, xuf_nlp);
-    set_time(info, pc.mesh->tf);
+    set_time(info, tf);
     eval_current_point_dae(info);
     eval_mr_write(info, get_eval_buffer());
 }
 
-void BoundarySweep::callback_jac(const f64* x0_nlp, const f64* xuf_nlp, const f64* p) {
+void BoundarySweep::callback_jac(const f64* xu0_nlp, const f64* xuf_nlp, const f64* p, const f64 t0, const f64 tf) {
     f64* jac_buf = get_jac_buffer();
     set_parameters(info, p);
     set_states_inputs(info, xuf_nlp);
-    set_time(info, pc.mesh->tf);
+    set_time(info, tf);
     eval_current_point_dae(info);
     /* TODO: check if C matrix does hold additional ders */
 
@@ -162,10 +162,10 @@ void BoundarySweep::callback_jac(const f64* x0_nlp, const f64* xuf_nlp, const f6
     }
 }
 
-void BoundarySweep::callback_hes(const f64* x0_nlp, const f64* xuf_nlp, const f64* p, const f64 mayer_factor, const f64* lambda) {
+void BoundarySweep::callback_hes(const f64* xu0_nlp, const f64* xuf_nlp, const f64* p, const f64 t0, const f64 tf, const f64 mayer_factor, const f64* lambda) {
     set_parameters(info, p);
     set_states_inputs(info, xuf_nlp);
-    set_time(info, pc.mesh->tf);
+    set_time(info, tf);
     fill_zero_hes_buffer();
 
     f64* jac_buf = get_jac_buffer();
@@ -186,13 +186,13 @@ void BoundarySweep::callback_hes(const f64* x0_nlp, const f64* xuf_nlp, const f6
 
     if (pc.r_size != 0) {
         /* set duals and precomputed Jacobian D */
-        info.exc_hes->C.args.lambda = lambda;
-        info.exc_hes->C.args.jac_csc = jac_buf + info.exc_jac->D.sparsity.nnz_offset;
+        info.exc_hes->D.args.lambda = lambda;
+        info.exc_hes->D.args.jac_csc = jac_buf + info.exc_jac->D.sparsity.nnz_offset;
 
-        richardson_extrapolation(info.exc_hes->C.extr, hessian_fwd_differences_wrapper, &info.exc_hes->C.args,
-                                NUM_HES_FD_STEP, NUM_HES_DF_EXTR_STEPS, NUM_HES_EXTR_DIV, 1, info.exc_hes->C.buffer.raw());
-        for (auto& [index_D, index_buffer] : info.exc_hes->C_to_Mr_buffer) {
-            hes_buffer[index_buffer] += info.exc_hes->C.buffer[index_D];
+        richardson_extrapolation(info.exc_hes->D.extr, hessian_fwd_differences_wrapper, &info.exc_hes->D.args,
+                                NUM_HES_FD_STEP, NUM_HES_DF_EXTR_STEPS, NUM_HES_EXTR_DIV, 1, info.exc_hes->D.buffer.raw());
+        for (auto& [index_D, index_buffer] : info.exc_hes->D_to_Mr_buffer) {
+            hes_buffer[index_buffer] += info.exc_hes->D.buffer[index_D];
         }
     }
 }
@@ -241,7 +241,7 @@ void Dynamics::jac(const f64* x, const f64* u, const f64* p, f64 t, f64* dfdx, v
     eval_write_ode_jacobian(info, dfdx);
 }
 
-GDOP::Problem create_gdop(InfoGDOP& info, const Mesh& mesh) {
+GDOP::Problem create_gdop(InfoGDOP& info, Mesh& mesh) {
     DATA* data = info.data;
 
     // at first call init for all start values
@@ -312,8 +312,12 @@ GDOP::Problem create_gdop(InfoGDOP& info, const Mesh& mesh) {
      * and also ignore x0 non fixed, since too complicated
      * => assume x(t_0) = x0 fixed, x(t_f) free to r constraint / maybe the old BE can do that already?!
      * option: generate fixed final states individually */
-    FixedVector<std::optional<f64>> x0_fixed(info.x_size);
-    FixedVector<std::optional<f64>> xf_fixed(info.x_size);
+    FixedVector<std::optional<f64>> xu0_fixed(info.xu_size);
+    FixedVector<std::optional<f64>> xuf_fixed(info.xu_size);
+
+    /* fix time horizon for now to [t0, tf] */
+    std::array<Bounds, 2> T_bounds = { Bounds{ info.t0, info.t0 }, Bounds{ info.tf, info.tf } };
+    std::array<std::optional<f64>, 2> T_fixed = { info.t0, info.tf };
 
     /* set *fixed* initial, final states */
     for (int x = 0; x < info.x_size; x++) {
@@ -322,8 +326,10 @@ GDOP::Problem create_gdop(InfoGDOP& info, const Mesh& mesh) {
             abort();
         }
 
-        x0_fixed[x] = real_get(data->modelData->realVarsData[x].attribute.start, 0);
+        xu0_fixed[x] = real_get(data->modelData->realVarsData[x].attribute.start, 0);
     }
+
+    /* u0 never fixed for now - let the solver calculate it from u_{0,1} ... u_{0, m} */
 
     /* create CSC <-> COO exchange, init jacobians */
     info.exc_jac = std::make_unique<ExchangeJacobians>(info);
@@ -346,8 +352,10 @@ GDOP::Problem create_gdop(InfoGDOP& info, const Mesh& mesh) {
         std::move(x_bounds),
         std::move(u_bounds),
         std::move(p_bounds),
-        std::move(x0_fixed),
-        std::move(xf_fixed),
+        std::move(T_bounds),
+        std::move(xu0_fixed),
+        std::move(xuf_fixed),
+        std::move(T_fixed),
         std::move(r_bounds),
         std::move(g_bounds),
         mesh

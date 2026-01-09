@@ -233,6 +233,11 @@ HESSIAN_PATTERN* generate_hessian_pattern(JACOBIAN* jac) {
 /**
  * @brief Compute Hessian-vector product λᵗH(x) using forward finite differences of the Jacobian.
  *
+ * @note I found out that this is very shady and only works well for well-scaled / posed problems, as
+ *       h can not be taken differently within a color. Therefore, we choose the geometric mean of the
+ *       nominal h as the h for a given color.
+ *       => use eval_hessian_fwd_differences_safe for safe version
+ *
  * Approximates the entries of the Hessian matrix H(x) using first-order directional derivatives.
  * The method uses seed vector coloring for efficient evaluation and exploits sparse Hessian structure.
  * Assumes the current point x has all controls and states set in `data->localData[0]->realVars`.
@@ -255,8 +260,16 @@ HESSIAN_PATTERN* generate_hessian_pattern(JACOBIAN* jac) {
  * @param[in]  jac_csc        (Optional) Jacobian values in CSC format, used to speed up Hessian calculation. NULL -> compute from scratch.
  * @param[out] hes            Output sparse Hessian values (COO format of hes_pattern, length = hes_pattern->nnz).
  */
-void eval_hessian_fwd_differences(DATA* data, threadData_t* threadData, HESSIAN_PATTERN* hes_pattern, modelica_real h,
-                                   int* u_indices, const modelica_real* lambda, modelica_real* jac_csc, modelica_real* hes) {
+void eval_hessian_fwd_differences_fast(
+    DATA* data,
+    threadData_t* threadData,
+    HESSIAN_PATTERN* hes_pattern,
+    modelica_real h,
+    int* u_indices,
+    const modelica_real* lambda,
+    modelica_real* jac_csc,
+    modelica_real* hes)
+{
     /* 0. retrieve pointers */
     JACOBIAN*       jacobian     = hes_pattern->jac;
     modelica_real** ws_baseJac   = hes_pattern->ws_baseJac;
@@ -295,20 +308,25 @@ void eval_hessian_fwd_differences(DATA* data, threadData_t* threadData, HESSIAN_
     for (int c1 = 0; c1 < hes_pattern->numColors; c1++) {
         /* 3. define seed vector s_{c_1} with all cols in c_1 active (implicitly) */
         /* 4. peturbate current x_{c_1} := x + h * s_{c_1} */
+        modelica_real c1_h = 0;
+        for (int columnIndex = 0; columnIndex < hes_pattern->colorSizes[c1]; columnIndex++) {
+            int col = hes_pattern->colsForColor[c1][columnIndex];
+            int realVarsIndex = (col < nStates ? col : u_indices[col - nStates]);
+
+            /* create perturbation size based on nominals and current entry */
+            const modelica_real nom = data->modelData->realVarsData[realVarsIndex].attribute.nominal;
+            c1_h += log(1.0 + fmax(ws_oldX[col], nom));
+        }
+
+        // geometric mean of h
+        c1_h = h / (1 + hes_pattern->colorSizes[c1]) * exp(c1_h);
+
         for (int columnIndex = 0; columnIndex < hes_pattern->colorSizes[c1]; columnIndex++) {
             int col = hes_pattern->colsForColor[c1][columnIndex];
             int realVarsIndex = (col < nStates ? col : u_indices[col - nStates]);
             /* remember the current realVars (to be perturbed) and perturbate */
             ws_oldX[col] = data->localData[0]->realVars[realVarsIndex];
-
-            /* create perturbation size based on nominals and current entry */
-            const modelica_real nom = data->modelData->realVarsData[realVarsIndex].attribute.nominal;
-            ws_h[col] = h * (1.0 + fmax(ws_oldX[col], nom));
-            if (ws_oldX[col] + ws_h[col] > data->modelData->realVarsData[realVarsIndex].attribute.max) {
-                ws_h[col] *= -1.0;
-            }
-
-            data->localData[0]->realVars[realVarsIndex] += ws_h[col];
+            data->localData[0]->realVars[realVarsIndex] += c1_h;
         }
 
         /* evaluate perturbed system (needed for Jacobian columns) */
@@ -348,7 +366,7 @@ void eval_hessian_fwd_differences(DATA* data, threadData_t* threadData, HESSIAN_
 
                     /* store and divide by step size, retrieve step size via nz col index / same as for the perturbation (step 4) */
                     int col = hes_pattern->col[nz];
-                    hes[nz] = der / ws_h[col];
+                    hes[nz] = der / c1_h;
                 }
             }
 
@@ -361,6 +379,128 @@ void eval_hessian_fwd_differences(DATA* data, threadData_t* threadData, HESSIAN_
             int col = hes_pattern->colsForColor[c1][columnIndex];
             int realVarsIndex = (col < nStates ? col : u_indices[col - nStates]);
             data->localData[0]->realVars[realVarsIndex] = ws_oldX[col];
+        }
+    }
+}
+
+/**
+ * @brief Compute Hessian-vector product λᵗH(x) using forward finite differences of the Jacobian.
+ *
+ * This version iterates through colors c1, but inside that loop, it iterates through every
+ * variable belonging to c1 individually. This prevents step-size scaling issues by allowing
+ * a fixed h for each variable.
+ *
+ * Runtime: O(1/2 * #vars * #colors * T_{JVP}) - Significantly slower than the colored version,
+ * but numerically more robust for bad scaling.
+ *
+ * @param[in]  data           Runtime simulation data structure.
+ * @param[in]  threadData     Thread-local data.
+ * @param[in]  hes_pattern    Precomputed sparsity and coloring pattern.
+ * @param[in]  h              (Ignored in this version, uses fixed 1e-6).
+ * @param[in]  lambda         Adjoint vector.
+ * @param[in]  u_indices      Indices of input variables.
+ * @param[in]  jac_csc        (Optional) Jacobian values in CSC format.
+ * @param[out] hes            Output sparse Hessian values.
+ */
+void eval_hessian_fwd_differences(
+    DATA* data,
+    threadData_t* threadData,
+    HESSIAN_PATTERN* hes_pattern,
+    modelica_real h,
+    int* u_indices,
+    const modelica_real* lambda,
+    modelica_real* jac_csc,
+    modelica_real* hes)
+{
+    /* 0. retrieve pointers */
+    JACOBIAN* jacobian         = hes_pattern->jac;
+    modelica_real** ws_baseJac = hes_pattern->ws_baseJac;
+    modelica_real* seeds       = jacobian->seedVars;
+    modelica_real* jvp         = jacobian->resultVars;
+    unsigned int* jacLeadIndex = jacobian->sparsePattern->leadindex;
+    unsigned int* jacIndex     = jacobian->sparsePattern->index;
+
+    int nStates = data->modelData->nStates;
+
+    /* 1. compute standard Jacobian, if jac_csc is NULL */
+    if (!jac_csc) {
+        /* 1.a. evaluate base system */
+        data->callback->functionDAE(data, threadData);
+
+        /* 1.b. evaluate all JVPs J(x) * s_{c} */
+        for (int color = 0; color < hes_pattern->numColors; color++) {
+            set_seed_vector(hes_pattern->colorSizes[color], hes_pattern->colsForColor[color], 1, seeds);
+            jacobian->evalColumn(data, threadData, jacobian, NULL);
+
+            for (int colIndex = 0; colIndex < hes_pattern->colorSizes[color]; colIndex++) {
+                int col = hes_pattern->colsForColor[color][colIndex];
+                for (unsigned int nz = jacLeadIndex[col]; nz < jacLeadIndex[col + 1]; nz++) {
+                    int row = jacIndex[nz];
+                    ws_baseJac[row][color] = jvp[row];
+                }
+            }
+            set_seed_vector(hes_pattern->colorSizes[color], hes_pattern->colsForColor[color], 0, seeds);
+        }
+    }
+
+    /* 2. Loop over all colors c1 */
+    for (int c1 = 0; c1 < hes_pattern->numColors; c1++) {
+
+        /* 3. Loop over each variable in color c1 individually */
+        for (int columnIndex = 0; columnIndex < hes_pattern->colorSizes[c1]; columnIndex++) {
+
+            /* Identify the specific variable to perturb */
+            int col = hes_pattern->colsForColor[c1][columnIndex];
+            int realVarsIndex = (col < nStates ? col : u_indices[col - nStates]);
+
+            /* 4. Perturb current x_{col} := x + h */
+            modelica_real oldVal = data->localData[0]->realVars[realVarsIndex];
+            modelica_real h_col = h * (1 + 1e-5 * std::abs(oldVal));
+            data->localData[0]->realVars[realVarsIndex] += h_col;
+
+            /* Evaluate perturbed system */
+            data->callback->functionDAE(data, threadData);
+
+            /* 5. Loop over all colors c2 with index less or equal to c_1 */
+            for (int c2 = 0; c2 <= c1; c2++) {
+                /* 6. Define seed vector s_{c_2} with all cols in c_2 active */
+                set_seed_vector(hes_pattern->colorSizes[c2], hes_pattern->colsForColor[c2], 1, seeds);
+
+                /* 7. Evaluate JVP J(x + h*e_{col}) * s_{c_2} */
+                jacobian->evalColumn(data, threadData, jacobian, NULL);
+
+                /* 8. Retrieve Hessian approximation */
+                ColorPair* colorPair = hes_pattern->colorPairs[get_color_pair_index(c1, c2)];
+                if (colorPair) {
+                    for (int varPairIdx = 0; varPairIdx < colorPair->size; varPairIdx++) {
+                        /* skip unrelated variables (not perturbated pairs) */
+                        if (!(colorPair->varPairs[varPairIdx].i == col || colorPair->varPairs[varPairIdx].j == col)) continue;
+
+                        /* nz index in flattened Hessian array */
+                        int nz = colorPair->lnnzIndices[varPairIdx];
+
+                        int* contributingRows = colorPair->contributingRows[varPairIdx];
+                        int numContributingRows = colorPair->numContributingRows[varPairIdx];
+                        modelica_real der = 0.0;
+
+                        /* 10. Approximate directional second derivative */
+                        for (int fIdx = 0; fIdx < numContributingRows; fIdx++) {
+                            int fnRow = contributingRows[fIdx];
+                            modelica_real J_fnRow_c2 = (jac_csc ? jac_csc[hes_pattern->cscJacIndexFromRowColor[fnRow][c2]] : ws_baseJac[fnRow][c2]);
+
+                            der += lambda[fnRow] * (jvp[fnRow] - J_fnRow_c2);
+                        }
+
+                        hes[nz] = der / h_col;
+                    }
+                }
+
+                /* 11. Reset s_{c_2} */
+                set_seed_vector(hes_pattern->colorSizes[c2], hes_pattern->colsForColor[c2], 0.0, seeds);
+            }
+
+            /* 12. Reset perturbation in x */
+            data->localData[0]->realVars[realVarsIndex] = oldVal;
         }
     }
 }

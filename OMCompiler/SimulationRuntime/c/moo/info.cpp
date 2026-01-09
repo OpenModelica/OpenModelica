@@ -66,10 +66,9 @@ void InfoGDOP::set_l2bn_options() {
 }
 
 void InfoGDOP::set_time_horizon(int steps) {
-    model_start_time = data->simulationInfo->startTime;
-    model_stop_time = data->simulationInfo->stopTime;
-    tf = model_stop_time - model_start_time;
-    intervals = static_cast<int>(round(tf/data->simulationInfo->stepSize));
+    t0 = data->simulationInfo->startTime;
+    tf = data->simulationInfo->stopTime;
+    intervals = static_cast<int>(round((tf - t0)/data->simulationInfo->stepSize));
     stages = steps;
 }
 
