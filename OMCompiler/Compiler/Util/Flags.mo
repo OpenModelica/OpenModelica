@@ -555,6 +555,8 @@ constant DebugFlag DUMP_SOLVE = DEBUG_FLAG(195, "dumpSolve", false,
   Gettext.gettext("Dumps information about equation solving."));
 constant DebugFlag FORCE_SCALARIZE = DEBUG_FLAG(196, "forceScalarize", false,
   Gettext.gettext("Forces scalarization to be done when it would normally be automatically disabled."));
+constant DebugFlag DEBUG_ADJOINT = DEBUG_FLAG(197, "debugAdjoint", false,
+  Gettext.gettext("Dumps debug output for the adjoint differentiation process in the new backend."));
 
 public
 // CONFIGURATION FLAGS
@@ -885,7 +887,8 @@ constant ConfigFlag GENERATE_DYNAMIC_JACOBIAN = CONFIG_FLAG(51, "generateDynamic
   SOME(STRING_DESC_OPTION({
     ("none", Gettext.gettext("Does not generate Jacobian. For use with explicit solvers.")),
     ("numeric", Gettext.gettext("Generates sparsity pattern for numeric Jacobian.")),
-    ("symbolic", Gettext.gettext("Generates symbolic Jacobian. Used by dassl or ida solver with simulation flag '-jacobian'."))
+    ("symbolic", Gettext.gettext("Generates symbolic Jacobian. Used by dassl or ida solver with simulation flag '-jacobian'.")),
+    ("symbolicadjoint", Gettext.gettext("Generates adjoint Jacobian symbolically."))
     })),
   Gettext.gettext("Select how Jacobian matrix is generated, where der(x) is differentiated w.r.t. x."));
 constant ConfigFlag GENERATE_SYMBOLIC_LINEARIZATION = CONFIG_FLAG(52, "generateSymbolicLinearization",
