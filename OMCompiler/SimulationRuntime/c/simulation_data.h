@@ -254,10 +254,10 @@ typedef DATA_ALIAS DATA_BOOLEAN_ALIAS;
 typedef DATA_ALIAS DATA_STRING_ALIAS;
 
 enum var_type {
-  T_REAL,     /* Variable is of real type */
-  T_INTEGER,  /* Variable is of integer type */
-  T_BOOLEAN,  /* Variable is of boolean type */
-  T_STRING    /* Variable is of string type */
+  T_REAL,     /* Variable is of base type Real */
+  T_INTEGER,  /* Variable is of base type Integer */
+  T_BOOLEAN,  /* Variable is of base type Boolean */
+  T_STRING    /* Variable is of base type String */
 };
 
 /* collect all attributes from one variable in one struct */
@@ -293,7 +293,7 @@ typedef struct STRING_ATTRIBUTE
 } STRING_ATTRIBUTE;
 
 /* Model dimension structures */
-enum DIMENSION_ATTRIBUTE_TYPE{
+enum DIMENSION_ATTRIBUTE_TYPE {
   DIMENSION_BY_START = 0,               /* dimension defined by start */
   DIMENSION_BY_VALUE_REFERENCE = 1      /* dimension defined by value reference of structural parameter */
 };
@@ -312,7 +312,7 @@ typedef struct DIMENSION_ATTRIBUTE
 typedef struct DIMENSION_INFO
 {
   size_t numberOfDimensions;            /* Number of dimension tags <dimension>, scalar if equal to 0. */
-  DIMENSION_ATTRIBUTE* dimensions;      /* Array of dimension sizes */
+  DIMENSION_ATTRIBUTE* dimensions;      /* Array of dimension sizes, row-major, e.g. `x[1,2]` has dimensions {1,2} */
   size_t scalar_length;                 /* Length of variable after scalarization to 1-dimensional array */
 } DIMENSION_INFO;
 
