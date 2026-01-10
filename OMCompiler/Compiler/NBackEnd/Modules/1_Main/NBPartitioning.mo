@@ -111,6 +111,22 @@ public
       end match;
     end isEqual;
 
+    function isMergable
+      input tuple<BClock, Option<BClock>> clock_tpl1;
+      input tuple<BClock, Option<BClock>> clock_tpl2;
+      output Boolean b;
+    algorithm
+      b := match(clock_tpl1, clock_tpl2)
+        local
+          BClock sub1, sub2, base1, base2;
+        case ((base1, NONE()), (base2, NONE()))         then isEqual(base1, base2);
+        case ((sub1, SOME(base1)), (base2, NONE()))     then isEqual(base1, base2) and isEqual(sub1, DEFAULT_SUB_CLOCK);
+        case ((base1, NONE()), (sub2, SOME(base2)))     then isEqual(base1, base2) and isEqual(DEFAULT_SUB_CLOCK, sub2);
+        case ((sub1, SOME(base1)), (sub2, SOME(base2))) then isEqual(base1, base2) and isEqual(sub1, sub2);
+        else false;
+      end match;
+    end isMergable;
+
     function add
       input Equation eqn;
       input ClockedInfo info;
@@ -212,7 +228,6 @@ public
           UnorderedMap.add(clock_name, clock, info.subClocks);
           UnorderedMap.add(clock_name, Util.getOption(baseClock), info.subToBase);
         else
-          // base clock
           UnorderedMap.add(clock_name, clock, info.baseClocks);
         end if;
 
@@ -376,21 +391,6 @@ public
         addSubClock(sub_clock, info);
       end for;
     end resolveSubClocks;
-
-    function baseClockCount
-      input ClockedInfo info;
-      input Boolean countInferred = false;
-      output Integer count = UnorderedMap.size(info.baseClocks);
-    algorithm
-      if not countInferred then
-        count := count - List.count(UnorderedMap.valueList(info.baseClocks), BClock.isInferredClock);
-      end if;
-    end baseClockCount;
-
-    function subClockCount
-      input ClockedInfo info;
-      output Integer count = UnorderedMap.size(info.subClocks);
-    end subClockCount;
 
   protected
     function resolveImplicitSubClock
@@ -707,7 +707,6 @@ protected
       // replace the clocked functions, inline clocked when equations and set equations to clocked
       partEquations := EquationPointers.mapExp(partEquations, function replaceClockedFunctions(held_crefs = held_crefs));
       if Partition.Association.isClocked(association) then
-        partEquations := EquationPointers.map(partEquations, replaceClockedWhen);
         partVariables := VariablePointers.mapPtr(partVariables, function BVariable.setVarKind(varKind = VariableKind.CLOCKED()));
       end if;
 
@@ -1000,8 +999,10 @@ protected
     // fill the adjacency matrix
     for i in 1:n loop
       for clock in UnorderedSet.toList(Partition.Partition.getClockDependencies(partitions[i])) loop
-        j := UnorderedMap.getSafe(clock, index_map, sourceInfo());
-        m[i] := j :: m[i];
+        m[i] :=  match UnorderedMap.get(clock, index_map)
+          case SOME(j) then j :: m[i];
+          else m[i];
+        end match;
       end for;
     end for;
 
@@ -1270,24 +1271,6 @@ protected
       purity      = NFPrefixes.Purity.PURE
     ));
   end replaceClockedFunctionExp;
-
-  function replaceClockedWhen
-    "replace clocked when equations in clocked partitions with their body statement.
-    only works for split up when equations with a single statement and no else when."
-    input output Equation eqn;
-  algorithm
-    eqn := match eqn
-      local
-        Expression cond;
-        WhenStatement stmt;
-
-      case Equation.WHEN_EQUATION(body = WhenEquationBody.WHEN_EQUATION_BODY(condition = cond, when_stmts = {stmt}, else_when = NONE()))
-        guard(Type.isClock(Expression.typeOf(cond)))
-      then WhenStatement.toEquation(stmt, eqn.attr, false);
-
-      else eqn;
-    end match;
-  end replaceClockedWhen;
 
 annotation(__OpenModelica_Interface="backend");
 end NBPartitioning;
