@@ -236,7 +236,7 @@ contains(QWT_CONFIG, QwtPlot) {
                 HEADERS += qwt_plot_opengl_canvas.h
                 SOURCES += qwt_plot_opengl_canvas.cpp
             }
-            
+
         }
 
     }

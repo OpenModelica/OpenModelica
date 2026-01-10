@@ -1,7 +1,7 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2015, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
@@ -1048,14 +1048,15 @@ Helper function to smCompToDataFlow
   input DAE.Element inElt;
   output Option<DAE.Exp> outExpOpt;
 protected
-  DAE.Exp start;
-  DAE.Type ty;
   Option<DAE.VariableAttributes> varAttrOpt;
 algorithm
-  DAE.VAR(variableAttributesOption=varAttrOpt, ty=ty) := inElt;
+  DAE.VAR(variableAttributesOption=varAttrOpt) := inElt;
   if isSome(varAttrOpt) then
-    start := DAEUtil.getStartAttr(varAttrOpt, ty);
-    outExpOpt := SOME(start);
+    try
+      outExpOpt := SOME(DAEUtil.getStartAttrFail(varAttrOpt));
+    else
+      outExpOpt := NONE();
+    end try;
   else
     outExpOpt := NONE();
   end if;

@@ -184,9 +184,8 @@ end setVarAttributes;
 public function varStartValue "author: PA
   Returns the DAE.StartValue of a variable."
   input BackendDAE.Var inVar;
-  output DAE.Exp sv;
-algorithm
-  sv := DAEUtil.getStartAttr(inVar.values, inVar.varType);
+  input SourceInfo info;
+  output DAE.Exp sv = DAEUtil.getStartAttr(inVar.values, inVar.varType, info);
 end varStartValue;
 
 public function varUnreplaceable "author: lochel
@@ -216,12 +215,7 @@ public function varStartValueFail "author: Frenkel TUD
   Returns the DAE.StartValue of a variable if there is one.
   Otherwise fail"
   input BackendDAE.Var v;
-  output DAE.Exp sv;
-protected
-  Option<DAE.VariableAttributes> attr;
-algorithm
-  BackendDAE.VAR(values = attr) := v;
-  sv := DAEUtil.getStartAttrFail(attr);
+  output DAE.Exp sv = DAEUtil.getStartAttrFail(v.values);
 end varStartValueFail;
 
 public function varNominalValueFail "author: lochel
@@ -260,18 +254,6 @@ algorithm
   sv := DAEUtil.getMaxAttrFail(attr);
 end varMaxValueFail;
 
-public function varStartValueType "author: Frenkel TUD 2012-11
-  Returns the DAE.StartValue of a variable. If nothing is set the type specific one is used"
-  input BackendDAE.Var v;
-  output DAE.Exp sv;
-protected
-  Option<DAE.VariableAttributes> attr;
-  DAE.Type ty;
-algorithm
-  BackendDAE.VAR(values=attr, varType=ty) := v;
-  sv := DAEUtil.getStartAttr(attr, ty);
-end varStartValueType;
-
 public function varStartValueOption "author: Frenkel TUD
   Returns the DAE.StartValue of a variable if there is one.
   Otherwise fail"
@@ -293,19 +275,12 @@ end varStartValueOption;
 
 public function varHasStartValue
   input BackendDAE.Var inVar;
-  output Boolean outHasStartValue;
-protected
-  Option<DAE.VariableAttributes> attr;
-algorithm
-  BackendDAE.VAR(values=attr) := inVar;
-  outHasStartValue := DAEUtil.hasStartAttr(attr);
+  output Boolean outHasStartValue = DAEUtil.hasStartAttr(inVar.values);
 end varHasStartValue;
 
 public function varHasNoStartValue
   input BackendDAE.Var inVar;
-  output Boolean outHasNoStartValue;
-algorithm
-  outHasNoStartValue := not varHasStartValue(inVar);
+  output Boolean outHasNoStartValue = not varHasStartValue(inVar);
 end varHasNoStartValue;
 
 public function varStartOrigin "author: Frenkel TUD
@@ -410,6 +385,7 @@ end varBindExpStartValue;
 public function varBindExpStartValueNoFail
   "Returns the binding or the start value if no binding is available."
   input BackendDAE.Var v;
+  input SourceInfo info;
   output DAE.Exp sv;
 algorithm
   sv := match(v)
@@ -419,7 +395,7 @@ algorithm
     case (BackendDAE.VAR(bindExp=SOME(e)))
     then e;
 
-    else varStartValue(v);
+    else varStartValue(v, info);
   end match;
 end varBindExpStartValueNoFail;
 
