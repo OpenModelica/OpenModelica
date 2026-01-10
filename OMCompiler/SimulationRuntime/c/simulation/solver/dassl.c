@@ -549,7 +549,7 @@ int dassl_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
 
   MODEL_DATA *mData = (MODEL_DATA*) data->modelData;
 
-  if (measure_time_flag) rt_tick(SIM_TIMER_SOLVER);
+  if (measure_time_flag) rt_push(SIM_TIMER_SOLVER);
 
   memcpy(stateDer, data->localData[1]->realVars + data->modelData->nStates, sizeof(double)*data->modelData->nStates);
 
@@ -623,11 +623,9 @@ int dassl_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
       /* rhs final flag is FALSE during for dassl evaluation */
       RHSFinalFlag = 0;
 
-      if (measure_time_flag) rt_accumulate(SIM_TIMER_SOLVER);
       /* read input vars */
       externalInputUpdate(data);
       data->callback->input_function(data, threadData);
-      if (measure_time_flag) rt_tick(SIM_TIMER_SOLVER);
 
       DDASKR(dasslData->residualFunction, (int*) &dasslData->N,
               &solverInfo->currentTime, states, stateDer, &tout,
@@ -701,6 +699,7 @@ int dassl_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
 
   if (return_from_small_step) {
     /* need to do this outside the try-catch macro */
+    if (measure_time_flag) rt_pop(SIM_TIMER_SOLVER);
     return 0;
   }
 
@@ -738,7 +737,7 @@ int dassl_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
   }
 
   infoStreamPrint(OMC_LOG_DASSL, 0, "Finished DASSL step.");
-  if (measure_time_flag) rt_accumulate(SIM_TIMER_SOLVER);
+  if (measure_time_flag) rt_pop(SIM_TIMER_SOLVER);
 
   return retVal;
 }
@@ -835,8 +834,7 @@ static int functionODE_residual(double *t, double *y, double *yd, double* cj,
   int saveJumpState;
   int success = 0;
 
-  if (measure_time_flag) rt_accumulate(SIM_TIMER_SOLVER);
-  if (measure_time_flag) rt_tick(SIM_TIMER_RESIDUALS);
+  if (measure_time_flag) rt_push(SIM_TIMER_RESIDUALS);
 
   if (data->simulationInfo->currentContext == CONTEXT_ALGEBRAIC)
   {
@@ -888,8 +886,7 @@ static int functionODE_residual(double *t, double *y, double *yd, double* cj,
     unsetContext(data);
   }
 
-  if (measure_time_flag) rt_accumulate(SIM_TIMER_RESIDUALS);
-  if (measure_time_flag) rt_tick(SIM_TIMER_SOLVER);
+  if (measure_time_flag) rt_pop(SIM_TIMER_RESIDUALS);
 
   return 0;
 }
@@ -904,8 +901,7 @@ static int function_ZeroCrossingsDASSL(int *neqm, double *t, double *y, double *
   double timeBackup;
   int saveJumpState;
 
-  if (measure_time_flag) rt_accumulate(SIM_TIMER_SOLVER);
-  if (measure_time_flag) rt_tick(SIM_TIMER_EVENT);
+  if (measure_time_flag) rt_push(SIM_TIMER_EVENT);
 
   if (data->simulationInfo->currentContext == CONTEXT_ALGEBRAIC)
   {
@@ -933,8 +929,7 @@ static int function_ZeroCrossingsDASSL(int *neqm, double *t, double *y, double *
     unsetContext(data);
   }
 
-  if (measure_time_flag) rt_accumulate(SIM_TIMER_EVENT);
-  if (measure_time_flag) rt_tick(SIM_TIMER_SOLVER);
+  if (measure_time_flag) rt_pop(SIM_TIMER_EVENT);
 
   return 0;
 }
@@ -985,6 +980,8 @@ int jacA_symColored(double *t, double *y, double *yprime, double *delta,
   unsigned int rows = jac->sizeRows;
   SPARSE_PATTERN* spp = jac->sparsePattern;
 
+  if (measure_time_flag) rt_push(SIM_TIMER_JACOBIAN);
+
   /* Evaluate constant equations if available */
   if (jac->constantEqns != NULL) {
       jac->constantEqns(data, threadData, jac, NULL);
@@ -993,6 +990,7 @@ int jacA_symColored(double *t, double *y, double *yprime, double *delta,
   genericColoredSymbolicJacobianEvaluation(rows, columns, spp, matrixA, t_jac,
                                            data, threadData, &setJacElementDasslSparse);
 
+  if (measure_time_flag) rt_pop(SIM_TIMER_JACOBIAN);
   return 0;
 }
 
@@ -1239,9 +1237,7 @@ static int callJacobian(double *t, double *y, double *yprime, double *deltaD,
   threadData_t *threadData = (threadData_t*)(void*)((double**)rpar)[2];
   int i;
 
-  /* profiling */
-  if (measure_time_flag) rt_accumulate(SIM_TIMER_SOLVER);
-  rt_tick(SIM_TIMER_JACOBIAN);
+  if (measure_time_flag) rt_push(SIM_TIMER_JACOBIAN);
 
   /* Compute J = (∂F)/(∂y) */
   if(dasslData->jacobianFunction(t, y, yprime, deltaD, pd, cj, h, wt, rpar, ipar))
@@ -1266,9 +1262,7 @@ static int callJacobian(double *t, double *y, double *yprime, double *deltaD,
   /* set context for the start values extrapolation of non-linear algebraic loops */
   unsetContext(data);
 
-  /* profiling */
-  rt_accumulate(SIM_TIMER_JACOBIAN);
-  if (measure_time_flag) rt_tick(SIM_TIMER_SOLVER);
+  if (measure_time_flag) rt_pop(SIM_TIMER_JACOBIAN);
 
   return 0;
 }
