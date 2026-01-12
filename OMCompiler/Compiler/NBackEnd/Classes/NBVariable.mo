@@ -528,12 +528,12 @@ public
     extends checkVar;
   algorithm
     b := match var.backendinfo.varKind
-      case VariableKind.JAC_VAR() then true;
+      case VariableKind.JAC_VAR()     then true;
       case VariableKind.JAC_TMP_VAR() then true;
       else false;
     end match;
   end isPDer;
-  
+
   function hasTearingSelect
     "checks if the variable has given tearing select.
     When provided with different functions can also check other relations.

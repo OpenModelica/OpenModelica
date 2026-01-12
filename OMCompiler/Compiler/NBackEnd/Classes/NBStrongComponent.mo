@@ -912,16 +912,6 @@ public
     end match;
   end getLoopResiduals;
 
-  function getLoopIterationVars
-    input StrongComponent comp;
-    output list<Pointer<Variable>> iterationVars;
-  algorithm
-    iterationVars := match comp
-      case ALGEBRAIC_LOOP()  then Tearing.getIterationVars(comp.strict);
-                        else {};
-    end match;
-  end getLoopIterationVars;
-
   function getVariables
     input StrongComponent comp;
     output list<Pointer<Variable>> vars;
@@ -956,19 +946,6 @@ public
     end match;
   end getVarCref;
 
-  function getEquationPointers
-    input StrongComponent comp;
-    output EquationPointer eqns;
-  algorithm
-    eqns := match comp
-      case SINGLE_COMPONENT()   then comp.eqn;
-      case ALIAS()              then getEquationPointers(comp.original);
-      else algorithm
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of wrong component: " + toString(comp)});
-      then fail();
-    end match;
-  end getEquationPointers;
-  
   function getEquations
     input StrongComponent comp;
     output list<Pointer<Equation>> eqns;
@@ -988,20 +965,6 @@ public
     end match;
   end getEquations;
 
-  function getVarPointer
-    // ToDo: other types
-    input StrongComponent comp;
-    output Pointer<Variable> vars;
-  algorithm
-    vars := match comp
-      case SINGLE_COMPONENT() then comp.var;
-      case ALIAS()            then getVarPointer(comp.original);
-      else algorithm
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of wrong component: " + toString(comp)});
-      then fail();
-    end match;
-  end getVarPointer;
-  
   function getSolveStatus
     input StrongComponent comp;
     output Solve.Status status;

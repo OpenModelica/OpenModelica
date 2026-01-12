@@ -222,7 +222,7 @@ public
           SimStrongComponent.Block columnEqn;
           list<SimStrongComponent.Block> columnEqns = {};
           VarData varData;
-          VariablePointers seed_scalar, res_scalar, tmp_scalar, seed_vec, res_vec, tmp_vec;
+          VariablePointers seed_vec, res_vec, tmp_vec;
           Pointer<list<SimVar>> seedVars_ptr = Pointer.create({});
           Pointer<list<SimVar>> resVars_ptr = Pointer.create({});
           Pointer<list<SimVar>> tmpVars_ptr = Pointer.create({});
