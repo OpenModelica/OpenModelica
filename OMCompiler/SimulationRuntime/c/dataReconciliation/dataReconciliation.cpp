@@ -861,6 +861,67 @@ bool isUnmeasuredVariables(DATA* data, const char* name)
   return false;
 }
 
+//----------------------------------------------
+// Helper: Update Reconciled.mo with reconciled values
+//----------------------------------------------
+void updateReconciledMo(DATA * data, threadData_t * threadData, vector<string> headers,  double * reconciled_X, ofstream & logfile)
+{
+  std::string modelPrefix(data->modelData->modelFilePrefix);
+  std::replace(modelPrefix.begin(), modelPrefix.end(), '.', '_');
+
+  // check for reconciled.mo file to update with reconciled values
+  std::string reconciledMoFile, reconciledValuesMoFile;
+  if (omc_flag[FLAG_OUTPUT_PATH])
+  {
+    reconciledMoFile = std::string(omc_flagValue[FLAG_OUTPUT_PATH]) + "/" + "Reconciled_tmp_" +  modelPrefix + ".mo";
+    reconciledValuesMoFile = std::string(omc_flagValue[FLAG_OUTPUT_PATH]) + "/" + "Reconciled_" +  modelPrefix + ".mo";
+  }
+  else
+  {
+    reconciledMoFile = "Reconciled_tmp_" + modelPrefix + ".mo";
+    reconciledValuesMoFile = "Reconciled_" + modelPrefix + ".mo";
+  }
+  std::ifstream infile(reconciledMoFile);
+  if (!infile.is_open())
+  {
+    // just give a warning, if file not found as this is optional and user may not want to update the file with reconciled values
+    warningStreamPrint(OMC_LOG_STDOUT, 0, "Reconciled modelica file path not found %s.", reconciledMoFile.c_str());
+    logfile << "|  warning   |   " << "Measurement input file path not found " << reconciledMoFile << "\n";
+  }
+
+  std::ofstream outfile(reconciledValuesMoFile);
+  if (!outfile.is_open())
+  {
+    // just give a warning, if file not found as this is optional and user may not want to update the file with reconciled values
+    warningStreamPrint(OMC_LOG_STDOUT, 0, "Cannot open reconciled values output file %s.", reconciledValuesMoFile.c_str());
+    logfile << "|  warning   |   " << "Cannot open reconciled values output file " << reconciledValuesMoFile << "\n";
+  }
+
+  std::string line;
+  int count = 1;
+  int varCount = 1; // counter for variables of interest
+  while (std::getline(infile, line))
+  {
+    if (count > 3 && varCount <= data->modelData->ndataReconVars)
+    {
+      std::string variableName(headers[varCount-1]);
+      std::replace(variableName.begin(), variableName.end(), '.', '_');
+      outfile << "  parameter Real " << variableName << " = " << reconciled_X[varCount-1] << ";\n";
+      varCount++;
+    }
+    else
+    {
+      // copy other lines as it is
+      count++;
+      outfile << line << "\n";
+    }
+  }
+  infile.close();
+  outfile.close();
+  omc_unlink(reconciledMoFile.c_str());
+  logfile << "|  info    |   " << "Reconciled modelica file updated successfully " << reconciledValuesMoFile << "\n";
+}
+
 /*
  * Function which reads the csv file
  * and stores the initial measured value X and HalfWidth confidence
@@ -2729,6 +2790,10 @@ int RunReconciliation(DATA *data, threadData_t *threadData, inputData x, matrixD
   if (omc_flag[FLAG_DATA_RECONCILE_STATE])
     datareconciliationdata = {csvinputs, xdiag, reconciled_X, copyReconciledSx, copyreconSx_diag, newX, eps, iterationcount, value, J, warningCorrelationData};
 
+  // read and update reconciled mo file with new values
+
+  updateReconciledMo(data, threadData, csvinputs.headers, reconciled_X.data, logfile);
+
   boundaryConditionData boundaryconditiondata;
   // create HTML Report for D.1
   if (omc_flag[FLAG_DATA_RECONCILE])
@@ -3157,6 +3222,7 @@ int boundaryConditions(DATA * data, threadData_t * threadData, int status)
   printMatrixWithHeaders(reconciled_Sx.data, reconciled_Sx.rows, reconciled_Sx.column, Sx_data.headers, "Reconciled_Sx", logfile);
   boundaryConditionData boundaryconditiondata;
   reconcileBoundaryConditions(data, threadData, reconciled_x, reconciled_Sx, boundaryconditiondata, warningCorrelationData, logfile);
+  updateReconciledMo(data, threadData, Sx_data.headers, reconciled_x.data, logfile);
 
   logfile << "*****Completed***********\n";
   logfile << "|  info    |   " << "Reconcile Boundary Conditions Completed! \n";
