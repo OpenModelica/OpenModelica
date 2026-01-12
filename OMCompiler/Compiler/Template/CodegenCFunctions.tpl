@@ -7908,7 +7908,7 @@ end crefVarInfo;
 template initializeStaticLSVars(list<SimVar> vars, Integer index)
 ::=
   let len = listLength(vars)
-  let indices = (vars |> var => varIndexWithComment(var) ;separator=",\n")
+  let indices = (vars |> var as SIMVAR(__) => '<%index%> /* <%crefCComment(var, crefStrNoUnderscore(name))%> */' ;separator=",\n")
   <<
   void initializeStaticLSData<%index%>(DATA* data, threadData_t* threadData, LINEAR_SYSTEM_DATA* linearSystemData, modelica_boolean initSparsePattern)
   {
@@ -7916,20 +7916,19 @@ template initializeStaticLSVars(list<SimVar> vars, Integer index)
       <%indices%>
     };
     for (int i = 0; i < <%len%>; ++i) {
-      linearSystemData->nominal[i] = data->modelData->realVarsData[indices[i]].attribute.nominal;
-      linearSystemData->min[i]     = data->modelData->realVarsData[indices[i]].attribute.min;
-      linearSystemData->max[i]     = data->modelData->realVarsData[indices[i]].attribute.max;
+      if (indices[i] == -1) {
+        linearSystemData->nominal[i] = 1.0;
+        linearSystemData->min[i]     = -DBL_MAX;
+        linearSystemData->max[i]     = DBL_MAX;
+      } else {
+        linearSystemData->nominal[i] = data->modelData->realVarsData[indices[i]].attribute.nominal;
+        linearSystemData->min[i]     = data->modelData->realVarsData[indices[i]].attribute.min;
+        linearSystemData->max[i]     = data->modelData->realVarsData[indices[i]].attribute.max;
+      }
     }
   }
   >>
 end initializeStaticLSVars;
-
-template varIndexWithComment(SimVar var)
-::=
-  match var
-  case SIMVAR(index=-1) then varIndexWithComment(cref2simvar(crefRemovePrePrefix(name), getSimCode()))
-  case SIMVAR(__) then '<%index%> /* <%crefCComment(var, crefStrNoUnderscore(name))%> */'
-end varIndexWithComment;
 
 template crefIndexWithComment(ComponentRef cr)
 ::=
