@@ -395,7 +395,7 @@ std::shared_ptr<NLP::Scaling> NominalScalingFactory::operator()(const GDOP::GDOP
     // artificial constraints are O(u)
     for (int u = 0; u < info.u_size; u++) {
         int u_real_vars = info.u_indices_real_vars[u];
-        g_nominal[gdop.get_off_fgr_total() + u] = real_vars_data[u_real_vars].attribute.nominal;
+        g_nominal[gdop.get_off_fgr_total() + u] = getNominalFromScalarIdx(info.data->simulationInfo, info.data->modelData, u_real_vars);
     }
 
     return std::make_shared<NLP::NominalScaling>(std::move(x_nominal), std::move(g_nominal), f_nominal);
