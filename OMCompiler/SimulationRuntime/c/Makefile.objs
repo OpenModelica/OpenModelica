@@ -142,7 +142,6 @@ SOLVER_OBJS_FMU=$(SOLVER_OBJS_LINEAR_SYSTEMS) \
                 omc_math$(OBJ_EXT) \
                 perform_simulation$(OBJ_EXT) \
                 perform_qss_simulation$(OBJ_EXT) \
-                solver_main$(OBJ_EXT) \
                 spatialDistribution$(OBJ_EXT) \
                 stateset$(OBJ_EXT) \
                 synchronous$(OBJ_EXT)
@@ -150,9 +149,11 @@ ifeq ($(OMC_FMI_RUNTIME),)
   SOLVER_OBJS_MINIMAL=$(SOLVER_OBJS_FMU) \
                       embedded_server$(OBJ_EXT) \
                       events$(OBJ_EXT) \
-                      real_time_sync$(OBJ_EXT)
+                      real_time_sync$(OBJ_EXT) \
+                      solver_main$(OBJ_EXT) \
 else
-  SOLVER_OBJS_MINIMAL=$(SOLVER_OBJS_FMU)
+  SOLVER_OBJS_MINIMAL=$(SOLVER_OBJS_FMU) \
+                      solver_main$(OBJ_EXT) \
 endif
 ifeq ($(OMC_MINIMAL_RUNTIME),)
   SOLVER_OBJS=$(SOLVER_OBJS_MINIMAL) \
