@@ -136,11 +136,13 @@ SOLVER_OBJS_FMU=$(SOLVER_OBJS_LINEAR_SYSTEMS) \
                 $(SOLVER_OBJS_MIXED_SYSTEMS) \
                 $(SOLVER_OBJS_NONLINEAR_SYSTEMS) \
                 delay$(OBJ_EXT) \
+                external_input$(OBJ_EXT) \
                 fmi_events$(OBJ_EXT) \
                 model_help$(OBJ_EXT) \
                 omc_math$(OBJ_EXT) \
                 perform_simulation$(OBJ_EXT) \
                 perform_qss_simulation$(OBJ_EXT) \
+                solver_main$(OBJ_EXT) \
                 spatialDistribution$(OBJ_EXT) \
                 stateset$(OBJ_EXT) \
                 synchronous$(OBJ_EXT)
@@ -148,9 +150,7 @@ ifeq ($(OMC_FMI_RUNTIME),)
   SOLVER_OBJS_MINIMAL=$(SOLVER_OBJS_FMU) \
                       embedded_server$(OBJ_EXT) \
                       events$(OBJ_EXT) \
-                      external_input$(OBJ_EXT) \
-                      real_time_sync$(OBJ_EXT) \
-                      solver_main$(OBJ_EXT)
+                      real_time_sync$(OBJ_EXT)
 else
   SOLVER_OBJS_MINIMAL=$(SOLVER_OBJS_FMU)
 endif

@@ -30,7 +30,6 @@
 
 #include "perform_simulation.h"
 
-#include "solver_main.h"
 #include "events.h"
 #include "sym_solver_ssc.h"
 #include "model_help.h"
