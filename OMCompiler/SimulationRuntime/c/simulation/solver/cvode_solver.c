@@ -45,8 +45,8 @@
 #include "../../util/omc_error.h"
 #include "../../gc/omc_gc.h"
 
-#include "dassl.h"
 #include "epsilon.h"
+#include "sundials_error.h"
 
 
 #ifdef WITH_SUNDIALS

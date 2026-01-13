@@ -32,13 +32,12 @@
 #define CVODE_SOLVER_H
 
 #ifndef OMC_FMI_RUNTIME
-  #include "omc_config.h"
+  #include "../../../omc_config.h"
 #else
-  #include "fmi-export/fmu2_model_interface.h"
+  #include "../../fmi/export/openmodelica/fmu2_model_interface.h"
 #endif
 #include "../../simulation_data.h"
 #include "../../util/simulation_options.h"
-#include "sundials_error.h"
 #include "solver_main.h"
 
 #ifdef WITH_SUNDIALS
