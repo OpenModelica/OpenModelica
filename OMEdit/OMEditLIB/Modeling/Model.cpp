@@ -1693,7 +1693,7 @@ namespace ModelInstance
     return value;
   }
 
-  FlatModelica::Expression* Model::getVariableValueOrBinding(const QString &variableName, bool value) const
+  const FlatModelica::Expression* Model::getVariableValueOrBinding(const QString &variableName, bool value) const
   {
     QString curName;
     bool last;
@@ -1722,7 +1722,9 @@ namespace ModelInstance
       if (pElement->isComponent()) {
         if (pElement->getName().compare(curName) == 0) {
           if (last) {
-            return value ? &pElement->getValue() : &pElement->getBinding();
+            return value
+                ? &static_cast<const Element*>(pElement)->getValue()
+                : &static_cast<const Element*>(pElement)->getBinding();
           } else {
             if (!pElement->getModel()) {
               return nullptr;
@@ -1731,7 +1733,7 @@ namespace ModelInstance
           }
         }
       } else if (pElement->isExtend() && pElement->getModel()) {
-        auto expression = pElement->getModel()->getVariableValueOrBinding(variableName, value);
+        const auto expression = pElement->getModel()->getVariableValueOrBinding(variableName, value);
         if (expression) {
           return expression;
         }

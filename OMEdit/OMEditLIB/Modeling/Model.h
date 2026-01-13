@@ -652,7 +652,7 @@ private:
     QPair<QString, bool> getVariableValue(QStringList variables);
     QString getVariableType(QStringList variables);
 
-    FlatModelica::Expression* getVariableValueOrBinding(const QString &variableName, bool value) const;
+    const FlatModelica::Expression *getVariableValueOrBinding(const QString &variableName, bool value) const;
     const Element *lookupElement(const QString &name) const;
     Element *lookupElement(const QString &name);
     const Element *lookupElement(const Name &name) const;
@@ -711,10 +711,10 @@ private:
     const QString &getComment() const;
     Annotation *getAnnotation() const;
     const FlatModelica::Expression &getValue() const {return mValue;}
-    FlatModelica::Expression &getValue() {return mValue;}
+    FlatModelica::Expression &getValue() = delete;
     const FlatModelica::Expression &getBinding() const {return mBinding;}
-    FlatModelica::Expression &getBinding() {return mBinding;}
-    void setBinding(const FlatModelica::Expression expression) {mBinding = expression;}
+    FlatModelica::Expression &getBinding() = delete;
+    void setBinding(const FlatModelica::Expression &expression) {mBinding = expression;}
     void resetBinding() {mBinding = mBindingForReset;}
     bool getIconDiagramMapPrimitivesVisible(bool icon) const;
     bool getIconDiagramMapHasExtent(bool icon) const;
