@@ -300,7 +300,7 @@ static void gbInternal_evalJacobian(DATA *data, threadData_t *threadData, DATA_G
           double delta_hhh = delta_h * der_x_ref[state];
 
           // scal_raw = ATOL * NOMINAL + RTOL * abs(x_i), we use the real (un-transformed) integrator tolerances though
-          const modelica_real nominal = getNominalFromScalarIdx(data->simulationInfo, data->modelData, state);
+          const modelica_real nominal = getNominalFromScalarIdx(data->simulationInfo, data->modelData, VAR_KIND_STATE, state);
           double raw_weight = nls->tol_integrator.atol * nominal + nls->tol_integrator.rtol * fabs(x[state]);
 
           // choose h_i := h * max(abs(x_i), h * f(x)_i, 1 / (ATOL * NOMINAL + RTOL * abs(x_i)), 1e-3)
@@ -535,7 +535,7 @@ static void createGbScales(GB_INTERNAL_NLS_DATA *nls, double *y1, double *y2)
 {
   for (int i = 0; i < nls->size; i++)
   {
-    const modelica_real nominal = getNominalFromScalarIdx(nls->nls_user_data->data->simulationInfo, nls->nls_user_data->data->modelData, i);
+    const modelica_real nominal = getNominalFromScalarIdx(nls->nls_user_data->data->simulationInfo, nls->nls_user_data->data->modelData, VAR_KIND_VARIABLE, i);
     nls->scal[i] = 1. / (nls->tol_scaled.atol * nominal + fmax(fabs(y1[i]), fabs(y2[i])) * nls->tol_scaled.rtol);
   }
 }

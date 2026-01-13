@@ -3315,12 +3315,22 @@ template generateStaticInitialData(list<ComponentRef> crefs, String indexName)
 ::=
   let systemType = 'NONLINEAR_SYSTEM_DATA'
   let bodyStaticData = (crefs |> cr hasindex i0 =>
+    let nominal = match cref2simvar(crefRemovePrePrefix(cr), getSimCode())
+      case SIMVAR(type_=T_REAL(__), varKind=PARAM()) then
+        'getNominalFromScalarIdx(data->simulationInfo, data->modelData, VAR_KIND_PARAMETER, <%crefIndexWithComment(cr)%>)'
+      case SIMVAR(type_=T_REAL(__)) then
+        'getNominalFromScalarIdx(data->simulationInfo, data->modelData, VAR_KIND_VARIABLE, <%crefIndexWithComment(cr)%>)'
+      else
+        '<%crefAttributes(cr)%>.nominal'
+      end match
+
     <<
     /* static nls data for <%crefStrNoUnderscore(cr)%> */
-    sysData->nominal[i] = getNominalFromScalarIdx(data->simulationInfo, data->modelData, <%crefIndexWithComment(cr)%>);
+    sysData->nominal[i] = <%nominal%>;
     sysData->min[i]     = <%crefAttributes(cr)%>.min;
     sysData->max[i++]   = <%crefAttributes(cr)%>.max;
     >>
+
   ;separator="\n")
   <<
 
@@ -7129,7 +7139,7 @@ template optimizationComponents1(ClassAttributes classAttribute, SimCode simCode
                 <<
                 min[<%i0%>] = <%crefAttributes(name)%>.min;
                 max[<%i0%>] = <%crefAttributes(name)%>.max;
-                nominal[<%i0%>] = getNominalFromScalarIdx(data->simulationInfo, data->modelData, <%crefIndexWithComment(name)%>);
+                nominal[<%i0%>] = getNominalFromScalarIdx(data->simulationInfo, data->modelData, VAR_KIND_VARIABLE, <%crefIndexWithComment(name)%>);
                 useNominal[<%i0%>] = <%crefAttributes(name)%>.useNominal;
                 name[<%i0%>] =(char *) <%crefVarInfo(name)%>.name;
                 <%match type_ case T_REAL() then

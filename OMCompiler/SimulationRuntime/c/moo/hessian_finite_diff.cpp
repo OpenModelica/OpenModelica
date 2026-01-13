@@ -316,7 +316,7 @@ void eval_hessian_fwd_differences_fast(
             int realVarsIndex = (col < nStates ? col : u_indices[col - nStates]);
 
             /* create perturbation size based on nominals and current entry */
-            const modelica_real nom = getNominalFromScalarIdx(data->simulationInfo, data->modelData, realVarsIndex);
+            const modelica_real nom = getNominalFromScalarIdx(data->simulationInfo, data->modelData, VAR_KIND_VARIABLE, realVarsIndex);
             c1_h += log(1.0 + fmax(ws_oldX[col], nom));
         }
 

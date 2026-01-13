@@ -381,7 +381,7 @@ static inline void pickUpBounds(OptDataBounds * bounds, OptDataDim * dim, DATA* 
   for(i = 0; i < nx; ++i){
     min = data->modelData->realVarsData[i].attribute.min;
     max = data->modelData->realVarsData[i].attribute.max;
-    nominal = getNominalFromScalarIdx(data->simulationInfo, data->modelData, i);
+    nominal = getNominalFromScalarIdx(data->simulationInfo, data->modelData, VAR_KIND_VARIABLE, i);
     nominalWasSet = data->modelData->realVarsData[i].attribute.useNominal;
     x0 = data->localData[1]->realVars[i];
 

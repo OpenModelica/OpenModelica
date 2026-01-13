@@ -574,7 +574,7 @@ int cvode_solver_initial(DATA *data, threadData_t *threadData, SOLVER_INFO *solv
   assertStreamPrint(threadData, abstol_tmp != NULL, "Out of memory.");
   for (i = 0; i < cvodeData->N; ++i)
   {
-    const modelica_real nominal = getNominalFromScalarIdx(data->simulationInfo, data->modelData, i);
+    const modelica_real nominal = getNominalFromScalarIdx(data->simulationInfo, data->modelData, VAR_KIND_STATE, i);
     abstol_tmp[i] = fmax(fabs(nominal), 1e-32) * data->simulationInfo->tolerance;
   }
   cvodeData->absoluteTolerance = N_VMake_Serial(cvodeData->N, abstol_tmp);

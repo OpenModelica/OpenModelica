@@ -450,7 +450,7 @@ int prefixedName_performSimulation(DATA* data, threadData_t *threadData, SOLVER_
           double currDer;
           for(i=data->modelData->nStates; i<2*data->modelData->nStates; ++i)
           {
-            modelica_real nominal = getNominalFromScalarIdx(data->simulationInfo, data->modelData, i);
+            modelica_real nominal = getNominalFromScalarIdx(data->simulationInfo, data->modelData, VAR_KIND_VARIABLE, i);
             currDer = fabs(data->localData[0]->realVars[i] / nominal);
             if(maxDer < currDer)
               maxDer = currDer;

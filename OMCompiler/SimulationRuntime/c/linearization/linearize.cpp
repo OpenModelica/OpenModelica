@@ -201,7 +201,7 @@ int functionJacAC_num(DATA* data, threadData_t *threadData, double *matrixA, dou
 
     /* use actually value for xScaling */
     for (i = 0; i < size_A; i++) {
-        modelica_real nominal = getNominalFromScalarIdx(data->simulationInfo, data->modelData, i);
+        modelica_real nominal = getNominalFromScalarIdx(data->simulationInfo, data->modelData, VAR_KIND_STATE, i);
         xScaling[i] = fmax(nominal, fabs(x[i]));
     }
 

@@ -354,27 +354,27 @@ std::shared_ptr<NLP::Scaling> NominalScalingFactory::operator()(const GDOP::GDOP
     auto has_lagrange = gdop.get_problem().pc->has_lagrange;
 
     if (has_mayer && has_lagrange) {
-        const modelica_real nominal_mayer = getNominalFromScalarIdx(info.data->simulationInfo, info.data->modelData, info.index_mayer_real_vars);
-        const modelica_real nominal_lagrange = getNominalFromScalarIdx(info.data->simulationInfo, info.data->modelData, info.index_lagrange_real_vars);
+        const modelica_real nominal_mayer = getNominalFromScalarIdx(info.data->simulationInfo, info.data->modelData, VAR_KIND_VARIABLE, info.index_mayer_real_vars);
+        const modelica_real nominal_lagrange = getNominalFromScalarIdx(info.data->simulationInfo, info.data->modelData, VAR_KIND_VARIABLE, info.index_lagrange_real_vars);
 
         f_nominal = (nominal_mayer + nominal_lagrange) / 2;
     }
     else if (has_lagrange) {
-        f_nominal = getNominalFromScalarIdx(info.data->simulationInfo, info.data->modelData, info.index_lagrange_real_vars);
+        f_nominal = getNominalFromScalarIdx(info.data->simulationInfo, info.data->modelData, VAR_KIND_VARIABLE, info.index_lagrange_real_vars);
     }
     else if (has_mayer) {
-        f_nominal = getNominalFromScalarIdx(info.data->simulationInfo, info.data->modelData, info.index_mayer_real_vars);
+        f_nominal = getNominalFromScalarIdx(info.data->simulationInfo, info.data->modelData, VAR_KIND_VARIABLE, info.index_mayer_real_vars);
     }
 
     // (x, u)_(t_node)
     for (int node = 0; node < 1 + gdop.get_mesh().node_count; node++) {
         for (int x = 0; x < x_size; x++) {
-            x_nominal[node * xu_size + x] = getNominalFromScalarIdx(info.data->simulationInfo, info.data->modelData, x);
+            x_nominal[node * xu_size + x] = getNominalFromScalarIdx(info.data->simulationInfo, info.data->modelData, VAR_KIND_VARIABLE, x);
         }
 
         for (int u = 0; u < u_size; u++) {
             int u_real_vars = info.u_indices_real_vars[u];
-            x_nominal[node * xu_size + x_size + u] = getNominalFromScalarIdx(info.data->simulationInfo, info.data->modelData, u_real_vars);
+            x_nominal[node * xu_size + x_size + u] = getNominalFromScalarIdx(info.data->simulationInfo, info.data->modelData, VAR_KIND_VARIABLE, u_real_vars);
         }
     }
 
@@ -384,18 +384,18 @@ std::shared_ptr<NLP::Scaling> NominalScalingFactory::operator()(const GDOP::GDOP
         }
 
         for (int g = 0; g < g_size; g++) {
-            g_nominal[f_size + node * fg_size + g] = getNominalFromScalarIdx(info.data->simulationInfo, info.data->modelData, info.index_g_real_vars + g);
+            g_nominal[f_size + node * fg_size + g] = getNominalFromScalarIdx(info.data->simulationInfo, info.data->modelData, VAR_KIND_VARIABLE, info.index_g_real_vars + g);
         }
     }
 
     for (int r = 0; r < r_size; r++) {
-        g_nominal[gdop.get_off_fg_total() + r] = getNominalFromScalarIdx(info.data->simulationInfo, info.data->modelData, info.index_r_real_vars + r);
+        g_nominal[gdop.get_off_fg_total() + r] = getNominalFromScalarIdx(info.data->simulationInfo, info.data->modelData, VAR_KIND_VARIABLE, info.index_r_real_vars + r);
     }
 
     // artificial constraints are O(u)
     for (int u = 0; u < info.u_size; u++) {
         int u_real_vars = info.u_indices_real_vars[u];
-        g_nominal[gdop.get_off_fgr_total() + u] = getNominalFromScalarIdx(info.data->simulationInfo, info.data->modelData, u_real_vars);
+        g_nominal[gdop.get_off_fgr_total() + u] = getNominalFromScalarIdx(info.data->simulationInfo, info.data->modelData, VAR_KIND_VARIABLE, u_real_vars);
     }
 
     return std::make_shared<NLP::NominalScaling>(std::move(x_nominal), std::move(g_nominal), f_nominal);
@@ -408,7 +408,7 @@ GDOP::Strategies default_strategies(InfoGDOP& info, GDOP::Problem& problem, bool
     // TODO: do add simulation_tolerance factor here?
     FixedVector<f64> verifier_tolerances(info.x_size);
     for (int x = 0; x < info.x_size; x++) {
-        verifier_tolerances[x] = 1e-4 * getNominalFromScalarIdx(info.data->simulationInfo, info.data->modelData, x);
+        verifier_tolerances[x] = 1e-4 * getNominalFromScalarIdx(info.data->simulationInfo, info.data->modelData, VAR_KIND_VARIABLE, x);
     }
 
     auto scaling_factory               = std::make_shared<NominalScalingFactory>(info);

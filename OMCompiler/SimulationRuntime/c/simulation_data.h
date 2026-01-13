@@ -252,13 +252,6 @@ typedef DATA_ALIAS DATA_INTEGER_ALIAS;
 typedef DATA_ALIAS DATA_BOOLEAN_ALIAS;
 typedef DATA_ALIAS DATA_STRING_ALIAS;
 
-enum var_type {
-  T_REAL,     /* Variable is of real type */
-  T_INTEGER,  /* Variable is of integer type */
-  T_BOOLEAN,  /* Variable is of boolean type */
-  T_STRING    /* Variable is of string type */
-};
-
 /* Index (i-th variable, j-th index in array variable)*/
 typedef struct array_index_t {
   size_t array_idx;   /* Index of scalar/ array variable */

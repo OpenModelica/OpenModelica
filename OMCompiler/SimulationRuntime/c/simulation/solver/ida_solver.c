@@ -224,8 +224,8 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
   /* Allocate memory for initialization process */
   tmp = (double*) malloc(idaData->N*sizeof(double));
   for(i=0; i < data->modelData->nStates; ++i) {
-    const modelica_real nominal = getNominalFromScalarIdx(data->simulationInfo, data->modelData, i);
-    tmp[i] = fmax(fabs(nominal), 1e-32);   /* TODO: Use some macro for 1e-32?? */
+    const modelica_real nominal = getNominalFromScalarIdx(data->simulationInfo, data->modelData, VAR_KIND_STATE, i);
+    tmp[i] = fmax(fabs(nominal), 1e-32);
     infoStreamPrint(OMC_LOG_SOLVER_V, 0, "%ld. %s -> %g", i+1, data->modelData->realVarsData[i].info.name, tmp[i]);
   }
 
@@ -251,7 +251,7 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
 
     /* set yScale from nominal values */
     for(i=0; i < data->modelData->nStates; ++i) {
-      const modelica_real nominal = getNominalFromScalarIdx(data->simulationInfo, data->modelData, i);
+      const modelica_real nominal = getNominalFromScalarIdx(data->simulationInfo, data->modelData, VAR_KIND_STATE, i);
       idaData->yScale[i] = fabs(nominal);
       idaData->ypScale[i] = 1.0; // TODO: 1 is not a good scaling value. Use something like nominal value / number of intervals
     }

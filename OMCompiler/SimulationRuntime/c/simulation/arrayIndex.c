@@ -286,7 +286,10 @@ size_t calculateLength(DIMENSION_INFO *dimensionInfo,
  * @param name            Name of array variable.
  * @param dimension_info  Dimension info for array variable.
  */
-void printFlattenedNames(FILE *stream, const char* separator, const char *name, DIMENSION_INFO *dimension_info)
+void printFlattenedNames(FILE *stream,
+                         const char* separator,
+                         const char *name,
+                         DIMENSION_INFO *dimension_info)
 {
   if (dimension_info == NULL || dimension_info->numberOfDimensions <= 0 || dimension_info->dimensions == NULL)
   {
@@ -368,7 +371,8 @@ void printFlattenedNames(FILE *stream, const char* separator, const char *name, 
  * @return size_t*          Array of indices,
  *                          caller is responsible to free with `free`.
  */
-size_t *linearToMultiDimArrayIndex(DIMENSION_INFO *dimension_info, size_t linear_address)
+size_t *linearToMultiDimArrayIndex(DIMENSION_INFO *dimension_info,
+                                   size_t linear_address)
 {
   size_t k;
 
@@ -448,7 +452,9 @@ size_t *linearToMultiDimArrayIndex(DIMENSION_INFO *dimension_info, size_t linear
  * @param array_index       Array of indices
  * @return size_t           Linear array address.
  */
-size_t multiDimArrayToLinearIndex(DIMENSION_INFO* dimension_info, size_t* array_index) {
+size_t multiDimArrayToLinearIndex(DIMENSION_INFO* dimension_info,
+                                  size_t* array_index)
+{
   size_t linear_address = 0;
   size_t dim_product;
 
@@ -564,19 +570,19 @@ void computeVarsIndex(void *variableData,
   {
     switch (type)
     {
-    case T_REAL:
+    case VAR_TYPE_REAL:
       dimensionInfo = &((STATIC_REAL_DATA *)variableData)[i].dimension;
       id = ((STATIC_REAL_DATA *)variableData)[i].info.id;
       break;
-    case T_INTEGER:
+    case VAR_TYPE_INTEGER:
       dimensionInfo = &((STATIC_INTEGER_DATA *)variableData)[i].dimension;
       id = ((STATIC_INTEGER_DATA *)variableData)[i].info.id;
       break;
-    case T_BOOLEAN:
+    case VAR_TYPE_BOOLEAN:
       dimensionInfo = &((STATIC_BOOLEAN_DATA *)variableData)[i].dimension;
       id = ((STATIC_BOOLEAN_DATA *)variableData)[i].info.id;
       break;
-    case T_STRING:
+    case VAR_TYPE_STRING:
       dimensionInfo = &((STATIC_STRING_DATA *)variableData)[i].dimension;
       id = ((STATIC_STRING_DATA *)variableData)[i].info.id;
       break;
@@ -626,17 +632,17 @@ void computeVarIndices(SIMULATION_INFO *simulationInfo,
                        MODEL_DATA *modelData)
 {
   // Variables
-  computeVarsIndex(modelData->realVarsData, T_REAL, modelData->nVariablesRealArray, simulationInfo->realVarsIndex);
+  computeVarsIndex(modelData->realVarsData, VAR_TYPE_REAL, modelData->nVariablesRealArray, simulationInfo->realVarsIndex);
   // TODO: Are states, state derivatives, algebraic variables and discrete algebraic variables handled with this?
-  computeVarsIndex(modelData->integerVarsData, T_INTEGER, modelData->nVariablesIntegerArray, simulationInfo->integerVarsIndex);
-  computeVarsIndex(modelData->booleanVarsData, T_BOOLEAN, modelData->nVariablesBooleanArray, simulationInfo->booleanVarsIndex);
-  computeVarsIndex(modelData->stringVarsData, T_STRING, modelData->nVariablesStringArray, simulationInfo->stringVarsIndex);
+  computeVarsIndex(modelData->integerVarsData, VAR_TYPE_INTEGER, modelData->nVariablesIntegerArray, simulationInfo->integerVarsIndex);
+  computeVarsIndex(modelData->booleanVarsData, VAR_TYPE_BOOLEAN, modelData->nVariablesBooleanArray, simulationInfo->booleanVarsIndex);
+  computeVarsIndex(modelData->stringVarsData, VAR_TYPE_STRING, modelData->nVariablesStringArray, simulationInfo->stringVarsIndex);
 
   // Parameters
-  computeVarsIndex(modelData->realParameterData, T_REAL, modelData->nParametersRealArray, simulationInfo->realParamsIndex);
-  computeVarsIndex(modelData->integerParameterData, T_INTEGER, modelData->nParametersIntegerArray, simulationInfo->integerParamsIndex);
-  computeVarsIndex(modelData->booleanParameterData, T_BOOLEAN, modelData->nParametersBooleanArray, simulationInfo->booleanParamsIndex);
-  computeVarsIndex(modelData->stringParameterData, T_STRING, modelData->nParametersStringArray, simulationInfo->stringParamsIndex);
+  computeVarsIndex(modelData->realParameterData, VAR_TYPE_REAL, modelData->nParametersRealArray, simulationInfo->realParamsIndex);
+  computeVarsIndex(modelData->integerParameterData, VAR_TYPE_INTEGER, modelData->nParametersIntegerArray, simulationInfo->integerParamsIndex);
+  computeVarsIndex(modelData->booleanParameterData, VAR_TYPE_BOOLEAN, modelData->nParametersBooleanArray, simulationInfo->booleanParamsIndex);
+  computeVarsIndex(modelData->stringParameterData, VAR_TYPE_STRING, modelData->nParametersStringArray, simulationInfo->stringParamsIndex);
 
   // TODO: Sensitivity parameter array + index
 
@@ -665,8 +671,8 @@ void computeVarIndices(SIMULATION_INFO *simulationInfo,
 void computeVarsReverseIndex(void *variableData,
                              enum var_type type,
                              size_t num_variables,
-                             array_index_t* reverseIndex) {
-
+                             array_index_t* reverseIndex)
+{
   size_t scalar_length;
   size_t i = 0;
 
@@ -674,16 +680,16 @@ void computeVarsReverseIndex(void *variableData,
   {
     switch (type)
     {
-    case T_REAL:
+    case VAR_TYPE_REAL:
       scalar_length = ((STATIC_REAL_DATA *)variableData)[var_count].dimension.scalar_length;
       break;
-    case T_INTEGER:
+    case VAR_TYPE_INTEGER:
       scalar_length = ((STATIC_INTEGER_DATA *)variableData)[var_count].dimension.scalar_length;
       break;
-    case T_BOOLEAN:
+    case VAR_TYPE_BOOLEAN:
       scalar_length = ((STATIC_BOOLEAN_DATA *)variableData)[var_count].dimension.scalar_length;
       break;
-    case T_STRING:
+    case VAR_TYPE_STRING:
       scalar_length = ((STATIC_STRING_DATA *)variableData)[var_count].dimension.scalar_length;
       break;
     default:
@@ -705,31 +711,62 @@ void computeVarsReverseIndex(void *variableData,
  * @param modelData       Model data with number of variables.
  */
 void computeVarReverseIndices(SIMULATION_INFO *simulationInfo,
-                              MODEL_DATA *modelData) {
-
+                              MODEL_DATA *modelData)
+{
   // Variables
-  computeVarsReverseIndex(modelData->realVarsData, T_REAL, modelData->nVariablesRealArray, simulationInfo->realVarsReverseIndex);
+  computeVarsReverseIndex(modelData->realVarsData, VAR_TYPE_REAL, modelData->nVariablesRealArray, simulationInfo->realVarsReverseIndex);
 }
 
 /**
  * @brief Get nominal attribute by scalar (flattened) index
  *
- * Look up array index and dimension from reverse index map.
+ * Look up array index and dimension from reverse index map based on variable
+ * kind.
+ * Performs simple out of bounds check.
  *
  * @param simulationInfo  Simulation info with revers map.
  * @param modelData       Model data containing nominal.
+ * @param kind            Kind of variable to get nominal for.
+ *                        If it's not known if it is a state or algebraic variable use `VAR_KIND_VARIABLE`.
  * @param scalar_idx      Scalar index.
  * @return modelica_real  Nominal value
  */
 modelica_real getNominalFromScalarIdx(const SIMULATION_INFO *simulationInfo,
                                       const MODEL_DATA *modelData,
-                                      size_t scalar_idx) {
+                                      enum var_kind kind,
+                                      size_t scalar_idx)
+{
+  array_index_t* revIndex;
 
-  if (scalar_idx >= modelData->nVariablesReal) {
-    throwStreamPrint(NULL, "getNominalFromScalarIdx: scalar_idx %zu out of bounds [0, %zu)",
-                     scalar_idx, modelData->nVariablesReal);
+  switch(kind)
+  {
+    case VAR_KIND_STATE:
+      if (scalar_idx >= modelData->nStates) {
+        throwStreamPrint(NULL, "getNominalFromScalarIdx: scalar_idx %zu out of bounds [0, %zu)",
+                          scalar_idx, modelData->nStates);
+      }
+      revIndex = &simulationInfo->realVarsReverseIndex[scalar_idx];
+      return real_get(modelData->realVarsData[revIndex->array_idx].attribute.nominal, revIndex->dim_idx);
+
+    case VAR_KIND_VARIABLE:
+      if (scalar_idx >= modelData->nVariablesReal) {
+        throwStreamPrint(NULL, "getNominalFromScalarIdx: scalar_idx %zu out of bounds [0, %zu)",
+                          scalar_idx, modelData->nVariablesReal);
+      }
+      revIndex = &simulationInfo->realVarsReverseIndex[scalar_idx];
+      return real_get(modelData->realVarsData[revIndex->array_idx].attribute.nominal, revIndex->dim_idx);
+
+    case VAR_KIND_PARAMETER:
+      if (scalar_idx >= modelData->nParametersReal) {
+        throwStreamPrint(NULL, "getNominalFromScalarIdx: scalar_idx %zu out of bounds [0, %zu)",
+                          scalar_idx, modelData->nParametersReal);
+      }
+      revIndex = &simulationInfo->realParamsReverseIndex[scalar_idx];
+      return real_get(modelData->realParameterData[revIndex->array_idx].attribute.nominal, revIndex->dim_idx);
+
+    default:
+      throwStreamPrint(NULL,
+        "getNominalFromScalarIdx not implemented for variables of kind %s.",
+        var_kind_names[kind]);
   }
-
-  array_index_t* revIndex = &simulationInfo->realVarsReverseIndex[scalar_idx];
-  return real_get(modelData->realVarsData[revIndex->array_idx].attribute.nominal, revIndex->dim_idx);
 }

@@ -37,6 +37,37 @@
 extern "C" {
 #endif
 
+/**
+ * @brief Variable data type.
+ */
+enum var_type {
+  VAR_TYPE_UNKNOWN = 0, /* Unknown variable type. */
+
+  VAR_TYPE_REAL,        /* Real type */
+  VAR_TYPE_INTEGER,     /* Integer type */
+  VAR_TYPE_BOOLEAN,     /* Boolean type */
+  VAR_TYPE_STRING,      /* String type */
+
+  VAR_TYPE_MAX          /* Number of variable types. */
+};
+
+extern const char *var_type_names[VAR_TYPE_MAX + 1];
+
+/**
+ * @brief Variable kind matching
+ */
+enum var_kind {
+  VAR_KIND_UNKNOWN = 0, /* Unknown variable kind */
+
+  VAR_KIND_STATE,       /* State*/
+  VAR_KIND_VARIABLE,    /* Variable */
+  VAR_KIND_PARAMETER,   /* Parameter*/
+
+  VAR_KIND_MAX          /* Number of variable kinds */
+};
+
+extern const char *var_kind_names[VAR_KIND_MAX + 1];
+
 extern void printErrorEqSyst(EQUATION_SYSTEM_ERROR err, EQUATION_INFO eq, double time);
 
 extern void freeVarInfo(VAR_INFO* info);
@@ -46,4 +77,3 @@ extern void freeVarInfo(VAR_INFO* info);
 #endif
 
 #endif
-
