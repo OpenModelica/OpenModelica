@@ -150,7 +150,7 @@ ifeq ($(OMC_FMI_RUNTIME),)
                       embedded_server$(OBJ_EXT) \
                       events$(OBJ_EXT) \
                       real_time_sync$(OBJ_EXT) \
-                      solver_main$(OBJ_EXT) \
+                      solver_main$(OBJ_EXT)
 else
   SOLVER_OBJS_MINIMAL=$(SOLVER_OBJS_FMU) \
                       solver_main$(OBJ_EXT) \
