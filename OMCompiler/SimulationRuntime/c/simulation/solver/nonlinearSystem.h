@@ -37,7 +37,6 @@
 
 #include "../../simulation_data.h"
 #include "../../util/omc_error.h"
-#include "../../util/simulation_options.h"
 
 #ifdef __cplusplus
 extern "C" {

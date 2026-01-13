@@ -37,6 +37,7 @@
 #include "model_help.h"
 #include "../../util/omc_error.h"
 #include "../../util/parallel_helper.h"
+#include "../../util/simulation_options.h"
 #include "../jacobian_util.h"
 #include "../../util/rtclock.h"
 #include "nonlinearSystem.h"

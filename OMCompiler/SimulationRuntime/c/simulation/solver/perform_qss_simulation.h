@@ -31,7 +31,7 @@
 #ifndef OMC_PERFORM_QSS_SIMULATION_H_
 #define OMC_PERFORM_QSS_SIMULATION_H_
 
-#include "simulation_data.h"
+#include "../../simulation_data.h"
 #include "solver_main.h"
 
 #ifdef __cplusplus

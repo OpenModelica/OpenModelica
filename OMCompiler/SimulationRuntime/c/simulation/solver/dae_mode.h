@@ -31,7 +31,7 @@
 #ifndef DAE_MODE_H
 #define DAE_MODE_H
 
-#include "simulation_data.h"
+#include "../../simulation_data.h"
 
 /* EVAL_DYNAMIC = 1000 */
 extern const int EVAL_DYNAMIC;

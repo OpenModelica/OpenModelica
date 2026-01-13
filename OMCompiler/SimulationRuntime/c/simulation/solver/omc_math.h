@@ -32,7 +32,7 @@
 #define OMCMATH_H_
 
 #include "../../util/omc_error.h"
-#include "simulation_data.h"
+#include "../../simulation_data.h"
 
 typedef double _omc_scalar;
 

@@ -32,7 +32,6 @@
 
 #include "solver_main.h"
 #include "events.h"
-#include "dassl.h"
 #include "sym_solver_ssc.h"
 #include "model_help.h"
 #include "../../util/rtclock.h"
@@ -43,7 +42,6 @@
 #include "linearSystem.h"
 #include "nonlinearSystem.h"
 #include "mixedSystem.h"
-#include "../../meta/meta_modelica.h"
 #include "dae_mode.h"
 
 #include "../../util/omc_error.h"
@@ -53,7 +51,6 @@
 #include <math.h>
 #include <string.h>
 #include <errno.h>
-#include <float.h>
 
 #include "synchronous.h"
 #if !defined(OMC_MINIMAL_RUNTIME)

@@ -35,15 +35,14 @@
 #include "external_input.h"
 #include "model_help.h"
 
-#include "simulation/simulation_runtime.h"
-#include "simulation/results/simulation_result.h"
-#include "openmodelica_func.h"
+#include "../simulation_runtime.h"
+#include "../results/simulation_result.h"
+#include "../../openmodelica_func.h"
 #include "linearSystem.h"
 #include "nonlinearSystem.h"
 #include "mixedSystem.h"
 
-#include "util/omc_error.h"
-#include "simulation/options.h"
+#include "../../util/omc_error.h"
 
 
 /*! enum error_msg
