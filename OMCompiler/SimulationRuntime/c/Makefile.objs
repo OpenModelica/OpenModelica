@@ -139,6 +139,8 @@ SOLVER_OBJS_FMU=$(SOLVER_OBJS_LINEAR_SYSTEMS) \
                 fmi_events$(OBJ_EXT) \
                 model_help$(OBJ_EXT) \
                 omc_math$(OBJ_EXT) \
+                perform_simulation$(OBJ_EXT) \
+                perform_qss_simulation$(OBJ_EXT) \
                 spatialDistribution$(OBJ_EXT) \
                 stateset$(OBJ_EXT) \
                 synchronous$(OBJ_EXT)
