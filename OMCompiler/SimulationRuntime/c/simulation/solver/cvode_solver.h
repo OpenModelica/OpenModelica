@@ -34,7 +34,7 @@
 #ifndef OMC_FMI_RUNTIME
   #include "../../../omc_config.h"
 #else
-  #include "../../fmi/export/openmodelica/fmu2_model_interface.h"
+  #include "fmi-export/fmu2_model_interface.h"
 #endif
 #include "../../simulation_data.h"
 #include "../../util/simulation_options.h"
