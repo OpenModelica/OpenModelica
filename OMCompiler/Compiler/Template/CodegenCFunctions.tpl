@@ -7928,7 +7928,7 @@ template initializeStaticLSVars(list<SimVar> vars, Integer index)
         linearSystemData->min[i]     = -DBL_MAX;
         linearSystemData->max[i]     = DBL_MAX;
       } else {
-        linearSystemData->nominal[i] = getNominalFromScalarIdx(data->simulationInfo, data->modelData, indices[i]);
+        linearSystemData->nominal[i] = getNominalFromScalarIdx(data->simulationInfo, data->modelData, VAR_KIND_VARIABLE, indices[i]);
         linearSystemData->min[i]     = data->modelData->realVarsData[indices[i]].attribute.min;
         linearSystemData->max[i]     = data->modelData->realVarsData[indices[i]].attribute.max;
       }

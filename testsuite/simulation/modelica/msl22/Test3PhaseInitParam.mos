@@ -6,9 +6,9 @@
 //  Simulate models and read in data.
 //
 
-loadFile("InitTest3Phase.mo");
+loadFile("InitTest3Phase.mo"); getErrorString();
 
-simulate(Test3Phase.Test3PhaseInitParam,stopTime=10, tolerance=1e-5, numberOfIntervals=1000, simflags="-emit_protected");
+simulate(Test3Phase.Test3PhaseInitParam,stopTime=10, tolerance=1e-5, numberOfIntervals=1000, simflags="-emit_protected"); getErrorString();
 
 "i_abc[:] at 0.0";
 val(i_abc[1],0.0);
@@ -57,6 +57,7 @@ val(power,10);
 
 // Result:
 // true
+// ""
 // record SimulationResult
 //     resultFile = "Test3Phase.Test3PhaseInitParam_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 10.0, numberOfIntervals = 1000, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'Test3Phase.Test3PhaseInitParam', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-emit_protected'",
@@ -64,6 +65,7 @@ val(power,10);
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
+// ""
 // "i_abc[:] at 0.0"
 // 0.2989206397856279
 // -0.2237364320240597

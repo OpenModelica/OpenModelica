@@ -32,7 +32,7 @@
 #define OMC_ARRAY_INDEX_H
 
 #include "../simulation_data.h"
-#include "util/varinfo.h"
+#include "../util/varinfo.h"
 
 #ifdef __cplusplus
 extern "C"
