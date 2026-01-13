@@ -38,9 +38,24 @@
 #include "../simulation_runtime.h"
 #include "../results/simulation_result.h"
 #include "../../openmodelica_func.h"
-#include "linearSystem.h"
-#include "nonlinearSystem.h"
+
+#if defined(OMC_NUM_MIXED_SYSTEMS) && OMC_NUM_MIXED_SYSTEMS==0
+#define check_mixed_solutions(X,Y) 0
+#else
 #include "mixedSystem.h"
+#endif
+
+#if defined(OMC_NUM_LINEAR_SYSTEMS) && OMC_NUM_LINEAR_SYSTEMS==0
+#define check_linear_solutions(X,Y) 0
+#else
+#include "linearSystem.h"
+#endif
+
+#if defined(OMC_NUM_NONLINEAR_SYSTEMS) && OMC_NUM_NONLINEAR_SYSTEMS==0
+#define check_nonlinear_solutions(X,Y) 0
+#else
+#include "nonlinearSystem.h"
+#endif
 
 #include "../../util/omc_error.h"
 

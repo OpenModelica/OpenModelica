@@ -36,6 +36,8 @@
 extern "C" {
 #endif
 
+#include "../../simulation_data.h"
+
 int externalInputallocate(DATA* data);
 int externalInputFree(DATA* data);
 int externalInputUpdate(DATA* data);

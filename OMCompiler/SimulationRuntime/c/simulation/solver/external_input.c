@@ -28,12 +28,13 @@
  *
  */
 
+#include "external_input.h"
+
 #include <string.h>
 #include <setjmp.h>
 
 #include "openmodelica.h"
 #include "openmodelica_func.h"
-#include "simulation_data.h"
 
 #include "util/omc_error.h"
 #include "util/omc_file.h"
