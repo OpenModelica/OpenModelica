@@ -31,22 +31,14 @@
 #include "external_input.h"
 
 #include <string.h>
-#include <setjmp.h>
 
-#include "openmodelica.h"
-#include "openmodelica_func.h"
+#include "../../openmodelica.h"
+#include "../../openmodelica_func.h"
 
-#include "util/omc_error.h"
-#include "util/omc_file.h"
-#include "gc/omc_gc.h"
-#include "util/read_csv.h"
-#include "util/libcsv.h"
-#include "util/read_matlab4.h"
+#include "../../util/omc_error.h"
+#include "../../util/read_csv.h"
 
-#include "simulation/simulation_runtime.h"
-#include "simulation/solver/solver_main.h"
-#include "simulation/solver/model_help.h"
-#include "simulation/options.h"
+#include "../options.h"
 
 static inline void externalInputallocate2(DATA* data, const char *filename);
 
