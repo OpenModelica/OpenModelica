@@ -32,21 +32,21 @@
 #include "../simulation_data.h"
 #include "varinfo.h"
 
-const char *var_type_names[VAR_TYPE_MAX+1] = {
-    "VAR_TYPE_UNKNOWN",
+const char *var_type_names[VAR_TYPE_MAX] = {
+    [VAR_TYPE_UNKNOWN] = "unknown",
 
-    /* VAR_TYPE_REAL */     "real",
-    /* VAR_TYPE_INTEGER */  "integer",
-    /* VAR_TYPE_BOOLEAN */  "boolean",
-    /* VAR_TYPE_STRING */   "string"
+    [VAR_TYPE_REAL]    = "real",
+    [VAR_TYPE_INTEGER] = "integer",
+    [VAR_TYPE_BOOLEAN] = "boolean",
+    [VAR_TYPE_STRING]  = "string"
 };
 
-const char *var_kind_names[VAR_KIND_MAX + 1] = {
-    "VAR_KIND_UNKNOWN",
+const char *var_kind_names[VAR_KIND_MAX] = {
+    [VAR_KIND_UNKNOWN]   = "unknown",
 
-    /* VAR_KIND_STATE */      "state",
-    /* VAR_KIND_VARIABLE */   "variable",
-    /* VAR_KIND_PARAMETER */  "parameter"
+    [VAR_KIND_STATE]     = "state",
+    [VAR_KIND_VARIABLE]  = "variable",
+    [VAR_KIND_PARAMETER] = "parameter"
 };
 
 void printErrorEqSyst(EQUATION_SYSTEM_ERROR err, EQUATION_INFO eq, double time)

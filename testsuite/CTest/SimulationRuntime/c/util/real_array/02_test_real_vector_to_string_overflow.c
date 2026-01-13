@@ -29,7 +29,7 @@ int main(void)
   const char *expected_print = "{1, 2, 3, 4, 5, ...}";
   // Test
   size_t buffer_size = 22;
-  char buffer[buffer_size];
+  char *buffer = (char*) malloc(buffer_size * sizeof(char));
   real_vector_to_string(&test_array, FALSE, buffer, buffer_size);
 
   // Validate
@@ -38,6 +38,9 @@ int main(void)
     fprintf(stderr, "Test failed: Expected '%s', got '%s'\n", expected_print, buffer);
     test_success = 0;
   }
+
+  // Free temp memory
+  free(buffer);
 
   if (test_success)
   {

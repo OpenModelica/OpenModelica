@@ -735,6 +735,8 @@ int check_linear_solution(DATA *data, int printFailingSystems, int sysNumber)
   long j, i = sysNumber;
 
   const size_t buff_size = 2048;
+  char *start_buffer;
+  char *nominal_buffer;
 
   if(linsys[i].solved == 0)
   {
@@ -749,7 +751,10 @@ int check_linear_solution(DATA *data, int printFailingSystems, int sysNumber)
     warningStreamPrintWithEquationIndexes(OMC_LOG_STDOUT, omc_dummyFileInfo, 1, indexes, "Solving linear system %d fails at time %g. For more information use -lv LOG_LS.", index, data->localData[0]->timeValue);
 #endif
 
-    for(j=0; j<modelInfoGetEquation(&data->modelData->modelDataXml, (linsys[i]).equationIndex).numVar; ++j) {
+    start_buffer = (char*) malloc(buff_size * sizeof(char));
+    nominal_buffer = (char*) malloc(buff_size * sizeof(char));
+    for(j=0; j<modelInfoGetEquation(&data->modelData->modelDataXml, (linsys[i]).equationIndex).numVar; ++j)
+    {
       int done=0;
       long k;
       const MODEL_DATA *mData = data->modelData;
@@ -775,6 +780,8 @@ int check_linear_solution(DATA *data, int printFailingSystems, int sysNumber)
       }
     }
     messageCloseWarning(OMC_LOG_STDOUT);
+    free(start_buffer);
+    free(nominal_buffer);
 
     return 1;
   }

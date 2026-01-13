@@ -22,7 +22,7 @@
 int validateDimensionA(const DIMENSION_INFO *dimension) {
   if (dimension->numberOfDimensions != 2)
   {
-    fprintf(stderr, "Test failed: Real variable dimension mismatch. Expected '2', got '%lu'\n", dimension->numberOfDimensions);
+    fprintf(stderr, "Test failed: Real variable dimension mismatch. Expected '2', got '%zu'\n", dimension->numberOfDimensions);
     return 0;
   }
 
@@ -62,7 +62,7 @@ int validateDimensionA(const DIMENSION_INFO *dimension) {
 
   if (dimension->scalar_length != 6)
   {
-    fprintf(stderr, "Test failed: Array length is wrong. Expected '6', got '%lu'\n", dimension->scalar_length);
+    fprintf(stderr, "Test failed: Array length is wrong. Expected '6', got '%zu'\n", dimension->scalar_length);
     return 0;
   }
 

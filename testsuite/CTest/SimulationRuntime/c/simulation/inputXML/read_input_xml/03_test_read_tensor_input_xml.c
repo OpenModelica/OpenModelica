@@ -91,7 +91,7 @@ int main(int argc, char *argv[])
   }
   if (test_success && modelData.integerParameterData[0].dimension.numberOfDimensions != 3)
   {
-    fprintf(stderr, "Test failed: Int parameter dimension mismatch. Expected '3', got '%lu'\n", modelData.integerParameterData[0].dimension.numberOfDimensions);
+    fprintf(stderr, "Test failed: Int parameter dimension mismatch. Expected '3', got '%zu'\n", modelData.integerParameterData[0].dimension.numberOfDimensions);
     test_success = 0;
   }
 
@@ -148,7 +148,7 @@ int main(int argc, char *argv[])
 
   if (test_success && modelData.integerParameterData[0].dimension.scalar_length != 24)
   {
-    fprintf(stderr, "Test failed: Array length is wrong. Expected '24', got '%lu'\n", modelData.integerParameterData[0].dimension.scalar_length);
+    fprintf(stderr, "Test failed: Array length is wrong. Expected '24', got '%zu'\n", modelData.integerParameterData[0].dimension.scalar_length);
     test_success = 0;
   }
 

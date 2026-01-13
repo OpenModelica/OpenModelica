@@ -91,8 +91,8 @@ void dumpInitialSolution(DATA *simData)
   const SIMULATION_INFO *sInfo = simData->simulationInfo;
 
   const size_t buff_size = 2048;
-  char start_buffer[buff_size];
-  char nominal_buffer[buff_size];
+  char *start_buffer;
+  char *nominal_buffer;
 
   if (OMC_ACTIVE_STREAM(OMC_LOG_INIT_V))
     printParameters(simData, OMC_LOG_INIT_V);
@@ -100,6 +100,9 @@ void dumpInitialSolution(DATA *simData)
   if (!OMC_ACTIVE_STREAM(OMC_LOG_SOTI)) {
     return;
   }
+
+  start_buffer = (char*) malloc(buff_size * sizeof(char));
+  nominal_buffer = (char*) malloc(buff_size * sizeof(char));
 
   infoStreamPrint(OMC_LOG_SOTI, 1, "### SOLUTION OF THE INITIALIZATION ###");
 
@@ -184,6 +187,9 @@ void dumpInitialSolution(DATA *simData)
                                    MMC_STRINGDATA(sInfo->stringVarsPre[i]));
     messageClose(OMC_LOG_SOTI);
   }
+
+  free(start_buffer);
+  free(nominal_buffer);
 
   messageClose(OMC_LOG_SOTI);
 }

@@ -587,7 +587,7 @@ void computeVarsIndex(void *variableData,
       id = ((STATIC_STRING_DATA *)variableData)[i].info.id;
       break;
     default:
-      throwStreamPrint(NULL, "computeVarsIndex: Illegal variable type case.");
+      throwStreamPrint(NULL, "computeVarsIndex: Illegal variable type %d.", (int) type);
     }
 
     assertStreamPrint(NULL, id == 0 || id > previous_id,      // TODO: FMUs don't set id
@@ -724,7 +724,7 @@ void computeVarReverseIndices(SIMULATION_INFO *simulationInfo,
  * kind.
  * Performs simple out of bounds check.
  *
- * @param simulationInfo  Simulation info with revers map.
+ * @param simulationInfo  Simulation info with reverse map.
  * @param modelData       Model data containing nominal.
  * @param kind            Kind of variable to get nominal for.
  *                        If it's not known if it is a state or algebraic variable use `VAR_KIND_VARIABLE`.

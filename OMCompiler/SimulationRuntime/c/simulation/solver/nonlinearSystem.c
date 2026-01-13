@@ -1516,6 +1516,8 @@ int check_nonlinear_solution(DATA *data, int printFailingSystems, int sysNumber)
   int i = sysNumber;
 
   const size_t buff_size = 2048;
+  char *start_buffer;
+  char *nominal_buffer;
 
   if(nonlinsys[i].solved == NLS_FAILED)
   {
@@ -1526,7 +1528,11 @@ int check_nonlinear_solution(DATA *data, int printFailingSystems, int sysNumber)
     {
       warningStreamPrint(OMC_LOG_INIT, 1, "proper start-values for some of the following iteration variables might help");
     }
-    for(j=0; j<modelInfoGetEquation(&data->modelData->modelDataXml, (nonlinsys[i]).equationIndex).numVar; ++j) {
+
+    start_buffer = (char*) malloc(buff_size * sizeof(char));
+    nominal_buffer = (char*) malloc(buff_size * sizeof(char));
+    for(j=0; j<modelInfoGetEquation(&data->modelData->modelDataXml, (nonlinsys[i]).equationIndex).numVar; ++j)
+    {
       int done=0;
       long k;
       const MODEL_DATA *mData = data->modelData;
@@ -1535,8 +1541,6 @@ int check_nonlinear_solution(DATA *data, int printFailingSystems, int sysNumber)
         if (!strcmp(mData->realVarsData[k].info.name, modelInfoGetEquation(&data->modelData->modelDataXml, (nonlinsys[i]).equationIndex).vars[j]))
         {
         done = 1;
-        char start_buffer[buff_size];
-        char nominal_buffer[buff_size];
         real_vector_to_string(&mData->realVarsData[k].attribute.start, mData->realVarsData[k].dimension.numberOfDimensions == 0, start_buffer, buff_size);
         real_vector_to_string(&mData->realVarsData[k].attribute.nominal, mData->realVarsData[k].dimension.numberOfDimensions == 0, nominal_buffer, buff_size);
         warningStreamPrint(OMC_LOG_INIT, 0, "[%ld] Real %s(start=%s, nominal=%s)",
@@ -1554,6 +1558,9 @@ int check_nonlinear_solution(DATA *data, int printFailingSystems, int sysNumber)
                            (nonlinsys[i]).equationIndex).vars[j]);
       }
     }
+    free(start_buffer);
+    free(nominal_buffer);
+
     if(data->simulationInfo->initial)
     {
       messageCloseWarning(OMC_LOG_INIT);

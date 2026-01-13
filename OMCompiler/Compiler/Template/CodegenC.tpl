@@ -917,9 +917,9 @@ template simulationFile_jac_header(SimCode simCode)
     case simCode as SIMCODE(__) then
     <<
     /* Jacobians */
-    static const _index_t one_dim[1] = { 1 };
-    static const modelica_real nominal_data[1] = { 1.0 };
-    static const modelica_real start_data[1]   = { 0.0 };
+    static _index_t one_dim[1] = { 1 };
+    static modelica_real nominal_data[1] = { 1.0 };
+    static modelica_real start_data[1]   = { 0.0 };
     static const REAL_ATTRIBUTE dummyREAL_ATTRIBUTE = {
       .unit = NULL,
       .displayUnit = NULL,
@@ -929,13 +929,13 @@ template simulationFile_jac_header(SimCode simCode)
       .useNominal = FALSE,
       .nominal = {
         .ndims     = 1,
-        .dim_size  = ( _index_t* )one_dim,
+        .dim_size  = one_dim,
         .data      = ( void* )nominal_data,
         .flexible  = FALSE
       },
       .start = {
         .ndims     = 1,
-        .dim_size  = ( _index_t* )one_dim,
+        .dim_size  = one_dim,
         .data      = ( void* )start_data,
         .flexible  = FALSE
       }
@@ -2896,6 +2896,8 @@ template functionNonLinearResidualsMultiFile2(list<list<SimEqSystem>> nonlinearS
       /* Non Linear Systems <%fullPathPrefix + fileName%> */
       <%simulationFileHeader(fileNamePrefix)%>
       #include "<%fileNamePrefix%>_12jac.h"
+      #include "simulation/arrayIndex.h"
+
       #if defined(__cplusplus)
       extern "C" {
       #endif

@@ -536,9 +536,14 @@ void read_array_var_real(real_array* array, const char* str, modelica_real defau
  *
  * @param var_map   Hash map for variable with attributes as keys.
  * @param attribute Attributes to write values into.
+ * @param isScalar  If true real variable represents a scalar, otherwise an array.
  */
-static void read_var_attribute_real(omc_ModelVariable *var_map, REAL_ATTRIBUTE *attribute, modelica_boolean isArrayVar)
+static void read_var_attribute_real(omc_ModelVariable *var_map, REAL_ATTRIBUTE *attribute, modelica_boolean isScalar)
 {
+  const size_t buff_size = 2048;
+  char *start_buffer;
+  char *nominal_buffer;
+
   read_array_var_real(&attribute->start, findHashStringStringEmpty(var_map, "start"), 0.0);
   attribute->fixed = read_value_bool(findHashStringString(var_map, "fixed"));
   attribute->useNominal = read_value_bool(findHashStringString(var_map, "useNominal"));
@@ -550,11 +555,10 @@ static void read_var_attribute_real(omc_ModelVariable *var_map, REAL_ATTRIBUTE *
 
   if (omc_useStream[OMC_LOG_DEBUG])
   {
-    const size_t buff_size = 2048;
-    char start_buffer[buff_size];
-    char nominal_buffer[buff_size];
-    real_vector_to_string(&attribute->start, isArrayVar, start_buffer, buff_size);
-    real_vector_to_string(&attribute->nominal, isArrayVar, nominal_buffer, buff_size);
+    start_buffer = (char*) malloc(buff_size * sizeof(char));
+    nominal_buffer = (char*) malloc(buff_size * sizeof(char));
+    real_vector_to_string(&attribute->start, isScalar, start_buffer, buff_size);
+    real_vector_to_string(&attribute->nominal, isScalar, nominal_buffer, buff_size);
 
     infoStreamPrint(OMC_LOG_DEBUG, 0,
                     "Real %s(start=%s, fixed=%s, useNominal=%s, nominal=%s, min=%g, max=%g)",
@@ -565,6 +569,9 @@ static void read_var_attribute_real(omc_ModelVariable *var_map, REAL_ATTRIBUTE *
                     nominal_buffer,
                     attribute->min,
                     attribute->max);
+
+    free(start_buffer);
+    free(nominal_buffer);
   }
 }
 

@@ -64,7 +64,7 @@ extern "C"
                                     size_t *array_index);
 
   size_t *linearToMultiDimArrayIndex(DIMENSION_INFO *dimension,
-                                    size_t linear_address);
+                                     size_t linear_address);
 
   void calculateAllScalarLength(MODEL_DATA *modelData);
 

@@ -244,7 +244,7 @@ void printParameters(DATA *data, int stream)
   MODEL_DATA *mData = data->modelData;
 
   const size_t buff_size = 2048;
-  char start_buffer[buff_size];
+  char *start_buffer;
 
   if (!OMC_ACTIVE_STREAM(stream)) {
     return;
@@ -254,6 +254,7 @@ void printParameters(DATA *data, int stream)
 
   if (0 < mData->nParametersReal)
   {
+    start_buffer = (char*) malloc(buff_size * sizeof(char));
     infoStreamPrint(stream, 1, "real parameters");
     for(i=0; i<mData->nParametersReal; ++i) {
       real_vector_to_string(&mData->realParameterData[i].attribute.start, mData->realParameterData[i].dimension.numberOfDimensions == 0, start_buffer, buff_size);
@@ -264,6 +265,7 @@ void printParameters(DATA *data, int stream)
                                  data->simulationInfo->realParameter[i]);
     }
     messageClose(stream);
+    free(start_buffer);
   }
 
   if (0 < mData->nParametersInteger)
