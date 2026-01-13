@@ -252,7 +252,8 @@ RESULTS_FILES = MatVer4.cpp \
                 simulation_result_ia.cpp \
                 simulation_result_mat4.cpp \
                 simulation_result_plt.cpp \
-                simulation_result_wall.cpp
+                simulation_result_wall.cpp \
+                simulation_result.cpp
 
 SIM_OBJS = ../dataReconciliation/dataReconciliation$(OBJ_EXT) \
            ../linearization/linearize$(OBJ_EXT) \
