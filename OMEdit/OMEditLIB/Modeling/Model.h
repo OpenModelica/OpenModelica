@@ -476,6 +476,11 @@ private:
   };
 
   class Element;
+  /**
+   * Assigns a new binding expression to the element.
+   *
+   * @param expression The binding expression to set; replaces the element's existing binding.
+   */
   class Modifier
   {
   public:
@@ -714,7 +719,7 @@ private:
     FlatModelica::Expression &getValue() {return mValue;}
     const FlatModelica::Expression &getBinding() const {return mBinding;}
     FlatModelica::Expression &getBinding() {return mBinding;}
-    void setBinding(const FlatModelica::Expression expression) {mBinding = expression;}
+    void setBinding(const FlatModelica::Expression expression) {mBinding = std::move(expression);}
     void resetBinding() {mBinding = mBindingForReset;}
     bool getIconDiagramMapPrimitivesVisible(bool icon) const;
     bool getIconDiagramMapHasExtent(bool icon) const;

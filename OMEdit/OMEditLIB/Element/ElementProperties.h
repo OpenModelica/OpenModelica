@@ -69,6 +69,162 @@ public slots:
 };
 
 class ElementParameters;
+/**
+ * Represents a parameter UI and its metadata for a ModelInstance element.
+ */
+ 
+/**
+ * Initialize a Parameter for the given ModelInstance element and its parent ElementParameters.
+ * @param pElement Pointer to the ModelInstance::Element this Parameter represents.
+ * @param defaultValue Default fixed/value-related flag for the parameter.
+ * @param pElementParameters Parent ElementParameters that owns this Parameter.
+ */
+
+/**
+ * Return the associated ModelInstance element.
+ * @returns Pointer to the ModelInstance::Element associated with this Parameter.
+ */
+
+/**
+ * Update the visible name label to reflect the current parameter name and annotations.
+ */
+
+/**
+ * Set or replace the widget used to display and edit the parameter value.
+ * The call configures the widget's displayed value, default-value state, unit context,
+ * whether the value has been modified, and whether the unit combobox change should be treated as user action.
+ * @param value Textual representation of the value to show.
+ * @param defaultValue Whether the provided value is the default.
+ * @param fromUnit Unit string that the provided value originates from (may be empty).
+ * @param valueModified `true` if the value should be marked as modified; `false` otherwise.
+ * @param unitComboBoxChanged `true` if the unit combobox change should be treated as if initiated by the user.
+ */
+
+/**
+ * Return the QWidget used for editing or displaying the parameter value.
+ * @returns Pointer to the value widget, or nullptr if none is created.
+ */
+
+/**
+ * Determine whether the parameter's current value differs from its stored or default value.
+ * @returns `true` if the displayed or stored value has been modified, `false` otherwise.
+ */
+
+/**
+ * Get the parameter's current value as displayed in the UI.
+ * @returns The current value string.
+ */
+
+/**
+ * Hide and disable the parameter's value widget, if present.
+ */
+
+/**
+ * Set the fixed state representation for this parameter.
+ * This updates the parameter's fixed-state string and records whether that state is considered the default.
+ * @param fixed String representing the fixed state (e.g., "true", "false", "inherit").
+ * @param defaultValue `true` if `fixed` represents the default state, `false` otherwise.
+ */
+
+/**
+ * Retrieve the currently stored fixed-state string for the parameter.
+ * @returns The fixed state string (e.g., "true", "false", "inherit").
+ */
+
+/**
+ * Enable or disable this Parameter's UI and related controls.
+ * @param enable `true` to enable controls, `false` to disable them.
+ */
+
+/**
+ * Refresh the parameter's UI and internal state to reflect current annotations and model data.
+ */
+
+/**
+ * Enable or disable the unit combobox based on the provided value text.
+ * @param value The current value text used to decide unit combobox availability.
+ */
+
+/**
+ * Update internal binding between the parameter UI and the given FlatModelica expression.
+ * @param expression Expression describing the value binding to apply.
+ */
+
+/**
+ * Check if the parameter's value differs from its original or default value, using internal helpers.
+ * @returns `true` if modified, `false` otherwise.
+ */
+
+/**
+ * Reset the unit combobox to its previous or default selection.
+ */
+
+/**
+ * Handle direct text changes in the value text box.
+ * @param text New text entered into the value text box.
+ */
+
+/**
+ * Slot invoked when the break option changes for this parameter.
+ * @param breakValue `true` if break is enabled, `false` if disabled.
+ */
+
+/**
+ * Show or open the class-editing UI for the parameter (slot).
+ */
+
+/**
+ * Show the file selector associated with this parameter (slot).
+ */
+
+/**
+ * Respond to a change in the unit combobox selection.
+ * @param index Index of the newly selected unit in the combobox.
+ */
+
+/**
+ * Respond to a change in the value combobox selection.
+ * @param index Index of the newly selected value in the combobox.
+ */
+
+/**
+ * Respond to toggling of the value checkbox.
+ * @param toggle `true` if checked, `false` if unchecked.
+ */
+
+/**
+ * Display the fixed-value menu for the parameter (slot).
+ */
+
+/**
+ * Set the parameter's fixed state to `true` from the UI (slot).
+ */
+
+/**
+ * Set the parameter's fixed state to `false` from the UI (slot).
+ */
+
+/**
+ * Set the parameter's fixed state to inherited from the UI (slot).
+ */
+
+/**
+ * Event filter override to intercept and handle specific UI events for this Parameter.
+ * @param pWatched The QObject being watched.
+ * @param pEvent The event to be filtered.
+ * @returns `true` if the event is handled and should not be propagated further, `false` otherwise.
+ */
+
+/**
+ * Construct a GroupBox with an optional title for grouping parameter UI elements.
+ * @param title Title text to display on the group box.
+ * @param parent Optional parent widget.
+ */
+
+/**
+ * Set the image annotation used for the group box header.
+ * @param groupImage Path or identifier for the image to associate with the group.
+ */
 class Parameter : public QObject
 {
   Q_OBJECT
@@ -190,9 +346,10 @@ private:
   void createValueWidget();
   void createValueComboBox();
   void enableDisableUnitComboBox(const QString &value);
-  void updateValueBinding(const FlatModelica::Expression expression);
+  void updateValueBinding(const FlatModelica::Expression& expression);
   bool isValueModifiedHelper() const;
   void resetUnitCombobox();
+  void valueTextBoxChanged(const QString &text);
 private slots:
   void setBreakValue(bool breakValue);
 public slots:
@@ -201,7 +358,6 @@ public slots:
   void unitComboBoxChanged(int index);
   void valueComboBoxChanged(int index);
   void valueCheckBoxChanged(bool toggle);
-  void valueTextBoxChanged(const QString &text);
   void showFixedMenu();
   void trueFixedClicked();
   void falseFixedClicked();

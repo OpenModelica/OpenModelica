@@ -603,6 +603,19 @@ void Parameter::createEditClassButton()
   connect(mpEditClassButton, SIGNAL(clicked()), SLOT(editClassButtonClicked()));
 }
 
+/**
+ * @brief Creates and configures the value editor widget for this parameter.
+ *
+ * Constructs the appropriate editor (combo box, text box, or checkbox) based on the parameter's value type,
+ * populates choice lists and tooltips from the element's annotations and model information, and connects
+ * the editor's change signals to the corresponding handler slots.
+ *
+ * The created editor may include:
+ * - A combo box for Boolean, Enumeration, Replaceable/Choices types with entries and tooltips sourced from
+ *   model elements, annotations, or replaceable choices resolved via the OMC proxy.
+ * - A check box for boolean checkbox parameters.
+ * - A line edit for free-form (normal) parameter values.
+ */
 void Parameter::createValueWidget()
 {
   int i;
@@ -716,7 +729,6 @@ void Parameter::createValueWidget()
     default:
       mpValueTextBox = new QLineEdit;
       mpValueTextBox->installEventFilter(this);
-      connect(mpValueTextBox, &QLineEdit::textEdited, this, &Parameter::valueTextBoxChanged);
       break;
   }
 }
@@ -766,12 +778,15 @@ void Parameter::enableDisableUnitComboBox(const QString &value)
   }
 }
 
-/*!
- * \brief Parameter::updateValueBinding
- * Updates the value binding of the parameter and call updateParameters so depending parameters gets updated.
- * \param value
+/**
+ * @brief Update the element's value binding and refresh dependent parameters.
+ *
+ * Sets the element's binding to the provided expression and updates parameters
+ * that depend on that binding.
+ *
+ * @param expression New binding expression to apply to the element.
  */
-void Parameter::updateValueBinding(const FlatModelica::Expression expression)
+void Parameter::updateValueBinding(const FlatModelica::Expression& expression)
 {
   // update the binding with the new value
   mpModelInstanceElement->setBinding(expression);
@@ -802,9 +817,11 @@ bool Parameter::isValueModifiedHelper() const
   }
 }
 
-/*!
- * \brief Parameter::resetUnitCombobox
- * Resets the unit combobox to the default unit.
+/**
+ * @brief Set the unit combobox selection to the parameter's default unit.
+ *
+ * If the default unit (mUnit) exists in the unit combo box and is not already selected,
+ * selects it and updates mPreviousUnit to the newly selected item's data.
  */
 void Parameter::resetUnitCombobox()
 {
@@ -812,6 +829,24 @@ void Parameter::resetUnitCombobox()
   if (index > -1 && index != mpUnitComboBox->currentIndex()) {
     mpUnitComboBox->setCurrentIndex(index);
     mPreviousUnit = mpUnitComboBox->itemData(mpUnitComboBox->currentIndex()).toString();
+  }
+}
+
+/**
+ * @brief Parse the given text as a FlatModelica expression and update the parameter's value binding.
+ *
+ * Attempts to parse text into a FlatModelica::Expression and, on success, applies it via updateValueBinding().
+ * If parsing fails, the parameter's binding is left unchanged.
+ *
+ * @param text The textual representation of the value to parse.
+ */
+void Parameter::valueTextBoxChanged(const QString &text)
+{
+  try {
+    updateValueBinding(FlatModelica::Expression::parse(text));
+  } catch (const std::exception &e) {
+    qDebug() << "Failed to parse value in Parameter::valueTextBoxChanged(): " << text;
+    qDebug() << e.what();
   }
 }
 
@@ -1024,16 +1059,18 @@ void Parameter::valueComboBoxChanged(int index)
       updateValueBinding(FlatModelica::Expression::parse(value));
     }
   } catch (const std::exception &e) {
-    qDebug() << "Failed to parse value: " << value;
+    qDebug() << "Failed to parse value in Parameter::valueComboBoxChanged: " << value;
     qDebug() << e.what();
   }
 }
 
-/*!
- * \brief Parameter::valueCheckBoxChanged
- * SLOT activated when mpValueCheckBox toggled(bool) SIGNAL is raised.\n
- * Marks the item modified.
- * \param toggle
+/**
+ * @brief Update the parameter value to reflect the checkbox state.
+ *
+ * Marks the parameter as modified and updates its binding to the boolean
+ * value represented by the checkbox.
+ *
+ * @param toggle `true` if the checkbox is checked, `false` otherwise.
  */
 void Parameter::valueCheckBoxChanged(bool toggle)
 {
@@ -1041,19 +1078,14 @@ void Parameter::valueCheckBoxChanged(bool toggle)
   updateValueBinding(FlatModelica::Expression(toggle));
 }
 
-/*!
- * \brief Parameter::valueTextBoxChanged
- * SLOT activated when mpValueTextkBox textEdited SIGNAL is raised.\n
- * \param text
+/**
+ * @brief Displays a context menu for selecting the "fixed" modifier state.
+ *
+ * Presents a titled pop-up menu with three selectable options: "true" (start value is used to initialize),
+ * "false" (start value is only a guess value), and "inherited" (shows the inherited interpretation).
+ * The initial checked item reflects the current state of mpFixedCheckBox. Selecting an option triggers the
+ * corresponding slot (trueFixedClicked, falseFixedClicked, or inheritedFixedClicked).
  */
-void Parameter::valueTextBoxChanged(const QString &text)
-{
-  try {
-    updateValueBinding(FlatModelica::Expression::parse(text));
-  } catch (...) {
-  }
-}
-
 void Parameter::showFixedMenu()
 {
   // create a menu
@@ -1110,17 +1142,22 @@ void Parameter::inheritedFixedClicked()
   mpFixedCheckBox->setTickState(true, mpFixedCheckBox->getInheritedValue());
 }
 
-/*!
- * \brief Parameter::eventFilter
- * Handles the FocusOut event of value textbox.
- * \param pWatched
- * \param pEvent
- * \return
+/**
+ * @brief Filters events for the parameter value editor and handles focus-out actions.
+ *
+ * When the watched object is the value text box and it receives a FocusOut event,
+ * updates unit combo box enablement and triggers parsing/validation of the text.
+ *
+ * @param pWatched The object being filtered (checked against the value text box).
+ * @param pEvent The event to filter (checked for FocusOut).
+ * @return `true` if the base `QObject::eventFilter` returns true, `false` otherwise.
  */
 bool Parameter::eventFilter(QObject *pWatched, QEvent *pEvent)
 {
   if (mpValueTextBox == pWatched && pEvent->type() == QEvent::FocusOut) {
-    enableDisableUnitComboBox(mpValueTextBox->text());
+    const QString text = mpValueTextBox->text();
+    enableDisableUnitComboBox(text);
+    valueTextBoxChanged(text);
   }
 
   return QObject::eventFilter(pWatched, pEvent);
