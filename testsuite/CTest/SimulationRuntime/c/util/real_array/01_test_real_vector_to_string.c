@@ -27,7 +27,7 @@ int main(void)
   real_vector_to_string(&test_array, TRUE, buffer, sizeof(buffer));
 
   // Validate
-  if (test_success && strcmp(buffer, expected_print))
+  if (test_success && strcmp(buffer, expected_print) != 0)
   {
     fprintf(stderr, "Test failed: Expected '%s', got '%s'\n", expected_print, buffer);
     test_success = 0;

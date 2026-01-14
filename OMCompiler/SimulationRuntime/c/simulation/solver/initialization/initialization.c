@@ -102,7 +102,9 @@ void dumpInitialSolution(DATA *simData)
   }
 
   start_buffer = (char*) malloc(buff_size * sizeof(char));
+  assertStreamPrint(NULL, start_buffer != NULL, "Out of memory.");
   nominal_buffer = (char*) malloc(buff_size * sizeof(char));
+  assertStreamPrint(NULL, nominal_buffer != NULL, "Out of memory.");
 
   infoStreamPrint(OMC_LOG_SOTI, 1, "### SOLUTION OF THE INITIALIZATION ###");
 

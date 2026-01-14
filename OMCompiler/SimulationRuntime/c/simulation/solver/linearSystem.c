@@ -752,7 +752,10 @@ int check_linear_solution(DATA *data, int printFailingSystems, int sysNumber)
 #endif
 
     start_buffer = (char*) malloc(buff_size * sizeof(char));
+    assertStreamPrint(NULL, start_buffer != NULL, "Out of memory.");
     nominal_buffer = (char*) malloc(buff_size * sizeof(char));
+    assertStreamPrint(NULL, nominal_buffer != NULL, "Out of memory.");
+
     for(j=0; j<modelInfoGetEquation(&data->modelData->modelDataXml, (linsys[i]).equationIndex).numVar; ++j)
     {
       int done=0;
@@ -763,8 +766,6 @@ int check_linear_solution(DATA *data, int printFailingSystems, int sysNumber)
         if (!strcmp(mData->realVarsData[k].info.name, modelInfoGetEquation(&data->modelData->modelDataXml, (linsys[i]).equationIndex).vars[j]))
         {
         done = 1;
-        char start_buffer[buff_size];
-        char nominal_buffer[buff_size];
         real_vector_to_string(&mData->realVarsData[k].attribute.start, mData->realVarsData[k].dimension.numberOfDimensions == 0, start_buffer, buff_size);
         real_vector_to_string(&mData->realVarsData[k].attribute.nominal, mData->realVarsData[k].dimension.numberOfDimensions == 0, nominal_buffer, buff_size);
         warningStreamPrint(OMC_LOG_LS, 0, "[%ld] Real %s(start=%s, nominal=%s)",

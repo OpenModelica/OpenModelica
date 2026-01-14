@@ -255,6 +255,8 @@ void printParameters(DATA *data, int stream)
   if (0 < mData->nParametersReal)
   {
     start_buffer = (char*) malloc(buff_size * sizeof(char));
+    assertStreamPrint(NULL, start_buffer != NULL, "Out of memory.");
+
     infoStreamPrint(stream, 1, "real parameters");
     for(i=0; i<mData->nParametersReal; ++i) {
       real_vector_to_string(&mData->realParameterData[i].attribute.start, mData->realParameterData[i].dimension.numberOfDimensions == 0, start_buffer, buff_size);

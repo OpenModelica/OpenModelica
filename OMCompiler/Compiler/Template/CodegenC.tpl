@@ -3524,7 +3524,12 @@ template functionUpdateBoundVariableAttributesFunctionsSimpleAssign(SimEqSystem 
       let updateEqs = match attribute
         case "nominal" then
           <<
-          put_real_element(<%expPart%>, 0, &<%crefAttributes(cref)%>.nominal);
+          if (<%crefVarDimension(cref)%>.numberOfDimensions == 0) {
+            put_real_element(<%expPart%>, 0, &<%crefAttributes(cref)%>.nominal);
+          } else {
+            throwStreamPrint(NULL, "Not yet implemented for array nominals.");
+          }
+
           if (omc_useStream[OMC_LOG_INIT_V]) {
             char nominal_buffer[2048];
             real_vector_to_string(&<%crefAttributes(cref)%>.nominal, <%crefVarDimension(cref)%>.numberOfDimensions == 0, nominal_buffer, 2048);

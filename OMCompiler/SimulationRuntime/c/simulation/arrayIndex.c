@@ -115,6 +115,8 @@ void freeArrayIndexMaps(SIMULATION_INFO *simulationInfo)
  *
  * Free with `freeArrayReverseIndexMaps`.
  *
+ * TODO: Allocate memory for missing maps or remove.
+ *
  * @param modelData         Model data containing number of scalarized variables.
  * @param simulationInfo    Simulation information with reverse index arrays to
  *                          allocate memory for.
@@ -127,32 +129,42 @@ void allocateArrayReverseIndexMaps(MODEL_DATA *modelData,
   // Variables
   simulationInfo->realVarsReverseIndex = (array_index_t *)calloc(modelData->nVariablesReal, sizeof(array_index_t));
   assertStreamPrint(threadData, simulationInfo->realVarsReverseIndex != NULL, "Out of memory");
-  simulationInfo->integerVarsReverseIndex = (array_index_t *)calloc(modelData->nVariablesInteger, sizeof(array_index_t));
-  assertStreamPrint(threadData, simulationInfo->integerVarsReverseIndex != NULL, "Out of memory");
-  simulationInfo->booleanVarsReverseIndex = (array_index_t *)calloc(modelData->nVariablesBoolean, sizeof(array_index_t));
-  assertStreamPrint(threadData, simulationInfo->booleanVarsReverseIndex != NULL, "Out of memory");
-  simulationInfo->stringVarsReverseIndex = (array_index_t *)calloc(modelData->nVariablesString, sizeof(array_index_t));
-  assertStreamPrint(threadData, simulationInfo->stringVarsReverseIndex != NULL, "Out of memory");
+  simulationInfo->integerVarsReverseIndex = NULL;
+  // simulationInfo->integerVarsReverseIndex = (array_index_t *)calloc(modelData->nVariablesInteger, sizeof(array_index_t));
+  // assertStreamPrint(threadData, simulationInfo->integerVarsReverseIndex != NULL, "Out of memory");
+  simulationInfo->booleanVarsReverseIndex = NULL;
+  // simulationInfo->booleanVarsReverseIndex = (array_index_t *)calloc(modelData->nVariablesBoolean, sizeof(array_index_t));
+  // assertStreamPrint(threadData, simulationInfo->booleanVarsReverseIndex != NULL, "Out of memory");
+  simulationInfo->stringVarsReverseIndex = NULL;
+  // simulationInfo->stringVarsReverseIndex = (array_index_t *)calloc(modelData->nVariablesString, sizeof(array_index_t));
+  // assertStreamPrint(threadData, simulationInfo->stringVarsReverseIndex != NULL, "Out of memory");
 
   // Parameters
   simulationInfo->realParamsReverseIndex = (array_index_t *)calloc(modelData->nParametersReal, sizeof(array_index_t));
   assertStreamPrint(threadData, simulationInfo->realParamsReverseIndex != NULL, "Out of memory");
-  simulationInfo->integerParamsReverseIndex = (array_index_t *)calloc(modelData->nParametersInteger, sizeof(array_index_t));
-  assertStreamPrint(threadData, simulationInfo->integerParamsReverseIndex != NULL, "Out of memory");
-  simulationInfo->booleanParamsReverseIndex = (array_index_t *)calloc(modelData->nParametersBoolean, sizeof(array_index_t));
-  assertStreamPrint(threadData, simulationInfo->booleanParamsReverseIndex != NULL, "Out of memory");
-  simulationInfo->stringParamsReverseIndex = (array_index_t *)calloc(modelData->nParametersString, sizeof(array_index_t));
-  assertStreamPrint(threadData, simulationInfo->stringParamsReverseIndex != NULL, "Out of memory");
+  simulationInfo->integerParamsReverseIndex = NULL;
+  // simulationInfo->integerParamsReverseIndex = (array_index_t *)calloc(modelData->nParametersInteger, sizeof(array_index_t));
+  // assertStreamPrint(threadData, simulationInfo->integerParamsReverseIndex != NULL, "Out of memory");
+  simulationInfo->booleanParamsReverseIndex = NULL;
+  // simulationInfo->booleanParamsReverseIndex = (array_index_t *)calloc(modelData->nParametersBoolean, sizeof(array_index_t));
+  // assertStreamPrint(threadData, simulationInfo->booleanParamsReverseIndex != NULL, "Out of memory");
+  simulationInfo->stringParamsReverseIndex = NULL;
+  // simulationInfo->stringParamsReverseIndex = (array_index_t *)calloc(modelData->nParametersString, sizeof(array_index_t));
+  // assertStreamPrint(threadData, simulationInfo->stringParamsReverseIndex != NULL, "Out of memory");
 
   // Alias variables
-  simulationInfo->realAliasReverseIndex = (array_index_t *)calloc(modelData->nAliasReal, sizeof(array_index_t));
-  assertStreamPrint(threadData, simulationInfo->realAliasReverseIndex != NULL, "Out of memory");
-  simulationInfo->integerAliasReverseIndex = (array_index_t *)calloc(modelData->nAliasInteger, sizeof(array_index_t));
-  assertStreamPrint(threadData, simulationInfo->integerAliasReverseIndex != NULL, "Out of memory");
-  simulationInfo->booleanAliasReverseIndex = (array_index_t *)calloc(modelData->nAliasBoolean, sizeof(array_index_t));
-  assertStreamPrint(threadData, simulationInfo->booleanAliasReverseIndex != NULL, "Out of memory");
-  simulationInfo->stringAliasReverseIndex = (array_index_t *)calloc(modelData->nAliasString, sizeof(array_index_t));
-  assertStreamPrint(threadData, simulationInfo->stringAliasReverseIndex != NULL, "Out of memory");
+  simulationInfo->realAliasReverseIndex = NULL;
+  // simulationInfo->realAliasReverseIndex = (array_index_t *)calloc(modelData->nAliasReal, sizeof(array_index_t));
+  // assertStreamPrint(threadData, simulationInfo->realAliasReverseIndex != NULL, "Out of memory");
+  simulationInfo->integerAliasReverseIndex = NULL;
+  // simulationInfo->integerAliasReverseIndex = (array_index_t *)calloc(modelData->nAliasInteger, sizeof(array_index_t));
+  // assertStreamPrint(threadData, simulationInfo->integerAliasReverseIndex != NULL, "Out of memory");
+  simulationInfo->booleanAliasReverseIndex = NULL;
+  // simulationInfo->booleanAliasReverseIndex = (array_index_t *)calloc(modelData->nAliasBoolean, sizeof(array_index_t));
+  // assertStreamPrint(threadData, simulationInfo->booleanAliasReverseIndex != NULL, "Out of memory");
+  simulationInfo->stringAliasReverseIndex = NULL;
+  // simulationInfo->stringAliasReverseIndex = (array_index_t *)calloc(modelData->nAliasString, sizeof(array_index_t));
+  // assertStreamPrint(threadData, simulationInfo->stringAliasReverseIndex != NULL, "Out of memory");
 }
 
 /**
@@ -693,7 +705,7 @@ void computeVarsReverseIndex(void *variableData,
       scalar_length = ((STATIC_STRING_DATA *)variableData)[var_count].dimension.scalar_length;
       break;
     default:
-      throwStreamPrint(NULL, "computeVarsIndex: Illegal variable type case.");
+      throwStreamPrint(NULL, "computeVarsReverseIndex: Illegal variable type case.");
     }
 
     for (size_t dim = 0; dim < scalar_length; dim++, i++) {
@@ -715,6 +727,9 @@ void computeVarReverseIndices(SIMULATION_INFO *simulationInfo,
 {
   // Variables
   computeVarsReverseIndex(modelData->realVarsData, VAR_TYPE_REAL, modelData->nVariablesRealArray, simulationInfo->realVarsReverseIndex);
+
+  // Parameters
+  computeVarsReverseIndex(modelData->realParameterData, VAR_TYPE_REAL, modelData->nParametersRealArray, simulationInfo->realParamsReverseIndex);
 }
 
 /**

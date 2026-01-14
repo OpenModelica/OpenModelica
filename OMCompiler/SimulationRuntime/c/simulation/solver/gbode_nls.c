@@ -83,7 +83,7 @@ void initializeStaticNLSData_SR(DATA* data, threadData_t *threadData, NONLINEAR_
 {
   for (int i = 0; i < nonlinsys->size; i++) {
     // Get the nominal values of the states
-    const modelica_real nominal = getNominalFromScalarIdx(data->simulationInfo, data->modelData, VAR_KIND_VARIABLE, i);
+    const modelica_real nominal = getNominalFromScalarIdx(data->simulationInfo, data->modelData, VAR_KIND_STATE, i);
     nonlinsys->nominal[i] = fmax(fabs(nominal), 1e-32);
     nonlinsys->min[i]     = data->modelData->realVarsData[i].attribute.min;
     nonlinsys->max[i]     = data->modelData->realVarsData[i].attribute.max;

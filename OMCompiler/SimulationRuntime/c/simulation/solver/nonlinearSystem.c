@@ -1530,7 +1530,9 @@ int check_nonlinear_solution(DATA *data, int printFailingSystems, int sysNumber)
     }
 
     start_buffer = (char*) malloc(buff_size * sizeof(char));
+    assertStreamPrint(NULL, start_buffer != NULL, "Out of memory.");
     nominal_buffer = (char*) malloc(buff_size * sizeof(char));
+    assertStreamPrint(NULL, nominal_buffer != NULL, "Out of memory.");
     for(j=0; j<modelInfoGetEquation(&data->modelData->modelDataXml, (nonlinsys[i]).equationIndex).numVar; ++j)
     {
       int done=0;

@@ -535,8 +535,8 @@ static void createGbScales(GB_INTERNAL_NLS_DATA *nls, double *y1, double *y2)
 {
   for (int i = 0; i < nls->size; i++)
   {
-    const modelica_real nominal = getNominalFromScalarIdx(nls->nls_user_data->data->simulationInfo, nls->nls_user_data->data->modelData, VAR_KIND_VARIABLE, i);
-    nls->scal[i] = 1. / (nls->tol_scaled.atol * nominal + fmax(fabs(y1[i]), fabs(y2[i])) * nls->tol_scaled.rtol);
+    const modelica_real nominal = getNominalFromScalarIdx(nls->nls_user_data->data->simulationInfo, nls->nls_user_data->data->modelData, VAR_KIND_STATE, i);
+    nls->scal[i] = 1.0 / (nls->tol_scaled.atol * fabs(nominal) + fmax(fabs(y1[i]), fabs(y2[i])) * nls->tol_scaled.rtol);
   }
 }
 

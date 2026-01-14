@@ -30,6 +30,10 @@ int main(void)
   // Test
   size_t buffer_size = 22;
   char *buffer = (char*) malloc(buffer_size * sizeof(char));
+  if (buffer == NULL) {
+    fprintf(stderr, "Test failed: malloc returned NULL\n");
+    return 1;
+  }
   real_vector_to_string(&test_array, FALSE, buffer, buffer_size);
 
   // Validate

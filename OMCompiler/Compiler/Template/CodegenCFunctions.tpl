@@ -7899,17 +7899,25 @@ template varArrayName(SimVar var)
 end varArrayName;
 
 template crefVarInfo(ComponentRef cr)
+"C code to access info element of component reference"
 ::=
   match cref2simvar(cr, getSimCode())
   case var as SIMVAR(__) then
-  'data->modelData-><%varArrayName(var)%>Data[<%index%>] /* <%crefCComment(var, crefStrNoUnderscore(name))%> */ .info'
+    if intLt(index,0) then
+      error(sourceInfo(), 'crefVarDimension got negative index=<%index%> for <%crefStr(name)%>')
+    else
+      'data->modelData-><%varArrayName(var)%>Data[<%index%>] /* <%crefCComment(var, crefStrNoUnderscore(name))%> */ .info'
 end crefVarInfo;
 
 template crefVarDimension(ComponentRef cr)
+"C code to access dimension attribute of component reference"
 ::=
   match cref2simvar(cr, getSimCode())
   case var as SIMVAR(__) then
-  'data->modelData-><%varArrayName(var)%>Data[<%index%>] /* <%crefCComment(var, crefStrNoUnderscore(name))%> */ .dimension'
+    if intLt(index,0) then
+      error(sourceInfo(), 'crefVarDimension got negative index=<%index%> for <%crefStr(name)%>')
+    else
+      'data->modelData-><%varArrayName(var)%>Data[<%index%>] /* <%crefCComment(var, crefStrNoUnderscore(name))%> */ .dimension'
 end crefVarDimension;
 
 template initializeStaticLSVars(list<SimVar> vars, Integer index)

@@ -556,7 +556,10 @@ static void read_var_attribute_real(omc_ModelVariable *var_map, REAL_ATTRIBUTE *
   if (omc_useStream[OMC_LOG_DEBUG])
   {
     start_buffer = (char*) malloc(buff_size * sizeof(char));
+    assertStreamPrint(NULL, start_buffer != NULL, "Out of memory.");
     nominal_buffer = (char*) malloc(buff_size * sizeof(char));
+    assertStreamPrint(NULL, nominal_buffer != NULL, "Out of memory.");
+
     real_vector_to_string(&attribute->start, isScalar, start_buffer, buff_size);
     real_vector_to_string(&attribute->nominal, isScalar, nominal_buffer, buff_size);
 
