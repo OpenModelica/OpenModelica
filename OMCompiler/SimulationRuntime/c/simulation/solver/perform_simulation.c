@@ -53,6 +53,7 @@
 
 #if defined(OMC_NUM_NONLINEAR_SYSTEMS) && OMC_NUM_NONLINEAR_SYSTEMS==0
 #define check_nonlinear_solutions(X,Y) 0
+#define cleanUpOldValueListAfterEvent(X,Y)
 #else
 #include "nonlinearSystem.h"
 #endif
