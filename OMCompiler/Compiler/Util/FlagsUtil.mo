@@ -420,7 +420,8 @@ constant list<Flags.ConfigFlag> allConfigFlags = {
   Flags.EVALUATE_STRUCTURAL_PARAMETERS,
   Flags.LOAD_MISSING_LIBRARIES,
   Flags.CAUSALIZE_DAE_MODE,
-  Flags.SIM_CODE_SCALARIZE
+  Flags.SIM_CODE_SCALARIZE,
+  Flags.EXECUTE_COMMAND
 };
 
 public function new
