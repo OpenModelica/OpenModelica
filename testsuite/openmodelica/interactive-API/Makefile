@@ -21,6 +21,7 @@ Buildings.PartialFlowMachine.mos \
 checkAllModelsRecursive1.mos \
 CheckModelExtObj1.mos \
 choicesAllMatching.mos \
+Cmd1.mos \
 ConnectionList.mos \
 ConversionVersions.mos \
 ConvertUnits.mos \

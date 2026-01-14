@@ -389,21 +389,32 @@ protected function translateFile
   a list with a single file name, with the rest of the list being an optional
   list of libraries and .mo-files if the file is a .mo-file"
   input list<String> inStringLst;
+protected
+  Absyn.Program p, pLibs;
+  DAE.DAElist d;
+  String flatString,str,f;
+  list<String>  libs;
+  Absyn.Path cname;
+  Boolean runBackend, runSilent;
+  GlobalScript.Statements stmts;
+  FCore.Cache cache;
+  FCore.Graph env;
+  String cls, fileNamePrefix;
+  SimCode.SimulationSettings sim_settings;
 algorithm
-  _ := matchcontinue (inStringLst)
-    local
-      Absyn.Program p, pLibs;
-      DAE.DAElist d;
-      String flatString,str,f;
-      list<String>  libs;
-      Absyn.Path cname;
-      Boolean runBackend, runSilent;
-      GlobalScript.Statements stmts;
-      FCore.Cache cache;
-      FCore.Graph env;
-      String cls, fileNamePrefix;
-      SimCode.SimulationSettings sim_settings;
+  // Execute the given script if --cmd is used.
+  if not stringEmpty(Flags.getConfigString(Flags.EXECUTE_COMMAND)) then
+    stmts := Parser.parsestringexp(Flags.getConfigString(Flags.EXECUTE_COMMAND));
+    showErrors(Print.getErrorString(), ErrorExt.printMessagesStr(false));
+    Interactive.evaluateToStdOut(stmts, true);
 
+    // Return if there's nothing more to do to avoid showing the help message.
+    if listEmpty(inStringLst) and stringEmpty(Config.classToInstantiate()) then
+      return;
+    end if;
+  end if;
+
+  _ := matchcontinue (inStringLst)
     // A .mo-file, followed by an optional list of extra .mo-files and libraries.
     // The last class in the first file will be instantiated.
     case (libs)
