@@ -3272,7 +3272,6 @@ case SIMCODE(modelInfo = MODELINFO(functions = functions, varInfo = vi as VARINF
     <%vars.realOptimizeFinalConstraintsVars
                            |> var => ScalarVariableFMU(var,"realVarsData") ;separator="\n";empty%>
     <%System.tmpTickResetIndex(0,2)%>
-    /* AHEU 1 */
     <%vars.paramVars       |> var => ScalarVariableFMU(var,"realParameterData") ;separator="\n";empty%>
     <%System.tmpTickResetIndex(0,2)%>
     <%vars.intAlgVars      |> var => ScalarVariableFMU(var,"integerVarsData") ;separator="\n";empty%>

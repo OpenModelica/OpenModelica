@@ -6037,15 +6037,25 @@ case SES_SIMPLE_ASSIGN_CONSTRAINTS(__) then
   let &preExp = buffer ""
   let expPart = daeExp(exp, context, &preExp, &varDecls, &auxFunction)
   let postExp = if isStartCref(cref) then
+    // Special handling for pre variables
+    let name = match cref
+      case CREF_QUAL(componentRef = cr as CREF_QUAL( ident = "$PRE" )) then
+        '<%crefVarInfo(popCref(cr))%>.name'
+      else
+        '<%crefVarInfo(popCref(cref))%>.name'
+    end match
     <<
     <%cref(popCref(cref), &sub)%> = <%cref(cref, &sub)%>;
-    infoStreamPrint(OMC_LOG_INIT_V, 0, "updated start value: %s(start=<%crefToPrintfArg(popCref(cref))%>)", <%crefVarInfo(popCref(cref))%>.name, (<%crefType(popCref(cref))%>) <%cref(popCref(cref), &sub)%>);
+    infoStreamPrint(OMC_LOG_INIT_V, 0,
+                    "updated start value: %s(start=<%crefToPrintfArg(popCref(cref))%>)",
+                    <%name%>,
+                    (<%crefType(popCref(cref))%>) <%cref(popCref(cref), &sub)%>);
     >>
   <<
   <%modelicaLine(eqInfo(eq))%>
   <%preExp%>
   <%contextCref(cref, context, &preExp, &varDecls, auxFunction, &sub)%> = <%expPart%>;
-    <%postExp%>
+  <%postExp%>
   <%endModelicaLine()%>
   >>
 end equationSimpleAssign;
