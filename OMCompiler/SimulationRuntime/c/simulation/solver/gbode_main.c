@@ -1187,7 +1187,7 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
                     solverInfo->currentTime, targetTime);
   }
 
-  gbData->eventHappened = solverInfo->didEventStep;
+  gbData->eventHappened = solverInfo->didEventStep || gbData->isFirstStep;
 
  /*
   * Handle step initialization after an event step or at the very first solver step.
@@ -1215,7 +1215,7 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
       * → Reset the ring buffer and solver statistics.
       * → Initialize gbData->timeRight, gbData->yRight, and gbData->kRight.
       */
-      getInitStepSize(data, threadData, gbData);
+      getInitStepSize(data, threadData, gbData, solverInfo);
       gbode_init(data, threadData, solverInfo);
     }
 
@@ -1394,7 +1394,7 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
 
       // Calculate error estimators and tolerance scaling for each state variable
       // Compute error tolerance for the i-th state based on relative and absolute tolerances:
-      // errtol = Rtol * max(|current state|, |previous state|) + Atol * nominal(state)
+      // errtol = Rtol * max(|current state|, |previous state|) + Atol * |nominal(state)|
       // TODO: make errtol and errest local variables
 
       for (i = 0, err=0; i < nStates; i++) {
@@ -1496,8 +1496,16 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
         // Increment the counter for error test failures.
         gbData->stats.nErrorTestFailures++;
 
-        // Reduce the step size by half to attempt a more accurate integration in the next iteration.
-        gbData->stepSize *= 0.5;
+        if (gbData->eventHappened)
+        {
+          // event or initial step rejection: reduce step size to 10% of previous step size
+          gbData->stepSize *= 0.1;
+        }
+        else
+        {
+          // standard rejection: reduce the step size by half to attempt a more accurate integration in the next iteration.
+          gbData->stepSize *= 0.5;
+        }
 
         // Restart the integration loop with the smaller step size.
         continue;

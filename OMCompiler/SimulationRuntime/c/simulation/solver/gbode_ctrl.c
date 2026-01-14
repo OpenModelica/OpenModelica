@@ -256,7 +256,7 @@ double GenericController(double* err_values, double* step_values, unsigned int e
  * @param threadData        Thread data for error handling.
  * @param gbData        Storing Runge-Kutta solver data.
  */
-void getInitStepSize(DATA* data, threadData_t* threadData, DATA_GBODE* gbData)
+void getInitStepSize(DATA* data, threadData_t* threadData, DATA_GBODE* gbData, SOLVER_INFO* solverInfo)
 {
   SIMULATION_DATA *sData = (SIMULATION_DATA*)data->localData[0];
   SIMULATION_DATA *sDataOld = (SIMULATION_DATA*)data->localData[1];
@@ -283,7 +283,11 @@ void getInitStepSize(DATA* data, threadData_t* threadData, DATA_GBODE* gbData)
   // Compute f(t0, y0)
   gbode_fODE(data, threadData, &(gbData->stats.nCallsODE));
 
-  if (gbData->initialStepSize < 0) {
+  if (solverInfo->didEventStep)
+  {
+    gbData->stepSize = fmax(1e-1 * gbData->stepSize, MINIMAL_STEP_SIZE);
+    gbData->lastStepSize = 0.0;
+  } else if (gbData->initialStepSize < 0) {
     memcpy(gbData->f, fODE, nStates * sizeof(double));
 
     // Compute weighted norms of y0 and f0
