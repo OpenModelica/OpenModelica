@@ -7899,12 +7899,12 @@ template varArrayName(SimVar var)
 end varArrayName;
 
 template crefVarInfo(ComponentRef cr)
-"C code to access info element of component reference"
+"C code to access info element of component reference."
 ::=
   match cref2simvar(cr, getSimCode())
   case var as SIMVAR(__) then
     if intLt(index,0) then
-      error(sourceInfo(), 'crefVarDimension got negative index=<%index%> for <%crefStr(name)%>')
+      error(sourceInfo(), 'crefVarInfo got negative index=<%index%> for <%crefStr(name)%>')
     else
       'data->modelData-><%varArrayName(var)%>Data[<%index%>] /* <%crefCComment(var, crefStrNoUnderscore(name))%> */ .info'
 end crefVarInfo;
