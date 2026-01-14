@@ -243,20 +243,31 @@ void printParameters(DATA *data, int stream)
   long i;
   MODEL_DATA *mData = data->modelData;
 
-  if (!OMC_ACTIVE_STREAM(stream)) return;
+  const size_t buff_size = 2048;
+  char *start_buffer;
+
+  if (!OMC_ACTIVE_STREAM(stream)) {
+    return;
+  }
 
   infoStreamPrint(stream, 1, "parameter values");
 
   if (0 < mData->nParametersReal)
   {
+    start_buffer = (char*) malloc(buff_size * sizeof(char));
+    assertStreamPrint(NULL, start_buffer != NULL, "Out of memory.");
+
     infoStreamPrint(stream, 1, "real parameters");
-    for(i=0; i<mData->nParametersReal; ++i)
+    for(i=0; i<mData->nParametersReal; ++i) {
+      real_vector_to_string(&mData->realParameterData[i].attribute.start, mData->realParameterData[i].dimension.numberOfDimensions == 0, start_buffer, buff_size);
       infoStreamPrint(stream, 0, "[%ld] parameter Real %s(start=%s, fixed=%s) = %g", i+1,
                                  mData->realParameterData[i].info.name,
-                                 real_vector_to_string(&mData->realParameterData[i].attribute.start, mData->realParameterData[i].dimension.numberOfDimensions == 0),
+                                 start_buffer,
                                  mData->realParameterData[i].attribute.fixed ? "true" : "false",
                                  data->simulationInfo->realParameter[i]);
+    }
     messageClose(stream);
+    free(start_buffer);
   }
 
   if (0 < mData->nParametersInteger)
@@ -965,11 +976,13 @@ void scalarAllocArrayAttributes(MODEL_DATA* modelData) {
   // Variables
   for(i = 0; i < modelData->nVariablesRealArray; i++) {
     simple_alloc_1d_real_array(&modelData->realVarsData[i].attribute.start, 1);
+    simple_alloc_1d_real_array(&modelData->realVarsData[i].attribute.nominal, 1);
   }
 
   // Parameter
   for(i = 0; i < modelData->nParametersRealArray; i++) {
     simple_alloc_1d_real_array(&modelData->realParameterData[i].attribute.start, 1);
+    simple_alloc_1d_real_array(&modelData->realParameterData[i].attribute.nominal, 1);
   }
 }
 
@@ -1026,6 +1039,10 @@ void initializeDataStruc(DATA *data, threadData_t *threadData)
   data->modelData->nAliasInteger = data->simulationInfo->integerAliasIndex[data->modelData->nAliasIntegerArray];
   data->modelData->nAliasBoolean = data->simulationInfo->booleanAliasIndex[data->modelData->nAliasBooleanArray];
   data->modelData->nAliasString  = data->simulationInfo->stringAliasIndex[data->modelData->nAliasStringArray];
+
+  /* Reverse map for scalarized variables */
+  allocateArrayReverseIndexMaps(data->modelData, data->simulationInfo, threadData);
+  computeVarReverseIndices(data->simulationInfo, data->modelData);
 
   /* prepare RingBuffer */
   for (i = 0; i < SIZERINGBUFFER; i++) {
@@ -1293,6 +1310,7 @@ void deInitializeDataStruc(DATA *data)
   free(data->simulationInfo->states_right);
 
   freeArrayIndexMaps(data->simulationInfo);
+  freeArrayReverseIndexMaps(data->simulationInfo);
 
   /* free buffer for old state variables */
   free(data->simulationInfo->realVarsOld);

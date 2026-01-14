@@ -518,7 +518,6 @@ size_t read_str(const char* str,  real_array* array, size_t num_elements) {
  * @param default_value
  */
 void read_array_var_real(real_array* array, const char* str, modelica_real default_value) {
-
   size_t length;
 
   length = read_str(str, NULL, 0);
@@ -537,26 +536,46 @@ void read_array_var_real(real_array* array, const char* str, modelica_real defau
  *
  * @param var_map   Hash map for variable with attributes as keys.
  * @param attribute Attributes to write values into.
+ * @param isScalar  If true real variable represents a scalar, otherwise an array.
  */
-static void read_var_attribute_real(omc_ModelVariable *var_map, REAL_ATTRIBUTE *attribute, modelica_boolean isArrayVar)
+static void read_var_attribute_real(omc_ModelVariable *var_map, REAL_ATTRIBUTE *attribute, modelica_boolean isScalar)
 {
+  const size_t buff_size = 2048;
+  char *start_buffer;
+  char *nominal_buffer;
+
   read_array_var_real(&attribute->start, findHashStringStringEmpty(var_map, "start"), 0.0);
   attribute->fixed = read_value_bool(findHashStringString(var_map, "fixed"));
   attribute->useNominal = read_value_bool(findHashStringString(var_map, "useNominal"));
-  attribute->nominal = read_value_real_default(findHashStringStringEmpty(var_map, "nominal"), 1.0);
+  read_array_var_real(&attribute->nominal, findHashStringStringEmpty(var_map, "nominal"), 1.0);
   attribute->min = read_value_real_default(findHashStringStringEmpty(var_map, "min"), REAL_MIN);
   attribute->max = read_value_real_default(findHashStringStringEmpty(var_map, "max"), REAL_MAX);
   attribute->unit = read_value_string(findHashStringStringEmpty(var_map, "unit"));
   attribute->displayUnit = read_value_string(findHashStringStringEmpty(var_map, "displayUnit"));
 
-  infoStreamPrint(OMC_LOG_DEBUG, 0,
-                  "Real %s(start=%s, fixed=%s, %snominal=%g%s, min=%g, max=%g)",
-                  findHashStringString(var_map, "name"),
-                  real_vector_to_string(&attribute->start, isArrayVar),
-                  (attribute->fixed) ? "true" : "false",
-                  (attribute->useNominal) ? "" : "{", attribute->nominal, attribute->useNominal ? "" : "}",
-                  attribute->min,
-                  attribute->max);
+  if (omc_useStream[OMC_LOG_DEBUG])
+  {
+    start_buffer = (char*) malloc(buff_size * sizeof(char));
+    assertStreamPrint(NULL, start_buffer != NULL, "Out of memory.");
+    nominal_buffer = (char*) malloc(buff_size * sizeof(char));
+    assertStreamPrint(NULL, nominal_buffer != NULL, "Out of memory.");
+
+    real_vector_to_string(&attribute->start, isScalar, start_buffer, buff_size);
+    real_vector_to_string(&attribute->nominal, isScalar, nominal_buffer, buff_size);
+
+    infoStreamPrint(OMC_LOG_DEBUG, 0,
+                    "Real %s(start=%s, fixed=%s, useNominal=%s, nominal=%s, min=%g, max=%g)",
+                    findHashStringString(var_map, "name"),
+                    start_buffer,
+                    (attribute->fixed) ? "true" : "false",
+                    (attribute->useNominal) ? "true" : "false",
+                    nominal_buffer,
+                    attribute->min,
+                    attribute->max);
+
+    free(start_buffer);
+    free(nominal_buffer);
+  }
 }
 
 static void read_var_attribute_int(omc_ModelVariable *v, INTEGER_ATTRIBUTE *attribute)
@@ -635,7 +654,7 @@ int shouldFilterOutput(omc_ModelVariable *variable, const char *name)
  * @brief Read all static data from File for every variable
  *
  * @param simulationInfo
- * @param type                T_REAL, T_INTEGER, T_BOOLEAN, T_STRING
+ * @param type                VAR_TYPE_REAL, VAR_TYPE_INTEGER, VAR_TYPE_BOOLEAN, VAR_TYPE_STRING
  * @param out                 Write variable infos into.
  *                            Must be of type STATIC_<type>_DATA
  * @param in                  Model variable map
@@ -658,7 +677,6 @@ static void read_variables(SIMULATION_INFO* simulationInfo,
                            hash_string_long **mapAliasParam,
                            int *sensitivityParIndex)
 {
-  char type_name[8];
   VAR_INFO *info;
   DIMENSION_INFO* dimension;
   modelica_boolean *filterOutput;
@@ -673,9 +691,8 @@ static void read_variables(SIMULATION_INFO* simulationInfo,
     // Access real/int/bool/string attribute data
     // Set info, dimension and filterOutput pointers
     switch (type) {
-      case T_REAL:
+      case VAR_TYPE_REAL:
         {
-          strncpy(type_name, "real", 8);
           STATIC_REAL_DATA* realVarsData = (STATIC_REAL_DATA*) out;
           REAL_ATTRIBUTE* attribute = &realVarsData[j].attribute;
           dimension = &realVarsData[j].dimension;
@@ -687,9 +704,8 @@ static void read_variables(SIMULATION_INFO* simulationInfo,
           *filterOutput = shouldFilterOutput(v, info->name);
         }
         break;
-      case T_INTEGER:
+      case VAR_TYPE_INTEGER:
         {
-          strncpy(type_name, "integer", 8);
           STATIC_INTEGER_DATA* intVarsData = (STATIC_INTEGER_DATA*) out;
           INTEGER_ATTRIBUTE* attribute = &intVarsData[j].attribute;
           dimension = &intVarsData[j].dimension;
@@ -701,9 +717,8 @@ static void read_variables(SIMULATION_INFO* simulationInfo,
           *filterOutput = shouldFilterOutput(v, info->name);
         }
         break;
-      case T_BOOLEAN:
+      case VAR_TYPE_BOOLEAN:
         {
-          strncpy(type_name, "boolean", 8);
           STATIC_BOOLEAN_DATA* boolVarsData = (STATIC_BOOLEAN_DATA*) out;
           BOOLEAN_ATTRIBUTE* attribute = &boolVarsData[j].attribute;
           dimension = &boolVarsData[j].dimension;
@@ -715,9 +730,8 @@ static void read_variables(SIMULATION_INFO* simulationInfo,
           *filterOutput = shouldFilterOutput(v, info->name);
         }
         break;
-      case T_STRING:
+      case VAR_TYPE_STRING:
         {
-          strncpy(type_name, "string", 8);
           STATIC_STRING_DATA* stringVarsData = (STATIC_STRING_DATA*) out;
           STRING_ATTRIBUTE* attribute = &stringVarsData[j].attribute;
           dimension = &stringVarsData[j].dimension;
@@ -1071,18 +1085,18 @@ void read_input_xml(MODEL_DATA* modelData,
 
   allocModelDataVars(modelData, TRUE, threadData);
 
-  read_variables(simulationInfo, T_REAL,    modelData->realVarsData,         mi->rSta, "real states",            0,                    modelData->nStatesArray,                               &mapAlias,      &mapAliasParam, &sensitivityParIndex);
-  read_variables(simulationInfo, T_REAL,    modelData->realVarsData,         mi->rDer, "real state derivatives", modelData->nStatesArray,   modelData->nStatesArray,                               &mapAlias,      &mapAliasParam, &sensitivityParIndex);
-  read_variables(simulationInfo, T_REAL,    modelData->realVarsData,         mi->rAlg, "real algebraics",        2*modelData->nStatesArray, modelData->nVariablesRealArray - 2*modelData->nStatesArray, &mapAlias,      &mapAliasParam, &sensitivityParIndex);
+  read_variables(simulationInfo, VAR_TYPE_REAL,    modelData->realVarsData,         mi->rSta, "real states",            0,                    modelData->nStatesArray,                               &mapAlias,      &mapAliasParam, &sensitivityParIndex);
+  read_variables(simulationInfo, VAR_TYPE_REAL,    modelData->realVarsData,         mi->rDer, "real state derivatives", modelData->nStatesArray,   modelData->nStatesArray,                               &mapAlias,      &mapAliasParam, &sensitivityParIndex);
+  read_variables(simulationInfo, VAR_TYPE_REAL,    modelData->realVarsData,         mi->rAlg, "real algebraics",        2*modelData->nStatesArray, modelData->nVariablesRealArray - 2*modelData->nStatesArray, &mapAlias,      &mapAliasParam, &sensitivityParIndex);
 
-  read_variables(simulationInfo, T_INTEGER, modelData->integerVarsData,      mi->iAlg, "integer variables",      0,                    modelData->nVariablesIntegerArray,                     &mapAlias,      &mapAliasParam, &sensitivityParIndex);
-  read_variables(simulationInfo, T_BOOLEAN, modelData->booleanVarsData,      mi->bAlg, "boolean variables",      0,                    modelData->nVariablesBooleanArray,                     &mapAlias,      &mapAliasParam, &sensitivityParIndex);
-  read_variables(simulationInfo, T_STRING,  modelData->stringVarsData,       mi->sAlg, "string variables",       0,                    modelData->nVariablesStringArray,                      &mapAlias,      &mapAliasParam, &sensitivityParIndex);
+  read_variables(simulationInfo, VAR_TYPE_INTEGER, modelData->integerVarsData,      mi->iAlg, "integer variables",      0,                    modelData->nVariablesIntegerArray,                     &mapAlias,      &mapAliasParam, &sensitivityParIndex);
+  read_variables(simulationInfo, VAR_TYPE_BOOLEAN, modelData->booleanVarsData,      mi->bAlg, "boolean variables",      0,                    modelData->nVariablesBooleanArray,                     &mapAlias,      &mapAliasParam, &sensitivityParIndex);
+  read_variables(simulationInfo, VAR_TYPE_STRING,  modelData->stringVarsData,       mi->sAlg, "string variables",       0,                    modelData->nVariablesStringArray,                      &mapAlias,      &mapAliasParam, &sensitivityParIndex);
 
-  read_variables(simulationInfo, T_REAL,    modelData->realParameterData,    mi->rPar, "real parameters",        0,                    modelData->nParametersRealArray,                       &mapAliasParam, &mapAliasParam, &sensitivityParIndex);
-  read_variables(simulationInfo, T_INTEGER, modelData->integerParameterData, mi->iPar, "integer parameters",     0,                    modelData->nParametersIntegerArray,                    &mapAliasParam, &mapAliasParam, &sensitivityParIndex);
-  read_variables(simulationInfo, T_BOOLEAN, modelData->booleanParameterData, mi->bPar, "boolean parameters",     0,                    modelData->nParametersBooleanArray,                    &mapAliasParam, &mapAliasParam, &sensitivityParIndex);
-  read_variables(simulationInfo, T_STRING,  modelData->stringParameterData,  mi->sPar, "string parameters",      0,                    modelData->nParametersStringArray,                     &mapAliasParam, &mapAliasParam, &sensitivityParIndex);
+  read_variables(simulationInfo, VAR_TYPE_REAL,    modelData->realParameterData,    mi->rPar, "real parameters",        0,                    modelData->nParametersRealArray,                       &mapAliasParam, &mapAliasParam, &sensitivityParIndex);
+  read_variables(simulationInfo, VAR_TYPE_INTEGER, modelData->integerParameterData, mi->iPar, "integer parameters",     0,                    modelData->nParametersIntegerArray,                    &mapAliasParam, &mapAliasParam, &sensitivityParIndex);
+  read_variables(simulationInfo, VAR_TYPE_BOOLEAN, modelData->booleanParameterData, mi->bPar, "boolean parameters",     0,                    modelData->nParametersBooleanArray,                    &mapAliasParam, &mapAliasParam, &sensitivityParIndex);
+  read_variables(simulationInfo, VAR_TYPE_STRING,  modelData->stringParameterData,  mi->sPar, "string parameters",      0,                    modelData->nParametersStringArray,                     &mapAliasParam, &mapAliasParam, &sensitivityParIndex);
 
   if (omc_flag[FLAG_IDAS]) {
     /* allocate memory for sensitivity analysis */
@@ -1090,7 +1104,7 @@ void read_input_xml(MODEL_DATA* modelData,
     simulationInfo->sensitivityMatrix = (modelica_real*) calloc(modelData->nSensitivityVars - modelData->nSensitivityParamVars, sizeof(modelica_real));
 
     // TODO: We also need nSensitivityVarsArray
-    read_variables(simulationInfo, T_REAL, modelData->realSensitivityData, mi->rSen, "real sensitivities", 0, modelData->nSensitivityVars, &mapAliasSen, &mapAliasParam, &sensitivityParIndex);
+    read_variables(simulationInfo, VAR_TYPE_REAL, modelData->realSensitivityData, mi->rSen, "real sensitivities", 0, modelData->nSensitivityVars, &mapAliasSen, &mapAliasParam, &sensitivityParIndex);
   }
 
   /* Read all alias variables */

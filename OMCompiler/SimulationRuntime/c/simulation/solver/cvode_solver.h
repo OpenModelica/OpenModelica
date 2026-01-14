@@ -105,7 +105,7 @@ typedef struct CVODE_SOLVER
 {
   CVODE_CONFIG config;        /* CVODE configuration */
   booleantype isInitialized;  /* Boolean flag if problem is initilaized with start value for y */
-  long int N;                 /* NUmber of unknowns / states */
+  long int N;                 /* Number of unknowns / states */
 
   /* work arrays */
   N_Vector y;                 /* dependent variable vector of ODE */

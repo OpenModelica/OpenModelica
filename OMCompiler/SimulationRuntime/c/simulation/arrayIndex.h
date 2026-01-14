@@ -28,22 +28,64 @@
  *
  */
 
+#ifndef OMC_ARRAY_INDEX_H
+#define OMC_ARRAY_INDEX_H
+
 #include "../simulation_data.h"
+#include "../util/varinfo.h"
 
-void allocateArrayIndexMaps(MODEL_DATA *modelData, SIMULATION_INFO *simulationInfo, threadData_t *threadData);
+#ifdef __cplusplus
+extern "C"
+{
+#endif
 
-void freeArrayIndexMaps(SIMULATION_INFO *simulationInfo);
+  void allocateArrayIndexMaps(MODEL_DATA *modelData,
+                              SIMULATION_INFO *simulationInfo,
+                              threadData_t *threadData);
 
-size_t calculateLength(DIMENSION_INFO *dimensionInfo, STATIC_INTEGER_DATA *integerParameterData, long nParametersIntegerArray);
+  void freeArrayIndexMaps(SIMULATION_INFO *simulationInfo);
 
-void printFlattenedNames(FILE *stream, const char* separator, const char *name, DIMENSION_INFO *dimension_info);
+  void allocateArrayReverseIndexMaps(MODEL_DATA *modelData,
+                                     SIMULATION_INFO *simulationInfo,
+                                     threadData_t *threadData);
 
-size_t multiDimArrayToLinearIndex(DIMENSION_INFO* dimension, size_t* array_index);
+  void freeArrayReverseIndexMaps(SIMULATION_INFO *simulationInfo);
 
-size_t* linearToMultiDimArrayIndex(DIMENSION_INFO* dimension, size_t linear_address);
+  size_t calculateLength(DIMENSION_INFO *dimensionInfo,
+                         STATIC_INTEGER_DATA *integerParameterData,
+                         long nParametersIntegerArray);
 
-void calculateAllScalarLength(MODEL_DATA* modelData);
+  void printFlattenedNames(FILE *stream,
+                           const char *separator,
+                           const char *name,
+                           DIMENSION_INFO *dimension_info);
 
-size_t scalarArrayVariableSize(void *variableData, enum var_type type, size_t num_variables);
+  size_t multiDimArrayToLinearIndex(DIMENSION_INFO *dimension,
+                                    size_t *array_index);
 
-void computeVarIndices(SIMULATION_INFO *simulationInfo, MODEL_DATA *modelData);
+  size_t *linearToMultiDimArrayIndex(DIMENSION_INFO *dimension,
+                                     size_t linear_address);
+
+  void calculateAllScalarLength(MODEL_DATA *modelData);
+
+  void computeVarIndices(SIMULATION_INFO *simulationInfo,
+                         MODEL_DATA *modelData);
+
+  void computeVarsReverseIndex(void *variableData,
+                               enum var_type type,
+                               size_t num_variables,
+                               array_index_t* reverseIndex);
+
+  void computeVarReverseIndices(SIMULATION_INFO *simulationInfo,
+                                MODEL_DATA *modelData);
+
+  modelica_real getNominalFromScalarIdx(const SIMULATION_INFO *simulationInfo,
+                                        const MODEL_DATA *modelData,
+                                        enum var_kind kind,
+                                        size_t scalar_idx);
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif
