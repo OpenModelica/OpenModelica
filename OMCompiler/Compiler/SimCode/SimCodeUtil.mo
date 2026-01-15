@@ -5825,7 +5825,7 @@ algorithm
       omsiJacFunction.innerVars = innerVars;
       omsiJacFunction.outputVars = columnVars;
       omsiJacFunction.nAllVars = nAllVars;
-      omsiJacFunction.context = SimCodeFunction.JACOBIAN_CONTEXT(SOME(hashTable));
+      omsiJacFunction.context = SimCodeFunction.JACOBIAN_CONTEXT(name, SOME(hashTable));
 
       if debug then
         dumpOMSIFunc(omsiJacFunction, "\nJacobian OMSIFunction");
@@ -15739,10 +15739,11 @@ algorithm
 end simVarFromHTOrFail;
 
 public function createJacContext
+  input String name;
   input Option<HashTableCrefSimVar.HashTable> jacHT;
   output SimCodeFunction.Context outContext;
 algorithm
-  outContext := SimCodeFunction.JACOBIAN_CONTEXT(jacHT);
+  outContext := SimCodeFunction.JACOBIAN_CONTEXT(name, jacHT);
 end createJacContext;
 
 

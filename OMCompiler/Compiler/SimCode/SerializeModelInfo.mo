@@ -187,8 +187,6 @@ function serializeVar
   output Boolean ok;
 algorithm
   ok := match var
-    local
-      DAE.ElementSource source;
     case SimCodeVar.SIMVAR()
       equation
         File.write(file,if first then "\"" else ",\n\"");
@@ -205,6 +203,8 @@ algorithm
         File.writeEscape(file,var.displayUnit,escape=JSON);
         File.write(file,"\",\"source\":");
         serializeSource(file,var.source,withOperations);
+        File.write(file, ",\"index\":");
+        File.writeInt(file, var.index);
         File.write(file,"}");
       then true;
     else

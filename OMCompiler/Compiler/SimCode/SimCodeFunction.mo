@@ -218,6 +218,7 @@ uniontype Context
   end ALGLOOP_CONTEXT;
 
   record JACOBIAN_CONTEXT
+    String name;
     Option<HashTableCrefSimVar.HashTable> jacHT;
   end JACOBIAN_CONTEXT;
 
@@ -244,7 +245,7 @@ end Context;
 public constant Context contextSimulationNonDiscrete  = SIMULATION_CONTEXT(false);
 public constant Context contextSimulationDiscrete     = SIMULATION_CONTEXT(true);
 public constant Context contextFunction               = FUNCTION_CONTEXT("", false);
-public constant Context contextJacobian               = JACOBIAN_CONTEXT(NONE());
+public constant Context contextJacobian               = JACOBIAN_CONTEXT("", NONE());
 public constant Context contextAlgloopJacobian        = ALGLOOP_CONTEXT(false,true);
 public constant Context contextAlgloopInitialisation  = ALGLOOP_CONTEXT(true,false);
 public constant Context contextAlgloop                = ALGLOOP_CONTEXT(false,false);
