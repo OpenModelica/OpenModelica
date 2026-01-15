@@ -549,7 +549,7 @@ static inline void printSomeModelInfos(OptDataBounds * bounds, OptDataDim * dim,
       sprintf(buffer, ", min = -Inf");
     }
 
-    printf("\nState[%i]:%s(start = %s, nominal = %g%s",
+    printf("\nState[%i]:%s(start = %g, nominal = %g%s",
            i,
            data->modelData->realVarsData[i].info.name,
            real_get(data->modelData->realVarsData[i].attribute.start, 0),

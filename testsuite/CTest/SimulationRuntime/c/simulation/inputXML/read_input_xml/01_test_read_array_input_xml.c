@@ -102,6 +102,9 @@ int validateNominalX(const real_array *nominal) {
 
 /**
  * @brief Validate min attribute of array variable `x`.
+ *
+ * @param min Pointer to min attribute.
+ * @return int Return `1` on success, `0` otherwise.
  */
 int validateMinX(const real_array *min) {
   const _index_t numElements = base_array_nr_of_elements(*min);
@@ -125,6 +128,9 @@ int validateMinX(const real_array *min) {
 
 /**
  * @brief Validate max attribute of array variable `x`.
+ *
+ * @param max Pointer to max attribute.
+ * @return int Return `1` on success, `0` otherwise.
  */
 int validateMaxX(const real_array *max) {
   const _index_t numElements = base_array_nr_of_elements(*max);

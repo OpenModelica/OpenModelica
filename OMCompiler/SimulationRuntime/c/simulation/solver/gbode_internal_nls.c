@@ -309,7 +309,7 @@ static void gbInternal_evalJacobian(DATA *data, threadData_t *threadData, DATA_G
           // some floating point magic
           delta_hh[state] = x[state] + delta_hh[state] - x[state];
 
-          if (x[state] + delta_hh[state] >= getMaxFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, VAR_KIND_VARIABLE, state))
+          if (x[state] + delta_hh[state] >= getMaxFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, VAR_KIND_STATE, state))
           {
             delta_hh[state] *= -1;
           }
