@@ -126,6 +126,54 @@ int validateNominalA(const real_array *nominal) {
 }
 
 /**
+ * @brief Validate min attribute of array variable `A`.
+ */
+int validateMinA(const real_array *min) {
+  const _index_t numElements = base_array_nr_of_elements(*min);
+  const _index_t expectedNumElements = 6;
+  if (numElements != expectedNumElements)
+  {
+    fprintf(stderr, "Test failed: Real variable min attribute wrong number of elements. Expected %ld, got %ld\n", expectedNumElements, numElements);
+    return 0;
+  }
+
+  const modelica_real expected[] = {-0.01, 0.02, 0.03, 0.04, 0.05, 0.06};
+  for (_index_t i = 0; i < expectedNumElements; ++i) {
+    const modelica_real elem = real_get(*min, i);
+    if (elem != expected[i]) {
+      fprintf(stderr, "Test failed: Real variable min attribute mismatched at index %ld. Expected %f, got %f\n", i, expected[i], elem);
+      return 0;
+    }
+  }
+
+  return 1;
+}
+
+/**
+ * @brief Validate max attribute of array variable `A`.
+ */
+int validateMaxA(const real_array *max) {
+  const _index_t numElements = base_array_nr_of_elements(*max);
+  const _index_t expectedNumElements = 6;
+  if (numElements != expectedNumElements)
+  {
+    fprintf(stderr, "Test failed: Real variable max attribute wrong number of elements. Expected %ld, got %ld\n", expectedNumElements, numElements);
+    return 0;
+  }
+
+  const modelica_real expected[] = {100.1, 100.2, 100.3, 100.4, 100.5, 100.6};
+  for (_index_t i = 0; i < expectedNumElements; ++i) {
+    const modelica_real elem = real_get(*max, i);
+    if (elem != expected[i]) {
+      fprintf(stderr, "Test failed: Real variable max attribute mismatched at index %ld. Expected %f, got %f\n", i, expected[i], elem);
+      return 0;
+    }
+  }
+
+  return 1;
+}
+
+/**
  * @brief Test parsing of init XML
  *
  * Test init XML with matrix variable containing two dimension tags.
@@ -203,6 +251,8 @@ int main(int argc, char *argv[])
   test_success = test_success && validateDimensionA(&modelData.realVarsData[0].dimension);
   test_success = test_success && validateStartA(&modelData.realVarsData[0].attribute.start);
   test_success = test_success && validateNominalA(&modelData.realVarsData[0].attribute.nominal);
+  test_success = test_success && validateMinA(&modelData.realVarsData[0].attribute.min);
+  test_success = test_success && validateMaxA(&modelData.realVarsData[0].attribute.max);
 
   // Free allocated memory
   freeModelDataVars(&modelData);

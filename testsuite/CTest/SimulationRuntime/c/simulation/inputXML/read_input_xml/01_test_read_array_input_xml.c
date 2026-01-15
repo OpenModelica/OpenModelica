@@ -101,6 +101,52 @@ int validateNominalX(const real_array *nominal) {
 }
 
 /**
+ * @brief Validate min attribute of array variable `x`.
+ */
+int validateMinX(const real_array *min) {
+  const _index_t numElements = base_array_nr_of_elements(*min);
+  const _index_t expectedNumElements = 1;
+  if (numElements != expectedNumElements)
+  {
+    fprintf(stderr, "Test failed: Real variable min attribute wrong number of elements. Expected %ld, got %ld\n", expectedNumElements, numElements);
+    return 0;
+  }
+
+  const modelica_real minValue = real_get(*min, 0);
+  const modelica_real expectedMinValue = -0.2;
+  if (minValue != expectedMinValue)
+  {
+    fprintf(stderr, "Test failed: Real variable min attribute mismatched. Expected %f, got %f\n", expectedMinValue, minValue);
+    return 0;
+  }
+
+  return 1;
+}
+
+/**
+ * @brief Validate max attribute of array variable `x`.
+ */
+int validateMaxX(const real_array *max) {
+  const _index_t numElements = base_array_nr_of_elements(*max);
+  const _index_t expectedNumElements = 1;
+  if (numElements != expectedNumElements)
+  {
+    fprintf(stderr, "Test failed: Real variable max attribute wrong number of elements. Expected %ld, got %ld\n", expectedNumElements, numElements);
+    return 0;
+  }
+
+  const modelica_real maxValue = real_get(*max, 0);
+  const modelica_real expectedMaxValue = 13.3;
+  if (maxValue != expectedMaxValue)
+  {
+    fprintf(stderr, "Test failed: Real variable max attribute mismatched. Expected %f, got %f\n", expectedMaxValue, maxValue);
+    return 0;
+  }
+
+  return 1;
+}
+
+/**
  * @brief Test parsing of init XML
  *
  * Test init XML with array variable containing one dimension tag.
@@ -179,6 +225,8 @@ int main(int argc, char *argv[])
   test_success = test_success && validateDimensionX(&modelData.realVarsData[0].dimension);
   test_success = test_success && validateStartX(&modelData.realVarsData[0].attribute.start);
   test_success = test_success && validateNominalX(&modelData.realVarsData[0].attribute.nominal);
+  test_success = test_success && validateMinX(&modelData.realVarsData[0].attribute.min);
+  test_success = test_success && validateMaxX(&modelData.realVarsData[0].attribute.max);
 
   // Test scalar variable p
   if (test_success && strcmp(modelData.integerParameterData[0].info.name, "p"))
