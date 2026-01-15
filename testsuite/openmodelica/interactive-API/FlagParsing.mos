@@ -64,6 +64,13 @@ setCommandLineOptions("fish"); getErrorString();
 // only take flags.
 setCommandLineOptions("-- -d=failtrace"); getErrorString();
 
+// Should work, flags don't require =.
+setCommandLineOptions("-d failtrace"); getErrorString();
+setCommandLineOptions("-d failtrace --debug=ceval"); getErrorString();
+
+// Shouldn't work, some flags require a value.
+setCommandLineOptions("-i="); getErrorString();
+
 // Result:
 // true
 // ""
@@ -143,4 +150,11 @@ setCommandLineOptions("-- -d=failtrace"); getErrorString();
 // ""
 // false
 // ""
+// true
+// ""
+// true
+// ""
+// false
+// "Error: Invalid type of flag instClass, expected a string but got nothing.
+// "
 // endResult
