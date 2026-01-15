@@ -284,7 +284,7 @@ algorithm
       equation
         true = FNode.isRefComponent(r);
         FCore.CO(e = e) = FNode.refData(r);
-        Absyn.TPATH(p, _) = SCodeUtil.getComponentTypeSpec(e);
+        p = SCodeUtil.getElementTypePath(e);
         (g, rr) = FLookup.name(g, r, p, FLookup.ignoreNothing, FLookup.dummyLookupOption);
         // print("Resolving ty: " + AbsynUtil.pathString(p) + " -> " + FNode.toStr(FNode.fromRef(rr)) + "\n");
         g = FGraphBuild.mkRefNode(FNode.refNodeName, {rr}, r, g);
@@ -296,7 +296,7 @@ algorithm
       equation
         true = FNode.isRefComponent(r);
         FCore.CO(e = e) = FNode.refData(r);
-        Absyn.TPATH(p, _) = SCodeUtil.getComponentTypeSpec(e);
+        p = SCodeUtil.getElementTypePath(e);
         failure((_, _) = FLookup.name(g, r, p, FLookup.ignoreNothing, FLookup.dummyLookupOption));
         print("FResolve.ty_one: component type path: " + AbsynUtil.pathString(p) +
               " not found in: " + FNode.toPathStr(FNode.fromRef(r)) +"!\n");

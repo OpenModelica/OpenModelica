@@ -115,6 +115,20 @@ getModelInstance(M, prettyPrint = true);
 //       \"type\": {
 //         \"name\": \"A\",
 //         \"restriction\": \"model\",
+//         \"elements\": [
+//           {
+//             \"$kind\": \"component\",
+//             \"name\": \"world\",
+//             \"type\": {
+//               \"$kind\": \"class\",
+//               \"name\": \"World\",
+//               \"restriction\": \"model\"
+//             },
+//             \"prefixes\": {
+//               \"outer\": true
+//             }
+//           }
+//         ],
 //         \"source\": {
 //           \"filename\": \"<interactive>\",
 //           \"lineStart\": 10,

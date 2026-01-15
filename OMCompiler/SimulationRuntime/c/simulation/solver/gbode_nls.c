@@ -35,9 +35,11 @@
 #include "gbode_nls.h"
 #include "gbode_util.h"
 #include "gbode_sparse.h"
+#include "gbode_internal_nls.h"
 
 #include "../../simulation_data.h"
 
+#include "../arrayIndex.h"
 #include "solver_main.h"
 #include "kinsolSolver.h"
 #include "kinsol_b.h"
@@ -81,7 +83,8 @@ void initializeStaticNLSData_SR(DATA* data, threadData_t *threadData, NONLINEAR_
 {
   for (int i = 0; i < nonlinsys->size; i++) {
     // Get the nominal values of the states
-    nonlinsys->nominal[i] = fmax(fabs(data->modelData->realVarsData[i].attribute.nominal), 1e-32);
+    const modelica_real nominal = getNominalFromScalarIdx(data->simulationInfo, data->modelData, VAR_KIND_STATE, i);
+    nonlinsys->nominal[i] = fmax(fabs(nominal), 1e-32);
     nonlinsys->min[i]     = data->modelData->realVarsData[i].attribute.min;
     nonlinsys->max[i]     = data->modelData->realVarsData[i].attribute.max;
   }
@@ -108,7 +111,8 @@ void initializeStaticNLSData_MR(DATA* data, threadData_t *threadData, NONLINEAR_
   // This needs to be done each time, the fast states change!
   for (int i = 0; i < nonlinsys->size; i++) {
     // Get the nominal values of the states
-    nonlinsys->nominal[i] = fmax(fabs(data->modelData->realVarsData[i].attribute.nominal), 1e-32);
+    const modelica_real nominal = getNominalFromScalarIdx(data->simulationInfo, data->modelData, VAR_KIND_VARIABLE, i);
+    nonlinsys->nominal[i] = fmax(fabs(nominal), 1e-32);
     nonlinsys->min[i]     = data->modelData->realVarsData[i].attribute.min;
     nonlinsys->max[i]     = data->modelData->realVarsData[i].attribute.max;
   }
@@ -132,12 +136,14 @@ void initializeStaticNLSData_MR(DATA* data, threadData_t *threadData, NONLINEAR_
  */
 void initializeStaticNLSData_IRK(DATA* data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA* nonlinsys, modelica_boolean initSparsePattern, modelica_boolean initNonlinearPattern)
 {
+
   for (int i = 0; i < nonlinsys->size; i++) {
     // Get the nominal values of the states, the non-linear system has size stages*nStates, i.e. [states, states, ...]
     int ii = i % data->modelData->nStates;
-    nonlinsys->nominal[i] = fmax(fabs(data->modelData->realVarsData[ii].attribute.nominal), 1e-32);
-    nonlinsys->min[i]     = data->modelData->realVarsData[i].attribute.min;
-    nonlinsys->max[i]     = data->modelData->realVarsData[i].attribute.max;
+    const modelica_real nominal = getNominalFromScalarIdx(data->simulationInfo, data->modelData, VAR_KIND_STATE, ii);
+    nonlinsys->nominal[i] = fmax(fabs(nominal), 1e-32);
+    nonlinsys->min[i]     = data->modelData->realVarsData[ii].attribute.min;
+    nonlinsys->max[i]     = data->modelData->realVarsData[ii].attribute.max;
   }
 
   /* Initialize sparsity pattern */
@@ -295,6 +301,17 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA(DATA* data, threadData_t* threadData, DAT
     solverData->initHomotopyData = NULL;
     nlsData->solverData = solverData;
     break;
+  case GB_NLS_INTERNAL:
+      nlsData->nlsMethod = NLS_GB_INTERNAL;
+    if (nlsData->isPatternAvailable) {
+      nlsData->nlsLinearSolver = NLS_LS_KLU;
+    } else {
+      nlsData->nlsLinearSolver = NLS_LS_DEFAULT;
+    }
+    solverData->ordinaryData = (void*) gbInternalNlsAllocate(nlsData->size, nlsUserData, FALSE, nlsData->isPatternAvailable);
+    solverData->initHomotopyData = NULL;
+    nlsData->solverData = solverData;
+    break;
   default:
     throwStreamPrint(NULL, "Memory allocation for NLS method %s not yet implemented.", GB_NLS_METHOD_NAME[gbData->nlsSolverMethod]);
   }
@@ -396,6 +413,22 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA_MR(DATA* data, threadData_t* threadData, 
     solverData->initHomotopyData = NULL;
     nlsData->solverData = solverData;
     break;
+  case GB_NLS_INTERNAL:
+    /* throw as multi-rate with internal NLS is not implemented */
+    throwStreamPrint(NULL, "GBODE Multi-Rate integration with '-gbnls=internal' is not yet implemented. Proceed by setting '-gbnls' as 'kinsol', 'newton', "
+                            "or 'experimental-kinsol'. Alternatively, you may disable Multi-Rate integration.");
+
+    /* WIP: multi-rate with internal NLS */
+    nlsData->nlsMethod = NLS_GB_INTERNAL;
+    if (nlsData->isPatternAvailable) {
+      nlsData->nlsLinearSolver = NLS_LS_KLU;
+    } else {
+      nlsData->nlsLinearSolver = NLS_LS_DEFAULT;
+    }
+    solverData->ordinaryData = (void*) gbInternalNlsAllocate(nlsData->size, nlsUserData, FALSE, nlsData->isPatternAvailable);
+    solverData->initHomotopyData = NULL;
+    nlsData->solverData = solverData;
+    break;
   default:
     throwStreamPrint(NULL, "Memory allocation for NLS method %s not yet implemented.", GB_NLS_METHOD_NAME[gbfData->nlsSolverMethod]);
   }
@@ -425,6 +458,9 @@ void freeRK_NLS_DATA(NONLINEAR_SYSTEM_DATA* nlsData)
     break;
   case NLS_KINSOL_B:
     B_nlsKinsolFree(dataSolver->ordinaryData);
+    break;
+  case NLS_GB_INTERNAL:
+    gbInternalNlsFree(dataSolver->ordinaryData);
     break;
   default:
     throwStreamPrint(NULL, "Not handled NONLINEAR_SOLVER in gbode_freeData. Are we leaking memroy?");
@@ -485,6 +521,7 @@ void get_kinsol_statistics(NLS_KINSOL_DATA* kin_mem)
   // Report numbers
   infoStreamPrint(OMC_LOG_GBODE_NLS, 0, "Kinsol statistics: nIters = %ld, nFuncEvals = %ld, nJacEvals = %ld,  fnorm:  %14.12g", nIters, nFuncEvals, nJacEvals, fnorm);
 }
+
 /**
  * @brief Special treatment when solving non linear systems of equations
  *
@@ -511,7 +548,11 @@ NLS_SOLVER_STATUS solveNLS_gb(DATA *data, threadData_t *threadData, NONLINEAR_SY
     rt_ext_tp_tick(&clock);
   }
 
-  if (gbData->nlsSolverMethod == GB_NLS_KINSOL || gbData->nlsSolverMethod == GB_NLS_KINSOL_B) {
+  if (gbData->nlsSolverMethod == GB_NLS_INTERNAL)
+  {
+    solved = gbInternalSolveNls(data, threadData, nlsData, gbData, solverData->ordinaryData);
+  }
+  else if (gbData->nlsSolverMethod == GB_NLS_KINSOL || gbData->nlsSolverMethod == GB_NLS_KINSOL_B) {
     // Get kinsol data object
     void* kin_mem;
     if (gbData->nlsSolverMethod == GB_NLS_KINSOL){
@@ -687,6 +728,7 @@ void residual_DIRK(RESIDUAL_USERDATA* userData, const double *xloc, double *res,
   const int stage_  = gbData->act_stage;
   const modelica_real fac = gbData->stepSize * gbData->tableau->A[stage_ * nStages + stage_];
 
+  sData->timeValue = gbData->time + gbData->tableau->c[stage_] * gbData->stepSize;
   // Set states
   for (i = 0; i < nStates; i++)
     assertStreamPrint(threadData, !isnan(xloc[i]), "residual_DIRK: xloc is NAN");

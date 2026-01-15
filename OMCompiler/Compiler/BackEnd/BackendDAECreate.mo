@@ -1534,7 +1534,7 @@ algorithm
   (oExp,oSource,oInlineHT,assrtLstOut) := matchcontinue(iExp,fnstpl,iSource,iInlineHT)
     local
       DAE.Exp e,e1;
-      list<DAE.Exp> elst;
+      list<DAE.Subscript> elst;
       DAE.ElementSource source;
       HashTableExpToExp.HashTable inlineHT;
       Boolean inlined;
@@ -3962,9 +3962,8 @@ algorithm
       then
         v_2;
 
-    case (v, globalKnownVars, ((DAE.STMT_ASSIGN(exp1 = DAE.ASUB(exp = DAE.CREF(componentRef = cr), sub= expExpLst)))::xs), true)
+    case (v, globalKnownVars, ((DAE.STMT_ASSIGN(exp1 = DAE.ASUB(exp = DAE.CREF(componentRef = cr), sub=subs)))::xs), true)
       equation
-        subs = List.map(expExpLst, Expression.makeIndexSubscript);
         cr = ComponentReference.subscriptCref(cr, subs);
         (vars, _) = BackendVariable.getVar(cr, v);
         vars = List.map1(vars, BackendVariable.setVarKind, BackendDAE.DISCRETE());

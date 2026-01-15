@@ -1954,6 +1954,15 @@ OMSimulator/SSP Options
 
   -  *Logging Level* - OMSimulator logging level.
 
+Sensitivity Optimization Options
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+-  General
+
+  -  *OMSens Backend Path* - sets the OMSens backend.
+
+  -  *python* - sets the Python executable to run OMSens scripts.
+
 __OpenModelica_commandLineOptions Annotation
 --------------------------------------------
 

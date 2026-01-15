@@ -101,7 +101,7 @@ simulate(expandDerOperator3); getErrorString();
 //
 // [stateselection] (1) Natural states before index reduction:
 // *************************************************************
-// 	[STAT] (1) Real $AUX_0 = x + y
+// 	[STAT] (1) Real $AUX_0 = x + y (StateSelect = avoid)
 //
 // [stateselection] (1) Created auxiliary equations:
 // ***************************************************

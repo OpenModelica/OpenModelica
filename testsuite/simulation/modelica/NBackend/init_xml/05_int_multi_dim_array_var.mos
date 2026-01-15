@@ -1,0 +1,52 @@
+// name: 05_int_multi_dim_array_var
+// keywords: NewBackend
+// status: correct
+// teardown_command: rm -f *MultiDimArrayVar*
+//
+// Check if init XML has array variable for integer array variable A of size
+// (2,3,4). Needs to be serialized in row major order
+
+setCommandLineOptions("--newBackend --simCodeScalarize=false");
+
+loadString("
+model MultiDimArrayVar
+  parameter Integer dim1 = 2;
+  parameter Integer dim2 = 3;
+  parameter Integer dim3 = 4;
+  parameter Integer A[dim1, dim2, dim3] = { { {1,  2,  3,  4 },
+                                              {5,  6,  7,  8 },
+                                              {9,  10, 11, 12} },
+                                            { {13, 14, 15, 16},
+                                              {17, 18, 19, 20},
+                                              {21, 22, 23, 24} } };
+end MultiDimArrayVar;
+"); getErrorString();
+
+buildModel(MultiDimArrayVar); getErrorString();
+
+system("sed -n '/<ArrayVariable/,/<\\/ArrayVariable>/p' MultiDimArrayVar_init.xml > MultiDimArrayVar_init.tmp.xml");
+initFileContent := readFile("MultiDimArrayVar_init.tmp.xml");
+
+// Result:
+// true
+// true
+// ""
+// {"MultiDimArrayVar", "MultiDimArrayVar_init.xml"}
+// ""
+// 0
+// "  <ArrayVariable
+//     name = \"A\"
+//     valueReference = \"1003\"
+//     variability = \"parameter\" isDiscrete = \"true\"
+//     causality = \"local\" isValueChangeable = \"true\"
+//     alias = \"noAlias\"
+//     classIndex = \"3\" classType = \"iPar\"
+//     isProtected = \"false\" hideResult = \"false\" isEncrypted = \"false\" initNonlinear = \"false\"
+//     fileName = \"\" startLine = \"0\" startColumn = \"0\" endLine = \"0\" endColumn = \"0\" fileWritable = \"true\">
+//     <Dimension start=\"2\"/>
+//     <Dimension start=\"3\"/>
+//     <Dimension start=\"4\"/>
+//     <Integer start=\"1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24\" fixed=\"false\" />
+//   </ArrayVariable>
+// "
+// endResult

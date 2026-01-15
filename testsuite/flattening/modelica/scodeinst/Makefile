@@ -119,6 +119,7 @@ CevalArrayConstant2.mo \
 CevalArrayConstant3.mo \
 CevalArrayConstructor1.mo \
 CevalArrayConstructor2.mo \
+CevalArrayConstructor3.mo \
 CevalAsin1.mo \
 CevalAtan1.mo \
 CevalAtan21.mo \
@@ -374,6 +375,8 @@ DimUnknown13.mo \
 DimUnknown14.mo \
 DimUnknown15.mo \
 DimUnknown16.mo \
+DimUnknown17.mo \
+DimUnknown18.mo \
 dim1.mo \
 dim13.mo \
 dim16.mo \
@@ -710,6 +713,7 @@ FunctionRecordArg3.mo \
 FunctionRecordArg4.mo \
 FunctionRecordArg5.mo \
 FunctionRecordArg6.mo \
+FunctionRecordArg7.mo \
 FunctionRecursive1.mo \
 FunctionRecursive2.mo \
 FunctionSections1.mo \
@@ -910,6 +914,7 @@ NoScalarize1.mo \
 NoScalarize2.mo \
 NoScalarizeConnect1.mo \
 NoScalarizeConnect2.mo \
+NoScalarizeConnect3.mo \
 OperationAdd1.mo \
 OperationAddEW1.mo \
 OperationDiv1.mo \

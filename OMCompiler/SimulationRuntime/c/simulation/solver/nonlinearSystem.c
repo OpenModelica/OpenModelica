@@ -613,7 +613,6 @@ void initializeNonlinearSystemData(DATA *data, threadData_t *threadData, NONLINE
  */
 int initializeNonlinearSystems(DATA *data, threadData_t *threadData)
 {
-  TRACE_PUSH
   int i;
   modelica_boolean someSmallDensity = FALSE;  /* pretty dumping of flag info */
   modelica_boolean someBigSize = FALSE;       /* analogous to someSmallDensity */
@@ -657,7 +656,6 @@ int initializeNonlinearSystems(DATA *data, threadData_t *threadData)
 
   messageClose(OMC_LOG_NLS);
 
-  TRACE_POP
   return 0;
 }
 
@@ -673,7 +671,6 @@ int initializeNonlinearSystems(DATA *data, threadData_t *threadData)
  */
 int updateStaticDataOfNonlinearSystems(DATA *data, threadData_t *threadData)
 {
-  TRACE_PUSH
   int i;
   int size;
   NONLINEAR_SYSTEM_DATA *nonlinsys = data->simulationInfo->nonlinearSystemData;
@@ -687,7 +684,6 @@ int updateStaticDataOfNonlinearSystems(DATA *data, threadData_t *threadData)
 
   messageClose(OMC_LOG_NLS);
 
-  TRACE_POP
   return 0;
 }
 
@@ -795,7 +791,6 @@ void freeNonlinearSyst(DATA* data, threadData_t* threadData, NONLINEAR_SYSTEM_DA
  */
 void freeNonlinearSystems(DATA *data, threadData_t *threadData)
 {
-  TRACE_PUSH
   int i;
   NONLINEAR_SYSTEM_DATA* nonlinsys = data->simulationInfo->nonlinearSystemData;
 
@@ -807,7 +802,6 @@ void freeNonlinearSystems(DATA *data, threadData_t *threadData)
 
   messageClose(OMC_LOG_NLS);
 
-  TRACE_POP
   return;
 }
 
@@ -819,6 +813,7 @@ void freeNonlinearSystems(DATA *data, threadData_t *threadData)
  */
 void printNonLinearSystemSolvingStatistics(NONLINEAR_SYSTEM_DATA* nonlinsys, enum OMC_LOG_STREAM stream)
 {
+  if (!OMC_ACTIVE_STREAM(stream)) return;
   infoStreamPrint(stream, 1, "Non-linear system %d of size %d solver statistics:", (int)nonlinsys->equationIndex, (int)nonlinsys->size);
   infoStreamPrint(stream, 0, " number of calls                : %ld", nonlinsys->numberOfCall);
   infoStreamPrint(stream, 0, " number of iterations           : %ld", nonlinsys->numberOfIterations);
@@ -1520,6 +1515,10 @@ int check_nonlinear_solution(DATA *data, int printFailingSystems, int sysNumber)
   long j;
   int i = sysNumber;
 
+  const size_t buff_size = 2048;
+  char *start_buffer;
+  char *nominal_buffer;
+
   if(nonlinsys[i].solved == NLS_FAILED)
   {
     int index = nonlinsys[i].equationIndex, indexes[2] = {1,index};
@@ -1529,26 +1528,41 @@ int check_nonlinear_solution(DATA *data, int printFailingSystems, int sysNumber)
     {
       warningStreamPrint(OMC_LOG_INIT, 1, "proper start-values for some of the following iteration variables might help");
     }
-    for(j=0; j<modelInfoGetEquation(&data->modelData->modelDataXml, (nonlinsys[i]).equationIndex).numVar; ++j) {
+
+    start_buffer = (char*) malloc(buff_size * sizeof(char));
+    assertStreamPrint(NULL, start_buffer != NULL, "Out of memory.");
+    nominal_buffer = (char*) malloc(buff_size * sizeof(char));
+    assertStreamPrint(NULL, nominal_buffer != NULL, "Out of memory.");
+    for(j=0; j<modelInfoGetEquation(&data->modelData->modelDataXml, (nonlinsys[i]).equationIndex).numVar; ++j)
+    {
       int done=0;
       long k;
       const MODEL_DATA *mData = data->modelData;
-      for(k=0; k<mData->nVariablesReal && !done; ++k)
+      for(k=0; k<mData->nVariablesRealArray && !done; ++k)
       {
         if (!strcmp(mData->realVarsData[k].info.name, modelInfoGetEquation(&data->modelData->modelDataXml, (nonlinsys[i]).equationIndex).vars[j]))
         {
         done = 1;
-        warningStreamPrint(OMC_LOG_INIT, 0, "[%ld] Real %s(start=%g, nominal=%g)", j+1,
-                                     mData->realVarsData[k].info.name,
-                                     mData->realVarsData[k].attribute.start,
-                                     mData->realVarsData[k].attribute.nominal);
+        real_vector_to_string(&mData->realVarsData[k].attribute.start, mData->realVarsData[k].dimension.numberOfDimensions == 0, start_buffer, buff_size);
+        real_vector_to_string(&mData->realVarsData[k].attribute.nominal, mData->realVarsData[k].dimension.numberOfDimensions == 0, nominal_buffer, buff_size);
+        warningStreamPrint(OMC_LOG_INIT, 0, "[%ld] Real %s(start=%s, nominal=%s)",
+                           j+1,
+                           mData->realVarsData[k].info.name,
+                           start_buffer,
+                           nominal_buffer);
         }
       }
       if (!done)
       {
-        warningStreamPrint(OMC_LOG_INIT, 0, "[%ld] Real %s(start=?, nominal=?)", j+1, modelInfoGetEquation(&data->modelData->modelDataXml, (nonlinsys[i]).equationIndex).vars[j]);
+        warningStreamPrint(OMC_LOG_INIT, 0, "[%ld] Real %s(start=?, nominal=?)",
+                           j+1,
+                           modelInfoGetEquation(&data->modelData->modelDataXml,
+                           (nonlinsys[i]).equationIndex).vars[j]);
       }
     }
+    free(start_buffer);
+    free(nominal_buffer);
+
     if(data->simulationInfo->initial)
     {
       messageCloseWarning(OMC_LOG_INIT);
@@ -1584,4 +1598,3 @@ void cleanUpOldValueListAfterEvent(DATA *data, double time)
     cleanValueListbyTime(nonlinsys[i].oldValueList->valueList, time);
   }
 }
-

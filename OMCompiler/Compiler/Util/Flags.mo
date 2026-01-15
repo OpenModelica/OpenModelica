@@ -833,7 +833,8 @@ constant ConfigFlag TEARING_METHOD = CONFIG_FLAG(41, "tearingMethod",
     ("noTearing", Gettext.gettext("Deprecated, use minimalTearing.")),
     ("minimalTearing", Gettext.gettext("Minimal tearing method to only tear discrete variables.")),
     ("omcTearing", Gettext.gettext("Tearing method developed by TU Dresden: Frenkel, Schubert.")),
-    ("cellier", Gettext.gettext("Tearing based on Celliers method, revised by FH Bielefeld: Täuber, Patrick"))})),
+    ("cellier", Gettext.gettext("Tearing based on Celliers method, revised by FH Bielefeld: Täuber, Patrick")),
+    ("guruTearing", Gettext.gettext("Tearing based solely on TearingSelect annotation. Forces prefer/always variables to be iteration variables."))})),
   Gettext.gettext("Sets the tearing method to use. Select no tearing or choose tearing method."));
 constant ConfigFlag TEARING_HEURISTIC = CONFIG_FLAG(42, "tearingHeuristic",
   NONE(), EXTERNAL(), STRING_FLAG("MC3"),
@@ -1198,7 +1199,7 @@ constant ConfigFlag INITIAL_STATE_SELECTION = CONFIG_FLAG(121, "initialStateSele
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   Gettext.gettext("Activates the state selection inside initialization to avoid singularities."));
 constant ConfigFlag LINEARIZATION_DUMP_LANGUAGE = CONFIG_FLAG(122, "linearizationDumpLanguage",
-  NONE(), EXTERNAL(), STRING_FLAG("modelica"),
+  NONE(), EXTERNAL(), STRING_FLAG("none"),
   SOME(STRING_DESC_OPTION({
     ("none", Gettext.gettext("Don't generate code for linearization.")),
     ("modelica", Gettext.gettext("Generate linearized Modelica model.")),
@@ -1380,6 +1381,13 @@ constant ConfigFlag LOAD_MISSING_LIBRARIES = CONFIG_FLAG(159, "loadMissingLibrar
 constant ConfigFlag CAUSALIZE_DAE_MODE = CONFIG_FLAG(160, "causalizeDaeMode",
   NONE(), EXTERNAL(), BOOL_FLAG(true), NONE(),
   Gettext.gettext("The system is partially causalized and simple assignments are generated for equations that can be solved explicitly. Only works with --daeMode."));
+/* please remove me once this is supported */
+constant ConfigFlag SIM_CODE_SCALARIZE = CONFIG_FLAG(161, "simCodeScalarize",
+  NONE(), EXTERNAL(), BOOL_FLAG(true), NONE(),
+  Gettext.gettext("Scalarizes variables during simcode phase."));
+constant ConfigFlag EXECUTE_COMMAND = CONFIG_FLAG(162, "cmd",
+  NONE(), EXTERNAL(), STRING_FLAG(""), NONE(),
+  Gettext.gettext("Executes the string argument as a script before any other operation."));
 
 function getFlags
   "Loads the flags with getGlobalRoot. Assumes flags have been loaded."

@@ -28,6 +28,8 @@
  *
  */
 
+#include "simulation/arrayIndex.h"
+
 #include "evaluations.h"
 
 #include "strategies.h"
@@ -71,9 +73,6 @@ static int control_trajectory_input_function(DATA* data, threadData_t* threadDat
     // but not important for now
     f64 time = data->localData[0]->timeValue;
 
-    // transform back to GDOP time (always [0, tf])
-    time -= info.model_start_time;
-
     controls.interpolate_at(time, u_interpolation);
     set_inputs(info, u_interpolation);
 
@@ -96,7 +95,7 @@ static void trajectory_xut_emit(simulation_result* sim_result, DATA* data, threa
         trajectory.u[u_idx].push_back(data->localData[0]->realVars[u]);
     }
 
-    trajectory.t.push_back(solver_info->currentTime - info.model_start_time);
+    trajectory.t.push_back(solver_info->currentTime);
 }
 
 static void trajectory_p_emit(simulation_result* sim_result, DATA* data, threadData_t *threadData)
@@ -115,7 +114,7 @@ static void trajectory_p_emit(simulation_result* sim_result, DATA* data, threadD
 // from e.g. initial equations / parameters
 void initialize_model(InfoGDOP& info) {
     externalInputallocate(info.data);
-    initializeModel(info.data, info.threadData, "", "", info.model_start_time);
+    initializeModel(info.data, info.threadData, "", "", info.t0);
 }
 
 // at least free for externalInputallocate();
@@ -164,7 +163,7 @@ int MatEmitter::operator()(const PrimalDualTrajectory& trajectory) {
         }
 
         // evaluate all algebraic variables
-        set_time(info, info.model_start_time + primals->t[i]);
+        set_time(info, primals->t[i]);
         set_states_inputs(info, xu.raw());
         eval_current_point_dae(info);
 
@@ -185,18 +184,28 @@ ConstantInitialization::ConstantInitialization(InfoGDOP& info)
 std::unique_ptr<PrimalDualTrajectory> ConstantInitialization::operator()(const GDOP::GDOP& gdop) {
     DATA* data = info.data;
 
-    std::vector<f64> t = {0, info.tf};
+    std::vector<f64> t = {info.t0, info.tf};
     std::vector<std::vector<f64>> x_guess;
     std::vector<std::vector<f64>> u_guess;
     std::vector<f64> p;
     InterpolationMethod interpolation = InterpolationMethod::LINEAR;
 
     for (int x = 0; x < info.x_size; x++) {
-        x_guess.push_back({data->modelData->realVarsData[x].attribute.start, data->modelData->realVarsData[x].attribute.start});
+        if (data->modelData->realVarsData[x].dimension.numberOfDimensions > 0) {
+            Log::error("Support for array variables not yet implemented!");
+            abort();
+        }
+        modelica_real* start = (modelica_real *)data->modelData->realVarsData[x].attribute.start.data;
+        x_guess.push_back({start[0], start[0]});
     }
 
     for (int u : info.u_indices_real_vars) {
-        u_guess.push_back({data->modelData->realVarsData[u].attribute.start, data->modelData->realVarsData[u].attribute.start});
+        if (data->modelData->realVarsData[u].dimension.numberOfDimensions > 0) {
+            Log::error("Support for array variables not yet implemented!");
+            abort();
+        }
+        modelica_real* start = (modelica_real *)data->modelData->realVarsData[u].attribute.start.data;
+        u_guess.push_back({start[0], start[0]});
     }
 
     // TODO: PARAMETERS add p
@@ -218,8 +227,8 @@ std::unique_ptr<Trajectory> Simulation::operator()(const ControlTrajectory& cont
 
     solver_info.solverMethod = solver;
     simInfo->numSteps  = num_steps;
-    simInfo->startTime = start_time + info.model_start_time; // shift by model start time
-    simInfo->stopTime  = stop_time  + info.model_start_time; // shift by model start time
+    simInfo->startTime = start_time;
+    simInfo->stopTime  = stop_time;
     simInfo->stepSize  = (stop_time - start_time) / static_cast<f64>(num_steps);
     simInfo->useStopTime = 1;
 
@@ -336,41 +345,36 @@ std::shared_ptr<NLP::Scaling> NominalScalingFactory::operator()(const GDOP::GDOP
     auto x_size  = info.x_size;
     auto u_size  = info.u_size;
     auto xu_size = info.xu_size;
-    auto f_size = info.f_size;
-    auto g_size = info.g_size;
-    auto r_size = info.r_size;
+    auto f_size  = info.f_size;
+    auto g_size  = info.g_size;
+    auto r_size  = info.r_size;
     auto fg_size = f_size + g_size;
-
-    auto real_vars_data = info.data->modelData->realVarsData;
 
     auto has_mayer = gdop.get_problem().pc->has_mayer;
     auto has_lagrange = gdop.get_problem().pc->has_lagrange;
 
     if (has_mayer && has_lagrange) {
-        f_nominal = (real_vars_data[info.index_mayer_real_vars].attribute.nominal +
-                     real_vars_data[info.index_lagrange_real_vars].attribute.nominal) / 2;
+        const modelica_real nominal_mayer = getNominalFromScalarIdx(info.data->simulationInfo, info.data->modelData, VAR_KIND_VARIABLE, info.index_mayer_real_vars);
+        const modelica_real nominal_lagrange = getNominalFromScalarIdx(info.data->simulationInfo, info.data->modelData, VAR_KIND_VARIABLE, info.index_lagrange_real_vars);
+
+        f_nominal = (nominal_mayer + nominal_lagrange) / 2;
     }
     else if (has_lagrange) {
-        f_nominal = real_vars_data[info.index_lagrange_real_vars].attribute.nominal;
+        f_nominal = getNominalFromScalarIdx(info.data->simulationInfo, info.data->modelData, VAR_KIND_VARIABLE, info.index_lagrange_real_vars);
     }
     else if (has_mayer) {
-        f_nominal = real_vars_data[info.index_mayer_real_vars].attribute.nominal;
-    }
-
-    // x(t_0)
-    for (int x = 0; x < info.x_size; x++) {
-        x_nominal[x] = real_vars_data[x].attribute.nominal;
+        f_nominal = getNominalFromScalarIdx(info.data->simulationInfo, info.data->modelData, VAR_KIND_VARIABLE, info.index_mayer_real_vars);
     }
 
     // (x, u)_(t_node)
-    for (int node = 0; node < gdop.get_mesh().node_count; node++) {
+    for (int node = 0; node < 1 + gdop.get_mesh().node_count; node++) {
         for (int x = 0; x < x_size; x++) {
-            x_nominal[x_size + node * xu_size + x] = real_vars_data[x].attribute.nominal;
+            x_nominal[node * xu_size + x] = getNominalFromScalarIdx(info.data->simulationInfo, info.data->modelData, VAR_KIND_VARIABLE, x);
         }
 
         for (int u = 0; u < u_size; u++) {
             int u_real_vars = info.u_indices_real_vars[u];
-            x_nominal[2 * x_size + node * xu_size + u] = real_vars_data[u_real_vars].attribute.nominal;
+            x_nominal[node * xu_size + x_size + u] = getNominalFromScalarIdx(info.data->simulationInfo, info.data->modelData, VAR_KIND_VARIABLE, u_real_vars);
         }
     }
 
@@ -380,12 +384,18 @@ std::shared_ptr<NLP::Scaling> NominalScalingFactory::operator()(const GDOP::GDOP
         }
 
         for (int g = 0; g < g_size; g++) {
-            g_nominal[f_size + node * fg_size + g] = real_vars_data[info.index_g_real_vars + g].attribute.nominal;
+            g_nominal[f_size + node * fg_size + g] = getNominalFromScalarIdx(info.data->simulationInfo, info.data->modelData, VAR_KIND_VARIABLE, info.index_g_real_vars + g);
         }
     }
 
     for (int r = 0; r < r_size; r++) {
-        g_nominal[gdop.get_off_fg_total() + r] = real_vars_data[info.index_r_real_vars + r].attribute.nominal;
+        g_nominal[gdop.get_off_fg_total() + r] = getNominalFromScalarIdx(info.data->simulationInfo, info.data->modelData, VAR_KIND_VARIABLE, info.index_r_real_vars + r);
+    }
+
+    // artificial constraints are O(u)
+    for (int u = 0; u < info.u_size; u++) {
+        int u_real_vars = info.u_indices_real_vars[u];
+        g_nominal[gdop.get_off_fgr_total() + u] = getNominalFromScalarIdx(info.data->simulationInfo, info.data->modelData, VAR_KIND_VARIABLE, u_real_vars);
     }
 
     return std::make_shared<NLP::NominalScaling>(std::move(x_nominal), std::move(g_nominal), f_nominal);
@@ -397,7 +407,9 @@ GDOP::Strategies default_strategies(InfoGDOP& info, GDOP::Problem& problem, bool
 
     // TODO: do add simulation_tolerance factor here?
     FixedVector<f64> verifier_tolerances(info.x_size);
-    for (int x = 0; x < info.x_size; x++) { verifier_tolerances[x] = 1e-4 * info.data->modelData->realVarsData[x].attribute.nominal; }
+    for (int x = 0; x < info.x_size; x++) {
+        verifier_tolerances[x] = 1e-4 * getNominalFromScalarIdx(info.data->simulationInfo, info.data->modelData, VAR_KIND_VARIABLE, x);
+    }
 
     auto scaling_factory               = std::make_shared<NominalScalingFactory>(info);
     auto emitter                       = std::make_shared<MatEmitter>(MatEmitter(info));
@@ -422,7 +434,14 @@ GDOP::Strategies default_strategies(InfoGDOP& info, GDOP::Problem& problem, bool
                                                                                         Linalg::Norm::NORM_INF,
                                                                                         std::move(verifier_tolerances)));
 
-    strategies.initialization          = simulation_initialization_strategy;
+    if (std::string(omc_flagValue[FLAG_IPOPT_INIT] ? omc_flagValue[FLAG_IPOPT_INIT] : "") == "CONST")
+    {
+        strategies.initialization = const_initialization_strategy;
+    }
+    else {
+        strategies.initialization = simulation_initialization_strategy;
+    }
+
     strategies.simulation              = simulation_strategy;
     strategies.simulation_step         = simulation_step_strategy;
     strategies.mesh_refinement         = std::make_shared<GDOP::L2BoundaryNorm>(info.l2bn_phase_one_iterations, info.l2bn_phase_two_iterations, info.l2bn_phase_two_level);

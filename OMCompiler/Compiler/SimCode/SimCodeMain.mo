@@ -82,7 +82,8 @@ import ErrorExt;
 import ExecStat;
 import Flags;
 import FlatModel = NFFlatModel;
-import FunctionTree = NFFlatten.FunctionTree;
+import NFFunction;
+import NFFlatten.{FunctionTree, FunctionTreeImpl};
 import FMI;
 import GCExt;
 import HashTable;
@@ -394,6 +395,7 @@ function generateModelCodeNewBackend
   output String fileDir;
   output Real timeSimCode = 0.0;
   output Real timeTemplates = 0.0;
+  output DAE.FunctionTree oldFunctionTree;
 protected
   Integer numCheckpoints;
   NSimCode.SimCode simCode;
@@ -403,7 +405,7 @@ algorithm
   StackOverflow.clearStacktraceMessages();
   try
     System.realtimeTick(ClockIndexes.RT_CLOCK_SIMCODE);
-    simCode := NSimCode.SimCode.create(bdae, className, fileNamePrefix, simSettingsOpt);
+    (simCode, oldFunctionTree) := NSimCode.SimCode.create(bdae, className, fileNamePrefix, simSettingsOpt);
     if Flags.isSet(Flags.DUMP_SIMCODE) then
       print(NSimCode.SimCode.toString(simCode));
     end if;
@@ -756,13 +758,14 @@ algorithm
       String fileprefix, fileNamePrefixHash;
       String install_include_omc_dir, install_include_omc_c_dir, install_share_buildproject_dir, install_fmu_sources_dir, fmu_tmp_sources_dir;
       String cmakelistsStr, needCvode, cvodeDirectory;
+      String modelDefinesHeaderStr;
       list<String> sourceFiles, model_desc_src_files, fmi2HeaderFiles, modelica_standard_table_sources;
       list<String> dgesv_sources, cminpack_sources, simrt_c_sundials_sources, simrt_linear_solver_sources, simrt_non_linear_solver_sources;
       list<String> simrt_mixed_solver_sources, fmi_export_files, model_gen_files, model_all_gen_files, shared_source_files;
       SimCode.VarInfo varInfo;
     case (SimCode.SIMCODE(),"C")
       algorithm
-        fileNamePrefixHash := substring(intString(stringHashDjb2(simCode.fileNamePrefix)), 1, 3);
+        fileNamePrefixHash := Util.hashFileNamePrefix(simCode.fileNamePrefix);
         fmutmp := fileNamePrefixHash + ".fmutmp";
         if System.directoryExists(fmutmp) then
           if not System.removeDirectory(fmutmp) then
@@ -895,8 +898,14 @@ algorithm
         // This fmu export files of OMC are located in a very unexpected place. Right now they are in SimulationRuntime/fmi/export/openmodelica
         // and then then they are installed to include/omc/c/fmi-export for some reason. The source, install, and source fmu location
         // for these files should be made consistent. For now to avoid modifing things a lot they are left as they are and copied here.
-        fmi_export_files := if FMUVersion == "1.0" then RuntimeSources.fmi1Files else RuntimeSources.fmi2Files;
-        copyFiles(fmi_export_files, source=install_include_omc_c_dir, destination=fmu_tmp_sources_dir);
+        if FMUVersion == "1.0" then
+          copyFiles(RuntimeSources.fmi1Files, source=install_include_omc_c_dir, destination=fmu_tmp_sources_dir);
+          fmi_export_files := RuntimeSources.fmi1Files;
+        else
+          copyFiles(RuntimeSources.fmi2_sources, source=install_include_omc_c_dir, destination=fmu_tmp_sources_dir);
+          copyFiles(RuntimeSources.fmi2_headers, source=install_include_omc_c_dir, destination=fmu_tmp_sources_dir);
+          fmi_export_files := RuntimeSources.fmi2_sources;
+        end if;
 
         /*
          * fix issue https://github.com/OpenModelica/OpenModelica/issues/13213
@@ -919,7 +928,8 @@ algorithm
         model_gen_files := list(simCode.fileNamePrefix + f for f in RuntimeSources.defaultFileSuffixes);
 
         // I need to see some tests failing or something not working to make sense of what to add here
-        shared_source_files := List.flatten({RuntimeSources.simrt_c_sources,
+        shared_source_files := List.flatten({fmi_export_files,
+                                             RuntimeSources.simrt_c_sources,
                                              simrt_linear_solver_sources,
                                              simrt_non_linear_solver_sources,
                                              simrt_mixed_solver_sources
@@ -929,12 +939,12 @@ algorithm
         if not Flags.getConfigBool(Flags.FMI_SOURCES) or Flags.getConfigEnum(Flags.FMI_FILTER) == Flags.FMI_BLACKBOX then
           model_desc_src_files := {}; // set the sourceFiles to empty, to remove the sources in modeldescription.xml
         else
-          model_desc_src_files := List.flatten({model_gen_files,      //  order matters
-                                                shared_source_files,
-                                                dgesv_sources,
-                                                cminpack_sources,
-                                                simrt_c_sundials_sources,
-                                                modelica_standard_table_sources
+          model_desc_src_files := List.flatten({List.sort(model_gen_files, Util.strcmpNoCaseBool),      //  order matters
+                                                List.sort(shared_source_files, Util.strcmpNoCaseBool),
+                                                List.sort(dgesv_sources, Util.strcmpNoCaseBool),
+                                                List.sort(cminpack_sources, Util.strcmpNoCaseBool),
+                                                List.sort(simrt_c_sundials_sources, Util.strcmpNoCaseBool),
+                                                List.sort(modelica_standard_table_sources, Util.strcmpNoCaseBool)
                                     });
         end if;
 
@@ -1008,10 +1018,26 @@ algorithm
 
         System.writeFile(fmu_tmp_sources_dir + "CMakeLists.txt", cmakelistsStr);
 
-        Tpl.closeFile(Tpl.tplCallWithFailErrorNoArg(function CodegenFMU.fmuMakefile(a_target=Config.simulationCodeTarget(), a_simCode=simCode, a_FMUVersion=FMUVersion, a_sourceFiles=model_all_gen_files, a_runtimeObjectFiles=list(System.stringReplace(f,".c",".o") for f in shared_source_files), a_dgesvObjectFiles=list(System.stringReplace(f,".c",".o") for f in dgesv_sources), a_cminpackObjectFiles=list(System.stringReplace(f,".c",".o") for f in cminpack_sources), a_sundialsObjectFiles=list(System.stringReplace(f,".c",".o") for f in simrt_c_sundials_sources)),
-                      txt=Tpl.redirectToFile(Tpl.emptyTxt, fmutmp+"/sources/Makefile.in")));
-        Tpl.closeFile(Tpl.tplCallWithFailError(CodegenFMU.settingsfile, simCode,
-                      txt=Tpl.redirectToFile(Tpl.emptyTxt, fmutmp+"/sources/omc_simulation_settings.h")));
+        // Set model define include in fmu2_model_interface.c
+        modelDefinesHeaderStr := System.readFile(fmu_tmp_sources_dir + "fmi-export/fmu2_model_interface.c");
+        modelDefinesHeaderStr := System.stringReplace(modelDefinesHeaderStr, "fmu2_dummy_model_defines.h", "../" + simCode.fileNamePrefix + "_FMU.h");
+        System.writeFile(fmu_tmp_sources_dir + "fmi-export/fmu2_model_interface.c", modelDefinesHeaderStr);
+
+        Tpl.closeFile(Tpl.tplCallWithFailErrorNoArg(
+          function CodegenFMU.fmuMakefile(
+            a_target=Config.simulationCodeTarget(),
+            a_simCode=simCode,
+            a_FMUVersion=FMUVersion,
+            a_sourceFiles=model_all_gen_files,
+            a_runtimeObjectFiles=list(System.stringReplace(f,".c",".o") for f in shared_source_files),
+            a_dgesvObjectFiles=list(System.stringReplace(f,".c",".o") for f in dgesv_sources),
+            a_cminpackObjectFiles=list(System.stringReplace(f,".c",".o") for f in cminpack_sources),
+            a_sundialsObjectFiles=list(System.stringReplace(f,".c",".o") for f in simrt_c_sundials_sources)),
+          txt=Tpl.redirectToFile(Tpl.emptyTxt, fmutmp+"/sources/Makefile.in")));
+        Tpl.closeFile(Tpl.tplCallWithFailError(
+          CodegenFMU.settingsfile,
+          simCode,
+          txt=Tpl.redirectToFile(Tpl.emptyTxt, fmutmp+"/sources/omc_simulation_settings.h")));
         /*Temporary generate extra files for omsicpp simcodetarget, additionaly to C-fmu code*/
         if Config.simCodeTarget() ==  "omsicpp" then
          runTpl(func = function CodegenOMSICpp.translateModel(a_simCode=simCode, a_FMUVersion=FMUVersion, a_FMUType=FMUType));
@@ -1135,6 +1161,7 @@ protected
   list<Option<Integer>> allRoots;
   FlatModel flatModel;
   FunctionTree funcTree;
+  UnorderedMap<Absyn.Path, NFFunction.Function> funcMap;
   NBackendDAE bdae;
   Boolean dumpValidFlatModelicaNF;
   String flatString = "", NFFlatString = "";
@@ -1159,7 +1186,10 @@ algorithm
     ExecStat.execStat("FrontEnd");
 
     if runBackend then
-      (outLibs, outFileDir, resultValues) := translateModelCallBackendNB(flatModel, funcTree, className, inFileNamePrefix, inSimSettingsOpt);
+      funcMap := UnorderedMap.fromLists(FunctionTreeImpl.listKeys(funcTree), FunctionTreeImpl.listValues(funcTree), AbsynUtil.pathHash, AbsynUtil.pathEqual);
+      (outLibs, outFileDir, resultValues, funcs) := translateModelCallBackendNB(flatModel, funcMap, className, inFileNamePrefix, inSimSettingsOpt);
+    else
+      funcs := NFConvertDAE.convertFunctionTree(funcTree);
     end if;
 
     // This must be done after calling the backend since it uses the FlatModel,
@@ -1167,7 +1197,7 @@ algorithm
     if dumpValidFlatModelicaNF then
       flatString := NFFlatString;
     elseif not runSilent then
-      (dae, funcs) := NFConvertDAE.convert(flatModel, funcTree);
+      dae := NFConvertDAE.convertModel(flatModel);
       flatString := DAEDump.dumpStr(dae, funcs);
     end if;
 
@@ -1456,13 +1486,14 @@ end translateModelCallBackendOBDAEMode;
 
 protected function translateModelCallBackendNB
   input FlatModel inFlatModel;
-  input FunctionTree inFuncTree;
+  input UnorderedMap<Absyn.Path, NFFunction.Function> funcMap;
   input Absyn.Path inClassName "path for the model";
   input String inFileNamePrefix;
   input Option<SimCode.SimulationSettings> inSimSettingsOpt;
   output list<String> outLibs;
   output String outFileDir;
   output list<tuple<String, Values.Value>> resultValues;
+  output DAE.FunctionTree oldFunctionTree;
 protected
   Real timeSimCode=0.0, timeTemplates=0.0, timeBackend=0.0;
   NBackendDAE bdae;
@@ -1472,7 +1503,7 @@ algorithm
   // ToDo: set permanently matching -> SBGraphs
 
   System.realtimeTick(ClockIndexes.RT_CLOCK_BACKEND);
-  bdae := NBackendDAE.lower(inFlatModel, inFuncTree);
+  bdae := NBackendDAE.lower(inFlatModel, funcMap);
   if Flags.isSet(Flags.OPT_DAE_DUMP) then
     print(NBackendDAE.toString(bdae, "(After Lowering)"));
   end if;
@@ -1480,7 +1511,7 @@ algorithm
   timeBackend := System.realtimeTock(ClockIndexes.RT_CLOCK_BACKEND);
   ExecStat.execStat("backend");
 
-  (outLibs, outFileDir, timeSimCode, timeTemplates) := generateModelCodeNewBackend(bdae, inClassName, inFileNamePrefix, inSimSettingsOpt);
+  (outLibs, outFileDir, timeSimCode, timeTemplates, oldFunctionTree) := generateModelCodeNewBackend(bdae, inClassName, inFileNamePrefix, inSimSettingsOpt);
 
   resultValues := {("timeTemplates", Values.REAL(timeTemplates)),
                   ("timeSimCode", Values.REAL(timeSimCode)),
@@ -1832,7 +1863,8 @@ algorithm
       partitionData               = SimCode.emptyPartitionData,
       daeModeData                 = daeModeData,
       inlineEquations             = {},
-      omsiData                    = NONE()
+      omsiData                    = NONE(),
+      scalarized                  = true
     );
 
     (simCode, (_, _, lits)) := SimCodeUtil.traverseExpsSimCode(simCode, SimCodeFunctionUtil.findLiteralsHelper, literals);

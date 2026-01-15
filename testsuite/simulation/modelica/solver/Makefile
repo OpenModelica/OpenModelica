@@ -4,6 +4,7 @@ TESTFILES = \
 bug2231-radau1.mos \
 LotkaVolterraWithInput.mos \
 problem1-dasslsteps.mos \
+problem1-gbodeInternal.mos \
 problem1-impeuler.mos \
 problem1-trapezoid.mos \
 problem1-imprk.mos \
@@ -70,6 +71,7 @@ DEPENDENCIES = \
 *.mo \
 *.mos \
 Makefile \
+gbode \
 
 
 CLEAN = `ls | grep -w -v -f deps.tmp`

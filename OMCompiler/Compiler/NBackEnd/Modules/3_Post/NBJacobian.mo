@@ -41,10 +41,13 @@ public
   import Module = NBModule;
 
 protected
+  // OF imports
+  import Absyn.Path;
+
   // NF imports
   import ComponentRef = NFComponentRef;
   import Expression = NFExpression;
-  import NFFlatten.FunctionTree;
+  import NFFunction.Function;
   import Operator = NFOperator;
   import SimplifyExp = NFSimplifyExp;
   import Type = NFType;
@@ -60,12 +63,14 @@ protected
   import NBEquation.{Equation, EquationPointers, EqData};
   import Jacobian = NBackendDAE.BackendDAE;
   import Matching = NBMatching;
+  import Partition = NBPartition;
   import Replacements = NBReplacements;
+  import Slice = NBSlice;
   import Sorting = NBSorting;
   import StrongComponent = NBStrongComponent;
-  import Partition = NBPartition;
+  import Tearing = NBTearing;
   import NFOperator.{MathClassification, SizeClassification};
-  import NBVariable.{VariablePointers, VarData};
+  import NBVariable.{VariablePointer, VariablePointers, VarData};
 
   // Old Backend Import (remove once coloring ins ported)
   import SymbolicJacobian;
@@ -103,44 +108,36 @@ public
   algorithm
     bdae := match bdae
       local
-        String name                                     "Context name for jacobian";
-        VariablePointers knowns                         "Variable array of knowns";
-        FunctionTree funcTree                           "Function call bodies";
-        list<Partition.Partition> oldPartitions, newPartitions = {} "Equation partitions before and afterwards";
-        list<Partition.Partition> oldEvents, newEvents = {}   "Event Equation partitions before and afterwards";
+        String name             "Context name for jacobian";
+        VariablePointers knowns "Variable array of knowns";
 
-      case BackendDAE.MAIN(varData = BVariable.VAR_DATA_SIM(knowns = knowns), funcTree = funcTree)
+      case BackendDAE.MAIN(varData = BVariable.VAR_DATA_SIM(knowns = knowns))
         algorithm
-          (oldPartitions, name) := match kind
-            case NBPartition.Kind.ODE then (bdae.ode, "ODE_JAC");
-            case NBPartition.Kind.DAE then (Util.getOption(bdae.dae), "DAE_JAC");
-            else algorithm
-              Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for: " + Partition.Partition.kindToString(kind)});
-            then fail();
-          end match;
-          oldEvents := bdae.ode_event;
-
           if Flags.isSet(Flags.JAC_DUMP) then
             print(StringUtil.headline_1("[symjacdump] Creating symbolic Jacobians:") + "\n");
           end if;
 
-          for part in listReverse(oldPartitions) loop
-            (part, funcTree) := partJacobian(part, funcTree, knowns, name, func);
-            newPartitions := part::newPartitions;
-          end for;
-
-          for part in listReverse(oldEvents) loop
-            (part, funcTree) := partJacobian(part, funcTree, knowns, name, func);
-            newEvents := part::newEvents;
-          end for;
-
-          () := match kind
-            case NBPartition.Kind.ODE algorithm bdae.ode := newPartitions; then ();
-            case NBPartition.Kind.DAE algorithm bdae.dae := SOME(newPartitions); then ();
-            else ();
+          name := match kind
+            case NBPartition.Kind.ODE algorithm
+              name := "ODE_JAC";
+              bdae.ode := applyToPartitions(bdae.ode, bdae.funcMap, knowns, name, func);
+            then name;
+            case NBPartition.Kind.DAE algorithm
+              name := "DAE_JAC";
+              bdae.dae := SOME(applyToPartitions(Util.getOption(bdae.dae), bdae.funcMap, knowns, name, func));
+            then name;
+            else algorithm
+              Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for: " + Partition.Partition.kindToString(kind)});
+            then fail();
           end match;
-          bdae.ode_event := newEvents;
-          bdae.funcTree := funcTree;
+
+          bdae.ode_event := applyToPartitions(bdae.ode_event, bdae.funcMap, knowns, name, func);
+          bdae.algebraic := applyToPartitions(bdae.algebraic, bdae.funcMap, knowns, name, func);
+          bdae.alg_event := applyToPartitions(bdae.alg_event, bdae.funcMap, knowns, name, func);
+          bdae.init := applyToPartitions(bdae.init, bdae.funcMap, knowns, name, func);
+          if Util.isSome(bdae.init_0) then
+            bdae.init_0 := SOME(applyToPartitions(Util.getOption(bdae.init_0), bdae.funcMap, knowns, name, func));
+          end if;
       then bdae;
 
       else algorithm
@@ -151,28 +148,39 @@ public
     end match;
   end main;
 
+  function applyToPartitions
+    input output list<Partition.Partition> partitions;
+    input output UnorderedMap<Path, Function> funcMap;
+    input VariablePointers knowns;
+    input String name;
+    input Module.jacobianInterface func;
+  algorithm
+    partitions := list(partJacobian(part, funcMap, knowns, name, func) for part in partitions);
+  end applyToPartitions;
+
   function nonlinear
-    input VariablePointers variables;
+    input VariablePointers seedCandidates;
+    input VariablePointers partialCandidates;
     input EquationPointers equations;
     input array<StrongComponent> comps;
-    output Option<Jacobian> jacobian;
-    input output FunctionTree funcTree;
+    input UnorderedMap<Path, Function> funcMap;
     input String name;
     input Boolean init;
+    output Option<Jacobian> jacobian;
   protected
     constant Module.jacobianInterface func = if Flags.isSet(Flags.NLS_ANALYTIC_JACOBIAN)
       then jacobianSymbolic
       else jacobianNumeric;
   algorithm
-    (jacobian, funcTree) := func(
+    jacobian := func(
         name              = name,
         jacType           = JacobianType.NLS,
-        seedCandidates    = variables,
-        partialCandidates = EquationPointers.getResiduals(equations),      // these have to be updated once there are inner equations in torn partitions
+        seedCandidates    = seedCandidates,
+        partialCandidates = partialCandidates,
         equations         = equations,
         knowns            = VariablePointers.empty(0),      // remove them? are they necessary?
         strongComponents  = SOME(comps),
-        funcTree          = funcTree,
+        funcMap           = funcMap,
         init              = init
       );
   end nonlinear;
@@ -416,7 +424,9 @@ public
 
           // traverse all components and save cref dependencies (only column-wise)
           for i in 1:arrayLength(comps) loop
-            StrongComponent.collectCrefs(comps[i], seedCandidates, partialCandidates, seed_mapping, partial_mapping, map, set, jacType);
+            if not StrongComponent.isDiscrete(comps[i]) then
+              StrongComponent.collectCrefs(comps[i], seedCandidates, partialCandidates, seed_mapping, partial_mapping, map, set, jacType);
+            end if;
           end for;
 
           // create row-wise sparsity pattern
@@ -534,6 +544,23 @@ public
       list<ComponentRef> deps;
       array<list<Integer>> cols, rows, colored_cols;
       array<SparsityColoringCol> cref_colored_cols;
+      function getIndices
+        input ComponentRef cref;
+        input UnorderedMap<ComponentRef, Integer> seed_indices;
+        input UnorderedMap<ComponentRef, Integer> partial_indices;
+        input array<list<Integer>> rows;
+        output list<Integer> indices;
+      algorithm
+        if UnorderedMap.contains(cref, seed_indices) then
+          indices := {UnorderedMap.getSafe(cref, seed_indices, sourceInfo())};
+        elseif UnorderedMap.contains(cref, partial_indices) then
+          indices := rows[UnorderedMap.getSafe(cref, partial_indices, sourceInfo())];
+        else
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because cref " + ComponentRef.toString(cref)
+            + " is neither a seed nor a partial candidate!"});
+          fail();
+        end if;
+      end getIndices;
     algorithm
       // create index -> cref arrays
       seeds := listArray(sparsityPattern.seed_vars);
@@ -565,7 +592,7 @@ public
       end for;
       for tpl in sparsityPattern.row_wise_pattern loop
         (idx_cref, deps) := tpl;
-        rows[UnorderedMap.getSafe(idx_cref, partial_indices, sourceInfo())] := list(UnorderedMap.getSafe(dep, seed_indices, sourceInfo()) for dep in deps);
+        rows[UnorderedMap.getSafe(idx_cref, partial_indices, sourceInfo())] := listAppend(getIndices(dep, seed_indices,partial_indices, rows) for dep in deps);
       end for;
 
       // call C function (old backend - ToDo: port to new backend!)
@@ -671,7 +698,7 @@ protected
 
   function partJacobian
     input output Partition.Partition part;
-    input output FunctionTree funcTree;
+    input UnorderedMap<Path, Function> funcMap;
     input VariablePointers knowns;
     input String name                                     "Context name for jacobian";
     input Module.jacobianInterface func;
@@ -680,24 +707,82 @@ protected
     VariablePointers unknowns;
     list<Pointer<Variable>> derivative_vars, state_vars;
     VariablePointers seedCandidates, partialCandidates;
-    Option<Jacobian> jacobian                             "Resulting jacobian";
     Partition.Kind kind = Partition.Partition.getKind(part);
+    Boolean updated;
   algorithm
-    partialCandidates := part.unknowns;
-    unknowns  := if Partition.Partition.getKind(part) == NBPartition.Kind.DAE then Util.getOption(part.daeUnknowns) else part.unknowns;
-    jacType   := if Partition.Partition.getKind(part) == NBPartition.Kind.DAE then JacobianType.DAE else JacobianType.ODE;
+    // create algebraic loop jacobians
+    part.strongComponents := match part.strongComponents
+      local
+        array<StrongComponent> comps;
+        StrongComponent tmp;
+      case SOME(comps) algorithm
+        for i in 1:arrayLength(comps) loop
+          (tmp, updated) := compJacobian(comps[i], funcMap, kind);
+          if updated then arrayUpdate(comps, i, tmp); end if;
+        end for;
+      then SOME(comps);
+      else part.strongComponents;
+    end match;
 
-    derivative_vars := list(var for var guard(BVariable.isStateDerivative(var)) in VariablePointers.toList(unknowns));
-    state_vars := list(Util.getOption(BVariable.getVarState(var)) for var in derivative_vars);
-    seedCandidates := VariablePointers.fromList(state_vars, partialCandidates.scalarized);
+    // create the simulation jacobian
+    if Partition.Partition.isODEorDAE(part) then
+      partialCandidates := part.unknowns;
+      unknowns  := if Partition.Partition.getKind(part) == NBPartition.Kind.DAE then Util.getOption(part.daeUnknowns) else part.unknowns;
+      jacType   := if Partition.Partition.getKind(part) == NBPartition.Kind.DAE then JacobianType.DAE else JacobianType.ODE;
 
-    (jacobian, funcTree) := func(name, jacType, seedCandidates, partialCandidates, part.equations, knowns, part.strongComponents, funcTree, kind ==  NBPartition.Kind.INI);
+      derivative_vars := list(var for var guard(BVariable.isStateDerivative(var)) in VariablePointers.toList(unknowns));
+      state_vars := list(Util.getOption(BVariable.getVarState(var)) for var in derivative_vars);
+      seedCandidates := VariablePointers.fromList(state_vars, partialCandidates.scalarized);
 
-    part.association := Partition.Association.CONTINUOUS(kind, jacobian);
-    if Flags.isSet(Flags.JAC_DUMP) then
-      print(Partition.Partition.toString(part, 2));
+      part.association := Partition.Association.CONTINUOUS(
+        kind      = kind,
+        jacobian  = func(name, jacType, seedCandidates, partialCandidates, part.equations, knowns, part.strongComponents, funcMap, kind == NBPartition.Kind.INI)
+      );
+      if Flags.isSet(Flags.JAC_DUMP) then
+        print(Partition.Partition.toString(part, 2));
+      end if;
     end if;
   end partJacobian;
+
+  function compJacobian
+    input output StrongComponent comp;
+    input UnorderedMap<Path, Function> funcMap;
+    input Partition.Kind kind;
+    output Boolean updated;
+  protected
+    Tearing strict;
+    list<StrongComponent> residual_comps;
+    list<VariablePointer> seed_candidates, residual_vars, inner_vars;
+    constant Boolean init = kind == NBPartition.Kind.INI;
+  algorithm
+    (comp, updated) := match comp
+      case StrongComponent.ALGEBRAIC_LOOP(strict = strict) algorithm
+        // create residual components
+        residual_comps        := list(StrongComponent.fromSolvedEquationSlice(eqn) for eqn in strict.residual_eqns);
+
+        // create seed and partial candidates
+        seed_candidates := list(Slice.getT(var) for var in strict.iteration_vars);
+        residual_vars   := list(Equation.getResidualVar(Slice.getT(eqn)) for eqn in strict.residual_eqns);
+        inner_vars      := listAppend(list(var for var guard(BVariable.isContinuous(var, init)) in StrongComponent.getVariables(comp)) for comp in strict.innerEquations);
+
+        // update jacobian to take slices (just to have correct inner variables and such)
+        strict.jac := nonlinear(
+          seedCandidates    = VariablePointers.fromList(seed_candidates),
+          partialCandidates = VariablePointers.fromList(listAppend(residual_vars, inner_vars)),
+          equations         = EquationPointers.fromList(list(Slice.getT(eqn) for eqn in strict.residual_eqns)),
+          comps             = Array.appendList(strict.innerEquations, residual_comps),
+          funcMap           = funcMap,
+          name              = Partition.Partition.kindToString(kind) + (if comp.linear then "_LS_JAC_" else "_NLS_JAC_") + intString(comp.idx),
+          init              = kind == NBPartition.Kind.INI);
+        comp.strict := strict;
+
+        if Flags.isSet(Flags.JAC_DUMP) then
+          print(StrongComponent.toString(comp) + "\n");
+        end if;
+      then (comp, true);
+      else (comp, false);
+    end match;
+  end compJacobian;
 
   function jacobianSymbolic extends Module.jacobianInterface;
   protected
@@ -743,13 +828,12 @@ protected
       new_vars        = {},
       diff_map        = SOME(diff_map),         // seed and temporary cref map
       diffType        = NBDifferentiate.DifferentiationType.JACOBIAN,
-      funcTree        = funcTree,
+      funcMap         = funcMap,
       scalarized      = seedCandidates.scalarized
     );
 
     // differentiate all strong components
     (diffed_comps, diffArguments) := Differentiate.differentiateStrongComponentList(comps, diffArguments, idx, name, getInstanceName());
-    funcTree := diffArguments.funcTree;
 
     // collect var data (most of this can be removed)
     unknown_vars  := listAppend(res_vars, tmp_vars);

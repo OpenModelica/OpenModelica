@@ -38,13 +38,17 @@ public
   import Adjacency = NBAdjacency;
 
 protected
+  // OF imports
+  import Absyn.Path;
+
   // NF imports
   import Call = NFCall;
   import ComponentRef = NFComponentRef;
   import Dimension = NFDimension;
   import Expression = NFExpression;
-  import FunctionTree = NFFlatten.FunctionTree;
+  import NFFunction.Function;
   import SimplifyExp = NFSimplifyExp;
+  import Statement = NFStatement;
   import Subscript = NFSubscript;
   import Type = NFType;
   import Operator = NFOperator;
@@ -702,7 +706,7 @@ public
       "refines the solvability kind using differentiation
       Note: only updates the solvabilites of the variables and equations from the maps v and e"
       input output Matrix full;
-      input output FunctionTree funcTree;
+      input UnorderedMap<Path, Function> funcMap;
       input UnorderedMap<ComponentRef, Integer> v    "variables to refine";
       input UnorderedMap<ComponentRef, Integer> e    "equations to refine";
       input VariablePointers vars                    "all variables";
@@ -710,9 +714,9 @@ public
       input UnorderedSet<ComponentRef> vars_set      "context variables to determine solvability";
       input Boolean init                             "true if initial";
     algorithm
-      (full, funcTree) := match full
+      full := match full
         local
-          DifferentiationArguments diffArgs = DifferentiationArguments.default(NBDifferentiate.DifferentiationType.SIMPLE, funcTree);
+          DifferentiationArguments diffArgs = DifferentiationArguments.default(NBDifferentiate.DifferentiationType.SIMPLE, funcMap);
           Pointer<Equation> eqn_ptr;
           Expression residual, exp;
           Solve.Status status;
@@ -769,7 +773,7 @@ public
               end if;
             end for;
           end for;
-        then (full, diffArgs.funcTree);
+        then full;
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " expected type full, got type " + strictnessString(getStrictness(full)) + "."});
         then fail();
@@ -1281,26 +1285,42 @@ public
     protected
       Option<Dependency> opt_dep = UnorderedMap.get(cref, map);
       Dependency dep;
+      list<Kind> kinds;
+      Integer res;
+
       function makeNewKinds
         input output list<Kind> kinds;
-        input Integer num;
+        input output Integer num;
       algorithm
-        kinds := match (kinds, num)
+        (kinds, num) := match (kinds, num)
           local
             list<Kind> rest;
-          case (_, 0) then kinds;
-          case (_::rest, _) then Kind.REDUCTION :: makeNewKinds(rest, num-1);
-          else kinds;
+          case (_, 0) then (kinds, num);
+          case (_::rest, _) algorithm
+            (kinds, num) := makeNewKinds(rest, num-1);
+          then (Kind.REDUCTION :: kinds, num);
+          else (kinds, num);
         end match;
       end makeNewKinds;
     algorithm
       if Util.isSome(opt_dep) then
         SOME(dep) := opt_dep;
+
+        // turn to reductions
         if reverse then
-          dep.kinds := listReverse(makeNewKinds(listReverse(dep.kinds), num));
+          (kinds, res) := makeNewKinds(listReverse(dep.kinds), num);
+          dep.kinds := listReverse(kinds);
         else
-          dep.kinds := makeNewKinds(dep.kinds, num);
+          (kinds, res) := makeNewKinds(dep.kinds, num);
+          dep.kinds := kinds;
         end if;
+
+        // if any remain, remove from skips
+        if res > 0 then
+          removeSkips(cref, map, res, reverse);
+        end if;
+
+        // add the updated dependency back to the map
         UnorderedMap.add(cref, dep, map);
       else
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because cref "
@@ -1341,15 +1361,42 @@ public
     function removeSkips
       input ComponentRef cref;
       input UnorderedMap<ComponentRef, Dependency> map;
+      input Integer num = -1        "number of skips to remove. negative implys all";
+      input Boolean reverse = false "if num > 0 this removes true->from right, false->from left";
     protected
       Option<Dependency> opt_dep = UnorderedMap.get(cref, map);
       Dependency dep;
+      Integer rest = num;
+      Integer i, len;
     algorithm
       if Util.isSome(opt_dep) then
         SOME(dep) := opt_dep;
-        for i in 1:arrayLength(dep.skips) loop
-          arrayUpdate(dep.skips, i, {});
-        end for;
+        if num < 0 then
+          // remove all skips
+          for i in 1:arrayLength(dep.skips) loop
+            arrayUpdate(dep.skips, i, {});
+          end for;
+        else
+          // remove specific number
+          i := if reverse then arrayLength(dep.skips) else 1;
+          while rest > 0 and i > 0 and i < arrayLength(dep.skips)+1 loop
+            len := listLength(dep.skips[i]);
+            if len <= rest then
+              // can remove full list
+              arrayUpdate(dep.skips, i, {});
+            elseif len > 0 then
+              // list needs to be reduced
+              if reverse then
+                arrayUpdate(dep.skips, i, List.firstN(dep.skips[i], len - rest));
+              else
+                arrayUpdate(dep.skips, i, List.lastN(dep.skips[i], len - rest));
+              end if;
+            end if;
+            // update rest to remove and move iterator
+            rest := rest - len;
+            i := if reverse then i - 1 else i + 1;
+          end while;
+        end if;
         UnorderedMap.add(cref, dep, map);
       else
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because cref "
@@ -1629,8 +1676,10 @@ public
       then UnorderedSet.union(occ1, occ2);
 
       case Equation.ALGORITHM() algorithm
+        // filter inputs for solvable (not occuring only in conditions)
+        inputs := collectDependenciesAlgorithmInputs(eqn.alg.statements, eqn.alg.inputs);
         // collect all crefs expanding potential records
-        inputs  := List.flatten(list(collectDependenciesCref(c, 0, map, dep_map, sol_map) for c in eqn.alg.inputs));
+        inputs  := List.flatten(list(collectDependenciesCref(c, 0, map, dep_map, sol_map) for c in inputs));
         outputs := List.flatten(list(collectDependenciesCref(c, 0, map, dep_map, sol_map) for c in eqn.alg.outputs));
         // create dependencies for inputs and outputs
         Dependency.addListFull(inputs, 0, dep_map, rep_set);
@@ -1708,10 +1757,11 @@ public
         set := UnorderedSet.union_list(sets, ComponentRef.hash, ComponentRef.isEqual);
       then set;
 
-      // reduce the dependency for these
+      // reduce the dependency and remove skips for these
       case Expression.SUBSCRIPTED_EXP() algorithm
         set := collectDependencies(exp.exp, depth, map, dep_map, sol_map, rep_set);
         Dependency.updateList(UnorderedSet.toList(set), listLength(exp.subscripts), true, dep_map);
+        Dependency.removeSkipsList(UnorderedSet.toList(set), dep_map);
       then set;
 
       // should not change anything
@@ -2048,6 +2098,71 @@ public
       then (set1, set2);
     end match;
   end collectDependenciesStmt;
+
+  function collectDependenciesAlgorithmInputs
+    "collects dependencies from algorithm inputs.
+    Only consider inputs that appear outside of when/if conditions"
+    input list<Statement> stmts;
+    input output list<ComponentRef> inputs;
+  protected
+    UnorderedSet<ComponentRef> candidates = UnorderedSet.fromList(inputs, ComponentRef.hash, ComponentRef.isEqual);
+    UnorderedSet<ComponentRef> result = UnorderedSet.fromList(inputs, ComponentRef.hash, ComponentRef.isEqual);
+  algorithm
+    for stmt in stmts loop
+      collectDependenciesAlgorithmStatement(stmt, candidates, result);
+    end for;
+    inputs := UnorderedSet.toList(result);
+  end collectDependenciesAlgorithmInputs;
+
+  function collectDependenciesAlgorithmStatement
+    input Statement stmt;
+    input UnorderedSet<ComponentRef> candidates;
+    input UnorderedSet<ComponentRef> result;
+  algorithm
+    _ := match stmt
+
+      // actual occurence can only happen here
+      case Statement.ASSIGNMENT() algorithm
+        Slice.filterExp(stmt.lhs, function Equation.collectFromSet(check_set = candidates), result);
+        Slice.filterExp(stmt.rhs, function Equation.collectFromSet(check_set = candidates), result);
+      then ();
+
+      // map body
+      case Statement.FOR() algorithm
+        for s in stmt.body loop
+          collectDependenciesAlgorithmStatement(s, candidates, result);
+        end for;
+      then ();
+
+      // map body
+      case Statement.WHILE() algorithm
+        for s in stmt.body loop
+          collectDependenciesAlgorithmStatement(s, candidates, result);
+        end for;
+      then ();
+
+      // skip conditions but map body
+      case Statement.IF() algorithm
+        for branch in stmt.branches loop
+          for s in Util.tuple22(branch) loop
+            collectDependenciesAlgorithmStatement(s, candidates, result);
+          end for;
+        end for;
+      then ();
+
+      // skip conditions but map body
+      case Statement.WHEN() algorithm
+        for branch in stmt.branches loop
+          for s in Util.tuple22(branch) loop
+            collectDependenciesAlgorithmStatement(s, candidates, result);
+          end for;
+        end for;
+      then ();
+
+      // all other cases do not produce an occurence
+      else ();
+    end match;
+  end collectDependenciesAlgorithmStatement;
 
   function updateConditionCrefs
     "variables in conditions are unsolvable, reduced and get their skips removed"

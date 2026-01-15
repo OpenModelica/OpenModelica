@@ -193,17 +193,11 @@ VariablesTreeItem* VariablesTreeItem::child(int row)
   return mChildren.value(row);
 }
 
-void VariablesTreeItem::removeChildren()
-{
-  qDeleteAll(mChildren);
-  mChildren.clear();
-  mChildrenHash.clear();
-}
-
 void VariablesTreeItem::removeChild(VariablesTreeItem *pVariablesTreeItem)
 {
   mChildren.removeOne(pVariablesTreeItem);
   mChildrenHash.remove(pVariablesTreeItem->getVariableName());
+  delete pVariablesTreeItem;
 }
 
 int VariablesTreeItem::columnCount() const
@@ -384,14 +378,16 @@ int VariablesTreeModel::columnCount(const QModelIndex &parent) const
 int VariablesTreeModel::rowCount(const QModelIndex &parent) const
 {
   VariablesTreeItem *pParentVariablesTreeItem;
-  if (parent.column() > 0)
+  if (parent.column() > 0) {
     return 0;
+  }
 
-  if (!parent.isValid())
+  if (!parent.isValid()) {
     pParentVariablesTreeItem = mpRootVariablesTreeItem;
-  else
+  } else {
     pParentVariablesTreeItem = static_cast<VariablesTreeItem*>(parent.internalPointer());
-  return pParentVariablesTreeItem->mChildren.size();
+  }
+  return pParentVariablesTreeItem ? pParentVariablesTreeItem->mChildren.size() : 0;
 }
 
 QVariant VariablesTreeModel::headerData(int section, Qt::Orientation orientation, int role) const
@@ -403,21 +399,22 @@ QVariant VariablesTreeModel::headerData(int section, Qt::Orientation orientation
 
 QModelIndex VariablesTreeModel::index(int row, int column, const QModelIndex &parent) const
 {
-  if (!hasIndex(row, column, parent))
+  if (!hasIndex(row, column, parent)) {
     return QModelIndex();
+  }
 
   VariablesTreeItem *pParentVariablesTreeItem;
-
-  if (!parent.isValid())
+  if (!parent.isValid()) {
     pParentVariablesTreeItem = mpRootVariablesTreeItem;
-  else
+  } else {
     pParentVariablesTreeItem = static_cast<VariablesTreeItem*>(parent.internalPointer());
+  }
 
-  VariablesTreeItem *pChildVariablesTreeItem = pParentVariablesTreeItem->child(row);
-  if (pChildVariablesTreeItem)
-    return createIndex(row, column, pChildVariablesTreeItem);
-  else
+  if (row < 0 || row >= pParentVariablesTreeItem->mChildren.size()) {
     return QModelIndex();
+  }
+
+  return createIndex(row, column, pParentVariablesTreeItem->child(row));
 }
 
 QModelIndex VariablesTreeModel::parent(const QModelIndex &index) const
@@ -660,26 +657,32 @@ bool VariablesTreeModel::removeVariableTreeItem(QString variable, bool closeInte
 {
   VariablesTreeItem *pVariablesTreeItem = findVariablesTreeItem(variable, mpRootVariablesTreeItem);
   if (pVariablesTreeItem) {
-    int row = pVariablesTreeItem->row();
-    beginRemoveRows(variablesTreeItemIndex(pVariablesTreeItem->parent()), row, row);
-    pVariablesTreeItem->removeChildren();
-    VariablesTreeItem *pParentVariablesTreeItem = pVariablesTreeItem->parent();
-    pParentVariablesTreeItem->removeChild(pVariablesTreeItem);
     MainWindow::instance()->getSimulationDialog()->removeInteractiveSimulation(pVariablesTreeItem->getSimulationOptions().isInteractiveSimulation(),
                                                                                pVariablesTreeItem->getFileName(), closeInteractivePlotWindow);
+    removeVariableTreeItem(pVariablesTreeItem);
+    return true;
+  }
+  return false;
+}
+
+void VariablesTreeModel::removeVariableTreeItem(VariablesTreeItem *pVariablesTreeItem)
+{
+  // now remove the item
+  VariablesTreeItem *pParentVariablesTreeItem = pVariablesTreeItem->parent();
+  if (pParentVariablesTreeItem) {
     /* Reset the active VariablesTreeItem so the contorls are disabled when initializeVisualization is called.
      * The can controls can be enabled if diagramWindow is active and we have a corresponding VariablesTreeItem for it.
      */
     if (pVariablesTreeItem == mpActiveVariablesTreeItem) {
       mpActiveVariablesTreeItem = 0;
     }
-    delete pVariablesTreeItem;
-    mpVariablesTreeView->getVariablesWidget()->initializeVisualization();
+    int row = pVariablesTreeItem->row();
+    beginRemoveRows(variablesTreeItemIndex(pParentVariablesTreeItem), row, row);
+    pParentVariablesTreeItem->removeChild(pVariablesTreeItem);
     endRemoveRows();
-    mpVariablesTreeView->getVariablesWidget()->findVariables();
-    return true;
+    mpVariablesTreeView->getVariablesWidget()->initializeVisualization();
   }
-  return false;
+  mpVariablesTreeView->getVariablesWidget()->findVariables();
 }
 
 /*!
@@ -1071,12 +1074,7 @@ void VariablesTreeModel::filterVariableTreeItem(VariableNode *pParentVariableNod
     VariableNode *pVariableNode = pParentVariableNode->mChildren.value(pVariablesTreeItem->getVariableName(), 0);
     // if we fail to find the variable node then remove that pVariablesTreeItem
     if (!pVariableNode) {
-      QModelIndex index = variablesTreeItemIndex(pParentVariablesTreeItem);
-      int row = pVariablesTreeItem->row();
-      beginRemoveRows(index, row, row);
-      pParentVariablesTreeItem->removeChild(pVariablesTreeItem);
-      delete pVariablesTreeItem;
-      endRemoveRows();
+      removeVariableTreeItem(pVariablesTreeItem);
     } else {
       filterVariableTreeItem(pVariableNode, pVariablesTreeItem);
     }
@@ -1547,8 +1545,6 @@ VariablesWidget::VariablesWidget(QWidget *pParent)
   setLayout(pMainLayout);
   connect(mpTreeSearchFilters->getExpandAllButton(), SIGNAL(clicked()), mpVariablesTreeView, SLOT(expandAll()));
   connect(mpTreeSearchFilters->getCollapseAllButton(), SIGNAL(clicked()), mpVariablesTreeView, SLOT(collapseAll()));
-  connect(mpVariablesTreeModel, SIGNAL(rowsInserted(QModelIndex,int,int)), mpVariableTreeProxyModel, SLOT(invalidate()));
-  connect(mpVariablesTreeModel, SIGNAL(rowsRemoved(QModelIndex,int,int)), mpVariableTreeProxyModel, SLOT(invalidate()));
   connect(mpVariablesTreeModel, SIGNAL(itemChecked(QModelIndex,qreal,int,int)), SLOT(plotVariables(QModelIndex,qreal,int,int)));
   connect(mpVariablesTreeModel, SIGNAL(unitChanged(QModelIndex)), SLOT(unitChanged(QModelIndex)));
   connect(mpVariablesTreeModel, SIGNAL(valueEntered(QModelIndex)), SLOT(valueEntered(QModelIndex)));
@@ -1614,6 +1610,11 @@ void VariablesWidget::variablesUpdated()
   foreach (QMdiSubWindow *pSubWindow, MainWindow::instance()->getPlotWindowContainer()->subWindowList(QMdiArea::StackingOrder)) {
     PlotWindow *pPlotWindow = qobject_cast<PlotWindow*>(pSubWindow->widget());
     if (pPlotWindow) { // we can have an AnimateWindow there as well so always check
+      /* Issue #14586 Do not add automatic prefix unit when updating variables.
+       * The display unit and prefix are already set when the variable is first plotted.
+       */
+      bool prefixUnitsState = pPlotWindow->getPrefixUnits();
+      pPlotWindow->setPrefixUnits(false);
       foreach (PlotCurve *pPlotCurve, pPlotWindow->getPlot()->getPlotCurvesList()) {
         if (pPlotWindow->isPlot() || pPlotWindow->isPlotArray()) {
           QString curveNameStructure = pPlotCurve->getNameStructure();
@@ -1662,6 +1663,7 @@ void VariablesWidget::variablesUpdated()
           }
         }
       }
+      pPlotWindow->setPrefixUnits(prefixUnitsState);
       pPlotWindow->updatePlot();
     }
   }
@@ -1846,16 +1848,20 @@ void VariablesWidget::updateInitXmlFile(VariablesTreeItem *pVariablesTreeItem, S
                                                             .arg(initFile.fileName()), Helper::scriptingKind, Helper::errorLevel));
     }
     initFile.close();
-    initFile.open(QIODevice::WriteOnly | QIODevice::Truncate);
-    QTextStream textStream(&initFile);
+    if (initFile.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
+      QTextStream textStream(&initFile);
 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
-    textStream.setEncoding(QStringConverter::Utf8);
+      textStream.setEncoding(QStringConverter::Utf8);
 #else
-    textStream.setCodec(Helper::utf8.toUtf8().constData());
+      textStream.setCodec(Helper::utf8.toUtf8().constData());
 #endif
-    textStream.setGenerateByteOrderMark(false);
-    textStream << initXmlDocument.toString();
-    initFile.close();
+      textStream.setGenerateByteOrderMark(false);
+      textStream << initXmlDocument.toString();
+      initFile.close();
+    } else {
+      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, GUIMessages::getMessage(GUIMessages::ERROR_OPENING_FILE).arg(initFile.fileName())
+                                                            .arg(initFile.errorString()), Helper::scriptingKind, Helper::errorLevel));
+    }
   } else {
     MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, GUIMessages::getMessage(GUIMessages::ERROR_OPENING_FILE).arg(initFile.fileName())
                                                           .arg(initFile.errorString()), Helper::scriptingKind, Helper::errorLevel));
@@ -2849,7 +2855,9 @@ void VariablesWidget::timeUnitChanged(int index)
  */
 void VariablesWidget::updateVariablesTree(QMdiSubWindow *pSubWindow)
 {
-  MainWindow::instance()->getModelWidgetContainer()->currentModelWidgetChanged(0);
+  if (MainWindow::instance()->isPlottingPerspectiveActive() && MainWindow::instance()->getModelWidgetContainer()) {
+    MainWindow::instance()->getModelWidgetContainer()->currentModelWidgetChanged(0);
+  }
   if (!pSubWindow && MainWindow::instance()->getPlotWindowContainer()->subWindowList().size() != 0) {
     return;
   }

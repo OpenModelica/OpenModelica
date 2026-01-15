@@ -367,6 +367,19 @@ public
     end match;
   end isCallNamed;
 
+  function isConnectionCall
+    input Expression exp;
+    output Boolean isConnection;
+  algorithm
+    isConnection := match exp
+      case CALL()
+        then Call.isConnectionsOperator(exp.call) or
+             Call.isStreamOperator(exp.call) or
+             Call.isCardinality(exp.call);
+      else false;
+    end match;
+  end isConnectionCall;
+
   function isTrue
     input Expression exp;
     output Boolean isTrue;
@@ -416,6 +429,7 @@ public
   function hash
     input Expression exp;
     output Integer hash = stringHashDjb2(toString(exp));
+    // TODO use stringHashDjb2Continue
   end hash;
 
   function isEqual
@@ -2420,9 +2434,8 @@ public
 
       // END() doesn't have a DAE representation.
 
-      case MULTARY() algorithm
-        // swapping not necessary because multary expressions have to be commutative
-      then toDAEMultary(exp.arguments, exp.inv_arguments, exp.operator);
+      // convert to binaries by splitting then use toDAE on result
+      case MULTARY() then toDAE(SimplifyExp.splitMultary(exp));
 
       case BINARY()
         algorithm
@@ -2442,7 +2455,7 @@ public
       case UNBOX() then DAE.UNBOX(toDAE(exp.exp), Type.toDAE(exp.ty));
 
       case SUBSCRIPTED_EXP()
-        then DAE.ASUB(toDAE(exp.exp), list(Subscript.toDAEExp(s) for s in exp.subscripts));
+        then DAE.ASUB(toDAE(exp.exp), list(Subscript.toDAE(s) for s in exp.subscripts));
 
       case TUPLE_ELEMENT()
         then DAE.TSUB(toDAE(exp.tupleExp), exp.index, Type.toDAE(exp.ty));
@@ -2477,66 +2490,6 @@ public
 
     end match;
   end toDAE;
-
-  function toDAEMultary
-    "Converts a multary expression to a chain of binary expressions because
-    the old frontend does not have multary expressions."
-    input list<Expression> arguments;
-    input list<Expression> inv_arguments;
-    input Operator operator;
-    output DAE.Exp daeExp;
-  algorithm
-    if listEmpty(inv_arguments) then
-      daeExp := toDAEMultaryArgs(arguments, operator);
-    elseif Type.isBoolean(operator.ty) then
-      daeExp := DAE.LBINARY(
-        exp1      = toDAEMultaryArgs(arguments, operator),
-        operator  = Operator.toDAE(Operator.invert(operator)),
-        exp2      = toDAEMultaryArgs(inv_arguments, operator)
-       );
-    else
-      daeExp := DAE.BINARY(
-        exp1      = toDAEMultaryArgs(arguments, operator),
-        operator  = Operator.toDAE(Operator.invert(operator)),
-        exp2      = toDAEMultaryArgs(inv_arguments, operator)
-       );
-     end if;
-  end toDAEMultary;
-
-  function toDAEMultaryArgs
-    input list<Expression> arguments;
-    input Operator operator;
-    output DAE.Exp daeExp;
-  protected
-    DAE.Operator daeOp;
-  algorithm
-    daeExp := match arguments
-      local
-        Expression arg;
-        list<Expression> rest;
-        DAE.Exp exp;
-
-      // list is empty from the get-go: create neutral element
-      case {} guard(Operator.getMathClassification(operator) == NFOperator.MathClassification.ADDITION)
-      then toDAE(makeZero(operator.ty));
-      case {} guard(Operator.getMathClassification(operator) == NFOperator.MathClassification.MULTIPLICATION)
-      then toDAE(makeOne(operator.ty));
-
-      // no rest, just return the DAE representation of last argument
-      case arg :: {} then toDAE(arg);
-
-      // convert argument to DAE and create new binary. recurse for second argument
-      case arg :: rest algorithm
-        exp := toDAE(arg);
-       (daeOp, _) := Operator.toDAE(operator);
-      then  DAE.BINARY(exp, daeOp, toDAEMultary(rest, {}, operator));
-
-      else algorithm
-        Error.assertion(false, getInstanceName() + " got unhandled argument list:
-        {" + stringDelimitList(list(toString(e) for e in arguments), ", ") + "}", sourceInfo());
-      then fail();
-    end match;
-  end toDAEMultaryArgs;
 
   function toDAERecord
     input Type ty;
@@ -4539,13 +4492,14 @@ public
 
   function isOne
     input Expression exp;
-    output Boolean isOne;
+    output Boolean b;
   algorithm
-    isOne := match exp
+    b := match exp
       case INTEGER() then exp.value == 1;
       case REAL() then exp.value == 1.0;
       case CAST() then isOne(exp.exp);
       case UNARY() then isMinusOne(exp.exp);
+      case ARRAY()    then Array.all(exp.elements, isOne);
       else false;
     end match;
   end isOne;
@@ -4682,6 +4636,29 @@ public
       else false;
     end match;
   end isLiteral;
+
+  function isLiteralXML
+    "allows for expressions additionally for init_xml"
+    input Expression exp;
+    output Boolean literal;
+  algorithm
+    literal := match exp
+      local
+        Expression call_exp;
+      case INTEGER() then true;
+      case REAL() then true;
+      case STRING() then true;
+      case BOOLEAN() then true;
+      case ENUM_LITERAL() then true;
+      case ARRAY() then Array.all(exp.elements, isLiteralXML);
+      case RECORD() then List.all(exp.elements, isLiteralXML);
+      case RANGE() then isLiteralXML(exp.start) and isLiteralXML(exp.stop) and
+                        Util.applyOptionOrDefault(exp.step, isLiteralXML, true);
+      case FILENAME() then true;
+      case CALL(call = Call.TYPED_ARRAY_CONSTRUCTOR(exp = call_exp)) then isLiteralXML(call_exp);
+      else false;
+    end match;
+  end isLiteralXML;
 
   function isLiteralReplace
     input Expression exp;
@@ -6255,6 +6232,29 @@ public
       else false;
     end match;
   end isFunctionPointer;
+
+  function isClockOrSampleFunction
+    "returns true if the expression is any form of clock sampling function"
+    input Expression exp;
+    output Boolean b;
+  algorithm
+    b := match exp
+      local
+        Call call;
+        Expression arg;
+      case CALL(call = call as Call.TYPED_CALL(arguments = arg :: _))
+      then match AbsynUtil.pathString(Function.Function.nameConsiderBuiltin(call.fn))
+        case "sample"       then not isLiteral(arg); // sample has a non clocked meaning as well
+        case "subSample"    then true;
+        case "superSample"  then true;
+        case "shiftSample"  then true;
+        case "backSample"   then true;
+        else false;
+      end match;
+      case Expression.CLKCONST() then true;
+      else false;
+    end match;
+  end isClockOrSampleFunction;
 
   function isConnector
     "Returns true if the expression is a component reference that refers to a

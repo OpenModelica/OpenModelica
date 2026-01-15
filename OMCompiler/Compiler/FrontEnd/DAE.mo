@@ -556,8 +556,12 @@ uniontype VariableAttributes
   end VAR_ATTR_ENUMERATION;
 end VariableAttributes;
 
-public constant VariableAttributes emptyVarAttrReal = VAR_ATTR_REAL(NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE());
-public constant VariableAttributes emptyVarAttrBool = VAR_ATTR_BOOL(NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE());
+public constant VariableAttributes emptyVarAttrReal   = VAR_ATTR_REAL(NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE());
+public constant VariableAttributes emptyVarAttrInt    = VAR_ATTR_INT(NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE());
+public constant VariableAttributes emptyVarAttrBool   = VAR_ATTR_BOOL(NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE());
+public constant VariableAttributes emptyVarAttrClock  = VAR_ATTR_CLOCK(NONE(),NONE());
+public constant VariableAttributes emptyVarAttrString = VAR_ATTR_STRING(NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE());
+public constant VariableAttributes emptyVarAttrEnum   = VAR_ATTR_ENUMERATION(NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE());
 
 public uniontype StateSelect
   record NEVER end NEVER;
@@ -1454,7 +1458,7 @@ uniontype Exp "Expressions
 
   record ASUB "Array subscripts"
     Exp exp;
-    list<Exp> sub;
+    list<Subscript> sub;
   end ASUB;
 
   record TSUB "Tuple 'subscript' (accessing only single values in calls)"

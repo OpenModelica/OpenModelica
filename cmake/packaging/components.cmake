@@ -83,13 +83,3 @@ cpack_add_component(omedit
                     GROUP GUIClients
                     DESCRIPTION "The OpenModelica Graphical Connection Editor."
                     )
-
-cpack_add_component(omsens
-                    DISPLAY_NAME "OMSens"
-                    DEPENDS omedit
-                    GROUP GUIClients
-                    DESCRIPTION "Sensitivity analysis support for OMEdit."
-                    )
-
-
-

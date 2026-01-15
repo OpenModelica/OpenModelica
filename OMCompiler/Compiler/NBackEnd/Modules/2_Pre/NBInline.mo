@@ -47,6 +47,7 @@ protected
   // NF imports
   import Call = NFCall;
   import ComponentRef = NFComponentRef;
+  import Dimension = NFDimension;
   import Expression = NFExpression;
   import NFFunction.Function;
   import NFFlatten.FunctionTree;
@@ -91,7 +92,7 @@ public
             print(StringUtil.headline_4("[dumpBackendInline] Inlining operatations for: "
               + List.toString(inline_types, DAEDump.dumpInlineTypeBackendStr)));
           end if;
-          (eqData, varData) := inline(bdae.eqData, bdae.varData, bdae.funcTree, inline_types, init);
+          (eqData, varData) := inline(bdae.eqData, bdae.varData, bdae.funcMap, inline_types, init);
           bdae.eqData := eqData;
           bdae.varData := varData;
           if Flags.isSet(Flags.DUMPBACKENDINLINE) then
@@ -243,7 +244,7 @@ public
       case (node, range as Expression.ARRAY()) algorithm
         node2   := InstNode.newIterator("$" + InstNode.name(node), Type.INTEGER(), sourceInfo());
         range2  := Expression.makeRange(Expression.INTEGER(1), NONE(), Expression.INTEGER(Type.sizeOf(Expression.typeOf(range))));
-        map     := Iterator.fromFrames({(ComponentRef.makeIterator(node, Type.INTEGER()), range, NONE())});
+        map     := Iterator.fromFrames({(ComponentRef.makeIterator(node, Type.arrayElementType(Expression.typeOf(range))), range, NONE())});
 
         // create the new iterator variable
         iter_cref := ComponentRef.makeIterator(node2, Type.INTEGER());
@@ -264,10 +265,18 @@ protected
     UnorderedMap<Absyn.Path, Function> replacements "rules for replacements are stored inside here";
     UnorderedSet<VariablePointer> set "new iterators from function bodies";
     VariablePointers variables = VarData.getVariables(varData);
+    Absyn.Path key;
+    Function value;
   algorithm
     // collect functions
     replacements := UnorderedMap.new<Function>(AbsynUtil.pathHash, AbsynUtil.pathEqual);
-    replacements := FunctionTree.fold(funcTree, function collectInlineFunctions(inline_types = inline_types), replacements);
+    for tpl in UnorderedMap.toList(funcMap) loop
+      (key, value) := tpl;
+      // only add to the map if the function has one of the inline types and is inlineable
+      if List.contains(inline_types, Function.inlineBuiltin(value), DAEUtil.inlineTypeEqual) and functionInlineable(value) then
+        UnorderedMap.add(key, value, replacements);
+      end if;
+    end for;
 
     // apply replacements
     eqData  := Replacements.replaceFunctions(eqData, variables, replacements);
@@ -286,20 +295,6 @@ protected
     varData := VarData.addTypedList(varData, UnorderedSet.toList(set), NBVariable.VarData.VarType.ITERATOR);
     eqData  := EqData.mapExp(eqData, function BackendDAE.lowerComponentReferenceExp(variables = variables, complete = true));
   end inline;
-
-  function collectInlineFunctions
-    "collects all functions that have one of the inline types,
-    use with FunctionTree.fold()"
-    input Absyn.Path key;
-    input Function value;
-    input output UnorderedMap<Absyn.Path, Function> replacements;
-    input list<DAE.InlineType> inline_types;
-  algorithm
-    // only add to the map if the function has one of the inline types and is inlineable
-    if List.contains(inline_types, Function.inlineBuiltin(value), DAEUtil.inlineTypeEqual) and functionInlineable(value) then
-      UnorderedMap.add(key, value, replacements);
-    end if;
-  end collectInlineFunctions;
 
   function inlineRecordsTuplesArrays
     "does not inline simple record equalities"
@@ -344,6 +339,7 @@ public
           Equation new_eqn, body;
           Expression lhs, rhs;
           Call call;
+          Dimension dim;
           list<Expression> elements;
           Integer size;
 
@@ -366,12 +362,14 @@ public
 
         // CREF = {...} array equation
         case Equation.ARRAY_EQUATION(lhs = lhs as Expression.CREF(), rhs = rhs as Expression.ARRAY()) algorithm
-          elements := list(NFExpression.applySubscripts({Subscript.INDEX(Expression.INTEGER(i))}, lhs, true) for i in 1:arrayLength(rhs.elements));
+          dim       := listHead(Type.arrayDims(lhs.ty));
+          elements  := list(NFExpression.applySubscripts({Subscript.nth(dim, i)}, lhs, true) for i in 1:arrayLength(rhs.elements));
         then inlineArrayEquation(eqn, listArray(elements), rhs.elements, eqn.attr, iter, variables, new_eqns, set, index);
 
         // {...} = CREF array equation
         case Equation.ARRAY_EQUATION(lhs = lhs as Expression.ARRAY(), rhs = rhs as Expression.CREF()) algorithm
-          elements := list(NFExpression.applySubscripts({Subscript.INDEX(Expression.INTEGER(i))}, rhs, true) for i in 1:arrayLength(lhs.elements));
+          dim       := listHead(Type.arrayDims(rhs.ty));
+          elements  := list(NFExpression.applySubscripts({Subscript.nth(dim, i)}, rhs, true) for i in 1:arrayLength(lhs.elements));
         then inlineArrayEquation(eqn, lhs.elements, listArray(elements), eqn.attr, iter, variables, new_eqns, set, index);
 
         // CREF = {... for i in []} array constructor equation

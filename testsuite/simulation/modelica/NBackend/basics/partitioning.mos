@@ -43,11 +43,17 @@ val(x, 1);
 // (2)       [ALGB] (1) Real k
 //
 //
-// Equations Equations (2/2)
-// ***************************
+//  Equations (2/2)
+// ******************
 // (1)       [SCAL] (1) z = a ^ 2.0 * k ($RES_SIM_2)
 // (2)       [SCAL] (1) k = cos(time) ($RES_AUX_5)
 //
+//
+// ###################
+//
+//     No Jacobian
+//
+// ###################
 //
 //
 // ================================
@@ -61,12 +67,18 @@ val(x, 1);
 // (3)       [ALGB] (1) Real $FUN_2
 //
 //
-// Equations Equations (3/3)
-// ***************************
+//  Equations (3/3)
+// ******************
 // (1)       [SCAL] (1) y = x ^ 2.0 + a ($RES_SIM_1)
 // (2)       [SCAL] (1) $DER.x = $FUN_2 ($RES_SIM_0)
 // (3)       [SCAL] (1) $FUN_2 = sin(time) ($RES_AUX_4)
 //
+//
+// ###################
+//
+//     No Jacobian
+//
+// ###################
 //
 //
 // record SimulationResult

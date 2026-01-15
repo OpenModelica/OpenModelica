@@ -513,7 +513,6 @@ constant Function CLOCK_SOLVER = Function.FUNCTION(Path.IDENT("Clock"),
   }, Type.CLOCK(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, {}, {}, listArray({}),
   Pointer.createImmutable(FunctionStatus.BUILTIN), Pointer.createImmutable(0));
 
-
 constant InstNode CLOCK_NODE = InstNode.CLASS_NODE("Clock",
   DUMMY_ELEMENT, Visibility.PUBLIC,
   Pointer.createImmutable(Class.PARTIAL_BUILTIN(Type.CLOCK(), ClassTree.EMPTY_TREE(),
@@ -547,6 +546,11 @@ constant Function GET_PART_INT = Function.FUNCTION(Path.IDENT("$getPart"),
 
 constant Function GET_PART_BOOL = Function.FUNCTION(Path.IDENT("$getPart"),
   InstNode.EMPTY_NODE(), {BOOL_PARAM}, {BOOL_PARAM}, {}, {},
+    Type.BOOLEAN(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, {}, {}, listArray({}),
+    Pointer.createImmutable(FunctionStatus.BUILTIN), Pointer.createImmutable(0));
+
+constant Function GET_PART_CLOCK = Function.FUNCTION(Path.IDENT("$getPart"),
+  InstNode.EMPTY_NODE(), {CLOCK_PARAM}, {CLOCK_PARAM}, {}, {},
     Type.BOOLEAN(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, {}, {}, listArray({}),
     Pointer.createImmutable(FunctionStatus.BUILTIN), Pointer.createImmutable(0));
 

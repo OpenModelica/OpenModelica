@@ -79,7 +79,6 @@ protected
   import Type = NFType;
   import Operator = NFOperator;
   import Variable = NFVariable;
-  import NFFlatten.FunctionTreeImpl;
   import NFPrefixes.Variability;
 
   // Backend imports
@@ -265,7 +264,7 @@ protected
           (const_vars, alias_vars) := List.splitOnTrue(alias_vars, BVariable.hasConstOrParamAliasBinding);
           for var in const_vars loop
             BVariable.setVarKind(var, VariableKind.PARAMETER(NONE()));
-            BVariable.setBindingAsStartAndFix(var);
+            BVariable.setBindingAsStartAndFix(var, true);
           end for;
           varData.parameters := VariablePointers.addList(const_vars, varData.parameters);
           varData.knowns := VariablePointers.addList(const_vars, varData.knowns);
@@ -820,7 +819,7 @@ protected
         for var in var_lst loop
           rhs := UnorderedMap.getSafe(BVariable.getVarName(var), replacements, sourceInfo());
           eq := Equation.makeAssignment(BVariable.toExpression(var), rhs, Pointer.create(0), NBEquation.TMP_STR, Iterator.EMPTY(), EquationAttributes.default(EquationKind.UNKNOWN, false));
-          (solved_eq,_,status, _) := Solve.solveBody(Pointer.access(eq), BVariable.getVarName(Pointer.access(var_to_keep)), FunctionTreeImpl.EMPTY());
+          (solved_eq, status, _) := Solve.solveBody(Pointer.access(eq), BVariable.getVarName(Pointer.access(var_to_keep)));
           collector := AttributeCollector.fixValues(collector, BVariable.getVarName(var), solved_eq);
         end for;
         if Flags.isSet(Flags.DEBUG_ALIAS) then
@@ -1394,7 +1393,7 @@ protected
       Option<Expression> nominal_opt = UnorderedMap.get(var_cref, attrcollector.nominal_map);
       Type ty;
     algorithm
-      rhs := Equation.getRHS(solved_eq);
+      SOME(rhs) := Equation.getRHS(solved_eq);
       // min:
       if Util.isSome(min_val_opt) then
         UnorderedMap.add(var_cref, Util.getOption(min_val_opt), repl);

@@ -93,12 +93,8 @@ fast-test: testsuite-depends
 	$(MAKE) omc-diff
 	cd testsuite/partest && echo "Running $(./runtests.pl -f -counttests) fast tests"
 	cd testsuite/partest && ./runtests.pl -f -with-txt
-omsens:
-	$(MAKE) -f $(defaultMakefileTarget) -C OMSens OMBUILDDIR=@OMBUILDDIR@
-omsens-clean:
-	$(MAKE) -f $(defaultMakefileTarget) -C OMSens OMBUILDDIR=@OMBUILDDIR@ clean
 omsens_qt: omsens_qt.skip
-omsens_qt.skip: omsens
+omsens_qt.skip:
 	$(MAKE) -f $(defaultMakefileTarget) -C OMSens_Qt || true
 
 SOURCE_DIRS_UTF8=OMEdit OMShell/OMShell OMNotebook/OMNotebook OMOptim/OMOptim OMPlot/OMPlot OMCompiler/Compiler/ OMCompiler/SimulationRuntime/ `bash -c echo testsuite/flattening/libraries/3rdParty/{PlanarMechanics,siemens,SiemensPower,ThermoSysPro}` testsuite/openmodelica/modelicaML testsuite/AVM testsuite/simulation

@@ -585,9 +585,10 @@ void UpdateCoordinateSystemCommand::updateCoordinateSystem(const ModelInstance::
   }
   mpGraphicsView->getModelWidget()->getModelInstance()->updateMergedCoordinateSystem();
 
-  mpGraphicsView->drawCoordinateSystem();
+  // set custom scale to true so that fitInViewInternal does not call fitInView
+  mpGraphicsView->setIsCustomScale(true);
+  mpGraphicsView->drawCoordinateSystem(false);
   mpGraphicsView->addClassAnnotation();
-  mpGraphicsView->fitInViewInternal();
   // if copy properties is true
   if (mCopyProperties) {
     GraphicsView *pGraphicsView;
@@ -596,9 +597,9 @@ void UpdateCoordinateSystemCommand::updateCoordinateSystem(const ModelInstance::
     } else {
       pGraphicsView = mpGraphicsView->getModelWidget()->getIconGraphicsView();
     }
-    pGraphicsView->drawCoordinateSystem();
+    mpGraphicsView->setIsCustomScale(true);
+    pGraphicsView->drawCoordinateSystem(false);
     pGraphicsView->addClassAnnotation();
-    pGraphicsView->fitInViewInternal();
   }
 }
 
@@ -712,7 +713,7 @@ void OMSimulatorUndoCommand::redoInternal()
   // Save the expanded LibraryTreeItems list
   pLibraryTreeModel->getExpandedLibraryTreeItemsList(pModelLibraryTreeItem, &mExpandedLibraryTreeItemsList);
   // save the opened ModelWidgets that belong to this model and save the selected elements
-  MainWindow::instance()->getModelWidgetContainer()->getOpenedModelWidgetsAndSelectedElementsOfClass(mModelName, &mOpenedModelWidgetsAndSelectedElements);
+  MainWindow::instance()->getModelWidgetContainer()->getOpenedModelWidgetsAndSelectedElementsOfClass(pModelLibraryTreeItem, &mOpenedModelWidgetsAndSelectedElements);
   // load the new snapshot
   if (mDoSnapShot) {
     OMSProxy::instance()->importSnapshot(mModelName, mNewSnapshot, &mModelName);
@@ -803,7 +804,8 @@ OMCUndoCommand::OMCUndoCommand(LibraryTreeItem *pLibraryTreeItem, const ModelInf
  */
 void OMCUndoCommand::redoInternal()
 {
-  MainWindow::instance()->getOMCProxy()->loadString(mNewModelText, mpParentContainingLibraryTreeItem->getFileName());
+  MainWindow::instance()->getOMCProxy()->loadString(mNewModelText, mpParentContainingLibraryTreeItem->getFileName(), Helper::utf8,
+                                                    mpParentContainingLibraryTreeItem->isSaveFolderStructure());
   if (!mSkipGetModelInstance || mUndoCalledOnce) {
     mpLibraryTreeItem->getModelWidget()->reDrawModelWidget(mNewModelInfo);
   }
@@ -816,6 +818,7 @@ void OMCUndoCommand::redoInternal()
 void OMCUndoCommand::undo()
 {
   mUndoCalledOnce = true;
-  MainWindow::instance()->getOMCProxy()->loadString(mOldModelText, mpParentContainingLibraryTreeItem->getFileName());
+  MainWindow::instance()->getOMCProxy()->loadString(mOldModelText, mpParentContainingLibraryTreeItem->getFileName(), Helper::utf8,
+                                                    mpParentContainingLibraryTreeItem->isSaveFolderStructure());
   mpLibraryTreeItem->getModelWidget()->reDrawModelWidget(mOldModelInfo);
 }

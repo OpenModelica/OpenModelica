@@ -1,4 +1,4 @@
-// name: TestNormVars
+// name: TestNormVar
 // status: correct
 // cflags: -d=-newInst
 
@@ -59,11 +59,11 @@ simulate(foo,stopTime=0);
 //
 // Variables (5)
 // ========================================
-// 1: u_norm:VARIABLE()  type: Real 
-// 2: x_norm:VARIABLE()  type: Real 
-// 3: x:STATE(1)(start = 100.0 fixed = true nominal = 100.0 )  type: Real 
-// 4: $cse1:VARIABLE(protected = true )  type: Real  unreplaceable
-// 5: x__OMC$scaled_state:VARIABLE()  type: Real 
+// 1: u_norm:VARIABLE()  type: Real
+// 2: x_norm:VARIABLE()  type: Real
+// 3: x:STATE(1)(start = 100.0 fixed = true nominal = 100.0 )  type: Real
+// 4: $cse1:VARIABLE(protected = true )  type: Real unreplaceable
+// 5: x__OMC$scaled_state:VARIABLE()  type: Real
 //
 //
 // Equations (5, 5)
@@ -100,12 +100,12 @@ simulate(foo,stopTime=0);
 //
 // Known variables only depending on parameters and constants - globalKnownVars (1)
 // ========================================
-// 1: input u:VARIABLE(fixed = true nominal = 20.0 )  type: Real 
+// 1: input u:VARIABLE(fixed = true nominal = 20.0 final = true )  type: Real
 //
 //
 // record SimulationResult
 //     resultFile = "foo_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'foo', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'foo', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
@@ -123,11 +123,11 @@ simulate(foo,stopTime=0);
 //
 // Variables (5)
 // ========================================
-// 1: u_norm:VARIABLE()  type: Real 
-// 2: x_norm:VARIABLE()  type: Real 
-// 3: x:STATE(1)(start = 100.0 fixed = true nominal = 100.0 )  type: Real 
-// 4: $cse1:VARIABLE(protected = true )  type: Real  unreplaceable
-// 5: u__OMC$scaled_input:VARIABLE()  type: Real 
+// 1: u_norm:VARIABLE()  type: Real
+// 2: x_norm:VARIABLE()  type: Real
+// 3: x:STATE(1)(start = 100.0 fixed = true nominal = 100.0 )  type: Real
+// 4: $cse1:VARIABLE(protected = true )  type: Real unreplaceable
+// 5: u__OMC$scaled_input:VARIABLE()  type: Real
 //
 //
 // Equations (5, 5)
@@ -164,12 +164,12 @@ simulate(foo,stopTime=0);
 //
 // Known variables only depending on parameters and constants - globalKnownVars (1)
 // ========================================
-// 1: input u:VARIABLE(fixed = true nominal = 20.0 )  type: Real 
+// 1: input u:VARIABLE(fixed = true nominal = 20.0 final = true )  type: Real
 //
 //
 // record SimulationResult
 //     resultFile = "foo_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'foo', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'foo', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
@@ -187,12 +187,12 @@ simulate(foo,stopTime=0);
 //
 // Variables (6)
 // ========================================
-// 1: u_norm:VARIABLE()  type: Real 
-// 2: x_norm:VARIABLE()  type: Real 
-// 3: x:STATE(1)(start = 100.0 fixed = true nominal = 100.0 )  type: Real 
-// 4: $cse1:VARIABLE(protected = true )  type: Real  unreplaceable
-// 5: x__OMC$scaled_state:VARIABLE()  type: Real 
-// 6: u__OMC$scaled_input:VARIABLE()  type: Real 
+// 1: u_norm:VARIABLE()  type: Real
+// 2: x_norm:VARIABLE()  type: Real
+// 3: x:STATE(1)(start = 100.0 fixed = true nominal = 100.0 )  type: Real
+// 4: $cse1:VARIABLE(protected = true )  type: Real unreplaceable
+// 5: x__OMC$scaled_state:VARIABLE()  type: Real
+// 6: u__OMC$scaled_input:VARIABLE()  type: Real
 //
 //
 // Equations (6, 6)
@@ -232,12 +232,12 @@ simulate(foo,stopTime=0);
 //
 // Known variables only depending on parameters and constants - globalKnownVars (1)
 // ========================================
-// 1: input u:VARIABLE(fixed = true nominal = 20.0 )  type: Real 
+// 1: input u:VARIABLE(fixed = true nominal = 20.0 final = true )  type: Real
 //
 //
 // record SimulationResult
 //     resultFile = "foo_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'foo', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'foo', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "

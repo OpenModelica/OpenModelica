@@ -41,7 +41,6 @@ public
   import NBVariable.{VariablePointer, VariablePointers, VarData};
   import Evaluation = NBEvaluation;
   import Events = NBEvents;
-  import NFFlatten.FunctionTree;
   import Jacobian = NBJacobian;
   import Partitioning = NBPartitioning;
   import NBJacobian.{SparsityPattern, SparsityColoring};
@@ -111,30 +110,30 @@ public
     list<Partition> alg_event             "Partitions for algebraic event iteration";
     list<Partition> clocked               "Clocked Partitions";
     list<Partition> init                  "Partitions for initialization";
-    Option<list<Partition>> init_0        "Partitions for lambda 0 (homotopy) Initialization";
-    // add init_1 for lambda = 1 (test for efficency)
+    Option<list<Partition>> init_0        "Partitions for initialization with lambda = 0 (homotopy)";
+    // add init_1 for lambda = 1? (test for efficency)
     Option<list<Partition>> dae           "Partitions for dae mode";
 
-    VarData varData                       "Variable data.";
-    EqData eqData                         "Equation data.";
+    VarData varData                       "Variable data";
+    EqData eqData                         "Equation data";
 
     Events.EventInfo eventInfo            "contains time and state events";
     Partitioning.ClockedInfo clockedInfo  "contains information about clocked partitions";
-    FunctionTree funcTree                 "Function bodies.";
+    UnorderedMap<Path, Function> funcMap  "Function bodies";
   end MAIN;
 
   record JACOBIAN
     String name                       "unique matrix name";
     JacobianType jacType              "type of jacobian";
-    VarData varData                   "Variable data.";
+    VarData varData                   "Variable data";
     array<StrongComponent> comps      "the sorted equations";
     SparsityPattern sparsityPattern   "Sparsity pattern for the jacobian";
     SparsityColoring sparsityColoring "Coloring information";
   end JACOBIAN;
 
   record HESSIAN
-    VarData varData     "Variable data.";
-    EqData eqData       "Equation data.";
+    VarData varData "Variable data";
+    EqData eqData   "Equation data";
   end HESSIAN;
 
   function toString
@@ -215,17 +214,17 @@ public
     end match;
   end setVarData;
 
-  function getFunctionTree
+  function getFunctionMap
     input BackendDAE bdae;
-    output FunctionTree funcTree;
+    output UnorderedMap<Path, Function> funcMap;
   algorithm
-    funcTree := match bdae
-      case MAIN(funcTree = funcTree) then funcTree;
+    funcMap := match bdae
+      case MAIN() then bdae.funcMap;
       else algorithm
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed! Only the record type MAIN() has a function tree."});
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed! Only the record type MAIN() has a function map."});
       then fail();
     end match;
-  end getFunctionTree;
+  end getFunctionMap;
 
   function sizes
     input BackendDAE bdae;
@@ -241,18 +240,17 @@ public
   function lower
     "This function transforms the FlatModel structure to BackendDAE."
     input FlatModel flatModel;
-    input FunctionTree funcTree;
+    input UnorderedMap<Path, Function> funcMap;
     output BackendDAE bdae;
   protected
     VarData variableData;
     EqData equationData;
     Events.EventInfo eventInfo = Events.EventInfo.empty();
     Partitioning.ClockedInfo clockedInfo = Partitioning.ClockedInfo.new();
-    UnorderedMap<Path, Function> functions;
   algorithm
     variableData := lowerVariableData(flatModel.variables);
     (equationData, variableData) := lowerEquationData(flatModel.equations, flatModel.algorithms, flatModel.initialEquations, flatModel.initialAlgorithms, variableData);
-    bdae := MAIN({}, {}, {}, {}, {}, {}, NONE(), NONE(), variableData, equationData, eventInfo, clockedInfo, lowerFunctions(funcTree));
+    bdae := MAIN({}, {}, {}, {}, {}, {}, NONE(), NONE(), variableData, equationData, eventInfo, clockedInfo, lowerFunctions(funcMap));
   end lower;
 
   function main
@@ -310,7 +308,7 @@ public
 
     // (do not change order SOLVE -> JACOBIAN)
     postOptModules := {
-      (Evaluation.removeDummies,    "Remove Dummies"),
+      (Evaluation.removeDummies,              "Remove Dummies"),
       (function Tearing.main(kind = kind),    "Tearing"),
       (Partitioning.categorize,               "Categorize"),
       (Solve.main,                            "Solve"),
@@ -371,7 +369,7 @@ public
           fail();
         end try;
         clock_time := System.realtimeTock(clock_idx);
-        ExecStat.execStat(name);
+        ExecStat.execStat("[" + ClockIndexes.toString(clock_idx) + "] " + name);
         module_clocks := (name, clock_time) :: module_clocks;
         if Flags.isSet(Flags.FAILTRACE) then
           (varSizes, eqnSizes) := sizes(bdae);
@@ -443,7 +441,6 @@ public
             VariablePointers.removeList(acc_discrete_states_accessed, varData.unknowns);
             VariablePointers.removeList(acc_discrete_states_accessed, varData.discretes);
             VariablePointers.removeList(acc_discrete_states_accessed, varData.discrete_states);
-            // TODO: CLOCKED?
 
             VariablePointers.removeList(Pointer.access(acc_previous), varData.previous);
             VariablePointers.removeList(Pointer.access(acc_previous), varData.variables);
@@ -640,6 +637,13 @@ protected
           clocks_lst := lowVar_ptr :: clocks_lst;
         then ();
 
+        // clocked variables are handled just as algebraics, the clocked type is just for partitioning
+        case VariableKind.CLOCKED() algorithm
+          algebraics_lst := lowVar_ptr :: algebraics_lst;
+          unknowns_lst := lowVar_ptr :: unknowns_lst;
+          initials_lst := lowVar_ptr :: initials_lst;
+        then ();
+
         case VariableKind.EXTOBJ() algorithm
           lowVar_ptr := BVariable.setFixed(lowVar_ptr);
           external_objects_lst := lowVar_ptr :: external_objects_lst;
@@ -773,7 +777,9 @@ protected
         Type elemTy;
         list<Pointer<Variable>> children = {};
 
-      case (_, _, Type.CLOCK()) then VariableKind.CLOCK();
+      // clocks and clocked signals
+      case (_, _, Type.CLOCK())                                           then VariableKind.CLOCK();
+      case (_,_ , _) guard(Binding.isClockOrSampleFunction(var.binding))  then VariableKind.CLOCKED();
 
       // variable -> artificial state if it has stateSelect = StateSelect.always
       case (NFPrefixes.Variability.CONTINUOUS, VariableAttributes.VAR_ATTR_REAL(stateSelect = SOME(NFBackendExtension.StateSelect.ALWAYS)), _)
@@ -1182,39 +1188,43 @@ protected
   end lowerIfBranchBody;
 
   function lowerWhenEquation
-    input FEquation frontend_equation;
+    input FEquation frontend_eq;
     input Boolean init;
     output list<Pointer<Equation>> backend_equations;
   algorithm
-    backend_equations := match frontend_equation
+    backend_equations := match frontend_eq
       local
-        list<FEquation.Branch> branches;
-        DAE.ElementSource source;
-        Expression condition, message, level;
         BEquation.WhenEquationBody whenEqBody;
         list<BEquation.WhenEquationBody> bodies;
         EquationAttributes attr;
+        Call call;
+        Algorithm alg;
 
-      case FEquation.WHEN(branches = branches, source = source)
-        algorithm
-          // When equation inside initial actually not allowed. Throw error?
-          SOME(whenEqBody) := lowerWhenEquationBody(branches);
-          bodies := BEquation.WhenEquationBody.split(whenEqBody);
+      case FEquation.WHEN() algorithm
+        // When equation inside initial actually not allowed. Throw error?
+        SOME(whenEqBody) := lowerWhenEquationBody(frontend_eq.branches);
+        bodies := BEquation.WhenEquationBody.split(whenEqBody);
       then list(Pointer.create(BEquation.WHEN_EQUATION(
         size    = BEquation.WhenEquationBody.size(b),
         body    = b,
-        source  = source,
+        source  = frontend_eq.source,
         attr    = EquationAttributes.default(if BEquation.WhenEquationBody.size(b) > 0 then EquationKind.DISCRETE else EquationKind.EMPTY, init)
       )) for b in bodies);
 
-      case FEquation.ASSERT(condition = condition, message = message, level = level, source = source)
-        algorithm
-          attr := EquationAttributes.default(EquationKind.EMPTY, init);
-          whenEqBody := BEquation.WHEN_EQUATION_BODY(condition, {BEquation.ASSERT(condition, message, level, source)}, NONE());
-      then {Pointer.create(BEquation.WHEN_EQUATION(0, whenEqBody, source, attr))};
+      case FEquation.ASSERT(condition = Expression.CALL(call = call)) guard(Call.isNamed(call, "noEvent")) algorithm
+        attr := EquationAttributes.default(EquationKind.EMPTY, init);
+        alg := Algorithm.ALGORITHM({Statement.ASSERT(frontend_eq.condition, frontend_eq.message, frontend_eq.level, frontend_eq.source)},
+          {}, {}, frontend_eq.scope, frontend_eq.source);
+      then {lowerAlgorithm(alg, init)};
+
+      case FEquation.ASSERT() algorithm
+        attr := EquationAttributes.default(EquationKind.EMPTY, init);
+        whenEqBody := BEquation.WHEN_EQUATION_BODY(frontend_eq.condition,
+          {BEquation.ASSERT(frontend_eq.condition, frontend_eq.message, frontend_eq.level, frontend_eq.source)}, NONE());
+      then {Pointer.create(BEquation.WHEN_EQUATION(0, whenEqBody, frontend_eq.source, attr))};
 
       else algorithm
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + FEquation.toString(frontend_equation)});
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + FEquation.toString(frontend_eq)});
       then fail();
 
     end match;
@@ -1327,7 +1337,7 @@ protected
 
     if listEmpty(alg.outputs) then
       attr := EquationAttributes.default(EquationKind.EMPTY, init);
-    elseif ComponentRef.listHasDiscrete(alg.outputs) then
+    elseif Algorithm.isDiscrete(alg) then
       attr := EquationAttributes.default(EquationKind.DISCRETE, init);
     else
       attr := EquationAttributes.default(EquationKind.CONTINUOUS, init);
@@ -1546,19 +1556,9 @@ public
   end lowerIteratorExp;
 
   function lowerFunctions
-    input output FunctionTree funcTree;
-  protected
-    // ToDo: replace all function trees with this UnorderedMap
-    UnorderedMap<Path, Function> functions = UnorderedMap.new<Function>(AbsynUtil.pathHash, AbsynUtil.pathEqual);
-  protected
-    Path path;
-    Function fn;
+    input output UnorderedMap<Path, Function> funcMap;
   algorithm
-    for tpl in FunctionTree.toList(funcTree) loop
-      (path, fn) := tpl;
-      (fn, funcTree) := Differentiate.resolvePartialDerivatives(fn, funcTree);
-      UnorderedMap.add(path, fn, functions);
-    end for;
+    UnorderedMap.apply(funcMap, function Differentiate.resolvePartialDerivatives(funcMap = funcMap));
   end lowerFunctions;
 
   function backenddaeinfo

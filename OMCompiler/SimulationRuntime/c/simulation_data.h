@@ -50,7 +50,6 @@
 #define omc_dummyVarInfo {-1,-1,"","",omc_dummyFileInfo_val}
 #define omc_dummyEquationInfo {-1,0,0,-1,NULL}
 #define omc_dummyFunctionInfo {-1,"",omc_dummyFileInfo_val}
-#define omc_dummyRealAttribute {NULL,NULL,-DBL_MAX,DBL_MAX,0,0,1.0,0.0}
 
 #define OMC_LINEARIZE_DUMP_LANGUAGE_MODELICA 0
 #define OMC_LINEARIZE_DUMP_LANGUAGE_MATLAB 1
@@ -74,8 +73,8 @@ typedef int (*initialAnalyticalJacobian_func_ptr)(DATA* data, threadData_t* thre
 /* Model info structures */
 typedef struct VAR_INFO
 {
-  int id;
-  int inputIndex; /* -1 means not an input */
+  int id;               /* -1 if no value reference set */
+  int inputIndex;       /* -1 means not an input */
   const char *name;
   const char *comment;
   FILE_INFO info;
@@ -256,6 +255,12 @@ typedef DATA_ALIAS DATA_INTEGER_ALIAS;
 typedef DATA_ALIAS DATA_BOOLEAN_ALIAS;
 typedef DATA_ALIAS DATA_STRING_ALIAS;
 
+/* Index (i-th variable, j-th index in array variable)*/
+typedef struct array_index_t {
+  size_t array_idx;   /* Index of scalar/ array variable */
+  size_t dim_idx;     /* Index inside array as 1D representation */
+} array_index_t;
+
 /* collect all attributes from one variable in one struct */
 typedef struct REAL_ATTRIBUTE
 {
@@ -265,8 +270,8 @@ typedef struct REAL_ATTRIBUTE
   modelica_real max;                   /* = +Inf */
   modelica_boolean fixed;              /* depends on the type */
   modelica_boolean useNominal;         /* = false */
-  modelica_real nominal;               /* = 1.0 */
-  modelica_real start;                 /* = 0.0 */
+  real_array nominal;                  /* = {1.0} */
+  real_array start;                    /* = {0.0} */
 } REAL_ATTRIBUTE;
 
 typedef struct INTEGER_ATTRIBUTE
@@ -296,15 +301,20 @@ enum DIMENSION_ATTRIBUTE_TYPE{
 
 typedef struct DIMENSION_ATTRIBUTE
 {
-  enum DIMENSION_ATTRIBUTE_TYPE type;      /* How the dimension is defined */
-  modelica_integer start;             /* If type=DIMENSION_BY_START: Dimension */
-  modelica_integer valueReference;    /* If type=DIMENSION_BY_VALUE_REFERENCE: Value reference of structural parameter specifying dimension */
+  /** How the dimension is defined */
+  enum DIMENSION_ATTRIBUTE_TYPE type;
+  /** If `type` is `DIMENSION_BY_START`: Dimension
+    * If `type` is `DIMENSION_BY_VALUE_REFERENCE`: Will be set to start value of referenced variable in function `calculateLength`. */
+  modelica_integer start;
+  /** If `type` is `DIMENSION_BY_VALUE_REFERENCE`: Value reference of structural parameter specifying dimension. */
+  modelica_integer valueReference;
 } DIMENSION_ATTRIBUTE;
 
 typedef struct DIMENSION_INFO
 {
-  modelica_integer numberOfDimensions;  /* number of dimension tags <dimension> */
-  DIMENSION_ATTRIBUTE* dimensions;      /* array of dimension sizes */
+  size_t numberOfDimensions;            /* Number of dimension tags <dimension>, scalar if equal to 0. */
+  DIMENSION_ATTRIBUTE* dimensions;      /* Array of dimension sizes */
+  size_t scalar_length;                 /* Length of variable after scalarization to 1-dimensional array */
 } DIMENSION_INFO;
 
 typedef struct STATIC_REAL_DATA
@@ -634,25 +644,44 @@ typedef struct MODEL_DATA
 
   long nBaseClocks;                    /* total number of base-clocks*/
 
-  fortran_integer nStates;
+  /* Number of un-scalrarized variables (arrays count as one variable) */
+  long nStatesArray;            /* Number of array + scalar state variables */
+  long nVariablesRealArray;     /* Number of array + scalar real variables: states + state derivatives + real algebraic variables */
+  long nVariablesIntegerArray;  /* Number of array + scalar integer variables */
+  long nVariablesBooleanArray;  /* Number of array + scalar boolean variables */
+  long nVariablesStringArray;   /* Number of array + scalar string variables */
 
-  /* numbers of unscalarized variables (arrays counted as one variable, used for index map) */
-  size_t nVariablesRealArray;
-  size_t nVariablesIntegerArray;
-  size_t nVariablesBooleanArray;
-  size_t nVariablesStringArray;
+  long nParametersRealArray;    /* Number of array + scalar real parameters */
+  long nParametersIntegerArray; /* Number of array + scalar integer parameters */
+  long nParametersBooleanArray; /* Number of array + scalar boolean parameters */
+  long nParametersStringArray;  /* Number of array + scalar string parameters */
 
-  long nVariablesReal;                 /* all Real Variables of the model (states, statesderivatives, algebraics, real discretes) */
-  long nDiscreteReal;                  /* only all _discrete_ reals */
-  long nVariablesInteger;
-  long nVariablesBoolean;
-  long nVariablesString;
-  long nParametersReal;
-  long nParametersInteger;
-  long nParametersBoolean;
-  long nParametersString;
-  long nInputVars;
-  long nOutputVars;
+  long nAliasRealArray;         /* Number of array + scalar real alias variables */
+  long nAliasIntegerArray;      /* Number of array + scalar integer alias variables */
+  long nAliasBooleanArray;      /* Number of array + scalar boolean alias variables */
+  long nAliasStringArray;       /* Number of array + scalar string alias variables */
+  // TODO: array handling for input and output vars missing
+
+  /* Number of scalarized variables (arrays are flatten to scalar elements.) */
+  long nStates;                 /* Number of state variables*/
+  long nVariablesReal;          /* Number of real variables: states + state derivatives + real algebraic variables + real discrete variables */
+  long nDiscreteReal;           /* Number of all discrete real variables */
+  long nVariablesInteger;       /* Number of integer variables */
+  long nVariablesBoolean;       /* Number of boolean variables */
+  long nVariablesString;        /* Number of string variables */
+
+  long nParametersReal;         /* Number of real parameters */
+  long nParametersInteger;      /* Number of integer parameters */
+  long nParametersBoolean;      /* Number of boolean parameters */
+  long nParametersString;       /* Number of string parameters */
+
+  long nInputVars;              /* Number of input variables */
+  long nOutputVars;             /* Number of output variables */
+
+  long nAliasReal;              /* Number of real alias variables */
+  long nAliasInteger;           /* Number of integer alias variables */
+  long nAliasBoolean;           /* Number of boolean alias variables */
+  long nAliasString;            /* Number of string alias variables */
 
   EVAL_DAG* dag;                        /* dependency of functionODE */
 
@@ -669,11 +698,6 @@ typedef struct MODEL_DATA
   long nInlineVars;                    /* number of additional variables for the inline solver */
   long nOptimizeConstraints;           /* number of additional variables for constraint in dynamic optimization */
   long nOptimizeFinalConstraints;      /* number of additional variables for final constraint in dynamic optimization */
-
-  long nAliasReal;
-  long nAliasInteger;
-  long nAliasBoolean;
-  long nAliasString;
 
   long nJacobians;
 
@@ -829,14 +853,47 @@ typedef struct SIMULATION_INFO
   modelica_real* states_left;          /* work array for findRoot in event.c */
   modelica_real* states_right;         /* work array for findRoot in event.c */
 
-  /* index map: arr_idx -> start_idx */
-  size_t* realVarsIndex;
+  /* Index maps: arr_idx -> start_idx
+   * Maps index from modelData-><Type>VarsData (array + scalar variables) to
+   * start index in simulationData-><Type>Vars (scalarized version).
+   */
+
+  size_t* realVarsIndex;    /**< Maps real array/scalar variables to start indices in scalarized version */
   size_t* integerVarsIndex;
   size_t* booleanVarsIndex;
   size_t* stringVarsIndex;
 
   /* adaptive eval of functionODE */
   EVAL_SELECTION* evalSelection;        /* selection for functionODE (don't allocate, only point to other selection) */
+
+  size_t* realParamsIndex;
+  size_t* integerParamsIndex;
+  size_t* booleanParamsIndex;
+  size_t* stringParamsIndex;
+
+  size_t* realAliasIndex;
+  size_t* integerAliasIndex;
+  size_t* booleanAliasIndex;
+  size_t* stringAliasIndex;
+
+  /* Reverse index maps: scalar_idx -> array_idx
+   * Maps index from simulationData-><Type>Vars (scalarized version) to
+   * index in modelData-><Type>VarsData (array + scalar variables).
+   */
+  array_index_t* realVarsReverseIndex;
+  array_index_t* integerVarsReverseIndex;
+  array_index_t* booleanVarsReverseIndex;
+  array_index_t* stringVarsReverseIndex;
+
+  array_index_t* realParamsReverseIndex;
+  array_index_t* integerParamsReverseIndex;
+  array_index_t* booleanParamsReverseIndex;
+  array_index_t* stringParamsReverseIndex;
+
+  array_index_t* realAliasReverseIndex;
+  array_index_t* integerAliasReverseIndex;
+  array_index_t* booleanAliasReverseIndex;
+  array_index_t* stringAliasReverseIndex;
 
   /* old vars for event handling */
   modelica_real timeValueOld;

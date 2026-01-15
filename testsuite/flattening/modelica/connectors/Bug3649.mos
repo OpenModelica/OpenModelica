@@ -1,4 +1,4 @@
-// name:     CGraphBug
+// name:     Bug3649
 // keywords: <insert keywords here>
 // status:   correct
 // cflags: -d=-newInst

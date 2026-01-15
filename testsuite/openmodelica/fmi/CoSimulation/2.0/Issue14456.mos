@@ -1,0 +1,39 @@
+// name: Issue14456.mos
+// keywords: fmu export and run
+// status: correct
+// teardown_command: rm -rf roomM370*.c roomM370*.h roomM370-tmp index.html roomM370.fmu roomM370_cs_systemCall.log model_res.mat
+
+setCommandLineOptions("--fmiFlags=s:cvode"); getErrorString();
+loadFile("roomM370.mo"); getErrorString();
+buildModelFMU(roomM370, version="2.0", fmuType="cs", platforms=["dynamic"]); getErrorString();
+
+system(getInstallationDirectoryPath() + "/bin/OMSimulator roomM370.fmu --mode=cs --tolerance=1e-6 --suppressPath=true --tempDir=\"roomM370-tmp\"", "roomM370_cs_systemCall.log"); getErrorString();
+readFile("roomM370_cs_systemCall.log"); getErrorString();
+
+
+// Result:
+// true
+// ""
+// true
+// ""
+// {"roomM370.fmu"}
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// "
+// 0
+// ""
+// "LOG_SOLVER        | info    | CVODE linear multistep method CV_BDF
+// LOG_SOLVER        | info    | CVODE maximum integration order CV_ITER_NEWTON
+// LOG_SOLVER        | info    | CVODE use equidistant time grid YES
+// LOG_SOLVER        | info    | CVODE Using relative error tolerance 1.000000e-06
+// LOG_SOLVER        | info    | CVODE Using dense internal linear solver SUNLinSol_Dense.
+// LOG_SOLVER        | info    | CVODE Use internal dense numeric jacobian method.
+// LOG_SOLVER        | info    | CVODE uses internal root finding method NO
+// LOG_SOLVER        | info    | CVODE maximum absolut step size 0
+// LOG_SOLVER        | info    | CVODE initial step size is set automatically
+// LOG_SOLVER        | info    | CVODE maximum integration order 5
+// LOG_SOLVER        | info    | CVODE maximum number of nonlinear convergence failures permitted during one step 10
+// LOG_SOLVER        | info    | CVODE BDF stability limit detection algorithm OFF
+// info:    Result file: model_res.mat (bufferSize=10)
+// "
+// ""
+// endResult

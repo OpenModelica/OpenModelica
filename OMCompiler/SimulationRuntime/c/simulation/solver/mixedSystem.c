@@ -165,8 +165,7 @@ int check_mixed_solutions(DATA *data, int printFailingSystems)
       retVal = 1;
       if(printFailingSystems && OMC_ACTIVE_WARNING_STREAM(OMC_LOG_MIXED))
       {
-        warningStreamPrint(OMC_LOG_MIXED, 1, "mixed system fails: %d at t=%g", modelInfoGetEquation(&data->modelData->modelDataXml, system->equationIndex).id, data->localData[0]->timeValue);
-        messageClose(OMC_LOG_MIXED);
+        warningStreamPrint(OMC_LOG_MIXED, 0, "mixed system fails: %d at t=%g", modelInfoGetEquation(&data->modelData->modelDataXml, system->equationIndex).id, data->localData[0]->timeValue);
       }
     }
 

@@ -914,14 +914,14 @@ argument_list [int canHaveBreak] returns [void* ast]
   finally{ OM_POP(5); }
 
 inheritance_modification returns [void* ast]
-@init { OM_PUSHZ2(c, i.ast); } :
+@init { i = 0; OM_PUSHZ1(c); } :
   BREAK ( c=connect_clause { $ast = Absyn__INHERITANCEBREAK(c, PARSER_INFO($start)); }
-        | i=component_reference
+        | i=IDENT
           {
             $ast = Absyn__INHERITANCEBREAK(
               Absyn__EQ_5fCONNECT(
-                i.ast,
-                Absyn__CREF_5fIDENT(mmc_mk_scon("break"),mmc_mk_nil())
+                Absyn__CREF_5fIDENT(mmc_mk_scon("break"),mmc_mk_nil()),
+                Absyn__CREF_5fIDENT(token_to_scon(i),mmc_mk_nil())
               ),
               PARSER_INFO($start));
           }

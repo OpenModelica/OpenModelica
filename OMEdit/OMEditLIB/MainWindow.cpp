@@ -110,13 +110,10 @@ MainWindow::MainWindow(QWidget *parent)
 {
   // Make sure we honor the system's proxy settings
   QNetworkProxyFactory::setUseSystemConfiguration(true);
-  // This is a very convoluted way of asking for the default system font in Qt
-  QFont systmFont("Monospace");
-  systmFont.setStyleHint(QFont::System);
-  Helper::systemFontInfo = QFontInfo(systmFont);
-  // This is a very convoluted way of asking for the default monospace font in Qt
-  QFont monospaceFont("Monospace");
-  monospaceFont.setStyleHint(QFont::TypeWriter);
+  // Default system font
+  Helper::systemFontInfo = QFontInfo(font());
+  // Default monospace font
+  QFont monospaceFont = QFontDatabase::systemFont(QFontDatabase::FixedFont);
   Helper::monospacedFontInfo = QFontInfo(monospaceFont);
   /*! @note Register the RecentFile, FindTextOM and DebuggerConfiguration struct in the Qt's meta system
    * Don't remove/move the following lines.
@@ -268,7 +265,7 @@ void MainWindow::setUpMainWindow(threadData_t *threadData)
   mpElementWidget = new ElementWidget(this);
   // Create ElementDockWidget
   mpElementDockWidget = new QDockWidget(Helper::elements, this);
-  mpElementDockWidget->setObjectName("ElementBrowser");
+  mpElementDockWidget->setObjectName("Elements");
   mpElementDockWidget->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
   mpElementDockWidget->setWidget(mpElementWidget);
   addDockWidget(Qt::LeftDockWidgetArea, mpElementDockWidget);
@@ -550,18 +547,6 @@ void MainWindow::showModelingPerspectiveToolBars(ModelWidget *pModelWidget)
     mpReSimulationToolBar->setEnabled(mpVariablesDockWidget->isVisible() && !mpVariablesWidget->getVariablesTreeView()->selectionModel()->selectedIndexes().isEmpty());
     SHOW_HIDE_TOOLBAR(mpPlotToolBar, ToolBars::plotToolBar, false);
     SHOW_HIDE_TOOLBAR(mpDebuggerToolBar, ToolBars::debuggerToolBar, false);
-  } else if (pModelWidget && pModelWidget->getLibraryTreeItem()->isCRML()) {
-    pSettings->beginGroup(ToolBars::modelingTextPerspective);
-    SHOW_HIDE_TOOLBAR(mpEditToolBar, ToolBars::editToolBar, true);
-    SHOW_HIDE_TOOLBAR(mpViewToolBar, ToolBars::viewToolBar, true);
-    SHOW_HIDE_TOOLBAR(mpShapesToolBar, ToolBars::shapesToolBar, false);
-    SHOW_HIDE_TOOLBAR(mpModelSwitcherToolBar, ToolBars::modelSwitcherToolBar, true);
-    SHOW_HIDE_TOOLBAR(mpCheckToolBar, ToolBars::checkToolBar, false);
-    SHOW_HIDE_TOOLBAR(mpSimulationToolBar, ToolBars::simulationToolBar, false);
-    SHOW_HIDE_TOOLBAR(mpReSimulationToolBar, ToolBars::reSimulationToolBar, false);
-    mpReSimulationToolBar->setEnabled(mpVariablesDockWidget->isVisible() && !mpVariablesWidget->getVariablesTreeView()->selectionModel()->selectedIndexes().isEmpty());
-    SHOW_HIDE_TOOLBAR(mpPlotToolBar, ToolBars::plotToolBar, false);
-    SHOW_HIDE_TOOLBAR(mpDebuggerToolBar, ToolBars::debuggerToolBar, false);
     SHOW_HIDE_TOOLBAR(mpOMSimulatorToolbar, ToolBars::OMSimulatorToolBar, false);
   } else if (pModelWidget && pModelWidget->getLibraryTreeItem()->isSSP()) {
     pSettings->beginGroup(ToolBars::modelingOMSPerspective);
@@ -765,6 +750,7 @@ int MainWindow::askForExit()
  */
 void MainWindow::beforeClosingMainWindow()
 {
+  mpAutoSaveTimer->stop();
   // Issue #9101. Close all top level windows
   foreach (QWidget *pWidget, QApplication::topLevelWidgets())  {
     if (pWidget == this) {
@@ -779,6 +765,7 @@ void MainWindow::beforeClosingMainWindow()
   delete mpLibraryWidget;
   delete mpElementWidget;
   delete mpModelWidgetContainer;
+  mpModelWidgetContainer = nullptr;
   // delete the ArchivedSimulationsWidget object
   ArchivedSimulationsWidget::destroy();
   if (mpSimulationDialog) {
@@ -924,7 +911,7 @@ void MainWindow::simulate(LibraryTreeItem *pLibraryTreeItem)
     mpSimulationDialog->directSimulate(pLibraryTreeItem, false, false, false, false);
   } else if (pLibraryTreeItem->isSSP()) {
     // get the top level LibraryTreeItem
-    LibraryTreeItem *pTopLevelLibraryTreeItem = mpLibraryWidget->getLibraryTreeModel()->getTopLevelLibraryTreeItem(pLibraryTreeItem);
+    LibraryTreeItem *pTopLevelLibraryTreeItem = LibraryTreeModel::getTopLevelLibraryTreeItem(pLibraryTreeItem);
     if (pTopLevelLibraryTreeItem) {
       if (!mpOMSSimulationDialog) {
         mpOMSSimulationDialog = new OMSSimulationDialog(this);
@@ -995,7 +982,7 @@ void MainWindow::simulationSetup(LibraryTreeItem *pLibraryTreeItem)
     mpSimulationDialog->show(pLibraryTreeItem, false, SimulationOptions());
   } else if (pLibraryTreeItem->isSSP()) {
     // get the top level LibraryTreeItem
-    LibraryTreeItem *pTopLevelLibraryTreeItem = mpLibraryWidget->getLibraryTreeModel()->getTopLevelLibraryTreeItem(pLibraryTreeItem);
+    LibraryTreeItem *pTopLevelLibraryTreeItem = LibraryTreeModel::getTopLevelLibraryTreeItem(pLibraryTreeItem);
     if (pTopLevelLibraryTreeItem) {
       if (!mpOMSSimulationDialog) {
         mpOMSSimulationDialog = new OMSSimulationDialog(this);
@@ -1424,16 +1411,20 @@ void MainWindow::exportModelToOMNotebook(LibraryTreeItem *pLibraryTreeItem)
   mpProgressBar->setValue(value++);
   // create a file object and write the xml in it.
   QFile omnotebookFile(omnotebookFileName);
-  omnotebookFile.open(QIODevice::WriteOnly);
-  QTextStream textStream(&omnotebookFile);
+  if (omnotebookFile.open(QIODevice::WriteOnly)) {
+    QTextStream textStream(&omnotebookFile);
 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
-  textStream.setEncoding(QStringConverter::Utf8);
+    textStream.setEncoding(QStringConverter::Utf8);
 #else
-  textStream.setCodec(Helper::utf8.toUtf8().constData());
+    textStream.setCodec(Helper::utf8.toUtf8().constData());
 #endif
-  textStream.setGenerateByteOrderMark(false);
-  textStream << xmlDocument.toString();
-  omnotebookFile.close();
+    textStream.setGenerateByteOrderMark(false);
+    textStream << xmlDocument.toString();
+    omnotebookFile.close();
+  } else {
+    QString msg = tr("Unable to open %1").arg(omnotebookFileName);
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, msg, Helper::scriptingKind, Helper::errorLevel));
+  }
   mpProgressBar->setValue(value++);
   // hide the progressbar and clear the message in status bar
   mpStatusBar->clearMessage();
@@ -2545,7 +2536,7 @@ void MainWindow::simulateModelInteractive()
   ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
   if (pModelWidget && pModelWidget->getLibraryTreeItem() && pModelWidget->getLibraryTreeItem()->isSSP()) {
     // get the top level LibraryTreeItem
-    LibraryTreeItem *pTopLevelLibraryTreeItem = mpLibraryWidget->getLibraryTreeModel()->getTopLevelLibraryTreeItem(pModelWidget->getLibraryTreeItem());
+    LibraryTreeItem *pTopLevelLibraryTreeItem = LibraryTreeModel::getTopLevelLibraryTreeItem(pModelWidget->getLibraryTreeItem());
     if (pTopLevelLibraryTreeItem) {
       if (!mpOMSSimulationDialog) {
         mpOMSSimulationDialog = new OMSSimulationDialog(this);
@@ -2994,11 +2985,19 @@ void MainWindow::runOMSensPlugin()
     }
   }
   // if OMSens plugin is already loaded.
-  InformationInterface *pInformationInterface = qobject_cast<InformationInterface*>(mpOMSensPlugin);
-  pInformationInterface->setOpenModelicaHome(Helper::OpenModelicaHome);
-  pInformationInterface->setTempPath(Utilities::tempDirectory());
   ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
-  if (pModelWidget) {
+  if (pModelWidget && pModelWidget->getLibraryTreeItem()) {
+    if (!pModelWidget->getLibraryTreeItem()->isSaved()) {
+      // save the model
+      if (!MainWindow::instance()->getLibraryWidget()->saveLibraryTreeItem(pModelWidget->getLibraryTreeItem())) {
+        return;
+      }
+    }
+    InformationInterface *pInformationInterface = qobject_cast<InformationInterface*>(mpOMSensPlugin);
+    pInformationInterface->setOpenModelicaHome(Helper::OpenModelicaHome);
+    pInformationInterface->setTempPath(Utilities::tempDirectory());
+    pInformationInterface->setOMSensPath(OptionsDialog::instance()->getSensitivityOptimizationPage()->getOMSensBackendPathTextBox()->text());
+    pInformationInterface->setPython(OptionsDialog::instance()->getSensitivityOptimizationPage()->getPythonTextBox()->text());
     ModelInterface *pModelInterface = qobject_cast<ModelInterface*>(mpOMSensPlugin);
     pModelInterface->analyzeModel(pModelWidget->toOMSensData());
   } else {
@@ -4360,7 +4359,7 @@ void MainWindow::createMenus()
 #ifndef Q_OS_MAC
   // Sensitivity Optimization menu
   QMenu *pSensitivityOptimizationMenu = new QMenu(menuBar());
-  pSensitivityOptimizationMenu->setTitle(tr("Sensitivity Optimization"));
+  pSensitivityOptimizationMenu->setTitle(Helper::sensitivityOptimization);
   // add actions to Sensitivity Optimization menu
   pSensitivityOptimizationMenu->addAction(mpRunOMSensAction);
   // add Sensitivity Optimization menu to menu bar

@@ -2,6 +2,7 @@ TEST = ../../../rtest -v
 
 TESTFILES = \
 ComplexTypeEquationCount.mos \
+ComplexTypeEquationCount2.mos \
 IntegerTest.mos
 
 

@@ -12,6 +12,6 @@ checkModel(ComplexTypeEquationCount);
 // Result:
 // true
 // "Check of ComplexTypeEquationCount completed successfully.
-// Class ComplexTypeEquationCount has 1 equation(s) and 1 variable(s).
+// Class ComplexTypeEquationCount has 2 equation(s) and 2 variable(s).
 // 1 of these are trivial equation(s)."
 // endResult

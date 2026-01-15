@@ -32,6 +32,22 @@
 #include "../simulation_data.h"
 #include "varinfo.h"
 
+const char *var_type_names[VAR_TYPE_MAX] = {
+    [VAR_TYPE_UNKNOWN] = "unknown",
+
+    [VAR_TYPE_REAL]    = "real",
+    [VAR_TYPE_INTEGER] = "integer",
+    [VAR_TYPE_BOOLEAN] = "boolean",
+    [VAR_TYPE_STRING]  = "string"
+};
+
+const char *var_kind_names[VAR_KIND_MAX] = {
+    [VAR_KIND_UNKNOWN]   = "unknown",
+
+    [VAR_KIND_STATE]     = "state",
+    [VAR_KIND_VARIABLE]  = "variable",
+    [VAR_KIND_PARAMETER] = "parameter"
+};
 
 void printErrorEqSyst(EQUATION_SYSTEM_ERROR err, EQUATION_INFO eq, double time)
 {
@@ -56,10 +72,14 @@ void printErrorEqSyst(EQUATION_SYSTEM_ERROR err, EQUATION_INFO eq, double time)
   }
 }
 
+/**
+ * @brief Free memory allocated by `read_var_info`.
+ *
+ * @param info  Pointer to variable info.
+ */
 void freeVarInfo(VAR_INFO* info)
 {
   free((void*)info->info.filename);
   free((void*)info->name);
   free((void*)info->comment);
 }
-

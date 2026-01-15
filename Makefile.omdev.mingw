@@ -61,7 +61,7 @@ ifeq ($(BUILDTYPE),)
 	BUILDTYPE=Debug
 endif
 
-.PHONY: omc omc-diff omlibrary omplot omedit omedit-testsuite omparser omsimulator omnotebook omshell omoptim omsens omsens_qt qtclientsDLLs simulationruntimecmsvc runtimeCPPinstall runtimeCPPmsvcinstall OMSICPPinstall all-runtimes test fast-test testsuite-depends libs-for-testing
+.PHONY: omc omc-diff omlibrary omplot omedit omedit-testsuite omparser omsimulator omnotebook omshell omoptim omsens_qt qtclientsDLLs simulationruntimecmsvc runtimeCPPinstall runtimeCPPmsvcinstall OMSICPPinstall all-runtimes test fast-test testsuite-depends libs-for-testing
 
 all: omc testsuite-depends
 
@@ -129,13 +129,7 @@ omshell: omc qtclientsDLLs
 omoptim: omc omplot qtclientsDLLs
 	$(MAKE) -f $(defaultMakefileTarget) -C OMOptim OMBUILDDIR=$(OMBUILDDIR) CC="$(CC)" CXX="$(CXX)" OM_QT_MAJOR_VERSION=$(OM_QT_MAJOR_VERSION)
 
-omsens:
-	$(MAKE) -f $(defaultMakefileTarget) -C OMSens OMBUILDDIR=$(OMBUILDDIR)
-
-omsens-clean:
-	$(MAKE) -f $(defaultMakefileTarget) -C OMSens OMBUILDDIR=$(OMBUILDDIR) clean
-
-omsens_qt: omsens
+omsens_qt:
 	$(MAKE) -f $(defaultMakefileTarget) -C OMSens_Qt OMBUILDDIR=$(OMBUILDDIR) CC="$(CC)" CXX="$(CXX)" OM_QT_MAJOR_VERSION=$(OM_QT_MAJOR_VERSION)
 
 qtclients: omplot omedit omnotebook omshell omoptim omsens_qt
@@ -223,6 +217,8 @@ else
 endif
 
 	for f in $(QT_EXTRA_DLLS); do cp -puf $(OM_MSYS_ENV_DIR)/bin/$$f $(builddir_bin)/; done
+	mkdir -p $(builddir_bin)/osgPlugins-3.6.5/
+	cp -pufr $(OM_MSYS_ENV_DIR)/bin/osgPlugins-3.6.5/* $(builddir_bin)/osgPlugins-3.6.5/
 
 clean-qtclients:
 	rm -f $(OMBUILDDIR)/bin/OMPlot.exe $(OMBUILDDIR)/bin/OMEdit.exe $(OMBUILDDIR)/bin/OMNotebook.exe $(OMBUILDDIR)/bin/OMShell.exe $(OMBUILDDIR)/bin/OMOptim.exe

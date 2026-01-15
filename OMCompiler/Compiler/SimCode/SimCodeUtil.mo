@@ -264,7 +264,7 @@ protected
   DoubleEnded.MutableList<BackendDAE.ZeroCrossing> de_relations;
   list<BackendDAE.ZeroCrossing> zeroCrossings, sampleZC, relations;
   list<DAE.ClassAttributes> classAttributes;
-  list<DAE.ComponentRef> discreteModelVars;
+  list<DAE.ComponentRef> discreteModelVars, iterationVarsLst1, iterationVarsLst2;
   list<DAE.Constraint> constraints;
   list<DAE.Exp> lits;
   list<SimCode.ClockedPartition> clockedPartitions;
@@ -311,7 +311,7 @@ protected
   list<SimCodeVar.SimVar> tmpsetcVars, tmpdatareconinputvars, tmpsetBVars;
   SimCode.JacobianMatrix dataReconSimJac, dataReconSimJacH;
   Integer numRelatedBoundaryConditions;
-  String fullPathPrefix, fileNamePrefixHash;
+  String fullPathPrefix, fileNamePrefixHash, iterationVarsStr;
 
   SimCode.OMSIFunction omsiInitEquations, omsiSimEquations;
   Option<SimCode.OMSIData> omsiOptData;
@@ -581,6 +581,20 @@ algorithm
       end if;
       SymbolicJacsNLS := listAppend(SymbolicJacsTemp, SymbolicJacsNLS);
       //SymbolicJacsNLS := dataReconSimJac::SymbolicJacsNLS;
+      // write iteration variables to file for data reconciliation report
+      (_, iterationVarsLst1) := BackendDAEOptimize.listAllIterationVariables0(inInitDAE.eqs);
+      (_, iterationVarsLst2) := BackendDAEOptimize.listAllIterationVariables0(inBackendDAE.eqs);
+      iterationVarsLst1 := List.unique(listAppend(iterationVarsLst1, iterationVarsLst2));
+
+      iterationVarsStr := "List of iteration variables(" + intString(listLength(iterationVarsLst1)) + "):"  + "\n=============================\n";
+      if listEmpty(iterationVarsLst1) then
+        iterationVarsStr := iterationVarsStr + "No iteration variables found.\n";
+      else
+        for var in iterationVarsLst1 loop
+          iterationVarsStr := iterationVarsStr + ComponentReference.crefStr(var) + "\n";
+        end for;
+      end if;
+      System.writeFile(shared.info.fileNamePrefix + "_iterationVars.txt", iterationVarsStr);
     end if;
 
     // collect symbolic jacobians from state selection
@@ -738,7 +752,7 @@ algorithm
     end if;
 
     // fix issue https://github.com/OpenModelica/OpenModelica/issues/12916
-    fileNamePrefixHash := substring(intString(stringHashDjb2(filenamePrefix)), 1, 3);
+    fileNamePrefixHash := Util.hashFileNamePrefix(filenamePrefix);
 
     // Set fullPathPrefix for FMUs
     if isFMU then
@@ -802,7 +816,8 @@ algorithm
       partitionData               = SimCode.emptyPartitionData,
       daeModeData                 = NONE(),
       inlineEquations             = inlineEquations,
-      omsiData                    = omsiOptData
+      omsiData                    = omsiOptData,
+      scalarized                  = true
     );
 
     (simCode, (_, _, lits)) := traverseExpsSimCode(simCode, SimCodeFunctionUtil.findLiteralsHelper, literals);
@@ -5349,11 +5364,9 @@ algorithm
   local
     BackendDAE.Var v, v1;
     SimCodeVar.SimVar simVar;
-    DAE.ComponentRef currVar, cref, derivedCref;
+    DAE.ComponentRef currVar, derivedCref;
     list<BackendDAE.Var> restVar;
     Option<DAE.VariableAttributes> dae_var_attr;
-    Boolean isProtected;
-    Boolean hideResult = false;
     Integer resIndex=inResIndex, tmpIndex=inTmpIndex;
     BackendDAE.VarKind varkind;
 
@@ -8594,10 +8607,30 @@ protected function extractVarFromVar
 protected
   list<DAE.ComponentRef> scalar_crefs;
   BackendDAE.Var scalarVar;
+  DAE.Exp binding;
+  list<Option<DAE.Exp>> scalar_bindings;
+  Option<DAE.Exp> binding_opt;
+  DAE.ComponentRef cref;
 algorithm
   // if it is an array parameter split it up. Do not do it for Cpp runtime, they can handle array parameters
   if Types.isArray(dlowVar.varType) then
     scalar_crefs := ComponentReference.expandCref(dlowVar.varName, false);
+
+    // try to scalarize bindings
+    try
+      scalar_bindings := match dlowVar.bindExp
+        case SOME(binding as DAE.ARRAY())  then list(SOME(b) for b in Expression.expandArray(binding));
+        case SOME(binding as DAE.MATRIX()) then list(SOME(b) for b in Expression.expandArray(binding));
+        else List.fill(dlowVar.bindExp, listLength(scalar_crefs));
+      end match;
+
+      // fail if they are not of equal length
+      if listLength(scalar_bindings) <> listLength(scalar_crefs) then fail(); end if;
+    else
+      scalar_bindings := List.fill(dlowVar.bindExp, listLength(scalar_crefs));
+    end try;
+
+
     if Config.simCodeTarget() <> "Cpp" then
       // Make sure the array does not get expanded again. The check for existence is made by the caller
       // of this function, extractVarsFromList. Which checks for the whole unxpanded array, which is never
@@ -8606,9 +8639,11 @@ algorithm
       // However that means we do the exapnsion of the array for nothing. So add it here so that it does
       // not get expanded again (and every entry checked again).
       Mutable.update(hs, BaseHashSet.add(dlowVar.varName, Mutable.access(hs)));
-      for cref in scalar_crefs loop
+      for tpl in List.zip(scalar_crefs, scalar_bindings) loop
+        (cref, binding_opt) := tpl;
         // extract the expanded sim var
         scalarVar := BackendVariable.copyVarNewName(cref, dlowVar);
+        scalarVar.bindExp := binding_opt;
         scalarVar.varType := ComponentReference.crefTypeFull(cref);
         extractVarFromVar2(scalarVar, inAliasVars, inVars, simVars, hs, timeInterval, iterationVars);
       end for;
@@ -9485,10 +9520,10 @@ algorithm
   str := "SubPartition Vars:\n"+UNDERLINE+"\n";
   str := str + stringDelimitList(simVarStrings,"\n")+"\n";
   str := str + "partition equations:\n"+UNDERLINE+"\n";
-  str := str + stringDelimitList(List.map(subPart.equations,simEqSystemString),"\n");
+  str := str + stringDelimitList(List.map(subPart.equations,simEqSystemString),"\n") + "\n";
   str := str + "removedEquations equations:\n"+UNDERLINE+"\n";
   str := str + stringDelimitList(List.map(subPart.removedEquations,simEqSystemString),"\n");
-  str := str + "SubClock:\n"+ BackendDump.subClockString(subPart.subClock);
+  str := str + "SubClock:\n"+ BackendDump.subClockString(subPart.subClock) + "\n";
   str := str + "Hold Events: "+boolString(subPart.holdEvents);
 end subPartitionString;
 
@@ -10159,6 +10194,7 @@ algorithm
           case DAE.NEVER() guard(BackendVariable.isNaturalState(dlowVar))
             algorithm
               Error.addSourceMessage(Error.STATE_STATESELECT_NEVER, {ComponentReference.printComponentRefStr(cr)}, source.info);
+              fail();
             then ();
           else ();
         end match;
@@ -15584,11 +15620,12 @@ public function cref2simvar
   output SimCodeVar.SimVar outSimVar;
 protected
   HashTableCrefSimVar.HashTable crefToSimVarHT;
-  DAE.ComponentRef badcref;
+  DAE.ComponentRef cref, badcref;
 algorithm
   try
     SimCode.SIMCODE(crefToSimVarHT = crefToSimVarHT) := simCode;
-    outSimVar := simVarFromHT(inCref, crefToSimVarHT);
+    cref := if simCode.scalarized then inCref else ComponentReference.crefStripSubs(inCref);
+    outSimVar := simVarFromHT(cref, crefToSimVarHT);
   else
     //print("cref2simvar: " + ComponentReference.printComponentRefStr(inCref) + " not found!\n");
     badcref := ComponentReference.makeCrefIdent("ERROR_cref2simvar_failed " + ComponentReference.printComponentRefStr(inCref), DAE.T_REAL_DEFAULT, {});

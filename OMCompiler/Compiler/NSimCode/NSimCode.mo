@@ -48,7 +48,7 @@ protected
   import NFTyping.ExpOrigin;
   import Expression = NFExpression;
   import NFFunction.Function;
-  import NFFlatten.{FunctionTree, FunctionTreeImpl};
+  import NFFlatten.FunctionTree;
   import NFInstNode.InstNode;
   import Type = NFType;
 
@@ -242,7 +242,7 @@ public
         str := str + SimStrongComponent.Block.listToString(blck_lst, "  ", "Algebraic Partition " + intString(idx)) + "\n";
         idx := idx + 1;
       end for;
-      str := str + SimStrongComponent.Block.listToString(simCode.allSim, "  ", "Event Partition") + "\n";
+      str := str + SimStrongComponent.Block.listToString(simCode.event_blocks, "  ", "Event Partition") + "\n";
       if not listEmpty(simCode.clockedPartitions) then
         str := str + SimPartition.listToString(simCode.clockedPartitions, "  ", "Clocked Partitions") + "\n";
       end if;
@@ -270,6 +270,7 @@ public
       input String fileNamePrefix;
       input Option<OldSimCode.SimulationSettings> simSettingsOpt;
       output SimCode simCode;
+      output DAE.FunctionTree oldFunctionTree;
     protected
       partial function mapExp
         input output Expression exp;
@@ -280,7 +281,7 @@ public
           // auxillaries
           VarData varData;
           EqData eqData;
-          FunctionTree funcTree;
+          UnorderedMap<Absyn.Path, Function> funcMap;
           VariablePointers residual_vars;
           SimVars vars;
           // old SimCode strcutures
@@ -317,11 +318,11 @@ public
           algorithm
             // somehow this cannot be set at definition (metamodelica bug?)
             simCodeIndices := EMPTY_SIM_CODE_INDICES();
-            funcTree := BackendDAE.getFunctionTree(bdae);
+            funcMap := BackendDAE.getFunctionMap(bdae);
 
             // get and replace all literals in functions
-            collect_literals    := function Expression.fakeMap(func = function Expression.replaceLiteral(map = literals_map, idx_ptr = literals_idx));
-            funcTree            := FunctionTreeImpl.mapExp(funcTree, collect_literals);
+            collect_literals := function Expression.fakeMap(func = function Expression.replaceLiteral(map = literals_map, idx_ptr = literals_idx));
+            UnorderedMap.apply(funcMap, function Function.mapExp(mapFn = collect_literals, mapFnFields = collect_literals, mapParameters = true, mapBody = true));
 
             // create sim vars before everything else
             residual_vars                       := BackendDAE.getLoopResiduals(bdae);
@@ -351,8 +352,6 @@ public
               init_0 := {};
             end if;
 
-            // create clocked partitions
-            (clockedPartitions, event_clocks, simCodeIndices) := SimStrongComponent.Block.createClockedBlocks(bdae.clocked, simCodeIndices, simcode_map, equation_map, bdae.clockedInfo);
 
             // start allSim with no return equations
             (no_ret, simCodeIndices) := SimStrongComponent.Block.createNoReturnBlocks(eqData.removed, simCodeIndices, NBPartition.Kind.ODE, simcode_map, equation_map);
@@ -364,11 +363,7 @@ public
             if isSome(bdae.dae) then
               // DAEMode
               ode := {};
-              algebraic := if listEmpty(no_ret) then {} else {no_ret};
-              no_ret := listAppend(event_clocks, no_ret);
-              if not listEmpty(no_ret) then
-                allSim    := listReverse(listAppend(no_ret, listReverse(allSim)));
-              end if;
+              algebraic := {};
               (daeModeData, simCodeIndices) := DaeModeData.create(Util.getOption(bdae.dae), simCodeIndices, simcode_map, equation_map);
             else
               // Normal Simulation
@@ -377,17 +372,23 @@ public
               (algebraic, allSim, simCodeIndices)               := SimStrongComponent.Block.createBlocks(bdae.algebraic, allSim, simCodeIndices, simcode_map, equation_map);
               (ode, allSim, event_blocks, simCodeIndices)       := SimStrongComponent.Block.createDiscreteBlocks(bdae.ode_event, ode, allSim, event_blocks, simCodeIndices, simcode_map, equation_map);
               (algebraic, allSim, event_blocks, simCodeIndices) := SimStrongComponent.Block.createDiscreteBlocks(bdae.alg_event, algebraic, allSim, event_blocks, simCodeIndices, simcode_map, equation_map);
-              if not listEmpty(no_ret) then
-                algebraic := listReverse(no_ret :: listReverse(algebraic));
-              end if;
-              // append event_clocks to no_return after adding them to algebraic
-              no_ret := listAppend(event_clocks, no_ret);
-              if not listEmpty(no_ret) then
-                // append them to the end, compiler won't let me do it unless i double reverse the lists
-                allSim := listReverse(listAppend(no_ret, listReverse(allSim)));
-              end if;
             end if;
 
+            // create clocked partitions
+            (clockedPartitions, event_clocks, simCodeIndices) := SimStrongComponent.Block.createClockedBlocks(bdae.clocked, simCodeIndices, simcode_map, equation_map, bdae.clockedInfo);
+
+            // add no return equations (without clocks) to algebraics
+            if not listEmpty(no_ret) then
+              algebraic := listReverse(no_ret :: listReverse(algebraic));
+            end if;
+
+            // append event_clocks to no_return after adding them to algebraic
+            no_ret := listAppend(event_clocks, no_ret);
+
+            if not listEmpty(no_ret) then
+              // append them to the end, compiler won't let me do it unless i double reverse the lists
+              allSim    := listReverse(listAppend(no_ret, listReverse(allSim)));
+            end if;
             // add all entwined equations to all sim
             allSim := listAppend(List.flatten(list(SimStrongComponent.Block.collectEntwinedEquations(blck) for blck in allSim)), allSim);
 
@@ -400,7 +401,10 @@ public
             // Will probably be mostly the same in all other regards
             program := SymbolTable.getAbsyn();
             directory := CevalScriptBackend.getFileDir(AbsynUtil.pathToCref(name), program);
-            (libs, libPaths, _, includeDirs, recordDecls, functions, _) := OldSimCodeUtil.createFunctions(program, ConvertDAE.convertFunctionTree(funcTree));
+            // The OB function tree is needed both here and when dumping the flat model,
+            // but converting it is destructive so return it to avoid doing it again.
+            oldFunctionTree := ConvertDAE.convertFunctionTree(FunctionTree.fromList(UnorderedMap.toList(funcMap)));
+            (libs, libPaths, _, includeDirs, recordDecls, functions, _) := OldSimCodeUtil.createFunctions(program, oldFunctionTree);
             makefileParams := OldSimCodeFunctionUtil.createMakefileParams(includeDirs, libs, libPaths, false, false);
 
             (linearLoops, nonlinearLoops, jacobians, simCodeIndices) := collectAlgebraicLoops(init, init_0, ode, algebraic, daeModeData, simCodeIndices, simcode_map);
@@ -561,7 +565,8 @@ public
         partitionData                 = OldSimCode.PARTITIONDATA(-1,{},{},{}),
         daeModeData                   = if isSome(simCode.daeModeData) then SOME(DaeModeData.convert(Util.getOption(simCode.daeModeData))) else NONE(),
         inlineEquations               = {},
-        omsiData                      = NONE());
+        omsiData                      = NONE(),
+        scalarized                    = Flags.getConfigBool(Flags.SIM_CODE_SCALARIZE));
     end convert;
 
     function getDirectoryAndLibs
@@ -667,8 +672,8 @@ public
         labels                          = {},
         resourcePaths                   = {},
         sortedClasses                   = {},
-        nClocks                         = UnorderedMap.size(clockedInfo.baseClocks),
-        nSubClocks                      = UnorderedMap.size(clockedInfo.subClocks),
+        nClocks                         = ClockedInfo.baseClockCount(clockedInfo),
+        nSubClocks                      = ClockedInfo.subClockCount(clockedInfo),
         nSpatialDistributions           = 0,
         hasLargeLinearEquationSystems   = true,
         linearLoops                     = linearLoops,
@@ -729,9 +734,9 @@ public
   uniontype DaeModeData
     "contains data that belongs to the dae mode"
     record DAE_MODE_DATA
-      list<list<SimStrongComponent.Block>> blcks          "daeMode blocks";
+      list<list<SimStrongComponent.Block>> blcks "daeMode blocks";
       Option<SimJacobian> sparsityPattern "contains the sparsity pattern for the daeMode";
-      list<SimVar> residualVars "variable used to calculate residuals of a DAE form, they are real";
+      list<SimVar> residualVars "variable used to calculate residuals of a DAE form, they are of type real";
       list<SimVar> algebraicVars;
       list<SimVar> auxiliaryVars;
       DaeModeConfig modeCreated;

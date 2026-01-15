@@ -43,8 +43,8 @@ simulate(static_IR_2); getErrorString();
 //
 // [stateselection] (2) State Derivatives Created by Differentiation
 // *******************************************************************
-// 	[DDER] (1) Real $DER.$FUN_1
-// 	[DDER] (1) Real $DER.$FUN_2
+// 	[DDER] (1) Real $DER.$FUN_1 (StateSelect = avoid)
+// 	[DDER] (1) Real $DER.$FUN_2 (StateSelect = avoid)
 //
 // [stateselection] (4) Selected Dummy States
 // ********************************************
@@ -72,8 +72,8 @@ simulate(static_IR_2); getErrorString();
 //
 // [stateselection] (2) State Derivatives Created by Differentiation
 // *******************************************************************
-// 	[DDER] (1) Real $DER.$FUN_1
-// 	[DDER] (1) Real $DER.$FUN_2
+// 	[DDER] (1) Real $DER.$FUN_1 (StateSelect = avoid)
+// 	[DDER] (1) Real $DER.$FUN_2 (StateSelect = avoid)
 //
 // [stateselection] (4) Selected Dummy States
 // ********************************************

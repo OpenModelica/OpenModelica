@@ -1024,6 +1024,14 @@ public function strcmpBool
   output Boolean b = stringCompare(s1, s2) > 0;
 end strcmpBool;
 
+public function strcmpNoCaseBool
+  "String compare, but ignoring case.
+  Boolean output as is expected by the sort function"
+  input String s1;
+  input String s2;
+  output Boolean b = stringCompare(System.tolower(s1), System.tolower(s2)) > 0;
+end strcmpNoCaseBool;
+
 public function stringAppendReverse
   "@author: adrpo
   This function will append the first string to the second string"
@@ -1442,6 +1450,11 @@ algorithm
    outFileName := if System.regularFileExists(f) then f else outFileName;
  end if;
 end absoluteOrRelative;
+
+public function hashFileNamePrefix
+  input String inFileNamePrefix;
+  output String hashStr = substring(intString(stringHashDjb2(inFileNamePrefix)), 1, 3);
+end hashFileNamePrefix;
 
 public function intLstString
   input list<Integer> lst;

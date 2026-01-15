@@ -1,17 +1,20 @@
-cmake_minimum_required(VERSION 2.8.9)
+cmake_minimum_required(VERSION 3.5)
 
 project(${DgesvName})
 
 IF(DGESV_FOUND)
   MESSAGE(STATUS "DGESV enabled")
   include_directories (${DGESV_INCLUDE_DIR})
-  add_library(${DgesvName}_static STATIC ${DGESV_SRCS})
-  install(TARGETS ${DgesvName}_static DESTINATION ${LIBINSTALLEXT})
+  add_library(${DgesvName} STATIC ${DGESV_SRCS})
+  install(TARGETS ${DgesvName} DESTINATION ${LIBINSTALLEXT})
   install(FILES ${DGESV_HEADERS} DESTINATION include/omc/cpp/Solver/Dgesv)
   if(MSVC)
-    # TODO: This is not allowed: cmake --help-policy CMP0026
-    GET_TARGET_PROPERTY(libDgesvLocation ${DgesvName}_static LOCATION)
-    GET_FILENAME_COMPONENT(libDgesvExt ${libDgesvLocation} EXT CACHE)
+    get_target_property(TARGET_TYPE ${DgesvName} TYPE)
+    if(TARGET_TYPE STREQUAL "STATIC_LIBRARY")
+      set(libDgesvExt ${CMAKE_STATIC_LIBRARY_SUFFIX})
+    elseif(TARGET_TYPE STREQUAL "SHARED_LIBRARY")
+      set(libDgesvExt ${CMAKE_SHARED_LIBRARY_SUFFIX})
+    endif()
   endif()
 
   add_library(${DgesvSolverName} DgesvSolver.cpp DgesvSolverSettings.cpp FactoryExport.cpp)
@@ -37,4 +40,3 @@ IF(DGESV_FOUND)
 ELSE()
   MESSAGE(STATUS "DGESV disabled")
 ENDIF(DGESV_FOUND)
-

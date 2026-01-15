@@ -101,9 +101,6 @@ struct OpenModelicaGeneratedFunctionCallbacks {
   */
   int (*initializeDAEmodeData)(DATA *data, DAEMODE_DATA* daeModeData);
 
-  /* computes index map with the sizes of all (resizable) variables */
-  void (*computeVarIndices)(DATA* data, size_t* realIndex, size_t* integerIndex, size_t* booleanIndex, size_t* stringIndex);
-
   /* sets the var to eqNode map and dependency graph */
   void (*getDependency)(DATA*, threadData_t*);
 

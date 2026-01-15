@@ -1,0 +1,283 @@
+// name:     testDumpSparseSVD.mos
+// keywords: kinsol jacobian sparse svd dumps
+// status: correct
+// teardown_command: rm -rf testDumpSVD* output.log
+// cflags: -d=-newInst
+//
+// Test flag LOG_NLS_SVD and -svdCount to detect equations / variables that cause poorly conditioned Jacobians.
+//
+loadString("
+model testDumpSVD
+  Real x(start = 1, nominal=2.3);
+  Real y(start = 1, nominal=1.2);
+  Real z(start = 1, nominal=2.1);
+
+  Real s(start=1, fixed=true, nominal=1);
+equation
+  x^2  + 3 * y - 5 * z^2 = 1 ;
+  y + 2 * z^2 - x^2= 1;
+  1e-6 * x^2 - 3 * y  = s;
+
+  der(s) = x;
+end testDumpSVD;
+"); getErrorString();
+
+simulate(testDumpSVD,
+         simflags="-lv=LOG_NLS_SVD -svdCount=1 -svdSigma=1e-8 -nls=experimental-kinsol",
+         startTime=0,
+         stopTime=0); getErrorString();
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'testDumpSVD', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-lv=LOG_NLS_SVD -svdCount=1 -svdSigma=1e-8 -nls=experimental-kinsol'",
+//     messages = "Simulation execution failed for model: testDumpSVD
+// LOG_NLS_SVD       | info    | experimental-kinsol: sparse SVD analysis (scaled = true, Caller: experimental-kinsol: Kinsol entry point).
+// |                 | |       | | Matrix Info
+// |                 | |       | | | NLS eq index = 8
+// |                 | |       | | | Columns      = 2
+// |                 | |       | | | Rows         = 2
+// |                 | |       | | | NNZ          = 4
+// |                 | |       | | | Curr Time    = 0.00000e+00
+// |                 | |       | | Matrix condition
+// |                 | |       | | | Cond(M) = 1.22304384e+01
+// |                 | |       | | | Matrix is well conditioned: Cond(M) = 1.22304384e+01 < 1e4
+// |                 | |       | | Smallest Singular values
+// |                 | |       | | | sigma_1   =  1.21052260e-01, rnorm_1   =  4.81722104e-16
+// |                 | |       | | Largest Singular values
+// |                 | |       | | | sigma_1   =  1.48052221e+00, rnorm_1   =  0.00000000e+00
+// |                 | |       | | Smallest right singular vectors (variable space)
+// |                 | |       | | | Found 1 singular vectors.
+// |                 | |       | | | V[:,2] (singular value 1.21052260e-01)
+// |                 | |       | | | | V[1][2] = -9.54904116e-01 for NLS Var: 1 with Name: x
+// |                 | |       | | | | V[2][2] = -2.96914347e-01 for NLS Var: 2 with Name: z
+// |                 | |       | | Smallest left singular vectors (function space)
+// |                 | |       | | | Found 1 singular vectors.
+// |                 | |       | | | U[:,2] (singular value 1.21052260e-01)
+// |                 | |       | | | | U[2][2] = +7.24849454e-01 for NLS Eqn: 2 with transformational debugger Idx: 3
+// |                 | |       | | | | U[1][2] = +6.88907301e-01 for NLS Eqn: 1 with transformational debugger Idx: 4
+// LOG_NLS_SVD       | info    | experimental-kinsol: sparse SVD analysis (scaled = true, Caller: experimental-kinsol: Kinsol entry point).
+// |                 | |       | | Matrix Info
+// |                 | |       | | | NLS eq index = 8
+// |                 | |       | | | Columns      = 2
+// |                 | |       | | | Rows         = 2
+// |                 | |       | | | NNZ          = 4
+// |                 | |       | | | Curr Time    = 0.00000e+00
+// |                 | |       | | Matrix condition
+// |                 | |       | | | Cond(M) = inf
+// |                 | warning | | | Matrix is very ill-conditioned: 1e12 < Cond(M) = inf
+// |                 | info    | | Smallest Singular values
+// |                 | |       | | | sigma_1   =  0.00000000e+00, rnorm_1   =  1.41421356e+00
+// |                 | |       | | Largest Singular values
+// |                 | |       | | | sigma_1   =  1.41421356e+00, rnorm_1   =  3.17774850e-16
+// |                 | |       | | Smallest right singular vectors (variable space)
+// |                 | |       | | | Found 1 singular vectors.
+// |                 | |       | | | V[:,2] (singular value 0.00000000e+00)
+// |                 | |       | | | | V[2][2] = -1.00000000e+00 for NLS Var: 2 with Name: z
+// |                 | |       | | | | V[1][2] = -2.85275091e-09 for NLS Var: 1 with Name: x
+// |                 | |       | | Smallest left singular vectors (function space)
+// |                 | |       | | | Found 1 singular vectors.
+// |                 | |       | | | U[:,2] (singular value 0.00000000e+00)
+// |                 | |       | | | | U[1][2] = -7.07106867e-01 for NLS Eqn: 1 with transformational debugger Idx: 4
+// |                 | |       | | | | U[2][2] = -7.07106696e-01 for NLS Eqn: 2 with transformational debugger Idx: 3
+// LOG_NLS_SVD       | info    | experimental-kinsol: sparse SVD analysis (scaled = true, Caller: experimental-kinsol: Kinsol entry point).
+// |                 | |       | | Matrix Info
+// |                 | |       | | | NLS eq index = 8
+// |                 | |       | | | Columns      = 2
+// |                 | |       | | | Rows         = 2
+// |                 | |       | | | NNZ          = 4
+// |                 | |       | | | Curr Time    = 0.00000e+00
+// |                 | |       | | Matrix condition
+// |                 | |       | | | Cond(M) = inf
+// |                 | warning | | | Matrix is very ill-conditioned: 1e12 < Cond(M) = inf
+// |                 | info    | | Smallest Singular values
+// |                 | |       | | | sigma_1   =  0.00000000e+00, rnorm_1   =  1.41421356e+00
+// |                 | |       | | Largest Singular values
+// |                 | |       | | | sigma_1   =  1.41421356e+00, rnorm_1   =  3.14255781e-16
+// |                 | |       | | Smallest right singular vectors (variable space)
+// |                 | |       | | | Found 1 singular vectors.
+// |                 | |       | | | V[:,2] (singular value 0.00000000e+00)
+// |                 | |       | | | | V[2][2] = -1.00000000e+00 for NLS Var: 2 with Name: z
+// |                 | |       | | | | V[1][2] = +2.27210950e-08 for NLS Var: 1 with Name: x
+// |                 | |       | | Smallest left singular vectors (function space)
+// |                 | |       | | | Found 1 singular vectors.
+// |                 | |       | | | U[:,2] (singular value 0.00000000e+00)
+// |                 | |       | | | | U[1][2] = +7.07106784e-01 for NLS Eqn: 1 with transformational debugger Idx: 4
+// |                 | |       | | | | U[2][2] = +7.07106778e-01 for NLS Eqn: 2 with transformational debugger Idx: 3
+// LOG_NLS_SVD       | info    | experimental-kinsol: sparse SVD analysis (scaled = true, Caller: experimental-kinsol: Kinsol entry point).
+// |                 | |       | | Matrix Info
+// |                 | |       | | | NLS eq index = 8
+// |                 | |       | | | Columns      = 2
+// |                 | |       | | | Rows         = 2
+// |                 | |       | | | NNZ          = 4
+// |                 | |       | | | Curr Time    = 0.00000e+00
+// |                 | |       | | Matrix condition
+// |                 | |       | | | Cond(M) = inf
+// |                 | warning | | | Matrix is very ill-conditioned: 1e12 < Cond(M) = inf
+// |                 | info    | | Smallest Singular values
+// |                 | |       | | | sigma_1   =  0.00000000e+00, rnorm_1   =  1.41421356e+00
+// |                 | |       | | Largest Singular values
+// |                 | |       | | | sigma_1   =  1.41421356e+00, rnorm_1   =  1.34590983e-16
+// |                 | |       | | Smallest right singular vectors (variable space)
+// |                 | |       | | | Found 1 singular vectors.
+// |                 | |       | | | V[:,2] (singular value 0.00000000e+00)
+// |                 | |       | | | | V[2][2] = -1.00000000e+00 for NLS Var: 2 with Name: z
+// |                 | |       | | | | V[1][2] = -2.06591075e-08 for NLS Var: 1 with Name: x
+// |                 | |       | | Smallest left singular vectors (function space)
+// |                 | |       | | | Found 1 singular vectors.
+// |                 | |       | | | U[:,2] (singular value 0.00000000e+00)
+// |                 | |       | | | | U[1][2] = -7.07106788e-01 for NLS Eqn: 1 with transformational debugger Idx: 4
+// |                 | |       | | | | U[2][2] = -7.07106774e-01 for NLS Eqn: 2 with transformational debugger Idx: 3
+// LOG_NLS_SVD       | info    | experimental-kinsol: sparse SVD analysis (scaled = true, Caller: experimental-kinsol: Kinsol entry point).
+// |                 | |       | | Matrix Info
+// |                 | |       | | | NLS eq index = 8
+// |                 | |       | | | Columns      = 2
+// |                 | |       | | | Rows         = 2
+// |                 | |       | | | NNZ          = 4
+// |                 | |       | | | Curr Time    = 0.00000e+00
+// |                 | |       | | Matrix condition
+// |                 | |       | | | Cond(M) = 8.52643536e+01
+// |                 | |       | | | Matrix is well conditioned: Cond(M) = 8.52643536e+01 < 1e4
+// |                 | |       | | Smallest Singular values
+// |                 | |       | | | sigma_1   =  1.65997973e-02, rnorm_1   =  1.21721806e-14
+// |                 | |       | | Largest Singular values
+// |                 | |       | | | sigma_1   =  1.41537099e+00, rnorm_1   =  1.27465691e-16
+// |                 | |       | | Smallest right singular vectors (variable space)
+// |                 | |       | | | Found 1 singular vectors.
+// |                 | |       | | | V[:,2] (singular value 1.65997973e-02)
+// |                 | |       | | | | V[1][2] = +9.99182133e-01 for NLS Var: 1 with Name: x
+// |                 | |       | | | | V[2][2] = +4.04359311e-02 for NLS Var: 2 with Name: z
+// |                 | |       | | Smallest left singular vectors (function space)
+// |                 | |       | | | Found 1 singular vectors.
+// |                 | |       | | | U[:,2] (singular value 1.65997973e-02)
+// |                 | |       | | | | U[2][2] = -7.07442316e-01 for NLS Eqn: 2 with transformational debugger Idx: 3
+// |                 | |       | | | | U[1][2] = -7.06771087e-01 for NLS Eqn: 1 with transformational debugger Idx: 4
+// LOG_NLS_SVD       | info    | experimental-kinsol: sparse SVD analysis (scaled = true, Caller: experimental-kinsol: Kinsol entry point).
+// |                 | |       | | Matrix Info
+// |                 | |       | | | NLS eq index = 16
+// |                 | |       | | | Columns      = 2
+// |                 | |       | | | Rows         = 2
+// |                 | |       | | | NNZ          = 4
+// |                 | |       | | | Curr Time    = 0.00000e+00
+// |                 | |       | | Matrix condition
+// |                 | |       | | | Cond(M) = 2.29221972e+01
+// |                 | |       | | | Matrix is well conditioned: Cond(M) = 2.29221972e+01 < 1e4
+// |                 | |       | | Smallest Singular values
+// |                 | |       | | | sigma_1   =  6.24233663e-02, rnorm_1   =  4.47701977e-15
+// |                 | |       | | Largest Singular values
+// |                 | |       | | | sigma_1   =  1.43088071e+00, rnorm_1   =  3.87950937e-17
+// |                 | |       | | Smallest right singular vectors (variable space)
+// |                 | |       | | | Found 1 singular vectors.
+// |                 | |       | | | V[:,2] (singular value 6.24233663e-02)
+// |                 | |       | | | | V[2][2] = -9.88329483e-01 for NLS Var: 2 with Name: z
+// |                 | |       | | | | V[1][2] = -1.52331324e-01 for NLS Var: 1 with Name: x
+// |                 | |       | | Smallest left singular vectors (function space)
+// |                 | |       | | | Found 1 singular vectors.
+// |                 | |       | | | U[:,2] (singular value 6.24233663e-02)
+// |                 | |       | | | | U[1][2] = -7.11845314e-01 for NLS Eqn: 1 with transformational debugger Idx: 12
+// |                 | |       | | | | U[2][2] = -7.02336280e-01 for NLS Eqn: 2 with transformational debugger Idx: 11
+// LOG_NLS_SVD       | info    | experimental-kinsol: sparse SVD analysis (scaled = true, Caller: experimental-kinsol: Kinsol entry point).
+// |                 | |       | | Matrix Info
+// |                 | |       | | | NLS eq index = 16
+// |                 | |       | | | Columns      = 2
+// |                 | |       | | | Rows         = 2
+// |                 | |       | | | NNZ          = 4
+// |                 | |       | | | Curr Time    = 0.00000e+00
+// |                 | |       | | Matrix condition
+// |                 | |       | | | Cond(M) = inf
+// |                 | warning | | | Matrix is very ill-conditioned: 1e12 < Cond(M) = inf
+// |                 | info    | | Smallest Singular values
+// |                 | |       | | | sigma_1   =  0.00000000e+00, rnorm_1   =  1.41421356e+00
+// |                 | |       | | Largest Singular values
+// |                 | |       | | | sigma_1   =  1.41421356e+00, rnorm_1   =  4.79796410e-16
+// |                 | |       | | Smallest right singular vectors (variable space)
+// |                 | |       | | | Found 1 singular vectors.
+// |                 | |       | | | V[:,2] (singular value 0.00000000e+00)
+// |                 | |       | | | | V[2][2] = -1.00000000e+00 for NLS Var: 2 with Name: z
+// |                 | |       | | | | V[1][2] = +2.49942027e-08 for NLS Var: 1 with Name: x
+// |                 | |       | | Smallest left singular vectors (function space)
+// |                 | |       | | | Found 1 singular vectors.
+// |                 | |       | | | U[:,2] (singular value 0.00000000e+00)
+// |                 | |       | | | | U[1][2] = +7.07106795e-01 for NLS Eqn: 1 with transformational debugger Idx: 12
+// |                 | |       | | | | U[2][2] = +7.07106767e-01 for NLS Eqn: 2 with transformational debugger Idx: 11
+// LOG_NLS_SVD       | info    | experimental-kinsol: sparse SVD analysis (scaled = true, Caller: experimental-kinsol: Kinsol entry point).
+// |                 | |       | | Matrix Info
+// |                 | |       | | | NLS eq index = 16
+// |                 | |       | | | Columns      = 2
+// |                 | |       | | | Rows         = 2
+// |                 | |       | | | NNZ          = 4
+// |                 | |       | | | Curr Time    = 0.00000e+00
+// |                 | |       | | Matrix condition
+// |                 | |       | | | Cond(M) = inf
+// |                 | warning | | | Matrix is very ill-conditioned: 1e12 < Cond(M) = inf
+// |                 | info    | | Smallest Singular values
+// |                 | |       | | | sigma_1   =  0.00000000e+00, rnorm_1   =  1.41421356e+00
+// |                 | |       | | Largest Singular values
+// |                 | |       | | | sigma_1   =  1.41421356e+00, rnorm_1   =  1.16763485e-16
+// |                 | |       | | Smallest right singular vectors (variable space)
+// |                 | |       | | | Found 1 singular vectors.
+// |                 | |       | | | V[:,2] (singular value 0.00000000e+00)
+// |                 | |       | | | | V[2][2] = -1.00000000e+00 for NLS Var: 2 with Name: z
+// |                 | |       | | | | V[1][2] = +1.53821108e-08 for NLS Var: 1 with Name: x
+// |                 | |       | | Smallest left singular vectors (function space)
+// |                 | |       | | | Found 1 singular vectors.
+// |                 | |       | | | U[:,2] (singular value 0.00000000e+00)
+// |                 | |       | | | | U[2][2] = +7.07106794e-01 for NLS Eqn: 2 with transformational debugger Idx: 11
+// |                 | |       | | | | U[1][2] = +7.07106769e-01 for NLS Eqn: 1 with transformational debugger Idx: 12
+// LOG_NLS_SVD       | info    | experimental-kinsol: sparse SVD analysis (scaled = true, Caller: experimental-kinsol: Kinsol entry point).
+// |                 | |       | | Matrix Info
+// |                 | |       | | | NLS eq index = 16
+// |                 | |       | | | Columns      = 2
+// |                 | |       | | | Rows         = 2
+// |                 | |       | | | NNZ          = 4
+// |                 | |       | | | Curr Time    = 0.00000e+00
+// |                 | |       | | Matrix condition
+// |                 | |       | | | Cond(M) = inf
+// |                 | warning | | | Matrix is very ill-conditioned: 1e12 < Cond(M) = inf
+// |                 | info    | | Smallest Singular values
+// |                 | |       | | | sigma_1   =  0.00000000e+00, rnorm_1   =  1.41421356e+00
+// |                 | |       | | Largest Singular values
+// |                 | |       | | | sigma_1   =  1.41421356e+00, rnorm_1   =  3.15753471e-16
+// |                 | |       | | Smallest right singular vectors (variable space)
+// |                 | |       | | | Found 1 singular vectors.
+// |                 | |       | | | V[:,2] (singular value 0.00000000e+00)
+// |                 | |       | | | | V[2][2] = -1.00000000e+00 for NLS Var: 2 with Name: z
+// |                 | |       | | | | V[1][2] = +1.55490484e-08 for NLS Var: 1 with Name: x
+// |                 | |       | | Smallest left singular vectors (function space)
+// |                 | |       | | | Found 1 singular vectors.
+// |                 | |       | | | U[:,2] (singular value 0.00000000e+00)
+// |                 | |       | | | | U[2][2] = +7.07106790e-01 for NLS Eqn: 2 with transformational debugger Idx: 11
+// |                 | |       | | | | U[1][2] = +7.07106773e-01 for NLS Eqn: 1 with transformational debugger Idx: 12
+// LOG_NLS_SVD       | info    | experimental-kinsol: sparse SVD analysis (scaled = true, Caller: experimental-kinsol: Kinsol entry point).
+// |                 | |       | | Matrix Info
+// |                 | |       | | | NLS eq index = 16
+// |                 | |       | | | Columns      = 2
+// |                 | |       | | | Rows         = 2
+// |                 | |       | | | NNZ          = 4
+// |                 | |       | | | Curr Time    = 0.00000e+00
+// |                 | |       | | Matrix condition
+// |                 | |       | | | Cond(M) = 7.48296899e+00
+// |                 | |       | | | Matrix is well conditioned: Cond(M) = 7.48296899e+00 < 1e4
+// |                 | |       | | Smallest Singular values
+// |                 | |       | | | sigma_1   =  2.29183112e-01, rnorm_1   =  2.25047284e-16
+// |                 | |       | | Largest Singular values
+// |                 | |       | | | sigma_1   =  1.71497012e+00, rnorm_1   =  7.32417405e-16
+// |                 | |       | | Smallest right singular vectors (variable space)
+// |                 | |       | | | Found 1 singular vectors.
+// |                 | |       | | | V[:,2] (singular value 2.29183112e-01)
+// |                 | |       | | | | V[1][2] = +8.21093155e-01 for NLS Var: 1 with Name: x
+// |                 | |       | | | | V[2][2] = -5.70794210e-01 for NLS Var: 2 with Name: z
+// |                 | |       | | Smallest left singular vectors (function space)
+// |                 | |       | | | Found 1 singular vectors.
+// |                 | |       | | | U[:,2] (singular value 2.29183112e-01)
+// |                 | |       | | | | U[2][2] = -7.69483312e-01 for NLS Eqn: 2 with transformational debugger Idx: 11
+// |                 | |       | | | | U[1][2] = -6.38666918e-01 for NLS Eqn: 1 with transformational debugger Idx: 12
+// LOG_ASSERT        | debug   | Solving non-linear system 16 failed at time=0.
+// |                 | |       | For more information please use -lv LOG_NLS.
+// LOG_ASSERT        | info    | simulation terminated by an assertion at initialization
+// "
+// end SimulationResult;
+// ""
+// endResult

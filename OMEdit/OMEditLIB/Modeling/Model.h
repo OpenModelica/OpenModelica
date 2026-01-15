@@ -367,6 +367,7 @@ private:
     bool isCheckBox() const {return mCheckBox;}
     bool isDymolaCheckBox() const {return mDymolaCheckBox;}
     const QList<Modifier*> &getChoices() const {return mChoices;}
+    QStringList getChoicesDisplayStringList() const;
     QStringList getChoicesValueStringList() const;
     QStringList getChoicesCommentStringList() const;
   private:
@@ -488,7 +489,7 @@ private:
     const QString &getType() const {return mType;}
     QString getValueWithoutQuotes() const {return StringHandler::removeFirstLastQuotes(getValue());}
     bool isValueDefined() const {return mValueDefined;}
-    QString toString(bool skipTopLevel = false, bool includeComment = false) const;
+    QString toString(bool skipTopLevel = false, bool includeComment = false, bool onlyType = false) const;
     Modifier *getModifier(const QString &modifier) const;
     QPair<QString, bool> getModifierValue(const QString &modifier) const;
     bool hasModifier(const QString &modifier) const;
@@ -501,6 +502,7 @@ private:
     bool isReplaceable() const;
     const QString &getValue() const {return mValue;}
     const QString &getComment() const {return mComment;}
+    bool hasElement() const {return mpElement != 0;}
     QPair<QString, bool> getModifierValue(QStringList qualifiedModifierName) const;
   private:
     Model *mpParentModel;
@@ -610,6 +612,7 @@ private:
     bool isModelJsonEmpty() const {return mModelJson.isEmpty();}
     void setModelJson(const QJsonObject &modelJson) {mModelJson = modelJson;}
     const QString &getName() const {return mName;}
+    QString getNameIfReplaceable() const;
     const QString &getRootType() const;
     bool isMissing() const {return mMissing;}
     void setRestriction(const QString &restriction) {mRestriction = restriction;}
@@ -649,7 +652,7 @@ private:
     QPair<QString, bool> getVariableValue(QStringList variables);
     QString getVariableType(QStringList variables);
 
-    FlatModelica::Expression* getVariableValueOrBinding(const QString &variableName, bool value) const;
+    const FlatModelica::Expression *getVariableValueOrBinding(const QString &variableName, bool value) const;
     const Element *lookupElement(const QString &name) const;
     Element *lookupElement(const QString &name);
     const Element *lookupElement(const Name &name) const;
@@ -708,10 +711,10 @@ private:
     const QString &getComment() const;
     Annotation *getAnnotation() const;
     const FlatModelica::Expression &getValue() const {return mValue;}
-    FlatModelica::Expression &getValue() {return mValue;}
+    FlatModelica::Expression &getValue() = delete;
     const FlatModelica::Expression &getBinding() const {return mBinding;}
-    FlatModelica::Expression &getBinding() {return mBinding;}
-    void setBinding(const FlatModelica::Expression expression) {mBinding = expression;}
+    FlatModelica::Expression &getBinding() = delete;
+    void setBinding(const FlatModelica::Expression &expression) {mBinding = expression;}
     void resetBinding() {mBinding = mBindingForReset;}
     bool getIconDiagramMapPrimitivesVisible(bool icon) const;
     bool getIconDiagramMapHasExtent(bool icon) const;
@@ -726,7 +729,7 @@ private:
     virtual bool isComponent() const = 0;
     virtual bool isExtend() const = 0;
     virtual bool isClass() const = 0;
-    virtual QString toString(bool skipTopLevel = false, bool mergeExtendsModifiers = false) const;
+    virtual QString toString(bool skipTopLevel = false, bool mergeExtendsModifiers = false, bool includeComment = true) const;
 
     QString getDirection() const;
   private:
@@ -765,7 +768,7 @@ private:
     virtual bool isComponent() const override {return false;}
     virtual bool isExtend() const override {return true;}
     virtual bool isClass() const override {return false;}
-    virtual QString toString(bool skipTopLevel = false, bool mergeExtendsModifiers = false) const override;
+    virtual QString toString(bool skipTopLevel = false, bool mergeExtendsModifiers = false, bool includeComment = true) const override;
   };
 
   class Component : public Element
@@ -797,7 +800,7 @@ private:
     virtual bool isComponent() const override {return true;}
     virtual bool isExtend() const override {return false;}
     virtual bool isClass() const override {return false;}
-    virtual QString toString(bool skipTopLevel = false, bool mergeExtendsModifiers = false) const override;
+    virtual QString toString(bool skipTopLevel = false, bool mergeExtendsModifiers = false, bool includeComment = true) const override;
   };
 
   class ReplaceableClass : public Element
@@ -825,7 +828,7 @@ private:
     virtual bool isComponent() const override {return false;}
     virtual bool isExtend() const override {return false;}
     virtual bool isClass() const override {return true;}
-    virtual QString toString(bool skipTopLevel = false, bool mergeExtendsModifiers = false) const override;
+    virtual QString toString(bool skipTopLevel = false, bool mergeExtendsModifiers = false, bool includeComment = true) const override;
   };
 
   class Part

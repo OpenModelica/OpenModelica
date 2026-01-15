@@ -1,0 +1,27 @@
+// name: MultiDimensionalArrays.Test2
+// keywords: NewBackend
+// status: correct
+// cflags: --newBackend
+
+loadFile("MultiDimensionalArrays.mo"); getErrorString();
+
+simulate(MultiDimensionalArrays.Test2); getErrorString();
+
+res := OpenModelica.Scripting.compareSimulationResults("MultiDimensionalArrays.Test2_res.mat",
+  "ReferenceFiles/MultiDimensionalArrays.Test2_res.mat",
+  "MultiDimensionalArrays.Test2_diff.csv",0.01,0.0001,
+  {"b[1].A[3]","b[2].A[1]"});
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "MultiDimensionalArrays.Test2_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'MultiDimensionalArrays.Test2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// {"Files Equal!"}
+// endResult

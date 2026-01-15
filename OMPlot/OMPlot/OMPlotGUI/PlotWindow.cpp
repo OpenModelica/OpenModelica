@@ -174,7 +174,6 @@ void PlotWindow::initializePlot(QStringList arguments)
   setYRightCustomLabel(getYRightLabel());
   setYRightRange(QString(arguments[20]).toDouble(), QString(arguments[21]).toDouble());
   setTimeUnit("");
-  setPrefixUnits(true);
   /* read variables */
   QStringList variablesToRead;
   for(int i = 22; i < arguments.length(); i++)
@@ -263,7 +262,9 @@ void PlotWindow::getStartStopTime(double &start, double &stop){
   {
     QString currentLine;
     // open the file
-    mFile.open(QIODevice::ReadOnly);
+    if (!mFile.open(QIODevice::ReadOnly)) {
+      throw PlotException(tr("Failed to open simulation result file %1").arg(mFile.fileName()));
+    }
     mpTextStream = new QTextStream(&mFile);
     // read the interval size from the file
     int intervalSize = 0;
@@ -469,7 +470,9 @@ void PlotWindow::plot(PlotCurve *pPlotCurve)
   if (mFile.fileName().endsWith("plt"))
   {
     // open the file
-    mFile.open(QIODevice::ReadOnly);
+    if (!mFile.open(QIODevice::ReadOnly)) {
+      throw PlotException(tr("Failed to open simulation result file %1").arg(mFile.fileName()));
+    }
     mpTextStream = new QTextStream(&mFile);
     // read the interval size from the file
     int intervalSize = 0;
@@ -705,7 +708,9 @@ void PlotWindow::plotParametric(PlotCurve *pPlotCurve)
     {
       QString currentLine;
       // open the file
-      mFile.open(QIODevice::ReadOnly);
+      if (!mFile.open(QIODevice::ReadOnly)) {
+        throw PlotException(tr("Failed to open simulation result file %1").arg(mFile.fileName()));
+      }
       mpTextStream = new QTextStream(&mFile);
       // read the interval size from the file
       int intervalSize = 0;
@@ -2293,7 +2298,8 @@ SetupDialog::SetupDialog(PlotWindow *pPlotWindow)
   mpYRightMinimumTextBox->setValidator(pDoubleValidator);
   mpYRightMaximumTextBox->setValidator(pDoubleValidator);
   mpPrefixUnitsCheckbox = new QCheckBox(tr("Prefix Units"));
-  mpPrefixUnitsCheckbox->setChecked(mpPlotWindow->getPrefixUnits());
+  mpPrefixUnitsCheckbox->setChecked(mpPlotWindow->getPrefixUnits() && mpPlotWindow->canHavePrefixUnits());
+  mpPrefixUnitsCheckbox->setEnabled(mpPlotWindow->canHavePrefixUnits());
   // range tab layout
   QVBoxLayout *pRangeTabVerticalLayout = new QVBoxLayout;
   pRangeTabVerticalLayout->setAlignment(Qt::AlignTop);

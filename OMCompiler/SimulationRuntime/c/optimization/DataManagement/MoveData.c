@@ -34,9 +34,11 @@
 #include "../../meta/meta_modelica.h"
 #include "../../openmodelica_types.h"
 #include "../../openmodelica.h"
+#include "../../simulation/arrayIndex.h"
 #include "../../simulation/options.h"
 #include "../../simulation/results/simulation_result.h"
 #include "../../simulation/solver/model_help.h"
+#include "../../util/real_array.h"
 #include "../../util/context.h"
 #include "../../util/omc_file.h"
 #include "../OptimizerData.h"
@@ -79,7 +81,7 @@ int pickUpModelData(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInf
   pickUpTime(&optData->time, &optData->dim, data, optData->bounds.preSim);
   setRKCoeff(&optData->rk, optData->dim.np);
   calculatedScalingHelper(&optData->bounds,&optData->time, &optData->dim, &optData->rk);
-  messageClose(OMC_LOG_SOLVER);
+  messageClose(OMC_LOG_SOLVER); // FIXME what does this belong to?
 
   dim = &optData->dim;
 
@@ -379,12 +381,13 @@ static inline void pickUpBounds(OptDataBounds * bounds, OptDataDim * dim, DATA* 
   for(i = 0; i < nx; ++i){
     min = data->modelData->realVarsData[i].attribute.min;
     max = data->modelData->realVarsData[i].attribute.max;
-    nominal = data->modelData->realVarsData[i].attribute.nominal;
+    nominal = getNominalFromScalarIdx(data->simulationInfo, data->modelData, VAR_KIND_VARIABLE, i);
     nominalWasSet = data->modelData->realVarsData[i].attribute.useNominal;
     x0 = data->localData[1]->realVars[i];
 
     check_nominal(bounds, min, max, nominal, nominalWasSet, i, x0);
-    data->modelData->realVarsData[i].attribute.nominal = bounds->vnom[i];
+    array_index_t* revIndex = &data->simulationInfo->realVarsReverseIndex[i];
+    put_real_element(bounds->vnom[i], revIndex->dim_idx, &data->modelData->realVarsData[revIndex->array_idx].attribute.nominal);
     bounds->scalF[i] = 1.0/bounds->vnom[i];
     bounds->vmin[i] = min * bounds->scalF[i];
     bounds->vmax[i] = max * bounds->scalF[i];
@@ -513,9 +516,10 @@ static inline void printSomeModelInfos(OptDataBounds * bounds, OptDataDim * dim,
 
   double *umin, *umax, *unom, *u0;
   double *xmin, *xmax, *xnom;
-  double tmpStart;
 
   char buffer[200];
+  char start_buffer[2048];
+
   char ** inputName;
   int i,j,k;
 
@@ -540,9 +544,13 @@ static inline void printSomeModelInfos(OptDataBounds * bounds, OptDataDim * dim,
     else
       sprintf(buffer, ", min = -Inf");
 
-    tmpStart = data->modelData->realVarsData[i].attribute.start;
-
-    printf("\nState[%i]:%s(start = %g, nominal = %g%s", i, data->modelData->realVarsData[i].info.name, tmpStart, xnom[i], buffer);
+    real_vector_to_string(&data->modelData->realVarsData[i].attribute.start, data->modelData->realVarsData[i].dimension.numberOfDimensions == 0, start_buffer, 2048);
+    printf("\nState[%i]:%s(start = %s, nominal = %g%s",
+           i,
+           data->modelData->realVarsData[i].info.name,
+           start_buffer,
+           xnom[i],
+           buffer);
 
     if(xmax[i] < 1e20)
       sprintf(buffer, ", max = %g", data->modelData->realVarsData[i].attribute.max);

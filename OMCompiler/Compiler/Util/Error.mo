@@ -903,6 +903,14 @@ public constant ErrorTypes.Message CONFLICTING_INHERITED_ANNOTATIONS = ErrorType
   Gettext.gettext("Conflicting '%s' annotations inherited by class '%s':\n  %s from 'extends %s'\n  %s from 'extends %s'"));
 public constant ErrorTypes.Message ASSIGN_ITERATOR_ERROR = ErrorTypes.MESSAGE(415, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   Gettext.gettext("Assignment to iterator '%s'."));
+public constant ErrorTypes.Message INVALID_CONNECTOR_VARIABILITY = ErrorTypes.MESSAGE(416, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
+  Gettext.gettext("Invalid variability %s on connector '%s'."));
+public constant ErrorTypes.Message NON_BREAKABLE_ELEMENT = ErrorTypes.MESSAGE(417, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
+  Gettext.gettext("Invalid use of break on non-component '%s'."));
+public constant ErrorTypes.Message NON_BREAKABLE_COMPONENT = ErrorTypes.MESSAGE(418, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
+  Gettext.gettext("Invalid use of break on component '%s', component must be a model, block, or connector."));
+public constant ErrorTypes.Message UNMATCHED_BREAK_CONNECT = ErrorTypes.MESSAGE(419, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
+  Gettext.gettext("No matching element found for 'break connect(%s, %s)'."));
 
 public constant ErrorTypes.Message INITIALIZATION_NOT_FULLY_SPECIFIED = ErrorTypes.MESSAGE(496, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
   Gettext.gettext("The initial conditions are not fully specified. %s."));
@@ -1085,7 +1093,7 @@ public constant ErrorTypes.Message COMMA_OPERATOR_DIFFERENT_SIZES = ErrorTypes.M
   Gettext.gettext("Arguments of concatenation comma operator have different sizes for the first dimension: %s has dimension %s and %s has dimension %s."));
 public constant ErrorTypes.Message NON_STATE_STATESELECT_ALWAYS = ErrorTypes.MESSAGE(592, ErrorTypes.SYMBOLIC(), ErrorTypes.WARNING(),
   Gettext.gettext("Variable %s has attribute stateSelect=StateSelect.always, but can't be selected as a state."));
-public constant ErrorTypes.Message STATE_STATESELECT_NEVER = ErrorTypes.MESSAGE(593, ErrorTypes.SYMBOLIC(), ErrorTypes.WARNING(),
+public constant ErrorTypes.Message STATE_STATESELECT_NEVER = ErrorTypes.MESSAGE(593, ErrorTypes.SYMBOLIC(), ErrorTypes.ERROR(),
   Gettext.gettext("Variable %s has attribute stateSelect=StateSelect.never, but was selected as a state"));
 public constant ErrorTypes.Message FUNCTION_HIGHER_VARIABILITY_BINDING = ErrorTypes.MESSAGE(594, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
   Gettext.gettext("Component '%s' of variability %s has binding %s of higher variability %s."));

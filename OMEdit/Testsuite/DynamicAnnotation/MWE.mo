@@ -7,8 +7,8 @@ package MWE
   end Unnamed;
 
   model Test
-    outer Modelica.Mechanics.MultiBody.World world;
     parameter Real a=3 annotation(Dialog(enable=world.animateWorld));
+    outer Modelica.Mechanics.MultiBody.World world;
     annotation (Icon(coordinateSystem(preserveAspectRatio=false)), Diagram(coordinateSystem(preserveAspectRatio=false)));
   end Test;
   annotation (uses(Modelica(version="4.0.0")));

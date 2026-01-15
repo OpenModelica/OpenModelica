@@ -161,6 +161,7 @@ ifeq ($(OMC_MINIMAL_RUNTIME),)
               gbode_ctrl$(OBJ_EXT) \
               gbode_events$(OBJ_EXT) \
               gbode_main$(OBJ_EXT) \
+              gbode_internal_nls$(OBJ_EXT) \
               gbode_nls$(OBJ_EXT) \
               gbode_sparse$(OBJ_EXT) \
               gbode_step$(OBJ_EXT) \
@@ -261,6 +262,7 @@ else
   SIM_OBJS_C_FMI=
 endif
 SIM_OBJS_C = $(SIM_OBJS_C_FMI) \
+             arrayIndex$(OBJ_EXT) \
              eval_dep$(OBJ_EXT) \
              jacobian_util$(OBJ_EXT) \
              omc_simulation_util$(OBJ_EXT) \
@@ -269,66 +271,67 @@ SIM_OBJS_C = $(SIM_OBJS_C_FMI) \
              simulation_omc_assert$(OBJ_EXT)
 SIM_HFILES = ../dataReconciliation/dataReconciliation.h \
              ../linearization/linearize.h \
+             arrayIndex.h \
+             eval_dep.h \
+             jacobian_util.h \
              modelinfo.h \
              omc_simulation_util.h \
+             options.h \
              simulation_info_json.h \
              simulation_input_xml.h \
              simulation_omc_assert.h \
              simulation_runtime.h \
-             socket.h \
-             options.h \
-             eval_dep.h \
-             jacobian_util.h
+             socket.h
 
-FMIPATH = ./fmi/
+FMIPATH = fmi/
 FMI_OBJS = FMICommon$(OBJ_EXT) FMI1Common$(OBJ_EXT) FMI1ModelExchange$(OBJ_EXT) FMI1CoSimulation$(OBJ_EXT) FMI2Common$(OBJ_EXT) FMI2ModelExchange$(OBJ_EXT)
 FMIOBJSPATH = $(FMI_OBJS:%=$(BUILDPATH)/$(FMIPATH)%)
 
-GCPATH = ./gc/
+GCPATH = gc/
 GCOBJSPATH = $(GC_OBJS:%=$(BUILDPATH)/$(GCPATH)%)
 GCHFILESPATH = $(GC_HFILES:%=$(GCPATH)%)
 GCHFILESPATH_MINIMAL = $(GC_HFILES_MINIMAL:%=$(GCPATH)%)
 GCOBJSPATH_MINIMAL = $(GC_OBJS_MINIMAL:%=$(BUILDPATH)/$(GCPATH)%)
 
 
-METAPATH = ./meta/
+METAPATH = meta/
 METAOBJSPATH = $(META_OBJS:%=$(BUILDPATH)/$(METAPATH)%)
 METAHFILESPATH = $(META_HFILES:%=$(METAPATH)%)
 
-UTILPATH = ./util/
+UTILPATH = util/
 UTILOBJSPATH = $(UTIL_OBJS:%=$(BUILDPATH)/$(UTILPATH)%)
 UTILHFILESPATH = $(UTIL_HFILES:%=$(UTILPATH)%)
 
-MATHPATH = ./math-support/
+MATHPATH = math-support/
 MATHOBJSPATH = $(MATH_OBJS:%=$(BUILDPATH)/$(MATHPATH)%)
 MATHHFILESPATH = $(MATH_HFILES:%=$(MATHPATH)%)
 
-INITIALIZATIONPATH = ./simulation/solver/initialization/
+INITIALIZATIONPATH = simulation/solver/initialization/
 INITIALIZATIONOBJSPATH = $(INITIALIZATION_OBJS:%=$(BUILDPATH)/$(INITIALIZATIONPATH)%)
 INITIALIZATIONHFILESPATH = $(INITIALIZATION_HFILES:%=$(INITIALIZATIONPATH)%)
 
-OPTIMIZATIONPATH = ./optimization/
+OPTIMIZATIONPATH = optimization/
 OPTIMIZATIONOBJSPATH = $(OPTIMIZATION_OBJS:%=$(BUILDPATH)/$(OPTIMIZATIONPATH)%)
 OPTIMIZATIONHFILESPATH = $(OPTIMIZATION_HFILES:%=$(OPTIMIZATIONPATH)%)
 
-SOLVERPATH = ./simulation/solver/
+SOLVERPATH = simulation/solver/
 SOLVEROBJSPATH = $(SOLVER_OBJS:%=$(BUILDPATH)/$(SOLVERPATH)%)
 SOLVERHFILESPATH = $(SOLVER_HFILES:%=$(SOLVERPATH)%)
 
-RESULTSPATH = ./simulation/results/
+RESULTSPATH = simulation/results/
 RESULTSOBJSPATH = $(RESULTS_OBJS:%=$(BUILDPATH)/$(RESULTSPATH)%)
 RESULTSHFILESPATH = $(RESULTS_HFILES:%=$(RESULTSPATH)%)
 RESULTSFILESPATH = $(RESULTS_FILES:%=$(RESULTSPATH)%)
 
-SIMPATH = ./simulation/
+SIMPATH = simulation/
 SIMOBJSPATH = $(SIM_OBJS:%=$(BUILDPATH)/$(SIMPATH)%)
 SIMOBJSPATHC = $(SIM_OBJS_C:%=$(BUILDPATH)/$(SIMPATH)%)
 SIMHFILESPATH = $(SIM_HFILES:%=$(SIMPATH)%)
 
-FMIPATH = ./fmi/
+FMIPATH = fmi/
 FMIOBJSPATH = $(FMI_OBJS:%=$(BUILDPATH)/$(FMIPATH)%)
 
-ALL_OBJS = $(GCOBJSPATH) $(METAOBJSPATH) $(UTILOBJSPATH) $(MATHOBJSPATH) $(SOLVEROBJSPATH) $(INITIALIZATIONOBJSPATH) $(OPTIMIZATIONOBJSPATH) $(RESULTSOBJSPATH) $(SIMOBJSPATH) $(SIMOBJSPATHC) $(BUILDPATH)/./meta/meta_modelica_catch$(OBJ_EXT)
+ALL_OBJS = $(GCOBJSPATH) $(METAOBJSPATH) $(UTILOBJSPATH) $(MATHOBJSPATH) $(SOLVEROBJSPATH) $(INITIALIZATIONOBJSPATH) $(OPTIMIZATIONOBJSPATH) $(RESULTSOBJSPATH) $(SIMOBJSPATH) $(SIMOBJSPATHC) $(BUILDPATH)/meta/meta_modelica_catch$(OBJ_EXT)
 
 # External solvers needed by FMI for ME
 ifeq ($(OMC_NUM_NONLINEAR_SYSTEMS),0)
@@ -357,7 +360,7 @@ EXTERNAL_SOLVER_OBJSPATH=$(EXTERNAL_SOLVER_OBJSPATH1:./%=$(BUILDPATH)/%)
 endif
 # Only objects needed for FMI for Modelica Exchange
 FMI_ME_OBJS = $(GCOBJSPATH_MINIMAL:$(BUILDPATH)/%=%) $(UTILOBJSPATH:$(BUILDPATH)/%=%) $(MATHOBJSPATH:$(BUILDPATH)/%=%) $(SIMOBJSPATHC:$(BUILDPATH)/%=%) $(SOLVEROBJSPATH:$(BUILDPATH)/%=%) $(INITIALIZATIONOBJSPATH:$(BUILDPATH)/%=%) \
-  ./meta/meta_modelica_catch$(OBJ_EXT) \
+  meta/meta_modelica_catch$(OBJ_EXT) \
   $(CMINPACK_OBJS:%=./external_solvers/%$(OBJ_EXT)) \
   $(LAPACK_OBJS:%=./external_solvers/%$(OBJ_EXT)) \
   $(BLAS_OBJS:%=./external_solvers/%$(OBJ_EXT)) \
@@ -368,6 +371,6 @@ ALL_HEADERS = $(METAHFILESPATH) $(GCFILESPATH) $(UTILHFILESPATH) $(MATHHFILESPAT
 ALL_PATHS = $(METAPATH) $(FMIPATH) $(GCPATH) $(UTILPATH) $(MATHPATH) $(SOLVERPATH) $(INITIALIZATIONPATH) $(OPTIMIZATIONPATH) $(RESULTSPATH) $(SIMPATH) linearization/ dataReconciliation/
 ALL_PATHS_CLEAN_OBJS = $(ALL_PATHS:%=%*$(OBJ_EXT)) $(ALL_PATHS:%=%*.a) meta/gc/*$(OBJ_EXT)
 
-BASE_OBJS = $(GCOBJSPATH) $(METAOBJSPATH) $(UTILOBJSPATH) ./meta/meta_modelica_catch$(OBJ_EXT)
+BASE_OBJS = $(GCOBJSPATH) $(METAOBJSPATH) $(UTILOBJSPATH) meta/meta_modelica_catch$(OBJ_EXT)
 
-COMMON_HEADERS = util/omc_msvc.h ./util/omc_numbers.h openmodelica.h openmodelica_types.h ModelicaUtilities.h omc_inline.h openmodelica_func.h simulation_data.h omc_simulation_settings.h
+COMMON_HEADERS = util/omc_msvc.h util/omc_numbers.h openmodelica.h openmodelica_types.h ModelicaUtilities.h omc_inline.h openmodelica_func.h simulation_data.h omc_simulation_settings.h

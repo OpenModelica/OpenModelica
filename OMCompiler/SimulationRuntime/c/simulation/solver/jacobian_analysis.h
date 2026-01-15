@@ -85,6 +85,7 @@ static inline const char* SolverCaller_callerString(SolverCaller caller) {
     }
 }
 
+// One column of U or V (NOT TRANSPOSE)
 typedef struct SVD_Component {
     int index;
     modelica_real value;

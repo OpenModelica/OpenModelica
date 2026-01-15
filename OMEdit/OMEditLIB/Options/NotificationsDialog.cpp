@@ -77,9 +77,13 @@ NotificationsDialog::NotificationsDialog(NotificationType notificationType, Noti
   mpCancelButton = new QPushButton(Helper::cancel);
   mpCancelButton->setAutoDefault(false);
   connect(mpCancelButton, SIGNAL(clicked()), SLOT(rejectNotification()));
+  mpSaveWithErrorsButton = new QPushButton();
+  mpSaveWithErrorsButton->setAutoDefault(false);
+  connect(mpSaveWithErrorsButton, &QPushButton::clicked, this, &NotificationsDialog::saveWithErrors);
   mpButtonBox = new QDialogButtonBox(Qt::Horizontal);
   mpButtonBox->addButton(mpOkButton, QDialogButtonBox::ActionRole);
   mpButtonBox->addButton(mpCancelButton, QDialogButtonBox::ActionRole);
+  // do not add the save with errors button here. We use it in ModelicaEditor::validateText
   // horizontal layout
   QHBoxLayout *pHorizontalLayout = new QHBoxLayout;
   pHorizontalLayout->addWidget(pPixmapLabel, 0, Qt::AlignTop);
@@ -315,7 +319,7 @@ void NotificationsDialog::saveNotification()
 /*!
  * \brief NotificationsDialog::rejectNotification
  * Slot activated when mpCancelButton clicked signal is raised.\n
- * Checks the notification type and calls the appropriate method.
+ * Only used for notificaiton type RevertPreviousOrFixErrorsManually. All other types are ignored.
  */
 void NotificationsDialog::rejectNotification()
 {
@@ -333,3 +337,26 @@ void NotificationsDialog::rejectNotification()
   }
   reject();
 }
+
+/*!
+ * \brief NotificationsDialog::saveWithErrors
+ * Slot activated when mpSaveWithErrorsButton clicked signal is raised.\n
+ * Only used for notificaiton type RevertPreviousOrFixErrorsManually. All other types are ignored.
+ */
+void NotificationsDialog::saveWithErrors()
+{
+  if (mpNotificationCheckBox->isChecked()) {
+    QSettings *pSettings = Utilities::getApplicationSettings();
+    switch (mNotificationType) {
+      case NotificationsDialog::RevertPreviousOrFixErrorsManually:
+        saveAlwaysAskForTextEditorErrorSettings();
+        pSettings->setValue("textEditor/revertPreviousOrFixErrorsManually", 2);
+        break;
+      default:
+        // should never be reached
+        break;
+    }
+  }
+  done(2);
+}
+

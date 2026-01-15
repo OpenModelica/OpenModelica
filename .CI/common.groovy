@@ -288,27 +288,6 @@ void buildOMC(CC, CXX, extraFlags, Boolean buildCpp, Boolean clean) {
   }
 }
 
-void buildOMSens() {
-  if (isWindows()) {
-  bat ("""
-     If Defined LOCALAPPDATA (echo LOCALAPPDATA: %LOCALAPPDATA%) Else (Set "LOCALAPPDATA=C:\\Users\\OpenModelica\\AppData\\Local")
-     echo on
-     (
-     echo export MSYS_WORKSPACE="`cygpath '${WORKSPACE}'`"
-     echo echo MSYS_WORKSPACE: \${MSYS_WORKSPACE}
-     echo cd \${MSYS_WORKSPACE}
-     echo export MAKETHREADS=-j16
-     echo set -e
-     echo time make -f Makefile.omdev.mingw \${MAKETHREADS} omsens
-     ) > buildOMSensWindows.sh
-
-     set MSYSTEM=UCRT64
-     set MSYS2_PATH_TYPE=inherit
-     %OMDEV%\\tools\\msys\\usr\\bin\\sh --login -i -c "cd `cygpath '${WORKSPACE}'` && chmod +x buildOMSensWindows.sh && ./buildOMSensWindows.sh && rm -f ./buildOMSensWindows.sh"
-  """)
-  }
-}
-
 void buildOMC_CMake(cmake_args, cmake_exe='cmake') {
   standardSetup()
 

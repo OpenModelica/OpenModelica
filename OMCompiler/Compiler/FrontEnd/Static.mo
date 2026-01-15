@@ -10452,17 +10452,18 @@ algorithm
       DAE.Type et;
       list<DAE.Subscript> ss;
       DAE.ComponentRef cr;
-      list<DAE.Exp> sub;
+      list<DAE.Exp> expl;
       DAE.Exp exp;
 
-    case (true,DAE.ASUB(sub=sub),_,_)
+    case (true,DAE.ASUB(sub=ss),_,_)
       equation
+        expl = list(Expression.getSubscriptExp(sub) for sub in ss);
         // TODO: Use a DAE.ERROR() or something if this has subscripts?
         a = Types.isArray(ty);
         sc = boolNot(a);
         et = Types.simplifyType(ty);
         exp = DAE.ARRAY(et,sc,{});
-        exp = Expression.makeASUB(exp,sub);
+        exp = Expression.makeASUB(exp,expl);
       then (exp,c);
 
     case (true,DAE.CREF(componentRef=cr),_,_)
@@ -10783,7 +10784,7 @@ algorithm
         true := ComponentReference.crefEqual(subCr1, subCr2);
         true := Expression.isArray(e) or Expression.isRange(e);
         e := ValuesUtil.valueExp(v, SOME(e));
-        e := DAE.ASUB(e, {index});
+        e := DAE.ASUB(e, {DAE.INDEX(index)});
       then
         (e, DAE.C_CONST(), inAttributes);
 

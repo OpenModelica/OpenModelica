@@ -165,11 +165,13 @@ algorithm
   systs := listAppend(contSysts, clockedSysts);
   outDAE := BackendDAE.DAE(systs, shared);
 
-  if Flags.isSet(Flags.DUMP_SYNCHRONOUS) then
-    print("synchronous features pre-phase: synchronousFeatures\n\n");
-    BackendDump.dumpEqSystems(systs, "clock partitioning");
-    BackendDump.dumpBasePartitions(shared.partitionsInfo.basePartitions, "Base clocks");
-    BackendDump.dumpSubPartitions(shared.partitionsInfo.subPartitions, "Sub clocks");
+  if not listEmpty(clockedSysts) then
+    if Flags.isSet(Flags.DUMP_SYNCHRONOUS) then
+      print("synchronous features pre-phase: synchronousFeatures\n\n");
+      BackendDump.dumpEqSystems(systs, "clock partitioning");
+      BackendDump.dumpBasePartitions(shared.partitionsInfo.basePartitions, "Base clocks");
+      BackendDump.dumpSubPartitions(shared.partitionsInfo.subPartitions, "Sub clocks");
+    end if;
   end if;
 end clockPartitioning1;
 
@@ -2387,7 +2389,7 @@ algorithm
                   varDirection = DAE.BIDIR(), varParallelism = DAE.NON_PARALLEL(),
                   varType = inType, bindExp = NONE(), tplExp = NONE(),
                   arryDim = {}, source = DAE.emptyElementSource,
-                  values = NONE(), tearingSelectOption = SOME(BackendDAE.DEFAULT()),
+                  values = DAEUtil.setProtectedAttr(DAEUtil.getEmptyVarAttr(inType), true), tearingSelectOption = SOME(BackendDAE.DEFAULT()),
                   hideResult = NONE(),
                   comment = NONE(), connectorType = DAE.NON_CONNECTOR(),
                   innerOuter = DAE.NOT_INNER_OUTER(), unreplaceable = false, initNonlinear = false, encrypted = false);

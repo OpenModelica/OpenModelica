@@ -38,8 +38,11 @@ encapsulated uniontype NBMatching
   import GCExt;
 
 protected
+  // OF imports
+  import Absyn.Path;
+
   // NF import
-  import NFFlatten.FunctionTree;
+  import NFFunction.Function;
   import Variable = NFVariable;
 
   // NB import
@@ -79,6 +82,16 @@ public
     str := str + toStringSingle(matching.eqn_to_var, true) + "\n";
   end toString;
 
+  function trivial
+    "produces a trivial soluation where e1 matches v1 etc."
+    input Integer n;
+    output Matching matching;
+  protected
+    array<Integer> arr = Array.createIntRange(n);
+  algorithm
+    matching := MATCHING(arr, arr);
+  end trivial;
+
   function regular
     "author: kabdelhak
     Regular matching algorithm for bipartite graphs by Constantinos C. Pantelides.
@@ -117,7 +130,7 @@ public
     input output Adjacency.Matrix full;
     input output VariablePointers vars;
     input output EquationPointers eqns;
-    input output FunctionTree funcTree;
+    input UnorderedMap<Path, Function> funcMap;
     input output VarData varData;
     input output EqData eqData;
     input Partition.Kind Kind;
@@ -143,10 +156,10 @@ public
     // 2. Resolve singular partitions if necessary
     if Kind == NBPartition.Kind.INI then
       // ####### BALANCE INITIALIZATION #######
-      (adj, full, vars, eqns, varData, eqData, funcTree, changed) := ResolveSingularities.balanceInitialization(adj, full, vars, eqns, varData, eqData, funcTree, matching, mapping);
+      (adj, full, vars, eqns, varData, eqData, changed) := ResolveSingularities.balanceInitialization(adj, full, vars, eqns, varData, eqData, funcMap, matching, mapping);
     else
       // ####### INDEX REDUCTION #######
-      (adj, full, vars, eqns, varData, eqData, funcTree, changed) := ResolveSingularities.indexReduction(adj, full, vars, eqns, varData, eqData, funcTree, matching, mapping);
+      (adj, full, vars, eqns, varData, eqData, changed) := ResolveSingularities.indexReduction(adj, full, vars, eqns, varData, eqData, funcMap, matching, mapping);
     end if;
 
     // 3. Recompute adjacency and restart matching if something changed in step 2.
@@ -159,7 +172,7 @@ public
         matching := regular(EMPTY_MATCHING, adj);
       else
         // ####### REDO INDEX REDUCTION IF NECESSARY #######
-        (matching, adj, full, vars, eqns, funcTree, varData, eqData) := singular(EMPTY_MATCHING, adj, full, vars, eqns, funcTree, varData, eqData, Kind, transposed);
+        (matching, adj, full, vars, eqns, varData, eqData) := singular(EMPTY_MATCHING, adj, full, vars, eqns, funcMap, varData, eqData, Kind, transposed);
       end if;
     end if;
   end singular;

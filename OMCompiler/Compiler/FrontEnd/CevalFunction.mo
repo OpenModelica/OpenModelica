@@ -2874,14 +2874,12 @@ algorithm
     local
       DAE.ComponentRef cref;
       DAE.Type ety;
-      list<DAE.Exp> sub_exps;
       list<DAE.Subscript> subs;
       FCore.Graph env;
       DAE.Exp exp;
 
-    case (DAE.ASUB(exp = DAE.CREF(componentRef = cref, ty = ety), sub = sub_exps), env)
+    case (DAE.ASUB(exp = DAE.CREF(componentRef = cref, ty = ety), sub = subs), env)
       equation
-        subs = List.map(sub_exps, Expression.makeIndexSubscript);
         cref = ComponentReference.subscriptCref(cref, subs);
         exp = Expression.makeCrefExp(cref, ety);
       then (exp, env);

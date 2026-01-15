@@ -36,6 +36,7 @@
 #include "openmodelica_func.h"
 
 #include "util/omc_error.h"
+#include "simulation/arrayIndex.h"
 #include "simulation/options.h"
 
 
@@ -70,8 +71,6 @@ static uinteger minStep( const modelica_real* tqp, const uinteger size );
  */
 int prefixedName_performQSSSimulation(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
 {
-  TRACE_PUSH
-
   SIMULATION_INFO *simInfo = data->simulationInfo;
   MODEL_DATA *mData = data->modelData;
   uinteger currStepNo = 0;
@@ -156,7 +155,8 @@ int prefixedName_performQSSSimulation(DATA* data, threadData_t *threadData, SOLV
   diffQ = 0.0; dTnextQ = 0.0; nextQ = 0.0;
   for (i = 0; i < STATES; i++)
   {
-    dQ[i] = 0.0001 * data->modelData->realVarsData[i].attribute.nominal;
+    const modelica_real nominal = getNominalFromScalarIdx(data->simulationInfo, data->modelData, VAR_KIND_STATE, i);
+    dQ[i] = 0.0001 * nominal;
     tx[i] = tq[i] = simInfo->startTime;
     qik[i] = state[i];
     xik[i] = state[i];
@@ -225,11 +225,6 @@ int prefixedName_performQSSSimulation(DATA* data, threadData_t *threadData, SOLV
     /* try */
     MMC_TRY_INTERNAL(simulationJumpBuffer)
     {
-#endif
-
-#ifdef USE_DEBUG_TRACE
-    if (omc_useStream[OMC_LOG_TRACE])
-      printf("TRACE: push loop step=%u, time=%.12g\n", currStepNo, solverInfo->currentTime);
 #endif
 
 #ifdef D
@@ -419,8 +414,6 @@ int prefixedName_performQSSSimulation(DATA* data, threadData_t *threadData, SOLV
       infoStreamPrint(OMC_LOG_STDOUT, 0, "model terminate | Simulation terminated by an assert at time: %g", data->localData[0]->timeValue);
       break;
     }
-
-    TRACE_POP /* pop loop */
   }
   /* End of main loop */
 
@@ -449,7 +442,6 @@ int prefixedName_performQSSSimulation(DATA* data, threadData_t *threadData, SOLV
    free(dQ);
    /* end - free memory */
 
-  TRACE_POP
   return retValue;
 }
 

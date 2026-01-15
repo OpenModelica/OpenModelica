@@ -125,6 +125,7 @@ OptionsDialog::OptionsDialog(QWidget *pParent)
   mpDebuggerPage = new DebuggerPage(this);
   mpFMIPage = new FMIPage(this);
   mpOMSimulatorPage = new OMSimulatorPage(this);
+  mpSensitivityOptimizationPage = new SensitivityOptimizationPage(this);
   mpTraceabilityPage = new TraceabilityPage(this);
   // Get the settings.
   // Don't read the settings in case we are running the testsuite. We want default OMEdit.
@@ -175,6 +176,7 @@ void OptionsDialog::readSettings()
   readDebuggerSettings();
   readFMISettings();
   readOMSimulatorSettings();
+  readSensitivityOptimizationSettings();
   readTraceabilitySettings();
 }
 
@@ -1462,6 +1464,24 @@ void OptionsDialog::readOMSimulatorSettings()
   }
   if (index > -1) {
     mpOMSimulatorPage->getLoggingLevelComboBox()->setCurrentIndex(index);
+  }
+}
+
+/*!
+ * \brief OptionsDialog::readSensitivityOptimizationSettings
+ * Reads the Sensitivity and Optimization settings from omedit.ini
+ */
+void OptionsDialog::readSensitivityOptimizationSettings()
+{
+  // read OMSens backend
+  if (mpSettings->contains("OMSens/backend")) {
+    mpSensitivityOptimizationPage->getOMSensBackendPathTextBox()->setText(mpSettings->value("OMSens/backend").toString());
+  }
+  // read python
+  if (mpSettings->contains("OMSens/python")) {
+    mpSensitivityOptimizationPage->getPythonTextBox()->setText(mpSettings->value("OMSens/python").toString());
+  } else {
+    mpSensitivityOptimizationPage->getPythonTextBox()->setText(OptionsDefaults::SensitivityOptimization::python);
   }
 }
 
@@ -3013,6 +3033,28 @@ void OptionsDialog::saveOMSimulatorSettings()
 }
 
 /*!
+ * \brief OptionsDialog::saveSensitivityOptimizationSettings
+ * Saves the Sensitivity and Optimization settings in omedit.ini
+ */
+void OptionsDialog::saveSensitivityOptimizationSettings()
+{
+  // set OMSens backend path
+  QString backendPath = mpSensitivityOptimizationPage->getOMSensBackendPathTextBox()->text();
+  if (backendPath.isEmpty()) {
+    mpSettings->remove("OMSens/backend");
+  } else {
+    mpSettings->setValue("OMSens/backend", backendPath);
+  }
+  // set python
+  QString python = mpSensitivityOptimizationPage->getPythonTextBox()->text();
+  if (python.compare(OptionsDefaults::SensitivityOptimization::python) == 0) {
+    mpSettings->remove("OMSens/python");
+  } else {
+    mpSettings->setValue("OMSens/python", python);
+  }
+}
+
+/*!
  * \brief OptionsDialog::saveTraceabilitySettings
  * Saves the traceability settings in omedit.ini
  */
@@ -3201,6 +3243,9 @@ void OptionsDialog::addListItems()
   QListWidgetItem *pOMSimulatorItem = new QListWidgetItem(mpOptionsList);
   pOMSimulatorItem->setIcon(QIcon(":/Resources/icons/ssp-icon.svg"));
   pOMSimulatorItem->setText(tr("OMSimulator/SSP"));
+  // Sensitivity Optimization Item
+  QListWidgetItem *pSensitivityOptimizationItem = new QListWidgetItem(mpOptionsList);
+  pSensitivityOptimizationItem->setText(Helper::sensitivityOptimization);
   // Traceability Item
   QListWidgetItem *pTraceabilityItem = new QListWidgetItem(mpOptionsList);
   pTraceabilityItem->setIcon(QIcon(":/Resources/icons/traceability.svg"));
@@ -3233,6 +3278,7 @@ void OptionsDialog::createPages()
   addPage(mpDebuggerPage);
   addPage(mpFMIPage);
   addPage(mpOMSimulatorPage);
+  addPage(mpSensitivityOptimizationPage);
   addPage(mpTraceabilityPage);
 }
 
@@ -3339,6 +3385,7 @@ void OptionsDialog::saveSettings()
   saveDebuggerSettings();
   saveFMISettings();
   saveOMSimulatorSettings();
+  saveSensitivityOptimizationSettings();
   saveTraceabilitySettings();
   // emit the signal so that all text editors can set settings & line wrapping mode
   emit textSettingsChanged();
@@ -6504,6 +6551,74 @@ OMSimulatorPage::OMSimulatorPage(OptionsDialog *pOptionsDialog)
   pMainLayout->setAlignment(Qt::AlignTop);
   pMainLayout->addWidget(mpGeneralGroupBox);
   setLayout(pMainLayout);
+}
+
+/*!
+ * \class SensitivityOptimizationPage
+ * Creates an interface for Sensitivity Optimization settings.
+ */
+/*!
+ * \brief SensitivityOptimizationPage::SensitivityOptimizationPage
+ * \param pOptionsDialog
+ */
+SensitivityOptimizationPage::SensitivityOptimizationPage(OptionsDialog *pOptionsDialog)
+  : QWidget(pOptionsDialog)
+{
+  mpOptionsDialog = pOptionsDialog;
+  mpGeneralGroupBox = new QGroupBox(Helper::general);
+  Label *pInfoLabel = new Label(tr("Sensitivity Optimization relies on the OMSens Python package. "
+                                   "Follow the installation instructions on the <a href=\"https://github.com/OpenModelica/OMSens\">OMSens GitHub page</a>.<br /><br />"
+                                   "Set the OMSens backend to the directory where the OMSens Python package is installed.<br />"
+                                   "Specify the Python executable you want to use for running OMSens scripts."));
+  pInfoLabel->setWordWrap(true);
+  pInfoLabel->setOpenExternalLinks(true);
+  pInfoLabel->setTextInteractionFlags(Qt::TextBrowserInteraction);
+  pInfoLabel->setToolTip("");
+  // omsens backend
+  mpOMSensBackendPathLabel = new Label(tr("OMSens Backend Path:"));
+  mpOMSensBackendPathTextBox = new QLineEdit;
+  mpOMSensBackendBrowseButton = new QPushButton(Helper::browse);
+  mpOMSensBackendBrowseButton->setAutoDefault(false);
+  connect(mpOMSensBackendBrowseButton, SIGNAL(clicked()), SLOT(browseOMSensBackendPath()));
+  // python executable
+  mpPythonLabel = new Label(tr("Python:"));
+  mpPythonTextBox = new QLineEdit(OptionsDefaults::SensitivityOptimization::python);
+  mpPythonBrowseButton = new QPushButton(Helper::browse);
+  mpPythonBrowseButton->setAutoDefault(false);
+  connect(mpPythonBrowseButton, SIGNAL(clicked()), SLOT(browsePythonExecutable()));
+  // set the layout
+  QGridLayout *pGeneralGroupBoxLayout = new QGridLayout;
+  pGeneralGroupBoxLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
+  pGeneralGroupBoxLayout->addWidget(pInfoLabel, 0, 0, 1, 3);
+  pGeneralGroupBoxLayout->addWidget(mpOMSensBackendPathLabel, 1, 0);
+  pGeneralGroupBoxLayout->addWidget(mpOMSensBackendPathTextBox, 1, 1);
+  pGeneralGroupBoxLayout->addWidget(mpOMSensBackendBrowseButton, 1, 2);
+  pGeneralGroupBoxLayout->addWidget(mpPythonLabel, 2, 0);
+  pGeneralGroupBoxLayout->addWidget(mpPythonTextBox, 2, 1);
+  pGeneralGroupBoxLayout->addWidget(mpPythonBrowseButton, 2, 2);
+  mpGeneralGroupBox->setLayout(pGeneralGroupBoxLayout);
+  QVBoxLayout *pMainLayout = new QVBoxLayout;
+  pMainLayout->setAlignment(Qt::AlignTop);
+  pMainLayout->addWidget(mpGeneralGroupBox);
+  setLayout(pMainLayout);
+}
+
+/*!
+ * \brief SensitivityOptimizationPage::browseOMSensBackendPath
+ * Browse OMSens backend path.
+ */
+void SensitivityOptimizationPage::browseOMSensBackendPath()
+{
+  mpOMSensBackendPathTextBox->setText(StringHandler::getExistingDirectory(this, QString("%1 - %2").arg(Helper::applicationName).arg(Helper::chooseDirectory), NULL));
+}
+
+/*!
+ * \brief SensitivityOptimizationPage::browsePythonExecutable
+ * Browse Python executable.
+ */
+void SensitivityOptimizationPage::browsePythonExecutable()
+{
+  mpPythonTextBox->setText(StringHandler::getOpenFileName(this, QString("%1 - %2").arg(Helper::applicationName, Helper::chooseFile)));
 }
 
 /*!

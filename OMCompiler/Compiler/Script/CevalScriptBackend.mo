@@ -115,6 +115,7 @@ import PackageManagement;
 import Parser;
 import Print;
 import Refactor;
+import ReverseLookup;
 import RewriteRules;
 import SCode;
 import SCodeDump;
@@ -1503,6 +1504,11 @@ algorithm
     case ("linearize",(vals as Values.CODE(Absyn.C_TYPENAME(className))::_))
       equation
         System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_TOTAL);
+        // Ensure that the linearization dump language is set to modelica if it is none
+        str = Flags.getConfigString(Flags.LINEARIZATION_DUMP_LANGUAGE);
+        if (stringEq(str,"none")) then
+          FlagsUtil.setConfigString(Flags.LINEARIZATION_DUMP_LANGUAGE, "modelica");
+        end if;
 
         (b,outCache,compileDir,executable,_,outputFormat_str,_,simflags,resultValues,vals,dirs) = buildModel(outCache,inEnv,vals,msg);
         if b then
@@ -3395,6 +3401,9 @@ algorithm
     case ("getDefaultOpenCLDevice", {})
       then ValuesUtil.makeInteger(Config.getDefaultOpenCLDevice());
 
+    case ("reverseLookup", {Values.CODE(Absyn.C_TYPENAME(path)), Values.CODE(Absyn.C_TYPENAME(classpath)), Values.BOOL(b1), Values.BOOL(b2)})
+      then ValuesUtil.makeString(ReverseLookup.lookup(path, classpath, SymbolTable.getAbsyn(), b1, b2));
+
  end matchcontinue;
 end cevalInteractiveFunctions4;
 
@@ -3660,6 +3669,7 @@ algorithm
       NFInst.instClassInProgram(cls_name, scode_p, annotation_p, relaxedFrontend, dumpFlat);
   else
     inst_failed := true;
+    NFInst.clearCaches();
   end try;
 
   FlagsUtil.set(Flags.NF_API, nf_api);
@@ -4364,7 +4374,7 @@ algorithm
 
   isWindows := Autoconf.os == "Windows_NT";
 
-  fmutmp := substring(intString(stringHashDjb2(filenameprefix)), 1, 3) + ".fmutmp";
+  fmutmp := Util.hashFileNamePrefix(filenameprefix) + ".fmutmp";
   logfile := filenameprefix + ".log";
   dir := fmutmp+"/sources/";
 

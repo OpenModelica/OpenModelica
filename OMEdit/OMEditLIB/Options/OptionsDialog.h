@@ -70,6 +70,7 @@ class CRMLPage;
 class DebuggerPage;
 class FMIPage;
 class OMSimulatorPage;
+class SensitivityOptimizationPage;
 class TraceabilityPage;
 class TabSettings;
 class StackFramesWidget;
@@ -117,6 +118,7 @@ public:
   void readDebuggerSettings();
   void readFMISettings();
   void readOMSimulatorSettings();
+  void readSensitivityOptimizationSettings();
   void readTraceabilitySettings();
   void saveGeneralSettings();
   void saveNFAPISettings();
@@ -130,6 +132,7 @@ public:
   void saveCEditorSettings();
   void saveHTMLEditorSettings();
   void saveOMSimulatorSettings();
+  void saveSensitivityOptimizationSettings();
   void saveTraceabilitySettings();
   void saveGraphicalViewsSettings();
   void saveSimulationSettings();
@@ -169,6 +172,7 @@ public:
   DebuggerPage* getDebuggerPage() {return mpDebuggerPage;}
   FMIPage* getFMIPage() {return mpFMIPage;}
   OMSimulatorPage* getOMSimulatorPage() {return mpOMSimulatorPage;}
+  SensitivityOptimizationPage* getSensitivityOptimizationPage() {return mpSensitivityOptimizationPage;}
   TraceabilityPage* getTraceabilityPage() {return mpTraceabilityPage;}
   void emitModelicaEditorSettingsChanged() {emit modelicaEditorSettingsChanged();}
   void saveDialogGeometry();
@@ -221,6 +225,7 @@ private:
   DebuggerPage *mpDebuggerPage;
   FMIPage *mpFMIPage;
   OMSimulatorPage *mpOMSimulatorPage;
+  SensitivityOptimizationPage *mpSensitivityOptimizationPage;
   TraceabilityPage *mpTraceabilityPage;
   QSettings *mpSettings;
   QListWidget *mpOptionsList;
@@ -1046,6 +1051,27 @@ private:
   ComboBox *mpLoggingLevelComboBox;
   Label *mpCommandLineOptionsLabel;
   QLineEdit *mpCommandLineOptionsTextBox;
+};
+
+class SensitivityOptimizationPage : public QWidget
+{
+  Q_OBJECT
+public:
+  SensitivityOptimizationPage(OptionsDialog *pOptionsDialog);
+  QLineEdit *getOMSensBackendPathTextBox() const {return mpOMSensBackendPathTextBox;}
+  QLineEdit *getPythonTextBox() const {return mpPythonTextBox;}
+private:
+  OptionsDialog *mpOptionsDialog;
+  QGroupBox *mpGeneralGroupBox;
+  Label *mpOMSensBackendPathLabel;
+  QLineEdit *mpOMSensBackendPathTextBox;
+  QPushButton *mpOMSensBackendBrowseButton;
+  Label *mpPythonLabel;
+  QLineEdit *mpPythonTextBox;
+  QPushButton *mpPythonBrowseButton;
+private slots:
+  void browseOMSensBackendPath();
+  void browsePythonExecutable();
 };
 
 class TraceabilityPage : public QWidget

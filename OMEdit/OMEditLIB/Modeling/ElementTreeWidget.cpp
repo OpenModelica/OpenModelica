@@ -49,7 +49,6 @@
  * \brief ElementTreeItem::ElementTreeItem
  */
 ElementTreeItem::ElementTreeItem()
-  : QObject(0)
 {
   mIsRootItem = true;
 }
@@ -87,7 +86,6 @@ QString makeTooltip(const QString &restriction, const QString &name, const QStri
  * \param pParentElementTreeItem
  */
 ElementTreeItem::ElementTreeItem(ModelInstance::Element *pElement, ElementTreeItem *pParentElementTreeItem)
-  : QObject(pParentElementTreeItem)
 {
   mpParentElementTreeItem = pParentElementTreeItem;
   if (pElement->isExtend()) {
@@ -115,8 +113,7 @@ ElementTreeItem::ElementTreeItem(ModelInstance::Element *pElement, ElementTreeIt
  */
 ElementTreeItem::~ElementTreeItem()
 {
-  qDeleteAll(mChildren);
-  mChildren.clear();
+  removeChildren();
 }
 
 /*!
@@ -127,6 +124,17 @@ void ElementTreeItem::removeChildren()
 {
   qDeleteAll(mChildren);
   mChildren.clear();
+}
+
+/*!
+ * \brief ElementTreeItem::removeChild
+ * Removes the given child.
+ * \param pLocalsTreeItem
+ */
+void ElementTreeItem::removeChild(ElementTreeItem *pElementTreeItem)
+{
+  mChildren.removeOne(pElementTreeItem);
+  delete pElementTreeItem;
 }
 
 /*!
@@ -266,12 +274,17 @@ int ElementTreeModel::columnCount(const QModelIndex &parent) const
  */
 int ElementTreeModel::rowCount(const QModelIndex &parent) const
 {
+  ElementTreeItem *pParentElementTreeItem;
   if (parent.column() > 0) {
     return 0;
   }
 
-  const ElementTreeItem *pParentElementTreeItem = parent.isValid() ? static_cast<const ElementTreeItem*>(parent.internalPointer()) : mpRootElementTreeItem;
-  return pParentElementTreeItem->childrenSize();
+  if (!parent.isValid()) {
+    pParentElementTreeItem = mpRootElementTreeItem;
+  } else {
+    pParentElementTreeItem = static_cast<ElementTreeItem*>(parent.internalPointer());
+  }
+  return pParentElementTreeItem ? pParentElementTreeItem->childrenSize() : 0;
 }
 
 /*!
@@ -305,12 +318,18 @@ QModelIndex ElementTreeModel::index(int row, int column, const QModelIndex &pare
     return QModelIndex();
   }
 
-  ElementTreeItem *pParentElementTreeItem = parent.isValid() ? static_cast<ElementTreeItem*>(parent.internalPointer()) : mpRootElementTreeItem;
-  if (auto *childItem = pParentElementTreeItem->child(row)) {
-    return createIndex(row, column, childItem);
+  ElementTreeItem *pParentElementTreeItem;
+  if (!parent.isValid()) {
+    pParentElementTreeItem = mpRootElementTreeItem;
+  } else {
+    pParentElementTreeItem = static_cast<ElementTreeItem*>(parent.internalPointer());
   }
 
-  return QModelIndex();
+  if (row < 0 || row >= pParentElementTreeItem->childrenSize()) {
+    return QModelIndex();
+  }
+
+  return createIndex(row, column, pParentElementTreeItem->child(row));
 }
 
 /*!
@@ -373,7 +392,25 @@ Qt::ItemFlags ElementTreeModel::flags(const QModelIndex &index) const
  */
 QModelIndex ElementTreeModel::elementTreeItemIndex(const ElementTreeItem *pElementTreeItem) const
 {
-  return elementTreeItemIndexHelper(pElementTreeItem, mpRootElementTreeItem, QModelIndex());
+  if (!pElementTreeItem || pElementTreeItem == mpRootElementTreeItem) {
+    return QModelIndex();
+  }
+
+  return createIndex(pElementTreeItem->row(), 0, const_cast<ElementTreeItem *>(pElementTreeItem));
+}
+
+/*!
+ * \brief ElementTreeModel::removeElements
+ * Removes all the Elements from the Element Browser.
+ */
+void ElementTreeModel::removeElements()
+{
+  const int n = mpRootElementTreeItem->childrenSize();
+  if (n > 0) {
+    beginRemoveRows(elementTreeItemIndex(mpRootElementTreeItem), 0, n - 1);
+    mpRootElementTreeItem->removeChildren();
+    endRemoveRows();
+  }
 }
 
 /*!
@@ -385,11 +422,7 @@ void ElementTreeModel::addElements(ModelInstance::Model *pModel)
 {
   mpElementWidget->setIgnoreSelectionChange(true);
   // remove the existing elements if there are any
-  if (mpRootElementTreeItem->childrenSize() > 0) {
-    beginRemoveRows(elementTreeItemIndex(mpRootElementTreeItem->parent()), 0, mpRootElementTreeItem->childrenSize() - 1);
-    mpRootElementTreeItem->removeChildren();
-    endRemoveRows();
-  }
+  removeElements();
   // add model elements recursively
   addElementsHelper(pModel, mpRootElementTreeItem);
   mpElementWidget->setIgnoreSelectionChange(false);
@@ -430,7 +463,8 @@ void ElementTreeModel::addElementsHelper(ModelInstance::Model *pModel, ElementTr
   if (pModel) {
     QModelIndex index = elementTreeItemIndex(pParentElementTreeItem);
     int row = 0;
-    LibraryTreeItem *pLibraryTreeItem = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem(pModel->getName());
+    const QString name = pModel->getReplaceable() ? pModel->getNameIfReplaceable() : pModel->getName();
+    LibraryTreeItem *pLibraryTreeItem = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem(name);
     if (pLibraryTreeItem && pLibraryTreeItem->getAccess() >= LibraryTreeItem::icon) {
       QList<ModelInstance::Element*> elements = pModel->getElements();
       QList<ModelInstance::Element*> visibleElements;
@@ -452,31 +486,6 @@ void ElementTreeModel::addElementsHelper(ModelInstance::Model *pModel, ElementTr
       }
     }
   }
-}
-
-/*!
- * \brief ElementTreeModel::elementTreeItemIndexHelper
- * Helper function for ElementTreeModel::ElementTreeItemIndex()
- * \param pElementTreeItem
- * \param pParentElementTreeItem
- * \param parentIndex
- * \return
- */
-QModelIndex ElementTreeModel::elementTreeItemIndexHelper(const ElementTreeItem *pElementTreeItem, const ElementTreeItem *pParentElementTreeItem,
-                                                          const QModelIndex &parentIndex) const
-{
-  if (pElementTreeItem == pParentElementTreeItem) {
-    return parentIndex;
-  }
-  for (int i = pParentElementTreeItem->childrenSize(); --i >= 0; ) {
-    const ElementTreeItem *pChildElementTreeItem = pParentElementTreeItem->child(i);
-    QModelIndex childIndex = index(i, 0, parentIndex);
-    QModelIndex index = elementTreeItemIndexHelper(pElementTreeItem, pChildElementTreeItem, childIndex);
-    if (index.isValid()) {
-      return index;
-    }
-  }
-  return QModelIndex();
 }
 
 /*!
@@ -523,8 +532,6 @@ ElementWidget::ElementWidget(QWidget *pParent)
   mpElementTreeView = new ElementTreeView(this);
   mpElementTreeView->setModel(mpElementTreeProxyModel);
   mpElementTreeView->setSelectionMode(QAbstractItemView::ExtendedSelection);
-  connect(mpElementTreeModel, SIGNAL(rowsInserted(QModelIndex,int,int)), mpElementTreeProxyModel, SLOT(invalidate()));
-  connect(mpElementTreeModel, SIGNAL(rowsRemoved(QModelIndex,int,int)), mpElementTreeProxyModel, SLOT(invalidate()));
   connect(mpTreeSearchFilters->getExpandAllButton(), SIGNAL(clicked()), mpElementTreeView, SLOT(expandAll()));
   connect(mpTreeSearchFilters->getCollapseAllButton(), SIGNAL(clicked()), mpElementTreeView, SLOT(collapseAll()));
   connect(mpElementTreeView->selectionModel(), SIGNAL(selectionChanged(QItemSelection,QItemSelection)), SLOT(elementSelectionChanged(QItemSelection,QItemSelection)));

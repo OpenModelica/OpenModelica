@@ -55,7 +55,6 @@ protected
   import NFInstNode.InstNode;
   import InstContext = NFInstContext;
   import NFFunction.Function;
-  import NFFlatten.FunctionTreeImpl;
   import SimplifyExp = NFSimplifyExp;
   import Statement = NFStatement;
   import Subscript = NFSubscript;
@@ -121,10 +120,10 @@ public
       case StrongComponent.SINGLE_COMPONENT() algorithm
         // solve the equation for the variable
         varName := BVariable.getVarName(comp.var);
-        (solvedEq, _, status, _) := Solve.solveBody(Pointer.access(comp.eqn), varName, FunctionTreeImpl.EMPTY());
+        (solvedEq, status, _) := Solve.solveBody(Pointer.access(comp.eqn), varName);
         if status == NBSolve.Status.EXPLICIT then
           // apply all previous replacements on the RHS
-          replace_exp := Equation.getRHS(solvedEq);
+          SOME(replace_exp) := Equation.getRHS(solvedEq);
           replace_exp := Expression.map(replace_exp, function applySimpleExp(replacements = replacements));
           replace_exp := SimplifyExp.simplifyDump(replace_exp, true, getInstanceName());
           // add the new replacement rule
@@ -341,8 +340,13 @@ public
         if not List.all(input_crefs, ComponentRef.sizeKnown) then
           body_exp := Typing.typeExp(body_exp, NFInstContext.RHS, sourceInfo(), true);
         end if;
+
+        // combine binaries and simplify
         body_exp := SimplifyExp.combineBinaries(body_exp);
-        body_exp := SimplifyExp.simplifyDump(body_exp, true, getInstanceName(), "\n");
+        body_exp := SimplifyExp.simplifyDump(body_exp, true, getInstanceName());
+
+        // replace body with possible nested functions
+        body_exp := Expression.map(body_exp, function applyFuncExp(replacements = replacements, variables = variables));
 
         if Flags.isSet(Flags.DUMPBACKENDINLINE) then
           print("[" + getInstanceName() + "] Inlining: " + Expression.toString(exp) + "\n");

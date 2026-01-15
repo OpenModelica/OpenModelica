@@ -214,13 +214,15 @@ template initDefaultValXml(DAE.Type type_)
   else error(sourceInfo(), 'initial value of unknown type: <%unparseType(type_)%>')
 end initDefaultValXml;
 
-template initValXml(Exp exp)
+template initValXml(Exp exp, String stringQuotes)
 ::=
   match exp
-  case ICONST(__) then integer
-  case RCONST(__) then real
-  case SCONST(__) then '<%Util.escapeModelicaStringToXmlString(string)%>'
-  case BCONST(__) then if bool then "true" else "false"
+  case ICONST(__)       then integer
+  case RCONST(__)       then real
+  case SCONST(__)       then '<%stringQuotes%><%Util.escapeModelicaStringToXmlString(string)%><%stringQuotes%>'
+  case BCONST(__)       then bool
+  case ARRAY(__)        then '<%array |> elem => initValXml(elem, stringQuotes) ;separator=" "%>'
+  case REDUCTION(__)    then if Expression.isSimpleLiteralValue(expr, true) then '<%initValXml(expr, stringQuotes)%>' else ''
   case ENUM_LITERAL(__) then '<%index%>'
   else error(sourceInfo(), 'initial value of unknown type: <%dumpExp(exp,"\"")%>')
 end initValXml;
@@ -244,31 +246,31 @@ end getVariablity;
 template variabilityString(VarKind varKind)
 ::=
   match varKind
-    case VARIABLE() then "variable"
-    case STATE(derName=NONE()) then 'STATE(<%index%>)'
+    case VARIABLE()               then "variable"
+    case STATE(derName=NONE())    then 'STATE(<%index%>)'
     case STATE(derName=SOME(dcr)) then 'STATE(<%index%>,<%crefStrNoUnderscore(dcr)%>)'
-    case STATE_DER()   then "STATE_DER"
-    case DUMMY_DER()   then "DUMMY_DER"
-    case DUMMY_STATE() then "DUMMY_STATE"
-    case CLOCKED_STATE()  then "CLOCKED_STATE"
-    case DISCRETE()    then "DISCRETE"
-    case PARAM()       then "PARAM"
-    case CONST()       then "CONST"
-    case EXTOBJ()  then 'EXTOBJ: <%dotPath(fullClassName)%>'
-    case JAC_VAR()     then "JACOBIAN_VAR"
-    case JAC_TMP_VAR()then "JACOBIAN_TMP_VAR"
-    case SEED_VAR()    then "SEED_VAR"
-    case OPT_CONSTR()  then "OPT_CONSTR"
-    case OPT_FCONSTR()  then "OPT_FCONSTR"
-    case OPT_INPUT_WITH_DER()  then "OPT_INPUT_WITH_DER"
-    case OPT_INPUT_DER()  then "OPT_INPUT_DER"
-    case OPT_TGRID()  then "OPT_TGRID"
-    case OPT_LOOP_INPUT()  then "OPT_LOOP_INPUT"
-    case ALG_STATE()  then "ALG_STATE"
-    case DAE_RESIDUAL_VAR() then "DAE_RESIDUAL_VAR"
-    case DAE_AUX_VAR() then "DAE_AUX_VAR"
-    case LOOP_ITERATION() then "LOOP_ITERATION"
-    case LOOP_SOLVED() then "LOOP_SOLVED"
+    case STATE_DER()              then "STATE_DER"
+    case DUMMY_DER()              then "DUMMY_DER"
+    case DUMMY_STATE()            then "DUMMY_STATE"
+    case CLOCKED_STATE()          then "CLOCKED_STATE"
+    case DISCRETE()               then "DISCRETE"
+    case PARAM()                  then "PARAM"
+    case CONST()                  then "CONST"
+    case EXTOBJ()                 then 'EXTOBJ: <%dotPath(fullClassName)%>'
+    case JAC_VAR()                then "JACOBIAN_VAR"
+    case JAC_TMP_VAR()            then "JACOBIAN_TMP_VAR"
+    case SEED_VAR()               then "SEED_VAR"
+    case OPT_CONSTR()             then "OPT_CONSTR"
+    case OPT_FCONSTR()            then "OPT_FCONSTR"
+    case OPT_INPUT_WITH_DER()     then "OPT_INPUT_WITH_DER"
+    case OPT_INPUT_DER()          then "OPT_INPUT_DER"
+    case OPT_TGRID()              then "OPT_TGRID"
+    case OPT_LOOP_INPUT()         then "OPT_LOOP_INPUT"
+    case ALG_STATE()              then "ALG_STATE"
+    case DAE_RESIDUAL_VAR()       then "DAE_RESIDUAL_VAR"
+    case DAE_AUX_VAR()            then "DAE_AUX_VAR"
+    case LOOP_ITERATION()         then "LOOP_ITERATION"
+    case LOOP_SOLVED()            then "LOOP_SOLVED"
     else "#UNKNOWN_VARKIND"
   end match
 end variabilityString;
@@ -336,8 +338,8 @@ template attributeString(DAE.Exp exp, String attr_name)
     case RCONST(__)
     case SCONST(__)
     case BCONST(__)
-    case ENUM_LITERAL(__) then ' <%attr_name%>="<%initValXml(exp)%>"'
-    case ARRAY(__)        then if Expression.isSimpleLiteralValue(exp, true) then ' <%attr_name%>="<%array |> elem => initValXml(elem) ;separator=" "%>"' else ''
+    case ENUM_LITERAL(__) then ' <%attr_name%>="<%initValXml(exp, '')%>"'
+    case ARRAY(__)        then if Expression.isSimpleLiteralValue(exp, true) then ' <%attr_name%>="<%array |> elem => initValXml(elem, '&quot;') ;separator=" "%>"' else ''
     /* this is basically an each operator, just write one value and repeat it for the size when using it later */
     case REDUCTION()      then if Expression.isSimpleLiteralValue(expr, true) then '<%attributeString(expr, attr_name)%>' else ''
     else ''

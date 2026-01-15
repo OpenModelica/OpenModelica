@@ -42,7 +42,6 @@ protected
   import ComponentRef = NFComponentRef;
   import Dimension = NFDimension;
   import Expression = NFExpression;
-  import NFFlatten.FunctionTreeImpl;
   import SimplifyExp = NFSimplifyExp;
   import Subscript = NFSubscript;
   import Type = NFType;
@@ -158,7 +157,7 @@ public
           occ_lst := UnorderedSet.toList(var_occurences);
           (iterators, _)  := Iterator.getFrames(Equation.getForIterator(eqn));
           order := UnorderedMap.fromLists(iterators, list(EvalOrder.INDEPENDENT for i in iterators), ComponentRef.hash, ComponentRef.isEqual);
-          if listLength(occ_lst) <> 1 then
+          if not List.hasOneElement(occ_lst) then
             subs  := list(ComponentRef.subscriptsAllWithWholeFlat(cref) for cref in occ_lst);
             subs  := List.transposeList(subs);
             subs_to_solve := ComponentRef.subscriptsAllWithWholeFlat(cref_to_solve);
@@ -809,10 +808,10 @@ protected
           for cref in crefs loop
             failed := false;
             // solve the artificial equation for cref
-            (solved_eqn, _, status, _) := Solve.solveBody(eqn, cref, FunctionTreeImpl.EMPTY());
+            (solved_eqn, status, _) := Solve.solveBody(eqn, cref);
             if status == NBSolve.Status.EXPLICIT then
               // try to used solved value as new parameter value to fulfill constraint
-              _ := match checkConstraint(Equation.getRHS(solved_eqn), optimal_values)
+              _ := match checkConstraint(Util.getOption(Equation.getRHS(solved_eqn)), optimal_values)
                 case SOME(value) algorithm
                   // saving previous optimal value and checking new one
                   old_optimal_value := UnorderedMap.getSafe(cref, optimal_values, sourceInfo());

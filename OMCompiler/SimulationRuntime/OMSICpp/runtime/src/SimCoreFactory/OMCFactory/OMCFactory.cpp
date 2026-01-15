@@ -41,7 +41,12 @@ public:
 protected:
     LoggerXMLTCP(std::string host, int port, LogSettings& logSettings)
         : LoggerXML(logSettings, true, _sstream)
+// from_string no longer available in boost 1.87
+#if ((BOOST_VERSION / 100000) >= 1 && (BOOST_VERSION / 100 % 1000) >= 87)
+          , _endpoint(boost::asio::ip::make_address(host), port)
+#else
           , _endpoint(boost::asio::ip::address::from_string(host), port)
+#endif
           , _socket(_ios)
     {
         if (logSettings.format != LF_XML && logSettings.format != LF_XMLTCP)
@@ -87,7 +92,12 @@ protected:
         }
     }
 
+// io_service no longer available in boost 1.87
+#if ((BOOST_VERSION / 100000) >= 1 && (BOOST_VERSION / 100 % 1000) >= 87)
+    boost::asio::io_context _ios;
+#else
     boost::asio::io_service _ios;
+#endif
     boost::asio::ip::tcp::endpoint _endpoint;
     boost::asio::ip::tcp::socket _socket;
     std::stringstream _sstream;

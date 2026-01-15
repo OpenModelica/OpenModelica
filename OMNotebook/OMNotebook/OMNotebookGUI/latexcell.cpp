@@ -878,9 +878,11 @@ void LatexCell::eval(bool silent)
     evaluated_ = true;
     QString tempdir=OmcInteractiveEnvironment::TmpPath();
     QTemporaryFile tfile;
-    tfile.open();
-    QString uniquefilename= tfile.fileName().section("/",-1,-1);
-    tfile.close();
+    QString uniquefilename;
+    if (tfile.open()) {
+      uniquefilename= tfile.fileName().section("/",-1,-1);
+      tfile.close();
+    }
     //qDebug()<<"checktempdir"<<tempdir1;
     QString tempfname = tempdir + "/latexfile" + uniquefilename;
 
@@ -898,10 +900,18 @@ void LatexCell::eval(bool silent)
             expr.append("\\end{document}");
         }
         QFile file(Tex);
-        file.open(QIODevice::WriteOnly);
-        QTextStream stream(&file);
-        stream <<expr;
-        file.close();
+        if (file.open(QIODevice::WriteOnly)) {
+          QTextStream stream(&file);
+          stream <<expr;
+          file.close();
+        } else {
+          if (!silent) {
+            input_->clear();
+            input_->textCursor().insertText(tr("Error: unable to write to %1").arg(Tex));
+            setClosed(false);
+            setState(Error_l);
+          }
+        }
 
         QProcess *process = new QProcess(this);
         process->setWorkingDirectory(tempdir);
@@ -925,17 +935,18 @@ void LatexCell::eval(bool silent)
             process->start("latex", QStringList() << "-halt-on-error" << Tex);
             process->waitForFinished();
             QFile logfile(log);
-            logfile.open(QIODevice::ReadOnly);
-            QStringList lines;
-            while(!logfile.atEnd())
-            {
-                QString line=logfile.readLine();
-                lines.append(line);
-            }
+            if (logfile.open(QIODevice::ReadOnly)) {
+              QStringList lines;
+              while(!logfile.atEnd())
+              {
+                  QString line=logfile.readLine();
+                  lines.append(line);
+              }
 
-            if(lines.last().contains("1 page"))
-            {
-                setpage=true;
+              if(lines.last().contains("1 page"))
+              {
+                  setpage=true;
+              }
             }
 
             QString texoutput=process->readAllStandardOutput();

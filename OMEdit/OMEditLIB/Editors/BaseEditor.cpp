@@ -2158,6 +2158,11 @@ void BaseEditor::initialize()
 {
   mpInfoBar = new InfoBar(this);
   mpInfoBar->hide();
+  mpReloadAsModelicaInfoBar = new ReloadAsModelicaInfoBar(this);
+  // Show the Reload as Modelica info bar only for text files which are internal.
+  if (!(mpModelWidget && mpModelWidget->getLibraryTreeItem() && mpModelWidget->getLibraryTreeItem()->isText() && mpModelWidget->getLibraryTreeItem()->isModelicaFile())) {
+    mpReloadAsModelicaInfoBar->hide();
+  }
   mpPlainTextEdit = new PlainTextEdit(this);
   mpFindReplaceWidget = new FindReplaceWidget(this);
   mpFindReplaceWidget->hide();
@@ -2168,6 +2173,7 @@ void BaseEditor::initialize()
   pMainLayout->setContentsMargins(0, 0, 0, 0);
   pMainLayout->setAlignment(Qt::AlignLeft | Qt::AlignTop);
   pMainLayout->addWidget(mpInfoBar, 0, Qt::AlignTop);
+  pMainLayout->addWidget(mpReloadAsModelicaInfoBar, 0, Qt::AlignTop);
   pMainLayout->addWidget(mpPlainTextEdit, 1);
   pMainLayout->addWidget(mpFindReplaceWidget, 0, Qt::AlignBottom);
   setLayout(pMainLayout);
@@ -2591,6 +2597,22 @@ void BaseEditor::toggleCommentSelection()
 }
 
 /*!
+ * \brief BaseEditor::reloadAsModelica
+ * Slot activated when reload button is clicked.
+ * Saves all files and reload them as Modelica model(s).
+ */
+void BaseEditor::reloadAsModelica()
+{
+  if (mpModelWidget && mpModelWidget->getLibraryTreeItem()) {
+    LibraryTreeItem *pTopLevelLibraryTreeItem = LibraryTreeModel::getTopLevelLibraryTreeItem(mpModelWidget->getLibraryTreeItem());
+    if (pTopLevelLibraryTreeItem) {
+      MainWindow::instance()->getLibraryWidget()->saveLibraryTreeItem(pTopLevelLibraryTreeItem);
+    }
+    MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->reloadClass(mpModelWidget->getLibraryTreeItem(), false);
+  }
+}
+
+/*!
  * \class FindReplaceWidget
  * Creates a widget within editor for find and replace.
  */
@@ -2987,4 +3009,47 @@ void InfoBar::showMessage(QString message)
 {
   mpInfoLabel->setText(message);
   show();
+}
+
+/*!
+ * \class ReloadAsModelicaInfoBar
+ * \brief Display message to reload as Modelica model above the BaseEditor.
+ */
+/*!
+ * \brief ReloadAsModelicaInfoBar::ReloadAsModelicaInfoBar
+ * \param pBaseEditor
+ */
+ReloadAsModelicaInfoBar::ReloadAsModelicaInfoBar(BaseEditor *pBaseEditor)
+  : QFrame(pBaseEditor)
+{
+  QPalette pal = palette();
+  pal.setColor(QPalette::Window, QColor(255, 255, 225));
+  pal.setColor(QPalette::WindowText, Qt::black);
+  setPalette(pal);
+  setFrameStyle(QFrame::StyledPanel);
+  setAutoFillBackground(true);
+  mpInfoLabel = new Label;
+  mpInfoLabel->setWordWrap(true);
+  if (pBaseEditor->getModelWidget() && pBaseEditor->getModelWidget()->getLibraryTreeItem()) {
+    LibraryTreeItem *pTopLevelLibraryTreeItem = LibraryTreeModel::getTopLevelLibraryTreeItem(pBaseEditor->getModelWidget()->getLibraryTreeItem());
+    if (pTopLevelLibraryTreeItem) {
+      const QString saveAndReload(tr("Once they have all been fixed, you can save and reload it in Modelica mode"));
+      QFileInfo fileInfo(pTopLevelLibraryTreeItem->getFileName());
+      if (fileInfo.isDir()) {
+        mpInfoLabel->setText(tr("The Modelica package %1 is open in text mode because of syntax errors in the code. %2.")
+                             .arg(pTopLevelLibraryTreeItem->getName(), saveAndReload));
+      } else {
+        mpInfoLabel->setText(tr("This Modelica file is open in text mode because of syntax errors in the code. %1.")
+                             .arg(saveAndReload));
+      }
+    }
+  }
+  mpReloadButton = new QPushButton(ResourceCache::getIcon(":/Resources/icons/refresh.svg"), tr("Save && Reload"));
+  connect(mpReloadButton, &QPushButton::clicked, pBaseEditor, &BaseEditor::reloadAsModelica);
+  // set the layout
+  QHBoxLayout *pMainLayout = new QHBoxLayout;
+  pMainLayout->setContentsMargins(2, 2, 2, 2);
+  pMainLayout->addWidget(mpInfoLabel);
+  pMainLayout->addWidget(mpReloadButton, 0, Qt::AlignRight);
+  setLayout(pMainLayout);
 }

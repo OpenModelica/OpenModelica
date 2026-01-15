@@ -78,6 +78,12 @@ public
     output T t = slice.t;
   end getT;
 
+  function hash
+    input Slice<T> slice;
+    input hashT func;
+    output Integer i = func(slice.t);
+  end hash;
+
   function isEqual
     input Slice<T> slice1;
     input Slice<T> slice2;
@@ -174,6 +180,12 @@ public
     func(slice.t);
   end applyMutable;
 
+  function check<T2>
+    input Slice<T> slice;
+    input checkT func;
+    output T2 t2 = func(slice.t);
+  end check;
+
   // ############################################################
   //                Partial Functions
   // ############################################################
@@ -188,6 +200,11 @@ public
     output Integer s;
   end sizeT;
 
+  partial function hashT
+    input T t;
+    output Integer i;
+  end hashT;
+
   partial function isEqualT
     input T t1;
     input T t2;
@@ -201,6 +218,11 @@ public
   partial function applyMutableT
     input T t;
   end applyMutableT;
+
+  partial function checkT<T2>
+    input T t;
+    output T2 t2;
+  end checkT;
 
   partial function filterCref
     "partial function that needs to be provided.
@@ -403,7 +425,7 @@ public
         fail();
       else
         // fill the equation with repeated scalar lists
-        scal_lst := List.repeat(scal_lst, realInt(eqn_size/listLength(scal_lst)));
+        scal_lst := List.repeat(scal_lst, intDiv(eqn_size, listLength(scal_lst)));
       end if;
 
       idx := 1;
@@ -448,7 +470,7 @@ public
 
     // sanity check for eqn size and get size of body equation
     if mod(eqn_size, iter_size) == 0 then
-      body_size := realInt(eqn_size/iter_size);
+      body_size := intDiv(eqn_size, iter_size);
     else
       Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName()
         + " failed because the equation size " + intString(eqn_size)
@@ -512,7 +534,7 @@ public
 
     // sanity check for eqn size and get size of body equation
     if mod(eqn_size, iter_size) == 0 then
-      body_size := realInt(eqn_size/iter_size);
+      body_size := intDiv(eqn_size, iter_size);
     else
       Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName()
         + " failed because the equation size " + intString(eqn_size)
@@ -578,12 +600,12 @@ public
     scal_length := listLength(scal_tpl_lst);
     if mod(scal_length, body_size) == 0 then
       // body has to be repeated
-      body_repeat := realInt(scal_length/body_size);
+      body_repeat := intDiv(scal_length, body_size);
       element_repeat := 1;
     elseif mod(body_size, scal_length) == 0 then
       // element has to be repeated
       body_repeat := 1;
-      element_repeat := realInt(body_size/scal_length);
+      element_repeat := intDiv(body_size, scal_length);
     else
       Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName()
         + " failed because number of flattened indices " + intString(scal_length)
@@ -673,12 +695,12 @@ public
       input output list<ComponentRef> single_dep;
       input Pointer<list<ComponentRef>> full_deps;
     protected
-      Integer div, dep_size = listLength(single_dep);
+      Integer dep_size = listLength(single_dep);
     algorithm
       if row_size > dep_size then
         // repeat the element until it fits
         if intMod(row_size, dep_size) == 0 then
-          single_dep := List.repeat(single_dep, realInt(row_size/listLength(single_dep)));
+          single_dep := List.repeat(single_dep, intDiv(row_size, dep_size));
         else
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because dependencies of size " + intString(dep_size)
             + " could not be repeated to fit row size " + intString(row_size) + "."});
@@ -717,14 +739,20 @@ public
     input list<Integer> values;
     input output Integer index;
   protected
-    Integer factor = 1, size;
-    list<Integer> rest_sizes = sizes;
+    Integer factor = 1, val, siz;
+    list<Integer> val_trav = values, siz_trav = sizes;
   algorithm
-    for v in values loop
-      size :: rest_sizes := rest_sizes;
-      index := index + (v - 1) * factor;
-      factor := factor * size;
-    end for;
+    while not (listEmpty(val_trav) or listEmpty(siz_trav)) loop
+      val :: val_trav := val_trav;
+      siz :: siz_trav := siz_trav;
+      if val > siz then
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because value of " + intString(val)
+          + " is too large for size " + intString(siz) + "."});
+        fail();
+      end if;
+      index := index + (val - 1) * factor;
+      factor := factor * siz;
+    end while;
   end locationToIndex;
 
   function indexToLocation
@@ -1276,7 +1304,11 @@ protected
 
   function keyHash
     input Key key;
-    output Integer hash = stringHashDjb2(keyString(key));
+    output Integer hash = 5381;
+  algorithm
+    for k in key loop
+      hash := stringHashDjb2Continue(intString(k), hash);
+    end for;
   end keyHash;
 
   function keyEqual
@@ -1424,12 +1456,15 @@ protected
     UnorderedMap<Key, Val2> map2;
     list<ComponentRef> scalarized;
     list<Integer> scal_lst;
+    Integer size_comp;
+    list<Boolean> eq_reg;
   algorithm
     // 1. get the cref subscripts and dimensions as well as the equation dimensions (they have to match in length)
     subs    := ComponentRef.subscriptsAllWithWholeFlat(cref);
     dims    := Type.arrayDims(ComponentRef.getSubscriptedType(cref));
     eq_dims := Type.arrayDims(ty);
-    if List.compareLength(subs, dims) == 0 and List.compareLength(subs, regulars) == 0 and List.compareLength(subs, eq_dims) == 0 then
+
+    if List.compareLength(subs, dims) == 0 and List.compareLength(subs, regulars) == 0 then
       // 2. create a map that maps a configuration key to the corresponding scalar crefs
       stripped  := ComponentRef.stripSubscriptsAll(cref);
       key       := arrayCreate(listLength(subs), 0);
@@ -1444,9 +1479,28 @@ protected
         UnorderedMap.add(k, scal_lst, map2);
       end for;
 
-      // 4. iterate over all equation dimensions and use the map to get the correct dependencies
+      // 4. check if equation and variable are of same length, if not: fixup the lists to be of equal length
+      size_comp := List.compareLength(eq_dims, regulars);
+      if size_comp > 0 then
+        // bigger equation than variable
+        eq_reg := listAppend(regulars, List.fill(false, listLength(eq_dims) - listLength(regulars)));
+      elseif size_comp < 0 then
+        // bigger variable than equation
+        eq_reg := List.filterOnTrue(regulars, Util.id);
+        size_comp := List.compareLength(eq_dims, eq_reg);
+
+        if size_comp > 0 then
+          eq_reg := listAppend(eq_reg, List.fill(false, listLength(eq_dims) - listLength(eq_reg))) annotation(__OpenModelica_DisableListAppendWarning=true);
+        elseif size_comp < 0 then
+          eq_reg := List.firstN(eq_reg, listLength(eq_dims));
+        end if;
+      else
+        eq_reg := regulars;
+      end if;
+
+      // 5. iterate over all equation dimensions and use the map to get the correct dependencies
       key := arrayCreate(listLength(subs), 0);
-      resolveEquationDimensions(List.zip(eq_dims, regulars), map2, key, m, modes, Mode.create(eqn_name, {original_cref}, false), Pointer.create(skip_idx));
+      resolveEquationDimensions(List.zip(eq_dims, eq_reg), map2, key, m, modes, Mode.create(eqn_name, {original_cref}, false), Pointer.create(skip_idx));
     else
       Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because subscripts, dimensions and dependencies were not of equal length.\n"
         + "variable subscripts(" + intString(listLength(subs)) + "): " + List.toString(subs, Subscript.toString) + "\n"
@@ -1755,6 +1809,7 @@ protected
 
       // just a single element
       case Expression.INTEGER() then {rep.value};
+      case Expression.ENUM_LITERAL() then {rep.index};
 
       // build list from range
       case Expression.RANGE() algorithm

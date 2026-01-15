@@ -162,7 +162,7 @@ public
       then fail();
     end match;
 
-    dim := INTEGER(realInt((stop-start)/step + 1), NFPrefixes.Variability.CONSTANT);
+    dim := INTEGER(intDiv(stop-start, step) + 1, NFPrefixes.Variability.CONSTANT);
   end fromRange;
 
   function fromInteger
@@ -451,6 +451,15 @@ public
       case UNTYPED() then Expression.toString(dim.dimension);
     end match;
   end toString;
+
+  function hashList
+    input list<Dimension> dims;
+    output Integer hash = 5381;
+  algorithm
+    for dim in dims loop
+      hash := stringHashDjb2Continue(toString(dim), hash);
+    end for;
+  end hashList;
 
   function toStringList
     input list<Dimension> dims;

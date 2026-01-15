@@ -55,6 +55,7 @@
 #include "sundials_error.h"
 #include "sundials_util.h"
 
+#include "../arrayIndex.h"
 #include "dae_mode.h"
 #include "dassl.h"
 #include "epsilon.h"
@@ -223,7 +224,8 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
   /* Allocate memory for initialization process */
   tmp = (double*) malloc(idaData->N*sizeof(double));
   for(i=0; i < data->modelData->nStates; ++i) {
-    tmp[i] = fmax(fabs(data->modelData->realVarsData[i].attribute.nominal), 1e-32);   /* TODO: Use some macro for 1e-32?? */
+    const modelica_real nominal = getNominalFromScalarIdx(data->simulationInfo, data->modelData, VAR_KIND_STATE, i);
+    tmp[i] = fmax(fabs(nominal), 1e-32);
     infoStreamPrint(OMC_LOG_SOLVER_V, 0, "%ld. %s -> %g", i+1, data->modelData->realVarsData[i].info.name, tmp[i]);
   }
 
@@ -249,7 +251,8 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
 
     /* set yScale from nominal values */
     for(i=0; i < data->modelData->nStates; ++i) {
-      idaData->yScale[i] = fabs(data->modelData->realVarsData[i].attribute.nominal);
+      const modelica_real nominal = getNominalFromScalarIdx(data->simulationInfo, data->modelData, VAR_KIND_STATE, i);
+      idaData->yScale[i] = fabs(nominal);
       idaData->ypScale[i] = 1.0; // TODO: 1 is not a good scaling value. Use something like nominal value / number of intervals
     }
     /* daeMode: set nominal values for algebraic variables */
@@ -340,7 +343,7 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
         for(i=1; i < IDA_LS_MAX; ++i) {
           warningStreamPrint(OMC_LOG_SOLVER, 0, "%-15s [%s]", IDA_LS_METHOD_NAME[i], IDA_LS_METHOD_DESC[i]);
         }
-        messageClose(OMC_LOG_SOLVER);
+        messageCloseWarning(OMC_LOG_SOLVER);
       }
       throwStreamPrint(threadData,"unrecognized ida linear solver method %s", (const char*)omc_flagValue[FLAG_IDA_LS]);
     }
@@ -376,16 +379,20 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
                                       " Colored numerical Jacobian will be used.");
     idaData->jacobianMethod = COLOREDNUMJAC;
   }else if(idaData->jacobianMethod == INTERNALNUMJAC && idaData->linearSolverMethod == IDA_LS_KLU) {
-    warningStreamPrint(OMC_LOG_STDOUT, 0, "Internal Numerical Jacobians without coloring are currently not supported by IDA with KLU."
-                                      " Colored numerical Jacobian will be used.");
-    idaData->jacobianMethod = COLOREDNUMJAC;
+    if ((!idaData->daeMode && jacobian->sparsePattern == NULL) || (idaData->daeMode && data->simulationInfo->daeModeData->sparsePattern == NULL)) {
+      throwStreamPrint(threadData, "##IDA## Internal Numerical Jacobians require a sparse pattern for the jacobian but no sparse pattern is generated.");
+    } else {
+      warningStreamPrint(OMC_LOG_STDOUT, 0, "Internal Numerical Jacobians without coloring are currently not supported by IDA with KLU."
+                                        " Colored numerical Jacobian will be used.");
+      idaData->jacobianMethod = COLOREDNUMJAC;
+    }
   }
 
   /* Set NNZ */
   if (idaData->daeMode) {
     idaData->NNZ = data->simulationInfo->daeModeData->sparsePattern->numberOfNonZeros;
   } else {
-    idaData->NNZ = data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A].sparsePattern->numberOfNonZeros;
+    idaData->NNZ = jacobian->sparsePattern->numberOfNonZeros;
   }
 
   switch (idaData->linearSolverMethod){
@@ -594,7 +601,6 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
   if (measure_time_flag) rt_clear(SIM_TIMER_SOLVER); /* TODO Initialization should not add to this timer... */
 
   free(tmp);
-  TRACE_POP
   return 0;
 }
 
@@ -605,8 +611,6 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
  */
 void ida_solver_deinitial(IDA_SOLVER *idaData)
 {
-  TRACE_PUSH
-
   if (omc_flag[FLAG_IDA_SCALING]) {
     /* free scaling data */
     free(idaData->yScale);
@@ -650,8 +654,6 @@ void ida_solver_deinitial(IDA_SOLVER *idaData)
 #endif
 
   IDAFree(&idaData->ida_mem);
-
-  TRACE_POP
 }
 
 
@@ -761,7 +763,6 @@ int ida_event_update(DATA* data, threadData_t *threadData)
  */
 int ida_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
 {
-  TRACE_PUSH
   double tout = 0;
   int i = 0, flag;
   int retVal = 0, finished = 0 /* FALSE */;
@@ -795,8 +796,6 @@ int ida_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInf
   /* reinit solver */
   if (!idaData->setInitialSolution)
   {
-    debugStreamPrint(OMC_LOG_SOLVER, 0, "Re-initialized IDA Solver");
-
     /* initialize states and der(states) */
     if (idaData->daeMode)
     {
@@ -874,7 +873,6 @@ int ida_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInf
     data->callback->functionODE(data, threadData);
     solverInfo->currentTime = sData->timeValue;
 
-    TRACE_POP
     return 0;
   }
 
@@ -1075,7 +1073,7 @@ int ida_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInf
   tmp = 0;
   flag = IDAGetNumNonlinSolvConvFails(idaData->ida_mem, &tmp);
   checkReturnFlag_SUNDIALS(flag, SUNDIALS_IDA_FLAG, "IDAGetNumNonlinSolvConvFails");
-  solverInfo->solverStatsTmp.nConvergenveTestFailures = tmp;
+  solverInfo->solverStatsTmp.nConvergenceTestFailures = tmp;
 
   /* get more statistics */
   if (omc_useStream[OMC_LOG_SOLVER_V])
@@ -1103,7 +1101,6 @@ int ida_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInf
   infoStreamPrint(OMC_LOG_SOLVER, 0, "##IDA## Finished Integrator step.");
   if (measure_time_flag) rt_accumulate(SIM_TIMER_SOLVER);
 
-  TRACE_POP
   return retVal;
 }
 
@@ -1122,7 +1119,6 @@ int ida_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInf
  */
 static int residualFunctionIDA(double time, N_Vector yy, N_Vector yp, N_Vector rr, void* user_data)
 {
-  TRACE_PUSH
   IDA_SOLVER* idaData = (IDA_SOLVER*) user_data;
   DATA* data = idaData->userData->data;
   threadData_t* threadData = idaData->userData->threadData;
@@ -1241,7 +1237,6 @@ static int residualFunctionIDA(double time, N_Vector yy, N_Vector yp, N_Vector r
   messageClose(OMC_LOG_SOLVER_V);
   if (measure_time_flag) rt_accumulate(SIM_TIMER_SOLVER);
 
-  TRACE_POP
   return retVal;
 }
 
@@ -1260,7 +1255,6 @@ static int residualFunctionIDA(double time, N_Vector yy, N_Vector yp, N_Vector r
  */
 static int rootsFunctionIDA(double time, N_Vector yy, N_Vector yp, double *gout, void* user_data)
 {
-  TRACE_PUSH
   IDA_SOLVER* idaData = (IDA_SOLVER*) user_data;
   DATA* data = idaData->userData->data;
   threadData_t* threadData = idaData->userData->threadData;
@@ -1324,7 +1318,6 @@ static int rootsFunctionIDA(double time, N_Vector yy, N_Vector yp, double *gout,
   messageClose(OMC_LOG_SOLVER_V);
   if (measure_time_flag) rt_tick(SIM_TIMER_SOLVER);   // TODO: Why do we have two rt_tick calls? Keep only this one?
 
-  TRACE_POP
   return 0;
 }
 
@@ -1346,7 +1339,6 @@ static int rootsFunctionIDA(double time, N_Vector yy, N_Vector yp, double *gout,
 static int jacColoredNumericalDense(double currentTime, double cj, N_Vector yy, N_Vector yp,
                                     N_Vector rr, SUNMatrix Jac, IDA_SOLVER *idaData)
 {
-  TRACE_PUSH
   DATA* data = idaData->userData->data;
   void* ida_mem = idaData->ida_mem;
   const int index = data->callback->INDEX_JAC_A;
@@ -1435,7 +1427,6 @@ static int jacColoredNumericalDense(double currentTime, double cj, N_Vector yy, 
   }
   unsetContext(data);
 
-  TRACE_POP
   return 0;
 }
 
@@ -1458,7 +1449,6 @@ static int jacColoredSymbolicalDense(double currentTime, double cj, N_Vector yy,
                                      N_Vector yp, N_Vector rr, SUNMatrix Jac,
                                      IDA_SOLVER *idaData)
 {
-  TRACE_PUSH
   DATA* data = idaData->userData->data;
   threadData_t* threadData = idaData->userData->threadData;
   void* ida_mem = idaData->ida_mem;
@@ -1539,7 +1529,6 @@ static int jacColoredSymbolicalDense(double currentTime, double cj, N_Vector yy,
 
   unsetContext(data);
 
-  TRACE_POP
   return 0;
 }
 
@@ -1568,7 +1557,6 @@ static int callDenseJacobian(realtype tt, realtype cj, N_Vector yy,
                              N_Vector yp, N_Vector rr, SUNMatrix Jac,
                              void *user_data, N_Vector tmp1, N_Vector tmp2,
                              N_Vector tmp3) {
-  TRACE_PUSH
   IDA_SOLVER* idaData = (IDA_SOLVER*) user_data;
   threadData_t* threadData = idaData->userData->threadData;
   int retVal;
@@ -1610,7 +1598,6 @@ static int callDenseJacobian(realtype tt, realtype cj, N_Vector yy,
   rt_accumulate(SIM_TIMER_JACOBIAN);
   if (measure_time_flag) rt_tick(SIM_TIMER_SOLVER);
 
-  TRACE_POP
   return retVal;
 }
 
@@ -1646,7 +1633,6 @@ static void finishSparseColPtr(SUNMatrix A, int nnz)
 static int jacoColoredNumericalSparse(double currentTime, N_Vector yy,
                                       N_Vector yp, N_Vector rr, SUNMatrix Jac,
                                       double cj, void *userData) {
-  TRACE_PUSH
   IDA_SOLVER* idaData = (IDA_SOLVER*)userData;
   DATA* data = (DATA*)(((IDA_USERDATA*)idaData->userData)->data);
   void* ida_mem = idaData->ida_mem;
@@ -1770,7 +1756,6 @@ static int jacoColoredNumericalSparse(double currentTime, N_Vector yy,
   unsetContext(data);
   messageClose(OMC_LOG_SOLVER_V);
 
-  TRACE_POP
   return 0;
 }
 
@@ -1783,7 +1768,6 @@ int jacColoredSymbolicalSparse(double currentTime, N_Vector yy, N_Vector yp,
                                N_Vector rr, SUNMatrix Jac, double cj,
                                void *userData)
 {
-  TRACE_PUSH
   IDA_SOLVER* idaData = (IDA_SOLVER*)userData;
   DATA* data = (DATA*)(((IDA_USERDATA*)idaData->userData)->data);
   threadData_t* threadData = (threadData_t*)(((IDA_USERDATA*)idaData->userData)->threadData);
@@ -1821,7 +1805,6 @@ int jacColoredSymbolicalSparse(double currentTime, N_Vector yy, N_Vector yp,
   finishSparseColPtr(Jac, sparsePattern->numberOfNonZeros);
   unsetContext(data);
 
-  TRACE_POP
   return 0;
 }
 
@@ -1833,7 +1816,6 @@ static int callSparseJacobian(double currentTime, double cj,
                               SUNMatrix Jac, void *user_data,
                               N_Vector tmp1, N_Vector tmp2, N_Vector tmp3)
 {
-  TRACE_PUSH
   IDA_SOLVER* idaData = (IDA_SOLVER*)user_data;
   DATA* data = (DATA*)(((IDA_USERDATA*)idaData->userData)->data);
   threadData_t* threadData = (threadData_t*)(((IDA_USERDATA*)((IDA_SOLVER*)user_data)->userData)->threadData);
@@ -1872,7 +1854,6 @@ static int callSparseJacobian(double currentTime, double cj,
   rt_accumulate(SIM_TIMER_JACOBIAN);
   if (measure_time_flag) rt_tick(SIM_TIMER_SOLVER);
 
-  TRACE_POP
   return 0;
 }
 

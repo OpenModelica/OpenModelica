@@ -39,6 +39,8 @@ class InformationInterface
 public:
   virtual void setOpenModelicaHome(const QString &omhome) = 0;
   virtual void setTempPath(const QString &path) = 0;
+  virtual void setOMSensPath(const QString &path) = 0;
+  virtual void setPython(const QString &path) = 0;
 };
 
 #define InformationInterface_iid "org.openmodelica.OMEdit.InformationInterface/1.0"

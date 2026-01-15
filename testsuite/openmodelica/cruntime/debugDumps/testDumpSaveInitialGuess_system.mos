@@ -1,0 +1,46 @@
+
+// name:     testDumpSaveInitialGuess_system.mos
+// keywords: kinsol initial guess file
+// status: correct
+// teardown_command: rm -rf SaveInitialGuess* output.log
+// cflags: -d=-newInst
+//
+// Test flag -saveInitialGuess_system=/path/to/file.mat,nls_index,
+// which writes the current state of the initialization to a .mat file
+// and can be read in later via -iif and -stopAtSysten=nls_index
+//
+loadString("
+model SaveInitialGuess
+  Real x(start = 1);
+  Real y;
+equation
+  x + y = 0.5;
+  x^2 + y^2 = 1.0;
+end SaveInitialGuess;
+"); getErrorString();
+
+simulate(SaveInitialGuess,
+         simflags="-nls=experimental-kinsol -saveInitialGuess_system=savedInitialGuess.mat,4",
+         startTime=0,
+         stopTime=0); getErrorString();
+
+readSimulationResult("savedInitialGuess.mat", {x,y}); getErrorString();
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'SaveInitialGuess', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-nls=experimental-kinsol -saveInitialGuess_system=savedInitialGuess.mat,4'",
+//     messages = "Simulation execution failed for model: SaveInitialGuess
+// LOG_STDOUT        | info    | Trying to write write initial guess for NLS system with index 4 to file savedInitialGuess.mat.
+// LOG_ASSERT        | debug   | Success: Initial guess has been written to disk (path = savedInitialGuess.mat). The program will terminate now.
+// LOG_ASSERT        | debug   | Solving non-linear system 4 failed at time=0.
+// |                 | |       | For more information please use -lv LOG_NLS.
+// LOG_ASSERT        | info    | simulation terminated by an assertion at initialization
+// "
+// end SimulationResult;
+// ""
+// {{1.0}, {-0.5}}
+// ""
+// endResult

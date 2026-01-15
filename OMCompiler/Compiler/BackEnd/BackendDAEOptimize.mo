@@ -293,8 +293,14 @@ algorithm
       (zero, _) = Expression.makeZeroExpression(Expression.arrayDimension(tp));
     then (zero, (globalKnownVars, aliasvars, true));
 
-    case (DAE.CALL(path=Absyn.IDENT(name=idn), expLst={e as DAE.CREF(componentRef=cr)}), (globalKnownVars, aliasvars, _)) guard idn=="pre" or idn=="previous" equation
-      (_, _) = BackendVariable.getVarSingle(cr, globalKnownVars);
+    case (DAE.CALL(path=Absyn.IDENT(name=idn), expLst={e as DAE.CREF(componentRef=cr)}), (globalKnownVars, aliasvars, _)) guard idn=="pre" or idn=="previous"
+      equation
+        (var, _) = BackendVariable.getVarSingle(cr, globalKnownVars);
+        /* https://github.com/OpenModelica/OpenModelica/issues/13811
+        * check if var is a top level input and keep the expression as it pre(param) = pre(param)
+        * for parameter and constat apply pre(param) = param
+        */
+        false = BackendVariable.isInput(var);
     then(e, (globalKnownVars, aliasvars, true));
 
     case (DAE.CALL(path=Absyn.IDENT(name=idn), expLst={e as DAE.CREF(componentRef=DAE.CREF_IDENT(ident="time"))}), (globalKnownVars, aliasvars, _)) guard idn=="pre" or idn=="previous"

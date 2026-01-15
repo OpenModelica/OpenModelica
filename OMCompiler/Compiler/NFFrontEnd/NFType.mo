@@ -305,9 +305,19 @@ public
   end isClock;
 
   function isContinuous
-    "update for records?"
     input Type ty;
-    output Boolean b = isReal(elementType(ty));
+    output Boolean b;
+  algorithm
+    b := match ty
+      local
+        ComplexType ct;
+
+      // check if all fields are continuous
+      case COMPLEX(complexTy = ct as ComplexType.RECORD())
+      then List.all(list(lookupRecordFieldType(Record.Field.name(field), ty) for field in ct.fields), isContinuous);
+
+      else isReal(elementType(ty));
+    end match;
   end isContinuous;
 
   function isScalar
@@ -1450,7 +1460,7 @@ public
       case CLOCK() then 1;
       case ENUMERATION() then 1;
       case ARRAY() then sizeOf(ty.elementType) * Dimension.sizesProduct(ty.dimensions, resize);
-      case TUPLE() then List.fold(list(sizeOf(t) for t in ty.types), intAdd, 0);
+      case TUPLE() then sum(sizeOf(t) for t in ty.types);
       case COMPLEX(complexTy = ComplexType.EXTERNAL_OBJECT()) then 1;
       case COMPLEX(complexTy = ComplexType.RECORD())
         then ClassTree.foldComponents(Class.classTree(InstNode.getClass(ty.cls)), fold_comp_size, 0);

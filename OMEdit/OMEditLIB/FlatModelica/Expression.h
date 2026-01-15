@@ -114,6 +114,9 @@ namespace FlatModelica
       bool isCall() const;
       bool isCall(const std::string &name) const;
 
+      bool isAssociative() const;
+      bool isNonAssociative() const;
+
       size_t ndims() const;
       size_t size() const;
       size_t size(size_t dimension) const;
@@ -126,6 +129,8 @@ namespace FlatModelica
       int enumIndex() const;
       QString QStringValue() const;
       QString functionName() const;
+
+      int priority(bool lhs) const;
 
       std::string toString() const;
       QString toQString() const;

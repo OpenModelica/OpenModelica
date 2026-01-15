@@ -41,9 +41,8 @@
 #include <QTreeView>
 #include <QSortFilterProxyModel>
 
-class ElementTreeItem : public QObject
+class ElementTreeItem
 {
-  Q_OBJECT
 public:
   ElementTreeItem();
   ElementTreeItem(ModelInstance::Element *pElement, ElementTreeItem *pParentElementTreeItem = 0);
@@ -53,6 +52,7 @@ public:
   ElementTreeItem* child(int row) const {return row >= 0 && row < childrenSize() ? mChildren.at(row) : 0;}
   void insertChild(int position, ElementTreeItem *pElementTreeItem) {mChildren.insert(position, pElementTreeItem);}
   void removeChildren();
+  void removeChild(ElementTreeItem *pElementTreeItem);
   QVariant data(int column, int role = Qt::DisplayRole) const;
   int row() const;
   ElementTreeItem* parent() const {return mpParentElementTreeItem;}
@@ -99,13 +99,13 @@ public:
   QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
   Qt::ItemFlags flags(const QModelIndex &index) const override;
   QModelIndex elementTreeItemIndex(const ElementTreeItem *pElementTreeItem) const;
+  void removeElements();
   void addElements(ModelInstance::Model *pModel);
   ElementTreeItem* findElementTreeItem(const QString &name, ElementTreeItem *pLibraryTreeItem = 0, Qt::CaseSensitivity caseSensitivity = Qt::CaseSensitive) const;
 private:
   ElementWidget *mpElementWidget;
   ElementTreeItem* mpRootElementTreeItem;
   void addElementsHelper(ModelInstance::Model *pModel, ElementTreeItem *pParentElementTreeItem);
-  QModelIndex elementTreeItemIndexHelper(const ElementTreeItem *pElementTreeItem, const ElementTreeItem *pParentElementTreeItem, const QModelIndex &parentIndex) const;
 };
 
 class ElementTreeView : public QTreeView

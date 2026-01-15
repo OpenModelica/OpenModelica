@@ -101,6 +101,17 @@ void omc_mmap_close_write_unix(omc_mmap_write_unix map)
 
 #endif /* HAVE_MMAP */
 
+/**
+ * @brief Open and read file content into buffer.
+ *
+ * @param fileName  Name of file to read.
+ * @param mode      File access mode for `fopen`.
+ * @param size      Size of data to read. If `0` use file size to update `size`.
+ * @param data      Read file content into null terminated buffer.
+ *                  Allocates memory, needs to be freed with `free`.
+ * @return FILE*    Pointer to open file stream. Needs to be closed with
+ *                  `omc_fclose`.
+ */
 static FILE* omc_mmap_common(const char *fileName, const char *mode, size_t *size, char **data)
 {
   FILE *file = omc_fopen(fileName, mode);
@@ -108,19 +119,29 @@ static FILE* omc_mmap_common(const char *fileName, const char *mode, size_t *siz
   if (!file) {
     throwStreamPrint(NULL, "Failed to open file %s for reading: %s\n", fileName, strerror(errno));
   }
+
   fseek(file, 0, SEEK_END);
   fileSize = ftell(file);
   rewind(file);
+
+  // Allocate +1 byte for null terminator
+  size_t allocSize = (*size > fileSize ? *size : fileSize) + 1;
   if (*size == 0) {
     *size = fileSize;
   }
   if (*size > fileSize) {
-    *data = (char*) calloc(*size,1);
+    *data = (char*) calloc(*size + 1, sizeof(char));
   } else {
-    *data = (char*) malloc(*size);
+    *data = (char*) malloc((*size + 1) * sizeof(char));
+  }
+  if (!*data) {
+    omc_fclose(file);
+    throwStreamPrint(NULL, "Memory allocation failed for file %s\n", fileName);
   }
 
-  omc_fread(*data, (*size > fileSize ? fileSize : *size), 1, file, 0);
+  size_t bytesToRead = (*size > fileSize ? fileSize : *size);
+  omc_fread(*data, bytesToRead, 1, file, 0);
+  (*data)[bytesToRead] = '\0';
 
   return file;
 }

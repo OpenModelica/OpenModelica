@@ -1,0 +1,30 @@
+// name: Issue14456.mos
+// keywords: fmu export import
+// status: correct
+// teardown_command: rm -rf roomM370*.c roomM370*.h
+
+loadFile("roomM370.mo"); getErrorString();
+buildModelFMU(roomM370, version="2.0", platforms=["dynamic"]); getErrorString();
+
+loadModel(Modelica); getErrorString();
+loadFile(importFMU("roomM370.fmu")); getErrorString();
+simulate(roomM370_me_FMU); getErrorString();
+
+
+
+// Result:
+// true
+// ""
+// {"roomM370.fmu"}
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// "
+// true
+// ""
+// record SimulationResult
+//     resultFile = "",
+//     simulationOptions = "startTime = 0.0, stopTime = 8000.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'roomM370_me_FMU', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "Failed to build model: roomM370_me_FMU"
+// end SimulationResult;
+// "[omsimulator/roomM370_me_FMU.mo:11:3-11:135:writable] Error: Class Modelica.Blocks.Interfaces.IntegerInput not found in scope roomM370_me_FMU.
+// "
+// endResult

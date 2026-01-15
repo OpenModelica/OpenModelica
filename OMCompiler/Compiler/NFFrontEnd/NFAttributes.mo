@@ -479,6 +479,13 @@ public
   algorithm
     if ConnectorType.isConnectorType(cty) then
       if Restriction.isConnector(restriction) then
+        if attributes.variability < Variability.DISCRETE and not InstContext.inRelaxed(context) and
+           not Class.isBuiltin(InstNode.getClass(component)) then
+          Error.addSourceMessage(Error.INVALID_CONNECTOR_VARIABILITY,
+            {Prefixes.variabilityString(attributes.variability), InstNode.name(component)}, InstNode.info(component));
+          fail();
+        end if;
+
         if Restriction.isExpandableConnector(restriction) then
           cty := ConnectorType.setPresent(cty);
         else
@@ -637,10 +644,6 @@ public
     input output IOStream.IOStream s;
     input Boolean isTopLevel = true;
   algorithm
-    if attr.isFinal then
-      s := IOStream.append(s, "final ");
-    end if;
-
     s := IOStream.append(s, Prefixes.unparseVariability(attr.variability, ty));
 
     if isTopLevel then

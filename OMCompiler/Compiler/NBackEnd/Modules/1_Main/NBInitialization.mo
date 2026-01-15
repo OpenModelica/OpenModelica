@@ -44,7 +44,6 @@ protected
   import Expression = NFExpression;
   import Flatten = NFFlatten;
   import NFFunction.Function;
-  import NFFlatten.{FunctionTree, FunctionTreeImpl};
   import NFInstNode.InstNode;
   import Operator = NFOperator;
   import Statement = NFStatement;
@@ -121,7 +120,6 @@ public
             (equations, initialEqs, initialVars) := createParameterEquations(varData.records, equations, initialEqs, initialVars, new_iters, eqData.uniqueIndex, " Record ");
             (equations, initialEqs, initialVars) := createParameterEquations(varData.external_objects, equations, initialEqs, initialVars, new_iters, eqData.uniqueIndex, " External Object ");
 
-
             // clone all initial variables and remove clocked variables
             clonedVars := VariablePointers.clone(initialVars, false);
             VariablePointers.mapRemovePtr(clonedVars, BVariable.isClocked);
@@ -130,6 +128,7 @@ public
             varData.initials := VariablePointers.compress(clonedVars);
             eqData.equations := equations;
             eqData.initials := EquationPointers.compress(initialEqs);
+
             // add new iterators
             bdae.eqData := eqData;
         then BackendDAE.setVarData(bdae, VarData.addTypedList(varData, UnorderedSet.toList(new_iters), NBVariable.VarData.VarType.ITERATOR));
@@ -227,7 +226,7 @@ public
             local
               Expression e;
             // use the start attribute itself if it is not a literal
-            case SOME(e) guard not Expression.isLiteral(e) then e;
+            case SOME(e) guard not Expression.isLiteralXML(e) then e;
             else algorithm
               // create a start variable if it is a literal
               (_, name, start_var, start_name) := createStartVar(var, name, {});
@@ -351,39 +350,7 @@ public
     Boolean skip;
   algorithm
     for var in VariablePointers.toList(parameters) loop
-      // check if the variable is a record element with bound parent or a record without binding
-      // if the parent is not fully unknown also create individual bindings
-      skip := match BVariable.getParent(var)
-        case SOME(parent) then BVariable.isBound(parent) and BVariable.isKnownRecord(parent);
-        else BVariable.isRecord(var) and not BVariable.isBound(var);
-      end match;
-
-      // parse records slightly different
-      if BVariable.isKnownRecord(var) and not skip then
-        // only consider non-evaluable parameter bindings
-        if not BVariable.hasEvaluableBinding(var) then
-          initial_param_vars := listAppend(BVariable.getRecordChildren(var), initial_param_vars);
-          parameter_eqs := Equation.generateBindingEquation(var, idx, true, new_iters) :: parameter_eqs;
-        else
-          for c_var in BVariable.getRecordChildren(var) loop
-            BVariable.setBindingAsStart(c_var);
-          end for;
-        end if;
-
-      // all other variables that are not records and not record elements to be skipped
-      elseif not (BVariable.isRecord(var) or skip) then
-        // only consider non-evaluable parameter bindings
-        if not BVariable.hasEvaluableBinding(var) then
-          // add variable to initial unknowns
-          initial_param_vars := var :: initial_param_vars;
-          // generate equation only if variable is fixed
-          if BVariable.isFixed(var) then
-            parameter_eqs := Equation.generateBindingEquation(var, idx, true, new_iters) :: parameter_eqs;
-          end if;
-        else
-          BVariable.setBindingAsStart(var);
-        end if;
-      end if;
+      (parameter_eqs, initial_param_vars) := createParameterEquation(var, new_iters, idx, parameter_eqs, initial_param_vars);
     end for;
     equations := EquationPointers.addList(parameter_eqs, equations);
     initialEqs := EquationPointers.addList(parameter_eqs, initialEqs);
@@ -393,6 +360,63 @@ public
         StringUtil.headline_4("Created" + str + "Parameter Binding Equations (" + intString(listLength(parameter_eqs)) + "):"), "", "\n", "", false) + "\n\n");
     end if;
   end createParameterEquations;
+
+  function createParameterEquation
+    input Pointer<Variable> var;
+    input UnorderedSet<VariablePointer> new_iters;
+    input Pointer<Integer> idx;
+    input output list<Pointer<Equation>> parameter_eqs;
+    input output list<Pointer<Variable>> initial_param_vars;
+  protected
+    Pointer<Variable> parent;
+    Boolean skip;
+  algorithm
+    if BVariable.isConst(var) then
+      // skip this variable if it is constant
+      skip := true;
+    else
+      // check if the variable is a record element with bound parent or a record without binding
+      // if the parent is not fully unknown also create individual bindings
+      skip := match BVariable.getParent(var)
+        case SOME(parent) then BVariable.isBound(parent) and BVariable.isKnownRecord(parent);
+        else (BVariable.isRecord(var) and not BVariable.isBound(var));
+      end match;
+    end if;
+
+    // do nothing if skipped
+    if skip then return; end if;
+
+    // parse known records
+    if BVariable.isKnownRecord(var) then
+      // only consider non-evaluable parameter bindings
+      // if the record is bound or has a start value, create an equation from it, otherwise create from its children
+      if not BVariable.hasEvaluableBinding(var) and (BVariable.isBound(var) or BVariable.hasStartAttr(var)) then
+        initial_param_vars  := listAppend(BVariable.getRecordChildren(var), initial_param_vars);
+        parameter_eqs       := Equation.generateBindingEquation(var, idx, true, new_iters) :: parameter_eqs;
+      else
+        for c_var in BVariable.getRecordChildren(var) loop
+          if BVariable.isBound(c_var) then
+            BVariable.setBindingAsStart(c_var, true);
+          end if;
+          (parameter_eqs, initial_param_vars) := createParameterEquation(c_var, new_iters, idx, parameter_eqs, initial_param_vars);
+        end for;
+      end if;
+
+    // all other variables that are not records
+    elseif not BVariable.isRecord(var) then
+      // only consider non-evaluable parameter bindings
+      if not BVariable.hasEvaluableBinding(var) then
+        // add variable to initial unknowns
+        initial_param_vars := var :: initial_param_vars;
+        // generate equation only if variable is fixed
+        if BVariable.isFixed(var) then
+          parameter_eqs := Equation.generateBindingEquation(var, idx, true, new_iters) :: parameter_eqs;
+        end if;
+      elseif BVariable.isBound(var) then
+        BVariable.setBindingAsStart(var, true);
+      end if;
+    end if;
+  end createParameterEquation;
 
   function createStartEquationSlice
     "creates a start equation for a sliced variable.
@@ -423,7 +447,7 @@ public
         ComponentRef new_iter;
 
       // convert array constructor to for-equation if elements are not a literal
-      case SOME(Expression.CALL(call = array_constructor as Call.TYPED_ARRAY_CONSTRUCTOR(exp = e))) guard not Expression.isLiteral(e) algorithm
+      case SOME(Expression.CALL(call = array_constructor as Call.TYPED_ARRAY_CONSTRUCTOR(exp = e))) guard not Expression.isLiteralXML(e) algorithm
         (var_ptr, name, _, _, _, frames, iterator) := createIteratedStartCref(var_ptr, name);
         replacements := UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual);
         for tpl in List.zip(array_constructor.iters, frames) loop
@@ -433,7 +457,7 @@ public
       then Expression.map(array_constructor.exp, function Replacements.applySimpleExp(replacements = replacements));
 
       // use the start attribute itself if it is not a literal
-      case SOME(e) guard not Expression.isLiteral(e) algorithm
+      case SOME(e) guard not Expression.isLiteralXML(e) algorithm
         if Slice.isFull(var_slice) then
           (var_ptr, name, _, _) := createStartVar(var_ptr, name, {});
           iterator := Iterator.EMPTY();
@@ -566,6 +590,7 @@ public
     extends Module.wrapper;
   protected
     Pointer<Boolean> hasHom = Pointer.create(false);
+    list<Partition> init_0;
   algorithm
     bdae := match bdae
       case BackendDAE.MAIN() algorithm
@@ -582,18 +607,22 @@ public
         bdae.init := list(Partition.mapEqn(par, function cleanupInitialCall(init = true)) for par in bdae.init);
 
         // homotopy(actual, simplified) -> actual
-        bdae.ode        := list(Partition.mapExp(par, function cleanupHomotopy(init = false, hasHom = hasHom)) for par in bdae.ode);
-        bdae.algebraic  := list(Partition.mapExp(par, function cleanupHomotopy(init = false, hasHom = hasHom)) for par in bdae.algebraic);
-        bdae.ode_event  := list(Partition.mapExp(par, function cleanupHomotopy(init = false, hasHom = hasHom)) for par in bdae.ode_event);
-        bdae.alg_event  := list(Partition.mapExp(par, function cleanupHomotopy(init = false, hasHom = hasHom)) for par in bdae.alg_event);
+        bdae.ode        := list(Partition.mapExp(par, function cleanupHomotopy(init0 = false, hasHom = hasHom)) for par in bdae.ode);
+        bdae.algebraic  := list(Partition.mapExp(par, function cleanupHomotopy(init0 = false, hasHom = hasHom)) for par in bdae.algebraic);
+        bdae.ode_event  := list(Partition.mapExp(par, function cleanupHomotopy(init0 = false, hasHom = hasHom)) for par in bdae.ode_event);
+        bdae.alg_event  := list(Partition.mapExp(par, function cleanupHomotopy(init0 = false, hasHom = hasHom)) for par in bdae.alg_event);
         if Util.isSome(bdae.dae) then
-          bdae.dae := SOME(list(Partition.mapExp(par, function cleanupHomotopy(init = false, hasHom = hasHom)) for par in Util.getOption(bdae.dae)));
+          bdae.dae := SOME(list(Partition.mapExp(par, function cleanupHomotopy(init0 = false, hasHom = hasHom)) for par in Util.getOption(bdae.dae)));
         end if;
 
         // create init_0 if homotopy call exists.
         if Pointer.access(hasHom) then
-          bdae.init_0 := SOME(list(Partition.clone(par, false) for par in bdae.init));
-          bdae.init_0 := SOME(list(Partition.mapExp(par, function cleanupHomotopy(init = true, hasHom = hasHom)) for par in Util.getOption(bdae.init_0)));
+          init_0 := list(Partition.clone(par, false) for par in bdae.init);
+
+          // homotopy(actual, simplified) -> simplified
+          init_0 := list(Partition.mapExp(par, function cleanupHomotopy(init0 = true, hasHom = hasHom)) for par in init_0);
+
+          bdae.init_0 := SOME(init_0);
         end if;
       then bdae;
 
@@ -606,6 +635,17 @@ public
     input Boolean init;
   protected
     Pointer<Boolean> simplify = Pointer.create(false);
+
+    function cleanupInitialCallExp
+      input output Expression exp;
+      input Boolean init;
+      input Pointer<Boolean> simplify "output, determines if when-equation should be simplified";
+    algorithm
+      if Expression.isCallNamed(exp, "initial") then
+        exp := Expression.BOOLEAN(init);
+        Pointer.update(simplify, true);
+      end if;
+    end cleanupInitialCallExp;
   algorithm
     eq := Equation.map(eq, function cleanupInitialCallExp(init = init, simplify = simplify));
     if Pointer.access(simplify) then
@@ -613,42 +653,16 @@ public
     end if;
   end cleanupInitialCall;
 
-  function cleanupInitialCallExp
-    input output Expression exp;
-    input Boolean init;
-    input Pointer<Boolean> simplify "output, determines if when-equation should be simplified";
-  algorithm
-    exp := match exp
-      local
-        Expression e;
-        String name;
-        Call call;
-      case Expression.CALL(call = call as Call.TYPED_CALL()) algorithm
-        name := AbsynUtil.pathString(Function.nameConsiderBuiltin(call.fn));
-        e := match name
-          case "initial" algorithm
-            Pointer.update(simplify, true);
-          then Expression.BOOLEAN(init);
-          else exp;
-        end match;
-      then e;
-      else exp;
-    end match;
-  end cleanupInitialCallExp;
-
   function cleanupHomotopy
     input output Expression exp;
-    input Boolean init "if init then replace with simplified, else replace with actual";
+    input Boolean init0 "if init0 then replace with simplified, else replace with actual";
     input Pointer<Boolean> hasHom   "output, determines if partition contains homotopy()";
   algorithm
     if Expression.isCallNamed(exp, "homotopy") then
+      Pointer.update(hasHom, true);
       exp := match exp
-        local
-          Call call;
-
-        case Expression.CALL(call = call as Call.TYPED_CALL()) algorithm
-          Pointer.update(hasHom, true);
-        then listGet(Call.arguments(exp.call), if init then 2 else 1);
+        case Expression.CALL()
+        then listGet(Call.arguments(exp.call), if init0 then 2 else 1);
 
         else exp;
       end match;

@@ -2917,7 +2917,7 @@ template algStmtAssign(DAE.Statement stmt, Context context, Text &varDecls, Text
         (match exp1 case ASUB(exp=arr, sub={idx}) then
         let &preExp = buffer ""
         let arr1 = daeExp(arr, context, &preExp, &varDecls, &auxFunction)
-        let idx1 = daeExp(idx, context, &preExp, &varDecls, &auxFunction)
+        let idx1 = daeSubscript(idx, context, &preExp, &varDecls, &auxFunction)
         let val1 = daeExp(val, context, &preExp, &varDecls, &auxFunction)
         <<
         <%preExp%>
@@ -5145,6 +5145,7 @@ end daeExp;
      '((<%int_type%>) <%integer%>)' /* Yes, we need to cast int to long on 64-bit arch... */
   case e as RCONST(__)          then real
   case e as BCONST(__)          then boolStrC(bool)
+  case e as SCONST(__)          then '"<%string%>"'
   case e as ENUM_LITERAL(__)    then index
   else error(sourceInfo(), 'Not a simple literal expression: <%ExpressionDumpTpl.dumpExp(exp,"\"")%>')
 end daeExpSimpleLiteral;
@@ -5601,7 +5602,7 @@ template daeExpCrefLhsSimContext(Exp ecr, Context context, Text &preExp,
 
   case ecr as CREF(componentRef=cr, ty=ty) then
     if crefIsScalarWithAllConstSubs(cr) then
-        contextCrefIsPre(cr,context, &auxFunction, isPre)
+      contextCrefIsPre(cr,context, &auxFunction, isPre)
     else if crefIsScalarWithVariableSubs(cr) then
       '(&<%contextCrefIsPre(crefStripSubs(cr),context, &auxFunction, isPre)%>)<%indexSubs(crefDims(cr), crefSubs(crefArrayGetFirstCref(cr)), context, &preExp, &varDecls, &auxFunction)%>'
     else
@@ -5611,7 +5612,7 @@ end daeExpCrefLhsSimContext;
 template indexSubs(list<Dimension> dims, list<Subscript> subs, Context context, Text &preExp, Text &varDecls, Text &auxFunction)
 ::=
   if intNe(listLength(dims),listLength(subs)) then
-    error(sourceInfo(),'indexSubs got different number of dimensions and subscripts')
+    error(sourceInfo(),'indexSubs got different number of dimensions(' + intString(listLength(dims)) + ') and subscripts(' + intString(listLength(subs)) + ')')
   else '[<%indexSubRecursive(listReverse(List.restOrEmpty(dims)), listReverse(subs), context, preExp, varDecls, auxFunction)%>]'
 end indexSubs;
 
@@ -7156,7 +7157,7 @@ template daeExpAsub(Exp inExp, Context context, Text &preExp,
   // MetaModelica Array
     (match inExp case ASUB(exp=e, sub={idx}) then
       let e1 = daeExp(e, context, &preExp, &varDecls, &auxFunction)
-      let idx1 = daeExp(idx, context, &preExp, &varDecls, &auxFunction)
+      let idx1 = daeSubscript(idx, context, &preExp, &varDecls, &auxFunction)
       'arrayGet(<%e1%>,<%idx1%>) /* DAE.ASUB */')
   // Modelica Array
   else
@@ -7167,7 +7168,7 @@ template daeExpAsub(Exp inExp, Context context, Text &preExp,
   // Faster asub: Do not construct a whole new array just to access one subscript
   case ASUB(exp=exp as ARRAY(scalar=true), sub={idx}) then
     let res = tempDecl(expTypeFromExpModelica(exp),&varDecls)
-    let idx1 = daeExp(idx, context, &preExp, &varDecls, &auxFunction)
+    let idx1 = daeSubscript(idx, context, &preExp, &varDecls, &auxFunction)
     let expl = (exp.array |> e hasindex i1 fromindex 1 =>
       let &caseVarDecls = buffer ""
       let &casePreExp = buffer ""
@@ -7194,7 +7195,7 @@ template daeExpAsub(Exp inExp, Context context, Text &preExp,
 
   case ASUB(exp=range as RANGE(ty=T_ARRAY(ty = T_INTEGER()),step=NONE()), sub={idx}) then
     let res = tempDecl("modelica_integer", &varDecls)
-    let idx1 = daeExp(idx, context, &preExp, &varDecls, &auxFunction)
+    let idx1 = daeSubscript(idx, context, &preExp, &varDecls, &auxFunction)
     let start = daeExp(range.start, context, &preExp, &varDecls, &auxFunction)
     let stop = daeExp(range.stop, context, &preExp, &varDecls, &auxFunction)
     let &preExp += <<
@@ -7206,27 +7207,36 @@ template daeExpAsub(Exp inExp, Context context, Text &preExp,
     res
 
   case ASUB(exp=RANGE(ty=t), sub={idx}) then
-    error(sourceInfo(),'ASUB_EASY_CASE type:<%unparseType(t)%> range:<%ExpressionDumpTpl.dumpExp(exp,"\"")%> index:<%ExpressionDumpTpl.dumpExp(idx,"\"")%>')
+    error(sourceInfo(),'ASUB_EASY_CASE type:<%unparseType(t)%> range:<%ExpressionDumpTpl.dumpExp(exp,"\"")%> index:<%ExpressionDumpTpl.dumpSubscript(idx)%>')
 
   case ASUB(exp=ecr as CREF(__), sub=subs) then
-    daeExpCrefLhs(buildCrefExpFromAsub(ecr, subs), context, &preExp, &varDecls, &auxFunction, false)
+    daeExpCrefLhs(buildCrefExpFromSubs(ecr, subs), context, &preExp, &varDecls, &auxFunction, false)
 
   case ASUB(exp=e, sub=indexes) then
     let exp = daeExp(e, context, &preExp, &varDecls, &auxFunction)
     let typeShort = expTypeFromExpShort(e)
     match Expression.typeof(inExp)
-    case T_ARRAY(__) then
-      error(sourceInfo(),'ASUB non-scalar <%ExpressionDumpTpl.dumpExp(inExp,"\"")%>. The inner exp has type: <%unparseType(Expression.typeof(e))%>. After ASUB it is still an array: <%unparseType(Expression.typeof(inExp))%>.')
     case T_COMPLEX(complexClassType = ClassInf.RECORD(__)) then
-      let expIndexes = (indexes |> index => daeSubscriptExp(index, context, &preExp, &varDecls, &auxFunction) ;separator=", ")
+      let expIndexes = (indexes |> index => daeSubscript(index, context, &preExp, &varDecls, &auxFunction) ;separator=", ")
       '<%typeShort%>_array_get(<%exp%>, <%listLength(indexes)%>, <%expIndexes%>)'
+    case T_ARRAY() then
+      let expIndexes = daeExpCrefIndexSpec(indexes, context, &preExp, &varDecls, &auxFunction)
+      '<%typeShort%>_get<%match listLength(indexes) case 1 then "" case i then '_<%i%>D'%>(<%exp%>, <%expIndexes%>)'
+
     else
-      let expIndexes = (indexes |> index => daeExpASubIndex(index, context, &preExp, &varDecls, &auxFunction) ;separator=", ")
+      let expIndexes = (indexes |> index => daeSubscriptASubIndex(index, context, &preExp, &varDecls, &auxFunction) ;separator=", ")
       '<%typeShort%>_get<%match listLength(indexes) case 1 then "" case i then '_<%i%>D'%>(<%exp%>, <%expIndexes%>)'
 
   else
     error(sourceInfo(),'OTHER_ASUB <%ExpressionDumpTpl.dumpExp(inExp,"\"")%>')
 end daeExpAsub;
+
+template daeSubscriptASubIndex(Subscript sub, Context context, Text &preExp, Text &varDecls, Text &auxFunction)
+::=
+match sub
+  case INDEX(__) then daeExpASubIndex(exp, context, &preExp, &varDecls, &auxFunction)
+  else daeSubscript(sub, context, &preExp, &varDecls, &auxFunction)
+end daeSubscriptASubIndex;
 
 template daeExpASubIndex(Exp exp, Context context, Text &preExp, Text &varDecls, Text &auxFunction)
 ::=
@@ -7803,7 +7813,7 @@ end daeExpSharedLiteral;
 template daeSubscript(Subscript sub, Context context, Text &preExp, Text &varDecls, Text &auxFunction)
 ::=
   match sub
-  case sub as INDEX() then daeSubscriptExp(sub.exp,context,&preExp,&varDecls,&auxFunction)
+  case sub as INDEX() then daeSubscriptExp(exp,context,&preExp,&varDecls,&auxFunction)
   else error(sourceInfo(), 'non INDEX(_) (i.e., slice) subscripts probably should not reach here. Check indexedAssign template.')
   end match
 end daeSubscript;
@@ -7844,12 +7854,12 @@ template varArrayNameValues(SimVar var, Integer ix, Boolean isPre, Boolean isSta
           "ERROR: Not implemented in varArrayNameValues"
         case SIMVAR(__) then
           let c_comment = CodegenUtil.crefCCommentWithVariability(var)
-          <<
-          <%if isStart then '<%varAttributes(var, &sub)%>.start'
-            else if isPre then '(<%arr%>this_function->pre_vars-><%crefTypeOMSIC(name)%>[<%index%>]<%c_comment%>)<%&sub%>'
-            else '(<%arr%>this_function->function_vars-><%crefTypeOMSIC(name)%>[<%index%>]<%c_comment%>)<%&sub%>'
-          %>
-          >>
+          if isStart then
+            '<%varAttributes(var, &sub)%>.start'
+          else if isPre then
+            '(<%arr%>this_function->pre_vars-><%crefTypeOMSIC(name)%>[<%index%>]<%c_comment%>)<%&sub%>'
+          else
+            '(<%arr%>this_function->function_vars-><%crefTypeOMSIC(name)%>[<%index%>]<%c_comment%>)<%&sub%>'
       end match
     else
       match var
@@ -7858,15 +7868,25 @@ template varArrayNameValues(SimVar var, Integer ix, Boolean isPre, Boolean isSta
           '<%daeExpSimpleLiteral(value)%><%c_comment%>'
         case SIMVAR(varKind=PARAM())
         case SIMVAR(varKind=OPT_TGRID()) then
-          '(<%arr%>data->simulationInfo-><%crefShortType(name)%>Parameter[<%index%>]<%crefCCommentWithVariability(var)%>)<%&sub%>'
+          let c_comment = CodegenUtil.crefCCommentWithVariability(var)
+          let ty = crefShortType(name)
+          '(<%arr%>data->simulationInfo-><%ty%>Parameter[data->simulationInfo-><%ty%>ParamsIndex[<%index%>]]<%c_comment%>)<%&sub%>'
         case SIMVAR(varKind=EXTOBJ()) then
           '(<%arr%>data->simulationInfo->extObjs[<%index%>])<%&sub%>'
         case SIMVAR(__) then
           let c_comment = CodegenUtil.crefCCommentWithVariability(var)
           let ty = crefShortType(name)
-          '<%if isStart then '<%varAttributes(var, &sub)%>.start'
-             else if isPre then '(<%arr%>data->simulationInfo-><%ty%>VarsPre[<%index%>]<%c_comment%>)<%&sub%>'
-             else '(<%arr%>data->localData[<%ix%>]-><%ty%>Vars[data->simulationInfo-><%ty%>VarsIndex[<%index%>]]<%c_comment%>)<%sub%>'%>'
+          if isStart then
+            // TODO: How to handle array case?
+            match ty
+              case "real" then
+                '((modelica_real *)(<%varAttributes(var, &sub)%>.start.data))[0]'
+              else
+                '<%varAttributes(var, &sub)%>.start'
+          else if isPre then
+            '(<%arr%>data->simulationInfo-><%ty%>VarsPre[<%index%>]<%c_comment%>)<%&sub%>'
+          else
+            '(<%arr%>data->localData[<%ix%>]-><%ty%>Vars[data->simulationInfo-><%ty%>VarsIndex[<%index%>]]<%c_comment%>)<%sub%>'
       end match
   end match
 end varArrayNameValues;
@@ -7879,16 +7899,31 @@ template varArrayName(SimVar var)
 end varArrayName;
 
 template crefVarInfo(ComponentRef cr)
+"C code to access info element of component reference."
 ::=
   match cref2simvar(cr, getSimCode())
   case var as SIMVAR(__) then
-  'data->modelData-><%varArrayName(var)%>Data[<%index%>].info /* <%crefCComment(var, crefStrNoUnderscore(name))%> */'
+    if intLt(index,0) then
+      error(sourceInfo(), 'crefVarInfo got negative index=<%index%> for <%crefStr(name)%>')
+    else
+      'data->modelData-><%varArrayName(var)%>Data[<%index%>] /* <%crefCComment(var, crefStrNoUnderscore(name))%> */ .info'
 end crefVarInfo;
+
+template crefVarDimension(ComponentRef cr)
+"C code to access dimension attribute of component reference"
+::=
+  match cref2simvar(cr, getSimCode())
+  case var as SIMVAR(__) then
+    if intLt(index,0) then
+      error(sourceInfo(), 'crefVarDimension got negative index=<%index%> for <%crefStr(name)%>')
+    else
+      'data->modelData-><%varArrayName(var)%>Data[<%index%>] /* <%crefCComment(var, crefStrNoUnderscore(name))%> */ .dimension'
+end crefVarDimension;
 
 template initializeStaticLSVars(list<SimVar> vars, Integer index)
 ::=
   let len = listLength(vars)
-  let indices = (vars |> var => varIndexWithComment(var) ;separator=",\n")
+  let indices = (vars |> var as SIMVAR(__) => '<%index%> /* <%crefCComment(var, crefStrNoUnderscore(name))%> */' ;separator=",\n")
   <<
   void initializeStaticLSData<%index%>(DATA* data, threadData_t* threadData, LINEAR_SYSTEM_DATA* linearSystemData, modelica_boolean initSparsePattern)
   {
@@ -7896,20 +7931,19 @@ template initializeStaticLSVars(list<SimVar> vars, Integer index)
       <%indices%>
     };
     for (int i = 0; i < <%len%>; ++i) {
-      linearSystemData->nominal[i] = data->modelData->realVarsData[indices[i]].attribute.nominal;
-      linearSystemData->min[i]     = data->modelData->realVarsData[indices[i]].attribute.min;
-      linearSystemData->max[i]     = data->modelData->realVarsData[indices[i]].attribute.max;
+      if (indices[i] == -1) {
+        linearSystemData->nominal[i] = 1.0;
+        linearSystemData->min[i]     = -DBL_MAX;
+        linearSystemData->max[i]     = DBL_MAX;
+      } else {
+        linearSystemData->nominal[i] = getNominalFromScalarIdx(data->simulationInfo, data->modelData, VAR_KIND_VARIABLE, indices[i]);
+        linearSystemData->min[i]     = data->modelData->realVarsData[indices[i]].attribute.min;
+        linearSystemData->max[i]     = data->modelData->realVarsData[indices[i]].attribute.max;
+      }
     }
   }
   >>
 end initializeStaticLSVars;
-
-template varIndexWithComment(SimVar var)
-::=
-  match var
-  case SIMVAR(index=-1) then varIndexWithComment(cref2simvar(crefRemovePrePrefix(name), getSimCode()))
-  case SIMVAR(__) then '<%index%> /* <%crefCComment(var, crefStrNoUnderscore(name))%> */'
-end varIndexWithComment;
 
 template crefIndexWithComment(ComponentRef cr)
 ::=
@@ -7933,7 +7967,7 @@ template crefAttributes(ComponentRef cr)
   case var as SIMVAR(index=-1, varKind=JAC_VAR()) then "dummyREAL_ATTRIBUTE"
   case var as SIMVAR(__) then
     if intLt(index,0) then error(sourceInfo(), 'varAttributes got negative index=<%index%> for <%crefStr(name)%>') else
-    'data->modelData-><%varArrayName(var)%>Data[<%index%>].attribute /* <%crefCComment(var, crefStrNoUnderscore(name))%> */'
+    'data->modelData-><%varArrayName(var)%>Data[<%index%>] /* <%crefCComment(var, crefStrNoUnderscore(name))%> */ .attribute'
 end crefAttributes;
 
 template typeCastContext(Context context, Type ty)

@@ -62,26 +62,13 @@ end FmuExportCrossCompile;") then
 end if;
 getErrorString();
 
-platforms := if false then {
-  "x86_64-apple-darwin15 docker run -e CROSS_TRIPLE=x86_64-apple-darwin multiarch/crossbuild",
-  "arm-linux-gnueabihf docker run -e CROSS_TRIPLE=arm-linux-gnueabihf multiarch/crossbuild",
-  "x86_64-linux-gnu docker run multiarch/crossbuild",
-  "i686-linux-gnu docker run multiarch/crossbuild",
-  "x86_64-w64-mingw32 docker run -e CROSS_TRIPLE=x86_64-w64-mingw32 multiarch/crossbuild",
-  "i686-w64-mingw32 docker run -e CROSS_TRIPLE=i686-w64-mingw32 multiarch/crossbuild"
-} else if true then {
+platforms := {
   "x86_64-apple-darwin15 docker run docker.openmodelica.org/osxcross-omsimulator:v2.0",
   "arm-linux-gnueabihf docker run docker.openmodelica.org/armcross-omsimulator:v2.0",
   "x86_64-linux-gnu docker run docker.openmodelica.org/build-deps:v1.13",
   "i686-linux-gnu docker run docker.openmodelica.org/build-deps:v1.13-i386",
   "x86_64-w64-mingw32 docker run docker.openmodelica.org/msyscross-omsimulator:v2.0",
   "i686-w64-mingw32 docker run docker.openmodelica.org/msyscross-omsimulator:v2.0"
-} else {
-  "arm-linux-gnueabihf",
-  "x86_64-linux-gnu",
-  "i686-linux-gnu",
-  "x86_64-w64-mingw32",
-  "i686-w64-mingw32"
 };
 
 for c in {"FmuExportCrossCompile","RoomHeating_OM.RH","WaterTank.Control","WaterTank.TestSingleWaterTank","BouncingBall"} loop

@@ -10929,7 +10929,7 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // </attributesValues>
 // </variable>
 // <variable id=\"453\" name=\"body.cylinder.length\" variability=\"continuous\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Length of visual object\">
-// <bindExpression string=\"if sqrt(body.r_CM * body.r_CM) &gt; 0.05555555555555555 then sqrt(body.r_CM * body.r_CM) - (if body.cylinderDiameter &gt; 0.12222222222222223 then 0.05555555555555555 else 0.0) else 0.0\">
+// <bindExpression string=\"if sqrt(body.r_CM[1] ^ 2.0 + body.r_CM[2] ^ 2.0 + body.r_CM[3] ^ 2.0) &gt; 0.05555555555555555 then sqrt(body.r_CM[1] ^ 2.0 + body.r_CM[2] ^ 2.0 + body.r_CM[3] ^ 2.0) - (if body.cylinderDiameter &gt; 0.12222222222222223 then 0.05555555555555555 else 0.0) else 0.0\">
 // </bindExpression>
 // <classesNames>
 // <element>

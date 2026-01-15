@@ -135,8 +135,6 @@ private:
   ComboBox *mpLinearSolverComboBox;
   Label *mpNonLinearSolverLabel;
   ComboBox *mpNonLinearSolverComboBox;
-  Label *mpLinearizationTimeLabel;
-  QLineEdit *mpLinearizationTimeTextBox;
   Label *mpOutputVariablesLabel;
   QLineEdit *mpOutputVariablesTextBox;
   Label  *mpProfilingLabel;
@@ -169,6 +167,9 @@ private:
   QCheckBox *mpEquidistantTimeGridCheckBox;
   QCheckBox *mpStoreVariablesAtEventsCheckBox;
   QCheckBox *mpShowGeneratedFilesCheckBox;
+  // Linearize Tab
+  QWidget *mpLinearizeTab;
+  ComboBox *mpLinearizationDumpLanguageComboBox;
   // checkboxes
   QCheckBox *mpSaveExperimentAnnotationCheckBox;
   QCheckBox *mpSaveSimulationFlagsAnnotationCheckBox;

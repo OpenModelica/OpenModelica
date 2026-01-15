@@ -469,8 +469,7 @@ void SimulationOutputWidget::addGeneratedFileTab(QString fileName)
 {
   QFile file(fileName);
   QFileInfo fileInfo(fileName);
-  if (file.exists()) {
-    file.open(QIODevice::ReadOnly);
+  if (file.open(QIODevice::ReadOnly)) {
     BaseEditor *pEditor;
     if (Utilities::isCFile(fileInfo.suffix())) {
       pEditor = new CEditor(MainWindow::instance());

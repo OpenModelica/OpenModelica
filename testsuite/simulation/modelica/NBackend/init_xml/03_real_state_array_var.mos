@@ -1,0 +1,57 @@
+// name: 03_real_state_array_var
+// keywords: NewBackend
+// status: correct
+// teardown_command: rm -f *StateArrayVariable*
+//
+// Check if init XML has array variable for real state array x with size=p.
+
+setCommandLineOptions("--newBackend --simCodeScalarize=false");
+
+loadString("
+model StateArrayVariable
+  parameter Integer p = 5;
+  Real x[p] (start = {1.0, 2.0, 3.0, 4.0, 5.0}, each fixed = true, nominal={1.0, 1.0, 2.0, 1.0, 1.0});
+equation
+  der(x) = -x;
+end StateArrayVariable;
+"); getErrorString();
+
+buildModel(StateArrayVariable); getErrorString();
+
+system("sed -n '/<ArrayVariable/,/<\\/ArrayVariable>/p' StateArrayVariable_init.xml > StateArrayVariable_init.tmp.xml");
+initFileContent := readFile("StateArrayVariable_init.tmp.xml");
+
+// Result:
+// true
+// true
+// ""
+// {"StateArrayVariable", "StateArrayVariable_init.xml"}
+// "Warning: NSimJacobian.SimJacobian.create could not generate sparsity pattern.
+// "
+// 0
+// "  <ArrayVariable
+//     name = \"x\"
+//     valueReference = \"1000\"
+//     variability = \"continuous\" isDiscrete = \"false\"
+//     causality = \"local\" isValueChangeable = \"false\"
+//     alias = \"noAlias\"
+//     classIndex = \"0\" classType = \"rSta\"
+//     isProtected = \"false\" hideResult = \"false\" isEncrypted = \"false\" initNonlinear = \"false\"
+//     fileName = \"\" startLine = \"0\" startColumn = \"0\" endLine = \"0\" endColumn = \"0\" fileWritable = \"true\">
+//     <Dimension start=\"5\"/>
+//     <Real start=\"1.0 2.0 3.0 4.0 5.0\" fixed=\"false\" useNominal=\"true\" nominal=\"1.0 1.0 2.0 1.0 1.0\" />
+//   </ArrayVariable>
+//   <ArrayVariable
+//     name = \"der(x)\"
+//     valueReference = \"1001\"
+//     variability = \"continuous\" isDiscrete = \"false\"
+//     causality = \"local\" isValueChangeable = \"false\"
+//     alias = \"noAlias\"
+//     classIndex = \"0\" classType = \"rDer\"
+//     isProtected = \"false\" hideResult = \"false\" isEncrypted = \"false\" initNonlinear = \"false\"
+//     fileName = \"\" startLine = \"0\" startColumn = \"0\" endLine = \"0\" endColumn = \"0\" fileWritable = \"true\">
+//     <Dimension start=\"5\"/>
+//     <Real fixed=\"false\" useNominal=\"false\" />
+//   </ArrayVariable>
+// "
+// endResult

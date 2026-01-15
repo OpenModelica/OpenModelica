@@ -468,7 +468,7 @@ protected
   InstNode parent, node;
 algorithm
   // Explode the cref into a list of parts in reverse order.
-  cref_parts := ComponentRef.toListReverse(cref, includeScope = false);
+  cref_parts := ComponentRef.toListReverse(cref, includeScope = true);
 
   // If the list is empty it's probably an iterator or _, which shouldn't be replaced.
   if listEmpty(cref_parts) then
@@ -1188,11 +1188,15 @@ algorithm
   pkg_name := InstNode.name(InstNode.libraryScope(fn.node));
   fn_handle := loadLibraryFunction(pkg_name, extName, extAnnotation, debug, info);
 
-  (mapped_args, specs) := mapExternalArgs(fn, args, extArgs);
-  ret_ty := if ComponentRef.isCref(outputRef) then ComponentRef.nodeType(outputRef) else Type.NORETCALL();
-  (res, output_vals) := FFI.callFunction(fn_handle, mapped_args, specs, ret_ty);
-
-  freeLibraryFunction(fn_handle, debug);
+  try
+    (mapped_args, specs) := mapExternalArgs(fn, args, extArgs);
+    ret_ty := if ComponentRef.isCref(outputRef) then ComponentRef.nodeType(outputRef) else Type.NORETCALL();
+    (res, output_vals) := FFI.callFunction(fn_handle, mapped_args, specs, ret_ty);
+    freeLibraryFunction(fn_handle, debug);
+  else
+    freeLibraryFunction(fn_handle, debug);
+    fail();
+  end try;
 
   if listEmpty(output_vals) then
     // No output parameters, just return the return value.
@@ -1366,7 +1370,7 @@ algorithm
   ErrorExt.rollBack(getInstanceName());
 
   if not found then
-    paths := list("  " + Testsuite.friendly(uriToFilename(p)) for p in paths);
+    paths := list("  " + Testsuite.friendly(uriToFilename(p)) for p guard not stringEmpty(p) in paths);
     Error.addSourceMessage(Error.EXTERNAL_FUNCTION_NOT_FOUND,
       {fnName, stringDelimitList(paths, "\n")}, info);
     fail();

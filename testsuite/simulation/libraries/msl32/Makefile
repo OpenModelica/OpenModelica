@@ -151,7 +151,6 @@ Modelica.Magnetic.FundamentalWave.Examples.Components.EddyCurrentLosses.mos \
 Modelica.Magnetic.FundamentalWave.Examples.Components.MultiPhaseInductance.mos \
 Modelica.Magnetic.FundamentalWave.Examples.Components.SinglePhaseInductance.mos \
 Modelica.Math.Nonlinear.Examples.quadratureLobatto3.mos \
-Modelica.Mechanics.MultiBody.Examples.Constraints.RevoluteConstraint.mos \
 Modelica.Mechanics.MultiBody.Examples.Constraints.PrismaticConstraint.mos \
 Modelica.Mechanics.MultiBody.Examples.Constraints.SphericalConstraint.mos \
 Modelica.Mechanics.MultiBody.Examples.Constraints.UniversalConstraint.mos \
@@ -277,6 +276,7 @@ Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.SMEE_Generator_MultiPha
 
 # Run make failingtest
 FAILINGTESTFILES = \
+Modelica.Mechanics.MultiBody.Examples.Constraints.RevoluteConstraint.mos \ # this model is wrong in the currently tested MSL 3.2.1 (ticket #2584)
 Modelica.Electrical.Analog.Examples.AmplifierWithOpAmpDetailed.mos \
 Modelica.Electrical.QuasiStationary.Machines.Examples.TransformerTestbench.mos \
 Modelica.Fluid.Examples.PumpingSystem.mos \

@@ -154,8 +154,8 @@ public
       then SINGLE_GENERIC_CALL(
           index     = index,
           iters     = iters,
-          lhs       = Equation.getLHS(body),
-          rhs       = Equation.getRHS(body),
+          lhs       = Util.getOption(Equation.getLHS(body)),
+          rhs       = Util.getOption(Equation.getRHS(body)),
           resizable = resizable);
 
       else algorithm
@@ -367,7 +367,7 @@ public
     algorithm
       for eqn in listReverse(if_body.then_eqns) loop
         // ToDo: what if there are more complex things inside?
-        body := (Equation.getLHS(Pointer.access(eqn)), Equation.getRHS(Pointer.access(eqn))) :: body;
+        body := (Util.getOption(Equation.getLHS(Pointer.access(eqn))), Util.getOption(Equation.getRHS(Pointer.access(eqn)))) :: body;
       end for;
       branch := SIM_BRANCH(if_body.condition, body);
       if Util.isSome(if_body.else_if) then

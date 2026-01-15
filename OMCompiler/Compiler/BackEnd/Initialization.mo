@@ -882,6 +882,7 @@ algorithm
           equation
             otherVariables = BackendVariable.addVar(v, otherVariables);
             v = BackendVariable.setVarFixed(v, true);
+            v = BackendVariable.setVarFinal(v, true);
             outGlobalKnownVars = BackendVariable.addVar(v, outGlobalKnownVars);
             hs = BaseHashSet.add(BackendVariable.varCref(v), hs);
           then ();

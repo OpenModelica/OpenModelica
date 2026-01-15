@@ -104,53 +104,33 @@ algorithm
     case DAE.VAR(ty = DAE.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ()))
       then inArg;
 
-    // variable Variables with binding
-    case DAE.VAR(componentRef=cr, kind = DAE.VARIABLE(), direction=dir, connectorType = ct, binding=SOME(e), source=source)
-      equation
-        (varSize, eqnSize, eqns, hs) = inArg;
-        b = DAEUtil.isInput(element) and DAEUtil.isPublicVar(element);
-        ce = Expression.crefExp(cr);
-        size = if b then 0 else Expression.sizeOf(element.ty);
-        eqns = List.consOnTrue(not b, DAE.EQUATION(ce, e, source), eqns);
-        hs = if not b then BaseHashSet.add(cr, hs) else hs;
-      then (varSize+size, eqnSize+size, eqns, hs);
-
-    // discrete Variables with binding
-    case DAE.VAR(componentRef=cr, kind = DAE.DISCRETE(), direction=dir, connectorType = ct, binding=SOME(e), source=source)
-      equation
-        (varSize, eqnSize, eqns, hs) = inArg;
-        b = DAEUtil.isInput(element) and DAEUtil.isPublicVar(element);
-        ce = Expression.crefExp(cr);
-        size = if b then 0 else Expression.sizeOf(element.ty);
-        eqns = List.consOnTrue(not b, DAE.EQUATION(ce, e, source), eqns);
-        hs = if not b then BaseHashSet.add(cr, hs) else hs;
-      then (varSize+size, eqnSize+size, eqns, hs);
-
-    // variable Variables
-    case DAE.VAR(componentRef=cr, kind = DAE.VARIABLE(), direction=dir, connectorType = ct)
-      equation
-        (varSize, eqnSize, eqns, hs) = inArg;
-        b = DAEUtil.isInput(element) and DAEUtil.isPublicVar(element);
-        size = if b then 0 else Expression.sizeOf(element.ty);
-        hs = if not b then BaseHashSet.add(cr, hs) else hs;
-      then (varSize+size, eqnSize, eqns, hs);
-
-    // discrete Variables
-    case DAE.VAR(componentRef=cr, kind = DAE.DISCRETE(), direction=dir, connectorType = ct)
-      equation
-        (varSize, eqnSize, eqns, hs) = inArg;
-        b = DAEUtil.isInput(element) and DAEUtil.isPublicVar(element);
-        size = if b then 0 else Expression.sizeOf(element.ty);
-        hs = if not b then BaseHashSet.add(cr, hs) else hs;
-      then (varSize+size, eqnSize, eqns, hs);
-
-    // parameter Variables
+    // parameter variables
     case DAE.VAR(kind = DAE.PARAM())
       then inArg;
 
-    // constant Variables
+    // constant variables
     case DAE.VAR(kind = DAE.CONST())
       then inArg;
+
+    // continuous/discrete variables
+    case DAE.VAR(componentRef=cr)
+      algorithm
+        (varSize, eqnSize, eqns, hs) := inArg;
+        size := Expression.sizeOf(element.ty);
+        varSize := varSize + size;
+
+        if DAEUtil.isInput(element) and DAEUtil.isPublicVar(element) then
+          eqnSize := eqnSize + size;
+        else
+          if isSome(element.binding) then
+            eqnSize := eqnSize + size;
+            eqns := DAE.EQUATION(Expression.crefExp(element.componentRef), Util.getOption(element.binding), element.source) :: eqns;
+          end if;
+
+          hs := BaseHashSet.add(cr, hs);
+        end if;
+      then
+        (varSize, eqnSize, eqns, hs);
 
     // equations
     case DAE.EQUATION(exp=e)

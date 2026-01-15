@@ -63,6 +63,7 @@ GetModelInstanceIcon1.mos \
 GetModelInstanceIcon2.mos \
 GetModelInstanceIcon3.mos \
 GetModelInstanceIcon4.mos \
+GetModelInstanceIcon5.mos \
 GetModelInstanceImport1.mos \
 GetModelInstanceImport2.mos \
 GetModelInstanceInnerOuter1.mos \
@@ -70,6 +71,8 @@ GetModelInstanceInnerOuter2.mos \
 GetModelInstanceInnerOuter3.mos \
 GetModelInstanceInnerOuter4.mos \
 GetModelInstanceInnerOuter5.mos \
+GetModelInstanceInnerOuter6.mos \
+GetModelInstanceInnerOuter7.mos \
 GetModelInstanceMissingClass1.mos \
 GetModelInstanceMissingClass2.mos \
 GetModelInstanceMissingClass3.mos \

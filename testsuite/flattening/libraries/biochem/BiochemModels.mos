@@ -345,7 +345,7 @@ checkModel(BioChem.Examples.MultiCompartments.Utilities.SmallCompartment); getEr
 //   parameter Real v1b = 9.0;
 //   parameter Real c_sbml = 0.01;
 //   parameter Real k1b = 1.0;
-//   parameter Real k1i = 0.5600000000000001;
+//   parameter Real k1i = 0.56;
 //   parameter Real hill_coeff = 8.0;
 //   Real trans_Bmal1(start = 0.0);
 //   parameter Real v4b = 3.6;
@@ -637,7 +637,7 @@ checkModel(BioChem.Examples.MultiCompartments.Utilities.SmallCompartment); getEr
 //   Real cytosol.ATP.n1.c(quantity = \"Concentration\", unit = \"mol/l\", min = 0.0);
 //   Real cytosol.ATP.n1.r(quantity = \"Molar flow rate\", unit = \"mol/s\");
 //   Real cytosol.ATP.n1.V(quantity = \"Volume\", unit = \"l\");
-//   Real cytosol.AMP.c(quantity = \"Concentration\", unit = \"mol/l\", min = 0.0, start = 0.000398124, stateSelect = StateSelect.prefer) \"Current concentration of substance (mM)\";
+//   Real cytosol.AMP.c(quantity = \"Concentration\", unit = \"mol/l\", min = 0.0, start = 3.98124e-4, stateSelect = StateSelect.prefer) \"Current concentration of substance (mM)\";
 //   Real cytosol.AMP.rNet(quantity = \"Molar flow rate\", unit = \"mol/s\") \"Net flow rate of substance into the node\";
 //   Real cytosol.AMP.n(quantity = \"AmountOfSubstance\", unit = \"mol\", min = 0.0, stateSelect = StateSelect.prefer) \"Number of moles of substance in pool (mol)\";
 //   Real cytosol.AMP.n1.c(quantity = \"Concentration\", unit = \"mol/l\", min = 0.0);
@@ -649,7 +649,7 @@ checkModel(BioChem.Examples.MultiCompartments.Utilities.SmallCompartment); getEr
 //   Real cytosol.LAC.n1.c(quantity = \"Concentration\", unit = \"mol/l\", min = 0.0);
 //   Real cytosol.LAC.n1.r(quantity = \"Molar flow rate\", unit = \"mol/s\");
 //   Real cytosol.LAC.n1.V(quantity = \"Volume\", unit = \"l\");
-//   Real cytosol.NAD.c(quantity = \"Concentration\", unit = \"mol/l\", min = 0.0, start = 0.6959379999999999) = cytosol.nad \"Current concentration of substance (mM)\";
+//   Real cytosol.NAD.c(quantity = \"Concentration\", unit = \"mol/l\", min = 0.0, start = 0.695938) = cytosol.nad \"Current concentration of substance (mM)\";
 //   Real cytosol.NAD.rNet(quantity = \"Molar flow rate\", unit = \"mol/s\") \"Net flow rate of substance into the node\";
 //   Real cytosol.NAD.n(quantity = \"AmountOfSubstance\", unit = \"mol\", min = 0.0) \"Number of moles of substance in pool (mol)\";
 //   Real cytosol.NAD.n1.c(quantity = \"Concentration\", unit = \"mol/l\", min = 0.0);
@@ -780,7 +780,7 @@ checkModel(BioChem.Examples.MultiCompartments.Utilities.SmallCompartment); getEr
 //   Real cytosol.jak.m1.c(quantity = \"Concentration\", unit = \"mol/l\", min = 0.0);
 //   Real cytosol.jak.m1.r(quantity = \"Molar flow rate\", unit = \"mol/s\");
 //   Real cytosol.jak.m1.V(quantity = \"Volume\", unit = \"l\");
-//   parameter Real cytosol.jak.KcatAK = 150000.0;
+//   parameter Real cytosol.jak.KcatAK = 1.5e5;
 //   Real cytosol.jak.bamp = cytosol.bamp;
 //   Real cytosol.jak.badp = cytosol.badp;
 //   Real cytosol.vgph.rr(quantity = \"Reaction rate\", unit = \"mol/s\") \"Rate of the reaction\";
@@ -924,7 +924,7 @@ checkModel(BioChem.Examples.MultiCompartments.Utilities.SmallCompartment); getEr
 //   parameter Real cytosol.vald.ka3 = 3000.0;
 //   parameter Real cytosol.vald.ka4 = 0.125;
 //   parameter Real cytosol.vald.ka5 = 340.0;
-//   parameter Real cytosol.vald.ka6 = 14000000.0;
+//   parameter Real cytosol.vald.ka6 = 1.4e7;
 //   parameter Real cytosol.vald.ka7 = 56000.0;
 //   Real cytosol.DHAP.c(quantity = \"Concentration\", unit = \"mol/l\", min = 0.0, start = 0.07427 / (1.0 + cytosol.kt), stateSelect = StateSelect.prefer) \"Current concentration of substance (mM)\";
 //   Real cytosol.DHAP.rNet(quantity = \"Molar flow rate\", unit = \"mol/s\") \"Net flow rate of substance into the node\";
@@ -958,7 +958,7 @@ checkModel(BioChem.Examples.MultiCompartments.Utilities.SmallCompartment); getEr
 //   Real cytosol.vgpdh_1.m1.c(quantity = \"Concentration\", unit = \"mol/l\", min = 0.0);
 //   Real cytosol.vgpdh_1.m1.r(quantity = \"Molar flow rate\", unit = \"mol/s\");
 //   Real cytosol.vgpdh_1.m1.V(quantity = \"Volume\", unit = \"l\");
-//   parameter Real cytosol.vgpdh_1.KcatGPDH = 78595.60000000001;
+//   parameter Real cytosol.vgpdh_1.KcatGPDH = 78595.6;
 //   parameter Real cytosol.vgpdh_1.KmGPDH = 0.0369;
 //   parameter Real cytosol.vgpdh_1.KmADP = 1.4;
 //   parameter Real cytosol.vgpdh_1.KmPN = 120.0;
@@ -996,20 +996,20 @@ checkModel(BioChem.Examples.MultiCompartments.Utilities.SmallCompartment); getEr
 //   parameter Real iv4 = 0.148871;
 //   parameter Real iv5 = 4.34299;
 //   parameter Real iv6 = 0.00406177;
-//   parameter Real iv7 = 1.72073e-05;
+//   parameter Real iv7 = 1.72073e-5;
 //   parameter Real iv8 = 0.0695775;
 //   parameter Real iv9 = 28.2621;
-//   parameter Real iv10 = 0.000398124;
+//   parameter Real iv10 = 3.98124e-4;
 //   parameter Real iv11 = 0.650608;
 //   parameter Real nv19 = 1.0;
 //   parameter Real nv20 = 1.14947;
-//   parameter Real kamp = 0.008414710000000001;
+//   parameter Real kamp = 0.00841471;
 //   parameter Real k2amp = 200.0;
 //   parameter Real kadp = 0.05;
 //   parameter Real k2adp = 84.7376;
 //   parameter Real tan = 27.5 \"\";
 //   parameter Real tcr = 54.0;
-//   parameter Real kt = 0.08500000000000001;
+//   parameter Real kt = 0.085;
 //   parameter Real kh = 0.2;
 //   parameter Real PNt = 139.117;
 //   Real adpt;
@@ -1110,7 +1110,7 @@ checkModel(BioChem.Examples.MultiCompartments.Utilities.SmallCompartment); getEr
 //   cytosol.vpdh.s2.r = cytosol.vpdh.nS2 * cytosol.vpdh.rr;
 //   cytosol.vpdh.p1.r = (-cytosol.vpdh.nP1) * cytosol.vpdh.rr;
 //   cytosol.vpdh.m1.r = 0.0;
-//   cytosol.jak.rr = cytosol.jak.KcatAK * (cytosol.jak.m1.c * cytosol.jak.s1.c - cytosol.jak.p1.c ^ 2.0) / (1.0 + 10.0 * (cytosol.jak.s1.c + cytosol.jak.p1.c) + cytosol.jak.m1.c * (10.0 + 100.0 * cytosol.jak.s1.c) + cytosol.jak.p1.c * (10.0 + 100.0 * cytosol.jak.p1.c + 0.2865329512893983 * cytosol.jak.s1.c));
+//   cytosol.jak.rr = cytosol.jak.KcatAK * (cytosol.jak.m1.c * cytosol.jak.s1.c - cytosol.jak.p1.c ^ 2.0) / (1.0 + 10.0 * (cytosol.jak.s1.c + cytosol.jak.p1.c) + cytosol.jak.m1.c * (10.0 + 100.0 * cytosol.jak.s1.c) + cytosol.jak.p1.c * (10.0 + 100.0 * cytosol.jak.p1.c + 0.28653295128939826 * cytosol.jak.s1.c));
 //   cytosol.jak.s1.r = cytosol.jak.nS1 * cytosol.jak.rr;
 //   cytosol.jak.p1.r = (-cytosol.jak.nP1) * cytosol.jak.rr;
 //   cytosol.jak.m1.r = 0.0;
@@ -1123,7 +1123,7 @@ checkModel(BioChem.Examples.MultiCompartments.Utilities.SmallCompartment); getEr
 //   cytosol.jatpase.rr = cytosol.jatpase.KcatATPase * cytosol.jatpase.s1.c / (0.05 + cytosol.jatpase.s1.c);
 //   cytosol.jatpase.s1.r = cytosol.jatpase.nS1 * cytosol.jatpase.rr;
 //   cytosol.jatpase.p1.r = (-cytosol.jatpase.nP1) * cytosol.jatpase.rr;
-//   cytosol.jck.rr = cytosol.jck.KcatCK * (1.84331797235023 * cytosol.jck.s1.c * cytosol.jck.s2.c + (-293.33) * cytosol.jck.p1.c * cytosol.jck.p2.c) / (1.0 + 0.02865329512893983 * cytosol.jck.s2.c + 1.25 * cytosol.jck.p2.c + cytosol.jck.s1.c * (1.43 + 0.09216589861751152 * cytosol.jck.s2.c) + cytosol.jck.p1.c * (16.7 + 10.0 * cytosol.jck.p2.c + 0.4761904761904762 * cytosol.jck.s2.c));
+//   cytosol.jck.rr = cytosol.jck.KcatCK * (1.8433179723502304 * cytosol.jck.s1.c * cytosol.jck.s2.c + (-293.33) * cytosol.jck.p1.c * cytosol.jck.p2.c) / (1.0 + 0.02865329512893983 * cytosol.jck.s2.c + 1.25 * cytosol.jck.p2.c + cytosol.jck.s1.c * (1.43 + 0.09216589861751152 * cytosol.jck.s2.c) + cytosol.jck.p1.c * (16.7 + 10.0 * cytosol.jck.p2.c + 0.47619047619047616 * cytosol.jck.s2.c));
 //   cytosol.jck.s1.r = cytosol.jck.nS1 * cytosol.jck.rr;
 //   cytosol.jck.s2.r = cytosol.jck.nS2 * cytosol.jck.rr;
 //   cytosol.jck.p1.r = (-cytosol.jck.nP1) * cytosol.jck.rr;
@@ -1138,7 +1138,7 @@ checkModel(BioChem.Examples.MultiCompartments.Utilities.SmallCompartment); getEr
 //   cytosol.mitochondria.NADm.c = cytosol.mitochondria.NADm.n1.c;
 //   cytosol.mitochondria.V = cytosol.mitochondria.NADm.n1.V;
 //   cytosol.mitochondria.NADm.c = cytosol.mitochondria.NADm.n / cytosol.mitochondria.V;
-//   cytosol.mitochondria.jox.rr = 10000.0 * cytosol.mitochondria.jox.s1.c * cytosol.mitochondria.jox.s2.c / ((0.01 + cytosol.mitochondria.jox.s1.c) * (0.15 + cytosol.mitochondria.jox.s2.c));
+//   cytosol.mitochondria.jox.rr = 1e4 * cytosol.mitochondria.jox.s1.c * cytosol.mitochondria.jox.s2.c / ((0.01 + cytosol.mitochondria.jox.s1.c) * (0.15 + cytosol.mitochondria.jox.s2.c));
 //   cytosol.mitochondria.jox.s1.r = cytosol.mitochondria.jox.nS1 * cytosol.mitochondria.jox.rr;
 //   cytosol.mitochondria.jox.s2.r = cytosol.mitochondria.jox.nS2 * cytosol.mitochondria.jox.rr;
 //   cytosol.mitochondria.jox.p1.r = (-cytosol.mitochondria.jox.nP1) * cytosol.mitochondria.jox.rr;
@@ -1615,7 +1615,7 @@ checkModel(BioChem.Examples.MultiCompartments.Utilities.SmallCompartment); getEr
 //   parameter Real v1b = 9.0;
 //   parameter Real c_sbml = 0.01;
 //   parameter Real k1b = 1.0;
-//   parameter Real k1i = 0.5600000000000001;
+//   parameter Real k1i = 0.56;
 //   parameter Real hill_coeff = 8.0;
 //   Real trans_Bmal1(start = 0.0);
 //   parameter Real v4b = 3.6;
@@ -2021,7 +2021,7 @@ checkModel(BioChem.Examples.MultiCompartments.Utilities.SmallCompartment); getEr
 // ""
 // ""
 // "Check of BioChem.Examples.centralMetabolism.cytosol completed successfully.
-// Class BioChem.Examples.centralMetabolism.cytosol has 320 equation(s) and 320 variable(s).
+// Class BioChem.Examples.centralMetabolism.cytosol has 326 equation(s) and 326 variable(s).
 // 229 of these are trivial equation(s)."
 // "[BioChem 1.0.1+msl.3.2.1/Examples/package.mo:426:3-1027:24:writable] Error: Cannot instantiate BioChem.Examples.centralMetabolism due to class specialization package.
 // Error: Error occurred while flattening model BioChem.Examples.centralMetabolism
@@ -2039,7 +2039,7 @@ checkModel(BioChem.Examples.MultiCompartments.Utilities.SmallCompartment); getEr
 // 70 of these are trivial equation(s)."
 // ""
 // "Check of BioChem.Examples.CircadianOscillator.Cytoplasm completed successfully.
-// Class BioChem.Examples.CircadianOscillator.Cytoplasm has 140 equation(s) and 142 variable(s).
+// Class BioChem.Examples.CircadianOscillator.Cytoplasm has 142 equation(s) and 144 variable(s).
 // 100 of these are trivial equation(s)."
 // ""
 // "Check of BioChem.Examples.CellDivison.cell completed successfully.
@@ -2052,7 +2052,7 @@ checkModel(BioChem.Examples.MultiCompartments.Utilities.SmallCompartment); getEr
 // "[BioChem 1.0.1+msl.3.2.1/Examples/package.mo:2195:7-2195:211:writable] Warning: Connecting two signal sources while connecting Ca_Cyt.n1.V to endoplasmicReticulum.Ca_Cyt_node.V.
 // "
 // "Check of BioChem.Examples.CaOscillations.Endoplasmic_Reticulum completed successfully.
-// Class BioChem.Examples.CaOscillations.Endoplasmic_Reticulum has 34 equation(s) and 35 variable(s).
+// Class BioChem.Examples.CaOscillations.Endoplasmic_Reticulum has 37 equation(s) and 38 variable(s).
 // 26 of these are trivial equation(s)."
 // ""
 // "Check of BioChem.Examples.GlucoseInsulinModel.GlucoseInsulinModel completed successfully.
@@ -2076,31 +2076,31 @@ checkModel(BioChem.Examples.MultiCompartments.Utilities.SmallCompartment); getEr
 // [BioChem 1.0.1+msl.3.2.1/Examples/package.mo:2502:11-2502:132:writable] Warning: Connecting two signal sources while connecting S_calc.n1.V to S_connector.V.
 // "
 // "Check of BioChem.Examples.GlucoseInsulinModel.Utilities.Reactions.FlowReaction completed successfully.
-// Class BioChem.Examples.GlucoseInsulinModel.Utilities.Reactions.FlowReaction has 7 equation(s) and 7 variable(s).
+// Class BioChem.Examples.GlucoseInsulinModel.Utilities.Reactions.FlowReaction has 9 equation(s) and 9 variable(s).
 // 4 of these are trivial equation(s)."
 // ""
 // "Check of BioChem.Examples.GlucoseInsulinModel.Utilities.Reactions.UtilizationReaction completed successfully.
-// Class BioChem.Examples.GlucoseInsulinModel.Utilities.Reactions.UtilizationReaction has 11 equation(s) and 11 variable(s).
+// Class BioChem.Examples.GlucoseInsulinModel.Utilities.Reactions.UtilizationReaction has 14 equation(s) and 14 variable(s).
 // 6 of these are trivial equation(s)."
 // ""
 // "Check of BioChem.Examples.GlucoseInsulinModel.Utilities.Reactions.signaltosubstance completed successfully.
-// Class BioChem.Examples.GlucoseInsulinModel.Utilities.Reactions.signaltosubstance has 7 equation(s) and 7 variable(s).
+// Class BioChem.Examples.GlucoseInsulinModel.Utilities.Reactions.signaltosubstance has 9 equation(s) and 9 variable(s).
 // 5 of these are trivial equation(s)."
 // ""
 // "Check of BioChem.Examples.GlucoseInsulinModel.Utilities.Reactions.U_ii_reaction completed successfully.
-// Class BioChem.Examples.GlucoseInsulinModel.Utilities.Reactions.U_ii_reaction has 7 equation(s) and 7 variable(s).
+// Class BioChem.Examples.GlucoseInsulinModel.Utilities.Reactions.U_ii_reaction has 9 equation(s) and 9 variable(s).
 // 5 of these are trivial equation(s)."
 // ""
 // "Check of BioChem.Examples.GlucoseInsulinModel.Utilities.Reactions.ActivationReaction completed successfully.
-// Class BioChem.Examples.GlucoseInsulinModel.Utilities.Reactions.ActivationReaction has 9 equation(s) and 9 variable(s).
+// Class BioChem.Examples.GlucoseInsulinModel.Utilities.Reactions.ActivationReaction has 12 equation(s) and 12 variable(s).
 // 6 of these are trivial equation(s)."
 // ""
 // "Check of BioChem.Examples.GlucoseInsulinModel.Utilities.Reactions.MM_insulin completed successfully.
-// Class BioChem.Examples.GlucoseInsulinModel.Utilities.Reactions.MM_insulin has 9 equation(s) and 9 variable(s).
+// Class BioChem.Examples.GlucoseInsulinModel.Utilities.Reactions.MM_insulin has 12 equation(s) and 12 variable(s).
 // 6 of these are trivial equation(s)."
 // ""
 // "Check of BioChem.Examples.GlucoseInsulinModel.Utilities.Reactions.GlucoseUptakeReaction completed successfully.
-// Class BioChem.Examples.GlucoseInsulinModel.Utilities.Reactions.GlucoseUptakeReaction has 9 equation(s) and 9 variable(s).
+// Class BioChem.Examples.GlucoseInsulinModel.Utilities.Reactions.GlucoseUptakeReaction has 12 equation(s) and 12 variable(s).
 // 6 of these are trivial equation(s)."
 // ""
 // "Check of BioChem.Examples.MassAction.UniUni completed successfully.
