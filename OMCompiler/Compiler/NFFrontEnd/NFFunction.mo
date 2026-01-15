@@ -872,8 +872,8 @@ uniontype Function
       output String s = Type.toString(InstNode.getType(p)) + " " + InstNode.name(p);
     end param_str;
   algorithm
-    inputs := List.toString(fn.inputs, param_str, "", "", ", ", "");
-    outputs := List.toString(fn.outputs, param_str, "", "", ", ", "");
+    inputs := List.toString(fn.inputs, param_str, List.Style.FLAT);
+    outputs := List.toString(fn.outputs, param_str, List.Style.FLAT);
 
     if listEmpty(fn.outputs) or listLength(fn.outputs) > 1 then
       outputs := "(" + outputs + ")";
@@ -2164,7 +2164,7 @@ uniontype Function
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName()
           + " failed because the body of the function is not a single assignment:\n"
-          + List.toString(body, function Statement.toString(indent = "\t"), "", "", "\n", "")});
+          + List.toStringCustom(body, function Statement.toString(indent = "\t"), "", "", "\n", "")});
       then fail();
     end match;
   end getSingleBodyExp;
@@ -2840,7 +2840,7 @@ protected
 
     if not listEmpty(cycles) then
       cycles_str := stringDelimitList(
-        list(List.toString(cycle, InstNode.name, "", "{", ", ", "}", true)
+        list(List.toString(cycle, InstNode.name, List.Style.FLAT_CURLY)
           for cycle in Graph.findCycles(cycles, InstNode.refEqual)), ", ");
 
       Error.addSourceMessage(Error.CYCLIC_FUNCTION_COMPONENTS, {cycles_str}, info);

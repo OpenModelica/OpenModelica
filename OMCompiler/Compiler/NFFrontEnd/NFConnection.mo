@@ -136,8 +136,8 @@ protected
   algorithm
     if listLength(leftConnectors) <> listLength(rightConnectors) then
       Error.terminate(getInstanceName() + " got unbalanced connection " + toString(conn) + ":" +
-        List.toString(leftConnectors, Connector.toString, "\n  lhs: ", "{", ", ", "}", true) +
-        List.toString(rightConnectors, Connector.toString, "\n  rhs: ", "{", ", ", "}", true), sourceInfo());
+        List.toStringCustom(leftConnectors, Connector.toString, "\n  lhs: ", "{", ", ", "}", true) +
+        List.toStringCustom(rightConnectors, Connector.toString, "\n  rhs: ", "{", ", ", "}", true), sourceInfo());
       fail();
     end if;
   end checkBalance;
