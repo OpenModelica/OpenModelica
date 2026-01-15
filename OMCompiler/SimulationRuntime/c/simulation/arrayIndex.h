@@ -79,10 +79,28 @@ extern "C"
   void computeVarReverseIndices(SIMULATION_INFO *simulationInfo,
                                 MODEL_DATA *modelData);
 
+  modelica_real getStartFromScalarIdx(const SIMULATION_INFO *simulationInfo,
+                                      const MODEL_DATA *modelData,
+                                      enum var_type type,
+                                      enum var_kind kind,
+                                      size_t scalar_idx);
+
   modelica_real getNominalFromScalarIdx(const SIMULATION_INFO *simulationInfo,
                                         const MODEL_DATA *modelData,
                                         enum var_kind kind,
                                         size_t scalar_idx);
+
+  modelica_real getMinFromScalarIdx(const SIMULATION_INFO *simulationInfo,
+                                    const MODEL_DATA *modelData,
+                                    enum var_type type,
+                                    enum var_kind kind,
+                                    size_t scalar_idx);
+
+  modelica_real getMaxFromScalarIdx(const SIMULATION_INFO *simulationInfo,
+                                    const MODEL_DATA *modelData,
+                                    enum var_type type,
+                                    enum var_kind kind,
+                                    size_t scalar_idx);
 
 #ifdef __cplusplus
 }

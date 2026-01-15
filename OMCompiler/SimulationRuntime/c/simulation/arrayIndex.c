@@ -733,7 +733,72 @@ void computeVarReverseIndices(SIMULATION_INFO *simulationInfo,
 }
 
 /**
- * @brief Get nominal attribute by scalar (flattened) index
+ * @brief Get start attribute by scalar (flattened) index.
+ *
+ * Look up array index and dimension from reverse index map based on variable
+ * kind.
+ * Performs simple out of bounds check.
+ *
+ * TODO: Implement for integers, booleans and strings.
+ *
+ * @param simulationInfo  Simulation info with reverse map.
+ * @param modelData       Model data containing start.
+ * @param type            Variable data type.
+ * @param kind            Kind of variable to get start for.
+ *                        If it's not known if it is a state or algebraic variable use `VAR_KIND_VARIABLE`.
+ * @param scalar_idx      Scalar index.
+ * @return modelica_real  start attribute value
+ */
+modelica_real getStartFromScalarIdx(const SIMULATION_INFO *simulationInfo,
+                                    const MODEL_DATA *modelData,
+                                    enum var_type type,
+                                    enum var_kind kind,
+                                    size_t scalar_idx)
+{
+  array_index_t* revIndex;
+
+  switch (type) {
+    case VAR_TYPE_REAL:
+      switch(kind)
+      {
+        case VAR_KIND_STATE:
+          if (scalar_idx >= modelData->nStates) {
+            throwStreamPrint(NULL, "getStartFromScalarIdx: scalar_idx %zu out of bounds [0, %zu)",
+                              scalar_idx, modelData->nStates);
+          }
+          revIndex = &simulationInfo->realVarsReverseIndex[scalar_idx];
+          return real_get(modelData->realVarsData[revIndex->array_idx].attribute.start, revIndex->dim_idx);
+
+        case VAR_KIND_VARIABLE:
+          if (scalar_idx >= modelData->nVariablesReal) {
+            throwStreamPrint(NULL, "getStartFromScalarIdx: scalar_idx %zu out of bounds [0, %zu)",
+                              scalar_idx, modelData->nVariablesReal);
+          }
+          revIndex = &simulationInfo->realVarsReverseIndex[scalar_idx];
+          return real_get(modelData->realVarsData[revIndex->array_idx].attribute.start, revIndex->dim_idx);
+
+        case VAR_KIND_PARAMETER:
+          if (scalar_idx >= modelData->nParametersReal) {
+            throwStreamPrint(NULL, "getStartFromScalarIdx: scalar_idx %zu out of bounds [0, %zu)",
+                              scalar_idx, modelData->nParametersReal);
+          }
+          revIndex = &simulationInfo->realParamsReverseIndex[scalar_idx];
+          return real_get(modelData->realParameterData[revIndex->array_idx].attribute.start, revIndex->dim_idx);
+
+        default:
+          throwStreamPrint(NULL,
+            "getStartFromScalarIdx not implemented for variables of kind %s.",
+            var_kind_names[kind]);
+      }
+      break;
+
+    default:
+      throwStreamPrint(NULL, "getStartFromScalarIdx only implemented for VAR_TYPE_REAL.");
+  }
+}
+
+/**
+ * @brief Get nominal attribute by scalar (flattened) index.
  *
  * Look up array index and dimension from reverse index map based on variable
  * kind.
@@ -743,7 +808,7 @@ void computeVarReverseIndices(SIMULATION_INFO *simulationInfo,
  * @param modelData       Model data containing nominal.
  * @param kind            Kind of variable to get nominal for.
  *                        If it's not known if it is a state or algebraic variable use `VAR_KIND_VARIABLE`.
- * @param scalar_idx      Scalar index.
+ * @param scalar_idx      Scalar index of real variable.
  * @return modelica_real  Nominal value
  */
 modelica_real getNominalFromScalarIdx(const SIMULATION_INFO *simulationInfo,
@@ -783,5 +848,135 @@ modelica_real getNominalFromScalarIdx(const SIMULATION_INFO *simulationInfo,
       throwStreamPrint(NULL,
         "getNominalFromScalarIdx not implemented for variables of kind %s.",
         var_kind_names[kind]);
+  }
+}
+
+/**
+ * @brief Get min attribute by scalar (flattened) index.
+ *
+ * Look up array index and dimension from reverse index map based on variable
+ * kind.
+ * Performs simple out of bounds check.
+ *
+ * TODO: Implement for integers, booleans and strings.
+ *
+ * @param simulationInfo  Simulation info with reverse map.
+ * @param modelData       Model data containing min.
+ * @param type            Variable data type.
+ * @param kind            Kind of variable to get min for.
+ *                        If it's not known if it is a state or algebraic variable use `VAR_KIND_VARIABLE`.
+ * @param scalar_idx      Scalar index.
+ * @return modelica_real  min attribute value
+ */
+modelica_real getMinFromScalarIdx(const SIMULATION_INFO *simulationInfo,
+                                  const MODEL_DATA *modelData,
+                                  enum var_type type,
+                                  enum var_kind kind,
+                                  size_t scalar_idx)
+{
+  array_index_t* revIndex;
+
+  switch (type) {
+    case VAR_TYPE_REAL:
+      switch(kind)
+      {
+        case VAR_KIND_STATE:
+          if (scalar_idx >= modelData->nStates) {
+            throwStreamPrint(NULL, "getMinFromScalarIdx: scalar_idx %zu out of bounds [0, %zu)",
+                              scalar_idx, modelData->nStates);
+          }
+          revIndex = &simulationInfo->realVarsReverseIndex[scalar_idx];
+          return real_get(modelData->realVarsData[revIndex->array_idx].attribute.min, revIndex->dim_idx);
+
+        case VAR_KIND_VARIABLE:
+          if (scalar_idx >= modelData->nVariablesReal) {
+            throwStreamPrint(NULL, "getMinFromScalarIdx: scalar_idx %zu out of bounds [0, %zu)",
+                              scalar_idx, modelData->nVariablesReal);
+          }
+          revIndex = &simulationInfo->realVarsReverseIndex[scalar_idx];
+          return real_get(modelData->realVarsData[revIndex->array_idx].attribute.min, revIndex->dim_idx);
+
+        case VAR_KIND_PARAMETER:
+          if (scalar_idx >= modelData->nParametersReal) {
+            throwStreamPrint(NULL, "getMinFromScalarIdx: scalar_idx %zu out of bounds [0, %zu)",
+                              scalar_idx, modelData->nParametersReal);
+          }
+          revIndex = &simulationInfo->realParamsReverseIndex[scalar_idx];
+          return real_get(modelData->realParameterData[revIndex->array_idx].attribute.min, revIndex->dim_idx);
+
+        default:
+          throwStreamPrint(NULL,
+            "getMinFromScalarIdx not implemented for variables of kind %s.",
+            var_kind_names[kind]);
+      }
+      break;
+
+    default:
+      throwStreamPrint(NULL, "getMinFromScalarIdx only implemented for VAR_TYPE_REAL.");
+  }
+}
+
+/**
+ * @brief Get max attribute by scalar (flattened) index.
+ *
+ * Look up array index and dimension from reverse index map based on variable
+ * kind.
+ * Performs simple out of bounds check.
+ *
+ * TODO: Implement for integers, booleans and strings.
+ *
+ * @param simulationInfo  Simulation info with reverse map.
+ * @param modelData       Model data containing max.
+ * @param type            Variable data type.
+ * @param kind            Kind of variable to get max for.
+ *                        If it's not known if it is a state or algebraic variable use `VAR_KIND_VARIABLE`.
+ * @param scalar_idx      Scalar index.
+ * @return modelica_real  max attribute value
+ */
+modelica_real getMaxFromScalarIdx(const SIMULATION_INFO *simulationInfo,
+                                  const MODEL_DATA *modelData,
+                                  enum var_type type,
+                                  enum var_kind kind,
+                                  size_t scalar_idx)
+{
+  array_index_t* revIndex;
+
+  switch (type) {
+    case VAR_TYPE_REAL:
+      switch(kind)
+      {
+        case VAR_KIND_STATE:
+          if (scalar_idx >= modelData->nStates) {
+            throwStreamPrint(NULL, "getMaxFromScalarIdx: scalar_idx %zu out of bounds [0, %zu)",
+                              scalar_idx, modelData->nStates);
+          }
+          revIndex = &simulationInfo->realVarsReverseIndex[scalar_idx];
+          return real_get(modelData->realVarsData[revIndex->array_idx].attribute.max, revIndex->dim_idx);
+
+        case VAR_KIND_VARIABLE:
+          if (scalar_idx >= modelData->nVariablesReal) {
+            throwStreamPrint(NULL, "getMaxFromScalarIdx: scalar_idx %zu out of bounds [0, %zu)",
+                              scalar_idx, modelData->nVariablesReal);
+          }
+          revIndex = &simulationInfo->realVarsReverseIndex[scalar_idx];
+          return real_get(modelData->realVarsData[revIndex->array_idx].attribute.max, revIndex->dim_idx);
+
+        case VAR_KIND_PARAMETER:
+          if (scalar_idx >= modelData->nParametersReal) {
+            throwStreamPrint(NULL, "getMaxFromScalarIdx: scalar_idx %zu out of bounds [0, %zu)",
+                              scalar_idx, modelData->nParametersReal);
+          }
+          revIndex = &simulationInfo->realParamsReverseIndex[scalar_idx];
+          return real_get(modelData->realParameterData[revIndex->array_idx].attribute.max, revIndex->dim_idx);
+
+        default:
+          throwStreamPrint(NULL,
+            "getMaxFromScalarIdx not implemented for variables of kind %s.",
+            var_kind_names[kind]);
+      }
+      break;
+
+    default:
+      throwStreamPrint(NULL, "getMaxFromScalarIdx only implemented for VAR_TYPE_REAL.");
   }
 }

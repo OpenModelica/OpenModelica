@@ -920,23 +920,35 @@ template simulationFile_jac_header(SimCode simCode)
     static _index_t one_dim[1] = { 1 };
     static modelica_real nominal_data[1] = { 1.0 };
     static modelica_real start_data[1]   = { 0.0 };
+    static modelica_real min_data[1]   = { -DBL_MAX };
+    static modelica_real max_data[1]   = { DBL_MAX };
     static const REAL_ATTRIBUTE dummyREAL_ATTRIBUTE = {
       .unit = NULL,
       .displayUnit = NULL,
-      .min = -DBL_MAX,
-      .max = DBL_MAX,
+      .min = {
+        .ndims     = 1,
+        .dim_size  = one_dim,
+        .data      = (void*) min_data,
+        .flexible  = FALSE
+      },
+      .max = {
+        .ndims     = 1,
+        .dim_size  = one_dim,
+        .data      = (void*) max_data,
+        .flexible  = FALSE
+      },
       .fixed = FALSE,
       .useNominal = FALSE,
       .nominal = {
         .ndims     = 1,
         .dim_size  = one_dim,
-        .data      = ( void* )nominal_data,
+        .data      = (void*) nominal_data,
         .flexible  = FALSE
       },
       .start = {
         .ndims     = 1,
         .dim_size  = one_dim,
-        .data      = ( void* )start_data,
+        .data      = (void*) start_data,
         .flexible  = FALSE
       }
     };
@@ -1958,9 +1970,12 @@ let &sub = buffer ""
       <%vars.inputVars |> SIMVAR(name=name) hasindex i0 =>
         match cref2simvar(name, simCode)
         case SIMVAR(aliasvar=NOALIAS(), type_=T_REAL()) then
+          let kind = match varKind
+            case PARAM() then 'VAR_KIND_PARAMETER'
+            else 'VAR_KIND_VARIABLE'
+          end match
           <<
-          assertStreamPrint(threadData, data->modelData-><%expTypeShort(type_)%>VarsData[<%index%>].dimension.numberOfDimensions == 0, "Handling of array variables not yet implemetned.");
-          data->simulationInfo->inputVars[<%i0%>] = real_get(data->modelData-><%expTypeShort(type_)%>VarsData[<%index%>].attribute.start, 0);
+          data->simulationInfo->inputVars[<%i0%>] = getStartFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, <%kind%>, <%index%>);
           >>
         case SIMVAR(aliasvar=NOALIAS()) then
           <<
@@ -3317,21 +3332,26 @@ template generateStaticInitialData(list<ComponentRef> crefs, String indexName)
 ::=
   let systemType = 'NONLINEAR_SYSTEM_DATA'
   let bodyStaticData = (crefs |> cr hasindex i0 =>
-    let nominal = match cref2simvar(crefRemovePrePrefix(cr), getSimCode())
-      case SIMVAR(type_=T_REAL(__), varKind=PARAM()) then
-        'getNominalFromScalarIdx(data->simulationInfo, data->modelData, VAR_KIND_PARAMETER, <%crefIndexWithComment(cr)%>)'
+    let comment = '/* static nls data for <%crefStrNoUnderscore(cr)%> */'
+    match cref2simvar(crefRemovePrePrefix(cr), getSimCode())
       case SIMVAR(type_=T_REAL(__)) then
-        'getNominalFromScalarIdx(data->simulationInfo, data->modelData, VAR_KIND_VARIABLE, <%crefIndexWithComment(cr)%>)'
+        let kind = match varKind
+          case PARAM() then 'VAR_KIND_PARAMETER'
+          else 'VAR_KIND_VARIABLE'
+        end match
+        <<
+        <%comment%>
+        sysData->nominal[i] = getNominalFromScalarIdx(data->simulationInfo, data->modelData, <%kind%>, <%crefIndexWithComment(cr)%>);
+        sysData->min[i]     = getMinFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, <%kind%>, <%crefIndexWithComment(cr)%>);
+        sysData->max[i++]   = getMaxFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, <%kind%>, <%crefIndexWithComment(cr)%>);
+        >>
       else
-        '<%crefAttributes(cr)%>.nominal'
-      end match
-
-    <<
-    /* static nls data for <%crefStrNoUnderscore(cr)%> */
-    sysData->nominal[i] = <%nominal%>;
-    sysData->min[i]     = <%crefAttributes(cr)%>.min;
-    sysData->max[i++]   = <%crefAttributes(cr)%>.max;
-    >>
+        <<
+        <%comment%>
+        sysData->nominal[i] = <%crefAttributes(cr)%>.nominal;
+        sysData->min[i]     = <%crefAttributes(cr)%>.min;
+        sysData->max[i++]   = <%crefAttributes(cr)%>.max;
+        >>
 
   ;separator="\n")
   <<
@@ -3504,8 +3524,8 @@ end functionUpdateBoundVariableAttributesFunctions;
 
 template functionUpdateBoundVariableAttributesFunctionsSimpleAssign(SimEqSystem eq, String attribute, Context context,
                               Text &varDecls, Text &auxFunction)
- "Generates an equation that is just a simple assignment for an arribute binding. The attribute type is given by the
- function argument 'attibute' (e.g min, max ...)"
+ "Generates an equation that is just a simple assignment for an attribute binding.
+  The attribute type is given by the function argument 'attibute' (e.g min, max ...)"
 ::=
   match eq
     case SES_SIMPLE_ASSIGN(__)
@@ -3522,29 +3542,26 @@ template functionUpdateBoundVariableAttributesFunctionsSimpleAssign(SimEqSystem 
         >>
 
       let updateEqs = match attribute
-        case "nominal" then
+        case "nominal"
+        case "min"
+        case "max" then
           <<
           if (<%crefVarDimension(cref)%>.numberOfDimensions == 0) {
-            put_real_element(<%expPart%>, 0, &<%crefAttributes(cref)%>.nominal);
+            put_real_element(<%expPart%>, 0, &<%crefAttributes(cref)%>.<%attribute%>);
           } else {
-            throwStreamPrint(NULL, "Not yet implemented for array nominals.");
+            throwStreamPrint(NULL, "Not yet implemented for array <%attribute%>.");
           }
 
           if (omc_useStream[OMC_LOG_INIT_V]) {
-            char nominal_buffer[2048];
-            real_vector_to_string(&<%crefAttributes(cref)%>.nominal, <%crefVarDimension(cref)%>.numberOfDimensions == 0, nominal_buffer, 2048);
-            infoStreamPrint(OMC_LOG_INIT_V, 0, "%s(nominal=%s)",
+            char <%attribute%>_buffer[2048];
+            real_vector_to_string(&<%crefAttributes(cref)%>.<%attribute%>, <%crefVarDimension(cref)%>.numberOfDimensions == 0, <%attribute%>_buffer, 2048);
+            infoStreamPrint(OMC_LOG_INIT_V, 0, "%s(<%attribute%>=%s)",
               <%crefVarInfo(cref)%>.name,
-              nominal_buffer);
+              <%attribute%>_buffer);
           }
           >>
         else
-          <<
-          <%crefAttributes(cref)%>.<%attribute%> = <%expPart%>;
-          infoStreamPrint(OMC_LOG_INIT_V, 0, "%s(<%attribute%>=<%crefToPrintfArg(cref)%>)",
-            <%crefVarInfo(cref)%>.name,
-            (<%crefType(cref)%>) <%crefAttributes(cref)%>.<%attribute%>);
-          >>
+          error(sourceInfo(), 'Attribute <%attribute%> not handled by functionUpdateBoundVariableAttributesFunctionsSimpleAssign!')
 
       <<
       <%modelicaLine(eqInfo(eq))%>
@@ -7151,24 +7168,16 @@ template optimizationComponents1(ClassAttributes classAttribute, SimCode simCode
         case simCode as SIMCODE(__) then
           match modelInfo
             case MODELINFO(vars=SIMVARS(__)) then
+              // This assumes, that all variables are of type T_REAL
               <<
-              <%vars.inputVars |> SIMVAR(index=index, type_=type_) hasindex i0 =>
+              <%vars.inputVars |> SIMVAR(type_=T_REAL()) hasindex i0 =>
                 <<
-                min[<%i0%>] = <%crefAttributes(name)%>.min;
-                max[<%i0%>] = <%crefAttributes(name)%>.max;
+                start[<%i0%>] = getStartFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, VAR_KIND_VARIABLE, <%crefIndexWithComment(name)%>);
+                min[<%i0%>] = getMinFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, VAR_KIND_VARIABLE, <%crefIndexWithComment(name)%>);
+                max[<%i0%>] = getMaxFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, VAR_KIND_VARIABLE, <%crefIndexWithComment(name)%>);
                 nominal[<%i0%>] = getNominalFromScalarIdx(data->simulationInfo, data->modelData, VAR_KIND_VARIABLE, <%crefIndexWithComment(name)%>);
                 useNominal[<%i0%>] = <%crefAttributes(name)%>.useNominal;
                 name[<%i0%>] =(char *) <%crefVarInfo(name)%>.name;
-                <%match type_ case T_REAL() then
-                  <<
-                  assertStreamPrint(NULL, data->modelData-><%expTypeShort(type_)%>VarsData[<%index%>].dimension.numberOfDimensions == 0, "Handling of array variables not yet implemetned.");
-                  start[<%i0%>] = real_get(<%crefAttributes(name)%>.start, 0);
-                  >>
-                else
-                  <<
-                  start[<%i0%>] = <%crefAttributes(name)%>.start;
-                  >>
-                %>
                 >>
               ;separator="\n"%>
               >>

@@ -543,13 +543,15 @@ static void read_var_attribute_real(omc_ModelVariable *var_map, REAL_ATTRIBUTE *
   const size_t buff_size = 2048;
   char *start_buffer;
   char *nominal_buffer;
+  char *min_buffer;
+  char *max_buffer;
 
   read_array_var_real(&attribute->start, findHashStringStringEmpty(var_map, "start"), 0.0);
   attribute->fixed = read_value_bool(findHashStringString(var_map, "fixed"));
   attribute->useNominal = read_value_bool(findHashStringString(var_map, "useNominal"));
   read_array_var_real(&attribute->nominal, findHashStringStringEmpty(var_map, "nominal"), 1.0);
-  attribute->min = read_value_real_default(findHashStringStringEmpty(var_map, "min"), REAL_MIN);
-  attribute->max = read_value_real_default(findHashStringStringEmpty(var_map, "max"), REAL_MAX);
+  read_array_var_real(&attribute->min, findHashStringStringEmpty(var_map, "min"), REAL_MIN);
+  read_array_var_real(&attribute->max, findHashStringStringEmpty(var_map, "max"), REAL_MAX);
   attribute->unit = read_value_string(findHashStringStringEmpty(var_map, "unit"));
   attribute->displayUnit = read_value_string(findHashStringStringEmpty(var_map, "displayUnit"));
 
@@ -559,9 +561,15 @@ static void read_var_attribute_real(omc_ModelVariable *var_map, REAL_ATTRIBUTE *
     assertStreamPrint(NULL, start_buffer != NULL, "Out of memory.");
     nominal_buffer = (char*) malloc(buff_size * sizeof(char));
     assertStreamPrint(NULL, nominal_buffer != NULL, "Out of memory.");
+    min_buffer = (char*) malloc(buff_size * sizeof(char));
+    assertStreamPrint(NULL, min_buffer != NULL, "Out of memory.");
+    max_buffer = (char*) malloc(buff_size * sizeof(char));
+    assertStreamPrint(NULL, max_buffer != NULL, "Out of memory.");
 
     real_vector_to_string(&attribute->start, isScalar, start_buffer, buff_size);
     real_vector_to_string(&attribute->nominal, isScalar, nominal_buffer, buff_size);
+    real_vector_to_string(&attribute->min, isScalar, min_buffer, buff_size);
+    real_vector_to_string(&attribute->max, isScalar, max_buffer, buff_size);
 
     infoStreamPrint(OMC_LOG_DEBUG, 0,
                     "Real %s(start=%s, fixed=%s, useNominal=%s, nominal=%s, min=%g, max=%g)",
@@ -570,11 +578,13 @@ static void read_var_attribute_real(omc_ModelVariable *var_map, REAL_ATTRIBUTE *
                     (attribute->fixed) ? "true" : "false",
                     (attribute->useNominal) ? "true" : "false",
                     nominal_buffer,
-                    attribute->min,
-                    attribute->max);
+                    min_buffer,
+                    max_buffer);
 
     free(start_buffer);
     free(nominal_buffer);
+    free(min_buffer);
+    free(max_buffer);
   }
 }
 
