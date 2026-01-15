@@ -2548,7 +2548,7 @@ public
     algorithm
       if Flags.isSet(Flags.DUMP_SLICE) then
         print(shift + "[" + intString(nesting_level) + "] ### Entwining following equations:\n"
-          + List.toString(eqn_lst, function toString(str = shift + "  "), "", "", "\n", "\n\n"));
+          + List.toString(eqn_lst, function toString(str = shift + "  "), List.Style.NEWLINE) + "\n\n");
       end if;
       eqn1 :: rest := eqn_lst;
       while not listEmpty(rest) loop
@@ -2599,7 +2599,7 @@ public
       entwined := listReverse(eqn1 :: entwined);
       if Flags.isSet(Flags.DUMP_SLICE) then
         print(shift + "[" + intString(nesting_level) + "] +++ Result of entwining:\n"
-          + List.toString(entwined, function toString(str = shift  + "  "), "", "", "\n", "\n\n"));
+          + List.toString(entwined, function toString(str = shift  + "  "), List.Style.NEWLINE) + "\n\n");
       end if;
     end entwine;
 

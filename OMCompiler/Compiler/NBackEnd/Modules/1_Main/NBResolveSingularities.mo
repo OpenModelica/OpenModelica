@@ -262,7 +262,7 @@ public
       end if;
       if Flags.isSet(Flags.DUMP_STATESELECTION_INFO) then
         print(StringUtil.headline_4("[stateselection] (" + intString(listLength(diffArguments.new_vars)) + ") State Derivatives Created by Differentiation"));
-        print(List.toString(diffArguments.new_vars, BVariable.pointerToString, "", "\t", "\n\t", "") + "\n\n");
+        print(List.toString(diffArguments.new_vars, BVariable.pointerToString, List.Style.NEWLINE_TAB) + "\n\n");
         print(StringUtil.headline_4("[stateselection] (" + intString(listLength(dummy_states)) + ") Selected Dummy States"));
         print(Slice.lstToString(dummy_states, BVariable.pointerToString) + "\n\n");
       end if;
@@ -346,10 +346,10 @@ public
       err_str := getInstanceName()
         + " failed.\n" + StringUtil.headline_4("(" + intString(listLength(unmatched_vars)) + "|"
         + intString(sum(Slice.size(v, function BVariable.size(resize = true)) for v in unmatched_vars)) + ") Unmatched Variables")
-        + List.toString(unmatched_vars, function Slice.toString(func=BVariable.pointerToString, maxLength=10), "", "\t", "\n\t", "\n", true) + "\n"
+        + List.toString(unmatched_vars, function Slice.toString(func=BVariable.pointerToString, maxLength=10), List.Style.NEWLINE_TAB) + "\n\n"
         + StringUtil.headline_4("(" + intString(listLength(unmatched_eqns)) + "|"
         + intString(sum(Slice.size(e, function Equation.size(resize = true)) for e in unmatched_eqns)) + ") Unmatched Equations")
-        + List.toString(unmatched_eqns, function Slice.toString(func=function Equation.pointerToString(str=""), maxLength=10), "", "\t", "\n\t", "\n", true) + "\n";
+        + List.toString(unmatched_eqns, function Slice.toString(func=function Equation.pointerToString(str=""), maxLength=10), List.Style.NEWLINE_TAB) + "\n\n";
 
       if Flags.isSet(Flags.BLT_DUMP) then
         // mark the discrete equations
@@ -456,16 +456,16 @@ public
         (adj, full) := Adjacency.Matrix.expand(adj, full, vo, vn, eo, en, variables, equations);
 
         if Flags.isSet(Flags.INITIALIZATION) then
-          print(List.toString(start_eqns, function Equation.pointerToString(str = ""),
+          print(List.toStringCustom(start_eqns, function Equation.pointerToString(str = ""),
             StringUtil.headline_4("Created Start Equations for balancing the Initialization (" + intString(listLength(start_eqns)) + "):"), "\t", "\n\t", "", false) + "\n\n");
         end if;
       else
         error_msg := getInstanceName()
           + " failed because following non-fixable variables could not be solved:\n"
-          + List.toString(failed_vars, BVariable.pointerToString, "", "\t", "\n\t", "\n", true);
+          + List.toString(failed_vars, BVariable.pointerToString, List.Style.NEWLINE_TAB) + "\n";
         if Flags.isSet(Flags.INITIALIZATION) then
           error_msg := error_msg + "\nFollowing equations were created by fixing variables:\n"
-            + List.toString(Pointer.access(ptr_start_eqns), function Equation.pointerToString(str = "\t"), "", "", "\n", "\n", true);
+            + List.toString(Pointer.access(ptr_start_eqns), function Equation.pointerToString(str = "\t"), List.Style.NEWLINE_TAB) + "\n";
         else
           error_msg := error_msg + "\nUse -d=initialization for more debug output.";
         end if;

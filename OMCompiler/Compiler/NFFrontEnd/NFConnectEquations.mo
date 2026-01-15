@@ -115,7 +115,7 @@ algorithm
     else
       Error.addInternalError(getInstanceName() + " got connection set with invalid type '" +
         ConnectorType.toDebugString(cty) + "': " +
-        List.toString(set, Connector.toString, "", "{", ", ", "}", true), sourceInfo());
+        List.toString(set, Connector.toString, List.Style.FLAT_CURLY), sourceInfo());
       fail();
     end if;
 

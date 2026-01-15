@@ -3478,7 +3478,7 @@ function printWrongArgsError
   input SourceInfo info;
 algorithm
   Error.addInternalError(evalFunc + " got invalid arguments " +
-    List.toString(args, Expression.toString, "", "(", ", ", ")", true), info);
+    List.toString(args, Expression.toString, List.Style.FLAT_BRACKETS), info);
 end printWrongArgsError;
 
 annotation(__OpenModelica_Interface="frontend");

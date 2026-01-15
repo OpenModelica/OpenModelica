@@ -204,7 +204,7 @@ protected
     aux_eqns := Pointer.access(acc_aux_equations);
     if Flags.isSet(Flags.DUMP_STATESELECTION_INFO) and not listEmpty(aux_eqns) then
       print(StringUtil.headline_4("[stateselection] (" + intString(listLength(aux_eqns)) + ") Created auxiliary equations:"));
-      print(List.toString(aux_eqns, function Equation.pointerToString(str=""), "", "\t", "\n\t", "\n") + "\n");
+      print(List.toString(aux_eqns, function Equation.pointerToString(str=""), List.Style.NEWLINE_TAB) + "\n\n");
     end if;
   end detectContinuousStatesDefault;
 
@@ -358,7 +358,7 @@ protected
       if listEmpty(acc_states) then
         print("\t<no states>\n\n");
       else
-        print(List.toString(acc_states, BVariable.pointerToString, "", "\t", "\n\t", "\n") + "\n");
+        print(List.toString(acc_states, BVariable.pointerToString, List.Style.NEWLINE_TAB) + "\n\n");
       end if;
     end if;
   end updateStatesAndDerivatives;
@@ -448,7 +448,7 @@ protected
       case {old_exp as Expression.LUNARY(exp = Expression.CREF(cref = state_cref))}  then (BVariable.getVarPointer(state_cref, sourceInfo()), old_exp, true);
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of unexpected expression " + context + "("
-          + List.toString(args, Expression.toString, "", "", ", ", "") + ")."});
+          + List.toString(args, Expression.toString, List.Style.FLAT) + ")."});
       then fail();
     end match;
     pre_cref := getPreVar(state_cref, state_var, acc_previous, scalarized);
@@ -488,18 +488,18 @@ protected
     if Flags.isSet(Flags.DUMP_STATESELECTION_INFO) then
       if not listEmpty(acc_discrete_states) then
         print(StringUtil.headline_4("[stateselection] Natural discrete states from " + context + ":"));
-        print(List.toString(acc_discrete_states, BVariable.pointerToString, "", "\t", "\n\t", "\n") + "\n");
+        print(List.toString(acc_discrete_states, BVariable.pointerToString, List.Style.NEWLINE_TAB) + "\n\n");
       end if;
       if not listEmpty(acc_clocked_states) then
         print(StringUtil.headline_4("[stateselection] Natural clocked states from " + context + ":"));
-        print(List.toString(acc_clocked_states, BVariable.pointerToString, "", "\t", "\n\t", "\n") + "\n");
+        print(List.toString(acc_clocked_states, BVariable.pointerToString, List.Style.NEWLINE_TAB) + "\n\n");
       end if;
     end if;
 
     if Flags.isSet(Flags.DUMP_DISCRETEVARS_INFO) then
       if not listEmpty(acc_previous) then
         print(StringUtil.headline_4("[discreteinfo] pre() and previous() variables from " + context + ":"));
-        print(List.toString(acc_previous, BVariable.pointerToString, "", "\t", "\n\t", "\n") + "\n");
+        print(List.toString(acc_previous, BVariable.pointerToString, List.Style.NEWLINE_TAB) + "\n\n");
       end if;
     end if;
 

@@ -258,16 +258,16 @@ public
         case RESIDUAL()           then str + "(" + intString(blck.index) + ") 0 = " + Expression.toString(blck.exp) + "\n";
         case ARRAY_RESIDUAL()     then str + "(" + intString(blck.index) + ") 0 = " + Expression.toString(blck.exp) + "\n";
         case FOR_RESIDUAL()       then str + "(" + intString(blck.index) + ") For-Loop-Residual:\n" + str + "for " + List.toString(blck.iterators, forTplStr) + " loop\n" + str + "  0 = " + Expression.toString(blck.exp) + ";\n" + str + "end for;\n";
-        case GENERIC_RESIDUAL()   then str + "(" + intString(blck.index) + ") Generic For-Loop-Residual:\n" + str + List.toString(blck.scal_indices, intString, "slice", "{", ", ", "}", true, 10) + "\n" + str + "for " + List.toString(blck.iterators, forTplStr) + " loop\n" + str + "  0 = " + Expression.toString(blck.exp) + ";\n" + str + "end for;\n";
+        case GENERIC_RESIDUAL()   then str + "(" + intString(blck.index) + ") Generic For-Loop-Residual:\n" + str + List.toStringCustom(blck.scal_indices, intString, "slice", "{", ", ", "}", true, 10) + "\n" + str + "for " + List.toString(blck.iterators, forTplStr) + " loop\n" + str + "  0 = " + Expression.toString(blck.exp) + ";\n" + str + "end for;\n";
         case SIMPLE_ASSIGN()      then str + "(" + intString(blck.index) + ") " + ComponentRef.toString(blck.lhs) + " := " + Expression.toString(blck.rhs) + "\n";
         case ARRAY_ASSIGN()       then str + "(" + intString(blck.index) + ") " + Expression.toString(blck.lhs) + " := " + Expression.toString(blck.rhs) + "\n";
         case RESIZABLE_ASSIGN()   then str + "(" + intString(blck.index) + ") " + "resizable call [index  " + intString(blck.call_index) + "]\n";
-        case GENERIC_ASSIGN()     then str + "(" + intString(blck.index) + ") " + "single generic call [index  " + intString(blck.call_index) + "] " + List.toString(inList = blck.scal_indices, inPrintFunc = intString, maxLength = 10) + "\n";
-        case ENTWINED_ASSIGN()    then str + List.toString(blck.single_calls, function toString(str=""), "### entwined call (" + intString(blck.index) + ") ###", "\n    ", "    ", "");
+        case GENERIC_ASSIGN()     then str + "(" + intString(blck.index) + ") " + "single generic call [index  " + intString(blck.call_index) + "] " + List.toStringCustom(inList = blck.scal_indices, inPrintFunc = intString, maxLength = 10) + "\n";
+        case ENTWINED_ASSIGN()    then str + List.toStringCustom(blck.single_calls, function toString(str=""), "### entwined call (" + intString(blck.index) + ") ###", "\n    ", "    ", "");
         case ALIAS()              then str + "(" + intString(blck.index) + ") Alias of " + intString(blck.aliasOf) + "\n";
         case ALGORITHM()          then str + "(" + intString(blck.index) + ") Algorithm\n" + Statement.toStringList(blck.stmts, str);
         case INVERSE_ALGORITHM()  then str + "(" + intString(blck.index) + ") Inverse Algorithm\n" + Statement.toStringList(blck.stmts, str) + "\n";
-        case IF()                 then str + "(" + intString(blck.index) + ") " + List.toString(blck.branches, function ifTplStr(str = str), "", str, str + "else ", str + "end if;\n");
+        case IF()                 then str + "(" + intString(blck.index) + ") " + List.toStringCustom(blck.branches, function ifTplStr(str = str), "", str, str + "else ", str + "end if;\n");
         case WHEN()               then str + "(" + intString(blck.index) + ") " + whenString(blck.conditions, blck.when_stmts, blck.else_when, str);
         case LINEAR()             then str + "(" + intString(blck.system.index) + ") " + LinearSystem.toString(blck.system, str);
         case NONLINEAR()          then str + "(" + intString(blck.system.index) + ") " + NonlinearSystem.toString(blck.system, str);
@@ -296,7 +296,7 @@ public
     algorithm
       (condition, blcks) := tpl;
       str := "if " + Expression.toString(condition) + " then\n  "
-         + List.toString(blcks, function toString(str = str + "  "), "", "", "\n", "");
+         + List.toString(blcks, function toString(str = str + "  "), List.Style.NEWLINE);
     end ifTplStr;
 
     function getIndex
@@ -1286,7 +1286,7 @@ public
       String indent = str;
     algorithm
       str := "when " + List.toString(conditions, ComponentRef.toString) + "\n" +
-             List.toString(when_stmts, function WhenStatement.toString(str = indent + "\t"), "", "", "\n", "") + "\n";
+             List.toString(when_stmts, function WhenStatement.toString(str = indent + "\t"), List.Style.NEWLINE) + "\n";
       if Util.isSome(else_when) then
         str := str + indent + "else" + toString(Util.getOption(else_when));
       else
@@ -1401,7 +1401,7 @@ public
     algorithm
       str := "Nonlinear System (size = " + intString(system.size) + ", homotopy = " + boolString(system.homotopy)
               + ", mixed = " + boolString(system.mixed) + ", torn = " + boolString(system.torn) + ")\n"
-              + str + "--" + List.toString(system.crefs, ComponentRef.toString, "Iteration Vars:", "{", ", ", "}", true, 10) + "\n"
+              + str + "--" + List.toStringCustom(system.crefs, ComponentRef.toString, "Iteration Vars:", "{", ", ", "}", true, 10) + "\n"
               + Block.listToString(system.blcks, str + "--");
     end toString;
 

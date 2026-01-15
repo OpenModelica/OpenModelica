@@ -497,7 +497,7 @@ protected
           failed_vars := list(var for var guard(Slice.check(var, function NBVariable.isDiscontinuous(init = init))) in guru_vars);
           if not listEmpty(failed_vars) then
             Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed. Following variables cannot be chosen as iteration variables because they are discontinuous:\n"
-              + List.toString(failed_vars, function Slice.toString(func = BVariable.pointerToString, maxLength = 10), "", "\t" , "\n\t", "")});
+              + List.toString(failed_vars, function Slice.toString(func = BVariable.pointerToString, maxLength = 10), List.Style.NEWLINE_TAB)});
             fail();
           end if;
 
@@ -573,7 +573,7 @@ protected
             // if not variable could be assigned in a full circle of checking all equations the problem is impossible to solve
             if not var_assigned then
               Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed. Following variables could not be solved as inner variables:\n"
-                + List.toString(UnorderedMap.valueList(unsolved_inner_vars), function Slice.toString(func = BVariable.pointerToString, maxLength = 10), "", "\t" , "\n\t", "")});
+                + List.toString(UnorderedMap.valueList(unsolved_inner_vars), function Slice.toString(func = BVariable.pointerToString, maxLength = 10), List.Style.NEWLINE_TAB)});
               fail();
             end if;
           end while;

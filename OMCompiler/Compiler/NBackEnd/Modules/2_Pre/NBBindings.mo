@@ -129,13 +129,13 @@ public
         end if;
 
         if Flags.isSet(Flags.DUMP_BINDINGS) then
-          print(List.toString(binding_cont, function Equation.pointerToString(str = "\t"),
+          print(List.toStringCustom(binding_cont, function Equation.pointerToString(str = "\t"),
             StringUtil.headline_4("Created Continuous Binding Equations (" + intString(listLength(binding_cont)) + "):"), "", "\n", "", false) + "\n\n");
-          print(List.toString(binding_clck, function Equation.pointerToString(str = "\t"),
+          print(List.toStringCustom(binding_clck, function Equation.pointerToString(str = "\t"),
             StringUtil.headline_4("Created Clocked Binding Equations (" + intString(listLength(binding_clck)) + "):"), "", "\n", "", false) + "\n\n");
-          print(List.toString(binding_disc, function Equation.pointerToString(str = "\t"),
+          print(List.toStringCustom(binding_disc, function Equation.pointerToString(str = "\t"),
             StringUtil.headline_4("Created Discrete Binding Equations (" + intString(listLength(binding_disc)) + "):"), "", "\n", "", false) + "\n\n");
-          print(List.toString(binding_rec, function Equation.pointerToString(str = "\t"),
+          print(List.toStringCustom(binding_rec, function Equation.pointerToString(str = "\t"),
             StringUtil.headline_4("Created Record Binding Equations (" + intString(listLength(binding_rec)) + "):"), "", "\n", "", false) + "\n\n");
         end if;
 

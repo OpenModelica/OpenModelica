@@ -1878,7 +1878,7 @@ algorithm
     case Flags.BOOL_FLAG() then boolString(flagData.data);
     case Flags.INT_FLAG() then intString(flagData.data);
     case Flags.INT_LIST_FLAG()
-      then List.toString(flagData.data, intString, "", "", ",", "", false);
+      then List.toStringCustom(flagData.data, intString, "", "", ",", "", false);
 
     case Flags.REAL_FLAG() then realString(flagData.data);
     case Flags.STRING_FLAG() then flagData.data;

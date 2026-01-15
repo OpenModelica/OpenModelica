@@ -190,7 +190,7 @@ public
       else
         algorithm
           Error.addSourceMessage(Error.NO_MATCHING_FUNCTION_FOUND_NFINST,
-            {"size" + List.toString(posArgs, Expression.toString, "", "(", ", ", ")", true),
+            {"size" + List.toString(posArgs, Expression.toString, List.Style.FLAT_BRACKETS),
              "size(Any[:, ...]) => Integer[:]\n  size(Any[:, ...], Integer) => Integer"}, info);
         then
           fail();
@@ -213,7 +213,7 @@ public
     // array can take any number of arguments, but needs at least one.
     if listEmpty(posArgs) then
       Error.addSourceMessage(Error.NO_MATCHING_FUNCTION_FOUND_NFINST,
-        {"array" + List.toString(posArgs, Expression.toString, "", "(", ", ", ")", true),
+        {"array" + List.toString(posArgs, Expression.toString, List.Style.FLAT_BRACKETS),
          "array(Any, Any, ...) => Any[:]"}, info);
       fail();
     end if;
@@ -966,7 +966,7 @@ protected
         if arg_var > Variability.PARAMETER and not (InstContext.inInstanceAPI(context) or Expression.contains(arg, Expression.isResizableCref)) then
           Error.addSourceMessageAndFail(Error.NON_PARAMETER_EXPRESSION_DIMENSION,
             {Expression.toString(arg), String(index),
-             List.toString(fillArg :: dimensionArgs, Expression.toString,
+             List.toStringCustom(fillArg :: dimensionArgs, Expression.toString,
                  ComponentRef.toString(fnRef), "(", ", ", ")", true)}, info);
         end if;
 

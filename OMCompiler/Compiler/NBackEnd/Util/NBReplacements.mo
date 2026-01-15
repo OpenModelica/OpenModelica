@@ -433,7 +433,7 @@ public
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName()
           + " failed because the body of the function is not a single assignment:\n"
-          + List.toString(body, function Statement.toString(indent = "\t"), "", "", "\n", "")});
+          + List.toString(body, function Statement.toString(indent = "\t"), List.Style.NEWLINE)});
       then fail();
     end match;
   end getFunctionBody;

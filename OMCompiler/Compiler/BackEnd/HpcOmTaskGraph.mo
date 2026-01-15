@@ -1177,7 +1177,7 @@ algorithm
     case (BackendDAE.SINGLEEQUATION(eqn=eqnIdx),_,_,_,_,_)
       equation
         (eqnVars, paramVars) = getVarsByEqns({eqnIdx}, iAdjacencyMatrix, iOrderedVars, iKnownVars, iOrderedEquations, iAnalyzeParameters);
-        _ = List.toString(eqnVars, tupleToString, "", "{", ";", "}", true);
+        _ = List.toStringCustom(eqnVars, tupleToString, "", "{", ";", "}", true);
       then
         (eqnVars, paramVars);
     case (BackendDAE.EQUATIONSYSTEM(eqns=eqns),_,_,_,_,_)
@@ -1188,31 +1188,31 @@ algorithm
     case (BackendDAE.SINGLEARRAY(eqn=eqnIdx),_,_,_,_,_)
       equation
         (eqnVars, paramVars) = getVarsByEqns({eqnIdx}, iAdjacencyMatrix, iOrderedVars, iKnownVars, iOrderedEquations, iAnalyzeParameters);
-        _ = List.toString(eqnVars, tupleToString, "", "{", ";", "}", true);
+        _ = List.toStringCustom(eqnVars, tupleToString, "", "{", ";", "}", true);
       then
         (eqnVars, paramVars);
     case (BackendDAE.SINGLEALGORITHM(eqn=eqnIdx),_,_,_,_,_)
       equation
         (eqnVars, paramVars) = getVarsByEqns({eqnIdx}, iAdjacencyMatrix, iOrderedVars, iKnownVars, iOrderedEquations, iAnalyzeParameters);
-        _ = List.toString(eqnVars, tupleToString, "", "{", ";", "}", true);
+        _ = List.toStringCustom(eqnVars, tupleToString, "", "{", ";", "}", true);
       then
         (eqnVars, paramVars);
     case (BackendDAE.SINGLECOMPLEXEQUATION(eqn=eqnIdx),_,_,_,_,_)
       equation
         (eqnVars, paramVars) = getVarsByEqns({eqnIdx}, iAdjacencyMatrix, iOrderedVars, iKnownVars, iOrderedEquations, iAnalyzeParameters);
-        _ = List.toString(eqnVars, tupleToString, "", "{", ";", "}", true);
+        _ = List.toStringCustom(eqnVars, tupleToString, "", "{", ";", "}", true);
       then
         (eqnVars, paramVars);
     case (BackendDAE.SINGLEWHENEQUATION(eqn=eqnIdx),_,_,_,_,_)
       equation
         (eqnVars, paramVars) = getVarsByEqns({eqnIdx}, iAdjacencyMatrix, iOrderedVars, iKnownVars, iOrderedEquations, iAnalyzeParameters);
-        _ = List.toString(eqnVars, tupleToString, "", "{", ";", "}", true);
+        _ = List.toStringCustom(eqnVars, tupleToString, "", "{", ";", "}", true);
       then
         (eqnVars, paramVars);
     case (BackendDAE.SINGLEIFEQUATION(eqn=eqnIdx),_,_,_,_,_)
       equation
         (eqnVars, paramVars) = getVarsByEqns({eqnIdx}, iAdjacencyMatrix, iOrderedVars, iKnownVars, iOrderedEquations, iAnalyzeParameters);
-        _ = List.toString(eqnVars, tupleToString, "", "{", ";", "}", true);
+        _ = List.toStringCustom(eqnVars, tupleToString, "", "{", ";", "}", true);
       then
         (eqnVars, paramVars);
     case (BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(residualequations=resEqns,innerEquations = innerEquations)),_,_,_,_,_)

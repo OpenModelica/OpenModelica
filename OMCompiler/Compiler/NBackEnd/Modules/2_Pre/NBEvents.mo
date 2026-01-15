@@ -157,9 +157,9 @@ public
       if not isEmpty(eventInfo) then
         (tev_lst, cev_lst, sev_lst) := toLists(eventInfo);
         str := StringUtil.headline_2("Event Info") + "\n";
-        str := str +  StringUtil.headline_4("Time Events") + List.toString(tev_lst, function TimeEvent.toString(printIndex = true), "", "", "\n", "") + "\n\n";
-        str := str +  StringUtil.headline_4("Composite Events") + List.toString(cev_lst, function tplString(f1 = Condition.toString, f2 = CompositeEvent.toString), "", "", "\n", "") + "\n\n";
-        str := str +  StringUtil.headline_4("State Events") + List.toString(sev_lst, function tplString(f1 = Condition.toString, f2 = StateEvent.toString), "", "", "\n", "") + "\n\n";
+        str := str +  StringUtil.headline_4("Time Events") + List.toString(tev_lst, function TimeEvent.toString(printIndex = true), List.Style.NEWLINE) + "\n\n";
+        str := str +  StringUtil.headline_4("Composite Events") + List.toString(cev_lst, function tplString(f1 = Condition.toString, f2 = CompositeEvent.toString), List.Style.NEWLINE) + "\n\n";
+        str := str +  StringUtil.headline_4("State Events") + List.toString(sev_lst, function tplString(f1 = Condition.toString, f2 = StateEvent.toString), List.Style.NEWLINE) + "\n\n";
       end if;
     end toString;
 
@@ -207,7 +207,7 @@ public
 
       if Flags.isSet(Flags.DUMP_EVENTS) then
         print(toString(eventInfo));
-        print(List.toString(auxiliary_eqns, function Equation.pointerToString(str = "  "), StringUtil.headline_4("Event Equations"), "", "\n", "\n\n"));
+        print(List.toStringCustom(auxiliary_eqns, function Equation.pointerToString(str = "  "), StringUtil.headline_4("Event Equations"), "", "\n", "\n\n"));
       end if;
     end create;
 

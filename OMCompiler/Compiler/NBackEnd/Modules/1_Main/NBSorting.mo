@@ -549,7 +549,7 @@ public
             Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName()
               + " crucially failed for the following Phase II strong component"
               + " because the body turned out to still have strong components:\n"
-              + List.toString(node_comp, SuperNode.toString, "", "\t", "\n\t", "\n")});
+              + List.toString(node_comp, SuperNode.toString, List.Style.NEWLINE_TAB) + "\n"});
           end if;
 
           // check for independence of the element equations

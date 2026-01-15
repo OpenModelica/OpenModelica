@@ -99,7 +99,7 @@ public
   algorithm
     str := func(slice.t);
     if maxLength > 0 and not listEmpty(slice.indices) then
-      str := str + "\n\tslice: " + List.toString(inList = slice.indices, inPrintFunc = intString, maxLength = maxLength);
+      str := str + "\n\tslice: " + List.toStringCustom(inList = slice.indices, inPrintFunc = intString, maxLength = maxLength);
     end if;
   end toString;
 
@@ -109,7 +109,7 @@ public
     input String indent = "";
     input Integer maxLength = 10;
     partial function toStringT_ = toStringT "ugly hack to make type T known to subfunction";
-    output String str = List.toString(lst, function toString(func = func, maxLength = maxLength), "", indent, "\n" + indent, "", false);
+    output String str = List.toStringCustom(lst, function toString(func = func, maxLength = maxLength), "", indent, "\n" + indent, "", false);
   end lstToString;
 
   function isFull
