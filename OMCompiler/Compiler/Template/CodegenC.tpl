@@ -1292,7 +1292,7 @@ template simulationFile(SimCode simCode, String guid, String isModelExchangeFMU)
 
     <%simulationFileHeader(simCode.fileNamePrefix)%>
     #include "simulation/solver/events.h"
-    #include "util/real_array.h"
+    #include "simulation/arrayIndex.h"
 
     <% if stringEq("",isModelExchangeFMU) then
     <<
