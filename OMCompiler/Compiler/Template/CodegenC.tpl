@@ -1873,12 +1873,12 @@ end globalDataAliasVarArray;
 template symJacDefinition(list<JacobianMatrix> JacobianMatrices, String modelNamePrefix) "template variableDefinitionsJacobians
   Generates defines for jacobian vars."
 ::=
-  let symbolicJacsDefine = (JacobianMatrices |> jac as JAC_MATRIX(columns=jacColumn, seedVars=seedVars, matrixName=name, jacobianIndex=indexJacobian)  =>
+  let symbolicJacsDefine = (JacobianMatrices |> jac as JAC_MATRIX()  =>
     <<
-    #define <%symbolName(modelNamePrefix,"INDEX_JAC_")%><%name%> <%indexJacobian%>
-    int <%symbolName(modelNamePrefix,"functionJac")%><%name%>_column(DATA* data, threadData_t *threadData, JACOBIAN *thisJacobian, JACOBIAN *parentJacobian);
-    int <%symbolName(modelNamePrefix,"initialAnalyticJacobian")%><%name%>(DATA* data, threadData_t *threadData, JACOBIAN *jacobian);
-    <%genericCallHeaders(jac.generic_loop_calls, createJacContext(jac.crefsHT))%>
+    #define <%symbolName(modelNamePrefix,"INDEX_JAC_")%><%jac.matrixName%> <%jac.jacobianIndex%>
+    int <%symbolName(modelNamePrefix,"functionJac")%><%jac.matrixName%>_column(DATA* data, threadData_t *threadData, JACOBIAN *thisJacobian, JACOBIAN *parentJacobian);
+    int <%symbolName(modelNamePrefix,"initialAnalyticJacobian")%><%jac.matrixName%>(DATA* data, threadData_t *threadData, JACOBIAN *jacobian);
+    <%genericCallHeaders(jac.generic_loop_calls, createJacContext(jac.matrixName, jac.crefsHT))%>
     >>
     ;separator="\n\n";empty)
 
@@ -5536,7 +5536,7 @@ template functionAnalyticJacobians(list<JacobianMatrix> JacobianMatrices, String
   let jacMats = (JacobianMatrices |> JAC_MATRIX() =>
     generateMatrix(columns, seedVars, matrixName, partitionIndex, crefsHT, modelNamePrefix) ;separator="\n")
   let jacGenericCalls = (JacobianMatrices |> JAC_MATRIX() =>
-    genericCallBodies(generic_loop_calls, createJacContext(crefsHT)) ;separator="\n")
+    genericCallBodies(generic_loop_calls, createJacContext(matrixName, crefsHT)) ;separator="\n")
   <<
   <%jacMats%>
 
@@ -5631,7 +5631,7 @@ template generateMatrix(list<JacobianColumn> jacobianColumn, list<SimVar> seedVa
       case _ then
         let jacMats =
         (jacobianColumn |> JAC_COLUMN(columnEqns=eqs, constantEqns=constantEqns) =>
-          functionJac(eqs, constantEqns, partIdx, matrixname, jacHT, modelNamePrefix)
+          functionJac(eqs, constantEqns, partIdx, createJacContext(matrixname, jacHT), modelNamePrefix)
           ;separator="\n")
         let indexColumn = (jacobianColumn |> JAC_COLUMN(numberOfResultVars=nRows) =>
           nRows
@@ -5643,40 +5643,44 @@ template generateMatrix(list<JacobianColumn> jacobianColumn, list<SimVar> seedVa
   end match
 end generateMatrix;
 
-template generateConstantEqns(list<SimEqSystem> constantEqns, String matrixName, String modelNamePrefix)
+template generateConstantEqns(list<SimEqSystem> constantEqns, String modelNamePrefix, Context context)
 ::=
+match context
+case JACOBIAN_CONTEXT() then
   <<
   OMC_DISABLE_OPT
-  int <%symbolName(modelNamePrefix,"functionJac")%><%matrixName%>_constantEqns(DATA* data, threadData_t *threadData, JACOBIAN *jacobian, JACOBIAN *parentJacobian)
+  int <%symbolName(modelNamePrefix,"functionJac")%><%name%>_constantEqns(DATA* data, threadData_t *threadData, JACOBIAN *jacobian, JACOBIAN *parentJacobian)
   {
-    int index = <%symbolName(modelNamePrefix,"INDEX_JAC_")%><%matrixName%>;
+    int index = <%symbolName(modelNamePrefix,"INDEX_JAC_")%><%name%>;
 
-    <%equations_call(constantEqns, modelNamePrefix, contextJacobian)%>
+    <%equations_call(constantEqns, modelNamePrefix, context)%>
 
     return 0;
   }
   >>
 end generateConstantEqns;
 
-template functionJac(list<SimEqSystem> jacEquations, list<SimEqSystem> constantEqns, Integer base_idx, String matrixName, Option<HashTableCrefSimVar.HashTable> jacHT, String modelNamePrefix)
+template functionJac(list<SimEqSystem> jacEquations, list<SimEqSystem> constantEqns, Integer base_idx, Context context, String modelNamePrefix)
   "This template generates functions for each column of a single jacobian.
    This is a helper of generateMatrix."
 ::=
+match context
+case JACOBIAN_CONTEXT() then
   <<
   /* constant equations */
   <%(constantEqns |> eq hasindex sub_idx =>
-    equation_impl(base_idx, sub_idx, eq, createJacContext(jacHT), modelNamePrefix, false); separator="\n")%>
+    equation_impl(base_idx, sub_idx, eq, context, modelNamePrefix, false); separator="\n")%>
   /* dynamic equations */
   <%(jacEquations |> eq hasindex sub_idx =>
-    equation_impl(base_idx, sub_idx, eq, createJacContext(jacHT), modelNamePrefix, false); separator="\n")%>
+    equation_impl(base_idx, sub_idx, eq, context, modelNamePrefix, false); separator="\n")%>
 
-  <%generateConstantEqns(constantEqns, matrixName, modelNamePrefix)%>
+  <%generateConstantEqns(constantEqns, modelNamePrefix, context)%>
 
-  int <%symbolName(modelNamePrefix,"functionJac")%><%matrixName%>_column(DATA* data, threadData_t *threadData, JACOBIAN *jacobian, JACOBIAN *parentJacobian)
+  int <%symbolName(modelNamePrefix,"functionJac")%><%name%>_column(DATA* data, threadData_t *threadData, JACOBIAN *jacobian, JACOBIAN *parentJacobian)
   {
-    int index = <%symbolName(modelNamePrefix,"INDEX_JAC_")%><%matrixName%>;
+    int index = <%symbolName(modelNamePrefix,"INDEX_JAC_")%><%name%>;
 
-    <%equations_call(jacEquations, modelNamePrefix, contextJacobian)%>
+    <%equations_call(jacEquations, modelNamePrefix, context)%>
 
     return 0;
   }
