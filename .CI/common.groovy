@@ -231,7 +231,7 @@ void buildOMC(CC, CXX, extraFlags, Boolean buildCpp, Boolean clean) {
   standardSetup()
 
   if (isWindows()) {
-    bat (label: 'build', script """
+    bat (label: 'build', script: """
       If Defined LOCALAPPDATA (echo LOCALAPPDATA: %LOCALAPPDATA%) Else (Set "LOCALAPPDATA=C:\\Users\\OpenModelica\\AppData\\Local")
       echo on
       (
