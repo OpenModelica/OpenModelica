@@ -63,7 +63,7 @@ unset OPENMODELICALIBRARY
 
 mkdir -p "$WORKDIR/.sanity-check"
 pushd "$WORKDIR/.sanity-check" >/dev/null
-cp $SCRIPT_DIR/testSanity.mos .
+cp "$SCRIPT_DIR/testSanity.mos" .
 
 # Run sanity MOS script
 echo Running sanity MOS script
@@ -86,12 +86,12 @@ rm -rf "$WORKDIR/.sanity-check"
 
 # Additional tests from testsuite
 echo Testing some models from testsuite, ffi, meta
-cd $TESTSUITE_DIR/flattening/libraries/biochem
-$RTEST --return-with-error-code EnzMM.mos
+cd "$TESTSUITE_DIR/flattening/libraries/biochem"
+"$RTEST" --return-with-error-code EnzMM.mos
 
 cd "$TESTSUITE_DIR/flattening/modelica/ffi"
-$RTEST --return-with-error-code ModelicaInternal_countLines.mos
-$RTEST --return-with-error-code Integer1.mos
+"$RTEST" --return-with-error-code ModelicaInternal_countLines.mos
+"$RTEST" --return-with-error-code Integer1.mos
 
 cd "$TESTSUITE_DIR/metamodelica/meta"
-$RTEST --return-with-error-code AlgPatternm.mos
+"$RTEST" --return-with-error-code AlgPatternm.mos

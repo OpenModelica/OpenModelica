@@ -165,25 +165,28 @@ void makeLibsAndCache() {
 /*
  * Perform sanity check
  *
- * @param buildCpp True if omc was build with Cpp runtime.
+ * @param installDir  Path to installation directory.
+ * @param buildCpp    True if omc was build with Cpp runtime.
  */
 void sanityCheck(String installDir, Boolean buildCpp) {
   if (isWindows()) {
     bat label: 'Sanity check - C', script: """
       set MSYSTEM=UCRT64
       set MSYS2_PATH_TYPE=inherit
-      %OMDEV%\\tools\\msys\\usr\\bin\\sh --login -i -c "cd `cygpath '${WORKSPACE}'` && bash testsuite/sanity-check/runSanity.sh --omc=${installDir}/bin/omc
+      %OMDEV%\\tools\\msys\\usr\\bin\\sh --login -i -c "cd `cygpath '${WORKSPACE}'` && bash testsuite/sanity-check/runSanity.sh --omc=${installDir}/bin/omc"
     """
-    bat label: 'Sanity check - Cpp', script: """
-      set MSYSTEM=UCRT64
-      set MSYS2_PATH_TYPE=inherit
-      %OMDEV%\\tools\\msys\\usr\\bin\\sh --login -i -c "cd `cygpath '${WORKSPACE}'` && bash testsuite/sanity-check/runSanity.sh --omc=${installDir}/bin/omc --testCpp=true
-    """
+    if (buildCpp) {
+      bat label: 'Sanity check - Cpp', script: """
+        set MSYSTEM=UCRT64
+        set MSYS2_PATH_TYPE=inherit
+        %OMDEV%\\tools\\msys\\usr\\bin\\sh --login -i -c "cd `cygpath '${WORKSPACE}'` && bash testsuite/sanity-check/runSanity.sh --omc=${installDir}/bin/omc --testCpp=true"
+      """
+    }
     bat label: 'Sanity check - With spaces', script: """
       set MSYSTEM=UCRT64
       set MSYS2_PATH_TYPE=inherit
-      mv ${installDir}/ '${installDir} but with spaces/'
-      %OMDEV%\\tools\\msys\\usr\\bin\\sh --login -i -c "cd `cygpath '${WORKSPACE}'` && mv ${installDir}/ '${installDir} but with spaces/' && bash testsuite/sanity-check/runSanity.sh --omc='${installDir} but with spaces/bin/omc'
+      move "${installDir}" "${installDir} but with spaces/"
+      %OMDEV%\\tools\\msys\\usr\\bin\\sh --login -i -c "cd `cygpath '${WORKSPACE}'` && bash testsuite/sanity-check/runSanity.sh --omc='${installDir} but with spaces/bin/omc'"
     """
   } else {
     sh label: 'Sanity check - C', script: "bash testsuite/sanity-check/runSanity.sh --omc=${installDir}/bin/omc"
