@@ -190,7 +190,7 @@ void sanityCheck(String installDir, Boolean buildCpp) {
       set MSYS2_PATH_TYPE=inherit
       set PATH=%PATH%;${installDir}\\build\\bin;${installDir}\\build\\lib\\omc\\omsicpp;${installDir}\\build\\lib\\omc\\cpp
       move "${installDir}" "${installDir} but with spaces/"
-      %OMDEV%\\tools\\msys\\usr\\bin\\sh --login -c "cd `cygpath '${WORKSPACE}'` && bash testsuite/sanity-check/runSanity.sh --omc='${installDir} but with spaces/bin/omc'" || (move "${installDir} but with spaces\\" "${installDir}" && exit 1)
+      %OMDEV%\\tools\\msys\\usr\\bin\\sh --login -c "cd `cygpath '${WORKSPACE}'` && bash testsuite/sanity-check/runSanity.sh --omc='${installDir} but with spaces/bin/omc' || (move "${installDir} but with spaces\\" "${installDir}" && exit 1)"
       move "${installDir} but with spaces/" "${installDir}"
     """
     bat label: "Sanity check - testsuite", script: """
