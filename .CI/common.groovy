@@ -173,27 +173,27 @@ void makeLibsAndCache() {
  */
 void sanityCheck(String installDir, Boolean buildCpp) {
   if (isWindows()) {
-    bat label: 'Sanity check - C', script: """
+    bat (label: 'Sanity check - C', script: """
       set MSYSTEM=UCRT64
       set MSYS2_PATH_TYPE=inherit
       set PATH=%PATH%;${installDir}\\build\\bin;${installDir}\\build\\lib\\omc\\omsicpp;${installDir}\\build\\lib\\omc\\cpp
       %OMDEV%\\tools\\msys\\usr\\bin\\sh --login -c "cd `cygpath '${WORKSPACE}'` && bash testsuite/sanity-check/runSanity.sh --omc=${installDir}/bin/omc"
-    """
-    bat label: 'Sanity check - Cpp', script: """
+    """)
+    bat (label: 'Sanity check - Cpp', script: """
       set MSYSTEM=UCRT64
       set MSYS2_PATH_TYPE=inherit
       set PATH=%PATH%;${installDir}\\build\\bin;${installDir}\\build\\lib\\omc\\omsicpp;${installDir}\\build\\lib\\omc\\cpp
       %OMDEV%\\tools\\msys\\usr\\bin\\sh --login -c "cd `cygpath '${WORKSPACE}'` && bash testsuite/sanity-check/runSanity.sh --omc=${installDir}/bin/omc --simCodeTarget=Cpp"
-    """
-    bat label: 'Sanity check - Install dir with spaces', script: """
+    """)
+    bat (label: 'Sanity check - Install dir with spaces', script: """
       set MSYSTEM=UCRT64
       set MSYS2_PATH_TYPE=inherit
       set PATH=%PATH%;${installDir}\\build\\bin;${installDir}\\build\\lib\\omc\\omsicpp;${installDir}\\build\\lib\\omc\\cpp
-      move "${installDir}" "${installDir} but with spaces/"
-      %OMDEV%\\tools\\msys\\usr\\bin\\sh --login -c "cd `cygpath '${WORKSPACE}'` && bash testsuite/sanity-check/runSanity.sh --omc='${installDir} but with spaces/bin/omc' || (move "${installDir} but with spaces\\" "${installDir}" && exit 1)"
+      move "${installDir}" "${installDir} but with spaces"
+      %OMDEV%\\tools\\msys\\usr\\bin\\sh --login -c "cd `cygpath '${WORKSPACE}'` && bash testsuite/sanity-check/runSanity.sh --omc='${installDir} but with spaces/bin/omc'" || (move "${installDir} but with spaces" "${installDir}" && exit 1)
       move "${installDir} but with spaces/" "${installDir}"
-    """
-    bat label: "Sanity check - testsuite", script: """
+    """)
+    bat (label: "Sanity check - testsuite", script: """
       If Defined LOCALAPPDATA (echo LOCALAPPDATA: %LOCALAPPDATA%) Else (Set "LOCALAPPDATA=C:\\Users\\OpenModelica\\AppData\\Local")
       echo on
       (
@@ -218,7 +218,7 @@ void sanityCheck(String installDir, Boolean buildCpp) {
       set MSYS2_PATH_TYPE=inherit
       set PATH=%PATH%;${installDir}\\build\\bin;${installDir}\\build\\lib\\omc\\omsicpp;${installDir}\\build\\lib\\omc\\cpp
       %OMDEV%\\tools\\msys\\usr\\bin\\sh --login -c "cd `cygpath '${WORKSPACE}'` && chmod +x miniTestsuite.sh && ./miniTestsuite.sh && rm -f ./miniTestsuite.sh"
-    """
+    """)
   } else {
     sh label: 'Sanity check - C', script: "bash testsuite/sanity-check/runSanity.sh --omc=${installDir}/bin/omc"
     if (buildCpp) {
@@ -231,7 +231,7 @@ void buildOMC(CC, CXX, extraFlags, Boolean buildCpp, Boolean clean) {
   standardSetup()
 
   if (isWindows()) {
-    bat label: 'build', script """
+    bat (label: 'build', script """
       If Defined LOCALAPPDATA (echo LOCALAPPDATA: %LOCALAPPDATA%) Else (Set "LOCALAPPDATA=C:\\Users\\OpenModelica\\AppData\\Local")
       echo on
       (
@@ -252,7 +252,7 @@ void buildOMC(CC, CXX, extraFlags, Boolean buildCpp, Boolean clean) {
       set MSYSTEM=UCRT64
       set MSYS2_PATH_TYPE=inherit
       %OMDEV%\\tools\\msys\\usr\\bin\\sh --login -i -c "cd `cygpath '${WORKSPACE}'` && chmod +x buildOMCWindows.sh && ./buildOMCWindows.sh && rm -f ./buildOMCWindows.sh"
-    """
+    """)
   } else {
     sh 'autoreconf --install'
     // Note: Do not use -march=native since we might use an incompatible machine in later stages
@@ -276,7 +276,7 @@ void buildOMC_CMake(cmake_args, cmake_exe='cmake') {
   standardSetup()
 
   if (isWindows()) {
-    bat ("""
+    bat (label: 'build', script: """
       If Defined LOCALAPPDATA (echo LOCALAPPDATA: %LOCALAPPDATA%) Else (Set "LOCALAPPDATA=C:\\Users\\OpenModelica\\AppData\\Local")
       echo on
       (
