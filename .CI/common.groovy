@@ -162,155 +162,109 @@ void makeLibsAndCache() {
   }
 }
 
+/*
+ * Perform sanity check
+ *
+ * @param buildCpp True if omc was build with Cpp runtime.
+ */
+void sanityCheck(String installDir, Boolean buildCpp) {
+  if (isWindows()) {
+    bat label: 'Sanity check - C', script: """
+      set MSYSTEM=UCRT64
+      set MSYS2_PATH_TYPE=inherit
+      %OMDEV%\\tools\\msys\\usr\\bin\\sh --login -i -c "cd `cygpath '${WORKSPACE}'` && bash testsuite/sanity-check/runSanity.sh --omc=${installDir}/bin/omc
+    """
+    bat label: 'Sanity check - Cpp', script: """
+      set MSYSTEM=UCRT64
+      set MSYS2_PATH_TYPE=inherit
+      %OMDEV%\\tools\\msys\\usr\\bin\\sh --login -i -c "cd `cygpath '${WORKSPACE}'` && bash testsuite/sanity-check/runSanity.sh --omc=${installDir}/bin/omc --testCpp=true
+    """
+    bat label: 'Sanity check - With spaces', script: """
+      set MSYSTEM=UCRT64
+      set MSYS2_PATH_TYPE=inherit
+      mv ${installDir}/ '${installDir} but with spaces/'
+      %OMDEV%\\tools\\msys\\usr\\bin\\sh --login -i -c "cd `cygpath '${WORKSPACE}'` && mv ${installDir}/ '${installDir} but with spaces/' && bash testsuite/sanity-check/runSanity.sh --omc='${installDir} but with spaces/bin/omc'
+    """
+  } else {
+    sh label: 'Sanity check - C', script: "bash testsuite/sanity-check/runSanity.sh --omc=${installDir}/bin/omc"
+    if (buildCpp) {
+      sh label: 'Sanity check - Cpp', script: "bash testsuite/sanity-check/runSanity.sh --omc=${installDir}/bin/omc --testCpp=true"
+    }
+    sh label: 'Sanity check - With spaces', script: """
+      mv ${installDir}/ '${installDir} but with spaces/'
+      bash testsuite/sanity-check/runSanity.sh --omc='${installDir} but with spaces/bin/omc'
+    """
+  }
+}
+
 void buildOMC(CC, CXX, extraFlags, Boolean buildCpp, Boolean clean) {
   standardSetup()
 
   if (isWindows()) {
-  bat ("""
-     If Defined LOCALAPPDATA (echo LOCALAPPDATA: %LOCALAPPDATA%) Else (Set "LOCALAPPDATA=C:\\Users\\OpenModelica\\AppData\\Local")
-     echo on
-     (
-     echo export MSYS_WORKSPACE="`cygpath '${WORKSPACE}'`"
-     echo echo MSYS_WORKSPACE: \${MSYS_WORKSPACE}
-     echo cd \${MSYS_WORKSPACE}
-     echo export MAKETHREADS=-j16
-     echo set -ex
-     echo export OPENMODELICAHOME="\${MSYS_WORKSPACE}/build"
-     echo export OPENMODELICALIBRARY="\${MSYS_WORKSPACE}/build/lib/omlibrary"
-     echo set
-     echo which cmake
-     echo time make -f Makefile.omdev.mingw \${MAKETHREADS} omc testsuite-depends
-     echo cd \${MSYS_WORKSPACE}
-     echo make -f Makefile.omdev.mingw \${MAKETHREADS} BUILDTYPE=Release all-runtimes
-     echo echo Check that omc can be started and a model can be build for NF OF with runtimes C Cpp FMU
-     echo echo Unset OPENMODELICALIBRARY to make sure the default is used
-     echo unset OPENMODELICALIBRARY
-     echo echo Attempt to build things using \$OPENMODELICAHOME
-     echo ./build/bin/omc --version
-     echo mkdir .sanity-check
-     echo cd .sanity-check
-     echo cp ../testsuite/sanity-check/testSanity.mos .
-     echo ../build/bin/omc --linearizationDumpLanguage=matlab testSanity.mos
-     echo export PATH=\$PATH:../build/bin/:../build/lib/omc/omsicpp:../build/lib/omc/cpp
-     echo ./M
-     echo ./M -l=1.0
-     echo ls linearized_model.m
-     echo ls M.fmu
-     echo rm -rf ./M* ./OMCppM* ./linear_M* ./linearized_model.m
-     echo ../build/bin/omc --simCodeTarget=Cpp testSanity.mos
-     echo ./M
-     echo ls M.fmu
-     echo rm -rf ./M* ./OMCppM*
-     echo cd ..
-     echo rm -rf .sanity-check
-     echo echo Testing some models from testsuite, ffi, meta
-     echo cd testsuite/flattening/libraries/biochem
-     echo ../../../rtest --return-with-error-code EnzMM.mos
-     echo cd \${MSYS_WORKSPACE}
-     echo cd testsuite/flattening/modelica/ffi
-     echo ../../../rtest --return-with-error-code ModelicaInternal_countLines.mos
-     echo ../../../rtest --return-with-error-code Integer1.mos
-     echo cd \${MSYS_WORKSPACE}
-     echo cd testsuite/metamodelica/meta
-     echo ../../rtest --return-with-error-code AlgPatternm.mos
-     echo echo Testing if we can compile in a path with spaces
-     echo cd \${MSYS_WORKSPACE}
-     echo mkdir -p ./path\\ with\\ space/
-     echo mv build ./path\\ with\\ space/
-     echo export OPENMODELICAHOME="\${MSYS_WORKSPACE}/path with space/build"
-     echo echo Attempt to build things using \$OPENMODELICAHOME
-     echo ./path\\ with\\ space/build/bin/omc --version
-     echo cd ./path\\ with\\ space/
-     echo mkdir .sanity-check
-     echo cd .sanity-check
-     echo cp ../../testsuite/sanity-check/testSanity.mos .
-     echo ../build/bin/omc --linearizationDumpLanguage=matlab testSanity.mos
-     echo export PATH=\$PATH:../build/bin/:../build/lib/omc/omsicpp:../build/lib/omc/cpp
-     echo ./M
-     echo ./M -l=1.0
-     echo ls linearized_model.m
-     echo ls M.fmu
-     echo rm -rf ./M* ./OMCppM* ./linear_M* ./linearized_model.m
-     echo ../build/bin/omc --simCodeTarget=Cpp testSanity.mos
-     echo ./M
-     echo ls M.fmu
-     echo rm -rf ./M* ./OMCppM*
-     echo cd ..
-     echo rm -rf .sanity-check
-     echo mv build/ ../.
-     echo cd ../../
-     echo rm -rf ./path\\ with\\ space/
-     ) > buildOMCWindows.sh
+    bat ("""
+      If Defined LOCALAPPDATA (echo LOCALAPPDATA: %LOCALAPPDATA%) Else (Set "LOCALAPPDATA=C:\\Users\\OpenModelica\\AppData\\Local")
+      echo on
+      (
+      echo export MSYS_WORKSPACE="`cygpath '${WORKSPACE}'`"
+      echo echo MSYS_WORKSPACE: \${MSYS_WORKSPACE}
+      echo cd \${MSYS_WORKSPACE}
+      echo export MAKETHREADS=-j16
+      echo set -ex
+      echo export OPENMODELICAHOME="\${MSYS_WORKSPACE}/build"
+      echo export OPENMODELICALIBRARY="\${MSYS_WORKSPACE}/build/lib/omlibrary"
+      echo set
+      echo which cmake
+      echo time make -f Makefile.omdev.mingw \${MAKETHREADS} omc testsuite-depends
+      echo cd \${MSYS_WORKSPACE}
+      echo make -f Makefile.omdev.mingw \${MAKETHREADS} BUILDTYPE=Release all-runtimes
+      ) > buildOMCWindows.sh
 
-     set MSYSTEM=UCRT64
-     set MSYS2_PATH_TYPE=inherit
-     %OMDEV%\\tools\\msys\\usr\\bin\\sh --login -i -c "cd `cygpath '${WORKSPACE}'` && chmod +x buildOMCWindows.sh && ./buildOMCWindows.sh && rm -f ./buildOMCWindows.sh"
-  """)
+      set MSYSTEM=UCRT64
+      set MSYS2_PATH_TYPE=inherit
+      %OMDEV%\\tools\\msys\\usr\\bin\\sh --login -i -c "cd `cygpath '${WORKSPACE}'` && chmod +x buildOMCWindows.sh && ./buildOMCWindows.sh && rm -f ./buildOMCWindows.sh"
+    """)
   } else {
-  sh 'autoreconf --install'
-  // Note: Do not use -march=native since we might use an incompatible machine in later stages
-  def withCppRuntime = buildCpp ? "--with-cppruntime":"--without-cppruntime"
-  sh "./configure CC='${CC}' CXX='${CXX}' FC=gfortran CFLAGS=-Os ${withCppRuntime} --without-omc --without-omlibrary --with-omniORB --enable-modelica3d --prefix=`pwd`/install ${extraFlags}"
-  // OMSimulator requires HOME to be set and writeable
-  if (clean) {
-    sh label: 'clean', script: "HOME='${env.WORKSPACE}' ${makeCommand()} -j${numPhysicalCPU()} ${outputSync()} clean"
+    sh 'autoreconf --install'
+    // Note: Do not use -march=native since we might use an incompatible machine in later stages
+    def withCppRuntime = buildCpp ? "--with-cppruntime":"--without-cppruntime"
+    sh "./configure CC='${CC}' CXX='${CXX}' FC=gfortran CFLAGS=-Os ${withCppRuntime} --without-omc --without-omlibrary --with-omniORB --enable-modelica3d --prefix=`pwd`/install ${extraFlags}"
+    // OMSimulator requires HOME to be set and writeable
+    if (clean) {
+      sh label: 'clean', script: "HOME='${env.WORKSPACE}' ${makeCommand()} -j${numPhysicalCPU()} ${outputSync()} clean"
+    }
+    sh label: 'build', script: "HOME='${env.WORKSPACE}' ${makeCommand()} -j${numPhysicalCPU()} ${outputSync()} omc omc-diff omsimulator"
+    sh 'find build/lib/*/omc/ -name "*.so" -exec strip {} ";"'
+
+    // Find unused imports
+    sh label: 'Find unused imports', script: 'cd OMCompiler/Compiler/boot && ./find-unused-import.sh ../*/*.mo'
   }
-  sh label: 'build', script: "HOME='${env.WORKSPACE}' ${makeCommand()} -j${numPhysicalCPU()} ${outputSync()} omc omc-diff omsimulator"
-  sh 'find build/lib/*/omc/ -name "*.so" -exec strip {} ";"'
-  // Run sanity tests
-  sh '''
-  mv build build.sanity-check
-  mkdir .sanity-check
-  cd .sanity-check
-  cp ../testsuite/sanity-check/testSanity.mos .
-  cat testSanity.mos
-  ../build.sanity-check/bin/omc --linearizationDumpLanguage=matlab testSanity.mos
-  ./M
-  ./M -l=1.0
-  ls linearized_model.m
-  ls M.fmu
-  rm -rf ./M* ./OMCppM* ./linear_M* ./linearized_model.m
-  '''
-  if (buildCpp) {
-    sh '''
-    cd .sanity-check
-    # do not do this on Mac as it doesn't work yet
-    # test `uname` = Darwin || ../build.sanity-check/bin/omc --simCodeTarget=Cpp testSanity.mos
-    # test `uname` = Darwin || ./M
-    # test `uname` = Darwin || ls M.fmu
-    # test `uname` = Darwin || rm -rf ./M* ./OMCppM*
-    cd ..
-    mv build.sanity-check build
-    rm -rf .sanity-check
-    '''
-  }
-  sh "cd OMCompiler/Compiler/boot && ./find-unused-import.sh ../*/*.mo"
-  }
+
+  sanityCheck('build', buildCpp)
 }
 
 void buildOMC_CMake(cmake_args, cmake_exe='cmake') {
   standardSetup()
 
   if (isWindows()) {
-  bat ("""
-     If Defined LOCALAPPDATA (echo LOCALAPPDATA: %LOCALAPPDATA%) Else (Set "LOCALAPPDATA=C:\\Users\\OpenModelica\\AppData\\Local")
-     echo on
-     (
-     echo export MSYS_WORKSPACE="`cygpath '${WORKSPACE}'`"
-     echo echo MSYS_WORKSPACE: \${MSYS_WORKSPACE}
-     echo cd \${MSYS_WORKSPACE}
-     echo which cmake
-     echo set -ex
-     echo mkdir build_cmake
-     echo ${cmake_exe} --version
-     echo ${cmake_exe} -S ./ -B ./build_cmake ${cmake_args}
-     echo time ${cmake_exe} --build ./build_cmake --parallel ${numPhysicalCPU()} --target install
-     ) > buildOMCWindows.sh
+    bat ("""
+      If Defined LOCALAPPDATA (echo LOCALAPPDATA: %LOCALAPPDATA%) Else (Set "LOCALAPPDATA=C:\\Users\\OpenModelica\\AppData\\Local")
+      echo on
+      (
+      echo export MSYS_WORKSPACE="`cygpath '${WORKSPACE}'`"
+      echo echo MSYS_WORKSPACE: \${MSYS_WORKSPACE}
+      echo cd \${MSYS_WORKSPACE}
+      echo which cmake
+      echo set -ex
+      echo mkdir build_cmake
+      echo ${cmake_exe} --version
+      echo ${cmake_exe} -S ./ -B ./build_cmake ${cmake_args}
+      echo time ${cmake_exe} --build ./build_cmake --parallel ${numPhysicalCPU()} --target install
+      ) > buildOMCWindows.sh
 
-     set MSYSTEM=UCRT64
-     set MSYS2_PATH_TYPE=inherit
-     %OMDEV%\\tools\\msys\\usr\\bin\\sh --login -i -c "cd `cygpath '${WORKSPACE}'` && chmod +x buildOMCWindows.sh && ./buildOMCWindows.sh && rm -f ./buildOMCWindows.sh"
-  """)
+      set MSYSTEM=UCRT64
+      set MSYS2_PATH_TYPE=inherit
+      %OMDEV%\\tools\\msys\\usr\\bin\\sh --login -i -c "cd `cygpath '${WORKSPACE}'` && chmod +x buildOMCWindows.sh && ./buildOMCWindows.sh && rm -f ./buildOMCWindows.sh"
+    """)
   }
   else {
     sh "mkdir ./build_cmake"
@@ -319,6 +273,8 @@ void buildOMC_CMake(cmake_args, cmake_exe='cmake') {
     sh "${cmake_exe} --build ./build_cmake --parallel ${numPhysicalCPU()} --target install"
     sh "${cmake_exe} --build ./build_cmake --parallel ${numPhysicalCPU()} --target testsuite-depends"
   }
+
+  sanityCheck('install_cmake', true)
 }
 
 def getQtMajorVersion(qtVersion) {
