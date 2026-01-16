@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 
-# Bash "strict mode"
-set -euo pipefail
+set -euo pipefail # bash "strict mode"
 
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 TESTSUITE_DIR="$(realpath "$SCRIPT_DIR/..")"
@@ -9,39 +8,51 @@ RTEST="$TESTSUITE_DIR/rtest"
 
 usage() {
   cat <<EOF
-Usage: $0 --omc=/full/path/to/omc [--workdir=/path/to/workdir] [--testCpp=true|false] [--help]
+Usage: $0 --omc=/full/path/to/omc [--workdir=/path/to/workdir] [--simCodeTarget=C|Cpp] [--help]
 
 Options:
-  --omc   Full path to the omc executable. REQUIRED.
-  --workdir     Working directory where to perform the sanity test. Default: current directory
-  --testCpp     true or false. If true, run the Cpp simCodeTarget tests. Default: false
-  -h, --help    Show this help and exit
+  --omc           Full path to the omc executable. REQUIRED.
+  --workdir       Working directory where to perform the sanity test. Default: current directory
+  --simCodeTarget Sim code target to use: C or Cpp, default: C
+  --clean         true or false. If true, remove temp files. Default: true
+  -h, --help      Show this help and exit
 EOF
 }
 
 # Defaults
 OMC=""
 WORKDIR="$(pwd)"
-TEST_CPP="false"
+SIM_CODE_TARGET="C"
+CLEAN="true"
 
 # Parse args (supports --opt value and --opt=value)
 while [ "$#" -gt 0 ]; do
   case "$1" in
     --omc=*) OMC="${1#*=}"; shift;;
-    --omc) OMC="$2"; shift 2;;
+    --omc) [ -n "${2:-}" ] || { echo "Error: --omc requires a value"; exit 1; }; OMC="$2"; shift 2;;
     --workdir=*) WORKDIR="${1#*=}"; shift;;
-    --workdir) WORKDIR="$2"; shift 2;;
-    --testCpp=*) TEST_CPP="${1#*=}"; shift;;
-    --testCpp) TEST_CPP="$2"; shift 2;;
+    --workdir) [ -n "${2:-}" ] || { echo "Error: --workdir requires a value"; exit 1; }; WORKDIR="$2"; shift 2;;
+    --simCodeTarget=*) SIM_CODE_TARGET="${1#*=}"; shift;;
+    --simCodeTarget) [ -n "${2:-}" ] || { echo "Error: --simCodeTarget requires a value"; exit 1; }; SIM_CODE_TARGET="$2"; shift 2;;
+    --clean=*) CLEAN="${1#*=}"; shift;;
+    --clean) [ -n "${2:-}" ] || { echo "Error: --clean requires a value"; exit 1; }; CLEAN="$2"; shift 2;;
     -h|--help) usage; exit 0;;
     *) echo "Unknown argument: $1"; usage; exit 1;;
   esac
 done
 
-# Normalize testCpp
-case "${TEST_CPP,,}" in
-  true|1|yes) TEST_CPP="true";;
-  *) TEST_CPP="false";;
+# Normalize clean
+case "${CLEAN,,}" in
+  true|1|yes) CLEAN="true";;
+  *) CLEAN="false";;
+esac
+
+# Normalize simCode target (accepts C or Cpp only)
+lc_sim="${SIM_CODE_TARGET,,}"
+case "$lc_sim" in
+  c) SIM_CODE_TARGET="C";;
+  cpp) SIM_CODE_TARGET="Cpp";;
+  *) echo "Error: --simCodeTarget must be C or Cpp (got: $SIM_CODE_TARGET)"; usage; exit 1;;
 esac
 
 # Normalize omc
@@ -50,48 +61,40 @@ if [ -z "$OMC" ]; then
   usage
   exit 1
 fi
+if [ ! -x "$OMC" ]; then
+  echo "Error: omc executable not found or not executable: $OMC"
+  exit 1
+fi
 OMC="$(realpath "$OMC")"
 
 echo "Using omc: $OMC ($("$OMC" --version))"
 echo "Working directory: $WORKDIR"
-echo "testCpp: $TEST_CPP"
+echo "simCodeTarget: $SIM_CODE_TARGET"
 
-echo Check that omc can be started and a model can be build for NF OF with runtimes C Cpp FMU
-
-echo Unset OPENMODELICALIBRARY to make sure the default is used
-unset OPENMODELICALIBRARY
-
-mkdir -p "$WORKDIR/.sanity-check"
-pushd "$WORKDIR/.sanity-check" >/dev/null
+mkdir -p "$WORKDIR/.sanity-check/$SIM_CODE_TARGET"
+pushd "$WORKDIR/.sanity-check/$SIM_CODE_TARGET" >/dev/null
 cp "$SCRIPT_DIR/testSanity.mos" .
 
-# Run sanity MOS script
-echo Running sanity MOS script
-"$OMC" --linearizationDumpLanguage=matlab testSanity.mos
-./M
-./M -l=1.0
-ls linearized_model.m
-ls M.fmu
-rm -rf ./M* ./OMCppM* ./linear_M* ./linearized_model.m
-
-# Test optional Cpp simCode target
-if [ "$TEST_CPP" = "true" ]; then
+# Run sanity MOS script with sim Code target
+if [ "$SIM_CODE_TARGET" = "Cpp" ]; then
+  set -x # echo on
   "$OMC" --simCodeTarget=Cpp testSanity.mos
   ./M
-  ls M.fmu
-  rm -rf ./M* ./OMCppM*
+  set +x # echo off
+  test -f OMCppM.cpp
+  test -f M.fmu
+else
+  set -x # echo on
+  "$OMC" --linearizationDumpLanguage=matlab testSanity.mos
+  ./M
+  ./M -l=1.0
+  set +x # echo off
+  test -f linearized_model.m
+  test -f M.fmu
 fi
+
+# Clean
 popd >/dev/null
-rm -rf "$WORKDIR/.sanity-check"
-
-# Additional tests from testsuite
-echo Testing some models from testsuite, ffi, meta
-cd "$TESTSUITE_DIR/flattening/libraries/biochem"
-"$RTEST" --return-with-error-code EnzMM.mos
-
-cd "$TESTSUITE_DIR/flattening/modelica/ffi"
-"$RTEST" --return-with-error-code ModelicaInternal_countLines.mos
-"$RTEST" --return-with-error-code Integer1.mos
-
-cd "$TESTSUITE_DIR/metamodelica/meta"
-"$RTEST" --return-with-error-code AlgPatternm.mos
+if [ "$CLEAN" = "true" ]; then
+  rm -rf "$WORKDIR/.sanity-check/"
+fi
