@@ -7171,11 +7171,15 @@ template optimizationComponents1(ClassAttributes classAttribute, SimCode simCode
               // This assumes, that all variables are of type T_REAL
               <<
               <%vars.inputVars |> SIMVAR(type_=T_REAL()) hasindex i0 =>
+                let kind = match varKind
+                  case PARAM() then 'VAR_KIND_PARAMETER'
+                  else 'VAR_KIND_VARIABLE'
+                end match
                 <<
-                start[<%i0%>] = getStartFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, VAR_KIND_VARIABLE, <%crefIndexWithComment(name)%>);
-                min[<%i0%>] = getMinFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, VAR_KIND_VARIABLE, <%crefIndexWithComment(name)%>);
-                max[<%i0%>] = getMaxFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, VAR_KIND_VARIABLE, <%crefIndexWithComment(name)%>);
-                nominal[<%i0%>] = getNominalFromScalarIdx(data->simulationInfo, data->modelData, VAR_KIND_VARIABLE, <%crefIndexWithComment(name)%>);
+                start[<%i0%>] = getStartFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, <%kind%>, <%crefIndexWithComment(name)%>);
+                min[<%i0%>] = getMinFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, <%kind%>, <%crefIndexWithComment(name)%>);
+                max[<%i0%>] = getMaxFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, <%kind%>, <%crefIndexWithComment(name)%>);
+                nominal[<%i0%>] = getNominalFromScalarIdx(data->simulationInfo, data->modelData, <%kind%>, <%crefIndexWithComment(name)%>);
                 useNominal[<%i0%>] = <%crefAttributes(name)%>.useNominal;
                 name[<%i0%>] =(char *) <%crefVarInfo(name)%>.name;
                 >>

@@ -572,7 +572,7 @@ static void read_var_attribute_real(omc_ModelVariable *var_map, REAL_ATTRIBUTE *
     real_vector_to_string(&attribute->max, isScalar, max_buffer, buff_size);
 
     infoStreamPrint(OMC_LOG_DEBUG, 0,
-                    "Real %s(start=%s, fixed=%s, useNominal=%s, nominal=%s, min=%g, max=%g)",
+                    "Real %s(start=%s, fixed=%s, useNominal=%s, nominal=%s, min=%s, max=%s)",
                     findHashStringString(var_map, "name"),
                     start_buffer,
                     (attribute->fixed) ? "true" : "false",
