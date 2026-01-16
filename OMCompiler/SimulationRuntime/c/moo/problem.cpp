@@ -260,8 +260,8 @@ GDOP::Problem create_gdop(InfoGDOP& info, Mesh& mesh) {
     FixedVector<Bounds> p_bounds(info.p_size);
 
     for (int x = 0; x < info.x_size; x++) {
-        x_bounds[x].lb = getMinFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, VAR_KIND_VARIABLE, x);
-        x_bounds[x].ub = getMaxFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, VAR_KIND_VARIABLE, x);
+        x_bounds[x].lb = getMinFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, VAR_KIND_STATE, x);
+        x_bounds[x].ub = getMaxFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, VAR_KIND_STATE, x);
     }
 
     /* new generated function getInputVarIndices, just fills the index list of all optimizable inputs */
