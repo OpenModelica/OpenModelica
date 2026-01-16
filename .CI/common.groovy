@@ -176,18 +176,19 @@ void sanityCheck(String installDir, Boolean buildCpp) {
     bat label: 'Sanity check - C', script: """
       set MSYSTEM=UCRT64
       set MSYS2_PATH_TYPE=inherit
-      %OMDEV%\\tools\\msys\\usr\\bin\\sh --login -i -c "cd `cygpath '${WORKSPACE}'` && bash testsuite/sanity-check/runSanity.sh --omc=${installDir}/bin/omc"
+      %OMDEV%\\tools\\msys\\usr\\bin\\sh --login -c "cd `cygpath '${WORKSPACE}'` && bash testsuite/sanity-check/runSanity.sh --omc=${installDir}/bin/omc"
     """
     bat label: 'Sanity check - Cpp', script: """
       set MSYSTEM=UCRT64
       set MSYS2_PATH_TYPE=inherit
-      %OMDEV%\\tools\\msys\\usr\\bin\\sh --login -i -c "cd `cygpath '${WORKSPACE}'` && bash testsuite/sanity-check/runSanity.sh --omc=${installDir}/bin/omc --simCodeTarget=Cpp"
+      %OMDEV%\\tools\\msys\\usr\\bin\\sh --login -c "cd `cygpath '${WORKSPACE}'` && bash testsuite/sanity-check/runSanity.sh --omc=${installDir}/bin/omc --simCodeTarget=Cpp"
     """
     bat label: 'Sanity check - Install dir with spaces', script: """
       set MSYSTEM=UCRT64
       set MSYS2_PATH_TYPE=inherit
       move "${installDir}" "${installDir} but with spaces/"
-      %OMDEV%\\tools\\msys\\usr\\bin\\sh --login -i -c "cd `cygpath '${WORKSPACE}'` && bash testsuite/sanity-check/runSanity.sh --omc='${installDir} but with spaces/bin/omc'"
+      %OMDEV%\\tools\\msys\\usr\\bin\\sh --login -c "cd `cygpath '${WORKSPACE}'` && bash testsuite/sanity-check/runSanity.sh --omc='${installDir} but with spaces/bin/omc'"
+      move "${installDir} but with spaces/" "${installDir}"
     """
     bat label: "Sanity check - testsuite", script: """
       If Defined LOCALAPPDATA (echo LOCALAPPDATA: %LOCALAPPDATA%) Else (Set "LOCALAPPDATA=C:\\Users\\OpenModelica\\AppData\\Local")
@@ -203,23 +204,19 @@ void sanityCheck(String installDir, Boolean buildCpp) {
       echo cd \${MSYS_WORKSPACE}
       echo cd testsuite/metamodelica/meta
       echo ../../rtest --return-with-error-code AlgPatternm.mos
-      ) > buildOMCWindows.sh
+      ) > miniTestsuite.sh
 
       set MSYSTEM=UCRT64
       set MSYS2_PATH_TYPE=inherit
       echo Unset OPENMODELICALIBRARY to make sure the default is used
       unset OPENMODELICALIBRARY
-      %OMDEV%\\tools\\msys\\usr\\bin\\sh --login -i -c "cd `cygpath '${WORKSPACE}'` && chmod +x buildOMCWindows.sh && ./buildOMCWindows.sh && rm -f ./buildOMCWindows.sh"
+      %OMDEV%\\tools\\msys\\usr\\bin\\sh --login -c "cd `cygpath '${WORKSPACE}'` && chmod +x miniTestsuite.sh && ./miniTestsuite.sh && rm -f ./miniTestsuite.sh"
     """
   } else {
     sh label: 'Sanity check - C', script: "bash testsuite/sanity-check/runSanity.sh --omc=${installDir}/bin/omc"
     if (buildCpp) {
       sh label: 'Sanity check - Cpp', script: "bash testsuite/sanity-check/runSanity.sh --omc=${installDir}/bin/omc --simCodeTarget=Cpp"
     }
-    sh label: 'Sanity check - With spaces', script: """
-      mv ${installDir}/ '${installDir} but with spaces/'
-      bash testsuite/sanity-check/runSanity.sh --omc='${installDir} but with spaces/bin/omc'
-    """
   }
 }
 
@@ -300,7 +297,7 @@ void buildOMC_CMake(cmake_args, cmake_exe='cmake') {
     sh "${cmake_exe} --build ./build_cmake --parallel ${numPhysicalCPU()} --target testsuite-depends"
   }
 
-  sanityCheck('install_cmake', true)
+  sanityCheck('build_cmake/install_cmake', true)
 }
 
 def getQtMajorVersion(qtVersion) {
