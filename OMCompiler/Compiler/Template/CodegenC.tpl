@@ -3332,7 +3332,7 @@ template generateStaticInitialData(list<ComponentRef> crefs, String indexName)
 ::=
   let systemType = 'NONLINEAR_SYSTEM_DATA'
   let bodyStaticData = (crefs |> cr hasindex i0 =>
-    let comment = '/* static nls data for <%crefStrNoUnderscore(cr)%> */'
+    let cComment = '/* static nls data for <%crefStrNoUnderscore(cr)%> */'
     match cref2simvar(crefRemovePrePrefix(cr), getSimCode())
       case SIMVAR(type_=T_REAL(__)) then
         let kind = match varKind
@@ -3340,14 +3340,14 @@ template generateStaticInitialData(list<ComponentRef> crefs, String indexName)
           else 'VAR_KIND_VARIABLE'
         end match
         <<
-        <%comment%>
+        <%cComment%>
         sysData->nominal[i] = getNominalFromScalarIdx(data->simulationInfo, data->modelData, <%kind%>, <%crefIndexWithComment(cr)%>);
         sysData->min[i]     = getMinFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, <%kind%>, <%crefIndexWithComment(cr)%>);
         sysData->max[i++]   = getMaxFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, <%kind%>, <%crefIndexWithComment(cr)%>);
         >>
       else
         <<
-        <%comment%>
+        <%cComment%>
         sysData->nominal[i] = <%crefAttributes(cr)%>.nominal;
         sysData->min[i]     = <%crefAttributes(cr)%>.min;
         sysData->max[i++]   = <%crefAttributes(cr)%>.max;
