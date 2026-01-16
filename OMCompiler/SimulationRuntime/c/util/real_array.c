@@ -576,7 +576,7 @@ void real_vector_to_string(const real_array *source, modelica_boolean isScalar, 
             size_t remaining = (bufsize > pos) ? bufsize - pos : 0;
 
             /* If not enough room to write an element, try to append "...}" and stop */
-            if (remaining <= 4) {
+            if (remaining <= 5) {
                 snprintf(buffer + pos, remaining, "...}");
                 return;
             }
@@ -589,7 +589,7 @@ void real_vector_to_string(const real_array *source, modelica_boolean isScalar, 
             }
 
             if (ret < 0) ret = 0;
-            if (ret >= remaining - 4) {
+            if (ret >= remaining - 5) {
                 /* Not enough space for more elements; try to write "...}" instead */
                 remaining = (bufsize > pos) ? bufsize - pos : 0;
                 snprintf(buffer + pos, remaining, "...}");

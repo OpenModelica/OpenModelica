@@ -263,8 +263,8 @@ typedef struct REAL_ATTRIBUTE
 {
   modelica_string unit;                /* = "" */
   modelica_string displayUnit;         /* = "" */
-  modelica_real min;                   /* = -Inf */
-  modelica_real max;                   /* = +Inf */
+  real_array min;                      /* = {-Inf} */
+  real_array max;                      /* = {+Inf} */
   modelica_boolean fixed;              /* depends on the type */
   modelica_boolean useNominal;         /* = false */
   real_array nominal;                  /* = {1.0} */

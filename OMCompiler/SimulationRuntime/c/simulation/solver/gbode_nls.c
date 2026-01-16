@@ -85,8 +85,8 @@ void initializeStaticNLSData_SR(DATA* data, threadData_t *threadData, NONLINEAR_
     // Get the nominal values of the states
     const modelica_real nominal = getNominalFromScalarIdx(data->simulationInfo, data->modelData, VAR_KIND_STATE, i);
     nonlinsys->nominal[i] = fmax(fabs(nominal), 1e-32);
-    nonlinsys->min[i]     = data->modelData->realVarsData[i].attribute.min;
-    nonlinsys->max[i]     = data->modelData->realVarsData[i].attribute.max;
+    nonlinsys->min[i]     = getMinFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, VAR_KIND_STATE, i);
+    nonlinsys->max[i]     = getMaxFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, VAR_KIND_STATE, i);
   }
 
   /* Initialize sparsity pattern */
@@ -113,8 +113,8 @@ void initializeStaticNLSData_MR(DATA* data, threadData_t *threadData, NONLINEAR_
     // Get the nominal values of the states
     const modelica_real nominal = getNominalFromScalarIdx(data->simulationInfo, data->modelData, VAR_KIND_VARIABLE, i);
     nonlinsys->nominal[i] = fmax(fabs(nominal), 1e-32);
-    nonlinsys->min[i]     = data->modelData->realVarsData[i].attribute.min;
-    nonlinsys->max[i]     = data->modelData->realVarsData[i].attribute.max;
+    nonlinsys->min[i]     = getMinFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, VAR_KIND_STATE, i);
+    nonlinsys->max[i]     = getMaxFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, VAR_KIND_STATE, i);
   }
 
   /* Initialize sparsity pattern, First guess (all states are fast states) */
@@ -142,8 +142,8 @@ void initializeStaticNLSData_IRK(DATA* data, threadData_t *threadData, NONLINEAR
     int ii = i % data->modelData->nStates;
     const modelica_real nominal = getNominalFromScalarIdx(data->simulationInfo, data->modelData, VAR_KIND_STATE, ii);
     nonlinsys->nominal[i] = fmax(fabs(nominal), 1e-32);
-    nonlinsys->min[i]     = data->modelData->realVarsData[ii].attribute.min;
-    nonlinsys->max[i]     = data->modelData->realVarsData[ii].attribute.max;
+    nonlinsys->min[i]     = getMinFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, VAR_KIND_STATE, ii);
+    nonlinsys->max[i]     = getMaxFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, VAR_KIND_STATE, ii);
   }
 
   /* Initialize sparsity pattern */

@@ -379,8 +379,8 @@ static inline void pickUpBounds(OptDataBounds * bounds, OptDataDim * dim, DATA* 
   data->callback->pickUpBoundsForInputsInOptimization(data,umin, umax, unom, nominalWasSetInput, inputName, bounds->u0, &bounds->preSim);
 
   for(i = 0; i < nx; ++i){
-    min = data->modelData->realVarsData[i].attribute.min;
-    max = data->modelData->realVarsData[i].attribute.max;
+    min = getMinFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, VAR_KIND_VARIABLE, i);
+    max = getMaxFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, VAR_KIND_VARIABLE, i);
     nominal = getNominalFromScalarIdx(data->simulationInfo, data->modelData, VAR_KIND_VARIABLE, i);
     nominalWasSet = data->modelData->realVarsData[i].attribute.useNominal;
     x0 = data->localData[1]->realVars[i];
@@ -518,7 +518,6 @@ static inline void printSomeModelInfos(OptDataBounds * bounds, OptDataDim * dim,
   double *xmin, *xmax, *xnom;
 
   char buffer[200];
-  char start_buffer[2048];
 
   char ** inputName;
   int i,j,k;
@@ -539,21 +538,26 @@ static inline void printSomeModelInfos(OptDataBounds * bounds, OptDataDim * dim,
 
   for(i = 0; i < nx; ++i){
 
-    if (xmin[i] > -1e20)
-      sprintf(buffer, ", min = %g", data->modelData->realVarsData[i].attribute.min);
-    else
-      sprintf(buffer, ", min = -Inf");
+    if(data->modelData->realVarsData[i].dimension.numberOfDimensions > 0){
+      throwStreamPrint(NULL, "Support for array variables not yet implemented!");
+    }
 
-    real_vector_to_string(&data->modelData->realVarsData[i].attribute.start, data->modelData->realVarsData[i].dimension.numberOfDimensions == 0, start_buffer, 2048);
-    printf("\nState[%i]:%s(start = %s, nominal = %g%s",
+    if (xmin[i] > -1e20) {
+      sprintf(buffer, ", min = %g", real_get(data->modelData->realVarsData[i].attribute.min, 0));
+    }
+    else {
+      sprintf(buffer, ", min = -Inf");
+    }
+
+    printf("\nState[%i]:%s(start = %g, nominal = %g%s",
            i,
            data->modelData->realVarsData[i].info.name,
-           start_buffer,
+           real_get(data->modelData->realVarsData[i].attribute.start, 0),
            xnom[i],
            buffer);
 
     if(xmax[i] < 1e20)
-      sprintf(buffer, ", max = %g", data->modelData->realVarsData[i].attribute.max);
+      sprintf(buffer, ", max = %g", real_get(data->modelData->realVarsData[i].attribute.max, 0));
     else
       sprintf(buffer, ", max = +Inf");
 

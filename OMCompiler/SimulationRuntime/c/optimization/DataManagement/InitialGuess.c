@@ -36,12 +36,13 @@
 
 #include "../../util/omc_file.h"
 
-#include "simulation/solver/dassl.h"
+#include "simulation/arrayIndex.h"
 #include "simulation/options.h"
 #include "simulation/results/simulation_result.h"
+#include "simulation/solver/dassl.h"
 #include "simulation/solver/external_input.h"
-#include "simulation/solver/model_help.h"
 #include "simulation/solver/initialization/initialization.h"
+#include "simulation/solver/model_help.h"
 
 
 static int initial_guess_ipopt_cflag(OptData *optData, char* cflags);
@@ -187,10 +188,7 @@ static short initial_guess_ipopt_sim(OptData *optData, SOLVER_INFO* solverInfo, 
          lookupRingBuffer(data->simulationData, (void**) data->localData);
          importStartValues(data, threadData, cflags, (double)optData->time.t[i][j]);
          for(l=0; l<nReal; ++l){
-            if(data->modelData->realVarsData[l].dimension.numberOfDimensions > 0){
-              throwStreamPrint(NULL, "Support for array variables not yet implemented!");
-            }
-            data->localData[0]->realVars[l] = real_get(data->modelData->realVarsData[l].attribute.start, 0);
+            data->localData[0]->realVars[l] = getStartFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, VAR_KIND_VARIABLE, l);
          }
        }
 
@@ -316,15 +314,15 @@ static inline void init_ipopt_data(OptData *optData, const short op){
   l = NRes-ncf;
   for(j = 0; j< nc; ++j){
     for(i = nx; i < l; i += nJ){
-      ipop->gmin[i+j] = data->modelData->realVarsData[j + index_con].attribute.min;
-      ipop->gmax[i+j] = data->modelData->realVarsData[j + index_con].attribute.max;
+      ipop->gmin[i+j] = getMinFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, VAR_KIND_VARIABLE, j + index_con);
+      ipop->gmax[i+j] = getMaxFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, VAR_KIND_VARIABLE, j + index_con);
     }
   }
 
   /*terminal constraint(s)*/
   for(j = 0; j < ncf; ++j, ++i){
-    ipop->gmin[l+j] = data->modelData->realVarsData[j + index_conf].attribute.min;
-    ipop->gmax[l+j] = data->modelData->realVarsData[j + index_conf].attribute.max;
+    ipop->gmin[l+j] = getMinFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, VAR_KIND_VARIABLE, j + index_conf);
+    ipop->gmax[l+j] = getMaxFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, VAR_KIND_VARIABLE, j + index_conf);
   }
 
 

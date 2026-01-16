@@ -209,8 +209,9 @@ int functionJacAC_num(DATA* data, threadData_t *threadData, double *matrixA, dou
     for(i = 0; i < size_A; i++) {
         xsave = x[i];
         delta_hh = delta_h * (fabs(xsave) + 1.0);
-        if ((xsave + delta_hh >=  data->modelData->realVarsData[i].attribute.max))
-            delta_hh *= -1;
+        if (xsave + delta_hh >= getMaxFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, VAR_KIND_VARIABLE, i)) {
+          delta_hh *= -1;
+        }
         x[i] += delta_hh / xScaling[i];
         /* Calculate scaled difference quotient */
         delta_hh = 1. / delta_hh * xScaling[i];
