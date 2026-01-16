@@ -190,13 +190,18 @@ void sanityCheck(String installDir, Boolean buildCpp) {
       set MSYS2_PATH_TYPE=inherit
       set PATH=%PATH%;${installDir}\\build\\bin;${installDir}\\build\\lib\\omc\\omsicpp;${installDir}\\build\\lib\\omc\\cpp
       move "${installDir}" "${installDir} but with spaces/"
-      %OMDEV%\\tools\\msys\\usr\\bin\\sh --login -c "cd `cygpath '${WORKSPACE}'` && bash testsuite/sanity-check/runSanity.sh --omc='${installDir} but with spaces/bin/omc'"
+      %OMDEV%\\tools\\msys\\usr\\bin\\sh --login -c "cd `cygpath '${WORKSPACE}'` && bash testsuite/sanity-check/runSanity.sh --omc='${installDir} but with spaces/bin/omc'" || (move "${installDir} but with spaces\\" "${installDir}" && exit 1)
       move "${installDir} but with spaces/" "${installDir}"
     """
     bat label: "Sanity check - testsuite", script: """
       If Defined LOCALAPPDATA (echo LOCALAPPDATA: %LOCALAPPDATA%) Else (Set "LOCALAPPDATA=C:\\Users\\OpenModelica\\AppData\\Local")
       echo on
       (
+      echo export MSYS_WORKSPACE="`cygpath '${WORKSPACE}'`"
+      echo echo MSYS_WORKSPACE: \${MSYS_WORKSPACE}
+      echo cd \${MSYS_WORKSPACE}
+      echo echo Unset OPENMODELICALIBRARY to make sure the default is used
+      echo unset OPENMODELICALIBRARY
       echo echo Testing some models from testsuite, ffi, meta
       echo cd testsuite/flattening/libraries/biochem
       echo ../../../rtest --return-with-error-code EnzMM.mos
@@ -212,8 +217,6 @@ void sanityCheck(String installDir, Boolean buildCpp) {
       set MSYSTEM=UCRT64
       set MSYS2_PATH_TYPE=inherit
       set PATH=%PATH%;${installDir}\\build\\bin;${installDir}\\build\\lib\\omc\\omsicpp;${installDir}\\build\\lib\\omc\\cpp
-      echo Unset OPENMODELICALIBRARY to make sure the default is used
-      unset OPENMODELICALIBRARY
       %OMDEV%\\tools\\msys\\usr\\bin\\sh --login -c "cd `cygpath '${WORKSPACE}'` && chmod +x miniTestsuite.sh && ./miniTestsuite.sh && rm -f ./miniTestsuite.sh"
     """
   } else {
