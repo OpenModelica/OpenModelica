@@ -166,9 +166,9 @@ void makeLibsAndCache() {
  * Perform sanity check.
  *
  * Run script testsuite/sanity-check/runSanity.sh for C and C++ runtime.
- * On Windows three tests with rtest are run as well.
+ * On Windows a install directory with spaces and three tests with rtest are run as well.
  *
- * @param installDir  Path to installation directory.
+ * @param installDir  Path to omc installation directory.
  * @param buildCpp    True if omc was build with Cpp runtime.
  */
 void sanityCheck(String installDir, Boolean buildCpp) {
@@ -176,19 +176,19 @@ void sanityCheck(String installDir, Boolean buildCpp) {
     bat label: 'Sanity check - C', script: """
       set MSYSTEM=UCRT64
       set MSYS2_PATH_TYPE=inherit
-      set PATH=%PATH%;${installDir}/build/bin/;${installDir}/build/lib/omc/omsicpp;${installDir}/build/lib/omc/cpp
+      set PATH=%PATH%;${installDir}\\build\\bin;${installDir}\\build\\lib\\omc\\omsicpp;${installDir}\\build\\lib\\omc\\cpp
       %OMDEV%\\tools\\msys\\usr\\bin\\sh --login -c "cd `cygpath '${WORKSPACE}'` && bash testsuite/sanity-check/runSanity.sh --omc=${installDir}/bin/omc"
     """
     bat label: 'Sanity check - Cpp', script: """
       set MSYSTEM=UCRT64
       set MSYS2_PATH_TYPE=inherit
-      set PATH=%PATH%;${installDir}/build/bin/;${installDir}/build/lib/omc/omsicpp;${installDir}/build/lib/omc/cpp
+      set PATH=%PATH%;${installDir}\\build\\bin;${installDir}\\build\\lib\\omc\\omsicpp;${installDir}\\build\\lib\\omc\\cpp
       %OMDEV%\\tools\\msys\\usr\\bin\\sh --login -c "cd `cygpath '${WORKSPACE}'` && bash testsuite/sanity-check/runSanity.sh --omc=${installDir}/bin/omc --simCodeTarget=Cpp"
     """
     bat label: 'Sanity check - Install dir with spaces', script: """
       set MSYSTEM=UCRT64
       set MSYS2_PATH_TYPE=inherit
-      set PATH=%PATH%;${installDir}/build/bin/;${installDir}/build/lib/omc/omsicpp;${installDir}/build/lib/omc/cpp
+      set PATH=%PATH%;${installDir}\\build\\bin;${installDir}\\build\\lib\\omc\\omsicpp;${installDir}\\build\\lib\\omc\\cpp
       move "${installDir}" "${installDir} but with spaces/"
       %OMDEV%\\tools\\msys\\usr\\bin\\sh --login -c "cd `cygpath '${WORKSPACE}'` && bash testsuite/sanity-check/runSanity.sh --omc='${installDir} but with spaces/bin/omc'"
       move "${installDir} but with spaces/" "${installDir}"
@@ -211,7 +211,7 @@ void sanityCheck(String installDir, Boolean buildCpp) {
 
       set MSYSTEM=UCRT64
       set MSYS2_PATH_TYPE=inherit
-      set PATH=%PATH%;${installDir}/build/bin/;${installDir}/build/lib/omc/omsicpp;${installDir}/build/lib/omc/cpp
+      set PATH=%PATH%;${installDir}\\build\\bin;${installDir}\\build\\lib\\omc\\omsicpp;${installDir}\\build\\lib\\omc\\cpp
       echo Unset OPENMODELICALIBRARY to make sure the default is used
       unset OPENMODELICALIBRARY
       %OMDEV%\\tools\\msys\\usr\\bin\\sh --login -c "cd `cygpath '${WORKSPACE}'` && chmod +x miniTestsuite.sh && ./miniTestsuite.sh && rm -f ./miniTestsuite.sh"
@@ -228,7 +228,7 @@ void buildOMC(CC, CXX, extraFlags, Boolean buildCpp, Boolean clean) {
   standardSetup()
 
   if (isWindows()) {
-    bat ("""
+    bat label: 'build', script """
       If Defined LOCALAPPDATA (echo LOCALAPPDATA: %LOCALAPPDATA%) Else (Set "LOCALAPPDATA=C:\\Users\\OpenModelica\\AppData\\Local")
       echo on
       (
@@ -249,7 +249,7 @@ void buildOMC(CC, CXX, extraFlags, Boolean buildCpp, Boolean clean) {
       set MSYSTEM=UCRT64
       set MSYS2_PATH_TYPE=inherit
       %OMDEV%\\tools\\msys\\usr\\bin\\sh --login -i -c "cd `cygpath '${WORKSPACE}'` && chmod +x buildOMCWindows.sh && ./buildOMCWindows.sh && rm -f ./buildOMCWindows.sh"
-    """)
+    """
   } else {
     sh 'autoreconf --install'
     // Note: Do not use -march=native since we might use an incompatible machine in later stages
@@ -301,7 +301,7 @@ void buildOMC_CMake(cmake_args, cmake_exe='cmake') {
     sh "${cmake_exe} --build ./build_cmake --parallel ${numPhysicalCPU()} --target testsuite-depends"
   }
 
-  sanityCheck('build_cmake/install_cmake', true)
+  sanityCheck('build', true)
 }
 
 def getQtMajorVersion(qtVersion) {
