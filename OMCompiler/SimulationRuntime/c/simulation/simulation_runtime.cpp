@@ -78,7 +78,6 @@
 #include "simulation/results/simulation_result_plt.h"
 #include "simulation/results/simulation_result_csv.h"
 #include "simulation/results/simulation_result_mat4.h"
-#include "simulation/results/simulation_result_wall.h"
 #include "simulation/results/simulation_result_ia.h"
 #include "simulation/solver/solver_main.h"
 #include "simulation/solver/gbode_util.h"
@@ -710,12 +709,6 @@ int initializeResultData(DATA* simData, threadData_t *threadData, int cpuTime)
     sim_result.free = mat4_free4;
     resultFormatHasCheapAliasesAndParameters = 1;
 #if !defined(OMC_MINIMAL_RUNTIME)
-  } else if(0 == strcmp("wall", simData->simulationInfo->outputFormat)) {
-    sim_result.init = recon_wall_init;
-    sim_result.emit = recon_wall_emit;
-    sim_result.writeParameterData = recon_wall_writeParameterData;
-    sim_result.free = recon_wall_free;
-    resultFormatHasCheapAliasesAndParameters = 1;
   } else if(0 == strcmp("plt", simData->simulationInfo->outputFormat)) {
     sim_result.init = plt_init;
     sim_result.emit = plt_emit;
