@@ -191,7 +191,7 @@ void sanityCheck(String installDir, Boolean buildCpp) {
       set PATH=%PATH%;${installDir} but with spaces\\bin;${installDir} but with spaces\\lib\\omc\\omsicpp;${installDir} but with spaces\\lib\\omc\\cpp
       move "${installDir}" "${installDir} but with spaces"
       %OMDEV%\\tools\\msys\\usr\\bin\\sh --login -c "cd `cygpath '${WORKSPACE}'` && bash testsuite/sanity-check/runSanity.sh --omc='${installDir} but with spaces/bin/omc'" || (move "${installDir} but with spaces" "${installDir}" && exit 1)
-      move "${installDir} but with spaces/" "${installDir}"
+      move "${installDir} but with spaces" "${installDir}"
     """)
     bat (label: "Sanity check - testsuite", script: """
       If Defined LOCALAPPDATA (echo LOCALAPPDATA: %LOCALAPPDATA%) Else (Set "LOCALAPPDATA=C:\\Users\\OpenModelica\\AppData\\Local")

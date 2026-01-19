@@ -3,8 +3,6 @@
 set -euo pipefail # bash "strict mode"
 
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
-TESTSUITE_DIR="$(realpath "$SCRIPT_DIR/..")"
-RTEST="$TESTSUITE_DIR/rtest"
 
 usage() {
   cat <<EOF
@@ -81,16 +79,16 @@ if [ "$SIM_CODE_TARGET" = "Cpp" ]; then
   "$OMC" --simCodeTarget=Cpp testSanity.mos
   ./M
   set +x # echo off
-  test -f OMCppM.cpp
-  test -f M.fmu
+  test -f OMCppM.cpp || { echo "Error: Expected file OMCppM.cpp not found"; exit 1; }
+  test -f M.fmu || { echo "Error: Expected file M.fmu not found"; exit 1; }
 else
   set -x # echo on
   "$OMC" --linearizationDumpLanguage=matlab testSanity.mos
   ./M
   ./M -l=1.0
   set +x # echo off
-  test -f linearized_model.m
-  test -f M.fmu
+  test -f linearized_model.m || { echo "Error: Expected file linearized_model.m not found"; exit 1; }
+  test -f M.fmu || { echo "Error: Expected file M.fmu not found"; exit 1; }
 fi
 
 # Clean
@@ -98,3 +96,5 @@ popd >/dev/null
 if [ "$CLEAN" = "true" ]; then
   rm -rf "$WORKDIR/.sanity-check/"
 fi
+
+echo "Sanity check ($SIM_CODE_TARGET) passed successfully."
