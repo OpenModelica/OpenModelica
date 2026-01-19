@@ -45,9 +45,11 @@
 #include <stdint.h>
 #include <assert.h>
 
-extern "C" {
+extern "C"
+{
 
-typedef struct mat_data {
+typedef struct mat_data
+{
   FILE *pFile;
   long data2HdrPos; /* position of data_2 matrix's header in a file */
 
@@ -56,7 +58,7 @@ typedef struct mat_data {
   size_t nSignals;
   size_t nEmits;
   size_t sync;
-  void* data_2;
+  void *data_2;
   MatVer4Type_t type;
 } mat_data;
 
@@ -67,6 +69,16 @@ static const char cpuTimeDesc[] = "cpu time [s]";
 static const char solverStepsName[] = "$solverSteps";
 static const char solverStepsDesc[] = "number of steps taken by the integrator";
 
+/**
+ * @brief Initialize MAT v4 output for a simulation run.
+ *
+ * Prepares MAT v4 matrices (name, description, data headers) and opens
+ * the output file. Allocates internal storage attached to `self->storage`.
+ *
+ * @param self        Writer instance containing filename and options.
+ * @param data        Simulation data structures (model and simulation info).
+ * @param threadData  Thread-local data used for error reporting.
+ */
 void mat4_init4(simulation_result *self, DATA *data, threadData_t *threadData)
 {
   const MODEL_DATA *mData = data->modelData;
@@ -97,95 +109,136 @@ void mat4_init4(simulation_result *self, DATA *data, threadData_t *threadData)
   size_t maxLengthName = strlen(timeName) + 1;
   size_t maxLengthDesc = strlen(timeDesc) + 1;
   size_t len;
-  matData->nSignals=1;
+  matData->nSignals = 1;
 
-  if (self->cpuTime) {
+  if (self->cpuTime)
+  {
     len = strlen(cpuTimeName) + 1;
-    if (len > maxLengthName) maxLengthName = len;
+    if (len > maxLengthName)
+      maxLengthName = len;
     len = strlen(cpuTimeDesc) + 1;
-    if (len > maxLengthDesc) maxLengthDesc = len;
+    if (len > maxLengthDesc)
+      maxLengthDesc = len;
     matData->nSignals++;
   }
 
-  if (omc_flag[FLAG_SOLVER_STEPS]) {
+  if (omc_flag[FLAG_SOLVER_STEPS])
+  {
     len = strlen(solverStepsName) + 1;
-    if (len > maxLengthName) maxLengthName = len;
+    if (len > maxLengthName)
+      maxLengthName = len;
     len = strlen(solverStepsDesc) + 1;
-    if (len > maxLengthDesc) maxLengthDesc = len;
+    if (len > maxLengthDesc)
+      maxLengthDesc = len;
     matData->nSignals++;
   }
 
-  for (int i=0; i < mData->nVariablesReal; i++)
-    if (!mData->realVarsData[i].filterOutput) {
+  for (int i = 0; i < mData->nVariablesReal; i++)
+  {
+    if (!mData->realVarsData[i].filterOutput)
+    {
       const char *unitStr = MMC_STRINGDATA(mData->realVarsData[i].attribute.unit);
       size_t unitLength = unitStr ? strlen(unitStr) + 3 : 0;
 
       len = strlen(mData->realVarsData[i].info.name) + 1;
-      if (len > maxLengthName) maxLengthName = len;
+      if (len > maxLengthName)
+        maxLengthName = len;
       len = strlen(mData->realVarsData[i].info.comment) + 1 + unitLength;
-      if (len > maxLengthDesc) maxLengthDesc = len;
+      if (len > maxLengthDesc)
+        maxLengthDesc = len;
       matData->nSignals++;
     }
+  }
 
   if (omc_flag[FLAG_IDAS])
-    for (int i=mData->nSensitivityParamVars; i < mData->nSensitivityVars; i++) {
+    for (int i = mData->nSensitivityParamVars; i < mData->nSensitivityVars; i++)
+    {
       len = strlen(mData->realSensitivityData[i].info.name) + 1;
-      if (len > maxLengthName) maxLengthName = len;
+      if (len > maxLengthName)
+        maxLengthName = len;
       len = strlen(mData->realSensitivityData[i].info.comment) + 1;
-      if (len > maxLengthDesc) maxLengthDesc = len;
+      if (len > maxLengthDesc)
+        maxLengthDesc = len;
       matData->nSignals++;
     }
 
-  for (int i=0; i < mData->nVariablesInteger; i++)
-    if (!mData->integerVarsData[i].filterOutput) {
+  for (int i = 0; i < mData->nVariablesInteger; i++)
+  {
+    if (!mData->integerVarsData[i].filterOutput)
+    {
       len = strlen(mData->integerVarsData[i].info.name) + 1;
-      if (len > maxLengthName) maxLengthName = len;
+      if (len > maxLengthName)
+        maxLengthName = len;
       len = strlen(mData->integerVarsData[i].info.comment) + 1;
-      if (len > maxLengthDesc) maxLengthDesc = len;
+      if (len > maxLengthDesc)
+        maxLengthDesc = len;
       matData->nSignals++;
     }
+  }
 
-  for (int i=0; i < mData->nVariablesBoolean; i++)
-    if (!mData->booleanVarsData[i].filterOutput) {
+  for (int i = 0; i < mData->nVariablesBoolean; i++)
+  {
+    if (!mData->booleanVarsData[i].filterOutput)
+    {
       len = strlen(mData->booleanVarsData[i].info.name) + 1;
-      if (len > maxLengthName) maxLengthName = len;
+      if (len > maxLengthName)
+        maxLengthName = len;
       len = strlen(mData->booleanVarsData[i].info.comment) + 1;
-      if (len > maxLengthDesc) maxLengthDesc = len;
+      if (len > maxLengthDesc)
+        maxLengthDesc = len;
       matData->nSignals++;
     }
+  }
 
-  for (int i=0; i < mData->nParametersReal; i++)
-    if (!mData->realParameterData[i].filterOutput) {
+  for (int i = 0; i < mData->nParametersReal; i++)
+  {
+    if (!mData->realParameterData[i].filterOutput)
+    {
       const char *unitStr = MMC_STRINGDATA(mData->realParameterData[i].attribute.unit);
       size_t unitLength = unitStr ? strlen(unitStr) + 3 : 0;
 
       len = strlen(mData->realParameterData[i].info.name) + 1;
-      if (len > maxLengthName) maxLengthName = len;
+      if (len > maxLengthName)
+        maxLengthName = len;
       len = strlen(mData->realParameterData[i].info.comment) + 1 + unitLength;
-      if (len > maxLengthDesc) maxLengthDesc = len;
+      if (len > maxLengthDesc)
+        maxLengthDesc = len;
       matData->nSignals++;
     }
+  }
 
-  for (int i=0; i < mData->nParametersInteger; i++)
-    if (!mData->integerParameterData[i].filterOutput) {
+  for (int i = 0; i < mData->nParametersInteger; i++)
+  {
+    if (!mData->integerParameterData[i].filterOutput)
+    {
       len = strlen(mData->integerParameterData[i].info.name) + 1;
-      if (len > maxLengthName) maxLengthName = len;
+      if (len > maxLengthName)
+        maxLengthName = len;
       len = strlen(mData->integerParameterData[i].info.comment) + 1;
-      if (len > maxLengthDesc) maxLengthDesc = len;
+      if (len > maxLengthDesc)
+        maxLengthDesc = len;
       matData->nSignals++;
     }
+  }
 
-  for (int i=0; i < mData->nParametersBoolean; i++)
-    if (!mData->booleanParameterData[i].filterOutput) {
+  for (int i = 0; i < mData->nParametersBoolean; i++)
+  {
+    if (!mData->booleanParameterData[i].filterOutput)
+    {
       len = strlen(mData->booleanParameterData[i].info.name) + 1;
-      if (len > maxLengthName) maxLengthName = len;
+      if (len > maxLengthName)
+        maxLengthName = len;
       len = strlen(mData->booleanParameterData[i].info.comment) + 1;
-      if (len > maxLengthDesc) maxLengthDesc = len;
+      if (len > maxLengthDesc)
+        maxLengthDesc = len;
       matData->nSignals++;
     }
+  }
 
-  for (int i=0; i < mData->nAliasReal; i++)
-    if (!mData->realAlias[i].filterOutput) {
+  for (int i = 0; i < mData->nAliasReal; i++)
+  {
+    if (!mData->realAlias[i].filterOutput)
+    {
       const char *unitStr = NULL;
       size_t unitLength = 0;
 
@@ -206,123 +259,161 @@ void mat4_init4(simulation_result *self, DATA *data, threadData_t *threadData)
       }
 
       len = strlen(mData->realAlias[i].info.name) + 1;
-      if (len > maxLengthName) maxLengthName = len;
+      if (len > maxLengthName)
+        maxLengthName = len;
       len = strlen(mData->realAlias[i].info.comment) + 1 + unitLength;
-      if (len > maxLengthDesc) maxLengthDesc = len;
+      if (len > maxLengthDesc)
+        maxLengthDesc = len;
       matData->nSignals++;
     }
+  }
 
-  for (int i=0; i < mData->nAliasInteger; i++)
-    if (!mData->integerAlias[i].filterOutput) {
+  for (int i = 0; i < mData->nAliasInteger; i++)
+  {
+    if (!mData->integerAlias[i].filterOutput)
+    {
       len = strlen(mData->integerAlias[i].info.name) + 1;
-      if (len > maxLengthName) maxLengthName = len;
+      if (len > maxLengthName)
+        maxLengthName = len;
       len = strlen(mData->integerAlias[i].info.comment) + 1;
-      if (len > maxLengthDesc) maxLengthDesc = len;
+      if (len > maxLengthDesc)
+        maxLengthDesc = len;
       matData->nSignals++;
     }
+  }
 
-  for (int i=0; i < mData->nAliasBoolean; i++)
-    if (!mData->booleanAlias[i].filterOutput) {
+  for (int i = 0; i < mData->nAliasBoolean; i++)
+  {
+    if (!mData->booleanAlias[i].filterOutput)
+    {
       len = strlen(mData->booleanAlias[i].info.name) + 1;
-      if (len > maxLengthName) maxLengthName = len;
+      if (len > maxLengthName)
+        maxLengthName = len;
       len = strlen(mData->booleanAlias[i].info.comment) + 1;
-      if (len > maxLengthDesc) maxLengthDesc = len;
+      if (len > maxLengthDesc)
+        maxLengthDesc = len;
       matData->nSignals++;
     }
+  }
 
   /* Copy all the var names and descriptions to "name" and "description". */
-  void* name = calloc(sizeof(char), maxLengthName * matData->nSignals);
-  void* description = calloc(sizeof(char), maxLengthDesc * matData->nSignals);
-  size_t cur=0;
+  void *name = calloc(sizeof(char), maxLengthName * matData->nSignals);
+  void *description = calloc(sizeof(char), maxLengthDesc * matData->nSignals);
+  size_t cur = 0;
   memcpy(name, timeName, strlen(timeName));
   memcpy(description, timeDesc, strlen(timeDesc));
   cur++;
 
-  if (self->cpuTime) {
-    memcpy((uint8_t*)name + maxLengthName * cur, cpuTimeName, strlen(cpuTimeName));
-    memcpy((uint8_t*)description + maxLengthDesc * cur, cpuTimeDesc, strlen(cpuTimeDesc));
+  if (self->cpuTime)
+  {
+    memcpy((uint8_t *)name + maxLengthName * cur, cpuTimeName, strlen(cpuTimeName));
+    memcpy((uint8_t *)description + maxLengthDesc * cur, cpuTimeDesc, strlen(cpuTimeDesc));
     cur++;
   }
 
-  if (omc_flag[FLAG_SOLVER_STEPS]) {
-    memcpy((uint8_t*)name + maxLengthName * cur, solverStepsName, strlen(solverStepsName));
-    memcpy((uint8_t*)description + maxLengthDesc * cur, solverStepsDesc, strlen(solverStepsDesc));
+  if (omc_flag[FLAG_SOLVER_STEPS])
+  {
+    memcpy((uint8_t *)name + maxLengthName * cur, solverStepsName, strlen(solverStepsName));
+    memcpy((uint8_t *)description + maxLengthDesc * cur, solverStepsDesc, strlen(solverStepsDesc));
     cur++;
   }
 
-  for (int i=0; i < mData->nVariablesReal; i++)
-    if (!mData->realVarsData[i].filterOutput) {
+  for (int i = 0; i < mData->nVariablesReal; i++)
+  {
+    if (!mData->realVarsData[i].filterOutput)
+    {
       const char *unitStr = MMC_STRINGDATA(mData->realVarsData[i].attribute.unit);
       size_t unitLength = unitStr ? strlen(unitStr) : 0;
 
-      memcpy((uint8_t*)name + maxLengthName * cur, mData->realVarsData[i].info.name, strlen(mData->realVarsData[i].info.name));
-      memcpy((uint8_t*)description + maxLengthDesc * cur, mData->realVarsData[i].info.comment, strlen(mData->realVarsData[i].info.comment));
+      memcpy((uint8_t *)name + maxLengthName * cur, mData->realVarsData[i].info.name, strlen(mData->realVarsData[i].info.name));
+      memcpy((uint8_t *)description + maxLengthDesc * cur, mData->realVarsData[i].info.comment, strlen(mData->realVarsData[i].info.comment));
       // unit information
       if (unitLength > 0)
       {
-        memcpy((uint8_t*)description + maxLengthDesc * cur + strlen(mData->realVarsData[i].info.comment) + 2, unitStr, unitLength);
-        ((uint8_t*)description)[maxLengthDesc * cur + strlen(mData->realVarsData[i].info.comment) + 0] = ' ';
-        ((uint8_t*)description)[maxLengthDesc * cur + strlen(mData->realVarsData[i].info.comment) + 1] = '[';
-        ((uint8_t*)description)[maxLengthDesc * cur + strlen(mData->realVarsData[i].info.comment) + 2 + unitLength] = ']';
+        memcpy((uint8_t *)description + maxLengthDesc * cur + strlen(mData->realVarsData[i].info.comment) + 2, unitStr, unitLength);
+        ((uint8_t *)description)[maxLengthDesc * cur + strlen(mData->realVarsData[i].info.comment) + 0] = ' ';
+        ((uint8_t *)description)[maxLengthDesc * cur + strlen(mData->realVarsData[i].info.comment) + 1] = '[';
+        ((uint8_t *)description)[maxLengthDesc * cur + strlen(mData->realVarsData[i].info.comment) + 2 + unitLength] = ']';
       }
       cur++;
     }
+  }
 
   if (omc_flag[FLAG_IDAS])
-    for (int i=mData->nSensitivityParamVars; i < mData->nSensitivityVars; i++) {
-      memcpy((uint8_t*)name + maxLengthName * cur, mData->realSensitivityData[i].info.name, strlen(mData->realSensitivityData[i].info.name));
-      memcpy((uint8_t*)description + maxLengthDesc * cur, mData->realSensitivityData[i].info.comment, strlen(mData->realSensitivityData[i].info.comment));
+  {
+    for (int i = mData->nSensitivityParamVars; i < mData->nSensitivityVars; i++)
+    {
+      memcpy((uint8_t *)name + maxLengthName * cur, mData->realSensitivityData[i].info.name, strlen(mData->realSensitivityData[i].info.name));
+      memcpy((uint8_t *)description + maxLengthDesc * cur, mData->realSensitivityData[i].info.comment, strlen(mData->realSensitivityData[i].info.comment));
       cur++;
     }
+  }
 
-  for (int i=0; i < mData->nVariablesInteger; i++)
-    if (!mData->integerVarsData[i].filterOutput) {
-      memcpy((uint8_t*)name + maxLengthName * cur, mData->integerVarsData[i].info.name, strlen(mData->integerVarsData[i].info.name));
-      memcpy((uint8_t*)description + maxLengthDesc * cur, mData->integerVarsData[i].info.comment, strlen(mData->integerVarsData[i].info.comment));
+  for (int i = 0; i < mData->nVariablesInteger; i++)
+  {
+    if (!mData->integerVarsData[i].filterOutput)
+    {
+      memcpy((uint8_t *)name + maxLengthName * cur, mData->integerVarsData[i].info.name, strlen(mData->integerVarsData[i].info.name));
+      memcpy((uint8_t *)description + maxLengthDesc * cur, mData->integerVarsData[i].info.comment, strlen(mData->integerVarsData[i].info.comment));
       cur++;
     }
+  }
 
-  for (int i=0; i < mData->nVariablesBoolean; i++)
-    if (!mData->booleanVarsData[i].filterOutput) {
-      memcpy((uint8_t*)name + maxLengthName * cur, mData->booleanVarsData[i].info.name, strlen(mData->booleanVarsData[i].info.name));
-      memcpy((uint8_t*)description + maxLengthDesc * cur, mData->booleanVarsData[i].info.comment, strlen(mData->booleanVarsData[i].info.comment));
+  for (int i = 0; i < mData->nVariablesBoolean; i++)
+  {
+    if (!mData->booleanVarsData[i].filterOutput)
+    {
+      memcpy((uint8_t *)name + maxLengthName * cur, mData->booleanVarsData[i].info.name, strlen(mData->booleanVarsData[i].info.name));
+      memcpy((uint8_t *)description + maxLengthDesc * cur, mData->booleanVarsData[i].info.comment, strlen(mData->booleanVarsData[i].info.comment));
       cur++;
     }
+  }
 
-  for (int i=0; i < mData->nParametersReal; i++)
-    if (!mData->realParameterData[i].filterOutput) {
+  for (int i = 0; i < mData->nParametersReal; i++)
+  {
+    if (!mData->realParameterData[i].filterOutput)
+    {
       const char *unitStr = MMC_STRINGDATA(mData->realParameterData[i].attribute.unit);
       size_t unitLength = unitStr ? strlen(unitStr) : 0;
 
-      memcpy((uint8_t*)name + maxLengthName * cur, mData->realParameterData[i].info.name, strlen(mData->realParameterData[i].info.name));
-      memcpy((uint8_t*)description + maxLengthDesc * cur, mData->realParameterData[i].info.comment, strlen(mData->realParameterData[i].info.comment));
+      memcpy((uint8_t *)name + maxLengthName * cur, mData->realParameterData[i].info.name, strlen(mData->realParameterData[i].info.name));
+      memcpy((uint8_t *)description + maxLengthDesc * cur, mData->realParameterData[i].info.comment, strlen(mData->realParameterData[i].info.comment));
       // unit information
       if (unitLength > 0)
       {
-        memcpy((uint8_t*)description + maxLengthDesc * cur + strlen(mData->realParameterData[i].info.comment) + 2, unitStr, unitLength);
-        ((uint8_t*)description)[maxLengthDesc * cur + strlen(mData->realParameterData[i].info.comment) + 0] = ' ';
-        ((uint8_t*)description)[maxLengthDesc * cur + strlen(mData->realParameterData[i].info.comment) + 1] = '[';
-        ((uint8_t*)description)[maxLengthDesc * cur + strlen(mData->realParameterData[i].info.comment) + 2 + unitLength] = ']';
+        memcpy((uint8_t *)description + maxLengthDesc * cur + strlen(mData->realParameterData[i].info.comment) + 2, unitStr, unitLength);
+        ((uint8_t *)description)[maxLengthDesc * cur + strlen(mData->realParameterData[i].info.comment) + 0] = ' ';
+        ((uint8_t *)description)[maxLengthDesc * cur + strlen(mData->realParameterData[i].info.comment) + 1] = '[';
+        ((uint8_t *)description)[maxLengthDesc * cur + strlen(mData->realParameterData[i].info.comment) + 2 + unitLength] = ']';
       }
       cur++;
     }
+  }
 
-  for (int i=0; i < mData->nParametersInteger; i++)
-    if (!mData->integerParameterData[i].filterOutput) {
-      memcpy((uint8_t*)name + maxLengthName * cur, mData->integerParameterData[i].info.name, strlen(mData->integerParameterData[i].info.name));
-      memcpy((uint8_t*)description + maxLengthDesc * cur, mData->integerParameterData[i].info.comment, strlen(mData->integerParameterData[i].info.comment));
+  for (int i = 0; i < mData->nParametersInteger; i++)
+  {
+    if (!mData->integerParameterData[i].filterOutput)
+    {
+      memcpy((uint8_t *)name + maxLengthName * cur, mData->integerParameterData[i].info.name, strlen(mData->integerParameterData[i].info.name));
+      memcpy((uint8_t *)description + maxLengthDesc * cur, mData->integerParameterData[i].info.comment, strlen(mData->integerParameterData[i].info.comment));
       cur++;
     }
+  }
 
-  for (int i=0; i < mData->nParametersBoolean; i++)
-    if (!mData->booleanParameterData[i].filterOutput) {
-      memcpy((uint8_t*)name + maxLengthName * cur, mData->booleanParameterData[i].info.name, strlen(mData->booleanParameterData[i].info.name));
-      memcpy((uint8_t*)description + maxLengthDesc * cur, mData->booleanParameterData[i].info.comment, strlen(mData->booleanParameterData[i].info.comment));
+  for (int i = 0; i < mData->nParametersBoolean; i++)
+  {
+    if (!mData->booleanParameterData[i].filterOutput)
+    {
+      memcpy((uint8_t *)name + maxLengthName * cur, mData->booleanParameterData[i].info.name, strlen(mData->booleanParameterData[i].info.name));
+      memcpy((uint8_t *)description + maxLengthDesc * cur, mData->booleanParameterData[i].info.comment, strlen(mData->booleanParameterData[i].info.comment));
       cur++;
     }
+  }
 
-  for (int i=0; i < mData->nAliasReal; i++)
-    if (!mData->realAlias[i].filterOutput) {
+  for (int i = 0; i < mData->nAliasReal; i++)
+  {
+    if (!mData->realAlias[i].filterOutput)
+    {
       const char *unitStr = NULL;
       size_t unitLength = 0;
 
@@ -342,32 +433,39 @@ void mat4_init4(simulation_result *self, DATA *data, threadData_t *threadData)
         unitLength = 1;
       }
 
-      memcpy((uint8_t*)name + maxLengthName * cur, mData->realAlias[i].info.name, strlen(mData->realAlias[i].info.name));
-      memcpy((uint8_t*)description + maxLengthDesc * cur, mData->realAlias[i].info.comment, strlen(mData->realAlias[i].info.comment));
+      memcpy((uint8_t *)name + maxLengthName * cur, mData->realAlias[i].info.name, strlen(mData->realAlias[i].info.name));
+      memcpy((uint8_t *)description + maxLengthDesc * cur, mData->realAlias[i].info.comment, strlen(mData->realAlias[i].info.comment));
       // unit information
       if (unitLength > 0)
       {
-        memcpy((uint8_t*)description + maxLengthDesc * cur + strlen(mData->realAlias[i].info.comment) + 2, unitStr, unitLength);
-        ((uint8_t*)description)[maxLengthDesc * cur + strlen(mData->realAlias[i].info.comment) + 0] = ' ';
-        ((uint8_t*)description)[maxLengthDesc * cur + strlen(mData->realAlias[i].info.comment) + 1] = '[';
-        ((uint8_t*)description)[maxLengthDesc * cur + strlen(mData->realAlias[i].info.comment) + 2 + unitLength] = ']';
+        memcpy((uint8_t *)description + maxLengthDesc * cur + strlen(mData->realAlias[i].info.comment) + 2, unitStr, unitLength);
+        ((uint8_t *)description)[maxLengthDesc * cur + strlen(mData->realAlias[i].info.comment) + 0] = ' ';
+        ((uint8_t *)description)[maxLengthDesc * cur + strlen(mData->realAlias[i].info.comment) + 1] = '[';
+        ((uint8_t *)description)[maxLengthDesc * cur + strlen(mData->realAlias[i].info.comment) + 2 + unitLength] = ']';
       }
       cur++;
     }
+  }
 
-  for (int i=0; i < mData->nAliasInteger; i++)
-    if (!mData->integerAlias[i].filterOutput) {
-      memcpy((uint8_t*)name + maxLengthName * cur, mData->integerAlias[i].info.name, strlen(mData->integerAlias[i].info.name));
-      memcpy((uint8_t*)description + maxLengthDesc * cur, mData->integerAlias[i].info.comment, strlen(mData->integerAlias[i].info.comment));
+  for (int i = 0; i < mData->nAliasInteger; i++)
+  {
+    if (!mData->integerAlias[i].filterOutput)
+    {
+      memcpy((uint8_t *)name + maxLengthName * cur, mData->integerAlias[i].info.name, strlen(mData->integerAlias[i].info.name));
+      memcpy((uint8_t *)description + maxLengthDesc * cur, mData->integerAlias[i].info.comment, strlen(mData->integerAlias[i].info.comment));
       cur++;
     }
+  }
 
-  for (int i=0; i < mData->nAliasBoolean; i++)
-    if (!mData->booleanAlias[i].filterOutput) {
-      memcpy((uint8_t*)name + maxLengthName * cur, mData->booleanAlias[i].info.name, strlen(mData->booleanAlias[i].info.name));
-      memcpy((uint8_t*)description + maxLengthDesc * cur, mData->booleanAlias[i].info.comment, strlen(mData->booleanAlias[i].info.comment));
+  for (int i = 0; i < mData->nAliasBoolean; i++)
+  {
+    if (!mData->booleanAlias[i].filterOutput)
+    {
+      memcpy((uint8_t *)name + maxLengthName * cur, mData->booleanAlias[i].info.name, strlen(mData->booleanAlias[i].info.name));
+      memcpy((uint8_t *)description + maxLengthDesc * cur, mData->booleanAlias[i].info.comment, strlen(mData->booleanAlias[i].info.comment));
       cur++;
     }
+  }
 
   //       Name: name
   //       Rank: 2
@@ -389,33 +487,58 @@ void mat4_init4(simulation_result *self, DATA *data, threadData_t *threadData)
   rt_accumulate(SIM_TIMER_OUTPUT);
 }
 
-#define WRITE_REAL_VALUE(data, offset, value) {if (omc_flag[FLAG_SINGLE_PRECISION]) {float f=(value); memcpy(((uint8_t*)(data)) + (offset)*sizeof(float), &f, sizeof(float));} else {double d=(value); memcpy(((uint8_t*)(data)) + (offset)*sizeof(double), &d, sizeof(double));}}
+#define WRITE_REAL_VALUE(data, offset, value)                                    \
+{                                                                                \
+  if (omc_flag[FLAG_SINGLE_PRECISION])                                           \
+  {                                                                              \
+    float f = (value);                                                           \
+    memcpy(((uint8_t *)(data)) + (offset) * sizeof(float), &f, sizeof(float));   \
+  }                                                                              \
+  else                                                                           \
+  {                                                                              \
+    double d = (value);                                                          \
+    memcpy(((uint8_t *)(data)) + (offset) * sizeof(double), &d, sizeof(double)); \
+  }                                                                              \
+}
 
-/* write the parameter data after updateBoundParameters is called */
+/**
+ * @brief Write parameter and time-invariant series into MAT v4 structures.
+ *
+ * This function populates `data_1` and `data_2` headers with parameter values
+ * and allocates the in-memory buffers used for subsequent emits. It is
+ * typically called after parameters have been updated
+ * (`updateBoundParameters`).
+ *
+ * @param self        Writer instance containing storage and filename.
+ * @param data        Simulation data structures (model and simulation info).
+ * @param threadData  Thread-local data used for error reporting.
+ */
 void mat4_writeParameterData4(simulation_result *self, DATA *data, threadData_t *threadData)
 {
-  mat_data *matData = (mat_data*) self->storage;
+  mat_data *matData = (mat_data *)self->storage;
   const SIMULATION_INFO *sInfo = data->simulationInfo;
-  const MODEL_DATA      *mData = data->modelData;
+  const MODEL_DATA *mData = data->modelData;
 
   if (!matData->pFile)
+  {
     return;
+  }
 
   rt_tick(SIM_TIMER_OUTPUT);
 
-  int32_t* dataInfo = (int32_t*) malloc(sizeof(int32_t) * 4 * matData->nSignals);
+  int32_t *dataInfo = (int32_t *)malloc(sizeof(int32_t) * 4 * matData->nSignals);
   size_t index1 = 1;
   size_t index2 = 0;
   size_t cur = 1;
 
   /* alias lookups */
-  size_t *realLookup = (size_t*) malloc(sizeof(size_t) * mData->nVariablesReal);
-  size_t *integerLookup = (size_t*) malloc(sizeof(size_t) * mData->nVariablesInteger);
-  size_t *boolLookup = (size_t*) malloc(sizeof(size_t) * mData->nVariablesBoolean);
+  size_t *realLookup = (size_t *)malloc(sizeof(size_t) * mData->nVariablesReal);
+  size_t *integerLookup = (size_t *)malloc(sizeof(size_t) * mData->nVariablesInteger);
+  size_t *boolLookup = (size_t *)malloc(sizeof(size_t) * mData->nVariablesBoolean);
 
-  size_t *realParameterLookup = (size_t*) malloc(sizeof(size_t) * mData->nParametersReal);
-  size_t *integerParameterLookup = (size_t*) malloc(sizeof(size_t) * mData->nParametersInteger);
-  size_t *boolParameterLookup = (size_t*) malloc(sizeof(size_t) * mData->nParametersBoolean);
+  size_t *realParameterLookup = (size_t *)malloc(sizeof(size_t) * mData->nParametersReal);
+  size_t *integerParameterLookup = (size_t *)malloc(sizeof(size_t) * mData->nParametersInteger);
+  size_t *boolParameterLookup = (size_t *)malloc(sizeof(size_t) * mData->nParametersBoolean);
 
   /* time */
   dataInfo[0] = 0;
@@ -423,7 +546,8 @@ void mat4_writeParameterData4(simulation_result *self, DATA *data, threadData_t 
   dataInfo[2] = 0;
   dataInfo[3] = -1;
 
-  if (self->cpuTime) {
+  if (self->cpuTime)
+  {
     dataInfo[4 * cur + 0] = 2;
     dataInfo[4 * cur + 1] = ++index2;
     dataInfo[4 * cur + 2] = 0;
@@ -431,7 +555,8 @@ void mat4_writeParameterData4(simulation_result *self, DATA *data, threadData_t 
     cur++;
   }
 
-  if (omc_flag[FLAG_SOLVER_STEPS]) {
+  if (omc_flag[FLAG_SOLVER_STEPS])
+  {
     dataInfo[4 * cur + 0] = 2;
     dataInfo[4 * cur + 1] = ++index2;
     dataInfo[4 * cur + 2] = 0;
@@ -439,8 +564,10 @@ void mat4_writeParameterData4(simulation_result *self, DATA *data, threadData_t 
     cur++;
   }
 
-  for (int i=0; i < mData->nVariablesReal; i++)
-    if (!mData->realVarsData[i].filterOutput) {
+  for (int i = 0; i < mData->nVariablesReal; i++)
+  {
+    if (!mData->realVarsData[i].filterOutput)
+    {
       realLookup[i] = cur;
       dataInfo[4 * cur + 0] = mData->realVarsData[i].time_unvarying ? 1 : 2;
       dataInfo[4 * cur + 1] = mData->realVarsData[i].time_unvarying ? ++index1 : ++index2;
@@ -448,18 +575,24 @@ void mat4_writeParameterData4(simulation_result *self, DATA *data, threadData_t 
       dataInfo[4 * cur + 3] = 0;
       cur++;
     }
+  }
 
   if (omc_flag[FLAG_IDAS])
-    for (int i=mData->nSensitivityParamVars; i < mData->nSensitivityVars; i++) {
+  {
+    for (int i = mData->nSensitivityParamVars; i < mData->nSensitivityVars; i++)
+    {
       dataInfo[4 * cur + 0] = 2;
       dataInfo[4 * cur + 1] = ++index2;
       dataInfo[4 * cur + 2] = 0;
       dataInfo[4 * cur + 3] = 0;
       cur++;
     }
+  }
 
-  for (int i=0; i < mData->nVariablesInteger; i++)
-    if (!mData->integerVarsData[i].filterOutput) {
+  for (int i = 0; i < mData->nVariablesInteger; i++)
+  {
+    if (!mData->integerVarsData[i].filterOutput)
+    {
       integerLookup[i] = cur;
       dataInfo[4 * cur + 0] = mData->integerVarsData[i].time_unvarying ? 1 : 2;
       dataInfo[4 * cur + 1] = mData->integerVarsData[i].time_unvarying ? ++index1 : ++index2;
@@ -467,9 +600,12 @@ void mat4_writeParameterData4(simulation_result *self, DATA *data, threadData_t 
       dataInfo[4 * cur + 3] = 0;
       cur++;
     }
+  }
 
-  for (int i=0; i < mData->nVariablesBoolean; i++)
-    if (!mData->booleanVarsData[i].filterOutput) {
+  for (int i = 0; i < mData->nVariablesBoolean; i++)
+  {
+    if (!mData->booleanVarsData[i].filterOutput)
+    {
       boolLookup[i] = cur;
       dataInfo[4 * cur + 0] = mData->booleanVarsData[i].time_unvarying ? 1 : 2;
       dataInfo[4 * cur + 1] = mData->booleanVarsData[i].time_unvarying ? ++index1 : ++index2;
@@ -477,9 +613,12 @@ void mat4_writeParameterData4(simulation_result *self, DATA *data, threadData_t 
       dataInfo[4 * cur + 3] = 0;
       cur++;
     }
+  }
 
-  for (int i=0; i < mData->nParametersReal; i++)
-    if (!mData->realParameterData[i].filterOutput) {
+  for (int i = 0; i < mData->nParametersReal; i++)
+  {
+    if (!mData->realParameterData[i].filterOutput)
+    {
       realParameterLookup[i] = cur;
       dataInfo[4 * cur + 0] = 1;
       dataInfo[4 * cur + 1] = ++index1;
@@ -487,9 +626,12 @@ void mat4_writeParameterData4(simulation_result *self, DATA *data, threadData_t 
       dataInfo[4 * cur + 3] = 0;
       cur++;
     }
+  }
 
-  for (int i=0; i < mData->nParametersInteger; i++)
-    if (!mData->integerParameterData[i].filterOutput) {
+  for (int i = 0; i < mData->nParametersInteger; i++)
+  {
+    if (!mData->integerParameterData[i].filterOutput)
+    {
       integerParameterLookup[i] = cur;
       dataInfo[4 * cur + 0] = 1;
       dataInfo[4 * cur + 1] = ++index1;
@@ -497,9 +639,12 @@ void mat4_writeParameterData4(simulation_result *self, DATA *data, threadData_t 
       dataInfo[4 * cur + 3] = 0;
       cur++;
     }
+  }
 
-  for (int i=0; i < mData->nParametersBoolean; i++)
-    if (!mData->booleanParameterData[i].filterOutput) {
+  for (int i = 0; i < mData->nParametersBoolean; i++)
+  {
+    if (!mData->booleanParameterData[i].filterOutput)
+    {
       boolParameterLookup[i] = cur;
       dataInfo[4 * cur + 0] = 1;
       dataInfo[4 * cur + 1] = ++index1;
@@ -507,9 +652,12 @@ void mat4_writeParameterData4(simulation_result *self, DATA *data, threadData_t 
       dataInfo[4 * cur + 3] = 0;
       cur++;
     }
+  }
 
-  for (int i=0; i < mData->nAliasReal; i++)
-    if (!mData->realAlias[i].filterOutput) {
+  for (int i = 0; i < mData->nAliasReal; i++)
+  {
+    if (!mData->realAlias[i].filterOutput)
+    {
       if (mData->realAlias[i].aliasType == ALIAS_TYPE_VARIABLE)
       { /* variable */
         dataInfo[4 * cur + 0] = dataInfo[4 * realLookup[mData->realAlias[i].nameID] + 0];
@@ -518,7 +666,9 @@ void mat4_writeParameterData4(simulation_result *self, DATA *data, threadData_t 
         dataInfo[4 * cur + 3] = dataInfo[4 * realLookup[mData->realAlias[i].nameID] + 3];
 
         if (mData->realAlias[i].negate)
+        {
           dataInfo[4 * cur + 1] = -dataInfo[4 * cur + 1];
+        }
         cur++;
       }
       else if (mData->realAlias[i].aliasType == ALIAS_TYPE_PARAMETER)
@@ -529,7 +679,9 @@ void mat4_writeParameterData4(simulation_result *self, DATA *data, threadData_t 
         dataInfo[4 * cur + 3] = dataInfo[4 * realParameterLookup[mData->realAlias[i].nameID] + 3];
 
         if (mData->realAlias[i].negate)
+        {
           dataInfo[4 * cur + 1] = -dataInfo[4 * cur + 1];
+        }
         cur++;
       }
       else if (mData->realAlias[i].aliasType == ALIAS_TYPE_TIME)
@@ -540,13 +692,18 @@ void mat4_writeParameterData4(simulation_result *self, DATA *data, threadData_t 
         dataInfo[4 * cur + 3] = -1;
 
         if (mData->realAlias[i].negate)
+        {
           dataInfo[4 * cur + 1] = -dataInfo[4 * cur + 1];
+        }
         cur++;
       }
     }
+  }
 
-  for (int i=0; i < mData->nAliasInteger; i++)
-    if (!mData->integerAlias[i].filterOutput) {
+  for (int i = 0; i < mData->nAliasInteger; i++)
+  {
+    if (!mData->integerAlias[i].filterOutput)
+    {
       if (mData->integerAlias[i].aliasType == ALIAS_TYPE_VARIABLE)
       { /* variable */
         dataInfo[4 * cur + 0] = dataInfo[4 * integerLookup[mData->integerAlias[i].nameID] + 0];
@@ -555,7 +712,9 @@ void mat4_writeParameterData4(simulation_result *self, DATA *data, threadData_t 
         dataInfo[4 * cur + 3] = dataInfo[4 * integerLookup[mData->integerAlias[i].nameID] + 3];
 
         if (mData->integerAlias[i].negate)
+        {
           dataInfo[4 * cur + 1] = -dataInfo[4 * cur + 1];
+        }
         cur++;
       }
       else if (mData->integerAlias[i].aliasType == ALIAS_TYPE_PARAMETER)
@@ -566,13 +725,18 @@ void mat4_writeParameterData4(simulation_result *self, DATA *data, threadData_t 
         dataInfo[4 * cur + 3] = dataInfo[4 * integerParameterLookup[mData->integerAlias[i].nameID] + 3];
 
         if (mData->integerAlias[i].negate)
+        {
           dataInfo[4 * cur + 1] = -dataInfo[4 * cur + 1];
+        }
         cur++;
       }
     }
+  }
 
-  for (int i=0; i < mData->nAliasBoolean; i++)
-    if (!mData->booleanAlias[i].filterOutput) {
+  for (int i = 0; i < mData->nAliasBoolean; i++)
+  {
+    if (!mData->booleanAlias[i].filterOutput)
+    {
       if (mData->booleanAlias[i].aliasType == ALIAS_TYPE_VARIABLE)
       { /* variable */
         if (mData->booleanAlias[i].negate)
@@ -612,6 +776,7 @@ void mat4_writeParameterData4(simulation_result *self, DATA *data, threadData_t 
         }
       }
     }
+  }
 
   free(realLookup);
   free(integerLookup);
@@ -626,8 +791,10 @@ void mat4_writeParameterData4(simulation_result *self, DATA *data, threadData_t 
   matData->nEmits = 0;
   matData->sync = 0;
 
-  if(omc_flag[FLAG_MAT_SYNC])
+  if (omc_flag[FLAG_MAT_SYNC])
+  {
     matData->sync = atoi(omc_flagValue[FLAG_MAT_SYNC]);
+  }
 
   //       Name: dataInfo
   //       Rank: 2
@@ -640,53 +807,71 @@ void mat4_writeParameterData4(simulation_result *self, DATA *data, threadData_t 
 
   size_t size = sizeofMatVer4Type(matData->type);
   cur = 0;
-  void* data_1 = malloc(size * matData->nData1 * 2);
+  void *data_1 = malloc(size * matData->nData1 * 2);
 
   WRITE_REAL_VALUE(data_1, cur, data->simulationInfo->startTime);
   WRITE_REAL_VALUE(data_1, cur + matData->nData1, data->simulationInfo->stopTime);
   cur++;
 
-  for (int i=0; i < mData->nVariablesReal; i++)
-    if (!mData->realVarsData[i].filterOutput && mData->realVarsData[i].time_unvarying) {
-        WRITE_REAL_VALUE(data_1, cur, data->localData[0]->realVars[i]);
-        WRITE_REAL_VALUE(data_1, cur + matData->nData1, data->localData[0]->realVars[i]);
-        cur++;
-      }
+  for (int i = 0; i < mData->nVariablesReal; i++)
+  {
+    if (!mData->realVarsData[i].filterOutput && mData->realVarsData[i].time_unvarying)
+    {
+      WRITE_REAL_VALUE(data_1, cur, data->localData[0]->realVars[i]);
+      WRITE_REAL_VALUE(data_1, cur + matData->nData1, data->localData[0]->realVars[i]);
+      cur++;
+    }
+  }
 
-  for (int i=0; i < mData->nVariablesInteger; i++)
-    if (!mData->integerVarsData[i].filterOutput && mData->integerVarsData[i].time_unvarying) {
+  for (int i = 0; i < mData->nVariablesInteger; i++)
+  {
+    if (!mData->integerVarsData[i].filterOutput && mData->integerVarsData[i].time_unvarying)
+    {
       WRITE_REAL_VALUE(data_1, cur, data->localData[0]->integerVars[i]);
       WRITE_REAL_VALUE(data_1, cur + matData->nData1, data->localData[0]->integerVars[i]);
       cur++;
     }
+  }
 
-  for (int i=0; i < mData->nVariablesBoolean; i++)
-    if (!mData->booleanVarsData[i].filterOutput && mData->booleanVarsData[i].time_unvarying) {
+  for (int i = 0; i < mData->nVariablesBoolean; i++)
+  {
+    if (!mData->booleanVarsData[i].filterOutput && mData->booleanVarsData[i].time_unvarying)
+    {
       WRITE_REAL_VALUE(data_1, cur, data->localData[0]->booleanVars[i]);
       WRITE_REAL_VALUE(data_1, cur + matData->nData1, data->localData[0]->booleanVars[i]);
       cur++;
     }
+  }
 
-  for (int i=0; i < mData->nParametersReal; i++)
-    if (!mData->realParameterData[i].filterOutput) {
+  for (int i = 0; i < mData->nParametersReal; i++)
+  {
+    if (!mData->realParameterData[i].filterOutput)
+    {
       WRITE_REAL_VALUE(data_1, cur, sInfo->realParameter[i]);
       WRITE_REAL_VALUE(data_1, cur + matData->nData1, sInfo->realParameter[i]);
       cur++;
     }
+  }
 
-  for (int i=0; i < mData->nParametersInteger; i++)
-    if (!mData->integerParameterData[i].filterOutput) {
+  for (int i = 0; i < mData->nParametersInteger; i++)
+  {
+    if (!mData->integerParameterData[i].filterOutput)
+    {
       WRITE_REAL_VALUE(data_1, cur, sInfo->integerParameter[i]);
       WRITE_REAL_VALUE(data_1, cur + matData->nData1, sInfo->integerParameter[i]);
       cur++;
     }
+  }
 
-  for (int i=0; i < mData->nParametersBoolean; i++)
-    if (!mData->booleanParameterData[i].filterOutput) {
+  for (int i = 0; i < mData->nParametersBoolean; i++)
+  {
+    if (!mData->booleanParameterData[i].filterOutput)
+    {
       WRITE_REAL_VALUE(data_1, cur, sInfo->booleanParameter[i]);
       WRITE_REAL_VALUE(data_1, cur + matData->nData1, sInfo->booleanParameter[i]);
       cur++;
     }
+  }
 
   //       Name: data_1
   //       Rank: 2
@@ -711,11 +896,22 @@ void mat4_writeParameterData4(simulation_result *self, DATA *data, threadData_t 
   rt_accumulate(SIM_TIMER_OUTPUT);
 }
 
+/**
+ * @brief Emit one simulation sample (time step) into the MAT v4 file.
+ *
+ * Appends the current time, optional CPU time and solver steps, and
+ * all enabled variable values to the in-memory `data_2` buffer and
+ * flushes it to disk when appropriate.
+ *
+ * @param self        Writer instance containing storage and filename.
+ * @param data        Simulation data structures (model and current values).
+ * @param threadData  Thread-local data used for error reporting.
+ */
 void mat4_emit4(simulation_result *self, DATA *data, threadData_t *threadData)
 {
-  mat_data *matData = (mat_data*) self->storage;
+  mat_data *matData = (mat_data *)self->storage;
   const SIMULATION_INFO *sInfo = data->simulationInfo;
-  const MODEL_DATA      *mData = data->modelData;
+  const MODEL_DATA *mData = data->modelData;
 
   if (!matData->pFile)
     return;
@@ -730,32 +926,60 @@ void mat4_emit4(simulation_result *self, DATA *data, threadData_t *threadData)
   WRITE_REAL_VALUE(matData->data_2, cur++, data->localData[0]->timeValue);
 
   if (self->cpuTime)
+  {
     WRITE_REAL_VALUE(matData->data_2, cur++, cpuTimeValue);
+  }
 
   if (omc_flag[FLAG_SOLVER_STEPS])
+  {
     WRITE_REAL_VALUE(matData->data_2, cur++, data->simulationInfo->solverSteps);
+  }
 
-  for (int i=0; i < mData->nVariablesReal; i++)
+  for (int i = 0; i < mData->nVariablesReal; i++)
+  {
     if (!mData->realVarsData[i].filterOutput && !mData->realVarsData[i].time_unvarying)
+    {
       WRITE_REAL_VALUE(matData->data_2, cur++, data->localData[0]->realVars[i]);
+    }
+  }
 
   if (omc_flag[FLAG_IDAS])
-    for (int i=mData->nSensitivityParamVars; i < mData->nSensitivityVars; i++)
+  {
+    for (int i = mData->nSensitivityParamVars; i < mData->nSensitivityVars; i++)
+    {
       WRITE_REAL_VALUE(matData->data_2, cur++, data->simulationInfo->sensitivityMatrix[i]);
+    }
+  }
 
-  for (int i=0; i < mData->nVariablesInteger; i++)
+  for (int i = 0; i < mData->nVariablesInteger; i++)
+  {
     if (!mData->integerVarsData[i].filterOutput && !mData->integerVarsData[i].time_unvarying)
+    {
       WRITE_REAL_VALUE(matData->data_2, cur++, data->localData[0]->integerVars[i]);
+    }
+  }
 
-  for (int i=0; i < mData->nVariablesBoolean; i++)
+  for (int i = 0; i < mData->nVariablesBoolean; i++)
+  {
     if (!mData->booleanVarsData[i].filterOutput && !mData->booleanVarsData[i].time_unvarying)
+    {
       WRITE_REAL_VALUE(matData->data_2, cur++, data->localData[0]->booleanVars[i]);
+    }
+  }
 
-  for (int i=0; i < mData->nAliasBoolean; i++)
+  for (int i = 0; i < mData->nAliasBoolean; i++)
+  {
     if (!mData->booleanAlias[i].filterOutput)
+    {
       if (mData->booleanAlias[i].aliasType == ALIAS_TYPE_VARIABLE)
+      {
         if (mData->booleanAlias[i].negate)
-          WRITE_REAL_VALUE(matData->data_2, cur++, (1-data->localData[0]->booleanVars[mData->booleanAlias[i].nameID]));
+        {
+          WRITE_REAL_VALUE(matData->data_2, cur++, (1 - data->localData[0]->booleanVars[mData->booleanAlias[i].nameID]));
+        }
+      }
+    }
+  }
 
   fwrite(matData->data_2, sizeofMatVer4Type(matData->type), matData->nData2, matData->pFile);
   matData->nEmits++;
@@ -769,23 +993,36 @@ void mat4_emit4(simulation_result *self, DATA *data, threadData_t *threadData)
   rt_accumulate(SIM_TIMER_OUTPUT);
 }
 
+/**
+ * @brief Finalize MAT v4 output and release resources.
+ *
+ * Writes any remaining buffered samples, updates headers and frees
+ * allocated buffers and file handles stored in `self->storage`.
+ *
+ * @param self        Writer instance containing storage and filename.
+ * @param data        Simulation data structures (not modified).
+ * @param threadData  Thread-local data used for error reporting.
+ */
 void mat4_free4(simulation_result *self, DATA *data, threadData_t *threadData)
 {
-  mat_data *matData = (mat_data*) self->storage;
+  mat_data *matData = (mat_data *)self->storage;
 
   rt_tick(SIM_TIMER_OUTPUT);
 
-  if (!matData->pFile) {
+  if (!matData->pFile)
+  {
     rt_accumulate(SIM_TIMER_OUTPUT);
     return;
   }
 
-  if (matData->nEmits > 0) {
+  if (matData->nEmits > 0)
+  {
     updateHeader_matVer4(matData->pFile, matData->data2HdrPos, "data_2", matData->nData2, matData->nEmits, matData->type);
     matData->nEmits = 0;
   }
 
-  if (matData->data_2) {
+  if (matData->data_2)
+  {
     free(matData->data_2);
     matData->data_2 = NULL;
   }
@@ -796,4 +1033,4 @@ void mat4_free4(simulation_result *self, DATA *data, threadData_t *threadData)
   rt_accumulate(SIM_TIMER_OUTPUT);
 }
 
-}
+} // extern "C"
