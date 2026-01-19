@@ -368,12 +368,12 @@ void initializeOutputFilter(MODEL_DATA *modelData, const char *variableFilter, i
     return;
   }
 
-  for(mmc_sint_t i=0; i<modelData->nVariablesRealArray; i++) {
+  for(mmc_sint_t i=0; i<modelData->nVariablesReal; i++) {
     if(!modelData->realVarsData[i].filterOutput) {
       modelData->realVarsData[i].filterOutput = regexec(&myregex, modelData->realVarsData[i].info.name, 0, NULL, 0) != 0;
     }
   }
-  for(mmc_sint_t i=0; i<modelData->nAliasRealArray; i++) {
+  for(mmc_sint_t i=0; i<modelData->nAliasReal; i++) {
     if(!modelData->realAlias[i].filterOutput) {
       if(modelData->realAlias[i].aliasType == ALIAS_TYPE_VARIABLE) {
         modelData->realAlias[i].filterOutput = regexec(&myregex, modelData->realAlias[i].info.name, 0, NULL, 0) != 0;
@@ -389,12 +389,12 @@ void initializeOutputFilter(MODEL_DATA *modelData, const char *variableFilter, i
     }
   }
 
-  for (mmc_sint_t i=0; i<modelData->nVariablesIntegerArray; i++) {
+  for (mmc_sint_t i=0; i<modelData->nVariablesInteger; i++) {
     if(!modelData->integerVarsData[i].filterOutput) {
       modelData->integerVarsData[i].filterOutput = regexec(&myregex, modelData->integerVarsData[i].info.name, 0, NULL, 0) != 0;
     }
   }
-  for (mmc_sint_t i=0; i<modelData->nAliasIntegerArray; i++) {
+  for (mmc_sint_t i=0; i<modelData->nAliasInteger; i++) {
     if(!modelData->integerAlias[i].filterOutput) {
       if(modelData->integerAlias[i].aliasType == ALIAS_TYPE_VARIABLE) {
         modelData->integerAlias[i].filterOutput = regexec(&myregex, modelData->integerAlias[i].info.name, 0, NULL, 0) != 0;
@@ -410,12 +410,12 @@ void initializeOutputFilter(MODEL_DATA *modelData, const char *variableFilter, i
     }
   }
 
-  for (mmc_sint_t i=0; i<modelData->nVariablesBooleanArray; i++) {
+  for (mmc_sint_t i=0; i<modelData->nVariablesBoolean; i++) {
     if(!modelData->booleanVarsData[i].filterOutput) {
       modelData->booleanVarsData[i].filterOutput = regexec(&myregex, modelData->booleanVarsData[i].info.name, 0, NULL, 0) != 0;
     }
   }
-  for (mmc_sint_t i=0; i<modelData->nAliasBooleanArray; i++) {
+  for (mmc_sint_t i=0; i<modelData->nAliasBoolean; i++) {
     if(!modelData->booleanAlias[i].filterOutput) {
       if(modelData->booleanAlias[i].aliasType == ALIAS_TYPE_VARIABLE) {
         modelData->booleanAlias[i].filterOutput = regexec(&myregex, modelData->booleanAlias[i].info.name, 0, NULL, 0) != 0;
@@ -431,12 +431,12 @@ void initializeOutputFilter(MODEL_DATA *modelData, const char *variableFilter, i
     }
   }
 
-  for (mmc_sint_t i=0; i<modelData->nVariablesStringArray; i++) {
+  for (mmc_sint_t i=0; i<modelData->nVariablesString; i++) {
     if(!modelData->stringVarsData[i].filterOutput) {
       modelData->stringVarsData[i].filterOutput = regexec(&myregex, modelData->stringVarsData[i].info.name, 0, NULL, 0) != 0;
     }
   }
-  for (mmc_sint_t i=0; i<modelData->nAliasStringArray; i++) {
+  for (mmc_sint_t i=0; i<modelData->nAliasString; i++) {
     if(!modelData->stringAlias[i].filterOutput) {
       if(modelData->stringAlias[i].aliasType == ALIAS_TYPE_VARIABLE) {
         modelData->stringAlias[i].filterOutput = regexec(&myregex, modelData->stringAlias[i].info.name, 0, NULL, 0) != 0;
