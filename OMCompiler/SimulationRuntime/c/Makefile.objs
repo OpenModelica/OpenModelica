@@ -235,8 +235,7 @@ RESULTS_OBJS_MINIMAL=MatVer4$(OBJ_EXT) \
 ifeq ($(OMC_MINIMAL_RUNTIME),)
   RESULTS_OBJS=$(RESULTS_OBJS_MINIMAL) \
                simulation_result_ia$(OBJ_EXT) \
-               simulation_result_plt$(OBJ_EXT) \
-               simulation_result_wall$(OBJ_EXT)
+               simulation_result_plt$(OBJ_EXT)
 else
   RESULTS_OBJS=$(RESULTS_OBJS_MINIMAL)
 endif
@@ -245,14 +244,12 @@ RESULTS_HFILES = MatVer4.h \
                  simulation_result_ia.h \
                  simulation_result_mat4.h \
                  simulation_result_plt.h \
-                 simulation_result_wall.h \
                  simulation_result.h
 RESULTS_FILES = MatVer4.cpp \
                 simulation_result_csv.cpp \
                 simulation_result_ia.cpp \
                 simulation_result_mat4.cpp \
                 simulation_result_plt.cpp \
-                simulation_result_wall.cpp \
                 simulation_result.cpp
 
 SIM_OBJS = ../dataReconciliation/dataReconciliation$(OBJ_EXT) \

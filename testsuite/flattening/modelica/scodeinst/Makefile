@@ -713,6 +713,7 @@ FunctionRecordArg3.mo \
 FunctionRecordArg4.mo \
 FunctionRecordArg5.mo \
 FunctionRecordArg6.mo \
+FunctionRecordArg7.mo \
 FunctionRecursive1.mo \
 FunctionRecursive2.mo \
 FunctionSections1.mo \

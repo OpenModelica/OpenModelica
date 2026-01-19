@@ -716,7 +716,6 @@ void Parameter::createValueWidget()
     default:
       mpValueTextBox = new QLineEdit;
       mpValueTextBox->installEventFilter(this);
-      connect(mpValueTextBox, &QLineEdit::textEdited, this, &Parameter::valueTextBoxChanged);
       break;
   }
 }
@@ -771,7 +770,7 @@ void Parameter::enableDisableUnitComboBox(const QString &value)
  * Updates the value binding of the parameter and call updateParameters so depending parameters gets updated.
  * \param value
  */
-void Parameter::updateValueBinding(const FlatModelica::Expression expression)
+void Parameter::updateValueBinding(const FlatModelica::Expression& expression)
 {
   // update the binding with the new value
   mpModelInstanceElement->setBinding(expression);
@@ -816,6 +815,22 @@ void Parameter::resetUnitCombobox()
 }
 
 /*!
+ * \brief Parameter::valueTextBoxChanged
+ * Called when the focus is lost from the value textbox.\n
+ * Updates the value according to the value entered.
+ * \param text
+ */
+void Parameter::valueTextBoxChanged(const QString &text)
+{
+  try {
+    updateValueBinding(FlatModelica::Expression::parse(text));
+  } catch (const std::exception &e) {
+    qDebug() << "Failed to parse value in Parameter::valueTextBoxChanged(): " << text;
+    qDebug() << e.what();
+  }
+}
+
+/*!
  * \brief Parameter::setBreakValue
  * Slot activated when break is toggled in the menu.
  * \param breakValue
@@ -836,7 +851,7 @@ void Parameter::editClassButtonClicked()
   QString type;
   QString value;
   QString defaultValue;
-  if (isReplaceableComponent() || isReplaceableClass()) {
+  if (isReplaceableComponent() || isReplaceableClass() || isChoicesAllMatching()) {
     value = mpValueComboBox->lineEdit()->text();
     defaultValue = mpValueComboBox->lineEdit()->placeholderText();
   } else {
@@ -1024,7 +1039,7 @@ void Parameter::valueComboBoxChanged(int index)
       updateValueBinding(FlatModelica::Expression::parse(value));
     }
   } catch (const std::exception &e) {
-    qDebug() << "Failed to parse value: " << value;
+    qDebug() << "Failed to parse value in Parameter::valueComboBoxChanged(): " << value;
     qDebug() << e.what();
   }
 }
@@ -1032,26 +1047,13 @@ void Parameter::valueComboBoxChanged(int index)
 /*!
  * \brief Parameter::valueCheckBoxChanged
  * SLOT activated when mpValueCheckBox toggled(bool) SIGNAL is raised.\n
- * Marks the item modified.
+ * Updates the value according to the checkbox state.
  * \param toggle
  */
 void Parameter::valueCheckBoxChanged(bool toggle)
 {
   mValueCheckBoxModified = true;
   updateValueBinding(FlatModelica::Expression(toggle));
-}
-
-/*!
- * \brief Parameter::valueTextBoxChanged
- * SLOT activated when mpValueTextkBox textEdited SIGNAL is raised.\n
- * \param text
- */
-void Parameter::valueTextBoxChanged(const QString &text)
-{
-  try {
-    updateValueBinding(FlatModelica::Expression::parse(text));
-  } catch (...) {
-  }
 }
 
 void Parameter::showFixedMenu()
@@ -1119,8 +1121,11 @@ void Parameter::inheritedFixedClicked()
  */
 bool Parameter::eventFilter(QObject *pWatched, QEvent *pEvent)
 {
-  if (mpValueTextBox == pWatched && pEvent->type() == QEvent::FocusOut) {
-    enableDisableUnitComboBox(mpValueTextBox->text());
+  if (mpValueTextBox == pWatched && pEvent->type() == QEvent::FocusOut
+      && mpElementParameters && !mpElementParameters->skipFocusOutEvent()) {
+    const QString text = mpValueTextBox->text();
+    enableDisableUnitComboBox(text);
+    valueTextBoxChanged(text);
   }
 
   return QObject::eventFilter(pWatched, pEvent);
@@ -2211,6 +2216,10 @@ void ElementParameters::updateElementParameters()
       }
     }
   }
+  /* Skip the focus out event when we are closing the dialog.
+   * Otherwise it will call valueTextBoxChanged which tries to use the delete model instance.
+   */
+  mSkipFocusOutEvent = true;
   accept();
 }
 
@@ -2226,6 +2235,7 @@ void ElementParameters::reject()
       pParameter->getModelInstanceElement()->resetBinding();
     }
   }
+  mSkipFocusOutEvent = true;
   QDialog::reject();
 }
 

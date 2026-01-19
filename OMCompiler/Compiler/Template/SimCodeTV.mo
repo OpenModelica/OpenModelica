@@ -1153,6 +1153,7 @@ package SimCodeFunction
       Boolean is_parallel;
     end FUNCTION_CONTEXT;
     record JACOBIAN_CONTEXT
+      String name;
       Option<HashTableCrefSimVar.HashTable> jacHT;
     end JACOBIAN_CONTEXT;
     record ALGLOOP_CONTEXT
@@ -1391,6 +1392,7 @@ package SimCodeUtil
   end simVarFromHT;
 
   function createJacContext
+    input String name;
     input Option<HashTableCrefSimVar.HashTable> jacHT;
     output SimCodeFunction.Context outContext;
   end createJacContext;

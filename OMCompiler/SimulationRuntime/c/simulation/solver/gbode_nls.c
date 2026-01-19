@@ -39,6 +39,7 @@
 
 #include "../../simulation_data.h"
 
+#include "../arrayIndex.h"
 #include "solver_main.h"
 #include "kinsolSolver.h"
 #include "kinsol_b.h"
@@ -82,9 +83,10 @@ void initializeStaticNLSData_SR(DATA* data, threadData_t *threadData, NONLINEAR_
 {
   for (int i = 0; i < nonlinsys->size; i++) {
     // Get the nominal values of the states
-    nonlinsys->nominal[i] = fmax(fabs(data->modelData->realVarsData[i].attribute.nominal), 1e-32);
-    nonlinsys->min[i]     = data->modelData->realVarsData[i].attribute.min;
-    nonlinsys->max[i]     = data->modelData->realVarsData[i].attribute.max;
+    const modelica_real nominal = getNominalFromScalarIdx(data->simulationInfo, data->modelData, VAR_KIND_STATE, i);
+    nonlinsys->nominal[i] = fmax(fabs(nominal), 1e-32);
+    nonlinsys->min[i]     = getMinFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, VAR_KIND_STATE, i);
+    nonlinsys->max[i]     = getMaxFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, VAR_KIND_STATE, i);
   }
 
   /* Initialize sparsity pattern */
@@ -109,9 +111,10 @@ void initializeStaticNLSData_MR(DATA* data, threadData_t *threadData, NONLINEAR_
   // This needs to be done each time, the fast states change!
   for (int i = 0; i < nonlinsys->size; i++) {
     // Get the nominal values of the states
-    nonlinsys->nominal[i] = fmax(fabs(data->modelData->realVarsData[i].attribute.nominal), 1e-32);
-    nonlinsys->min[i]     = data->modelData->realVarsData[i].attribute.min;
-    nonlinsys->max[i]     = data->modelData->realVarsData[i].attribute.max;
+    const modelica_real nominal = getNominalFromScalarIdx(data->simulationInfo, data->modelData, VAR_KIND_VARIABLE, i);
+    nonlinsys->nominal[i] = fmax(fabs(nominal), 1e-32);
+    nonlinsys->min[i]     = getMinFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, VAR_KIND_STATE, i);
+    nonlinsys->max[i]     = getMaxFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, VAR_KIND_STATE, i);
   }
 
   /* Initialize sparsity pattern, First guess (all states are fast states) */
@@ -137,9 +140,10 @@ void initializeStaticNLSData_IRK(DATA* data, threadData_t *threadData, NONLINEAR
   for (int i = 0; i < nonlinsys->size; i++) {
     // Get the nominal values of the states, the non-linear system has size stages*nStates, i.e. [states, states, ...]
     int ii = i % data->modelData->nStates;
-    nonlinsys->nominal[i] = fmax(fabs(data->modelData->realVarsData[ii].attribute.nominal), 1e-32);
-    nonlinsys->min[i]     = data->modelData->realVarsData[ii].attribute.min;
-    nonlinsys->max[i]     = data->modelData->realVarsData[ii].attribute.max;
+    const modelica_real nominal = getNominalFromScalarIdx(data->simulationInfo, data->modelData, VAR_KIND_STATE, ii);
+    nonlinsys->nominal[i] = fmax(fabs(nominal), 1e-32);
+    nonlinsys->min[i]     = getMinFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, VAR_KIND_STATE, ii);
+    nonlinsys->max[i]     = getMaxFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, VAR_KIND_STATE, ii);
   }
 
   /* Initialize sparsity pattern */

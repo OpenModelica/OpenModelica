@@ -1,0 +1,10 @@
+// name: Cmd1
+// status: correct
+// cflags: --cmd="print(\"test\")"
+
+print("test2");
+
+// Result:
+// test
+// test2
+// endResult

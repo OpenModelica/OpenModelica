@@ -3272,7 +3272,6 @@ case SIMCODE(modelInfo = MODELINFO(functions = functions, varInfo = vi as VARINF
     <%vars.realOptimizeFinalConstraintsVars
                            |> var => ScalarVariableFMU(var,"realVarsData") ;separator="\n";empty%>
     <%System.tmpTickResetIndex(0,2)%>
-    /* AHEU 1 */
     <%vars.paramVars       |> var => ScalarVariableFMU(var,"realParameterData") ;separator="\n";empty%>
     <%System.tmpTickResetIndex(0,2)%>
     <%vars.intAlgVars      |> var => ScalarVariableFMU(var,"integerVarsData") ;separator="\n";empty%>
@@ -3348,11 +3347,11 @@ template ScalarVariableTypeFMU(String attrstr, String unit, String displayUnit, 
       <<
       <%attrstr%>.unit = "<%Util.escapeModelicaStringToCString(unit)%>";
       <%attrstr%>.displayUnit = "<%Util.escapeModelicaStringToCString(displayUnit)%>";
-      <%attrstr%>.min = <%optInitValFMU(minValue,"-DBL_MAX")%>;
-      <%attrstr%>.max = <%optInitValFMU(maxValue,"DBL_MAX")%>;
+      put_real_element(<%optInitValFMU(minValue,"-DBL_MAX")%>, 0, &<%attrstr%>.min);
+      put_real_element(<%optInitValFMU(maxValue,"DBL_MAX")%>, 0, &<%attrstr%>.max);
       <%attrstr%>.fixed = <%if isFixed then 1 else 0%>;
       <%attrstr%>.useNominal = <%if nominalValue then 1 else 0%>;
-      <%attrstr%>.nominal = <%optInitValFMU(nominalValue,"1.0")%>;
+      put_real_element(<%optInitValFMU(nominalValue,"1.0")%>, 0, &<%attrstr%>.nominal);
       put_real_element(<%optInitValFMU(startValue,"0.0")%>, 0, &<%attrstr%>.start);
       >>
     case T_INTEGER(__) then

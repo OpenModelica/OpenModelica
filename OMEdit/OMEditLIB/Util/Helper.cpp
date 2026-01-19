@@ -767,7 +767,7 @@ void Helper::initHelperVariables()
   Helper::immediate = tr("Immediate");
   Helper::synchronize = tr("Synchronize");
   Helper::priority = tr("Priority:");
-  Helper::secs = tr("secs");
+  Helper::secs = tr("s");
   Helper::saveContentsInOneFile = tr("Save contents in one file");
   Helper::dateTime = tr("DateTime");
   Helper::startTime = tr("Start Time");

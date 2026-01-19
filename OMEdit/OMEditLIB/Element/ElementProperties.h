@@ -110,6 +110,7 @@ public:
   bool isEnumeration() const {return mValueType == Enumeration;}
   bool isReplaceableComponent() const {return mValueType == ReplaceableComponent;}
   bool isReplaceableClass() const {return mValueType == ReplaceableClass;}
+  bool isChoicesAllMatching() const {return mValueType == ChoicesAllMatching;}
   bool isRecord() const {return mValueType == Record;}
   bool isChoices() const {return mValueType == Choices;}
   QWidget* getValueWidget();
@@ -190,9 +191,10 @@ private:
   void createValueWidget();
   void createValueComboBox();
   void enableDisableUnitComboBox(const QString &value);
-  void updateValueBinding(const FlatModelica::Expression expression);
+  void updateValueBinding(const FlatModelica::Expression& expression);
   bool isValueModifiedHelper() const;
   void resetUnitCombobox();
+  void valueTextBoxChanged(const QString &text);
 private slots:
   void setBreakValue(bool breakValue);
 public slots:
@@ -201,7 +203,6 @@ public slots:
   void unitComboBoxChanged(int index);
   void valueComboBoxChanged(int index);
   void valueCheckBoxChanged(bool toggle);
-  void valueTextBoxChanged(const QString &text);
   void showFixedMenu();
   void trueFixedClicked();
   void falseFixedClicked();
@@ -259,6 +260,7 @@ public:
   QString getElementDimensions() const {return mpElement->getDimensions().getTypedDimensionsString();}
   bool isInherited() const {return mInherited;}
   bool isNested() const {return mNested;}
+  bool skipFocusOutEvent() const {return mSkipFocusOutEvent;}
   QString getModification() const {return mModification;}
   void applyFinalStartFixedAndDisplayUnitModifiers(Parameter *pParameter, ModelInstance::Modifier *pModifier, bool defaultValue, bool isElementModification);
   void updateParameters();
@@ -267,6 +269,7 @@ private:
   GraphicsView *mpGraphicsView;
   bool mInherited;
   bool mNested;
+  bool mSkipFocusOutEvent = false;
   ModelInstance::Modifier *mpDefaultElementModifier;
   ModelInstance::Modifier *mpReplaceableConstrainedByModifier;
   ModelInstance::Modifier *mpElementModifier;

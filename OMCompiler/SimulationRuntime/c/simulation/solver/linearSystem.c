@@ -735,6 +735,10 @@ int check_linear_solution(DATA *data, int printFailingSystems, int sysNumber)
   LINEAR_SYSTEM_DATA* linsys = data->simulationInfo->linearSystemData;
   long j, i = sysNumber;
 
+  const size_t buff_size = 2048;
+  char *start_buffer;
+  char *nominal_buffer;
+
   if(linsys[i].solved == 0)
   {
     int index = linsys[i].equationIndex, indexes[2] = {1,index};
@@ -748,7 +752,13 @@ int check_linear_solution(DATA *data, int printFailingSystems, int sysNumber)
     warningStreamPrintWithEquationIndexes(OMC_LOG_STDOUT, omc_dummyFileInfo, 1, indexes, "Solving linear system %d fails at time %g. For more information use -lv LOG_LS.", index, data->localData[0]->timeValue);
 #endif
 
-    for(j=0; j<modelInfoGetEquation(&data->modelData->modelDataXml, (linsys[i]).equationIndex).numVar; ++j) {
+    start_buffer = (char*) malloc(buff_size * sizeof(char));
+    assertStreamPrint(NULL, start_buffer != NULL, "Out of memory.");
+    nominal_buffer = (char*) malloc(buff_size * sizeof(char));
+    assertStreamPrint(NULL, nominal_buffer != NULL, "Out of memory.");
+
+    for(j=0; j<modelInfoGetEquation(&data->modelData->modelDataXml, (linsys[i]).equationIndex).numVar; ++j)
+    {
       int done=0;
       long k;
       const MODEL_DATA *mData = data->modelData;
@@ -757,10 +767,13 @@ int check_linear_solution(DATA *data, int printFailingSystems, int sysNumber)
         if (!strcmp(mData->realVarsData[k].info.name, modelInfoGetEquation(&data->modelData->modelDataXml, (linsys[i]).equationIndex).vars[j]))
         {
         done = 1;
-        warningStreamPrint(OMC_LOG_LS, 0, "[%ld] Real %s(start=%s, nominal=%g)", j+1,
-                                     mData->realVarsData[k].info.name,
-                                     real_vector_to_string(&mData->realVarsData[k].attribute.start, mData->realVarsData[k].dimension.numberOfDimensions == 0),
-                                     mData->realVarsData[k].attribute.nominal);
+        real_vector_to_string(&mData->realVarsData[k].attribute.start, mData->realVarsData[k].dimension.numberOfDimensions == 0, start_buffer, buff_size);
+        real_vector_to_string(&mData->realVarsData[k].attribute.nominal, mData->realVarsData[k].dimension.numberOfDimensions == 0, nominal_buffer, buff_size);
+        warningStreamPrint(OMC_LOG_LS, 0, "[%ld] Real %s(start=%s, nominal=%s)",
+                           j+1,
+                           mData->realVarsData[k].info.name,
+                           start_buffer,
+                           nominal_buffer);
         }
       }
       if (!done)
@@ -769,6 +782,8 @@ int check_linear_solution(DATA *data, int printFailingSystems, int sysNumber)
       }
     }
     messageCloseWarning(OMC_LOG_STDOUT);
+    free(start_buffer);
+    free(nominal_buffer);
 
     return 1;
   }
