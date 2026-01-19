@@ -110,6 +110,7 @@ public:
   bool isEnumeration() const {return mValueType == Enumeration;}
   bool isReplaceableComponent() const {return mValueType == ReplaceableComponent;}
   bool isReplaceableClass() const {return mValueType == ReplaceableClass;}
+  bool isChoicesAllMatching() const {return mValueType == ChoicesAllMatching;}
   bool isRecord() const {return mValueType == Record;}
   bool isChoices() const {return mValueType == Choices;}
   QWidget* getValueWidget();
