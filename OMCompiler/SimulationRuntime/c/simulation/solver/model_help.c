@@ -881,45 +881,45 @@ void freeModelDataVars(MODEL_DATA* modelData)
   unsigned int i;
 
   // Variables
-  for(i=0; i < modelData->nVariablesRealArray; i++) {
+  for(i=0; i < modelData->nVariablesReal; i++) {
     freeVarInfo(&modelData->realVarsData[i].info);
   }
   omc_alloc_interface.free_uncollectable(modelData->realVarsData);
 
-  for(i=0; i < modelData->nVariablesIntegerArray; i++) {
+  for(i=0; i < modelData->nVariablesInteger; i++) {
     freeVarInfo(&modelData->integerVarsData[i].info);
   }
   omc_alloc_interface.free_uncollectable(modelData->integerVarsData);
 
-  for(i=0; i < modelData->nVariablesBooleanArray; i++) {
+  for(i=0; i < modelData->nVariablesBoolean; i++) {
     freeVarInfo(&modelData->booleanVarsData[i].info);
   }
   omc_alloc_interface.free_uncollectable(modelData->booleanVarsData);
 
 #if !defined(OMC_NVAR_STRING) || OMC_NVAR_STRING>0
-  for(i=0; i < modelData->nVariablesStringArray; i++) {
+  for(i=0; i < modelData->nVariablesString; i++) {
     freeVarInfo(&modelData->stringVarsData[i].info);
   }
   omc_alloc_interface.free_uncollectable(modelData->stringVarsData);
 #endif
 
   // Parameters
-  for(i=0; i < modelData->nParametersRealArray; i++) {
+  for(i=0; i < modelData->nParametersReal; i++) {
     freeVarInfo(&modelData->realParameterData[i].info);
   }
   omc_alloc_interface.free_uncollectable(modelData->realParameterData);
 
-  for(i=0; i < modelData->nParametersIntegerArray; i++) {
+  for(i=0; i < modelData->nParametersInteger; i++) {
     freeVarInfo(&modelData->integerParameterData[i].info);
   }
   omc_alloc_interface.free_uncollectable(modelData->integerParameterData);
 
-  for(i=0; i < modelData->nParametersBooleanArray; i++) {
+  for(i=0; i < modelData->nParametersBoolean; i++) {
     freeVarInfo(&modelData->booleanParameterData[i].info);
   }
   omc_alloc_interface.free_uncollectable(modelData->booleanParameterData);
 
-  for(i=0; i < modelData->nParametersStringArray; i++) {
+  for(i=0; i < modelData->nParametersString; i++) {
     freeVarInfo(&modelData->stringParameterData[i].info);
   }
   omc_alloc_interface.free_uncollectable(modelData->stringParameterData);
@@ -932,28 +932,28 @@ void freeModelDataVars(MODEL_DATA* modelData)
 
   // Alias Variables
   if (modelData->realAlias != NULL) {
-    for(i=0; i < modelData->nAliasRealArray; i++) {
+    for(i=0; i < modelData->nAliasReal; i++) {
       freeVarInfo(&modelData->realAlias[i].info);
     }
     omc_alloc_interface.free_uncollectable(modelData->realAlias);
   }
 
   if (modelData->integerAlias != NULL) {
-    for(i=0; i < modelData->nAliasIntegerArray; i++) {
+    for(i=0; i < modelData->nAliasInteger; i++) {
       freeVarInfo(&modelData->integerAlias[i].info);
     }
     omc_alloc_interface.free_uncollectable(modelData->integerAlias);
   }
 
   if (modelData->booleanAlias != NULL) {
-    for(i=0; i < modelData->nAliasBooleanArray; i++) {
+    for(i=0; i < modelData->nAliasBoolean; i++) {
       freeVarInfo(&modelData->booleanAlias[i].info);
     }
     omc_alloc_interface.free_uncollectable(modelData->booleanAlias);
   }
 
   if (modelData->stringAlias != NULL) {
-    for(i=0; i < modelData->nAliasStringArray; i++) {
+    for(i=0; i < modelData->nAliasString; i++) {
       freeVarInfo(&modelData->stringAlias[i].info);
     }
     omc_alloc_interface.free_uncollectable(modelData->stringAlias);
