@@ -173,6 +173,8 @@ void makeLibsAndCache() {
  */
 void sanityCheck(String installDir, Boolean buildCpp) {
   if (isWindows()) {
+    installDir = "${WORKSPACE}\\${installDir}"
+
     bat (label: 'Sanity check - C', script: """
       set MSYSTEM=UCRT64
       set MSYS2_PATH_TYPE=inherit
