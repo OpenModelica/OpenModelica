@@ -50,7 +50,7 @@ extern "C" {
  *
  * @return 1 for big-endian, 0 for little-endian
  */
-const char isBigEndian()
+char isBigEndian()
 {
   union
   {

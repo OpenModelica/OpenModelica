@@ -64,25 +64,25 @@ typedef struct mat_data
 
 struct variableCount
 {
-  size_t maxLengthName;    /* Lenght of longest variable name */
+  size_t maxLengthName;   /* Length of longest variable name */
   size_t maxLengthDesc;   /* Length of longest variable description */
   size_t nSignals;        /* Number of signals */
 };
 
 enum channel_t: int32_t {
-  CHANNEL_TIME = 0,
-  CHANNEL_TIME_INVARIANT = 1,
-  CHANNEL_TIME_VARIANT = 2
+  CHANNEL_TIME = 0,           /* Special case: Variable is time */
+  CHANNEL_TIME_INVARIANT = 1, /* Variable stored in data_1 matrix */
+  CHANNEL_TIME_VARIANT = 2    /* Variable stored in data_2 matrix */
 };
 
 enum interpolation_t: int32_t {
-  INTERPOLATION_LINEAR = 0
+  INTERPOLATION_LINEAR = 0  /* Variable interpolated linear */
 };
 
 enum extrapolation_t: int32_t {
-  EXTRAPOLATION_NOT_ALLOWED = -1,
-  EXTRAPOLATION_CONSTANT = 0,
-  EXTRAPOLATION_LINEAR = 1
+  EXTRAPOLATION_NOT_ALLOWED = -1, /* Variable can't be extrapolated outside time interval */
+  EXTRAPOLATION_CONSTANT = 0, /* Variable is constant outside time interval */
+  EXTRAPOLATION_LINEAR = 1  /* Variable is extrapolated linear by first/last two points */
 };
 
 /**
@@ -110,7 +110,7 @@ typedef struct DataInfo {
     * -1 = variable not defined outside time range,
     * 0 = keep first/last value when outside time range,
     * 1 = linear extrapolation on first/last two points */
-  extrapolation_t extraplotation;
+  extrapolation_t extrapolation;
 } DataInfo;
 
 static const char timeName[] = "time";
@@ -590,14 +590,14 @@ void writeDataInfo(simulation_result *self, mat_data *matData, const MODEL_DATA 
   dataInfo[0].channel = CHANNEL_TIME;
   dataInfo[0].index = ++index_time_variant;
   dataInfo[0].interpolation = INTERPOLATION_LINEAR;
-  dataInfo[0].extraplotation = EXTRAPOLATION_NOT_ALLOWED;
+  dataInfo[0].extrapolation = EXTRAPOLATION_NOT_ALLOWED;
 
   if (self->cpuTime)
   {
     dataInfo[cur].channel = CHANNEL_TIME_VARIANT;
     dataInfo[cur].index = ++index_time_variant;
     dataInfo[cur].interpolation = INTERPOLATION_LINEAR;
-    dataInfo[cur].extraplotation = EXTRAPOLATION_CONSTANT;
+    dataInfo[cur].extrapolation = EXTRAPOLATION_CONSTANT;
     cur++;
   }
 
@@ -606,7 +606,7 @@ void writeDataInfo(simulation_result *self, mat_data *matData, const MODEL_DATA 
     dataInfo[cur].channel = CHANNEL_TIME_VARIANT;
     dataInfo[cur].index = ++index_time_variant;
     dataInfo[cur].interpolation = INTERPOLATION_LINEAR;
-    dataInfo[cur].extraplotation = EXTRAPOLATION_CONSTANT;
+    dataInfo[cur].extrapolation = EXTRAPOLATION_CONSTANT;
     cur++;
   }
 
@@ -618,7 +618,7 @@ void writeDataInfo(simulation_result *self, mat_data *matData, const MODEL_DATA 
       dataInfo[cur].channel = mData->realVarsData[i].time_unvarying ? CHANNEL_TIME_INVARIANT : CHANNEL_TIME_VARIANT;
       dataInfo[cur].index = mData->realVarsData[i].time_unvarying ? ++index_time_invariant : ++index_time_variant;
       dataInfo[cur].interpolation = INTERPOLATION_LINEAR;
-      dataInfo[cur].extraplotation = EXTRAPOLATION_CONSTANT;
+      dataInfo[cur].extrapolation = EXTRAPOLATION_CONSTANT;
       cur++;
     }
   }
@@ -630,7 +630,7 @@ void writeDataInfo(simulation_result *self, mat_data *matData, const MODEL_DATA 
       dataInfo[cur].channel = CHANNEL_TIME_VARIANT;
       dataInfo[cur].index = ++index_time_variant;
       dataInfo[cur].interpolation = INTERPOLATION_LINEAR;
-      dataInfo[cur].extraplotation = EXTRAPOLATION_CONSTANT;
+      dataInfo[cur].extrapolation = EXTRAPOLATION_CONSTANT;
       cur++;
     }
   }
@@ -643,7 +643,7 @@ void writeDataInfo(simulation_result *self, mat_data *matData, const MODEL_DATA 
       dataInfo[cur].channel = mData->integerVarsData[i].time_unvarying ? CHANNEL_TIME_INVARIANT : CHANNEL_TIME_VARIANT;
       dataInfo[cur].index = mData->integerVarsData[i].time_unvarying ? ++index_time_invariant : ++index_time_variant;
       dataInfo[cur].interpolation = INTERPOLATION_LINEAR;
-      dataInfo[cur].extraplotation = EXTRAPOLATION_CONSTANT;
+      dataInfo[cur].extrapolation = EXTRAPOLATION_CONSTANT;
       cur++;
     }
   }
@@ -656,7 +656,7 @@ void writeDataInfo(simulation_result *self, mat_data *matData, const MODEL_DATA 
       dataInfo[cur].channel = mData->booleanVarsData[i].time_unvarying ? CHANNEL_TIME_INVARIANT : CHANNEL_TIME_VARIANT;
       dataInfo[cur].index = mData->booleanVarsData[i].time_unvarying ? ++index_time_invariant : ++index_time_variant;
       dataInfo[cur].interpolation = INTERPOLATION_LINEAR;
-      dataInfo[cur].extraplotation = EXTRAPOLATION_CONSTANT;
+      dataInfo[cur].extrapolation = EXTRAPOLATION_CONSTANT;
       cur++;
     }
   }
@@ -669,7 +669,7 @@ void writeDataInfo(simulation_result *self, mat_data *matData, const MODEL_DATA 
       dataInfo[cur].channel = CHANNEL_TIME_INVARIANT;
       dataInfo[cur].index = ++index_time_invariant;
       dataInfo[cur].interpolation = INTERPOLATION_LINEAR;
-      dataInfo[cur].extraplotation = EXTRAPOLATION_CONSTANT;
+      dataInfo[cur].extrapolation = EXTRAPOLATION_CONSTANT;
       cur++;
     }
   }
@@ -682,7 +682,7 @@ void writeDataInfo(simulation_result *self, mat_data *matData, const MODEL_DATA 
       dataInfo[cur].channel = CHANNEL_TIME_INVARIANT;
       dataInfo[cur].index = ++index_time_invariant;
       dataInfo[cur].interpolation = INTERPOLATION_LINEAR;
-      dataInfo[cur].extraplotation = EXTRAPOLATION_CONSTANT;
+      dataInfo[cur].extrapolation = EXTRAPOLATION_CONSTANT;
       cur++;
     }
   }
@@ -695,7 +695,7 @@ void writeDataInfo(simulation_result *self, mat_data *matData, const MODEL_DATA 
       dataInfo[cur].channel = CHANNEL_TIME_INVARIANT;
       dataInfo[cur].index = ++index_time_invariant;
       dataInfo[cur].interpolation = INTERPOLATION_LINEAR;
-      dataInfo[cur].extraplotation = EXTRAPOLATION_CONSTANT;
+      dataInfo[cur].extrapolation = EXTRAPOLATION_CONSTANT;
       cur++;
     }
   }
@@ -709,7 +709,7 @@ void writeDataInfo(simulation_result *self, mat_data *matData, const MODEL_DATA 
         dataInfo[cur].channel = dataInfo[realLookup[mData->realAlias[i].nameID]].channel;
         dataInfo[cur].index = dataInfo[realLookup[mData->realAlias[i].nameID]].index;
         dataInfo[cur].interpolation = dataInfo[realLookup[mData->realAlias[i].nameID]].interpolation;
-        dataInfo[cur].extraplotation = dataInfo[realLookup[mData->realAlias[i].nameID]].extraplotation;
+        dataInfo[cur].extrapolation = dataInfo[realLookup[mData->realAlias[i].nameID]].extrapolation;
 
         if (mData->realAlias[i].negate)
         {
@@ -722,7 +722,7 @@ void writeDataInfo(simulation_result *self, mat_data *matData, const MODEL_DATA 
         dataInfo[cur].channel = dataInfo[realParameterLookup[mData->realAlias[i].nameID]].channel;
         dataInfo[cur].index = dataInfo[realParameterLookup[mData->realAlias[i].nameID]].index;
         dataInfo[cur].interpolation = dataInfo[realParameterLookup[mData->realAlias[i].nameID]].interpolation;
-        dataInfo[cur].extraplotation = dataInfo[realParameterLookup[mData->realAlias[i].nameID]].extraplotation;
+        dataInfo[cur].extrapolation = dataInfo[realParameterLookup[mData->realAlias[i].nameID]].extrapolation;
 
         if (mData->realAlias[i].negate)
         {
@@ -735,7 +735,7 @@ void writeDataInfo(simulation_result *self, mat_data *matData, const MODEL_DATA 
         dataInfo[cur].channel = CHANNEL_TIME_VARIANT;
         dataInfo[cur].index = 1;
         dataInfo[cur].interpolation = INTERPOLATION_LINEAR;
-        dataInfo[cur].extraplotation = EXTRAPOLATION_NOT_ALLOWED;
+        dataInfo[cur].extrapolation = EXTRAPOLATION_NOT_ALLOWED;
 
         if (mData->realAlias[i].negate)
         {
@@ -755,7 +755,7 @@ void writeDataInfo(simulation_result *self, mat_data *matData, const MODEL_DATA 
         dataInfo[cur].channel = dataInfo[integerLookup[mData->integerAlias[i].nameID]].channel;
         dataInfo[cur].index = dataInfo[integerLookup[mData->integerAlias[i].nameID]].index;
         dataInfo[cur].interpolation = dataInfo[integerLookup[mData->integerAlias[i].nameID]].interpolation;
-        dataInfo[cur].extraplotation = dataInfo[integerLookup[mData->integerAlias[i].nameID]].extraplotation;
+        dataInfo[cur].extrapolation = dataInfo[integerLookup[mData->integerAlias[i].nameID]].extrapolation;
 
         if (mData->integerAlias[i].negate)
         {
@@ -768,7 +768,7 @@ void writeDataInfo(simulation_result *self, mat_data *matData, const MODEL_DATA 
         dataInfo[cur].channel = dataInfo[integerParameterLookup[mData->integerAlias[i].nameID]].channel;
         dataInfo[cur].index = dataInfo[integerParameterLookup[mData->integerAlias[i].nameID]].index;
         dataInfo[cur].interpolation = dataInfo[integerParameterLookup[mData->integerAlias[i].nameID]].interpolation;
-        dataInfo[cur].extraplotation = dataInfo[integerParameterLookup[mData->integerAlias[i].nameID]].extraplotation;
+        dataInfo[cur].extrapolation = dataInfo[integerParameterLookup[mData->integerAlias[i].nameID]].extrapolation;
 
         if (mData->integerAlias[i].negate)
         {
@@ -790,7 +790,7 @@ void writeDataInfo(simulation_result *self, mat_data *matData, const MODEL_DATA 
           dataInfo[cur].channel = CHANNEL_TIME_VARIANT;
           dataInfo[cur].index = ++index_time_variant;
           dataInfo[cur].interpolation = INTERPOLATION_LINEAR;
-          dataInfo[cur].extraplotation = EXTRAPOLATION_CONSTANT;
+          dataInfo[cur].extrapolation = EXTRAPOLATION_CONSTANT;
           cur++;
         }
         else
@@ -798,7 +798,7 @@ void writeDataInfo(simulation_result *self, mat_data *matData, const MODEL_DATA 
           dataInfo[cur].channel = dataInfo[boolLookup[mData->booleanAlias[i].nameID]].channel;
           dataInfo[cur].index = dataInfo[boolLookup[mData->booleanAlias[i].nameID]].index;
           dataInfo[cur].interpolation = dataInfo[boolLookup[mData->booleanAlias[i].nameID]].interpolation;
-          dataInfo[cur].extraplotation = dataInfo[boolLookup[mData->booleanAlias[i].nameID]].extraplotation;
+          dataInfo[cur].extrapolation = dataInfo[boolLookup[mData->booleanAlias[i].nameID]].extrapolation;
           cur++;
         }
       }
@@ -809,7 +809,7 @@ void writeDataInfo(simulation_result *self, mat_data *matData, const MODEL_DATA 
           dataInfo[cur].channel = CHANNEL_TIME_INVARIANT;
           dataInfo[cur].index = ++index_time_invariant;
           dataInfo[cur].interpolation = INTERPOLATION_LINEAR;
-          dataInfo[cur].extraplotation = EXTRAPOLATION_CONSTANT;
+          dataInfo[cur].extrapolation = EXTRAPOLATION_CONSTANT;
           cur++;
         }
         else
@@ -817,7 +817,7 @@ void writeDataInfo(simulation_result *self, mat_data *matData, const MODEL_DATA 
           dataInfo[cur].channel = dataInfo[boolParameterLookup[mData->booleanAlias[i].nameID]].channel;
           dataInfo[cur].index = dataInfo[boolParameterLookup[mData->booleanAlias[i].nameID]].index;
           dataInfo[cur].interpolation = dataInfo[boolParameterLookup[mData->booleanAlias[i].nameID]].interpolation;
-          dataInfo[cur].extraplotation = dataInfo[boolParameterLookup[mData->booleanAlias[i].nameID]].extraplotation;
+          dataInfo[cur].extrapolation = dataInfo[boolParameterLookup[mData->booleanAlias[i].nameID]].extrapolation;
           cur++;
         }
       }
