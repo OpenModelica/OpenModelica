@@ -851,7 +851,7 @@ void Parameter::editClassButtonClicked()
   QString type;
   QString value;
   QString defaultValue;
-  if (isReplaceableComponent() || isReplaceableClass()) {
+  if (isReplaceableComponent() || isReplaceableClass() || isChoicesAllMatching()) {
     value = mpValueComboBox->lineEdit()->text();
     defaultValue = mpValueComboBox->lineEdit()->placeholderText();
   } else {
