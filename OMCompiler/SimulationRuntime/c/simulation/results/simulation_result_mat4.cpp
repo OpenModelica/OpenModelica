@@ -67,6 +67,16 @@ static const char cpuTimeDesc[] = "cpu time [s]";
 static const char solverStepsName[] = "$solverSteps";
 static const char solverStepsDesc[] = "number of steps taken by the integrator";
 
+/**
+ * @brief Initialize MAT v4 output for a simulation run.
+ *
+ * Prepares MAT v4 matrices (name, description, data headers) and opens
+ * the output file. Allocates internal storage attached to `self->storage`.
+ *
+ * @param self        Writer instance containing filename and options.
+ * @param data        Simulation data structures (model and simulation info).
+ * @param threadData  Thread-local data used for error reporting.
+ */
 void mat4_init4(simulation_result *self, DATA *data, threadData_t *threadData)
 {
   const MODEL_DATA *mData = data->modelData;
@@ -410,7 +420,18 @@ void mat4_init4(simulation_result *self, DATA *data, threadData_t *threadData)
 
 #define WRITE_REAL_VALUE(data, offset, value) {if (omc_flag[FLAG_SINGLE_PRECISION]) {float f=(value); memcpy(((uint8_t*)(data)) + (offset)*sizeof(float), &f, sizeof(float));} else {double d=(value); memcpy(((uint8_t*)(data)) + (offset)*sizeof(double), &d, sizeof(double));}}
 
-/* write the parameter data after updateBoundParameters is called */
+/**
+ * @brief Write parameter and time-invariant series into MAT v4 structures.
+ *
+ * This function populates `data_1` and `data_2` headers with parameter values
+ * and allocates the in-memory buffers used for subsequent emits. It is
+ * typically called after parameters have been updated
+ * (`updateBoundParameters`).
+ *
+ * @param self        Writer instance containing storage and filename.
+ * @param data        Simulation data structures (model and simulation info).
+ * @param threadData  Thread-local data used for error reporting.
+ */
 void mat4_writeParameterData4(simulation_result *self, DATA *data, threadData_t *threadData)
 {
   mat_data *matData = (mat_data*) self->storage;
@@ -753,6 +774,17 @@ void mat4_writeParameterData4(simulation_result *self, DATA *data, threadData_t 
   rt_accumulate(SIM_TIMER_OUTPUT);
 }
 
+/**
+ * @brief Emit one simulation sample (time step) into the MAT v4 file.
+ *
+ * Appends the current time, optional CPU time and solver steps, and
+ * all enabled variable values to the in-memory `data_2` buffer and
+ * flushes it to disk when appropriate.
+ *
+ * @param self        Writer instance containing storage and filename.
+ * @param data        Simulation data structures (model and current values).
+ * @param threadData  Thread-local data used for error reporting.
+ */
 void mat4_emit4(simulation_result *self, DATA *data, threadData_t *threadData)
 {
   mat_data *matData = (mat_data*) self->storage;
@@ -825,6 +857,16 @@ void mat4_emit4(simulation_result *self, DATA *data, threadData_t *threadData)
   rt_accumulate(SIM_TIMER_OUTPUT);
 }
 
+/**
+ * @brief Finalize MAT v4 output and release resources.
+ *
+ * Writes any remaining buffered samples, updates headers and frees
+ * allocated buffers and file handles stored in `self->storage`.
+ *
+ * @param self        Writer instance containing storage and filename.
+ * @param data        Simulation data structures (not modified).
+ * @param threadData  Thread-local data used for error reporting.
+ */
 void mat4_free4(simulation_result *self, DATA *data, threadData_t *threadData)
 {
   mat_data *matData = (mat_data*) self->storage;
