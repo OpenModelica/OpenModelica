@@ -337,8 +337,14 @@ static double getFlagReal(enum _FLAG flag, double res)
 }
 
 /**
- * Read the variable filter and mark variables that should not be part of the result file.
- * This phase is skipped for interactive simulations
+ * @brief Mark variables that should be filterd from result file.
+ *
+ * Read the variable filter and mark variables that should not be part of the
+ * result file. This phase is skipped for interactive simulations
+ *
+ * @param modelData                                   Model data containing filter property.
+ * @param variableFilter                              Regex to filter variables.
+ * @param resultFormatHasCheapAliasesAndParameters
  */
 void initializeOutputFilter(MODEL_DATA *modelData, const char *variableFilter, int resultFormatHasCheapAliasesAndParameters)
 {
@@ -361,67 +367,86 @@ void initializeOutputFilter(MODEL_DATA *modelData, const char *variableFilter, i
     return;
   }
 
-  for(mmc_sint_t i=0; i<modelData->nVariablesReal; i++) if(!modelData->realVarsData[i].filterOutput) {
-    modelData->realVarsData[i].filterOutput = regexec(&myregex, modelData->realVarsData[i].info.name, 0, NULL, 0) != 0;
+  for(mmc_sint_t i=0; i<modelData->nVariablesReal; i++) {
+    if(!modelData->realVarsData[i].filterOutput) {
+      modelData->realVarsData[i].filterOutput = regexec(&myregex, modelData->realVarsData[i].info.name, 0, NULL, 0) != 0;
+    }
   }
-  for(mmc_sint_t i=0; i<modelData->nAliasReal; i++) if(!modelData->realAlias[i].filterOutput) {
-    if(modelData->realAlias[i].aliasType == ALIAS_TYPE_VARIABLE) {
-      modelData->realAlias[i].filterOutput = regexec(&myregex, modelData->realAlias[i].info.name, 0, NULL, 0) != 0;
-      if (0 == modelData->realAlias[i].filterOutput) {
-        modelData->realVarsData[modelData->realAlias[i].nameID].filterOutput = 0;
-      }
-    } else if(modelData->realAlias[i].aliasType == ALIAS_TYPE_PARAMETER) {
-      modelData->realAlias[i].filterOutput = regexec(&myregex, modelData->realAlias[i].info.name, 0, NULL, 0) != 0;
-      if (0 == modelData->realAlias[i].filterOutput && resultFormatHasCheapAliasesAndParameters) {
-        modelData->realParameterData[modelData->realAlias[i].nameID].filterOutput = 0;
+  for(mmc_sint_t i=0; i<modelData->nAliasReal; i++) {
+    if(!modelData->realAlias[i].filterOutput) {
+      if(modelData->realAlias[i].aliasType == ALIAS_TYPE_VARIABLE) {
+        modelData->realAlias[i].filterOutput = regexec(&myregex, modelData->realAlias[i].info.name, 0, NULL, 0) != 0;
+        if (0 == modelData->realAlias[i].filterOutput) {
+          modelData->realVarsData[modelData->realAlias[i].nameID].filterOutput = 0;
+        }
+      } else if(modelData->realAlias[i].aliasType == ALIAS_TYPE_PARAMETER) {
+        modelData->realAlias[i].filterOutput = regexec(&myregex, modelData->realAlias[i].info.name, 0, NULL, 0) != 0;
+        if (0 == modelData->realAlias[i].filterOutput && resultFormatHasCheapAliasesAndParameters) {
+          modelData->realParameterData[modelData->realAlias[i].nameID].filterOutput = 0;
+        }
       }
     }
   }
-  for (mmc_sint_t i=0; i<modelData->nVariablesInteger; i++) if(!modelData->integerVarsData[i].filterOutput) {
-    modelData->integerVarsData[i].filterOutput = regexec(&myregex, modelData->integerVarsData[i].info.name, 0, NULL, 0) != 0;
+
+  for (mmc_sint_t i=0; i<modelData->nVariablesInteger; i++) {
+    if(!modelData->integerVarsData[i].filterOutput) {
+      modelData->integerVarsData[i].filterOutput = regexec(&myregex, modelData->integerVarsData[i].info.name, 0, NULL, 0) != 0;
+    }
   }
-  for (mmc_sint_t i=0; i<modelData->nAliasInteger; i++) if(!modelData->integerAlias[i].filterOutput) {
-    if(modelData->integerAlias[i].aliasType == ALIAS_TYPE_VARIABLE) {
-      modelData->integerAlias[i].filterOutput = regexec(&myregex, modelData->integerAlias[i].info.name, 0, NULL, 0) != 0;
-      if (0 == modelData->integerAlias[i].filterOutput) {
-        modelData->integerVarsData[modelData->integerAlias[i].nameID].filterOutput = 0;
-      }
-    } else if(modelData->integerAlias[i].aliasType == ALIAS_TYPE_PARAMETER) {
-      modelData->integerAlias[i].filterOutput = regexec(&myregex, modelData->integerAlias[i].info.name, 0, NULL, 0) != 0;
-      if (0 == modelData->integerAlias[i].filterOutput && resultFormatHasCheapAliasesAndParameters) {
-        modelData->integerParameterData[modelData->integerAlias[i].nameID].filterOutput = 0;
+  for (mmc_sint_t i=0; i<modelData->nAliasInteger; i++) {
+    if(!modelData->integerAlias[i].filterOutput) {
+      if(modelData->integerAlias[i].aliasType == ALIAS_TYPE_VARIABLE) {
+        modelData->integerAlias[i].filterOutput = regexec(&myregex, modelData->integerAlias[i].info.name, 0, NULL, 0) != 0;
+        if (0 == modelData->integerAlias[i].filterOutput) {
+          modelData->integerVarsData[modelData->integerAlias[i].nameID].filterOutput = 0;
+        }
+      } else if(modelData->integerAlias[i].aliasType == ALIAS_TYPE_PARAMETER) {
+        modelData->integerAlias[i].filterOutput = regexec(&myregex, modelData->integerAlias[i].info.name, 0, NULL, 0) != 0;
+        if (0 == modelData->integerAlias[i].filterOutput && resultFormatHasCheapAliasesAndParameters) {
+          modelData->integerParameterData[modelData->integerAlias[i].nameID].filterOutput = 0;
+        }
       }
     }
   }
-  for (mmc_sint_t i=0; i<modelData->nVariablesBoolean; i++) if(!modelData->booleanVarsData[i].filterOutput) {
-    modelData->booleanVarsData[i].filterOutput = regexec(&myregex, modelData->booleanVarsData[i].info.name, 0, NULL, 0) != 0;
+
+  for (mmc_sint_t i=0; i<modelData->nVariablesBoolean; i++) {
+    if(!modelData->booleanVarsData[i].filterOutput) {
+      modelData->booleanVarsData[i].filterOutput = regexec(&myregex, modelData->booleanVarsData[i].info.name, 0, NULL, 0) != 0;
+    }
   }
-  for (mmc_sint_t i=0; i<modelData->nAliasBoolean; i++) if(!modelData->booleanAlias[i].filterOutput) {
-    if(modelData->booleanAlias[i].aliasType == ALIAS_TYPE_VARIABLE) {
-      modelData->booleanAlias[i].filterOutput = regexec(&myregex, modelData->booleanAlias[i].info.name, 0, NULL, 0) != 0;
-      if (0 == modelData->booleanAlias[i].filterOutput) {
-        modelData->booleanVarsData[modelData->booleanAlias[i].nameID].filterOutput = 0;
-      }
-    } else if(modelData->booleanAlias[i].aliasType == ALIAS_TYPE_PARAMETER) {
-      modelData->booleanAlias[i].filterOutput = regexec(&myregex, modelData->booleanAlias[i].info.name, 0, NULL, 0) != 0;
-      if (0 == modelData->booleanAlias[i].filterOutput && resultFormatHasCheapAliasesAndParameters) {
-        modelData->booleanParameterData[modelData->booleanAlias[i].nameID].filterOutput = 0;
+  for (mmc_sint_t i=0; i<modelData->nAliasBoolean; i++) {
+    if(!modelData->booleanAlias[i].filterOutput) {
+      if(modelData->booleanAlias[i].aliasType == ALIAS_TYPE_VARIABLE) {
+        modelData->booleanAlias[i].filterOutput = regexec(&myregex, modelData->booleanAlias[i].info.name, 0, NULL, 0) != 0;
+        if (0 == modelData->booleanAlias[i].filterOutput) {
+          modelData->booleanVarsData[modelData->booleanAlias[i].nameID].filterOutput = 0;
+        }
+      } else if(modelData->booleanAlias[i].aliasType == ALIAS_TYPE_PARAMETER) {
+        modelData->booleanAlias[i].filterOutput = regexec(&myregex, modelData->booleanAlias[i].info.name, 0, NULL, 0) != 0;
+        if (0 == modelData->booleanAlias[i].filterOutput && resultFormatHasCheapAliasesAndParameters) {
+          modelData->booleanParameterData[modelData->booleanAlias[i].nameID].filterOutput = 0;
+        }
       }
     }
   }
-  for (mmc_sint_t i=0; i<modelData->nVariablesString; i++) if(!modelData->stringVarsData[i].filterOutput) {
-    modelData->stringVarsData[i].filterOutput = regexec(&myregex, modelData->stringVarsData[i].info.name, 0, NULL, 0) != 0;
+
+  for (mmc_sint_t i=0; i<modelData->nVariablesString; i++) {
+    if(!modelData->stringVarsData[i].filterOutput) {
+      modelData->stringVarsData[i].filterOutput = regexec(&myregex, modelData->stringVarsData[i].info.name, 0, NULL, 0) != 0;
+    }
   }
-  for (mmc_sint_t i=0; i<modelData->nAliasString; i++) if(!modelData->stringAlias[i].filterOutput) {
-    if(modelData->stringAlias[i].aliasType == ALIAS_TYPE_VARIABLE) {
-      modelData->stringAlias[i].filterOutput = regexec(&myregex, modelData->stringAlias[i].info.name, 0, NULL, 0) != 0;
-      if (0 == modelData->stringAlias[i].filterOutput) {
-        modelData->stringVarsData[modelData->stringAlias[i].nameID].filterOutput = 0;
-      }
-    } else if(modelData->stringAlias[i].aliasType == ALIAS_TYPE_PARAMETER) {
-      modelData->stringAlias[i].filterOutput = regexec(&myregex, modelData->stringAlias[i].info.name, 0, NULL, 0) != 0;
-      if (0 == modelData->stringAlias[i].filterOutput && resultFormatHasCheapAliasesAndParameters) {
-        modelData->stringParameterData[modelData->stringAlias[i].nameID].filterOutput = 0;
+  for (mmc_sint_t i=0; i<modelData->nAliasString; i++) {
+    if(!modelData->stringAlias[i].filterOutput) {
+      if(modelData->stringAlias[i].aliasType == ALIAS_TYPE_VARIABLE) {
+        modelData->stringAlias[i].filterOutput = regexec(&myregex, modelData->stringAlias[i].info.name, 0, NULL, 0) != 0;
+        if (0 == modelData->stringAlias[i].filterOutput) {
+          modelData->stringVarsData[modelData->stringAlias[i].nameID].filterOutput = 0;
+        }
+      } else if(modelData->stringAlias[i].aliasType == ALIAS_TYPE_PARAMETER) {
+        modelData->stringAlias[i].filterOutput = regexec(&myregex, modelData->stringAlias[i].info.name, 0, NULL, 0) != 0;
+        if (0 == modelData->stringAlias[i].filterOutput && resultFormatHasCheapAliasesAndParameters) {
+          modelData->stringParameterData[modelData->stringAlias[i].nameID].filterOutput = 0;
+        }
       }
     }
   }
