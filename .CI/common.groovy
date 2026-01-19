@@ -176,19 +176,19 @@ void sanityCheck(String installDir, Boolean buildCpp) {
     bat (label: 'Sanity check - C', script: """
       set MSYSTEM=UCRT64
       set MSYS2_PATH_TYPE=inherit
-      set PATH=%PATH%;${installDir}\\build\\bin;${installDir}\\build\\lib\\omc\\omsicpp;${installDir}\\build\\lib\\omc\\cpp
+      set PATH=%PATH%;${installDir}\\bin;${installDir}\\lib\\omc\\omsicpp;${installDir}\\lib\\omc\\cpp
       %OMDEV%\\tools\\msys\\usr\\bin\\sh --login -c "cd `cygpath '${WORKSPACE}'` && bash testsuite/sanity-check/runSanity.sh --omc=${installDir}/bin/omc"
     """)
     bat (label: 'Sanity check - Cpp', script: """
       set MSYSTEM=UCRT64
       set MSYS2_PATH_TYPE=inherit
-      set PATH=%PATH%;${installDir}\\build\\bin;${installDir}\\build\\lib\\omc\\omsicpp;${installDir}\\build\\lib\\omc\\cpp
+      set PATH=%PATH%;${installDir}\\bin;${installDir}\\lib\\omc\\omsicpp;${installDir}\\lib\\omc\\cpp
       %OMDEV%\\tools\\msys\\usr\\bin\\sh --login -c "cd `cygpath '${WORKSPACE}'` && bash testsuite/sanity-check/runSanity.sh --omc=${installDir}/bin/omc --simCodeTarget=Cpp"
     """)
     bat (label: 'Sanity check - Install dir with spaces', script: """
       set MSYSTEM=UCRT64
       set MSYS2_PATH_TYPE=inherit
-      set PATH=%PATH%;${installDir}\\build\\bin;${installDir}\\build\\lib\\omc\\omsicpp;${installDir}\\build\\lib\\omc\\cpp
+      set PATH=%PATH%;${installDir} but with spaces\\bin;${installDir} but with spaces\\lib\\omc\\omsicpp;${installDir} but with spaces\\lib\\omc\\cpp
       move "${installDir}" "${installDir} but with spaces"
       %OMDEV%\\tools\\msys\\usr\\bin\\sh --login -c "cd `cygpath '${WORKSPACE}'` && bash testsuite/sanity-check/runSanity.sh --omc='${installDir} but with spaces/bin/omc'" || (move "${installDir} but with spaces" "${installDir}" && exit 1)
       move "${installDir} but with spaces/" "${installDir}"
@@ -216,7 +216,7 @@ void sanityCheck(String installDir, Boolean buildCpp) {
 
       set MSYSTEM=UCRT64
       set MSYS2_PATH_TYPE=inherit
-      set PATH=%PATH%;${installDir}\\build\\bin;${installDir}\\build\\lib\\omc\\omsicpp;${installDir}\\build\\lib\\omc\\cpp
+      set PATH=%PATH%;${installDir}\\bin;${installDir}\\lib\\omc\\omsicpp;${installDir}\\lib\\omc\\cpp
       %OMDEV%\\tools\\msys\\usr\\bin\\sh --login -c "cd `cygpath '${WORKSPACE}'` && chmod +x miniTestsuite.sh && ./miniTestsuite.sh && rm -f ./miniTestsuite.sh"
     """)
   } else {
