@@ -788,7 +788,7 @@ typedef struct SIMULATION_INFO
   modelica_real minStepSize;           /* defines the minimal step size */
   modelica_real tolerance;
   const char *solverMethod;
-  const char *outputFormat;
+  const char *outputFormat;           /* Output format: "mat", "csv", "plt", "empty" */
   const char *variableFilter;
 
   double loggingTimeRecord[2];         /* Time interval in which logging is active. Only used if useLoggingTime=1 */
