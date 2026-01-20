@@ -35,14 +35,14 @@
 #include "simulation/options.h"
 #include "simulation_result_mat4.h"
 
-#include <assert.h>
+#include <cassert>
+#include <cstdint>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <fstream>
 #include <iostream>
 #include <map>
-#include <stdint.h>
 #include <string>
 #include <utility>
 
@@ -373,6 +373,11 @@ void mat4_init4(simulation_result *self, DATA *data, threadData_t *threadData)
   /* Copy all the var names and descriptions to "name" and "description". */
   char* name = (char*) calloc(maxLengthName * matData->nSignals, sizeof(char));
   char *description = (char*) calloc(maxLengthDesc * matData->nSignals, sizeof(char));
+  if (!name || !description) {
+    free(name);
+    free(description);
+    throwStreamPrint(threadData, "Failed to allocate memory for name/description buffers");
+  }
   static_assert(sizeof(char) == sizeof(uint8_t), "This code assumes uint8_t and char have the same size.");
   char* current_name_row = name;
   char* current_desc_row = description;
@@ -514,8 +519,7 @@ void mat4_init4(simulation_result *self, DATA *data, threadData_t *threadData)
         unitLength = 1;
         break;
       default:
-        throwStreamPrint(NULL, "");
-        break;
+        throwStreamPrint(NULL, "mat4_init4: Unknown alias type for real variable.");
       }
       if (unitStr != NULL && unitLength > 0) {
         snprintf(current_desc_row, maxLengthDesc, "%s [%s]", mData->realAlias[i].info.comment, unitStr);
