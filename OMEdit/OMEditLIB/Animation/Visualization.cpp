@@ -1193,7 +1193,7 @@ VisualizationAbstract::VisualizationAbstract()
   : _visType(VisType::NONE),
     mpOMVisScene(nullptr),
     mpOMVisualBase(nullptr),
-    mpTimeManager(new TimeManager(0.0, 0.0, 1.0, 0.0, 0.1, 0.0, 1.0))
+    mpTimeManager(new TimeManager(0.0, 0.0, 0.0, 0.0, 0.1, 0.0, 1.0))
 {
 }
 
@@ -1201,7 +1201,7 @@ VisualizationAbstract::VisualizationAbstract(const std::string& modelFile, const
   : _visType(visType),
     mpOMVisScene(new OMVisScene(this)),
     mpOMVisualBase(new OMVisualBase(this, modelFile, path)),
-    mpTimeManager(new TimeManager(0.0, 0.0, 0.0, 0.0, 0.1, 0.0, 100.0))
+    mpTimeManager(new TimeManager(0.0, 0.0, 0.0, 0.0, 0.1, 0.0, 1.0))
 {
   mpOMVisScene->getScene().setPath(path);
 }
