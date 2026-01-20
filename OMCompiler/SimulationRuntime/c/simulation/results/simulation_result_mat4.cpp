@@ -35,15 +35,16 @@
 #include "simulation/options.h"
 #include "simulation_result_mat4.h"
 
+#include <assert.h>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 #include <fstream>
 #include <iostream>
 #include <map>
+#include <stdint.h>
 #include <string>
 #include <utility>
-#include <cstring>
-#include <cstdlib>
-#include <stdint.h>
-#include <assert.h>
 
 extern "C"
 {
@@ -370,45 +371,48 @@ void mat4_init4(simulation_result *self, DATA *data, threadData_t *threadData)
   matData->nSignals = count.nSignals;
 
   /* Copy all the var names and descriptions to "name" and "description". */
-  void *name = calloc(sizeof(char), maxLengthName * matData->nSignals);
-  void *description = calloc(sizeof(char), maxLengthDesc * matData->nSignals);
-  size_t cur = 0;
-  memcpy(name, timeName, strlen(timeName));
-  memcpy(description, timeDesc, strlen(timeDesc));
-  cur++;
+  char* name = (char*) calloc(maxLengthName * matData->nSignals, sizeof(char));
+  char *description = (char*) calloc(maxLengthDesc * matData->nSignals, sizeof(char));
+  static_assert(sizeof(char) == sizeof(uint8_t), "This code assumes uint8_t and char have the same size.");
+  char* current_name_row = name;
+  char* current_desc_row = description;
+
+  snprintf(current_name_row, maxLengthName, "%s", timeName);
+  current_name_row += maxLengthName;
+  snprintf(current_desc_row, maxLengthDesc, "%s", timeDesc);
+  current_desc_row += maxLengthDesc;
 
   if (self->cpuTime)
   {
-    memcpy((uint8_t *)name + maxLengthName * cur, cpuTimeName, strlen(cpuTimeName));
-    memcpy((uint8_t *)description + maxLengthDesc * cur, cpuTimeDesc, strlen(cpuTimeDesc));
-    cur++;
+    snprintf(current_name_row, maxLengthName, "%s", cpuTimeName);
+    current_name_row += maxLengthName;
+    snprintf(current_desc_row, maxLengthDesc, "%s", cpuTimeDesc);
+    current_desc_row += maxLengthDesc;
   }
 
   if (omc_flag[FLAG_SOLVER_STEPS])
   {
-    memcpy((uint8_t *)name + maxLengthName * cur, solverStepsName, strlen(solverStepsName));
-    memcpy((uint8_t *)description + maxLengthDesc * cur, solverStepsDesc, strlen(solverStepsDesc));
-    cur++;
+    snprintf(current_name_row, maxLengthName, "%s", solverStepsName);
+    current_name_row += maxLengthName;
+    snprintf(current_desc_row, maxLengthDesc, "%s", solverStepsDesc);
+    current_desc_row += maxLengthDesc;
   }
 
   for (int i = 0; i < mData->nVariablesReal; i++)
   {
     if (!mData->realVarsData[i].filterOutput)
     {
-      const char *unitStr = MMC_STRINGDATA(mData->realVarsData[i].attribute.unit);
-      size_t unitLength = unitStr ? strlen(unitStr) : 0;
+      snprintf(current_name_row, maxLengthName, "%s", mData->realVarsData[i].info.name);
+      current_name_row += maxLengthName;
 
-      memcpy((uint8_t *)name + maxLengthName * cur, mData->realVarsData[i].info.name, strlen(mData->realVarsData[i].info.name));
-      memcpy((uint8_t *)description + maxLengthDesc * cur, mData->realVarsData[i].info.comment, strlen(mData->realVarsData[i].info.comment));
-      // unit information
-      if (unitLength > 0)
-      {
-        memcpy((uint8_t *)description + maxLengthDesc * cur + strlen(mData->realVarsData[i].info.comment) + 2, unitStr, unitLength);
-        ((uint8_t *)description)[maxLengthDesc * cur + strlen(mData->realVarsData[i].info.comment) + 0] = ' ';
-        ((uint8_t *)description)[maxLengthDesc * cur + strlen(mData->realVarsData[i].info.comment) + 1] = '[';
-        ((uint8_t *)description)[maxLengthDesc * cur + strlen(mData->realVarsData[i].info.comment) + 2 + unitLength] = ']';
+      const char *unitStr = MMC_STRINGDATA(mData->realVarsData[i].attribute.unit);
+      if (unitStr != NULL && strlen(unitStr) > 0) {
+        snprintf(current_desc_row, maxLengthDesc, "%s [%s]", mData->realVarsData[i].info.comment, unitStr);
       }
-      cur++;
+      else {
+        snprintf(current_desc_row, maxLengthDesc, "%s", mData->realVarsData[i].info.comment);
+      }
+      current_desc_row += maxLengthDesc;
     }
   }
 
@@ -416,9 +420,10 @@ void mat4_init4(simulation_result *self, DATA *data, threadData_t *threadData)
   {
     for (int i = mData->nSensitivityParamVars; i < mData->nSensitivityVars; i++)
     {
-      memcpy((uint8_t *)name + maxLengthName * cur, mData->realSensitivityData[i].info.name, strlen(mData->realSensitivityData[i].info.name));
-      memcpy((uint8_t *)description + maxLengthDesc * cur, mData->realSensitivityData[i].info.comment, strlen(mData->realSensitivityData[i].info.comment));
-      cur++;
+      snprintf(current_name_row, maxLengthName, "%s", mData->realSensitivityData[i].info.name);
+      current_name_row += maxLengthName;
+      snprintf(current_desc_row, maxLengthDesc, "%s", mData->realSensitivityData[i].info.comment);
+      current_desc_row += maxLengthDesc;
     }
   }
 
@@ -426,9 +431,10 @@ void mat4_init4(simulation_result *self, DATA *data, threadData_t *threadData)
   {
     if (!mData->integerVarsData[i].filterOutput)
     {
-      memcpy((uint8_t *)name + maxLengthName * cur, mData->integerVarsData[i].info.name, strlen(mData->integerVarsData[i].info.name));
-      memcpy((uint8_t *)description + maxLengthDesc * cur, mData->integerVarsData[i].info.comment, strlen(mData->integerVarsData[i].info.comment));
-      cur++;
+      snprintf(current_name_row, maxLengthName, "%s", mData->integerVarsData[i].info.name);
+      current_name_row += maxLengthName;
+      snprintf(current_desc_row, maxLengthDesc, "%s", mData->integerVarsData[i].info.comment);
+      current_desc_row += maxLengthDesc;
     }
   }
 
@@ -436,9 +442,10 @@ void mat4_init4(simulation_result *self, DATA *data, threadData_t *threadData)
   {
     if (!mData->booleanVarsData[i].filterOutput)
     {
-      memcpy((uint8_t *)name + maxLengthName * cur, mData->booleanVarsData[i].info.name, strlen(mData->booleanVarsData[i].info.name));
-      memcpy((uint8_t *)description + maxLengthDesc * cur, mData->booleanVarsData[i].info.comment, strlen(mData->booleanVarsData[i].info.comment));
-      cur++;
+      snprintf(current_name_row, maxLengthName, "%s", mData->booleanVarsData[i].info.name);
+      current_name_row += maxLengthName;
+      snprintf(current_desc_row, maxLengthDesc, "%s", mData->booleanVarsData[i].info.comment);
+      current_desc_row += maxLengthDesc;
     }
   }
 
@@ -446,20 +453,17 @@ void mat4_init4(simulation_result *self, DATA *data, threadData_t *threadData)
   {
     if (!mData->realParameterData[i].filterOutput)
     {
-      const char *unitStr = MMC_STRINGDATA(mData->realParameterData[i].attribute.unit);
-      size_t unitLength = unitStr ? strlen(unitStr) : 0;
+      snprintf(current_name_row, maxLengthName, "%s", mData->realParameterData[i].info.name);
+      current_name_row += maxLengthName;
 
-      memcpy((uint8_t *)name + maxLengthName * cur, mData->realParameterData[i].info.name, strlen(mData->realParameterData[i].info.name));
-      memcpy((uint8_t *)description + maxLengthDesc * cur, mData->realParameterData[i].info.comment, strlen(mData->realParameterData[i].info.comment));
-      // unit information
-      if (unitLength > 0)
-      {
-        memcpy((uint8_t *)description + maxLengthDesc * cur + strlen(mData->realParameterData[i].info.comment) + 2, unitStr, unitLength);
-        ((uint8_t *)description)[maxLengthDesc * cur + strlen(mData->realParameterData[i].info.comment) + 0] = ' ';
-        ((uint8_t *)description)[maxLengthDesc * cur + strlen(mData->realParameterData[i].info.comment) + 1] = '[';
-        ((uint8_t *)description)[maxLengthDesc * cur + strlen(mData->realParameterData[i].info.comment) + 2 + unitLength] = ']';
+      const char *unitStr = MMC_STRINGDATA(mData->realParameterData[i].attribute.unit);
+      if (unitStr != NULL && strlen(unitStr) > 0) {
+        snprintf(current_desc_row, maxLengthDesc, "%s [%s]", mData->realParameterData[i].info.comment, unitStr);
       }
-      cur++;
+      else {
+        snprintf(current_desc_row, maxLengthDesc, "%s", mData->realParameterData[i].info.comment);
+      }
+      current_desc_row += maxLengthDesc;
     }
   }
 
@@ -467,9 +471,10 @@ void mat4_init4(simulation_result *self, DATA *data, threadData_t *threadData)
   {
     if (!mData->integerParameterData[i].filterOutput)
     {
-      memcpy((uint8_t *)name + maxLengthName * cur, mData->integerParameterData[i].info.name, strlen(mData->integerParameterData[i].info.name));
-      memcpy((uint8_t *)description + maxLengthDesc * cur, mData->integerParameterData[i].info.comment, strlen(mData->integerParameterData[i].info.comment));
-      cur++;
+      snprintf(current_name_row, maxLengthName, "%s", mData->integerParameterData[i].info.name);
+      current_name_row += maxLengthName;
+      snprintf(current_desc_row, maxLengthDesc, "%s", mData->integerParameterData[i].info.comment);
+      current_desc_row += maxLengthDesc;
     }
   }
 
@@ -477,9 +482,10 @@ void mat4_init4(simulation_result *self, DATA *data, threadData_t *threadData)
   {
     if (!mData->booleanParameterData[i].filterOutput)
     {
-      memcpy((uint8_t *)name + maxLengthName * cur, mData->booleanParameterData[i].info.name, strlen(mData->booleanParameterData[i].info.name));
-      memcpy((uint8_t *)description + maxLengthDesc * cur, mData->booleanParameterData[i].info.comment, strlen(mData->booleanParameterData[i].info.comment));
-      cur++;
+      snprintf(current_name_row, maxLengthName, "%s", mData->booleanParameterData[i].info.name);
+      current_name_row += maxLengthName;
+      snprintf(current_desc_row, maxLengthDesc, "%s", mData->booleanParameterData[i].info.comment);
+      current_desc_row += maxLengthDesc;
     }
   }
 
@@ -487,36 +493,37 @@ void mat4_init4(simulation_result *self, DATA *data, threadData_t *threadData)
   {
     if (!mData->realAlias[i].filterOutput)
     {
-      const char *unitStr = NULL;
-      size_t unitLength = 0;
+      const char *unitStr;
+      size_t unitLength;
 
-      if (mData->realAlias[i].aliasType == ALIAS_TYPE_VARIABLE)
-      { /* variable */
+      snprintf(current_name_row, maxLengthName, "%s", mData->realAlias[i].info.name);
+      current_name_row += maxLengthName;
+
+      switch (mData->realAlias[i].aliasType)
+      {
+      case ALIAS_TYPE_VARIABLE:
         unitStr = MMC_STRINGDATA(mData->realVarsData[mData->realAlias[i].nameID].attribute.unit);
         unitLength = unitStr ? strlen(unitStr) : 0;
-      }
-      else if (mData->realAlias[i].aliasType == ALIAS_TYPE_PARAMETER)
-      { /* parameter */
+        break;
+      case ALIAS_TYPE_PARAMETER:
         unitStr = MMC_STRINGDATA(mData->realParameterData[mData->realAlias[i].nameID].attribute.unit);
         unitLength = unitStr ? strlen(unitStr) : 0;
-      }
-      else if (mData->realAlias[i].aliasType == ALIAS_TYPE_TIME)
-      { /* time */
+        break;
+      case ALIAS_TYPE_TIME:
         unitStr = "s";
         unitLength = 1;
+        break;
+      default:
+        throwStreamPrint(NULL, "");
+        break;
       }
-
-      memcpy((uint8_t *)name + maxLengthName * cur, mData->realAlias[i].info.name, strlen(mData->realAlias[i].info.name));
-      memcpy((uint8_t *)description + maxLengthDesc * cur, mData->realAlias[i].info.comment, strlen(mData->realAlias[i].info.comment));
-      // unit information
-      if (unitLength > 0)
-      {
-        memcpy((uint8_t *)description + maxLengthDesc * cur + strlen(mData->realAlias[i].info.comment) + 2, unitStr, unitLength);
-        ((uint8_t *)description)[maxLengthDesc * cur + strlen(mData->realAlias[i].info.comment) + 0] = ' ';
-        ((uint8_t *)description)[maxLengthDesc * cur + strlen(mData->realAlias[i].info.comment) + 1] = '[';
-        ((uint8_t *)description)[maxLengthDesc * cur + strlen(mData->realAlias[i].info.comment) + 2 + unitLength] = ']';
+      if (unitStr != NULL && unitLength > 0) {
+        snprintf(current_desc_row, maxLengthDesc, "%s [%s]", mData->realAlias[i].info.comment, unitStr);
       }
-      cur++;
+      else {
+        snprintf(current_desc_row, maxLengthDesc, "%s", mData->realAlias[i].info.comment);
+      }
+      current_desc_row += maxLengthDesc;
     }
   }
 
@@ -524,9 +531,10 @@ void mat4_init4(simulation_result *self, DATA *data, threadData_t *threadData)
   {
     if (!mData->integerAlias[i].filterOutput)
     {
-      memcpy((uint8_t *)name + maxLengthName * cur, mData->integerAlias[i].info.name, strlen(mData->integerAlias[i].info.name));
-      memcpy((uint8_t *)description + maxLengthDesc * cur, mData->integerAlias[i].info.comment, strlen(mData->integerAlias[i].info.comment));
-      cur++;
+      snprintf(current_name_row, maxLengthName, "%s", mData->integerAlias[i].info.name);
+      current_name_row += maxLengthName;
+      snprintf(current_desc_row, maxLengthDesc, "%s", mData->integerAlias[i].info.comment);
+      current_desc_row += maxLengthDesc;
     }
   }
 
@@ -534,9 +542,10 @@ void mat4_init4(simulation_result *self, DATA *data, threadData_t *threadData)
   {
     if (!mData->booleanAlias[i].filterOutput)
     {
-      memcpy((uint8_t *)name + maxLengthName * cur, mData->booleanAlias[i].info.name, strlen(mData->booleanAlias[i].info.name));
-      memcpy((uint8_t *)description + maxLengthDesc * cur, mData->booleanAlias[i].info.comment, strlen(mData->booleanAlias[i].info.comment));
-      cur++;
+      snprintf(current_name_row, maxLengthName, "%s", mData->booleanAlias[i].info.name);
+      current_name_row += maxLengthName;
+      snprintf(current_desc_row, maxLengthDesc, "%s", mData->booleanAlias[i].info.comment);
+      current_desc_row += maxLengthDesc;
     }
   }
 
@@ -547,7 +556,6 @@ void mat4_init4(simulation_result *self, DATA *data, threadData_t *threadData)
   //  Data Type: 8-bit, unsigned integer
   writeMatrix_matVer4(matData->pFile, "name", maxLengthName, matData->nSignals, name, MatVer4Type_CHAR);
   free(name);
-  name = NULL;
 
   //       Name: description
   //       Rank: 2
@@ -556,7 +564,7 @@ void mat4_init4(simulation_result *self, DATA *data, threadData_t *threadData)
   //  Data Type: 8-bit, unsigned integer
   writeMatrix_matVer4(matData->pFile, "description", maxLengthDesc, matData->nSignals, description, MatVer4Type_CHAR);
   free(description);
-  description = NULL;
+
   rt_accumulate(SIM_TIMER_OUTPUT);
 }
 
