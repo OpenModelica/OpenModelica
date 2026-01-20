@@ -367,6 +367,61 @@ struct variableCount count_name_description_signals(const MODEL_DATA *mData,
 }
 
 /**
+ * @brief Print name(s) of scalar or array variable.
+ *
+ * For array variables names for all array elements are printed in the form
+ * `"<name>[dim1][dim2]...[dimN]"`. *
+ *
+ * TODO: How to handle state derivates `"der(x)"`?
+ *       Will result in `der(x)[1]`, ...
+ *
+ * @param buffer    Buffer to print name to.
+ * @param maxlen    Maximum length of single name.
+ * @param name      Variable name.
+ * @param dimension (Optional) Dimension of array variables.
+ * @return char*    Return pointer to buffer after writing variable name.
+ */
+char* printName(char* buffer, size_t maxlen, const char* name, const DIMENSION_INFO *dimension)
+{
+  // Scalar case
+  if (dimension == NULL || dimension->numberOfDimensions == 0) {
+    snprintf(buffer, maxlen, "%s", name);
+    buffer += maxlen;
+    return buffer;
+  }
+
+  // Array case
+  size_t *idx = (size_t *)calloc(dimension->numberOfDimensions, sizeof(size_t));
+  assertStreamPrint(NULL, idx != NULL, "Out of memory");
+
+  for(size_t linear = 0; linear < dimension->scalar_length; linear++) {
+    /* compute multi-dimensional indices for this linear index (row-major) */
+    size_t rem = linear;
+    for (size_t k = 0; k < dimension->numberOfDimensions; k++)
+    {
+      /* stride = product of sizes of dimensions after k */
+      size_t stride = 1;
+      for (size_t j = k + 1; j < dimension->numberOfDimensions; j++)
+      {
+        stride *= (size_t)dimension->dimensions[j].start;
+      }
+      idx[k] = rem / stride + 1;
+      rem = rem % stride;
+    }
+
+    /* write indices */
+    size_t written = snprintf(buffer, maxlen, "%s", name);
+    for (size_t k = 0; k < dimension->numberOfDimensions; ++k)
+    {
+      written += snprintf(buffer + written, maxlen, "[%zu]", idx[k]);
+    }
+    buffer += maxlen;
+  }
+
+  return buffer;
+}
+
+/**
  * @brief Initialize MAT v4 output for a simulation run.
  *
  * Prepares MAT v4 matrices (name, description, data headers) and opens
@@ -445,8 +500,7 @@ void mat4_init4(simulation_result *self, DATA *data, threadData_t *threadData)
   {
     if (!mData->realVarsData[i].filterOutput)
     {
-      snprintf(current_name_row, maxLengthName, "%s", mData->realVarsData[i].info.name);
-      current_name_row += maxLengthName;
+      current_name_row = printName(current_name_row, maxLengthName, mData->realVarsData[i].info.name, &mData->realVarsData[i].dimension);
 
       const char *unitStr = MMC_STRINGDATA(mData->realVarsData[i].attribute.unit);
       if (unitStr != NULL && strlen(unitStr) > 0) {
