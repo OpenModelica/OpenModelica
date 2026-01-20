@@ -122,6 +122,62 @@ static const char solverStepsName[] = "$solverSteps";
 static const char solverStepsDesc[] = "number of steps taken by the integrator";
 
 /**
+ * @brief Number of digits in non-negative number.
+ *
+ * @param number    Natural number.
+ * @return size_t   Number of digist.
+ */
+static inline size_t numDigits(size_t number) {
+  if (number == 0) {
+    return 1;
+  }
+  return floor(log10(number)) + 1;
+}
+
+/**
+ * @brief Length of name including array index.
+ *
+ * @param name        Name of variable.
+ * @param dimension   Optional dimension of variable.
+ * @return size_t     Length of string "<name>[dim1][dim2]...[dimN]" including trailing null character.
+ */
+static size_t lengthName(const char *name, const DIMENSION_INFO *dimension)
+{
+  size_t len = strlen(name) + 1;
+
+  // Add optional array index
+  if (dimension != NULL && dimension->numberOfDimensions > 0)
+  {
+    for(size_t i = 0; i < dimension->numberOfDimensions; i++) {
+      /* Number of digits of size plus brackets "[", and "]""*/
+      len += numDigits(dimension->dimensions[i].start) + 2;
+    }
+  }
+
+  return len;
+}
+
+/**
+ * @brief Length of description string "<comment>[ (<unit>)]".
+ *
+ * @param comment   Comment part of description.
+ * @param unit      Optional unit part of description.
+ * @return size_t   Length of string "<comment>[ (<unit>)]" including trailing null character.
+ */
+static size_t lengthDescription(const char* comment, modelica_string* unit)
+{
+  /* Length unit */
+  size_t unitLength = 0;
+  if (unit != NULL) {
+    const char *unitStr = MMC_STRINGDATA(*unit);
+    unitLength = unitStr ? strlen(unitStr) + 3 : 0; /* Lenght of " (<unit>)" */
+  }
+
+  /* Length description */
+  return strlen(comment) + unitLength + 1;
+}
+
+/**
  * @brief Length of longest variable name, description and number of signals.
  *
  * @param mData                   Model data containing names and description of
@@ -134,193 +190,175 @@ static const char solverStepsDesc[] = "number of steps taken by the integrator";
 struct variableCount count_name_description_signals(const MODEL_DATA *mData,
                                                     modelica_boolean cpuTime)
 {
-  size_t len;
   struct variableCount count = {
     .maxLengthName = strlen(timeName) + 1,
     .maxLengthDesc = strlen(timeDesc) + 1,
     .nSignals = 1};
 
+  /* CPU-time */
   if (cpuTime)
   {
-    len = strlen(cpuTimeName) + 1;
-    if (len > count.maxLengthName)
-      count.maxLengthName = len;
-    len = strlen(cpuTimeDesc) + 1;
-    if (len > count.maxLengthDesc)
-      count.maxLengthDesc = len;
+    count.maxLengthName = fmax(lengthName(cpuTimeName, NULL), count.maxLengthName);
+    count.maxLengthDesc = fmax(lengthDescription(cpuTimeDesc, NULL), count.maxLengthDesc);
     count.nSignals++;
   }
 
+  /* Solver steps */
   if (omc_flag[FLAG_SOLVER_STEPS])
   {
-    len = strlen(solverStepsName) + 1;
-    if (len > count.maxLengthName)
-      count.maxLengthName = len;
-    len = strlen(solverStepsDesc) + 1;
-    if (len > count.maxLengthDesc)
-      count.maxLengthDesc = len;
+    count.maxLengthName = fmax(lengthName(solverStepsName, NULL), count.maxLengthName);
+    count.maxLengthDesc = fmax(lengthDescription(solverStepsDesc, NULL), count.maxLengthDesc);
     count.nSignals++;
   }
 
-  for (int i = 0; i < mData->nVariablesReal; i++)
+  /* Real variables */
+  for (int i = 0; i < mData->nVariablesRealArray; i++)
   {
     if (!mData->realVarsData[i].filterOutput)
     {
-      const char *unitStr = MMC_STRINGDATA(mData->realVarsData[i].attribute.unit);
-      size_t unitLength = unitStr ? strlen(unitStr) + 3 : 0;
-
-      len = strlen(mData->realVarsData[i].info.name) + 1;
-      if (len > count.maxLengthName)
-        count.maxLengthName = len;
-      len = strlen(mData->realVarsData[i].info.comment) + 1 + unitLength;
-      if (len > count.maxLengthDesc)
-        count.maxLengthDesc = len;
-      count.nSignals++;
+      count.maxLengthName = fmax(lengthName(mData->realVarsData[i].info.name, &mData->realVarsData[i].dimension), count.maxLengthName);
+      count.maxLengthDesc = fmax(lengthDescription(mData->realVarsData[i].info.comment, &mData->realVarsData[i].attribute.unit), count.maxLengthDesc);
+      count.nSignals += mData->realVarsData[i].dimension.scalar_length;
     }
   }
 
-  if (omc_flag[FLAG_IDAS])
-    for (int i = mData->nSensitivityParamVars; i < mData->nSensitivityVars; i++)
-    {
-      len = strlen(mData->realSensitivityData[i].info.name) + 1;
-      if (len > count.maxLengthName)
-        count.maxLengthName = len;
-      len = strlen(mData->realSensitivityData[i].info.comment) + 1;
-      if (len > count.maxLengthDesc)
-        count.maxLengthDesc = len;
-      count.nSignals++;
-    }
-
-  for (int i = 0; i < mData->nVariablesInteger; i++)
+  /* Integer variables */
+  for (int i = 0; i < mData->nVariablesIntegerArray; i++)
   {
     if (!mData->integerVarsData[i].filterOutput)
     {
-      len = strlen(mData->integerVarsData[i].info.name) + 1;
-      if (len > count.maxLengthName)
-        count.maxLengthName = len;
-      len = strlen(mData->integerVarsData[i].info.comment) + 1;
-      if (len > count.maxLengthDesc)
-        count.maxLengthDesc = len;
-      count.nSignals++;
+      count.maxLengthName = fmax(lengthName(mData->integerVarsData[i].info.name, &mData->integerVarsData[i].dimension), count.maxLengthName);
+      count.maxLengthDesc = fmax(lengthDescription(mData->integerVarsData[i].info.comment, NULL), count.maxLengthDesc);
+      count.nSignals += mData->integerVarsData[i].dimension.scalar_length;
     }
   }
 
-  for (int i = 0; i < mData->nVariablesBoolean; i++)
+  /* Boolean variables */
+  for (int i = 0; i < mData->nVariablesBooleanArray; i++)
   {
     if (!mData->booleanVarsData[i].filterOutput)
     {
-      len = strlen(mData->booleanVarsData[i].info.name) + 1;
-      if (len > count.maxLengthName)
-        count.maxLengthName = len;
-      len = strlen(mData->booleanVarsData[i].info.comment) + 1;
-      if (len > count.maxLengthDesc)
-        count.maxLengthDesc = len;
-      count.nSignals++;
+      count.maxLengthName = fmax(lengthName(mData->booleanVarsData[i].info.name, &mData->booleanVarsData[i].dimension), count.maxLengthName);
+      count.maxLengthDesc = fmax(lengthDescription(mData->booleanVarsData[i].info.comment, NULL), count.maxLengthDesc);
+      count.nSignals += mData->booleanVarsData[i].dimension.scalar_length;
     }
   }
 
-  for (int i = 0; i < mData->nParametersReal; i++)
+  /* Real parameters */
+  for (int i = 0; i < mData->nParametersRealArray; i++)
   {
     if (!mData->realParameterData[i].filterOutput)
     {
-      const char *unitStr = MMC_STRINGDATA(mData->realParameterData[i].attribute.unit);
-      size_t unitLength = unitStr ? strlen(unitStr) + 3 : 0;
+      count.maxLengthName = fmax(lengthName(mData->realParameterData[i].info.name, &mData->realParameterData[i].dimension), count.maxLengthName);
+      count.maxLengthDesc = fmax(lengthDescription(mData->realParameterData[i].info.comment, &mData->realParameterData[i].attribute.unit), count.maxLengthDesc);
+      count.nSignals += mData->realParameterData[i].dimension.scalar_length;
+    }
+  }
 
-      len = strlen(mData->realParameterData[i].info.name) + 1;
-      if (len > count.maxLengthName)
-        count.maxLengthName = len;
-      len = strlen(mData->realParameterData[i].info.comment) + 1 + unitLength;
-      if (len > count.maxLengthDesc)
-        count.maxLengthDesc = len;
+  /* Sensitivity parameters */
+  if (omc_flag[FLAG_IDAS])
+  {
+    for (int i = mData->nSensitivityParamVars; i < mData->nSensitivityVars; i++)
+    {
+      count.maxLengthName = fmax(lengthName(mData->realSensitivityData[i].info.name, NULL), count.maxLengthName);
+      count.maxLengthDesc = fmax(lengthDescription(mData->realSensitivityData[i].info.comment, NULL), count.maxLengthDesc);
       count.nSignals++;
     }
   }
 
-  for (int i = 0; i < mData->nParametersInteger; i++)
+  /* Integer parameters */
+  for (int i = 0; i < mData->nParametersIntegerArray; i++)
   {
     if (!mData->integerParameterData[i].filterOutput)
     {
-      len = strlen(mData->integerParameterData[i].info.name) + 1;
-      if (len > count.maxLengthName)
-        count.maxLengthName = len;
-      len = strlen(mData->integerParameterData[i].info.comment) + 1;
-      if (len > count.maxLengthDesc)
-        count.maxLengthDesc = len;
-      count.nSignals++;
+      count.maxLengthName = fmax(lengthName(mData->integerParameterData[i].info.name, &mData->integerParameterData[i].dimension), count.maxLengthName);
+      count.maxLengthDesc = fmax(lengthDescription(mData->integerParameterData[i].info.comment, NULL), count.maxLengthDesc);
+      count.nSignals += mData->integerParameterData[i].dimension.scalar_length;
     }
   }
 
-  for (int i = 0; i < mData->nParametersBoolean; i++)
+  /* Boolean parameter */
+  for (int i = 0; i < mData->nParametersBooleanArray; i++)
   {
     if (!mData->booleanParameterData[i].filterOutput)
     {
-      len = strlen(mData->booleanParameterData[i].info.name) + 1;
-      if (len > count.maxLengthName)
-        count.maxLengthName = len;
-      len = strlen(mData->booleanParameterData[i].info.comment) + 1;
-      if (len > count.maxLengthDesc)
-        count.maxLengthDesc = len;
-      count.nSignals++;
+      count.maxLengthName = fmax(lengthName(mData->booleanParameterData[i].info.name, &mData->booleanParameterData[i].dimension), count.maxLengthName);
+      count.maxLengthDesc = fmax(lengthDescription(mData->booleanParameterData[i].info.comment, NULL), count.maxLengthDesc);
+      count.nSignals += mData->booleanParameterData[i].dimension.scalar_length;
     }
   }
 
-  for (int i = 0; i < mData->nAliasReal; i++)
+  /* Real aliases */
+  for (int i = 0; i < mData->nAliasRealArray; i++)
   {
     if (!mData->realAlias[i].filterOutput)
     {
-      const char *unitStr = NULL;
-      size_t unitLength = 0;
-
-      if (mData->realAlias[i].aliasType == ALIAS_TYPE_VARIABLE)
-      { /* variable */
-        unitStr = MMC_STRINGDATA(mData->realVarsData[mData->realAlias[i].nameID].attribute.unit);
-        unitLength = unitStr ? strlen(unitStr) + 3 : 0;
+      switch (mData->realAlias[i].aliasType)
+      {
+      case ALIAS_TYPE_VARIABLE:
+        count.maxLengthName = fmax(lengthName(mData->realAlias[i].info.name, &mData->realVarsData[mData->realAlias[i].nameID].dimension), count.maxLengthName);
+        count.maxLengthDesc = fmax(lengthDescription(mData->realAlias[i].info.comment, &mData->realVarsData[mData->realAlias[i].nameID].attribute.unit), count.maxLengthDesc);
+        count.nSignals += mData->realVarsData[mData->realAlias[i].nameID].dimension.scalar_length;
+        break;
+        case ALIAS_TYPE_PARAMETER:
+        count.maxLengthName = fmax(lengthName(mData->realAlias[i].info.name, &mData->realParameterData[mData->realAlias[i].nameID].dimension), count.maxLengthName);
+        count.maxLengthDesc = fmax(lengthDescription(mData->realAlias[i].info.comment, &mData->realParameterData[mData->realAlias[i].nameID].attribute.unit), count.maxLengthDesc);
+        count.nSignals += mData->realParameterData[mData->realAlias[i].nameID].dimension.scalar_length;
+        break;
+      case ALIAS_TYPE_TIME:
+        count.maxLengthName = fmax(lengthName(mData->realAlias[i].info.name, NULL), count.maxLengthName);
+        count.maxLengthDesc = fmax(lengthDescription(mData->realAlias[i].info.comment, NULL) + 4 /* " (s)" */, count.maxLengthDesc);
+        count.nSignals++;
+        break;
+      default:
+        throwStreamPrint(NULL, "count_name_description_signals: Unknown alias type for real alias.");
       }
-      else if (mData->realAlias[i].aliasType == ALIAS_TYPE_PARAMETER)
-      { /* parameter */
-        unitStr = MMC_STRINGDATA(mData->realParameterData[mData->realAlias[i].nameID].attribute.unit);
-        unitLength = unitStr ? strlen(unitStr) + 3 : 0;
-      }
-      else if (mData->realAlias[i].aliasType == ALIAS_TYPE_TIME)
-      { /* time */
-        unitStr = "s";
-        unitLength = 4;
-      }
-
-      len = strlen(mData->realAlias[i].info.name) + 1;
-      if (len > count.maxLengthName)
-        count.maxLengthName = len;
-      len = strlen(mData->realAlias[i].info.comment) + 1 + unitLength;
-      if (len > count.maxLengthDesc)
-        count.maxLengthDesc = len;
-      count.nSignals++;
     }
   }
 
-  for (int i = 0; i < mData->nAliasInteger; i++)
+  /* Integer aliases */
+  for (int i = 0; i < mData->nAliasIntegerArray; i++)
   {
     if (!mData->integerAlias[i].filterOutput)
     {
-      len = strlen(mData->integerAlias[i].info.name) + 1;
-      if (len > count.maxLengthName)
-        count.maxLengthName = len;
-      len = strlen(mData->integerAlias[i].info.comment) + 1;
-      if (len > count.maxLengthDesc)
-        count.maxLengthDesc = len;
-      count.nSignals++;
+      switch (mData->integerAlias[i].aliasType)
+      {
+      case ALIAS_TYPE_VARIABLE:
+        count.maxLengthName = fmax(lengthName(mData->integerAlias[i].info.name, &mData->integerVarsData[mData->integerAlias[i].nameID].dimension), count.maxLengthName);
+        count.maxLengthDesc = fmax(lengthDescription(mData->integerAlias[i].info.comment, NULL), count.maxLengthDesc);
+        count.nSignals += mData->integerVarsData[mData->integerAlias[i].nameID].dimension.scalar_length;
+        break;
+      case ALIAS_TYPE_PARAMETER:
+        count.maxLengthName = fmax(lengthName(mData->integerAlias[i].info.name, &mData->integerParameterData[mData->integerAlias[i].nameID].dimension), count.maxLengthName);
+        count.maxLengthDesc = fmax(lengthDescription(mData->integerAlias[i].info.comment, NULL), count.maxLengthDesc);
+        count.nSignals += mData->integerParameterData[mData->integerAlias[i].nameID].dimension.scalar_length;
+        break;
+      default:
+        throwStreamPrint(NULL, "count_name_description_signals: Unknown alias type for integer alias.");
+      }
     }
   }
 
-  for (int i = 0; i < mData->nAliasBoolean; i++)
+  /* Boolean aliases */
+  for (int i = 0; i < mData->nAliasBooleanArray; i++)
   {
     if (!mData->booleanAlias[i].filterOutput)
     {
-      len = strlen(mData->booleanAlias[i].info.name) + 1;
-      if (len > count.maxLengthName)
-        count.maxLengthName = len;
-      len = strlen(mData->booleanAlias[i].info.comment) + 1;
-      if (len > count.maxLengthDesc)
-        count.maxLengthDesc = len;
+      switch (mData->booleanAlias[i].aliasType)
+      {
+      case ALIAS_TYPE_VARIABLE:
+        count.maxLengthName = fmax(lengthName(mData->booleanAlias[i].info.name, &mData->booleanVarsData[mData->booleanAlias[i].nameID].dimension), count.maxLengthName);
+        count.maxLengthDesc = fmax(lengthDescription(mData->booleanAlias[i].info.comment, NULL), count.maxLengthDesc);
+        count.nSignals += mData->booleanVarsData[mData->booleanAlias[i].nameID].dimension.scalar_length;
+        break;
+      case ALIAS_TYPE_PARAMETER:
+        count.maxLengthName = fmax(lengthName(mData->booleanAlias[i].info.name, &mData->booleanParameterData[mData->booleanAlias[i].nameID].dimension), count.maxLengthName);
+        count.maxLengthDesc = fmax(lengthDescription(mData->booleanAlias[i].info.comment, NULL), count.maxLengthDesc);
+        count.nSignals += mData->booleanParameterData[mData->booleanAlias[i].nameID].dimension.scalar_length;
+        break;
+      default:
+        throwStreamPrint(NULL, "count_name_description_signals: Unknown alias type for boolean alias.");
+      }
       count.nSignals++;
     }
   }
@@ -403,7 +441,7 @@ void mat4_init4(simulation_result *self, DATA *data, threadData_t *threadData)
     current_desc_row += maxLengthDesc;
   }
 
-  for (int i = 0; i < mData->nVariablesReal; i++)
+  for (int i = 0; i < mData->nVariablesRealArray; i++)
   {
     if (!mData->realVarsData[i].filterOutput)
     {
@@ -432,7 +470,7 @@ void mat4_init4(simulation_result *self, DATA *data, threadData_t *threadData)
     }
   }
 
-  for (int i = 0; i < mData->nVariablesInteger; i++)
+  for (int i = 0; i < mData->nVariablesIntegerArray; i++)
   {
     if (!mData->integerVarsData[i].filterOutput)
     {
@@ -443,7 +481,7 @@ void mat4_init4(simulation_result *self, DATA *data, threadData_t *threadData)
     }
   }
 
-  for (int i = 0; i < mData->nVariablesBoolean; i++)
+  for (int i = 0; i < mData->nVariablesBooleanArray; i++)
   {
     if (!mData->booleanVarsData[i].filterOutput)
     {
@@ -454,7 +492,7 @@ void mat4_init4(simulation_result *self, DATA *data, threadData_t *threadData)
     }
   }
 
-  for (int i = 0; i < mData->nParametersReal; i++)
+  for (int i = 0; i < mData->nParametersRealArray; i++)
   {
     if (!mData->realParameterData[i].filterOutput)
     {
@@ -472,7 +510,7 @@ void mat4_init4(simulation_result *self, DATA *data, threadData_t *threadData)
     }
   }
 
-  for (int i = 0; i < mData->nParametersInteger; i++)
+  for (int i = 0; i < mData->nParametersIntegerArray; i++)
   {
     if (!mData->integerParameterData[i].filterOutput)
     {
@@ -483,7 +521,7 @@ void mat4_init4(simulation_result *self, DATA *data, threadData_t *threadData)
     }
   }
 
-  for (int i = 0; i < mData->nParametersBoolean; i++)
+  for (int i = 0; i < mData->nParametersBooleanArray; i++)
   {
     if (!mData->booleanParameterData[i].filterOutput)
     {
@@ -494,7 +532,7 @@ void mat4_init4(simulation_result *self, DATA *data, threadData_t *threadData)
     }
   }
 
-  for (int i = 0; i < mData->nAliasReal; i++)
+  for (int i = 0; i < mData->nAliasRealArray; i++)
   {
     if (!mData->realAlias[i].filterOutput)
     {
@@ -531,7 +569,7 @@ void mat4_init4(simulation_result *self, DATA *data, threadData_t *threadData)
     }
   }
 
-  for (int i = 0; i < mData->nAliasInteger; i++)
+  for (int i = 0; i < mData->nAliasIntegerArray; i++)
   {
     if (!mData->integerAlias[i].filterOutput)
     {
@@ -542,7 +580,7 @@ void mat4_init4(simulation_result *self, DATA *data, threadData_t *threadData)
     }
   }
 
-  for (int i = 0; i < mData->nAliasBoolean; i++)
+  for (int i = 0; i < mData->nAliasBooleanArray; i++)
   {
     if (!mData->booleanAlias[i].filterOutput)
     {
@@ -590,13 +628,13 @@ void writeDataInfo(simulation_result *self, mat_data *matData, const MODEL_DATA 
   size_t cur = 1;
 
   /* alias lookups */
-  size_t *realLookup = (size_t *)malloc(sizeof(size_t) * mData->nVariablesReal);
-  size_t *integerLookup = (size_t *)malloc(sizeof(size_t) * mData->nVariablesInteger);
-  size_t *boolLookup = (size_t *)malloc(sizeof(size_t) * mData->nVariablesBoolean);
+  size_t *realLookup = (size_t *)malloc(sizeof(size_t) * mData->nVariablesRealArray);
+  size_t *integerLookup = (size_t *)malloc(sizeof(size_t) * mData->nVariablesIntegerArray);
+  size_t *boolLookup = (size_t *)malloc(sizeof(size_t) * mData->nVariablesBooleanArray);
 
-  size_t *realParameterLookup = (size_t *)malloc(sizeof(size_t) * mData->nParametersReal);
-  size_t *integerParameterLookup = (size_t *)malloc(sizeof(size_t) * mData->nParametersInteger);
-  size_t *boolParameterLookup = (size_t *)malloc(sizeof(size_t) * mData->nParametersBoolean);
+  size_t *realParameterLookup = (size_t *)malloc(sizeof(size_t) * mData->nParametersRealArray);
+  size_t *integerParameterLookup = (size_t *)malloc(sizeof(size_t) * mData->nParametersIntegerArray);
+  size_t *boolParameterLookup = (size_t *)malloc(sizeof(size_t) * mData->nParametersBooleanArray);
 
   /* time */
   dataInfo[0].channel = CHANNEL_TIME;
@@ -622,7 +660,7 @@ void writeDataInfo(simulation_result *self, mat_data *matData, const MODEL_DATA 
     cur++;
   }
 
-  for (int i = 0; i < mData->nVariablesReal; i++)
+  for (int i = 0; i < mData->nVariablesRealArray; i++)
   {
     if (!mData->realVarsData[i].filterOutput)
     {
@@ -647,7 +685,7 @@ void writeDataInfo(simulation_result *self, mat_data *matData, const MODEL_DATA 
     }
   }
 
-  for (int i = 0; i < mData->nVariablesInteger; i++)
+  for (int i = 0; i < mData->nVariablesIntegerArray; i++)
   {
     if (!mData->integerVarsData[i].filterOutput)
     {
@@ -660,7 +698,7 @@ void writeDataInfo(simulation_result *self, mat_data *matData, const MODEL_DATA 
     }
   }
 
-  for (int i = 0; i < mData->nVariablesBoolean; i++)
+  for (int i = 0; i < mData->nVariablesBooleanArray; i++)
   {
     if (!mData->booleanVarsData[i].filterOutput)
     {
@@ -673,7 +711,7 @@ void writeDataInfo(simulation_result *self, mat_data *matData, const MODEL_DATA 
     }
   }
 
-  for (int i = 0; i < mData->nParametersReal; i++)
+  for (int i = 0; i < mData->nParametersRealArray; i++)
   {
     if (!mData->realParameterData[i].filterOutput)
     {
@@ -686,7 +724,7 @@ void writeDataInfo(simulation_result *self, mat_data *matData, const MODEL_DATA 
     }
   }
 
-  for (int i = 0; i < mData->nParametersInteger; i++)
+  for (int i = 0; i < mData->nParametersIntegerArray; i++)
   {
     if (!mData->integerParameterData[i].filterOutput)
     {
@@ -699,7 +737,7 @@ void writeDataInfo(simulation_result *self, mat_data *matData, const MODEL_DATA 
     }
   }
 
-  for (int i = 0; i < mData->nParametersBoolean; i++)
+  for (int i = 0; i < mData->nParametersBooleanArray; i++)
   {
     if (!mData->booleanParameterData[i].filterOutput)
     {
@@ -712,7 +750,7 @@ void writeDataInfo(simulation_result *self, mat_data *matData, const MODEL_DATA 
     }
   }
 
-  for (int i = 0; i < mData->nAliasReal; i++)
+  for (int i = 0; i < mData->nAliasRealArray; i++)
   {
     if (!mData->realAlias[i].filterOutput)
     {
@@ -758,7 +796,7 @@ void writeDataInfo(simulation_result *self, mat_data *matData, const MODEL_DATA 
     }
   }
 
-  for (int i = 0; i < mData->nAliasInteger; i++)
+  for (int i = 0; i < mData->nAliasIntegerArray; i++)
   {
     if (!mData->integerAlias[i].filterOutput)
     {
@@ -791,7 +829,7 @@ void writeDataInfo(simulation_result *self, mat_data *matData, const MODEL_DATA 
     }
   }
 
-  for (int i = 0; i < mData->nAliasBoolean; i++)
+  for (int i = 0; i < mData->nAliasBooleanArray; i++)
   {
     if (!mData->booleanAlias[i].filterOutput)
     {
@@ -920,7 +958,7 @@ void mat4_writeParameterData4(simulation_result *self, DATA *data, threadData_t 
   WRITE_REAL_VALUE(data_1, cur + matData->nData1, data->simulationInfo->stopTime);
   cur++;
 
-  for (int i = 0; i < mData->nVariablesReal; i++)
+  for (int i = 0; i < mData->nVariablesRealArray; i++)
   {
     if (!mData->realVarsData[i].filterOutput && mData->realVarsData[i].time_unvarying)
     {
@@ -930,7 +968,7 @@ void mat4_writeParameterData4(simulation_result *self, DATA *data, threadData_t 
     }
   }
 
-  for (int i = 0; i < mData->nVariablesInteger; i++)
+  for (int i = 0; i < mData->nVariablesIntegerArray; i++)
   {
     if (!mData->integerVarsData[i].filterOutput && mData->integerVarsData[i].time_unvarying)
     {
@@ -940,7 +978,7 @@ void mat4_writeParameterData4(simulation_result *self, DATA *data, threadData_t 
     }
   }
 
-  for (int i = 0; i < mData->nVariablesBoolean; i++)
+  for (int i = 0; i < mData->nVariablesBooleanArray; i++)
   {
     if (!mData->booleanVarsData[i].filterOutput && mData->booleanVarsData[i].time_unvarying)
     {
@@ -950,7 +988,7 @@ void mat4_writeParameterData4(simulation_result *self, DATA *data, threadData_t 
     }
   }
 
-  for (int i = 0; i < mData->nParametersReal; i++)
+  for (int i = 0; i < mData->nParametersRealArray; i++)
   {
     if (!mData->realParameterData[i].filterOutput)
     {
@@ -960,7 +998,7 @@ void mat4_writeParameterData4(simulation_result *self, DATA *data, threadData_t 
     }
   }
 
-  for (int i = 0; i < mData->nParametersInteger; i++)
+  for (int i = 0; i < mData->nParametersIntegerArray; i++)
   {
     if (!mData->integerParameterData[i].filterOutput)
     {
@@ -970,7 +1008,7 @@ void mat4_writeParameterData4(simulation_result *self, DATA *data, threadData_t 
     }
   }
 
-  for (int i = 0; i < mData->nParametersBoolean; i++)
+  for (int i = 0; i < mData->nParametersBooleanArray; i++)
   {
     if (!mData->booleanParameterData[i].filterOutput)
     {
@@ -1044,7 +1082,7 @@ void mat4_emit4(simulation_result *self, DATA *data, threadData_t *threadData)
     WRITE_REAL_VALUE(matData->data_2, cur++, data->simulationInfo->solverSteps);
   }
 
-  for (int i = 0; i < mData->nVariablesReal; i++)
+  for (int i = 0; i < mData->nVariablesRealArray; i++)
   {
     if (!mData->realVarsData[i].filterOutput && !mData->realVarsData[i].time_unvarying)
     {
@@ -1060,7 +1098,7 @@ void mat4_emit4(simulation_result *self, DATA *data, threadData_t *threadData)
     }
   }
 
-  for (int i = 0; i < mData->nVariablesInteger; i++)
+  for (int i = 0; i < mData->nVariablesIntegerArray; i++)
   {
     if (!mData->integerVarsData[i].filterOutput && !mData->integerVarsData[i].time_unvarying)
     {
@@ -1068,7 +1106,7 @@ void mat4_emit4(simulation_result *self, DATA *data, threadData_t *threadData)
     }
   }
 
-  for (int i = 0; i < mData->nVariablesBoolean; i++)
+  for (int i = 0; i < mData->nVariablesBooleanArray; i++)
   {
     if (!mData->booleanVarsData[i].filterOutput && !mData->booleanVarsData[i].time_unvarying)
     {
@@ -1076,7 +1114,7 @@ void mat4_emit4(simulation_result *self, DATA *data, threadData_t *threadData)
     }
   }
 
-  for (int i = 0; i < mData->nAliasBoolean; i++)
+  for (int i = 0; i < mData->nAliasBooleanArray; i++)
   {
     if (!mData->booleanAlias[i].filterOutput)
     {
