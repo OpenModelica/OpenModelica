@@ -2855,7 +2855,6 @@ void VariablesWidget::updateVariablesTree(QMdiSubWindow *pSubWindow)
   }
   /* if the same sub window is activated again then just return */
   if (mpLastActiveSubWindow == pSubWindow) {
-    mpLastActiveSubWindow = pSubWindow;
     return;
   }
   mpLastActiveSubWindow = pSubWindow;
@@ -2865,7 +2864,7 @@ void VariablesWidget::updateVariablesTree(QMdiSubWindow *pSubWindow)
    */
   pSubWindow = MainWindow::instance()->getPlotWindowContainer()->getPlotSubWindowFromMdi();
   updateVariablesTreeHelper(pSubWindow);
-  initializeVisualization();
+  updateVisualization();
 }
 
 void VariablesWidget::showContextMenu(QPoint point)
