@@ -161,18 +161,18 @@ protected function notification2 "help-function"
   output String outS;
 protected
   ComponentRef cr1 = ComponentRef.EMPTY();
-  Real factor1=0;
-  Integer i1=0, i2=0, i3=0, i4=0, i5=0, i6=0, i7=0;
+  Real factor=0;
+  Integer s=0, m=0, g=0, A=0, K=0, mol=0, cd=0;
 algorithm
   outS := stringAppendList(list(
   // We already assigned the variables before
-  "\"" + ComponentRef.toString(cr1) + "\" has the Unit \"" + Unit.unitString(Unit.UNIT(factor1, i1, i2, i3, i4, i5, i6, i7), inHtU2S) + "\"\n"
+  "\"" + ComponentRef.toString(cr1) + "\" has the Unit \"" + Unit.unitString(Unit.UNIT(s, m, g, A, K, mol, cd, factor), inHtU2S) + "\"\n"
   // Do the filtering and unboxing stuff at the same time; then we only need one hashtable call
   // And we only use a try-block for MASTER nodes
   for t1 guard match t1 local Boolean b; case (cr1,Unit.MASTER()) algorithm
     b := false;
     try
-      Unit.UNIT(factor1, i1, i2, i3, i4, i5, i6, i7) :=
+      Unit.UNIT(s, m, g, A, K, mol, cd, factor) :=
         UnorderedMap.getOrFail(ComponentRef.stripSubscripts(cr1), inHtCr2U2);
       b := true;
     else
@@ -629,7 +629,7 @@ algorithm
     case Expression.CREF()
       guard ComponentRef.isTime(eq.cref)
       algorithm
-        op_unit := Unit.UNIT(1e0, 0, 0, 0, 1, 0, 0, 0);
+        op_unit := NFUnit.SECOND;
         addUnit2HtS2U("time", op_unit, htS2U);
         addUnit2HtU2S("time", op_unit, htU2S);
       then
@@ -676,11 +676,11 @@ algorithm
           insertUnitInEquation(listHead(call_args), Unit.MASTER({}), htCr2U, htS2U, htU2S, fnCache);
 
         if Unit.isUnit(op_unit) then
-          op_unit := Unit.unitDiv(op_unit, Unit.UNIT(1e0, 0, 0, 0, 1, 0, 0, 0));
+          op_unit := Unit.unitDiv(op_unit, NFUnit.SECOND);
           insertUnitString(op_unit, htS2U, htU2S);
         elseif Unit.isUnit(unit) then
           Unit.MASTER(varList = vars) := op_unit;
-          op_unit := Unit.unitMul(unit, Unit.UNIT(1e0, 0, 0, 0, 1, 0, 0, 0));
+          op_unit := Unit.unitMul(unit, NFUnit.SECOND);
           List.map2_0(vars, updateHtCr2U, op_unit, htCr2U);
           insertUnitString(op_unit, htS2U, htU2S);
         else
