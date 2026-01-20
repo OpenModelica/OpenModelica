@@ -113,8 +113,8 @@ simulation/solver/nonlinearSolverHybrd.h \
 simulation/solver/nonlinearSystem.h \
 simulation/solver/nonlinearValuesList.h \
 simulation/solver/omc_math.h \
-simulation/solver/perform_qss_simulation.c.inc \
-simulation/solver/perform_simulation.c.inc \
+simulation/solver/perform_qss_simulation.h \
+simulation/solver/perform_simulation.h \
 simulation/solver/real_time_sync.h \
 simulation/solver/solver_main.h \
 simulation/solver/spatialDistribution.h \

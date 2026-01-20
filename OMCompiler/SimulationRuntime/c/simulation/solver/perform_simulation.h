@@ -1,7 +1,7 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2018, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
@@ -28,33 +28,18 @@
  *
  */
 
-#ifndef DAE_MODE_H
-#define DAE_MODE_H
+#ifndef OMC_PERFORM_SIMULATION_H_
+#define OMC_PERFORM_SIMULATION_H_
 
 #include "../../simulation_data.h"
-
-/* EVAL_DYNAMIC = 1000 */
-extern const int EVAL_DYNAMIC;
-/* EVAL_ALGEBRAIC = 0100 */
-extern const int EVAL_ALGEBRAIC;
-/* EVAL_ZEROCROSS = 0010 */
-extern const int EVAL_ZEROCROSS;
-/* EVAL_DISCRETE = 0001 */
-extern const int EVAL_DISCRETE;
-/* EVAL_ALL = 1111 */
-extern const int EVAL_ALL;
+#include "solver_main.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-int evaluateDAEResiduals_wrapperEventUpdate(DATA* data, threadData_t* threadData);
-int evaluateDAEResiduals_wrapperZeroCrossingsEquations(DATA* data, threadData_t* threadData);
-
-void getAlgebraicDAEVarNominals(DATA*, double*);
-void getAlgebraicDAEVars(DATA*, double*);
-void setAlgebraicDAEVars(DATA*, double*);
-
+void omc_updateContinuousSystem(DATA *data, threadData_t *threadData);
+int omc_performSimulation(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo);
 
 #ifdef __cplusplus
 }

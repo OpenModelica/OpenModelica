@@ -32,6 +32,7 @@
  */
 
 #include <string.h>
+#include <math.h>
 
 #include "../../util/omc_error.h"
 #include "model_help.h"

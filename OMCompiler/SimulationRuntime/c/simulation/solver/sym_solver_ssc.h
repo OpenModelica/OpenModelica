@@ -37,8 +37,6 @@
 #include "../../simulation_data.h"
 #include "solver_main.h"
 
-#include <math.h>
-
 typedef struct DATA_SYM_SOLVER_SSC{
   void* data;
   void* solverData;

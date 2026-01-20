@@ -1,7 +1,7 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
@@ -28,18 +28,36 @@
  *
  */
 
-#include "solver_main.h"
+#include "perform_simulation.h"
+
 #include "events.h"
-#include "dassl.h"
 #include "sym_solver_ssc.h"
+#include "model_help.h"
+#include "../../util/rtclock.h"
 
 #include "../simulation_runtime.h"
 #include "../results/simulation_result.h"
 #include "../../openmodelica_func.h"
-#include "linearSystem.h"
-#include "nonlinearSystem.h"
+
+#if defined(OMC_NUM_MIXED_SYSTEMS) && OMC_NUM_MIXED_SYSTEMS==0
+#define check_mixed_solutions(X,Y) 0
+#else
 #include "mixedSystem.h"
-#include "../../meta/meta_modelica.h"
+#endif
+
+#if defined(OMC_NUM_LINEAR_SYSTEMS) && OMC_NUM_LINEAR_SYSTEMS==0
+#define check_linear_solutions(X,Y) 0
+#else
+#include "linearSystem.h"
+#endif
+
+#if defined(OMC_NUM_NONLINEAR_SYSTEMS) && OMC_NUM_NONLINEAR_SYSTEMS==0
+#define check_nonlinear_solutions(X,Y) 0
+#define cleanUpOldValueListAfterEvent(X,Y)
+#else
+#include "nonlinearSystem.h"
+#endif
+
 #include "dae_mode.h"
 
 #include "../../util/omc_error.h"
@@ -50,7 +68,6 @@
 #include <math.h>
 #include <string.h>
 #include <errno.h>
-#include <float.h>
 
 #include "synchronous.h"
 #if !defined(OMC_MINIMAL_RUNTIME)
@@ -65,7 +82,7 @@
  *
  *  \param [ref] [data]
  */
-static void prefixedName_updateContinuousSystem(DATA *data, threadData_t *threadData)
+void omc_updateContinuousSystem(DATA *data, threadData_t *threadData)
 {
   externalInputUpdate(data);
   data->callback->input_function(data, threadData);
@@ -94,7 +111,7 @@ static fire_timer_t simulationUpdate(DATA* data, threadData_t *threadData, SOLVE
   data->simulationInfo->noThrowAsserts = 1 /* true */;
   data->simulationInfo->needToReThrow = 0 /* false */;
 
-  prefixedName_updateContinuousSystem(data, threadData);
+  omc_updateContinuousSystem(data, threadData);
 
   if (solverInfo->solverMethod == S_SYM_SOLVER_SSC) {
     DATA_SYM_SOLVER_SSC* solverData = (DATA_SYM_SOLVER_SSC*) solverInfo->solverData;
@@ -162,7 +179,7 @@ static fire_timer_t simulationUpdate(DATA* data, threadData_t *threadData, SOLVE
 
   /* Update continous system because hold() needs to be re-evaluated */
   if (timerWasActivated == 1) {
-    prefixedName_updateContinuousSystem(data, threadData);
+    omc_updateContinuousSystem(data, threadData);
   }
 
   /* Add event to spatialDistribution */
@@ -234,8 +251,21 @@ static void fmtInit(DATA* data, MEASURE_TIME* mt)
   }
 }
 
+static void fmtClose(MEASURE_TIME* mt)
+{
+  if (mt->fmtInt) {
+    fclose(mt->fmtInt);
+    mt->fmtInt = NULL;
+  }
+  if (mt->fmtReal) {
+    fclose(mt->fmtReal);
+    mt->fmtReal = NULL;
+  }
+}
+
 static void fmtEmitStep(DATA* data, threadData_t *threadData, MEASURE_TIME* mt, SOLVER_INFO* solverInfo)
 {
+#if !defined(OMC_MINIMAL_RUNTIME)
   if(mt->fmtReal)
   {
     int i, flag=1;
@@ -261,12 +291,10 @@ static void fmtEmitStep(DATA* data, threadData_t *threadData, MEASURE_TIME* mt, 
     if(!flag)
     {
       warningStreamPrint(OMC_LOG_SOLVER, 0, "Disabled time measurements because the output file could not be generated: %s", strerror(errno));
-      fclose(mt->fmtInt);
-      fclose(mt->fmtReal);
-      mt->fmtInt = NULL;
-      mt->fmtReal = NULL;
+      fmtClose(mt);
     }
   }
+#endif
 
   /* prevent emit if noEventEmit flag is used, if it's an event */
   modelica_boolean do_emit = !(omc_flag[FLAG_NOEVENTEMIT] && solverInfo->didEventStep);
@@ -310,20 +338,6 @@ static void fmtEmitStep(DATA* data, threadData_t *threadData, MEASURE_TIME* mt, 
     }
   }
 #endif
-}
-
-static void fmtClose(MEASURE_TIME* mt)
-{
-  if(mt->fmtInt)
-  {
-    fclose(mt->fmtInt);
-    mt->fmtInt = NULL;
-  }
-  if(mt->fmtReal)
-  {
-    fclose(mt->fmtReal);
-    mt->fmtReal = NULL;
-  }
 }
 
 static void checkSimulationTerminated(DATA* data, SOLVER_INFO* solverInfo)
@@ -383,7 +397,7 @@ static void saveIntegratorStats(SOLVER_INFO* solverInfo)
  *
  *  This function performs the simulation controlled by solverInfo.
  */
-int prefixedName_performSimulation(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
+int omc_performSimulation(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
 {
   int retValIntegrator=0;
   int retValue=0;

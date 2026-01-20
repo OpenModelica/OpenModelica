@@ -1,7 +1,7 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
@@ -28,16 +28,37 @@
  *
  */
 
+#include "perform_qss_simulation.h"
+
 #include <stdio.h>
 #include "solver_main.h"
+#include "external_input.h"
+#include "model_help.h"
 
-#include "simulation/simulation_runtime.h"
-#include "simulation/results/simulation_result.h"
-#include "openmodelica_func.h"
+#include "../simulation_runtime.h"
+#include "../results/simulation_result.h"
+#include "../../openmodelica_func.h"
 
-#include "util/omc_error.h"
-#include "simulation/arrayIndex.h"
-#include "simulation/options.h"
+#if defined(OMC_NUM_MIXED_SYSTEMS) && OMC_NUM_MIXED_SYSTEMS==0
+#define check_mixed_solutions(X,Y) 0
+#else
+#include "mixedSystem.h"
+#endif
+
+#if defined(OMC_NUM_LINEAR_SYSTEMS) && OMC_NUM_LINEAR_SYSTEMS==0
+#define check_linear_solutions(X,Y) 0
+#else
+#include "linearSystem.h"
+#endif
+
+#if defined(OMC_NUM_NONLINEAR_SYSTEMS) && OMC_NUM_NONLINEAR_SYSTEMS==0
+#define check_nonlinear_solutions(X,Y) 0
+#else
+#include "nonlinearSystem.h"
+#endif
+
+#include "../../util/omc_error.h"
+#include "../arrayIndex.h"
 
 
 /*! enum error_msg
@@ -69,7 +90,7 @@ static uinteger minStep( const modelica_real* tqp, const uinteger size );
  *
  *  This function performs the simulation controlled by solverInfo.
  */
-int prefixedName_performQSSSimulation(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
+int omc_performQSSSimulation(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
 {
   SIMULATION_INFO *simInfo = data->simulationInfo;
   MODEL_DATA *mData = data->modelData;

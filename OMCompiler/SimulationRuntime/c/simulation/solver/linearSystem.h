@@ -36,7 +36,6 @@
 #define _LINEARSYSTEM_H_
 
 #include "../../simulation_data.h"
-#include "../../util/simulation_options.h"
 
 #ifdef __cplusplus
 extern "C" {

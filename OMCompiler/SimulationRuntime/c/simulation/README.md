@@ -25,7 +25,7 @@ The dashed ODE solvers `Runge Kutta`, `symSolver`, `symSolverSsc` and `QSS` are 
 ### ODE/DAE Solver
 
   - Perfom Simulation:
-    [solver/perform_simulation.c.inc](./solver/perform_simulation.c.inc),
+    [solver/perform_simulation.c](./solver/perform_simulation.c),
     [solver/solver_main.c](./solver/solver_main.c)<br/>
     Main solver routine to integrate ODE/DAE system using one of the following
     solvers:
@@ -44,7 +44,7 @@ The dashed ODE solvers `Runge Kutta`, `symSolver`, `symSolverSsc` and `QSS` are 
       solver.
 
    - QSS:
-     [solver/perform_qss_simulation.c.inc](./solver/perform_qss_simulation.c.inc)<br/>
+     [solver/perform_qss_simulation.c](./solver/perform_qss_simulation.c)<br/>
      Quantized State System (QSS) solver for sparse ODE systems.
 
 ### Non-Linear Solver
