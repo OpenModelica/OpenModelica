@@ -266,8 +266,8 @@ typedef struct REAL_ATTRIBUTE
 {
   modelica_string unit;                /* = "" */
   modelica_string displayUnit;         /* = "" */
-  modelica_real min;                   /* = -Inf */
-  modelica_real max;                   /* = +Inf */
+  real_array min;                      /* = {-Inf} */
+  real_array max;                      /* = {+Inf} */
   modelica_boolean fixed;              /* depends on the type */
   modelica_boolean useNominal;         /* = false */
   real_array nominal;                  /* = {1.0} */
@@ -793,7 +793,7 @@ typedef struct SIMULATION_INFO
   modelica_real minStepSize;           /* defines the minimal step size */
   modelica_real tolerance;
   const char *solverMethod;
-  const char *outputFormat;
+  const char *outputFormat;           /* Output format: "mat", "csv", "plt", "empty" */
   const char *variableFilter;
 
   double loggingTimeRecord[2];         /* Time interval in which logging is active. Only used if useLoggingTime=1 */

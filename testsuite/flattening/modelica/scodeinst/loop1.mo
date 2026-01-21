@@ -15,6 +15,7 @@ end A;
 
 // Result:
 // Error processing file: loop1.mo
+// [flattening/modelica/scodeinst/loop1.mo:11:3-11:25:writable] Notification: From here:
 // [flattening/modelica/scodeinst/loop1.mo:12:3-12:24:writable] Error: Dimension 1 of x, 'i', could not be evaluated due to a cyclic dependency.
 //
 // # Error encountered! Exiting...

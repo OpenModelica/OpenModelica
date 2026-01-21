@@ -29,9 +29,10 @@
  */
 
 #include "simulation_data.h"
+#include "simulation/arrayIndex.h"
 #include "simulation/simulation_runtime.h"
-#include "simulation/solver/gbode_main.h"
 #include "simulation/solver/external_input.h"
+#include "simulation/solver/gbode_main.h"
 
 #include <nlp/instances/gdop/gdop.h>
 
@@ -259,8 +260,8 @@ GDOP::Problem create_gdop(InfoGDOP& info, Mesh& mesh) {
     FixedVector<Bounds> p_bounds(info.p_size);
 
     for (int x = 0; x < info.x_size; x++) {
-        x_bounds[x].lb = data->modelData->realVarsData[x].attribute.min;
-        x_bounds[x].ub = data->modelData->realVarsData[x].attribute.max;
+        x_bounds[x].lb = getMinFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, VAR_KIND_STATE, x);
+        x_bounds[x].ub = getMaxFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, VAR_KIND_STATE, x);
     }
 
     /* new generated function getInputVarIndices, just fills the index list of all optimizable inputs */
@@ -268,8 +269,8 @@ GDOP::Problem create_gdop(InfoGDOP& info, Mesh& mesh) {
     data->callback->getInputVarIndicesInOptimization(data, info.u_indices_real_vars.raw());
     for (int u = 0; u < info.u_size; u++) {
         int u_index = info.u_indices_real_vars[u];
-        u_bounds[u].lb = data->modelData->realVarsData[u_index].attribute.min;
-        u_bounds[u].ub = data->modelData->realVarsData[u_index].attribute.max;
+        u_bounds[u].lb = getMinFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, VAR_KIND_VARIABLE, u_index);
+        u_bounds[u].ub = getMaxFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, VAR_KIND_VARIABLE, u_index);
     }
 
     /* constraint sizes */
@@ -299,13 +300,13 @@ GDOP::Problem create_gdop(InfoGDOP& info, Mesh& mesh) {
     info.index_g_real_vars = data->modelData->nVariablesReal - (info.g_size + info.r_size);
     info.index_r_real_vars = data->modelData->nVariablesReal - info.r_size;
     for (int g = 0; g < info.g_size; g++) {
-        g_bounds[g].lb = data->modelData->realVarsData[info.index_g_real_vars + g].attribute.min;
-        g_bounds[g].ub = data->modelData->realVarsData[info.index_g_real_vars + g].attribute.max;
+        g_bounds[g].lb = getMinFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, VAR_KIND_VARIABLE, info.index_g_real_vars + g);
+        g_bounds[g].ub = getMaxFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, VAR_KIND_VARIABLE, info.index_g_real_vars + g);
     }
 
     for (int r = 0; r < info.r_size; r++) {
-        r_bounds[r].lb = data->modelData->realVarsData[info.index_r_real_vars + r].attribute.min;
-        r_bounds[r].ub = data->modelData->realVarsData[info.index_r_real_vars + r].attribute.max;
+        r_bounds[r].lb = getMinFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, VAR_KIND_VARIABLE, info.index_r_real_vars + r);
+        r_bounds[r].ub = getMaxFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, VAR_KIND_VARIABLE, info.index_r_real_vars + r);
     }
 
     /* for now we ignore xf fixed (need some steps in Backend to detect)
@@ -321,12 +322,7 @@ GDOP::Problem create_gdop(InfoGDOP& info, Mesh& mesh) {
 
     /* set *fixed* initial, final states */
     for (int x = 0; x < info.x_size; x++) {
-        if (data->modelData->realVarsData[x].dimension.numberOfDimensions > 0) {
-            Log::error("Support for array variables not yet implemented!");
-            abort();
-        }
-
-        xu0_fixed[x] = real_get(data->modelData->realVarsData[x].attribute.start, 0);
+        xu0_fixed[x] = getStartFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, VAR_KIND_VARIABLE, x);
     }
 
     /* u0 never fixed for now - let the solver calculate it from u_{0,1} ... u_{0, m} */
