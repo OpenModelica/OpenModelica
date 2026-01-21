@@ -8872,7 +8872,7 @@ algorithm
   end if;
   try
     unit := Unit.parseUnitString(deriv.unit);
-    unit := Unit.unitDiv(unit, Unit.UNIT(1e0, 0, 0, 0, 1, 0, 0, 0));
+    unit := Unit.unitDiv(unit, NFUnit.SECOND);
     deriv.unit := Unit.unitString(unit);
   else
     deriv.unit := "";
@@ -9901,8 +9901,8 @@ protected
   Integer mol, cd, m, s, A, K, kg;
   Real factor;
 algorithm
-  Unit.UNIT(factor, mol, cd, m, s, A, K, kg) := unit;
-  baseUnit := SimCode.BASEUNIT(mol, cd, m, s, A, K, kg, factor*10^(-3*kg), 0.0);
+  Unit.UNIT(s, m, kg, A, K, mol, cd, factor) := unit;
+  baseUnit := SimCode.BASEUNIT(s, m, kg, A, K, mol, cd, factor*10^(-3*kg), 0.0);
 end transformUnitToBaseUnit;
 
 public function createCrefToSimVarHT "author: unknown and marcusw
