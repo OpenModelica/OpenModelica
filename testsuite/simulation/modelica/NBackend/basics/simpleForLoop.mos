@@ -2,18 +2,18 @@
 // keywords: NewBackend
 // status: correct
 
+setCommandLineOptions("--newBackend --simCodeScalarize=false"); getErrorString();
+
 loadString("
 model simpleForLoop
-  parameter Integer N=100;
-  Real[N] x (each start=1, each fixed = true);
+  parameter Integer N=100 \"Size of array x.\";
+  Real[N] x (each start=1, each fixed = true) \"Array with states\";
 equation
   for i in 1:N loop
     der(x[i]) = 1/i * x[i];
    end for;
 end simpleForLoop;
 "); getErrorString();
-
-setCommandLineOptions("--newBackend"); getErrorString();
 
 simulate(simpleForLoop); getErrorString();
 
