@@ -1,7 +1,7 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
@@ -80,6 +80,7 @@ end Unit;
 
 public constant Unit ONE = UNIT(0, 0, 0, 0, 0, 0, 0, 1e0);
 public constant Unit SECOND = UNIT(1, 0, 0, 0, 0, 0, 0, 1e0);
+//public constant Unit THRICE = ?
 
 protected uniontype Token
   record T_NUMBER
@@ -102,6 +103,8 @@ public constant ComponentRef UPDATECREF = ComponentRef.CREF(InstNode.NAME_NODE("
 /* from https://www.bipm.org/documents/d/guest/si-brochure-9-en-pdf */
 public constant list<tuple<String, Unit>> LU_COMPLEXUNITS = {
   /*                 s, m, g, A, K,mol,cd,factor */
+  ("1",         UNIT(0, 0, 0, 0, 0, 0, 0, 1e0)), // 1
+
   /* base units */
   ("s",         UNIT(1, 0, 0, 0, 0, 0, 0, 1e0)), // second
   ("m",         UNIT(0, 1, 0, 0, 0, 0, 0, 1e0)), // meter
@@ -152,15 +155,13 @@ public constant list<tuple<String, Unit>> LU_COMPLEXUNITS = {
 
   /* custom units */
   ("bar",       UNIT(-2,-1,1, 0, 0, 0, 0, 1e8)), // bar = 100kPa
-  ("degF",      UNIT(0, 0, 0, 0, 0, 0, 1, 0.5555555555555556)),//°Fahrenheit
+  ("degF",      UNIT(0, 0, 0, 0, 0, 0, 1, 0.5555555555555556))//°Fahrenheit
 //("VA",        UNIT(1e3, 0, 0, 2,-3, 0, 0, 1)), //Voltampere=Watt
 //("var",       UNIT(1e3, 0, 0, 2,-3, 0, 0, 1)), //Var=Watt
 //("R",         UNIT(2.58e-7, 0, 0, 0, 1, 1, 0,-1)), //Röntgen    2, 58*10^-4 C/kg
 //("phon",      UNIT(1e0, 0, 0, 0, 0, 0, 0, 0)), //Phon
 //("sone",      UNIT(1e0, 0, 0, 0, 0, 0, 0, 0)), //Sone
-
-  ("1",         UNIT(0, 0, 0, 0, 0, 0, 0, 1e0))}; // 1
-/*                   s, m, g, A, K,mol,cd,fac */
+};
 
 public function getKnownUnits
   output StringToUnitTable outKnownUnits;
