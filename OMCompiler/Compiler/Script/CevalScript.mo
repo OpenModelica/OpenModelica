@@ -497,6 +497,8 @@ algorithm
         end if;
       end if;
 
+      checkPatchedModelicaServices(AbsynUtil.pathFirstIdent(path), pnew);
+
       if notifyLoad and not forceLoad then
         version := getPackageVersion(path, pnew);
         msgTokens := {AbsynUtil.pathString(path), version, requestedBy};
@@ -596,6 +598,35 @@ algorithm
     Error.addMessage(Error.LOAD_MODEL_DIFFERENT_VERSIONS_OLDER, {pathStr, version, actualVersionStr});
   end if;
 end checkValidVersion;
+
+protected function checkPatchedModelicaServices
+  "Checks if the library is ModelicaServices, and issues a warning if it
+   doesn't appear to have been patched for use with OpenModelica."
+  input String name;
+  input Absyn.Program program;
+protected
+  Absyn.Class cls;
+  Absyn.Algorithm alg;
+  Absyn.ComponentRef fn;
+algorithm
+  if name == "ModelicaServices" then
+    try
+      // Try to look up ModelicaServices.ExternalReferences.loadResource.
+      cls := InteractiveUtil.getPathedClassInProgram(Absyn.Path.QUALIFIED("ModelicaServices",
+        Absyn.Path.QUALIFIED("ExternalReferences", Absyn.Path.IDENT("loadResource"))), program);
+      // Check if the first statement in the first algorithm section is a function call.
+      Absyn.ClassPart.ALGORITHMS(contents = {Absyn.AlgorithmItem.ALGORITHMITEM(algorithm_ = alg)}) :=
+        List.find(AbsynUtil.getClassPartsInClass(cls), AbsynUtil.isAlgorithmSection);
+      Absyn.Algorithm.ALG_ASSIGN(value = Absyn.Exp.CALL(function_ = fn)) := alg;
+
+      // Issue a warning if that function call is not a call to our uriToFilename.
+      if AbsynUtil.crefString(fn) <> "OpenModelica.Scripting.uriToFilename" then
+        Error.addMessage(Error.UNPATCHED_MODELICA_SERVICES, {});
+      end if;
+    else
+    end try;
+  end if;
+end checkPatchedModelicaServices;
 
 public function cevalInteractiveFunctions
 "defined in the interactive environment."
