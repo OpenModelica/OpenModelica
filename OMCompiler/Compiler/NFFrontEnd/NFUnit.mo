@@ -108,7 +108,7 @@ public constant list<tuple<String, Unit>> LU_COMPLEXUNITS = {
   /* base units */
   ("s",         UNIT(1, 0, 0, 0, 0, 0, 0, 1e0)), // second
   ("m",         UNIT(0, 1, 0, 0, 0, 0, 0, 1e0)), // meter
-  ("g",         UNIT(0, 0, 1, 0, 0, 0, 0, 1e3)), // gram
+  ("g",         UNIT(0, 0, 1, 0, 0, 0, 0, 1e0)), // gram
   ("A",         UNIT(0, 0, 0, 1, 0, 0, 0, 1e0)), // ampere
   ("K",         UNIT(0, 0, 0, 0, 1, 0, 0, 1e0)), // kelvin
   ("mol",       UNIT(0, 0, 0, 0, 0, 1, 0, 1e0)), // mole
