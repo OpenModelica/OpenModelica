@@ -319,7 +319,7 @@ static void gbInternal_evalJacobian(DATA *data, threadData_t *threadData, DATA_G
           delta_hh[state] = 1. / delta_hh[state];
         }
       }
-      gbode_fODE(data, threadData, NULL);
+      gbode_fODE(data, threadData, NULL, NULL);
 
       for (int state = 0; state < nStates; state++)
       {
@@ -597,7 +597,7 @@ static NLS_SOLVER_STATUS gbInternalSolveNls_DIRK(DATA *data,
       data->localData[0]->timeValue = gbData->time;
 
       /* callback ODE + callback Jacobian of ODE -> nls_jacobian buffer */
-      gbode_fODE(data, threadData, &(gbData->stats.nCallsODE));
+      gbode_fODE(data, threadData, &(gbData->stats.nCallsODE), NULL);
       gbInternal_evalJacobian(data, threadData, gbData, nls);
 
       jac_called = TRUE;
@@ -693,7 +693,7 @@ static NLS_SOLVER_STATUS gbInternalSolveNls_DIRK(DATA *data,
       data->localData[0]->timeValue = gbData->time + gbData->tableau->c[stage] * gbData->stepSize;
 
       /* callback ODE + callback Jacobian of ODE -> nls_jacobian buffer */
-      gbode_fODE(data, threadData, &(gbData->stats.nCallsODE));
+      gbode_fODE(data, threadData, &(gbData->stats.nCallsODE), NULL);
       gbInternal_evalJacobian(data, threadData, gbData, nls);
 
       jacobian_SR_DIRK_assemble(data, threadData, gbData, nls, jacobian_ODE,
@@ -849,7 +849,7 @@ static NLS_SOLVER_STATUS gbInternalSolveNls_T_Transform(DATA *data,
     data->localData[0]->timeValue = gbData->time;
 
     /* callback ODE + callback Jacobian of ODE -> nls_jacobian buffer */
-    gbode_fODE(data, threadData, &(gbData->stats.nCallsODE));
+    gbode_fODE(data, threadData, &(gbData->stats.nCallsODE), NULL);
 
     if (transform->firstRowZero)
     {
@@ -931,7 +931,7 @@ static NLS_SOLVER_STATUS gbInternalSolveNls_T_Transform(DATA *data,
       memcpy(data->localData[0]->realVars, x0, size * sizeof(double));
       daxpy_(&size, &DBL_ONE, &nls->Z[j * size], &INT_ONE, data->localData[0]->realVars, &INT_ONE);
       data->localData[0]->timeValue = gbData->time + gbData->tableau->c[j + (int)transform->firstRowZero] * gbData->stepSize;
-      gbode_fODE(data, threadData, &(gbData->stats.nCallsODE));
+      gbode_fODE(data, threadData, &(gbData->stats.nCallsODE), NULL);
       memcpy(&nls->work[j * size], &data->localData[0]->realVars[size], size * sizeof(double));
     }
 
@@ -1066,7 +1066,7 @@ static NLS_SOLVER_STATUS gbInternalSolveNls_T_Transform(DATA *data,
 
         memcpy(data->localData[0]->realVars, &x[size * s_minus1], size * sizeof(double));
         data->localData[0]->timeValue = gbData->time + gbData->stepSize * nls->tabl->c[s_minus1];
-        gbode_fODE(data, threadData, &(gbData->stats.nCallsODE));
+        gbode_fODE(data, threadData, &(gbData->stats.nCallsODE), NULL);
 
         // k_s = f(t + h * c_s, x0 + h * sum{j=1}^{s-1} A_{s, j} * k_j)
         memcpy(&gbData->k[size * s_minus1], &data->localData[0]->realVars[size], size * sizeof(double));

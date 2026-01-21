@@ -48,7 +48,7 @@
  *                                  NULL if not available.
  * @param sparsePattern             Pointer to sparsity pattern of Jacobian.
  */
-void initJacobian(JACOBIAN* jacobian, unsigned int sizeCols, unsigned int sizeRows, unsigned int sizeTmpVars, jacobianColumn_func_ptr evalColumn, jacobianColumn_func_ptr constantEqns, SPARSE_PATTERN* sparsePattern)
+void initJacobian(JACOBIAN* jacobian, unsigned int sizeCols, unsigned int sizeRows, unsigned int sizeTmpVars, EVAL_DAG* dag, jacobianColumn_func_ptr evalColumn, jacobianColumn_func_ptr constantEqns, SPARSE_PATTERN* sparsePattern)
 {
   jacobian->sizeCols = sizeCols;
   jacobian->sizeRows = sizeRows;
@@ -56,6 +56,8 @@ void initJacobian(JACOBIAN* jacobian, unsigned int sizeCols, unsigned int sizeRo
   jacobian->seedVars = (modelica_real*) calloc(sizeCols, sizeof(modelica_real));
   jacobian->resultVars = (modelica_real*) calloc(sizeRows, sizeof(modelica_real));
   jacobian->tmpVars = (modelica_real*) calloc(sizeTmpVars, sizeof(modelica_real));
+  jacobian->dag = dag;
+  jacobian->evalSelection = NULL;
   jacobian->evalColumn = evalColumn;
   jacobian->constantEqns = constantEqns;
   jacobian->sparsePattern = sparsePattern;
@@ -66,7 +68,7 @@ void initJacobian(JACOBIAN* jacobian, unsigned int sizeCols, unsigned int sizeRo
 /**
  * @brief Copy analytic Jacobian.
  *
- * Sparsity pattern is not copied, only the pointer to it.
+ * Sparsity pattern and DAG are not copied, only their pointers.
  *
  * @param source                  Jacobian that should be copied.
  * @return JACOBIAN*              Copy of source.
@@ -78,6 +80,7 @@ JACOBIAN* copyJacobian(JACOBIAN* source)
     source->sizeCols,
     source->sizeRows,
     source->sizeTmpVars,
+    source->dag,
     source->evalColumn,
     source->constantEqns,
     source->sparsePattern);
@@ -102,6 +105,25 @@ void freeJacobian(JACOBIAN *jac)
   free(jac->resultVars); jac->resultVars = NULL;
   freeSparsePattern(jac->sparsePattern);
   free(jac->sparsePattern); jac->sparsePattern = NULL;
+  freeEvalDAG(jac->dag); jac->dag = NULL;
+}
+
+/**
+ * @brief Free memory of analytic Jacobian.
+ *
+ * Does not free sparsity pattern and DAG.
+ * Call this for Jacobians that were copied from another Jacobian.
+ *
+ * @param jac   Pointer to Jacobian.
+ */
+void freeJacobianCopy(JACOBIAN *jac)
+{
+  if (jac == NULL) {
+    return;
+  }
+  free(jac->seedVars); jac->seedVars = NULL;
+  free(jac->tmpVars); jac->tmpVars = NULL;
+  free(jac->resultVars); jac->resultVars = NULL;
 }
 
 /*! \fn evalJacobian
