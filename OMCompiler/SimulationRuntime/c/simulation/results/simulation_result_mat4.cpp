@@ -918,19 +918,25 @@ void writeDataInfo(simulation_result *self, mat_data *matData, const MODEL_DATA 
     cur++;
   }
 
-  for (int i = 0; i < mData->nVariablesReal; i++)
+  /* Real variables */
+  for (int arrayIdx = 0, scalarIdx = 0; arrayIdx < mData->nVariablesRealArray; arrayIdx++)
   {
-    if (!mData->realVarsData[i].filterOutput)
+    if (!mData->realVarsData[arrayIdx].filterOutput)
     {
-      realLookup[i] = cur;
-      dataInfo[cur].channel = mData->realVarsData[i].time_unvarying ? CHANNEL_TIME_INVARIANT : CHANNEL_TIME_VARIANT;
-      dataInfo[cur].index = mData->realVarsData[i].time_unvarying ? ++index_time_invariant : ++index_time_variant;
-      dataInfo[cur].interpolation = INTERPOLATION_LINEAR;
-      dataInfo[cur].extrapolation = EXTRAPOLATION_CONSTANT;
-      cur++;
+      for (int j = 0; j < mData->realVarsData[arrayIdx].dimension.scalar_length; j++)
+      {
+        realLookup[scalarIdx] = cur;
+        dataInfo[cur].channel = mData->realVarsData[arrayIdx].time_unvarying ? CHANNEL_TIME_INVARIANT : CHANNEL_TIME_VARIANT;
+        dataInfo[cur].index = mData->realVarsData[arrayIdx].time_unvarying ? ++index_time_invariant : ++index_time_variant;
+        dataInfo[cur].interpolation = INTERPOLATION_LINEAR;
+        dataInfo[cur].extrapolation = EXTRAPOLATION_CONSTANT;
+        cur++;
+        scalarIdx++;
+      }
     }
   }
 
+  /* Sensitivity parameters */
   if (omc_flag[FLAG_IDAS])
   {
     for (int i = mData->nSensitivityParamVars; i < mData->nSensitivityVars; i++)
@@ -943,191 +949,267 @@ void writeDataInfo(simulation_result *self, mat_data *matData, const MODEL_DATA 
     }
   }
 
-  for (int i = 0; i < mData->nVariablesInteger; i++)
+  /* Integer variables */
+  for (int arrayIdx = 0, scalarIdx = 0; arrayIdx < mData->nVariablesIntegerArray; arrayIdx++)
   {
-    if (!mData->integerVarsData[i].filterOutput)
+    if (!mData->integerVarsData[arrayIdx].filterOutput)
     {
-      integerLookup[i] = cur;
-      dataInfo[cur].channel = mData->integerVarsData[i].time_unvarying ? CHANNEL_TIME_INVARIANT : CHANNEL_TIME_VARIANT;
-      dataInfo[cur].index = mData->integerVarsData[i].time_unvarying ? ++index_time_invariant : ++index_time_variant;
-      dataInfo[cur].interpolation = INTERPOLATION_LINEAR;
-      dataInfo[cur].extrapolation = EXTRAPOLATION_CONSTANT;
-      cur++;
-    }
-  }
-
-  for (int i = 0; i < mData->nVariablesBoolean; i++)
-  {
-    if (!mData->booleanVarsData[i].filterOutput)
-    {
-      boolLookup[i] = cur;
-      dataInfo[cur].channel = mData->booleanVarsData[i].time_unvarying ? CHANNEL_TIME_INVARIANT : CHANNEL_TIME_VARIANT;
-      dataInfo[cur].index = mData->booleanVarsData[i].time_unvarying ? ++index_time_invariant : ++index_time_variant;
-      dataInfo[cur].interpolation = INTERPOLATION_LINEAR;
-      dataInfo[cur].extrapolation = EXTRAPOLATION_CONSTANT;
-      cur++;
-    }
-  }
-
-  for (int i = 0; i < mData->nParametersReal; i++)
-  {
-    if (!mData->realParameterData[i].filterOutput)
-    {
-      realParameterLookup[i] = cur;
-      dataInfo[cur].channel = CHANNEL_TIME_INVARIANT;
-      dataInfo[cur].index = ++index_time_invariant;
-      dataInfo[cur].interpolation = INTERPOLATION_LINEAR;
-      dataInfo[cur].extrapolation = EXTRAPOLATION_CONSTANT;
-      cur++;
-    }
-  }
-
-  for (int i = 0; i < mData->nParametersInteger; i++)
-  {
-    if (!mData->integerParameterData[i].filterOutput)
-    {
-      integerParameterLookup[i] = cur;
-      dataInfo[cur].channel = CHANNEL_TIME_INVARIANT;
-      dataInfo[cur].index = ++index_time_invariant;
-      dataInfo[cur].interpolation = INTERPOLATION_LINEAR;
-      dataInfo[cur].extrapolation = EXTRAPOLATION_CONSTANT;
-      cur++;
-    }
-  }
-
-  for (int i = 0; i < mData->nParametersBoolean; i++)
-  {
-    if (!mData->booleanParameterData[i].filterOutput)
-    {
-      boolParameterLookup[i] = cur;
-      dataInfo[cur].channel = CHANNEL_TIME_INVARIANT;
-      dataInfo[cur].index = ++index_time_invariant;
-      dataInfo[cur].interpolation = INTERPOLATION_LINEAR;
-      dataInfo[cur].extrapolation = EXTRAPOLATION_CONSTANT;
-      cur++;
-    }
-  }
-
-  for (int i = 0; i < mData->nAliasReal; i++)
-  {
-    if (!mData->realAlias[i].filterOutput)
-    {
-      if (mData->realAlias[i].aliasType == ALIAS_TYPE_VARIABLE)
-      { /* variable */
-        dataInfo[cur].channel = dataInfo[realLookup[mData->realAlias[i].nameID]].channel;
-        dataInfo[cur].index = dataInfo[realLookup[mData->realAlias[i].nameID]].index;
-        dataInfo[cur].interpolation = dataInfo[realLookup[mData->realAlias[i].nameID]].interpolation;
-        dataInfo[cur].extrapolation = dataInfo[realLookup[mData->realAlias[i].nameID]].extrapolation;
-
-        if (mData->realAlias[i].negate)
-        {
-          dataInfo[cur].index = -dataInfo[cur].index;
-        }
-        cur++;
-      }
-      else if (mData->realAlias[i].aliasType == ALIAS_TYPE_PARAMETER)
-      { /* parameter */
-        dataInfo[cur].channel = dataInfo[realParameterLookup[mData->realAlias[i].nameID]].channel;
-        dataInfo[cur].index = dataInfo[realParameterLookup[mData->realAlias[i].nameID]].index;
-        dataInfo[cur].interpolation = dataInfo[realParameterLookup[mData->realAlias[i].nameID]].interpolation;
-        dataInfo[cur].extrapolation = dataInfo[realParameterLookup[mData->realAlias[i].nameID]].extrapolation;
-
-        if (mData->realAlias[i].negate)
-        {
-          dataInfo[cur].index = -dataInfo[cur].index;
-        }
-        cur++;
-      }
-      else if (mData->realAlias[i].aliasType == ALIAS_TYPE_TIME)
-      { /* time */
-        dataInfo[cur].channel = CHANNEL_TIME_VARIANT;
-        dataInfo[cur].index = 1;
+      for (int j = 0; j < mData->integerVarsData[arrayIdx].dimension.scalar_length; j++)
+      {
+        integerLookup[scalarIdx] = cur;
+        dataInfo[cur].channel = mData->integerVarsData[arrayIdx].time_unvarying ? CHANNEL_TIME_INVARIANT : CHANNEL_TIME_VARIANT;
+        dataInfo[cur].index = mData->integerVarsData[arrayIdx].time_unvarying ? ++index_time_invariant : ++index_time_variant;
         dataInfo[cur].interpolation = INTERPOLATION_LINEAR;
-        dataInfo[cur].extrapolation = EXTRAPOLATION_NOT_ALLOWED;
-
-        if (mData->realAlias[i].negate)
-        {
-          dataInfo[cur].index = -dataInfo[cur].index;
-        }
+        dataInfo[cur].extrapolation = EXTRAPOLATION_CONSTANT;
         cur++;
+        scalarIdx++;
       }
     }
   }
 
-  for (int i = 0; i < mData->nAliasInteger; i++)
+  /* Boolean variables */
+  for (int arrayIdx = 0, scalarIdx = 0; arrayIdx < mData->nVariablesBooleanArray; arrayIdx++)
   {
-    if (!mData->integerAlias[i].filterOutput)
+    if (!mData->booleanVarsData[arrayIdx].filterOutput)
     {
-      if (mData->integerAlias[i].aliasType == ALIAS_TYPE_VARIABLE)
-      { /* variable */
-        dataInfo[cur].channel = dataInfo[integerLookup[mData->integerAlias[i].nameID]].channel;
-        dataInfo[cur].index = dataInfo[integerLookup[mData->integerAlias[i].nameID]].index;
-        dataInfo[cur].interpolation = dataInfo[integerLookup[mData->integerAlias[i].nameID]].interpolation;
-        dataInfo[cur].extrapolation = dataInfo[integerLookup[mData->integerAlias[i].nameID]].extrapolation;
-
-        if (mData->integerAlias[i].negate)
-        {
-          dataInfo[cur].index = -dataInfo[cur].index;
-        }
+      for (int j = 0; j < mData->booleanVarsData[arrayIdx].dimension.scalar_length; j++)
+      {
+        boolLookup[scalarIdx] = cur;
+        dataInfo[cur].channel = mData->booleanVarsData[arrayIdx].time_unvarying ? CHANNEL_TIME_INVARIANT : CHANNEL_TIME_VARIANT;
+        dataInfo[cur].index = mData->booleanVarsData[arrayIdx].time_unvarying ? ++index_time_invariant : ++index_time_variant;
+        dataInfo[cur].interpolation = INTERPOLATION_LINEAR;
+        dataInfo[cur].extrapolation = EXTRAPOLATION_CONSTANT;
         cur++;
-      }
-      else if (mData->integerAlias[i].aliasType == ALIAS_TYPE_PARAMETER)
-      { /* parameter */
-        dataInfo[cur].channel = dataInfo[integerParameterLookup[mData->integerAlias[i].nameID]].channel;
-        dataInfo[cur].index = dataInfo[integerParameterLookup[mData->integerAlias[i].nameID]].index;
-        dataInfo[cur].interpolation = dataInfo[integerParameterLookup[mData->integerAlias[i].nameID]].interpolation;
-        dataInfo[cur].extrapolation = dataInfo[integerParameterLookup[mData->integerAlias[i].nameID]].extrapolation;
-
-        if (mData->integerAlias[i].negate)
-        {
-          dataInfo[cur].index = -dataInfo[cur].index;
-        }
-        cur++;
+        scalarIdx++;
       }
     }
   }
 
-  for (int i = 0; i < mData->nAliasBoolean; i++)
+  /* Real parameters */
+  for (int arrayIdx = 0, scalarIdx = 0; arrayIdx < mData->nParametersRealArray; arrayIdx++)
   {
-    if (!mData->booleanAlias[i].filterOutput)
+    if (!mData->realParameterData[arrayIdx].filterOutput)
     {
-      if (mData->booleanAlias[i].aliasType == ALIAS_TYPE_VARIABLE)
-      { /* variable */
-        if (mData->booleanAlias[i].negate)
+      for (int j = 0; j < mData->realParameterData[arrayIdx].dimension.scalar_length; j++)
+      {
+        realParameterLookup[scalarIdx] = cur;
+        dataInfo[cur].channel = CHANNEL_TIME_INVARIANT;
+        dataInfo[cur].index = ++index_time_invariant;
+        dataInfo[cur].interpolation = INTERPOLATION_LINEAR;
+        dataInfo[cur].extrapolation = EXTRAPOLATION_CONSTANT;
+        cur++;
+        scalarIdx++;
+      }
+    }
+  }
+
+  /* Integer parameters */
+  for (int arrayIdx = 0, scalarIdx = 0; arrayIdx < mData->nParametersIntegerArray; arrayIdx++)
+  {
+    if (!mData->integerParameterData[arrayIdx].filterOutput)
+    {
+      for (int j = 0; j < mData->integerParameterData[arrayIdx].dimension.scalar_length; j++)
+      {
+        integerParameterLookup[scalarIdx] = cur;
+        dataInfo[cur].channel = CHANNEL_TIME_INVARIANT;
+        dataInfo[cur].index = ++index_time_invariant;
+        dataInfo[cur].interpolation = INTERPOLATION_LINEAR;
+        dataInfo[cur].extrapolation = EXTRAPOLATION_CONSTANT;
+        cur++;
+        scalarIdx++;
+      }
+    }
+  }
+
+  /* Boolean parameters */
+  for (int arrayIdx = 0, scalarIdx = 0; arrayIdx < mData->nParametersBooleanArray; arrayIdx++)
+  {
+    if (!mData->booleanParameterData[arrayIdx].filterOutput)
+    {
+      for (int j = 0; j < mData->booleanParameterData[arrayIdx].dimension.scalar_length; j++)
+      {
+        boolParameterLookup[scalarIdx] = cur;
+        dataInfo[cur].channel = CHANNEL_TIME_INVARIANT;
+        dataInfo[cur].index = ++index_time_invariant;
+        dataInfo[cur].interpolation = INTERPOLATION_LINEAR;
+        dataInfo[cur].extrapolation = EXTRAPOLATION_CONSTANT;
+        cur++;
+        scalarIdx++;
+      }
+    }
+  }
+
+  /* Real alias */
+  for (int arrayIdx = 0, scalarIdx = 0; arrayIdx < mData->nAliasRealArray; arrayIdx++)
+  {
+    if (!mData->realAlias[arrayIdx].filterOutput)
+    {
+      /* Determine scalar length depending on alias type */
+      size_t aliasScalarLength = 1;
+      switch (mData->realAlias[arrayIdx].aliasType)
+      {
+      case ALIAS_TYPE_VARIABLE:
+        aliasScalarLength = mData->realVarsData[mData->realAlias[arrayIdx].nameID].dimension.scalar_length;
+        break;
+      case ALIAS_TYPE_PARAMETER:
+        aliasScalarLength = mData->realParameterData[mData->realAlias[arrayIdx].nameID].dimension.scalar_length;
+        break;
+      case ALIAS_TYPE_TIME:
+        aliasScalarLength = 1;
+        break;
+      default:
+        throwStreamPrint(NULL, "writeDataInfo: Unknown alias type for real alias.");
+      }
+
+      for (int j = 0; j < (int)aliasScalarLength; j++)
+      {
+        switch (mData->realAlias[arrayIdx].aliasType)
         {
+        case ALIAS_TYPE_VARIABLE:
+          dataInfo[cur].channel = dataInfo[realLookup[mData->realAlias[arrayIdx].nameID]].channel;
+          dataInfo[cur].index = dataInfo[realLookup[mData->realAlias[arrayIdx].nameID]].index;
+          dataInfo[cur].interpolation = dataInfo[realLookup[mData->realAlias[arrayIdx].nameID]].interpolation;
+          dataInfo[cur].extrapolation = dataInfo[realLookup[mData->realAlias[arrayIdx].nameID]].extrapolation;
+          break;
+
+        case ALIAS_TYPE_PARAMETER:
+          dataInfo[cur].channel = dataInfo[realParameterLookup[mData->realAlias[arrayIdx].nameID]].channel;
+          dataInfo[cur].index = dataInfo[realParameterLookup[mData->realAlias[arrayIdx].nameID]].index;
+          dataInfo[cur].interpolation = dataInfo[realParameterLookup[mData->realAlias[arrayIdx].nameID]].interpolation;
+          dataInfo[cur].extrapolation = dataInfo[realParameterLookup[mData->realAlias[arrayIdx].nameID]].extrapolation;
+          break;
+
+        case ALIAS_TYPE_TIME:
           dataInfo[cur].channel = CHANNEL_TIME_VARIANT;
-          dataInfo[cur].index = ++index_time_variant;
+          dataInfo[cur].index = 1;
           dataInfo[cur].interpolation = INTERPOLATION_LINEAR;
-          dataInfo[cur].extrapolation = EXTRAPOLATION_CONSTANT;
-          cur++;
+          dataInfo[cur].extrapolation = EXTRAPOLATION_NOT_ALLOWED;
+          break;
+
+        default:
+          throwStreamPrint(NULL, "writeDataInfo: Unknown alias type for real alias.");
         }
-        else
+        if (mData->realAlias[arrayIdx].negate)
         {
-          dataInfo[cur].channel = dataInfo[boolLookup[mData->booleanAlias[i].nameID]].channel;
-          dataInfo[cur].index = dataInfo[boolLookup[mData->booleanAlias[i].nameID]].index;
-          dataInfo[cur].interpolation = dataInfo[boolLookup[mData->booleanAlias[i].nameID]].interpolation;
-          dataInfo[cur].extrapolation = dataInfo[boolLookup[mData->booleanAlias[i].nameID]].extrapolation;
-          cur++;
+          dataInfo[cur].index = -dataInfo[cur].index;
         }
+
+        cur++;
+        scalarIdx++;
       }
-      else if (mData->booleanAlias[i].aliasType == ALIAS_TYPE_PARAMETER)
-      { /* parameter */
-        if (mData->booleanAlias[i].negate)
+    }
+  }
+
+  /* Integer alias */
+  for (int arrayIdx = 0, scalarIdx = 0; arrayIdx < mData->nAliasIntegerArray; arrayIdx++)
+  {
+    if (!mData->integerAlias[arrayIdx].filterOutput)
+    {
+      /* Determine scalar length depending on alias type */
+      size_t aliasScalarLength = 1;
+      switch (mData->integerAlias[arrayIdx].aliasType)
+      {
+      case ALIAS_TYPE_VARIABLE:
+        aliasScalarLength = mData->integerVarsData[mData->integerAlias[arrayIdx].nameID].dimension.scalar_length;
+        break;
+      case ALIAS_TYPE_PARAMETER:
+        aliasScalarLength = mData->integerParameterData[mData->integerAlias[arrayIdx].nameID].dimension.scalar_length;
+        break;
+      default:
+        throwStreamPrint(NULL, "writeDataInfo: Unknown alias type for integer alias.");
+      }
+
+      for (int j = 0; j < (int)aliasScalarLength; j++)
+      {
+        switch (mData->integerAlias[arrayIdx].aliasType)
         {
-          dataInfo[cur].channel = CHANNEL_TIME_INVARIANT;
-          dataInfo[cur].index = ++index_time_invariant;
-          dataInfo[cur].interpolation = INTERPOLATION_LINEAR;
-          dataInfo[cur].extrapolation = EXTRAPOLATION_CONSTANT;
-          cur++;
+        case ALIAS_TYPE_VARIABLE:
+          dataInfo[cur].channel = dataInfo[integerLookup[mData->integerAlias[arrayIdx].nameID]].channel;
+          dataInfo[cur].index = dataInfo[integerLookup[mData->integerAlias[arrayIdx].nameID]].index;
+          dataInfo[cur].interpolation = dataInfo[integerLookup[mData->integerAlias[arrayIdx].nameID]].interpolation;
+          dataInfo[cur].extrapolation = dataInfo[integerLookup[mData->integerAlias[arrayIdx].nameID]].extrapolation;
+          break;
+        case ALIAS_TYPE_PARAMETER:
+          dataInfo[cur].channel = dataInfo[integerParameterLookup[mData->integerAlias[arrayIdx].nameID]].channel;
+          dataInfo[cur].index = dataInfo[integerParameterLookup[mData->integerAlias[arrayIdx].nameID]].index;
+          dataInfo[cur].interpolation = dataInfo[integerParameterLookup[mData->integerAlias[arrayIdx].nameID]].interpolation;
+          dataInfo[cur].extrapolation = dataInfo[integerParameterLookup[mData->integerAlias[arrayIdx].nameID]].extrapolation;
+          break;
+        default:
+          throwStreamPrint(NULL, "writeDataInfo: Unknown alias type for integer alias.");
         }
-        else
+        if (mData->integerAlias[arrayIdx].negate)
         {
-          dataInfo[cur].channel = dataInfo[boolParameterLookup[mData->booleanAlias[i].nameID]].channel;
-          dataInfo[cur].index = dataInfo[boolParameterLookup[mData->booleanAlias[i].nameID]].index;
-          dataInfo[cur].interpolation = dataInfo[boolParameterLookup[mData->booleanAlias[i].nameID]].interpolation;
-          dataInfo[cur].extrapolation = dataInfo[boolParameterLookup[mData->booleanAlias[i].nameID]].extrapolation;
-          cur++;
+          dataInfo[cur].index = -dataInfo[cur].index;
         }
+
+        cur++;
+        scalarIdx++;
+      }
+    }
+  }
+
+  /* Boolean alias */
+  for (int arrayIdx = 0, scalarIdx = 0; arrayIdx < mData->nAliasBooleanArray; arrayIdx++)
+  {
+    if (!mData->booleanAlias[arrayIdx].filterOutput)
+    {
+      /* Determine scalar length depending on alias type */
+      size_t aliasScalarLength = 1;
+      switch (mData->booleanAlias[arrayIdx].aliasType)
+      {
+      case ALIAS_TYPE_VARIABLE:
+        aliasScalarLength = mData->booleanVarsData[mData->booleanAlias[arrayIdx].nameID].dimension.scalar_length;
+        break;
+      case ALIAS_TYPE_PARAMETER:
+        aliasScalarLength = mData->booleanParameterData[mData->booleanAlias[arrayIdx].nameID].dimension.scalar_length;
+        break;
+      default:
+        throwStreamPrint(NULL, "writeDataInfo: Unknown alias type for boolean alias.");
+      }
+
+      for (int j = 0; j < (int)aliasScalarLength; j++)
+      {
+        switch (mData->booleanAlias[arrayIdx].aliasType)
+        {
+        case ALIAS_TYPE_VARIABLE:
+          if (mData->booleanAlias[arrayIdx].negate)
+          {
+            dataInfo[cur].channel = CHANNEL_TIME_VARIANT;
+            dataInfo[cur].index = ++index_time_variant;
+            dataInfo[cur].interpolation = INTERPOLATION_LINEAR;
+            dataInfo[cur].extrapolation = EXTRAPOLATION_CONSTANT;
+          }
+          else
+          {
+            dataInfo[cur].channel = dataInfo[boolLookup[mData->booleanAlias[arrayIdx].nameID]].channel;
+            dataInfo[cur].index = dataInfo[boolLookup[mData->booleanAlias[arrayIdx].nameID]].index;
+            dataInfo[cur].interpolation = dataInfo[boolLookup[mData->booleanAlias[arrayIdx].nameID]].interpolation;
+            dataInfo[cur].extrapolation = dataInfo[boolLookup[mData->booleanAlias[arrayIdx].nameID]].extrapolation;
+          }
+          break;
+        case ALIAS_TYPE_PARAMETER:
+          if (mData->booleanAlias[arrayIdx].negate)
+          {
+            dataInfo[cur].channel = CHANNEL_TIME_INVARIANT;
+            dataInfo[cur].index = ++index_time_invariant;
+            dataInfo[cur].interpolation = INTERPOLATION_LINEAR;
+            dataInfo[cur].extrapolation = EXTRAPOLATION_CONSTANT;
+          }
+          else
+          {
+            dataInfo[cur].channel = dataInfo[boolParameterLookup[mData->booleanAlias[arrayIdx].nameID]].channel;
+            dataInfo[cur].index = dataInfo[boolParameterLookup[mData->booleanAlias[arrayIdx].nameID]].index;
+            dataInfo[cur].interpolation = dataInfo[boolParameterLookup[mData->booleanAlias[arrayIdx].nameID]].interpolation;
+            dataInfo[cur].extrapolation = dataInfo[boolParameterLookup[mData->booleanAlias[arrayIdx].nameID]].extrapolation;
+          }
+          break;
+        default:
+          throwStreamPrint(NULL, "writeDataInfo: Unknown alias type for boolean alias.");
+        }
+
+        cur++;
+        scalarIdx++;
       }
     }
   }
@@ -1216,13 +1298,16 @@ void mat4_writeParameterData4(simulation_result *self, DATA *data, threadData_t 
   WRITE_REAL_VALUE(data_1, cur + matData->nData1, data->simulationInfo->stopTime);
   cur++;
 
-  for (int i = 0; i < mData->nVariablesReal; i++)
+  for (int arrayIdx = 0, scalarIdx=0; arrayIdx < mData->nVariablesReal; arrayIdx++)
   {
-    if (!mData->realVarsData[i].filterOutput && mData->realVarsData[i].time_unvarying)
+    if (!mData->realVarsData[arrayIdx].filterOutput && mData->realVarsData[arrayIdx].time_unvarying)
     {
-      WRITE_REAL_VALUE(data_1, cur, data->localData[0]->realVars[i]);
-      WRITE_REAL_VALUE(data_1, cur + matData->nData1, data->localData[0]->realVars[i]);
-      cur++;
+      for (int j = 0; j < mData->realVarsData[arrayIdx].dimension.scalar_length; j++) {
+        WRITE_REAL_VALUE(data_1, cur, data->localData[0]->realVars[scalarIdx]);
+        WRITE_REAL_VALUE(data_1, cur + matData->nData1, data->localData[0]->realVars[scalarIdx]);
+        cur++;
+        scalarIdx++;
+      }
     }
   }
 
