@@ -448,12 +448,7 @@ public
           // create row-wise sparsity pattern
           for cref in listReverse(partial_vars) loop
             // only create rows for derivatives
-            if jacType == JacobianType.NLS
-               or BVariable.checkCref(cref, BVariable.isResidual, sourceInfo())
-               or (BVariable.checkCref(cref, BVariable.isStateDerivative, sourceInfo()) and jacType <> JacobianType.OPT_MRF and jacType <> JacobianType.OPT_R0)
-               or (jacType == JacobianType.OPT_LFG and BVariable.checkCref(cref, BVariable.isLagrangeOrPathConstraint, sourceInfo()))
-               or (jacType == JacobianType.OPT_MRF and BVariable.checkCref(cref, BVariable.isMayerOrFinalConstraint, sourceInfo()))
-               or (jacType == JacobianType.OPT_R0 and BVariable.checkCref(cref, BVariable.isInitialConstraint, sourceInfo())) then
+            if jacType == JacobianType.NLS or isRowInJacobian(cref, jacType) then
               if UnorderedMap.contains(cref, map) then
                 tmp := UnorderedSet.unique_list(UnorderedMap.getOrFail(cref, map), ComponentRef.hash, ComponentRef.isEqual);
                 rows := (cref, tmp) :: rows;
@@ -589,12 +584,14 @@ public
     algorithm
       // create index -> cref arrays
       seeds := listArray(sparsityPattern.seed_vars);
-      if jacType == JacobianType.NLS or jacType == JacobianType.OPT_LFG or jacType == JacobianType.OPT_MRF or jacType == JacobianType.OPT_R0 then
+
+      if jacType == JacobianType.NLS then
         partials := listArray(sparsityPattern.partial_vars);
       else
-        partials := listArray(list(cref for cref guard(BVariable.checkCref(cref, BVariable.isStateDerivative, sourceInfo()) or
-          BVariable.checkCref(cref, BVariable.isResidual, sourceInfo())) in sparsityPattern.partial_vars));
+        partials := listArray(list(cref for cref guard(isRowInJacobian(cref, jacType)) in sparsityPattern.partial_vars));
       end if;
+
+      print("Partials: " + Array.toString(partials, ComponentRef.toString) + "\n");
 
       // create cref -> index maps
       sizeCols := arrayLength(seeds);
@@ -728,6 +725,20 @@ public
 protected
   // ToDo: all the DAEMode stuff is probably incorrect!
 
+  // TODO: better documentation of this
+  function isRowInJacobian
+    "Checks if a cref of the partial derivatives, is an actual row in the sparsity pattern (ODE and OPT-Jacobians). If this is false, its an inner variable."
+    input ComponentRef cref;
+    input JacobianType jacType;
+    output Boolean b;
+  algorithm
+    b := BVariable.checkCref(cref, BVariable.isResidual, sourceInfo())
+           or (BVariable.checkCref(cref, BVariable.isStateDerivative, sourceInfo()) and jacType <> JacobianType.OPT_MRF and jacType <> JacobianType.OPT_R0)
+           or (jacType == JacobianType.OPT_LFG and BVariable.checkCref(cref, BVariable.isLagrangeOrPathConstraint, sourceInfo()))
+           or (jacType == JacobianType.OPT_MRF and BVariable.checkCref(cref, BVariable.isMayerOrFinalConstraint, sourceInfo()))
+           or (jacType == JacobianType.OPT_R0 and BVariable.checkCref(cref, BVariable.isInitialConstraint, sourceInfo()));
+  end isRowInJacobian;
+
   // TODO: refactor with map
   function getOptimizableVars
     input VariablePointers variables;
@@ -820,6 +831,7 @@ protected
     // sort?
   end getr0PartialCandidates;
 
+  // before this is ever called, we should check if the variable / annotation pairs are even valid: e.g. path constraint with final time or so!
   function partJacobianDynamicOptimization
     input Partition.Partition part;
     input VariablePointers all_knowns;
@@ -830,7 +842,8 @@ protected
     output Option<Jacobian> MRF_jacobian;
     output Option<Jacobian> R0_jacobian;
   protected
-    Boolean init = true; // TODO for parameter seed?
+    Partition.Kind kind = Partition.Partition.getKind(part);
+    Boolean init = (kind == NBPartition.Kind.INI); // TODO for parameter seed?
     VariablePointers seedCandidates, partialCandidates;
   algorithm
     print("[DEBUG] LFG\n");
