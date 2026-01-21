@@ -369,7 +369,6 @@ struct variableCount count_name_description_signals(const MODEL_DATA *mData,
       default:
         throwStreamPrint(NULL, "count_name_description_signals: Unknown alias type for boolean alias.");
       }
-      count.nSignals++;
     }
   }
 
@@ -448,6 +447,7 @@ char *printArrayName(char *buffer,
     buffer += maxlen;
   }
 
+  free(idx);
   return buffer;
 }
 
@@ -610,7 +610,7 @@ void mat4_init4(simulation_result *self, DATA *data, threadData_t *threadData)
     }
   }
 
-  /* Sensititvity parameters */
+  /* Sensitivity parameters */
   if (omc_flag[FLAG_IDAS])
   {
     for (int i = mData->nSensitivityParamVars; i < mData->nSensitivityVars; i++)
@@ -749,7 +749,7 @@ void mat4_init4(simulation_result *self, DATA *data, threadData_t *threadData)
                                    FALSE);
         description_head = printArrayDescription(description_head,
                                                  maxLengthDesc,
-                                                 mData->realParameterData[i].info.comment,
+                                                 mData->realAlias[i].info.comment,
                                                  &mData->realParameterData[mData->realAlias[i].nameID].dimension,
                                                  &mData->realParameterData[mData->realAlias[i].nameID].attribute.unit);
         break;
@@ -763,7 +763,7 @@ void mat4_init4(simulation_result *self, DATA *data, threadData_t *threadData)
         modelica_string unitStr = mmc_mk_scon("s");
         description_head = printArrayDescription(description_head,
                                                  maxLengthDesc,
-                                                 mData->realParameterData[i].info.comment,
+                                                 mData->realAlias[i].info.comment,
                                                  NULL,
                                                  &unitStr);
         break;
@@ -789,7 +789,7 @@ void mat4_init4(simulation_result *self, DATA *data, threadData_t *threadData)
                                    FALSE);
         description_head = printArrayDescription(description_head,
                                                  maxLengthDesc,
-                                                 mData->integerVarsData[i].info.comment,
+                                                 mData->integerAlias[i].info.comment,
                                                  &mData->integerVarsData[mData->integerAlias[i].nameID].dimension,
                                                  NULL);
         break;
@@ -801,7 +801,7 @@ void mat4_init4(simulation_result *self, DATA *data, threadData_t *threadData)
                                    FALSE);
         description_head = printArrayDescription(description_head,
                                                  maxLengthDesc,
-                                                 mData->integerParameterData[i].info.comment,
+                                                 mData->integerAlias[i].info.comment,
                                                  &mData->integerParameterData[mData->integerAlias[i].nameID].dimension,
                                                  NULL);
         break;
@@ -816,7 +816,7 @@ void mat4_init4(simulation_result *self, DATA *data, threadData_t *threadData)
   {
     if (!mData->booleanAlias[i].filterOutput)
     {
-      switch (mData->integerAlias[i].aliasType)
+      switch (mData->booleanAlias[i].aliasType)
       {
       case ALIAS_TYPE_VARIABLE:
         name_head = printArrayName(name_head,
@@ -826,7 +826,7 @@ void mat4_init4(simulation_result *self, DATA *data, threadData_t *threadData)
                                           FALSE);
         description_head = printArrayDescription(description_head,
                                                  maxLengthDesc,
-                                                 mData->booleanVarsData[i].info.comment,
+                                                 mData->booleanAlias[i].info.comment,
                                                  &mData->booleanVarsData[mData->booleanAlias[i].nameID].dimension,
                                                  NULL);
         break;
@@ -838,7 +838,7 @@ void mat4_init4(simulation_result *self, DATA *data, threadData_t *threadData)
                                           FALSE);
         description_head = printArrayDescription(description_head,
                                                  maxLengthDesc,
-                                                 mData->booleanParameterData[i].info.comment,
+                                                 mData->booleanAlias[i].info.comment,
                                                  &mData->booleanParameterData[mData->booleanAlias[i].nameID].dimension,
                                                  NULL);
         break;
