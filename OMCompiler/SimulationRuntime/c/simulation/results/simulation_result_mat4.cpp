@@ -1451,14 +1451,20 @@ void mat4_emit4(simulation_result *self, DATA *data, threadData_t *threadData)
     WRITE_REAL_VALUE(matData->data_2, cur++, data->simulationInfo->solverSteps);
   }
 
-  for (int i = 0; i < mData->nVariablesReal; i++)
+  /* Real variables */
+  for (int arrayIdx = 0, scalarIdx = 0; arrayIdx < mData->nVariablesRealArray; arrayIdx++)
   {
-    if (!mData->realVarsData[i].filterOutput && !mData->realVarsData[i].time_unvarying)
+    if (!mData->realVarsData[arrayIdx].filterOutput && !mData->realVarsData[arrayIdx].time_unvarying)
     {
-      WRITE_REAL_VALUE(matData->data_2, cur++, data->localData[0]->realVars[i]);
+      for (int j = 0; j < mData->realVarsData[arrayIdx].dimension.scalar_length; j++)
+      {
+        WRITE_REAL_VALUE(matData->data_2, cur++, data->localData[0]->realVars[scalarIdx]);
+        scalarIdx++;
+      }
     }
   }
 
+  /* Sensitivity parameters */
   if (omc_flag[FLAG_IDAS])
   {
     for (int i = mData->nSensitivityParamVars; i < mData->nSensitivityVars; i++)
@@ -1467,31 +1473,58 @@ void mat4_emit4(simulation_result *self, DATA *data, threadData_t *threadData)
     }
   }
 
-  for (int i = 0; i < mData->nVariablesInteger; i++)
+  /* Integer variables */
+  for (int arrayIdx = 0, scalarIdx = 0; arrayIdx < mData->nVariablesIntegerArray; arrayIdx++)
   {
-    if (!mData->integerVarsData[i].filterOutput && !mData->integerVarsData[i].time_unvarying)
+    if (!mData->integerVarsData[arrayIdx].filterOutput && !mData->integerVarsData[arrayIdx].time_unvarying)
     {
-      WRITE_REAL_VALUE(matData->data_2, cur++, data->localData[0]->integerVars[i]);
-    }
-  }
-
-  for (int i = 0; i < mData->nVariablesBoolean; i++)
-  {
-    if (!mData->booleanVarsData[i].filterOutput && !mData->booleanVarsData[i].time_unvarying)
-    {
-      WRITE_REAL_VALUE(matData->data_2, cur++, data->localData[0]->booleanVars[i]);
-    }
-  }
-
-  for (int i = 0; i < mData->nAliasBoolean; i++)
-  {
-    if (!mData->booleanAlias[i].filterOutput)
-    {
-      if (mData->booleanAlias[i].aliasType == ALIAS_TYPE_VARIABLE)
+      for (int j = 0; j < mData->integerVarsData[arrayIdx].dimension.scalar_length; j++)
       {
-        if (mData->booleanAlias[i].negate)
+        WRITE_REAL_VALUE(matData->data_2, cur++, data->localData[0]->integerVars[scalarIdx]);
+        scalarIdx++;
+      }
+    }
+  }
+
+  /* Boolean variables */
+  for (int arrayIdx = 0, scalarIdx = 0; arrayIdx < mData->nVariablesBooleanArray; arrayIdx++)
+  {
+    if (!mData->booleanVarsData[arrayIdx].filterOutput && !mData->booleanVarsData[arrayIdx].time_unvarying)
+    {
+      for (int j = 0; j < mData->booleanVarsData[arrayIdx].dimension.scalar_length; j++)
+      {
+        WRITE_REAL_VALUE(matData->data_2, cur++, data->localData[0]->booleanVars[scalarIdx]);
+        scalarIdx++;
+      }
+    }
+  }
+
+  /* Boolean alias */
+  for (int arrayIdx = 0; arrayIdx < mData->nAliasBooleanArray; arrayIdx++)
+  {
+    if (!mData->booleanAlias[arrayIdx].filterOutput)
+    {
+      size_t aliasScalarLength = 1;
+      switch (mData->booleanAlias[arrayIdx].aliasType)
+      {
+      case ALIAS_TYPE_VARIABLE:
+        aliasScalarLength = mData->booleanVarsData[mData->booleanAlias[arrayIdx].nameID].dimension.scalar_length;
+        break;
+      case ALIAS_TYPE_PARAMETER:
+        aliasScalarLength = mData->booleanParameterData[mData->booleanAlias[arrayIdx].nameID].dimension.scalar_length;
+        break;
+      default:
+        throwStreamPrint(NULL, "mat4_emit4: Unknown alias type for boolean alias.");
+      }
+
+      for (int j = 0; j < (int)aliasScalarLength; j++)
+      {
+        if (mData->booleanAlias[arrayIdx].aliasType == ALIAS_TYPE_VARIABLE)
         {
-          WRITE_REAL_VALUE(matData->data_2, cur++, (1 - data->localData[0]->booleanVars[mData->booleanAlias[i].nameID]));
+          if (mData->booleanAlias[arrayIdx].negate)
+          {
+            WRITE_REAL_VALUE(matData->data_2, cur++, (1 - data->localData[0]->booleanVars[mData->booleanAlias[arrayIdx].nameID]));
+          }
         }
       }
     }
