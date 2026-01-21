@@ -226,24 +226,31 @@ public function hashUnit
   output Integer outHash = stringHashDjb2(unit2string(inKey));
 end hashUnit;
 
+function realAlmostEqRel
+  // TODO move to MetaModelicaBuiltin.mo?
+  input Real a;
+  input Real b;
+  input Real relTol = 1e-3;
+  output Boolean c;
+algorithm
+  c := if a == b then true else relTol > abs(a - b)/(abs(a) + abs(b));
+end realAlmostEqRel;
+
 public function unitEqual
   input Unit unit1;
   input Unit unit2;
   output Boolean res;
 algorithm
   res := match (unit1, unit2)
-    local
-      Real f1, f2;
-
-    case (UNIT(factor = f1), UNIT(factor = f2))
-    then unit1.s   == unit2.s   and
-         unit1.m   == unit2.m   and
-         unit1.g   == unit2.g   and
-         unit1.A   == unit2.A   and
-         unit1.K   == unit2.K   and
-         unit1.mol == unit2.mol and
-         unit1.cd  == unit2.cd  and
-         (f1 == f2 or abs(f1 - f2)/max(abs(f1), abs(f2)) < 1e-3);
+    case (UNIT(), UNIT())
+    then  unit1.s   == unit2.s
+      and unit1.m   == unit2.m
+      and unit1.g   == unit2.g
+      and unit1.A   == unit2.A
+      and unit1.K   == unit2.K
+      and unit1.mol == unit2.mol
+      and unit1.cd  == unit2.cd
+      and realAlmostEqRel(unit1.factor, unit2.factor);
 
     case (MASTER(), MASTER()) //equation
       // lcr comparison????

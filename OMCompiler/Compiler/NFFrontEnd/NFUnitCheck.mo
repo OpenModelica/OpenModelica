@@ -794,24 +794,8 @@ algorithm
       String s1, s2;
 
     case (Unit.UNIT(), Unit.UNIT())
-      algorithm
-        isEqual := realEq(unit1.factor, unit2.factor);
-
-        if not isEqual then
-          r := realMax(realAbs(unit1.factor), realAbs(unit2.factor));
-          isEqual := realLe(realDiv(realAbs(realSub(unit1.factor, unit2.factor)), r), 1e-3);
-        end if;
-
-        isEqual := isEqual and
-                   unit1.mol == unit2.mol and
-                   unit1.cd  == unit2.cd  and
-                   unit1.m   == unit2.m   and
-                   unit1.s   == unit2.s   and
-                   unit1.A   == unit2.A   and
-                   unit1.K   == unit2.K   and
-                   unit1.g   == unit2.g;
       then
-        (isEqual, unit1);
+        (Unit.unitEqual(unit1, unit2), unit1);
 
     case (Unit.UNIT(), Unit.MASTER(varList = vars2))
       algorithm
@@ -826,10 +810,8 @@ algorithm
         (true, unit2);
 
     case (Unit.MASTER(varList = vars1), Unit.MASTER(varList = vars2))
-      algorithm
-        vars2 := List.append_reverse(vars1, vars2);
       then
-        (true, Unit.MASTER(vars2));
+        (true, Unit.MASTER(List.append_reverse(vars1, vars2)));
 
     case (Unit.UNKNOWN(unit = s1), Unit.UNKNOWN(unit = s2))
       then (s1 == s2, unit1);
