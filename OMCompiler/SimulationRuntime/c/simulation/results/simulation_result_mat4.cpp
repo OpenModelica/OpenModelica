@@ -151,12 +151,12 @@ static size_t lengthName(const char *name, const DIMENSION_INFO *dimension)
 {
   size_t len = strlen(name) + 1;
 
-  // Add optional array index
+  /* Add optional array index */
   if (dimension != NULL && dimension->numberOfDimensions > 0)
   {
     for (size_t i = 0; i < dimension->numberOfDimensions; i++)
     {
-      /* Number of digits of size plus brackets "[", and "]""*/
+      /* Number of digits of size plus brackets "[", and "]"" */
       len += numDigits(dimension->dimensions[i].start) + 2;
     }
   }
@@ -232,6 +232,17 @@ struct variableCount count_name_description_signals(const MODEL_DATA *mData,
     }
   }
 
+  /* Sensitivity parameters */
+  if (omc_flag[FLAG_IDAS])
+  {
+    for (int i = mData->nSensitivityParamVars; i < mData->nSensitivityVars; i++)
+    {
+      count.maxLengthName = fmax(lengthName(mData->realSensitivityData[i].info.name, NULL), count.maxLengthName);
+      count.maxLengthDesc = fmax(lengthDescription(mData->realSensitivityData[i].info.comment, NULL), count.maxLengthDesc);
+      count.nSignals++;
+    }
+  }
+
   /* Integer variables */
   for (int i = 0; i < mData->nVariablesIntegerArray; i++)
   {
@@ -262,17 +273,6 @@ struct variableCount count_name_description_signals(const MODEL_DATA *mData,
       count.maxLengthName = fmax(lengthName(mData->realParameterData[i].info.name, &mData->realParameterData[i].dimension), count.maxLengthName);
       count.maxLengthDesc = fmax(lengthDescription(mData->realParameterData[i].info.comment, &mData->realParameterData[i].attribute.unit), count.maxLengthDesc);
       count.nSignals += mData->realParameterData[i].dimension.scalar_length;
-    }
-  }
-
-  /* Sensitivity parameters */
-  if (omc_flag[FLAG_IDAS])
-  {
-    for (int i = mData->nSensitivityParamVars; i < mData->nSensitivityVars; i++)
-    {
-      count.maxLengthName = fmax(lengthName(mData->realSensitivityData[i].info.name, NULL), count.maxLengthName);
-      count.maxLengthDesc = fmax(lengthDescription(mData->realSensitivityData[i].info.comment, NULL), count.maxLengthDesc);
-      count.nSignals++;
     }
   }
 
@@ -404,7 +404,7 @@ char *printArrayName(char *buffer,
                      const DIMENSION_INFO *dimension,
                      modelica_boolean isStateDerivative)
 {
-  // Scalar case
+  /* Scalar case */
   if (dimension == NULL || dimension->numberOfDimensions == 0)
   {
     snprintf(buffer, maxlen, "%s", name);
@@ -412,7 +412,7 @@ char *printArrayName(char *buffer,
     return buffer;
   }
 
-  // Array case
+  /* Array case */
   size_t *idx = (size_t *)calloc(dimension->numberOfDimensions, sizeof(size_t));
   assertStreamPrint(NULL, idx != NULL, "Out of memory");
 
@@ -448,6 +448,52 @@ char *printArrayName(char *buffer,
     buffer += maxlen;
   }
 
+  return buffer;
+}
+
+/**
+ * @brief Print description(s) of scalar or array variable into buffer.
+ *
+ * Print `"<description> [<unit>]"` if a unit is available, otherwise print
+ * `"<description>"`. Print same description `dimension->scalar_length` times.
+ *
+ * TODO: Move to a place where CSV can use it as well.
+ *
+ * @param buffer              Buffer to print description to.
+ * @param maxlen              Maximum length of single description.
+ * @param description         Variable description.
+ * @param dimension           (Optional) Dimension of array variables.
+ *                            Can be `NULL`.
+ * @param unit                (Optional) Unit of variable. Can be NULL.
+ * @return char*              Return pointer to buffer after writing variable
+ *                            description.
+ */
+char * printArrayDescription(char *buffer,
+                             size_t maxlen,
+                             const char *description,
+                             const DIMENSION_INFO *dimension,
+                             const modelica_string *unit)
+{
+  /* Optional unit */
+  modelica_boolean hasUnit = FALSE;
+  char *unitStr = NULL;
+  if (unit != NULL) {
+    unitStr = MMC_STRINGDATA(*unit);
+    hasUnit = unitStr != NULL && strlen(unitStr) > 0;
+  }
+
+  /* Print description string */
+  size_t scalar_length = dimension ? dimension->scalar_length : 1;
+  for (size_t i = 0; i < scalar_length; i++)
+  {
+    if (hasUnit) {
+      snprintf(buffer, maxlen, "%s [%s]", description, unitStr);
+    }
+    else {
+      snprintf(buffer, maxlen, "%s", description);
+    }
+    buffer += maxlen;
+  }
   return buffer;
 }
 
@@ -503,150 +549,180 @@ void mat4_init4(simulation_result *self, DATA *data, threadData_t *threadData)
     throwStreamPrint(threadData, "Failed to allocate memory for name/description buffers");
   }
   static_assert(sizeof(char) == sizeof(uint8_t), "This code assumes uint8_t and char have the same size.");
-  char *current_name_row = name;
-  char *current_desc_row = description;
+  char *name_head = name;
+  char *description_head = description;
 
-  snprintf(current_name_row, maxLengthName, "%s", timeName);
-  current_name_row += maxLengthName;
-  snprintf(current_desc_row, maxLengthDesc, "%s", timeDesc);
-  current_desc_row += maxLengthDesc;
+  name_head = printArrayName(name_head,
+                             maxLengthName,
+                             timeName,
+                             NULL,
+                             FALSE);
+  description_head = printArrayDescription(description_head,
+                                           maxLengthDesc,
+                                           timeDesc,
+                                           NULL,
+                                           NULL);
 
   if (self->cpuTime)
   {
-    snprintf(current_name_row, maxLengthName, "%s", cpuTimeName);
-    current_name_row += maxLengthName;
-    snprintf(current_desc_row, maxLengthDesc, "%s", cpuTimeDesc);
-    current_desc_row += maxLengthDesc;
+    name_head = printArrayName(name_head,
+                              maxLengthName,
+                              cpuTimeName,
+                              NULL,
+                              FALSE);
+    description_head = printArrayDescription(description_head,
+                                             maxLengthDesc,
+                                             cpuTimeDesc,
+                                             NULL,
+                                             NULL);
   }
 
   if (omc_flag[FLAG_SOLVER_STEPS])
   {
-    snprintf(current_name_row, maxLengthName, "%s", solverStepsName);
-    current_name_row += maxLengthName;
-    snprintf(current_desc_row, maxLengthDesc, "%s", solverStepsDesc);
-    current_desc_row += maxLengthDesc;
+    name_head = printArrayName(name_head,
+                              maxLengthName,
+                              solverStepsName,
+                              NULL,
+                              FALSE);
+    description_head = printArrayDescription(description_head,
+                                             maxLengthDesc,
+                                             solverStepsDesc,
+                                             NULL,
+                                             NULL);
   }
 
+  /* States, state derivatives, real variables */
   for (int i = 0; i < mData->nVariablesRealArray; i++)
   {
     if (!mData->realVarsData[i].filterOutput)
     {
       modelica_boolean isStateDerivative = mData->nStatesArray <= i && i < 2 * mData->nStatesArray;
-      current_name_row = printArrayName(current_name_row,
-                                        maxLengthName,
-                                        mData->realVarsData[i].info.name,
-                                        &mData->realVarsData[i].dimension,
-                                        isStateDerivative);
-
-      const char *unitStr = MMC_STRINGDATA(mData->realVarsData[i].attribute.unit);
-      if (unitStr != NULL && strlen(unitStr) > 0)
-      {
-        snprintf(current_desc_row, maxLengthDesc, "%s [%s]", mData->realVarsData[i].info.comment, unitStr);
-      }
-      else
-      {
-        snprintf(current_desc_row, maxLengthDesc, "%s", mData->realVarsData[i].info.comment);
-      }
-      current_desc_row += maxLengthDesc;
+      name_head = printArrayName(name_head,
+                                 maxLengthName,
+                                 mData->realVarsData[i].info.name,
+                                 &mData->realVarsData[i].dimension,
+                                 isStateDerivative);
+      description_head = printArrayDescription(description_head,
+                                               maxLengthDesc,
+                                               mData->realVarsData[i].info.comment,
+                                               &mData->realVarsData[i].dimension,
+                                               &mData->realVarsData[i].attribute.unit);
     }
   }
 
+  /* Sensititvity parameters */
   if (omc_flag[FLAG_IDAS])
   {
     for (int i = mData->nSensitivityParamVars; i < mData->nSensitivityVars; i++)
     {
-      snprintf(current_name_row, maxLengthName, "%s", mData->realSensitivityData[i].info.name);
-      current_name_row += maxLengthName;
-      snprintf(current_desc_row, maxLengthDesc, "%s", mData->realSensitivityData[i].info.comment);
-      current_desc_row += maxLengthDesc;
+      name_head = printArrayName(name_head,
+                                 maxLengthName,
+                                 mData->realSensitivityData[i].info.name,
+                                 &mData->realSensitivityData[i].dimension,
+                                 FALSE);
+      description_head = printArrayDescription(description_head,
+                                               maxLengthDesc,
+                                               mData->realSensitivityData[i].info.comment,
+                                               &mData->realSensitivityData[i].dimension,
+                                               NULL);
     }
   }
 
+  /* Integer variables */
   for (int i = 0; i < mData->nVariablesIntegerArray; i++)
   {
     if (!mData->integerVarsData[i].filterOutput)
     {
-      current_name_row = printArrayName(current_name_row,
-                                        maxLengthName,
-                                        mData->integerVarsData[i].info.name,
-                                        &mData->integerVarsData[i].dimension,
-                                        FALSE);
-      snprintf(current_desc_row, maxLengthDesc, "%s", mData->integerVarsData[i].info.comment);
-      current_desc_row += maxLengthDesc;
+      name_head = printArrayName(name_head,
+                                 maxLengthName,
+                                 mData->integerVarsData[i].info.name,
+                                 &mData->integerVarsData[i].dimension,
+                                 FALSE);
+      description_head = printArrayDescription(description_head,
+                                               maxLengthDesc,
+                                               mData->integerVarsData[i].info.comment,
+                                               &mData->integerVarsData[i].dimension,
+                                               NULL);
     }
   }
 
+  /* Boolean variables */
   for (int i = 0; i < mData->nVariablesBooleanArray; i++)
   {
     if (!mData->booleanVarsData[i].filterOutput)
     {
-      current_name_row = printArrayName(current_name_row,
-                                        maxLengthName,
-                                        mData->booleanVarsData[i].info.name,
-                                        &mData->booleanVarsData[i].dimension,
-                                        FALSE);
-      snprintf(current_desc_row, maxLengthDesc, "%s", mData->booleanVarsData[i].info.comment);
-      current_desc_row += maxLengthDesc;
+      name_head = printArrayName(name_head,
+                                 maxLengthName,
+                                 mData->booleanVarsData[i].info.name,
+                                 &mData->booleanVarsData[i].dimension,
+                                 FALSE);
+      description_head = printArrayDescription(description_head,
+                                               maxLengthDesc,
+                                               mData->booleanVarsData[i].info.comment,
+                                               &mData->booleanVarsData[i].dimension,
+                                               NULL);
     }
   }
 
+  /* Real parameters */
   for (int i = 0; i < mData->nParametersRealArray; i++)
   {
     if (!mData->realParameterData[i].filterOutput)
     {
-      current_name_row = printArrayName(current_name_row,
-                                        maxLengthName,
-                                        mData->realParameterData[i].info.name,
-                                        &mData->realParameterData[i].dimension,
-                                        FALSE);
-
-      const char *unitStr = MMC_STRINGDATA(mData->realParameterData[i].attribute.unit);
-      if (unitStr != NULL && strlen(unitStr) > 0)
-      {
-        snprintf(current_desc_row, maxLengthDesc, "%s [%s]", mData->realParameterData[i].info.comment, unitStr);
-      }
-      else
-      {
-        snprintf(current_desc_row, maxLengthDesc, "%s", mData->realParameterData[i].info.comment);
-      }
-      current_desc_row += maxLengthDesc;
+      name_head = printArrayName(name_head,
+                                 maxLengthName,
+                                 mData->realParameterData[i].info.name,
+                                 &mData->realParameterData[i].dimension,
+                                 FALSE);
+      description_head = printArrayDescription(description_head,
+                                               maxLengthDesc,
+                                               mData->realParameterData[i].info.comment,
+                                               &mData->realParameterData[i].dimension,
+                                               &mData->realParameterData[i].attribute.unit);
     }
   }
 
+  /* Integer parameters */
   for (int i = 0; i < mData->nParametersIntegerArray; i++)
   {
     if (!mData->integerParameterData[i].filterOutput)
     {
-      current_name_row = printArrayName(current_name_row,
+      name_head = printArrayName(name_head,
                                         maxLengthName,
                                         mData->integerParameterData[i].info.name,
                                         &mData->integerParameterData[i].dimension,
                                         FALSE);
-      snprintf(current_desc_row, maxLengthDesc, "%s", mData->integerParameterData[i].info.comment);
-      current_desc_row += maxLengthDesc;
+      description_head = printArrayDescription(description_head,
+                                               maxLengthDesc,
+                                               mData->integerParameterData[i].info.comment,
+                                               &mData->integerParameterData[i].dimension,
+                                               NULL);
     }
   }
 
+  /* Boolean parameters */
   for (int i = 0; i < mData->nParametersBooleanArray; i++)
   {
     if (!mData->booleanParameterData[i].filterOutput)
     {
-      current_name_row = printArrayName(current_name_row,
-                                        maxLengthName,
-                                        mData->booleanParameterData[i].info.name,
-                                        &mData->booleanParameterData[i].dimension,
-                                        FALSE);
-      snprintf(current_desc_row, maxLengthDesc, "%s", mData->booleanParameterData[i].info.comment);
-      current_desc_row += maxLengthDesc;
+      name_head = printArrayName(name_head,
+                                 maxLengthName,
+                                 mData->booleanParameterData[i].info.name,
+                                 &mData->booleanParameterData[i].dimension,
+                                 FALSE);
+      description_head = printArrayDescription(description_head,
+                                               maxLengthDesc,
+                                               mData->booleanParameterData[i].info.comment,
+                                               &mData->booleanParameterData[i].dimension,
+                                               NULL);
     }
   }
 
+  /* Real alias */
   for (int i = 0; i < mData->nAliasRealArray; i++)
   {
     if (!mData->realAlias[i].filterOutput)
     {
-      const char *unitStr;
-      size_t unitLength;
       modelica_boolean isStateDerivative;
 
       switch (mData->realAlias[i].aliasType)
@@ -654,47 +730,51 @@ void mat4_init4(simulation_result *self, DATA *data, threadData_t *threadData)
       case ALIAS_TYPE_VARIABLE:
         isStateDerivative = mData->nStatesArray <= mData->realAlias[i].nameID
                          && mData->realAlias[i].nameID < 2 * mData->nStatesArray;
-        current_name_row = printArrayName(current_name_row,
-                                          maxLengthName,
-                                          mData->realAlias[i].info.name,
-                                          &mData->realParameterData[mData->realAlias[i].nameID].dimension,
-                                          isStateDerivative);
-        unitStr = MMC_STRINGDATA(mData->realVarsData[mData->realAlias[i].nameID].attribute.unit);
-        unitLength = unitStr ? strlen(unitStr) : 0;
+        name_head = printArrayName(name_head,
+                                   maxLengthName,
+                                   mData->realAlias[i].info.name,
+                                   &mData->realVarsData[mData->realAlias[i].nameID].dimension,
+                                   isStateDerivative);
+        description_head = printArrayDescription(description_head,
+                                                 maxLengthDesc,
+                                                 mData->realVarsData[i].info.comment,
+                                                 &mData->realVarsData[mData->realAlias[i].nameID].dimension,
+                                                 &mData->realVarsData[mData->realAlias[i].nameID].attribute.unit);
         break;
       case ALIAS_TYPE_PARAMETER:
-        current_name_row = printArrayName(current_name_row,
-                                          maxLengthName,
-                                          mData->realAlias[i].info.name,
-                                          &mData->realParameterData[mData->realAlias[i].nameID].dimension,
-                                          FALSE);
-        unitStr = MMC_STRINGDATA(mData->realParameterData[mData->realAlias[i].nameID].attribute.unit);
-        unitLength = unitStr ? strlen(unitStr) : 0;
+        name_head = printArrayName(name_head,
+                                   maxLengthName,
+                                   mData->realAlias[i].info.name,
+                                   &mData->realParameterData[mData->realAlias[i].nameID].dimension,
+                                   FALSE);
+        description_head = printArrayDescription(description_head,
+                                                 maxLengthDesc,
+                                                 mData->realParameterData[i].info.comment,
+                                                 &mData->realParameterData[mData->realAlias[i].nameID].dimension,
+                                                 &mData->realParameterData[mData->realAlias[i].nameID].attribute.unit);
         break;
       case ALIAS_TYPE_TIME:
-        current_name_row = printArrayName(current_name_row,
-                                          maxLengthName,
-                                          mData->realAlias[i].info.name,
-                                          NULL,
-                                          FALSE);
-        unitStr = "s";
-        unitLength = 1;
+      {
+        name_head = printArrayName(name_head,
+                                   maxLengthName,
+                                   mData->realAlias[i].info.name,
+                                   NULL,
+                                   FALSE);
+        modelica_string unitStr = mmc_mk_scon("s");
+        description_head = printArrayDescription(description_head,
+                                                 maxLengthDesc,
+                                                 mData->realParameterData[i].info.comment,
+                                                 NULL,
+                                                 &unitStr);
         break;
+      }
       default:
         throwStreamPrint(NULL, "mat4_init4: Unknown alias type for real variable.");
       }
-      if (unitStr != NULL && unitLength > 0)
-      {
-        snprintf(current_desc_row, maxLengthDesc, "%s [%s]", mData->realAlias[i].info.comment, unitStr);
-      }
-      else
-      {
-        snprintf(current_desc_row, maxLengthDesc, "%s", mData->realAlias[i].info.comment);
-      }
-      current_desc_row += maxLengthDesc;
     }
   }
 
+  /* Integer alias */
   for (int i = 0; i < mData->nAliasIntegerArray; i++)
   {
     if (!mData->integerAlias[i].filterOutput)
@@ -702,28 +782,36 @@ void mat4_init4(simulation_result *self, DATA *data, threadData_t *threadData)
       switch (mData->integerAlias[i].aliasType)
       {
       case ALIAS_TYPE_VARIABLE:
-        current_name_row = printArrayName(current_name_row,
-                                          maxLengthName,
-                                          mData->integerAlias[i].info.name,
-                                          &mData->integerVarsData[mData->integerAlias[i].nameID].dimension,
-                                          FALSE);
+        name_head = printArrayName(name_head,
+                                   maxLengthName,
+                                   mData->integerAlias[i].info.name,
+                                   &mData->integerVarsData[mData->integerAlias[i].nameID].dimension,
+                                   FALSE);
+        description_head = printArrayDescription(description_head,
+                                                 maxLengthDesc,
+                                                 mData->integerVarsData[i].info.comment,
+                                                 &mData->integerVarsData[mData->integerAlias[i].nameID].dimension,
+                                                 NULL);
         break;
       case ALIAS_TYPE_PARAMETER:
-        current_name_row = printArrayName(current_name_row,
-                                          maxLengthName,
-                                          mData->integerAlias[i].info.name,
-                                          &mData->integerParameterData[mData->integerAlias[i].nameID].dimension,
-                                          FALSE);
+        name_head = printArrayName(name_head,
+                                   maxLengthName,
+                                   mData->integerAlias[i].info.name,
+                                   &mData->integerParameterData[mData->integerAlias[i].nameID].dimension,
+                                   FALSE);
+        description_head = printArrayDescription(description_head,
+                                                 maxLengthDesc,
+                                                 mData->integerParameterData[i].info.comment,
+                                                 &mData->integerParameterData[mData->integerAlias[i].nameID].dimension,
+                                                 NULL);
         break;
       default:
         throwStreamPrint(NULL, "mat4_init4: Unknown alias type for integer variable.");
       }
-
-      snprintf(current_desc_row, maxLengthDesc, "%s", mData->integerAlias[i].info.comment);
-      current_desc_row += maxLengthDesc;
     }
   }
 
+  /* Boolean alias */
   for (int i = 0; i < mData->nAliasBooleanArray; i++)
   {
     if (!mData->booleanAlias[i].filterOutput)
@@ -731,24 +819,32 @@ void mat4_init4(simulation_result *self, DATA *data, threadData_t *threadData)
       switch (mData->integerAlias[i].aliasType)
       {
       case ALIAS_TYPE_VARIABLE:
-        current_name_row = printArrayName(current_name_row,
+        name_head = printArrayName(name_head,
                                           maxLengthName,
                                           mData->booleanAlias[i].info.name,
                                           &mData->booleanVarsData[mData->booleanAlias[i].nameID].dimension,
                                           FALSE);
+        description_head = printArrayDescription(description_head,
+                                                 maxLengthDesc,
+                                                 mData->booleanVarsData[i].info.comment,
+                                                 &mData->booleanVarsData[mData->booleanAlias[i].nameID].dimension,
+                                                 NULL);
         break;
       case ALIAS_TYPE_PARAMETER:
-        current_name_row = printArrayName(current_name_row,
+        name_head = printArrayName(name_head,
                                           maxLengthName,
                                           mData->booleanAlias[i].info.name,
                                           &mData->booleanParameterData[mData->booleanAlias[i].nameID].dimension,
                                           FALSE);
+        description_head = printArrayDescription(description_head,
+                                                 maxLengthDesc,
+                                                 mData->booleanParameterData[i].info.comment,
+                                                 &mData->booleanParameterData[mData->booleanAlias[i].nameID].dimension,
+                                                 NULL);
         break;
       default:
         throwStreamPrint(NULL, "mat4_init4: Unknown alias type for boolean variable.");
       }
-      snprintf(current_desc_row, maxLengthDesc, "%s", mData->booleanAlias[i].info.comment);
-      current_desc_row += maxLengthDesc;
     }
   }
 
