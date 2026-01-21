@@ -51,16 +51,16 @@ extern "C"
 
 typedef struct mat_data
 {
-  FILE *pFile;
-  long data2HdrPos; /* position of data_2 matrix's header in a file */
+  FILE *pFile;        /* Pointer to opened result file */
+  long data2HdrPos;   /* position of data_2 matrix's header in a file */
 
-  size_t nData1;
-  size_t nData2;
-  size_t nSignals;
-  size_t nEmits;
-  size_t sync;
-  void *data_2;
-  MatVer4Type_t type;
+  size_t nData1;      /* Number series to store in data_1 matrix (time invariant variables) */
+  size_t nData2;      /* Number series to store in data_2 matrix (time variant variables) */
+  size_t nSignals;    /* Number of signals to store */
+  size_t nEmits;      /* Counter for simulation resul emits */
+  size_t sync;        /* Number of emity until mat file header get's sinced. See falg `-mat_sync` */
+  void *data_2;       /* Time variant data */
+  MatVer4Type_t type; /* Level of precision for result storage */
 } mat_data;
 
 struct variableCount
@@ -1298,7 +1298,8 @@ void mat4_writeParameterData4(simulation_result *self, DATA *data, threadData_t 
   WRITE_REAL_VALUE(data_1, cur + matData->nData1, data->simulationInfo->stopTime);
   cur++;
 
-  for (int arrayIdx = 0, scalarIdx=0; arrayIdx < mData->nVariablesReal; arrayIdx++)
+  /* Real variables */
+  for (int arrayIdx = 0, scalarIdx=0; arrayIdx < mData->nVariablesRealArray; arrayIdx++)
   {
     if (!mData->realVarsData[arrayIdx].filterOutput && mData->realVarsData[arrayIdx].time_unvarying)
     {
@@ -1311,53 +1312,78 @@ void mat4_writeParameterData4(simulation_result *self, DATA *data, threadData_t 
     }
   }
 
-  for (int i = 0; i < mData->nVariablesInteger; i++)
+  /* Integer variables */
+  for (int arrayIdx = 0, scalarIdx = 0; arrayIdx < mData->nVariablesIntegerArray; arrayIdx++)
   {
-    if (!mData->integerVarsData[i].filterOutput && mData->integerVarsData[i].time_unvarying)
+    if (!mData->integerVarsData[arrayIdx].filterOutput && mData->integerVarsData[arrayIdx].time_unvarying)
     {
-      WRITE_REAL_VALUE(data_1, cur, data->localData[0]->integerVars[i]);
-      WRITE_REAL_VALUE(data_1, cur + matData->nData1, data->localData[0]->integerVars[i]);
-      cur++;
+      for (int j = 0; j < mData->integerVarsData[arrayIdx].dimension.scalar_length; j++)
+      {
+        WRITE_REAL_VALUE(data_1, cur, data->localData[0]->integerVars[scalarIdx]);
+        WRITE_REAL_VALUE(data_1, cur + matData->nData1, data->localData[0]->integerVars[scalarIdx]);
+        cur++;
+        scalarIdx++;
+      }
     }
   }
 
-  for (int i = 0; i < mData->nVariablesBoolean; i++)
+  /* Boolean variables */
+  for (int arrayIdx = 0, scalarIdx = 0; arrayIdx < mData->nVariablesBooleanArray; arrayIdx++)
   {
-    if (!mData->booleanVarsData[i].filterOutput && mData->booleanVarsData[i].time_unvarying)
+    if (!mData->booleanVarsData[arrayIdx].filterOutput && mData->booleanVarsData[arrayIdx].time_unvarying)
     {
-      WRITE_REAL_VALUE(data_1, cur, data->localData[0]->booleanVars[i]);
-      WRITE_REAL_VALUE(data_1, cur + matData->nData1, data->localData[0]->booleanVars[i]);
-      cur++;
+      for (int j = 0; j < mData->booleanVarsData[arrayIdx].dimension.scalar_length; j++)
+      {
+        WRITE_REAL_VALUE(data_1, cur, data->localData[0]->booleanVars[scalarIdx]);
+        WRITE_REAL_VALUE(data_1, cur + matData->nData1, data->localData[0]->booleanVars[scalarIdx]);
+        cur++;
+        scalarIdx++;
+      }
     }
   }
 
-  for (int i = 0; i < mData->nParametersReal; i++)
+  /* Real parameter */
+  for (int arrayIdx = 0, scalarIdx = 0; arrayIdx < mData->nParametersRealArray; arrayIdx++)
   {
-    if (!mData->realParameterData[i].filterOutput)
+    if (!mData->realParameterData[arrayIdx].filterOutput)
     {
-      WRITE_REAL_VALUE(data_1, cur, sInfo->realParameter[i]);
-      WRITE_REAL_VALUE(data_1, cur + matData->nData1, sInfo->realParameter[i]);
-      cur++;
+      for (int j = 0; j < mData->realVarsData[arrayIdx].dimension.scalar_length; j++)
+      {
+        WRITE_REAL_VALUE(data_1, cur, sInfo->realParameter[arrayIdx]);
+        WRITE_REAL_VALUE(data_1, cur + matData->nData1, sInfo->realParameter[arrayIdx]);
+        cur++;
+        scalarIdx++;
+      }
     }
   }
 
-  for (int i = 0; i < mData->nParametersInteger; i++)
+  /* Integer parameter */
+  for (int arrayIdx = 0, scalarIdx = 0; arrayIdx < mData->nParametersIntegerArray; arrayIdx++)
   {
-    if (!mData->integerParameterData[i].filterOutput)
+    if (!mData->integerParameterData[arrayIdx].filterOutput)
     {
-      WRITE_REAL_VALUE(data_1, cur, sInfo->integerParameter[i]);
-      WRITE_REAL_VALUE(data_1, cur + matData->nData1, sInfo->integerParameter[i]);
-      cur++;
+      for (int j = 0; j < mData->integerVarsData[arrayIdx].dimension.scalar_length; j++)
+      {
+        WRITE_REAL_VALUE(data_1, cur, sInfo->integerParameter[arrayIdx]);
+        WRITE_REAL_VALUE(data_1, cur + matData->nData1, sInfo->integerParameter[arrayIdx]);
+        cur++;
+        scalarIdx++;
+      }
     }
   }
 
-  for (int i = 0; i < mData->nParametersBoolean; i++)
+  /* Boolean parameter */
+  for (int arrayIdx = 0, scalarIdx = 0; arrayIdx < mData->nParametersBooleanArray; arrayIdx++)
   {
-    if (!mData->booleanParameterData[i].filterOutput)
+    if (!mData->booleanParameterData[arrayIdx].filterOutput)
     {
-      WRITE_REAL_VALUE(data_1, cur, sInfo->booleanParameter[i]);
-      WRITE_REAL_VALUE(data_1, cur + matData->nData1, sInfo->booleanParameter[i]);
-      cur++;
+      for (int j = 0; j < mData->booleanVarsData[arrayIdx].dimension.scalar_length; j++)
+      {
+        WRITE_REAL_VALUE(data_1, cur, sInfo->booleanParameter[arrayIdx]);
+        WRITE_REAL_VALUE(data_1, cur + matData->nData1, sInfo->booleanParameter[arrayIdx]);
+        cur++;
+        scalarIdx++;
+      }
     }
   }
 
