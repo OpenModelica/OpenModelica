@@ -186,7 +186,7 @@ protected
   String s;
   Unit ut;
 algorithm
-  outKnownUnitsInverse := UnorderedMap.new<String>(hashUnit, unitEqual);
+  outKnownUnitsInverse := UnorderedMap.new<String>(hash, isEqual);
 
   for unit in LU_COMPLEXUNITS loop
     (s, ut) := unit;
@@ -221,10 +221,10 @@ algorithm
   end match;
 end isMaster;
 
-public function hashUnit
+public function hash
   input Unit inKey;
   output Integer outHash = stringHashDjb2(unit2string(inKey));
-end hashUnit;
+end hash;
 
 function realAlmostEqRel
   // TODO move to MetaModelicaBuiltin.mo?
@@ -236,7 +236,7 @@ algorithm
   c := if a == b then true else relTol > abs(a - b)/(abs(a) + abs(b));
 end realAlmostEqRel;
 
-public function unitEqual
+public function isEqual
   input Unit unit1;
   input Unit unit2;
   output Boolean res;
@@ -260,7 +260,7 @@ algorithm
 
     else false;
   end match;
-end unitEqual;
+end isEqual;
 
 public function unit2string
   input Unit unit;

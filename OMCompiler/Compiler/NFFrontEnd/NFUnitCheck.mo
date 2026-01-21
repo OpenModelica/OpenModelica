@@ -795,7 +795,7 @@ algorithm
 
     case (Unit.UNIT(), Unit.UNIT())
       then
-        (Unit.unitEqual(unit1, unit2), unit1);
+        (Unit.isEqual(unit1, unit2), unit1);
 
     case (Unit.UNIT(), Unit.MASTER(varList = vars2))
       algorithm
