@@ -108,7 +108,7 @@ public constant list<tuple<String, Unit>> LU_COMPLEXUNITS = {
   /* base units */
   ("s",         UNIT(1, 0, 0, 0, 0, 0, 0, 1e0)), // second
   ("m",         UNIT(0, 1, 0, 0, 0, 0, 0, 1e0)), // meter
-  ("kg",        UNIT(0, 0, 1, 0, 0, 0, 0, 1e3)), // kilogram
+  ("g",         UNIT(0, 0, 1, 0, 0, 0, 0, 1e3)), // gram
   ("A",         UNIT(0, 0, 0, 1, 0, 0, 0, 1e0)), // ampere
   ("K",         UNIT(0, 0, 0, 0, 1, 0, 0, 1e0)), // kelvin
   ("mol",       UNIT(0, 0, 0, 0, 0, 1, 0, 1e0)), // mole
@@ -116,7 +116,7 @@ public constant list<tuple<String, Unit>> LU_COMPLEXUNITS = {
 
   /* derived units */
   ("rad",       UNIT(0, 0, 0, 0, 0, 0, 0, 1e0)), // radian
-  ("sr",        UNIT(0, 0, 0, 0, 0, 0, 0, 1e0)), // steradian
+//("sr",        UNIT(0, 0, 0, 0, 0, 0, 0, 1e0)), // steradian
   ("Hz",        UNIT(-1,0, 0, 0, 0, 0, 0, 1e0)), // hertz
   ("N",         UNIT(-2,1, 1, 0, 0, 0, 0, 1e3)), // newton
   ("Pa",        UNIT(-2,-1,1, 0, 0, 0, 0, 1e3)), // pascal
@@ -131,31 +131,34 @@ public constant list<tuple<String, Unit>> LU_COMPLEXUNITS = {
   ("T",         UNIT(-2,0, 1,-1, 0, 0, 0, 1e3)), // tesla
   ("H",         UNIT(-2,2, 1,-2, 0, 0, 0, 1e3)), // henry
   ("degC",      UNIT(0, 0, 0, 0, 1, 0, 0, 1e0)), // °Celsius
-  ("lm",        UNIT(0, 0, 0, 0, 0, 0, 1, 1e0)), // lumen
-  ("lx",        UNIT(0,-2, 0, 0, 0, 0, 1, 1e0)), // lux
-  ("Bq",        UNIT(-1,0, 0, 0, 0, 0, 0, 1e0)), // becquerel
-  ("Gy",        UNIT(-2,2, 0, 0, 0, 0, 0, 1e0)), // gray
-  ("Sv",        UNIT(-2,2, 0, 0, 0, 0, 0, 1e0)), // sievert
+//("lm",        UNIT(0, 0, 0, 0, 0, 0, 1, 1e0)), // lumen
+//("lx",        UNIT(0,-2, 0, 0, 0, 0, 1, 1e0)), // lux
+//("Bq",        UNIT(-1,0, 0, 0, 0, 0, 0, 1e0)), // becquerel
+//("Gy",        UNIT(-2,2, 0, 0, 0, 0, 0, 1e0)), // gray
+//("Sv",        UNIT(-2,2, 0, 0, 0, 0, 0, 1e0)), // sievert
   ("kat",       UNIT(-1,0, 0, 0, 0, 1, 0, 1e0)), // katal
 
   /* accepted non-SI units */
   ("min",       UNIT(1, 0, 0, 0, 0, 0, 0,  60)), // minute
   ("h",         UNIT(1, 0, 0, 0, 0, 0, 0,3600)), // hour
   ("d",         UNIT(1, 0, 0, 0, 0, 0, 0,86400)), // day
-  ("au",        UNIT(0, 1, 0, 0, 0, 0, 0,149597870700)), // astronomical unit
+//("au",        UNIT(0, 1, 0, 0, 0, 0, 0,149597870700)), // astronomical unit
 //("deg",       UNIT(0, 0, 0, 0, 0, 0, 0,1.7453292519943295e-2)), // degree
 //("???",       UNIT(0, 0, 0, 0, 0, 0, 0,2.908882086657216e-4)), // arcminute
 //("???",       UNIT(0, 0, 0, 0, 0, 0, 0,4.84813681109536e-6)), // arcsecond
-  ("ha",        UNIT(0, 2, 0, 0, 0, 0, 0, 1e4)), // hectare
+//("ha",        UNIT(0, 2, 0, 0, 0, 0, 0, 1e4)), // hectare
   ("l",         UNIT(0, 3, 0, 0, 0, 0, 0,1e-3)), // liter
-  ("L",         UNIT(0, 3, 0, 0, 0, 0, 0,1e-3)), // liter
-  ("t",         UNIT(0, 0, 1, 0, 0, 0, 0, 1e6)), // tonne
-  ("eV",        UNIT(-2,2, 1, 0, 0, 0, 0,1.602176634e-16)), // electronvolt
-  ("B",         UNIT(0, 0, 0, 0, 0, 0, 0,1e-2)), // bel (dezibel dB)
+//("L",         UNIT(0, 3, 0, 0, 0, 0, 0,1e-3)), // liter
+//("t",         UNIT(0, 0, 1, 0, 0, 0, 0, 1e6)), // tonne
+//("eV",        UNIT(-2,2, 1, 0, 0, 0, 0,1.602176634e-16)), // electronvolt
+//("B",         UNIT(0, 0, 0, 0, 0, 0, 0,1e-2)), // bel (dezibel dB)
 
   /* custom units */
   ("bar",       UNIT(-2,-1,1, 0, 0, 0, 0, 1e8)), // bar = 100kPa
   ("degF",      UNIT(0, 0, 0, 0, 0, 0, 1, 0.5555555555555556))//°Fahrenheit
+
+/* old implementation */
+/*                   fac,mol,cd, m, s, A, K, g*/
 //("VA",        UNIT(1e3, 0, 0, 2,-3, 0, 0, 1)), //Voltampere=Watt
 //("var",       UNIT(1e3, 0, 0, 2,-3, 0, 0, 1)), //Var=Watt
 //("R",         UNIT(2.58e-7, 0, 0, 0, 1, 1, 0,-1)), //Röntgen    2, 58*10^-4 C/kg
