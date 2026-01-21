@@ -45,7 +45,7 @@ public:
 
 protected:
   /**
-   * This function handles complex c-runtime arguments like "-override=startTime=0,...". The
+   * This function handles complex c-runtime arguments like "-override=varName=0,...". The
    * arguments are separated correctly returned as vector. Furthermore the are added to the given
    * opts-map (old values are overwritten).
    * @param argc Number of arguments in the argv-array.
