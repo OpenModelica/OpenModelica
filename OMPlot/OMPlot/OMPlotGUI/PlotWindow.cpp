@@ -985,7 +985,7 @@ double getTimeUnitFactor(QString timeUnit)
 {
   if (timeUnit == "ms") return 1000.0;
   else if (timeUnit == "s") return 1.0;
-  else if (timeUnit == "min") return 1.0/6.0;
+  else if (timeUnit == "min") return 1.0/60.0;
   else if (timeUnit == "h") return 1.0/3600.0;
   else if (timeUnit == "d") return 1.0/86400.0;
   else throw PlotException(QObject::tr("Unknown unit in plotArray(Parametric)."));
