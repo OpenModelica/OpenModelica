@@ -245,13 +245,13 @@ end UnitDefinition;
 
 uniontype BaseUnit
   record BASEUNIT
-    Integer mol "exponent";
-    Integer cd  "exponent";
-    Integer m   "exponent";
     Integer s   "exponent";
+    Integer m   "exponent";
+    Integer kg  "exponent";
     Integer A   "exponent";
     Integer K   "exponent";
-    Integer kg  "exponent";
+    Integer mol "exponent";
+    Integer cd  "exponent";
     Real factor "prefix";
     Real offset "offset";
   end BASEUNIT;
