@@ -272,6 +272,7 @@ void getInitStepSize(DATA* data, threadData_t* threadData, DATA_GBODE* gbData, S
   double h0, h1;
   double absTol = data->simulationInfo->tolerance;
   double relTol = absTol;
+  const double oldStep = gbData->stepSize;
 
   // Increase initialFailures counter on repeated failures (for adaptive reduction)
   gbData->initialFailures++;
@@ -283,11 +284,7 @@ void getInitStepSize(DATA* data, threadData_t* threadData, DATA_GBODE* gbData, S
   // Compute f(t0, y0)
   gbode_fODE(data, threadData, &(gbData->stats.nCallsODE));
 
-  if (solverInfo->didEventStep)
-  {
-    gbData->stepSize = fmax(1e-1 * gbData->stepSize, MINIMAL_STEP_SIZE);
-    gbData->lastStepSize = 0.0;
-  } else if (gbData->initialStepSize < 0) {
+  if (gbData->initialStepSize < 0) {
     memcpy(gbData->f, fODE, nStates * sizeof(double));
 
     // Compute weighted norms of y0 and f0
@@ -351,6 +348,11 @@ void getInitStepSize(DATA* data, threadData_t* threadData, DATA_GBODE* gbData, S
   } else {
     gbData->stepSize = gbData->initialStepSize;
     gbData->lastStepSize = 0.0;
+  }
+
+  if (solverInfo->didEventStep)
+  {
+    gbData->stepSize = fmax(oldStep * 1e-1, gbData->stepSize);
   }
 
   infoStreamPrint(OMC_LOG_SOLVER, 0, "Initial step size = %e at time %g", gbData->stepSize, gbData->time);
