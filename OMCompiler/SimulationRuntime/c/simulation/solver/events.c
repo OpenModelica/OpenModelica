@@ -44,10 +44,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 int maxBisectionIterations = 0;
 void bisection(DATA* data, threadData_t *threadData, double*, double*, double*, double*, LIST*, LIST*);
 void saveZeroCrossingsAfterEvent(DATA *data, threadData_t *threadData);
@@ -481,7 +477,3 @@ void eventListCopy(void* dest, const void* src) {
   long* dest_event = (long*) dest;
   *dest_event = *((long*) src);
 }
-
-#ifdef __cplusplus
-}
-#endif

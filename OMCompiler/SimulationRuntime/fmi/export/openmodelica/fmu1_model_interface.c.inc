@@ -35,7 +35,7 @@
 #include "../simulation/solver/linearSystem.h"
 #include "../simulation/solver/mixedSystem.h"
 #include "../simulation/solver/delay.h"
-#include "../simulation/solver/fmi_events.h"
+#include "../simulation/solver/discrete_changes.h"
 #include "../simulation/simulation_info_json.h"
 #include "../simulation/simulation_input_xml.h"
 

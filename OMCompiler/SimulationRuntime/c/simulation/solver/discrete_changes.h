@@ -31,8 +31,8 @@
 /*! \file events.h
  */
 
-#ifndef _OMC_FMI_EVENTS_H_
-#define _OMC_FMI_EVENTS_H_
+#ifndef _OMC_discrete_changes_H_
+#define _OMC_discrete_changes_H_
 
 #include "../../simulation_data.h"
 
