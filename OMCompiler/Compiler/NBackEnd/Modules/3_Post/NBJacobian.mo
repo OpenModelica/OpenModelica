@@ -468,7 +468,6 @@ public
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed."});
         then fail();
-
       end match;
 
       // create coloring
