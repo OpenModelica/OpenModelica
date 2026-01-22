@@ -588,15 +588,14 @@ int prefixedName_performSimulation(DATA* data, threadData_t *threadData, SOLVER_
       MMC_CATCH_INTERNAL(simulationJumpBuffer)
 #endif
       if (!success) { /* catch */
-        if(TRUE) {
+        if(0 == retry) {
           retrySimulationStep(data, threadData, solverInfo);
           retry = 1;
+        } else {
+          retValue =  -1;
+          infoStreamPrint(OMC_LOG_STDOUT, 0, "model terminate | Simulation terminated by an assert at time: %g", data->localData[0]->timeValue);
+          break;
         }
-        //else {
-        //  retValue =  -1;
-        //  infoStreamPrint(OMC_LOG_STDOUT, 0, "model terminate | Simulation terminated by an assert at time: %g", data->localData[0]->timeValue);
-        //  break;
-        //}
       }
     } /* end while solver */
   } /* end else */
