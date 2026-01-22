@@ -235,9 +235,9 @@ typedef enum HOMOTOPY_METHOD
 } HOMOTOPY_METHOD;
 
 enum ALIAS_TYPE {
-  ALIAS_TYPE_VARIABLE = 0,
-  ALIAS_TYPE_PARAMETER = 1,
-  ALIAS_TYPE_TIME = 2,
+  ALIAS_TYPE_VARIABLE = 0,  /* Alias of a variable */
+  ALIAS_TYPE_PARAMETER = 1, /* Alias of a parameter */
+  ALIAS_TYPE_TIME = 2,      /* Alias of time */
 };
 
 /* Alias data with various types */

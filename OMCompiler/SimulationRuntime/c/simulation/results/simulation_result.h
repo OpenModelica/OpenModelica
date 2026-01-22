@@ -37,7 +37,7 @@
 extern "C" {
 #endif /* cplusplus */
 
-/* A prototype for the simulation result interface. */
+/** Simulation result interface. */
 typedef struct simulation_result {
   const char *filename;
   long numpoints;
