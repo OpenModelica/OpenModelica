@@ -458,6 +458,7 @@ char *printArrayName(char *buffer,
  * `"<description>"`. Print same description `dimension->scalar_length` times.
  *
  * TODO: Move to a place where CSV can use it as well.
+ * TODO: This prints "(null) [<unit>]" if dimension is `NULL`.
  *
  * @param buffer              Buffer to print description to.
  * @param maxlen              Maximum length of single description.
@@ -487,7 +488,6 @@ char * printArrayDescription(char *buffer,
   for (size_t i = 0; i < scalar_length; i++)
   {
     if (hasUnit) {
-      // TODO: This can print "(null) [<unit>]"
       snprintf(buffer, maxlen, "%s [%s]", description, unitStr);
     }
     else {
