@@ -540,6 +540,18 @@ public function regularFileExists
   external "C" outBool = SystemImpl__regularFileExists(inString) annotation(Library = "omcruntime");
 end regularFileExists;
 
+public function regularFileReadable
+  input String inString;
+  output Boolean outBool;
+  external "C" outBool = SystemImpl__regularFileReadable(inString) annotation(Library = "omcruntime");
+end regularFileReadable;
+
+public function regularFileWritable
+  input String inString;
+  output Boolean outBool;
+  external "C" outBool = SystemImpl__regularFileWritable(inString) annotation(Library = "omcruntime");
+end regularFileWritable;
+
 public function removeFile "Removes a file, returns 0 if suceeds, implemented using remove() in stdio.h"
   input String fileName;
   output Integer res;
