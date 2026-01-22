@@ -487,6 +487,7 @@ char * printArrayDescription(char *buffer,
   for (size_t i = 0; i < scalar_length; i++)
   {
     if (hasUnit) {
+      // TODO: This can print "(null) [<unit>]"
       snprintf(buffer, maxlen, "%s [%s]", description, unitStr);
     }
     else {
@@ -737,7 +738,7 @@ void mat4_init4(simulation_result *self, DATA *data, threadData_t *threadData)
                                    isStateDerivative);
         description_head = printArrayDescription(description_head,
                                                  maxLengthDesc,
-                                                 mData->realVarsData[i].info.comment,
+                                                 mData->realAlias[i].info.comment,
                                                  &mData->realVarsData[mData->realAlias[i].nameID].dimension,
                                                  &mData->realVarsData[mData->realAlias[i].nameID].attribute.unit);
         break;
@@ -875,8 +876,12 @@ void mat4_init4(simulation_result *self, DATA *data, threadData_t *threadData)
  * @param self      Simulation result.
  * @param matData   MAT data.
  * @param mData     Model data.
+ * @param mData     Model data.
  */
-void writeDataInfo(simulation_result *self, mat_data *matData, const MODEL_DATA *mData)
+void writeDataInfo(simulation_result *self,
+                   mat_data *matData,
+                   const MODEL_DATA *modelData,
+                   const SIMULATION_INFO *simulationInfo)
 {
   static_assert(sizeof(DataInfo) == 4 * sizeof(int32_t), "DataInfo must be 4x32-bit");
 
@@ -886,13 +891,19 @@ void writeDataInfo(simulation_result *self, mat_data *matData, const MODEL_DATA 
   size_t cur = 1;
 
   /* alias lookups */
-  size_t *realLookup = (size_t *)malloc(sizeof(size_t) * mData->nVariablesReal);
-  size_t *integerLookup = (size_t *)malloc(sizeof(size_t) * mData->nVariablesInteger);
-  size_t *boolLookup = (size_t *)malloc(sizeof(size_t) * mData->nVariablesBoolean);
+  size_t *realLookup = (size_t *)malloc(sizeof(size_t) * modelData->nVariablesReal);
+  for(int i=0; i < modelData->nVariablesReal; i++) realLookup[i] = -1;
+  size_t *integerLookup = (size_t *)malloc(sizeof(size_t) * modelData->nVariablesInteger);
+  for(int i=0; i < modelData->nVariablesInteger; i++) integerLookup[i] = -1;
+  size_t *boolLookup = (size_t *)malloc(sizeof(size_t) * modelData->nVariablesBoolean);
+  for(int i=0; i < modelData->nVariablesBoolean; i++) boolLookup[i] = -1;
 
-  size_t *realParameterLookup = (size_t *)malloc(sizeof(size_t) * mData->nParametersReal);
-  size_t *integerParameterLookup = (size_t *)malloc(sizeof(size_t) * mData->nParametersInteger);
-  size_t *boolParameterLookup = (size_t *)malloc(sizeof(size_t) * mData->nParametersBoolean);
+  size_t *realParameterLookup = (size_t *)malloc(sizeof(size_t) * modelData->nParametersReal);
+  for(int i=0; i < modelData->nParametersReal; i++) realParameterLookup[i] = -1;
+  size_t *integerParameterLookup = (size_t *)malloc(sizeof(size_t) * modelData->nParametersInteger);
+  for(int i=0; i < modelData->nParametersInteger; i++) integerParameterLookup[i] = -1;
+  size_t *boolParameterLookup = (size_t *)malloc(sizeof(size_t) * modelData->nParametersBoolean);
+  for(int i=0; i < modelData->nParametersBoolean; i++) boolParameterLookup[i] = -1;
 
   /* time */
   dataInfo[0].channel = CHANNEL_TIME;
@@ -919,19 +930,18 @@ void writeDataInfo(simulation_result *self, mat_data *matData, const MODEL_DATA 
   }
 
   /* Real variables */
-  for (int arrayIdx = 0, scalarIdx = 0; arrayIdx < mData->nVariablesRealArray; arrayIdx++)
+  for (int arrayIdx = 0; arrayIdx < modelData->nVariablesRealArray; arrayIdx++)
   {
-    if (!mData->realVarsData[arrayIdx].filterOutput)
+    if (!modelData->realVarsData[arrayIdx].filterOutput)
     {
-      for (int i = 0; i < mData->realVarsData[arrayIdx].dimension.scalar_length; i++)
+      for (int i = 0; i < modelData->realVarsData[arrayIdx].dimension.scalar_length; i++)
       {
-        realLookup[scalarIdx] = cur;
-        dataInfo[cur].channel = mData->realVarsData[arrayIdx].time_unvarying ? CHANNEL_TIME_INVARIANT : CHANNEL_TIME_VARIANT;
-        dataInfo[cur].index = mData->realVarsData[arrayIdx].time_unvarying ? ++index_time_invariant : ++index_time_variant;
+        realLookup[simulationInfo->realVarsIndex[arrayIdx] + i] = cur;
+        dataInfo[cur].channel = modelData->realVarsData[arrayIdx].time_unvarying ? CHANNEL_TIME_INVARIANT : CHANNEL_TIME_VARIANT;
+        dataInfo[cur].index = modelData->realVarsData[arrayIdx].time_unvarying ? ++index_time_invariant : ++index_time_variant;
         dataInfo[cur].interpolation = INTERPOLATION_LINEAR;
         dataInfo[cur].extrapolation = EXTRAPOLATION_CONSTANT;
         cur++;
-        scalarIdx++;
       }
     }
   }
@@ -939,7 +949,7 @@ void writeDataInfo(simulation_result *self, mat_data *matData, const MODEL_DATA 
   /* Sensitivity parameters */
   if (omc_flag[FLAG_IDAS])
   {
-    for (int i = mData->nSensitivityParamVars; i < mData->nSensitivityVars; i++)
+    for (int i = modelData->nSensitivityParamVars; i < modelData->nSensitivityVars; i++)
     {
       dataInfo[cur].channel = CHANNEL_TIME_VARIANT;
       dataInfo[cur].index = ++index_time_variant;
@@ -950,109 +960,104 @@ void writeDataInfo(simulation_result *self, mat_data *matData, const MODEL_DATA 
   }
 
   /* Integer variables */
-  for (int arrayIdx = 0, scalarIdx = 0; arrayIdx < mData->nVariablesIntegerArray; arrayIdx++)
+  for (int arrayIdx = 0; arrayIdx < modelData->nVariablesIntegerArray; arrayIdx++)
   {
-    if (!mData->integerVarsData[arrayIdx].filterOutput)
+    if (!modelData->integerVarsData[arrayIdx].filterOutput)
     {
-      for (int i = 0; i < mData->integerVarsData[arrayIdx].dimension.scalar_length; i++)
+      for (int i = 0; i < modelData->integerVarsData[arrayIdx].dimension.scalar_length; i++)
       {
-        integerLookup[scalarIdx] = cur;
-        dataInfo[cur].channel = mData->integerVarsData[arrayIdx].time_unvarying ? CHANNEL_TIME_INVARIANT : CHANNEL_TIME_VARIANT;
-        dataInfo[cur].index = mData->integerVarsData[arrayIdx].time_unvarying ? ++index_time_invariant : ++index_time_variant;
+        integerLookup[simulationInfo->integerVarsIndex[arrayIdx] + i] = cur;
+        dataInfo[cur].channel = modelData->integerVarsData[arrayIdx].time_unvarying ? CHANNEL_TIME_INVARIANT : CHANNEL_TIME_VARIANT;
+        dataInfo[cur].index = modelData->integerVarsData[arrayIdx].time_unvarying ? ++index_time_invariant : ++index_time_variant;
         dataInfo[cur].interpolation = INTERPOLATION_LINEAR;
         dataInfo[cur].extrapolation = EXTRAPOLATION_CONSTANT;
         cur++;
-        scalarIdx++;
       }
     }
   }
 
   /* Boolean variables */
-  for (int arrayIdx = 0, scalarIdx = 0; arrayIdx < mData->nVariablesBooleanArray; arrayIdx++)
+  for (int arrayIdx = 0; arrayIdx < modelData->nVariablesBooleanArray; arrayIdx++)
   {
-    if (!mData->booleanVarsData[arrayIdx].filterOutput)
+    if (!modelData->booleanVarsData[arrayIdx].filterOutput)
     {
-      for (int i = 0; i < mData->booleanVarsData[arrayIdx].dimension.scalar_length; i++)
+      for (int i = 0; i < modelData->booleanVarsData[arrayIdx].dimension.scalar_length; i++)
       {
-        boolLookup[scalarIdx] = cur;
-        dataInfo[cur].channel = mData->booleanVarsData[arrayIdx].time_unvarying ? CHANNEL_TIME_INVARIANT : CHANNEL_TIME_VARIANT;
-        dataInfo[cur].index = mData->booleanVarsData[arrayIdx].time_unvarying ? ++index_time_invariant : ++index_time_variant;
+        boolLookup[simulationInfo->booleanVarsIndex[arrayIdx] + i] = cur;
+        dataInfo[cur].channel = modelData->booleanVarsData[arrayIdx].time_unvarying ? CHANNEL_TIME_INVARIANT : CHANNEL_TIME_VARIANT;
+        dataInfo[cur].index = modelData->booleanVarsData[arrayIdx].time_unvarying ? ++index_time_invariant : ++index_time_variant;
         dataInfo[cur].interpolation = INTERPOLATION_LINEAR;
         dataInfo[cur].extrapolation = EXTRAPOLATION_CONSTANT;
         cur++;
-        scalarIdx++;
       }
     }
   }
 
   /* Real parameters */
-  for (int arrayIdx = 0, scalarIdx = 0; arrayIdx < mData->nParametersRealArray; arrayIdx++)
+  for (int arrayIdx = 0; arrayIdx < modelData->nParametersRealArray; arrayIdx++)
   {
-    if (!mData->realParameterData[arrayIdx].filterOutput)
+    if (!modelData->realParameterData[arrayIdx].filterOutput)
     {
-      for (int i = 0; i < mData->realParameterData[arrayIdx].dimension.scalar_length; i++)
+      for (int i = 0; i < modelData->realParameterData[arrayIdx].dimension.scalar_length; i++)
       {
-        realParameterLookup[scalarIdx] = cur;
+        realParameterLookup[simulationInfo->realParamsIndex[arrayIdx] + i] = cur;
         dataInfo[cur].channel = CHANNEL_TIME_INVARIANT;
         dataInfo[cur].index = ++index_time_invariant;
         dataInfo[cur].interpolation = INTERPOLATION_LINEAR;
         dataInfo[cur].extrapolation = EXTRAPOLATION_CONSTANT;
         cur++;
-        scalarIdx++;
       }
     }
   }
 
   /* Integer parameters */
-  for (int arrayIdx = 0, scalarIdx = 0; arrayIdx < mData->nParametersIntegerArray; arrayIdx++)
+  for (int arrayIdx = 0; arrayIdx < modelData->nParametersIntegerArray; arrayIdx++)
   {
-    if (!mData->integerParameterData[arrayIdx].filterOutput)
+    if (!modelData->integerParameterData[arrayIdx].filterOutput)
     {
-      for (int i = 0; i < mData->integerParameterData[arrayIdx].dimension.scalar_length; i++)
+      for (int i = 0; i < modelData->integerParameterData[arrayIdx].dimension.scalar_length; i++)
       {
-        integerParameterLookup[scalarIdx] = cur;
+        integerParameterLookup[simulationInfo->integerParamsIndex[arrayIdx] + i] = cur;
         dataInfo[cur].channel = CHANNEL_TIME_INVARIANT;
         dataInfo[cur].index = ++index_time_invariant;
         dataInfo[cur].interpolation = INTERPOLATION_LINEAR;
         dataInfo[cur].extrapolation = EXTRAPOLATION_CONSTANT;
         cur++;
-        scalarIdx++;
       }
     }
   }
 
   /* Boolean parameters */
-  for (int arrayIdx = 0, scalarIdx = 0; arrayIdx < mData->nParametersBooleanArray; arrayIdx++)
+  for (int arrayIdx = 0; arrayIdx < modelData->nParametersBooleanArray; arrayIdx++)
   {
-    if (!mData->booleanParameterData[arrayIdx].filterOutput)
+    if (!modelData->booleanParameterData[arrayIdx].filterOutput)
     {
-      for (int i = 0; i < mData->booleanParameterData[arrayIdx].dimension.scalar_length; i++)
+      for (int i = 0; i < modelData->booleanParameterData[arrayIdx].dimension.scalar_length; i++)
       {
-        boolParameterLookup[scalarIdx] = cur;
+        boolParameterLookup[simulationInfo->booleanParamsIndex[arrayIdx] + i] = cur;
         dataInfo[cur].channel = CHANNEL_TIME_INVARIANT;
         dataInfo[cur].index = ++index_time_invariant;
         dataInfo[cur].interpolation = INTERPOLATION_LINEAR;
         dataInfo[cur].extrapolation = EXTRAPOLATION_CONSTANT;
         cur++;
-        scalarIdx++;
       }
     }
   }
 
   /* Real alias */
-  for (int arrayIdx = 0, scalarIdx = 0; arrayIdx < mData->nAliasRealArray; arrayIdx++)
+  for (int arrayIdx = 0; arrayIdx < modelData->nAliasRealArray; arrayIdx++)
   {
-    if (!mData->realAlias[arrayIdx].filterOutput)
+    if (!modelData->realAlias[arrayIdx].filterOutput)
     {
       /* Determine scalar length depending on alias type */
       size_t aliasScalarLength = 1;
-      switch (mData->realAlias[arrayIdx].aliasType)
+      switch (modelData->realAlias[arrayIdx].aliasType)
       {
       case ALIAS_TYPE_VARIABLE:
-        aliasScalarLength = mData->realVarsData[mData->realAlias[arrayIdx].nameID].dimension.scalar_length;
+        aliasScalarLength = modelData->realVarsData[modelData->realAlias[arrayIdx].nameID].dimension.scalar_length;
         break;
       case ALIAS_TYPE_PARAMETER:
-        aliasScalarLength = mData->realParameterData[mData->realAlias[arrayIdx].nameID].dimension.scalar_length;
+        aliasScalarLength = modelData->realParameterData[modelData->realAlias[arrayIdx].nameID].dimension.scalar_length;
         break;
       case ALIAS_TYPE_TIME:
         aliasScalarLength = 1;
@@ -1061,22 +1066,23 @@ void writeDataInfo(simulation_result *self, mat_data *matData, const MODEL_DATA 
         throwStreamPrint(NULL, "writeDataInfo: Unknown alias type for real alias.");
       }
 
+      /* Copy dataInfo from alias */
       for (int i = 0; i < (int)aliasScalarLength; i++)
       {
-        switch (mData->realAlias[arrayIdx].aliasType)
+        switch (modelData->realAlias[arrayIdx].aliasType)
         {
         case ALIAS_TYPE_VARIABLE:
-          dataInfo[cur].channel = dataInfo[realLookup[mData->realAlias[arrayIdx].nameID]].channel;
-          dataInfo[cur].index = dataInfo[realLookup[mData->realAlias[arrayIdx].nameID]].index;
-          dataInfo[cur].interpolation = dataInfo[realLookup[mData->realAlias[arrayIdx].nameID]].interpolation;
-          dataInfo[cur].extrapolation = dataInfo[realLookup[mData->realAlias[arrayIdx].nameID]].extrapolation;
+          dataInfo[cur].channel = dataInfo[realLookup[modelData->realAlias[arrayIdx].nameID] + i].channel;
+          dataInfo[cur].index = dataInfo[realLookup[modelData->realAlias[arrayIdx].nameID] + i].index;
+          dataInfo[cur].interpolation = dataInfo[realLookup[modelData->realAlias[arrayIdx].nameID] + i].interpolation;
+          dataInfo[cur].extrapolation = dataInfo[realLookup[modelData->realAlias[arrayIdx].nameID] + i].extrapolation;
           break;
 
         case ALIAS_TYPE_PARAMETER:
-          dataInfo[cur].channel = dataInfo[realParameterLookup[mData->realAlias[arrayIdx].nameID]].channel;
-          dataInfo[cur].index = dataInfo[realParameterLookup[mData->realAlias[arrayIdx].nameID]].index;
-          dataInfo[cur].interpolation = dataInfo[realParameterLookup[mData->realAlias[arrayIdx].nameID]].interpolation;
-          dataInfo[cur].extrapolation = dataInfo[realParameterLookup[mData->realAlias[arrayIdx].nameID]].extrapolation;
+          dataInfo[cur].channel = dataInfo[realParameterLookup[modelData->realAlias[arrayIdx].nameID] + i].channel;
+          dataInfo[cur].index = dataInfo[realParameterLookup[modelData->realAlias[arrayIdx].nameID] + i].index;
+          dataInfo[cur].interpolation = dataInfo[realParameterLookup[modelData->realAlias[arrayIdx].nameID] + i].interpolation;
+          dataInfo[cur].extrapolation = dataInfo[realParameterLookup[modelData->realAlias[arrayIdx].nameID] + i].extrapolation;
           break;
 
         case ALIAS_TYPE_TIME:
@@ -1089,80 +1095,79 @@ void writeDataInfo(simulation_result *self, mat_data *matData, const MODEL_DATA 
         default:
           throwStreamPrint(NULL, "writeDataInfo: Unknown alias type for real alias.");
         }
-        if (mData->realAlias[arrayIdx].negate)
+        if (modelData->realAlias[arrayIdx].negate)
         {
           dataInfo[cur].index = -dataInfo[cur].index;
         }
 
         cur++;
-        scalarIdx++;
       }
     }
   }
 
   /* Integer alias */
-  for (int arrayIdx = 0, scalarIdx = 0; arrayIdx < mData->nAliasIntegerArray; arrayIdx++)
+  for (int arrayIdx = 0; arrayIdx < modelData->nAliasIntegerArray; arrayIdx++)
   {
-    if (!mData->integerAlias[arrayIdx].filterOutput)
+    if (!modelData->integerAlias[arrayIdx].filterOutput)
     {
       /* Determine scalar length depending on alias type */
       size_t aliasScalarLength = 1;
-      switch (mData->integerAlias[arrayIdx].aliasType)
+      switch (modelData->integerAlias[arrayIdx].aliasType)
       {
       case ALIAS_TYPE_VARIABLE:
-        aliasScalarLength = mData->integerVarsData[mData->integerAlias[arrayIdx].nameID].dimension.scalar_length;
+        aliasScalarLength = modelData->integerVarsData[modelData->integerAlias[arrayIdx].nameID].dimension.scalar_length;
         break;
       case ALIAS_TYPE_PARAMETER:
-        aliasScalarLength = mData->integerParameterData[mData->integerAlias[arrayIdx].nameID].dimension.scalar_length;
+        aliasScalarLength = modelData->integerParameterData[modelData->integerAlias[arrayIdx].nameID].dimension.scalar_length;
         break;
       default:
         throwStreamPrint(NULL, "writeDataInfo: Unknown alias type for integer alias.");
       }
 
+      /* Copy dataInfo from alias */
       for (int i = 0; i < (int)aliasScalarLength; i++)
       {
-        switch (mData->integerAlias[arrayIdx].aliasType)
+        switch (modelData->integerAlias[arrayIdx].aliasType)
         {
         case ALIAS_TYPE_VARIABLE:
-          dataInfo[cur].channel = dataInfo[integerLookup[mData->integerAlias[arrayIdx].nameID]].channel;
-          dataInfo[cur].index = dataInfo[integerLookup[mData->integerAlias[arrayIdx].nameID]].index;
-          dataInfo[cur].interpolation = dataInfo[integerLookup[mData->integerAlias[arrayIdx].nameID]].interpolation;
-          dataInfo[cur].extrapolation = dataInfo[integerLookup[mData->integerAlias[arrayIdx].nameID]].extrapolation;
+          dataInfo[cur].channel = dataInfo[integerLookup[modelData->integerAlias[arrayIdx].nameID] + i].channel;
+          dataInfo[cur].index = dataInfo[integerLookup[modelData->integerAlias[arrayIdx].nameID] + i].index;
+          dataInfo[cur].interpolation = dataInfo[integerLookup[modelData->integerAlias[arrayIdx].nameID] + i].interpolation;
+          dataInfo[cur].extrapolation = dataInfo[integerLookup[modelData->integerAlias[arrayIdx].nameID] + i].extrapolation;
           break;
         case ALIAS_TYPE_PARAMETER:
-          dataInfo[cur].channel = dataInfo[integerParameterLookup[mData->integerAlias[arrayIdx].nameID]].channel;
-          dataInfo[cur].index = dataInfo[integerParameterLookup[mData->integerAlias[arrayIdx].nameID]].index;
-          dataInfo[cur].interpolation = dataInfo[integerParameterLookup[mData->integerAlias[arrayIdx].nameID]].interpolation;
-          dataInfo[cur].extrapolation = dataInfo[integerParameterLookup[mData->integerAlias[arrayIdx].nameID]].extrapolation;
+          dataInfo[cur].channel = dataInfo[integerParameterLookup[modelData->integerAlias[arrayIdx].nameID] + i].channel;
+          dataInfo[cur].index = dataInfo[integerParameterLookup[modelData->integerAlias[arrayIdx].nameID] + i].index;
+          dataInfo[cur].interpolation = dataInfo[integerParameterLookup[modelData->integerAlias[arrayIdx].nameID] + i].interpolation;
+          dataInfo[cur].extrapolation = dataInfo[integerParameterLookup[modelData->integerAlias[arrayIdx].nameID] + i].extrapolation;
           break;
         default:
           throwStreamPrint(NULL, "writeDataInfo: Unknown alias type for integer alias.");
         }
-        if (mData->integerAlias[arrayIdx].negate)
+        if (modelData->integerAlias[arrayIdx].negate)
         {
           dataInfo[cur].index = -dataInfo[cur].index;
         }
 
         cur++;
-        scalarIdx++;
       }
     }
   }
 
   /* Boolean alias */
-  for (int arrayIdx = 0, scalarIdx = 0; arrayIdx < mData->nAliasBooleanArray; arrayIdx++)
+  for (int arrayIdx = 0, scalarIdx = 0; arrayIdx < modelData->nAliasBooleanArray; arrayIdx++)
   {
-    if (!mData->booleanAlias[arrayIdx].filterOutput)
+    if (!modelData->booleanAlias[arrayIdx].filterOutput)
     {
       /* Determine scalar length depending on alias type */
       size_t aliasScalarLength = 1;
-      switch (mData->booleanAlias[arrayIdx].aliasType)
+      switch (modelData->booleanAlias[arrayIdx].aliasType)
       {
       case ALIAS_TYPE_VARIABLE:
-        aliasScalarLength = mData->booleanVarsData[mData->booleanAlias[arrayIdx].nameID].dimension.scalar_length;
+        aliasScalarLength = modelData->booleanVarsData[modelData->booleanAlias[arrayIdx].nameID].dimension.scalar_length;
         break;
       case ALIAS_TYPE_PARAMETER:
-        aliasScalarLength = mData->booleanParameterData[mData->booleanAlias[arrayIdx].nameID].dimension.scalar_length;
+        aliasScalarLength = modelData->booleanParameterData[modelData->booleanAlias[arrayIdx].nameID].dimension.scalar_length;
         break;
       default:
         throwStreamPrint(NULL, "writeDataInfo: Unknown alias type for boolean alias.");
@@ -1170,10 +1175,10 @@ void writeDataInfo(simulation_result *self, mat_data *matData, const MODEL_DATA 
 
       for (int i = 0; i < (int)aliasScalarLength; i++)
       {
-        switch (mData->booleanAlias[arrayIdx].aliasType)
+        switch (modelData->booleanAlias[arrayIdx].aliasType)
         {
         case ALIAS_TYPE_VARIABLE:
-          if (mData->booleanAlias[arrayIdx].negate)
+          if (modelData->booleanAlias[arrayIdx].negate)
           {
             dataInfo[cur].channel = CHANNEL_TIME_VARIANT;
             dataInfo[cur].index = ++index_time_variant;
@@ -1182,14 +1187,14 @@ void writeDataInfo(simulation_result *self, mat_data *matData, const MODEL_DATA 
           }
           else
           {
-            dataInfo[cur].channel = dataInfo[boolLookup[mData->booleanAlias[arrayIdx].nameID]].channel;
-            dataInfo[cur].index = dataInfo[boolLookup[mData->booleanAlias[arrayIdx].nameID]].index;
-            dataInfo[cur].interpolation = dataInfo[boolLookup[mData->booleanAlias[arrayIdx].nameID]].interpolation;
-            dataInfo[cur].extrapolation = dataInfo[boolLookup[mData->booleanAlias[arrayIdx].nameID]].extrapolation;
+            dataInfo[cur].channel = dataInfo[boolLookup[modelData->booleanAlias[arrayIdx].nameID]].channel;
+            dataInfo[cur].index = dataInfo[boolLookup[modelData->booleanAlias[arrayIdx].nameID]].index;
+            dataInfo[cur].interpolation = dataInfo[boolLookup[modelData->booleanAlias[arrayIdx].nameID]].interpolation;
+            dataInfo[cur].extrapolation = dataInfo[boolLookup[modelData->booleanAlias[arrayIdx].nameID]].extrapolation;
           }
           break;
         case ALIAS_TYPE_PARAMETER:
-          if (mData->booleanAlias[arrayIdx].negate)
+          if (modelData->booleanAlias[arrayIdx].negate)
           {
             dataInfo[cur].channel = CHANNEL_TIME_INVARIANT;
             dataInfo[cur].index = ++index_time_invariant;
@@ -1198,10 +1203,10 @@ void writeDataInfo(simulation_result *self, mat_data *matData, const MODEL_DATA 
           }
           else
           {
-            dataInfo[cur].channel = dataInfo[boolParameterLookup[mData->booleanAlias[arrayIdx].nameID]].channel;
-            dataInfo[cur].index = dataInfo[boolParameterLookup[mData->booleanAlias[arrayIdx].nameID]].index;
-            dataInfo[cur].interpolation = dataInfo[boolParameterLookup[mData->booleanAlias[arrayIdx].nameID]].interpolation;
-            dataInfo[cur].extrapolation = dataInfo[boolParameterLookup[mData->booleanAlias[arrayIdx].nameID]].extrapolation;
+            dataInfo[cur].channel = dataInfo[boolParameterLookup[modelData->booleanAlias[arrayIdx].nameID]].channel;
+            dataInfo[cur].index = dataInfo[boolParameterLookup[modelData->booleanAlias[arrayIdx].nameID]].index;
+            dataInfo[cur].interpolation = dataInfo[boolParameterLookup[modelData->booleanAlias[arrayIdx].nameID]].interpolation;
+            dataInfo[cur].extrapolation = dataInfo[boolParameterLookup[modelData->booleanAlias[arrayIdx].nameID]].extrapolation;
           }
           break;
         default:
@@ -1287,7 +1292,7 @@ void mat4_writeParameterData4(simulation_result *self, DATA *data, threadData_t 
   rt_tick(SIM_TIMER_OUTPUT);
 
   /* Write dataInfo*/
-  writeDataInfo(self, matData, mData);
+  writeDataInfo(self, matData, mData, sInfo);
 
   /* Write data_1 */
   size_t size = sizeofMatVer4Type(matData->type);
@@ -1344,10 +1349,10 @@ void mat4_writeParameterData4(simulation_result *self, DATA *data, threadData_t 
   {
     if (!mData->realParameterData[arrayIdx].filterOutput)
     {
-      for (int i = 0; i < mData->realVarsData[arrayIdx].dimension.scalar_length; i++)
+      for (int i = 0; i < mData->realParameterData[arrayIdx].dimension.scalar_length; i++)
       {
-        WRITE_REAL_VALUE(data_1, cur, sInfo->realParameter[data->simulationInfo->booleanVarsIndex[arrayIdx] + i]);
-        WRITE_REAL_VALUE(data_1, cur + matData->nData1, sInfo->realParameter[data->simulationInfo->booleanVarsIndex[arrayIdx] + i]);
+        WRITE_REAL_VALUE(data_1, cur, sInfo->realParameter[data->simulationInfo->realParamsIndex[arrayIdx] + i]);
+        WRITE_REAL_VALUE(data_1, cur + matData->nData1, sInfo->realParameter[data->simulationInfo->realParamsIndex[arrayIdx] + i]);
         cur++;
       }
     }
@@ -1358,10 +1363,10 @@ void mat4_writeParameterData4(simulation_result *self, DATA *data, threadData_t 
   {
     if (!mData->integerParameterData[arrayIdx].filterOutput)
     {
-      for (int i = 0; i < mData->integerVarsData[arrayIdx].dimension.scalar_length; i++)
+      for (int i = 0; i < mData->integerParameterData[arrayIdx].dimension.scalar_length; i++)
       {
-        WRITE_REAL_VALUE(data_1, cur, sInfo->integerParameter[data->simulationInfo->stringVarsIndex[arrayIdx] + i]);
-        WRITE_REAL_VALUE(data_1, cur + matData->nData1, sInfo->integerParameter[data->simulationInfo->stringVarsIndex[arrayIdx] + i]);
+        WRITE_REAL_VALUE(data_1, cur, sInfo->integerParameter[data->simulationInfo->integerVarsIndex[arrayIdx] + i]);
+        WRITE_REAL_VALUE(data_1, cur + matData->nData1, sInfo->integerParameter[data->simulationInfo->integerVarsIndex[arrayIdx] + i]);
         cur++;
       }
     }
@@ -1372,7 +1377,7 @@ void mat4_writeParameterData4(simulation_result *self, DATA *data, threadData_t 
   {
     if (!mData->booleanParameterData[arrayIdx].filterOutput)
     {
-      for (int i = 0; i < mData->booleanVarsData[arrayIdx].dimension.scalar_length; i++)
+      for (int i = 0; i < mData->booleanParameterData[arrayIdx].dimension.scalar_length; i++)
       {
         WRITE_REAL_VALUE(data_1, cur, sInfo->booleanParameter[data->simulationInfo->booleanParamsIndex[arrayIdx] + i]);
         WRITE_REAL_VALUE(data_1, cur + matData->nData1, sInfo->booleanParameter[data->simulationInfo->booleanParamsIndex[arrayIdx] + i]);
