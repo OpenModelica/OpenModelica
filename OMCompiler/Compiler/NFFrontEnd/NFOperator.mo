@@ -200,8 +200,8 @@ public
       case (0, 0)                 then (SizeClassification.SCALAR, ty1);
       case (0, i2) guard(i2>0)    then (SizeClassification.SCALAR_ARRAY, ty2);
       case (i1, 0) guard(i1>0)    then (SizeClassification.ARRAY_SCALAR, ty1);
-      case (1, 2)                 then (SizeClassification.VECTOR_MATRIX, ty2);
-      case (2, 1)                 then (SizeClassification.MATRIX_VECTOR, ty1);
+      case (1, 2)                 then (SizeClassification.VECTOR_MATRIX, ty1);
+      case (2, 1)                 then (SizeClassification.MATRIX_VECTOR, ty2);
       case (i1, i2) guard(i1==i2) then (getSizeClassification(operator), ty1);
       else algorithm
         Error.assertion(false, getInstanceName() + " failed because the binary arguments have incompatible sizes: "
