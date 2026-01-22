@@ -278,7 +278,7 @@ public
           try
             idx_map := UnorderedMap.new<Integer>(ComponentRef.hash, ComponentRef.isEqual, listLength(seedVars) + listLength(resVars));
             if Jacobian.isDynamic(jacobian.jacType) then
-              if Flags.getConfigString(Flags.GENERATE_DYNAMIC_JACOBIAN) == "symbolicadjoint" then
+              if jacobian.isAdjoint then
                 loopVars := resVars;
               else
                 loopVars := seedVars;

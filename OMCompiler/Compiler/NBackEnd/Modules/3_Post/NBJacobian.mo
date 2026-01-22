@@ -869,10 +869,12 @@ protected
 
       jacobian := func(name, jacType, seedCandidates, partialCandidates, part.equations, knowns, part.strongComponents, funcMap, kind ==  NBPartition.Kind.INI);
 
-      if Flags.getConfigString(Flags.GENERATE_DYNAMIC_JACOBIAN) == "symbolicadjoint" and Util.isSome(jacobian) then
-        part.association := Partition.Association.CONTINUOUS(kind, NONE(), jacobian);
-      else
-        part.association := Partition.Association.CONTINUOUS(kind, jacobian, NONE());
+      if Util.isSome(jacobian) then
+        if BackendDAE.getIsAdjoint(Util.getOption(jacobian)) then
+          part.association := Partition.Association.CONTINUOUS(kind, NONE(), jacobian);
+        else
+          part.association := Partition.Association.CONTINUOUS(kind, jacobian, NONE());
+        end if;
       end if;
       if Flags.isSet(Flags.JAC_DUMP) then
         print(Partition.Partition.toString(part, 2));
@@ -943,13 +945,6 @@ protected
     else
       Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because no strong components were given!"});
     end if;
-
-    // // print strong components
-    // print("Strong components for symbolic differentiation:\n");
-    // print(jacobianTypeString(jacType) + "\n");
-    // for c in comps loop
-    //   print(StrongComponent.toString(c, 2) + "\n");
-    // end for;
 
     // create seed vars
     VariablePointers.mapPtr(seedCandidates, function makeVarTraverse(name = name, vars_ptr = seed_vars_ptr, map = diff_map, makeVar = BVariable.makeSeedVar, init = init));
@@ -1078,7 +1073,6 @@ protected
     input NBEquation.EquationAttributes attr;
     output Pointer<NBEquation.Equation> eqPtr;
   algorithm
-    // print("Creating adjoint ASSIGNMENT for lhs = " + Expression.toString(lhs) + " with rhs = " + Expression.toString(rhs) + "\n");
     eqPtr := NBEquation.Equation.makeAssignment(
       lhs,
       rhs,

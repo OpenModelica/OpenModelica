@@ -227,6 +227,18 @@ public
     end match;
   end getJacType;
 
+  function getIsAdjoint
+    input BackendDAE bdae;
+    output Boolean isAdjoint;
+  algorithm
+    isAdjoint := match bdae
+      case JACOBIAN(isAdjoint = isAdjoint) then isAdjoint;
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed! Only the record type JACOBIAN() has a jacobian."});
+      then fail();
+    end match;
+  end getIsAdjoint;
+
   function getFunctionMap
     input BackendDAE bdae;
     output UnorderedMap<Path, Function> funcMap;

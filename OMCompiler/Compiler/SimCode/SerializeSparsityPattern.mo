@@ -41,16 +41,25 @@ function serialize
 protected
   array<Integer> columnPointers, rowIndices, columns;
   String fname;
-  Boolean adj;
   list<tuple<Integer, list<Integer>>> pattern;
   list<list<Integer>> colorList;
 algorithm
   for jac in code.jacobianMatrices loop
-    // pick sparsity and coloring depending on adjoint
-    adj := jac.isAdjoint;
-    pattern := if adj then jac.sparsityT else jac.sparsity;
-    // prefer row coloring if available for adjoint, otherwise fall back to column coloring
-    colorList := if adj then (if not listEmpty(jac.coloredRows) then jac.coloredRows else jac.coloredCols) else jac.coloredCols;
+    // pick sparsity and coloring depending on isAdjoint boolean
+    if jac.isAdjoint then
+      pattern := jac.sparsityT;
+      // if adjoint then row coloring must exist else fail
+      if not listEmpty(jac.coloredRows) then
+        colorList := jac.coloredRows;
+      else
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because no row coloring for the adjoint jacobian exists."});
+        fail();
+      end if;
+    else
+      pattern := jac.sparsity;
+      colorList := jac.coloredCols;
+    end if;
+
     if not listEmpty(pattern) then
       fname := code.fileNamePrefix + "_Jac" + jac.matrixName + ".bin";
       columnPointers := listArray(0 :: list(listLength(Util.tuple22(column)) for column in pattern));
