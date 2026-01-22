@@ -28,7 +28,7 @@
  *
  */
 
-/*! \file events.h
+/*! \file discrete_changes.h
  */
 
 #ifndef _OMC_DISCRETE_CHANGES_H_
