@@ -272,7 +272,7 @@ void getInitStepSize(DATA* data, threadData_t* threadData, DATA_GBODE* gbData, S
   double h0, h1;
   double absTol = data->simulationInfo->tolerance;
   double relTol = absTol;
-  double oldStep = gbData->stepSize;
+  const double oldStep = gbData->stepSize;
 
   // Increase initialFailures counter on repeated failures (for adaptive reduction)
   gbData->initialFailures++;
