@@ -2088,8 +2088,8 @@ void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickne
             pPlotWindow->toggleSign(pPlotCurve, true);
           }
         } else {/* i.e., pPlotWindow->isPlotArray() */
-          double timePercent = mpTimeTextBox->text().toDouble();
-          pPlotWindow->plotArray(timePercent, pPlotCurve);
+          double time = mpTimeManager->getVisTime();
+          pPlotWindow->plotArray(time, pPlotCurve);
         }
         if (!pPlotCurve) {
           pPlotCurve = pPlotWindow->getPlot()->getPlotCurvesList().last();
@@ -2203,8 +2203,8 @@ void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickne
                 pPlotWindow->toggleSign(pPlotCurve, true);
               }
             } else { /* i.e., pPlotWindow->isPlotArrayParametric() */
-              double timePercent = mpTimeTextBox->text().toDouble();
-              pPlotWindow->plotArrayParametric(timePercent, pPlotCurve);
+              double time = mpTimeManager->getVisTime();
+              pPlotWindow->plotArrayParametric(time, pPlotCurve);
             }
             if (!pPlotCurve) {
               pPlotCurve = pPlotWindow->getPlot()->getPlotCurvesList().last();
