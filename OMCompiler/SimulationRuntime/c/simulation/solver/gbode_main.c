@@ -105,7 +105,6 @@ int gbode_fODE(DATA *data, threadData_t *threadData, unsigned int* counter)
 #if !defined(OMC_EMCC)
   MMC_CATCH_INTERNAL(simulationJumpBuffer)
 #endif
-  //infoStreamPrint(OMC_LOG_STDOUT, 0, "Return is %d", ret);
 
   return ret;
 }
