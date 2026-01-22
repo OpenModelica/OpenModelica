@@ -458,7 +458,7 @@ char *printArrayName(char *buffer,
  * `"<description>"`. Print same description `dimension->scalar_length` times.
  *
  * TODO: Move to a place where CSV can use it as well.
- * TODO: This prints "(null) [<unit>]" if dimension is `NULL`.
+ * TODO: This prints "(null) [<unit>]" if `description` is `NULL`.
  *
  * @param buffer              Buffer to print description to.
  * @param maxlen              Maximum length of single description.
@@ -873,10 +873,10 @@ void mat4_init4(simulation_result *self, DATA *data, threadData_t *threadData)
  *
  * See doc/UsersGuide/source/technical_details.rst for data format.
  *
- * @param self      Simulation result.
- * @param matData   MAT data.
- * @param mData     Model data.
- * @param mData     Model data.
+ * @param self            Simulation result.
+ * @param matData         MAT data.
+ * @param modelData       Model data.
+ * @param simulationInfo  Simulation info.
  */
 void writeDataInfo(simulation_result *self,
                    mat_data *matData,
@@ -886,30 +886,32 @@ void writeDataInfo(simulation_result *self,
   static_assert(sizeof(DataInfo) == 4 * sizeof(int32_t), "DataInfo must be 4x32-bit");
 
   DataInfo *dataInfo = (DataInfo *)malloc(sizeof(DataInfo) * matData->nSignals);
+  assertStreamPrint(NULL, dataInfo != NULL, "Out of memory.");
   size_t index_time_invariant = 1; // Count time-invariant series, stored in data_1
   size_t index_time_variant = 0;   // Count time-variant series, stored in data_2
-  size_t cur = 1;
+  size_t cur = 0;
 
   /* alias lookups */
   size_t *realLookup = (size_t *)malloc(sizeof(size_t) * modelData->nVariablesReal);
-  for(int i=0; i < modelData->nVariablesReal; i++) realLookup[i] = -1;
+  assertStreamPrint(NULL, realLookup != NULL || modelData->nVariablesReal == 0, "Out of memory.");
   size_t *integerLookup = (size_t *)malloc(sizeof(size_t) * modelData->nVariablesInteger);
-  for(int i=0; i < modelData->nVariablesInteger; i++) integerLookup[i] = -1;
+  assertStreamPrint(NULL, integerLookup != NULL || modelData->nVariablesInteger == 0, "Out of memory.");
   size_t *boolLookup = (size_t *)malloc(sizeof(size_t) * modelData->nVariablesBoolean);
-  for(int i=0; i < modelData->nVariablesBoolean; i++) boolLookup[i] = -1;
+  assertStreamPrint(NULL, boolLookup != NULL || modelData->nVariablesBoolean == 0, "Out of memory.");
 
   size_t *realParameterLookup = (size_t *)malloc(sizeof(size_t) * modelData->nParametersReal);
-  for(int i=0; i < modelData->nParametersReal; i++) realParameterLookup[i] = -1;
+  assertStreamPrint(NULL, realParameterLookup != NULL || modelData->nParametersReal == 0, "Out of memory.");
   size_t *integerParameterLookup = (size_t *)malloc(sizeof(size_t) * modelData->nParametersInteger);
-  for(int i=0; i < modelData->nParametersInteger; i++) integerParameterLookup[i] = -1;
+  assertStreamPrint(NULL, integerParameterLookup != NULL || modelData->nParametersInteger == 0, "Out of memory.");
   size_t *boolParameterLookup = (size_t *)malloc(sizeof(size_t) * modelData->nParametersBoolean);
-  for(int i=0; i < modelData->nParametersBoolean; i++) boolParameterLookup[i] = -1;
+  assertStreamPrint(NULL, boolParameterLookup != NULL || modelData->nParametersBoolean == 0, "Out of memory.");
 
   /* time */
-  dataInfo[0].channel = CHANNEL_TIME;
-  dataInfo[0].index = ++index_time_variant;
-  dataInfo[0].interpolation = INTERPOLATION_LINEAR;
-  dataInfo[0].extrapolation = EXTRAPOLATION_NOT_ALLOWED;
+  dataInfo[cur].channel = CHANNEL_TIME;
+  dataInfo[cur].index = ++index_time_variant;
+  dataInfo[cur].interpolation = INTERPOLATION_LINEAR;
+  dataInfo[cur].extrapolation = EXTRAPOLATION_NOT_ALLOWED;
+  cur++;
 
   if (self->cpuTime)
   {
@@ -1050,17 +1052,21 @@ void writeDataInfo(simulation_result *self,
     if (!modelData->realAlias[arrayIdx].filterOutput)
     {
       /* Determine scalar length depending on alias type */
-      size_t aliasScalarLength = 1;
+      size_t aliasScalarLength;
+      size_t aliasStartIdx;
       switch (modelData->realAlias[arrayIdx].aliasType)
       {
       case ALIAS_TYPE_VARIABLE:
         aliasScalarLength = modelData->realVarsData[modelData->realAlias[arrayIdx].nameID].dimension.scalar_length;
+        aliasStartIdx = realLookup[simulationInfo->realVarsIndex[modelData->realAlias[arrayIdx].nameID]];
         break;
       case ALIAS_TYPE_PARAMETER:
         aliasScalarLength = modelData->realParameterData[modelData->realAlias[arrayIdx].nameID].dimension.scalar_length;
+        aliasStartIdx = realParameterLookup[simulationInfo->realParamsIndex[modelData->realAlias[arrayIdx].nameID]];
         break;
       case ALIAS_TYPE_TIME:
         aliasScalarLength = 1;
+        aliasStartIdx = -1;
         break;
       default:
         throwStreamPrint(NULL, "writeDataInfo: Unknown alias type for real alias.");
@@ -1072,26 +1078,18 @@ void writeDataInfo(simulation_result *self,
         switch (modelData->realAlias[arrayIdx].aliasType)
         {
         case ALIAS_TYPE_VARIABLE:
-          dataInfo[cur].channel = dataInfo[realLookup[modelData->realAlias[arrayIdx].nameID] + i].channel;
-          dataInfo[cur].index = dataInfo[realLookup[modelData->realAlias[arrayIdx].nameID] + i].index;
-          dataInfo[cur].interpolation = dataInfo[realLookup[modelData->realAlias[arrayIdx].nameID] + i].interpolation;
-          dataInfo[cur].extrapolation = dataInfo[realLookup[modelData->realAlias[arrayIdx].nameID] + i].extrapolation;
-          break;
-
         case ALIAS_TYPE_PARAMETER:
-          dataInfo[cur].channel = dataInfo[realParameterLookup[modelData->realAlias[arrayIdx].nameID] + i].channel;
-          dataInfo[cur].index = dataInfo[realParameterLookup[modelData->realAlias[arrayIdx].nameID] + i].index;
-          dataInfo[cur].interpolation = dataInfo[realParameterLookup[modelData->realAlias[arrayIdx].nameID] + i].interpolation;
-          dataInfo[cur].extrapolation = dataInfo[realParameterLookup[modelData->realAlias[arrayIdx].nameID] + i].extrapolation;
+          dataInfo[cur].channel = dataInfo[aliasStartIdx + i].channel;
+          dataInfo[cur].index = dataInfo[aliasStartIdx + i].index;
+          dataInfo[cur].interpolation = dataInfo[aliasStartIdx + i].interpolation;
+          dataInfo[cur].extrapolation = dataInfo[aliasStartIdx + i].extrapolation;
           break;
-
         case ALIAS_TYPE_TIME:
           dataInfo[cur].channel = CHANNEL_TIME_VARIANT;
           dataInfo[cur].index = 1;
           dataInfo[cur].interpolation = INTERPOLATION_LINEAR;
           dataInfo[cur].extrapolation = EXTRAPOLATION_NOT_ALLOWED;
           break;
-
         default:
           throwStreamPrint(NULL, "writeDataInfo: Unknown alias type for real alias.");
         }
@@ -1111,14 +1109,17 @@ void writeDataInfo(simulation_result *self,
     if (!modelData->integerAlias[arrayIdx].filterOutput)
     {
       /* Determine scalar length depending on alias type */
-      size_t aliasScalarLength = 1;
+      size_t aliasScalarLength;
+      size_t aliasStartIdx;
       switch (modelData->integerAlias[arrayIdx].aliasType)
       {
       case ALIAS_TYPE_VARIABLE:
         aliasScalarLength = modelData->integerVarsData[modelData->integerAlias[arrayIdx].nameID].dimension.scalar_length;
+        aliasStartIdx = integerLookup[simulationInfo->integerVarsIndex[modelData->integerAlias[arrayIdx].nameID]];
         break;
       case ALIAS_TYPE_PARAMETER:
         aliasScalarLength = modelData->integerParameterData[modelData->integerAlias[arrayIdx].nameID].dimension.scalar_length;
+        aliasStartIdx = integerParameterLookup[simulationInfo->integerParamsIndex[modelData->integerAlias[arrayIdx].nameID]];
         break;
       default:
         throwStreamPrint(NULL, "writeDataInfo: Unknown alias type for integer alias.");
@@ -1127,23 +1128,11 @@ void writeDataInfo(simulation_result *self,
       /* Copy dataInfo from alias */
       for (int i = 0; i < (int)aliasScalarLength; i++)
       {
-        switch (modelData->integerAlias[arrayIdx].aliasType)
-        {
-        case ALIAS_TYPE_VARIABLE:
-          dataInfo[cur].channel = dataInfo[integerLookup[modelData->integerAlias[arrayIdx].nameID] + i].channel;
-          dataInfo[cur].index = dataInfo[integerLookup[modelData->integerAlias[arrayIdx].nameID] + i].index;
-          dataInfo[cur].interpolation = dataInfo[integerLookup[modelData->integerAlias[arrayIdx].nameID] + i].interpolation;
-          dataInfo[cur].extrapolation = dataInfo[integerLookup[modelData->integerAlias[arrayIdx].nameID] + i].extrapolation;
-          break;
-        case ALIAS_TYPE_PARAMETER:
-          dataInfo[cur].channel = dataInfo[integerParameterLookup[modelData->integerAlias[arrayIdx].nameID] + i].channel;
-          dataInfo[cur].index = dataInfo[integerParameterLookup[modelData->integerAlias[arrayIdx].nameID] + i].index;
-          dataInfo[cur].interpolation = dataInfo[integerParameterLookup[modelData->integerAlias[arrayIdx].nameID] + i].interpolation;
-          dataInfo[cur].extrapolation = dataInfo[integerParameterLookup[modelData->integerAlias[arrayIdx].nameID] + i].extrapolation;
-          break;
-        default:
-          throwStreamPrint(NULL, "writeDataInfo: Unknown alias type for integer alias.");
-        }
+        dataInfo[cur].channel = dataInfo[aliasStartIdx + i].channel;
+        dataInfo[cur].index = dataInfo[aliasStartIdx + i].index;
+        dataInfo[cur].interpolation = dataInfo[aliasStartIdx + i].interpolation;
+        dataInfo[cur].extrapolation = dataInfo[aliasStartIdx + i].extrapolation;
+
         if (modelData->integerAlias[arrayIdx].negate)
         {
           dataInfo[cur].index = -dataInfo[cur].index;
@@ -1155,19 +1144,22 @@ void writeDataInfo(simulation_result *self,
   }
 
   /* Boolean alias */
-  for (int arrayIdx = 0, scalarIdx = 0; arrayIdx < modelData->nAliasBooleanArray; arrayIdx++)
+  for (int arrayIdx = 0; arrayIdx < modelData->nAliasBooleanArray; arrayIdx++)
   {
     if (!modelData->booleanAlias[arrayIdx].filterOutput)
     {
       /* Determine scalar length depending on alias type */
-      size_t aliasScalarLength = 1;
+      size_t aliasScalarLength;
+      size_t aliasStartIdx;
       switch (modelData->booleanAlias[arrayIdx].aliasType)
       {
       case ALIAS_TYPE_VARIABLE:
         aliasScalarLength = modelData->booleanVarsData[modelData->booleanAlias[arrayIdx].nameID].dimension.scalar_length;
+        aliasStartIdx = boolLookup[simulationInfo->booleanVarsIndex[modelData->booleanAlias[arrayIdx].nameID]];
         break;
       case ALIAS_TYPE_PARAMETER:
         aliasScalarLength = modelData->booleanParameterData[modelData->booleanAlias[arrayIdx].nameID].dimension.scalar_length;
+        aliasStartIdx = boolParameterLookup[simulationInfo->booleanParamsIndex[modelData->booleanAlias[arrayIdx].nameID]];
         break;
       default:
         throwStreamPrint(NULL, "writeDataInfo: Unknown alias type for boolean alias.");
@@ -1175,46 +1167,22 @@ void writeDataInfo(simulation_result *self,
 
       for (int i = 0; i < (int)aliasScalarLength; i++)
       {
-        switch (modelData->booleanAlias[arrayIdx].aliasType)
+        if (modelData->booleanAlias[arrayIdx].negate)
         {
-        case ALIAS_TYPE_VARIABLE:
-          if (modelData->booleanAlias[arrayIdx].negate)
-          {
-            dataInfo[cur].channel = CHANNEL_TIME_VARIANT;
-            dataInfo[cur].index = ++index_time_variant;
-            dataInfo[cur].interpolation = INTERPOLATION_LINEAR;
-            dataInfo[cur].extrapolation = EXTRAPOLATION_CONSTANT;
-          }
-          else
-          {
-            dataInfo[cur].channel = dataInfo[boolLookup[modelData->booleanAlias[arrayIdx].nameID]].channel;
-            dataInfo[cur].index = dataInfo[boolLookup[modelData->booleanAlias[arrayIdx].nameID]].index;
-            dataInfo[cur].interpolation = dataInfo[boolLookup[modelData->booleanAlias[arrayIdx].nameID]].interpolation;
-            dataInfo[cur].extrapolation = dataInfo[boolLookup[modelData->booleanAlias[arrayIdx].nameID]].extrapolation;
-          }
-          break;
-        case ALIAS_TYPE_PARAMETER:
-          if (modelData->booleanAlias[arrayIdx].negate)
-          {
-            dataInfo[cur].channel = CHANNEL_TIME_INVARIANT;
-            dataInfo[cur].index = ++index_time_invariant;
-            dataInfo[cur].interpolation = INTERPOLATION_LINEAR;
-            dataInfo[cur].extrapolation = EXTRAPOLATION_CONSTANT;
-          }
-          else
-          {
-            dataInfo[cur].channel = dataInfo[boolParameterLookup[modelData->booleanAlias[arrayIdx].nameID]].channel;
-            dataInfo[cur].index = dataInfo[boolParameterLookup[modelData->booleanAlias[arrayIdx].nameID]].index;
-            dataInfo[cur].interpolation = dataInfo[boolParameterLookup[modelData->booleanAlias[arrayIdx].nameID]].interpolation;
-            dataInfo[cur].extrapolation = dataInfo[boolParameterLookup[modelData->booleanAlias[arrayIdx].nameID]].extrapolation;
-          }
-          break;
-        default:
-          throwStreamPrint(NULL, "writeDataInfo: Unknown alias type for boolean alias.");
+          dataInfo[cur].channel = CHANNEL_TIME_VARIANT;
+          dataInfo[cur].index = ++index_time_variant;
+          dataInfo[cur].interpolation = INTERPOLATION_LINEAR;
+          dataInfo[cur].extrapolation = EXTRAPOLATION_CONSTANT;
+        }
+        else
+        {
+          dataInfo[cur].channel = dataInfo[aliasStartIdx + i].channel;
+          dataInfo[cur].index = dataInfo[aliasStartIdx + i].index;
+          dataInfo[cur].interpolation = dataInfo[aliasStartIdx + i].interpolation;
+          dataInfo[cur].extrapolation = dataInfo[aliasStartIdx + i].extrapolation;
         }
 
         cur++;
-        scalarIdx++;
       }
     }
   }
@@ -1365,8 +1333,8 @@ void mat4_writeParameterData4(simulation_result *self, DATA *data, threadData_t 
     {
       for (int i = 0; i < mData->integerParameterData[arrayIdx].dimension.scalar_length; i++)
       {
-        WRITE_REAL_VALUE(data_1, cur, sInfo->integerParameter[data->simulationInfo->integerVarsIndex[arrayIdx] + i]);
-        WRITE_REAL_VALUE(data_1, cur + matData->nData1, sInfo->integerParameter[data->simulationInfo->integerVarsIndex[arrayIdx] + i]);
+        WRITE_REAL_VALUE(data_1, cur, sInfo->integerParameter[data->simulationInfo->integerParamsIndex[arrayIdx] + i]);
+        WRITE_REAL_VALUE(data_1, cur + matData->nData1, sInfo->integerParameter[data->simulationInfo->integerParamsIndex[arrayIdx] + i]);
         cur++;
       }
     }
@@ -1517,8 +1485,8 @@ void mat4_emit4(simulation_result *self, DATA *data, threadData_t *threadData)
 
       for (int i = 0; i < (int)aliasScalarLength; i++)
       {
-        size_t aliasScalarIdxStart = data->simulationInfo->booleanVarsIndex[mData->booleanAlias[arrayIdx].nameID];
-        WRITE_REAL_VALUE(matData->data_2, cur++, (1 - data->localData[0]->booleanVars[aliasScalarIdxStart + i]));
+        size_t aliasStartIdx = data->simulationInfo->booleanVarsIndex[mData->booleanAlias[arrayIdx].nameID];
+        WRITE_REAL_VALUE(matData->data_2, cur++, (1 - data->localData[0]->booleanVars[aliasStartIdx + i]));
       }
     }
   }
