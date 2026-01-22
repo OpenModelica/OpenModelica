@@ -350,7 +350,6 @@ static int gbInternal_evalJacobian(DATA *data, threadData_t *threadData, DATA_GB
   #if !defined(OMC_EMCC)
     MMC_CATCH_INTERNAL(simulationJumpBuffer)
   #endif
- // infoStreamPrint(OMC_LOG_STDOUT, 0, "Return Jac is %d", ret);
 
   rt_accumulate(SIM_TIMER_JACOBIAN);
   gbData->stats.nCallsJacobian++;
