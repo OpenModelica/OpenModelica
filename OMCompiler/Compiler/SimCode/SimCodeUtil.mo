@@ -5135,8 +5135,9 @@ algorithm
      then
         (linearModelMatrices, uniqueEqIndex);
 
+    // create empty jacobian if names do not match
     case ((SOME((_, jacName, _, _, _, _)), _, _, _) :: _, _, _, name::restnames)
-      guard  jacName <> name // create empty jacobian if names do not match
+      guard jacName <> name
       equation
         tmpJac = SimCode.emptyJacobian;
         tmpJac.matrixName = name;

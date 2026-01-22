@@ -1864,21 +1864,6 @@ public
     outExp := arrayFromList_impl(newlst, ty, restdims);
   end arrayFromList_impl;
 
-  // build a matrix from list<list<Expression>> using arrayFromList
-  function makeMatrixFromRows
-    input list<list<Expression>> rows;
-    output Expression mat;
-  protected
-    Integer nRows = listLength(rows);
-    Integer nCols = if nRows == 0 then 0 else listLength(listHead(rows));
-    list<Expression> flat = List.flatten(rows);
-    Type elemTy = if listEmpty(flat) then Type.REAL() else Expression.typeOf(listHead(flat));
-    list<Dimension> dims = {Dimension.fromInteger(nRows), Dimension.fromInteger(nCols)};
-  algorithm
-    // dims are given in normal order [rows, cols]
-    mat := Expression.arrayFromList(flat, elemTy, dims);
-  end makeMatrixFromRows;
-
   function makeEnumLiteral
     input Type enumType;
     input Integer index;
@@ -4750,16 +4735,6 @@ public
       else false;
     end match;
   end isRecord;
-
-  function isIf
-    input Expression exp;
-    output Boolean isIf;
-  algorithm
-    isIf := match exp
-      case IF() then true;
-      else false;
-    end match;
-  end isIf;
 
   function isRecordOrRecordArray
     input Expression exp;
