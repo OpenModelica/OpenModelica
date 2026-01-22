@@ -81,3 +81,4 @@ noneFromVersion
 allowNonStandardModelica
 reinitInAlgorithms
 hideResult
+ModelicaServices
