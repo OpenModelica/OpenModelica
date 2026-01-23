@@ -765,17 +765,56 @@ protected
     end for;
   end getInitialEquations;
 
+  function isLfgVariable
+    "Lfg contains variables: x (states), u (controls) and p (parameters)"
+    input Pointer<Variable> var_ptr;
+    output Boolean out;
+  algorithm
+    if (BVariable.isFinalTime(var_ptr) or BVariable.isInitialTime(var_ptr)) then
+      out := false;
+    else
+      out := true;
+    end if;
+  end isLfgVariable;
+
+  function isMrfVariable
+    "Mrf contains variables: x (states), u (controls) at final time, p (parameters) and tf (final time)"
+    input Pointer<Variable> var_ptr;
+    output Boolean out;
+  algorithm
+    if (BVariable.isInitialTime(var_ptr)) then
+      out := false;
+    else
+      out := true;
+    end if;
+  end isMrfVariable;
+
+  function isR0Variable
+    "r0 contains variables: x (states), u (controls) at initial time, p (parameters) and t0 (initial time)"
+    input Pointer<Variable> var_ptr;
+    output Boolean out;
+  algorithm
+    if (BVariable.isFinalTime(var_ptr)) then
+      out := false;
+    else
+      out := true;
+    end if;
+  end isR0Variable;
+
   function getSeedCandidatesDynamicOptimization
     input Partition.Partition part;
     input VariablePointers all_knowns;
+    input BVariable.checkVar filter;
     output list<Pointer<Variable>> unknowns;
   protected
     list<Pointer<Variable>> derivative_vars, unknown_states;
   algorithm
+    // we could absorb the filter into getOptimizableVars as its faster
     unknowns := getOptimizableVars(all_knowns); // all optimizable inputs + parameters
     derivative_vars := list(var for var guard(BVariable.isStateDerivative(var)) in VariablePointers.toList(part.unknowns));
     unknown_states := list(Util.getOption(BVariable.getVarState(var)) for var in derivative_vars); // all states
     unknowns := listAppend(unknown_states, unknowns); // all states, inputs and parameters (optimizable)
+    unknowns := List.filterOnTrue(unknowns, filter);
     // sort?
   end getSeedCandidatesDynamicOptimization;
 
@@ -826,7 +865,7 @@ protected
   algorithm
     // Lfg Jacobian (Lagrange (L), ODE (f), Path Constraints (g))
     partialCandidates := VariablePointers.fromList(getLfgPartialCandidates(part, all_knowns), part.unknowns.scalarized);
-    seedCandidates := VariablePointers.fromList(getSeedCandidatesDynamicOptimization(part, all_knowns), partialCandidates.scalarized);
+    seedCandidates := VariablePointers.fromList(getSeedCandidatesDynamicOptimization(part, all_knowns, isLfgVariable), partialCandidates.scalarized);
 
     // TODO: add _OPT to name?
     LFG_jacobian := func(name, JacobianType.OPT_LFG, seedCandidates, partialCandidates,
@@ -834,7 +873,7 @@ protected
 
     // Mrf Jacobian (Mayer (M), Final Constraints (rf))
     partialCandidates := VariablePointers.fromList(getMrfPartialCandidates(part, all_knowns), part.unknowns.scalarized);
-    seedCandidates := VariablePointers.fromList(getSeedCandidatesDynamicOptimization(part, all_knowns), partialCandidates.scalarized);
+    seedCandidates := VariablePointers.fromList(getSeedCandidatesDynamicOptimization(part, all_knowns, isMrfVariable), partialCandidates.scalarized);
 
     // TODO: add _OPT to name?
     MRF_jacobian := func(name, JacobianType.OPT_MRF, seedCandidates, partialCandidates,
@@ -842,7 +881,7 @@ protected
 
     // r0 Jacobian (Initial Constraints (r0))
     partialCandidates := VariablePointers.fromList(getR0PartialCandidates(part, all_knowns), part.unknowns.scalarized);
-    seedCandidates := VariablePointers.fromList(getSeedCandidatesDynamicOptimization(part, all_knowns), partialCandidates.scalarized);
+    seedCandidates := VariablePointers.fromList(getSeedCandidatesDynamicOptimization(part, all_knowns, isR0Variable), partialCandidates.scalarized);
 
     // TODO: add _OPT to name?
     R0_jacobian := func(name, JacobianType.OPT_R0, seedCandidates, partialCandidates,

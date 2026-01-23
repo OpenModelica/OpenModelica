@@ -703,6 +703,30 @@ public
     end match;
   end isOptimizable;
 
+  function isInitialTime
+    extends checkVar;
+  protected
+    OptimizerExpression optExp;
+  algorithm
+    b := match var.backendinfo
+      case BackendExtension.BACKEND_INFO(annotations = BackendExtension.ANNOTATIONS(optimizerExpression = SOME(optExp)))
+        then (optExp == OptimizerExpression.INITIAL_TIME);
+      else false;
+    end match;
+  end isInitialTime;
+
+  function isFinalTime
+    extends checkVar;
+  protected
+    OptimizerExpression optExp;
+  algorithm
+    b := match var.backendinfo
+      case BackendExtension.BACKEND_INFO(annotations = BackendExtension.ANNOTATIONS(optimizerExpression = SOME(optExp)))
+        then (optExp == OptimizerExpression.FINAL_TIME);
+      else false;
+    end match;
+  end isFinalTime;
+
   function isLagrangeOrPathConstraint
     extends checkVar;
   protected
