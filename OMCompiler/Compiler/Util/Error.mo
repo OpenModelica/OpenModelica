@@ -442,8 +442,8 @@ public constant ErrorTypes.Message LOAD_MODEL_DIFFERENT_VERSIONS = ErrorTypes.ME
   Gettext.gettext("Requested package %s of version %s, but this package was already loaded with version %s. OpenModelica cannot reason about compatibility between the two packages since they are not semantic versions."));
 public constant ErrorTypes.Message LOAD_MODEL_FAILED = ErrorTypes.MESSAGE(184, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
   Gettext.gettext("Failed to load package %s (%s) using MODELICAPATH %s."));
-public constant ErrorTypes.Message REPLACEABLE_BASE_CLASS_SIMPLE = ErrorTypes.MESSAGE(185, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
-  Gettext.gettext("Base class %s is replaceable."));
+public constant ErrorTypes.Message LOAD_FILE_FAILED = ErrorTypes.MESSAGE(185, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
+  Gettext.gettext("Failed to load file %s: %s."));
 public constant ErrorTypes.Message INVALID_SIZE_INDEX = ErrorTypes.MESSAGE(186, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   Gettext.gettext("Invalid index %s in call to size of %s, valid index interval is [1,%s]."));
 public constant ErrorTypes.Message ALGORITHM_TRANSITION_FAILURE = ErrorTypes.MESSAGE(187, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),

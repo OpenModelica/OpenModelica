@@ -91,6 +91,8 @@ extern int SystemImpl__setCFlags(const char *str);
 extern int SystemImpl__setLDFlags(const char *str);
 extern char* SystemImpl__pwd(void);
 extern int SystemImpl__regularFileExists(const char* filename);
+extern int SystemImpl__regularFileReadable(const char* str);
+extern int SystemImpl__regularFileWritable(const char* str);
 extern int SystemImpl__removeFile(const char* filename);
 extern int SystemImpl__rename(const char *source, const char *dest);
 extern const char* SystemImpl__basename(const char *str);
@@ -113,6 +115,5 @@ extern int SystemImpl__unescapedStringLength(const char* str);
 extern const char* SystemImpl__iconv(const char * str, const char *from, const char *to, int printError);
 extern const char* SystemImpl__iconv__ascii(const char * str);
 extern void SystemImpl__initGarbageCollector(void);
-extern int SystemImpl__regularFileWritable(const char* str);
 
 #endif //__SYSTEMIMPL_H
