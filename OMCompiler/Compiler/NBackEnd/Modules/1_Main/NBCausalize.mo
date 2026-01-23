@@ -204,7 +204,7 @@ public
     full := Adjacency.Matrix.createFull(vars, eqns);
 
     // create solvable adjacency matrix for matching
-    adj := Adjacency.Matrix.fromFull(full, vars.map, eqns.map, eqns, st, iter);
+    adj := Adjacency.Matrix.fullToFinal(full, vars.map, eqns.map, eqns, st, iter);
     matching := Matching.regular(NBMatching.EMPTY_MATCHING, adj);
 
     // create all occurence adjacency matrix for sorting, upgrading the matching matrix
@@ -266,7 +266,7 @@ protected
         // #################################################
         vn := UnorderedMap.subMap(partition.unknowns.map, list(BVariable.getVarName(var) for var in unfixable));
         en := UnorderedMap.subMap(partition.equations.map, list(Equation.getEqnName(eqn) for eqn in initials));
-        adj_matching := Adjacency.Matrix.fromFull(full, vn, en, partition.equations, NBAdjacency.MatrixStrictness.MATCHING);
+        adj_matching := Adjacency.Matrix.fullToFinal(full, vn, en, partition.equations, NBAdjacency.MatrixStrictness.MATCHING);
         matching := Matching.regular(NBMatching.EMPTY_MATCHING, adj_matching, true, true);
 
         // #################################################
@@ -306,7 +306,7 @@ protected
         full := Adjacency.Matrix.createFull(variables, equations);
 
         // create solvable adjacency matrix for matching
-        adj_matching := Adjacency.Matrix.fromFull(full, variables.map, equations.map, equations, NBAdjacency.MatrixStrictness.MATCHING);
+        adj_matching := Adjacency.Matrix.fullToFinal(full, variables.map, equations.map, equations, NBAdjacency.MatrixStrictness.MATCHING);
 
         // perform matching
         (matching, adj_matching, full, variables, equations, varData, eqData) := Matching.singular(NBMatching.EMPTY_MATCHING, adj_matching, full, variables, equations, funcMap, varData, eqData, kind, false);

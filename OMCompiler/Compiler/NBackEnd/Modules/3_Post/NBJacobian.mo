@@ -112,9 +112,7 @@ public
     bdae := match bdae
       local
         String name             "Context name for jacobian";
-        VariablePointers knowns "Variable array of knowns";
-
-      case BackendDAE.MAIN(varData = BVariable.VAR_DATA_SIM(knowns = knowns))
+      case BackendDAE.MAIN()
         algorithm
           if Flags.isSet(Flags.JAC_DUMP) then
             print(StringUtil.headline_1("[symjacdump] Creating symbolic Jacobians:") + "\n");
@@ -123,23 +121,23 @@ public
           name := match kind
             case NBPartition.Kind.ODE algorithm
               name := "ODE_JAC";
-              bdae.ode := applyToPartitions(bdae.ode, bdae.funcMap, knowns, name, func);
+              bdae.ode := applyToPartitions(bdae.ode, bdae.funcMap, name, func);
             then name;
             case NBPartition.Kind.DAE algorithm
               name := "DAE_JAC";
-              bdae.dae := SOME(applyToPartitions(Util.getOption(bdae.dae), bdae.funcMap, knowns, name, func));
+              bdae.dae := SOME(applyToPartitions(Util.getOption(bdae.dae), bdae.funcMap, name, func));
             then name;
             else algorithm
               Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for: " + Partition.Partition.kindToString(kind)});
             then fail();
           end match;
 
-          bdae.ode_event := applyToPartitions(bdae.ode_event, bdae.funcMap, knowns, name, func);
-          bdae.algebraic := applyToPartitions(bdae.algebraic, bdae.funcMap, knowns, name, func);
-          bdae.alg_event := applyToPartitions(bdae.alg_event, bdae.funcMap, knowns, name, func);
-          bdae.init := applyToPartitions(bdae.init, bdae.funcMap, knowns, name, func);
+          bdae.ode_event := applyToPartitions(bdae.ode_event, bdae.funcMap, name, func);
+          bdae.algebraic := applyToPartitions(bdae.algebraic, bdae.funcMap, name, func);
+          bdae.alg_event := applyToPartitions(bdae.alg_event, bdae.funcMap, name, func);
+          bdae.init := applyToPartitions(bdae.init, bdae.funcMap, name, func);
           if Util.isSome(bdae.init_0) then
-            bdae.init_0 := SOME(applyToPartitions(Util.getOption(bdae.init_0), bdae.funcMap, knowns, name, func));
+            bdae.init_0 := SOME(applyToPartitions(Util.getOption(bdae.init_0), bdae.funcMap, name, func));
           end if;
       then bdae;
 
@@ -154,11 +152,10 @@ public
   function applyToPartitions
     input output list<Partition.Partition> partitions;
     input output UnorderedMap<Path, Function> funcMap;
-    input VariablePointers knowns;
     input String name;
     input Module.jacobianInterface func;
   algorithm
-    partitions := list(partJacobian(part, funcMap, knowns, name, func) for part in partitions);
+    partitions := list(partJacobian(part, funcMap, name, func) for part in partitions);
   end applyToPartitions;
 
   function nonlinear
@@ -166,6 +163,7 @@ public
     input VariablePointers partialCandidates;
     input EquationPointers equations;
     input array<StrongComponent> comps;
+    input Option<Adjacency.Matrix> full;
     input UnorderedMap<Path, Function> funcMap;
     input String name;
     input Boolean init;
@@ -181,8 +179,8 @@ public
         seedCandidates    = seedCandidates,
         partialCandidates = partialCandidates,
         equations         = equations,
-        knowns            = VariablePointers.empty(0),      // remove them? are they necessary?
         strongComponents  = SOME(comps),
+        full              = full,
         funcMap           = funcMap,
         init              = init
       );
@@ -194,7 +192,7 @@ public
     output BackendDAE jacobian;
   protected
     JacobianType jacType;
-    list<Pointer<Variable>> variables = {}, unknowns = {}, knowns = {}, auxiliaryVars = {}, aliasVars = {};
+    list<Pointer<Variable>> variables = {}, unknowns = {}, auxiliaryVars = {}, aliasVars = {};
     list<Pointer<Variable>> diffVars = {}, dependencies = {}, resultVars = {}, tmpVars = {}, seedVars = {};
     list<StrongComponent> comps = {};
     list<SparsityPatternCol> col_wise_pattern = {};
@@ -222,7 +220,6 @@ public
             jacType       := jac.jacType;
             variables     := listAppend(VariablePointers.toList(tmpVarData.variables), variables);
             unknowns      := listAppend(VariablePointers.toList(tmpVarData.unknowns), unknowns);
-            knowns        := listAppend(VariablePointers.toList(tmpVarData.knowns), knowns);
             auxiliaryVars := listAppend(VariablePointers.toList(tmpVarData.auxiliaries), auxiliaryVars);
             aliasVars     := listAppend(VariablePointers.toList(tmpVarData.aliasVars), aliasVars);
             diffVars      := listAppend(VariablePointers.toList(tmpVarData.diffVars), diffVars);
@@ -250,7 +247,6 @@ public
       varData := VarData.VAR_DATA_JAC(
         variables     = VariablePointers.fromList(variables),
         unknowns      = VariablePointers.fromList(unknowns),
-        knowns        = VariablePointers.fromList(knowns),
         auxiliaries   = VariablePointers.fromList(auxiliaryVars),
         aliasVars     = VariablePointers.fromList(aliasVars),
         diffVars      = VariablePointers.fromList(diffVars),
@@ -273,6 +269,7 @@ public
         jacType           = jacType,
         varData           = varData,
         comps             = listArray(comps),
+        //sparsity          = Adjacency.Matrix.SPARSITY(arrayCreate()),
         sparsityPattern   = sparsityPattern,
         sparsityColoring  = sparsityColoring,
         isAdjoint         = name == "ADJ" // this is maybe bad (e.g. when name changes)
@@ -1010,7 +1007,6 @@ protected
   function partJacobian
     input output Partition.Partition part;
     input UnorderedMap<Path, Function> funcMap;
-    input VariablePointers knowns;
     input String name                                     "Context name for jacobian";
     input Module.jacobianInterface func;
   protected
@@ -1029,7 +1025,7 @@ protected
         StrongComponent tmp;
       case SOME(comps) algorithm
         for i in 1:arrayLength(comps) loop
-          (tmp, updated) := compJacobian(comps[i], funcMap, kind);
+          (tmp, updated) := compJacobian(comps[i], part.adjacencyMatrix, funcMap, kind);
           if updated then arrayUpdate(comps, i, tmp); end if;
         end for;
       then SOME(comps);
@@ -1070,6 +1066,7 @@ protected
 
   function compJacobian
     input output StrongComponent comp;
+    input Option<Adjacency.Matrix> full;
     input UnorderedMap<Path, Function> funcMap;
     input Partition.Kind kind;
     output Boolean updated;
@@ -1095,6 +1092,7 @@ protected
           partialCandidates = VariablePointers.fromList(listAppend(residual_vars, inner_vars)),
           equations         = EquationPointers.fromList(list(Slice.getT(eqn) for eqn in strict.residual_eqns)),
           comps             = Array.appendList(strict.innerEquations, residual_comps),
+          full              = full,
           funcMap           = funcMap,
           name              = Partition.Partition.kindToString(kind) + (if comp.linear then "_LS_JAC_" else "_NLS_JAC_") + intString(comp.idx),
           init              = kind == NBPartition.Kind.INI);
@@ -1121,6 +1119,7 @@ protected
     BVariable.VarData varDataJac;
     SparsityPattern sparsityPattern;
     SparsityColoring sparsityColoring;
+    Adjacency.Matrix sparsity;
 
     BVariable.checkVar func = getTmpFilterFunction(jacType);
   algorithm
@@ -1174,7 +1173,6 @@ protected
     varDataJac := BVariable.VAR_DATA_JAC(
       variables     = VariablePointers.fromList(all_vars),
       unknowns      = VariablePointers.fromList(unknown_vars),
-      knowns        = knowns,
       auxiliaries   = VariablePointers.fromList(aux_vars),
       aliasVars     = VariablePointers.fromList(alias_vars),
       diffVars      = partialCandidates,
@@ -1184,6 +1182,12 @@ protected
       seedVars      = VariablePointers.fromList(seed_vars)
     );
 
+    if Util.isSome(full) then
+      sparsity := Adjacency.Matrix.fullToSparsity(Util.getOption(full), equations);
+    else
+      Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because full adjacency matrix to create sparsity pattern is missing."});
+      fail();
+    end if;
     (sparsityPattern, sparsityColoring) := SparsityPattern.create(seedCandidates, partialCandidates, strongComponents, jacType);
 
     jacobian := SOME(Jacobian.JACOBIAN(
@@ -1191,6 +1195,7 @@ protected
       jacType           = jacType,
       varData           = varDataJac,
       comps             = listArray(diffed_comps),
+      // sparsity
       sparsityPattern   = sparsityPattern,
       sparsityColoring  = sparsityColoring,
       isAdjoint         = false
@@ -1823,7 +1828,6 @@ protected
     varDataJac := BVariable.VAR_DATA_JAC(
       variables     = VariablePointers.fromList({}),
       unknowns      = partialCandidates,
-      knowns        = VariablePointers.fromList({}),
       auxiliaries   = VariablePointers.fromList({}),
       aliasVars     = VariablePointers.fromList({}),
       diffVars      = VariablePointers.fromList({}),

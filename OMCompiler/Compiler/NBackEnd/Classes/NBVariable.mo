@@ -2431,7 +2431,6 @@ public
       VariablePointers variables          "All jacobian variables";
       /* subset of full variable array */
       VariablePointers unknowns           "All result and temporary vars"; // FIXME unused?
-      VariablePointers knowns             "Parameters, constants";
       VariablePointers auxiliaries        "Variables created by the backend known to be solved
                                           by given binding. E.g. $cse";
       VariablePointers aliasVars          "Variables removed due to alias removal";
@@ -2573,7 +2572,6 @@ public
               VariablePointers.toString(varData.resultVars, "Residual", NONE(), false) +
               VariablePointers.toString(varData.tmpVars, "Inner", NONE(), false) +
               VariablePointers.toString(varData.dependencies, "Dependencies", NONE(), false) +
-              VariablePointers.toString(varData.knowns, "Known", NONE(), false) +
               VariablePointers.toString(varData.auxiliaries, "Auxiliary", NONE(), false) +
               VariablePointers.toString(varData.aliasVars, "Alias", NONE(), false);
           end if;

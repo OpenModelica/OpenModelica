@@ -166,7 +166,7 @@ public
     if changed then
       // ToDo: keep more of old information by only updating changed stuff
       full  := Adjacency.Matrix.createFull(vars, eqns);
-      adj   := Adjacency.Matrix.fromFull(full, vars.map, eqns.map, eqns, matrixStrictness);
+      adj   := Adjacency.Matrix.fullToFinal(full, vars.map, eqns.map, eqns, matrixStrictness);
       if Kind == NBPartition.Kind.INI then
         // ####### DO NOT REDO BALANCING INITIALIZATION #######
         matching := regular(EMPTY_MATCHING, adj);

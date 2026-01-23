@@ -395,6 +395,12 @@ public
       MatrixStrictness st                 "strictness with which it was created";
     end FINAL;
 
+    record SPARSITY
+      array<ComponentRef> equation_names;
+      array<UnorderedMap<ComponentRef, Dependency>> dependencies;
+      array<UnorderedSet<ComponentRef>> repetitions;
+    end SPARSITY;
+
     function createFull
       input VariablePointers vars;
       input EquationPointers eqns;
@@ -448,7 +454,7 @@ public
       end if;
     end createFull;
 
-    function fromFull
+    function fullToFinal
       input Matrix full;
       input UnorderedMap<ComponentRef, Integer> vars_map;
       input UnorderedMap<ComponentRef, Integer> eqns_map;
@@ -456,7 +462,35 @@ public
       input MatrixStrictness st;
       input Iterator iter = Iterator.EMPTY() "optional iterator the whole system might be surrounded by";
       output Matrix adj = upgrade(EMPTY(MatrixStrictness.FULL), full, vars_map, eqns_map, eqns, st, iter);
-    end fromFull;
+    end fullToFinal;
+
+    function fullToSparsity
+      input Matrix full;
+      input EquationPointers eqns;
+      output Matrix sparse;
+    algorithm
+      sparse := match full
+        local
+          list<ComponentRef> eqn_names = {};
+          list<UnorderedMap<ComponentRef, Dependency>> deps = {};
+          list<UnorderedSet<ComponentRef>> reps = {};
+
+        case FULL() algorithm
+          for i in 1:arrayLength(full.equation_names) loop
+            if UnorderedMap.contains(full.equation_names[i], eqns.map) then
+              eqn_names := full.equation_names[i] :: eqn_names;
+              deps := full.dependencies[i] :: deps;
+              reps := full.repetitions[i] :: reps;
+            end if;
+          end for;
+        then SPARSITY(listArray(listReverse(eqn_names)), listArray(listReverse(deps)), listArray(listReverse(reps)));
+
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of wrong matrix type.
+            Expected: full, Got :" + strictnessString(getStrictness(full)) + "."});
+        then fail();
+      end match;
+    end fullToSparsity;
 
     function upgrade
       "upgrades a matrix using the information provided by the full matrix"
@@ -518,7 +552,7 @@ public
                     + Solvability.toString(Solvability.fromStrictness(st)) + ". The new matrix will be
                     created from using only the full adjacency matrix.");
                 end if;
-                result := fromFull(full, vars_map, eqns_map, eqns, st, iter);
+                result := fullToFinal(full, vars_map, eqns_map, eqns, st, iter);
               end if;
             then result;
 
@@ -527,14 +561,14 @@ public
 
             // cannot upgrade a full matrix
             case FULL() algorithm
-              Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for because of wrong matrix type for the 1st input.
+              Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of wrong matrix type for the 1st input.
                 Expected: final or empty, Got :" + strictnessString(getStrictness(adj)) + "."});
             then fail();
           end match;
         then adj;
 
         else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for because of wrong matrix type for the 2nd input.
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of wrong matrix type for the 2nd input.
             Expected: full, Got :" + strictnessString(getStrictness(full)) + "."});
         then fail();
       end match;
@@ -900,6 +934,24 @@ public
           str := str + "\n" + Mapping.toString(adj.mapping);
         then str;
 
+        case SPARSITY() algorithm
+          types := list(ComponentRef.getSubscriptedType(name) for name in adj.equation_names);
+          complex_sizes := listArray(list(Util.applyOptionOrDefault(Type.complexSize(ty, true), intString, "0") for ty in types));
+          types_str := listArray(list(dimsString(Type.arrayDims(ty)) for ty in types));
+          names := listArray(list(ComponentRef.toString(name) for name in adj.equation_names));
+          length0 := max(stringLength(sz) for sz in complex_sizes);
+          length1 := max(stringLength(ty) for ty in types_str) + 1;
+          length2 := max(stringLength(name) for name in names) + 3;
+          for i in 1:arrayLength(names) loop
+            str := str
+              + arrayGet(complex_sizes, i) + " " + StringUtil.repeat(" ", length0 - stringLength(arrayGet(complex_sizes, i))) + " | "
+              + arrayGet(types_str, i) + " " + StringUtil.repeat(".", length1 - stringLength(arrayGet(types_str, i)))
+              + arrayGet(names, i) + " " + StringUtil.repeat(".", length2 - stringLength(arrayGet(names, i)))
+              + " " + List.toString(UnorderedMap.keyList(adj.dependencies[i]), function sparseString(dep_map = adj.dependencies[i],
+              rep_set = adj.repetitions[i])) + "\n";
+          end for;
+        then str;
+
         case EMPTY() then str + StringUtil.headline_4("Empty Adjacency Matrix") + "\n";
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of unknown adjacency matrix type."});
@@ -1130,6 +1182,17 @@ public
       if UnorderedSet.contains(cref, rep_set) then str := str + "+"; end if;
       str := str + "]";
     end fullString;
+
+    function sparseString
+      input ComponentRef cref;
+      input UnorderedMap<ComponentRef, Dependency> dep_map;
+      input UnorderedSet<ComponentRef> rep_set;
+      output String str = ComponentRef.toString(cref) + "[";
+    algorithm
+      str := str + Dependency.toString(UnorderedMap.getSafe(cref, dep_map, sourceInfo()));
+      if UnorderedSet.contains(cref, rep_set) then str := str + "+"; end if;
+      str := str + "]";
+    end sparseString;
 
     function dimsString
       input list<Dimension> dims;
