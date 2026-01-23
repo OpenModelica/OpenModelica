@@ -421,7 +421,8 @@ constant list<Flags.ConfigFlag> allConfigFlags = {
   Flags.LOAD_MISSING_LIBRARIES,
   Flags.CAUSALIZE_DAE_MODE,
   Flags.SIM_CODE_SCALARIZE,
-  Flags.EXECUTE_COMMAND
+  Flags.EXECUTE_COMMAND,
+  Flags.MOO_DYNAMIC_OPTIMIZATION
 };
 
 public function new
