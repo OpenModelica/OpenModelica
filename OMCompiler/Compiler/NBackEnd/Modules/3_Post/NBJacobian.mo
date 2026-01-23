@@ -770,11 +770,7 @@ protected
     input Pointer<Variable> var_ptr;
     output Boolean out;
   algorithm
-    if (BVariable.isFinalTime(var_ptr) or BVariable.isInitialTime(var_ptr)) then
-      out := false;
-    else
-      out := true;
-    end if;
+    out := not (BVariable.isFinalTime(var_ptr) or BVariable.isInitialTime(var_ptr));
   end isLfgVariable;
 
   function isMrfVariable
@@ -782,11 +778,7 @@ protected
     input Pointer<Variable> var_ptr;
     output Boolean out;
   algorithm
-    if (BVariable.isInitialTime(var_ptr)) then
-      out := false;
-    else
-      out := true;
-    end if;
+    out := not BVariable.isInitialTime(var_ptr);
   end isMrfVariable;
 
   function isR0Variable
@@ -794,11 +786,7 @@ protected
     input Pointer<Variable> var_ptr;
     output Boolean out;
   algorithm
-    if (BVariable.isFinalTime(var_ptr)) then
-      out := false;
-    else
-      out := true;
-    end if;
+    out := not (BVariable.isFinalTime(var_ptr));
   end isR0Variable;
 
   function getSeedCandidatesDynamicOptimization
