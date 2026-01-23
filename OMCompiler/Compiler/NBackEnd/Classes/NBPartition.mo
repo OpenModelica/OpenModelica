@@ -101,13 +101,12 @@ public
       str := match association
         case CONTINUOUS() algorithm
           if Util.isSome(association.jacobian) then
-            //str := BJacobian.toString(Util.getOption(association.jacobian), Partition.kindToString(association.kind));
-
-            // TODO: fix this
-            str := "[ODE]:\n" + BJacobian.toString(Util.getOption(association.jacobian), Partition.kindToString(association.kind)) + "\n";
-            str := str + "[OPTIMIZATION - LFG]:\n" + BJacobian.toString(Util.getOption(association.LFG_jacobian), Partition.kindToString(association.kind)) + "\n";
-            str := str + "[OPTIMIZATION - MRf]:\n" + BJacobian.toString(Util.getOption(association.MRF_jacobian), Partition.kindToString(association.kind)) + "\n";
-            str := str + "[OPTIMIZATION - R0]:\n" + BJacobian.toString(Util.getOption(association.R0_jacobian), Partition.kindToString(association.kind)) + "\n";
+            str := BJacobian.toString(Util.getOption(association.jacobian), Partition.kindToString(association.kind));
+            if (Flags.getConfigBool(Flags.MOO_DYNAMIC_OPTIMIZATION)) then
+              str := "\n" + str + BJacobian.toString(Util.getOption(association.LFG_jacobian), Partition.kindToString(association.kind));
+              str := "\n" + str + BJacobian.toString(Util.getOption(association.MRF_jacobian), Partition.kindToString(association.kind));
+              str := "\n" + str + BJacobian.toString(Util.getOption(association.R0_jacobian), Partition.kindToString(association.kind));
+            end if;
           else
             str := StringUtil.headline_1("No Jacobian");
           end if;

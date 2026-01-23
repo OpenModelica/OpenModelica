@@ -397,7 +397,6 @@ public
         local
           Mapping seed_mapping, partial_mapping;
           array<StrongComponent> comps;
-          ComponentRef t, k;
           list<ComponentRef> seed_vars, seed_vars_array, partial_vars, partial_vars_array, tmp, row_vars = {}, col_vars = {};
           UnorderedSet<ComponentRef> set;
           list<SparsityPatternCol> cols = {};
@@ -429,20 +428,11 @@ public
           for cref in seed_vars_array loop UnorderedSet.add(cref, set); end for;
           for cref in partial_vars_array loop UnorderedSet.add(cref, set); end for;
 
-          for t in UnorderedSet.toList(set) loop
-            print("Set:" + ComponentRef.toString(t) + "\n");
-          end for;
-
           // traverse all components and save cref dependencies (only column-wise)
           for i in 1:arrayLength(comps) loop
             if not StrongComponent.isDiscrete(comps[i]) then
               StrongComponent.collectCrefs(comps[i], seedCandidates, partialCandidates, seed_mapping, partial_mapping, map, set, jacType);
             end if;
-          end for;
-
-          for aux in UnorderedMap.toList(map) loop
-            (k, tmp) := aux;
-            print("Map: " + ComponentRef.toString(k) + " => " + stringDelimitList(List.map(tmp, ComponentRef.toString), ", ") + "\n");
           end for;
 
           // create row-wise sparsity pattern
@@ -454,10 +444,6 @@ public
                 rows := (cref, tmp) :: rows;
                 row_vars := cref :: row_vars;
 
-                print("[DEBUG] cref: " + ComponentRef.toString(cref) + "\n");
-                print("[DEBUG] tmp: " + stringDelimitList(List.map(tmp, ComponentRef.toString), ", ") + "\n");
-                print("[DEBUG] row_vars: " + stringDelimitList(List.map(row_vars, ComponentRef.toString), ", ") + "\n\n");
-
                 for dep in tmp loop
                   // also add inverse dependency (indep var) --> (res/tmp) :: rest
                   UnorderedMap.add(dep, cref :: UnorderedMap.getSafe(dep, map, sourceInfo()), map);
@@ -468,7 +454,9 @@ public
 
           // create column-wise sparsity pattern
           for cref in listReverse(seed_vars) loop
-            if (jacType == JacobianType.OPT_LFG or jacType == JacobianType.OPT_MRF or jacType == JacobianType.OPT_R0) or jacType == JacobianType.NLS or BVariable.checkCref(cref, BVariable.isState, sourceInfo()) then
+            // TODO: check this condition for Optimization
+            if (jacType == JacobianType.NLS or BVariable.checkCref(cref, BVariable.isState, sourceInfo())
+                or (jacType == JacobianType.OPT_LFG or jacType == JacobianType.OPT_MRF or jacType == JacobianType.OPT_R0)) then
               tmp := UnorderedSet.unique_list(UnorderedMap.getSafe(cref, map, sourceInfo()), ComponentRef.hash, ComponentRef.isEqual);
               cols := (cref, tmp) :: cols;
               col_vars := cref :: col_vars;
@@ -591,8 +579,6 @@ public
         partials := listArray(list(cref for cref guard(isRowInJacobian(cref, jacType)) in sparsityPattern.partial_vars));
       end if;
 
-      print("Partials: " + Array.toString(partials, ComponentRef.toString) + "\n");
-
       // create cref -> index maps
       sizeCols := arrayLength(seeds);
       sizeRows := arrayLength(partials);
@@ -610,12 +596,6 @@ public
       // prepare index based sparsity pattern for C
       for tpl in sparsityPattern.col_wise_pattern loop
         (idx_cref, deps) := tpl;
-        print("Deps:\n");
-        for dep in deps loop
-          print("Dep: " + ComponentRef.toString(dep) + "\n");
-          UnorderedMap.getSafe(dep, partial_indices, sourceInfo());
-        end for;
-        print("Deps done\n");
         cols[UnorderedMap.getSafe(idx_cref, seed_indices, sourceInfo())] := list(UnorderedMap.getSafe(dep, partial_indices, sourceInfo()) for dep in deps);
       end for;
       for tpl in sparsityPattern.row_wise_pattern loop
@@ -633,7 +613,6 @@ public
         cref_colored_cols[i] := list(seeds[idx] for idx in colored_cols[i]);
       end for;
 
-      // matching number of colors
       sparsityColoring := SPARSITY_COLORING(cref_colored_cols, arrayCreate(arrayLength(cref_colored_cols), {}));
     end PartialD2ColoringAlgC;
 
@@ -725,7 +704,6 @@ public
 protected
   // ToDo: all the DAEMode stuff is probably incorrect!
 
-  // TODO: better documentation of this
   function isRowInJacobian
     "Checks if a cref of the partial derivatives, is an actual row in the sparsity pattern (ODE and OPT-Jacobians). If this is false, its an inner variable."
     input ComponentRef cref;
@@ -821,7 +799,7 @@ protected
     // sort?
   end getMrfPartialCandidates;
 
-  function getr0PartialCandidates
+  function getR0PartialCandidates
     input Partition.Partition part;
     input VariablePointers all_knowns;
     output list<Pointer<Variable>> partialCandidates;
@@ -829,7 +807,7 @@ protected
     partialCandidates := VariablePointers.toList(part.unknowns);
     partialCandidates := listAppend(getInitialEquations(part, all_knowns), partialCandidates);
     // sort?
-  end getr0PartialCandidates;
+  end getR0PartialCandidates;
 
   // before this is ever called, we should check if the variable / annotation pairs are even valid: e.g. path constraint with final time or so!
   function partJacobianDynamicOptimization
@@ -846,47 +824,29 @@ protected
     Boolean init = (kind == NBPartition.Kind.INI); // TODO for parameter seed?
     VariablePointers seedCandidates, partialCandidates;
   algorithm
-    print("[DEBUG] LFG\n");
-
     // Lfg Jacobian (Lagrange (L), ODE (f), Path Constraints (g))
     partialCandidates := VariablePointers.fromList(getLfgPartialCandidates(part, all_knowns), part.unknowns.scalarized);
-    print("[DEBUG] Partial candidates:\n" + VariablePointers.toString(partialCandidates));
-
     seedCandidates := VariablePointers.fromList(getSeedCandidatesDynamicOptimization(part, all_knowns), partialCandidates.scalarized);
-    print("[DEBUG] seedCandidates:\n" + VariablePointers.toString(seedCandidates));
 
     // TODO: add _OPT to name?
     LFG_jacobian := func(name, JacobianType.OPT_LFG, seedCandidates, partialCandidates,
                          part.equations, all_knowns, part.strongComponents, funcMap, init);
-    print("[DEBUG] JACOBIAN DONE\n");
-
-    print("[DEBUG] MRf\n");
 
     // Mrf Jacobian (Mayer (M), Final Constraints (rf))
     partialCandidates := VariablePointers.fromList(getMrfPartialCandidates(part, all_knowns), part.unknowns.scalarized);
-    print("[DEBUG] Partial candidates:\n" + VariablePointers.toString(partialCandidates));
-
     seedCandidates := VariablePointers.fromList(getSeedCandidatesDynamicOptimization(part, all_knowns), partialCandidates.scalarized);
-    print("[DEBUG] seedCandidates:\n" + VariablePointers.toString(seedCandidates));
 
     // TODO: add _OPT to name?
     MRF_jacobian := func(name, JacobianType.OPT_MRF, seedCandidates, partialCandidates,
                          part.equations, all_knowns, part.strongComponents, funcMap, init);
-    print("[DEBUG] JACOBIAN DONE\n");
-
-    print("[DEBUG] R0\n");
 
     // r0 Jacobian (Initial Constraints (r0))
-    partialCandidates := VariablePointers.fromList(getr0PartialCandidates(part, all_knowns), part.unknowns.scalarized);
-    print("[DEBUG] Partial candidates:\n" + VariablePointers.toString(partialCandidates));
-
+    partialCandidates := VariablePointers.fromList(getR0PartialCandidates(part, all_knowns), part.unknowns.scalarized);
     seedCandidates := VariablePointers.fromList(getSeedCandidatesDynamicOptimization(part, all_knowns), partialCandidates.scalarized);
-    print("[DEBUG] seedCandidates:\n" + VariablePointers.toString(seedCandidates));
 
     // TODO: add _OPT to name?
     R0_jacobian := func(name, JacobianType.OPT_R0, seedCandidates, partialCandidates,
                         part.equations, all_knowns, part.strongComponents, funcMap, init);
-
   end partJacobianDynamicOptimization;
 
   function partJacobian
@@ -927,8 +887,6 @@ protected
       derivative_vars := list(var for var guard(BVariable.isStateDerivative(var)) in VariablePointers.toList(unknowns));
       state_vars := list(Util.getOption(BVariable.getVarState(var)) for var in derivative_vars);
       seedCandidates := VariablePointers.fromList(state_vars, partialCandidates.scalarized);
-
-      print("[DEBUG] ODE\n");
 
       jacobian := func(name, jacType, seedCandidates, partialCandidates, part.equations, knowns, part.strongComponents, funcMap, kind == NBPartition.Kind.INI);
 
@@ -987,7 +945,6 @@ protected
   function jacobianSymbolic extends Module.jacobianInterface;
   protected
     list<StrongComponent> comps, diffed_comps;
-    StrongComponent sc;
     Pointer<list<Pointer<Variable>>> seed_vars_ptr = Pointer.create({});
     Pointer<list<Pointer<Variable>>> pDer_vars_ptr = Pointer.create({});
     UnorderedMap<ComponentRef,ComponentRef> diff_map = UnorderedMap.new<ComponentRef>(ComponentRef.hash, ComponentRef.isEqual);
@@ -1035,11 +992,6 @@ protected
 
     // differentiate all strong components
     (diffed_comps, diffArguments) := Differentiate.differentiateStrongComponentList(comps, diffArguments, idx, name, getInstanceName());
-
-    print("Diffed Strong Components:\n");
-    for sc in diffed_comps loop
-      print(StrongComponent.toString(sc) + "\n");
-    end for;
 
     // collect var data (most of this can be removed)
     unknown_vars  := listAppend(res_vars, tmp_vars);

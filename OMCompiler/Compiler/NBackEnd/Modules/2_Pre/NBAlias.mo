@@ -345,7 +345,7 @@ protected
           UnorderedSet.add(cref, acc);
         then ();
       case Expression.CREF(cref = cref) algorithm
-        // TODO: add guard here (dont do alias for optimization annotations), now we disable all aliases
+        // TODO: add guard here (dont do alias for optimization annotations)
         // UnorderedSet.add(cref, acc);
       then ();
 

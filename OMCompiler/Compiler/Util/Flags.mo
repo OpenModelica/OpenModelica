@@ -1389,7 +1389,7 @@ constant ConfigFlag EXECUTE_COMMAND = CONFIG_FLAG(162, "cmd",
   NONE(), EXTERNAL(), STRING_FLAG(""), NONE(),
   Gettext.gettext("Executes the string argument as a script before any other operation."));
 constant ConfigFlag MOO_DYNAMIC_OPTIMIZATION = CONFIG_FLAG(163, "moo",
-  NONE(), EXTERNAL(), BOOL_FLAG(true), NONE(),
+  NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   Gettext.gettext("Generate code for dynamic optimization library MOO."));
 
 function getFlags
