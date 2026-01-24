@@ -747,7 +747,7 @@ algorithm
         // check for cyclic bindings in start value
         false = BaseHashSet.has(cr, hs);
         (v, _) = BackendVariable.getVarSingle(cr, vars);
-        e = BackendVariable.varStartValueType(v);
+        e = BackendVariable.varStartValue(v, sourceInfo());
         hs = BaseHashSet.add(cr,hs);
         (e, (_,b,hs)) = Expression.traverseExpBottomUp(e, replaceCrefWithBindStartExp, (vars,b,hs));
       then (e, (vars,b,hs));

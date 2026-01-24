@@ -210,7 +210,7 @@ QColor Plot::getUniqueColor(int index, int total)
     return mColorsList.at(index);
 }
 
-void Plot::setFontSizes(double titleFontSize, double verticalAxisTitleFontSize, double verticalAxisNumbersFontSize, 
+void Plot::setFontSizes(double titleFontSize, double verticalAxisTitleFontSize, double verticalAxisNumbersFontSize,
                         double rightVerticalAxisTitleFontSize, double rightVerticalAxisNumbersFontSize, double horizontalAxisTitleFontSize,
                         double horizontalAxisNumbersFontSize, double footerFontSize, double legendFontSize)
 {

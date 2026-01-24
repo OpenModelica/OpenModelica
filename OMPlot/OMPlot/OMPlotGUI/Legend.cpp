@@ -58,7 +58,7 @@ Legend::Legend(Plot *pParent)
   mpToggleAxisAction = new QAction(tr("Right Y-Axis"), this);
   mpToggleAxisAction->setCheckable(true);
   connect(mpToggleAxisAction, SIGNAL(triggered(bool)), SLOT(switchAxis(bool)));
-    
+
   mpSetupAction = new QAction(tr("Setup"), this);
   connect(mpSetupAction, SIGNAL(triggered()), SLOT(showSetupDialog()));
 

@@ -22,6 +22,6 @@ simulate(AlgorithmSize);getErrorString();
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// "[Modelica 3.2.1+maint.om/Blocks/Sources.mo:561:5-561:73:writable] Warning: Parameter sine.freqHz has no value, and is fixed during initialization (fixed=true), using available start value (start=1.0) as default value.
+// "[Modelica 3.2.1+maint.om/Blocks/Sources.mo:561:5-561:73:writable] Warning: Parameter sine.freqHz has no binding, and is fixed during initialization (fixed=true), using available start value (start=1.0) as default value.
 // "
 // endResult

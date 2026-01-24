@@ -25,6 +25,6 @@ end RecordBinding17;
 //   final parameter Integer m.y(start = 0);
 //   final parameter Integer m_type = 1;
 // end RecordBinding17;
-// [flattening/modelica/scodeinst/RecordBinding17.mo:8:3-8:23:writable] Warning: Parameter m.y has no value, and is fixed during initialization (fixed=true), using available start value (start=0) as default value.
+// [flattening/modelica/scodeinst/RecordBinding17.mo:8:3-8:23:writable] Warning: Parameter m.y has no binding, and is fixed during initialization (fixed=true), using available start value (start=0) as default value.
 //
 // endResult

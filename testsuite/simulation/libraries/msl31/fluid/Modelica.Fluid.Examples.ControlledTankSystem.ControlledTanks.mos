@@ -27,9 +27,9 @@ simulate(Modelica.Fluid.Examples.ControlledTankSystem.ControlledTanks); getError
 //     resultFile = "",
 //     simulationOptions = "startTime = 0.0, stopTime = 900.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Fluid.Examples.ControlledTankSystem.ControlledTanks', storeInTemp = false, noClean = false, options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "Simulation failed for model: Modelica.Fluid.Examples.ControlledTankSystem.ControlledTanks
-// Warning: Parameter stop.buttonTimeTable has neither value nor start value, and is fixed during initialization (fixed=true)
+// Warning: Parameter stop.buttonTimeTable has neither binding nor start value, and is fixed during initialization (fixed=true)
 // [Sources.mo:2842:7-2843:108:writable] Warning: Failed to deduce dimensions of table due to unknown dimensions of modifier stop.buttonTimeTable.
-// Warning: Parameter start.buttonTimeTable has neither value nor start value, and is fixed during initialization (fixed=true)
+// Warning: Parameter start.buttonTimeTable has neither binding nor start value, and is fixed during initialization (fixed=true)
 // [Sources.mo:2842:7-2843:108:writable] Warning: Failed to deduce dimensions of table due to unknown dimensions of modifier start.buttonTimeTable.
 // Warning: Alias variables tank1.medium.T = tank1.medium.state.T have start values tank1.T_start != 300.0. Use value from tank1.medium.T.
 // Warning: Alias variables tank1.medium.p = tank1.medium.state.p have start values tank1.p_start != 100000.0. Use value from tank1.medium.p.
@@ -72,7 +72,7 @@ simulate(Modelica.Fluid.Examples.ControlledTankSystem.ControlledTanks); getError
 // Modelica.Fluid.Examples.ControlledTankSystem.ControlledTanks.c:6734: warning: passing argument 3 of 'array_alloc_scalar_string_array' discards qualifiers from pointer target type
 // c:/bin/cygwin/home/adrpo/dev/OpenModelica/build/include/omc/string_array.h:129: note: expected 'modelica_string_t' but argument is of type 'const char *'
 // mingw32-make: *** [Modelica.Fluid.Examples.ControlledTankSystem.ControlledTanks.o] Error 1
-// 
+//
 // "
 // end SimulationResult;
 // ""
