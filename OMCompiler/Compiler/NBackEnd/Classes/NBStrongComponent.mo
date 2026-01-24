@@ -186,7 +186,7 @@ public
       case MULTI_COMPONENT() algorithm
         str := StringUtil.headline_3("BLOCK" + indexStr + ": Multi Strong Component (status = " + Solve.statusString(comp.status) + ", size = " + intString(s) + ")");
         str := str + "### Variables:\n";
-        str := str + List.toString(comp.vars, function Slice.toString(func = BVariable.pointerToString, maxLength = 10), "", "\t", "\n\t", "");
+        str := str + List.toString(comp.vars, function Slice.toString(func = BVariable.pointerToString, maxLength = 10), List.Style.NEWLINE_TAB);
         str := str + "\n### Equation:\n" + Slice.toString(comp.eqn, function Equation.pointerToString(str = "\t")) + "\n";
       then str;
 
@@ -199,13 +199,13 @@ public
       case RESIZABLE_COMPONENT() algorithm
         str := StringUtil.headline_3("BLOCK" + indexStr + ": Resizable Component (status = " + Solve.statusString(comp.status) + ", size = " + intString(s) + ")");
         str := str + "### Variable:\n\t" + ComponentRef.toString(comp.var_cref) + "\n";
-        str := str + "### Equation:\n\t" + Equation.pointerToString(Slice.getT(comp.eqn)) + "\n";
+        str := str + "### Equation:\n" + Equation.pointerToString(Slice.getT(comp.eqn), "\t") + "\n";
       then str;
 
       case ENTWINED_COMPONENT() algorithm
         str := StringUtil.headline_3("BLOCK" + indexStr + ": Entwined Component (status = Solve.EXPLICIT, size = " + intString(s) + ")");
-        str := str + "call order: " + List.toString(list(Equation.getEqnName(Util.tuple21(e)) for e in comp.entwined_tpl_lst), ComponentRef.toString, "", "{", ", ", "}", true, 10) + "\n";
-        str := str + List.toString(comp.entwined_slices, function toString(index = -2), "", "", "", "");
+        str := str + "call order: " + List.toString(list(Equation.getEqnName(Util.tuple21(e)) for e in comp.entwined_tpl_lst), ComponentRef.toString, List.Style.FLAT_CURLY_SHORT) + "\n";
+        str := str + List.toString(comp.entwined_slices, function toString(index = -2), List.Style.NONE);
       then str;
 
       case GENERIC_COMPONENT() algorithm

@@ -5968,7 +5968,7 @@ algorithm
       list<Absyn.ElementArg> args;
 
     case SOME(Absyn.CLASSMOD(elementArgLst = args))
-      then List.toString(args, formatSimulationFlagString, "", "-", " -", "", false);
+      then List.toStringCustom(args, formatSimulationFlagString, "", "-", " -", "", false);
 
     else "";
   end match;

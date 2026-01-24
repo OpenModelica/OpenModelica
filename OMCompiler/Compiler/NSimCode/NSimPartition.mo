@@ -167,8 +167,8 @@ public
     input output String str = "";
   algorithm
     str := match part
-      case BASE_PARTITION() then "[BASE] Partition " + BClock.toString(part.baseClock) + List.toString(part.subPartitions, function toString(str = str), "", "\n", "", "\n");
-      case SUB_PARTITION()  then str + "[SUB-] Partition " + BClock.toString(part.subClock) + List.toString(part.equations, function Block.toString(str = str), "", "\n", "", "");
+      case BASE_PARTITION() then "[BASE] Partition " + BClock.toString(part.baseClock) + List.toString(part.subPartitions, function toString(str = str), List.Style.NEWLINE) + "\n";
+      case SUB_PARTITION()  then str + "[SUB-] Partition " + BClock.toString(part.subClock) + List.toString(part.equations, function Block.toString(str = str), List.Style.NEWLINE);
       else "[ERR-]";
     end match;
   end toString;

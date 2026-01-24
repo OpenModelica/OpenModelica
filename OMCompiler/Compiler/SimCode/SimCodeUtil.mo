@@ -8551,12 +8551,12 @@ algorithm
 
     case SimCode.IF_GENERIC_CALL() algorithm
       str := "if generic call " + intString(call.index) + " " + List.toString(call.iters, BackendDump.simIteratorString);
-      str := str + List.toString(call.branches, simBranchString, "", "", "\n", "");
+      str := str + List.toString(call.branches, simBranchString, List.Style.NEWLINE);
     then str;
 
     case SimCode.WHEN_GENERIC_CALL() algorithm
       str := "when generic call " + intString(call.index) + " " + List.toString(call.iters, BackendDump.simIteratorString);
-      str := str + List.toString(call.branches, simBranchString, "", "", "\n", "");
+      str := str + List.toString(call.branches, simBranchString, List.Style.NEWLINE);
     then str;
 
     else "";
@@ -8579,14 +8579,14 @@ algorithm
     case SimCode.SIM_BRANCH() algorithm
       b := Util.isSome(branch.condition);
       str := if b then "if " + ExpressionDump.printExpStr(Util.getOption(branch.condition)) + " then\n" else "else\n";
-      str := str + List.toString(branch.body, simBranchBodyString, "  ", "  ", "\n", "");
+      str := str + List.toString(branch.body, simBranchBodyString, List.Style.NEWLINE_INDENT);
       str := if b then str + "end if;" else str;
     then str;
 
     case SimCode.SIM_BRANCH_STMT() algorithm
       b := Util.isSome(branch.condition);
       str := if b then "if " + ExpressionDump.printExpStr(Util.getOption(branch.condition)) + " then\n" else "else\n";
-      str := str + List.toString(branch.body, DAEDump.ppStatementStr, "  ", "  ", "\n", "");
+      str := str + List.toString(branch.body, DAEDump.ppStatementStr, List.Style.NEWLINE_INDENT);
       str := if b then str + "\nend if;" else str;
     then str;
 
@@ -9293,14 +9293,14 @@ algorithm
     case SimCode.SES_GENERIC_ASSIGN()
       algorithm
         s := intString(eqSysIn.index) +": "+ " (SES_GENERIC_ASSIGN) " + " call index: " + intString(eqSysIn.call_index) + "\n";
-        s := s + "\tindices: " + List.toString(eqSysIn.scal_indices, intString, "", "{", ", ", "}", true, 10) + "\n";
+        s := s + "\tindices: " + List.toString(eqSysIn.scal_indices, intString, List.Style.FLAT_CURLY_SHORT) + "\n";
     then s;
 
     case SimCode.SES_ENTWINED_ASSIGN()
       algorithm
         s := intString(eqSysIn.index) +": "+ " (SES_ENTWINED_ASSIGN)\n";
-        s := s + "\tcall order: " + List.toString(eqSysIn.call_order, intString, "", "{", ", ", "}", true, 10) + "\n";
-        s := s + List.toString(eqSysIn.single_calls, simEqSystemString, "", "\t", "\n", "");
+        s := s + "\tcall order: " + List.toString(eqSysIn.call_order, intString, List.Style.FLAT_CURLY_SHORT) + "\n";
+        s := s + List.toString(eqSysIn.single_calls, simEqSystemString, List.Style.NEWLINE_TAB);
         s := s + "\n";
     then s;
 
@@ -9603,7 +9603,7 @@ algorithm
   print("\nequationsForZeroCrossings:\n" + UNDERLINE + "\n");
   dumpSimEqSystemLst(simCode.equationsForZeroCrossings,"\n");
   print("\ngeneric calls:\n" + UNDERLINE + "\n");
-  print(List.toString(simCode.generic_loop_calls, simGenericCallString, "", "", "\n", ""));
+  print(List.toString(simCode.generic_loop_calls, simGenericCallString, List.Style.NEWLINE));
   print("\njacobianEquations:\n" + UNDERLINE + "\n");
   dumpSimEqSystemLst(simCode.jacobianEquations,"\n");
   extObjInfoString(simCode.extObjInfo);

@@ -4519,7 +4519,7 @@ protected
 algorithm
   str := match cdef
     case Absyn.DERIVED(typeSpec = Absyn.TPATH(arrayDim = SOME(ad)))
-      then List.toString(ad, Dump.printSubscriptStr, "", "{", ",", "}");
+      then List.toString(ad, Dump.printSubscriptStr, List.Style.FLAT_CURLY);
     else "{}";
   end match;
 end getClassDimensions;
