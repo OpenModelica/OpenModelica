@@ -86,7 +86,10 @@ void UtilitiesTest::literalConstant_data()
   QTest::newRow("Integer array with whitespace") << "{11, 981 ,34}";
   QTest::newRow("Decimal") << "56.7";
   QTest::newRow("Negative decimal value") << "-10.00";
+  QTest::newRow("Decimal without leading digit") << ".25";
+  QTest::newRow("Decimal without trailing digit") << "25.";
   QTest::newRow("Decimal array") << "{3.11,5.289,3.4798}";
+  QTest::newRow("Decimal array mix") << "{.31,5.5,47.}";
   QTest::newRow("Decimal array with whitespace") << "{7.89 , 2.2 , 567.8}";
   QTest::newRow("Exponential form") << "1e-09";
   QTest::newRow("Exponential form array with whitespace") << "{1e-09 , 2e-3 , 0.456e7}";
