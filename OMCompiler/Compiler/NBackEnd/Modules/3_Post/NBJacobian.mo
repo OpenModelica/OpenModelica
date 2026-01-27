@@ -632,7 +632,7 @@ public
       end for;
 
       // call C function (old backend - ToDo: port to new backend!)
-      //colored_cols := SymbolicJacobian.createColoring(cols, rows, sizeRows, sizeCols);
+      // colored_cols := SymbolicJacobian.createColoring(cols, rows, sizeRows, sizeCols);
       colored_cols := SymbolicJacobian.createColoring(rows, cols, sizeCols, sizeRows);
       // get cref based coloring
       cref_colored_cols := arrayCreate(arrayLength(colored_cols), {});
