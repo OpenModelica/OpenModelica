@@ -957,7 +957,6 @@ void read_model_description_sizes(omc_ModelDescription *md, MODEL_DATA *modelDat
   numRealAlgVars = read_value_long(findHashStringString(md, "numberOfRealAlgebraicVariables"), 0);
   modelData->nVariablesRealArray = 2*modelData->nStatesArray + numRealAlgVars;
   modelData->nAliasRealArray = read_value_long(findHashStringString(md, "numberOfRealAlgebraicAliasVariables"), 0);
-  // TODO: How to get data->modelData->nDiscreteReal or its array version?
   modelData->nParametersRealArray = read_value_long(findHashStringString(md, "numberOfRealParameters"), 0);
 
   modelData->nParametersIntegerArray = read_value_long(findHashStringString(md, "numberOfIntegerParameters"), 0);

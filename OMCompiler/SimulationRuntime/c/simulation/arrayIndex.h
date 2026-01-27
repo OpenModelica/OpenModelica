@@ -66,6 +66,11 @@ extern "C"
   size_t *linearToMultiDimArrayIndex(DIMENSION_INFO *dimension,
                                      size_t linear_address);
 
+  void printMultiDimArrayIndex(DIMENSION_INFO *dimension_info,
+                               size_t linear_address,
+                               char* buffer,
+                               size_t buffer_size);
+
   void calculateAllScalarLength(MODEL_DATA *modelData);
 
   void computeVarIndices(SIMULATION_INFO *simulationInfo,
