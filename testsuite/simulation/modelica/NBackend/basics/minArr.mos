@@ -2,7 +2,7 @@
 // keywords: NewBackend
 // status: correct
 
-setCommandLineOptions("--newBackend --simCodeScalarize=false"); getErrorString();
+setCommandLineOptions("--newBackend --simCodeScalarize=true"); getErrorString();
 
 loadString("
   model minimal_array
