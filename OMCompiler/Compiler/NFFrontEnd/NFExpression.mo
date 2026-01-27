@@ -4598,6 +4598,11 @@ public
     end match;
   end isGreaterOrEqual;
 
+  function hasArrayType
+    input Expression exp;
+    output Boolean b = Type.isArray(typeOf(exp));
+  end hasArrayType;
+
   function isScalar
     input Expression exp;
     output Boolean scalar = Type.isScalar(typeOf(exp));

@@ -6,7 +6,7 @@ loadString("
 model implicitEquation
   Real x;
 equation
-   x - x^2 + x^3 = sin(time);
+  x - x^2 + x^3 = sin(time);
 end implicitEquation;"); getErrorString();
 
 setCommandLineOptions("--newBackend -d=dumpSimCode");
@@ -22,7 +22,7 @@ simulate(implicitEquation); getErrorString();
 //
 // ##################################
 // ============
-//   SimVars 
+//   SimVars
 // ============
 // Algebraic Variables (2)
 // *************************
@@ -161,19 +161,19 @@ simulate(implicitEquation); getErrorString();
 // jacobianMatrices:
 // ========================================
 // 	Jacobian idx: 0
-// 	
+//
 // 	Jacobian idx: 1
-// 	
+//
 // 	Jacobian idx: 2
-// 	
+//
 // 	Jacobian idx: 3
-// 	
+//
 // 	Jacobian idx: 4
-// 	
+//
 // 	Jacobian idx: 5
-// 	
+//
 // 	Jacobian idx: 6
-// 	
+//
 //
 // modelInfo:
 // ========================================

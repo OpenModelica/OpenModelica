@@ -70,7 +70,7 @@ public
   uniontype Association
     record CONTINUOUS
       Kind kind;
-      Option<Jacobian> jacobian "Analytic jacobian for the integrator";
+      Option<Jacobian> jacobian     "Analytic jacobian for the integrator";
       Option<Jacobian> jacobianAdjoint "Analytic adjoint jacobian for the integrator";
       Option<Jacobian> LFG_jacobian "Analytic jacobian of Lagrange term (L), ODE (f), Path Constraints (g) for MOO";
       Option<Jacobian> MRF_jacobian "Analytic jacobian of Mayer term (Mf), Final Constraints (rf) for MOO";

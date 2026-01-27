@@ -913,7 +913,7 @@ public
       case Op.ADD_ARRAY_SCALAR  then true;
       case Op.MUL_SCALAR_ARRAY  then true;
       case Op.MUL_ARRAY_SCALAR  then true;
-      else false;
+                                else false;
     end match;
   end isCommutative;
 
