@@ -4480,7 +4480,7 @@ function deletePosition<T>
   input Integer inPosition;
   output list<T> outList = {};
 protected
-  Integer i = 1;
+  Integer i = 0;
   T e;
   list<T> rest = inList;
 algorithm
