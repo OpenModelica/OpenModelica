@@ -7899,16 +7899,31 @@ template varArrayName(SimVar var)
 end varArrayName;
 
 template crefVarInfo(ComponentRef cr)
+"C code to access info element of component reference."
 ::=
   match cref2simvar(cr, getSimCode())
   case var as SIMVAR(__) then
-  'data->modelData-><%varArrayName(var)%>Data[<%index%>].info /* <%crefCComment(var, crefStrNoUnderscore(name))%> */'
+    if intLt(index,0) then
+      error(sourceInfo(), 'crefVarInfo got negative index=<%index%> for <%crefStr(name)%>')
+    else
+      'data->modelData-><%varArrayName(var)%>Data[<%index%>] /* <%crefCComment(var, crefStrNoUnderscore(name))%> */ .info'
 end crefVarInfo;
+
+template crefVarDimension(ComponentRef cr)
+"C code to access dimension attribute of component reference"
+::=
+  match cref2simvar(cr, getSimCode())
+  case var as SIMVAR(__) then
+    if intLt(index,0) then
+      error(sourceInfo(), 'crefVarDimension got negative index=<%index%> for <%crefStr(name)%>')
+    else
+      'data->modelData-><%varArrayName(var)%>Data[<%index%>] /* <%crefCComment(var, crefStrNoUnderscore(name))%> */ .dimension'
+end crefVarDimension;
 
 template initializeStaticLSVars(list<SimVar> vars, Integer index)
 ::=
   let len = listLength(vars)
-  let indices = (vars |> var => varIndexWithComment(var) ;separator=",\n")
+  let indices = (vars |> var as SIMVAR(__) => '<%index%> /* <%crefCComment(var, crefStrNoUnderscore(name))%> */' ;separator=",\n")
   <<
   void initializeStaticLSData<%index%>(DATA* data, threadData_t* threadData, LINEAR_SYSTEM_DATA* linearSystemData, modelica_boolean initSparsePattern)
   {
@@ -7916,20 +7931,19 @@ template initializeStaticLSVars(list<SimVar> vars, Integer index)
       <%indices%>
     };
     for (int i = 0; i < <%len%>; ++i) {
-      linearSystemData->nominal[i] = data->modelData->realVarsData[indices[i]].attribute.nominal;
-      linearSystemData->min[i]     = data->modelData->realVarsData[indices[i]].attribute.min;
-      linearSystemData->max[i]     = data->modelData->realVarsData[indices[i]].attribute.max;
+      if (indices[i] == -1) {
+        linearSystemData->nominal[i] = 1.0;
+        linearSystemData->min[i]     = -DBL_MAX;
+        linearSystemData->max[i]     = DBL_MAX;
+      } else {
+        linearSystemData->nominal[i] = getNominalFromScalarIdx(data->simulationInfo, data->modelData, VAR_KIND_VARIABLE, indices[i]);
+        linearSystemData->min[i]     = getMinFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, VAR_KIND_VARIABLE, indices[i]);
+        linearSystemData->max[i]     = getMaxFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, VAR_KIND_VARIABLE, indices[i]);
+      }
     }
   }
   >>
 end initializeStaticLSVars;
-
-template varIndexWithComment(SimVar var)
-::=
-  match var
-  case SIMVAR(index=-1) then varIndexWithComment(cref2simvar(crefRemovePrePrefix(name), getSimCode()))
-  case SIMVAR(__) then '<%index%> /* <%crefCComment(var, crefStrNoUnderscore(name))%> */'
-end varIndexWithComment;
 
 template crefIndexWithComment(ComponentRef cr)
 ::=
@@ -7953,7 +7967,7 @@ template crefAttributes(ComponentRef cr)
   case var as SIMVAR(index=-1, varKind=JAC_VAR()) then "dummyREAL_ATTRIBUTE"
   case var as SIMVAR(__) then
     if intLt(index,0) then error(sourceInfo(), 'varAttributes got negative index=<%index%> for <%crefStr(name)%>') else
-    'data->modelData-><%varArrayName(var)%>Data[<%index%>].attribute /* <%crefCComment(var, crefStrNoUnderscore(name))%> */'
+    'data->modelData-><%varArrayName(var)%>Data[<%index%>] /* <%crefCComment(var, crefStrNoUnderscore(name))%> */ .attribute'
 end crefAttributes;
 
 template typeCastContext(Context context, Type ty)

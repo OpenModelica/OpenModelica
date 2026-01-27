@@ -256,7 +256,7 @@ double GenericController(double* err_values, double* step_values, unsigned int e
  * @param threadData        Thread data for error handling.
  * @param gbData        Storing Runge-Kutta solver data.
  */
-void getInitStepSize(DATA* data, threadData_t* threadData, DATA_GBODE* gbData)
+void getInitStepSize(DATA* data, threadData_t* threadData, DATA_GBODE* gbData, SOLVER_INFO* solverInfo)
 {
   SIMULATION_DATA *sData = (SIMULATION_DATA*)data->localData[0];
   SIMULATION_DATA *sDataOld = (SIMULATION_DATA*)data->localData[1];
@@ -272,6 +272,7 @@ void getInitStepSize(DATA* data, threadData_t* threadData, DATA_GBODE* gbData)
   double h0, h1;
   double absTol = data->simulationInfo->tolerance;
   double relTol = absTol;
+  const double oldStep = gbData->stepSize;
 
   // Increase initialFailures counter on repeated failures (for adaptive reduction)
   gbData->initialFailures++;
@@ -347,6 +348,11 @@ void getInitStepSize(DATA* data, threadData_t* threadData, DATA_GBODE* gbData)
   } else {
     gbData->stepSize = gbData->initialStepSize;
     gbData->lastStepSize = 0.0;
+  }
+
+  if (solverInfo->didEventStep)
+  {
+    gbData->stepSize = fmax(oldStep * 1e-1, gbData->stepSize);
   }
 
   infoStreamPrint(OMC_LOG_SOLVER, 0, "Initial step size = %e at time %g", gbData->stepSize, gbData->time);

@@ -1140,7 +1140,7 @@ external "builtin";
 annotation(Documentation(info="<html>
 <p>Loads the given file using the given encoding.</p>
 <p>
-  Note that if the file basename is package.mo and the parent directory is the top-level class, the library structure is loaded as if loadModel(ClassName) was called.
+  Note that if the file basename is package.mo and the parent directory is the top-level class, or if the file is a directory, the library structure is loaded as if loadModel(ClassName) was called.
   Uses-annotations are respected if uses=true.
   The main difference from loadModel is that loadFile appends this directory to the MODELICAPATH (for this call only).
 </p>

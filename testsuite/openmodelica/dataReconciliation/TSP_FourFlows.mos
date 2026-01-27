@@ -3,7 +3,6 @@
 // status:   correct
 // depends: ./NewDataReconciliationSimpleTests/resources/DataReconciliationSimpleTests.TSP_FourFlows_Inputs.csv
 
-
 setCommandLineOptions("--preOptModules+=dataReconciliation");
 getErrorString();
 

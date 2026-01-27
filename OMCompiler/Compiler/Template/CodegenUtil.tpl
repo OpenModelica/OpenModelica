@@ -246,31 +246,31 @@ end getVariablity;
 template variabilityString(VarKind varKind)
 ::=
   match varKind
-    case VARIABLE() then "variable"
-    case STATE(derName=NONE()) then 'STATE(<%index%>)'
+    case VARIABLE()               then "variable"
+    case STATE(derName=NONE())    then 'STATE(<%index%>)'
     case STATE(derName=SOME(dcr)) then 'STATE(<%index%>,<%crefStrNoUnderscore(dcr)%>)'
-    case STATE_DER()   then "STATE_DER"
-    case DUMMY_DER()   then "DUMMY_DER"
-    case DUMMY_STATE() then "DUMMY_STATE"
-    case CLOCKED_STATE()  then "CLOCKED_STATE"
-    case DISCRETE()    then "DISCRETE"
-    case PARAM()       then "PARAM"
-    case CONST()       then "CONST"
-    case EXTOBJ()  then 'EXTOBJ: <%dotPath(fullClassName)%>'
-    case JAC_VAR()     then "JACOBIAN_VAR"
-    case JAC_TMP_VAR()then "JACOBIAN_TMP_VAR"
-    case SEED_VAR()    then "SEED_VAR"
-    case OPT_CONSTR()  then "OPT_CONSTR"
-    case OPT_FCONSTR()  then "OPT_FCONSTR"
-    case OPT_INPUT_WITH_DER()  then "OPT_INPUT_WITH_DER"
-    case OPT_INPUT_DER()  then "OPT_INPUT_DER"
-    case OPT_TGRID()  then "OPT_TGRID"
-    case OPT_LOOP_INPUT()  then "OPT_LOOP_INPUT"
-    case ALG_STATE()  then "ALG_STATE"
-    case DAE_RESIDUAL_VAR() then "DAE_RESIDUAL_VAR"
-    case DAE_AUX_VAR() then "DAE_AUX_VAR"
-    case LOOP_ITERATION() then "LOOP_ITERATION"
-    case LOOP_SOLVED() then "LOOP_SOLVED"
+    case STATE_DER()              then "STATE_DER"
+    case DUMMY_DER()              then "DUMMY_DER"
+    case DUMMY_STATE()            then "DUMMY_STATE"
+    case CLOCKED_STATE()          then "CLOCKED_STATE"
+    case DISCRETE()               then "DISCRETE"
+    case PARAM()                  then "PARAM"
+    case CONST()                  then "CONST"
+    case EXTOBJ()                 then 'EXTOBJ: <%dotPath(fullClassName)%>'
+    case JAC_VAR()                then "JACOBIAN_VAR"
+    case JAC_TMP_VAR()            then "JACOBIAN_TMP_VAR"
+    case SEED_VAR()               then "SEED_VAR"
+    case OPT_CONSTR()             then "OPT_CONSTR"
+    case OPT_FCONSTR()            then "OPT_FCONSTR"
+    case OPT_INPUT_WITH_DER()     then "OPT_INPUT_WITH_DER"
+    case OPT_INPUT_DER()          then "OPT_INPUT_DER"
+    case OPT_TGRID()              then "OPT_TGRID"
+    case OPT_LOOP_INPUT()         then "OPT_LOOP_INPUT"
+    case ALG_STATE()              then "ALG_STATE"
+    case DAE_RESIDUAL_VAR()       then "DAE_RESIDUAL_VAR"
+    case DAE_AUX_VAR()            then "DAE_AUX_VAR"
+    case LOOP_ITERATION()         then "LOOP_ITERATION"
+    case LOOP_SOLVED()            then "LOOP_SOLVED"
     else "#UNKNOWN_VARKIND"
   end match
 end variabilityString;

@@ -161,18 +161,18 @@ protected function notification2 "help-function"
   output String outS;
 protected
   ComponentRef cr1 = ComponentRef.EMPTY();
-  Real factor1=0;
-  Integer i1=0, i2=0, i3=0, i4=0, i5=0, i6=0, i7=0;
+  Real factor=0;
+  Integer s=0, m=0, g=0, A=0, K=0, mol=0, cd=0;
 algorithm
   outS := stringAppendList(list(
   // We already assigned the variables before
-  "\"" + ComponentRef.toString(cr1) + "\" has the Unit \"" + Unit.unitString(Unit.UNIT(factor1, i1, i2, i3, i4, i5, i6, i7), inHtU2S) + "\"\n"
+  "\"" + ComponentRef.toString(cr1) + "\" has the Unit \"" + Unit.unitString(Unit.UNIT(s, m, g, A, K, mol, cd, factor), inHtU2S) + "\"\n"
   // Do the filtering and unboxing stuff at the same time; then we only need one hashtable call
   // And we only use a try-block for MASTER nodes
   for t1 guard match t1 local Boolean b; case (cr1,Unit.MASTER()) algorithm
     b := false;
     try
-      Unit.UNIT(factor1, i1, i2, i3, i4, i5, i6, i7) :=
+      Unit.UNIT(s, m, g, A, K, mol, cd, factor) :=
         UnorderedMap.getOrFail(ComponentRef.stripSubscripts(cr1), inHtCr2U2);
       b := true;
     else
@@ -629,7 +629,7 @@ algorithm
     case Expression.CREF()
       guard ComponentRef.isTime(eq.cref)
       algorithm
-        op_unit := Unit.UNIT(1e0, 0, 0, 0, 1, 0, 0, 0);
+        op_unit := NFUnit.SECOND;
         addUnit2HtS2U("time", op_unit, htS2U);
         addUnit2HtU2S("time", op_unit, htU2S);
       then
@@ -676,11 +676,11 @@ algorithm
           insertUnitInEquation(listHead(call_args), Unit.MASTER({}), htCr2U, htS2U, htU2S, fnCache);
 
         if Unit.isUnit(op_unit) then
-          op_unit := Unit.unitDiv(op_unit, Unit.UNIT(1e0, 0, 0, 0, 1, 0, 0, 0));
+          op_unit := Unit.unitDiv(op_unit, NFUnit.SECOND);
           insertUnitString(op_unit, htS2U, htU2S);
         elseif Unit.isUnit(unit) then
           Unit.MASTER(varList = vars) := op_unit;
-          op_unit := Unit.unitMul(unit, Unit.UNIT(1e0, 0, 0, 0, 1, 0, 0, 0));
+          op_unit := Unit.unitMul(unit, NFUnit.SECOND);
           List.map2_0(vars, updateHtCr2U, op_unit, htCr2U);
           insertUnitString(op_unit, htS2U, htU2S);
         else
@@ -794,24 +794,8 @@ algorithm
       String s1, s2;
 
     case (Unit.UNIT(), Unit.UNIT())
-      algorithm
-        isEqual := realEq(unit1.factor, unit2.factor);
-
-        if not isEqual then
-          r := realMax(realAbs(unit1.factor), realAbs(unit2.factor));
-          isEqual := realLe(realDiv(realAbs(realSub(unit1.factor, unit2.factor)), r), 1e-3);
-        end if;
-
-        isEqual := isEqual and
-                   unit1.mol == unit2.mol and
-                   unit1.cd  == unit2.cd  and
-                   unit1.m   == unit2.m   and
-                   unit1.s   == unit2.s   and
-                   unit1.A   == unit2.A   and
-                   unit1.K   == unit2.K   and
-                   unit1.g   == unit2.g;
       then
-        (isEqual, unit1);
+        (Unit.isEqual(unit1, unit2), unit1);
 
     case (Unit.UNIT(), Unit.MASTER(varList = vars2))
       algorithm
@@ -826,10 +810,8 @@ algorithm
         (true, unit2);
 
     case (Unit.MASTER(varList = vars1), Unit.MASTER(varList = vars2))
-      algorithm
-        vars2 := List.append_reverse(vars1, vars2);
       then
-        (true, Unit.MASTER(vars2));
+        (true, Unit.MASTER(List.append_reverse(vars1, vars2)));
 
     case (Unit.UNKNOWN(unit = s1), Unit.UNKNOWN(unit = s2))
       then (s1 == s2, unit1);

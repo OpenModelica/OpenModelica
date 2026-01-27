@@ -136,7 +136,7 @@ SOLVER_OBJS_FMU=$(SOLVER_OBJS_LINEAR_SYSTEMS) \
                 $(SOLVER_OBJS_MIXED_SYSTEMS) \
                 $(SOLVER_OBJS_NONLINEAR_SYSTEMS) \
                 delay$(OBJ_EXT) \
-                fmi_events$(OBJ_EXT) \
+                discrete_changes$(OBJ_EXT) \
                 model_help$(OBJ_EXT) \
                 omc_math$(OBJ_EXT) \
                 spatialDistribution$(OBJ_EXT) \
@@ -191,7 +191,7 @@ SOLVER_HFILES = cvode_solver.h \
                 epsilon.h \
                 events.h \
                 external_input.h \
-                fmi_events.h \
+                discrete_changes.h \
                 ida_solver.h \
                 jacobianSymbolical.h \
                 linearSystem.h \
@@ -233,8 +233,7 @@ RESULTS_OBJS_MINIMAL=MatVer4$(OBJ_EXT) \
 ifeq ($(OMC_MINIMAL_RUNTIME),)
   RESULTS_OBJS=$(RESULTS_OBJS_MINIMAL) \
                simulation_result_ia$(OBJ_EXT) \
-               simulation_result_plt$(OBJ_EXT) \
-               simulation_result_wall$(OBJ_EXT)
+               simulation_result_plt$(OBJ_EXT)
 else
   RESULTS_OBJS=$(RESULTS_OBJS_MINIMAL)
 endif
@@ -243,14 +242,12 @@ RESULTS_HFILES = MatVer4.h \
                  simulation_result_ia.h \
                  simulation_result_mat4.h \
                  simulation_result_plt.h \
-                 simulation_result_wall.h \
                  simulation_result.h
 RESULTS_FILES = MatVer4.cpp \
                 simulation_result_csv.cpp \
                 simulation_result_ia.cpp \
                 simulation_result_mat4.cpp \
-                simulation_result_plt.cpp \
-                simulation_result_wall.cpp
+                simulation_result_plt.cpp
 
 SIM_OBJS = ../dataReconciliation/dataReconciliation$(OBJ_EXT) \
            ../linearization/linearize$(OBJ_EXT) \

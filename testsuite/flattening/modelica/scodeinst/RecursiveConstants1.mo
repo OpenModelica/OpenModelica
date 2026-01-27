@@ -10,6 +10,8 @@ end RecursiveConstants1;
 
 // Result:
 // Error processing file: RecursiveConstants1.mo
+// [flattening/modelica/scodeinst/RecursiveConstants1.mo:8:3-8:22:writable] Notification: From here:
+// [flattening/modelica/scodeinst/RecursiveConstants1.mo:7:3-7:22:writable] Notification: From here:
 // [flattening/modelica/scodeinst/RecursiveConstants1.mo:8:3-8:22:writable] Error: Variable 'y' has a cyclic dependency and has variability constant.
 //
 // # Error encountered! Exiting...

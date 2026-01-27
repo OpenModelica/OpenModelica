@@ -917,7 +917,8 @@ public
       // Known variables, except for top level inputs have a 0-derivative
       case (Expression.CREF(), _, _)
         guard(BVariable.isParamOrConst(var_ptr) and
-              not (ComponentRef.isTopLevel(exp.cref) and BVariable.isInput(var_ptr)))
+              not (ComponentRef.isTopLevel(exp.cref) and BVariable.isInput(var_ptr))
+              and not BVariable.isOptimizable(var_ptr) /* TODO? */ )
       then (Expression.makeZero(exp.ty), diffArguments);
 
       // -------------------------------------

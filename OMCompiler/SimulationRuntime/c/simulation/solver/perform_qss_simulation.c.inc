@@ -36,6 +36,7 @@
 #include "openmodelica_func.h"
 
 #include "util/omc_error.h"
+#include "simulation/arrayIndex.h"
 #include "simulation/options.h"
 
 
@@ -154,7 +155,8 @@ int prefixedName_performQSSSimulation(DATA* data, threadData_t *threadData, SOLV
   diffQ = 0.0; dTnextQ = 0.0; nextQ = 0.0;
   for (i = 0; i < STATES; i++)
   {
-    dQ[i] = 0.0001 * data->modelData->realVarsData[i].attribute.nominal;
+    const modelica_real nominal = getNominalFromScalarIdx(data->simulationInfo, data->modelData, VAR_KIND_STATE, i);
+    dQ[i] = 0.0001 * nominal;
     tx[i] = tq[i] = simInfo->startTime;
     qik[i] = state[i];
     xik[i] = state[i];

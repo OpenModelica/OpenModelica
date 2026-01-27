@@ -21,6 +21,8 @@ Buildings.PartialFlowMachine.mos \
 checkAllModelsRecursive1.mos \
 CheckModelExtObj1.mos \
 choicesAllMatching.mos \
+Cmd1.mos \
+Cmd2.mos \
 ConnectionList.mos \
 ConversionVersions.mos \
 ConvertUnits.mos \
@@ -101,6 +103,7 @@ ListImport.mos \
 ListMultilineComment.mos \
 loadClassContentString1.mos \
 loadClassContentString2.mos \
+LoadFile1.mos \
 loadFileInteractiveQualified.mos \
 matrices.mos \
 Modelica.Media.Examples.getComponents.mos \
@@ -157,6 +160,7 @@ Ticket6287and6288.mos \
 Ticket6300.mos \
 Ticket6307.mos \
 Ticket6406.mos \
+UnpatchedModelicaServices.mos \
 UsesAnnotation1.mos \
 UsesAnnotation2.mos \
 variables.mos \

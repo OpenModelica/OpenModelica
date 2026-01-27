@@ -54,6 +54,7 @@
 #include <math.h>
 #include <string.h>
 
+#include "../arrayIndex.h"
 #include "external_input.h"
 #include "kinsolSolver.h"
 #include "kinsol_b.h"
@@ -70,6 +71,8 @@
 
 extern void communicateStatus(const char *phase, double completionPercent, double currentTime, double currentStepSize);
 
+// TODO: we should add proper return handling of callbacks: ODE, Jacobian, Zero-Crossings, etc.
+
 /**
  * @brief Calculate function values of function ODE f(t,y).
  *
@@ -79,8 +82,15 @@ extern void communicateStatus(const char *phase, double completionPercent, doubl
  * @param threadData  Thread data for error handling.
  * @param counter     Counter for function calls. Incremented by 1.
  */
-void gbode_fODE(DATA *data, threadData_t *threadData, unsigned int* counter)
+int gbode_fODE(DATA *data, threadData_t *threadData, unsigned int* counter)
 {
+  int ret = -1;
+
+  /* try */
+#if !defined(OMC_EMCC)
+  MMC_TRY_INTERNAL(simulationJumpBuffer)
+#endif
+
   if (counter)
   {
     (*counter)++;
@@ -89,6 +99,14 @@ void gbode_fODE(DATA *data, threadData_t *threadData, unsigned int* counter)
   externalInputUpdate(data);
   data->callback->input_function(data, threadData);
   data->callback->functionODE(data, threadData);
+
+  ret = 0;
+
+#if !defined(OMC_EMCC)
+  MMC_CATCH_INTERNAL(simulationJumpBuffer)
+#endif
+
+  return ret;
 }
 
 /**
@@ -793,7 +811,8 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
     for (ii = 0; ii < nFastStates; ii++) {
       i = gbData->fastStatesIdx[ii];
       // Get the nominal values of the fast states
-      gbfData->nlsData->nominal[ii] = fmax(fabs(data->modelData->realVarsData[i].attribute.nominal), 1e-32);
+      const modelica_real nominal = getNominalFromScalarIdx(data->simulationInfo, data->modelData, VAR_KIND_STATE, i);
+      gbfData->nlsData->nominal[ii] = fmax(fabs(nominal), 1e-32);
       infoStreamPrint(OMC_LOG_GBODE, 0, "%s = %g", data->modelData->realVarsData[i].info.name, gbfData->nlsData->nominal[ii]);
     }
     messageClose(OMC_LOG_GBODE);
@@ -915,7 +934,8 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
       for (i = 0, err=0; i < nFastStates; i++) {
         ii = gbData->fastStatesIdx[i];
         // calculate corresponding values for the error estimator and step size control
-        gbfData->errtol[ii] = Atol * data->modelData->realVarsData[ii].attribute.nominal + fmax(fabs(gbfData->y[ii]), fabs(gbfData->yt[ii])) * Rtol;
+        const modelica_real nominal = getNominalFromScalarIdx(data->simulationInfo, data->modelData, VAR_KIND_STATE, ii);
+        gbfData->errtol[ii] = Atol * fabs(nominal) + fmax(fabs(gbfData->y[ii]), fabs(gbfData->yt[ii])) * Rtol;
         gbfData->errest[ii] = fabs(gbfData->y[ii] - gbfData->yt[ii]);
         gbfData->err[ii] = gbData->tableau->fac * gbfData->errest[ii] / gbfData->errtol[ii];
         err += gbfData->err[ii] * gbfData->err[ii];
@@ -1184,7 +1204,7 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
                     solverInfo->currentTime, targetTime);
   }
 
-  gbData->eventHappened = solverInfo->didEventStep;
+  gbData->eventHappened = solverInfo->didEventStep || gbData->isFirstStep;
 
  /*
   * Handle step initialization after an event step or at the very first solver step.
@@ -1212,7 +1232,7 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
       * → Reset the ring buffer and solver statistics.
       * → Initialize gbData->timeRight, gbData->yRight, and gbData->kRight.
       */
-      getInitStepSize(data, threadData, gbData);
+      getInitStepSize(data, threadData, gbData, solverInfo);
       gbode_init(data, threadData, solverInfo);
     }
 
@@ -1311,6 +1331,9 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
     // Loop will be performed until the error estimate for all states fullfills the
     // given tolerance
     do {
+      // set error to DBL_MAX, in case we break / continue early
+      err = DBL_MAX;
+
       if (OMC_ACTIVE_STREAM(OMC_LOG_SOLVER_V)) {
         // debug ring buffer of the states and derivatives during integration
         infoStreamPrint(OMC_LOG_SOLVER_V, 1, "States and derivatives of the ring buffer:");
@@ -1371,7 +1394,12 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
           messageClose(OMC_LOG_SOLVER);
           return -1;
         } else {
-          gbData->stepSize *= 0.5;
+          if (gbData->eventHappened) {
+            gbData->stepSize *= 0.1; // event or initial step rejection: reduce step size to 10% of previous step size
+          } else {
+            gbData->stepSize *= 0.5; // standard rejection: reduce the step size by half to attempt a more accurate integration in the next iteration
+          }
+
           if (gbData->multi_rate && OMC_ACTIVE_STREAM(OMC_LOG_GBODE_STATES)) {
             gbData->err_slow = 0;
             gbData->err_fast = 0;
@@ -1391,12 +1419,13 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
 
       // Calculate error estimators and tolerance scaling for each state variable
       // Compute error tolerance for the i-th state based on relative and absolute tolerances:
-      // errtol = Rtol * max(|current state|, |previous state|) + Atol * nominal(state)
+      // errtol = Rtol * max(|current state|, |previous state|) + Atol * |nominal(state)|
       // TODO: make errtol and errest local variables
 
       for (i = 0, err=0; i < nStates; i++) {
         // calculate corresponding values for the error estimator and step size control
-        gbData->errtol[i] = Atol * data->modelData->realVarsData[i].attribute.nominal + fmax(fabs(gbData->y[i]), fabs(gbData->yt[i])) * Rtol;
+        const modelica_real nominal = getNominalFromScalarIdx(data->simulationInfo, data->modelData, VAR_KIND_STATE, i);
+        gbData->errtol[i] = Atol * fabs(nominal) + fmax(fabs(gbData->y[i]), fabs(gbData->yt[i])) * Rtol;
         gbData->errest[i] = fabs(gbData->y[i] - gbData->yt[i]);
         gbData->err[i] = gbData->tableau->fac * gbData->errest[i] / gbData->errtol[i];
         err += gbData->err[i] * gbData->err[i];
@@ -1492,8 +1521,16 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
         // Increment the counter for error test failures.
         gbData->stats.nErrorTestFailures++;
 
-        // Reduce the step size by half to attempt a more accurate integration in the next iteration.
-        gbData->stepSize *= 0.5;
+        if (gbData->eventHappened)
+        {
+          // event or initial step rejection: reduce step size to 10% of previous step size
+          gbData->stepSize *= 0.1;
+        }
+        else
+        {
+          // standard rejection: reduce the step size by half to attempt a more accurate integration in the next iteration.
+          gbData->stepSize *= 0.5;
+        }
 
         // Restart the integration loop with the smaller step size.
         continue;
@@ -1712,7 +1749,7 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
         printVector_gb(OMC_LOG_GBODE_V, "y", gbData->y, nStates, gbData->time + gbData->lastStepSize);
         messageClose(OMC_LOG_GBODE_V);
       }
-    } while (err > 1 && gbData->ctrl_method != GB_CTRL_CNST);
+    } while (!isfinite(err) || (err > 1 && gbData->ctrl_method != GB_CTRL_CNST));
 
     // count processed steps
     gbData->stats.nStepsTaken++;

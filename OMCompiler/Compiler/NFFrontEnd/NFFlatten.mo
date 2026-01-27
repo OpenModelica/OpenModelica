@@ -948,7 +948,7 @@ algorithm
     comp_var := Component.variability(comp);
     if comp_var <= Variability.STRUCTURAL_PARAMETER or binding_var <= Variability.STRUCTURAL_PARAMETER then
       // Constant evaluate parameters that are structural/constant.
-      binding_exp := Ceval.evalExp(binding_exp);
+      binding_exp := Ceval.evalExp(binding_exp, Ceval.EvalTarget.new(info, NFInstContext.BINDING));
       binding_exp := flattenExp(binding_exp, prefix, Binding.getInfo(binding));
     elseif binding_var == Variability.PARAMETER and Component.isFinal(comp) then
       // Try to use inlining first.

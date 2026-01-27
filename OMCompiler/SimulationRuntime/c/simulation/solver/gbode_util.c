@@ -290,6 +290,25 @@ void hermite_interpolation_a(double ta, double* fa, double* dfa, double tb, doub
 void gb_interpolation(enum GB_INTERPOL_METHOD interpolMethod, double ta, double* fa, double* dfa, double tb, double* fb, double* dfb, double t, double* f,
                       int nIdx, int* idx, int nStates, BUTCHER_TABLEAU* tableau, double* x, double *k)
 {
+  // handle edge case for tiny interval length
+  if ((tb == ta) || fabs(tb - ta) / (fabs(tb) + fabs(ta)) < GBODE_EPSILON)
+  {
+    if (idx == NULL)
+    {
+      memcpy(f, fa, nStates * sizeof(double));
+    }
+    else
+    {
+      for (int ii = 0; ii < nStates; ii++)
+      {
+        int i = idx[ii];
+        f[i] = fa[i];
+      }
+    }
+
+    return;
+  }
+
   switch (interpolMethod)
   {
   case GB_INTERPOL_LIN:
@@ -298,7 +317,6 @@ void gb_interpolation(enum GB_INTERPOL_METHOD interpolMethod, double ta, double*
   case GB_DENSE_OUTPUT:
   case GB_DENSE_OUTPUT_ERRCTRL:
     if (tableau->withDenseOutput) {
-      // FIXME omit division by zero if fabs(tb-ta) <= GBODE_EPSILON
       tableau->dense_output(tableau, fa, x, k, (t - ta)/(tb - ta), (tb - ta), f, nIdx, idx, nStates);
       break;
     }

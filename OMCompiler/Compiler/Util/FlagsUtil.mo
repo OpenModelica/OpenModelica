@@ -421,7 +421,9 @@ constant list<Flags.ConfigFlag> allConfigFlags = {
   Flags.EVALUATE_STRUCTURAL_PARAMETERS,
   Flags.LOAD_MISSING_LIBRARIES,
   Flags.CAUSALIZE_DAE_MODE,
-  Flags.SIM_CODE_SCALARIZE
+  Flags.SIM_CODE_SCALARIZE,
+  Flags.EXECUTE_COMMAND,
+  Flags.MOO_DYNAMIC_OPTIMIZATION
 };
 
 public function new
@@ -643,9 +645,7 @@ algorithm
       // Stop parsing arguments if -- is encountered.
       break;
     else
-      if not readArg(arg, flags) then
-        outArgs := arg :: outArgs;
-      end if;
+      (rest_args, outArgs) := readArg(arg, flags, rest_args, outArgs);
     end if;
   end while;
 
@@ -663,7 +663,8 @@ protected function readArg
   consumed, otherwise false."
   input String inArg;
   input Flags.Flag inFlags;
-  output Boolean outConsumed;
+  input output list<String> restArgs;
+  input output list<String> nonFlags;
 protected
   String flagtype;
   Integer len;
@@ -675,40 +676,38 @@ algorithm
   if flagtype == "+" then
     if len == 1 then
       // + alone is not a valid flag.
-      parseFlag(inArg, Flags.NO_FLAGS());
+      parseFlag(inArg, Flags.NO_FLAGS(), restArgs);
     else
-      parseFlag(System.substring(inArg, 2, len), inFlags, flagtype);
+      restArgs := parseFlag(System.substring(inArg, 2, len), inFlags, restArgs, flagtype);
     end if;
-    outConsumed := true;
   // Flags beginning with - must have another - for long flags, i.e. -h or --help.
   elseif flagtype == "-" then
     if len == 1 then
       // - alone is not a valid flag.
-      parseFlag(inArg, Flags.NO_FLAGS());
+      parseFlag(inArg, Flags.NO_FLAGS(), restArgs);
     elseif len == 2 then
       // Short flag without argument, i.e. -h.
-      parseFlag(System.substring(inArg, 2, 2), inFlags, flagtype);
+      restArgs := parseFlag(System.substring(inArg, 2, 2), inFlags, restArgs, flagtype);
     elseif stringGetStringChar(inArg, 2) == "-" then
       if len < 4 or stringGetStringChar(inArg, 4) == "=" then
         // Short flags may not be used with --, i.e. --h or --h=debug.
-        parseFlag(inArg, Flags.NO_FLAGS());
+        parseFlag(inArg, Flags.NO_FLAGS(), restArgs);
       else
         // Long flag, i.e. --help or --help=debug.
-        parseFlag(System.substring(inArg, 3, len), inFlags, "--");
+        restArgs := parseFlag(System.substring(inArg, 3, len), inFlags, restArgs, "--");
       end if;
     else
       if stringGetStringChar(inArg, 3) == "=" then
         // Short flag with argument, i.e. -h=debug.
-        parseFlag(System.substring(inArg, 2, len), inFlags, flagtype);
+        restArgs := parseFlag(System.substring(inArg, 2, len), inFlags, restArgs, flagtype);
       else
         // Long flag used with -, i.e. -help, which is not allowed.
-        parseFlag(inArg, Flags.NO_FLAGS());
+        parseFlag(inArg, Flags.NO_FLAGS(), restArgs);
       end if;
     end if;
-    outConsumed := true;
   else
     // Arguments that don't begin with + or - are not flags, ignore them.
-    outConsumed := false;
+    nonFlags := inArg :: nonFlags;
   end if;
 end readArg;
 
@@ -716,27 +715,44 @@ protected function parseFlag
   "Parses a single flag."
   input String inFlag;
   input Flags.Flag inFlags;
+  input output list<String> restArgs;
   input String inFlagPrefix = "";
 protected
   String flag;
   list<String> values;
+  String value;
+  Boolean missing_value;
 algorithm
   flag :: values := System.strtok(inFlag, "=");
-  values := List.flatten(List.map1(values, System.strtok, ","));
-  parseConfigFlag(flag, values, inFlags, inFlagPrefix);
+  value := stringAppendList(values);
+  missing_value := stringEmpty(value) and not StringUtil.endsWith(inFlag, "=");
+  restArgs := parseConfigFlag(flag, value, inFlags, restArgs, inFlagPrefix, missing_value);
 end parseFlag;
 
 protected function parseConfigFlag
   "Tries to look up the flag with the given name, and set it to the given value."
   input String inFlag;
-  input list<String> inValues;
+  input String inValue;
   input Flags.Flag inFlags;
+  input output list<String> restArgs;
   input String inFlagPrefix;
+  input Boolean missingValue;
 protected
   Flags.ConfigFlag config_flag;
+  String value;
 algorithm
   config_flag := lookupConfigFlag(inFlag, inFlagPrefix);
-  evaluateConfigFlag(config_flag, inValues, inFlags);
+
+  if missingValue and flagRequiresValue(config_flag) and not listEmpty(restArgs) then
+    // If no value was given using = and the flag requires a value,
+    // use the next argument as the value.
+    value := listHead(restArgs);
+    restArgs := listRest(restArgs);
+  else
+    value := inValue;
+  end if;
+
+  evaluateConfigFlag(config_flag, value, inFlags);
 end parseConfigFlag;
 
 protected function lookupConfigFlag
@@ -766,6 +782,16 @@ algorithm
   end match;
 end configFlagEq;
 
+protected function flagRequiresValue
+  input Flags.ConfigFlag flag;
+  output Boolean requiresValue;
+algorithm
+  requiresValue := match flag
+    case Flags.CONFIG_FLAG(defaultValue = Flags.BOOL_FLAG()) then false;
+    else true;
+  end match;
+end flagRequiresValue;
+
 protected function setAdditionalOptModules
   input Flags.ConfigFlag inFlag;
   input Flags.ConfigFlag inOppositeFlag;
@@ -789,7 +815,7 @@ end setAdditionalOptModules;
 protected function evaluateConfigFlag
   "Evaluates a given flag and it's arguments."
   input Flags.ConfigFlag inFlag;
-  input list<String> inValues;
+  input String inValue;
   input Flags.Flag inFlags;
 algorithm
   _ := match(inFlag, inFlags)
@@ -801,14 +827,14 @@ algorithm
     // Special case for +d, +debug, set the given debug flags.
     case (Flags.CONFIG_FLAG(index = 1), Flags.FLAGS(debugFlags = debug_flags))
       equation
-        List.map1_0(inValues, setDebugFlag, debug_flags);
+        List.map1_0(splitCSV(inValue), setDebugFlag, debug_flags);
       then
         ();
 
     // Special case for +h, +help, show help text.
     case (Flags.CONFIG_FLAG(index = 2), _)
       equation
-        values = List.map(inValues, System.tolower);
+        values = splitCSV(System.tolower(inValue));
         System.gettextInit(if Flags.getConfigString(Flags.RUNNING_TESTSUITE) == "" then Flags.getConfigString(Flags.LOCALE_FLAG) else "C");
         print(printHelp(values));
         setConfigString(Flags.HELP, "omc");
@@ -818,49 +844,49 @@ algorithm
     // Special case for --preOptModules+=<value>
     case (_, _) guard(configFlagEq(inFlag, Flags.PRE_OPT_MODULES_ADD))
       equation
-        setAdditionalOptModules(Flags.PRE_OPT_MODULES_ADD, Flags.PRE_OPT_MODULES_SUB, inValues);
+        setAdditionalOptModules(Flags.PRE_OPT_MODULES_ADD, Flags.PRE_OPT_MODULES_SUB, splitCSV(inValue));
       then
         ();
 
     // Special case for --preOptModules-=<value>
     case (_, _) guard(configFlagEq(inFlag, Flags.PRE_OPT_MODULES_SUB))
       equation
-        setAdditionalOptModules(Flags.PRE_OPT_MODULES_SUB, Flags.PRE_OPT_MODULES_ADD, inValues);
+        setAdditionalOptModules(Flags.PRE_OPT_MODULES_SUB, Flags.PRE_OPT_MODULES_ADD, splitCSV(inValue));
       then
         ();
 
     // Special case for --postOptModules+=<value>
     case (_, _) guard(configFlagEq(inFlag, Flags.POST_OPT_MODULES_ADD))
       equation
-        setAdditionalOptModules(Flags.POST_OPT_MODULES_ADD, Flags.POST_OPT_MODULES_SUB, inValues);
+        setAdditionalOptModules(Flags.POST_OPT_MODULES_ADD, Flags.POST_OPT_MODULES_SUB, splitCSV(inValue));
       then
         ();
 
     // Special case for --postOptModules-=<value>
     case (_, _) guard(configFlagEq(inFlag, Flags.POST_OPT_MODULES_SUB))
       equation
-        setAdditionalOptModules(Flags.POST_OPT_MODULES_SUB, Flags.POST_OPT_MODULES_ADD, inValues);
+        setAdditionalOptModules(Flags.POST_OPT_MODULES_SUB, Flags.POST_OPT_MODULES_ADD, splitCSV(inValue));
       then
         ();
 
     // Special case for --initOptModules+=<value>
     case (_, _) guard(configFlagEq(inFlag, Flags.INIT_OPT_MODULES_ADD))
       equation
-        setAdditionalOptModules(Flags.INIT_OPT_MODULES_ADD, Flags.INIT_OPT_MODULES_SUB, inValues);
+        setAdditionalOptModules(Flags.INIT_OPT_MODULES_ADD, Flags.INIT_OPT_MODULES_SUB, splitCSV(inValue));
       then
         ();
 
     // Special case for --initOptModules-=<value>
     case (_, _) guard(configFlagEq(inFlag, Flags.INIT_OPT_MODULES_SUB))
       equation
-        setAdditionalOptModules(Flags.INIT_OPT_MODULES_SUB, Flags.INIT_OPT_MODULES_ADD, inValues);
+        setAdditionalOptModules(Flags.INIT_OPT_MODULES_SUB, Flags.INIT_OPT_MODULES_ADD, splitCSV(inValue));
       then
         ();
 
     // All other configuration flags, set the flag to the given values.
     case (_, Flags.FLAGS(configFlags = config_flags))
       equation
-        setConfigFlag(inFlag, config_flags, inValues);
+        setConfigFlag(inFlag, config_flags, inValue);
       then
         ();
 
@@ -941,27 +967,27 @@ protected function setConfigFlag
   strings."
   input Flags.ConfigFlag inFlag;
   input array<Flags.FlagData> inConfigData;
-  input list<String> inValues;
+  input String inValue;
 protected
   Flags.FlagData data, default_value;
   String name;
   Option<Flags.ValidOptions> validOptions;
 algorithm
   Flags.CONFIG_FLAG(name = name, defaultValue = default_value, validOptions = validOptions) := inFlag;
-  data := stringFlagData(inValues, default_value, validOptions, name);
+  data := stringFlagData(inValue, default_value, validOptions, name);
   _ := updateConfigFlagArray(inConfigData, data, inFlag);
 end setConfigFlag;
 
 protected function stringFlagData
   "Converts a list of strings into a FlagData value. The expected type is also
    given so that the value can be typechecked."
-  input list<String> inValues;
+  input String inValue;
   input Flags.FlagData inExpectedType;
   input Option<Flags.ValidOptions> validOptions;
   input String inName;
   output Flags.FlagData outValue;
 algorithm
-  outValue := matchcontinue(inValues, inExpectedType, validOptions, inName)
+  outValue := matchcontinue(inValue, inExpectedType, validOptions, inName)
     local
       Boolean b;
       Integer i;
@@ -971,50 +997,54 @@ algorithm
       list<String> flags, slst;
       Flags.ValidOptions options;
 
+    // No value, but a boolean flag => enable the flag.
+    case ("", Flags.BOOL_FLAG(), _, _) then Flags.BOOL_FLAG(true);
+
     // A boolean value.
-    case ({s}, Flags.BOOL_FLAG(), _, _)
+    case (_, Flags.BOOL_FLAG(), _, _)
       equation
-        b = Util.stringBool(s);
+        b = Util.stringBool(inValue);
       then
         Flags.BOOL_FLAG(b);
 
-    // No value, but a boolean flag => enable the flag.
-    case ({}, Flags.BOOL_FLAG(), _, _) then Flags.BOOL_FLAG(true);
-
     // An integer value.
-    case ({s}, Flags.INT_FLAG(), _, _)
+    case (_, Flags.INT_FLAG(), _, _)
       equation
-        i = stringInt(s);
-        true = stringEq(intString(i), s);
+        i = stringInt(inValue);
+        true = stringEq(intString(i), inValue);
       then
         Flags.INT_FLAG(i);
 
     // integer list.
-    case (slst, Flags.INT_LIST_FLAG(), _, _)
-      equation
-        ilst = List.map(slst,stringInt);
+    case (_, Flags.INT_LIST_FLAG(), _, _)
+      algorithm
+        ilst := list(stringInt(v) for v in splitCSV(inValue));
       then
         Flags.INT_LIST_FLAG(ilst);
 
     // A real value.
-    case ({s}, Flags.REAL_FLAG(), _, _)
-      then Flags.REAL_FLAG(System.stringReal(s));
+    case (_, Flags.REAL_FLAG(), _, _)
+      then Flags.REAL_FLAG(System.stringReal(inValue));
 
-    // A string value.
-    case ({s}, Flags.STRING_FLAG(), SOME(options), _)
+    // A string value with valid options specified.
+    case (_, Flags.STRING_FLAG(), SOME(options), _)
       equation
         flags = getValidStringOptions(options);
-        true = listMember(s,flags);
-      then Flags.STRING_FLAG(s);
-    case ({s}, Flags.STRING_FLAG(), NONE(), _) then Flags.STRING_FLAG(s);
+        true = listMember(inValue,flags);
+      then Flags.STRING_FLAG(inValue);
+
+    // A string value without valid options specified.
+    case (_, Flags.STRING_FLAG(), NONE(), _)
+      guard not stringEmpty(inValue)
+      then Flags.STRING_FLAG(inValue);
 
     // A multiple-string value.
-    case (_, Flags.STRING_LIST_FLAG(), _, _) then Flags.STRING_LIST_FLAG(inValues);
+    case (_, Flags.STRING_LIST_FLAG(), _, _) then Flags.STRING_LIST_FLAG(splitCSV(inValue));
 
     // An enumeration value.
-    case ({s}, Flags.ENUM_FLAG(validValues = enums), _, _)
+    case (_, Flags.ENUM_FLAG(validValues = enums), _, _)
       equation
-        i = Util.assoc(s, enums);
+        i = Util.assoc(inValue, enums);
       then
         Flags.ENUM_FLAG(i, enums);
 
@@ -1022,7 +1052,7 @@ algorithm
     case (_, _, NONE(), _)
       equation
         et = printExpectedTypeStr(inExpectedType);
-        at = printActualTypeStr(inValues);
+        at = printActualTypeStr(inValue);
         Error.addMessage(Error.INVALID_FLAG_TYPE, {inName, et, at});
       then
         fail();
@@ -1031,7 +1061,7 @@ algorithm
       equation
         flags = getValidStringOptions(options);
         et = stringDelimitList(flags, ", ");
-        at = printActualTypeStr(inValues);
+        at = printActualTypeStr(inValue);
         Error.addMessage(Error.INVALID_FLAG_TYPE_STRINGS, {inName, et, at});
       then
         fail();
@@ -1064,7 +1094,7 @@ end printExpectedTypeStr;
 
 protected function printActualTypeStr
   "Prints the actual type as a string."
-  input list<String> inType;
+  input String inType;
   output String outTypeStr;
 algorithm
   outTypeStr := matchcontinue(inType)
@@ -1072,14 +1102,14 @@ algorithm
       String s;
       Integer i;
 
-    case {} then "nothing";
-    case {s} equation Util.stringBool(s); then "the boolean value " + s;
-    case {s}
+    case "" then "nothing";
+    case _ equation Util.stringBool(inType); then "the boolean value " + inType;
+    case _
       equation
-        i = stringInt(s);
+        i = stringInt(inType);
         // intString returns 0 on failure, so this is to make sure that it
         // actually succeeded.
-        true = stringEq(intString(i), s);
+        true = stringEq(intString(i), inType);
       then
         "the number " + intString(i);
     //case {s}
@@ -1087,8 +1117,7 @@ algorithm
     //    System.stringReal(s);
     //  then
     //    "the number " + intString(i);
-    case {s} then "the string \"" + s + "\"";
-    else "a list of values.";
+    else "the string \"" + inType + "\"";
   end matchcontinue;
 end printActualTypeStr;
 
@@ -1940,6 +1969,11 @@ algorithm
     flagStrings := "-d=" + stringDelimitList(strl, ",") :: flagStrings;
   end if;
 end unparseFlags;
+
+function splitCSV
+  input String value;
+  output list<String> outValues = System.strtok(value, ",");
+end splitCSV;
 
 annotation(__OpenModelica_Interface="util");
 end FlagsUtil;

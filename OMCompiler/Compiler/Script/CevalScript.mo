@@ -315,7 +315,7 @@ algorithm
 end compileModel;
 
 public function loadFile "load the file or the directory structure if the file is named package.mo"
-  input String name;
+  input String inName;
   input String encoding;
   input Absyn.Program p;
   input Boolean checkUses;
@@ -324,10 +324,25 @@ public function loadFile "load the file or the directory structure if the file i
   input Boolean allowWithin = true;
   output Absyn.Program outProgram;
 protected
-  String dir,filename,cname,prio,mp;
+  String dir,name=inName,filename,cname,prio,mp,msg;
   list<String> rest;
 algorithm
-  true := System.regularFileExists(name);
+  // If the name refers to a directory, try to load a package.mo inside it instead.
+  if System.directoryExists(inName) then
+    name := inName + Autoconf.pathDelimiter + "package.mo";
+  end if;
+
+  if not System.regularFileReadable(name) then
+    if not System.regularFileExists(name) then
+      msg := "file does not exist";
+    else
+      msg := "read access denied";
+    end if;
+
+    Error.addMessage(Error.LOAD_FILE_FAILED, {name, msg});
+    fail();
+  end if;
+
   (dir,filename) := Util.getAbsoluteDirectoryAndFile(name);
   if filename == "package.mo" or filename == "package.moc" then
     cname::rest := System.strtok(List.last(System.strtok(dir,"/"))," ");
@@ -497,6 +512,8 @@ algorithm
         end if;
       end if;
 
+      checkPatchedModelicaServices(AbsynUtil.pathFirstIdent(path), pnew);
+
       if notifyLoad and not forceLoad then
         version := getPackageVersion(path, pnew);
         msgTokens := {AbsynUtil.pathString(path), version, requestedBy};
@@ -596,6 +613,35 @@ algorithm
     Error.addMessage(Error.LOAD_MODEL_DIFFERENT_VERSIONS_OLDER, {pathStr, version, actualVersionStr});
   end if;
 end checkValidVersion;
+
+protected function checkPatchedModelicaServices
+  "Checks if the library is ModelicaServices, and issues a warning if it
+   doesn't appear to have been patched for use with OpenModelica."
+  input String name;
+  input Absyn.Program program;
+protected
+  Absyn.Class cls;
+  Absyn.Algorithm alg;
+  Absyn.ComponentRef fn;
+algorithm
+  if name == "ModelicaServices" then
+    try
+      // Try to look up ModelicaServices.ExternalReferences.loadResource.
+      cls := InteractiveUtil.getPathedClassInProgram(Absyn.Path.QUALIFIED("ModelicaServices",
+        Absyn.Path.QUALIFIED("ExternalReferences", Absyn.Path.IDENT("loadResource"))), program);
+      // Check if the first statement in the first algorithm section is a function call.
+      Absyn.ClassPart.ALGORITHMS(contents = {Absyn.AlgorithmItem.ALGORITHMITEM(algorithm_ = alg)}) :=
+        List.find(AbsynUtil.getClassPartsInClass(cls), AbsynUtil.isAlgorithmSection);
+      Absyn.Algorithm.ALG_ASSIGN(value = Absyn.Exp.CALL(function_ = fn)) := alg;
+
+      // Issue a warning if that function call is not a call to our uriToFilename.
+      if AbsynUtil.crefString(fn) <> "OpenModelica.Scripting.uriToFilename" then
+        Error.addMessage(Error.UNPATCHED_MODELICA_SERVICES, {});
+      end if;
+    else
+    end try;
+  end if;
+end checkPatchedModelicaServices;
 
 public function cevalInteractiveFunctions
 "defined in the interactive environment."

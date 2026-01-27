@@ -836,13 +836,13 @@ package SimCode
 
   uniontype BaseUnit
     record BASEUNIT
-      Integer mol "exponent";
-      Integer cd  "exponent";
-      Integer m   "exponent";
       Integer s   "exponent";
+      Integer m   "exponent";
+      Integer kg  "exponent";
       Integer A   "exponent";
       Integer K   "exponent";
-      Integer kg  "exponent";
+      Integer mol "exponent";
+      Integer cd  "exponent";
       Real factor "prefix";
       Real offset "offset";
     end BASEUNIT;
@@ -1155,6 +1155,7 @@ package SimCodeFunction
       Boolean is_parallel;
     end FUNCTION_CONTEXT;
     record JACOBIAN_CONTEXT
+      String name;
       Option<HashTableCrefSimVar.HashTable> jacHT;
     end JACOBIAN_CONTEXT;
     record ALGLOOP_CONTEXT
@@ -1393,6 +1394,7 @@ package SimCodeUtil
   end simVarFromHT;
 
   function createJacContext
+    input String name;
     input Option<HashTableCrefSimVar.HashTable> jacHT;
     output SimCodeFunction.Context outContext;
   end createJacContext;

@@ -28,31 +28,22 @@
  *
  */
 
-/*
-  Stores results in a Wall file format.
-
-  Specification of the Wall format can be found at http://github.com/xogeny/recon
+/*! \file discrete_changes.h
  */
 
-#ifndef _SIMULATION_RESULT_WALL_H_
-#define _SIMULATION_RESULT_WALL_H_
+#ifndef _OMC_DISCRETE_CHANGES_H_
+#define _OMC_DISCRETE_CHANGES_H_
 
-#include "simulation_result.h"
-#include "simulation_data.h"
+#include "../../simulation_data.h"
 
 #ifdef __cplusplus
 extern "C" {
-#endif /* cplusplus */
-
-#if !defined(OMC_MINIMAL_RUNTIME)
-void recon_wall_init(simulation_result *self,DATA *data, threadData_t *threadData);
-void recon_wall_emit(simulation_result *self,DATA *data, threadData_t *threadData);
-void recon_wall_writeParameterData(simulation_result *self,DATA *data, threadData_t *threadData);
-void recon_wall_free(simulation_result *self,DATA *data, threadData_t *threadData);
 #endif
+
+modelica_boolean checkForDiscreteChanges(DATA* data, threadData_t *threadData);
 
 #ifdef __cplusplus
 }
-#endif /* cplusplus */
+#endif
 
-#endif /* _SIMULATION_RESULT_WALL_H_ */
+#endif

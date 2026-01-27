@@ -72,7 +72,11 @@ public
       Kind kind;
       Option<Jacobian> jacobian "Analytic jacobian for the integrator";
       Option<Jacobian> jacobianAdjoint "Analytic adjoint jacobian for the integrator";
+      Option<Jacobian> LFG_jacobian "Analytic jacobian of Lagrange term (L), ODE (f), Path Constraints (g) for MOO";
+      Option<Jacobian> MRF_jacobian "Analytic jacobian of Mayer term (Mf), Final Constraints (rf) for MOO";
+      Option<Jacobian> R0_jacobian  "Analytic jacobian of Initial Constraints (r0) for MOO";
     end CONTINUOUS;
+
     record CLOCKED
       BClock clock;
       Option<BClock> baseClock;
@@ -99,6 +103,11 @@ public
         case CONTINUOUS() algorithm
           if Util.isSome(association.jacobian) then
             str := BJacobian.toString(Util.getOption(association.jacobian), Partition.kindToString(association.kind));
+            if (Flags.getConfigBool(Flags.MOO_DYNAMIC_OPTIMIZATION)) then
+              str := "\n" + str + BJacobian.toString(Util.getOption(association.LFG_jacobian), Partition.kindToString(association.kind));
+              str := "\n" + str + BJacobian.toString(Util.getOption(association.MRF_jacobian), Partition.kindToString(association.kind));
+              str := "\n" + str + BJacobian.toString(Util.getOption(association.R0_jacobian), Partition.kindToString(association.kind));
+            end if;
           else
             str := StringUtil.headline_1("No Jacobian");
           end if;
@@ -155,7 +164,7 @@ public
           association := CLOCKED(clock, SOME(UnorderedMap.getSafe(base_name, info.baseClocks, sourceInfo())), clock_deps, false);
         end if;
       else
-        association := CONTINUOUS(kind, NONE(), NONE());
+        association := CONTINUOUS(kind, NONE(), NONE(), NONE(), NONE(), NONE());
       end if;
     end create;
 

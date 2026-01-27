@@ -199,6 +199,7 @@ CevalRecord4.mo \
 CevalRecord5.mo \
 CevalRecord6.mo \
 CevalRecord7.mo \
+CevalRecord8.mo \
 CevalRecordArray1.mo \
 CevalRecordArray2.mo \
 CevalRecordArray3.mo \
@@ -713,6 +714,7 @@ FunctionRecordArg3.mo \
 FunctionRecordArg4.mo \
 FunctionRecordArg5.mo \
 FunctionRecordArg6.mo \
+FunctionRecordArg7.mo \
 FunctionRecursive1.mo \
 FunctionRecursive2.mo \
 FunctionSections1.mo \
