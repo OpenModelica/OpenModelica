@@ -2654,13 +2654,6 @@ algorithm
   SimCodeVar.SIMVAR(index=index) := var;
 end varIndex;
 
-public function varName
-  input SimCodeVar.SimVar var;
-  output DAE.ComponentRef name;
-algorithm
-  SimCodeVar.SIMVAR(name=name) := var;
-end varName;
-
 public function isParallelFunctionContext
   input SimCodeFunction.Context context;
   output Boolean outBool;
