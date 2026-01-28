@@ -4,6 +4,10 @@
   "description": "The result of calling the getModelInstance API",
   "type": "object",
   "properties": {
+    "$kind": {
+      "description": "Optional specifier of what kind of class it is",
+      "type": "string"
+    },
     "name": {
       "description": "The name of the class",
       "type": "string"
@@ -13,7 +17,7 @@
       "$ref": "#/definitions/dimensions"
     },
     "restriction": {
-      "description": "The kind of class",
+      "description": "The class's restriction",
       "type": "string"
     },
     "prefixes": {
@@ -301,48 +305,7 @@
     "replaceableClass": {
       "description": "A replaceable class definition",
       "type": "object",
-      "properties": {
-        "$kind": {
-          "type": "string",
-          "const": "class"
-        },
-        "name": {
-          "description": "Name of the class",
-          "type": "string"
-        },
-        "restriction": {
-          "description": "The kind of class",
-          "type": "string"
-        },
-        "prefixes": {
-          "description": "The class' prefixes",
-          "$ref": "#/definitions/classPrefixes"
-        },
-        "baseClass": {
-          "description": "The name of the extended class of a short class definition",
-          "type": "string"
-        },
-        "dims": {
-          "description": "The class' dimensions for a short class definition",
-          "$ref": "#/definitions/dimensions"
-        },
-        "modifiers": {
-          "description": "Modifier from the SCode (on short class definitions or class extends)",
-          "$ref": "#/definitions/scodeModifier"
-        },
-        "comment": {
-          "description": "The class' comment",
-          "$ref": "#/definitions/comment"
-        },
-        "annotation": {
-          "description": "The annotation on the replaceble class definition",
-          "$ref": "#/definitions/annotation"
-        },
-        "source": {
-          "$ref": "#/definitions/source"
-        }
-      },
-      "required": ["$kind", "name"]
+      "$ref": "#"
     },
     "classPrefixes": {
       "description": "The class prefixes",

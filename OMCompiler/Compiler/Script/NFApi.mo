@@ -1071,6 +1071,7 @@ end buildInstanceTreeComponent;
 function dumpJSONInstanceTree
   input InstanceTree tree;
   input InstNode scope;
+  input String kind = "";
   input Boolean root = true;
   input Boolean isDeleted = false;
   input Boolean isExtends = false;
@@ -1087,6 +1088,10 @@ algorithm
   node := InstNode.resolveOuter(node);
   def := InstNode.definition(node);
   cmt := SCodeUtil.getElementComment(def);
+
+  if not stringEmpty(kind) then
+    json := JSON.addPair("$kind", JSON.makeString(kind), json);
+  end if;
 
   json := JSON.addPair("name", dumpJSONNodePath(node, not isExtends), json);
 
@@ -1287,17 +1292,25 @@ function dumpJSONReplaceableClass
   input InstNode scope;
   output JSON json = JSON.makeNull();
 protected
-  SCode.Element elem;
-  SCode.ClassDef cdef;
-  InstNode node, derivedNode;
-  Absyn.Path path;
-  Option<list<Absyn.Subscript>> odims;
-  SCode.Comment cmt;
+  InstNode node;
+  InstContext.Type context;
+  InstSettings inst_settings;
+  InstanceTree inst_tree;
 algorithm
-  node := InstNode.getRedeclaredNode(cls);
-  elem := InstNode.definition(node);
-  json := dumpJSONSCodeClass(elem, scope, node, true, json);
-  json := JSON.addPair("source", dumpJSONSourceInfo(InstNode.info(node)), json);
+  context := InstContext.set(NFInstContext.RELAXED, NFInstContext.CLASS);
+  context := InstContext.set(context, NFInstContext.INSTANCE_API);
+  inst_settings := InstSettings.SETTINGS(mergeExtendsSections = false, resizableArrays = false);
+
+  node := Inst.instantiate(cls, context = context);
+  inst_tree := buildInstanceTree(node);
+  Inst.instExpressions(node, context = context, settings = inst_settings);
+  Inst.updateImplicitVariability(node, false, context);
+
+  Typing.typeClassType(node, NFBinding.EMPTY_BINDING, context, node);
+  Typing.typeComponents(node, context);
+  Typing.typeBindings(node, context);
+
+  json := dumpJSONInstanceTree(inst_tree, node, kind = "class");
 end dumpJSONReplaceableClass;
 
 function dumpJSONComponent

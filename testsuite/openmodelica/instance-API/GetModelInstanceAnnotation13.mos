@@ -64,12 +64,121 @@ getErrorString();
 //     },
 //     {
 //       \"$kind\": \"class\",
-//       \"name\": \"C\",
+//       \"name\": \"M.C\",
 //       \"restriction\": \"model\",
 //       \"prefixes\": {
 //         \"replaceable\": true
 //       },
-//       \"baseClass\": \"P.C\",
+//       \"elements\": [
+//         {
+//           \"$kind\": \"extends\",
+//           \"baseClass\": {
+//             \"name\": \"P.C\",
+//             \"restriction\": \"model\",
+//             \"elements\": [
+//               {
+//                 \"$kind\": \"component\",
+//                 \"name\": \"b\",
+//                 \"type\": \"Boolean\",
+//                 \"modifiers\": \"false\",
+//                 \"value\": {
+//                   \"binding\": false
+//                 },
+//                 \"prefixes\": {
+//                   \"variability\": \"parameter\"
+//                 }
+//               },
+//               {
+//                 \"$kind\": \"component\",
+//                 \"name\": \"e\",
+//                 \"type\": {
+//                   \"name\": \"P.E\",
+//                   \"restriction\": \"type\",
+//                   \"elements\": [
+//                     {
+//                       \"$kind\": \"extends\",
+//                       \"baseClass\": \"enumeration\"
+//                     },
+//                     {
+//                       \"$kind\": \"component\",
+//                       \"name\": \"A\"
+//                     },
+//                     {
+//                       \"$kind\": \"component\",
+//                       \"name\": \"B\"
+//                     },
+//                     {
+//                       \"$kind\": \"component\",
+//                       \"name\": \"C\"
+//                     }
+//                   ],
+//                   \"source\": {
+//                     \"filename\": \"<interactive>\",
+//                     \"lineStart\": 9,
+//                     \"columnStart\": 5,
+//                     \"lineEnd\": 9,
+//                     \"columnEnd\": 34
+//                   }
+//                 },
+//                 \"modifiers\": \"E.B\",
+//                 \"value\": {
+//                   \"binding\": {
+//                     \"$kind\": \"enum\",
+//                     \"name\": \"P.E.B\",
+//                     \"index\": 2
+//                   }
+//                 },
+//                 \"prefixes\": {
+//                   \"variability\": \"parameter\"
+//                 }
+//               },
+//               {
+//                 \"$kind\": \"component\",
+//                 \"name\": \"x\",
+//                 \"type\": \"Real\",
+//                 \"modifiers\": \"0\",
+//                 \"value\": {
+//                   \"binding\": 0
+//                 },
+//                 \"prefixes\": {
+//                   \"variability\": \"parameter\"
+//                 },
+//                 \"annotation\": {
+//                   \"Dialog\": {
+//                     \"enable\": {
+//                       \"$kind\": \"binary_op\",
+//                       \"lhs\": {
+//                         \"$kind\": \"cref\",
+//                         \"parts\": [
+//                           {
+//                             \"name\": \"C\"
+//                           },
+//                           {
+//                             \"name\": \"e\"
+//                           }
+//                         ]
+//                       },
+//                       \"op\": \"==\",
+//                       \"rhs\": {
+//                         \"$kind\": \"enum\",
+//                         \"name\": \"P.E.A\",
+//                         \"index\": 1
+//                       }
+//                     }
+//                   }
+//                 }
+//               }
+//             ],
+//             \"source\": {
+//               \"filename\": \"<interactive>\",
+//               \"lineStart\": 3,
+//               \"columnStart\": 5,
+//               \"lineEnd\": 7,
+//               \"columnEnd\": 10
+//             }
+//           }
+//         }
+//       ],
 //       \"source\": {
 //         \"filename\": \"<interactive>\",
 //         \"lineStart\": 15,
