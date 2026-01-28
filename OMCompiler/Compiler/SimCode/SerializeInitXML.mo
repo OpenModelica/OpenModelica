@@ -39,7 +39,6 @@ import File;
 protected
 import BackendDAE.VarKind;
 import CR=ComponentReference;
-import CodegenUtil;
 import DAE.{Exp,Type};
 import Dump;
 import ExpressionDump.printExpStr;
@@ -48,7 +47,6 @@ import Settings;
 import SimCode.{SimulationSettings,VarInfo};
 import SimCodeVar.{AliasVariable,Causality,SimVar};
 import SimCodeUtil;
-import Tpl;
 import Types;
 import Util;
 

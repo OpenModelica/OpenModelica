@@ -47,7 +47,6 @@ import writeCref = ComponentReference.writeCref;
 import expStr = ExpressionDump.printExpStr;
 import List;
 import SimCodeUtil;
-import SimCodeFunctionUtil;
 import Util;
 
 public

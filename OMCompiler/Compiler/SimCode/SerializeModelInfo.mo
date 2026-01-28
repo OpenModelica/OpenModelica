@@ -58,7 +58,6 @@ import expStr = ExpressionDump.printExpStr;
 import List;
 import PrefixUtil;
 import SimCodeUtil;
-import SimCodeFunctionUtil;
 import SCodeDump;
 import Util;
 import UnorderedSet;
