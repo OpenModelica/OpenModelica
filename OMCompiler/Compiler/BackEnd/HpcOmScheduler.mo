@@ -55,7 +55,6 @@ import HashTableCrefSimVar;
 import HpcOmSchedulerExt;
 import HpcOmSimCodeMain;
 import List;
-import SimCodeFunctionUtil;
 import SimCodeUtil;
 import System;
 import Util;
@@ -3284,7 +3283,7 @@ algorithm
         threadIdx = 1;
         compIdx = arrayLength(iSccSimEqMapping)+1;  // the next available component index
         taskIdx = arrayLength(iTaskGraph)+1;
-        simVarIdx = List.fold(List.map(algVars,SimCodeFunctionUtil.varIndex),intMax,0)+1;// the next available simVar index
+        simVarIdx = max(v.index for v in algVars)+1;// the next available simVar index
         simEqSysIdx = SimCodeUtil.getMaxSimEqSystemIndex(iSimCode)+1;// the next available simEqSys index
         lsIdx = List.fold(List.map(List.flatten(odes),SimCodeUtil.getLSindex),intMax,0)+1;// the next available linear system index
         nlsIdx = List.fold(List.map(List.flatten(odes),SimCodeUtil.getNLSindex),intMax,0)+1;// the next available nonlinear system index

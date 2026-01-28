@@ -47,7 +47,6 @@ import writeCref = ComponentReference.writeCref;
 import expStr = ExpressionDump.printExpStr;
 import List;
 import SimCodeUtil;
-import SimCodeFunctionUtil;
 import Util;
 
 public
@@ -582,7 +581,7 @@ algorithm
         File.write(file, ",\"section\":\"");
         File.write(file, section);
         File.write(file, "\",\"tag\":\"container\",\"display\":\"mixed\",\"defines\":[");
-        serializeUses(file,list(SimCodeFunctionUtil.varName(v) for v in eq.discVars));
+        serializeUses(file,list(v.name for v in eq.discVars));
         File.write(file, "],\"equation\":[");
         serializeEquationIndex(file,eq.cont);
         for e1 in eq.discEqs loop
@@ -902,37 +901,6 @@ algorithm
   serializeList(file,eqs,serializeEquationIndex);
   File.write(file,"]");
 end serializeIfBranch;
-
-function writeEqExpStr
-  input File.File file;
-  input DAE.EquationExp eqExp;
-algorithm
-  _ := match eqExp
-    case DAE.PARTIAL_EQUATION()
-      equation
-        File.writeEscape(file,expStr(eqExp.exp),escape=JSON);
-      then ();
-    case DAE.RESIDUAL_EXP()
-      equation
-        File.write(file,"0 = ");
-        File.writeEscape(file,expStr(eqExp.exp),escape=JSON);
-      then ();
-    case DAE.EQUALITY_EXPS()
-      equation
-        File.writeEscape(file,expStr(eqExp.lhs),escape=JSON);
-        File.write(file," = ");
-        File.writeEscape(file,expStr(eqExp.rhs),escape=JSON);
-      then ();
-  end match;
-end writeEqExpStr;
-
-function serializeFunction
-  input File.File file;
-  input SimCodeFunction.Function func;
-algorithm
-  File.write(file, "\n");
-  serializePath(file, SimCodeUtil.functionPath(func));
-end serializeFunction;
 
 function serializeSource
   input File.File file;

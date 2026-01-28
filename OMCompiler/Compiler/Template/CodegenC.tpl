@@ -2441,7 +2441,7 @@ template functionSetupLinearSystems(list<SimEqSystem> linearSystems, String mode
           let &varDeclsRes = buffer "" /*BUFD*/
           let &auxFunction = buffer ""
           let &tmp = buffer ""
-          let xlocs = (ls.vars |> var hasindex i0 => '<%cref(varName(var), &sub)%> = xloc[<%i0%>];' ;separator="\n")
+          let xlocs = (ls.vars |> var as SIMVAR() hasindex i0 => '<%cref(name, &sub)%> = xloc[<%i0%>];' ;separator="\n")
           let prebody = (match ls.partOfJac
             case true then
               (ls.residual |> eq2 =>
@@ -2531,7 +2531,7 @@ template functionSetupLinearSystems(list<SimEqSystem> linearSystems, String mode
          let &varDeclsRes = buffer "" /*BUFD*/
          let &auxFunction = buffer ""
          let &tmp = buffer ""
-         let xlocs = (ls.vars |> var hasindex i0 => '<%cref(varName(var), &sub)%> = xloc[<%i0%>];' ;separator="\n")
+         let xlocs = (ls.vars |> var as SIMVAR() hasindex i0 => '<%cref(var.name, &sub)%> = xloc[<%i0%>];' ;separator="\n")
          let prebody = (ls.residual |> eq2 =>
                functionExtraResidualsPreBody(eq2, &tmp, modelNamePrefix)
           ;separator="\n")
@@ -2543,7 +2543,7 @@ template functionSetupLinearSystems(list<SimEqSystem> linearSystems, String mode
          let &varDeclsRes2 = buffer "" /*BUFD*/
          let &auxFunction2 = buffer ""
          let &tmp2 = buffer ""
-         let xlocs2 = (at.vars |> var hasindex i0 => '<%cref(varName(var), &sub)%> = xloc[<%i0%>];' ;separator="\n")
+         let xlocs2 = (at.vars |> var as SIMVAR() hasindex i0 => '<%cref(var.name, &sub)%> = xloc[<%i0%>];' ;separator="\n")
          let prebody2 = (at.residual |> eq2 =>
                functionExtraResidualsPreBody(eq2, &tmp2, modelNamePrefix)
           ;separator="\n")
