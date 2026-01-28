@@ -3157,7 +3157,6 @@ protected
     NFCall call;
     NFPrefixes.Variability var = Expression.variability(mat);
     NFPrefixes.Purity pur = Expression.purity(mat);
-    NFFunction.Function TRANSPOSE_FUNC;
   algorithm
     // Only handle array types
     if not Type.isArray(inTy) then
@@ -3180,7 +3179,7 @@ protected
       listAppend({listGet(dims,2), listGet(dims,1)}, listRest(listRest(dims)))
     );
 
-    call := NFCall.makeTypedCall(NFBuiltinFuncs.TRANSPOSE_FUNC, {mat}, var, pur, resTy);
+    call := NFCall.makeTypedCall(NFBuiltinFuncs.TRANSPOSE, {mat}, var, pur, resTy);
     tr := Expression.CALL(call);
   end typeTransposeCall;
 
