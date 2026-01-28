@@ -584,9 +584,7 @@ void Parameter::setEnabled(bool enable)
  */
 void Parameter::update()
 {
-  ElementParameters *pElementParameters = qobject_cast<ElementParameters*>(mpElementParameters->parent());
-  mEnable.evaluate(mpElementParameters->getGraphicsView()->getModelWidget()->getModelInstance(),
-                   mpElementParameters->isNested() ? pElementParameters->getElementQualifiedName() : "");
+  mEnable.evaluate(mpElementParameters->getGraphicsView()->getModelWidget()->getModelInstance());
   setEnabled(mEnable);
 }
 
@@ -898,55 +896,68 @@ void Parameter::editClassButtonClicked()
   // get type as qualified path
   const QString qualifiedType = MainWindow::instance()->getOMCProxy()->qualifyPath(classPath, type);
   ModelInstance::Model *pCurrentModel = mpModelInstanceElement->getModel();
-  const QJsonObject newModelJSON = MainWindow::instance()->getOMCProxy()->getModelInstance(qualifiedType, modifier);
-  if (!newModelJSON.isEmpty()) {
-    const QJsonObject modifierJSON = MainWindow::instance()->getOMCProxy()->modifierToJSON(modifier);
-    ModelInstance::Modifier *pElementModifier = new ModelInstance::Modifier("", QJsonValue(), mpModelInstanceElement->getParentModel());
-    pElementModifier->deserialize(QJsonValue(modifierJSON));
-    const QJsonObject defaultModifierJSON = MainWindow::instance()->getOMCProxy()->modifierToJSON(defaultModifier);
-    ModelInstance::Modifier *pDefaultElementModifier = new ModelInstance::Modifier("", QJsonValue(), mpModelInstanceElement->getParentModel());
-    pDefaultElementModifier->deserialize(QJsonValue(defaultModifierJSON));
-    ModelInstance::Model *pNewModel = new ModelInstance::Model(newModelJSON, mpModelInstanceElement);
+  ModelInstance::Model *pNewModel = nullptr;
+  ModelInstance::Model *pParentModel = mpModelInstanceElement->getParentModel();
+  /* if qualifiedType is same as type then no need to get the new model instance
+   * see #14393 for an example where we use the same model instance
+   * as it has values from the top level.
+   */
+  if (qualifiedType != type) {
+    const QJsonObject newModelJSON = MainWindow::instance()->getOMCProxy()->getModelInstance(qualifiedType, modifier);
+    if (newModelJSON.isEmpty()) {
+      QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::error),
+                            tr("Unable to get the model instance of the redeclare class '%1'.").arg(qualifiedType), QMessageBox::Ok);
+      return;
+    }
+    pNewModel = new ModelInstance::Model(newModelJSON, mpModelInstanceElement);
     mpModelInstanceElement->setModel(pNewModel);
-    MainWindow::instance()->getProgressBar()->setRange(0, 0);
-    MainWindow::instance()->showProgressBar();
-    ElementParameters *pElementParameters = new ElementParameters(mpModelInstanceElement, mpElementParameters->getGraphicsView(), mpElementParameters->isInherited(),
-                                                                  true, pDefaultElementModifier, pReplaceableConstrainedByModifier, pElementModifier, mpElementParameters);
-    MainWindow::instance()->hideProgressBar();
-    MainWindow::instance()->getStatusBar()->clearMessage();
-    if (pElementParameters->exec() == QDialog::Accepted) {
-      const QString modification = pElementParameters->getModification();
-      if (isReplaceableClass()) {
-        QString restriction;
-        if (mpModelInstanceElement->getModel()) {
-          restriction = mpModelInstanceElement->getModel()->getRestriction();
-        } else {
-          restriction = mpModelInstanceElement->getType();
-        }
-        QString elementRedeclaration = "redeclare " % restriction % " " % mpModelInstanceElement->getName() % " = " % type % " " % modification;
+  }
+  const QJsonObject modifierJSON = MainWindow::instance()->getOMCProxy()->modifierToJSON(modifier);
+  ModelInstance::Modifier *pElementModifier = new ModelInstance::Modifier("", QJsonValue(), pParentModel);
+  pElementModifier->deserialize(QJsonValue(modifierJSON));
+  const QJsonObject defaultModifierJSON = MainWindow::instance()->getOMCProxy()->modifierToJSON(defaultModifier);
+  ModelInstance::Modifier *pDefaultElementModifier = new ModelInstance::Modifier("", QJsonValue(), pParentModel);
+  pDefaultElementModifier->deserialize(QJsonValue(defaultModifierJSON));
+  MainWindow::instance()->getProgressBar()->setRange(0, 0);
+  MainWindow::instance()->showProgressBar();
+  ElementParameters *pElementParameters = new ElementParameters(mpModelInstanceElement, mpElementParameters->getGraphicsView(), mpElementParameters->isInherited(),
+                                                                true, pDefaultElementModifier, pReplaceableConstrainedByModifier, pElementModifier, mpElementParameters);
+  MainWindow::instance()->hideProgressBar();
+  MainWindow::instance()->getStatusBar()->clearMessage();
+  if (pElementParameters->exec() == QDialog::Accepted) {
+    const QString modification = pElementParameters->getModification();
+    if (isReplaceableClass()) {
+      QString restriction;
+      if (mpModelInstanceElement->getModel()) {
+        restriction = mpModelInstanceElement->getModel()->getRestriction();
+      } else {
+        restriction = mpModelInstanceElement->getType();
+      }
+      QString elementRedeclaration = "redeclare " % restriction % " " % mpModelInstanceElement->getName() % " = " % type % " " % modification;
+      if (!comment.isEmpty()) {
+        elementRedeclaration = elementRedeclaration % " " % comment;
+      }
+      setValueWidget(elementRedeclaration, false, mUnit, true);
+    } else {
+      if (value.startsWith("redeclare")) {
+        QString elementRedeclaration = "redeclare " % type % " " % mpModelInstanceElement->getName() % modification;
         if (!comment.isEmpty()) {
           elementRedeclaration = elementRedeclaration % " " % comment;
         }
         setValueWidget(elementRedeclaration, false, mUnit, true);
       } else {
-        if (value.startsWith("redeclare")) {
-          QString elementRedeclaration = "redeclare " % type % " " % mpModelInstanceElement->getName() % modification;
-          if (!comment.isEmpty()) {
-            elementRedeclaration = elementRedeclaration % " " % comment;
-          }
-          setValueWidget(elementRedeclaration, false, mUnit, true);
+        if (modification.isEmpty()) {
+          setValueWidget("", false, mUnit, true);
         } else {
-          if (modification.isEmpty()) {
-            setValueWidget("", false, mUnit, true);
-          } else {
-            setValueWidget(mpModelInstanceElement->getName() % modification, false, mUnit, true);
-          }
+          setValueWidget(mpModelInstanceElement->getName() % modification, false, mUnit, true);
         }
       }
     }
-    pElementParameters->deleteLater();
-    delete pElementModifier;
-    delete pDefaultElementModifier;
+  }
+  pElementParameters->deleteLater();
+  delete pElementModifier;
+  delete pDefaultElementModifier;
+  if (qualifiedType != type) {
     // reset the actual model of the element
     mpModelInstanceElement->setModel(pCurrentModel);
     delete pNewModel;
@@ -1029,18 +1040,30 @@ void Parameter::valueComboBoxChanged(int index)
   int toolTipIndex = mpValueComboBox->findData(value);
   mpValueComboBox->setToolTip(mpValueComboBox->itemData(toolTipIndex, Qt::ToolTipRole).toString());
 
-  try {
-    if (isEnumeration()) {
-      updateValueBinding(FlatModelica::Expression(value.toStdString(), index));
-    } else {
-      if (isChoices()) {
-        resetUnitCombobox();
-      }
-      updateValueBinding(FlatModelica::Expression::parse(value));
+  // reset in case of empty selection
+  if (index == 0) {
+    resetUnitCombobox();
+    mpModelInstanceElement->resetBinding();
+    try {
+      updateValueBinding(static_cast<const ModelInstance::Element*>(mpModelInstanceElement)->getBinding());
+    } catch (const std::exception &e) {
+      qDebug() << "Failed to reset expression to binding in Parameter::valueComboBoxChanged()";
+      qDebug() << e.what();
     }
-  } catch (const std::exception &e) {
-    qDebug() << "Failed to parse value in Parameter::valueComboBoxChanged(): " << value;
-    qDebug() << e.what();
+  } else {
+    try {
+      if (isEnumeration()) {
+        updateValueBinding(FlatModelica::Expression(value.toStdString(), index));
+      } else {
+        if (isChoices()) {
+          resetUnitCombobox();
+        }
+        updateValueBinding(FlatModelica::Expression::parse(value));
+      }
+    } catch (const std::exception &e) {
+      qDebug() << "Failed to parse value in Parameter::valueComboBoxChanged(): " << value;
+      qDebug() << e.what();
+    }
   }
 }
 
