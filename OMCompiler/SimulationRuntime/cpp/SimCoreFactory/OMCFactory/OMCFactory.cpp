@@ -557,27 +557,15 @@ vector<const char *> OMCFactory::handleComplexCRuntimeArguments(int argc, const 
       else if ((oit = opts.find(arg)) != opts.end() && i < argc - 1)
           opts[oit->first] = argv[++i]; // regular override
       else if (strncmp(argv[i], "-override=", 10) == 0) {
-          // FIXME startTime, stopTime, ... are no longer used with override
-          map<string, string> supported = MAP_LIST_OF
-            "startTime", "-S" MAP_LIST_SEP "stopTime", "-E" MAP_LIST_SEP
-            "stepSize", "-H" MAP_LIST_SEP "numberOfIntervals", "-G" MAP_LIST_SEP
-            "solver", "-I" MAP_LIST_SEP "tolerance", "-T" MAP_LIST_SEP
-            "outputFormat", "-P" MAP_LIST_SEP "variableFilter", "-B" MAP_LIST_END;
           vector<string> strs;
           boost::split(strs, argv[i], boost::is_any_of(",="));
           for (int j = 1; j < strs.size(); j++) {
-              if ((oit = supported.find(strs[j])) != supported.end()
-                  && j < strs.size() - 1) {
-                  opts[oit->second] = strs[++j];
-              }
-              else {
-                  // leave unrecognized overrides
-                  if (overrideOMEdit.size() > 10)
-                      overrideOMEdit += ",";
-                  overrideOMEdit += strs[j];
-                  if (j < strs.size() - 1)
-                      overrideOMEdit += "=" + strs[++j];
-              }
+              // leave unrecognized overrides
+              if (overrideOMEdit.size() > 10)
+                  overrideOMEdit += ",";
+              overrideOMEdit += strs[j];
+              if (j < strs.size() - 1)
+                  overrideOMEdit += "=" + strs[++j];
           }
           if (overrideOMEdit.size() > 10)
               optv.push_back(strdup(overrideOMEdit.c_str()));
@@ -602,6 +590,12 @@ void OMCFactory::fillArgumentsToIgnore()
 void OMCFactory::fillArgumentsToReplace()
 {
   _argumentsToReplace = map<string, string>();
+  _argumentsToReplace.insert(pair<string,string>("-startTime", "start-time"));
+  _argumentsToReplace.insert(pair<string,string>("-stopTime", "stop-time"));
+  _argumentsToReplace.insert(pair<string,string>("-stepSize", "step-size"));
+  _argumentsToReplace.insert(pair<string,string>("-s", "solver"));
+  _argumentsToReplace.insert(pair<string,string>("-outputFormat", "output-format"));
+  _argumentsToReplace.insert(pair<string,string>("-variableFilter", "variable-filter"));
   _argumentsToReplace.insert(pair<string,string>("-r", "results-file"));
   _argumentsToReplace.insert(pair<string,string>("-ls", "lin-solver"));
   _argumentsToReplace.insert(pair<string,string>("-nls", "non-lin-solver"));
