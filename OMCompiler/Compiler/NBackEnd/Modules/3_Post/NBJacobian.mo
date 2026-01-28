@@ -1242,27 +1242,6 @@ protected
     rhs := Expression.map(rhs, Expression.repairOperator);
   end buildAdjointRhs;
 
-  // Build processing order for adjoint equations:
-  // - tmp_vars in reverse order (reverse-mode)
-  // - res_vars in original order (order does not matter here)
-  // FIXME the above comment seems outdated, what's happening in this function?
-  function buildAdjointProcessingOrder
-    input UnorderedMap<ComponentRef, list<Expression>> adjoint_map;
-    input list<Pointer<Variable>> res_vars;
-    output list<ComponentRef> resKeys = {};
-  protected
-    ComponentRef c;
-  algorithm
-    // original order for result vars
-    // FIXME order is reversed here! Is this the intended behavior?
-    for v in res_vars loop
-      c := BVariable.getVarName(v);
-      if UnorderedMap.contains(c, adjoint_map) then
-        resKeys := c :: resKeys;
-      end if;
-    end for;
-  end buildAdjointProcessingOrder;
-
   // Helper: run reverse-mode on a residual expression with a given seed (current_grad),
   // accumulating into the provided adjoint_map. Returns updated DifferentiationArguments.
   function accumulateAdjointForResidual
@@ -1424,7 +1403,7 @@ protected
 
     Integer i;
     String newName;
-    ComponentRef newC;
+    ComponentRef newC, c;
 
     BVariable.checkVar func = getTmpFilterFunction(jacType);
     type ExpressionList = list<Expression>; // for saving terms for the same lhs in a map
@@ -1759,7 +1738,7 @@ protected
         end if;
       end if;
     end for;
-    // Emit tmp components in requested order
+    // Emit tmp components in determined order
     for lhsKey in orderedTmpCrefs loop
       tmpComps := makeAdjointComponent(lhsKey, adjoint_map, newName, i) :: tmpComps;
       i := i + 1;
@@ -1775,12 +1754,14 @@ protected
       end if;
     end for;
 
-    // 3. RESULT VAR equations
-    resKeys := buildAdjointProcessingOrder(adjoint_map, res_vars);
+    // emit result variable components in any order
     resComps := {};
-    for lhsKey in resKeys loop
-      resComps := makeAdjointComponent(lhsKey, adjoint_map, newName, i) :: resComps;
-      i := i + 1;
+    for v in res_vars loop
+      c := BVariable.getVarName(v);
+      if UnorderedMap.contains(c, adjoint_map) then
+        resComps := makeAdjointComponent(c, adjoint_map, newName, i) :: resComps;
+        i := i + 1;
+      end if;
     end for;
     // no reversal needed as order does not matter?
 

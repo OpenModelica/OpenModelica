@@ -302,7 +302,7 @@ constant Function ATANH_REAL = Function.FUNCTION(Path.IDENT("atanh"),
   InstNode.EMPTY_NODE(), {REAL_PARAM}, {REAL_PARAM}, {}, {},
     Type.REAL(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, {}, {}, listArray({}),
     Pointer.createImmutable(FunctionStatus.BUILTIN), Pointer.createImmutable(0));
-    
+
 constant Function EXP_REAL = Function.FUNCTION(Path.IDENT("exp"),
   InstNode.EMPTY_NODE(), {REAL_PARAM}, {REAL_PARAM}, {}, {},
     Type.REAL(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, {}, {}, listArray({}),
@@ -446,6 +446,11 @@ constant Function FMU_LOAD_RESOURCE = Function.FUNCTION(Path.IDENT("OpenModelica
 constant Function SAMPLE = Function.FUNCTION(Path.QUALIFIED("OMC_NO_CLOCK", Path.IDENT("sample")),
   InstNode.EMPTY_NODE(), {REAL_PARAM, REAL_PARAM}, {REAL_PARAM}, {}, {},
     Type.BOOLEAN(), DAE.FUNCTION_ATTRIBUTES_BUILTIN_IMPURE, {}, {}, listArray({}),
+    Pointer.createImmutable(FunctionStatus.BUILTIN), Pointer.createImmutable(0));
+
+constant Function TRANSPOSE_FUNC = Function.FUNCTION(Path.IDENT("transpose"),
+  InstNode.EMPTY_NODE(), {}, {}, {}, {},
+    Type.UNKNOWN(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, {}, {}, listArray({}),
     Pointer.createImmutable(FunctionStatus.BUILTIN), Pointer.createImmutable(0));
 
 constant Component CLOCK_COMPONENT = Component.COMPONENT(NFInstNode.EMPTY_NODE(),

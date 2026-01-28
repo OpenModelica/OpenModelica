@@ -3180,20 +3180,7 @@ protected
       listAppend({listGet(dims,2), listGet(dims,1)}, listRest(listRest(dims)))
     );
 
-    // Build a minimal builtin function descriptor (local, not globally registered)
-    // FIXME why not put that in NFBuiltinFuncs.mo?
-    TRANSPOSE_FUNC :=
-      NFFunction.Function.FUNCTION(
-        Absyn.Path.IDENT("transpose"),
-        NFInstNode.EMPTY_NODE(),
-        {}, {}, {}, {},
-        resTy,
-        DAE.FUNCTION_ATTRIBUTES_BUILTIN,
-        {}, {}, listArray({}),
-        Pointer.createImmutable(NFFunction.FunctionStatus.BUILTIN),
-        Pointer.createImmutable(0));
-
-    call := NFCall.makeTypedCall(TRANSPOSE_FUNC, {mat}, var, pur, resTy);
+    call := NFCall.makeTypedCall(NFBuiltinFuncs.TRANSPOSE_FUNC, {mat}, var, pur, resTy);
     tr := Expression.CALL(call);
   end typeTransposeCall;
 
@@ -3226,19 +3213,7 @@ protected
     resDims := List.append_reverse(ones, inDims);
     resTy := if n > 0 then Type.ARRAY(elTy, resDims) else elTy;
 
-    // Minimal builtin descriptor for 'promote'
-    PROMOTE_FUNC :=
-      NFFunction.Function.FUNCTION(
-        Absyn.Path.IDENT("promote"),
-        NFInstNode.EMPTY_NODE(),
-        {}, {}, {}, {},
-        resTy,
-        DAE.FUNCTION_ATTRIBUTES_BUILTIN,
-        {}, {}, listArray({}),
-        Pointer.createImmutable(NFFunction.FunctionStatus.BUILTIN),
-        Pointer.createImmutable(0));
-
-    call := NFCall.makeTypedCall(PROMOTE_FUNC, {arr, Expression.INTEGER(n)}, var, pur, resTy);
+    call := NFCall.makeTypedCall(NFBuiltinFuncs.PROMOTE, {arr, Expression.INTEGER(n)}, var, pur, resTy);
     promoted := Expression.CALL(call);
   end typePromoteCall;
 
@@ -3272,19 +3247,7 @@ protected
     dims := Type.arrayDims(inTy);
     resTy := elTy; // always reduce to scalar of element type
 
-    // Build minimal builtin function descriptor for 'sum'
-    SUM_FUNC :=
-      NFFunction.Function.FUNCTION(
-        Absyn.Path.IDENT("sum"),
-        NFInstNode.EMPTY_NODE(),
-        {}, {}, {}, {},
-        resTy,
-        DAE.FUNCTION_ATTRIBUTES_BUILTIN,
-        {}, {}, listArray({}),
-        Pointer.createImmutable(NFFunction.FunctionStatus.BUILTIN),
-        Pointer.createImmutable(0));
-
-    call := NFCall.makeTypedCall(SUM_FUNC, {arr}, var, pur, resTy);
+    call := NFCall.makeTypedCall(NFBuiltinFuncs.SUM, {arr}, var, pur, resTy);
     s := Expression.CALL(call);
   end typeSumCall;
 
