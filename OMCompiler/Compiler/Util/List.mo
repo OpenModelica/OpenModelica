@@ -4472,31 +4472,6 @@ algorithm
   end while;
 end deleteMemberOnTrue;
 
-function deletePosition<T>
-  "Takes a list and a position, and deletes the position from the list.
-   Note that positions are indexed from 0.
-     Example: deletePosition({1, 2, 3, 4, 5}, 1) => {1, 3, 4, 5}"
-  input list<T> inList;
-  input Integer inPosition;
-  output list<T> outList = {};
-protected
-  Integer i = 0;
-  T e;
-  list<T> rest = inList;
-algorithm
-  // Traverse until end or index hit
-  while not listEmpty(rest) and i <> inPosition loop
-    e :: rest := rest;
-    outList := e :: outList;
-    i := i + 1;
-  end while;
-  if i == inPosition then
-    // drop this element
-    _ :: rest := rest;
-  end if;
-  outList := append_reverse(outList, rest);
-end deletePosition;
-
 public function deletePositions<T>
   "Takes a list and a list of positions, and deletes the positions from the
    list. Note that positions are indexed from 0.

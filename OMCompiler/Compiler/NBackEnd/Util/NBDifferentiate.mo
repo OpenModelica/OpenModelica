@@ -2894,11 +2894,11 @@ public
           // Forward derivative term accumulator
           upstream := diffArguments.current_grad;
           // Differentiate numerator factors
-          i := 0;
+          i := 1;
           for f in arguments loop
             // Remove first occurrence of f from numerator list using List.deleteMemberOnTrue
             // this may be an issue if f occurs multiple times
-            arg_rest := List.deletePosition(arguments, i);
+            arg_rest := listDelete(arguments, i);
             e_over_f := Expression.MULTARY(arg_rest, {denomProd}, operator);
 
             // Reverse local upstream for f: G_f = upstream .* (exp / f)
@@ -2920,11 +2920,11 @@ public
 
           sub_terms := {};
           // Differentiate denominator factors
-          i := 0;
+          i := 1;
           powSizeClass := if Expression.hasArrayType(listHead(inv_arguments)) then NFOperator.SizeClassification.ARRAY_SCALAR else NFOperator.SizeClassification.SCALAR;
           powOp := Operator.fromClassification((NFOperator.MathClassification.POWER, powSizeClass), Type.REAL());
           for g in inv_arguments loop
-            arg_rest := List.deletePosition(inv_arguments, i);
+            arg_rest := listDelete(inv_arguments, i);
             // exp / g : add one more g to denominator list
             e_over_g := Expression.MULTARY({numProd}, g :: inv_arguments, operator);
 
