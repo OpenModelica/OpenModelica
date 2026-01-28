@@ -270,6 +270,13 @@ public
     residuals := list(Equation.getResidualVar(Slice.getT(eqn)) for eqn in tearing.residual_eqns);
   end getResidualVars;
 
+  function getIterationVars
+    input Tearing tearing;
+    output list<Pointer<Variable>> iterationVars;
+  algorithm
+    iterationVars := list(Slice.getT(var) for var in tearing.iteration_vars);
+  end getIterationVars;
+  
   function getResidualEqns
     input Tearing tearing;
     output list<Pointer<Equation>> residuals = list(Slice.getT(eqn) for eqn in tearing.residual_eqns);

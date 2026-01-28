@@ -1,37 +1,38 @@
-// name: algebraicLoop
+// name: scalarAdjointJacobian3
 // keywords: NewBackend
 // status: correct
+// cflags: -d=dumpSimCode
 
 loadString("
-  model algebraicLoop
-    Real x, y;
+  model scalarAdjointJacobian3
+    Real x(start=0.5, fixed=true);
+    Real y(start=0.0, fixed=true);
   equation
-    der(y)^3 + der(x)^2 - x * y = 0;
-    der(x)^3 - der(y)^2 - y - x = 0;
-  end algebraicLoop;
+  der(y)^3 + der(x)^2 - x * y = 0;
+  der(x)^3 - der(y)^2 - y - x = 0;
+  end scalarAdjointJacobian3;
 "); getErrorString();
 
-setCommandLineOptions("--newBackend --generateDynamicJacobian=symbolic -d=dumpSimCode"); getErrorString();
+setCommandLineOptions("--newBackend --generateDynamicJacobian=symbolicadjoint -d=dumpSimCode"); getErrorString();
 
-buildModel(algebraicLoop); getErrorString();
-
+buildModel(scalarAdjointJacobian3); getErrorString();
 // Result:
 // true
 // ""
 // true
 // ""
-// ###############################
+// ########################################
 //
-//     SimCode (algebraicLoop)
+//     SimCode (scalarAdjointJacobian3)
 //
-// ###############################
+// ########################################
 // ============
 //   SimVars
 // ============
 // States (2)
 // ************
-//   (0)[STAT] (1) Real y
-//   (1)[STAT] (1) Real x
+//   (0)[STAT] (1) Real y = 0.0
+//   (1)[STAT] (1) Real x = 0.5
 //
 // Derivatives (2)
 // *****************
@@ -40,8 +41,8 @@ buildModel(algebraicLoop); getErrorString();
 //
 // Residual Variables (2)
 // ************************
-//   (0)[RES-] (1) Real $RES_SIM_0
-//   (1)[RES-] (1) Real $RES_SIM_1
+//   (0)[RES-] (1) Real $RES_SIM_1
+//   (1)[RES-] (1) Real $RES_SIM_0
 //
 // Initial Partition
 // -------------------
@@ -49,8 +50,8 @@ buildModel(algebraicLoop); getErrorString();
 //   (4) y := $START.y
 //   (3) Nonlinear System (size = 2, homotopy = false, mixed = false, torn = true)
 //   --Iteration Vars:{$DER.y, $DER.x}
-//   --(1) 0 = -($DER.x ^ 3.0 - (x + y + $DER.y ^ 2.0))
-//   --(2) 0 = -(($DER.x ^ 2.0 + $DER.y ^ 3.0) - x * y)
+//   --(1) 0 = -(($DER.x ^ 2.0 + $DER.y ^ 3.0) - x * y)
+//   --(2) 0 = -($DER.x ^ 3.0 - (x + y + $DER.y ^ 2.0))
 //
 // ODE Partition 1
 // -----------------
@@ -62,26 +63,32 @@ buildModel(algebraicLoop); getErrorString();
 // Event Partition
 // -----------------
 //
-// ==============================================
-//   SimCode Jacobian A(idx = 0, partition = 0)
-// ==============================================
+// ======================================================
+//   [EMPTY] SimCode Jacobian A(idx = 0, partition = 0)
+// ======================================================
+//
+// ================================================
+//   SimCode Jacobian ADJ(idx = 1, partition = 1)
+// ================================================
 //
 // ColumnVars (size = 2)
 // ***********************
-//   (0)[JVAR] (1) Real $pDER_ODE_JAC.$DER.y
-//   (1)[JVAR] (1) Real $pDER_ODE_JAC.$DER.x
+//   (0)[JVAR] (1) Real $pDER_ODE_JAC_ADJ.y
+//   (1)[JVAR] (1) Real $pDER_ODE_JAC_ADJ.x
 //
 // SeedVars (size = 2)
 // *********************
-//   (0)[SEED] (1) Real $SEED_ODE_JAC.y
-//   (1)[SEED] (1) Real $SEED_ODE_JAC.x
+//   (0)[SEED] (1) Real $SEED_ODE_LS_JAC_1.$DER.y
+//   (1)[SEED] (1) Real $SEED_ODE_LS_JAC_1.$DER.x
 //
 // Column Equations (size = 2)
 // -----------------------------
-//   (11) Nonlinear System (size = 2, homotopy = false, mixed = false, torn = true)
-//   --Iteration Vars:{$pDER_ODE_JAC.$DER.x, $pDER_ODE_JAC.$DER.y}
-//   --(9) 0 = -(3.0 * $DER.x ^ 2.0 * $pDER_ODE_JAC.$DER.x - ($SEED_ODE_JAC.x + $SEED_ODE_JAC.y + 2.0 * $DER.y * $pDER_ODE_JAC.$DER.y))
-//   --(10) 0 = -((2.0 * $DER.x * $pDER_ODE_JAC.$DER.x + 3.0 * $DER.y ^ 2.0 * $pDER_ODE_JAC.$DER.y) - ($SEED_ODE_JAC.x * y + x * $SEED_ODE_JAC.y))
+//   (13) Nonlinear System (size = 2, homotopy = false, mixed = false, torn = true)
+//   --Iteration Vars:{$pDER_ODE_JAC_ADJ.$TMP_1, $pDER_ODE_JAC_ADJ.$TMP_2}
+//   --(11) 0 = $SEED_ODE_LS_JAC_1.$DER.x - (-(2.0 * $pDER_ODE_JAC_ADJ.$TMP_2 * $DER.x + 3.0 * $pDER_ODE_JAC_ADJ.$TMP_1 * $DER.x ^ 2.0))
+//   --(12) 0 = $SEED_ODE_LS_JAC_1.$DER.y - (2.0 * $pDER_ODE_JAC_ADJ.$TMP_1 * $DER.y - 3.0 * $pDER_ODE_JAC_ADJ.$TMP_2 * $DER.y ^ 2.0)
+//   (10) $pDER_ODE_JAC_ADJ.x := -($pDER_ODE_JAC_ADJ.$TMP_2 * y + $pDER_ODE_JAC_ADJ.$TMP_1)
+//   (9) $pDER_ODE_JAC_ADJ.y := -($pDER_ODE_JAC_ADJ.$TMP_2 * x + $pDER_ODE_JAC_ADJ.$TMP_1)
 //
 // Sparsity Pattern Cols
 // ***********************
@@ -102,10 +109,6 @@ buildModel(algebraicLoop); getErrorString();
 // ************************
 //   {1}
 //   {0}
-//
-// ========================================================
-//   [EMPTY] SimCode Jacobian ADJ(idx = 1, partition = 0)
-// ========================================================
 //
 // ======================================================
 //   [EMPTY] SimCode Jacobian B(idx = 2, partition = 0)
@@ -174,8 +177,8 @@ buildModel(algebraicLoop); getErrorString();
 // 4: y=$START.y [Real]
 // 3:  (NONLINEAR) index:0 jacobian: false
 // crefs: $DER.y , $DER.x
-// 	1: -($DER.x ^ 3.0 - x - y - $DER.y ^ 2.0) (RESIDUAL)
-// 	2: -($DER.x ^ 2.0 + $DER.y ^ 3.0 - x * y) (RESIDUAL)
+// 	1: -($DER.x ^ 2.0 + $DER.y ^ 3.0 - x * y) (RESIDUAL)
+// 	2: -($DER.x ^ 3.0 - x - y - $DER.y ^ 2.0) (RESIDUAL)
 //
 // ========================================
 //
@@ -216,27 +219,31 @@ buildModel(algebraicLoop); getErrorString();
 //
 // jacobianEquations:
 // ========================================
-// 11:  (NONLINEAR) index:2 jacobian: false
-// crefs: $pDER_ODE_JAC.$DER.x , $pDER_ODE_JAC.$DER.y
-// 	9: -(3.0 * $DER.x ^ 2.0 * $pDER_ODE_JAC.$DER.x - $SEED_ODE_JAC.x - $SEED_ODE_JAC.y - 2.0 * $DER.y * $pDER_ODE_JAC.$DER.y) (RESIDUAL)
-// 	10: -(2.0 * $DER.x * $pDER_ODE_JAC.$DER.x + 3.0 * $DER.y ^ 2.0 * $pDER_ODE_JAC.$DER.y - ($SEED_ODE_JAC.x * y + x * $SEED_ODE_JAC.y)) (RESIDUAL)
+// 15: $pDER_ODE_JAC_ADJ.y=-($pDER_ODE_JAC_ADJ.$TMP_2 * x + $pDER_ODE_JAC_ADJ.$TMP_1) [Real]
+// 14: $pDER_ODE_JAC_ADJ.x=-($pDER_ODE_JAC_ADJ.$TMP_2 * y + $pDER_ODE_JAC_ADJ.$TMP_1) [Real]
+// 13:  (NONLINEAR) index:2 jacobian: false
+// crefs: $pDER_ODE_JAC_ADJ.$TMP_1 , $pDER_ODE_JAC_ADJ.$TMP_2
+// 	11: $SEED_ODE_LS_JAC_1.$DER.x - ((-2.0 * $pDER_ODE_JAC_ADJ.$TMP_2 * $DER.x) - 3.0 * $pDER_ODE_JAC_ADJ.$TMP_1 * $DER.x ^ 2.0) (RESIDUAL)
+// 	12: $SEED_ODE_LS_JAC_1.$DER.y - (2.0 * $pDER_ODE_JAC_ADJ.$TMP_1 * $DER.y - 3.0 * $pDER_ODE_JAC_ADJ.$TMP_2 * $DER.y ^ 2.0) (RESIDUAL)
 //
 //
 // jacobianMatrices:
 // ========================================
 // 	Jacobian idx: 0
-// 	11:  (NONLINEAR) index:2 jacobian: false
-// crefs: $pDER_ODE_JAC.$DER.x , $pDER_ODE_JAC.$DER.y
-// 	9: -(3.0 * $DER.x ^ 2.0 * $pDER_ODE_JAC.$DER.x - $SEED_ODE_JAC.x - $SEED_ODE_JAC.y - 2.0 * $DER.y * $pDER_ODE_JAC.$DER.y) (RESIDUAL)
-// 	10: -(2.0 * $DER.x * $pDER_ODE_JAC.$DER.x + 3.0 * $DER.y ^ 2.0 * $pDER_ODE_JAC.$DER.y - ($SEED_ODE_JAC.x * y + x * $SEED_ODE_JAC.y)) (RESIDUAL)
 //
+// 	Jacobian idx: 1
+// 	13:  (NONLINEAR) index:2 jacobian: false
+// crefs: $pDER_ODE_JAC_ADJ.$TMP_1 , $pDER_ODE_JAC_ADJ.$TMP_2
+// 	11: $SEED_ODE_LS_JAC_1.$DER.x - ((-2.0 * $pDER_ODE_JAC_ADJ.$TMP_2 * $DER.x) - 3.0 * $pDER_ODE_JAC_ADJ.$TMP_1 * $DER.x ^ 2.0) (RESIDUAL)
+// 	12: $SEED_ODE_LS_JAC_1.$DER.y - (2.0 * $pDER_ODE_JAC_ADJ.$TMP_1 * $DER.y - 3.0 * $pDER_ODE_JAC_ADJ.$TMP_2 * $DER.y ^ 2.0) (RESIDUAL)
+//
+// 	10: $pDER_ODE_JAC_ADJ.x=-($pDER_ODE_JAC_ADJ.$TMP_2 * y + $pDER_ODE_JAC_ADJ.$TMP_1) [Real]
+// 	9: $pDER_ODE_JAC_ADJ.y=-($pDER_ODE_JAC_ADJ.$TMP_2 * x + $pDER_ODE_JAC_ADJ.$TMP_1) [Real]
 //
 // columnVars(2)
 // ----------------------
-// index:0: $pDER_ODE_JAC.$DER.y (no alias)  initial: 	no arrCref index:(1) []
-// index:1: $pDER_ODE_JAC.$DER.x (no alias)  initial: 	no arrCref index:(2) []
-// 	Jacobian idx: 1
-//
+// index:0: $pDER_ODE_JAC_ADJ.y (no alias)  initial: 	no arrCref index:(1) []
+// index:1: $pDER_ODE_JAC_ADJ.x (no alias)  initial: 	no arrCref index:(2) []
 // 	Jacobian idx: 2
 //
 // 	Jacobian idx: 3
@@ -252,8 +259,8 @@ buildModel(algebraicLoop); getErrorString();
 // ========================================
 // stateVars (2)
 // ----------------------
-// index:0: y (no alias)  initial: 	no arrCref index:(1) []
-// index:1: x (no alias)  initial: 	no arrCref index:(2) []
+// index:0: y (no alias)  initial: 0.0	no arrCref index:(1) []
+// index:1: x (no alias)  initial: 0.5	no arrCref index:(2) []
 // derivativeVars
 // ----------------------
 // index:2: $DER.y (no alias)  initial: 	no arrCref index:(3) []
@@ -261,6 +268,6 @@ buildModel(algebraicLoop); getErrorString();
 // functions:
 // -----------
 //
-// {"algebraicLoop", "algebraicLoop_init.xml"}
+// {"scalarAdjointJacobian3", "scalarAdjointJacobian3_init.xml"}
 // ""
 // endResult

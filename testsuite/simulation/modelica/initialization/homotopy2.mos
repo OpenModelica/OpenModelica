@@ -192,6 +192,8 @@ res := OpenModelica.Scripting.readSimulationResult("initializationTests.homotopy
 //
 // 	Jacobian idx: 7
 //
+// 	Jacobian idx: 8
+//
 //
 // modelInfo:
 // ========================================
@@ -398,6 +400,8 @@ res := OpenModelica.Scripting.readSimulationResult("initializationTests.homotopy
 // 	Jacobian idx: 7
 //
 // 	Jacobian idx: 8
+//
+// 	Jacobian idx: 9
 //
 //
 // modelInfo:

@@ -71,6 +71,7 @@ public
     record CONTINUOUS
       Kind kind;
       Option<Jacobian> jacobian     "Analytic jacobian for the integrator";
+      Option<Jacobian> jacobianAdjoint "Analytic adjoint jacobian for the integrator";
       Option<Jacobian> LFG_jacobian "Analytic jacobian of Lagrange term (L), ODE (f), Path Constraints (g) for MOO";
       Option<Jacobian> MRF_jacobian "Analytic jacobian of Mayer term (Mf), Final Constraints (rf) for MOO";
       Option<Jacobian> R0_jacobian  "Analytic jacobian of Initial Constraints (r0) for MOO";
@@ -110,6 +111,9 @@ public
           else
             str := StringUtil.headline_1("No Jacobian");
           end if;
+          if Util.isSome(association.jacobianAdjoint) then
+            str := BJacobian.toString(Util.getOption(association.jacobianAdjoint), Partition.kindToString(association.kind) + " Adjoint") + "\n";
+          end if;
         then str;
         case CLOCKED() algorithm
           str := BClock.toString(association.clock);
@@ -126,7 +130,7 @@ public
     end toString;
 
     function create
-      "create an associtation for a partition from the equation array and the clocked info
+      "create an association for a partition from the equation array and the clocked info
       holdEvents is updated later for clocked associations"
       input EquationPointers equations;
       input Kind kind;
@@ -160,7 +164,7 @@ public
           association := CLOCKED(clock, SOME(UnorderedMap.getSafe(base_name, info.baseClocks, sourceInfo())), clock_deps, false);
         end if;
       else
-        association := CONTINUOUS(kind, NONE(), NONE(), NONE(), NONE());
+        association := CONTINUOUS(kind, NONE(), NONE(), NONE(), NONE(), NONE());
       end if;
     end create;
 
@@ -482,6 +486,16 @@ public
         else NONE();
       end match;
     end getJacobian;
+
+    function getJacobianAdjoint
+      input Partition part;
+      output Option<Jacobian> jac;
+    algorithm
+      jac := match part.association
+        case CONTINUOUS(jacobianAdjoint = jac) then jac;
+        else NONE();
+      end match;
+    end getJacobianAdjoint;
 
     function getKind
       input Partition part;
