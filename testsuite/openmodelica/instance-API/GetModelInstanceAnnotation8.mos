@@ -49,7 +49,7 @@ getErrorString();
 //           },
 //           {
 //             \"$kind\": \"class\",
-//             \"name\": \"C\",
+//             \"name\": \"M.C\",
 //             \"restriction\": \"model\",
 //             \"prefixes\": {
 //               \"replaceable\": {
@@ -68,7 +68,22 @@ getErrorString();
 //                 }
 //               }
 //             },
-//             \"baseClass\": \"A\",
+//             \"elements\": [
+//               {
+//                 \"$kind\": \"extends\",
+//                 \"baseClass\": {
+//                   \"name\": \"A\",
+//                   \"restriction\": \"model\",
+//                   \"source\": {
+//                     \"filename\": \"<interactive>\",
+//                     \"lineStart\": 2,
+//                     \"columnStart\": 3,
+//                     \"lineEnd\": 3,
+//                     \"columnEnd\": 8
+//                   }
+//                 }
+//               }
+//             ],
 //             \"source\": {
 //               \"filename\": \"<interactive>\",
 //               \"lineStart\": 7,

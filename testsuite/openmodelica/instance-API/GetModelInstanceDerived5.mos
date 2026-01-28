@@ -78,15 +78,40 @@ getModelInstance(HierarchicalEditingGUI.Main.NestModel, prettyPrint = true); get
 //           },
 //           {
 //             \"$kind\": \"class\",
-//             \"name\": \"InnerNestedModel\",
+//             \"name\": \"HierarchicalEditingGUI.Main.NestModel.InnerNestedModel\",
 //             \"restriction\": \"model\",
 //             \"prefixes\": {
 //               \"replaceable\": true
 //             },
-//             \"baseClass\": \"HierarchicalEditingGUI.Nested2\",
 //             \"annotation\": {
 //               \"choicesAllMatching\": true
 //             },
+//             \"elements\": [
+//               {
+//                 \"$kind\": \"extends\",
+//                 \"baseClass\": {
+//                   \"name\": \"HierarchicalEditingGUI.Nested2\",
+//                   \"restriction\": \"model\",
+//                   \"elements\": [
+//                     {
+//                       \"$kind\": \"component\",
+//                       \"name\": \"p2A\",
+//                       \"type\": \"Real\",
+//                       \"prefixes\": {
+//                         \"variability\": \"parameter\"
+//                       }
+//                     }
+//                   ],
+//                   \"source\": {
+//                     \"filename\": \"<interactive>\",
+//                     \"lineStart\": 11,
+//                     \"columnStart\": 5,
+//                     \"lineEnd\": 14,
+//                     \"columnEnd\": 16
+//                   }
+//                 }
+//               }
+//             ],
 //             \"source\": {
 //               \"filename\": \"<interactive>\",
 //               \"lineStart\": 6,

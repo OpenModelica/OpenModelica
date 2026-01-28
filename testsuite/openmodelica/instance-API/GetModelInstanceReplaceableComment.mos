@@ -46,13 +46,28 @@ getModelInstance(ReplaceableRecordDescription.View, prettyPrint = true);
 //         \"elements\": [
 //           {
 //             \"$kind\": \"class\",
-//             \"name\": \"replRecord\",
+//             \"name\": \"ReplaceableRecordDescription.ClassWithReplaceables.replRecord\",
 //             \"restriction\": \"record\",
 //             \"prefixes\": {
 //               \"replaceable\": true
 //             },
-//             \"baseClass\": \"ReplaceableRecordDescription.RecordToBeReplaced\",
 //             \"comment\": \"Description string for replaceable record\",
+//             \"elements\": [
+//               {
+//                 \"$kind\": \"extends\",
+//                 \"baseClass\": {
+//                   \"name\": \"ReplaceableRecordDescription.RecordToBeReplaced\",
+//                   \"restriction\": \"record\",
+//                   \"source\": {
+//                     \"filename\": \"<interactive>\",
+//                     \"lineStart\": 16,
+//                     \"columnStart\": 5,
+//                     \"lineEnd\": 17,
+//                     \"columnEnd\": 27
+//                   }
+//                 }
+//               }
+//             ],
 //             \"source\": {
 //               \"filename\": \"<interactive>\",
 //               \"lineStart\": 5,
@@ -63,13 +78,28 @@ getModelInstance(ReplaceableRecordDescription.View, prettyPrint = true);
 //           },
 //           {
 //             \"$kind\": \"class\",
-//             \"name\": \"replModel\",
+//             \"name\": \"ReplaceableRecordDescription.ClassWithReplaceables.replModel\",
 //             \"restriction\": \"model\",
 //             \"prefixes\": {
 //               \"replaceable\": true
 //             },
-//             \"baseClass\": \"ReplaceableRecordDescription.ModelToBeReplaced\",
 //             \"comment\": \"Description string for replaceable model\",
+//             \"elements\": [
+//               {
+//                 \"$kind\": \"extends\",
+//                 \"baseClass\": {
+//                   \"name\": \"ReplaceableRecordDescription.ModelToBeReplaced\",
+//                   \"restriction\": \"model\",
+//                   \"source\": {
+//                     \"filename\": \"<interactive>\",
+//                     \"lineStart\": 13,
+//                     \"columnStart\": 5,
+//                     \"lineEnd\": 14,
+//                     \"columnEnd\": 26
+//                   }
+//                 }
+//               }
+//             ],
 //             \"source\": {
 //               \"filename\": \"<interactive>\",
 //               \"lineStart\": 7,
@@ -80,7 +110,7 @@ getModelInstance(ReplaceableRecordDescription.View, prettyPrint = true);
 //           },
 //           {
 //             \"$kind\": \"class\",
-//             \"name\": \"replModelConstraint\",
+//             \"name\": \"ReplaceableRecordDescription.ClassWithReplaceables.replModelConstraint\",
 //             \"restriction\": \"model\",
 //             \"prefixes\": {
 //               \"replaceable\": {
@@ -88,7 +118,22 @@ getModelInstance(ReplaceableRecordDescription.View, prettyPrint = true);
 //                 \"comment\": \"Description string for replaceable model with constraint\"
 //               }
 //             },
-//             \"baseClass\": \"ReplaceableRecordDescription.ModelToBeReplaced\",
+//             \"elements\": [
+//               {
+//                 \"$kind\": \"extends\",
+//                 \"baseClass\": {
+//                   \"name\": \"ReplaceableRecordDescription.ModelToBeReplaced\",
+//                   \"restriction\": \"model\",
+//                   \"source\": {
+//                     \"filename\": \"<interactive>\",
+//                     \"lineStart\": 13,
+//                     \"columnStart\": 5,
+//                     \"lineEnd\": 14,
+//                     \"columnEnd\": 26
+//                   }
+//                 }
+//               }
+//             ],
 //             \"source\": {
 //               \"filename\": \"<interactive>\",
 //               \"lineStart\": 9,
