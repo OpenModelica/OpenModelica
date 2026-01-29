@@ -110,7 +110,6 @@ import PriorityQueue;
 import SemanticVersion;
 import SimCodeDump;
 import SimCodeFunctionUtil;
-import SimCodeFunctionUtil.varName;
 import Static;
 import StringUtil;
 import SymbolicJacobian;
@@ -3635,7 +3634,7 @@ algorithm
       rhsVals = ValuesUtil.valueReals(List.map(beqs, Ceval.cevalSimple));
       jacVals = SymbolicJacobian.evaluateConstantJacobian(listLength(simVars), jac);
       (solvedVals, linInfo) = System.dgesv(jacVals, rhsVals);
-      names = List.map(simVars, varName);
+      names = list(v.name for v in simVars);
       checkLinearSystem(linInfo, names, jacVals, rhsVals);
       // TODO: Move these to known vars :/ This is done in the wrong phase of the compiler... Also, if done as an optimization module, we can optimize more!
       sources = List.map1(sources, ElementSource.addSymbolicTransformation, DAE.LINEAR_SOLVED(names, jacVals, rhsVals, solvedVals));
@@ -5343,7 +5342,7 @@ protected
   DAE.ComponentRef newCref, oldCref;
 algorithm
   for v in inVars loop
-      oldCref := varName(v);
+      oldCref := v.name;
       newCref := Differentiate.createSeedCrefName(oldCref, inMatrixName);
       outSimVars := replaceSimVarName(newCref, v)::outSimVars;
   end for;
@@ -9677,8 +9676,8 @@ protected
   DAE.ComponentRef cr1;
   DAE.ComponentRef cr2;
 algorithm
-  cr1 := varName(var1);
-  cr2 := varName(var2);
+  cr1 := var1.name;
+  cr2 := var2.name;
   outBool := ComponentReference.crefLexicalGreaterSubsAtEnd(cr1,cr2);
 end simVarCompareByCrefSubsAtEndlLexical;
 
@@ -13524,12 +13523,12 @@ algorithm
     case(SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(vars=simVars,residual=residual)))
       equation
         _ = List.flatten(List.map(residual,getSimEqSystemCrefsLHS));
-        crefs2 = list(SimCodeFunctionUtil.varName(v) for v in simVars);
+        crefs2 = list(v.name for v in simVars);
       then listAppend(crefs2,crefs2);
     case(SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(crefs=crefs)))
       then crefs;
     case(SimCode.SES_MIXED(discVars=simVars))
-      then list(SimCodeFunctionUtil.varName(v) for v in simVars);
+      then list(v.name for v in simVars);
     case(SimCode.SES_WHEN(whenStmtLst={BackendDAE.ASSIGN(left=lhs)}))
       equation
         crefs = Expression.getAllCrefs(lhs);
