@@ -41,14 +41,31 @@ function serialize
 protected
   array<Integer> columnPointers, rowIndices, columns;
   String fname;
+  list<tuple<Integer, list<Integer>>> pattern;
+  list<list<Integer>> colorList;
 algorithm
   for jac in code.jacobianMatrices loop
-    if not listEmpty(jac.sparsity) then
+    // pick sparsity and coloring depending on isAdjoint boolean
+    if jac.isAdjoint then
+      pattern := jac.sparsityT;
+      // if adjoint then row coloring must exist else fail
+      if not listEmpty(jac.coloredRows) then
+        colorList := jac.coloredRows;
+      else
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because no row coloring for the adjoint jacobian exists."});
+        fail();
+      end if;
+    else
+      pattern := jac.sparsity;
+      colorList := jac.coloredCols;
+    end if;
+
+    if not listEmpty(pattern) then
       fname := code.fileNamePrefix + "_Jac" + jac.matrixName + ".bin";
-      columnPointers := listArray(0 :: list(listLength(Util.tuple22(column)) for column in jac.sparsity));
-      rowIndices := listArray(List.flatten(list(Util.tuple22(column) for column in jac.sparsity)));
+      columnPointers := listArray(0 :: list(listLength(Util.tuple22(column)) for column in pattern));
+      rowIndices := listArray(List.flatten(list(Util.tuple22(column) for column in pattern)));
       serializeJacobian(fname, arrayLength(columnPointers), arrayLength(rowIndices), columnPointers, rowIndices);
-      for color in jac.coloredCols loop
+      for color in colorList loop
         columns := listArray(color);
         serializeColor(fname, arrayLength(columns), columns);
       end for;

@@ -1504,6 +1504,8 @@ public
       note: doesn't include __OpenModelica_tearingSelect, this is considered a first class attribute"
       Boolean hideResult;
       Boolean resizable;
+      Boolean optimizable;
+      Option<OptimizerExpression> optimizerExpression;
     end ANNOTATIONS;
 
     function create
@@ -1529,6 +1531,32 @@ public
               case SCode.NAMEMOD(ident = "__OpenModelica_resizable", mod = SCode.MOD(binding = SOME(Absyn.BOOL(b)))) algorithm
                 annotations.resizable := b;
               then ();
+              case SCode.NAMEMOD(ident = "optimizable", mod = SCode.MOD(binding = SOME(Absyn.BOOL(b)))) algorithm
+                annotations.optimizable := b;
+              then ();
+
+              // TODO: check for conflicting annotations?
+              case SCode.NAMEMOD(ident = "isMayer", mod = SCode.MOD(binding = SOME(Absyn.BOOL(b)))) algorithm
+                annotations.optimizerExpression := SOME(OptimizerExpression.MAYER);
+              then ();
+              case SCode.NAMEMOD(ident = "isLagrange", mod = SCode.MOD(binding = SOME(Absyn.BOOL(b)))) algorithm
+                annotations.optimizerExpression := SOME(OptimizerExpression.LAGRANGE);
+              then ();
+              case SCode.NAMEMOD(ident = "isConstraint", mod = SCode.MOD(binding = SOME(Absyn.BOOL(b)))) algorithm
+                annotations.optimizerExpression := SOME(OptimizerExpression.PATH_CONSTRAINT);
+              then ();
+              case SCode.NAMEMOD(ident = "isInitialConstraint", mod = SCode.MOD(binding = SOME(Absyn.BOOL(b)))) algorithm
+                annotations.optimizerExpression := SOME(OptimizerExpression.INITIAL_CONSTRAINT);
+              then ();
+              case SCode.NAMEMOD(ident = "isFinalConstraint", mod = SCode.MOD(binding = SOME(Absyn.BOOL(b)))) algorithm
+                annotations.optimizerExpression := SOME(OptimizerExpression.FINAL_CONSTRAINT);
+              then ();
+              case SCode.NAMEMOD(ident = "isInitialTime", mod = SCode.MOD(binding = SOME(Absyn.BOOL(b)))) algorithm
+                annotations.optimizerExpression := SOME(OptimizerExpression.INITIAL_TIME);
+              then ();
+              case SCode.NAMEMOD(ident = "isFinalTime", mod = SCode.MOD(binding = SOME(Absyn.BOOL(b)))) algorithm
+                annotations.optimizerExpression := SOME(OptimizerExpression.FINAL_TIME);
+              then ();
               else ();
             end match;
           end for;
@@ -1538,7 +1566,10 @@ public
     end create;
   end Annotations;
 
-  constant Annotations EMPTY_ANNOTATIONS = ANNOTATIONS(false, false);
+  // TODO: how to use Initial or Final state? - better state-pair Real x_0 = x (initialState = true);  -> binding only for initial time / optimizer?
+  type OptimizerExpression = enumeration(MAYER, LAGRANGE, PATH_CONSTRAINT, INITIAL_CONSTRAINT, FINAL_CONSTRAINT, INITIAL_TIME, FINAL_TIME);
+
+  constant Annotations EMPTY_ANNOTATIONS = ANNOTATIONS(false, false, false, NONE());
 
   annotation(__OpenModelica_Interface="frontend");
 end NFBackendExtension;

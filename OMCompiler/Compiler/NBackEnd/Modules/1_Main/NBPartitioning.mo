@@ -807,7 +807,7 @@ protected
     clone_eqns := EquationPointers.clone(equations);
     partitions := {Partition.PARTITION(
       index             = 1,
-      association       = Partition.Association.CONTINUOUS(kind, NONE()),
+      association       = Partition.Association.CONTINUOUS(kind, NONE(), NONE(), NONE(), NONE(), NONE()),
       unknowns          = clone_vars,
       daeUnknowns       = NONE(),
       equations         = clone_eqns,

@@ -97,7 +97,7 @@ readFile("modelDescription.tmp.xml");
 //       <File name=\"simulation/simulation_info_json.c\" />
 //       <File name=\"simulation/simulation_omc_assert.c\" />
 //       <File name=\"simulation/solver/delay.c\" />
-//       <File name=\"simulation/solver/fmi_events.c\" />
+//       <File name=\"simulation/solver/discrete_changes.c\" />
 //       <File name=\"simulation/solver/initialization/initialization.c\" />
 //       <File name=\"simulation/solver/model_help.c\" />
 //       <File name=\"simulation/solver/omc_math.c\" />

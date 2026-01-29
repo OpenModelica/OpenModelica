@@ -172,6 +172,7 @@ end translateModel;
     extern void <%symbolName(modelNamePrefixStr,"function_initSample")%>(DATA *data, threadData_t *threadData);
     extern int <%symbolName(modelNamePrefixStr,"initialAnalyticJacobianG")%>(DATA* data, threadData_t *threadData, JACOBIAN *jacobian);
     extern int <%symbolName(modelNamePrefixStr,"initialAnalyticJacobianA")%>(DATA* data, threadData_t *threadData, JACOBIAN *jacobian);
+    extern int <%symbolName(modelNamePrefixStr,"initialAnalyticJacobianADJ")%>(DATA* data, threadData_t *threadData, JACOBIAN *jacobian);
     extern int <%symbolName(modelNamePrefixStr,"initialAnalyticJacobianB")%>(DATA* data, threadData_t *threadData, JACOBIAN *jacobian);
     extern int <%symbolName(modelNamePrefixStr,"initialAnalyticJacobianC")%>(DATA* data, threadData_t *threadData, JACOBIAN *jacobian);
     extern int <%symbolName(modelNamePrefixStr,"initialAnalyticJacobianD")%>(DATA* data, threadData_t *threadData, JACOBIAN *jacobian);
@@ -179,6 +180,7 @@ end translateModel;
     extern int <%symbolName(modelNamePrefixStr,"initialAnalyticJacobianH")%>(DATA* data, threadData_t *threadData, JACOBIAN *jacobian);
     extern int <%symbolName(modelNamePrefixStr,"functionJacG_column")%>(DATA* data, threadData_t *threadData, JACOBIAN *thisJacobian, JACOBIAN *parentJacobian);
     extern int <%symbolName(modelNamePrefixStr,"functionJacA_column")%>(DATA* data, threadData_t *threadData, JACOBIAN *thisJacobian, JACOBIAN *parentJacobian);
+    extern int <%symbolName(modelNamePrefixStr,"functionJacADJ_column")%>(DATA* data, threadData_t *threadData, JACOBIAN *thisJacobian, JACOBIAN *parentJacobian);
     extern int <%symbolName(modelNamePrefixStr,"functionJacB_column")%>(DATA* data, threadData_t *threadData, JACOBIAN *thisJacobian, JACOBIAN *parentJacobian);
     extern int <%symbolName(modelNamePrefixStr,"functionJacC_column")%>(DATA* data, threadData_t *threadData, JACOBIAN *thisJacobian, JACOBIAN *parentJacobian);
     extern int <%symbolName(modelNamePrefixStr,"functionJacD_column")%>(DATA* data, threadData_t *threadData, JACOBIAN *thisJacobian, JACOBIAN *parentJacobian);
@@ -1383,18 +1385,21 @@ template simulationFile(SimCode simCode, String guid, String isModelExchangeFMU)
       <%symbolName(modelNamePrefixStr,"relationDescription")%>,
       <%symbolName(modelNamePrefixStr,"function_initSample")%>,
       <%symbolName(modelNamePrefixStr,"INDEX_JAC_A")%>,
+      <%symbolName(modelNamePrefixStr,"INDEX_JAC_ADJ")%>,
       <%symbolName(modelNamePrefixStr,"INDEX_JAC_B")%>,
       <%symbolName(modelNamePrefixStr,"INDEX_JAC_C")%>,
       <%symbolName(modelNamePrefixStr,"INDEX_JAC_D")%>,
       <%symbolName(modelNamePrefixStr,"INDEX_JAC_F")%>,
       <%symbolName(modelNamePrefixStr,"INDEX_JAC_H")%>,
       <%symbolName(modelNamePrefixStr,"initialAnalyticJacobianA")%>,
+      <%symbolName(modelNamePrefixStr,"initialAnalyticJacobianADJ")%>,
       <%symbolName(modelNamePrefixStr,"initialAnalyticJacobianB")%>,
       <%symbolName(modelNamePrefixStr,"initialAnalyticJacobianC")%>,
       <%symbolName(modelNamePrefixStr,"initialAnalyticJacobianD")%>,
       <%symbolName(modelNamePrefixStr,"initialAnalyticJacobianF")%>,
       <%symbolName(modelNamePrefixStr,"initialAnalyticJacobianH")%>,
       <%symbolName(modelNamePrefixStr,"functionJacA_column")%>,
+      <%symbolName(modelNamePrefixStr,"functionJacADJ_column")%>,
       <%symbolName(modelNamePrefixStr,"functionJacB_column")%>,
       <%symbolName(modelNamePrefixStr,"functionJacC_column")%>,
       <%symbolName(modelNamePrefixStr,"functionJacD_column")%>,
@@ -2439,7 +2444,7 @@ template functionSetupLinearSystems(list<SimEqSystem> linearSystems, String mode
           let &varDeclsRes = buffer "" /*BUFD*/
           let &auxFunction = buffer ""
           let &tmp = buffer ""
-          let xlocs = (ls.vars |> var hasindex i0 => '<%cref(varName(var), &sub)%> = xloc[<%i0%>];' ;separator="\n")
+          let xlocs = (ls.vars |> var as SIMVAR() hasindex i0 => '<%cref(name, &sub)%> = xloc[<%i0%>];' ;separator="\n")
           let prebody = (match ls.partOfJac
             case true then
               (ls.residual |> eq2 =>
@@ -2529,7 +2534,7 @@ template functionSetupLinearSystems(list<SimEqSystem> linearSystems, String mode
          let &varDeclsRes = buffer "" /*BUFD*/
          let &auxFunction = buffer ""
          let &tmp = buffer ""
-         let xlocs = (ls.vars |> var hasindex i0 => '<%cref(varName(var), &sub)%> = xloc[<%i0%>];' ;separator="\n")
+         let xlocs = (ls.vars |> var as SIMVAR() hasindex i0 => '<%cref(var.name, &sub)%> = xloc[<%i0%>];' ;separator="\n")
          let prebody = (ls.residual |> eq2 =>
                functionExtraResidualsPreBody(eq2, &tmp, modelNamePrefix)
           ;separator="\n")
@@ -2541,7 +2546,7 @@ template functionSetupLinearSystems(list<SimEqSystem> linearSystems, String mode
          let &varDeclsRes2 = buffer "" /*BUFD*/
          let &auxFunction2 = buffer ""
          let &tmp2 = buffer ""
-         let xlocs2 = (at.vars |> var hasindex i0 => '<%cref(varName(var), &sub)%> = xloc[<%i0%>];' ;separator="\n")
+         let xlocs2 = (at.vars |> var as SIMVAR() hasindex i0 => '<%cref(var.name, &sub)%> = xloc[<%i0%>];' ;separator="\n")
          let prebody2 = (at.residual |> eq2 =>
                functionExtraResidualsPreBody(eq2, &tmp2, modelNamePrefix)
           ;separator="\n")
@@ -5630,8 +5635,32 @@ end genVector;
 template functionAnalyticJacobians(list<JacobianMatrix> JacobianMatrices, String modelNamePrefix, String fileNamePrefix) "template functionAnalyticJacobians
   This template generates source code for all given jacobians."
 ::=
-  let initialjacMats = (JacobianMatrices |> JAC_MATRIX() =>
-    initialAnalyticJacobians(columns, seedVars, matrixName, sparsity, coloredCols, maxColorCols, modelNamePrefix, fileNamePrefix); separator="\n")
+   let initialjacMats =
+    (JacobianMatrices |> JAC_MATRIX() =>
+      // Adjoint: use transposed sparsity and row coloring
+      if isAdjoint then
+        initialAnalyticJacobians(
+          columns,
+          seedVars,
+          matrixName,
+          sparsityT,
+          coloredRows,
+          listLength(coloredRows),
+          modelNamePrefix,
+          fileNamePrefix)
+      // Normal: use regular sparsity and column coloring
+      else
+        initialAnalyticJacobians(
+          columns,
+          seedVars,
+          matrixName,
+          sparsity,
+          coloredCols,
+          maxColorCols,
+          modelNamePrefix,
+          fileNamePrefix)
+      ;separator="\n")
+
   let jacMats = (JacobianMatrices |> JAC_MATRIX() =>
     generateMatrix(columns, seedVars, matrixName, partitionIndex, crefsHT, modelNamePrefix) ;separator="\n")
   let jacGenericCalls = (JacobianMatrices |> JAC_MATRIX() =>

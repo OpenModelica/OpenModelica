@@ -56,7 +56,6 @@ import GraphML;
 import HpcOmScheduler;
 import List;
 import SimCodeUtil;
-import SimCodeFunctionUtil;
 import Util;
 
   // -------------------------------------------
@@ -2926,7 +2925,7 @@ import Util;
       threadText := "Th -1";
       if(isSome(simVarOpt)) then
         simVar := Util.getOption(simVarOpt);
-        varCompRef := SimCodeFunctionUtil.varName(simVar);
+        varCompRef := simVar.name;
         description :=  ComponentReference.printComponentRefStr(varCompRef);
         isValidVar := BaseHashTable.hasKey(varCompRef, iVarNameSCVarIdxMapping);
 

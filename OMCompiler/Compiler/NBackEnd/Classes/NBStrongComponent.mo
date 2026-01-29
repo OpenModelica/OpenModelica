@@ -931,6 +931,21 @@ public
     end match;
   end getVariables;
 
+  function getVarCref
+    input StrongComponent comp;
+    output ComponentRef var_cref;
+  algorithm
+    var_cref := match comp
+      case SLICED_COMPONENT()   then comp.var_cref;
+      case RESIZABLE_COMPONENT()then comp.var_cref;
+      case GENERIC_COMPONENT()  then comp.var_cref;
+      case ALIAS()              then getVarCref(comp.original);
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of wrong component: " + toString(comp)});
+      then fail();
+    end match;
+  end getVarCref;
+
   function getEquations
     input StrongComponent comp;
     output list<Pointer<Equation>> eqns;
@@ -1010,11 +1025,21 @@ public
     end match;
   end isAlias;
 
+  function isSingleComponent
+    input StrongComponent comp;
+    output Boolean b;
+  algorithm
+    b := match removeAlias(comp)
+      case SINGLE_COMPONENT() then true;
+      else false;
+    end match;
+  end isSingleComponent;
+
   function isAlgebraicLoop
     input StrongComponent comp;
     output Boolean b;
   algorithm
-    b := match comp
+    b := match removeAlias(comp)
       case ALGEBRAIC_LOOP() then true;
       else false;
     end match;
@@ -1214,29 +1239,39 @@ protected
     input UnorderedMap<ComponentRef, list<ComponentRef>> map;
     input JacobianType jacType;
   protected
-    function addStateDependencies
+    function addSubDependencies
       input ComponentRef dep;
       input UnorderedMap<ComponentRef, list<ComponentRef>> map;
+      input BVariable.checkVar checkFn;
       input output UnorderedSet<ComponentRef> set;
     algorithm
       // if the dependency is a state add itself, otherwise add the dependencies already saved
       // (those are known to be states). ToDo: avoid this check by adding state self dependency beforehand?
-      if BVariable.checkCref(dep, BVariable.isState, sourceInfo()) then
+      if BVariable.checkCref(dep, checkFn, sourceInfo()) then
         UnorderedSet.add(dep, set);
       else
         for tmp in UnorderedMap.getSafe(dep, map, sourceInfo()) loop
           UnorderedSet.add(tmp, set);
         end for;
       end if;
-    end addStateDependencies;
+    end addSubDependencies;
   algorithm
     UnorderedSet.apply(dependencies, function ComponentRef.mapExp(func = Expression.replaceResizableParameter));
     UnorderedSet.apply(dependencies, function ComponentRef.simplifySubscripts(trim = false));
     // replace non derivative dependencies with their previous dependencies
     // (be careful with algebraic loops. this here assumes that cyclic dependencies have already been resolved)
-    if jacType == NBJacobian.JacobianType.ODE then
-      dependencies := UnorderedSet.fold(dependencies, function addStateDependencies(map = map), UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual));
-    end if;
+    dependencies := match jacType
+      case NBJacobian.JacobianType.ODE
+        then UnorderedSet.fold(dependencies, function addSubDependencies(map = map, checkFn = BVariable.isState), UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual));
+      // TODO: for optimization these checks / checkFn are not valid yet, add free time
+      case NBJacobian.JacobianType.OPT_LFG
+        then UnorderedSet.fold(dependencies, function addSubDependencies(map = map, checkFn = BVariable.isStateOrOptimizable), UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual));
+      case NBJacobian.JacobianType.OPT_MRF
+        then UnorderedSet.fold(dependencies, function addSubDependencies(map = map, checkFn = BVariable.isStateOrOptimizable), UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual));
+      case NBJacobian.JacobianType.OPT_R0
+        then UnorderedSet.fold(dependencies, function addSubDependencies(map = map, checkFn = BVariable.isStateOrOptimizable), UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual));
+      else dependencies;
+    end match;
   end prepareDependencies;
 
   annotation(__OpenModelica_Interface="backend");

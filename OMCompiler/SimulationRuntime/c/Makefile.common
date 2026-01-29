@@ -101,7 +101,7 @@ simulation/solver/embedded_server.h \
 simulation/solver/epsilon.h \
 simulation/solver/events.h \
 simulation/solver/external_input.h \
-simulation/solver/fmi_events.h \
+simulation/solver/discrete_changes.h \
 simulation/solver/ida_solver.h \
 simulation/solver/linearSolverLapack.h \
 simulation/solver/linearSolverTotalPivot.h \

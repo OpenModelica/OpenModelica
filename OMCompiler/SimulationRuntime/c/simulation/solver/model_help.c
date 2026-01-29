@@ -49,7 +49,7 @@
 #include "mixedSystem.h"
 #include "delay.h"
 #include "epsilon.h"
-#include "fmi_events.h"
+#include "discrete_changes.h"
 #include "stateset.h"
 #include "spatialDistribution.h"
 #include "../../meta/meta_modelica.h"

@@ -252,7 +252,8 @@ constant list<Flags.DebugFlag> allDebugFlags = {
   Flags.DUMP_EVENTS,
   Flags.DUMP_RESIZABLE,
   Flags.DUMP_SOLVE,
-  Flags.FORCE_SCALARIZE
+  Flags.FORCE_SCALARIZE,
+  Flags.DEBUG_ADJOINT
 };
 
 protected
@@ -421,7 +422,8 @@ constant list<Flags.ConfigFlag> allConfigFlags = {
   Flags.LOAD_MISSING_LIBRARIES,
   Flags.CAUSALIZE_DAE_MODE,
   Flags.SIM_CODE_SCALARIZE,
-  Flags.EXECUTE_COMMAND
+  Flags.EXECUTE_COMMAND,
+  Flags.MOO_DYNAMIC_OPTIMIZATION
 };
 
 public function new

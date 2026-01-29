@@ -71,6 +71,8 @@
 
 extern void communicateStatus(const char *phase, double completionPercent, double currentTime, double currentStepSize);
 
+// TODO: we should add proper return handling of callbacks: ODE, Jacobian, Zero-Crossings, etc.
+
 /**
  * @brief Calculate function values of function ODE f(t,y).
  *
@@ -81,8 +83,15 @@ extern void communicateStatus(const char *phase, double completionPercent, doubl
  * @param counter     Counter for function calls. Incremented by 1.
  * @param selection   Equations to evaluate.
  */
-void gbode_fODE(DATA *data, threadData_t *threadData, unsigned int* counter, EVAL_SELECTION* selection)
+int gbode_fODE(DATA *data, threadData_t *threadData, unsigned int* counter, EVAL_SELECTION* selection)
 {
+  int ret = -1;
+
+  /* try */
+#if !defined(OMC_EMCC)
+  MMC_TRY_INTERNAL(simulationJumpBuffer)
+#endif
+
   if (counter)
   {
     (*counter)++;
@@ -93,6 +102,14 @@ void gbode_fODE(DATA *data, threadData_t *threadData, unsigned int* counter, EVA
 
   data->simulationInfo->evalSelection = selection;
   data->callback->functionODE(data, threadData);
+
+  ret = 0;
+
+#if !defined(OMC_EMCC)
+  MMC_CATCH_INTERNAL(simulationJumpBuffer)
+#endif
+
+  return ret;
 }
 
 /**
@@ -1411,6 +1428,9 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
     // Loop will be performed until the error estimate for all states fullfills the
     // given tolerance
     do {
+      // set error to DBL_MAX, in case we break / continue early
+      err = DBL_MAX;
+
       if (OMC_ACTIVE_STREAM(OMC_LOG_SOLVER_V)) {
         // debug ring buffer of the states and derivatives during integration
         infoStreamPrint(OMC_LOG_SOLVER_V, 1, "States and derivatives of the ring buffer:");
@@ -1471,7 +1491,12 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
           messageClose(OMC_LOG_SOLVER);
           return -1;
         } else {
-          gbData->stepSize *= 0.5;
+          if (gbData->eventHappened) {
+            gbData->stepSize *= 0.1; // event or initial step rejection: reduce step size to 10% of previous step size
+          } else {
+            gbData->stepSize *= 0.5; // standard rejection: reduce the step size by half to attempt a more accurate integration in the next iteration
+          }
+
           if (gbData->multi_rate && OMC_ACTIVE_STREAM(OMC_LOG_GBODE_STATES)) {
             gbData->err_slow = 0;
             gbData->err_fast = 0;
@@ -1821,7 +1846,7 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
         printVector_gb(OMC_LOG_GBODE_V, "y", gbData->y, nStates, gbData->time + gbData->lastStepSize);
         messageClose(OMC_LOG_GBODE_V);
       }
-    } while (err > 1 && gbData->ctrl_method != GB_CTRL_CNST);
+    } while (!isfinite(err) || (err > 1 && gbData->ctrl_method != GB_CTRL_CNST));
 
     // count processed steps
     gbData->stats.nStepsTaken++;

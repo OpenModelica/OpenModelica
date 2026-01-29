@@ -46,7 +46,7 @@ public
   //NF Imports
   import Attributes = NFAttributes;
   import BackendExtension = NFBackendExtension;
-  import NFBackendExtension.{BackendInfo, StateSelect, TearingSelect, VariableAttributes, VariableKind};
+  import NFBackendExtension.{BackendInfo, StateSelect, TearingSelect, VariableAttributes, VariableKind, OptimizerExpression};
   import NFBinding.Binding;
   import Ceval = NFCeval;
   import Class = NFClass;
@@ -524,6 +524,16 @@ public
     end match;
   end isIterator;
 
+  function isPDer
+    extends checkVar;
+  algorithm
+    b := match var.backendinfo.varKind
+      case VariableKind.JAC_VAR()     then true;
+      case VariableKind.JAC_TMP_VAR() then true;
+      else false;
+    end match;
+  end isPDer;
+
   function hasTearingSelect
     "checks if the variable has given tearing select.
     When provided with different functions can also check other relations.
@@ -692,6 +702,82 @@ public
       else false;
     end match;
   end isKnown;
+
+  function isOptimizable
+    extends checkVar;
+  algorithm
+    b := match var.backendinfo
+      case BackendExtension.BACKEND_INFO(varKind = VariableKind.PARAMETER(), annotations = BackendExtension.ANNOTATIONS(optimizable = true)) then true;
+      case BackendExtension.BACKEND_INFO(annotations = BackendExtension.ANNOTATIONS(optimizable = true)) guard(isInput(var_ptr)) then true;
+      else false;
+    end match;
+  end isOptimizable;
+
+  function isInitialTime
+    extends checkVar;
+  protected
+    OptimizerExpression optExp;
+  algorithm
+    b := match var.backendinfo
+      case BackendExtension.BACKEND_INFO(annotations = BackendExtension.ANNOTATIONS(optimizerExpression = SOME(optExp)))
+        then (optExp == OptimizerExpression.INITIAL_TIME);
+      else false;
+    end match;
+  end isInitialTime;
+
+  function isFinalTime
+    extends checkVar;
+  protected
+    OptimizerExpression optExp;
+  algorithm
+    b := match var.backendinfo
+      case BackendExtension.BACKEND_INFO(annotations = BackendExtension.ANNOTATIONS(optimizerExpression = SOME(optExp)))
+        then (optExp == OptimizerExpression.FINAL_TIME);
+      else false;
+    end match;
+  end isFinalTime;
+
+  function isLagrangeOrPathConstraint
+    extends checkVar;
+  protected
+    OptimizerExpression optExp;
+  algorithm
+    b := match (var.backendinfo)
+      case BackendExtension.BACKEND_INFO(annotations = BackendExtension.ANNOTATIONS(optimizerExpression = SOME(optExp)))
+        then (optExp == OptimizerExpression.LAGRANGE or optExp == OptimizerExpression.PATH_CONSTRAINT);
+      else false;
+    end match;
+  end isLagrangeOrPathConstraint;
+
+  function isMayerOrFinalConstraint
+    extends checkVar;
+  protected
+    OptimizerExpression optExp;
+  algorithm
+    b := match (var.backendinfo)
+      case BackendExtension.BACKEND_INFO(annotations = BackendExtension.ANNOTATIONS(optimizerExpression = SOME(optExp)))
+        then (optExp == OptimizerExpression.MAYER or optExp == OptimizerExpression.FINAL_CONSTRAINT);
+      else false;
+    end match;
+  end isMayerOrFinalConstraint;
+
+  function isInitialConstraint
+    extends checkVar;
+  protected
+    OptimizerExpression optExp;
+  algorithm
+    b := match (var.backendinfo)
+      case BackendExtension.BACKEND_INFO(annotations = BackendExtension.ANNOTATIONS(optimizerExpression = SOME(optExp)))
+        then (optExp == OptimizerExpression.INITIAL_CONSTRAINT);
+      else false;
+    end match;
+  end isInitialConstraint;
+
+  function isStateOrOptimizable
+    extends checkVar;
+  algorithm
+    b := (isState(var_ptr) or isOptimizable(var_ptr));
+  end isStateOrOptimizable;
 
   function isResizable
     extends checkVar;

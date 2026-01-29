@@ -55,7 +55,6 @@ import HashTableCrefSimVar;
 import HpcOmSchedulerExt;
 import HpcOmSimCodeMain;
 import List;
-import SimCodeFunctionUtil;
 import SimCodeUtil;
 import System;
 import Util;
@@ -3284,7 +3283,7 @@ algorithm
         threadIdx = 1;
         compIdx = arrayLength(iSccSimEqMapping)+1;  // the next available component index
         taskIdx = arrayLength(iTaskGraph)+1;
-        simVarIdx = List.fold(List.map(algVars,SimCodeFunctionUtil.varIndex),intMax,0)+1;// the next available simVar index
+        simVarIdx = max(v.index for v in algVars)+1;// the next available simVar index
         simEqSysIdx = SimCodeUtil.getMaxSimEqSystemIndex(iSimCode)+1;// the next available simEqSys index
         lsIdx = List.fold(List.map(List.flatten(odes),SimCodeUtil.getLSindex),intMax,0)+1;// the next available linear system index
         nlsIdx = List.fold(List.map(List.flatten(odes),SimCodeUtil.getNLSindex),intMax,0)+1;// the next available nonlinear system index
@@ -3547,14 +3546,15 @@ algorithm
       String name;
       SimCode.SparsityPattern sparsity,sparsityT;
       SimCode.NonlinearPattern nonlinearPat, nonlinearPatT;
-      list<list<Integer>> colCols;
+      list<list<Integer>> colCols, colRows;
       array<Integer> ass;
       Integer newIdx;
+      Boolean isAdj;
       Option<HashTableCrefSimVar.HashTable> crefToSimVarHTJacobian;
-    case(SOME(SimCode.JAC_MATRIX(jacCols,vars,name,sparsity,sparsityT,nonlinearPat,nonlinearPatT,colCols,maxCol,jacIdx,partIdx,{},crefToSimVarHTJacobian)),(newIdx,ass))
+    case(SOME(SimCode.JAC_MATRIX(jacCols,vars,name,sparsity,sparsityT,nonlinearPat,nonlinearPatT,colCols,colRows,maxCol,jacIdx,partIdx,{},crefToSimVarHTJacobian,isAdj)),(newIdx,ass))
       equation
         (jacCols,(newIdx,ass)) = List.mapFold(jacCols,TDS_replaceSimEqSysIdxInJacobianColumnWithUpdate,(newIdx,ass));
-   then (SOME(SimCode.JAC_MATRIX(jacCols,vars,name,sparsity,sparsityT,nonlinearPat,nonlinearPatT,colCols,maxCol,jacIdx,partIdx,{},crefToSimVarHTJacobian)),(newIdx,ass));
+   then (SOME(SimCode.JAC_MATRIX(jacCols,vars,name,sparsity,sparsityT,nonlinearPat,nonlinearPatT,colCols,colRows,maxCol,jacIdx,partIdx,{},crefToSimVarHTJacobian,isAdj)),(newIdx,ass));
    else (jacIn,tplIn);
   end matchcontinue;
 end TDS_replaceSimEqSysIdxInJacobianMatrixWithUpdate;

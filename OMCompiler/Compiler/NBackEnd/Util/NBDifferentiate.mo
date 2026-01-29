@@ -49,6 +49,7 @@ public
   import NFClassTree.ClassTree;
   import Component = NFComponent;
   import ComponentRef = NFComponentRef;
+  import Dimension = NFDimension;
   import Expression = NFExpression;
   import InstContext = NFInstContext;
   import NFInstNode.{InstNode, CachedData};
@@ -92,6 +93,9 @@ public
       DifferentiationType diffType                              "Differentiation use case (time, simple, function, jacobian)";
       UnorderedMap<Path, Function> funcMap                      "Function tree containing all functions and their known derivatives";
       Boolean scalarized                                        "true if the variables are scalarized";
+      Option<UnorderedMap<ComponentRef, list<Expression>>> adjoint_map  "map for accumulating adjoint gradients for component refs";
+      Expression current_grad                                   "current gradient expression, used in reverse mode";
+      Boolean collectAdjoints                                   "If false, skip writing into adjoint_map (used for LHS traversal in reverse/Jacobian).";
     end DIFFERENTIATION_ARGUMENTS;
 
     function default
@@ -103,7 +107,10 @@ public
         diff_map    = NONE(),
         diffType    = ty,
         funcMap     = funcMap,
-        scalarized  = false
+        scalarized  = false,
+        adjoint_map = NONE(),
+        current_grad= Expression.EMPTY(Type.REAL()),
+        collectAdjoints = false
       );
     end default;
 
@@ -116,7 +123,10 @@ public
         diff_map    = NONE(),
         diffType    = DifferentiationType.SIMPLE,
         funcMap     = funcMap,
-        scalarized  = false
+        scalarized  = false,
+        adjoint_map = NONE(),
+        current_grad = Expression.EMPTY(Type.REAL()),
+        collectAdjoints = false
       );
     end simpleCref;
 
@@ -162,6 +172,66 @@ public
     diffArguments := Pointer.access(diffArguments_ptr);
   end differentiateStrongComponentList;
 
+
+  function differentiateStrongComponentListAdjoint
+    "author: fbrandt
+    Differentiates a list of strong components.
+    Extended: Before differentiating each component, set current_grad to the
+    mapped seed/pDER variable (diff_map value) for the component's LHS cref, if present.
+    Many rules for reverse mode differentiation can be found e.g. here: https://fkoehler.site/autodiff-table/"
+    input output list<StrongComponent> comps;
+    input output DifferentiationArguments diffArguments;
+    input Pointer<Integer> idx;
+    input String context;
+    input String name;
+  protected
+    Pointer<DifferentiationArguments> diffArguments_ptr = Pointer.create(diffArguments);
+    list<StrongComponent> newComps = {};
+    UnorderedMap<ComponentRef,ComponentRef> diff_map;
+    ComponentRef lhsCref;
+    ComponentRef gradCref;
+    list<VariablePointer> compVars;
+    DifferentiationArguments da;
+  algorithm
+    diff_map := Util.getOption(diffArguments.diff_map);
+    for comp in comps loop
+      // Determine LHS cref of this component
+      dbg("Component: " + StrongComponent.toString(comp));
+      // compVars := match comp
+      //   case StrongComponent.ALGEBRAIC_LOOP() then StrongComponent.getLoopIterationVars(comp);
+      //   else StrongComponent.getVariables(comp);
+      // end match;
+      compVars := StrongComponent.getVariables(comp);
+      for var in compVars loop
+        lhsCref := BVariable.getVarName(var);
+        // Update current_grad if we have a mapping for lhsCref
+        if (not ComponentRef.isEmpty(lhsCref)) then
+          gradCref := UnorderedMap.getOrFail(lhsCref, diff_map);
+          // this is currently not needed, but in case we have subscripts on LHS later, we need to copy them to the seed
+          gradCref := match comp
+            case StrongComponent.RESIZABLE_COMPONENT() then ComponentRef.copySubscripts(StrongComponent.getVarCref(comp), gradCref); // put subscript on the seed;
+            case StrongComponent.SLICED_COMPONENT() then ComponentRef.copySubscripts(StrongComponent.getVarCref(comp), gradCref); // put subscript on the seed;
+            else gradCref;
+          end match;
+          // and update in diffArguments
+          da := Pointer.access(diffArguments_ptr);
+          da.current_grad := Expression.fromCref(gradCref);
+          Pointer.update(diffArguments_ptr, da);
+        else
+          dbg("  No seed mapping for: " + ComponentRef.toString(lhsCref));
+        end if;
+        // Differentiate this component
+        dbg("  Differentiating component...");
+        comp := differentiateStrongComponent(comp, diffArguments_ptr, idx, context, name);
+        newComps := comp :: newComps;
+        dbg("  Done differentiating component.");
+      end for;
+    end for;
+
+    comps := listReverse(newComps);
+    diffArguments := Pointer.access(diffArguments_ptr);
+  end differentiateStrongComponentListAdjoint;
+
   function differentiateStrongComponent
     input output StrongComponent comp;
     input Pointer<DifferentiationArguments> diffArguments_ptr;
@@ -196,7 +266,8 @@ public
       then StrongComponent.MULTI_COMPONENT(new_var_slices, new_eqn_slice, comp.status);
 
       case StrongComponent.SLICED_COMPONENT() algorithm
-        (Expression.CREF(cref = new_cref), diffArguments) := differentiateComponentRef(Expression.fromCref(comp.var_cref), Pointer.access(diffArguments_ptr));
+        // Map the subscripted LHS cref without collecting into the adjoint_map if one exists
+        (Expression.CREF(cref = new_cref), diffArguments) := differentiateComponentRefNoCollect(Expression.fromCref(comp.var_cref), Pointer.access(diffArguments_ptr));
         Pointer.update(diffArguments_ptr, diffArguments);
         new_var_slice := Slice.apply(comp.var, function differentiateVariablePointer(diffArguments_ptr = diffArguments_ptr));
         new_eqn_slice := Slice.apply(comp.eqn, function differentiateEquationPointer(diffArguments_ptr = diffArguments_ptr, name = name));
@@ -332,21 +403,88 @@ public
         EquationAttributes attr;
         Algorithm alg;
 
+        UnorderedMap<ComponentRef,ComponentRef> dm;
+        ComponentRef lhs_base = ComponentRef.EMPTY();
+        ComponentRef seed_base;
+        Integer n = 0, iel;
+        list<Type.Dimension> dims;
+        Expression grad_save, rhs_i, grad_i;
+        Boolean collect_save;
+
       // ToDo: Element source stuff (see old backend)
       case Equation.SCALAR_EQUATION() algorithm
-        (lhs, diffArguments) := differentiateExpression(eq.lhs, diffArguments);
+        (lhs, diffArguments) := differentiateExpressionNoCollect(eq.lhs, diffArguments);
         (rhs, diffArguments) := differentiateExpression(eq.rhs, diffArguments);
         attr := differentiateEquationAttributes(eq.attr, diffArguments);
       then (Equation.SCALAR_EQUATION(eq.ty, lhs, rhs, eq.source, attr), diffArguments);
 
       case Equation.ARRAY_EQUATION() algorithm
-        (lhs, diffArguments) := differentiateExpression(eq.lhs, diffArguments);
-        (rhs, diffArguments) := differentiateExpression(eq.rhs, diffArguments);
+        (lhs, diffArguments) := differentiateExpressionNoCollect(eq.lhs, diffArguments);
+        // Only do per-element reverse seeding for explicit element-wise array assembly on RHS
+        if Util.isSome(diffArguments.adjoint_map) and
+          diffArguments.diffType == DifferentiationType.JACOBIAN and
+          Expression.isArray(eq.rhs) then
+
+          SOME(dm) := diffArguments.diff_map;
+
+          // this must be a variable cref on the LHS so this should work
+          lhs_base := Expression.toCref(eq.lhs);
+
+          // Vector length from equation type
+          if Type.isArray(eq.ty) then
+            dims := Type.arrayDims(eq.ty);
+            if not listEmpty(dims) then
+              n := Dimension.size(listHead(dims));
+            end if;
+          end if;
+
+          if (not ComponentRef.isEmpty(lhs_base)) and UnorderedMap.contains(lhs_base, dm) and n > 0 then
+            seed_base := UnorderedMap.getOrFail(lhs_base, dm);
+
+            // Save and prepare flags
+            grad_save := diffArguments.current_grad;
+            collect_save := diffArguments.collectAdjoints;
+
+            // Accumulate adjoints per element with scalar seeds seed_base[i] on rhs[i]
+            for iel in 1:n loop
+              // current_grad := $SEED...y[i]
+              grad_i := Expression.applySubscripts(
+                {Subscript.INDEX(Expression.INTEGER(iel))},
+                Expression.fromCref(seed_base),
+                true);
+
+              // rhs_i := rhs[i]
+              rhs_i := Expression.applySubscripts(
+                {Subscript.INDEX(Expression.INTEGER(iel))},
+                eq.rhs,
+                true);
+
+              diffArguments.current_grad := grad_i;
+              diffArguments.collectAdjoints := true;
+
+              // Differentiate rhs element to accumulate into adjoint_map
+              (_, diffArguments) := differentiateExpression(rhs_i, diffArguments);
+            end for;
+
+            // Restore state
+            diffArguments.current_grad := grad_save;
+            diffArguments.collectAdjoints := collect_save;
+
+            // Also differentiate the full RHS without collecting (avoid duplicates)
+            (rhs, diffArguments) := differentiateExpressionNoCollect(eq.rhs, diffArguments);
+          else
+            // Fallback: regular vector reverse-mode
+            (rhs, diffArguments) := differentiateExpression(eq.rhs, diffArguments);
+          end if;
+        else
+          // Non-explicit RHS (e.g., A*x): let reverse-mode handle vectors/matrices
+          (rhs, diffArguments) := differentiateExpression(eq.rhs, diffArguments);
+        end if;
         attr := differentiateEquationAttributes(eq.attr, diffArguments);
       then (Equation.ARRAY_EQUATION(eq.ty, lhs, rhs, eq.source, attr, eq.recordSize), diffArguments);
 
       case Equation.RECORD_EQUATION() algorithm
-        (lhs, diffArguments) := differentiateExpression(eq.lhs, diffArguments);
+        (lhs, diffArguments) := differentiateExpressionNoCollect(eq.lhs, diffArguments);
         (rhs, diffArguments) := differentiateExpression(eq.rhs, diffArguments);
         attr := differentiateEquationAttributes(eq.attr, diffArguments);
       then (Equation.RECORD_EQUATION(eq.ty, lhs, rhs, eq.source, attr, eq.recordSize), diffArguments);
@@ -370,7 +508,7 @@ public
       then (Equation.WHEN_EQUATION(eq.size, whenBody, eq.source, attr), diffArguments);
 
       case Equation.ALGORITHM() algorithm
-        (alg, diffArguments) := differentiateAlgorithm(eq.alg, diffArguments);
+        (alg, diffArguments) := differentiateAlgorithm(eq.alg, diffArguments); // may need differentiateAlgorithmAdjoint
       then (Equation.ALGORITHM(eq.size, alg, eq.source, eq.expand, eq.attr), diffArguments);
 
       else algorithm
@@ -476,11 +614,12 @@ public
   algorithm
     (exp, diffArguments) := match exp
       local
-        Expression elem1, elem2;
+        Expression elem1, elem2, current_grad, gradTrue, gradFalse;
         list<Expression> new_elements = {};
         list<list<Expression>> new_matrix_elements = {};
         array<Expression> arr;
         ComponentRef d_fn;
+        Boolean isReverse = Util.isSome(diffArguments.adjoint_map);
 
       // differentiation of constant expressions results in zero
       case Expression.INTEGER()   then (Expression.INTEGER(0), diffArguments);
@@ -528,12 +667,37 @@ public
         end for;
       then (Expression.RECORD(exp.path, exp.ty, listReverse(new_elements)), diffArguments);
 
+      // e.g. (f(x))' = f'(x) * x' (more rules in differentiateCall)
       case Expression.CALL() then differentiateCall(exp, diffArguments);
 
-      // (if c then a else b)' = if c then a' else b'
+      // Forward: (if c then a else b)' = if c then a' else b'
+      // Reverse: upstream G is only sent to taken branch:
+      //   grad_a = if c then G else 0
+      //   grad_b = if c then 0 else G
+      // Then recurse with those masked gradients.
       case Expression.IF() algorithm
-        (elem1, diffArguments) := differentiateExpression(exp.trueBranch, diffArguments);
-        (elem2, diffArguments) := differentiateExpression(exp.falseBranch, diffArguments);
+        if isReverse then
+          // Keep original upstream
+          current_grad := diffArguments.current_grad;
+
+          // Masked gradients
+          gradTrue  := Expression.IF(Expression.typeOf(current_grad), exp.condition, current_grad, Expression.makeZero(Expression.typeOf(current_grad)));
+          gradFalse := Expression.IF(Expression.typeOf(current_grad), exp.condition, Expression.makeZero(Expression.typeOf(current_grad)), current_grad);
+
+          // Recurse true branch
+          diffArguments.current_grad := gradTrue;
+          (elem1, diffArguments) := differentiateExpression(exp.trueBranch, diffArguments);
+
+          // Recurse false branch
+          diffArguments.current_grad := gradFalse;
+          (elem2, diffArguments) := differentiateExpression(exp.falseBranch, diffArguments);
+
+          // Restore upstream
+          diffArguments.current_grad := current_grad;
+        else
+          (elem1, diffArguments) := differentiateExpression(exp.trueBranch, diffArguments);
+          (elem2, diffArguments) := differentiateExpression(exp.falseBranch, diffArguments);
+        end if;
       then (Expression.IF(exp.ty, exp.condition, elem1, elem2), diffArguments);
 
       // e.g. (fg)' = fg' + f'g (more rules in differentiateBinary)
@@ -544,7 +708,17 @@ public
 
       // (-x)' = -(x')
       case Expression.UNARY() algorithm
-        (elem1, diffArguments) := differentiateExpression(exp.exp, diffArguments);
+        if isReverse then
+          current_grad := diffArguments.current_grad;
+
+          // apply same unary operator to current_grad
+          diffArguments.current_grad := Expression.UNARY(exp.operator, current_grad);
+          (elem1, diffArguments) := differentiateExpression(exp.exp, diffArguments);
+
+          diffArguments.current_grad := current_grad;
+        else
+          (elem1, diffArguments) := differentiateExpression(exp.exp, diffArguments);
+        end if;
       then (Expression.UNARY(exp.operator, elem1), diffArguments);
 
       // ((Real) x)' = (Real) x'
@@ -611,6 +785,22 @@ public
     end match;
   end differentiateExpression;
 
+  function differentiateExpressionNoCollect
+    input output Expression expr;
+    input output DifferentiationArguments diffArguments;
+  protected
+    Boolean oldCollect;
+  algorithm
+    if Util.isSome(diffArguments.adjoint_map) then
+      oldCollect := diffArguments.collectAdjoints;
+      diffArguments.collectAdjoints := false;
+      (expr, diffArguments) := differentiateExpression(expr, diffArguments);
+      diffArguments.collectAdjoints := oldCollect;
+    else
+      (expr, diffArguments) := differentiateExpression(expr, diffArguments);
+    end if;
+  end differentiateExpressionNoCollect;
+
   function differentiateComponentRef
     input output Expression exp "Has to be Expression.CREF()";
     input output DifferentiationArguments diffArguments;
@@ -630,10 +820,20 @@ public
       then fail();
     end match;
 
+    // Debug entry summary
+    dbg("[dCREF] exp=" + Expression.toString(exp)
+        + " | diffType=" + DifferentiationArguments.diffTypeStr(diffArguments.diffType)
+        + " | scalarized=" + boolString(diffArguments.scalarized)
+        + " | collectAdjoints=" + boolString(diffArguments.collectAdjoints));
+    if Util.isSome(diffArguments.adjoint_map) then
+      dbg("[dCREF] current_grad=" + Expression.toString(diffArguments.current_grad));
+    end if;
+
     (exp, diffArguments) := match (exp, diffArguments.diffType, diffArguments.diff_map)
       local
-        Expression res;
+        Expression res, adjExpr;
         UnorderedMap<ComponentRef,ComponentRef> diff_map;
+        list<Subscript> expCrefSubscripts;
 
       // -------------------------------------
       //    EMPTY and WILD crefs do nothing
@@ -699,7 +899,8 @@ public
       // Known variables, except for top level inputs have a 0-derivative
       case (Expression.CREF(), _, _)
         guard(BVariable.isParamOrConst(var_ptr) and
-              not (ComponentRef.isTopLevel(exp.cref) and BVariable.isInput(var_ptr)))
+              not (ComponentRef.isTopLevel(exp.cref) and BVariable.isInput(var_ptr))
+              and not BVariable.isOptimizable(var_ptr) /* TODO? */ )
       then (Expression.makeZero(exp.ty), diffArguments);
 
       // -------------------------------------
@@ -761,6 +962,11 @@ public
       algorithm
         if UnorderedMap.contains(exp.cref, diff_map) then
           res := Expression.fromCref(UnorderedMap.getOrFail(exp.cref, diff_map));
+
+          // Accumulate adjoint contribution: append current_grad to list at key exp.cref.
+          if diffArguments.collectAdjoints then
+            UnorderedMap.tryAddUpdate(exp.cref, function updateAdjointList(current_grad = diffArguments.current_grad), Util.getOption(diffArguments.adjoint_map));
+          end if;
         else
           // Everything that is not in diff_map gets differentiated to zero
           res := Expression.makeZero(exp.ty);
@@ -773,11 +979,50 @@ public
         guard(not diffArguments.scalarized)
       algorithm
         strippedCref := ComponentRef.stripSubscriptsAll(exp.cref);
+        expCrefSubscripts := ComponentRef.subscriptsAllFlat(exp.cref);
+        dbg("[dCREF:JAC] cref=" + ComponentRef.toString(exp.cref)
+            + " | stripped=" + ComponentRef.toString(strippedCref)
+            + " | subs=" + Subscript.toStringList(expCrefSubscripts));
         if UnorderedMap.contains(strippedCref, diff_map) then
           // get the derivative an reapply subscripts
           derCref := UnorderedMap.getOrFail(strippedCref, diff_map);
-          derCref := ComponentRef.copySubscripts(exp.cref, derCref);
-          res     := Expression.fromCref(derCref);
+          dbg("[dCREF:JAC] mapped -> " + ComponentRef.toString(derCref));
+          res     := Expression.fromCref(ComponentRef.copySubscripts(exp.cref, derCref));
+          dbg("[dCREF:JAC] get variable for derivative cref: " + NBVariable.pointerToString(NBVariable.getVarPointer(derCref, sourceInfo())));
+          if diffArguments.collectAdjoints then // if derCref is on the rhs then collect adjoint (collectAdjoints is false when differentiating lhs)
+            // Create adjoint expression from subscripts:
+            adjExpr := match expCrefSubscripts
+              local
+                Integer iidx;
+                Option<Expression> onehotOpt;
+                Option<Expression> multiOpt;
+              // Single literal index -> one-hot
+              case {Subscript.INDEX(Expression.INTEGER(iidx))}
+                algorithm
+                  dbg("[dCREF:JAC] adjoint via INDEX[" + intString(iidx) + "]");
+                  onehotOpt := buildOneHotVectorAdjoint(derCref, iidx, diffArguments.current_grad);
+                then (if Util.isSome(onehotOpt) then Util.getOption(onehotOpt) else diffArguments.current_grad);
+
+              // Single slice/range -> multi-hot scatter
+              case {Subscript.SLICE()}
+                algorithm
+                  dbg("[dCREF:JAC] adjoint via SLICE " + Subscript.toString(listHead(expCrefSubscripts)));
+                  multiOpt := buildMultiHotVectorAdjoint(derCref, listHead(expCrefSubscripts), diffArguments.current_grad);
+                then (if Util.isSome(multiOpt) then Util.getOption(multiOpt) else diffArguments.current_grad);
+
+              // Whole dimension -> pass upstream as-is
+              case {Subscript.WHOLE()}
+                then diffArguments.current_grad;
+
+              // Fallback: keep previous behavior
+              else diffArguments.current_grad;
+            end match;
+            dbg("[dCREF:JAC] append adjoint key=" + ComponentRef.toString(derCref)
+                + " expr=" + Expression.toString(adjExpr));
+            UnorderedMap.tryAddUpdate(derCref, function updateAdjointList(current_grad = adjExpr), Util.getOption(diffArguments.adjoint_map));
+          else
+            dbg("[dCREF:JAC] collectAdjoints=false, skip append");
+          end if;
         else
           res     := Expression.makeZero(exp.ty);
         end if;
@@ -791,6 +1036,22 @@ public
     end match;
   end differentiateComponentRef;
 
+  function differentiateComponentRefNoCollect
+    input output Expression exp;
+    input output DifferentiationArguments diffArguments;
+  protected
+    Boolean oldCollect;
+  algorithm
+    if Util.isSome(diffArguments.adjoint_map) then
+      oldCollect := diffArguments.collectAdjoints;
+      diffArguments.collectAdjoints := false;
+      (exp, diffArguments) := differentiateComponentRef(exp, diffArguments);
+      diffArguments.collectAdjoints := oldCollect;
+    else
+      (exp, diffArguments) := differentiateComponentRef(exp, diffArguments);
+    end if;
+  end differentiateComponentRefNoCollect;
+
   function differentiateVariablePointer
     input Pointer<Variable> var_ptr;
     input Pointer<DifferentiationArguments> diffArguments_ptr;
@@ -800,7 +1061,7 @@ public
     Variable var = Pointer.access(var_ptr);
     Expression crefExp;
   algorithm
-    (crefExp, diffArguments) := differentiateComponentRef(Expression.fromCref(var.name), diffArguments);
+    (crefExp, diffArguments) := differentiateComponentRefNoCollect(Expression.fromCref(var.name), diffArguments);
     diff_ptr := match crefExp
       case Expression.CREF(cref = ComponentRef.EMPTY()) then Pointer.create(NBVariable.DUMMY_VARIABLE);
       case Expression.CREF(cref = ComponentRef.WILD())  then Pointer.create(NBVariable.DUMMY_VARIABLE);
@@ -972,10 +1233,23 @@ public
     exp := match (exp)
       local
         Integer i;
-        Expression ret, ret1, ret2, arg1, arg2, arg3, diffArg1, diffArg2, diffArg3;
+        Expression ret, ret1, ret2, arg1, arg2, arg3, diffArg1, diffArg2, diffArg3, current_grad, cond1, cond2, cond, zero1, zero2, grad_x, grad_y, old_grad;
         list<Expression> rest;
         Type ty;
         DifferentiationType diffType;
+        Integer rY, rX;
+        Boolean isReverse = Util.isSome(diffArguments.adjoint_map);
+
+        Type elTy;
+        // sumG = G + Gᵀ
+        Operator addM, subM;
+        Expression sumG, triuG;
+
+        // diagG = G .* I(n), I(n) from diagonal(ones(n))
+        Integer nExp;
+        Expression eyeNN;
+        Operator mulEW;
+        Expression diagG;
 
       // d/dz delay(x, delta) = (dt/dz - d delta/dz) * delay(der(x), delta)
       case (Expression.CALL()) guard(name == "delay")
@@ -1027,9 +1301,188 @@ public
         end match;
       then ret;
 
+      case (Expression.CALL()) guard(name == "sum")
+      algorithm
+        arg1 := match Call.arguments(exp.call)
+          case {arg1} then arg1;
+          else algorithm
+            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for: " + Expression.toString(exp) + "."});
+          then fail();
+        end match;
+        if isReverse then
+          current_grad := diffArguments.current_grad;
+          // sum is linear -> multiply upstream gradient with ones of the right size
+          diffArguments.current_grad := Expression.BINARY(
+            Expression.makeOne(Expression.typeOf(arg1)),
+            Operator.fromClassification(
+              (NFOperator.MathClassification.MULTIPLICATION, NFOperator.SizeClassification.ARRAY_SCALAR),
+              Expression.typeOf(arg1)
+            ),
+            current_grad);
+        end if;
+
+        (ret1, diffArguments) := differentiateExpression(arg1, diffArguments);
+
+        if isReverse then
+          // restore upstream
+          diffArguments.current_grad := current_grad;
+        end if;
+        exp.call := Call.setArguments(exp.call, {ret1});
+      then exp;
+
+      // symmetric(A):
+      // Forward: symmetric(dA/dz)
+      // Reverse: grad_A = triu(G + Gᵀ) - diag(G)
+      case (Expression.CALL()) guard(name == "symmetric")
+      algorithm
+        arg1 := match Call.arguments(exp.call)
+          case {arg1} then arg1;
+          else algorithm
+            Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed for: " + Expression.toString(exp) + "."});
+          then fail();
+        end match;
+
+        if isReverse then
+          current_grad := diffArguments.current_grad;
+
+          // upstream gradient type (matrix)
+          ty := Expression.typeOf(current_grad);
+          // element type
+          elTy := if Type.isArray(ty) then Type.arrayElementType(ty) else ty;
+          // matrix dimension (assume square)
+          nExp := Dimension.size(listHead(Type.arrayDims(Expression.typeOf(arg1))));
+
+          // element-wise add / mul operators with full matrix type (not element type)
+          addM := Operator.fromClassification(
+            (NFOperator.MathClassification.ADDITION, NFOperator.SizeClassification.ELEMENT_WISE),
+            ty);
+          subM := Operator.fromClassification(
+            (NFOperator.MathClassification.SUBTRACTION, NFOperator.SizeClassification.ELEMENT_WISE),
+            ty);
+          mulEW := Operator.fromClassification(
+            (NFOperator.MathClassification.MULTIPLICATION, NFOperator.SizeClassification.ELEMENT_WISE),
+            ty);
+
+          // sumG = G + Gᵀ   (binary)
+          sumG := Expression.BINARY(
+            current_grad,
+            addM,
+            typeTransposeCall(current_grad));
+
+          // triu(sumG) = sumG .* triu(ones(n,n))  (binary)
+          triuG := Expression.BINARY(
+            sumG,
+            mulEW,
+            Expression.makeTriuMask(nExp, elTy));
+
+          // I(n)
+          eyeNN := Expression.makeIdentityMatrix(nExp, elTy);
+
+          // diagG = G .* I  (binary)
+          diagG := Expression.BINARY(
+            current_grad,
+            mulEW,
+            eyeNN);
+
+          // triu(G + Gᵀ) - diag(G)  (binary)
+          diffArguments.current_grad := Expression.BINARY(
+            triuG,
+            subM,
+            diagG);
+        end if;
+
+        // Forward: symmetric(dA/dz)
+        (ret1, diffArguments) := differentiateExpression(arg1, diffArguments);
+
+        if isReverse then
+          // restore upstream
+          diffArguments.current_grad := current_grad;
+        end if;
+        exp.call := Call.setArguments(exp.call, {ret1});
+      then exp;
+
+      // diagonal(v):
+      // Forward: diagonal(dv/dz)
+      // Reverse: grad_v = diag(G)  (extract diagonal of upstream matrix)
+      case (Expression.CALL()) guard(name == "diagonal")
+      algorithm
+        arg1 := match Call.arguments(exp.call)
+          case {arg1} then arg1;
+          else algorithm
+            Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed for: " + Expression.toString(exp) + "."});
+          then fail();
+        end match;
+
+        if isReverse then
+          current_grad := diffArguments.current_grad;
+          // number of elements in v and in diagonal of G
+          nExp := Dimension.size(listHead(Type.arrayDims(Expression.typeOf(arg1))));
+          // Literal: [ G[1,1], G[2,2], ..., G[n,n] ]
+          diffArguments.current_grad := extractDiagonalVector(current_grad, nExp, Expression.typeOf(arg1));
+        end if;
+
+        // Forward: diagonal(dv/dz)
+        (ret1, diffArguments) := differentiateExpression(arg1, diffArguments);
+
+        if isReverse then
+          // Restore upstream and return updated call
+          diffArguments.current_grad := current_grad;
+        end if;
+        exp.call := Call.setArguments(exp.call, {ret1});
+      then exp;
+
+      // matrix(A)
+      // Forward: matrix(dA/dz)
+      // Reverse: let rX = ndims(A), G the upstream matrix:
+      //   - if rX < 2: dropLastDimIndex1(G) (2-rX times)
+      //   - if rX = 2: G
+      //   - if rX > 2: promote(G, rX)
+      case (Expression.CALL()) guard(name == "matrix")
+      algorithm
+        arg1 := match Call.arguments(exp.call)
+          case {arg1} then arg1;
+          else algorithm
+            Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed for: " + Expression.toString(exp) + "."});
+          then fail();
+        end match;
+
+        if isReverse then
+          current_grad := diffArguments.current_grad;
+          // Rank of input A
+          ty := Expression.typeOf(arg1);
+          rX := if Type.isArray(ty) then Type.dimensionCount(ty) else 0;
+
+          // Map upstream gradient back to A's shape
+          grad_x := current_grad;
+
+          // If A has rank < 2, drop trailing dims by indexing with 1
+          if rX < 2 then
+            for i in 1:(2 - rX) loop
+              grad_x := dropLastDimIndex1(grad_x);
+            end for;
+          elseif rX > 2 then
+            // If A has rank > 2 (with trailing singleton dims), promote G to rank rX
+            grad_x := typePromoteCall(grad_x, rX);
+          end if;
+
+          // Recurse into A with mapped upstream gradient
+          diffArguments.current_grad := grad_x;
+
+          (ret1, diffArguments) := differentiateExpression(arg1, diffArguments);
+
+          // restore upstream
+          diffArguments.current_grad := current_grad;
+        else
+          (ret1, diffArguments) := differentiateExpression(arg1, diffArguments);
+        end if;
+        // Forward: matrix(dA/dz)
+        exp.call := Call.setArguments(exp.call, {ret1});
+      then exp;
+
       // Functions with one argument that differentiate "through"
+      // through means that the derivative of the function wrt. its input is equal to the function of derivative of input
       // d/dz f(x) -> f(dx/dz)
-      case (Expression.CALL()) guard(List.contains({"sum", "pre", "noEvent", "scalar", "vector", "matrix", "diagonal", "transpose", "symmetric", "skew"}, name, stringEqual))
+      case (Expression.CALL()) guard(List.contains({"pre", "noEvent", "scalar", "vector", "transpose", "skew"}, name, stringEqual))
       algorithm
         arg1 := match Call.arguments(exp.call)
           case {arg1} then arg1;
@@ -1065,13 +1518,27 @@ public
             Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for: " + Expression.toString(exp) + "."});
           then fail();
         end match;
-        (ret1, diffArguments) := differentiateExpression(arg1, diffArguments);
+        if isReverse then
+          rY := if Type.isArray(Expression.typeOf(exp)) then Type.dimensionCount(Expression.typeOf(exp)) else 0;
+          rX := if Type.isArray(Expression.typeOf(arg1)) then Type.dimensionCount(Expression.typeOf(arg1)) else 0;
+          current_grad := diffArguments.current_grad;
+          old_grad := current_grad;
+          for i in 1:max(0, rY - rX) loop
+            current_grad := dropLastDimIndex1(current_grad);
+          end for;
+          diffArguments.current_grad := current_grad;
+          (ret1, diffArguments) := differentiateExpression(arg1, diffArguments);
+          diffArguments.current_grad := old_grad;
+        else
+          (ret1, diffArguments) := differentiateExpression(arg1, diffArguments);
+        end if;
         exp.call := Call.setArguments(exp.call, {ret1, arg2});
       then exp;
 
       // d/dz identity(n) = zeros(n, n)
       case (Expression.CALL()) guard(name == "identity")
       algorithm
+        // diffArguments.current_grad := Expression.makeZero(Expression.typeOf(exp));?
         arg1 := match Call.arguments(exp.call)
           case {arg1} then arg1;
           else algorithm
@@ -1090,7 +1557,20 @@ public
       algorithm
         // only differentiate 1st input
         arg1 :: rest := Call.arguments(exp.call);
-        (ret1, diffArguments) := differentiateExpression(arg1, diffArguments);
+        if isReverse then
+          rY := if Type.isArray(Expression.typeOf(exp)) then Type.dimensionCount(Expression.typeOf(exp)) else 0;
+          rX := if Type.isArray(Expression.typeOf(arg1)) then Type.dimensionCount(Expression.typeOf(arg1)) else 0;
+          current_grad := diffArguments.current_grad;
+          old_grad := current_grad;
+          for i in 1:max(0, rY - rX) loop // reduce over all added dimensions with sum (TODO: change to only sum over added dimensions)
+            current_grad := typeSumCall(current_grad); // sum over first (or last?) dimension
+          end for;
+          diffArguments.current_grad := current_grad;
+          (ret1, diffArguments) := differentiateExpression(arg1, diffArguments);
+          diffArguments.current_grad := old_grad;
+        else
+          (ret1, diffArguments) := differentiateExpression(arg1, diffArguments);
+        end if;
         exp.call := Call.setArguments(exp.call, ret1 :: rest);
       then exp;
 
@@ -1104,9 +1584,27 @@ public
             Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for: " + Expression.toString(exp) + "."});
           then fail();
         end match;
+        current_grad := diffArguments.current_grad;
+
+        if isReverse then
+          cond := Expression.RELATION(
+            arg1, // x
+            Operator.makeGreaterEq(Expression.typeOf(arg1)),
+            Expression.makeZero(Expression.typeOf(arg1)),
+            -1);
+
+          grad_x := Expression.IF(
+            Expression.typeOf(arg1),
+            cond,
+            Expression.MULTARY({arg2, current_grad}, {}, mulOp), // d(positive_slope * x)/dx = positive_slope * current_grad
+            Expression.MULTARY({arg3, current_grad}, {}, mulOp)  // d(negative_slope * x)/dx = negative_slope * current_grad
+          );
+          diffArguments.current_grad := grad_x;
+        end if;
 
         // dx/dz, dm1/dz, dm2/dz
         (diffArg1, diffArguments) := differentiateExpression(arg1, diffArguments);
+        diffArguments.current_grad := current_grad; // restore upstream
         (diffArg2, diffArguments) := differentiateExpression(arg2, diffArguments);
         (diffArg3, diffArguments) := differentiateExpression(arg3, diffArguments);
 
@@ -1136,7 +1634,7 @@ public
       algorithm
         ret := match Call.arguments(exp.call)
           case {arg1} algorithm
-            // dx/dz
+            // dX/dz
             (diffArg1, diffArguments) := differentiateExpression(arg1, diffArguments);
             ty := Expression.typeOf(diffArg1);
             if Expression.isZero(diffArg1) then
@@ -1153,9 +1651,58 @@ public
           then ret;
 
           case {arg1, arg2} algorithm
-            // dx/dz, dy/dz
-            (diffArg1, diffArguments) := differentiateExpression(arg1, diffArguments);
-            (diffArg2, diffArguments) := differentiateExpression(arg2, diffArguments);
+            if isReverse then
+              current_grad := diffArguments.current_grad;
+              // Relation: for min use x<y; for max use x>y
+              cond1 := Expression.RELATION(
+                arg1,
+                if name == "min" then Operator.makeLess(Expression.typeOf(arg1))
+                                else Operator.makeGreater(Expression.typeOf(arg1)),
+                arg2,
+                -1);
+              cond2 := Expression.RELATION(
+                arg2,
+                if name == "min" then Operator.makeLess(Expression.typeOf(arg2))
+                                else Operator.makeGreater(Expression.typeOf(arg2)),
+                arg1,
+                -1);
+
+              // Reverse local masks:
+              // For min: grad_x = upstream if x<y else 0; grad_y = upstream if x>=y else 0
+              // For max: grad_x = upstream if x>y else 0; grad_y = upstream if x<=y else 0
+              zero1 := Expression.makeZero(Expression.typeOf(arg1));
+              zero2 := Expression.makeZero(Expression.typeOf(arg2));
+
+              grad_x := Expression.IF(
+                Expression.typeOf(arg1),
+                cond1,
+                current_grad,
+                zero1);
+
+              grad_y := Expression.IF(
+                Expression.typeOf(arg2),
+                cond2,
+                current_grad,
+                zero2);
+
+              // Reverse recurse arg1 with grad_x
+              old_grad := diffArguments.current_grad;
+              diffArguments.current_grad := grad_x;
+              // dx/dz
+              (diffArg1, diffArguments) := differentiateExpression(arg1, diffArguments);
+
+              // Reverse recurse arg2 with grad_y
+              diffArguments.current_grad := grad_y;
+              // dy/dz
+              (diffArg2, diffArguments) := differentiateExpression(arg2, diffArguments);
+
+              // Restore upstream
+              diffArguments.current_grad := old_grad;
+            else
+              // Forward: dx/dz and dy/dz
+              (diffArg1, diffArguments) := differentiateExpression(arg1, diffArguments);
+              (diffArg2, diffArguments) := differentiateExpression(arg2, diffArguments);
+            end if;
 
             ty := Expression.typeOf(diffArg1);
             if Expression.isZero(diffArg1) and Expression.isZero(diffArg2) then
@@ -1186,8 +1733,13 @@ public
         // differentiate the call df/dx
         ret := differentiateBuiltinCall1Arg(name, arg1);
         if not Expression.isZero(ret) then
+          current_grad := diffArguments.current_grad;
+
+          diffArguments.current_grad := Expression.MULTARY({current_grad, ret}, {}, mulOp);
           // differentiate the argument (inner derivative) dx/dz
           (diffArg1, diffArguments) := differentiateExpression(arg1, diffArguments);
+
+          diffArguments.current_grad := current_grad;
           ret := Expression.MULTARY({ret, diffArg1}, {}, mulOp);
         end if;
       then ret;
@@ -1204,8 +1756,15 @@ public
         end match;
         // differentiate the call
         (ret1, ret2) := differentiateBuiltinCall2Arg(name, arg1, arg2);             // df/dx and df/dy
+        current_grad := diffArguments.current_grad;
+
+        diffArguments.current_grad := Expression.MULTARY({current_grad, ret1}, {}, mulOp);
         (diffArg1, diffArguments) := differentiateExpression(arg1, diffArguments);  // dx/dz
+
+        diffArguments.current_grad := Expression.MULTARY({current_grad, ret2}, {}, mulOp);
         (diffArg2, diffArguments) := differentiateExpression(arg2, diffArguments);  // dy/dz
+
+        diffArguments.current_grad := current_grad;
         ret1 := Expression.MULTARY({ret1, diffArg1}, {}, mulOp);                    // df/dx * dx/dz
         ret2 := Expression.MULTARY({ret2, diffArg2}, {}, mulOp);                    // df/dy * dy/dz
         ret := Expression.MULTARY({ret1,ret2}, {}, addOp);                          // df/dx * dx/dz + df/dy * dy/dz
@@ -1884,28 +2443,58 @@ public
     input output Expression exp "Has to be Expression.BINARY()";
     input output DifferentiationArguments diffArguments;
   algorithm
+    if Flags.isSet(Flags.DEBUG_ADJOINT) then
+      print("differentiateBinary: " + Expression.toString(exp) + "\n");
+    end if;
     (exp, diffArguments) := match exp
       local
         Expression exp1, exp2, diffExp1, diffExp2, e1, e2, e3, res;
-        Operator operator, addOp, mulOp, powOp;
+        Operator operator, addOp, mulOp, powOp, divOp;
         Operator.SizeClassification sizeClass, powSizeClass;
+        Expression current_grad;
+        // Local reverse grads (to assign before recursing)
+        Expression grad_exp1, grad_exp2, denom2, numUF;
+        Boolean isVec1, isVec2, isMat1, isMat2;
+        Type ty1, ty2;
+        Integer r1, r2;
+        list<Integer> dim1, dim2;
+        Boolean isReverse = Util.isSome(diffArguments.adjoint_map);
 
       // Addition calculations (ADD, ADD_EW, ...)
       // (f + g)' = f' + g'
+      // Adjoint rule: ∂(f + g)/∂f = 1, ∂(f + g)/∂g = 1
+      // diffArguments.current_grad = ∂Out/∂(f + g) * ∂(f + g)/∂f = current_grad * 1 = current_grad
       case Expression.BINARY(exp1 = exp1, operator = operator, exp2 = exp2)
         guard(Operator.getMathClassification(operator) == NFOperator.MathClassification.ADDITION)
         algorithm
+          //current_grad := diffArguments.current_grad;
+
+          //diffArguments.current_grad := current_grad; // not needed, but for clarity
           (diffExp1, diffArguments) := differentiateExpression(exp1, diffArguments);
+
+          //diffArguments.current_grad := current_grad; // not needed, but for clarity
           (diffExp2, diffArguments) := differentiateExpression(exp2, diffArguments);
+
+          //diffArguments.current_grad := current_grad;
       then (Expression.MULTARY({diffExp1, diffExp2}, {}, operator), diffArguments);
 
       // Subtraction calculations (SUB, SUB_EW, ...)
       // (f - g)' = f' - g'
+      // ∂(f - g)/∂f = 1, ∂(f - g)/∂g = -1
       case Expression.BINARY(exp1 = exp1, operator = operator, exp2 = exp2)
         guard(Operator.getMathClassification(operator) == NFOperator.MathClassification.SUBTRACTION)
         algorithm
+          current_grad := diffArguments.current_grad;
+
+          // differentiate first argument
+          //diffArguments.current_grad := current_grad; // not needed, but for clarity
           (diffExp1, diffArguments) := differentiateExpression(exp1, diffArguments);
+
+          // differentiate second argument
+          diffArguments.current_grad := Expression.negate(current_grad);
           (diffExp2, diffArguments) := differentiateExpression(exp2, diffArguments);
+
+          diffArguments.current_grad := current_grad;
           // create addition operator from the size classification of original multiplication operator
           (_, sizeClass) := Operator.classify(operator);
           addOp := Operator.fromClassification((NFOperator.MathClassification.ADDITION, sizeClass), operator.ty);
@@ -1913,17 +2502,128 @@ public
 
       // Multiplication (MUL, MUL_EW, ...)
       // (f * g)' =  fg' + f'g
+      // ∂(f * g)/∂f = g, ∂(f * g)/∂g = f
       case Expression.BINARY(exp1 = exp1, operator = operator, exp2 = exp2)
         guard(Operator.getMathClassification(operator) == NFOperator.MathClassification.MULTIPLICATION)
-        algorithm
+      algorithm
+        if isReverse then
+          // Upstream gradient
+          current_grad := diffArguments.current_grad;
+
+          // Type / rank info
+          ty1 := Expression.typeOf(exp1);
+          ty2 := Expression.typeOf(exp2);
+          r1 := if Type.isArray(ty1) then Type.dimensionCount(ty1) else 0;
+          r2 := if Type.isArray(ty2) then Type.dimensionCount(ty2) else 0;
+          dim1 := if r1 > 0 then NFDimension.sizes(Type.arrayDims(ty1)) else {};
+          dim2 := if r2 > 0 then NFDimension.sizes(Type.arrayDims(ty2)) else {};
+
+          isVec1 := (r1 == 1);
+          isVec2 := (r2 == 1);
+          isMat1 := (r1 == 2);
+          isMat2 := (r2 == 2);
+
+          // Original size classification (kept for forward combination)
+          (_, sizeClass) := Operator.classify(operator);
+          // Decide shape case
+          // Inner product
+          if isVec1 and isVec2 and sizeClass == NFOperator.SizeClassification.SCALAR then
+            grad_exp1 := Expression.BINARY(
+              current_grad,
+              Operator.fromClassification(
+                (NFOperator.MathClassification.MULTIPLICATION, NFOperator.SizeClassification.SCALAR_ARRAY),
+                operator.ty),
+              exp2); // G * y
+            grad_exp2 := Expression.BINARY(
+              current_grad,
+              Operator.fromClassification(
+                (NFOperator.MathClassification.MULTIPLICATION, NFOperator.SizeClassification.SCALAR_ARRAY),
+                operator.ty),
+              exp1); // G * x
+          // outer product
+          elseif isMat1 and isMat2 and sizeClass == NFOperator.SizeClassification.MATRIX and listGet(dim1, 1) > 1 and listGet(dim1, 2) == 1 and listGet(dim2, 1) == 1 and listGet(dim2, 2) > 1 then
+            grad_exp1 := Expression.BINARY(
+              current_grad,
+              Operator.fromClassification(
+                (NFOperator.MathClassification.MULTIPLICATION, NFOperator.SizeClassification.MATRIX),
+                operator.ty),
+              exp2); // G * y
+            grad_exp2 := Expression.BINARY(
+              typeTransposeCall(current_grad),
+              Operator.fromClassification(
+                (NFOperator.MathClassification.MULTIPLICATION, NFOperator.SizeClassification.MATRIX),
+                operator.ty),
+              exp1); // G^T * x
+          // Matrix * Vector
+          elseif isMat1 and isVec2 then
+            grad_exp1 := Expression.BINARY(
+              current_grad,
+              Operator.fromClassification(
+                (NFOperator.MathClassification.MULTIPLICATION, NFOperator.SizeClassification.MATRIX),
+                operator.ty),
+              typeTransposeCall(exp2)); // G * xᵀ
+            grad_exp2 := Expression.BINARY(
+              typeTransposeCall(exp1),
+              Operator.fromClassification(
+                (NFOperator.MathClassification.MULTIPLICATION, NFOperator.SizeClassification.MATRIX_VECTOR),
+                operator.ty),
+              current_grad); // Aᵀ * G
+          // Vector * Matrix
+          elseif isVec1 and isMat2 then
+            // grad w.r.t exp1 (x): B * Gᵀ  -> treat Gᵀ via transpose(current_grad)
+            grad_exp1 := Expression.BINARY(
+              exp2,
+              Operator.fromClassification(
+                (NFOperator.MathClassification.MULTIPLICATION, NFOperator.SizeClassification.MATRIX_VECTOR),
+                operator.ty),
+              typeTransposeCall(current_grad));    // B * Gᵀ  (shape n)
+            // grad w.r.t exp2 (B): xᵀ * G
+            grad_exp2 := Expression.BINARY(
+              typeTransposeCall(exp1),
+              Operator.fromClassification(
+                (NFOperator.MathClassification.MULTIPLICATION, NFOperator.SizeClassification.MATRIX),
+                operator.ty),
+              current_grad);                   // xᵀ * G  (outer product)
+          // Matrix * Matrix
+          elseif isMat1 and isMat2 then
+            grad_exp1 := Expression.BINARY(
+              current_grad,
+              Operator.fromClassification(
+                (NFOperator.MathClassification.MULTIPLICATION, NFOperator.SizeClassification.MATRIX),
+                operator.ty),
+              typeTransposeCall(exp2));              // G * Bᵀ
+            grad_exp2 := Expression.BINARY(
+              typeTransposeCall(exp1),
+              Operator.fromClassification(
+                (NFOperator.MathClassification.MULTIPLICATION, NFOperator.SizeClassification.MATRIX),
+                operator.ty),
+              current_grad);                     // Aᵀ * G
+          else
+            grad_exp1 := Expression.MULTARY({current_grad, exp2}, {}, makeMulFromOperator(operator));
+            grad_exp2 := Expression.MULTARY({current_grad, exp1}, {}, makeMulFromOperator(operator));
+          end if;
+
+          // Reverse recurse: exp1
+          diffArguments.current_grad := grad_exp1;
+          (diffExp1, diffArguments) := differentiateExpression(exp1, diffArguments);
+          // Reverse recurse: exp2
+          diffArguments.current_grad := grad_exp2;
+          (diffExp2, diffArguments) := differentiateExpression(exp2, diffArguments);
+          // Restore upstream
+          diffArguments.current_grad := current_grad;
+        else
+          // only forward differentiation
           (diffExp1, diffArguments) := differentiateExpression(exp1, diffArguments);
           (diffExp2, diffArguments) := differentiateExpression(exp2, diffArguments);
-          // create addition operator from the size classification of original multiplication operator
-          sizeClass := Operator.classifyAddition(operator);
-          addOp := Operator.fromClassification((NFOperator.MathClassification.ADDITION, sizeClass), operator.ty);
+        end if;
+        // Forward derivative assembly: f*g' + f'*g
+        sizeClass := Operator.classifyAddition(operator);
+        addOp := Operator.fromClassification(
+          (NFOperator.MathClassification.ADDITION, sizeClass),
+          operator.ty);
       then (Expression.MULTARY(
               {Expression.BINARY(exp1, operator, diffExp2),
-               Expression.BINARY(diffExp1, operator, exp2)},
+                Expression.BINARY(diffExp1, operator, exp2)},
               {},
               addOp
             ),
@@ -1934,22 +2634,50 @@ public
       case Expression.BINARY(exp1 = exp1, operator = operator, exp2 = exp2)
         guard(Operator.getMathClassification(operator) == NFOperator.MathClassification.DIVISION)
         algorithm
+          powSizeClass := NFOperator.SizeClassification.SCALAR;
+          powOp := Operator.fromClassification((NFOperator.MathClassification.POWER, powSizeClass), Type.REAL());
+          if isReverse then
+            current_grad := diffArguments.current_grad; // upstream gradient
+            diffArguments.current_grad := Expression.MULTARY({current_grad}, {exp2}, Operator.fromClassification(
+              (NFOperator.MathClassification.MULTIPLICATION, if Type.isArray(Expression.typeOf(current_grad)) then NFOperator.SizeClassification.ARRAY_SCALAR else NFOperator.SizeClassification.SCALAR),
+              operator.ty)); // z = f/g going into f
+          end if;
           (diffExp1, diffArguments) := differentiateExpression(exp1, diffArguments);
+          if isReverse then
+            // Reverse local grad for denominator g: G_g = - ( (upstream .* f) / g^2 )
+            // Build g^2
+            denom2 := Expression.BINARY(exp2, powOp, Expression.REAL(2.0));
+
+            // Build numerator = upstream .* f  with proper size classification
+            numUF := Expression.BINARY(current_grad, if Type.isArray(Expression.typeOf(exp1)) then Operator.makeScalarProduct(operator.ty) else Operator.fromClassification(
+              (NFOperator.MathClassification.MULTIPLICATION, NFOperator.SizeClassification.SCALAR),
+              Type.REAL()), exp1);
+
+            // Divide by g^2 (array/scalar-safe)
+            divOp := Operator.fromClassification(
+              (NFOperator.MathClassification.DIVISION, NFOperator.SizeClassification.SCALAR),
+              Type.REAL());
+            diffArguments.current_grad := Expression.negate(
+              Expression.BINARY(numUF, divOp, denom2));
+          end if;
           (diffExp2, diffArguments) := differentiateExpression(exp2, diffArguments);
+
+          if isReverse then
+            // Restore upstream
+            diffArguments.current_grad := current_grad;
+          end if;
           // create subtraction and multiplication operator from the size classification of original division operator
           (_, sizeClass) := Operator.classify(operator);
           // the frontend treats multiplication equally for element and nen elementwise, but pow needs to have the correct operator
-          powSizeClass := if Type.isArray(Expression.typeOf(exp2)) then NFOperator.SizeClassification.ARRAY_SCALAR else NFOperator.SizeClassification.SCALAR;
           addOp := Operator.fromClassification((NFOperator.MathClassification.ADDITION, sizeClass), operator.ty);
           mulOp := Operator.fromClassification((NFOperator.MathClassification.MULTIPLICATION, sizeClass), operator.ty);
-          powOp := Operator.fromClassification((NFOperator.MathClassification.POWER, powSizeClass), operator.ty);
       then (Expression.MULTARY(
               {Expression.MULTARY(
                 {Expression.BINARY(exp1, mulOp, diffExp2)},              // fg'
                 {Expression.BINARY(diffExp1, mulOp, exp2)},              // - f'g
                 addOp
               )},
-              {Expression.BINARY(exp2, powOp, Expression.REAL(2.0))},           // / g^2
+              {Expression.BINARY(exp2, powOp, Expression.REAL(2.0))},    // / g^2
               mulOp
             ),
             diffArguments);
@@ -1965,13 +2693,20 @@ public
       case Expression.BINARY(exp1 = exp1, operator = operator, exp2 = exp2)
         guard((Operator.getMathClassification(operator) == NFOperator.MathClassification.POWER))
         algorithm
+          (_, sizeClass) := Operator.classify(operator);
+          addOp := Operator.fromClassification((NFOperator.MathClassification.ADDITION, sizeClass), operator.ty);
+          current_grad := diffArguments.current_grad; // upstream gradient
+
+          diffArguments.current_grad := Expression.MULTARY({current_grad, exp2, Expression.BINARY(exp1, operator, minusOne(exp2, addOp))}, {}, makeMulFromOperator(operator));
           (diffExp1, diffArguments) := differentiateExpression(exp1, diffArguments);
+
+          diffArguments.current_grad := Expression.MULTARY({current_grad, exp, expLog(exp1)}, {}, makeMulFromOperator(operator));
           (diffExp2, diffArguments) := differentiateExpression(exp2, diffArguments);
+
+          diffArguments.current_grad := current_grad;
           diffExp1 := SimplifyExp.simplifyDump(diffExp1, true, getInstanceName());
           diffExp2 := SimplifyExp.simplifyDump(diffExp2, true, getInstanceName());
-          (_, sizeClass) := Operator.classify(operator);
           mulOp := Operator.fromClassification((NFOperator.MathClassification.MULTIPLICATION, sizeClass), operator.ty);
-          addOp := Operator.fromClassification((NFOperator.MathClassification.ADDITION, sizeClass), operator.ty);
 
           res := match (Expression.isZero(diffExp1), Expression.isZero(diffExp2))
             // Power (POW, POW_EW, ...) with constant exponent and constant base
@@ -2016,31 +2751,80 @@ public
     Note: these can only contain commutative operators"
     input output Expression exp "Has to be Expression.MULTARY()";
     input output DifferentiationArguments diffArguments;
+  protected
+    Boolean isReverse = Util.isSome(diffArguments.adjoint_map);
   algorithm
+    if Flags.isSet(Flags.DEBUG_ADJOINT) then
+      print("differentiateMultary: " + Expression.toString(exp) + "\n");
+    end if;
     exp := match exp
       local
         Expression diff_arg, divisor, diff_enumerator, diff_divisor;
         list<Expression> arguments, new_arguments = {};
         list<Expression> inv_arguments, new_inv_arguments = {};
         list<Expression> diff_arguments, diff_inv_arguments;
-        Operator operator, addOp, powOp;
+        Operator operator, addOp, powOp, mulOp, mulEWOp, addEWOp;
         Operator.SizeClassification sizeClass, powSizeClass;
+        Expression current_grad, upstream, e_over_f, term, e_over_g, numProd, denomProd;
+        List<Expression> add_terms, sub_terms, arg_rest, arg_products;
+        Boolean hasArray, hasArrayNum;
+        Expression local_grad, localUpF, localUpG;
+        Integer i;
         Type powTy;
 
       // Dash calculations (ADD, SUB, ADD_EW, SUB_EW, ...)
       // NOTE: Multary always contains ADDITION
       // (sum(f_i))' = sum(f_i')
       // e.g. (f + g + h - p - q)' = f' + g' + h' - p' - q'
+      // Reverse-mode note:
+      //  - If an argument is scalar but at least one other argument is an array,
+      //    its local upstream must be sum-reduced to a scalar before recursion.
       case Expression.MULTARY(arguments = arguments, inv_arguments = inv_arguments, operator = operator)
         guard(Operator.getMathClassification(operator) == NFOperator.MathClassification.ADDITION)
         algorithm
+          if isReverse then
+            // Detect if any term is an array (for mixed scalar/array broadcasting)
+            hasArray := List.any(arguments, Expression.hasArrayType) or List.any(inv_arguments, Expression.hasArrayType);
+          end if;
+          // go over addition arguments
           for arg in listReverse(arguments) loop
+            if isReverse then
+              current_grad := diffArguments.current_grad;
+              // For scalar arg in mixed case: sum-reduce upstream to scalar
+              if Expression.isScalar(arg) and hasArray then
+                diffArguments.current_grad := typeSumCall(current_grad);
+              else
+                diffArguments.current_grad := current_grad;
+              end if;
+            end if;
+
             (diff_arg, diffArguments) := differentiateExpression(arg, diffArguments);
-            new_arguments := diff_arg :: new_arguments;
+
+            if isReverse then
+              diffArguments.current_grad := current_grad;
+            else
+              new_arguments := diff_arg :: new_arguments;
+            end if;
           end for;
+          // go over subtraction arguments
           for arg in listReverse(inv_arguments) loop
+            if isReverse then
+              current_grad := diffArguments.current_grad;
+
+              local_grad := Expression.negate(current_grad);
+              if Expression.isScalar(arg) and hasArray then
+                local_grad := typeSumCall(local_grad);
+              end if;
+              diffArguments.current_grad := local_grad;
+            end if;
+
             (diff_arg, diffArguments) := differentiateExpression(arg, diffArguments);
-            new_inv_arguments := diff_arg :: new_inv_arguments;
+
+            if isReverse then
+              diffArguments.current_grad := current_grad;
+            else
+              new_inv_arguments := diff_arg :: new_inv_arguments;
+            end if;
           end for;
       then Expression.MULTARY(new_arguments, new_inv_arguments, operator);
 
@@ -2054,20 +2838,118 @@ public
         algorithm
           // create addition operator
           sizeClass := Operator.classifyAddition(operator);
-          addOp     := Operator.fromClassification((NFOperator.MathClassification.ADDITION, sizeClass), operator.ty);
+          addOp := Operator.fromClassification((NFOperator.MathClassification.ADDITION, sizeClass), operator.ty);
+          // the adjoint is handled inside here
           (new_arguments, diffArguments) := differentiateMultaryMultiplicationArgs(arguments, diffArguments, operator);
       then Expression.MULTARY(new_arguments, {}, addOp);
 
       // Dot calculations (MUL, DIV, MUL_EW, DIV_EW, ...)
       // NOTE: Multary always contains MULTIPLICATION
       // (prod(f_i)) / prod(g_j))'
-      // makes use if single product rule:
+      // makes use of single product rule:
       // prod(f_i)) = sum((f_i)' * prod(f_k | k <> i))
       // e.g. (abc)' = a'bc + ab'c + abc'
       // and binary division rule
       // (f / g)' = (f'g - g'f) / g^2
+      // this is implemented like so:
+      // E = (prod arguments) / (prod inv_arguments)
+      // dE = Σ_i f_i' * (E / f_i) - Σ_j g_j' * (E / g_j)
+      // Reverse mode local grads (used via current_grad):
+      //   for f_i: G_i = G * (E / f_i)
+      //   for g_j: G_j = -G * (E / g_j)
+      // Reverse assumptions:
+      //  - Broadcasting only happens in the numerator.
+      //  - All denominators are scalar.
+      //  - If the numerator is an array then the division by the denominator is elementwise.
+      // Sum reduction is needed:
+      //  - For scalar f_i in numerator if any other numerator factor is an array.
+      //  - For denominator g_j (scalar) if numerator is an array.
       case Expression.MULTARY(arguments = arguments, inv_arguments = inv_arguments, operator = operator)
-        guard(Operator.getMathClassification(operator) == NFOperator.MathClassification.MULTIPLICATION)
+        guard(Operator.getMathClassification(operator) == NFOperator.MathClassification.MULTIPLICATION
+              and (not listEmpty(inv_arguments)) and isReverse)
+        algorithm
+          (_, sizeClass) := Operator.classify(operator);
+          // Determine operators
+          addOp := Operator.fromClassification(
+            (NFOperator.MathClassification.ADDITION, sizeClass),
+            operator.ty);
+          mulOp := makeMulFromOperator(operator);
+
+          // Use element-wise mul for reverse local upstream assembly to avoid array*scalar miscodegen
+          // when upstream and partial products are arrays.
+          // We keep forward terms using mulOp as before.
+          mulEWOp := Operator.fromClassification(
+            (NFOperator.MathClassification.MULTIPLICATION, NFOperator.SizeClassification.ELEMENT_WISE),
+            operator.ty);
+          addEWOp := Operator.fromClassification(
+            (NFOperator.MathClassification.ADDITION, NFOperator.SizeClassification.ELEMENT_WISE),
+            operator.ty);
+
+          // Does the numerator contain any arrays?
+          hasArrayNum := List.any(arguments, Expression.hasArrayType);
+
+          numProd := Expression.MULTARY(arguments, {}, operator);
+          denomProd := Expression.MULTARY(inv_arguments, {}, operator);
+
+          // Forward derivative term accumulator
+          upstream := diffArguments.current_grad;
+          // Differentiate numerator factors
+          i := 1;
+          for f in arguments loop
+            // Remove first occurrence of f from numerator list using List.deleteMemberOnTrue
+            // this may be an issue if f occurs multiple times
+            arg_rest := listDelete(arguments, i);
+            e_over_f := Expression.MULTARY(arg_rest, {denomProd}, operator);
+
+            // Reverse local upstream for f: G_f = upstream .* (exp / f)
+            localUpF := Expression.MULTARY({upstream, e_over_f}, {}, mulEWOp);
+
+            // If f is scalar but numerator has arrays -> sum-reduce to scalar
+            if Expression.isScalar(f) and hasArrayNum then
+              localUpF := typeSumCall(localUpF);
+            end if;
+
+            // Recurse into f with G_f
+            diffArguments.current_grad := localUpF;
+            (diff_arg, diffArguments) := differentiateExpression(f, diffArguments);
+
+            // Forward term: f' * (exp / f)
+            term := Expression.MULTARY({diff_arg, e_over_f}, {}, mulEWOp);
+            i := i + 1;
+          end for;
+
+          sub_terms := {};
+          // Differentiate denominator factors
+          i := 1;
+          powSizeClass := if Expression.hasArrayType(listHead(inv_arguments)) then NFOperator.SizeClassification.ARRAY_SCALAR else NFOperator.SizeClassification.SCALAR;
+          powOp := Operator.fromClassification((NFOperator.MathClassification.POWER, powSizeClass), Type.REAL());
+          for g in inv_arguments loop
+            arg_rest := listDelete(inv_arguments, i);
+            // exp / g : add one more g to denominator list
+            e_over_g := Expression.MULTARY({numProd}, g :: inv_arguments, operator);
+
+            // Reverse local upstream for g: G_g = - upstream .* (exp / g)
+            localUpG := Expression.negate(Expression.MULTARY({upstream, e_over_g}, {}, mulEWOp));
+
+            // If numerator has arrays -> sum-reduce scalar denominator upstream
+            if hasArrayNum then
+              localUpG := typeSumCall(localUpG);
+            end if;
+
+            diffArguments.current_grad := localUpG;
+            (diff_arg, diffArguments) := differentiateExpression(g, diffArguments);
+
+            // Forward term: - g' * (exp / g)
+            term := Expression.negate(Expression.MULTARY({diff_arg, e_over_g}, {}, mulEWOp));
+            i := i + 1;
+          end for;
+          // Restore upstream gradient
+          diffArguments.current_grad := upstream;
+          then (Expression.END());
+
+      case Expression.MULTARY(arguments = arguments, inv_arguments = inv_arguments, operator = operator)
+        guard(Operator.getMathClassification(operator) == NFOperator.MathClassification.MULTIPLICATION
+              and (not listEmpty(inv_arguments)))
         algorithm
           // the frontend treats multiplication equally for elementwise and non-elementwise, but pow needs to have the correct operator
           if not listEmpty(inv_arguments) and Type.isArray(Expression.typeOf(listHead(inv_arguments))) then
@@ -2113,28 +2995,74 @@ public
   end differentiateMultary;
 
   function differentiateMultaryMultiplicationArgs
-    "prod(f_i)) = sum((f_i)' * prod(f_k | k <> i))
+    "prod_i(f_i)' = sum_i((f_i)' * prod(f_k | k <> i))
     e.g. (fgh)' = f'gh + fg'h + fgh'"
     input list<Expression> arguments;
     output list<Expression> new_arguments = {};
     input output DifferentiationArguments diffArguments;
     input Operator operator;
   protected
-    Expression diff_arg;
+    Expression diff_arg, current_grad, localUp, restProd;
     Array<List<Expression>> diff_lists;
+    List<Expression> arg_products, restArgs;
     Integer idx = 1;
+    Boolean isReverse = Util.isSome(diffArguments.adjoint_map);
+    Operator mulEWOp = Operator.fromClassification(
+      (NFOperator.MathClassification.MULTIPLICATION, NFOperator.SizeClassification.ELEMENT_WISE),
+      operator.ty);
   algorithm
-    diff_lists := arrayCreate(listLength(arguments), {});
+    if isReverse then
+      arg_products := Expression.productOfListExceptSelf(arguments, makeMulFromOperator(operator));
+    else
+      diff_lists := arrayCreate(listLength(arguments), {});
+    end if;
     for arg in arguments loop
+      if isReverse then
+        current_grad := diffArguments.current_grad;
+
+        // product of remaining factors (k <> i)
+        restProd := listGet(arg_products, idx);
+
+        // Build local upstream = current_grad .* restProd, but flatten if restProd is also a MULTARY product.
+        restArgs := match restProd
+          local
+            Operator mOp;
+            list<Expression> rA;
+          case Expression.MULTARY(operator = mOp, arguments = rA)
+            guard Operator.getMathClassification(mOp) == NFOperator.MathClassification.MULTIPLICATION
+          then rA;
+          else {restProd};
+        end match;
+
+        localUp := Expression.MULTARY(
+          listAppend({current_grad}, restArgs),
+          {},
+          mulEWOp); // may need to adapt this aswell to scalar when scalar
+
+        // If current argument is scalar but the rest-product is array-shaped,
+        // sum-reduce the local upstream to a scalar before recursing.
+        if Expression.isScalar(arg) and Expression.hasArrayType(restProd) then
+          localUp := typeSumCall(localUp);
+        end if;
+        diffArguments.current_grad := localUp;
+      end if;
+
       (diff_arg, diffArguments) := differentiateExpression(arg, diffArguments);
-      for i in 1:arrayLength(diff_lists) loop
-        diff_lists[i] := if i == idx then diff_arg :: diff_lists[i] else arg :: diff_lists[i];
-      end for;
+
+      if isReverse then
+        diffArguments.current_grad := current_grad;
+      else
+        for i in 1:arrayLength(diff_lists) loop
+          diff_lists[i] := if i == idx then diff_arg :: diff_lists[i] else arg :: diff_lists[i];
+        end for;
+      end if;
       idx := idx + 1;
     end for;
-    for i in arrayLength(diff_lists):-1:1 loop
-      new_arguments := Expression.MULTARY(listReverse(diff_lists[i]), {}, operator) :: new_arguments;
-    end for;
+    if not isReverse then
+      for i in arrayLength(diff_lists):-1:1 loop
+        new_arguments := Expression.MULTARY(listReverse(diff_lists[i]), {}, operator) :: new_arguments;
+      end for;
+    end if;
   end differentiateMultaryMultiplicationArgs;
 
   function differentiateEquationAttributes
@@ -2176,38 +3104,385 @@ public
     end if;
   end differentiateBinding;
 
-  protected
-    function minusOne
-      input output Expression exp;
-      input Operator op;
-    algorithm
-      exp := match exp
-        local
-          Real r;
-          Integer i;
-        case Expression.REAL(value = r)         then Expression.REAL(r - 1.0);
-        case Expression.INTEGER(value = i)      then Expression.INTEGER(i - 1);
-        else Expression.MULTARY({exp}, {Expression.makeOne(op.ty)}, op);
-      end match;
-    end minusOne;
+protected
+  function minusOne
+    input output Expression exp;
+    input Operator op;
+  algorithm
+    exp := match exp
+      local
+        Real r;
+        Integer i;
+      case Expression.REAL(value = r)         then Expression.REAL(r - 1.0);
+      case Expression.INTEGER(value = i)      then Expression.INTEGER(i - 1);
+      else Expression.MULTARY({exp}, {Expression.makeOne(op.ty)}, op);
+    end match;
+  end minusOne;
 
-    function expLog
-      input output Expression exp;
-    algorithm
-      exp := match exp
-        local
-          Real r;
-          Integer i;
-        case Expression.REAL(value = r)     then Expression.REAL(log(r));
-        case Expression.INTEGER(value = i)  then Expression.REAL(log(i));
-        else Expression.CALL(Call.makeTypedCall(
-          fn          = NFBuiltinFuncs.LOG_REAL,
-          args        = {exp},
-          variability = Expression.variability(exp),
-          purity      = NFPrefixes.Purity.PURE
-        ));
-      end match;
-    end expLog;
+  function expLog
+    input output Expression exp;
+  algorithm
+    exp := match exp
+      local
+        Real r;
+        Integer i;
+      case Expression.REAL(value = r)     then Expression.REAL(log(r));
+      case Expression.INTEGER(value = i)  then Expression.REAL(log(i));
+      else Expression.CALL(Call.makeTypedCall(
+        fn          = NFBuiltinFuncs.LOG_REAL,
+        args        = {exp},
+        variability = Expression.variability(exp),
+        purity      = NFPrefixes.Purity.PURE
+      ));
+    end match;
+  end expLog;
+
+  function makeMulFromOperator
+    input Operator operator;
+    output Operator mulOp;
+  algorithm
+    mulOp := Operator.fromClassification((NFOperator.MathClassification.MULTIPLICATION, Operator.getSizeClassification(operator)), operator.ty);
+  end makeMulFromOperator;
+
+  function typeTransposeCall
+    "Create a typed builtin transpose(mat) call without expanding mat.
+     Returns mat if it is not an array with at least 2 dimensions."
+    input Expression mat;
+    output Expression tr;
+  protected
+    Type inTy = Expression.typeOf(mat);
+    list<Type.Dimension> dims;
+    Type elTy;
+    Type resTy;
+    NFCall call;
+    NFPrefixes.Variability var = Expression.variability(mat);
+    NFPrefixes.Purity pur = Expression.purity(mat);
+  algorithm
+    // Only handle array types
+    if not Type.isArray(inTy) then
+      tr := mat;
+      return;
+    end if;
+
+    elTy := Type.arrayElementType(inTy);
+    dims := Type.arrayDims(inTy);
+
+    // Need at least 2 dimensions to transpose
+    if listLength(dims) < 2 then
+      tr := mat;
+      return;
+    end if;
+
+    // Swap first two dimensions; keep the rest
+    resTy := Type.ARRAY(
+      elTy,
+      listAppend({listGet(dims,2), listGet(dims,1)}, listRest(listRest(dims)))
+    );
+
+    call := NFCall.makeTypedCall(NFBuiltinFuncs.TRANSPOSE, {mat}, var, pur, resTy);
+    tr := Expression.CALL(call);
+  end typeTransposeCall;
+
+    // Helper: build a typed builtin promote(A, n) call that appends (n - ndims(A)) singleton dims.
+  function typePromoteCall
+    input Expression arr;   // A (scalar or array)
+    input Integer n;        // desired rank
+    output Expression promoted;
+  protected
+    Type inTy = Expression.typeOf(arr);
+    Type elTy;
+    list<Type.Dimension> inDims;
+    Integer m, k;
+    list<Type.Dimension> ones = {};
+    list<Type.Dimension> resDims;
+    Type resTy;
+    NFCall call;
+    NFPrefixes.Variability var = Expression.variability(arr);
+    NFPrefixes.Purity pur = Expression.purity(arr);
+    NFFunction.Function PROMOTE_FUNC;
+  algorithm
+    elTy := if Type.isArray(inTy) then Type.arrayElementType(inTy) else inTy;
+    inDims := if Type.isArray(inTy) then Type.arrayDims(inTy) else {};
+    m := listLength(inDims);
+
+    // Append singleton dims to the right until rank n
+    for k in 1:max(0, n - m) loop
+      ones := Dimension.fromInteger(1) :: ones;
+    end for;
+    resDims := List.append_reverse(ones, inDims);
+    resTy := if n > 0 then Type.ARRAY(elTy, resDims) else elTy;
+
+    call := NFCall.makeTypedCall(NFBuiltinFuncs.PROMOTE, {arr, Expression.INTEGER(n)}, var, pur, resTy);
+    promoted := Expression.CALL(call);
+  end typePromoteCall;
+
+
+  function typeSumCall
+    "
+    Create a typed builtin sum(A) call without expanding A.
+      Semantics:
+        - If A is not an array => return A (defensive fallback).
+        - If A is an array => return sum over all elements, resulting in a scalar of element type.
+    "
+    input Expression arr;
+    output Expression s;
+  protected
+    Type inTy = Expression.typeOf(arr);
+    list<Type.Dimension> dims;
+    Type elTy;
+    Type resTy;
+    NFCall call;
+    NFPrefixes.Variability var = Expression.variability(arr);
+    NFPrefixes.Purity pur = Expression.purity(arr);
+    NFFunction.Function SUM_FUNC;
+  algorithm
+    // Not an array: just return expression (sum(x) == x)
+    if not Type.isArray(inTy) then
+      s := arr;
+      return;
+    end if;
+
+    elTy := Type.arrayElementType(inTy);
+    dims := Type.arrayDims(inTy);
+    resTy := elTy; // always reduce to scalar of element type
+
+    call := NFCall.makeTypedCall(NFBuiltinFuncs.SUM, {arr}, var, pur, resTy);
+    s := Expression.CALL(call);
+  end typeSumCall;
+
+  // Helper: build matrix * vector (or matrix * matrix) MULTARY with a proper mul operator
+  function makeMul
+    input Expression a;
+    input Expression b;
+    input Operator.SizeClassification sc;
+    input Type ty;
+    output Expression res;
+  algorithm
+    res := Expression.BINARY(
+      a,
+      Operator.fromClassification((NFOperator.MathClassification.MULTIPLICATION, sc), ty),
+      b);
+  end makeMul;
+
+  // Drop the last array dimension by indexing it with 1:
+  // arr[..., 1]. If arr is not an array, return it unchanged.
+  function dropLastDimIndex1
+    input Expression arr;
+    output Expression res;
+  protected
+    Type ty = Expression.typeOf(arr);
+    list<Type.Dimension> dims;
+    Integer m, i;
+    list<Subscript> subs = {};
+  algorithm
+    if not Type.isArray(ty) then
+      res := arr; return;
+    end if;
+
+    dims := Type.arrayDims(ty);
+    m := listLength(dims);
+    if m <= 0 then
+      res := arr; return;
+    end if;
+
+    // Build subscripts: WHOLE for first m-1 dims, INDEX(1) for last
+    for i in 1:(m-1) loop
+      subs := Subscript.WHOLE() :: subs;
+    end for;
+    subs := Subscript.INDEX(Expression.INTEGER(1)) :: subs;
+    subs := listReverse(subs);
+
+    res := Expression.applySubscripts(subs, arr, true);
+  end dropLastDimIndex1;
+
+  // Build vector[n] with elements A[i,i], i=1..n (literal array).
+  function extractDiagonalVector
+    input Expression A;     // matrix
+    input Integer n;
+    input Type vecTy;       // vector[n] type
+    output Expression v;
+  protected
+    list<Expression> elems = {};
+    Integer i;
+  algorithm
+    for i in 1:n loop
+      elems := Expression.applySubscripts(
+        { Subscript.INDEX(Expression.INTEGER(i)), Subscript.INDEX(Expression.INTEGER(i)) },
+        A, true) :: elems;
+    end for;
+    v := Expression.ARRAY(vecTy, listArray(listReverse(elems)), false);
+  end extractDiagonalVector;
+
+  function dbg
+    input String s;
+  algorithm
+    if Flags.isSet(Flags.DEBUG_ADJOINT) then
+      print(s + "\n");
+    end if;
+  end dbg;
+
+  function updateAdjointList
+    input Option<list<Expression>> oldOpt;
+    input Expression current_grad;
+    output list<Expression> newList;
+  protected
+    list<Expression> oldList;
+  algorithm
+    newList := match oldOpt
+      // probably the only case since empty list is used to initialize
+      case SOME(oldList) then (current_grad :: oldList);
+      else {current_grad};
+    end match;
+  end updateAdjointList;
+
+  // Build a 1D one-hot array of the same type as derBaseCref:
+  // zeros(n) with value placed at index idx.
+  function buildOneHotVectorAdjoint
+    input ComponentRef derBaseCref;
+    input Integer idx;                // 1-based
+    input Expression value;           // scalar element to place
+    output Option<Expression> onehot; // NONE if sizes unknown or not vector
+  protected
+    Type arrTy;
+    list<Type.Dimension> dims;
+    list<Integer> sizes;
+    Integer n, i;
+    Type elTy;
+    list<Expression> elems = {};
+  algorithm
+    // Array type of the pDER base cref
+    arrTy := ComponentRef.getSubscriptedType(derBaseCref);
+    if not Type.isArray(arrTy) then
+      onehot := NONE(); return;
+    end if;
+
+    dims := Type.arrayDims(arrTy);
+    if not List.hasOneElement(dims) then
+      // Only handle simple vectors here
+      onehot := NONE(); return;
+    end if;
+
+    sizes := NFDimension.sizes(dims);
+    if listEmpty(sizes) then
+      onehot := NONE(); return;
+    end if;
+
+    n := listHead(sizes);
+    elTy := Type.arrayElementType(arrTy);
+
+    // Build [0,0,...,value,...,0]
+    for i in 1:n loop
+      elems := (if i == idx then value else Expression.makeZero(elTy)) :: elems;
+    end for;
+
+    onehot := SOME(Expression.ARRAY(
+      arrTy,
+      listArray(listReverse(elems)),
+      false
+    ));
+  end buildOneHotVectorAdjoint;
+
+  // Build a multi-hot scatter vector for a SLICE subscript:
+  // result = sum_t [onehot(idx_t) * seed_elem_t]
+  // Handles:
+  //   - WHOLE()                     -> returns seed
+  //   - SLICE {i1,i2,...}           -> sum of one-hots; indices must be literal integers
+  //   - SLICE range lo[:st]:hi      -> sum over lo, lo+st, ..., hi; lo,st,hi must be literal integers
+  function buildMultiHotVectorAdjoint
+    input ComponentRef derBaseCref;
+    input Subscript sub;        // SLICE or WHOLE
+    input Expression seed;      // upstream gradient for the sliced view (scalar or vector)
+    output Option<Expression> scatter; // NONE() if not handled
+  protected
+    Type arrTy;
+    Type elTy;
+    Operator addOp;
+    Boolean seedIsArray;
+    Integer m, j, loI, hiI, stI;
+    array<Expression> elems = arrayCreate(0, Expression.INTEGER(0));
+    Option<Expression> accOpt;
+    Option<Expression> ohOpt;
+    Expression acc, seedElem, term;
+    list<Expression> idxElems;
+  algorithm
+    arrTy := ComponentRef.getSubscriptedType(derBaseCref);
+    elTy  := Type.arrayElementType(arrTy);
+    addOp := Operator.fromClassification(
+      (NFOperator.MathClassification.ADDITION, NFOperator.SizeClassification.ELEMENT_WISE),
+      elTy
+    );
+    seedIsArray := Type.isArray(Expression.typeOf(seed));
+
+    scatter := match sub
+      // case Subscript.SLICE(slice = Expression.ARRAY(elements = elems))
+      //     algorithm
+      //       m := arrayLength(elems);
+      //       if m == 0 then
+      //         scatter := SOME(Expression.makeZero(arrTy)); return;
+      //       end if;
+
+      //       acc := Expression.makeZero(arrTy);
+
+      //       for j in 1:m loop
+      //         // slice index must be a literal integer
+      //         if match elems[j] case Expression.INTEGER() then true else false end match then
+      //           // pick element seed[j] if seed is a vector, else reuse scalar seed
+      //           seedElem := if seedIsArray
+      //             then Expression.applySubscripts({Subscript.INDEX(Expression.INTEGER(j))}, seed, true)
+      //             else seed;
+
+      //           ohOpt := buildOneHotVectorAdjoint(derBaseCref, Expression.toInteger(elems[j]), seedElem);
+      //           if Util.isSome(ohOpt) then
+      //             acc := Expression.MULTARY({acc, Util.getOption(ohOpt)}, {}, addOp);
+      //           else
+      //             scatter := NONE(); return;
+      //           end if;
+      //         else
+      //           scatter := NONE(); return;
+      //         end if;
+      //       end for;
+
+      //       scatter := SOME(acc);
+      //     then scatter;
+      // SLICE with range lo:hi (unit step)
+      case Subscript.SLICE(slice = Expression.RANGE(
+          start = Expression.INTEGER(loI),
+          step  = NONE(),
+          stop  = Expression.INTEGER(hiI)))
+        algorithm
+          if hiI < loI then
+            scatter := SOME(Expression.makeZero(arrTy)); return;
+          end if;
+
+          accOpt := NONE();
+          m := hiI - loI + 1;
+          for j in 0:(m-1) loop
+            ohOpt := buildOneHotVectorAdjoint(
+              derBaseCref,
+              loI + j,
+              if seedIsArray
+                then Expression.applySubscripts({Subscript.INDEX(Expression.INTEGER(j+1))}, seed, true)
+                else seed
+            );
+            if Util.isSome(ohOpt) then
+              if Util.isSome(accOpt) then
+                acc := Util.getOption(accOpt);
+                term := Util.getOption(ohOpt);
+                accOpt := SOME(Expression.MULTARY({acc, term}, {}, addOp));
+              else
+                accOpt := ohOpt;
+              end if;
+            else
+              scatter := NONE(); return;
+            end if;
+          end for;
+
+          scatter := if Util.isSome(accOpt) then accOpt else SOME(Expression.makeZero(arrTy));
+        then scatter;
+
+      else NONE();
+    end match;
+  end buildMultiHotVectorAdjoint;
 
   annotation(__OpenModelica_Interface="backend");
 end NBDifferentiate;

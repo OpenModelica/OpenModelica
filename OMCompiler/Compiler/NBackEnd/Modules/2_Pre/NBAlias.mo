@@ -298,7 +298,7 @@ protected
     Pointer<Equation> eqPtr;
     EquationAttributes attr;
   algorithm
-    EqData.mapExp(eqData, function filterPre(acc = exceptionSet));
+    EqData.mapExp(eqData, function filterExceptions(acc = exceptionSet));
     for keyValueTpl in UnorderedMap.toList(replacements) loop
       (cref, exp) := keyValueTpl;
       if isValidReplacement(cref, exp, exceptionSet) then
@@ -330,8 +330,8 @@ protected
     end if;
   end isValidReplacement;
 
-  function filterPre
-    "Filter expression for pre call"
+  function filterExceptions
+    "Filter expression for all forbidden aliases (pre, dynamic optimization annotations, ...)"
     input output Expression exp;
     input UnorderedSet<ComponentRef> acc;
   algorithm
@@ -342,12 +342,16 @@ protected
 
       case Expression.CALL(call = call as Call.TYPED_CALL(arguments = {Expression.CREF(cref = cref)}))
         guard(AbsynUtil.pathString(Function.nameConsiderBuiltin(call.fn)) == "pre") algorithm
-        UnorderedSet.add(cref, acc);
+          UnorderedSet.add(cref, acc);
+        then ();
+      case Expression.CREF(cref = cref) algorithm
+        // TODO: add guard here (dont do alias for optimization annotations)
+        // UnorderedSet.add(cref, acc);
       then ();
 
       else ();
     end match;
-  end filterPre;
+  end filterExceptions;
 
   function dumpReplacements
     input UnorderedMap<ComponentRef, Expression> replacements;

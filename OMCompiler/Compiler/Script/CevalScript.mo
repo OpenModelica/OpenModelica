@@ -315,7 +315,7 @@ algorithm
 end compileModel;
 
 public function loadFile "load the file or the directory structure if the file is named package.mo"
-  input String name;
+  input String inName;
   input String encoding;
   input Absyn.Program p;
   input Boolean checkUses;
@@ -324,10 +324,25 @@ public function loadFile "load the file or the directory structure if the file i
   input Boolean allowWithin = true;
   output Absyn.Program outProgram;
 protected
-  String dir,filename,cname,prio,mp;
+  String dir,name=inName,filename,cname,prio,mp,msg;
   list<String> rest;
 algorithm
-  true := System.regularFileExists(name);
+  // If the name refers to a directory, try to load a package.mo inside it instead.
+  if System.directoryExists(inName) then
+    name := inName + Autoconf.pathDelimiter + "package.mo";
+  end if;
+
+  if not System.regularFileReadable(name) then
+    if not System.regularFileExists(name) then
+      msg := "file does not exist";
+    else
+      msg := "read access denied";
+    end if;
+
+    Error.addMessage(Error.LOAD_FILE_FAILED, {name, msg});
+    fail();
+  end if;
+
   (dir,filename) := Util.getAbsoluteDirectoryAndFile(name);
   if filename == "package.mo" or filename == "package.moc" then
     cname::rest := System.strtok(List.last(System.strtok(dir,"/"))," ");

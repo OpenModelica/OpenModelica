@@ -208,6 +208,34 @@ template ScalarVariableType(SimCode simCode, DAE.ComponentRef simVarCref, AliasV
     else error(sourceInfo(), 'ScalarVariableType: <%unparseType(type_)%>')
 end ScalarVariableType;
 
+template attributeString(DAE.Exp exp, String attr_name)
+::=
+  match exp
+    case ICONST(__)
+    case RCONST(__)
+    case SCONST(__)
+    case BCONST(__)
+    case ENUM_LITERAL(__) then ' <%attr_name%>="<%initValXml(exp, '')%>"'
+    case ARRAY(__)        then if Expression.isSimpleLiteralValue(exp, true) then ' <%attr_name%>="<%array |> elem => initValXml(elem, '&quot;') ;separator=" "%>"' else ''
+    /* this is basically an each operator, just write one value and repeat it for the size when using it later */
+    case REDUCTION()      then if Expression.isSimpleLiteralValue(expr, true) then '<%attributeString(expr, attr_name)%>' else ''
+    else ''
+end attributeString;
+
+template attributeOptionString(Option<DAE.Exp> exp_opt, String attr_name)
+ "generates code for an attribute"
+::=
+  match exp_opt
+    case SOME(exp) then attributeString(exp, attr_name)
+    else ''
+end attributeOptionString;
+
+template unitString(String unit, String attr_name)
+ "generates code for unit attribute"
+::=
+  if unit then ' <%attr_name%>="<%Util.escapeModelicaStringToXmlString(unit)%>"'
+end unitString;
+
 template ScalarVariableTypeStartAttribute(SimCode simCode, DAE.ComponentRef simVarCref, AliasVariable simVarAlias, Option<DAE.Exp> startValue, Text type, Text& complexStartExpressions, Text stateDerVectorName)
  "generates code for start attribute,
   adds non-constant start values to complexStartExpressions"
