@@ -606,8 +606,10 @@ algorithm
     case Exp.SCONST() then exp.string;
     case Exp.BCONST() then boolString(exp.bool);
     case Exp.ENUM_LITERAL() then intString(exp.index);
+    case Exp.ARRAY() guard Expression.isSimpleLiteralValue(exp, true) then stringDelimitList(list(expString(e) for e in exp.array), " ");
+    case Exp.REDUCTION() then expString(exp.expr);
     else "";
-  //else algorithm Error.addInternalError("initial value of unknown type: " + printExpStr(exp), sourceInfo()); then fail();
+    //else algorithm Error.addInternalError("initial value of unknown type: " + printExpStr(exp), sourceInfo()); then fail();
   end match;
 end expString;
 
