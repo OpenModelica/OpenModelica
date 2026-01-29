@@ -21,11 +21,15 @@ loadString("
   end A;
 
   model M
-    extends A(redeclare model B = MB, redeclare model C = C(y = 2.0));
+    extends A(redeclare model B = MB, redeclare model C = MC(y = 2.0));
 
     model MB
       Real x = 2.0;
     end MB;
+
+    model MC
+      Real y;
+    end MC;
   end M;
 ");
 
@@ -59,7 +63,7 @@ getModelInstance(M, prettyPrint = true);
 //             \"prefixes\": {
 //               \"redeclare\": true
 //             },
-//             \"baseClass\": \"C\",
+//             \"baseClass\": \"MC\",
 //             \"modifiers\": {
 //               \"y\": \"2.0\"
 //             }
@@ -117,37 +121,93 @@ getModelInstance(M, prettyPrint = true);
 //           },
 //           {
 //             \"$kind\": \"class\",
-//             \"name\": \"B\",
+//             \"name\": \"M.B\",
 //             \"restriction\": \"model\",
 //             \"prefixes\": {
-//               \"replaceable\": true
+//               \"redeclare\": true
 //             },
+//             \"elements\": [
+//               {
+//                 \"$kind\": \"extends\",
+//                 \"baseClass\": {
+//                   \"name\": \"M.MB\",
+//                   \"restriction\": \"model\",
+//                   \"elements\": [
+//                     {
+//                       \"$kind\": \"component\",
+//                       \"name\": \"x\",
+//                       \"type\": \"Real\",
+//                       \"modifiers\": \"2.0\",
+//                       \"value\": {
+//                         \"binding\": 2
+//                       }
+//                     }
+//                   ],
+//                   \"source\": {
+//                     \"filename\": \"<interactive>\",
+//                     \"lineStart\": 19,
+//                     \"columnStart\": 5,
+//                     \"lineEnd\": 21,
+//                     \"columnEnd\": 11
+//                   }
+//                 }
+//               }
+//             ],
 //             \"source\": {
 //               \"filename\": \"<interactive>\",
-//               \"lineStart\": 5,
-//               \"columnStart\": 17,
-//               \"lineEnd\": 7,
-//               \"columnEnd\": 10
+//               \"lineStart\": 17,
+//               \"columnStart\": 25,
+//               \"lineEnd\": 17,
+//               \"columnEnd\": 37
 //             }
 //           },
 //           {
 //             \"$kind\": \"class\",
-//             \"name\": \"C\",
+//             \"name\": \"M.C\",
 //             \"restriction\": \"model\",
 //             \"prefixes\": {
-//               \"replaceable\": true
+//               \"redeclare\": true
 //             },
+//             \"elements\": [
+//               {
+//                 \"$kind\": \"extends\",
+//                 \"modifiers\": {
+//                   \"y\": \"2.0\"
+//                 },
+//                 \"baseClass\": {
+//                   \"name\": \"M.MC\",
+//                   \"restriction\": \"model\",
+//                   \"elements\": [
+//                     {
+//                       \"$kind\": \"component\",
+//                       \"name\": \"y\",
+//                       \"type\": \"Real\",
+//                       \"value\": {
+//                         \"binding\": 2
+//                       }
+//                     }
+//                   ],
+//                   \"source\": {
+//                     \"filename\": \"<interactive>\",
+//                     \"lineStart\": 23,
+//                     \"columnStart\": 5,
+//                     \"lineEnd\": 25,
+//                     \"columnEnd\": 11
+//                   }
+//                 }
+//               }
+//             ],
 //             \"source\": {
 //               \"filename\": \"<interactive>\",
-//               \"lineStart\": 9,
-//               \"columnStart\": 17,
-//               \"lineEnd\": 11,
-//               \"columnEnd\": 10
+//               \"lineStart\": 17,
+//               \"columnStart\": 49,
+//               \"lineEnd\": 17,
+//               \"columnEnd\": 70
 //             }
 //           },
 //           {
 //             \"$kind\": \"class\",
-//             \"name\": \"D\",
+//             \"name\": \"M.D\",
 //             \"restriction\": \"model\",
 //             \"prefixes\": {
 //               \"replaceable\": {
@@ -157,7 +217,54 @@ getModelInstance(M, prettyPrint = true);
 //                 }
 //               }
 //             },
-//             \"baseClass\": \"A.C\",
+//             \"elements\": [
+//               {
+//                 \"$kind\": \"extends\",
+//                 \"baseClass\": {
+//                   \"name\": \"M.C\",
+//                   \"restriction\": \"model\",
+//                   \"prefixes\": {
+//                     \"redeclare\": true
+//                   },
+//                   \"elements\": [
+//                     {
+//                       \"$kind\": \"extends\",
+//                       \"modifiers\": {
+//                         \"y\": \"2.0\"
+//                       },
+//                       \"baseClass\": {
+//                         \"name\": \"M.MC\",
+//                         \"restriction\": \"model\",
+//                         \"elements\": [
+//                           {
+//                             \"$kind\": \"component\",
+//                             \"name\": \"y\",
+//                             \"type\": \"Real\",
+//                             \"value\": {
+//                               \"binding\": 1
+//                             }
+//                           }
+//                         ],
+//                         \"source\": {
+//                           \"filename\": \"<interactive>\",
+//                           \"lineStart\": 23,
+//                           \"columnStart\": 5,
+//                           \"lineEnd\": 25,
+//                           \"columnEnd\": 11
+//                         }
+//                       }
+//                     }
+//                   ],
+//                   \"source\": {
+//                     \"filename\": \"<interactive>\",
+//                     \"lineStart\": 17,
+//                     \"columnStart\": 49,
+//                     \"lineEnd\": 17,
+//                     \"columnEnd\": 70
+//                   }
+//                 }
+//               }
+//             ],
 //             \"source\": {
 //               \"filename\": \"<interactive>\",
 //               \"lineStart\": 13,
@@ -172,7 +279,7 @@ getModelInstance(M, prettyPrint = true);
 //           \"lineStart\": 17,
 //           \"columnStart\": 5,
 //           \"lineEnd\": 17,
-//           \"columnEnd\": 70
+//           \"columnEnd\": 71
 //         }
 //       }
 //     }
@@ -181,7 +288,7 @@ getModelInstance(M, prettyPrint = true);
 //     \"filename\": \"<interactive>\",
 //     \"lineStart\": 16,
 //     \"columnStart\": 3,
-//     \"lineEnd\": 22,
+//     \"lineEnd\": 26,
 //     \"columnEnd\": 8
 //   }
 // }"
