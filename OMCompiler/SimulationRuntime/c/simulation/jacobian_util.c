@@ -56,6 +56,8 @@ void initJacobian(JACOBIAN* jacobian, unsigned int sizeCols, unsigned int sizeRo
   jacobian->seedVars = (modelica_real*) calloc(sizeCols, sizeof(modelica_real));
   jacobian->resultVars = (modelica_real*) calloc(sizeRows, sizeof(modelica_real));
   jacobian->tmpVars = (modelica_real*) calloc(sizeTmpVars, sizeof(modelica_real));
+  jacobian->dag = NULL;
+  jacobian->evalSelection = NULL;
   jacobian->evalColumn = evalColumn;
   jacobian->constantEqns = constantEqns;
   jacobian->sparsePattern = sparsePattern;
