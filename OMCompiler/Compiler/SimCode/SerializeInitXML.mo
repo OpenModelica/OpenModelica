@@ -505,14 +505,15 @@ function scalarVariableTypeAttribute
 protected
   String expStr;
 algorithm
-  expStr := Util.applyOptionOrDefault(attr, expString, "");
-  if expStr <> "" then
+  try
+    expStr := expString(Util.getOption(attr));
     File.write(file, " ");
     File.write(file, name);
     File.write(file, "=\"");
-    File.writeEscape(file, expStr, XML);
+    File.write(file, expStr);
     File.write(file, "\"");
-  end if;
+  else
+  end try;
 end scalarVariableTypeAttribute;
 
 function scalarVariableTypeStringAttribute
@@ -603,12 +604,12 @@ algorithm
   str := match exp
     case Exp.ICONST() then intString(exp.integer);
     case Exp.RCONST() then realString(exp.real);
-    case Exp.SCONST() then exp.string;
+    case Exp.SCONST() then Util.escapeModelicaStringToXmlString(exp.string);
     case Exp.BCONST() then boolString(exp.bool);
     case Exp.ENUM_LITERAL() then intString(exp.index);
     case Exp.ARRAY() guard Expression.isSimpleLiteralValue(exp, true) then stringDelimitList(list(expString(e) for e in exp.array), " ");
     case Exp.REDUCTION() then expString(exp.expr);
-    else "";
+    else fail();
     //else algorithm Error.addInternalError("initial value of unknown type: " + printExpStr(exp), sourceInfo()); then fail();
   end match;
 end expString;
