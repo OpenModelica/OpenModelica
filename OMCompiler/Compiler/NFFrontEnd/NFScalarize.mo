@@ -204,7 +204,7 @@ algorithm
     // filter sliced variables
     // ToDo: do this more efficiently and not create them in the first place
     if not (listEmpty(indices) or listLength(indices) == listLength(vars)) then
-      vars := List.keepPositions(vars, indices);
+      vars := List.keepPositions(vars, indices, zeroBased = true);
     end if;
   else
     Error.assertion(false, getInstanceName() + " failed for: " + Variable.toString(var), sourceInfo());

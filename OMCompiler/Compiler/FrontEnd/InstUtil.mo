@@ -7014,7 +7014,7 @@ algorithm
   vars1 := listReverse(vars1);
   equations1 := List.deletePositions(equations, is);
   equations1 := list(DAEUtil.moveElementToInitialSection(eq) for eq in equations);
-  i := 0;
+  i := 1;
   for eq in equations1 loop
     _ := match eq
       case DAE.INITIALEQUATION(exp1=DAE.CREF(ty=DAE.T_COMPLEX()), exp2=DAE.CALL(path=path))
@@ -7052,7 +7052,7 @@ Helper function for propagateBinding"
   input DAE.ComponentRef inCref;
   input list<DAE.Element> inEquations;
   output DAE.Exp outExp;
-  input output Integer i=0;
+  input output Integer i=1;
 algorithm
   outExp :=match (inCref, inEquations)
     local
