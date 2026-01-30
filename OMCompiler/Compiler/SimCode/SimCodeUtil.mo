@@ -5141,7 +5141,6 @@ algorithm
         tmpJac = SimCode.emptyJacobian;
         tmpJac.matrixName = name;
         linearModelMatrices = tmpJac::inJacobianMatrices;
-        // FIXME maybe we should just skip the matrix instead of making it empty
         (linearModelMatrices, uniqueEqIndex) = createSymbolicJacobianssSimCode(inSymJacobians, inSimVarHT, iuniqueEqIndex, restnames, linearModelMatrices);
       then
         (linearModelMatrices, uniqueEqIndex);
