@@ -1051,7 +1051,7 @@ void initializeDataStruc(DATA *data, threadData_t *threadData)
 
   /* init eval selection for functionODE */
   data->modelData->dag = NULL;
-  data->simulationInfo->evalSelection = allocEvalSelection(data->modelData->dag);
+  data->simulationInfo->evalSelection = NULL;
 
   /* prepare RingBuffer */
   for (i = 0; i < SIZERINGBUFFER; i++) {
