@@ -1928,19 +1928,22 @@ QPair<double, bool> VariablesWidget::readVariableValue(QString variable, double 
 {
   double value = 0.0;
   bool found = false;
+  const double tolerance = 1e-12;
 
   if (mModelicaMatReader.file) {
     ModelicaMatVariable_t* var = omc_matlab4_find_var(&mModelicaMatReader, variable.toUtf8().constData());
     if (var) {
       omc_matlab4_val(&value, &mModelicaMatReader, var, time);
       found = true;
-    } else {
     }
   } else if (mpCSVData) {
     double *timeDataSet = read_csv_dataset(mpCSVData, "time");
     if (timeDataSet) {
       for (int i = 0 ; i < mpCSVData->numsteps ; i++) {
-        if (QString::number(timeDataSet[i]).compare(QString::number(time)) == 0) {
+        // relative distance. See #14959
+        double diff  = qAbs(timeDataSet[i] - time);
+        double scale = qMax(qAbs(timeDataSet[i]), qAbs(time));
+        if (diff <= tolerance * qMax(1.0, scale)) {
           double *varDataSet = read_csv_dataset(mpCSVData, variable.toUtf8().constData());
           if (varDataSet) {
             value = varDataSet[i];
@@ -1963,7 +1966,10 @@ QPair<double, bool> VariablesWidget::readVariableValue(QString variable, double 
           break;
         }
         QStringList values = currentLine.split(",");
-        if (QString::number(time).compare(values[0]) == 0) {
+        const double t = values[0].toDouble();
+        double diff  = qAbs(t - time);
+        double scale = qMax(qAbs(t), qAbs(time));
+        if (diff <= tolerance * qMax(1.0, scale)) {
           value = values[1].toDouble();
           found = true;
           break;
