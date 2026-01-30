@@ -15,7 +15,7 @@ test: clean
 	$(MAKE) CMakeCrossCompile
 
 dockerpull:
-	docker pull ghcr.io/openmodelica/crossbuild:v1.26.0-dev
+	docker pull ghcr.io/openmodelica/crossbuild:v1.27.0
 
 fmuExportCrossCompile:
 	HOME=$(CURDIR)/../../../libraries/ $(OMC) fmuExportCrossCompile.mos
@@ -39,6 +39,7 @@ check-CMakeCrossCompile-files:
 	@file CMakeCrossCompile/Pendulum_FMU/binaries/win64/Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum.dll | grep "PE32+ executable (DLL) (console) x86-64, for MS Windows" || (file Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum.fmutmp/binaries/win64/Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum.dll ; false)
 	@file CMakeCrossCompile/Pendulum_FMU/binaries/linux32/Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum.so | grep "ELF *32-bit *LSB *shared *object, Intel 80386, version 1 (SYSV), dynamically linked" || (file Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum.fmutmp/binaries/linux32/Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum.so ; false)
 	@file CMakeCrossCompile/Pendulum_FMU/binaries/linux64/Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum.so | grep "ELF *64-bit *LSB *shared *object, x86-64, version 1 (SYSV), dynamically linked" || (file Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum.fmutmp/binaries/linux64/Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum.so ; false)
+# Only one linux64 binary type in a 2.0 FMU possible
 #	@file CMakeCrossCompile/Pendulum_FMU/binaries/arm-linux-gnueabihf/Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum.so | grep "ELF *32-bit *LSB *shared *object, ARM, EABI5 version 1 (SYSV), dynamically linked" || (file Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum.fmutmp/binaries/arm-linux-gnueabihf/Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum.so ; false)
 
 fmu-check:
