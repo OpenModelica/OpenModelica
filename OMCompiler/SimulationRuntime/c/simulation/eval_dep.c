@@ -81,17 +81,19 @@ EVAL_DAG* allocEvalDAG(size_t nVars, size_t nEqns)
  */
 void freeEvalDAG(EVAL_DAG* dag)
 {
-  free(dag->select);
-  for (size_t i = 0; i < dag->nEqns; i++)
-    free(dag->eqDep[i]);
-  free(dag->eqDep);
-  free(dag->nEqDep);
-  free(dag->mapVarToEqNode);
-  free(dag);
+  if (dag) {
+    free(dag->select);
+    for (size_t i = 0; i < dag->nEqns; i++)
+      free(dag->eqDep[i]);
+    free(dag->eqDep);
+    free(dag->nEqDep);
+    free(dag->mapVarToEqNode);
+    free(dag);
+  }
 }
 
 /**
- * @brief Create empty selection
+ * @brief Create empty selection from given DAG
  *
  * @param dag
  * @return EVAL_SELECTION*
@@ -115,8 +117,10 @@ EVAL_SELECTION* allocEvalSelection(EVAL_DAG* dag)
  */
 void freeEvalSelection(EVAL_SELECTION* selection)
 {
-  free(selection->idx);
-  free(selection);
+  if (selection) {
+    free(selection->idx);
+    free(selection);
+  }
 }
 
 /**

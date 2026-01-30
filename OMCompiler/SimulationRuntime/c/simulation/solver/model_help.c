@@ -1321,6 +1321,7 @@ void deInitializeDataStruc(DATA *data)
   freeArrayReverseIndexMaps(data->simulationInfo);
 
   /* free buffer for adaptive eval */
+  freeEvalSelection(data->simulationInfo->evalSelection);
   freeEvalDAG(data->modelData->dag);
 
   /* free buffer for old state variables */
