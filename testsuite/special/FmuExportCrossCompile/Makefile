@@ -1,7 +1,7 @@
 .PHONE: clean test fmuExportCrossCompile CMakeCrossCompile
 
 # Note: Requires PATH to include:
-# all cross-compilation targets (including OSX)
+# all cross-compilation targets (no OSX)
 # fmuCheck.linux32 fmuCheck.linux64 fmuCheck.win32.exe fmuCheck.win64.exe
 
 # I hate if conditions in make...
@@ -30,7 +30,6 @@ CMakeCrossCompile:
 check-FmuExportCrossCompile-files:
 	@file FmuExportCrossCompile.fmutmp/binaries/win32/FmuExportCrossCompile.dll | grep "PE32 executable (DLL) (console) Intel 80386, for MS Windows" || (file FmuExportCrossCompile.fmutmp/binaries/win32/FmuExportCrossCompile.dll ; false)
 	@file FmuExportCrossCompile.fmutmp/binaries/win64/FmuExportCrossCompile.dll | grep "PE32+ executable (DLL) (console) x86-64, for MS Windows" || (file FmuExportCrossCompile.fmutmp/binaries/win64/FmuExportCrossCompile.dll ; false)
-	@file FmuExportCrossCompile.fmutmp/binaries/darwin64/FmuExportCrossCompile.dylib | grep "Mach-O 64-bit x86_64 dynamically linked shared library" || (file FmuExportCrossCompile.fmutmp/binaries/darwin64/FmuExportCrossCompile.dylib ; false)
 	@file FmuExportCrossCompile.fmutmp/binaries/linux32/FmuExportCrossCompile.so | grep "ELF *32-bit *LSB *shared *object, Intel 80386, version 1 (SYSV), dynamically linked" || (file FmuExportCrossCompile.fmutmp/binaries/linux32/FmuExportCrossCompile.so ; false)
 	@file FmuExportCrossCompile.fmutmp/binaries/linux64/FmuExportCrossCompile.so | grep "ELF *64-bit *LSB *shared *object, x86-64, version 1 (SYSV), dynamically linked" || (file FmuExportCrossCompile.fmutmp/binaries/linux64/FmuExportCrossCompile.so ; false)
 	@file FmuExportCrossCompile.fmutmp/binaries/arm-linux-gnueabihf/FmuExportCrossCompile.so | grep "ELF *32-bit *LSB *shared *object, ARM, EABI5 version 1 (SYSV), dynamically linked" || (file FmuExportCrossCompile.fmutmp/binaries/arm-linux-gnueabihf/FmuExportCrossCompile.so ; false)
@@ -38,7 +37,6 @@ check-FmuExportCrossCompile-files:
 check-CMakeCrossCompile-files:
 	@file CMakeCrossCompile/Pendulum_FMU/binaries/win32/Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum.dll | grep "PE32 executable (DLL) (console) Intel 80386, for MS Windows" || (file Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum.fmutmp/binaries/win32/Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum.dll ; false)
 	@file CMakeCrossCompile/Pendulum_FMU/binaries/win64/Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum.dll | grep "PE32+ executable (DLL) (console) x86-64, for MS Windows" || (file Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum.fmutmp/binaries/win64/Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum.dll ; false)
-	@file CMakeCrossCompile/Pendulum_FMU/binaries/darwin64/Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum.dylib | grep "Mach-O 64-bit x86_64 dynamically linked shared library" || (file Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum.fmutmp/binaries/darwin64/Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum.dylib ; false)
 	@file CMakeCrossCompile/Pendulum_FMU/binaries/linux32/Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum.so | grep "ELF *32-bit *LSB *shared *object, Intel 80386, version 1 (SYSV), dynamically linked" || (file Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum.fmutmp/binaries/linux32/Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum.so ; false)
 	@file CMakeCrossCompile/Pendulum_FMU/binaries/linux64/Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum.so | grep "ELF *64-bit *LSB *shared *object, x86-64, version 1 (SYSV), dynamically linked" || (file Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum.fmutmp/binaries/linux64/Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum.so ; false)
 #	@file CMakeCrossCompile/Pendulum_FMU/binaries/arm-linux-gnueabihf/Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum.so | grep "ELF *32-bit *LSB *shared *object, ARM, EABI5 version 1 (SYSV), dynamically linked" || (file Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum.fmutmp/binaries/arm-linux-gnueabihf/Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum.so ; false)
