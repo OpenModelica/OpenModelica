@@ -549,7 +549,7 @@ public
         (new_residuals, dae_type) := slicedDAEModeComponent(comp.strict.iteration_vars, comp.strict.residual_eqns, variables, uniqueIndex, slice_set);
       then (new_residuals, dae_type);
 
-      else ({}, if StrongComponent.isDiscrete(comp) then DAEType.REMOVED else DAEType.INNER);
+      else ({}, if isDiscrete(comp) then DAEType.REMOVED else DAEType.INNER);
     end match;
 
     if dae_type == DAEType.RESIDUAL then
@@ -907,8 +907,8 @@ public
     output list<Pointer<Variable>> residuals;
   algorithm
     residuals := match comp
-      case ALGEBRAIC_LOOP()  then Tearing.getResidualVars(comp.strict);
-                        else {};
+      case ALGEBRAIC_LOOP() then Tearing.getResidualVars(comp.strict);
+      else {};
     end match;
   end getLoopResiduals;
 
@@ -917,14 +917,14 @@ public
     output list<Pointer<Variable>> vars;
   algorithm
     vars := match comp
-      case SINGLE_COMPONENT()   then {comp.var};
-      case MULTI_COMPONENT()    then list(Slice.getT(v) for v in comp.vars);
-      case SLICED_COMPONENT()   then {Slice.getT(comp.var)};
-      case RESIZABLE_COMPONENT()then {Slice.getT(comp.var)};
-      case GENERIC_COMPONENT()  then {Slice.getT(comp.var)};
-      case ENTWINED_COMPONENT() then List.flatten(list(getVariables(slice) for slice in comp.entwined_slices));
-      case ALGEBRAIC_LOOP()     then Tearing.getVariables(comp.strict);
-      case ALIAS()              then getVariables(comp.original);
+      case SINGLE_COMPONENT()     then {comp.var};
+      case MULTI_COMPONENT()      then list(Slice.getT(v) for v in comp.vars);
+      case SLICED_COMPONENT()     then {Slice.getT(comp.var)};
+      case RESIZABLE_COMPONENT()  then {Slice.getT(comp.var)};
+      case GENERIC_COMPONENT()    then {Slice.getT(comp.var)};
+      case ENTWINED_COMPONENT()   then List.flatten(list(getVariables(slice) for slice in comp.entwined_slices));
+      case ALGEBRAIC_LOOP()       then Tearing.getVariables(comp.strict);
+      case ALIAS()                then getVariables(comp.original);
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of wrong component: " + toString(comp)});
       then fail();
@@ -936,10 +936,10 @@ public
     output ComponentRef var_cref;
   algorithm
     var_cref := match comp
-      case SLICED_COMPONENT()   then comp.var_cref;
-      case RESIZABLE_COMPONENT()then comp.var_cref;
-      case GENERIC_COMPONENT()  then comp.var_cref;
-      case ALIAS()              then getVarCref(comp.original);
+      case SLICED_COMPONENT()     then comp.var_cref;
+      case RESIZABLE_COMPONENT()  then comp.var_cref;
+      case GENERIC_COMPONENT()    then comp.var_cref;
+      case ALIAS()                then getVarCref(comp.original);
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of wrong component: " + toString(comp)});
       then fail();
@@ -951,14 +951,14 @@ public
     output list<Pointer<Equation>> eqns;
   algorithm
     eqns := match comp
-      case SINGLE_COMPONENT()   then {comp.eqn};
-      case MULTI_COMPONENT()    then {Slice.getT(comp.eqn)};
-      case SLICED_COMPONENT()   then {Slice.getT(comp.eqn)};
-      case RESIZABLE_COMPONENT()then {Slice.getT(comp.eqn)};
-      case GENERIC_COMPONENT()  then {Slice.getT(comp.eqn)};
-      case ENTWINED_COMPONENT() then List.flatten(list(getEquations(slice) for slice in comp.entwined_slices));
-      case ALGEBRAIC_LOOP()     then Tearing.getResidualEqns(comp.strict); // + inner?
-      case ALIAS()              then getEquations(comp.original);
+      case SINGLE_COMPONENT()     then {comp.eqn};
+      case MULTI_COMPONENT()      then {Slice.getT(comp.eqn)};
+      case SLICED_COMPONENT()     then {Slice.getT(comp.eqn)};
+      case RESIZABLE_COMPONENT()  then {Slice.getT(comp.eqn)};
+      case GENERIC_COMPONENT()    then {Slice.getT(comp.eqn)};
+      case ENTWINED_COMPONENT()   then List.flatten(list(getEquations(slice) for slice in comp.entwined_slices));
+      case ALGEBRAIC_LOOP()       then Tearing.getResidualEqns(comp.strict); // + inner?
+      case ALIAS()                then getEquations(comp.original);
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of wrong component: " + toString(comp)});
       then fail();
@@ -970,14 +970,14 @@ public
     output Solve.Status status;
   algorithm
     status := match comp
-      case SINGLE_COMPONENT()   then comp.status;
-      case MULTI_COMPONENT()    then comp.status;
-      case SLICED_COMPONENT()   then comp.status;
-      case RESIZABLE_COMPONENT()then comp.status;
-      case GENERIC_COMPONENT()  then NBSolve.Status.EXPLICIT;
-      case ENTWINED_COMPONENT() then NBSolve.Status.EXPLICIT;
-      case ALGEBRAIC_LOOP()     then comp.status;
-      case ALIAS()              then getSolveStatus(comp.original);
+      case SINGLE_COMPONENT()     then comp.status;
+      case MULTI_COMPONENT()      then comp.status;
+      case SLICED_COMPONENT()     then comp.status;
+      case RESIZABLE_COMPONENT()  then comp.status;
+      case GENERIC_COMPONENT()    then NBSolve.Status.EXPLICIT;
+      case ENTWINED_COMPONENT()   then NBSolve.Status.EXPLICIT;
+      case ALGEBRAIC_LOOP()       then comp.status;
+      case ALIAS()                then getSolveStatus(comp.original);
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of wrong component: " + toString(comp)});
       then fail();
@@ -990,14 +990,14 @@ public
     output Boolean b;
   algorithm
     b := match comp
-      case SINGLE_COMPONENT()   then Equation.isDiscrete(comp.eqn);
-      case MULTI_COMPONENT()    then Equation.isDiscrete(Slice.getT(comp.eqn));
-      case SLICED_COMPONENT()   then Equation.isDiscrete(Slice.getT(comp.eqn));
-      case RESIZABLE_COMPONENT()then Equation.isDiscrete(Slice.getT(comp.eqn));
-      case ENTWINED_COMPONENT() then List.all(comp.entwined_slices, isDiscrete);
-      case GENERIC_COMPONENT()  then Equation.isDiscrete(Slice.getT(comp.eqn));
-      case ALGEBRAIC_LOOP()     then comp.mixed;
-      case ALIAS()              then isDiscrete(comp.original);
+      case SINGLE_COMPONENT()     then Equation.isDiscrete(comp.eqn);
+      case MULTI_COMPONENT()      then Equation.isDiscrete(Slice.getT(comp.eqn));
+      case SLICED_COMPONENT()     then Equation.isDiscrete(Slice.getT(comp.eqn));
+      case RESIZABLE_COMPONENT()  then Equation.isDiscrete(Slice.getT(comp.eqn));
+      case ENTWINED_COMPONENT()   then List.all(comp.entwined_slices, isDiscrete);
+      case GENERIC_COMPONENT()    then Equation.isDiscrete(Slice.getT(comp.eqn));
+      case ALGEBRAIC_LOOP()       then comp.mixed;
+      case ALIAS()                then isDiscrete(comp.original);
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of wrong component: " + toString(comp)});
       then fail();

@@ -84,7 +84,7 @@ public
       Integer numColors                                   "number of colors";
       list<SimGenericCall> generic_loop_calls             "Generic for-loop and array calls";
       Option<UnorderedMap<ComponentRef, SimVar>> jac_map  "hash table for cref -> simVar";
-      Boolean isAdjoint                                 "indicates if this is an adjoint jacobian";
+      Boolean isAdjoint                                   "indicates if this is an adjoint jacobian";
     end SIM_JAC;
 
     function toString
@@ -449,14 +449,8 @@ public
         dep_indices := List.map(dependencies, function UnorderedMap.getOrFail(map = idx_map));
         simPattern := (UnorderedMap.getOrFail(cref, idx_map), List.sort(dep_indices, intGt)) :: simPattern;
       end for;
-      simPattern := List.sort(simPattern, sparsityTplSortGt);
+      simPattern := List.sort(simPattern, Util.compareTupleIntGt);
     end createSparsityPattern;
-
-    function sparsityTplSortGt
-      input tuple<Integer, list<Integer>> col1 "or row1";
-      input tuple<Integer, list<Integer>> col2 "or row2";
-      output Boolean b = Util.tuple21(col1) > Util.tuple21(col2);
-    end sparsityTplSortGt;
 
     function createSparsityColoring
       input Jacobian.SparsityColoring coloring;
