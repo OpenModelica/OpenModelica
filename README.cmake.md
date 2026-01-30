@@ -101,7 +101,7 @@ dependencies (If you need help, follow the instructions
 Note that most of the latest Linux releases do not support Qt5 QTWebKit anymore so one needs to configure with Qt6
 
   ```
-  cmake -S . -B build_cmake -DOM_QT_MAJOR_VERSION=6
+  cmake -S . -B build_cmake -DOM_QT_MAJOR_VERSION=6 -D=OM_OMEDIT_ENABLE_QTWEBENGINE=ON
   ```
 
 
