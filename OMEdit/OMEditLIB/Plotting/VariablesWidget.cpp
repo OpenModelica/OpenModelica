@@ -1937,10 +1937,11 @@ QPair<double, bool> VariablesWidget::readVariableValue(QString variable, double 
     } else {
     }
   } else if (mpCSVData) {
+    const double tolerance = 1e-12;
     double *timeDataSet = read_csv_dataset(mpCSVData, "time");
     if (timeDataSet) {
       for (int i = 0 ; i < mpCSVData->numsteps ; i++) {
-        if (QString::number(timeDataSet[i]).compare(QString::number(time)) == 0) {
+        if (qAbs(timeDataSet[i] - time) <= tolerance) {
           double *varDataSet = read_csv_dataset(mpCSVData, variable.toUtf8().constData());
           if (varDataSet) {
             value = varDataSet[i];
