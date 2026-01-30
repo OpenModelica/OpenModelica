@@ -429,7 +429,9 @@ void Plot::replot()
 
   // Now we need to again loop through curves to set the color and title.
   // Also display y-axis (left or right) only if axis is assigned to at least one curve
-  bool leftAxisVisible = false, rightAxisVisible = false;
+  // if no curves are present then display left y-axis by default. See #14894. The window size is too small without any y-axes.
+  bool leftAxisVisible = mPlotCurvesList.isEmpty() ? true : false;
+  bool rightAxisVisible = false;
   for (int i = 0 ; i < mPlotCurvesList.length() ; i++) {
     // if user has set the custom color for the curve then dont get automatic color for it
     if (!mPlotCurvesList[i]->hasCustomColor()) {
