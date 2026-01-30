@@ -5088,7 +5088,7 @@ algorithm
       Integer uniqueEqIndex, nRows;
 
       list<String> restnames;
-      String name, dummyVar, jacName;
+      String name, dummyVar;
 
       SimCodeVar.SimVars simvars;
       list<SimCode.SimEqSystem> allEquations = {}, constantEqns = {};
@@ -5132,17 +5132,6 @@ algorithm
         linearModelMatrices = tmpJac::inJacobianMatrices;
         (linearModelMatrices, uniqueEqIndex) = createSymbolicJacobianssSimCode(rest, inSimVarHT, iuniqueEqIndex, restnames, linearModelMatrices);
      then
-        (linearModelMatrices, uniqueEqIndex);
-
-    // create empty jacobian if names do not match
-    case ((SOME((_, jacName, _, _, _, _)), _, _, _) :: _, _, _, name::restnames)
-      guard jacName <> name
-      equation
-        tmpJac = SimCode.emptyJacobian;
-        tmpJac.matrixName = name;
-        linearModelMatrices = tmpJac::inJacobianMatrices;
-        (linearModelMatrices, uniqueEqIndex) = createSymbolicJacobianssSimCode(inSymJacobians, inSimVarHT, iuniqueEqIndex, restnames, linearModelMatrices);
-      then
         (linearModelMatrices, uniqueEqIndex);
 
     // if only sparsity pattern is generated
