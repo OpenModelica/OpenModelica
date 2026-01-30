@@ -6321,14 +6321,16 @@ FMIPage::FMIPage(OptionsDialog *pOptionsDialog)
   pNativePlatformCheckBox->setProperty(Helper::fmuPlatformNamePropertyId, "static");
   pPlatformsLayout->addWidget(pNativePlatformCheckBox);
   // docker platforms
+  // image pinned to https://github.com/OpenModelica/openmodelica-crossbuild/pkgs/container/crossbuild/663938369?tag=v1.27.0
+  const QString dockerImage = "ghcr.io/openmodelica/crossbuild@sha256:ea582449710395fd8b1f62f0be735030a9f332de6dcc44ec2914d7ee0692edec";
   QStringList dockerPlarforms;
-  dockerPlarforms << "x86_64-linux-gnu docker run ghcr.io/openmodelica/crossbuild:v1.26.0-dev"
-                  << "i686-linux-gnu docker run ghcr.io/openmodelica/crossbuild:v1.26.0-dev"
-                  << "aarch64-linux-gnu docker run ghcr.io/openmodelica/crossbuild:v1.26.0-dev"
-                  << "arm-linux-gnueabi docker run ghcr.io/openmodelica/crossbuild:v1.26.0-dev"
-                  << "arm-linux-gnueabihf docker run ghcr.io/openmodelica/crossbuild:v1.26.0-dev"
-                  << "x86_64-w64-mingw32 docker run ghcr.io/openmodelica/crossbuild:v1.26.0-dev"
-                  << "i686-w64-mingw32 docker run ghcr.io/openmodelica/crossbuild:v1.26.0-dev";
+  dockerPlarforms << ("x86_64-linux-gnu docker run " + dockerImage)
+                  << ("i686-linux-gnu docker run " + dockerImage)
+                  << ("aarch64-linux-gnu docker run " + dockerImage)
+                  << ("arm-linux-gnueabi docker run " + dockerImage)
+                  << ("arm-linux-gnueabihf docker run " + dockerImage)
+                  << ("x86_64-w64-mingw32 docker run " + dockerImage)
+                  << ("i686-w64-mingw32 docker run " + dockerImage);
   foreach (QString dockerPlarform, dockerPlarforms) {
     QCheckBox *pCheckBox = new QCheckBox(dockerPlarform);
     pCheckBox->setProperty(Helper::fmuPlatformNamePropertyId, dockerPlarform);

@@ -83,7 +83,6 @@ public
       String host_and_port;
       String host;
       Option<String> port;
-      String host_and_port;
       String namespace;
       String repository_and_tag;
       String repository;
@@ -130,7 +129,7 @@ public
     // TODO: docker manifest inspect is experimental!
     // See https://docs.docker.com/reference/cli/docker/manifest/inspect/
     cmd := ContainerImage.containerTool + " manifest inspect " + imageName + " -v";
-    if System.systemCall(cmd, outFile=manifestFile) <> 0 then
+    if not System.systemCall(cmd, outFile=manifestFile) == 0 then
       Error.addCompilerError("Failed to retrieve manifest of container image '" + imageName + "'.");
       Error.addCompilerNotification(System.readFile(manifestFile) + "\n");
       System.removeFile(manifestFile);
@@ -155,6 +154,7 @@ public
     // Sanity check for 256-SHA
     if not StringUtil.startsWith(digest_sha256_str, "sha256:") then
       Error.addCompilerError("Retrieve digest 256-SHA has unexpected format: '" + digest_sha256_str + "'.");
+      System.removeFile(manifestFile);
       fail();
     end if;
 
@@ -225,8 +225,8 @@ public
     hasKnownDigest := match (image.digest, isKnownTag)
       local
         String digest;
-      // https://github.com/OpenModelica/openmodelica-crossbuild/pkgs/container/crossbuild/577190934?tag=v1.26.0-dev
-      case (SOME("sha256:"), true) then true;
+      // https://github.com/OpenModelica/openmodelica-crossbuild/pkgs/container/crossbuild/663938369?tag=v1.27.0
+      case (SOME("sha256:ea582449710395fd8b1f62f0be735030a9f332de6dcc44ec2914d7ee0692edec"), true) then true;
       case (SOME(digest), true)
       algorithm
         Error.addCompilerWarning("Container image \"" + toString(image) + "\" has unknown digest \"" + digest + "\".");
@@ -289,9 +289,7 @@ public
       Error.addCompilerError("Failed to verify signature of container image '" + imageName + "'.");
       Error.addCompilerNotification(System.readFile(cosignLogFile) + "\n");
       System.removeFile(cosignLogFile);
-      // TODO: Fail if failing to verify!
-      // fail();
-      return;
+      fail();
     end if;
 
     System.removeFile(cosignLogFile);
