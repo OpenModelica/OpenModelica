@@ -1220,7 +1220,7 @@ public
     list<Pointer<Variable>> arg_children;
   algorithm
     subscripts    := ComponentRef.subscriptsAllFlat(cref);
-    arg_children  := BVariable.getRecordChildren(getVarPointer(cref, sourceInfo()));
+    arg_children  := getRecordChildren(getVarPointer(cref, sourceInfo()));
     children      := list(ComponentRef.mergeSubscripts(subscripts, getVarName(child), true, true) for child in arg_children);
   end getRecordChildrenCref;
 
@@ -1285,7 +1285,7 @@ public
         Variable pre;
       case qual as InstNode.VAR_NODE()
         algorithm
-          var_ptr := BVariable.getVarPointer(cref, sourceInfo());
+          var_ptr := getVarPointer(cref, sourceInfo());
           qual.name := PREVIOUS_STR;
           pre_cref := ComponentRef.append(cref, ComponentRef.fromNode(qual, ComponentRef.scalarType(cref)));
           pre := fromCref(pre_cref, Variable.attributes(Pointer.access(var_ptr)));
@@ -1456,7 +1456,7 @@ public
       case qual as InstNode.VAR_NODE()
         algorithm
           // get the variable pointer from the old cref to later on link back to it
-          old_var_ptr := BVariable.getVarPointer(cref, sourceInfo());
+          old_var_ptr := getVarPointer(cref, sourceInfo());
           // prepend the start str
           qual.name := START_STR;
           start_cref := ComponentRef.append(cref, ComponentRef.fromNode(qual, ComponentRef.scalarType(cref)));
@@ -1621,7 +1621,7 @@ public
       case qual as InstNode.VAR_NODE()
         algorithm
           // get the variable pointer from the old cref to later on link back to it
-          old_var_ptr := BVariable.getVarPointer(cref, sourceInfo());
+          old_var_ptr := getVarPointer(cref, sourceInfo());
           // prepend the tmp str
           qual.name := TEMPORARY_STR;
           tmp_cref := ComponentRef.append(cref, ComponentRef.fromNode(qual, ComponentRef.scalarType(cref)));

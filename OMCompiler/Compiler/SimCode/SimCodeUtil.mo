@@ -5147,7 +5147,7 @@ algorithm
 
     // if only sparsity pattern is generated
     case (((optionBDAE, (sparsepattern, sparsepatternT, (diffCompRefs, diffedCompRefs), _), colsColors, _))::rest, _, _, name::restnames)
-      guard  checkForEmptyBDAE(optionBDAE)
+      guard checkForEmptyBDAE(optionBDAE)
       equation
         if Flags.isSet(Flags.JAC_DUMP2) then
           print("Start sparse pattern without analytical Jacobians\n");
@@ -5337,27 +5337,13 @@ end getSimVars2Crefs;
 protected function replaceSeedVarsName
   input list<SimCodeVar.SimVar> inVars;
   input String inMatrixName;
-  output list<SimCodeVar.SimVar> outSimVars = {};
-protected
-  DAE.ComponentRef newCref, oldCref;
-algorithm
-  for v in inVars loop
-      oldCref := v.name;
-      newCref := Differentiate.createSeedCrefName(oldCref, inMatrixName);
-      outSimVars := replaceSimVarName(newCref, v)::outSimVars;
-  end for;
-  outSimVars := Dangerous.listReverseInPlace(outSimVars);
+  output list<SimCodeVar.SimVar> outSimVars = list(replaceSimVarName(Differentiate.createSeedCrefName(v.name, inMatrixName), v) for v in inVars);
 end replaceSeedVarsName;
 
 protected function sortBackVarWithSimVarsOrder
   input SimCodeVar.SimVar var;
   input BackendDAE.Variables vars;
-  output BackendDAE.Var outVar;
-protected
-  DAE.ComponentRef cref;
-algorithm
-  SimCodeVar.SIMVAR(name = cref) := var;
-  outVar := BackendVariable.getVarSingle(cref, vars);
+  output BackendDAE.Var outVar = BackendVariable.getVarSingle(var.name, vars);
 end sortBackVarWithSimVarsOrder;
 
 protected function createJacSimVarsColumn "author: wbraun"
