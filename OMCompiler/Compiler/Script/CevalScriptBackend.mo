@@ -3779,6 +3779,7 @@ algorithm
       list<String> dockerImgArgs;
       ContainerImage.ContainerImage dockerImage;
       list<String> dockerArguments;
+      String dockerRunArgs;
       Boolean isOpenModelicaImage, hasKnownDigest;
       Integer uid;
       String cidFile, volumeID, containerID, userID;
@@ -3829,6 +3830,7 @@ algorithm
         dockerImage := ContainerImage.getDigestSha(dockerImage);
         Error.addCompilerNotification("Using docker image '" + ContainerImage.toString(dockerImage) + "' for cross compilation.");
         (isOpenModelicaImage, hasKnownDigest) := ContainerImage.isTrustedOpenModelicaImage(dockerImage);
+        dockerRunArgs := stringDelimitList(dockerArguments, " ") + " " + ContainerImage.toString(dockerImage);
 
         uid := System.getuid();
         cidFile := fmutmp+".cidfile";
@@ -3905,7 +3907,7 @@ algorithm
                             fmiTarget +
                             CMAKE_BUILD_TYPE +
                             " ..";
-        cmd := "docker run " + userID + " --rm -w /fmu -v " + volumeID + ":/fmu " + stringDelimitList(dockerImgArgs," ") +
+        cmd := "docker run " + userID + " --rm -w /fmu -v " + volumeID + ":/fmu " + dockerRunArgs +
                " sh -c " + dquote +
                   "cd " + dquote + "/fmu/" + fmuSourceDir + dquote + " && " +
                   "mkdir " + buildDir + " && cd " + buildDir + " && " +
@@ -3919,7 +3921,7 @@ algorithm
         // Docker cp can't handle too long names on Windows.
         // Workaround: Zip it in the container, copy it to host, unzip it
         if isWindows then
-          cmd := "docker run " + userID + " --rm -w /fmu -v " + volumeID + ":/fmu " + stringDelimitList(dockerImgArgs," ") +
+          cmd := "docker run " + userID + " --rm -w /fmu -v " + volumeID + ":/fmu " + dockerRunArgs +
                  " tar -zcf comp-fmutmp.tar.gz " + fmutmp;
           runDockerCmd(cmd, dockerLogFile, cleanup=true, volumeID=volumeID, containerID=containerID);
 

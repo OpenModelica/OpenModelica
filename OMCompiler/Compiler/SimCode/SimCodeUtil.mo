@@ -15962,8 +15962,8 @@ algorithm
                   "             NAMES " + lib + "\n" +
                   "             PATHS ${EXTERNAL_LIBDIRECTORIES} NO_DEFAULT_PATH)\n" +
                   "if(NOT ${" + lib + "})\n" +
-                  "  message(WARNING \"Could not find library \")" + "\n" +
-                  "  message(STATUS \"zlib is refered by ModelicaMatIO, but not used by default. Try compiling without linking.\")" + "\n" +
+                  "  message(WARNING \"Could not find library zlib\")" + "\n" +
+                  "  message(STATUS \"zlib is referred by ModelicaMatIO, but not used by default. Try compiling without linking.\")" + "\n" +
                   "else()\n" +
                   "  message(STATUS \"Linking ${" + lib + "}\")" + "\n" +
                   "  target_link_libraries(${FMU_NAME_HASH} PRIVATE ${" + lib + "})" + "\n" +
@@ -15973,9 +15973,12 @@ algorithm
       cmakeCode := cmakeCode + "find_library(" + lib + "\n" +
                   "             NAMES " + lib + "\n" +
                   "             PATHS ${EXTERNAL_LIBDIRECTORIES} NO_DEFAULT_PATH)\n" +
-                  "message(STATUS \"Linking ${" + lib + "}\")" + "\n" +
-                  "target_link_libraries(${FMU_NAME_HASH} PRIVATE ${" + lib + "})" + "\n" +
-                  "list(APPEND RUNTIME_DEPENDS ${" + lib + "})" + "\n";
+                  "if(NOT ${" + lib + "})\n" +
+                  "  message(FATAL_ERROR \"Could not find library " + lib + "\")\n" +
+                  "endif()\n" +
+                  "message(STATUS \"Linking ${" + lib + "}\")\n" +
+                  "target_link_libraries(${FMU_NAME_HASH} PRIVATE ${" + lib + "})\n" +
+                  "list(APPEND RUNTIME_DEPENDS ${" + lib + "})\n";
     end if;
   end for;
 end getCmakeLinkLibrariesCode;
