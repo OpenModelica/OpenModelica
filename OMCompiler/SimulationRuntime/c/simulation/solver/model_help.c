@@ -1050,7 +1050,8 @@ void initializeDataStruc(DATA *data, threadData_t *threadData)
   computeVarReverseIndices(data->simulationInfo, data->modelData);
 
   /* init eval selection for functionODE */
-  data->simulationInfo->evalSelection = NULL;
+  data->modelData->dag = NULL;
+  data->simulationInfo->evalSelection = allocEvalSelection(data->modelData->dag);
 
   /* prepare RingBuffer */
   for (i = 0; i < SIZERINGBUFFER; i++) {

@@ -100,10 +100,13 @@ void freeEvalDAG(EVAL_DAG* dag)
  */
 EVAL_SELECTION* allocEvalSelection(EVAL_DAG* dag)
 {
-  EVAL_SELECTION* selection = (EVAL_SELECTION*) malloc(sizeof(EVAL_SELECTION));
-  selection->n = 0;
-  selection->idx = (size_t*) malloc(dag->nEqns * sizeof(size_t));
-  selection->dag = dag;
+  EVAL_SELECTION* selection = NULL;
+  if (dag) {
+    selection = (EVAL_SELECTION*) malloc(sizeof(EVAL_SELECTION));
+    selection->n = 0;
+    selection->idx = (size_t*) malloc(dag->nEqns * sizeof(size_t));
+    selection->dag = dag;
+  }
 
   return selection;
 }
