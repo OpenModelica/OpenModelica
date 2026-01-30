@@ -54,6 +54,7 @@
 #include "newtonIteration.h"
 #include "nonlinearSystem.h"
 #include "solver_main.h"
+#include "../eval_dep.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -101,6 +102,8 @@ typedef struct DATA_GBODEF{
   int nSlowStates;                                  /* Numbers of slow states */
   int *fastStatesIdx, *fastStates_old;              /* Indices of fast states, old values for comparison and update of sparsity pattern */
   int *slowStatesIdx;                               /* Indices of slow states */
+
+  EVAL_SELECTION* evalSelectionFast;                /* selection of fast equations for functionODE */
 
   modelica_boolean didEventStep;                    /* Will be used for updating the derivatives */
   int ringBufferSize;                               /* Buffer size for storing the error, stepSize and last values of states (yv) and their derivatives (kv) */

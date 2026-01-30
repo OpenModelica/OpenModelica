@@ -4,6 +4,7 @@ find_package(LAPACK REQUIRED)
 
 set(OMC_SIMRT_SIMULATION_SOURCES
   "arrayIndex.c"
+  "eval_dep.c"
   "jacobian_util.c"
   "modelinfo.c"
   "omc_simulation_util.c"
@@ -77,6 +78,7 @@ set(OMC_SIMRT_SIMULATION_CINC
 
 set(OMC_SIMRT_SIMULATION_HEADERS
   "arrayIndex.h"
+  "eval_dep.h"
   "jacobian_util.h"
   "modelinfo.h"
   "omc_simulation_util.h"

@@ -45,6 +45,7 @@
 #include "util/rtclock.h"
 #include "util/simulation_options.h"
 #include "util/context.h"
+#include "simulation/eval_dep.h"
 
 #define omc_dummyVarInfo {-1,-1,"","",omc_dummyFileInfo_val}
 #define omc_dummyEquationInfo {-1,0,0,-1,NULL}
@@ -203,6 +204,8 @@ typedef struct JACOBIAN
   modelica_real* tmpVars;               /* Partial derivatives used to compute resultVars */
   modelica_real* resultVars;            /* Result column/row for given seed vector */
   modelica_real dae_cj;                 /* Is the scalar in the system Jacobian, proportional to the inverse of the step size. From User Documentation for ida v5.4.0 equation (2.5). */
+  EVAL_DAG* dag;                        /* dependency of rows and inner partial derivatives */
+  EVAL_SELECTION* evalSelection;        /* selection for evalColumn (don't allocate, only set to other pointer) */
   jacobianColumn_func_ptr evalColumn;   /* symbolic jacobian column/row based on seed vector */
   jacobianColumn_func_ptr constantEqns; /* Constant equations independent of seed vector */
   modelica_boolean isRowEval;           /* Flag indicating if evalColumn evaluates rows instead of columns and
@@ -686,6 +689,8 @@ typedef struct MODEL_DATA
   long nAliasBoolean;           /* Number of boolean alias variables */
   long nAliasString;            /* Number of string alias variables */
 
+  EVAL_DAG* dag;                        /* dependency of functionODE */
+
   long nZeroCrossings;
   long nRelations;
   long nMathEvents;                    /* number of math triggering functions e.g. cail, floor, integer */
@@ -892,6 +897,9 @@ typedef struct SIMULATION_INFO
   array_index_t* integerAliasReverseIndex;
   array_index_t* booleanAliasReverseIndex;
   array_index_t* stringAliasReverseIndex;
+
+  /* adaptive eval of functionODE */
+  EVAL_SELECTION* evalSelection;        /* selection for functionODE (don't allocate, only point to other selection) */
 
   /* old vars for event handling */
   modelica_real timeValueOld;

@@ -602,7 +602,7 @@ template functionEquationsSynchronous(Integer base_idx, Integer sub_idx, list<tu
 
     <%addRootsTempArray()%>
 
-    <%equations_call(equations, modelNamePrefix, contextSimulationDiscrete)%>
+    <%equations_call(equations, modelNamePrefix, contextSimulationDiscrete, '')%>
 
     return 0;
   }
@@ -3633,7 +3633,7 @@ template functionEquationsMultiFiles(list<SimEqSystem> inEqs, Integer numEqs, In
                   OMC_DISABLE_OPT
                   void <%name%>(DATA *data, threadData_t *threadData)
                   {
-                    <%equations_call(eqs, modelNamePrefix, contextOther)%>
+                    <%equations_call(eqs, modelNamePrefix, contextOther, '')%>
                   }
                   >>
                   +
@@ -3698,7 +3698,7 @@ template functionInitialEquations_lambda0(list<SimEqSystem> initalEquations_lamb
     int <%symbolName(modelNamePrefix,"functionInitialEquations_lambda0")%>(DATA *data, threadData_t *threadData)
     {
       data->simulationInfo->discreteCall = 1;
-      <%equations_call(initalEquations_lambda0, modelNamePrefix, contextSimulationDiscrete)%>
+      <%equations_call(initalEquations_lambda0, modelNamePrefix, contextSimulationDiscrete, '')%>
       data->simulationInfo->discreteCall = 0;
 
       return 0;
@@ -4447,7 +4447,7 @@ template functionXXX_system(list<SimEqSystem> eqs, String name, Integer n, Strin
 
   static void function<%name%>_system<%n%>(DATA *data, threadData_t *threadData)
   {
-    <%equations_call(eqs, modelNamePrefix, contextSimulationNonDiscrete)%>
+    <%equations_call(eqs, modelNamePrefix, contextSimulationNonDiscrete, 'data->simulationInfo->evalSelection')%>
   }
   >>
 end functionXXX_system;
@@ -4800,7 +4800,7 @@ template functionDAE(list<SimEqSystem> allEquationsPlusWhen, String modelNamePre
     data->simulationInfo->needToIterate = 0;
     data->simulationInfo->discreteCall = 1;
     <%symbolName(modelNamePrefix,"functionLocalKnownVars")%>(data, threadData);
-    <%equations_call(allEquationsPlusWhen, modelNamePrefix, contextSimulationDiscrete)%>
+    <%equations_call(allEquationsPlusWhen, modelNamePrefix, contextSimulationDiscrete, '')%>
     data->simulationInfo->discreteCall = 0;
 
   #if !defined(OMC_MINIMAL_RUNTIME)
@@ -4822,7 +4822,7 @@ template functionLocalKnownVars(list<SimEqSystem> localKnownVars, String modelNa
 
   int <%symbolName(modelNamePrefix,"functionLocalKnownVars")%>(DATA *data, threadData_t *threadData)
   {
-    <%equations_call(localKnownVars, modelNamePrefix, contextSimulationDiscrete)%>
+    <%equations_call(localKnownVars, modelNamePrefix, contextSimulationDiscrete, '')%>
 
     return 0;
   }
@@ -4877,7 +4877,7 @@ template functionZeroCrossing(list<ZeroCrossing> zeroCrossings, list<SimEqSystem
   {
     data->simulationInfo->callStatistics.functionZeroCrossingsEquations++;
 
-    <%equations_call(equationsForZeroCrossings, modelNamePrefix, contextZeroCross)%>
+    <%equations_call(equationsForZeroCrossings, modelNamePrefix, contextZeroCross, '')%>
 
     return 0;
   }
@@ -5195,7 +5195,7 @@ template functionAssertsforCheck(list<SimEqSystem> algAndEqAssertsEquations, Str
   OMC_DISABLE_OPT
   int <%symbolName(modelNamePrefix,"checkForAsserts")%>(DATA *data, threadData_t *threadData)
   {
-    <%equations_call(algAndEqAssertsEquations, modelNamePrefix, contextSimulationDiscrete)%>
+    <%equations_call(algAndEqAssertsEquations, modelNamePrefix, contextSimulationDiscrete, '')%>
 
     return 0;
   }
@@ -5699,7 +5699,7 @@ case JACOBIAN_CONTEXT() then
   {
     int index = <%symbolName(modelNamePrefix,"INDEX_JAC_")%><%name%>;
 
-    <%equations_call(constantEqns, modelNamePrefix, context)%>
+    <%equations_call(constantEqns, modelNamePrefix, context, '')%>
 
     return 0;
   }
@@ -5726,7 +5726,7 @@ case JACOBIAN_CONTEXT() then
   {
     int index = <%symbolName(modelNamePrefix,"INDEX_JAC_")%><%name%>;
 
-    <%equations_call(jacEquations, modelNamePrefix, context)%>
+    <%equations_call(jacEquations, modelNamePrefix, context, 'jacobian->evalSelection')%>
 
     return 0;
   }
@@ -6072,7 +6072,7 @@ template equation_call(SimEqSystem eq, String modelNamePrefix, Context context)
     >>
 end equation_call;
 
-template equations_call(list<SimEqSystem> eqs, String modelNamePrefix, Context context)
+template equations_call(list<SimEqSystem> eqs, String modelNamePrefix, Context context, String selection)
   "Generates sequence of equation calls"
 ::=
   match eqs
@@ -6086,14 +6086,32 @@ template equations_call(list<SimEqSystem> eqs, String modelNamePrefix, Context c
     let argsType = match context
       case JACOBIAN_CONTEXT() then 'DATA*, threadData_t*, JACOBIAN*, JACOBIAN*'
       else 'DATA*, threadData_t*'
+    let body = match selection
+      case "" then
+        <<
+        for (int id = 0; id < <%nFuncs%>; id++) {
+          eqFunctions[id](<%args%>);
+        }
+        >>
+      else
+        <<
+        if (<%selection%>) {
+          for (int i = 0; i < <%selection%>->n; i++) {
+            int id = <%selection%>->idx[i];
+            eqFunctions[id](<%args%>);
+          }
+        } else {
+          for (int id = 0; id < <%nFuncs%>; id++) {
+            eqFunctions[id](<%args%>);
+          }
+        }
+        >>
     <<
     static void (*const eqFunctions[<%nFuncs%>])(<%argsType%>) = {
       <%eqs |> eq => '<%name%>_<%equationIndexGeneral(eq)%>'; separator=",\n"%>
     };
 
-    for (int id = 0; id < <%nFuncs%>; id++) {
-      eqFunctions[id](<%args%>);
-    }
+    <%body%>
     >>
 end equations_call;
 
@@ -6731,7 +6749,7 @@ case SES_IFEQUATION(ifbranches=ifbranches, elsebranch=elsebranch) then
     <<
     <%conditionline%>
     {
-      <%equations_call(eqns, modelNamePrefixStr, context)%>
+      <%equations_call(eqns, modelNamePrefixStr, context, '')%>
     }
     >>
     ;separator="\n")
@@ -6740,7 +6758,7 @@ case SES_IFEQUATION(ifbranches=ifbranches, elsebranch=elsebranch) then
   <%preExp%>
   <%IfEquation%>else
   {
-    <%equations_call(elsebranch, modelNamePrefixStr, context)%>
+    <%equations_call(elsebranch, modelNamePrefixStr, context, '')%>
   }
   >>
 end equationIfEquationAssign;

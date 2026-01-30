@@ -36,7 +36,6 @@ extern "C" {
 #endif
 
 /* Forward declaration of DATA */
-struct DATA;
 typedef struct DATA DATA;
 
 /**

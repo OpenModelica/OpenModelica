@@ -53,6 +53,7 @@
 #include "stateset.h"
 #include "spatialDistribution.h"
 #include "../../meta/meta_modelica.h"
+#include "../eval_dep.h"
 
 #ifdef USE_PARJAC
   #include <omp.h>
@@ -1048,6 +1049,9 @@ void initializeDataStruc(DATA *data, threadData_t *threadData)
   allocateArrayReverseIndexMaps(data->modelData, data->simulationInfo, threadData);
   computeVarReverseIndices(data->simulationInfo, data->modelData);
 
+  /* init eval selection for functionODE */
+  data->simulationInfo->evalSelection = NULL;
+
   /* prepare RingBuffer */
   for (i = 0; i < SIZERINGBUFFER; i++) {
     /* set time value */
@@ -1315,6 +1319,9 @@ void deInitializeDataStruc(DATA *data)
 
   freeArrayIndexMaps(data->simulationInfo);
   freeArrayReverseIndexMaps(data->simulationInfo);
+
+  /* free buffer for adaptive eval */
+  freeEvalDAG(data->modelData->dag);
 
   /* free buffer for old state variables */
   free(data->simulationInfo->realVarsOld);
