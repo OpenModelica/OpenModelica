@@ -543,7 +543,7 @@ void AbstractAnimationWindow::openFMUSettingsDialog(VisualizationFMU* pVisualiza
 }
 
 /*!
- * \brief AbstractAnimationWindow::updateSceneFunction
+ * \brief AbstractAnimationWindow::updateScene
  * updates the visualization objects
  */
 void AbstractAnimationWindow::updateScene()
