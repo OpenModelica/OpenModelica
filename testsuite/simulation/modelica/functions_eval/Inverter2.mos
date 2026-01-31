@@ -14,7 +14,7 @@ res := OpenModelica.Scripting.compareSimulationResults("Inverter2_res.mat",
   {"mn.cc.idrain",
   "mn.irs",
   "mn.ird",
-  "mn.Dinternal"}); 
+  "mn.Dinternal"});
 getErrorString();
 // Result:
 // true
@@ -28,7 +28,7 @@ getErrorString();
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// "[Modelica 3.2.1+maint.om/Electrical/Spice3.mo:4630:5-4631:56:writable] Warning: Parameter mn.IC has no value, and is fixed during initialization (fixed=true), using available start value (start=-1e+40) as default value.
+// "[Modelica 3.2.1+maint.om/Electrical/Spice3.mo:4630:5-4631:56:writable] Warning: Parameter mn.IC has no binding, and is fixed during initialization (fixed=true), using available start value (start=-1e+40) as default value.
 // "
 // {"Files Equal!"}
 // "Warning: 'compareSimulationResults' is deprecated. It is recommended to use 'diffSimulationResults' instead.

@@ -89,10 +89,10 @@ unloadOMSimulator();
 // true
 // ""
 // "Modelica.Blocks.Sources.Constant.fmu"
-// "[Modelica 3.2.3+maint.om/Blocks/Sources.mo:216:5-217:102:writable] Warning: Parameter k has no value, and is fixed during initialization (fixed=true), using available start value (start=1.0) as default value.
+// "[Modelica 3.2.3+maint.om/Blocks/Sources.mo:216:5-217:102:writable] Warning: Parameter k has no binding, and is fixed during initialization (fixed=true), using available start value (start=1.0) as default value.
 // "
 // "Modelica.Blocks.Sources.Sine.fmu"
-// "[Modelica 3.2.3+maint.om/Blocks/Sources.mo:517:5-517:73:writable] Warning: Parameter freqHz has no value, and is fixed during initialization (fixed=true), using available start value (start=1.0) as default value.
+// "[Modelica 3.2.3+maint.om/Blocks/Sources.mo:517:5-517:73:writable] Warning: Parameter freqHz has no binding, and is fixed during initialization (fixed=true), using available start value (start=1.0) as default value.
 // "
 // <?xml version="1.0"?>
 // <ssd:SystemStructureDescription xmlns:ssc="http://ssp-standard.org/SSP1/SystemStructureCommon" xmlns:ssd="http://ssp-standard.org/SSP1/SystemStructureDescription" xmlns:ssv="http://ssp-standard.org/SSP1/SystemStructureParameterValues" xmlns:ssm="http://ssp-standard.org/SSP1/SystemStructureParameterMapping" xmlns:ssb="http://ssp-standard.org/SSP1/SystemStructureSignalDictionary" xmlns:oms="https://raw.githubusercontent.com/OpenModelica/OMSimulator/master/schema/oms.xsd" name="test" version="1.0">

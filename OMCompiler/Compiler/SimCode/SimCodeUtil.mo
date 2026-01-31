@@ -7463,7 +7463,7 @@ protected
   DAE.ComponentRef cr;
   DAE.ElementSource source;
 algorithm
-  e := BackendVariable.varBindExpStartValueNoFail(inVar);
+  e := BackendVariable.varBindExpStartValueNoFail(inVar, sourceInfo());
   source := BackendVariable.getVarSource(inVar);
   if Types.isArray(inVar.varType) then
     varExp := BackendVariable.varExp(inVar);
@@ -8127,7 +8127,7 @@ algorithm
            exp = replaceCrefWithStartValue(exp,varsIn);
          end if;
        elseif BackendVariable.varHasStartValue(var) then
-         exp = BackendVariable.varStartValue(var);
+         exp = BackendVariable.varStartValue(var, sourceInfo());
        else
          exp = expIn;
        end if;
@@ -10434,6 +10434,7 @@ protected function setDefaultStartValue
   output Option<DAE.Exp> exp;
 algorithm
   exp := match type_
+    case _ guard not Config.defaultStartValueAvailable() then NONE();
     case (DAE.T_INTEGER()) then SOME(DAE.ICONST(0));
     case (DAE.T_REAL()) then SOME(DAE.RCONST(0.0));
     case (DAE.T_BOOL()) then SOME(DAE.BCONST(false));
@@ -10642,7 +10643,7 @@ algorithm
     // C RUNTIME
     // Parameters without binding. Investigate if it has start value
     case (BackendDAE.VAR(varKind = BackendDAE.PARAM(), values = dae_var_attr, varType = tp)) guard not stringEq(Config.simCodeTarget(), "Cpp") equation
-      e = DAEUtil.getStartAttr(dae_var_attr, tp);
+      e = DAEUtil.getStartAttrFail(dae_var_attr);
     then SOME(e);
 
     // CPP RUNTIME
@@ -14413,7 +14414,7 @@ algorithm
     // check for param Vars, as we are only interested in causality = parameters
     if BackendVariable.isParam(var) and not BackendVariable.containsCref(var.varName, currentSystem.orderedVars) then
       lhs := BackendVariable.varExp(var);
-      rhs := BackendVariable.varBindExpStartValueNoFail(var) "bindings are optional";
+      rhs := BackendVariable.varBindExpStartValueNoFail(var, sourceInfo()) "bindings are optional";
       eqn := BackendDAE.EQUATION(lhs, rhs, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_BINDING);
       BackendEquation.add(eqn, currentSystem.orderedEqs);
       //var := BackendVariable.setBindExp(var,NONE());

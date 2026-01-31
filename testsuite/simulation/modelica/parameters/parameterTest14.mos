@@ -41,7 +41,7 @@ simulate(parameterTest14); getErrorString();
 //
 // Known variables only depending on parameters and constants - globalKnownVars (1)
 // ========================================
-// 1: p1:PARAM(start = 5 )  type: Integer 
+// 1: p1:PARAM(start = 5 )  type: Integer
 //
 //
 //
@@ -80,7 +80,7 @@ simulate(parameterTest14); getErrorString();
 //
 // globalKnownVars (1)
 // ========================================
-// 1: p1:PARAM(start = 5 final = true )  type: Integer 
+// 1: p1:PARAM(start = 5 final = true )  type: Integer
 //
 //
 // mark: 1
@@ -107,7 +107,7 @@ simulate(parameterTest14); getErrorString();
 //
 // globalKnownVars (1)
 // ========================================
-// 1: p1:PARAM(start = 5 final = true )  type: Integer 
+// 1: p1:PARAM(start = 5 final = true )  type: Integer
 //
 //
 // mark: 1
@@ -128,7 +128,7 @@ simulate(parameterTest14); getErrorString();
 //
 // globalKnownVars (1)
 // ========================================
-// 1: p1:PARAM(start = 5 final = true )  type: Integer 
+// 1: p1:PARAM(start = 5 final = true )  type: Integer
 //
 //
 // mark: 1
@@ -152,7 +152,7 @@ simulate(parameterTest14); getErrorString();
 //
 // Known variables only depending on parameters and constants - globalKnownVars (1)
 // ========================================
-// 1: p1:PARAM(start = 5 final = true )  type: Integer 
+// 1: p1:PARAM(start = 5 final = true )  type: Integer
 //
 //
 //
@@ -166,6 +166,6 @@ simulate(parameterTest14); getErrorString();
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// "[<interactive>:3:3-3:59:writable] Warning: Parameter p1 has no value, and is fixed during initialization (fixed=true), using available start value (start=5) as default value.
+// "[<interactive>:3:3-3:59:writable] Warning: Parameter p1 has no binding, and is fixed during initialization (fixed=true), using available start value (start=5) as default value.
 // "
 // endResult

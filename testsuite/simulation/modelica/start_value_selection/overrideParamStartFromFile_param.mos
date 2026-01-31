@@ -29,7 +29,7 @@ simulate(overrideParamStartFromFile_param_model, simflags="-iif=init_overridePar
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// "[<interactive>:4:3-4:37:writable] Warning: Parameter Tstart has no value, and is fixed during initialization (fixed=true), using available start value (start=1173) as default value.
+// "[<interactive>:4:3-4:37:writable] Warning: Parameter Tstart has no binding, and is fixed during initialization (fixed=true), using available start value (start=1173) as default value.
 // "
 // record SimulationResult
 //     resultFile = "overrideParamStartFromFile_param_model_res.mat",
@@ -84,6 +84,6 @@ simulate(overrideParamStartFromFile_param_model, simflags="-iif=init_overridePar
 // LOG_NLS           | info    | free non-linear system solvers
 // "
 // end SimulationResult;
-// "[<interactive>:4:3-4:37:writable] Warning: Parameter Tstart has no value, and is fixed during initialization (fixed=true), using available start value (start=1173) as default value.
+// "[<interactive>:4:3-4:37:writable] Warning: Parameter Tstart has no binding, and is fixed during initialization (fixed=true), using available start value (start=1173) as default value.
 // "
 // endResult

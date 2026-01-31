@@ -52,7 +52,7 @@ fully compliant with the MLS. This ensures maximum portability and long-term sup
 
 In case this is not possible for some reason, e.g. lack of time and resources, or the fact that the
 legacy code belongs to Modelica libraries you did not develop yourself, we provide a way to cope
-with non-standard Modelica code in newer version of OpenModelica: the 
+with non-standard Modelica code in newer version of OpenModelica: the
 `--allowNonStandardModelica <https://openmodelica.org/doc/OpenModelicaUsersGuide/latest/omchelptext.html#omcflag-allownonstandardmodelica>`_
 compiler flag allows to disable some Modelica compatibility checks and continue using your legacy
 code with newer versions of the compiler. This flag can be set in OMEdit in the

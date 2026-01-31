@@ -635,10 +635,10 @@ end DiscreteScalarStateSpaceUnclocked;</Input>
     messages = ""
 end SimulationResult;
 OMC-ERROR:
-"[&lt;interactive>:2:3-2:28:writable] Warning: Parameter a has no value, and is fixed during initialization (fixed=true), using available start value (start=0.0) as default value.
-[&lt;interactive>:2:3-2:28:writable] Warning: Parameter b has no value, and is fixed during initialization (fixed=true), using available start value (start=0.0) as default value.
-[&lt;interactive>:2:3-2:28:writable] Warning: Parameter c has no value, and is fixed during initialization (fixed=true), using available start value (start=0.0) as default value.
-[&lt;interactive>:2:3-2:28:writable] Warning: Parameter d has no value, and is fixed during initialization (fixed=true), using available start value (start=0.0) as default value.
+"[&lt;interactive>:2:3-2:28:writable] Warning: Parameter a has no binding, and is fixed during initialization (fixed=true), using available start value (start=0.0) as default value.
+[&lt;interactive>:2:3-2:28:writable] Warning: Parameter b has no binding, and is fixed during initialization (fixed=true), using available start value (start=0.0) as default value.
+[&lt;interactive>:2:3-2:28:writable] Warning: Parameter c has no binding, and is fixed during initialization (fixed=true), using available start value (start=0.0) as default value.
+[&lt;interactive>:2:3-2:28:writable] Warning: Parameter d has no binding, and is fixed during initialization (fixed=true), using available start value (start=0.0) as default value.
 Warning: The initial conditions are not fully specified. Use +d=initialization for more information.
 "</Output>
         </GraphCell>
