@@ -234,24 +234,41 @@ static void clearHashTable()
   varIndex_ht = NULL;
 }
 
-/** */
-void buildEvalDAG(EVAL_DAG* dag, MODEL_DATA_XML *xml, const size_t* ixs)
+static size_t varIndexFromName(MODEL_DATA *modelData, const char *name)
 {
-  assertStreamPrint(NULL, dag, "dag is NULL.");
-  assertStreamPrint(NULL, ixs, "ixs is NULL.");
+  /* for now only look at real vars */
+  for (int i = 0; i < modelData->nVariablesReal; i++) {
+    if (strcmp(modelData->realVarsData[i].info.name, name)==0) {
+      if (modelData->realVarsData[i].info.id >= 1000) {
+        return (size_t)(modelData->realVarsData[i].info.id - 1000);
+      } else {
+        return (size_t)(-1);
+      }
+    }
+  }
+  return (size_t)(-1);
+}
 
+/** */
+void buildEvalDAG(MODEL_DATA *modelData, size_t nEqns, const size_t* ixs)
+{
   size_t nEdges = 0;
+  EVAL_DAG *dag = allocEvalDAG(modelData->nVariablesReal, nEqns);
+  modelData->dag = dag;
 
   for (size_t i = 0; i < dag->nEqns; ++i) {
-    EQUATION_INFO eqInfo = modelInfoGetEquation(xml, ixs[i]);
+    EQUATION_INFO eqInfo = modelInfoGetEquation(&modelData->modelDataXml, ixs[i]);
 
     /* see what variables it defines */
     for (size_t j = 0; j < eqInfo.numVar; ++j) {
-      /* store (varName -> eqIndex) in hash table */
-      addVarToHashTable(eqInfo.vars[j], i);
+      size_t varIndex = varIndexFromName(modelData, eqInfo.vars[j]);
+      if (varIndex != (size_t)(-1)) {
+        /* store (varName -> eqIndex) in hash table */
+        addVarToHashTable(eqInfo.vars[j], i);
 
-      /* set var -> eqn map */
-      //dag->mapVarToEqNode[varIndexFromName(eqInfo.vars[j])] = i;
+        /* set var -> eqn map */
+        dag->mapVarToEqNode[varIndex] = i;
+      }
     }
 
     /* count how many edges will be in the DAG */
@@ -267,7 +284,7 @@ void buildEvalDAG(EVAL_DAG* dag, MODEL_DATA_XML *xml, const size_t* ixs)
   }
 
   for (size_t i = 0; i < dag->nEqns; ++i) {
-    EQUATION_INFO eqInfo = modelInfoGetEquation(xml, ixs[i]);
+    EQUATION_INFO eqInfo = modelInfoGetEquation(&modelData->modelDataXml, ixs[i]);
 
     for (size_t j = 0; j < eqInfo.numVarUsed; ++j) {
       /* look up variable in hash table */

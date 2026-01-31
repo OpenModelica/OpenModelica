@@ -4448,8 +4448,7 @@ template functionXXX_DAG(list<SimEqSystem> eqs, String name, String modelNamePre
   void <%symbolName(modelNamePrefix, name)%>_DAG(DATA* data, threadData_t* threadData)
   {
     const size_t eqMap[] = {<%eqs |> eq => equationIndexGeneral(eq); separator=", "%>};
-    data->modelData->dag = allocEvalDAG(data->modelData->nVariablesReal, sizeof(eqMap)/sizeof(size_t));
-    buildEvalDAG(data->modelData->dag,  &data->modelData->modelDataXml, eqMap);
+    buildEvalDAG(data->modelData, sizeof(eqMap)/sizeof(size_t), eqMap);
   }
   >>
 end functionXXX_DAG;

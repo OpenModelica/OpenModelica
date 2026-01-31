@@ -785,6 +785,7 @@ static void updateEvalSelection(DATA* data, DATA_GBODE* gbData)
   for (k = 0; k < gbData->nFastStates; k++) {
     size_t derIdx = gbData->fastStatesIdx[k] + gbData->nStates;
     size_t eqnIdx = selection->dag->mapVarToEqNode[derIdx];
+    if (eqnIdx == (size_t)(-1)) continue;
     selection->dag->select[eqnIdx] = TRUE;
   }
 
@@ -820,6 +821,7 @@ static void updateEvalSelectionJacobian(DATA* data, DATA_GBODE* gbData)
   for (k = 0; k < gbData->nFastStates; k++) {
     size_t derIdx = gbData->fastStatesIdx[k];
     size_t eqnIdx = selection->dag->mapVarToEqNode[derIdx];
+    if (eqnIdx == (size_t)(-1)) continue;
     selection->dag->select[eqnIdx] = TRUE;
   }
 
