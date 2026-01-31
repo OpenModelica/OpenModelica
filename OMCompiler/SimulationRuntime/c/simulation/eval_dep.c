@@ -29,6 +29,10 @@
  */
 
 #include "eval_dep.h"
+#include "../util/omc_error.h"
+#include "../util/uthash.h"
+#include "../simulation_data.h"
+#include "simulation_info_json.h"
 
 
 /**
@@ -68,8 +72,9 @@ EVAL_DAG* allocEvalDAG(size_t nVars, size_t nEqns)
   A better solution would be to remove the variable as well and propagate the
   zero symbolically.
   */
-  for (size_t i = 0; i < nVars; i++)
+  for (size_t i = 0; i < nVars; ++i) {
     dag->mapVarToEqNode[i] = (size_t)(-1);
+  }
 
   return dag;
 }
@@ -81,13 +86,16 @@ EVAL_DAG* allocEvalDAG(size_t nVars, size_t nEqns)
  */
 void freeEvalDAG(EVAL_DAG* dag)
 {
-  free(dag->select);
-  for (size_t i = 0; i < dag->nEqns; i++)
-    free(dag->eqDep[i]);
-  free(dag->eqDep);
-  free(dag->nEqDep);
-  free(dag->mapVarToEqNode);
-  free(dag);
+  if (dag) {
+    free(dag->select);
+    for (size_t i = 0; i < dag->nEqns; ++i) {
+      free(dag->eqDep[i]);
+    }
+    free(dag->eqDep);
+    free(dag->nEqDep);
+    free(dag->mapVarToEqNode);
+    free(dag);
+  }
 }
 
 /**
@@ -98,6 +106,8 @@ void freeEvalDAG(EVAL_DAG* dag)
  */
 EVAL_SELECTION* allocEvalSelection(EVAL_DAG* dag)
 {
+  assertStreamPrint(NULL, dag, "No DAG was given.");
+
   EVAL_SELECTION* selection = (EVAL_SELECTION*) malloc(sizeof(EVAL_SELECTION));
   selection->n = 0;
   selection->idx = (size_t*) malloc(dag->nEqns * sizeof(size_t));
@@ -115,8 +125,10 @@ EVAL_SELECTION* allocEvalSelection(EVAL_DAG* dag)
  */
 void freeEvalSelection(EVAL_SELECTION* selection)
 {
-  free(selection->idx);
-  free(selection);
+  if (selection) {
+    free(selection->idx);
+    free(selection);
+  }
 }
 
 /**
@@ -128,9 +140,12 @@ void freeEvalSelection(EVAL_SELECTION* selection)
  */
 void clearEvalSelection(EVAL_SELECTION* selection)
 {
+  assertStreamPrint(NULL, selection, "selection is NULL.");
+
   /* clear work array */
-  for (size_t k = 0; k < selection->dag->nEqns; k++)
-    selection->dag->select[k] = FALSE;
+  for (size_t i = 0; i < selection->dag->nEqns; ++i) {
+    selection->dag->select[i] = FALSE;
+  }
 
   /* set selected equations to zero just to be safe */
   selection->n = 0;
@@ -147,25 +162,26 @@ void clearEvalSelection(EVAL_SELECTION* selection)
  */
 void activateEvalDependencies(EVAL_SELECTION* selection)
 {
+  assertStreamPrint(NULL, selection, "selection is NULL.");
+
   EVAL_DAG* dag = selection->dag;
   /* select dependencies backwards */
-  for (size_t i = dag->nEqns-1; i+1 > 0 /* careful: count down with unsigned */; i--) {
+  for (size_t i = dag->nEqns-1; i+1 > 0 /* careful: count down with unsigned */; --i) {
     if (dag->select[i]) {
-      for (size_t j = 0; j < dag->nEqDep[i]; j ++) {
+      for (size_t j = 0; j < dag->nEqDep[i]; ++j) {
         size_t dep = dag->eqDep[i][j];
 
         /*
-        workaround, some JACOBIAN_TMP_VAR variables seem to miss an equation in which
-        they are solved. This is probably because the derivative is zero and the
-        corresponding equation was removed from the system.
+        workaround, some JACOBIAN_TMP_VAR variables seem to miss an equation in
+        which they are solved. This is probably because the derivative is zero
+        and the corresponding equation was removed from the system.
 
         So we use the default -1 to mean there is no equation to evaluate.
 
-        A better solution would be to remove the variable as well and propagate the
-        zero symbolically.
+        A better solution would be to remove the variable as well and propagate
+        the zero symbolically.
         */
-        if (dep == (size_t)(-1))
-          continue;
+        if (dep == (size_t)(-1)) continue;
 
         dag->select[dep] = TRUE;
       }
@@ -174,7 +190,45 @@ void activateEvalDependencies(EVAL_SELECTION* selection)
 
   /* get the indices in correct order */
   selection->n = 0;
-  for (size_t i = 0; i < dag->nEqns; i++)
-    if (dag->select[i])
-      selection->idx[selection->n++] = i;
+  for (size_t i = 0; i < dag->nEqns; ++i) {
+    if (dag->select[i]) selection->idx[selection->n++] = i;
+  }
+}
+
+/* * * * * * * * * * * * * * *
+ * OpenModelica specific stuff
+ * * * * * * * * * * * * * * */
+
+typedef struct hash_varName_eqIndex
+{
+  const char *id;     // variable name
+  size_t val;         // equation index
+  UT_hash_handle hh;
+} hash_varName_eqIndex;
+
+
+void buildEvalDAG(EVAL_DAG* dag, MODEL_DATA_XML* xml)
+{
+  assertStreamPrint(NULL, dag, "dag is NULL.");
+
+  // for each equation:
+  for (size_t i = 0; i < dag->nEqns; ++i) {
+    EQUATION_INFO eqInfo = modelInfoGetEquation(xml, i);
+    // see what variables it defines
+    for (size_t j = 0; j < eqInfo.numVar; ++j) {
+      // store the pair varName -> eqIndex in hash table
+      // id: eqInfo.vars[j], val:i;
+    }
+  }
+  //   count how many variables are used
+
+  // allocate space for all edges
+  // for each equation starting from 1:
+  //   set pointer to previous + length of previous
+
+  // for each equation:
+  //   see what variables are used
+  //   lookup eqIndex in hash table and save in eqDep
+
+
 }
