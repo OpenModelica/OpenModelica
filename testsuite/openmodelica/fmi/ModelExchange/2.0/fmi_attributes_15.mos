@@ -82,6 +82,7 @@ readFile("fmi_attributes_15_tmp.xml")
 //       <File name=\"math-support/pivot.c\" />
 //       <File name=\"meta/meta_modelica_catch.c\" />
 //       <File name=\"simulation/arrayIndex.c\" />
+//       <File name=\"simulation/eval_dep.c\" />
 //       <File name=\"simulation/jacobian_util.c\" />
 //       <File name=\"simulation/omc_simulation_util.c\" />
 //       <File name=\"simulation/options.c\" />
@@ -170,7 +171,7 @@ readFile("fmi_attributes_15_tmp.xml")
 //     <Unit name=\"xyz\">
 //     </Unit>
 //     <Unit name=\"bar\">
-//       <BaseUnit m=\"-1\" s=\"-2\" kg=\"1\" factor=\"100000.0\" />
+//       <BaseUnit m=\"-1\" s=\"-2\" kg=\"1\" factor=\"1e5\" />
 //     </Unit>
 //     <Unit name=\"kg2\">
 //       <BaseUnit kg=\"2\" />
@@ -189,7 +190,7 @@ readFile("fmi_attributes_15_tmp.xml")
 //     <Category name=\"logAll\" description=\"logAll\" />
 //     <Category name=\"logFmi2Call\" description=\"logFmi2Call\" />
 //   </LogCategories>
-//   <DefaultExperiment startTime=\"0.0\" stopTime=\"1.0\" tolerance=\"1e-06\" stepSize=\"0.002\"/>
+//   <DefaultExperiment startTime=\"0.0\" stopTime=\"1.0\" tolerance=\"1e-6\" stepSize=\"0.002\"/>
 //   <ModelVariables>
 //   <!-- Index of variable = \"1\" -->
 //   <ScalarVariable

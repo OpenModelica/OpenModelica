@@ -77,6 +77,7 @@ readFile("modelDescription.tmp.xml");
 //       <File name=\"math-support/pivot.c\" />
 //       <File name=\"meta/meta_modelica_catch.c\" />
 //       <File name=\"simulation/arrayIndex.c\" />
+//       <File name=\"simulation/eval_dep.c\" />
 //       <File name=\"simulation/jacobian_util.c\" />
 //       <File name=\"simulation/omc_simulation_util.c\" />
 //       <File name=\"simulation/options.c\" />
@@ -179,7 +180,7 @@ readFile("modelDescription.tmp.xml");
 //     <Category name=\"logAll\" />
 //     <Category name=\"logFmi2Call\" />
 //   </LogCategories>
-//   <DefaultExperiment startTime=\"0.0\" stopTime=\"1.0\" tolerance=\"1e-06\" stepSize=\"0.002\"/>
+//   <DefaultExperiment startTime=\"0.0\" stopTime=\"1.0\" tolerance=\"1e-6\" stepSize=\"0.002\"/>
 //   <ModelVariables>
 //   <!-- Index of variable = \"1\" -->
 //   <ScalarVariable
@@ -187,7 +188,7 @@ readFile("modelDescription.tmp.xml");
 //     valueReference=\"3\"
 //     causality=\"output\"
 //     >
-//     <Real min=\"0.0\" nominal=\"100000.0\" unit=\"Pa\"/>
+//     <Real min=\"0.0\" nominal=\"1e5\" unit=\"Pa\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"2\" -->
 //   <ScalarVariable
@@ -195,7 +196,7 @@ readFile("modelDescription.tmp.xml");
 //     valueReference=\"4\"
 //     causality=\"output\"
 //     >
-//     <Real min=\"611.657\" max=\"100000000.0\" nominal=\"1000000.0\" unit=\"Pa\"/>
+//     <Real min=\"611.657\" max=\"1e8\" nominal=\"1e6\" unit=\"Pa\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"3\" -->
 //   <ScalarVariable
@@ -203,7 +204,7 @@ readFile("modelDescription.tmp.xml");
 //     valueReference=\"5\"
 //     causality=\"output\"
 //     >
-//     <Real min=\"0.0\" nominal=\"10000000.0\" unit=\"Pa\"/>
+//     <Real min=\"0.0\" nominal=\"1e7\" unit=\"Pa\"/>
 //   </ScalarVariable>
 //   </ModelVariables>
 //   <ModelStructure>
