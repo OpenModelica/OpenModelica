@@ -1049,8 +1049,8 @@ void initializeDataStruc(DATA *data, threadData_t *threadData)
   allocateArrayReverseIndexMaps(data->modelData, data->simulationInfo, threadData);
   computeVarReverseIndices(data->simulationInfo, data->modelData);
 
-  /* init eval selection for functionODE */
-  data->callback->getDependency(data, threadData);
+  /* init DAG and eval selection for functionODE */
+  data->modelData->dag = NULL;
   data->simulationInfo->evalSelection = NULL;
 
   /* prepare RingBuffer */

@@ -373,7 +373,7 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA_MR(DATA* data, threadData_t* threadData, 
   JACOBIAN* jacobian_ODE = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
   gbfData->jacobian = (JACOBIAN*) malloc(sizeof(JACOBIAN));
   initJacobian(gbfData->jacobian, gbfData->nlSystemSize, gbfData->nlSystemSize, gbfData->nlSystemSize, jacobian_ODE->dag, nlsData->analyticalJacobianColumn, NULL, nlsData->sparsePattern);
-  gbfData->jacobian->evalSelection = allocEvalSelection(gbfData->jacobian->dag);
+  gbfData->jacobian->evalSelection = NULL;//allocEvalSelection(gbfData->jacobian->dag);
   nlsData->initialAnalyticalJacobian = NULL;
   nlsData->jacobianIndex = -1;
 

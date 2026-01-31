@@ -209,6 +209,8 @@ int gbodef_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solve
 
   printButcherTableau(gbfData->tableau);
 
+  /* get DAG for functionODE */
+  data->callback->getDAG_ODE(data, threadData);
   /* allocate selective RHS evaluation */
   gbfData->evalSelectionFast = allocEvalSelection(data->modelData->dag);
 

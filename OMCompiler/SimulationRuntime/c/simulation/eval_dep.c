@@ -88,9 +88,8 @@ void freeEvalDAG(EVAL_DAG* dag)
 {
   if (dag) {
     free(dag->select);
-    for (size_t i = 0; i < dag->nEqns; ++i) {
-      free(dag->eqDep[i]);
-    }
+    /* only free once since eqDep was allocated in one chunk */
+    if (dag->eqDep) free(dag->eqDep[0]);
     free(dag->eqDep);
     free(dag->nEqDep);
     free(dag->mapVarToEqNode);
@@ -150,7 +149,7 @@ void clearEvalSelection(EVAL_SELECTION* selection)
   /* set selected equations to zero just to be safe */
   selection->n = 0;
   // don't clear idx as that would be O(n) work,
-  // it will be owerwritten by activateEvalDependencies
+  // it will be overwritten by activateEvalDependencies
 }
 
 /**
@@ -206,29 +205,80 @@ typedef struct hash_varName_eqIndex
   UT_hash_handle hh;
 } hash_varName_eqIndex;
 
+static hash_varName_eqIndex *varIndex_ht = NULL;
 
-void buildEvalDAG(EVAL_DAG* dag, MODEL_DATA_XML* xml)
+static void addVarToHashTable(const char *name, size_t index)
+{
+  hash_varName_eqIndex *s;
+  HASH_FIND_STR(varIndex_ht, name, s);
+  if (s) {
+    errorStreamPrint(OMC_LOG_STDOUT, 1, "Variable %s is solved in more than one equation.", name);
+    errorStreamPrint(OMC_LOG_STDOUT, 0, "originally solved in %zu, now in %zu", s->val, index);
+    messageClose(OMC_LOG_STDOUT);
+  } else {
+    s = (hash_varName_eqIndex *)malloc(sizeof *s);
+    s->id = name;
+    s->val = index;
+    HASH_ADD_KEYPTR(hh, varIndex_ht, s->id, strlen(s->id), s);
+  }
+}
+
+static void clearHashTable()
+{
+  hash_varName_eqIndex *s, *tmp;
+
+  HASH_ITER(hh, varIndex_ht, s, tmp) {
+    HASH_DEL(varIndex_ht, s);
+    free(s);
+  }
+  varIndex_ht = NULL;
+}
+
+/** */
+void buildEvalDAG(EVAL_DAG* dag, MODEL_DATA_XML *xml, const size_t* ixs)
 {
   assertStreamPrint(NULL, dag, "dag is NULL.");
+  assertStreamPrint(NULL, ixs, "ixs is NULL.");
 
-  // for each equation:
+  size_t nEdges = 0;
+
   for (size_t i = 0; i < dag->nEqns; ++i) {
-    EQUATION_INFO eqInfo = modelInfoGetEquation(xml, i);
-    // see what variables it defines
+    EQUATION_INFO eqInfo = modelInfoGetEquation(xml, ixs[i]);
+
+    /* see what variables it defines */
     for (size_t j = 0; j < eqInfo.numVar; ++j) {
-      // store the pair varName -> eqIndex in hash table
-      // id: eqInfo.vars[j], val:i;
+      /* store (varName -> eqIndex) in hash table */
+      addVarToHashTable(eqInfo.vars[j], i);
+
+      /* set var -> eqn map */
+      //dag->mapVarToEqNode[varIndexFromName(eqInfo.vars[j])] = i;
+    }
+
+    /* count how many edges will be in the DAG */
+    // TODO remove duplicates if two vars are solved in the same eqn
+    nEdges += eqInfo.numVarUsed;
+    dag->nEqDep[i] = eqInfo.numVarUsed;
+  }
+
+  /* allocate space for all edges in one go */
+  dag->eqDep[0] = (size_t*) malloc(nEdges * sizeof(size_t));
+  for (size_t i = 1; i < dag->nEqns; ++i) {
+    dag->eqDep[i] = dag->eqDep[i-1] + dag->nEqDep[i-1];
+  }
+
+  for (size_t i = 0; i < dag->nEqns; ++i) {
+    EQUATION_INFO eqInfo = modelInfoGetEquation(xml, ixs[i]);
+
+    for (size_t j = 0; j < eqInfo.numVarUsed; ++j) {
+      /* look up variable in hash table */
+      hash_varName_eqIndex *s;
+      HASH_FIND_STR(varIndex_ht, eqInfo.varsUsed[j], s);
+      /* if it exists, add the corresponding equation to the dependency */
+      // TODO reduce size of eqDep if used variables are not solved in the
+      // system corresponding to this DAG
+      dag->eqDep[i][j] = s ? s->val : (size_t)(-1);
     }
   }
-  //   count how many variables are used
 
-  // allocate space for all edges
-  // for each equation starting from 1:
-  //   set pointer to previous + length of previous
-
-  // for each equation:
-  //   see what variables are used
-  //   lookup eqIndex in hash table and save in eqDep
-
-
+  clearHashTable();
 }

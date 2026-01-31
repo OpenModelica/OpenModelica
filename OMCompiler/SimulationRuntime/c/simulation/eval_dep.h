@@ -74,6 +74,9 @@ void freeEvalSelection(EVAL_SELECTION* selection);
 void clearEvalSelection(EVAL_SELECTION* selection);
 void activateEvalDependencies(EVAL_SELECTION* selection);
 
+typedef struct MODEL_DATA_XML MODEL_DATA_XML;
+void buildEvalDAG(EVAL_DAG* dag, MODEL_DATA_XML* xml, const size_t* ixs);
+
 #ifdef __cplusplus
 }
 #endif
