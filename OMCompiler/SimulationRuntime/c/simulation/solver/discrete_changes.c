@@ -29,6 +29,7 @@
  */
 
 #include "discrete_changes.h"
+#include "../arrayIndex.h"
 
 /**
  * @brief Check for changes in discrete variables since the previous step.
@@ -49,107 +50,131 @@
 modelica_boolean checkForDiscreteChanges(DATA *data, threadData_t *threadData)
 {
   MODEL_DATA *modelData = data->modelData;
+  SIMULATION_INFO *simulationInfo = data->simulationInfo;
 
   /* No discrete variables */
-  if (modelData->nDiscreteReal == 0 &&
-      modelData->nVariablesInteger == 0 &&
-      modelData->nVariablesBoolean == 0 &&
-      modelData->nVariablesString == 0)
+  if (modelData->nDiscreteRealArray == 0 &&
+      modelData->nVariablesIntegerArray == 0 &&
+      modelData->nVariablesBooleanArray == 0 &&
+      modelData->nVariablesStringArray == 0)
   {
     return FALSE;
   }
 
   modelica_boolean needToIterate = FALSE;
+  char* index_buffer;
+  size_t buffer_size = 2000;
   if (OMC_ACTIVE_STREAM(OMC_LOG_EVENTS_V))
   {
     infoStreamPrint(OMC_LOG_EVENTS_V, 1, "check for discrete changes at time=%.12g",
                     data->localData[0]->timeValue);
+    index_buffer = (char*) malloc(buffer_size*sizeof(char));
   }
 
   /* Real discrete variables */
-  for (long i = modelData->nVariablesReal - modelData->nDiscreteReal; i < modelData->nVariablesReal; i++)
+  for (long arrayIdx = modelData->nVariablesRealArray - modelData->nDiscreteRealArray; arrayIdx < modelData->nVariablesRealArray; arrayIdx++)
   {
-    if (strncmp(modelData->realVarsData[i].info.name, "$cse", 4))
+    if (strncmp(modelData->realVarsData[arrayIdx].info.name, "$cse", 4))
     {
-      modelica_real v1 = data->simulationInfo->realVarsPre[i];
-      modelica_real v2 = data->localData[0]->realVars[i];
-      if (v1 != v2)
+      for (int i = 0; modelData->realVarsData[arrayIdx].dimension.scalar_length; i++)
       {
-        needToIterate = TRUE;
-        if (OMC_ACTIVE_STREAM(OMC_LOG_EVENTS_V))
+        size_t scalarIdx = simulationInfo->realVarsIndex[arrayIdx] + i;
+        modelica_real v1 = simulationInfo->realVarsPre[scalarIdx];
+        modelica_real v2 = data->localData[0]->realVars[scalarIdx];
+        if (v1 != v2)
         {
-          infoStreamPrint(OMC_LOG_EVENTS_V, 0, "discrete var changed: %s from %g to %g",
-                          modelData->realVarsData[i].info.name, v1, v2);
-        }
-        else
-        {
-          return needToIterate;
+          needToIterate = TRUE;
+          if (OMC_ACTIVE_STREAM(OMC_LOG_EVENTS_V))
+          {
+            printMultiDimArrayIndex(&modelData->realVarsData[arrayIdx].dimension, scalarIdx, index_buffer, buffer_size);
+            infoStreamPrint(OMC_LOG_EVENTS_V, 0, "discrete var changed: %s%s from %g to %g",
+                            modelData->realVarsData[arrayIdx].info.name, index_buffer, v1, v2);
+          }
+          else
+          {
+            return needToIterate;
+          }
         }
       }
     }
   }
 
-  for (long i = 0; i < modelData->nVariablesInteger; i++)
+  for (long arrayIdx = 0; arrayIdx < modelData->nVariablesIntegerArray; arrayIdx++)
   {
-    if (strncmp(modelData->integerVarsData[i].info.name, "$cse", 4))
+    if (strncmp(modelData->integerVarsData[arrayIdx].info.name, "$cse", 4))
     {
-      modelica_integer v1 = data->simulationInfo->integerVarsPre[i];
-      modelica_integer v2 = data->localData[0]->integerVars[i];
-      if (v1 != v2)
+      for (int i = 0; modelData->integerVarsData[arrayIdx].dimension.scalar_length; i++)
       {
-        needToIterate = TRUE;
-        if (OMC_ACTIVE_STREAM(OMC_LOG_EVENTS_V))
+        size_t scalarIdx = simulationInfo->integerVarsIndex[arrayIdx] + i;
+        modelica_integer v1 = simulationInfo->integerVarsPre[scalarIdx];
+        modelica_integer v2 = data->localData[0]->integerVars[scalarIdx];
+        if (v1 != v2)
         {
-          infoStreamPrint(OMC_LOG_EVENTS_V, 0, "discrete var changed: %s from %ld to %ld",
-                          modelData->integerVarsData[i].info.name, (long)v1, (long)v2);
-        }
-        else
-        {
-          return needToIterate;
+          needToIterate = TRUE;
+          if (OMC_ACTIVE_STREAM(OMC_LOG_EVENTS_V))
+          {
+            printMultiDimArrayIndex(&modelData->integerVarsData[arrayIdx].dimension, scalarIdx, index_buffer, buffer_size);
+            infoStreamPrint(OMC_LOG_EVENTS_V, 0, "discrete var changed: %s%s from %ld to %ld",
+                            modelData->integerVarsData[arrayIdx].info.name, index_buffer, (long)v1, (long)v2);
+          }
+          else
+          {
+            return needToIterate;
+          }
         }
       }
     }
   }
 
-  for (long i = 0; i < modelData->nVariablesBoolean; i++)
+  for (long arrayIdx = 0; arrayIdx < modelData->nVariablesBooleanArray; arrayIdx++)
   {
-    if (strncmp(modelData->booleanVarsData[i].info.name, "$cse", 4))
+    if (strncmp(modelData->booleanVarsData[arrayIdx].info.name, "$cse", 4))
     {
-      modelica_boolean v1 = data->simulationInfo->booleanVarsPre[i];
-      modelica_boolean v2 = data->localData[0]->booleanVars[i];
-      if (v1 != v2)
+      for (int i = 0; modelData->booleanVarsData[arrayIdx].dimension.scalar_length; i++)
       {
-        needToIterate = TRUE;
-        if (OMC_ACTIVE_STREAM(OMC_LOG_EVENTS_V))
+        size_t scalarIdx = simulationInfo->booleanVarsIndex[arrayIdx] + i;
+        modelica_boolean v1 = simulationInfo->booleanVarsPre[arrayIdx];
+        modelica_boolean v2 = data->localData[0]->booleanVars[arrayIdx];
+        if (v1 != v2)
         {
-          infoStreamPrint(OMC_LOG_EVENTS_V, 0, "discrete var changed: %s from %d to %d",
-                          modelData->booleanVarsData[i].info.name, v1, v2);
-        }
-        else
-        {
-          return needToIterate;
+          needToIterate = TRUE;
+          if (OMC_ACTIVE_STREAM(OMC_LOG_EVENTS_V))
+          {
+            printMultiDimArrayIndex(&modelData->booleanVarsData[arrayIdx].dimension, scalarIdx, index_buffer, buffer_size);
+            infoStreamPrint(OMC_LOG_EVENTS_V, 0, "discrete var changed: %s%s from %d to %d",
+                            modelData->booleanVarsData[arrayIdx].info.name, index_buffer, v1, v2);
+          }
+          else
+          {
+            return needToIterate;
+          }
         }
       }
     }
   }
 
-  for (long i = 0; i < modelData->nVariablesString; i++)
+  for (long arrayIdx = 0; arrayIdx < modelData->nVariablesStringArray; arrayIdx++)
   {
-    if (strncmp(modelData->stringVarsData[i].info.name, "$cse", 4))
+    if (strncmp(modelData->stringVarsData[arrayIdx].info.name, "$cse", 4))
     {
-      modelica_string v1 = data->simulationInfo->stringVarsPre[i];
-      modelica_string v2 = data->localData[0]->stringVars[i];
-      if (0 != strcmp(MMC_STRINGDATA(v1), MMC_STRINGDATA(v2)))
+      for (int i = 0; modelData->stringVarsData[arrayIdx].dimension.scalar_length; i++)
       {
-        needToIterate = TRUE;
-        if (OMC_ACTIVE_STREAM(OMC_LOG_EVENTS_V))
+        size_t scalarIdx = simulationInfo->stringVarsIndex[arrayIdx] + i;
+        modelica_string v1 = simulationInfo->stringVarsPre[arrayIdx];
+        modelica_string v2 = data->localData[0]->stringVars[arrayIdx];
+        if (0 != strcmp(MMC_STRINGDATA(v1), MMC_STRINGDATA(v2)))
         {
-          infoStreamPrint(OMC_LOG_EVENTS_V, 0, "discrete var changed: %s from %s to %s",
-                          modelData->stringVarsData[i].info.name, MMC_STRINGDATA(v1), MMC_STRINGDATA(v2));
-        }
-        else
-        {
-          return needToIterate;
+          needToIterate = TRUE;
+          if (OMC_ACTIVE_STREAM(OMC_LOG_EVENTS_V))
+          {
+            printMultiDimArrayIndex(&modelData->stringVarsData[arrayIdx].dimension, scalarIdx, index_buffer, buffer_size);
+            infoStreamPrint(OMC_LOG_EVENTS_V, 0, "discrete var changed: %s from %s to %s",
+                            modelData->stringVarsData[arrayIdx].info.name, MMC_STRINGDATA(v1), MMC_STRINGDATA(v2));
+          }
+          else
+          {
+            return needToIterate;
+          }
         }
       }
     }
@@ -158,6 +183,7 @@ modelica_boolean checkForDiscreteChanges(DATA *data, threadData_t *threadData)
   if (OMC_ACTIVE_STREAM(OMC_LOG_EVENTS_V))
   {
     messageClose(OMC_LOG_EVENTS_V);
+    free(index_buffer);
   }
 
   return needToIterate;
