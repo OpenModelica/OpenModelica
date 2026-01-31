@@ -93,8 +93,10 @@ typedef struct EQUATION_INFO
   EQUATION_SECTION section;
   int profileBlockIndex;
   int parent;
-  int numVar;
-  const char **vars;
+  int numVar;                           // number of vars
+  const char **vars;                    // vars defined in this equation
+  int numVarUsed;                       // number of varsUsed
+  const char **varsUsed;                // vars used in this equation
 } EQUATION_INFO;
 
 typedef struct FUNCTION_INFO

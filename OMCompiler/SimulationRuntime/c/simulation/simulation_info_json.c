@@ -68,7 +68,7 @@ static const char* skipValue(const char* str, const char* fileName);
  * @param str           Points to some locating inside JSON object.
  * @param first         1 if first location in JSON object, 0 otherwise.
  * @param fileName      Name of JSON to parse. Used for error messages.
- * @return const char*  Points to location directly after JSON obbject.
+ * @return const char*  Points to location directly after JSON object.
  */
 static inline const char* skipObjectRest(const char* str, int first, const char* fileName)
 {
@@ -219,7 +219,7 @@ static inline const char* assertStringValue(const char *str, const char *value, 
  * @param str             Pointer to character to assert.
  * @param c               Character str should be equal to.
  * @param fileName        Name of JSON to parse. Used for error messages.
- * @return const char*    Point to next locatin after character.
+ * @return const char*    Point to next location after character.
  */
 static inline const char* assertChar(const char *str, char c, const char *fileName)
 {
@@ -239,7 +239,7 @@ static inline const char* assertChar(const char *str, char c, const char *fileNa
  * @param str             Pointer to number to assert.
  * @param expected        Expected number.
  * @param fileName        Name of JSON to parse. Used for error messages.
- * @return const char*    Point to next locatin after number.
+ * @return const char*    Point to next location after number.
  */
 static inline const char* assertNumber(const char *str, double expected, const char *fileName)
 {
@@ -263,34 +263,106 @@ static inline const char* assertNumber(const char *str, double expected, const c
 }
 
 /**
- * @brief Skipp JSON object if it exists.
+ * @brief Skip name if it exists.
  *
- * @param str             Pointer to object/filed to skip.
+ * Returns back `str` if name does not exist.
+ *
+ * @param str             Pointer to name to skip.
+ * @param name            Name to skip.
+ * @param fileName        Name of JSON to parse. Used for error messages.
+ * @return const char*    Point to next location after name.
+ */
+static inline const char *skipNameIfExist(const char *str, const char *name, const char* fileName)
+{
+  const char *s = str;
+  size_t len;
+  if (*s != ',') return str;
+  ++s;
+  len = strlen(name);
+  if (*s != '\"' || strncmp(s+1,name,len)) return str;
+  s += len + 1;
+  if (strncmp("\":", s, 2)) return str;
+  s += 2;
+  return s;
+}
+
+/**
+ * @brief Skip JSON object if it exists.
+ *
+ * @param str             Pointer to object/field to skip.
  * @param name            Name of object to skip.
  * @param fileName        Name of JSON to parse. Used for error messages.
- * @return const char*    Point to next locatin after object.
+ * @return const char*    Point to next location after object.
  */
 static inline const char *skipFieldIfExist(const char *str, const char *name, const char* fileName)
 {
   const char *s = str;
-  int len = strlen(name);
-  if (*s != ',') {
-    return str;
-  }
-  s++;
-  if (*s != '\"' || strncmp(s+1,name,len)) {
-    return str;
-  }
-  s += len + 1;
-  if (strncmp("\":", s, 2)) {
-    return str;
-  }
-  s += 2;
+  s = skipNameIfExist(str, name, fileName);
+  if (s == str) return str;
   s = skipSpace(s);
   s = skipValue(s, fileName);
   s = skipSpace(s);
   s = skipSpace(s);
   return s;
+}
+
+/**
+ * @brief Read field with string array as value if it exists.
+ *
+ * @param str             Points to beginning of equation object.
+ * @param name            Name of the field.
+ * @param numValues       Pointer to number of values in array.
+ * @param values          Pointer where to write the values.
+ * @param fileName        Name of JSON to parse. Used for error messages.
+ * @return const char*    Point to next location after character.
+ */
+static const char* readFieldStringArrayIfExist(const char *str, const char *name, int *numValues, const char ***values, const char* fileName)
+{
+  *numValues = 0;
+  *values = NULL;
+
+  const char *s = skipNameIfExist(str, name, fileName);
+  if (s == str) return str;
+
+  str = skipSpace(s);
+  if (*str != '[') return skipValue(str, fileName);
+  ++str;
+  if (*str == ']') return str+1;
+
+  const char *str2 = skipSpace(str);
+  int n = 0;
+  while (1) {
+    str = skipValue(str, fileName);
+    ++n;
+    str = skipSpace(str);
+    if (*str != ',') break;
+    ++str;
+  };
+  assertChar(str, ']', fileName);
+  *numValues = n;
+  *values = malloc(sizeof(const char*)*n);
+  str = str2;
+
+  for (int j = 0; j<n; ++j) {
+    const char *str3 = skipSpace(str);
+    char *tmp;
+    int len = 0;
+    str = assertChar(str, '\"', fileName);
+    while (*str != '\"' && *str) {
+      ++len;
+      ++str;
+    }
+    str = assertChar(str, '\"', fileName);
+    tmp = malloc(len+1);
+    strncpy(tmp, str3+1, len);
+    tmp[len] = '\0';
+    (*values)[j] = tmp;
+    if (j != n-1) {
+      str = assertChar(str, ',', fileName);
+    }
+  }
+  str = assertChar(skipSpace(str), ']', fileName);
+  return str;
 }
 
 /**
@@ -300,17 +372,15 @@ static inline const char *skipFieldIfExist(const char *str, const char *name, co
  * @param xml             Equation info to fill
  * @param i               Index of equation inside "equations" array.
  * @param fileName        Name of JSON to parse. Used for error messages.
- * @return const char*    Point to next locatin after character.
+ * @return const char*    Point to next location after character.
  */
 static const char* readEquation(const char *str, EQUATION_INFO *xml, int i, const char* fileName)
 {
-  int n=0,j;
-  const char *str2;
-  str=assertChar(str,'{', fileName);
-  str=assertStringValue(str,"eqIndex", fileName);
-  str=assertChar(str,':', fileName);
-  str=assertNumber(str,i,fileName);
-  str=skipSpace(str);
+  str = assertChar(str, '{', fileName);
+  str = assertStringValue(str, "eqIndex", fileName);
+  str = assertChar(str, ':', fileName);
+  str = assertNumber(str, i, fileName);
+  str = skipSpace(str);
   xml->id = i;
   str = skipFieldIfExist(str, "parent", fileName);
   if (0 == strncmp(",\"section\":\"initial-lambda0\"", str, 28)) {
@@ -338,52 +408,8 @@ static const char* readEquation(const char *str, EQUATION_INFO *xml, int i, cons
   str = skipFieldIfExist(str, "tag", fileName);
   str = skipFieldIfExist(str, "display", fileName);
   str = skipFieldIfExist(str, "unknowns", fileName);
-  if (strncmp(",\"defines\":[", str, 12)) {
-    xml->numVar = 0;
-    xml->vars = 0;
-    str = skipObjectRest(str,0, fileName);
-    return str;
-  }
-  str += 12;
-  str = skipSpace(str);
-  if (*str == ']') {
-    xml->numVar = 0;
-    xml->vars = 0;
-    return skipObjectRest(str-1,0, fileName);
-  }
-  str2 = skipSpace(str);
-  while (1) {
-    str=skipValue(str, fileName);
-    n++;
-    str=skipSpace(str);
-    if (*str != ',') {
-      break;
-    }
-    str++;
-  };
-  assertChar(str, ']', fileName);
-  xml->numVar = n;
-  xml->vars = malloc(sizeof(const char*)*n);
-  str = str2;
-  for (j=0; j<n; j++) {
-    const char *str3 = skipSpace(str);
-    char *tmp;
-    int len=0;
-    str = assertChar(str, '\"', fileName);
-    while (*str != '\"' && *str) {
-      len++;
-      str++;
-    }
-    str = assertChar(str, '\"', fileName);
-    tmp = malloc(len+1);
-    strncpy(tmp, str3+1, len);
-    tmp[len] = '\0';
-    xml->vars[j] = tmp;
-    if (j != n-1) {
-      str = assertChar(str, ',', fileName);
-    }
-  }
-  str = assertChar(skipSpace(str), ']', fileName);
+  str = readFieldStringArrayIfExist(str, "defines", &xml->numVar, &xml->vars, fileName);
+  str = readFieldStringArrayIfExist(str, "uses", &xml->numVarUsed, &xml->varsUsed, fileName);
   return skipObjectRest(str,0, fileName);
 }
 
@@ -392,7 +418,7 @@ static const char* readEquation(const char *str, EQUATION_INFO *xml, int i, cons
  *
  * @param str           Point to beginning of equation array at '['.
  * @param xml           Model data from xml
- * @return const char*  Point to end of equation array dirreclty after ']'.
+ * @return const char*  Point to end of equation array directly after ']'.
  */
 static const char* readEquations(const char *str, MODEL_DATA_XML *xml)
 {
@@ -542,6 +568,8 @@ void modelInfoInit(MODEL_DATA_XML* xml)
   xml->equationInfo[0].profileBlockIndex = -1;
   xml->equationInfo[0].numVar = 0;
   xml->equationInfo[0].vars = NULL;
+  xml->equationInfo[0].numVarUsed = 0;
+  xml->equationInfo[0].varsUsed = NULL;
 
   // fprintf(stderr, "Loaded the JSON file in %fms...\n", rt_tock(0) * 1000.0);
   // fprintf(stderr, "Parse the JSON %s\n", xml->infoXMLData);
@@ -575,6 +603,12 @@ void modelInfoDeinit(MODEL_DATA_XML* xml)
           free((void*) xml->equationInfo[i].vars[j]);
         }
         free(xml->equationInfo[i].vars);
+      }
+      if (xml->equationInfo[i].varsUsed != NULL) {
+        for (j = 0; j < xml->equationInfo[i].numVarUsed; ++j) {
+          free((void*) xml->equationInfo[i].varsUsed[j]);
+        }
+        free(xml->equationInfo[i].varsUsed);
       }
     }
     free(xml->equationInfo); xml->equationInfo = NULL;
