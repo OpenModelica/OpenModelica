@@ -67,6 +67,26 @@ buildModel(scalarAdjointJacobian3); getErrorString();
 //   [EMPTY] SimCode Jacobian A(idx = 0, partition = 0)
 // ======================================================
 //
+// ======================================================
+//   [EMPTY] SimCode Jacobian B(idx = 2, partition = 0)
+// ======================================================
+//
+// ======================================================
+//   [EMPTY] SimCode Jacobian C(idx = 3, partition = 0)
+// ======================================================
+//
+// ======================================================
+//   [EMPTY] SimCode Jacobian D(idx = 4, partition = 0)
+// ======================================================
+//
+// ======================================================
+//   [EMPTY] SimCode Jacobian F(idx = 5, partition = 0)
+// ======================================================
+//
+// ======================================================
+//   [EMPTY] SimCode Jacobian H(idx = 6, partition = 0)
+// ======================================================
+//
 // ================================================
 //   SimCode Jacobian ADJ(idx = 1, partition = 1)
 // ================================================
@@ -109,26 +129,6 @@ buildModel(scalarAdjointJacobian3); getErrorString();
 // ************************
 //   {1}
 //   {0}
-//
-// ======================================================
-//   [EMPTY] SimCode Jacobian B(idx = 2, partition = 0)
-// ======================================================
-//
-// ======================================================
-//   [EMPTY] SimCode Jacobian C(idx = 3, partition = 0)
-// ======================================================
-//
-// ======================================================
-//   [EMPTY] SimCode Jacobian D(idx = 4, partition = 0)
-// ======================================================
-//
-// ======================================================
-//   [EMPTY] SimCode Jacobian F(idx = 5, partition = 0)
-// ======================================================
-//
-// ======================================================
-//   [EMPTY] SimCode Jacobian H(idx = 6, partition = 0)
-// ======================================================
 //
 //
 //
@@ -231,6 +231,16 @@ buildModel(scalarAdjointJacobian3); getErrorString();
 // ========================================
 // 	Jacobian idx: 0
 //
+// 	Jacobian idx: 2
+//
+// 	Jacobian idx: 3
+//
+// 	Jacobian idx: 4
+//
+// 	Jacobian idx: 5
+//
+// 	Jacobian idx: 6
+//
 // 	Jacobian idx: 1
 // 	13:  (NONLINEAR) index:2 jacobian: false
 // crefs: $pDER_ODE_JAC_ADJ.$TMP_1 , $pDER_ODE_JAC_ADJ.$TMP_2
@@ -244,16 +254,6 @@ buildModel(scalarAdjointJacobian3); getErrorString();
 // ----------------------
 // index:0: $pDER_ODE_JAC_ADJ.y (no alias)  initial: 	no arrCref index:(1) []
 // index:1: $pDER_ODE_JAC_ADJ.x (no alias)  initial: 	no arrCref index:(2) []
-// 	Jacobian idx: 2
-//
-// 	Jacobian idx: 3
-//
-// 	Jacobian idx: 4
-//
-// 	Jacobian idx: 5
-//
-// 	Jacobian idx: 6
-//
 //
 // modelInfo:
 // ========================================
