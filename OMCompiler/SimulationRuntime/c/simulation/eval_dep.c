@@ -234,6 +234,13 @@ static void clearHashTable()
   varIndex_ht = NULL;
 }
 
+/**
+ * @brief Get variable index from name
+ *
+ * @param modelData   Pointer to model data structure
+ * @param name        Name of variable
+ * @return size_t     Index of variable if it exists else -1
+ */
 static size_t varIndexFromName(MODEL_DATA *modelData, const char *name)
 {
   /* for now only look at real vars */
@@ -249,7 +256,15 @@ static size_t varIndexFromName(MODEL_DATA *modelData, const char *name)
   return (size_t)(-1);
 }
 
-/** */
+/**
+ * @brief Set up DAG based on modelInfo
+ *
+ * Reads system info from modelData and sets all edges and var->eqn map in DAG.
+ *
+ * @param modelData   Pointer to model data structure
+ * @param nEqns       Number of equations in this DAG
+ * @param ixs         Map from local eqIndices in this DAG to global eqIndices
+ */
 void buildEvalDAG(MODEL_DATA *modelData, size_t nEqns, const size_t* ixs)
 {
   size_t nEdges = 0;
