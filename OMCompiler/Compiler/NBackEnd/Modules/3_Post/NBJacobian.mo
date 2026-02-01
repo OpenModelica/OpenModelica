@@ -112,7 +112,9 @@ public
     bdae := match bdae
       local
         String name             "Context name for jacobian";
-      case BackendDAE.MAIN()
+        VariablePointers knowns "Variable array of knowns";
+
+      case BackendDAE.MAIN(varData = BVariable.VAR_DATA_SIM(knowns = knowns))
         algorithm
           if Flags.isSet(Flags.JAC_DUMP) then
             print(StringUtil.headline_1("[symjacdump] Creating symbolic Jacobians:") + "\n");
@@ -121,23 +123,23 @@ public
           name := match kind
             case NBPartition.Kind.ODE algorithm
               name := "ODE_JAC";
-              bdae.ode := applyToPartitions(bdae.ode, bdae.funcMap, name, func);
+              bdae.ode := applyToPartitions(bdae.ode, bdae.funcMap, knowns, name, func);
             then name;
             case NBPartition.Kind.DAE algorithm
               name := "DAE_JAC";
-              bdae.dae := SOME(applyToPartitions(Util.getOption(bdae.dae), bdae.funcMap, name, func));
+              bdae.dae := SOME(applyToPartitions(Util.getOption(bdae.dae), bdae.funcMap, knowns, name, func));
             then name;
             else algorithm
               Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for: " + Partition.Partition.kindToString(kind)});
             then fail();
           end match;
 
-          bdae.ode_event := applyToPartitions(bdae.ode_event, bdae.funcMap, name, func);
-          bdae.algebraic := applyToPartitions(bdae.algebraic, bdae.funcMap, name, func);
-          bdae.alg_event := applyToPartitions(bdae.alg_event, bdae.funcMap, name, func);
-          bdae.init := applyToPartitions(bdae.init, bdae.funcMap, name, func);
+          bdae.ode_event := applyToPartitions(bdae.ode_event, bdae.funcMap, knowns, name, func);
+          bdae.algebraic := applyToPartitions(bdae.algebraic, bdae.funcMap, knowns, name, func);
+          bdae.alg_event := applyToPartitions(bdae.alg_event, bdae.funcMap, knowns, name, func);
+          bdae.init := applyToPartitions(bdae.init, bdae.funcMap, knowns, name, func);
           if Util.isSome(bdae.init_0) then
-            bdae.init_0 := SOME(applyToPartitions(Util.getOption(bdae.init_0), bdae.funcMap, name, func));
+            bdae.init_0 := SOME(applyToPartitions(Util.getOption(bdae.init_0), bdae.funcMap, knowns, name, func));
           end if;
       then bdae;
 
@@ -152,10 +154,11 @@ public
   function applyToPartitions
     input output list<Partition.Partition> partitions;
     input output UnorderedMap<Path, Function> funcMap;
+    input VariablePointers knowns;
     input String name;
     input Module.jacobianInterface func;
   algorithm
-    partitions := list(partJacobian(part, funcMap, name, func) for part in partitions);
+    partitions := list(partJacobian(part, funcMap, knowns, name, func) for part in partitions);
   end applyToPartitions;
 
   function nonlinear
@@ -985,7 +988,7 @@ protected
 
     // TODO: add _OPT to name?
     LFG_jacobian := func(name, JacobianType.OPT_LFG, seedCandidates, partialCandidates,
-                         part.equations, all_knowns, part.strongComponents, funcMap, init);
+                         part.equations, part.strongComponents, part.adjacencyMatrix, funcMap, init);
 
     // Mrf Jacobian (Mayer (M), Final Constraints (rf))
     partialCandidates := VariablePointers.fromList(getMrfPartialCandidates(part, all_knowns), part.unknowns.scalarized);
@@ -993,7 +996,7 @@ protected
 
     // TODO: add _OPT to name?
     MRF_jacobian := func(name, JacobianType.OPT_MRF, seedCandidates, partialCandidates,
-                         part.equations, all_knowns, part.strongComponents, funcMap, init);
+                         part.equations, part.strongComponents, part.adjacencyMatrix, funcMap, init);
 
     // r0 Jacobian (Initial Constraints (r0))
     partialCandidates := VariablePointers.fromList(getR0PartialCandidates(part, all_knowns), part.unknowns.scalarized);
@@ -1001,12 +1004,13 @@ protected
 
     // TODO: add _OPT to name?
     R0_jacobian := func(name, JacobianType.OPT_R0, seedCandidates, partialCandidates,
-                        part.equations, all_knowns, part.strongComponents, funcMap, init);
+                        part.equations, part.strongComponents, part.adjacencyMatrix, funcMap, init);
   end partJacobianDynamicOptimization;
 
   function partJacobian
     input output Partition.Partition part;
     input UnorderedMap<Path, Function> funcMap;
+    input VariablePointers knowns;
     input String name                                     "Context name for jacobian";
     input Module.jacobianInterface func;
   protected
@@ -1042,7 +1046,7 @@ protected
       state_vars := list(Util.getOption(BVariable.getVarState(var)) for var in derivative_vars);
       seedCandidates := VariablePointers.fromList(state_vars, partialCandidates.scalarized);
 
-      jacobian := func(name, jacType, seedCandidates, partialCandidates, part.equations, knowns, part.strongComponents, funcMap, kind == NBPartition.Kind.INI);
+      jacobian := func(name, jacType, seedCandidates, partialCandidates, part.equations, part.strongComponents, part.adjacencyMatrix, funcMap, kind == NBPartition.Kind.INI);
 
       if Flags.getConfigBool(Flags.MOO_DYNAMIC_OPTIMIZATION) then
         /* Add Lfg + Mr Jacobians for MOO dynamic optimization */
