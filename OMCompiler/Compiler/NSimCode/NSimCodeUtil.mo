@@ -92,6 +92,7 @@ public
     input list<SimVar> simVars;
     input output UnorderedMap<ComponentRef, SimVar> simcode_map;
   algorithm
+    // TODO write function UnorderedMap.addList to avoid rehashes
     for var in simVars loop
       UnorderedMap.add(SimVar.getName(var), var, simcode_map);
     end for;

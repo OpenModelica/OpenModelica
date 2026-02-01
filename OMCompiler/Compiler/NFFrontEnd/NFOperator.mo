@@ -135,20 +135,22 @@ public
     end match;
   end invert;
 
+  type TypeRestriction = enumeration(SCALAR, VECTOR, MATRIX, ARRAY, OTHER);
+
   function typeRestriction
     input Type ty;
-    output Integer i;
+    output TypeRestriction restriction;
   algorithm
     if Type.isScalar(ty) then
-      i := 0;
+      restriction := TypeRestriction.SCALAR;
     elseif Type.isVector(ty) then
-      i := 1;
+      restriction := TypeRestriction.VECTOR;
     elseif Type.isMatrix(ty) then
-      i := 2;
+      restriction := TypeRestriction.MATRIX;
     elseif Type.isArray(ty) then
-      i := 3;
+      restriction := TypeRestriction.ARRAY;
     else
-      i := 4;
+      restriction := TypeRestriction.OTHER;
     end if;
   end typeRestriction;
 
@@ -158,12 +160,12 @@ public
   protected
     MathClassification mc = getMathClassification(operator);
     SizeClassification sc;
-    list<tuple<Integer, Type>> lst;
-    tuple<Integer, Type> min_, max_;
+    list<tuple<TypeRestriction, Type>> lst;
+    tuple<TypeRestriction, Type> min_, max_;
     Type ty;
     function tplLt
-      input tuple<Integer, Type> tpl1;
-      input tuple<Integer, Type> tpl2;
+      input tuple<TypeRestriction, Type> tpl1;
+      input tuple<TypeRestriction, Type> tpl2;
       output Boolean b = Util.tuple21(tpl1) < Util.tuple21(tpl2);
     end tplLt;
   algorithm
@@ -171,12 +173,12 @@ public
     min_ := List.minElement(lst, tplLt);
     max_ := List.maxElement(lst, tplLt);
     (sc, ty) := match (min_, max_)
-      case ((0, _), (0, ty))  then (SizeClassification.SCALAR, ty);
-      case ((0, _), (_ ,ty))  then (SizeClassification.SCALAR_ARRAY, ty);
-      case ((1, _), (1, ty))  then (SizeClassification.ELEMENT_WISE, ty);
-      case ((1, _), (2, ty))  then (SizeClassification.VECTOR_MATRIX, ty);
-      case ((2, _), (2, ty))  then (SizeClassification.ELEMENT_WISE, ty);
-      case ((3, _), (3, ty))  then (SizeClassification.ELEMENT_WISE, ty);
+      case ((TypeRestriction.SCALAR, _), (TypeRestriction.SCALAR, ty))  then (SizeClassification.SCALAR, ty);
+      case ((TypeRestriction.SCALAR, _), (_ ,ty))                       then (SizeClassification.SCALAR_ARRAY, ty);
+      case ((TypeRestriction.VECTOR, _), (TypeRestriction.VECTOR, ty))  then (SizeClassification.ELEMENT_WISE, ty);
+      case ((TypeRestriction.VECTOR, _), (TypeRestriction.MATRIX, ty))  then (SizeClassification.VECTOR_MATRIX, ty);
+      case ((TypeRestriction.MATRIX, _), (TypeRestriction.MATRIX, ty))  then (SizeClassification.ELEMENT_WISE, ty);
+      case ((TypeRestriction.ARRAY,  _), (TypeRestriction.ARRAY,  ty))  then (SizeClassification.ELEMENT_WISE, ty);
       else algorithm
         Error.assertion(false, getInstanceName() + " failed because the multary arguments have incompatible sizes: "
         + List.toString(types, Type.toString), sourceInfo());
@@ -196,13 +198,13 @@ public
   algorithm
     (sc, ty) := match (typeRestriction(ty1), typeRestriction(ty2))
       local
-        Integer i1, i2;
-      case (0, 0)                 then (SizeClassification.SCALAR, ty1);
-      case (0, i2) guard(i2>0)    then (SizeClassification.SCALAR_ARRAY, ty2);
-      case (i1, 0) guard(i1>0)    then (SizeClassification.ARRAY_SCALAR, ty1);
-      case (1, 2)                 then (SizeClassification.VECTOR_MATRIX, ty1);
-      case (2, 1)                 then (SizeClassification.MATRIX_VECTOR, ty2);
-      case (i1, i2) guard(i1==i2) then (getSizeClassification(operator), ty1);
+        TypeRestriction r1, r2;
+      case (TypeRestriction.SCALAR, TypeRestriction.SCALAR)               then (SizeClassification.SCALAR, ty1);
+      case (TypeRestriction.SCALAR, r2) guard(r2>TypeRestriction.SCALAR)  then (SizeClassification.SCALAR_ARRAY, ty2);
+      case (r1, TypeRestriction.SCALAR) guard(r1>TypeRestriction.SCALAR)  then (SizeClassification.ARRAY_SCALAR, ty1);
+      case (TypeRestriction.VECTOR, TypeRestriction.MATRIX)               then (SizeClassification.VECTOR_MATRIX, ty1);
+      case (TypeRestriction.MATRIX, TypeRestriction.VECTOR)               then (SizeClassification.MATRIX_VECTOR, ty2);
+      case (r1, r2) guard(r1 == r2)                                       then (getSizeClassification(operator), ty1);
       else algorithm
         Error.assertion(false, getInstanceName() + " failed because the binary arguments have incompatible sizes: "
           + Type.toString(ty1) + ", " + Type.toString(ty2), sourceInfo());
@@ -216,10 +218,10 @@ public
     output Boolean b;
   algorithm
     b := match operator.op
-      case Op.AND   then true;
-      case Op.OR    then true;
-      case Op.NOT   then true;
-                    else false;
+      case Op.AND then true;
+      case Op.OR  then true;
+      case Op.NOT then true;
+                  else false;
     end match;
   end isLogical;
 
@@ -987,8 +989,7 @@ public
     input MathClassification mcl2;
     output Boolean b;
   algorithm
-    b :=  (Util.intCompare(Integer(mcl1), Integer(mcl2)) == 0)
-          or (isDashClassification(mcl1) and isDashClassification(mcl2));
+    b := mcl1 == mcl2 or (isDashClassification(mcl1) and isDashClassification(mcl2));
   end isCombineableMath;
 
   function isCombineableSize
@@ -996,7 +997,7 @@ public
     input SizeClassification scl2;
     output Boolean b;
   algorithm
-    b := (Util.intCompare(Integer(scl1), Integer(scl2)) == 0);
+    b := scl1 == scl2;
   end isCombineableSize;
 
   function toDebugString

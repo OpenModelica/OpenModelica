@@ -1423,7 +1423,7 @@ protected
   list<tuple<list<Integer>,list<tuple<list<Integer>,Integer>>,list<tuple<list<String>,Integer>>,list<Integer>,list<Integer>>> tmppredecessortargetinfo;
 algorithm
   // first loop
-  tmpcount:=0;
+  tmpcount:=1;
   usedblocks:={};
   print("\nLoop-1\n"+ "========\n");
   for blocks in predecessortargetinfo loop
