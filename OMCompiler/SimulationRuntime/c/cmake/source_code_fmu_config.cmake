@@ -171,13 +171,6 @@ set(SOURCE_FMU_COMMON_HEADERS "omc_inline.h"
                               "util/omc_init.h"
                               "dataReconciliation/dataReconciliation.h")
 
-if (OM_OMC_ENABLE_OPTIMIZATION)
-  list(APPEND SOURCE_FMU_COMMON_HEADERS
-                              "optimization/OptimizerData.h"
-                              "optimization/OptimizerLocalFunction.h"
-                              "optimization/OptimizerInterface.h")
-endif ()
-
 set(SOURCE_FMU_COMMON_QUOTED_HEADERS)
 foreach(source_file IN LISTS SOURCE_FMU_COMMON_HEADERS)
   list(APPEND SOURCE_FMU_COMMON_QUOTED_HEADERS "\"${source_file}\"")
