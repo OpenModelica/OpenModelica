@@ -423,7 +423,7 @@ public
             (jacF, simCodeIndices) := SimJacobian.empty("F", simCodeIndices);
             (jacH, simCodeIndices) := SimJacobian.empty("H", simCodeIndices);
             //jacobians := jacA :: jacB :: jacC :: jacD :: jacF :: jacH :: jacAdjoint :: jacobians;
-            jacobians := listReverse(jacH :: jacF :: jacD :: jacC :: jacB :: jacAdjoint :: jacA :: jacobians);
+            jacobians := listReverse( jacAdjoint :: jacH :: jacF :: jacD :: jacC :: jacB :: jacA :: jacobians);
 
             for jac in jacobians loop
               if Util.isSome(jac.jac_map) then

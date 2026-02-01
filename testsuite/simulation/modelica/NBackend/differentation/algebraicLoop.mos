@@ -103,10 +103,6 @@ buildModel(algebraicLoop); getErrorString();
 //   {1}
 //   {0}
 //
-// ========================================================
-//   [EMPTY] SimCode Jacobian ADJ(idx = 1, partition = 0)
-// ========================================================
-//
 // ======================================================
 //   [EMPTY] SimCode Jacobian B(idx = 2, partition = 0)
 // ======================================================
@@ -126,6 +122,10 @@ buildModel(algebraicLoop); getErrorString();
 // ======================================================
 //   [EMPTY] SimCode Jacobian H(idx = 6, partition = 0)
 // ======================================================
+//
+// ========================================================
+//   [EMPTY] SimCode Jacobian ADJ(idx = 1, partition = 0)
+// ========================================================
 //
 //
 //
@@ -235,8 +235,6 @@ buildModel(algebraicLoop); getErrorString();
 // ----------------------
 // index:0: $pDER_ODE_JAC.$DER.y (no alias)  initial: 	no arrCref index:(1) []
 // index:1: $pDER_ODE_JAC.$DER.x (no alias)  initial: 	no arrCref index:(2) []
-// 	Jacobian idx: 1
-//
 // 	Jacobian idx: 2
 //
 // 	Jacobian idx: 3
@@ -246,6 +244,8 @@ buildModel(algebraicLoop); getErrorString();
 // 	Jacobian idx: 5
 //
 // 	Jacobian idx: 6
+//
+// 	Jacobian idx: 1
 //
 //
 // modelInfo:

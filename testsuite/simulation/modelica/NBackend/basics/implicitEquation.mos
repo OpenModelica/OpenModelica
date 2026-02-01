@@ -52,10 +52,6 @@ simulate(implicitEquation); getErrorString();
 //   [EMPTY] SimCode Jacobian A(idx = 0, partition = 0)
 // ======================================================
 //
-// ========================================================
-//   [EMPTY] SimCode Jacobian ADJ(idx = 1, partition = 0)
-// ========================================================
-//
 // ======================================================
 //   [EMPTY] SimCode Jacobian B(idx = 2, partition = 0)
 // ======================================================
@@ -75,6 +71,10 @@ simulate(implicitEquation); getErrorString();
 // ======================================================
 //   [EMPTY] SimCode Jacobian H(idx = 6, partition = 0)
 // ======================================================
+//
+// ========================================================
+//   [EMPTY] SimCode Jacobian ADJ(idx = 1, partition = 0)
+// ========================================================
 //
 //
 //
@@ -162,8 +162,6 @@ simulate(implicitEquation); getErrorString();
 // ========================================
 // 	Jacobian idx: 0
 //
-// 	Jacobian idx: 1
-//
 // 	Jacobian idx: 2
 //
 // 	Jacobian idx: 3
@@ -173,6 +171,8 @@ simulate(implicitEquation); getErrorString();
 // 	Jacobian idx: 5
 //
 // 	Jacobian idx: 6
+//
+// 	Jacobian idx: 1
 //
 //
 // modelInfo:
