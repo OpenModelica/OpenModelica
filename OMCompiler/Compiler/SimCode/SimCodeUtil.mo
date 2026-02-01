@@ -5035,12 +5035,12 @@ algorithm
         if Util.isSome(shared.dataReconciliationData) then
           BackendDAE.DATA_RECON(_, _, _, _, jacH) := Util.getOption(shared.dataReconciliationData);
           if isSome(jacH) then // check for matrix H is present which means state estimation algorithm is choosed and jacobian F and H are generated earlier
-            matrixnames := {"A", "ADJ", "B", "C", "D"};
+            matrixnames := {"A", "B", "C", "D", "ADJ"};
           else
-            matrixnames := {"A", "ADJ", "B", "C", "D", "H"};
+            matrixnames := {"A", "B", "C", "D", "H", "ADJ"};
           end if;
         else
-           matrixnames := {"A", "ADJ", "B", "C", "D", "F", "H"};
+           matrixnames := {"A", "B", "C", "D", "F", "H", "ADJ"};
         end if;
         (res, ouniqueEqIndex) := createSymbolicJacobianssSimCode(inSymjacs, crefSimVarHT, iuniqueEqIndex, matrixnames, {});
         // _ := FlagsUtil.set(Flags.EXEC_STAT, b);
@@ -5331,9 +5331,9 @@ protected
   DAE.ComponentRef newCref, oldCref;
 algorithm
   for v in inVars loop
-      oldCref := v.name;
-      newCref := Differentiate.createSeedCrefName(oldCref, inMatrixName);
-      outSimVars := replaceSimVarName(newCref, v)::outSimVars;
+    oldCref := v.name;
+    newCref := Differentiate.createSeedCrefName(oldCref, inMatrixName);
+    outSimVars := replaceSimVarName(newCref, v)::outSimVars;
   end for;
   outSimVars := Dangerous.listReverseInPlace(outSimVars);
 end replaceSeedVarsName;
