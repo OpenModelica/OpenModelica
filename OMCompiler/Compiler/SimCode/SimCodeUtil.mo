@@ -15961,7 +15961,7 @@ algorithm
       cmakeCode := cmakeCode + "find_library(" + lib + "\n" +
                   "             NAMES " + lib + "\n" +
                   "             PATHS ${EXTERNAL_LIBDIRECTORIES} NO_DEFAULT_PATH)\n" +
-                  "if(NOT ${" + lib + "})\n" +
+                  "if(NOT " + lib + ")\n" +
                   "  message(WARNING \"Could not find library zlib\")" + "\n" +
                   "  message(STATUS \"zlib is referred by ModelicaMatIO, but not used by default. Try compiling without linking.\")" + "\n" +
                   "else()\n" +
@@ -15973,7 +15973,7 @@ algorithm
       cmakeCode := cmakeCode + "find_library(" + lib + "\n" +
                   "             NAMES " + lib + "\n" +
                   "             PATHS ${EXTERNAL_LIBDIRECTORIES} NO_DEFAULT_PATH)\n" +
-                  "if(NOT ${" + lib + "})\n" +
+                  "if(NOT " + lib + ")\n" +
                   "  message(FATAL_ERROR \"Could not find library " + lib + "\")\n" +
                   "endif()\n" +
                   "message(STATUS \"Linking ${" + lib + "}\")\n" +

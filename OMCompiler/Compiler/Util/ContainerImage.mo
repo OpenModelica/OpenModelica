@@ -129,7 +129,7 @@ public
     // TODO: docker manifest inspect is experimental!
     // See https://docs.docker.com/reference/cli/docker/manifest/inspect/
     cmd := ContainerImage.containerTool + " manifest inspect " + imageName + " -v";
-    if not System.systemCall(cmd, outFile=manifestFile) == 0 then
+    if System.systemCall(cmd, outFile=manifestFile) <> 0 then
       Error.addCompilerError("Failed to retrieve manifest of container image '" + imageName + "'.");
       Error.addCompilerNotification(System.readFile(manifestFile) + "\n");
       System.removeFile(manifestFile);
@@ -252,7 +252,7 @@ public
     pullLogFile := image.repository + "_pull.log";
 
     cmd := ContainerImage.containerTool + " pull " + imageName;
-    if not System.systemCall(cmd, outFile=pullLogFile) == 0 then
+    if System.systemCall(cmd, outFile=pullLogFile) <> 0 then
       Error.addCompilerError("Failed to pull container image '" + imageName + "'.");
       Error.addCompilerNotification(System.readFile(pullLogFile) + "\n");
       System.removeFile(pullLogFile);
@@ -285,7 +285,7 @@ public
            " --certificate-oidc-issuer=https://token.actions.githubusercontent.com";
 
     System.appendFile(cosignLogFile, cmd + "\n");
-    if not System.systemCall(cmd, outFile=cosignLogFile) == 0 then
+    if System.systemCall(cmd, outFile=cosignLogFile) <> 0 then
       Error.addCompilerError("Failed to verify signature of container image '" + imageName + "'.");
       Error.addCompilerNotification(System.readFile(cosignLogFile) + "\n");
       System.removeFile(cosignLogFile);
