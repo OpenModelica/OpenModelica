@@ -118,7 +118,9 @@ public
     bdae := match bdae
       local
         String name             "Context name for jacobian";
-      case BackendDAE.MAIN()
+        VariablePointers knowns "Variable array of knowns";
+
+      case BackendDAE.MAIN(varData = BVariable.VAR_DATA_SIM(knowns = knowns))
         algorithm
           if Flags.isSet(Flags.JAC_DUMP) then
             print(StringUtil.headline_1("[symjacdump] Creating symbolic Jacobians:") + "\n");
@@ -127,11 +129,11 @@ public
           name := match kind
             case NBPartition.Kind.ODE algorithm
               name := "ODE_JAC";
-              bdae.ode := applyToPartitions(bdae.ode, bdae.funcMap, name, func);
+              bdae.ode := applyToPartitions(bdae.ode, bdae.funcMap, knowns, name, func);
             then name;
             case NBPartition.Kind.DAE algorithm
               name := "DAE_JAC";
-              bdae.dae := SOME(applyToPartitions(Util.getOption(bdae.dae), bdae.funcMap, name, func));
+              bdae.dae := SOME(applyToPartitions(Util.getOption(bdae.dae), bdae.funcMap, knowns, name, func));
             then name;
             else algorithm
               Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for: " + Partition.Partition.kindToString(kind)});
@@ -158,10 +160,11 @@ public
   function applyToPartitions
     input output list<Partition.Partition> partitions;
     input output UnorderedMap<Path, Function> funcMap;
+    input VariablePointers knowns;
     input String name;
     input Module.jacobianInterface func;
   algorithm
-    partitions := list(partJacobian(part, funcMap, name, func) for part in partitions);
+    partitions := list(partJacobian(part, funcMap, knowns, name, func) for part in partitions);
   end applyToPartitions;
 
   function nonlinear
@@ -996,6 +999,7 @@ protected
   function partJacobian
     input output Partition.Partition part;
     input UnorderedMap<Path, Function> funcMap;
+    input VariablePointers knowns;
     input String name                                     "Context name for jacobian";
     input Module.jacobianInterface func;
   protected
