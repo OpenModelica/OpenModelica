@@ -1,7 +1,7 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2019, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
@@ -34,6 +34,7 @@
 #include "jacobian_util.h"
 #include "options.h"
 #include "../util/omc_file.h"
+#include "eval_dep.h"
 
 /**
  * @brief Initialize analytic jacobian.
@@ -98,15 +99,15 @@ JACOBIAN* copyJacobian(JACOBIAN* source)
  */
 void freeJacobian(JACOBIAN *jac)
 {
-  if (jac == NULL) {
-    return;
+  if (jac) {
+    free(jac->seedVars); jac->seedVars = NULL;
+    free(jac->tmpVars); jac->tmpVars = NULL;
+    free(jac->resultVars); jac->resultVars = NULL;
+    freeSparsePattern(jac->sparsePattern);
+    free(jac->sparsePattern); jac->sparsePattern = NULL;
+    freeEvalDAG(jac->dag); jac->dag = NULL;
+    freeEvalSelection(jac->evalSelection); jac->evalSelection = NULL;
   }
-  free(jac->seedVars); jac->seedVars = NULL;
-  free(jac->tmpVars); jac->tmpVars = NULL;
-  free(jac->resultVars); jac->resultVars = NULL;
-  freeSparsePattern(jac->sparsePattern);
-  free(jac->sparsePattern); jac->sparsePattern = NULL;
-  freeEvalDAG(jac->dag); jac->dag = NULL;
 }
 
 /**
@@ -119,12 +120,13 @@ void freeJacobian(JACOBIAN *jac)
  */
 void freeJacobianCopy(JACOBIAN *jac)
 {
-  if (jac == NULL) {
-    return;
+  if (jac) {
+    free(jac->seedVars);
+    free(jac->tmpVars);
+    free(jac->resultVars);
+    freeEvalSelection(jac->evalSelection);
+    free(jac);
   }
-  free(jac->seedVars); jac->seedVars = NULL;
-  free(jac->tmpVars); jac->tmpVars = NULL;
-  free(jac->resultVars); jac->resultVars = NULL;
 }
 
 /*! \fn evalJacobian

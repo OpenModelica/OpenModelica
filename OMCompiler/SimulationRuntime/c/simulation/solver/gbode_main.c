@@ -582,9 +582,7 @@ void gbodef_freeData(DATA_GBODEF *gbfData)
   freeRK_NLS_DATA(gbfData->nlsData);
 
   /* Free Jacobian */
-  freeEvalSelection(gbfData->jacobian->evalSelection);
   freeJacobianCopy(gbfData->jacobian);
-  free(gbfData->jacobian); gbfData->jacobian = NULL;
 
   /* Free sparsity pattern */
   freeSparsePattern(gbfData->sparsePattern_DIRK);
@@ -615,12 +613,10 @@ void gbodef_freeData(DATA_GBODEF *gbfData)
   free(gbfData->kv);
   free(gbfData->fastStates_old);
 
-  if (gbfData->fastStatesDebugFile != NULL)
+  if (gbfData->fastStatesDebugFile)
     fclose(gbfData->fastStatesDebugFile);
 
   free(gbfData);
-
-  return;
 }
 
 /**
@@ -638,7 +634,6 @@ void gbode_freeData(DATA* data, DATA_GBODE *gbData)
 
   /* Free Jacobian */
   freeJacobianCopy(gbData->jacobian);
-  free(gbData->jacobian); gbData->jacobian = NULL;
 
   /* Free Butcher tableau */
   freeButcherTableau(gbData->tableau);
