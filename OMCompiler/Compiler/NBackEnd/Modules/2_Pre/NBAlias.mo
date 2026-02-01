@@ -298,7 +298,7 @@ protected
     Pointer<Equation> eqPtr;
     EquationAttributes attr;
   algorithm
-    EqData.mapExp(eqData, function filterExceptions(acc = exceptionSet));
+    EqData.map(eqData, function filterExceptionsEquation(acc = exceptionSet));
     for keyValueTpl in UnorderedMap.toList(replacements) loop
       (cref, exp) := keyValueTpl;
       if isValidReplacement(cref, exp, exceptionSet) then
@@ -330,12 +330,27 @@ protected
     end if;
   end isValidReplacement;
 
+  function filterExceptionsEquation
+    input output Equation eqn;
+    input UnorderedSet<ComponentRef> acc;
+  algorithm
+    _ := match eqn
+      case Equation.ALGORITHM() algorithm
+        for cref in eqn.alg.outputs loop
+          UnorderedSet.add(cref, acc);
+        end for;
+      then ();
+      else ();
+    end match;
+    Equation.map(eqn, function filterExceptions(acc = acc));
+  end filterExceptionsEquation;
+
   function filterExceptions
     "Filter expression for all forbidden aliases (pre, dynamic optimization annotations, ...)"
     input output Expression exp;
     input UnorderedSet<ComponentRef> acc;
   algorithm
-    () := match exp
+    _ := match exp
       local
         Call call;
         ComponentRef cref;
