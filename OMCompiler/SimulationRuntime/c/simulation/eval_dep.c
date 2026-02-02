@@ -55,7 +55,7 @@ EVAL_DAG* allocEvalDAG(size_t nVars, size_t nEqns)
   if (nEqns != 0 ) {
     dag->nEqDep = (size_t*) calloc(nEqns, sizeof(size_t));
     dag->eqDep = (size_t**) calloc(nEqns, sizeof(size_t*));
-    dag->select = (modelica_boolean*) calloc(nEqns, sizeof(modelica_boolean));
+    dag->select = (int*) calloc(nEqns, sizeof(int));
   } else {
     dag->nEqDep = NULL;
     dag->eqDep = NULL;
@@ -143,7 +143,7 @@ void clearEvalSelection(EVAL_SELECTION* selection)
 
   /* clear work array */
   for (size_t i = 0; i < selection->dag->nEqns; ++i) {
-    selection->dag->select[i] = FALSE;
+    selection->dag->select[i] = 0 /* FALSE */;
   }
 
   /* set selected equations to zero just to be safe */
@@ -182,7 +182,7 @@ void activateEvalDependencies(EVAL_SELECTION* selection)
         */
         if (dep == (size_t)(-1)) continue;
 
-        dag->select[dep] = TRUE;
+        dag->select[dep] = !0 /* TRUE */;
       }
     }
   }

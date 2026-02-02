@@ -36,7 +36,6 @@ extern "C" {
 #endif
 
 #include <stddef.h>
-#include "../openmodelica_types.h"
 
 
 /**
@@ -52,7 +51,7 @@ typedef struct EVAL_DAG
   size_t* mapVarToEqNode;               /* map from (scalar) var index to super node index */
   size_t* nEqDep;                       /* number of dependencies for each superNode */
   size_t** eqDep;                       /* index of dependent eqFunctions (edges of DAG) */
-  modelica_boolean* select;             /* work array to mark selection */
+  int* select;                          /* work array to mark selection */
 } EVAL_DAG;
 
 /**
@@ -73,6 +72,9 @@ void freeEvalSelection(EVAL_SELECTION* selection);
 
 void clearEvalSelection(EVAL_SELECTION* selection);
 void activateEvalDependencies(EVAL_SELECTION* selection);
+
+typedef struct MODEL_DATA MODEL_DATA;
+void buildEvalDAG(MODEL_DATA* modelData, size_t nEqns, const size_t* ixs);
 
 #ifdef __cplusplus
 }
