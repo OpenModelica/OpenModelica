@@ -490,10 +490,13 @@ bool ModelicaEditor::validateText(LibraryTreeItem **pLibraryTreeItem)
             // save and reload
             LibraryTreeItem *pTopLevelLibraryTreeItem = LibraryTreeModel::getTopLevelLibraryTreeItem(*pLibraryTreeItem);
             if (pTopLevelLibraryTreeItem) {
-              MainWindow::instance()->getLibraryWidget()->saveLibraryTreeItem(pTopLevelLibraryTreeItem, true);
-              pLibraryTreeModel->reloadClass(pTopLevelLibraryTreeItem, false);
+              if (MainWindow::instance()->getLibraryWidget()->saveLibraryTreeItem(pTopLevelLibraryTreeItem, true)) {
+                pLibraryTreeModel->reloadClass(pTopLevelLibraryTreeItem, false);
+                setTextChanged(false);
+                return false;
+              }
             }
-            setTextChanged(false);
+            setTextChanged(true);
             return false;
           }
         case QMessageBox::RejectRole: // revert to last correct version
