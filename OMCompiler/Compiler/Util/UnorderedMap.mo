@@ -283,7 +283,7 @@ public
      the old value. The generated value is returned by this function. If the key
      does not exist nothing happens.
 
-     This function can be used to e.g. append to an existing key, value pair. 
+     This function can be used to e.g. append to an existing key, value pair.
      This is faster than trying to fetch the value,
      updating it and then readding it, since the key only needs to be hashed
      once."

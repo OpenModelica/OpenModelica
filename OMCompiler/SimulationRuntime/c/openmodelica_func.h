@@ -101,6 +101,9 @@ struct OpenModelicaGeneratedFunctionCallbacks {
   */
   int (*initializeDAEmodeData)(DATA *data, DAEMODE_DATA* daeModeData);
 
+  /* get dependency graph for functionODE */
+  void (*getDAG_ODE)(DATA*, threadData_t*);
+
   /* functionODE contains those equations that are needed
   * to calculate the dynamic part of the system */
   int (*functionODE)(DATA *data, threadData_t*);
