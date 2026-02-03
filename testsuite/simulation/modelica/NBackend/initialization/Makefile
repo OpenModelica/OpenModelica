@@ -1,7 +1,7 @@
 TEST = ../../../../rtest -v
 
 TESTFILES = \
-experimental_initialLambda0.mos
+experimental_initialSimplified.mos
 
 # test that currently fail. Move up when fixed.
 # Run make failingtest

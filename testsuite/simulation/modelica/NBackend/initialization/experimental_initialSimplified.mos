@@ -1,0 +1,281 @@
+// name: experimental_initialSimplified
+// keywords: NewBackend
+// status: correct
+// cflags: --newBackend
+
+loadString("
+package P
+  // impure function initialSimplified
+  //   output Boolean isInitialLambda0 = false;
+  // annotation(Inline = false, __OpenModelica_builtin=true);
+  // end initialSimplified;
+
+  model experimental_initialSimplified
+    parameter Real u_fix0 = 1;
+    parameter Real y_fix0 = 1;
+    parameter Real y_fix = 10;
+    Real u, y1, y2;
+  equation
+    if initialSimplified() then
+      u = u_fix0;
+    else
+      y2 = homotopy(y_fix, y_fix0);
+    end if;
+    y1 = u^3 + sin(u);
+    y2 = sqrt(y1) + sin(1e-6*u);
+  end experimental_initialSimplified;
+end P;
+"); getErrorString();
+
+setCommandLineOptions("-d=dumpSimCode"); getErrorString();
+simulate(P.experimental_initialSimplified); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// ##################################################
+//
+//     SimCode (P.experimental_initialSimplified)
+//
+// ##################################################
+// ============
+//   SimVars
+// ============
+// Algebraic Variables (6)
+// *************************
+//   (0)[ALGB] (1) Real u
+//   (1)[ALGB] (1) Real y1
+//   (2)[ALGB] (1) Real y2
+//   (3)[ALGB] (1) Real $FUN_1
+//   (4)[ALGB] (1) Real $FUN_2
+//   (5)[ALGB] (1) Real $FUN_3
+//
+// Real Parameters (3)
+// *********************
+//   (0)[PRMT] (1) Real u_fix0 = 1.0
+//   (1)[PRMT] (1) Real y_fix0 = 1.0
+//   (2)[PRMT] (1) Real y_fix = 10.0
+//
+// Residual Variables (6)
+// ************************
+//   (0)[RES-] (1) Real $RES_AUX_5
+//   (1)[RES-] (1) Real $RES_SIM_0
+//   (2)[RES-] (1) Real $RES_AUX_6
+//   (3)[RES-] (1) Real $RES_SIM_1
+//   (4)[RES-] (1) Real $RES_AUX_7
+//   (5)[RES-] (1) Real $RES_SIM_4
+//
+// Initial Partition (Lambda = 0)
+// --------------------------------
+//   (13) u := u_fix0
+//   (12) $FUN_1 := sin(u)
+//   (11) y1 := u ^ 3.0 + $FUN_1
+//   (10) $FUN_3 := sin(1e-6 * u)
+//   (9) $FUN_2 := sqrt(y1)
+//   (8) y2 := $FUN_2 + $FUN_3
+//
+// Initial Partition
+// -------------------
+//   (7) y2 := homotopy(y_fix, y_fix0)
+//   (6) Nonlinear System (size = 5, homotopy = false, mixed = false, torn = true)
+//   --Iteration Vars:{u, $FUN_3, $FUN_2, y1, $FUN_1}
+//   --(1) 0 = sin(1e-6 * u) - $FUN_3
+//   --(2) 0 = ($FUN_2 + $FUN_3) - y2
+//   --(3) 0 = sqrt(y1) - $FUN_2
+//   --(4) 0 = (u ^ 3.0 + $FUN_1) - y1
+//   --(5) 0 = sin(u) - $FUN_1
+//
+// Algebraic Partition 1
+// -----------------------
+//   (20) Nonlinear System (size = 6, homotopy = true, mixed = false, torn = true)
+//   --Iteration Vars:{$FUN_3, u, y2, $FUN_2, y1, $FUN_1}
+//   --(14) 0 = sin(1e-6 * u) - $FUN_3
+//   --(15) 0 = y_fix - y2
+//   --(16) 0 = ($FUN_2 + $FUN_3) - y2
+//   --(17) 0 = sqrt(y1) - $FUN_2
+//   --(18) 0 = (u ^ 3.0 + $FUN_1) - y1
+//   --(19) 0 = sin(u) - $FUN_1
+//
+// Event Partition
+// -----------------
+//
+// ======================================================
+//   [EMPTY] SimCode Jacobian A(idx = 0, partition = 0)
+// ======================================================
+//
+// ======================================================
+//   [EMPTY] SimCode Jacobian B(idx = 2, partition = 0)
+// ======================================================
+//
+// ======================================================
+//   [EMPTY] SimCode Jacobian C(idx = 3, partition = 0)
+// ======================================================
+//
+// ======================================================
+//   [EMPTY] SimCode Jacobian D(idx = 4, partition = 0)
+// ======================================================
+//
+// ======================================================
+//   [EMPTY] SimCode Jacobian F(idx = 5, partition = 0)
+// ======================================================
+//
+// ======================================================
+//   [EMPTY] SimCode Jacobian H(idx = 6, partition = 0)
+// ======================================================
+//
+// ========================================================
+//   [EMPTY] SimCode Jacobian ADJ(idx = 1, partition = 0)
+// ========================================================
+//
+//
+//
+// *********************
+// * SimCode Equations *
+// *********************
+//
+//
+// allEquations:
+// ========================================
+//
+// 20:  (NONLINEAR) index:1 jacobian: false
+// crefs: $FUN_3 , u , y2 , $FUN_2 , y1 , $FUN_1
+// 	14: sin(1e-6 * u) - $FUN_3 (RESIDUAL)
+// 	15: y_fix - y2 (RESIDUAL)
+// 	16: $FUN_2 + $FUN_3 - y2 (RESIDUAL)
+// 	17: sqrt(y1) - $FUN_2 (RESIDUAL)
+// 	18: u ^ 3.0 + $FUN_1 - y1 (RESIDUAL)
+// 	19: sin(u) - $FUN_1 (RESIDUAL)
+//
+// ========================================
+//
+//
+//
+// odeEquations (0 systems):
+// ========================================
+// ========================================
+//
+//
+//
+// algebraicEquations (1 systems):
+// ========================================
+// 20:  (NONLINEAR) index:1 jacobian: false
+// crefs: $FUN_3 , u , y2 , $FUN_2 , y1 , $FUN_1
+// 	14: sin(1e-6 * u) - $FUN_3 (RESIDUAL)
+// 	15: y_fix - y2 (RESIDUAL)
+// 	16: $FUN_2 + $FUN_3 - y2 (RESIDUAL)
+// 	17: sqrt(y1) - $FUN_2 (RESIDUAL)
+// 	18: u ^ 3.0 + $FUN_1 - y1 (RESIDUAL)
+// 	19: sin(u) - $FUN_1 (RESIDUAL)
+//
+// ========================================
+//
+//
+// clockPartitions (0 systems):
+//
+// ========================================
+//
+//
+//
+// initialEquations: (2)
+// ========================================
+// 7: y2=homotopy(y_fix, y_fix0) [Real]
+// 6:  (NONLINEAR) index:0 jacobian: false
+// crefs: u , $FUN_3 , $FUN_2 , y1 , $FUN_1
+// 	1: sin(1e-6 * u) - $FUN_3 (RESIDUAL)
+// 	2: $FUN_2 + $FUN_3 - y2 (RESIDUAL)
+// 	3: sqrt(y1) - $FUN_2 (RESIDUAL)
+// 	4: u ^ 3.0 + $FUN_1 - y1 (RESIDUAL)
+// 	5: sin(u) - $FUN_1 (RESIDUAL)
+//
+// ========================================
+//
+//
+//
+// initialEquations_lambda0: (6)
+// ========================================
+// 13: u=u_fix0 [Real]
+// 12: $FUN_1=sin(u) [Real]
+// 11: y1=u ^ 3.0 + $FUN_1 [Real]
+// 10: $FUN_3=sin(1e-6 * u) [Real]
+// 9: $FUN_2=sqrt(y1) [Real]
+// 8: y2=$FUN_2 + $FUN_3 [Real]
+//
+// removedInitialEquations:
+// ========================================
+//
+// startValueEquations:
+// ========================================
+//
+// nominalValueEquations:
+// ========================================
+//
+// minValueEquations:
+// ========================================
+//
+// maxValueEquations:
+// ========================================
+//
+// parameterEquations:
+// ========================================
+//
+// removedEquations:
+// ========================================
+//
+// algorithmAndEquationAsserts:
+// ========================================
+//
+// equationsForZeroCrossings:
+// ========================================
+//
+// generic calls:
+// ========================================
+//
+// jacobianEquations:
+// ========================================
+//
+// jacobianMatrices:
+// ========================================
+// 	Jacobian idx: 0
+//
+// 	Jacobian idx: 2
+//
+// 	Jacobian idx: 3
+//
+// 	Jacobian idx: 4
+//
+// 	Jacobian idx: 5
+//
+// 	Jacobian idx: 6
+//
+// 	Jacobian idx: 1
+//
+//
+// modelInfo:
+// ========================================
+// algVars (6)
+// ----------------------
+// index:0: u (no alias)  initial: 	no arrCref index:(1) []
+// index:1: y1 (no alias)  initial: 	no arrCref index:(2) []
+// index:2: y2 (no alias)  initial: 	no arrCref index:(3) []
+// index:3: $FUN_1 (no alias)  hideResult  initial: 	no arrCref index:(4) []
+// index:4: $FUN_2 (no alias)  hideResult  initial: 	no arrCref index:(5) []
+// index:5: $FUN_3 (no alias)  hideResult  initial: 	no arrCref index:(6) []
+// paramVars
+// ----------------------
+// index:0: u_fix0 (no alias)  initial: 1.0	no arrCref index:(7) []
+// index:1: y_fix0 (no alias)  initial: 1.0	no arrCref index:(8) []
+// index:2: y_fix (no alias)  initial: 10.0	no arrCref index:(9) []
+// functions:
+// -----------
+//
+// record SimulationResult
+//     resultFile = "P.experimental_initialSimplified_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'P.experimental_initialSimplified', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully with 3 homotopy steps.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// endResult
