@@ -590,6 +590,21 @@ double vecMaxNorm(int n, double *x)
   return norm;
 }
 
+/**
+ * @brief Sets all infs and nans of a vector to 1.
+ */
+void vecMakeFinite(int n, double *a)
+{
+  for (int i = 0; i < n; i++)
+  {
+    if (!isfinite(a[i]))
+    {
+      warningStreamPrint(OMC_LOG_NLS_V, 0, "Entry of scaling vector is inf or nan. Element will be set to 1.0.");
+      a[i] = 1;
+    }
+  }
+}
+
 void vecAdd(int n, double *a, double *b, double *c)
 {
   int i;
@@ -2247,6 +2262,7 @@ NLS_SOLVER_STATUS solveHomotopy(DATA *data, threadData_t *threadData, NONLINEAR_
           memcpy(relationsPreBackup, data->simulationInfo->relations, sizeof(modelica_boolean)*data->modelData->nRelations);
         /* calculate scaling factor of residuals */
         matVecMultAbsBB(homotopyData->n, homotopyData->fJac, homotopyData->ones, homotopyData->resScaling);
+        vecMakeFinite(homotopyData->n, homotopyData->resScaling);
         debugVectorDouble(OMC_LOG_NLS_JAC, "residuum scaling:", homotopyData->resScaling, homotopyData->n);
         scaleMatrixRows(homotopyData->n, homotopyData->m, homotopyData->fJac);
 

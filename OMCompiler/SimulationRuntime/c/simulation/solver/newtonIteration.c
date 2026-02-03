@@ -478,8 +478,13 @@ void compute_scaling_vector(DATA_NEWTON* solverData, double* scalingVector) {
     jac_row_start = i*solverData->n;
     scalingVector[i] = _omc_gen_maximumVectorNorm(&(solverData->fjac[jac_row_start]), solverData->n);
     if(scalingVector[i] <= 0.0) {
-      warningStreamPrint(OMC_LOG_NLS_V, 1, "Jacobian matrix is singular.");
+      warningStreamPrint(OMC_LOG_NLS_V, 0, "Jacobian matrix is singular. Scaling of residual entry is set to 1e-16.");
       scalingVector[i] = 1e-16;
+    }
+    else if (!isfinite(scalingVector[i]))
+    {
+      warningStreamPrint(OMC_LOG_NLS_V, 0, "Jacobian entry is inf or nan. Scaling of residual entry will be set to 1.0.");
+      scalingVector[i] = 1.0;
     }
   }
 }
