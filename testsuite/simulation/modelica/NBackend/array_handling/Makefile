@@ -6,6 +6,7 @@ simple_nested_for.mos\
 irregular_for.mos\
 diagonal_slice_for.mos\
 simple_der_for.mos\
+slice_for.mos\
 for_exp.mos\
 for_list.mos\
 for_if.mos\
