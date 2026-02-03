@@ -598,7 +598,7 @@ public
         // check if we have homotopy
         bdae.init       := list(Partition.mapExp(par, function containsHomotopyCall(hasHom = hasHom)) for par in bdae.init);
 
-        // Simulation system: initial() -> false, initialLambda0() -> false
+        // Simulation system: initial() -> false, initialSimplified() -> false
         bdae.ode        := list(Partition.mapEqn(par, function cleanupInitialCall(init = false, init0 = false)) for par in bdae.ode);
         bdae.algebraic  := list(Partition.mapEqn(par, function cleanupInitialCall(init = false, init0 = false)) for par in bdae.algebraic);
         bdae.ode_event  := list(Partition.mapEqn(par, function cleanupInitialCall(init = false, init0 = false)) for par in bdae.ode_event);
@@ -621,11 +621,11 @@ public
           init_0 := list(Partition.clone(par, false) for par in bdae.init);
           // homotopy(actual, simplified) -> simplified
           //init_0 := list(Partition.mapExp(par, function cleanupHomotopy(init0 = true)) for par in init_0);
-          // initial() -> true, initialLambda0() -> true
+          // initial() -> true, initialSimplified() -> true
           init_0 := list(Partition.mapEqn(par, function cleanupInitialCall(init = true, init0 = true)) for par in init_0);
           bdae.init_0 := SOME(init_0);
         end if;
-        // initial() -> true, initialLambda0() -> false
+        // initial() -> true, initialSimplified() -> false
         bdae.init := list(Partition.mapEqn(par, function cleanupInitialCall(init = true, init0 = false)) for par in bdae.init);
       then bdae;
 
@@ -649,7 +649,7 @@ public
       if Expression.isCallNamed(exp, "initial") then
         exp := Expression.BOOLEAN(init);
         Pointer.update(simplify, true);
-      elseif Expression.isCallNamed(exp, "initialLambda0") then
+      elseif Expression.isCallNamed(exp, "initialSimplified") then
         exp := Expression.BOOLEAN(init0);
         Pointer.update(simplify, true);
       end if;
@@ -677,7 +677,7 @@ public
     input Pointer<Boolean> hasHom;
   algorithm
     if not Pointer.access(hasHom) then
-      Pointer.update(hasHom, Expression.isCallNamed(exp, "homotopy"));
+      Pointer.update(hasHom, Expression.isCallNamed(exp, "homotopy") or Expression.isCallNamed(exp, "initialSimplified"));
     end if;
   end containsHomotopyCall;
 
