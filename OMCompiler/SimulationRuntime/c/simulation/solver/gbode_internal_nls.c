@@ -1187,7 +1187,32 @@ void *gbInternalNlsAllocate(int size,
   }
 
   // add a history of thetas_last + #newt iterations to detect nearly linear systems, similar to err controller
-  nls->theta_keep = pow(10.0, -3.0 + 1.75 * log(1.0 + (double)jacobian_ODE->sparsePattern->maxColors) / log(1.0 + (double)nls->size));
+  if(omc_flag[FLAG_SR_NLS_INTERNAL_JACKEEP])
+  {
+    double keep_flag_value = atof(omc_flagValue[FLAG_SR_NLS_INTERNAL_JACKEEP]);
+    if (keep_flag_value >= 1.0)
+    {
+      throwStreamPrint(NULL, "Invalid value %1.6e for flag '-gbnls_internal_jackeep'. Value must be strictly less than 1.", keep_flag_value);
+    }
+    else
+    {
+      nls->theta_keep = keep_flag_value;
+    }
+  }
+  else
+  {
+    // heuristic that takes sparsity into account
+    if (nls->size > 8)
+    {
+      nls->theta_keep = pow(10.0, -3.0 + 1.75 * log(1.0 + (double)jacobian_ODE->sparsePattern->maxColors) / log(1.0 + (double)nls->size));
+    }
+    else
+    {
+      // for very small systems we can compute the Jacobian frequently
+      nls->theta_keep = 1e-3;
+    }
+  }
+
   nls->call_jac = TRUE;
   nls->theta_divergence = 0.99;
   nls->max_newton_it = !trfm ? 5 : 4 + 2 * trfm->size; // = 5 for each (E)SDIRK stage and e.g. 10 for full RadauIIA 3-step
