@@ -981,7 +981,9 @@ algorithm
 
   // Equation Declaration section
   modelicaOutput := modelicaOutput + "\nequation";
-  modelicaOutput := dumpExtractedEquations(modelicaOutput, currentSystem.orderedEqs, "extracted equations");
+  //modelicaOutput := dumpExtractedEquations(modelicaOutput, currentSystem.orderedEqs, "extracted equations");
+  modelicaOutput := dumpExtractedEquations(modelicaOutput, BackendEquation.listEquation(residualEquations), "residual equations");
+  modelicaOutput := dumpExtractedEquations(modelicaOutput, BackendEquation.listEquation(setSPrime_Eq), "remaining equations in Set-S'");
   modelicaOutput := modelicaOutput + "\nend " + modelName + ";";
   System.writeFile(modelicaFileName + ".mo", modelicaOutput);
 
