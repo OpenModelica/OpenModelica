@@ -1667,6 +1667,9 @@ public
   end scalarize;
 
   function scalarizeAll
+    "output list is in reverse order.
+    cref:  b.A (Real[2, 3])
+    crefs: {b[2].A[3], b[2].A[2], b[2].A[1], b[1].A[3], b[1].A[2], b[1].A[1]}"
     input ComponentRef cref;
     input Boolean resize;
     output list<ComponentRef> crefs;

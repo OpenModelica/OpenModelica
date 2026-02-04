@@ -181,24 +181,30 @@ protected
   list<BackendInfo> backend_attributes;
 algorithm
   try
-    crefs               := ComponentRef.scalarizeAll(ComponentRef.stripSubscriptsAll(var.name), false);
+    crefs               := listReverse(ComponentRef.scalarizeAll(ComponentRef.stripSubscriptsAll(var.name), false));
     elem_ty             := Type.arrayElementType(var.ty);
-    backend_attributes  := listReverse(BackendInfo.scalarize(var.backendinfo, listLength(crefs)));
+    backend_attributes  := BackendInfo.scalarize(var.backendinfo, listLength(crefs));
     if Binding.isBound(var.binding) then
       binding_iter      := ExpressionIterator.fromExp(Binding.getTypedExp(var.binding), true);
       bind_var          := Binding.variability(var.binding);
       bind_src          := Binding.source(var.binding);
-      for cr in crefs loop
-        (binding_iter, exp) := ExpressionIterator.next(binding_iter);
-        binding := Binding.makeFlat(exp, bind_var, bind_src);
-        binfo :: backend_attributes := backend_attributes;
-        vars := Variable.VARIABLE(cr, elem_ty, binding, var.visibility, var.attributes, {}, {}, var.comment, var.info, binfo) :: vars;
-      end for;
+      vars := list(
+        match cr
+          case _ algorithm
+            (binding_iter, exp) := ExpressionIterator.next(binding_iter);
+            binding := Binding.makeFlat(exp, bind_var, bind_src);
+            binfo :: backend_attributes := backend_attributes;
+          then Variable.VARIABLE(cr, elem_ty, binding, var.visibility, var.attributes, {}, {}, var.comment, var.info, binfo);
+        end match for cr in crefs
+      );
     else
-      for cr in crefs loop
-        binfo :: backend_attributes := backend_attributes;
-        vars := Variable.VARIABLE(cr, elem_ty, var.binding, var.visibility, var.attributes, {}, {}, var.comment, var.info, binfo) :: vars;
-      end for;
+      vars := list(
+        match cr
+          case _ algorithm
+            binfo :: backend_attributes := backend_attributes;
+          then Variable.VARIABLE(cr, elem_ty, var.binding, var.visibility, var.attributes, {}, {}, var.comment, var.info, binfo);
+        end match for cr in crefs
+      );
     end if;
     // filter sliced variables
     // ToDo: do this more efficiently and not create them in the first place
