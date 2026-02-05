@@ -655,6 +655,27 @@ public
     b := not isPrevious(var_ptr) and Util.isSome(getVarPre(var_ptr));
   end hasPre;
 
+  function isJacobianResultVar
+    "only returns true if the variable itself is not a pre() or previous() and has a pre() pointer set"
+    extends checkVar;
+  algorithm
+    b := match getVarPDer(var_ptr)
+      local
+        Pointer<Variable> der_var;
+      case SOME(der_var) then isJacobianResultVarPDer(der_var);
+      else false;
+    end match;
+  end isJacobianResultVar;
+
+  function isJacobianResultVarPDer
+    extends checkVar;
+  algorithm
+    b := match var.backendinfo.varKind
+      case VariableKind.JAC_VAR() then true;
+      else false;
+    end match;
+  end isJacobianResultVarPDer;
+
   function isDummyState
     extends checkVar;
   algorithm
@@ -1390,7 +1411,6 @@ public
             else if isTmp then VariableKind.JAC_TMP_VAR() else VariableKind.JAC_VAR();
           end match;
           var.backendinfo := BackendInfo.setVarKind(var.backendinfo, varKind);
-
 
           // create the new variable pointer and safe it to the component reference
           (var_ptr, cref) := makeVarPtrCyclic(var, cref);

@@ -1187,7 +1187,7 @@ protected
     );
 
     if Util.isSome(full) then
-      sparsity := Adjacency.Matrix.fullToSparsity(Util.getOption(full), equations);
+      sparsity := Adjacency.Matrix.fullToSparsity(Util.getOption(full), comps);
     else
       Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because full adjacency matrix to create sparsity pattern is missing."});
       fail();
