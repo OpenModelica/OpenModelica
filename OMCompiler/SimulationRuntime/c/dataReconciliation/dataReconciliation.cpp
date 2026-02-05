@@ -873,12 +873,13 @@ void updateReconciledMo(DATA * data, threadData_t * threadData, vector<string> h
   std::string reconciledMoFile, reconciledValuesMoFile;
   if (omc_flag[FLAG_OUTPUT_PATH])
   {
-    reconciledMoFile = std::string(omc_flagValue[FLAG_OUTPUT_PATH]) + "/" + "Reconciled_tmp_" +  modelPrefix + ".mo";
+    reconciledMoFile = std::string(omc_flagValue[FLAG_OUTPUT_PATH]) + "/" + data->modelData->modelFilePrefix +"_Reconciled_tmp.mo";
     reconciledValuesMoFile = std::string(omc_flagValue[FLAG_OUTPUT_PATH]) + "/" + "Reconciled_" +  modelPrefix + ".mo";
+    copyReferenceFile(data, "_Reconciled_tmp.mo");
   }
   else
   {
-    reconciledMoFile = "Reconciled_tmp_" + modelPrefix + ".mo";
+    reconciledMoFile = std::string(data->modelData->modelFilePrefix) + "_Reconciled_tmp.mo";
     reconciledValuesMoFile = "Reconciled_" + modelPrefix + ".mo";
   }
   std::ifstream infile(reconciledMoFile);
@@ -2909,6 +2910,7 @@ int reconcileBoundaryConditions(DATA * data, threadData_t * threadData, inputDat
   if (omc_flag[FLAG_OUTPUT_PATH])
   {
     boundaryConditionsVarsFilename = std::string(omc_flagValue[FLAG_OUTPUT_PATH]) + "/" + std::string(data->modelData->modelFilePrefix) + "_BoundaryConditionVars.txt";
+    copyReferenceFile(data, "_BoundaryConditionVars.txt");
   }
   else
   {
@@ -3020,6 +3022,11 @@ int stateEstimation(DATA *data, threadData_t *threadData, inputData x, matrixDat
   boundaryConditionData boundaryconditiondata;
   if (data->modelData->nSetbVars > 0)
   {
+    // copy the reference files "BoundaryConditionsEquations.html and _BoundaryConditionIntermediateEquations.html to output path"
+    if (omc_flag[FLAG_OUTPUT_PATH])
+    {
+      copyReferenceFile(data, "_BoundaryConditionIntermediateEquations.html");
+    }
     // pepare data to compute boundary condition
     inputData reconciled_x = {datareconciliationdata.reconciled_X.rows, datareconciliationdata.reconciled_X.column, datareconciliationdata.reconciled_X.data, {}};
     matrixData reconciled_Sx = {datareconciliationdata.reconciled_SX.rows, datareconciliationdata.reconciled_SX.column, datareconciliationdata.reconciled_SX.data};
@@ -3058,6 +3065,7 @@ int dataReconciliation(DATA * data, threadData_t * threadData, int status)
     copyReferenceFile(data, "_AuxiliaryConditions.html");
     copyReferenceFile(data, "_IntermediateEquations.html");
     copyReferenceFile(data, "_relatedBoundaryConditionsEquations.html");
+    copyReferenceFile(data, "_iterationVars.txt");
   }
 
   // report run time initialization and non linear convergence error to html
@@ -3169,6 +3177,7 @@ int boundaryConditions(DATA * data, threadData_t * threadData, int status)
   {
     copyReferenceFile(data, "_BoundaryConditionsEquations.html");
     copyReferenceFile(data, "_BoundaryConditionIntermediateEquations.html");
+    copyReferenceFile(data, "_iterationVars.txt");
   }
 
   // report run time initialization and non linear convergence error to html
