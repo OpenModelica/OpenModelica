@@ -1789,7 +1789,6 @@ protected
     varDataJac := BVariable.VAR_DATA_JAC(
       variables     = VariablePointers.fromList(all_vars),
       unknowns      = VariablePointers.fromList(unknown_vars),
-      knowns        = knowns,
       auxiliaries   = VariablePointers.fromList(aux_vars),
       aliasVars     = VariablePointers.fromList(alias_vars),
       diffVars      = partialCandidates,
