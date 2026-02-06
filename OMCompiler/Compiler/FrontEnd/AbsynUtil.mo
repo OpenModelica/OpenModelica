@@ -1645,25 +1645,20 @@ public function pathToStringList
   input Absyn.Path path;
   output list<String> outPaths;
 algorithm
-  outPaths := listReverse(pathToStringListWork(path,{}));
+  outPaths := listReverse(pathToStringListReverse(path));
 end pathToStringList;
 
-protected function pathToStringListWork
+public function pathToStringListReverse
   input Absyn.Path path;
-  input list<String> acc;
+  input list<String> acc = {};
   output list<String> outPaths;
 algorithm
-  outPaths := match(path,acc)
-    local
-      String n;
-      Absyn.Path p;
-
-    case (Absyn.IDENT(name = n),_) then n::acc;
-    case (Absyn.FULLYQUALIFIED(path = p),_) then pathToStringListWork(p,acc);
-    case (Absyn.QUALIFIED(name = n,path = p),_)
-      then pathToStringListWork(p,n::acc);
+  outPaths := match path
+    case Absyn.IDENT() then path.name :: acc;
+    case Absyn.QUALIFIED() then pathToStringListReverse(path.path, path.name :: acc);
+    case Absyn.FULLYQUALIFIED() then pathToStringListReverse(path.path, acc);
   end match;
-end pathToStringListWork;
+end pathToStringListReverse;
 
 public function addSubscriptsLast
   "Function for appending subscripts at end of last ident"

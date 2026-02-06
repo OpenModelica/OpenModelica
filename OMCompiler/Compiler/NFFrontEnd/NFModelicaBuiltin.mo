@@ -5608,6 +5608,7 @@ end convertPackageToLibrary;
 function getModelInstance
   "Dumps a model instance as a JSON string."
   input TypeName className;
+  input TypeName context = $TypeName(__NoContext);
   input String modifier = "";
   input Boolean prettyPrint = false;
   output String result;

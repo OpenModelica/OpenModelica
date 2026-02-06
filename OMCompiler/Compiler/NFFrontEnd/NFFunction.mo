@@ -467,7 +467,7 @@ uniontype Function
         guard InstNode.isEnumerationType(fnNode)
         algorithm
           node := makeEnumConversionOp(fnNode);
-          node := InstNode.setNodeType(NFInstNode.InstNodeType.ROOT_CLASS(parent), node);
+          node := InstNode.makeRootClass(node, parent);
           (node, cmts) := instFunction3(node, context, info);
           fn := new(fnPath, node, cmts);
           fnNode := InstNode.cacheAddFunc(fnNode, fn, false);
@@ -480,7 +480,7 @@ uniontype Function
             OperatorOverloading.checkOperatorRestrictions(fnNode);
           end if;
 
-          fnNode := InstNode.setNodeType(NFInstNode.InstNodeType.ROOT_CLASS(parent), fnNode);
+          fnNode := InstNode.makeRootClass(fnNode, parent);
           (fnNode, cmts) := instFunction3(fnNode, context, info);
           fn := new(fnPath, fnNode, cmts);
           specialBuiltin := isSpecialBuiltin(fn);
