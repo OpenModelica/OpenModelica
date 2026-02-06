@@ -3390,12 +3390,14 @@ QList<QString> OMCProxy::getAvailablePackageConversionsFrom(const QString &pkg, 
  * \param icon
  * \return
  */
-QJsonObject OMCProxy::getModelInstance(const QString &className, const QString &modifier, bool prettyPrint, bool icon)
+QJsonObject OMCProxy::getModelInstance(const QString &className, const QString &context, const QString &modifier, bool prettyPrint, bool icon)
 {
   QElapsedTimer timer;
   timer.start();
 
   QString modelInstanceJson = "";
+  QString cnt = context.isEmpty() ? QString("__NoContext") : context;
+
   if (icon) {
     QList<QString> filter;
     filter << "Icon" << "IconMap" << "Diagram" << "DiagramMap" << "experiment";
@@ -3410,10 +3412,10 @@ QJsonObject OMCProxy::getModelInstance(const QString &className, const QString &
       } else {
         getErrorString();
       }
-      modelInstanceJson = mpOMCInterface->getModelInstance(className, modifier, prettyPrint);
+      modelInstanceJson = mpOMCInterface->getModelInstance(className, cnt, modifier, prettyPrint);
     }
   } else {
-    modelInstanceJson = mpOMCInterface->getModelInstance(className, modifier, prettyPrint);
+    modelInstanceJson = mpOMCInterface->getModelInstance(className, cnt, modifier, prettyPrint);
   }
 
   if (MainWindow::instance()->isNewApiProfiling()) {

@@ -388,7 +388,7 @@ algorithm
 
   clsNode := InstUtil.mergeScalars(clsNode, path, isRootClass = true);
   checkInstanceRestriction(clsNode, path, context);
-  clsNode := InstNode.setNodeType(InstNodeType.ROOT_CLASS(InstNode.EMPTY_NODE()), clsNode);
+  clsNode := InstNode.makeRootClass(clsNode);
 end lookupRootClass;
 
 function instantiateRootClass

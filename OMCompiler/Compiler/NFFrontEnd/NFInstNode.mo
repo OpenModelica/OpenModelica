@@ -94,6 +94,7 @@ uniontype InstNodeType
     "The root of the instance tree, i.e. the class that the instantiation starts from."
     InstNode parent "The parent of the class, e.g. when instantiating a function
                      in a component where the component is the parent.";
+    Option<Absyn.Path> context "Used by getModelInstance to add context to instances.";
   end ROOT_CLASS;
 
   record NORMAL_COMP
@@ -409,6 +410,14 @@ uniontype InstNode
     end match;
   end isDerivedClass;
 
+  function makeRootClass
+    input output InstNode node;
+    input InstNode parent = EMPTY_NODE();
+    input Option<Absyn.Path> context = NONE();
+  algorithm
+    node := setNodeType(InstNodeType.ROOT_CLASS(parent, context), node);
+  end makeRootClass;
+
   function isRootClass
     input InstNode node;
     output Boolean res;
@@ -418,6 +427,16 @@ uniontype InstNode
       else false;
     end match;
   end isRootClass;
+
+  function rootClassContext
+    input InstNode node;
+    output Option<Absyn.Path> context;
+  algorithm
+    context := match node
+      case CLASS_NODE(nodeType = InstNodeType.ROOT_CLASS(context = context)) then context;
+      else NONE();
+    end match;
+  end rootClassContext;
 
   function isFunction
     input InstNode node;

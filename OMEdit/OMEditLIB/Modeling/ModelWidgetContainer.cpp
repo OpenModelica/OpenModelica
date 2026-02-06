@@ -859,7 +859,7 @@ ModelInstance::Component *GraphicsView::createModelInstanceComponent(ModelInstan
   /* We use getModelInstance with icon flag for bettter performance
    * This model will be updated right after this so it doesn't matter if the Component has complete model or not.
    */
-  ModelInstance::Model *pModel = new ModelInstance::Model(MainWindow::instance()->getOMCProxy()->getModelInstance(className, "", false, true));
+  ModelInstance::Model *pModel = new ModelInstance::Model(MainWindow::instance()->getOMCProxy()->getModelInstance(className, "", "", false, true));
   pModel->setRestriction(isConnector ? "connector" : "model");
   pComponent->setModel(pModel);
   pModelInstance->addElement(pComponent);
@@ -5835,7 +5835,7 @@ void ModelWidget::loadModelInstance(bool icon, const ModelInfo &modelInfo)
   QElapsedTimer timer;
   timer.start();
   // call getModelInstance
-  const QJsonObject jsonObject = MainWindow::instance()->getOMCProxy()->getModelInstance(mpLibraryTreeItem->getNameStructure(), "", false, icon);
+  const QJsonObject jsonObject = MainWindow::instance()->getOMCProxy()->getModelInstance(mpLibraryTreeItem->getNameStructure(), "", "", false, icon);
   // set the new ModelInstance
   mpModelInstance = new ModelInstance::Model(jsonObject);
   if (MainWindow::instance()->isNewApiProfiling()) {
