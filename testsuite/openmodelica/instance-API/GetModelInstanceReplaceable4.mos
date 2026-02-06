@@ -42,18 +42,11 @@ getModelInstance(P.M, prettyPrint = true);
 //         \"elements\": [
 //           {
 //             \"$kind\": \"class\",
-//             \"name\": \"P.A.B\",
+//             \"name\": \"B\",
 //             \"restriction\": \"model\",
 //             \"prefixes\": {
 //               \"replaceable\": true
 //             },
-//             \"elements\": [
-//               {
-//                 \"$kind\": \"component\",
-//                 \"name\": \"x\",
-//                 \"type\": \"Real\"
-//               }
-//             ],
 //             \"source\": {
 //               \"filename\": \"<interactive>\",
 //               \"lineStart\": 4,
@@ -64,18 +57,11 @@ getModelInstance(P.M, prettyPrint = true);
 //           },
 //           {
 //             \"$kind\": \"class\",
-//             \"name\": \"P.A.C\",
+//             \"name\": \"C\",
 //             \"restriction\": \"model\",
 //             \"prefixes\": {
 //               \"replaceable\": true
 //             },
-//             \"elements\": [
-//               {
-//                 \"$kind\": \"component\",
-//                 \"name\": \"y\",
-//                 \"type\": \"Real\"
-//               }
-//             ],
 //             \"source\": {
 //               \"filename\": \"<interactive>\",
 //               \"lineStart\": 8,
@@ -86,39 +72,14 @@ getModelInstance(P.M, prettyPrint = true);
 //           },
 //           {
 //             \"$kind\": \"class\",
-//             \"name\": \"P.A.D\",
+//             \"name\": \"D\",
 //             \"restriction\": \"model\",
 //             \"prefixes\": {
 //               \"replaceable\": {
 //                 \"constrainedby\": \"C\"
 //               }
 //             },
-//             \"elements\": [
-//               {
-//                 \"$kind\": \"extends\",
-//                 \"baseClass\": {
-//                   \"name\": \"P.A.C\",
-//                   \"restriction\": \"model\",
-//                   \"prefixes\": {
-//                     \"replaceable\": true
-//                   },
-//                   \"elements\": [
-//                     {
-//                       \"$kind\": \"component\",
-//                       \"name\": \"y\",
-//                       \"type\": \"Real\"
-//                     }
-//                   ],
-//                   \"source\": {
-//                     \"filename\": \"<interactive>\",
-//                     \"lineStart\": 8,
-//                     \"columnStart\": 19,
-//                     \"lineEnd\": 10,
-//                     \"columnEnd\": 12
-//                   }
-//                 }
-//               }
-//             ],
+//             \"baseClass\": \"P.A.C\",
 //             \"source\": {
 //               \"filename\": \"<interactive>\",
 //               \"lineStart\": 12,
