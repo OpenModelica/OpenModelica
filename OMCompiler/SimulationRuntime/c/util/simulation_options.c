@@ -148,6 +148,7 @@ const char *FLAG_NAME[FLAG_MAX+1] = {
   /* FLAG_DATA_RECONCILE_STATE */         "reconcileState",
   /* FLAG_SR */                           "gbm",
   /* FLAG_SR_CTRL */                      "gbctrl",
+  /* FLAG_SR_CTRL_EVNT_REINIT */          "gbctrl_evnt_reinit",
   /* FLAG_SR_CTRL_FILTER */               "gbctrl_filter",
   /* FLAG_SR_CTRL_FHR */                  "gbctrl_fhr",
   /* FLAG_SR_ERR */                       "gberr",
@@ -301,6 +302,7 @@ const char *FLAG_DESC[FLAG_MAX+1] = {
   /* FLAG_DATA_RECONCILE_STATE */         "Run the State Estimation numerical computation algorithm for constrained equations",
   /* FLAG_SR */                           "Value specifies the chosen solver of solver gbode (single-rate, slow states integrator)",
   /* FLAG_SR_CTRL */                      "Step size control of solver gbode (single-rate, slow states integrator)",
+  /* FLAG_SR_CTRL_EVNT_REINIT */          "Reset step size using standard inital step size selection after an event (default false)",
   /* FLAG_SR_CTRL_FILTER */               "Applies exponential smoothing to the step size factor; gbctrl_filter = 0 yields constant step size, gbctrl_filter = 1 uses full adaptation without averaging.",
   /* FLAG_SR_CTRL_FHR */                  "Applies adaptive damping to the step size factor using Führer’s approach, scaling it by h_fac *= (h_n / h_n1)^gamma to penalize repeated rejections or reward successful step acceptance.",
   /* FLAG_SR_ERR */                       "Error estimation method for solver gbode (single-rate, slow states integrator).",
@@ -632,6 +634,8 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   "  Value specifies the chosen solver of solver gbode (single-rate, slow states integrator).",
   /* FLAG_SR_CTRL */
   "  Step size control of solver gbode (single-rate, slow states integrator).",
+  /* FLAG_SR_CTRL_EVNT_REINIT */
+  "  Reset step size using standard inital step size selection after an event (default false)",
   /* FLAG_SR_CTRL_FILTER */
   "  Applies exponential smoothing to the step size factor; gbctrl_filter = 0 yields constant step size, gbctrl_filter = 1 uses full adaptation without averaging.",
   /* FLAG_SR_CTRL_FHR */
@@ -828,6 +832,7 @@ const flag_repeat_policy FLAG_REPEAT_POLICIES[FLAG_MAX] = {
   /* FLAG_DATA_RECONCILE_STATE  */        FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_SR */                           FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_SR_CTRL */                      FLAG_REPEAT_POLICY_FORBID,
+  /* FLAG_SR_CTRL_EVNT_REINIT */          FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_SR_CTRL_FILTER */               FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_SR_CTRL_FHR */                  FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_SR_ERR */                       FLAG_REPEAT_POLICY_FORBID,
@@ -980,6 +985,7 @@ const int FLAG_TYPE[FLAG_MAX] = {
   /* FLAG_DATA_RECONCILE_STATE */         FLAG_TYPE_FLAG,
   /* FLAG_SR */                           FLAG_TYPE_OPTION,
   /* FLAG_SR_CTRL */                      FLAG_TYPE_OPTION,
+  /* FLAG_SR_CTRL_EVNT_REINIT */          FLAG_TYPE_FLAG,
   /* FLAG_SR_CTRL_FILTER */               FLAG_TYPE_OPTION,
   /* FLAG_SR_CTRL_FHR */                  FLAG_TYPE_FLAG,
   /* FLAG_SR_ERR */                       FLAG_TYPE_OPTION,
