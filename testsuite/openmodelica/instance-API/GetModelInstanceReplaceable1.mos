@@ -39,18 +39,11 @@ getModelInstance(M, prettyPrint = true);
 //     },
 //     {
 //       \"$kind\": \"class\",
-//       \"name\": \"M.M\",
+//       \"name\": \"M\",
 //       \"restriction\": \"model\",
 //       \"prefixes\": {
 //         \"replaceable\": true
 //       },
-//       \"elements\": [
-//         {
-//           \"$kind\": \"component\",
-//           \"name\": \"x\",
-//           \"type\": \"Real\"
-//         }
-//       ],
 //       \"source\": {
 //         \"filename\": \"<interactive>\",
 //         \"lineStart\": 5,

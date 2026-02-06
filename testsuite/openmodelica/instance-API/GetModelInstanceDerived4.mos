@@ -68,139 +68,15 @@ getModelInstance(HierarchicalEditingGUI.Problem1, prettyPrint = true); getErrorS
 //           },
 //           {
 //             \"$kind\": \"class\",
-//             \"name\": \"HierarchicalEditingGUI.Main.NestModel\",
+//             \"name\": \"NestModel\",
 //             \"restriction\": \"model\",
 //             \"prefixes\": {
 //               \"replaceable\": true
 //             },
+//             \"baseClass\": \"HierarchicalEditingGUI.Nested1\",
 //             \"annotation\": {
 //               \"choicesAllMatching\": true
 //             },
-//             \"elements\": [
-//               {
-//                 \"$kind\": \"extends\",
-//                 \"baseClass\": {
-//                   \"name\": \"HierarchicalEditingGUI.Nested1\",
-//                   \"restriction\": \"model\",
-//                   \"elements\": [
-//                     {
-//                       \"$kind\": \"component\",
-//                       \"name\": \"p1A\",
-//                       \"type\": \"Real\",
-//                       \"prefixes\": {
-//                         \"variability\": \"parameter\"
-//                       }
-//                     },
-//                     {
-//                       \"$kind\": \"component\",
-//                       \"name\": \"p1B\",
-//                       \"type\": \"Real\",
-//                       \"prefixes\": {
-//                         \"variability\": \"parameter\"
-//                       }
-//                     },
-//                     {
-//                       \"$kind\": \"class\",
-//                       \"name\": \"HierarchicalEditingGUI.Main.NestModel.InnerNestedModel\",
-//                       \"restriction\": \"model\",
-//                       \"prefixes\": {
-//                         \"replaceable\": true
-//                       },
-//                       \"annotation\": {
-//                         \"choicesAllMatching\": true
-//                       },
-//                       \"elements\": [
-//                         {
-//                           \"$kind\": \"extends\",
-//                           \"baseClass\": {
-//                             \"name\": \"HierarchicalEditingGUI.Nested2\",
-//                             \"restriction\": \"model\",
-//                             \"elements\": [
-//                               {
-//                                 \"$kind\": \"component\",
-//                                 \"name\": \"p2A\",
-//                                 \"type\": \"Real\",
-//                                 \"prefixes\": {
-//                                   \"variability\": \"parameter\"
-//                                 }
-//                               }
-//                             ],
-//                             \"source\": {
-//                               \"filename\": \"<interactive>\",
-//                               \"lineStart\": 11,
-//                               \"columnStart\": 5,
-//                               \"lineEnd\": 14,
-//                               \"columnEnd\": 16
-//                             }
-//                           }
-//                         }
-//                       ],
-//                       \"source\": {
-//                         \"filename\": \"<interactive>\",
-//                         \"lineStart\": 6,
-//                         \"columnStart\": 19,
-//                         \"lineEnd\": 6,
-//                         \"columnEnd\": 89
-//                       }
-//                     },
-//                     {
-//                       \"$kind\": \"component\",
-//                       \"name\": \"nested2\",
-//                       \"type\": {
-//                         \"name\": \"HierarchicalEditingGUI.Main.NestModel.InnerNestedModel\",
-//                         \"restriction\": \"model\",
-//                         \"prefixes\": {
-//                           \"replaceable\": true
-//                         },
-//                         \"annotation\": {
-//                           \"choicesAllMatching\": true
-//                         },
-//                         \"elements\": [
-//                           {
-//                             \"$kind\": \"extends\",
-//                             \"baseClass\": {
-//                               \"name\": \"HierarchicalEditingGUI.Nested2\",
-//                               \"restriction\": \"model\",
-//                               \"elements\": [
-//                                 {
-//                                   \"$kind\": \"component\",
-//                                   \"name\": \"p2A\",
-//                                   \"type\": \"Real\",
-//                                   \"prefixes\": {
-//                                     \"variability\": \"parameter\"
-//                                   }
-//                                 }
-//                               ],
-//                               \"source\": {
-//                                 \"filename\": \"<interactive>\",
-//                                 \"lineStart\": 11,
-//                                 \"columnStart\": 5,
-//                                 \"lineEnd\": 14,
-//                                 \"columnEnd\": 16
-//                               }
-//                             }
-//                           }
-//                         ],
-//                         \"source\": {
-//                           \"filename\": \"<interactive>\",
-//                           \"lineStart\": 6,
-//                           \"columnStart\": 19,
-//                           \"lineEnd\": 6,
-//                           \"columnEnd\": 89
-//                         }
-//                       }
-//                     }
-//                   ],
-//                   \"source\": {
-//                     \"filename\": \"<interactive>\",
-//                     \"lineStart\": 3,
-//                     \"columnStart\": 5,
-//                     \"lineEnd\": 9,
-//                     \"columnEnd\": 16
-//                   }
-//                 }
-//               }
-//             ],
 //             \"source\": {
 //               \"filename\": \"<interactive>\",
 //               \"lineStart\": 18,
@@ -263,40 +139,15 @@ getModelInstance(HierarchicalEditingGUI.Problem1, prettyPrint = true); getErrorS
 //                       },
 //                       {
 //                         \"$kind\": \"class\",
-//                         \"name\": \"HierarchicalEditingGUI.Main.NestModel.InnerNestedModel\",
+//                         \"name\": \"InnerNestedModel\",
 //                         \"restriction\": \"model\",
 //                         \"prefixes\": {
 //                           \"replaceable\": true
 //                         },
+//                         \"baseClass\": \"HierarchicalEditingGUI.Nested2\",
 //                         \"annotation\": {
 //                           \"choicesAllMatching\": true
 //                         },
-//                         \"elements\": [
-//                           {
-//                             \"$kind\": \"extends\",
-//                             \"baseClass\": {
-//                               \"name\": \"HierarchicalEditingGUI.Nested2\",
-//                               \"restriction\": \"model\",
-//                               \"elements\": [
-//                                 {
-//                                   \"$kind\": \"component\",
-//                                   \"name\": \"p2A\",
-//                                   \"type\": \"Real\",
-//                                   \"prefixes\": {
-//                                     \"variability\": \"parameter\"
-//                                   }
-//                                 }
-//                               ],
-//                               \"source\": {
-//                                 \"filename\": \"<interactive>\",
-//                                 \"lineStart\": 11,
-//                                 \"columnStart\": 5,
-//                                 \"lineEnd\": 14,
-//                                 \"columnEnd\": 16
-//                               }
-//                             }
-//                           }
-//                         ],
 //                         \"source\": {
 //                           \"filename\": \"<interactive>\",
 //                           \"lineStart\": 6,
