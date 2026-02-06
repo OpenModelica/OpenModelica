@@ -6255,8 +6255,8 @@ void DebuggerPage::browseGDBPath()
 }
 
 /*!
- * \class DebuggerPage
- * \brief Creates an interface for debugger settings.
+ * \class FMIPage
+ * \brief Creates an interface for FMI settings.
  */
 /*!
  * \brief FMIPage::FMIPage
