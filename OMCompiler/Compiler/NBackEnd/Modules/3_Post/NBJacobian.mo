@@ -166,6 +166,7 @@ public
     input VariablePointers partialCandidates;
     input EquationPointers equations;
     input array<StrongComponent> comps;
+    input Option<Adjacency.Matrix> full;
     input UnorderedMap<Path, Function> funcMap;
     input String name;
     input Boolean init;
@@ -181,8 +182,8 @@ public
         seedCandidates    = seedCandidates,
         partialCandidates = partialCandidates,
         equations         = equations,
-        knowns            = VariablePointers.empty(0),      // remove them? are they necessary?
         strongComponents  = SOME(comps),
+        full              = full,
         funcMap           = funcMap,
         init              = init
       );
@@ -194,7 +195,7 @@ public
     output BackendDAE jacobian;
   protected
     JacobianType jacType;
-    list<Pointer<Variable>> variables = {}, unknowns = {}, knowns = {}, auxiliaryVars = {}, aliasVars = {};
+    list<Pointer<Variable>> variables = {}, unknowns = {}, auxiliaryVars = {}, aliasVars = {};
     list<Pointer<Variable>> diffVars = {}, dependencies = {}, resultVars = {}, tmpVars = {}, seedVars = {};
     list<StrongComponent> comps = {};
     list<SparsityPatternCol> col_wise_pattern = {};
@@ -222,7 +223,6 @@ public
             jacType       := jac.jacType;
             variables     := listAppend(VariablePointers.toList(tmpVarData.variables), variables);
             unknowns      := listAppend(VariablePointers.toList(tmpVarData.unknowns), unknowns);
-            knowns        := listAppend(VariablePointers.toList(tmpVarData.knowns), knowns);
             auxiliaryVars := listAppend(VariablePointers.toList(tmpVarData.auxiliaries), auxiliaryVars);
             aliasVars     := listAppend(VariablePointers.toList(tmpVarData.aliasVars), aliasVars);
             diffVars      := listAppend(VariablePointers.toList(tmpVarData.diffVars), diffVars);
@@ -250,7 +250,6 @@ public
       varData := VarData.VAR_DATA_JAC(
         variables     = VariablePointers.fromList(variables),
         unknowns      = VariablePointers.fromList(unknowns),
-        knowns        = VariablePointers.fromList(knowns),
         auxiliaries   = VariablePointers.fromList(auxiliaryVars),
         aliasVars     = VariablePointers.fromList(aliasVars),
         diffVars      = VariablePointers.fromList(diffVars),
@@ -273,6 +272,7 @@ public
         jacType           = jacType,
         varData           = varData,
         comps             = listArray(comps),
+        //sparsity          = Adjacency.Matrix.SPARSITY(arrayCreate()),
         sparsityPattern   = sparsityPattern,
         sparsityColoring  = sparsityColoring,
         isAdjoint         = name == "ADJ" // this is maybe bad (e.g. when name changes)
@@ -988,7 +988,7 @@ protected
 
     // TODO: add _OPT to name?
     LFG_jacobian := func(name, JacobianType.OPT_LFG, seedCandidates, partialCandidates,
-                         part.equations, all_knowns, part.strongComponents, funcMap, init);
+                         part.equations, part.strongComponents, part.adjacencyMatrix, funcMap, init);
 
     // Mrf Jacobian (Mayer (M), Final Constraints (rf))
     partialCandidates := VariablePointers.fromList(getMrfPartialCandidates(part, all_knowns), part.unknowns.scalarized);
@@ -996,7 +996,7 @@ protected
 
     // TODO: add _OPT to name?
     MRF_jacobian := func(name, JacobianType.OPT_MRF, seedCandidates, partialCandidates,
-                         part.equations, all_knowns, part.strongComponents, funcMap, init);
+                         part.equations, part.strongComponents, part.adjacencyMatrix, funcMap, init);
 
     // r0 Jacobian (Initial Constraints (r0))
     partialCandidates := VariablePointers.fromList(getR0PartialCandidates(part, all_knowns), part.unknowns.scalarized);
@@ -1004,7 +1004,7 @@ protected
 
     // TODO: add _OPT to name?
     R0_jacobian := func(name, JacobianType.OPT_R0, seedCandidates, partialCandidates,
-                        part.equations, all_knowns, part.strongComponents, funcMap, init);
+                        part.equations, part.strongComponents, part.adjacencyMatrix, funcMap, init);
   end partJacobianDynamicOptimization;
 
   function partJacobian
@@ -1029,7 +1029,7 @@ protected
         StrongComponent tmp;
       case SOME(comps) algorithm
         for i in 1:arrayLength(comps) loop
-          (tmp, updated) := compJacobian(comps[i], funcMap, kind);
+          (tmp, updated) := compJacobian(comps[i], part.adjacencyMatrix, funcMap, kind);
           if updated then arrayUpdate(comps, i, tmp); end if;
         end for;
       then SOME(comps);
@@ -1046,7 +1046,7 @@ protected
       state_vars := list(Util.getOption(BVariable.getVarState(var)) for var in derivative_vars);
       seedCandidates := VariablePointers.fromList(state_vars, partialCandidates.scalarized);
 
-      jacobian := func(name, jacType, seedCandidates, partialCandidates, part.equations, knowns, part.strongComponents, funcMap, kind == NBPartition.Kind.INI);
+      jacobian := func(name, jacType, seedCandidates, partialCandidates, part.equations, part.strongComponents, part.adjacencyMatrix, funcMap, kind == NBPartition.Kind.INI);
 
       if Flags.getConfigBool(Flags.MOO_DYNAMIC_OPTIMIZATION) then
         /* Add Lfg + Mr Jacobians for MOO dynamic optimization */
@@ -1070,6 +1070,7 @@ protected
 
   function compJacobian
     input output StrongComponent comp;
+    input Option<Adjacency.Matrix> full;
     input UnorderedMap<Path, Function> funcMap;
     input Partition.Kind kind;
     output Boolean updated;
@@ -1095,6 +1096,7 @@ protected
           partialCandidates = VariablePointers.fromList(listAppend(residual_vars, inner_vars)),
           equations         = EquationPointers.fromList(list(Slice.getT(eqn) for eqn in strict.residual_eqns)),
           comps             = Array.appendList(strict.innerEquations, residual_comps),
+          full              = full,
           funcMap           = funcMap,
           name              = Partition.Partition.kindToString(kind) + (if comp.linear then "_LS_JAC_" else "_NLS_JAC_") + intString(comp.idx),
           init              = kind == NBPartition.Kind.INI);
@@ -1121,6 +1123,7 @@ protected
     BVariable.VarData varDataJac;
     SparsityPattern sparsityPattern;
     SparsityColoring sparsityColoring;
+    Adjacency.Matrix sparsity;
 
     BVariable.checkVar func = getTmpFilterFunction(jacType);
   algorithm
@@ -1174,7 +1177,6 @@ protected
     varDataJac := BVariable.VAR_DATA_JAC(
       variables     = VariablePointers.fromList(all_vars),
       unknowns      = VariablePointers.fromList(unknown_vars),
-      knowns        = knowns,
       auxiliaries   = VariablePointers.fromList(aux_vars),
       aliasVars     = VariablePointers.fromList(alias_vars),
       diffVars      = partialCandidates,
@@ -1184,6 +1186,12 @@ protected
       seedVars      = VariablePointers.fromList(seed_vars)
     );
 
+    if Util.isSome(full) then
+      //sparsity := Adjacency.Matrix.fullToSparsity(Util.getOption(full), comps);
+    else
+      Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because full adjacency matrix to create sparsity pattern is missing."});
+      fail();
+    end if;
     (sparsityPattern, sparsityColoring) := SparsityPattern.create(seedCandidates, partialCandidates, strongComponents, jacType);
 
     jacobian := SOME(Jacobian.JACOBIAN(
@@ -1191,6 +1199,7 @@ protected
       jacType           = jacType,
       varData           = varDataJac,
       comps             = listArray(diffed_comps),
+      // sparsity
       sparsityPattern   = sparsityPattern,
       sparsityColoring  = sparsityColoring,
       isAdjoint         = false
@@ -1780,7 +1789,6 @@ protected
     varDataJac := BVariable.VAR_DATA_JAC(
       variables     = VariablePointers.fromList(all_vars),
       unknowns      = VariablePointers.fromList(unknown_vars),
-      knowns        = knowns,
       auxiliaries   = VariablePointers.fromList(aux_vars),
       aliasVars     = VariablePointers.fromList(alias_vars),
       diffVars      = partialCandidates,
@@ -1823,7 +1831,6 @@ protected
     varDataJac := BVariable.VAR_DATA_JAC(
       variables     = VariablePointers.fromList({}),
       unknowns      = partialCandidates,
-      knowns        = VariablePointers.fromList({}),
       auxiliaries   = VariablePointers.fromList({}),
       aliasVars     = VariablePointers.fromList({}),
       diffVars      = VariablePointers.fromList({}),

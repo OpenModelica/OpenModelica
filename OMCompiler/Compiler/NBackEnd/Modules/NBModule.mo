@@ -278,8 +278,8 @@ public
     input VariablePointers seedCandidates                 "differentiate by these";
     input VariablePointers partialCandidates              "solve the equations for these";
     input EquationPointers equations                      "Equations array";
-    input VariablePointers knowns                         "Variable array of knowns";
     input Option<array<StrongComponent>> strongComponents "Strong Components";
+    input Option<Adjacency.Matrix> full                   "full adjacency matrix to create sparsity pattern";
     output Option<Jacobian> jacobian                      "Resulting jacobian";
     input UnorderedMap<Path, Function> funcMap            "Function call bodies";
     input Boolean init;

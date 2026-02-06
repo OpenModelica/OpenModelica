@@ -429,7 +429,7 @@ protected
           e := UnorderedMap.subMap(equations.map, list(Equation.getEqnName(eqn) for eqn in disc_eqns));
 
           // match the discretes to create inner components
-          adj         := Adjacency.Matrix.fromFull(full, v, e, equations, NBAdjacency.MatrixStrictness.MATCHING);
+          adj         := Adjacency.Matrix.fullToFinal(full, v, e, equations, NBAdjacency.MatrixStrictness.MATCHING);
           matching    := Matching.regular(NBMatching.EMPTY_MATCHING, adj, true, true);
 
           // get matched vars and remove them from the iteration variable list

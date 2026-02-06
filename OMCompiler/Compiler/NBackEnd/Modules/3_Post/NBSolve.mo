@@ -1528,6 +1528,7 @@ protected
     input Equation eqn;
     output Status solve_status;
   protected
+    Pointer<Variable> var_ptr = BVariable.getVarPointer(var_cref, sourceInfo());
     list<ComponentRef> slices_lst;
     Option<Pointer<Variable>> record_parent;
   algorithm

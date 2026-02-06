@@ -127,6 +127,7 @@ public
     JacobianType jacType              "type of jacobian";
     VarData varData                   "Variable data";
     array<StrongComponent> comps      "the sorted equations";
+    //Adjacency.Matrix sparsity         "new sparsity pattern";
     SparsityPattern sparsityPattern   "Sparsity pattern for the jacobian";
     SparsityColoring sparsityColoring "Coloring information";
     Boolean isAdjoint                 "is this an adjoint jacobian?";
