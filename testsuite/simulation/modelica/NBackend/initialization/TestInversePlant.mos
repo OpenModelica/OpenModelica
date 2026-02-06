@@ -1,0 +1,1120 @@
+// name: TestInversePlant
+// keywords: NewBackend
+// status: correct
+// cflags: --newBackend
+
+loadString("package TestInversePlant
+  function initialSimplified \"Returns true when solving the initialization problem with the simplified expressions of homotopy() operators\"
+    output Boolean isInitialSimplified = false;
+  annotation(Inline = true, __OpenModelica_builtin=true);
+  end initialSimplified;
+
+  model Plant
+    connector RealInput = input Real;
+    connector RealOutput = output Real;
+
+    parameter Integer N = 5 \"Number of finite volumes\";
+    parameter Real NTU = 4 \"Nominal NTU\";
+    final parameter Real Gtot = NTU \"Nominal total heat conductance\";
+    parameter Real cp = 1 \"Specific heat capacity\";
+    parameter Real kf = 0.1 \"Fluid friction coefficient\";
+    parameter Real Kt = 1 \"Turbine flow coefficient\";
+    parameter Real Tnom = 700 \"Nominal TIT\";
+    parameter Real Tsnom = 400 \"Nominal flue gas outlet temperature\";
+    parameter Real Pnom = 223 \"Nominal turbine power\";
+    parameter Real pnom = 1.1 \"Nominal fluid inlet pressure\";
+    parameter Real TOP = 0.1 \"Nominal turbine outlet pressure\";
+    parameter Real gamma = 1.2 \"cp/cv\";
+
+    RealInput w \"Fluid flow rate\";
+    RealInput wfg \"Flue gas flow rate\";
+
+    Real T[N + 1] \"Fluid temperatures\";
+    Real p[N + 1] \"Fluid pressures\";
+    Real Tfg[N + 1] \"Flue gas temperatures\";
+    Real G[N] \"Volume conductivity\";
+    Real Q[N] \"Thermal powers\";
+    Real TIT = T[N + 1] \"Turbine inlet temperature\";
+
+    RealOutput P \"Turbine power\";
+    RealOutput Ts = Tfg[N+1] \"Outlet flue gas temperature\";
+    RealOutput TIP = p[N + 1] \"Turbine inlet pressure\";
+    RealOutput pin = p[1] \"Fluid inlet pressure\";
+  equation
+    T[1] = 300;
+    Tfg[1] = 800;
+    for i in 1:N loop
+      0 = w*cp*(T[i] - T[i + 1]) + Q[i];
+      0 = wfg*cp*(Tfg[N - i + 1] - Tfg[N - i + 2]) - Q[i];
+      Q[i] = ((Tfg[N - i + 2] + Tfg[N - i + 1])/2 - (T[i + 1] + T[i])/2)*G[i];
+      G[i] = NTU/N*w^0.8;
+      (p[i] - p[i + 1]) = kf/N*w^2;
+    end for;
+    w = Kt*p[N + 1]/sqrt(TIT/Tnom);
+    P = w*cp*TIT*(1 - (TOP/TIP)^((gamma - 1)/gamma));
+  end Plant;
+
+  model ForwardOnDesign
+    Plant plant;
+  equation
+    plant.w = 1;
+    plant.wfg = 1;
+  end ForwardOnDesign;
+
+  model BackwardOnDesign
+    Plant plant;
+  equation
+    plant.P = plant.Pnom;
+    plant.Ts = plant.Tsnom;
+  end BackwardOnDesign;
+
+  model BackwardOffDesign
+    Plant plant;
+    parameter Real load = 0.3;
+  equation
+    plant.P = plant.Pnom*load;
+    plant.Ts = plant.Tsnom;
+  end BackwardOffDesign;
+
+  model BackwardOnDesignHomotopy
+    Plant plant;
+  equation
+    if initialSimplified() then
+      plant.w = 1;
+      plant.wfg = 1;
+    else
+      plant.P = homotopy(plant.Pnom, plant.Pnom);
+      plant.Ts = plant.Tsnom;
+    end if;
+  end BackwardOnDesignHomotopy;
+
+  model BackwardOffDesignHomotopy
+    Plant plant;
+    parameter Real load = 0.3;
+  equation
+    if initialSimplified() then
+      plant.w = 1;
+      plant.wfg = 1;
+    else
+      plant.P = homotopy(plant.Pnom*load, plant.Pnom);
+      plant.Ts = plant.Tsnom;
+    end if;
+  end BackwardOffDesignHomotopy;
+end TestInversePlant;"); getErrorString();
+
+setCommandLineOptions("-d=bltdump,dumpSimCode"); getErrorString();
+simulate(TestInversePlant.ForwardOnDesign); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// #################################################
+//
+//     [ODE] Differential-Algebraic: (Causalize)
+//
+// #################################################
+//
+// ================================
+//   (1) Continuous ODE Partition
+// ================================
+//
+// BLOCK 1: Sliced Component (status = Solve.UNPROCESSED, size = 1)
+// ------------------------------------------------------------------
+// ### Variable:
+// 	plant.T[1]
+// ### Equation:
+// 	[SCAL] (1) plant.T[1] = 300.0 ($RES_SIM_15)
+//
+// BLOCK 2: Resizable Component (status = Solve.UNPROCESSED, size = 5)
+// ---------------------------------------------------------------------
+// ### Variable:
+// 	plant.G[$i1]
+// ### Equation:
+// 	[FOR-] (5) ($RES_SIM_10)
+// [----] for $i1 in 1:5 loop
+// [----]   [SCAL] (1) plant.G[$i1] = 0.2 * plant.NTU ($RES_SIM_11)
+// [----] end for;
+//
+// BLOCK 3: Sliced Component (status = Solve.UNPROCESSED, size = 1)
+// ------------------------------------------------------------------
+// ### Variable:
+// 	plant.Tfg[1]
+// ### Equation:
+// 	[SCAL] (1) plant.Tfg[1] = 800.0 ($RES_SIM_14)
+//
+// BLOCK 4: Algebraic Loop (Linear = false, Mixed = false, Homotopy = false, size = 15)
+// --------------------------------------------------------------------------------------
+// Strict Tearing Set
+// ********************
+// ### Iteration Variables:
+// 	[ALGB] (6) Real[6] plant.T
+// 	slice: {5, 4, 3, 2, 1};
+// 	[ALGB] (5) Real[5] plant.Q;
+// 	[ALGB] (6) Real[6] plant.Tfg
+// 	slice: {1, 2, 3, 4, 5};
+// ### Residual Equations:
+// 	[FOR-] (5) ($RES_SIM_8)
+// [----] for $i1 in 1:5 loop
+// [----]   [SCAL] (1) plant.Q[$i1] = (0.5 * (plant.Tfg[7 - $i1] + plant.Tfg[6 - $i1]) - 0.5 * (plant.T[1 + $i1] + plant.T[$i1])) * plant.G[$i1] ($RES_SIM_9)
+// [----] end for;;
+// 	[FOR-] (5) ($RES_SIM_4)
+// [----] for $i1 in 1:5 loop
+// [----]   [SCAL] (1) 0.0 = plant.cp * (plant.T[$i1] - plant.T[1 + $i1]) + plant.Q[$i1] ($RES_SIM_5)
+// [----] end for;;
+// 	[FOR-] (5) ($RES_SIM_6)
+// [----] for $i1 in 1:5 loop
+// [----]   [SCAL] (1) 0.0 = plant.cp * (plant.Tfg[6 - $i1] - plant.Tfg[7 - $i1]) - plant.Q[$i1] ($RES_SIM_7)
+// [----] end for;;
+// ### Inner Equations:
+//
+// BLOCK 5: Single Strong Component (status = Solve.UNPROCESSED, size = 1)
+// -------------------------------------------------------------------------
+// ### Variable:
+// 	Real plant.TIT = plant.T[6]
+// ### Equation:
+// 	[SCAL] (1) plant.TIT = plant.T[6] ($RES_BND_16)
+//
+// BLOCK 6: Single Strong Component (status = Solve.UNPROCESSED, size = 1)
+// -------------------------------------------------------------------------
+// ### Variable:
+// 	Real $FUN_1
+// ### Equation:
+// 	[SCAL] (1) $FUN_1 = sqrt(plant.TIT / plant.Tnom) ($RES_AUX_20)
+//
+// BLOCK 7: Sliced Component (status = Solve.UNPROCESSED, size = 1)
+// ------------------------------------------------------------------
+// ### Variable:
+// 	plant.p[6]
+// ### Equation:
+// 	[SCAL] (1) 1.0 = (plant.p[6] * plant.Kt) / $FUN_1 ($RES_SIM_3)
+//
+// BLOCK 8: Single Strong Component (status = Solve.UNPROCESSED, size = 1)
+// -------------------------------------------------------------------------
+// ### Variable:
+// 	Real plant.TIP = plant.p[6]
+// ### Equation:
+// 	[SCAL] (1) plant.TIP = plant.p[6] ($RES_BND_18)
+//
+// BLOCK 9: Single Strong Component (status = Solve.UNPROCESSED, size = 1)
+// -------------------------------------------------------------------------
+// ### Variable:
+// 	Real plant.P
+// ### Equation:
+// 	[SCAL] (1) plant.P = plant.TIT * plant.cp * (1.0 - (plant.TOP / plant.TIP) ^ ((plant.gamma - 1.0) / plant.gamma)) ($RES_SIM_2)
+//
+// BLOCK 10: Resizable Component (status = Solve.UNPROCESSED, size = 5)
+// ----------------------------------------------------------------------
+// ### Variable:
+// 	plant.p[$i1]
+// ### Equation:
+// 	[FOR-] (5) ($RES_SIM_12)
+// [----] for $i1 in 1:5 loop
+// [----]   [SCAL] (1) plant.p[$i1] - plant.p[1 + $i1] = 0.2 * plant.kf ($RES_SIM_13)
+// [----] end for;
+//
+// BLOCK 11: Single Strong Component (status = Solve.UNPROCESSED, size = 1)
+// --------------------------------------------------------------------------
+// ### Variable:
+// 	Real plant.pin = plant.p[1]
+// ### Equation:
+// 	[SCAL] (1) plant.pin = plant.p[1] ($RES_BND_19)
+//
+// BLOCK 12: Single Strong Component (status = Solve.UNPROCESSED, size = 1)
+// --------------------------------------------------------------------------
+// ### Variable:
+// 	Real plant.Ts = plant.Tfg[6]
+// ### Equation:
+// 	[SCAL] (1) plant.Ts = plant.Tfg[6] ($RES_BND_17)
+//
+// #################################################
+//
+//     [ODE] Differential-Algebraic: (Causalize)
+//
+// #################################################
+//
+// ================================
+//   (1) Continuous ODE Partition
+// ================================
+//
+// BLOCK 1: Sliced Component (status = Solve.UNPROCESSED, size = 1)
+// ------------------------------------------------------------------
+// ### Variable:
+// 	plant.T[1]
+// ### Equation:
+// 	[SCAL] (1) plant.T[1] = 300.0 ($RES_SIM_15)
+//
+// BLOCK 2: Resizable Component (status = Solve.UNPROCESSED, size = 5)
+// ---------------------------------------------------------------------
+// ### Variable:
+// 	plant.G[$i1]
+// ### Equation:
+// 	[FOR-] (5) ($RES_SIM_10)
+// [----] for $i1 in 1:5 loop
+// [----]   [SCAL] (1) plant.G[$i1] = 0.2 * plant.NTU ($RES_SIM_11)
+// [----] end for;
+//
+// BLOCK 3: Sliced Component (status = Solve.UNPROCESSED, size = 1)
+// ------------------------------------------------------------------
+// ### Variable:
+// 	plant.Tfg[1]
+// ### Equation:
+// 	[SCAL] (1) plant.Tfg[1] = 800.0 ($RES_SIM_14)
+//
+// BLOCK 4: Algebraic Loop (Linear = false, Mixed = false, Homotopy = false, size = 15)
+// --------------------------------------------------------------------------------------
+// Strict Tearing Set
+// ********************
+// ### Iteration Variables:
+// 	[ALGB] (6) Real[6] plant.T
+// 	slice: {5, 4, 3, 2, 1};
+// 	[ALGB] (5) Real[5] plant.Q;
+// 	[ALGB] (6) Real[6] plant.Tfg
+// 	slice: {1, 2, 3, 4, 5};
+// ### Residual Equations:
+// 	[FOR-] (5) ($RES_SIM_8)
+// [----] for $i1 in 1:5 loop
+// [----]   [SCAL] (1) plant.Q[$i1] = (0.5 * (plant.Tfg[7 - $i1] + plant.Tfg[6 - $i1]) - 0.5 * (plant.T[1 + $i1] + plant.T[$i1])) * plant.G[$i1] ($RES_SIM_9)
+// [----] end for;;
+// 	[FOR-] (5) ($RES_SIM_4)
+// [----] for $i1 in 1:5 loop
+// [----]   [SCAL] (1) 0.0 = plant.cp * (plant.T[$i1] - plant.T[1 + $i1]) + plant.Q[$i1] ($RES_SIM_5)
+// [----] end for;;
+// 	[FOR-] (5) ($RES_SIM_6)
+// [----] for $i1 in 1:5 loop
+// [----]   [SCAL] (1) 0.0 = plant.cp * (plant.Tfg[6 - $i1] - plant.Tfg[7 - $i1]) - plant.Q[$i1] ($RES_SIM_7)
+// [----] end for;;
+// ### Inner Equations:
+//
+// BLOCK 5: Single Strong Component (status = Solve.UNPROCESSED, size = 1)
+// -------------------------------------------------------------------------
+// ### Variable:
+// 	Real plant.TIT = plant.T[6]
+// ### Equation:
+// 	[SCAL] (1) plant.TIT = plant.T[6] ($RES_BND_16)
+//
+// BLOCK 6: Single Strong Component (status = Solve.UNPROCESSED, size = 1)
+// -------------------------------------------------------------------------
+// ### Variable:
+// 	Real $FUN_1
+// ### Equation:
+// 	[SCAL] (1) $FUN_1 = sqrt(plant.TIT / plant.Tnom) ($RES_AUX_20)
+//
+// BLOCK 7: Sliced Component (status = Solve.UNPROCESSED, size = 1)
+// ------------------------------------------------------------------
+// ### Variable:
+// 	plant.p[6]
+// ### Equation:
+// 	[SCAL] (1) 1.0 = (plant.p[6] * plant.Kt) / $FUN_1 ($RES_SIM_3)
+//
+// BLOCK 8: Single Strong Component (status = Solve.UNPROCESSED, size = 1)
+// -------------------------------------------------------------------------
+// ### Variable:
+// 	Real plant.TIP = plant.p[6]
+// ### Equation:
+// 	[SCAL] (1) plant.TIP = plant.p[6] ($RES_BND_18)
+//
+// BLOCK 9: Single Strong Component (status = Solve.UNPROCESSED, size = 1)
+// -------------------------------------------------------------------------
+// ### Variable:
+// 	Real plant.P
+// ### Equation:
+// 	[SCAL] (1) plant.P = plant.TIT * plant.cp * (1.0 - (plant.TOP / plant.TIP) ^ ((plant.gamma - 1.0) / plant.gamma)) ($RES_SIM_2)
+//
+// BLOCK 10: Resizable Component (status = Solve.UNPROCESSED, size = 5)
+// ----------------------------------------------------------------------
+// ### Variable:
+// 	plant.p[$i1]
+// ### Equation:
+// 	[FOR-] (5) ($RES_SIM_12)
+// [----] for $i1 in 1:5 loop
+// [----]   [SCAL] (1) plant.p[$i1] - plant.p[1 + $i1] = 0.2 * plant.kf ($RES_SIM_13)
+// [----] end for;
+//
+// BLOCK 11: Single Strong Component (status = Solve.UNPROCESSED, size = 1)
+// --------------------------------------------------------------------------
+// ### Variable:
+// 	Real plant.pin = plant.p[1]
+// ### Equation:
+// 	[SCAL] (1) plant.pin = plant.p[1] ($RES_BND_19)
+//
+// BLOCK 12: Single Strong Component (status = Solve.UNPROCESSED, size = 1)
+// --------------------------------------------------------------------------
+// ### Variable:
+// 	Real plant.Ts = plant.Tfg[6]
+// ### Equation:
+// 	[SCAL] (1) plant.Ts = plant.Tfg[6] ($RES_BND_17)
+//
+// #########################################
+//
+//     [INI] Initialization: (Causalize)
+//
+// #########################################
+//
+// ================================
+//   (1) Continuous INI Partition
+// ================================
+//
+// BLOCK 1: Sliced Component (status = Solve.UNPROCESSED, size = 1)
+// ------------------------------------------------------------------
+// ### Variable:
+// 	plant.T[1]
+// ### Equation:
+// 	[SCAL] (1) plant.T[1] = 300.0 ($RES_SIM_15)
+//
+// BLOCK 2: Sliced Component (status = Solve.UNPROCESSED, size = 1)
+// ------------------------------------------------------------------
+// ### Variable:
+// 	plant.Tfg[1]
+// ### Equation:
+// 	[SCAL] (1) plant.Tfg[1] = 800.0 ($RES_SIM_14)
+//
+// BLOCK 3: Resizable Component (status = Solve.UNPROCESSED, size = 5)
+// ---------------------------------------------------------------------
+// ### Variable:
+// 	plant.G[$i1]
+// ### Equation:
+// 	[FOR-] (5) ($RES_SIM_10)
+// [----] for $i1 in 1:5 loop
+// [----]   [SCAL] (1) plant.G[$i1] = 0.2 * plant.NTU ($RES_SIM_11)
+// [----] end for;
+//
+// BLOCK 4: Algebraic Loop (Linear = false, Mixed = false, Homotopy = false, size = 15)
+// --------------------------------------------------------------------------------------
+// Strict Tearing Set
+// ********************
+// ### Iteration Variables:
+// 	[ALGB] (6) Real[6] plant.T
+// 	slice: {1, 2, 3, 4, 5};
+// 	[ALGB] (5) Real[5] plant.Q;
+// 	[ALGB] (6) Real[6] plant.Tfg
+// 	slice: {4, 3, 2, 1, 5};
+// ### Residual Equations:
+// 	[FOR-] (5) ($RES_SIM_8)
+// [----] for $i1 in 1:5 loop
+// [----]   [SCAL] (1) plant.Q[$i1] = (0.5 * (plant.Tfg[7 - $i1] + plant.Tfg[6 - $i1]) - 0.5 * (plant.T[1 + $i1] + plant.T[$i1])) * plant.G[$i1] ($RES_SIM_9)
+// [----] end for;;
+// 	[FOR-] (5) ($RES_SIM_4)
+// [----] for $i1 in 1:5 loop
+// [----]   [SCAL] (1) 0.0 = plant.cp * (plant.T[$i1] - plant.T[1 + $i1]) + plant.Q[$i1] ($RES_SIM_5)
+// [----] end for;;
+// 	[FOR-] (5) ($RES_SIM_6)
+// [----] for $i1 in 1:5 loop
+// [----]   [SCAL] (1) 0.0 = plant.cp * (plant.Tfg[6 - $i1] - plant.Tfg[7 - $i1]) - plant.Q[$i1] ($RES_SIM_7)
+// [----] end for;;
+// ### Inner Equations:
+//
+// BLOCK 5: Single Strong Component (status = Solve.UNPROCESSED, size = 1)
+// -------------------------------------------------------------------------
+// ### Variable:
+// 	Real plant.TIT = plant.T[6]
+// ### Equation:
+// 	[SCAL] (1) plant.TIT = plant.T[6] ($RES_BND_16)
+//
+// BLOCK 6: Single Strong Component (status = Solve.UNPROCESSED, size = 1)
+// -------------------------------------------------------------------------
+// ### Variable:
+// 	Real $FUN_1
+// ### Equation:
+// 	[SCAL] (1) $FUN_1 = sqrt(plant.TIT / plant.Tnom) ($RES_AUX_20)
+//
+// BLOCK 7: Sliced Component (status = Solve.UNPROCESSED, size = 1)
+// ------------------------------------------------------------------
+// ### Variable:
+// 	plant.p[6]
+// ### Equation:
+// 	[SCAL] (1) 1.0 = (plant.p[6] * plant.Kt) / $FUN_1 ($RES_SIM_3)
+//
+// BLOCK 8: Single Strong Component (status = Solve.UNPROCESSED, size = 1)
+// -------------------------------------------------------------------------
+// ### Variable:
+// 	Real plant.TIP = plant.p[6]
+// ### Equation:
+// 	[SCAL] (1) plant.TIP = plant.p[6] ($RES_BND_18)
+//
+// BLOCK 9: Single Strong Component (status = Solve.UNPROCESSED, size = 1)
+// -------------------------------------------------------------------------
+// ### Variable:
+// 	Real plant.P
+// ### Equation:
+// 	[SCAL] (1) plant.P = plant.TIT * plant.cp * (1.0 - (plant.TOP / plant.TIP) ^ ((plant.gamma - 1.0) / plant.gamma)) ($RES_SIM_2)
+//
+// BLOCK 10: Single Strong Component (status = Solve.UNPROCESSED, size = 1)
+// --------------------------------------------------------------------------
+// ### Variable:
+// 	Real plant.Ts = plant.Tfg[6]
+// ### Equation:
+// 	[SCAL] (1) plant.Ts = plant.Tfg[6] ($RES_BND_17)
+//
+// BLOCK 11: Resizable Component (status = Solve.UNPROCESSED, size = 5)
+// ----------------------------------------------------------------------
+// ### Variable:
+// 	plant.p[$i1]
+// ### Equation:
+// 	[FOR-] (5) ($RES_SIM_12)
+// [----] for $i1 in 1:5 loop
+// [----]   [SCAL] (1) plant.p[$i1] - plant.p[1 + $i1] = 0.2 * plant.kf ($RES_SIM_13)
+// [----] end for;
+//
+// BLOCK 12: Single Strong Component (status = Solve.UNPROCESSED, size = 1)
+// --------------------------------------------------------------------------
+// ### Variable:
+// 	Real plant.pin = plant.p[1]
+// ### Equation:
+// 	[SCAL] (1) plant.pin = plant.p[1] ($RES_BND_19)
+//
+// BLOCK 13: Single Strong Component (status = Solve.UNPROCESSED, size = 1)
+// --------------------------------------------------------------------------
+// ### Variable:
+// 	final parameter Real plant.Gtot = plant.NTU
+// ### Equation:
+// 	[SCAL] (1) plant.Gtot = plant.NTU ($RES_BND_21)
+//
+// ################################
+//
+//     [ALG] Algebraic: (Solve)
+//
+// ################################
+//
+// ================================
+//   (1) Continuous ALG Partition
+// ================================
+//
+// --- Alias of INI[1 | 1] ---
+// BLOCK 1: Sliced Component (status = Solve.EXPLICIT, size = 1)
+// ---------------------------------------------------------------
+// ### Variable:
+// 	plant.T[1]
+// ### Equation:
+// 	[SCAL] (1) plant.T[1] = 300.0 ($RES_SIM_15)
+//
+// --- Alias of INI[1 | 3] ---
+// BLOCK 2: Resizable Component (status = Solve.EXPLICIT, size = 5)
+// ------------------------------------------------------------------
+// ### Variable:
+// 	plant.G[$i1]
+// ### Equation:
+// 	[FOR-] (5) ($RES_SIM_10)
+// [----] for $i1 in 1:5 loop
+// [----]   [SCAL] (1) plant.G[$i1] = 0.2 * plant.NTU ($RES_SIM_11)
+// [----] end for;
+//
+// --- Alias of INI[1 | 2] ---
+// BLOCK 3: Sliced Component (status = Solve.EXPLICIT, size = 1)
+// ---------------------------------------------------------------
+// ### Variable:
+// 	plant.Tfg[1]
+// ### Equation:
+// 	[SCAL] (1) plant.Tfg[1] = 800.0 ($RES_SIM_14)
+//
+// BLOCK 4: Algebraic Loop (Linear = true, Mixed = false, Homotopy = false, size = 15)
+// -------------------------------------------------------------------------------------
+// Strict Tearing Set
+// ********************
+// ### Iteration Variables:
+// 	[ALGB] (6) Real[6] plant.T
+// 	slice: {5, 4, 3, 2, 1};
+// 	[ALGB] (5) Real[5] plant.Q;
+// 	[ALGB] (6) Real[6] plant.Tfg
+// 	slice: {1, 2, 3, 4, 5};
+// ### Residual Equations:
+// 	[FOR-] (5) ($RES_SIM_8)
+// [----] for $i1 in 1:5 loop
+// [----]   [SCAL] (1) $RES_SIM_8[$i1] = (0.5 * (plant.Tfg[7 - $i1] + plant.Tfg[6 - $i1]) - 0.5 * (plant.T[1 + $i1] + plant.T[$i1])) * plant.G[$i1] - plant.Q[$i1] ($RES_SIM_9)
+// [----] end for;;
+// 	[FOR-] (5) ($RES_SIM_4)
+// [----] for $i1 in 1:5 loop
+// [----]   [SCAL] (1) $RES_SIM_4[$i1] = plant.cp * (plant.T[$i1] - plant.T[1 + $i1]) + plant.Q[$i1] ($RES_SIM_5)
+// [----] end for;;
+// 	[FOR-] (5) ($RES_SIM_6)
+// [----] for $i1 in 1:5 loop
+// [----]   [SCAL] (1) $RES_SIM_6[$i1] = plant.cp * (plant.Tfg[6 - $i1] - plant.Tfg[7 - $i1]) - plant.Q[$i1] ($RES_SIM_7)
+// [----] end for;;
+// ### Inner Equations:
+//
+// --- Alias of INI[1 | 5] ---
+// BLOCK 5: Single Strong Component (status = Solve.EXPLICIT, size = 1)
+// ----------------------------------------------------------------------
+// ### Variable:
+// 	Real plant.TIT = plant.T[6]
+// ### Equation:
+// 	[SCAL] (1) plant.TIT = plant.T[6] ($RES_BND_16)
+//
+// --- Alias of INI[1 | 6] ---
+// BLOCK 6: Single Strong Component (status = Solve.EXPLICIT, size = 1)
+// ----------------------------------------------------------------------
+// ### Variable:
+// 	Real $FUN_1
+// ### Equation:
+// 	[SCAL] (1) $FUN_1 = sqrt(plant.TIT / plant.Tnom) ($RES_AUX_20)
+//
+// --- Alias of INI[1 | 7] ---
+// BLOCK 7: Sliced Component (status = Solve.EXPLICIT, size = 1)
+// ---------------------------------------------------------------
+// ### Variable:
+// 	plant.p[6]
+// ### Equation:
+// 	[SCAL] (1) plant.p[6] = 1/((plant.Kt * $FUN_1) / $FUN_1 ^ 2.0) ($RES_SIM_3)
+//
+// --- Alias of INI[1 | 8] ---
+// BLOCK 8: Single Strong Component (status = Solve.EXPLICIT, size = 1)
+// ----------------------------------------------------------------------
+// ### Variable:
+// 	Real plant.TIP = plant.p[6]
+// ### Equation:
+// 	[SCAL] (1) plant.TIP = plant.p[6] ($RES_BND_18)
+//
+// --- Alias of INI[1 | 9] ---
+// BLOCK 9: Single Strong Component (status = Solve.EXPLICIT, size = 1)
+// ----------------------------------------------------------------------
+// ### Variable:
+// 	Real plant.P
+// ### Equation:
+// 	[SCAL] (1) plant.P = plant.TIT * plant.cp * (1.0 - (plant.TOP / plant.TIP) ^ ((plant.gamma - 1.0) / plant.gamma)) ($RES_SIM_2)
+//
+// --- Alias of INI[1 | 11] ---
+// BLOCK 10: Resizable Component (status = Solve.EXPLICIT, size = 5)
+// -------------------------------------------------------------------
+// ### Variable:
+// 	plant.p[$i1]
+// ### Equation:
+// 	[FOR-] (5) ($RES_SIM_12)
+// [----] for $i1 in 5:(-1):1 loop
+// [----]   [SCAL] (1) plant.p[$i1] = plant.p[1 + $i1] + 0.2 * plant.kf ($RES_SIM_13)
+// [----] end for;
+//
+// --- Alias of INI[1 | 12] ---
+// BLOCK 11: Single Strong Component (status = Solve.EXPLICIT, size = 1)
+// -----------------------------------------------------------------------
+// ### Variable:
+// 	Real plant.pin = plant.p[1]
+// ### Equation:
+// 	[SCAL] (1) plant.pin = plant.p[1] ($RES_BND_19)
+//
+// --- Alias of INI[1 | 10] ---
+// BLOCK 12: Single Strong Component (status = Solve.EXPLICIT, size = 1)
+// -----------------------------------------------------------------------
+// ### Variable:
+// 	Real plant.Ts = plant.Tfg[6]
+// ### Equation:
+// 	[SCAL] (1) plant.Ts = plant.Tfg[6] ($RES_BND_17)
+//
+// #####################################
+//
+//     [INI] Initialization: (Solve)
+//
+// #####################################
+//
+// ================================
+//   (1) Continuous INI Partition
+// ================================
+//
+// BLOCK 1: Sliced Component (status = Solve.EXPLICIT, size = 1)
+// ---------------------------------------------------------------
+// ### Variable:
+// 	plant.T[1]
+// ### Equation:
+// 	[SCAL] (1) plant.T[1] = 300.0 ($RES_SIM_15)
+//
+// BLOCK 2: Sliced Component (status = Solve.EXPLICIT, size = 1)
+// ---------------------------------------------------------------
+// ### Variable:
+// 	plant.Tfg[1]
+// ### Equation:
+// 	[SCAL] (1) plant.Tfg[1] = 800.0 ($RES_SIM_14)
+//
+// BLOCK 3: Resizable Component (status = Solve.EXPLICIT, size = 5)
+// ------------------------------------------------------------------
+// ### Variable:
+// 	plant.G[$i1]
+// ### Equation:
+// 	[FOR-] (5) ($RES_SIM_10)
+// [----] for $i1 in 1:5 loop
+// [----]   [SCAL] (1) plant.G[$i1] = 0.2 * plant.NTU ($RES_SIM_11)
+// [----] end for;
+//
+// BLOCK 4: Algebraic Loop (Linear = true, Mixed = false, Homotopy = false, size = 15)
+// -------------------------------------------------------------------------------------
+// Strict Tearing Set
+// ********************
+// ### Iteration Variables:
+// 	[ALGB] (6) Real[6] plant.T
+// 	slice: {1, 2, 3, 4, 5};
+// 	[ALGB] (5) Real[5] plant.Q;
+// 	[ALGB] (6) Real[6] plant.Tfg
+// 	slice: {4, 3, 2, 1, 5};
+// ### Residual Equations:
+// 	[FOR-] (5) ($RES_SIM_8)
+// [----] for $i1 in 1:5 loop
+// [----]   [SCAL] (1) $RES_SIM_8[$i1] = (0.5 * (plant.Tfg[7 - $i1] + plant.Tfg[6 - $i1]) - 0.5 * (plant.T[1 + $i1] + plant.T[$i1])) * plant.G[$i1] - plant.Q[$i1] ($RES_SIM_9)
+// [----] end for;;
+// 	[FOR-] (5) ($RES_SIM_4)
+// [----] for $i1 in 1:5 loop
+// [----]   [SCAL] (1) $RES_SIM_4[$i1] = plant.cp * (plant.T[$i1] - plant.T[1 + $i1]) + plant.Q[$i1] ($RES_SIM_5)
+// [----] end for;;
+// 	[FOR-] (5) ($RES_SIM_6)
+// [----] for $i1 in 1:5 loop
+// [----]   [SCAL] (1) $RES_SIM_6[$i1] = plant.cp * (plant.Tfg[6 - $i1] - plant.Tfg[7 - $i1]) - plant.Q[$i1] ($RES_SIM_7)
+// [----] end for;;
+// ### Inner Equations:
+//
+// BLOCK 5: Single Strong Component (status = Solve.EXPLICIT, size = 1)
+// ----------------------------------------------------------------------
+// ### Variable:
+// 	Real plant.TIT = plant.T[6]
+// ### Equation:
+// 	[SCAL] (1) plant.TIT = plant.T[6] ($RES_BND_16)
+//
+// BLOCK 6: Single Strong Component (status = Solve.EXPLICIT, size = 1)
+// ----------------------------------------------------------------------
+// ### Variable:
+// 	Real $FUN_1
+// ### Equation:
+// 	[SCAL] (1) $FUN_1 = sqrt(plant.TIT / plant.Tnom) ($RES_AUX_20)
+//
+// BLOCK 7: Sliced Component (status = Solve.EXPLICIT, size = 1)
+// ---------------------------------------------------------------
+// ### Variable:
+// 	plant.p[6]
+// ### Equation:
+// 	[SCAL] (1) plant.p[6] = 1/((plant.Kt * $FUN_1) / $FUN_1 ^ 2.0) ($RES_SIM_3)
+//
+// BLOCK 8: Single Strong Component (status = Solve.EXPLICIT, size = 1)
+// ----------------------------------------------------------------------
+// ### Variable:
+// 	Real plant.TIP = plant.p[6]
+// ### Equation:
+// 	[SCAL] (1) plant.TIP = plant.p[6] ($RES_BND_18)
+//
+// BLOCK 9: Single Strong Component (status = Solve.EXPLICIT, size = 1)
+// ----------------------------------------------------------------------
+// ### Variable:
+// 	Real plant.P
+// ### Equation:
+// 	[SCAL] (1) plant.P = plant.TIT * plant.cp * (1.0 - (plant.TOP / plant.TIP) ^ ((plant.gamma - 1.0) / plant.gamma)) ($RES_SIM_2)
+//
+// BLOCK 10: Single Strong Component (status = Solve.EXPLICIT, size = 1)
+// -----------------------------------------------------------------------
+// ### Variable:
+// 	Real plant.Ts = plant.Tfg[6]
+// ### Equation:
+// 	[SCAL] (1) plant.Ts = plant.Tfg[6] ($RES_BND_17)
+//
+// BLOCK 11: Resizable Component (status = Solve.EXPLICIT, size = 5)
+// -------------------------------------------------------------------
+// ### Variable:
+// 	plant.p[$i1]
+// ### Equation:
+// 	[FOR-] (5) ($RES_SIM_12)
+// [----] for $i1 in 5:(-1):1 loop
+// [----]   [SCAL] (1) plant.p[$i1] = plant.p[1 + $i1] + 0.2 * plant.kf ($RES_SIM_13)
+// [----] end for;
+//
+// BLOCK 12: Single Strong Component (status = Solve.EXPLICIT, size = 1)
+// -----------------------------------------------------------------------
+// ### Variable:
+// 	Real plant.pin = plant.p[1]
+// ### Equation:
+// 	[SCAL] (1) plant.pin = plant.p[1] ($RES_BND_19)
+//
+// BLOCK 13: Single Strong Component (status = Solve.EXPLICIT, size = 1)
+// -----------------------------------------------------------------------
+// ### Variable:
+// 	final parameter Real plant.Gtot = plant.NTU
+// ### Equation:
+// 	[SCAL] (1) plant.Gtot = plant.NTU ($RES_BND_21)
+//
+// ##################################################
+//
+//     SimCode (TestInversePlant.ForwardOnDesign)
+//
+// ##################################################
+// ============
+//   SimVars
+// ============
+// Algebraic Variables (34)
+// **************************
+//   (0)[ALGB] (1) Real plant.T[1]
+//   (1)[ALGB] (1) Real plant.T[2]
+//   (2)[ALGB] (1) Real plant.T[3]
+//   (3)[ALGB] (1) Real plant.T[4]
+//   (4)[ALGB] (1) Real plant.T[5]
+//   (5)[ALGB] (1) Real plant.T[6]
+//   (6)[ALGB] (1) Real plant.p[1]
+//   (7)[ALGB] (1) Real plant.p[2]
+//   (8)[ALGB] (1) Real plant.p[3]
+//   (9)[ALGB] (1) Real plant.p[4]
+//   (10)[ALGB] (1) Real plant.p[5]
+//   (11)[ALGB] (1) Real plant.p[6]
+//   (12)[ALGB] (1) Real plant.Tfg[1]
+//   (13)[ALGB] (1) Real plant.Tfg[2]
+//   (14)[ALGB] (1) Real plant.Tfg[3]
+//   (15)[ALGB] (1) Real plant.Tfg[4]
+//   (16)[ALGB] (1) Real plant.Tfg[5]
+//   (17)[ALGB] (1) Real plant.Tfg[6]
+//   (18)[ALGB] (1) Real plant.G[1]
+//   (19)[ALGB] (1) Real plant.G[2]
+//   (20)[ALGB] (1) Real plant.G[3]
+//   (21)[ALGB] (1) Real plant.G[4]
+//   (22)[ALGB] (1) Real plant.G[5]
+//   (23)[ALGB] (1) Real plant.Q[1]
+//   (24)[ALGB] (1) Real plant.Q[2]
+//   (25)[ALGB] (1) Real plant.Q[3]
+//   (26)[ALGB] (1) Real plant.Q[4]
+//   (27)[ALGB] (1) Real plant.Q[5]
+//   (28)[ALGB] (1) Real plant.TIT
+//   (29)[ALGB] (1) Real plant.P
+//   (30)[ALGB] (1) Real plant.Ts
+//   (31)[ALGB] (1) Real plant.TIP
+//   (32)[ALGB] (1) Real plant.pin
+//   (33)[ALGB] (1) Real $FUN_1
+//
+// Real Parameters (13)
+// **********************
+//   (0)[PRMT] (1) Real plant.NTU = 4.0
+//   (1)[PRMT] (1) Real plant.Gtot
+//   (2)[PRMT] (1) Real plant.cp = 1.0
+//   (3)[PRMT] (1) Real plant.kf = 0.1
+//   (4)[PRMT] (1) Real plant.Kt = 1.0
+//   (5)[PRMT] (1) Real plant.Tnom = 700.0
+//   (6)[PRMT] (1) Real plant.Tsnom = 400.0
+//   (7)[PRMT] (1) Real plant.Pnom = 223.0
+//   (8)[PRMT] (1) Real plant.pnom = 1.1
+//   (9)[PRMT] (1) Real plant.TOP = 0.1
+//   (10)[PRMT] (1) Real plant.gamma = 1.2
+//   (11)[PRMT] (1) Real plant.wfg = 1.0
+//   (12)[PRMT] (1) Real plant.w = 1.0
+//
+// Integer Parameters (1)
+// ************************
+//   (0)[PRMT] (1) Integer plant.N = 5
+//
+// Residual Variables (15)
+// *************************
+//   (0)[RES-] (1) Real $RES_SIM_8[1]
+//   (1)[RES-] (1) Real $RES_SIM_8[2]
+//   (2)[RES-] (1) Real $RES_SIM_8[3]
+//   (3)[RES-] (1) Real $RES_SIM_8[4]
+//   (4)[RES-] (1) Real $RES_SIM_8[5]
+//   (5)[RES-] (1) Real $RES_SIM_4[1]
+//   (6)[RES-] (1) Real $RES_SIM_4[2]
+//   (7)[RES-] (1) Real $RES_SIM_4[3]
+//   (8)[RES-] (1) Real $RES_SIM_4[4]
+//   (9)[RES-] (1) Real $RES_SIM_4[5]
+//   (10)[RES-] (1) Real $RES_SIM_6[1]
+//   (11)[RES-] (1) Real $RES_SIM_6[2]
+//   (12)[RES-] (1) Real $RES_SIM_6[3]
+//   (13)[RES-] (1) Real $RES_SIM_6[4]
+//   (14)[RES-] (1) Real $RES_SIM_6[5]
+//
+// Initial Partition
+// -------------------
+//   (16) plant.T[1] := 300.0
+//   (15) plant.Tfg[1] := 800.0
+//   (14) resizable call [index  1]
+//   (13) Nonlinear System (size = 15, homotopy = false, mixed = false, torn = true)
+//   --Iteration Vars:{plant.T[2], plant.T[3], plant.T[4], plant.T[5], plant.T[6], plant.Q[1], plant.Q[2], plant.Q[3], plant.Q[4], plant.Q[5], ...}
+//   --(10) For-Loop-Residual:
+//   --for {$i1 in 1:5} loop
+//   --  0 = (0.5 * (plant.Tfg[7 - $i1] + plant.Tfg[6 - $i1]) - 0.5 * (plant.T[1 + $i1] + plant.T[$i1])) * plant.G[$i1] - plant.Q[$i1];
+//   --end for;
+//   --(11) For-Loop-Residual:
+//   --for {$i1 in 1:5} loop
+//   --  0 = plant.cp * (plant.T[$i1] - plant.T[1 + $i1]) + plant.Q[$i1];
+//   --end for;
+//   --(12) For-Loop-Residual:
+//   --for {$i1 in 1:5} loop
+//   --  0 = plant.cp * (plant.Tfg[6 - $i1] - plant.Tfg[7 - $i1]) - plant.Q[$i1];
+//   --end for;
+//   (9) plant.TIT := plant.T[6]
+//   (8) $FUN_1 := sqrt(plant.TIT / plant.Tnom)
+//   (7) plant.p[6] := 1/((plant.Kt * $FUN_1) / $FUN_1 ^ 2.0)
+//   (6) plant.TIP := plant.p[6]
+//   (5) plant.P := plant.TIT * plant.cp * (1.0 - (plant.TOP / plant.TIP) ^ ((plant.gamma - 1.0) / plant.gamma))
+//   (4) plant.Ts := plant.Tfg[6]
+//   (3) resizable call [index  0]
+//   (2) plant.pin := plant.p[1]
+//   (1) plant.Gtot := plant.NTU
+//
+// Algebraic Partition 1
+// -----------------------
+//   (31) Alias of 16
+//   (30) Alias of 14
+//   (29) Alias of 15
+//   (28) Nonlinear System (size = 15, homotopy = false, mixed = false, torn = true)
+//   --Iteration Vars:{plant.T[2], plant.T[3], plant.T[4], plant.T[5], plant.T[6], plant.Q[1], plant.Q[2], plant.Q[3], plant.Q[4], plant.Q[5], ...}
+//   --(25) For-Loop-Residual:
+//   --for {$i1 in 1:5} loop
+//   --  0 = (0.5 * (plant.Tfg[7 - $i1] + plant.Tfg[6 - $i1]) - 0.5 * (plant.T[1 + $i1] + plant.T[$i1])) * plant.G[$i1] - plant.Q[$i1];
+//   --end for;
+//   --(26) For-Loop-Residual:
+//   --for {$i1 in 1:5} loop
+//   --  0 = plant.cp * (plant.T[$i1] - plant.T[1 + $i1]) + plant.Q[$i1];
+//   --end for;
+//   --(27) For-Loop-Residual:
+//   --for {$i1 in 1:5} loop
+//   --  0 = plant.cp * (plant.Tfg[6 - $i1] - plant.Tfg[7 - $i1]) - plant.Q[$i1];
+//   --end for;
+//   (24) Alias of 9
+//   (23) Alias of 8
+//   (22) Alias of 7
+//   (21) Alias of 6
+//   (20) Alias of 5
+//   (19) Alias of 3
+//   (18) Alias of 2
+//   (17) Alias of 4
+//
+// Event Partition
+// -----------------
+//
+// Generic Calls
+// ---------------
+//   (0) [SNGL]: {{$i1 | start:5, step:-1, stop:1, size: 5}}
+// 	plant.p[$i1] = plant.p[1 + $i1] + 0.2 * plant.kf
+//   (1) [SNGL]: {{$i1 | start:1, step:1, stop:5, size: 5}}
+// 	plant.G[$i1] = 0.2 * plant.NTU
+//
+// ======================================================
+//   [EMPTY] SimCode Jacobian A(idx = 0, partition = 0)
+// ======================================================
+//
+// ======================================================
+//   [EMPTY] SimCode Jacobian B(idx = 2, partition = 0)
+// ======================================================
+//
+// ======================================================
+//   [EMPTY] SimCode Jacobian C(idx = 3, partition = 0)
+// ======================================================
+//
+// ======================================================
+//   [EMPTY] SimCode Jacobian D(idx = 4, partition = 0)
+// ======================================================
+//
+// ======================================================
+//   [EMPTY] SimCode Jacobian F(idx = 5, partition = 0)
+// ======================================================
+//
+// ======================================================
+//   [EMPTY] SimCode Jacobian H(idx = 6, partition = 0)
+// ======================================================
+//
+// ========================================================
+//   [EMPTY] SimCode Jacobian ADJ(idx = 1, partition = 0)
+// ========================================================
+//
+//
+//
+// *********************
+// * SimCode Equations *
+// *********************
+//
+//
+// allEquations:
+// ========================================
+//
+// 31: alias of 16
+// 30: alias of 14
+// 29: alias of 15
+// 28:  (NONLINEAR) index:1 jacobian: false
+// crefs: plant.T[2] , plant.T[3] , plant.T[4] , plant.T[5] , plant.T[6] , plant.Q[1] , plant.Q[2] , plant.Q[3] , plant.Q[4] , plant.Q[5] , plant.Tfg[2] , plant.Tfg[3] , plant.Tfg[4] , plant.Tfg[5] , plant.Tfg[6]
+// 	25: (0.5 * (plant.Tfg[7 - $i1] + plant.Tfg[6 - $i1]) - 0.5 * (plant.T[1 + $i1] + plant.T[$i1])) * plant.G[$i1] - plant.Q[$i1] (FOR_RESIDUAL)
+// 	26: plant.cp * (plant.T[$i1] - plant.T[1 + $i1]) + plant.Q[$i1] (FOR_RESIDUAL)
+// 	27: plant.cp * (plant.Tfg[6 - $i1] - plant.Tfg[7 - $i1]) - plant.Q[$i1] (FOR_RESIDUAL)
+//
+// 24: alias of 9
+// 23: alias of 8
+// 22: alias of 7
+// 21: alias of 6
+// 20: alias of 5
+// 19: alias of 3
+// 18: alias of 2
+// 17: alias of 4
+// ========================================
+//
+//
+//
+// odeEquations (0 systems):
+// ========================================
+// ========================================
+//
+//
+//
+// algebraicEquations (1 systems):
+// ========================================
+// 31: alias of 16
+// 30: alias of 14
+// 29: alias of 15
+// 28:  (NONLINEAR) index:1 jacobian: false
+// crefs: plant.T[2] , plant.T[3] , plant.T[4] , plant.T[5] , plant.T[6] , plant.Q[1] , plant.Q[2] , plant.Q[3] , plant.Q[4] , plant.Q[5] , plant.Tfg[2] , plant.Tfg[3] , plant.Tfg[4] , plant.Tfg[5] , plant.Tfg[6]
+// 	25: (0.5 * (plant.Tfg[7 - $i1] + plant.Tfg[6 - $i1]) - 0.5 * (plant.T[1 + $i1] + plant.T[$i1])) * plant.G[$i1] - plant.Q[$i1] (FOR_RESIDUAL)
+// 	26: plant.cp * (plant.T[$i1] - plant.T[1 + $i1]) + plant.Q[$i1] (FOR_RESIDUAL)
+// 	27: plant.cp * (plant.Tfg[6 - $i1] - plant.Tfg[7 - $i1]) - plant.Q[$i1] (FOR_RESIDUAL)
+//
+// 24: alias of 9
+// 23: alias of 8
+// 22: alias of 7
+// 21: alias of 6
+// 20: alias of 5
+// 19: alias of 3
+// 18: alias of 2
+// 17: alias of 4
+// ========================================
+//
+//
+// clockPartitions (0 systems):
+//
+// ========================================
+//
+//
+//
+// initialEquations: (13)
+// ========================================
+// 16: plant.T[1]=300.0 [Real]
+// 15: plant.Tfg[1]=800.0 [Real]
+// 14:  (SES_RESIZABLE_ASSIGN)  call index: 1
+//
+// 13:  (NONLINEAR) index:0 jacobian: false
+// crefs: plant.T[2] , plant.T[3] , plant.T[4] , plant.T[5] , plant.T[6] , plant.Q[1] , plant.Q[2] , plant.Q[3] , plant.Q[4] , plant.Q[5] , plant.Tfg[2] , plant.Tfg[3] , plant.Tfg[4] , plant.Tfg[5] , plant.Tfg[6]
+// 	10: (0.5 * (plant.Tfg[7 - $i1] + plant.Tfg[6 - $i1]) - 0.5 * (plant.T[1 + $i1] + plant.T[$i1])) * plant.G[$i1] - plant.Q[$i1] (FOR_RESIDUAL)
+// 	11: plant.cp * (plant.T[$i1] - plant.T[1 + $i1]) + plant.Q[$i1] (FOR_RESIDUAL)
+// 	12: plant.cp * (plant.Tfg[6 - $i1] - plant.Tfg[7 - $i1]) - plant.Q[$i1] (FOR_RESIDUAL)
+//
+// 9: plant.TIT=plant.T[6] [Real]
+// 8: $FUN_1=sqrt(plant.TIT / plant.Tnom) [Real]
+// 7: plant.p[6]=1.0 / (plant.Kt * $FUN_1 / $FUN_1 ^ 2.0) [Real]
+// 6: plant.TIP=plant.p[6] [Real]
+// 5: plant.P=plant.TIT * plant.cp * (1.0 - (plant.TOP / plant.TIP) ^ ((plant.gamma - 1.0) / plant.gamma)) [Real]
+// 4: plant.Ts=plant.Tfg[6] [Real]
+// 3:  (SES_RESIZABLE_ASSIGN)  call index: 0
+//
+// 2: plant.pin=plant.p[1] [Real]
+// 1: plant.Gtot=plant.NTU [Real]
+// ========================================
+//
+//
+//
+// initialEquations_lambda0: (0)
+// ========================================
+//
+// removedInitialEquations:
+// ========================================
+//
+// startValueEquations:
+// ========================================
+//
+// nominalValueEquations:
+// ========================================
+//
+// minValueEquations:
+// ========================================
+//
+// maxValueEquations:
+// ========================================
+//
+// parameterEquations:
+// ========================================
+//
+// removedEquations:
+// ========================================
+//
+// algorithmAndEquationAsserts:
+// ========================================
+//
+// equationsForZeroCrossings:
+// ========================================
+//
+// generic calls:
+// ========================================
+// single generic call 0 {$i1 in 5:-1:1}
+//   plant.p[$i1] = plant.p[1 + $i1] + 0.2 * plant.kf;
+// single generic call 1 {$i1 in 1:1:5}
+//   plant.G[$i1] = 0.2 * plant.NTU;
+// jacobianEquations:
+// ========================================
+//
+// jacobianMatrices:
+// ========================================
+// 	Jacobian idx: 0
+//
+// 	Jacobian idx: 2
+//
+// 	Jacobian idx: 3
+//
+// 	Jacobian idx: 4
+//
+// 	Jacobian idx: 5
+//
+// 	Jacobian idx: 6
+//
+// 	Jacobian idx: 1
+//
+//
+// modelInfo:
+// ========================================
+// algVars (34)
+// ----------------------
+// index:0: plant.T[1] (no alias)  initial: 	arrCref:plant.T index:(1) []
+// index:1: plant.T[2] (no alias)  initial: 	no arrCref index:(2) []
+// index:2: plant.T[3] (no alias)  initial: 	no arrCref index:(3) []
+// index:3: plant.T[4] (no alias)  initial: 	no arrCref index:(4) []
+// index:4: plant.T[5] (no alias)  initial: 	no arrCref index:(5) []
+// index:5: plant.T[6] (no alias)  initial: 	no arrCref index:(6) []
+// index:6: plant.p[1] (no alias)  initial: 	arrCref:plant.p index:(7) []
+// index:7: plant.p[2] (no alias)  initial: 	no arrCref index:(8) []
+// index:8: plant.p[3] (no alias)  initial: 	no arrCref index:(9) []
+// index:9: plant.p[4] (no alias)  initial: 	no arrCref index:(10) []
+// index:10: plant.p[5] (no alias)  initial: 	no arrCref index:(11) []
+// index:11: plant.p[6] (no alias)  initial: 	no arrCref index:(12) []
+// index:12: plant.Tfg[1] (no alias)  initial: 	arrCref:plant.Tfg index:(13) []
+// index:13: plant.Tfg[2] (no alias)  initial: 	no arrCref index:(14) []
+// index:14: plant.Tfg[3] (no alias)  initial: 	no arrCref index:(15) []
+// index:15: plant.Tfg[4] (no alias)  initial: 	no arrCref index:(16) []
+// index:16: plant.Tfg[5] (no alias)  initial: 	no arrCref index:(17) []
+// index:17: plant.Tfg[6] (no alias)  initial: 	no arrCref index:(18) []
+// index:18: plant.G[1] (no alias)  initial: 	arrCref:plant.G index:(19) []
+// index:19: plant.G[2] (no alias)  initial: 	no arrCref index:(20) []
+// index:20: plant.G[3] (no alias)  initial: 	no arrCref index:(21) []
+// index:21: plant.G[4] (no alias)  initial: 	no arrCref index:(22) []
+// index:22: plant.G[5] (no alias)  initial: 	no arrCref index:(23) []
+// index:23: plant.Q[1] (no alias)  initial: 	arrCref:plant.Q index:(24) []
+// index:24: plant.Q[2] (no alias)  initial: 	no arrCref index:(25) []
+// index:25: plant.Q[3] (no alias)  initial: 	no arrCref index:(26) []
+// index:26: plant.Q[4] (no alias)  initial: 	no arrCref index:(27) []
+// index:27: plant.Q[5] (no alias)  initial: 	no arrCref index:(28) []
+// index:28: plant.TIT (no alias)  initial: 	no arrCref index:(29) []
+// index:29: plant.P (no alias)  initial: 	no arrCref index:(30) []
+// index:30: plant.Ts (no alias)  initial: 	no arrCref index:(31) []
+// index:31: plant.TIP (no alias)  initial: 	no arrCref index:(32) []
+// index:32: plant.pin (no alias)  initial: 	no arrCref index:(33) []
+// index:33: $FUN_1 (no alias)  hideResult  initial: 	no arrCref index:(34) []
+// paramVars
+// ----------------------
+// index:0: plant.NTU (no alias)  initial: 4.0	no arrCref index:(36) []
+// index:1: plant.Gtot (no alias)  initial: 	no arrCref index:(37) []
+// index:2: plant.cp (no alias)  initial: 1.0	no arrCref index:(38) []
+// index:3: plant.kf (no alias)  initial: 0.1	no arrCref index:(39) []
+// index:4: plant.Kt (no alias)  initial: 1.0	no arrCref index:(40) []
+// index:5: plant.Tnom (no alias)  initial: 700.0	no arrCref index:(41) []
+// index:6: plant.Tsnom (no alias)  initial: 400.0	no arrCref index:(42) []
+// index:7: plant.Pnom (no alias)  initial: 223.0	no arrCref index:(43) []
+// index:8: plant.pnom (no alias)  initial: 1.1	no arrCref index:(44) []
+// index:9: plant.TOP (no alias)  initial: 0.1	no arrCref index:(45) []
+// index:10: plant.gamma (no alias)  initial: 1.2	no arrCref index:(46) []
+// index:11: plant.wfg (no alias)  initial: 1.0	no arrCref index:(47) []
+// index:12: plant.w (no alias)  initial: 1.0	no arrCref index:(48) []
+// intParamVars
+// ----------------------
+// index:0: plant.N (no alias)  initial: 5	no arrCref index:(35) []
+// functions:
+// -----------
+//
+// record SimulationResult
+//     resultFile = "TestInversePlant.ForwardOnDesign_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'TestInversePlant.ForwardOnDesign', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// endResult
