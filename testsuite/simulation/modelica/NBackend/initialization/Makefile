@@ -1,7 +1,8 @@
 TEST = ../../../../rtest -v
 
 TESTFILES = \
-experimental_initialSimplified.mos
+experimental_initialSimplified.mos \
+TestInversePlant.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make failingtest
