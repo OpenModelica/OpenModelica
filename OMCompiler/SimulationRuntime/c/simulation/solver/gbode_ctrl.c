@@ -350,7 +350,7 @@ void getInitStepSize(DATA* data, threadData_t* threadData, DATA_GBODE* gbData, S
     gbData->lastStepSize = 0.0;
   }
 
-  if (solverInfo->didEventStep)
+  if (solverInfo->didEventStep && !omc_flag[FLAG_SR_CTRL_EVNT_REINIT])
   {
     gbData->stepSize = fmax(oldStep * 1e-1, gbData->stepSize);
   }
