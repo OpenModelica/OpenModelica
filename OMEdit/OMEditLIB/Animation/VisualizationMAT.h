@@ -49,7 +49,6 @@ public:
   void initData() override;
   void initializeVisAttributes(const double time) override;
   void readMat(const std::string& modelFile, const std::string& path);
-  void setSimulationSettings(const UserSimSettingsMAT& simSetMAT);
   void simulate(TimeManager& omvm) override {Q_UNUSED(omvm);}
   void updateScene(const double time) override;
   void updateVisualizerAttribute(VisualizerAttribute& attr, const double time) override;
