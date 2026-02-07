@@ -1510,7 +1510,7 @@ VariablesWidget::VariablesWidget(QWidget *pParent)
   mpToolBar->addWidget(mpSpeedLabel);
   mpToolBar->addWidget(mpSpeedComboBox);
   // time manager
-  mpTimeManager = new TimeManager(0.0, 0.0, 0.0, 0.0, 0.1, 0.0, 1.0);
+  mpTimeManager = new TimeManager(0.0, 0.0, 0.0, 0.0, 0.016, 0.0, 1.0);
   mpTimeManager->setStartTime(0.0);
   mpTimeManager->setEndTime(1.0);
   mpTimeManager->setVisTime(mpTimeManager->getStartTime());
