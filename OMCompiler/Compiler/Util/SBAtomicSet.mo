@@ -111,6 +111,14 @@ public
     res := new(SBMultiInterval.crossProd(set1.aset, set2.aset));
   end crossProd;
 
+  function normalize
+    input SBAtomicSet set1;
+    input SBAtomicSet set2;
+    output SBAtomicSet res;
+  algorithm
+    res := new(SBMultiInterval.normalize(set1.aset, set2.aset));
+  end normalize;
+
   function cardinality
     input SBAtomicSet set;
     input output Integer card = 0;

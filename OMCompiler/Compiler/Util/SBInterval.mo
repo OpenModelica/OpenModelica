@@ -117,6 +117,11 @@ public
     output SBInterval int = INTERVAL(1, 1, System.intMaxLit());
   end newFull;
 
+  function newSingle
+    input Integer i;
+    output SBInterval int = INTERVAL(i, 1, i);
+  end newSingle;
+
   function lowerBound
     input SBInterval int;
     output Integer lo = int.lo;
@@ -186,46 +191,71 @@ public
     input SBInterval int2;
     output UnorderedSet<SBInterval> ints;
   protected
-    SBInterval i2;
-    Integer count_r, count_s;
+    SBInterval inter, aux, left, right;
+    Integer count_r, count_s, nInters;
   algorithm
     ints := UnorderedSet.new(hash, isEqual);
-    i2 := intersection(int1, int2);
+    inter := intersection(int1, int2);
 
-    if isEmpty(i2) then
+    if isEmpty(inter) then
       // No intersection, nothing to remove.
       UnorderedSet.add(int1, ints);
-    elseif not isEqual(int1, i2) then
-      // Rightmost interval.
-      if i2.hi < int1.hi then
-        UnorderedSet.add(new(i2.hi + int1.step, int1.step, int1.hi), ints);
+    elseif not isEqual(int1, inter) then
+      // "Before" intersection
+      if int1.lo < inter.lo then
+        aux := new(int1.lo, 1, inter.lo-1);
+        left := intersection(int1, aux);
+        UnorderedSet.add(left, ints);
       end if;
 
-      count_r := div(i2.step, int1.step) - 1;
-      count_s := if i2.hi < System.intMaxLit() then div(i2.hi - i2.lo, i2.step) else System.intMaxLit();
+      // "During" intersection
+      if inter.step <= (inter.hi - inter.lo) then
+        nInters := realInt(inter.step / int1.step);
+        for i in 1:(nInters-1) loop
+          aux := new(inter.lo + i * int1.step, inter.step, inter.hi);
+          UnorderedSet.add(aux, ints);
+        end for;
+      end if;
+
+      // "After" intersection
+      if int1.hi > inter.hi then
+        aux := new(inter.hi + 1, 1, int1.hi);
+        right := intersection(int1, aux);
+        UnorderedSet.add(right, ints);
+      end if;
+
+      /* This is the old way of doing it, maybe more correct?
+      // Rightmost interval.
+      if inter.hi < int1.hi then
+        UnorderedSet.add(new(inter.hi + int1.step, int1.step, int1.hi), ints);
+      end if;
+
+      count_r := div(inter.step, int1.step) - 1;
+      count_s := if inter.hi < System.intMaxLit() then div(inter.hi - inter.lo, inter.step) else System.intMaxLit();
 
       if count_r < count_s then
-        // create an interval for every residue class not equal to i2.lo
+        // create an interval for every residue class not equal to inter.lo
         if count_s < System.intMaxLit() then
           for i in count_r:-1:1 loop
-            UnorderedSet.add(new(i2.lo + i * int1.step, i2.step, i2.hi - i2.step + i * int1.step), ints);
+            UnorderedSet.add(new(inter.lo + i * int1.step, inter.step, inter.hi - inter.step + i * int1.step), ints);
           end for;
         else
           for i in count_r:-1:1 loop
-            UnorderedSet.add(new(i2.lo + i * int1.step, i2.step, System.intMaxLit()), ints);
+            UnorderedSet.add(new(inter.lo + i * int1.step, inter.step, System.intMaxLit()), ints);
           end for;
         end if;
       else
         // create an interval for every space between removed points
         for i in count_s:-1:1 loop
-          UnorderedSet.add(new(i2.lo + int1.step + (i - 1) * i2.step, int1.step, i2.lo - int1.step + i * i2.step), ints);
+          UnorderedSet.add(new(inter.lo + int1.step + (i - 1) * inter.step, int1.step, inter.lo - int1.step + i * inter.step), ints);
         end for;
       end if;
 
       // Leftmost interval.
-      if i2.lo > int1.lo then
-        UnorderedSet.add(new(int1.lo, int1.step, i2.lo - int1.step), ints);
+      if inter.lo > int1.lo then
+        UnorderedSet.add(new(int1.lo, int1.step, inter.lo - int1.step), ints);
       end if;
+      */
     end if;
   end complement;
 
@@ -275,6 +305,23 @@ public
       end if;
     end if;
   end affine;
+
+  function normalize
+    input SBInterval int1;
+    input SBInterval int2;
+    output SBInterval res;
+  algorithm
+    if int1.step == int2.step then
+      if int1.hi + int1.step == int2.lo or contains(int2.lo, int1) then
+        res := new(int1.lo, int1.step, int2.hi);
+      // kabdelhak: should this be int2.step instead of int1.step in elseif?
+      elseif int2.hi + int1.step == int1.lo or contains(int1.lo, int2) then
+        res := new(int2.lo, int1.step, int1.hi);
+      else
+        res := new(-1, -1, -1);
+      end if;
+    end if;
+  end normalize;
 
   function cardinality
     input SBInterval int;
