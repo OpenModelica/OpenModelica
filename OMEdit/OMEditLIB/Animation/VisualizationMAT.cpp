@@ -100,12 +100,6 @@ void VisualizationMAT::readMat(const std::string& modelFile, const std::string& 
      */
 }
 
-void VisualizationMAT::setSimulationSettings(const UserSimSettingsMAT& simSetMAT)
-{
-  auto newVal = simSetMAT.speedup * mpTimeManager->getHVisual();
-  mpTimeManager->setHVisual(newVal);
-}
-
 void VisualizationMAT::updateScene(const double time)
 {
   mpTimeManager->updateTick();  //for real-time measurement
