@@ -1513,7 +1513,7 @@ protected
 algorithm
   if printError then
     exp_str := Expression.toString(exp);
-    ty_str := List.toString(types, Type.toString, "", "", ", ", "", false);
+    ty_str := List.toStringCustom(types, Type.toString, "", "", ", ", "", false);
     Error.addSourceMessage(Error.UNRESOLVABLE_TYPE, {exp_str, ty_str, "<NO_COMPONENT>"}, info);
   end if;
 

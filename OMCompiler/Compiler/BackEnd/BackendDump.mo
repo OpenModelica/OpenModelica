@@ -1821,7 +1821,7 @@ public function simIteratorString
 algorithm
   str := match iter
     case BackendDAE.SIM_ITERATOR_RANGE()  then ComponentReference.printComponentRefStr(iter.name) + " in " + ExpressionDump.printExpStr(iter.start) + ":" + ExpressionDump.printExpStr(iter.step) + ":" + ExpressionDump.printExpStr(iter.stop);
-    case BackendDAE.SIM_ITERATOR_LIST()   then ComponentReference.printComponentRefStr(iter.name) + " in " + List.toString(iter.lst, intString, "", "{", ", ", "}", true, 10);
+    case BackendDAE.SIM_ITERATOR_LIST()   then ComponentReference.printComponentRefStr(iter.name) + " in " + List.toString(iter.lst, intString, List.Style.FLAT_CURLY_SHORT);
   end match;
 end simIteratorString;
 
@@ -2300,7 +2300,7 @@ algorithm
     case({},_) then ();
     case(elem::rest,_)
       equation
-      sparsepatternStr = List.toString(elem, intString,"Row[" + intString(inInteger) + "] = ","{",";","}",true);
+      sparsepatternStr = List.toStringCustom(elem, intString,"Row[" + intString(inInteger) + "] = ","{",";","}",true);
       print(sparsepatternStr + "\n");
       dumpSparsePattern2(rest,inInteger+1);
     then ();

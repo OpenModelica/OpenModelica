@@ -248,11 +248,11 @@ public
       end if;
       if not listEmpty(simCode.literals) then
         str := str + StringUtil.headline_3("Shared Literals");
-        str := str + List.toString(simCode.literals, Expression.toString, "", "  ", "\n  ", "\n\n");
+        str := str + List.toString(simCode.literals, Expression.toString, List.Style.NEWLINE_INDENT) + "\n\n";
       end if;
       if not listEmpty(simCode.generic_loop_calls) then
         str := str + StringUtil.headline_3("Generic Calls");
-        str := str + List.toString(simCode.generic_loop_calls, SimGenericCall.toString, "", "  ", "\n  ", "\n\n");
+        str := str + List.toString(simCode.generic_loop_calls, SimGenericCall.toString,  List.Style.NEWLINE_INDENT) + "\n\n";
       end if;
       if isSome(simCode.daeModeData) then
         str := str + DaeModeData.toString(Util.getOption(simCode.daeModeData)) + "\n";

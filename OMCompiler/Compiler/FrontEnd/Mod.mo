@@ -3158,7 +3158,7 @@ algorithm
       algorithm
         final_str := if SCodeUtil.finalBool(inMod.finalPrefix) then "final " else "";
         each_str := if SCodeUtil.eachBool(inMod.eachPrefix) then "each " else "";
-        sub_str := List.toString(inMod.subModLst, unparseSubModStr, "", "(", ", ", ")", false);
+        sub_str := List.toStringCustom(inMod.subModLst, unparseSubModStr, "", "(", ", ", ")", false);
         binding_str := unparseBindingStr(inMod.binding);
       then
         final_str + each_str + sub_str + binding_str;

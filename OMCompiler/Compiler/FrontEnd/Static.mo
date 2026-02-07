@@ -2783,7 +2783,7 @@ algorithm
         Types.typeErrorSanityCheck(ty1_str, ty2_str, inInfo);
         pre_str := PrefixUtil.printPrefixStr(inPrefix);
         exp_str := ExpressionDump.printExpStr(exp2);
-        expl_str := List.toString(inExpl, ExpressionDump.printExpStr, "", "[", ",", "]", true);
+        expl_str := List.toStringCustom(inExpl, ExpressionDump.printExpStr, "", "[", ",", "]", true);
         Error.addSourceMessageAndFail(Error.TYPE_MISMATCH_ARRAY_EXP,
           {pre_str, exp_str, ty1_str, expl_str, ty2_str}, inInfo);
       end try;
@@ -3057,7 +3057,7 @@ algorithm
       dim1_str := ExpressionDump.dimensionString(dim1);
       dim2_str := ExpressionDump.dimensionString(dim2);
       pre_str := PrefixUtil.printPrefixStr3(inPrefix);
-      el_str := List.toString(expl, ExpressionDump.printExpStr, "", "{", ", ", "}", true);
+      el_str := List.toStringCustom(expl, ExpressionDump.printExpStr, "", "{", ", ", "}", true);
       Error.addSourceMessageAndFail(Error.MATRIX_EXP_ROW_SIZE,
         {pre_str, el_str, dim1_str, dim2_str}, inInfo);
     end if;
@@ -3070,7 +3070,7 @@ algorithm
       ty2_str := Types.unparsePropTypeNoAttr(prop);
       Types.typeErrorSanityCheck(ty1_str, ty2_str, inInfo);
       pre_str := PrefixUtil.printPrefixStr3(inPrefix);
-      el_str := List.toString(expl, ExpressionDump.printExpStr, "", "{", ", ", "}", true);
+      el_str := List.toStringCustom(expl, ExpressionDump.printExpStr, "", "{", ", ", "}", true);
       Error.addSourceMessageAndFail(Error.TYPE_MISMATCH_MATRIX_EXP,
         {pre_str, el_str, ty1_str, ty2_str}, inInfo);
     end try;

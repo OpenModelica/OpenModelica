@@ -285,7 +285,7 @@ public
     if listEmpty(followEquations) then
       eq_filter_opt := NONE();
     else
-      print(List.toString(followEquations, Util.id, "[debugFilterEquations] filtering for equations: ") + "\n\n");
+      print(List.toStringCustom(followEquations, Util.id, "[debugFilterEquations] filtering for equations: ") + "\n\n");
       eq_filter_opt := SOME(UnorderedSet.fromList(followEquations, stringHashDjb2, stringEqual));
     end if;
 
@@ -722,7 +722,7 @@ protected
       if listEmpty(forced_states) then
         print("\t<no states>\n\n");
       else
-        print(List.toString(forced_states, BVariable.pointerToString, "", "\t", "\n\t", "\n") + "\n");
+        print(List.toString(forced_states, BVariable.pointerToString, List.Style.NEWLINE_TAB) + "\n\n");
       end if;
     end if;
   end lowerVariableData;
