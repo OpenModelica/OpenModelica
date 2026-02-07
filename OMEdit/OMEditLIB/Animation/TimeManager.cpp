@@ -49,6 +49,7 @@ TimeManager::TimeManager(const double simTime, const double realTime, const doub
     mTimeDiscretization(1000)
 {
   mpUpdateSceneTimer = new QTimer();
+  mpUpdateSceneTimer->setTimerType(Qt::PreciseTimer);
   mpUpdateSceneTimer->setInterval(100);
   rt_ext_tp_tick_realtime(&_visualTimer);
 }
