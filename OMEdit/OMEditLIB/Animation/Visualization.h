@@ -233,7 +233,6 @@ private:
 class VisualizationAbstract
 {
 public:
-  VisualizationAbstract();
   VisualizationAbstract(const std::string& modelFile, const std::string& path, const VisType visType = VisType::NONE);
   virtual ~VisualizationAbstract() = default;
 
