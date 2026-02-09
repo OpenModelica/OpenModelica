@@ -676,6 +676,13 @@ static NLS_SOLVER_STATUS gbInternalSolveNls_DIRK(DATA *data,
         nls->etas[stage] = pow(fmax(nls->etas[stage], DBL_EPSILON), 0.8);
       }
 
+      if (!isfinite(nls->etas[stage]) || !isfinite(nrm_delta))
+      {
+        // Inf or NaN detected
+        // Either RHS or Jacobian or solution of the system contained a Inf or NaN
+        return NLS_FAILED;
+      }
+
       // Newton converged
       if (nls->etas[stage] * nrm_delta < nls->fnewt)
       {
@@ -1027,6 +1034,13 @@ static NLS_SOLVER_STATUS gbInternalSolveNls_T_Transform(DATA *data,
     else
     {
       *nls->etas = pow(fmax(*nls->etas, DBL_EPSILON), 0.8);
+    }
+
+    if (!isfinite(*nls->etas) || !isfinite(nrm_delta))
+    {
+      // Inf or NaN detected
+      // Either RHS or Jacobian or solution of the system contained a Inf or NaN
+      return NLS_FAILED;
     }
 
     // Newton converged

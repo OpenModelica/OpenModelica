@@ -49,7 +49,7 @@ typedef struct BUTCHER_TABLEAU BUTCHER_TABLEAU;
  */
 typedef void (*gb_dense_output)(BUTCHER_TABLEAU* tableau, double* yOld, double* x, double* k, double dt, double stepSize, double* y, int nIdx, int* idx, int nStates);
 
-#define MAX_GBODE_FIRK_STAGES 6
+#define MAX_GBODE_FIRK_STAGES 7
 
 /**
  * @brief Transformation structures for decoupling fully implicit Runge–Kutta systems.

@@ -244,6 +244,9 @@ enum GB_METHOD {
   RK_RADAU_IIA_2,     /* radauIIA2*/
   RK_RADAU_IIA_3,     /* radauIIA3*/
   RK_RADAU_IIA_4,     /* radauIIA4*/
+  RK_RADAU_IIA_5,     /* radauIIA5*/
+  RK_RADAU_IIA_6,     /* radauIIA6*/
+  RK_RADAU_IIA_7,     /* radauIIA7*/
   RK_LOBA_IIIA_3,     /* lobattoIIIA3*/
   RK_LOBA_IIIA_4,     /* lobattoIIIA4*/
   RK_LOBA_IIIB_3,     /* lobattoIIIB3*/
