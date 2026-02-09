@@ -303,7 +303,7 @@ algorithm
   local
     Real startTime,stopTime,stepSize,tolerance;
     Integer nIntervals;
-    String method,format,varFilter,cflags,options;
+    String method,format,varFilter,cflags,options,simflags;
 
     case(GlobalScript.SIMULATION_OPTIONS(
       DAE.RCONST(startTime),
@@ -317,10 +317,10 @@ algorithm
       DAE.SCONST(format),
       DAE.SCONST(varFilter),
       DAE.SCONST(cflags),
-      _)) equation
+      DAE.SCONST(simflags))) equation
         options = "";
 
-    then SimCode.SIMULATION_SETTINGS(startTime,stopTime,nIntervals,stepSize,tolerance,method,options,format,varFilter,cflags);
+    then SimCode.SIMULATION_SETTINGS(startTime,stopTime,nIntervals,stepSize,tolerance,method,options,format,varFilter,cflags,simflags);
   end match;
 end convertSimulationOptionsToSimCode;
 
@@ -1154,7 +1154,7 @@ algorithm
         (outCache, env, SOME(dae), _) = runFrontEnd(outCache, inEnv, path, true, transform = true);
         filenameprefix = AbsynUtil.pathString(path);
         description = DAEUtil.daeDescription(dae);
-        daelow = BackendDAECreate.lower(dae,outCache,env,BackendDAE.EXTRA_INFO(description,filenameprefix));
+        daelow = BackendDAECreate.lower(dae,outCache,env,BackendDAE.EXTRA_INFO(description,filenameprefix,NONE()));
         (BackendDAE.DAE({syst},shared)) = BackendDAEUtil.preOptimizeBackendDAE(daelow,NONE());
         (syst,m,_) = BackendDAEUtil.getAdjacencyMatrixfromOption(syst,BackendDAE.NORMAL(),NONE(),BackendDAEUtil.isInitializationDAE(shared));
         vars = BackendVariable.daeVars(syst);
@@ -3464,7 +3464,7 @@ algorithm
         description = DAEUtil.daeDescription(dae);
         a_cref = AbsynUtil.pathToCref(className);
         file_dir = getFileDir(a_cref, SymbolTable.getAbsyn());
-        dlow = BackendDAECreate.lower(dae,cache,env,BackendDAE.EXTRA_INFO(description,filenameprefix));
+        dlow = BackendDAECreate.lower(dae,cache,env,BackendDAE.EXTRA_INFO(description,filenameprefix,NONE()));
         dlow = FindZeroCrossings.findZeroCrossings(dlow);
         flatModelicaStr = DAEDump.dumpStr(dae,FCore.getFunctionTree(cache));
         flatModelicaStr = stringAppend("OldEqStr={'", flatModelicaStr);
@@ -4595,13 +4595,13 @@ algorithm
       Integer interval_i;
       Real starttime_r,stoptime_r,tolerance_r;
       FCore.Cache cache;
-      String cflags;
-    case (cache, {Values.CODE(Absyn.C_TYPENAME(_)),starttime_v,stoptime_v,Values.INTEGER(interval_i),tolerance_v,Values.STRING(method_str),_,Values.STRING(options_str),Values.STRING(outputFormat_str),Values.STRING(variableFilter_str),Values.STRING(cflags),Values.STRING(_)})
+      String cflags, simflags;
+    case (cache, {Values.CODE(Absyn.C_TYPENAME(_)),starttime_v,stoptime_v,Values.INTEGER(interval_i),tolerance_v,Values.STRING(method_str),_,Values.STRING(options_str),Values.STRING(outputFormat_str),Values.STRING(variableFilter_str),Values.STRING(cflags),Values.STRING(simflags)})
       equation
         starttime_r = ValuesUtil.valueReal(starttime_v);
         stoptime_r = ValuesUtil.valueReal(stoptime_v);
         tolerance_r = ValuesUtil.valueReal(tolerance_v);
-        outSimSettings = SimCodeMain.createSimulationSettings(starttime_r,stoptime_r,interval_i,tolerance_r,method_str,options_str,outputFormat_str,variableFilter_str,cflags);
+        outSimSettings = SimCodeMain.createSimulationSettings(starttime_r,stoptime_r,interval_i,tolerance_r,method_str,options_str,outputFormat_str,variableFilter_str,cflags,simflags);
       then
         (cache, outSimSettings);
     else
@@ -6201,7 +6201,7 @@ algorithm
         cname_str = AbsynUtil.pathString(classname);
         filenameprefix = if filenameprefix == "<default>" then cname_str else filenameprefix;
 
-        dlow = BackendDAECreate.lower(dae,cache,env,BackendDAE.EXTRA_INFO(description,filenameprefix)); //Verificare cosa fa
+        dlow = BackendDAECreate.lower(dae,cache,env,BackendDAE.EXTRA_INFO(description,filenameprefix,NONE())); //Verificare cosa fa
         dlow_1 = BackendDAEUtil.preOptimizeBackendDAE(dlow,NONE());
         dlow_1 = FindZeroCrossings.findZeroCrossings(dlow_1);
         xml_filename = stringAppendList({filenameprefix,".xml"});
@@ -6241,7 +6241,7 @@ algorithm
         cname_str = AbsynUtil.pathString(classname);
         filenameprefix = if filenameprefix == "<default>" then cname_str else filenameprefix;
 
-        dlow = BackendDAECreate.lower(dae,cache,env,BackendDAE.EXTRA_INFO(description,filenameprefix)); //Verificare cosa fa
+        dlow = BackendDAECreate.lower(dae,cache,env,BackendDAE.EXTRA_INFO(description,filenameprefix,NONE())); //Verificare cosa fa
         dlow_1 = BackendDAEUtil.preOptimizeBackendDAE(dlow,NONE());
         dlow_1 = BackendDAEUtil.transformBackendDAE(dlow_1,NONE(),NONE(),NONE());
         dlow_1 = FindZeroCrossings.findZeroCrossings(dlow_1);
@@ -6282,7 +6282,7 @@ algorithm
         cname_str = AbsynUtil.pathString(classname);
         filenameprefix = if filenameprefix == "<default>" then cname_str else filenameprefix;
 
-        dlow = BackendDAECreate.lower(dae,cache,env,BackendDAE.EXTRA_INFO(description,filenameprefix));
+        dlow = BackendDAECreate.lower(dae,cache,env,BackendDAE.EXTRA_INFO(description,filenameprefix, NONE()));
         indexed_dlow = BackendDAEUtil.getSolvedSystem(dlow,"");
         xml_filename = stringAppendList({filenameprefix,".xml"});
 
@@ -6321,7 +6321,7 @@ algorithm
         cname_str = AbsynUtil.pathString(classname);
         filenameprefix = if filenameprefix == "<default>" then cname_str else filenameprefix;
 
-        dlow = BackendDAECreate.lower(dae,cache,env,BackendDAE.EXTRA_INFO(description,filenameprefix));
+        dlow = BackendDAECreate.lower(dae,cache,env,BackendDAE.EXTRA_INFO(description,filenameprefix,NONE()));
         indexed_dlow = BackendDAEUtil.getSolvedSystem(dlow,"");
         xml_filename = stringAppendList({filenameprefix,".xml"});
 
