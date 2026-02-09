@@ -30,7 +30,8 @@ importFMU("DrumBoilerModel.fmu"); getErrorString();
 loadFile("DrumBoilerModel_me_FMU.mo"); getErrorString();
 
 setCommandLineOptions("--simCodeTarget=C"); getErrorString();
-simulate(DrumBoilerModel_me_FMU, stopTime=100.0, simflags="-override=q_F=10,Y_Valve=1"); getErrorString();
+setCommandLineOptions("--allowNonStandardModelica=reinitInAlgorithms"); getErrorString(); // this and logLevel=0 to make importFMU work
+simulate(DrumBoilerModel_me_FMU, stopTime=100.0, simflags="-override=q_F=10,Y_Valve=1,logLevel=0"); getErrorString();
 
 // inputs
 val(q_F, 100);
@@ -92,13 +93,13 @@ val(evaporator_qm_S, 100);
 //       <BaseUnit />
 //     </Unit>
 //     <Unit name=\"N/mm2\">
-//       <BaseUnit m=\"-1\" s=\"-2\" kg=\"1\" factor=\"1000000.0\" />
+//       <BaseUnit m=\"-1\" s=\"-2\" kg=\"1\" factor=\"1e6\" />
 //     </Unit>
 //     <Unit name=\"MW\">
-//       <BaseUnit m=\"2\" s=\"-3\" kg=\"1\" factor=\"1000000.0\" />
+//       <BaseUnit m=\"2\" s=\"-3\" kg=\"1\" factor=\"1e6\" />
 //     </Unit>
 //     <Unit name=\"bar\">
-//       <BaseUnit m=\"-1\" s=\"-2\" kg=\"1\" factor=\"100000.0\" />
+//       <BaseUnit m=\"-1\" s=\"-2\" kg=\"1\" factor=\"1e5\" />
 //     </Unit>
 //     <Unit name=\"kg/kg\">
 //       <BaseUnit />
@@ -137,7 +138,7 @@ val(evaporator_qm_S, 100);
 //       <BaseUnit K=\"1\" />
 //     </Unit>
 //     <Unit name=\"km-1.s-3.g\">
-//       <BaseUnit m=\"-1\" s=\"-3\" kg=\"1\" factor=\"1e-06\" />
+//       <BaseUnit m=\"-1\" s=\"-3\" kg=\"1\" factor=\"1e-6\" />
 //     </Unit>
 //     <Unit name=\"m3.s-1\">
 //       <BaseUnit m=\"3\" s=\"-1\" />
@@ -187,7 +188,7 @@ val(evaporator_qm_S, 100);
 //     <Category name=\"logAll\" />
 //     <Category name=\"logFmi2Call\" />
 //   </LogCategories>
-//   <DefaultExperiment startTime=\"0.0\" stopTime=\"1.0\" tolerance=\"1e-06\" stepSize=\"0.002\"/>
+//   <DefaultExperiment startTime=\"0.0\" stopTime=\"1.0\" tolerance=\"1e-6\" stepSize=\"0.002\"/>
 //   <ModelVariables>
 //   <!-- Index of variable = \"1\" -->
 //   <ScalarVariable
@@ -211,7 +212,7 @@ val(evaporator_qm_S, 100);
 //     valueReference=\"2\"
 //     description=\"pressure inside drum boiler\"
 //     >
-//     <Real min=\"611.657\" max=\"100000000.0\" nominal=\"1000000.0\" unit=\"Pa\"/>
+//     <Real min=\"611.657\" max=\"1e8\" nominal=\"1e6\" unit=\"Pa\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"4\" -->
 //   <ScalarVariable
@@ -235,7 +236,7 @@ val(evaporator_qm_S, 100);
 //     valueReference=\"5\"
 //     description=\"der(pressure inside drum boiler)\"
 //     initial=\"approx\">
-//     <Real start=\"0.0\" derivative=\"3\" nominal=\"500000000.0\" unit=\"km-1.s-3.g\"/>
+//     <Real start=\"0.0\" derivative=\"3\" nominal=\"5e8\" unit=\"km-1.s-3.g\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"7\" -->
 //   <ScalarVariable
@@ -421,7 +422,7 @@ val(evaporator_qm_S, 100);
 //     valueReference=\"143\"
 //     description=\"steam enthalpy (specific enthalpy close to steam port when mass flows in to the boiler)\"
 //     >
-//     <Real min=\"-10000000000.0\" max=\"10000000000.0\" nominal=\"500000.0\" unit=\"J/kg\"/>
+//     <Real min=\"-1e10\" max=\"1e10\" nominal=\"5e5\" unit=\"J/kg\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"30\" -->
 //   <ScalarVariable
@@ -429,7 +430,7 @@ val(evaporator_qm_S, 100);
 //     valueReference=\"144\"
 //     description=\"specific enthalpy of liquid\"
 //     >
-//     <Real min=\"-10000000000.0\" max=\"10000000000.0\" nominal=\"500000.0\" unit=\"J/kg\"/>
+//     <Real min=\"-1e10\" max=\"1e10\" nominal=\"5e5\" unit=\"J/kg\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"31\" -->
 //   <ScalarVariable
@@ -437,7 +438,7 @@ val(evaporator_qm_S, 100);
 //     valueReference=\"145\"
 //     description=\"specific enthalpy of vapour\"
 //     >
-//     <Real min=\"-10000000000.0\" max=\"10000000000.0\" nominal=\"500000.0\" unit=\"J/kg\"/>
+//     <Real min=\"-1e10\" max=\"1e10\" nominal=\"5e5\" unit=\"J/kg\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"32\" -->
 //   <ScalarVariable
@@ -461,7 +462,7 @@ val(evaporator_qm_S, 100);
 //     valueReference=\"148\"
 //     description=\"density in liquid phase\"
 //     >
-//     <Real min=\"0.0\" max=\"100000.0\" nominal=\"500.0\" unit=\"kg/m3\"/>
+//     <Real min=\"0.0\" max=\"1e5\" nominal=\"500.0\" unit=\"kg/m3\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"35\" -->
 //   <ScalarVariable
@@ -469,7 +470,7 @@ val(evaporator_qm_S, 100);
 //     valueReference=\"149\"
 //     description=\"density in vapour phase\"
 //     >
-//     <Real min=\"0.0\" max=\"100000.0\" nominal=\"500.0\" unit=\"kg/m3\"/>
+//     <Real min=\"0.0\" max=\"1e5\" nominal=\"500.0\" unit=\"kg/m3\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"36\" -->
 //   <ScalarVariable
@@ -477,7 +478,7 @@ val(evaporator_qm_S, 100);
 //     valueReference=\"150\"
 //     description=\"Connector of Real output signal\"
 //     >
-//     <Real min=\"-9.999999999999999e+59\" max=\"100000.0\"/>
+//     <Real min=\"-1e60\" max=\"1e5\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"37\" -->
 //   <ScalarVariable
@@ -494,7 +495,7 @@ val(evaporator_qm_S, 100);
 //     valueReference=\"152\"
 //     description=\"Specific thermodynamic enthalpy close to the connection point if m_flow &lt; 0\"
 //     initial=\"exact\">
-//     <Real start=\"100000.0\" min=\"-10000000000.0\" max=\"10000000000.0\" nominal=\"500000.0\" unit=\"J/kg\"/>
+//     <Real start=\"1e5\" min=\"-1e10\" max=\"1e10\" nominal=\"5e5\" unit=\"J/kg\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"39\" -->
 //   <ScalarVariable
@@ -502,7 +503,7 @@ val(evaporator_qm_S, 100);
 //     valueReference=\"153\"
 //     description=\"Mass flow rate from the connection point into the component\"
 //     initial=\"exact\">
-//     <Real start=\"0.0\" min=\"0.0\" max=\"100000.0\" unit=\"kg/s\"/>
+//     <Real start=\"0.0\" min=\"0.0\" max=\"1e5\" unit=\"kg/s\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"40\" -->
 //   <ScalarVariable
@@ -518,7 +519,7 @@ val(evaporator_qm_S, 100);
 //     valueReference=\"157\"
 //     description=\"Gas constant (of mixture if applicable)\"
 //     initial=\"exact\">
-//     <Real start=\"1000.0\" min=\"0.0\" max=\"10000000.0\" nominal=\"1000.0\" unit=\"J/(kg.K)\"/>
+//     <Real start=\"1000.0\" min=\"0.0\" max=\"1e7\" nominal=\"1000.0\" unit=\"J/(kg.K)\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"42\" -->
 //   <ScalarVariable
@@ -550,7 +551,7 @@ val(evaporator_qm_S, 100);
 //     valueReference=\"161\"
 //     description=\"Density of medium\"
 //     >
-//     <Real min=\"0.0\" max=\"100000.0\" nominal=\"500.0\" unit=\"kg/m3\"/>
+//     <Real min=\"0.0\" max=\"1e5\" nominal=\"500.0\" unit=\"kg/m3\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"46\" -->
 //   <ScalarVariable
@@ -574,7 +575,7 @@ val(evaporator_qm_S, 100);
 //     valueReference=\"164\"
 //     description=\"Specific internal energy of medium\"
 //     >
-//     <Real min=\"-100000000.0\" max=\"100000000.0\" nominal=\"1000000.0\" unit=\"J/kg\"/>
+//     <Real min=\"-1e8\" max=\"1e8\" nominal=\"1e6\" unit=\"J/kg\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"49\" -->
 //   <ScalarVariable
@@ -592,7 +593,7 @@ val(evaporator_qm_S, 100);
 //     description=\"steam flow rate\"
 //     causality=\"output\"
 //     >
-//     <Real min=\"-9.999999999999999e+59\" max=\"100000.0\"/>
+//     <Real min=\"-1e60\" max=\"1e5\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"51\" -->
 //   <ScalarVariable
@@ -616,7 +617,7 @@ val(evaporator_qm_S, 100);
 //     valueReference=\"169\"
 //     description=\"Gas constant (of mixture if applicable)\"
 //     initial=\"exact\">
-//     <Real start=\"1000.0\" min=\"0.0\" max=\"10000000.0\" nominal=\"1000.0\" unit=\"J/(kg.K)\"/>
+//     <Real start=\"1000.0\" min=\"0.0\" max=\"1e7\" nominal=\"1000.0\" unit=\"J/(kg.K)\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"54\" -->
 //   <ScalarVariable
@@ -640,7 +641,7 @@ val(evaporator_qm_S, 100);
 //     valueReference=\"172\"
 //     description=\"Density of medium\"
 //     >
-//     <Real min=\"0.0\" max=\"100000.0\" nominal=\"500.0\" unit=\"kg/m3\"/>
+//     <Real min=\"0.0\" max=\"1e5\" nominal=\"500.0\" unit=\"kg/m3\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"57\" -->
 //   <ScalarVariable
@@ -664,7 +665,7 @@ val(evaporator_qm_S, 100);
 //     valueReference=\"175\"
 //     description=\"Specific internal energy of medium\"
 //     >
-//     <Real min=\"-100000000.0\" max=\"100000000.0\" nominal=\"1000000.0\" unit=\"J/kg\"/>
+//     <Real min=\"-1e8\" max=\"1e8\" nominal=\"1e6\" unit=\"J/kg\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"60\" -->
 //   <ScalarVariable
@@ -672,7 +673,7 @@ val(evaporator_qm_S, 100);
 //     valueReference=\"178\"
 //     description=\"Specific thermodynamic enthalpy close to the connection point if m_flow &lt; 0\"
 //     initial=\"exact\">
-//     <Real start=\"100000.0\" min=\"-10000000000.0\" max=\"10000000000.0\" nominal=\"500000.0\" unit=\"J/kg\"/>
+//     <Real start=\"1e5\" min=\"-1e10\" max=\"1e10\" nominal=\"5e5\" unit=\"J/kg\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"61\" -->
 //   <ScalarVariable
@@ -680,7 +681,7 @@ val(evaporator_qm_S, 100);
 //     valueReference=\"179\"
 //     description=\"Mass flow rate from the connection point into the component\"
 //     initial=\"exact\">
-//     <Real start=\"0.0\" min=\"0.0\" max=\"100000.0\" unit=\"kg/s\"/>
+//     <Real start=\"0.0\" min=\"0.0\" max=\"1e5\" unit=\"kg/s\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"62\" -->
 //   <ScalarVariable
@@ -690,7 +691,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"fixed\"
 //     causality=\"parameter\"
 //     >
-//     <Real start=\"1000000.0\" unit=\"1\"/>
+//     <Real start=\"1e6\" unit=\"1\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"63\" -->
 //   <ScalarVariable
@@ -700,7 +701,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"fixed\"
 //     causality=\"parameter\"
 //     >
-//     <Real start=\"1e-05\" unit=\"1\"/>
+//     <Real start=\"1e-5\" unit=\"1\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"64\" -->
 //   <ScalarVariable
@@ -710,7 +711,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"fixed\"
 //     causality=\"parameter\"
 //     >
-//     <Real start=\"9000000.0\" min=\"0.0\" nominal=\"100000.0\" unit=\"Pa\"/>
+//     <Real start=\"9e6\" min=\"0.0\" nominal=\"1e5\" unit=\"Pa\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"65\" -->
 //   <ScalarVariable
@@ -720,7 +721,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"fixed\"
 //     causality=\"calculatedParameter\"
 //     >
-//     <Real min=\"-9.999999999999999e+59\" max=\"100000000.0\" nominal=\"1000000.0\" unit=\"Pa\"/>
+//     <Real min=\"-1e60\" max=\"1e8\" nominal=\"1e6\" unit=\"Pa\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"66\" -->
 //   <ScalarVariable
@@ -740,7 +741,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"fixed\"
 //     causality=\"parameter\"
 //     >
-//     <Real start=\"180.0\" min=\"-100000.0\" max=\"100000.0\" unit=\"kg/s\"/>
+//     <Real start=\"180.0\" min=\"-1e5\" max=\"1e5\" unit=\"kg/s\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"68\" -->
 //   <ScalarVariable
@@ -750,7 +751,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"fixed\"
 //     causality=\"calculatedParameter\"
 //     >
-//     <Real min=\"-100000.0\" max=\"100000.0\" unit=\"kg/s\"/>
+//     <Real min=\"-1e5\" max=\"1e5\" unit=\"kg/s\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"69\" -->
 //   <ScalarVariable
@@ -760,7 +761,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"fixed\"
 //     causality=\"calculatedParameter\"
 //     >
-//     <Real min=\"-100000.0\" max=\"100000.0\" unit=\"kg/s\"/>
+//     <Real min=\"-1e5\" max=\"1e5\" unit=\"kg/s\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"70\" -->
 //   <ScalarVariable
@@ -770,7 +771,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"fixed\"
 //     causality=\"calculatedParameter\"
 //     >
-//     <Real min=\"611.657\" max=\"100000000.0\" nominal=\"1000000.0\" unit=\"Pa\"/>
+//     <Real min=\"611.657\" max=\"1e8\" nominal=\"1e6\" unit=\"Pa\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"71\" -->
 //   <ScalarVariable
@@ -840,7 +841,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"fixed\"
 //     causality=\"parameter\"
 //     >
-//     <Real start=\"500.0\" min=\"0.0\" max=\"10000000.0\" nominal=\"1000.0\" unit=\"J/(kg.K)\"/>
+//     <Real start=\"500.0\" min=\"0.0\" max=\"1e7\" nominal=\"1000.0\" unit=\"J/(kg.K)\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"78\" -->
 //   <ScalarVariable
@@ -850,7 +851,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"fixed\"
 //     causality=\"parameter\"
 //     >
-//     <Real start=\"300000.0\" min=\"0.0\" unit=\"kg\"/>
+//     <Real start=\"3e5\" min=\"0.0\" unit=\"kg\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"79\" -->
 //   <ScalarVariable
@@ -860,7 +861,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"fixed\"
 //     causality=\"parameter\"
 //     >
-//     <Real start=\"100000.0\" min=\"611.657\" max=\"100000000.0\" nominal=\"1000000.0\" unit=\"Pa\"/>
+//     <Real start=\"1e5\" min=\"611.657\" max=\"1e8\" nominal=\"1e6\" unit=\"Pa\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"80\" -->
 //   <ScalarVariable
@@ -939,7 +940,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"fixed\"
 //     causality=\"calculatedParameter\"
 //     >
-//     <Real min=\"-100000.0\" max=\"100000.0\" unit=\"kg/s\"/>
+//     <Real min=\"-1e5\" max=\"1e5\" unit=\"kg/s\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"88\" -->
 //   <ScalarVariable
@@ -949,7 +950,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"fixed\"
 //     causality=\"calculatedParameter\"
 //     >
-//     <Real min=\"0.0\" max=\"100000.0\" unit=\"kg/s\"/>
+//     <Real min=\"0.0\" max=\"1e5\" unit=\"kg/s\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"89\" -->
 //   <ScalarVariable
@@ -969,7 +970,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"fixed\"
 //     causality=\"calculatedParameter\"
 //     >
-//     <Real min=\"-10000000000.0\" max=\"10000000000.0\" nominal=\"500000.0\" unit=\"J/kg\"/>
+//     <Real min=\"-1e10\" max=\"1e10\" nominal=\"5e5\" unit=\"J/kg\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"91\" -->
 //   <ScalarVariable
@@ -979,7 +980,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"fixed\"
 //     causality=\"calculatedParameter\"
 //     >
-//     <Real min=\"-100000.0\" max=\"100000.0\" unit=\"kg/s\"/>
+//     <Real min=\"-1e5\" max=\"1e5\" unit=\"kg/s\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"92\" -->
 //   <ScalarVariable
@@ -1009,7 +1010,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"fixed\"
 //     causality=\"calculatedParameter\"
 //     >
-//     <Real min=\"0.0\" max=\"100000.0\" nominal=\"500.0\" unit=\"kg/m3\"/>
+//     <Real min=\"0.0\" max=\"1e5\" nominal=\"500.0\" unit=\"kg/m3\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"95\" -->
 //   <ScalarVariable
@@ -1019,7 +1020,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"fixed\"
 //     causality=\"parameter\"
 //     >
-//     <Real start=\"84013.05815259689\" min=\"-10000000000.0\" max=\"10000000000.0\" nominal=\"500000.0\" unit=\"J/kg\"/>
+//     <Real start=\"84013.05815259689\" min=\"-1e10\" max=\"1e10\" nominal=\"5e5\" unit=\"J/kg\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"96\" -->
 //   <ScalarVariable
@@ -1039,7 +1040,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"fixed\"
 //     causality=\"calculatedParameter\"
 //     >
-//     <Real min=\"0.0\" nominal=\"100000.0\" unit=\"Pa\"/>
+//     <Real min=\"0.0\" nominal=\"1e5\" unit=\"Pa\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"98\" -->
 //   <ScalarVariable
@@ -1049,7 +1050,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"fixed\"
 //     causality=\"calculatedParameter\"
 //     >
-//     <Real min=\"611.657\" max=\"100000000.0\" nominal=\"1000000.0\" unit=\"Pa\"/>
+//     <Real min=\"611.657\" max=\"1e8\" nominal=\"1e6\" unit=\"Pa\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"99\" -->
 //   <ScalarVariable
@@ -1069,7 +1070,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"fixed\"
 //     causality=\"calculatedParameter\"
 //     >
-//     <Real min=\"611.657\" max=\"100000000.0\" nominal=\"1000000.0\" unit=\"Pa\"/>
+//     <Real min=\"611.657\" max=\"1e8\" nominal=\"1e6\" unit=\"Pa\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"101\" -->
 //   <ScalarVariable
@@ -1079,7 +1080,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"fixed\"
 //     causality=\"parameter\"
 //     >
-//     <Real start=\"50000.0\" min=\"611.657\" max=\"100000000.0\" nominal=\"1000000.0\" unit=\"Pa\"/>
+//     <Real start=\"5e4\" min=\"611.657\" max=\"1e8\" nominal=\"1e6\" unit=\"Pa\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"102\" -->
 //   <ScalarVariable
@@ -1089,7 +1090,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"fixed\"
 //     causality=\"calculatedParameter\"
 //     >
-//     <Real min=\"611.657\" max=\"100000000.0\" nominal=\"1000000.0\" unit=\"Pa\"/>
+//     <Real min=\"611.657\" max=\"1e8\" nominal=\"1e6\" unit=\"Pa\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"103\" -->
 //   <ScalarVariable
@@ -1119,7 +1120,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"fixed\"
 //     causality=\"parameter\"
 //     >
-//     <Real start=\"1.0\" min=\"0.0\" nominal=\"100000.0\" unit=\"Pa\"/>
+//     <Real start=\"1.0\" min=\"0.0\" nominal=\"1e5\" unit=\"Pa\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"106\" -->
 //   <ScalarVariable
@@ -1129,7 +1130,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"fixed\"
 //     causality=\"parameter\"
 //     >
-//     <Real start=\"0.0001\" min=\"0.0\"/>
+//     <Real start=\"1e-4\" min=\"0.0\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"107\" -->
 //   <ScalarVariable
@@ -1139,7 +1140,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"fixed\"
 //     causality=\"parameter\"
 //     >
-//     <Real start=\"9.806649999999999\" unit=\"m/s2\"/>
+//     <Real start=\"9.80665\" unit=\"m/s2\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"108\" -->
 //   <ScalarVariable
@@ -1179,7 +1180,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"fixed\"
 //     causality=\"parameter\"
 //     >
-//     <Real start=\"101325.0\" min=\"0.0\" nominal=\"100000.0\" unit=\"Pa\"/>
+//     <Real start=\"101325.0\" min=\"0.0\" nominal=\"1e5\" unit=\"Pa\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"112\" -->
 //   <ScalarVariable
@@ -1189,7 +1190,7 @@ val(evaporator_qm_S, 100);
 //     variability=\"fixed\"
 //     causality=\"calculatedParameter\"
 //     >
-//     <Real min=\"0.0\" nominal=\"100000.0\" unit=\"Pa\"/>
+//     <Real min=\"0.0\" nominal=\"1e5\" unit=\"Pa\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"113\" -->
 //   <ScalarVariable
@@ -1228,7 +1229,7 @@ val(evaporator_qm_S, 100);
 //     valueReference=\"166\"
 //     description=\"Mass flow rate in design flow direction\"
 //     >
-//     <Real max=\"100000.0\" unit=\"kg/s\"/>
+//     <Real max=\"1e5\" unit=\"kg/s\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"118\" -->
 //   <ScalarVariable
@@ -1244,7 +1245,7 @@ val(evaporator_qm_S, 100);
 //     valueReference=\"143\"
 //     description=\"Specific thermodynamic enthalpy close to the connection point if m_flow &lt; 0\"
 //     >
-//     <Real min=\"-10000000000.0\" max=\"10000000000.0\" nominal=\"500000.0\" unit=\"J/kg\"/>
+//     <Real min=\"-1e10\" max=\"1e10\" nominal=\"5e5\" unit=\"J/kg\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"120\" -->
 //   <ScalarVariable
@@ -1252,7 +1253,7 @@ val(evaporator_qm_S, 100);
 //     valueReference=\"166\"
 //     description=\"Mass flow rate from the connection point into the component\"
 //     >
-//     <Real max=\"100000.0\" unit=\"kg/s\"/>
+//     <Real max=\"1e5\" unit=\"kg/s\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"121\" -->
 //   <ScalarVariable
@@ -1260,7 +1261,7 @@ val(evaporator_qm_S, 100);
 //     valueReference=\"2\"
 //     description=\"Thermodynamic pressure in the connection point\"
 //     >
-//     <Real min=\"611.657\" max=\"100000000.0\" nominal=\"1000000.0\" unit=\"Pa\"/>
+//     <Real min=\"611.657\" max=\"1e8\" nominal=\"1e6\" unit=\"Pa\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"122\" -->
 //   <ScalarVariable
@@ -1268,7 +1269,7 @@ val(evaporator_qm_S, 100);
 //     valueReference=\"145\"
 //     description=\"Specific thermodynamic enthalpy close to the connection point if m_flow &lt; 0\"
 //     >
-//     <Real min=\"-10000000000.0\" max=\"10000000000.0\" nominal=\"500000.0\" unit=\"J/kg\"/>
+//     <Real min=\"-1e10\" max=\"1e10\" nominal=\"5e5\" unit=\"J/kg\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"123\" -->
 //   <ScalarVariable
@@ -1276,7 +1277,7 @@ val(evaporator_qm_S, 100);
 //     valueReference=\"291\"
 //     description=\"Mass flow rate from the connection point into the component\"
 //     >
-//     <Real min=\"-100000.0\" unit=\"kg/s\"/>
+//     <Real min=\"-1e5\" unit=\"kg/s\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"124\" -->
 //   <ScalarVariable
@@ -1300,7 +1301,7 @@ val(evaporator_qm_S, 100);
 //     valueReference=\"155\"
 //     description=\"Feed water enthalpy (specific enthalpy close to feedwater port when mass flows in to the boiler)\"
 //     >
-//     <Real min=\"-10000000000.0\" max=\"10000000000.0\" nominal=\"500000.0\" unit=\"J/kg\"/>
+//     <Real min=\"-1e10\" max=\"1e10\" nominal=\"5e5\" unit=\"J/kg\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"127\" -->
 //   <ScalarVariable
@@ -1324,7 +1325,7 @@ val(evaporator_qm_S, 100);
 //     valueReference=\"144\"
 //     description=\"Specific thermodynamic enthalpy close to the connection point if m_flow &lt; 0\"
 //     >
-//     <Real min=\"-10000000000.0\" max=\"10000000000.0\" nominal=\"500000.0\" unit=\"J/kg\"/>
+//     <Real min=\"-1e10\" max=\"1e10\" nominal=\"5e5\" unit=\"J/kg\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"130\" -->
 //   <ScalarVariable
@@ -1332,7 +1333,7 @@ val(evaporator_qm_S, 100);
 //     valueReference=\"150\"
 //     description=\"Mass flow rate from the connection point into the component\"
 //     >
-//     <Real max=\"100000.0\" unit=\"kg/s\"/>
+//     <Real max=\"1e5\" unit=\"kg/s\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"131\" -->
 //   <ScalarVariable
@@ -1340,7 +1341,7 @@ val(evaporator_qm_S, 100);
 //     valueReference=\"2\"
 //     description=\"Thermodynamic pressure in the connection point\"
 //     >
-//     <Real min=\"611.657\" max=\"100000000.0\" nominal=\"1000000.0\" unit=\"Pa\"/>
+//     <Real min=\"611.657\" max=\"1e8\" nominal=\"1e6\" unit=\"Pa\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"132\" -->
 //   <ScalarVariable
@@ -1348,7 +1349,7 @@ val(evaporator_qm_S, 100);
 //     valueReference=\"145\"
 //     description=\"Specific thermodynamic enthalpy close to the connection point if m_flow &lt; 0\"
 //     >
-//     <Real min=\"-10000000000.0\" max=\"10000000000.0\" nominal=\"500000.0\" unit=\"J/kg\"/>
+//     <Real min=\"-1e10\" max=\"1e10\" nominal=\"5e5\" unit=\"J/kg\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"133\" -->
 //   <ScalarVariable
@@ -1356,7 +1357,7 @@ val(evaporator_qm_S, 100);
 //     valueReference=\"304\"
 //     description=\"Mass flow rate from the connection point into the component\"
 //     >
-//     <Real min=\"-100000.0\" unit=\"kg/s\"/>
+//     <Real min=\"-1e5\" unit=\"kg/s\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"134\" -->
 //   <ScalarVariable
@@ -1364,7 +1365,7 @@ val(evaporator_qm_S, 100);
 //     valueReference=\"2\"
 //     description=\"Thermodynamic pressure in the connection point\"
 //     >
-//     <Real min=\"611.657\" max=\"100000000.0\" nominal=\"1000000.0\" unit=\"Pa\"/>
+//     <Real min=\"611.657\" max=\"1e8\" nominal=\"1e6\" unit=\"Pa\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"135\" -->
 //   <ScalarVariable
@@ -1372,7 +1373,7 @@ val(evaporator_qm_S, 100);
 //     valueReference=\"306\"
 //     description=\"steam mass flow rate\"
 //     >
-//     <Real min=\"-100000.0\" max=\"9.999999999999999e+59\" unit=\"kg/s\"/>
+//     <Real min=\"-1e5\" max=\"1e60\" unit=\"kg/s\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"136\" -->
 //   <ScalarVariable
@@ -1396,7 +1397,7 @@ val(evaporator_qm_S, 100);
 //     valueReference=\"2\"
 //     description=\"Saturation pressure\"
 //     >
-//     <Real min=\"611.657\" max=\"100000000.0\" nominal=\"1000000.0\" unit=\"Pa\"/>
+//     <Real min=\"611.657\" max=\"1e8\" nominal=\"1e6\" unit=\"Pa\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"139\" -->
 //   <ScalarVariable
@@ -1457,7 +1458,7 @@ val(evaporator_qm_S, 100);
 //     valueReference=\"143\"
 //     description=\"Specific thermodynamic enthalpy close to the connection point if m_flow &lt; 0\"
 //     >
-//     <Real min=\"-10000000000.0\" max=\"10000000000.0\" nominal=\"500000.0\" unit=\"J/kg\"/>
+//     <Real min=\"-1e10\" max=\"1e10\" nominal=\"5e5\" unit=\"J/kg\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"147\" -->
 //   <ScalarVariable
@@ -1465,7 +1466,7 @@ val(evaporator_qm_S, 100);
 //     valueReference=\"166\"
 //     description=\"Mass flow rate from the connection point into the component\"
 //     >
-//     <Real max=\"100000.0\" unit=\"kg/s\"/>
+//     <Real max=\"1e5\" unit=\"kg/s\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"148\" -->
 //   <ScalarVariable
@@ -1473,7 +1474,7 @@ val(evaporator_qm_S, 100);
 //     valueReference=\"2\"
 //     description=\"Thermodynamic pressure in the connection point\"
 //     >
-//     <Real min=\"611.657\" max=\"100000000.0\" nominal=\"1000000.0\" unit=\"Pa\"/>
+//     <Real min=\"611.657\" max=\"1e8\" nominal=\"1e6\" unit=\"Pa\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"149\" -->
 //   <ScalarVariable
@@ -1481,7 +1482,7 @@ val(evaporator_qm_S, 100);
 //     valueReference=\"145\"
 //     description=\"Specific thermodynamic enthalpy close to the connection point if m_flow &lt; 0\"
 //     >
-//     <Real min=\"-10000000000.0\" max=\"10000000000.0\" nominal=\"500000.0\" unit=\"J/kg\"/>
+//     <Real min=\"-1e10\" max=\"1e10\" nominal=\"5e5\" unit=\"J/kg\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"150\" -->
 //   <ScalarVariable
@@ -1489,7 +1490,7 @@ val(evaporator_qm_S, 100);
 //     valueReference=\"321\"
 //     description=\"Mass flow rate from the connection point into the component\"
 //     >
-//     <Real min=\"-100000.0\" unit=\"kg/s\"/>
+//     <Real min=\"-1e5\" unit=\"kg/s\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"151\" -->
 //   <ScalarVariable
@@ -1497,7 +1498,7 @@ val(evaporator_qm_S, 100);
 //     valueReference=\"2\"
 //     description=\"Thermodynamic pressure in the connection point\"
 //     >
-//     <Real min=\"611.657\" max=\"100000000.0\" nominal=\"1000000.0\" unit=\"Pa\"/>
+//     <Real min=\"611.657\" max=\"1e8\" nominal=\"1e6\" unit=\"Pa\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"152\" -->
 //   <ScalarVariable
@@ -1513,7 +1514,7 @@ val(evaporator_qm_S, 100);
 //     valueReference=\"2\"
 //     description=\"Thermodynamic pressure in the connection point\"
 //     >
-//     <Real min=\"611.657\" max=\"100000000.0\" nominal=\"1000000.0\" unit=\"Pa\"/>
+//     <Real min=\"611.657\" max=\"1e8\" nominal=\"1e6\" unit=\"Pa\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"154\" -->
 //   <ScalarVariable
@@ -1537,7 +1538,7 @@ val(evaporator_qm_S, 100);
 //     valueReference=\"2\"
 //     description=\"Absolute pressure of medium\"
 //     >
-//     <Real min=\"0.0\" nominal=\"100000.0\" unit=\"Pa\"/>
+//     <Real min=\"0.0\" nominal=\"1e5\" unit=\"Pa\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"157\" -->
 //   <ScalarVariable
@@ -1545,7 +1546,7 @@ val(evaporator_qm_S, 100);
 //     valueReference=\"2\"
 //     description=\"Saturation pressure\"
 //     >
-//     <Real min=\"611.657\" max=\"100000000.0\" nominal=\"1000000.0\" unit=\"Pa\"/>
+//     <Real min=\"611.657\" max=\"1e8\" nominal=\"1e6\" unit=\"Pa\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"158\" -->
 //   <ScalarVariable
@@ -1561,7 +1562,7 @@ val(evaporator_qm_S, 100);
 //     valueReference=\"161\"
 //     description=\"Density\"
 //     >
-//     <Real min=\"0.0\" max=\"100000.0\" nominal=\"500.0\" unit=\"kg/m3\"/>
+//     <Real min=\"0.0\" max=\"1e5\" nominal=\"500.0\" unit=\"kg/m3\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"160\" -->
 //   <ScalarVariable
@@ -1569,7 +1570,7 @@ val(evaporator_qm_S, 100);
 //     valueReference=\"155\"
 //     description=\"Specific enthalpy\"
 //     >
-//     <Real min=\"-10000000000.0\" max=\"10000000000.0\" nominal=\"500000.0\" unit=\"J/kg\"/>
+//     <Real min=\"-1e10\" max=\"1e10\" nominal=\"5e5\" unit=\"J/kg\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"161\" -->
 //   <ScalarVariable
@@ -1577,7 +1578,7 @@ val(evaporator_qm_S, 100);
 //     valueReference=\"2\"
 //     description=\"Pressure\"
 //     >
-//     <Real min=\"611.657\" max=\"100000000.0\" nominal=\"1000000.0\" unit=\"Pa\"/>
+//     <Real min=\"611.657\" max=\"1e8\" nominal=\"1e6\" unit=\"Pa\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"162\" -->
 //   <ScalarVariable
@@ -1585,7 +1586,7 @@ val(evaporator_qm_S, 100);
 //     valueReference=\"155\"
 //     description=\"Specific thermodynamic enthalpy close to the connection point if m_flow &lt; 0\"
 //     >
-//     <Real min=\"-10000000000.0\" max=\"10000000000.0\" nominal=\"500000.0\" unit=\"J/kg\"/>
+//     <Real min=\"-1e10\" max=\"1e10\" nominal=\"5e5\" unit=\"J/kg\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"163\" -->
 //   <ScalarVariable
@@ -1601,7 +1602,7 @@ val(evaporator_qm_S, 100);
 //     valueReference=\"2\"
 //     description=\"Thermodynamic pressure in the connection point\"
 //     >
-//     <Real min=\"611.657\" max=\"100000000.0\" nominal=\"1000000.0\" unit=\"Pa\"/>
+//     <Real min=\"611.657\" max=\"1e8\" nominal=\"1e6\" unit=\"Pa\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"165\" -->
 //   <ScalarVariable
@@ -1617,7 +1618,7 @@ val(evaporator_qm_S, 100);
 //     valueReference=\"172\"
 //     description=\"Density\"
 //     >
-//     <Real min=\"0.0\" max=\"100000.0\" nominal=\"500.0\" unit=\"kg/m3\"/>
+//     <Real min=\"0.0\" max=\"1e5\" nominal=\"500.0\" unit=\"kg/m3\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"167\" -->
 //   <ScalarVariable
@@ -1625,7 +1626,7 @@ val(evaporator_qm_S, 100);
 //     valueReference=\"143\"
 //     description=\"Specific enthalpy\"
 //     >
-//     <Real min=\"-10000000000.0\" max=\"10000000000.0\" nominal=\"500000.0\" unit=\"J/kg\"/>
+//     <Real min=\"-1e10\" max=\"1e10\" nominal=\"5e5\" unit=\"J/kg\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"168\" -->
 //   <ScalarVariable
@@ -1633,7 +1634,7 @@ val(evaporator_qm_S, 100);
 //     valueReference=\"143\"
 //     description=\"Specific thermodynamic enthalpy close to the connection point if m_flow &lt; 0\"
 //     >
-//     <Real min=\"-10000000000.0\" max=\"10000000000.0\" nominal=\"500000.0\" unit=\"J/kg\"/>
+//     <Real min=\"-1e10\" max=\"1e10\" nominal=\"5e5\" unit=\"J/kg\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"169\" -->
 //   <ScalarVariable
@@ -1657,7 +1658,7 @@ val(evaporator_qm_S, 100);
 //     valueReference=\"2\"
 //     description=\"Thermodynamic pressure in the connection point\"
 //     >
-//     <Real min=\"611.657\" max=\"100000000.0\" nominal=\"1000000.0\" unit=\"Pa\"/>
+//     <Real min=\"611.657\" max=\"1e8\" nominal=\"1e6\" unit=\"Pa\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"172\" -->
 //   <ScalarVariable
@@ -2081,20 +2082,24 @@ val(evaporator_qm_S, 100);
 // ""
 // true
 // ""
+// true
+// ""
 // record SimulationResult
 //     resultFile = "DrumBoilerModel_me_FMU_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 100.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'DrumBoilerModel_me_FMU', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-override=q_F=10,Y_Valve=1'",
-//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+//     simulationOptions = "startTime = 0.0, stopTime = 100.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'DrumBoilerModel_me_FMU', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-override=q_F=10,Y_Valve=1,logLevel=0'",
+//     messages = "LOG_STDOUT        | warning | You are overriding logLevel with a small value or zero.
+// |                 | |       | This could lead to numerically dirty solutions or divisions by zero if not tearingStrictness=veryStrict.
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
 // ""
 // 10.0
 // 1.0
-// 1.066186930067678
-// 1.132373860135355
-// -16.62186190266388
-// 101.410212034632
+// 1.0661869300676776
+// 1.1323738601353552
+// -16.62186190266387
+// 101.41021203463197
 // 66.98717532203514
-// -1.132373860135355
+// -1.1323738601353552
 // endResult
