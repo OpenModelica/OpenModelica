@@ -45,6 +45,7 @@ import HashTableCG;
 import MMath;
 import SCode;
 import ZeroCrossings;
+import SimCode;
 
 public
 type Type = .DAE.Type
@@ -171,6 +172,7 @@ uniontype ExtraInfo "extra information that we should send around with the DAE"
   record EXTRA_INFO
     String description    "the model description string";
     String fileNamePrefix "the model name to be used in the dumps";
+    Option<SimCode.SimulationSettings> simSettingsOption "simulation settings options needed for data reconciliation to apply start values from csv files";
   end EXTRA_INFO;
 end ExtraInfo;
 
