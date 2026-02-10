@@ -42,6 +42,7 @@ GetModelInstanceConnection4.mos \
 GetModelInstanceConnection5.mos \
 GetModelInstanceConnection6.mos \
 GetModelInstanceContext1.mos \
+GetModelInstanceContext2.mos \
 GetModelInstanceDerived1.mos \
 GetModelInstanceDerived2.mos \
 GetModelInstanceDerived3.mos \
