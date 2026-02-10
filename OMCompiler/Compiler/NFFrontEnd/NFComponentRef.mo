@@ -1556,7 +1556,7 @@ public
   protected
     Option<Absyn.Path> opt_context;
   algorithm
-    opt_context := InstNode.rootClassContext(InstNode.parent(node));
+    opt_context := InstNode.rootClassContext(InstNode.instanceParent(node));
 
     if isSome(opt_context) then
       for name in AbsynUtil.pathToStringListReverse(Util.getOption(opt_context)) loop
