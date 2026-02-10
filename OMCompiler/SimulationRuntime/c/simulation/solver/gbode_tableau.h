@@ -183,6 +183,38 @@ typedef struct T_TRANSFORM {
 } T_TRANSFORM;
 
 /**
+ * @brief Stage-value predictors (SVPs) for ESDIRK and SDIRK methods
+ *
+ * As (E)SDIRK methods can be solved sequentially (stage by stage in order),
+ * it is possible to get good and stable predictions of the stage k_s by doing a linear
+ * combination of the previous stages k_1, ..., k_{s-1}. This can be interpreted as a
+ * so-called EDIRK method (see "Intrastep, Stage-Value Predictors for Diagonally-Implicit Runge–Kutta Methods"
+ * by Carpenter et al: https://ntrs.nasa.gov/api/citations/20240008442/downloads/NASA-TM-20240008442.pdf).
+ *
+ * This structure contains the additional explicit EDIRK row for stage s, to predict the (E)SDIRK row s.
+ */
+typedef struct STAGE_VALUE_PREDICTORS {
+
+  /**
+   * @brief Row s of this predictor matrix builds the predicton for stage s of the real system:
+   *            k_pred^{s} := sum_{i=1}^{s-1} A_predictor[s, i] * k[i]
+   */
+  double *A_predictor;
+
+  /**
+   * @brief Stage availability flags for predictors.
+   *            available[s] == true: a predictor exists for stage s
+   *            available[s] == false: no predictor, use default (constant, dense output, Hermite) initial guess
+   */
+  modelica_boolean *available;
+
+  /**
+   * @brief Number of stages in the original Butcher tableau.
+   */
+  int nStages;
+} STAGE_VALUE_PREDICTORS;
+
+/**
  * @brief Butcher tableau specifiying a Runge-Kutta method.
  *
  * c | A
@@ -218,6 +250,7 @@ typedef struct BUTCHER_TABLEAU {
   modelica_boolean isKRightAvailable; /* Availability of function values on right hand side */
   gb_dense_output dense_output;       /* Generic dense output function */
   T_TRANSFORM *t_transform;           /* T-transformation for FIRK methods */
+  STAGE_VALUE_PREDICTORS *svp;        /* Stage-Value-Predictors for (E)SDIRK methods */
 } BUTCHER_TABLEAU;
 
 /**

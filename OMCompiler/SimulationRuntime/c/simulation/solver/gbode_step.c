@@ -297,21 +297,29 @@ int expl_diag_impl_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
       memcpy(nlsData->nlsx,    gbData->yOld, nStates*sizeof(modelica_real));
       memcpy(nlsData->nlsxExtrapolation,    gbData->yOld, nStates*sizeof(modelica_real));
 
-      if (gbData->time != data->simulationInfo->startTime && !gbData->eventHappened
-          && gbData->tableau->dense_output != NULL && gbData->nlsSolverMethod == GB_NLS_INTERNAL
+      if (gbData->tableau->svp != NULL && gbData->tableau->svp->available[stage_])
+      {
+        /* stage-value-predictors (highest priority) */
+        gbInternalStageValuePredictors(gbData->tableau->svp, stage_, nStates, gbData->stepSize, gbData->k, gbData->yOld, nlsData->nlsxOld);
+      }
+      else if (gbData->time != data->simulationInfo->startTime && !gbData->eventHappened
+          && gbData->tableau->withDenseOutput && gbData->nlsSolverMethod == GB_NLS_INTERNAL
           && gbData->extrapolationBaseTime != INFINITY)
       {
+        /* dense output if available / possible */
         double theta = (gbData->time + gbData->tableau->c[stage_] * gbData->stepSize - gbData->extrapolationBaseTime) / gbData->extrapolationStepSize;
         gbData->tableau->dense_output(gbData->tableau, gbData->yLast, NULL, gbData->kLast,
                                       theta, gbData->extrapolationStepSize, nlsData->nlsxOld, 0, NULL, nStates);
       }
       else if (stage>1)
       {
+        /* perform hermite to interpolate between two stages */
         extrapolation_hermite_gb(nlsData->nlsxOld, gbData->nStates, gbData->time + gbData->tableau->c[stage_-2] * gbData->stepSize, gbData->x + (stage_-2) * nStates, gbData->k + (stage_-2) * nStates,
                              gbData->time + gbData->tableau->c[stage_-1] * gbData->stepSize, gbData->x + (stage_-1) * nStates, gbData->k + (stage_-1) * nStates, gbData->time + gbData->tableau->c[stage_] * gbData->stepSize);
       }
       else
       {
+        /* generic extrapolation */
         extrapolation_gb(gbData, nlsData->nlsxOld, gbData->time + gbData->tableau->c[stage_] * gbData->stepSize);
       }
 

@@ -84,6 +84,20 @@ void setButcherTableau(BUTCHER_TABLEAU* tableau, const double *c, const double *
   tableau->t_transform = NULL;
 }
 
+void setStageValuePredictors(BUTCHER_TABLEAU *tableau, const double *A_pred, const modelica_boolean *available)
+{
+  tableau->svp = (STAGE_VALUE_PREDICTORS *) malloc(sizeof(STAGE_VALUE_PREDICTORS));
+
+  int stages = tableau->nStages;
+
+  tableau->svp->nStages = stages;
+  tableau->svp->A_predictor = (double *) malloc(stages * stages * sizeof(double));
+  memcpy(tableau->svp->A_predictor, A_pred, stages * stages * sizeof(double));
+
+  tableau->svp->available = (modelica_boolean *) malloc(stages * sizeof(modelica_boolean));
+  memcpy(tableau->svp->available, available, stages * sizeof(modelica_boolean));
+}
+
 void setTTransform(BUTCHER_TABLEAU *tableau, const double *A_part_inv, const double *T, const double *T_inv, const double *gamma, const double *alpha, const double *beta,
                    modelica_boolean f_row_zero, modelica_boolean l_col_zero, int n_real_eigs, int n_cmplx_eigs, const double *phi, const double *rho)
 {
@@ -233,6 +247,18 @@ void getButcherTableau_ESDIRK3(BUTCHER_TABLEAU* tableau)
   tableau->dense_output = denseOutput_ESDIRK3;
   tableau->isKLeftAvailable = TRUE;
   tableau->isKRightAvailable = FALSE;
+
+  // TODO: should we use the predictor for stage 3 and 4 or only for stage 4? stage 3 has a order 1 predictor only.
+  const double A_predictor[] = {
+                                0, 0,     0, 0,
+                                0, 0,     0, 0,
+                                0.3, 0.3, 0, 0,  // max(R_int(-inf)) = 1.0, order 1
+                                0.5333190407494745800028006, 0.8095865780886579710085016, -0.3429056188381325309677550, 0.0 // // max(R_int(-inf)) = 1.0, order 2
+                               };
+
+  const modelica_boolean svp_available[] = {FALSE, FALSE, FALSE, TRUE};
+
+  setStageValuePredictors(tableau, A_predictor, svp_available);
 }
 
 // TODO: Describe me
@@ -335,6 +361,16 @@ void getButcherTableau_SDIRK3(BUTCHER_TABLEAU* tableau)
   const double bt[] = {0.0, 1.7726301276675510709204584, -0.7726301276675510709204578};
 
   setButcherTableau(tableau, c, A, b, bt);
+
+  const double A_predictor[] = {
+                                0, 0, 0,
+                                0.7179332607542294997080097,                            0,  0,  // max(R_int(-inf)) = 0.0, order 1
+                                0.7726301276675510709204581,  0.2273698723324489290795419,  0,  // max(R_int(-inf)) = 0.0, order 2
+                               };
+
+  const modelica_boolean svp_available[] = {FALSE, TRUE, TRUE};
+
+  setStageValuePredictors(tableau, A_predictor, svp_available);
 }
 
 void denseOutput_SDIRK4(BUTCHER_TABLEAU* tableau, double* yOld, double* x, double* k, double dt, double stepSize, double* y, int nIdx, int* idx, int nStates)
@@ -2309,6 +2345,10 @@ BUTCHER_TABLEAU* initButcherTableau(enum GB_METHOD method, enum _FLAG flag)
     infoStreamPrint(OMC_LOG_SOLVER, 0, "Richardson extrapolation is used for step size control");
   }
 
+  // set optionals to default value
+  tableau->t_transform = NULL;
+  tableau->svp = NULL;
+
   switch(method)
   {
     case MS_ADAMS_MOULTON:
@@ -2482,6 +2522,13 @@ BUTCHER_TABLEAU* initButcherTableau(enum GB_METHOD method, enum _FLAG flag)
   return tableau;
 }
 
+void freeStageValuePredictors(STAGE_VALUE_PREDICTORS *svp)
+{
+  free(svp->A_predictor);
+  free(svp->available);
+  free(svp);
+}
+
 void freeTTransform(T_TRANSFORM *t_transform)
 {
   free(t_transform->A_part_inv);
@@ -2511,6 +2558,11 @@ void freeButcherTableau(BUTCHER_TABLEAU* tableau)
   if (tableau->t_transform)
   {
     freeTTransform(tableau->t_transform);
+  }
+
+  if (tableau->svp)
+  {
+    freeStageValuePredictors(tableau->svp);
   }
 
   free(tableau);

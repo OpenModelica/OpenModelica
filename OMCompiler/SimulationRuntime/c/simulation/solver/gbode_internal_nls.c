@@ -56,6 +56,15 @@ extern void daxpy_(const int *n,
                    const double *x, const int *incX,
                    double *y, const int *incY);
 
+/* y := alpha * A * x + beta * y */
+extern void dgemv_(const char *trans,
+                   const int *m,
+                   const int *n,
+                   const double *alpha, const double *A, const int *ldA,
+                   const double *x, const int *incX,
+                   const double *beta, double *y, const int *incY
+);
+
 /* C := alpha * A * B + beta * C */
 extern void dgemm_(const char *transA,
                    const char *transB,
@@ -1463,4 +1472,25 @@ void gbInternalContraction(DATA *data,
 
   // yt := y + yt = y + (gamma / h * I - J)^{-1} * (gamma * sum (b_j - bt_j) * k_j)
   daxpy_(&size, &DBL_ONE, y, &INT_ONE, yt, &INT_ONE);
+}
+
+void gbInternalStageValuePredictors(STAGE_VALUE_PREDICTORS *svp,
+                                    int active_stage,
+                                    int nStates,
+                                    double stepSize,
+                                    const double *K,
+                                    const double *y0,
+                                    double *ypred)
+{
+  // y := h * a[1] * k[1] + a[2] * k[2] + ... + a[s-1] * k[s-1]) + y0
+  memcpy(ypred, y0, nStates * sizeof(double));
+
+  dgemv_(
+    &CHAR_NO_TRANS,
+    &nStates,
+    &active_stage,
+    &stepSize, K, &nStates,
+    &svp->A_predictor[active_stage * svp->nStages], &INT_ONE,
+    &DBL_ONE, ypred, &INT_ONE
+  );
 }
