@@ -23,6 +23,7 @@ cppruntime.log \
 cppruntimeHpcom.log \
 cppruntimeFMU1.log \
 cppruntimeFMU2.log \
+cppruntimeOutputFormat.log \
 cppruntimeStaticLinking.log \
 cppruntimeGenDebugSymbols.log \
 cppruntimeHardcodedStartValues.log \
@@ -513,6 +514,9 @@ cppruntimeFMU1.log: omc-diff
 	@echo $@ done
 cppruntimeFMU2.log: omc-diff
 	$(MAKE) -j1 -C openmodelica/cppruntime/fmu/modelExchange/2.0 -f Makefile test  > $@
+	@echo $@ done
+cppruntimeOutputFormat.log: omc-diff
+	$(MAKE) -j1 -C openmodelica/cppruntime/outputFormat -f Makefile test  > $@
 	@echo $@ done
 cppruntimeStaticLinking.log: omc-diff
 	$(MAKE) -j1 -C openmodelica/cppruntime/staticLinking -f Makefile test  > $@
