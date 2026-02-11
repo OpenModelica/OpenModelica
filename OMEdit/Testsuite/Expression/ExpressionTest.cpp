@@ -304,7 +304,7 @@ void ExpressionTest::parseJSON()
   try {
     FlatModelica::Expression e;
     e.deserialize(jsonValue);
-    qDebug() << e.toQString();
+    //qDebug() << e.toQString();
     //qDebug() << jsonValue;
     //qDebug() << e.serialize();
     QCOMPARE(e.serialize(), jsonValue);
