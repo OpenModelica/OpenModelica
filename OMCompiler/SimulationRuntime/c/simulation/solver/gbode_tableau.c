@@ -252,8 +252,8 @@ void getButcherTableau_ESDIRK3(BUTCHER_TABLEAU* tableau)
   const double A_predictor[] = {
                                 0, 0,     0, 0,
                                 0, 0,     0, 0,
-                                0.3, 0.3, 0, 0,  // max(R_int(-inf)) = 1.0, order 1
-                                0.5333190407494745800028006, 0.8095865780886579710085016, -0.3429056188381325309677550, 0.0 // // max(R_int(-inf)) = 1.0, order 2
+                                0.3, 0.3, 0, 0,  // order 1, R_int(-inf) = -0.37657 => strongly A-stable
+                                0.5333190407494745800028006, 0.8095865780886579710085016, -0.3429056188381325309677550, 0.0 // order 2, R_int(-inf) = -0.95666 => strongly A-stable
                                };
 
   const modelica_boolean svp_available[] = {FALSE, FALSE, FALSE, TRUE};
@@ -341,6 +341,68 @@ void getButcherTableau_ESDIRK4(BUTCHER_TABLEAU* tableau)
   tableau->dense_output = denseOutput_ESDIRK4;
   tableau->isKLeftAvailable = TRUE;
   tableau->isKRightAvailable = FALSE;
+}
+
+/* Dense Output from "Intrastep, Stage-Value Predictors for Diagonally-Implicit Runge–Kutta Methods" */
+void denseOutput_ESDIRK4_7L2SA(BUTCHER_TABLEAU* tableau, double* yOld, double* x, double* k, double dt, double stepSize, double* y, int nIdx, int* idx, int nStates)
+{
+  tableau->b_dt[0] = (-27.59333059022041759502043 * dt + 64.65274650435436557321524) * dt - 37.46026752914355622243673;
+  tableau->b_dt[1] = tableau->b_dt[0];
+  tableau->b_dt[2] = (48.80073718304123520372254 * dt - 113.4655885884012189742302) * dt + 65.60400381988389248115137;
+  tableau->b_dt[3] = (6.195923997399599986313684 * dt - 20.18211580148779384670407) * dt + 14.50473408798312502327690;
+  tableau->b_dt[4] = (-2.0 * dt + 3.84221138118028167447597) * dt - 1.066701349013079462428321;
+  tableau->b_dt[5] = (1.94 * dt + 1.5) * dt - 3.996501500566825597103974;
+  tableau->b_dt[6] = (0.25 * dt - 1.0) * dt + 0.875;
+
+  denseOutput(tableau, yOld, x, k, dt, stepSize, y, nIdx, idx, nStates);
+}
+
+/* 7 stage, L-stable, 4(3) ESDIRK method with stage-value predictor */
+void getButcherTableau_ESDIRK4_7L2SA(BUTCHER_TABLEAU* tableau)
+{
+  tableau->nStages = 7;
+  tableau->order_b = 4;
+  tableau->order_bt = 3;
+  tableau->fac      = 1.0;
+
+  /* method from "Diagonally implicit Runge–Kutta methods for stiff ODEs" */
+  const double c[] = { 0.0, 0.25, 0.07322330470336312069346008, 0.5, 0.6966490299823633325360106, 0.7063492063492063932628184, 1.0 };
+
+  const double A[] = {
+                      0, 0, 0, 0, 0, 0, 0,
+                      0.125, 0.125, 0, 0, 0, 0, 0,
+                      -0.02588834764831843965326996, -0.02588834764831843965326996, 0.125, 0, 0, 0, 0,
+                      0.3383883476483184327143761, 0.3383883476483184327143761, -0.3017766952966368654287521, 0.125, 0, 0, 0,
+                      -0.3592453618381594160346992, -0.3592453618381594160346992, 0.93650786004636443760063, 0.3536318936123176159824766, 0.125, 0, 0,
+                      0.2336106109124456153836036, 0.2336106109124456153836036, -0.04331537381018980142899366, 0.01903274535895701016774417, 0.1384106129755478808984748, 0.125, 0,
+                      -0.4008516150096082530929209, -0.4008516150096082530929209, 0.9391524145239087406622502, 0.5185422838949311774570106, 0.7755100321672021568275568, -0.5565015005668255687609758, 0.125
+                     };
+
+  const double b[] = { -0.4008516150096082530929209, -0.4008516150096082530929209, 0.9391524145239087406622502, 0.5185422838949311774570106, 0.7755100321672021568275568, -0.5565015005668255687609758, 0.125 };
+
+  const double bt[] = { -0.2421068937666858433832573, -0.2421068937666858433832573, 0.6587096818817366195020213, 0.5004777357240689505957221, 0.7607872310157867135060883, -0.5714751468025063285693932, 0.1357142857142857039765005 };
+
+  setButcherTableau(tableau, c, A, b, bt);
+
+  tableau->withDenseOutput = TRUE;
+  tableau->dense_output = denseOutput_ESDIRK4_7L2SA;
+  tableau->isKLeftAvailable = TRUE;
+  tableau->isKRightAvailable = FALSE;
+
+  /* SVP from "Intrastep, Stage-Value Predictors for Diagonally-Implicit Runge–Kutta Methods" */
+  const double A_predictor[] = {
+                                0, 0, 0, 0, 0, 0, 0,
+                                0, 0, 0, 0, 0, 0, 0,
+                                0.03661165235168154462996192, 0.03661165235168154462996192, 0, 0, 0, 0, 0,
+                                0.8535533905932738214801523, 0.8535533905932738214801523, -1.207106781186547581023924, 0, 0, 0, 0,
+                                -0.9517714576323296493843248, -0.9517714576323296493843248, 1.920191945247022028907364, 0.68, 0, 0, 0,
+                                -0.2103336111576326549491873, -0.2103336111576326549491873, 0.6941969710616575148587203, 0.2558194576028144989674432, 0.177, 0, 0,
+                                -1.489680406763977982227047, -1.489680406763977982227047, 2.936560813527956077505104, 0.3579, 0.5498, 0.1351, 0,
+                               };
+
+  const modelica_boolean svp_available[] = {FALSE, FALSE, TRUE, TRUE, TRUE, TRUE, TRUE};
+
+  setStageValuePredictors(tableau, A_predictor, svp_available);
 }
 
 // 3-stage order 3(2), L-stable SDIRK, embedded bt might be bad, dense output missing
@@ -2434,6 +2496,9 @@ BUTCHER_TABLEAU* initButcherTableau(enum GB_METHOD method, enum _FLAG flag)
       break;
     case RK_ESDIRK4:
       getButcherTableau_ESDIRK4(tableau);
+      break;
+    case RK_ESDIRK4_7L2SA:
+      getButcherTableau_ESDIRK4_7L2SA(tableau);
       break;
     case RK_RADAU_IA_2:
       if (extrapolMethod == GB_EXT_DEFAULT) tableau->richardson = TRUE;
