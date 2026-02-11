@@ -1,6 +1,7 @@
 // name:     Crane_HPCOM_FMI_1_0_CPP_HPCOM
 // keywords: Crane FMI-Export FMI-Import
 // status:   correct
+// teardown_command: rm -rf binaries sources modelDescription.xml cranes_crane* *.fmutmp
 // cflags: -d=-newInst
 // Real variables, Real input variable, continuous-time states, state events, event iteration
 
@@ -8,9 +9,10 @@ loadModel(Modelica, {"3.2.3"}); getErrorString();
 setDebugFlags("hpcom,hardcodedStartValues"); getErrorString();
 setCommandLineOptions("+simCodeTarget=Cpp +n=2 +hpcomCode=openmp +hpcomScheduler=level"); getErrorString();
 loadFile("cranes.mo"); getErrorString();
-buildModelFMU(cranes.crane); getErrorString();
+buildModelFMU(cranes.crane, version="1.0", fileNamePrefix="cranes.crane"); getErrorString();
 
 setCommandLineOptions("+simCodeTarget=C"); getErrorString();
+setCommandLineOptions("--allowNonStandardModelica=reinitInAlgorithms"); getErrorString(); // make importFMU work
 clearDebugFlags(); getErrorString();
 //importFMU("cranes_crane.fmu", "<default>", 6); getErrorString();
 importFMU("cranes_crane.fmu"); getErrorString();
@@ -28,14 +30,27 @@ val(prismatic_v, 1);
 // true
 // ""
 // true
-// ""
+// "Notification: cranes requested package Modelica of version 3.2.1. Modelica 3.2.3 is used instead which states that it is fully compatible without conversion script needed.
+// Notification: Automatically loaded package Modelica_DeviceDrivers 1.8.2 due to uses annotation from cranes.
+// Notification: Automatically loaded package Modelica_Synchronous 0.93.0-dev due to uses annotation from Modelica_DeviceDrivers.
+// "
 // readCalcTimesFromFile: No valid profiling-file found.
 // Warning: The costs have been estimated. Maybe cranes_crane_eqs_prof-file is missing.
 // Using level Scheduler for the DAE system
 // Using level Scheduler for the ODE system
 // Using level Scheduler for the ZeroFunc system
 // HpcOm is still under construction.
-// "SimCode: The model cranes.crane has been translated to FMU"
+// "cranes_crane.fmu"
+// "Notification: cranes requested package Modelica of version 3.2.1. Modelica 3.2.3 is used instead which states that it is fully compatible without conversion script needed.
+// [Modelica_DeviceDrivers 1.8.2/package.mo:10:16-10:38:writable] Warning: Conversion-annotation contains unknown element: nonFromVersion.
+// [Modelica_DeviceDrivers 1.8.2/package.mo:10:40-10:62:writable] Warning: Conversion-annotation contains unknown element: nonFromVersion.
+// [Modelica_DeviceDrivers 1.8.2/package.mo:10:64-10:86:writable] Warning: Conversion-annotation contains unknown element: nonFromVersion.
+// [Modelica_DeviceDrivers 1.8.2/package.mo:10:88-10:110:writable] Warning: Conversion-annotation contains unknown element: nonFromVersion.
+// [Modelica_DeviceDrivers 1.8.2/package.mo:10:112-10:134:writable] Warning: Conversion-annotation contains unknown element: nonFromVersion.
+// Warning: Requested package Modelica_DeviceDrivers of version 1.2, but this package was already loaded with version 1.8.2. There are no conversion annotations and 1.2 is older than 1.8.2, so the libraries are probably incompatible.
+// Warning: Requested package Modelica_Synchronous of version 0.92.2, but this package was already loaded with version 0.93.0-dev. There are no conversion annotations and 0.92.2 is older than 0.93.0-dev, so the libraries are probably incompatible.
+// "
+// true
 // ""
 // true
 // ""
@@ -47,10 +62,45 @@ val(prismatic_v, 1);
 // ""
 // record SimulationResult
 //     resultFile = "cranes_crane_me_FMU_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 150, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'cranes_crane_me_FMU', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = ""
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 150, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'cranes_crane_me_FMU', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
 // end SimulationResult;
-// ""
-// 0.9493545676148136
-// 0.3948240567413477
+// "Notification: cranes requested package Modelica of version 3.2.1. Modelica 3.2.3 is used instead which states that it is fully compatible without conversion script needed.
+// [Modelica_DeviceDrivers 1.8.2/package.mo:10:16-10:38:writable] Warning: Conversion-annotation contains unknown element: nonFromVersion.
+// [Modelica_DeviceDrivers 1.8.2/package.mo:10:40-10:62:writable] Warning: Conversion-annotation contains unknown element: nonFromVersion.
+// [Modelica_DeviceDrivers 1.8.2/package.mo:10:64-10:86:writable] Warning: Conversion-annotation contains unknown element: nonFromVersion.
+// [Modelica_DeviceDrivers 1.8.2/package.mo:10:88-10:110:writable] Warning: Conversion-annotation contains unknown element: nonFromVersion.
+// [Modelica_DeviceDrivers 1.8.2/package.mo:10:112-10:134:writable] Warning: Conversion-annotation contains unknown element: nonFromVersion.
+// Warning: Requested package Modelica_DeviceDrivers of version 1.2, but this package was already loaded with version 1.8.2. There are no conversion annotations and 1.2 is older than 1.8.2, so the libraries are probably incompatible.
+// Warning: Requested package Modelica_Synchronous of version 0.92.2, but this package was already loaded with version 0.93.0-dev. There are no conversion annotations and 0.92.2 is older than 0.93.0-dev, so the libraries are probably incompatible.
+// [openmodelica/cppruntime/hpcom/fmu/modelExchange/1.0/cranes_crane_me_FMU.mo:1683:3-1683:170:writable] Warning: Parameter body_cylinder_shapeType has no value, and is fixed during initialization (fixed=true), using available start value (start=\"cylinder\") as default value.
+// [openmodelica/cppruntime/hpcom/fmu/modelExchange/1.0/cranes_crane_me_FMU.mo:1684:3-1684:166:writable] Warning: Parameter body_sphere_shapeType has no value, and is fixed during initialization (fixed=true), using available start value (start=\"sphere\") as default value.
+// [openmodelica/cppruntime/hpcom/fmu/modelExchange/1.0/cranes_crane_me_FMU.mo:1685:3-1685:90:writable] Warning: Parameter bodyShape_frameTranslation_shapeType has no value, and is fixed during initialization (fixed=true), using available start value (start=\"cylinder\") as default value.
+// [openmodelica/cppruntime/hpcom/fmu/modelExchange/1.0/cranes_crane_me_FMU.mo:1687:3-1687:171:writable] Warning: Parameter bodyShape_shape2_shapeType has no value, and is fixed during initialization (fixed=true), using available start value (start=\"sphere\") as default value.
+// [openmodelica/cppruntime/hpcom/fmu/modelExchange/1.0/cranes_crane_me_FMU.mo:1688:3-1688:73:writable] Warning: Parameter bodyShape_shapeType has no value, and is fixed during initialization (fixed=true), using available start value (start=\"cylinder\") as default value.
+// [openmodelica/cppruntime/hpcom/fmu/modelExchange/1.0/cranes_crane_me_FMU.mo:1690:3-1690:80:writable] Warning: Parameter fixedTranslation_shapeType has no value, and is fixed during initialization (fixed=true), using available start value (start=\"cylinder\") as default value.
+// [openmodelica/cppruntime/hpcom/fmu/modelExchange/1.0/cranes_crane_me_FMU.mo:1691:3-1691:165:writable] Warning: Parameter prismatic_box_shapeType has no value, and is fixed during initialization (fixed=true), using available start value (start=\"box\") as default value.
+// [openmodelica/cppruntime/hpcom/fmu/modelExchange/1.0/cranes_crane_me_FMU.mo:1692:3-1692:174:writable] Warning: Parameter revolute_cylinder_shapeType has no value, and is fixed during initialization (fixed=true), using available start value (start=\"cylinder\") as default value.
+// [openmodelica/cppruntime/hpcom/fmu/modelExchange/1.0/cranes_crane_me_FMU.mo:1693:3-1693:175:writable] Warning: Parameter world_gravityArrowHead_shapeType has no value, and is fixed during initialization (fixed=true), using available start value (start=\"cone\") as default value.
+// [openmodelica/cppruntime/hpcom/fmu/modelExchange/1.0/cranes_crane_me_FMU.mo:1694:3-1694:179:writable] Warning: Parameter world_gravityArrowLine_shapeType has no value, and is fixed during initialization (fixed=true), using available start value (start=\"cylinder\") as default value.
+// [openmodelica/cppruntime/hpcom/fmu/modelExchange/1.0/cranes_crane_me_FMU.mo:1695:3-1695:78:writable] Warning: Parameter world_label1 has no value, and is fixed during initialization (fixed=true), using available start value (start=\"x\") as default value.
+// [openmodelica/cppruntime/hpcom/fmu/modelExchange/1.0/cranes_crane_me_FMU.mo:1696:3-1696:76:writable] Warning: Parameter world_label2 has no value, and is fixed during initialization (fixed=true), using available start value (start=\"y\") as default value.
+// [openmodelica/cppruntime/hpcom/fmu/modelExchange/1.0/cranes_crane_me_FMU.mo:1697:3-1697:170:writable] Warning: Parameter world_x_arrowHead_shapeType has no value, and is fixed during initialization (fixed=true), using available start value (start=\"cone\") as default value.
+// [openmodelica/cppruntime/hpcom/fmu/modelExchange/1.0/cranes_crane_me_FMU.mo:1698:3-1698:174:writable] Warning: Parameter world_x_arrowLine_shapeType has no value, and is fixed during initialization (fixed=true), using available start value (start=\"cylinder\") as default value.
+// [openmodelica/cppruntime/hpcom/fmu/modelExchange/1.0/cranes_crane_me_FMU.mo:1699:3-1699:183:writable] Warning: Parameter world_x_label_cylinders_1__shapeType has no value, and is fixed during initialization (fixed=true), using available start value (start=\"cylinder\") as default value.
+// [openmodelica/cppruntime/hpcom/fmu/modelExchange/1.0/cranes_crane_me_FMU.mo:1700:3-1700:183:writable] Warning: Parameter world_x_label_cylinders_2__shapeType has no value, and is fixed during initialization (fixed=true), using available start value (start=\"cylinder\") as default value.
+// [openmodelica/cppruntime/hpcom/fmu/modelExchange/1.0/cranes_crane_me_FMU.mo:1701:3-1701:170:writable] Warning: Parameter world_y_arrowHead_shapeType has no value, and is fixed during initialization (fixed=true), using available start value (start=\"cone\") as default value.
+// [openmodelica/cppruntime/hpcom/fmu/modelExchange/1.0/cranes_crane_me_FMU.mo:1702:3-1702:174:writable] Warning: Parameter world_y_arrowLine_shapeType has no value, and is fixed during initialization (fixed=true), using available start value (start=\"cylinder\") as default value.
+// [openmodelica/cppruntime/hpcom/fmu/modelExchange/1.0/cranes_crane_me_FMU.mo:1703:3-1703:183:writable] Warning: Parameter world_y_label_cylinders_1__shapeType has no value, and is fixed during initialization (fixed=true), using available start value (start=\"cylinder\") as default value.
+// [openmodelica/cppruntime/hpcom/fmu/modelExchange/1.0/cranes_crane_me_FMU.mo:1704:3-1704:183:writable] Warning: Parameter world_y_label_cylinders_2__shapeType has no value, and is fixed during initialization (fixed=true), using available start value (start=\"cylinder\") as default value.
+// [openmodelica/cppruntime/hpcom/fmu/modelExchange/1.0/cranes_crane_me_FMU.mo:1705:3-1705:170:writable] Warning: Parameter world_z_arrowHead_shapeType has no value, and is fixed during initialization (fixed=true), using available start value (start=\"cone\") as default value.
+// [openmodelica/cppruntime/hpcom/fmu/modelExchange/1.0/cranes_crane_me_FMU.mo:1706:3-1706:174:writable] Warning: Parameter world_z_arrowLine_shapeType has no value, and is fixed during initialization (fixed=true), using available start value (start=\"cylinder\") as default value.
+// [openmodelica/cppruntime/hpcom/fmu/modelExchange/1.0/cranes_crane_me_FMU.mo:1707:3-1707:183:writable] Warning: Parameter world_z_label_cylinders_1__shapeType has no value, and is fixed during initialization (fixed=true), using available start value (start=\"cylinder\") as default value.
+// [openmodelica/cppruntime/hpcom/fmu/modelExchange/1.0/cranes_crane_me_FMU.mo:1708:3-1708:183:writable] Warning: Parameter world_z_label_cylinders_2__shapeType has no value, and is fixed during initialization (fixed=true), using available start value (start=\"cylinder\") as default value.
+// [openmodelica/cppruntime/hpcom/fmu/modelExchange/1.0/cranes_crane_me_FMU.mo:1709:3-1709:183:writable] Warning: Parameter world_z_label_cylinders_3__shapeType has no value, and is fixed during initialization (fixed=true), using available start value (start=\"cylinder\") as default value.
+// "
+// 0.9493545676148134
+// 0.3948240567414916
 // endResult
