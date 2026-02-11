@@ -389,15 +389,15 @@ void getButcherTableau_ESDIRK4_7L2SA(BUTCHER_TABLEAU* tableau)
   tableau->isKLeftAvailable = TRUE;
   tableau->isKRightAvailable = FALSE;
 
-  /* SVP from "Intrastep, Stage-Value Predictors for Diagonally-Implicit Runge–Kutta Methods" */
+  /* SVP from "Intrastep, Stage-Value Predictors for Diagonally-Implicit Runge–Kutta Methods" (properties of paper can be reproduced) */
   const double A_predictor[] = {
                                 0, 0, 0, 0, 0, 0, 0,
                                 0, 0, 0, 0, 0, 0, 0,
-                                0.03661165235168154462996192, 0.03661165235168154462996192, 0, 0, 0, 0, 0,
-                                0.8535533905932738214801523, 0.8535533905932738214801523, -1.207106781186547581023924, 0, 0, 0, 0,
-                                -0.9517714576323296493843248, -0.9517714576323296493843248, 1.920191945247022028907364, 0.68, 0, 0, 0,
-                                -0.2103336111576326549491873, -0.2103336111576326549491873, 0.6941969710616575148587203, 0.2558194576028144989674432, 0.177, 0, 0,
-                                -1.489680406763977982227047, -1.489680406763977982227047, 2.936560813527956077505104, 0.3579, 0.5498, 0.1351, 0,
+                                0.03661165235168154462996192, 0.03661165235168154462996192, 0, 0, 0, 0, 0, /* order 1, R(-inf) = sqrt(2) - 1 => strongly A-stable */
+                                0.8535533905932738214801523, 0.8535533905932738214801523, -1.207106781186547581023924, 0, 0, 0, 0, /* order 2, R(-inf) = 1 => A-stable */
+                                -0.9517714576323296493843248, -0.9517714576323296493843248, 1.920191945247022028907364, 0.68, 0, 0, 0, /* order 2, R(-inf) = -0.05615 => strongly A-stable */
+                                -0.2103336111576326549491873, -0.2103336111576326549491873, 0.6941969710616575148587203, 0.2558194576028144989674432, 0.177, 0, 0, /* order 2, R(-inf) = 0 => L-stable! */
+                                -1.489680406763977982227047, -1.489680406763977982227047, 2.936560813527956077505104, 0.3579, 0.5498, 0.1351, 0, /* order 2, R(-inf) = 1e-7 => strongly A-stable */
                                };
 
   const modelica_boolean svp_available[] = {FALSE, FALSE, TRUE, TRUE, TRUE, TRUE, TRUE};
@@ -426,8 +426,8 @@ void getButcherTableau_SDIRK3(BUTCHER_TABLEAU* tableau)
 
   const double A_predictor[] = {
                                 0, 0, 0,
-                                0.7179332607542294997080097,                            0,  0,  // max(R_int(-inf)) = 0.0, order 1
-                                0.7726301276675510709204581,  0.2273698723324489290795419,  0,  // max(R_int(-inf)) = 0.0, order 2
+                                0.7179332607542294997080097,                            0,  0,  // order 1, R(-inf) = 0 => L-stable
+                                0.7726301276675510709204581,  0.2273698723324489290795419,  0,  // order 2, R(-inf) = 0 => L-stable
                                };
 
   const modelica_boolean svp_available[] = {FALSE, TRUE, TRUE};
@@ -471,6 +471,18 @@ void getButcherTableau_SDIRK4(BUTCHER_TABLEAU* tableau)
   tableau->dense_output = denseOutput_SDIRK4;
   tableau->isKLeftAvailable = FALSE;
   tableau->isKRightAvailable = FALSE;
+
+  const double A_predictor[] = {
+                                0, 0, 0, 0, 0,
+                                0, 0, 0, 0, 0,
+                                0.275, 0.275, 0, 0, 0, /* order 1, R(-inf) = 1 => A-stable */
+                                0.1875, -0.46875, 0.78125, 0, 0, /* order 2, R(-inf) = 0 => L-stable */
+                                1.03125, 1.03125, 0, -1.0625, 0, /* order 2, R(-inf) = 0 => L-stable */
+                               };
+
+  const modelica_boolean svp_available[] = {FALSE, FALSE, TRUE, TRUE, TRUE};
+
+  setStageValuePredictors(tableau, A_predictor, svp_available);
 }
 
 // 2 stage, L-stable, order 2(1), SDIRK with gamma = 0.29289
