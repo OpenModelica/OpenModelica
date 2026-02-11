@@ -3,7 +3,7 @@ set -e
 
 testcases=( "BrowseMSL" "Diagram" "Transformation" "Homotopy" "Expression"
             "ModelInstance" "VariableValue" "Utilities" "StringHandler" "DynamicAnnotation"
-            "AutoCompletion" )
+            "AutoCompletion" "MergeExtendsModifiers" )
 OMEditTestResults="$PWD/OMEditTestResult"
 
 for testcase in "${testcases[@]}"

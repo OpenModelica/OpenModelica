@@ -32,33 +32,27 @@
  * @author Adeel Asghar <adeel.asghar@liu.se>
  */
 
-#ifndef DYNAMICANNOTATIONTEST_H
-#define DYNAMICANNOTATIONTEST_H
+#ifndef MERGEEXTENDSMODIFIERSTEST_H
+#define MERGEEXTENDSMODIFIERSTEST_H
 
 #include <QObject>
 
 /*!
- * \brief The DynamicAnnotationTest class
- * Tests the Model class.
+ * \brief The MergeExtendsModifiersTest class
+ * Tests the variable value from model.
  */
-class DynamicAnnotationTest: public QObject
+class MergeExtendsModifiersTest: public QObject
 {
   Q_OBJECT
 private slots:
   void initTestCase();
   /*!
-   * \brief evaluate
-   * Tests the DynamicAnnotation evaluate.
+   * \brief mergeExtendsModifiers
+   * Tests the merging of extends modifiers.
    */
-  void evaluate();
-  void evaluate_data();
-  /*!
-   * \brief evaluate_nested
-   * Tests the DynamicAnnotation evaluate nested.
-   */
-  void evaluate_nested();
-  void evaluate_nested_data();
+  void mergeExtendsModifiers();
+  void mergeExtendsModifiers_data();
   void cleanupTestCase();
 };
 
-#endif // DYNAMICANNOTATIONTEST_H
+#endif // MERGEEXTENDSMODIFIERSTEST_H

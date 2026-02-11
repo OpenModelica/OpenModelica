@@ -34,37 +34,30 @@
 
 #include "VariableValueTest.h"
 #include "Util.h"
-#include "OMEditApplication.h"
 #include "MainWindow.h"
 #include "Modeling/LibraryTreeWidget.h"
-
-#ifndef GC_THREADS
-#define GC_THREADS
-#endif
-extern "C" {
-#include "meta/meta_modelica.h"
-}
+#include "Modeling/Model.h"
 
 OMEDITTEST_MAIN(VariableValueTest)
 
 void VariableValueTest::initTestCase()
 {
   // load TestIconExtend.mo
-  QString testIconExtendFileName = QFINDTESTDATA("TestIconExtend.mo");
+  const QString testIconExtendFileName = QFINDTESTDATA("TestIconExtend.mo");
   MainWindow::instance()->getLibraryWidget()->openFile(testIconExtendFileName);
   if (!MainWindow::instance()->getOMCProxy()->existClass("TestIconExtend")) {
     QFAIL(QString("Failed to load file %1").arg(testIconExtendFileName).toStdString().c_str());
   }
 
   // load IconsWithValues.mo
-  QString iconsWithValuesFileName = QFINDTESTDATA("IconsWithValues.mo");
+  const QString iconsWithValuesFileName = QFINDTESTDATA("IconsWithValues.mo");
   MainWindow::instance()->getLibraryWidget()->openFile(iconsWithValuesFileName);
   if (!MainWindow::instance()->getOMCProxy()->existClass("IconsWithValues")) {
     QFAIL(QString("Failed to load file %1").arg(iconsWithValuesFileName).toStdString().c_str());
   }
 
   // load TestParameterSubLevelinIcon.mo
-  QString testParameterSubLevelinIconFileName = QFINDTESTDATA("TestParameterSubLevelinIcon.mo");
+  const QString testParameterSubLevelinIconFileName = QFINDTESTDATA("TestParameterSubLevelinIcon.mo");
   MainWindow::instance()->getLibraryWidget()->openFile(testParameterSubLevelinIconFileName);
   if (!MainWindow::instance()->getOMCProxy()->existClass("TestParameterSubLevelinIcon")) {
     QFAIL(QString("Failed to load file %1").arg(testParameterSubLevelinIconFileName).toStdString().c_str());
