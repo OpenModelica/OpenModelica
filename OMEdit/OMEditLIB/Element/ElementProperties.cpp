@@ -584,9 +584,7 @@ void Parameter::setEnabled(bool enable)
  */
 void Parameter::update()
 {
-  ElementParameters *pElementParameters = qobject_cast<ElementParameters*>(mpElementParameters->parent());
-  mEnable.evaluate(mpElementParameters->getGraphicsView()->getModelWidget()->getModelInstance(),
-                   mpElementParameters->isNested() ? pElementParameters->getElementQualifiedName() : "");
+  mEnable.evaluate(mpElementParameters->getGraphicsView()->getModelWidget()->getModelInstance());
   setEnabled(mEnable);
 }
 
@@ -897,15 +895,14 @@ void Parameter::editClassButtonClicked()
   }
   // get type as qualified path
   const QString qualifiedType = MainWindow::instance()->getOMCProxy()->qualifyPath(classPath, type);
+  const QJsonObject modifierJSON = MainWindow::instance()->getOMCProxy()->modifierToJSON(modifier);
+  ModelInstance::Modifier *pElementModifier = new ModelInstance::Modifier("", QJsonValue(modifierJSON), mpModelInstanceElement->getParentModel());
+  modifier = mpModelInstanceElement->getModifiersHierarchically(pElementModifier);
   ModelInstance::Model *pCurrentModel = mpModelInstanceElement->getModel();
-  const QJsonObject newModelJSON = MainWindow::instance()->getOMCProxy()->getModelInstance(qualifiedType, modifier);
+  const QJsonObject newModelJSON = MainWindow::instance()->getOMCProxy()->getModelInstance(qualifiedType, mpModelInstanceElement->getQualifiedName(), modifier);
   if (!newModelJSON.isEmpty()) {
-    const QJsonObject modifierJSON = MainWindow::instance()->getOMCProxy()->modifierToJSON(modifier);
-    ModelInstance::Modifier *pElementModifier = new ModelInstance::Modifier("", QJsonValue(), mpModelInstanceElement->getParentModel());
-    pElementModifier->deserialize(QJsonValue(modifierJSON));
     const QJsonObject defaultModifierJSON = MainWindow::instance()->getOMCProxy()->modifierToJSON(defaultModifier);
-    ModelInstance::Modifier *pDefaultElementModifier = new ModelInstance::Modifier("", QJsonValue(), mpModelInstanceElement->getParentModel());
-    pDefaultElementModifier->deserialize(QJsonValue(defaultModifierJSON));
+    ModelInstance::Modifier *pDefaultElementModifier = new ModelInstance::Modifier("", QJsonValue(defaultModifierJSON), mpModelInstanceElement->getParentModel());
     ModelInstance::Model *pNewModel = new ModelInstance::Model(newModelJSON, mpModelInstanceElement);
     mpModelInstanceElement->setModel(pNewModel);
     MainWindow::instance()->getProgressBar()->setRange(0, 0);
@@ -945,12 +942,12 @@ void Parameter::editClassButtonClicked()
       }
     }
     pElementParameters->deleteLater();
-    delete pElementModifier;
     delete pDefaultElementModifier;
     // reset the actual model of the element
     mpModelInstanceElement->setModel(pCurrentModel);
     delete pNewModel;
   }
+  delete pElementModifier;
 }
 
 /*!
@@ -1029,18 +1026,30 @@ void Parameter::valueComboBoxChanged(int index)
   int toolTipIndex = mpValueComboBox->findData(value);
   mpValueComboBox->setToolTip(mpValueComboBox->itemData(toolTipIndex, Qt::ToolTipRole).toString());
 
-  try {
-    if (isEnumeration()) {
-      updateValueBinding(FlatModelica::Expression(value.toStdString(), index));
-    } else {
-      if (isChoices()) {
-        resetUnitCombobox();
-      }
-      updateValueBinding(FlatModelica::Expression::parse(value));
+  // reset in case of empty selection
+  if (index == 0) {
+    resetUnitCombobox();
+    mpModelInstanceElement->resetBinding();
+    try {
+      updateValueBinding(static_cast<const ModelInstance::Element*>(mpModelInstanceElement)->getBinding());
+    } catch (const std::exception &e) {
+      qDebug() << "Failed to reset expression to binding in Parameter::valueComboBoxChanged()";
+      qDebug() << e.what();
     }
-  } catch (const std::exception &e) {
-    qDebug() << "Failed to parse value in Parameter::valueComboBoxChanged(): " << value;
-    qDebug() << e.what();
+  } else {
+    try {
+      if (isEnumeration()) {
+        updateValueBinding(FlatModelica::Expression(value.toStdString(), index));
+      } else {
+        if (isChoices()) {
+          resetUnitCombobox();
+        }
+        updateValueBinding(FlatModelica::Expression::parse(value));
+      }
+    } catch (const std::exception &e) {
+      qDebug() << "Failed to parse value in Parameter::valueComboBoxChanged(): " << value;
+      qDebug() << e.what();
+    }
   }
 }
 

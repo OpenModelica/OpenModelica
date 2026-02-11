@@ -37,8 +37,6 @@
 
 #include <QObject>
 
-#include "Modeling/Model.h"
-
 /*!
  * \brief The VariableValue class
  * Tests the variable value from model.

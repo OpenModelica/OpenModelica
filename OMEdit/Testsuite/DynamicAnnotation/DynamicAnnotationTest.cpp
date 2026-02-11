@@ -34,62 +34,215 @@
 
 #include "DynamicAnnotationTest.h"
 #include "Util.h"
-#include "OMEditApplication.h"
 #include "MainWindow.h"
 #include "Modeling/LibraryTreeWidget.h"
-
-#ifndef GC_THREADS
-#define GC_THREADS
-#endif
-extern "C" {
-#include "meta/meta_modelica.h"
-}
+#include "Modeling/Model.h"
 
 OMEDITTEST_MAIN(DynamicAnnotationTest)
 
 void DynamicAnnotationTest::initTestCase()
 {
-  MainWindow::instance()->getLibraryWidget()->openFile(QFINDTESTDATA(mFileName));
-  if (!MainWindow::instance()->getOMCProxy()->existClass(mPackageName)) {
-    QFAIL(QString("Failed to load file %1").arg(mFileName).toStdString().c_str());
+  // load MWE.mo
+  const QString fileName = QFINDTESTDATA("MWE.mo");
+  MainWindow::instance()->getLibraryWidget()->openFile(fileName);
+  if (!MainWindow::instance()->getOMCProxy()->existClass("MWE")) {
+    QFAIL(QString("Failed to load file %1").arg(fileName).toStdString().c_str());
   }
 
-  mpModelInstance = new ModelInstance::Model(MainWindow::instance()->getOMCProxy()->getModelInstance(mModelName));
+  // load EnableInReplaceable.mo
+  const QString enableInReplaceableFileName = QFINDTESTDATA("EnableInReplaceable.mo");
+  MainWindow::instance()->getLibraryWidget()->openFile(enableInReplaceableFileName);
+  if (!MainWindow::instance()->getOMCProxy()->existClass("EnableInReplaceable")) {
+    QFAIL(QString("Failed to load file %1").arg(enableInReplaceableFileName).toStdString().c_str());
+  }
+
+  // load EnableInReplaceable1.mo
+  const QString enableInReplaceable1FileName = QFINDTESTDATA("EnableInReplaceable1.mo");
+  MainWindow::instance()->getLibraryWidget()->openFile(enableInReplaceable1FileName);
+  if (!MainWindow::instance()->getOMCProxy()->existClass("EnableInReplaceable1")) {
+    QFAIL(QString("Failed to load file %1").arg(enableInReplaceable1FileName).toStdString().c_str());
+  }
 }
 
 void DynamicAnnotationTest::evaluate()
 {
+  QFETCH(QString, model);
+  QFETCH(QString, element);
+  QFETCH(QString, subElement);
+  QFETCH(bool, result);
+
   // check model instance
-  if (!mpModelInstance) {
-    QFAIL(QString("Model instance of %1 is NULL.").arg(mModelName).toStdString().c_str());
+  ModelInstance::Model *pModelInstance = new ModelInstance::Model(MainWindow::instance()->getOMCProxy()->getModelInstance(model));
+  if (!pModelInstance) {
+    QFAIL(QString("Model instance of %1 is NULL.").arg(model).toStdString().c_str());
   }
-  // get the element test from the model instance
-  QList<ModelInstance::Element*> elements = mpModelInstance->getElements();
-  if (elements.size() < 2) {
-    QFAIL(QString("Failed to read the class elements of %1.").arg(mpModelInstance->getName()).toStdString().c_str());
-  } else {
-    // get the first element
-    ModelInstance::Element *pTestElement = elements.at(1);
-    if (pTestElement->getModel()->getElements().isEmpty()) {
-      QFAIL(QString("Failed to read the class elements of %1.").arg(pTestElement->getModel()->getName()).toStdString().c_str());
-    } else {
-      // read the dialog annotation of element and then evaluate it
-      ModelInstance::Element *pElement = pTestElement->getModel()->getElements().at(0);
-      auto &dialogAnnotation = pElement->getAnnotation()->getDialogAnnotation();
-      mEnable = dialogAnnotation.isEnabled();
-      mEnable.evaluate(mpModelInstance);
-      // mEnable should be false after evaluation
-      if (mEnable) {
-        QFAIL(QString("Failed to evaluate the expression %1 in %2.").arg(mEnable.toQString(), pElement->getQualifiedName()).toStdString().c_str());
-      }
-    }
+
+  auto pElement = pModelInstance->lookupElement(element);
+  if (!pElement) {
+    QFAIL(QString("Failed to find element %1.").arg(element).toStdString().c_str());
   }
+
+  auto pSubElement = pElement->getModel()->lookupElement(subElement);
+  if (!pSubElement) {
+    QFAIL(QString("Failed to find sub element %1.").arg(subElement).toStdString().c_str());
+  }
+
+  auto &dialogAnnotation = pSubElement->getAnnotation()->getDialogAnnotation();
+  BooleanAnnotation enable = dialogAnnotation.isEnabled();
+  enable.evaluate(pModelInstance);
+  QCOMPARE(enable, result);
+
+  delete pModelInstance;
+}
+
+void DynamicAnnotationTest::evaluate_data()
+{
+  QTest::addColumn<QString>("model");
+  QTest::addColumn<QString>("element");
+  QTest::addColumn<QString>("subElement");
+  QTest::addColumn<bool>("result");
+
+  QTest::newRow("Evaluate Dialog(enable=world.animateWorld)")
+      << "MWE.Unnamed"
+      << "test"
+      << "a"
+      << false;
+
+  QTest::newRow("Evaluate Dialog(enable = booleanParam) in model")
+      << "EnableInReplaceable.ClassWithInstances"
+      << "mainClass"
+      << "realParam"
+      << true;
+
+  QTest::newRow("Evaluate Dialog(enable = booleanParam) in record")
+      << "EnableInReplaceable.ClassWithInstances"
+      << "mainRecord"
+      << "realParam"
+      << true;
+}
+
+void DynamicAnnotationTest::evaluate_nested()
+{
+  QFETCH(QString, model);
+  QFETCH(QString, element);
+  QFETCH(QString, subElement);
+  QFETCH(QString, nestedModel);
+  QFETCH(QString, modifier);
+  QFETCH(QString, nestedElement);
+  QFETCH(bool, result);
+
+  ModelInstance::Model *pModelInstance = new ModelInstance::Model(MainWindow::instance()->getOMCProxy()->getModelInstance(model));
+  if (!pModelInstance) {
+    QFAIL(QString("Model instance of %1 is NULL.").arg(model).toStdString().c_str());
+  }
+
+  auto pElement = pModelInstance->lookupElement(element);
+  if (!pElement) {
+    QFAIL(QString("Failed to find element %1.").arg(element).toStdString().c_str());
+  }
+
+  auto pSubElement = pElement->getModel()->lookupElement(subElement);
+  if (!pSubElement) {
+    QFAIL(QString("Failed to find sub element %1.").arg(subElement).toStdString().c_str());
+  }
+
+  ModelInstance::Model *pNestedModelInstance = new ModelInstance::Model(MainWindow::instance()->getOMCProxy()->getModelInstance(nestedModel, pSubElement->getQualifiedName(), modifier));
+  if (!pNestedModelInstance) {
+    QFAIL(QString("Model instance of %1 is NULL.").arg(nestedModel).toStdString().c_str());
+  }
+  ModelInstance::Model *pCurrentNestedModelInstance = pSubElement->getModel();
+  pSubElement->setModel(pNestedModelInstance);
+
+  auto pNestedElement = pNestedModelInstance->lookupElement(nestedElement);
+  if (!pNestedElement) {
+    QFAIL(QString("Failed to find nested element %1.").arg(nestedElement).toStdString().c_str());
+  }
+
+  auto &dialogAnnotation = pNestedElement->getAnnotation()->getDialogAnnotation();
+  BooleanAnnotation enable = dialogAnnotation.isEnabled();
+  enable.evaluate(pModelInstance);
+  QCOMPARE(enable, result);
+
+  pSubElement->setModel(pCurrentNestedModelInstance);
+  delete pNestedModelInstance;
+  delete pModelInstance;
+}
+
+void DynamicAnnotationTest::evaluate_nested_data()
+{
+  QTest::addColumn<QString>("model");
+  QTest::addColumn<QString>("element");
+  QTest::addColumn<QString>("subElement");
+  QTest::addColumn<QString>("nestedModel");
+  QTest::addColumn<QString>("modifier");
+  QTest::addColumn<QString>("nestedElement");
+  QTest::addColumn<bool>("result");
+
+  QTest::newRow("Evaluate Dialog(enable = booleanParam) in record")
+      << "EnableInReplaceable.ClassWithInstances"
+      << "classWithReplaceable"
+      << "replParamRecord"
+      << "EnableInReplaceable.MainRecord"
+      << ""
+      << "realParam"
+      << true;
+
+  QTest::newRow("Evaluate Dialog(enable = booleanParam) in model")
+      << "EnableInReplaceable.ClassWithInstances"
+      << "classWithReplaceable"
+      << "replInstance"
+      << "EnableInReplaceable.MainClass"
+      << ""
+      << "realParam"
+      << true;
+
+  QTest::newRow("Evaluate Dialog(enable = booleanParam) in short class")
+      << "EnableInReplaceable.ClassWithInstances"
+      << "classWithReplaceable"
+      << "replModel"
+      << "EnableInReplaceable.MainClass"
+      << ""
+      << "realParam"
+      << true;
+
+  QTest::newRow("Evaluate Dialog(enable=typeParam == EnableInReplaceable1.SomeType.Type1)")
+      << "EnableInReplaceable1.ClassWithInstance"
+      << "classWithRecords"
+      << "replRecord1"
+      << "EnableInReplaceable1.BaseRecord"
+      << ""
+      << "realParam1"
+      << true;
+
+  QTest::newRow("Evaluate Dialog(enable=typeParam == EnableInReplaceable1.SomeType.Type2)")
+      << "EnableInReplaceable1.ClassWithInstance"
+      << "classWithRecords"
+      << "replRecord1"
+      << "EnableInReplaceable1.BaseRecord"
+      << ""
+      << "realParam2"
+      << false;
+
+  QTest::newRow("Evaluate Dialog(enable=typeParam == EnableInReplaceable1.SomeType.Type1) with modifier")
+      << "EnableInReplaceable1.ClassWithInstance"
+      << "classWithRecords"
+      << "replRecord1"
+      << "EnableInReplaceable1.BaseRecord"
+      << "(typeParam=EnableInReplaceable1.SomeType.Type2)"
+      << "realParam1"
+      << false;
+
+  QTest::newRow("Evaluate Dialog(enable=typeParam == EnableInReplaceable1.SomeType.Type2) with modifier")
+      << "EnableInReplaceable1.ClassWithInstance"
+      << "classWithRecords"
+      << "replRecord1"
+      << "EnableInReplaceable1.BaseRecord"
+      << "(typeParam=EnableInReplaceable1.SomeType.Type2)"
+      << "realParam2"
+      << true;
 }
 
 void DynamicAnnotationTest::cleanupTestCase()
 {
-  if (mpModelInstance) {
-    delete mpModelInstance;
-  }
   MainWindow::instance()->close();
 }

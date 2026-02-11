@@ -490,6 +490,8 @@ private:
     QString getValueWithoutQuotes() const {return StringHandler::removeFirstLastQuotes(getValue());}
     bool isValueDefined() const {return mValueDefined;}
     QString toString(bool skipTopLevel = false, bool includeComment = false, bool onlyType = false) const;
+    static Modifier *mergeModifiersIntoOne(QList<const Modifier *> extendsModifiers, Model *pParentModel);
+    static void mergeModifiers(Modifier *pModifier1, const Modifier *pModifier2);
     Modifier *getModifier(const QString &modifier) const;
     QPair<QString, bool> getModifierValue(const QString &modifier) const;
     bool hasModifier(const QString &modifier) const;
@@ -719,6 +721,8 @@ private:
     bool getIconDiagramMapPrimitivesVisible(bool icon) const;
     bool getIconDiagramMapHasExtent(bool icon) const;
     const ExtentAnnotation &getIconDiagramMapExtent(bool icon) const;
+    QList<const Modifier*> getModifiersHierarchicallyHelper() const;
+    QString getModifiersHierarchically(const Modifier* pModifier) const;
 
     virtual QString getName() const = 0;
     virtual QString getQualifiedName(bool includeBaseName) const = 0;
@@ -782,9 +786,7 @@ private:
     void setType(const QString &type) {mType = type;}
   private:
     void deserialize_impl(const QJsonObject &jsonObject) override;
-    QList<Modifier*> getExtendsModifiers(const Model *pParentModel) const;
-    Modifier *mergeModifiersIntoOne(QList<Modifier*> extendsModifiers) const;
-    static void mergeModifiers(Modifier *pModifier1, Modifier *pModifier2);
+    QList<const Modifier *> getExtendsModifiers(const Model *pParentModel) const;
   private:
     QString mName;
     bool mCondition = true;
