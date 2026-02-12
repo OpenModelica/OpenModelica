@@ -213,6 +213,8 @@ void getButcherTableau_ESDIRK2(BUTCHER_TABLEAU* tableau)
   tableau->dense_output = denseOutput_ESDIRK2;
   tableau->isKLeftAvailable = TRUE;
   tableau->isKRightAvailable = FALSE;
+
+  // predictor cant be stable for stage 2
 }
 
 // TODO: Describe me
@@ -538,6 +540,8 @@ void getButcherTableau_SDIRK2(BUTCHER_TABLEAU* tableau)
   setButcherTableau(tableau, c, A, b, bt);
   tableau->isKLeftAvailable = FALSE;
   tableau->isKRightAvailable = FALSE;
+
+  // predictor cant be stable for stage 2
 }
 
 // TODO: Describe me
