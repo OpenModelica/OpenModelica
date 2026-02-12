@@ -182,6 +182,13 @@ typedef struct T_TRANSFORM {
   int size;
 } T_TRANSFORM;
 
+typedef enum STAGE_VALUE_PREDICTOR_TYPE
+{
+  SVP_NOT_AVAILABLE = 0,
+  SVP_LINEAR_COMBINATION = 1,
+  SVP_DENSE_OUTPUT = 2
+} STAGE_VALUE_PREDICTOR_TYPE;
+
 /**
  * @brief Stage-value predictors (SVPs) for ESDIRK and SDIRK methods
  *
@@ -202,11 +209,22 @@ typedef struct STAGE_VALUE_PREDICTORS {
   double *A_predictor;
 
   /**
-   * @brief Stage availability flags for predictors.
-   *            available[s] == true: a predictor exists for stage s
-   *            available[s] == false: no predictor, use default (constant, dense output, Hermite) initial guess
+   * @brief Stable dense output SVP. This predictor is not a standard dense output, i.e. a smooth
+   *        interpolation of the solution on the last interval, but rather a stable, medium order interpolation
+   *        that can be used for extrapolation e.g. for stages 2 or 3 of an ESDIRK method.
+   *
+   * @note If no dedicated stable dense output exists, one may just keep this as NULL and fallback to standard
+   *       dense output / Hermite extrapolation for the stage 2 or 3 guesses.
    */
-  modelica_boolean *available;
+  gb_dense_output dense_output_predictor;
+
+  /**
+   * @brief Stage type for predictors.
+   *            type[s] == SVP_NOT_AVAILABLE: no predictor, use default (constant, dense output, Hermite) initial guess
+   *            type[s] == SVP_LINEAR_COMBINATION: use row s of `A_predictor` field to form the linear combination guess
+   *            type[s] == SVP_DENSE_OUTPUT: use the provided stable `dense_output_predictor` guess.
+   */
+  STAGE_VALUE_PREDICTOR_TYPE *type;
 
   /**
    * @brief Number of stages in the original Butcher tableau.

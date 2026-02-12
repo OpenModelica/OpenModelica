@@ -84,18 +84,20 @@ void setButcherTableau(BUTCHER_TABLEAU* tableau, const double *c, const double *
   tableau->t_transform = NULL;
 }
 
-void setStageValuePredictors(BUTCHER_TABLEAU *tableau, const double *A_pred, const modelica_boolean *available)
+void setStageValuePredictors(BUTCHER_TABLEAU *tableau, const double *A_pred, const STAGE_VALUE_PREDICTOR_TYPE *type, gb_dense_output dense_output_pred)
 {
   tableau->svp = (STAGE_VALUE_PREDICTORS *) malloc(sizeof(STAGE_VALUE_PREDICTORS));
 
   int stages = tableau->nStages;
-
   tableau->svp->nStages = stages;
+
   tableau->svp->A_predictor = (double *) malloc(stages * stages * sizeof(double));
   memcpy(tableau->svp->A_predictor, A_pred, stages * stages * sizeof(double));
 
-  tableau->svp->available = (modelica_boolean *) malloc(stages * sizeof(modelica_boolean));
-  memcpy(tableau->svp->available, available, stages * sizeof(modelica_boolean));
+  tableau->svp->dense_output_predictor = dense_output_pred;
+
+  tableau->svp->type = (STAGE_VALUE_PREDICTOR_TYPE *) malloc(stages * sizeof(STAGE_VALUE_PREDICTOR_TYPE));
+  memcpy(tableau->svp->type, type, stages * sizeof(STAGE_VALUE_PREDICTOR_TYPE));
 }
 
 void setTTransform(BUTCHER_TABLEAU *tableau, const double *A_part_inv, const double *T, const double *T_inv, const double *gamma, const double *alpha, const double *beta,
@@ -256,9 +258,9 @@ void getButcherTableau_ESDIRK3(BUTCHER_TABLEAU* tableau)
                                 0.5333190407494745800028006, 0.8095865780886579710085016, -0.3429056188381325309677550, 0.0 // order 2, R_int(-inf) = -0.95666 => strongly A-stable
                                };
 
-  const modelica_boolean svp_available[] = {FALSE, FALSE, FALSE, TRUE};
+  const STAGE_VALUE_PREDICTOR_TYPE svp_type[] = {SVP_NOT_AVAILABLE, SVP_NOT_AVAILABLE, SVP_NOT_AVAILABLE, SVP_LINEAR_COMBINATION};
 
-  setStageValuePredictors(tableau, A_predictor, svp_available);
+  setStageValuePredictors(tableau, A_predictor, svp_type, NULL);
 }
 
 // TODO: Describe me
@@ -343,8 +345,11 @@ void getButcherTableau_ESDIRK4(BUTCHER_TABLEAU* tableau)
   tableau->isKRightAvailable = FALSE;
 }
 
-/* Dense Output from "Intrastep, Stage-Value Predictors for Diagonally-Implicit Runge–Kutta Methods" */
-void denseOutput_ESDIRK4_7L2SA(BUTCHER_TABLEAU* tableau, double* yOld, double* x, double* k, double dt, double stepSize, double* y, int nIdx, int* idx, int nStates)
+/* Dense Output from "Intrastep, Stage-Value Predictors for Diagonally-Implicit Runge–Kutta Methods"
+ *  => I noticed that this dense output is used as extrapolation only. So it is not used for having a continuous
+ *     solution but rather as a stable, low order extrapolation for guesses of the stage 2 system in the next iteration!
+ */
+void predictor_denseOutput_ESDIRK4_7L2SA(BUTCHER_TABLEAU* tableau, double* yOld, double* x, double* k, double dt, double stepSize, double* y, int nIdx, int* idx, int nStates)
 {
   tableau->b_dt[0] = (-27.59333059022041759502043 * dt + 64.65274650435436557321524) * dt - 37.46026752914355622243673;
   tableau->b_dt[1] = tableau->b_dt[0];
@@ -353,6 +358,23 @@ void denseOutput_ESDIRK4_7L2SA(BUTCHER_TABLEAU* tableau, double* yOld, double* x
   tableau->b_dt[4] = (-2.0 * dt + 3.84221138118028167447597) * dt - 1.066701349013079462428321;
   tableau->b_dt[5] = (1.94 * dt + 1.5) * dt - 3.996501500566825597103974;
   tableau->b_dt[6] = (0.25 * dt - 1.0) * dt + 0.875;
+
+  denseOutput(tableau, yOld, x, k, dt, stepSize, y, nIdx, idx, nStates);
+}
+
+/* Real dense output of the ESDIRK4(3)7L2SA
+ *  => Quartic C1 interpolant (order 4), remaining 2 degrees of freedom are chosen to minimize the error
+ *     (see e.g. https://github.com/WRKampi/extensisq, MIT license)
+ */
+void denseOutput_ESDIRK4_7L2SA(BUTCHER_TABLEAU* tableau, double* yOld, double* x, double* k, double dt, double stepSize, double* y, int nIdx, int* idx, int nStates)
+{
+  tableau->b_dt[0] = ((2.940701270662915 * dt + (-4.079699311306614)) * dt + (-0.2618535743659094)) * dt + 1.0;
+  tableau->b_dt[1] = ((9.138591896250813 * dt + (-17.47548056248241)) * dt + 7.936037051221989) * dt;
+  tableau->b_dt[2] = ((-8.276798249263065 * dt + 14.67529166947831) * dt + (-5.459341005691339)) * dt;
+  tableau->b_dt[3] = ((-3.271794891939533 * dt + 5.506505216089204) * dt + (-1.71616804025474)) * dt;
+  tableau->b_dt[4] = ((-3.684277016082155 * dt + 5.817533967829905) * dt + (-1.357746919580548)) * dt;
+  tableau->b_dt[5] = ((2.144128340407973 * dt + (-3.175253679682295)) * dt + 0.4746238387074965) * dt;
+  tableau->b_dt[6] = ((1.009448649963051 * dt + (-1.268897299926103)) * dt + 0.3844486499630515) * dt;
 
   denseOutput(tableau, yOld, x, k, dt, stepSize, y, nIdx, idx, nStates);
 }
@@ -400,9 +422,9 @@ void getButcherTableau_ESDIRK4_7L2SA(BUTCHER_TABLEAU* tableau)
                                 -1.489680406763977982227047, -1.489680406763977982227047, 2.936560813527956077505104, 0.3579, 0.5498, 0.1351, 0, /* order 2, R(-inf) = 1e-7 => strongly A-stable */
                                };
 
-  const modelica_boolean svp_available[] = {FALSE, FALSE, TRUE, TRUE, TRUE, TRUE, TRUE};
+  const STAGE_VALUE_PREDICTOR_TYPE svp_type[] = {SVP_NOT_AVAILABLE, SVP_DENSE_OUTPUT, SVP_LINEAR_COMBINATION, SVP_LINEAR_COMBINATION, SVP_LINEAR_COMBINATION, SVP_LINEAR_COMBINATION, SVP_LINEAR_COMBINATION};
 
-  setStageValuePredictors(tableau, A_predictor, svp_available);
+  setStageValuePredictors(tableau, A_predictor, svp_type, predictor_denseOutput_ESDIRK4_7L2SA);
 }
 
 // 3-stage order 3(2), L-stable SDIRK, embedded bt might be bad, dense output missing
@@ -430,9 +452,9 @@ void getButcherTableau_SDIRK3(BUTCHER_TABLEAU* tableau)
                                 0.7726301276675510709204581,  0.2273698723324489290795419,  0,  // order 2, R(-inf) = 0 => L-stable
                                };
 
-  const modelica_boolean svp_available[] = {FALSE, TRUE, TRUE};
+  const STAGE_VALUE_PREDICTOR_TYPE svp_type[] = {SVP_NOT_AVAILABLE, SVP_LINEAR_COMBINATION, SVP_LINEAR_COMBINATION};
 
-  setStageValuePredictors(tableau, A_predictor, svp_available);
+  setStageValuePredictors(tableau, A_predictor, svp_type, NULL);
 }
 
 void denseOutput_SDIRK4(BUTCHER_TABLEAU* tableau, double* yOld, double* x, double* k, double dt, double stepSize, double* y, int nIdx, int* idx, int nStates)
@@ -480,9 +502,9 @@ void getButcherTableau_SDIRK4(BUTCHER_TABLEAU* tableau)
                                 1.03125, 1.03125, 0, -1.0625, 0, /* order 2, R(-inf) = 0 => L-stable */
                                };
 
-  const modelica_boolean svp_available[] = {FALSE, FALSE, TRUE, TRUE, TRUE};
+  const STAGE_VALUE_PREDICTOR_TYPE svp_type[] = {SVP_NOT_AVAILABLE, SVP_NOT_AVAILABLE, SVP_LINEAR_COMBINATION, SVP_LINEAR_COMBINATION, SVP_LINEAR_COMBINATION};
 
-  setStageValuePredictors(tableau, A_predictor, svp_available);
+  setStageValuePredictors(tableau, A_predictor, svp_type, NULL);
 }
 
 // 2 stage, L-stable, order 2(1), SDIRK with gamma = 0.29289
@@ -2602,7 +2624,7 @@ BUTCHER_TABLEAU* initButcherTableau(enum GB_METHOD method, enum _FLAG flag)
 void freeStageValuePredictors(STAGE_VALUE_PREDICTORS *svp)
 {
   free(svp->A_predictor);
-  free(svp->available);
+  free(svp->type);
   free(svp);
 }
 

@@ -1474,7 +1474,7 @@ void gbInternalContraction(DATA *data,
   daxpy_(&size, &DBL_ONE, y, &INT_ONE, yt, &INT_ONE);
 }
 
-void gbInternalStageValuePredictors(STAGE_VALUE_PREDICTORS *svp,
+void gbInternalLinearCombinationSVP(STAGE_VALUE_PREDICTORS *svp,
                                     int active_stage,
                                     int nStates,
                                     double stepSize,
