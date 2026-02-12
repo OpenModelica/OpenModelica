@@ -1352,6 +1352,12 @@ package SimCodeUtil
     output list<SimCode.SimEqSystem> deps;
   end computeDependencies;
 
+  function getSimEqSysForIndex
+    input Integer idx;
+    input list<SimCode.SimEqSystem> allSimEqs;
+    output SimCode.SimEqSystem outSimEq;
+  end getSimEqSysForIndex;
+
   function getSimEqSystemsByIndexLst
     input list<Integer> idcs;
     input list<SimCode.SimEqSystem> allSes;
