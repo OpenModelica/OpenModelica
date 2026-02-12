@@ -649,7 +649,7 @@ public
       if Expression.isCallNamed(exp, "initial") then
         exp := Expression.BOOLEAN(init);
         Pointer.update(simplify, true);
-      elseif Expression.isCallNamed(exp, "initialSimplified") then
+      elseif Expression.isCallNamed(exp, "initialSimplified") and Flags.isConfigFlagSet(Flags.ALLOW_NON_STANDARD_MODELICA, "initialSimplified") then
         exp := Expression.BOOLEAN(init0);
         Pointer.update(simplify, true);
       end if;
@@ -677,7 +677,9 @@ public
     input Pointer<Boolean> hasHom;
   algorithm
     if not Pointer.access(hasHom) then
-      Pointer.update(hasHom, Expression.isCallNamed(exp, "homotopy") or Expression.isCallNamed(exp, "initialSimplified"));
+      if Expression.isCallNamed(exp, "homotopy") or (Expression.isCallNamed(exp, "initialSimplified") and Flags.isConfigFlagSet(Flags.ALLOW_NON_STANDARD_MODELICA, "initialSimplified")) then
+      Pointer.update(hasHom, true);
+      end if;
     end if;
   end containsHomotopyCall;
 

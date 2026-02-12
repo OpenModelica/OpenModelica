@@ -4,11 +4,6 @@
 // cflags: --newBackend
 
 loadString("package TestInversePlant
-  function initialSimplified \"Returns true when solving the initialization problem with the simplified expressions of homotopy() operators\"
-    output Boolean isInitialSimplified = false;
-  annotation(Inline = true, __OpenModelica_builtin=true);
-  end initialSimplified;
-
   model Plant
     connector RealInput = input Real;
     connector RealOutput = output Real;
