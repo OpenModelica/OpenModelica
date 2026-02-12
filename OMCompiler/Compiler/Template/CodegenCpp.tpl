@@ -10905,13 +10905,15 @@ case CREF(componentRef = c, ty = ty) then
   match cref2simvar(c, simCode)
   case SIMVAR(varKind=varKind) then
     match varKind
+/* don't use __zDot due to SIMVAR indexing of new backend
     case STATE()
     case STATE_DER() then
       //STATE vars are flat vectors
       <<
-      /*assign to <%cref(c,useFlatArrayNotation)%>*/
+      // assign to <%cref(c,useFlatArrayNotation)%>
       memcpy(&<%lhsStr%>, <%arr%>.getData(), <%arr%>.getNumElems()*sizeof(double));
       >>
+*/
     case JAC_VAR()
     case JAC_TMP_VAR()
     case SEED_VAR() then
