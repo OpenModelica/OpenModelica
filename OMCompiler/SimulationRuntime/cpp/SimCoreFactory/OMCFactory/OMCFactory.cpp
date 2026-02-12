@@ -566,10 +566,8 @@ vector<const char *> OMCFactory::handleOverrides(int argc, const char* argv[], m
                && (mit = mapOMEdit.find(arg.substr(0, j))) != mapOMEdit.end()) {
           if ((oit = opts.find(mit->second)) != opts.end())
               opts[oit->first] = arg.substr(j + 1); // split at = and override value
-          else {
-              std::cout << "Passing through: " << argv[i] << std::endl;
+          else
               optv.push_back(strdup(argv[i])); // pass through
-          }
       }
       else
           optv.push_back(strdup(argv[i]));     // pass through
