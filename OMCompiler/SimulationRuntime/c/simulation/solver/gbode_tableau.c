@@ -343,6 +343,19 @@ void getButcherTableau_ESDIRK4(BUTCHER_TABLEAU* tableau)
   tableau->dense_output = denseOutput_ESDIRK4;
   tableau->isKLeftAvailable = TRUE;
   tableau->isKRightAvailable = FALSE;
+
+  const double A_predictor[] = {
+                                0, 0, 0, 0, 0, 0,
+                                0, 0, 0, 0, 0, 0,
+                                0.07322330470336311889978890, 0.07322330470336311889978890, 0, 0, 0, 0, /* order 1, R(-inf) = sqrt(2) - 1 => strongly A-stable */
+                                0.5011104345603980506876319, 0.5011104345603980506876319, -0.3772208691207961013752639, 0, 0, 0, /* order 2, R(-inf) = -0.875 => strongly A-stable */
+                                2.755721730042486125344791, 2.755721730042486125344791, -4.090643460084972250689581, -0.3808, 0, 0, /* order 2, R(-inf) = 0 => L-stable */
+                                0.3245695011190811847458344, 0.3245695011190811847458344, -0.1203242647439138855925758, 0.3245695011190811847458344, 0.1466157613866703313550725, 0, /* order 2, R(-inf) = 0 => L-stable, minimizes infinity norm over all order 2 L-stable methods */
+                               };
+
+  const STAGE_VALUE_PREDICTOR_TYPE svp_type[] = {SVP_NOT_AVAILABLE, SVP_NOT_AVAILABLE, SVP_LINEAR_COMBINATION, SVP_LINEAR_COMBINATION, SVP_LINEAR_COMBINATION, SVP_LINEAR_COMBINATION};
+
+  setStageValuePredictors(tableau, A_predictor, svp_type, NULL);
 }
 
 /* Dense Output from "Intrastep, Stage-Value Predictors for Diagonally-Implicit Runge–Kutta Methods"
