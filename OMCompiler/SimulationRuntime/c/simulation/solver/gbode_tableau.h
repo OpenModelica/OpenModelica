@@ -203,8 +203,10 @@ typedef enum STAGE_VALUE_PREDICTOR_TYPE
 typedef struct STAGE_VALUE_PREDICTORS {
 
   /**
-   * @brief Row s of this predictor matrix builds the predicton for stage s of the real system (also referred to as beta in the literature):
-   *            k_pred^{s} := sum_{i=1}^{s-1} A_predictor[s, i] * k[i]
+   * @brief Row s of this predictor matrix builds the predicton for stage s of the real system (A_predictor is referred to as beta in the literature):
+   *            y_pred^{s} := y0 + h * sum_{i=1}^{s-1} A_predictor[s, i] * k[i]
+   *
+   * @note We express this predictor such that it outputs y_pred^{s}, as this way we dont need to form k_pred^{s} and then y^{s} from it again.
    */
   double *A_predictor;
 
