@@ -9840,6 +9840,20 @@ template equation_function_create_single_body(SimEqSystem eq, Context context, S
       equationForEquation(e, context, &varDeclsLocal, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace,
                           additionalFuncs, method, classnameext, stateDerVectorName, useFlatArrayNotation,
                           createMeasureTime, assignToStartValues, overwriteOldStartValue, varDeclsLocal)
+    case e as SES_ALIAS(__)
+      then
+      /* should call alias; duplicate equation code for now
+      <<
+      initEquation_<%aliasOf%>();
+      >>
+      */
+      // get equation from initialization system
+      match simCode
+      case SIMCODE(__) then
+        equation_function_create_single_body(getSimEqSysForIndex(e.aliasOf, initialEquations), context, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace,
+                                             &additionalFuncs, method, classnameext, stateDerVectorName /*=__zDot*/, useFlatArrayNotation,
+                                             createMeasureTime, assignToStartValues, overwriteOldStartValue, &varDeclsLocal)
+      end match
     else
       error(sourceInfo(), 'NOT IMPLEMENTED EQUATION: <%dumpEqs(fill(eq,1))%>')
   end match
