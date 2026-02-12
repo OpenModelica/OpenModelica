@@ -1474,6 +1474,15 @@ void gbInternalContraction(DATA *data,
   daxpy_(&size, &DBL_ONE, y, &INT_ONE, yt, &INT_ONE);
 }
 
+/**
+ * @brief Perform intrastep stage-value-prediction (linear combination of known stage values k).
+ *
+ * Calculates y_predictor := y0 + h * A_predictor[1] * k[1] + A_predictor[2] * k[2] + ... + A_predictor[s-1] * k[s-1]),
+ * where values of A_predictor are choosen such that order and stability properties are nice.
+ *
+ * @note This function is located in gbode_internal_nls.c as we get symbol conflicts with
+ *       SUNDIALS BLAS symbols that use long int as index type and are included transitively.
+ */
 void gbInternalLinearCombinationSVP(STAGE_VALUE_PREDICTORS *svp,
                                     int active_stage,
                                     int nStates,
@@ -1482,7 +1491,6 @@ void gbInternalLinearCombinationSVP(STAGE_VALUE_PREDICTORS *svp,
                                     const double *y0,
                                     double *ypred)
 {
-  // y := h * a[1] * k[1] + a[2] * k[2] + ... + a[s-1] * k[s-1]) + y0
   memcpy(ypred, y0, nStates * sizeof(double));
 
   dgemv_(

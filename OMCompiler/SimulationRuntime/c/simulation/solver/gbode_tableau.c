@@ -252,7 +252,6 @@ void getButcherTableau_ESDIRK3(BUTCHER_TABLEAU* tableau)
   tableau->isKLeftAvailable = TRUE;
   tableau->isKRightAvailable = FALSE;
 
-  // TODO: should we use the predictor for stage 3 and 4 or only for stage 4? stage 3 has a order 1 predictor only.
   const double A_predictor[] = {
                                 0, 0,     0, 0,
                                 0, 0,     0, 0,
@@ -260,7 +259,7 @@ void getButcherTableau_ESDIRK3(BUTCHER_TABLEAU* tableau)
                                 0.5333190407494745800028006, 0.8095865780886579710085016, -0.3429056188381325309677550, 0.0 // order 2, R_int(-inf) = -0.95666 => strongly A-stable
                                };
 
-  const STAGE_VALUE_PREDICTOR_TYPE svp_type[] = {SVP_NOT_AVAILABLE, SVP_NOT_AVAILABLE, SVP_NOT_AVAILABLE, SVP_LINEAR_COMBINATION};
+  const STAGE_VALUE_PREDICTOR_TYPE svp_type[] = {SVP_NOT_AVAILABLE, SVP_NOT_AVAILABLE, SVP_LINEAR_COMBINATION, SVP_LINEAR_COMBINATION};
 
   setStageValuePredictors(tableau, A_predictor, svp_type, NULL);
 }
@@ -379,7 +378,7 @@ void predictor_denseOutput_ESDIRK4_7L2SA(BUTCHER_TABLEAU* tableau, double* yOld,
 
 /* Real dense output of the ESDIRK4(3)7L2SA
  *  => Quartic C1 interpolant (order 4), remaining 2 degrees of freedom are chosen to minimize the error
- *     (see e.g. https://github.com/WRKampi/extensisq, MIT license)
+ *     (see e.g. https://github.com/WRKampi/extensisq for numeric values, MIT license)
  */
 void denseOutput_ESDIRK4_7L2SA(BUTCHER_TABLEAU* tableau, double* yOld, double* x, double* k, double dt, double stepSize, double* y, int nIdx, int* idx, int nStates)
 {
