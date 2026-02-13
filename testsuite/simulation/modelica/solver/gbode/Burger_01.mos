@@ -108,4 +108,16 @@ getErrorString();
 //
 // (true, {})
 // ""
+// 0
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+//
+// (true, {})
+// ""
+// 0
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+//
+// (true, {})
+// ""
 // endResult
