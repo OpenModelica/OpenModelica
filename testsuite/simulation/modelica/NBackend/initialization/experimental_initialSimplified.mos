@@ -27,7 +27,7 @@ package P
 end P;
 "); getErrorString();
 
-setCommandLineOptions("-d=dumpSimCode"); getErrorString();
+setCommandLineOptions("-d=dumpSimCode --allowNonStandardModelica=initialSimplified"); getErrorString();
 simulate(P.experimental_initialSimplified); getErrorString();
 
 // Result:

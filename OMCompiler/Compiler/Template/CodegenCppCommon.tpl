@@ -233,10 +233,12 @@ template representationCref(ComponentRef inCref, SimCode simCode, Text& extraFun
   else
     let representation = cref2simvar(inCref, simCode) |> var as SIMVAR(varKind=varKind, index=i, matrixName=matrixName) =>
     match varKind
+/* don't use __zDot due to SIMVAR indexing of new backend
     case STATE() then
       '__z[<%i%>]'
     case STATE_DER() then
       '__zDot[<%i%>]'
+*/
     case DAE_RESIDUAL_VAR() then
       '__daeResidual[<%i%>]'
     case JAC_VAR() then
@@ -428,8 +430,10 @@ template daeExpCrefRhsArrayBox(ComponentRef cr, DAE.Type ty, Context context, Te
   else
     let box = cref2simvar(cr, simCode) |> var as SIMVAR(index=i, matrixName=matrixName) =>
       match varKind
+/* don't use __zDot due to SIMVAR indexing of new backend
         case STATE()
         case STATE_DER()
+*/
         case DAE_RESIDUAL_VAR() then
           let arrdata = representationCref(cr, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, context, varDecls, stateDerVectorName, useFlatArrayNotation)
           daeExpCrefRhsArrayBox2(arrdata, ty, false, context, preExp, varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace)

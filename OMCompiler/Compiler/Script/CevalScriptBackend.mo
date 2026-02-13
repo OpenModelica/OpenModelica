@@ -5888,20 +5888,20 @@ algorithm
         // className, startTime, stopTime, numberOfIntervals, tolerance, method, fileNamePrefix,
         // options, outputFormat, variableFilter, cflags, simflags
         values := vals;
-        (Values.CODE(Absyn.C_TYPENAME(classname)),vals) := getListFirstShowError(vals, "while retreaving the className (1 arg) from the buildModel arguments");
-        (_,vals) := getListFirstShowError(vals, "while retreaving the startTime (2 arg) from the buildModel arguments");
-        (_,vals) := getListFirstShowError(vals, "while retreaving the stopTime (3 arg) from the buildModel arguments");
-        (_,vals) := getListFirstShowError(vals, "while retreaving the numberOfIntervals (4 arg) from the buildModel arguments");
-        (_,vals) := getListFirstShowError(vals, "while retreaving the tolerance (5 arg) from the buildModel arguments");
-        (_,vals) := getListFirstShowError(vals, "while retreaving the method (6 arg) from the buildModel arguments");
+        (Values.CODE(Absyn.C_TYPENAME(classname)),vals) := getListFirstShowError(vals, "while retrieving the className (1 arg) from the buildModel arguments");
+        (_,vals) := getListFirstShowError(vals, "while retrieving the startTime (2 arg) from the buildModel arguments");
+        (_,vals) := getListFirstShowError(vals, "while retrieving the stopTime (3 arg) from the buildModel arguments");
+        (_,vals) := getListFirstShowError(vals, "while retrieving the numberOfIntervals (4 arg) from the buildModel arguments");
+        (_,vals) := getListFirstShowError(vals, "while retrieving the tolerance (5 arg) from the buildModel arguments");
+        (_,vals) := getListFirstShowError(vals, "while retrieving the method (6 arg) from the buildModel arguments");
         (Values.STRING(filenameprefix),vals) := getListFirstShowError(vals, "while retreaving the fileNamePrefix (7 arg) from the buildModel arguments");
 
 
-        (_,vals) := getListFirstShowError(vals, "while retreaving the options (8 arg) from the buildModel arguments");
-        (_,vals) := getListFirstShowError(vals, "while retreaving the outputFormat (9 arg) from the buildModel arguments");
-        (_,vals) := getListFirstShowError(vals, "while retreaving the variableFilter (10 arg) from the buildModel arguments");
-        (_,vals) := getListFirstShowError(vals, "while retreaving the cflags (11 arg) from the buildModel arguments");
-        (Values.STRING(simflags),vals) := getListFirstShowError(vals, "while retreaving the simflags (12 arg) from the buildModel arguments");
+        (_,vals) := getListFirstShowError(vals, "while retrieving the options (8 arg) from the buildModel arguments");
+        (_,vals) := getListFirstShowError(vals, "while retrieving the outputFormat (9 arg) from the buildModel arguments");
+        (_,vals) := getListFirstShowError(vals, "while retrieving the variableFilter (10 arg) from the buildModel arguments");
+        (_,vals) := getListFirstShowError(vals, "while retrieving the cflags (11 arg) from the buildModel arguments");
+        (Values.STRING(simflags),vals) := getListFirstShowError(vals, "while retrieving the simflags (12 arg) from the buildModel arguments");
 
         Error.clearMessages() "Clear messages";
 

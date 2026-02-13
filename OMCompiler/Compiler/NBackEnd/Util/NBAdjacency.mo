@@ -1607,7 +1607,7 @@ public
     end addListFull;
 
     function isReductionKind
-      input Dependency.Kind kind;
+      input Kind kind;
       output Boolean b = kind == Kind.REDUCTION;
     end isReductionKind;
 
@@ -1995,16 +1995,23 @@ public
 
       // variables in conditions are unsolvable and variables not occuring in both branches are implicit
       case Expression.IF() algorithm
-        set1  := collectDependencies(exp.trueBranch, depth, map, dep_map, sol_map, rep_set);
-        set2  := collectDependencies(exp.falseBranch, depth, map, dep_map, sol_map, rep_set);
-        // variables not occuring in both branches will be tagged implicit
-        diff  := UnorderedSet.sym_difference(set1, set2);
-        Solvability.updateList(UnorderedSet.toList(diff), Solvability.IMPLICIT(), sol_map);
-        // variables in conditions are unsolvable, their skips have to be removed and they can be repeated
-        set   := collectDependencies(exp.condition, depth, map, dep_map, sol_map, rep_set);
-        addRepetitions(set, rep_set);
-        updateConditionCrefs(UnorderedSet.toList(set), dep_map, sol_map);
-      then UnorderedSet.union_list({set, set1, set2}, ComponentRef.hash, ComponentRef.isEqual);
+        if Expression.isCallNamed(exp.condition, "initial") then
+          // branches only in the initial system are ignored
+          // only look at the falseBranch
+          set   := collectDependencies(exp.falseBranch, depth, map, dep_map, sol_map, rep_set);
+        else
+          set1  := collectDependencies(exp.trueBranch, depth, map, dep_map, sol_map, rep_set);
+          set2  := collectDependencies(exp.falseBranch, depth, map, dep_map, sol_map, rep_set);
+          // variables not occuring in both branches will be tagged implicit
+          diff  := UnorderedSet.sym_difference(set1, set2);
+          Solvability.updateList(UnorderedSet.toList(diff), Solvability.IMPLICIT(), sol_map);
+          // variables in conditions are unsolvable, their skips have to be removed and they can be repeated
+          set   := collectDependencies(exp.condition, depth, map, dep_map, sol_map, rep_set);
+          addRepetitions(set, rep_set);
+          updateConditionCrefs(UnorderedSet.toList(set), dep_map, sol_map);
+          set := UnorderedSet.union_list({set, set1, set2}, ComponentRef.hash, ComponentRef.isEqual);
+        end if;
+      then set;
 
       // for array constructors replace all iterators (temporarily)
       case Expression.CALL(call = call as Call.TYPED_ARRAY_CONSTRUCTOR(exp = call_exp)) algorithm
@@ -2144,25 +2151,33 @@ public
     list<UnorderedSet<ComponentRef>> sets1 = {};
     UnorderedSet<ComponentRef> set1, set2, diff;
   algorithm
-    // variables in conditions are unsolvable, repeated and get their skips removed
-    set := collectDependencies(body.condition, 0, map, dep_map, sol_map, rep_set);
-    addRepetitions(set, rep_set);
-    updateConditionCrefs(UnorderedSet.toList(set), dep_map, sol_map);
-
-    // get variables from 'then' branch
-    for eqn in body.then_eqns loop
-      sets1  := collectDependenciesEquation(Pointer.access(eqn), map, dep_map, sol_map, rep_set) :: sets1;
-    end for;
-
-    // if there is an 'else' branch, mark those not occuring in both as implicit (maybe it should be unsolvable?)
-    if Util.isSome(body.else_if) then
-      set1 := UnorderedSet.union_list(sets1, ComponentRef.hash, ComponentRef.isEqual);
-      set2 := collectDependenciesIf(Util.getOption(body.else_if), map, dep_map, sol_map, rep_set);
-      diff  := UnorderedSet.sym_difference(set1, set2);
-      Solvability.updateList(UnorderedSet.toList(diff), Solvability.IMPLICIT(), sol_map);
-      set := UnorderedSet.union_list({set, set1, set2}, ComponentRef.hash, ComponentRef.isEqual);
+    if Expression.isCallNamed(body.condition, "initial") then
+      // branches only in the initial system are ignored
+      // only look at the 'else' branch if it exists
+      if Util.isSome(body.else_if) then
+        set := collectDependenciesIf(Util.getOption(body.else_if), map, dep_map, sol_map, rep_set);
+      end if;
     else
-      set := UnorderedSet.union_list(set :: sets1, ComponentRef.hash, ComponentRef.isEqual);
+      // variables in conditions are unsolvable, repeated and get their skips removed
+      set := collectDependencies(body.condition, 0, map, dep_map, sol_map, rep_set);
+      addRepetitions(set, rep_set);
+      updateConditionCrefs(UnorderedSet.toList(set), dep_map, sol_map);
+
+      // get variables from 'then' branch
+      for eqn in body.then_eqns loop
+        sets1  := collectDependenciesEquation(Pointer.access(eqn), map, dep_map, sol_map, rep_set) :: sets1;
+      end for;
+
+      // if there is an 'else' branch, mark those not occuring in both as implicit (maybe it should be unsolvable?)
+      if Util.isSome(body.else_if) then
+        set1 := UnorderedSet.union_list(sets1, ComponentRef.hash, ComponentRef.isEqual);
+        set2 := collectDependenciesIf(Util.getOption(body.else_if), map, dep_map, sol_map, rep_set);
+        diff  := UnorderedSet.sym_difference(set1, set2);
+        Solvability.updateList(UnorderedSet.toList(diff), Solvability.IMPLICIT(), sol_map);
+        set := UnorderedSet.union_list({set, set1, set2}, ComponentRef.hash, ComponentRef.isEqual);
+      else
+        set := UnorderedSet.union_list(set :: sets1, ComponentRef.hash, ComponentRef.isEqual);
+      end if;
     end if;
   end collectDependenciesIf;
 
@@ -2184,34 +2199,43 @@ public
     list<UnorderedSet<ComponentRef>> lst = {}, lst1, lst2;
     list<tuple<UnorderedSet<ComponentRef>, UnorderedSet<ComponentRef>>> tpl_lst = {};
   algorithm
-    // variables in conditions are unsolvable, reduced and get their skips removed
-    set := collectDependencies(body.condition, 0, map, dep_map, sol_map, rep_set);
-    updateConditionCrefs(UnorderedSet.toList(set), dep_map, sol_map);
+    if Expression.isCallNamed(body.condition, "initial") then
+      // branches only in the initial system are ignored
+      // traverse else when if it exists
+      if Util.isSome(body.else_when) then
+        lst := collectDependenciesWhen(Util.getOption(body.else_when), map, dep_map, sol_map, rep_set) :: lst;
+      end if;
+      set := UnorderedSet.union_list(lst, ComponentRef.hash, ComponentRef.isEqual);
+    else
+      // variables in conditions are unsolvable, reduced and get their skips removed
+      set := collectDependencies(body.condition, 0, map, dep_map, sol_map, rep_set);
+      updateConditionCrefs(UnorderedSet.toList(set), dep_map, sol_map);
 
-    // make condition repeat if the body is larger than 1
-    if sum(WhenStatement.size(stmt, true) for stmt in body.when_stmts) > 1 then
-      addRepetitions(set, rep_set);
+      // make condition repeat if the body is larger than 1
+      if sum(WhenStatement.size(stmt, true) for stmt in body.when_stmts) > 1 then
+        addRepetitions(set, rep_set);
+      end if;
+
+      // collect all dependencies from the statments
+      for stmt in body.when_stmts loop
+        tpl_lst := collectDependenciesStmt(stmt, map, dep_map, sol_map, rep_set) :: tpl_lst;
+      end for;
+
+      // create the two sets for solvables and potentially unsovables
+      (lst1, lst2) := List.unzip(tpl_lst);
+      set1 := UnorderedSet.union_list(lst1, ComponentRef.hash, ComponentRef.isEqual);
+      set2 := UnorderedSet.union_list(lst2, ComponentRef.hash, ComponentRef.isEqual);
+
+      // get the set difference to determine the unsolvables and tag them as such
+      diff := UnorderedSet.difference(set2, set1);
+      Solvability.updateList(UnorderedSet.toList(diff), Solvability.UNSOLVABLE(), sol_map);
+
+      // traverse else when if it exists
+      if Util.isSome(body.else_when) then
+        lst := collectDependenciesWhen(Util.getOption(body.else_when), map, dep_map, sol_map, rep_set) :: lst;
+      end if;
+      set := UnorderedSet.union_list(set :: set1 :: set2 :: lst, ComponentRef.hash, ComponentRef.isEqual);
     end if;
-
-    // collect all dependencies from the statments
-    for stmt in body.when_stmts loop
-      tpl_lst := collectDependenciesStmt(stmt, map, dep_map, sol_map, rep_set) :: tpl_lst;
-    end for;
-
-    // create the two sets for solvables and potentially unsovables
-    (lst1, lst2) := List.unzip(tpl_lst);
-    set1 := UnorderedSet.union_list(lst1, ComponentRef.hash, ComponentRef.isEqual);
-    set2 := UnorderedSet.union_list(lst2, ComponentRef.hash, ComponentRef.isEqual);
-
-    // get the set difference to determine the unsolvables and tag them as such
-    diff := UnorderedSet.difference(set2, set1);
-    Solvability.updateList(UnorderedSet.toList(diff), Solvability.UNSOLVABLE(), sol_map);
-
-    // traverse else when if it exists
-    if Util.isSome(body.else_when) then
-      lst := collectDependenciesWhen(Util.getOption(body.else_when), map, dep_map, sol_map, rep_set) :: lst;
-    end if;
-    set := UnorderedSet.union_list(set :: set1 :: set2 :: lst, ComponentRef.hash, ComponentRef.isEqual);
   end collectDependenciesWhen;
 
   function collectDependenciesStmt
@@ -2298,18 +2322,24 @@ public
       // skip conditions but map body
       case Statement.IF() algorithm
         for branch in stmt.branches loop
-          for s in Util.tuple22(branch) loop
-            collectDependenciesAlgorithmStatement(s, candidates, result);
-          end for;
+          // branches only in the initial system are ignored
+          if not Expression.isCallNamed(Util.tuple21(branch), "initial") then
+            for s in Util.tuple22(branch) loop
+              collectDependenciesAlgorithmStatement(s, candidates, result);
+            end for;
+          end if;
         end for;
       then ();
 
       // skip conditions but map body
       case Statement.WHEN() algorithm
         for branch in stmt.branches loop
-          for s in Util.tuple22(branch) loop
-            collectDependenciesAlgorithmStatement(s, candidates, result);
-          end for;
+          // branches only in the initial system are ignored
+          if not Expression.isCallNamed(Util.tuple21(branch), "initial") then
+            for s in Util.tuple22(branch) loop
+              collectDependenciesAlgorithmStatement(s, candidates, result);
+            end for;
+          end if;
         end for;
       then ();
 

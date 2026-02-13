@@ -2,6 +2,7 @@ TEST = ../../../../rtest -v
 
 TESTFILES = \
 experimental_initialSimplified.mos \
+no_alg_loop.mos \
 TestInversePlant.mos \
 
 # test that currently fail. Move up when fixed.

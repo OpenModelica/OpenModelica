@@ -72,7 +72,7 @@ end initial;
 impure function initialSimplified "True if in homotopy initialization phase with lambda=0"
   discrete output Boolean isInitialLambda0;
 external "builtin";
-annotation(__OpenModelica_builtin=true, __OpenModelica_Impure=true, Documentation(info="<html>
+annotation(__OpenModelica_builtin=true, __OpenModelica_Impure=true, version="Experimental", Documentation(info="<html>
   Experimental</a>
 </html>"));
 end initialSimplified;

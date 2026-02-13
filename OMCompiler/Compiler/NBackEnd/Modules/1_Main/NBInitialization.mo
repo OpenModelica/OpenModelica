@@ -596,7 +596,7 @@ public
       case BackendDAE.MAIN() algorithm
 
         // check if we have homotopy
-        bdae.init       := list(Partition.mapExp(par, function containsHomotopyCall(hasHom = hasHom)) for par in bdae.init);
+        bdae.init := list(Partition.mapExp(par, function containsHomotopyCall(hasHom = hasHom)) for par in bdae.init);
 
         // Simulation system: initial() -> false, initialSimplified() -> false
         bdae.ode        := list(Partition.mapEqn(par, function cleanupInitialCall(init = false, init0 = false)) for par in bdae.ode);
