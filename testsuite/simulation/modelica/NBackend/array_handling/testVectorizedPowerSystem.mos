@@ -125,16 +125,6 @@ val(fixedVoltageSource1.p[1], 1.0);
 //   (2) Continuous ODE Partition
 // ================================
 //
-// BLOCK 1: Multi Strong Component (status = Solve.UNPROCESSED, size = 1)
-// ------------------------------------------------------------------------
-// ### Variables:
-// 	[DISS] (1) discrete Real system.initime
-// ### Equation:
-// 	[WHEN] (1) ($RES_SIM_9)
-// 	[----] when initial() then
-// 	[----]   system.initime := time
-// 	[----] end when;
-//
 // ================================
 //   (3) Continuous ODE Partition
 // ================================
@@ -266,13 +256,6 @@ val(fixedVoltageSource1.p[1], 1.0);
 // ================================
 //   (2) Continuous ODE Partition
 // ================================
-//
-// BLOCK 1: Multi Strong Component (status = Solve.UNPROCESSED, size = 0)
-// ------------------------------------------------------------------------
-// ### Variables:
-// 	[DISS] (1) discrete Real system.initime
-// ### Equation:
-// 	[DUMY] (0) Dummy equation.
 //
 // ================================
 //   (3) Continuous ODE Partition
