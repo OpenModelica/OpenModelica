@@ -14,6 +14,7 @@ Identity.mos \
 LotkaVolterra.mos \
 MeasureTime.mos \
 SampledPrints.mos \
+SampleElseWhen.mos \
 SemiLinear.mos \
 SemiLinearTest2.mos \
 Sign.mos \
