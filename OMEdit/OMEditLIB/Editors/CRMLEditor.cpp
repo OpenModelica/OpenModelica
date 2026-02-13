@@ -152,10 +152,7 @@ CRMLHighlighter::CRMLHighlighter(CRMLEditorPage *pCRMLEditorPage, QPlainTextEdit
 //! Initialized the syntax highlighter with default values.
 void CRMLHighlighter::initializeSettings()
 {
-  QFont font;
-  font.setFamily(mpCRMLEditorPage->getOptionsDialog()->getTextEditorPage()->getFontFamilyComboBox()->currentFont().family());
-  font.setPointSizeF(mpCRMLEditorPage->getOptionsDialog()->getTextEditorPage()->getFontSizeSpinBox()->value());
-  mpPlainTextEdit->document()->setDefaultFont(font);
+  const QFont font = mpPlainTextEdit->font();
 #if (QT_VERSION >= QT_VERSION_CHECK(5, 11, 0))
   mpPlainTextEdit->setTabStopDistance((qreal)(mpCRMLEditorPage->getOptionsDialog()->getTextEditorPage()->getTabSizeSpinBox()->value() * QFontMetrics(font).horizontalAdvance(QLatin1Char(' '))));
 #else // QT_VERSION_CHECK

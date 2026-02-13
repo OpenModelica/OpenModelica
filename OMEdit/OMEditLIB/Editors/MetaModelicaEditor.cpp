@@ -164,10 +164,7 @@ MetaModelicaHighlighter::MetaModelicaHighlighter(MetaModelicaEditorPage *pMetaMo
 //! Initialized the syntax highlighter with default values.
 void MetaModelicaHighlighter::initializeSettings()
 {
-  QFont font;
-  font.setFamily(mpMetaModelicaEditorPage->getOptionsDialog()->getTextEditorPage()->getFontFamilyComboBox()->currentFont().family());
-  font.setPointSizeF(mpMetaModelicaEditorPage->getOptionsDialog()->getTextEditorPage()->getFontSizeSpinBox()->value());
-  mpPlainTextEdit->document()->setDefaultFont(font);
+  const QFont font = mpPlainTextEdit->font();
 #if QT_VERSION >= QT_VERSION_CHECK(5, 11, 0)
   mpPlainTextEdit->setTabStopDistance((qreal)(mpMetaModelicaEditorPage->getOptionsDialog()->getTextEditorPage()->getTabSizeSpinBox()->value() * QFontMetrics(font).horizontalAdvance(QLatin1Char(' '))));
 #else // QT_VERSION_CHECK
