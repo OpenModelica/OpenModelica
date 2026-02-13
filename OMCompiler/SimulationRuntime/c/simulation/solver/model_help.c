@@ -96,12 +96,15 @@ int homBacktraceStrategy = 1;
 
 static double tolZC;
 
-/*! \fn updateDiscreteSystem
+/*!
+ * @brief Update discrete system with event iteration.
  *
- *  Function to update the whole system with event iteration.
- *  Evaluates functionDAE()
+ * Evaluate `functionDAE` until no discrete changes occur.
+ * If `data->simulationInfo->sampleActivated` is active deactivate samples after
+ * first event iteration and update next sample time for that sample event.
  *
- *  \param [ref] [data]
+ * @param data          Data object.
+ * @param threadData    thread data for error handling.
  */
 void updateDiscreteSystem(DATA *data, threadData_t *threadData)
 {
@@ -120,6 +123,21 @@ void updateDiscreteSystem(DATA *data, threadData_t *threadData)
 
   relationChanged = checkRelations(data);
   discreteChanged = checkForDiscreteChanges(data, threadData);
+
+  /* Deactivate possible sample events after first event iteration */
+  if(data->simulationInfo->sampleActivated)
+  {
+    for(int i = 0; i < data->modelData->nSamples; i++)
+    {
+      if(data->simulationInfo->samples[i])
+      {
+        data->simulationInfo->samples[i] = 0;
+        data->simulationInfo->nextSampleTimes[i] += data->modelData->samplesInfo[i].interval;
+      }
+    }
+  }
+
+  /* Update discrete system until nothing changes any more */
   while(discreteChanged || data->simulationInfo->needToIterate || relationChanged)
   {
     storePreValues(data);
@@ -139,7 +157,6 @@ void updateDiscreteSystem(DATA *data, threadData_t *threadData)
     discreteChanged = checkForDiscreteChanges(data, threadData);
   }
   storeRelations(data);
-
 }
 
 /*! \fn saveZeroCrossings
