@@ -297,21 +297,38 @@ int expl_diag_impl_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
       memcpy(nlsData->nlsx,    gbData->yOld, nStates*sizeof(modelica_real));
       memcpy(nlsData->nlsxExtrapolation,    gbData->yOld, nStates*sizeof(modelica_real));
 
-      if (gbData->time != data->simulationInfo->startTime && !gbData->eventHappened
-          && gbData->tableau->dense_output != NULL && gbData->nlsSolverMethod == GB_NLS_INTERNAL
-          && gbData->extrapolationBaseTime != INFINITY)
+      // is the last solution valid and do we use internal nls
+      modelica_boolean dense_output_valid = (gbData->time != data->simulationInfo->startTime && !gbData->eventHappened
+                                             && gbData->nlsSolverMethod == GB_NLS_INTERNAL && gbData->extrapolationBaseTime != INFINITY);
+
+      if (gbData->tableau->svp != NULL && gbData->tableau->svp->type[stage_] == SVP_LINEAR_COMBINATION)
       {
+        /* linear combination stage-value-predictors (highest priority) */
+        gbInternalLinearCombinationSVP(gbData->tableau->svp, stage_, nStates, gbData->stepSize, gbData->k, gbData->yOld, nlsData->nlsxOld);
+      }
+      else if (dense_output_valid && gbData->tableau->svp != NULL && gbData->tableau->svp->type[stage_] == SVP_DENSE_OUTPUT)
+      {
+        /* dense output stage-value-predictor */
+        double theta = (gbData->time + gbData->tableau->c[stage_] * gbData->stepSize - gbData->extrapolationBaseTime) / gbData->extrapolationStepSize;
+        gbData->tableau->svp->dense_output_predictor(gbData->tableau, gbData->yLast, NULL, gbData->kLast,
+                                                     theta, gbData->extrapolationStepSize, nlsData->nlsxOld, 0, NULL, nStates);
+      }
+      else if (dense_output_valid && gbData->tableau->withDenseOutput)
+      {
+        /* standard dense output if available / possible */
         double theta = (gbData->time + gbData->tableau->c[stage_] * gbData->stepSize - gbData->extrapolationBaseTime) / gbData->extrapolationStepSize;
         gbData->tableau->dense_output(gbData->tableau, gbData->yLast, NULL, gbData->kLast,
                                       theta, gbData->extrapolationStepSize, nlsData->nlsxOld, 0, NULL, nStates);
       }
       else if (stage>1)
       {
+        /* perform hermite to interpolate between two stages */
         extrapolation_hermite_gb(nlsData->nlsxOld, gbData->nStates, gbData->time + gbData->tableau->c[stage_-2] * gbData->stepSize, gbData->x + (stage_-2) * nStates, gbData->k + (stage_-2) * nStates,
                              gbData->time + gbData->tableau->c[stage_-1] * gbData->stepSize, gbData->x + (stage_-1) * nStates, gbData->k + (stage_-1) * nStates, gbData->time + gbData->tableau->c[stage_] * gbData->stepSize);
       }
       else
       {
+        /* generic extrapolation */
         extrapolation_gb(gbData, nlsData->nlsxOld, gbData->time + gbData->tableau->c[stage_] * gbData->stepSize);
       }
 
@@ -517,8 +534,6 @@ int full_implicit_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
   int nStates = data->modelData->nStates;
   int nStages = gbData->tableau->nStages;
 
-  double Atol = data->simulationInfo->tolerance;
-  double Rtol = data->simulationInfo->tolerance;
   NLS_SOLVER_STATUS solved = NLS_FAILED;
 
   // NLS - used values for extrapolation

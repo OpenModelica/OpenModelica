@@ -238,6 +238,7 @@ enum GB_METHOD {
   RK_ESDIRK2,         /* esdirk2*/
   RK_ESDIRK3,         /* esdirk3*/
   RK_ESDIRK4,         /* esdirk4*/
+  RK_ESDIRK4_7L2SA,   /* esdirk4s7*/
   RK_RADAU_IA_2,      /* radauIA2*/
   RK_RADAU_IA_3,      /* radauIA3*/
   RK_RADAU_IA_4,      /* radauIA4*/

@@ -182,6 +182,58 @@ typedef struct T_TRANSFORM {
   int size;
 } T_TRANSFORM;
 
+typedef enum STAGE_VALUE_PREDICTOR_TYPE
+{
+  SVP_NOT_AVAILABLE = 0,
+  SVP_LINEAR_COMBINATION = 1,
+  SVP_DENSE_OUTPUT = 2
+} STAGE_VALUE_PREDICTOR_TYPE;
+
+/**
+ * @brief Stage-value predictors (SVPs) for ESDIRK and SDIRK methods
+ *
+ * As (E)SDIRK methods can be solved sequentially (stage by stage in order),
+ * it is possible to get good and stable predictions of the stage k_s by doing a linear
+ * combination of the previous stages k_1, ..., k_{s-1}. This can be interpreted as a
+ * so-called EDIRK method (see "Intrastep, Stage-Value Predictors for Diagonally-Implicit Runge–Kutta Methods"
+ * by Carpenter et al: https://ntrs.nasa.gov/api/citations/20240008442/downloads/NASA-TM-20240008442.pdf).
+ *
+ * This structure contains the additional explicit EDIRK row for stage s, to predict the (E)SDIRK row s.
+ */
+typedef struct STAGE_VALUE_PREDICTORS {
+
+  /**
+   * @brief Row s of this predictor matrix builds the predicton for stage s of the real system (A_predictor is referred to as beta in the literature):
+   *            y_pred^{s} := y0 + h * sum_{i=1}^{s-1} A_predictor[s, i] * k[i]
+   *
+   * @note We express this predictor such that it outputs y_pred^{s}, as this way we dont need to form k_pred^{s} and then y^{s} from it again.
+   */
+  double *A_predictor;
+
+  /**
+   * @brief Stable dense output SVP. This predictor is not a standard dense output, i.e. a smooth
+   *        interpolation of the solution on the last interval, but rather a stable, medium order interpolation
+   *        that can be used for extrapolation e.g. for stages 2 or 3 of an ESDIRK method.
+   *
+   * @note If no dedicated stable dense output exists, one may just keep this as NULL and fallback to standard
+   *       dense output / Hermite extrapolation for the stage 2 or 3 guesses.
+   */
+  gb_dense_output dense_output_predictor;
+
+  /**
+   * @brief Stage type for predictors.
+   *            type[s] == SVP_NOT_AVAILABLE: no predictor, use default (constant, dense output, Hermite) initial guess
+   *            type[s] == SVP_LINEAR_COMBINATION: use row s of `A_predictor` field to form the linear combination guess
+   *            type[s] == SVP_DENSE_OUTPUT: use the provided stable `dense_output_predictor` guess.
+   */
+  STAGE_VALUE_PREDICTOR_TYPE *type;
+
+  /**
+   * @brief Number of stages in the original Butcher tableau.
+   */
+  int nStages;
+} STAGE_VALUE_PREDICTORS;
+
 /**
  * @brief Butcher tableau specifiying a Runge-Kutta method.
  *
@@ -218,6 +270,7 @@ typedef struct BUTCHER_TABLEAU {
   modelica_boolean isKRightAvailable; /* Availability of function values on right hand side */
   gb_dense_output dense_output;       /* Generic dense output function */
   T_TRANSFORM *t_transform;           /* T-transformation for FIRK methods */
+  STAGE_VALUE_PREDICTORS *svp;        /* Stage-Value-Predictors for (E)SDIRK methods */
 } BUTCHER_TABLEAU;
 
 /**

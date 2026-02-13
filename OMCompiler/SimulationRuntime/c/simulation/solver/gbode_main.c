@@ -1683,6 +1683,8 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
         messageClose(OMC_LOG_GBODE_V);
       }
 
+      /* TODO: do we even need this condition anymore? */
+
       // Adjust the error estimate for step size control by incorporating interpolation error.
       // This is done only if:
       // - The current error estimate is greater than 0.01,
@@ -1691,7 +1693,7 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
       // - And the interpolation method supports error control (Hermite or dense output).
       //
       // The error used for step size control is set to the maximum of the interpolation error and the current error.
-      if ((err > 1e-2) && (retries < 4) && noConst_intWithErrctrl) {
+      if ((err > 1e-2) && (retries < 4) && noConst_intWithErrctrl && gbData->multi_rate) {
         err = fmax(gbData->err_int, err);
       }
 

@@ -68,6 +68,14 @@ void gbInternalContraction(DATA *data,
                            double *yt,
                            double *y);
 
+void gbInternalLinearCombinationSVP(STAGE_VALUE_PREDICTORS *svp,
+                                    int active_stage,
+                                    int nStates,
+                                    double stepSize,
+                                    const double *K,
+                                    const double *y0,
+                                    double *ypred);
+
 #ifdef __cplusplus
 };
 #endif
