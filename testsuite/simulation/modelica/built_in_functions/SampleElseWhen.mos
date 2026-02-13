@@ -1,14 +1,14 @@
 // name: SampleElseWhen
 // keywords: sample when elsewhen
 // status: correct
-// teardown_command: rm -rf TestSampleEventIteration*
+// teardown_command: rm -rf TestSampleElseWhen*
 //
 // From https://github.com/OpenModelica/OpenModelica/issues/13050
 // Ensure, that sample becomes false after the first event iteration so y and z
 // are zero at all times
 
 loadString("
-model SampleElseWhen
+model TestSampleElseWhen
   Boolean y;
   Boolean z(start = false, fixed = true);
 equation
@@ -18,10 +18,10 @@ equation
   elsewhen not y then
     z = false;
   end when;
-end SampleElseWhen;
+end TestSampleElseWhen;
 "); getErrorString();
 
-simulate(SampleElseWhen); getErrorString();
+simulate(TestSampleElseWhen); getErrorString();
 
 val(z, 0.0);
 val(z, 0.49);
@@ -39,8 +39,8 @@ val(y, 1.0);
 // true
 // ""
 // record SimulationResult
-//     resultFile = "SampleElseWhen_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'SampleElseWhen', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     resultFile = "TestSampleElseWhen_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'TestSampleElseWhen', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
