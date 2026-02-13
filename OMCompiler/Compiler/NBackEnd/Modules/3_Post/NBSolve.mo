@@ -1250,10 +1250,8 @@ protected
   algorithm
     () := match exp
       case (Expression.CALL(call = call as Call.TYPED_CALL())) guard List.hasOneElement(Call.arguments(exp.call)) algorithm
-        name :=  AbsynUtil.pathString(Function.nameConsiderBuiltin(call.fn));
-        argExp := match Call.arguments(call)
-          case {argExp} then argExp;
-        end match;
+        name := AbsynUtil.pathString(Function.nameConsiderBuiltin(call.fn));
+        argExp := listHead(Call.arguments(call));
         (crefFoundInRecursion, inverseInstructions, status) := solveUniqueFindInstructions(argExp, cref, crefFound, inverseInstructions);
         if status == Status.IMPLICIT then
           return;
@@ -1326,10 +1324,8 @@ protected
   algorithm
     () := match exp
       case (Expression.CALL(call = call as Call.TYPED_CALL())) guard(listLength(Call.arguments(exp.call)) == 2) algorithm
-        name :=  AbsynUtil.pathString(Function.nameConsiderBuiltin(call.fn));
-        {argExp1, argExp2} := match Call.arguments(call)
-          case {argExp1, argExp2} then {argExp1, argExp2};
-        end match;
+        name := AbsynUtil.pathString(Function.nameConsiderBuiltin(call.fn));
+        {argExp1, argExp2} := Call.arguments(call);
         (crefFoundInRecursion, inverseInstructions, status) := solveUniqueFindInstructions(argExp1, cref, crefFound, inverseInstructions);
         if status == Status.IMPLICIT then
           return;
