@@ -4,7 +4,7 @@
 // teardown_command: rm -rf _DrModelicaForTesting.SampleSignalGenerator.* DrModelicaForTesting.SampleSignalGenerator_* DrModelicaForTesting.SampleSignalGenerator DrModelicaForTesting.SampleSignalGenerator.exe DrModelicaForTesting.SampleSignalGenerator.cpp DrModelicaForTesting.SampleSignalGenerator.makefile DrModelicaForTesting.SampleSignalGenerator.libs DrModelicaForTesting.SampleSignalGenerator.log DrModelicaForTesting.SampleSignalGenerator.c DrModelicaForTesting.SampleSignalGenerator.o output.log
 // cflags: -d=-newInst
 //
-// Simulation Results 
+// Simulation Results
 // Modelica Standard Library
 //
 
@@ -17,7 +17,7 @@ simulate(DrModelicaForTesting.SampleSignalGenerator, numberOfIntervals=190, stop
 res := OpenModelica.Scripting.compareSimulationResults("DrModelicaForTesting.SampleSignalGenerator_res.mat",
   "ReferenceFiles/SampleSignalGenerator_ref.mat","DrModelicaForTesting.SampleSignalGenerator_diff.csv",0.01,0.013,
   {"startTime","period","outSignal"});
-  
+
 // Result:
 // true
 // ""
@@ -31,5 +31,5 @@ res := OpenModelica.Scripting.compareSimulationResults("DrModelicaForTesting.Sam
 // "
 // end SimulationResult;
 // ""
-// {"Files not Equal!", "outSignal"}
+// {"Files Equal!"}
 // endResult
