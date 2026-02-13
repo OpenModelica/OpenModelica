@@ -23,7 +23,7 @@ system(realpath(".") + "/burgerEq -s=dassl -r burgerEq_ref.mat", "refSimulation.
 print(readFile("refSimulation.log"));
 
 // Simulate with ESDIRK3 and KINSOL+KLU
-system(realpath(".") + "/burgerEq -s=gbode -gbm=esdirk3 -gbnls=kinsol -tolerance=1e-3", "burgerEq_esdirk3.log");
+system(realpath(".") + "/burgerEq -s=gbode -gbm=esdirk3 -gbnls=kinsol -tolerance=1e-6", "burgerEq_esdirk3.log");
 print(readFile("burgerEq_esdirk3.log"));
 
 diffSimulationResults(actualFile = "burgerEq_res.mat",
@@ -33,9 +33,31 @@ diffSimulationResults(actualFile = "burgerEq_res.mat",
                               "y[301]", "y[302]", "y[303]", "y[304]", "y[305]", "y[306]", "y[307]", "y[308]", "y[309]", "y[310]"});
 getErrorString();
 
+// Simulate with ESDIRK4 and internal gbnls
+system(realpath(".") + "/burgerEq -s=gbode -gbm=esdirk4 -gbnls=internal -gberr=embedded -tolerance=1e-6", "burgerEq_esdirk4.log");
+print(readFile("burgerEq_esdirk4.log"));
+
+diffSimulationResults(actualFile = "burgerEq_res.mat",
+                      expectedFile = "burgerEq_ref.mat",
+                      diffPrefix = "diff",
+                      vars = {"y[291]", "y[292]", "y[293]", "y[294]", "y[295]", "y[296]", "y[297]", "y[298]", "y[299]", "y[300]",
+                              "y[301]", "y[302]", "y[303]", "y[304]", "y[305]", "y[306]", "y[307]", "y[308]", "y[309]", "y[310]"});
+getErrorString();
+
+// Simulate with Radau IIA 3-step and internal gbnls
+system(realpath(".") + "/burgerEq -s=gbode -gbm=radauIIA3 -gbnls=internal -gberr=embedded -tolerance=1e-6", "burgerEq_radauIIA3.log");
+print(readFile("burgerEq_radauIIA3.log"));
+
+diffSimulationResults(actualFile = "burgerEq_res.mat",
+                      expectedFile = "burgerEq_ref.mat",
+                      diffPrefix = "diff",
+                      vars = {"y[291]", "y[292]", "y[293]", "y[294]", "y[295]", "y[296]", "y[297]", "y[298]", "y[299]", "y[300]",
+                              "y[301]", "y[302]", "y[303]", "y[304]", "y[305]", "y[306]", "y[307]", "y[308]", "y[309]", "y[310]"});
+getErrorString();
+
 // Simulate with expl euler
-system(realpath(".") + "/burgerEq -s=gbode -gbm=expl_euler -gbnls=kinsol -gbratio=0.05 -tolerance=1e-6", "burgerEq_adams_test.log");
-print(readFile("burgerEq_adams_test.log"));
+system(realpath(".") + "/burgerEq -s=gbode -gbm=expl_euler -gbnls=kinsol -gbratio=0.05 -tolerance=1e-6", "burgerEq_euler_test.log");
+print(readFile("burgerEq_euler_test.log"));
 
 diffSimulationResults(actualFile = "burgerEq_res.mat",
                       expectedFile = "burgerEq_ref.mat",
@@ -45,8 +67,8 @@ diffSimulationResults(actualFile = "burgerEq_res.mat",
 getErrorString();
 
 // Simulate with fehlberg78
-system(realpath(".") + "/burgerEq -s=gbode -gbm=fehlberg78 -gbnls=kinsol -gbratio=0 -tolerance=1e-8", "burgerEq_esdirk3_mr.log");
-print(readFile("burgerEq_esdirk3_mr.log"));
+system(realpath(".") + "/burgerEq -s=gbode -gbm=fehlberg78 -gbnls=kinsol -gbratio=0 -tolerance=1e-8", "burgerEq_fehlberg78.log");
+print(readFile("burgerEq_fehlberg78.log"));
 
 diffSimulationResults(actualFile = "burgerEq_res.mat",
                       expectedFile = "burgerEq_ref.mat",
