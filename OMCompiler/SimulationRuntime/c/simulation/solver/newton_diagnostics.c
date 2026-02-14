@@ -1156,7 +1156,7 @@ void newtonDiagnostics(DATA* data, threadData_t *threadData, int sysNumber)
       (data->modelData->integerParameterData[i].info.name),
       (data->modelData->integerParameterData[i].attribute.start));
 
-  printf("   ****** Number of discrete real params  : %ld\n", data->modelData->nDiscreteReal);
+  printf("   ****** Number of discrete real params  : %ld\n", data->modelData->nDiscreteRealArray);
   printf("   ****** Number of real parameters       : %ld\n", data->modelData->nParametersReal);
   for( unsigned int i = 0; i < data->modelData->nParametersReal; ++i)
     printf("   ****** %2d: id=%d, name=%10s, value=%10f\n", i+1, (data->modelData->realParameterData[i].info.id),

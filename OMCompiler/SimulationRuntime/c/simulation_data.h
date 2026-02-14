@@ -655,6 +655,7 @@ typedef struct MODEL_DATA
   /* Number of un-scalrarized variables (arrays count as one variable) */
   long nStatesArray;            /* Number of array + scalar state variables */
   long nVariablesRealArray;     /* Number of array + scalar real variables: states + state derivatives + real algebraic variables */
+  long nDiscreteRealArray;      /* Number of array + scalar real discrete variables */
   long nVariablesIntegerArray;  /* Number of array + scalar integer variables */
   long nVariablesBooleanArray;  /* Number of array + scalar boolean variables */
   long nVariablesStringArray;   /* Number of array + scalar string variables */
@@ -673,7 +674,6 @@ typedef struct MODEL_DATA
   /* Number of scalarized variables (arrays are flatten to scalar elements.) */
   long nStates;                 /* Number of state variables*/
   long nVariablesReal;          /* Number of real variables: states + state derivatives + real algebraic variables + real discrete variables */
-  long nDiscreteReal;           /* Number of all discrete real variables */
   long nVariablesInteger;       /* Number of integer variables */
   long nVariablesBoolean;       /* Number of boolean variables */
   long nVariablesString;        /* Number of string variables */
