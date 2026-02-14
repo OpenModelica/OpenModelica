@@ -146,7 +146,7 @@ public
             end if;
             if not listEmpty(simJac.generic_loop_calls) then
               str := str + StringUtil.headline_3("Generic Calls");
-              str := str + List.toString(simJac.generic_loop_calls, SimGenericCall.toString, "", "  ", "\n  ", "\n");
+              str := str + List.toString(simJac.generic_loop_calls, SimGenericCall.toString, List.Style.NEWLINE_INDENT);
             end if;
             str := str + "\n";
           end if;

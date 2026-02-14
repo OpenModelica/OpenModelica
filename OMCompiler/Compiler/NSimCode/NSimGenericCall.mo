@@ -110,10 +110,10 @@ public
         + Expression.toString(call.lhs) + " = " + Expression.toString(call.rhs);
       case IF_GENERIC_CALL() then "(" + intString(call.index) + ") [-IF-]: "
         + List.toString(call.iters, SimIterator.toString) + "\n\t"
-        + List.toString(call.branches, SimBranch.toString, "", "", "\telse", "");
+        + List.toStringCustom(call.branches, SimBranch.toString, "", "", "\telse", "");
       case WHEN_GENERIC_CALL() then "(" + intString(call.index) + ") [WHEN]: "
         + List.toString(call.iters, SimIterator.toString) + "\n\t"
-        + List.toString(call.branches, SimBranch.toString, "", "", "\telse", "");
+        + List.toStringCustom(call.branches, SimBranch.toString, "", "", "\telse", "");
       else "CALL_NOT_SUPPORTED";
     end match;
   end toString;
@@ -213,12 +213,12 @@ public
       output String str;
       function subIterString
         input list<DependentIterator> sub_iter;
-        output String str = List.toString(list(Util.tuple21(tpl) for tpl in sub_iter), ComponentRef.toString, "", "(", ", ", ")", false);
+        output String str = List.toStringCustom(list(Util.tuple21(tpl) for tpl in sub_iter), ComponentRef.toString, "", "(", ", ", ")", false);
       end subIterString;
     algorithm
       str := match iter
         case SIM_ITERATOR_RANGE() then "{" + ComponentRef.toString(iter.name) + " | start:" + Expression.toString(iter.start) + ", step:" + Expression.toString(iter.step) + ", stop:" + Expression.toString(iter.stop) + ", size: " + Expression.toString(iter.size) + "}" + subIterString(iter.sub_iter);
-        case SIM_ITERATOR_LIST()  then "{" + ComponentRef.toString(iter.name) + " | list: " + List.toString(iter.lst, intString, "", "{", ", ", "}", true, 10) + "}" + subIterString(iter.sub_iter);
+        case SIM_ITERATOR_LIST()  then "{" + ComponentRef.toString(iter.name) + " | list: " + List.toString(iter.lst, intString, List.Style.FLAT_CURLY_SHORT) + "}" + subIterString(iter.sub_iter);
       end match;
     end toString;
 
@@ -352,7 +352,7 @@ public
         then str;
         case SIM_BRANCH_STMT() algorithm
           str := if Expression.isEnd(branch.condition) then "\n" else "when " + Expression.toString(branch.condition) + " then\n";
-          str := str + List.toString(branch.body, function Statement.toString(indent = ""), "\t  ", "\t  ", "\n", "");
+          str := str + List.toString(branch.body, function Statement.toString(indent = ""), List.Style.NEWLINE_TAB);
         then str;
         else "SIM BRANCH NOT KNOWN";
       end match;

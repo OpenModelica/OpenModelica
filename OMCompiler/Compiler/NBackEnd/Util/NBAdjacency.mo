@@ -1067,14 +1067,14 @@ public
           names := listArray(list(ComponentRef.toString(name) for name in adj.equation_names));
           for i in arrayLength(names):-1:1 loop
             (XX, II, NM, NP, LV, LP, LC, QQ) := Solvability.categorize(UnorderedSet.toList(adj.occurences[i]), adj.solvabilities[i]);
-            xx := List.toString(XX, ComponentRef.toString, "XX ", "{", ",", "}", false) :: xx;
-            ii := List.toString(II, ComponentRef.toString, "II ", "{", ",", "}", false) :: ii;
-            nm := List.toString(NM, ComponentRef.toString, "N- ", "{", ",", "}", false) :: nm;
-            np := List.toString(NP, ComponentRef.toString, "N+ ", "{", ",", "}", false) :: np;
-            lv := List.toString(LV, ComponentRef.toString, "LV ", "{", ",", "}", false) :: lv;
-            lp := List.toString(LP, ComponentRef.toString, "LP ", "{", ",", "}", false) :: lp;
-            lc := List.toString(LC, ComponentRef.toString, "LC ", "{", ",", "}", false) :: lc;
-            qq := List.toString(QQ, ComponentRef.toString, "|| ", "{", ",", "}", false) :: qq;
+            xx := List.toStringCustom(XX, ComponentRef.toString, "XX ", "{", ",", "}", false) :: xx;
+            ii := List.toStringCustom(II, ComponentRef.toString, "II ", "{", ",", "}", false) :: ii;
+            nm := List.toStringCustom(NM, ComponentRef.toString, "N- ", "{", ",", "}", false) :: nm;
+            np := List.toStringCustom(NP, ComponentRef.toString, "N+ ", "{", ",", "}", false) :: np;
+            lv := List.toStringCustom(LV, ComponentRef.toString, "LV ", "{", ",", "}", false) :: lv;
+            lp := List.toStringCustom(LP, ComponentRef.toString, "LP ", "{", ",", "}", false) :: lp;
+            lc := List.toStringCustom(LC, ComponentRef.toString, "LC ", "{", ",", "}", false) :: lc;
+            qq := List.toStringCustom(QQ, ComponentRef.toString, "|| ", "{", ",", "}", false) :: qq;
           end for;
           XX_ := listArray(xx);
           II_ := listArray(ii);
@@ -1128,12 +1128,12 @@ public
           names := listArray(list(ComponentRef.toString(name) for name in adj.equation_names));
           for i in arrayLength(names):-1:1 loop
             (F, R, E, A, S, K) := Dependency.categorize(UnorderedSet.toList(adj.occurences[i]), adj.dependencies[i], adj.repetitions[i]);
-            f := List.toString(F, ComponentRef.toString, "[!]", "{", ",", "}", false) :: f;
-            r := List.toString(R, ComponentRef.toString, "[-]", "{", ",", "}", false) :: r;
-            e := List.toString(E, ComponentRef.toString, "[+]", "{", ",", "}", false) :: e;
-            a := List.toString(A, ComponentRef.toString, "[:]", "{", ",", "}", false) :: a;
-            s := List.toString(S, ComponentRef.toString, "[.]", "{", ",", "}", false) :: s;
-            k := List.toString(K, ComponentRef.toString, "[o]", "{", ",", "}", false) :: k;
+            f := List.toStringCustom(F, ComponentRef.toString, "[!]", "{", ",", "}", false) :: f;
+            r := List.toStringCustom(R, ComponentRef.toString, "[-]", "{", ",", "}", false) :: r;
+            e := List.toStringCustom(E, ComponentRef.toString, "[+]", "{", ",", "}", false) :: e;
+            a := List.toStringCustom(A, ComponentRef.toString, "[:]", "{", ",", "}", false) :: a;
+            s := List.toStringCustom(S, ComponentRef.toString, "[.]", "{", ",", "}", false) :: s;
+            k := List.toStringCustom(K, ComponentRef.toString, "[o]", "{", ",", "}", false) :: k;
           end for;
           F_ := listArray(f);
           R_ := listArray(r);
@@ -1403,14 +1403,8 @@ public
       String str1, str2;
     algorithm
       str1 := Array.toString(dep.skips, function List.toString(
-        inPrintFunc   = intString,
-        inNameStr     = "",
-        inBeginStr    = "{",
-        inDelimitStr  = ", ",
-        inEndStr      = "}",
-        inPrintEmpty  = false,
-        maxLength     = 0), "", "", ", ", "");
-      str2 := List.toString(dep.kinds, kindString, "", "", ", ", "");
+        inPrintFunc = intString, style = List.Style.FLAT_CURLY), "", "", ", ", "");
+      str2 := List.toString(dep.kinds, kindString, List.Style.FLAT);
       str := if str1 == "" or str2 == "" then str1 + str2 else str1 + ", " + str2;
       str := "{" + str + "}";
     end toString;

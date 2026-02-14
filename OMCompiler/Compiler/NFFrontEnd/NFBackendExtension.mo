@@ -422,7 +422,7 @@ public
         then attributesToString({("fixed", attr.fixed), ("start", attr.start), ("min", attr.min), ("max", attr.max)}, NONE(), NONE());
 
         case VAR_ATTR_RECORD()
-        then List.toString(UnorderedMap.toList(attr.indexMap), function recordString(childrenAttr = attr.childrenAttr), "", "" ,", " , "");
+        then List.toString(UnorderedMap.toList(attr.indexMap), function recordString(childrenAttr = attr.childrenAttr), List.Style.FLAT);
 
         else getInstanceName() + " failed. Attribute string could not be created.";
       end match;
