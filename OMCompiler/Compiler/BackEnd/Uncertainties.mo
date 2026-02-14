@@ -147,7 +147,7 @@ algorithm
         (dae,cache,graph) = flattenModel(className,p,cache);
         description = DAEUtil.daeDescription(dae);
         //print("- Flatten ok\n");
-        dlow = BackendDAECreate.lower(dae,cache,graph,BackendDAE.EXTRA_INFO(description,outputFile));
+        dlow = BackendDAECreate.lower(dae,cache,graph,BackendDAE.EXTRA_INFO(description,outputFile,NONE()));
         //(dlow_1,funcs1) = BackendDAEUtil.getSolvedSystem(dlow, funcs,SOME({"removeSimpleEquations","removeFinalParameters", "removeEqualRHS", "expandDerOperator"}), NONE(), NONE(),NONE());
         FlagsUtil.setConfigBool(Flags.DEFAULT_OPT_MODULES_ORDERING, false);
         (dlow_1) = BackendDAEUtil.getSolvedSystem(dlow, "", SOME({"removeSimpleEquations","removeUnusedVariables","removeEqualRHS","expandDerOperator"}), NONE(), NONE(), SOME({}));
