@@ -375,7 +375,10 @@ public
       "returns true if the partition is empty.
       maybe check more than only equations?"
       input Partition partition;
-      output Boolean b = EquationPointers.size(partition.equations) == 0;
+      output Boolean b = EquationPointers.size(partition.equations) == 0
+        or Util.applyOptionOrDefault(partition.strongComponents, isEmptyArr, false);
+    protected
+      function isEmptyArr = arrayEmpty; // FIXME MetaModelica bug with inlined functions?
     end isEmpty;
 
     function isODEorDAE
