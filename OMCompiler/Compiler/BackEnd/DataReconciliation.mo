@@ -56,9 +56,10 @@ import Matching;
 import Util;
 import System;
 import Settings;
-import GlobalScript;
-import CevalScriptBackend;
 import SimCode;
+import SymbolTable;
+import Absyn;
+import CevalScript;
 import StringUtil;
 
 protected type ExtAdjacencyMatrixRow = tuple<Integer,list<Integer>>;
@@ -243,8 +244,7 @@ algorithm
 
   // set the start values of the variables of interest to be the measurements for better convergence of the data reconciliation problem
   outDiffVars :=setStartValuesToMeasurements(outDiffVars, measurementcsvData, csvfileName);
-  BackendDump.dumpVariables(outDiffVars, "new start values");
-  //fail();
+
   // prepare set-c residual equations and residual vars
   (_, residualEquations) := BackendEquation.traverseEquationArray(BackendEquation.listEquation(setC_Eq), BackendEquation.traverseEquationToScalarResidualForm, (shared.functionTree, {}));
   (residualEquations, residualVars) := BackendEquation.convertResidualsIntoSolvedEquations(listReverse(residualEquations), "$res_F_", 1);
@@ -324,11 +324,8 @@ algorithm
   modelicaOutput := dumpExtractedEquations(modelicaOutput, outOtherEqns, "remaining equations in Set-S");
   modelicaOutput := modelicaOutput + "\nend " + modelName + ";";
   System.writeFile(modelicaFileName + ".mo", modelicaOutput);
-  //simflags := CevalScriptBackend.getSimulationOption(defaulSimOpt, "simflags");
-  //print("\nSimflags used for simulating the reconciled model: " + anyString(simflags) + "\n");
-  // update the DAE with new system of equations and vars computed by the dataReconciliation extraction algorithm
-  outDAE := BackendDAE.DAE({currentSystem}, shared);
 
+  outDAE := BackendDAE.DAE({currentSystem}, shared);
 end newExtractionAlgorithm;
 
 // extract the "-sx =.csv" file path from simflags
@@ -347,9 +344,10 @@ algorithm
 
   // should never fail!
   try
-    (nummatches, {_, filePath}) := System.regex(simflags, "-sx[ \t]*=[ \t]*([^ \t]+)", 2, true);
+    (nummatches, {_, filePath}) := System.regex(simflags, "-sx[ \t]*=[ \t]*(\"[^\"]*\"|[^, \t]+)", 2, true);
     if nummatches == 2 then
-      csvFilePath := filePath;
+      csvFilePath := System.stringReplace(filePath, " ", ""); // remove the double quotes if present in the file path
+      csvFilePath := System.stringReplace(csvFilePath, "\"", ""); // remove the double quotes if present in the file path
       return;
     end if;
   else
@@ -357,17 +355,16 @@ algorithm
   end try;
 end extractSxPath;
 
-
+// read the csv file and extract the measurement data for setting start values for data reconciliation initialization.
 protected function readMeasurementsFromCSV
   input BackendDAE.Shared shared;
   output String csvFileName;
   output list<tuple<String, String>> measurementData = {};
 protected
-  String content, varName;
-  Real value;
-  Integer matches, count;
+  String content;
   list<String> tokens, lines;
   SimCode.SimulationSettings simulationSettings;
+  Absyn.Program p;
 algorithm
   if isNone(shared.info.simSettingsOption) then
     Error.addMessage(Error.INTERNAL_ERROR, {": SimulationSettings is NONE, expected SimulationSettings to be present in shared.info.simSettingsOption for reading measurements from csv file for data reconciliation initialization."});
@@ -377,9 +374,16 @@ algorithm
   simulationSettings := Util.getOption(shared.info.simSettingsOption);
   // extract the csv file path from simflags
   csvFileName := extractSxPath(simulationSettings.simflags);
+
   if stringEmpty(csvFileName) then
     Error.addMessage(Error.INTERNAL_ERROR, {": No csv file provided or failed to read file with -sx flag in simflags."});
     fail();
+  end if;
+
+  // resolve uri if the csv file path is provided as a uri (e.g) modelica:// or file://, otherwise get the absolute path for the csv file
+  if (StringUtil.startsWith(csvFileName, "modelica://") or StringUtil.startsWith(csvFileName, "file://")) then
+    p := SymbolTable.getAbsyn();
+    csvFileName := CevalScript.getFullPathFromUri(p, csvFileName, true);
   end if;
 
   content := System.readFile(csvFileName);
@@ -393,12 +397,12 @@ algorithm
   for line in lines loop
     line := System.stringReplace(line, ";", ",");
     line := System.trim(line);
-    tokens := System.strtok(line, ",");
+    tokens := Util.stringSplitAtChar(line, ",");
     if not listEmpty(tokens) then
       measurementData := (listGet(tokens, 1), listGet(tokens, 2)) :: measurementData;
     end if;
   end for;
-  print("Extracted measurement data from csv file:\n" + anyString(listReverse(measurementData)) + "=>" + anyString(listLength(measurementData)) + "\n");
+  //print("Extracted measurement data from csv file:\n" + anyString(listReverse(measurementData)) + "=>" + anyString(listLength(measurementData)) + "\n");
 end readMeasurementsFromCSV;
 
 protected function setStartValuesToMeasurements
@@ -409,6 +413,7 @@ protected function setStartValuesToMeasurements
 protected
   list<BackendDAE.Var> varList;
   String varName, valueStr;
+  Real value;
   BackendDAE.Var var1;
   Boolean foundMeasurement;
   list<DAE.Exp> startValueList = {DAE.RCONST(10.0), DAE.RCONST(600), DAE.RCONST(550.0), DAE.RCONST(70e5), DAE.RCONST(68e5), DAE.RCONST(500), DAE.RCONST(1.0), DAE.RCONST(1e9), DAE.RCONST(5)};
@@ -420,7 +425,13 @@ algorithm
       Error.addMessage(Error.INTERNAL_ERROR, {": Entry for variable of interest " + ComponentReference.printComponentRefStr(var.varName) + " not found in the measurement csv file " + csvFileName});
       fail();
     end if;
-    var := BackendVariable.setVarStartValue(var, DAE.RCONST(stringReal(valueStr)));
+    try
+      value := stringReal(valueStr);
+    else
+      Error.addMessage(Error.INTERNAL_ERROR, {": Failed to convert the measurement value \"" + valueStr + "\" for variable of interest " + ComponentReference.printComponentRefStr(var.varName) + " from csv file " + csvFileName + " to a valid Real number for setting start value for data reconciliation initialization."});
+      fail();
+    end try;
+    var := BackendVariable.setVarStartValue(var, DAE.RCONST(value));
     varList := var :: varList;
   end for;
   outVariables := BackendVariable.listVar(listReverse(varList));
@@ -488,13 +499,14 @@ protected
   list<DAE.ComponentRef> cr_lst;
   BackendDAE.Jacobian simCodeJacobian;
   BackendDAE.Shared shared;
-  String str, modelicaOutput, modelicaFileName, modelName, auxillaryConditionsFilename, auxillaryEquations, intermediateEquationsFilename, intermediateEquations;
+  String str, modelicaOutput, modelicaFileName, modelName, auxillaryConditionsFilename, auxillaryEquations, intermediateEquationsFilename, intermediateEquations, csvfileName;
   list<tuple<Integer, list<Integer>>> mappedEbltSetS;
   list<tuple<Integer, BackendDAE.Equation, list<Integer>>> setBFailedBoundaryConditionEquations;
 
   list<Integer> allVarsList, knowns, unknowns, boundaryConditionVars, exactEquationVars, extractedVarsfromSetS, constantVars, knownVariablesWithEquationBinding, boundaryConditionTaggedEquationSolvedVars, unknownVarsInSetC, unMeasuredVariablesOfInterest;
   BackendDAE.Variables inputVars, outDiffVars, outOtherVars, outResidualVars, outBoundaryConditionVars;
   Integer procedureCount;
+  list<tuple<String, String>> measurementcsvData;
   Boolean debug = false, status = false;
 
 algorithm
@@ -647,6 +659,12 @@ algorithm
   // set uncertain variables unreplaceable attributes to be true
   outDiffVars := BackendVariable.listVar(List.map1(BackendVariable.varList(outDiffVars), BackendVariable.setVarUnreplaceable, true));
 
+  // read the measurements from csv file and set the start values of the variables of interest to be the measurements to help initialization
+  (csvfileName, measurementcsvData) := readMeasurementsFromCSV(shared);
+
+  // set the start values of the variables of interest to be the measurements for better convergence of the data reconciliation problem
+  outDiffVars :=setStartValuesToMeasurements(outDiffVars, measurementcsvData, csvfileName);
+
   // set boundaryConditionsVars unreplaceable attributes to be true
   outBoundaryConditionVars := BackendVariable.listVar(List.map1(listReverse(failedboundaryConditionVars), BackendVariable.setVarUnreplaceable, true));
 
@@ -746,13 +764,14 @@ protected
   list<DAE.ComponentRef> cr_lst;
   BackendDAE.Jacobian simCodeJacobian, simCodeJacobianH;
   BackendDAE.Shared shared;
-  String str, modelicaOutput, modelicaFileName, modelName, auxillaryConditionsFilename, auxillaryEquations, intermediateEquationsFilename, intermediateEquations;
+  String str, modelicaOutput, modelicaFileName, modelName, auxillaryConditionsFilename, auxillaryEquations, intermediateEquationsFilename, intermediateEquations, csvfileName;
   list<tuple<Integer, list<Integer>>> mappedEbltSetS;
   list<tuple<Integer, BackendDAE.Equation, list<Integer>>> setBFailedBoundaryConditionEquations;
 
   list<Integer> allVarsList, knowns, unknowns, unMeasuredVariablesOfInterest, failedboundaryConditionEquationIndex, boundaryConditionVars, exactEquationVars, extractedVarsfromSetS, constantVars, knownVariablesWithEquationBinding, boundaryConditionTaggedEquationSolvedVars, unknownVarsInSetC;
   BackendDAE.Variables inputVars, outDiffVars, outOtherVars, outResidualVars, outBoundaryConditionVars, outOtherVarsSetSPrime;
   Integer procedureCount, numRelatedBoundaryConditions;
+  list<tuple<String, String>> measurementcsvData;
   Boolean debug = false, status = false;
 
 algorithm
@@ -887,6 +906,12 @@ algorithm
   outDiffVars := BackendVariable.listVar(List.map1r(knowns, BackendVariable.getVarAt, currentSystem.orderedVars));
   // set uncertain variables unreplaceable attributes to be true
   outDiffVars := BackendVariable.listVar(List.map1(BackendVariable.varList(outDiffVars), BackendVariable.setVarUnreplaceable, true));
+
+  // read the measurements from csv file and set the start values of the variables of interest to be the measurements to help initialization
+  (csvfileName, measurementcsvData) := readMeasurementsFromCSV(shared);
+
+  // set the start values of the variables of interest to be the measurements for better convergence of the data reconciliation problem
+  outDiffVars :=setStartValuesToMeasurements(outDiffVars, measurementcsvData, csvfileName);
 
   // prepare set-c residual equations and residual vars
   (_, residualEquations) := BackendEquation.traverseEquationArray(BackendEquation.listEquation(setC_Eq), BackendEquation.traverseEquationToScalarResidualForm, (shared.functionTree, {}));
