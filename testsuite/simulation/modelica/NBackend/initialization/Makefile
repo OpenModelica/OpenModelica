@@ -1,7 +1,8 @@
 TEST = ../../../../rtest -v
 
 TESTFILES = \
-no_alg_loop.mos \
+init_if_eq.mos \
+init_if_exp.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make failingtest
