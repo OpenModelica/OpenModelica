@@ -23,13 +23,19 @@ runScript(modelTesting);getErrorString();
 // "true
 // "
 // ""
-// Simulation options: startTime = 0.0, stopTime = 5.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica_DeviceDrivers.Blocks.Examples.TestSerialPackager_ExternalTrigger', options = '', outputFormat = 'mat', variableFilter = 'time|getInteger.y.1.', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
+// Simulation options: startTime = 0.0, stopTime = 5.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica_DeviceDrivers.Blocks.Examples.TestSerialPackager_ExternalTrigger', options = '', outputFormat = 'mat', variableFilter = 'time|getInteger.y.1.', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
 // Result file: Modelica_DeviceDrivers.Blocks.Examples.TestSerialPackager_ExternalTrigger_res.mat
 // Messages: LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 //
 // Files Equal!
 // Warning: Requested package Modelica_Synchronous of version 0.92.2, but this package was already loaded with version 0.93.0-dev. There are no conversion annotations and 0.92.2 is older than 0.93.0-dev, so the libraries are probably incompatible.
+// [Modelica_Synchronous 0.92.2/WorkInProgress.mo:11:9-20:24:writable] Warning: External function annotation should occur on the external-clause, not on the function.
+// [Modelica_Synchronous 0.92.2/WorkInProgress.mo:130:9-144:24:writable] Warning: External function annotation should occur on the external-clause, not on the function.
+// [Modelica_DeviceDrivers 1.8.2/EmbeddedTargets/STM32F4/Functions/HAL.mo:6:3-12:14:writable] Warning: External function annotation should occur on the external-clause, not on the function.
+// [Modelica_DeviceDrivers 1.8.2/Incubate/OperatingSystem/DynamicArray.mo:6:3-94:18:writable] Warning: External function annotation should occur on the external-clause, not on the function.
+// [Modelica_DeviceDrivers 1.8.2/Incubate/Utilities/Functions.mo:1041:3-1062:27:writable] Warning: External function annotation should occur on the external-clause, not on the function.
+// [Modelica_DeviceDrivers 1.8.2/Incubate/Utilities/Functions.mo:1064:3-1092:25:writable] Warning: External function annotation should occur on the external-clause, not on the function.
 // Warning: Alias equations of external objects are not Modelica compliant as in:
 //     getInteger.pkgIn.pkg = unpackInt1.pkgOut[1].pkg
 //     unpackInt.pkgOut[1].pkg = unpackInt1.pkgIn.pkg

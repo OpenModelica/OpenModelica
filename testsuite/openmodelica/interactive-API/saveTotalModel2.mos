@@ -1,0 +1,45 @@
+// name: saveTotalModel2
+// keywords:
+// status: correct
+//
+
+loadString("
+  function f1
+    external \"C\" f1_ext();
+    annotation(Include = \"f1.h\", derivative = f1_der);
+  end f1;
+
+  function f1_der
+  end f1_der;
+
+  model M
+  equation
+    f1();
+  end M;
+");
+
+saveTotalSCode("M.mo", M); getErrorString();
+readFile("M.mo");
+
+// Result:
+// true
+// true
+// "[<interactive>:2:3-5:9:writable] Warning: External function annotation should occur on the external-clause, not on the function.
+// "
+// "function f1
+//   external \"C\" f1_ext() annotation(Include = \"f1.h\");
+//   annotation(Include = \"f1.h\", derivative = f1_der);
+// end f1;
+//
+// function f1_der end f1_der;
+//
+// model M
+// equation
+//   f1();
+// end M;
+//
+// model M_total
+//   extends M;
+// end M_total;
+// "
+// endResult

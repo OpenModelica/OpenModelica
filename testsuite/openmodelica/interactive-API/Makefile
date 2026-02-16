@@ -129,6 +129,7 @@ ReverseLookup3.mos \
 RunScript.mos \
 saveShort.mos \
 saveTotalModel.mos \
+saveTotalModel2.mos \
 setComponentComment.mos \
 setComponentModifierValue.mos \
 setElementAnnotation.mos \

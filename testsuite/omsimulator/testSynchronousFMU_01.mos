@@ -41,7 +41,9 @@ diffSimulationResults(
 // true
 // ""
 // true
-// ""
+// "[Modelica_Synchronous 0.92.2/WorkInProgress.mo:11:9-20:24:writable] Warning: External function annotation should occur on the external-clause, not on the function.
+// [Modelica_Synchronous 0.92.2/WorkInProgress.mo:130:9-144:24:writable] Warning: External function annotation should occur on the external-clause, not on the function.
+// "
 // true
 // record SimulationResult
 //     resultFile = "Modelica_Synchronous.Examples.Elementary.ClockSignals.SubSample_res.csv",
@@ -50,9 +52,13 @@ diffSimulationResults(
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// ""
+// "[Modelica_Synchronous 0.92.2/WorkInProgress.mo:11:9-20:24:writable] Warning: External function annotation should occur on the external-clause, not on the function.
+// [Modelica_Synchronous 0.92.2/WorkInProgress.mo:130:9-144:24:writable] Warning: External function annotation should occur on the external-clause, not on the function.
+// "
 // "Modelica_Synchronous.Examples.Elementary.ClockSignals.SubSample.fmu"
-// ""
+// "[Modelica_Synchronous 0.92.2/WorkInProgress.mo:11:9-20:24:writable] Warning: External function annotation should occur on the external-clause, not on the function.
+// [Modelica_Synchronous 0.92.2/WorkInProgress.mo:130:9-144:24:writable] Warning: External function annotation should occur on the external-clause, not on the function.
+// "
 // 0
 // ""
 // (true, {})
