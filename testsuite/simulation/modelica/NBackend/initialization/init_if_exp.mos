@@ -1,19 +1,19 @@
-// name: no_alg_loop
+// name: init_if_exp
 // keywords: NewBackend, initialization, adjacency
 // status: correct
 // cflags: --newBackend
 
 loadString("
-model no_alg_loop
+model init_if_exp
   Real u, y;
 equation
-  1 = if initial() then y else u;
-  y = u^3 + sin(u);
-end no_alg_loop;
+  1 = if initial() then y + y^2 else u;
+  y = u^3 + u;
+end init_if_exp;
 "); getErrorString();
 
 setCommandLineOptions("-d=dumpSimCode"); getErrorString();
-simulate(no_alg_loop); getErrorString();
+simulate(init_if_exp); getErrorString();
 
 // Result:
 // true
@@ -22,36 +22,35 @@ simulate(no_alg_loop); getErrorString();
 // ""
 // #############################
 //
-//     SimCode (no_alg_loop)
+//     SimCode (init_if_exp)
 //
 // #############################
 // ============
 //   SimVars
 // ============
-// Algebraic Variables (3)
+// Algebraic Variables (2)
 // *************************
 //   (0)[ALGB] (1) Real u
 //   (1)[ALGB] (1) Real y
-//   (2)[ALGB] (1) Real $FUN_1
 //
 // Residual Variables (2)
 // ************************
 //   (0)[RES-] (1) Real $RES_SIM_0
-//   (1)[RES-] (1) Real $RES_AUX_2
+//   (1)[RES-] (1) Real $RES_SIM_1
 //
 // Initial Partition
 // -------------------
-//   (4) y := 1.0
-//   (3) Nonlinear System (size = 2, homotopy = false, mixed = false, torn = true)
-//   --Iteration Vars:{u, $FUN_1}
-//   --(1) 0 = (u ^ 3.0 + $FUN_1) - y
-//   --(2) 0 = sin(u) - $FUN_1
+//   (4) Nonlinear System (size = 1, homotopy = false, mixed = false, torn = true)
+//   --Iteration Vars:{y}
+//   --(3) 0 = (-1.0) + (y + y ^ 2.0)
+//   (2) Nonlinear System (size = 1, homotopy = false, mixed = false, torn = true)
+//   --Iteration Vars:{u}
+//   --(1) 0 = (u ^ 3.0 + u) - y
 //
 // Algebraic Partition 1
 // -----------------------
-//   (7) u := 1.0
-//   (6) $FUN_1 := sin(u)
-//   (5) y := u ^ 3.0 + $FUN_1
+//   (6) u := 1.0
+//   (5) y := u ^ 3.0 + u
 //
 // Event Partition
 // -----------------
@@ -94,9 +93,8 @@ simulate(no_alg_loop); getErrorString();
 // allEquations:
 // ========================================
 //
-// 7: u=1.0 [Real]
-// 6: $FUN_1=sin(u) [Real]
-// 5: y=u ^ 3.0 + $FUN_1 [Real]
+// 6: u=1.0 [Real]
+// 5: y=u ^ 3.0 + u [Real]
 // ========================================
 //
 //
@@ -109,9 +107,8 @@ simulate(no_alg_loop); getErrorString();
 //
 // algebraicEquations (1 systems):
 // ========================================
-// 7: u=1.0 [Real]
-// 6: $FUN_1=sin(u) [Real]
-// 5: y=u ^ 3.0 + $FUN_1 [Real]
+// 6: u=1.0 [Real]
+// 5: y=u ^ 3.0 + u [Real]
 // ========================================
 //
 //
@@ -123,11 +120,13 @@ simulate(no_alg_loop); getErrorString();
 //
 // initialEquations: (2)
 // ========================================
-// 4: y=1.0 [Real]
-// 3:  (NONLINEAR) index:0 jacobian: false
-// crefs: u , $FUN_1
-// 	1: u ^ 3.0 + $FUN_1 - y (RESIDUAL)
-// 	2: sin(u) - $FUN_1 (RESIDUAL)
+// 4:  (NONLINEAR) index:1 jacobian: false
+// crefs: y
+// 	3: -1.0 + y + y ^ 2.0 (RESIDUAL)
+//
+// 2:  (NONLINEAR) index:0 jacobian: false
+// crefs: u
+// 	1: u ^ 3.0 + u - y (RESIDUAL)
 //
 // ========================================
 //
@@ -188,17 +187,16 @@ simulate(no_alg_loop); getErrorString();
 //
 // modelInfo:
 // ========================================
-// algVars (3)
+// algVars (2)
 // ----------------------
 // index:0: u (no alias)  initial: 	no arrCref index:(1) []
 // index:1: y (no alias)  initial: 	no arrCref index:(2) []
-// index:2: $FUN_1 (no alias)  hideResult  initial: 	no arrCref index:(3) []
 // functions:
 // -----------
 //
 // record SimulationResult
-//     resultFile = "no_alg_loop_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'no_alg_loop', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     resultFile = "init_if_exp_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'init_if_exp', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "

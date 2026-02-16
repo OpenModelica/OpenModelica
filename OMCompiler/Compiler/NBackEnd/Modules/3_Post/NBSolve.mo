@@ -210,6 +210,11 @@ public
           (eqn, solve_status, implicit_index) := solveSingleStrongComponent(Pointer.access(comp.eqn), Pointer.access(comp.var), funcMap, kind, implicit_index, slicing_map, varData, eqData);
         then ({StrongComponent.SINGLE_COMPONENT(comp.var, Pointer.create(eqn), solve_status)}, solve_status);
 
+        // solve component that was simplified
+        case StrongComponent.MULTI_COMPONENT(vars = {var_slice}) guard(not Equation.isCompound(Slice.getT(comp.eqn))) algorithm
+          (solved_comps, implicit_index) := solveStrongComponent(StrongComponent.createSliceOrSingle(BVariable.getVarName(Slice.getT(var_slice)), var_slice, comp.eqn), funcMap, kind, implicit_index, slicing_map, varData, eqData);
+        then (solved_comps, Status.UNPROCESSED); // status is unknown, but does not matter because errors were handled in the recursive call.
+
         case StrongComponent.MULTI_COMPONENT() algorithm
           eqn_ptr := Slice.getT(comp.eqn);
           eqn := Pointer.access(eqn_ptr);

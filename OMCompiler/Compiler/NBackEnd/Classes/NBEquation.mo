@@ -2386,6 +2386,16 @@ public
       end match;
     end isClocked;
 
+    function isCompound extends checkEqn;
+    algorithm
+      b := match Pointer.access(eqn_ptr)
+        case ALGORITHM()      then true;
+        case IF_EQUATION()    then true;
+        case WHEN_EQUATION()  then true;
+        else false;
+      end match;
+    end isCompound;
+
     function expIsParamOrConst
       input output Expression exp;
       input Pointer<Boolean> b_ptr;
