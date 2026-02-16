@@ -1076,32 +1076,28 @@ public
         eqn := EquationPointers.getEqnAt(eqns, mapping.eqn_StA[i]);
         (_, size) := mapping.var_AtS[var_arr_idx];
 
-        comp := match Pointer.access(eqn)
+        if Equation.isForEquation(eqn) then
           // - case 1: sliced equation because of for-equation
-          case _ guard(Equation.isForEquation(eqn)) algorithm
-            try
-              ({var_slice}, {eqn_slice}) := getLoopVarsAndEqns(comp_indices, eqn_to_var, mapping, vars, eqns);
-            else
-              Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because single indices did not turn out to be single components."});
-              fail();
-            end try;
-          then SLICED_COMPONENT(VariablePointers.varSlice(vars, var_scal_idx, mapping), var_slice, eqn_slice, NBSolve.Status.UNPROCESSED);
-
+          try
+            ({var_slice}, {eqn_slice}) := getLoopVarsAndEqns(comp_indices, eqn_to_var, mapping, vars, eqns);
+          else
+            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because single indices did not turn out to be single components."});
+            fail();
+          end try;
+          comp := SLICED_COMPONENT(VariablePointers.varSlice(vars, var_scal_idx, mapping), var_slice, eqn_slice, NBSolve.Status.UNPROCESSED);
+        elseif Equation.isCompound(eqn) then
           // - case 2: multi components for when/if and algorithm although its size 1
-          case Equation.WHEN_EQUATION()   then MULTI_COMPONENT({Slice.SLICE(var, {})}, Slice.SLICE(eqn, {}), NBSolve.Status.UNPROCESSED);
-          case Equation.IF_EQUATION()     then MULTI_COMPONENT({Slice.SLICE(var, {})}, Slice.SLICE(eqn, {}), NBSolve.Status.UNPROCESSED);
-          case Equation.ALGORITHM()       then MULTI_COMPONENT({Slice.SLICE(var, {})}, Slice.SLICE(eqn, {}), NBSolve.Status.UNPROCESSED);
-
+          comp := MULTI_COMPONENT({Slice.SLICE(var, {})}, Slice.SLICE(eqn, {}), NBSolve.Status.UNPROCESSED);
+        else
           // - case 3: single or sliced strong component
-          else algorithm
-            try
-              ({var_slice}, {eqn_slice}) := getLoopVarsAndEqns(comp_indices, eqn_to_var, mapping, vars, eqns);
-            else
-              Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because single indices did not turn out to be single components."});
-              fail();
-            end try;
-          then createSliceOrSingle(VariablePointers.varSlice(vars, var_scal_idx, mapping), var_slice, eqn_slice);
-        end match;
+          try
+            ({var_slice}, {eqn_slice}) := getLoopVarsAndEqns(comp_indices, eqn_to_var, mapping, vars, eqns);
+          else
+            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because single indices did not turn out to be single components."});
+            fail();
+          end try;
+          comp := createSliceOrSingle(VariablePointers.varSlice(vars, var_scal_idx, mapping), var_slice, eqn_slice);
+        end if;
       then comp;
 
       // Size > 1 strong component
