@@ -398,7 +398,7 @@ algorithm
     line := System.stringReplace(line, ";", ",");
     line := System.trim(line);
     tokens := Util.stringSplitAtChar(line, ",");
-    if not listEmpty(tokens) then
+    if not listEmpty(tokens) and listLength(tokens) >= 2 then
       measurementData := (listGet(tokens, 1), listGet(tokens, 2)) :: measurementData;
     end if;
   end for;
