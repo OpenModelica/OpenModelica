@@ -119,10 +119,7 @@ CHighlighter::CHighlighter(CEditorPage *pCEditorPage, QPlainTextEdit *pPlainText
 //! Initialized the syntax highlighter with default values.
 void CHighlighter::initializeSettings()
 {
-  QFont font;
-  font.setFamily(mpCEditorPage->getOptionsDialog()->getTextEditorPage()->getFontFamilyComboBox()->currentFont().family());
-  font.setPointSizeF(mpCEditorPage->getOptionsDialog()->getTextEditorPage()->getFontSizeSpinBox()->value());
-  mpPlainTextEdit->document()->setDefaultFont(font);
+  const QFont font = mpPlainTextEdit->font();
 #if QT_VERSION >= QT_VERSION_CHECK(5, 11, 0)
   mpPlainTextEdit->setTabStopDistance((qreal)(mpCEditorPage->getOptionsDialog()->getTextEditorPage()->getTabSizeSpinBox()->value() * QFontMetrics(font).horizontalAdvance(QLatin1Char(' '))));
 #else // QT_VERSION_CHECK
