@@ -858,7 +858,7 @@ void Parameter::editClassButtonClicked()
   }
   QString modifier = value;
   QString defaultModifier = defaultValue;
-  ModelInstance::Modifier *pReplaceableConstrainedByModifier = 0;
+  ModelInstance::Modifier *pReplaceableConstrainedByModifier = nullptr;
   QString comment;
   if (isReplaceableComponent()) {
     type = mpModelInstanceElement->getType();
@@ -877,6 +877,8 @@ void Parameter::editClassButtonClicked()
     } else if (isReplaceableClass()) {
       FlatModelica::Parser::getShortClassTypeFromElementRedeclaration(value, type, modifier, comment);
     }
+  } else if (!value.isEmpty()) {
+    FlatModelica::Parser::getModifierFromElementModification(value, modifier);
   }
 
   QString classPath;
@@ -895,9 +897,30 @@ void Parameter::editClassButtonClicked()
   }
   // get type as qualified path
   const QString qualifiedType = MainWindow::instance()->getOMCProxy()->qualifyPath(classPath, type);
+  // qDebug() << "element modifier" << modifier;
   const QJsonObject modifierJSON = MainWindow::instance()->getOMCProxy()->modifierToJSON(modifier);
   ModelInstance::Modifier *pElementModifier = new ModelInstance::Modifier("", QJsonValue(modifierJSON), mpModelInstanceElement->getParentModel());
-  modifier = mpModelInstanceElement->getModifiersHierarchically(pElementModifier);
+  if (pReplaceableConstrainedByModifier) {
+    // qDebug() << "replaceable constrainedby modifier" << pReplaceableConstrainedByModifier->toString();
+    /*! Read the constrainedby modifiers and if they have a modifier from this class then use its value.
+     *  See issue #14393
+     */
+    foreach (auto *pModifier, pReplaceableConstrainedByModifier->getModifiers()) {
+      Parameter *pParameter = mpElementParameters->findParameter(pModifier->getName());
+      if (pParameter) {
+        // qDebug() << "pParameter->getValue()" << pParameter->getValue();
+        pModifier->setValue(pParameter->getValue());
+      }
+    }
+    // qDebug() << "replaceable constrainedby modifier" << pReplaceableConstrainedByModifier->toString();
+    QList<const ModelInstance::Modifier*> modifiers;
+    modifiers.append(pReplaceableConstrainedByModifier);
+    modifiers.append(pElementModifier);
+    ModelInstance::Modifier *pMergedModifier = ModelInstance::Modifier::mergeModifiersIntoOne(modifiers, mpModelInstanceElement->getParentModel());
+    modifier = pMergedModifier->toString();
+    delete pMergedModifier;
+  }
+  // qDebug() << "element and replaceable constrainedby merged modifier" << modifier;
   ModelInstance::Model *pCurrentModel = mpModelInstanceElement->getModel();
   const QJsonObject newModelJSON = MainWindow::instance()->getOMCProxy()->getModelInstance(qualifiedType, mpModelInstanceElement->getQualifiedName(), modifier);
   if (!newModelJSON.isEmpty()) {
@@ -1341,6 +1364,23 @@ QString ElementParameters::getComponentClassComment() const
 ModelInstance::Model *ElementParameters::getModel() const
 {
   return hasElement() ? mpElement->getModel() : mpGraphicsView->getModelWidget()->getModelInstance();
+}
+
+/*!
+ * \brief ElementParameters::findParameter
+ * Finds the Parameter.
+ * \param parameter
+ * \param caseSensitivity
+ * \return
+ */
+Parameter* ElementParameters::findParameter(const QString &parameter, Qt::CaseSensitivity caseSensitivity) const
+{
+  foreach (Parameter *pParameter, mParametersList) {
+    if (pParameter->getModelInstanceElement()->getName().compare(parameter, caseSensitivity) == 0) {
+      return pParameter;
+    }
+  }
+  return nullptr;
 }
 
 /*!
@@ -1898,23 +1938,6 @@ void ElementParameters::applyModifier(ModelInstance::Modifier *pModifier, bool d
       }
     }
   }
-}
-
-/*!
- * \brief ElementParameters::findParameter
- * Finds the Parameter.
- * \param parameter
- * \param caseSensitivity
- * \return
- */
-Parameter* ElementParameters::findParameter(const QString &parameter, Qt::CaseSensitivity caseSensitivity) const
-{
-  foreach (Parameter *pParameter, mParametersList) {
-    if (pParameter->getModelInstanceElement()->getName().compare(parameter, caseSensitivity) == 0) {
-      return pParameter;
-    }
-  }
-  return 0;
 }
 
 /*!
