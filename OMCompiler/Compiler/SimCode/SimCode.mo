@@ -700,6 +700,7 @@ uniontype SimulationSettings
     String outputFormat;
     String variableFilter;
     String cflags;
+    String simflags;
   end SIMULATION_SETTINGS;
 end SimulationSettings;
 

@@ -131,6 +131,7 @@ public function createSimulationSettings
   input String outputFormat;
   input String variableFilter;
   input String cflags;
+  input String simflags;
   output SimCode.SimulationSettings simSettings;
 protected
   Real stepSize;
@@ -140,7 +141,7 @@ algorithm
   stepSize := (stopTime - startTime) / intReal(numberOfIntervals);
   simSettings := SimCode.SIMULATION_SETTINGS(
     startTime, stopTime, numberOfIntervals, stepSize, tolerance,
-    method, options, outputFormat, variableFilter, cflags);
+    method, options, outputFormat, variableFilter, cflags, simflags);
 end createSimulationSettings;
 
 
@@ -1314,7 +1315,7 @@ algorithm
       end if;
 
       description := DAEUtil.daeDescription(dae);
-      dlow := BackendDAECreate.lower(dae, cache, graph, BackendDAE.EXTRA_INFO(description, inFileNamePrefix));
+      dlow := BackendDAECreate.lower(dae, cache, graph, BackendDAE.EXTRA_INFO(description, inFileNamePrefix, inSimSettingsOpt));
 
       GCExt.free(dae);
       dae := DAE.emptyDae;
@@ -1437,7 +1438,7 @@ algorithm
       end if;
 
       description := DAEUtil.daeDescription(dae);
-      dlow := BackendDAECreate.lower(dae, cache, graph, BackendDAE.EXTRA_INFO(description,inFileNamePrefix));
+      dlow := BackendDAECreate.lower(dae, cache, graph, BackendDAE.EXTRA_INFO(description,inFileNamePrefix,inSimSettingsOpt));
 
       GCExt.free(dae);
       dae := DAE.emptyDae;
