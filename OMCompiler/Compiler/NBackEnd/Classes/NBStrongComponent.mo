@@ -1127,7 +1127,7 @@ public
               innerEquations  = listArray({}),
               jac             = NONE());
             for eqn in comp_eqns loop
-              Equation.map(Pointer.access(Slice.getT(eqn)), function Initialization.containsHomotopyCall(hasHom = homotopy));
+              Equation.map(Pointer.access(Slice.getT(eqn)), function Initialization.containsHomotopyCall(b = homotopy));
             end for;
           then ALGEBRAIC_LOOP(
             idx     = -1,

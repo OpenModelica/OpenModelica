@@ -69,14 +69,6 @@ annotation(__OpenModelica_builtin=true, __OpenModelica_Impure=true, Documentatio
 </html>"));
 end initial;
 
-impure function initialSimplified "True if in homotopy initialization phase with lambda=0"
-  discrete output Boolean isInitialLambda0;
-external "builtin";
-annotation(__OpenModelica_builtin=true, __OpenModelica_Impure=true, version="Experimental", Documentation(info="<html>
-  Experimental</a>
-</html>"));
-end initialSimplified;
-
 impure function terminal "True after successful analysis"
   discrete output Boolean isTerminal;
 external "builtin";

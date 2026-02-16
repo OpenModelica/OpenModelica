@@ -4,12 +4,12 @@
 // cflags: --newBackend
 
 loadString("
-package P
-  // impure function initialSimplified
-  //   output Boolean isInitialLambda0 = false;
-  // annotation(Inline = false, __OpenModelica_builtin=true);
-  // end initialSimplified;
+impure function initialSimplified
+  discrete output Boolean isInitialSimplified = false;
+  annotation(Inline = false, __OpenModelica_builtin=true);
+end initialSimplified;
 
+package P
   model experimental_initialSimplified
     parameter Real u_fix0 = 1;
     parameter Real y_fix0 = 1;
@@ -270,6 +270,10 @@ simulate(P.experimental_initialSimplified); getErrorString();
 // functions:
 // -----------
 //
+// Function: initialSimplified
+// 	outVars: isInitialSimplified (Boolean, )  ,
+// 	functionArguments:
+// 	variableDeclarations: isInitialSimplified (Boolean, )  ,
 // record SimulationResult
 //     resultFile = "P.experimental_initialSimplified_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'P.experimental_initialSimplified', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",

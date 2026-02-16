@@ -185,7 +185,7 @@ public
     (comp, dummy, index) := match comp
       // create implicit equations
       case StrongComponent.SINGLE_COMPONENT() algorithm
-        Equation.map(Pointer.access(comp.eqn), function Initialization.containsHomotopyCall(hasHom = homotopy));
+        Equation.map(Pointer.access(comp.eqn), function Initialization.containsHomotopyCall(b = homotopy));
         new_comp := StrongComponent.ALGEBRAIC_LOOP(
           idx     = index,
           strict  = singleImplicit(comp.var, comp.eqn),
@@ -197,7 +197,7 @@ public
       then finalize(new_comp, dummy, funcMap, index, VariablePointers.empty(), EquationPointers.empty(), Pointer.create(0), kind);
 
       case StrongComponent.MULTI_COMPONENT() algorithm
-        Equation.map(Pointer.access(Slice.getT(comp.eqn)), function Initialization.containsHomotopyCall(hasHom = homotopy));
+        Equation.map(Pointer.access(Slice.getT(comp.eqn)), function Initialization.containsHomotopyCall(b = homotopy));
         new_comp := StrongComponent.ALGEBRAIC_LOOP(
           idx     = index,
           strict  = singleImplicit(Slice.getT(listHead(comp.vars)), Slice.getT(comp.eqn)), // this is wrong! need to take all vars
@@ -209,7 +209,7 @@ public
       then finalize(new_comp, dummy, funcMap, index, VariablePointers.empty(), EquationPointers.empty(), Pointer.create(0), kind);
 
       case StrongComponent.RESIZABLE_COMPONENT() algorithm
-        Equation.map(Pointer.access(Slice.getT(comp.eqn)), function Initialization.containsHomotopyCall(hasHom = homotopy));
+        Equation.map(Pointer.access(Slice.getT(comp.eqn)), function Initialization.containsHomotopyCall(b = homotopy));
         new_comp := StrongComponent.ALGEBRAIC_LOOP(
           idx     = index,
           strict  = singleImplicit(Slice.getT(comp.var), Slice.getT(comp.eqn)),

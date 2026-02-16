@@ -3,7 +3,13 @@
 // status: correct
 // cflags: --newBackend
 
-loadString("package TestInversePlant
+loadString("
+impure function initialSimplified
+  discrete output Boolean isInitialLambda0 = false;
+  annotation(Inline = false, __OpenModelica_builtin=true);
+end initialSimplified;
+
+package TestInversePlant
   model Plant
     connector RealInput = input Real;
     connector RealOutput = output Real;
@@ -97,7 +103,7 @@ loadString("package TestInversePlant
   end BackwardOffDesignHomotopy;
 end TestInversePlant;"); getErrorString();
 
-setCommandLineOptions("-d=bltdump,dumpSimCode"); getErrorString();
+setCommandLineOptions("-d=bltdump,dumpSimCode --allowNonStandardModelica=initialSimplified"); getErrorString();
 simulate(TestInversePlant.ForwardOnDesign); getErrorString();
 
 // Result:
