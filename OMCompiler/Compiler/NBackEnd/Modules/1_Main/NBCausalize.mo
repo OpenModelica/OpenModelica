@@ -144,7 +144,7 @@ public
   algorithm
     for partition in partitions loop
       (new_partition, varData, eqData) := func(partition, varData, eqData, funcMap);
-      new_partitions := new_partition :: new_partitions;
+      new_partitions := if Partition.isEmpty(new_partition) then new_partitions else new_partition :: new_partitions;
     end for;
     new_partitions := listReverse(new_partitions);
 
