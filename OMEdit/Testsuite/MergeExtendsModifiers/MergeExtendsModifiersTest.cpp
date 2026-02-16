@@ -57,10 +57,48 @@ void MergeExtendsModifiersTest::initTestCase()
   }
 }
 
+void MergeExtendsModifiersTest::mergeModifiers()
+{
+  QFETCH(QStringList, modifiers);
+  QFETCH(QString, result);
+
+  QList<const ModelInstance::Modifier*> modifierList;
+
+  foreach (auto modifier, modifiers) {
+    const QJsonObject modifierJSON = MainWindow::instance()->getOMCProxy()->modifierToJSON(modifier);
+    ModelInstance::Modifier *pModifier = new ModelInstance::Modifier("", QJsonValue(modifierJSON), nullptr);
+    modifierList.append(pModifier);
+  }
+
+  ModelInstance::Modifier *pMergedModifier = ModelInstance::Modifier::mergeModifiersIntoOne(modifierList, nullptr);
+  const QString mergedModifiers = pMergedModifier->toString();
+  delete pMergedModifier;
+
+  QCOMPARE(mergedModifiers, result);
+}
+
+void MergeExtendsModifiersTest::mergeModifiers_data()
+{
+  QTest::addColumn<QStringList>("modifiers");
+  QTest::addColumn<QString>("result");
+
+  QTest::newRow("Merge modifiers")
+      << QStringList{"(realParam1 = 3)", "(realParam2 = 5)"}
+      << "(realParam2 = 5, realParam1 = 3)";
+
+  QTest::newRow("Merge modifiers update")
+      << QStringList{"(realParam2 = 3)", "(realParam2 = 5)"}
+      << "(realParam2 = 5)";
+
+  QTest::newRow("Merge modifiers nested")
+      << QStringList{"M(realParam1 = 3)", "M(realParam2 = 5, realParam3 = 10)"}
+      << "(realParam2 = 5, realParam3 = 10, realParam1 = 3)";
+}
+
 void MergeExtendsModifiersTest::mergeExtendsModifiers()
 {
   QFETCH(QString, model);
-  QFETCH(QString, component);
+  QFETCH(QString, element);
   QFETCH(QString, result);
 
   ModelInstance::Model *pModelInstance = new ModelInstance::Model(MainWindow::instance()->getOMCProxy()->getModelInstance(model));
@@ -68,10 +106,10 @@ void MergeExtendsModifiersTest::mergeExtendsModifiers()
     QFAIL("Model instance is null.");
   }
 
-  auto pElement = pModelInstance->lookupElement(component);
+  auto pElement = pModelInstance->lookupElement(element);
 
   if (!pElement) {
-    QFAIL(QString("Failed to find element %1.").arg(component).toStdString().c_str());
+    QFAIL(QString("Failed to find element %1.").arg(element).toStdString().c_str());
   }
 
   const QString mergedModifiers = pElement->toString(false, true);
@@ -83,10 +121,9 @@ void MergeExtendsModifiersTest::mergeExtendsModifiers()
 void MergeExtendsModifiersTest::mergeExtendsModifiers_data()
 {
   QTest::addColumn<QString>("model");
-  QTest::addColumn<QString>("component");
+  QTest::addColumn<QString>("element");
   QTest::addColumn<QString>("result");
 
-  // Test merge of extends modifiers
   QTest::newRow("Merge extends modifiers")
       << "CopyExtendModifier.ClassWithExtend"
       << "baseModel"

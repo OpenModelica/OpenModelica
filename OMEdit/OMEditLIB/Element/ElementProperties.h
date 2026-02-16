@@ -262,6 +262,7 @@ public:
   bool isNested() const {return mNested;}
   bool skipFocusOutEvent() const {return mSkipFocusOutEvent;}
   QString getModification() const {return mModification;}
+  Parameter* findParameter(const QString &parameter, Qt::CaseSensitivity caseSensitivity = Qt::CaseSensitive) const;
   void applyFinalStartFixedAndDisplayUnitModifiers(Parameter *pParameter, ModelInstance::Modifier *pModifier, bool defaultValue, bool isElementModification);
   void updateParameters();
 private:
@@ -303,7 +304,6 @@ private:
   void fetchClassExtendsModifiers(ModelInstance::Element *pModelElement);
   void fetchRootClassExtendsModifiers(ModelInstance::Element *pModelElement);
   void applyModifier(ModelInstance::Modifier *pModifier, bool defaultValue);
-  Parameter* findParameter(const QString &parameter, Qt::CaseSensitivity caseSensitivity = Qt::CaseSensitive) const;
 public slots:
   void commentLinkClicked(QString link);
   void updateElementParameters();

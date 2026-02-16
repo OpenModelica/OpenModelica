@@ -486,6 +486,7 @@ private:
     Model* getParentModel() const {return mpParentModel;}
     const QString &getName() const {return mName;}
     void setName(const QString &newName) {mName = newName;}
+    void setValue(const QString &value) {mValue = value; mValueDefined = true;}
     const QString &getType() const {return mType;}
     QString getValueWithoutQuotes() const {return StringHandler::removeFirstLastQuotes(getValue());}
     bool isValueDefined() const {return mValueDefined;}
@@ -721,8 +722,6 @@ private:
     bool getIconDiagramMapPrimitivesVisible(bool icon) const;
     bool getIconDiagramMapHasExtent(bool icon) const;
     const ExtentAnnotation &getIconDiagramMapExtent(bool icon) const;
-    QList<const Modifier*> getModifiersHierarchicallyHelper() const;
-    QString getModifiersHierarchically(const Modifier* pModifier) const;
 
     virtual QString getName() const = 0;
     virtual QString getQualifiedName(bool includeBaseName) const = 0;

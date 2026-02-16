@@ -47,6 +47,12 @@ class MergeExtendsModifiersTest: public QObject
 private slots:
   void initTestCase();
   /*!
+   * \brief mergeModifiers
+   * Tests the merging of modifiers.
+   */
+  void mergeModifiers();
+  void mergeModifiers_data();
+  /*!
    * \brief mergeExtendsModifiers
    * Tests the merging of extends modifiers.
    */

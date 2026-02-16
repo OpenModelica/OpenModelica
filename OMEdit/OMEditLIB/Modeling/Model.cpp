@@ -812,7 +812,10 @@ namespace ModelInstance
       value.append(mName);
       QStringList subModifiers;
       foreach (auto *pSubModifier, mModifiers) {
-        subModifiers.append(pSubModifier->toString(skipTopLevel, includeComment));
+        QString subValue = pSubModifier->toString(skipTopLevel, includeComment);
+        if (!subValue.isEmpty()) {
+          subModifiers.append(subValue);
+        }
       }
       if (!subModifiers.isEmpty()) {
         value.append("(" % subModifiers.join(", ") % ")");
@@ -853,6 +856,7 @@ namespace ModelInstance
   /*!
      * \brief Modifier::mergeModifiersIntoOne
      * Merges the list of all extends modifiers into one modifier.
+     * Caller is responsible to delete the returned modifier.
      * \param extendsModifiers
      * \return
      */
@@ -2315,32 +2319,6 @@ namespace ModelInstance
       return mpParentModel->getParentElement()->getIconDiagramMapExtent(icon);
     } else {
       return getAnnotation()->getMap(icon).getExtent();
-    }
-  }
-
-  QList<const Modifier*> Element::getModifiersHierarchicallyHelper() const
-  {
-    QList<const Modifier*> pModifiers;
-    if (mpParentModel && mpParentModel->getParentElement()) {
-      pModifiers << mpParentModel->getParentElement()->getModifiersHierarchicallyHelper();
-    }
-    if (mpModifier) {
-      pModifiers << mpModifier;
-    }
-    return pModifiers;
-  }
-
-  QString Element::getModifiersHierarchically(const Modifier* pModifier) const
-  {
-    QList<const Modifier*> pModifiers;
-    pModifiers << getModifiersHierarchicallyHelper() << pModifier;
-    Modifier *pMergedModifier = Modifier::mergeModifiersIntoOne(pModifiers, mpParentModel);
-    if (pMergedModifier) {
-      QString value = pMergedModifier->toString();
-      delete pMergedModifier;
-      return value;
-    } else {
-      return toString();
     }
   }
 
