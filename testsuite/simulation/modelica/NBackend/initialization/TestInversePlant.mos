@@ -92,14 +92,16 @@ package TestInversePlant
   model BackwardOffDesignHomotopy
     Plant plant;
     parameter Real load = 0.3;
+    Real x(start=0);
   equation
     if initialSimplified() then
       plant.w = 1;
       plant.wfg = 1;
     else
-      plant.P = homotopy(plant.Pnom*load, plant.Pnom + 1e-16*plant.w); // TODO fix runtime to use init0 even when there is no alg loop with homotopy
+      plant.P = homotopy(plant.Pnom*load, plant.Pnom);
       plant.Ts = plant.Tsnom;
     end if;
+    0 = homotopy(x^3 + x, x); // TODO fix runtime to use init0 even when there is no alg loop with homotopy
   end BackwardOffDesignHomotopy;
 end TestInversePlant;"); getErrorString();
 
