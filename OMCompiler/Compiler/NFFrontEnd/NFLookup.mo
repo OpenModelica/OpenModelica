@@ -436,6 +436,7 @@ function lookupSimpleName
   input InstNode scope;
   input InstContext.Type context;
   output InstNode node;
+  output Boolean selfReference = false;
 protected
   InstNode cur_scope = scope;
   Boolean require_builtin = false;
@@ -468,9 +469,11 @@ algorithm
         // Do parentScope first to avoid an infinite loop if we're already in the top scope.
         cur_scope := InstNode.topScope(InstNode.parentScope(cur_scope));
         require_builtin := true;
-      elseif name == InstNode.name(cur_scope) and InstNode.isClass(cur_scope) then
+      elseif name == InstNode.name(cur_scope) and InstNode.isClass(cur_scope) or
+             name == InstNode.name(InstNode.classScope(cur_scope)) then
         // If the scope has the same name as we're looking for we can just return it.
-        node := cur_scope;
+        node := InstNode.classScope(cur_scope);
+        selfReference := true;
         return;
       else
         if InstNode.isTopScope(cur_scope) and not loaded and not require_builtin then
@@ -584,19 +587,24 @@ function lookupName
   input Boolean checkAccessViolations;
   output InstNode node;
   output LookupState state;
+protected
+  Boolean self_reference;
 algorithm
   (node, state) := match name
     // Simple name, look it up in the given scope.
     case Absyn.Path.IDENT()
-      then lookupFirstIdent(name.name, scope, context);
+      algorithm
+        (node, state, _) := lookupFirstIdent(name.name, scope, context);
+      then
+        (node, state);
 
     // Qualified name, look up first part in the given scope and look up the
     // rest of the name in the found element.
     case Absyn.Path.QUALIFIED()
       algorithm
-        (node, state) := lookupFirstIdent(name.name, scope, context);
+        (node, state, self_reference) := lookupFirstIdent(name.name, scope, context);
       then
-        lookupLocalName(name.path, node, state, context, checkAccessViolations, isSelfReference(node, scope));
+        lookupLocalName(name.path, node, state, context, checkAccessViolations, self_reference);
 
     // Fully qualified path, start from top scope.
     case Absyn.Path.FULLYQUALIFIED()
@@ -605,31 +613,14 @@ algorithm
   end match;
 end lookupName;
 
-function isSelfReference
-  input InstNode node;
-  input InstNode scope;
-  output Boolean res;
-protected
-  InstNode parent = scope;
-algorithm
-  while not InstNode.isEmpty(parent) loop
-    if InstNode.refEqual(node, parent) then
-      res := true;
-      return;
-    end if;
-
-    parent := InstNode.instanceParent(parent);
-  end while;
-
-  res := false;
-end isSelfReference;
-
 function lookupNames
   input Absyn.Path name;
   input InstNode scope;
   input InstContext.Type context;
   output list<InstNode> nodes;
   output LookupState state;
+protected
+  Boolean self_reference;
 algorithm
   (nodes, state) := match name
     local
@@ -646,9 +637,9 @@ algorithm
     // rest of the name in the found element.
     case Absyn.Path.QUALIFIED()
       algorithm
-        (node, state) := lookupFirstIdent(name.name, scope, context);
+        (node, state, self_reference) := lookupFirstIdent(name.name, scope, context);
       then
-        lookupLocalNames(name.path, node, {node}, state, context, isSelfReference(node, scope));
+        lookupLocalNames(name.path, node, {node}, state, context, self_reference);
 
     // Fully qualified path, start from top scope.
     case Absyn.Path.FULLYQUALIFIED()
@@ -664,14 +655,16 @@ function lookupFirstIdent
   input InstContext.Type context;
   output InstNode node;
   output LookupState state;
+  output Boolean selfReference;
 algorithm
   try
     // Check if the name refers to a reserved builtin name.
     node := lookupSimpleBuiltinName(name);
     state := LookupState.PREDEF_CLASS();
+    selfReference := false;
   else
     // Otherwise, check each scope until the name is found.
-    node := lookupSimpleName(name, scope, context);
+    (node, selfReference) := lookupSimpleName(name, scope, context);
     state := LookupState.nodeState(node);
   end try;
 end lookupFirstIdent;
