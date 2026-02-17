@@ -393,23 +393,8 @@ protected function setSubmodifierInElement
   input Absyn.Path elementName;
   input Absyn.Modification mod;
         output Boolean outContinue = true;
-protected
-  list<Absyn.ElementArg> args_old, args_new;
-  Absyn.EqMod eqmod_old, eqmod_new;
-  String el_id, id = "";
-  Absyn.ElementSpec el_spec;
 algorithm
-  el_id := AbsynUtil.pathFirstIdent(elementName);
-  el_spec := AbsynUtil.elementSpec(element);
-
-  if not AbsynUtil.isClassOrComponentElementSpec(el_spec) then
-    return;
-  end if;
-
-  // this will fail if no class or component (extends, import, etc)
-  id := AbsynUtil.elementSpecName(el_spec);
-
-  if el_id == id then
+  if AbsynUtil.isElementNamed(AbsynUtil.pathFirstIdent(elementName), element) then
     try
       () := match element
         case Absyn.ELEMENT()
