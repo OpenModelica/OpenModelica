@@ -595,35 +595,41 @@ public
     bdae := match bdae
       case BackendDAE.MAIN() algorithm
 
-        // initial() -> false
-        bdae.ode        := list(Partition.mapEqn(par, function cleanupInitialCall(init = false)) for par in bdae.ode);
-        bdae.algebraic  := list(Partition.mapEqn(par, function cleanupInitialCall(init = false)) for par in bdae.algebraic);
-        bdae.ode_event  := list(Partition.mapEqn(par, function cleanupInitialCall(init = false)) for par in bdae.ode_event);
-        bdae.alg_event  := list(Partition.mapEqn(par, function cleanupInitialCall(init = false)) for par in bdae.alg_event);
+        // initial() -> false, initialSimplified() -> false
+        bdae.ode        := list(Partition.mapEqn(par, function cleanupInitialCall(init = false, init0 = false)) for par in bdae.ode);
+        bdae.algebraic  := list(Partition.mapEqn(par, function cleanupInitialCall(init = false, init0 = false)) for par in bdae.algebraic);
+        bdae.ode_event  := list(Partition.mapEqn(par, function cleanupInitialCall(init = false, init0 = false)) for par in bdae.ode_event);
+        bdae.alg_event  := list(Partition.mapEqn(par, function cleanupInitialCall(init = false, init0 = false)) for par in bdae.alg_event);
         if Util.isSome(bdae.dae) then
-          bdae.dae := SOME(list(Partition.mapEqn(par, function cleanupInitialCall(init = false)) for par in Util.getOption(bdae.dae)));
+          bdae.dae := SOME(list(Partition.mapEqn(par, function cleanupInitialCall(init = false, init0 = false)) for par in Util.getOption(bdae.dae)));
         end if;
-        // initial() -> true
-        bdae.init := list(Partition.mapEqn(par, function cleanupInitialCall(init = true)) for par in bdae.init);
-
         // homotopy(actual, simplified) -> actual
-        bdae.ode        := list(Partition.mapExp(par, function cleanupHomotopy(init0 = false, hasHom = hasHom)) for par in bdae.ode);
-        bdae.algebraic  := list(Partition.mapExp(par, function cleanupHomotopy(init0 = false, hasHom = hasHom)) for par in bdae.algebraic);
-        bdae.ode_event  := list(Partition.mapExp(par, function cleanupHomotopy(init0 = false, hasHom = hasHom)) for par in bdae.ode_event);
-        bdae.alg_event  := list(Partition.mapExp(par, function cleanupHomotopy(init0 = false, hasHom = hasHom)) for par in bdae.alg_event);
+        bdae.ode        := list(Partition.mapExp(par, function cleanupHomotopy(init0 = false)) for par in bdae.ode);
+        bdae.algebraic  := list(Partition.mapExp(par, function cleanupHomotopy(init0 = false)) for par in bdae.algebraic);
+        bdae.ode_event  := list(Partition.mapExp(par, function cleanupHomotopy(init0 = false)) for par in bdae.ode_event);
+        bdae.alg_event  := list(Partition.mapExp(par, function cleanupHomotopy(init0 = false)) for par in bdae.alg_event);
         if Util.isSome(bdae.dae) then
-          bdae.dae := SOME(list(Partition.mapExp(par, function cleanupHomotopy(init0 = false, hasHom = hasHom)) for par in Util.getOption(bdae.dae)));
+          bdae.dae := SOME(list(Partition.mapExp(par, function cleanupHomotopy(init0 = false)) for par in Util.getOption(bdae.dae)));
         end if;
+
+        // check if we have init lambda0 system
+        bdae.init := list(Partition.mapExp(par, function containsLambda0(b = hasHom)) for par in bdae.init);
 
         // create init_0 if homotopy call exists.
         if Pointer.access(hasHom) then
           init_0 := list(Partition.clone(par, false) for par in bdae.init);
 
+          // initial() -> true, initialSimplified() -> true
+          init_0 := list(Partition.mapEqn(par, function cleanupInitialCall(init = true, init0 = true)) for par in init_0);
           // homotopy(actual, simplified) -> simplified
-          init_0 := list(Partition.mapExp(par, function cleanupHomotopy(init0 = true, hasHom = hasHom)) for par in init_0);
+          init_0 := list(Partition.mapExp(par, function cleanupHomotopy(init0 = true)) for par in init_0);
 
           bdae.init_0 := SOME(init_0);
         end if;
+
+        // initial() -> true, initialSimplified() -> false
+        bdae.init := list(Partition.mapEqn(par, function cleanupInitialCall(init = true, init0 = false)) for par in bdae.init);
+
       then bdae;
 
       else bdae;
@@ -633,21 +639,26 @@ public
   function cleanupInitialCall
     input output Equation eq;
     input Boolean init;
+    input Boolean init0;
   protected
     Pointer<Boolean> simplify = Pointer.create(false);
 
     function cleanupInitialCallExp
       input output Expression exp;
       input Boolean init;
+      input Boolean init0;
       input Pointer<Boolean> simplify "output, determines if when-equation should be simplified";
     algorithm
       if Expression.isCallNamed(exp, "initial") then
         exp := Expression.BOOLEAN(init);
         Pointer.update(simplify, true);
+      elseif Flags.isConfigFlagSet(Flags.ALLOW_NON_STANDARD_MODELICA, "initialSimplified") and Expression.isCallNamed(exp, "initialSimplified") then
+        exp := Expression.BOOLEAN(init0);
+        Pointer.update(simplify, true);
       end if;
     end cleanupInitialCallExp;
   algorithm
-    eq := Equation.map(eq, function cleanupInitialCallExp(init = init, simplify = simplify));
+    eq := Equation.map(eq, function cleanupInitialCallExp(init = init, init0 = init0, simplify = simplify));
     if Pointer.access(simplify) then
       eq := Equation.simplify(eq);
     end if;
@@ -656,27 +667,38 @@ public
   function cleanupHomotopy
     input output Expression exp;
     input Boolean init0 "if init0 then replace with simplified, else replace with actual";
-    input Pointer<Boolean> hasHom   "output, determines if partition contains homotopy()";
   algorithm
-    if Expression.isCallNamed(exp, "homotopy") then
-      Pointer.update(hasHom, true);
-      exp := match exp
-        case Expression.CALL()
+    exp := match exp
+      case Expression.CALL() guard Call.isNamed(exp.call, "homotopy")
         then listGet(Call.arguments(exp.call), if init0 then 2 else 1);
-
-        else exp;
-      end match;
-    end if;
+      else exp;
+    end match;
   end cleanupHomotopy;
 
   function containsHomotopyCall
     input output Expression exp;
     input Pointer<Boolean> b;
   algorithm
-    if not Pointer.access(b) then
-      Pointer.update(b, Expression.isCallNamed(exp, "homotopy"));
+    if not Pointer.access(b) and Expression.isCallNamed(exp, "homotopy") then
+      Pointer.update(b, true);
     end if;
   end containsHomotopyCall;
+
+  function containsLambda0
+    input output Expression exp;
+    input Pointer<Boolean> b;
+  algorithm
+    if not Pointer.access(b) and (
+        Expression.isCallNamed(exp, "homotopy") or
+        (
+          Flags.isConfigFlagSet(Flags.ALLOW_NON_STANDARD_MODELICA, "initialSimplified") and
+          Expression.isCallNamed(exp, "initialSimplified")
+        )
+      )
+    then
+      Pointer.update(b, true);
+    end if;
+  end containsLambda0;
 
   function removeWhenEquation
     "this function checks if an equation has to be removed before initialization.

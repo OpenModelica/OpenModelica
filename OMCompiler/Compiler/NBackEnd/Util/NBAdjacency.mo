@@ -1995,7 +1995,7 @@ public
 
       // variables in conditions are unsolvable and variables not occuring in both branches are implicit
       case Expression.IF() algorithm
-        if Expression.isCallNamed(exp.condition, "initial") then
+        if isInitialException(exp.condition) then
           // branches only in the initial system are ignored
           // only look at the falseBranch
           set   := collectDependencies(exp.falseBranch, depth, map, dep_map, sol_map, rep_set);
@@ -2151,7 +2151,7 @@ public
     list<UnorderedSet<ComponentRef>> sets1 = {};
     UnorderedSet<ComponentRef> set1, set2, diff;
   algorithm
-    if Expression.isCallNamed(body.condition, "initial") then
+    if isInitialException(body.condition) then
       // branches only in the initial system are ignored
       // only look at the 'else' branch if it exists
       if Util.isSome(body.else_if) then
@@ -2199,7 +2199,7 @@ public
     list<UnorderedSet<ComponentRef>> lst = {}, lst1, lst2;
     list<tuple<UnorderedSet<ComponentRef>, UnorderedSet<ComponentRef>>> tpl_lst = {};
   algorithm
-    if Expression.isCallNamed(body.condition, "initial") then
+    if isInitialException(body.condition) then
       // branches only in the initial system are ignored
       // traverse else when if it exists
       if Util.isSome(body.else_when) then
@@ -2323,7 +2323,7 @@ public
       case Statement.IF() algorithm
         for branch in stmt.branches loop
           // branches only in the initial system are ignored
-          if not Expression.isCallNamed(Util.tuple21(branch), "initial") then
+          if not isInitialException(Util.tuple21(branch)) then
             for s in Util.tuple22(branch) loop
               collectDependenciesAlgorithmStatement(s, candidates, result);
             end for;
@@ -2335,7 +2335,7 @@ public
       case Statement.WHEN() algorithm
         for branch in stmt.branches loop
           // branches only in the initial system are ignored
-          if not Expression.isCallNamed(Util.tuple21(branch), "initial") then
+          if not isInitialException(Util.tuple21(branch)) then
             for s in Util.tuple22(branch) loop
               collectDependenciesAlgorithmStatement(s, candidates, result);
             end for;
@@ -2358,6 +2358,12 @@ public
     Dependency.updateList(crefs, -1, false, dep_map);
     Solvability.updateList(crefs, Solvability.UNSOLVABLE(), sol_map);
   end updateConditionCrefs;
+
+  function isInitialException
+    input Expression exp;
+    output Boolean b = Expression.isCallNamed(exp, "initial") or
+      (Flags.isConfigFlagSet(Flags.ALLOW_NON_STANDARD_MODELICA, "initialSimplified") and Expression.isCallNamed(exp, "initialSimplified"));
+  end isInitialException;
 
   annotation(__OpenModelica_Interface="backend");
 end NBAdjacency;
