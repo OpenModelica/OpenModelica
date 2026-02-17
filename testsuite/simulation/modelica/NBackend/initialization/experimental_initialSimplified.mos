@@ -58,14 +58,13 @@ simulate(P.experimental_initialSimplified); getErrorString();
 //   (1)[PRMT] (1) Real y_fix0 = 1.0
 //   (2)[PRMT] (1) Real y_fix = 10.0
 //
-// Residual Variables (6)
+// Residual Variables (5)
 // ************************
 //   (0)[RES-] (1) Real $RES_AUX_5
 //   (1)[RES-] (1) Real $RES_SIM_0
 //   (2)[RES-] (1) Real $RES_AUX_6
 //   (3)[RES-] (1) Real $RES_SIM_1
 //   (4)[RES-] (1) Real $RES_AUX_7
-//   (5)[RES-] (1) Real $RES_SIM_4
 //
 // Initial Partition (Lambda = 0)
 // --------------------------------
@@ -89,14 +88,14 @@ simulate(P.experimental_initialSimplified); getErrorString();
 //
 // Algebraic Partition 1
 // -----------------------
-//   (20) Nonlinear System (size = 6, homotopy = true, mixed = false, torn = true)
-//   --Iteration Vars:{$FUN_3, u, y2, $FUN_2, y1, $FUN_1}
+//   (20) y2 := y_fix
+//   (19) Nonlinear System (size = 5, homotopy = false, mixed = false, torn = true)
+//   --Iteration Vars:{$FUN_3, u, $FUN_1, y1, $FUN_2}
 //   --(14) 0 = sin(1e-6 * u) - $FUN_3
-//   --(15) 0 = y_fix - y2
-//   --(16) 0 = ($FUN_2 + $FUN_3) - y2
+//   --(15) 0 = sin(u) - $FUN_1
+//   --(16) 0 = (u ^ 3.0 + $FUN_1) - y1
 //   --(17) 0 = sqrt(y1) - $FUN_2
-//   --(18) 0 = (u ^ 3.0 + $FUN_1) - y1
-//   --(19) 0 = sin(u) - $FUN_1
+//   --(18) 0 = ($FUN_2 + $FUN_3) - y2
 //
 // Event Partition
 // -----------------
@@ -139,14 +138,14 @@ simulate(P.experimental_initialSimplified); getErrorString();
 // allEquations:
 // ========================================
 //
-// 20:  (NONLINEAR) index:1 jacobian: false
-// crefs: $FUN_3 , u , y2 , $FUN_2 , y1 , $FUN_1
+// 20: y2=y_fix [Real]
+// 19:  (NONLINEAR) index:1 jacobian: false
+// crefs: $FUN_3 , u , $FUN_1 , y1 , $FUN_2
 // 	14: sin(1e-6 * u) - $FUN_3 (RESIDUAL)
-// 	15: y_fix - y2 (RESIDUAL)
-// 	16: $FUN_2 + $FUN_3 - y2 (RESIDUAL)
+// 	15: sin(u) - $FUN_1 (RESIDUAL)
+// 	16: u ^ 3.0 + $FUN_1 - y1 (RESIDUAL)
 // 	17: sqrt(y1) - $FUN_2 (RESIDUAL)
-// 	18: u ^ 3.0 + $FUN_1 - y1 (RESIDUAL)
-// 	19: sin(u) - $FUN_1 (RESIDUAL)
+// 	18: $FUN_2 + $FUN_3 - y2 (RESIDUAL)
 //
 // ========================================
 //
@@ -160,14 +159,14 @@ simulate(P.experimental_initialSimplified); getErrorString();
 //
 // algebraicEquations (1 systems):
 // ========================================
-// 20:  (NONLINEAR) index:1 jacobian: false
-// crefs: $FUN_3 , u , y2 , $FUN_2 , y1 , $FUN_1
+// 20: y2=y_fix [Real]
+// 19:  (NONLINEAR) index:1 jacobian: false
+// crefs: $FUN_3 , u , $FUN_1 , y1 , $FUN_2
 // 	14: sin(1e-6 * u) - $FUN_3 (RESIDUAL)
-// 	15: y_fix - y2 (RESIDUAL)
-// 	16: $FUN_2 + $FUN_3 - y2 (RESIDUAL)
+// 	15: sin(u) - $FUN_1 (RESIDUAL)
+// 	16: u ^ 3.0 + $FUN_1 - y1 (RESIDUAL)
 // 	17: sqrt(y1) - $FUN_2 (RESIDUAL)
-// 	18: u ^ 3.0 + $FUN_1 - y1 (RESIDUAL)
-// 	19: sin(u) - $FUN_1 (RESIDUAL)
+// 	18: $FUN_2 + $FUN_3 - y2 (RESIDUAL)
 //
 // ========================================
 //
@@ -277,7 +276,7 @@ simulate(P.experimental_initialSimplified); getErrorString();
 // record SimulationResult
 //     resultFile = "P.experimental_initialSimplified_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'P.experimental_initialSimplified', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully with 3 homotopy steps.
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
