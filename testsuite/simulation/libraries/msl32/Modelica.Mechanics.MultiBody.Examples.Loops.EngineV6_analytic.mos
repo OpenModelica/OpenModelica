@@ -1,7 +1,6 @@
 // name:     Modelica.Mechanics.MultiBody.Examples.Loops.EngineV6_analytic
 // keywords: simulation MSL Examples
 // status: correct
-// cflags: -d=-newInst
 //
 // Simulation Results
 // Modelica Standard Library
@@ -41,15 +40,15 @@ runScript(modelTesting);getErrorString();
 //  * Number of equations: 9016
 //  * Number of variables: 9016
 // Notification: Model statistics after passing the back-end for initialization:
-//  * Number of independent subsystems: 1478
+//  * Number of independent subsystems: 1459
 //  * Number of states: 0 ()
 //  * Number of discrete variables: 333 ('-d=discreteinfo' for list of discrete vars)
 //  * Number of discrete states: 0 ('-d=discreteinfo' for list of discrete states)
 //  * Number of clocked states: 0 ('-d=discreteinfo' for list of clocked states)
 //  * Top-level inputs: 0
-// Notification: Strong component statistics for initialization (2822):
-//  * Single equations (assignments): 2815
-//  * Array equations: 6
+// Notification: Strong component statistics for initialization (2951):
+//  * Single equations (assignments): 2920
+//  * Array equations: 30
 //  * Algorithm blocks: 0
 //  * Record equations: 0
 //  * When equations: 0
@@ -68,8 +67,8 @@ runScript(modelTesting);getErrorString();
 //  * Number of discrete states: 0 ('-d=discreteinfo' for list of discrete states)
 //  * Number of clocked states: 0 ('-d=discreteinfo' for list of clocked states)
 //  * Top-level inputs: 0
-// Notification: Strong component statistics for simulation (1343):
-//  * Single equations (assignments): 1342
+// Notification: Strong component statistics for simulation (1391):
+//  * Single equations (assignments): 1390
 //  * Array equations: 0
 //  * Algorithm blocks: 0
 //  * Record equations: 0
@@ -80,7 +79,7 @@ runScript(modelTesting);getErrorString();
 //  * Mixed (continuous/discrete) equation systems: 0
 // Notification: Torn system details for strict tearing set:
 //  * Linear torn systems (#iteration vars, #inner vars, density): 1 system
-//    {(1,455,100.0%)}
+//    {(1,473,100.0%)}
 //  * Non-linear torn systems (#iteration vars, #inner vars): 0 systems
 //
 // "true
