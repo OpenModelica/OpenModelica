@@ -2588,7 +2588,7 @@ template extFunCallVardecl(SimExtArg arg, Text &varDecls, Text &auxFunction, Boo
         <%rec_typename%>_copy_to_external(<%rhs%>, <%lhs%>);
         >>
       else
-        let &varDecls += '<%extType(ty,true,false,false)%><%lhs%>;<%\n%>'
+        let &varDecls += '<%extType(ty,true,false,false)%> <%lhs%>;<%\n%>'
         <<
         <%lhs%> = (<%extType(ty,true,false,false)%>) <%rhs%>;
         >>
