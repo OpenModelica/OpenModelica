@@ -2025,7 +2025,7 @@ namespace ModelInstance
   {
     QStringList choices;
     foreach (auto *pChoice, mChoices) {
-      if (pChoice->hasElement()) { // include comment in choice has element
+      if (pChoice->hasElement()) { // include comment in choice if has element
         choices.append(pChoice->toString(false, true));
       } else {
         choices.append(pChoice->toString(false, false));
@@ -2170,14 +2170,38 @@ namespace ModelInstance
     return mpPrefixes ? mpPrefixes.get()->isOuter() : false;
   }
 
+  /*!
+   * \brief Element::isParameter
+   * Returns true if the element is a parameter, otherwise false.
+   * First check if the element is defined as parameter in the prefixes. If not, then check in the modifiers of the extends parent element recursively.
+   * \return
+   */
   bool Element::isParameter() const
   {
-    return mpPrefixes ? mpPrefixes.get()->getVariability().compare(QStringLiteral("parameter")) == 0 : false;
+    if (isParameterInPrefixes()) {
+      return true;
+    } else if (mpParentModel && mpParentModel->getParentElement()) {
+      return mpParentModel->getParentElement()->isParameter(getName());
+    } else {
+      return false;
+    }
   }
 
+  /*!
+   * \brief Element::isInput
+   * Returns true if the element is an input, otherwise false.
+   * First check if the element is defined as input in the prefixes. If not, then check in the modifiers of the extends parent element recursively.
+   * \return
+   */
   bool Element::isInput() const
   {
-    return mpPrefixes ? mpPrefixes.get()->getDirection().compare(QStringLiteral("input")) == 0 : false;
+    if (isInputInPrefixes()) {
+      return true;
+    } else if (mpParentModel && mpParentModel->getParentElement()) {
+      return mpParentModel->getParentElement()->isInput(getName());
+    } else {
+      return false;
+    }
   }
 
   Replaceable *Element::getReplaceable() const
@@ -2374,6 +2398,70 @@ namespace ModelInstance
       }
     }
     return modifierValue;
+  }
+
+  /*!
+   * \brief Element::isParameterInPrefixes
+   * Checks if element is parameter in prefixes.
+   * \return
+   */
+  bool Element::isParameterInPrefixes() const
+  {
+    return mpPrefixes ? mpPrefixes.get()->getVariability().compare(QStringLiteral("parameter")) == 0 : false;
+  }
+
+  /*!
+   * \brief Element::isParameter
+   * Checks if element is parameter either in prefixes or in the modifier or in the parent element recursively.
+   * \param name
+   * \return
+   */
+  bool Element::isParameter(const QString &name) const
+  {
+    if (isParameterInPrefixes()) {
+      return true;
+    } else if (mpModifier) {
+      foreach (auto pModifier, mpModifier->getModifiers()) {
+        if ((pModifier->getName().compare(name) == 0) && pModifier->hasElement()) {
+          return pModifier->getElement()->isParameter(name);
+        }
+      }
+    } else if (mpParentModel && mpParentModel->getParentElement()) {
+      return mpParentModel->getParentElement()->isParameter(name);
+    }
+    return false;
+  }
+
+  /*!
+   * \brief Element::isInputInPrefixes
+   * Checks if element is input in prefixes.
+   * \return
+   */
+  bool Element::isInputInPrefixes() const
+  {
+    return mpPrefixes ? mpPrefixes.get()->getDirection().compare(QStringLiteral("input")) == 0 : false;
+  }
+
+  /*!
+   * \brief Element::isInput
+   * Checks if element is input either in prefixes or in the modifier or in the parent element recursively.
+   * \param name
+   * \return
+   */
+  bool Element::isInput(const QString &name) const
+  {
+    if (isInputInPrefixes()) {
+      return true;
+    } else if (mpModifier) {
+      foreach (auto pModifier, mpModifier->getModifiers()) {
+        if ((pModifier->getName().compare(name) == 0) && pModifier->hasElement()) {
+          return pModifier->getElement()->isInput(name);
+        }
+      }
+    } else if (mpParentModel && mpParentModel->getParentElement()) {
+      return mpParentModel->getParentElement()->isInput(name);
+    }
+    return false;
   }
 
   Extend::Extend(Model *pParentModel, const QJsonObject &jsonObject)
