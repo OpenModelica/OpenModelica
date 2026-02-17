@@ -1,7 +1,6 @@
 // name:     Modelica.Mechanics.MultiBody.Examples.Loops.EngineV6
 // keywords: simulation MSL Examples
 // status: correct
-// cflags: -d=-newInst
 //
 // Simulation Results
 // Modelica Standard Library
@@ -30,11 +29,11 @@ runScript(modelTesting);getErrorString();
 // ""
 // OpenModelicaModelTesting.Kind.VerifiedSimulation
 // Modelica.Mechanics.MultiBody.Examples.Loops.EngineV6
-// {"load.phi","load.w","filter.x[1]","filter.x[2]"}
-// Simulation options: startTime = 0.0, stopTime = 1.01, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Mechanics.MultiBody.Examples.Loops.EngineV6', options = '', outputFormat = 'mat', variableFilter = 'time|load.phi|load.w|filter.x.1.|filter.x.2.', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
+// {"load.phi", "load.w", "filter.x[1]", "filter.x[2]"}
+// Simulation options: startTime = 0.0, stopTime = 1.01, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Mechanics.MultiBody.Examples.Loops.EngineV6', options = '', outputFormat = 'mat', variableFilter = 'time|load.phi|load.w|filter.x.1.|filter.x.2.', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
 // Result file: Modelica.Mechanics.MultiBody.Examples.Loops.EngineV6_res.mat
 // Messages: LOG_STDOUT        | info    | Using sparse solver for linear system 6,
-// |                 | |       | because density of 0.176 remains under threshold of 0.200.
+// |                 | |       | because density of 0.154 remains under threshold of 0.200.
 // LOG_STDOUT        | info    | Using sparse solver for linear system 13,
 // |                 | |       | because density of 0.155 remains under threshold of 0.200.
 // LOG_STDOUT        | info    | The maximum density for using sparse solvers can be specified
@@ -46,16 +45,17 @@ runScript(modelTesting);getErrorString();
 // Notification: Model statistics after passing the front-end and creating the data structures used by the back-end:
 //  * Number of equations: 11116
 //  * Number of variables: 11116
+// Warning: The model contains alias variables with redundant start and/or conflicting nominal values. It is recommended to resolve the conflicts, because otherwise the system could be hard to solve. To print the conflicting alias sets and the chosen candidates please use -d=aliasConflicts.
 // Notification: Model statistics after passing the back-end for initialization:
-//  * Number of independent subsystems: 1885
+//  * Number of independent subsystems: 1897
 //  * Number of states: 0 ()
 //  * Number of discrete variables: 390 ('-d=discreteinfo' for list of discrete vars)
 //  * Number of discrete states: 0 ('-d=discreteinfo' for list of discrete states)
 //  * Number of clocked states: 0 ('-d=discreteinfo' for list of clocked states)
 //  * Top-level inputs: 0
-// Notification: Strong component statistics for initialization (3205):
-//  * Single equations (assignments): 3192
-//  * Array equations: 0
+// Notification: Strong component statistics for initialization (3865):
+//  * Single equations (assignments): 3816
+//  * Array equations: 36
 //  * Algorithm blocks: 0
 //  * Record equations: 0
 //  * When equations: 0
@@ -65,7 +65,7 @@ runScript(modelTesting);getErrorString();
 //  * Mixed (continuous/discrete) equation systems: 0
 // Notification: Torn system details for strict tearing set:
 //  * Linear torn systems (#iteration vars, #inner vars, density): 7 systems
-//    {(27,757,17.6%), (3,10,88.9%), (3,10,88.9%), (3,10,88.9%), (2,11,100.0%), (3,10,88.9%), (3,10,88.9%)}
+//    {(32,752,15.4%), (3,10,88.9%), (3,10,88.9%), (3,10,88.9%), (3,10,88.9%), (3,10,88.9%), (2,11,100.0%)}
 //  * Non-linear torn systems (#iteration vars, #inner vars): 6 systems
 //    {(2,12), (2,12), (2,12), (2,12), (2,12), (2,12)}
 // Notification: Model statistics after passing the back-end for simulation:

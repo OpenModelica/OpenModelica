@@ -1,7 +1,6 @@
 // name:     Modelica.Electrical.Spice3.Examples.CascodeCircuit
 // keywords: simulation MSL Examples
 // status: correct
-// cflags: -d=-newInst
 //
 // Simulation Results
 // Modelica Standard Library

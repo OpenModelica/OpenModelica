@@ -276,7 +276,7 @@ Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.SMEE_Generator_MultiPha
 
 # Run make failingtest
 FAILINGTESTFILES = \
-Modelica.Mechanics.MultiBody.Examples.Constraints.RevoluteConstraint.mos \ # this model is wrong in the currently tested MSL 3.2.1 (ticket #2584)
+Modelica.Mechanics.MultiBody.Examples.Constraints.RevoluteConstraint.mos # this model is wrong in the currently tested MSL 3.2.1 (ticket #2584) \
 Modelica.Electrical.Analog.Examples.AmplifierWithOpAmpDetailed.mos \
 Modelica.Electrical.QuasiStationary.Machines.Examples.TransformerTestbench.mos \
 Modelica.Fluid.Examples.PumpingSystem.mos \
