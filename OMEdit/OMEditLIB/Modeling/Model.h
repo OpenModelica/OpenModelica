@@ -506,6 +506,7 @@ private:
     const QString &getValue() const {return mValue;}
     const QString &getComment() const {return mComment;}
     bool hasElement() const {return mpElement != 0;}
+    Element *getElement() const {return mpElement;}
     QPair<QString, bool> getModifierValue(QStringList qualifiedModifierName) const;
   private:
     Model *mpParentModel;
@@ -738,6 +739,10 @@ private:
   private:
     virtual void deserialize_impl(const QJsonObject &jsonObject) = 0;
     static QPair<QString, bool> getModifierValueFromInheritedType(Model *pModel, QStringList modifierNames);
+    bool isParameterInPrefixes() const;
+    bool isParameter(const QString &name) const;
+    bool isInputInPrefixes() const;
+    bool isInput(const QString &name) const;
   protected:
     Model *mpParentModel;
     Model *mpModel = 0;

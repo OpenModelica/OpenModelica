@@ -1398,7 +1398,7 @@ void ElementParameters::applyFinalStartFixedAndDisplayUnitModifiers(Parameter *p
      * Redeclared but not replaceable classes should not show up in the parameter window. See issue #11311.
      * Only check for redeclare and replaceable modification for top level and when its not element modification. See issue #13334.
      */
-    if (defaultValue && (pModifier->isFinal() || (!isElementModification && pModifier->isRedeclare() && !pModifier->isReplaceable()))) {
+    if (defaultValue && (pModifier->isFinal() || (!isElementModification && !pParameter->getModelInstanceElement()->isParameter() && pModifier->isRedeclare() && !pModifier->isReplaceable()))) {
       if (mParametersList.removeOne(pParameter)) {
         delete pParameter;
       }
