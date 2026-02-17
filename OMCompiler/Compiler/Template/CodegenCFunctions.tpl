@@ -4856,6 +4856,17 @@ template jacCrefs(ComponentRef cr, Context context, Integer ix, Text &sub)
      case SIMVAR(index=-2) then crefOld(cr, ix)
 end jacCrefs;
 
+template jacSparsityIndex(ComponentRef cr, Context context)
+::=
+  match context
+    case JACOBIAN_CONTEXT(jacHT=SOME(jacHT)) then
+      match simVarFromHT(cr, jacHT)
+      case v as SIMVAR(varKind=BackendDAE.JAC_VAR()) then 'ROW <%index%> (<%crefCComment(v, crefStrNoUnderscore(name))%>)'
+      case v as SIMVAR(varKind=BackendDAE.JAC_TMP_VAR()) then 'ROW TMP <%index%> (<%crefCComment(v, crefStrNoUnderscore(name))%>)'
+      case v as SIMVAR(varKind=BackendDAE.SEED_VAR()) then 'SEED <%index%> (<%crefCComment(v, crefStrNoUnderscore(name))%>)'
+      else 'NOT FOUND'
+end jacSparsityIndex;
+
 template contextCrefIsPre(ComponentRef cr, Context context, Text &auxFunction, Boolean isPre)
   "Generates code for a component reference depending on which context we're in."
 ::=

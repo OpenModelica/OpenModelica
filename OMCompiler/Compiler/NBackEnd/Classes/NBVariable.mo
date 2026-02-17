@@ -685,6 +685,7 @@ function isJacobianResultVar
     end match;
   end isJacobianResultVarPDer;
 
+
   function isDummyState
     extends checkVar;
   algorithm
