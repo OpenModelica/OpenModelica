@@ -713,6 +713,10 @@ qreal Utilities::convertUnit(qreal value, qreal offset, qreal scaleFactor)
  */
 QStringList Utilities::extractArrayParts(const QString &input) {
   QString trimmed = input.trimmed();
+  // if input is empty then return empty list
+  if (trimmed.isEmpty()) {
+    return QStringList();
+  }
   // If input is NOT an array (doesn't start with { and end with }), return it as single element
   if (!trimmed.startsWith('{') || !trimmed.endsWith('}')) {
     return QStringList{ trimmed };
@@ -802,7 +806,7 @@ QString Utilities::arrayExpressionUnitConversion(OMCProxy *pOMCProxy, QString va
       convertedValues.append(value);
     }
   }
-  return QString("{%1}").arg(convertedValues.join(","));
+  return convertedValues.isEmpty() ? "" : QString("{%1}").arg(convertedValues.join(","));
 }
 
 Label* Utilities::getHeadingLabel(QString heading)
