@@ -931,6 +931,25 @@ public
     end match;
   end getVariables;
 
+  function getVariableCrefs
+    input StrongComponent comp;
+    output list<ComponentRef> var_crefs;
+  algorithm
+    var_crefs := match comp
+      case SINGLE_COMPONENT()     then {BVariable.getVarName(comp.var)};
+      case MULTI_COMPONENT()      then list(BVariable.getVarName(Slice.getT(v)) for v in comp.vars);
+      case SLICED_COMPONENT()     then {comp.var_cref};
+      case RESIZABLE_COMPONENT()  then {comp.var_cref};
+      case GENERIC_COMPONENT()    then {comp.var_cref};
+      case ENTWINED_COMPONENT()   then List.flatten(list(list(BVariable.getVarName(var) for var in getVariables(slice)) for slice in comp.entwined_slices));
+      case ALGEBRAIC_LOOP()       then list(BVariable.getVarName(var) for var in Tearing.getVariables(comp.strict));
+      case ALIAS()                then getVariableCrefs(comp.original);
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of wrong component: " + toString(comp)});
+      then fail();
+    end match;
+  end getVariableCrefs;
+
   function getVarCref
     input StrongComponent comp;
     output ComponentRef var_cref;

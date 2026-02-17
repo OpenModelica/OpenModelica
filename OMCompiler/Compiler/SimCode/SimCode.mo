@@ -70,6 +70,35 @@ type ExtAlias = tuple<DAE.ComponentRef, DAE.ComponentRef>;
 type SparsityPattern = list< tuple<Integer, list<Integer>> >;
 type NonlinearPattern = SparsityPattern; // same structure but different name for the sake of maintenance
 
+
+uniontype Dependency
+  "the dependency kind to show how a component reference occurs in an equation.
+  for each dimension there has to be one dependency kind."
+  record DEPENDENCY
+    array<list<Integer>> skips;
+    list<Boolean> kinds "true = reduced, false = regular"; // Fixme: enumerations don't seem to work for codegen
+  end DEPENDENCY;
+end Dependency;
+
+uniontype SparsityRow
+  record SPARSITY_ROW
+    DAE.ComponentRef equation_name "only for debugging";
+    list<BackendDAE.SimIterator> equation_iterators;
+    list<tuple<DAE.ComponentRef, Dependency, Boolean /*true=repeated*/>> dependencies;
+    list<DAE.ComponentRef> solved_crefs;
+  end SPARSITY_ROW;
+end SparsityRow;
+
+uniontype Sparsity
+  "the new resizable sparsity pattern for the NB"
+  record SPARSITY
+    list<SparsityRow> rows;
+  end SPARSITY;
+
+  record EMPTY
+  end EMPTY;
+end Sparsity;
+
 uniontype JacobianColumn
   record JAC_COLUMN
     list<SimEqSystem> columnEqns;       // column equations equals in size to column vars
@@ -84,6 +113,7 @@ uniontype JacobianMatrix
     list<JacobianColumn> columns;       // columns equations and variables
     list<SimCodeVar.SimVar> seedVars;   // corresponds to the number of columns
     String matrixName;                  // unique matrix name
+    Sparsity sparsityMatrix;            // new backend sparsity
     SparsityPattern sparsity;
     SparsityPattern sparsityT;
     NonlinearPattern nonlinear;
@@ -99,7 +129,8 @@ uniontype JacobianMatrix
   end JAC_MATRIX;
 end JacobianMatrix;
 
-constant JacobianMatrix emptyJacobian = JAC_MATRIX({}, {}, "", {}, {}, {}, {}, {}, {}, 0, -1, 0, {}, NONE(), false);
+constant JacobianMatrix emptyJacobian = JAC_MATRIX({}, {}, "", Sparsity.EMPTY(),
+  {}, {}, {}, {}, {}, {}, 0, -1, 0, {}, NONE(), false);
 constant PartitionData emptyPartitionData = PARTITIONDATA(-1,{},{},{});
 
 

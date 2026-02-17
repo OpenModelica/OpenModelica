@@ -41,6 +41,9 @@ protected
   // OF imports
   import Absyn.Path;
 
+  // Old Simcode imports
+  import OldSimCode = SimCode;
+
   // NF imports
   import Call = NFCall;
   import ComponentRef = NFComponentRef;
@@ -398,9 +401,10 @@ public
 
     record SPARSITY
       array<ComponentRef> equation_names;
+      array<Iterator> equation_iterators;
       array<UnorderedMap<ComponentRef, Dependency>> dependencies;
       array<UnorderedSet<ComponentRef>> repetitions;
-      array<list<Pointer<Variable>>> solved_variables;
+      array<list<ComponentRef>> solved_crefs;
     end SPARSITY;
 
     function createFull
@@ -469,18 +473,26 @@ public
     function fullToSparsity
       input Matrix full;
       input list<StrongComponent> comps;
-      output Matrix sparse;
+      input UnorderedSet<ComponentRef> seed_set;
+      input UnorderedSet<ComponentRef> pder_set;
+      output Matrix sparsity;
 
       type Dependencies = list<ComponentRef>;
+      function filterSet
+        input ComponentRef cref;
+        input UnorderedSet<ComponentRef> set;
+        output Boolean b = UnorderedSet.contains(ComponentRef.stripSubscriptsAll(cref), set);
+      end filterSet;
     algorithm
-      sparse := match full
+      sparsity := match full
         local
           UnorderedMap<ComponentRef, Integer> index_map = UnorderedMap.new<Integer>(ComponentRef.hash, ComponentRef.isEqual);
           UnorderedMap<ComponentRef, Dependencies> inner_map = UnorderedMap.new<Dependencies>(ComponentRef.hash, ComponentRef.isEqual);
           list<Pointer<Equation>> eqns;
-          list<Pointer<Variable>> vars;
-          ComponentRef eqn_name, dep_cref;
+          list<ComponentRef> var_crefs, pder_crefs, tmp_crefs;
+          ComponentRef eqn_name, dep_cref, seed_cref, pder_cref;
           Integer eqn_index;
+          Iterator iter;
           Dependency dep;
           list<tuple<list<ComponentRef>, Dependency, Boolean>> local_deps;
           Boolean repeated;
@@ -490,9 +502,10 @@ public
           UnorderedSet<ComponentRef> rep_set;
 
           list<ComponentRef> eqn_names = {};
+          list<Iterator> eqn_iters = {};
           list<UnorderedMap<ComponentRef, Dependency>> deps = {};
           list<UnorderedSet<ComponentRef>> reps = {};
-          list<list<Pointer<Variable>>> solved_vars = {};
+          list<list<ComponentRef>> solved_crefs = {};
 
 
         case FULL() algorithm
@@ -507,15 +520,16 @@ public
           //    if it is an inner equation save the mapping to tmp name -> deps
           //    if it is a result equation save the mapping to final name -> deps
           for comp in comps loop
-            eqns := StrongComponent.getEquations(comp);
-            vars := StrongComponent.getVariables(comp);
+            eqns      := StrongComponent.getEquations(comp);
+            var_crefs := StrongComponent.getVariableCrefs(comp);
+
             for eqn in eqns loop
               eqn_name    := Equation.getEqnName(eqn);
               eqn_index   := UnorderedMap.getSafe(eqn_name, index_map, sourceInfo());
-              local_deps  := {};
-              changed     := false;
 
               // map the dependencies with the inner maps
+              local_deps  := {};
+              changed     := false;
               for tpl in UnorderedMap.toList(full.dependencies[eqn_index]) loop
                 (dep_cref, dep) := tpl;
                 repeated := UnorderedSet.contains(dep_cref, full.repetitions[eqn_index]);
@@ -526,35 +540,49 @@ public
                 local_deps := (inner_deps, dep, repeated) :: local_deps;
               end for;
 
-              if List.any(vars, BVariable.isJacobianResultVar) then
-                if changed then
-                  // if anything changed create a new dependency map for this row and get all relevant
-                  dep_map := UnorderedMap.new<Dependency>(ComponentRef.hash, ComponentRef.isEqual);
-                  rep_set := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
-                  for tpl in local_deps loop
-                    // this might lead to duplicate occurences. can and should not be optimized here
-                    // as dependency information might not be combinable. optimize afterwards!
-                    (inner_deps, dep, repeated) := tpl;
-                    for dep_cref in inner_deps loop
-                      UnorderedMap.add(dep_cref, dep, dep_map);
+              (pder_crefs, tmp_crefs) := List.splitOnTrue(var_crefs, function filterSet(set = pder_set));
+
+              // handle result rows
+              if not listEmpty(pder_crefs) then
+               // create a new dependency map for this row and get all relevant seeds
+                dep_map := UnorderedMap.new<Dependency>(ComponentRef.hash, ComponentRef.isEqual);
+                rep_set := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
+                for tpl in local_deps loop
+                  // this might lead to duplicate occurences. can and should not be optimized here
+                  // as dependency information might not be combinable. optimize afterwards!
+                  // ToDo: combine dependencies
+                  (inner_deps, dep, repeated) := tpl;
+                  for dep_cref in inner_deps loop
+                    if filterSet(dep_cref, seed_set) then
+                      seed_cref := BVariable.getPartnerCref(dep_cref, BVariable.getVarSeed);
+                      UnorderedMap.add(seed_cref, dep, dep_map);
                       if repeated then
-                        UnorderedSet.add(dep_cref, rep_set);
+                        UnorderedSet.add(seed_cref, rep_set);
                       end if;
-                    end for;
+                    end if;
                   end for;
+                end for;
+
+                try
+                  pder_crefs := list(BVariable.getPartnerCref(cref, BVariable.getVarPDer) for cref in pder_crefs);
                 else
-                  // nothing changed, just use the original dependencies
-                  dep_map := full.dependencies[eqn_index];
-                  rep_set := full.repetitions[eqn_index];
-                end if;
+                  Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + List.toString(pder_crefs, ComponentRef.toString)
+                    + " because they were supposed to be a row vars but at least one does not have a corresponding partial derivative."});
+                  fail();
+                end try;
 
                 // save the row/result dependencies
-                eqn_names   := eqn_name :: eqn_names;
-                deps        := dep_map :: deps;
-                reps        := rep_set :: reps;
-                solved_vars := vars :: solved_vars;
-              else
-                if changed then
+                // get the iterators (potentially need local iterators?)
+                eqn_names     := eqn_name :: eqn_names;
+                eqn_iters     := Equation.getForIterator(Pointer.access(eqn)) :: eqn_iters;
+                deps          := dep_map :: deps;
+                reps          := rep_set :: reps;
+                solved_crefs  := pder_crefs :: solved_crefs;
+              end if;
+
+              // handle inner temporary dependencies
+              if not listEmpty(tmp_crefs) then
+               if changed then
                   // some dependencies were mapped. additional dependency information is irrelevant
                   inner_deps := List.flatten(list(Util.tuple31(tpl) for tpl in local_deps));
                   inner_deps := UnorderedSet.unique_list(inner_deps, ComponentRef.hash, ComponentRef.isEqual);
@@ -562,20 +590,29 @@ public
                   // nothing changed, just use the original dependencies
                   inner_deps := UnorderedMap.keyList(full.dependencies[eqn_index]);
                 end if;
-                // add the inner dependencies
-                for var in vars loop
-                  UnorderedMap.add(BVariable.getVarName(var), inner_deps, inner_map);
+
+                // filter inner dependencies for relevant seeds and add
+                inner_deps := List.filterOnTrue(inner_deps, function filterSet(set = seed_set));
+                for cref in tmp_crefs loop
+                  UnorderedMap.add(cref, inner_deps, inner_map);
                 end for;
               end if;
             end for;
           end for;
-        then SPARSITY(listArray(listReverse(eqn_names)), listArray(listReverse(deps)), listArray(listReverse(reps)), listArray(listReverse(solved_vars)));
+        then SPARSITY(
+          equation_names      = listArray(listReverse(eqn_names)),
+          equation_iterators  = listArray(listReverse(eqn_iters)),
+          dependencies        = listArray(listReverse(deps)),
+          repetitions         = listArray(listReverse(reps)),
+          solved_crefs        = listArray(listReverse(solved_crefs)));
 
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of wrong matrix type.
             Expected: full, Got :" + strictnessString(getStrictness(full)) + "."});
         then fail();
       end match;
+
+      print(toString(sparsity) + "\n");
     end fullToSparsity;
 
     function upgrade
@@ -978,6 +1015,43 @@ public
       end if;
     end compress;
 
+    function combine
+      "for now only combines sparsity matrices as its the only one needed"
+      input list<Matrix> matrices;
+      output Matrix result;
+    protected
+      list<list<ComponentRef>> equation_names = {};
+      list<list<Iterator>> equation_iterators = {};
+      list<list<UnorderedMap<ComponentRef, Dependency>>> dependencies = {};
+      list<list<UnorderedSet<ComponentRef>>> repetitions = {};
+      list<list<list<ComponentRef>>> solved_crefs = {};
+    algorithm
+      for matrix in listReverse(matrices) loop
+        _ := match matrix
+          case SPARSITY() algorithm
+            equation_names      := arrayList(matrix.equation_names) :: equation_names;
+            equation_iterators  := arrayList(matrix.equation_iterators) :: equation_iterators;
+            dependencies        := arrayList(matrix.dependencies) :: dependencies;
+            repetitions         := arrayList(matrix.repetitions) :: repetitions;
+            solved_crefs        := arrayList(matrix.solved_crefs) :: solved_crefs;
+          then ();
+
+          else algorithm
+            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " expected type sparsity, got type " + strictnessString(getStrictness(matrix)) + "."});
+          then fail();
+        end match;
+      end for;
+
+      // compile the final result
+      result := SPARSITY(
+        equation_names      = listArray(List.flatten(equation_names)),
+        equation_iterators  = listArray(List.flatten(equation_iterators)),
+        dependencies        = listArray(List.flatten(dependencies)),
+        repetitions         = listArray(List.flatten(repetitions)),
+        solved_crefs        = listArray(List.flatten(solved_crefs))
+      );
+    end combine;
+
     function toString
       input Matrix adj;
       input output String str = "";
@@ -985,7 +1059,7 @@ public
       str := match adj
         local
           list<Type> types;
-          array<String> vars, names, types_str, complex_sizes;
+          array<String> solved, names, types_str, complex_sizes;
           Integer length0, length1, length2, length3;
 
         case FULL() algorithm
@@ -1027,18 +1101,18 @@ public
           complex_sizes := listArray(list(Util.applyOptionOrDefault(Type.complexSize(ty, true), intString, "0") for ty in types));
           types_str := listArray(list(dimsString(Type.arrayDims(ty)) for ty in types));
           names := listArray(list(ComponentRef.toString(name) for name in adj.equation_names));
-          vars := listArray(list(List.toString(var_list, BVariable.pointerToString) for var_list in adj.solved_variables));
+          solved := listArray(list(List.toString(var_list, ComponentRef.toString) for var_list in adj.solved_crefs));
           length0 := max(stringLength(sz) for sz in complex_sizes);
           length1 := max(stringLength(ty) for ty in types_str) + 1;
           length2 := max(stringLength(name) for name in names) + 3;
-          length3 := max(stringLength(var) for var in vars) + 3;
+          length3 := max(stringLength(var) for var in solved) + 3;
           for i in 1:arrayLength(names) loop
             str := str
               + arrayGet(complex_sizes, i) + " " + StringUtil.repeat(" ", length0 - stringLength(arrayGet(complex_sizes, i))) + " | "
               + arrayGet(types_str, i) + " " + StringUtil.repeat(".", length1 - stringLength(arrayGet(types_str, i)))
               + arrayGet(names, i) + " " + StringUtil.repeat(".", length2 - stringLength(arrayGet(names, i)))
-              + arrayGet(vars, i) + " " + StringUtil.repeat(".", length3 - stringLength(arrayGet(vars, i)))
-              + " " + List.toString(UnorderedMap.keyList(adj.dependencies[i]), function sparseString(dep_map = adj.dependencies[i],
+              + arrayGet(solved, i) + " " + StringUtil.repeat(".", length3 - stringLength(arrayGet(solved, i)))
+              + " " + List.toString(UnorderedMap.keyList(adj.dependencies[i]), function sparsityString(dep_map = adj.dependencies[i],
               rep_set = adj.repetitions[i])) + "\n";
           end for;
         then str;
@@ -1274,7 +1348,7 @@ public
       str := str + "]";
     end fullString;
 
-    function sparseString
+    function sparsityString
       input ComponentRef cref;
       input UnorderedMap<ComponentRef, Dependency> dep_map;
       input UnorderedSet<ComponentRef> rep_set;
@@ -1283,7 +1357,7 @@ public
       str := str + Dependency.toString(UnorderedMap.getSafe(cref, dep_map, sourceInfo()));
       if UnorderedSet.contains(cref, rep_set) then str := str + "+"; end if;
       str := str + "]";
-    end sparseString;
+    end sparsityString;
 
     function dimsString
       input list<Dimension> dims;
@@ -1651,6 +1725,18 @@ public
         end match;
       end for;
     end categorize;
+
+    function convert
+      input Dependency dep;
+      output OldSimCode.Dependency odep;
+    protected
+      function convertKind
+        input Kind kind;
+        output Boolean okind = kind == Kind.REDUCTION;
+      end convertKind;
+    algorithm
+      odep := OldSimCode.DEPENDENCY(dep.skips, list(convertKind(kind) for kind in dep.kinds));
+    end convert;
   end Dependency;
 
   uniontype Solvability

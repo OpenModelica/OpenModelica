@@ -391,6 +391,33 @@ package SimCode
   type SparsityPattern = list<tuple<Integer, list<Integer>>>;
   type NonlinearPattern = SparsityPattern;
 
+
+  uniontype Dependency
+    record DEPENDENCY
+      array<list<Integer>> skips;
+      list<Boolean> kinds "true = reduced, false = regular";
+    end DEPENDENCY;
+  end Dependency;
+
+uniontype SparsityRow
+  record SPARSITY_ROW
+    DAE.ComponentRef equation_name;
+    list<BackendDAE.SimIterator> equation_iterators;
+    list<tuple<DAE.ComponentRef, Dependency, Boolean>> dependencies;
+    list<DAE.ComponentRef> solved_crefs;
+  end SPARSITY_ROW;
+end SparsityRow;
+
+  uniontype Sparsity
+    record SPARSITY
+      list<SparsityRow> rows;
+    end SPARSITY;
+
+    record EMPTY
+    end EMPTY;
+  end Sparsity;
+
+
   uniontype JacobianColumn
     record JAC_COLUMN
       list<SimEqSystem> columnEqns;
@@ -405,6 +432,7 @@ package SimCode
       list<JacobianColumn> columns;
       list<SimCodeVar.SimVar> seedVars;
       String matrixName;
+      Sparsity sparsityMatrix;
       SparsityPattern sparsity;
       SparsityPattern sparsityT;
       NonlinearPattern nonlinear;

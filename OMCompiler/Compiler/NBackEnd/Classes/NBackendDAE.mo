@@ -77,6 +77,7 @@ protected
   import Variable = NFVariable;
 
   // New Backend imports
+  import Adjacency = NBAdjacency;
   import Alias = NBAlias;
   import BackendDAE = NBackendDAE;
   import Bindings = NBBindings;
@@ -127,7 +128,7 @@ public
     JacobianType jacType              "type of jacobian";
     VarData varData                   "Variable data";
     array<StrongComponent> comps      "the sorted equations";
-    //Adjacency.Matrix sparsity         "new sparsity pattern";
+    Adjacency.Matrix sparsity         "new sparsity pattern";
     SparsityPattern sparsityPattern   "Sparsity pattern for the jacobian";
     SparsityColoring sparsityColoring "Coloring information";
     Boolean isAdjoint                 "is this an adjoint jacobian?";
