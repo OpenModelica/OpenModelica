@@ -52,6 +52,8 @@ void UtilitiesTest::extractArrayParts_data()
   QTest::addColumn<QString>("input");
   QTest::addColumn<QStringList>("expected");
 
+  QTest::newRow("Empty string") << "" << (QStringList{});
+  QTest::newRow("Empty array") << "{}" << (QStringList{});
   QTest::newRow("Simple array") << "{1, 2, 3}" << (QStringList{"1", "2", "3"});
   QTest::newRow("Quoted strings") << "{\"one\", \"two, three\"}" << (QStringList{"one", "two, three"});
   QTest::newRow("Mixed values") << "{1.2, \"hello\", var}" << (QStringList{"1.2", "hello", "var"});

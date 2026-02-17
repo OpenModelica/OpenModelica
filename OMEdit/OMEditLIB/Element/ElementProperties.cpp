@@ -2026,46 +2026,46 @@ void ElementParameters::updateElementParameters()
     if (pParameter->getGroup().isEmpty()) {
       continue;
     }
-    ElementModifier elementModifier;
-    elementModifier.mName = pParameter->getName();
-    elementModifier.mExtendName = pParameter->getExtendName();
-    elementModifier.mInherited = pParameter->isInherited();
-    elementModifier.mKey = pParameter->getName();
-    QString elementModifierValue = pParameter->getValue();
-    elementModifier.mIsReplaceable = (pParameter->isReplaceableComponent() || pParameter->isReplaceableClass());
-    elementModifier.mFinal = pParameter->getFinalEachMenu()->isFinal();
-    elementModifier.mEach = pParameter->getFinalEachMenu()->isEach();
-    elementModifier.mBreak = pParameter->getFinalEachMenu()->isBreak();
-    elementModifier.mStartAndFixed = pParameter->isShowStartAndFixed();
-    // if break
-    if (elementModifier.mBreak) {
-      elementModifierValue = Helper::BREAK;
-    } else {
-      // convert the value to display unit
-      if (!pParameter->getUnit().isEmpty()
-          && pParameter->getUnit().compare(pParameter->getUnitComboBox()->itemData(pParameter->getUnitComboBox()->currentIndex()).toString()) != 0) {
-        bool ok = true;
-        qreal elementModifierRealValue = elementModifierValue.toDouble(&ok);
-        // if the modifier is a literal constant
-        if (ok) {
-          OMCInterface::convertUnits_res convertUnit = pOMCProxy->convertUnits(pParameter->getUnitComboBox()->itemData(pParameter->getUnitComboBox()->currentIndex()).toString(),
-                                                                               pParameter->getUnit());
-          if (convertUnit.unitsCompatible) {
-            elementModifierRealValue = Utilities::convertUnit(elementModifierRealValue, convertUnit.offset, convertUnit.scaleFactor);
-            elementModifierValue = StringHandler::number(elementModifierRealValue);
-          }
-        } else { // if expression
-          elementModifierValue = Utilities::arrayExpressionUnitConversion(pOMCProxy, elementModifierValue,
-                                                                          pParameter->getUnitComboBox()->itemData(pParameter->getUnitComboBox()->currentIndex()).toString(),
-                                                                          pParameter->getUnit());
-        }
-      }
-    }
 
     QStringList subModifiers;
     // if value is changed
     if (pParameter->isValueModified()) {
       valueChanged = true;
+      ElementModifier elementModifier;
+      elementModifier.mName = pParameter->getName();
+      elementModifier.mExtendName = pParameter->getExtendName();
+      elementModifier.mInherited = pParameter->isInherited();
+      elementModifier.mKey = pParameter->getName();
+      QString elementModifierValue = pParameter->getValue();
+      elementModifier.mIsReplaceable = (pParameter->isReplaceableComponent() || pParameter->isReplaceableClass());
+      elementModifier.mFinal = pParameter->getFinalEachMenu()->isFinal();
+      elementModifier.mEach = pParameter->getFinalEachMenu()->isEach();
+      elementModifier.mBreak = pParameter->getFinalEachMenu()->isBreak();
+      elementModifier.mStartAndFixed = pParameter->isShowStartAndFixed();
+      // if break
+      if (elementModifier.mBreak) {
+        elementModifierValue = Helper::BREAK;
+      } else {
+        // convert the value to display unit
+        if (!pParameter->getUnit().isEmpty()
+            && pParameter->getUnit().compare(pParameter->getUnitComboBox()->itemData(pParameter->getUnitComboBox()->currentIndex()).toString()) != 0) {
+          bool ok = true;
+          qreal elementModifierRealValue = elementModifierValue.toDouble(&ok);
+          // if the modifier is a literal constant
+          if (ok) {
+            OMCInterface::convertUnits_res convertUnit = pOMCProxy->convertUnits(pParameter->getUnitComboBox()->itemData(pParameter->getUnitComboBox()->currentIndex()).toString(),
+                                                                                 pParameter->getUnit());
+            if (convertUnit.unitsCompatible) {
+              elementModifierRealValue = Utilities::convertUnit(elementModifierRealValue, convertUnit.offset, convertUnit.scaleFactor);
+              elementModifierValue = StringHandler::number(elementModifierRealValue);
+            }
+          } else { // if expression
+            elementModifierValue = Utilities::arrayExpressionUnitConversion(pOMCProxy, elementModifierValue,
+                                                                            pParameter->getUnitComboBox()->itemData(pParameter->getUnitComboBox()->currentIndex()).toString(),
+                                                                            pParameter->getUnit());
+          }
+        }
+      }
       // set start value
       if (pParameter->isShowStartAndFixed()) {
         QString startModifier;
