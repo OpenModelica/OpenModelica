@@ -2470,26 +2470,26 @@ template extFunCallC(Function fun, Text &preExp, Text &varDecls, Text &auxFuncti
 match fun
 case EXTERNAL_FUNCTION(__) then
   /* adpro: 2011-06-24 do vardecls -> extArgs as there might be some sets in there! */
-  let &preExp += (List.union(extArgs, extArgs) |> arg => extFunCallVardecl(arg, &varDecls, &auxFunction, false) ;separator="\n")
+  let &preExp += (List.union(extArgs, extArgs) |> arg => extFunCallVardecl(arg, &varDecls, &auxFunction, false) ;separator="\n") + "\n"
   let _ = (biVars |> bivar => extFunCallBiVar(bivar, &preExp, &varDecls, &auxFunction) ;separator="\n")
   let fname = if dynamicLoad then 'ptr_<%extFunctionName(extName, language)%>' else '<%extName%>'
   let dynamicCheck = if dynamicLoad then
-  <<
-  if(<%fname%>==NULL)
-  {
-    FILE_INFO info = {<%infoArgs(info)%>};
-    omc_terminate(info, "dynamic external function <%extFunctionName(extName, language)%> not set!");
-  } else
-  >>
+      <<
+      if(<%fname%>==NULL)
+      {
+        FILE_INFO info = {<%infoArgs(info)%>};
+        omc_terminate(info, "dynamic external function <%extFunctionName(extName, language)%> not set!");
+      } else
+      >>
     else ''
   let args = (extArgs |> arg => extArg(arg, &preExp, &varDecls, &auxFunction) ;separator=", ")
   let returnAssign = match extReturn case SIMEXTARG(cref=c) then
       '<%extVarName(c)%> = '
     else
       ""
-  /*https://github.com/OpenModelica/OpenModelica/issues/9681
+  /* https://github.com/OpenModelica/OpenModelica/issues/9681
    * ModelicaError should be handled as assert failing with AssertionLevel = error
-  */
+   */
   let modelicaError = match extName
     case "ModelicaError" then
       <<
@@ -2541,9 +2541,10 @@ case EXTERNAL_FUNCTION(__) then
 end extFunCallF77;
 
 template extFunCallVardecl(SimExtArg arg, Text &varDecls, Text &auxFunction, Boolean isReturn)
- "Helper to extFunCall."
+ "Helper to extFunCall. Generate variable declarations."
 ::=
   match arg
+  // Input array argument
   case SIMEXTARG(isInput = true, isArray = true, type_ = ty, cref = c) then
     match expTypeShort(ty)
     case "integer" then
@@ -2551,17 +2552,21 @@ template extFunCallVardecl(SimExtArg arg, Text &varDecls, Text &auxFunction, Boo
       let &varDecls += 'integer_array <%var_name%>_packed;<%\n%>'
       'pack_alloc_integer_array(&<%var_name%>, &<%var_name%>_packed);<%\n%>'
     else ""
+
+  // Array argument (string)
   case SIMEXTARG(isInput = false, isArray = true, type_ = ty, cref = c) then
     match expTypeShort(ty)
     case "string" then
       'fill_string_array(&<%contextCrefNoPrevExp(c,contextFunction,&auxFunction)%>, mmc_string_uninitialized);<%\n%>'
     else ""
-  case SIMEXTARG(isInput=true, isArray=false, type_=ty, cref=c) then
+
+  // Input scalar argument
+  case SIMEXTARG(isInput = true, isArray = false, type_ = ty, cref = c) then
     match ty
     case T_STRING(__) then
       ""
     case T_FUNCTION_REFERENCE_VAR(__) then
-      (match c
+      match c
       case CREF_IDENT(__) then
         let &varDecls += 'modelica_fnptr <%extVarName(c)%>;<%\n%>'
         <<
@@ -2571,7 +2576,7 @@ template extFunCallVardecl(SimExtArg arg, Text &varDecls, Text &auxFunction, Boo
         <%extVarName(c)%> = <%if Flags.isSet(Flags.OMC_RELOCATABLE_FUNCTIONS) then '*(void**)' %>MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_<%ident%>), 1));
         >>
       else
-        error(sourceInfo(), 'Got function pointer that is not a CREF_IDENT: <%crefStr(c)%>, <%unparseType(ty)%>'))
+        error(sourceInfo(), 'Got function pointer that is not a CREF_IDENT: <%crefStr(c)%>, <%unparseType(ty)%>')
     else
       let lhs = extVarName(c)
       let rhs = contextCrefNoPrevExp(c,contextFunction,&auxFunction)
@@ -2583,12 +2588,13 @@ template extFunCallVardecl(SimExtArg arg, Text &varDecls, Text &auxFunction, Boo
         <%rec_typename%>_copy_to_external(<%rhs%>, <%lhs%>);
         >>
       else
-        let &varDecls += '<%extType(ty,true,false,false)%> <%lhs%>;<%\n%>'
+        let &varDecls += '<%extType(ty,true,false,false)%><%lhs%>;<%\n%>'
         <<
-        <%lhs%> = (<%extType(ty,true,false,false)%>)<%rhs%>;
+        <%lhs%> = (<%extType(ty,true,false,false)%>) <%rhs%>;
         >>
 
-  case SIMEXTARG(outputIndex=oi, isArray=false, type_=ty, cref=c) then
+  // Output Scalar (outputIndex > 0)
+  case SIMEXTARG(outputIndex = oi, isArray = false, type_ = ty, cref = c) then
     match oi case 0 then
       ""
     else
@@ -2683,28 +2689,35 @@ template extFunCallBiVarF77(Variable var, Text &preExp, Text &varDecls, Text &au
 end extFunCallBiVarF77;
 
 template extFunCallVarcopy(SimExtArg arg, Text &auxFunction)
- "Helper to extFunCall."
+ "Helper to extFunCall. Unpack/copy for output of external function call."
 ::=
-match arg
-case SIMEXTARG(outputIndex=0) then ""
-case SIMEXTARG(outputIndex=oi, isInput=isInput, isArray=true, cref=c, type_=ty) then
-  let var_name = contextCrefNoPrevExp(c, contextFunction, &auxFunction)
-  match expTypeShort(ty)
-    case "integer" then
-      if isInput then
-        'unpack_copy_integer_array(&<%var_name%>_packed, &<%var_name%>);'
-      else
-        'unpack_integer_array(&<%var_name%>);'
-    case "string" then 'unpack_string_array(&<%var_name%>, <%var_name%>_c89);'
-    else ""
-case SIMEXTARG(outputIndex=oi, isArray=false, type_ = ty as T_COMPLEX(complexClassType=RECORD(__)), cref=c) then
+  match arg
+  // Not an output
+  case SIMEXTARG(outputIndex=0) then ""
+
+  // Array output
+  case SIMEXTARG(outputIndex=oi, isInput=isInput, isArray=true, cref=c, type_=ty) then
+    let var_name = contextCrefNoPrevExp(c, contextFunction, &auxFunction)
+    match expTypeShort(ty)
+      case "integer" then
+        if isInput then
+          'unpack_copy_integer_array(&<%var_name%>_packed, &<%var_name%>);'
+        else
+          'unpack_integer_array(&<%var_name%>);'
+      case "string" then 'unpack_string_array(&<%var_name%>, <%var_name%>_c89);'
+      else ""
+
+  // Scalar record output
+  case SIMEXTARG(outputIndex=oi, isArray=false, type_=ty as T_COMPLEX(complexClassType=RECORD(__)), cref=c) then
     let rhs = extVarName(c)
     let lhs = contextCrefNoPrevExp(c,contextFunction,&auxFunction)
     let rec_typename = expTypeShort(ty)
     <<
     <%expTypeShort(ty)%>_copy_from_external(<%rhs%>, <%lhs%>);
     >>
-case SIMEXTARG(outputIndex=oi, isArray=false, type_=ty, cref=c) then
+
+  // Scalar output
+  case SIMEXTARG(outputIndex=oi, isArray=false, type_=ty, cref=c) then
     let cr = '<%extVarName(c)%>'
     <<
     <%contextCrefNoPrevExp(c,contextFunction,&auxFunction)%> = (<%expTypeModelica(ty)%>)<%
@@ -2733,17 +2746,19 @@ case SIMEXTARG(outputIndex=oi, isArray=ai, type_=ty, cref=c) then
 end extFunCallVarcopyF77;
 
 template extArg(SimExtArg extArg, Text &preExp, Text &varDecls, Text &auxFunction)
- "Helper to extFunCall."
+ "Helper to extFunCall. Access data of external function argument."
 ::=
   match extArg
+  // Array argument
   case SIMEXTARG(cref=c, outputIndex=oi, isArray=true, type_=t, isInput=isInput) then
     let name = contextCrefNoPrevExp(c,contextFunction,&auxFunction)
     let shortTypeStr = expTypeShort(t)
     let &varDecls += 'void *<%name%>_c89;<%\n%>'
-    //let arg_name = match shortTypeStr case "integer" then '<%name%>_packed' else name
     let arg_name = if isInput then (match shortTypeStr case "integer" then '<%name%>_packed' else name) else name
     let &preExp += '<%name%>_c89 = (void*) data_of_<%shortTypeStr%>_c89_array(<%arg_name%>);<%\n%>'
     '(<%extType(t,isInput,true,false)%>) <%name%>_c89'
+
+  // Scalar argument, no output
   case SIMEXTARG(cref=c, isInput=ii, outputIndex=0, type_=t) then
     match t
     case T_STRING(__) then
@@ -2751,10 +2766,15 @@ template extArg(SimExtArg extArg, Text &preExp, Text &varDecls, Text &auxFunctio
       'MMC_STRINGDATA(<%cr%>)'
     case T_COMPLEX(complexClassType=RECORD(__)) then '&<%extVarName(c)%>'
     else extVarName(c)
+
+  // Scalar output
   case SIMEXTARG(cref=c, isInput=ii, outputIndex=oi, type_=t) then
     '&<%extVarName(c)%>'
+
   case SIMEXTARGEXP(__) then
     daeExternalCExp(exp, contextFunction, &preExp, &varDecls, &auxFunction)
+
+  // Size argument
   case SIMEXTARGSIZE(cref=c) then
     let typeStr = expTypeShort(type_)
     let name = contextCrefNoPrevExp(c,contextFunction, &auxFunction)
