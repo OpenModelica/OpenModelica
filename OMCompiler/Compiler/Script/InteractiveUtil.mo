@@ -1898,7 +1898,7 @@ algorithm
               "/lib/omc/AnnotationsBuiltin_" +
               Util.stringReplaceChar(annotationVersion, ".", "_") +
               ".mo";
-  annotationProgram := Parser.parsebuiltin(filename, "UTF-8");
+  annotationProgram := Parser.parse(filename, "UTF-8");
 end modelicaAnnotationProgram;
 
 public function buildEnvForGraphicProgram

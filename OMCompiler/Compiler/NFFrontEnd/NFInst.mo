@@ -3360,7 +3360,10 @@ algorithm
 
     case SCode.Equation.EQ_CONNECT(info = info)
       algorithm
-        if InstContext.inWhen(context) then
+        if InstContext.inInitial(context) then
+          Error.addSourceMessage(Error.CONNECT_IN_INITIAL_EQUATION, {}, info);
+          fail();
+        elseif InstContext.inWhen(context) then
           Error.addSourceMessage(Error.CONNECT_IN_WHEN,
             {Dump.printComponentRefStr(scodeEq.crefLeft),
              Dump.printComponentRefStr(scodeEq.crefRight)}, info);

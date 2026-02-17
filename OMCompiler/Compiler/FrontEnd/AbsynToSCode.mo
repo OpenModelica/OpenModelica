@@ -1573,12 +1573,7 @@ algorithm
       then SCode.EQ_PDE(inEquation.leftSide, inEquation.rightSide, inEquation.domain, inComment, inInfo);
 
     case Absyn.EQ_CONNECT()
-      algorithm
-        if inIsInitial then
-          Error.addSourceMessageAndFail(Error.CONNECT_IN_INITIAL_EQUATION, {}, inInfo);
-        end if;
-      then
-        SCode.EQ_CONNECT(inEquation.connector1, inEquation.connector2, inComment, inInfo);
+      then SCode.EQ_CONNECT(inEquation.connector1, inEquation.connector2, inComment, inInfo);
 
     case Absyn.EQ_FOR()
       algorithm
