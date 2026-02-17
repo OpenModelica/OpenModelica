@@ -52,6 +52,49 @@ typedef void (*gb_dense_output)(BUTCHER_TABLEAU* tableau, double* yOld, double* 
 #define MAX_GBODE_FIRK_STAGES 7
 
 /**
+ * @brief Data for contractive error estimates (requires T-Transformation + internal NLS strategy).
+ *
+ * Error estimates for superconvergent FIRK methods are extremely difficult as an embedded method can obtain a
+ * maximum order of s-1 for s stages, while the methods have order 2s (Gauss), 2s-1 (Radau), 2s-2 (Lobatto). This
+ * leads to poor and non-A-stable error estimates.
+ *
+ * However, for collocation methods with at least one real eigenvalue (gamma) and 0 as a non-collocated point, we can get
+ * an A-stable error estimate of order s by using one additional function evaluation and one LU-solve:
+ *
+ *    ERR = (I - h * gamma * J)^(-1) * h * gamma * (f(x0, y0) - d(0)^T * A * k),
+ *
+ * where d(0) are the weights of the differentiation matrix at node 0.
+ *
+ * Note that the LU decomposition of (1 / (h * gamma ) * I - * J)^(-1) is already available from the Newtion iteration, so we actually just compute
+ *
+ *    ERR = (1 / (h * gamma) * I - J)^(-1) * (f(x0, y0) - d(0)^T * A * k).
+ *
+ * This struct is a bit more general, as it also allows for generic nodes u: (I - h * gamma * J)^(-1) * h * gamma * (f(x0 + u * h, y0) - d(u)^T * A * k),
+ * but note that these estimates with u != 0 always have a limited stability domain (may be quite big though: e.g. unstable for Re(lambda) < -200,
+ * the standard embedded method is only stable up to approximately -10).
+ *
+ * One extension could be to perform another contraction, i.e. ERR_2 := (I - h * gamma * J)^(-1) * h * gamma * (f(x0 + u * h, y0 + h * ERR) - d(u)^T * A * k), which is
+ * A-stable for u != 0 (e.g. Lobatto IIIA) and L-stable for u = 0 (e.g. Gauss, Radau). Clearly, this would be double the cost.
+ *
+ * For theory of these estimates refer to
+ *     Shampine & Baka "Error estimators for stiff differential equations" (original literature),
+ *     Hairer & Wanner pp.123 "Solving Ordinary Differential Equations II" (Radau IIA estimate),
+ *     Gonzalez-Pinto et al. "Two–step error estimators for implicit Runge–Kutta methods applied to stiff systems" (gives an overview of such ideas and
+ *                                                                                                                  an alternative 2-step estimator),
+ */
+typedef struct CONTRACTIVE_DEFECT_ERROR {
+  /**
+   * @brief Weights of the stage values d(u)^T * A.
+   */
+  double *dT_A;
+
+  /**
+   * @brief Uncollocated node u at which to perform the additional function evaluation.
+   */
+  double u;
+} CONTRACTIVE_DEFECT_ERROR;
+
+/**
  * @brief Transformation structures for decoupling fully implicit Runge–Kutta systems.
  *
  * Fully implicit Runge–Kutta (FIRK) schemes require solving a coupled system of
@@ -180,6 +223,11 @@ typedef struct T_TRANSFORM {
    * @brief Size S_r of the T-transformations size_{transform} = #stages - int(explicit_first) - int(explicit_last)
    */
   int size;
+
+  /**
+   * @brief Contractive defect error estimate for FIRK methods.
+   */
+  CONTRACTIVE_DEFECT_ERROR *defect_err;
 } T_TRANSFORM;
 
 typedef enum STAGE_VALUE_PREDICTOR_TYPE
@@ -201,7 +249,6 @@ typedef enum STAGE_VALUE_PREDICTOR_TYPE
  * This structure contains the additional explicit EDIRK row for stage s, to predict the (E)SDIRK row s.
  */
 typedef struct STAGE_VALUE_PREDICTORS {
-
   /**
    * @brief Row s of this predictor matrix builds the predicton for stage s of the real system (A_predictor is referred to as beta in the literature):
    *            y_pred^{s} := y0 + h * sum_{i=1}^{s-1} A_predictor[s, i] * k[i]

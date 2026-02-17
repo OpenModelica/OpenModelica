@@ -37,9 +37,6 @@
 
 // TODO: How to choose TOL for Richardson??
 // TODO: Calibrate safety factor for internal tolerances
-// TODO: update guess routines (stage value predictors for (E)SDIRK)
-// TODO: update embedded for FIRK with real eigenvalue: we have the contractive error, but
-//       it looks like its only useful for defect-based errors in collocation methods
 
 /* some constants for less verbose BLAS calls */
 static const double DBL_ZERO = 0.0;
@@ -1400,78 +1397,72 @@ NLS_SOLVER_STATUS gbInternalSolveNls(DATA *data,
   }
 }
 
+extern void gb_interpolation(enum GB_INTERPOL_METHOD interpolMethod, double ta, double* fa, double* dfa, double tb, double* fb, double* dfb, double t, double* f,
+                             int nIdx, int* idx, int nStates, BUTCHER_TABLEAU* tableau, double* x, double *k);
+
 /**
- * Contractive error estimate for stiff problems. (stiffness filter)
+ * @brief Contractive error estimate for stiff problems. (stiffness filter)
  *
- * Its unclear if this is what is really needed see e.g. `https://sperezr.webs.ull.es/investigacion/estimadores-9-art.pdf`
- * as they inspect similar to Hairer (ODE II) the defect of the collocation polynomial at t = 0 (which is inherently unstable).
- * I am not sure if this inversion (gamma / h * I - J)^{-1} * (gamma * sum (b - bt) * k) is beneficial in general,
- * esp. if the embedded method is not A-stable.
+ * Construct an embedded method of order `nStages` for a given collocation method
+ * with at least one real eigenvalue. It is preferred to have 0 as an uncollocated point, but
+ * this estimate is also possible for e.g. Lobatto IIIA (choose u = 0.3 for example). We exclude
+ * complex eigenvalues as this work would be even more expensive then.
  *
- * However, tested on Gauss5 for the Robertson example at TOL = 1e-10, it worked pretty well compared to the standard error estimate.
+ * This estimate is A-stable and of one order higher than the naive embedded method, which
+ * is crucial for stiff problems.
  *
- * This might only be useful for defect-based error estimates: err = h * gamma * f(t0, x0) + sum (b - bt) * (k or z). Since that is
- * O(h * gamma * lambda * y0) for h * lambda -> inf, we must contract the term to get -> -1 asympotically. This allows for 1 order
- * higher error estimate, but requires 1 additional RHS call and 1 additional LU solve. TODO: inspect this.
- *
+ * See notes on struct CONTRACTIVE_DEFECT_ERROR for more context.
  */
 void gbInternalContraction(DATA *data,
                            threadData_t *threadData,
                            NONLINEAR_SYSTEM_DATA *nonlinsys,
                            DATA_GBODE *gbData,
-                           double *yt,
-                           double *y)
+                           const double *y,
+                           double *yt)
 {
   GB_INTERNAL_NLS_DATA *nls = (GB_INTERNAL_NLS_DATA *) (((struct dataSolver *)nonlinsys->solverData)->ordinaryData);
+  CONTRACTIVE_DEFECT_ERROR *defect_err = gbData->tableau->t_transform->defect_err;
   BUTCHER_TABLEAU *tabl = nls->tabl;
 
-  double factors[MAX_GBODE_FIRK_STAGES];
-  int size = nls->size;
-  int nStages_i = (int)tabl->nStages;
+  int nStates = gbData->nStates;
+  int nStages = (int)tabl->nStages;
 
-  // compute y
-  if (tabl->c[tabl->nStages - 1] == 1.0)
+  // get f(t_n + u * h, y(t_n + u * h))
+  if (defect_err->u == 0.0)
   {
-    // y := y0 + Z_s (since c_s == 1)
-    memcpy(y, &nonlinsys->nlsx[nls->size * (tabl->nStages - 1)], nls->size * sizeof(double));
+    data->localData[0]->timeValue = gbData->time;
+    memcpy(data->localData[0]->realVars, gbData->yOld, nStates * sizeof(double));
+    gbode_fODE(data, threadData, &(gbData->stats.nCallsODE), NULL);
   }
   else
   {
-    // y := y0 + h * sum b_j * k_j
-    for (int stage = 0; stage < tabl->nStages; stage++)
-    {
-      factors[stage] = gbData->stepSize * tabl->b[stage];
-    }
-    memcpy(y, gbData->yOld, nls->size * sizeof(double));
-    dgemm_(&CHAR_NO_TRANS, &CHAR_NO_TRANS,
-           &size,
-           &INT_ONE,
-           &nStages_i,
-           &DBL_ONE, gbData->k, &size,
-           factors, &nStages_i,
-           &DBL_ONE, y, &size);
+    // dense output to t_n + u * h
+    data->localData[0]->timeValue = gbData->time + defect_err->u * gbData->stepSize;
+    gb_interpolation(gbData->interpolation,
+                     gbData->timeLeft,  gbData->yLeft,  gbData->kLeft,
+                     gbData->timeRight, gbData->yRight, gbData->kRight,
+                     data->localData[0]->timeValue,  data->localData[0]->realVars,
+                     nStates, NULL, nStates, gbData->tableau, gbData->yOld, gbData->k);
+    gbode_fODE(data, threadData, &(gbData->stats.nCallsODE), NULL);
   }
 
-  // compute yt
-  for (int stage = 0; stage < tabl->nStages; stage++)
-  {
-    factors[stage] = tabl->t_transform->gamma[0] * (tabl->b[stage] - tabl->bt[stage]);
-  }
-
-  // yt := gamma * sum (b_j - bt_j) * k_j
+  // ERR := -d^T * A * k
   dgemm_(&CHAR_NO_TRANS, &CHAR_NO_TRANS,
-         &size,
+         &nStates,
          &INT_ONE,
-         &nStages_i,
-         &DBL_ONE, gbData->k, &size,
-         factors, &nStages_i,
-         &DBL_ZERO, yt, &size);
+         &nStages,
+         &DBL_MINUS_ONE, gbData->k, &nStates,
+         defect_err->dT_A, &nStages,
+         &DBL_ZERO, yt, &nStates);
 
-  // yt := (gamma / h * I - J)^{-1} * yt = (gamma / h * I - J)^{-1} * (gamma * sum (b_j - bt_j) * k_j)
+  // ERR := f(t_n + u * h, y(t_n + u * h)) - d^T * A * k
+  daxpy_(&nStates, &DBL_ONE, &data->localData[0]->realVars[nStates], &INT_ONE, yt, &INT_ONE);
+
+  // ERR := (gamma / h * I - J)^{-1} * yt = (gamma / h * I - J)^{-1} * (f(t_n + u * h, y(t_n + u * h)) - d(u)^T * A * k) (exact error measure)
   gbInternal_dKLU_solve(&nls->klu_internals_real[0], nls->size, yt);
 
-  // yt := y + yt = y + (gamma / h * I - J)^{-1} * (gamma * sum (b_j - bt_j) * k_j)
-  daxpy_(&size, &DBL_ONE, y, &INT_ONE, yt, &INT_ONE);
+  // yt := y + ERR = y + (gamma / h * I - J)^{-1} * (f(t_n + u * h, y(t_n + u * h)) - d(u)^T * A * k) (add y to it, as we need yt explicitly)
+  daxpy_(&nStates, &DBL_ONE, y, &INT_ONE, yt, &INT_ONE);
 }
 
 /**

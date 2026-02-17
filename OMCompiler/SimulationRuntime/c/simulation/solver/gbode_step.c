@@ -555,7 +555,7 @@ int full_implicit_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
   }
 
   if (gbData->time != data->simulationInfo->startTime && !gbData->eventHappened
-      && gbData->tableau->dense_output != NULL && gbData->nlsSolverMethod == GB_NLS_INTERNAL
+      && gbData->tableau->withDenseOutput && gbData->nlsSolverMethod == GB_NLS_INTERNAL
       && gbData->extrapolationBaseTime != INFINITY)
   {
     for (stage_ = 0; stage_ < nStages; stage_++) {
@@ -586,12 +586,30 @@ int full_implicit_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
   // y       = yold+h*sum(b[stage_]  * k[stage_], stage_=1..nStages);
   // yt      = yold+h*sum(bt[stage_] * k[stage_], stage_=1..nStages);
 
+  // calculate y(t_n+1)
   for (i = 0; i < nStates; i++) {
-    gbData->y[i]  = gbData->yOld[i];
-    gbData->yt[i] = gbData->yOld[i];
+    gbData->y[i] = gbData->yOld[i];
     for (stage_ = 0; stage_ < nStages; stage_++) {
       gbData->y[i]  += gbData->stepSize * gbData->tableau->b[stage_]  * (gbData->k + stage_ * nStates)[i];
-      gbData->yt[i] += gbData->stepSize * gbData->tableau->bt[stage_] * (gbData->k + stage_ * nStates)[i];
+    }
+  }
+
+  modelica_boolean use_contractive_error = (gbData->tableau->t_transform != NULL
+                                         && gbData->tableau->t_transform->defect_err != NULL
+                                         && gbData->nlsSolverMethod == GB_NLS_INTERNAL);
+
+  // calculate yt(t_n+1) by contractive or standard embedded error estimate
+  if (use_contractive_error)
+  {
+    gbInternalContraction(data, threadData, gbData->nlsData, gbData, gbData->y, gbData->yt);
+  }
+  else
+  {
+    for (i = 0; i < nStates; i++) {
+      gbData->yt[i] = gbData->yOld[i];
+      for (stage_ = 0; stage_ < nStages; stage_++) {
+        gbData->yt[i] += gbData->stepSize * gbData->tableau->bt[stage_] * (gbData->k + stage_ * nStates)[i];
+      }
     }
   }
 
