@@ -69,6 +69,7 @@ public:
   QString getDisplayUnit() {return mDisplayUnit;}
   QString getPreviousUnit() {return mPreviousUnit;}
   QStringList getDisplayUnits() {return mDisplayUnits;}
+  QString getDescription() const {return mDescription;}
   QStringList getUses() {return mUses;}
   QStringList getInitialUses() {return mInitialUses;}
   QList<IntStringPair> getDefinedIn() {return mDefinedIn;}

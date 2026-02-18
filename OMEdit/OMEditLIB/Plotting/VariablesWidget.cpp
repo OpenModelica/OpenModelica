@@ -299,7 +299,14 @@ QVariant VariablesTreeItem::data(int column, int role) const
       switch (role) {
         case Qt::DisplayRole:
         case Qt::ToolTipRole:
-          return mDescription;
+          /* Show the description of child in case of array variables
+           * See #14980
+           */
+          if (mIsMainArray && !mChildren.isEmpty()) {
+            return mChildren.at(0)->getDescription();
+          } else {
+            return mDescription;
+          }
         default:
           return QVariant();
       }
