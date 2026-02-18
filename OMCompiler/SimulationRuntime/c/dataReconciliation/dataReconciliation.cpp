@@ -1976,6 +1976,7 @@ correlationData readCorrelationCoefficientFile(csvData Sx_result, ofstream & log
           {
             errorData info = {rowHeaders.back(), columnHeaders[columnCount-2], temp};
             warningCorrelationData.warningInfo.push_back(info);
+            cx_data.push_back(atof(temp.c_str()));
           }
           else
           {
@@ -2439,20 +2440,17 @@ double solveConvergence(DATA *data, matrixData conv_recon_x, matrixData conv_rec
   //printMatrix(struct_Jstar.data,struct_Jstar.rows,struct_Jstar.column,"J*/r ");
   double convergedvalue = struct_Jstar.data[0];
 
-  //  free(struct_Jstar.data);
-  //  free(struct_conv_tmpmatrixrhs.data);
-  //  free(conv_tmpmatrixrhs);
-  //  free(transpose_add_f_F_recon_x_x.data);
-  //  free(add_f_F_recon_x_x.data);
-  //  free(transpose_add_f_F_recon_x_x.data);
-  //  free(mult_F_recon_x_x.data);
-  //  free(tmp_F_recon_x_x);
-  //  free(struct_conv_tmpmatrixlhs.data);
-  //  free(conv_tmpmatrixlhs);
-  //  free(conv_data1Transpose.data);
-  //  free(copy_reconx_x.data);
-  //  free(conv_data1result.data);
-  //  free(conv_data1);
+  // free the tmp matrices
+  free(conv_data1);
+  free(conv_tmpmatrixlhs);
+  free(tmp_F_recon_x_x);
+  free(conv_tmpmatrixrhs);
+  free(add_f_F_recon_x_x.data);
+  free(struct_Jstar.data);
+  free(conv_data1Transpose.data);
+  free(transpose_add_f_F_recon_x_x.data);
+  //free(conv_recon_x.data);
+  free(copy_reconx_x.data);
 
   return convergedvalue;
 }
@@ -2495,7 +2493,16 @@ double calculateQualityValue(matrixData reconciledX, matrixData Sx, csvData meas
   solveMatrixMultiplication(subCopyTranspose.data, newX, subCopyTranspose.rows, subCopyTranspose.column, measured_x.rows, measured_x.column, J, logfile, data);
   printMatrix(J, subCopyTranspose.rows, measured_x.column, "J", logfile);
 
-  return J[0];
+  double J_value = J[0];
+
+  // --- Free all temporary allocations ---
+  free(newX);
+  free(subCopy.data);
+  free(subCopyTranspose.data);
+  free(measured_x.data);
+  free(J);
+
+  return J_value;
 }
 
 /*
@@ -2683,8 +2690,23 @@ int RunReconciliation(DATA *data, threadData_t *threadData, inputData x, matrixD
     printMatrixWithHeaders(reconciled_Sx.data, reconciled_Sx.rows, reconciled_Sx.column, csvinputs.headers, "reconciled_Sx ===> (Sx - (Sx*Ft*Fstar))", logfile);
     //free(x.data);
     //free(Sx.data);
-    x.data = reconciled_X.data;
-    //Sx.data=reconciled_Sx.data;
+    //x.data = reconciled_X.data;
+    for (int i = 0; i < reconciled_X.rows * reconciled_X.column; i++)
+    {
+      x.data[i] = reconciled_X.data[i];
+    }
+
+    free(reconciled_X.data);
+    free(jacF.data);
+    free(jacFt.data);
+    free(tmpmatrixC);
+    free(tmpmatrixD);
+    free(tmpmatrixC1.data);
+    free(tmpmatrixD1.data);
+    free(setc);
+    free(tmpsetc);
+    free(copySx.data);
+    free(reconciled_Sx.data);
     iterationcount++;
     return RunReconciliation(data, threadData, x, Sx, jacF, jacFt, eps, iterationcount, csvinputs, xdiag, sxdiag, logfile, warningCorrelationData, datareconciliationdata);
   }
@@ -2801,28 +2823,44 @@ int RunReconciliation(DATA *data, threadData_t *threadData, inputData x, matrixD
   {
     createHtmlReportFordataReconciliation(data, csvinputs, xdiag, reconciled_X, copyreconSx_diag, newX, eps, iterationcount, value, J, warningCorrelationData, boundaryconditiondata);
     // free the memory for data Reconciliation
-    free(tmpFstar.data);
-    free(tmpfstar.data);
-    // free(tmpmatrixC);
-    // free(tmpmatrixD);
-    // free(setc);
-    free(reconciled_Sx.data);
+    free(jacF.data);
+    free(jacFt.data);
+    free(tmpmatrixC);
+    free(tmpmatrixD);
+    free(tmpmatrixC1.data);
+    free(tmpmatrixD1.data);
+    free(setc);
+    free(tmpsetc);
+    free(copySx.data);
+    free(copyReconciledSx.data);
     free(reconciled_X.data);
+    free(reconciled_Sx.data);
+    free(newX);
+    free(newSx_diag);
     free(copyreconSx_diag.data);
     free(tmpcopyreconSx_diag.data);
-    free(newSx_diag);
-    free(newX);
-    // free(jacF.data);
-    // free(jacFt.data);
-    // free(x.data);
-    // free(Sx.data);
   }
   else
   {
-    // stateEstimation
-    free(tmpFstar.data);
-    free(tmpfstar.data);
+    // state estimation, do not free the commented data as it is used in state estimation report
+    free(jacF.data);
+    free(jacFt.data);
+    free(tmpmatrixC);
+    free(tmpmatrixD);
+    free(tmpmatrixC1.data);
+    free(tmpmatrixD1.data);
+    free(setc);
+    free(tmpsetc);
+    free(copySx.data);
+    //free(copyReconciledSx.data);
+    //free(reconciled_X.data);
+    free(reconciled_Sx.data);
+    //free(newX);
+    free(newSx_diag);
+    //free(copyreconSx_diag.data);
+    free(tmpcopyreconSx_diag.data);
   }
+
   return 0;
 }
 
@@ -2982,8 +3020,8 @@ int reconcileBoundaryConditions(DATA * data, threadData_t * threadData, inputDat
   // free the memory
   if (omc_flag[FLAG_DATA_RECONCILE_BOUNDARY])
   {
-    // free(reconciled_Sx.data);
-    // free(reconciled_x.data);
+    free(reconciled_Sx.data);
+    free(reconciled_x.data);
     free(tmpMatrixAf);
     free(S_t);
     free(jacF.data);
@@ -3050,7 +3088,6 @@ int stateEstimation(DATA *data, threadData_t *threadData, inputData x, matrixDat
     free(boundaryconditiondata.boundaryConditionVarsResults);
     free(boundaryconditiondata.reconSt_diag);
   }
-
   return 0;
 }
 
@@ -3238,7 +3275,7 @@ int boundaryConditions(DATA * data, threadData_t * threadData, int status)
   logfile.flush();
   logfile.close();
 
-  free(reconciled_Sx.data);
-  free(reconciled_x.data);
+  //free(reconciled_Sx.data);
+  //free(reconciled_x.data);
   return 0;
 }
