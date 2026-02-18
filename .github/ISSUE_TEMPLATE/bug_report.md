@@ -3,13 +3,16 @@ name: Bug Report
 about: "Report a problem to help us improve \U0001F680"
 title: ''
 labels: ''
-assignees: ''
+assignees: casella
 
 ---
 
 ### Description
 
 <!--- A clear and concise description of what the bug is. -->
+
+<!|--- Please first try with the latest released version of OpenModelica or with the latest nightly build before reporting a bug, chances are it may have been solved already! --->
+
 
 ### Steps to Reproduce
 
