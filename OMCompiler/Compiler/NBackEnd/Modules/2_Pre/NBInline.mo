@@ -630,6 +630,7 @@ protected
     Expression range, subscript_exp, lhs_sub, rhs_sub, lhs_exp, rhs_exp;
     Iterator local_iter;
     Pointer<Equation> new_eqn;
+    Boolean failed = false;
   algorithm
     if Flags.isSet(Flags.DUMPBACKENDINLINE) then
       print("[" + getInstanceName() + "] Inlining: " + Equation.toString(eqn) + "\n");
@@ -652,7 +653,7 @@ protected
 
     for arg in rest loop
       new_eqn := match arg
-        case Expression.CREF(cref = rhs) algorithm
+        case Expression.CREF(cref = rhs) guard(not failed) algorithm
           ty          := Expression.typeOf(arg);
           sz          := Type.sizeOf(ty);
 
@@ -692,8 +693,8 @@ protected
         then new_eqn;
 
         else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because all arguments need to be plain crefs. Offender: " + Expression.toString(arg)});
-        then fail();
+          failed := true;
+        then Pointer.create(eqn);
       end match;
 
       eqns := new_eqn :: eqns;
@@ -702,8 +703,10 @@ protected
       end if;
     end for;
 
-    Pointer.update(new_eqns, eqns);
-    eqn := Equation.DUMMY_EQUATION();
+    if not failed then
+      Pointer.update(new_eqns, eqns);
+      eqn := Equation.DUMMY_EQUATION();
+    end if;
   end inlineCatCall;
 
   function createInlinedEquation
