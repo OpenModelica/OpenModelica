@@ -1147,6 +1147,8 @@ public constant ErrorTypes.Message REINIT_IN_ALGORITHM = ErrorTypes.MESSAGE(618,
   Gettext.gettext("Operator reinit may not be used in an algorithm section (use translation flag --allowNonStandardModelica=reinitInAlgorithms to ignore)."));
 public constant ErrorTypes.Message HIDE_RESULT_NOT_EVALUATED = ErrorTypes.MESSAGE(619, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
   Gettext.gettext("Ignoring the hideResult annotation on '%s' which could not be evaluated, probably due to missing annotation(Evaluate=true)."));
+public constant ErrorTypes.Message MISPLACED_EXTERNAL_ANNOTATION = ErrorTypes.MESSAGE(620, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
+  Gettext.gettext("External function annotation should occur on the external-clause, not on the function."));
 
 public constant ErrorTypes.Message MATCH_SHADOWING = ErrorTypes.MESSAGE(5001, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   Gettext.gettext("Local variable '%s' shadows another variable."));

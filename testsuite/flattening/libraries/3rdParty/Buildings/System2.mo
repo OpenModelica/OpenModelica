@@ -1896,7 +1896,8 @@ package Modelica
           discrete input Modelica.SIunits.Time pre_nextTimeEvent;
           input Real tableAvailable annotation(__OpenModelica_UnusedVariable = true);
           output Real y;
-          external "C" y = ModelicaStandardTables_CombiTimeTable_getValue(tableID, icol, timeIn, nextTimeEvent, pre_nextTimeEvent) annotation(Library = {"ModelicaStandardTables"}, derivative(noDerivative = nextTimeEvent, noDerivative = pre_nextTimeEvent, noDerivative = tableAvailable) = getDerTableValue);
+          external "C" y = ModelicaStandardTables_CombiTimeTable_getValue(tableID, icol, timeIn, nextTimeEvent, pre_nextTimeEvent) annotation(Library = {"ModelicaStandardTables"});
+          annotation(derivative(noDerivative = nextTimeEvent, noDerivative = pre_nextTimeEvent, noDerivative = tableAvailable) = getDerTableValue);
         end getTableValue;
 
         function getTableValueNoDer
@@ -8720,6 +8721,6 @@ end System2;
 //   booToReaRad.y = if booToReaRad.u then booToReaRad.realTrue else booToReaRad.realFalse;
 //   not1.y = not not1.u;
 // end System2;
-// [flattening/libraries/3rdParty/Buildings/System2.mo:4451:7-4466:18:writable] Warning: Pure function 'Modelica.Utilities.Strings.isEmpty' contains a call to impure function 'Modelica.Utilities.Strings.Advanced.skipWhiteSpace'.
+// [flattening/libraries/3rdParty/Buildings/System2.mo:4452:7-4467:18:writable] Warning: Pure function 'Modelica.Utilities.Strings.isEmpty' contains a call to impure function 'Modelica.Utilities.Strings.Advanced.skipWhiteSpace'.
 //
 // endResult
