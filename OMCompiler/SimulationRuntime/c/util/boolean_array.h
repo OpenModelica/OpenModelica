@@ -169,6 +169,8 @@ extern void convert_alloc_boolean_array_to_f77(const boolean_array* a,
                                         boolean_array* dest);
 extern void convert_alloc_boolean_array_from_f77(const boolean_array* a,
                                           boolean_array* dest);
+void pack_alloc_boolean_array(const boolean_array *a, integer_array *dest);
+void unpack_copy_boolean_array(const integer_array *a, boolean_array *dest);
 extern void fill_alloc_boolean_array(boolean_array* dest, modelica_boolean value, int ndims, ...);
 
 /* Returns the smallest value in the given array, or true if the array is empty. */

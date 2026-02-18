@@ -22,7 +22,7 @@ simulate(ExtRecordMemberArguments); getErrorString();
 // b: 7
 // C: {-1, -2, -3}
 // d: -4
-// E: {true, false}
+// E: {true, false, false, true, true, true}
 // f: true
 // G: {'one', 'two'}
 // h: 'scalar'

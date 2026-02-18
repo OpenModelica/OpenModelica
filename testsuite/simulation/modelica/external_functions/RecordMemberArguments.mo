@@ -67,7 +67,7 @@ void foo(const double* A, size_t dim_A_1, size_t dim_A_2, const double b, const 
       b = 7.0,
       C = {-1, -2, -3},
       d = -4,
-      E = {true, false},
+      E = {true, false, false, true, true, true},
       f = true,
       G = {"one", "two"},
       h = "scalar");

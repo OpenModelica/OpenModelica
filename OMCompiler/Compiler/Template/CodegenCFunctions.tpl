@@ -1300,23 +1300,28 @@ template extType(Type type, Boolean isInput, Boolean isArray, Boolean returnType
  "Generates type for external function argument or return value."
 ::=
   let s = match type
-  case T_INTEGER(__)     then "int"
-  case T_REAL(__)        then "double"
-  case T_STRING(__)      then "const char*"
-  case T_BOOL(__)        then "int"
-  case T_ENUMERATION(__) then "int"
-  case T_ARRAY(__)       then extType(ty,isInput,true,returnType)
-  case T_COMPLEX(complexClassType=EXTERNAL_OBJ(__))
-                      then "void *"
-  case T_COMPLEX(complexClassType=RECORD(path=rname))
-                      then '<%underscorePath(rname)%>'
-  case T_METATYPE(__)
-  case T_METABOXED(__)
-       then "modelica_metatype"
-  case T_FUNCTION_REFERENCE_VAR(__)
-       then "modelica_fnptr"
-  else error(sourceInfo(), 'Unknown external C type <%unparseType(type)%>')
-  match type case T_ARRAY(__) then s else if isInput then (if isArray then '<%match s case "const char*" then "" else "const "%><%s%>*' else s) else '<%s%>*'
+    case T_INTEGER(__)     then "int"
+    case T_REAL(__)        then "double"
+    case T_STRING(__)      then "const char*"
+    case T_BOOL(__)        then "int"
+    case T_ENUMERATION(__) then "int"
+    case T_ARRAY(__)       then extType(ty,isInput,true,returnType)
+    case T_COMPLEX(complexClassType=EXTERNAL_OBJ(__))
+                        then "void *"
+    case T_COMPLEX(complexClassType=RECORD(path=rname))
+                        then '<%underscorePath(rname)%>'
+    case T_METATYPE(__)
+    case T_METABOXED(__)
+        then "modelica_metatype"
+    case T_FUNCTION_REFERENCE_VAR(__)
+        then "modelica_fnptr"
+    else error(sourceInfo(), 'Unknown external C type <%unparseType(type)%>')
+
+  match type
+  case T_ARRAY(__) then s
+  else
+    if isInput then (if isArray then '<%match s case "const char*" then "" else "const "%><%s%>*' else s)
+    else '<%s%>*'
 end extType;
 
 template extTypeF77(Type type, Boolean isReference)
@@ -2552,6 +2557,11 @@ template extFunCallVardecl(SimExtArg arg, Text &varDecls, Text &auxFunction, Boo
       let cVarName = System.stringReplace(argName, ".", "_") + "_packed"
       let &varDecls += 'integer_array <%cVarName%>;<%\n%>'
       'pack_alloc_integer_array(&<%argName%>, &<%cVarName%>);<%\n%>'
+    case "boolean" then
+      let argName = '<%contextCrefNoPrevExp(c, contextFunction, &auxFunction)%>'
+      let cVarName = System.stringReplace(argName, ".", "_") + "_packed"
+      let &varDecls += 'integer_array <%cVarName%>;<%\n%>'
+      'pack_alloc_boolean_array(&<%argName%>, &<%cVarName%>);<%\n%>'
     else ""
 
   // Array argument (string)
@@ -2705,6 +2715,8 @@ template extFunCallVarcopy(SimExtArg arg, Text &auxFunction)
           'unpack_copy_integer_array(&<%var_name%>_packed, &<%var_name%>);'
         else
           'unpack_integer_array(&<%var_name%>);'
+      case "boolean" then
+          'unpack_copy_boolean_array(&<%var_name%>_packed, &<%var_name%>);'
       case "string" then 'unpack_string_array(&<%var_name%>, <%var_name%>_c89);'
       else ""
 
@@ -2754,11 +2766,17 @@ template extArg(SimExtArg extArg, Text &preExp, Text &varDecls, Text &auxFunctio
   case SIMEXTARG(cref=c, outputIndex=oi, isArray=true, type_=t, isInput=isInput) then
     let argName = contextCrefNoPrevExp(c, contextFunction, &auxFunction)
     let cVarName = System.stringReplace(argName, ".", "_")
+    let cType = extType(t, isInput, true, false)
     let shortTypeStr = expTypeShort(t)
-    let &varDecls += 'void *<%cVarName%>_c89;<%\n%>'
-    let packedArgName = if isInput then (match shortTypeStr case "integer" then '<%cVarName%>_packed' else argName) else argName
-    let &preExp += '<%cVarName%>_c89 = (void*) data_of_<%shortTypeStr%>_c89_array(<%packedArgName%>);<%\n%>'
-    '(<%extType(t,isInput,true,false)%>) <%cVarName%>_c89'
+    let &varDecls += '<%cType%> <%cVarName%>_c89;<%\n%>'
+    let packedArgName = if isInput then (
+        match shortTypeStr
+          case "integer"
+          case "boolean" then '<%cVarName%>_packed'
+          else argName)
+      else argName
+    let &preExp += '<%cVarName%>_c89 = data_of_<%shortTypeStr%>_c89_array(<%packedArgName%>);<%\n%>'
+    '<%cVarName%>_c89'
 
   // Scalar argument, no output
   case SIMEXTARG(cref=c, isInput=ii, outputIndex=0, type_=t) then

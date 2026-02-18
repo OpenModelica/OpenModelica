@@ -40,6 +40,8 @@
 #include <assert.h>
 #include <stdarg.h>
 
+// Forward integer_array function
+void alloc_integer_array_data(integer_array* a);
 
 modelica_boolean boolean_get(const boolean_array a, size_t i)
 {
@@ -893,6 +895,51 @@ void convert_alloc_boolean_array_from_f77(const boolean_array* a,
         a->dim_size[i] = tmp;
     }
     transpose_boolean_array(a, dest);
+}
+
+/* Packs a boolean_array into an integer_array where each boolean value is
+ * stored as an `int`. The destination `integer_array` will be allocated
+ * with the same shape as the source boolean array. This is useful when
+ * external code expects `int` arrays instead of `signed char` (modelica_boolean).
+ */
+void pack_alloc_boolean_array(const boolean_array *a, integer_array *dest)
+{
+    size_t i;
+    size_t n = base_array_nr_of_elements(*a);
+
+    /* Clone shape */
+    dest->ndims = a->ndims;
+    dest->dim_size = size_alloc(dest->ndims);
+    for (i = 0; i < (size_t) dest->ndims; ++i) {
+        dest->dim_size[i] = a->dim_size[i];
+    }
+
+    /* Allocate integer data for dest */
+    alloc_integer_array_data(dest);
+
+    /* Fill with packed int values */
+    int *int_data = (int*) dest->data;
+    for (i = 0; i < n; ++i) {
+        /* boolean_get returns modelica_boolean (signed char); convert to int */
+        int_data[i] = (int) boolean_get(*a, i);
+    }
+
+}
+
+/* Unpack an integer_array that was packed with pack_alloc_boolean_array
+ * into the destination boolean_array. The destination array must be
+ * allocated with the correct shape beforehand.
+ */
+void unpack_copy_boolean_array(const integer_array *a, boolean_array *dest)
+{
+    long i;
+    long n = (long) base_array_nr_of_elements(*a);
+    const int *int_data = (const int*) a->data;
+
+    for (i = n - 1; i >= 0; --i) {
+        /* Convert int back to modelica_boolean (signed char) */
+        put_boolean_element((modelica_boolean) int_data[i], (int) i, dest);
+    }
 }
 
 /* Fills an array with a value. */
