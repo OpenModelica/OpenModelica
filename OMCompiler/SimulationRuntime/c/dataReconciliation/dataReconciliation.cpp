@@ -34,6 +34,7 @@
 #include "simulation/solver/external_input.h"
 #include "simulation/options.h"
 #include "simulation/solver/model_help.h"
+#include "simulation/jacobian_util.h"
 #include <iostream>
 #include <sstream>
 #include <string>
@@ -848,17 +849,18 @@ bool isUnmeasuredVariables(DATA* data, const char* name)
 {
   char **unmeasuredvariable = (char**) malloc(data->modelData->nSetbVars * sizeof(char*));
   data->callback->dataReconciliationUnmeasuredVariables(data, unmeasuredvariable);
-
+  bool found = false;
   // check for unmeasured variables
   for (int i = 0; i < data->modelData->nSetbVars; i++)
   {
     if (strcmp(unmeasuredvariable[i], name) == 0)
     {
-      return true;
+      found = true;
+      break;
     }
   }
   free(unmeasuredvariable);
-  return false;
+  return found;
 }
 
 //----------------------------------------------
@@ -1621,6 +1623,8 @@ matrixData getJacobianMatrixF(DATA * data, threadData_t * threadData, ofstream &
     jacobian->seedVars[x] = 0.0;
   }
   matrixData Fdata = {rows, cols, jacF};
+  // free the allocated seed and result variables in jacobian struct after computing the jacobian matrix F to avoid memory leak
+  freeJacobian(jacobian);
   return Fdata;
 }
 
@@ -1666,6 +1670,8 @@ matrixData getJacobianMatrixH(DATA * data, threadData_t * threadData, ofstream &
     jacobian->seedVars[x] = 0.0;
   }
   matrixData Fdata = {rows, cols, jacF};
+  // free the allocated seed and result variables in jacobian struct after computing the jacobian matrix F to avoid memory leak
+  freeJacobian(jacobian);
   return Fdata;
 }
 
