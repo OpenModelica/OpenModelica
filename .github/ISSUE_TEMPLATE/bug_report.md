@@ -3,7 +3,7 @@ name: Bug Report
 about: "Report a problem to help us improve \U0001F680"
 title: ''
 labels: ''
-assignees: casella
+assignees: ''
 
 ---
 
