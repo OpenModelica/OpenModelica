@@ -2548,9 +2548,10 @@ template extFunCallVardecl(SimExtArg arg, Text &varDecls, Text &auxFunction, Boo
   case SIMEXTARG(isInput = true, isArray = true, type_ = ty, cref = c) then
     match expTypeShort(ty)
     case "integer" then
-      let var_name = '<%contextCrefNoPrevExp(c, contextFunction, &auxFunction)%>'
-      let &varDecls += 'integer_array <%var_name%>_packed;<%\n%>'
-      'pack_alloc_integer_array(&<%var_name%>, &<%var_name%>_packed);<%\n%>'
+      let argName = '<%contextCrefNoPrevExp(c, contextFunction, &auxFunction)%>'
+      let cVarName = System.stringReplace(argName, ".", "_") + "_packed"
+      let &varDecls += 'integer_array <%cVarName%>;<%\n%>'
+      'pack_alloc_integer_array(&<%argName%>, &<%cVarName%>);<%\n%>'
     else ""
 
   // Array argument (string)
@@ -2752,12 +2753,12 @@ template extArg(SimExtArg extArg, Text &preExp, Text &varDecls, Text &auxFunctio
   // Array argument
   case SIMEXTARG(cref=c, outputIndex=oi, isArray=true, type_=t, isInput=isInput) then
     let argName = contextCrefNoPrevExp(c, contextFunction, &auxFunction)
-    let cVarName = System.stringReplace(argName, ".", "_") + "_c89"
+    let cVarName = System.stringReplace(argName, ".", "_")
     let shortTypeStr = expTypeShort(t)
-    let &varDecls += 'void *<%cVarName%>;<%\n%>'
-    let packedArgName = if isInput then (match shortTypeStr case "integer" then '<%argName%>_packed' else argName) else argName
-    let &preExp += '<%cVarName%> = (void*) data_of_<%shortTypeStr%>_c89_array(<%packedArgName%>);<%\n%>'
-    '(<%extType(t,isInput,true,false)%>) <%cVarName%>'
+    let &varDecls += 'void *<%cVarName%>_c89;<%\n%>'
+    let packedArgName = if isInput then (match shortTypeStr case "integer" then '<%cVarName%>_packed' else argName) else argName
+    let &preExp += '<%cVarName%>_c89 = (void*) data_of_<%shortTypeStr%>_c89_array(<%packedArgName%>);<%\n%>'
+    '(<%extType(t,isInput,true,false)%>) <%cVarName%>_c89'
 
   // Scalar argument, no output
   case SIMEXTARG(cref=c, isInput=ii, outputIndex=0, type_=t) then
