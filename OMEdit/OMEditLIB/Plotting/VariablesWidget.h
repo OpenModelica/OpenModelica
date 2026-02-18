@@ -267,6 +267,7 @@ private:
   ModelicaMatReader mModelicaMatReader;
   csv_data *mpCSVData;
   QFile mPlotFileReader;
+  QString mOpenedResultFileName;
   void selectInteractivePlotWindow(VariablesTreeItem *pVariablesTreeItem);
   void openResultFile(VariablesTreeItem *pVariablesTreeItem, double &startTime, double &stopTime);
   void checkVariable(const QModelIndex &index, bool checkState);
