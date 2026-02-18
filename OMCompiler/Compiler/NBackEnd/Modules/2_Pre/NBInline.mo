@@ -52,6 +52,7 @@ protected
   import NFFunction.Function;
   import NFFlatten.FunctionTree;
   import InstNode = NFInstNode.InstNode;
+  import Operator = NFOperator;
   import Statement = NFStatement;
   import Subscript = NFSubscript;
   import Type = NFType;
@@ -380,6 +381,16 @@ public
         case Equation.ARRAY_EQUATION(lhs = lhs as Expression.CALL(call = call as Call.TYPED_ARRAY_CONSTRUCTOR()), rhs = rhs as Expression.CREF())
         then inlineArrayConstructor(eqn, rhs.cref, call.exp, call.iters, eqn.attr, iter, variables, new_eqns, set, index);
 
+        // CREF = cat()
+        case Equation.ARRAY_EQUATION(lhs = lhs as Expression.CREF(), rhs = Expression.CALL(call = call))
+          guard(AbsynUtil.pathString(Function.nameConsiderBuiltin(Call.typedFunction(call))) == "cat") algorithm
+        then inlineCatCall(eqn, lhs.cref, Call.arguments(call), eqn.attr, iter, variables, new_eqns, set, index);
+
+        // cat() = CREF
+        case Equation.ARRAY_EQUATION(lhs = Expression.CALL(call = call), rhs = rhs as Expression.CREF())
+          guard(AbsynUtil.pathString(Function.nameConsiderBuiltin(Call.typedFunction(call))) == "cat") algorithm
+        then inlineCatCall(eqn, rhs.cref, Call.arguments(call), eqn.attr, iter, variables, new_eqns, set, index);
+
         // apply on for-equation. assumed to be split up
         case Equation.FOR_EQUATION(body = {body}) algorithm
           new_eqn := inlineRecordTupleArrayEquation(body, eqn.iter, variables, new_eqns, set, index, true);
@@ -586,6 +597,114 @@ protected
     Pointer.update(new_eqns, eqns);
     eqn := Equation.DUMMY_EQUATION();
   end inlineArrayConstructor;
+
+  function inlineCatCall
+    "inlines a cat() call by creating a new equation each of the arguments. needs prior handling in function alias
+    where both the cat() and all its arguments have been replaced by alias variables such that we can always expect
+    the structure:
+      FUN_X = cat(DIM, FUN_1, FUN_2, FUN_3, ....)
+    the result will be for each scalar argument:
+      FUN_X[shift + 1] = FUN_1;
+    and for array argument:
+      for $i0 in 1:size(FUN_2) loop
+        FUN_X[shift + i0] = FUN_2[i0];
+      end for;
+    shift always takes the size of the sum of the previous sizes so that all replacements in total make up the size of FUN_X."
+    input output Equation eqn;
+    input ComponentRef cref;
+    input list<Expression> args;
+    input EquationAttributes attr;
+    input Iterator iter;
+    input VariablePointers variables;
+    input Pointer<list<Pointer<Equation>>> new_eqns;
+    input UnorderedSet<VariablePointer> set "new iterators";
+    input Pointer<Integer> index;
+  protected
+    Integer dim, sz, shift = 0;
+    list<Expression> rest;
+    list<Pointer<Equation>> eqns;
+    Type ty;
+    ComponentRef iterator_name, lhs, rhs;
+    Pointer<Variable> iterator_var;
+    VariablePointers update_vars;
+    Expression range, subscript_exp, lhs_sub, rhs_sub, lhs_exp, rhs_exp;
+    Iterator local_iter;
+    Pointer<Equation> new_eqn;
+  algorithm
+    if Flags.isSet(Flags.DUMPBACKENDINLINE) then
+      print("[" + getInstanceName() + "] Inlining: " + Equation.toString(eqn) + "\n");
+    end if;
+    eqns := Pointer.access(new_eqns);
+
+    // split of the first argument as it is the dimension indicator
+    // ToDo: actually use it
+    Expression.INTEGER(dim) :: rest := args;
+
+    // create an iterator that can be used multiple times
+    iterator_name := ComponentRef.makeIterator(InstNode.newUniqueIterator(), Type.INTEGER());
+    iterator_var  := BackendDAE.lowerIterator(iterator_name);
+    iterator_name := BVariable.getVarName(iterator_var);
+    // create a variable array that is used to properly lower the variable nodes of iterators
+    update_vars   := VariablePointers.fromList({iterator_var});
+    UnorderedSet.add(iterator_var, set);
+    // create an expression of the iterator that can be used for subscripting
+    subscript_exp := Expression.fromCref(iterator_name);
+
+    for arg in rest loop
+      new_eqn := match arg
+        case Expression.CREF(cref = rhs) algorithm
+          ty          := Expression.typeOf(arg);
+          sz          := Type.sizeOf(ty);
+
+          // if its scalar, create scalar assignment, otherwise create for-loop
+          // ToDo: resizables always need for-loop
+          if sz == 1 then
+            // SCALAR.
+            // properly subscript LHS with shift
+            lhs_sub     := Expression.INTEGER(shift+1);
+            lhs         := ComponentRef.mergeSubscripts({Subscript.INDEX(lhs_sub)}, cref);
+            // if its an array type RHS needs to be subscripted even though its of size 1
+            if Type.isArray(ty) then
+              rhs       := ComponentRef.mergeSubscripts({Subscript.INDEX(Expression.INTEGER(1))}, rhs);
+            end if;
+            // the local iterator does not add anything, just take surrounding iterator
+            local_iter  := iter;
+            // create a new equation
+            new_eqn     := Equation.makeAssignment(Expression.fromCref(lhs), Expression.fromCref(rhs), index, NBEquation.SIMULATION_STR, local_iter, attr);
+          else
+            // make a range of proper size to the rhs
+            range       := Expression.makeRange(Expression.INTEGER(1), NONE(), Expression.INTEGER(sz));
+            // add the new iterator
+            local_iter  := Iterator.addFrames(iter, {(iterator_name, range, NONE())});
+            // subscript the LHS with the shift+iterator
+            lhs_sub     := if shift == 0 then subscript_exp else Expression.MULTARY({Expression.INTEGER(shift), subscript_exp}, {}, Operator.makeAdd(Type.INTEGER()));
+            lhs         := ComponentRef.mergeSubscripts({Subscript.INDEX(lhs_sub)}, cref);
+            // subscript the LHS only with iterator
+            rhs         := ComponentRef.mergeSubscripts({Subscript.INDEX(subscript_exp)}, rhs);
+            // lower the iterators to add proper variable nodes
+            lhs_exp     := Expression.map(Expression.fromCref(lhs), function BackendDAE.lowerComponentReferenceExp(variables = update_vars, complete = false));
+            rhs_exp     := Expression.map(Expression.fromCref(rhs), function BackendDAE.lowerComponentReferenceExp(variables = update_vars, complete = false));
+            // create the new equation
+            new_eqn     := Equation.makeAssignment(lhs_exp, rhs_exp, index, NBEquation.SIMULATION_STR, local_iter, attr);
+          end if;
+          // bump the shift adding the size of this last equation
+          shift := shift + sz;
+        then new_eqn;
+
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because all arguments need to be plain crefs. Offender: " + Expression.toString(arg)});
+        then fail();
+      end match;
+
+      eqns := new_eqn :: eqns;
+      if Flags.isSet(Flags.DUMPBACKENDINLINE) then
+        print("-- Result: " + Equation.pointerToString(new_eqn) + "\n");
+      end if;
+    end for;
+
+    Pointer.update(new_eqns, eqns);
+    eqn := Equation.DUMMY_EQUATION();
+  end inlineCatCall;
 
   function createInlinedEquation
     "used for inlining record, tuple and array equations.
