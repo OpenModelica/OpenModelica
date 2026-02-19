@@ -2,7 +2,6 @@
 // keywords: init const string substring
 // status: correct
 // teardown_command: rm -f *AIMC_Transformer*
-// cflags: -d=newInst
 
 setCommandLineOptions("+simCodeTarget=Cpp");
 

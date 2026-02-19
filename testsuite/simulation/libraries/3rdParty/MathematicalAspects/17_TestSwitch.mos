@@ -1,6 +1,5 @@
 // name: 17_TestSwitch
 // status: correct
-// cflags: -d=-newInst
 //
 //  Simulation Results
 //  Examples to the Tutorial "Mathematical Aspects of Object-Oriented Modeling and Simulation"
@@ -37,14 +36,14 @@ res := OpenModelica.Scripting.compareSimulationResults("TestSwitch2_res.mat",
 // ""
 // record SimulationResult
 //     resultFile = "TestSwitch1_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 2.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'TestSwitch1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 2.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'TestSwitch1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// "[Modelica 3.2.2+maint.om/Electrical/Analog/Sources.mo:284:5-284:68:writable] Warning: Parameter U.freqHz has no value, and is fixed during initialization (fixed=true), using available start value (start=1.0) as default value.
-// [Modelica 3.2.2+maint.om/Electrical/Analog/Sources.mo:282:5-282:61:writable] Warning: Parameter U.V has no value, and is fixed during initialization (fixed=true), using available start value (start=1.0) as default value.
-// [Modelica 3.2.2+maint.om/Electrical/Analog/Basic.mo:304:5-304:52:writable] Warning: Parameter I.L has no value, and is fixed during initialization (fixed=true), using available start value (start=1.0) as default value.
+// "[Modelica 3.2.2+maint.om/Electrical/Analog/Basic.mo:304:5-304:52:writable] Warning: Parameter I.L has no value, and is fixed during initialization (fixed=true), using available start value (start=1) as default value.
+// [Modelica 3.2.2+maint.om/Electrical/Analog/Sources.mo:282:5-282:61:writable] Warning: Parameter U.V has no value, and is fixed during initialization (fixed=true), using available start value (start=1) as default value.
+// [Modelica 3.2.2+maint.om/Electrical/Analog/Sources.mo:284:5-284:68:writable] Warning: Parameter U.freqHz has no value, and is fixed during initialization (fixed=true), using available start value (start=1) as default value.
 // Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // "
 // {"Files Equal!"}
@@ -52,14 +51,14 @@ res := OpenModelica.Scripting.compareSimulationResults("TestSwitch2_res.mat",
 // "
 // record SimulationResult
 //     resultFile = "TestSwitch2_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 2.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'TestSwitch2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 2.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'TestSwitch2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// "[Modelica 3.2.2+maint.om/Electrical/Analog/Sources.mo:284:5-284:68:writable] Warning: Parameter U.freqHz has no value, and is fixed during initialization (fixed=true), using available start value (start=1.0) as default value.
-// [Modelica 3.2.2+maint.om/Electrical/Analog/Sources.mo:282:5-282:61:writable] Warning: Parameter U.V has no value, and is fixed during initialization (fixed=true), using available start value (start=1.0) as default value.
-// [Modelica 3.2.2+maint.om/Electrical/Analog/Basic.mo:304:5-304:52:writable] Warning: Parameter I.L has no value, and is fixed during initialization (fixed=true), using available start value (start=1.0) as default value.
+// "[Modelica 3.2.2+maint.om/Electrical/Analog/Basic.mo:304:5-304:52:writable] Warning: Parameter I.L has no value, and is fixed during initialization (fixed=true), using available start value (start=1) as default value.
+// [Modelica 3.2.2+maint.om/Electrical/Analog/Sources.mo:282:5-282:61:writable] Warning: Parameter U.V has no value, and is fixed during initialization (fixed=true), using available start value (start=1) as default value.
+// [Modelica 3.2.2+maint.om/Electrical/Analog/Sources.mo:284:5-284:68:writable] Warning: Parameter U.freqHz has no value, and is fixed during initialization (fixed=true), using available start value (start=1) as default value.
 // Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // "
 // {"Files Equal!"}

@@ -387,7 +387,7 @@ package Buildings
           input Buildings.HeatTransfer.Data.Solids.Generic material;
           output Modelica.SIunits.SpecificInternalEnergy[Buildings.HeatTransfer.Conduction.nSupPCM] ud;
           output Modelica.SIunits.Temperature[Buildings.HeatTransfer.Conduction.nSupPCM] Td;
-          output Real[Buildings.HeatTransfer.Conduction.nSupPCM] dT_du(fixed = false, unit = "kg.K2/J");
+          output Real[Buildings.HeatTransfer.Conduction.nSupPCM] dT_du(each fixed = false, each unit = "kg.K2/J");
         protected
           parameter Real scale = 0.999;
           parameter Modelica.SIunits.Temperature Tm1 = material.TSol + (1 - scale) * (material.TLiq - material.TSol);
@@ -403,7 +403,7 @@ package Buildings
         function temperature_u
           input Modelica.SIunits.SpecificInternalEnergy[Buildings.HeatTransfer.Conduction.nSupPCM] ud;
           input Modelica.SIunits.Temperature[Buildings.HeatTransfer.Conduction.nSupPCM] Td;
-          input Real[:] dT_du(each fixed = false, unit = "kg.K2/J");
+          input Real[:] dT_du(each fixed = false, each unit = "kg.K2/J");
           input Modelica.SIunits.SpecificInternalEnergy u;
           output Modelica.SIunits.Temperature T;
         protected

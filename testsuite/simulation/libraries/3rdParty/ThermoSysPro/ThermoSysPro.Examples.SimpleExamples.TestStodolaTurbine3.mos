@@ -2,7 +2,6 @@
 // keywords: simulation ThermoSysPro.Examples.SimpleExamples
 // status: correct
 // teardown_command: rm -rf _ThermoSysPro.Examples.SimpleExamples.TestStodolaTurbine3.* ThermoSysPro.Examples.SimpleExamples.TestStodolaTurbine3_* ThermoSysPro.Examples.SimpleExamples.TestStodolaTurbine3 ThermoSysPro.Examples.SimpleExamples.TestStodolaTurbine3.exe ThermoSysPro.Examples.SimpleExamples.TestStodolaTurbine3.cpp ThermoSysPro.Examples.SimpleExamples.TestStodolaTurbine3.makefile ThermoSysPro.Examples.SimpleExamples.TestStodolaTurbine3.libs ThermoSysPro.Examples.SimpleExamples.TestStodolaTurbine3.log ThermoSysPro.Examples.SimpleExamples.TestStodolaTurbine3.c ThermoSysPro.Examples.SimpleExamples.TestStodolaTurbine3.o output.log
-// cflags: -d=-newInst
 //
 // Simulation Results 
 // Modelica Standard Library
@@ -79,7 +78,6 @@ getEnvironmentVar("REFERENCEFILES")+"/ThermoSysPro/ThermoSysPro.Examples.SimpleE
 // [ThermoSysPro 3.2.0/ElectroMechanics/Connectors.mo:3:3-36:24:writable] Warning: Connector .ThermoSysPro.ElectroMechanics.Connectors.MechanichalTorque is not balanced: The number of potential variables (2) is not equal to the number of flow variables (0).
 // [ThermoSysPro 3.2.0/WaterSteam/Connectors.mo:3:3-43:17:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
 // [ThermoSysPro 3.2.0/WaterSteam/Connectors.mo:87:3-127:18:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// Warning: The model contains alias variables with redundant start and/or conflicting nominal values. It is recommended to resolve the conflicts, because otherwise the system could be hard to solve. To print the conflicting alias sets and the chosen candidates please use -d=aliasConflicts.
 // "
 // {"Files not Equal!","stodolaTurbine.pros1.duph","stodolaTurbine.pros1.duhp","stodolaTurbine.pros.duph","stodolaTurbine.pros.duhp","stodolaTurbine.props.cp"}
 // endResult

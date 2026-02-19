@@ -2,7 +2,6 @@
 // keywords: simulation ThermoSysPro.Examples.SimpleExamples
 // status: correct
 // teardown_command: rm -rf _ThermoSysPro.Examples.CombinedCyclePowerPlant.CombinedCycle_Load_100_50.* ThermoSysPro.Examples.CombinedCyclePowerPlant.CombinedCycle_Load_100_50_* ThermoSysPro.Examples.CombinedCyclePowerPlant.CombinedCycle_Load_100_50 ThermoSysPro.Examples.CombinedCyclePowerPlant.CombinedCycle_Load_100_50.exe ThermoSysPro.Examples.CombinedCyclePowerPlant.CombinedCycle_Load_100_50.cpp ThermoSysPro.Examples.CombinedCyclePowerPlant.CombinedCycle_Load_100_50.makefile ThermoSysPro.Examples.CombinedCyclePowerPlant.CombinedCycle_Load_100_50.libs ThermoSysPro.Examples.CombinedCyclePowerPlant.CombinedCycle_Load_100_50.log ThermoSysPro.Examples.CombinedCyclePowerPlant.CombinedCycle_Load_100_50.c ThermoSysPro.Examples.CombinedCyclePowerPlant.CombinedCycle_Load_100_50.o output.log
-// cflags: -d=-newInst
 //
 // Simulation Results 
 // Modelica Standard Library
@@ -603,11 +602,9 @@ getEnvironmentVar("REFERENCEFILES")+"/ThermoSysPro/ThermoSysPro.Examples.Combine
 // [ThermoSysPro 3.2.0/WaterSteam/Connectors.mo:87:3-127:18:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
 // [ThermoSysPro 3.2.0/WaterSteam/Connectors.mo:3:3-43:17:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidInlet$vanne_entree_TurbineMP$C1 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
 // [ThermoSysPro 3.2.0/WaterSteam/Connectors.mo:87:3-127:18:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// Warning: The model contains alias variables with redundant start and/or conflicting nominal values. It is recommended to resolve the conflicts, because otherwise the system could be hard to solve. To print the conflicting alias sets and the chosen candidates please use -d=aliasConflicts.
 // Notification: The given system is mixed-determined.   [index = 1]
 // Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
 // Warning: The initial conditions are over specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
-// Warning: The model contains alias variables with redundant start and/or conflicting nominal values. It is recommended to resolve the conflicts, because otherwise the system could be hard to solve. To print the conflicting alias sets and the chosen candidates please use -d=aliasConflicts.
 // "
 // {"Files not Equal!","Condenseur.hv","MelangeurPostTMP1.h","EconomiseurBP.TwoPhaseFlowPipe.Q[3]","EconomiseurBP.TwoPhaseFlowPipe.Q[2]","EconomiseurBP.TwoPhaseFlowPipe.Q[1]","SurchauffeurBP.TwoPhaseFlowPipe.Q[4]","SurchauffeurBP.TwoPhaseFlowPipe.Q[3]","SurchauffeurBP.TwoPhaseFlowPipe.Q[2]","SurchauffeurBP.TwoPhaseFlowPipe.Q[1]","EvaporateurBP.TwoPhaseFlowPipe.Q[4]","EvaporateurBP.TwoPhaseFlowPipe.Q[3]","EvaporateurBP.TwoPhaseFlowPipe.Q[2]","SurchauffeurMP1.TwoPhaseFlowPipe.Q[4]","SurchauffeurMP1.TwoPhaseFlowPipe.Q[3]","SurchauffeurMP1.TwoPhaseFlowPipe.Q[2]","SurchauffeurMP1.TwoPhaseFlowPipe.Q[1]","EconomiseurMP.TwoPhaseFlowPipe.Q[4]","EconomiseurMP.TwoPhaseFlowPipe.Q[3]","EconomiseurMP.TwoPhaseFlowPipe.Q[2]","EconomiseurMP.TwoPhaseFlowPipe.Q[1]","BallonMP.Vv"}
 // endResult
