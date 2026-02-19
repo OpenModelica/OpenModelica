@@ -1385,5 +1385,12 @@ public
     end match;
   end isLiteral;
 
+  function fillWithWholeLeft
+    input output list<Subscript> subs;
+    input Integer targetLength;
+  algorithm
+    subs := listAppend(List.fill(Subscript.WHOLE(), targetLength - listLength(subs)), subs);
+  end fillWithWholeLeft;
+
 annotation(__OpenModelica_Interface="frontend");
 end NFSubscript;
