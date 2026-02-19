@@ -303,9 +303,17 @@ algorithm
 
   // write the list of known variables to the csv file with the headers
   if not System.regularFileExists(inDAE.shared.info.fileNamePrefix + "_Inputs.csv") then
-    str := "Variable Names,Measured Value-x,HalfWidthConfidenceInterval,xi,xk,rx_ik\n";
+    str := "Variable Names,Measured Value-x,HalfWidthConfidenceInterval\n";
     str := dumpToCsv(str, BackendVariable.varList(outDiffVars));
     System.writeFile(shared.info.fileNamePrefix + "_Inputs.csv", str);
+  end if;
+
+  // write the list of known variables to the correlation matrix csv file with the headers
+  if not System.regularFileExists(inDAE.shared.info.fileNamePrefix + "_Correlation_Inputs.csv") then
+    //str := "Variable Names,Measured Value-x,HalfWidthConfidenceInterval\n";
+    str := dumpCorrelationVarsToCsv(BackendVariable.varList(outDiffVars));
+    str := dumpToCsv(str + "\n", BackendVariable.varList(outDiffVars));
+    System.writeFile(shared.info.fileNamePrefix + "_Correlation_Inputs.csv", str);
   end if;
 
   // write the new Reconciled vars and equations to .mo File
@@ -1112,6 +1120,14 @@ algorithm
     str := dumpToCsv(str, BackendVariable.varList(outDiffVars));
     str := dumpToCsv(str, BackendVariable.varList(outBoundaryConditionVars));
     System.writeFile(shared.info.fileNamePrefix + "_Inputs.csv", str);
+  end if;
+
+  // write the list of known variables to the correlation matrix csv file with the headers
+  if not System.regularFileExists(inDAE.shared.info.fileNamePrefix + "_Correlation_Inputs.csv") then
+    //str := "Variable Names,Measured Value-x,HalfWidthConfidenceInterval\n";
+    str := dumpCorrelationVarsToCsv(BackendVariable.varList(outDiffVars));
+    str := dumpToCsv(str + "\n", BackendVariable.varList(outDiffVars));
+    System.writeFile(shared.info.fileNamePrefix + "_Correlation_Inputs.csv", str);
   end if;
 
   // write the list of unmeasured variables variables to txt file "XXX_BoundaryConditionVars.txt"
@@ -1950,7 +1966,7 @@ algorithm
 
   // write the list of known variables to the csv file with the headers
   if not System.regularFileExists(inDAE.shared.info.fileNamePrefix + "_Inputs.csv") then
-    str := "Variable Names,Measured Value-x,HalfWidthConfidenceInterval,xi,xk,rx_ik\n";
+    str := "Variable Names,Measured Value-x,HalfWidthConfidenceInterval\n";
     str := dumpToCsv(str, BackendVariable.varList(outDiffVars));
     System.writeFile(shared.info.fileNamePrefix + "_Inputs.csv", str);
   end if;
@@ -3688,6 +3704,21 @@ algorithm
   end for;
   outstring := instring+outstring;
 end dumpToCsv;
+
+/* function which dumps the variable names to csv file */
+public function dumpCorrelationVarsToCsv
+  input list<BackendDAE.Var> invar;
+  output String outstring="";
+protected
+  DAE.ComponentRef cr;
+  String str = "Sxij,";
+algorithm
+  for i in invar loop
+    cr := BackendVariable.varCref(i);
+    outstring := outstring + ComponentReference.crefStr(cr) + ",";
+  end for;
+  outstring := str + outstring;
+end dumpCorrelationVarsToCsv;
 
 /* function which dumps non reconciledVars failing for condition -2 to a log file*/
 public function dumpNonReconciledVars
