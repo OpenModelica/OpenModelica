@@ -1,7 +1,6 @@
 // name:     Modelica.Electrical.Analog.Examples.CauerLowPassSC_staticLinking
 // keywords: simulation MSL Examples
 // status: correct
-// cflags: -d=-newInst
 //
 // Simulation Results 
 // Modelica Standard Library

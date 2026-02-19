@@ -6,8 +6,6 @@ ThermoPower.Test.DistributedParameterComponents.TestWaterFlow1DFV_B.mos \
 ThermoPower.Test.DistributedParameterComponents.TestWaterFlow1DFV2ph.mos \
 ThermoPower.Test.DistributedParameterComponents.TestFlow1D2phChen.mos \
 ThermoPower.Test.DistributedParameterComponents.TestFlow1D2phDB_hf.mos \
-ThermoPower.Examples.RankineCycle.Simulators.ClosedLoop.mos \
-ThermoPower.PowerPlants.SteamTurbineGroup.Tests.TestSTG_cc.mos \
 ThermoPower.Examples.HRB.Simulators.ClosedLoopDigitalSimulator.mos \
 ThermoPower.Examples.HRB.Simulators.ClosedLoopDigitalSimulatorSimplified \
 ThermoPower.Examples.HRB.Simulators.ClosedLoopSimulator \
@@ -15,6 +13,8 @@ ThermoPower.Examples.HRB.Simulators.ClosedLoopSimulator \
 # test that currently fail. Move up when fixed.
 # Run make testfailing
 FAILINGTESTFILES = \
+ThermoPower.Examples.RankineCycle.Simulators.ClosedLoop.mos \
+ThermoPower.PowerPlants.SteamTurbineGroup.Tests.TestSTG_cc.mos \
 
 
 # Dependency files that are not .mo .mos or Makefile

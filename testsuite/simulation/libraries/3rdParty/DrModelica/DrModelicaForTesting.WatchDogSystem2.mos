@@ -2,7 +2,6 @@
 // keywords: simulation DrModelicaForTesting.WatchDogSystem2
 // status: correct
 // teardown_command: rm -rf _DrModelicaForTesting.WatchDogSystem2.* DrModelicaForTesting.WatchDogSystem2_* DrModelicaForTesting.WatchDogSystem2 DrModelicaForTesting.WatchDogSystem2.exe DrModelicaForTesting.WatchDogSystem2.cpp DrModelicaForTesting.WatchDogSystem2.makefile DrModelicaForTesting.WatchDogSystem2.libs DrModelicaForTesting.WatchDogSystem2.log DrModelicaForTesting.WatchDogSystem2.c DrModelicaForTesting.WatchDogSystem2.o output.log
-// cflags: -d=-newInst
 //
 // Simulation Results
 // Modelica Standard Library
@@ -26,12 +25,17 @@ res := OpenModelica.Scripting.compareSimulationResults("DrModelicaForTesting.Wat
 // ""
 // record SimulationResult
 //     resultFile = "DrModelicaForTesting.WatchDogSystem2_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 200, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'DrModelicaForTesting.WatchDogSystem2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 200, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'DrModelicaForTesting.WatchDogSystem2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// "[simulation/libraries/3rdParty/DrModelica/DrModelicaForTesting.mo:1551:5-1551:22:writable] Warning: Connector dOutput is not balanced: The number of potential variables (1) is not equal to the number of flow variables (0).
+// [simulation/libraries/3rdParty/DrModelica/DrModelicaForTesting.mo:1594:6-1594:19:writable] Warning: Connector dOn is not balanced: The number of potential variables (1) is not equal to the number of flow variables (0).
+// [simulation/libraries/3rdParty/DrModelica/DrModelicaForTesting.mo:1595:6-1595:20:writable] Warning: Connector dOff is not balanced: The number of potential variables (1) is not equal to the number of flow variables (0).
+// [simulation/libraries/3rdParty/DrModelica/DrModelicaForTesting.mo:1596:6-1596:25:writable] Warning: Connector dDeadline is not balanced: The number of potential variables (1) is not equal to the number of flow variables (0).
+// [simulation/libraries/3rdParty/DrModelica/DrModelicaForTesting.mo:1597:6-1597:22:writable] Warning: Connector dAlarm is not balanced: The number of potential variables (1) is not equal to the number of flow variables (0).
+// Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // "
 // {"Files Equal!"}
 // endResult

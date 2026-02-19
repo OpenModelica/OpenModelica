@@ -1,8 +1,7 @@
-// name: mslDistribustionsTest
+// name: mslDistributionsTest
 // keywords: pre array const
 // status: correct
 // teardown_command: rm -f *NoiseExamples*
-// cflags: -d=newInst
 
 setCommandLineOptions("+simCodeTarget=Cpp");
 

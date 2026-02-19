@@ -1,9 +1,6 @@
 // name:     HumModOMCTotal [buildModel]
 // keywords:
 // status:   correct
-// cflags: -d=-newInst
-//
-//
 //
 
 /*
@@ -21,7 +18,15 @@ buildModel(HumModTest); getErrorString();
 // Notification: Automatically loaded package ModelicaServices 3.2.1 due to uses annotation from Modelica.
 // "
 // {"HumModTest", "HumModTest_init.xml"}
-// "Warning: The model contains alias variables with redundant start and/or conflicting nominal values. It is recommended to resolve the conflicts, because otherwise the system could be hard to solve. To print the conflicting alias sets and the chosen candidates please use -d=aliasConflicts.
+// "[simulation/libraries/3rdParty/HumMod/HumModTest_OMC_total.mo:164:1-164:67:writable] Warning: In relation cardioVascularSystem.heart.RightAtrium.initialVol == 0.0, == on Real numbers is only allowed inside functions.
+// [simulation/libraries/3rdParty/HumMod/HumModTest_OMC_total.mo:164:1-164:67:writable] Warning: In relation cardioVascularSystem.heart.LeftAtrium.initialVol == 0.0, == on Real numbers is only allowed inside functions.
+// [simulation/libraries/3rdParty/HumMod/HumModTest_OMC_total.mo:164:1-164:67:writable] Warning: In relation cardioVascularSystem.pulmonaryCirculation.pulmCapys.initialVol == 0.0, == on Real numbers is only allowed inside functions.
+// [simulation/libraries/3rdParty/HumMod/HumModTest_OMC_total.mo:164:1-164:67:writable] Warning: In relation cardioVascularSystem.pulmonaryCirculation.pulmArty.initialVol == 0.0, == on Real numbers is only allowed inside functions.
+// [simulation/libraries/3rdParty/HumMod/HumModTest_OMC_total.mo:164:1-164:67:writable] Warning: In relation cardioVascularSystem.pulmonaryCirculation.pulmVeins.initialVol == 0.0, == on Real numbers is only allowed inside functions.
+// [simulation/libraries/3rdParty/HumMod/HumModTest_OMC_total.mo:164:1-164:67:writable] Warning: In relation cardioVascularSystem.systemicCirculation.systemicArtys.initialVol == 0.0, == on Real numbers is only allowed inside functions.
+// [simulation/libraries/3rdParty/HumMod/HumModTest_OMC_total.mo:164:1-164:67:writable] Warning: In relation cardioVascularSystem.systemicCirculation.systemicVeinsElacticBloodCompartment.systemicVeins.initialVol == 0.0, == on Real numbers is only allowed inside functions.
+// [simulation/libraries/3rdParty/HumMod/HumModTest_OMC_total.mo:164:1-164:67:writable] Warning: In relation cardioVascularSystem.systemicCirculation.splanchnicCirculation.portalVein.initialVol == 0.0, == on Real numbers is only allowed inside functions.
+// Warning: The model contains alias variables with redundant start and/or conflicting nominal values. It is recommended to resolve the conflicts, because otherwise the system could be hard to solve. To print the conflicting alias sets and the chosen candidates please use -d=aliasConflicts.
 // Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // Warning: The model contains alias variables with redundant start and/or conflicting nominal values. It is recommended to resolve the conflicts, because otherwise the system could be hard to solve. To print the conflicting alias sets and the chosen candidates please use -d=aliasConflicts.
 // "

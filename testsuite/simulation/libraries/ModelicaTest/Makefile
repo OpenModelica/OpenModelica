@@ -103,7 +103,7 @@ ModelicaTest.MultiBody.Joints.JointUSP2.mos \
 #JointUSR - different result from Dymola, wrong initialisation of state derivative (j2.a)
 #JointSSR - different result from Dymola, wrong initialisation of state derivative (j2.a)
 #ModelicaTest.MultiBody.Forces.Damper2.mos
-$(WRONGRESULTTEST)=\
+WRONGRESULTTEST=\
 ModelicaTest.MultiBody.FourbarVariants.JointUSR.mos \
 ModelicaTest.MultiBody.FourbarVariants.JointSSR.mos \
 ModelicaTest.MultiBody.Forces.Damper2.mos\
@@ -115,9 +115,6 @@ ModelicaTest.MultiBody.Forces.Damper2.mos\
 NOTCOMPILETEST= \
 
 NOTSIMULATETEST= \
-
-WRONGRESULTTEST = \
-
 
 # Dependency files that are not .mo .mos or Makefile
 # Add them here or they will be cleaned.

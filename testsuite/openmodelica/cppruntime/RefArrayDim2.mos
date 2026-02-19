@@ -2,7 +2,6 @@
 // keywords: multi-dimensional RefArray external F77 LAPACK, ticket:4093
 // status: correct
 // teardown_command: rm -f *AliasArrayTest*
-// cflags: -d=-newInst
 
 setCommandLineOptions("+simCodeTarget=Cpp");
 
