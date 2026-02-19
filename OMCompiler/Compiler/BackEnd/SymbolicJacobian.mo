@@ -269,6 +269,7 @@ algorithm
 
         if debug then BackendDump.dumpJacobianString(BackendDAE.GENERIC_JACOBIAN(symjac, sparsePattern, coloredCols, nonlinearPattern)); end if;
       else
+        Error.addInternalError("Could not generate symbolic Jacobian. Using numeric Jacobian instead.", sourceInfo());
         // only generate sparsity pattern
         (sparsePattern, coloredCols) := generateSparsePattern(DAE, inDepVars, depVars);
         if debug then execStat(getInstanceName() + "-> generateSparsePattern "); end if;
