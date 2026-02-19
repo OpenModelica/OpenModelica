@@ -301,15 +301,21 @@ protected
   BackendDAE.NonlinearPattern nonlinearPattern;
   DAE.FunctionTree funcs, functionTree;
 algorithm
-  System.realtimeTick(ClockIndexes.RT_CLOCK_EXECSTAT_JACOBIANS);
-  BackendDAE.DAE(eqs=eqs,shared=shared) := inBackendDAE;
-  (symJacA, funcs, sparsePattern, sparseColoring, nonlinearPattern) := createSymbolicJacobianforStates(inBackendDAE);
-  shared := addBackendDAESharedJacobian(symJacA, sparsePattern, sparseColoring, nonlinearPattern, shared);
-  functionTree := BackendDAEUtil.getFunctions(shared);
-  functionTree := DAE.AvlTreePathFunction.join(functionTree, funcs);
-  shared := BackendDAEUtil.setSharedFunctionTree(shared, functionTree);
-  outBackendDAE := BackendDAE.DAE(eqs,shared);
-  System.realtimeTock(ClockIndexes.RT_CLOCK_EXECSTAT_JACOBIANS);
+  try
+    System.realtimeTick(ClockIndexes.RT_CLOCK_EXECSTAT_JACOBIANS);
+    BackendDAE.DAE(eqs=eqs,shared=shared) := inBackendDAE;
+    (symJacA, funcs, sparsePattern, sparseColoring, nonlinearPattern) := createSymbolicJacobianforStates(inBackendDAE);
+    shared := addBackendDAESharedJacobian(symJacA, sparsePattern, sparseColoring, nonlinearPattern, shared);
+    functionTree := BackendDAEUtil.getFunctions(shared);
+    functionTree := DAE.AvlTreePathFunction.join(functionTree, funcs);
+    shared := BackendDAEUtil.setSharedFunctionTree(shared, functionTree);
+    outBackendDAE := BackendDAE.DAE(eqs,shared);
+    System.realtimeTock(ClockIndexes.RT_CLOCK_EXECSTAT_JACOBIANS);
+  else
+    Error.addInternalError("Could not generate symbolic Jacobian. Using numeric Jacobian instead.", sourceInfo());
+    FlagsUtil.setConfigString(Flags.GENERATE_DYNAMIC_JACOBIAN, "numeric");
+    outBackendDAE := detectSparsePatternODE(inBackendDAE);
+  end try;
 end generateSymbolicJacobianPast;
 
 protected function createSymbolicJacobianforStates "author: wbraun
