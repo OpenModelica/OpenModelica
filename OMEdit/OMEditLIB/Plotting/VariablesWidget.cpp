@@ -725,7 +725,6 @@ bool VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
   }
   // set the newly inserted VariablesTreeItem active
   mpActiveVariablesTreeItem = pTopVariablesTreeItem;
-  mpVariablesTreeView->getVariablesWidget()->initializeVisualization();
   /* open the model_init.xml file for reading */
   mScalarVariablesHash.clear();
   QString initFileName, infoFileName;
@@ -1589,6 +1588,7 @@ void VariablesWidget::insertVariablesItemsToTree(QString fileName, QString fileP
   if (updateVariables) {
     variablesUpdated();
   }
+  mOpenedResultFileName = "";
   initializeVisualization();
   mpVariablesTreeView->setSortingEnabled(true);
   mpVariablesTreeView->sortByColumn(0, Qt::AscendingOrder);
