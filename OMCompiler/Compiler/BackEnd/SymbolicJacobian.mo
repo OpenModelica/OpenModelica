@@ -249,24 +249,32 @@ algorithm
     if debug then execStat(getInstanceName() + "-> get all vars "); end if;
 
     if Flags.getConfigString(Flags.GENERATE_DYNAMIC_JACOBIAN) == "symbolic" then
-      // generate symbolic jacobian and sparsity pattern
-      (symjac, funcs, sparsePattern, coloredCols, nonlinearPattern) := generateGenericJacobian(
-        inBackendDAE          = DAE,
-        inDiffVars            = inDepVars,
-        inStateVars           = BackendVariable.emptyVars(),
-        inInputVars           = BackendVariable.emptyVars(),
-        inParameterVars       = shared.globalKnownVars,
-        inDifferentiatedVars  = resVars,
-        inVars                = BackendVariable.varList(v),
-        inName                = "A",
-        onlySparsePattern     = false,
-        daeMode               = true);
-      if debug then execStat(getInstanceName() + "-> generateGenericJacobian "); end if;
+      try
+        // generate symbolic jacobian and sparsity pattern
+        (symjac, funcs, sparsePattern, coloredCols, nonlinearPattern) := generateGenericJacobian(
+          inBackendDAE          = DAE,
+          inDiffVars            = inDepVars,
+          inStateVars           = BackendVariable.emptyVars(),
+          inInputVars           = BackendVariable.emptyVars(),
+          inParameterVars       = shared.globalKnownVars,
+          inDifferentiatedVars  = resVars,
+          inVars                = BackendVariable.varList(v),
+          inName                = "A",
+          onlySparsePattern     = false,
+          daeMode               = true);
+        if debug then execStat(getInstanceName() + "-> generateGenericJacobian "); end if;
 
-      shared.symjacs := List.set(shared.symjacs, BackendDAE.SymbolicJacobianAIndex, (symjac, sparsePattern, coloredCols, nonlinearPattern));
-      shared.functionTree := funcs;
+        shared.symjacs := List.set(shared.symjacs, BackendDAE.SymbolicJacobianAIndex, (symjac, sparsePattern, coloredCols, nonlinearPattern));
+        shared.functionTree := funcs;
 
-      if debug then BackendDump.dumpJacobianString(BackendDAE.GENERIC_JACOBIAN(symjac, sparsePattern, coloredCols, nonlinearPattern)); end if;
+        if debug then BackendDump.dumpJacobianString(BackendDAE.GENERIC_JACOBIAN(symjac, sparsePattern, coloredCols, nonlinearPattern)); end if;
+      else
+        // only generate sparsity pattern
+        (sparsePattern, coloredCols) := generateSparsePattern(DAE, inDepVars, depVars);
+        if debug then execStat(getInstanceName() + "-> generateSparsePattern "); end if;
+        shared := addBackendDAESharedJacobianSparsePattern(sparsePattern, coloredCols, BackendDAE.SymbolicJacobianAIndex, shared);
+        if debug then execStat(getInstanceName() + "-> addBackendDAESharedJacobianSparsePattern "); end if;
+      end try;
     else
       // only generate sparsity pattern
       (sparsePattern, coloredCols) := generateSparsePattern(DAE, inDepVars, depVars);
