@@ -1234,7 +1234,7 @@ public
       local
         Integer i;
         Expression ret, ret1, ret2, arg1, arg2, arg3, diffArg1, diffArg2, diffArg3, current_grad, cond1, cond2, cond, zero1, zero2, grad_x, grad_y, old_grad;
-        list<Expression> rest;
+        list<Expression> rest, diffRest;
         Type ty;
         DifferentiationType diffType;
         Integer rY, rX;
@@ -1507,6 +1507,23 @@ public
         (ret1, diffArguments) := differentiateExpression(arg1, diffArguments);
         (ret2, diffArguments) := differentiateExpression(arg2, diffArguments);
         exp.call := Call.setArguments(exp.call, {ret1, ret2});
+      then exp;
+
+      // d/dz cat(k, A, B, C, ...) = cat(k, dA/dz, dB/dz, dC/dz, ...)
+      case Expression.CALL() guard name == "cat"
+      algorithm
+        if isReverse then
+          Error.addInternalError(getInstanceName() + " failed for: " + Expression.toString(exp) + "\nReverse Mode not implemented for `cat()`.", sourceInfo());
+          fail();
+        end if;
+
+        arg1 :: rest := Call.arguments(exp.call);
+        diffRest := {};
+        for arg in listReverse(rest) loop
+          (ret, diffArguments) := differentiateExpression(arg, diffArguments);
+          diffRest := ret :: diffRest;
+        end for;
+        exp.call := Call.setArguments(exp.call, arg1 :: diffRest);
       then exp;
 
       // d/dz promote(A, n) = promote(dA/dz, n)
