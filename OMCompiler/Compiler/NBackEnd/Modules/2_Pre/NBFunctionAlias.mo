@@ -468,6 +468,19 @@ protected
       exp := aux.replacer;
       ty := Expression.typeOf(exp);
     else
+      // create auxilliary variables for each cat call argument as well (needed for inline)
+      exp := match exp
+        local
+          Call call;
+        case Expression.CALL(call = call as Call.TYPED_CALL())
+          guard("cat" == AbsynUtil.pathFirstIdent(Function.nameConsiderBuiltin(Call.typedFunction(call)))) algorithm
+          call.arguments  := listHead(call.arguments) :: list(introduceAlias(arg, map, aux_index, iter, init) for arg in listRest(call.arguments));
+          exp.call        := call;
+          id              := CALL_ID(exp, new_iter); // this might cause double aliasing but the same cat() call will probably not exist more than once anyway
+        then exp;
+        else exp;
+      end match;
+
       // for initial systems create parameters, otherwise use type to determine variable kind
       ty := Expression.typeOf(exp);
       exp := match ty
@@ -493,8 +506,18 @@ protected
   protected
     Function fn = Call.typedFunction(call);
   algorithm
-    b := not (Inline.functionInlineable(fn) or Function.isSpecialBuiltin(fn) or replaceException(fn));
+    b := forceReplacement(fn) or not (Inline.functionInlineable(fn) or Function.isSpecialBuiltin(fn) or replaceException(fn));
   end checkCallReplacement;
+
+  function forceReplacement
+    input Function fn;
+    output Boolean b;
+  algorithm
+    b := match AbsynUtil.pathFirstIdent(Function.nameConsiderBuiltin(fn))
+      case "cat" then true;
+      else false;
+    end match;
+  end forceReplacement;
 
   function replaceException
     input Function fn;
