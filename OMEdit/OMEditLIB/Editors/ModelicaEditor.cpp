@@ -490,10 +490,13 @@ bool ModelicaEditor::validateText(LibraryTreeItem **pLibraryTreeItem)
             // save and reload
             LibraryTreeItem *pTopLevelLibraryTreeItem = LibraryTreeModel::getTopLevelLibraryTreeItem(*pLibraryTreeItem);
             if (pTopLevelLibraryTreeItem) {
-              MainWindow::instance()->getLibraryWidget()->saveLibraryTreeItem(pTopLevelLibraryTreeItem, true);
-              pLibraryTreeModel->reloadClass(pTopLevelLibraryTreeItem, false);
+              if (MainWindow::instance()->getLibraryWidget()->saveLibraryTreeItem(pTopLevelLibraryTreeItem, true)) {
+                pLibraryTreeModel->reloadClass(pTopLevelLibraryTreeItem, false);
+                setTextChanged(false);
+                return false;
+              }
             }
-            setTextChanged(false);
+            setTextChanged(true);
             return false;
           }
         case QMessageBox::RejectRole: // revert to last correct version
@@ -706,10 +709,7 @@ ModelicaHighlighter::ModelicaHighlighter(ModelicaEditorPage *pModelicaEditorPage
 //! Initialized the syntax highlighter with default values.
 void ModelicaHighlighter::initializeSettings()
 {
-  QFont font;
-  font.setFamily(mpModelicaEditorPage->getOptionsDialog()->getTextEditorPage()->getFontFamilyComboBox()->currentFont().family());
-  font.setPointSizeF(mpModelicaEditorPage->getOptionsDialog()->getTextEditorPage()->getFontSizeSpinBox()->value());
-  mpPlainTextEdit->document()->setDefaultFont(font);
+  const QFont font = mpPlainTextEdit->font();
 #if QT_VERSION >= QT_VERSION_CHECK(5, 11, 0)
   mpPlainTextEdit->setTabStopDistance((qreal)(mpModelicaEditorPage->getOptionsDialog()->getTextEditorPage()->getTabSizeSpinBox()->value() * QFontMetrics(font).horizontalAdvance(QLatin1Char(' '))));
 #else // QT_VERSION_CHECK

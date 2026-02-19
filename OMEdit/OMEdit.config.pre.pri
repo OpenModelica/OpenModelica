@@ -72,5 +72,3 @@ UI_DIR = generatedfiles/ui
 MOC_DIR = generatedfiles/moc
 
 RCC_DIR = generatedfiles/rcc
-
-TARGET = OMEdit

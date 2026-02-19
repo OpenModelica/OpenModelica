@@ -34,16 +34,8 @@
 
 #include "ExpressionTest.h"
 #include "Util.h"
-#include "OMEditApplication.h"
 #include "MainWindow.h"
 #include "FlatModelica/Expression.h"
-
-#ifndef GC_THREADS
-#define GC_THREADS
-#endif
-extern "C" {
-#include "meta/meta_modelica.h"
-}
 
 OMEDITTEST_MAIN(ExpressionTest)
 
@@ -312,7 +304,7 @@ void ExpressionTest::parseJSON()
   try {
     FlatModelica::Expression e;
     e.deserialize(jsonValue);
-    qDebug() << e.toQString();
+    //qDebug() << e.toQString();
     //qDebug() << jsonValue;
     //qDebug() << e.serialize();
     QCOMPARE(e.serialize(), jsonValue);

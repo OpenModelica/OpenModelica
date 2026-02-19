@@ -555,6 +555,8 @@ constant DebugFlag DUMP_SOLVE = DEBUG_FLAG(195, "dumpSolve", false,
   Gettext.gettext("Dumps information about equation solving."));
 constant DebugFlag FORCE_SCALARIZE = DEBUG_FLAG(196, "forceScalarize", false,
   Gettext.gettext("Forces scalarization to be done when it would normally be automatically disabled."));
+constant DebugFlag DEBUG_ADJOINT = DEBUG_FLAG(197, "debugAdjoint", false,
+  Gettext.gettext("Dumps debug output for the adjoint differentiation process in the new backend."));
 
 public
 // CONFIGURATION FLAGS
@@ -885,7 +887,8 @@ constant ConfigFlag GENERATE_DYNAMIC_JACOBIAN = CONFIG_FLAG(51, "generateDynamic
   SOME(STRING_DESC_OPTION({
     ("none", Gettext.gettext("Does not generate Jacobian. For use with explicit solvers.")),
     ("numeric", Gettext.gettext("Generates sparsity pattern for numeric Jacobian.")),
-    ("symbolic", Gettext.gettext("Generates symbolic Jacobian. Used by dassl or ida solver with simulation flag '-jacobian'."))
+    ("symbolic", Gettext.gettext("Generates symbolic Jacobian. Used by dassl or ida solver with simulation flag '-jacobian'.")),
+    ("symbolicadjoint", Gettext.gettext("Generates adjoint Jacobian symbolically."))
     })),
   Gettext.gettext("Select how Jacobian matrix is generated, where der(x) is differentiated w.r.t. x."));
 constant ConfigFlag GENERATE_SYMBOLIC_LINEARIZATION = CONFIG_FLAG(52, "generateSymbolicLinearization",
@@ -1199,7 +1202,7 @@ constant ConfigFlag INITIAL_STATE_SELECTION = CONFIG_FLAG(121, "initialStateSele
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   Gettext.gettext("Activates the state selection inside initialization to avoid singularities."));
 constant ConfigFlag LINEARIZATION_DUMP_LANGUAGE = CONFIG_FLAG(122, "linearizationDumpLanguage",
-  NONE(), EXTERNAL(), STRING_FLAG("modelica"),
+  NONE(), EXTERNAL(), STRING_FLAG("none"),
   SOME(STRING_DESC_OPTION({
     ("none", Gettext.gettext("Don't generate code for linearization.")),
     ("modelica", Gettext.gettext("Generate linearized Modelica model.")),
@@ -1285,8 +1288,8 @@ constant ConfigFlag ALLOW_NON_STANDARD_MODELICA = CONFIG_FLAG(143, "allowNonStan
     ("protectedAccess", Gettext.gettext("Allow access of protected elements")),
     ("reinitInAlgorithms", Gettext.gettext("Allow reinit in algorithm sections")),
     ("unbalancedModel", Gettext.gettext("Allow models to be locally unbalanced and to have unbalanced connectors")),
-    ("implicitParameterStartAttribute", Gettext.gettext("Allow fixed parameters with no binding or start attribute"))
-
+    ("implicitParameterStartAttribute", Gettext.gettext("Allow fixed parameters with no binding or start attribute")),
+    ("initialSimplified", Gettext.gettext("Allow use of experimental operator `initialSimplified()`"))
     })),
   Gettext.gettext("Flags to allow non-standard Modelica."));
 constant ConfigFlag EXPORT_CLOCKS_IN_MODELDESCRIPTION = CONFIG_FLAG(144, "exportClocksInModelDescription",
@@ -1384,7 +1387,13 @@ constant ConfigFlag CAUSALIZE_DAE_MODE = CONFIG_FLAG(160, "causalizeDaeMode",
 /* please remove me once this is supported */
 constant ConfigFlag SIM_CODE_SCALARIZE = CONFIG_FLAG(161, "simCodeScalarize",
   NONE(), EXTERNAL(), BOOL_FLAG(true), NONE(),
-  Gettext.gettext("Sclarizes variables during simcode phase."));
+  Gettext.gettext("Scalarizes variables during simcode phase."));
+constant ConfigFlag EXECUTE_COMMAND = CONFIG_FLAG(162, "cmd",
+  NONE(), EXTERNAL(), STRING_FLAG(""), NONE(),
+  Gettext.gettext("Executes the string argument as a script before any other operation."));
+constant ConfigFlag MOO_DYNAMIC_OPTIMIZATION = CONFIG_FLAG(163, "moo",
+  NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
+  Gettext.gettext("Generate code for dynamic optimization library MOO."));
 
 function getFlags
   "Loads the flags with getGlobalRoot. Assumes flags have been loaded."

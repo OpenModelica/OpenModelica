@@ -6,7 +6,7 @@ loadString("
 model implicitEquation
   Real x;
 equation
-   x - x^2 + x^3 = sin(time);
+  x - x^2 + x^3 = sin(time);
 end implicitEquation;"); getErrorString();
 
 setCommandLineOptions("--newBackend -d=dumpSimCode");
@@ -53,24 +53,28 @@ simulate(implicitEquation); getErrorString();
 // ======================================================
 //
 // ======================================================
-//   [EMPTY] SimCode Jacobian B(idx = 1, partition = 0)
+//   [EMPTY] SimCode Jacobian B(idx = 2, partition = 0)
 // ======================================================
 //
 // ======================================================
-//   [EMPTY] SimCode Jacobian C(idx = 2, partition = 0)
+//   [EMPTY] SimCode Jacobian C(idx = 3, partition = 0)
 // ======================================================
 //
 // ======================================================
-//   [EMPTY] SimCode Jacobian D(idx = 3, partition = 0)
+//   [EMPTY] SimCode Jacobian D(idx = 4, partition = 0)
 // ======================================================
 //
 // ======================================================
-//   [EMPTY] SimCode Jacobian F(idx = 4, partition = 0)
+//   [EMPTY] SimCode Jacobian F(idx = 5, partition = 0)
 // ======================================================
 //
 // ======================================================
-//   [EMPTY] SimCode Jacobian H(idx = 5, partition = 0)
+//   [EMPTY] SimCode Jacobian H(idx = 6, partition = 0)
 // ======================================================
+//
+// ========================================================
+//   [EMPTY] SimCode Jacobian ADJ(idx = 1, partition = 0)
+// ========================================================
 //
 //
 //
@@ -158,8 +162,6 @@ simulate(implicitEquation); getErrorString();
 // ========================================
 // 	Jacobian idx: 0
 //
-// 	Jacobian idx: 1
-//
 // 	Jacobian idx: 2
 //
 // 	Jacobian idx: 3
@@ -167,6 +169,10 @@ simulate(implicitEquation); getErrorString();
 // 	Jacobian idx: 4
 //
 // 	Jacobian idx: 5
+//
+// 	Jacobian idx: 6
+//
+// 	Jacobian idx: 1
 //
 //
 // modelInfo:

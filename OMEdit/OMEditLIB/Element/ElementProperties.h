@@ -110,6 +110,7 @@ public:
   bool isEnumeration() const {return mValueType == Enumeration;}
   bool isReplaceableComponent() const {return mValueType == ReplaceableComponent;}
   bool isReplaceableClass() const {return mValueType == ReplaceableClass;}
+  bool isChoicesAllMatching() const {return mValueType == ChoicesAllMatching;}
   bool isRecord() const {return mValueType == Record;}
   bool isChoices() const {return mValueType == Choices;}
   QWidget* getValueWidget();
@@ -190,9 +191,10 @@ private:
   void createValueWidget();
   void createValueComboBox();
   void enableDisableUnitComboBox(const QString &value);
-  void updateValueBinding(const FlatModelica::Expression expression);
+  void updateValueBinding(const FlatModelica::Expression& expression);
   bool isValueModifiedHelper() const;
   void resetUnitCombobox();
+  void valueTextBoxChanged(const QString &text);
 private slots:
   void setBreakValue(bool breakValue);
 public slots:
@@ -258,7 +260,9 @@ public:
   QString getElementDimensions() const {return mpElement->getDimensions().getTypedDimensionsString();}
   bool isInherited() const {return mInherited;}
   bool isNested() const {return mNested;}
+  bool skipFocusOutEvent() const {return mSkipFocusOutEvent;}
   QString getModification() const {return mModification;}
+  Parameter* findParameter(const QString &parameter, Qt::CaseSensitivity caseSensitivity = Qt::CaseSensitive) const;
   void applyFinalStartFixedAndDisplayUnitModifiers(Parameter *pParameter, ModelInstance::Modifier *pModifier, bool defaultValue, bool isElementModification);
   void updateParameters();
 private:
@@ -266,6 +270,7 @@ private:
   GraphicsView *mpGraphicsView;
   bool mInherited;
   bool mNested;
+  bool mSkipFocusOutEvent = false;
   ModelInstance::Modifier *mpDefaultElementModifier;
   ModelInstance::Modifier *mpReplaceableConstrainedByModifier;
   ModelInstance::Modifier *mpElementModifier;
@@ -299,7 +304,6 @@ private:
   void fetchClassExtendsModifiers(ModelInstance::Element *pModelElement);
   void fetchRootClassExtendsModifiers(ModelInstance::Element *pModelElement);
   void applyModifier(ModelInstance::Modifier *pModifier, bool defaultValue);
-  Parameter* findParameter(const QString &parameter, Qt::CaseSensitivity caseSensitivity = Qt::CaseSensitive) const;
 public slots:
   void commentLinkClicked(QString link);
   void updateElementParameters();

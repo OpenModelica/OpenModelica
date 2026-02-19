@@ -1140,7 +1140,7 @@ external "builtin";
 annotation(Documentation(info="<html>
 <p>Loads the given file using the given encoding.</p>
 <p>
-  Note that if the file basename is package.mo and the parent directory is the top-level class, the library structure is loaded as if loadModel(ClassName) was called.
+  Note that if the file basename is package.mo and the parent directory is the top-level class, or if the file is a directory, the library structure is loaded as if loadModel(ClassName) was called.
   Uses-annotations are respected if uses=true.
   The main difference from loadModel is that loadFile appends this directory to the MODELICAPATH (for this call only).
 </p>
@@ -1870,8 +1870,8 @@ impure function alarm
   "Schedules an alarm signal for the process."
   input Integer seconds;
   output Integer previousSeconds;
-external "builtin";
-annotation(__OpenModelica_Impure=true,Library = {"omcruntime"},Documentation(info="<html>
+external "builtin" annotation(Library = {"omcruntime"});
+annotation(__OpenModelica_Impure=true,Documentation(info="<html>
 <p>Like <a href=\"http://linux.die.net/man/2/alarm\">alarm(2)</a>.</p>
 <p>Note that OpenModelica also sends SIGALRM to the process group when the alarm is triggered (in order to kill running simulations).</p>
 </html>"));
@@ -2977,7 +2977,8 @@ annotation(Documentation(info="<html>
 <p>The only required argument is the className, while all others have some default values.</p>
 <h2>Usage:</h2>
 <p><b>linearize</b>(<em>A</em>, stopTime=0.0);</p>
-<p>Creates the file \"linear_A.mo\" that contains the linearized matrices at stopTime.</p>
+<p>Creates the file in the selected linearization output language (modelica by default) that contains the linearized matrices at stopTime.</p>
+<p>The output language can be changed with the command line option <em>--linearizationDumpLanguage</em> e.g., <b>setCommandLineOptions(\"--linearizationDumpLanguage=modelica\")</b></p>
 </html>", revisions="<html>
 <table>
 <tr><th>Revision</th><th>Author</th><th>Comment</th></tr>
@@ -5362,6 +5363,7 @@ end convertPackageToLibrary;
 function getModelInstance
   "Dumps a model instance as a JSON string."
   input TypeName className;
+  input TypeName context = $TypeName(__NoContext);
   input String modifier = "";
   input Boolean prettyPrint = false;
   output String result;

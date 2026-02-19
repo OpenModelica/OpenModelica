@@ -442,8 +442,8 @@ public constant ErrorTypes.Message LOAD_MODEL_DIFFERENT_VERSIONS = ErrorTypes.ME
   Gettext.gettext("Requested package %s of version %s, but this package was already loaded with version %s. OpenModelica cannot reason about compatibility between the two packages since they are not semantic versions."));
 public constant ErrorTypes.Message LOAD_MODEL_FAILED = ErrorTypes.MESSAGE(184, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
   Gettext.gettext("Failed to load package %s (%s) using MODELICAPATH %s."));
-public constant ErrorTypes.Message REPLACEABLE_BASE_CLASS_SIMPLE = ErrorTypes.MESSAGE(185, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
-  Gettext.gettext("Base class %s is replaceable."));
+public constant ErrorTypes.Message LOAD_FILE_FAILED = ErrorTypes.MESSAGE(185, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
+  Gettext.gettext("Failed to load file %s: %s."));
 public constant ErrorTypes.Message INVALID_SIZE_INDEX = ErrorTypes.MESSAGE(186, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   Gettext.gettext("Invalid index %s in call to size of %s, valid index interval is [1,%s]."));
 public constant ErrorTypes.Message ALGORITHM_TRANSITION_FAILURE = ErrorTypes.MESSAGE(187, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
@@ -1147,6 +1147,8 @@ public constant ErrorTypes.Message REINIT_IN_ALGORITHM = ErrorTypes.MESSAGE(618,
   Gettext.gettext("Operator reinit may not be used in an algorithm section (use translation flag --allowNonStandardModelica=reinitInAlgorithms to ignore)."));
 public constant ErrorTypes.Message HIDE_RESULT_NOT_EVALUATED = ErrorTypes.MESSAGE(619, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
   Gettext.gettext("Ignoring the hideResult annotation on '%s' which could not be evaluated, probably due to missing annotation(Evaluate=true)."));
+public constant ErrorTypes.Message MISPLACED_EXTERNAL_ANNOTATION = ErrorTypes.MESSAGE(620, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
+  Gettext.gettext("External function annotation should occur on the external-clause, not on the function."));
 
 public constant ErrorTypes.Message MATCH_SHADOWING = ErrorTypes.MESSAGE(5001, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   Gettext.gettext("Local variable '%s' shadows another variable."));
@@ -1242,6 +1244,8 @@ public constant ErrorTypes.Message CONVERSION_UNKNOWN_ANNOTATION = ErrorTypes.ME
   Gettext.gettext("Conversion-annotation contains unknown element: %s."));
 public constant ErrorTypes.Message CONVERSION_MISSING_NONE_FROM_VERSION = ErrorTypes.MESSAGE(5048, ErrorTypes.SCRIPTING(), ErrorTypes.WARNING(),
   Gettext.gettext("Conversion-annotation is missing version for noneFromVersion: %s."));
+public constant ErrorTypes.Message UNPATCHED_MODELICA_SERVICES = ErrorTypes.MESSAGE(5049, ErrorTypes.SCRIPTING(), ErrorTypes.WARNING(),
+  Gettext.gettext("This version of ModelicaServices does not appear to be patched for use with OpenModelica, consider using a version distributed by OpenModelica instead to avoid compatibility issues."));
 
 public constant ErrorTypes.Message COMPILER_ERROR = ErrorTypes.MESSAGE(5999, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   Gettext.notrans("%s"));
@@ -1743,7 +1747,7 @@ algorithm
 end failOnErrorMsg;
 
 public function addCompilerError "
-  Used to make a compiler warning"
+  Used to make a compiler error"
   input String message;
 algorithm
   addMessage(COMPILER_ERROR, {message});

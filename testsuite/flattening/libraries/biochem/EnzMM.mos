@@ -1,7 +1,6 @@
 //name:         EnzMM
 //keyword:      instantiating msl221
 //status:       correct
-// cflags: -d=-newInst
 //
 // instantiate example
 //
@@ -39,6 +38,12 @@ getErrorString();
 //   Real G6P.n1.r(quantity = \"Molar flow rate\", unit = \"mol/s\");
 //   Real G6P.n1.V(quantity = \"Volume\", unit = \"l\");
 // equation
+//   uur.p1.V = F6P.n1.V;
+//   uur.p1.c = F6P.n1.c;
+//   G6P.n1.V = uur.s1.V;
+//   G6P.n1.c = uur.s1.c;
+//   uur.p1.r + F6P.n1.r = 0.0;
+//   G6P.n1.r + uur.s1.r = 0.0;
 //   der(F6P.n) = F6P.rNet;
 //   F6P.rNet = F6P.n1.r;
 //   F6P.c = F6P.n1.c;
@@ -46,19 +51,13 @@ getErrorString();
 //   F6P.c = F6P.n / V;
 //   uur.rr = (uur.vF * uur.s1.c / uur.KmS - uur.vR * uur.p1.c / uur.KmP) / (1.0 + uur.s1.c / uur.KmS + uur.p1.c / uur.KmP);
 //   uur.s1.r = uur.nS1 * uur.rr;
-//   uur.p1.r = (-uur.nP1) * uur.rr;
+//   uur.p1.r = -uur.nP1 * uur.rr;
 //   der(G6P.n) = G6P.rNet;
 //   G6P.rNet = G6P.n1.r;
 //   G6P.c = G6P.n1.c;
 //   V = G6P.n1.V;
 //   G6P.c = G6P.n / V;
 //   der(V) = 0.0 \"Compartment volume is constant\";
-//   F6P.n1.r + uur.p1.r = 0.0;
-//   uur.s1.r + G6P.n1.r = 0.0;
-//   F6P.n1.V = uur.p1.V;
-//   F6P.n1.c = uur.p1.c;
-//   G6P.n1.V = uur.s1.V;
-//   G6P.n1.c = uur.s1.c;
 // end BioChem.Examples.EnzMM;
 // "
 // ""

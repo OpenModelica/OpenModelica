@@ -26,7 +26,6 @@ stateEstimation2.mos\
 FourFlows.mos\
 TSP_Pipe.mos\
 TSP_Pipe1.mos\
-TSP_Pipe2.mos\
 TSP_Pipe4.mos\
 TSP_Pipe7.mos\
 TSP_Pipe8.mos\
@@ -38,7 +37,6 @@ TSP_Splitter2.mos\
 TSP_Splitter3.mos\
 TSP_Splitter4.mos\
 TSP_Splitter5.mos\
-TSP_Splitter6.mos\
 TSP_Splitter7.mos\
 TSP_FourFlows.mos\
 TSP_FourFlows1.mos\
@@ -59,6 +57,8 @@ TSP_Pipe6.mos\
 TSP_Pipe5.mos\
 TSP_FourFlows10.mos\
 TSP_Pipe3.mos\
+TSP_Splitter6.mos\
+TSP_Pipe2.mos\
 
 
 # Dependency files that are not .mo .mos or Makefile

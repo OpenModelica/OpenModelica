@@ -4,6 +4,7 @@ find_package(LAPACK REQUIRED)
 
 set(OMC_SIMRT_SIMULATION_SOURCES
   "arrayIndex.c"
+  "eval_dep.c"
   "jacobian_util.c"
   "modelinfo.c"
   "omc_simulation_util.c"
@@ -13,7 +14,6 @@ set(OMC_SIMRT_SIMULATION_SOURCES
   "results/simulation_result_ia.cpp"
   "results/simulation_result_mat4.cpp"
   "results/simulation_result_plt.cpp"
-  "results/simulation_result_wall.cpp"
   "results/simulation_result.cpp"
   "simulation_info_json.c"
   "simulation_input_xml.c"
@@ -27,7 +27,7 @@ set(OMC_SIMRT_SIMULATION_SOURCES
   "solver/embedded_server.c"
   "solver/events.c"
   "solver/external_input.c"
-  "solver/fmi_events.c"
+  "solver/discrete_changes.c"
   "solver/gbode_conf.c"
   "solver/gbode_ctrl.c"
   "solver/gbode_events.c"
@@ -78,6 +78,7 @@ set(OMC_SIMRT_SIMULATION_CINC
 
 set(OMC_SIMRT_SIMULATION_HEADERS
   "arrayIndex.h"
+  "eval_dep.h"
   "jacobian_util.h"
   "modelinfo.h"
   "omc_simulation_util.h"
@@ -87,7 +88,6 @@ set(OMC_SIMRT_SIMULATION_HEADERS
   "results/simulation_result_ia.h"
   "results/simulation_result_mat4.h"
   "results/simulation_result_plt.h"
-  "results/simulation_result_wall.h"
   "results/simulation_result.h"
   "simulation_info_json.h"
   "simulation_input_xml.h"
@@ -102,7 +102,7 @@ set(OMC_SIMRT_SIMULATION_HEADERS
   "solver/epsilon.h"
   "solver/events.h"
   "solver/external_input.h"
-  "solver/fmi_events.h"
+  "solver/discrete_changes.h"
   "solver/gbode_conf.h"
   "solver/gbode_ctrl.h"
   "solver/gbode_events.h"

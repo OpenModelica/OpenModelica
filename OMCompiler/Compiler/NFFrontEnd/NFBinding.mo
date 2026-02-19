@@ -719,6 +719,21 @@ public
   algorithm
     binding := match binding
 
+      case WILD()
+      then TYPED_BINDING(
+          bindingExp  = exp,
+          bindingType = Expression.typeOf(exp),
+          variability = Expression.variability(exp),
+          purity      = Expression.purity(exp),
+          eachType    = EachType.NOT_EACH,
+          evalState   = if Expression.isConstNumber(exp)
+                        then Mutable.create(EvalState.EVALUATED)
+                        else Mutable.create(EvalState.NOT_EVALUATED),
+          isFlattened = true,
+          source      = Source.BINDING,
+          info        = sourceInfo()
+        );
+
       case UNBOUND()
       then TYPED_BINDING(
           bindingExp  = exp,

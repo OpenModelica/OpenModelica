@@ -82,7 +82,8 @@ import ErrorExt;
 import ExecStat;
 import Flags;
 import FlatModel = NFFlatModel;
-import FunctionTree = NFFlatten.FunctionTree;
+import NFFunction;
+import NFFlatten.{FunctionTree, FunctionTreeImpl};
 import FMI;
 import GCExt;
 import HashTable;
@@ -130,6 +131,7 @@ public function createSimulationSettings
   input String outputFormat;
   input String variableFilter;
   input String cflags;
+  input String simflags;
   output SimCode.SimulationSettings simSettings;
 protected
   Real stepSize;
@@ -139,7 +141,7 @@ algorithm
   stepSize := (stopTime - startTime) / intReal(numberOfIntervals);
   simSettings := SimCode.SIMULATION_SETTINGS(
     startTime, stopTime, numberOfIntervals, stepSize, tolerance,
-    method, options, outputFormat, variableFilter, cflags);
+    method, options, outputFormat, variableFilter, cflags, simflags);
 end createSimulationSettings;
 
 
@@ -938,12 +940,12 @@ algorithm
         if not Flags.getConfigBool(Flags.FMI_SOURCES) or Flags.getConfigEnum(Flags.FMI_FILTER) == Flags.FMI_BLACKBOX then
           model_desc_src_files := {}; // set the sourceFiles to empty, to remove the sources in modeldescription.xml
         else
-          model_desc_src_files := List.flatten({model_gen_files,      //  order matters
-                                                shared_source_files,
-                                                dgesv_sources,
-                                                cminpack_sources,
-                                                simrt_c_sundials_sources,
-                                                modelica_standard_table_sources
+          model_desc_src_files := List.flatten({List.sort(model_gen_files, Util.strcmpNoCaseBool),      //  order matters
+                                                List.sort(shared_source_files, Util.strcmpNoCaseBool),
+                                                List.sort(dgesv_sources, Util.strcmpNoCaseBool),
+                                                List.sort(cminpack_sources, Util.strcmpNoCaseBool),
+                                                List.sort(simrt_c_sundials_sources, Util.strcmpNoCaseBool),
+                                                List.sort(modelica_standard_table_sources, Util.strcmpNoCaseBool)
                                     });
         end if;
 
@@ -1022,10 +1024,21 @@ algorithm
         modelDefinesHeaderStr := System.stringReplace(modelDefinesHeaderStr, "fmu2_dummy_model_defines.h", "../" + simCode.fileNamePrefix + "_FMU.h");
         System.writeFile(fmu_tmp_sources_dir + "fmi-export/fmu2_model_interface.c", modelDefinesHeaderStr);
 
-        Tpl.closeFile(Tpl.tplCallWithFailErrorNoArg(function CodegenFMU.fmuMakefile(a_target=Config.simulationCodeTarget(), a_simCode=simCode, a_FMUVersion=FMUVersion, a_sourceFiles=model_all_gen_files, a_runtimeObjectFiles=list(System.stringReplace(f,".c",".o") for f in shared_source_files), a_dgesvObjectFiles=list(System.stringReplace(f,".c",".o") for f in dgesv_sources), a_cminpackObjectFiles=list(System.stringReplace(f,".c",".o") for f in cminpack_sources), a_sundialsObjectFiles=list(System.stringReplace(f,".c",".o") for f in simrt_c_sundials_sources)),
-                      txt=Tpl.redirectToFile(Tpl.emptyTxt, fmutmp+"/sources/Makefile.in")));
-        Tpl.closeFile(Tpl.tplCallWithFailError(CodegenFMU.settingsfile, simCode,
-                      txt=Tpl.redirectToFile(Tpl.emptyTxt, fmutmp+"/sources/omc_simulation_settings.h")));
+        Tpl.closeFile(Tpl.tplCallWithFailErrorNoArg(
+          function CodegenFMU.fmuMakefile(
+            a_target=Config.simulationCodeTarget(),
+            a_simCode=simCode,
+            a_FMUVersion=FMUVersion,
+            a_sourceFiles=model_all_gen_files,
+            a_runtimeObjectFiles=list(System.stringReplace(f,".c",".o") for f in shared_source_files),
+            a_dgesvObjectFiles=list(System.stringReplace(f,".c",".o") for f in dgesv_sources),
+            a_cminpackObjectFiles=list(System.stringReplace(f,".c",".o") for f in cminpack_sources),
+            a_sundialsObjectFiles=list(System.stringReplace(f,".c",".o") for f in simrt_c_sundials_sources)),
+          txt=Tpl.redirectToFile(Tpl.emptyTxt, fmutmp+"/sources/Makefile.in")));
+        Tpl.closeFile(Tpl.tplCallWithFailError(
+          CodegenFMU.settingsfile,
+          simCode,
+          txt=Tpl.redirectToFile(Tpl.emptyTxt, fmutmp+"/sources/omc_simulation_settings.h")));
         /*Temporary generate extra files for omsicpp simcodetarget, additionaly to C-fmu code*/
         if Config.simCodeTarget() ==  "omsicpp" then
          runTpl(func = function CodegenOMSICpp.translateModel(a_simCode=simCode, a_FMUVersion=FMUVersion, a_FMUType=FMUType));
@@ -1149,6 +1162,7 @@ protected
   list<Option<Integer>> allRoots;
   FlatModel flatModel;
   FunctionTree funcTree;
+  UnorderedMap<Absyn.Path, NFFunction.Function> funcMap;
   NBackendDAE bdae;
   Boolean dumpValidFlatModelicaNF;
   String flatString = "", NFFlatString = "";
@@ -1173,7 +1187,8 @@ algorithm
     ExecStat.execStat("FrontEnd");
 
     if runBackend then
-      (outLibs, outFileDir, resultValues, funcs) := translateModelCallBackendNB(flatModel, funcTree, className, inFileNamePrefix, inSimSettingsOpt);
+      funcMap := UnorderedMap.fromLists(FunctionTreeImpl.listKeys(funcTree), FunctionTreeImpl.listValues(funcTree), AbsynUtil.pathHash, AbsynUtil.pathEqual);
+      (outLibs, outFileDir, resultValues, funcs) := translateModelCallBackendNB(flatModel, funcMap, className, inFileNamePrefix, inSimSettingsOpt);
     else
       funcs := NFConvertDAE.convertFunctionTree(funcTree);
     end if;
@@ -1300,7 +1315,7 @@ algorithm
       end if;
 
       description := DAEUtil.daeDescription(dae);
-      dlow := BackendDAECreate.lower(dae, cache, graph, BackendDAE.EXTRA_INFO(description, inFileNamePrefix));
+      dlow := BackendDAECreate.lower(dae, cache, graph, BackendDAE.EXTRA_INFO(description, inFileNamePrefix, inSimSettingsOpt));
 
       GCExt.free(dae);
       dae := DAE.emptyDae;
@@ -1423,7 +1438,7 @@ algorithm
       end if;
 
       description := DAEUtil.daeDescription(dae);
-      dlow := BackendDAECreate.lower(dae, cache, graph, BackendDAE.EXTRA_INFO(description,inFileNamePrefix));
+      dlow := BackendDAECreate.lower(dae, cache, graph, BackendDAE.EXTRA_INFO(description,inFileNamePrefix,inSimSettingsOpt));
 
       GCExt.free(dae);
       dae := DAE.emptyDae;
@@ -1472,7 +1487,7 @@ end translateModelCallBackendOBDAEMode;
 
 protected function translateModelCallBackendNB
   input FlatModel inFlatModel;
-  input FunctionTree inFuncTree;
+  input UnorderedMap<Absyn.Path, NFFunction.Function> funcMap;
   input Absyn.Path inClassName "path for the model";
   input String inFileNamePrefix;
   input Option<SimCode.SimulationSettings> inSimSettingsOpt;
@@ -1489,7 +1504,7 @@ algorithm
   // ToDo: set permanently matching -> SBGraphs
 
   System.realtimeTick(ClockIndexes.RT_CLOCK_BACKEND);
-  bdae := NBackendDAE.lower(inFlatModel, inFuncTree);
+  bdae := NBackendDAE.lower(inFlatModel, funcMap);
   if Flags.isSet(Flags.OPT_DAE_DUMP) then
     print(NBackendDAE.toString(bdae, "(After Lowering)"));
   end if;
@@ -1679,12 +1694,12 @@ algorithm
       if Util.isSome(inBackendDAE.shared.dataReconciliationData) then
         BackendDAE.DATA_RECON(_, _, _, _, jacH) := Util.getOption(inBackendDAE.shared.dataReconciliationData);
         if isSome(jacH) then
-          matrixnames := {"B", "C", "D"};
+          matrixnames := {"B", "C", "D", "ADJ"};
         else
-          matrixnames := {"B", "C", "D", "H"};
+          matrixnames := {"B", "C", "D", "H", "ADJ"};
         end if;
       else
-        matrixnames := {"B", "C", "D", "F", "H"};
+        matrixnames := {"B", "C", "D", "F", "H", "ADJ"};
       end if;
       (daeModeSP, uniqueEqIndex, tempVars) := SimCodeUtil.createSymbolicSimulationJacobian(
         inJacobian      = BackendDAE.GENERIC_JACOBIAN(daeModeJac, daeModeSparsity, daeModeColoring, nonlinearPattern),
@@ -1706,12 +1721,12 @@ algorithm
       if Util.isSome(inBackendDAE.shared.dataReconciliationData) then
         BackendDAE.DATA_RECON(_, _, _, _, jacH) := Util.getOption(inBackendDAE.shared.dataReconciliationData);
         if isSome(jacH) then
-          matrixnames := {"A", "B", "C", "D"};
+          matrixnames := {"A", "B", "C", "D", "ADJ"};
         else
-          matrixnames := {"A", "B", "C", "D", "H"};
+          matrixnames := {"A", "B", "C", "D", "H", "ADJ"};
         end if;
       else
-        matrixnames := {"A", "B", "C", "D", "F", "H"};
+        matrixnames := {"A", "B", "C", "D", "F", "H", "ADJ"};
       end if;
       (symJacs, uniqueEqIndex) := SimCodeUtil.createSymbolicJacobianssSimCode({}, crefToSimVarHT, uniqueEqIndex, matrixnames, {});
     end if;

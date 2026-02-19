@@ -3,7 +3,7 @@
 // status: correct
 // cflags: -d=-newInst
 //
-// Simulation Results 
+// Simulation Results
 // Modelica Standard Library
 //
 
@@ -26,5 +26,5 @@ res := OpenModelica.Scripting.compareSimulationResults("Modelica.Blocks.Examples
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// {"Files not Equal!", "sample.y"}
+// {"Files Equal!"}
 // endResult

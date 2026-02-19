@@ -1543,11 +1543,27 @@ public
             obj := JSON.addPair("subscripts", Subscript.toJSONList(cref.subscripts), obj);
           end if;
         then
-          toJSON_impl(cref.restCref, obj :: accum);
+          if isEmpty(cref.restCref) then toJSON_context(cref.node, obj :: accum) else
+                                         toJSON_impl(cref.restCref, obj :: accum);
 
       else accum;
     end match;
   end toJSON_impl;
+
+  function toJSON_context
+    input InstNode node;
+    input output list<JSON> accum;
+  protected
+    Option<Absyn.Path> opt_context;
+  algorithm
+    opt_context := InstNode.rootClassContext(InstNode.instanceParent(node));
+
+    if isSome(opt_context) then
+      for name in AbsynUtil.pathToStringListReverse(Util.getOption(opt_context)) loop
+        accum := JSON.addPair("name", JSON.makeString(name), JSON.emptyListObject()) :: accum;
+      end for;
+    end if;
+  end toJSON_context;
 
   function hash
     input ComponentRef cref;
@@ -1667,6 +1683,9 @@ public
   end scalarize;
 
   function scalarizeAll
+    "output list is in reverse order.
+    cref:  b.A (Real[2, 3])
+    crefs: {b[2].A[3], b[2].A[2], b[2].A[1], b[1].A[3], b[1].A[2], b[1].A[1]}"
     input ComponentRef cref;
     input Boolean resize;
     output list<ComponentRef> crefs;

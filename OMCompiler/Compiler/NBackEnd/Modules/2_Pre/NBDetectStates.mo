@@ -235,8 +235,9 @@ protected
         ComponentRef state_cref, der_cref;
         Pointer<Variable> state_var, der_var;
 
+      // parse all der(x) calls where x is not a state derivative. those need to be handled by resolveGeneralDer()
       case Expression.CALL(call = Call.TYPED_CALL(fn = Function.FUNCTION(path = Absyn.IDENT(name = "der")),
-        arguments = {Expression.CREF(cref = state_cref)}))
+        arguments = {Expression.CREF(cref = state_cref)})) guard(not BVariable.checkCref(state_cref, BVariable.isStateDerivative, sourceInfo()))
         algorithm
           state_var := BVariable.getVarPointer(state_cref, sourceInfo());
 
@@ -314,11 +315,13 @@ protected
 
   function checkAlgebraic
     "Needs to be mapped with Expression.fold()
-    counts the number of algebraic variables in an expression."
+    counts the number of algebraic variables in an expression.
+    Count state derivatives double to ensure that they get an auxiliary."
     input Expression exp;
     input output Integer i;
   algorithm
     i := match exp
+      case Expression.CREF() guard(BVariable.isStateDerivative(BVariable.getVarPointer(exp.cref, sourceInfo()))) then i + 2;
       case Expression.CREF() guard(BVariable.isAlgebraic(BVariable.getVarPointer(exp.cref, sourceInfo()))) then i + 1;
       else i;
     end match;
@@ -449,9 +452,7 @@ protected
       then fail();
     end match;
     pre_cref := getPreVar(state_cref, state_var, acc_previous, scalarized);
-    if not scalarized then
-      pre_cref := ComponentRef.copySubscripts(state_cref, pre_cref);
-    end if;
+
     new_exp := Expression.fromCref(pre_cref);
     if negated then
       new_exp := Expression.logicNegate(new_exp);

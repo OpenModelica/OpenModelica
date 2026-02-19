@@ -45,11 +45,11 @@
 #include "util/rtclock.h"
 #include "util/simulation_options.h"
 #include "util/context.h"
+#include "simulation/eval_dep.h"
 
 #define omc_dummyVarInfo {-1,-1,"","",omc_dummyFileInfo_val}
 #define omc_dummyEquationInfo {-1,0,0,-1,NULL}
 #define omc_dummyFunctionInfo {-1,"",omc_dummyFileInfo_val}
-#define omc_dummyRealAttribute {NULL,NULL,-DBL_MAX,DBL_MAX,0,0,1.0,0.0}
 
 #define OMC_LINEARIZE_DUMP_LANGUAGE_MODELICA 0
 #define OMC_LINEARIZE_DUMP_LANGUAGE_MATLAB 1
@@ -94,8 +94,10 @@ typedef struct EQUATION_INFO
   EQUATION_SECTION section;
   int profileBlockIndex;
   int parent;
-  int numVar;
-  const char **vars;
+  int numVar;                           // number of vars
+  const char **vars;                    // vars defined in this equation
+  int numVarUsed;                       // number of varsUsed
+  const char **varsUsed;                // vars used in this equation
 } EQUATION_INFO;
 
 typedef struct FUNCTION_INFO
@@ -151,15 +153,19 @@ typedef enum
 /**
  * @brief Sparse pattern for Jacobian matrix.
  *
- * Using compressed sparse column (CSC) format.
+ * Using compressed sparse column (CSC) or compressed sparse row (CSR) format.
+ * Includes coloring of columns/rows for efficient numerical Jacobian evaluation.
+ * CSC uses column coloring and CSR uses row coloring.
+ * leadindex: size nCols+1 (CSC) or nRows+1 (CSR)
  */
 typedef struct SPARSE_PATTERN
 {
-  unsigned int* leadindex;        /* Array with column indices, size rows+1 */
+  /* Primary CSC/CSR representation */
+  unsigned int* leadindex;        /* Array with column/row indices, size nCols+1/nRows+1 */
   unsigned int* index;            /* Array with number of non-zeros indices */
   unsigned int sizeofIndex;       /* Length of array index, equal to numberOfNonZeros */
-  unsigned int* colorCols;        /* Color coding of columns. First color is `1`, second is `2`, ...
-                                   * Length of array is rows */
+  unsigned int* colorCols;        /* Color coding of columns/rows. First color is `1`, second is `2`, ...
+                                   * Length of array is nCols/nRows */
   unsigned int numberOfNonZeros;  /* Number of non-zero elements in matrix */
   unsigned int maxColors;         /* Number of colors */
 } SPARSE_PATTERN;
@@ -195,13 +201,17 @@ typedef struct JACOBIAN
   size_t sizeCols;                      /* Number of columns of Jacobian */
   size_t sizeRows;                      /* Number of rows of Jacobian */
   size_t sizeTmpVars;                   /* Length of vector tmpVars */
-  SPARSE_PATTERN* sparsePattern;        /* Contain sparse pattern including coloring */
-  modelica_real* seedVars;              /* Seed vector for specifying which columns to evaluate */
+  SPARSE_PATTERN* sparsePattern;        /* Contains sparse pattern in CSC/CSR format including column/row coloring */
+  modelica_real* seedVars;              /* Seed vector for specifying which columns/rows to evaluate */
   modelica_real* tmpVars;               /* Partial derivatives used to compute resultVars */
-  modelica_real* resultVars;            /* Result column for given seed vector */
+  modelica_real* resultVars;            /* Result column/row for given seed vector */
   modelica_real dae_cj;                 /* Is the scalar in the system Jacobian, proportional to the inverse of the step size. From User Documentation for ida v5.4.0 equation (2.5). */
-  jacobianColumn_func_ptr evalColumn;   /* symbolic jacobian column based on seed vector */
+  EVAL_DAG* dag;                        /* dependency of rows and inner partial derivatives */
+  EVAL_SELECTION* evalSelection;        /* selection for evalColumn (don't allocate, only set to other pointer) */
+  jacobianColumn_func_ptr evalColumn;   /* symbolic jacobian column/row based on seed vector */
   jacobianColumn_func_ptr constantEqns; /* Constant equations independent of seed vector */
+  modelica_boolean isRowEval;           /* Flag indicating if evalColumn evaluates rows instead of columns and
+                                           uses CSR sparse pattern and row coloring and seedVars is length sizeRows and resultVars is length sizeCols */
 } JACOBIAN;
 
 /* EXTERNAL_INPUT
@@ -233,9 +243,9 @@ typedef enum HOMOTOPY_METHOD
 } HOMOTOPY_METHOD;
 
 enum ALIAS_TYPE {
-  ALIAS_TYPE_VARIABLE = 0,
-  ALIAS_TYPE_PARAMETER = 1,
-  ALIAS_TYPE_TIME = 2,
+  ALIAS_TYPE_VARIABLE = 0,  /* Alias of a variable */
+  ALIAS_TYPE_PARAMETER = 1, /* Alias of a parameter */
+  ALIAS_TYPE_TIME = 2,      /* Alias of time */
 };
 
 /* Alias data with various types */
@@ -253,24 +263,23 @@ typedef DATA_ALIAS DATA_INTEGER_ALIAS;
 typedef DATA_ALIAS DATA_BOOLEAN_ALIAS;
 typedef DATA_ALIAS DATA_STRING_ALIAS;
 
-enum var_type {
-  T_REAL,     /* Variable is of real type */
-  T_INTEGER,  /* Variable is of integer type */
-  T_BOOLEAN,  /* Variable is of boolean type */
-  T_STRING    /* Variable is of string type */
-};
+/* Index (i-th variable, j-th index in array variable)*/
+typedef struct array_index_t {
+  size_t array_idx;   /* Index of scalar/ array variable */
+  size_t dim_idx;     /* Index inside array as 1D representation */
+} array_index_t;
 
 /* collect all attributes from one variable in one struct */
 typedef struct REAL_ATTRIBUTE
 {
   modelica_string unit;                /* = "" */
   modelica_string displayUnit;         /* = "" */
-  modelica_real min;                   /* = -Inf */
-  modelica_real max;                   /* = +Inf */
+  real_array min;                      /* = {-Inf} */
+  real_array max;                      /* = {+Inf} */
   modelica_boolean fixed;              /* depends on the type */
   modelica_boolean useNominal;         /* = false */
-  modelica_real nominal;               /* = 1.0 */
-  real_array start;                    /* = 0.0 */
+  real_array nominal;                  /* = {1.0} */
+  real_array start;                    /* = {0.0} */
 } REAL_ATTRIBUTE;
 
 typedef struct INTEGER_ATTRIBUTE
@@ -682,6 +691,8 @@ typedef struct MODEL_DATA
   long nAliasBoolean;           /* Number of boolean alias variables */
   long nAliasString;            /* Number of string alias variables */
 
+  EVAL_DAG* dag;                        /* dependency of functionODE */
+
   long nZeroCrossings;
   long nRelations;
   long nMathEvents;                    /* number of math triggering functions e.g. cail, floor, integer */
@@ -790,7 +801,7 @@ typedef struct SIMULATION_INFO
   modelica_real minStepSize;           /* defines the minimal step size */
   modelica_real tolerance;
   const char *solverMethod;
-  const char *outputFormat;
+  const char *outputFormat;           /* Output format: "mat", "csv", "plt", "empty" */
   const char *variableFilter;
 
   double loggingTimeRecord[2];         /* Time interval in which logging is active. Only used if useLoggingTime=1 */
@@ -850,11 +861,18 @@ typedef struct SIMULATION_INFO
   modelica_real* states_left;          /* work array for findRoot in event.c */
   modelica_real* states_right;         /* work array for findRoot in event.c */
 
-  /* Index maps: arr_idx -> start_idx */
-  size_t* realVarsIndex;
+  /* Index maps: arr_idx -> start_idx
+   * Maps index from modelData-><Type>VarsData (array + scalar variables) to
+   * start index in simulationData-><Type>Vars (scalarized version).
+   */
+
+  size_t* realVarsIndex;    /**< Maps real array/scalar variables to start indices in scalarized version */
   size_t* integerVarsIndex;
   size_t* booleanVarsIndex;
   size_t* stringVarsIndex;
+
+  /* adaptive eval of functionODE */
+  EVAL_SELECTION* evalSelection;        /* selection for functionODE (don't allocate, only point to other selection) */
 
   size_t* realParamsIndex;
   size_t* integerParamsIndex;
@@ -865,6 +883,25 @@ typedef struct SIMULATION_INFO
   size_t* integerAliasIndex;
   size_t* booleanAliasIndex;
   size_t* stringAliasIndex;
+
+  /* Reverse index maps: scalar_idx -> array_idx
+   * Maps index from simulationData-><Type>Vars (scalarized version) to
+   * index in modelData-><Type>VarsData (array + scalar variables).
+   */
+  array_index_t* realVarsReverseIndex;
+  array_index_t* integerVarsReverseIndex;
+  array_index_t* booleanVarsReverseIndex;
+  array_index_t* stringVarsReverseIndex;
+
+  array_index_t* realParamsReverseIndex;
+  array_index_t* integerParamsReverseIndex;
+  array_index_t* booleanParamsReverseIndex;
+  array_index_t* stringParamsReverseIndex;
+
+  array_index_t* realAliasReverseIndex;
+  array_index_t* integerAliasReverseIndex;
+  array_index_t* booleanAliasReverseIndex;
+  array_index_t* stringAliasReverseIndex;
 
   /* old vars for event handling */
   modelica_real timeValueOld;

@@ -22,6 +22,7 @@ mslElectricalMachinesTest.mos \
 mslElectricalMachinesTestDAE.mos \
 mslElectricalSensorsTest.mos \
 mslMathFFT1Test.mos \
+mslThermalMassesTestNB.mos \
 nameClashTest.mos \
 functionPointerTest.mos \
 recordTupleReturnTest.mos \

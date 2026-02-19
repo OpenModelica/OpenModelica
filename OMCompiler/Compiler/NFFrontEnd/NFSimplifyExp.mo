@@ -249,12 +249,9 @@ function simplifyBuiltinCall
   output Expression exp;
 algorithm
   exp := match AbsynUtil.pathFirstIdent(name)
-    case "cat"
-      algorithm
-        // ToDo: prevent this for NB
-        exp := ExpandExp.expandBuiltinCat(args, call, false);
-      then
-        exp;
+    case "cat" guard not Flags.getConfigBool(Flags.NEW_BACKEND) algorithm
+      exp := ExpandExp.expandBuiltinCat(args, call, false);
+    then exp;
 
     case "pre" then match args
       case {exp as Expression.BOOLEAN()} then exp;

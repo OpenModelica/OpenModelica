@@ -410,11 +410,13 @@ package SimCode
       NonlinearPattern nonlinear;
       NonlinearPattern nonlinearT;
       list<list<Integer>> coloredCols;
+      list<list<Integer>> coloredRows;
       Integer maxColorCols;
       Integer jacobianIndex;
       Integer partitionIndex;
       list<SimGenericCall> generic_loop_calls;
       Option<HashTableCrefSimVar.HashTable> crefsHT;
+      Boolean isAdjoint;
     end JAC_MATRIX;
   end JacobianMatrix;
 
@@ -834,13 +836,13 @@ package SimCode
 
   uniontype BaseUnit
     record BASEUNIT
-      Integer mol "exponent";
-      Integer cd  "exponent";
-      Integer m   "exponent";
       Integer s   "exponent";
+      Integer m   "exponent";
+      Integer kg  "exponent";
       Integer A   "exponent";
       Integer K   "exponent";
-      Integer kg  "exponent";
+      Integer mol "exponent";
+      Integer cd  "exponent";
       Real factor "prefix";
       Real offset "offset";
     end BASEUNIT;
@@ -1153,6 +1155,7 @@ package SimCodeFunction
       Boolean is_parallel;
     end FUNCTION_CONTEXT;
     record JACOBIAN_CONTEXT
+      String name;
       Option<HashTableCrefSimVar.HashTable> jacHT;
     end JACOBIAN_CONTEXT;
     record ALGLOOP_CONTEXT
@@ -1349,6 +1352,12 @@ package SimCodeUtil
     output list<SimCode.SimEqSystem> deps;
   end computeDependencies;
 
+  function getSimEqSysForIndex
+    input Integer idx;
+    input list<SimCode.SimEqSystem> allSimEqs;
+    output SimCode.SimEqSystem outSimEq;
+  end getSimEqSysForIndex;
+
   function getSimEqSystemsByIndexLst
     input list<Integer> idcs;
     input list<SimCode.SimEqSystem> allSes;
@@ -1391,6 +1400,7 @@ package SimCodeUtil
   end simVarFromHT;
 
   function createJacContext
+    input String name;
     input Option<HashTableCrefSimVar.HashTable> jacHT;
     output SimCodeFunction.Context outContext;
   end createJacContext;
@@ -3928,6 +3938,11 @@ package Expression
     input list<DAE.Exp> iExpressions;
     output Boolean oCrefWithEqualIdents;
   end isCrefListWithEqualIdents;
+
+  function expDimensions
+    input DAE.Exp inExp;
+    output DAE.Dimensions outDims;
+  end expDimensions;
 
   function dimensionsList
     input DAE.Dimensions inDims;

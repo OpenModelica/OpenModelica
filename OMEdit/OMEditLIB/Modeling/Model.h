@@ -486,10 +486,13 @@ private:
     Model* getParentModel() const {return mpParentModel;}
     const QString &getName() const {return mName;}
     void setName(const QString &newName) {mName = newName;}
+    void setValue(const QString &value) {mValue = value; mValueDefined = true;}
     const QString &getType() const {return mType;}
     QString getValueWithoutQuotes() const {return StringHandler::removeFirstLastQuotes(getValue());}
     bool isValueDefined() const {return mValueDefined;}
     QString toString(bool skipTopLevel = false, bool includeComment = false, bool onlyType = false) const;
+    static Modifier *mergeModifiersIntoOne(QList<const Modifier *> extendsModifiers, Model *pParentModel);
+    static void mergeModifiers(Modifier *pModifier1, const Modifier *pModifier2);
     Modifier *getModifier(const QString &modifier) const;
     QPair<QString, bool> getModifierValue(const QString &modifier) const;
     bool hasModifier(const QString &modifier) const;
@@ -503,6 +506,7 @@ private:
     const QString &getValue() const {return mValue;}
     const QString &getComment() const {return mComment;}
     bool hasElement() const {return mpElement != 0;}
+    Element *getElement() const {return mpElement;}
     QPair<QString, bool> getModifierValue(QStringList qualifiedModifierName) const;
   private:
     Model *mpParentModel;
@@ -652,7 +656,7 @@ private:
     QPair<QString, bool> getVariableValue(QStringList variables);
     QString getVariableType(QStringList variables);
 
-    FlatModelica::Expression* getVariableValueOrBinding(const QString &variableName, bool value) const;
+    const FlatModelica::Expression *getVariableValueOrBinding(const QString &variableName, bool value) const;
     const Element *lookupElement(const QString &name) const;
     Element *lookupElement(const QString &name);
     const Element *lookupElement(const Name &name) const;
@@ -711,10 +715,10 @@ private:
     const QString &getComment() const;
     Annotation *getAnnotation() const;
     const FlatModelica::Expression &getValue() const {return mValue;}
-    FlatModelica::Expression &getValue() {return mValue;}
+    FlatModelica::Expression &getValue() = delete;
     const FlatModelica::Expression &getBinding() const {return mBinding;}
-    FlatModelica::Expression &getBinding() {return mBinding;}
-    void setBinding(const FlatModelica::Expression expression) {mBinding = expression;}
+    FlatModelica::Expression &getBinding() = delete;
+    void setBinding(const FlatModelica::Expression &expression) {mBinding = expression;}
     void resetBinding() {mBinding = mBindingForReset;}
     bool getIconDiagramMapPrimitivesVisible(bool icon) const;
     bool getIconDiagramMapHasExtent(bool icon) const;
@@ -735,6 +739,10 @@ private:
   private:
     virtual void deserialize_impl(const QJsonObject &jsonObject) = 0;
     static QPair<QString, bool> getModifierValueFromInheritedType(Model *pModel, QStringList modifierNames);
+    bool isParameterInPrefixes() const;
+    bool isParameter(const QString &name) const;
+    bool isInputInPrefixes() const;
+    bool isInput(const QString &name) const;
   protected:
     Model *mpParentModel;
     Model *mpModel = 0;
@@ -782,9 +790,7 @@ private:
     void setType(const QString &type) {mType = type;}
   private:
     void deserialize_impl(const QJsonObject &jsonObject) override;
-    QList<Modifier*> getExtendsModifiers(const Model *pParentModel) const;
-    Modifier *mergeModifiersIntoOne(QList<Modifier*> extendsModifiers) const;
-    static void mergeModifiers(Modifier *pModifier1, Modifier *pModifier2);
+    QList<const Modifier *> getExtendsModifiers(const Model *pParentModel) const;
   private:
     QString mName;
     bool mCondition = true;

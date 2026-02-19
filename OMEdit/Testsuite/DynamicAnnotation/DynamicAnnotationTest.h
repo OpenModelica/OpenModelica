@@ -37,8 +37,6 @@
 
 #include <QObject>
 
-#include "Modeling/Model.h"
-
 /*!
  * \brief The DynamicAnnotationTest class
  * Tests the Model class.
@@ -46,19 +44,20 @@
 class DynamicAnnotationTest: public QObject
 {
   Q_OBJECT
-private:
-  const QString mFileName = "MWE.mo";
-  const QString mPackageName = "MWE";
-  const QString mModelName = "MWE.Unnamed";
-  ModelInstance::Model *mpModelInstance = 0;
-  BooleanAnnotation mEnable;
 private slots:
   void initTestCase();
   /*!
    * \brief evaluate
-   * Tests the DynamicAnnotation evalaute.
+   * Tests the DynamicAnnotation evaluate.
    */
   void evaluate();
+  void evaluate_data();
+  /*!
+   * \brief evaluate_nested
+   * Tests the DynamicAnnotation evaluate nested.
+   */
+  void evaluate_nested();
+  void evaluate_nested_data();
   void cleanupTestCase();
 };
 

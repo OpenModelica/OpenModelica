@@ -34,58 +34,154 @@
 
 #include "ModelInstanceTest.h"
 #include "Util.h"
-#include "OMEditApplication.h"
 #include "MainWindow.h"
 #include "Modeling/LibraryTreeWidget.h"
-
-#ifndef GC_THREADS
-#define GC_THREADS
-#endif
-extern "C" {
-#include "meta/meta_modelica.h"
-}
+#include "Modeling/Model.h"
 
 OMEDITTEST_MAIN(ModelInstanceTest)
 
 void ModelInstanceTest::initTestCase()
 {
-  MainWindow::instance()->getLibraryWidget()->openFile(QFINDTESTDATA(mFileName));
-  if (!MainWindow::instance()->getOMCProxy()->existClass(mPackageName)) {
-    QFAIL(QString("Failed to load file %1").arg(mFileName).toStdString().c_str());
+  // load ModelInstanceTest.mo
+  const QString modelInstanceTestFileName = QFINDTESTDATA("ModelInstanceTest.mo");
+  MainWindow::instance()->getLibraryWidget()->openFile(modelInstanceTestFileName);
+  if (!MainWindow::instance()->getOMCProxy()->existClass("P")) {
+    QFAIL(QString("Failed to load file %1").arg(modelInstanceTestFileName).toStdString().c_str());
   }
 
-  mpModelInstance = new ModelInstance::Model(MainWindow::instance()->getOMCProxy()->getModelInstance(mModelName));
+  // load RestrictedVariabilityParamDialog.mo
+  const QString restrictedVariabilityParamDialogFileName = QFINDTESTDATA("RestrictedVariabilityParamDialog.mo");
+  MainWindow::instance()->getLibraryWidget()->openFile(restrictedVariabilityParamDialogFileName);
+  if (!MainWindow::instance()->getOMCProxy()->existClass("RestrictedVariabilityParamDialog")) {
+    QFAIL(QString("Failed to load file %1").arg(restrictedVariabilityParamDialogFileName).toStdString().c_str());
+  }
 }
 
 void ModelInstanceTest::classAnnotations()
 {
-  if (mpModelInstance->getAnnotation()->getIconAnnotation()->getGraphics().isEmpty()) {
+  ModelInstance::Model *pModelInstance = new ModelInstance::Model(MainWindow::instance()->getOMCProxy()->getModelInstance("P.M"));
+  if (!pModelInstance) {
+    QFAIL("Model instance is null.");
+  }
+
+  if (pModelInstance->getAnnotation()->getIconAnnotation()->getGraphics().isEmpty()) {
     QFAIL("Failed to read the class icon annotation.");
   }
 
-  if (mpModelInstance->getAnnotation()->getDiagramAnnotation()->getGraphics().isEmpty()) {
+  if (pModelInstance->getAnnotation()->getDiagramAnnotation()->getGraphics().isEmpty()) {
     QFAIL("Failed to read the class diagram annotation.");
   }
+
+  delete pModelInstance;
 }
 
 void ModelInstanceTest::classElements()
 {
-  if (mpModelInstance->getElements().isEmpty()) {
+  ModelInstance::Model *pModelInstance = new ModelInstance::Model(MainWindow::instance()->getOMCProxy()->getModelInstance("P.M"));
+  if (!pModelInstance) {
+    QFAIL("Model instance is null.");
+  }
+
+  if (pModelInstance->getElements().isEmpty()) {
     QFAIL("Failed to read the class elements.");
   }
+
+  delete pModelInstance;
 }
 
 void ModelInstanceTest::classConnections()
 {
-  if (mpModelInstance->getConnections().isEmpty()) {
+  ModelInstance::Model *pModelInstance = new ModelInstance::Model(MainWindow::instance()->getOMCProxy()->getModelInstance("P.M"));
+  if (!pModelInstance) {
+    QFAIL("Model instance is null.");
+  }
+
+  if (pModelInstance->getConnections().isEmpty()) {
     QFAIL("Failed to read the class connections.");
   }
+
+  delete pModelInstance;
+}
+
+void ModelInstanceTest::isParameter()
+{
+  QFETCH(QString, model);
+  QFETCH(QString, element);
+  QFETCH(bool, result);
+
+  ModelInstance::Model *pModelInstance = new ModelInstance::Model(MainWindow::instance()->getOMCProxy()->getModelInstance(model));
+  if (!pModelInstance) {
+    QFAIL("Model instance is null.");
+  }
+
+  auto pElement = pModelInstance->lookupElement(element);
+
+  if (!pElement) {
+    QFAIL(QString("Failed to find element %1.").arg(element).toStdString().c_str());
+  }
+
+  QCOMPARE(pElement->isParameter(), result);
+
+  delete pModelInstance;
+}
+
+void ModelInstanceTest::isParameter_data()
+{
+  QTest::addColumn<QString>("model");
+  QTest::addColumn<QString>("element");
+  QTest::addColumn<bool>("result");
+
+  QTest::newRow("Parameter in prefix")
+      << "RestrictedVariabilityParamDialog.Volume"
+      << "V"
+      << false;
+
+  QTest::newRow("Parameter in extends modifiers")
+      << "RestrictedVariabilityParamDialog.RestrictByRedeclare"
+      << "V"
+      << true;
+}
+
+void ModelInstanceTest::isInput()
+{
+  QFETCH(QString, model);
+  QFETCH(QString, element);
+  QFETCH(bool, result);
+
+  ModelInstance::Model *pModelInstance = new ModelInstance::Model(MainWindow::instance()->getOMCProxy()->getModelInstance(model));
+  if (!pModelInstance) {
+    QFAIL("Model instance is null.");
+  }
+
+  auto pElement = pModelInstance->lookupElement(element);
+
+  if (!pElement) {
+    QFAIL(QString("Failed to find element %1.").arg(element).toStdString().c_str());
+  }
+
+  QCOMPARE(pElement->isInput(), result);
+
+  delete pModelInstance;
+}
+
+void ModelInstanceTest::isInput_data()
+{
+  QTest::addColumn<QString>("model");
+  QTest::addColumn<QString>("element");
+  QTest::addColumn<bool>("result");
+
+  QTest::newRow("Input in prefix")
+      << "RestrictedVariabilityParamDialog.Volume"
+      << "X"
+      << false;
+
+  QTest::newRow("Input in extends modifiers")
+      << "RestrictedVariabilityParamDialog.InputByRedeclare"
+      << "X"
+      << true;
 }
 
 void ModelInstanceTest::cleanupTestCase()
 {
-  if (mpModelInstance) {
-    delete mpModelInstance;
-  }
   MainWindow::instance()->close();
 }

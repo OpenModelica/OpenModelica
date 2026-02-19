@@ -303,7 +303,7 @@ algorithm
   local
     Real startTime,stopTime,stepSize,tolerance;
     Integer nIntervals;
-    String method,format,varFilter,cflags,options;
+    String method,format,varFilter,cflags,options,simflags;
 
     case(GlobalScript.SIMULATION_OPTIONS(
       DAE.RCONST(startTime),
@@ -317,10 +317,10 @@ algorithm
       DAE.SCONST(format),
       DAE.SCONST(varFilter),
       DAE.SCONST(cflags),
-      _)) equation
+      DAE.SCONST(simflags))) equation
         options = "";
 
-    then SimCode.SIMULATION_SETTINGS(startTime,stopTime,nIntervals,stepSize,tolerance,method,options,format,varFilter,cflags);
+    then SimCode.SIMULATION_SETTINGS(startTime,stopTime,nIntervals,stepSize,tolerance,method,options,format,varFilter,cflags,simflags);
   end match;
 end convertSimulationOptionsToSimCode;
 
@@ -1154,7 +1154,7 @@ algorithm
         (outCache, env, SOME(dae), _) = runFrontEnd(outCache, inEnv, path, true, transform = true);
         filenameprefix = AbsynUtil.pathString(path);
         description = DAEUtil.daeDescription(dae);
-        daelow = BackendDAECreate.lower(dae,outCache,env,BackendDAE.EXTRA_INFO(description,filenameprefix));
+        daelow = BackendDAECreate.lower(dae,outCache,env,BackendDAE.EXTRA_INFO(description,filenameprefix,NONE()));
         (BackendDAE.DAE({syst},shared)) = BackendDAEUtil.preOptimizeBackendDAE(daelow,NONE());
         (syst,m,_) = BackendDAEUtil.getAdjacencyMatrixfromOption(syst,BackendDAE.NORMAL(),NONE(),BackendDAEUtil.isInitializationDAE(shared));
         vars = BackendVariable.daeVars(syst);
@@ -1504,6 +1504,11 @@ algorithm
     case ("linearize",(vals as Values.CODE(Absyn.C_TYPENAME(className))::_))
       equation
         System.realtimeTick(ClockIndexes.RT_CLOCK_SIMULATE_TOTAL);
+        // Ensure that the linearization dump language is set to modelica if it is none
+        str = Flags.getConfigString(Flags.LINEARIZATION_DUMP_LANGUAGE);
+        if (stringEq(str,"none")) then
+          FlagsUtil.setConfigString(Flags.LINEARIZATION_DUMP_LANGUAGE, "modelica");
+        end if;
 
         (b,outCache,compileDir,executable,_,outputFormat_str,_,simflags,resultValues,vals,dirs) = buildModel(outCache,inEnv,vals,msg);
         if b then
@@ -3108,8 +3113,8 @@ algorithm
     case ("convertPackageToLibrary", {Values.CODE(Absyn.C_TYPENAME(classpath)), Values.CODE(Absyn.C_TYPENAME(path)), Values.STRING(str)})
       then convertPackageToLibrary(classpath, path, str);
 
-    case ("getModelInstance", {Values.CODE(Absyn.C_TYPENAME(classpath)), Values.STRING(str), Values.BOOL(b)})
-      then NFApi.getModelInstance(classpath, str, b);
+    case ("getModelInstance", {Values.CODE(Absyn.C_TYPENAME(classpath)), Values.CODE(Absyn.C_TYPENAME(path)), Values.STRING(str), Values.BOOL(b)})
+      then NFApi.getModelInstance(classpath, path, str, b);
 
     case ("getModelInstanceAnnotation", {Values.CODE(Absyn.C_TYPENAME(classpath)), v as Values.ARRAY(), Values.BOOL(b)})
       then NFApi.getModelInstanceAnnotation(classpath, ValuesUtil.arrayValueStrings(v), b);
@@ -3459,7 +3464,7 @@ algorithm
         description = DAEUtil.daeDescription(dae);
         a_cref = AbsynUtil.pathToCref(className);
         file_dir = getFileDir(a_cref, SymbolTable.getAbsyn());
-        dlow = BackendDAECreate.lower(dae,cache,env,BackendDAE.EXTRA_INFO(description,filenameprefix));
+        dlow = BackendDAECreate.lower(dae,cache,env,BackendDAE.EXTRA_INFO(description,filenameprefix,NONE()));
         dlow = FindZeroCrossings.findZeroCrossings(dlow);
         flatModelicaStr = DAEDump.dumpStr(dae,FCore.getFunctionTree(cache));
         flatModelicaStr = stringAppend("OldEqStr={'", flatModelicaStr);
@@ -4590,13 +4595,13 @@ algorithm
       Integer interval_i;
       Real starttime_r,stoptime_r,tolerance_r;
       FCore.Cache cache;
-      String cflags;
-    case (cache, {Values.CODE(Absyn.C_TYPENAME(_)),starttime_v,stoptime_v,Values.INTEGER(interval_i),tolerance_v,Values.STRING(method_str),_,Values.STRING(options_str),Values.STRING(outputFormat_str),Values.STRING(variableFilter_str),Values.STRING(cflags),Values.STRING(_)})
+      String cflags, simflags;
+    case (cache, {Values.CODE(Absyn.C_TYPENAME(_)),starttime_v,stoptime_v,Values.INTEGER(interval_i),tolerance_v,Values.STRING(method_str),_,Values.STRING(options_str),Values.STRING(outputFormat_str),Values.STRING(variableFilter_str),Values.STRING(cflags),Values.STRING(simflags)})
       equation
         starttime_r = ValuesUtil.valueReal(starttime_v);
         stoptime_r = ValuesUtil.valueReal(stoptime_v);
         tolerance_r = ValuesUtil.valueReal(tolerance_v);
-        outSimSettings = SimCodeMain.createSimulationSettings(starttime_r,stoptime_r,interval_i,tolerance_r,method_str,options_str,outputFormat_str,variableFilter_str,cflags);
+        outSimSettings = SimCodeMain.createSimulationSettings(starttime_r,stoptime_r,interval_i,tolerance_r,method_str,options_str,outputFormat_str,variableFilter_str,cflags,simflags);
       then
         (cache, outSimSettings);
     else
@@ -5883,20 +5888,20 @@ algorithm
         // className, startTime, stopTime, numberOfIntervals, tolerance, method, fileNamePrefix,
         // options, outputFormat, variableFilter, cflags, simflags
         values := vals;
-        (Values.CODE(Absyn.C_TYPENAME(classname)),vals) := getListFirstShowError(vals, "while retreaving the className (1 arg) from the buildModel arguments");
-        (_,vals) := getListFirstShowError(vals, "while retreaving the startTime (2 arg) from the buildModel arguments");
-        (_,vals) := getListFirstShowError(vals, "while retreaving the stopTime (3 arg) from the buildModel arguments");
-        (_,vals) := getListFirstShowError(vals, "while retreaving the numberOfIntervals (4 arg) from the buildModel arguments");
-        (_,vals) := getListFirstShowError(vals, "while retreaving the tolerance (5 arg) from the buildModel arguments");
-        (_,vals) := getListFirstShowError(vals, "while retreaving the method (6 arg) from the buildModel arguments");
+        (Values.CODE(Absyn.C_TYPENAME(classname)),vals) := getListFirstShowError(vals, "while retrieving the className (1 arg) from the buildModel arguments");
+        (_,vals) := getListFirstShowError(vals, "while retrieving the startTime (2 arg) from the buildModel arguments");
+        (_,vals) := getListFirstShowError(vals, "while retrieving the stopTime (3 arg) from the buildModel arguments");
+        (_,vals) := getListFirstShowError(vals, "while retrieving the numberOfIntervals (4 arg) from the buildModel arguments");
+        (_,vals) := getListFirstShowError(vals, "while retrieving the tolerance (5 arg) from the buildModel arguments");
+        (_,vals) := getListFirstShowError(vals, "while retrieving the method (6 arg) from the buildModel arguments");
         (Values.STRING(filenameprefix),vals) := getListFirstShowError(vals, "while retreaving the fileNamePrefix (7 arg) from the buildModel arguments");
 
 
-        (_,vals) := getListFirstShowError(vals, "while retreaving the options (8 arg) from the buildModel arguments");
-        (_,vals) := getListFirstShowError(vals, "while retreaving the outputFormat (9 arg) from the buildModel arguments");
-        (_,vals) := getListFirstShowError(vals, "while retreaving the variableFilter (10 arg) from the buildModel arguments");
-        (_,vals) := getListFirstShowError(vals, "while retreaving the cflags (11 arg) from the buildModel arguments");
-        (Values.STRING(simflags),vals) := getListFirstShowError(vals, "while retreaving the simflags (12 arg) from the buildModel arguments");
+        (_,vals) := getListFirstShowError(vals, "while retrieving the options (8 arg) from the buildModel arguments");
+        (_,vals) := getListFirstShowError(vals, "while retrieving the outputFormat (9 arg) from the buildModel arguments");
+        (_,vals) := getListFirstShowError(vals, "while retrieving the variableFilter (10 arg) from the buildModel arguments");
+        (_,vals) := getListFirstShowError(vals, "while retrieving the cflags (11 arg) from the buildModel arguments");
+        (Values.STRING(simflags),vals) := getListFirstShowError(vals, "while retrieving the simflags (12 arg) from the buildModel arguments");
 
         Error.clearMessages() "Clear messages";
 
@@ -6196,7 +6201,7 @@ algorithm
         cname_str = AbsynUtil.pathString(classname);
         filenameprefix = if filenameprefix == "<default>" then cname_str else filenameprefix;
 
-        dlow = BackendDAECreate.lower(dae,cache,env,BackendDAE.EXTRA_INFO(description,filenameprefix)); //Verificare cosa fa
+        dlow = BackendDAECreate.lower(dae,cache,env,BackendDAE.EXTRA_INFO(description,filenameprefix,NONE())); //Verificare cosa fa
         dlow_1 = BackendDAEUtil.preOptimizeBackendDAE(dlow,NONE());
         dlow_1 = FindZeroCrossings.findZeroCrossings(dlow_1);
         xml_filename = stringAppendList({filenameprefix,".xml"});
@@ -6236,7 +6241,7 @@ algorithm
         cname_str = AbsynUtil.pathString(classname);
         filenameprefix = if filenameprefix == "<default>" then cname_str else filenameprefix;
 
-        dlow = BackendDAECreate.lower(dae,cache,env,BackendDAE.EXTRA_INFO(description,filenameprefix)); //Verificare cosa fa
+        dlow = BackendDAECreate.lower(dae,cache,env,BackendDAE.EXTRA_INFO(description,filenameprefix,NONE())); //Verificare cosa fa
         dlow_1 = BackendDAEUtil.preOptimizeBackendDAE(dlow,NONE());
         dlow_1 = BackendDAEUtil.transformBackendDAE(dlow_1,NONE(),NONE(),NONE());
         dlow_1 = FindZeroCrossings.findZeroCrossings(dlow_1);
@@ -6277,7 +6282,7 @@ algorithm
         cname_str = AbsynUtil.pathString(classname);
         filenameprefix = if filenameprefix == "<default>" then cname_str else filenameprefix;
 
-        dlow = BackendDAECreate.lower(dae,cache,env,BackendDAE.EXTRA_INFO(description,filenameprefix));
+        dlow = BackendDAECreate.lower(dae,cache,env,BackendDAE.EXTRA_INFO(description,filenameprefix, NONE()));
         indexed_dlow = BackendDAEUtil.getSolvedSystem(dlow,"");
         xml_filename = stringAppendList({filenameprefix,".xml"});
 
@@ -6316,7 +6321,7 @@ algorithm
         cname_str = AbsynUtil.pathString(classname);
         filenameprefix = if filenameprefix == "<default>" then cname_str else filenameprefix;
 
-        dlow = BackendDAECreate.lower(dae,cache,env,BackendDAE.EXTRA_INFO(description,filenameprefix));
+        dlow = BackendDAECreate.lower(dae,cache,env,BackendDAE.EXTRA_INFO(description,filenameprefix,NONE()));
         indexed_dlow = BackendDAEUtil.getSolvedSystem(dlow,"");
         xml_filename = stringAppendList({filenameprefix,".xml"});
 

@@ -55,7 +55,6 @@ protected
   import NFInstNode.InstNode;
   import InstContext = NFInstContext;
   import NFFunction.Function;
-  import NFFlatten.FunctionTreeImpl;
   import SimplifyExp = NFSimplifyExp;
   import Statement = NFStatement;
   import Subscript = NFSubscript;
@@ -121,7 +120,7 @@ public
       case StrongComponent.SINGLE_COMPONENT() algorithm
         // solve the equation for the variable
         varName := BVariable.getVarName(comp.var);
-        (solvedEq, _, status, _) := Solve.solveBody(Pointer.access(comp.eqn), varName, FunctionTreeImpl.EMPTY());
+        (solvedEq, status, _) := Solve.solveBody(Pointer.access(comp.eqn), varName);
         if status == NBSolve.Status.EXPLICIT then
           // apply all previous replacements on the RHS
           SOME(replace_exp) := Equation.getRHS(solvedEq);

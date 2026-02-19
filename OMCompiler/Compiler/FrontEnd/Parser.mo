@@ -48,7 +48,6 @@ import Config;
 import ErrorExt;
 import Flags;
 import ParserExt;
-import AbsynToSCode;
 import System;
 import Testsuite;
 import Util;
@@ -61,15 +60,20 @@ function parse "Parse a mo-file"
   input String encoding;
   input String libraryPath = "";
   input Option<Integer> lveInstance = NONE();
+  input Integer acceptedGram = Config.acceptedGrammar();
+  input Integer languageStandardInt = Flags.getConfigEnum(Flags.LANGUAGE_STANDARD);
+  input Boolean strict = Flags.getConfigBool(Flags.STRICT);
   output Absyn.Program outProgram;
 protected
   list<Absyn.Class> classes, classes1;
   Absyn.Within w;
   Absyn.Class cs;
+  String realpath;
 algorithm
-  outProgram := parsebuiltin(filename,encoding,libraryPath,lveInstance);
-  /* Check that the program is not totally off the charts */
-  _ := AbsynToSCode.translateAbsyn2SCode(outProgram);
+  realpath := Util.replaceWindowsBackSlashWithPathDelimiter(System.realpath(filename));
+  outProgram := ParserExt.parse(realpath, Testsuite.friendly(realpath),
+    acceptedGram, encoding, languageStandardInt, strict, Testsuite.isRunning(), libraryPath, lveInstance);
+
   // Check license features
   if (isSome(lveInstance)) then
     Absyn.PROGRAM(classes, w) := outProgram;
@@ -99,27 +103,7 @@ function parsestring "Parse a string as if it were a stored definition"
   output Absyn.Program outProgram;
 algorithm
   outProgram := ParserExt.parsestring(str, infoFilename, grammar, languageStd, strict, Testsuite.isRunning());
-  /* Check that the program is not totally off the charts */
-  _ := AbsynToSCode.translateAbsyn2SCode(outProgram);
 end parsestring;
-
-function parsebuiltin "Like parse, but skips the SCode check to avoid infinite loops for ModelicaBuiltin.mo."
-  input String filename;
-  input String encoding;
-  input String libraryPath = "";
-  input Option<Integer> lveInstance = NONE();
-  input Integer acceptedGram=Config.acceptedGrammar();
-  input Integer languageStandardInt=Flags.getConfigEnum(Flags.LANGUAGE_STANDARD);
-  input Boolean strict = Flags.getConfigBool(Flags.STRICT);
-  output Absyn.Program outProgram;
-  annotation(__OpenModelica_EarlyInline = true);
-protected
-  String realpath;
-algorithm
-  realpath := Util.replaceWindowsBackSlashWithPathDelimiter(System.realpath(filename));
-  outProgram := ParserExt.parse(realpath, Testsuite.friendly(realpath),
-    acceptedGram, encoding, languageStandardInt, strict, Testsuite.isRunning(), libraryPath, lveInstance);
-end parsebuiltin;
 
 function parsestringexp "Parse a string as if it was a sequence of statements"
   input String str;

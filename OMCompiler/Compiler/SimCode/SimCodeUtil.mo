@@ -110,7 +110,6 @@ import PriorityQueue;
 import SemanticVersion;
 import SimCodeDump;
 import SimCodeFunctionUtil;
-import SimCodeFunctionUtil.varName;
 import Static;
 import StringUtil;
 import SymbolicJacobian;
@@ -264,7 +263,7 @@ protected
   DoubleEnded.MutableList<BackendDAE.ZeroCrossing> de_relations;
   list<BackendDAE.ZeroCrossing> zeroCrossings, sampleZC, relations;
   list<DAE.ClassAttributes> classAttributes;
-  list<DAE.ComponentRef> discreteModelVars;
+  list<DAE.ComponentRef> discreteModelVars, iterationVarsLst1, iterationVarsLst2;
   list<DAE.Constraint> constraints;
   list<DAE.Exp> lits;
   list<SimCode.ClockedPartition> clockedPartitions;
@@ -311,7 +310,7 @@ protected
   list<SimCodeVar.SimVar> tmpsetcVars, tmpdatareconinputvars, tmpsetBVars;
   SimCode.JacobianMatrix dataReconSimJac, dataReconSimJacH;
   Integer numRelatedBoundaryConditions;
-  String fullPathPrefix, fileNamePrefixHash;
+  String fullPathPrefix, fileNamePrefixHash, iterationVarsStr;
 
   SimCode.OMSIFunction omsiInitEquations, omsiSimEquations;
   Option<SimCode.OMSIData> omsiOptData;
@@ -581,6 +580,20 @@ algorithm
       end if;
       SymbolicJacsNLS := listAppend(SymbolicJacsTemp, SymbolicJacsNLS);
       //SymbolicJacsNLS := dataReconSimJac::SymbolicJacsNLS;
+      // write iteration variables to file for data reconciliation report
+      (_, iterationVarsLst1) := BackendDAEOptimize.listAllIterationVariables0(inInitDAE.eqs);
+      (_, iterationVarsLst2) := BackendDAEOptimize.listAllIterationVariables0(inBackendDAE.eqs);
+      iterationVarsLst1 := List.unique(listAppend(iterationVarsLst1, iterationVarsLst2));
+
+      iterationVarsStr := "List of iteration variables(" + intString(listLength(iterationVarsLst1)) + "):"  + "\n=============================\n";
+      if listEmpty(iterationVarsLst1) then
+        iterationVarsStr := iterationVarsStr + "No iteration variables found.\n";
+      else
+        for var in iterationVarsLst1 loop
+          iterationVarsStr := iterationVarsStr + ComponentReference.crefStr(var) + "\n";
+        end for;
+      end if;
+      System.writeFile(shared.info.fileNamePrefix + "_iterationVars.txt", iterationVarsStr);
     end if;
 
     // collect symbolic jacobians from state selection
@@ -3621,7 +3634,7 @@ algorithm
       rhsVals = ValuesUtil.valueReals(List.map(beqs, Ceval.cevalSimple));
       jacVals = SymbolicJacobian.evaluateConstantJacobian(listLength(simVars), jac);
       (solvedVals, linInfo) = System.dgesv(jacVals, rhsVals);
-      names = List.map(simVars, varName);
+      names = list(v.name for v in simVars);
       checkLinearSystem(linInfo, names, jacVals, rhsVals);
       // TODO: Move these to known vars :/ This is done in the wrong phase of the compiler... Also, if done as an optimization module, we can optimize more!
       sources = List.map1(sources, ElementSource.addSymbolicTransformation, DAE.LINEAR_SOLVED(names, jacVals, rhsVals, solvedVals));
@@ -4831,7 +4844,7 @@ algorithm
           print("created sparse pattern for algebraic loop time: " + realString(clock()) + "\n");
         end if;
 
-      then (SOME(SimCode.JAC_MATRIX({}, {}, "", sparseInts, sparseIntsT, nonlinearPat, nonlinearPatT, coloring, maxColor, -1, 0, {}, NONE())), iuniqueEqIndex, itempvars);
+      then (SOME(SimCode.JAC_MATRIX({}, {}, "", sparseInts, sparseIntsT, nonlinearPat, nonlinearPatT, coloring, {}, maxColor, -1, 0, {}, NONE(), false)), iuniqueEqIndex, itempvars);
 
     case (BackendDAE.GENERIC_JACOBIAN(SOME((BackendDAE.DAE(eqs=systs, shared=shared), name, independentVarsLst, residualVarsLst, dependentVarsLst, _)),
                                       (sparsepatternComRefs, sparsepatternComRefsT, (_, _), _),
@@ -4906,7 +4919,7 @@ algorithm
 
         (allEquations, constantEqns, uniqueEqIndex, tempvars) = getSimEqSystemForJacobians(systs, shared, uniqueEqIndex, tempvars);
 
-      then (SOME(SimCode.JAC_MATRIX({SimCode.JAC_COLUMN(allEquations, columnVars, nRows, constantEqns)}, seedVars, name, sparseInts, sparseIntsT, nonlinearPat, nonlinearPatT, coloring, maxColor, -1, 0, {}, SOME(crefToSimVarHTJacobian))), uniqueEqIndex, tempvars);
+      then (SOME(SimCode.JAC_MATRIX({SimCode.JAC_COLUMN(allEquations, columnVars, nRows, constantEqns)}, seedVars, name, sparseInts, sparseIntsT, nonlinearPat, nonlinearPatT, coloring, {}, maxColor, -1, 0, {}, SOME(crefToSimVarHTJacobian), false)), uniqueEqIndex, tempvars);
 
     else
       equation
@@ -5022,12 +5035,12 @@ algorithm
         if Util.isSome(shared.dataReconciliationData) then
           BackendDAE.DATA_RECON(_, _, _, _, jacH) := Util.getOption(shared.dataReconciliationData);
           if isSome(jacH) then // check for matrix H is present which means state estimation algorithm is choosed and jacobian F and H are generated earlier
-            matrixnames := {"A", "B", "C", "D"};
+            matrixnames := {"A", "B", "C", "D", "ADJ"};
           else
-            matrixnames := {"A", "B", "C", "D", "H"};
+            matrixnames := {"A", "B", "C", "D", "H", "ADJ"};
           end if;
         else
-           matrixnames := {"A", "B", "C", "D", "F", "H"};
+           matrixnames := {"A", "B", "C", "D", "F", "H", "ADJ"};
         end if;
         (res, ouniqueEqIndex) := createSymbolicJacobianssSimCode(inSymjacs, crefSimVarHT, iuniqueEqIndex, matrixnames, {});
         // _ := FlagsUtil.set(Flags.EXEC_STAT, b);
@@ -5123,7 +5136,7 @@ algorithm
 
     // if only sparsity pattern is generated
     case (((optionBDAE, (sparsepattern, sparsepatternT, (diffCompRefs, diffedCompRefs), _), colsColors, _))::rest, _, _, name::restnames)
-      guard  checkForEmptyBDAE(optionBDAE)
+      guard checkForEmptyBDAE(optionBDAE)
       equation
         if Flags.isSet(Flags.JAC_DUMP2) then
           print("Start sparse pattern without analytical Jacobians\n");
@@ -5177,7 +5190,7 @@ algorithm
         seedVars = List.map1(seedVars, setSimVarKind, BackendDAE.SEED_VAR());
         seedVars = List.map1(seedVars, setSimVarMatrixName, SOME(name));
 
-        tmpJac = SimCode.JAC_MATRIX({SimCode.JAC_COLUMN({},{},nRows, {})}, seedVars, name, sparseInts, sparseIntsT, nonlinearPat, nonlinearPatT, coloring, maxColor, -1, 0, {}, NONE());
+        tmpJac = SimCode.JAC_MATRIX({SimCode.JAC_COLUMN({},{},nRows, {})}, seedVars, name, sparseInts, sparseIntsT, nonlinearPat, nonlinearPatT, coloring, {}, maxColor, -1, 0, {}, NONE(), false);
         linearModelMatrices = tmpJac::inJacobianMatrices;
         (linearModelMatrices, uniqueEqIndex) = createSymbolicJacobianssSimCode(rest, inSimVarHT, iuniqueEqIndex, restnames, linearModelMatrices);
 
@@ -5284,7 +5297,7 @@ algorithm
           print("analytical Jacobians -> created all SimCode equations for Matrix " + name +  " time: " + realString(clock()) + "\n");
         end if;
 
-        tmpJac = SimCode.JAC_MATRIX({SimCode.JAC_COLUMN(allEquations, columnVars, nRows, constantEqns)}, seedVars, name, sparseInts, sparseIntsT, nonlinearPat, nonlinearPatT, coloring, maxColor, -1, 0, {}, SOME(crefToSimVarHTJacobian));
+        tmpJac = SimCode.JAC_MATRIX({SimCode.JAC_COLUMN(allEquations, columnVars, nRows, constantEqns)}, seedVars, name, sparseInts, sparseIntsT, nonlinearPat, nonlinearPatT, coloring, {}, maxColor, -1, 0, {}, SOME(crefToSimVarHTJacobian), false);
         linearModelMatrices = tmpJac::inJacobianMatrices;
         (linearModelMatrices, uniqueEqIndex) = createSymbolicJacobianssSimCode(rest, inSimVarHT, uniqueEqIndex, restnames, linearModelMatrices);
      then
@@ -5313,27 +5326,13 @@ end getSimVars2Crefs;
 protected function replaceSeedVarsName
   input list<SimCodeVar.SimVar> inVars;
   input String inMatrixName;
-  output list<SimCodeVar.SimVar> outSimVars = {};
-protected
-  DAE.ComponentRef newCref, oldCref;
-algorithm
-  for v in inVars loop
-      oldCref := varName(v);
-      newCref := Differentiate.createSeedCrefName(oldCref, inMatrixName);
-      outSimVars := replaceSimVarName(newCref, v)::outSimVars;
-  end for;
-  outSimVars := Dangerous.listReverseInPlace(outSimVars);
+  output list<SimCodeVar.SimVar> outSimVars = list(replaceSimVarName(Differentiate.createSeedCrefName(v.name, inMatrixName), v) for v in inVars);
 end replaceSeedVarsName;
 
 protected function sortBackVarWithSimVarsOrder
   input SimCodeVar.SimVar var;
   input BackendDAE.Variables vars;
-  output BackendDAE.Var outVar;
-protected
-  DAE.ComponentRef cref;
-algorithm
-  SimCodeVar.SIMVAR(name = cref) := var;
-  outVar := BackendVariable.getVarSingle(cref, vars);
+  output BackendDAE.Var outVar = BackendVariable.getVarSingle(var.name, vars);
 end sortBackVarWithSimVarsOrder;
 
 protected function createJacSimVarsColumn "author: wbraun"
@@ -5811,7 +5810,7 @@ algorithm
       omsiJacFunction.innerVars = innerVars;
       omsiJacFunction.outputVars = columnVars;
       omsiJacFunction.nAllVars = nAllVars;
-      omsiJacFunction.context = SimCodeFunction.JACOBIAN_CONTEXT(SOME(hashTable));
+      omsiJacFunction.context = SimCodeFunction.JACOBIAN_CONTEXT(name, SOME(hashTable));
 
       if debug then
         dumpOMSIFunc(omsiJacFunction, "\nJacobian OMSIFunction");
@@ -8858,7 +8857,7 @@ algorithm
   end if;
   try
     unit := Unit.parseUnitString(deriv.unit);
-    unit := Unit.unitDiv(unit, Unit.UNIT(1e0, 0, 0, 0, 1, 0, 0, 0));
+    unit := Unit.unitDiv(unit, NFUnit.SECOND);
     deriv.unit := Unit.unitString(unit);
   else
     deriv.unit := "";
@@ -9652,8 +9651,8 @@ protected
   DAE.ComponentRef cr1;
   DAE.ComponentRef cr2;
 algorithm
-  cr1 := varName(var1);
-  cr2 := varName(var2);
+  cr1 := var1.name;
+  cr2 := var2.name;
   outBool := ComponentReference.crefLexicalGreaterSubsAtEnd(cr1,cr2);
 end simVarCompareByCrefSubsAtEndlLexical;
 
@@ -9887,8 +9886,8 @@ protected
   Integer mol, cd, m, s, A, K, kg;
   Real factor;
 algorithm
-  Unit.UNIT(factor, mol, cd, m, s, A, K, kg) := unit;
-  baseUnit := SimCode.BASEUNIT(mol, cd, m, s, A, K, kg, factor*10^(-3*kg), 0.0);
+  Unit.UNIT(s, m, kg, A, K, mol, cd, factor) := unit;
+  baseUnit := SimCode.BASEUNIT(s, m, kg, A, K, mol, cd, factor*10^(-3*kg), 0.0);
 end transformUnitToBaseUnit;
 
 public function createCrefToSimVarHT "author: unknown and marcusw
@@ -13499,12 +13498,12 @@ algorithm
     case(SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(vars=simVars,residual=residual)))
       equation
         _ = List.flatten(List.map(residual,getSimEqSystemCrefsLHS));
-        crefs2 = list(SimCodeFunctionUtil.varName(v) for v in simVars);
+        crefs2 = list(v.name for v in simVars);
       then listAppend(crefs2,crefs2);
     case(SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(crefs=crefs)))
       then crefs;
     case(SimCode.SES_MIXED(discVars=simVars))
-      then list(SimCodeFunctionUtil.varName(v) for v in simVars);
+      then list(v.name for v in simVars);
     case(SimCode.SES_WHEN(whenStmtLst={BackendDAE.ASSIGN(left=lhs)}))
       equation
         crefs = Expression.getAllCrefs(lhs);
@@ -14182,7 +14181,7 @@ algorithm
     // discreteStates
     if not checkForEmptyBDAE(optcontPartDer) then
       contPartDer := {(optcontPartDer,spPattern,spColors, nlPattern)};
-      ({contSimJac}, uniqueEqIndex) := createSymbolicJacobianssSimCode(contPartDer, crefSimVarHT, uniqueEqIndex, {"FMIDer"}, {});
+      ({contSimJac}, uniqueEqIndex) := createSymbolicJacobianssSimCode(contPartDer, crefSimVarHT, uniqueEqIndex, {"FMIDER"}, {});
       // collect algebraic loops and symjacs for FMIDer
       ({contSimJac}, outModelInfo, symJacs) := addAlgebraicLoopsModelInfoSymJacs({contSimJac}, inModelInfo);
       contPartSimDer := SOME(contSimJac);
@@ -15369,8 +15368,9 @@ algorithm
     SimCode.SIMCODE(crefToSimVarHT = crefToSimVarHT) := simCode;
     cref := if simCode.scalarized then inCref else ComponentReference.crefStripSubs(inCref);
     outSimVar := simVarFromHT(cref, crefToSimVarHT);
+    // print("cref2simvar found via HT for cref: " + ComponentReference.printComponentRefStr(outSimVar.name) + "\n");
   else
-    //print("cref2simvar: " + ComponentReference.printComponentRefStr(inCref) + " not found!\n");
+    // print("cref2simvar: " + ComponentReference.printComponentRefStr(inCref) + " not found!\n");
     badcref := ComponentReference.makeCrefIdent("ERROR_cref2simvar_failed " + ComponentReference.printComponentRefStr(inCref), DAE.T_REAL_DEFAULT, {});
     outSimVar := SimCodeVar.SIMVAR(badcref, BackendDAE.VARIABLE(), "", "", "", -2, NONE(), NONE(), NONE(), NONE(), false, DAE.T_REAL_DEFAULT, false, NONE(), SimCodeVar.NOALIAS(), DAE.emptyElementSource, SOME(SimCodeVar.LOCAL()), NONE(), NONE(), {}, false, true, NONE(), false, NONE(), false, NONE(), NONE(), NONE(), SOME(badcref), false);
   end try;
@@ -15427,10 +15427,11 @@ algorithm
 end simVarFromHT;
 
 public function createJacContext
+  input String name;
   input Option<HashTableCrefSimVar.HashTable> jacHT;
   output SimCodeFunction.Context outContext;
 algorithm
-  outContext := SimCodeFunction.JACOBIAN_CONTEXT(jacHT);
+  outContext := SimCodeFunction.JACOBIAN_CONTEXT(name, jacHT);
 end createJacContext;
 
 

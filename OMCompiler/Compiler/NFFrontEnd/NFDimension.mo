@@ -162,7 +162,7 @@ public
       then fail();
     end match;
 
-    dim := INTEGER(realInt((stop-start)/step + 1), NFPrefixes.Variability.CONSTANT);
+    dim := INTEGER(intDiv(stop-start, step) + 1, NFPrefixes.Variability.CONSTANT);
   end fromRange;
 
   function fromInteger
@@ -266,15 +266,18 @@ public
     end match;
   end size;
 
+  function sizes
+    "Returns the sizes of the given dimension sizes."
+    input list<Dimension> dims;
+    input Boolean resize = false;
+    output list<Integer> outSizes = list(Dimension.size(d, resize) for d in dims);
+  end sizes;
+
   function sizesProduct
     "Returns the product of the given dimension sizes."
     input list<Dimension> dims;
     input Boolean resize = false;
-    output Integer outSize = 1;
-  algorithm
-    for dim in dims loop
-      outSize := outSize * Dimension.size(dim, resize);
-    end for;
+    output Integer outSize = product(Dimension.size(d, resize) for d in dims);
   end sizesProduct;
 
   function isEqual

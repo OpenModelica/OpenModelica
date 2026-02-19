@@ -2,9 +2,9 @@
 // keywords: solver error, state selection, non-linear solver start values
 // status: correct
 // cflags: -d=-newInst
-//  
+//
 // test for #3500
-// 
+//
 
 
 loadModel(Modelica, {"3.2.3"});
@@ -47,7 +47,7 @@ simulate(FourBarLinkage, tolerance=1e-8);
 getErrorString();
 val(revolute1.angle, 100);
 
-system("./FourBarLinkage -override=stepSize=0.02");
+system("./FourBarLinkage -stepSize=0.02");
 getErrorString();
 val(revolute1.angle, 100);
 

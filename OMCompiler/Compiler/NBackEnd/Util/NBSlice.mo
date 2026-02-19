@@ -425,7 +425,7 @@ public
         fail();
       else
         // fill the equation with repeated scalar lists
-        scal_lst := List.repeat(scal_lst, realInt(eqn_size/listLength(scal_lst)));
+        scal_lst := List.repeat(scal_lst, intDiv(eqn_size, listLength(scal_lst)));
       end if;
 
       idx := 1;
@@ -470,7 +470,7 @@ public
 
     // sanity check for eqn size and get size of body equation
     if mod(eqn_size, iter_size) == 0 then
-      body_size := realInt(eqn_size/iter_size);
+      body_size := intDiv(eqn_size, iter_size);
     else
       Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName()
         + " failed because the equation size " + intString(eqn_size)
@@ -534,7 +534,7 @@ public
 
     // sanity check for eqn size and get size of body equation
     if mod(eqn_size, iter_size) == 0 then
-      body_size := realInt(eqn_size/iter_size);
+      body_size := intDiv(eqn_size, iter_size);
     else
       Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName()
         + " failed because the equation size " + intString(eqn_size)
@@ -600,12 +600,12 @@ public
     scal_length := listLength(scal_tpl_lst);
     if mod(scal_length, body_size) == 0 then
       // body has to be repeated
-      body_repeat := realInt(scal_length/body_size);
+      body_repeat := intDiv(scal_length, body_size);
       element_repeat := 1;
     elseif mod(body_size, scal_length) == 0 then
       // element has to be repeated
       body_repeat := 1;
-      element_repeat := realInt(body_size/scal_length);
+      element_repeat := intDiv(body_size, scal_length);
     else
       Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName()
         + " failed because number of flattened indices " + intString(scal_length)
@@ -695,12 +695,12 @@ public
       input output list<ComponentRef> single_dep;
       input Pointer<list<ComponentRef>> full_deps;
     protected
-      Integer div, dep_size = listLength(single_dep);
+      Integer dep_size = listLength(single_dep);
     algorithm
       if row_size > dep_size then
         // repeat the element until it fits
         if intMod(row_size, dep_size) == 0 then
-          single_dep := List.repeat(single_dep, realInt(row_size/listLength(single_dep)));
+          single_dep := List.repeat(single_dep, intDiv(row_size, dep_size));
         else
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because dependencies of size " + intString(dep_size)
             + " could not be repeated to fit row size " + intString(row_size) + "."});

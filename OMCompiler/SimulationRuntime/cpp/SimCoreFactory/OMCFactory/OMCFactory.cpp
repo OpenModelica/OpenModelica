@@ -540,46 +540,34 @@ SimSettings OMCFactory::readSimulationParameter(int argc, const char* argv[])
      return settings;
 }
 
-vector<const char *> OMCFactory::handleComplexCRuntimeArguments(int argc, const char* argv[], map<string, string> &opts)
+vector<const char *> OMCFactory::handleOverrides(int argc, const char* argv[], map<string, string> &opts)
 {
-  map<string, string>::const_iterator oit;
+  map<string, string> mapOMEdit = MAP_LIST_OF
+    "-startTime", "-S" MAP_LIST_SEP "-stopTime", "-E" MAP_LIST_SEP
+    "-stepSize", "-H" MAP_LIST_SEP "-numberOfIntervals", "-G" MAP_LIST_SEP
+    "-s", "-I" MAP_LIST_SEP "-tolerance", "-T" MAP_LIST_SEP
+    "-outputFormat", "-P" MAP_LIST_SEP "-variableFilter", "-B" MAP_LIST_END;
+  map<string, string>::const_iterator oit, mit;
   vector<const char *> optv;
 
   optv.push_back(strdup(argv[0]));
-  std::string overrideOMEdit = "-override=";      // unrecognized OMEdit overrides
   for (int i = 1; i < argc; i++) {
-
       string arg = argv[i];
       int j;
+      // Cpp overrides with =
       if (arg[0] == '-' && arg[1] != '-' && (j = arg.find('=')) > 0
           && (oit = opts.find(arg.substr(0, j))) != opts.end())
           opts[oit->first] = arg.substr(j + 1); // split at = and override
+      // Cpp overrides with space
       else if ((oit = opts.find(arg)) != opts.end() && i < argc - 1)
           opts[oit->first] = argv[++i]; // regular override
-      else if (strncmp(argv[i], "-override=", 10) == 0) {
-          map<string, string> supported = MAP_LIST_OF
-            "startTime", "-S" MAP_LIST_SEP "stopTime", "-E" MAP_LIST_SEP
-            "stepSize", "-H" MAP_LIST_SEP "numberOfIntervals", "-G" MAP_LIST_SEP
-            "solver", "-I" MAP_LIST_SEP "tolerance", "-T" MAP_LIST_SEP
-            "outputFormat", "-P" MAP_LIST_SEP "variableFilter", "-B" MAP_LIST_END;
-          vector<string> strs;
-          boost::split(strs, argv[i], boost::is_any_of(",="));
-          for (int j = 1; j < strs.size(); j++) {
-              if ((oit = supported.find(strs[j])) != supported.end()
-                  && j < strs.size() - 1) {
-                  opts[oit->second] = strs[++j];
-              }
-              else {
-                  // leave unrecognized overrides
-                  if (overrideOMEdit.size() > 10)
-                      overrideOMEdit += ",";
-                  overrideOMEdit += strs[j];
-                  if (j < strs.size() - 1)
-                      overrideOMEdit += "=" + strs[++j];
-              }
-          }
-          if (overrideOMEdit.size() > 10)
-              optv.push_back(strdup(overrideOMEdit.c_str()));
+      // OMEdit options
+      else if (arg[0] == '-' && arg[1] != '-' && (j = arg.find('=')) > 0
+               && (mit = mapOMEdit.find(arg.substr(0, j))) != mapOMEdit.end()) {
+          if ((oit = opts.find(mit->second)) != opts.end())
+              opts[oit->first] = arg.substr(j + 1); // split at = and override value
+          else
+              optv.push_back(strdup(argv[i])); // pass through
       }
       else
           optv.push_back(strdup(argv[i]));     // pass through
@@ -594,13 +582,11 @@ vector<const char *> OMCFactory::handleComplexCRuntimeArguments(int argc, const 
 
 void OMCFactory::fillArgumentsToIgnore()
 {
-  _argumentsToIgnore = unordered_set<string>();
   _argumentsToIgnore.insert("-abortSlowSimulation"); // used by nightly tests
 }
 
 void OMCFactory::fillArgumentsToReplace()
 {
-  _argumentsToReplace = map<string, string>();
   _argumentsToReplace.insert(pair<string,string>("-r", "results-file"));
   _argumentsToReplace.insert(pair<string,string>("-ls", "lin-solver"));
   _argumentsToReplace.insert(pair<string,string>("-nls", "non-lin-solver"));
@@ -619,7 +605,7 @@ pair<shared_ptr<ISimController>,SimSettings>
 OMCFactory::createSimulation(int argc, const char* argv[],
                              map<string, string> &opts)
 {
-  vector<const char *> optv = handleComplexCRuntimeArguments(argc, argv, opts);
+  vector<const char *> optv = handleOverrides(argc, argv, opts);
 
   SimSettings settings = readSimulationParameter(optv.size(), &optv[0]);
   type_map simcontroller_type_map;

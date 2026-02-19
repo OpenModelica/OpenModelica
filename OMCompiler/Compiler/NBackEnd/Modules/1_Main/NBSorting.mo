@@ -49,7 +49,6 @@ protected
 
   // NF imports
   import ComponentRef = NFComponentRef;
-  import NFFlatten.FunctionTree;
 
   // Util imports
   import BackendUtil = NBBackendUtil;

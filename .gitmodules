@@ -10,3 +10,6 @@
 [submodule "OMSens_Qt"]
 	path = OMSens_Qt
 	url = ../OMSens_Qt.git
+[submodule "OMCompiler/Compiler/boot/bomc"]
+	path = OMCompiler/Compiler/boot/bomc
+	url = ../OMBootstrapping.git

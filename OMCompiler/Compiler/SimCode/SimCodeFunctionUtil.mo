@@ -715,7 +715,7 @@ algorithm
       DAE.VarKind kind;
       SCode.Visibility visibility;
 
-      // Modelica functions.
+    // Modelica function
     case (_, DAE.FUNCTION(path = fpath, source = source, visibility = visibility,
       functions = DAE.FUNCTION_DEF(body = daeElts)::_, // might be followed by derivative maps
       type_ = DAE.T_FUNCTION(funcArg=args, functionAttributes=funAttrs),
@@ -734,8 +734,8 @@ algorithm
       then
         (SimCodeFunction.FUNCTION(fpath, outVars, funArgs, varDecls, bodyStmts, visibility, info), includes, includeDirs, libs,libPaths);
 
-
-     case (_, DAE.FUNCTION(path = fpath, source = source,
+    // Kernel function
+    case (_, DAE.FUNCTION(path = fpath, source = source,
       functions = DAE.FUNCTION_DEF(body = daeElts)::_, // might be followed by derivative maps
       type_ = DAE.T_FUNCTION(funcArg=args, functionAttributes=funAttrs),
       partialPrefix=false), includes, includeDirs, libs,libPaths)
@@ -753,7 +753,7 @@ algorithm
       then
         (SimCodeFunction.KERNEL_FUNCTION(fpath, outVars, funArgs, varDecls, bodyStmts, info), includes, includeDirs, libs,libPaths);
 
-
+    // Parallel function
     case (_, DAE.FUNCTION(path = fpath, source = source,
       functions = DAE.FUNCTION_DEF(body = daeElts)::_, // might be followed by derivative maps
       type_ = DAE.T_FUNCTION(funcArg=args, functionAttributes = funAttrs),
@@ -802,7 +802,7 @@ algorithm
         (SimCodeFunction.EXTERNAL_FUNCTION(fpath, extfnname, funArgs, simextargs, extReturn,
           inVars, outVars, biVars, fn_includes, fn_libs, lang, visibility, info, dynamicLoad), includes, includeDirs, libs,libPaths);
 
-        // Record constructor.
+    // Record constructor
     case (_, DAE.RECORD_CONSTRUCTOR(source = source, type_ = DAE.T_FUNCTION(funcArg = args, funcResultType = restype as DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(name)))), includes, includeDirs, libs,libPaths)
       equation
         funArgs = List.map1(args, typesSimFunctionArg, NONE());
@@ -815,7 +815,7 @@ algorithm
       then
         (SimCodeFunction.RECORD_CONSTRUCTOR(name, funArgs, varDecls, SCode.PUBLIC(), info), includes, includeDirs, libs,libPaths);
 
-        // failure
+    // failure
     case (_, fn, _, _, _,_)
       equation
         Error.addInternalError("function elaborateFunction failed for function:\n" + DAEDump.dumpFunctionStr(fn), sourceInfo());
@@ -2653,13 +2653,6 @@ public function varIndex
 algorithm
   SimCodeVar.SIMVAR(index=index) := var;
 end varIndex;
-
-public function varName
-  input SimCodeVar.SimVar var;
-  output DAE.ComponentRef name;
-algorithm
-  SimCodeVar.SIMVAR(name=name) := var;
-end varName;
 
 public function isParallelFunctionContext
   input SimCodeFunction.Context context;

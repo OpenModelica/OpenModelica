@@ -145,19 +145,16 @@ public
   function toIndexList
     input Subscript subscript;
     input Integer length;
-    input Boolean baseZero = true;
     output list<Integer> indices;
-  protected
-    Integer shift = if baseZero then 1 else 0;
   algorithm
     indices := match subscript
       local
         array<Expression> elems;
         Integer start, step, stop;
 
-      case INDEX() then {toInteger(subscript)-shift};
+      case INDEX() then {toInteger(subscript)};
 
-      case WHOLE() then List.intRange2(1-shift,length-shift);
+      case WHOLE() then List.intRange2(1,length);
 
       case SLICE(slice = Expression.ARRAY(elements = elems))
       then list(Expression.toInteger(e) for e in elems);
@@ -166,13 +163,13 @@ public
         start = Expression.INTEGER(start),
         step  = SOME(Expression.INTEGER(step)),
         stop  = Expression.INTEGER(stop)))
-      then List.intRange3(start-shift, step, stop-shift);
+      then List.intRange3(start, step, stop);
 
       case SLICE(slice = Expression.RANGE(
         start = Expression.INTEGER(start),
         step  = NONE(),
         stop  = Expression.INTEGER(stop)))
-      then List.intRange2(start-shift, stop-shift);
+      then List.intRange2(start, stop);
 
       else algorithm
         Error.assertion(false, getInstanceName() + " got an incorrect subscript type " + toString(subscript) + ".", sourceInfo());

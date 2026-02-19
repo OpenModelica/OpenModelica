@@ -46,7 +46,7 @@ public
   //NF Imports
   import Attributes = NFAttributes;
   import BackendExtension = NFBackendExtension;
-  import NFBackendExtension.{BackendInfo, StateSelect, TearingSelect, VariableAttributes, VariableKind};
+  import NFBackendExtension.{BackendInfo, StateSelect, TearingSelect, VariableAttributes, VariableKind, OptimizerExpression};
   import NFBinding.Binding;
   import Ceval = NFCeval;
   import Class = NFClass;
@@ -524,6 +524,16 @@ public
     end match;
   end isIterator;
 
+  function isPDer
+    extends checkVar;
+  algorithm
+    b := match var.backendinfo.varKind
+      case VariableKind.JAC_VAR()     then true;
+      case VariableKind.JAC_TMP_VAR() then true;
+      else false;
+    end match;
+  end isPDer;
+
   function hasTearingSelect
     "checks if the variable has given tearing select.
     When provided with different functions can also check other relations.
@@ -645,6 +655,27 @@ public
     b := not isPrevious(var_ptr) and Util.isSome(getVarPre(var_ptr));
   end hasPre;
 
+  function isJacobianResultVar
+    "only returns true if the variable itself is not a pre() or previous() and has a pre() pointer set"
+    extends checkVar;
+  algorithm
+    b := match getVarPDer(var_ptr)
+      local
+        Pointer<Variable> der_var;
+      case SOME(der_var) then isJacobianResultVarPDer(der_var);
+      else false;
+    end match;
+  end isJacobianResultVar;
+
+  function isJacobianResultVarPDer
+    extends checkVar;
+  algorithm
+    b := match var.backendinfo.varKind
+      case VariableKind.JAC_VAR() then true;
+      else false;
+    end match;
+  end isJacobianResultVarPDer;
+
   function isDummyState
     extends checkVar;
   algorithm
@@ -692,6 +723,82 @@ public
       else false;
     end match;
   end isKnown;
+
+  function isOptimizable
+    extends checkVar;
+  algorithm
+    b := match var.backendinfo
+      case BackendExtension.BACKEND_INFO(varKind = VariableKind.PARAMETER(), annotations = BackendExtension.ANNOTATIONS(optimizable = true)) then true;
+      case BackendExtension.BACKEND_INFO(annotations = BackendExtension.ANNOTATIONS(optimizable = true)) guard(isInput(var_ptr)) then true;
+      else false;
+    end match;
+  end isOptimizable;
+
+  function isInitialTime
+    extends checkVar;
+  protected
+    OptimizerExpression optExp;
+  algorithm
+    b := match var.backendinfo
+      case BackendExtension.BACKEND_INFO(annotations = BackendExtension.ANNOTATIONS(optimizerExpression = SOME(optExp)))
+        then (optExp == OptimizerExpression.INITIAL_TIME);
+      else false;
+    end match;
+  end isInitialTime;
+
+  function isFinalTime
+    extends checkVar;
+  protected
+    OptimizerExpression optExp;
+  algorithm
+    b := match var.backendinfo
+      case BackendExtension.BACKEND_INFO(annotations = BackendExtension.ANNOTATIONS(optimizerExpression = SOME(optExp)))
+        then (optExp == OptimizerExpression.FINAL_TIME);
+      else false;
+    end match;
+  end isFinalTime;
+
+  function isLagrangeOrPathConstraint
+    extends checkVar;
+  protected
+    OptimizerExpression optExp;
+  algorithm
+    b := match (var.backendinfo)
+      case BackendExtension.BACKEND_INFO(annotations = BackendExtension.ANNOTATIONS(optimizerExpression = SOME(optExp)))
+        then (optExp == OptimizerExpression.LAGRANGE or optExp == OptimizerExpression.PATH_CONSTRAINT);
+      else false;
+    end match;
+  end isLagrangeOrPathConstraint;
+
+  function isMayerOrFinalConstraint
+    extends checkVar;
+  protected
+    OptimizerExpression optExp;
+  algorithm
+    b := match (var.backendinfo)
+      case BackendExtension.BACKEND_INFO(annotations = BackendExtension.ANNOTATIONS(optimizerExpression = SOME(optExp)))
+        then (optExp == OptimizerExpression.MAYER or optExp == OptimizerExpression.FINAL_CONSTRAINT);
+      else false;
+    end match;
+  end isMayerOrFinalConstraint;
+
+  function isInitialConstraint
+    extends checkVar;
+  protected
+    OptimizerExpression optExp;
+  algorithm
+    b := match (var.backendinfo)
+      case BackendExtension.BACKEND_INFO(annotations = BackendExtension.ANNOTATIONS(optimizerExpression = SOME(optExp)))
+        then (optExp == OptimizerExpression.INITIAL_CONSTRAINT);
+      else false;
+    end match;
+  end isInitialConstraint;
+
+  function isStateOrOptimizable
+    extends checkVar;
+  algorithm
+    b := (isState(var_ptr) or isOptimizable(var_ptr));
+  end isStateOrOptimizable;
 
   function isResizable
     extends checkVar;
@@ -1134,7 +1241,7 @@ public
     list<Pointer<Variable>> arg_children;
   algorithm
     subscripts    := ComponentRef.subscriptsAllFlat(cref);
-    arg_children  := BVariable.getRecordChildren(getVarPointer(cref, sourceInfo()));
+    arg_children  := getRecordChildren(getVarPointer(cref, sourceInfo()));
     children      := list(ComponentRef.mergeSubscripts(subscripts, getVarName(child), true, true) for child in arg_children);
   end getRecordChildrenCref;
 
@@ -1161,6 +1268,7 @@ public
         // also update the derivative to be a dummy derivative
         der_var := Pointer.access(derivative);
         der_var.backendinfo := BackendInfo.setVarKind(der_var.backendinfo, VariableKind.DUMMY_DER(varPointer));
+        der_var.backendinfo := BackendInfo.setStateSelect(der_var.backendinfo, NFBackendExtension.StateSelect.AVOID);
         Pointer.update(derivative, der_var);
       then BackendInfo.setVarKind(var.backendinfo, VariableKind.DUMMY_STATE(derivative));
 
@@ -1198,7 +1306,7 @@ public
         Variable pre;
       case qual as InstNode.VAR_NODE()
         algorithm
-          var_ptr := BVariable.getVarPointer(cref, sourceInfo());
+          var_ptr := getVarPointer(cref, sourceInfo());
           qual.name := PREVIOUS_STR;
           pre_cref := ComponentRef.append(cref, ComponentRef.fromNode(qual, ComponentRef.scalarType(cref)));
           pre := fromCref(pre_cref, Variable.attributes(Pointer.access(var_ptr)));
@@ -1304,7 +1412,6 @@ public
           end match;
           var.backendinfo := BackendInfo.setVarKind(var.backendinfo, varKind);
 
-
           // create the new variable pointer and safe it to the component reference
           (var_ptr, cref) := makeVarPtrCyclic(var, cref);
           connectPartners(res_ptr, var_ptr, BackendInfo.setVarPDer);
@@ -1369,7 +1476,7 @@ public
       case qual as InstNode.VAR_NODE()
         algorithm
           // get the variable pointer from the old cref to later on link back to it
-          old_var_ptr := BVariable.getVarPointer(cref, sourceInfo());
+          old_var_ptr := getVarPointer(cref, sourceInfo());
           // prepend the start str
           qual.name := START_STR;
           start_cref := ComponentRef.append(cref, ComponentRef.fromNode(qual, ComponentRef.scalarType(cref)));
@@ -1509,8 +1616,9 @@ public
     else
       var := fromCref(cref);
     end if;
-    // update the variable to be a seed and pass the pointer to the original variable
-    var.backendinfo := BackendInfo.setVarKind(var.backendinfo, VariableKind.ALGEBRAIC());
+    // update the variable to have StateSelect.AVOID as it has no good start values
+    var.backendinfo := BackendInfo.setStateSelect(var.backendinfo, NFBackendExtension.StateSelect.AVOID);
+
     // create the new variable pointer and safe it to the component reference
     (var_ptr, cref) := makeVarPtrCyclic(var, cref);
     (der_cref, der_var) := makeDerVar(cref);
@@ -1533,7 +1641,7 @@ public
       case qual as InstNode.VAR_NODE()
         algorithm
           // get the variable pointer from the old cref to later on link back to it
-          old_var_ptr := BVariable.getVarPointer(cref, sourceInfo());
+          old_var_ptr := getVarPointer(cref, sourceInfo());
           // prepend the tmp str
           qual.name := TEMPORARY_STR;
           tmp_cref := ComponentRef.append(cref, ComponentRef.fromNode(qual, ComponentRef.scalarType(cref)));
@@ -2343,7 +2451,6 @@ public
       VariablePointers variables          "All jacobian variables";
       /* subset of full variable array */
       VariablePointers unknowns           "All result and temporary vars"; // FIXME unused?
-      VariablePointers knowns             "Parameters, constants";
       VariablePointers auxiliaries        "Variables created by the backend known to be solved
                                           by given binding. E.g. $cse";
       VariablePointers aliasVars          "Variables removed due to alias removal";
@@ -2485,7 +2592,6 @@ public
               VariablePointers.toString(varData.resultVars, "Residual", NONE(), false) +
               VariablePointers.toString(varData.tmpVars, "Inner", NONE(), false) +
               VariablePointers.toString(varData.dependencies, "Dependencies", NONE(), false) +
-              VariablePointers.toString(varData.knowns, "Known", NONE(), false) +
               VariablePointers.toString(varData.auxiliaries, "Auxiliary", NONE(), false) +
               VariablePointers.toString(varData.aliasVars, "Alias", NONE(), false);
           end if;

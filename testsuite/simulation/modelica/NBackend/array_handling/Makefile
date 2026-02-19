@@ -6,6 +6,7 @@ simple_nested_for.mos\
 irregular_for.mos\
 diagonal_slice_for.mos\
 simple_der_for.mos\
+slice_for.mos\
 for_exp.mos\
 for_list.mos\
 for_if.mos\
@@ -21,6 +22,8 @@ subscripted_expression.mos\
 matrix_vector_product.mos\
 scalar_product.mos\
 EnumIndex.mos\
+BenchmarksForResizeableArrays.ArrayEquations.CascadedFirstOrder1.mos\
+BenchmarksForResizeableArrays.ArrayEquations.CascadedFirstOrder2.mos\
 
 # test that currently fail. Move up when fixed.
 # Run make failingtest

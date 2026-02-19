@@ -1,7 +1,7 @@
 // name:     BouncingBall
 // keywords: events
 // status: correct
-// teardown_command: rm -rf  BouncingBall.log libModelica.dll BouncingBall.cpp BouncingBall.libs BouncingBall.h BouncingBall.makefile output.log Functions.h Functions.cpp
+// teardown_command: rm -rf BouncingBall_diff.csv
 // cflags: 	 +simCodeTarget=Cpp -d=-newInst
 //
 // Event handling

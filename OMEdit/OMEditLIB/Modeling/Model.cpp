@@ -812,7 +812,10 @@ namespace ModelInstance
       value.append(mName);
       QStringList subModifiers;
       foreach (auto *pSubModifier, mModifiers) {
-        subModifiers.append(pSubModifier->toString(skipTopLevel, includeComment));
+        QString subValue = pSubModifier->toString(skipTopLevel, includeComment);
+        if (!subValue.isEmpty()) {
+          subModifiers.append(subValue);
+        }
       }
       if (!subModifiers.isEmpty()) {
         value.append("(" % subModifiers.join(", ") % ")");
@@ -825,6 +828,75 @@ namespace ModelInstance
       }
 
       return value.compare(mName) == 0 ? "" : value;
+    }
+  }
+
+  /*!
+   * \brief createModifier
+   * Creates the Modifier from another Modifier.\n
+   * See issue #13301 and #13516.\n
+   * Dump the modifier as string and use OMCProxy::modifierToJSON to convert it to JSON.\n
+   * Contruct new Modifier instance with JSON.
+   * \param pModifier
+   * \return
+   */
+  Modifier *createModifier(const Modifier *pModifier, Model *pParentModel)
+  {
+    // If value is defined then we wrap within parenthesis otherwise its not needed.
+    if (pModifier->isValueDefined()) {
+      QJsonObject jsonObject = MainWindow::instance()->getOMCProxy()->modifierToJSON("(" % pModifier->toString() % ")");
+      return new Modifier(pModifier->getName(), jsonObject.value(pModifier->getName()), pParentModel);
+    } else {
+      QJsonObject jsonObject;
+      jsonObject.insert("modifiers", MainWindow::instance()->getOMCProxy()->modifierToJSON(pModifier->toString()));
+      return new Modifier(pModifier->getName(), jsonObject.value("modifiers"), pParentModel);
+    }
+  }
+
+  /*!
+     * \brief Modifier::mergeModifiersIntoOne
+     * Merges the list of all extends modifiers into one modifier.
+     * Caller is responsible to delete the returned modifier.
+     * \param extendsModifiers
+     * \return
+     */
+  Modifier *Modifier::mergeModifiersIntoOne(QList<const Modifier *> extendsModifiers, Model *pParentModel)
+  {
+    Modifier *pModifier = nullptr;
+    if (!extendsModifiers.isEmpty()) {
+      pModifier = createModifier(extendsModifiers.last(), pParentModel);
+      for (int i = extendsModifiers.size() - 2 ; i >= 0 ; i--) {
+        Modifier::mergeModifiers(pModifier, extendsModifiers.at(i));
+      }
+    }
+    return pModifier;
+  }
+
+  /*!
+     * \brief Modifier::mergeModifiers
+     * Merges pModifier2 into pModifier1
+     * \param pModifier1
+     * \param pModifier2
+     */
+  void Modifier::mergeModifiers(Modifier *pModifier1, const Modifier *pModifier2)
+  {
+    foreach (auto pSubModifier2, pModifier2->getModifiers()) {
+      bool subModifierFound = false;
+      foreach (auto pSubModifier1, pModifier1->getModifiers()) {
+        /* if modifier exists then check if its value is defined
+           * if the value is not defined then merge sub modifiers
+           */
+        if (pSubModifier2->getName().compare(pSubModifier1->getName()) == 0) {
+          subModifierFound = true;
+          if (!pSubModifier1->isValueDefined()) {
+            Modifier::mergeModifiers(pSubModifier1, pSubModifier2);
+          }
+        }
+      }
+      // if modifier doesn't exist then add it
+      if (!subModifierFound) {
+        pModifier1->addModifier(pSubModifier2);
+      }
     }
   }
 
@@ -852,28 +924,6 @@ namespace ModelInstance
   {
     Modifier *pModifier = getModifier(modifier);
     return pModifier && pModifier->getName().compare(modifier) == 0;
-  }
-
-  /*!
-   * \brief createModifier
-   * Creates the Modifier from another Modifier.\n
-   * See issue #13301 and #13516.\n
-   * Dump the modifier as string and use OMCProxy::modifierToJSON to convert it to JSON.\n
-   * Contruct new Modifier instance with JSON.
-   * \param pModifier
-   * \return
-   */
-  Modifier *createModifier(const Modifier *pModifier, Model *pParentModel)
-  {
-    // If value is defined then we wrap within parenthesis otherwise its not needed.
-    if (pModifier->isValueDefined()) {
-      QJsonObject jsonObject = MainWindow::instance()->getOMCProxy()->modifierToJSON("(" % pModifier->toString() % ")");
-      return new Modifier(pModifier->getName(), jsonObject.value(pModifier->getName()), pParentModel);
-    } else {
-      QJsonObject jsonObject;
-      jsonObject.insert("modifiers", MainWindow::instance()->getOMCProxy()->modifierToJSON(pModifier->toString()));
-      return new Modifier(pModifier->getName(), jsonObject.value("modifiers"), pParentModel);
-    }
   }
 
   void Modifier::addModifier(const Modifier *pModifier)
@@ -1693,7 +1743,7 @@ namespace ModelInstance
     return value;
   }
 
-  FlatModelica::Expression* Model::getVariableValueOrBinding(const QString &variableName, bool value) const
+  const FlatModelica::Expression* Model::getVariableValueOrBinding(const QString &variableName, bool value) const
   {
     QString curName;
     bool last;
@@ -1719,10 +1769,12 @@ namespace ModelInstance
     elements.append(mElements);
 
     foreach (auto pElement, elements) {
-      if (pElement->isComponent()) {
+      if (pElement->isComponent() || pElement->isClass()) {
         if (pElement->getName().compare(curName) == 0) {
           if (last) {
-            return value ? &pElement->getValue() : &pElement->getBinding();
+            return value
+                ? &static_cast<const Element*>(pElement)->getValue()
+                : &static_cast<const Element*>(pElement)->getBinding();
           } else {
             if (!pElement->getModel()) {
               return nullptr;
@@ -1731,7 +1783,7 @@ namespace ModelInstance
           }
         }
       } else if (pElement->isExtend() && pElement->getModel()) {
-        auto expression = pElement->getModel()->getVariableValueOrBinding(variableName, value);
+        const auto expression = pElement->getModel()->getVariableValueOrBinding(variableName, value);
         if (expression) {
           return expression;
         }
@@ -1973,7 +2025,7 @@ namespace ModelInstance
   {
     QStringList choices;
     foreach (auto *pChoice, mChoices) {
-      if (pChoice->hasElement()) { // include comment in choice has element
+      if (pChoice->hasElement()) { // include comment in choice if has element
         choices.append(pChoice->toString(false, true));
       } else {
         choices.append(pChoice->toString(false, false));
@@ -2118,14 +2170,38 @@ namespace ModelInstance
     return mpPrefixes ? mpPrefixes.get()->isOuter() : false;
   }
 
+  /*!
+   * \brief Element::isParameter
+   * Returns true if the element is a parameter, otherwise false.
+   * First check if the element is defined as parameter in the prefixes. If not, then check in the modifiers of the extends parent element recursively.
+   * \return
+   */
   bool Element::isParameter() const
   {
-    return mpPrefixes ? mpPrefixes.get()->getVariability().compare(QStringLiteral("parameter")) == 0 : false;
+    if (isParameterInPrefixes()) {
+      return true;
+    } else if (mpParentModel && mpParentModel->getParentElement()) {
+      return mpParentModel->getParentElement()->isParameter(getName());
+    } else {
+      return false;
+    }
   }
 
+  /*!
+   * \brief Element::isInput
+   * Returns true if the element is an input, otherwise false.
+   * First check if the element is defined as input in the prefixes. If not, then check in the modifiers of the extends parent element recursively.
+   * \return
+   */
   bool Element::isInput() const
   {
-    return mpPrefixes ? mpPrefixes.get()->getDirection().compare(QStringLiteral("input")) == 0 : false;
+    if (isInputInPrefixes()) {
+      return true;
+    } else if (mpParentModel && mpParentModel->getParentElement()) {
+      return mpParentModel->getParentElement()->isInput(getName());
+    } else {
+      return false;
+    }
   }
 
   Replaceable *Element::getReplaceable() const
@@ -2324,6 +2400,70 @@ namespace ModelInstance
     return modifierValue;
   }
 
+  /*!
+   * \brief Element::isParameterInPrefixes
+   * Checks if element is parameter in prefixes.
+   * \return
+   */
+  bool Element::isParameterInPrefixes() const
+  {
+    return mpPrefixes ? mpPrefixes.get()->getVariability().compare(QStringLiteral("parameter")) == 0 : false;
+  }
+
+  /*!
+   * \brief Element::isParameter
+   * Checks if element is parameter either in prefixes or in the modifier or in the parent element recursively.
+   * \param name
+   * \return
+   */
+  bool Element::isParameter(const QString &name) const
+  {
+    if (isParameterInPrefixes()) {
+      return true;
+    } else if (mpModifier) {
+      foreach (auto pModifier, mpModifier->getModifiers()) {
+        if ((pModifier->getName().compare(name) == 0) && pModifier->hasElement()) {
+          return pModifier->getElement()->isParameter(name);
+        }
+      }
+    } else if (mpParentModel && mpParentModel->getParentElement()) {
+      return mpParentModel->getParentElement()->isParameter(name);
+    }
+    return false;
+  }
+
+  /*!
+   * \brief Element::isInputInPrefixes
+   * Checks if element is input in prefixes.
+   * \return
+   */
+  bool Element::isInputInPrefixes() const
+  {
+    return mpPrefixes ? mpPrefixes.get()->getDirection().compare(QStringLiteral("input")) == 0 : false;
+  }
+
+  /*!
+   * \brief Element::isInput
+   * Checks if element is input either in prefixes or in the modifier or in the parent element recursively.
+   * \param name
+   * \return
+   */
+  bool Element::isInput(const QString &name) const
+  {
+    if (isInputInPrefixes()) {
+      return true;
+    } else if (mpModifier) {
+      foreach (auto pModifier, mpModifier->getModifiers()) {
+        if ((pModifier->getName().compare(name) == 0) && pModifier->hasElement()) {
+          return pModifier->getElement()->isInput(name);
+        }
+      }
+    } else if (mpParentModel && mpParentModel->getParentElement()) {
+      return mpParentModel->getParentElement()->isInput(name);
+    }
+    return false;
+  }
+
   Extend::Extend(Model *pParentModel, const QJsonObject &jsonObject)
     : Element(pParentModel)
   {
@@ -2460,9 +2600,9 @@ namespace ModelInstance
    * \param pParentModel
    * \return
    */
-  QList<Modifier*> Component::getExtendsModifiers(const Model *pParentModel) const
+  QList<const Modifier*> Component::getExtendsModifiers(const Model *pParentModel) const
   {
-    QList<Modifier*> modifiers;
+    QList<const Modifier*> modifiers;
     if (pParentModel && pParentModel->getParentElement() && pParentModel->getParentElement()->getModifier()) {
       Modifier *pExtentElementModifier = pParentModel->getParentElement()->getModifier();
       foreach (auto *pSubModifier, pExtentElementModifier->getModifiers()) {
@@ -2473,52 +2613,6 @@ namespace ModelInstance
       modifiers.append(getExtendsModifiers(pExtentElementModifier->getParentModel()));
     }
     return modifiers;
-  }
-
-  /*!
-   * \brief Component::mergeModifiersIntoOne
-   * Merges the list of all extends modifiers into one modifier.
-   * \param extendsModifiers
-   * \return
-   */
-  Modifier *Component::mergeModifiersIntoOne(QList<Modifier *> extendsModifiers) const
-  {
-    Modifier *pModifier = nullptr;
-    if (!extendsModifiers.isEmpty()) {
-      pModifier = createModifier(extendsModifiers.last(), mpParentModel);
-      for (int i = extendsModifiers.size() - 2 ; i >= 0 ; i--) {
-        Component::mergeModifiers(pModifier, extendsModifiers.at(i));
-      }
-    }
-    return pModifier;
-  }
-
-  /*!
-   * \brief Component::mergeModifiers
-   * Merges pModifier2 into pModifier1
-   * \param pModifier1
-   * \param pModifier2
-   */
-  void Component::mergeModifiers(Modifier *pModifier1, Modifier *pModifier2)
-  {
-    foreach (auto pSubModifier2, pModifier2->getModifiers()) {
-      bool subModifierFound = false;
-      foreach (auto pSubModifier1, pModifier1->getModifiers()) {
-        /* if modifier exists then check if its value is defined
-         * if the value is not defined then merge sub modifiers
-         */
-        if (pSubModifier2->getName().compare(pSubModifier1->getName()) == 0) {
-          subModifierFound = true;
-          if (!pSubModifier1->isValueDefined()) {
-            Component::mergeModifiers(pSubModifier1, pSubModifier2);
-          }
-        }
-      }
-      // if modifier doesn't exist then add it
-      if (!subModifierFound) {
-        pModifier1->addModifier(pSubModifier2);
-      }
-    }
   }
 
   /*!
@@ -2570,14 +2664,14 @@ namespace ModelInstance
     Modifier *pModifier = nullptr;
     if (mergeExtendsModifiers) {
       // Merge extends modifiers. See issue #13301 and #13516.
-      QList<Modifier *> extendsModifiers = getExtendsModifiers(mpParentModel);
-      pModifier = mergeModifiersIntoOne(extendsModifiers);
+      QList<const Modifier*> extendsModifiers = getExtendsModifiers(mpParentModel);
+      pModifier = Modifier::mergeModifiersIntoOne(extendsModifiers, mpParentModel);
     }
     // if merge modifiers
     if (pModifier) {
       // if this modifier exists then merge it
       if (mpModifier) {
-        Component::mergeModifiers(pModifier, mpModifier);
+        Modifier::mergeModifiers(pModifier, mpModifier);
       }
       // we don't need the name coming from the extend modification
       pModifier->setName("");

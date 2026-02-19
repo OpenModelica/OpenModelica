@@ -90,6 +90,9 @@ enum GB_METHOD getGB_method(enum _FLAG flag)
     case RK_RADAU_IIA_2:
     case RK_RADAU_IIA_3:
     case RK_RADAU_IIA_4:
+    case RK_RADAU_IIA_5:
+    case RK_RADAU_IIA_6:
+    case RK_RADAU_IIA_7:
     case RK_LOBA_IIIA_3:
     case RK_LOBA_IIIA_4:
     case RK_LOBA_IIIB_3:

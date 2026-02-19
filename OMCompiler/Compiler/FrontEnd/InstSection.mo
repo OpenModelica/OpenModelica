@@ -265,6 +265,11 @@ algorithm
     // Connect equations.
     case SCode.EQ_CONNECT(crefLeft = lhs_acr, crefRight = rhs_acr, info = info)
       algorithm
+        if SCodeUtil.isInitial(inInitial) then
+          Error.addSourceMessage(Error.CONNECT_IN_INITIAL_EQUATION, {}, info);
+          fail();
+        end if;
+
         (outCache, outEnv, outIH, outSets, outDae, outGraph) :=
           instConnect(outCache, outEnv, outIH, outSets, inPrefix, lhs_acr,
               rhs_acr, inImpl, inGraph, info);

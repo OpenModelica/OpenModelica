@@ -37,13 +37,14 @@ encapsulated package NBEquation
 
 public
   // Old Frontend imports
+  import Absyn.Path;
   import DAE;
   import ElementSource;
 
   // New Frontend imports
   import Algorithm = NFAlgorithm;
   import BackendDAE = NBackendDAE;
-  import NFBackendExtension.VariableAttributes;
+  import NFBackendExtension.{VariableAttributes, OptimizerExpression};
   import Binding = NFBinding;
   import Call = NFCall;
   import Class = NFClass;
@@ -51,7 +52,7 @@ public
   import ComponentRef = NFComponentRef;
   import Dimension = NFDimension;
   import Expression = NFExpression;
-  import NFFlatten.FunctionTree;
+  import NFFunction.Function;
   import InstNode = NFInstNode.InstNode;
   import Operator = NFOperator;
   import NFPrefixes.{Variability, Purity};
@@ -781,10 +782,10 @@ public
           occs    := Equation.collectCrefs(tmpEqn, function Equation.collectFromMap(check_map = iter_map));
 
 
-          if listLength(occs) == 1 then
+          if List.hasOneElement(occs) then
             // get the only occuring iterator cref and solve the body for it
             cref := listHead(occs);
-            (tmpEqn, _, status, invert) := Solve.solveBody(tmpEqn, cref, FunctionTree.EMPTY());
+            (tmpEqn, status, invert) := Solve.solveBody(tmpEqn, cref);
             operator := if invert == NBSolve.RelationInversion.TRUE then Operator.invert(condition.operator) else condition.operator;
 
             // if its solvable, get the corresponding iterator range and adapt it with the information of the if-condition
@@ -2385,6 +2386,16 @@ public
       end match;
     end isClocked;
 
+    function isCompound extends checkEqn;
+    algorithm
+      b := match Pointer.access(eqn_ptr)
+        case ALGORITHM()      then true;
+        case IF_EQUATION()    then true;
+        case WHEN_EQUATION()  then true;
+        else false;
+      end match;
+    end isCompound;
+
     function expIsParamOrConst
       input output Expression exp;
       input Pointer<Boolean> b_ptr;
@@ -2453,7 +2464,7 @@ public
       if BVariable.isClock(var_ptr) then
         eqnAttr := EquationAttributes.default(EquationKind.CLOCKED, initial_, SOME(-1));
       elseif BVariable.isContinuous(var_ptr, initial_) then
-        eqnAttr := EquationAttributes.default(EquationKind.CONTINUOUS, initial_);
+        eqnAttr := EquationAttributes.default(EquationKind.CONTINUOUS, initial_, NONE(), var.backendinfo.annotations.optimizerExpression);
       else
         eqnAttr := EquationAttributes.default(EquationKind.DISCRETE, initial_);
       end if;
@@ -2669,7 +2680,7 @@ public
       Iterator new_iter;
     algorithm
       // get the sizes of the 'return value' of the equation
-      if listLength(indices) == 1 then
+      if List.hasOneElement(indices) then
         // perform a single replacement for the one index
         location      := Slice.indexToLocation(listHead(indices), sizes);
         replacements  := UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual);
@@ -2725,7 +2736,7 @@ public
       input ComponentRef cref_to_solve                            "the cref to solve the body for (EMPTY() for already solved)";
       input UnorderedMap<ComponentRef, Expression> replacements   "prepared replacement map";
       output Equation sliced_eqn                                  "scalar sliced equation";
-      input output FunctionTree funcTree                          "func tree for solving";
+      input UnorderedMap<Path, Function> funcMap                  "func map for solving";
       output Solve.Status solve_status                            "solve success status";
     protected
       Equation eqn;
@@ -2744,7 +2755,7 @@ public
           sliced_eqn := map(listHead(eqn.body), function Replacements.applySimpleExp(replacements = replacements));
           // solve the body if necessary
           if not ComponentRef.isEmpty(cref_to_solve) then
-            (sliced_eqn, funcTree, solve_status, _) := Solve.solveBody(sliced_eqn, cref_to_solve, funcTree);
+            (sliced_eqn, solve_status, _) := Solve.solveBody(sliced_eqn, cref_to_solve, funcMap);
           end if;
         then (sliced_eqn, solve_status);
 
@@ -3946,13 +3957,14 @@ public
 
   uniontype EquationAttributes
     record EQUATION_ATTRIBUTES
-      Option<Pointer<Equation>> derivative  "if the equation has been differentiated w.r.t time already";
-      Option<Pointer<Variable>> residualVar "also used to represent the equation itself";
-      Option<Integer> clock_idx             "only set if clocked eq";
-      Boolean residual                      "true if in residual form";
-      Boolean exclusively_initial           "true if in initial equation block";
-      Evaluation.Stages evalStages          "evaluation stages (prior used for DAE mode, still necessary?)";
-      EquationKind kind                     "continuous, clocked, discrete, empty";
+      Option<Pointer<Equation>> derivative            "if the equation has been differentiated w.r.t time already";
+      Option<Pointer<Variable>> residualVar           "also used to represent the equation itself";
+      Option<Integer> clock_idx                       "only set if clocked eq";
+      Boolean residual                                "true if in residual form";
+      Boolean exclusively_initial                     "true if in initial equation block";
+      Evaluation.Stages evalStages                    "evaluation stages (prior used for DAE mode, still necessary?)";
+      EquationKind kind                               "continuous, clocked, discrete, empty";
+      Option<OptimizerExpression> optimizerExpression "dynamic optimization component: Mayer, Lagrange, Path, Boundary";
     end EQUATION_ATTRIBUTES;
 
     function toString
@@ -4011,6 +4023,7 @@ public
     input EquationKind kind;
     input Boolean exclusively_initial;
     input Option<Integer> clock_idx = NONE();
+    input Option<OptimizerExpression> optimizerExpression = NONE();
     output EquationAttributes attr;
   algorithm
     attr := EQUATION_ATTRIBUTES(
@@ -4020,7 +4033,8 @@ public
       residual            = false,
       exclusively_initial = exclusively_initial,
       evalStages          = NBEvaluation.DEFAULT_STAGES,
-      kind                = kind);
+      kind                = kind,
+      optimizerExpression = optimizerExpression);
   end default;
 
   type EquationKind = enumeration(CONTINUOUS, DISCRETE, CLOCKED, EMPTY, UNKNOWN);

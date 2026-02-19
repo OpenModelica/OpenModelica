@@ -132,6 +132,7 @@ CevalBinding6.mo \
 CevalBinding7.mo \
 CevalBinding8.mo \
 CevalBinding9.mo \
+CevalBinding10.mo \
 CevalConstant1.mo \
 CevalCeil1.mo \
 CevalCos1.mo \
@@ -199,6 +200,7 @@ CevalRecord4.mo \
 CevalRecord5.mo \
 CevalRecord6.mo \
 CevalRecord7.mo \
+CevalRecord8.mo \
 CevalRecordArray1.mo \
 CevalRecordArray2.mo \
 CevalRecordArray3.mo \
@@ -713,6 +715,7 @@ FunctionRecordArg3.mo \
 FunctionRecordArg4.mo \
 FunctionRecordArg5.mo \
 FunctionRecordArg6.mo \
+FunctionRecordArg7.mo \
 FunctionRecursive1.mo \
 FunctionRecursive2.mo \
 FunctionSections1.mo \
@@ -812,6 +815,7 @@ InnerOuter9.mo \
 InnerOuter10.mo \
 InnerOuter11.mo \
 InnerOuter12.mo \
+InnerOuter13.mo \
 InnerOuterClass1.mo \
 InnerOuterConnect1.mo \
 InnerOuterDuplicate1.mo \

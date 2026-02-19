@@ -584,9 +584,7 @@ void Parameter::setEnabled(bool enable)
  */
 void Parameter::update()
 {
-  ElementParameters *pElementParameters = qobject_cast<ElementParameters*>(mpElementParameters->parent());
-  mEnable.evaluate(mpElementParameters->getGraphicsView()->getModelWidget()->getModelInstance(),
-                   mpElementParameters->isNested() ? pElementParameters->getElementQualifiedName() : "");
+  mEnable.evaluate(mpElementParameters->getGraphicsView()->getModelWidget()->getModelInstance());
   setEnabled(mEnable);
 }
 
@@ -700,7 +698,7 @@ void Parameter::createValueWidget()
             replaceableChoice[0].remove(0, parentClassName.size() + 1);
           }
           if (isReplaceableClass()) {
-            replaceableValue = QString("redeclare %1 %2 + %3").arg(restriction, elementName, replaceableChoice[0]);
+            replaceableValue = QString("redeclare %1 %2 = %3").arg(restriction, elementName, replaceableChoice[0]);
           } else {
             replaceableValue = QString("redeclare %1 %2").arg(replaceableChoice[0], elementName);
           }
@@ -770,7 +768,7 @@ void Parameter::enableDisableUnitComboBox(const QString &value)
  * Updates the value binding of the parameter and call updateParameters so depending parameters gets updated.
  * \param value
  */
-void Parameter::updateValueBinding(const FlatModelica::Expression expression)
+void Parameter::updateValueBinding(const FlatModelica::Expression& expression)
 {
   // update the binding with the new value
   mpModelInstanceElement->setBinding(expression);
@@ -815,6 +813,22 @@ void Parameter::resetUnitCombobox()
 }
 
 /*!
+ * \brief Parameter::valueTextBoxChanged
+ * Called when the focus is lost from the value textbox.\n
+ * Updates the value according to the value entered.
+ * \param text
+ */
+void Parameter::valueTextBoxChanged(const QString &text)
+{
+  try {
+    updateValueBinding(FlatModelica::Expression::parse(text));
+  } catch (const std::exception &e) {
+    qDebug() << "Failed to parse value in Parameter::valueTextBoxChanged(): " << text;
+    qDebug() << e.what();
+  }
+}
+
+/*!
  * \brief Parameter::setBreakValue
  * Slot activated when break is toggled in the menu.
  * \param breakValue
@@ -835,7 +849,7 @@ void Parameter::editClassButtonClicked()
   QString type;
   QString value;
   QString defaultValue;
-  if (isReplaceableComponent() || isReplaceableClass()) {
+  if (isReplaceableComponent() || isReplaceableClass() || isChoicesAllMatching()) {
     value = mpValueComboBox->lineEdit()->text();
     defaultValue = mpValueComboBox->lineEdit()->placeholderText();
   } else {
@@ -844,7 +858,7 @@ void Parameter::editClassButtonClicked()
   }
   QString modifier = value;
   QString defaultModifier = defaultValue;
-  ModelInstance::Modifier *pReplaceableConstrainedByModifier = 0;
+  ModelInstance::Modifier *pReplaceableConstrainedByModifier = nullptr;
   QString comment;
   if (isReplaceableComponent()) {
     type = mpModelInstanceElement->getType();
@@ -863,6 +877,8 @@ void Parameter::editClassButtonClicked()
     } else if (isReplaceableClass()) {
       FlatModelica::Parser::getShortClassTypeFromElementRedeclaration(value, type, modifier, comment);
     }
+  } else if (!value.isEmpty()) {
+    FlatModelica::Parser::getModifierFromElementModification(value, modifier);
   }
 
   QString classPath;
@@ -881,15 +897,35 @@ void Parameter::editClassButtonClicked()
   }
   // get type as qualified path
   const QString qualifiedType = MainWindow::instance()->getOMCProxy()->qualifyPath(classPath, type);
+  // qDebug() << "element modifier" << modifier;
+  const QJsonObject modifierJSON = MainWindow::instance()->getOMCProxy()->modifierToJSON(modifier);
+  ModelInstance::Modifier *pElementModifier = new ModelInstance::Modifier("", QJsonValue(modifierJSON), mpModelInstanceElement->getParentModel());
+  if (pReplaceableConstrainedByModifier) {
+    // qDebug() << "replaceable constrainedby modifier" << pReplaceableConstrainedByModifier->toString();
+    /*! Read the constrainedby modifiers and if they have a modifier from this class then use its value.
+     *  See issue #14393
+     */
+    foreach (auto *pModifier, pReplaceableConstrainedByModifier->getModifiers()) {
+      Parameter *pParameter = mpElementParameters->findParameter(pModifier->getName());
+      if (pParameter) {
+        // qDebug() << "pParameter->getValue()" << pParameter->getValue();
+        pModifier->setValue(pParameter->getValue());
+      }
+    }
+    // qDebug() << "replaceable constrainedby modifier" << pReplaceableConstrainedByModifier->toString();
+    QList<const ModelInstance::Modifier*> modifiers;
+    modifiers.append(pReplaceableConstrainedByModifier);
+    modifiers.append(pElementModifier);
+    ModelInstance::Modifier *pMergedModifier = ModelInstance::Modifier::mergeModifiersIntoOne(modifiers, mpModelInstanceElement->getParentModel());
+    modifier = pMergedModifier->toString();
+    delete pMergedModifier;
+  }
+  // qDebug() << "element and replaceable constrainedby merged modifier" << modifier;
   ModelInstance::Model *pCurrentModel = mpModelInstanceElement->getModel();
-  const QJsonObject newModelJSON = MainWindow::instance()->getOMCProxy()->getModelInstance(qualifiedType, modifier);
+  const QJsonObject newModelJSON = MainWindow::instance()->getOMCProxy()->getModelInstance(qualifiedType, mpModelInstanceElement->getQualifiedName(), modifier);
   if (!newModelJSON.isEmpty()) {
-    const QJsonObject modifierJSON = MainWindow::instance()->getOMCProxy()->modifierToJSON(modifier);
-    ModelInstance::Modifier *pElementModifier = new ModelInstance::Modifier("", QJsonValue(), mpModelInstanceElement->getParentModel());
-    pElementModifier->deserialize(QJsonValue(modifierJSON));
     const QJsonObject defaultModifierJSON = MainWindow::instance()->getOMCProxy()->modifierToJSON(defaultModifier);
-    ModelInstance::Modifier *pDefaultElementModifier = new ModelInstance::Modifier("", QJsonValue(), mpModelInstanceElement->getParentModel());
-    pDefaultElementModifier->deserialize(QJsonValue(defaultModifierJSON));
+    ModelInstance::Modifier *pDefaultElementModifier = new ModelInstance::Modifier("", QJsonValue(defaultModifierJSON), mpModelInstanceElement->getParentModel());
     ModelInstance::Model *pNewModel = new ModelInstance::Model(newModelJSON, mpModelInstanceElement);
     mpModelInstanceElement->setModel(pNewModel);
     MainWindow::instance()->getProgressBar()->setRange(0, 0);
@@ -929,12 +965,12 @@ void Parameter::editClassButtonClicked()
       }
     }
     pElementParameters->deleteLater();
-    delete pElementModifier;
     delete pDefaultElementModifier;
     // reset the actual model of the element
     mpModelInstanceElement->setModel(pCurrentModel);
     delete pNewModel;
   }
+  delete pElementModifier;
 }
 
 /*!
@@ -1013,25 +1049,37 @@ void Parameter::valueComboBoxChanged(int index)
   int toolTipIndex = mpValueComboBox->findData(value);
   mpValueComboBox->setToolTip(mpValueComboBox->itemData(toolTipIndex, Qt::ToolTipRole).toString());
 
-  try {
-    if (isEnumeration()) {
-      updateValueBinding(FlatModelica::Expression(value.toStdString(), index));
-    } else {
-      if (isChoices()) {
-        resetUnitCombobox();
-      }
-      updateValueBinding(FlatModelica::Expression::parse(value));
+  // reset in case of empty selection
+  if (index == 0) {
+    resetUnitCombobox();
+    mpModelInstanceElement->resetBinding();
+    try {
+      updateValueBinding(static_cast<const ModelInstance::Element*>(mpModelInstanceElement)->getBinding());
+    } catch (const std::exception &e) {
+      qDebug() << "Failed to reset expression to binding in Parameter::valueComboBoxChanged()";
+      qDebug() << e.what();
     }
-  } catch (const std::exception &e) {
-    qDebug() << "Failed to parse value: " << value;
-    qDebug() << e.what();
+  } else {
+    try {
+      if (isEnumeration()) {
+        updateValueBinding(FlatModelica::Expression(value.toStdString(), index));
+      } else {
+        if (isChoices()) {
+          resetUnitCombobox();
+        }
+        updateValueBinding(FlatModelica::Expression::parse(value));
+      }
+    } catch (const std::exception &e) {
+      qDebug() << "Failed to parse value in Parameter::valueComboBoxChanged(): " << value;
+      qDebug() << e.what();
+    }
   }
 }
 
 /*!
  * \brief Parameter::valueCheckBoxChanged
  * SLOT activated when mpValueCheckBox toggled(bool) SIGNAL is raised.\n
- * Marks the item modified.
+ * Updates the value according to the checkbox state.
  * \param toggle
  */
 void Parameter::valueCheckBoxChanged(bool toggle)
@@ -1105,8 +1153,11 @@ void Parameter::inheritedFixedClicked()
  */
 bool Parameter::eventFilter(QObject *pWatched, QEvent *pEvent)
 {
-  if (mpValueTextBox == pWatched && pEvent->type() == QEvent::FocusOut) {
-    enableDisableUnitComboBox(mpValueTextBox->text());
+  if (mpValueTextBox == pWatched && pEvent->type() == QEvent::FocusOut
+      && mpElementParameters && !mpElementParameters->skipFocusOutEvent()) {
+    const QString text = mpValueTextBox->text();
+    enableDisableUnitComboBox(text);
+    valueTextBoxChanged(text);
   }
 
   return QObject::eventFilter(pWatched, pEvent);
@@ -1316,6 +1367,23 @@ ModelInstance::Model *ElementParameters::getModel() const
 }
 
 /*!
+ * \brief ElementParameters::findParameter
+ * Finds the Parameter.
+ * \param parameter
+ * \param caseSensitivity
+ * \return
+ */
+Parameter* ElementParameters::findParameter(const QString &parameter, Qt::CaseSensitivity caseSensitivity) const
+{
+  foreach (Parameter *pParameter, mParametersList) {
+    if (pParameter->getModelInstanceElement()->getName().compare(parameter, caseSensitivity) == 0) {
+      return pParameter;
+    }
+  }
+  return nullptr;
+}
+
+/*!
  * \brief ElementParameters::applyFinalStartFixedAndDisplayUnitModifiers
  * \param pParameter
  * \param pModifier
@@ -1330,7 +1398,7 @@ void ElementParameters::applyFinalStartFixedAndDisplayUnitModifiers(Parameter *p
      * Redeclared but not replaceable classes should not show up in the parameter window. See issue #11311.
      * Only check for redeclare and replaceable modification for top level and when its not element modification. See issue #13334.
      */
-    if (defaultValue && (pModifier->isFinal() || (!isElementModification && pModifier->isRedeclare() && !pModifier->isReplaceable()))) {
+    if (defaultValue && (pModifier->isFinal() || (!isElementModification && !pParameter->getModelInstanceElement()->isParameter() && pModifier->isRedeclare() && !pModifier->isReplaceable()))) {
       if (mParametersList.removeOne(pParameter)) {
         delete pParameter;
       }
@@ -1873,23 +1941,6 @@ void ElementParameters::applyModifier(ModelInstance::Modifier *pModifier, bool d
 }
 
 /*!
- * \brief ElementParameters::findParameter
- * Finds the Parameter.
- * \param parameter
- * \param caseSensitivity
- * \return
- */
-Parameter* ElementParameters::findParameter(const QString &parameter, Qt::CaseSensitivity caseSensitivity) const
-{
-  foreach (Parameter *pParameter, mParametersList) {
-    if (pParameter->getModelInstanceElement()->getName().compare(parameter, caseSensitivity) == 0) {
-      return pParameter;
-    }
-  }
-  return 0;
-}
-
-/*!
  * \brief ElementParameters::commentLinkClicked
  * \param link
  */
@@ -1975,46 +2026,46 @@ void ElementParameters::updateElementParameters()
     if (pParameter->getGroup().isEmpty()) {
       continue;
     }
-    ElementModifier elementModifier;
-    elementModifier.mName = pParameter->getName();
-    elementModifier.mExtendName = pParameter->getExtendName();
-    elementModifier.mInherited = pParameter->isInherited();
-    elementModifier.mKey = pParameter->getName();
-    QString elementModifierValue = pParameter->getValue();
-    elementModifier.mIsReplaceable = (pParameter->isReplaceableComponent() || pParameter->isReplaceableClass());
-    elementModifier.mFinal = pParameter->getFinalEachMenu()->isFinal();
-    elementModifier.mEach = pParameter->getFinalEachMenu()->isEach();
-    elementModifier.mBreak = pParameter->getFinalEachMenu()->isBreak();
-    elementModifier.mStartAndFixed = pParameter->isShowStartAndFixed();
-    // if break
-    if (elementModifier.mBreak) {
-      elementModifierValue = Helper::BREAK;
-    } else {
-      // convert the value to display unit
-      if (!pParameter->getUnit().isEmpty()
-          && pParameter->getUnit().compare(pParameter->getUnitComboBox()->itemData(pParameter->getUnitComboBox()->currentIndex()).toString()) != 0) {
-        bool ok = true;
-        qreal elementModifierRealValue = elementModifierValue.toDouble(&ok);
-        // if the modifier is a literal constant
-        if (ok) {
-          OMCInterface::convertUnits_res convertUnit = pOMCProxy->convertUnits(pParameter->getUnitComboBox()->itemData(pParameter->getUnitComboBox()->currentIndex()).toString(),
-                                                                               pParameter->getUnit());
-          if (convertUnit.unitsCompatible) {
-            elementModifierRealValue = Utilities::convertUnit(elementModifierRealValue, convertUnit.offset, convertUnit.scaleFactor);
-            elementModifierValue = StringHandler::number(elementModifierRealValue);
-          }
-        } else { // if expression
-          elementModifierValue = Utilities::arrayExpressionUnitConversion(pOMCProxy, elementModifierValue,
-                                                                          pParameter->getUnitComboBox()->itemData(pParameter->getUnitComboBox()->currentIndex()).toString(),
-                                                                          pParameter->getUnit());
-        }
-      }
-    }
 
     QStringList subModifiers;
     // if value is changed
     if (pParameter->isValueModified()) {
       valueChanged = true;
+      ElementModifier elementModifier;
+      elementModifier.mName = pParameter->getName();
+      elementModifier.mExtendName = pParameter->getExtendName();
+      elementModifier.mInherited = pParameter->isInherited();
+      elementModifier.mKey = pParameter->getName();
+      QString elementModifierValue = pParameter->getValue();
+      elementModifier.mIsReplaceable = (pParameter->isReplaceableComponent() || pParameter->isReplaceableClass());
+      elementModifier.mFinal = pParameter->getFinalEachMenu()->isFinal();
+      elementModifier.mEach = pParameter->getFinalEachMenu()->isEach();
+      elementModifier.mBreak = pParameter->getFinalEachMenu()->isBreak();
+      elementModifier.mStartAndFixed = pParameter->isShowStartAndFixed();
+      // if break
+      if (elementModifier.mBreak) {
+        elementModifierValue = Helper::BREAK;
+      } else {
+        // convert the value to display unit
+        if (!pParameter->getUnit().isEmpty()
+            && pParameter->getUnit().compare(pParameter->getUnitComboBox()->itemData(pParameter->getUnitComboBox()->currentIndex()).toString()) != 0) {
+          bool ok = true;
+          qreal elementModifierRealValue = elementModifierValue.toDouble(&ok);
+          // if the modifier is a literal constant
+          if (ok) {
+            OMCInterface::convertUnits_res convertUnit = pOMCProxy->convertUnits(pParameter->getUnitComboBox()->itemData(pParameter->getUnitComboBox()->currentIndex()).toString(),
+                                                                                 pParameter->getUnit());
+            if (convertUnit.unitsCompatible) {
+              elementModifierRealValue = Utilities::convertUnit(elementModifierRealValue, convertUnit.offset, convertUnit.scaleFactor);
+              elementModifierValue = StringHandler::number(elementModifierRealValue);
+            }
+          } else { // if expression
+            elementModifierValue = Utilities::arrayExpressionUnitConversion(pOMCProxy, elementModifierValue,
+                                                                            pParameter->getUnitComboBox()->itemData(pParameter->getUnitComboBox()->currentIndex()).toString(),
+                                                                            pParameter->getUnit());
+          }
+        }
+      }
       // set start value
       if (pParameter->isShowStartAndFixed()) {
         QString startModifier;
@@ -2197,6 +2248,10 @@ void ElementParameters::updateElementParameters()
       }
     }
   }
+  /* Skip the focus out event when we are closing the dialog.
+   * Otherwise it will call valueTextBoxChanged which tries to use the delete model instance.
+   */
+  mSkipFocusOutEvent = true;
   accept();
 }
 
@@ -2212,6 +2267,7 @@ void ElementParameters::reject()
       pParameter->getModelInstanceElement()->resetBinding();
     }
   }
+  mSkipFocusOutEvent = true;
   QDialog::reject();
 }
 

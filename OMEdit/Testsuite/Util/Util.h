@@ -38,6 +38,15 @@
 #include <QtGlobal>
 #include <QtTest/QtTest>
 
+#include "OMEditApplication.h"
+
+#ifndef GC_THREADS
+#define GC_THREADS
+#endif
+extern "C" {
+#include "meta/meta_modelica.h"
+}
+
 #define OMEDITTEST_MAIN(TestObject) \
 static int execution_failed() \
 { \

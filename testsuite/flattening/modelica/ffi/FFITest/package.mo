@@ -3,7 +3,7 @@ package FFITest
     function real1
       input Real x;
       output Real y;
-    external "C" y = real1_ext(x);
+    external "C" y = real1_ext(x)
       annotation(Library="FFITestLib");
     end real1;
 
@@ -16,7 +16,7 @@ package FFITest
       input Real y;
       input Real z;
       output Real r;
-    external "C" r = real2_ext(x, y, z);
+    external "C" r = real2_ext(x, y, z)
       annotation(Library="FFITestLib");
     end real2;
 
@@ -28,7 +28,7 @@ package FFITest
       input Real x;
       input Real y;
       output Real r;
-    external "C" real3_ext(x, y, r);
+    external "C" real3_ext(x, y, r)
       annotation(Library="FFITestLib");
     end real3;
 
@@ -39,7 +39,7 @@ package FFITest
     function integer1
       input Integer x;
       output Integer y;
-    external "C" y = integer1_ext(x);
+    external "C" y = integer1_ext(x)
       annotation(Library="FFITestLib");
     end integer1;
 
@@ -52,7 +52,7 @@ package FFITest
       input Integer y;
       input Integer z;
       output Integer r;
-    external "C" r = integer2_ext(x, y, z);
+    external "C" r = integer2_ext(x, y, z)
       annotation(Library="FFITestLib");
     end integer2;
 
@@ -63,7 +63,7 @@ package FFITest
     function boolean1
       input Boolean x;
       output Boolean y;
-    external "C" y = boolean1_ext(x);
+    external "C" y = boolean1_ext(x)
       annotation(Library="FFITestLib");
     end boolean1;
 
@@ -77,7 +77,7 @@ package FFITest
       input Boolean y;
       input Boolean z;
       output Boolean r;
-    external "C" r = boolean2_ext(x, y, z);
+    external "C" r = boolean2_ext(x, y, z)
       annotation(Library="FFITestLib");
     end boolean2;
 
@@ -91,7 +91,7 @@ package FFITest
     function enum1
       input E1 x;
       output E1 y;
-    external "C" y = enum1_ext(x);
+    external "C" y = enum1_ext(x)
       annotation(Library="FFITestLib");
     end enum1;
 
@@ -104,7 +104,7 @@ package FFITest
       input E1 x;
       input E1 y;
       output E1 r;
-    external "C" r = enum2_ext(x, y);
+    external "C" r = enum2_ext(x, y)
       annotation(Library="FFITestLib");
     end enum2;
 
@@ -119,7 +119,7 @@ package FFITest
     function string1
       input String x;
       output Integer y;
-    external "C" y = string1_ext(x);
+    external "C" y = string1_ext(x)
       annotation(Library="FFITestLib");
     end string1;
 
@@ -131,7 +131,7 @@ package FFITest
       output String s;
     protected
       Boolean eof;
-    external "C" s = ModelicaInternal_readLine("String2.mos", 1, eof);
+    external "C" s = ModelicaInternal_readLine("String2.mos", 1, eof)
       annotation(Library="ModelicaExternalC");
     end string2;
 
@@ -144,7 +144,7 @@ package FFITest
     function realArray1
       input Real x[:];
       output Real y[size(x, 1)];
-    external "C" realArray1_ext(x, size(x, 1), y);
+    external "C" realArray1_ext(x, size(x, 1), y)
       annotation(Library="FFITestLib");
     end realArray1;
 
@@ -155,7 +155,7 @@ package FFITest
     function stringArray1
       input String s[:];
       output Integer lens[size(s, 1)];
-    external "C" stringArray1_ext(s, size(s, 1), lens);
+    external "C" stringArray1_ext(s, size(s, 1), lens)
       annotation(Library="FFITestLib");
     end stringArray1;
 
@@ -172,7 +172,7 @@ package FFITest
     function record1
       input R1 r1;
       output Real x;
-    external "C" x = record1_ext(r1);
+    external "C" x = record1_ext(r1)
       annotation(Library="FFITestLib");
     end record1;
 
@@ -192,7 +192,7 @@ package FFITest
       input Real y;
       input Real z;
       output R2 r2;
-    external "C" record2_ext(r2, x, y, z);
+    external "C" record2_ext(r2, x, y, z)
       annotation(Library="FFITestLib");
     end record2;
 
@@ -211,7 +211,7 @@ package FFITest
       input Real r;
       input Integer i2;
       output R3 r3;
-    external "C" record3_ext(r3, i1, r, i2);
+    external "C" record3_ext(r3, i1, r, i2)
       annotation(Library="FFITestLib");
     end record3;
 
@@ -228,7 +228,7 @@ package FFITest
     function record4
       input Real arr[5];
       output R4 r4;
-    external "C" record4_ext(arr, r4);
+    external "C" record4_ext(arr, r4)
       annotation(Library="FFITestLib");
     end record4;
 
@@ -239,7 +239,7 @@ package FFITest
     function record5
       input Real x;
       output R1 r1;
-    external "C" r1 = record5_ext(x);
+    external "C" r1 = record5_ext(x)
       annotation(Library="FFITestLib");
     end record5;
 
@@ -251,7 +251,7 @@ package FFITest
   package ErrorChecking
     function missingFunction1
       output Real x;
-    external "C" x = missingFunction1_ext();
+    external "C" x = missingFunction1_ext()
       annotation(Library="FFITestLib");
     end missingFunction1;
 
@@ -261,7 +261,7 @@ package FFITest
 
     function arrayResult1
       output Real[3] x;
-    external "C" x = arrayResult1_ext();
+    external "C" x = arrayResult1_ext()
       annotation(Library="FFITestLib");
     end arrayResult1;
 
@@ -294,7 +294,7 @@ package FFITest
     function countLines
       input String filename;
       output Integer lines;
-    external "C" lines = ModelicaInternal_countLines(filename);
+    external "C" lines = ModelicaInternal_countLines(filename)
       annotation(Library="ModelicaExternalC");
     end countLines;
 
@@ -309,7 +309,7 @@ package FFITest
       output Real number;
     protected
       Integer nextIndex;
-    external "C" ModelicaStrings_scanReal(string, startIndex, unsigned, nextIndex, number);
+    external "C" ModelicaStrings_scanReal(string, startIndex, unsigned, nextIndex, number)
       annotation(Library="ModelicaExternalC");
     end scanReal;
 
@@ -324,7 +324,7 @@ package FFITest
       output Integer number;
     protected
       Integer nextIndex;
-    external "C" ModelicaStrings_scanInteger(string, startIndex, unsigned, nextIndex, number);
+    external "C" ModelicaStrings_scanInteger(string, startIndex, unsigned, nextIndex, number)
       annotation(Library="ModelicaExternalC");
     end scanInteger;
 
@@ -338,7 +338,7 @@ package FFITest
       output String outString;
     protected
       Integer nextIndex;
-    external "C" ModelicaStrings_scanString(string, startIndex, nextIndex, outString);
+    external "C" ModelicaStrings_scanString(string, startIndex, nextIndex, outString)
       annotation(Library="ModelicaExternalC");
     end scanString;
 

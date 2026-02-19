@@ -388,7 +388,7 @@ algorithm
 
   clsNode := InstUtil.mergeScalars(clsNode, path, isRootClass = true);
   checkInstanceRestriction(clsNode, path, context);
-  clsNode := InstNode.setNodeType(InstNodeType.ROOT_CLASS(InstNode.EMPTY_NODE()), clsNode);
+  clsNode := InstNode.makeRootClass(clsNode);
 end lookupRootClass;
 
 function instantiateRootClass
@@ -3360,7 +3360,10 @@ algorithm
 
     case SCode.Equation.EQ_CONNECT(info = info)
       algorithm
-        if InstContext.inWhen(context) then
+        if InstContext.inInitial(context) then
+          Error.addSourceMessage(Error.CONNECT_IN_INITIAL_EQUATION, {}, info);
+          fail();
+        elseif InstContext.inWhen(context) then
           Error.addSourceMessage(Error.CONNECT_IN_WHEN,
             {Dump.printComponentRefStr(scodeEq.crefLeft),
              Dump.printComponentRefStr(scodeEq.crefRight)}, info);

@@ -33,15 +33,28 @@ encapsulated package SimCodeFunction
 "The entry points to this module is the translateFunctions function."
 
 // public imports
-public
-import Absyn;
-import AbsynUtil;
-import DAE;
-import HashTableCrefSimVar;
-import HashTableStringToPath;
-import Tpl;
+public import Absyn;
+public import AbsynUtil;
+public import DAE;
+public import HashTableCrefSimVar;
+public import HashTableStringToPath;
+public import Tpl;
 
-uniontype FunctionCode
+// private imports
+protected import BaseHashTable;
+protected import CodegenCFunctions;
+protected import CodegenMidToC;
+protected import ComponentReference;
+protected import DAEToMid;
+protected import Error;
+protected import ExpressionDump;
+protected import Global;
+protected import List;
+protected import MidCode;
+protected import SimCodeFunctionUtil;
+protected import Types;
+
+public uniontype FunctionCode
   "Root data structure containing information required for templates to
   generate C functions for Modelica/MetaModelica functions."
   record FUNCTIONCODE
@@ -57,8 +70,8 @@ end FunctionCode;
 
 // TODO: I believe some of these fields can be removed. Check to see what is
 //       used in templates.
-uniontype Function
-  "Represents a Modelica or MetaModelica function."
+public uniontype Function
+  "Represents a Modelica, MetaModelica or external function."
   record FUNCTION
     Absyn.Path name;
     list<Variable> outVars;
@@ -111,9 +124,55 @@ uniontype Function
     SCode.Visibility visibility;
     SourceInfo info;
   end RECORD_CONSTRUCTOR;
+
+  function toString
+  "Print for debugging purpose"
+    input Function func;
+    output String str = "";
+  algorithm
+    str := match func
+      local
+        String tmp = "";
+        list<String> ls;
+      case FUNCTION() algorithm
+        tmp := tmp + "name: " + AbsynUtil.pathString(func.name);
+      then "FUNCTION(" + tmp + ")";
+      case PARALLEL_FUNCTION() algorithm
+        tmp := tmp + "name: " + AbsynUtil.pathString(func.name);
+      then "PARALLEL_FUNCTION(" + tmp + ")";
+      case KERNEL_FUNCTION() algorithm
+        tmp := tmp + "name: " + AbsynUtil.pathString(func.name);
+      then "KERNEL_FUNCTION(" + tmp + ")";
+      case EXTERNAL_FUNCTION() algorithm
+        tmp := "\n";
+        tmp := tmp + "  name: " + AbsynUtil.pathString(func.name) + ",\n";
+        tmp := tmp + "  extName: " + func.extName + ",\n";
+        ls := List.map(func.funArgs, Variable.toString);
+        tmp := tmp + "  funArgs: {" + stringDelimitList(ls, ", ") + "},\n";
+        ls := List.map(func.extArgs, SimExtArg.toString);
+        tmp := tmp + "  extArgs: {" + stringDelimitList(ls, ", ") + "},\n";
+        tmp := tmp + "  extReturn: " + SimExtArg.toString(func.extReturn) + ",\n";
+        ls := List.map(func.inVars, Variable.toString);
+        tmp := tmp + "  inVars: {" + stringDelimitList(ls, ", ") + "},\n";
+        ls := List.map(func.outVars, Variable.toString);
+        tmp := tmp + "  outVars: {" + stringDelimitList(ls, ", ") + "},\n";
+        ls := List.map(func.biVars, Variable.toString);
+        tmp := tmp + "  biVars: {" + stringDelimitList(ls, ", ") + "},\n";
+        tmp := tmp + "  includes: {" + stringDelimitList(func.includes, ", ") + "},\n";
+        tmp := tmp + "  libs: {" + stringDelimitList(func.libs, ", ") + "},\n";
+        tmp := tmp + "  language: " + func.language + "\n";
+      then "EXTERNAL_FUNCTION(" + tmp + ")";
+      case RECORD_CONSTRUCTOR() algorithm
+        tmp := tmp + "name: " + AbsynUtil.pathString(func.name);
+      then "RECORD_CONSTRUCTOR(" + tmp + ")";
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for an unknown reason."});
+      then fail();
+    end match;
+  end toString;
 end Function;
 
-uniontype RecordDeclaration
+public uniontype RecordDeclaration
 
   record RECORD_DECL_FULL
     String name "struct (record) name ? encoded";
@@ -136,7 +195,7 @@ uniontype RecordDeclaration
 
 end RecordDeclaration;
 
-uniontype MakefileParams
+public uniontype MakefileParams
   "Platform specific parameters used when generating makefiles."
   record MAKEFILE_PARAMS
     String ccompiler;
@@ -156,7 +215,7 @@ uniontype MakefileParams
   end MAKEFILE_PARAMS;
 end MakefileParams;
 
-uniontype SimExtArg
+public uniontype SimExtArg
   "Information about an argument to an external function."
   record SIMEXTARG
     DAE.ComponentRef cref;
@@ -166,10 +225,12 @@ uniontype SimExtArg
     Boolean hasBinding "avoid double allocation";
     DAE.Type type_;
   end SIMEXTARG;
+
   record SIMEXTARGEXP
     DAE.Exp exp;
     DAE.Type type_;
   end SIMEXTARGEXP;
+
   record SIMEXTARGSIZE
     DAE.ComponentRef cref;
     Boolean isInput;
@@ -177,11 +238,50 @@ uniontype SimExtArg
     DAE.Type type_;
     DAE.Exp exp;
   end SIMEXTARGSIZE;
+
   record SIMNOEXTARG end SIMNOEXTARG;
+
+  function toString
+    input SimExtArg simExtArg;
+    output String str = "";
+  algorithm
+    str := match simExtArg
+      local
+        String tmp = "";
+      case SIMEXTARG() algorithm
+        tmp := tmp + "cref: " + ComponentReference.printComponentRefStr(simExtArg.cref);
+        tmp := if simExtArg.isInput then tmp + ", isInput: true" else tmp + ", isInput: false";
+        tmp := tmp + ", outputIndex: " + intString(simExtArg.outputIndex);
+        tmp := if simExtArg.isArray then tmp + ", isArray: true" else tmp + ", isArray: false";
+        tmp := if simExtArg.hasBinding then tmp + ", hasBinding: true" else tmp + ", hasBinding: false";
+        tmp := tmp + ", type: " + Types.unparseType(simExtArg.type_);
+      then "SIMEXTARG(" + tmp + ")";
+
+      case SIMEXTARGEXP() algorithm
+        tmp := tmp + "exp: " + ExpressionDump.printExpStr(simExtArg.exp);
+        tmp := tmp + ", type: " + Types.unparseType(simExtArg.type_);
+      then "SIMEXTARGEXP(" + tmp + ")";
+
+      case SIMEXTARGSIZE() algorithm
+        tmp := tmp + "cref: " + ComponentReference.printComponentRefStr(simExtArg.cref);
+        tmp := if simExtArg.isInput then tmp + ", isInput: true" else tmp + ", isInput: false";
+        tmp := tmp + ", outputIndex: " + intString(simExtArg.outputIndex);
+        tmp := tmp + ", type: " + Types.unparseType(simExtArg.type_);
+        tmp := tmp + ", exp: " + ExpressionDump.printExpStr(simExtArg.exp);
+      then "SIMEXTARGSIZE(" + tmp + ")";
+
+      case SIMNOEXTARG()
+      then "SIMNOEXTARG()";
+
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for an unknown reason."});
+      then fail();
+    end match;
+  end toString;
 end SimExtArg;
 
-uniontype Variable
-  "a variable represents a name, a type and a possible default value"
+public uniontype Variable
+  "A variable represents a name, a type and a possible default value"
   record VARIABLE
     DAE.ComponentRef name;
     DAE.Type ty;
@@ -198,9 +298,29 @@ uniontype Variable
     list<Variable> args;
     Option<DAE.Exp> defaultValue "default value";
   end FUNCTION_PTR;
+
+  function toString
+    input Variable variable;
+    output String str = "";
+  algorithm
+    str := match variable
+      local
+        String tmp = "";
+      case VARIABLE() algorithm
+        tmp := tmp + "name: " + ComponentReference.printComponentRefStr(variable.name);
+        tmp := tmp + ", type: " + Types.unparseType(variable.ty);
+      then "VARIABLE(" + tmp + ")";
+      case FUNCTION_PTR() algorithm
+        tmp := tmp + "name: " + variable.name;
+      then "FUNCTION_PTR(" + tmp + ")";
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for an unknown reason."});
+      then fail();
+    end match;
+  end toString;
 end Variable;
 
-uniontype Context
+public uniontype Context
   "Constants of this type defined below are used by templates to be able to
   generate different code depending on the context it is generated in."
   record SIMULATION_CONTEXT
@@ -218,6 +338,7 @@ uniontype Context
   end ALGLOOP_CONTEXT;
 
   record JACOBIAN_CONTEXT
+    String name;
     Option<HashTableCrefSimVar.HashTable> jacHT;
   end JACOBIAN_CONTEXT;
 
@@ -244,7 +365,7 @@ end Context;
 public constant Context contextSimulationNonDiscrete  = SIMULATION_CONTEXT(false);
 public constant Context contextSimulationDiscrete     = SIMULATION_CONTEXT(true);
 public constant Context contextFunction               = FUNCTION_CONTEXT("", false);
-public constant Context contextJacobian               = JACOBIAN_CONTEXT(NONE());
+public constant Context contextJacobian               = JACOBIAN_CONTEXT("", NONE());
 public constant Context contextAlgloopJacobian        = ALGLOOP_CONTEXT(false,true);
 public constant Context contextAlgloopInitialisation  = ALGLOOP_CONTEXT(true,false);
 public constant Context contextAlgloop                = ALGLOOP_CONTEXT(false,false);
@@ -258,16 +379,6 @@ public constant Context contextOMSI                   = OMSI_CONTEXT(NONE());
 
 constant list<DAE.Exp> listExpLength1 = {DAE.ICONST(0)} "For CodegenC.tpl";
 constant list<Variable> boxedRecordOutVars = VARIABLE(DAE.CREF_IDENT("",DAE.T_COMPLEX_DEFAULT_RECORD,{}),DAE.T_COMPLEX_DEFAULT_RECORD,NONE(),{},DAE.NON_PARALLEL(),DAE.VARIABLE(), false)::{} "For CodegenC.tpl";
-
-// protected imports
-protected
-import BaseHashTable;
-import CodegenCFunctions;
-import CodegenMidToC;
-import Global;
-import SimCodeFunctionUtil;
-import MidCode;
-import DAEToMid;
 
 public function translateFunctions "
   Entry point to translate Modelica/MetaModelica functions to C functions.

@@ -1,0 +1,124 @@
+// name: TestInversePlant
+// keywords: NewBackend
+// status: correct
+// cflags: --newBackend
+
+loadString("
+impure function initialSimplified
+  discrete output Boolean isInitialLambda0 = false;
+  annotation(Inline = false, __OpenModelica_builtin=true);
+end initialSimplified;
+
+package TestInversePlant
+  model Plant
+    connector RealInput = input Real;
+    connector RealOutput = output Real;
+
+    parameter Integer N = 5 \"Number of finite volumes\";
+    parameter Real NTU = 4 \"Nominal NTU\";
+    final parameter Real Gtot = NTU \"Nominal total heat conductance\";
+    parameter Real cp = 1 \"Specific heat capacity\";
+    parameter Real kf = 0.1 \"Fluid friction coefficient\";
+    parameter Real Kt = 1 \"Turbine flow coefficient\";
+    parameter Real Tnom = 700 \"Nominal TIT\";
+    parameter Real Tsnom = 400 \"Nominal flue gas outlet temperature\";
+    parameter Real Pnom = 223 \"Nominal turbine power\";
+    parameter Real pnom = 1.1 \"Nominal fluid inlet pressure\";
+    parameter Real TOP = 0.1 \"Nominal turbine outlet pressure\";
+    parameter Real gamma = 1.2 \"cp/cv\";
+
+    RealInput w \"Fluid flow rate\";
+    RealInput wfg \"Flue gas flow rate\";
+
+    Real T[N + 1] \"Fluid temperatures\";
+    Real p[N + 1] \"Fluid pressures\";
+    Real Tfg[N + 1] \"Flue gas temperatures\";
+    Real G[N] \"Volume conductivity\";
+    Real Q[N] \"Thermal powers\";
+    Real TIT = T[N + 1] \"Turbine inlet temperature\";
+
+    RealOutput P \"Turbine power\";
+    RealOutput Ts = Tfg[N+1] \"Outlet flue gas temperature\";
+    RealOutput TIP = p[N + 1] \"Turbine inlet pressure\";
+    RealOutput pin = p[1] \"Fluid inlet pressure\";
+  equation
+    T[1] = 300;
+    Tfg[1] = 800;
+    for i in 1:N loop
+      0 = w*cp*(T[i] - T[i + 1]) + Q[i];
+      0 = wfg*cp*(Tfg[N - i + 1] - Tfg[N - i + 2]) - Q[i];
+      Q[i] = ((Tfg[N - i + 2] + Tfg[N - i + 1])/2 - (T[i + 1] + T[i])/2)*G[i];
+      G[i] = NTU/N*w^0.8;
+      (p[i] - p[i + 1]) = kf/N*w^2;
+    end for;
+    w = Kt*p[N + 1]/sqrt(TIT/Tnom);
+    P = w*cp*TIT*(1 - (TOP/TIP)^((gamma - 1)/gamma));
+  end Plant;
+
+  model ForwardOnDesign
+    Plant plant;
+  equation
+    plant.w = 1;
+    plant.wfg = 1;
+  end ForwardOnDesign;
+
+  model BackwardOnDesign
+    Plant plant;
+  equation
+    plant.P = plant.Pnom;
+    plant.Ts = plant.Tsnom;
+  end BackwardOnDesign;
+
+  model BackwardOffDesign
+    Plant plant;
+    parameter Real load = 0.3;
+  equation
+    plant.P = plant.Pnom*load;
+    plant.Ts = plant.Tsnom;
+  end BackwardOffDesign;
+
+  model BackwardOnDesignHomotopy
+    Plant plant;
+  equation
+    if initialSimplified() then
+      plant.w = 1;
+      plant.wfg = 1;
+    else
+      plant.P = plant.Pnom;
+      plant.Ts = plant.Tsnom;
+    end if;
+  end BackwardOnDesignHomotopy;
+
+  model BackwardOffDesignHomotopy
+    Plant plant;
+    parameter Real load = 0.3;
+    Real x(start=0);
+  equation
+    if initialSimplified() then
+      plant.w = 1;
+      plant.wfg = 1;
+    else
+      plant.P = homotopy(plant.Pnom*load, plant.Pnom);
+      plant.Ts = plant.Tsnom;
+    end if;
+    0 = homotopy(x^3 + x, x); // TODO fix runtime to use init0 even when there is no alg loop with homotopy
+  end BackwardOffDesignHomotopy;
+end TestInversePlant;"); getErrorString();
+
+setCommandLineOptions("--allowNonStandardModelica=initialSimplified"); getErrorString();
+simulate(TestInversePlant.BackwardOffDesignHomotopy); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "TestInversePlant.BackwardOffDesignHomotopy_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'TestInversePlant.BackwardOffDesignHomotopy', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully with 3 homotopy steps.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// endResult

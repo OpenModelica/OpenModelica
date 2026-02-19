@@ -48,7 +48,7 @@ protected
   import NFTyping.ExpOrigin;
   import Expression = NFExpression;
   import NFFunction.Function;
-  import NFFlatten.{FunctionTree, FunctionTreeImpl};
+  import NFFlatten.FunctionTree;
   import NFInstNode.InstNode;
   import Type = NFType;
 
@@ -281,7 +281,7 @@ public
           // auxillaries
           VarData varData;
           EqData eqData;
-          FunctionTree funcTree;
+          UnorderedMap<Absyn.Path, Function> funcMap;
           VariablePointers residual_vars;
           SimVars vars;
           // old SimCode strcutures
@@ -311,18 +311,18 @@ public
           UnorderedMap<ComponentRef, SimVar> simcode_map;
           UnorderedMap<ComponentRef, SimStrongComponent.Block> equation_map;
           Option<DaeModeData> daeModeData;
-          SimJacobian jacA, jacB, jacC, jacD, jacF, jacH;
+          SimJacobian jacA, jacB, jacC, jacD, jacF, jacH, jacAdjoint;
           list<SimStrongComponent.Block> inlineEquations; // ToDo: what exactly is this?
           mapExp collect_literals;
         case BackendDAE.MAIN(varData = varData as BVariable.VAR_DATA_SIM(), eqData = eqData as BEquation.EQ_DATA_SIM())
           algorithm
             // somehow this cannot be set at definition (metamodelica bug?)
             simCodeIndices := EMPTY_SIM_CODE_INDICES();
-            funcTree := BackendDAE.getFunctionTree(bdae);
+            funcMap := BackendDAE.getFunctionMap(bdae);
 
             // get and replace all literals in functions
-            collect_literals    := function Expression.fakeMap(func = function Expression.replaceLiteral(map = literals_map, idx_ptr = literals_idx));
-            funcTree            := FunctionTreeImpl.mapExp(funcTree, collect_literals);
+            collect_literals := function Expression.fakeMap(func = function Expression.replaceLiteral(map = literals_map, idx_ptr = literals_idx));
+            UnorderedMap.apply(funcMap, function Function.mapExp(mapFn = collect_literals, mapFnFields = collect_literals, mapParameters = true, mapBody = true));
 
             // create sim vars before everything else
             residual_vars                       := BackendDAE.getLoopResiduals(bdae);
@@ -403,17 +403,18 @@ public
             directory := CevalScriptBackend.getFileDir(AbsynUtil.pathToCref(name), program);
             // The OB function tree is needed both here and when dumping the flat model,
             // but converting it is destructive so return it to avoid doing it again.
-            oldFunctionTree := ConvertDAE.convertFunctionTree(funcTree);
+            oldFunctionTree := ConvertDAE.convertFunctionTree(FunctionTree.fromList(UnorderedMap.toList(funcMap)));
             (libs, libPaths, _, includeDirs, recordDecls, functions, _) := OldSimCodeUtil.createFunctions(program, oldFunctionTree);
             makefileParams := OldSimCodeFunctionUtil.createMakefileParams(includeDirs, libs, libPaths, false, false);
 
             (linearLoops, nonlinearLoops, jacobians, simCodeIndices) := collectAlgebraicLoops(init, init_0, ode, algebraic, daeModeData, simCodeIndices, simcode_map);
 
             if isSome(daeModeData) then
-              (jacA, simCodeIndices) := SimJacobian.createSimulationJacobian(Util.getOption(bdae.dae), simCodeIndices, simcode_map);
+              (jacA, jacAdjoint, simCodeIndices) := SimJacobian.createSimulationJacobian(Util.getOption(bdae.dae), simCodeIndices, simcode_map);
+              // should jacAdjoint be added aswell? -> for now no
               daeModeData := DaeModeData.addJacobian(daeModeData, jacA);
             else
-              (jacA, simCodeIndices) := SimJacobian.createSimulationJacobian(listAppend(bdae.ode, bdae.ode_event), simCodeIndices, simcode_map);
+              (jacA, jacAdjoint, simCodeIndices) := SimJacobian.createSimulationJacobian(listAppend(bdae.ode, bdae.ode_event), simCodeIndices, simcode_map);
             end if;
 
             (jacB, simCodeIndices) := SimJacobian.empty("B", simCodeIndices);
@@ -421,8 +422,8 @@ public
             (jacD, simCodeIndices) := SimJacobian.empty("D", simCodeIndices);
             (jacF, simCodeIndices) := SimJacobian.empty("F", simCodeIndices);
             (jacH, simCodeIndices) := SimJacobian.empty("H", simCodeIndices);
-            //jacobians := jacA :: jacB :: jacC :: jacD :: jacF :: jacobians;
-            jacobians := listReverse(jacH :: jacF :: jacD :: jacC :: jacB :: jacA :: jacobians);
+            //jacobians := jacA :: jacB :: jacC :: jacD :: jacF :: jacH :: jacAdjoint :: jacobians;
+            jacobians := listReverse( jacAdjoint :: jacH :: jacF :: jacD :: jacC :: jacB :: jacA :: jacobians);
 
             for jac in jacobians loop
               if Util.isSome(jac.jac_map) then
@@ -431,7 +432,7 @@ public
             end for;
 
             // jacobian blocks only from simulation jacobians
-            jac_blocks := SimJacobian.getJacobiansBlocks({jacA, jacB, jacC, jacD, jacF, jacH});
+            jac_blocks := SimJacobian.getJacobiansBlocks({jacA, jacB, jacC, jacD, jacF, jacH, jacAdjoint});
             (jac_blocks, simCodeIndices) := SimStrongComponent.Block.fixIndices(jac_blocks, {}, simCodeIndices);
 
             // generate the generic loop calls and replace literal expressions

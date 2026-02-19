@@ -88,7 +88,6 @@ public:
     setClock("");
     setLinearSolver("");
     setNonLinearSolver("");
-    setLinearizationTime("");
     setOutputVariables("");
     setProfiling("none");
     setCPUTime(false);
@@ -206,8 +205,6 @@ public:
   QString getLinearSolver() const {return mLinearSolver;}
   void setNonLinearSolver(const QString &nonLinearSolver) {mNonLinearSolver = nonLinearSolver;}
   QString getNonLinearSolver() const {return mNonLinearSolver;}
-  void setLinearizationTime(const QString &linearizationTime) {mLinearizationTime = linearizationTime;}
-  QString getLinearizationTime() const {return mLinearizationTime;}
   void setOutputVariables(const QString &outputVariables) {mOutputVariables = outputVariables;}
   QString getOutputVariables() const {return mOutputVariables;}
   void setProfiling(const QString &profiling) {mProfiling = profiling;}
@@ -319,7 +316,6 @@ private:
   QString mClock;
   QString mLinearSolver;
   QString mNonLinearSolver;
-  QString mLinearizationTime;
   QString mOutputVariables;
   QString mProfiling;
   bool mCPUTime;

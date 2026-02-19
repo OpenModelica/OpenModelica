@@ -101,6 +101,9 @@ struct OpenModelicaGeneratedFunctionCallbacks {
   */
   int (*initializeDAEmodeData)(DATA *data, DAEMODE_DATA* daeModeData);
 
+  /* get dependency graph for functionODE */
+  void (*getDAG_ODE)(DATA*, threadData_t*);
+
   /* functionODE contains those equations that are needed
   * to calculate the dynamic part of the system */
   int (*functionODE)(DATA *data, threadData_t*);
@@ -249,6 +252,7 @@ struct OpenModelicaGeneratedFunctionCallbacks {
   /* function for calculation Jacobian */
   /*#ifdef D_OMC_JACOBIAN*/
   const int INDEX_JAC_A;
+  const int INDEX_JAC_ADJ;
   const int INDEX_JAC_B;
   const int INDEX_JAC_C;
   const int INDEX_JAC_D;
@@ -262,6 +266,7 @@ struct OpenModelicaGeneratedFunctionCallbacks {
   * Return-value 1: jac is not present
   */
   initialAnalyticalJacobian_func_ptr initialAnalyticJacobianA;
+  initialAnalyticalJacobian_func_ptr initialAnalyticJacobianADJ;
   initialAnalyticalJacobian_func_ptr initialAnalyticJacobianB;
   initialAnalyticalJacobian_func_ptr initialAnalyticJacobianC;
   initialAnalyticalJacobian_func_ptr initialAnalyticJacobianD;
@@ -272,6 +277,7 @@ struct OpenModelicaGeneratedFunctionCallbacks {
   * These functions calculate specific jacobian column.
   */
   jacobianColumn_func_ptr functionJacA_column;
+  jacobianColumn_func_ptr functionJacADJ_column;
   jacobianColumn_func_ptr functionJacB_column;
   jacobianColumn_func_ptr functionJacC_column;
   jacobianColumn_func_ptr functionJacD_column;

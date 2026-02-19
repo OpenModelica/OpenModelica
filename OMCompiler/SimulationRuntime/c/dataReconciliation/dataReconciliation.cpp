@@ -34,6 +34,7 @@
 #include "simulation/solver/external_input.h"
 #include "simulation/options.h"
 #include "simulation/solver/model_help.h"
+#include "simulation/jacobian_util.h"
 #include <iostream>
 #include <sstream>
 #include <string>
@@ -76,6 +77,13 @@ struct csvData
   vector< vector<string> > rx;
 };
 
+struct errorData
+{
+  string name;
+  string x;
+  string sx;
+};
+
 struct correlationData
 {
   vector<double> data;
@@ -87,6 +95,7 @@ struct correlationDataWarning
 {
   vector<string> diagonalEntry;
   vector<string> aboveDiagonalEntry;
+  vector<errorData> warningInfo; // to warn user about entries closer to 1
 };
 
 struct matrixData
@@ -102,13 +111,6 @@ struct inputData
   int column;
   double * data;
   vector<int> index;
-};
-
-struct errorData
-{
-  string name;
-  string x;
-  string sx;
 };
 
 struct dataReconciliationData
@@ -253,6 +255,11 @@ void createErrorHtmlReport(DATA * data, int status = 0)
     copyReferenceFile(data, ".log");
   }
 
+  // iteration vars file
+  if (status == 0)
+  {
+    myfile << "<h2> <a href=" << data->modelData->modelFilePrefix << "_iterationVars.txt" << " target=_blank> Iteration vars </a> </h2>\n";
+  }
   // debug log
   if (status == 0)
   {
@@ -264,6 +271,48 @@ void createErrorHtmlReport(DATA * data, int status = 0)
   myfile.flush();
   myfile.close();
 }
+
+/*
+* create warning report for correlation coefficients data
+*/
+void createCorrelationWarningReport(DATA * data, ofstream &myfile, correlationDataWarning &warningCorrelationData)
+{
+    // create a warning log for correlation input file
+  if (!warningCorrelationData.aboveDiagonalEntry.empty() || !warningCorrelationData.diagonalEntry.empty() || !warningCorrelationData.warningInfo.empty())
+  {
+    myfile << "<h3> <a href=" << data->modelData->modelFilePrefix << "_warning.txt" << " target=_blank> Warnings </a> </h3>\n";
+    /* create a warning log file */
+    ofstream warningfile;
+    std::stringstream warning_file;
+    if (omc_flag[FLAG_OUTPUT_PATH])
+    {
+      warning_file << string(omc_flagValue[FLAG_OUTPUT_PATH]) << "/" << data->modelData->modelFilePrefix << "_warning.txt";
+    }
+    else
+    {
+      warning_file << data->modelData->modelFilePrefix << "_warning.txt";
+    }
+
+    warningfile.open(warning_file.str().c_str());
+    // user warning #1 : Diagonal entry for variable of interest <variable name> in correlation input file <input file name> is ignored
+    for (const auto &index : warningCorrelationData.diagonalEntry)
+    {
+      warningfile << "|  warning  |   " << "Diagonal entry for variable of interest " << index << " in correlation input file " << omc_flagValue[FLAG_DATA_RECONCILE_Cx] << " is ignored" << "\n";
+    }
+    // user warning #2 : Above diagonal entry for variable of interest <variable name> in correlation input file <input file name> is ignored
+    for (const auto &index : warningCorrelationData.aboveDiagonalEntry)
+    {
+      warningfile << "|  warning  |   " << "Above diagonal entry for variable of interest " << index << " in correlation input file " << omc_flagValue[FLAG_DATA_RECONCILE_Cx] << " is ignored" << "\n";
+    }
+    // user warning #3 : Entries in correlation matrix closer to 1 for variable of interest <variable name> in correlation input file <input file name>
+    for (const auto &info : warningCorrelationData.warningInfo)
+    {
+      warningfile << "|  warning  |   " << "Entry for variable of interest " <<  info.name << " and variable of interest " << info.x << " in correlation input file " << omc_flagValue[FLAG_DATA_RECONCILE_Cx] <<  " is closer to 1: " << "[" << info.sx  << "]" <<"\n";
+    }
+    warningfile.close();
+  }
+}
+
 
 /*
 * create html report for data Reconciliation D.1
@@ -388,38 +437,15 @@ void createHtmlReportFordataReconciliation(DATA *data, csvData &csvinputs, matri
   if (data->modelData->nRelatedBoundaryConditions > 0)
     myfile << "<h3> <a href=" << data->modelData->modelFilePrefix << "_relatedBoundaryConditionsEquations.html" << " target=_blank> Related boundary conditions </a> </h3>\n";
 
+  // iteration vars file
+  myfile << "<h3> <a href=" << data->modelData->modelFilePrefix << "_iterationVars.txt" << " target=_blank> Iteration vars </a> </h3>\n";
+
   // Debug log
   myfile << "<h3> <a href=" << data->modelData->modelFilePrefix << "_debug.txt" << " target=_blank> Debug log </a> </h3>\n";
 
   // create a warning log for correlation input file
-  if (!warningCorrelationData.aboveDiagonalEntry.empty() || !warningCorrelationData.diagonalEntry.empty())
-  {
-    myfile << "<h3> <a href=" << data->modelData->modelFilePrefix << "_warning.txt" << " target=_blank> Warnings </a> </h3>\n";
-    /* create a warning log file */
-    ofstream warningfile;
-    std::stringstream warning_file;
-    if (omc_flag[FLAG_OUTPUT_PATH])
-    {
-      warning_file << string(omc_flagValue[FLAG_OUTPUT_PATH]) << "/" << data->modelData->modelFilePrefix << "_warning.txt";
-    }
-    else
-    {
-      warning_file << data->modelData->modelFilePrefix << "_warning.txt";
-    }
+  createCorrelationWarningReport(data, myfile, warningCorrelationData);
 
-    warningfile.open(warning_file.str().c_str());
-    // user warning #1 : Diagonal entry for variable of interest <variable name> in correlation input file <input file name> is ignored
-    for (const auto &index : warningCorrelationData.diagonalEntry)
-    {
-      warningfile << "|  warning  |   " << "Diagonal entry for variable of interest " << index << " in correlation input file " << omc_flagValue[FLAG_DATA_RECONCILE_Cx] << " is ignored" << "\n";
-    }
-    // user warning #2 : Above diagonal entry for variable of interest <variable name> in correlation input file <input file name> is ignored
-    for (const auto &index : warningCorrelationData.aboveDiagonalEntry)
-    {
-      warningfile << "|  warning  |   " << "Above diagonal entry for variable of interest " << index << " in correlation input file " << omc_flagValue[FLAG_DATA_RECONCILE_Cx] << " is ignored" << "\n";
-    }
-    warningfile.close();
-  }
 
   /* Add Results data */
   myfile << "<h2> Results: </h2>\n";
@@ -650,6 +676,11 @@ void createErrorHtmlReportForBoundaryConditions(DATA * data, int status = 0)
     copyReferenceFile(data, ".log");
   }
 
+  // iteration vars file
+  if (status == 0)
+  {
+    myfile << "<h2> <a href=" << data->modelData->modelFilePrefix << "_iterationVars.txt" << " target=_blank> Iteration vars </a> </h2>\n";
+  }
   // debug log
   if (status == 0)
   {
@@ -665,7 +696,7 @@ void createErrorHtmlReportForBoundaryConditions(DATA * data, int status = 0)
 /*
  * create HTML Report for Boundary Conditions D.2
  */
-void createHtmlReportForBoundaryConditions(DATA * data, std::vector<std::string> & boundaryConditionVars, double* values, double* uncertaintyValues)
+void createHtmlReportForBoundaryConditions(DATA * data, std::vector<std::string> & boundaryConditionVars, double* values, double* uncertaintyValues, correlationDataWarning &warningCorrelationData)
 {
   ofstream myfile;
   time_t now = time(0);
@@ -728,8 +759,14 @@ void createHtmlReportForBoundaryConditions(DATA * data, std::vector<std::string>
   // Intermediate Conditions
   myfile << "<h3> <a href=" << data->modelData->modelFilePrefix << "_BoundaryConditionIntermediateEquations.html" << " target=_blank> Intermediate equations </a> </h3>\n";
 
+  // iteration vars file
+  myfile << "<h3> <a href=" << data->modelData->modelFilePrefix << "_iterationVars.txt" << " target=_blank> Iteration vars </a> </h3>\n";
+
   // Debug log
   myfile << "<h3> <a href=" << data->modelData->modelFilePrefix << "_BoundaryConditions_debug.txt" << " target=_blank> Debug log </a> </h3>\n";
+
+  // create a warning log for correlation input file
+  createCorrelationWarningReport(data, myfile, warningCorrelationData);
 
   /* Add Results data */
   myfile << "<h2> Results: </h2>\n";
@@ -812,17 +849,80 @@ bool isUnmeasuredVariables(DATA* data, const char* name)
 {
   char **unmeasuredvariable = (char**) malloc(data->modelData->nSetbVars * sizeof(char*));
   data->callback->dataReconciliationUnmeasuredVariables(data, unmeasuredvariable);
-
+  bool found = false;
   // check for unmeasured variables
   for (int i = 0; i < data->modelData->nSetbVars; i++)
   {
     if (strcmp(unmeasuredvariable[i], name) == 0)
     {
-      return true;
+      found = true;
+      break;
     }
   }
   free(unmeasuredvariable);
-  return false;
+  return found;
+}
+
+//----------------------------------------------
+// Helper: Update Reconciled.mo with reconciled values
+//----------------------------------------------
+void updateReconciledMo(DATA * data, threadData_t * threadData, vector<string> headers,  double * reconciled_X, ofstream & logfile)
+{
+  std::string modelPrefix(data->modelData->modelFilePrefix);
+  std::replace(modelPrefix.begin(), modelPrefix.end(), '.', '_');
+
+  // check for reconciled.mo file to update with reconciled values
+  std::string reconciledMoFile, reconciledValuesMoFile;
+  if (omc_flag[FLAG_OUTPUT_PATH])
+  {
+    reconciledMoFile = std::string(omc_flagValue[FLAG_OUTPUT_PATH]) + "/" + data->modelData->modelFilePrefix +"_Reconciled_tmp.mo";
+    reconciledValuesMoFile = std::string(omc_flagValue[FLAG_OUTPUT_PATH]) + "/" + "Reconciled_" +  modelPrefix + ".mo";
+    copyReferenceFile(data, "_Reconciled_tmp.mo");
+  }
+  else
+  {
+    reconciledMoFile = std::string(data->modelData->modelFilePrefix) + "_Reconciled_tmp.mo";
+    reconciledValuesMoFile = "Reconciled_" + modelPrefix + ".mo";
+  }
+  std::ifstream infile(reconciledMoFile);
+  if (!infile.is_open())
+  {
+    // just give a warning, if file not found as this is optional and user may not want to update the file with reconciled values
+    warningStreamPrint(OMC_LOG_STDOUT, 0, "Reconciled modelica file path not found %s.", reconciledMoFile.c_str());
+    logfile << "|  warning   |   " << "Measurement input file path not found " << reconciledMoFile << "\n";
+  }
+
+  std::ofstream outfile(reconciledValuesMoFile);
+  if (!outfile.is_open())
+  {
+    // just give a warning, if file not found as this is optional and user may not want to update the file with reconciled values
+    warningStreamPrint(OMC_LOG_STDOUT, 0, "Cannot open reconciled values output file %s.", reconciledValuesMoFile.c_str());
+    logfile << "|  warning   |   " << "Cannot open reconciled values output file " << reconciledValuesMoFile << "\n";
+  }
+
+  std::string line;
+  int count = 1;
+  int varCount = 1; // counter for variables of interest
+  while (std::getline(infile, line))
+  {
+    if (count > 3 && varCount <= data->modelData->ndataReconVars)
+    {
+      std::string variableName(headers[varCount-1]);
+      std::replace(variableName.begin(), variableName.end(), '.', '_');
+      outfile << "  parameter Real " << variableName << " = " << reconciled_X[varCount-1] << ";\n";
+      varCount++;
+    }
+    else
+    {
+      // copy other lines as it is
+      count++;
+      outfile << line << "\n";
+    }
+  }
+  infile.close();
+  outfile.close();
+  omc_unlink(reconciledMoFile.c_str());
+  logfile << "|  info    |   " << "Reconciled modelica file updated successfully " << reconciledValuesMoFile << "\n";
 }
 
 /*
@@ -1523,6 +1623,8 @@ matrixData getJacobianMatrixF(DATA * data, threadData_t * threadData, ofstream &
     jacobian->seedVars[x] = 0.0;
   }
   matrixData Fdata = {rows, cols, jacF};
+  // free the allocated seed and result variables in jacobian struct after computing the jacobian matrix F to avoid memory leak
+  freeJacobian(jacobian);
   return Fdata;
 }
 
@@ -1568,6 +1670,8 @@ matrixData getJacobianMatrixH(DATA * data, threadData_t * threadData, ofstream &
     jacobian->seedVars[x] = 0.0;
   }
   matrixData Fdata = {rows, cols, jacF};
+  // free the allocated seed and result variables in jacobian struct after computing the jacobian matrix F to avoid memory leak
+  freeJacobian(jacobian);
   return Fdata;
 }
 
@@ -1760,7 +1864,7 @@ void validateCorelationInputsSquareMatrix(DATA * data, ofstream &logfile, vector
  * Function which reads the correlation coefficient input file
  * and stores the correlation coefficient matrix Cx for DataReconciliation
  */
-correlationData readCorrelationCoefficientFile(csvData Sx_result, ofstream & logfile, DATA * data, threadData_t * threadData, bool boundaryConditions = false)
+correlationData readCorrelationCoefficientFile(csvData Sx_result, ofstream & logfile, DATA * data, threadData_t * threadData, correlationDataWarning & warningCorrelationData, bool boundaryConditions = false)
 {
   char * filename = NULL;
   filename = (char*) omc_flagValue[FLAG_DATA_RECONCILE_Cx];
@@ -1873,6 +1977,13 @@ correlationData readCorrelationCoefficientFile(csvData Sx_result, ofstream & log
             errorData info = {rowHeaders.back(), columnHeaders[columnCount-2], temp};
             errorInfo.push_back(info);
           }
+          // warn users if value is closer to 1
+          else if (atof(temp.c_str()) > 0.99 && atof(temp.c_str()) < 1.01)
+          {
+            errorData info = {rowHeaders.back(), columnHeaders[columnCount-2], temp};
+            warningCorrelationData.warningInfo.push_back(info);
+            cx_data.push_back(atof(temp.c_str()));
+          }
           else
           {
             cx_data.push_back(atof(temp.c_str()));
@@ -1951,6 +2062,15 @@ correlationData readCorrelationCoefficientFile(csvData Sx_result, ofstream & log
       createErrorHtmlReportForBoundaryConditions(data);
     }
     exit(1);
+  }
+
+  // user warning : Entry for variable of interest <variable name> and variable of interest <variable name> in correlation input file <input file name> is closer to 1.
+  if (!warningCorrelationData.warningInfo.empty())
+  {
+    for (const auto & info : warningCorrelationData.warningInfo)
+    {
+      warningStreamPrint(OMC_LOG_STDOUT, 0, "Entry for variable of interest %s and variable of interest %s in correlation input file %s is closer to 1: [%s] ", info.name.c_str(), info.x.c_str(), filename, info.sx.c_str());
+    }
   }
 
   // validate correlation input column headers
@@ -2326,20 +2446,17 @@ double solveConvergence(DATA *data, matrixData conv_recon_x, matrixData conv_rec
   //printMatrix(struct_Jstar.data,struct_Jstar.rows,struct_Jstar.column,"J*/r ");
   double convergedvalue = struct_Jstar.data[0];
 
-  //  free(struct_Jstar.data);
-  //  free(struct_conv_tmpmatrixrhs.data);
-  //  free(conv_tmpmatrixrhs);
-  //  free(transpose_add_f_F_recon_x_x.data);
-  //  free(add_f_F_recon_x_x.data);
-  //  free(transpose_add_f_F_recon_x_x.data);
-  //  free(mult_F_recon_x_x.data);
-  //  free(tmp_F_recon_x_x);
-  //  free(struct_conv_tmpmatrixlhs.data);
-  //  free(conv_tmpmatrixlhs);
-  //  free(conv_data1Transpose.data);
-  //  free(copy_reconx_x.data);
-  //  free(conv_data1result.data);
-  //  free(conv_data1);
+  // free the tmp matrices
+  free(conv_data1);
+  free(conv_tmpmatrixlhs);
+  free(tmp_F_recon_x_x);
+  free(conv_tmpmatrixrhs);
+  free(add_f_F_recon_x_x.data);
+  free(struct_Jstar.data);
+  free(conv_data1Transpose.data);
+  free(transpose_add_f_F_recon_x_x.data);
+  //free(conv_recon_x.data);
+  free(copy_reconx_x.data);
 
   return convergedvalue;
 }
@@ -2382,7 +2499,16 @@ double calculateQualityValue(matrixData reconciledX, matrixData Sx, csvData meas
   solveMatrixMultiplication(subCopyTranspose.data, newX, subCopyTranspose.rows, subCopyTranspose.column, measured_x.rows, measured_x.column, J, logfile, data);
   printMatrix(J, subCopyTranspose.rows, measured_x.column, "J", logfile);
 
-  return J[0];
+  double J_value = J[0];
+
+  // --- Free all temporary allocations ---
+  free(newX);
+  free(subCopy.data);
+  free(subCopyTranspose.data);
+  free(measured_x.data);
+  free(J);
+
+  return J_value;
 }
 
 /*
@@ -2570,8 +2696,23 @@ int RunReconciliation(DATA *data, threadData_t *threadData, inputData x, matrixD
     printMatrixWithHeaders(reconciled_Sx.data, reconciled_Sx.rows, reconciled_Sx.column, csvinputs.headers, "reconciled_Sx ===> (Sx - (Sx*Ft*Fstar))", logfile);
     //free(x.data);
     //free(Sx.data);
-    x.data = reconciled_X.data;
-    //Sx.data=reconciled_Sx.data;
+    //x.data = reconciled_X.data;
+    for (int i = 0; i < reconciled_X.rows * reconciled_X.column; i++)
+    {
+      x.data[i] = reconciled_X.data[i];
+    }
+
+    free(reconciled_X.data);
+    free(jacF.data);
+    free(jacFt.data);
+    free(tmpmatrixC);
+    free(tmpmatrixD);
+    free(tmpmatrixC1.data);
+    free(tmpmatrixD1.data);
+    free(setc);
+    free(tmpsetc);
+    free(copySx.data);
+    free(reconciled_Sx.data);
     iterationcount++;
     return RunReconciliation(data, threadData, x, Sx, jacF, jacFt, eps, iterationcount, csvinputs, xdiag, sxdiag, logfile, warningCorrelationData, datareconciliationdata);
   }
@@ -2678,41 +2819,61 @@ int RunReconciliation(DATA *data, threadData_t *threadData, inputData x, matrixD
   if (omc_flag[FLAG_DATA_RECONCILE_STATE])
     datareconciliationdata = {csvinputs, xdiag, reconciled_X, copyReconciledSx, copyreconSx_diag, newX, eps, iterationcount, value, J, warningCorrelationData};
 
+  // read and update reconciled mo file with new values
+
+  updateReconciledMo(data, threadData, csvinputs.headers, reconciled_X.data, logfile);
+
   boundaryConditionData boundaryconditiondata;
   // create HTML Report for D.1
   if (omc_flag[FLAG_DATA_RECONCILE])
   {
     createHtmlReportFordataReconciliation(data, csvinputs, xdiag, reconciled_X, copyreconSx_diag, newX, eps, iterationcount, value, J, warningCorrelationData, boundaryconditiondata);
     // free the memory for data Reconciliation
-    free(tmpFstar.data);
-    free(tmpfstar.data);
-    // free(tmpmatrixC);
-    // free(tmpmatrixD);
-    // free(setc);
-    free(reconciled_Sx.data);
+    free(jacF.data);
+    free(jacFt.data);
+    free(tmpmatrixC);
+    free(tmpmatrixD);
+    free(tmpmatrixC1.data);
+    free(tmpmatrixD1.data);
+    free(setc);
+    free(tmpsetc);
+    free(copySx.data);
+    free(copyReconciledSx.data);
     free(reconciled_X.data);
+    free(reconciled_Sx.data);
+    free(newX);
+    free(newSx_diag);
     free(copyreconSx_diag.data);
     free(tmpcopyreconSx_diag.data);
-    free(newSx_diag);
-    free(newX);
-    // free(jacF.data);
-    // free(jacFt.data);
-    // free(x.data);
-    // free(Sx.data);
   }
   else
   {
-    // stateEstimation
-    free(tmpFstar.data);
-    free(tmpfstar.data);
+    // state estimation, do not free the commented data as it is used in state estimation report
+    free(jacF.data);
+    free(jacFt.data);
+    free(tmpmatrixC);
+    free(tmpmatrixD);
+    free(tmpmatrixC1.data);
+    free(tmpmatrixD1.data);
+    free(setc);
+    free(tmpsetc);
+    free(copySx.data);
+    //free(copyReconciledSx.data);
+    //free(reconciled_X.data);
+    free(reconciled_Sx.data);
+    //free(newX);
+    free(newSx_diag);
+    //free(copyreconSx_diag.data);
+    free(tmpcopyreconSx_diag.data);
   }
+
   return 0;
 }
 
 /*
  * Runs the numerical procedure to compute Boundary conditions (D.2)
 */
-int reconcileBoundaryConditions(DATA * data, threadData_t * threadData, inputData reconciled_x, matrixData reconciled_Sx, boundaryConditionData& boundaryconditiondata, ofstream& logfile)
+int reconcileBoundaryConditions(DATA * data, threadData_t * threadData, inputData reconciled_x, matrixData reconciled_Sx, boundaryConditionData& boundaryconditiondata, correlationDataWarning& warningCorrelationData, ofstream& logfile)
 {
   // set the inputs from csv file to simulationInfo datainputVars
   for (int i = 0; i < reconciled_x.rows * reconciled_x.column; i++)
@@ -2789,7 +2950,17 @@ int reconcileBoundaryConditions(DATA * data, threadData_t * threadData, inputDat
   scaleVector(jacF.rows, 1, 1.96, reconSt_diag);
 
   // check for BoundaryConditionVars.txt file exists to generate the html report
-  std::string boundaryConditionsVarsFilename = std::string(data->modelData->modelFilePrefix) +  "_BoundaryConditionVars.txt";
+  std::string boundaryConditionsVarsFilename;
+  if (omc_flag[FLAG_OUTPUT_PATH])
+  {
+    boundaryConditionsVarsFilename = std::string(omc_flagValue[FLAG_OUTPUT_PATH]) + "/" + std::string(data->modelData->modelFilePrefix) + "_BoundaryConditionVars.txt";
+    copyReferenceFile(data, "_BoundaryConditionVars.txt");
+  }
+  else
+  {
+    boundaryConditionsVarsFilename = std::string(data->modelData->modelFilePrefix) +  "_BoundaryConditionVars.txt";
+  }
+
   vector<std::string> boundaryConditionVars;
 
   ifstream boundaryConditionVarsip(boundaryConditionsVarsFilename);
@@ -2846,7 +3017,7 @@ int reconcileBoundaryConditions(DATA * data, threadData_t * threadData, inputDat
 
   // create html report for boundary conditions
   if (omc_flag[FLAG_DATA_RECONCILE_BOUNDARY])
-    createHtmlReportForBoundaryConditions(data, boundaryConditionVars, boundaryConditionVarsResults, reconSt_diag);
+    createHtmlReportForBoundaryConditions(data, boundaryConditionVars, boundaryConditionVarsResults, reconSt_diag, warningCorrelationData);
 
   // copy the results for state estimation
   if (omc_flag[FLAG_DATA_RECONCILE_STATE])
@@ -2855,8 +3026,8 @@ int reconcileBoundaryConditions(DATA * data, threadData_t * threadData, inputDat
   // free the memory
   if (omc_flag[FLAG_DATA_RECONCILE_BOUNDARY])
   {
-    // free(reconciled_Sx.data);
-    // free(reconciled_x.data);
+    free(reconciled_Sx.data);
+    free(reconciled_x.data);
     free(tmpMatrixAf);
     free(S_t);
     free(jacF.data);
@@ -2895,12 +3066,17 @@ int stateEstimation(DATA *data, threadData_t *threadData, inputData x, matrixDat
   boundaryConditionData boundaryconditiondata;
   if (data->modelData->nSetbVars > 0)
   {
+    // copy the reference files "BoundaryConditionsEquations.html and _BoundaryConditionIntermediateEquations.html to output path"
+    if (omc_flag[FLAG_OUTPUT_PATH])
+    {
+      copyReferenceFile(data, "_BoundaryConditionIntermediateEquations.html");
+    }
     // pepare data to compute boundary condition
     inputData reconciled_x = {datareconciliationdata.reconciled_X.rows, datareconciliationdata.reconciled_X.column, datareconciliationdata.reconciled_X.data, {}};
     matrixData reconciled_Sx = {datareconciliationdata.reconciled_SX.rows, datareconciliationdata.reconciled_SX.column, datareconciliationdata.reconciled_SX.data};
 
     logfile << "\n\nCalculation of Boundary condition \n" << "====================================\n";
-    reconcileBoundaryConditions(data, threadData, reconciled_x, reconciled_Sx, boundaryconditiondata, logfile);
+    reconcileBoundaryConditions(data, threadData, reconciled_x, reconciled_Sx, boundaryconditiondata, warningCorrelationData, logfile);
     // printBoundaryConditionsResults(boundaryconditiondata.boundaryConditionVarsResults, boundaryconditiondata.reconSt_diag,  boundaryconditiondata.boundaryConditionVars.size(), 1, boundaryconditiondata.boundaryConditionVars, "Final Results Copied", logfile);
   }
 
@@ -2918,7 +3094,6 @@ int stateEstimation(DATA *data, threadData_t *threadData, inputData x, matrixDat
     free(boundaryconditiondata.boundaryConditionVarsResults);
     free(boundaryconditiondata.reconSt_diag);
   }
-
   return 0;
 }
 
@@ -2933,6 +3108,7 @@ int dataReconciliation(DATA * data, threadData_t * threadData, int status)
     copyReferenceFile(data, "_AuxiliaryConditions.html");
     copyReferenceFile(data, "_IntermediateEquations.html");
     copyReferenceFile(data, "_relatedBoundaryConditionsEquations.html");
+    copyReferenceFile(data, "_iterationVars.txt");
   }
 
   // report run time initialization and non linear convergence error to html
@@ -2987,7 +3163,9 @@ int dataReconciliation(DATA * data, threadData_t * threadData, int status)
   inputData x = getInputData(Sx_data, logfile);
 
   // read the correlation coefficient input data provide by user
-  correlationData Cx_data = readCorrelationCoefficientFile(Sx_data, logfile, data, threadData);
+  correlationDataWarning warningCorrelationData;
+
+  correlationData Cx_data = readCorrelationCoefficientFile(Sx_data, logfile, data, threadData, warningCorrelationData);
 
   // Compute the covariance matrix (Sx) from csvData
   matrixData Sx = computeCovarianceMatrixSx(Sx_data, Cx_data, logfile, data);
@@ -3005,7 +3183,6 @@ int dataReconciliation(DATA * data, threadData_t * threadData, int status)
   matrixData tmp_x = {x.rows, x.column, x.data};
   matrixData x_diag = copyMatrix(tmp_x);
 
-  correlationDataWarning warningCorrelationData;
   // Print the initial information
   logfile << "\n\nInitial Data \n" << "=============\n";
   printMatrixWithHeaders(x.data, x.rows, x.column, Sx_data.headers, "X", logfile);
@@ -3043,6 +3220,7 @@ int boundaryConditions(DATA * data, threadData_t * threadData, int status)
   {
     copyReferenceFile(data, "_BoundaryConditionsEquations.html");
     copyReferenceFile(data, "_BoundaryConditionIntermediateEquations.html");
+    copyReferenceFile(data, "_iterationVars.txt");
   }
 
   // report run time initialization and non linear convergence error to html
@@ -3079,7 +3257,8 @@ int boundaryConditions(DATA * data, threadData_t * threadData, int status)
   inputData reconciled_x = getReconciledX(Sx_data, logfile);
 
   // read the reconciled covariance matrix input file provided by user
-  correlationData cx_data = readCorrelationCoefficientFile(Sx_data, logfile, data, threadData, true);
+  correlationDataWarning warningCorrelationData;
+  correlationData cx_data = readCorrelationCoefficientFile(Sx_data, logfile, data, threadData, warningCorrelationData, true);
 
   // create the column matrix from the covariance matrix
   int rowsize = cx_data.rowHeaders.size();
@@ -3094,14 +3273,15 @@ int boundaryConditions(DATA * data, threadData_t * threadData, int status)
   //printCorelationMatrix(reconciled_Sx.data, reconciled_Sx.rowHeaders, reconciled_Sx.columnHeaders, "Reconciled_Sx", logfile, warningCorrelationData);
   printMatrixWithHeaders(reconciled_Sx.data, reconciled_Sx.rows, reconciled_Sx.column, Sx_data.headers, "Reconciled_Sx", logfile);
   boundaryConditionData boundaryconditiondata;
-  reconcileBoundaryConditions(data, threadData, reconciled_x, reconciled_Sx, boundaryconditiondata, logfile);
+  reconcileBoundaryConditions(data, threadData, reconciled_x, reconciled_Sx, boundaryconditiondata, warningCorrelationData, logfile);
+  updateReconciledMo(data, threadData, Sx_data.headers, reconciled_x.data, logfile);
 
   logfile << "*****Completed***********\n";
   logfile << "|  info    |   " << "Reconcile Boundary Conditions Completed! \n";
   logfile.flush();
   logfile.close();
 
-  free(reconciled_Sx.data);
-  free(reconciled_x.data);
+  //free(reconciled_Sx.data);
+  //free(reconciled_x.data);
   return 0;
 }

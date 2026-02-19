@@ -1757,6 +1757,7 @@ to calculate the given varibales.
   input BackendDAE.BackendDAE inDAE;
   input list<BackendDAE.Var> iVarlst;
   input Boolean makeMatching = true;
+  input Boolean filterDiscretes = false;
   output BackendDAE.BackendDAE outDAE;
 
 protected
@@ -1765,7 +1766,7 @@ protected
   BackendDAE.EqSystem tmpsyst;
 algorithm
   BackendDAE.DAE(systs, shared) := inDAE;
-  outDAE := BackendDAE.DAE(list(tryReduceEqSystem(syst, shared, iVarlst) for syst in systs), shared);
+  outDAE := BackendDAE.DAE(list(tryReduceEqSystem(syst, shared, iVarlst, filterDiscretes) for syst in systs), shared);
   if makeMatching then
     outDAE := BackendDAEUtil.transformBackendDAE(outDAE,SOME((BackendDAE.NO_INDEX_REDUCTION(),BackendDAE.EXACT())),NONE(),NONE());
   end if;
@@ -1777,11 +1778,12 @@ public function tryReduceEqSystem
   input BackendDAE.EqSystem iSyst;
   input BackendDAE.Shared shared;
   input list<BackendDAE.Var> iVarlst;
+  input Boolean filterDiscretes;
   output BackendDAE.EqSystem oSyst;
 algorithm
   try
     //BackendDump.dumpEqSystem(iSyst,"IN: tryReduceEqSystem");
-    oSyst := reduceEqSystem(iSyst, shared, iVarlst);
+    oSyst := reduceEqSystem(iSyst, shared, iVarlst, filterDiscretes);
     //BackendDump.dumpEqSystem(oSyst,"OUT: tryReduceEqSystem");
   else
     oSyst := iSyst;
@@ -1798,11 +1800,12 @@ only to get the functionsTree.
   input BackendDAE.EqSystem iSyst;
   input BackendDAE.Shared shared;
   input list<BackendDAE.Var> iVarlst;
+  input Boolean filterDiscretes;
   output BackendDAE.EqSystem oSyst;
 
 protected
   array<Integer> ass1, ass2;
-  BackendDAE.Variables v;
+  BackendDAE.Variables vars;
   BackendDAE.EqSystem syst;
   BackendDAE.Variables iVars = BackendVariable.listVar(iVarlst);
   BackendDAE.EquationArray ordererdEqs, arrEqs;
@@ -1815,15 +1818,15 @@ protected
   BackendDAE.AdjacencyMatrix m;
 algorithm
   oSyst := match iSyst
-    case syst as BackendDAE.EQSYSTEM( orderedEqs=ordererdEqs, orderedVars=v,
+    case syst as BackendDAE.EQSYSTEM( orderedEqs=ordererdEqs, orderedVars=vars,
                                       matching=BackendDAE.MATCHING(ass1=ass1, ass2=ass2) )
       algorithm
         if (Flags.getConfigEnum(Flags.SYM_SOLVER) > 0) then
-          (_,statevarindx_lst) := BackendVariable.getAllVarIndicesFromVariables(v, BackendVariable.isAlgState);
+          (_,statevarindx_lst) := BackendVariable.getAllVarIndicesFromVariables(vars, BackendVariable.isAlgState);
         else
-          (_,statevarindx_lst) := BackendVariable.getAllVarIndicesFromVariables(v, BackendVariable.isStateVar);
+          (_,statevarindx_lst) := BackendVariable.getAllVarIndicesFromVariables(vars, BackendVariable.isStateVar);
         end if;
-        indx_lst_v := BackendVariable.getVarIndexFromVariables(iVars, v);
+        indx_lst_v := BackendVariable.getVarIndexFromVariables(iVars, vars);
 
         indx_lst_v := listAppend(indx_lst_v, statevarindx_lst) "overestimate" annotation(__OpenModelica_DisableListAppendWarning=true);
         indx_lst_e := List.map1r(indx_lst_v, arrayGet, ass1);
@@ -1837,8 +1840,15 @@ algorithm
         indx_lst_e := Array.foldIndex(indx_arr, translateArrayList, {});
 
         el := BackendEquation.getList(indx_lst_e, ordererdEqs);
+        if filterDiscretes then
+          el := list(e for e guard(not BackendEquation.isDiscreteEquation(e)) in el);
+        end if;
+
         arrEqs := BackendEquation.listEquation(el);
-        vl := BackendEquation.equationsVars(arrEqs, v);
+        vl := BackendEquation.equationsVars(arrEqs, vars);
+        if filterDiscretes then
+          vl := list(v for v guard(not BackendVariable.isVarDiscrete(v)) in vl);
+        end if;
 
         syst.orderedVars := BackendVariable.listVar1(vl);
         syst.orderedEqs := arrEqs;

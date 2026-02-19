@@ -49,6 +49,7 @@ public import AbsynUtil;
 public import SCode;
 
 protected
+import Config;
 import Debug;
 import Error;
 import Flags;
@@ -449,7 +450,7 @@ algorithm
         cos = translateClassdefConstraints(parts);
         scodeCmt = translateCommentList(ann, cmtString);
         decl = translateClassdefExternaldecls(parts);
-        decl = translateAlternativeExternalAnnotation(decl,scodeCmt);
+        decl = translateAlternativeExternalAnnotation(decl, scodeCmt, info);
       then
         (SCode.PARTS(els,eqs,initeqs,als,initals,cos,classAttrs,decl),scodeCmt);
 
@@ -487,7 +488,7 @@ algorithm
         mod = translateMod(SOME(Absyn.CLASSMOD(cmod,Absyn.NOMOD())), SCode.NOT_FINAL(), SCode.NOT_EACH(), NONE(), AbsynUtil.dummyInfo);
         scodeCmt = translateCommentList(ann, cmtString);
         decl = translateClassdefExternaldecls(parts);
-        decl = translateAlternativeExternalAnnotation(decl,scodeCmt);
+        decl = translateAlternativeExternalAnnotation(decl, scodeCmt, info);
       then
         (SCode.CLASS_EXTENDS(mod,SCode.PARTS(els,eqs,initeqs,als,initals,cos,{},decl)),scodeCmt);
 
@@ -507,54 +508,53 @@ algorithm
 end translateClassdef;
 
 protected function translateAlternativeExternalAnnotation
-"first class annotation instead, since it is very common that an element
-  annotation is used for this purpose.
-  For instance, instead of external \"C\" annotation(Library=\"foo.lib\";
-  it says external \"C\" ; annotation(Library=\"foo.lib\";"
-input Option<SCode.ExternalDecl> decl;
-input SCode.Comment comment;
-output Option<SCode.ExternalDecl> outDecl;
+  "Checks if the annotation for an external declaration is misplaced, i.e.
+     external \"C\"; annotation(Library=\"foo.lib\");
+   instead of
+     external \"C\" annotation(Library=\"foo.lib\");
+  "
+  input Option<SCode.ExternalDecl> decl;
+  input SCode.Comment comment;
+  input SourceInfo info;
+  output Option<SCode.ExternalDecl> outDecl;
+protected
+  SCode.ExternalDecl ext_decl;
+  SCode.Annotation ann;
+
+  function whitelist_mod
+    input SCode.SubMod submod;
+    output Boolean keep;
+  algorithm
+    keep := match submod.ident
+      case "Library" then true;
+      case "Include" then true;
+      case "LibraryDirectory" then true;
+      case "SourceDirectory" then true;
+      case "License" then true;
+      else false;
+    end match;
+  end whitelist_mod;
 algorithm
-  outDecl := match (decl,comment)
-    local
-      Option<SCode.Ident> name ;
-      Option<String> l ;
-      Option<Absyn.ComponentRef> out ;
-      list<Absyn.Exp> a;
-      Option<SCode.Annotation> ann1,ann2,ann;
-    // none
-    case (NONE(),_) then NONE();
-    // Else, merge
-    case (SOME(SCode.EXTERNALDECL(name,l,out,a,ann1)),SCode.COMMENT(annotation_=ann2))
-      equation
-        ann = SCodeUtil.mergeSCodeOptAnn(ann1, ann2);
-      then SOME(SCode.EXTERNALDECL(name,l,out,a,ann));
+  outDecl := match (decl, comment)
+    // The external declaration is missing an annotation but there is one on the function.
+    case (SOME(ext_decl as SCode.EXTERNALDECL(annotation_ = NONE())), SCode.COMMENT(annotation_ = SOME(ann)))
+      algorithm
+        // Filter out only the modifiers allowed on an external declaration.
+        ann.modification := SCodeUtil.filterSubMods(ann.modification, whitelist_mod);
+
+        // If any matching modifiers were found, issue a warning and copy them to the external declaration.
+        if not SCodeUtil.isEmptyMod(ann.modification) then
+          if Config.languageStandardAtLeast(Config.LanguageStandard.'3.3') then
+            Error.addSourceMessage(Error.MISPLACED_EXTERNAL_ANNOTATION, {}, info);
+          end if;
+          ext_decl.annotation_ := SOME(ann);
+        end if;
+      then
+        SOME(ext_decl);
+
+    else decl;
   end match;
 end translateAlternativeExternalAnnotation;
-
-protected function mergeSCodeAnnotationsFromParts
-  input Absyn.ClassPart part;
-  input Option<SCode.Annotation> inMod;
-  output Option<SCode.Annotation> outMod;
-algorithm
-  outMod := match (part,inMod)
-    local
-      Absyn.Annotation aann;
-      Option<SCode.Annotation> ann;
-      list<Absyn.ElementItem> rest;
-    case (Absyn.EXTERNAL(_,SOME(aann)),_)
-      equation
-        ann = translateAnnotation(aann);
-        ann = SCodeUtil.mergeSCodeOptAnn(ann, inMod);
-      then ann;
-    case (Absyn.PUBLIC(_::rest),_)
-      then mergeSCodeAnnotationsFromParts(Absyn.PUBLIC(rest),inMod);
-    case (Absyn.PROTECTED(_::rest),_)
-      then mergeSCodeAnnotationsFromParts(Absyn.PROTECTED(rest),inMod);
-
-    else inMod;
-  end match;
-end mergeSCodeAnnotationsFromParts;
 
 protected function translateEnumlist
 "Convert an EnumLiteral list to an Ident list.
@@ -1573,12 +1573,7 @@ algorithm
       then SCode.EQ_PDE(inEquation.leftSide, inEquation.rightSide, inEquation.domain, inComment, inInfo);
 
     case Absyn.EQ_CONNECT()
-      algorithm
-        if inIsInitial then
-          Error.addSourceMessageAndFail(Error.CONNECT_IN_INITIAL_EQUATION, {}, inInfo);
-        end if;
-      then
-        SCode.EQ_CONNECT(inEquation.connector1, inEquation.connector2, inComment, inInfo);
+      then SCode.EQ_CONNECT(inEquation.connector1, inEquation.connector2, inComment, inInfo);
 
     case Absyn.EQ_FOR()
       algorithm

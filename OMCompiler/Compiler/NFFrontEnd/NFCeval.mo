@@ -336,6 +336,7 @@ protected
   Option<Expression> start_exp;
   Type cref_ty, exp_ty;
   Integer dim_diff;
+  list<Integer> errors;
 algorithm
   exp_context := InstContext.nodeContext(node, target.context);
   Typing.typeComponentBinding(node, exp_context, typeChildren = false);
@@ -370,13 +371,18 @@ algorithm
               // Mark the binding as currently being evaluated, to detect loops due
               // to mutually dependent constants/parameters.
               Mutable.update(binding.evalState, NFBinding.EvalState.EVALUATING);
+              ErrorExt.setCheckpoint(getInstanceName());
 
               // Evaluate the binding expression.
               try
                 exp := evalExp(binding.bindingExp, target);
+                ErrorExt.delCheckpoint(getInstanceName());
               else
                 // Reset the flag if the evaluation failed.
                 Mutable.update(binding.evalState, NFBinding.EvalState.NOT_EVALUATED);
+                errors := ErrorExt.popCheckPoint(getInstanceName());
+                Error.addSourceMessage(Error.ERROR_FROM_HERE, {}, binding.info);
+                ErrorExt.pushMessages(errors);
                 fail();
               end try;
 
@@ -746,7 +752,6 @@ algorithm
       else
         // Ignore components that don't have a binding, it might not be an error
         // and if it is we can give better error messages in other places.
-        arg := Expression.EMPTY(ty);
       end try;
     end if;
 

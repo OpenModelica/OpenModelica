@@ -82,6 +82,7 @@ OMCProxy::OMCProxy(threadData_t* threadData, QWidget *pParent)
   mpOMCLoggerTextBox->setReadOnly(true);
   mpOMCLoggerTextBox->setLineWrapMode(QPlainTextEdit::WidgetWidth);
   mpOMCLoggerTextBox->setUseTimer(false);
+  mpOMCLoggerTextBox->setFont(QFont(Helper::monospacedFontInfo.family()));
   mpExpressionTextBox = new CustomExpressionBox(this);
   connect(mpExpressionTextBox, SIGNAL(returnPressed()), SLOT(sendCustomExpression()));
   mpOMCLoggerSendButton = new QPushButton(Helper::send);
@@ -416,7 +417,8 @@ void OMCProxy::logCommand(QString command, bool saveToHistory)
   if (isLoggingEnabled()) {
     if (saveToHistory || MainWindow::instance()->isDebug()) {
       // insert the command to the logger window.
-      QFont font(Helper::monospacedFontInfo.family(), Helper::monospacedFontInfo.pointSize() - 2, QFont::Bold, false);
+      QFont font = mpOMCLoggerTextBox->font();
+      font.setBold(true);
       QTextCharFormat format;
       format.setFont(font);
       mpOMCLoggerTextBox->appendOutput(command + "\n", format);
@@ -468,10 +470,7 @@ void OMCProxy::logResponse(QString command, QString response, double elapsed, bo
     }
     if (customCommand || MainWindow::instance()->isDebug()) {
       // insert the response to the logger window.
-      QFont font(Helper::monospacedFontInfo.family(), Helper::monospacedFontInfo.pointSize() - 2, QFont::Normal, false);
-      QTextCharFormat format;
-      format.setFont(font);
-      mpOMCLoggerTextBox->appendOutput(response + "\n\n", format);
+      mpOMCLoggerTextBox->appendOutput(response + "\n\n");
     }
     // write the log to communication log file
     if (mpCommunicationLogFile) {
@@ -3391,12 +3390,14 @@ QList<QString> OMCProxy::getAvailablePackageConversionsFrom(const QString &pkg, 
  * \param icon
  * \return
  */
-QJsonObject OMCProxy::getModelInstance(const QString &className, const QString &modifier, bool prettyPrint, bool icon)
+QJsonObject OMCProxy::getModelInstance(const QString &className, const QString &context, const QString &modifier, bool prettyPrint, bool icon)
 {
   QElapsedTimer timer;
   timer.start();
 
   QString modelInstanceJson = "";
+  QString cnt = context.isEmpty() ? QString("__NoContext") : context;
+
   if (icon) {
     QList<QString> filter;
     filter << "Icon" << "IconMap" << "Diagram" << "DiagramMap" << "experiment";
@@ -3411,10 +3412,10 @@ QJsonObject OMCProxy::getModelInstance(const QString &className, const QString &
       } else {
         getErrorString();
       }
-      modelInstanceJson = mpOMCInterface->getModelInstance(className, modifier, prettyPrint);
+      modelInstanceJson = mpOMCInterface->getModelInstance(className, cnt, modifier, prettyPrint);
     }
   } else {
-    modelInstanceJson = mpOMCInterface->getModelInstance(className, modifier, prettyPrint);
+    modelInstanceJson = mpOMCInterface->getModelInstance(className, cnt, modifier, prettyPrint);
   }
 
   if (MainWindow::instance()->isNewApiProfiling()) {

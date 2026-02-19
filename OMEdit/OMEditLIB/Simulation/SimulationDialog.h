@@ -135,8 +135,6 @@ private:
   ComboBox *mpLinearSolverComboBox;
   Label *mpNonLinearSolverLabel;
   ComboBox *mpNonLinearSolverComboBox;
-  Label *mpLinearizationTimeLabel;
-  QLineEdit *mpLinearizationTimeTextBox;
   Label *mpOutputVariablesLabel;
   QLineEdit *mpOutputVariablesTextBox;
   Label  *mpProfilingLabel;

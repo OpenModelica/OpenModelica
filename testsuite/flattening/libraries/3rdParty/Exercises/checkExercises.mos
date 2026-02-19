@@ -1,6 +1,5 @@
 // name: Exercises.* [checkModel]
 // status: correct
-// cflags: -d=-newInst
 // provided by Martin Otter
 //
 
@@ -51,46 +50,46 @@ checkModel(FourBar.TestPlanarLoops); getErrorString();
 // ""
 // "Check of ServoSystem1.Aufgabe3_2 completed successfully.
 // Class ServoSystem1.Aufgabe3_2 has 547 equation(s) and 547 variable(s).
-// 395 of these are trivial equation(s)."
+// 399 of these are trivial equation(s)."
 // ""
 // "Check of ServoSystem1.Aufgabe3_3 completed successfully.
 // Class ServoSystem1.Aufgabe3_3 has 547 equation(s) and 547 variable(s).
-// 395 of these are trivial equation(s)."
+// 399 of these are trivial equation(s)."
 // ""
 // "Check of ServoSystem3.Aufgabe3_2 completed successfully.
 // Class ServoSystem3.Aufgabe3_2 has 547 equation(s) and 547 variable(s).
-// 395 of these are trivial equation(s)."
+// 399 of these are trivial equation(s)."
 // ""
 // "Check of ServoSystem3.Aufgabe3_3 completed successfully.
 // Class ServoSystem3.Aufgabe3_3 has 547 equation(s) and 547 variable(s).
-// 395 of these are trivial equation(s)."
+// 399 of these are trivial equation(s)."
 // ""
 // "Check of ServoSystem3.Aufgabe4_1 completed successfully.
-// Class ServoSystem3.Aufgabe4_1 has 370 equation(s) and 370 variable(s).
-// 267 of these are trivial equation(s)."
+// Class ServoSystem3.Aufgabe4_1 has 372 equation(s) and 372 variable(s).
+// 270 of these are trivial equation(s)."
 // ""
 // "Check of ServoSystem3.Aufgabe4_2 completed successfully.
-// Class ServoSystem3.Aufgabe4_2 has 1865 equation(s) and 1865 variable(s).
-// 1309 of these are trivial equation(s)."
+// Class ServoSystem3.Aufgabe4_2 has 1867 equation(s) and 1867 variable(s).
+// 1422 of these are trivial equation(s)."
 // ""
 // "Check of ServoSystem3.Aufgabe4_3a completed successfully.
-// Class ServoSystem3.Aufgabe4_3a has 1865 equation(s) and 1865 variable(s).
-// 1309 of these are trivial equation(s)."
+// Class ServoSystem3.Aufgabe4_3a has 1867 equation(s) and 1867 variable(s).
+// 1422 of these are trivial equation(s)."
 // ""
 // "Check of ServoSystem3.Aufgabe4_3b completed successfully.
-// Class ServoSystem3.Aufgabe4_3b has 1865 equation(s) and 1865 variable(s).
-// 1309 of these are trivial equation(s)."
+// Class ServoSystem3.Aufgabe4_3b has 1867 equation(s) and 1867 variable(s).
+// 1422 of these are trivial equation(s)."
 // ""
 // "Check of ServoSystem3.Aufgabe4_4a completed successfully.
-// Class ServoSystem3.Aufgabe4_4a has 1865 equation(s) and 1865 variable(s).
-// 1309 of these are trivial equation(s)."
+// Class ServoSystem3.Aufgabe4_4a has 1867 equation(s) and 1867 variable(s).
+// 1422 of these are trivial equation(s)."
 // ""
 // "Check of ServoSystem3.Aufgabe4_4b completed successfully.
 // Class ServoSystem3.Aufgabe4_4b has 1888 equation(s) and 1888 variable(s).
-// 1329 of these are trivial equation(s)."
+// 1440 of these are trivial equation(s)."
 // ""
 // "Check of FourBar.TestPlanarLoops completed successfully.
 // Class FourBar.TestPlanarLoops has 1912 equation(s) and 1912 variable(s).
-// 1299 of these are trivial equation(s)."
+// 1420 of these are trivial equation(s)."
 // ""
 // endResult

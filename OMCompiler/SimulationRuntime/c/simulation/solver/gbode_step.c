@@ -283,7 +283,7 @@ int expl_diag_impl_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
       if (!gbData->tableau->isKLeftAvailable || (stage > 0)) {
         // Calculate the fODE values for the explicit stage
         memcpy(sData->realVars, gbData->res_const, nStates*sizeof(double));
-        gbode_fODE(data, threadData, &(gbData->stats.nCallsODE));
+        gbode_fODE(data, threadData, &(gbData->stats.nCallsODE), NULL);
       } else {
         memcpy(fODE, gbData->kLeft, nStates*sizeof(double));
       }
@@ -297,21 +297,38 @@ int expl_diag_impl_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
       memcpy(nlsData->nlsx,    gbData->yOld, nStates*sizeof(modelica_real));
       memcpy(nlsData->nlsxExtrapolation,    gbData->yOld, nStates*sizeof(modelica_real));
 
-      if (gbData->time != data->simulationInfo->startTime && !gbData->eventHappened
-          && gbData->tableau->dense_output != NULL && gbData->nlsSolverMethod == GB_NLS_INTERNAL
-          && gbData->extrapolationBaseTime != INFINITY)
+      // is the last solution valid and do we use internal nls
+      modelica_boolean dense_output_valid = (gbData->time != data->simulationInfo->startTime && !gbData->eventHappened
+                                             && gbData->nlsSolverMethod == GB_NLS_INTERNAL && gbData->extrapolationBaseTime != INFINITY);
+
+      if (gbData->tableau->svp != NULL && gbData->tableau->svp->type[stage_] == SVP_LINEAR_COMBINATION)
       {
+        /* linear combination stage-value-predictors (highest priority) */
+        gbInternalLinearCombinationSVP(gbData->tableau->svp, stage_, nStates, gbData->stepSize, gbData->k, gbData->yOld, nlsData->nlsxOld);
+      }
+      else if (dense_output_valid && gbData->tableau->svp != NULL && gbData->tableau->svp->type[stage_] == SVP_DENSE_OUTPUT)
+      {
+        /* dense output stage-value-predictor */
+        double theta = (gbData->time + gbData->tableau->c[stage_] * gbData->stepSize - gbData->extrapolationBaseTime) / gbData->extrapolationStepSize;
+        gbData->tableau->svp->dense_output_predictor(gbData->tableau, gbData->yLast, NULL, gbData->kLast,
+                                                     theta, gbData->extrapolationStepSize, nlsData->nlsxOld, 0, NULL, nStates);
+      }
+      else if (dense_output_valid && gbData->tableau->withDenseOutput)
+      {
+        /* standard dense output if available / possible */
         double theta = (gbData->time + gbData->tableau->c[stage_] * gbData->stepSize - gbData->extrapolationBaseTime) / gbData->extrapolationStepSize;
         gbData->tableau->dense_output(gbData->tableau, gbData->yLast, NULL, gbData->kLast,
                                       theta, gbData->extrapolationStepSize, nlsData->nlsxOld, 0, NULL, nStates);
       }
       else if (stage>1)
       {
+        /* perform hermite to interpolate between two stages */
         extrapolation_hermite_gb(nlsData->nlsxOld, gbData->nStates, gbData->time + gbData->tableau->c[stage_-2] * gbData->stepSize, gbData->x + (stage_-2) * nStates, gbData->k + (stage_-2) * nStates,
                              gbData->time + gbData->tableau->c[stage_-1] * gbData->stepSize, gbData->x + (stage_-1) * nStates, gbData->k + (stage_-1) * nStates, gbData->time + gbData->tableau->c[stage_] * gbData->stepSize);
       }
       else
       {
+        /* generic extrapolation */
         extrapolation_gb(gbData, nlsData->nlsxOld, gbData->time + gbData->tableau->c[stage_] * gbData->stepSize);
       }
 
@@ -435,7 +452,7 @@ int expl_diag_impl_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solv
     if (gbfData->tableau->A[stage * nStages + stage_] == 0) {
       // Calculate the fODE values for the explicit stage
       memcpy(sData->realVars, gbfData->res_const, nStates*sizeof(double));
-      gbode_fODE(data, threadData, &(gbfData->stats.nCallsODE));
+      gbode_fODE(data, threadData, &(gbfData->stats.nCallsODE), gbfData->evalSelectionFast);
     } else {
       // interpolate the slow states on the time of the current stage
       gb_interpolation(gbData->interpolation,
@@ -517,8 +534,6 @@ int full_implicit_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
   int nStates = data->modelData->nStates;
   int nStages = gbData->tableau->nStages;
 
-  double Atol = data->simulationInfo->tolerance;
-  double Rtol = data->simulationInfo->tolerance;
   NLS_SOLVER_STATUS solved = NLS_FAILED;
 
   // NLS - used values for extrapolation
@@ -540,7 +555,7 @@ int full_implicit_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
   }
 
   if (gbData->time != data->simulationInfo->startTime && !gbData->eventHappened
-      && gbData->tableau->dense_output != NULL && gbData->nlsSolverMethod == GB_NLS_INTERNAL
+      && gbData->tableau->withDenseOutput && gbData->nlsSolverMethod == GB_NLS_INTERNAL
       && gbData->extrapolationBaseTime != INFINITY)
   {
     for (stage_ = 0; stage_ < nStages; stage_++) {
@@ -571,12 +586,30 @@ int full_implicit_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
   // y       = yold+h*sum(b[stage_]  * k[stage_], stage_=1..nStages);
   // yt      = yold+h*sum(bt[stage_] * k[stage_], stage_=1..nStages);
 
+  // calculate y(t_n+1)
   for (i = 0; i < nStates; i++) {
-    gbData->y[i]  = gbData->yOld[i];
-    gbData->yt[i] = gbData->yOld[i];
+    gbData->y[i] = gbData->yOld[i];
     for (stage_ = 0; stage_ < nStages; stage_++) {
       gbData->y[i]  += gbData->stepSize * gbData->tableau->b[stage_]  * (gbData->k + stage_ * nStates)[i];
-      gbData->yt[i] += gbData->stepSize * gbData->tableau->bt[stage_] * (gbData->k + stage_ * nStates)[i];
+    }
+  }
+
+  modelica_boolean use_contractive_error = (gbData->tableau->t_transform != NULL
+                                         && gbData->tableau->t_transform->defect_err != NULL
+                                         && gbData->nlsSolverMethod == GB_NLS_INTERNAL);
+
+  // calculate yt(t_n+1) by contractive or standard embedded error estimate
+  if (use_contractive_error)
+  {
+    gbInternalContraction(data, threadData, gbData->nlsData, gbData, gbData->y, gbData->yt);
+  }
+  else
+  {
+    for (i = 0; i < nStates; i++) {
+      gbData->yt[i] = gbData->yOld[i];
+      for (stage_ = 0; stage_ < nStages; stage_++) {
+        gbData->yt[i] += gbData->stepSize * gbData->tableau->bt[stage_] * (gbData->k + stage_ * nStates)[i];
+      }
     }
   }
 
@@ -643,7 +676,7 @@ int gbodef_richardson(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
     if (!gbfData->isExplicit) {
       sData->timeValue = gbfData->time;
       memcpy(sData->realVars, gbfData->y, nStates*sizeof(double));
-      gbode_fODE(data, threadData, &(gbfData->stats.nCallsODE));
+      gbode_fODE(data, threadData, &(gbfData->stats.nCallsODE), gbfData->evalSelectionFast);
       gbfData->tv[1] = gbfData->tv[0];
       memcpy(gbfData->yv + nStates, gbfData->yv, nStates * sizeof(double));
       memcpy(gbfData->kv + nStates, gbfData->kv, nStates * sizeof(double));
@@ -671,7 +704,7 @@ int gbodef_richardson(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
       if (!gbfData->isExplicit) {
         sData->timeValue = gbfData->time + gbfData->stepSize;
         memcpy(sData->realVars, gbfData->y, nStates*sizeof(double));
-        gbode_fODE(data, threadData, &(gbfData->stats.nCallsODE));
+        gbode_fODE(data, threadData, &(gbfData->stats.nCallsODE), gbfData->evalSelectionFast);
         gbfData->tv[0] = gbfData->time;
         memcpy(gbfData->yv, gbfData->y, nStates * sizeof(double));
         memcpy(gbfData->kv, fODE, nStates * sizeof(double));
@@ -777,7 +810,7 @@ int gbode_richardson(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
     if (!gbData->isExplicit) {
       sData->timeValue = gbData->time;
       memcpy(sData->realVars, gbData->y, nStates*sizeof(double));
-      gbode_fODE(data, threadData, &(gbData->stats.nCallsODE));
+      gbode_fODE(data, threadData, &(gbData->stats.nCallsODE), NULL);
       gbData->tv[1] = gbData->tv[0];
       memcpy(gbData->yv + nStates, gbData->yv, nStates * sizeof(double));
       memcpy(gbData->kv + nStates, gbData->kv, nStates * sizeof(double));
@@ -805,7 +838,7 @@ int gbode_richardson(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
       if (!gbData->isExplicit) {
         sData->timeValue = gbData->time + gbData->stepSize;
         memcpy(sData->realVars, gbData->y, nStates*sizeof(double));
-        gbode_fODE(data, threadData, &(gbData->stats.nCallsODE));
+        gbode_fODE(data, threadData, &(gbData->stats.nCallsODE), NULL);
         gbData->tv[0] = gbData->time;
         memcpy(gbData->yv, gbData->y, nStates * sizeof(double));
         memcpy(gbData->kv, fODE, nStates * sizeof(double));

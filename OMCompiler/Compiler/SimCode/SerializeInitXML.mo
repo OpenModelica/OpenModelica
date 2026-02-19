@@ -39,7 +39,6 @@ import File;
 protected
 import BackendDAE.VarKind;
 import CR=ComponentReference;
-import CodegenUtil;
 import DAE.{Exp,Type};
 import Dump;
 import ExpressionDump.printExpStr;
@@ -48,7 +47,6 @@ import Settings;
 import SimCode.{SimulationSettings,VarInfo};
 import SimCodeVar.{AliasVariable,Causality,SimVar};
 import SimCodeUtil;
-import Tpl;
 import Types;
 import Util;
 
@@ -68,198 +66,188 @@ function simulationInitFileReturnBool
   input String guid;
   output Boolean success = false;
 protected
-  SimCodeFunction.MakefileParams makefileParams;
-  ModelInfo modelInfo;
   VarInfo vi;
   SimulationSettings s;
   File.File file = File.File();
-  String FMUType;
+  String fileName, FMUType;
 algorithm
   try
-  _ := match Config.simCodeTarget()
-    case "omsic"
-  algorithm
-      File.open(file, simCode.fullPathPrefix+"/"+simCode.fileNamePrefix + "_init.xml", File.Mode.Write);
-      then();
-  /*Temporary disabled omsicpp
-    case "omsicpp"
-  algorithm
-      File.open(file, simCode.fullPathPrefix+"/"+simCode.fileNamePrefix + "_init.xml", File.Mode.Write);
-      then();*/
-    else algorithm
-      File.open(file, simCode.fileNamePrefix + "_init.xml", File.Mode.Write);
-      then();
-  end match;
-  makefileParams := simCode.makefileParams;
-  modelInfo := simCode.modelInfo;
-  vi := modelInfo.varInfo;
-  SOME(s) := simCode.simulationSettingsOpt;
-  FMUType := match Config.simCodeTarget()
-    case "omsic" then "2.0";
-    case "omsicpp" then "2.0";
-    else "1.0";
-  end match;
+    fileName := match Config.simCodeTarget()
+      case "omsic" then simCode.fullPathPrefix+"/"+simCode.fileNamePrefix + "_init.xml";
+      /*Temporary disabled omsicpp
+      case "omsicpp" then simCode.fullPathPrefix+"/"+simCode.fileNamePrefix + "_init.xml";*/
+      else simCode.fileNamePrefix + "_init.xml";
+    end match;
+    File.open(file, fileName, File.Mode.Write);
+
+    vi := simCode.modelInfo.varInfo;
+    SOME(s) := simCode.simulationSettingsOpt;
+    FMUType := match Config.simCodeTarget()
+      case "omsic" then "2.0";
+      case "omsicpp" then "2.0";
+      else "1.0";
+    end match;
 
 
-  File.write(file, "<?xml version = \"1.0\" encoding=\"UTF-8\"?>\n\n");
-  File.write(file, "<!-- description of the model interface using an extention of the FMI standard -->\n");
-  File.write(file, "<fmiModelDescription\n");
-  File.write(file, "  fmiVersion                          = \""+FMUType+"\"\n\n");
+    File.write(file, "<?xml version = \"1.0\" encoding=\"UTF-8\"?>\n\n");
+    File.write(file, "<!-- description of the model interface using an extention of the FMI standard -->\n");
+    File.write(file, "<fmiModelDescription\n");
+    File.write(file, "  fmiVersion                          = \""+FMUType+"\"\n\n");
 
-  File.write(file, "  modelName                           = \"");
-  Dump.writePath(file, modelInfo.name, initialDot=false);
-  File.write(file, "\"\n");
+    File.write(file, "  modelName                           = \"");
+    Dump.writePath(file, simCode.modelInfo.name, initialDot=false);
+    File.write(file, "\"\n");
 
-  File.write(file, "  modelIdentifier                     = \"");
-  Dump.writePath(file, modelInfo.name, delimiter="_", initialDot=false);
-  File.write(file, "\"\n\n");
+    File.write(file, "  modelIdentifier                     = \"");
+    Dump.writePath(file, simCode.modelInfo.name, delimiter="_", initialDot=false);
+    File.write(file, "\"\n\n");
 
-  File.write(file, "  OPENMODELICAHOME                    = \"");
-  File.write(file, makefileParams.omhome);
-  File.write(file, "\"\n\n");
-
-
-  File.write(file, "  guid                                = \"{");
-  File.write(file, guid);
-  File.write(file, "}\"\n\n");
+    File.write(file, "  OPENMODELICAHOME                    = \"");
+    File.write(file, simCode.makefileParams.omhome);
+    File.write(file, "\"\n\n");
 
 
-  File.write(file, "  description                         = \"");
-  File.writeEscape(file, modelInfo.description, XML);
-  File.write(file, "\"\n");
-
-  File.write(file, "  generationTool                      = \"OpenModelica Compiler ");
-  File.write(file, Settings.getVersionNr());
-  File.write(file, "\"\n");
-
-  File.write(file, "  generationDateAndTime               = \"");
-  xsdateTime(file, Util.getCurrentDateTime());
-  File.write(file, "\"\n\n");
+    File.write(file, "  guid                                = \"{");
+    File.write(file, guid);
+    File.write(file, "}\"\n\n");
 
 
-  File.write(file, "  variableNamingConvention            = \"structured\"\n\n");
+    File.write(file, "  description                         = \"");
+    File.writeEscape(file, simCode.modelInfo.description, XML);
+    File.write(file, "\"\n");
 
-  File.write(file, "  numberOfEventIndicators             = \"");
-  File.writeInt(file, vi.numZeroCrossings);
-  File.write(file, "\"  cmt_numberOfEventIndicators             = \"NG:       number of zero crossings,                           FMI\"\n");
+    File.write(file, "  generationTool                      = \"OpenModelica Compiler ");
+    File.write(file, Settings.getVersionNr());
+    File.write(file, "\"\n");
 
-  File.write(file, "  numberOfTimeEvents                  = \"");
-  File.writeInt(file, vi.numTimeEvents);
-  File.write(file, "\"  cmt_numberOfTimeEvents                  = \"NG_SAM:   number of zero crossings that are samples,          OMC\"\n\n");
-
-
-  File.write(file, "  numberOfInputVariables              = \"");
-  File.writeInt(file, vi.numInVars);
-  File.write(file, "\"  cmt_numberOfInputVariables              = \"NI:       number of inputvar on topmodel,                     OMC\"\n");
-
-  File.write(file, "  numberOfOutputVariables             = \"");
-  File.writeInt(file, vi.numOutVars);
-  File.write(file, "\"  cmt_numberOfOutputVariables             = \"NO:       number of outputvar on topmodel,                    OMC\"\n\n");
-
-  File.write(file, "  numberOfExternalObjects             = \"");
-  File.writeInt(file, vi.numExternalObjects);
-
-  File.write(file, "\"  cmt_numberOfExternalObjects             = \"NEXT:     number of external objects,                         OMC\"\n");
-
-  File.write(file, "  numberOfFunctions                   = \"");
-  File.writeInt(file, listLength(modelInfo.functions));
-  File.write(file, "\"  cmt_numberOfFunctions                   = \"NFUNC:    number of functions used by the simulation,         OMC\"\n\n");
+    File.write(file, "  generationDateAndTime               = \"");
+    xsdateTime(file, Util.getCurrentDateTime());
+    File.write(file, "\"\n\n");
 
 
-  File.write(file, "  numberOfContinuousStates            = \"");
-  File.writeInt(file, vi.numStateVars);
-  File.write(file, "\"  cmt_numberOfContinuousStates            = \"NX:       number of states,                                   FMI\"\n");
+    File.write(file, "  variableNamingConvention            = \"structured\"\n\n");
 
-  File.write(file, "  numberOfRealAlgebraicVariables      = \"");
-  File.writeInt(file, vi.numAlgVars+vi.numDiscreteReal+vi.numOptimizeConstraints+vi.numOptimizeFinalConstraints);
-  File.write(file, "\"  cmt_numberOfRealAlgebraicVariables      = \"NY:       number of real variables,                           OMC\"\n");
+    File.write(file, "  numberOfEventIndicators             = \"");
+    File.writeInt(file, vi.numZeroCrossings);
+    File.write(file, "\"  cmt_numberOfEventIndicators             = \"NG:       number of zero crossings,                           FMI\"\n");
 
-  File.write(file, "  numberOfRealAlgebraicAliasVariables = \"");
-  File.writeInt(file, vi.numAlgAliasVars);
-  File.write(file, "\"  cmt_numberOfRealAlgebraicAliasVariables = \"NA:       number of alias variables,                          OMC\"\n");
-
-  File.write(file, "  numberOfRealParameters              = \"");
-  File.writeInt(file, vi.numParams);
-  File.write(file, "\"  cmt_numberOfRealParameters              = \"NP:       number of parameters,                               OMC\"\n\n");
+    File.write(file, "  numberOfTimeEvents                  = \"");
+    File.writeInt(file, vi.numTimeEvents);
+    File.write(file, "\"  cmt_numberOfTimeEvents                  = \"NG_SAM:   number of zero crossings that are samples,          OMC\"\n\n");
 
 
-  File.write(file, "  numberOfIntegerAlgebraicVariables   = \"");
-  File.writeInt(file, vi.numIntAlgVars);
-  File.write(file, "\"  cmt_numberOfIntegerAlgebraicVariables   = \"NYINT:    number of alg. int variables,                       OMC\"\n");
+    File.write(file, "  numberOfInputVariables              = \"");
+    File.writeInt(file, vi.numInVars);
+    File.write(file, "\"  cmt_numberOfInputVariables              = \"NI:       number of inputvar on topmodel,                     OMC\"\n");
 
-  File.write(file, "  numberOfIntegerAliasVariables       = \"");
-  File.writeInt(file, vi.numIntAliasVars);
-  File.write(file, "\"  cmt_numberOfIntegerAliasVariables       = \"NAINT:    number of alias int variables,                      OMC\"\n");
+    File.write(file, "  numberOfOutputVariables             = \"");
+    File.writeInt(file, vi.numOutVars);
+    File.write(file, "\"  cmt_numberOfOutputVariables             = \"NO:       number of outputvar on topmodel,                    OMC\"\n\n");
 
-  File.write(file, "  numberOfIntegerParameters           = \"");
-  File.writeInt(file, vi.numIntParams);
-  File.write(file, "\"  cmt_numberOfIntegerParameters           = \"NPINT:    number of int parameters,                           OMC\"\n\n");
+    File.write(file, "  numberOfExternalObjects             = \"");
+    File.writeInt(file, vi.numExternalObjects);
 
-  File.write(file, "  numberOfStringAlgebraicVariables    = \"");
-  File.writeInt(file, vi.numStringAlgVars);
-  File.write(file, "\"  cmt_numberOfStringAlgebraicVariables    = \"NYSTR:    number of alg. string variables,                    OMC\"\n");
+    File.write(file, "\"  cmt_numberOfExternalObjects             = \"NEXT:     number of external objects,                         OMC\"\n");
 
-  File.write(file, "  numberOfStringAliasVariables        = \"");
-  File.writeInt(file, vi.numStringAliasVars);
-  File.write(file, "\"  cmt_numberOfStringAliasVariables        = \"NASTR:    number of alias string variables,                   OMC\"\n");
-
-  File.write(file, "  numberOfStringParameters            = \"");
-  File.writeInt(file, vi.numStringParamVars);
-  File.write(file, "\"  cmt_numberOfStringParameters            = \"NPSTR:    number of string parameters,                        OMC\"\n\n");
+    File.write(file, "  numberOfFunctions                   = \"");
+    File.writeInt(file, listLength(simCode.modelInfo.functions));
+    File.write(file, "\"  cmt_numberOfFunctions                   = \"NFUNC:    number of functions used by the simulation,         OMC\"\n\n");
 
 
-  File.write(file, "  numberOfBooleanAlgebraicVariables   = \"");
-  File.writeInt(file, vi.numBoolAlgVars);
-  File.write(file, "\"  cmt_numberOfBooleanAlgebraicVariables   = \"NYBOOL:   number of alg. bool variables,                      OMC\"\n");
+    File.write(file, "  numberOfContinuousStates            = \"");
+    File.writeInt(file, vi.numStateVars);
+    File.write(file, "\"  cmt_numberOfContinuousStates            = \"NX:       number of states,                                   FMI\"\n");
 
-  File.write(file, "  numberOfBooleanAliasVariables       = \"");
-  File.writeInt(file, vi.numBoolAliasVars);
-  File.write(file, "\"  cmt_numberOfBooleanAliasVariables       = \"NABOOL:   number of alias bool variables,                     OMC\"\n");
+    File.write(file, "  numberOfRealAlgebraicVariables      = \"");
+    File.writeInt(file, vi.numAlgVars+vi.numDiscreteReal+vi.numOptimizeConstraints+vi.numOptimizeFinalConstraints);
+    File.write(file, "\"  cmt_numberOfRealAlgebraicVariables      = \"NY:       number of real variables,                           OMC\"\n");
 
-  File.write(file, "  numberOfBooleanParameters           = \"");
-  File.writeInt(file, vi.numBoolParams);
-  File.write(file, "\"  cmt_numberOfBooleanParameters           = \"NPBOOL:   number of bool parameters,                          OMC\" >\n\n\n");
+    File.write(file, "  numberOfRealAlgebraicAliasVariables = \"");
+    File.writeInt(file, vi.numAlgAliasVars);
+    File.write(file, "\"  cmt_numberOfRealAlgebraicAliasVariables = \"NA:       number of alias variables,                          OMC\"\n");
+
+    File.write(file, "  numberOfRealParameters              = \"");
+    File.writeInt(file, vi.numParams);
+    File.write(file, "\"  cmt_numberOfRealParameters              = \"NP:       number of parameters,                               OMC\"\n\n");
 
 
-  File.write(file, "  <!-- startTime, stopTime, tolerance are FMI specific, all others are OMC specific -->\n");
+    File.write(file, "  numberOfIntegerAlgebraicVariables   = \"");
+    File.writeInt(file, vi.numIntAlgVars);
+    File.write(file, "\"  cmt_numberOfIntegerAlgebraicVariables   = \"NYINT:    number of alg. int variables,                       OMC\"\n");
 
-  File.write(file, "  <DefaultExperiment\n");
+    File.write(file, "  numberOfIntegerAliasVariables       = \"");
+    File.writeInt(file, vi.numIntAliasVars);
+    File.write(file, "\"  cmt_numberOfIntegerAliasVariables       = \"NAINT:    number of alias int variables,                      OMC\"\n");
 
-  File.write(file, "    startTime      = \"");
-  File.writeReal(file, s.startTime);
-  File.write(file, "\"\n");
+    File.write(file, "  numberOfIntegerParameters           = \"");
+    File.writeInt(file, vi.numIntParams);
+    File.write(file, "\"  cmt_numberOfIntegerParameters           = \"NPINT:    number of int parameters,                           OMC\"\n\n");
 
-  File.write(file, "    stopTime       = \"");
-  File.writeReal(file, s.stopTime);
-  File.write(file, "\"\n");
+    File.write(file, "  numberOfStringAlgebraicVariables    = \"");
+    File.writeInt(file, vi.numStringAlgVars);
+    File.write(file, "\"  cmt_numberOfStringAlgebraicVariables    = \"NYSTR:    number of alg. string variables,                    OMC\"\n");
 
-  File.write(file, "    stepSize       = \"");
-  File.writeReal(file, s.stepSize);
-  File.write(file, "\"\n");
+    File.write(file, "  numberOfStringAliasVariables        = \"");
+    File.writeInt(file, vi.numStringAliasVars);
+    File.write(file, "\"  cmt_numberOfStringAliasVariables        = \"NASTR:    number of alias string variables,                   OMC\"\n");
 
-  File.write(file, "    tolerance      = \"");
-  File.writeReal(file, s.tolerance);
-  File.write(file, "\"\n");
+    File.write(file, "  numberOfStringParameters            = \"");
+    File.writeInt(file, vi.numStringParamVars);
+    File.write(file, "\"  cmt_numberOfStringParameters            = \"NPSTR:    number of string parameters,                        OMC\"\n\n");
 
-  File.write(file, "    solver         = \"");
-  File.write(file, s.method);
-  File.write(file, "\"\n");
 
-  File.write(file, "    outputFormat   = \"");
-  File.write(file, s.outputFormat);
-  File.write(file, "\"\n");
+    File.write(file, "  numberOfBooleanAlgebraicVariables   = \"");
+    File.writeInt(file, vi.numBoolAlgVars);
+    File.write(file, "\"  cmt_numberOfBooleanAlgebraicVariables   = \"NYBOOL:   number of alg. bool variables,                      OMC\"\n");
 
-  File.write(file, "    variableFilter = \"");
-  File.write(file, s.variableFilter);
-  File.write(file, "\" />\n\n");
+    File.write(file, "  numberOfBooleanAliasVariables       = \"");
+    File.writeInt(file, vi.numBoolAliasVars);
+    File.write(file, "\"  cmt_numberOfBooleanAliasVariables       = \"NABOOL:   number of alias bool variables,                     OMC\"\n");
 
-  File.write(file, "  <!-- variables in the model -->\n");
-  File.write(file, "  <ModelVariables>\n\n");
-  modelVariables(file, modelInfo);
-  File.write(file, "\n\n\n  </ModelVariables>\n\n");
+    File.write(file, "  numberOfBooleanParameters           = \"");
+    File.writeInt(file, vi.numBoolParams);
+    File.write(file, "\"  cmt_numberOfBooleanParameters           = \"NPBOOL:   number of bool parameters,                          OMC\" >\n\n\n");
 
-  File.write(file, "\n</fmiModelDescription>\n\n");
-  success := true;
+
+    File.write(file, "  <!-- startTime, stopTime, tolerance are FMI specific, all others are OMC specific -->\n");
+
+    File.write(file, "  <DefaultExperiment\n");
+
+    File.write(file, "    startTime      = \"");
+    File.writeReal(file, s.startTime);
+    File.write(file, "\"\n");
+
+    File.write(file, "    stopTime       = \"");
+    File.writeReal(file, s.stopTime);
+    File.write(file, "\"\n");
+
+    File.write(file, "    stepSize       = \"");
+    File.writeReal(file, s.stepSize);
+    File.write(file, "\"\n");
+
+    File.write(file, "    tolerance      = \"");
+    File.writeReal(file, s.tolerance);
+    File.write(file, "\"\n");
+
+    File.write(file, "    solver         = \"");
+    File.write(file, s.method);
+    File.write(file, "\"\n");
+
+    File.write(file, "    outputFormat   = \"");
+    File.write(file, s.outputFormat);
+    File.write(file, "\"\n");
+
+    File.write(file, "    variableFilter = \"");
+    File.write(file, s.variableFilter);
+    File.write(file, "\" />\n\n");
+
+    File.write(file, "  <!-- variables in the model -->\n");
+    File.write(file, "  <ModelVariables>\n\n");
+    modelVariables(file, simCode.modelInfo.vars);
+    File.write(file, "\n\n\n  </ModelVariables>\n\n");
+
+    File.write(file, "\n</fmiModelDescription>\n\n");
+    success := true;
   else
   end try;
 end simulationInitFileReturnBool;
@@ -268,20 +256,16 @@ protected
 
 function modelVariables "Generates code for ModelVariables file for FMU target."
   input File.File file;
-  input ModelInfo modelInfo;
+  input SimCodeVar.SimVars vars;
 protected
-  SimCodeVar.SimVars vars;
   Integer vr, ix=0;
 algorithm
-
   // set starting index
   vr := match Config.simCodeTarget()
     case "omsic" then 0;
     case "omsicpp" then 0;
     else 1000;
   end match;
-
-  vars := modelInfo.vars;
 
   vr := scalarVariables(file, vars.stateVars, "rSta", vr);
   vr := scalarVariables(file, vars.derivativeVars, "rDer", vr);
@@ -306,8 +290,6 @@ algorithm
 
   // sensitivity variables
   vr := scalarVariables(file, vars.sensitivityVars, "rSen", vr);
-
-
 end modelVariables;
 
 function scalarVariables
@@ -336,8 +318,7 @@ algorithm
   File.write(file, "  <" + type_name + "\n");
   scalarVariableAttribute(file, var, classType, valueReference, classIndex);
   File.write(file, "    ");
-  // TODO: Convert ScalarVariableType to File.mo?
-  File.write(file, Tpl.textString(CodegenUtil.ScalarVariableType(Tpl.emptyTxt, var.unit, var.displayUnit, var.minValue, var.maxValue, var.initialValue, var.nominalValue, var.isFixed, var.type_)));
+  scalarVariableType(file, var);
   File.write(file, "\n  </" + type_name + ">\n");
 end scalarVariable;
 
@@ -425,96 +406,87 @@ end scalarVariableAttribute;
 
 function scalarVariableType "Generates code for ScalarVariable Type file for FMU target."
   input File.File file;
-  input String unit, displayUnit;
-  input Option<Exp> minValue, maxValue, startValue, nominalValue;
-  input Boolean isFixed;
-  input Type t;
+  input SimVar v;
 protected
   Absyn.Path path;
 algorithm
-  _ := match t
-  case Type.T_INTEGER(__)
+  () := match Types.arrayElementType(v.type_)
+  case Type.T_INTEGER()
     algorithm
-      File.write(file, "<Integer ");
-      scalarVariableTypeAttribute(file, startValue, "start");
-      scalarVariableTypeFixedAttribute(file, isFixed);
-      scalarVariableTypeAttribute(file, minValue, "min");
-      scalarVariableTypeAttribute(file, maxValue, "max");
-      scalarVariableTypeStringAttribute(file, unit, "unit");
-      scalarVariableTypeStringAttribute(file, displayUnit, "displayUnit");
+      File.write(file, "<Integer");
+      scalarVariableTypeAttribute(file, v.initialValue, "start");
+      scalarVariableTypeFixedAttribute(file, v.isFixed);
+      scalarVariableTypeAttribute(file, v.minValue, "min");
+      scalarVariableTypeAttribute(file, v.maxValue, "max");
+      scalarVariableTypeStringAttribute(file, v.unit, "unit");
+      scalarVariableTypeStringAttribute(file, v.displayUnit, "displayUnit");
       File.write(file, " />");
     then ();
-  case Type.T_REAL(__)
+  case Type.T_REAL()
     algorithm
-      File.write(file, "<Real ");
-      scalarVariableTypeAttribute(file, startValue, "start");
-      scalarVariableTypeFixedAttribute(file, isFixed);
-      scalarVariableTypeUseAttribute(file, nominalValue, "useNominal", "nominal");
-      scalarVariableTypeAttribute(file, minValue, "min");
-      scalarVariableTypeAttribute(file, maxValue, "max");
-      scalarVariableTypeStringAttribute(file, unit, "unit");
-      scalarVariableTypeStringAttribute(file, displayUnit, "displayUnit");
+      File.write(file, "<Real");
+      scalarVariableTypeAttribute(file, v.initialValue, "start");
+      scalarVariableTypeFixedAttribute(file, v.isFixed);
+      scalarVariableTypeUseAttribute(file, v.nominalValue, "useNominal", "nominal");
+      scalarVariableTypeAttribute(file, v.minValue, "min");
+      scalarVariableTypeAttribute(file, v.maxValue, "max");
+      scalarVariableTypeStringAttribute(file, v.unit, "unit");
+      scalarVariableTypeStringAttribute(file, v.displayUnit, "displayUnit");
+      File.write(file, " />");
     then ();
-  case Type.T_BOOL(__)
+  case Type.T_BOOL()
     algorithm
-      File.write(file, "<Boolean ");
-      scalarVariableTypeAttribute(file, startValue, "start");
-      scalarVariableTypeFixedAttribute(file, isFixed);
-      scalarVariableTypeStringAttribute(file, unit, "unit");
-      scalarVariableTypeStringAttribute(file, displayUnit, "displayUnit");
+      File.write(file, "<Boolean");
+      scalarVariableTypeAttribute(file, v.initialValue, "start");
+      scalarVariableTypeFixedAttribute(file, v.isFixed);
+      scalarVariableTypeStringAttribute(file, v.unit, "unit");
+      scalarVariableTypeStringAttribute(file, v.displayUnit, "displayUnit");
+      File.write(file, " />");
     then ();
-  case Type.T_STRING(__)
+  case Type.T_STRING()
     algorithm
-      File.write(file, "<String ");
-      scalarVariableTypeAttribute(file, startValue, "start");
-      scalarVariableTypeFixedAttribute(file, isFixed);
-      scalarVariableTypeStringAttribute(file, unit, "unit");
-      scalarVariableTypeStringAttribute(file, displayUnit, "displayUnit");
+      File.write(file, "<String");
+      scalarVariableTypeAttribute(file, v.initialValue, "start");
+      scalarVariableTypeFixedAttribute(file, v.isFixed);
+      scalarVariableTypeStringAttribute(file, v.unit, "unit");
+      scalarVariableTypeStringAttribute(file, v.displayUnit, "displayUnit");
+      File.write(file, " />");
     then ();
-  case Type.T_ENUMERATION(__)
+  case Type.T_ENUMERATION()
     algorithm
-      File.write(file, "<Integer ");
-      scalarVariableTypeAttribute(file, startValue, "start");
-      scalarVariableTypeFixedAttribute(file, isFixed);
-      scalarVariableTypeStringAttribute(file, unit, "unit");
-      scalarVariableTypeStringAttribute(file, displayUnit, "displayUnit");
+      File.write(file, "<Integer");
+      scalarVariableTypeAttribute(file, v.initialValue, "start");
+      scalarVariableTypeFixedAttribute(file, v.isFixed);
+      scalarVariableTypeStringAttribute(file, v.unit, "unit");
+      scalarVariableTypeStringAttribute(file, v.displayUnit, "displayUnit");
+      File.write(file, " />");
     then ();
   case Type.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ(path=path))
     algorithm
       File.write(file, "<ExternalObject path=\"");
       Dump.writePath(file, path, XML);
-      File.write(file, "\"");
+      File.write(file, "\" />");
     then ();
   else
     algorithm
-      Error.addInternalError("ScalarVariableType: "+Types.unparseType(t), sourceInfo());
+      Error.addInternalError(getInstanceName() + ": " + Types.unparseType(v.type_), sourceInfo());
     then fail();
   end match;
-  File.write(file, " />");
 end scalarVariableType;
 
 function scalarVariableTypeUseAttribute
   input File.File file;
-  input Option<Exp> startValue;
+  input Option<Exp> attr;
   input String use, name;
 protected
-  Exp exp;
+  String expStr;
 algorithm
+  File.write(file, " ");
   File.write(file, use);
-  _ := match startValue
-  case SOME(exp)
-    algorithm
-      File.write(file, "=\"true\" ");
-      File.write(file, name);
-      File.write(file, "=\"");
-      writeExp(file, exp);
-      File.write(file, "\"");
-    then ();
-  else
-    algorithm
-      File.write(file, "=\"false\"");
-    then ();
-  end match;
+  File.write(file, "=\"");
+  File.write(file, String(isSome(attr)));
+  File.write(file, "\"");
+  scalarVariableTypeAttribute(file, attr, name);
 end scalarVariableTypeUseAttribute;
 
 function scalarVariableTypeFixedAttribute
@@ -531,19 +503,17 @@ function scalarVariableTypeAttribute
   input Option<Exp> attr;
   input String name;
 protected
-  Exp exp;
+  String expStr;
 algorithm
-  _ := match attr
-  case SOME(exp)
-    algorithm
-      File.write(file, " ");
-      File.write(file, name);
-      File.write(file, "=\"");
-      writeExp(file, exp);
-      File.write(file, "\"");
-    then ();
-  else ();
-  end match;
+  try
+    expStr := expString(Util.getOption(attr));
+    File.write(file, " ");
+    File.write(file, name);
+    File.write(file, "=\"");
+    File.write(file, expStr);
+    File.write(file, "\"");
+  else
+  end try;
 end scalarVariableTypeAttribute;
 
 function scalarVariableTypeStringAttribute
@@ -551,7 +521,7 @@ function scalarVariableTypeStringAttribute
   input String attr;
   input String name;
 algorithm
-  if attr=="" then
+  if attr == "" then
     return;
   end if;
   File.write(file, " ");
@@ -566,12 +536,12 @@ function getCausality "Returns the Causality Attribute of ScalarVariable."
   output String str;
 algorithm
   str := match c
-    case SOME(Causality.NONECAUS(__)) then "none";
-    case SOME(Causality.OUTPUT(__)) then "output";
-    case SOME(Causality.INPUT(__)) then "input";
-    case SOME(Causality.LOCAL(__)) then "local"; // replacement for INTERNAL(), From now Use LOCAL according to FMI-2.0 specification
-    case SOME(Causality.PARAMETER(__)) then "parameter";
-    case SOME(Causality.CALCULATED_PARAMETER(__)) then "calculatedParameter";
+    case SOME(Causality.NONECAUS()) then "none";
+    case SOME(Causality.OUTPUT()) then "output";
+    case SOME(Causality.INPUT()) then "input";
+    case SOME(Causality.LOCAL()) then "local"; // replacement for INTERNAL(), From now Use LOCAL according to FMI-2.0 specification
+    case SOME(Causality.PARAMETER()) then "parameter";
+    case SOME(Causality.CALCULATED_PARAMETER()) then "calculatedParameter";
     else "local";
   end match;
 end getCausality;
@@ -581,9 +551,9 @@ function getVariablity "Returns the variablity Attribute of ScalarVariable."
   output String str;
 algorithm
   str := match varKind
-  case VarKind.DISCRETE(__) then "discrete";
-  case VarKind.PARAM(__) then "parameter";
-  case VarKind.CONST(__) then "constant";
+  case VarKind.DISCRETE() then "discrete";
+  case VarKind.PARAM() then "parameter";
+  case VarKind.CONST() then "constant";
   else "continuous";
   end match;
 end getVariablity;
@@ -592,7 +562,7 @@ function getAliasVar "Returns the alias Attribute of ScalarVariable."
   input File.File file;
   input SimCodeVar.SimVar simVar;
 algorithm
-  _ := match simVar
+  () := match simVar
   local SimCodeVar.AliasVariable aliasvar;
   case SimCodeVar.SIMVAR(aliasvar = aliasvar as AliasVariable.ALIAS())
     algorithm
@@ -627,19 +597,22 @@ algorithm
   File.writeInt(file, dt.sec, ":%02dZ");
 end xsdateTime;
 
-function writeExp
-  input File.File file;
+function expString
   input Exp exp;
+  output String str;
 algorithm
-  _ := match exp
-  case Exp.ICONST(__) algorithm File.writeInt(file, exp.integer); then ();
-  case Exp.RCONST(__) algorithm File.writeReal(file, exp.real); then ();
-  case Exp.SCONST(__) algorithm File.writeEscape(file, exp.string, XML); then ();
-  case Exp.BCONST(__) algorithm File.write(file, String(exp.bool)); then ();
-  case Exp.ENUM_LITERAL(__) algorithm File.writeInt(file, exp.index); then ();
-  else algorithm Error.addInternalError("initial value of unknown type: " + printExpStr(exp), sourceInfo()); then fail();
+  str := match exp
+    case Exp.ICONST() then intString(exp.integer);
+    case Exp.RCONST() then realString(exp.real);
+    case Exp.SCONST() then Util.escapeModelicaStringToXmlString(exp.string);
+    case Exp.BCONST() then boolString(exp.bool);
+    case Exp.ENUM_LITERAL() then intString(exp.index);
+    case Exp.ARRAY() guard Expression.isSimpleLiteralValue(exp, true) then stringDelimitList(list(expString(e) for e in exp.array), " ");
+    case Exp.REDUCTION() then expString(exp.expr);
+    else fail();
+    //else algorithm Error.addInternalError("initial value of unknown type: " + printExpStr(exp), sourceInfo()); then fail();
   end match;
-end writeExp;
+end expString;
 
 annotation(__OpenModelica_Interface="backend");
 end SerializeInitXML;

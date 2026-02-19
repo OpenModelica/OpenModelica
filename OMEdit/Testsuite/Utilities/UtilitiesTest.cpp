@@ -34,16 +34,8 @@
 
 #include "UtilitiesTest.h"
 #include "Util.h"
-#include "OMEditApplication.h"
 #include "MainWindow.h"
 #include "Util/Utilities.h"
-
-#ifndef GC_THREADS
-#define GC_THREADS
-#endif
-extern "C" {
-#include "meta/meta_modelica.h"
-}
 
 OMEDITTEST_MAIN(UtilitiesTest)
 
@@ -60,6 +52,8 @@ void UtilitiesTest::extractArrayParts_data()
   QTest::addColumn<QString>("input");
   QTest::addColumn<QStringList>("expected");
 
+  QTest::newRow("Empty string") << "" << (QStringList{});
+  QTest::newRow("Empty array") << "{}" << (QStringList{});
   QTest::newRow("Simple array") << "{1, 2, 3}" << (QStringList{"1", "2", "3"});
   QTest::newRow("Quoted strings") << "{\"one\", \"two, three\"}" << (QStringList{"one", "two, three"});
   QTest::newRow("Mixed values") << "{1.2, \"hello\", var}" << (QStringList{"1.2", "hello", "var"});
@@ -86,7 +80,10 @@ void UtilitiesTest::literalConstant_data()
   QTest::newRow("Integer array with whitespace") << "{11, 981 ,34}";
   QTest::newRow("Decimal") << "56.7";
   QTest::newRow("Negative decimal value") << "-10.00";
+  QTest::newRow("Decimal without leading digit") << ".25";
+  QTest::newRow("Decimal without trailing digit") << "25.";
   QTest::newRow("Decimal array") << "{3.11,5.289,3.4798}";
+  QTest::newRow("Decimal array mix") << "{.31,5.5,47.}";
   QTest::newRow("Decimal array with whitespace") << "{7.89 , 2.2 , 567.8}";
   QTest::newRow("Exponential form") << "1e-09";
   QTest::newRow("Exponential form array with whitespace") << "{1e-09 , 2e-3 , 0.456e7}";

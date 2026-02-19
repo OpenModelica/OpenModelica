@@ -574,7 +574,7 @@ algorithm
 
   // Look up the class to instantiate and mark it as the root class.
   cls := Lookup.lookupClassName(classPath, top, NFInstContext.RELAXED, AbsynUtil.dummyInfo, checkAccessViolations = false);
-  cls := InstNode.setNodeType(InstNodeType.ROOT_CLASS(InstNode.EMPTY_NODE()), cls);
+  cls := InstNode.makeRootClass(cls);
 
   // Instantiate the class.
   inst_cls := NFInst.instantiate(cls, context = NFInstContext.RELAXED);
@@ -788,6 +788,7 @@ constant InstanceTree ENUM_BASE = InstanceTree.BUILTIN_BASE_CLASS("enumeration")
 
 function getModelInstance
   input Absyn.Path classPath;
+  input Absyn.Path contextPath;
   input String modifier;
   input Boolean prettyPrint;
   output Values.Value res;
@@ -812,6 +813,10 @@ algorithm
     if SCodeUtil.isFunction(InstNode.definition(cls_node)) then
       context := InstContext.unset(context, NFInstContext.CLASS);
       context := InstContext.set(context, NFInstContext.FUNCTION);
+    end if;
+
+    if AbsynUtil.pathFirstIdent(contextPath) <> "__NoContext" then
+      cls_node := InstNode.setNodeType(InstNodeType.ROOT_CLASS(InstNode.EMPTY_NODE(), SOME(contextPath)), cls_node);
     end if;
 
     cls_node := Inst.instantiateRootClass(cls_node, context, mod);
@@ -1167,7 +1172,7 @@ algorithm
     ErrorExt.setCheckpoint(getInstanceName());
     try
       context := InstContext.set(NFInstContext.CLASS, NFInstContext.RELAXED);
-      scope := InstNode.setNodeType(InstNodeType.ROOT_CLASS(InstNode.EMPTY_NODE()), scope);
+      scope := InstNode.makeRootClass(scope);
       scope := Inst.instantiate(scope, context = context, instPartial = true);
       Inst.insertGeneratedInners(scope, InstNode.topScope(scope), context);
       Inst.instExpressions(scope, context = context, settings = NFInst.DEFAULT_SETTINGS);

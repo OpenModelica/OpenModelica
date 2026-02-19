@@ -44,10 +44,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 int maxBisectionIterations = 0;
 void bisection(DATA* data, threadData_t *threadData, double*, double*, double*, double*, LIST*, LIST*);
 void saveZeroCrossingsAfterEvent(DATA *data, threadData_t *threadData);
@@ -56,7 +52,7 @@ void saveZeroCrossingsAfterEvent(DATA *data, threadData_t *threadData);
  *
  *  \param [ref] [data]
  *  \param [ref] [solverInfo]
- *  \return indicates if a time event is occuered or not.
+ *  \return indicates if a time event is occurred or not.
  *
  *  Function check if a sample expression should be activated
  *  before next step and sets then the next step size to the
@@ -163,12 +159,15 @@ void handleEvents(DATA* data, threadData_t *threadData, LIST* eventLst, double *
     storePreValues(data);
 
     /* activate time event */
-    for(i=0; i<data->modelData->nSamples; ++i)
+    for(i=0; i<data->modelData->nSamples; ++i) {
       if(data->simulationInfo->nextSampleTimes[i] <= time + SAMPLE_EPS)
       {
         data->simulationInfo->samples[i] = 1;
         infoStreamPrint(OMC_LOG_EVENTS, 0, "[%ld] sample(%g, %g)", data->modelData->samplesInfo[i].index, data->modelData->samplesInfo[i].start, data->modelData->samplesInfo[i].interval);
       }
+    }
+
+    solverInfo->sampleEvents++;
   }
   data->simulationInfo->chatteringInfo.lastStepsNumStateEvents-=data->simulationInfo->chatteringInfo.lastSteps[data->simulationInfo->chatteringInfo.currentIndex];
   /* state event */
@@ -224,28 +223,16 @@ void handleEvents(DATA* data, threadData_t *threadData, LIST* eventLst, double *
   saveZeroCrossingsAfterEvent(data, threadData);
   /*sim_result_emit(data);*/
 
-  /* time event */
+  /* Compute time of next time event, disable sampleActivated */
   if(data->simulationInfo->sampleActivated)
   {
-    /* deactivate time events */
-    for(i=0; i<data->modelData->nSamples; ++i)
-    {
-      if(data->simulationInfo->samples[i])
-      {
-        data->simulationInfo->samples[i] = 0;
-        data->simulationInfo->nextSampleTimes[i] += data->modelData->samplesInfo[i].interval;
-      }
-    }
-
     for(i=0; i<data->modelData->nSamples; ++i) {
       if((i == 0) || (data->simulationInfo->nextSampleTimes[i] < data->simulationInfo->nextSampleEvent)) {
+        // data->simulationInfo->nextSampleTimes[i] update in updateDiscreteSystem
         data->simulationInfo->nextSampleEvent = data->simulationInfo->nextSampleTimes[i];
       }
     }
-
     data->simulationInfo->sampleActivated = 0;
-
-    solverInfo->sampleEvents++;
   }
 }
 
@@ -481,7 +468,3 @@ void eventListCopy(void* dest, const void* src) {
   long* dest_event = (long*) dest;
   *dest_event = *((long*) src);
 }
-
-#ifdef __cplusplus
-}
-#endif

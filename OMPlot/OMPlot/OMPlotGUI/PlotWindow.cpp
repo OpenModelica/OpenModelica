@@ -1536,8 +1536,8 @@ void PlotWindow::setXRange(double min, double max)
   if (!(max == 0 && min == 0)) {
     mpPlot->setAxisScale(QwtPlot::xBottom, min, max);
   }
-  mXRangeMin = QString::number(min);
-  mXRangeMax = QString::number(max);
+  mXRangeMin = QString::number(min, 'g', 17);
+  mXRangeMax = QString::number(max, 'g', 17);
 }
 
 QString PlotWindow::getXRangeMin()
@@ -1555,8 +1555,8 @@ void PlotWindow::setYRange(double min, double max)
   if (!(max == 0 && min == 0)) {
     mpPlot->setAxisScale(QwtPlot::yLeft, min, max);
   }
-  mYRangeMin = QString::number(min);
-  mYRangeMax = QString::number(max);
+  mYRangeMin = QString::number(min, 'g', 17);
+  mYRangeMax = QString::number(max, 'g', 17);
 }
 
 QString PlotWindow::getYRangeMin()
@@ -1574,8 +1574,8 @@ void PlotWindow::setYRightRange(double min, double max)
     if (!(max == 0 && min == 0)) {
         mpPlot->setAxisScale(QwtPlot::yRight, min, max);
     }
-    mYRightRangeMin = QString::number(min);
-    mYRightRangeMax = QString::number(max);
+    mYRightRangeMin = QString::number(min, 'g', 17);
+    mYRightRangeMax = QString::number(max, 'g', 17);
 }
 
 QString PlotWindow::getYRightRangeMin()
@@ -2254,9 +2254,9 @@ SetupDialog::SetupDialog(PlotWindow *pPlotWindow)
   // x-axis
   mpXAxisGroupBox = new QGroupBox(tr("X-Axis"));
   mpXMinimumLabel = new QLabel(tr("Minimum"));
-  mpXMinimumTextBox = new QLineEdit(QString::number(mpPlotWindow->getPlot()->axisScaleDiv(QwtPlot::xBottom).lowerBound()));
+  mpXMinimumTextBox = new QLineEdit(QString::number(mpPlotWindow->getPlot()->axisScaleDiv(QwtPlot::xBottom).lowerBound(), 'g', 17));
   mpXMaximumLabel = new QLabel(tr("Maximum"));
-  mpXMaximumTextBox = new QLineEdit(QString::number(mpPlotWindow->getPlot()->axisScaleDiv(QwtPlot::xBottom).upperBound()));
+  mpXMaximumTextBox = new QLineEdit(QString::number(mpPlotWindow->getPlot()->axisScaleDiv(QwtPlot::xBottom).upperBound(), 'g', 17));
   QGridLayout *pXGridLayout = new QGridLayout;
   pXGridLayout->addWidget(mpXMinimumLabel, 0, 0);
   pXGridLayout->addWidget(mpXMinimumTextBox, 0, 1);
@@ -2267,9 +2267,9 @@ SetupDialog::SetupDialog(PlotWindow *pPlotWindow)
   // y-axis
   mpYAxisGroupBox = new QGroupBox(tr("Left Y-Axis"));
   mpYMinimumLabel = new QLabel(tr("Minimum"));
-  mpYMinimumTextBox = new QLineEdit(QString::number(mpPlotWindow->getPlot()->axisScaleDiv(QwtPlot::yLeft).lowerBound()));
+  mpYMinimumTextBox = new QLineEdit(QString::number(mpPlotWindow->getPlot()->axisScaleDiv(QwtPlot::yLeft).lowerBound(), 'g', 17));
   mpYMaximumLabel = new QLabel(tr("Maximum"));
-  mpYMaximumTextBox = new QLineEdit(QString::number(mpPlotWindow->getPlot()->axisScaleDiv(QwtPlot::yLeft).upperBound()));
+  mpYMaximumTextBox = new QLineEdit(QString::number(mpPlotWindow->getPlot()->axisScaleDiv(QwtPlot::yLeft).upperBound(), 'g', 17));
   QGridLayout *pYGridLayout = new QGridLayout;
   pYGridLayout->addWidget(mpYMinimumLabel, 0, 0);
   pYGridLayout->addWidget(mpYMinimumTextBox, 0, 1);
@@ -2280,9 +2280,9 @@ SetupDialog::SetupDialog(PlotWindow *pPlotWindow)
   // right y-axis
   mpYRightAxisGroupBox = new QGroupBox(tr("Right Y-Axis"));
   mpYRightMinimumLabel = new QLabel(tr("Minimum"));
-  mpYRightMinimumTextBox = new QLineEdit(QString::number(mpPlotWindow->getPlot()->axisScaleDiv(QwtPlot::yRight).lowerBound()));
+  mpYRightMinimumTextBox = new QLineEdit(QString::number(mpPlotWindow->getPlot()->axisScaleDiv(QwtPlot::yRight).lowerBound(), 'g', 17));
   mpYRightMaximumLabel = new QLabel(tr("Maximum"));
-  mpYRightMaximumTextBox = new QLineEdit(QString::number(mpPlotWindow->getPlot()->axisScaleDiv(QwtPlot::yRight).upperBound()));
+  mpYRightMaximumTextBox = new QLineEdit(QString::number(mpPlotWindow->getPlot()->axisScaleDiv(QwtPlot::yRight).upperBound(), 'g', 17));
   QGridLayout* pYRightGridLayout = new QGridLayout;
   pYRightGridLayout->addWidget(mpYRightMinimumLabel, 0, 0);
   pYRightGridLayout->addWidget(mpYRightMinimumTextBox, 0, 1);
