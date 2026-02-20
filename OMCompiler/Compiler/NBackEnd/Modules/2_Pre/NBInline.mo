@@ -383,12 +383,12 @@ public
 
         // CREF = cat()
         case Equation.ARRAY_EQUATION(lhs = lhs as Expression.CREF(), rhs = Expression.CALL(call = call))
-          guard(AbsynUtil.pathString(Function.nameConsiderBuiltin(Call.typedFunction(call))) == "cat") algorithm
+          guard(AbsynUtil.pathString(Function.nameConsiderBuiltin(Call.typedFunction(call))) == "cat")
         then inlineCatCall(eqn, lhs.cref, Call.arguments(call), eqn.attr, iter, variables, new_eqns, set, index);
 
         // cat() = CREF
         case Equation.ARRAY_EQUATION(lhs = Expression.CALL(call = call), rhs = rhs as Expression.CREF())
-          guard(AbsynUtil.pathString(Function.nameConsiderBuiltin(Call.typedFunction(call))) == "cat") algorithm
+          guard(AbsynUtil.pathString(Function.nameConsiderBuiltin(Call.typedFunction(call))) == "cat")
         then inlineCatCall(eqn, rhs.cref, Call.arguments(call), eqn.attr, iter, variables, new_eqns, set, index);
 
         // apply on for-equation. assumed to be split up
@@ -478,7 +478,11 @@ protected
     list<Pointer<Equation>> eqns;
   algorithm
     if Flags.isSet(Flags.DUMPBACKENDINLINE) then
-      print("[" + getInstanceName() + "] Inlining: " + Equation.toString(eqn) + "\n");
+      print("\n[" + getInstanceName() + "] Inlining: ");
+      if not Iterator.isEmpty(iter) then
+        print("{" + Iterator.toString(iter) + "} ");
+      end if;
+      print(Equation.toString(eqn) + "\n");
     end if;
     eqns := Pointer.access(new_eqns);
     for i in 1:recordSize loop
@@ -511,7 +515,11 @@ protected
     rhs_elems := getElementList(RHS);
     if not listEmpty(lhs_elems) and List.compareLength(lhs_elems, rhs_elems) == 0 then
       if Flags.isSet(Flags.DUMPBACKENDINLINE) then
-        print("[" + getInstanceName() + "] Inlining: " + Equation.toString(eqn) + "\n");
+        print("\n[" + getInstanceName() + "] Inlining: ");
+        if not Iterator.isEmpty(iter) then
+          print("{" + Iterator.toString(iter) + "} ");
+        end if;
+        print(Equation.toString(eqn) + "\n");
       end if;
       eqns := Pointer.access(new_eqns);
       for tpl in List.zip(lhs_elems, rhs_elems) loop
@@ -546,7 +554,11 @@ protected
     Pointer<Equation> new_eqn;
   algorithm
     if Flags.isSet(Flags.DUMPBACKENDINLINE) then
-      print("[" + getInstanceName() + "] Inlining: " + Equation.toString(eqn) + "\n");
+      print("\n[" + getInstanceName() + "] Inlining: ");
+      if not Iterator.isEmpty(iter) then
+        print("{" + Iterator.toString(iter) + "} ");
+      end if;
+      print(Equation.toString(eqn) + "\n");
     end if;
     eqns := Pointer.access(new_eqns);
     for i in 1: arrayLength(lhs_elements) loop
@@ -576,7 +588,11 @@ protected
     list<Pointer<Equation>> eqns;
   algorithm
     if Flags.isSet(Flags.DUMPBACKENDINLINE) then
-      print("[" + getInstanceName() + "] Inlining: " + Equation.toString(eqn) + "\n");
+      print("\n[" + getInstanceName() + "] Inlining: ");
+      if not Iterator.isEmpty(iter) then
+        print("{" + Iterator.toString(iter) + "} ");
+      end if;
+      print(Equation.toString(eqn) + "\n");
     end if;
     eqns := Pointer.access(new_eqns);
 
@@ -620,10 +636,11 @@ protected
     input UnorderedSet<VariablePointer> set "new iterators";
     input Pointer<Integer> index;
   protected
-    Integer dim, sz, shift = 0;
+    Integer n, sz, shift = 0;
     list<Expression> rest;
     list<Pointer<Equation>> eqns;
     Type ty;
+    Dimension dim;
     ComponentRef iterator_name, lhs, rhs;
     Pointer<Variable> iterator_var;
     VariablePointers update_vars;
@@ -633,13 +650,16 @@ protected
     Boolean failed = false;
   algorithm
     if Flags.isSet(Flags.DUMPBACKENDINLINE) then
-      print("[" + getInstanceName() + "] Inlining: " + Equation.toString(eqn) + "\n");
+      print("\n[" + getInstanceName() + "] Inlining: ");
+      if not Iterator.isEmpty(iter) then
+        print("{" + Iterator.toString(iter) + "} ");
+      end if;
+      print(Equation.toString(eqn) + "\n");
     end if;
     eqns := Pointer.access(new_eqns);
 
     // split of the first argument as it is the dimension indicator
-    // ToDo: actually use it
-    Expression.INTEGER(dim) :: rest := args;
+    Expression.INTEGER(n) :: rest := args;
 
     // create an iterator that can be used multiple times
     iterator_name := ComponentRef.makeIterator(InstNode.newUniqueIterator(), Type.INTEGER());
@@ -652,55 +672,91 @@ protected
     subscript_exp := Expression.fromCref(iterator_name);
 
     for arg in rest loop
-      new_eqn := match arg
+      _ := match arg
         case Expression.CREF(cref = rhs) guard(not failed) algorithm
-          ty          := Expression.typeOf(arg);
-          sz          := Type.sizeOf(ty);
-
-          // if its scalar, create scalar assignment, otherwise create for-loop
-          // ToDo: resizables always need for-loop
-          if sz == 1 then
-            // SCALAR.
+          ty  := Expression.typeOf(arg);
+          sz  := Type.sizeOf(ty);
+          if Type.isArray(ty) then
+            dim := Type.nthDimension(ty, n);
+            sz  := Dimension.size(dim);
+            // if its size one, create scalar assignment, otherwise create for-loop
+            // ToDo: resizables always need for-loop
+            // ToDo: add subscripts to the correct dimension
+            if sz == 1 then
+              // SCALAR.
+              // properly subscript LHS with shift
+              lhs_sub     := Expression.INTEGER(shift+1);
+              lhs         := ComponentRef.mergeSubscripts(Subscript.fillWithWholeLeft({Subscript.INDEX(lhs_sub)}, n), cref);
+              lhs_exp     := Expression.fromCref(lhs);
+              // if its an array type RHS needs to be subscripted even though its of size 1
+              rhs         := ComponentRef.mergeSubscripts(Subscript.fillWithWholeLeft({Subscript.INDEX(Expression.INTEGER(1))}, n), rhs);
+              rhs_exp     := Expression.fromCref(rhs);
+              // the local iterator does not add anything, just take surrounding iterator
+              local_iter  := iter;
+            else
+              // ARRAY
+              // make a range of proper size to the rhs
+              range       := Expression.makeRange(Expression.INTEGER(1), NONE(), Expression.INTEGER(sz));
+              // add the new iterator
+              local_iter  := Iterator.addFrames(iter, {(iterator_name, range, NONE())});
+              // subscript the LHS with the shift+iterator
+              lhs_sub     := if shift == 0 then subscript_exp else Expression.MULTARY({Expression.INTEGER(shift), subscript_exp}, {}, Operator.makeAdd(Type.INTEGER()));
+              lhs         := ComponentRef.mergeSubscripts(Subscript.fillWithWholeLeft({Subscript.INDEX(lhs_sub)}, n), cref);
+              // subscript the LHS only with iterator
+              rhs         := ComponentRef.mergeSubscripts(Subscript.fillWithWholeLeft({Subscript.INDEX(subscript_exp)}, n), rhs);
+              // lower the iterators to add proper variable nodes
+              lhs_exp     := Expression.map(Expression.fromCref(lhs), function BackendDAE.lowerComponentReferenceExp(variables = update_vars, complete = false));
+              rhs_exp     := Expression.map(Expression.fromCref(rhs), function BackendDAE.lowerComponentReferenceExp(variables = update_vars, complete = false));
+            end if;
+          else
+            // SCALAR
             // properly subscript LHS with shift
             lhs_sub     := Expression.INTEGER(shift+1);
-            lhs         := ComponentRef.mergeSubscripts({Subscript.INDEX(lhs_sub)}, cref);
-            // if its an array type RHS needs to be subscripted even though its of size 1
-            if Type.isArray(ty) then
-              rhs       := ComponentRef.mergeSubscripts({Subscript.INDEX(Expression.INTEGER(1))}, rhs);
-            end if;
+            lhs         := ComponentRef.mergeSubscripts(Subscript.fillWithWholeLeft({Subscript.INDEX(lhs_sub)}, n), cref);
+            lhs_exp     := Expression.fromCref(lhs);
+            rhs_exp     := Expression.fromCref(rhs);
             // the local iterator does not add anything, just take surrounding iterator
             local_iter  := iter;
-            // create a new equation
-            new_eqn     := Equation.makeAssignment(Expression.fromCref(lhs), Expression.fromCref(rhs), index, NBEquation.SIMULATION_STR, local_iter, attr);
-          else
-            // make a range of proper size to the rhs
-            range       := Expression.makeRange(Expression.INTEGER(1), NONE(), Expression.INTEGER(sz));
-            // add the new iterator
-            local_iter  := Iterator.addFrames(iter, {(iterator_name, range, NONE())});
-            // subscript the LHS with the shift+iterator
-            lhs_sub     := if shift == 0 then subscript_exp else Expression.MULTARY({Expression.INTEGER(shift), subscript_exp}, {}, Operator.makeAdd(Type.INTEGER()));
-            lhs         := ComponentRef.mergeSubscripts({Subscript.INDEX(lhs_sub)}, cref);
-            // subscript the LHS only with iterator
-            rhs         := ComponentRef.mergeSubscripts({Subscript.INDEX(subscript_exp)}, rhs);
-            // lower the iterators to add proper variable nodes
-            lhs_exp     := Expression.map(Expression.fromCref(lhs), function BackendDAE.lowerComponentReferenceExp(variables = update_vars, complete = false));
-            rhs_exp     := Expression.map(Expression.fromCref(rhs), function BackendDAE.lowerComponentReferenceExp(variables = update_vars, complete = false));
-            // create the new equation
-            new_eqn     := Equation.makeAssignment(lhs_exp, rhs_exp, index, NBEquation.SIMULATION_STR, local_iter, attr);
           end if;
+
+          // create the new equation
+          new_eqn     := Equation.makeAssignment(lhs_exp, rhs_exp, index, NBEquation.SIMULATION_STR, local_iter, attr);
           // bump the shift adding the size of this last equation
           shift := shift + sz;
-        then new_eqn;
+
+          eqns := new_eqn :: eqns;
+          if Flags.isSet(Flags.DUMPBACKENDINLINE) then
+            print("-- Result: " + Equation.pointerToString(new_eqn) + "\n");
+          end if;
+        then ();
+
+        case Expression.ARRAY() guard(not failed and Expression.isLiteral(arg)) algorithm
+          // a literal expression, does not need subscripting
+          for elem in arg.elements loop
+            ty          := Expression.typeOf(elem);
+            sz          := Type.sizeOf(ty);
+            // properly subscript LHS with shift
+            lhs_sub     := Expression.INTEGER(shift+1);
+            lhs         := ComponentRef.mergeSubscripts(Subscript.fillWithWholeLeft({Subscript.INDEX(lhs_sub)}, n), cref);
+            lhs_exp     := Expression.fromCref(lhs);
+
+            // create the new equation
+            new_eqn     := Equation.makeAssignment(lhs_exp, elem, index, NBEquation.SIMULATION_STR, iter, attr);
+
+            // bump the shift adding the size of this last equation
+            shift := shift + sz;
+
+            eqns := new_eqn :: eqns;
+            if Flags.isSet(Flags.DUMPBACKENDINLINE) then
+              print("-- Result: " + Equation.pointerToString(new_eqn) + "\n");
+            end if;
+          end for;
+        then ();
 
         else algorithm
           failed := true;
-        then Pointer.create(eqn);
+        then ();
       end match;
-
-      eqns := new_eqn :: eqns;
-      if Flags.isSet(Flags.DUMPBACKENDINLINE) then
-        print("-- Result: " + Equation.pointerToString(new_eqn) + "\n");
-      end if;
     end for;
 
     if not failed then

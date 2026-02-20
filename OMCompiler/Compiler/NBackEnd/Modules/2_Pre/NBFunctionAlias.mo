@@ -195,12 +195,15 @@ protected
       output ComponentRef name;
     protected
       Type new_ty = ty;
+      list<Subscript> subs;
     algorithm
       if not Iterator.isEmpty(iter) then
-        new_ty := Type.liftArrayRightList(ty, list(Dimension.fromInteger(i) for i in Iterator.sizes(iter)));
+        new_ty    := Type.liftArrayRightList(ty, list(Dimension.fromInteger(i) for i in Iterator.sizes(iter)));
         (_, name) := BVariable.makeAuxVar(NBVariable.FUNCTION_STR, Pointer.access(aux_index), new_ty, init);
-        // add iterators to subscripts of auxilliary variable
-        name      := ComponentRef.mergeSubscripts(Iterator.normalizedSubscripts(iter), name, true, true);
+        // add iterators to subscripts of auxilliary variable. fill with WHOLE if necessary
+        subs      := Iterator.normalizedSubscripts(iter);
+        subs      := Subscript.fillWithWholeLeft(subs, Type.dimensionCount(new_ty));
+        name      := ComponentRef.mergeSubscripts(subs, name, true, true);
       else
         (_, name) := BVariable.makeAuxVar(NBVariable.FUNCTION_STR, Pointer.access(aux_index), new_ty, init);
       end if;
@@ -474,7 +477,8 @@ protected
           Call call;
         case Expression.CALL(call = call as Call.TYPED_CALL())
           guard("cat" == AbsynUtil.pathFirstIdent(Function.nameConsiderBuiltin(Call.typedFunction(call)))) algorithm
-          call.arguments  := listHead(call.arguments) :: list(introduceAlias(arg, map, aux_index, iter, init) for arg in listRest(call.arguments));
+          call.arguments  := listHead(call.arguments) :: list(if Expression.isLiteral(arg) or Expression.isCref(arg) then arg
+            else introduceAlias(arg, map, aux_index, iter, init) for arg in listRest(call.arguments));
           exp.call        := call;
           id              := CALL_ID(exp, new_iter); // this might cause double aliasing but the same cat() call will probably not exist more than once anyway
         then exp;
