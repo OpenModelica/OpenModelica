@@ -2148,16 +2148,27 @@ protected function dumpExtractedVars
   input String comment;
   output String outstring="";
 protected
-  DAE.ComponentRef cr;
+  DAE.ComponentRef cr, cr1, creflast;
+  Boolean isRec;
+  Absyn.Path path;
+  list<String> recordvarlist;
 algorithm
   outstring := "\n  //"+ comment;
+  recordvarlist := {};
   for var in invar loop
     cr := BackendVariable.varCref(var);
+    // check for record type variable and extract the path of the record to print in modelica format
+    (cr1, isRec) := ComponentReference.crefGetFirstRec(cr);
     if BackendVariable.varHasUncertainValueRefine(var) then
       outstring := outstring + "\n  parameter "  + DAEDump.daeTypeStr(var.varType) + " " + System.stringReplace(ComponentReference.crefStr(cr), ".", "_") + ";";
     elseif BackendVariable.isParam(var) then
       outstring := outstring + "\n  parameter "  + DAEDump.daeTypeStr(var.varType) + " " + System.stringReplace(ComponentReference.crefStr(cr), ".", "_") + " = " + ExpressionDump.printOptExpStr(var.bindExp) +";";
-    else
+    elseif isRec and not listMember(ComponentReference.crefStr(cr1), recordvarlist) then
+      creflast := ComponentReference.crefLastCref(cr1);
+      path := Types.getRecordPath(ComponentReference.crefType(creflast));
+      recordvarlist := ComponentReference.crefStr(cr1) :: recordvarlist;
+      outstring := outstring + "\n  "  + AbsynUtil.pathString(path) + " " + System.stringReplace(ComponentReference.crefStr(cr1), ".", "_") + ";";
+    elseif not isRec then
       outstring := outstring + "\n  "  + DAEDump.daeTypeStr(var.varType) + " " + System.stringReplace(ComponentReference.crefStr(cr), ".", "_") + ";";
     end if;
   end for;
