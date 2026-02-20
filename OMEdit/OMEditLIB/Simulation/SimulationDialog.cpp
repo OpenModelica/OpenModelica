@@ -1123,6 +1123,8 @@ bool SimulationDialog::translateModel(QString simulationParameters)
       // select dataReconciliationStateEstimation preOptModules for both dataReconciliation and stateEstimation
       MainWindow::instance()->getOMCProxy()->setCommandLineOptions(QString("--preOptModules+=%1").arg("dataReconciliationStateEstimation"));
     }
+    // pass the -sx flag via simflags to be used in the data reconciliation and state estimation algorithms (#14864)
+    simulationParameters.append(", simflags=").append("\"").append(QString("-sx=%1").arg(mpLibraryTreeItem->mSimulationOptions.getDataReconciliationMeasurementInputFile())).append("\"");
   }
   // set linearization dump language
   if (mpLinearizationDumpLanguageComboBox->currentText() != QStringLiteral("none")) {
