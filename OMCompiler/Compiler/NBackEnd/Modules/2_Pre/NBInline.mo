@@ -672,7 +672,7 @@ protected
     subscript_exp := Expression.fromCref(iterator_name);
 
     for arg in rest loop
-      new_eqn := match arg
+      _ := match arg
         case Expression.CREF(cref = rhs) guard(not failed) algorithm
           ty  := Expression.typeOf(arg);
           sz  := Type.sizeOf(ty);
@@ -723,34 +723,40 @@ protected
           new_eqn     := Equation.makeAssignment(lhs_exp, rhs_exp, index, NBEquation.SIMULATION_STR, local_iter, attr);
           // bump the shift adding the size of this last equation
           shift := shift + sz;
-        then new_eqn;
 
-        case _ guard(not failed and Expression.isLiteral(arg)) algorithm
+          eqns := new_eqn :: eqns;
+          if Flags.isSet(Flags.DUMPBACKENDINLINE) then
+            print("-- Result: " + Equation.pointerToString(new_eqn) + "\n");
+          end if;
+        then ();
+
+        case Expression.ARRAY() guard(not failed and Expression.isLiteral(arg)) algorithm
           // a literal expression, does not need subscripting
-          ty          := Expression.typeOf(arg);
-          sz          := Type.sizeOf(ty);
-          // properly subscript LHS with shift
-          lhs_sub     := Expression.INTEGER(shift+1);
-          lhs         := ComponentRef.mergeSubscripts(Subscript.fillWithWholeLeft({Subscript.INDEX(lhs_sub)}, n), cref);
-          lhs_exp     := Expression.fromCref(lhs);
+          for elem in arg.elements loop
+            ty          := Expression.typeOf(elem);
+            sz          := Type.sizeOf(ty);
+            // properly subscript LHS with shift
+            lhs_sub     := Expression.INTEGER(shift+1);
+            lhs         := ComponentRef.mergeSubscripts(Subscript.fillWithWholeLeft({Subscript.INDEX(lhs_sub)}, n), cref);
+            lhs_exp     := Expression.fromCref(lhs);
 
-          // create the new equation
-          new_eqn     := Equation.makeAssignment(lhs_exp, arg, index, NBEquation.SIMULATION_STR, iter, attr);
+            // create the new equation
+            new_eqn     := Equation.makeAssignment(lhs_exp, elem, index, NBEquation.SIMULATION_STR, iter, attr);
 
-          // bump the shift adding the size of this last equation
-          shift := shift + sz;
-        then new_eqn;
+            // bump the shift adding the size of this last equation
+            shift := shift + sz;
 
+            eqns := new_eqn :: eqns;
+            if Flags.isSet(Flags.DUMPBACKENDINLINE) then
+              print("-- Result: " + Equation.pointerToString(new_eqn) + "\n");
+            end if;
+          end for;
+        then ();
 
         else algorithm
           failed := true;
-        then Pointer.create(eqn);
+        then ();
       end match;
-
-      eqns := new_eqn :: eqns;
-      if Flags.isSet(Flags.DUMPBACKENDINLINE) then
-        print("-- Result: " + Equation.pointerToString(new_eqn) + "\n");
-      end if;
     end for;
 
     if not failed then
