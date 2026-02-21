@@ -1208,6 +1208,7 @@ protected
       local
         Integer skip;
         list<Integer> rest, tail;
+        list<Dimension> rest_dim, tail_dim;
         Type sub_ty;
         list<Type> rest_ty;
         Pointer<Variable> parent;
@@ -1263,11 +1264,18 @@ protected
       case (Type.ARRAY(), rest) guard(Dimension.sizesProduct(ty.dimensions, true) == 1) algorithm
       then resolveSkips(index, ty.elementType, rest, cref, fullmap);
 
-      // skip to an array element
+      // skip to an array element with more or equal skips to dimensions
       case (Type.ARRAY(), rest) guard List.compareLength(rest, ty.dimensions) >= 0 algorithm
         (rest, tail) := List.split(rest, listLength(ty.dimensions));
         index := locationToIndex(list(Dimension.size(dim, true) for dim in ty.dimensions), rest, index);
       then resolveSkips(index, ty.elementType, tail, cref, fullmap);
+
+      // skip to an array with less skips then dimensions
+      case (Type.ARRAY(), rest) algorithm
+        (rest_dim, tail_dim) := List.split(ty.dimensions, listLength(rest));
+        index := locationToIndex(list(Dimension.size(dim, true) for dim in rest_dim), rest, index);
+        ty.dimensions := tail_dim;
+      then (index, ty);
 
       // skip for tuple or array, but the skip is too large
       case (_, skip::_) guard(Type.isTuple(ty) or Type.isArray(ty)) algorithm
