@@ -672,7 +672,7 @@ protected
     subscript_exp := Expression.fromCref(iterator_name);
 
     for arg in rest loop
-      _ := match arg
+      failed := match arg
         case Expression.CREF(cref = rhs) guard(not failed) algorithm
           ty  := Expression.typeOf(arg);
           sz  := Type.sizeOf(ty);
@@ -728,34 +728,14 @@ protected
           if Flags.isSet(Flags.DUMPBACKENDINLINE) then
             print("-- Result: " + Equation.pointerToString(new_eqn) + "\n");
           end if;
-        then ();
+        then false;
 
+        // inline for literals down to element, nested arrays possible
         case Expression.ARRAY() guard(not failed and Expression.isLiteral(arg)) algorithm
-          // a literal expression, does not need subscripting
-          for elem in arg.elements loop
-            ty          := Expression.typeOf(elem);
-            sz          := Type.sizeOf(ty);
-            // properly subscript LHS with shift
-            lhs_sub     := Expression.INTEGER(shift+1);
-            lhs         := ComponentRef.mergeSubscripts(Subscript.fillWithWholeLeft({Subscript.INDEX(lhs_sub)}, n), cref);
-            lhs_exp     := Expression.fromCref(lhs);
+          (eqns, shift) := inlineCatCallLiterals(arg, cref, iter, attr, n, index, failed, eqns, shift);
+        then false;
 
-            // create the new equation
-            new_eqn     := Equation.makeAssignment(lhs_exp, elem, index, NBEquation.SIMULATION_STR, iter, attr);
-
-            // bump the shift adding the size of this last equation
-            shift := shift + sz;
-
-            eqns := new_eqn :: eqns;
-            if Flags.isSet(Flags.DUMPBACKENDINLINE) then
-              print("-- Result: " + Equation.pointerToString(new_eqn) + "\n");
-            end if;
-          end for;
-        then ();
-
-        else algorithm
-          failed := true;
-        then ();
+        else true;
       end match;
     end for;
 
@@ -764,6 +744,53 @@ protected
       eqn := Equation.DUMMY_EQUATION();
     end if;
   end inlineCatCall;
+
+  function inlineCatCallLiterals
+    "recursively inlines arrays of literal expressions that were an argument to a cat() call"
+    input Expression exp;
+    input ComponentRef cref;
+    input Iterator iter;
+    input EquationAttributes attr;
+    input Integer n;
+    input Pointer<Integer> index;
+    input Boolean failed;
+    input output list<Pointer<Equation>> eqns;
+    input output Integer shift;
+  algorithm
+    _ := match exp
+      local
+        Integer sz;
+        ComponentRef lhs;
+        Expression lhs_sub, lhs_exp;
+        Pointer<Equation> new_eqn;
+
+      case Expression.ARRAY() guard(not failed and Expression.isLiteral(exp)) algorithm
+        // a literal expression, does not need subscripting
+        for elem in exp.elements loop
+          (eqns, shift) := inlineCatCallLiterals(elem, cref, iter, attr, n, index, failed, eqns, shift);
+        end for;
+      then ();
+
+      else algorithm
+        sz          := Type.sizeOf(Expression.typeOf(exp));
+        // properly subscript LHS with shift
+        lhs_sub     := Expression.INTEGER(shift+1);
+        lhs         := ComponentRef.mergeSubscripts(Subscript.fillWithWholeLeft({Subscript.INDEX(lhs_sub)}, n), cref);
+        lhs_exp     := Expression.fromCref(lhs);
+
+        // create the new equation
+        new_eqn     := Equation.makeAssignment(lhs_exp, exp, index, NBEquation.SIMULATION_STR, iter, attr);
+
+        // bump the shift adding the size of this last equation
+        shift := shift + sz;
+
+        eqns := new_eqn :: eqns;
+        if Flags.isSet(Flags.DUMPBACKENDINLINE) then
+          print("-- Result: " + Equation.pointerToString(new_eqn) + "\n");
+        end if;
+      then ();
+    end match;
+  end inlineCatCallLiterals;
 
   function createInlinedEquation
     "used for inlining record, tuple and array equations.
