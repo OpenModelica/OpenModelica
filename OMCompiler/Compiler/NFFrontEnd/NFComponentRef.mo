@@ -921,7 +921,7 @@ public
         subs := {};
         for size in listReverse(sizes_) loop
           if size <> 1 then
-            subs := Subscript.SLICE(Expression.RANGE(Type.INTEGER(), Expression.INTEGER(1), NONE(), Expression.INTEGER(size))) :: subs;
+            subs := Subscript.SLICE(Expression.makeRange(Expression.INTEGER(1), NONE(), Expression.INTEGER(size))) :: subs;
           end if;
         end for;
       then subscriptsAllWithWhole(cref.restCref, subs :: accumSubs);
