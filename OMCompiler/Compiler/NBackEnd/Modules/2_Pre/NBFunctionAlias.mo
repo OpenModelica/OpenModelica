@@ -469,26 +469,29 @@ protected
     if isSome(aux_opt) then
       aux := Util.getOption(aux_opt);
       exp := aux.replacer;
-      ty := Expression.typeOf(exp);
     else
       // create auxilliary variables for each cat call argument as well (needed for inline)
-      exp := match exp
+      (exp, aux_opt) := match exp
         local
           Call call;
+
         case Expression.CALL(call = call as Call.TYPED_CALL())
           guard("cat" == AbsynUtil.pathFirstIdent(Function.nameConsiderBuiltin(Call.typedFunction(call)))) algorithm
           call.arguments  := listHead(call.arguments) :: list(if Expression.isLiteral(arg) or Expression.isCref(arg) then arg
             else introduceAlias(arg, map, aux_index, iter, init) for arg in listRest(call.arguments));
           exp.call        := call;
-          id              := CALL_ID(exp, new_iter); // this might cause double aliasing but the same cat() call will probably not exist more than once anyway
-        then exp;
-        else exp;
+          id              := CALL_ID(exp, new_iter);
+          // double check if after replacing cat() call arguments the ID already exists
+          aux_opt         := UnorderedMap.get(id, map);
+        then (exp, aux_opt);
+        else (exp, aux_opt);
       end match;
 
       // for initial systems create parameters, otherwise use type to determine variable kind
       ty := Expression.typeOf(exp);
-      exp := match ty
-        case Type.TUPLE() algorithm
+      exp := match (aux_opt, ty)
+        case (SOME(aux), _) then aux.replacer;
+        case (_, Type.TUPLE()) algorithm
           names   := list(Call_Aux.createName(sub_ty, new_iter, aux_index, init) for sub_ty in ty.types);
           tpl_lst := list(if ComponentRef.size(cref, true) == 0 then Expression.fromCref(ComponentRef.WILD()) else Expression.fromCref(cref) for cref in names);
         then Expression.TUPLE(ty, tpl_lst);
@@ -496,11 +499,13 @@ protected
           name := Call_Aux.createName(ty, new_iter, aux_index, init);
         then Expression.fromCref(name);
       end match;
-    end if;
 
-    // create auxilliary and add to map
-    aux := CALL_AUX(exp, if Type.isDiscrete(ty) then EquationKind.DISCRETE else EquationKind.CONTINUOUS, false);
-    UnorderedMap.add(id, aux, map);
+      if Util.isNone(aux_opt) then
+        // create auxilliary and add to map if there was none before
+        aux := CALL_AUX(exp, if Type.isDiscrete(ty) then EquationKind.DISCRETE else EquationKind.CONTINUOUS, false);
+        UnorderedMap.add(id, aux, map);
+      end if;
+    end if;
   end introduceAlias;
 
   function checkCallReplacement
