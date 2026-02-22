@@ -932,6 +932,9 @@ public
       case SLICE() then listHead(Type.arrayDims(Expression.typeOf(subscript.slice)));
       case WHOLE() then Dimension.UNKNOWN();
       case SPLIT_INDEX() then Dimension.fromInteger(1);
+      else algorithm
+        Error.assertion(false, getInstanceName() + " got wrong subscript " + toString(subscript) + "\n", sourceInfo());
+      then fail();
     end match;
   end toDimension;
 

@@ -1188,6 +1188,9 @@ public
               case Subscript.SLICE() then Subscript.toDimension(sub) :: subbed_dims;
               case Subscript.WHOLE() then dim :: subbed_dims;
               case Subscript.SPLIT_INDEX() then subbed_dims;
+              else algorithm
+                Error.assertion(false, getInstanceName() + " got wrong subscript " + Subscript.toString(sub) + "\n", sourceInfo());
+              then fail();
             end match;
           end for;
 
