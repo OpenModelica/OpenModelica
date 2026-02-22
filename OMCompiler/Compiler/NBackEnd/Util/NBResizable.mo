@@ -96,8 +96,8 @@ public
 
         if debug then
           print(optimalValuesToString(optimal_values, StringUtil.headline_2("[debug] Initial Resizable Parameter Values:") + "\n"));
-          print(List.toString(UnorderedMap.keyList(c2pi), Expression.toString, StringUtil.headline_2("[debug] Final Inequality Constraints:"), "  0 >= ", "\n  0 >= ", "\n") + "\n");
-          print(List.toString(UnorderedMap.keyList(c2pe), Expression.toString, StringUtil.headline_2("[debug] Final Equality Constraints:"), "  0 = ", "\n  0 = ", "\n") + "\n");
+          print(List.toStringCustom(UnorderedMap.keyList(c2pi), Expression.toString, StringUtil.headline_2("[debug] Final Inequality Constraints:"), "  0 >= ", "\n  0 >= ", "\n") + "\n");
+          print(List.toStringCustom(UnorderedMap.keyList(c2pe), Expression.toString, StringUtil.headline_2("[debug] Final Equality Constraints:"), "  0 = ", "\n  0 = ", "\n") + "\n");
         end if;
 
         // compute the optimal values by checking constraints

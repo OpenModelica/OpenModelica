@@ -327,15 +327,15 @@ protected
       print(StringUtil.headline_3("Simulation Function Alias"));
       debug_str := list((Call_Aux.toString(Util.tuple22(tpl)), Call_Id.toString(Util.tuple21(tpl))) for tpl in debug_lst_sim);
       debug_max_length := max(stringLength(Util.tuple21(tpl)) for tpl in debug_str) + 3;
-      print(List.toString(debug_str, function functionAliasTplString(max_length = debug_max_length), "", "  ", "\n  ", "\n\n"));
+      print(List.toString(debug_str, function functionAliasTplString(max_length = debug_max_length), List.Style.NEWLINE) + "\n\n");
       print(StringUtil.headline_3("Initial Function Alias"));
       debug_str := list((Call_Aux.toString(Util.tuple22(tpl)), Call_Id.toString(Util.tuple21(tpl))) for tpl in debug_lst_ini);
       debug_max_length := max(stringLength(Util.tuple21(tpl)) for tpl in debug_str) + 3;
-      print(List.toString(debug_str, function functionAliasTplString(max_length = debug_max_length), "", "  ", "\n  ", "\n\n"));
+      print(List.toString(debug_str, function functionAliasTplString(max_length = debug_max_length), List.Style.NEWLINE) + "\n\n");
       print(StringUtil.headline_3("Clocked Function Alias"));
       debug_str := list((ComponentRef.toString(Util.tuple22(tpl)), BClock.toString(Util.tuple21(tpl))) for tpl in UnorderedMap.toList(clock_map));
       debug_max_length := max(stringLength(Util.tuple21(tpl)) for tpl in debug_str) + 3;
-      print(List.toString(debug_str, function functionAliasTplString(max_length = debug_max_length), "", "  ", "\n  ", "\n\n"));
+      print(List.toString(debug_str, function functionAliasTplString(max_length = debug_max_length), List.Style.NEWLINE_TAB) + "\n\n");
     end if;
   end functionAliasDefault;
 

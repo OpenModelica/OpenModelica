@@ -71,7 +71,7 @@ public
   algorithm
     str := match iter
       case ARRAY_ITERATOR()
-      then List.toString(iter.arrays, function Array.toString(
+      then List.toStringCustom(iter.arrays, function Array.toString(
         inPrintFunc   = Expression.toString,
         inNameStr     = "",
         inBeginStr    = "{",

@@ -784,7 +784,7 @@ public
       case INDEX() then Expression.toString(subscript.index);
       case SLICE() then Expression.toString(subscript.slice);
       case EXPANDED_SLICE()
-        then List.toString(subscript.indices, toString, "", "{", ", ", "}", false);
+        then List.toString(subscript.indices, toString, List.Style.FLAT_CURLY);
       case WHOLE() then ":";
       case SPLIT_PROXY()
         then "<" + InstNode.name(subscript.origin) + ", " + InstNode.name(subscript.parent) + ">";
@@ -797,7 +797,7 @@ public
     input list<Subscript> subscripts;
     output String string;
   algorithm
-    string := List.toString(subscripts, toString, "", "[", ", ", "]", false);
+    string := List.toStringCustom(subscripts, toString, "", "[", ", ", "]", false);
   end toStringList;
 
   function toFlatString
@@ -811,7 +811,7 @@ public
       case INDEX() then Expression.toFlatString(subscript.index, format);
       case SLICE() then Expression.toFlatString(subscript.slice, format);
       case EXPANDED_SLICE()
-        then List.toString(subscript.indices, toString, "", "{", ", ", "}", false);
+        then List.toStringCustom(subscript.indices, toString, "", "{", ", ", "}", false);
       case WHOLE() then ":";
       case SPLIT_INDEX()
         then "<" + InstNode.name(subscript.node) + ", " + String(subscript.dimIndex) + ">";
@@ -823,7 +823,7 @@ public
     input BaseModelica.OutputFormat format;
     output String string;
   algorithm
-    string := List.toString(subscripts, function toFlatString(format = format), "", "[", ",", "]", false);
+    string := List.toStringCustom(subscripts, function toFlatString(format = format), "", "[", ",", "]", false);
   end toFlatStringList;
 
   function toJSON

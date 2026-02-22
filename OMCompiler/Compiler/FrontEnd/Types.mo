@@ -2405,22 +2405,22 @@ algorithm
       Absyn.Path path;
 
     case (DAE.T_INTEGER(varLst = vars))
-      then List.toString(vars, printVarStr, "Integer", "(", ", ", ")", false);
+      then List.toStringCustom(vars, printVarStr, "Integer", "(", ", ", ")", false);
 
     case (DAE.T_REAL(varLst = vars))
-      then List.toString(vars, printVarStr, "Real", "(", ", ", ")", false);
+      then List.toStringCustom(vars, printVarStr, "Real", "(", ", ", ")", false);
 
     case (DAE.T_STRING(varLst = vars))
-      then List.toString(vars, printVarStr, "String", "(", ", ", ")", false);
+      then List.toStringCustom(vars, printVarStr, "String", "(", ", ", ")", false);
 
     case (DAE.T_BOOL(varLst = vars))
-      then List.toString(vars, printVarStr, "Boolean", "(", ", ", ")", false);
+      then List.toStringCustom(vars, printVarStr, "Boolean", "(", ", ", ")", false);
 
     case (DAE.T_CLOCK(varLst = vars))
-      then List.toString(vars, printVarStr, "Clock", "(", ", ", ")", false);
+      then List.toStringCustom(vars, printVarStr, "Clock", "(", ", ", ")", false);
 
     case (DAE.T_ENUMERATION(literalVarLst = vars))
-      then List.toString(vars, printVarStr, "Enumeration", "(", ", ", ")", false);
+      then List.toStringCustom(vars, printVarStr, "Enumeration", "(", ", ", ")", false);
 
     case (DAE.T_SUBTYPE_BASIC(complexClassType = st, complexType = t, varLst = vars))
       equation

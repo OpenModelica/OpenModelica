@@ -4867,7 +4867,7 @@ algorithm
 
     if isSome(ann) then
       SOME(Absyn.Annotation.ANNOTATION(elementArgs = eargs)) := ann;
-      annotationString := List.toString(eargs, Dump.unparseElementArgStr, "", "(", ", ", ")");
+      annotationString := List.toString(eargs, Dump.unparseElementArgStr, List.Style.FLAT_BRACKETS);
     else
       annotationString := "()";
     end if;

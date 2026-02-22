@@ -312,7 +312,7 @@ public
           if not listEmpty(failed_inner) then
             if Flags.isSet(Flags.TEARING_DUMP) then
               err_str := " Following inner equations could not be solved explicitely:\n"
-                + List.toString(failed_inner, function StrongComponent.toString(index = -1), "" ,"" , "\n", "");
+                + List.toString(failed_inner, function StrongComponent.toString(index = -1), List.Style.NEWLINE);
             else
               err_str := " Use -d=tearingdump for more information.";
             end if;

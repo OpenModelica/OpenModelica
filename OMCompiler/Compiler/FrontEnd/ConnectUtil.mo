@@ -1303,7 +1303,7 @@ algorithm
   SetTrieNode.SET_TRIE_NODE(nodes = nodes) := trie;
 
   id_nosubs := ComponentReference.crefFirstIdent(cref);
-  subs_str := List.toString(ComponentReference.crefFirstSubs(cref),
+  subs_str := List.toStringCustom(ComponentReference.crefFirstSubs(cref),
     ExpressionDump.printSubscriptStr, "", "[", ",", "]", false);
   id_subs := id_nosubs + subs_str;
 

@@ -122,9 +122,9 @@ public
     input output String str;
   algorithm
     str := StringUtil.headline_4(str);
-    str := str + "### Iteration Variables:\n" + Slice.lstToString(set.iteration_vars, BVariable.pointerToString);
-    str := str + "\n### Residual Equations:\n" + Slice.lstToString(set.residual_eqns, function Equation.pointerToString(str = ""));
-    str := str + "\n### Inner Equations:\n" + Array.toString(set.innerEquations, function StrongComponent.toString(index = -1), "", "\t", "\n\t", "");
+    str := str + "### Iteration Variables:\n" + Slice.lstToString(set.iteration_vars, BVariable.pointerToString, "    ");
+    str := str + "\n### Residual Equations:\n" + Slice.lstToString(set.residual_eqns, function Equation.pointerToString(str = "    "));
+    str := str + "\n### Inner Equations:\n" + Array.toString(set.innerEquations, function StrongComponent.toString(index = -1), "", "    ", "\n  ", "");
     if Util.isSome(set.jac) then
       str := str + "\n" + BJacobian.toString(Util.getOption(set.jac), "NLS");
     end if;
@@ -495,7 +495,7 @@ protected
           failed_vars := list(var for var guard(Slice.check(var, function NBVariable.isDiscontinuous(init = init))) in guru_vars);
           if not listEmpty(failed_vars) then
             Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed. Following variables cannot be chosen as iteration variables because they are discontinuous:\n"
-              + List.toString(failed_vars, function Slice.toString(func = BVariable.pointerToString, maxLength = 10), "", "\t" , "\n\t", "")});
+              + List.toString(failed_vars, function Slice.toString(func = BVariable.pointerToString, maxLength = 10), List.Style.NEWLINE_TAB)});
             fail();
           end if;
 
@@ -571,7 +571,7 @@ protected
             // if not variable could be assigned in a full circle of checking all equations the problem is impossible to solve
             if not var_assigned then
               Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed. Following variables could not be solved as inner variables:\n"
-                + List.toString(UnorderedMap.valueList(unsolved_inner_vars), function Slice.toString(func = BVariable.pointerToString, maxLength = 10), "", "\t" , "\n\t", "")});
+                + List.toString(UnorderedMap.valueList(unsolved_inner_vars), function Slice.toString(func = BVariable.pointerToString, maxLength = 10), List.Style.NEWLINE_TAB)});
               fail();
             end if;
           end while;

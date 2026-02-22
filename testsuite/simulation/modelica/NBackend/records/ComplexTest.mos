@@ -146,7 +146,7 @@ simulate(ComplexTestNB.T10); getErrorString();
 //
 // Created Record Parameter Binding Equations (1):
 // *************************************************
-// 	[RECD] (2) z3 = Complex.'+'(z1, z2) ($RES_BND_6)
+// 	[RECD] (2) z3 = Complex.'+'(z1, z2); ($RES_BND_6)
 //
 // Created External Object Parameter Binding Equations (0):
 // **********************************************************
@@ -154,7 +154,7 @@ simulate(ComplexTestNB.T10); getErrorString();
 //
 // record SimulationResult
 //     resultFile = "ComplexTestNB.T01_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'ComplexTestNB.T01', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'ComplexTestNB.T01', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
@@ -175,8 +175,8 @@ simulate(ComplexTestNB.T10); getErrorString();
 //
 // Created Record Binding Equations (2):
 // ***************************************
-// 	[RECD] (2) z2 = Complex(0.0, 1.0) ($RES_BND_4)
-// 	[RECD] (2) z1 = Complex(1.0, 0.0) ($RES_BND_3)
+// 	[RECD] (2) z2 = Complex(0.0, 1.0); ($RES_BND_4)
+// 	[RECD] (2) z1 = Complex(1.0, 0.0); ($RES_BND_3)
 //
 // Created Parameter Binding Equations (0):
 // ******************************************
@@ -320,7 +320,7 @@ simulate(ComplexTestNB.T10); getErrorString();
 //
 // Created Record Binding Equations (1):
 // ***************************************
-// 	[RECD] (2) z1 = Complex.'constructor'.fromReal(time, 0.0) ($RES_BND_0)
+// 	[RECD] (2) z1 = Complex.'constructor'.fromReal(time, 0.0); ($RES_BND_0)
 //
 // Created Parameter Binding Equations (0):
 // ******************************************
@@ -356,8 +356,8 @@ simulate(ComplexTestNB.T10); getErrorString();
 //
 // Created Record Binding Equations (2):
 // ***************************************
-// 	[RECD] (2) z2 = Complex(0.0, 1.0) ($RES_BND_4)
-// 	[RECD] (2) z1 = Complex.'constructor'.fromReal(time, 0.0) ($RES_BND_3)
+// 	[RECD] (2) z2 = Complex(0.0, 1.0); ($RES_BND_4)
+// 	[RECD] (2) z1 = Complex.'constructor'.fromReal(time, 0.0); ($RES_BND_3)
 //
 // Created Parameter Binding Equations (0):
 // ******************************************
@@ -393,7 +393,7 @@ simulate(ComplexTestNB.T10); getErrorString();
 //
 // Created Record Binding Equations (1):
 // ***************************************
-// 	[RECD] (2) v0 = Complex(1.0, 0.0) ($RES_BND_2)
+// 	[RECD] (2) v0 = Complex(1.0, 0.0); ($RES_BND_2)
 //
 // Created Parameter Binding Equations (0):
 // ******************************************
@@ -431,7 +431,7 @@ simulate(ComplexTestNB.T10); getErrorString();
 //
 // Created Record Binding Equations (1):
 // ***************************************
-// 	[RECD] (2) v0 = Complex(1.0, 0.0) ($RES_BND_4)
+// 	[RECD] (2) v0 = Complex(1.0, 0.0); ($RES_BND_4)
 //
 // Created Parameter Binding Equations (0):
 // ******************************************
@@ -455,10 +455,10 @@ simulate(ComplexTestNB.T10); getErrorString();
 // ""
 // Created Continuous Binding Equations (4):
 // *******************************************
-// 	[SCAL] (1) z.im = b ($RES_BND_3)
-// 	[SCAL] (1) z.re = a ($RES_BND_2)
-// 	[SCAL] (1) b = 1.0 ($RES_BND_1)
-// 	[SCAL] (1) a = 1.0 ($RES_BND_0)
+// 	[SCAL] (1) z.im = b; ($RES_BND_3)
+// 	[SCAL] (1) z.re = a; ($RES_BND_2)
+// 	[SCAL] (1) b = 1.0; ($RES_BND_1)
+// 	[SCAL] (1) a = 1.0; ($RES_BND_0)
 //
 // Created Clocked Binding Equations (0):
 // ****************************************
