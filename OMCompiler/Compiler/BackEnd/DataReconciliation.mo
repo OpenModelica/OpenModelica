@@ -3772,7 +3772,7 @@ algorithm
     case (BackendDAE.COMPLEX_EQUATION(left = e1, right = e2))
       equation
         s1 = ExpressionDump.printExp2Str(e1, "", NONE(), NONE());
-        s2 = ExpressionDump.printExpStr(e2);
+        s2 = ExpressionDump.printExp2Str(e2, "", NONE(), NONE());
         res = stringAppendList({s1," = ",s2});
       then
         res;
