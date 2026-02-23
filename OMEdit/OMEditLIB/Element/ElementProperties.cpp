@@ -1361,6 +1361,7 @@ void ElementParameters::applyFinalStartFixedAndDisplayUnitModifiers(Parameter *p
           if (hasStart) {
             if (!pParameter->isGroupDefined() && !pParameter->getModelInstanceElement()->isParameter() && !pParameter->getModelInstanceElement()->isInput()) {
               pParameter->setGroup("Initialization");
+              addOrUpdateParametersScrollArea(pParameter);
             }
             pParameter->setShowStartAndFixed(true);
           }
@@ -1717,28 +1718,38 @@ void ElementParameters::createTabsGroupBoxesAndParameters(ModelInstance::Model *
       }
       // create the Parameter
       Parameter *pParameter = new Parameter(pElement, defaultValue, this);
-      if (!mTabsMap.contains(pParameter->getTab())) {
-        ParametersScrollArea *pParametersScrollArea = new ParametersScrollArea;
-        GroupBox *pGroupBox = new GroupBox(pParameter->getGroup());
-        // set the group image
-        pGroupBox->setGroupImage(pParameter->getGroupImage());
-        pParametersScrollArea->addGroupBox(pGroupBox);
-        mTabsMap.insert(pParameter->getTab(), mpParametersTabWidget->addTab(pParametersScrollArea, pParameter->getTab()));
-      } else {
-        ParametersScrollArea *pParametersScrollArea;
-        pParametersScrollArea = qobject_cast<ParametersScrollArea*>(mpParametersTabWidget->widget(mTabsMap.value(pParameter->getTab())));
-        GroupBox *pGroupBox = pParametersScrollArea->getGroupBox(pParameter->getGroup());
-        if (pParametersScrollArea && !pGroupBox) {
-          pGroupBox = new GroupBox(pParameter->getGroup());
-          pParametersScrollArea->addGroupBox(pGroupBox);
-        }
-        // set the group image
-        pGroupBox->setGroupImage(pParameter->getGroupImage());
-      }
+      addOrUpdateParametersScrollArea(pParameter);
       mParametersList.append(pParameter);
     } else if (pElement->isExtend() && pElement->getModel()) {
       createTabsGroupBoxesAndParameters(pElement->getModel(), true);
     }
+  }
+}
+
+/*!
+ * \brief ElementParameters::addOrUpdateParametersScrollArea
+ * Adds or updates the ParametersScrollArea for the parameter.
+ * \param pParameter
+ */
+void ElementParameters::addOrUpdateParametersScrollArea(Parameter *pParameter)
+{
+  if (!mTabsMap.contains(pParameter->getTab())) {
+    ParametersScrollArea *pParametersScrollArea = new ParametersScrollArea;
+    GroupBox *pGroupBox = new GroupBox(pParameter->getGroup());
+    // set the group image
+    pGroupBox->setGroupImage(pParameter->getGroupImage());
+    pParametersScrollArea->addGroupBox(pGroupBox);
+    mTabsMap.insert(pParameter->getTab(), mpParametersTabWidget->addTab(pParametersScrollArea, pParameter->getTab()));
+  } else {
+    ParametersScrollArea *pParametersScrollArea;
+    pParametersScrollArea = qobject_cast<ParametersScrollArea*>(mpParametersTabWidget->widget(mTabsMap.value(pParameter->getTab())));
+    GroupBox *pGroupBox = pParametersScrollArea->getGroupBox(pParameter->getGroup());
+    if (pParametersScrollArea && !pGroupBox) {
+      pGroupBox = new GroupBox(pParameter->getGroup());
+      pParametersScrollArea->addGroupBox(pGroupBox);
+    }
+    // set the group image
+    pGroupBox->setGroupImage(pParameter->getGroupImage());
   }
 }
 

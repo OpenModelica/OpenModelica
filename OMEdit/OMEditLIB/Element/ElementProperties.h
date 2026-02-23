@@ -294,6 +294,7 @@ private:
 
   void setUpDialog();
   void createTabsGroupBoxesAndParameters(ModelInstance::Model *pModelInstance, bool defaultValue);
+  void addOrUpdateParametersScrollArea(Parameter *pParameter);
   void fetchElementExtendsModifiers(ModelInstance::Model *pModelInstance, bool defaultValue);
   void fetchModifiers(ModelInstance::Modifier *pModifier);
   void fetchRootElementModifiers(ModelInstance::Element *pModelElement);
