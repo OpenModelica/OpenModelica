@@ -1456,7 +1456,7 @@ protected
       local
         Call call;
 
-      case Expression.CREF() guard(not (VariablePointers.containsCref(exp.cref, variables)
+      case Expression.CREF() guard(not (VariablePointers.containsCref(ComponentRef.stripSubscriptsAll(exp.cref), variables)
         or ComponentRef.isNameNode(exp.cref) or ComponentRef.isWild(exp.cref))) algorithm
         UnorderedSet.add(lowerIterator(exp.cref), set);
       then ();
@@ -1490,6 +1490,7 @@ protected
     ComponentRef cref;
   algorithm
     cref := ComponentRef.fromNode(iterator, InstNode.getType(iterator), {}, NFComponentRef.Origin.ITERATOR);
+    cref := ComponentRef.stripSubscriptsAll(cref);
     if not VariablePointers.containsCref(cref, variables) then
       UnorderedSet.add(lowerIterator(cref), set);
     end if;

@@ -2710,6 +2710,7 @@ public
         then varData;
 
         case (VAR_DATA_SIM(), VarType.PARAMETER) algorithm
+          varData.variables   := VariablePointers.addList(var_lst, varData.variables);
           varData.parameters  := VariablePointers.addList(var_lst, varData.parameters);
           varData.knowns      := VariablePointers.addList(var_lst, varData.knowns);
         then varData;

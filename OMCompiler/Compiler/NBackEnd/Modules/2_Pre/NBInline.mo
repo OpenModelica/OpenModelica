@@ -391,6 +391,16 @@ public
           guard(AbsynUtil.pathString(Function.nameConsiderBuiltin(Call.typedFunction(call))) == "cat")
         then inlineCatCall(eqn, rhs.cref, Call.arguments(call), eqn.attr, iter, variables, new_eqns, set, index);
 
+        // CREF = promote()
+        case Equation.ARRAY_EQUATION(lhs = lhs as Expression.CREF(), rhs = Expression.CALL(call = call))
+          guard(AbsynUtil.pathString(Function.nameConsiderBuiltin(Call.typedFunction(call))) == "promote")
+        then inlinePromoteCall(eqn, lhs.cref, Call.arguments(call), eqn.attr, iter, variables, new_eqns, set, index);
+
+        // promote() = CREF
+        case Equation.ARRAY_EQUATION(lhs = Expression.CALL(call = call), rhs = rhs as Expression.CREF())
+          guard(AbsynUtil.pathString(Function.nameConsiderBuiltin(Call.typedFunction(call))) == "promote")
+        then inlinePromoteCall(eqn, rhs.cref, Call.arguments(call), eqn.attr, iter, variables, new_eqns, set, index);
+
         // apply on for-equation. assumed to be split up
         case Equation.FOR_EQUATION(body = {body}) algorithm
           new_eqn := inlineRecordTupleArrayEquation(body, eqn.iter, variables, new_eqns, set, index, true);
@@ -613,6 +623,61 @@ protected
     Pointer.update(new_eqns, eqns);
     eqn := Equation.DUMMY_EQUATION();
   end inlineArrayConstructor;
+
+  function inlinePromoteCall
+    "inlines a promote() call by creating a new equation for the argument. needs prior handling in function alias
+    where both the promote() and its argument have been replaced by alias variables such that we can always expect
+    the structure:
+      FUN_2 = promote(FUN_1, DIM)
+    the result will be:
+      FUN_2[:,:,:,1,1,1,1] = FUN_1;
+    where the amount of ':' is equal to the number of dimensions in FUN_1 and
+    the amount of '1' is equal to DIM minus that number.
+    "
+    input output Equation eqn;
+    input ComponentRef cref;
+    input list<Expression> args;
+    input EquationAttributes attr;
+    input Iterator iter;
+    input VariablePointers variables;
+    input Pointer<list<Pointer<Equation>>> new_eqns;
+    input UnorderedSet<VariablePointer> set "new iterators";
+    input Pointer<Integer> index;
+  protected
+    Expression arg;
+    Integer n, dim_count;
+    list<Subscript> subs;
+    Expression lhs;
+    Pointer<Equation> new_eqn;
+  algorithm
+    if Flags.isSet(Flags.DUMPBACKENDINLINE) then
+      print("\n[" + getInstanceName() + "] Inlining: ");
+      if not Iterator.isEmpty(iter) then
+        print("{" + Iterator.toString(iter) + "} ");
+      end if;
+      print(Equation.toString(eqn) + "\n");
+    end if;
+
+    {arg, Expression.INTEGER(n)} := args;
+
+    eqn := match arg
+      case Expression.CREF() algorithm
+        dim_count := Type.dimensionCount(ComponentRef.getSubscriptedType(arg.cref));
+        if n == dim_count then
+          lhs     := Expression.fromCref(cref);
+        else
+          subs    := Subscript.fillWithWholeLeft(List.fill(Subscript.INDEX(Expression.INTEGER(1)), n - dim_count), n);
+          lhs     := Expression.fromCref(ComponentRef.mergeSubscripts(subs, cref));
+        end if;
+        // create the new equation
+        new_eqn   := Equation.makeAssignment(lhs, arg, index, NBEquation.SIMULATION_STR, iter, attr);
+        if Flags.isSet(Flags.DUMPBACKENDINLINE) then
+          print("-- Result: " + Equation.pointerToString(new_eqn) + "\n");
+        end if;
+      then Pointer.access(new_eqn);
+      else eqn;
+    end match;
+  end inlinePromoteCall;
 
   function inlineCatCall
     "inlines a cat() call by creating a new equation each of the arguments. needs prior handling in function alias
