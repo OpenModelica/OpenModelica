@@ -565,6 +565,40 @@ public
     end match;
   end toDAEExp;
 
+  function applyExp
+    input Binding binding;
+    input ApplyFn fn;
+
+    partial function ApplyFn
+      input Expression exp;
+    end ApplyFn;
+  algorithm
+    () := match binding
+      case UNTYPED_BINDING() algorithm Expression.apply(binding.bindingExp, fn); then ();
+      case TYPED_BINDING()   algorithm Expression.apply(binding.bindingExp, fn); then ();
+      case FLAT_BINDING()    algorithm Expression.apply(binding.bindingExp, fn); then ();
+      case CEVAL_BINDING()   algorithm Expression.apply(binding.bindingExp, fn); then ();
+      else ();
+    end match;
+  end applyExp;
+
+  function applyExpShallow
+    input Binding binding;
+    input ApplyFn fn;
+
+    partial function ApplyFn
+      input Expression exp;
+    end ApplyFn;
+  algorithm
+    () := match binding
+      case UNTYPED_BINDING() algorithm fn(binding.bindingExp); then ();
+      case TYPED_BINDING()   algorithm fn(binding.bindingExp); then ();
+      case FLAT_BINDING()    algorithm fn(binding.bindingExp); then ();
+      case CEVAL_BINDING()   algorithm fn(binding.bindingExp); then ();
+      else ();
+    end match;
+  end applyExpShallow;
+
   function mapExp
     input output Binding binding;
     input MapFunc mapFn;
