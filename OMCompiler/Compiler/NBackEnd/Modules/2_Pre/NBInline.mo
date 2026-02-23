@@ -797,7 +797,7 @@ protected
 
         // inline for literals down to element, nested arrays possible
         case Expression.ARRAY() guard(not failed and Expression.isLiteral(arg)) algorithm
-          (eqns, shift) := inlineCatCallLiterals(arg, cref, iter, attr, n, index, failed, eqns, shift);
+          (eqns, shift) := inlineCatCallLiterals(arg, cref, iter, attr, n, index, eqns, shift);
         then false;
 
         else true;
@@ -818,7 +818,6 @@ protected
     input EquationAttributes attr;
     input Integer n;
     input Pointer<Integer> index;
-    input Boolean failed;
     input output list<Pointer<Equation>> eqns;
     input output Integer shift;
   algorithm
@@ -826,13 +825,13 @@ protected
       local
         Integer sz;
         ComponentRef lhs;
-        Expression lhs_sub, lhs_exp;
+        Expression lhs_sub, lhs_exp, rhs_exp;
         Pointer<Equation> new_eqn;
 
-      case Expression.ARRAY() guard(not failed and Expression.isLiteral(exp)) algorithm
+      case Expression.ARRAY() algorithm
         // a literal expression, does not need subscripting
         for elem in exp.elements loop
-          (eqns, shift) := inlineCatCallLiterals(elem, cref, iter, attr, n, index, failed, eqns, shift);
+          (eqns, shift) := inlineCatCallLiterals(elem, cref, iter, attr, n, index, eqns, shift);
         end for;
       then ();
 
@@ -843,8 +842,11 @@ protected
         lhs         := ComponentRef.mergeSubscripts(Subscript.fillWithWholeLeft({Subscript.INDEX(lhs_sub)}, n), cref);
         lhs_exp     := Expression.fromCref(lhs);
 
+        // wrap rhs in enough array to fit the lhs type
+        rhs_exp     := Expression.makeArray(Expression.typeOf(lhs_exp), arrayCreate(1, exp), true);
+
         // create the new equation
-        new_eqn     := Equation.makeAssignment(lhs_exp, exp, index, NBEquation.SIMULATION_STR, iter, attr);
+        new_eqn     := Equation.makeAssignment(lhs_exp, rhs_exp, index, NBEquation.SIMULATION_STR, iter, attr);
 
         // bump the shift adding the size of this last equation
         shift := shift + sz;
