@@ -101,6 +101,7 @@ import InstUtil = NFInstUtil;
 
 public
 type FunctionTree = FunctionTreeImpl.Tree;
+type DeletedVariables = UnorderedSet<ComponentRef>;
 
 encapsulated package FunctionTreeImpl
   import Absyn.Path;
@@ -325,7 +326,7 @@ protected
   DAE.ElementSource src;
   Option<SCode.Comment> cmt;
   FlattenSettings settings;
-  UnorderedSet<ComponentRef> deleted_vars;
+  DeletedVariables deleted_vars;
   Prefix prefix;
 algorithm
   settings := FlattenSettings.SETTINGS(
@@ -386,6 +387,7 @@ algorithm
   end if;
 
   flatModel.variables := list(updateVariability(var) for var in flatModel.variables);
+  checkDeletedVarRefs(flatModel, deleted_vars, settings);
 end flatten;
 
 function flattenConnection
@@ -394,13 +396,13 @@ function flattenConnection
   output Connections conns;
 protected
   FlatModel flatModel;
-  UnorderedSet<ComponentRef> deleted_vars;
+  DeletedVariables deleted_vars;
 algorithm
   flatModel := flatten(classInst, classPath, false);
   deleted_vars := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
 
   // get the connections from the model
-  (flatModel, conns) := Connections.collectConnections(flatModel, function isDeletedConnector(deletedVars = deleted_vars));
+  (flatModel, conns) := Connections.collectConnections(flatModel, function isDeletedCref(deletedVars = deleted_vars));
   // Elaborate expandable connectors.
   (_, conns) := ExpandableConnectors.elaborate(flatModel, conns);
   conns := Connections.collectFlows(flatModel, conns);
@@ -446,7 +448,7 @@ function flattenClass
   input Option<Binding> binding;
   input output list<Variable> vars;
   input output Sections sections;
-  input UnorderedSet<ComponentRef> deletedVars;
+  input DeletedVariables deletedVars;
   input FlattenSettings settings;
 protected
   array<InstNode> comps;
@@ -507,7 +509,7 @@ function flattenComponent
   input Option<Binding> outerBinding;
   input output list<Variable> vars;
   input output Sections sections;
-  input UnorderedSet<ComponentRef> deletedVars;
+  input DeletedVariables deletedVars;
   input FlattenSettings settings;
 protected
   InstNode comp_node;
@@ -615,7 +617,7 @@ end isDeletedComponent;
 function deleteComponent
   input InstNode node;
   input Prefix prefix;
-  input UnorderedSet<ComponentRef> deletedVars;
+  input DeletedVariables deletedVars;
 protected
   ComponentRef cref;
 algorithm
@@ -918,7 +920,7 @@ function flattenComplexComponent
   input Prefix prefix;
   input output list<Variable> vars;
   input output Sections sections;
-  input UnorderedSet<ComponentRef> deletedVars;
+  input DeletedVariables deletedVars;
   input FlattenSettings settings;
 protected
   list<Dimension> dims;
@@ -1077,7 +1079,7 @@ function flattenArray
   input output list<Variable> vars;
   input output Sections sections;
   input list<Subscript> subscripts = {};
-  input UnorderedSet<ComponentRef> deletedVars;
+  input DeletedVariables deletedVars;
   input SourceInfo info;
   input FlattenSettings settings;
 protected
@@ -1117,7 +1119,7 @@ function vectorizeArray
   input output list<Variable> vars;
   input output Sections sections;
   input list<Subscript> subscripts = {};
-  input UnorderedSet<ComponentRef> deletedVars;
+  input DeletedVariables deletedVars;
   input FlattenSettings settings;
 protected
   list<Variable> vrs;
@@ -2336,9 +2338,9 @@ algorithm
   source := ElementSource.addElementSourceInstanceOpt(source, comp_pre);
 end addElementSourceArrayPrefix;
 
-function isDeletedConnector
+function isDeletedCref
   input ComponentRef cref;
-  input UnorderedSet<ComponentRef> deletedVars;
+  input DeletedVariables deletedVars;
   output Boolean res;
 protected
   ComponentRef cr = cref;
@@ -2360,12 +2362,12 @@ algorithm
   end while;
 
   res := false;
-end isDeletedConnector;
+end isDeletedCref;
 
 function resolveConnections
 "Generates the connect equations and adds them to the equation list"
   input output FlatModel flatModel;
-  input UnorderedSet<ComponentRef> deletedVars;
+  input DeletedVariables deletedVars;
   input FlattenSettings settings;
 protected
   Connections conns;
@@ -2388,7 +2390,7 @@ algorithm
 
   // Collect connections from the model.
   (flatModel, conns) := Connections.collectConnections(flatModel,
-    function isDeletedConnector(deletedVars = deletedVars));
+    function isDeletedCref(deletedVars = deletedVars));
   ctable := CardinalityTable.fromConnections(conns);
 
   // Elaborate expandable connectors.
@@ -2406,7 +2408,7 @@ algorithm
   // - return the broken connects + the equations
   if  System.getHasOverconstrainedConnectors() then
     (flatModel, broken) := NFOCConnectionGraph.handleOverconstrainedConnections(flatModel, conns,
-      function isDeletedConnector(deletedVars = deletedVars));
+      function isDeletedCref(deletedVars = deletedVars));
   end if;
   // add the broken connections
   conns := Connections.addBroken(broken, conns);
@@ -3182,6 +3184,94 @@ algorithm
     else eq :: equations;
   end match;
 end evaluateIfWithConnects2;
+
+function checkDeletedVarRefs
+  input FlatModel flatModel;
+  input DeletedVariables deletedVars;
+  input FlattenSettings settings;
+algorithm
+  for var in flatModel.variables loop
+    checkDeletedVarRefsInVar(var, deletedVars, settings);
+  end for;
+
+  for eq in flatModel.equations loop
+    checkDeletedVarRefsInEq(eq, deletedVars, settings);
+  end for;
+
+  for eq in flatModel.initialEquations loop
+    checkDeletedVarRefsInEq(eq, deletedVars, settings);
+  end for;
+
+  for alg in flatModel.algorithms loop
+    checkDeletedVarRefsInAlg(alg, deletedVars, settings);
+  end for;
+
+  for alg in flatModel.initialAlgorithms loop
+    checkDeletedVarRefsInAlg(alg, deletedVars, settings);
+  end for;
+end checkDeletedVarRefs;
+
+function checkDeletedVarRefsInVar
+  input Variable var;
+  input DeletedVariables deletedVars;
+  input FlattenSettings settings;
+algorithm
+  Variable.applyExpShallow(var,
+    function checkDeletedVarRefsInExp(deletedVars = deletedVars, settings = settings, info = var.info));
+end checkDeletedVarRefsInVar;
+
+function checkDeletedVarRefsInExp
+  input Expression exp;
+  input DeletedVariables deletedVars;
+  input FlattenSettings settings;
+  input SourceInfo info;
+algorithm
+  Expression.apply(exp,
+    function checkDeletedVarRefsInExp_traverser(deletedVars = deletedVars, settings = settings, info = info));
+end checkDeletedVarRefsInExp;
+
+function checkDeletedVarRefsInExp_traverser
+  input Expression exp;
+  input DeletedVariables deletedVars;
+  input FlattenSettings settings;
+  input SourceInfo info;
+algorithm
+  () := match exp
+    case Expression.CREF()
+      guard isDeletedCref(exp.cref, deletedVars)
+      algorithm
+        Error.addSourceMessage(Error.INVALID_DELETED_COMPONENT_CONTEXT,
+          {ComponentRef.toString(exp.cref)}, info);
+
+        if not settings.relaxedErrorChecking then
+          fail();
+        end if;
+      then
+        ();
+
+    else ();
+  end match;
+end checkDeletedVarRefsInExp_traverser;
+
+function checkDeletedVarRefsInEq
+  input Equation eq;
+  input DeletedVariables deletedVars;
+  input FlattenSettings settings;
+algorithm
+  Equation.applyExp(eq,
+    function checkDeletedVarRefsInExp(deletedVars = deletedVars, settings = settings, info = Equation.info(eq)));
+end checkDeletedVarRefsInEq;
+
+function checkDeletedVarRefsInAlg
+  input Algorithm alg;
+  input DeletedVariables deletedVars;
+  input FlattenSettings settings;
+algorithm
+  for stmt in alg.statements loop
+    Statement.applyExp(stmt,
+      function checkDeletedVarRefsInExp(deletedVars = deletedVars, settings = settings, info = Statement.info(stmt)));
+  end for;
+end checkDeletedVarRefsInAlg;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFFlatten;
