@@ -913,6 +913,8 @@ public constant ErrorTypes.Message UNMATCHED_BREAK_CONNECT = ErrorTypes.MESSAGE(
   Gettext.gettext("No matching element found for 'break connect(%s, %s)'."));
 public constant ErrorTypes.Message INVALID_DELETED_COMPONENT_CONTEXT = ErrorTypes.MESSAGE(420, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   Gettext.gettext("'%s' refers to a component with a false condition."));
+public constant ErrorTypes.Message UNROLL_FAILURE = ErrorTypes.MESSAGE(421, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
+  Gettext.gettext("For loop could not be unrolled:\n%s"));
 
 public constant ErrorTypes.Message INITIALIZATION_NOT_FULLY_SPECIFIED = ErrorTypes.MESSAGE(496, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
   Gettext.gettext("The initial conditions are not fully specified. %s."));

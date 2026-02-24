@@ -45,6 +45,7 @@ protected
   import ExpandExp = NFExpandExp;
   import Expression = NFExpression;
   import FlatModelicaUtil = NFFlatModelicaUtil;
+  import Flatten = NFFlatten;
   import InstContext = NFInstContext;
   import IOStream;
   import Lookup = NFLookup;
@@ -253,6 +254,8 @@ public
       flat_model.initialEquations := Equation.splitRecordEquations(flat_model.initialEquations);
       flat_model.initialEquations := Scalarize.scalarizeEquations(flat_model.initialEquations, forceScalarize = true);
       flat_model.initialEquations := Equation.mapExpList(flat_model.initialEquations, ExpandExp.expandCallArgs);
+      flat_model.algorithms := list(Flatten.unrollForStatementsInAlg(a) for a in flat_model.algorithms);
+      flat_model.initialAlgorithms := list(Flatten.unrollForStatementsInAlg(a) for a in flat_model.initialAlgorithms);
     else
       flat_model.variables := reconstructRecordInstances(flat_model.variables);
     end if;
