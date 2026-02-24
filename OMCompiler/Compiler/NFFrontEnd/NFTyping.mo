@@ -1437,6 +1437,7 @@ algorithm
         next_context := InstContext.set(context, NFInstContext.SUBEXPRESSION);
         (e1, ty, variability, purity) := typeExp(exp.exp, next_context, info, retype);
         exp.exp := e1;
+        exp.ty  := Type.copyDims(ty, exp.ty);
       then
         (exp, exp.ty, variability, purity);
 
