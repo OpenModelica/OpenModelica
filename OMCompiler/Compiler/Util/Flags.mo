@@ -1289,7 +1289,8 @@ constant ConfigFlag ALLOW_NON_STANDARD_MODELICA = CONFIG_FLAG(143, "allowNonStan
     ("reinitInAlgorithms", Gettext.gettext("Allow reinit in algorithm sections")),
     ("unbalancedModel", Gettext.gettext("Allow models to be locally unbalanced and to have unbalanced connectors")),
     ("implicitParameterStartAttribute", Gettext.gettext("Allow fixed parameters with no binding or start attribute")),
-    ("initialSimplified", Gettext.gettext("Allow use of experimental operator `initialSimplified()`"))
+    ("initialSimplified", Gettext.gettext("Allow use of experimental operator `initialSimplified()`")),
+    ("illegalConditionalContext", Gettext.gettext("Allow use of components with false conditions in illegal contexts"))
     })),
   Gettext.gettext("Flags to allow non-standard Modelica."));
 constant ConfigFlag EXPORT_CLOCKS_IN_MODELDESCRIPTION = CONFIG_FLAG(144, "exportClocksInModelDescription",
