@@ -289,20 +289,6 @@ public
       eq_filter_opt := SOME(UnorderedSet.fromList(followEquations, stringHashDjb2, stringEqual));
     end if;
 
-    // Pre-Partitioning Modules
-    // (do not change order SIMPLIFY -> ALIAS -> EVENTS -> DETECTSTATES)
-    preOptModules := {
-      (Bindings.main,      "Bindings"),
-      (FunctionAlias.main, "FunctionAlias"),
-      (function Inline.main(inline_types = inline_types, init = false), "Early Inline"),
-      (function simplify(init = false), "Simplify 1"),
-      (Alias.main,         "Alias"),
-      (function simplify(init = false), "Simplify 2"), // TODO simplify in Alias only
-      (removeStream,       "Remove Stream"),
-      (DetectStates.main,  "Detect States"),
-      (Events.main,        "Events")
-    };
-
     if Flags.getConfigBool(Flags.DAE_MODE) then
       mainModules := {(DAEMode.main, "DAE-Mode")};
       kind := NBPartition.Kind.DAE;
@@ -311,6 +297,20 @@ public
       kind := NBPartition.Kind.ODE;
     end if;
 
+    // Pre-Partitioning Modules
+    // (do not change order SIMPLIFY -> ALIAS -> EVENTS -> DETECTSTATES)
+    preOptModules := {
+      (Bindings.main,      "Bindings"),
+      (function FunctionAlias.main(kind = kind), "FunctionAlias"),
+      (function Inline.main(inline_types = inline_types, init = false), "Early Inline"),
+      (function simplify(init = false), "Simplify 1"),
+      (function Alias.main(kind = kind),  "Alias"),
+      (function simplify(init = false), "Simplify 2"), // TODO simplify in Alias only
+      (removeStream,       "Remove Stream"),
+      (DetectStates.main,  "Detect States"),
+      (Events.main,        "Events")
+    };
+
     // all main modules are always done in ODE mode
     mainModules := listAppend({
       (function Partitioning.main(kind = NBPartition.Kind.ODE),             "Partitioning"),
@@ -318,7 +318,6 @@ public
       (function Inline.main(inline_types = {DAE.AFTER_INDEX_RED_INLINE()}, init = false), "After Index Reduction Inline"),
       (Initialization.main,                                                 "Initialization")
     }, mainModules);
-
 
     // (do not change order SOLVE -> JACOBIAN)
     postOptModules := {

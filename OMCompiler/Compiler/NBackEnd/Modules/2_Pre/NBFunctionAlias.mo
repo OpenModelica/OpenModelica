@@ -56,6 +56,7 @@ protected
   import BEquation = NBEquation;
   import Inline = NBInline;
   import NBEquation.{Equation, EquationPointers, EqData, EquationAttributes, EquationKind, Iterator};
+  import Partition = NBPartition;
   import Partitioning = NBPartitioning;
   import NBPartitioning.BClock;
   import BVariable = NBVariable;
@@ -70,6 +71,7 @@ public
      called during simulation and gets the corresponding subfunction from
      Config."
     extends Module.wrapper;
+    input Partition.Kind kind;
   protected
     Module.aliasInterface func;
   algorithm
@@ -82,14 +84,14 @@ public
 
       case BackendDAE.MAIN(varData = varData, eqData = eqData)
         algorithm
-          (varData, eqData) := func(varData, eqData);
+          (varData, eqData) := func(varData, eqData, kind);
           bdae.varData := varData;
           bdae.eqData := eqData;
       then bdae;
 
       case BackendDAE.HESSIAN(varData = varData, eqData = eqData)
         algorithm
-          (varData, eqData) := func(varData, eqData);
+          (varData, eqData) := func(varData, eqData, kind);
           bdae.varData := varData;
           bdae.eqData := eqData;
       then bdae;

@@ -133,7 +133,7 @@ public
     input UnorderedMap<Path, Function> funcMap;
     input output VarData varData;
     input output EqData eqData;
-    input Partition.Kind Kind;
+    input Partition.Kind kind;
     input Boolean transposed = false        "transpose matching if true";
     input Boolean clear = true              "start from scratch if true";
   protected
@@ -154,25 +154,25 @@ public
     end try;
 
     // 2. Resolve singular partitions if necessary
-    if Kind == NBPartition.Kind.INI then
+    if kind == NBPartition.Kind.INI then
       // ####### BALANCE INITIALIZATION #######
-      (adj, full, vars, eqns, varData, eqData, changed) := ResolveSingularities.balanceInitialization(adj, full, vars, eqns, varData, eqData, funcMap, matching, mapping);
+      (adj, full, vars, eqns, varData, eqData, changed) := ResolveSingularities.balanceInitialization(adj, full, vars, eqns, varData, eqData, kind, funcMap, matching, mapping);
     else
       // ####### INDEX REDUCTION #######
-      (adj, full, vars, eqns, varData, eqData, changed) := ResolveSingularities.indexReduction(adj, full, vars, eqns, varData, eqData, funcMap, matching, mapping);
+      (adj, full, vars, eqns, varData, eqData, changed) := ResolveSingularities.indexReduction(adj, full, vars, eqns, varData, eqData, kind, funcMap, matching, mapping);
     end if;
 
     // 3. Recompute adjacency and restart matching if something changed in step 2.
     if changed then
       // ToDo: keep more of old information by only updating changed stuff
-      full  := Adjacency.Matrix.createFull(vars, eqns);
+      full  := Adjacency.Matrix.createFull(vars, eqns, kind);
       adj   := Adjacency.Matrix.fullToFinal(full, vars.map, eqns.map, eqns, matrixStrictness);
-      if Kind == NBPartition.Kind.INI then
+      if kind == NBPartition.Kind.INI then
         // ####### DO NOT REDO BALANCING INITIALIZATION #######
         matching := regular(EMPTY_MATCHING, adj);
       else
         // ####### REDO INDEX REDUCTION IF NECESSARY #######
-        (matching, adj, full, vars, eqns, varData, eqData) := singular(EMPTY_MATCHING, adj, full, vars, eqns, funcMap, varData, eqData, Kind, transposed);
+        (matching, adj, full, vars, eqns, varData, eqData) := singular(EMPTY_MATCHING, adj, full, vars, eqns, funcMap, varData, eqData, kind, transposed);
       end if;
     end if;
   end singular;

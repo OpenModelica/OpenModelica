@@ -1050,7 +1050,7 @@ protected
           (_, baseClock, _) := Partition.Partition.getClocks(part);
 
           // causalize
-          (_, sub_comps) := Causalize.simple(part.unknowns, part.equations);
+          (_, sub_comps) := Causalize.simple(part.unknowns, part.equations, Partition.Partition.getKind(part));
 
           // split the resulting strong components into partitions by clocks
           collector := NONE();
