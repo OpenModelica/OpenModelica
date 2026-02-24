@@ -249,7 +249,7 @@ function simplifyBuiltinCall
   output Expression exp;
 algorithm
   exp := match AbsynUtil.pathFirstIdent(name)
-    case "cat" guard not Flags.getConfigBool(Flags.NEW_BACKEND) algorithm
+    case "cat" guard(not Flags.getConfigBool(Flags.NEW_BACKEND) or List.all(args, Expression.isLiteral)) algorithm
       exp := ExpandExp.expandBuiltinCat(args, call, false);
     then exp;
 
