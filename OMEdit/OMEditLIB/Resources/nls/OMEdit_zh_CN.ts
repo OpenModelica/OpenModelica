@@ -2021,7 +2021,7 @@ You can choose between waiting longer or abort debugging.</source>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="841"/>
-        <source>Error has occurred while loading the model : 
+        <source>Error has occurred while loading the model :
 %1.</source>
         <translation>加载模型 %1 时出现错误。</translation>
     </message>
@@ -4543,8 +4543,8 @@ Please check the Messages browser for error messages and possibly undo the lates
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="3731"/>
-        <source>The system libraries are read from the MODELICAPATH and are always read-only.</source>
-        <translation>系统库从 MODELICAPATH 读取并且是只读的。</translation>
+        <source>The system libraries are read from OPENMODELICALIBRARY (MODELICAPATH in the language specification) and are always read-only.</source>
+        <translation>系统库从 OPENMODELICALIBRARY（在语言规范中为 MODELICAPATH）读取，并始终为只读。</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="3734"/>

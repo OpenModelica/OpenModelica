@@ -1057,7 +1057,7 @@ msgstr ""
 
 #: ../Util/Error.mo:498
 #, c-format
-msgid "Failed to load package %s (%s) using MODELICAPATH %s."
+msgid "Failed to load package %s (%s) using OPENMODELICALIBRARY (MODELICAPATH in the language specification) %s."
 msgstr ""
 
 #: ../Util/Error.mo:500
@@ -2138,7 +2138,7 @@ msgstr ""
 #: ../Util/Error.mo:841
 #, c-format
 msgid ""
-"Skipped loading package %s (%s) using MODELICAPATH %s (uses-annotation may "
+"Skipped loading package %s (%s) using OPENMODELICALIBRARY (MODELICAPATH in the language specification) %s (uses-annotation may "
 "be wrong)."
 msgstr ""
 
