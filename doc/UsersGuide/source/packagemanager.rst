@@ -27,7 +27,7 @@ can find them.
 
 The default place where OpenModelica looks for packages is set by environment variable ``OPENMODELICALIBRARY``.
 The variable `OPENMODELICALIBRARY <https://specification.modelica.org/maint/3.6/packages.html#the-modelica-library-path-modelicapath>`_
-from the language specification is ignored by OpenModelica, see `FAQ OpenModelica General <faq-openmodelica-general>`_.
+from the language specification is ignored by OpenModelica, see :ref:`FAQ OpenModelica General <faq-openmodelica-general>`.
 You can check where it is by typing ``getModelicaPath()`` in the Interactive Environment (Tools | OpenModelica Compiler CLI in OMEdit),
 or by browsing the General group under Tools|Options|Libraries. Installed read-only libraries are all placed by default
 in the ``OPENMODELICALIBRARY``.
