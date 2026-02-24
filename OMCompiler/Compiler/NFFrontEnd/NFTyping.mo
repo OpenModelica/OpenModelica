@@ -1438,7 +1438,7 @@ algorithm
         (e1, ty, variability, purity) := typeExp(exp.exp, next_context, info, retype);
         exp.exp := e1;
       then
-        (exp, ty, variability, purity);
+        (exp, exp.ty, variability, purity);
 
     case Expression.SUBSCRIPTED_EXP()
       then typeSubscriptedExp(exp, context, info);
