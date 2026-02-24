@@ -194,7 +194,7 @@ public
       //  2. DUMMY DERIVATIVE
       // --------------------------------------------------------
       // create full adjacency matrix and prepare data
-      full_local      := Adjacency.Matrix.createFull(candidate_ptrs, constraint_ptrs);
+      full_local      := Adjacency.Matrix.createFull(candidate_ptrs, constraint_ptrs, kind);
       set_adj         := Adjacency.Matrix.EMPTY(NBAdjacency.MatrixStrictness.LINEAR);
       rest_candidates := VariablePointers.toList(candidate_ptrs);
       eo              := constraint_ptrs.map;
@@ -227,7 +227,7 @@ public
           vo := UnorderedMap.merge(vo, UnorderedMap.copy(vn), sourceInfo());
           vn := UnorderedMap.subMap(candidate_ptrs.map, list(BVariable.getVarName(var) for var in current_candidates));
           // expand the adjacency matrix
-          (set_adj, full_local)   := Adjacency.Matrix.expand(set_adj, full_local, vo, vn, eo, en, candidate_ptrs, constraint_ptrs);
+          (set_adj, full_local)   := Adjacency.Matrix.expand(set_adj, full_local, vo, vn, eo, en, candidate_ptrs, constraint_ptrs, kind);
           // continue matching
           set_matching            := Matching.regular(set_matching, set_adj, false, true, false);
 
@@ -318,66 +318,6 @@ public
     end if;
   end indexReduction;
 
-  function noIndexReduction
-    "fails if the system has unmatched variables"
-    extends Module.resolveSingularitiesInterface;
-  protected
-    Adjacency.Mapping mapping;
-    array<Boolean> discrete_eqns, discrete_vars;
-    list<Slice<VariablePointer>> unmatched_vars, matched_vars;
-    list<Slice<EquationPointer>> unmatched_eqns, matched_eqns;
-    String err_str;
-    array<list<Integer>> msss;
-    VariablePointers candidates;
-    EquationPointers constraints;
-    Integer msss_idx = 1;
-  algorithm
-    // get the mapping and fail if there is none
-    mapping := match mapping_opt
-      case SOME(mapping) then mapping;
-      else algorithm
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because no mapping was provided."});
-      then fail();
-    end match;
-
-    (matched_vars, unmatched_vars, matched_eqns, unmatched_eqns) := Matching.getMatches(matching, mapping_opt, variables, equations);
-    if not listEmpty(unmatched_vars) then
-      err_str := getInstanceName()
-        + " failed.\n" + StringUtil.headline_4("(" + intString(listLength(unmatched_vars)) + "|"
-        + intString(sum(Slice.size(v, function BVariable.size(resize = true)) for v in unmatched_vars)) + ") Unmatched Variables")
-        + List.toString(unmatched_vars, function Slice.toString(func=BVariable.pointerToString, maxLength=10), "", "\t", "\n\t", "\n", true) + "\n"
-        + StringUtil.headline_4("(" + intString(listLength(unmatched_eqns)) + "|"
-        + intString(sum(Slice.size(e, function Equation.size(resize = true)) for e in unmatched_eqns)) + ") Unmatched Equations")
-        + List.toString(unmatched_eqns, function Slice.toString(func=function Equation.pointerToString(str=""), maxLength=10), "", "\t", "\n\t", "\n", true) + "\n";
-
-      if Flags.isSet(Flags.BLT_DUMP) then
-        // mark the discrete equations
-        discrete_eqns := listArray(list(Equation.isDiscrete(eqn) for eqn in EquationPointers.toList(equations)));
-        discrete_vars := listArray(list(BVariable.isDiscrete(var) for var in VariablePointers.toList(variables)));
-
-        // get the minimally structurally singular subset
-        msss := match adj
-          case Adjacency.FINAL() then getMSSS(adj.m, adj.mT, matching, discrete_eqns, discrete_vars, mapping);
-          else algorithm
-            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " expected final matrix as adj input but got :\n"
-              + Adjacency.Matrix.toString(adj)});
-          then fail();
-        end match;
-
-        for marked_eqns in msss loop
-          (constraints, candidates, _) := getConstraintsAndCandidates(equations, marked_eqns, mapping);
-          err_str := err_str + StringUtil.headline_2("MSSS " + intString(msss_idx) + "") + "\n"
-            + EquationPointers.toString(constraints, "Constraint")
-            + VariablePointers.toString(candidates, "State Candidate");
-          msss_idx := msss_idx + 1;
-        end for;
-      end if;
-      Error.addMessage(Error.INTERNAL_ERROR,{err_str});
-      fail();
-    end if;
-    changed := false;
-  end noIndexReduction;
-
   function balanceInitialization
     extends Module.resolveSingularitiesInterface;
   protected
@@ -452,7 +392,7 @@ public
         // update adjacency matrices
         vn := UnorderedMap.new<Integer>(ComponentRef.hash, ComponentRef.isEqual);
         en := UnorderedMap.subMap(equations.map, list(Equation.getEqnName(eqn) for eqn in start_eqns));
-        (adj, full) := Adjacency.Matrix.expand(adj, full, vo, vn, eo, en, variables, equations);
+        (adj, full) := Adjacency.Matrix.expand(adj, full, vo, vn, eo, en, variables, equations, kind);
 
         if Flags.isSet(Flags.INITIALIZATION) then
           print(List.toString(start_eqns, function Equation.pointerToString(str = ""),

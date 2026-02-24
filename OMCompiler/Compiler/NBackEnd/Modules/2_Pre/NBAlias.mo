@@ -89,6 +89,7 @@ protected
   import Differentiate = NBDifferentiate;
   import NBDifferentiate.{DifferentiationType, DifferentiationArguments};
   import NBEquation.{Equation, EquationAttributes, EquationKind, EquationPointers, EqData, Iterator};
+  import Partition = NBPartition;
   import Replacements = NBReplacements;
   import SimplifyExp = NFSimplifyExp;
   import Solve = NBSolve;
@@ -114,6 +115,7 @@ public
      called during simulation and gets the corresponding subfunction from
      Config."
     extends Module.wrapper;
+    input Partition.Kind kind;
   protected
     Module.aliasInterface func;
   algorithm
@@ -126,16 +128,16 @@ public
 
       case BackendDAE.MAIN(varData = varData, eqData = eqData)
         algorithm
-          (varData, eqData) := func(varData, eqData);
+          (varData, eqData) := func(varData, eqData, kind);
           // allways apply clock alias
-          (varData, eqData) := aliasClocks(varData, eqData);
+          (varData, eqData) := aliasClocks(varData, eqData, kind);
           bdae.varData := varData;
           bdae.eqData := eqData;
       then bdae;
 
       case BackendDAE.HESSIAN(varData = varData, eqData = eqData)
         algorithm
-          (varData, eqData) := func(varData, eqData);
+          (varData, eqData) := func(varData, eqData, kind);
           bdae.varData := varData;
           bdae.eqData := eqData;
       then bdae;
@@ -228,7 +230,7 @@ protected
           // -----------------------------------
           //            1. 2. 3.
           // -----------------------------------
-          (replacements, newEquations) := aliasCausalize(varData.unknowns, eqData.simulation, "Simulation");
+          (replacements, newEquations) := aliasCausalize(varData.unknowns, eqData.simulation, kind, "Simulation");
           (replacements, auxEquations) := checkReplacements(replacements, eqData);
 
           // -----------------------------------
@@ -404,7 +406,7 @@ protected
           // -----------------------------------
           //            1. 2. 3.
           // -----------------------------------
-          (replacements, newEquations) := aliasCausalize(varData.clocks, eqData.clocked, "Clocked");
+          (replacements, newEquations) := aliasCausalize(varData.clocks, eqData.clocked, kind, "Clocked");
           (replacements, auxEquations) := checkReplacements(replacements, eqData);
 
           // -----------------------------------
@@ -436,6 +438,7 @@ protected
     "
     input VariablePointers variables;
     input EquationPointers equations;
+    input Partition.Kind kind;
     input String context;
     output UnorderedMap<ComponentRef, Expression> replacements;
     output EquationPointers newEquations;
@@ -471,7 +474,7 @@ protected
     // --------------------------------------------------------------------------------------------------------
     replacements := UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual, size);
     for set in sets loop
-      replacements := createReplacementRules(set, replacements);
+      replacements := createReplacementRules(set, replacements, kind);
     end for;
 
   end aliasCausalize;
@@ -792,6 +795,7 @@ protected
     "Creates replacement rules from a simple set by causalizing it and replacing the expressions in order"
     input AliasSet set;
     input output UnorderedMap<ComponentRef, Expression> replacements;
+    input Partition.Kind kind;
   algorithm
     // ToDo: fix variable attributes to keep
     // report errors/warnings
@@ -814,7 +818,7 @@ protected
         vars := VariablePointers.fromList(list(BVariable.getVarPointer(cr, sourceInfo()) for cr in set.simple_variables), true);
         eqs := EquationPointers.fromList(const_eq :: set.simple_equations);
         // causalize the system
-        (_, comps) := Causalize.simple(vars, eqs);
+        (_, comps) := Causalize.simple(vars, eqs, kind);
         // create replacements from strong components
         Replacements.simple(comps, replacements);
       then replacements;
@@ -825,7 +829,7 @@ protected
         vars := VariablePointers.fromList(alias_vars);
         eqs := EquationPointers.fromList(set.simple_equations);
         // causalize the system
-        (_, comps) := Causalize.simple(vars, eqs);
+        (_, comps) := Causalize.simple(vars, eqs, kind);
         if Flags.isSet(Flags.DEBUG_ALIAS) then
           print(StringUtil.headline_3("Variable to keep (values of attributes before replacements):") + BVariable.pointerToString(Pointer.access(var_to_keep))+"\n\n");
         end if;
