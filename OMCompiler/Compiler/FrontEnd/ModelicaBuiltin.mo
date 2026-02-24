@@ -1567,7 +1567,7 @@ function getModelicaPath
   output String modelicaPath;
 external "builtin";
 annotation(Documentation(info="<html>
-<p>The MODELICAPATH is a list of paths to search when trying to  <a href=\"modelica://OpenModelica.Scripting.loadModel\">load a library</a>. It is a string separated by colon (:) on all OSes except Windows, which uses semicolon (;).</p>
+<p>The OPENMODELICALIBRARY (MODELICAPATH in the language specification) is a list of paths to search when trying to  <a href=\"modelica://OpenModelica.Scripting.loadModel\">load a library</a>. It is a string separated by colon (:) on all OSes except Windows, which uses semicolon (;).</p>
 <p>To override the default path (<a href=\"modelica://OpenModelica.Scripting.getInstallationDirectoryPath\">OPENMODELICAHOME</a>/lib/omlibrary/:~/.openmodelica/libraries/), set the environment variable OPENMODELICALIBRARY=...</p>
 <p>On Windows the HOME directory '~' is replaced by %APPDATA%</p>
 </html>"),

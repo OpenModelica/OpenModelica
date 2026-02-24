@@ -441,7 +441,7 @@ public constant ErrorTypes.Message EMPTY_ARRAY = ErrorTypes.MESSAGE(182, ErrorTy
 public constant ErrorTypes.Message LOAD_MODEL_DIFFERENT_VERSIONS = ErrorTypes.MESSAGE(183, ErrorTypes.SCRIPTING(), ErrorTypes.WARNING(),
   Gettext.gettext("Requested package %s of version %s, but this package was already loaded with version %s. OpenModelica cannot reason about compatibility between the two packages since they are not semantic versions."));
 public constant ErrorTypes.Message LOAD_MODEL_FAILED = ErrorTypes.MESSAGE(184, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
-  Gettext.gettext("Failed to load package %s (%s) using MODELICAPATH %s."));
+  Gettext.gettext("Failed to load package %s (%s) using OPENMODELICALIBRARY (MODELICAPATH in the language specification) %s."));
 public constant ErrorTypes.Message LOAD_FILE_FAILED = ErrorTypes.MESSAGE(185, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
   Gettext.gettext("Failed to load file %s: %s."));
 public constant ErrorTypes.Message INVALID_SIZE_INDEX = ErrorTypes.MESSAGE(186, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
@@ -1024,7 +1024,7 @@ public constant ErrorTypes.Message MISSING_INTERFACE_TYPE = ErrorTypes.MESSAGE(5
 public constant ErrorTypes.Message CLASS_NOT_FOUND = ErrorTypes.MESSAGE(555, ErrorTypes.SCRIPTING(), ErrorTypes.WARNING(),
   Gettext.gettext("Class %s not found inside class %s."));
 public constant ErrorTypes.Message NOTIFY_LOAD_MODEL_FAILED = ErrorTypes.MESSAGE(556, ErrorTypes.SCRIPTING(), ErrorTypes.NOTIFICATION(),
-  Gettext.gettext("Skipped loading package %s (%s) using MODELICAPATH %s (uses-annotation may be wrong)."));
+  Gettext.gettext("Skipped loading package %s (%s) using OPENMODELICALIBRARY (MODELICAPATH in the language specification) %s (uses-annotation may be wrong)."));
 public constant ErrorTypes.Message ROOT_USER_INTERACTIVE = ErrorTypes.MESSAGE(557, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
   Gettext.gettext("You are trying to run OpenModelica as a server using the root user.\nThis is a very bad idea:\n* The socket interface does not authenticate the user.\n* OpenModelica allows execution of arbitrary commands."));
 public constant ErrorTypes.Message USES_MISSING_VERSION = ErrorTypes.MESSAGE(558, ErrorTypes.SCRIPTING(), ErrorTypes.WARNING(),
@@ -1120,7 +1120,7 @@ public constant ErrorTypes.Message ERROR_PKG_NOT_FOUND_VERSION = ErrorTypes.MESS
 public constant ErrorTypes.Message ERROR_PKG_NOT_EXACT_MATCH = ErrorTypes.MESSAGE(603, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
   Gettext.gettext("The package index did not contain an entry for package %s of version %s. There are other versions that claim to be compatible: %s."));
 public constant ErrorTypes.Message ERROR_PKG_INDEX_NOT_ON_PATH = ErrorTypes.MESSAGE(604, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
-  Gettext.gettext("The MODELICAPATH (%s) does not contain %s, so the package index cannot be used."));
+  Gettext.gettext("The OPENMODELICALIBRARY (MODELICAPATH in the language specification) (%s) does not contain %s, so the package index cannot be used."));
 public constant ErrorTypes.Message ERROR_PKG_INDEX_NOT_FOUND = ErrorTypes.MESSAGE(605, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
   Gettext.gettext("The package index does not exist: %s."));
 public constant ErrorTypes.Message ERROR_PKG_INDEX_NOT_PARSED = ErrorTypes.MESSAGE(606, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),

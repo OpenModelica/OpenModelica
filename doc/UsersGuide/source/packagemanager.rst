@@ -25,18 +25,20 @@ that are required to compile the models in your own package next time you (or so
 computer) loads your package, provided they are installed in places on the computer's file system where OpenModelica
 can find them.
 
-The default place where OpenModelica looks for packages is the so-called
-`MODELICAPATH <https://specification.modelica.org/maint/3.6/packages.html#the-modelica-library-path-modelicapath>`_.
+The default place where OpenModelica looks for packages is set by environment variable ``OPENMODELICALIBRARY``.
+The variable `OPENMODELICALIBRARY <https://specification.modelica.org/maint/3.6/packages.html#the-modelica-library-path-modelicapath>`_
+from the language specification is ignored by OpenModelica, see `FAQ OpenModelica General <faq-openmodelica-general>`_.
 You can check where it is by typing ``getModelicaPath()`` in the Interactive Environment (Tools | OpenModelica Compiler CLI in OMEdit),
-or by browsing the General group under Tools|Options|Libraries. Installed read-only libraries are all placed by default in the MODELICAPATH.
+or by browsing the General group under Tools|Options|Libraries. Installed read-only libraries are all placed by default
+in the ``OPENMODELICALIBRARY``.
 
 However, when you open a package directly from the file system, OpenModelica will also look for
 packages it depends upon in the same directory that contains the package you just opened. For example, if you open
 ``/home/John/ModelicaPackages/MoonShot/package.mo``, and your MoonShot package contains ``annotation(uses(Rockets));``,
 OpenModelica will also check ``/home/John/ModelicaPackages/Rockets/package.mo`` and ``/home/John/ModelicaPackages/Rockets.mo``.
 So, if you are developing several packages with dependencies among them, you can place them in the same common root directory
-to make sure that all the dependencies are loaded automatically, without the need of putting them in the MODELICAPATH, or
-to change it to include that directory.
+to make sure that all the dependencies are loaded automatically, without the need of putting them in the
+``OPENMODELICALIBRARY``, or to change it to include that directory.
 
 Please note that if the ``uses`` annotation refers to a specific version of a package, that package will only be loaded
 if the name of the directory or of the single file that contains it also indicates the version number, as allowed by
@@ -44,9 +46,10 @@ the Modelica Specification, `Section 18.8.3
 <https://specification.modelica.org/maint/3.6/annotations.html#mapping-of-versions-to-file-system>`_. For example,
 if MoonShot contains ``annotation(uses(Rockets(version = "2.0.0"));``, OpenModelica will try to load
 ``/home/John/ModelicaPackages/Rockets 2.0.0/package.mo`` or ``/home/John/ModelicaPackages/Rockets 2.0.0.mo``;
-in this case, packages without the version number in their root directory, such as 
-``/home/John/ModelicaPackages/Rockets/package.mo``, will be ignored. All installed packages in the MODELICAPATH
-include version numbers in their directory name, which also allows to install multiple versions of the same library.
+in this case, packages without the version number in their root directory, such as
+``/home/John/ModelicaPackages/Rockets/package.mo``, will be ignored. All installed packages in the
+``OPENMODELICALIBRARY`` include version numbers in their directory name, which also allows to install multiple versions
+of the same library.
 
 When a new version of certain package comes out, `conversion annotations
 <https://specification.modelica.org/maint/3.5/annotations.html#version-handling>`_ in it declare whether your models using
@@ -54,7 +57,7 @@ a certain older version of it can be used as they are with the new one, which is
 they need to be upgraded by running a conversion script, provided with the new version of the package. The former case
 is declared explicitly by a ``conversion(noneFromVersion)`` annotation. For example, a ``conversion(noneFromVersion="3.0.0")``
 annotation in version ``3.1.0`` of a certain package means that all packages using version ``3.0.0`` can use ``3.1.0``
-without any change. Of course it is preferrable to use a newer, backwards-compatible version, as it contains bugfixes
+without any change. Of course it is preferable to use a newer, backwards-compatible version, as it contains bugfixes
 and possibly new features.
 
 Hence, if you install a new version of a library which is 100% backwards-compatible with the previous ones, all your models that
@@ -66,7 +69,7 @@ your library that uses it, by running the provided conversion scripts.
 OpenModelica has a package manager that can be used to install and update libraries on your computer, and is able to run
 conversion scripts. Keep in mind there are three stages in package usage: *available* packages are indexed on the
 OSMC servers and can be downloaded from public repositories;
-*installed* packages are stored in the MODELICAPATH of your computer; *loaded* packages are loaded in memory
+*installed* packages are stored in the ``OPENMODELICALIBRARY`` of your computer; *loaded* packages are loaded in memory
 in an active OMC session, either via the Interactive Environment, or via the OMEdit GUI, where they are shown in the
 Libraries Browser. When you load a package, OpenModelica tries to load the best possible installed versions of all
 the dependencies declared in the uses annotation.
