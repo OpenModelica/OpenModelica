@@ -1142,7 +1142,7 @@ annotation(Documentation(info="<html>
 <p>
   Note that if the file basename is package.mo and the parent directory is the top-level class, or if the file is a directory, the library structure is loaded as if loadModel(ClassName) was called.
   Uses-annotations are respected if uses=true.
-  The main difference from loadModel is that loadFile appends this directory to the MODELICAPATH (for this call only).
+  The main difference from loadModel is that loadFile appends this directory to OPENMODELICALIBRARY (MODELICAPATH in the language specification) (for this call only).
 </p>
 </html>"), preferredView="text");
 end loadFile;
@@ -1556,7 +1556,7 @@ function setModelicaPath
   output Boolean success;
 external "builtin";
 annotation(Documentation(info="<html>
-<p>Sets the OPENMODELICALIBRARY (MODELICAPATH in the language specification) environment variable in OpenModelica. See <a href=\"modelica://OpenModelica.Scripting.loadModel\">loadModel()</a> for a description of what the MODELICAPATH is used for.</p>
+<p>Sets the OPENMODELICALIBRARY (MODELICAPATH in the language specification) environment variable in OpenModelica. See <a href=\"modelica://OpenModelica.Scripting.loadModel\">loadModel()</a> for a description of what OPENMODELICALIBRARY is used for.</p>
 <p>Set it to empty string to clear it: setModelicaPath(\"\");</p>
 </html>"),
   preferredView="text");
