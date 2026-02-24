@@ -387,7 +387,10 @@ algorithm
   end if;
 
   flatModel.variables := list(updateVariability(var) for var in flatModel.variables);
-  checkDeletedVarRefs(flatModel, deleted_vars, settings);
+
+  if not Flags.isConfigFlagSet(Flags.ALLOW_NON_STANDARD_MODELICA, "illegalConditionalContext") then
+    checkDeletedVarRefs(flatModel, deleted_vars, settings);
+  end if;
 end flatten;
 
 function flattenConnection
