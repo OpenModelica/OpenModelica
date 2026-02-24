@@ -820,36 +820,39 @@ protected
     input Pointer<Integer> index;
     input output list<Pointer<Equation>> eqns;
     input output Integer shift;
+    input list<Subscript> subs = {};
   algorithm
     _ := match exp
       local
-        Integer sz;
+        Integer sub_idx;
+        Boolean is_cat_dim;
+        Subscript sub;
         ComponentRef lhs;
-        Expression lhs_sub, lhs_exp, rhs_exp;
+        Expression lhs_exp;
         Pointer<Equation> new_eqn;
 
       case Expression.ARRAY() algorithm
-        // a literal expression, does not need subscripting
+        is_cat_dim  := n == listLength(subs) + 1;
+        sub_idx     := if is_cat_dim then shift + 1 else 1;
+
         for elem in exp.elements loop
-          (eqns, shift) := inlineCatCallLiterals(elem, cref, iter, attr, n, index, eqns, shift);
+          sub           := Subscript.INDEX(Expression.INTEGER(sub_idx));
+          (eqns, shift) := inlineCatCallLiterals(elem, cref, iter, attr, n, index, eqns, shift, sub :: subs);
+          sub_idx       := sub_idx + 1;
         end for;
+
+        if is_cat_dim then
+          shift := shift + arrayLength(exp.elements);
+        end if;
       then ();
 
       else algorithm
-        sz          := Type.sizeOf(Expression.typeOf(exp));
         // properly subscript LHS with shift
-        lhs_sub     := Expression.INTEGER(shift+1);
-        lhs         := ComponentRef.mergeSubscripts(Subscript.fillWithWholeLeft({Subscript.INDEX(lhs_sub)}, n), cref);
+        lhs         := ComponentRef.mergeSubscripts(listReverse(subs), cref);
         lhs_exp     := Expression.fromCref(lhs);
 
-        // wrap rhs in enough array to fit the lhs type
-        rhs_exp     := Expression.makeArray(Expression.typeOf(lhs_exp), arrayCreate(1, exp), true);
-
         // create the new equation
-        new_eqn     := Equation.makeAssignment(lhs_exp, rhs_exp, index, NBEquation.SIMULATION_STR, iter, attr);
-
-        // bump the shift adding the size of this last equation
-        shift := shift + sz;
+        new_eqn     := Equation.makeAssignment(lhs_exp, exp, index, NBEquation.SIMULATION_STR, iter, attr);
 
         eqns := new_eqn :: eqns;
         if Flags.isSet(Flags.DUMPBACKENDINLINE) then
