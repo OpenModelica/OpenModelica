@@ -1435,8 +1435,10 @@ algorithm
     case Expression.CAST()
       algorithm
         next_context := InstContext.set(context, NFInstContext.SUBEXPRESSION);
+        (e1, ty, variability, purity) := typeExp(exp.exp, next_context, info, retype);
+        exp.exp := e1;
       then
-        typeExp(exp.exp, next_context, info, retype);
+        (exp, ty, variability, purity);
 
     case Expression.SUBSCRIPTED_EXP()
       then typeSubscriptedExp(exp, context, info);
