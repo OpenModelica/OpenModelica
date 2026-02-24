@@ -235,7 +235,7 @@ protected
     list<tuple<String, String>> debug_str;
     Integer debug_max_length;
   algorithm
-    _ := match eqData
+    _ := match (eqData, varData)
       local
         Call_Id id;
         Call_Aux aux;
@@ -243,7 +243,7 @@ protected
         Pointer<Equation> new_eqn;
         list<Pointer<Variable>> new_vars;
 
-      case EqData.EQ_DATA_SIM() algorithm
+      case (EqData.EQ_DATA_SIM(), VarData.VAR_DATA_SIM()) algorithm
         // first collect all new functions from simulation equations
         eqData.simulation := EquationPointers.map(eqData.simulation,
           function introduceFunctionAliasEquation(map = map, variables = variables, set = set, aux_index = aux_index, eqn_index = eqData.uniqueIndex, init = false));
@@ -279,6 +279,11 @@ protected
         eqData.initials := EquationPointers.map(eqData.initials,
           function introduceFunctionAliasEquation(map = map, variables = variables, set = set, aux_index = aux_index, eqn_index = eqData.uniqueIndex, init = true));
 
+        // add parameter function alias
+        varData.parameters := VariablePointers.mapPtr(varData.parameters,
+          function BVariable.mapExp(funcExp = function introduceFunctionAlias(map = map, aux_index = aux_index, iter = Iterator.EMPTY(), init = true),
+          mapFunc = Expression.fakeMap));
+
         // create new initialization variables and corresponding equations for the function alias
         for tpl in listReverse(UnorderedMap.toList(map)) loop
           (id, aux) := tpl;
@@ -292,8 +297,11 @@ protected
               (disc, new_vars_disc, new_vars_cont, new_vars_init, new_vars_recd) := addAuxVar(new_var, disc, new_vars_disc, new_vars_cont, new_vars_init, new_vars_recd, true);
             end for;
 
-            new_eqn := Equation.makeAssignment(aux.replacer, id.call, eqData.uniqueIndex, "AUX", id.iter, EquationAttributes.default(aux.kind, false));
+            new_eqn := Equation.makeAssignment(aux.replacer, id.call, eqData.uniqueIndex, "AUX", id.iter, EquationAttributes.default(aux.kind, true));
             new_eqns_init := new_eqn :: new_eqns_init;
+
+            aux.parsed := true;
+            UnorderedMap.add(id, aux, map);
           end if;
         end for;
 
@@ -476,15 +484,30 @@ protected
       (exp, aux_opt) := match exp
         local
           Call call;
+          Expression arg1, arg2;
 
-        case Expression.CALL(call = call as Call.TYPED_CALL())
-          guard("cat" == AbsynUtil.pathFirstIdent(Function.nameConsiderBuiltin(Call.typedFunction(call)))) algorithm
-          call.arguments  := listHead(call.arguments) :: list(if Expression.isLiteral(arg) or Expression.isCref(arg) then arg
-            else introduceAlias(arg, map, aux_index, iter, init) for arg in listRest(call.arguments));
-          exp.call        := call;
-          id              := CALL_ID(exp, new_iter);
-          // double check if after replacing cat() call arguments the ID already exists
-          aux_opt         := UnorderedMap.get(id, map);
+        case Expression.CALL(call = call as Call.TYPED_CALL()) algorithm
+          _ := match (Call.functionName(call), call.arguments)
+            case (Absyn.IDENT(name = "cat"), _) algorithm
+              call.arguments  := listHead(call.arguments) :: list(if Expression.isLiteral(arg) or Expression.isCref(arg) then arg
+                else introduceAlias(arg, map, aux_index, iter, init) for arg in listRest(call.arguments));
+              exp.call        := call;
+              id              := CALL_ID(exp, new_iter);
+              // double check if after replacing cat() call arguments the ID already exists
+              aux_opt         := UnorderedMap.get(id, map);
+            then ();
+
+            case (Absyn.IDENT(name = "promote"), {arg1, arg2}) algorithm
+              call.arguments  := {if Expression.isLiteral(arg1) or Expression.isCref(arg1) then arg1
+                else introduceAlias(arg1, map, aux_index, iter, init), arg2};
+              exp.call        := call;
+              id              := CALL_ID(exp, new_iter);
+              // double check if after replacing promote() call arguments the ID already exists
+              aux_opt         := UnorderedMap.get(id, map);
+            then ();
+
+            else ();
+          end match;
         then (exp, aux_opt);
         else (exp, aux_opt);
       end match;

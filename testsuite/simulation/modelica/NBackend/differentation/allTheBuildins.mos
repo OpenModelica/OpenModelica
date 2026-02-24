@@ -48,7 +48,7 @@ buildModel(oneArgBuiltins); getErrorString();
 //
 // ### debugDifferentiation | NBJacobian.jacobianSymbolic ###
 // [BEFORE] [SCAL] (1) $FUN_1 = abs(var2) ($RES_AUX_31)
-// [AFTER ] [SCAL] (1) $pDER_ODE_JAC.$FUN_1 = sign(var2) * $SEED_ODE_JAC.var2 ($RES_AUX_31)
+// [AFTER ] [SCAL] (1) $pDER_ODE_JAC.$FUN_1 = CAST(Real, sign(var2)) * $SEED_ODE_JAC.var2 ($RES_AUX_31)
 //
 // ### debugDifferentiation | NBJacobian.jacobianSymbolic ###
 // [BEFORE] [SCAL] (1) $DER.var2 = $FUN_1 ($RES_SIM_15)
@@ -159,7 +159,7 @@ buildModel(oneArgBuiltins); getErrorString();
 // [AFTER ] [SCAL] (1) $pDER_ODE_JAC.$DER.var15 = $pDER_ODE_JAC.$FUN_14 ($RES_SIM_2)
 //
 // ### debugDifferentiation | NBJacobian.jacobianSymbolic ###
-// [BEFORE] [SCAL] (1) $FUN_15 = cos(ivar1) ($RES_AUX_17)
+// [BEFORE] [SCAL] (1) $FUN_15 = cos(CAST(Real, ivar1)) ($RES_AUX_17)
 // [AFTER ] [SCAL] (1) $pDER_ODE_JAC.$FUN_15 = -0.0 ($RES_AUX_17)
 //
 // ### debugDifferentiation | NBJacobian.jacobianSymbolic ###

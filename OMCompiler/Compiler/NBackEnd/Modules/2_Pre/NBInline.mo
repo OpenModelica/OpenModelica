@@ -391,6 +391,16 @@ public
           guard(AbsynUtil.pathString(Function.nameConsiderBuiltin(Call.typedFunction(call))) == "cat")
         then inlineCatCall(eqn, rhs.cref, Call.arguments(call), eqn.attr, iter, variables, new_eqns, set, index);
 
+        // CREF = promote()
+        case Equation.ARRAY_EQUATION(lhs = lhs as Expression.CREF(), rhs = Expression.CALL(call = call))
+          guard(AbsynUtil.pathString(Function.nameConsiderBuiltin(Call.typedFunction(call))) == "promote")
+        then inlinePromoteCall(eqn, lhs.cref, Call.arguments(call), eqn.attr, iter, variables, new_eqns, set, index);
+
+        // promote() = CREF
+        case Equation.ARRAY_EQUATION(lhs = Expression.CALL(call = call), rhs = rhs as Expression.CREF())
+          guard(AbsynUtil.pathString(Function.nameConsiderBuiltin(Call.typedFunction(call))) == "promote")
+        then inlinePromoteCall(eqn, rhs.cref, Call.arguments(call), eqn.attr, iter, variables, new_eqns, set, index);
+
         // apply on for-equation. assumed to be split up
         case Equation.FOR_EQUATION(body = {body}) algorithm
           new_eqn := inlineRecordTupleArrayEquation(body, eqn.iter, variables, new_eqns, set, index, true);
@@ -614,6 +624,61 @@ protected
     eqn := Equation.DUMMY_EQUATION();
   end inlineArrayConstructor;
 
+  function inlinePromoteCall
+    "inlines a promote() call by creating a new equation for the argument. needs prior handling in function alias
+    where both the promote() and its argument have been replaced by alias variables such that we can always expect
+    the structure:
+      FUN_2 = promote(FUN_1, DIM)
+    the result will be:
+      FUN_2[:,:,:,1,1,1,1] = FUN_1;
+    where the amount of ':' is equal to the number of dimensions in FUN_1 and
+    the amount of '1' is equal to DIM minus that number.
+    "
+    input output Equation eqn;
+    input ComponentRef cref;
+    input list<Expression> args;
+    input EquationAttributes attr;
+    input Iterator iter;
+    input VariablePointers variables;
+    input Pointer<list<Pointer<Equation>>> new_eqns;
+    input UnorderedSet<VariablePointer> set "new iterators";
+    input Pointer<Integer> index;
+  protected
+    Expression arg;
+    Integer n, dim_count;
+    list<Subscript> subs;
+    Expression lhs;
+    Pointer<Equation> new_eqn;
+  algorithm
+    if Flags.isSet(Flags.DUMPBACKENDINLINE) then
+      print("\n[" + getInstanceName() + "] Inlining: ");
+      if not Iterator.isEmpty(iter) then
+        print("{" + Iterator.toString(iter) + "} ");
+      end if;
+      print(Equation.toString(eqn) + "\n");
+    end if;
+
+    {arg, Expression.INTEGER(n)} := args;
+
+    eqn := match arg
+      case Expression.CREF() algorithm
+        dim_count := Type.dimensionCount(ComponentRef.getSubscriptedType(arg.cref));
+        if n == dim_count then
+          lhs     := Expression.fromCref(cref);
+        else
+          subs    := Subscript.fillWithWholeLeft(List.fill(Subscript.INDEX(Expression.INTEGER(1)), n - dim_count), n);
+          lhs     := Expression.fromCref(ComponentRef.mergeSubscripts(subs, cref));
+        end if;
+        // create the new equation
+        new_eqn   := Equation.makeAssignment(lhs, arg, index, NBEquation.SIMULATION_STR, iter, attr);
+        if Flags.isSet(Flags.DUMPBACKENDINLINE) then
+          print("-- Result: " + Equation.pointerToString(new_eqn) + "\n");
+        end if;
+      then Pointer.access(new_eqn);
+      else eqn;
+    end match;
+  end inlinePromoteCall;
+
   function inlineCatCall
     "inlines a cat() call by creating a new equation each of the arguments. needs prior handling in function alias
     where both the cat() and all its arguments have been replaced by alias variables such that we can always expect
@@ -732,7 +797,7 @@ protected
 
         // inline for literals down to element, nested arrays possible
         case Expression.ARRAY() guard(not failed and Expression.isLiteral(arg)) algorithm
-          (eqns, shift) := inlineCatCallLiterals(arg, cref, iter, attr, n, index, failed, eqns, shift);
+          (eqns, shift) := inlineCatCallLiterals(arg, cref, iter, attr, n, index, eqns, shift);
         then false;
 
         else true;
@@ -753,36 +818,41 @@ protected
     input EquationAttributes attr;
     input Integer n;
     input Pointer<Integer> index;
-    input Boolean failed;
     input output list<Pointer<Equation>> eqns;
     input output Integer shift;
+    input list<Subscript> subs = {};
   algorithm
     _ := match exp
       local
-        Integer sz;
+        Integer sub_idx;
+        Boolean is_cat_dim;
+        Subscript sub;
         ComponentRef lhs;
-        Expression lhs_sub, lhs_exp;
+        Expression lhs_exp;
         Pointer<Equation> new_eqn;
 
-      case Expression.ARRAY() guard(not failed and Expression.isLiteral(exp)) algorithm
-        // a literal expression, does not need subscripting
+      case Expression.ARRAY() algorithm
+        is_cat_dim  := n == listLength(subs) + 1;
+        sub_idx     := if is_cat_dim then shift + 1 else 1;
+
         for elem in exp.elements loop
-          (eqns, shift) := inlineCatCallLiterals(elem, cref, iter, attr, n, index, failed, eqns, shift);
+          sub           := Subscript.INDEX(Expression.INTEGER(sub_idx));
+          (eqns, shift) := inlineCatCallLiterals(elem, cref, iter, attr, n, index, eqns, shift, sub :: subs);
+          sub_idx       := sub_idx + 1;
         end for;
+
+        if is_cat_dim then
+          shift := shift + arrayLength(exp.elements);
+        end if;
       then ();
 
       else algorithm
-        sz          := Type.sizeOf(Expression.typeOf(exp));
         // properly subscript LHS with shift
-        lhs_sub     := Expression.INTEGER(shift+1);
-        lhs         := ComponentRef.mergeSubscripts(Subscript.fillWithWholeLeft({Subscript.INDEX(lhs_sub)}, n), cref);
+        lhs         := ComponentRef.mergeSubscripts(listReverse(subs), cref);
         lhs_exp     := Expression.fromCref(lhs);
 
         // create the new equation
         new_eqn     := Equation.makeAssignment(lhs_exp, exp, index, NBEquation.SIMULATION_STR, iter, attr);
-
-        // bump the shift adding the size of this last equation
-        shift := shift + sz;
 
         eqns := new_eqn :: eqns;
         if Flags.isSet(Flags.DUMPBACKENDINLINE) then

@@ -100,13 +100,13 @@ simulate(for_if_lists); getErrorString();
 //   [----] for i in 1:5 loop
 //   [----]   [-IF-] (1)
 //   [----]   [----] if i <> 3 then
-//   [----]   [----]   [SCAL] (1) x[i] = time + i
+//   [----]   [----]   [SCAL] (1) x[i] = time + CAST(Real, i)
 //   [----]   [----] end if;
 //   [----] end for;
 // [AFTER ]
 //   [FOR-] (4)
 //   [----] for i in {1, 2, 4, 5} loop
-//   [----]   [SCAL] (1) x[i] = time + i
+//   [----]   [SCAL] (1) x[i] = time + CAST(Real, i)
 //   [----] end for;
 //
 // ### dumpSimplify |  ###
@@ -127,13 +127,13 @@ simulate(for_if_lists); getErrorString();
 //   [----] for i in 1:5 loop
 //   [----]   [-IF-] (1)
 //   [----]   [----] if i < 3 then
-//   [----]   [----]   [SCAL] (1) y[i] = time + i
+//   [----]   [----]   [SCAL] (1) y[i] = time + CAST(Real, i)
 //   [----]   [----] end if;
 //   [----] end for;
 // [AFTER ]
 //   [FOR-] (2)
 //   [----] for i in 1:1:2 loop
-//   [----]   [SCAL] (1) y[i] = time + i
+//   [----]   [SCAL] (1) y[i] = time + CAST(Real, i)
 //   [----] end for;
 //
 // ### dumpSimplify |  ###
@@ -161,13 +161,13 @@ simulate(for_if_lists); getErrorString();
 //   [----] for i in 1:5 loop
 //   [----]   [-IF-] (1)
 //   [----]   [----] if i > 3 then
-//   [----]   [----]   [SCAL] (1) z[i] = time + i
+//   [----]   [----]   [SCAL] (1) z[i] = time + CAST(Real, i)
 //   [----]   [----] end if;
 //   [----] end for;
 // [AFTER ]
 //   [FOR-] (2)
 //   [----] for i in 4:1:5 loop
-//   [----]   [SCAL] (1) z[i] = time + i
+//   [----]   [SCAL] (1) z[i] = time + CAST(Real, i)
 //   [----] end for;
 //
 // ### dumpSimplify |  ###
@@ -203,13 +203,13 @@ simulate(for_if_lists); getErrorString();
 //   [----] for i in {1, 2, 3, 4, 5} loop
 //   [----]   [-IF-] (1)
 //   [----]   [----] if i <> 3 then
-//   [----]   [----]   [SCAL] (1) x[i] = time + i
+//   [----]   [----]   [SCAL] (1) x[i] = time + CAST(Real, i)
 //   [----]   [----] end if;
 //   [----] end for;
 // [AFTER ]
 //   [FOR-] (4)
 //   [----] for i in {1, 2, 4, 5} loop
-//   [----]   [SCAL] (1) x[i] = time + i
+//   [----]   [SCAL] (1) x[i] = time + CAST(Real, i)
 //   [----] end for;
 //
 // ### dumpSimplify |  ###
@@ -230,13 +230,13 @@ simulate(for_if_lists); getErrorString();
 //   [----] for i in {1, 2, 3, 4, 5} loop
 //   [----]   [-IF-] (1)
 //   [----]   [----] if i < 3 then
-//   [----]   [----]   [SCAL] (1) y[i] = time + i
+//   [----]   [----]   [SCAL] (1) y[i] = time + CAST(Real, i)
 //   [----]   [----] end if;
 //   [----] end for;
 // [AFTER ]
 //   [FOR-] (2)
 //   [----] for i in {1, 2} loop
-//   [----]   [SCAL] (1) y[i] = time + i
+//   [----]   [SCAL] (1) y[i] = time + CAST(Real, i)
 //   [----] end for;
 //
 // ### dumpSimplify |  ###
@@ -264,13 +264,13 @@ simulate(for_if_lists); getErrorString();
 //   [----] for i in {1, 2, 3, 4, 5} loop
 //   [----]   [-IF-] (1)
 //   [----]   [----] if i > 3 then
-//   [----]   [----]   [SCAL] (1) z[i] = time + i
+//   [----]   [----]   [SCAL] (1) z[i] = time + CAST(Real, i)
 //   [----]   [----] end if;
 //   [----] end for;
 // [AFTER ]
 //   [FOR-] (2)
 //   [----] for i in {4, 5} loop
-//   [----]   [SCAL] (1) z[i] = time + i
+//   [----]   [SCAL] (1) z[i] = time + CAST(Real, i)
 //   [----] end for;
 //
 // ### dumpSimplify |  ###

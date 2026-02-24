@@ -5331,7 +5331,11 @@ public
       // Such an expression can't be promoted here, so we create a promote call instead.
       case (_, _) guard isArray
         algorithm
-          (outExp, expanded) := ExpandExp.expand(exp);
+          if Flags.getConfigBool(Flags.NEW_BACKEND) and not Expression.isLiteral(exp) then
+            expanded := false;
+          else
+            (outExp, expanded) := ExpandExp.expand(exp);
+          end if;
 
           if expanded then
             outExp := promote2(outExp, true, dims, types);

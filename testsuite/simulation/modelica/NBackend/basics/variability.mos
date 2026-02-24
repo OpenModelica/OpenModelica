@@ -28,6 +28,6 @@ simulate(variability); getErrorString();
 // ### Variable:
 // 	Integer m
 // ### Equation:
-// 	[SCAL] (1) m = time ^ 2.0 ($RES_SIM_0)
+// 	[SCAL] (1) CAST(Real, m) = time ^ 2.0 ($RES_SIM_0)
 // "
 // endResult

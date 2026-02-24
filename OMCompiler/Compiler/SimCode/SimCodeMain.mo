@@ -1498,10 +1498,10 @@ protected function translateModelCallBackendNB
 protected
   Real timeSimCode=0.0, timeTemplates=0.0, timeBackend=0.0;
   NBackendDAE bdae;
+  Boolean nf_api;
 algorithm
   FlagsUtil.setConfigBool(Flags.BUILDING_MODEL, true);
-
-  // ToDo: set permanently matching -> SBGraphs
+  nf_api := FlagsUtil.set(Flags.NF_API, false);
 
   System.realtimeTick(ClockIndexes.RT_CLOCK_BACKEND);
   bdae := NBackendDAE.lower(inFlatModel, funcMap);
@@ -1511,12 +1511,14 @@ algorithm
   bdae := NBackendDAE.main(bdae);
   timeBackend := System.realtimeTock(ClockIndexes.RT_CLOCK_BACKEND);
   ExecStat.execStat("backend");
+  FlagsUtil.set(Flags.NF_API, nf_api);
 
   (outLibs, outFileDir, timeSimCode, timeTemplates, oldFunctionTree) := generateModelCodeNewBackend(bdae, inClassName, inFileNamePrefix, inSimSettingsOpt);
 
   resultValues := {("timeTemplates", Values.REAL(timeTemplates)),
                   ("timeSimCode", Values.REAL(timeSimCode)),
                   ("timeBackend", Values.REAL(timeBackend))};
+
 end translateModelCallBackendNB;
 
 protected function generateModelCodeDAE
