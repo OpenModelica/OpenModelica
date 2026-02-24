@@ -107,6 +107,17 @@ public
     end for;
   end applyExpList;
 
+  function map
+    input output Algorithm alg;
+    input MapFn fn;
+
+    partial function MapFn
+      input output Statement stmt;
+    end MapFn;
+  algorithm
+    alg.statements := list(Statement.map(s, fn) for s in alg.statements);
+  end map;
+
   function mapExp
     input output Algorithm alg;
     input MapFunc func;

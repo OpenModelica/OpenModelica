@@ -2197,6 +2197,65 @@ algorithm
   end for;
 end splitForLoop2;
 
+function unrollForStatementsInAlg
+  input output Algorithm alg;
+algorithm
+  alg.statements := unrollForStatements(alg.statements);
+end unrollForStatementsInAlg;
+
+function unrollForStatements
+  input list<Statement> stmts;
+  output list<Statement> outStmts = {};
+algorithm
+  for s in stmts loop
+    outStmts := unrollForStatement(s, outStmts);
+  end for;
+
+  outStmts := listReverseInPlace(outStmts);
+end unrollForStatements;
+
+function unrollForStatement
+  input Statement stmt;
+  input output list<Statement> statements;
+protected
+  Expression range, val;
+  SourceInfo info;
+  RangeIterator range_iter;
+  list<Statement> stmts;
+  Boolean has_for;
+algorithm
+  statements := match stmt
+    case Statement.FOR(range = SOME(range))
+      algorithm
+        info := Statement.info(stmt);
+
+        try
+          range := Ceval.evalExp(range, Ceval.EvalTarget.new(info, NFInstContext.ITERATION_RANGE));
+          range_iter := RangeIterator.fromExp(range);
+        else
+          Error.addSourceMessage(Error.UNROLL_FAILURE, {Statement.toString(stmt)}, info);
+        end try;
+
+        has_for := Statement.containsList(stmt.body, Statement.isFor);
+
+        while RangeIterator.hasNext(range_iter) loop
+          (range_iter, val) := RangeIterator.next(range_iter);
+          stmts := Statement.replaceIteratorList(stmt.body, stmt.iterator, val);
+
+          if has_for then
+            // Unroll recursively if there are nested for loops, otherwise skip it to save time.
+            stmts := unrollForStatements(stmts);
+          end if;
+
+          statements := List.append_reverse(stmts, statements);
+        end while;
+      then
+        statements;
+
+    else stmt :: statements;
+  end match;
+end unrollForStatement;
+
 function flattenAlgorithms
   input list<Algorithm> algorithms;
   input Prefix prefix;
