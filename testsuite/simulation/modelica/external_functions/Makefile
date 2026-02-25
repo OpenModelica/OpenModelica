@@ -1,19 +1,20 @@
 TEST = ../../../rtest -v
 
 TESTFILES = \
-MDD_test.mos \
-extObj_ticket3446.mos \
-ExtObj.mos \
-ExtObjStringParam.mos \
 ExternalCFuncInputOnly.mos \
 ExternalLibraries.mos \
 ExternalRHSFlag.mos \
+extObj_ticket3446.mos \
+ExtObj.mos \
+ExtObjStringParam.mos \
 ImplicitArray.mos \
 LapackInverse.mos \
-Matrix.mos  \
+Matrix.mos \
+MDD_test.mos \
 ModelicaUtilities.mos \
-TestRoots.mos \
 QualifiedCrefArg.mos \
+RecordMemberArguments.mos \
+TestRoots.mos \
 ts.mos
 
 # test that currently fail. Move up when fixed.
