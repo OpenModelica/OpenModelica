@@ -257,11 +257,11 @@ void GraphicsView::drawCoordinateSystem(bool openingModel)
 {
   if (isIconView() && mpModelWidget->getLibraryTreeItem()->getAccess() >= LibraryTreeItem::icon) {
     mCoordinateSystem = mpModelWidget->getModelInstance()->getAnnotation()->getIconAnnotation()->mCoordinateSystem;
-    mMergedCoordinateSystem = mpModelWidget->getModelInstance()->getAnnotation()->getIconAnnotation()->mMergedCoordinateSystem;
+    mMergedCoordinateSystem = mpModelWidget->getModelInstance()->mMergedIconCoordinateSystem;
     setExtentRectangle(mMergedCoordinateSystem.getExtentRectangle(), openingModel);
   } else if (isDiagramView() && mpModelWidget->getLibraryTreeItem()->getAccess() >= LibraryTreeItem::diagram) {
     mCoordinateSystem = mpModelWidget->getModelInstance()->getAnnotation()->getDiagramAnnotation()->mCoordinateSystem;
-    mMergedCoordinateSystem = mpModelWidget->getModelInstance()->getAnnotation()->getDiagramAnnotation()->mMergedCoordinateSystem;
+    mMergedCoordinateSystem = mpModelWidget->getModelInstance()->mMergedDiagramCoordinateSystem;
     setExtentRectangle(mMergedCoordinateSystem.getExtentRectangle(), openingModel);
   }
 }
@@ -5833,7 +5833,9 @@ void ModelWidget::loadModelInstance(bool icon, const ModelInfo &modelInfo)
   // save the current ModelInstance pointer so we can delete it later.
   ModelInstance::Model *pOldModelInstance = mpModelInstance;
   QElapsedTimer timer;
-  timer.start();
+  if (MainWindow::instance()->isNewApiProfiling()) {
+    timer.start();
+  }
   // call getModelInstance
   const QJsonObject jsonObject = MainWindow::instance()->getOMCProxy()->getModelInstance(mpLibraryTreeItem->getNameStructure(), "", "", false, icon);
   // set the new ModelInstance
@@ -5841,8 +5843,8 @@ void ModelWidget::loadModelInstance(bool icon, const ModelInfo &modelInfo)
   if (MainWindow::instance()->isNewApiProfiling()) {
     double elapsed = (double)timer.elapsed() / 1000.0;
     MainWindow::instance()->writeNewApiProfiling(QString("Time for parsing JSON %1 secs").arg(QString::number(elapsed, 'f', 6)));
+    timer.restart();
   }
-  timer.restart();
   // enable skip expression evaluation flag if we are drawing the icon only
   MainWindow::instance()->setSkipExpressionEvaluation(icon);
   // drawing

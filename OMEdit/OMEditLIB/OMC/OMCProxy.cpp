@@ -3393,7 +3393,9 @@ QList<QString> OMCProxy::getAvailablePackageConversionsFrom(const QString &pkg, 
 QJsonObject OMCProxy::getModelInstance(const QString &className, const QString &context, const QString &modifier, bool prettyPrint, bool icon)
 {
   QElapsedTimer timer;
-  timer.start();
+  if (MainWindow::instance()->isNewApiProfiling()) {
+    timer.start();
+  }
 
   QString modelInstanceJson = "";
   QString cnt = context.isEmpty() ? QString("__NoContext") : context;
@@ -3426,7 +3428,9 @@ QJsonObject OMCProxy::getModelInstance(const QString &className, const QString &
 
   printMessagesStringInternal();
   if (!modelInstanceJson.isEmpty()) {
-    timer.restart();
+    if (MainWindow::instance()->isNewApiProfiling()) {
+      timer.restart();
+    }
     QJsonParseError jsonParserError;
     QJsonDocument doc = QJsonDocument::fromJson(modelInstanceJson.toUtf8(), &jsonParserError);
     if (doc.isNull()) {

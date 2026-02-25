@@ -522,8 +522,6 @@ namespace ModelInstance
     : mPlacementAnnotation(pParentModel)
   {
     mpParentModel = pParentModel;
-    mpIconAnnotation = std::make_unique<IconDiagramAnnotation>(mpParentModel);
-    mpDiagramAnnotation = std::make_unique<IconDiagramAnnotation>(mpParentModel);
     mDocumentationClass = false;
     mVersion = "";
     mVersionDate = "";
@@ -547,10 +545,12 @@ namespace ModelInstance
   void Annotation::deserialize(const QJsonObject &jsonObject)
   {
     if (jsonObject.contains("Icon")) {
+      mpIconAnnotation = std::make_unique<IconDiagramAnnotation>(mpParentModel);
       mpIconAnnotation->deserialize(jsonObject.value("Icon").toObject());
     }
 
     if (jsonObject.contains("Diagram")) {
+      mpDiagramAnnotation = std::make_unique<IconDiagramAnnotation>(mpParentModel);
       mpDiagramAnnotation->deserialize(jsonObject.value("Diagram").toObject());
     }
 
@@ -638,6 +638,26 @@ namespace ModelInstance
     }
   }
 
+  IconDiagramAnnotation *Annotation::getIconAnnotation() const
+  {
+    return mpIconAnnotation ? mpIconAnnotation.get() : &IconDiagramAnnotation::defaultIconDiagramAnnotation;
+  }
+
+  IconDiagramAnnotation *Annotation::getIconAnnotationWithoutDefault() const
+  {
+    return mpIconAnnotation ? mpIconAnnotation.get() : nullptr;
+  }
+
+  IconDiagramAnnotation *Annotation::getDiagramAnnotation() const
+  {
+    return mpDiagramAnnotation ? mpDiagramAnnotation.get() : &IconDiagramAnnotation::defaultIconDiagramAnnotation;
+  }
+
+  IconDiagramAnnotation *Annotation::getDiagramAnnotationWithoutDefault() const
+  {
+    return mpDiagramAnnotation ? mpDiagramAnnotation.get() : nullptr;
+  }
+
   /*!
    * \brief Annotation::getMap
    * Returns either the IconMap or DiagramMap annotation.
@@ -653,6 +673,8 @@ namespace ModelInstance
     }
   }
 
+  IconDiagramAnnotation IconDiagramAnnotation::defaultIconDiagramAnnotation{nullptr};
+
   IconDiagramAnnotation::IconDiagramAnnotation(Model *pParentModel)
   {
     mpParentModel = pParentModel;
@@ -667,7 +689,6 @@ namespace ModelInstance
   {
     if (jsonObject.contains("coordinateSystem")) {
       mCoordinateSystem.deserialize(jsonObject.value("coordinateSystem").toObject());
-      mMergedCoordinateSystem = mCoordinateSystem;
     }
 
     if (jsonObject.contains("graphics")) {
@@ -1218,6 +1239,7 @@ namespace ModelInstance
     }
 
     if (mModelJson.contains("annotation")) {
+      mpAnnotation = std::make_unique<Annotation>(this);
       mpAnnotation->deserialize(mModelJson.value("annotation").toObject());
     }
 
@@ -1240,8 +1262,7 @@ namespace ModelInstance
       for (const QJsonValue &connection: connectionsArray) {
         QJsonObject connectionObject = connection.toObject();
         if (!connectionObject.isEmpty()) {
-          Connection *pConnection = new Connection(this);
-          pConnection->deserialize(connection.toObject());
+          Connection *pConnection = new Connection(connectionObject, this);
           mConnections.append(pConnection);
         }
       }
@@ -1253,8 +1274,7 @@ namespace ModelInstance
       for (const QJsonValue &transition: transitionsArray) {
         QJsonObject transitionObject = transition.toObject();
         if (!transitionObject.isEmpty()) {
-          Transition *pTransition = new Transition(this);
-          pTransition->deserialize(transition.toObject());
+          Transition *pTransition = new Transition(transitionObject, this);
           mTransitions.append(pTransition);
         }
       }
@@ -1266,8 +1286,7 @@ namespace ModelInstance
       for (const QJsonValue &initialState: initialStatesArray) {
         QJsonObject initialStateObject = initialState.toObject();
         if (!initialStateObject.isEmpty()) {
-          InitialState *pInitialState = new InitialState(this);
-          pInitialState->deserialize(initialState.toObject());
+          InitialState *pInitialState = new InitialState(initialStateObject, this);
           mInitialStates.append(pInitialState);
         }
       }
@@ -1318,12 +1337,19 @@ namespace ModelInstance
      *
      * Following is the second case. First case is covered when we read the annotation of the class. Third case is handled by default values of IconDiagramAnnotation class.
      */
-    if (!getAnnotation()->getIconAnnotation()->mMergedCoordinateSystem.isComplete()) {
-      readCoordinateSystemFromExtendsClass(&getAnnotation()->getIconAnnotation()->mMergedCoordinateSystem, true);
+
+    if (getAnnotationWithoutDefault() && getAnnotationWithoutDefault()->getIconAnnotationWithoutDefault()) {
+      mMergedIconCoordinateSystem = getAnnotationWithoutDefault()->getIconAnnotationWithoutDefault()->mCoordinateSystem;
+    }
+    if (!mMergedIconCoordinateSystem.isComplete()) {
+      readCoordinateSystemFromExtendsClass(&mMergedIconCoordinateSystem, true);
     }
 
-    if (!getAnnotation()->getDiagramAnnotation()->mMergedCoordinateSystem.isComplete()) {
-      readCoordinateSystemFromExtendsClass(&getAnnotation()->getDiagramAnnotation()->mMergedCoordinateSystem, false);
+    if (getAnnotationWithoutDefault() && getAnnotationWithoutDefault()->getDiagramAnnotationWithoutDefault()) {
+      mMergedDiagramCoordinateSystem = getAnnotationWithoutDefault()->getDiagramAnnotationWithoutDefault()->mCoordinateSystem;
+    }
+    if (!mMergedDiagramCoordinateSystem.isComplete()) {
+      readCoordinateSystemFromExtendsClass(&mMergedDiagramCoordinateSystem, false);
     }
   }
 
@@ -1466,6 +1492,11 @@ namespace ModelInstance
     return mpAnnotation ? mpAnnotation.get() : &Annotation::defaultAnnotation;
   }
 
+  Annotation *Model::getAnnotationWithoutDefault() const
+  {
+    return mpAnnotation ? mpAnnotation.get() : nullptr;
+  }
+
   void Model::readCoordinateSystemFromExtendsClass(CoordinateSystem *pCoordinateSystem, bool isIcon)
   {
     /* From Modelica Specification Version 3.6-dev
@@ -1482,9 +1513,9 @@ namespace ModelInstance
         auto pExtend = dynamic_cast<Extend*>(pElement);
         ModelInstance::CoordinateSystem coordinateSystem;
         if (isIcon) {
-          coordinateSystem = pExtend->getModel()->getAnnotation()->getIconAnnotation()->mCoordinateSystem;
+          coordinateSystem = pExtend->getModel()->mMergedIconCoordinateSystem;
         } else {
-          coordinateSystem = pExtend->getModel()->getAnnotation()->getDiagramAnnotation()->mCoordinateSystem;
+          coordinateSystem = pExtend->getModel()->mMergedDiagramCoordinateSystem;
         }
 
         if (!pCoordinateSystem->hasExtent() && coordinateSystem.hasExtent()) {
@@ -1854,7 +1885,6 @@ namespace ModelInstance
     mConnections.clear();
     mTransitions.clear();
     mInitialStates.clear();
-    mpAnnotation = std::make_unique<Annotation>(this);
   }
 
   Transformation::Transformation()
@@ -2495,8 +2525,8 @@ namespace ModelInstance
     }
 
     // Always create Annotation for extend element. See #11363
-    mpAnnotation = std::make_unique<Annotation>(mpParentModel);
     if (jsonObject.contains("annotation")) {
+      mpAnnotation = std::make_unique<Annotation>(mpParentModel);
       mpAnnotation->deserialize(jsonObject.value("annotation").toObject());
     }
   }
@@ -2932,9 +2962,16 @@ namespace ModelInstance
     }
   }
 
-  Connection::Connection(Model *pParentModel)
+  /*!
+   * \brief Connection::Connection
+   * Constructor for Connection.
+   * \param jsonObject
+   * \param pParentModel
+   */
+  Connection::Connection(const QJsonObject &jsonObject, Model *pParentModel)
   {
     mpParentModel = pParentModel;
+    deserialize(jsonObject);
   }
 
   /*!
@@ -2952,6 +2989,16 @@ namespace ModelInstance
     mpEndConnector = std::make_unique<Connector>("cref", endConnector);
     mpAnnotation = std::make_unique<Annotation>(mpParentModel);
     mpAnnotation->deserialize(annotationJsonObject);
+  }
+
+  Annotation *Connection::getAnnotation() const
+  {
+    return mpAnnotation ? mpAnnotation.get() : &Annotation::defaultAnnotation;
+  }
+
+  QString Connection::toString() const
+  {
+    return "connect(" % mpStartConnector->getName() % ", " % mpEndConnector->getName() % ")";
   }
 
   void Connection::deserialize(const QJsonObject &jsonObject)
@@ -2972,17 +3019,7 @@ namespace ModelInstance
     }
   }
 
-  Annotation *Connection::getAnnotation() const
-  {
-    return mpAnnotation ? mpAnnotation.get() : &Annotation::defaultAnnotation;
-  }
-
-  QString Connection::toString() const
-  {
-    return "connect(" % mpStartConnector->getName() % ", " % mpEndConnector->getName() % ")";
-  }
-
-  Transition::Transition(Model *pParentModel)
+  Transition::Transition(const QJsonObject &jsonObject, Model *pParentModel)
   {
     mpParentModel = pParentModel;
     mCondition = false;
@@ -2990,6 +3027,7 @@ namespace ModelInstance
     mReset = true;
     mSynchronize = false;
     mPriority = 1;
+    deserialize(jsonObject);
   }
 
   /*!
@@ -3018,6 +3056,25 @@ namespace ModelInstance
     mPriority = priority;
     mpAnnotation = std::make_unique<Annotation>(mpParentModel);
     mpAnnotation->deserialize(annotationJsonObject);
+  }
+
+  Annotation *Transition::getAnnotation() const
+  {
+    return mpAnnotation ? mpAnnotation.get() : &Annotation::defaultAnnotation;
+  }
+
+  QString Transition::toString() const
+  {
+    QStringList transitionArgs;
+    transitionArgs << mpStartConnector->getName()
+                   << mpEndConnector->getName()
+                   << QVariant(mCondition).toString()
+                   << QVariant(mCondition).toString()
+                   << QVariant(mImmediate).toString()
+                   << QVariant(mReset).toString()
+                   << QVariant(mSynchronize).toString()
+                   << QString::number(mPriority);
+    return "transition(" % transitionArgs.join(", ") % ")";
   }
 
   void Transition::deserialize(const QJsonObject &jsonObject)
@@ -3049,28 +3106,10 @@ namespace ModelInstance
     }
   }
 
-  Annotation *Transition::getAnnotation() const
-  {
-    return mpAnnotation ? mpAnnotation.get() : &Annotation::defaultAnnotation;
-  }
-
-  QString Transition::toString() const
-  {
-    QStringList transitionArgs;
-    transitionArgs << mpStartConnector->getName()
-                   << mpEndConnector->getName()
-                   << QVariant(mCondition).toString()
-                   << QVariant(mCondition).toString()
-                   << QVariant(mImmediate).toString()
-                   << QVariant(mReset).toString()
-                   << QVariant(mSynchronize).toString()
-                   << QString::number(mPriority);
-    return "transition(" % transitionArgs.join(", ") % ")";
-  }
-
-  InitialState::InitialState(Model *pParentModel)
+  InitialState::InitialState(const QJsonObject &jsonObject, Model *pParentModel)
   {
     mpParentModel = pParentModel;
+    deserialize(jsonObject);
   }
 
   /*!
@@ -3086,6 +3125,16 @@ namespace ModelInstance
     mpStartConnector = std::make_unique<Connector>("cref", startConnector);
     mpAnnotation = std::make_unique<Annotation>(mpParentModel);
     mpAnnotation->deserialize(annotationJsonObject);
+  }
+
+  Annotation *InitialState::getAnnotation() const
+  {
+    return mpAnnotation ? mpAnnotation.get() : &Annotation::defaultAnnotation;
+  }
+
+  QString InitialState::toString() const
+  {
+    return "initialState(" % mpStartConnector->getName() % ")";
   }
 
   void InitialState::deserialize(const QJsonObject &jsonObject)
@@ -3104,16 +3153,6 @@ namespace ModelInstance
       mpAnnotation = std::make_unique<Annotation>(mpParentModel);
       mpAnnotation->deserialize(jsonObject.value("annotation").toObject());
     }
-  }
-
-  Annotation *InitialState::getAnnotation() const
-  {
-    return mpAnnotation ? mpAnnotation.get() : &Annotation::defaultAnnotation;
-  }
-
-  QString InitialState::toString() const
-  {
-    return "initialState(" % mpStartConnector->getName() % ")";
   }
 
 }

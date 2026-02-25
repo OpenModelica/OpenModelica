@@ -276,7 +276,8 @@ private:
     bool isGraphicsEmpty() const {return mGraphics.isEmpty();}
 
     CoordinateSystem mCoordinateSystem;
-    CoordinateSystem mMergedCoordinateSystem;
+
+    static IconDiagramAnnotation defaultIconDiagramAnnotation;
   private:
     Model *mpParentModel;
     QVector<Shape*> mGraphics;
@@ -411,8 +412,10 @@ private:
     ~Annotation();
     void deserialize(const QJsonObject &jsonObject);
 
-    IconDiagramAnnotation *getIconAnnotation() const {return mpIconAnnotation.get();}
-    IconDiagramAnnotation *getDiagramAnnotation() const {return mpDiagramAnnotation.get();}
+    IconDiagramAnnotation *getIconAnnotation() const;
+    IconDiagramAnnotation *getIconAnnotationWithoutDefault() const;
+    IconDiagramAnnotation *getDiagramAnnotation() const;
+    IconDiagramAnnotation *getDiagramAnnotationWithoutDefault() const;
     const BooleanAnnotation &isState() const {return mState;}
     // Element annotation
     const BooleanAnnotation &isChoicesAllMatching() const {return mChoicesAllMatching;}
@@ -632,6 +635,7 @@ private:
     QString getDirection() const;
     QString getComment() const {return mComment;}
     Annotation *getAnnotation() const;
+    Annotation *getAnnotationWithoutDefault() const;
     void readCoordinateSystemFromExtendsClass(CoordinateSystem *pCoordinateSystem, bool isIcon);
     void addElement(Element *pElement) {mElements.append(pElement);}
     void removeElement(const QString &name);
@@ -662,6 +666,8 @@ private:
     const Element *lookupElement(const Name &name) const;
     Element *lookupElement(const Name &name);
 
+    CoordinateSystem mMergedIconCoordinateSystem;
+    CoordinateSystem mMergedDiagramCoordinateSystem;
   private:
     void initialize();
 
@@ -897,9 +903,8 @@ private:
   class Connection
   {
   public:
-    Connection(Model *pParentModel);
+    Connection(const QJsonObject &jsonObject, Model *pParentModel);
     Connection(Model *pParentModel, const QString &startConnector, const QString &endConnector, const QJsonObject &annotationJsonObject);
-    void deserialize(const QJsonObject &jsonObject);
 
     Model *getParentModel() const {return mpParentModel;}
     Connector *getStartConnector() const {return mpStartConnector.get();}
@@ -911,15 +916,16 @@ private:
     std::unique_ptr<Connector> mpStartConnector;
     std::unique_ptr<Connector> mpEndConnector;
     std::unique_ptr<Annotation> mpAnnotation;
+
+    void deserialize(const QJsonObject &jsonObject);
   };
 
   class Transition
   {
   public:
-    Transition(Model *pParentModel);
+    Transition(const QJsonObject &jsonObject, Model *pParentModel);
     Transition(Model *pParentModel, const QString &startConnector, const QString &endConnector, bool condition, bool immediate, bool reset,
                bool synchronize, int priority, const QJsonObject &annotationJsonObject);
-    void deserialize(const QJsonObject &jsonObject);
 
     Model *getParentModel() const {return mpParentModel;}
     Connector *getStartConnector() const {return mpStartConnector.get();}
@@ -946,14 +952,15 @@ private:
     bool mSynchronize;
     int mPriority;
     std::unique_ptr<Annotation> mpAnnotation;
+
+    void deserialize(const QJsonObject &jsonObject);
   };
 
   class InitialState
   {
   public:
-    InitialState(Model *pParentModel);
+    InitialState(const QJsonObject &jsonObject, Model *pParentModel);
     InitialState(Model *pParentModel, const QString &startConnector, const QJsonObject &annotationJsonObject);
-    void deserialize(const QJsonObject &jsonObject);
 
     Model *getParentModel() const {return mpParentModel;}
     Connector *getStartConnector() const {return mpStartConnector.get();}
@@ -963,6 +970,8 @@ private:
     Model *mpParentModel;
     std::unique_ptr<Connector> mpStartConnector;
     std::unique_ptr<Annotation> mpAnnotation;
+
+    void deserialize(const QJsonObject &jsonObject);
   };
 } // namespace ModelInstance
 

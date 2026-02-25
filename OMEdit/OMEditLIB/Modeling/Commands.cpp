@@ -572,16 +572,16 @@ void UpdateCoordinateSystemCommand::updateCoordinateSystem(const ModelInstance::
 {
   if (mCopyProperties) {
     mpGraphicsView->getModelWidget()->getModelInstance()->getAnnotation()->getIconAnnotation()->mCoordinateSystem = coordinateSystem;
-    mpGraphicsView->getModelWidget()->getModelInstance()->getAnnotation()->getIconAnnotation()->mMergedCoordinateSystem = coordinateSystem;
+    mpGraphicsView->getModelWidget()->getModelInstance()->mMergedIconCoordinateSystem = coordinateSystem;
 
     mpGraphicsView->getModelWidget()->getModelInstance()->getAnnotation()->getDiagramAnnotation()->mCoordinateSystem = coordinateSystem;
-    mpGraphicsView->getModelWidget()->getModelInstance()->getAnnotation()->getDiagramAnnotation()->mMergedCoordinateSystem = coordinateSystem;
+    mpGraphicsView->getModelWidget()->getModelInstance()->mMergedDiagramCoordinateSystem = coordinateSystem;
   } else if (mpGraphicsView->isIconView()) {
     mpGraphicsView->getModelWidget()->getModelInstance()->getAnnotation()->getIconAnnotation()->mCoordinateSystem = coordinateSystem;
-    mpGraphicsView->getModelWidget()->getModelInstance()->getAnnotation()->getIconAnnotation()->mMergedCoordinateSystem = coordinateSystem;
+    mpGraphicsView->getModelWidget()->getModelInstance()->mMergedIconCoordinateSystem = coordinateSystem;
   } else {
     mpGraphicsView->getModelWidget()->getModelInstance()->getAnnotation()->getDiagramAnnotation()->mCoordinateSystem = coordinateSystem;
-    mpGraphicsView->getModelWidget()->getModelInstance()->getAnnotation()->getDiagramAnnotation()->mMergedCoordinateSystem = coordinateSystem;
+    mpGraphicsView->getModelWidget()->getModelInstance()->mMergedDiagramCoordinateSystem = coordinateSystem;
   }
   mpGraphicsView->getModelWidget()->getModelInstance()->updateMergedCoordinateSystem();
 

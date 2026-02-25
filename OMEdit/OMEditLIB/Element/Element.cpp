@@ -558,9 +558,9 @@ ModelInstance::CoordinateSystem Element::getCoordinateSystem() const
   ModelInstance::CoordinateSystem coordinateSystem;
   if (mpModelComponent && mpModel) {
     if (mpModelComponent->isConnector() && (mpGraphicsView->isDiagramView()) && canUseDiagramAnnotation()) {
-      coordinateSystem = mpModel->getAnnotation()->getDiagramAnnotation()->mMergedCoordinateSystem;
+      coordinateSystem = mpModel->mMergedDiagramCoordinateSystem;
     } else {
-      coordinateSystem = mpModel->getAnnotation()->getIconAnnotation()->mMergedCoordinateSystem;
+      coordinateSystem = mpModel->mMergedIconCoordinateSystem;
     }
   }
   return coordinateSystem;
