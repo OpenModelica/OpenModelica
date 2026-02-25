@@ -466,8 +466,8 @@ void ElementTreeModel::addElementsHelper(ModelInstance::Model *pModel, ElementTr
     const QString name = pModel->getReplaceable() ? pModel->getNameIfReplaceable() : pModel->getName();
     LibraryTreeItem *pLibraryTreeItem = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem(name);
     if (pLibraryTreeItem && pLibraryTreeItem->getAccess() >= LibraryTreeItem::icon) {
-      QList<ModelInstance::Element*> elements = pModel->getElements();
-      QList<ModelInstance::Element*> visibleElements;
+      QVector<ModelInstance::Element*> elements = pModel->getElements();
+      QVector<ModelInstance::Element*> visibleElements;
       for (ModelInstance::Element* element : elements) {
         // show only public or all elements if access is diagram
         if (element->isPublic() || pLibraryTreeItem->getAccess() >= LibraryTreeItem::diagram) {

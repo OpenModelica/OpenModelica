@@ -620,7 +620,7 @@ void LibraryTreeItem::moveChild(int from, int to)
 const QList<LibraryTreeItem*> &LibraryTreeItem::getInheritedClasses()
 {
   if (mpModelWidget && mpModelWidget->isDiagramViewLoaded()) {
-    QList<ModelInstance::Element*> elements = mpModelWidget->getModelInstance()->getElements();
+    QVector<ModelInstance::Element*> elements = mpModelWidget->getModelInstance()->getElements();
     // reuse the mInheritedClasses list
     mInheritedClasses.clear();
     foreach (auto pElement, elements) {
@@ -684,7 +684,7 @@ const QList<ElementInfo> &LibraryTreeItem::getComponentsList()
 {
   if (mpModelWidget) {
     if (mpModelWidget->isDiagramViewLoaded()) {
-      QList<ModelInstance::Element*> elements = mpModelWidget->getModelInstance()->getElements();
+      QVector<ModelInstance::Element*> elements = mpModelWidget->getModelInstance()->getElements();
       // reuse the mComponents list
       mComponents.clear();
       foreach (auto pElement, elements) {

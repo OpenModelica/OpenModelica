@@ -1921,7 +1921,7 @@ void ExpandableConnectorTreeModel::createExpandableConnectorTreeItem(ModelInstan
     endInsertRows();
   }
   if (pModelElement->getModel()) {
-    QList<ModelInstance::Element*> elements = pModelElement->getModel()->getElements();
+    QVector<ModelInstance::Element*> elements = pModelElement->getModel()->getElements();
     foreach (auto pChildModelElement, elements) {
       // Issue #12548. List the elements of expandable connector class and all the expandable connectors of the class including the inherited ones.
       if (pModelElement->getModel()->isExpandableConnector() || pChildModelElement->isExtend()

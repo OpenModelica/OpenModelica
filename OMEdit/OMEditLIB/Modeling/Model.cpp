@@ -860,7 +860,7 @@ namespace ModelInstance
      * \param extendsModifiers
      * \return
      */
-  Modifier *Modifier::mergeModifiersIntoOne(QList<const Modifier *> extendsModifiers, Model *pParentModel)
+  Modifier *Modifier::mergeModifiersIntoOne(QVector<const Modifier *> extendsModifiers, Model *pParentModel)
   {
     Modifier *pModifier = nullptr;
     if (!extendsModifiers.isEmpty()) {
@@ -1512,9 +1512,9 @@ namespace ModelInstance
    * \brief Model::getComponents
    * Returns all components of the model, including inherited ones.
    */
-  QList<Element *> Model::getComponents() const
+  QVector<Element *> Model::getComponents() const
   {
-    QList<Element *> comps;
+    QVector<Element *> comps;
 
     foreach (auto pElement, mElements) {
       if (pElement->isExtend() && pElement->getModel()) {
@@ -1764,7 +1764,7 @@ namespace ModelInstance
      * We don't store the generated inner components together with the other components
      * So we need to add it here.
      */
-    QList<Element*> elements;
+    QVector<Element*> elements;
     elements.append(mGeneratedInnerComponents);
     elements.append(mElements);
 
@@ -2600,9 +2600,9 @@ namespace ModelInstance
    * \param pParentModel
    * \return
    */
-  QList<const Modifier*> Component::getExtendsModifiers(const Model *pParentModel) const
+  QVector<const Modifier*> Component::getExtendsModifiers(const Model *pParentModel) const
   {
-    QList<const Modifier*> modifiers;
+    QVector<const Modifier*> modifiers;
     if (pParentModel && pParentModel->getParentElement() && pParentModel->getParentElement()->getModifier()) {
       Modifier *pExtentElementModifier = pParentModel->getParentElement()->getModifier();
       foreach (auto *pSubModifier, pExtentElementModifier->getModifiers()) {
@@ -2664,7 +2664,7 @@ namespace ModelInstance
     Modifier *pModifier = nullptr;
     if (mergeExtendsModifiers) {
       // Merge extends modifiers. See issue #13301 and #13516.
-      QList<const Modifier*> extendsModifiers = getExtendsModifiers(mpParentModel);
+      QVector<const Modifier*> extendsModifiers = getExtendsModifiers(mpParentModel);
       pModifier = Modifier::mergeModifiersIntoOne(extendsModifiers, mpParentModel);
     }
     // if merge modifiers

@@ -872,7 +872,7 @@ bool Element::isParameterConnectorSizing(ModelInstance::Model *pModel, QString p
       return true;
     }
     // Look in class inheritance
-    QList<ModelInstance::Element*> elements = pModel->getElements();
+    QVector<ModelInstance::Element*> elements = pModel->getElements();
     foreach (auto pElement, elements) {
       if (pElement->isExtend() && pElement->getModel()) {
         auto pExtend = dynamic_cast<ModelInstance::Extend*>(pElement);
@@ -897,7 +897,7 @@ void Element::createClassElements()
   }
 
   if (mpModel) {
-    QList<ModelInstance::Element*> elements = mpModel->getElements();
+    QVector<ModelInstance::Element*> elements = mpModel->getElements();
     foreach (auto pElement, elements) {
       if (pElement->isComponent()) {
         auto pComponent = dynamic_cast<ModelInstance::Component*>(pElement);
@@ -1464,7 +1464,7 @@ void Element::showNonExistingOrDefaultElementIfNeeded()
  */
 void Element::createClassInheritedElements()
 {
-  QList<ModelInstance::Element*> elements = mpModel->getElements();
+  QVector<ModelInstance::Element*> elements = mpModel->getElements();
   foreach (auto pElement, elements) {
     if (pElement->isExtend() && pElement->getModel()) {
       auto pExtend = dynamic_cast<ModelInstance::Extend*>(pElement);
@@ -1501,7 +1501,7 @@ void Element::createClassShapes()
      *
      * Always use the icon annotation when element type is port.
      */
-    QList<ModelInstance::Shape*> shapes;
+    QVector<ModelInstance::Shape*> shapes;
     // Always use the IconMap here. Only IconMap makes sense for drawing icons of Element.
     if (!(pExtendModel && !pExtendModel->getIconDiagramMapPrimitivesVisible(true))) {
       /* issue #12074
