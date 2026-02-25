@@ -100,7 +100,7 @@ public
   extends Module.resolveSingularitiesInterface;
   protected
     Adjacency.Mapping mapping;
-    array<Boolean> discrete_eqns, discrete_vars;
+    array<Boolean> discrete_eqns;
     array<list<Integer>> msss;
     list<Integer> marked_eqns;
     Adjacency.Matrix state_adj;
@@ -132,11 +132,10 @@ public
 
     // mark the discrete equations
     discrete_eqns := listArray(list(Equation.isDiscrete(eqn) for eqn in EquationPointers.toList(equations)));
-    discrete_vars := listArray(list(BVariable.isDiscrete(var) for var in VariablePointers.toList(variables)));
 
     // get the minimally structurally singular subset
     msss := match adj
-      case Adjacency.FINAL() then getMSSS(adj.m, adj.mT, matching, discrete_eqns, discrete_vars, mapping);
+      case Adjacency.FINAL() then getMSSS(adj.m, adj.mT, matching, discrete_eqns, mapping);
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " expected final matrix as adj input but got :\n"
           + Adjacency.Matrix.toString(adj)});
@@ -430,7 +429,6 @@ protected
     input array<list<Integer>> mT             "var -> list<eqn>";
     input Matching matching;
     input array<Boolean> discrete_eqns;
-    input array<Boolean> discrete_vars;
     input Adjacency.Mapping mapping;
     output array<list<Integer>> msss;
   protected
@@ -441,7 +439,7 @@ protected
   algorithm
     // find all unmatched variable and equation indices
     for eqn in 1:arrayLength(matching.eqn_to_var) loop
-      if matching.eqn_to_var[eqn] == -1 and not discrete_eqns[mapping.eqn_StA[eqn]] then
+      if matching.eqn_to_var[eqn] == -1 then
         eqn_candidates := eqn :: eqn_candidates;
       end if;
     end for;
@@ -450,14 +448,14 @@ protected
     for eqn in eqn_candidates loop
       if eqn_coloring[eqn] == -1 then
         color := color + 1;
-        fillColorEqn(eqn, color, eqn_coloring, var_coloring, m, mT, discrete_eqns, discrete_vars, mapping);
+        fillColorEqn(eqn, color, eqn_coloring, var_coloring, m, mT, mapping);
       end if;
     end for;
 
     // fill the msss array, sorting each equation to their respective color
     msss := arrayCreate(color, {});
     for eqn in 1:arrayLength(eqn_coloring) loop
-      if eqn_coloring[eqn] <> -1 then
+      if eqn_coloring[eqn] <> -1 and not discrete_eqns[eqn] then
         msss[eqn_coloring[eqn]] := eqn :: msss[eqn_coloring[eqn]];
       end if;
     end for;
@@ -472,14 +470,12 @@ protected
     input array<Integer> var_coloring;
     input array<list<Integer>> m              "eqn -> list<var>";
     input array<list<Integer>> mT             "var -> list<eqn>";
-    input array<Boolean> discrete_eqns;
-    input array<Boolean> discrete_vars;
     input Adjacency.Mapping mapping;
   algorithm
     arrayUpdate(eqn_coloring, eqn, color);
     for var in m[eqn] loop
-      if var_coloring[var] == -1 and not discrete_vars[mapping.var_StA[var]] then
-        fillColorVar(var, color, eqn_coloring, var_coloring, m, mT, discrete_eqns, discrete_vars, mapping);
+      if var_coloring[var] == -1 then
+        fillColorVar(var, color, eqn_coloring, var_coloring, m, mT, mapping);
       end if;
     end for;
   end fillColorEqn;
@@ -493,14 +489,12 @@ protected
     input array<Integer> var_coloring;
     input array<list<Integer>> m              "eqn -> list<var>";
     input array<list<Integer>> mT             "var -> list<eqn>";
-    input array<Boolean> discrete_eqns;
-    input array<Boolean> discrete_vars;
     input Adjacency.Mapping mapping;
   algorithm
     arrayUpdate(var_coloring, var, color);
     for eqn in mT[var] loop
-      if eqn_coloring[eqn] == -1 and not discrete_eqns[mapping.eqn_StA[eqn]] then
-        fillColorEqn(eqn, color, eqn_coloring, var_coloring, m, mT, discrete_eqns, discrete_vars, mapping);
+      if eqn_coloring[eqn] == -1 then
+        fillColorEqn(eqn, color, eqn_coloring, var_coloring, m, mT, mapping);
       end if;
     end for;
   end fillColorVar;
