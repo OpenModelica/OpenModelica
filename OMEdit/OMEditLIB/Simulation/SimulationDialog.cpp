@@ -2007,9 +2007,9 @@ void SimulationDialog::simulationProcessFinished(SimulationOptions simulationOpt
     QString htmlPath;
     // read the data Reconciliation report file
     if (simulationOptions.getDataReconciliationAlgorithm().compare(QStringLiteral("dataReconciliation")) == 0) {
-      htmlPath = QString("%1/%2.html").arg(workingDirectory, simulationOptions.getClassName());
+      htmlPath = QString("%1/%2.html").arg(workingDirectory, simulationOptions.getFileNamePrefix());
     } else { // read the data Reconciliation Boundary Conditions report file
-      htmlPath = QString("%1/%2_BoundaryConditions.html").arg(workingDirectory, simulationOptions.getClassName());
+      htmlPath = QString("%1/%2_BoundaryConditions.html").arg(workingDirectory, simulationOptions.getFileNamePrefix());
     }
     QFileInfo reportFileInfo(htmlPath);
     QUrl url = QString("file:///%1").arg(htmlPath);
@@ -2020,6 +2020,20 @@ void SimulationDialog::simulationProcessFinished(SimulationOptions simulationOpt
     bool reportFileNewer = resultFileLastModifiedDateTime.secsTo(reportFileModificationTime) >= 0;
     if (reportFileExists && reportFileNewer) {
       QDesktopServices::openUrl(url);
+    }
+    // Generate FMU for reconciled model if options set
+    if (simulationOptions.getGenerateFMUSaveSetting()) {
+      QString reconciledModelFilePath = QString("%1/Reconciled_%2.mo").arg(workingDirectory, simulationOptions.getFileNamePrefix());
+      QFileInfo reconciledModelFileInfo(reconciledModelFilePath);
+      reconciledModelFileInfo.setCaching(false);
+      if (reconciledModelFileInfo.exists()) {
+        LibraryWidget * plibraryWidget = MainWindow::instance()->getLibraryWidget();
+        plibraryWidget->openModelicaFile(reconciledModelFilePath);
+        LibraryTreeItem * plibraryItem =  plibraryWidget->getLibraryTreeModel()->findLibraryTreeItemOneLevel(reconciledModelFileInfo.completeBaseName());
+        if (plibraryItem) {
+          MainWindow::instance()->exportModelFMU(plibraryItem);
+        }
+      }
     }
   }
 }
@@ -2297,6 +2311,7 @@ DataReconciliationDialog::DataReconciliationDialog(LibraryTreeItem *pLibraryTree
 
   // save settings
   mpSaveSettingsCheckBox = new QCheckBox(tr("Save Settings"));
+  mpGenerateFMUCheckBox = new QCheckBox(tr("Generate Fmu"));
   // Create the buttons
   mpCalculateButton = new QPushButton(tr("Calculate"));
   mpCalculateButton->setAutoDefault(true);
@@ -2326,6 +2341,8 @@ DataReconciliationDialog::DataReconciliationDialog(LibraryTreeItem *pLibraryTree
 
   mpDataReconciliationEpsilonTextBox->setText(mpLibraryTreeItem->mSimulationOptions.getDataReconciliationEpsilon());
   mpSaveSettingsCheckBox->setChecked(mpLibraryTreeItem->mSimulationOptions.getDataReconciliationSaveSetting());
+  mpGenerateFMUCheckBox->setChecked(mpLibraryTreeItem->mSimulationOptions.getGenerateFMUSaveSetting());
+
   if (!mpLibraryTreeItem->mSimulationOptions.isDataReconciliationInitialized()) {
     // if ignoreSimulationFlagsAnnotation flag is not set then read the __OpenModelica_simulationFlags annotation
     if (!OptionsDialog::instance()->getSimulationPage()->getIgnoreSimulationFlagsAnnotationCheckBox()->isChecked()) {
@@ -2397,10 +2414,15 @@ DataReconciliationDialog::DataReconciliationDialog(LibraryTreeItem *pLibraryTree
   mpDataReconciliationStackedWidget->setCurrentIndex(mpDataReconciliationAlgorithmComboBox->currentIndex());
 
   QWidget *pBottomPageWidget = new QWidget;
-  QGridLayout *pBottomPageGridLayout = new QGridLayout;
-  pBottomPageGridLayout->addWidget(mpSaveSettingsCheckBox, 0, 0);
-  pBottomPageGridLayout->addWidget(mpButtonBox, 0, 1, 1, 2, Qt::AlignRight);
-  pBottomPageWidget->setLayout(pBottomPageGridLayout);
+  QHBoxLayout *pBottomPageHBoxLayout = new QHBoxLayout;
+  pBottomPageHBoxLayout->setContentsMargins(0, 0, 0, 0);
+  // Left side checkboxes
+  pBottomPageHBoxLayout->addWidget(mpSaveSettingsCheckBox);
+  pBottomPageHBoxLayout->addWidget(mpGenerateFMUCheckBox);
+  // Push buttons to the right
+  pBottomPageHBoxLayout->addStretch();
+  pBottomPageHBoxLayout->addWidget(mpButtonBox);
+  pBottomPageWidget->setLayout(pBottomPageHBoxLayout);
 
   QVBoxLayout *pMainVBoxLayout = new QVBoxLayout;
   pMainVBoxLayout->addWidget(pTopPageWidget);
@@ -2508,6 +2530,7 @@ void DataReconciliationDialog::calculateDataReconciliation()
     }
   }
   mpLibraryTreeItem->mSimulationOptions.setDataReconciliationSaveSetting(mpSaveSettingsCheckBox->isChecked());
+  mpLibraryTreeItem->mSimulationOptions.setGenerateFMUSaveSetting(mpGenerateFMUCheckBox->isChecked());
   accept();
 }
 
