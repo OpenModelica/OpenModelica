@@ -1274,7 +1274,7 @@ namespace ModelInstance
    * Deserializes the elements JSON and adds the elements to the model.
    * \param elements
    */
-  void Model::deserializeElements(const QJsonArray elements)
+  void Model::deserializeElements(const QJsonArray &elements)
   {
     for (const QJsonValue &element: elements) {
       QJsonObject elementObject = element.toObject();

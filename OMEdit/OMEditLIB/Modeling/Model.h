@@ -606,7 +606,7 @@ private:
     Model(const QJsonObject &jsonObject, Element *pParentElement = 0);
     virtual ~Model();
     void deserialize();
-    void deserializeElements(const QJsonArray elements);
+    void deserializeElements(const QJsonArray &elements);
     void updateMergedCoordinateSystem();
 
     Element *getParentElement() const {return mpParentElement;}
