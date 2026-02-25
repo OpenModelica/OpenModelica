@@ -100,6 +100,7 @@ public:
     setBoundaryConditionCorrelationMatrixInputFile("");
     setDataReconciliationEpsilon("");
     setDataReconciliationSaveSetting(false);
+    setGenerateFMUSaveSetting(false);
     setLogStreams(QStringList() << "LOG_STDOUT" << "LOG_ASSERT" << "LOG_STATS");
     setAdditionalSimulationFlags("");
     // Output
@@ -229,6 +230,9 @@ public:
   QString getDataReconciliationEpsilon() const {return mDataReconciliationEpsilon;}
   void setDataReconciliationSaveSetting(bool dataReconciliationSaveSetting) {mDataReconciliationSaveSetting = dataReconciliationSaveSetting;}
   bool getDataReconciliationSaveSetting() const {return mDataReconciliationSaveSetting;}
+  void setGenerateFMUSaveSetting(bool generateFMUSaveSetting) {mGenerateFMUSaveSetting = generateFMUSaveSetting;}
+  bool getGenerateFMUSaveSetting() const {return mGenerateFMUSaveSetting;}
+
   void setLogStreams(QStringList logStreams) {mLogStreams = logStreams;}
   QStringList getLogStreams() const {return mLogStreams;}
   void setAdditionalSimulationFlags(const QString &additionalSimulationFlags) {mAdditionalSimulationFlags = additionalSimulationFlags;}
@@ -328,6 +332,7 @@ private:
   QString mBoundaryConditionCorrelationMatrixInputFile;
   QString mDataReconciliationEpsilon;
   bool mDataReconciliationSaveSetting;
+  bool mGenerateFMUSaveSetting;
   QStringList mLogStreams;
   QString mAdditionalSimulationFlags;
   // output
