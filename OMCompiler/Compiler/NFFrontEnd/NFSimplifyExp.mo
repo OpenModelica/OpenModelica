@@ -288,7 +288,7 @@ function simplifyCat
   input Call call;
   output Expression exp;
 protected
-  list<Expression> nonempty_args = list(arg for arg guard(Expression.sizeZero(arg)) in args);
+  list<Expression> nonempty_args = list(arg for arg guard(not Expression.sizeZero(arg)) in args);
 algorithm
   if listLength(nonempty_args) == 2 then
     {_, exp} := nonempty_args;
