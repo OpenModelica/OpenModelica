@@ -837,6 +837,24 @@ public
     end match;
   end typeOf;
 
+  function sizeOf
+    "this can fail for certain untyped expressions"
+    input Expression exp;
+    output Integer sz = Type.sizeOf(typeOf(exp));
+  end sizeOf;
+
+  function sizeZero
+    "returns true if its a constructor that is definitely of size zero;"
+    input Expression exp;
+    output Boolean b;
+  algorithm
+    try
+      b := 0 == sizeOf(exp);
+    else
+      b := false;
+    end try;
+  end sizeZero;
+
   function setType
     input Type ty;
     input output Expression exp;
