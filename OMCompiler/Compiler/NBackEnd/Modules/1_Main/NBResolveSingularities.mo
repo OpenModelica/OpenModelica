@@ -459,6 +459,9 @@ protected
         msss[eqn_coloring[eqn]] := eqn :: msss[eqn_coloring[eqn]];
       end if;
     end for;
+
+    // remove all empty colors (purely discrete)
+    msss := listArray(list(ms for ms guard(not listEmpty(ms)) in arrayList(msss)));
   end getMSSS;
 
   function fillColorEqn
