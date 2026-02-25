@@ -673,6 +673,7 @@ namespace ModelInstance
     if (jsonObject.contains("graphics")) {
       if (jsonObject.value("graphics").isArray()) {
         QJsonArray graphicsArray = jsonObject.value("graphics").toArray();
+        mGraphics.reserve(graphicsArray.size());
         for (int i = 0; i < graphicsArray.size(); ++i) {
           QJsonObject graphicObject = graphicsArray.at(i).toObject();
           if (graphicObject.contains("name") && graphicObject.contains("elements")) {
@@ -1223,7 +1224,9 @@ namespace ModelInstance
     updateMergedCoordinateSystem();
 
     if (mModelJson.contains("imports")) {
-      for (const QJsonValue &import: mModelJson.value("imports").toArray()) {
+      const auto& importsArray = mModelJson.value("imports").toArray();
+      mImports.reserve(importsArray.size());
+      for (const QJsonValue &import: importsArray) {
         QJsonObject importObject = import.toObject();
         if (!importObject.isEmpty()) {
           mImports.append(Import(importObject));
@@ -1232,7 +1235,9 @@ namespace ModelInstance
     }
 
     if (mModelJson.contains("connections")) {
-      for (const QJsonValue &connection: mModelJson.value("connections").toArray()) {
+      const auto& connectionsArray = mModelJson.value("connections").toArray();
+      mConnections.reserve(connectionsArray.size());
+      for (const QJsonValue &connection: connectionsArray) {
         QJsonObject connectionObject = connection.toObject();
         if (!connectionObject.isEmpty()) {
           Connection *pConnection = new Connection(this);
@@ -1243,7 +1248,9 @@ namespace ModelInstance
     }
 
     if (mModelJson.contains("transitions")) {
-      for (const QJsonValue &transition: mModelJson.value("transitions").toArray()) {
+      const auto& transitionsArray = mModelJson.value("transitions").toArray();
+      mTransitions.reserve(transitionsArray.size());
+      for (const QJsonValue &transition: transitionsArray) {
         QJsonObject transitionObject = transition.toObject();
         if (!transitionObject.isEmpty()) {
           Transition *pTransition = new Transition(this);
@@ -1254,7 +1261,9 @@ namespace ModelInstance
     }
 
     if (mModelJson.contains("initialStates")) {
-      for (const QJsonValue &initialState: mModelJson.value("initialStates").toArray()) {
+      const auto& initialStatesArray = mModelJson.value("initialStates").toArray();
+      mInitialStates.reserve(initialStatesArray.size());
+      for (const QJsonValue &initialState: initialStatesArray) {
         QJsonObject initialStateObject = initialState.toObject();
         if (!initialStateObject.isEmpty()) {
           InitialState *pInitialState = new InitialState(this);
@@ -1276,6 +1285,7 @@ namespace ModelInstance
    */
   void Model::deserializeElements(const QJsonArray &elements)
   {
+    mElements.reserve(elements.size());
     for (const QJsonValue &element: elements) {
       QJsonObject elementObject = element.toObject();
       QString kind = elementObject.value("$kind").toString();
@@ -2005,8 +2015,11 @@ namespace ModelInstance
       mDymolaCheckBox.deserialize(jsonObject.value("__Dymola_checkBox"));
     }
 
+
     if (jsonObject.contains("choice")) {
-      for (const auto& choice: jsonObject.value("choice").toArray()) {
+      const auto& choicesArray = jsonObject.value("choice").toArray();
+      mChoices.reserve(choicesArray.size());
+      for (const auto& choice : choicesArray) {
         mChoices.append(new Modifier("", choice, mpParentModel));
       }
     }
