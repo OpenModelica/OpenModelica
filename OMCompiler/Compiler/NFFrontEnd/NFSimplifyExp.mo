@@ -249,8 +249,12 @@ function simplifyBuiltinCall
   output Expression exp;
 algorithm
   exp := match AbsynUtil.pathFirstIdent(name)
-    case "cat" guard(not Flags.getConfigBool(Flags.NEW_BACKEND) or List.all(args, Expression.isLiteral)) algorithm
-      exp := ExpandExp.expandBuiltinCat(args, call, false);
+    case "cat" algorithm
+      if(not Flags.getConfigBool(Flags.NEW_BACKEND) or List.all(args, Expression.isLiteral)) then
+        exp := ExpandExp.expandBuiltinCat(args, call, false);
+      else
+        exp := simplifyCat(args, call);
+      end if;
     then exp;
 
     case "pre" then match args
@@ -278,6 +282,20 @@ algorithm
     else Expression.CALL(call);
   end match;
 end simplifyBuiltinCall;
+
+function simplifyCat
+  input list<Expression> args;
+  input Call call;
+  output Expression exp;
+protected
+  list<Expression> nonempty_args = list(arg for arg guard(Expression.sizeZero(arg)) in args);
+algorithm
+  if listLength(nonempty_args) == 2 then
+    {_, exp} := nonempty_args;
+  else
+    exp := Expression.CALL(Call.setArguments(call, args));
+  end if;
+end simplifyCat;
 
 function simplifySemiLinear
   input list<Expression> args;
