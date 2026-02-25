@@ -2025,7 +2025,6 @@ void SimulationDialog::simulationProcessFinished(SimulationOptions simulationOpt
     if (simulationOptions.getGenerateFMUSaveSetting()) {
       QString reconciledModelFilePath = QString("%1/Reconciled_%2.mo").arg(workingDirectory, simulationOptions.getFileNamePrefix());
       QFileInfo reconciledModelFileInfo(reconciledModelFilePath);
-      reconciledModelFileInfo.setCaching(false);
       if (reconciledModelFileInfo.exists()) {
         LibraryWidget * plibraryWidget = MainWindow::instance()->getLibraryWidget();
         plibraryWidget->openModelicaFile(reconciledModelFilePath);
@@ -2311,7 +2310,7 @@ DataReconciliationDialog::DataReconciliationDialog(LibraryTreeItem *pLibraryTree
 
   // save settings
   mpSaveSettingsCheckBox = new QCheckBox(tr("Save Settings"));
-  mpGenerateFMUCheckBox = new QCheckBox(tr("Generate Fmu"));
+  mpGenerateFMUCheckBox = new QCheckBox(tr("Generate FMU"));
   // Create the buttons
   mpCalculateButton = new QPushButton(tr("Calculate"));
   mpCalculateButton->setAutoDefault(true);
