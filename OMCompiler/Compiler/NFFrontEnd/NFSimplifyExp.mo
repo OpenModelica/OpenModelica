@@ -292,8 +292,10 @@ protected
 algorithm
   if listLength(nonempty_args) == 2 then
     {_, exp} := nonempty_args;
+  elseif listLength(nonempty_args) == 1 then
+    _ :: exp :: _ := args;
   else
-    exp := Expression.CALL(Call.setArguments(call, args));
+    exp := Expression.CALL(Call.setArguments(call, nonempty_args));
   end if;
 end simplifyCat;
 
