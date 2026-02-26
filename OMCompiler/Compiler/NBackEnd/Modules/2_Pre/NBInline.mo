@@ -125,7 +125,7 @@ public
         Expression range;
         Integer start;
 
-      case Equation.FOR_EQUATION(body = {new_eqn}) guard(Iterator.size(eqn.iter) == 1) algorithm
+      case Equation.FOR_EQUATION(body = {new_eqn}) guard(Iterator.size(eqn.iter) == 1 and not Iterator.isResizable(eqn.iter)) algorithm
         replacements := UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual);
         (names, ranges) := Iterator.getFrames(eqn.iter);
         for tpl in List.zip(names, ranges) loop
@@ -745,23 +745,10 @@ protected
             dim := Type.nthDimension(ty, n);
             sz  := Dimension.size(dim);
             // if its size one, create scalar assignment, otherwise create for-loop
-            // ToDo: resizables always need for-loop
-            // ToDo: add subscripts to the correct dimension
-            if sz == 1 then
-              // SCALAR.
-              // properly subscript LHS with shift
-              lhs_sub     := Expression.INTEGER(shift+1);
-              lhs         := ComponentRef.mergeSubscripts(Subscript.fillWithWholeLeft({Subscript.INDEX(lhs_sub)}, n), cref);
-              lhs_exp     := Expression.fromCref(lhs);
-              // if its an array type RHS needs to be subscripted even though its of size 1
-              rhs         := ComponentRef.mergeSubscripts(Subscript.fillWithWholeLeft({Subscript.INDEX(Expression.INTEGER(1))}, n), rhs);
-              rhs_exp     := Expression.fromCref(rhs);
-              // the local iterator does not add anything, just take surrounding iterator
-              local_iter  := iter;
-            else
+            if sz <> 1 or Dimension.isResizable(dim) then
               // ARRAY
               // make a range of proper size to the rhs
-              range       := Expression.makeRange(Expression.INTEGER(1), NONE(), Expression.INTEGER(sz));
+              range       := Expression.makeRange(Expression.INTEGER(1), NONE(), Dimension.sizeExp(dim));
               // add the new iterator
               local_iter  := Iterator.addFrames(iter, {(iterator_name, range, NONE())});
               // subscript the LHS with the shift+iterator
@@ -772,6 +759,17 @@ protected
               // lower the iterators to add proper variable nodes
               lhs_exp     := Expression.map(Expression.fromCref(lhs), function BackendDAE.lowerComponentReferenceExp(variables = update_vars, complete = false));
               rhs_exp     := Expression.map(Expression.fromCref(rhs), function BackendDAE.lowerComponentReferenceExp(variables = update_vars, complete = false));
+            else
+              // SCALAR.
+              // properly subscript LHS with shift
+              lhs_sub     := Expression.INTEGER(shift+1);
+              lhs         := ComponentRef.mergeSubscripts(Subscript.fillWithWholeLeft({Subscript.INDEX(lhs_sub)}, n), cref);
+              lhs_exp     := Expression.fromCref(lhs);
+              // if its an array type RHS needs to be subscripted even though its of size 1
+              rhs         := ComponentRef.mergeSubscripts(Subscript.fillWithWholeLeft({Subscript.INDEX(Expression.INTEGER(1))}, n), rhs);
+              rhs_exp     := Expression.fromCref(rhs);
+              // the local iterator does not add anything, just take surrounding iterator
+              local_iter  := iter;
             end if;
           else
             // SCALAR

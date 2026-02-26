@@ -295,6 +295,13 @@ public
       b := match iter case EMPTY() then true; else false; end match;
     end isEmpty;
 
+    function isResizable
+      input Iterator iter;
+      output Boolean b;
+    algorithm
+      b := List.any(types(iter), Type.isResizable);
+    end isResizable;
+
     function intersect
       input Iterator iter1;
       input Iterator iter2;
@@ -2395,6 +2402,11 @@ public
         else false;
       end match;
     end isCompound;
+
+    function isResizable extends checkEqn;
+    algorithm
+      b := Type.isResizable(getType(Pointer.access(eqn_ptr)));
+    end isResizable;
 
     function expIsParamOrConst
       input output Expression exp;

@@ -24,6 +24,9 @@ scalar_product.mos\
 EnumIndex.mos\
 BenchmarksForResizeableArrays.ArrayEquations.CascadedFirstOrder1.mos\
 BenchmarksForResizeableArrays.ArrayEquations.CascadedFirstOrder2.mos\
+BenchmarksForResizeableArrays.ArrayEquations.CascadedFirstOrder3.mos\
+BenchmarksForResizeableArrays.ArrayEquations.CascadedFirstOrder4.mos\
+BenchmarksForResizeableArrays.Resizable.CascadedFirstOrder1_Resizable.mos\
 
 # test that currently fail. Move up when fixed.
 # Run make failingtest

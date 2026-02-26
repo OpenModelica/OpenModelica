@@ -2225,6 +2225,7 @@ public
     function getScalarVarNames
       "Returns the names of all variables, with arrays and records expanded."
       input VariablePointers variables;
+      input Boolean resize;
       output list<ComponentRef> names = {};
     protected
       Variable var;
@@ -2233,7 +2234,7 @@ public
         var := Pointer.access(var_ptr);
 
         if Type.isArray(var.ty) then
-          for cr in ComponentRef.scalarizeAll(ComponentRef.stripSubscriptsAll(var.name), true) loop
+          for cr in ComponentRef.scalarizeAll(ComponentRef.stripSubscriptsAll(var.name), resize) loop
             if Type.isComplex(ComponentRef.nodeType(cr)) then
               names := listAppend(ComponentRef.getRecordChildren(cr), names);
             else
@@ -2573,7 +2574,7 @@ public
               VariablePointers.toString(varData.previous, "Previous", NONE(), false) +
               VariablePointers.toString(varData.clocks, "Clock", NONE(), false) +
               VariablePointers.toString(varData.top_level_inputs, "Top Level Input", NONE(), false) +
-              VariablePointers.toString(varData.resizables, "Resizable Parameters", NONE(), false) +
+              VariablePointers.toString(varData.resizables, "Resizable Parameter", NONE(), false) +
               VariablePointers.toString(varData.parameters, "Parameter", NONE(), false) +
               VariablePointers.toString(varData.constants, "Constant", NONE(), false) +
               VariablePointers.toString(varData.records, "Record", NONE(), false) +
