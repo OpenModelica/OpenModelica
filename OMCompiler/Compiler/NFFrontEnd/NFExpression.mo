@@ -1278,10 +1278,15 @@ public
   end makeTuple;
 
   function rangeSize
-    input Expression range  "has to be RANGE()!";
+    input Expression range "has to be RANGE()!";
     input Boolean resize = false;
     output Integer size = Dimension.size(Type.nthDimension(typeOf(range), 1), resize);
   end rangeSize;
+
+  function rangeSizeExp
+    input Expression range "has to be RANGE()!";
+    output Expression size = Dimension.sizeExp(Type.nthDimension(typeOf(range), 1));
+  end rangeSizeExp;
 
   function applySubscripts
     "Subscripts an expression with the given list of subscripts."
@@ -6695,26 +6700,41 @@ public
     end match;
   end replaceLiteralArrayElements;
 
+  function replaceCrefWithBinding
+    input ComponentRef cref;
+    input output Expression exp;
+    input recurse func;
+    partial function recurse
+      input output Expression exp;
+    end recurse;
+  protected
+    Expression e;
+  algorithm
+    exp := match InstNode.getBindingExpOpt(ComponentRef.node(cref))
+      case SOME(e as Expression.INTEGER())                                    then e;
+      case SOME(e as Expression.CREF())                                       then replaceCrefWithBinding(e.cref, e, func);
+      case SOME(Expression.SUBSCRIPTED_EXP(exp = e as Expression.INTEGER()))  then e;
+      case SOME(Expression.SUBSCRIPTED_EXP(exp = e as Expression.CREF()))     then replaceCrefWithBinding(e.cref, e, func);
+      case SOME(e) algorithm
+        e := Expression.map(e, func);
+      then e;
+      else exp;
+    end match;
+  end replaceCrefWithBinding;
+
+  function replaceResizableParameterWithOriginal
+    input output Expression exp;
+  algorithm
+    exp := match exp
+      // frontend replacement
+      case Expression.CREF() guard(ComponentRef.isResizable(exp.cref)) algorithm
+      then replaceCrefWithBinding(exp.cref, exp, replaceResizableParameterWithOriginal);
+      else exp;
+    end match;
+  end replaceResizableParameterWithOriginal;
+
   function replaceResizableParameter
     input output Expression exp;
-  protected
-    function replaceWithBinding
-      input ComponentRef cref;
-      input output Expression exp;
-    protected
-      Expression e;
-    algorithm
-      exp := match InstNode.getBindingExpOpt(ComponentRef.node(cref))
-        case SOME(e as Expression.INTEGER()) then e;
-        case SOME(e as Expression.CREF()) then replaceWithBinding(e.cref, e);
-        case SOME(Expression.SUBSCRIPTED_EXP(exp = e as Expression.INTEGER())) then e;
-        case SOME(Expression.SUBSCRIPTED_EXP(exp = e as Expression.CREF())) then replaceWithBinding(e.cref, e);
-        case SOME(e) algorithm
-          e := Expression.map(e, replaceResizableParameter);
-        then e;
-        else exp;
-      end match;
-    end replaceWithBinding;
   algorithm
     exp := match exp
       local
@@ -6729,12 +6749,12 @@ public
           then Expression.INTEGER(v);
 
           // optimal value not yet computed
-          else replaceWithBinding(exp.cref, exp);
+          else replaceCrefWithBinding(exp.cref, exp, replaceResizableParameter);
         end match;
 
       // frontend replacement
       case Expression.CREF() guard(ComponentRef.isResizable(exp.cref))
-      then replaceWithBinding(exp.cref, exp);
+      then replaceCrefWithBinding(exp.cref, exp, replaceResizableParameter);
 
       else exp;
     end match;

@@ -912,15 +912,15 @@ public
   algorithm
     subscripts := match cref
       local
-        list<Integer> sizes_;
+        list<Expression> sizes_;
         list<Subscript> subs;
 
       case CREF(subscripts = {}) algorithm
-        sizes_ := sizes_local(cref, false);
+        sizes_ := sizes_local_exp(cref, false);
         subs := {};
         for size in listReverse(sizes_) loop
-          if size <> 1 then
-            subs := Subscript.SLICE(Expression.makeRange(Expression.INTEGER(1), NONE(), Expression.INTEGER(size))) :: subs;
+          if not Expression.isOne(size) then
+            subs := Subscript.SLICE(Expression.makeRange(Expression.INTEGER(1), NONE(), size)) :: subs;
           end if;
         end for;
       then subscriptsAllWithWhole(cref.restCref, subs :: accumSubs);
@@ -1974,7 +1974,6 @@ public
     Option<Integer> complex_size;
   algorithm
     s_lst := match cref
-      case EMPTY() then {};
       case CREF() algorithm
         complex_size := Type.complexSize(cref.ty);
         s_lst := list(Dimension.size(dim, resize) for dim in Type.arrayDims(cref.ty));
@@ -1983,8 +1982,29 @@ public
         end if;
         s_lst := if listEmpty(s_lst) then {1} else s_lst;
       then s_lst;
+      else {};
     end match;
   end sizes_local;
+
+  function sizes_local_exp
+    input ComponentRef cref;
+    input Boolean withComplex;
+    output list<Expression> s_lst = {};
+  protected
+    Option<Integer> complex_size;
+  algorithm
+    s_lst := match cref
+      case CREF() algorithm
+        complex_size := Type.complexSize(cref.ty);
+        s_lst := list(Dimension.sizeExp(dim) for dim in Type.arrayDims(cref.ty));
+        if withComplex and Util.isSome(complex_size) then
+          s_lst := Expression.INTEGER(Util.getOption(complex_size)) :: s_lst;
+        end if;
+        s_lst := if listEmpty(s_lst) then {Expression.INTEGER(1)} else s_lst;
+      then s_lst;
+      else {};
+    end match;
+  end sizes_local_exp;
 
   function sizeKnown
     input ComponentRef cref;

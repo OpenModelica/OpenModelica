@@ -246,7 +246,7 @@ public
     output tuple<Integer, Integer> eqnSizes "scal, arr";
   algorithm
     (varSizes, eqnSizes) := match bdae
-      case MAIN() then ((VarData.scalarSize(bdae.varData), VarData.size(bdae.varData)), (EqData.scalarSize(bdae.eqData), EqData.size(bdae.eqData)));
+      case MAIN() then ((VarData.scalarSize(bdae.varData, true), VarData.size(bdae.varData)), (EqData.scalarSize(bdae.eqData, true), EqData.size(bdae.eqData)));
       else ((0, 0), (0, 0));
     end match;
   end sizes;
@@ -705,7 +705,7 @@ protected
 
     // lower the component references properly
     variables       := VariablePointers.map(variables, function Variable.mapExp(fn = function lowerComponentReferenceExp(variables = variables, complete = true)));
-    variables       := VariablePointers.map(variables, function Variable.applyToType(func = function Type.applyToDims(func = function lowerDimension(variables = variables))));
+    variables       := VariablePointers.map(variables, function Variable.applyToType(func = function Type.applyToDims(func = function lowerDimension(variables = variables, complete = true))));
 
     /* lower the records to add children */
     records         := VariablePointers.mapPtr(records, function lowerRecordChildren(variables = variables));
@@ -1406,7 +1406,7 @@ protected
     end match;
 
     // also lower dimensions in the case of resizable variables
-    exp := Expression.applyToType(exp, function Type.applyToDims(func = function lowerDimension(variables = variables)));
+    exp := Expression.applyToType(exp, function Type.applyToDims(func = function lowerDimension(variables = variables, complete = complete)));
   end lowerComponentReferenceExp;
 
   public function lowerComponentReference
@@ -1421,7 +1421,7 @@ protected
       if not ComponentRef.isWild(cref) then
         var  := VariablePointers.getVarSafe(variables, ComponentRef.stripSubscriptsAll(cref), if complete then SOME(sourceInfo()) else NONE());
         cref := lowerComponentReferenceInstNode(cref, var);
-        cref := ComponentRef.mapSubscripts(cref, function Subscript.mapExp(func = function lowerComponentReferenceExp(variables = variables, complete = true)));
+        cref := ComponentRef.mapSubscripts(cref, function Subscript.mapExp(func = function lowerComponentReferenceExp(variables = variables, complete = complete)));
       end if;
     else
       if Flags.isSet(Flags.FAILTRACE) and complete then
@@ -1433,10 +1433,11 @@ protected
   protected function lowerDimension
     input output Dimension dim;
     input VariablePointers variables;
+    input Boolean complete;
   algorithm
     dim := match dim
       case Dimension.RESIZABLE() algorithm
-        dim.exp := Expression.map(dim.exp, function lowerComponentReferenceExp(variables = variables, complete = true));
+        dim.exp := Expression.map(dim.exp, function lowerComponentReferenceExp(variables = variables, complete = complete));
       then dim;
 
       else dim;

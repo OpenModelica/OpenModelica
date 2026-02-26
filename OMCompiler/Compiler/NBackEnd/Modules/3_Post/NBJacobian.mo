@@ -373,8 +373,8 @@ public
       Integer nnz;
     algorithm
       // get all relevant crefs
-      seed_vars     := VariablePointers.getScalarVarNames(seedCandidates);
-      partial_vars  := VariablePointers.getScalarVarNames(partialCandidates);
+      seed_vars     := VariablePointers.getScalarVarNames(seedCandidates, false);
+      partial_vars  := VariablePointers.getScalarVarNames(partialCandidates, false);
 
       // assume full dependency
       cols := list((s, partial_vars) for s in seed_vars);
@@ -434,8 +434,8 @@ public
           partial_mapping := Mapping.create(EquationPointers.empty(), partialCandidates);
 
           // get all relevant crefs
-          partial_vars        := VariablePointers.getScalarVarNames(partialCandidates);
-          seed_vars           := VariablePointers.getScalarVarNames(seedCandidates);
+          partial_vars        := VariablePointers.getScalarVarNames(partialCandidates, false);
+          seed_vars           := VariablePointers.getScalarVarNames(seedCandidates, false);
           // unscalarized seed vars are currently needed for sparsity pattern
           seed_vars_array     := VariablePointers.getVarNames(seedCandidates);
           partial_vars_array  := VariablePointers.getVarNames(partialCandidates);

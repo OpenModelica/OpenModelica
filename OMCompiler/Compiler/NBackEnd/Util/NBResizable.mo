@@ -96,8 +96,18 @@ public
 
         if debug then
           print(optimalValuesToString(optimal_values, StringUtil.headline_2("[debug] Initial Resizable Parameter Values:") + "\n"));
-          print(List.toString(UnorderedMap.keyList(c2pi), Expression.toString, StringUtil.headline_2("[debug] Final Inequality Constraints:"), "  0 >= ", "\n  0 >= ", "\n") + "\n");
-          print(List.toString(UnorderedMap.keyList(c2pe), Expression.toString, StringUtil.headline_2("[debug] Final Equality Constraints:"), "  0 = ", "\n  0 = ", "\n") + "\n");
+          print(StringUtil.headline_2("[debug] Final Inequality Constraints:"));
+          if UnorderedMap.isEmpty(c2pi) then
+            print("  <No Constraints>\n\n");
+          else
+            print(List.toString(UnorderedMap.keyList(c2pi), Expression.toString, "", "  0 >= ", "\n  0 >= ", "\n") + "\n");
+          end if;
+          print(StringUtil.headline_2("[debug] Final Equality Constraints:"));
+          if UnorderedMap.isEmpty(c2pe) then
+            print("  <No Constraints>\n\n");
+          else
+            print(List.toString(UnorderedMap.keyList(c2pe), Expression.toString, "", "  0 = ", "\n  0 = ", "\n") + "\n");
+          end if;
         end if;
 
         // compute the optimal values by checking constraints
@@ -286,12 +296,15 @@ protected
       then ();
 
       case Equation.ARRAY_EQUATION() algorithm
+        Equation.map(eqn, function collectVars(func = BVariable.isResizable, collector = constrained_vars));
+        UnorderedSet.fold(constrained_vars, function addVariableConstraint(eqn = eqn, replacements = NONE()), c2pi);
         for tpl in List.zip(Type.arrayDims(Expression.typeOf(eqn.lhs)), Type.arrayDims(Expression.typeOf(eqn.rhs))) loop
           (lhs_dim, rhs_dim) := tpl;
           if Dimension.isResizable(lhs_dim) or Dimension.isResizable(rhs_dim) then
             const := Expression.MULTARY({Dimension.sizeExp(lhs_dim)}, {Dimension.sizeExp(rhs_dim)}, Operator.makeAdd(Type.INTEGER()));
             try
               addConstraint(const, NONE(), c2pe, Expression.isZero, "array dimension", "=");
+              _ := Expression.map(const, function collectResizables(collector = parameters));
             else
               Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed.\nViolation of implicit constraint `" + Dimension.toString(lhs_dim) + " = " + Dimension.toString(rhs_dim)
                 + "` for LHS and RHS type dimensions in equation:\n" + Equation.toString(eqn)});
@@ -309,6 +322,7 @@ protected
         UnorderedSet.fold(constrained_vars, function addVariableConstraint(eqn = eqn, replacements = NONE()), c2pi);
       then ();
     end match;
+
     if debug then
       print("\n");
     end if;
@@ -464,66 +478,61 @@ protected
     input UnorderedMap<ComponentRef, Expression> optimal_values;
     input UnorderedMap<Expression, ParameterList> c2pi;
   protected
-    Option<Integer> opt_factor = NONE();
-    Integer min_distance = 0;
-    Integer max_distance = 0;
-    Integer distance;
-    ComponentRef cref;
-    UnorderedSet<Expression> occ;
-    DifferentiationArguments args;
-    list<tuple<ComponentRef, Integer>> optimal_distances = {};
-    list<ComponentRef> failed_crefs = {};
-    list<ComponentRef> failed_iters = {};
-    Expression range, step, target, distance_const;
+    Expression range, target;
     UnorderedSet<ComponentRef> local_parameters;
+    DifferentiationArguments args;
   algorithm
-    for tpl in UnorderedMap.toList(occs) loop
-      (cref, occ) := tpl;
-      for exp in UnorderedSet.toList(occ) loop
-        args := DifferentiationArguments.simpleCref(cref);
-        (opt_factor, min_distance, max_distance) := getDistance(cref, exp, args, opt_factor, min_distance, max_distance);
-      end for;
-      if Util.isSome(opt_factor) and Util.getOption(opt_factor) <> 0 then
-        optimal_distances := (cref, max_distance - min_distance) :: optimal_distances;
-      else
-        failed_crefs := cref :: failed_crefs;
-      end if;
-    end for;
-
-    for tpl in optimal_distances loop
-      (cref, distance) := tpl;
+    for cref in UnorderedMap.keyList(occs) loop
       range := UnorderedMap.getSafe(cref, resizables, sourceInfo());
       Expression.map(range, function collectResizables(collector = parameters));
       _ := match range
         case Expression.RANGE() algorithm
-          step := Util.getOptionOrDefault(range.step, Expression.INTEGER(1));
-          // collect local parameters and merge with global parameters
-          local_parameters := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
-          _ := Expression.map(range, function collectResizables(collector = local_parameters));
-          UnorderedSet.merge(parameters, local_parameters);
           // optimization target function (minimum)
           // min! f(x) = stop - start
           target := Expression.MULTARY({range.stop}, {range.start}, Operator.makeAdd(Type.INTEGER()));
           target := SimplifyExp.simplify(target);
 
+          // collect local parameters and merge with global parameters
+          local_parameters := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
+          _ := Expression.map(range, function collectResizables(collector = local_parameters));
+          UnorderedSet.merge(parameters, local_parameters);
+
           // differentiate the target by all contained parameters to determine initial values
+          args := DifferentiationArguments.simpleCref(cref);
           UnorderedSet.apply(local_parameters, function getInitialValues(target = target, args = args, min_parameters = min_parameters, optimal_values = optimal_values));
 
-          // the optimal distance constraint
-          // distance - (stop - start)/start <= 0
-          distance_const := Expression.MULTARY({Expression.INTEGER(distance)}, {Expression.MULTARY({target}, {step}, Operator.makeMul(Type.INTEGER()))}, Operator.makeAdd(Type.INTEGER()));
-          distance_const := SimplifyExp.simplify(distance_const);
-          distance_const := SimplifyExp.combineBinaries(distance_const);
-          distance_const := SimplifyExp.simplify(distance_const);
-          UnorderedMap.add(distance_const, UnorderedSet.toList(local_parameters), c2pi);
-          if debug then
-            print("[debug] adding equation constraint: 0 >= " + Expression.toString(distance_const) + "\n");
-          end if;
+          getRangeConstraint(range.start, range.step, range.stop, local_parameters, c2pi, "equation");
         then ();
         else ();
       end match;
     end for;
   end findOptimalValue;
+
+  function getRangeConstraint
+    input Expression start;
+    input Option<Expression> step_opt;
+    input Expression stop;
+    input UnorderedSet<ComponentRef> parameters;
+    input UnorderedMap<Expression, ParameterList> c2pi;
+    input String const_kind;
+  protected
+    Expression step, target, distance_const;
+  algorithm
+    step := Util.getOptionOrDefault(step_opt, Expression.INTEGER(1));
+    target := Expression.MULTARY({stop}, {start}, Operator.makeAdd(Type.INTEGER()));
+
+    // the optimal distance constraint
+    // 2 - (stop - start)/start <= 0
+    // ToDo: reduce the constant to 1. current structures do not support size 1 for loops well
+    distance_const := Expression.MULTARY({Expression.INTEGER(2)}, {Expression.MULTARY({target}, {step}, Operator.makeMul(Type.INTEGER()))}, Operator.makeAdd(Type.INTEGER()));
+    distance_const := SimplifyExp.simplify(distance_const);
+    distance_const := SimplifyExp.combineBinaries(distance_const);
+    distance_const := SimplifyExp.simplify(distance_const);
+    UnorderedMap.add(distance_const, UnorderedSet.toList(parameters), c2pi);
+    if debug then
+      print("[debug] adding " + const_kind + " constraint: 0 >= " + Expression.toString(distance_const) + "\n");
+    end if;
+  end getRangeConstraint;
 
   function getFactor
     input Expression exp;
@@ -619,6 +628,14 @@ protected
           + "` for component reference `" + ComponentRef.toString(cref) + "` of variable `" + Variable.toString(Pointer.access(BVariable.getVarPointer(cref, sourceInfo()))) + "`\nin equation:\n" + Equation.toString(eqn)});
         fail();
       end try;
+      const   := Expression.MULTARY({Dimension.sizeExp(dim)}, {Expression.INTEGER(1)}, op);
+      try
+        addConstraint(const, replacements, c2pi, Expression.isNonPositive, "variable", ">=");
+      else
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed.\nViolation of implicit constraint `" + Dimension.toString(dim) + " >= 1"
+          + "` for component reference `" + ComponentRef.toString(cref) + "` of variable `" + Variable.toString(Pointer.access(BVariable.getVarPointer(cref, sourceInfo()))) + "`\nin equation:\n" + Equation.toString(eqn)});
+        fail();
+      end try;
     end for;
   end addVariableConstraint;
 
@@ -646,6 +663,9 @@ protected
     else
       const := old_const;
     end if;
+
+    const := Expression.map(const, function addRangeConstraints(replacements = replacements, c2p = c2p, func = func, const_kind = const_kind, eq_kind = eq_kind));
+
     parameters := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
     Expression.map(const, function collectResizables(collector = parameters));
     params := UnorderedSet.toList(parameters);
@@ -674,12 +694,37 @@ protected
 
     if debug then
       if redundant then
-        print("[debug] not adding redundant " + const_kind + " constraint: 0 " + const_kind + " " + Expression.toString(old_const) + " simplified to: 0 " + const_kind + " " + Expression.toString(const) + "\n");
+        print("[debug] not adding redundant " + const_kind + " constraint: 0 " + eq_kind + " " + Expression.toString(old_const) + " simplified to: 0 " + eq_kind + " " + Expression.toString(const) + "\n");
       else
-        print("[debug] adding " + const_kind + " constraint: 0 " + const_kind + " " + Expression.toString(old_const) + " simplified to: 0 " + const_kind + " " + Expression.toString(const) + "\n");
+        print("[debug] adding " + const_kind + " constraint: 0 " + eq_kind + " " + Expression.toString(old_const) + " simplified to: 0 " + eq_kind + " " + Expression.toString(const) + "\n");
       end if;
     end if;
   end addConstraint;
+
+  function addRangeConstraints
+    input output Expression exp;
+    input Option<UnorderedMap<ComponentRef, Expression>> replacements;
+    input UnorderedMap<Expression, ParameterList> c2p;
+    input checkFunc func "checks validity of redundant constraints";
+    input String const_kind "only for debugging: words to describe the kind of constraint";
+    input String eq_kind "only for debugging: in/equality symbols (=, >=, <=, >, <)";
+    partial function checkFunc
+      input Expression exp;
+      output Boolean b;
+    end checkFunc;
+  protected
+    UnorderedSet<ComponentRef> parameters;
+  algorithm
+    exp := match exp
+      case Expression.RANGE() algorithm
+        // collect local parameters
+        parameters := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
+        _ := Expression.map(exp, function collectResizables(collector = parameters));
+        getRangeConstraint(exp.start, exp.step, exp.stop, parameters, c2p, "variable");
+      then Expression.rangeSizeExp(exp);
+      else exp;
+    end match;
+  end addRangeConstraints;
 
   function getInitialValues
     input output ComponentRef cref;
@@ -802,7 +847,7 @@ protected
         case SOME(value) guard(func(value)) then ();
 
         // this constraint is violated
-        case SOME(value)algorithm
+        case SOME(value) algorithm
           // create artificial equation
           eqn := Equation.makeAssignmentEqn(constraint, Expression.INTEGER(0), Iterator.EMPTY(), EquationAttributes.default(EquationKind.DISCRETE, false));
           for cref in crefs loop

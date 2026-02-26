@@ -662,7 +662,7 @@ public
       end match;
 
       if Flags.isSet(Flags.BLT_MATRIX_DUMP) then
-        print(toString(adj, "Final") + "\n");
+        print(toString(adj, "") + "\n");
       end if;
     end upgrade;
 
