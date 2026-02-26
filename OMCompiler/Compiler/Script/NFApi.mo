@@ -1189,7 +1189,7 @@ function dumpJSONInstanceAnnotationExtends
   input list<String> filter;
   output JSON json = JSON.makeNull();
 algorithm
-  json := JSON.addPair("$kind", JSON.makeString("extends"), json);
+  json := JSON.addPair("$kind", JSON.STRING("extends"), json);
   json := JSON.addPair("baseClass", dumpJSONInstanceAnnotation(ext, filter), json);
 end dumpJSONInstanceAnnotationExtends;
 
@@ -1255,7 +1255,7 @@ algorithm
   cls_def := InstNode.definition(node);
   SOME(ext_def) := InstNode.extendsDefinition(node);
 
-  json := JSON.addPair("$kind", JSON.makeString("extends"), json);
+  json := JSON.addPair("$kind", JSON.STRING("extends"), json);
   json := dumpJSONSCodeMod(getExtendsModifier(ext_def, node), node, json);
   json := dumpJSONCommentOpt(SCodeUtil.getElementComment(ext_def), node, json);
 
@@ -1271,7 +1271,7 @@ function dumpJSONBuiltinBaseClass
   input String name;
   output JSON json = JSON.makeNull();
 algorithm
-  json := JSON.addPair("$kind", JSON.makeString("extends"), json);
+  json := JSON.addPair("$kind", JSON.STRING("extends"), json);
   json := JSON.addPair("baseClass", JSON.makeString(name), json);
 end dumpJSONBuiltinBaseClass;
 
@@ -1325,7 +1325,7 @@ algorithm
   elem := InstNode.definition(node);
   scope := InstNode.parent(node);
 
-  json := JSON.addPair("$kind", JSON.makeString("component"), json);
+  json := JSON.addPair("$kind", JSON.STRING("component"), json);
   json := JSON.addPair("name", JSON.makeString(InstNode.name(node)), json);
 
   () := match (comp, elem)
@@ -1484,7 +1484,7 @@ function dumpJSONEnumTypeLiteral
   input InstNode scope;
   output JSON json = JSON.makeNull();
 algorithm
-  json := JSON.addPair("$kind", JSON.makeString("component"), json);
+  json := JSON.addPair("$kind", JSON.STRING("component"), json);
   json := JSON.addPair("name", JSON.makeString(InstNode.name(node)), json);
   json := dumpJSONComment(Component.comment(InstNode.component(node)), scope, json);
 end dumpJSONEnumTypeLiteral;
@@ -1605,9 +1605,9 @@ algorithm
   end if;
 
   if AbsynUtil.isInput(attrs.direction) then
-    json := JSON.addPair("direction", JSON.makeString("input"), json);
+    json := JSON.addPair("direction", JSON.STRING("input"), json);
   elseif AbsynUtil.isOutput(attrs.direction) then
-    json := JSON.addPair("direction", JSON.makeString("output"), json);
+    json := JSON.addPair("direction", JSON.STRING("output"), json);
   end if;
 end dumpJSONAttributes;
 
@@ -1925,7 +1925,7 @@ algorithm
     case Absyn.Exp.CALL()
       algorithm
         json := JSON.makeNull();
-        json := JSON.addPair("$kind", JSON.makeString("call"), json);
+        json := JSON.addPair("$kind", JSON.STRING("call"), json);
         json := JSON.addPair("name", dumpJSONAbsynCref(exp.function_), json);
         json := dumpJSONAbsynFunctionArgs(exp.functionArgs, json);
       then
@@ -2289,7 +2289,7 @@ algorithm
   json := match element
     case SCode.Element.COMPONENT()
       algorithm
-        json := JSON.addPair("$kind", JSON.makeString("component"), json);
+        json := JSON.addPair("$kind", JSON.STRING("component"), json);
         json := JSON.addPair("name", JSON.makeString(element.name), json);
         json := JSON.addPair("type", dumpJSONPath(AbsynUtil.typeSpecPath(element.typeSpec)), json);
         json := JSON.addPairNotNull("dims", dumpJSONDims(element.attributes.arrayDims, {}), json);
@@ -2339,7 +2339,7 @@ algorithm
   () := match element
     case SCode.CLASS()
       algorithm
-        json := JSON.addPair("$kind", JSON.makeString("class"), json);
+        json := JSON.addPair("$kind", JSON.STRING("class"), json);
 
         if InstNode.isEmpty(node) or isRedeclare then
           json := JSON.addPair("name", JSON.makeString(element.name), json);
@@ -2388,7 +2388,7 @@ algorithm
 
       for ext in exts loop
         json_ext := JSON.makeNull();
-        json_ext := JSON.addPair("$kind", JSON.makeString("extends"), json_ext);
+        json_ext := JSON.addPair("$kind", JSON.STRING("extends"), json_ext);
         json_ext := JSON.addPair("baseClass", dumpJSONSCodeClass(InstNode.definition(ext), ext, scope, false), json_ext);
         json_elements := JSON.addElement(json_ext, json_elements);
       end for;
