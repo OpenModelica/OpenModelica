@@ -558,10 +558,10 @@ QList<QPointF> ShapeAnnotation::getExtentsForInheritedShapeFromIconDiagramMap(Gr
   if (pExtend) {
     if (pGraphicsView->isIconView()) {
       extent = pExtend->getIconDiagramMapExtent(true);
-      preserveAspectRatio = pExtend->getModel()->getAnnotation()->getIconAnnotation()->mMergedCoordinateSystem.getPreserveAspectRatio();
+      preserveAspectRatio = pExtend->getModel()->mMergedIconCoordinateSystem.getPreserveAspectRatio();
     } else {
       extent = pExtend->getIconDiagramMapExtent(false);
-      preserveAspectRatio = pExtend->getModel()->getAnnotation()->getDiagramAnnotation()->mMergedCoordinateSystem.getPreserveAspectRatio();
+      preserveAspectRatio = pExtend->getModel()->mMergedDiagramCoordinateSystem.getPreserveAspectRatio();
     }
   }
 

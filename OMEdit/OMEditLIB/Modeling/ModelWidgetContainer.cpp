@@ -257,11 +257,11 @@ void GraphicsView::drawCoordinateSystem(bool openingModel)
 {
   if (isIconView() && mpModelWidget->getLibraryTreeItem()->getAccess() >= LibraryTreeItem::icon) {
     mCoordinateSystem = mpModelWidget->getModelInstance()->getAnnotation()->getIconAnnotation()->mCoordinateSystem;
-    mMergedCoordinateSystem = mpModelWidget->getModelInstance()->getAnnotation()->getIconAnnotation()->mMergedCoordinateSystem;
+    mMergedCoordinateSystem = mpModelWidget->getModelInstance()->mMergedIconCoordinateSystem;
     setExtentRectangle(mMergedCoordinateSystem.getExtentRectangle(), openingModel);
   } else if (isDiagramView() && mpModelWidget->getLibraryTreeItem()->getAccess() >= LibraryTreeItem::diagram) {
     mCoordinateSystem = mpModelWidget->getModelInstance()->getAnnotation()->getDiagramAnnotation()->mCoordinateSystem;
-    mMergedCoordinateSystem = mpModelWidget->getModelInstance()->getAnnotation()->getDiagramAnnotation()->mMergedCoordinateSystem;
+    mMergedCoordinateSystem = mpModelWidget->getModelInstance()->mMergedDiagramCoordinateSystem;
     setExtentRectangle(mMergedCoordinateSystem.getExtentRectangle(), openingModel);
   }
 }
@@ -275,7 +275,7 @@ void GraphicsView::drawCoordinateSystem(bool openingModel)
  */
 void GraphicsView::drawShapes(ModelInstance::Model *pModelInstance, bool inhertied, bool openingModel)
 {
-  QList<ModelInstance::Shape*> shapes;
+  QVector<ModelInstance::Shape*> shapes;
   ModelInstance::Extend *pExtendModel = 0;
   if (inhertied) {
     pExtendModel = pModelInstance->getParentExtend();
@@ -363,7 +363,7 @@ void GraphicsView::drawElements(ModelInstance::Model *pModelInstance, bool inher
 {
   // We use access.icon so we can draw public components so that we can see and set the parameters in the parameters window.
   if (mpModelWidget->getLibraryTreeItem()->getAccess() >= LibraryTreeItem::icon && isDiagramView()) {
-    QList<ModelInstance::Element*> elements = pModelInstance->getElements();
+    QVector<ModelInstance::Element*> elements = pModelInstance->getElements();
     int elementIndex = -1, connectorIndex = -1;
     for (int i = 0; i < elements.size(); ++i) {
       auto pModelInstanceElement = elements.at(i);
@@ -420,7 +420,7 @@ void GraphicsView::drawConnections(ModelInstance::Model *pModelInstance, bool in
   // We use access.diagram so we can draw connections.
   if (mpModelWidget->getLibraryTreeItem()->getAccess() >= LibraryTreeItem::diagram && isDiagramView()) {
     int modelInfoIndex = -1;
-    QList<ModelInstance::Connection*> connections = pModelInstance->getConnections();
+    QVector<ModelInstance::Connection*> connections = pModelInstance->getConnections();
     for (int i = 0; i < connections.size(); ++i) {
       auto pConnection = connections.at(i);
       // if connection is valid and has line annotation
@@ -488,7 +488,7 @@ void GraphicsView::drawTransitions(ModelInstance::Model *pModelInstance, bool in
   // We use access.diagram so we can draw transitions.
   if (mpModelWidget->getLibraryTreeItem()->getAccess() >= LibraryTreeItem::diagram && isDiagramView()) {
     int modelInfoIndex = -1;
-    QList<ModelInstance::Transition*> transitions = pModelInstance->getTransitions();
+    QVector<ModelInstance::Transition*> transitions = pModelInstance->getTransitions();
     for (int i = 0; i < transitions.size(); ++i) {
       auto pTransition = transitions.at(i);
       // if transition is valid and has line annotation
@@ -554,7 +554,7 @@ void GraphicsView::drawInitialStates(ModelInstance::Model *pModelInstance, bool 
   // We use access.diagram so we can draw initial states.
   if (mpModelWidget->getLibraryTreeItem()->getAccess() >= LibraryTreeItem::diagram && isDiagramView()) {
     int modelInfoIndex = -1;
-    QList<ModelInstance::InitialState*> initialStates = pModelInstance->getInitialStates();
+    QVector<ModelInstance::InitialState*> initialStates = pModelInstance->getInitialStates();
     for (int i = 0; i < initialStates.size(); ++i) {
       auto pInitialState = initialStates.at(i);
       // if initialState is valid and has line annotation
@@ -834,7 +834,7 @@ ModelInstance::Component *GraphicsView::createModelInstanceComponent(ModelInstan
   const QJsonArray elementsArray = modelJSON.value("elements").toArray();
   if (!elementsArray.isEmpty()) {
     pModelInstance->deserializeElements(elementsArray);
-    QList<ModelInstance::Element*> elements = pModelInstance->getElements();
+    QVector<ModelInstance::Element*> elements = pModelInstance->getElements();
     if (!elements.isEmpty()) {
       return dynamic_cast<ModelInstance::Component*>(elements.last());
     }
@@ -1795,7 +1795,7 @@ bool GraphicsView::updateTransition(LineAnnotation *pTransitionLineAnnotation)
   const QString startElementName = pTransitionLineAnnotation->getStartElementName();
   const QString endElementName = pTransitionLineAnnotation->getEndElementName();
   ModelInfo oldModelInfo = mpModelWidget->createModelInfo();
-  QList<ModelInstance::Transition*> transitions = mpModelWidget->getModelInstance()->getTransitions();
+  QVector<ModelInstance::Transition*> transitions = mpModelWidget->getModelInstance()->getTransitions();
   for (int i = 0; i < transitions.size(); ++i) {
     auto pTransition = transitions.at(i);
     if (pTransition->getStartConnector()->getName().compare(startElementName) == 0 && pTransition->getEndConnector()->getName().compare(endElementName) == 0) {
@@ -3300,7 +3300,7 @@ void GraphicsView::addConnection(Element *pElement, bool createConnector)
             && (!(pElement->isExpandableConnector() || pElement->isArray()
                 || (pRootParentElement && (pRootParentElement->isExpandableConnector() || pRootParentElement->isArray()))))) {
           if (pElement->getModel()) {
-            QList<ModelInstance::Shape*> shapes = pElement->getModel()->getAnnotation()->getIconAnnotation()->getGraphics();
+            QVector<ModelInstance::Shape*> shapes = pElement->getModel()->getAnnotation()->getIconAnnotation()->getGraphics();
             if (!shapes.isEmpty()) {
               mpConnectionLineAnnotation->setLineColor(shapes.at(0)->getLineColor());
             } else if (pElement->getShapesList().size() > 0) {
@@ -5805,7 +5805,7 @@ void ModelWidget::drawModel(const ModelInfo &modelInfo)
 
 void ModelWidget::drawModelIconDiagram(ModelInstance::Model *pModelInstance, bool inherited, const ModelInfo &modelInfo)
 {
-  QList<ModelInstance::Element*> elements = pModelInstance->getElements();
+  QVector<ModelInstance::Element*> elements = pModelInstance->getElements();
   foreach (auto pElement, elements) {
     if (pElement->isExtend() && pElement->getModel()) {
       auto pExtend = dynamic_cast<ModelInstance::Extend*>(pElement);
@@ -5832,17 +5832,19 @@ void ModelWidget::loadModelInstance(bool icon, const ModelInfo &modelInfo)
 {
   // save the current ModelInstance pointer so we can delete it later.
   ModelInstance::Model *pOldModelInstance = mpModelInstance;
-  QElapsedTimer timer;
-  timer.start();
   // call getModelInstance
   const QJsonObject jsonObject = MainWindow::instance()->getOMCProxy()->getModelInstance(mpLibraryTreeItem->getNameStructure(), "", "", false, icon);
+  QElapsedTimer timer;
+  if (MainWindow::instance()->isNewApiProfiling()) {
+    timer.start();
+  }
   // set the new ModelInstance
   mpModelInstance = new ModelInstance::Model(jsonObject);
   if (MainWindow::instance()->isNewApiProfiling()) {
     double elapsed = (double)timer.elapsed() / 1000.0;
-    MainWindow::instance()->writeNewApiProfiling(QString("Time for parsing JSON %1 secs").arg(QString::number(elapsed, 'f', 6)));
+    MainWindow::instance()->writeNewApiProfiling(QString("Time for creating model structure %1 secs").arg(QString::number(elapsed, 'f', 6)));
+    timer.restart();
   }
-  timer.restart();
   // enable skip expression evaluation flag if we are drawing the icon only
   MainWindow::instance()->setSkipExpressionEvaluation(icon);
   // drawing
@@ -5889,7 +5891,7 @@ void ModelWidget::loadDiagramViewNAPI()
  */
 void ModelWidget::detectMultipleDeclarations()
 {
-  QList<ModelInstance::Element*> elements = mpModelInstance->getElements();
+  QVector<ModelInstance::Element*> elements = mpModelInstance->getElements();
   for (int i = 0 ; i < elements.size() ; i++) {
     for (int j = 0 ; j < elements.size() ; j++) {
       if (i == j) {
@@ -7800,8 +7802,9 @@ void ModelWidgetContainer::addModelWidget(ModelWidget *pModelWidget, bool checkP
     }
     pModelWidget->getEditor()->getPlainTextEdit()->setFocus(Qt::ActiveWindowFocusReason);
   }
-  pModelWidget->updateViewButtonsBasedOnAccess();
+
   if (!checkPreferedView || !pModelWidget->getLibraryTreeItem()->isModelica()) {
+    pModelWidget->updateViewButtonsBasedOnAccess();
     return;
   }
   // get the preferred view to display

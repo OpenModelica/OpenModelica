@@ -913,7 +913,7 @@ void Parameter::editClassButtonClicked()
       }
     }
     // qDebug() << "replaceable constrainedby modifier" << pReplaceableConstrainedByModifier->toString();
-    QList<const ModelInstance::Modifier*> modifiers;
+    QVector<const ModelInstance::Modifier*> modifiers;
     modifiers.append(pReplaceableConstrainedByModifier);
     modifiers.append(pElementModifier);
     ModelInstance::Modifier *pMergedModifier = ModelInstance::Modifier::mergeModifiersIntoOne(modifiers, mpModelInstanceElement->getParentModel());
