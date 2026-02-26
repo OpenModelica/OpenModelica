@@ -268,7 +268,7 @@ FlatModelica::Expression DynamicAnnotation::evaluate_helper(FlatModelica::Expres
       }
     });
 
-    if (!value && !expression.isLiteral()) {
+    if (!value && !expression.isLiteral() && !expression.isNull()) {
       // qDebug() << "Expression is not literal:" << expression.toQString();
       return evaluate_helper(&expression, pModel, readFromResultFileForDynamicSelect, time, value);
     } else {
