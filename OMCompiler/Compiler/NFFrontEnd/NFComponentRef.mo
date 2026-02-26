@@ -1500,7 +1500,7 @@ public
         algorithm
           json := JSON.emptyListObject();
           json := JSON.addPair("$kind", JSON.makeString("cref"), json);
-          json := JSON.addPair("parts", JSON.makeArray(toJSON_impl(cref)), json);
+          json := JSON.addPair("parts", JSON.makeList(toJSON_impl(cref)), json);
         then
           json;
 
@@ -1510,7 +1510,7 @@ public
         algorithm
           json := JSON.emptyListObject();
           json := JSON.addPair("$kind", JSON.makeString("cref"), json);
-          json := JSON.addPair("parts", JSON.makeArray(
+          json := JSON.addPair("parts", JSON.makeList(
             {JSON.fromPair("name", JSON.makeString("_"))}), json);
         then
           json;
