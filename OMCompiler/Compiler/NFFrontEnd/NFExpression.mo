@@ -6408,13 +6408,7 @@ public
           json;
 
       case ARRAY()
-        algorithm
-          json := JSON.emptyArray(arrayLength(exp.elements));
-          for e in exp.elements loop
-            json := JSON.addElement(toJSON(e), json);
-          end for;
-        then
-          json;
+        then JSON.makeList(list(toJSON(e) for e in exp.elements));
 
       case RANGE()
         algorithm
@@ -6435,7 +6429,7 @@ public
           json := JSON.emptyListObject();
           json := JSON.addPair("$kind", JSON.STRING("tuple"), json);
           json := JSON.addPair("elements",
-            JSON.makeArray(list(toJSON(e) for e in exp.elements)), json);
+            JSON.makeList(list(toJSON(e) for e in exp.elements)), json);
         then
           json;
 
@@ -6445,7 +6439,7 @@ public
           json := JSON.addPair("$kind", JSON.STRING("record"), json);
           json := JSON.addPair("name", JSON.makeString(AbsynUtil.pathString(exp.path)), json);
           json := JSON.addPair("elements",
-            JSON.makeArray(list(toJSON(e) for e in exp.elements)), json);
+            JSON.makeList(list(toJSON(e) for e in exp.elements)), json);
         then
           json;
 
@@ -6460,7 +6454,7 @@ public
 
           if isSome(exp.dimIndex) then
             json := JSON.addPair("arguments",
-              JSON.makeArray({toJSON(exp.exp), toJSON(Util.getOption(exp.dimIndex))}), json);
+              JSON.makeList({toJSON(exp.exp), toJSON(Util.getOption(exp.dimIndex))}), json);
           else
             json := JSON.addPair("arguments", JSON.makeArray({toJSON(exp.exp)}), json);
           end if;
@@ -6574,7 +6568,7 @@ public
           json := JSON.emptyListObject();
           json := JSON.addPair("$kind", JSON.STRING("function"), json);
           json := JSON.addPair("name", JSON.makeString(ComponentRef.toString(exp.fn)), json);
-          json := JSON.addPair("arguments", JSON.makeArray(
+          json := JSON.addPair("arguments", JSON.makeList(
             list(dump_arg(name, arg) threaded for arg in exp.args, name in exp.argNames)), json);
         then
           json;
