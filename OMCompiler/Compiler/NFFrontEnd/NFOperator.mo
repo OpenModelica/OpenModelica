@@ -39,6 +39,7 @@ public
   import Absyn;
   import AbsynUtil;
   import DAE;
+  import JSON;
 
   type Op = enumeration(
     // Basic arithmetic operators.
@@ -459,6 +460,53 @@ public
 
     symbol := spacing + symbol + spacing;
   end symbol;
+
+  function toJSON
+    input Operator operator;
+    output JSON json;
+  protected
+    constant array<JSON> symbols = MetaModelica.Dangerous.listArrayLiteral({
+      JSON.STRING("+"),
+      JSON.STRING("-"),
+      JSON.STRING("*"),
+      JSON.STRING("/"),
+      JSON.STRING("^"),
+      JSON.STRING(".+"),
+      JSON.STRING(".-"),
+      JSON.STRING(".*"),
+      JSON.STRING("./"),
+      JSON.STRING(".^"),
+      JSON.STRING(".+"),
+      JSON.STRING(".+"),
+      JSON.STRING(".-"),
+      JSON.STRING(".-"),
+      JSON.STRING("*"),
+      JSON.STRING(".*"),
+      JSON.STRING("*"),
+      JSON.STRING("*"),
+      JSON.STRING("*"),
+      JSON.STRING("*"),
+      JSON.STRING("./"),
+      JSON.STRING("/"),
+      JSON.STRING(".^"),
+      JSON.STRING(".^"),
+      JSON.STRING("^"),
+      JSON.STRING("-"),
+      JSON.STRING("and"),
+      JSON.STRING("or"),
+      JSON.STRING("not"),
+      JSON.STRING("<"),
+      JSON.STRING("<="),
+      JSON.STRING(">"),
+      JSON.STRING(">="),
+      JSON.STRING("=="),
+      JSON.STRING("<>")
+    });
+
+    Op op = operator.op;
+  algorithm
+    json := symbols[Integer(op)];
+  end toJSON;
 
   function priority
     input Operator op;
