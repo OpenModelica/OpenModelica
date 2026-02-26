@@ -5832,17 +5832,17 @@ void ModelWidget::loadModelInstance(bool icon, const ModelInfo &modelInfo)
 {
   // save the current ModelInstance pointer so we can delete it later.
   ModelInstance::Model *pOldModelInstance = mpModelInstance;
+  // call getModelInstance
+  const QJsonObject jsonObject = MainWindow::instance()->getOMCProxy()->getModelInstance(mpLibraryTreeItem->getNameStructure(), "", "", false, icon);
   QElapsedTimer timer;
   if (MainWindow::instance()->isNewApiProfiling()) {
     timer.start();
   }
-  // call getModelInstance
-  const QJsonObject jsonObject = MainWindow::instance()->getOMCProxy()->getModelInstance(mpLibraryTreeItem->getNameStructure(), "", "", false, icon);
   // set the new ModelInstance
   mpModelInstance = new ModelInstance::Model(jsonObject);
   if (MainWindow::instance()->isNewApiProfiling()) {
     double elapsed = (double)timer.elapsed() / 1000.0;
-    MainWindow::instance()->writeNewApiProfiling(QString("Time for parsing JSON %1 secs").arg(QString::number(elapsed, 'f', 6)));
+    MainWindow::instance()->writeNewApiProfiling(QString("Time for creating model structure %1 secs").arg(QString::number(elapsed, 'f', 6)));
     timer.restart();
   }
   // enable skip expression evaluation flag if we are drawing the icon only
@@ -7802,8 +7802,9 @@ void ModelWidgetContainer::addModelWidget(ModelWidget *pModelWidget, bool checkP
     }
     pModelWidget->getEditor()->getPlainTextEdit()->setFocus(Qt::ActiveWindowFocusReason);
   }
-  pModelWidget->updateViewButtonsBasedOnAccess();
+
   if (!checkPreferedView || !pModelWidget->getLibraryTreeItem()->isModelica()) {
+    pModelWidget->updateViewButtonsBasedOnAccess();
     return;
   }
   // get the preferred view to display

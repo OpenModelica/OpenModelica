@@ -2356,7 +2356,7 @@ namespace ModelInstance
     if (getAnnotation()->getMap(icon).hasExtent()) {
       return getAnnotation()->getMap(icon).hasExtent();
     }
-    if (mpParentModel && !mpParentModel->getAnnotation()->getMap(icon).hasExtent()) {
+    if (mpParentModel && mpParentModel->getAnnotation()->getMap(icon).hasExtent()) {
       return mpParentModel->getAnnotation()->getMap(icon).hasExtent();
     }
 
@@ -2378,7 +2378,7 @@ namespace ModelInstance
     if (getAnnotation()->getMap(icon).hasExtent()) {
       return getAnnotation()->getMap(icon).getExtent();
     }
-    if (mpParentModel && !mpParentModel->getAnnotation()->getMap(icon).hasExtent()) {
+    if (mpParentModel && mpParentModel->getAnnotation()->getMap(icon).hasExtent()) {
       return mpParentModel->getAnnotation()->getMap(icon).getExtent();
     }
 
@@ -2524,7 +2524,6 @@ namespace ModelInstance
       }
     }
 
-    // Always create Annotation for extend element. See #11363
     if (jsonObject.contains("annotation")) {
       mpAnnotation = std::make_unique<Annotation>(mpParentModel);
       mpAnnotation->deserialize(jsonObject.value("annotation").toObject());

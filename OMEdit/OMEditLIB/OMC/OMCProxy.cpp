@@ -3441,7 +3441,7 @@ QJsonObject OMCProxy::getModelInstance(const QString &className, const QString &
     }
     if (MainWindow::instance()->isNewApiProfiling()) {
       double elapsed = (double)timer.elapsed() / 1000.0;
-      MainWindow::instance()->writeNewApiProfiling(QString("Time for converting to JSON %1 secs").arg(QString::number(elapsed, 'f', 6)));
+      MainWindow::instance()->writeNewApiProfiling(QString("Time for converting string JSON to QJsonDocument %1 secs").arg(QString::number(elapsed, 'f', 6)));
     }
     return doc.object();
   }
