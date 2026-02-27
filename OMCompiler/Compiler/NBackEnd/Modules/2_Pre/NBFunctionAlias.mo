@@ -416,6 +416,17 @@ protected
         new_exp.call    := call;
       then new_exp;
 
+      // create alias for array constructors in multaries and binaries
+      // Note: do not map! only replace top lvl constructors
+      case Expression.MULTARY() algorithm
+        exp.arguments     := list(introduceArrayConstructorAlias(arg, map, aux_index, iter, init) for arg in exp.arguments);
+        exp.inv_arguments := list(introduceArrayConstructorAlias(arg, map, aux_index, iter, init) for arg in exp.inv_arguments);
+      then exp;
+      case Expression.BINARY() algorithm
+        exp.exp1 := introduceArrayConstructorAlias(exp.exp1, map, aux_index, iter, init);
+        exp.exp2 := introduceArrayConstructorAlias(exp.exp2, map, aux_index, iter, init);
+      then exp;
+
       // remove tuple expressions that occur when using a function only for one output
       // y = fun(x)[1] where fun() has multiple outputs
       // we create y = ($FUN1, $FUN2)[1] and simplify to y = $FUN1
