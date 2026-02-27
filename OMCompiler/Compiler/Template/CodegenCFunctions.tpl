@@ -7620,6 +7620,12 @@ case exp as MATCHEXPRESSION(__) then
     case MATCH(switch=SOME((switchIndex,ty as T_INTEGER(__),_))) then
       let matchInputVar = getTempDeclMatchInputName(startIndexInputs, switchIndex)
       '<%matchInputVar%>'
+    case MATCH(switch=SOME((switchIndex,ty as T_ENUMERATION(__),_))) then
+      let matchInputVar = getTempDeclMatchInputName(startIndexInputs, switchIndex)
+      '<%matchInputVar%>'
+    case MATCH(switch=SOME((switchIndex,ty as T_METABOXED(__),_))) then
+      let matchInputVar = getTempDeclMatchInputName(startIndexInputs, switchIndex)
+      'mmc_unbox_integer(<%matchInputVar%>)'
     case MATCH(switch=SOME(_)) then
       error(sourceInfo(), 'Unknown switch: <%ExpressionDumpTpl.dumpExp(exp,"\"")%>')
     else tempDecl('volatile mmc_switch_type', &varDeclsInner)
@@ -7808,6 +7814,7 @@ template switchIndex(Pattern pattern, Integer extraArg)
     case PAT_CONSTANT(exp=e as SCONST(__))
     case PAT_CONSTANT(exp=SHARED_LITERAL(exp=e as SCONST(__))) then 'case <%stringHashDjb2Mod(e.string,extraArg)%> /* <%e.string%> */'
     case PAT_CONSTANT(exp=e as ICONST(__)) then 'case <%e.integer%>'
+    case PAT_CONSTANT(exp=e as ENUM_LITERAL(__)) then 'case <%e.index%>'
     else 'default'
 end switchIndex;
 
