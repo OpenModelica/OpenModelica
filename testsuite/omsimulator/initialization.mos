@@ -65,10 +65,10 @@ readFile("initialization_systemCall.log");
 // info:      A.w:       1.5
 // info:    Simulation
 // info:      A.x_start: 1.5
-// info:      A.x:       1.9994990009999
-// info:      A.w:       2.498998002
+// info:      A.x:       2.0004996663339
+// info:      A.w:       2.500999332668
 // info:    Final Statistics for 'test.root':
-//          NumSteps = 1001 NumRhsEvals  = 1002 NumLinSolvSetups = 51
+//          NumSteps = 1001 NumRhsEvals  = 1002 NumLinSolvSetups = 52
 //          NumNonlinSolvIters = 1001 NumNonlinSolvConvFails = 0 NumErrTestFails = 0
 // "
 // endResult
