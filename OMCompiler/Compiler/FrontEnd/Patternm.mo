@@ -798,6 +798,7 @@ algorithm
         (matchDecls,ht) = filterUnusedDecls(matchDecls,ht,{},HashTableStringToPath.emptyHashTableSized(hashSize));
         (elabExps,inputAliases,elabCases) = filterUnusedPatterns(elabExps,inputAliases,elabCases) "filterUnusedPatterns() again to filter out the last parts.";
         (elabMatchTy, elabCases) = optimizeMatchToSwitch(matchTy,elabCases,info);
+        elabMatchTy = unboxSwitchType(elabMatchTy, elabExps);
         checkConstantMatchInputs(elabExps, info);
         exp = DAE.MATCHEXPRESSION(elabMatchTy,elabExps,inputAliases,matchDecls,elabCases,et);
       then (cache,exp,prop);
@@ -986,6 +987,10 @@ algorithm
         false = listMember(ix,ixs);
         (ty,extraarg) = findPatternToConvertToSwitch2(pats,ix::ixs,DAE.T_INTEGER_DEFAULT,allSubPatternsMatch,numPatternsInMatrix);
       then (ty,extraarg);
+
+    case (DAE.PAT_CONSTANT(exp=DAE.ENUM_LITERAL(index=ix))::pats,_,_,_,_)
+      guard not listMember(ix,ixs)
+      then findPatternToConvertToSwitch2(pats,ix::ixs,DAE.T_ENUMERATION_DEFAULT,allSubPatternsMatch,numPatternsInMatrix);
 
     case ({},_,DAE.T_STRING(),_,_)
       equation
@@ -3104,6 +3109,22 @@ algorithm
     else {inExp};
   end match;
 end convertExpToPatterns;
+
+protected function unboxSwitchType
+  input output DAE.MatchType elabMatchTy;
+  input list<DAE.Exp> elabExps;
+protected
+  Integer idx, hash_mod;
+  DAE.Type ty;
+algorithm
+  elabMatchTy := match elabMatchTy
+    case DAE.MatchType.MATCH(switch = SOME((idx, ty as DAE.T_ENUMERATION(), hash_mod)))
+      guard Types.isBoxedType(Expression.typeof(listHead(elabExps)))
+      then DAE.MatchType.MATCH(SOME((idx, DAE.T_METABOXED(ty), hash_mod)));
+
+    else elabMatchTy;
+  end match;
+end unboxSwitchType;
 
 annotation(__OpenModelica_Interface="frontend");
 end Patternm;
