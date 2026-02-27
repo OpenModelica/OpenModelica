@@ -1729,6 +1729,7 @@ protected
   InstNodeType node_ty;
   Modifier mod;
   Option<InstNode> orig_opt;
+  ClassTree cls_tree;
 algorithm
   // Check that the redeclare element is actually a class.
   if not InstNode.isClass(redeclareNode) then
@@ -1774,12 +1775,9 @@ algorithm
         algorithm
           node_ty := InstNodeType.BASE_CLASS(InstNode.parent(orig_node), InstNode.definition(orig_node), InstNode.nodeType(orig_node));
           orig_node := InstNode.setNodeType(node_ty, orig_node);
-          rdcl_cls.elements := ClassTree.setClassExtends(orig_node, rdcl_cls.elements);
-          rdcl_cls.modifier := mod;
-          rdcl_cls.ccMod := constrainingMod;
-          rdcl_cls.prefixes := prefs;
+          cls_tree := ClassTree.setClassExtends(orig_node, rdcl_cls.elements);
         then
-          rdcl_cls;
+          Class.PARTIAL_CLASS(cls_tree, mod, constrainingMod, prefs);
 
       else
         algorithm
@@ -1793,12 +1791,7 @@ algorithm
         then redeclareEnum(rdcl_cls, orig_cls, prefs, mod, redeclareNode, originalNode, context);
 
       case (_, Class.PARTIAL_CLASS())
-        algorithm
-          rdcl_cls.prefixes := prefs;
-          rdcl_cls.modifier := mod;
-          rdcl_cls.ccMod := constrainingMod;
-        then
-          rdcl_cls;
+        then Class.PARTIAL_CLASS(rdcl_cls.elements, mod, constrainingMod, prefs);
 
       else
         algorithm
