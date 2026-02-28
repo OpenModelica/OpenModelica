@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Name=OMShell
+Comment=Modelica-based modeling and simulation environment
+Exec=OMShell
+Terminal=false
+Type=Application
+Icon=omshell
+Categories=Qt;Science;Development
