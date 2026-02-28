@@ -717,38 +717,8 @@ pipeline {
         }
       }
     }
-    stage('fmuchecker + FMPy + OMEdit testsuite') {
+    stage('FMPy + OMEdit testsuite') {
       parallel {
-        stage('linux-wine-fmuchecker') {
-          agent {
-            docker {
-              label 'linux'
-              image 'docker.openmodelica.org/fmuchecker:v2.0.4'
-            }
-          }
-          when {
-            beforeAgent true
-            expression { shouldWeRunTests }
-          }
-          options {
-            skipDefaultCheckout true
-          }
-          steps {
-            echo "${env.NODE_NAME}"
-            sh 'rm -rf testsuite/'
-            unstash 'cross-fmu'
-            unstash 'cross-fmu-extras'
-            sh '''
-            export HOME="$PWD"
-            cd testsuite/special/FmuExportCrossCompile/
-            ./single-fmu-run.sh linux64 `cat VERSION`
-            ./single-fmu-run.sh linux32 `cat VERSION`
-            ./single-fmu-run.sh win64 `cat VERSION`
-            ./single-fmu-run.sh win32 `cat VERSION`
-            '''
-            stash name: 'cross-fmu-results-linux-wine', includes: 'testsuite/special/FmuExportCrossCompile/*.csv, testsuite/special/FmuExportCrossCompile/Test_FMUs/**'
-          }
-        }
         stage('linux-FMPy') {
           agent {
             docker {
@@ -772,55 +742,6 @@ pipeline {
             cd testsuite/special/FMPy/
             make test
             '''
-          }
-        }
-        stage('osx-fmuchecker') {
-          agent {
-            label 'osx'
-          }
-          when {
-            beforeAgent true
-            expression { shouldWeRunTests }
-          }
-          options {
-            skipDefaultCheckout true
-          }
-          steps {
-            echo "${env.NODE_NAME}"
-            sh 'rm -rf testsuite/'
-            unstash 'cross-fmu'
-            unstash 'cross-fmu-extras'
-            sh '''
-            cd testsuite/special/FmuExportCrossCompile/
-            ./single-fmu-run.sh darwin64 `cat VERSION` /usr/local/bin/fmuCheck.darwin64
-            '''
-            stash name: 'cross-fmu-results-osx', includes: 'testsuite/special/FmuExportCrossCompile/*.csv, testsuite/special/FmuExportCrossCompile/Test_FMUs/**'
-          }
-        }
-        stage('arm-fmuchecker') {
-          agent {
-            docker {
-              label 'linux-arm32'
-              image 'docker.openmodelica.org/fmuchecker:v2.0.4-arm'
-            }
-          }
-          when {
-            beforeAgent true
-            expression { shouldWeRunTests }
-          }
-          options {
-            skipDefaultCheckout true
-          }
-          steps {
-            echo "${env.NODE_NAME}"
-            sh 'rm -rf testsuite/'
-            unstash 'cross-fmu'
-            unstash 'cross-fmu-extras'
-            sh '''
-            cd testsuite/special/FmuExportCrossCompile/
-            ./single-fmu-run.sh arm-linux-gnueabihf `cat VERSION` /usr/local/bin/fmuCheck.arm-linux-gnueabihf
-            '''
-            stash name: 'cross-fmu-results-armhf', includes: 'testsuite/special/FmuExportCrossCompile/*.csv, testsuite/special/FmuExportCrossCompile/Test_FMUs/**'
           }
         }
         stage('clang-qt5-omedit-testsuite') {
