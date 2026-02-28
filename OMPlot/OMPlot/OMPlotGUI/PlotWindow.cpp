@@ -1000,7 +1000,7 @@ void PlotWindow::updateTimeText()
 {
   QString unit = getTimeUnit();
   double timeUnitFactor = getTimeUnitFactor(unit);
-  mpPlot->setFooter(QString("t = %1 " + unit).arg(getTime()*timeUnitFactor,0,'g',3));
+  mpPlot->setFooter(QString("t = %1 " + unit).arg(getTime()*timeUnitFactor,0,'g',4));
   mpPlot->replot();
 }
 
