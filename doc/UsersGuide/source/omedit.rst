@@ -1473,7 +1473,7 @@ Libraries Options
 
 -  General
 
-  -  *MODELICAPATH* - Sets the MODELICAPATH. MODELICAPATH is used to load libraries.
+  -  *OPENMODELICALIBRARY* - Sets the OPENMODELICALIBRARY. OPENMODELICALIBRARY is used to load libraries.
 
 -  System libraries loaded automatically on startup - The list of system libraries that are loaded on startup.
 

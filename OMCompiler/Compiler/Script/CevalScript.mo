@@ -444,7 +444,7 @@ algorithm
 end checkUsesAndUpdateProgram;
 
 public function loadModel
-  input list<tuple<Absyn.Path,String,list<String>,Boolean /* Only use the first entry on the MODELICAPATH */>> imodelsToLoad;
+  input list<tuple<Absyn.Path,String,list<String>,Boolean /* Only use the first entry on the OPENMODELICALIBRARY (MODELICAPATH in the language specification) */>> imodelsToLoad;
   input String modelicaPath;
   input Absyn.Program ip;
   input Boolean forceLoad;
@@ -2941,7 +2941,7 @@ algorithm
     case ("modelica://",name,_,mp,true)
       equation
         name::_ = System.strtok(name,".");
-        str = "Could not resolve modelica://" + name + " with MODELICAPATH: " + mp;
+        str = "Could not resolve modelica://" + name + " with OPENMODELICALIBRARY (MODELICAPATH in the language specification): " + mp;
         Error.addMessage(Error.COMPILER_ERROR,{str});
       then fail();
   end matchcontinue;
