@@ -731,11 +731,7 @@ bool VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
     existingTopVariableTreeItem = false;
   }
   // set the newly inserted VariablesTreeItem active
-  PlotWindowContainer *pPlotWindowContainer = MainWindow::instance()->getPlotWindowContainer();
-  if (!(pPlotWindowContainer->currentSubWindow() && pPlotWindowContainer->isDiagramWindow(pPlotWindowContainer->currentSubWindow()->widget()))) {
-    mpActiveVariablesTreeItem = pTopVariablesTreeItem;
-    mpVariablesTreeView->getVariablesWidget()->initializeVisualization();
-  }
+  mpActiveVariablesTreeItem = pTopVariablesTreeItem;
   /* open the model_init.xml file for reading */
   mScalarVariablesHash.clear();
   QString initFileName, infoFileName;
@@ -1599,6 +1595,7 @@ void VariablesWidget::insertVariablesItemsToTree(QString fileName, QString fileP
   if (updateVariables) {
     variablesUpdated();
   }
+  mOpenedResultFileName = "";
   initializeVisualization();
   mpVariablesTreeView->setSortingEnabled(true);
   mpVariablesTreeView->sortByColumn(0, Qt::AscendingOrder);
@@ -1897,21 +1894,27 @@ void VariablesWidget::initializeVisualization()
   }
 
   if (pVariablesTreeItem) {
-    // close any result file before opening a new one
-    closeResultFile();
-    // Open the file for reading
-    double startTime = 0.0;
-    double stopTime = 0.0;
-    openResultFile(pVariablesTreeItem, startTime, stopTime);
-    // Initialize the time manager
-    mpTimeManager->setStartTime(startTime);
-    mpTimeManager->setEndTime(stopTime);
-    mpTimeManager->setVisTime(mpTimeManager->getStartTime());
-    mpTimeManager->setPause(true);
-    // reset the visualization controls
+    /* Only initialize if already opened result file is different from the current one.
+     * This is especially important when there are multiple plots of interest for the same simulation result and the user wants to inspect each of them at a specific timestamp.
+     */
+    QString fileName = QString("%1/%2").arg(pVariablesTreeItem->getFilePath(), pVariablesTreeItem->getFileName());
+    if (mOpenedResultFileName != fileName) {
+      // close any result file before opening a new one
+      closeResultFile();
+      // Open the file for reading
+      double startTime = 0.0;
+      double stopTime = 0.0;
+      openResultFile(pVariablesTreeItem, startTime, stopTime);
+      // Initialize the time manager
+      mpTimeManager->setStartTime(startTime);
+      mpTimeManager->setEndTime(stopTime);
+      mpTimeManager->setVisTime(mpTimeManager->getStartTime());
+      mpTimeManager->setPause(true);
+      // reset the visualization controls
+      mpTimeTextBox->setText(QString::number(mpTimeManager->getVisTime()));
+      mpSimulationTimeSlider->setValue(mpTimeManager->getTimeFraction());
+    }
     mpTimeControlsDescriptionLabel->setText(tr("Enabled for %1").arg(pVariablesTreeItem->getVariableName()));
-    mpTimeTextBox->setText(QString::number(mpTimeManager->getVisTime()));
-    mpSimulationTimeSlider->setValue(mpTimeManager->getTimeFraction());
     enableVisualizationControls(true);
     updateVisualization();
   } else {
@@ -2632,6 +2635,7 @@ void VariablesWidget::closeResultFile()
   if (mPlotFileReader.isOpen()) {
     mPlotFileReader.close();
   }
+  mOpenedResultFileName = "";
 }
 
 /*!
@@ -2717,6 +2721,8 @@ void VariablesWidget::openResultFile(VariablesTreeItem *pVariablesTreeItem, doub
       MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
                                                             GUIMessages::getMessage(GUIMessages::ERROR_OPENING_FILE)
                                                             .arg(fileName, errorString), Helper::scriptingKind, Helper::errorLevel));
+    } else {
+      mOpenedResultFileName = fileName;
     }
   }
 }
@@ -2876,7 +2882,6 @@ void VariablesWidget::updateVariablesTree(QMdiSubWindow *pSubWindow)
   }
   /* if the same sub window is activated again then just return */
   if (mpLastActiveSubWindow == pSubWindow) {
-    mpLastActiveSubWindow = pSubWindow;
     return;
   }
   mpLastActiveSubWindow = pSubWindow;
