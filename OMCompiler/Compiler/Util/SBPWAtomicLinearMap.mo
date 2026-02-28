@@ -36,6 +36,7 @@ encapsulated uniontype SBPWAtomicLinearMap
 
 protected
   import Array;
+  import Error;
   import List;
   import System;
   import MetaModelica.Dangerous.*;
@@ -99,6 +100,10 @@ public
 
     if compatible then
       map := PW_ATOMIC_LINEAR_MAP(SBAtomicSet.copy(dom), SBLinearMap.copy(lmap));
+    else
+      Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed the domain "
+        + SBAtomicSet.toString(dom) + " and the linear map " + SBLinearMap.toString(lmap) + " are incompatible."});
+      fail();
     end if;
   end new;
 

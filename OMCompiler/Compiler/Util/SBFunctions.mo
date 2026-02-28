@@ -41,7 +41,6 @@ protected
   import Array;
   import MetaModelica.Dangerous.*;
   import System;
-  import Util;
   import Vector;
 
 public
@@ -211,7 +210,7 @@ public
     outMap := SBPWLinearMap.new(listArray(sres), listArray(lres));
   end minPW;
 
-  function minMap
+  function minMap2
     input SBPWLinearMap pw1;
     input SBPWLinearMap pw2;
     output SBPWLinearMap outMap = SBPWLinearMap.newEmpty();
@@ -245,7 +244,7 @@ public
         end if;
       end for;
     end for;
-  end minMap;
+  end minMap2;
 
   function reduceMapN
     input SBPWLinearMap pw;
@@ -253,18 +252,15 @@ public
     output SBPWLinearMap outMap;
   protected
     array<SBSet> dom, new_s;
-    Vector<SBSet> sres;
     array<SBLinearMap> lmap, new_l;
-    Vector<SBLinearMap> lres;
     SBPWLinearMap pw_copy, new_map;
-    SBSet di, new_domi;
+    SBSet di, new_domi, reduced, not_reduced;
     SBLinearMap li, new_lm;
     Real gdim, odim;
     Integer off;
     SBMultiInterval mi;
     SBInterval idim, new_inter;
-    Integer loint, hiint;
-    array<Real> resg, reso;
+    Integer loint, stint, hiint, newoff;
     SBAtomicSet aux_as;
     UnorderedSet<SBAtomicSet> aux_newd;
     array<SBAtomicSet> asets;
@@ -273,8 +269,8 @@ public
     lmap := SBPWLinearMap.lmap(pw);
 
     pw_copy := SBPWLinearMap.copy(pw);
-    sres := Vector.fromArray(SBPWLinearMap.dom(pw_copy));
-    lres := Vector.fromArray(SBPWLinearMap.lmap(pw_copy));
+    outMap := SBPWLinearMap.newEmpty();
+    outMap.ndim := pw.ndim;
 
     for i in 1:arrayLength(dom) loop
       di := dom[i];
@@ -282,269 +278,458 @@ public
       gdim := arrayGet(SBLinearMap.gain(li), dim);
       odim := arrayGet(SBLinearMap.offset(li), dim);
 
-      if gdim == 1 and odim < 0 then
-        off := realInt(-odim);
+      if gdim == 1 and odim <> 0 then
+        off := intAbs(realInt(odim));
         asets := UnorderedSet.toArray(SBSet.asets(di));
 
         for adom in asets loop
           mi := SBAtomicSet.aset(adom);
           idim := arrayGet(SBMultiInterval.intervals(mi), dim);
           loint := SBInterval.lowerBound(idim);
+          stint := SBInterval.stepValue(idim);
           hiint := SBInterval.upperBound(idim);
 
-          if hiint - loint > off * off then
-            new_s := arrayCreateNoInit(off, di);
-            new_l := arrayCreateNoInit(off, li);
+          // Map's image is in adom, reduction is plausible
+          if intMod(off, stint) == 0 then
+            if ((hiint - loint) / stint) > off * off then
+              new_s := arrayCreateNoInit(off, di);
+              new_l := arrayCreateNoInit(off, li);
 
-            for k in 1:off loop
-              resg := arrayCopy(SBLinearMap.gain(li));
-              reso := arrayCopy(SBLinearMap.offset(li));
-              resg[dim] := 0;
-              reso[dim] := loint + k - off - 1;
+              for k in 1:off loop
+                new_inter := SBInterval.new(loint + k - 1, off, hiint);
+                aux_as := SBAtomicSet.replace(new_inter, dim, adom);
+                new_s[k] := SBSet.addAtomicSet(aux_as, SBSet.newEmpty());
 
-              new_l[k] := SBLinearMap.new(resg, reso);
-
-              new_inter := SBInterval.new(loint + k - 1, off, hiint);
-              aux_as := SBAtomicSet.replace(new_inter, dim, adom);
-              new_s[k] := SBSet.addAtomicSet(aux_as, SBSet.newEmpty());
-            end for;
-
-            new_map := SBPWLinearMap.new(new_s, new_l);
-
-            aux_newd := UnorderedSet.new(SBAtomicSet.hash, SBAtomicSet.isEqual);
-            for aux_asi in asets loop
-              if not SBAtomicSet.isEqual(aux_asi, adom) then
-                UnorderedSet.add(aux_asi, aux_newd);
-              end if;
-            end for;
-
-            new_domi := SBSet.new(aux_newd);
-
-            if SBSet.isEmpty(new_domi) then
-              if i < Vector.size(sres) then
-                Vector.remove(sres, i);
-                Vector.remove(lres, i);
-              else
-                Vector.shrink(sres, i + 1);
-                Vector.shrink(lres, i + 1);
-              end if;
-            else
-              Vector.update(sres, i, new_domi);
+                if odim > 0 then
+                  newoff := realInt(SBInterval.upperBound(new_inter) + odim);
+                else
+                  newoff := realInt(SBInterval.lowerBound(new_inter) + odim);
+                end if;
+                new_l[k] := SBLinearMap.replace(SBLinearMap.copy(lmap[i]), 0, newoff, dim);
+              end for;
+              new_map := SBPWLinearMap.new(new_s, new_l);
+              outMap  := SBPWLinearMap.combine(outMap, new_map);
             end if;
-
-            Vector.appendArray(sres, SBPWLinearMap.dom(new_map));
-            Vector.appendArray(lres, SBPWLinearMap.lmap(new_map));
           end if;
         end for;
       end if;
     end for;
 
-    outMap := SBPWLinearMap.new(Vector.toArray(sres), Vector.toArray(lres));
+    // Add intervals that weren't reduced
+    reduced := SBPWLinearMap.wholeDom(outMap);
+    for i in 1:arrayLength(dom) loop
+      not_reduced := SBSet.complement(dom[i], reduced);
+
+      if not SBSet.isEmpty(not_reduced) then
+        new_map := SBPWLinearMap.new(arrayCreate(1, not_reduced), arrayCreate(1, lmap[i]));
+        outMap  := SBPWLinearMap.combine(outMap, new_map);
+      end if;
+    end for;
   end reduceMapN;
 
   function mapInf
     input SBPWLinearMap pw;
-    output SBPWLinearMap outMap;
+    input Integer max_it;
+    output SBPWLinearMap res = pw;
   protected
-    Integer max_it;
-    array<SBSet> dom;
-    array<SBLinearMap> lmap;
-    SBSet d;
-    SBLinearMap lm;
-    array<Real> gain, off;
-    Real a, b, its;
-
-    function max_inter
-      input SBAtomicSet aset;
-      input Real offset;
-      input Integer dim;
-      input output Real its;
-    protected
-      array<SBInterval> is;
-      SBInterval i;
-      Real hi, lo;
-    algorithm
-      is := SBMultiInterval.intervals(SBAtomicSet.aset(aset));
-      i := is[dim];
-      hi := SBInterval.upperBound(i);
-      lo := SBInterval.lowerBound(i);
-      its := max(its, ceil((hi - lo) / abs(offset)));
-    end max_inter;
+    Integer i;
+    SBPWLinearMap old = SBPWLinearMap.newEmpty();
   algorithm
-    if SBPWLinearMap.isEmpty(pw) then
-      outMap := SBPWLinearMap.newEmpty();
-      return;
-    end if;
+    if not SBPWLinearMap.isEmpty(pw) then
+      i := 1;
+      while (not SBPWLinearMap.isEqual(old, res) and i < max_it) loop
+        old := res;
+        res := SBPWLinearMap.compPW(res, pw);
+        i := i + 1;
+      end while;
 
-    outMap := reduceMapN(pw, 1);
-    for i in 2:SBPWLinearMap.ndim(outMap) loop
-      outMap := reduceMapN(pw, i);
-    end for;
-
-    max_it := 0;
-    dom := SBPWLinearMap.dom(outMap);
-    lmap := SBPWLinearMap.lmap(outMap);
-
-    for i in 1:arrayLength(dom) loop
-      d := dom[i];
-      lm := lmap[i];
-      gain := SBLinearMap.gain(lm);
-      off := SBLinearMap.offset(lm);
-
-      a := 0;
-      b := gain[1];
-
-      for j in 1:arrayLength(gain) loop
-        a := realMax(a, gain[j] * abs(off[j]));
-        b := realMin(b, gain[j]);
-      end for;
-
-      if a > 0 then
-        its := 0;
-
-        for dim in 1:SBPWLinearMap.ndim(outMap) loop
-          if gain[dim] == 1 and off[dim] < 0 then
-            its := UnorderedSet.fold(SBSet.asets(d),
-              function max_inter(offset = off[dim], dim = dim), its);
-          end if;
+      if SBPWLinearMap.isEqual(old, res) then
+        return;
+      else
+        old := res;
+        for j in 1:SBPWLinearMap.ndim(res) loop
+          res := reduceMapN(res, j);
         end for;
+        for j in 1:SBPWLinearMap.ndim(old) loop
+          old := reduceMapN(old, j);
+        end for;
+        res := SBPWLinearMap.compPW(res, res);
 
-        max_it := max_it + realInt(its);
-      elseif b == 0 then
-        max_it := max_it + 1;
+        while not SBPWLinearMap.isEqual(old, res) loop
+          old := res;
+          res := SBPWLinearMap.compPW(res, res);
+          for j in 1:SBPWLinearMap.ndim(res) loop
+            res := reduceMapN(res, j);
+          end for;
+        end while;
       end if;
-    end for;
-
-    for i in 1:Util.msb(max_it) loop
-      outMap := SBPWLinearMap.compPW(outMap, outMap);
-    end for;
+    end if;
   end mapInf;
 
-  function minAdjCompMap
-    input SBPWLinearMap pw2;
-    input SBPWLinearMap pw1;
-    output SBPWLinearMap outMap;
+  partial function minAdjFunc
+    input SBPWLinearMap map1 "source: *this";
+    input SBPWLinearMap map2 "source: pw2";
+    input SBPWLinearMap map3 "source: pw1";
+    output SBPWLinearMap res;
+  end minAdjFunc;
+
+  function minAdjWrapper
+    input SBPWLinearMap map1 "source: *this";
+    input SBPWLinearMap map2 "source: pw1";
+    input minAdjFunc func;
+    output SBPWLinearMap res;
   protected
-    array<SBSet> dom;
-    array<SBLinearMap> lmap;
-    SBSet d, dom_inv, aux;
-    SBLinearMap lm_inv, aux_lm1, aux_lm2, lm_res;
-    SBPWLinearMap inv_pw, aux_inv, aux_res;
-    Real min_g, max_g, inf, g;
-    array<Integer> min_aux;
-    array<Real> resg, reso, gain, off, gres, oi, ginv;
+    SBSet whole_dom, image_dom;
+    SBPWLinearMap map2_identity "source: pw2";
   algorithm
-    dom := SBPWLinearMap.dom(pw2);
-    lmap := SBPWLinearMap.lmap(pw2);
+    whole_dom     := SBPWLinearMap.wholeDom(map2);
+    image_dom     := SBPWLinearMap.image(map2, whole_dom);
+    map2_identity := SBPWLinearMap.newIdentity(image_dom);
+    // apply function
+    res := func(map1, map2, map2_identity);
+  end minAdjWrapper;
 
-    if arrayLength(dom) <> 1 then
-      // Warning: There should be only one pair in the map.
-      outMap := SBPWLinearMap.newEmpty();
-      return;
-    end if;
-
-    d := dom[1];
-    dom_inv := SBPWLinearMap.image(pw2, d);
-    lm_inv := SBLinearMap.inverse(lmap[1]);
-
-    inv_pw := SBPWLinearMap.newScalar(dom_inv, lm_inv);
-    inf := intReal(System.intMaxLit());
-
-    if Array.maxElement(SBLinearMap.gain(lm_inv), realLt) < inf then
-      outMap := SBPWLinearMap.compPW(pw1, inv_pw);
-    elseif Array.minElement(SBLinearMap.gain(lm_inv), realLt) == inf then
-      if not SBPWLinearMap.isEmpty(pw2) then
-        aux := SBPWLinearMap.image(pw1, d);
-        min_aux := SBSet.minElem(aux);
-        resg := arrayCreate(arrayLength(min_aux), 0.0);
-        reso := Array.map(min_aux, intReal);
-        lm_res := SBLinearMap.new(resg, reso);
-        outMap := SBPWLinearMap.newScalar(dom_inv, lm_res);
-      else
-        outMap := SBPWLinearMap.newEmpty();
-      end if;
-    else
-      min_aux := SBSet.minElem(d);
-      gain := SBLinearMap.gain(lm_inv);
-      off := SBLinearMap.offset(lm_inv);
-      resg := arrayCreateNoInit(arrayLength(gain), 0.0);
-      reso := arrayCreateNoInit(arrayLength(gain), 0.0);
-
-      for i in 1:arrayLength(gain) loop
-        g := arrayGetNoBoundsChecking(gain, i);
-
-        if g == inf then
-          resg[i] := 0.0;
-          reso[i] := intReal(min_aux[i]);
-        else
-          resg[i] := g;
-          reso[i] := off[i];
+  function minAdjMap extends minAdjFunc;
+  protected
+    SBPWLinearMap aux_map, min_adj, min_map;
+  algorithm
+    if not SBPWLinearMap.isEmpty(map1) then
+      aux_map := SBPWLinearMap.new(arrayCreate(1, map1.dom[1]), arrayCreate(1, map1.lmap[1]));
+      res := minAdjCompMap(aux_map, map2, map3);
+      for i in 2:arrayLength(map1.dom) loop
+        aux_map := SBPWLinearMap.new(arrayCreate(1, map1.dom[i]), arrayCreate(1, map1.lmap[i]));
+        min_adj := minAdjCompMap(aux_map, map2, map3);
+        min_map := minMap(aux_map, map2, map3);
+        res     := SBPWLinearMap.combine(min_adj, res);
+        if not SBPWLinearMap.isEmpty(min_map) then
+          res   := SBPWLinearMap.combine(min_map, res);
         end if;
       end for;
+    else
+      res := SBPWLinearMap.newEmpty();
+    end if;
+  end minAdjMap;
 
-      aux_lm1 := SBLinearMap.new(resg, reso);
-      aux_inv := SBPWLinearMap.newScalar(dom_inv, aux_lm1);
-      aux_res := SBPWLinearMap.compPW(pw1, aux_inv);
+  function minAdjCompMap extends minAdjFunc;
+  protected
+    Vector<SBSet> new_dom;
+    Vector<SBLinearMap> new_lmap;
+    SBSet inv_image, image2, image12, scomp, mins2;
+    SBAtomicSet aset;
+    SBLinearMap inv_map, new_map;
+    SBPWLinearMap inv_pw, new_inv_pw, auxres;
+    Real max_gain, min_gain;
+    SBMultiInterval mi_comp;
+    array<Integer> min1, min2;
+    array<Real> new_gain, new_offset;
+  algorithm
+    new_dom   := Vector.new<SBSet>();
+    new_lmap  := Vector.new<SBLinearMap>();
+    if arrayLength(map1.dom) == 1 then
+      inv_image := SBPWLinearMap.image(map1, map1.dom[1]);
+      inv_map   := SBLinearMap.inverse(map1.lmap[1]);
+      inv_pw    := SBPWLinearMap.new(arrayCreate(1, inv_image), arrayCreate(1, inv_map));
 
-      if SBPWLinearMap.isEmpty(aux_res) then
-        outMap := SBPWLinearMap.newEmpty();
+      max_gain := Array.maxElement(inv_map.gain, realLt);
+      min_gain := Array.minElement(inv_map.gain, realLt);
+
+      if max_gain < System.realMaxLit() then
+        // bijective -> invertible
+        res := SBPWLinearMap.compPW(map2, inv_pw);
+        return;
+      elseif min_gain == System.realMaxLit() then
+        // constant map
+        if not SBPWLinearMap.isEmpty(map1) then
+          image2  := SBPWLinearMap.image(map2, map1.dom[1]);
+          image12 := SBPWLinearMap.image(map1, image2);
+
+          // Get vertices in image of pw2 with minimum image in pw1
+          mi_comp := SBMultiInterval.fromList(list(SBInterval.newSingle(i) for i in SBSet.minElem(image12)));
+          aset  := SBAtomicSet.new(mi_comp);
+          scomp := SBSet.newEmpty();
+          scomp := SBSet.addAtomicSet(aset, scomp);
+          mins2 := SBPWLinearMap.preImage(map3, scomp);
+          mins2 := SBSet.intersection(mins2, image2);
+          min2  := SBSet.minElem(mins2);
+
+          new_gain    := arrayCreate(inv_image.ndim, 0.0);
+          new_offset  := listArray(list(intReal(i) for i in min2));
+          new_map := SBLinearMap.new(new_gain, new_offset);
+
+          Vector.push(new_dom, inv_image);
+          Vector.push(new_lmap, new_map);
+        end if;
       else
-        aux := SBPWLinearMap.image(pw1, d);
-        min_aux := SBSet.minElem(aux);
-        lm_res := arrayGet(SBPWLinearMap.lmap(aux_res), 1);
-        gres := SBLinearMap.gain(lm_res);
-        oi := SBLinearMap.offset(lm_res);
-        ginv := SBLinearMap.gain(lm_inv);
+        // bijective in some dimensions, and constant in others
+        min1  := SBSet.minElem(map1.dom[1]);
 
-        for i in 1:arrayLength(gain) loop
-          g := arrayGetNoBoundsChecking(gain, i);
-
-          if g == inf then
-            resg[i] := 0.0;
-            reso[i] := intReal(min_aux[i]);
+        new_gain    := arrayCreate(arrayLength(inv_map.gain), 0.0);
+        new_offset  := arrayCreate(arrayLength(inv_map.offset), 0.0);
+        for i in 1:arrayLength(inv_map.gain) loop
+          if inv_map.gain[i] < System.realMaxLit() then
+            new_gain[i]   := inv_map.gain[i];
+            new_offset[i] := inv_map.offset[i];
           else
-            resg[i] := gres[i];
-            reso[i] := oi[i];
+            new_offset[i] := intReal(min1[i]);
           end if;
         end for;
+        new_map := SBLinearMap.new(new_gain, new_offset);
+        new_inv_pw := SBPWLinearMap.new(arrayCreate(1, inv_image), arrayCreate(1, new_map));
 
-        aux_lm2 := SBLinearMap.new(resg, reso);
-        outMap := SBPWLinearMap.newScalar(arrayGet(SBPWLinearMap.dom(aux_res), 1), aux_lm2);
+        // compose
+        auxres := SBPWLinearMap.compPW(map2, new_inv_pw);
+
+        // Replace values of constant maps with the desired value
+        image2  := SBPWLinearMap.image(map2, map1.dom[1]);
+        image12 := SBPWLinearMap.image(map1, image2);
+
+        // Get vertices in image of pw2 with minimum image in pw1
+        mi_comp := SBMultiInterval.fromList(list(SBInterval.newSingle(i) for i in SBSet.minElem(image12)));
+        aset  := SBAtomicSet.new(mi_comp);
+        scomp := SBSet.newEmpty();
+        scomp := SBSet.addAtomicSet(aset, scomp);
+        mins2 := SBPWLinearMap.preImage(map3, scomp);
+        mins2 := SBSet.intersection(mins2, image2);
+        min2  := SBSet.minElem(mins2);
+
+        for i in 1:arrayLength(auxres.dom) loop
+          new_gain    := arrayCreate(arrayLength(inv_map.gain), 0.0);
+          new_offset  := arrayCreate(arrayLength(inv_map.offset), 0.0);
+
+          for j in 1:arrayLength(inv_map.gain) loop
+            if inv_map.gain[j] < System.realMaxLit() then
+              new_gain[j]   := auxres.lmap[i].gain[j];
+              new_offset[j] := auxres.lmap[i].offset[j];
+            else
+              new_offset[j] := intReal(min2[i]);
+            end if;
+          end for;
+
+          new_map := SBLinearMap.new(new_gain, new_offset);
+
+          Vector.push(new_dom, auxres.dom[i]);
+          Vector.push(new_lmap, new_map);
+        end for;
       end if;
     end if;
+
+    res := SBPWLinearMap.new(Vector.toArray(new_dom), Vector.toArray(new_lmap));
   end minAdjCompMap;
 
-  function minAdjMap
-    input SBPWLinearMap pw2;
-    input SBPWLinearMap pw1;
-    output SBPWLinearMap outMap;
+  function minMap extends minAdjFunc;
   protected
-    array<SBSet> dom2;
-    array<SBLinearMap> lm2;
-    SBPWLinearMap map1, mapi, min_adj, min_m;
+    SBSet dom;
+    SBPWLinearMap aux;
   algorithm
-    if SBPWLinearMap.isEmpty(pw2) then
-      outMap := SBPWLinearMap.newEmpty();
+    res := SBPWLinearMap.newEmpty();
+    if not (SBPWLinearMap.isEmpty(map1) or SBPWLinearMap.isEmpty(map2)) then
+      for i in 1:arrayLength(map1.dom) loop
+        for j in 1:arrayLength(map2.dom) loop
+          dom := SBSet.intersection(map1.dom[i], map2.dom[j]);
+          if not SBSet.isEmpty(dom) then
+            aux := minMapSet(dom, map1.lmap[i], map2.lmap[j]);
+            if SBPWLinearMap.isEmpty(res) then
+              res := aux;
+            else
+              res := SBPWLinearMap.combine(aux, res);
+            end if;
+          end if;
+        end for;
+      end for;
+    end if;
+  end minMap;
+
+  function minMapSet
+    input SBSet dom;
+    input SBLinearMap lm1;
+    input SBLinearMap lm2;
+    output SBPWLinearMap res;
+  protected
+    SBLinearMap idlm;
+  algorithm
+    if SBLinearMap.ndim(lm1) == SBLinearMap.ndim(lm2) then
+      idlm := SBLinearMap.newIdentity(SBLinearMap.ndim(lm1));
+      res := minMapSet2(dom, lm1, lm2, idlm, idlm);
+    else
+      res := SBPWLinearMap.newEmpty();
+    end if;
+  end minMapSet;
+
+  function minMapSet3
+    input SBSet dom;
+    input SBLinearMap lm1;
+    input SBLinearMap lm2;
+    input SBPWLinearMap map3;
+    output SBPWLinearMap res = SBPWLinearMap.newEmpty();
+  protected
+    SBPWLinearMap map1 = SBPWLinearMap.new(arrayCreate(1, dom), arrayCreate(1, lm1));
+    SBPWLinearMap map2 = SBPWLinearMap.new(arrayCreate(1, dom), arrayCreate(1, lm2));
+    SBSet image1, image2, d, d1, d2, pre1, pre2;
+  algorithm
+    image1 := SBPWLinearMap.image(map1, dom);
+    image2 := SBPWLinearMap.image(map2, dom);
+    for i in 1:arrayLength(map3.dom) loop
+      d1 := SBSet.intersection(map3.dom[i], image1);
+      if not SBSet.isEmpty(d1) then
+        pre1 := SBPWLinearMap.preImage(map1, d1);
+        for j in 1:arrayLength(map3.dom) loop
+          d2 := SBSet.intersection(map3.dom[j], image2);
+          if not SBSet.isEmpty(d2) then
+            pre2 := SBPWLinearMap.preImage(map2, d2);
+            d := SBSet.intersection(SBSet.intersection(pre1, pre2), dom);
+            if not SBSet.isEmpty(d) then
+              res := SBPWLinearMap.combine(res, minMapSet2(d, lm1, lm2, map3.lmap[i], map3.lmap[j]));
+            end if;
+          end if;
+        end for;
+      end if;
+    end for;
+  end minMapSet3;
+
+  function minMapSet2
+    input SBSet dom;
+    input SBLinearMap lm1;
+    input SBLinearMap lm2;
+    input SBLinearMap lm3;
+    input SBLinearMap lm4;
+    output SBPWLinearMap res;
+  protected
+    SBAtomicSet asAux;
+    list<SBAtomicSet> asets = UnorderedSet.toList(dom.asets);
+    SBPWLinearMap aux = SBPWLinearMap.newEmpty();
+    SBSet sres1, sres2 = SBSet.newEmpty();
+    SBLinearMap lres1, lres2;
+    Vector<SBSet> new_dom = Vector.new<SBSet>();
+    Vector<SBLinearMap> new_lmap = Vector.new<SBLinearMap>();
+  algorithm
+    asAux::asets := asets;
+    if not SBSet.isEmpty(dom) then
+      aux := minMapAtomSet(aux, asAux, lm1, lm2, lm3, lm4);
+      if not SBPWLinearMap.isEmpty(aux) then
+        sres1 := aux.dom[1];
+        lres1 := aux.lmap[1];
+        for aset in asets loop
+          aux := minMapAtomSet(aux, asAux, lm1, lm2, lm3, lm4);
+          for i in 1:arrayLength(aux.dom) loop
+            if SBLinearMap.isEqual(aux.lmap[i], lres1) then
+              sres1 := SBSet.union(sres1, aux.dom[i]);
+            else
+              if SBSet.isEmpty(sres2) then
+                sres2 := aux.dom[i];
+                lres2 := aux.lmap[i];
+              else
+                sres2 := SBSet.union(sres2, aux.dom[i]);
+              end if;
+            end if;
+          end for;
+        end for;
+      end if;
+    end if;
+
+    // combine the sets
+    if not (SBSet.isEmpty(sres1) or SBLinearMap.isEmpty(lres1)) then
+      Vector.push(new_dom, sres1);
+      Vector.push(new_lmap, lres1);
+    end if;
+    if not (SBSet.isEmpty(sres2) or SBLinearMap.isEmpty(lres2)) then
+      Vector.push(new_dom, sres2);
+      Vector.push(new_lmap, lres2);
+    end if;
+    res := SBPWLinearMap.new(Vector.toArray(new_dom), Vector.toArray(new_lmap));
+  end minMapSet2;
+
+  function minMapAtomSet
+    input output SBPWLinearMap res;
+    input SBAtomicSet dom;
+    input SBLinearMap lm1;
+    input SBLinearMap lm2;
+    input SBLinearMap lm3;
+    input SBLinearMap lm4;
+  protected
+    SBAtomicSet as1, as2;
+    SBLinearMap lmAux;
+    SBLinearMap lm31 = SBLinearMap.compose(lm3, lm1);
+    SBLinearMap lm42 = SBLinearMap.compose(lm4, lm2);
+    SBSet d1, d2, aux = SBSet.newEmpty();
+    Vector<SBSet> new_dom = Vector.new<SBSet>();
+    Vector<SBLinearMap> new_lmap = Vector.new<SBLinearMap>();
+    SBLinearMap id;
+    Real xinter;
+    SBInterval i1, i2;
+  algorithm
+    aux := SBSet.addAtomicSet(dom, aux);
+
+    // base case
+    if SBLinearMap.isEqual(lm31, lm42) and SBLinearMap.isEqual(lm1, lm2) then
+      Vector.push(new_dom, aux);
+      Vector.push(new_lmap, lm1);
+      res := SBPWLinearMap.new(Vector.toArray(new_dom), Vector.toArray(new_lmap));
       return;
     end if;
 
-    dom2 := SBPWLinearMap.dom(pw2);
-    lm2 := SBPWLinearMap.lmap(pw2);
-    map1 := SBPWLinearMap.newScalar(dom2[1], lm2[1]);
-    outMap := minAdjCompMap(map1, pw1);
+    // need to analyze gains and offsets of lm31 and lm42
+    if SBLinearMap.ndim(lm31) == SBLinearMap.ndim(lm42) and SBLinearMap.ndim(lm1) == SBLinearMap.ndim(lm2) then
+      for i in 1:arrayLength(lm31.gain) loop
+        lmAux := lm1;
 
-    for i in 1:arrayLength(dom2) loop
-      mapi := SBPWLinearMap.newScalar(dom2[i], lm2[i]);
-      min_adj := minAdjCompMap(mapi, pw1);
-      min_m := minMap(outMap, min_adj);
+        if lm31.gain[i] <> lm42.gain[i] then
+          // different gains, there's intersection
+          xinter := (lm42.offset[i] - lm31.offset[i]) / (lm31.gain[i] - lm42.gain[i]);
 
-      outMap := SBPWLinearMap.combine(min_adj, outMap);
+          if xinter <= intReal(dom.aset.intervals[i].lo) then
+            // 1. intersection before domain
+            if lm42.gain[i] < lm31.gain[i] then
+              lmAux := lm2;
+            end if;
+            Vector.push(new_dom, aux);
+            Vector.push(new_lmap, lmAux);
+          elseif xinter >= intReal(dom.aset.intervals[i].hi) then
+            // 2. intersection after domain
+            if lm42.gain[i] > lm31.gain[i] then
+              lmAux := lm2;
+            end if;
+            Vector.push(new_dom, aux);
+            Vector.push(new_lmap, lmAux);
+          else
+            // 3. intersection in domain
+            i1 := SBInterval.INTERVAL(dom.aset.intervals[i].lo, dom.aset.intervals[i].step, realInt(floor(xinter)));
+            i2 := SBInterval.INTERVAL(i1.hi + i1.step, dom.aset.intervals[i].step, dom.aset.intervals[i].hi);
+            as1 := SBAtomicSet.replace(i1, i, dom);
+            as2 := SBAtomicSet.replace(i2, i, dom);
+            d1 := SBSet.newEmpty();
+            d2 := SBSet.newEmpty();
+            d1 := SBSet.addAtomicSet(as1, d1);
+            d2 := SBSet.addAtomicSet(as2, d2);
+            Vector.push(new_dom, d1);
+            Vector.push(new_dom, d2);
 
-      if not SBPWLinearMap.isEmpty(min_m) then
-        outMap := SBPWLinearMap.combine(min_m, outMap);
-      end if;
-    end for;
-  end minAdjMap;
+            if lm31.gain[i] > lm42.gain[i] then
+              Vector.push(new_lmap, lm1);
+              Vector.push(new_lmap, lm2);
+            else
+              Vector.push(new_lmap, lm2);
+              Vector.push(new_lmap, lm1);
+            end if;
+          end if;
+          res := SBPWLinearMap.new(Vector.toArray(new_dom), Vector.toArray(new_lmap));
+          return;
+        elseif lm31.offset[i] <> lm42.offset[i] then
+          // same gain and different offset, no intersection
+          if lm42.offset[i] < lm31.offset[i] then
+            lmAux := lm2;
+          end if;
+          Vector.push(new_dom, aux);
+          Vector.push(new_lmap, lmAux);
+          res := SBPWLinearMap.new(Vector.toArray(new_dom), Vector.toArray(new_lmap));
+          return;
+        end if;
+      end for;
+    end if;
+
+    // same gain and offset, get the minimum: lm1 or lm2
+    id := SBLinearMap.newIdentity(SBLinearMap.ndim(lm1));
+    res := minMapAtomSet(res, dom, lm1, lm2, id, id);
+  end minMapAtomSet;
 
   function connectedComponents
     input SBSet vss;
@@ -555,40 +740,37 @@ public
     SBPWLinearMap ermap1, ermap2, rmap1, rmap2, new_res;
     SBSet last_im, new_im, diff_im;
   algorithm
-    outMap := SBPWLinearMap.newIdentity(vss);
-
+    outMap := SBPWLinearMap.newIdentity(vss); // connected vertices map
     new_im := vss;
     diff_im := vss;
-
     while not SBSet.isEmpty(diff_im) loop
+      // map left and right map to minimal connected indices
       ermap1 := SBPWLinearMap.compPW(outMap, emap1);
       ermap2 := SBPWLinearMap.compPW(outMap, emap2);
 
-      rmap1 := minAdjMap(ermap1, ermap2);
-      rmap2 := minAdjMap(ermap2, ermap1);
+      // combine maps to get minimal connection from left to right and vice versa
+      rmap1 := minAdjWrapper(ermap1, ermap2, minAdjMap);
+      rmap2 := minAdjWrapper(ermap2, ermap1, minAdjMap);
+      // inverse apply connected minimal indices to connect from cluster to cluster
       rmap1 := SBPWLinearMap.combine(rmap1, outMap);
       rmap2 := SBPWLinearMap.combine(rmap2, outMap);
-
-      new_res := minMap(rmap1, rmap2);
+      // find minimal connections
+      new_res := minAdjWrapper(rmap1, rmap2, minMap);
 
       last_im := new_im;
       new_im := SBPWLinearMap.image(new_res, vss);
       diff_im := SBSet.complement(last_im, new_im);
 
       if not SBSet.isEmpty(diff_im) then
-        outMap := mapInf(new_res);
+        // if there is a difference apply infinity map
+        outMap := mapInf(new_res, 1);
         new_im := SBPWLinearMap.image(outMap, vss);
+      else
+        outMap := new_res;
       end if;
+
     end while;
   end connectedComponents;
-
-
-  function test
-  algorithm
-    test1();
-    test2();
-    test3();
-  end test;
 
   function make_set
     input list<SBInterval> i;
@@ -615,163 +797,5 @@ public
     pw := SBPWLinearMap.newScalar(dom, lmap);
   end make_pw;
 
-  function test1
-  protected
-    SBSet vss;
-    SBPWLinearMap emap1, emap2;
-    list<SBSet> sets;
-    list<SBPWLinearMap> pws1, pws2;
-    SBPWLinearMap res;
-  algorithm
-    sets := {
-      make_set({SBInterval.new(1   , 1, 1)}),
-      make_set({SBInterval.new(2   , 1, 1001)}),
-      make_set({SBInterval.new(1002, 1, 1002)}),
-      make_set({SBInterval.new(1003, 1, 1003)}),
-      make_set({SBInterval.new(1004, 1, 2003)}),
-      make_set({SBInterval.new(2004, 1, 3003)}),
-      make_set({SBInterval.new(3004, 1, 4003)})
-    };
-
-    vss := SBSet.newEmpty();
-    for s in sets loop
-      vss := SBSet.union(vss, s);
-    end for;
-
-    pws1 := {
-      make_pw({SBInterval.new(1, 1, 1)}      , {0.0}, {1.0}),
-      make_pw({SBInterval.new(2, 1, 2)}      , {0.0}, {1002.0}),
-      make_pw({SBInterval.new(3, 1, 1001)}   , {1.0}, {1001.0}),
-      make_pw({SBInterval.new(1002, 1, 2001)}, {1.0}, {1002.0}),
-      make_pw({SBInterval.new(2002, 1, 3001)}, {1.0}, {1002.0})
-    };
-
-    emap1 :: pws1 := pws1;
-    for pw in pws1 loop
-      emap1 := SBPWLinearMap.combine(pw, emap1);
-    end for;
-
-    pws2 := {
-      make_pw({SBInterval.new(1, 1, 1)}      , {0.0}, {2.0}),
-      make_pw({SBInterval.new(2, 1, 2)}      , {0.0}, {1003.0}),
-      make_pw({SBInterval.new(3, 1, 1001)}   , {1.0}, {0.0}),
-      make_pw({SBInterval.new(1002, 1, 2001)}, {1.0}, {2.0}),
-      make_pw({SBInterval.new(2002, 1, 3001)}, {0.0}, {1003.0})
-    };
-
-    emap2 :: pws2 := pws2;
-    for pw in pws2 loop
-      emap2 := SBPWLinearMap.combine(pw, emap2);
-    end for;
-
-    res := connectedComponents(vss, emap1, emap2);
-    print(SBPWLinearMap.toString(res) + "\n");
-  end test1;
-
-  function test2
-  protected
-    SBSet vss;
-    SBPWLinearMap emap1, emap2;
-    list<SBSet> sets;
-    list<SBPWLinearMap> pws1, pws2;
-    SBPWLinearMap res;
-  algorithm
-    sets := {
-      make_set({SBInterval.new(1, 1, 1)}),
-      make_set({SBInterval.new(2, 1, 1001)}),
-      make_set({SBInterval.new(1002, 1, 1002)}),
-      make_set({SBInterval.new(1003, 1, 1003)}),
-      make_set({SBInterval.new(1004, 1, 2003)}),
-      make_set({SBInterval.new(2004, 1, 3003)}),
-      make_set({SBInterval.new(3004, 1, 4003)})
-    };
-
-    vss := SBSet.newEmpty();
-    for s in sets loop
-      vss := SBSet.union(vss, s);
-    end for;
-
-    pws1 := {
-      make_pw({SBInterval.new(1, 1, 1)}      , {0.0}, {1.0}),
-      make_pw({SBInterval.new(2, 1, 2)}      , {0.0}, {1002.0}),
-      make_pw({SBInterval.new(3, 1, 3)}      , {0.0}, {1004.0}),
-      make_pw({SBInterval.new(4, 1, 1002)}   , {1.0}, {2000.0}),
-      make_pw({SBInterval.new(1003, 1, 2001)}, {1.0}, {2.0}),
-      make_pw({SBInterval.new(2002, 1, 3001)}, {1.0}, {1002.0})
-    };
-
-    emap1 :: pws1 := pws1;
-    for pw in pws1 loop
-      emap1 := SBPWLinearMap.combine(pw, emap1);
-    end for;
-
-    pws2 := {
-      make_pw({SBInterval.new(1, 1, 1)}      , {0.0}, {2.0}),
-      make_pw({SBInterval.new(2, 1, 2)}      , {0.0}, {1003.0}),
-      make_pw({SBInterval.new(3, 1, 3)}      , {0.0}, {1003.0}),
-      make_pw({SBInterval.new(4, 1, 1002)}   , {1.0}, {-1.0}),
-      make_pw({SBInterval.new(1003, 1, 2001)}, {1.0}, {1.0}),
-      make_pw({SBInterval.new(2002, 1, 3001)}, {1.0}, {2.0})
-    };
-
-    emap2 :: pws2 := pws2;
-    for pw in pws2 loop
-      emap2 := SBPWLinearMap.combine(pw, emap2);
-    end for;
-
-    res := connectedComponents(vss, emap1, emap2);
-    print(SBPWLinearMap.toString(res) + "\n");
-  end test2;
-
-  function test3
-  protected
-    SBSet vss;
-    SBPWLinearMap emap1, emap2, res;
-    list<SBSet> sets;
-    list<SBPWLinearMap> pws1, pws2;
-  algorithm
-    sets := {
-      make_set({SBInterval.new(1, 1, 1000),    SBInterval.new(1, 1, 100)}),
-      make_set({SBInterval.new(1001, 1, 2000), SBInterval.new(101, 1, 200)}),
-      make_set({SBInterval.new(2001, 1, 3000), SBInterval.new(201, 1, 300)}),
-      make_set({SBInterval.new(3001, 1, 4000), SBInterval.new(301, 1, 400)}),
-      make_set({SBInterval.new(4001, 1, 4001)}),
-      make_set({SBInterval.new(4002, 1, 4002)})
-    };
-
-    vss := SBSet.newEmpty();
-    for s in sets loop
-      vss := SBSet.union(vss, s);
-    end for;
-
-    pws1 := {
-      make_pw({SBInterval.new(1, 1, 999)    , SBInterval.new(1, 1, 99)}   , {1.0, 1.0}, {0.0, 0.0}),
-      make_pw({SBInterval.new(1000, 1, 1998), SBInterval.new(100, 1, 198)}, {1.0, 1.0}, {1001.0, 101.0}),
-      make_pw({SBInterval.new(1999, 1, 2998), SBInterval.new(199, 1, 199)}, {1.0, 0.0}, {-1998.0, 100.0}),
-      make_pw({SBInterval.new(2999, 1, 2999), SBInterval.new(200, 1, 299)}, {0.0, 1.0}, {3001.0, 101.0}),
-      make_pw({SBInterval.new(3000, 1, 3000), SBInterval.new(300, 1, 399)}, {0.0, 1.0}, {3000.0, -99.0})
-    };
-
-    emap1 :: pws1 := pws1;
-    for pw in pws1 loop
-      emap1 := SBPWLinearMap.combine(pw, emap1);
-    end for;
-
-    pws2 := {
-      make_pw({SBInterval.new(1, 1, 999)    , SBInterval.new(1, 1, 99)}   , {1.0, 1.0}, {1000.0, 101.0}),
-      make_pw({SBInterval.new(1000, 1, 1998), SBInterval.new(100, 1, 198)}, {1.0, 1.0}, {2002.0, 201.0}),
-      make_pw({SBInterval.new(1999, 1, 2998), SBInterval.new(199, 1, 199)}, {1.0, 0.0}, {-998.0, 101.0}),
-      make_pw({SBInterval.new(2999, 1, 2999), SBInterval.new(200, 1, 299)}, {0.0, 0.0}, {4001.0, 4001.0}),
-      make_pw({SBInterval.new(3000, 1, 3000), SBInterval.new(300, 1, 399)}, {0.0, 0.0}, {4002.0, 4002.0})
-    };
-
-    emap2 :: pws2 := pws2;
-    for pw in pws2 loop
-      emap2 := SBPWLinearMap.combine(pw, emap2);
-    end for;
-
-    res := connectedComponents(vss, emap1, emap2);
-    print(SBPWLinearMap.toString(res) + "\n");
-  end test3;
 annotation(__OpenModelica_Interface="util");
 end SBFunctions;
