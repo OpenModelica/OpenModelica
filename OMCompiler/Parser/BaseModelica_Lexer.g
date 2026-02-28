@@ -424,19 +424,19 @@ T_END : 'end' EAT_WS_COMMENT?;
 IDENT : QIDENT | IDENT2;
 
 fragment
-IDENT2 : NONDIGIT (NONDIGIT | DIGIT)* | '$cpuTime';
+IDENT2 : NONDIGIT (NONDIGIT | DIGIT)*;
 
 fragment
 QIDENT :
          '\'' (QCHAR | SESCAPE) (QCHAR | SESCAPE)* '\'' ;
 
 fragment
-QCHAR :  (DIGIT | NONDIGIT | '!' | '#' | '$' | '%' | '&' | '(' | ')'
+QCHAR :  (DIGIT | NONDIGIT | '!' | '#' | '%' | '&' | '(' | ')'
           | '*' | '+' | ',' | '-' | '.' | '/' | ':' | ';' | '<' | '>' | '='
           | '?' | '@' | '[' | ']' | '^' | '{' | '}' | '|' | '~' | ' ' | '"' );
 
 fragment
-NONDIGIT :   ('_' | 'a'..'z' | 'A'..'Z');
+NONDIGIT :   ('_' | 'a'..'z' | 'A'..'Z' | '$');
 
 fragment
 DIGIT :
