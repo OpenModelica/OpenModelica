@@ -215,5 +215,16 @@ public
     end match;
   end convertSub;
 
+  function numSubPart
+    "returns the number of sub partitions"
+    input SimPartition part;
+    output Integer i;
+  algorithm
+    i := match part
+      case BASE_PARTITION() then listLength(part.subPartitions);
+      else 1;
+    end match;
+  end numSubPart;
+
   annotation(__OpenModelica_Interface="backend");
 end NSimPartition;
