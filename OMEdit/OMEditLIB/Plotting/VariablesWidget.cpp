@@ -1910,11 +1910,14 @@ void VariablesWidget::initializeVisualization()
       mpTimeManager->setPause(true);
       // reset the visualization controls
       mpTimeTextBox->setText(QString::number(mpTimeManager->getVisTime()));
+      bool state = mpSimulationTimeSlider->blockSignals(true);
       mpSimulationTimeSlider->setValue(mpTimeManager->getTimeFraction());
+      mpSimulationTimeSlider->blockSignals(state);
     }
     mpTimeControlsDescriptionLabel->setText(tr("Enabled for %1").arg(pVariablesTreeItem->getVariableName()));
     enableVisualizationControls(true);
     updateVisualization();
+    updatePlotWindows();
   } else {
     mpTimeControlsDescriptionLabel->setText("");
     // disable visualization controls so the call to rewindVisualization doesn't try to update visualization.
