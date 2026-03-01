@@ -168,7 +168,7 @@ readFile("QuotedIdentifier_me_systemCall.log");
 // "info:    maximum step size for 'model.root': 0.002000
 // info:    Result file: QuotedIdentifier_dynamic_res.mat (bufferSize=1)
 // info:    Final Statistics for 'model.root':
-//          NumSteps = 501 NumRhsEvals  = 502 NumLinSolvSetups = 26
-//          NumNonlinSolvIters = 501 NumNonlinSolvConvFails = 0 NumErrTestFails = 0
+//          NumSteps = 500 NumRhsEvals  = 501 NumLinSolvSetups = 25
+//          NumNonlinSolvIters = 500 NumNonlinSolvConvFails = 0 NumErrTestFails = 0
 // "
 // endResult
