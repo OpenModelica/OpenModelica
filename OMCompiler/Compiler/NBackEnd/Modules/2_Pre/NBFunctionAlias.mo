@@ -200,7 +200,7 @@ protected
       list<Subscript> subs;
     algorithm
       if not Iterator.isEmpty(iter) then
-        new_ty    := Type.liftArrayRightList(ty, list(Dimension.fromInteger(i) for i in Iterator.sizes(iter)));
+        new_ty    := Type.liftArrayRightList(ty, Iterator.dimensions(iter));
         (_, name) := BVariable.makeAuxVar(NBVariable.FUNCTION_STR, Pointer.access(aux_index), new_ty, init);
         // add iterators to subscripts of auxilliary variable. fill with WHOLE if necessary
         subs      := Iterator.normalizedSubscripts(iter);
