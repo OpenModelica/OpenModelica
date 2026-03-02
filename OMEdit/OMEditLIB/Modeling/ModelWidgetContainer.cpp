@@ -7095,6 +7095,44 @@ void ModelWidget::navigateToClass(const QString &className)
 }
 
 /*!
+ * \brief ModelWidget::getParameterDisplayString
+ * Gets the parameter display string and removes the type prefix if exists.
+ * \param parameterName
+ * \return
+ */
+QPair<QString, bool> ModelWidget::getParameterDisplayString(QString parameterName)
+{
+  QPair<QString, bool> displayString("", false);
+  QString typeName;
+
+  if (mpModelInstance) {
+    displayString = mpModelInstance->getVariableValue(StringHandler::makeVariableParts(parameterName));
+    typeName = mpModelInstance->getVariableType(StringHandler::makeVariableParts(parameterName));
+  }
+  if (displayString.second) {
+    StringHandler::removeTypePrefix(displayString.first, typeName);
+  }
+
+  return displayString;
+}
+
+/*!
+ * \brief ModelWidget::getParameterModifierValue
+ * Gets the parameter modifier value.
+ * \param parameterName
+ * \param modifier
+ * \return
+ */
+QPair<QString, bool> ModelWidget::getParameterModifierValue(const QString &parameterName, const QString &modifier)
+{
+  QPair<QString, bool> modifierValue("", false);
+  if (mpModelInstance) {
+    modifierValue = ModelInstance::Element::getModifierValueFromInheritedType(mpModelInstance, QStringList() << parameterName << modifier);
+  }
+  return qMakePair(StringHandler::removeFirstLastQuotes(modifierValue.first), modifierValue.second);
+}
+
+/*!
  * \brief ModelWidget::createUndoStack
  * Creates the undo stack.
  */

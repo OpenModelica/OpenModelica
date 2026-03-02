@@ -1923,3 +1923,17 @@ QString StringHandler::convertSemVertoReadableString(const QString &semver)
 
   return version;
 }
+
+/*!
+ * \brief StringHandler::removeTypePrefix
+ * Removes the type prefix from the string if it starts with it. For example, if the string is "type1.var1" and the type is "type1" then it returns "var1".
+ * \param str
+ * \param type
+ */
+void StringHandler::removeTypePrefix(QString &str, const QString &type)
+{
+  const QString prefix = type + '.';
+  if (str.startsWith(prefix)) {
+    str.remove(0, prefix.length());
+  }
+}

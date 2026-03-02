@@ -2193,6 +2193,29 @@ namespace ModelInstance
     return modifierValue;
   }
 
+  QPair<QString, bool> Element::getModifierValueFromInheritedType(Model *pModel, QStringList modifierNames)
+  {
+    QPair<QString, bool> modifierValue("", false);
+    foreach (auto pElement, pModel->getElements()) {
+      if (pElement->isExtend()) {
+        auto pExtend = dynamic_cast<Extend*>(pElement);
+        if (pExtend->getModifier()) {
+          modifierValue = pExtend->getModifier()->getModifierValue(modifierNames);
+          if (modifierValue.second) {
+            return modifierValue;
+          }
+        }
+        if (!modifierValue.second && pExtend->getModel()) {
+          modifierValue = Element::getModifierValueFromInheritedType(pExtend->getModel(), modifierNames);
+          if (modifierValue.second) {
+            return modifierValue;
+          }
+        }
+      }
+    }
+    return modifierValue;
+  }
+
   bool Element::isPublic() const
   {
     return mpPrefixes ? mpPrefixes.get()->isPublic() : true;
@@ -2418,29 +2441,6 @@ namespace ModelInstance
     }
 
     return dir;
-  }
-
-  QPair<QString, bool> Element::getModifierValueFromInheritedType(Model *pModel, QStringList modifierNames)
-  {
-    QPair<QString, bool> modifierValue("", false);
-    foreach (auto pElement, pModel->getElements()) {
-      if (pElement->isExtend()) {
-        auto pExtend = dynamic_cast<Extend*>(pElement);
-        if (pExtend->getModifier()) {
-          modifierValue = pExtend->getModifier()->getModifierValue(modifierNames);
-          if (modifierValue.second) {
-            return modifierValue;
-          }
-        }
-        if (!modifierValue.second && pExtend->getModel()) {
-          modifierValue = Element::getModifierValueFromInheritedType(pExtend->getModel(), modifierNames);
-          if (modifierValue.second) {
-            return modifierValue;
-          }
-        }
-      }
-    }
-    return modifierValue;
   }
 
   /*!
