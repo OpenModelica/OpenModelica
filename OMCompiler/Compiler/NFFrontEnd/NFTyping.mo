@@ -612,7 +612,6 @@ algorithm
       Type ty;
       TypingError ty_err;
       Integer parent_dims, dim_index;
-      Boolean evaluated;
       Ceval.EvalTarget target;
 
     // A dimension that we're already trying to type.
@@ -637,18 +636,16 @@ algorithm
 
         (exp, ty, var) := typeExp(dimension.dimension, InstContext.set(context, NFInstContext.DIMENSION), info);
         TypeCheck.checkDimensionType(exp, ty, info);
-        evaluated := true;
 
         if not InstContext.inFunction(context) then
           // Dimensions must be parameter expressions in a non-function class.
           if var <= Variability.PARAMETER then
             if InstContext.inRelaxed(context) then
               exp := Ceval.tryEvalExp(exp);
-              evaluated := Expression.isLiteral(exp);
             else
               target := Ceval.EvalTarget.new(info, context,
                 SOME(Ceval.EvalTargetData.DIMENSION_DATA(component, index, exp)));
-              exp := Ceval.evalExp(exp, target);
+              exp := Ceval.tryEvalExpResizable(exp, target);
             end if;
           elseif not var == Variability.NON_STRUCTURAL_PARAMETER then
             Error.addSourceMessage(Error.DIMENSION_NOT_KNOWN, {Expression.toString(exp)}, info);
