@@ -44,6 +44,7 @@
 #include <QToolButton>
 #include <QLabel>
 #include <QFile>
+#include <QFileInfo>
 #include <QMdiSubWindow>
 #include <QGroupBox>
 #include <QPushButton>
@@ -265,6 +266,12 @@ class NoVariableException : public PlotException
 {
 public:
   NoVariableException(const char *varName) : PlotException(varName) {}
+};
+
+class TimeOutOfBoundsException : public PlotException
+{
+public:
+  TimeOutOfBoundsException(const QFileInfo &fileInfo, double startTime, double stopTime);
 };
 
 class SetupDialog;
