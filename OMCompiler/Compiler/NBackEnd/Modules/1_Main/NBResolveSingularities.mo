@@ -455,7 +455,7 @@ protected
     // fill the msss array, sorting each equation to their respective color
     msss := arrayCreate(color, {});
     for eqn in 1:arrayLength(eqn_coloring) loop
-      if eqn_coloring[eqn] <> -1 and not discrete_eqns[eqn] then
+      if eqn_coloring[eqn] <> -1 and not discrete_eqns[mapping.eqn_StA[eqn]] then
         msss[eqn_coloring[eqn]] := eqn :: msss[eqn_coloring[eqn]];
       end if;
     end for;
