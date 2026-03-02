@@ -257,7 +257,6 @@ private:
   void hideResizerItems();
   void getScale(qreal *sx, qreal *sy);
   void updateConnections();
-  static bool checkEnumerationDisplayString(QString &displayString, const QString &typeName);
   void updateToolTip();
   bool canUseDiagramAnnotation() const;
 signals:

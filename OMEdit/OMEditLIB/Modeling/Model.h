@@ -704,6 +704,7 @@ private:
     Modifier *getModifier() const {return mpModifier;}
     QPair<QString, bool> getVariableValue(QStringList variables);
     QPair<QString, bool> getModifierValueFromType(QStringList modifierNames);
+    static QPair<QString, bool> getModifierValueFromInheritedType(Model *pModel, QStringList modifierNames);
     const Dimensions &getDimensions() const {return mDims;}
     bool isPublic() const;
     bool isFinal() const;
@@ -744,7 +745,6 @@ private:
     QString getDirection() const;
   private:
     virtual void deserialize_impl(const QJsonObject &jsonObject) = 0;
-    static QPair<QString, bool> getModifierValueFromInheritedType(Model *pModel, QStringList modifierNames);
     bool isParameterInPrefixes() const;
     bool isParameter(const QString &name) const;
     bool isInputInPrefixes() const;

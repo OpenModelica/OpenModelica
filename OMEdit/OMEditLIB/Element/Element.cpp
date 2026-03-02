@@ -1106,7 +1106,7 @@ QPair<QString, bool> Element::getParameterDisplayString(QString parameterName)
        * Check for enumeration type and shorten display string.
        */
       if (displayString.second) {
-        Element::checkEnumerationDisplayString(displayString.first, typeName);
+        StringHandler::removeTypePrefix(displayString.first, typeName);
       }
     }
   }
@@ -1720,21 +1720,6 @@ void Element::updateConnections()
       pConnectionLineAnnotation->setEndElement(mpGraphicsView->getModelWidget()->getConnectorElement(this, endElementName));
     }
   }
-}
-
-/*!
- * \brief Element::checkEnumerationDisplayString
- * Checks for enumeration type and shortens enumeration value.
- * Returns true if displayString was modified.
- * See ModelicaSpec 3.3, section 18.6.5.5, ticket:4084
- */
-bool Element::checkEnumerationDisplayString(QString &displayString, const QString &typeName)
-{
-  if (displayString.startsWith(typeName + ".")) {
-    displayString = displayString.right(displayString.length() - typeName.length() - 1);
-    return true;
-  }
-  return false;
 }
 
 /*!

@@ -607,6 +607,9 @@ public:
   void showElement(ModelInstance::Model *pModelInstance, bool addToList);
   void selectDeselectElement(const QString &name, bool selected);
   void navigateToClass(const QString &className);
+
+  QPair<QString, bool> getParameterDisplayString(QString parameterName);
+  QPair<QString, bool> getParameterModifierValue(const QString &parameterName, const QString &modifier);
 private:
   ModelWidgetContainer *mpModelWidgetContainer;
   ModelInstance::Model *mpModelInstance;

@@ -45,8 +45,18 @@ class StringHandlerTest: public QObject
   Q_OBJECT
 
 private slots:
+  /*!
+   * \brief makeVariablePartsWithIndTest
+   * Tests the StringHandler::makeVariablePartsWithInd function.
+   */
   void makeVariablePartsWithIndTest();
   void makeVariablePartsWithIndTest_data();
+  /*!
+   * \brief removeTypePrefix
+   * Tests the StringHandler::removeTypePrefix function.
+   */
+  void removeTypePrefix();
+  void removeTypePrefix_data();
   void cleanupTestCase();
 };
 
