@@ -105,13 +105,34 @@ uniontype EvalTargetData
   end DIMENSION_DATA;
 end EvalTargetData;
 
+function tryEvalExpResizable
+  input output Expression exp;
+  input EvalTarget target = noTarget;
+algorithm
+  ErrorExt.setCheckpoint(getInstanceName());
+  try
+    exp := evalExp(exp, target);
+    ErrorExt.delCheckpoint(getInstanceName());
+  else
+    exp := evalExpPartial(exp, target);
+    if Expression.contains(exp, Expression.isResizableCref) then
+      /* evaluation is allowed to fail for resizables */
+      ErrorExt.rollBack(getInstanceName());
+    else
+      ErrorExt.delCheckpoint(getInstanceName());
+      fail();
+    end if;
+  end try;
+end tryEvalExpResizable;
+
 function tryEvalExp
   input output Expression exp;
+  input EvalTarget target = noTarget;
 algorithm
   ErrorExt.setCheckpoint(getInstanceName());
 
   try
-    exp := evalExp(exp);
+    exp := evalExp(exp, target);
   else
   end try;
 
