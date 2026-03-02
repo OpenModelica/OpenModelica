@@ -904,6 +904,7 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
       gbfData->jacobian->sizeCols = nFastStates;
       gbfData->jacobian->sizeRows = nFastStates;
 
+      /* TODO don't free and realloc, instead overwrite large enough buffer */
       switch (gbfData->nlsSolverMethod)
       {
       case GB_NLS_NEWTON:
@@ -1010,7 +1011,7 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
           messageClose(OMC_LOG_SOLVER);  // FIXME what does this belong to?
           return -1;
         }
-        err = 100;
+        err = INFINITY;
         continue;
       }
 
@@ -1427,8 +1428,8 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
     // Loop will be performed until the error estimate for all states fullfills the
     // given tolerance
     do {
-      // set error to DBL_MAX, in case we break / continue early
-      err = DBL_MAX;
+      // set error to INFINITY, in case we break / continue early
+      err = INFINITY;
 
       if (OMC_ACTIVE_STREAM(OMC_LOG_SOLVER_V)) {
         // debug ring buffer of the states and derivatives during integration

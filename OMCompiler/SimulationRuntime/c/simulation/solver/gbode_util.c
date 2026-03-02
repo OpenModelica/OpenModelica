@@ -291,7 +291,7 @@ void gb_interpolation(enum GB_INTERPOL_METHOD interpolMethod, double ta, double*
                       int nIdx, int* idx, int nStates, BUTCHER_TABLEAU* tableau, double* x, double *k)
 {
   // handle edge case for tiny interval length
-  if ((tb == ta) || fabs(tb - ta) / (fabs(tb) + fabs(ta)) < GBODE_EPSILON)
+  if ((tb == ta) || fabs(tb - ta) < GBODE_EPSILON * (fabs(tb) + fabs(ta)))
   {
     if (idx == NULL)
     {
