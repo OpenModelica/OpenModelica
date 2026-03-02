@@ -743,9 +743,11 @@ protected
 algorithm
   config_flag := lookupConfigFlag(inFlag, inFlagPrefix);
 
-  if missingValue and flagRequiresValue(config_flag) and not listEmpty(restArgs) then
+  if missingValue and flagRequiresValue(config_flag) and not listEmpty(restArgs)
+     and not StringUtil.startsWith(listHead(restArgs), "-") then
     // If no value was given using = and the flag requires a value,
-    // use the next argument as the value.
+    // use the next argument as the value unless the next argument is another
+    // flag (starts with -).
     value := listHead(restArgs);
     restArgs := listRest(restArgs);
   else
