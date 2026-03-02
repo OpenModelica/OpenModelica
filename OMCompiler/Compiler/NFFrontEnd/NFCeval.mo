@@ -114,15 +114,14 @@ algorithm
     exp := evalExp(exp, target);
     ErrorExt.delCheckpoint(getInstanceName());
   else
-    try
-      exp := evalExpPartial(exp, target);
+    exp := tryEvalExpPartial(exp, target);
+    if Expression.contains(exp, Expression.isResizableCref) then
       /* evaluation is allowed to fail for resizables */
-      true := Expression.contains(exp, Expression.isResizableCref);
       ErrorExt.rollBack(getInstanceName());
     else
       ErrorExt.delCheckpoint(getInstanceName());
       fail();
-    end try;
+    end if;
   end try;
 end tryEvalExpResizable;
 
@@ -263,6 +262,20 @@ algorithm
     else exp;
   end match;
 end evalExp;
+
+function tryEvalExpPartial
+  input output Expression exp;
+  input EvalTarget target = noTarget;
+algorithm
+  ErrorExt.setCheckpoint(getInstanceName());
+
+  try
+    exp := evalExpPartial(exp, target);
+  else
+  end try;
+
+  ErrorExt.rollBack(getInstanceName());
+end tryEvalExpPartial;
 
 function evalExpPartialDefault
   "Simplied version of evalExpPartial to work around MetaModelica issues with
