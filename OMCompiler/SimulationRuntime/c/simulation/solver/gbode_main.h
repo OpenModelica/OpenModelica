@@ -85,7 +85,8 @@ typedef struct DATA_GBODEF{
                                                         // k_{i}=f(t_{n}+c_{i}*h, y_{n}+h\sum _{j=1}^{s}a_{ij}*k_{j}),    i=1, ... ,s
   double *yv, *kv, *tv;                             /* Buffer storage of the last values of states (yv) and their derivatives (kv) */
   double *res_const;                                /* Constant parts of residual for non-linear system of implicit RK method. */
-  double *errest, *errtol;                          /* absolute error and given error tolerance of each individual states */
+  double *errest;                                   /* Absolute error and given error tolerance of each individual states */
+  double *errtol;                                   /* Given error tolerance of each individual state */
   double *err;                                      /* error of each individual state during integration err = errest/errtol*/
   double *errValues;                                /* ring buffer for step size control */
   double *stepSizeValues;                           /* ring buffer for step size control */
@@ -94,6 +95,8 @@ typedef struct DATA_GBODEF{
   double stepSize, lastStepSize;                    /* actual and last step size of integration */
   int act_stage;                                    /* Current stage of Runge-Kutta method. */
   enum GB_CTRL_METHOD ctrl_method;                  /* Step size control algorithm */
+  int ringBufferSize;                               /* Buffer size for storing the error, stepSize and last values of states (yv) and their derivatives (kv) */
+  enum GB_INTERPOL_METHOD interpolation;            /* Interpolation method */
   modelica_boolean isExplicit;                      /* Boolean stating if the RK method is explicit */
   BUTCHER_TABLEAU* tableau;                         /* Butcher tableau of the Runge-Kutta method */
   int nStates;                                      /* Numbers of fast states */
@@ -105,8 +108,6 @@ typedef struct DATA_GBODEF{
   EVAL_SELECTION* evalSelectionFast;                /* selection of fast equations for functionODE */
 
   modelica_boolean didEventStep;                    /* Will be used for updating the derivatives */
-  int ringBufferSize;                               /* Buffer size for storing the error, stepSize and last values of states (yv) and their derivatives (kv) */
-  enum GB_INTERPOL_METHOD interpolation;            /* Interpolation method */
   unsigned int nlSystemSize;                        /* Size of non-linear system to solve in a RK step. */
   modelica_boolean symJacAvailable;                 /* Boolean stating if a symbolic Jacobian is available */
   gm_step_function step_fun;                        /* Step function of the integrator */
