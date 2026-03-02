@@ -114,14 +114,15 @@ algorithm
     exp := evalExp(exp, target);
     ErrorExt.delCheckpoint(getInstanceName());
   else
-    exp := evalExpPartial(exp, target);
-    if Expression.contains(exp, Expression.isResizableCref) then
+    try
+      exp := evalExpPartial(exp, target);
       /* evaluation is allowed to fail for resizables */
+      true := Expression.contains(exp, Expression.isResizableCref);
       ErrorExt.rollBack(getInstanceName());
     else
       ErrorExt.delCheckpoint(getInstanceName());
       fail();
-    end if;
+    end try;
   end try;
 end tryEvalExpResizable;
 
