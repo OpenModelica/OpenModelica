@@ -106,7 +106,7 @@ typedef void* modelica_fnptr;
 
 typedef double modelica_real;
 typedef mmc_sint_t modelica_integer;
-typedef signed char modelica_boolean;
+typedef int modelica_boolean;
 /* When MetaModelica grammar is enabled, all strings are boxed */
 typedef modelica_metatype modelica_string;
 typedef mmc_sint_t         _index_t;
