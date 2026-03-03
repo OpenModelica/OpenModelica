@@ -212,6 +212,17 @@ val(y4, 1.0);
 //
 // 	Jacobian idx: 6
 //
+// columnVars(9)
+// ----------------------
+// index:0: $DER.x4.$pDERA.dummyVarA (no alias)  initial: 	no arrCref index:() [10]
+// index:1: x1.$pDERA.dummyVarA (no alias)  initial: 	no arrCref index:() [10]
+// index:2: x2.$pDERA.dummyVarA (no alias)  initial: 	no arrCref index:() [10]
+// index:3: x3.$pDERA.dummyVarA (no alias)  initial: 	no arrCref index:() [10]
+// index:4: x4.$pDERA.dummyVarA (no alias)  initial: 	no arrCref index:() [10]
+// index:5: y1.$pDERA.dummyVarA (no alias)  initial: 	no arrCref index:() []
+// index:6: y2.$pDERA.dummyVarA (no alias)  initial: 	no arrCref index:() []
+// index:7: y3.$pDERA.dummyVarA (no alias)  initial: 	no arrCref index:() []
+// index:8: y4.$pDERA.dummyVarA (no alias)  initial: 	no arrCref index:() []
 //
 // modelInfo:
 // ========================================

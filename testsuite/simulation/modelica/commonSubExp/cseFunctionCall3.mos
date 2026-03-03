@@ -83,9 +83,54 @@ simulate(CSE.FunctionCallTest3); getErrorString();
 // 1: x - sin(time * $cse1) - {}
 // 2: $cse1 - cos(time) - {}
 // 3: (a, b) - CSE.functions.f2(time, x) - {}
+//
+//
+//
+// ###############################################################
+// Final Results
+// ###############################################################
+//
+// ########### Updated Variable List (jacobian) (7)
+// ========================================
+// 1: x.$pDERA.dummyVarA:VARIABLE()  type: Real
+// 2: $DER.y.$pDERA.dummyVarA:STATE_DER(fixed = true )  type: Real unreplaceable
+// 3: $DER.z.$pDERA.dummyVarA:STATE_DER(fixed = true )  type: Real unreplaceable
+// 4: b.$pDERA.dummyVarA:VARIABLE()  type: Real
+// 5: $cse5:VARIABLE(protected = true )  type: Real unreplaceable
+// 6: $cse4:VARIABLE(protected = true )  type: Real unreplaceable
+// 7: $cse3:VARIABLE(protected = true )  type: Real unreplaceable
+//
+//
+// ########### Updated Equation List (jacobian) (6, 7)
+// ========================================
+// 1/1 (1): $DER.y.$pDERA.dummyVarA = x.$pDERA.dummyVarA * $cse3   [unknown |0|0|0|0|]
+// 2/2 (1): b.$pDERA.dummyVarA = x.$pDERA.dummyVarA * $cse4   [unknown |0|0|0|0|]
+// 3/3 (1): x.$pDERA.dummyVarA = $cse5 * time * $cse1.$pDERA.dummyVarA   [unknown |0|0|0|0|]
+// 4/4 (1): $DER.y.$pDERA.dummyVarA = $DER.z.$pDERA.dummyVarA   [dynamic |0|0|0|0|]
+// 5/5 (1): $cse5 = cos(time * $cse1)   [unknown |0|0|0|0|]
+// 6/6 (2): ($cse3, $cse4) = $DER$$PCSE$Pfunctions$Pf2(time, x, 0.0, 1.0)   [unknown |0|0|0|0|]
+//
+//
+// ########### Updated globalKnownVars (jacobian) (9)
+// ========================================
+// 1: $cse1.$pDERA.dummyVarA:VARIABLE(protected = true )  = 0.0  type: Real unreplaceable
+// 2: b:VARIABLE()  type: Real
+// 3: a:VARIABLE()  type: Real
+// 4: z:STATE(1)(fixed = true )  type: Real
+// 5: y:STATE(1)(fixed = true )  type: Real
+// 6: x:VARIABLE()  type: Real
+// 7: $cse1:VARIABLE(protected = true )  type: Real unreplaceable
+// 8: input z.SeedA:STATE_DER()  type: Real unreplaceable
+// 9: input y.SeedA:STATE_DER()  type: Real unreplaceable
+//
+//
+// ########### CSE Replacements (2/46)
+// ========================================
+// 1: ($cse3, $cse4) - $DER$$PCSE$Pfunctions$Pf2(time, x, 0.0, 1.0) - {}
+// 2: $cse5 - cos(time * $cse1) - {}
 // record SimulationResult
 //     resultFile = "CSE.FunctionCallTest3_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'CSE.FunctionCallTest3', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'CSE.FunctionCallTest3', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
