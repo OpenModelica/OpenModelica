@@ -2735,14 +2735,20 @@ void VariablesWidget::updateVisualization()
   if (mpSimulationTimeSlider->isEnabled()) {
     mpTimeManager->updateTick();  //for real-time measurement
     double visTime = mpTimeManager->getRealTime();
-    // Update the DiagramWindow by emitting updateDynamicSelect SIGNAL only if its DiagramWindow is active
+    // Update the DiagramWindow by emitting updateDynamicSelect SIGNAL only if the DiagramWindow relates to the currently opened result file
     PlotWindowContainer *pPlotWindowContainer = MainWindow::instance()->getPlotWindowContainer();
-    if (pPlotWindowContainer->currentSubWindow() && pPlotWindowContainer->isDiagramWindow(pPlotWindowContainer->currentSubWindow()->widget())) {
-      emit updateDynamicSelect(mpTimeManager->getVisTime());
-    }
-    if (MainWindow::instance()->getPlotWindowContainer()->getDiagramWindow()
-        && MainWindow::instance()->getPlotWindowContainer()->getDiagramWindow()->getModelWidget()) {
-      MainWindow::instance()->getPlotWindowContainer()->getDiagramWindow()->getModelWidget()->getDiagramGraphicsView()->scene()->update();
+    if (pPlotWindowContainer->getDiagramWindow() &&
+        pPlotWindowContainer->getDiagramWindow()->getModelWidget() &&
+        pPlotWindowContainer->getDiagramWindow()->getModelWidget()->getLibraryTreeItem()) {
+      const QString className = pPlotWindowContainer->getDiagramWindow()->getModelWidget()->getLibraryTreeItem()->getNameStructure();
+      VariablesTreeItem *pVariablesTreeItem = mpVariablesTreeModel->findVariablesTreeItemFromClassNameTopLevel(className);
+      if (pVariablesTreeItem) {
+        QString fileName = QString("%1/%2").arg(pVariablesTreeItem->getFilePath(), pVariablesTreeItem->getFileName());
+        if (mOpenedResultFileName == fileName) {
+          emit updateDynamicSelect(mpTimeManager->getVisTime());
+          pPlotWindowContainer->getDiagramWindow()->getModelWidget()->getDiagramGraphicsView()->scene()->update();
+        }
+      }
     }
     mpTimeManager->updateTick();  //for real-time measurement
     visTime = mpTimeManager->getRealTime() - visTime;
