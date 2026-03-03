@@ -1871,19 +1871,17 @@ void VariablesWidget::updateInitXmlFile(VariablesTreeItem *pVariablesTreeItem, S
  */
 void VariablesWidget::initializeVisualization()
 {
-  VariablesTreeItem *pVariablesTreeItem = 0;
+  VariablesTreeItem *pVariablesTreeItem = nullptr;
   PlotWindowContainer *pPlotWindowContainer = MainWindow::instance()->getPlotWindowContainer();
   bool isDiagramWindow = (pPlotWindowContainer->currentSubWindow() && pPlotWindowContainer->isDiagramWindow(pPlotWindowContainer->currentSubWindow()->widget())
                           && pPlotWindowContainer->getDiagramWindow() && pPlotWindowContainer->getDiagramWindow()->getModelWidget()
                           && pPlotWindowContainer->getDiagramWindow()->getModelWidget()->getLibraryTreeItem());
-  if (mpVariablesTreeModel->getActiveVariablesTreeItem() || isDiagramWindow) {
-    // if we came in due to diagram window then find the VariablesTreeItem
-    if (isDiagramWindow) {
-      const QString className = pPlotWindowContainer->getDiagramWindow()->getModelWidget()->getLibraryTreeItem()->getNameStructure();
-      pVariablesTreeItem = mpVariablesTreeModel->findVariablesTreeItemFromClassNameTopLevel(className);
-    } else {
-      pVariablesTreeItem = mpVariablesTreeModel->getActiveVariablesTreeItem();
-    }
+  // if we came in due to diagram window then find the VariablesTreeItem
+  if (isDiagramWindow) {
+    const QString className = pPlotWindowContainer->getDiagramWindow()->getModelWidget()->getLibraryTreeItem()->getNameStructure();
+    pVariablesTreeItem = mpVariablesTreeModel->findVariablesTreeItemFromClassNameTopLevel(className);
+  } else {
+    pVariablesTreeItem = mpVariablesTreeModel->getActiveVariablesTreeItem();
   }
 
   if (pVariablesTreeItem) {
