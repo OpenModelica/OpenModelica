@@ -28,6 +28,7 @@ BenchmarksForResizeableArrays.ArrayEquations.CascadedFirstOrder3.mos\
 BenchmarksForResizeableArrays.ArrayEquations.CascadedFirstOrder4.mos\
 BenchmarksForResizeableArrays.ArrayEquations.WaterHammer.mos\
 BenchmarksForResizeableArrays.ForLoops.CascadedFirstOrder.mos\
+BenchmarksForResizeableArrays.ForLoops.CocurrentHeatExchanger.mos\
 BenchmarksForResizeableArrays.Resizable.CascadedFirstOrder1_Resizable.mos\
 BenchmarksForResizeableArrays.Resizable.CascadedFirstOrder2_Resizable.mos\
 BenchmarksForResizeableArrays.Resizable.CascadedFirstOrder3_Resizable.mos\

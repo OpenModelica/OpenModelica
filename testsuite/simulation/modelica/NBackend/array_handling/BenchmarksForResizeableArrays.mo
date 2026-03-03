@@ -381,9 +381,9 @@ An explanation for this model is given in the reference above.
         "heat flow rate of fluid B in the segments";
       SI.Temperature TA[N] "temperature nodes on channel A";
       SI.Temperature TB[N] "temperature nodes on channel B";
-      SI.Temperature TAtilde[N - 1](each start=300, fixed=true) "temperature states on channel A";
-      SI.Temperature TBtilde[N - 1](each start=300, fixed=true) "temperature states on channel B";
-      SI.Temperature TW[N - 1](each start=300, fixed=true) "temperatures on the wall segments";
+      SI.Temperature TAtilde[N - 1](each start=300, each fixed=true) "temperature states on channel A";
+      SI.Temperature TBtilde[N - 1](each start=300, each fixed=true) "temperature states on channel B";
+      SI.Temperature TW[N - 1](each start=300, each fixed=true) "temperatures on the wall segments";
       SI.HeatFlowRate QtotA "total heat flow rate of fluid A";
       SI.HeatFlowRate QtotB "total heat flow rate of fluid B";
     equation
