@@ -1148,7 +1148,7 @@ public
     input Slice<EquationPointer> eqn_slice;
     output StrongComponent comp;
   algorithm
-    if Slice.isFull(var_slice) and Slice.isFull(eqn_slice) then
+    if Slice.isFull(var_slice) and Slice.isFull(eqn_slice) and not ComponentRef.hasSubscripts(cref) then
       comp := SINGLE_COMPONENT(
         var       = Slice.getT(var_slice),
         eqn       = Slice.getT(eqn_slice),

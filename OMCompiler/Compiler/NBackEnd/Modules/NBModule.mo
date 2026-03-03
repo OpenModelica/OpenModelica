@@ -142,6 +142,7 @@ public
     input output EquationPointers equations;
     input output VarData varData;
     input output EqData eqData;
+    input Partition.Kind kind;
     input UnorderedMap<Path, Function> funcMap;
     input Matching matching;
     input Option<Adjacency.Mapping> mapping_opt;
@@ -235,6 +236,7 @@ public
      are pointers, so no return value."
     input output VarData varData         "Data containing variable pointers";
     input output EqData eqData           "Data containing equation pointers";
+    input Partition.Kind kind;
   end functionAliasInterface;
 
 
@@ -246,6 +248,7 @@ public
      are pointers, so no return value."
     input output VarData varData         "Data containing variable pointers";
     input output EqData eqData           "Data containing equation pointers";
+    input Partition.Kind kind;
   end aliasInterface;
 
 //                                 INLINE

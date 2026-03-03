@@ -129,9 +129,7 @@ public
       end match;
     end for;
 
-    if not listEmpty(conns.connections) then
-      flatModel.equations := listReverseInPlace(eql);
-    end if;
+    flatModel.equations := listReverseInPlace(eql);
   end collectConnections;
 
   function collectFlows

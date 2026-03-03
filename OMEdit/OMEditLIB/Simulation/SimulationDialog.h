@@ -250,6 +250,7 @@ private:
   Label *mpDataReconciliationEpsilonLabel;
   QLineEdit *mpDataReconciliationEpsilonTextBox;
   QCheckBox *mpSaveSettingsCheckBox;
+  QCheckBox *mpGenerateFMUCheckBox;
   QPushButton *mpCalculateButton;
   QPushButton *mpCancelButton;
   QDialogButtonBox *mpButtonBox;

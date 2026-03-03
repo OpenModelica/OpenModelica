@@ -1,5 +1,4 @@
 // status: correct
-// cflags: -d=-newInst
 
 loadModel(Modelica,{"3.2.2"});getErrorString();
 loadFile("ReaderTMY3_total.mo");getErrorString();

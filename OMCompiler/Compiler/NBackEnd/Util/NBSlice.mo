@@ -685,7 +685,7 @@ public
     input list<Integer> slice = {}                                "optional slice, empty list means all";
     output list<tuple<ComponentRef, list<ComponentRef>>> tpl_lst  "cref -> dependencies for each scalar cref";
   protected
-    list<ComponentRef> row_cref_scal;
+    list<ComponentRef> row_cref_scal, dependencies_resizable;
     Integer row_size;
     list<list<ComponentRef>> dependencies_scal;
     Pointer<list<ComponentRef>> full_deps = Pointer.create({});
@@ -715,7 +715,10 @@ public
   algorithm
     row_cref_scal := ComponentRef.scalarizeSlice(row_cref, slice, true);
     row_size      := listLength(row_cref_scal);
-    dependencies_scal := list(ComponentRef.scalarizeSlice(dep, slice, true) for dep in dependencies);
+
+    dependencies_resizable  := list(ComponentRef.simplifySubscripts(ComponentRef.mapExp(dep, Expression.replaceResizableParameterWithOriginal)) for dep in dependencies);
+    dependencies_scal       := list(ComponentRef.scalarizeSlice(dep, slice, true) for dep in dependencies_resizable);
+
     if not listEmpty(dependencies_scal) then
       // repeat lists that are too short to fit the equation size and collect full dependencies
       dependencies_scal := list(fixSingleDep(row_size, d, full_deps) for d in dependencies_scal);
@@ -1137,6 +1140,8 @@ public
     for cref in scalarized_dependencies loop
       // remove all resizable parameters from cref
       replaced := ComponentRef.mapExp(cref, Expression.replaceResizableParameter);
+      replaced := ComponentRef.simplifySubscripts(replaced);
+
       // remove all subscripts from cref
       stripped := ComponentRef.stripSubscriptsAll(replaced);
 
@@ -1208,6 +1213,7 @@ protected
       local
         Integer skip;
         list<Integer> rest, tail;
+        list<Dimension> rest_dim, tail_dim;
         Type sub_ty;
         list<Type> rest_ty;
         Pointer<Variable> parent;
@@ -1263,11 +1269,18 @@ protected
       case (Type.ARRAY(), rest) guard(Dimension.sizesProduct(ty.dimensions, true) == 1) algorithm
       then resolveSkips(index, ty.elementType, rest, cref, fullmap);
 
-      // skip to an array element
+      // skip to an array element with more or equal skips to dimensions
       case (Type.ARRAY(), rest) guard List.compareLength(rest, ty.dimensions) >= 0 algorithm
         (rest, tail) := List.split(rest, listLength(ty.dimensions));
         index := locationToIndex(list(Dimension.size(dim, true) for dim in ty.dimensions), rest, index);
       then resolveSkips(index, ty.elementType, tail, cref, fullmap);
+
+      // skip to an array with less skips then dimensions
+      case (Type.ARRAY(), rest) algorithm
+        (rest_dim, tail_dim) := List.split(ty.dimensions, listLength(rest));
+        index := locationToIndex(list(Dimension.size(dim, true) for dim in rest_dim), rest, index);
+        ty.dimensions := tail_dim;
+      then (index, ty);
 
       // skip for tuple or array, but the skip is too large
       case (_, skip::_) guard(Type.isTuple(ty) or Type.isArray(ty)) algorithm
@@ -1353,6 +1366,7 @@ protected
     try
       // remove resizable parameters for index lookup
       cref := ComponentRef.mapExp(original_cref, Expression.replaceResizableParameter);
+      cref := ComponentRef.simplifySubscripts(cref);
 
       // I. resolve the skips
       d           := UnorderedMap.getSafe(original_cref, dep, sourceInfo());
@@ -1384,6 +1398,7 @@ protected
           // II.3 all reduced - full dependency per row. scalarize and add to all rows of the equation
           resolveAllReduced(cref, original_cref, eqn_name, skip_idx, size, iter_size, frames, rep, map, m, mapping, modes);
         end if;
+
       end for;
     else
       Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for: " + ComponentRef.toString(original_cref) + "."});

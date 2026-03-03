@@ -3393,7 +3393,9 @@ QList<QString> OMCProxy::getAvailablePackageConversionsFrom(const QString &pkg, 
 QJsonObject OMCProxy::getModelInstance(const QString &className, const QString &context, const QString &modifier, bool prettyPrint, bool icon)
 {
   QElapsedTimer timer;
-  timer.start();
+  if (MainWindow::instance()->isNewApiProfiling()) {
+    timer.start();
+  }
 
   QString modelInstanceJson = "";
   QString cnt = context.isEmpty() ? QString("__NoContext") : context;
@@ -3426,7 +3428,9 @@ QJsonObject OMCProxy::getModelInstance(const QString &className, const QString &
 
   printMessagesStringInternal();
   if (!modelInstanceJson.isEmpty()) {
-    timer.restart();
+    if (MainWindow::instance()->isNewApiProfiling()) {
+      timer.restart();
+    }
     QJsonParseError jsonParserError;
     QJsonDocument doc = QJsonDocument::fromJson(modelInstanceJson.toUtf8(), &jsonParserError);
     if (doc.isNull()) {
@@ -3437,7 +3441,7 @@ QJsonObject OMCProxy::getModelInstance(const QString &className, const QString &
     }
     if (MainWindow::instance()->isNewApiProfiling()) {
       double elapsed = (double)timer.elapsed() / 1000.0;
-      MainWindow::instance()->writeNewApiProfiling(QString("Time for converting to JSON %1 secs").arg(QString::number(elapsed, 'f', 6)));
+      MainWindow::instance()->writeNewApiProfiling(QString("Time for converting string JSON to QJsonDocument %1 secs").arg(QString::number(elapsed, 'f', 6)));
     }
     return doc.object();
   }

@@ -62,7 +62,7 @@ void MergeExtendsModifiersTest::mergeModifiers()
   QFETCH(QStringList, modifiers);
   QFETCH(QString, result);
 
-  QList<const ModelInstance::Modifier*> modifierList;
+  QVector<const ModelInstance::Modifier*> modifierList;
 
   foreach (auto modifier, modifiers) {
     const QJsonObject modifierJSON = MainWindow::instance()->getOMCProxy()->modifierToJSON(modifier);

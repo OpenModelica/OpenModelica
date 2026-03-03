@@ -2,6 +2,7 @@ TEST = ../../../../rtest -v
 
 TESTFILES = \
 experimental_initialSimplified.mos \
+homotopy_no_loop.mos \
 init_if_eq.mos \
 init_if_exp.mos \
 TestInversePlant.mos \

@@ -76,6 +76,33 @@ void StringHandlerTest::makeVariablePartsWithIndTest_data()
     << QStringList({"paramTable", "[1,1]"});
 }
 
+void StringHandlerTest::removeTypePrefix()
+{
+  QFETCH(QString, string);
+  QFETCH(QString, typeName);
+  QFETCH(QString, result);
+
+  StringHandler::removeTypePrefix(string, typeName);
+  QCOMPARE(string, result);
+}
+
+void StringHandlerTest::removeTypePrefix_data()
+{
+  QTest::addColumn<QString>("string");
+  QTest::addColumn<QString>("typeName");
+  QTest::addColumn<QString>("result");
+
+  QTest::newRow("removeTypePrefix 1")
+      << "P.Dynamics.FixedInitial"
+      << "P.Dynamics"
+      << "FixedInitial";
+
+  QTest::newRow("removeTypePrefix 2")
+      << "Modelica.Blocks.Types.Enumeration.Periodic"
+      << "Modelica.Blocks.Types.Enumeration"
+      << "Periodic";
+}
+
 void StringHandlerTest::cleanupTestCase()
 {
   MainWindow::instance()->close();

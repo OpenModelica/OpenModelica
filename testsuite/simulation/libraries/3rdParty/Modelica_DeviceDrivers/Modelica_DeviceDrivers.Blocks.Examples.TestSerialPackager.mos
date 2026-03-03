@@ -1,7 +1,6 @@
 // name: Modelica_DeviceDrivers.Blocks.Examples.TestSerialPackager
 // keywords: simulation Modelica_DeviceDrivers examples
 // status: correct
-// cflags: -d=-newInst
 //
 // Simulation Results
 // Modelica_DeviceDrivers
@@ -36,16 +35,13 @@ runScript(modelTesting);getErrorString();
 // [Modelica_DeviceDrivers 1.8.2/Incubate/OperatingSystem/DynamicArray.mo:6:3-94:18:writable] Warning: External function annotation should occur on the external-clause, not on the function.
 // [Modelica_DeviceDrivers 1.8.2/Incubate/Utilities/Functions.mo:1041:3-1062:27:writable] Warning: External function annotation should occur on the external-clause, not on the function.
 // [Modelica_DeviceDrivers 1.8.2/Incubate/Utilities/Functions.mo:1064:3-1092:25:writable] Warning: External function annotation should occur on the external-clause, not on the function.
+// [Modelica_DeviceDrivers 1.8.2/Blocks/Packaging/SerialPackager.mo:130:7-137:16:writable] Warning: Pure function 'Modelica_DeviceDrivers.Blocks.Packaging.SerialPackager.Internal.DummyFunctions.clear' contains a call to impure function 'Modelica_DeviceDrivers.Packaging.SerialPackager_.clear'.
+// [Modelica_DeviceDrivers 1.8.2/Blocks/Packaging/SerialPackager.mo:139:5-153:23:writable] Warning: Pure function 'Modelica_DeviceDrivers.Blocks.Packaging.SerialPackager.Internal.DummyFunctions.integerBitPack' contains a call to impure function 'Modelica_DeviceDrivers.Packaging.SerialPackager_.integerBitPack'.
+// [Modelica_DeviceDrivers 1.8.2/Blocks/Packaging/SerialPackager.mo:63:7-72:21:writable] Warning: Pure function 'Modelica_DeviceDrivers.Blocks.Packaging.SerialPackager.Internal.DummyFunctions.addInteger' contains a call to impure function 'Modelica_DeviceDrivers.Packaging.SerialPackager_.addInteger'.
+// [Modelica_DeviceDrivers 1.8.2/Blocks/Packaging/SerialPackager.mo:98:7-105:23:writable] Warning: Pure function 'Modelica_DeviceDrivers.Blocks.Packaging.SerialPackager.Internal.DummyFunctions.resetPointer' contains a call to impure function 'Modelica_DeviceDrivers.Packaging.SerialPackager_.resetPointer'.
+// [Modelica_DeviceDrivers 1.8.2/Blocks/Packaging/SerialPackager.mo:155:5-169:25:writable] Warning: Pure function 'Modelica_DeviceDrivers.Blocks.Packaging.SerialPackager.Internal.DummyFunctions.integerBitUnpack' contains a call to impure function 'Modelica_DeviceDrivers.Packaging.SerialPackager_.integerBitUnpack'.
+// [Modelica_DeviceDrivers 1.8.2/Blocks/Packaging/SerialPackager.mo:107:7-117:21:writable] Warning: Pure function 'Modelica_DeviceDrivers.Blocks.Packaging.SerialPackager.Internal.DummyFunctions.getInteger' contains a call to impure function 'Modelica_DeviceDrivers.Packaging.SerialPackager_.getInteger'.
 // Warning: Alias equations of external objects are not Modelica compliant as in:
-//     addBoolean.pkgOut[1].pkg = resetPointer.pkgIn.pkg
-//     getBoolean.pkgIn.pkg = getInteger.pkgOut[1].pkg
-//     addBoolean.pkgIn.pkg = addInteger.pkgOut[1].pkg
-//     getInteger.pkgIn.pkg = unpackInt1.pkgOut[1].pkg
-//     unpackInt.pkgOut[1].pkg = unpackInt1.pkgIn.pkg
-//     resetPointer.pkgOut[1].pkg = unpackInt.pkgIn.pkg
-//     addInteger.pkgIn.pkg = packInt1.pkgOut[1].pkg
-//     packInt.pkgOut[1].pkg = packInt1.pkgIn.pkg
-//     packInt.pkgIn.pkg = packager.pkgOut.pkg
 //     addBoolean.pkgOut[1].pkg = addBoolean.pkgIn.pkg
 //     unpackInt1.pkgOut[1].pkg = unpackInt1.pkgIn.pkg
 //     getInteger.pkgOut[1].pkg = getInteger.pkgIn.pkg
@@ -54,6 +50,15 @@ runScript(modelTesting);getErrorString();
 //     packInt1.pkgOut[1].pkg = packInt1.pkgIn.pkg
 //     addInteger.pkgOut[1].pkg = addInteger.pkgIn.pkg
 //     packInt.pkgOut[1].pkg = packInt.pkgIn.pkg
+//     addBoolean.pkgOut[1].pkg = resetPointer.pkgIn.pkg
+//     getInteger.pkgOut[1].pkg = getBoolean.pkgIn.pkg
+//     addInteger.pkgOut[1].pkg = addBoolean.pkgIn.pkg
+//     unpackInt1.pkgOut[1].pkg = getInteger.pkgIn.pkg
+//     unpackInt.pkgOut[1].pkg = unpackInt1.pkgIn.pkg
+//     resetPointer.pkgOut[1].pkg = unpackInt.pkgIn.pkg
+//     packInt1.pkgOut[1].pkg = addInteger.pkgIn.pkg
+//     packInt.pkgOut[1].pkg = packInt1.pkgIn.pkg
+//     packager.pkgOut.pkg = packInt.pkgIn.pkg
 //
 // "true
 // "

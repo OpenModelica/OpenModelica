@@ -932,6 +932,9 @@ public
       case SLICE() then listHead(Type.arrayDims(Expression.typeOf(subscript.slice)));
       case WHOLE() then Dimension.UNKNOWN();
       case SPLIT_INDEX() then Dimension.fromInteger(1);
+      else algorithm
+        Error.assertion(false, getInstanceName() + " got wrong subscript " + toString(subscript) + "\n", sourceInfo());
+      then fail();
     end match;
   end toDimension;
 
@@ -1384,6 +1387,13 @@ public
       else false;
     end match;
   end isLiteral;
+
+  function fillWithWholeLeft
+    input output list<Subscript> subs;
+    input Integer targetLength;
+  algorithm
+    subs := listAppend(List.fill(Subscript.WHOLE(), targetLength - listLength(subs)), subs);
+  end fillWithWholeLeft;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFSubscript;

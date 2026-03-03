@@ -2518,7 +2518,7 @@ public
       then (Expression.MULTARY({diffExp1}, {diffExp2}, addOp), diffArguments);
 
       // Multiplication (MUL, MUL_EW, ...)
-      // (f * g)' =  fg' + f'g
+      // (f * g)' =  f'g + fg'
       // ∂(f * g)/∂f = g, ∂(f * g)/∂g = f
       case Expression.BINARY(exp1 = exp1, operator = operator, exp2 = exp2)
         guard(Operator.getMathClassification(operator) == NFOperator.MathClassification.MULTIPLICATION)
@@ -2639,8 +2639,8 @@ public
           (NFOperator.MathClassification.ADDITION, sizeClass),
           operator.ty);
       then (Expression.MULTARY(
-              {Expression.BINARY(exp1, operator, diffExp2),
-                Expression.BINARY(diffExp1, operator, exp2)},
+              {Expression.BINARY(diffExp1, operator, exp2),       // f'g
+                Expression.BINARY(exp1, operator, diffExp2)},     // fg'
               {},
               addOp
             ),
@@ -2690,8 +2690,8 @@ public
           mulOp := Operator.fromClassification((NFOperator.MathClassification.MULTIPLICATION, sizeClass), operator.ty);
       then (Expression.MULTARY(
               {Expression.MULTARY(
-                {Expression.BINARY(exp1, mulOp, diffExp2)},              // fg'
-                {Expression.BINARY(diffExp1, mulOp, exp2)},              // - f'g
+                {Expression.BINARY(diffExp1, mulOp, exp2)},              // f'g
+                {Expression.BINARY(exp1, mulOp, diffExp2)},              // - fg'
                 addOp
               )},
               {Expression.BINARY(exp2, powOp, Expression.REAL(2.0))},    // / g^2

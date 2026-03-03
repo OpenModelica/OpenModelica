@@ -483,6 +483,40 @@ public
     end while;
   end removeNonTopLevelDirection;
 
+  partial function ApplyFn
+    input Expression exp;
+  end ApplyFn;
+
+  function applyExp
+    input Variable var;
+    input ApplyFn fn;
+  algorithm
+    Binding.applyExp(var.binding, fn);
+
+    for ty_attr in var.typeAttributes loop
+      Binding.applyExp(Util.tuple22(ty_attr), fn);
+    end for;
+
+    for c in var.children loop
+      applyExp(c, fn);
+    end for;
+  end applyExp;
+
+  function applyExpShallow
+    input Variable var;
+    input ApplyFn fn;
+  algorithm
+    Binding.applyExpShallow(var.binding, fn);
+
+    for ty_attr in var.typeAttributes loop
+      Binding.applyExpShallow(Util.tuple22(ty_attr), fn);
+    end for;
+
+    for c in var.children loop
+      applyExpShallow(c, fn);
+    end for;
+  end applyExpShallow;
+
   partial function MapFn
     input output Expression exp;
   end MapFn;

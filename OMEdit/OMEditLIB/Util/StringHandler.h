@@ -164,6 +164,7 @@ public:
   static QString insertClassAtPosition(QString parentClassText, QString childClassText, int linePosition, int nestedLevel);
   static QString number(double value);
   static QString convertSemVertoReadableString(const QString &semver);
+  static void removeTypePrefix(QString &str, const QString &type);
 protected:
   static QString mLastOpenDir;
 };

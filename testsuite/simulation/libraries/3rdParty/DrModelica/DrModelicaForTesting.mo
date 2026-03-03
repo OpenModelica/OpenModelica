@@ -32,7 +32,7 @@ package DrModelicaForTesting
         NumberOfIntervals=200));
   end ABCDsystem;
 
-  class Activate
+  model Activate
     constant Real x = 4;
     Real y, z;
   equation
@@ -108,7 +108,7 @@ package DrModelicaForTesting
         NumberOfIntervals=200));
   end AlgorithmSection;
 
-  class AppendElement
+  model AppendElement
     Real[1, 3] PA=[1, 2, 3];
     // A row matrix value
     Real[3, 1] PB=[1; 2; 3];
@@ -152,7 +152,7 @@ package DrModelicaForTesting
         NumberOfIntervals=200));
   end AppendElement;
 
-  class AddEmpty
+  model AddEmpty
     Real[3, 0] A, B;
     Real[0, 0] C;
     Real ab[3, 0] = A + B; // Fine, the result is an empty matrix of type Real[3, 0]
@@ -164,7 +164,7 @@ package DrModelicaForTesting
         NumberOfIntervals=200));
   end AddEmpty;
 
-  class AddSub1
+  model AddSub1
     Real Add3[2, 2] = {{1, 1}, {2, 2}} + {{1, 2}, {3, 4}};
                       // Result: {{2, 3}, {5, 6}}
     Real Sub1[3] = {1, 2, 3} - {1, 2, 0};    // Result: {0, 0, 3}
@@ -175,7 +175,7 @@ package DrModelicaForTesting
         NumberOfIntervals=200));
   end AddSub1;
 
-  class ArrayAlgebraFunc
+  model ArrayAlgebraFunc
     Real transp1[2, 2] = transpose([1, 2; 3, 4]); // Gives [1, 2; 3, 4] of type Integer[2, 2]
     Real transp2[2, 2, 1] = transpose({{{1},{2}},{{3},{4}}}); // Gives {{{1},{2}},{{3},{4}}} of type Integer[2, 2, 1]
     Real out[2, 2] = outerProduct({2, 1}, {3, 2}); // Gives {{6, 4}, {3, 2}}
@@ -191,7 +191,7 @@ package DrModelicaForTesting
 
   type Angle = Real(unit="rad"); // The type Angle is a subtype of Real
 
-  class ArrayConstruct1
+  model ArrayConstruct1
     Integer[3] a = {1, 2, 3}; // A 3-vector of type Integer[3]
     Real[3] b = array(1.0, 2.0, 3); // A 3-vector of type Real[3]
     Integer[2,3] c = {{11, 12, 13}, {21, 22, 23}}; // A 2x3 matrix of type Integer[2,3]
@@ -347,7 +347,7 @@ package DrModelicaForTesting
             NumberOfIntervals=200));
   end ArrayDim4;
 
-  class ArrayDiv
+  model ArrayDiv
     Real Div1[3];
   equation
     Div1 = {2, 4, 6} / 2;
@@ -358,7 +358,7 @@ package DrModelicaForTesting
             NumberOfIntervals=200));
   end ArrayDiv;
 
-  class Exp
+  model Exp
     Real e1[2, 2];
     Real e2[2, 2];
   equation
@@ -392,7 +392,7 @@ package DrModelicaForTesting
     p.children     := children;
   end mkperson;
 
-  class PersonList
+  model PersonList
     Person[3] persons = {mkperson("John", 35, {"Carl", "Eva"} ),
               mkperson("Karin", 40, {"Anders", "Dan"} ),
               mkperson("Lisa", 37, {"John", "Daniel"} )
@@ -400,7 +400,7 @@ package DrModelicaForTesting
   end PersonList;
 
 
-  class getPerson
+  model getPerson
     PersonList pList;
     String name[3];
     Integer age[3];
@@ -418,7 +418,7 @@ package DrModelicaForTesting
             NumberOfIntervals=200));
   end getPerson;
 
-  class ArrayIndex
+  model ArrayIndex
     Real[2, 2] A = {{2, 3}, {4, 5}}; // Definition of array A
     Real A_Retrieval = A[2, 2]; // Retrieves the array element value 5
     Real B[2, 2];
@@ -434,7 +434,7 @@ package DrModelicaForTesting
             NumberOfIntervals=200));
   end ArrayIndex;
 
-  class ArrayMult
+  model ArrayMult
     Real m1[3] = {1, 2, 3} * 2;       // Elementwise mult: {2, 4, 6};
     Real m2[3] = 3 * {1, 2, 3};       // Elementwise mult: {3, 6, 9};
     Real m3 = {1, 2, 3} * {1, 2, 2};     // Scalar product:    11;
@@ -450,7 +450,7 @@ package DrModelicaForTesting
             NumberOfIntervals=200));
   end ArrayMult;
 
-  class ArrayReduce
+  model ArrayReduce
     Real minimum, maximum, summ, prod;
   equation
     minimum = min({1, -1, 7});              // Gives the value -1
@@ -464,7 +464,7 @@ package DrModelicaForTesting
             NumberOfIntervals=200));
   end ArrayReduce;
 
-  class AssertTest
+  model AssertTest
     parameter Real lowlimit   = -5;
     parameter Real highlimit   =  5;
     parameter Real x = 7;
@@ -472,7 +472,7 @@ package DrModelicaForTesting
     assert(x >= lowlimit and x <= highlimit, "Variable x out of limit");
   end AssertTest;
 
-  class AssertTestInst
+  model AssertTestInst
     AssertTest assertTest(lowlimit = -2, highlimit = 6, x = 5);
 
     annotation (experiment(
@@ -481,7 +481,7 @@ package DrModelicaForTesting
             NumberOfIntervals=200));
   end AssertTestInst;
 
-  class AssertTest1
+  model AssertTest1
     parameter Real lowlimit;
     parameter Real highlimit;
     Real x = 5;
@@ -489,7 +489,7 @@ package DrModelicaForTesting
     assert(x >= lowlimit and x <= highlimit, "Variable x out of limit");
   end AssertTest1;
 
-  class AssertTest2
+  model AssertTest2
     AssertTest assertTest1(lowlimit = 4, highlimit = 8);
 
     annotation (experiment(
@@ -498,7 +498,7 @@ package DrModelicaForTesting
             NumberOfIntervals=200));
   end AssertTest2;
 
-  class AssertTest3
+  model AssertTest3
     AssertTest assertTest1(lowlimit = 6, highlimit = 20);
 
     annotation (experiment(
@@ -532,7 +532,7 @@ package DrModelicaForTesting
     Real green;
   end ColorData;
 
-  class Color "Subclass of ColorData"
+  model Color "Subclass of ColorData"
     extends ColorData;
   equation
     red + blue + green = 1;
@@ -567,7 +567,7 @@ end Modelica;
     flow Current i;
   end Pin;
 
-  partial class TwoPin "Superclass of elements with two electrical pins"
+  partial model TwoPin "Superclass of elements with two electrical pins"
     import Modelica.SIunits.Voltage;
     import Modelica.SIunits.Current;
     Pin p;
@@ -609,7 +609,7 @@ end Modelica;
   end Circuit;
 
 
-  class Concat3
+  model Concat3
     Real[2, 3] r1 = cat(1, {{1.0, 2.0, 3}}, {{4, 5, 6}});
     Real[2, 6] r2 = cat(2, r1, r1);
     Real[2, 3] r3 = cat(2, r1);
@@ -622,7 +622,7 @@ end Modelica;
             NumberOfIntervals=200));
   end Concat3;
 
-  class ConcatArr1
+  model ConcatArr1
     Real[5] c1 = cat(1, {1, 2}, {10, 12, 13}); // Result: {1, 2, 10, 12, 13}
     Real[2, 3] c2 = cat(2, {{1, 2}, {3, 4}}, {{10}, {11}}); // Result: {{1, 2, 10}, {3, 4, 11}}
 
@@ -632,7 +632,7 @@ end Modelica;
             NumberOfIntervals=200));
   end ConcatArr1;
 
-  class ConcatArr2
+  model ConcatArr2
     Real[2, 3] c3 = cat(2, [1, 2; 3, 4], [10; 11]); // Same result: {{1, 2, 10}, {3, 4, 11}}
 
     annotation (experiment(
@@ -641,7 +641,7 @@ end Modelica;
             NumberOfIntervals=200));
   end ConcatArr2;
 
-  class ConcatArr4
+  model ConcatArr4
     Real[1, 1, 1] A = {{{1}}};
     Real[1, 1, 2] B = {{{2, 3}}};
     Real[1, 1, 3] C = {{{4, 5, 6}}};
@@ -654,7 +654,7 @@ end Modelica;
   end ConcatArr4;
 
 
-  class ConstructFunc
+  model ConstructFunc
     Real z[2,3]  = zeros(2, 3);  // Constructs the matrix {{0,0,0}, {0,0,0}}
     Real o[3]    = ones(3);      // Constructs the vector {1, 1, 1}
     Real f[2,2]  = fill(2.1,2,2); // Constructs the matrix {{2.1, 2.1}, {2.1, 2.1}}
@@ -683,7 +683,7 @@ end Modelica;
             NumberOfIntervals=200));
   end DAEexample;
 
-  class DimConvert
+  model DimConvert
     Real[3] v1 =      {1.0, 2.0, 3.0};
     Real[3,1] m1 =    matrix(v1);     // m1 contains {{1.0}, {2.0}, {3.0}}
     Real[3] v2 =      vector(m1);     // v2 contains {1.0, 2.0, 3.0}
@@ -842,7 +842,7 @@ end Modelica;
     e := a * b;
   end f;
 
-  class EqualityEquationsCorrect
+  model EqualityEquationsCorrect
     Real x;
     Real y;
     Real z;
@@ -868,7 +868,7 @@ end Modelica;
     y := radius*sin(angle);//Modelica.Math.sin(angle);
   end PointOnCircle;
 
-  class EquationCall
+  model EquationCall
     Real px, py;
   equation
     (px, py) = PointOnCircle(1.2, 2);
@@ -879,7 +879,7 @@ end Modelica;
             NumberOfIntervals=200));
   end EquationCall;
 
-  class Equations
+  model Equations
     Real x(start = 2);        // Modification equation
     constant Integer one = 1;      // Declaration equation
   equation
@@ -909,7 +909,7 @@ end Modelica;
             NumberOfIntervals=200));
   end FilterBlock1;
 
-  class FiveForEquations
+  model FiveForEquations
     Real[5] x;
   equation
     for i in 1:5 loop
@@ -1059,7 +1059,7 @@ end Modelica;
             NumberOfIntervals=200));
   end HelloWorld;
 
-  class HideVariableForEquations
+  model HideVariableForEquations
     constant Integer k = 4;
     Real     x[k + 1];
   equation
@@ -1075,7 +1075,7 @@ end Modelica;
 
   type Concentration = Real(final quantity ="Concentration",final unit = "mol/m3");
 
-  class HydrogenIodide
+  model HydrogenIodide
     parameter Real k1 = 0.73;
     parameter Real k2 = 0.04;
     Concentration H2(start=5);
@@ -1091,7 +1091,7 @@ end Modelica;
             NumberOfIntervals=200));
   end HydrogenIodide;
 
-  class IfEquation
+  model IfEquation
     parameter Real u;
     parameter Real uMax;
     parameter Real uMin;
@@ -1133,7 +1133,7 @@ end Modelica;
             NumberOfIntervals=200));
   end LogCall1;
 
-  class LotkaVolterra
+  model LotkaVolterra
     parameter Real g_r =0.04 "Natural growth rate for rabbits";
     parameter Real d_rf=0.0005 "Death rate of rabbits due to foxes";
     parameter Real d_f =0.09 "Natural deathrate for foxes";
@@ -1184,7 +1184,7 @@ end Modelica;
     parameter Real radius;
   end CelestialBody;
 
-  class Rocket
+  model Rocket
     extends Body;
     Real altitude(start = 59404);
     Real velocity(start = -2003);
@@ -1229,7 +1229,7 @@ end Modelica;
     r3 := x - y;
   end MultipleResultsFunction;
 
-  class MRFcall
+  model MRFcall
     Real a, b, c;
   equation
     (a, b, c) = MultipleResultsFunction(2.0, 1.0);
@@ -1272,7 +1272,7 @@ end Modelica;
     end for;
   end PolynomialEvaluator1;
 
-  class PositionalCall
+  model PositionalCall
     Real p;
   equation
     p = PolynomialEvaluator1({1,2,3,4},21);
@@ -1323,7 +1323,7 @@ end Modelica;
     end for;
   end PolynomialEvaluatorB;
 
-  class NamedCall
+  model NamedCall
     Real p;
   equation
     p = PolynomialEvaluatorB(A = {1, 2, 3, 4}, x = 21);
@@ -1348,7 +1348,7 @@ end Modelica;
     y = c[1] * xpowers[n + 1];
   end PolynomialEvaluator;
 
-  class PolyEvaluate1
+  model PolyEvaluate1
     Real p;
     PolynomialEvaluator polyeval(c = {1, 2, 3, 4});
   equation
@@ -1361,7 +1361,7 @@ end Modelica;
   end PolyEvaluate1;
 
 
-  class PolyEvaluate2
+  model PolyEvaluate2
     Real p;
     PolynomialEvaluator polyeval(c = {1, 2, 3, 4}, x = time, y = p);
     annotation (experiment(
@@ -1371,7 +1371,7 @@ end Modelica;
 
   end PolyEvaluate2;
 
-  class RangeVector
+  model RangeVector
     Real v1[5] = 2.7 : 6.8; // v1 is {2.7, 3.7, 4.7, 5.7, 6.7}
     Real v2[5] = {2.7, 3.7, 4.7, 5.7, 6.7}; // v2 is equal to v1
     Integer v3[3] = 3 : 5; // v3 is {3, 4, 5}
@@ -1467,7 +1467,7 @@ end Modelica;
             NumberOfIntervals=200));
   end SumZ;
 
-  class SumVector
+  model SumVector
     Real sum;
     parameter Real v[5] = {100, 200, -300, 400, 500};
     parameter Integer n = size(v, 1);
@@ -1513,7 +1513,7 @@ end Modelica;
             NumberOfIntervals=200));
   end TwoRateSampler;
 
-  class OneReturnValue
+  model OneReturnValue
     Real a = 1, b = 0, c = 1;
 
     Real s1[3] = sin({a, b, c});
@@ -1526,7 +1526,7 @@ end Modelica;
             NumberOfIntervals=200));
   end OneReturnValue;
 
-  class SumVec
+  model SumVec
     Real[3] v1 = {1, 2, 3};
     Real[3] v2 = {6, 4, 5};
     Real[3] v3 = {3, 7, 6};
@@ -1661,7 +1661,7 @@ end Modelica;
             NumberOfIntervals=200));
   end WhenPriority;
 
-  class WhenStat
+  model WhenStat
     Real x(start=1);
     Real y1;
     parameter Real y2 = 5;
@@ -1679,7 +1679,7 @@ end Modelica;
             NumberOfIntervals=200));
   end WhenStat;
 
-  class WhenStat2
+  model WhenStat2
     Real x(start = 1);
     Real y1;
     parameter Real y2 = 5;
@@ -1697,7 +1697,7 @@ end Modelica;
             NumberOfIntervals=200));
   end WhenStat2;
 
-  class WhenStat3
+  model WhenStat3
     Real x(start = 1);
     Real y1;
     Real y2;
@@ -1739,7 +1739,7 @@ end Modelica;
             NumberOfIntervals=200));
   end WhenValidResult;
 
-  class WhenSet
+  model WhenSet
     Real x;
     parameter Real y2 = 3;
     discrete Real y1;
@@ -2073,7 +2073,7 @@ end Modelica;
         NumberOfIntervals=200));
   end SimpleValveFlow;
 
-  class PopulationGrowth
+  model PopulationGrowth
     parameter Real g = 0.04    "Growth factor of population";
     parameter Real d = 0.0005  "Death factor of population";
     Real           P(start=10) "Population size, initially 10";
@@ -2086,7 +2086,7 @@ end Modelica;
   end PopulationGrowth;
 
 
-  class KyenesianModel
+  model KyenesianModel
     parameter Real a = 0.5    "Consumption fraction";
     parameter Real b = 0.5    "Investment fraction of consumption increase";
     Real      GNP(start=0)         "Gross National Product";
@@ -2207,16 +2207,4 @@ end Modelica;
         StopTime=1,
         NumberOfIntervals=200));
   end PendulumLoop2D;
-
-
-
-
-
-
-
-
-
-
-
-
 end DrModelicaForTesting;

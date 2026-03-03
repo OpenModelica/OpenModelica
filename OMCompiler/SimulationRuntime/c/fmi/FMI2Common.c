@@ -1,7 +1,7 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
@@ -34,9 +34,16 @@ extern "C" {
 
 #include "FMI2Common.h"
 
-/*
- * Used for logging FMU messages.
- * Logger function used by the FMU 2.0 internally.
+/**
+ * @brief FMU 2.0 internal logger callback.
+ *
+ * Forwards log messages from the FMU to the FMI library logging machinery.
+ *
+ * @param c            FMU component instance.
+ * @param instanceName Name of the FMU instance.
+ * @param status       Severity status of the message.
+ * @param category     Log category string.
+ * @param message      Printf-style format string.
  */
 void fmi2logger(fmi2_component_t c, fmi2_string_t instanceName, fmi2_status_t status, fmi2_string_t category, fmi2_string_t message, ...)
 {
@@ -47,10 +54,16 @@ void fmi2logger(fmi2_component_t c, fmi2_string_t instanceName, fmi2_status_t st
   fflush(NULL);
 }
 
-/*
- * OpenModelica uses signed integers and according to FMI specifications the value references should be unsigned integers.
- * So to overcome this we use value references as Real in the Modelica code.
- * This function converts back the value references from double to int and use them in FMI specific functions.
+/**
+ * @brief Convert an array of double-encoded value references to fmi2_value_reference_t.
+ *
+ * OpenModelica represents value references as Real (double) to avoid signed/unsigned
+ * integer mismatches with the FMI specification. This function converts them back to
+ * the unsigned integer type required by FMI functions.
+ *
+ * @param numberOfValueReferences Number of value references to convert.
+ * @param valuesReferences        Input array of value references encoded as doubles.
+ * @return Newly allocated array of fmi2_value_reference_t; caller must free().
  */
 fmi2_value_reference_t* real_to_fmi2_value_reference(int numberOfValueReferences, double* valuesReferences)
 {
@@ -62,9 +75,13 @@ fmi2_value_reference_t* real_to_fmi2_value_reference(int numberOfValueReferences
   return valuesReferences_int;
 }
 
-/*
- * OpenModelica uses signed char for boolean and according to FMI specifications boolean are ints.
- * So to this function converts signed char into int
+/**
+ * @brief Convert Modelica boolean array (signed char) to FMI boolean array (int).
+ *
+ * @param modelicaBoolean Input array of Modelica booleans.
+ * @param fmiBoolean      Output array of FMI booleans.
+ * @param size            Number of elements to convert.
+ * @return Always returns 0.
  */
 int signedchar_to_int(signed char* modelicaBoolean, int* fmiBoolean, int size)
 {
@@ -74,9 +91,13 @@ int signedchar_to_int(signed char* modelicaBoolean, int* fmiBoolean, int size)
   }
   return 0;
 }
-/*
- * OpenModelica uses signed char for boolean and according to FMI specifications boolean are ints.
- * So to this function converts int into signed char
+/**
+ * @brief Convert FMI boolean array (int) to Modelica boolean array (signed char).
+ *
+ * @param fmiBoolean      Input array of FMI booleans.
+ * @param modelicaBoolean Output array of Modelica booleans.
+ * @param size            Number of elements to convert.
+ * @return Always returns 0.
  */
 int int_to_signedchar(int* fmiBoolean, signed char* modelicaBoolean, int size)
 {
@@ -87,176 +108,187 @@ int int_to_signedchar(int* fmiBoolean, signed char* modelicaBoolean, int size)
   return 0;
 }
 
-/*
- * Wrapper for the FMI function fmi2GetReal.
- * parameter flowStatesInput is dummy and is only used to run the equations in sequence.
- * Returns realValues.
+/**
+ * @brief Wrapper for fmi2GetReal.
+ *
+ * @param in_fmi2                 FMI2 model exchange instance.
+ * @param numberOfValueReferences Number of value references.
+ * @param realValuesReferences    Value references encoded as doubles.
+ * @param flowStatesInput         Dummy parameter used to enforce equation ordering.
+ * @param realValues              Output array for the retrieved real values.
  */
-void fmi2GetReal_OMC(void* in_fmi2, int numberOfValueReferences, double* realValuesReferences, double flowStatesInput, double* realValues, int fmiType)
+void fmi2GetReal_OMC(void* in_fmi2, int numberOfValueReferences, double* realValuesReferences, double flowStatesInput, double* realValues)
 {
-  if (fmiType == 1) {
-    FMI2ModelExchange* FMI2ME = (FMI2ModelExchange*)in_fmi2;
+  FMI2ModelExchange* FMI2ME = (FMI2ModelExchange*)in_fmi2;
+  fmi2_value_reference_t* valuesReferences_int = real_to_fmi2_value_reference(numberOfValueReferences, realValuesReferences);
+  fmi2_status_t status = fmi2_import_get_real(FMI2ME->FMIImportInstance, valuesReferences_int, numberOfValueReferences, (fmi2_real_t*)realValues);
+  free(valuesReferences_int);
+  if (status != fmi2_status_ok && status != fmi2_status_warning) {
+    ModelicaFormatError("fmi2GetReal failed with status : %s\n", fmi2_status_to_string(status));
+  }
+}
+
+/**
+ * @brief Wrapper for fmi2SetReal.
+ *
+ * Only sets values in instantiated, initialization, event, or continuous-time mode.
+ *
+ * @param in_fmi2                 FMI2 model exchange instance.
+ * @param numberOfValueReferences Number of value references.
+ * @param realValuesReferences    Value references encoded as doubles.
+ * @param realValues              Real values to set.
+ */
+void fmi2SetReal_OMC(void* in_fmi2, int numberOfValueReferences, double* realValuesReferences, double* realValues)
+{
+  FMI2ModelExchange* FMI2ME = (FMI2ModelExchange*)in_fmi2;
+  if (FMI2ME->FMISolvingMode == fmi2_instantiated_mode || FMI2ME->FMISolvingMode == fmi2_initialization_mode || FMI2ME->FMISolvingMode == fmi2_event_mode || FMI2ME->FMISolvingMode == fmi2_continuousTime_mode) {
     fmi2_value_reference_t* valuesReferences_int = real_to_fmi2_value_reference(numberOfValueReferences, realValuesReferences);
-    fmi2_status_t status = fmi2_import_get_real(FMI2ME->FMIImportInstance, valuesReferences_int, numberOfValueReferences, (fmi2_real_t*)realValues);
+    fmi2_status_t status = fmi2_import_set_real(FMI2ME->FMIImportInstance, valuesReferences_int, numberOfValueReferences, (fmi2_real_t*)realValues);
     free(valuesReferences_int);
     if (status != fmi2_status_ok && status != fmi2_status_warning) {
-      ModelicaFormatError("fmi2GetReal failed with status : %s\n", fmi2_status_to_string(status));
+      ModelicaFormatError("fmi2SetReal failed with status : %s\n", fmi2_status_to_string(status));
     }
-  } else if (fmiType == 2) {
-
   }
 }
 
-/*
- * Wrapper for the FMI function fmi2SetReal.
- * Returns status.
+/**
+ * @brief Wrapper for fmi2GetInteger.
+ *
+ * @param in_fmi2                  FMI2 model exchange instance.
+ * @param numberOfValueReferences  Number of value references.
+ * @param integerValuesReferences  Value references encoded as doubles.
+ * @param flowStatesInput          Dummy parameter used to enforce equation ordering.
+ * @param integerValues            Output array for the retrieved integer values.
  */
-void fmi2SetReal_OMC(void* in_fmi2, int numberOfValueReferences, double* realValuesReferences, double* realValues, int fmiType)
+void fmi2GetInteger_OMC(void* in_fmi2, int numberOfValueReferences, double* integerValuesReferences, double flowStatesInput, int* integerValues)
 {
-  if (fmiType == 1) {
-    FMI2ModelExchange* FMI2ME = (FMI2ModelExchange*)in_fmi2;
-    if (FMI2ME->FMISolvingMode == fmi2_instantiated_mode || FMI2ME->FMISolvingMode == fmi2_initialization_mode || FMI2ME->FMISolvingMode == fmi2_event_mode || FMI2ME->FMISolvingMode == fmi2_continuousTime_mode) {
-      fmi2_value_reference_t* valuesReferences_int = real_to_fmi2_value_reference(numberOfValueReferences, realValuesReferences);
-      fmi2_status_t status = fmi2_import_set_real(FMI2ME->FMIImportInstance, valuesReferences_int, numberOfValueReferences, (fmi2_real_t*)realValues);
-      free(valuesReferences_int);
-      if (status != fmi2_status_ok && status != fmi2_status_warning) {
-        ModelicaFormatError("fmi2SetReal failed with status : %s\n", fmi2_status_to_string(status));
-      }
-    }
-  } else if (fmiType == 2) {
-
+  FMI2ModelExchange* FMI2ME = (FMI2ModelExchange*)in_fmi2;
+  fmi2_value_reference_t* valuesReferences_int = real_to_fmi2_value_reference(numberOfValueReferences, integerValuesReferences);
+  fmi2_status_t status = fmi2_import_get_integer(FMI2ME->FMIImportInstance, valuesReferences_int, numberOfValueReferences, (fmi2_integer_t*)integerValues);
+  free(valuesReferences_int);
+  if (status != fmi2_status_ok && status != fmi2_status_warning) {
+    ModelicaFormatError("fmi2GetInteger failed with status : %s\n", fmi2_status_to_string(status));
   }
 }
 
-/*
- * Wrapper for the FMI function fmi2GetInteger.
- * parameter flowStatesInput is dummy and is only used to run the equations in sequence.
- * Returns integerValues.
+/**
+ * @brief Wrapper for fmi2SetInteger.
+ *
+ * Only sets values in instantiated, initialization, or event mode.
+ *
+ * @param in_fmi2                  FMI2 model exchange instance.
+ * @param numberOfValueReferences  Number of value references.
+ * @param integerValuesReferences  Value references encoded as doubles.
+ * @param integerValues            Integer values to set.
  */
-void fmi2GetInteger_OMC(void* in_fmi2, int numberOfValueReferences, double* integerValuesReferences, double flowStatesInput, int* integerValues, int fmiType)
+void fmi2SetInteger_OMC(void* in_fmi2, int numberOfValueReferences, double* integerValuesReferences, int* integerValues)
 {
-  if (fmiType == 1) {
-    FMI2ModelExchange* FMI2ME = (FMI2ModelExchange*)in_fmi2;
+  FMI2ModelExchange* FMI2ME = (FMI2ModelExchange*)in_fmi2;
+  if (FMI2ME->FMISolvingMode == fmi2_instantiated_mode || FMI2ME->FMISolvingMode == fmi2_initialization_mode || FMI2ME->FMISolvingMode == fmi2_event_mode) {
     fmi2_value_reference_t* valuesReferences_int = real_to_fmi2_value_reference(numberOfValueReferences, integerValuesReferences);
-    fmi2_status_t status = fmi2_import_get_integer(FMI2ME->FMIImportInstance, valuesReferences_int, numberOfValueReferences, (fmi2_integer_t*)integerValues);
+    fmi2_status_t status = fmi2_import_set_integer(FMI2ME->FMIImportInstance, valuesReferences_int, numberOfValueReferences, (fmi2_integer_t*)integerValues);
     free(valuesReferences_int);
     if (status != fmi2_status_ok && status != fmi2_status_warning) {
-      ModelicaFormatError("fmi2GetInteger failed with status : %s\n", fmi2_status_to_string(status));
+      ModelicaFormatError("fmi2SetInteger failed with status : %s\n", fmi2_status_to_string(status));
     }
-  } else if (fmiType == 2) {
-
   }
 }
 
-/*
- * Wrapper for the FMI function fmi2SetInteger.
- * Returns status.
+/**
+ * @brief Wrapper for fmi2GetBoolean.
+ *
+ * Retrieves boolean values and converts them from FMI int to Modelica signed char.
+ *
+ * @param in_fmi2                  FMI2 model exchange instance.
+ * @param numberOfValueReferences  Number of value references.
+ * @param booleanValuesReferences  Value references encoded as doubles.
+ * @param flowStatesInput          Dummy parameter used to enforce equation ordering.
+ * @param booleanValues            Output array for the retrieved boolean values.
  */
-void fmi2SetInteger_OMC(void* in_fmi2, int numberOfValueReferences, double* integerValuesReferences, int* integerValues, int fmiType)
+void fmi2GetBoolean_OMC(void* in_fmi2, int numberOfValueReferences, double* booleanValuesReferences, double flowStatesInput, signed char* booleanValues)
 {
-  if (fmiType == 1) {
-    FMI2ModelExchange* FMI2ME = (FMI2ModelExchange*)in_fmi2;
-    if (FMI2ME->FMISolvingMode == fmi2_instantiated_mode || FMI2ME->FMISolvingMode == fmi2_initialization_mode || FMI2ME->FMISolvingMode == fmi2_event_mode) {
-      fmi2_value_reference_t* valuesReferences_int = real_to_fmi2_value_reference(numberOfValueReferences, integerValuesReferences);
-      fmi2_status_t status = fmi2_import_set_integer(FMI2ME->FMIImportInstance, valuesReferences_int, numberOfValueReferences, (fmi2_integer_t*)integerValues);
-      free(valuesReferences_int);
-      if (status != fmi2_status_ok && status != fmi2_status_warning) {
-        ModelicaFormatError("fmi2SetInteger failed with status : %s\n", fmi2_status_to_string(status));
-      }
-    }
-  } else if (fmiType == 2) {
+  FMI2ModelExchange* FMI2ME = (FMI2ModelExchange*)in_fmi2;
+  fmi2_value_reference_t* valuesReferences_int = real_to_fmi2_value_reference(numberOfValueReferences, booleanValuesReferences);
+  int* fmiBoolean = malloc(sizeof(int)*numberOfValueReferences);
+  fmi2_status_t status = fmi2_import_get_boolean(FMI2ME->FMIImportInstance, valuesReferences_int, numberOfValueReferences, fmiBoolean);
+  int_to_signedchar(fmiBoolean, booleanValues, numberOfValueReferences);
+  free(fmiBoolean);
+  free(valuesReferences_int);
 
+
+  if (status != fmi2_status_ok && status != fmi2_status_warning) {
+    ModelicaFormatError("fmi2GetBoolean failed with status : %s\n", fmi2_status_to_string(status));
   }
 }
 
-/*
- * Wrapper for the FMI function fmi2GetBoolean.
- * parameter flowStatesInput is dummy and is only used to run the equations in sequence.
- * Returns booleanValues.
+/**
+ * @brief Wrapper for fmi2SetBoolean.
+ *
+ * Converts Modelica signed char booleans to FMI int before setting.
+ * Only sets values in instantiated, initialization, or event mode.
+ *
+ * @param in_fmi2                  FMI2 model exchange instance.
+ * @param numberOfValueReferences  Number of value references.
+ * @param booleanValuesReferences  Value references encoded as doubles.
+ * @param booleanValues            Boolean values to set.
  */
-void fmi2GetBoolean_OMC(void* in_fmi2, int numberOfValueReferences, double* booleanValuesReferences, double flowStatesInput, signed char* booleanValues, int fmiType)
+void fmi2SetBoolean_OMC(void* in_fmi2, int numberOfValueReferences, double* booleanValuesReferences, signed char* booleanValues)
 {
-  if (fmiType == 1) {
-    FMI2ModelExchange* FMI2ME = (FMI2ModelExchange*)in_fmi2;
+  FMI2ModelExchange* FMI2ME = (FMI2ModelExchange*)in_fmi2;
+  if (FMI2ME->FMISolvingMode == fmi2_instantiated_mode || FMI2ME->FMISolvingMode == fmi2_initialization_mode || FMI2ME->FMISolvingMode == fmi2_event_mode) {
     fmi2_value_reference_t* valuesReferences_int = real_to_fmi2_value_reference(numberOfValueReferences, booleanValuesReferences);
     int* fmiBoolean = malloc(sizeof(int)*numberOfValueReferences);
-    fmi2_status_t status = fmi2_import_get_boolean(FMI2ME->FMIImportInstance, valuesReferences_int, numberOfValueReferences, fmiBoolean);
-    int_to_signedchar(fmiBoolean, booleanValues, numberOfValueReferences);
+    fmi2_status_t status;
+    signedchar_to_int(booleanValues, fmiBoolean, numberOfValueReferences);
+    status = fmi2_import_set_boolean(FMI2ME->FMIImportInstance, valuesReferences_int, numberOfValueReferences, fmiBoolean);
     free(fmiBoolean);
     free(valuesReferences_int);
-
-
     if (status != fmi2_status_ok && status != fmi2_status_warning) {
-      ModelicaFormatError("fmi2GetBoolean failed with status : %s\n", fmi2_status_to_string(status));
+      ModelicaFormatError("fmi2SetBoolean failed with status : %s\n", fmi2_status_to_string(status));
     }
-  } else if (fmiType == 2) {
-
   }
 }
 
-/*
- * Wrapper for the FMI function fmi2SetBoolean.
- * Returns status.
+/**
+ * @brief Wrapper for fmi2GetString.
+ *
+ * @param in_fmi2                  FMI2 model exchange instance.
+ * @param numberOfValueReferences  Number of value references.
+ * @param stringValuesReferences   Value references encoded as doubles.
+ * @param flowStatesInput          Dummy parameter used to enforce equation ordering.
+ * @param stringValues             Output array for the retrieved string values.
  */
-void fmi2SetBoolean_OMC(void* in_fmi2, int numberOfValueReferences, double* booleanValuesReferences, signed char* booleanValues, int fmiType)
+void fmi2GetString_OMC(void* in_fmi2, int numberOfValueReferences, double* stringValuesReferences, double flowStatesInput, char** stringValues)
 {
-  if (fmiType == 1) {
-    FMI2ModelExchange* FMI2ME = (FMI2ModelExchange*)in_fmi2;
-    if (FMI2ME->FMISolvingMode == fmi2_instantiated_mode || FMI2ME->FMISolvingMode == fmi2_initialization_mode || FMI2ME->FMISolvingMode == fmi2_event_mode) {
-      fmi2_value_reference_t* valuesReferences_int = real_to_fmi2_value_reference(numberOfValueReferences, booleanValuesReferences);
-      int* fmiBoolean = malloc(sizeof(int)*numberOfValueReferences);
-      fmi2_status_t status;
-      signedchar_to_int(booleanValues, fmiBoolean, numberOfValueReferences);
-      status = fmi2_import_set_boolean(FMI2ME->FMIImportInstance, valuesReferences_int, numberOfValueReferences, fmiBoolean);
-      free(fmiBoolean);
-      free(valuesReferences_int);
-      if (status != fmi2_status_ok && status != fmi2_status_warning) {
-        ModelicaFormatError("fmi2SetBoolean failed with status : %s\n", fmi2_status_to_string(status));
-      }
-    }
-  } else if (fmiType == 2) {
-
+  FMI2ModelExchange* FMI2ME = (FMI2ModelExchange*)in_fmi2;
+  fmi2_value_reference_t* valuesReferences_int = real_to_fmi2_value_reference(numberOfValueReferences, stringValuesReferences);
+  fmi2_status_t status = fmi2_import_get_string(FMI2ME->FMIImportInstance, valuesReferences_int, numberOfValueReferences, (fmi2_string_t*)stringValues);
+  free(valuesReferences_int);
+  if (status != fmi2_status_ok && status != fmi2_status_warning) {
+    ModelicaFormatError("fmi2GetString failed with status : %s\n", fmi2_status_to_string(status));
   }
 }
 
-/*
- * Wrapper for the FMI function fmi2GetString.
- * parameter flowStatesInput is dummy and is only used to run the equations in sequence.
- * Returns stringValues.
+/**
+ * @brief Wrapper for fmi2SetString.
+ *
+ * Only sets values in instantiated, initialization, or event mode.
+ *
+ * @param in_fmi2                  FMI2 model exchange instance.
+ * @param numberOfValueReferences  Number of value references.
+ * @param stringValuesReferences   Value references encoded as doubles.
+ * @param stringValues             String values to set.
  */
-void fmi2GetString_OMC(void* in_fmi2, int numberOfValueReferences, double* stringValuesReferences, double flowStatesInput, char** stringValues, int fmiType)
+void fmi2SetString_OMC(void* in_fmi2, int numberOfValueReferences, double* stringValuesReferences, char** stringValues)
 {
-  if (fmiType == 1) {
-    FMI2ModelExchange* FMI2ME = (FMI2ModelExchange*)in_fmi2;
+  FMI2ModelExchange* FMI2ME = (FMI2ModelExchange*)in_fmi2;
+  if (FMI2ME->FMISolvingMode == fmi2_instantiated_mode || FMI2ME->FMISolvingMode == fmi2_initialization_mode || FMI2ME->FMISolvingMode == fmi2_event_mode) {
     fmi2_value_reference_t* valuesReferences_int = real_to_fmi2_value_reference(numberOfValueReferences, stringValuesReferences);
-    fmi2_status_t status = fmi2_import_get_string(FMI2ME->FMIImportInstance, valuesReferences_int, numberOfValueReferences, (fmi2_string_t*)stringValues);
+    fmi2_status_t status = fmi2_import_set_string(FMI2ME->FMIImportInstance, valuesReferences_int, numberOfValueReferences, (fmi2_string_t*)stringValues);
     free(valuesReferences_int);
     if (status != fmi2_status_ok && status != fmi2_status_warning) {
-      ModelicaFormatError("fmi2GetString failed with status : %s\n", fmi2_status_to_string(status));
+      ModelicaFormatError("fmi2SetString failed with status : %s\n", fmi2_status_to_string(status));
     }
-  } else if (fmiType == 2) {
-
-  }
-}
-
-/*
- * Wrapper for the FMI function fmi2SetString.
- * Returns status.
- */
-void fmi2SetString_OMC(void* in_fmi2, int numberOfValueReferences, double* stringValuesReferences, char** stringValues, int fmiType)
-{
-  if (fmiType == 1) {
-    FMI2ModelExchange* FMI2ME = (FMI2ModelExchange*)in_fmi2;
-    if (FMI2ME->FMISolvingMode == fmi2_instantiated_mode || FMI2ME->FMISolvingMode == fmi2_initialization_mode || FMI2ME->FMISolvingMode == fmi2_event_mode) {
-      fmi2_value_reference_t* valuesReferences_int = real_to_fmi2_value_reference(numberOfValueReferences, stringValuesReferences);
-      fmi2_status_t status = fmi2_import_set_string(FMI2ME->FMIImportInstance, valuesReferences_int, numberOfValueReferences, (fmi2_string_t*)stringValues);
-      free(valuesReferences_int);
-      if (status != fmi2_status_ok && status != fmi2_status_warning) {
-        ModelicaFormatError("fmi2SetString failed with status : %s\n", fmi2_status_to_string(status));
-      }
-    }
-  } else if (fmiType == 2) {
-
   }
 }
 

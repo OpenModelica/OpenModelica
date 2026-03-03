@@ -235,6 +235,16 @@ public
     end match;
   end isAssignment;
 
+  function isFor
+    input Statement stmt;
+    output Boolean res;
+  algorithm
+    res := match stmt
+      case FOR() then true;
+      else false;
+    end match;
+  end isFor;
+
   function makeIf
     input list<tuple<Expression, list<Statement>>> branches;
     input DAE.ElementSource src;
@@ -802,6 +812,72 @@ public
       else ();
     end match;
   end foldExp;
+
+  function contains
+    input Statement stmt;
+    input PredFn fn;
+    output Boolean res;
+
+    partial function PredFn
+      input Statement stmt;
+      output Boolean res;
+    end PredFn;
+  algorithm
+    if fn(stmt) then
+      res := true;
+      return;
+    end if;
+
+    res := match stmt
+      case FOR() then containsList(stmt.body, fn);
+
+      case IF()
+        algorithm
+          for b in stmt.branches loop
+            if containsList(Util.tuple22(b), fn) then
+              res := true;
+              return;
+            end if;
+          end for;
+        then
+          false;
+
+      case WHEN()
+        algorithm
+          for b in stmt.branches loop
+            if containsList(Util.tuple22(b), fn) then
+              res := true;
+              return;
+            end if;
+          end for;
+        then
+          false;
+
+      case WHILE() then containsList(stmt.body, fn);
+
+      else false;
+    end match;
+  end contains;
+
+  function containsList
+    input list<Statement> eql;
+    input PredFn func;
+    output Boolean res;
+
+    partial function PredFn
+      input Statement eq;
+      output Boolean res;
+    end PredFn;
+  algorithm
+    for eq in eql loop
+      if contains(eq, func) then
+        res := true;
+        return;
+      end if;
+    end for;
+
+    res := false;
+  end containsList;
 
   function replaceIteratorList
     input output list<Statement> stmtl;

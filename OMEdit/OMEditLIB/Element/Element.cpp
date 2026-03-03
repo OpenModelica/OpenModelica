@@ -558,9 +558,9 @@ ModelInstance::CoordinateSystem Element::getCoordinateSystem() const
   ModelInstance::CoordinateSystem coordinateSystem;
   if (mpModelComponent && mpModel) {
     if (mpModelComponent->isConnector() && (mpGraphicsView->isDiagramView()) && canUseDiagramAnnotation()) {
-      coordinateSystem = mpModel->getAnnotation()->getDiagramAnnotation()->mMergedCoordinateSystem;
+      coordinateSystem = mpModel->mMergedDiagramCoordinateSystem;
     } else {
-      coordinateSystem = mpModel->getAnnotation()->getIconAnnotation()->mMergedCoordinateSystem;
+      coordinateSystem = mpModel->mMergedIconCoordinateSystem;
     }
   }
   return coordinateSystem;
@@ -872,7 +872,7 @@ bool Element::isParameterConnectorSizing(ModelInstance::Model *pModel, QString p
       return true;
     }
     // Look in class inheritance
-    QList<ModelInstance::Element*> elements = pModel->getElements();
+    QVector<ModelInstance::Element*> elements = pModel->getElements();
     foreach (auto pElement, elements) {
       if (pElement->isExtend() && pElement->getModel()) {
         auto pExtend = dynamic_cast<ModelInstance::Extend*>(pElement);
@@ -897,7 +897,7 @@ void Element::createClassElements()
   }
 
   if (mpModel) {
-    QList<ModelInstance::Element*> elements = mpModel->getElements();
+    QVector<ModelInstance::Element*> elements = mpModel->getElements();
     foreach (auto pElement, elements) {
       if (pElement->isComponent()) {
         auto pComponent = dynamic_cast<ModelInstance::Component*>(pElement);
@@ -1106,7 +1106,7 @@ QPair<QString, bool> Element::getParameterDisplayString(QString parameterName)
        * Check for enumeration type and shorten display string.
        */
       if (displayString.second) {
-        Element::checkEnumerationDisplayString(displayString.first, typeName);
+        StringHandler::removeTypePrefix(displayString.first, typeName);
       }
     }
   }
@@ -1464,7 +1464,7 @@ void Element::showNonExistingOrDefaultElementIfNeeded()
  */
 void Element::createClassInheritedElements()
 {
-  QList<ModelInstance::Element*> elements = mpModel->getElements();
+  QVector<ModelInstance::Element*> elements = mpModel->getElements();
   foreach (auto pElement, elements) {
     if (pElement->isExtend() && pElement->getModel()) {
       auto pExtend = dynamic_cast<ModelInstance::Extend*>(pElement);
@@ -1501,7 +1501,7 @@ void Element::createClassShapes()
      *
      * Always use the icon annotation when element type is port.
      */
-    QList<ModelInstance::Shape*> shapes;
+    QVector<ModelInstance::Shape*> shapes;
     // Always use the IconMap here. Only IconMap makes sense for drawing icons of Element.
     if (!(pExtendModel && !pExtendModel->getIconDiagramMapPrimitivesVisible(true))) {
       /* issue #12074
@@ -1720,21 +1720,6 @@ void Element::updateConnections()
       pConnectionLineAnnotation->setEndElement(mpGraphicsView->getModelWidget()->getConnectorElement(this, endElementName));
     }
   }
-}
-
-/*!
- * \brief Element::checkEnumerationDisplayString
- * Checks for enumeration type and shortens enumeration value.
- * Returns true if displayString was modified.
- * See ModelicaSpec 3.3, section 18.6.5.5, ticket:4084
- */
-bool Element::checkEnumerationDisplayString(QString &displayString, const QString &typeName)
-{
-  if (displayString.startsWith(typeName + ".")) {
-    displayString = displayString.right(displayString.length() - typeName.length() - 1);
-    return true;
-  }
-  return false;
 }
 
 /*!

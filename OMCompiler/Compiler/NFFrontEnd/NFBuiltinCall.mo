@@ -971,7 +971,7 @@ protected
 
         if arg_pur == Purity.PURE and not Structural.isExpressionNotFixed(arg) then
           Structural.markExp(arg);
-          arg := if InstContext.inInstanceAPI(context) then Ceval.tryEvalExp(arg) else Ceval.evalExp(arg);
+          arg := if InstContext.inInstanceAPI(context) then Ceval.tryEvalExp(arg) else Ceval.tryEvalExpResizable(arg);
           arg_ty := Expression.typeOf(arg);
         end if;
       end if;

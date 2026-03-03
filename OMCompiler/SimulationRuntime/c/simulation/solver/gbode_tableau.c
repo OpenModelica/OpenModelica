@@ -176,12 +176,16 @@ void denseOutput(BUTCHER_TABLEAU* tableau, double* yOld, double* x, double* k, d
 {
   int i, j;
 
+  for (j = 0; j < tableau->nStages; ++j) {
+    tableau->b_dt[j] *= dt * stepSize;
+  }
+
   if (idx == NULL) {
     // TODO memory layout may be bad, better to iterate over j on the outside?
     for (i=0; i<nStates; i++) {
       y[i] = yOld[i];
       for (j = 0; j<tableau->nStages; j++) {
-        y[i] += dt * stepSize * tableau->b_dt[j] * k[j * nStates + i];
+        y[i] += tableau->b_dt[j] * k[j * nStates + i];
       }
     }
   } else {
@@ -189,7 +193,7 @@ void denseOutput(BUTCHER_TABLEAU* tableau, double* yOld, double* x, double* k, d
       i = idx[ii];
       y[i] = yOld[i];
       for (j = 0; j<tableau->nStages; j++) {
-        y[i] += dt * stepSize * tableau->b_dt[j] * k[j * nStates + i];
+        y[i] += tableau->b_dt[j] * k[j * nStates + i];
       }
     }
   }
@@ -563,7 +567,7 @@ void getButcherTableau_SDIRK2(BUTCHER_TABLEAU* tableau)
   tableau->isKLeftAvailable = FALSE;
   tableau->isKRightAvailable = FALSE;
 
-  // predictor cant be stable for stage 2
+  // predictor can't be stable for stage 2
 }
 
 // TODO: Describe me
@@ -1566,7 +1570,7 @@ void getButcherTableau_LOBATTO_IIIC_4(BUTCHER_TABLEAU* tableau)
 
   const double A_part_inv[] = {
       6.0, 8.090169943749474241022934171828190588602, -3.090169943749474241022934171828190588601, 1.0,
-      -1.61803398874989484820458683436563811772 /* golden ration nice! */, 0.0, 2.236067977499789696409173668731276235441, -0.6180339887498948482045868343656381177202,
+      -1.61803398874989484820458683436563811772 /* golden ratio nice! */, 0.0, 2.236067977499789696409173668731276235441, -0.6180339887498948482045868343656381177202,
       0.6180339887498948482045868343656381177203, -2.23606797749978969640917366873127623544, 0.0, 1.61803398874989484820458683436563811772,
       -1.0, 3.090169943749474241022934171828190588602, -8.090169943749474241022934171828190588603, 6.0,
   };

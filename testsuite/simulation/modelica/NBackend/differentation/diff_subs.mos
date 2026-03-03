@@ -36,7 +36,7 @@ buildModel(diff_subs); getErrorString();
 // ### debugDifferentiation | NBJacobian.jacobianSymbolic ###
 // [BEFORE] [FOR-] (2) ($RES_AUX_10)
 // [----] for $i2 in 1:2 loop
-// [----]   [SCAL] (1) $FUN_4[$i2] = cos($i2 * time) ($RES_AUX_11)
+// [----]   [SCAL] (1) $FUN_4[$i2] = cos(CAST(Real, $i2) * time) ($RES_AUX_11)
 // [----] end for;
 // [AFTER ] [FOR-] (2) ($RES_AUX_10)
 // [----] for $i2 in 1:2 loop
@@ -46,17 +46,17 @@ buildModel(diff_subs); getErrorString();
 // ### debugDifferentiation | NBJacobian.jacobianSymbolic ###
 // [BEFORE] [FOR-] (4) ($RES_SIM_1)
 // [----] for {$i1 in 1:2, $i2 in 1:2} loop
-// [----]   [SCAL] (1) a[2].x[$i1, $i2] = $i1 * $FUN_4[$i2] ($RES_SIM_2)
+// [----]   [SCAL] (1) a[2].x[$i1, $i2] = CAST(Real, $i1) * $FUN_4[$i2] ($RES_SIM_2)
 // [----] end for;
 // [AFTER ] [FOR-] (4) ($RES_SIM_1)
 // [----] for {$i1 in 1:2, $i2 in 1:2} loop
-// [----]   [SCAL] (1) $pDER_ODE_JAC.a[2].x[$i1, $i2] = $i1 * $pDER_ODE_JAC.$FUN_4[$i2] ($RES_SIM_2)
+// [----]   [SCAL] (1) $pDER_ODE_JAC.a[2].x[$i1, $i2] = CAST(Real, $i1) * $pDER_ODE_JAC.$FUN_4[$i2] ($RES_SIM_2)
 // [----] end for;
 //
 // ### debugDifferentiation | NBJacobian.jacobianSymbolic ###
 // [BEFORE] [FOR-] (2) ($RES_AUX_12)
 // [----] for $i2 in 1:2 loop
-// [----]   [SCAL] (1) $FUN_3[$i2] = sin($i2 * time) ($RES_AUX_13)
+// [----]   [SCAL] (1) $FUN_3[$i2] = sin(CAST(Real, $i2) * time) ($RES_AUX_13)
 // [----] end for;
 // [AFTER ] [FOR-] (2) ($RES_AUX_12)
 // [----] for $i2 in 1:2 loop
@@ -66,11 +66,11 @@ buildModel(diff_subs); getErrorString();
 // ### debugDifferentiation | NBJacobian.jacobianSymbolic ###
 // [BEFORE] [FOR-] (4) ($RES_SIM_3)
 // [----] for {$i1 in 1:2, $i2 in 1:2} loop
-// [----]   [SCAL] (1) a[1].x[$i1, $i2] = $i1 * $FUN_3[$i2] ($RES_SIM_4)
+// [----]   [SCAL] (1) a[1].x[$i1, $i2] = CAST(Real, $i1) * $FUN_3[$i2] ($RES_SIM_4)
 // [----] end for;
 // [AFTER ] [FOR-] (4) ($RES_SIM_3)
 // [----] for {$i1 in 1:2, $i2 in 1:2} loop
-// [----]   [SCAL] (1) $pDER_ODE_JAC.a[1].x[$i1, $i2] = $i1 * $pDER_ODE_JAC.$FUN_3[$i2] ($RES_SIM_4)
+// [----]   [SCAL] (1) $pDER_ODE_JAC.a[1].x[$i1, $i2] = CAST(Real, $i1) * $pDER_ODE_JAC.$FUN_3[$i2] ($RES_SIM_4)
 // [----] end for;
 //
 // ### debugDifferentiation | NBJacobian.jacobianSymbolic ###

@@ -54,6 +54,9 @@ end LIST_OBJECT;
 record ARRAY
   Vector<JSON> values;
 end ARRAY;
+record LIST
+  list<JSON> values;
+end LIST;
 record STRING
   String str;
 end STRING;
@@ -98,6 +101,11 @@ function makeArray
   input list<JSON> elements;
   output JSON obj = ARRAY(Vector.fromList(elements));
 end makeArray;
+
+function makeList
+  input list<JSON> elements;
+  output JSON obj = LIST(elements);
+end makeList;
 
 function makeString
   input String str;
@@ -260,6 +268,12 @@ algorithm
       then
         ();
 
+    case LIST()
+      algorithm
+        toString_list(value.values);
+      then
+        ();
+
     case OBJECT()
       algorithm
         toString_object(value.values);
@@ -291,6 +305,26 @@ algorithm
 
   Print.printBuf("]");
 end toString_array;
+
+function toString_list
+  input list<JSON> values;
+protected
+  Boolean first = true;
+algorithm
+  Print.printBuf("[");
+
+  for v in values loop
+    if first then
+      first := false;
+    else
+      Print.printBuf(", ");
+    end if;
+
+    toString_work(v);
+  end for;
+
+  Print.printBuf("]");
+end toString_list;
 
 function toString_object
   input UnorderedMap<String, JSON> map;
@@ -387,6 +421,12 @@ algorithm
       then
         ();
 
+    case LIST()
+      algorithm
+        toStringPP_list(value.values, indent);
+      then
+        ();
+
     case OBJECT()
       algorithm
         toStringPP_object(value.values, indent);
@@ -424,6 +464,31 @@ algorithm
   Print.printBuf(indent);
   Print.printBuf("]");
 end toStringPP_array;
+
+function toStringPP_list
+  input list<JSON> values;
+  input String indent;
+protected
+  String next_indent = indent + "  ";
+  Boolean first = true;
+algorithm
+  Print.printBuf("[\n");
+
+  for v in values loop
+    if first then
+      first := false;
+    else
+      Print.printBuf(",\n");
+    end if;
+
+    Print.printBuf(next_indent);
+    toStringPP_work(v, next_indent);
+  end for;
+
+  Print.printBuf("\n");
+  Print.printBuf(indent);
+  Print.printBuf("]");
+end toStringPP_list;
 
 function toStringPP_object
   input UnorderedMap<String, JSON> map;
@@ -585,6 +650,7 @@ algorithm
     case OBJECT() then list(getString(v) for v in UnorderedMap.valueList(obj.values));
     case LIST_OBJECT() then listReverse(getString(Util.tuple22(v)) for v in obj.values);
     case ARRAY() then Vector.mapToList(obj.values, getString);
+    case LIST() then list(getString(v) for v in obj.values);
   end match;
 end getStringList;
 
@@ -616,6 +682,7 @@ algorithm
     case OBJECT() then UnorderedMap.size(obj.values);
     case LIST_OBJECT() then listLength(obj.values);
     case ARRAY() then Vector.size(obj.values);
+    case LIST() then listLength(obj.values);
     else 1;
   end match;
 end size;

@@ -2,7 +2,6 @@
 // keywords: simulation ThermoSysPro.Examples.SimpleExamples
 // status: correct
 // teardown_command: rm -rf _ThermoSysPro.Examples.SimpleExamples.TestNTUWaterHeating0.* ThermoSysPro.Examples.SimpleExamples.TestNTUWaterHeating0_* ThermoSysPro.Examples.SimpleExamples.TestNTUWaterHeating0 ThermoSysPro.Examples.SimpleExamples.TestNTUWaterHeating0.exe ThermoSysPro.Examples.SimpleExamples.TestNTUWaterHeating0.cpp ThermoSysPro.Examples.SimpleExamples.TestNTUWaterHeating0.makefile ThermoSysPro.Examples.SimpleExamples.TestNTUWaterHeating0.libs ThermoSysPro.Examples.SimpleExamples.TestNTUWaterHeating0.log ThermoSysPro.Examples.SimpleExamples.TestNTUWaterHeating0.c ThermoSysPro.Examples.SimpleExamples.TestNTUWaterHeating0.o output.log
-// cflags: -d=-newInst
 //
 // Simulation Results 
 // Modelica Standard Library
@@ -82,7 +81,6 @@ getEnvironmentVar("REFERENCEFILES")+"/ThermoSysPro/ThermoSysPro.Examples.SimpleE
 // [ThermoSysPro 3.2.0/WaterSteam/Connectors.mo:3:3-43:17:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidInlet$nTUWaterHeating$Ev is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
 // [ThermoSysPro 3.2.0/Properties/WaterSteam/Common.mo:646:3-701:20:writable] Warning: sat.pt was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
 // [ThermoSysPro 3.2.0/Properties/WaterSteam/Common.mo:646:3-701:20:writable] Warning: sat.cv was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// Warning: The model contains alias variables with redundant start and/or conflicting nominal values. It is recommended to resolve the conflicts, because otherwise the system could be hard to solve. To print the conflicting alias sets and the chosen candidates please use -d=aliasConflicts.
 // "
 // {"Files not Equal!","sourceP.pro.duph","sourceP.pro.duhp","singularPressureLoss3.pro.duph","singularPressureLoss3.pro.duhp","nTUWaterHeating.vsatC.pt","nTUWaterHeating.prosp.duph","nTUWaterHeating.prosp.duhp","nTUWaterHeating.prosp.ddph","nTUWaterHeating.prosp.ddhp","nTUWaterHeating.proevC.duph","nTUWaterHeating.proevC.duhp","nTUWaterHeating.prodesmC.duph","nTUWaterHeating.prodesmC.duhp","nTUWaterHeating.lsatC.pt"}
 // endResult

@@ -1,5 +1,5 @@
 // name: DrumBoiler
-// cflags: --flowThreshold=1e-15 -d=-newInst
+// cflags: --flowThreshold=1e-15
 // status: correct
 
 loadModel(Modelica,{"3.2"});
@@ -31,8 +31,8 @@ getErrorString();
 // ""
 // record SimulationResult
 //     resultFile = "drumBoiler.optDrumBoiler_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 3600.0, numberOfIntervals = 50, tolerance = 0.0001, method = 'dassl', fileNamePrefix = 'drumBoiler.optDrumBoiler', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-optimizerNP 1 -s optimization'",
-//     messages = "LOG_ASSERT        | warning | [openmodelica/cruntime/optimization/benchmark/DrumBoiler.mo:148:4-148:63:writable]
+//     simulationOptions = "startTime = 0.0, stopTime = 3600.0, numberOfIntervals = 50, tolerance = 1e-4, method = 'dassl', fileNamePrefix = 'drumBoiler.optDrumBoiler', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-optimizerNP 1 -s optimization'",
+//     messages = "LOG_ASSERT        | warning | [openmodelica/cruntime/optimization/benchmark/DrumBoiler.mo:149:4-149:63:writable]
 // |                 | |       | The following assertion has been violated at time 0.000000
 // |                 | |       | ((der_evaporator_p >= 0.0 and der_evaporator_p <= 32000.0)) --> \"Variable violating min/max constraint: 0.0 <= der_evaporator_p <= 32000.0, has value: -9.57311\"
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
@@ -58,7 +58,8 @@ getErrorString();
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// "Warning: The model contains alias variables with redundant start and/or conflicting nominal values. It is recommended to resolve the conflicts, because otherwise the system could be hard to solve. To print the conflicting alias sets and the chosen candidates please use -d=aliasConflicts.
+// "[openmodelica/cruntime/optimization/benchmark/DrumBoiler.mo:29:5-29:141:writable] Warning: Connector q_F is not balanced: The number of potential variables (1) is not equal to the number of flow variables (0).
+// Warning: The model contains alias variables with redundant start and/or conflicting nominal values. It is recommended to resolve the conflicts, because otherwise the system could be hard to solve. To print the conflicting alias sets and the chosen candidates please use -d=aliasConflicts.
 // "
 // {"Files Equal!"}
 // "Warning: 'compareSimulationResults' is deprecated. It is recommended to use 'diffSimulationResults' instead.

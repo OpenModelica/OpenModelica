@@ -554,10 +554,8 @@ ModelInstance::Extend *TextAnnotation::getExtend() const
 
 void TextAnnotation::initUpdateTextString()
 {
-  if (mpElement) {
-    if (mOriginalTextString.contains("%")) {
-      updateTextString();
-    }
+  if (mOriginalTextString.contains("%")) {
+    updateTextString();
   }
 }
 
@@ -578,13 +576,28 @@ void TextAnnotation::updateTextStringHelper(QRegExp regExp)
         /* Ticket:4204
          * If we have extend element then call Element::getParameterDisplayString from root element.
          */
-        QPair<QString, bool> parameterValue = mpElement->getRootParentElement()->getParameterDisplayString(variable);
+        QPair<QString, bool> parameterValue;
+        if (mpElement) {
+          parameterValue = mpElement->getRootParentElement()->getParameterDisplayString(variable);
+        } else if (mpGraphicsView && mpGraphicsView->getModelWidget()) {
+          parameterValue = mpGraphicsView->getModelWidget()->getParameterDisplayString(variable);
+        }
         if (parameterValue.second || !parameterValue.first.isEmpty()) {
           QString textValue = parameterValue.first;
-          QPair<QString, bool> unit = mpElement->getRootParentElement()->getParameterModifierValue(variable, "unit");
-          QPair<QString, bool> displayUnit = mpElement->getRootParentElement()->getParameterModifierValue(variable, "displayUnit");
+          QPair<QString, bool> unit;
+          QPair<QString, bool> displayUnit;
           // Look for unit and displayUnit in the variable element.
-          auto pElement = mpElement->getRootParentElement()->getModel()->lookupElement(variable);
+          ModelInstance::Element *pElement = nullptr;
+          if (mpElement) {
+            unit = mpElement->getRootParentElement()->getParameterModifierValue(variable, "unit");
+            displayUnit = mpElement->getRootParentElement()->getParameterModifierValue(variable, "displayUnit");
+            pElement = mpElement->getRootParentElement()->getModel()->lookupElement(variable);
+          } else if (mpGraphicsView && mpGraphicsView->getModelWidget() && mpGraphicsView->getModelWidget()->getModelInstance()) {
+            unit = mpGraphicsView->getModelWidget()->getParameterModifierValue(variable, "unit");
+            displayUnit = mpGraphicsView->getModelWidget()->getParameterModifierValue(variable, "displayUnit");
+            pElement = mpGraphicsView->getModelWidget()->getModelInstance()->lookupElement(variable);
+          }
+
           if (pElement) {
             if (!displayUnit.second) {
               displayUnit = pElement->getModifierValueFromType(QStringList() << "displayUnit");
@@ -622,7 +635,7 @@ void TextAnnotation::updateTextStringHelper(QRegExp regExp)
       } else { /* if there is just alone % then remove it. Because if you want to print % then use %%. */
         mTextString.replace(pos, 1, "");
       }
-    } else if (variable.compare("%%") == 0) { /* if string is %% then just move over it. We replace it with % in TextAnnotation::updateTextString(). */
+    } else {
       pos += regExp.matchedLength();
     }
   }
@@ -664,20 +677,29 @@ void TextAnnotation::updateTextString(const QString &textString)
         mTextString.prepend(QString("%1: ").arg(pLineAnnotation->getPriority()));
       }
     }
-  } else if (mpElement) {
+  } else {
     if (!mTextString.contains("%")) {
       return;
     }
-    if (mTextString.toLower().contains("%name")) {
-      QString name = mpElement->getName();
-      if (mpElement->getModelComponent() && mpElement->getModelComponent()->getDimensions().isArray()) {
-        name.append("[" % mpElement->getModelComponent()->getDimensions().getTypedDimensionsString() % "]");
+
+    // %name is only for text annotations inside the element.
+    if (mpElement) {
+      if (mTextString.toLower().contains("%name")) {
+        QString name = mpElement->getName();
+        if (mpElement->getModelComponent() && mpElement->getModelComponent()->getDimensions().isArray()) {
+          name.append("[" % mpElement->getModelComponent()->getDimensions().getTypedDimensionsString() % "]");
+        }
+        mTextString.replace(QRegExp("%name"), name);
       }
-      mTextString.replace(QRegExp("%name"), name);
+      if (mTextString.toLower().contains("%class")) {
+        mTextString.replace(QRegExp("%class"), mpElement->getClassName());
+      }
+    } else {
+      if (mTextString.toLower().contains("%class")) {
+        mTextString.replace(QRegExp("%class"), mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getName());
+      }
     }
-    if (mTextString.toLower().contains("%class")) {
-      mTextString.replace(QRegExp("%class"), mpElement->getClassName());
-    }
+
     if (!mTextString.contains("%")) {
       return;
     }

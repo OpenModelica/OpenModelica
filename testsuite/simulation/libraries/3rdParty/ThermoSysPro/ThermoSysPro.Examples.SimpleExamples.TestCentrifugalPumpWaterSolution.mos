@@ -2,7 +2,6 @@
 // keywords: simulation ThermoSysPro.Examples.SimpleExamples
 // status: correct
 // teardown_command: rm -rf _ThermoSysPro.Examples.SimpleExamples.TestCentrifugalPumpWaterSolution.* ThermoSysPro.Examples.SimpleExamples.TestCentrifugalPumpWaterSolution_* ThermoSysPro.Examples.SimpleExamples.TestCentrifugalPumpWaterSolution ThermoSysPro.Examples.SimpleExamples.TestCentrifugalPumpWaterSolution.exe ThermoSysPro.Examples.SimpleExamples.TestCentrifugalPumpWaterSolution.cpp ThermoSysPro.Examples.SimpleExamples.TestCentrifugalPumpWaterSolution.makefile ThermoSysPro.Examples.SimpleExamples.TestCentrifugalPumpWaterSolution.libs ThermoSysPro.Examples.SimpleExamples.TestCentrifugalPumpWaterSolution.log ThermoSysPro.Examples.SimpleExamples.TestCentrifugalPumpWaterSolution.c ThermoSysPro.Examples.SimpleExamples.TestCentrifugalPumpWaterSolution.o output.log
-// cflags: -d=-newInst
 //
 // Simulation Results
 // Modelica Standard Library
@@ -29,29 +28,28 @@ getEnvironmentVar("REFERENCEFILES")+"/ThermoSysPro/ThermoSysPro.Examples.SimpleE
 // ""
 // record SimulationResult
 //     resultFile = "ThermoSysPro.Examples.SimpleExamples.TestCentrifugalPumpWaterSolution_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1000.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'ThermoSysPro.Examples.SimpleExamples.TestCentrifugalPumpWaterSolution', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 1000.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'ThermoSysPro.Examples.SimpleExamples.TestCentrifugalPumpWaterSolution', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// "[ThermoSysPro 3.2.0/WaterSolution/Connectors.mo:3:3-42:25:writable] Warning: Connector .ThermoSysPro.WaterSolution.Connectors.WaterSolutionInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// [ThermoSysPro 3.2.0/WaterSolution/Connectors.mo:44:3-83:26:writable] Warning: Connector .ThermoSysPro.WaterSolution.Connectors.WaterSolutionOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// [ThermoSysPro 3.2.0/WaterSolution/Connectors.mo:3:3-42:25:writable] Warning: Connector .ThermoSysPro.WaterSolution.Connectors.WaterSolutionInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// [ThermoSysPro 3.2.0/WaterSolution/Connectors.mo:44:3-83:26:writable] Warning: Connector .ThermoSysPro.WaterSolution.Connectors.WaterSolutionOutlet$pump$C2 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// [ThermoSysPro 3.2.0/Properties/WaterSteam/Common.mo:703:3-754:22:writable] Warning: pro.x was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [ThermoSysPro 3.2.0/Properties/WaterSteam/Common.mo:1185:3-1241:26:writable] Warning: pro.x was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [ThermoSysPro 3.2.0/WaterSolution/Connectors.mo:3:3-42:25:writable] Warning: Connector .ThermoSysPro.WaterSolution.Connectors.WaterSolutionInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// [ThermoSysPro 3.2.0/WaterSolution/Connectors.mo:44:3-83:26:writable] Warning: Connector .ThermoSysPro.WaterSolution.Connectors.WaterSolutionOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// [ThermoSysPro 3.2.0/WaterSolution/Connectors.mo:3:3-42:25:writable] Warning: Connector .ThermoSysPro.WaterSolution.Connectors.WaterSolutionInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// [ThermoSysPro 3.2.0/WaterSolution/Connectors.mo:44:3-83:26:writable] Warning: Connector .ThermoSysPro.WaterSolution.Connectors.WaterSolutionOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// [ThermoSysPro 3.2.0/WaterSolution/Connectors.mo:3:3-42:25:writable] Warning: Connector .ThermoSysPro.WaterSolution.Connectors.WaterSolutionInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// [ThermoSysPro 3.2.0/WaterSolution/Connectors.mo:44:3-83:26:writable] Warning: Connector .ThermoSysPro.WaterSolution.Connectors.WaterSolutionOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// [ThermoSysPro 3.2.0/WaterSolution/Connectors.mo:3:3-42:25:writable] Warning: Connector .ThermoSysPro.WaterSolution.Connectors.WaterSolutionInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// [ThermoSysPro 3.2.0/WaterSolution/Connectors.mo:44:3-83:26:writable] Warning: Connector .ThermoSysPro.WaterSolution.Connectors.WaterSolutionOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// [ThermoSysPro 3.2.0/WaterSolution/Connectors.mo:3:3-42:25:writable] Warning: Connector .ThermoSysPro.WaterSolution.Connectors.WaterSolutionInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// [ThermoSysPro 3.2.0/WaterSolution/Connectors.mo:44:3-83:26:writable] Warning: Connector .ThermoSysPro.WaterSolution.Connectors.WaterSolutionOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// [ThermoSysPro 3.2.0/WaterSolution/Connectors.mo:3:3-42:25:writable] Warning: Connector .ThermoSysPro.WaterSolution.Connectors.WaterSolutionInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// [ThermoSysPro 3.2.0/WaterSolution/Connectors.mo:44:3-83:26:writable] Warning: Connector .ThermoSysPro.WaterSolution.Connectors.WaterSolutionOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// "[ThermoSysPro 3.2.0/WaterSolution/BoundaryConditions/RefP.mo:5:3-7:16:writable] Warning: Connector C1 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.2.0/WaterSolution/BoundaryConditions/RefP.mo:8:3-9:83:writable] Warning: Connector C2 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.2.0/WaterSolution/Machines/StaticCentrifugalPump.mo:46:3-48:16:writable] Warning: Connector C1 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.2.0/WaterSolution/Machines/StaticCentrifugalPump.mo:49:3-50:83:writable] Warning: Connector C2 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.2.0/WaterSolution/LoopBreakers/LoopBreakerQ.mo:5:3-7:16:writable] Warning: Connector Ce is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.2.0/WaterSolution/LoopBreakers/LoopBreakerQ.mo:8:3-9:83:writable] Warning: Connector Cs is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.2.0/WaterSolution/LoopBreakers/LoopBreakerT.mo:5:3-7:16:writable] Warning: Connector Ce is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.2.0/WaterSolution/LoopBreakers/LoopBreakerT.mo:8:3-9:83:writable] Warning: Connector Cs is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.2.0/WaterSolution/BoundaryConditions/RefT.mo:5:3-7:16:writable] Warning: Connector C1 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.2.0/WaterSolution/BoundaryConditions/RefT.mo:8:3-9:83:writable] Warning: Connector C2 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.2.0/WaterSolution/PressureLosses/SingularPressureLoss.mo:15:3-17:16:writable] Warning: Connector C1 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.2.0/WaterSolution/PressureLosses/SingularPressureLoss.mo:18:3-19:83:writable] Warning: Connector C2 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.2.0/WaterSolution/LoopBreakers/LoopBreakerXh2o.mo:5:3-7:16:writable] Warning: Connector Ce is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.2.0/WaterSolution/LoopBreakers/LoopBreakerXh2o.mo:8:3-9:83:writable] Warning: Connector Cs is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.2.0/WaterSolution/BoundaryConditions/RefXh2o.mo:5:3-7:16:writable] Warning: Connector C1 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.2.0/WaterSolution/BoundaryConditions/RefXh2o.mo:8:3-9:83:writable] Warning: Connector C2 is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// Warning: The model contains alias variables with redundant start and/or conflicting nominal values. It is recommended to resolve the conflicts, because otherwise the system could be hard to solve. To print the conflicting alias sets and the chosen candidates please use -d=aliasConflicts.
 // "
 // {"Files Equal!"}
 // endResult

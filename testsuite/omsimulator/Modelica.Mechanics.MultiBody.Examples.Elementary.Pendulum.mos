@@ -19,7 +19,7 @@ readFile("Pendulum_systemCall.log");
 // info:    Parameter model.root.fmu.world.label1 will not be stored in the result file, because the signal type is not supported
 // info:    Parameter model.root.fmu.world.label2 will not be stored in the result file, because the signal type is not supported
 // info:    Final Statistics for 'model.root':
-//          NumSteps = 523 NumRhsEvals  = 533 NumLinSolvSetups = 36
-//          NumNonlinSolvIters = 532 NumNonlinSolvConvFails = 0 NumErrTestFails = 1
+//          NumSteps = 2728 NumRhsEvals  = 2881 NumLinSolvSetups = 156
+//          NumNonlinSolvIters = 2880 NumNonlinSolvConvFails = 0 NumErrTestFails = 12
 // "
 // endResult

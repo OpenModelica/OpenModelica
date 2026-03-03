@@ -193,6 +193,7 @@ public
   function simple
     input VariablePointers vars;
     input EquationPointers eqns;
+    input BPartition.Kind kind;
     input Adjacency.MatrixStrictness st = NBAdjacency.MatrixStrictness.MATCHING;
     input Iterator iter = Iterator.EMPTY();
     output Matching matching;
@@ -201,7 +202,7 @@ public
     Adjacency.Matrix full, adj;
   algorithm
     // create full matrix
-    full := Adjacency.Matrix.createFull(vars, eqns);
+    full := Adjacency.Matrix.createFull(vars, eqns, kind);
 
     // create solvable adjacency matrix for matching
     adj := Adjacency.Matrix.fullToFinal(full, vars.map, eqns.map, eqns, st, iter);
@@ -258,7 +259,7 @@ protected
         (initials, simulation)  := List.splitOnTrue(EquationPointers.toList(partition.equations), Equation.isInitial);
 
         // create full matrix
-        full := Adjacency.Matrix.createFull(partition.unknowns, partition.equations);
+        full := Adjacency.Matrix.createFull(partition.unknowns, partition.equations, kind);
 
         // do not resolve potential singular partitions in Phase I or II! -> regular matching
         // #################################################
@@ -276,7 +277,7 @@ protected
         eo := en;
         vn := UnorderedMap.new<Integer>(ComponentRef.hash, ComponentRef.isEqual);
         en := UnorderedMap.subMap(partition.equations.map, list(Equation.getEqnName(eqn) for eqn in simulation));
-        (adj_matching, full) := Adjacency.Matrix.expand(adj_matching, full, vo, vn, eo, en, partition.unknowns, partition.equations);
+        (adj_matching, full) := Adjacency.Matrix.expand(adj_matching, full, vo, vn, eo, en, partition.unknowns, partition.equations, Partition.getKind(partition));
         matching := Matching.regular(matching, adj_matching, true, true);
 
         // #################################################
@@ -286,7 +287,7 @@ protected
         eo := UnorderedMap.merge(eo, en, sourceInfo());
         vn := UnorderedMap.subMap(partition.unknowns.map, list(BVariable.getVarName(var) for var in fixable));
         en := UnorderedMap.new<Integer>(ComponentRef.hash, ComponentRef.isEqual);
-        (adj_matching, full) := Adjacency.Matrix.expand(adj_matching, full, vo, vn, eo, en, partition.unknowns, partition.equations);
+        (adj_matching, full) := Adjacency.Matrix.expand(adj_matching, full, vo, vn, eo, en, partition.unknowns, partition.equations, Partition.getKind(partition));
         (matching, adj_matching, full, variables, equations, varData, eqData) := Matching.singular(matching, adj_matching, full, partition.unknowns, partition.equations, funcMap, varData, eqData, kind, false, false);
 
         // create all occurence adjacency matrix for sorting, upgrading the matching matrix
@@ -303,7 +304,7 @@ protected
         ASSC.main(equations, variables);
 
         // create full matrix
-        full := Adjacency.Matrix.createFull(variables, equations);
+        full := Adjacency.Matrix.createFull(variables, equations, kind);
 
         // create solvable adjacency matrix for matching
         adj_matching := Adjacency.Matrix.fullToFinal(full, variables.map, equations.map, equations, NBAdjacency.MatrixStrictness.MATCHING);

@@ -2,7 +2,6 @@
 // keywords: new backend
 // status: correct
 // teardown_command: rm -f *TwoMasses*
-// cflags: -d=newInst
 
 setCommandLineOptions("--simCodeTarget=Cpp");
 setCommandLineOptions("--newBackend");

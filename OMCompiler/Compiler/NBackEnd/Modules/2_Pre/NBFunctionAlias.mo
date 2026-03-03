@@ -56,6 +56,7 @@ protected
   import BEquation = NBEquation;
   import Inline = NBInline;
   import NBEquation.{Equation, EquationPointers, EqData, EquationAttributes, EquationKind, Iterator};
+  import Partition = NBPartition;
   import Partitioning = NBPartitioning;
   import NBPartitioning.BClock;
   import BVariable = NBVariable;
@@ -70,6 +71,7 @@ public
      called during simulation and gets the corresponding subfunction from
      Config."
     extends Module.wrapper;
+    input Partition.Kind kind;
   protected
     Module.aliasInterface func;
   algorithm
@@ -82,14 +84,14 @@ public
 
       case BackendDAE.MAIN(varData = varData, eqData = eqData)
         algorithm
-          (varData, eqData) := func(varData, eqData);
+          (varData, eqData) := func(varData, eqData, kind);
           bdae.varData := varData;
           bdae.eqData := eqData;
       then bdae;
 
       case BackendDAE.HESSIAN(varData = varData, eqData = eqData)
         algorithm
-          (varData, eqData) := func(varData, eqData);
+          (varData, eqData) := func(varData, eqData, kind);
           bdae.varData := varData;
           bdae.eqData := eqData;
       then bdae;
@@ -195,12 +197,15 @@ protected
       output ComponentRef name;
     protected
       Type new_ty = ty;
+      list<Subscript> subs;
     algorithm
       if not Iterator.isEmpty(iter) then
-        new_ty := Type.liftArrayRightList(ty, list(Dimension.fromInteger(i) for i in Iterator.sizes(iter)));
+        new_ty    := Type.liftArrayRightList(ty, Iterator.dimensions(iter));
         (_, name) := BVariable.makeAuxVar(NBVariable.FUNCTION_STR, Pointer.access(aux_index), new_ty, init);
-        // add iterators to subscripts of auxilliary variable
-        name      := ComponentRef.mergeSubscripts(Iterator.normalizedSubscripts(iter), name, true, true);
+        // add iterators to subscripts of auxilliary variable. fill with WHOLE if necessary
+        subs      := Iterator.normalizedSubscripts(iter);
+        subs      := Subscript.fillWithWholeLeft(subs, Type.dimensionCount(new_ty));
+        name      := ComponentRef.mergeSubscripts(subs, name, true, true);
       else
         (_, name) := BVariable.makeAuxVar(NBVariable.FUNCTION_STR, Pointer.access(aux_index), new_ty, init);
       end if;
@@ -230,7 +235,7 @@ protected
     list<tuple<String, String>> debug_str;
     Integer debug_max_length;
   algorithm
-    _ := match eqData
+    _ := match (eqData, varData)
       local
         Call_Id id;
         Call_Aux aux;
@@ -238,7 +243,7 @@ protected
         Pointer<Equation> new_eqn;
         list<Pointer<Variable>> new_vars;
 
-      case EqData.EQ_DATA_SIM() algorithm
+      case (EqData.EQ_DATA_SIM(), VarData.VAR_DATA_SIM()) algorithm
         // first collect all new functions from simulation equations
         eqData.simulation := EquationPointers.map(eqData.simulation,
           function introduceFunctionAliasEquation(map = map, variables = variables, set = set, aux_index = aux_index, eqn_index = eqData.uniqueIndex, init = false));
@@ -274,6 +279,11 @@ protected
         eqData.initials := EquationPointers.map(eqData.initials,
           function introduceFunctionAliasEquation(map = map, variables = variables, set = set, aux_index = aux_index, eqn_index = eqData.uniqueIndex, init = true));
 
+        // add parameter function alias
+        varData.parameters := VariablePointers.mapPtr(varData.parameters,
+          function BVariable.mapExp(funcExp = function introduceFunctionAlias(map = map, aux_index = aux_index, iter = Iterator.EMPTY(), init = true),
+          mapFunc = Expression.fakeMap));
+
         // create new initialization variables and corresponding equations for the function alias
         for tpl in listReverse(UnorderedMap.toList(map)) loop
           (id, aux) := tpl;
@@ -287,8 +297,11 @@ protected
               (disc, new_vars_disc, new_vars_cont, new_vars_init, new_vars_recd) := addAuxVar(new_var, disc, new_vars_disc, new_vars_cont, new_vars_init, new_vars_recd, true);
             end for;
 
-            new_eqn := Equation.makeAssignment(aux.replacer, id.call, eqData.uniqueIndex, "AUX", id.iter, EquationAttributes.default(aux.kind, false));
+            new_eqn := Equation.makeAssignment(aux.replacer, id.call, eqData.uniqueIndex, "AUX", id.iter, EquationAttributes.default(aux.kind, true));
             new_eqns_init := new_eqn :: new_eqns_init;
+
+            aux.parsed := true;
+            UnorderedMap.add(id, aux, map);
           end if;
         end for;
 
@@ -403,6 +416,17 @@ protected
         new_exp.call    := call;
       then new_exp;
 
+      // create alias for array constructors in multaries and binaries
+      // Note: do not map! only replace top lvl constructors
+      case Expression.MULTARY() algorithm
+        exp.arguments     := list(introduceArrayConstructorAlias(arg, map, aux_index, iter, init) for arg in exp.arguments);
+        exp.inv_arguments := list(introduceArrayConstructorAlias(arg, map, aux_index, iter, init) for arg in exp.inv_arguments);
+      then exp;
+      case Expression.BINARY() algorithm
+        exp.exp1 := introduceArrayConstructorAlias(exp.exp1, map, aux_index, iter, init);
+        exp.exp2 := introduceArrayConstructorAlias(exp.exp2, map, aux_index, iter, init);
+      then exp;
+
       // remove tuple expressions that occur when using a function only for one output
       // y = fun(x)[1] where fun() has multiple outputs
       // we create y = ($FUN1, $FUN2)[1] and simplify to y = $FUN1
@@ -466,25 +490,44 @@ protected
     if isSome(aux_opt) then
       aux := Util.getOption(aux_opt);
       exp := aux.replacer;
-      ty := Expression.typeOf(exp);
     else
       // create auxilliary variables for each cat call argument as well (needed for inline)
-      exp := match exp
+      (exp, aux_opt) := match exp
         local
           Call call;
-        case Expression.CALL(call = call as Call.TYPED_CALL())
-          guard("cat" == AbsynUtil.pathFirstIdent(Function.nameConsiderBuiltin(Call.typedFunction(call)))) algorithm
-          call.arguments  := listHead(call.arguments) :: list(introduceAlias(arg, map, aux_index, iter, init) for arg in listRest(call.arguments));
-          exp.call        := call;
-          id              := CALL_ID(exp, new_iter); // this might cause double aliasing but the same cat() call will probably not exist more than once anyway
-        then exp;
-        else exp;
+          Expression arg1, arg2;
+
+        case Expression.CALL(call = call as Call.TYPED_CALL()) algorithm
+          _ := match (Call.functionName(call), call.arguments)
+            case (Absyn.IDENT(name = "cat"), _) algorithm
+              call.arguments  := listHead(call.arguments) :: list(if Expression.isLiteral(arg) or Expression.isCref(arg) then arg
+                else introduceAlias(arg, map, aux_index, iter, init) for arg in listRest(call.arguments));
+              exp.call        := call;
+              id              := CALL_ID(exp, new_iter);
+              // double check if after replacing cat() call arguments the ID already exists
+              aux_opt         := UnorderedMap.get(id, map);
+            then ();
+
+            case (Absyn.IDENT(name = "promote"), {arg1, arg2}) algorithm
+              call.arguments  := {if Expression.isLiteral(arg1) or Expression.isCref(arg1) then arg1
+                else introduceAlias(arg1, map, aux_index, iter, init), arg2};
+              exp.call        := call;
+              id              := CALL_ID(exp, new_iter);
+              // double check if after replacing promote() call arguments the ID already exists
+              aux_opt         := UnorderedMap.get(id, map);
+            then ();
+
+            else ();
+          end match;
+        then (exp, aux_opt);
+        else (exp, aux_opt);
       end match;
 
       // for initial systems create parameters, otherwise use type to determine variable kind
       ty := Expression.typeOf(exp);
-      exp := match ty
-        case Type.TUPLE() algorithm
+      exp := match (aux_opt, ty)
+        case (SOME(aux), _) then aux.replacer;
+        case (_, Type.TUPLE()) algorithm
           names   := list(Call_Aux.createName(sub_ty, new_iter, aux_index, init) for sub_ty in ty.types);
           tpl_lst := list(if ComponentRef.size(cref, true) == 0 then Expression.fromCref(ComponentRef.WILD()) else Expression.fromCref(cref) for cref in names);
         then Expression.TUPLE(ty, tpl_lst);
@@ -492,11 +535,13 @@ protected
           name := Call_Aux.createName(ty, new_iter, aux_index, init);
         then Expression.fromCref(name);
       end match;
-    end if;
 
-    // create auxilliary and add to map
-    aux := CALL_AUX(exp, if Type.isDiscrete(ty) then EquationKind.DISCRETE else EquationKind.CONTINUOUS, false);
-    UnorderedMap.add(id, aux, map);
+      if Util.isNone(aux_opt) then
+        // create auxilliary and add to map if there was none before
+        aux := CALL_AUX(exp, if Type.isDiscrete(ty) then EquationKind.DISCRETE else EquationKind.CONTINUOUS, false);
+        UnorderedMap.add(id, aux, map);
+      end if;
+    end if;
   end introduceAlias;
 
   function checkCallReplacement

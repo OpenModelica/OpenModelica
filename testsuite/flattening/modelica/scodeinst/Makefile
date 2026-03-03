@@ -285,6 +285,10 @@ Condition8.mo \
 Condition9.mo \
 Condition10.mo \
 ConditionInvalid1.mo \
+ConditionInvalidContext1.mo \
+ConditionInvalidContext2.mo \
+ConditionInvalidContext3.mo \
+ConditionInvalidContext4.mo \
 ConditionInvalidBinding1.mo \
 ConditionInvalidBinding2.mo \
 ConditionInvalidType1.mo \

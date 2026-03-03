@@ -194,9 +194,9 @@ package BenchmarksForResizeableArrays "Library with benchmark models to evaluate
         SI.Velocity c "Speed of sound in water (m/s)";
         SI.Length dx "Length of each pipe segment (m)";
         SI.Time dt "Time step for stability (s)";
-        SI.Pressure p[n+1](start=fill(3e5, n+1), fixed=true) "Pressure at each node (Pa)";
+        SI.Pressure p[n+1](start=fill(3e5, n+1), each fixed=true) "Pressure at each node (Pa)";
         SI.VolumeFlowRate Q[n] "Flow rate in each segment (m^3/s)";
-        SI.Velocity V[n](start=fill(0.1, n), fixed=true) "Speed of flow in each segment (m/s)";
+        SI.Velocity V[n](start=fill(0.1, n), each fixed=true) "Speed of flow in each segment (m/s)";
         SI.MassFlowRate Qend "Flow rate at the end of the pipe (m^3/s)";
         SI.MassFlowRate QPlusEnds[n+2];
         Real valveOpen "1 if valve is open, 0 if closed";
@@ -808,6 +808,40 @@ of a corresponding library.
 </html>"));
   end SlidingMass3DthatRequiresScalarizationCorrected;
   end ErrorsIfArraysNotExpandedCorrected;
+
+  package Resizable
+  extends .Modelica.Icons.ExamplesPackage;
+
+    model CascadedFirstOrder1_Resizable
+      extends ArrayEquations.CascadedFirstOrder1(N = NR);
+      parameter Integer NR = 10 annotation(__OpenModelica_resizable=true);
+    end CascadedFirstOrder1_Resizable;
+
+    model CascadedFirstOrder2_Resizable
+      extends ArrayEquations.CascadedFirstOrder2(N = NR);
+      parameter Integer NR = 10 annotation(
+        __OpenModelica_resizable = true);
+    end CascadedFirstOrder2_Resizable;
+
+    model CascadedFirstOrder3_Resizable
+      extends ArrayEquations.CascadedFirstOrder3(N = NR);
+      parameter Integer NR = 10 annotation(
+        __OpenModelica_resizable = true);
+    end CascadedFirstOrder3_Resizable;
+
+    model CascadedFirstOrder4_Resizable
+      extends ArrayEquations.CascadedFirstOrder4(N = NR);
+      parameter Integer NR = 10 annotation(
+        __OpenModelica_resizable = true);
+    end CascadedFirstOrder4_Resizable;
+
+    model WaterHammer_Resizable
+      extends ArrayEquations.WaterHammer(n = NR);
+      parameter Integer NR = 10 annotation(
+        __OpenModelica_resizable = true);
+    end WaterHammer_Resizable;
+
+  end Resizable;
   annotation (uses(Modelica(version="4.0.0")), Documentation(info="<html>
 <p>Library <b>BenchmarksForResizeableArrays</b> is a <b>free</b> package providing benchmark models with arrays.
 The goal is that the arrays can be resized after translation of the models (and before simulation starts).

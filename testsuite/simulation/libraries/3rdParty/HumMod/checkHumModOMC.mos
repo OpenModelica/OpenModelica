@@ -1,9 +1,6 @@
 // name:     HumModOMCTotal [checkModel]
 // keywords:
 // status:   correct
-// cflags: -d=-newInst
-//
-//
 //
 
 /*
@@ -21,7 +18,191 @@ checkModel(HumModTest); getErrorString();
 // Notification: Automatically loaded package ModelicaServices 3.2.1 due to uses annotation from Modelica.
 // "
 // "Check of HumModTest completed successfully.
-// Class HumModTest has 29145 equation(s) and 29145 variable(s).
-// 25876 of these are trivial equation(s)."
-// ""
+// Class HumModTest has 90868 equation(s) and 90868 variable(s).
+// 87631 of these are trivial equation(s)."
+// "[simulation/libraries/3rdParty/HumMod/HumModTest_OMC_total.mo:164:1-164:67:writable] Warning: In relation cardioVascularSystem.heart.RightAtrium.initialVol == 0.0, == on Real numbers is only allowed inside functions.
+// [simulation/libraries/3rdParty/HumMod/HumModTest_OMC_total.mo:164:1-164:67:writable] Warning: In relation cardioVascularSystem.heart.LeftAtrium.initialVol == 0.0, == on Real numbers is only allowed inside functions.
+// [simulation/libraries/3rdParty/HumMod/HumModTest_OMC_total.mo:164:1-164:67:writable] Warning: In relation cardioVascularSystem.pulmonaryCirculation.pulmCapys.initialVol == 0.0, == on Real numbers is only allowed inside functions.
+// [simulation/libraries/3rdParty/HumMod/HumModTest_OMC_total.mo:164:1-164:67:writable] Warning: In relation cardioVascularSystem.pulmonaryCirculation.pulmArty.initialVol == 0.0, == on Real numbers is only allowed inside functions.
+// [simulation/libraries/3rdParty/HumMod/HumModTest_OMC_total.mo:164:1-164:67:writable] Warning: In relation cardioVascularSystem.pulmonaryCirculation.pulmVeins.initialVol == 0.0, == on Real numbers is only allowed inside functions.
+// [simulation/libraries/3rdParty/HumMod/HumModTest_OMC_total.mo:164:1-164:67:writable] Warning: In relation cardioVascularSystem.systemicCirculation.systemicArtys.initialVol == 0.0, == on Real numbers is only allowed inside functions.
+// [simulation/libraries/3rdParty/HumMod/HumModTest_OMC_total.mo:164:1-164:67:writable] Warning: In relation cardioVascularSystem.systemicCirculation.systemicVeinsElacticBloodCompartment.systemicVeins.initialVol == 0.0, == on Real numbers is only allowed inside functions.
+// [simulation/libraries/3rdParty/HumMod/HumModTest_OMC_total.mo:164:1-164:67:writable] Warning: In relation cardioVascularSystem.systemicCirculation.splanchnicCirculation.portalVein.initialVol == 0.0, == on Real numbers is only allowed inside functions.
+// [simulation/libraries/3rdParty/HumMod/HumModTest_OMC_total.mo:6161:1-6161:43:writable] Warning: The following equation is INCONSISTENT due to specified unit information: nutrientsAndMetabolism.tissuesMetabolism.bone.TotalCaloriesUse.y = nutrientsAndMetabolism.tissuesMetabolism.bone.cellularMetabolism.CalsUse
+// Warning: The units of following sub-expressions need to be equal:
+// - sub-expression \"nutrientsAndMetabolism.tissuesMetabolism.bone.cellularMetabolism.CalsUse\" has unit \"kcal/min\"
+// - sub-expression \"nutrientsAndMetabolism.tissuesMetabolism.bone.TotalCaloriesUse.y\" has unit \"cal/min\"
+// [simulation/libraries/3rdParty/HumMod/HumModTest_OMC_total.mo:6161:1-6161:43:writable] Warning: The following equation is INCONSISTENT due to specified unit information: nutrientsAndMetabolism.tissuesMetabolism.brain.TotalCaloriesUse.y = nutrientsAndMetabolism.tissuesMetabolism.brain.cellularMetabolism.CalsUse
+// Warning: The units of following sub-expressions need to be equal:
+// - sub-expression \"nutrientsAndMetabolism.tissuesMetabolism.brain.cellularMetabolism.CalsUse\" has unit \"kcal/min\"
+// - sub-expression \"nutrientsAndMetabolism.tissuesMetabolism.brain.TotalCaloriesUse.y\" has unit \"cal/min\"
+// [simulation/libraries/3rdParty/HumMod/HumModTest_OMC_total.mo:6161:1-6161:43:writable] Warning: The following equation is INCONSISTENT due to specified unit information: nutrientsAndMetabolism.tissuesMetabolism.fat.TotalCaloriesUse.y = nutrientsAndMetabolism.tissuesMetabolism.fat.cellularMetabolism.CalsUse
+// Warning: The units of following sub-expressions need to be equal:
+// - sub-expression \"nutrientsAndMetabolism.tissuesMetabolism.fat.cellularMetabolism.CalsUse\" has unit \"kcal/min\"
+// - sub-expression \"nutrientsAndMetabolism.tissuesMetabolism.fat.TotalCaloriesUse.y\" has unit \"cal/min\"
+// [simulation/libraries/3rdParty/HumMod/HumModTest_OMC_total.mo:6161:1-6161:43:writable] Warning: The following equation is INCONSISTENT due to specified unit information: nutrientsAndMetabolism.tissuesMetabolism.gITract.TotalCaloriesUse.y = nutrientsAndMetabolism.tissuesMetabolism.gITract.cellularMetabolism.CalsUse
+// Warning: The units of following sub-expressions need to be equal:
+// - sub-expression \"nutrientsAndMetabolism.tissuesMetabolism.gITract.cellularMetabolism.CalsUse\" has unit \"kcal/min\"
+// - sub-expression \"nutrientsAndMetabolism.tissuesMetabolism.gITract.TotalCaloriesUse.y\" has unit \"cal/min\"
+// [simulation/libraries/3rdParty/HumMod/HumModTest_OMC_total.mo:6161:1-6161:43:writable] Warning: The following equation is INCONSISTENT due to specified unit information: nutrientsAndMetabolism.tissuesMetabolism.kidney.TotalCaloriesUse.y = nutrientsAndMetabolism.tissuesMetabolism.kidney.cellularMetabolism.CalsUse
+// Warning: The units of following sub-expressions need to be equal:
+// - sub-expression \"nutrientsAndMetabolism.tissuesMetabolism.kidney.cellularMetabolism.CalsUse\" has unit \"kcal/min\"
+// - sub-expression \"nutrientsAndMetabolism.tissuesMetabolism.kidney.TotalCaloriesUse.y\" has unit \"cal/min\"
+// [simulation/libraries/3rdParty/HumMod/HumModTest_OMC_total.mo:6161:1-6161:43:writable] Warning: The following equation is INCONSISTENT due to specified unit information: nutrientsAndMetabolism.tissuesMetabolism.liver.TotalCaloriesUse.y = nutrientsAndMetabolism.tissuesMetabolism.liver.cellularMetabolism.CalsUse
+// Warning: The units of following sub-expressions need to be equal:
+// - sub-expression \"nutrientsAndMetabolism.tissuesMetabolism.liver.cellularMetabolism.CalsUse\" has unit \"kcal/min\"
+// - sub-expression \"nutrientsAndMetabolism.tissuesMetabolism.liver.TotalCaloriesUse.y\" has unit \"cal/min\"
+// [simulation/libraries/3rdParty/HumMod/HumModTest_OMC_total.mo:6161:1-6161:43:writable] Warning: The following equation is INCONSISTENT due to specified unit information: nutrientsAndMetabolism.tissuesMetabolism.otherTissue.TotalCaloriesUse.y = nutrientsAndMetabolism.tissuesMetabolism.otherTissue.cellularMetabolism.CalsUse
+// Warning: The units of following sub-expressions need to be equal:
+// - sub-expression \"nutrientsAndMetabolism.tissuesMetabolism.otherTissue.cellularMetabolism.CalsUse\" has unit \"kcal/min\"
+// - sub-expression \"nutrientsAndMetabolism.tissuesMetabolism.otherTissue.TotalCaloriesUse.y\" has unit \"cal/min\"
+// [simulation/libraries/3rdParty/HumMod/HumModTest_OMC_total.mo:6161:1-6161:43:writable] Warning: The following equation is INCONSISTENT due to specified unit information: nutrientsAndMetabolism.tissuesMetabolism.respiratoryMuscle.TotalCaloriesUse.y = nutrientsAndMetabolism.tissuesMetabolism.respiratoryMuscle.cellularMetabolism.CalsUse
+// Warning: The units of following sub-expressions need to be equal:
+// - sub-expression \"nutrientsAndMetabolism.tissuesMetabolism.respiratoryMuscle.cellularMetabolism.CalsUse\" has unit \"kcal/min\"
+// - sub-expression \"nutrientsAndMetabolism.tissuesMetabolism.respiratoryMuscle.TotalCaloriesUse.y\" has unit \"cal/min\"
+// [simulation/libraries/3rdParty/HumMod/HumModTest_OMC_total.mo:6161:1-6161:43:writable] Warning: The following equation is INCONSISTENT due to specified unit information: nutrientsAndMetabolism.tissuesMetabolism.rightHeart.TotalCaloriesUse.y = nutrientsAndMetabolism.tissuesMetabolism.rightHeart.cellularMetabolism.CalsUse
+// Warning: The units of following sub-expressions need to be equal:
+// - sub-expression \"nutrientsAndMetabolism.tissuesMetabolism.rightHeart.cellularMetabolism.CalsUse\" has unit \"kcal/min\"
+// - sub-expression \"nutrientsAndMetabolism.tissuesMetabolism.rightHeart.TotalCaloriesUse.y\" has unit \"cal/min\"
+// [simulation/libraries/3rdParty/HumMod/HumModTest_OMC_total.mo:6161:1-6161:43:writable] Warning: The following equation is INCONSISTENT due to specified unit information: nutrientsAndMetabolism.tissuesMetabolism.leftHeart.TotalCaloriesUse.y = nutrientsAndMetabolism.tissuesMetabolism.leftHeart.cellularMetabolism.CalsUse
+// Warning: The units of following sub-expressions need to be equal:
+// - sub-expression \"nutrientsAndMetabolism.tissuesMetabolism.leftHeart.cellularMetabolism.CalsUse\" has unit \"kcal/min\"
+// - sub-expression \"nutrientsAndMetabolism.tissuesMetabolism.leftHeart.TotalCaloriesUse.y\" has unit \"cal/min\"
+// [simulation/libraries/3rdParty/HumMod/HumModTest_OMC_total.mo:6162:1-6162:50:writable] Warning: The following equation is INCONSISTENT due to specified unit information: nutrientsAndMetabolism.tissuesMetabolism.skeletalMuscle.PartCaloriesUse.y = nutrientsAndMetabolism.tissuesMetabolism.skeletalMuscle.skeletalMuscle_HeatWithoutTermoregulation
+// Warning: The units of following sub-expressions need to be equal:
+// - sub-expression \"nutrientsAndMetabolism.tissuesMetabolism.skeletalMuscle.skeletalMuscle_HeatWithoutTermoregulation\" has unit \"kcal/min\"
+// - sub-expression \"nutrientsAndMetabolism.tissuesMetabolism.skeletalMuscle.PartCaloriesUse.y\" has unit \"cal/min\"
+// [simulation/libraries/3rdParty/HumMod/HumModTest_OMC_total.mo:6161:1-6161:43:writable] Warning: The following equation is INCONSISTENT due to specified unit information: nutrientsAndMetabolism.tissuesMetabolism.skeletalMuscle.TotalCaloriesUse.y = nutrientsAndMetabolism.tissuesMetabolism.skeletalMuscle.cellularMetabolism.CalsUse
+// Warning: The units of following sub-expressions need to be equal:
+// - sub-expression \"nutrientsAndMetabolism.tissuesMetabolism.skeletalMuscle.cellularMetabolism.CalsUse\" has unit \"kcal/min\"
+// - sub-expression \"nutrientsAndMetabolism.tissuesMetabolism.skeletalMuscle.TotalCaloriesUse.y\" has unit \"cal/min\"
+// [simulation/libraries/3rdParty/HumMod/HumModTest_OMC_total.mo:6161:1-6161:43:writable] Warning: The following equation is INCONSISTENT due to specified unit information: nutrientsAndMetabolism.tissuesMetabolism.skin.TotalCaloriesUse.y = nutrientsAndMetabolism.tissuesMetabolism.skin.cellularMetabolism.CalsUse
+// Warning: The units of following sub-expressions need to be equal:
+// - sub-expression \"nutrientsAndMetabolism.tissuesMetabolism.skin.cellularMetabolism.CalsUse\" has unit \"kcal/min\"
+// - sub-expression \"nutrientsAndMetabolism.tissuesMetabolism.skin.TotalCaloriesUse.y\" has unit \"cal/min\"
+// [simulation/libraries/3rdParty/HumMod/HumModTest_OMC_total.mo:1810:1-1810:31:writable] Warning: The following equation is INCONSISTENT due to specified unit information: water.UpperTorso.capilaryMembrane.toPressure.q_in.o = water.UpperTorso.capilaryMembrane.q_in.o
+// Warning: The units of following sub-expressions need to be equal:
+// - sub-expression \"water.UpperTorso.capilaryMembrane.q_in.o\" has unit \"g/ml\"
+// - sub-expression \"water.UpperTorso.capilaryMembrane.toPressure.q_in.o\" has unit \"g\"
+// [simulation/libraries/3rdParty/HumMod/HumModTest_OMC_total.mo:1810:1-1810:31:writable] Warning: The following equation is INCONSISTENT due to specified unit information: water.MiddleTorso.capilaryMembrane.toPressure.q_in.o = water.MiddleTorso.capilaryMembrane.q_in.o
+// Warning: The units of following sub-expressions need to be equal:
+// - sub-expression \"water.MiddleTorso.capilaryMembrane.q_in.o\" has unit \"g/ml\"
+// - sub-expression \"water.MiddleTorso.capilaryMembrane.toPressure.q_in.o\" has unit \"g\"
+// [simulation/libraries/3rdParty/HumMod/HumModTest_OMC_total.mo:1810:1-1810:31:writable] Warning: The following equation is INCONSISTENT due to specified unit information: water.LowerTorso.capilaryMembrane.toPressure.q_in.o = water.LowerTorso.capilaryMembrane.q_in.o
+// Warning: The units of following sub-expressions need to be equal:
+// - sub-expression \"water.LowerTorso.capilaryMembrane.q_in.o\" has unit \"g/ml\"
+// - sub-expression \"water.LowerTorso.capilaryMembrane.toPressure.q_in.o\" has unit \"g\"
+// [simulation/libraries/3rdParty/HumMod/HumModTest_OMC_total.mo:1454:1-1454:71:writable] Warning: The following equation is INCONSISTENT due to specified unit information: water.Kidney.nephron.glomerulus.colloidHydraulicPressure1.q_in.o = water.Kidney.nephron.glomerulus.colloidOsmolarity.q_out.o
+// Warning: The units of following sub-expressions need to be equal:
+// - sub-expression \"water.Kidney.nephron.glomerulus.colloidOsmolarity.q_out.o\" has unit \"g/ml\"
+// - sub-expression \"water.Kidney.nephron.glomerulus.colloidHydraulicPressure1.q_in.o\" has unit \"g\"
+// [simulation/libraries/3rdParty/HumMod/HumModTest_OMC_total.mo:1556:1-1556:55:writable] Warning: The following equation is INCONSISTENT due to specified unit information: water.Kidney.vascularH2O.o = water.Kidney.colloidhydraulicPressure0_1.q_in.o
+// Warning: The units of following sub-expressions need to be equal:
+// - sub-expression \"water.Kidney.colloidhydraulicPressure0_1.q_in.o\" has unit \"g\"
+// - sub-expression \"water.Kidney.vascularH2O.o\" has unit \"g/ml\"
+// [simulation/libraries/3rdParty/HumMod/HumModTest_OMC_total.mo:1315:1-1315:66:writable] Warning: The following equation is INCONSISTENT due to specified unit information: water.waterProperties.hydrostatics.LegMusclePump_Effect = water.waterProperties.hydrostatics.LowerTorsoHydrostatics.Pump_Effect
+// Warning: The units of following sub-expressions need to be equal:
+// - sub-expression \"water.waterProperties.hydrostatics.LowerTorsoHydrostatics.Pump_Effect\" has unit \"1\"
+// - sub-expression \"water.waterProperties.hydrostatics.LegMusclePump_Effect\" has unit \"ml/min\"
+// [simulation/libraries/3rdParty/HumMod/HumModTest_OMC_total.mo:2206:1-2206:42:writable] Warning: The following equation is INCONSISTENT due to specified unit information: water.GILumen.vascularH2O.o = water.plasma.q_in.o
+// Warning: The units of following sub-expressions need to be equal:
+// - sub-expression \"water.plasma.q_in.o\" has unit \"g/ml\"
+// - sub-expression \"water.GILumen.vascularH2O.o\" has unit \"kg/m3\"
+// [simulation/libraries/3rdParty/HumMod/HumModTest_OMC_total.mo:2206:1-2206:42:writable] Warning: The following equation is INCONSISTENT due to specified unit information: water.GILumen.vascularH2O.o = water.Kidney.vascularH2O.o
+// Warning: The units of following sub-expressions need to be equal:
+// - sub-expression \"water.Kidney.vascularH2O.o\" has unit \"g/ml\"
+// - sub-expression \"water.GILumen.vascularH2O.o\" has unit \"kg/m3\"
+// [simulation/libraries/3rdParty/HumMod/HumModTest_OMC_total.mo:2206:1-2206:42:writable] Warning: The following equation is INCONSISTENT due to specified unit information: water.GILumen.vascularH2O.o = water.LowerTorso.vascularH2O.o
+// Warning: The units of following sub-expressions need to be equal:
+// - sub-expression \"water.LowerTorso.vascularH2O.o\" has unit \"g/ml\"
+// - sub-expression \"water.GILumen.vascularH2O.o\" has unit \"kg/m3\"
+// [simulation/libraries/3rdParty/HumMod/HumModTest_OMC_total.mo:2206:1-2206:42:writable] Warning: The following equation is INCONSISTENT due to specified unit information: water.GILumen.vascularH2O.o = water.MiddleTorso.vascularH2O.o
+// Warning: The units of following sub-expressions need to be equal:
+// - sub-expression \"water.MiddleTorso.vascularH2O.o\" has unit \"g/ml\"
+// - sub-expression \"water.GILumen.vascularH2O.o\" has unit \"kg/m3\"
+// [simulation/libraries/3rdParty/HumMod/HumModTest_OMC_total.mo:2206:1-2206:42:writable] Warning: The following equation is INCONSISTENT due to specified unit information: water.GILumen.vascularH2O.o = water.UpperTorso.vascularH2O.o
+// Warning: The units of following sub-expressions need to be equal:
+// - sub-expression \"water.UpperTorso.vascularH2O.o\" has unit \"g/ml\"
+// - sub-expression \"water.GILumen.vascularH2O.o\" has unit \"kg/m3\"
+// [Modelica 3.2.1+maint.om/Blocks/Math.mo:611:5-611:12:writable] Warning: The following equation is INCONSISTENT due to specified unit information: nutrientsAndMetabolism.tissuesMetabolism.bone.CalToO2.y = nutrientsAndMetabolism.tissuesMetabolism.bone.CalToO2.k * nutrientsAndMetabolism.tissuesMetabolism.bone.CalToO2.u
+// Warning: The units of following sub-expressions need to be equal:
+// - sub-expression \"nutrientsAndMetabolism.tissuesMetabolism.bone.CalToO2.k * nutrientsAndMetabolism.tissuesMetabolism.bone.CalToO2.u\" has unit \"cal/min\"
+// - sub-expression \"nutrientsAndMetabolism.tissuesMetabolism.bone.CalToO2.y\" has unit \"ml/min\"
+// [Modelica 3.2.1+maint.om/Blocks/Math.mo:611:5-611:12:writable] Warning: The following equation is INCONSISTENT due to specified unit information: nutrientsAndMetabolism.tissuesMetabolism.brain.CalToO2.y = nutrientsAndMetabolism.tissuesMetabolism.brain.CalToO2.k * nutrientsAndMetabolism.tissuesMetabolism.brain.CalToO2.u
+// Warning: The units of following sub-expressions need to be equal:
+// - sub-expression \"nutrientsAndMetabolism.tissuesMetabolism.brain.CalToO2.k * nutrientsAndMetabolism.tissuesMetabolism.brain.CalToO2.u\" has unit \"cal/min\"
+// - sub-expression \"nutrientsAndMetabolism.tissuesMetabolism.brain.CalToO2.y\" has unit \"ml/min\"
+// [Modelica 3.2.1+maint.om/Blocks/Math.mo:611:5-611:12:writable] Warning: The following equation is INCONSISTENT due to specified unit information: nutrientsAndMetabolism.tissuesMetabolism.fat.CalToO2.y = nutrientsAndMetabolism.tissuesMetabolism.fat.CalToO2.k * nutrientsAndMetabolism.tissuesMetabolism.fat.CalToO2.u
+// Warning: The units of following sub-expressions need to be equal:
+// - sub-expression \"nutrientsAndMetabolism.tissuesMetabolism.fat.CalToO2.k * nutrientsAndMetabolism.tissuesMetabolism.fat.CalToO2.u\" has unit \"cal/min\"
+// - sub-expression \"nutrientsAndMetabolism.tissuesMetabolism.fat.CalToO2.y\" has unit \"ml/min\"
+// [Modelica 3.2.1+maint.om/Blocks/Math.mo:611:5-611:12:writable] Warning: The following equation is INCONSISTENT due to specified unit information: nutrientsAndMetabolism.tissuesMetabolism.gITract.CalToO2.y = nutrientsAndMetabolism.tissuesMetabolism.gITract.CalToO2.k * nutrientsAndMetabolism.tissuesMetabolism.gITract.CalToO2.u
+// Warning: The units of following sub-expressions need to be equal:
+// - sub-expression \"nutrientsAndMetabolism.tissuesMetabolism.gITract.CalToO2.k * nutrientsAndMetabolism.tissuesMetabolism.gITract.CalToO2.u\" has unit \"cal/min\"
+// - sub-expression \"nutrientsAndMetabolism.tissuesMetabolism.gITract.CalToO2.y\" has unit \"ml/min\"
+// [Modelica 3.2.1+maint.om/Blocks/Math.mo:611:5-611:12:writable] Warning: The following equation is INCONSISTENT due to specified unit information: nutrientsAndMetabolism.tissuesMetabolism.kidney.CalToO2.y = nutrientsAndMetabolism.tissuesMetabolism.kidney.CalToO2.k * nutrientsAndMetabolism.tissuesMetabolism.kidney.CalToO2.u
+// Warning: The units of following sub-expressions need to be equal:
+// - sub-expression \"nutrientsAndMetabolism.tissuesMetabolism.kidney.CalToO2.k * nutrientsAndMetabolism.tissuesMetabolism.kidney.CalToO2.u\" has unit \"cal/min\"
+// - sub-expression \"nutrientsAndMetabolism.tissuesMetabolism.kidney.CalToO2.y\" has unit \"ml/min\"
+// [Modelica 3.2.1+maint.om/Blocks/Math.mo:611:5-611:12:writable] Warning: The following equation is INCONSISTENT due to specified unit information: nutrientsAndMetabolism.tissuesMetabolism.liver.CalToO2.y = nutrientsAndMetabolism.tissuesMetabolism.liver.CalToO2.k * nutrientsAndMetabolism.tissuesMetabolism.liver.CalToO2.u
+// Warning: The units of following sub-expressions need to be equal:
+// - sub-expression \"nutrientsAndMetabolism.tissuesMetabolism.liver.CalToO2.k * nutrientsAndMetabolism.tissuesMetabolism.liver.CalToO2.u\" has unit \"cal/min\"
+// - sub-expression \"nutrientsAndMetabolism.tissuesMetabolism.liver.CalToO2.y\" has unit \"ml/min\"
+// [Modelica 3.2.1+maint.om/Blocks/Math.mo:611:5-611:12:writable] Warning: The following equation is INCONSISTENT due to specified unit information: nutrientsAndMetabolism.tissuesMetabolism.otherTissue.CalToO2.y = nutrientsAndMetabolism.tissuesMetabolism.otherTissue.CalToO2.k * nutrientsAndMetabolism.tissuesMetabolism.otherTissue.CalToO2.u
+// Warning: The units of following sub-expressions need to be equal:
+// - sub-expression \"nutrientsAndMetabolism.tissuesMetabolism.otherTissue.CalToO2.k * nutrientsAndMetabolism.tissuesMetabolism.otherTissue.CalToO2.u\" has unit \"cal/min\"
+// - sub-expression \"nutrientsAndMetabolism.tissuesMetabolism.otherTissue.CalToO2.y\" has unit \"ml/min\"
+// [Modelica 3.2.1+maint.om/Blocks/Math.mo:611:5-611:12:writable] Warning: The following equation is INCONSISTENT due to specified unit information: nutrientsAndMetabolism.tissuesMetabolism.respiratoryMuscle.CalToO2.y = nutrientsAndMetabolism.tissuesMetabolism.respiratoryMuscle.CalToO2.k * nutrientsAndMetabolism.tissuesMetabolism.respiratoryMuscle.CalToO2.u
+// Warning: The units of following sub-expressions need to be equal:
+// - sub-expression \"nutrientsAndMetabolism.tissuesMetabolism.respiratoryMuscle.CalToO2.k * nutrientsAndMetabolism.tissuesMetabolism.respiratoryMuscle.CalToO2.u\" has unit \"cal/min\"
+// - sub-expression \"nutrientsAndMetabolism.tissuesMetabolism.respiratoryMuscle.CalToO2.y\" has unit \"ml/min\"
+// [Modelica 3.2.1+maint.om/Blocks/Math.mo:611:5-611:12:writable] Warning: The following equation is INCONSISTENT due to specified unit information: nutrientsAndMetabolism.tissuesMetabolism.rightHeart.CalToO2.y = nutrientsAndMetabolism.tissuesMetabolism.rightHeart.CalToO2.k * nutrientsAndMetabolism.tissuesMetabolism.rightHeart.CalToO2.u
+// Warning: The units of following sub-expressions need to be equal:
+// - sub-expression \"nutrientsAndMetabolism.tissuesMetabolism.rightHeart.CalToO2.k * nutrientsAndMetabolism.tissuesMetabolism.rightHeart.CalToO2.u\" has unit \"cal/min\"
+// - sub-expression \"nutrientsAndMetabolism.tissuesMetabolism.rightHeart.CalToO2.y\" has unit \"ml/min\"
+// [Modelica 3.2.1+maint.om/Blocks/Math.mo:611:5-611:12:writable] Warning: The following equation is INCONSISTENT due to specified unit information: nutrientsAndMetabolism.tissuesMetabolism.leftHeart.CalToO2.y = nutrientsAndMetabolism.tissuesMetabolism.leftHeart.CalToO2.k * nutrientsAndMetabolism.tissuesMetabolism.leftHeart.CalToO2.u
+// Warning: The units of following sub-expressions need to be equal:
+// - sub-expression \"nutrientsAndMetabolism.tissuesMetabolism.leftHeart.CalToO2.k * nutrientsAndMetabolism.tissuesMetabolism.leftHeart.CalToO2.u\" has unit \"cal/min\"
+// - sub-expression \"nutrientsAndMetabolism.tissuesMetabolism.leftHeart.CalToO2.y\" has unit \"ml/min\"
+// [Modelica 3.2.1+maint.om/Blocks/Math.mo:611:5-611:12:writable] Warning: The following equation is INCONSISTENT due to specified unit information: nutrientsAndMetabolism.tissuesMetabolism.skeletalMuscle.CalToO2.y = nutrientsAndMetabolism.tissuesMetabolism.skeletalMuscle.CalToO2.k * nutrientsAndMetabolism.tissuesMetabolism.skeletalMuscle.CalToO2.u
+// Warning: The units of following sub-expressions need to be equal:
+// - sub-expression \"nutrientsAndMetabolism.tissuesMetabolism.skeletalMuscle.CalToO2.k * nutrientsAndMetabolism.tissuesMetabolism.skeletalMuscle.CalToO2.u\" has unit \"cal/min\"
+// - sub-expression \"nutrientsAndMetabolism.tissuesMetabolism.skeletalMuscle.CalToO2.y\" has unit \"ml/min\"
+// [simulation/libraries/3rdParty/HumMod/HumModTest_OMC_total.mo:9154:1-9154:24:writable] Warning: The following equation is INCONSISTENT due to specified unit information: nutrientsAndMetabolism.tissuesMetabolism.skeletalMuscle.glycogen.q_out.conc = nutrientsAndMetabolism.tissuesMetabolism.skeletalMuscle.glycogen.soluteMass
+// Warning: The units of following sub-expressions need to be equal:
+// - sub-expression \"nutrientsAndMetabolism.tissuesMetabolism.skeletalMuscle.glycogen.soluteMass\" has unit \"g\"
+// - sub-expression \"nutrientsAndMetabolism.tissuesMetabolism.skeletalMuscle.glycogen.q_out.conc\" has unit \"mg\"
+// [Modelica 3.2.1+maint.om/Blocks/Math.mo:611:5-611:12:writable] Warning: The following equation is INCONSISTENT due to specified unit information: nutrientsAndMetabolism.tissuesMetabolism.skin.CalToO2.y = nutrientsAndMetabolism.tissuesMetabolism.skin.CalToO2.k * nutrientsAndMetabolism.tissuesMetabolism.skin.CalToO2.u
+// Warning: The units of following sub-expressions need to be equal:
+// - sub-expression \"nutrientsAndMetabolism.tissuesMetabolism.skin.CalToO2.k * nutrientsAndMetabolism.tissuesMetabolism.skin.CalToO2.u\" has unit \"cal/min\"
+// - sub-expression \"nutrientsAndMetabolism.tissuesMetabolism.skin.CalToO2.y\" has unit \"ml/min\"
+// [simulation/libraries/3rdParty/HumMod/HumModTest_OMC_total.mo:1641:1-1641:61:writable] Warning: The following equation is INCONSISTENT due to specified unit information: water.UpperTorso.extravascularH2O.q_out.o = if water.UpperTorso.extravascularH2O.ECFV > 0.0 then water.UpperTorso.extravascularH2O.NotpermeableSolutes / water.UpperTorso.extravascularH2O.ECFV else 0.0
+// Warning: The units of following sub-expressions need to be equal:
+// - sub-expression \"if water.UpperTorso.extravascularH2O.ECFV > 0.0 then water.UpperTorso.extravascularH2O.NotpermeableSolutes / water.UpperTorso.extravascularH2O.ECFV else 0.0\" has unit \"g/ml\"
+// - sub-expression \"water.UpperTorso.extravascularH2O.q_out.o\" has unit \"g\"
+// [simulation/libraries/3rdParty/HumMod/HumModTest_OMC_total.mo:1641:1-1641:61:writable] Warning: The following equation is INCONSISTENT due to specified unit information: water.MiddleTorso.extravascularH2O.q_out.o = if water.MiddleTorso.extravascularH2O.ECFV > 0.0 then water.MiddleTorso.extravascularH2O.NotpermeableSolutes / water.MiddleTorso.extravascularH2O.ECFV else 0.0
+// Warning: The units of following sub-expressions need to be equal:
+// - sub-expression \"if water.MiddleTorso.extravascularH2O.ECFV > 0.0 then water.MiddleTorso.extravascularH2O.NotpermeableSolutes / water.MiddleTorso.extravascularH2O.ECFV else 0.0\" has unit \"g/ml\"
+// - sub-expression \"water.MiddleTorso.extravascularH2O.q_out.o\" has unit \"g\"
+// [simulation/libraries/3rdParty/HumMod/HumModTest_OMC_total.mo:1641:1-1641:61:writable] Warning: The following equation is INCONSISTENT due to specified unit information: water.LowerTorso.extravascularH2O.q_out.o = if water.LowerTorso.extravascularH2O.ECFV > 0.0 then water.LowerTorso.extravascularH2O.NotpermeableSolutes / water.LowerTorso.extravascularH2O.ECFV else 0.0
+// Warning: The units of following sub-expressions need to be equal:
+// - sub-expression \"if water.LowerTorso.extravascularH2O.ECFV > 0.0 then water.LowerTorso.extravascularH2O.NotpermeableSolutes / water.LowerTorso.extravascularH2O.ECFV else 0.0\" has unit \"g/ml\"
+// - sub-expression \"water.LowerTorso.extravascularH2O.q_out.o\" has unit \"g\"
+// [simulation/libraries/3rdParty/HumMod/HumModTest_OMC_total.mo:1420:1-1420:68:writable] Warning: The following equation is INCONSISTENT due to specified unit information: water.Kidney.nephron.H2OChannels.changePerMin = water.Kidney.nephron.H2OChannels.InactivateK * water.Kidney.nephron.H2OChannels.CD_H2O_Reab.q - water.Kidney.nephron.H2OChannels.ReactivateK * water.Kidney.nephron.H2OChannels.Inactive
+// Warning: The units of following sub-expressions need to be equal:
+// - sub-expression \"water.Kidney.nephron.H2OChannels.InactivateK * water.Kidney.nephron.H2OChannels.CD_H2O_Reab.q\" has unit \"1.6666666666666667e-8m2.s-1\"
+// - sub-expression \"water.Kidney.nephron.H2OChannels.ReactivateK * water.Kidney.nephron.H2OChannels.Inactive\" has unit \"1/m1\"
+// [simulation/libraries/3rdParty/HumMod/HumModTest_OMC_total.mo:3068:1-3068:396:writable] Warning: The following equation is INCONSISTENT due to specified unit information: gases.oxygen.tissuesO2.O2ToTissues2 = gases.oxygen.tissuesO2.skeletalMuscleO2.O2Use_mmol_per_min + gases.oxygen.tissuesO2.boneO2.O2Use_mmol_per_min + gases.oxygen.tissuesO2.fatO2.O2Use_mmol_per_min + gases.oxygen.tissuesO2.brainO2.O2Use_mmol_per_min + gases.oxygen.tissuesO2.rightHeartO2.O2Use_mmol_per_min + gases.oxygen.tissuesO2.respiratoryMuscleO2.O2Use_mmol_per_min + gases.oxygen.tissuesO2.otherTissueO2.O2Use_mmol_per_min + gases.oxygen.tissuesO2.liverO2.O2Use_mmol_per_min + gases.oxygen.tissuesO2.leftHeartO2.O2Use_mmol_per_min + gases.oxygen.tissuesO2.kidneyO2.O2Use_mmol_per_min + gases.oxygen.tissuesO2.GITractO2.O2Use_mmol_per_min + gases.oxygen.tissuesO2.skinO2.O2Use_mmol_per_min
+// Warning: The units of following sub-expressions need to be equal:
+// - sub-expression \"gases.oxygen.tissuesO2.skeletalMuscleO2.O2Use_mmol_per_min + gases.oxygen.tissuesO2.boneO2.O2Use_mmol_per_min + gases.oxygen.tissuesO2.fatO2.O2Use_mmol_per_min + gases.oxygen.tissuesO2.brainO2.O2Use_mmol_per_min + gases.oxygen.tissuesO2.rightHeartO2.O2Use_mmol_per_min + gases.oxygen.tissuesO2.respiratoryMuscleO2.O2Use_mmol_per_min + gases.oxygen.tissuesO2.otherTissueO2.O2Use_mmol_per_min + gases.oxygen.tissuesO2.liverO2.O2Use_mmol_per_min + gases.oxygen.tissuesO2.leftHeartO2.O2Use_mmol_per_min + gases.oxygen.tissuesO2.kidneyO2.O2Use_mmol_per_min + gases.oxygen.tissuesO2.GITractO2.O2Use_mmol_per_min + gases.oxygen.tissuesO2.skinO2.O2Use_mmol_per_min\" has unit \"ml/min\"
+// - sub-expression \"gases.oxygen.tissuesO2.O2ToTissues2\" has unit \"mmol/min\"
+// [simulation/libraries/3rdParty/HumMod/HumModTest_OMC_total.mo:2992:1-2992:89:writable] Warning: The following equation is INCONSISTENT due to specified unit information: gases.oxygen.x = ((-gases.oxygen.O2Lung.q_out.q) - gases.oxygen.tissuesO2.O2ToTissues) / gases.oxygen.O2Lung.BloodFlow * gases.oxygen.veins.SolventVolume
+// Warning: The units of following sub-expressions need to be equal:
+// - sub-expression \"-gases.oxygen.O2Lung.q_out.q\" has unit \"ml/min\"
+// - sub-expression \"gases.oxygen.tissuesO2.O2ToTissues\" has unit \"mmol/min\"
+// [Modelica 3.2.1+maint.om/Blocks/Math.mo:942:5-942:16:writable] Warning: The following equation is INCONSISTENT due to specified unit information: heat.sweatGland.H2OOutflow.y = heat.sweatGland.H2OOutflow.u1 - heat.sweatGland.H2OOutflow.u2
+// Warning: The units of following sub-expressions need to be equal:
+// - sub-expression \"heat.sweatGland.H2OOutflow.u1 - heat.sweatGland.H2OOutflow.u2\" has unit \"ml/min\"
+// - sub-expression \"heat.sweatGland.H2OOutflow.y\" has unit \"kg/min\"
+// "
 // endResult

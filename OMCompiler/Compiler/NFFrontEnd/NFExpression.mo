@@ -837,6 +837,24 @@ public
     end match;
   end typeOf;
 
+  function sizeOf
+    "this can fail for certain untyped expressions"
+    input Expression exp;
+    output Integer sz = Type.sizeOf(typeOf(exp));
+  end sizeOf;
+
+  function sizeZero
+    "returns true if its a constructor that is definitely of size zero;"
+    input Expression exp;
+    output Boolean b;
+  algorithm
+    try
+      b := 0 == sizeOf(exp);
+    else
+      b := false;
+    end try;
+  end sizeZero;
+
   function setType
     input Type ty;
     input output Expression exp;
@@ -1260,10 +1278,15 @@ public
   end makeTuple;
 
   function rangeSize
-    input Expression range  "has to be RANGE()!";
+    input Expression range "has to be RANGE()!";
     input Boolean resize = false;
     output Integer size = Dimension.size(Type.nthDimension(typeOf(range), 1), resize);
   end rangeSize;
+
+  function rangeSizeExp
+    input Expression range "has to be RANGE()!";
+    output Expression size = Dimension.sizeExp(Type.nthDimension(typeOf(range), 1));
+  end rangeSizeExp;
 
   function applySubscripts
     "Subscripts an expression with the given list of subscripts."
@@ -5331,7 +5354,11 @@ public
       // Such an expression can't be promoted here, so we create a promote call instead.
       case (_, _) guard isArray
         algorithm
-          (outExp, expanded) := ExpandExp.expand(exp);
+          if Flags.getConfigBool(Flags.NEW_BACKEND) and not Expression.isLiteral(exp) then
+            expanded := false;
+          else
+            (outExp, expanded) := ExpandExp.expand(exp);
+          end if;
 
           if expanded then
             outExp := promote2(outExp, true, dims, types);
@@ -6361,7 +6388,7 @@ public
       case ENUM_LITERAL()
         algorithm
           json := JSON.emptyListObject();
-          json := JSON.addPair("$kind", JSON.makeString("enum"), json);
+          json := JSON.addPair("$kind", JSON.STRING("enum"), json);
           json := JSON.addPair("name", JSON.makeString(toString(exp)), json);
           json := JSON.addPair("index", JSON.makeInteger(exp.index), json);
         then
@@ -6375,24 +6402,18 @@ public
       case TYPENAME()
         algorithm
           json := JSON.emptyListObject();
-          json := JSON.addPair("$kind", JSON.makeString("typename"), json);
+          json := JSON.addPair("$kind", JSON.STRING("typename"), json);
           json := JSON.addPair("name", JSON.makeString(Type.toString(exp.ty)), json);
         then
           json;
 
       case ARRAY()
-        algorithm
-          json := JSON.emptyArray(arrayLength(exp.elements));
-          for e in exp.elements loop
-            json := JSON.addElement(toJSON(e), json);
-          end for;
-        then
-          json;
+        then JSON.makeList(list(toJSON(e) for e in exp.elements));
 
       case RANGE()
         algorithm
           json := JSON.emptyListObject();
-          json := JSON.addPair("$kind", JSON.makeString("range"), json);
+          json := JSON.addPair("$kind", JSON.STRING("range"), json);
           json := JSON.addPair("start", toJSON(exp.start), json);
 
           if isSome(exp.step) then
@@ -6406,19 +6427,19 @@ public
       case TUPLE()
         algorithm
           json := JSON.emptyListObject();
-          json := JSON.addPair("$kind", JSON.makeString("tuple"), json);
+          json := JSON.addPair("$kind", JSON.STRING("tuple"), json);
           json := JSON.addPair("elements",
-            JSON.makeArray(list(toJSON(e) for e in exp.elements)), json);
+            JSON.makeList(list(toJSON(e) for e in exp.elements)), json);
         then
           json;
 
       case RECORD()
         algorithm
           json := JSON.emptyListObject();
-          json := JSON.addPair("$kind", JSON.makeString("record"), json);
+          json := JSON.addPair("$kind", JSON.STRING("record"), json);
           json := JSON.addPair("name", JSON.makeString(AbsynUtil.pathString(exp.path)), json);
           json := JSON.addPair("elements",
-            JSON.makeArray(list(toJSON(e) for e in exp.elements)), json);
+            JSON.makeList(list(toJSON(e) for e in exp.elements)), json);
         then
           json;
 
@@ -6428,12 +6449,12 @@ public
       case SIZE()
         algorithm
           json := JSON.emptyListObject();
-          json := JSON.addPair("$kind", JSON.makeString("call"), json);
-          json := JSON.addPair("name", JSON.makeString("size"), json);
+          json := JSON.addPair("$kind", JSON.STRING("call"), json);
+          json := JSON.addPair("name", JSON.STRING("size"), json);
 
           if isSome(exp.dimIndex) then
             json := JSON.addPair("arguments",
-              JSON.makeArray({toJSON(exp.exp), toJSON(Util.getOption(exp.dimIndex))}), json);
+              JSON.makeList({toJSON(exp.exp), toJSON(Util.getOption(exp.dimIndex))}), json);
           else
             json := JSON.addPair("arguments", JSON.makeArray({toJSON(exp.exp)}), json);
           end if;
@@ -6443,9 +6464,9 @@ public
       case BINARY()
         algorithm
           json := JSON.emptyListObject();
-          json := JSON.addPair("$kind", JSON.makeString("binary_op"), json);
+          json := JSON.addPair("$kind", JSON.STRING("binary_op"), json);
           json := JSON.addPair("lhs", toJSON(exp.exp1), json);
-          json := JSON.addPair("op", JSON.makeString(Operator.symbol(exp.operator, spacing = "")), json);
+          json := JSON.addPair("op", Operator.toJSON(exp.operator), json);
           json := JSON.addPair("rhs", toJSON(exp.exp2), json);
         then
           json;
@@ -6453,8 +6474,8 @@ public
       case UNARY()
         algorithm
           json := JSON.emptyListObject();
-          json := JSON.addPair("$kind", JSON.makeString("unary_op"), json);
-          json := JSON.addPair("op", JSON.makeString(Operator.symbol(exp.operator, spacing = "")), json);
+          json := JSON.addPair("$kind", JSON.STRING("unary_op"), json);
+          json := JSON.addPair("op", Operator.toJSON(exp.operator), json);
           json := JSON.addPair("exp", toJSON(exp.exp), json);
         then
           json;
@@ -6462,9 +6483,9 @@ public
       case LBINARY()
         algorithm
           json := JSON.emptyListObject();
-          json := JSON.addPair("$kind", JSON.makeString("binary_op"), json);
+          json := JSON.addPair("$kind", JSON.STRING("binary_op"), json);
           json := JSON.addPair("lhs", toJSON(exp.exp1), json);
-          json := JSON.addPair("op", JSON.makeString(Operator.symbol(exp.operator, spacing = "")), json);
+          json := JSON.addPair("op", Operator.toJSON(exp.operator), json);
           json := JSON.addPair("rhs", toJSON(exp.exp2), json);
         then
           json;
@@ -6472,8 +6493,8 @@ public
       case LUNARY()
         algorithm
           json := JSON.emptyListObject();
-          json := JSON.addPair("$kind", JSON.makeString("unary_op"), json);
-          json := JSON.addPair("op", JSON.makeString(Operator.symbol(exp.operator, spacing = "")), json);
+          json := JSON.addPair("$kind", JSON.STRING("unary_op"), json);
+          json := JSON.addPair("op", Operator.toJSON(exp.operator), json);
           json := JSON.addPair("exp", toJSON(exp.exp), json);
         then
           json;
@@ -6481,9 +6502,9 @@ public
       case RELATION()
         algorithm
           json := JSON.emptyListObject();
-          json := JSON.addPair("$kind", JSON.makeString("binary_op"), json);
+          json := JSON.addPair("$kind", JSON.STRING("binary_op"), json);
           json := JSON.addPair("lhs", toJSON(exp.exp1), json);
-          json := JSON.addPair("op", JSON.makeString(Operator.symbol(exp.operator, spacing = "")), json);
+          json := JSON.addPair("op", Operator.toJSON(exp.operator), json);
           json := JSON.addPair("rhs", toJSON(exp.exp2), json);
         then
           json;
@@ -6491,19 +6512,19 @@ public
       case MULTARY()
         algorithm
           json := JSON.emptyListObject();
-          json := JSON.addPair("$kind", JSON.makeString("multary_op"), json);
+          json := JSON.addPair("$kind", JSON.STRING("multary_op"), json);
           json := JSON.addPair("args",
             JSON.makeArray(list(toJSON(a) for a in exp.arguments)), json);
           json := JSON.addPair("inv_args",
             JSON.makeArray(list(toJSON(a) for a in exp.inv_arguments)), json);
-          json := JSON.addPair("op", JSON.makeString(Operator.symbol(exp.operator, spacing = "")), json);
+          json := JSON.addPair("op", Operator.toJSON(exp.operator), json);
         then
           json;
 
       case IF()
         algorithm
           json := JSON.emptyListObject();
-          json := JSON.addPair("$kind", JSON.makeString("if"), json);
+          json := JSON.addPair("$kind", JSON.STRING("if"), json);
           json := JSON.addPair("condition", toJSON(exp.condition), json);
           json := JSON.addPair("true", toJSON(exp.trueBranch), json);
           json := JSON.addPair("false", toJSON(exp.falseBranch), json);
@@ -6517,7 +6538,7 @@ public
       case SUBSCRIPTED_EXP()
         algorithm
           json := JSON.emptyListObject();
-          json := JSON.addPair("$kind", JSON.makeString("sub"), json);
+          json := JSON.addPair("$kind", JSON.STRING("sub"), json);
           json := JSON.addPair("exp", toJSON(exp.exp), json);
           json := JSON.addPair("subscripts", Subscript.toJSONList(exp.subscripts), json);
         then
@@ -6526,7 +6547,7 @@ public
       case TUPLE_ELEMENT()
         algorithm
           json := JSON.emptyListObject();
-          json := JSON.addPair("$kind", JSON.makeString("tuple_element"), json);
+          json := JSON.addPair("$kind", JSON.STRING("tuple_element"), json);
           json := JSON.addPair("exp", toJSON(exp.tupleExp), json);
           json := JSON.addPair("index", JSON.makeInteger(exp.index), json);
         then
@@ -6535,7 +6556,7 @@ public
       case RECORD_ELEMENT()
         algorithm
           json := JSON.emptyListObject();
-          json := JSON.addPair("$kind", JSON.makeString("record_element"), json);
+          json := JSON.addPair("$kind", JSON.STRING("record_element"), json);
           json := JSON.addPair("exp", toJSON(exp.recordExp), json);
           json := JSON.addPair("index", JSON.makeInteger(exp.index), json);
           json := JSON.addPair("field", JSON.makeString(exp.fieldName), json);
@@ -6545,9 +6566,9 @@ public
       case PARTIAL_FUNCTION_APPLICATION()
         algorithm
           json := JSON.emptyListObject();
-          json := JSON.addPair("$kind", JSON.makeString("function"), json);
+          json := JSON.addPair("$kind", JSON.STRING("function"), json);
           json := JSON.addPair("name", JSON.makeString(ComponentRef.toString(exp.fn)), json);
-          json := JSON.addPair("arguments", JSON.makeArray(
+          json := JSON.addPair("arguments", JSON.makeList(
             list(dump_arg(name, arg) threaded for arg in exp.args, name in exp.argNames)), json);
         then
           json;
@@ -6673,26 +6694,41 @@ public
     end match;
   end replaceLiteralArrayElements;
 
+  function replaceCrefWithBinding
+    input ComponentRef cref;
+    input output Expression exp;
+    input recurse func;
+    partial function recurse
+      input output Expression exp;
+    end recurse;
+  protected
+    Expression e;
+  algorithm
+    exp := match InstNode.getBindingExpOpt(ComponentRef.node(cref))
+      case SOME(e as Expression.INTEGER())                                    then e;
+      case SOME(e as Expression.CREF())                                       then replaceCrefWithBinding(e.cref, e, func);
+      case SOME(Expression.SUBSCRIPTED_EXP(exp = e as Expression.INTEGER()))  then e;
+      case SOME(Expression.SUBSCRIPTED_EXP(exp = e as Expression.CREF()))     then replaceCrefWithBinding(e.cref, e, func);
+      case SOME(e) algorithm
+        e := Expression.map(e, func);
+      then e;
+      else exp;
+    end match;
+  end replaceCrefWithBinding;
+
+  function replaceResizableParameterWithOriginal
+    input output Expression exp;
+  algorithm
+    exp := match exp
+      // frontend replacement
+      case Expression.CREF() guard(ComponentRef.isResizable(exp.cref)) algorithm
+      then replaceCrefWithBinding(exp.cref, exp, replaceResizableParameterWithOriginal);
+      else exp;
+    end match;
+  end replaceResizableParameterWithOriginal;
+
   function replaceResizableParameter
     input output Expression exp;
-  protected
-    function replaceWithBinding
-      input ComponentRef cref;
-      input output Expression exp;
-    protected
-      Expression e;
-    algorithm
-      exp := match InstNode.getBindingExpOpt(ComponentRef.node(cref))
-        case SOME(e as Expression.INTEGER()) then e;
-        case SOME(e as Expression.CREF()) then replaceWithBinding(e.cref, e);
-        case SOME(Expression.SUBSCRIPTED_EXP(exp = e as Expression.INTEGER())) then e;
-        case SOME(Expression.SUBSCRIPTED_EXP(exp = e as Expression.CREF())) then replaceWithBinding(e.cref, e);
-        case SOME(e) algorithm
-          e := Expression.map(e, replaceResizableParameter);
-        then e;
-        else exp;
-      end match;
-    end replaceWithBinding;
   algorithm
     exp := match exp
       local
@@ -6707,12 +6743,12 @@ public
           then Expression.INTEGER(v);
 
           // optimal value not yet computed
-          else replaceWithBinding(exp.cref, exp);
+          else replaceCrefWithBinding(exp.cref, exp, replaceResizableParameter);
         end match;
 
       // frontend replacement
       case Expression.CREF() guard(ComponentRef.isResizable(exp.cref))
-      then replaceWithBinding(exp.cref, exp);
+      then replaceCrefWithBinding(exp.cref, exp, replaceResizableParameter);
 
       else exp;
     end match;

@@ -2,7 +2,6 @@
 // keywords: external function with record input and output
 // status: correct
 // teardown_command: rm -f *ExternalRecord.Test*
-// cflags: -d=-newInst
 
 setCommandLineOptions("+simCodeTarget=Cpp"); getErrorString();
 
