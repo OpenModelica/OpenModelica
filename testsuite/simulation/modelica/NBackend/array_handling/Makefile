@@ -30,6 +30,7 @@ BenchmarksForResizeableArrays.ArrayEquations.WaterHammer.mos\
 BenchmarksForResizeableArrays.ForLoops.CascadedFirstOrder.mos\
 BenchmarksForResizeableArrays.ForLoops.CocurrentHeatExchanger.mos\
 BenchmarksForResizeableArrays.ComponentArrays.FiltersInSeries.mos\
+BenchmarksForResizeableArrays.ComponentArrays.TransmissionLine.mos\
 BenchmarksForResizeableArrays.Resizable.CascadedFirstOrder1_Resizable.mos\
 BenchmarksForResizeableArrays.Resizable.CascadedFirstOrder2_Resizable.mos\
 BenchmarksForResizeableArrays.Resizable.CascadedFirstOrder3_Resizable.mos\
