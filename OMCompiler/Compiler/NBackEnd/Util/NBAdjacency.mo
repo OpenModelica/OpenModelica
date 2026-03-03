@@ -765,7 +765,7 @@ public
       end match;
 
       if Flags.isSet(Flags.BLT_MATRIX_DUMP) then
-        print(toString(adj, "Expanded Final") + "\n");
+        print(toString(adj, "Expanded ") + "\n");
       end if;
     end expand;
 

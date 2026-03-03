@@ -633,7 +633,9 @@ public
         for var_idx in scal_lst loop
           // we now know that there is a dependency of equation (eqn_idx) to variable (var_idx)
           // call the function that adds this specific variable to the correct structure
-          eqn_idx := func(eqn_idx, var_idx);
+          if var_idx > 0 then
+            eqn_idx := func(eqn_idx, var_idx);
+          end if;
         end for;
       end for;
     end for;
@@ -1628,10 +1630,14 @@ protected
     input Integer var_idx;
     input Mode mode;
   algorithm
-    //print("adding eqn: " + intString(eqn_idx) + " var: " + intString(var_idx) + " with mode " + Mode.toString(mode) + "\n");
     try
-      arrayUpdate(m, eqn_idx, var_idx :: m[eqn_idx]);
-      UnorderedMap.addUpdate((eqn_idx, var_idx), function Mode.mergeCreate(mode = mode), modes);
+      // only add the variable if its a viable index. due to unresolved if-expressions in for-loops some branches can access variables
+      // that seem out of scope but are in fact valid because the if-condition ensures it.
+      if var_idx > 0 then
+        //print("adding eqn: " + intString(eqn_idx) + " var: " + intString(var_idx) + " with mode " + Mode.toString(mode) + "\n");
+        arrayUpdate(m, eqn_idx, var_idx :: m[eqn_idx]);
+        UnorderedMap.addUpdate((eqn_idx, var_idx), function Mode.mergeCreate(mode = mode), modes);
+      end if;
     else
       Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because index " + intString(eqn_idx)
         + " could not be added. Matrix size: " + intString(arrayLength(m)) + "."});

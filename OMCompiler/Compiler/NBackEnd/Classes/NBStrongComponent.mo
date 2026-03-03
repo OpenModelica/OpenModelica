@@ -869,7 +869,13 @@ public
     ComponentRef cref;
     list<tuple<ComponentRef, list<ComponentRef>>> scalarized_dependencies;
   algorithm
-    Equation.FOR_EQUATION(iter = iter, body = {body}) := eqn;
+    try
+      Equation.FOR_EQUATION(iter = iter, body = {body}) := eqn;
+    else
+      Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because the for-loop had more than one body equation:\n" + Equation.toString(eqn)});
+      fail();
+    end try;
+
     dependencies := Equation.collectCrefs(eqn, function Slice.getDependentCrefCausalized(set = set), Expression.fakeMap);
     if ComponentRef.isEmpty(var_cref) then
       SOME(Expression.CREF(cref = cref)) := Equation.getLHS(body);
