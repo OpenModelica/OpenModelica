@@ -215,9 +215,9 @@ public
 
     function hashClockTpl
       input ClockTpl tpl;
-      output Integer hash = 5381;
+      output Integer hash;
     algorithm
-      hash := stringHashDjb2Continue(ComponentRef.toString(Util.tuple21(tpl)), hash);
+      hash := ComponentRef.hash(Util.tuple21(tpl));
       hash := stringHashDjb2Continue(BClock.toString(Util.tuple22(tpl)), hash);
     end hashClockTpl;
 

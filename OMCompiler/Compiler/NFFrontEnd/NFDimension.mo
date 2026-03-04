@@ -457,7 +457,7 @@ public
 
   function hashList
     input list<Dimension> dims;
-    output Integer hash = 5381;
+    output Integer hash = Util.HASH_SEED;
   algorithm
     for dim in dims loop
       hash := stringHashDjb2Continue(toString(dim), hash);

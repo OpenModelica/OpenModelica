@@ -87,7 +87,7 @@ public
   function hash
     "compute hash value by only using iteration variables with their first index should be unique enough"
     input Tearing set;
-    output Integer h = 5381;
+    output Integer h = Util.HASH_SEED;
   algorithm
     for var in set.iteration_vars loop
       h := stringHashDjb2Continue(BVariable.pointerToString(Slice.getT(var)), h);

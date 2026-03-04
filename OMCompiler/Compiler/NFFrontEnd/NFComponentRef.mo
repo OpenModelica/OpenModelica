@@ -1561,39 +1561,9 @@ public
   function hash
     input ComponentRef cref;
     output Integer hash;
-  protected
-    Integer h;
-
-    function hash_rest
-      input ComponentRef cref;
-      input output Integer hash;
-    algorithm
-      hash := match cref
-        case CREF()
-          algorithm
-            hash := stringHashDjb2Continue(InstNode.name(cref.node), hash);
-
-            for s in cref.subscripts loop
-              hash := stringHashDjb2Continue(Subscript.toString(s), hash);
-            end for;
-          then
-            hash_rest(cref.restCref, hash);
-
-        else hash;
-      end match;
-    end hash_rest;
   algorithm
     hash := match cref
-      case CREF()
-        algorithm
-          h := stringHashDjb2(InstNode.name(cref.node));
-
-          for s in cref.subscripts loop
-            h := stringHashDjb2Continue(Subscript.toString(s), h);
-          end for;
-        then
-          hash_rest(cref.restCref, h);
-
+      case CREF() then hashContinue(cref, false);
       case WILD() then stringHashDjb2("_");
       else 0;
     end match;
@@ -1603,23 +1573,35 @@ public
     "hashes the cref without subscripts. used for non expanded variables"
     input ComponentRef cref;
     output Integer hash;
-  protected
-    function hash_rest
-      input ComponentRef cref;
-      input output Integer hash;
-    algorithm
-      hash := match cref
-        case CREF() then hash_rest(cref.restCref, stringHashDjb2Continue(InstNode.name(cref.node), hash));
-        else hash;
-      end match;
-    end hash_rest;
   algorithm
     hash := match cref
-      case CREF() then hash_rest(cref.restCref, stringHashDjb2(InstNode.name(cref.node)));
+      case CREF() then hashContinue(cref, true);
       case WILD() then stringHashDjb2("_");
       else 0;
     end match;
   end hashStrip;
+
+  function hashContinue
+    input ComponentRef cref;
+    input Boolean strip;
+    input output Integer hash = Util.HASH_SEED;
+  algorithm
+    hash := match cref
+      case CREF()
+        algorithm
+          hash := stringHashDjb2Continue(InstNode.name(cref.node), hash);
+
+          if not strip then
+            for s in cref.subscripts loop
+              hash := stringHashDjb2Continue(Subscript.toString(s), hash);
+            end for;
+          end if;
+        then
+          hashContinue(cref.restCref, strip, hash);
+
+      else hash;
+    end match;
+  end hashContinue;
 
   function toPath
     input ComponentRef cref;
