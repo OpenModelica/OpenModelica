@@ -599,25 +599,25 @@ public
 
       case RATIONAL_CLOCK()
         algorithm
-          Expression.hashContinue(clk.intervalCounter, hash);
-          stringHashDjb2Continue(", ", hash);
-          Expression.hashContinue(clk.resolution, hash);
+          hash := Expression.hashContinue(clk.intervalCounter, hash);
+          hash := stringHashDjb2Continue(", ", hash);
+          hash := Expression.hashContinue(clk.resolution, hash);
         then hash;
 
       case REAL_CLOCK() then Expression.hashContinue(clk.interval, hash);
 
       case EVENT_CLOCK()
         algorithm
-          Expression.hashContinue(clk.condition, hash);
-          stringHashDjb2Continue(", ", hash);
-          Expression.hashContinue(clk.startInterval, hash);
+          hash := Expression.hashContinue(clk.condition, hash);
+          hash := stringHashDjb2Continue(", ", hash);
+          hash := Expression.hashContinue(clk.startInterval, hash);
         then hash;
 
       case SOLVER_CLOCK()
         algorithm
-          Expression.hashContinue(clk.c, hash);
-          stringHashDjb2Continue(", ", hash);
-          Expression.hashContinue(clk.solverMethod, hash);
+          hash := Expression.hashContinue(clk.c, hash);
+          hash := stringHashDjb2Continue(", ", hash);
+          hash := Expression.hashContinue(clk.solverMethod, hash);
         then hash;
     end match;
     hash := stringHashDjb2Continue(")", hash);
