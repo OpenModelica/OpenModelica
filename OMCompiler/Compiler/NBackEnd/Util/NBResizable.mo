@@ -622,15 +622,15 @@ protected
       sub_exp := Subscript.toExp(sub);
       const   := Expression.MULTARY({sub_exp}, {Dimension.sizeExp(dim)}, op);
       try
-        addConstraint(const, replacements, c2pi, Expression.isNonPositive, "variable", ">=");
+        addConstraint(const, replacements, c2pi, Expression.isNonPositive, ComponentRef.toString(cref) + " (variable)", ">=");
       else
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed.\nViolation of implicit constraint `" + Dimension.toString(dim) + " >= " + Subscript.toString(sub)
           + "` for component reference `" + ComponentRef.toString(cref) + "` of variable `" + Variable.toString(Pointer.access(BVariable.getVarPointer(cref, sourceInfo()))) + "`\nin equation:\n" + Equation.toString(eqn)});
         fail();
       end try;
-      const   := Expression.MULTARY({Dimension.sizeExp(dim)}, {Expression.INTEGER(1)}, op);
+      const   := Expression.MULTARY({Expression.INTEGER(1)}, {Dimension.sizeExp(dim)}, op);
       try
-        addConstraint(const, replacements, c2pi, Expression.isNonPositive, "variable", ">=");
+        addConstraint(const, replacements, c2pi, Expression.isNonPositive, ComponentRef.toString(cref) + " (variable)", ">=");
       else
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed.\nViolation of implicit constraint `" + Dimension.toString(dim) + " >= 1"
           + "` for component reference `" + ComponentRef.toString(cref) + "` of variable `" + Variable.toString(Pointer.access(BVariable.getVarPointer(cref, sourceInfo()))) + "`\nin equation:\n" + Equation.toString(eqn)});
@@ -816,8 +816,15 @@ protected
   protected
     UnorderedSet<ComponentRef> failed_parameters = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
   algorithm
+    if debug then
+      print("FIXING CONSTRAINTS\n\n");
+    end if;
     fixConstraints(optimal_values, c2pi, p2ci, failed_parameters, function intLe(i2 = 0));
     fixConstraints(optimal_values, c2pe, p2ce, failed_parameters, function intEq(i2 = 0));
+
+    if debug then
+      print("\n");
+    end if;
   end computeOptimalValues;
 
   function fixConstraints
@@ -844,10 +851,17 @@ protected
       (constraint, crefs) := tpl;
       _ := match checkConstraint(constraint, optimal_values)
         // this constraint is not violated
-        case SOME(value) guard(func(value)) then ();
+        case SOME(value) guard(func(value)) algorithm
+          if debug then
+            print(Expression.toString(constraint) + " || is not violated " + intString(value) + "\n");
+          end if;
+        then ();
 
         // this constraint is violated
         case SOME(value) algorithm
+          if debug then
+            print(Expression.toString(constraint) + " || is violated by " + intString(value) + "\n");
+          end if;
           // create artificial equation
           eqn := Equation.makeAssignmentEqn(constraint, Expression.INTEGER(0), Iterator.EMPTY(), EquationAttributes.default(EquationKind.DISCRETE, false));
           for cref in crefs loop

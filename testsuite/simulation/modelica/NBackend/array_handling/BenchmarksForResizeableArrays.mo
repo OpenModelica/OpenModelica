@@ -841,6 +841,11 @@ of a corresponding library.
         __OpenModelica_resizable = true);
     end WaterHammer_Resizable;
 
+    model CascadedFirstOrder_Resizable
+      extends ForLoops.CascadedFirstOrder(N = NR);
+      parameter Integer NR = 10 annotation(__OpenModelica_resizable=true);
+    end CascadedFirstOrder_Resizable;
+
   end Resizable;
   annotation (uses(Modelica(version="4.0.0")), Documentation(info="<html>
 <p>Library <b>BenchmarksForResizeableArrays</b> is a <b>free</b> package providing benchmark models with arrays.

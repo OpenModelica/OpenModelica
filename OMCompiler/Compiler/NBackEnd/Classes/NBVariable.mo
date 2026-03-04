@@ -1534,7 +1534,6 @@ public
     Variable var;
     list<ComponentRef> iter_crefs;
     list<Subscript> iter_subs;
-    list<Integer> sub_sizes;
     Type ty;
   algorithm
     // get subscripts from optional iterator
@@ -1543,8 +1542,7 @@ public
     if listEmpty(iter_subs) then
       ty := var_ty;
     else
-      sub_sizes := Iterator.sizes(iterator);
-      ty := Type.liftArrayLeftList(var_ty, list(Dimension.fromInteger(sub_size) for sub_size in sub_sizes));
+      ty := Type.liftArrayLeftList(var_ty, Iterator.dimensions(iterator));
     end if;
     // create inst node with dummy variable pointer and create cref from it
     node := InstNode.VAR_NODE(name + "_" + intString(uniqueIndex), Pointer.create(DUMMY_VARIABLE));
