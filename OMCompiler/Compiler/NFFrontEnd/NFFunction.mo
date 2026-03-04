@@ -1655,7 +1655,7 @@ uniontype Function
       // The function does contain impure calls, mark the function as impure.
       if not pure then
         attr := fn.attributes;
-        attr.isImpure := true;
+        attr.purity := DAE.Purity.IMPURE;
         fn.attributes := attr;
       end if;
     end if;
@@ -1727,7 +1727,7 @@ uniontype Function
     fn :: _ := typeRefCache(fn_ref);
     slots_arr := listArray(fn.slots);
 
-    purity := if Function.isImpure(fn) or Function.isOMImpure(fn) then Purity.IMPURE else Purity.PURE;
+    purity := if Function.isImpure(fn) then Purity.IMPURE else Purity.PURE;
     variability := Variability.CONSTANT;
 
     // Type the arguments and add them to the slots.
@@ -1919,13 +1919,8 @@ uniontype Function
 
   function isImpure
     input Function fn;
-    output Boolean isImpure = fn.attributes.isImpure;
+    output Boolean isImpure = fn.attributes.purity == DAE.Purity.IMPURE;
   end isImpure;
-
-  function isOMImpure
-    input Function fn;
-    output Boolean isImpure = not fn.attributes.isOpenModelicaPure;
-  end isOMImpure;
 
   function isFunctionPointer
     input Function fn;
@@ -2039,7 +2034,7 @@ uniontype Function
   algorithm
     vis := SCode.PUBLIC(); // TODO: Use the actual visibility.
     par := false; // TODO: Use the actual partial prefix.
-    impr := fn.attributes.isImpure;
+    impr := fn.attributes.purity == DAE.Purity.IMPURE;
     ity := fn.attributes.inline;
     ty := makeDAEType(fn);
     unused_inputs := analyseUnusedParameters(fn);
@@ -2436,12 +2431,6 @@ protected
       not SCodeUtil.commentHasBooleanNamedAnnotation(cmt, "__OpenModelica_Impure");
   end hasOMPure;
 
-  function hasImpure
-    input SCode.Comment cmt;
-    output Boolean res =
-      SCodeUtil.commentHasBooleanNamedAnnotation(cmt, "__ModelicaAssociation_Impure");
-  end hasImpure;
-
   function getBuiltinPtr
     input SCode.Comment cmt;
     output DAE.FunctionBuiltin builtin =
@@ -2488,6 +2477,7 @@ protected
     SCode.FunctionRestriction fres;
     Boolean is_partial;
     SCode.Comment cmt;
+    DAE.Purity purity;
   algorithm
     def := InstNode.classDefinition(Class.lastBaseClass(node));
     res := SCodeUtil.getClassRestriction(def);
@@ -2498,27 +2488,26 @@ protected
     is_partial := InstNode.isPartial(node);
 
     cmt := mergeFunctionAnnotations(comments);
+    purity := InstUtil.getFunctionRestrictionPurity(SCodeUtil.getFunctionRestrictionPurity(fres), cmt);
 
     attr := matchcontinue fres
       local
-        Boolean is_impure, is_om_pure, has_out_params, has_unbox_args;
+        Boolean has_unbox_args;
         String name;
         list<String> in_params, out_params;
         DAE.InlineType inline_ty;
         DAE.FunctionBuiltin builtin;
-        Absyn.FunctionPurity purity;
 
       // External builtin function.
-      case SCode.FunctionRestriction.FR_EXTERNAL_FUNCTION(purity)
+      case SCode.FunctionRestriction.FR_EXTERNAL_FUNCTION()
         algorithm
           in_params := list(InstNode.name(i) for i in inputs);
           out_params := list(InstNode.name(o) for o in outputs);
           name := SCodeUtil.isBuiltinFunction(def, in_params, out_params);
           inline_ty := InstUtil.commentIsInlineFunc(cmt);
-          is_impure := AbsynUtil.isImpure(purity) or hasImpure(cmt);
           has_unbox_args := hasUnboxArgsAnnotation(cmt);
         then
-          DAE.FUNCTION_ATTRIBUTES(inline_ty, hasOMPure(cmt), is_impure, is_partial,
+          DAE.FUNCTION_ATTRIBUTES(inline_ty, purity, is_partial,
             DAE.FUNCTION_BUILTIN(SOME(name), has_unbox_args), DAE.FP_NON_PARALLEL());
 
       // Parallel function: there are some builtin functions.
@@ -2530,7 +2519,7 @@ protected
           inline_ty := InstUtil.commentIsInlineFunc(cmt);
           has_unbox_args := hasUnboxArgsAnnotation(cmt);
         then
-          DAE.FUNCTION_ATTRIBUTES(inline_ty, hasOMPure(cmt), false, is_partial,
+          DAE.FUNCTION_ATTRIBUTES(inline_ty, purity, is_partial,
             DAE.FUNCTION_BUILTIN(SOME(name), has_unbox_args), DAE.FP_PARALLEL_FUNCTION());
 
       // Parallel function: non-builtin.
@@ -2538,12 +2527,12 @@ protected
         algorithm
           inline_ty := InstUtil.commentIsInlineFunc(cmt);
         then
-          DAE.FUNCTION_ATTRIBUTES(inline_ty, hasOMPure(cmt), false, is_partial,
+          DAE.FUNCTION_ATTRIBUTES(inline_ty, purity, is_partial,
             getBuiltinPtr(cmt), DAE.FP_PARALLEL_FUNCTION());
 
       // Kernel functions: never builtin and never inlined.
       case SCode.FunctionRestriction.FR_KERNEL_FUNCTION()
-        then DAE.FUNCTION_ATTRIBUTES(DAE.NO_INLINE(), true, false, is_partial,
+        then DAE.FUNCTION_ATTRIBUTES(DAE.NO_INLINE(), purity, is_partial,
           DAE.FUNCTION_NOT_BUILTIN(), DAE.FP_KERNEL_FUNCTION());
 
       // Normal function.
@@ -2551,17 +2540,16 @@ protected
         algorithm
           inline_ty := InstUtil.commentIsInlineFunc(cmt);
 
-          // In Modelica 3.2 and before, external functions with side-effects are not marked.
-          is_impure := SCodeUtil.isRestrictionImpure(res,
-              Config.languageStandardAtMost(Config.LanguageStandard.'3.2')) or
-            SCodeUtil.commentHasBooleanNamedAnnotation(cmt, "__ModelicaAssociation_Impure");
+          // Since Modelica 3.3, normal functions are pure by default and external functions are impure.
+          if purity == DAE.Purity.UNDEFINED and Config.languageStandardAtLeast(Config.LanguageStandard.'3.3') then
+            purity := if SCodeUtil.isExternalFunctionRestriction(fres) then DAE.Purity.IMPURE else DAE.Purity.PURE;
+          end if;
 
           if SCodeUtil.hasNamedExternalCall("ModelicaError", SCodeUtil.getClassDef(def)) then
-            is_impure := false;
+            purity := DAE.Purity.IMPURE;
           end if;
         then
-          DAE.FUNCTION_ATTRIBUTES(inline_ty, hasOMPure(cmt), is_impure, is_partial,
-            getBuiltinPtr(cmt), DAE.FP_NON_PARALLEL());
+          DAE.FUNCTION_ATTRIBUTES(inline_ty, purity, is_partial, getBuiltinPtr(cmt), DAE.FP_NON_PARALLEL());
 
     end matchcontinue;
   end makeAttributes;

@@ -736,7 +736,7 @@ function arrayList<A>
 external "builtin";
 end arrayList;
 
-impure function listArray<A>
+function listArray<A>
   "O(n)"
   input List<A> lst;
   output array<A> arr;

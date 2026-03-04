@@ -8038,14 +8038,11 @@ public function makeCallAttr
   output DAE.CallAttributes callAttr;
 protected
   Boolean isImpure,isT,isB;
-  DAE.FunctionBuiltin isbuiltin;
-  DAE.InlineType isinline;
-  Option<String> name;
 algorithm
-  DAE.FUNCTION_ATTRIBUTES(isBuiltin=isbuiltin,isImpure=isImpure,inline=isinline) := attr;
   isT := isTuple(ty);
-  isB := isBuiltin(isbuiltin);
-  callAttr := DAE.CALL_ATTR(ty,isT,isB,isImpure,false,isinline,DAE.NO_TAIL());
+  isB := isBuiltin(attr.isBuiltin);
+  isImpure := attr.purity == DAE.Purity.IMPURE;
+  callAttr := DAE.CALL_ATTR(ty,isT,isB,isImpure,false,attr.inline,DAE.NO_TAIL());
 end makeCallAttr;
 
 public function builtinName
