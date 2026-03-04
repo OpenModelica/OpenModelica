@@ -827,7 +827,7 @@ protected
         call_crefs := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
         Slice.filterExp(arg, function Slice.getContinuous(init = false), call_crefs);
         for cref in UnorderedSet.toList(call_crefs) loop
-          cref_size := ComponentRef.size(cref, true);
+          cref_size := Type.sizeOf(ComponentRef.getSubscriptedType(cref), true);
           var_size  := BVariable.size(BVariable.getVarPointer(cref, sourceInfo()), true);
           // if the cref does not represent the full variable it has to be collected as it might cause a sliced state
           if var_size <> cref_size * iter_size then

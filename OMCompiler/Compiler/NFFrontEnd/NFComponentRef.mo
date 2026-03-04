@@ -1941,6 +1941,7 @@ public
   end depth;
 
   function size
+    "Note: does not take subscripts into account"
     input ComponentRef cref;
     input Boolean withComplex;
     input Boolean resize = false;
@@ -1948,6 +1949,7 @@ public
   end size;
 
   function sizes
+    "Note: does not take subscripts into account"
     input ComponentRef cref;
     input Boolean withComplex;
     input Boolean resize = false;
@@ -1966,6 +1968,7 @@ public
   end sizes;
 
   function sizes_local
+    "Note: does not take subscripts into account"
     input ComponentRef cref;
     input Boolean withComplex;
     input Boolean resize = false;
