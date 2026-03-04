@@ -1314,24 +1314,32 @@ public function pathHash "Hashes a path."
   input Absyn.Path path;
   output Integer hash;
 algorithm
-  hash := pathHashWork(path, Util.HASH_SEED);
+  hash := pathHashContinue(path, Util.HASH_SEED);
 end pathHash;
 
-public function pathHashWork "Hashes a path."
+public function pathHashContinue "Hashes a path."
   input Absyn.Path path;
-  input Integer acc;
-  output Integer hash;
+  input output Integer hash;
 algorithm
-  hash := match (path,acc)
-    local
-      Absyn.Path p;
-      String s;
-      Integer i,i2;
-    case (Absyn.FULLYQUALIFIED(p),_) then pathHashWork(p, acc*31 + 46 /* '.' */);
-    case (Absyn.QUALIFIED(s,p),_) equation i = stringHashDjb2(s); i2 = acc*31+46; then pathHashWork(p, i2*31 + i);
-    case (Absyn.IDENT(s),_) equation i = stringHashDjb2(s); i2 = acc*31+46; then i2*31 + i;
+  hash := match path
+    case Absyn.FULLYQUALIFIED()
+      algorithm
+        hash := stringHashDjb2Continue(".", hash);
+      then pathHashContinue(path.path, hash);
+
+    case Absyn.QUALIFIED()
+      algorithm
+        hash := stringHashDjb2Continue(".", hash);
+        hash := stringHashDjb2Continue(path.name, hash);
+      then pathHashContinue(path.path, hash);
+
+    case Absyn.IDENT()
+      algorithm
+        hash := stringHashDjb2Continue(".", hash);
+        hash := stringHashDjb2Continue(path.name, hash);
+      then hash;
   end match;
-end pathHashWork;
+end pathHashContinue;
 
 public function optPathString "Returns a path converted to string or an empty string if nothing exist"
   input Option<Absyn.Path> inPathOption;

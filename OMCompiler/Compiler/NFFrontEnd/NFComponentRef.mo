@@ -1560,31 +1560,19 @@ public
 
   function hash
     input ComponentRef cref;
-    output Integer hash;
-  algorithm
-    hash := match cref
-      case CREF() then hashContinue(cref, false);
-      case WILD() then stringHashDjb2("_");
-      else 0;
-    end match;
+    output Integer hash = hashContinue(cref, false, Util.HASH_SEED);
   end hash;
 
   function hashStrip
     "hashes the cref without subscripts. used for non expanded variables"
     input ComponentRef cref;
-    output Integer hash;
-  algorithm
-    hash := match cref
-      case CREF() then hashContinue(cref, true);
-      case WILD() then stringHashDjb2("_");
-      else 0;
-    end match;
+    output Integer hash = hashContinue(cref, true, Util.HASH_SEED);
   end hashStrip;
 
   function hashContinue
     input ComponentRef cref;
     input Boolean strip;
-    input output Integer hash = Util.HASH_SEED;
+    input output Integer hash;
   algorithm
     hash := match cref
       case CREF()
@@ -1599,6 +1587,7 @@ public
         then
           hashContinue(cref.restCref, strip, hash);
 
+      case WILD() then stringHashDjb2Continue("_", hash);
       else hash;
     end match;
   end hashContinue;

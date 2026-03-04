@@ -2170,6 +2170,14 @@ uniontype InstNode
     output Integer hash = stringHashDjb2(name(node));
   end hash;
 
+  function hashContinue
+    "Returns the hash of an InstNode's name."
+    input InstNode node;
+    input output Integer hash;
+  algorithm
+    hash := stringHashDjb2Continue(name(node), hash);
+  end hashContinue;
+
   function dimensionCount
     input InstNode node;
     output Integer count;

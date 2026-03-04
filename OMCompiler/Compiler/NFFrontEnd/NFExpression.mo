@@ -437,25 +437,23 @@ public
   algorithm
     hash := match exp
       local
-        Type t;
-        Expression first, first_inv;
-        list<Expression> rest, rest_inv;
+        Absyn.Path path;
 
       case INTEGER() then stringHashDjb2Continue(intString(exp.value), hash);
       case REAL() then stringHashDjb2Continue(realString(exp.value), hash);
       case STRING() then stringHashDjb2Continue(exp.value, hash);
       case BOOLEAN() then stringHashDjb2Continue(boolString(exp.value), hash);
 
-      case ENUM_LITERAL(ty = t as Type.ENUMERATION())
+      case ENUM_LITERAL(ty = Type.ENUMERATION(typePath = path))
         algorithm
-          hash := stringHashDjb2Continue(AbsynUtil.pathString(t.typePath), hash);
+          hash := AbsynUtil.pathHashContinue(path, hash);
           hash := stringHashDjb2Continue(".", hash);
           hash := stringHashDjb2Continue(exp.name, hash);
         then hash;
 
-      case CLKCONST() then stringHashDjb2Continue(ClockKind.toString(exp.clk), hash);
+      case CLKCONST() then ClockKind.hashContinue(exp.clk, hash);
       case CREF() then ComponentRef.hashContinue(exp.cref, false, hash);
-      case TYPENAME() then stringHashDjb2Continue(Type.typenameString(Type.arrayElementType(exp.ty)), hash); // TODO use Type.hashContinue
+      case TYPENAME() then Type.hashContinue(Type.arrayElementType(exp.ty), hash);
 
       case ARRAY()
         algorithm
@@ -503,7 +501,7 @@ public
 
       case RECORD()
         algorithm
-        hash := stringHashDjb2Continue(AbsynUtil.pathString(exp.path), hash);
+        hash := AbsynUtil.pathHashContinue(exp.path, hash);
         hash := stringHashDjb2Continue("(", hash);
           for e in exp.elements loop
             hash := hashContinue(e, hash);
@@ -591,7 +589,7 @@ public
       case CAST()
         algorithm
           hash := stringHashDjb2Continue("CAST(", hash);
-          hash := stringHashDjb2Continue(Type.toString(exp.ty), hash);
+          hash := Type.hashContinue(exp.ty, hash);
           hash := stringHashDjb2Continue(", ", hash);
           hash := hashContinue(exp.exp, hash);
           hash := stringHashDjb2Continue(")", hash);
@@ -615,8 +613,12 @@ public
         algorithm
           hash := stringHashDjb2Continue("(", hash);
           hash := hashContinue(exp.exp, hash);
-          hash := stringHashDjb2Continue(")", hash);
-          hash := stringHashDjb2Continue(Subscript.toStringList(exp.subscripts), hash);
+          hash := stringHashDjb2Continue(")[", hash);
+          for sub in exp.subscripts loop
+            hash := Subscript.hashContinue(sub, hash);
+            hash := stringHashDjb2Continue(", ", hash); // trailing comma, don't care...
+          end for;
+          hash := stringHashDjb2Continue("]", hash);
         then hash;
 
       case TUPLE_ELEMENT()
