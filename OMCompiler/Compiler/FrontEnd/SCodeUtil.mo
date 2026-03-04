@@ -4575,6 +4575,17 @@ algorithm
   end match;
 end isRestrictionImpure;
 
+public function getFunctionRestrictionPurity
+  input SCode.FunctionRestriction restr;
+  output Absyn.FunctionPurity purity;
+algorithm
+  purity := match restr
+    case SCode.FR_NORMAL_FUNCTION(purity = purity) then purity;
+    case SCode.FR_EXTERNAL_FUNCTION(purity = purity) then purity;
+    else Absyn.FunctionPurity.NO_PURITY();
+  end match;
+end getFunctionRestrictionPurity;
+
 public function elementInnerOuter
   input SCode.Element element;
   output Absyn.InnerOuter io;

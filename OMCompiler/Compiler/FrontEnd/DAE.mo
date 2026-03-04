@@ -1102,17 +1102,23 @@ partial function EvaluateSingletonTypeFunction
   output Type ty;
 end EvaluateSingletonTypeFunction;
 
-public constant FunctionAttributes FUNCTION_ATTRIBUTES_BUILTIN = FUNCTION_ATTRIBUTES(NO_INLINE(),true,false,false,FUNCTION_BUILTIN(NONE(), false),FP_NON_PARALLEL());
-public constant FunctionAttributes FUNCTION_ATTRIBUTES_DEFAULT = FUNCTION_ATTRIBUTES(DEFAULT_INLINE(),true,false,false,FUNCTION_NOT_BUILTIN(),FP_NON_PARALLEL());
-public constant FunctionAttributes FUNCTION_ATTRIBUTES_IMPURE = FUNCTION_ATTRIBUTES(NO_INLINE(),false,true,false,FUNCTION_NOT_BUILTIN(),FP_NON_PARALLEL());
-public constant FunctionAttributes FUNCTION_ATTRIBUTES_BUILTIN_IMPURE = FUNCTION_ATTRIBUTES(NO_INLINE(),false,true,false,FUNCTION_BUILTIN(NONE(), false),FP_NON_PARALLEL());
+public constant FunctionAttributes FUNCTION_ATTRIBUTES_BUILTIN = FUNCTION_ATTRIBUTES(NO_INLINE(),Purity.PURE,false,FUNCTION_BUILTIN(NONE(), false),FP_NON_PARALLEL());
+public constant FunctionAttributes FUNCTION_ATTRIBUTES_DEFAULT = FUNCTION_ATTRIBUTES(DEFAULT_INLINE(),Purity.PURE,false,FUNCTION_NOT_BUILTIN(),FP_NON_PARALLEL());
+public constant FunctionAttributes FUNCTION_ATTRIBUTES_IMPURE = FUNCTION_ATTRIBUTES(NO_INLINE(),Purity.IMPURE,false,FUNCTION_NOT_BUILTIN(),FP_NON_PARALLEL());
+public constant FunctionAttributes FUNCTION_ATTRIBUTES_BUILTIN_IMPURE = FUNCTION_ATTRIBUTES(NO_INLINE(),Purity.IMPURE,false,FUNCTION_BUILTIN(NONE(), false),FP_NON_PARALLEL());
+
+public type Purity = enumeration(
+  PURE,      // Function with pure prefix
+  IMPURE,    // Function with impure prefix
+  UNDEFINED, // Function with neither pure nor impure prefix
+  OM_IMPURE  // Function with __OpenModelica_Impure=true annotation (only used by the OF)
+);
 
 public
 uniontype FunctionAttributes
   record FUNCTION_ATTRIBUTES
     InlineType inline;
-    Boolean isOpenModelicaPure "if the function has __OpenModelica_Impure";
-    Boolean isImpure "if the function has prefix *impure* is true, else false";
+    Purity purity;
     Boolean isFunctionPointer "if the function is a local variable";
     FunctionBuiltin isBuiltin;
     FunctionParallelism functionParallelism;
