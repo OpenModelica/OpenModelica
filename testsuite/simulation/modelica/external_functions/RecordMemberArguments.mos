@@ -4,7 +4,7 @@
 // teardown_command: rm -f ExtRecordMemberArguments*
 //
 // Issue https://github.com/OpenModelica/OpenModelica/issues/14462
-// TODO: This test is missing the boolean array part.
+// Issue https://github.com/OpenModelica/OpenModelica/issues/15105
 
 loadFile("RecordMemberArguments.mo"); getErrorString();
 simulate(ExtRecordMemberArguments); getErrorString();
@@ -22,6 +22,7 @@ simulate(ExtRecordMemberArguments); getErrorString();
 // myRealVar: 7
 // myIntegerArray: {-1, -2, -3}
 // myIntegerVar: -4
+// myBooleanArray: {true, false, false, true, true, true}
 // myBooleanVar: true
 // myStringArray: {'one', 'two'}
 // myStringVar: 'scalar'
