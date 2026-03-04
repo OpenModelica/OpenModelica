@@ -72,6 +72,7 @@ import List;
 import Print;
 import System;
 
+public constant Integer HASH_SEED = 5381;
 public constant SourceInfo dummyInfo = SOURCEINFO("",false,0,0,0,0,0.0);
 
 public function isIntGreater "Author: BZ"

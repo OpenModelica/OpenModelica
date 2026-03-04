@@ -428,9 +428,249 @@ public
 
   function hash
     input Expression exp;
-    output Integer hash = stringHashDjb2(toString(exp));
-    // TODO use stringHashDjb2Continue
+    output Integer hash = hashContinue(exp, Util.HASH_SEED);
   end hash;
+
+  function hashContinue
+    input Expression exp;
+    input output Integer hash;
+  algorithm
+    hash := match exp
+      local
+        Type t;
+        Expression first, first_inv;
+        list<Expression> rest, rest_inv;
+
+      case INTEGER() then stringHashDjb2Continue(intString(exp.value), hash);
+      case REAL() then stringHashDjb2Continue(realString(exp.value), hash);
+      case STRING() then stringHashDjb2Continue(exp.value, hash);
+      case BOOLEAN() then stringHashDjb2Continue(boolString(exp.value), hash);
+
+      case ENUM_LITERAL(ty = t as Type.ENUMERATION())
+        algorithm
+          hash := stringHashDjb2Continue(AbsynUtil.pathString(t.typePath), hash);
+          hash := stringHashDjb2Continue(".", hash);
+          hash := stringHashDjb2Continue(exp.name, hash);
+        then hash;
+
+      case CLKCONST() then stringHashDjb2Continue(ClockKind.toString(exp.clk), hash);
+      case CREF() then ComponentRef.hashContinue(exp.cref, false, hash);
+      case TYPENAME() then stringHashDjb2Continue(Type.typenameString(Type.arrayElementType(exp.ty)), hash); // TODO use Type.hashContinue
+
+      case ARRAY()
+        algorithm
+          hash := stringHashDjb2Continue("{", hash);
+          for e in exp.elements loop
+            hash := hashContinue(e, hash);
+            hash := stringHashDjb2Continue(", ", hash); // trailing comma, don't care...
+          end for;
+          hash := stringHashDjb2Continue("}", hash);
+        then hash;
+
+      case MATRIX()
+        algorithm
+          hash := stringHashDjb2Continue("[", hash);
+          for el in exp.elements loop
+            for e in el loop
+              hash := hashContinue(e, hash);
+              hash := stringHashDjb2Continue(", ", hash); // trailing comma, don't care...
+            end for;
+            hash := stringHashDjb2Continue("; ", hash); // trailing semicolon, don't care...
+          end for;
+          hash := stringHashDjb2Continue("]", hash);
+        then hash;
+
+      case RANGE()
+        algorithm
+          hash := hashContinue(exp.start, hash);
+          hash := stringHashDjb2Continue(":", hash);
+          if isSome(exp.step) then
+            hash := hashContinue(Util.getOption(exp.step), hash);
+            hash := stringHashDjb2Continue(":", hash);
+          end if;
+          hash := hashContinue(exp.stop, hash);
+        then hash;
+
+      case TUPLE()
+        algorithm
+          hash := stringHashDjb2Continue("(", hash);
+          for e in exp.elements loop
+            hash := hashContinue(e, hash);
+            hash := stringHashDjb2Continue(", ", hash); // trailing comma, don't care...
+          end for;
+          hash := stringHashDjb2Continue(")", hash);
+        then hash;
+
+      case RECORD()
+        algorithm
+        hash := stringHashDjb2Continue(AbsynUtil.pathString(exp.path), hash);
+        hash := stringHashDjb2Continue("(", hash);
+          for e in exp.elements loop
+            hash := hashContinue(e, hash);
+            hash := stringHashDjb2Continue(", ", hash); // trailing comma, don't care...
+          end for;
+          hash := stringHashDjb2Continue(")", hash);
+        then hash;
+
+      case CALL() then stringHashDjb2Continue(Call.toString(exp.call), hash); // TODO use Call.hashContinue
+
+      case SIZE()
+        algorithm
+          hash := stringHashDjb2Continue("size(", hash);
+          hash := hashContinue(exp.exp, hash);
+          if isSome(exp.dimIndex) then
+            hash := stringHashDjb2Continue(", ", hash);
+            hash := hashContinue(Util.getOption(exp.dimIndex), hash);
+          end if;
+          hash := stringHashDjb2Continue(")", hash);
+        then hash;
+
+      case END() then stringHashDjb2Continue("end", hash);
+
+      case BINARY()
+        algorithm
+          hash := hashContinue(exp.exp1, hash);
+          hash := stringHashDjb2Continue(Operator.symbol(exp.operator), hash);
+          hash := hashContinue(exp.exp2, hash);
+        then hash;
+
+      case UNARY()
+        algorithm
+          hash := stringHashDjb2Continue(Operator.symbol(exp.operator, ""), hash);
+          hash := hashContinue(exp.exp, hash);
+        then hash;
+
+      case LBINARY()
+        algorithm
+          hash := hashContinue(exp.exp1, hash);
+          hash := stringHashDjb2Continue(Operator.symbol(exp.operator), hash);
+          hash := hashContinue(exp.exp2, hash);
+        then hash;
+
+      case LUNARY()
+        algorithm
+          hash := stringHashDjb2Continue(Operator.symbol(exp.operator, ""), hash);
+          hash := stringHashDjb2Continue(" ", hash);
+          hash := hashContinue(exp.exp, hash);
+        then hash;
+
+      case RELATION()
+        algorithm
+          hash := hashContinue(exp.exp1, hash);
+          hash := stringHashDjb2Continue(Operator.symbol(exp.operator), hash);
+          hash := hashContinue(exp.exp2, hash);
+        then hash;
+
+      case MULTARY()
+        algorithm
+          hash := stringHashDjb2Continue("(", hash);
+          for e in exp.arguments loop
+            hash := stringHashDjb2Continue(Operator.symbol(exp.operator), hash);
+            hash := hashContinue(e, hash);
+          end for;
+          hash := stringHashDjb2Continue(")", hash);
+          hash := stringHashDjb2Continue(Operator.symbol(Operator.invert(exp.operator)), hash);
+          hash := stringHashDjb2Continue("(", hash);
+          for e in exp.inv_arguments loop
+            hash := stringHashDjb2Continue(Operator.symbol(exp.operator), hash);
+            hash := hashContinue(e, hash);
+          end for;
+          hash := stringHashDjb2Continue(")", hash);
+        then hash;
+
+      case IF()
+        algorithm
+          hash := stringHashDjb2Continue("if ", hash);
+          hash := hashContinue(exp.condition, hash);
+          hash := stringHashDjb2Continue(" then ", hash);
+          hash := hashContinue(exp.trueBranch, hash);
+          hash := stringHashDjb2Continue(" else ", hash);
+          hash := hashContinue(exp.falseBranch, hash);
+        then hash;
+
+      case CAST()
+        algorithm
+          hash := stringHashDjb2Continue("CAST(", hash);
+          hash := stringHashDjb2Continue(Type.toString(exp.ty), hash);
+          hash := stringHashDjb2Continue(", ", hash);
+          hash := hashContinue(exp.exp, hash);
+          hash := stringHashDjb2Continue(")", hash);
+        then hash;
+
+      case BOX()
+        algorithm
+          hash := stringHashDjb2Continue("BOX(", hash);
+          hash := hashContinue(exp.exp, hash);
+          hash := stringHashDjb2Continue(")", hash);
+        then hash;
+
+      case UNBOX()
+        algorithm
+          hash := stringHashDjb2Continue("UNBOX(", hash);
+          hash := hashContinue(exp.exp, hash);
+          hash := stringHashDjb2Continue(")", hash);
+        then hash;
+
+      case SUBSCRIPTED_EXP()
+        algorithm
+          hash := stringHashDjb2Continue("(", hash);
+          hash := hashContinue(exp.exp, hash);
+          hash := stringHashDjb2Continue(")", hash);
+          hash := stringHashDjb2Continue(Subscript.toStringList(exp.subscripts), hash);
+        then hash;
+
+      case TUPLE_ELEMENT()
+        algorithm
+          hash := hashContinue(exp.tupleExp, hash);
+          hash := stringHashDjb2Continue("[", hash);
+          hash := stringHashDjb2Continue(intString(exp.index), hash);
+          hash := stringHashDjb2Continue("]", hash);
+        then hash;
+
+      case RECORD_ELEMENT()
+        algorithm
+          hash := stringHashDjb2Continue("(", hash);
+          hash := hashContinue(exp.recordExp, hash);
+          hash := stringHashDjb2Continue(").", hash);
+          hash := stringHashDjb2Continue(exp.fieldName, hash);
+        then hash;
+
+      case MUTABLE() then hashContinue(Mutable.access(exp.exp), hash);
+      case EMPTY() then stringHashDjb2Continue("#EMPTY#", hash);
+
+      case PARTIAL_FUNCTION_APPLICATION()
+        algorithm
+          hash := stringHashDjb2Continue("function ", hash);
+          hash := ComponentRef.hashContinue(exp.fn, false, hash);
+          hash := stringHashDjb2Continue("(", hash);
+          //list(n + " = " + toString(a) threaded for a in exp.args, n in exp.argNames)
+          for n in exp.argNames loop
+            hash := stringHashDjb2Continue(n, hash);
+            hash := stringHashDjb2Continue(", ", hash); // trailing comma, don't care...
+          end for;
+          hash := stringHashDjb2Continue(" = ", hash);
+          for a in exp.args loop
+            hash := hashContinue(a, hash);
+            hash := stringHashDjb2Continue(", ", hash); // trailing comma, don't care...
+          end for;
+          hash := stringHashDjb2Continue(")", hash);
+        then hash;
+
+      case FILENAME() then stringHashDjb2Continue(exp.filename, hash);
+
+      case SHARED_LITERAL()
+        algorithm
+          hash := stringHashDjb2Continue("LITERAL(", hash);
+          hash := stringHashDjb2Continue(intString(exp.index), hash);
+          hash := stringHashDjb2Continue(", ", hash);
+          hash := hashContinue(exp.exp, hash);
+          hash := stringHashDjb2Continue(")", hash);
+        then hash;
+
+      case INSTANCE_NAME() then stringHashDjb2Continue("getInstanceName()", hash);
+      else hash;
+    end match;
+  end hashContinue;
 
   function isEqual
     "Returns true if the two expressions are equal, otherwise false."
@@ -476,7 +716,7 @@ public
         Operator op;
         Call c;
         list<Subscript> subs;
-        ClockKind clk1, clk2;
+        ClockKind clk;
         Mutable<Expression> me;
         list<list<Expression>> mat;
         array<Expression> arr;
@@ -517,11 +757,11 @@ public
         then
           comp;
 
-      case CLKCONST(clk1)
+      case CLKCONST()
         algorithm
-          CLKCONST(clk2) := exp2;
+          CLKCONST(clk) := exp2;
         then
-          ClockKind.compare(clk1, clk2);
+          ClockKind.compare(exp1.clk, clk);
 
       case CREF()
         algorithm
@@ -1945,7 +2185,6 @@ public
     output String str;
   protected
     Type t;
-    ClockKind clk;
     Expression first, first_inv;
     list<Expression> rest, rest_inv;
   algorithm
@@ -1958,7 +2197,7 @@ public
       case ENUM_LITERAL(ty = t as Type.ENUMERATION())
         then AbsynUtil.pathString(t.typePath) + "." + exp.name;
 
-      case CLKCONST(clk) then ClockKind.toString(clk);
+      case CLKCONST() then ClockKind.toString(exp.clk);
       case CREF() then ComponentRef.toString(exp.cref);
       case TYPENAME() then Type.typenameString(Type.arrayElementType(exp.ty));
       case ARRAY() then "{" + stringDelimitList(list(toString(e) for e in exp.elements), ", ") + "}";
@@ -2042,7 +2281,6 @@ public
     output String str;
   protected
     Type t;
-    ClockKind clk;
     Expression first;
     list<Expression> rest;
   algorithm
@@ -2058,7 +2296,7 @@ public
           else
             Util.makeQuotedIdentifier(AbsynUtil.pathString(t.typePath)) + "." + Util.makeQuotedIdentifier(exp.name);
 
-      case CLKCONST(clk) then ClockKind.toFlatString(clk, format);
+      case CLKCONST() then ClockKind.toFlatString(exp.clk, format);
 
       case CREF() then ComponentRef.toFlatString(exp.cref, format);
       case TYPENAME() then Type.typenameString(Type.arrayElementType(exp.ty));

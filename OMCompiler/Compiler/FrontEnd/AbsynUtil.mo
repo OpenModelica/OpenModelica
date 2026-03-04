@@ -1314,7 +1314,7 @@ public function pathHash "Hashes a path."
   input Absyn.Path path;
   output Integer hash;
 algorithm
-  hash := pathHashWork(path,5381);
+  hash := pathHashWork(path, Util.HASH_SEED);
 end pathHash;
 
 public function pathHashWork "Hashes a path."

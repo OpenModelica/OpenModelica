@@ -1319,7 +1319,7 @@ protected
 
   function keyHash
     input Key key;
-    output Integer hash = 5381;
+    output Integer hash = Util.HASH_SEED;
   algorithm
     for k in key loop
       hash := stringHashDjb2Continue(intString(k), hash);
