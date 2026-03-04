@@ -43,11 +43,11 @@ simulate(simple_tuple); getErrorString();
 //
 // Initial Function Alias
 // ------------------------
-//
+//   <no alias>
 //
 // Clocked Function Alias
 // ------------------------
-//
+//   <no alias>
 //
 // [dumpBackendInline] Inlining operatations for: {NORMAL, BUILTIN_EARLY, EARLY, DEFAULT}
 // ****************************************************************************************
@@ -129,6 +129,10 @@ simulate(simple_tuple); getErrorString();
 // ****************************************
 // [dumprepl] Nontrivial Alias Replacements:
 // *******************************************
+//
+// Sliced State Alias
+// --------------------
+//   <no alias>
 //
 // [dumpBackendInline] Inlining operatations for: {AFTER_INDEX_RED}
 // ******************************************************************

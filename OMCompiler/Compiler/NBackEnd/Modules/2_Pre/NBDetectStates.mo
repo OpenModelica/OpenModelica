@@ -60,6 +60,8 @@ protected
   import BVariable = NBVariable;
   import Differentiate = NBDifferentiate;
   import NBEquation.{Equation, EquationPointers, EqData, EquationAttributes, EquationKind, Iterator, WhenEquationBody, WhenStatement, IfEquationBody};
+  import FunctionAlias = NBFunctionAlias;
+  import BPartition = NBPartition;
   import NBVariable.{VariablePointers, VarData};
 
   // Util
@@ -136,6 +138,9 @@ protected
     list<Pointer<Equation>> aux_eqns;
     EqData newEqData;
   algorithm
+    // introduce sliced state alias before resolving the der() calls
+    (varData, eqData) := FunctionAlias.introduceSlicedStateAlias(varData, eqData, NBPartition.Kind.ODE);
+
     (varData, eqData) := match (varData, eqData)
       case (BVariable.VAR_DATA_SIM(), BEquation.EQ_DATA_SIM()) algorithm
 

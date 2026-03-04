@@ -148,6 +148,46 @@ public
     record EMPTY
     end EMPTY;
 
+    function createFrame
+      "takes a typical (name, exp) tuple representing (for name in exp loop)
+      and checks if exp already is RANGE(). if not it creates a RANGE() of
+      correct size and maps the ARRAY() expression to that RANGE().
+      returns frame structure used for Iterator.fromFrames()"
+      input tuple<InstNode, Expression> iter;
+      input UnorderedSet<VariablePointer> set "new iterators";
+      output tuple<ComponentRef, Expression, Option<Iterator>> frame;
+    algorithm
+      frame := match iter
+        local
+          InstNode node, node2;
+          Expression range, range2;
+          Iterator map;
+          ComponentRef iter_cref;
+          Pointer<Variable> iter_var;
+
+        // it already is a proper range, use it for the for loop
+        case (node, range as Expression.RANGE()) then (ComponentRef.makeIterator(node, Type.INTEGER()), range, NONE());
+
+        // it has an array as constructor, map it to a range
+        // used to fix #13031
+        case (node, range as Expression.ARRAY()) algorithm
+          node2   := InstNode.newIterator("$" + InstNode.name(node), Type.INTEGER(), sourceInfo());
+          range2  := Expression.makeRange(Expression.INTEGER(1), NONE(), Expression.INTEGER(Type.sizeOf(Expression.typeOf(range))));
+          map     := Iterator.fromFrames({(ComponentRef.makeIterator(node, Type.arrayElementType(Expression.typeOf(range))), range, NONE())});
+
+          // create the new iterator variable
+          iter_cref := ComponentRef.makeIterator(node2, Type.INTEGER());
+          iter_var  := BackendDAE.lowerIterator(iter_cref);
+          iter_cref := BVariable.getVarName(iter_var);
+          UnorderedSet.add(iter_var, set);
+        then (iter_cref, range2, SOME(map));
+
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed to inline iterator expression: " + InstNode.toString(Util.tuple21(iter)) + " in " + Expression.toString(Util.tuple22(iter)) + "."});
+        then fail();
+      end match;
+    end createFrame;
+
     function fromFrames
       input list<Frame> frames;
       output Iterator iter;
@@ -604,11 +644,11 @@ public
 
         case Call.TYPED_ARRAY_CONSTRUCTOR() algorithm
           (names, ranges, maps) := getFrames(iter);
-        then fromFrames(listAppend(list(Inline.inlineArrayIterator(tpl, new_iters) for tpl in call.iters), List.zip3(names, ranges, maps)));
+        then fromFrames(listAppend(list(createFrame(tpl, new_iters) for tpl in call.iters), List.zip3(names, ranges, maps)));
 
         case Call.TYPED_REDUCTION() algorithm
           (names, ranges, maps) := getFrames(iter);
-        then fromFrames(listAppend(list(Inline.inlineArrayIterator(tpl, new_iters) for tpl in call.iters), List.zip3(names, ranges, maps)));
+        then fromFrames(listAppend(list(createFrame(tpl, new_iters) for tpl in call.iters), List.zip3(names, ranges, maps)));
 
         else iter;
       end match;
@@ -650,7 +690,7 @@ public
         case Expression.CALL(call = call as Call.TYPED_ARRAY_CONSTRUCTOR()) algorithm
           // inline the frontend iterator to get frames for backend iterator
           for tpl in listReverse(call.iters) loop
-            frames := Inline.inlineArrayIterator(tpl, new_iters) :: frames;
+            frames := createFrame(tpl, new_iters) :: frames;
           end for;
           tmp := fromFrames(frames);
 

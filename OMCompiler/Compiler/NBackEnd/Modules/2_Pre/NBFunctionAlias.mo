@@ -59,6 +59,7 @@ protected
   import Partition = NBPartition;
   import Partitioning = NBPartitioning;
   import NBPartitioning.BClock;
+  import Slice = NBSlice;
   import BVariable = NBVariable;
   import NBVariable.{VariablePointer, VariablePointers, VarData};
 
@@ -114,6 +115,57 @@ public
       else fail();
     end match;
   end getModule;
+
+  function introduceSlicedStateAlias
+    "introduces alias for variables that are only partially states to ensure variables are either a state in their entirety or not a state at all.
+    to be used in DetectStates, just before the der() calls are resolved.
+    1. collect all crefs in der() calls that do not fully access the variable
+    2. check if any variable is not fully a state by combining all their sliced der() calls
+    3. replace all variables that are not fully states by alias variables and create equations"
+    extends Module.functionAliasInterface;
+  protected
+    UnorderedMap<Call_Id, Call_Aux> aux_map = UnorderedMap.new<Call_Aux>(Call_Id.hash, Call_Id.isEqual);
+    list<Pointer<Variable>> new_vars_cont = {}, new_vars_recd = {};
+    list<Pointer<Equation>> new_eqns_cont = {};
+  algorithm
+    _ := match (eqData, varData)
+      local
+        UnorderedMap<ComponentRef,Indices> map = UnorderedMap.new<Indices>(ComponentRef.hash, ComponentRef.isEqual);
+        UnorderedSet<ComponentRef> set;
+        Pointer<Integer> aux_index = Pointer.create(1);
+
+      case (EqData.EQ_DATA_SIM(), VarData.VAR_DATA_SIM()) algorithm
+        // first collect all state slices
+        EquationPointers.map(eqData.simulation, function collectSlicedStatesAliasEquation(map = map));
+        set := getSlicedStatesSet(map);
+
+        if not UnorderedSet.isEmpty(set) then
+          // replace all state slices of variables that are only partially states
+          eqData.simulation := EquationPointers.map(eqData.simulation, function introduceSlicedStateAliasEquation(set = set, map = aux_map, aux_index = aux_index));
+
+          // create new state slice variables and corresponding equations for the alias
+          (_, new_vars_cont, _, new_vars_recd, _, new_eqns_cont, _) :=
+            resolveAux(aux_map, eqData.uniqueIndex, false, {}, new_vars_cont, {}, new_vars_recd, {}, new_eqns_cont, {});
+        end if;
+      then ();
+      else ();
+    end match;
+
+    // add the new variables and equations (should only be continuous, states are still considered algebraic)
+    varData := VarData.addTypedList(varData, new_vars_cont, VarData.VarType.ALGEBRAIC);
+    varData := VarData.addTypedList(varData, new_vars_recd, VarData.VarType.RECORD);
+    eqData  := EqData.addTypedList(eqData, new_eqns_cont, EqData.EqType.CONTINUOUS, false);
+
+    // update record children
+    for var in new_vars_recd loop
+      BackendDAE.lowerRecordChildren(var, VarData.getVariables(varData));
+    end for;
+
+    // dump if flag is set
+    if Flags.isSet(Flags.DUMP_CSE) then
+      print(aliasListToString(UnorderedMap.toList(aux_map), Call_Id.toString, Call_Aux.toString, "Sliced State"));
+    end if;
+  end introduceSlicedStateAlias;
 
 protected
   uniontype Call_Id
@@ -193,6 +245,7 @@ protected
       input Type ty;
       input Iterator iter;
       input Pointer<Integer> aux_index;
+      input String aux_name;
       input Boolean init;
       output ComponentRef name;
     protected
@@ -201,13 +254,13 @@ protected
     algorithm
       if not Iterator.isEmpty(iter) then
         new_ty    := Type.liftArrayRightList(ty, Iterator.dimensions(iter));
-        (_, name) := BVariable.makeAuxVar(NBVariable.FUNCTION_STR, Pointer.access(aux_index), new_ty, init);
+        (_, name) := BVariable.makeAuxVar(aux_name, Pointer.access(aux_index), new_ty, init);
         // add iterators to subscripts of auxilliary variable. fill with WHOLE if necessary
         subs      := Iterator.normalizedSubscripts(iter);
         subs      := Subscript.fillWithWholeLeft(subs, Type.dimensionCount(new_ty));
         name      := ComponentRef.mergeSubscripts(subs, name, true, true);
       else
-        (_, name) := BVariable.makeAuxVar(NBVariable.FUNCTION_STR, Pointer.access(aux_index), new_ty, init);
+        (_, name) := BVariable.makeAuxVar(aux_name, Pointer.access(aux_index), new_ty, init);
       end if;
       Pointer.update(aux_index, Pointer.access(aux_index) + 1);
     end createName;
@@ -231,45 +284,17 @@ protected
     Pointer<Integer> aux_index = Pointer.create(1);
     list<Pointer<Variable>> new_vars_disc = {}, new_vars_cont = {}, new_vars_init = {}, new_vars_recd = {}, new_vars_clck;
     list<Pointer<Equation>> new_eqns_disc = {}, new_eqns_cont = {}, new_eqns_init = {}, new_eqns_clck;
-    list<tuple<Call_Id, Call_Aux>> debug_lst_sim, debug_lst_ini;
-    list<tuple<String, String>> debug_str;
-    Integer debug_max_length;
+    list<tuple<Call_Id, Call_Aux>> debug_lst_sim = {}, debug_lst_ini;
   algorithm
     _ := match (eqData, varData)
-      local
-        Call_Id id;
-        Call_Aux aux;
-        Boolean disc;
-        Pointer<Equation> new_eqn;
-        list<Pointer<Variable>> new_vars;
-
       case (EqData.EQ_DATA_SIM(), VarData.VAR_DATA_SIM()) algorithm
         // first collect all new functions from simulation equations
         eqData.simulation := EquationPointers.map(eqData.simulation,
           function introduceFunctionAliasEquation(map = map, variables = variables, set = set, aux_index = aux_index, eqn_index = eqData.uniqueIndex, init = false));
 
         // create new simulation variables and corresponding equations for the function alias
-        for tpl in listReverse(UnorderedMap.toList(map)) loop
-          (id, aux) := tpl;
-          new_vars  := Call_Aux.getVars(aux);
-          disc := true;
-
-          // categorize all aux variables
-          for new_var in new_vars loop
-            (disc, new_vars_disc, new_vars_cont, new_vars_init, new_vars_recd) := addAuxVar(new_var, disc, new_vars_disc, new_vars_cont, new_vars_init, new_vars_recd, false);
-          end for;
-
-          // if any of the created variables is continuous, so is the equation
-          new_eqn := Equation.makeAssignment(aux.replacer, id.call, eqData.uniqueIndex, "AUX", id.iter, EquationAttributes.default(aux.kind, false));
-          if disc then
-            new_eqns_disc := new_eqn :: new_eqns_disc;
-          else
-            new_eqns_cont := new_eqn :: new_eqns_cont;
-          end if;
-
-          aux.parsed := true;
-          UnorderedMap.add(id, aux, map);
-        end for;
+        (new_vars_disc, new_vars_cont, new_vars_init, new_vars_recd, new_eqns_disc, new_eqns_cont, new_eqns_init) :=
+          resolveAux(map, eqData.uniqueIndex, false, new_vars_disc, new_vars_cont, new_vars_init, new_vars_recd, new_eqns_disc, new_eqns_cont, new_eqns_init);
 
         if Flags.isSet(Flags.DUMP_CSE) then
           debug_lst_sim := UnorderedMap.toList(map);
@@ -285,31 +310,15 @@ protected
           mapFunc = Expression.fakeMap));
 
         // create new initialization variables and corresponding equations for the function alias
-        for tpl in listReverse(UnorderedMap.toList(map)) loop
-          (id, aux) := tpl;
-
-          // only create new var and eqn if there is not already one in the simulation system
-          if not aux.parsed then
-            // unfix parameters in initial system because we also add an equation
-            new_vars := Call_Aux.getVars(aux);
-
-            for new_var in new_vars loop
-              (disc, new_vars_disc, new_vars_cont, new_vars_init, new_vars_recd) := addAuxVar(new_var, disc, new_vars_disc, new_vars_cont, new_vars_init, new_vars_recd, true);
-            end for;
-
-            new_eqn := Equation.makeAssignment(aux.replacer, id.call, eqData.uniqueIndex, "AUX", id.iter, EquationAttributes.default(aux.kind, true));
-            new_eqns_init := new_eqn :: new_eqns_init;
-
-            aux.parsed := true;
-            UnorderedMap.add(id, aux, map);
-          end if;
-        end for;
+        (new_vars_disc, new_vars_cont, new_vars_init, new_vars_recd, new_eqns_disc, new_eqns_cont, new_eqns_init) :=
+          resolveAux(map, eqData.uniqueIndex, true, new_vars_disc, new_vars_cont, new_vars_init, new_vars_recd, new_eqns_disc, new_eqns_cont, new_eqns_init);
 
         // create clock alias equations
         (new_eqns_clck, new_vars_clck, clock_map) := addClockedAlias(eqData.simulation, eqData.uniqueIndex);
       then ();
       else ();
     end match;
+
     // add the new variables and equations
     varData := VarData.addTypedList(varData, new_vars_cont, VarData.VarType.ALGEBRAIC);
     varData := VarData.addTypedList(varData, new_vars_disc, VarData.VarType.DISCRETE);
@@ -334,20 +343,86 @@ protected
         UnorderedMap.remove(Util.tuple21(tpl), map);
       end for;
       debug_lst_ini := UnorderedMap.toList(map);
-      print(StringUtil.headline_3("Simulation Function Alias"));
-      debug_str := list((Call_Aux.toString(Util.tuple22(tpl)), Call_Id.toString(Util.tuple21(tpl))) for tpl in debug_lst_sim);
-      debug_max_length := max(stringLength(Util.tuple21(tpl)) for tpl in debug_str) + 3;
-      print(List.toString(debug_str, function functionAliasTplString(max_length = debug_max_length), "", "  ", "\n  ", "\n\n"));
-      print(StringUtil.headline_3("Initial Function Alias"));
-      debug_str := list((Call_Aux.toString(Util.tuple22(tpl)), Call_Id.toString(Util.tuple21(tpl))) for tpl in debug_lst_ini);
-      debug_max_length := max(stringLength(Util.tuple21(tpl)) for tpl in debug_str) + 3;
-      print(List.toString(debug_str, function functionAliasTplString(max_length = debug_max_length), "", "  ", "\n  ", "\n\n"));
-      print(StringUtil.headline_3("Clocked Function Alias"));
-      debug_str := list((ComponentRef.toString(Util.tuple22(tpl)), BClock.toString(Util.tuple21(tpl))) for tpl in UnorderedMap.toList(clock_map));
-      debug_max_length := max(stringLength(Util.tuple21(tpl)) for tpl in debug_str) + 3;
-      print(List.toString(debug_str, function functionAliasTplString(max_length = debug_max_length), "", "  ", "\n  ", "\n\n"));
+      print(aliasListToString(debug_lst_sim, Call_Id.toString, Call_Aux.toString, "Simulation Function"));
+      print(aliasListToString(debug_lst_ini, Call_Id.toString, Call_Aux.toString, "Initial Function"));
+      print(aliasListToString(UnorderedMap.toList(clock_map), BClock.toString, ComponentRef.toString, "Clocked Function"));
     end if;
   end functionAliasDefault;
+
+  function aliasListToString<T1, T2>
+    input list<tuple<T1, T2>> aux_lst;
+    input idToString func1;
+    input auxToString func2;
+    input String name;
+    output String str;
+  protected
+    list<tuple<String, String>> str_lst;
+    Integer max_length;
+    partial function idToString<T1>
+      input T1 t1;
+      output String str;
+    end idToString;
+    partial function auxToString<T2>
+      input T2 t2;
+      output String str;
+    end auxToString;
+  algorithm
+      str := StringUtil.headline_3(name + " Alias");
+      if listEmpty(aux_lst) then
+        str := str + "  <no alias>\n\n";
+      else
+        str_lst := list((func2(Util.tuple22(tpl)), func1(Util.tuple21(tpl))) for tpl in aux_lst);
+        max_length := max(stringLength(Util.tuple21(tpl)) for tpl in str_lst) + 3;
+        str := str + List.toString(str_lst, function functionAliasTplString(max_length = max_length), "", "  ", "\n  ", "\n\n");
+      end if;
+  end aliasListToString;
+
+  function resolveAux
+    input UnorderedMap<Call_Id, Call_Aux> map;
+    input Pointer<Integer> eq_index;
+    input Boolean init;
+    input output list<Pointer<Variable>> new_vars_disc;
+    input output list<Pointer<Variable>> new_vars_cont;
+    input output list<Pointer<Variable>> new_vars_init;
+    input output list<Pointer<Variable>> new_vars_recd;
+    input output list<Pointer<Equation>> new_eqns_disc;
+    input output list<Pointer<Equation>> new_eqns_cont;
+    input output list<Pointer<Equation>> new_eqns_init;
+  protected
+    Call_Id id;
+    Call_Aux aux;
+    Boolean disc;
+    Pointer<Equation> new_eqn;
+    list<Pointer<Variable>> new_vars;
+  algorithm
+    // create new simulation variables and corresponding equations for the function alias
+    for tpl in listReverse(UnorderedMap.toList(map)) loop
+      (id, aux) := tpl;
+      // only create new var and eqn if there is not already parsed
+      if not aux.parsed then
+        new_vars  := Call_Aux.getVars(aux);
+        disc      := true;
+
+        // categorize all aux variables
+        for new_var in new_vars loop
+          (disc, new_vars_disc, new_vars_cont, new_vars_init, new_vars_recd) := addAuxVar(new_var, disc, new_vars_disc, new_vars_cont, new_vars_init, new_vars_recd, init);
+        end for;
+
+        // if any of the created variables is continuous, so is the equation
+        new_eqn := Equation.makeAssignment(aux.replacer, id.call, eq_index, "AUX", id.iter, EquationAttributes.default(aux.kind, init));
+        if init then
+          new_eqns_init := new_eqn :: new_eqns_init;
+        elseif disc then
+          new_eqns_disc := new_eqn :: new_eqns_disc;
+        else
+          new_eqns_cont := new_eqn :: new_eqns_cont;
+        end if;
+
+        aux.parsed := true;
+        UnorderedMap.add(id, aux, map);
+      end if;
+    end for;
+  end resolveAux;
 
   function introduceFunctionAliasEquation
     "creates auxilliary variables for all not inlineable function calls in the equation"
@@ -408,7 +483,7 @@ protected
         Call call;
         Expression new_exp, sub_exp;
 
-      case Expression.CALL() guard(checkCallReplacement(exp.call)) then introduceAlias(exp, map, aux_index, iter, init);
+      case Expression.CALL() guard(checkCallReplacement(exp.call)) then introduceAlias(exp, map, aux_index, NBVariable.FUNCTION_STR, iter, init);
 
       // create alias for array constructors as arguments to functions
       case new_exp as Expression.CALL(call = call as Call.TYPED_CALL()) algorithm
@@ -445,6 +520,7 @@ protected
   end introduceFunctionAlias;
 
   function introduceArrayConstructorAlias
+    "introduces alias variables for array constructor and reduction calls"
     input output Expression exp;
     input UnorderedMap<Call_Id, Call_Aux> map;
     input Pointer<Integer> aux_index;
@@ -452,16 +528,35 @@ protected
     input Boolean init;
   algorithm
     exp := match exp
-      case Expression.CALL(call = Call.TYPED_ARRAY_CONSTRUCTOR()) then introduceAlias(exp, map, aux_index, iter, init);
-      case Expression.CALL(call = Call.TYPED_REDUCTION()) then introduceAlias(exp, map, aux_index, iter, init);
+      case Expression.CALL(call = Call.TYPED_ARRAY_CONSTRUCTOR()) then introduceAlias(exp, map, aux_index,  NBVariable.FUNCTION_STR, iter, init);
+      case Expression.CALL(call = Call.TYPED_REDUCTION()) then introduceAlias(exp, map, aux_index,  NBVariable.FUNCTION_STR, iter, init);
       else exp;
     end match;
   end introduceArrayConstructorAlias;
 
+  function introduceAliasCrefConditional
+    "introduces alias variables for crefs, only if they are in the set"
+    input output Expression exp;
+    input UnorderedSet<ComponentRef> set;
+    input UnorderedMap<Call_Id, Call_Aux> map;
+    input Pointer<Integer> aux_index;
+    input Iterator iter;
+    input Boolean init;
+  algorithm
+    exp := match exp
+      case Expression.CREF() guard(UnorderedSet.contains(ComponentRef.stripSubscriptsAll(exp.cref), set))
+      then introduceAlias(exp, map, aux_index,  NBVariable.STATE_ALIAS_STR, iter, init);
+      else exp;
+    end match;
+  end introduceAliasCrefConditional;
+
   function introduceAlias
+    "introduces alias variables for any expression.
+    Extra handling for cat() and promotion() calls."
     input output Expression exp;
     input UnorderedMap<Call_Id, Call_Aux> map;
     input Pointer<Integer> aux_index;
+    input String aux_name;
     input Iterator iter;
     input Boolean init;
   protected
@@ -501,7 +596,7 @@ protected
           _ := match (Call.functionName(call), call.arguments)
             case (Absyn.IDENT(name = "cat"), _) algorithm
               call.arguments  := listHead(call.arguments) :: list(if Expression.isLiteral(arg) or Expression.isCref(arg) then arg
-                else introduceAlias(arg, map, aux_index, iter, init) for arg in listRest(call.arguments));
+                else introduceAlias(arg, map, aux_index, aux_name, iter, init) for arg in listRest(call.arguments));
               exp.call        := call;
               id              := CALL_ID(exp, new_iter);
               // double check if after replacing cat() call arguments the ID already exists
@@ -510,7 +605,7 @@ protected
 
             case (Absyn.IDENT(name = "promote"), {arg1, arg2}) algorithm
               call.arguments  := {if Expression.isLiteral(arg1) or Expression.isCref(arg1) then arg1
-                else introduceAlias(arg1, map, aux_index, iter, init), arg2};
+                else introduceAlias(arg1, map, aux_index, aux_name, iter, init), arg2};
               exp.call        := call;
               id              := CALL_ID(exp, new_iter);
               // double check if after replacing promote() call arguments the ID already exists
@@ -528,11 +623,11 @@ protected
       exp := match (aux_opt, ty)
         case (SOME(aux), _) then aux.replacer;
         case (_, Type.TUPLE()) algorithm
-          names   := list(Call_Aux.createName(sub_ty, new_iter, aux_index, init) for sub_ty in ty.types);
+          names   := list(Call_Aux.createName(sub_ty, new_iter, aux_index, aux_name, init) for sub_ty in ty.types);
           tpl_lst := list(if ComponentRef.size(cref, true) == 0 then Expression.fromCref(ComponentRef.WILD()) else Expression.fromCref(cref) for cref in names);
         then Expression.TUPLE(ty, tpl_lst);
         else algorithm
-          name := Call_Aux.createName(ty, new_iter, aux_index, init);
+          name := Call_Aux.createName(ty, new_iter, aux_index, aux_name, init);
         then Expression.fromCref(name);
       end match;
 
@@ -555,6 +650,7 @@ protected
   end checkCallReplacement;
 
   function forceReplacement
+    "returns true if the call has to be force replaced without exception"
     input Function fn;
     output Boolean b;
   algorithm
@@ -565,6 +661,7 @@ protected
   end forceReplacement;
 
   function replaceException
+    "returns true if this call should not be replaced"
     input Function fn;
     output Boolean b;
   protected
@@ -641,6 +738,7 @@ protected
   end filterFrames;
 
   function addAuxVar
+    "add the aux var to the correct list and potentially resolve records properly"
     input Pointer<Variable> new_var;
     input output Boolean disc;
     input output list<Pointer<Variable>> new_vars_disc;
@@ -670,6 +768,7 @@ protected
   end addAuxVar;
 
   function addClockedAlias
+    "add a clocked alias equation and variable"
     input EquationPointers equations;
     input Pointer<Integer> eqn_idx;
     output list<Pointer<Equation>> clock_eqns = {};
@@ -688,6 +787,137 @@ protected
       clock_eqns := Equation.makeAssignment(Expression.fromCref(clock_name), BClock.toExp(clock), eqn_idx, "AUX", Iterator.EMPTY(), EquationAttributes.default(EquationKind.CLOCKED, false)) :: clock_eqns;
     end for;
   end addClockedAlias;
+
+  // type for slice collection
+  type Indices = UnorderedSet<Integer>;
+
+  function collectSlicedStatesAliasEquation
+    "helper function to map equations for sliced state collection"
+    input output Equation eqn;
+    input UnorderedMap<ComponentRef,Indices> map;
+  protected
+    Iterator iter = Equation.getForIterator(eqn);
+  algorithm
+    Equation.map(eqn, function collectSlicedStatesAlias(iter = iter, map = map), NONE(), Expression.fakeMap);
+  end collectSlicedStatesAliasEquation;
+
+  function collectSlicedStatesAlias
+    "check cref in a der() call for full access of the variable.
+    if its not fully accessing the variable, add it to the slice map."
+    input output Expression exp;
+    input Iterator iter;
+    input UnorderedMap<ComponentRef,Indices> map;
+  algorithm
+    exp := match exp
+      local
+        Integer iter_size, cref_size, var_size;
+        Expression arg;
+        UnorderedSet<ComponentRef> call_crefs;
+        ComponentRef stripped_cref;
+        UnorderedSet<Integer> indices;
+        list<ComponentRef> names;
+        list<Expression> ranges;
+        list<Option<Iterator>> maps;
+
+      // derivative
+      case Expression.CALL(call = Call.TYPED_CALL(fn = Function.FUNCTION(path = Absyn.IDENT(name = "der")), arguments = {arg})) algorithm
+        // get the iterator size
+        iter_size := Iterator.size(iter, true);
+        // collect all crefs in the call
+        call_crefs := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
+        Slice.filterExp(arg, function Slice.getContinuous(init = false), call_crefs);
+        for cref in UnorderedSet.toList(call_crefs) loop
+          cref_size := Type.sizeOf(ComponentRef.getSubscriptedType(cref), true);
+          var_size  := BVariable.size(BVariable.getVarPointer(cref, sourceInfo()), true);
+          // if the cref does not represent the full variable it has to be collected as it might cause a sliced state
+          if var_size <> cref_size * iter_size then
+            stripped_cref         := ComponentRef.stripSubscriptsAll(cref);
+            indices               := UnorderedMap.getOrDefault(stripped_cref, map, UnorderedSet.new(Util.id, intEq));
+            (names, ranges, maps) := Iterator.getFrames(iter);
+            // get all the local indices (start index = 0) and collect with potential previous indices
+            for index in Slice.getCrefInFrameIndicesLocal(cref, stripped_cref, List.zip3(names, ranges, maps), 0) loop
+              UnorderedSet.add(index, indices);
+            end for;
+            UnorderedMap.add(stripped_cref, indices, map);
+          end if;
+        end for;
+      then exp;
+
+      // array constructor, get the iterators and add them going deeper
+      case Expression.CALL(call = Call.TYPED_ARRAY_CONSTRUCTOR()) algorithm
+        Expression.mapShallow(exp, function collectSlicedStatesAlias(iter = Iterator.expand(iter, exp.call), map = map));
+      then exp;
+      case Expression.CALL(call = Call.TYPED_REDUCTION()) algorithm
+        Expression.mapShallow(exp, function collectSlicedStatesAlias(iter = Iterator.expand(iter, exp.call), map = map));
+      then exp;
+
+      // just map deeper in search for der() calls
+      else algorithm
+        Expression.mapShallow(exp, function collectSlicedStatesAlias(iter = iter, map = map));
+      then exp;
+    end match;
+  end collectSlicedStatesAlias;
+
+  function getSlicedStatesSet
+    "takes the map of states and their sliced indices and returns the set of all states of which the indices are not covering the full state"
+    input UnorderedMap<ComponentRef,Indices> map;
+    output UnorderedSet<ComponentRef> set = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
+  protected
+    ComponentRef state;
+    UnorderedSet<Integer> indices;
+  algorithm
+    for tpl in UnorderedMap.toList(map) loop
+      (state, indices) := tpl;
+      if BVariable.size(BVariable.getVarPointer(state, sourceInfo()), true) <> UnorderedSet.size(indices) then
+        UnorderedSet.add(state, set);
+      end if;
+    end for;
+  end getSlicedStatesSet;
+
+  function introduceSlicedStateAliasEquation
+    "creates auxilliary variables for all state slices where the variable is only partially a state"
+    input output Equation eqn;
+    input UnorderedSet<ComponentRef> set;
+    input UnorderedMap<Call_Id, Call_Aux> map;
+    input Pointer<Integer> aux_index;
+  protected
+    Iterator iter = Equation.getForIterator(eqn);
+  algorithm
+    eqn := Equation.map(eqn, function introduceSlicedStateAliasExp(set = set, map = map, iter = iter, aux_index = aux_index), NONE(), Expression.fakeMap);
+  end introduceSlicedStateAliasEquation;
+
+  function introduceSlicedStateAliasExp
+    "replace component references in der() calls that have been found to be only partially states."
+    input output Expression exp;
+    input UnorderedSet<ComponentRef> set;
+    input UnorderedMap<Call_Id, Call_Aux> map;
+    input Iterator iter;
+    input Pointer<Integer> aux_index;
+  algorithm
+    exp := match exp
+      local
+        Call call;
+        Expression arg, new_exp;
+
+      case Expression.CALL(call = call as Call.TYPED_CALL(fn = Function.FUNCTION(path = Absyn.IDENT(name = "der")), arguments = {arg})) algorithm
+        call.arguments  := {Expression.map(arg, function introduceAliasCrefConditional(set = set, map = map, iter = iter, aux_index = aux_index, init = false))};
+        exp.call        := call;
+      then exp;
+
+        // array constructor, get the iterators and add them going deeper
+      case Expression.CALL(call = Call.TYPED_ARRAY_CONSTRUCTOR()) algorithm
+        new_exp := Expression.mapShallow(exp, function introduceSlicedStateAliasExp(set = set, map = map, iter = Iterator.expand(iter, exp.call), aux_index = aux_index));
+      then new_exp;
+      case Expression.CALL(call = Call.TYPED_REDUCTION()) algorithm
+        new_exp := Expression.mapShallow(exp, function introduceSlicedStateAliasExp(set = set, map = map, iter = Iterator.expand(iter, exp.call), aux_index = aux_index));
+      then new_exp;
+
+      // just map deeper in search for der() calls
+      else algorithm
+        new_exp := Expression.mapShallow(exp, function introduceSlicedStateAliasExp(set = set, map = map, iter = iter, aux_index = aux_index));
+      then new_exp;
+    end match;
+  end introduceSlicedStateAliasExp;
 
   annotation(__OpenModelica_Interface="backend");
 end NBFunctionAlias;

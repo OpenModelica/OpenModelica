@@ -273,6 +273,15 @@ public
     end match;
   end filterExp;
 
+  function getContinuous
+    extends filterCref;
+    input Boolean init;
+  algorithm
+    if BVariable.checkCref(cref, function BVariable.isContinuous(init = init), sourceInfo()) then
+      UnorderedSet.add(cref, acc);
+    end if;
+  end getContinuous;
+
   function getSliceCandidates
     "Used to collect all slices of a certain variable name.
     Note: the name has to be stripped of all subscripts for this to work."
@@ -1771,10 +1780,6 @@ protected
   protected
     ComponentRef c;
     Integer var_arr_idx, var_start;
-    list<Integer> sizes;
-    list<Expression> subs;
-    Type ty;
-    Integer complex_size;
   algorithm
     // try to get array index, if it fails, strip the subscripts
     (var_arr_idx, c)  := match UnorderedMap.get(cref, map)
@@ -1784,9 +1789,28 @@ protected
       then (UnorderedMap.getSafe(c, map, sourceInfo()), c);
     end match;
     (var_start, _)  := mapping.var_AtS[var_arr_idx];
-    sizes           := ComponentRef.sizes(c, false);
-    subs            := ComponentRef.subscriptsToExpression(cref, true);
-    ty              := Type.arrayElementType(ComponentRef.getComponentType(cref));
+
+    // add local indices to start index
+    scal_lst := getCrefInFrameIndicesLocal(cref, c, frames, var_start);
+  end getCrefInFrameIndices;
+
+public
+  function getCrefInFrameIndicesLocal
+    input ComponentRef subscripted_cref;
+    input ComponentRef stripped_cref;
+    input list<tuple<ComponentRef, Expression, Option<Iterator>>> frames  "iterator frames at which to evaluate cref";
+    input Integer var_start;
+    output list<Integer> scal_lst;
+  protected
+    list<Integer> sizes;
+    list<Expression> subs;
+    Type ty;
+    Integer complex_size;
+  algorithm
+    // prepare the sizes of the full cref, the subscripts and the type to check if its complex
+    sizes := ComponentRef.sizes(stripped_cref, false);
+    subs  := ComponentRef.subscriptsToExpression(subscripted_cref, true);
+    ty    := Type.arrayElementType(ComponentRef.getComponentType(subscripted_cref));
 
     // check if it needs special record handling
     scal_lst := match Type.complexSize(ty)
@@ -1798,8 +1822,9 @@ protected
       then scal_lst;
       else listReverse(combineFrames2Indices(var_start, sizes, subs, frames, UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual)));
     end match;
-  end getCrefInFrameIndices;
+  end getCrefInFrameIndicesLocal;
 
+protected
   function resolveDimensionsSubscripts
     "uses the replacement module to replace all iterator crefs in the subscript with the current position.
     Returns the current positions for each subscript."
