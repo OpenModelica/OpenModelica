@@ -1355,14 +1355,46 @@ public
 
   function hash
     input Subscript sub;
-    output Integer hash;
+    output Integer hash = hashContinue(sub, Util.HASH_SEED);
+  end hash;
+
+  function hashContinue
+    input Subscript sub;
+    input output Integer hash;
   algorithm
     hash := match sub
-      case SPLIT_PROXY() then InstNode.hash(sub.origin) + InstNode.hash(sub.parent);
-      case SPLIT_INDEX() then InstNode.hash(sub.node) + sub.dimIndex;
-      else stringHashDjb2(toString(sub));
+      case RAW_SUBSCRIPT() then stringHashDjb2Continue(Dump.printSubscriptStr(sub.subscript), hash);
+      case UNTYPED() then Expression.hashContinue(sub.exp, hash);
+      case INDEX() then Expression.hashContinue(sub.index, hash);
+      case SLICE() then Expression.hashContinue(sub.slice, hash);
+
+      case EXPANDED_SLICE()
+        algorithm
+          hash := stringHashDjb2Continue("{", hash);
+          for s in sub.indices loop
+            hash := hashContinue(s, hash);
+            hash := stringHashDjb2Continue(", ", hash); // trailing comma, don't care...
+          end for;
+          hash := stringHashDjb2Continue("}", hash);
+        then hash;
+
+      case WHOLE() then stringHashDjb2Continue(":", hash);
+
+      case SPLIT_PROXY()
+        algorithm
+          hash := InstNode.hashContinue(sub.origin, hash);
+          hash := InstNode.hashContinue(sub.parent, hash);
+        then hash;
+
+      case SPLIT_INDEX()
+        algorithm
+          hash := InstNode.hashContinue(sub.node, hash);
+          hash := stringHashDjb2Continue(intString(sub.dimIndex), hash);
+        then hash;
+
+      else hash;
     end match;
-  end hash;
+  end hashContinue;
 
   function splitIndexDimExp
     input Subscript sub;

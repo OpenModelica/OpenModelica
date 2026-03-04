@@ -760,7 +760,7 @@ uniontype Exp "The Exp uniontype is the container of a Modelica expression.
   record CALL
     ComponentRef function_ "function" ;
     FunctionArgs functionArgs;
-    list<Absyn.Path> typeVars;
+    list<Path> typeVars;
   end CALL;
 
   // stefan

@@ -1269,6 +1269,83 @@ public
     end match;
   end isEqual;
 
+  function hashContinue
+    input Type ty;
+    input output Integer hash;
+  algorithm
+    hash := match ty
+      case Type.INTEGER() then stringHashDjb2Continue("Integer", hash);
+      case Type.REAL() then stringHashDjb2Continue("Real", hash);
+      case Type.STRING() then stringHashDjb2Continue("String", hash);
+      case Type.BOOLEAN() then stringHashDjb2Continue("Boolean", hash);
+      case Type.CLOCK() then stringHashDjb2Continue("Clock", hash);
+
+      case Type.ENUMERATION()
+        algorithm
+          if listEmpty(ty.literals) then
+            hash := stringHashDjb2Continue("enumeration(:)", hash);
+          else
+            hash := stringHashDjb2Continue("enumeration", hash);
+            hash := AbsynUtil.pathHashContinue(ty.typePath, hash);
+            hash := stringHashDjb2Continue("(", hash);
+            for lit in ty.literals loop
+              hash := stringHashDjb2Continue(lit, hash);
+              hash := stringHashDjb2Continue(", ", hash); // trailing comma, don't care...
+            end for;
+            hash := stringHashDjb2Continue(")", hash);
+          end if;
+        then hash;
+
+      case Type.ARRAY()
+        algorithm
+          hash := hashContinue(ty.elementType, hash);
+          hash := stringHashDjb2Continue("[", hash);
+          for dim in ty.dimensions loop
+            hash := stringHashDjb2Continue(Dimension.toString(dim), hash); // TODO use Dimension.hashContinue
+            hash := stringHashDjb2Continue(", ", hash); // trailing comma, don't care...
+          end for;
+          hash := stringHashDjb2Continue("]", hash);
+        then hash;
+
+      case Type.TUPLE()
+        algorithm
+          hash := stringHashDjb2Continue("(", hash);
+          for t in ty.types loop
+            hash := hashContinue(t, hash);
+            hash := stringHashDjb2Continue(", ", hash); // trailing comma, don't care...
+          end for;
+          hash := stringHashDjb2Continue(")", hash);
+        then hash;
+
+      case Type.NORETCALL() then stringHashDjb2Continue("()", hash);
+      case Type.UNKNOWN() then stringHashDjb2Continue("unknown()", hash);
+      case Type.COMPLEX() then AbsynUtil.pathHashContinue(InstNode.scopePath(ty.cls), hash);
+      case Type.FUNCTION() then stringHashDjb2Continue(Function.typeString(ty.fn), hash); // TODO use Functino.hashContinue
+      case Type.METABOXED() then hashContinue(ty.ty, hash);
+      case Type.POLYMORPHIC() then stringHashDjb2Continue(ty.name, hash);
+      case Type.ANY() then stringHashDjb2Continue("$ANY$", hash);
+
+      case Type.CONDITIONAL_ARRAY()
+        algorithm
+          hash := hashContinue(ty.trueType, hash);
+          hash := hashContinue(ty.falseType, hash);
+        then hash;
+
+      case Type.UNTYPED()
+        algorithm
+          hash := InstNode.hashContinue(ty.typeNode, hash);
+          hash := stringHashDjb2Continue("[", hash);
+          for dim in ty.dimensions loop
+            hash := stringHashDjb2Continue(Dimension.toString(dim), hash); // TODO use Dimension.hashContinue
+            hash := stringHashDjb2Continue(", ", hash); // trailing comma, don't care...
+          end for;
+          hash := stringHashDjb2Continue("]", hash);
+        then hash;
+
+      else hash;
+    end match;
+  end hashContinue;
+
   function isDiscrete
     input Type ty;
     output Boolean isDiscrete;
