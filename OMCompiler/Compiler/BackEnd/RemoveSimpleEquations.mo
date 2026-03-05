@@ -1546,6 +1546,14 @@ algorithm
 
     case(_, _, _, _, _, _, _, _, (vars, shared, eqns, seqns, index, mT, _))
       equation
+
+        if ComponentReference.crefHaveSubs(cr1) or ComponentReference.crefHaveSubs(cr2) then
+          // Removing elements of arrays can lead to issues later on when passing arrays to funvtions.
+          // The array elements are computed from the start of the array plus the position of the element in questoin.
+          // This might be a bit too broad as of now.
+          fail();
+        end if;
+
         if Flags.isSet(Flags.DEBUG_ALIAS) then
           BackendDump.debugStrCrefStrCrefStr("Alias Equation ", cr1, " = ", cr2, " found. Negated lhs[" + boolString(negatedCr1) + "] = rhs[" + boolString(negatedCr2) + "].\n");
         end if;
