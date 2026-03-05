@@ -117,6 +117,57 @@ ElementTreeItem::~ElementTreeItem()
 }
 
 /*!
+ * \brief ElementTreeItem::child
+ * Returns the child at the given row.
+ * \param row
+ * \return
+ */
+ElementTreeItem* ElementTreeItem::child(int row) const
+{
+  if (row >= 0 && row < mChildren.size()) {
+    return mChildren.at(row);
+  } else {
+    return 0;
+  }
+}
+
+/*!
+ * \brief ElementTreeItem::findChild
+ * Finds the child with the given name and case sensitivity.
+ * \param name
+ * \param caseSensitivity
+ * \return
+ */
+ElementTreeItem* ElementTreeItem::findChild(const QString &name, Qt::CaseSensitivity caseSensitivity) const
+{
+  if (caseSensitivity == Qt::CaseSensitive) {
+    auto it = mChildrenHash.find(name);
+    return it != mChildrenHash.end() ? it.value() : nullptr;
+  } else {
+    // QHash doesn’t support case-insensitive keys directly,
+    // so fallback to linear search for insensitive mode:
+    for (ElementTreeItem *child : mChildren) {
+      if (child->getNameStructure().compare(name, Qt::CaseInsensitive) == 0) {
+        return child;
+      }
+    }
+    return nullptr;
+  }
+}
+
+/*!
+ * \brief ElementTreeItem::insertChild
+ * Inserts the given child at the given position.
+ * \param position
+ * \param pElementTreeItem
+ */
+void ElementTreeItem::insertChild(int position, ElementTreeItem *pElementTreeItem)
+{
+  mChildren.insert(position, pElementTreeItem);
+  mChildrenHash.insert(pElementTreeItem->getNameStructure(), pElementTreeItem);
+}
+
+/*!
  * \brief ElementTreeItem::removeChildren
  * Removes all the children.
  */
@@ -124,6 +175,7 @@ void ElementTreeItem::removeChildren()
 {
   qDeleteAll(mChildren);
   mChildren.clear();
+  mChildrenHash.clear();
 }
 
 /*!
@@ -134,6 +186,7 @@ void ElementTreeItem::removeChildren()
 void ElementTreeItem::removeChild(ElementTreeItem *pElementTreeItem)
 {
   mChildren.removeOne(pElementTreeItem);
+  mChildrenHash.remove(pElementTreeItem->getNameStructure());
   delete pElementTreeItem;
 }
 
@@ -430,7 +483,7 @@ void ElementTreeModel::addElements(ModelInstance::Model *pModel)
 
 /*!
  * \brief ElementTreeModel::findElementTreeItem
- * Finds the ElementTreeItem based on the name and case sensitivity.
+ * Finds the ElementTreeItem with the given name and case sensitivity under the given ElementTreeItem.
  * \param name
  * \param pElementTreeItem
  * \param caseSensitivity
@@ -440,15 +493,9 @@ ElementTreeItem* ElementTreeModel::findElementTreeItem(const QString &name, Elem
 {
   if (!pElementTreeItem) {
     pElementTreeItem = mpRootElementTreeItem;
-  } else if (pElementTreeItem->getNameStructure().compare(name, caseSensitivity) == 0) {
-    return pElementTreeItem;
   }
-  for (int i = pElementTreeItem->childrenSize(); --i >= 0; ) {
-    if (ElementTreeItem *item = findElementTreeItem(name, pElementTreeItem->child(i), caseSensitivity)) {
-      return item;
-    }
-  }
-  return 0;
+
+  return pElementTreeItem->findChild(name, caseSensitivity);
 }
 
 /*!
@@ -574,7 +621,7 @@ void ElementWidget::selectDeselectElementItem(const QString &name, bool selected
   }
   // Makesure the last selected Element is visible.
   if (selected) {
-    ElementTreeItem *pElementTreeItem = mpElementTreeModel->findElementTreeItem(name, mpElementTreeModel->getRootElementTreeItem());
+    ElementTreeItem *pElementTreeItem = mpElementTreeModel->findElementTreeItem(name);
     if (pElementTreeItem) {
       QModelIndex modelIndex = mpElementTreeModel->elementTreeItemIndex(pElementTreeItem);
       QModelIndex proxyIndex = mpElementTreeProxyModel->mapFromSource(modelIndex);

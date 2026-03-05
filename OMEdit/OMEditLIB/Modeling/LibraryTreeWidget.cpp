@@ -1145,17 +1145,34 @@ Qt::ItemFlags LibraryTreeModel::flags(const QModelIndex &index) const
  */
 LibraryTreeItem* LibraryTreeModel::findLibraryTreeItem(const QString &name, LibraryTreeItem *pLibraryTreeItem, Qt::CaseSensitivity caseSensitivity) const
 {
+  QString path = name;
   if (!pLibraryTreeItem) {
     pLibraryTreeItem = mpRootLibraryTreeItem;
   } else if (pLibraryTreeItem->getNameStructure().compare(name, caseSensitivity) == 0) {
     return pLibraryTreeItem;
+  } else {
+    // strip the prefix of the path if it is same as the name structure of the current item
+    StringHandler::removeTypePrefix(path, pLibraryTreeItem->getNameStructure());
   }
-  for (int i = pLibraryTreeItem->childrenSize(); --i >= 0; ) {
-    if (LibraryTreeItem *item = findLibraryTreeItem(name, pLibraryTreeItem->childAt(i), caseSensitivity)) {
-      return item;
+
+  if (path.isEmpty()) {
+    return nullptr;
+  }
+
+  QStringList parts = StringHandler::splitPath(path);
+  if (parts.isEmpty()) {
+    return nullptr;
+  }
+
+  for (const QString &part : parts) {
+    const QString item = pLibraryTreeItem->getNameStructure().isEmpty() ? part : pLibraryTreeItem->getNameStructure() + "." + part;
+    pLibraryTreeItem = findLibraryTreeItemOneLevel(item, pLibraryTreeItem, caseSensitivity);
+    if (!pLibraryTreeItem) {
+      return nullptr;  // Path broken
     }
   }
-  return 0;
+
+  return pLibraryTreeItem;
 }
 
 /*!
