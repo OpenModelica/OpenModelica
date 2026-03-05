@@ -115,6 +115,7 @@ private:
 	int mCurveStyle;
 	QFont mLegendFont;
 	double mTime;
+	bool mTimeOutOfBounds = false;
 	bool mIsInteractiveSimulation;
 	QString mInteractiveTreeItemOwner;
 	int mInteractivePort;
