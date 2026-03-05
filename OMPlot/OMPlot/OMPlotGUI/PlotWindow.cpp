@@ -998,9 +998,11 @@ double getTimeUnitFactor(QString timeUnit)
 
 void PlotWindow::updateTimeText()
 {
-  QString unit = getTimeUnit();
-  double timeUnitFactor = getTimeUnitFactor(unit);
-  mpPlot->setFooter(QString("t = %1 " + unit).arg(getTime()*timeUnitFactor,0,'g',3));
+  double time = getTime();
+  QString timeUnit = getTimeUnit();
+  double timeUnitFactor = getTimeUnitFactor(timeUnit);
+  QString timeString = QString::number(time * timeUnitFactor);
+  mpPlot->setFooter(QString("t = %1 %2").arg(timeString).arg(timeUnit));
   mpPlot->replot();
 }
 

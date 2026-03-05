@@ -216,7 +216,7 @@ public:
   Plot* getPlot();
   void receiveMessage(QStringList arguments);
   void closeEvent(QCloseEvent *event);
-  void setTime(double time){mTime = time;}
+  void setTime(double time) {mTime = time;}
   double getTime() {return mTime;}
   void updateTimeText();
   void updatePlot();
