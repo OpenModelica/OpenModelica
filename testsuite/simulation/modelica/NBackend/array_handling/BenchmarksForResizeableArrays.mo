@@ -846,6 +846,11 @@ of a corresponding library.
       parameter Integer NR = 10 annotation(__OpenModelica_resizable=true);
     end CascadedFirstOrder_Resizable;
 
+    model FiltersInSeries_Resizable
+      extends ComponentArrays.FiltersInSeries(N = NR);
+      parameter Integer NR = 10 annotation(__OpenModelica_resizable=true);
+    end FiltersInSeries_Resizable;
+
   end Resizable;
   annotation (uses(Modelica(version="4.0.0")), Documentation(info="<html>
 <p>Library <b>BenchmarksForResizeableArrays</b> is a <b>free</b> package providing benchmark models with arrays.
