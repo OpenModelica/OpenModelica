@@ -57,6 +57,12 @@ private slots:
    */
   void removeTypePrefix();
   void removeTypePrefix_data();
+  /*!
+   * \brief splitPath
+   * Tests the StringHandler::splitPath function.
+   */
+  void splitPath();
+  void splitPath_data();
   void cleanupTestCase();
 };
 

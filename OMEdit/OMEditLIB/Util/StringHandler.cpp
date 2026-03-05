@@ -988,6 +988,38 @@ QString StringHandler::removeFirstWordAfterDot(QString value)
   return wordsBeforeAfterFirstDot(value, false);
 }
 
+/*!
+ * \brief StringHandler::splitPath
+ * Splits the path into a list of paths.
+ * \param path
+ * \return
+ */
+QStringList StringHandler::splitPath(QString path)
+{
+  QStringList result;
+
+  path = path.trimmed();
+  if (path.isEmpty()) {
+    return result;
+  }
+
+  while (!path.isEmpty()) {
+    QString first = getFirstWordBeforeDot(path);
+    result.append(first);
+
+    QString remaining = removeFirstWordAfterDot(path);
+
+    // If nothing changed, we reached the last element
+    if (remaining == path) {
+      break;
+    }
+
+    path = remaining.trimmed();
+  }
+
+  return result;
+}
+
 QString StringHandler::escapeString(QString value)
 {
   QString res;

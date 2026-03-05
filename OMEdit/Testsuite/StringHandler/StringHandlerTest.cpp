@@ -103,6 +103,40 @@ void StringHandlerTest::removeTypePrefix_data()
       << "Periodic";
 }
 
+void StringHandlerTest::splitPath()
+{
+  QFETCH(QString, path);
+  QFETCH(QStringList, result);
+
+  QCOMPARE(StringHandler::splitPath(path), result);
+}
+
+void StringHandlerTest::splitPath_data()
+{
+  QTest::addColumn<QString>("path");
+  QTest::addColumn<QStringList>("result");
+
+  QTest::newRow("Empty path")
+    << ""
+    << QStringList({});
+
+  QTest::newRow("Path 1")
+    << "A.B"
+    << QStringList({"A", "B"});
+
+  QTest::newRow("Path 2")
+    << "A.B.'C'"
+    << QStringList({"A", "B", "'C'"});
+
+  QTest::newRow("Path 3")
+    << "A.B.'C.D'"
+    << QStringList({"A", "B", "'C.D'"});
+
+  QTest::newRow("Path 4")
+    << "A.B.'C.D'.E"
+    << QStringList({"A", "B", "'C.D'", "E"});
+}
+
 void StringHandlerTest::cleanupTestCase()
 {
   MainWindow::instance()->close();

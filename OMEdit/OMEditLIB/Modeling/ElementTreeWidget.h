@@ -49,8 +49,9 @@ public:
   ~ElementTreeItem();
   bool isRootItem() const {return mIsRootItem;}
   int childrenSize() const {return mChildren.size();}
-  ElementTreeItem* child(int row) const {return row >= 0 && row < childrenSize() ? mChildren.at(row) : 0;}
-  void insertChild(int position, ElementTreeItem *pElementTreeItem) {mChildren.insert(position, pElementTreeItem);}
+  ElementTreeItem* child(int row) const;
+  ElementTreeItem* findChild(const QString &name, Qt::CaseSensitivity caseSensitivity) const;
+  void insertChild(int position, ElementTreeItem *pElementTreeItem);
   void removeChildren();
   void removeChild(ElementTreeItem *pElementTreeItem);
   QVariant data(int column, int role = Qt::DisplayRole) const;
@@ -63,6 +64,7 @@ private:
   ElementTreeItem *mpParentElementTreeItem = 0;
   bool mIsRootItem = false;
   QList<ElementTreeItem*> mChildren;
+  QHash<QString, ElementTreeItem*> mChildrenHash;
   QString mName;
   QString mNameStructure;
   QString mDisplayName;
@@ -101,7 +103,7 @@ public:
   QModelIndex elementTreeItemIndex(const ElementTreeItem *pElementTreeItem) const;
   void removeElements();
   void addElements(ModelInstance::Model *pModel);
-  ElementTreeItem* findElementTreeItem(const QString &name, ElementTreeItem *pLibraryTreeItem = 0, Qt::CaseSensitivity caseSensitivity = Qt::CaseSensitive) const;
+  ElementTreeItem* findElementTreeItem(const QString &name, ElementTreeItem *pElementTreeItem = 0, Qt::CaseSensitivity caseSensitivity = Qt::CaseSensitive) const;
 private:
   ElementWidget *mpElementWidget;
   ElementTreeItem* mpRootElementTreeItem;
