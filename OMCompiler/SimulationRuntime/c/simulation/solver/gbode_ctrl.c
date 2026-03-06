@@ -37,32 +37,83 @@
 unsigned int use_fhr = FALSE;
 double use_filter = 1.0;
 
-/**
- * @brief Determine the error threshold depending on the percentage of fast states
- *        to all states. Use the sorted states with respect to the error.
- *
- * @param gbData        Pointer to generik GBODE data struct.
- * @return * double     Error threshold for the fast state selection
- */
-double getErrorThreshold(DATA_GBODE* gbData)
+static inline void swap(int *a, int *b)
 {
-  int i, j, temp;
+  int tmp = *a;
+  *a = *b;
+  *b = tmp;
+}
 
-  if (gbData->percentage == 1)
-    return -1;
+/**
+ * @brief Partitions an index array around a pivot value using Hoare's scheme in ascending order.
+ * @see https://en.wikipedia.org/wiki/Quicksort#Hoare_partition_scheme
+ *
+ * @param idx    Index array being rearranged
+ * @param value  Array of values
+ * @param left   Left boundary of partition range (inclusive)
+ * @param right  Right boundary of partition range (inclusive)
+ * @return       Split point j, such that no element in [left, ... , j] is greater
+ *               than any element in [j+1, ... , right]
+ */
+static int partition(int *idx, const double *value, int left, int right)
+{
+  double pivot = value[idx[(left + right) / 2]];
 
-  for (i = 0;  i < gbData->nStates - 1; i++) {
-    for (j = 0; j < gbData->nStates - i - 1; j++) {
-      if (gbData->err[gbData->sortedStatesIdx[j]] < gbData->err[gbData->sortedStatesIdx[j+1]]) {
-        temp = gbData->sortedStatesIdx[j];
-        gbData->sortedStatesIdx[j] = gbData->sortedStatesIdx[j+1];
-        gbData->sortedStatesIdx[j+1] = temp;
-      }
+  int i = left - 1;
+  int j = right + 1;
+
+  while (1)
+  {
+    do { i++; } while (value[idx[i]] < pivot);
+    do { j--; } while (value[idx[j]] > pivot);
+
+    if (i >= j) return j;
+
+    swap(&idx[i], &idx[j]);
+  }
+}
+
+/**
+ * @brief Finds the error threshold at the given percentage of fast states
+ *        to all states using a quickselect algorithm.
+ *
+ * Returns the error value such that "percentage" of states have a higher error.
+ * Runs in O(n) best and average time without fully sorting the array.
+ *
+ * @param gbData  GBODE data object
+ * @return        Error threshold value, or -1.0 if percentage >= 1.0
+ */
+double getErrorThreshold(DATA_GBODE *gbData)
+{
+  if (gbData->percentage >= 1.0) return -1.0;
+
+  int length = gbData->nStates;
+  int last = length - 1;
+
+  // make percentage fit the ascending order of partition()
+  int target = last - (int)round(length * gbData->percentage);
+
+  if (target < 0) target = 0;
+  if (target >= length) target = last;
+
+  int left = 0;
+  int right = last;
+
+  while (left < right)
+  {
+    int split = partition(gbData->sortedStatesIdx, gbData->err, left, right);
+
+    if (target <= split)
+    {
+      right = split;
+    }
+    else
+    {
+      left = split + 1;
     }
   }
-  i = fmin(fmax(round(gbData->nStates * gbData->percentage), 1), gbData->nStates - 1);
 
-  return gbData->err[gbData->sortedStatesIdx[i]];
+  return gbData->err[gbData->sortedStatesIdx[target]];
 }
 
 /**
