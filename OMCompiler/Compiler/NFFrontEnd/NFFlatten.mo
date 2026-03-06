@@ -2001,7 +2001,7 @@ algorithm
               end if;
 
               if should_eval then
-                cond := Ceval.evalExp(cond, target);
+                cond := Ceval.tryEvalExp(cond, target);
                 cond := flattenExp(cond, prefix, info);
               end if;
             end if;
