@@ -249,23 +249,31 @@ public slots:
   void interactiveSimulationPaused();
 };
 
-//Exception classes
+// Exception classes
+
 class PlotException : public std::runtime_error
 {
 public:
-  PlotException(const QString &str) : std::runtime_error(str.toStdString()) {}
+  PlotException(const QString &str);
+};
+
+class InvalidInputException : public PlotException
+{
+public:
+  InvalidInputException(const QString &argName);
 };
 
 class NoFileException : public PlotException
 {
 public:
-  NoFileException(const QString &fileName) : PlotException(fileName) {}
+  NoFileException(const QString &error, const QString &fileName = QString());
 };
 
 class NoVariableException : public PlotException
 {
 public:
-  NoVariableException(const QString &varName) : PlotException(varName) {}
+  NoVariableException(const QString &error, const QString &varName = QString());
+  NoVariableException(const QString &error, uint32_t nbVars);
 };
 
 class TimeOutOfBoundsException : public PlotException
