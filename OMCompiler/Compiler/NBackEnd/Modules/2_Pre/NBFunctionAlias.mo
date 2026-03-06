@@ -835,7 +835,7 @@ protected
             indices               := UnorderedMap.getOrDefault(stripped_cref, map, UnorderedSet.new(Util.id, intEq));
             (names, ranges, maps) := Iterator.getFrames(iter);
             // get all the local indices (start index = 0) and collect with potential previous indices
-            for index in Slice.getCrefInFrameIndicesLocal(cref, stripped_cref, List.zip3(names, ranges, maps), 0) loop
+            for index in Slice.getCrefInFrameIndicesLocal(cref, stripped_cref, List.zip3(names, ranges, maps), 0, true) loop
               UnorderedSet.add(index, indices);
             end for;
             UnorderedMap.add(stripped_cref, indices, map);

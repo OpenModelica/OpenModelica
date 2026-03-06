@@ -1462,6 +1462,7 @@ public
 
   function getIntegerRange
     input Expression range  "has to be RANGE()!";
+    input Boolean resize;
     output Integer start;
     output Integer step;
     output Integer stop;
@@ -1472,10 +1473,10 @@ public
         Option<Expression> step_opt;
       case RANGE(step = step_opt) algorithm
         try
-          start := getInteger(range.start);
-          stop  := getInteger(range.stop);
+          start := getInteger(range.start, resize);
+          stop  := getInteger(range.stop, resize);
           if Util.isSome(range.step) then
-            step := getInteger(Util.getOption(range.step));
+            step := getInteger(Util.getOption(range.step), resize);
           else
             step := if start > stop then -1 else 1;
           end if;
@@ -1492,11 +1493,16 @@ public
 
   function getInteger
     input Expression exp;
+    input Boolean resize;
     output Integer i;
   protected
     Expression e;
   algorithm
-    e := Expression.map(exp, Expression.replaceResizableParameter);
+    if resize then
+      e := Expression.map(exp, Expression.replaceResizableParameter);
+    else
+      e := Expression.map(exp, Expression.replaceResizableParameterWithOriginal);
+    end if;
     i := match SimplifyExp.simplify(e)
       case INTEGER(i) then i;
       else algorithm
