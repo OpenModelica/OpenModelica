@@ -1,0 +1,59 @@
+// name: Issue14470
+// keywords: array sub index
+// status: correct
+// teardown_command: rm -rf RecordTest.LabelArray*
+//
+// Test for https://github.com/OpenModelica/OpenModelica/issues/14470
+// Sub index of positionArray needs to be correct.
+//
+// The order of the prints isn't deterministic.
+
+loadString("
+package RecordTest
+  model LabelArray
+    Real pos[2] = {time, time};
+    Label label[3](position = positionArray);
+  protected
+    Real positionArray[3, 2] = {
+      pos + {0, 11}, // 0 Can't be changed to non-zero or bug vanishes
+      pos + {0, 21}, // 0 Can't be changed to non-zero or bug vanishes
+      pos + {30, 31}
+    }; // positionArray can't be moved out of protected or bug vanishes
+  end LabelArray;
+
+  model Label
+    Real position[2] = {0, 0};
+  algorithm
+    when time > 0.5 then
+      printFunc(position);
+    end when;
+  end Label;
+
+  impure function printFunc
+    input Real position[2];
+  algorithm
+    Modelica.Utilities.Streams.print(\"Position: \" + String(position[1]) + \", \" + String(position[2]));
+  end printFunc;
+end RecordTest;
+"); getErrorString();
+
+simulate(RecordTest.LabelArray); getErrorString();
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "RecordTest.LabelArray_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'RecordTest.LabelArray', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_STDOUT        | info    | Position: 0.5, 11.5
+// LOG_STDOUT        | info    | Position: 0.5, 21.5
+// LOG_STDOUT        | info    | Position: 30.5, 31.5
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Notification: Automatically loaded package Complex 4.1.0 due to uses annotation from Modelica.
+// Notification: Automatically loaded package ModelicaServices 4.1.0 due to uses annotation from Modelica.
+// Notification: Automatically loaded package Modelica 4.1.0 due to usage.
+// "
+// endResult
