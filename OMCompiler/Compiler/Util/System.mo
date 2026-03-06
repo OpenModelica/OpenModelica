@@ -1009,7 +1009,7 @@ public function realMaxLit "Returns the maximum real that can be represent using
 end realMaxLit;
 
 public function uriToClassAndPath "Handles modelica:// and file:// URI's. The result is an absolute path on the local system.
-  The result depends on the current MODELICAPATH. Sets the error buffer on failure."
+  The result depends on the current OPENMODELICALIBRARY (MODELICAPATH in the language specification). Sets the error buffer on failure."
   input String uri;
   output String scheme "file:// or modelica://, in lower-case";
   output String classname "empty if file:// is used";

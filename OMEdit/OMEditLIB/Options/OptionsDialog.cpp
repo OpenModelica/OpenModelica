@@ -3753,9 +3753,9 @@ LibrariesPage::LibrariesPage(OptionsDialog *pOptionsDialog)
   : QWidget(pOptionsDialog)
 {
   mpOptionsDialog = pOptionsDialog;
-  // MODELICAPATH
+  // OPENMODELICALIBRARY
   QGroupBox *pModelicaPathGroupBox = new QGroupBox(Helper::general);
-  mpModelicaPathLabel = new Label("MODELICAPATH");
+  mpModelicaPathLabel = new Label("OPENMODELICALIBRARY");
   mpModelicaPathTextBox = new QLineEdit;
   mpModelicaPathTextBox->setPlaceholderText(Helper::ModelicaPath);
   mpModelicaPathTextBox->setToolTip(Helper::modelicaPathTip);
@@ -3772,7 +3772,7 @@ LibrariesPage::LibrariesPage(OptionsDialog *pOptionsDialog)
   // system libraries groupbox
   mpSystemLibrariesGroupBox = new QGroupBox(tr("System libraries loaded automatically on startup *"));
   // system libraries note
-  mpSystemLibrariesNoteLabel = new Label(tr("The system libraries are read from the MODELICAPATH and are always read-only."));
+  mpSystemLibrariesNoteLabel = new Label(tr("The system libraries are read from OPENMODELICALIBRARY (MODELICAPATH in the language specification) and are always read-only."));
   mpSystemLibrariesNoteLabel->setElideMode(Qt::ElideMiddle);
   // load latest Modeica checkbox
   mpLoadLatestModelicaCheckbox = new QCheckBox(tr("Load latest Modelica version on startup"));
