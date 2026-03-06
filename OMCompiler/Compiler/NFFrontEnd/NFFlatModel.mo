@@ -46,6 +46,8 @@ protected
   import Expression = NFExpression;
   import FlatModelicaUtil = NFFlatModelicaUtil;
   import Flatten = NFFlatten;
+  import NFFlatten.FunctionTree;
+  import Inline = NFInline;
   import InstContext = NFInstContext;
   import IOStream;
   import Lookup = NFLookup;
@@ -237,6 +239,7 @@ public
     String name = Util.makeQuotedIdentifier(className(flatModel));
     BaseModelica.OutputFormat format;
     Boolean scalarize;
+    list<Function> funcs = functions;
   algorithm
     format := BaseModelica.formatFromFlags();
     scalarize := Flags.isConfigFlagSet(Flags.BASE_MODELICA_OPTIONS, "scalarize");
@@ -244,6 +247,13 @@ public
     if Flags.getConfigString(Flags.OBFUSCATE) == "protected" or
        Flags.getConfigString(Flags.OBFUSCATE) == "encrypted" then
       flat_model := obfuscate(flat_model);
+    end if;
+
+    if BaseModelica.inlineFunctions() then
+      // Try to inline all functions regardless of what Inline annotation they have.
+      flat_model := mapExp(flat_model, function Inline.inlineCallExp(forceInline = true));
+      // Re-collect the functions to avoid dumping functions that are no longer used.
+      funcs := FunctionTree.listValues(Flatten.collectFunctions(flat_model));
     end if;
 
     if scalarize then
@@ -267,7 +277,7 @@ public
     s := IOStream.append(s, "//! base 0.1.0\n");
     s := IOStream.append(s, "package " + name + "\n");
 
-    for fn in functions loop
+    for fn in funcs loop
       if not (Function.isDefaultRecordConstructor(fn) or Function.isExternalObjectConstructorOrDestructor(fn)) then
         // Function parameters are not affected by the scalarization mode, so use default format here.
         s := Function.toFlatStream(fn, BaseModelica.defaultFormat, "  ", s);
@@ -275,7 +285,7 @@ public
       end if;
     end for;
 
-    for ty in collectFlatTypes(flat_model, functions) loop
+    for ty in collectFlatTypes(flat_model, funcs) loop
       s := Type.toFlatDeclarationStream(ty, format, "  ", s);
       s := IOStream.append(s, ";\n\n");
     end for;

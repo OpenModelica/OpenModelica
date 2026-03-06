@@ -83,5 +83,9 @@ public
     format.moveBindings := Flags.isConfigFlagSet(Flags.BASE_MODELICA_OPTIONS, "moveBindings");
   end formatFromFlags;
 
+  function inlineFunctions
+    output Boolean enabled = Flags.isConfigFlagSet(Flags.BASE_MODELICA_OPTIONS, "inlineFunctions");
+  end inlineFunctions;
+
 annotation(__OpenModelica_Interface="frontend");
 end BaseModelica;
