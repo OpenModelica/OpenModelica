@@ -50,6 +50,7 @@ protected
   import Prefixes = NFPrefixes;
   import Subscript = NFSubscript;
   import Type = NFType;
+  import TypeCheck = NFTypeCheck;
   import Variable = NFVariable;
   import NFArrayConnections.NameVertexTable;
 
@@ -168,10 +169,14 @@ public
         () := match scc
           local
             Type ty1, ty2;
+            TypeCheck.MatchKind kind;
+
           case StrongComponent.SINGLE_COMPONENT() algorithm
             ty1 := Type.removeSizeOneArraysAndRecords(Variable.typeOf(Pointer.access(scc.var)));
             ty2 := Type.removeSizeOneArraysAndRecords(Equation.getType(Pointer.access(scc.eqn)));
-            if not Type.isEqual(ty1, ty2) then
+            (_, _, kind) := TypeCheck.matchTypes(ty1, ty2, Expression.fromCref(BVariable.getVarName(scc.var)));
+
+            if kind <> NFTypeCheck.MatchKind.EXACT then
               // The variability of the equation must be greater or equal to that of the variable it solves.
               // See MLS section 3.8 Variability of Expressions
               err := getInstanceName() + " failed. The following strong component has conflicting types: "
