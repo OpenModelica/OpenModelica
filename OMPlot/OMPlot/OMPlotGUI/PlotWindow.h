@@ -253,20 +253,19 @@ public slots:
 class PlotException : public std::runtime_error
 {
 public:
-  PlotException(const char *e) : std::runtime_error(e) {}
-  PlotException(const QString str) : std::runtime_error(str.toStdString().c_str()) {}
+  PlotException(const QString &str) : std::runtime_error(str.toStdString()) {}
 };
 
 class NoFileException : public PlotException
 {
 public:
-  NoFileException(const char *fileName) : PlotException(fileName) {}
+  NoFileException(const QString &fileName) : PlotException(fileName) {}
 };
 
 class NoVariableException : public PlotException
 {
 public:
-  NoVariableException(const char *varName) : PlotException(varName) {}
+  NoVariableException(const QString &varName) : PlotException(varName) {}
 };
 
 class TimeOutOfBoundsException : public PlotException
