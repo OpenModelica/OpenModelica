@@ -3200,19 +3200,19 @@ algorithm
       then
         (vLst,indxs);
     // try again check if variable indexes used
-    case (_,_)
-      equation
-        // replace variables with WHOLEDIM()
-        (cr1,true) = replaceVarWithWholeDim(cr, false);
-        crlst = ComponentReference.expandCref(cr1,true);
-        if isPresent(outIntegerLst) then
-          (vLst as _::_,indxs) = getVarLst(crlst,inVariables);
-        else
-          (vLst as _::_,_) = getVarLst(crlst,inVariables);
-          indxs = {};
-        end if;
-      then
-        (vLst,indxs);
+    // case (_,_)
+    //   equation
+    //     // replace variables with WHOLEDIM()
+    //     (cr1,true) = replaceVarWithWholeDim(cr, false);
+    //     crlst = ComponentReference.expandCref(cr1,true);
+    //     if isPresent(outIntegerLst) then
+    //       (vLst as _::_,indxs) = getVarLst(crlst,inVariables);
+    //     else
+    //       (vLst as _::_,_) = getVarLst(crlst,inVariables);
+    //       indxs = {};
+    //     end if;
+    //   then
+    //     (vLst,indxs);
     /* failure
     case (_,_)
       equation
