@@ -518,14 +518,14 @@ public
           Integer start, step;
 
         case SINGLE() guard(arrayLength(location) == 1) algorithm
-          (start, step, _) := Expression.getIntegerRange(iter.range);
+          (start, step, _) := Expression.getIntegerRange(iter.range, true);
           UnorderedMap.add(iter.name, Expression.INTEGER(start + location[1]*step), replacements);
           createMappedLocationReplacement(iter.map, location[1], replacements);
         then ();
 
         case NESTED() guard(arrayLength(location) == arrayLength(iter.ranges)) algorithm
           for i in 1:arrayLength(location) loop
-            (start, step, _) := Expression.getIntegerRange(iter.ranges[i]);
+            (start, step, _) := Expression.getIntegerRange(iter.ranges[i], true);
             UnorderedMap.add(iter.names[i], Expression.INTEGER(start + location[i]*step), replacements);
             createMappedLocationReplacement(iter.maps[i], location[i], replacements);
           end for;
@@ -604,8 +604,8 @@ public
       Integer or_start, or_step, or_stop, ee_start, ee_step, ee_stop;
       Expression exp;
     algorithm
-      (or_start, or_step, or_stop) := Expression.getIntegerRange(replacor_range);
-      (ee_start, ee_step, ee_stop) := Expression.getIntegerRange(replacee_range);
+      (or_start, or_step, or_stop) := Expression.getIntegerRange(replacor_range, true);
+      (ee_start, ee_step, ee_stop) := Expression.getIntegerRange(replacee_range, true);
       // check if same size
       if (or_stop-or_start+1)/or_step == (ee_stop-ee_start+1)/ee_step then
         // replacee = ee_start + (ee_step/or_step) * (replacor-or_start)
@@ -1010,10 +1010,10 @@ public
             // revert an array/list if needed
             case Expression.ARRAY(literal = true) algorithm
               if eo == NBResizable.EvalOrder.FORWARD then
-                elements := list(Expression.getInteger(e) for e in range.elements);
+                elements := list(Expression.getInteger(e, true) for e in range.elements);
                 range.elements := listArray(list(Expression.INTEGER(e) for e in List.sort(elements, intGt)));
               elseif eo == NBResizable.EvalOrder.BACKWARD then
-                elements := list(Expression.getInteger(e) for e in range.elements);
+                elements := list(Expression.getInteger(e, true) for e in range.elements);
                 range.elements := listArray(list(Expression.INTEGER(e) for e in List.sort(elements, intLt)));
               end if;
             then range;
