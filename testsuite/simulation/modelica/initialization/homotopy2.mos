@@ -194,6 +194,11 @@ res := OpenModelica.Scripting.readSimulationResult("initializationTests.homotopy
 //
 // 	Jacobian idx: 8
 //
+// columnVars(3)
+// ----------------------
+// index:0: x.$pDERA.dummyVarA (no alias)  initial: 	no arrCref index:() []
+// index:1: y.$pDERA.dummyVarA (no alias)  initial: 	no arrCref index:() []
+// index:2: z.$pDERA.dummyVarA (no alias)  initial: 	no arrCref index:() []
 //
 // modelInfo:
 // ========================================
@@ -403,6 +408,11 @@ res := OpenModelica.Scripting.readSimulationResult("initializationTests.homotopy
 //
 // 	Jacobian idx: 9
 //
+// columnVars(3)
+// ----------------------
+// index:0: x.$pDERA.dummyVarA (no alias)  initial: 	no arrCref index:() []
+// index:1: y.$pDERA.dummyVarA (no alias)  initial: 	no arrCref index:() []
+// index:2: z.$pDERA.dummyVarA (no alias)  initial: 	no arrCref index:() []
 //
 // modelInfo:
 // ========================================

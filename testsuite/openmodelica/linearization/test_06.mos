@@ -90,7 +90,7 @@ readFile("linearized_model.log"); getErrorString(); // Check that output log is 
 // LOG_STDOUT        | info    | Linear model is created.
 // "
 // end SimulationResult;
-// "Warning: There are nonlinear iteration variables with default zero start attribute found in NLSJac3. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// "Warning: There are nonlinear iteration variables with default zero start attribute found in NLSJac4. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // "
 // true

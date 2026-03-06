@@ -385,6 +385,19 @@ simulate(dynamicTearing2, simflags="-lv=LOG_DT_CONS"); getErrorString();
 //
 // 	Jacobian idx: 9
 //
+// columnVars(11)
+// ----------------------
+// index:0: $cse4.$pDERA.dummyVarA (no alias)  protected  hideResult  initial: 	no arrCref index:() []
+// index:1: $cse5.$pDERA.dummyVarA (no alias)  protected  hideResult  initial: 	no arrCref index:() []
+// index:2: $cse6.$pDERA.dummyVarA (no alias)  protected  hideResult  initial: 	no arrCref index:() []
+// index:3: x1.$pDERA.dummyVarA (no alias)  initial: 	no arrCref index:() []
+// index:4: x2.$pDERA.dummyVarA (no alias)  initial: 	no arrCref index:() []
+// index:5: x3.$pDERA.dummyVarA (no alias)  initial: 	no arrCref index:() []
+// index:6: x4.$pDERA.dummyVarA (no alias)  initial: 	no arrCref index:() []
+// index:7: x5.$pDERA.dummyVarA (no alias)  initial: 	no arrCref index:() []
+// index:8: x6.$pDERA.dummyVarA (no alias)  initial: 	no arrCref index:() []
+// index:9: x7.$pDERA.dummyVarA (no alias)  initial: 	no arrCref index:() []
+// index:10: x8.$pDERA.dummyVarA (no alias)  initial: 	no arrCref index:() []
 //
 // modelInfo:
 // ========================================

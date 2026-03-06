@@ -598,6 +598,64 @@ val(aimc.inertiaRotor.flange_b.tau, 0);
 // $res_LSJac3_2.$pDERLSJac3.dummyVarLSJac3
 // $res_LSJac3_1.$pDERLSJac3.dummyVarLSJac3
 //
+// Unreplaceable Crefs: (7)
+// ========================================
+// $cse1.$pDERA.dummyVarA
+// $DER.aimc.inertiaRotor.w.$pDERA.dummyVarA
+// $DER.aimc.idq_sr.$pDERA.dummyVarA[1]
+// $DER.aimc.idq_sr.$pDERA.dummyVarA[2]
+// $DER.aimc.idq_rr.$pDERA.dummyVarA[1]
+// $DER.aimc.idq_rr.$pDERA.dummyVarA[2]
+// $DER.speedSensor.flange.phi.$pDERA.dummyVarA
+//
+// Replacements: (7)
+// ========================================
+// sinevoltage1.v.$pDERA.dummyVarA[3] -> 0.0
+// sinevoltage1.v.$pDERA.dummyVarA[2] -> 0.0
+// sinevoltage1.v.$pDERA.dummyVarA[1] -> 0.0
+// aimc.inertiaRotor.a.$pDERA.dummyVarA -> $DER.aimc.inertiaRotor.w.$pDERA.dummyVarA
+// aimc.rs.plug_n.pin.1.v.$pDERA.dummyVarA -> -aimc.rs.v.$pDERA.dummyVarA[1]
+// aimc.rs.plug_n.pin.2.v.$pDERA.dummyVarA -> -aimc.rs.v.$pDERA.dummyVarA[2]
+// aimc.rs.plug_n.pin.3.v.$pDERA.dummyVarA -> -aimc.rs.v.$pDERA.dummyVarA[3]
+//
+// ExtendReplacements: (20)
+// ========================================
+// aimc.rs.plug_n.pin.3.v.$pDERA
+// aimc.rs.plug_n.pin.2.v.$pDERA
+// aimc.rs.plug_n.pin.1.v.$pDERA
+// aimc.rs.plug_n.pin.3.v
+// aimc.rs.plug_n.pin.2.v
+// aimc.rs.plug_n.pin.1.v
+// aimc.rs
+// aimc.rs.plug_n.pin
+// sinevoltage1.v.$pDERA.dummyVarA
+// aimc.inertiaRotor
+// aimc
+// sinevoltage1
+// aimc.rs.plug_n.pin.3
+// aimc.rs.plug_n.pin.2
+// aimc.rs.plug_n.pin.1
+// aimc.inertiaRotor.a.$pDERA
+// aimc.rs.plug_n
+// aimc.inertiaRotor.a
+// sinevoltage1.v.$pDERA
+// sinevoltage1.v
+//
+// Unreplaceable Crefs: (2)
+// ========================================
+// $res_LSJac4_2.$pDERLSJac4.dummyVarLSJac4
+// $res_LSJac4_1.$pDERLSJac4.dummyVarLSJac4
+//
+// Unreplaceable Crefs: (7)
+// ========================================
+// $res_LSJac5_7.$pDERLSJac5.dummyVarLSJac5
+// $res_LSJac5_6.$pDERLSJac5.dummyVarLSJac5
+// $res_LSJac5_5.$pDERLSJac5.dummyVarLSJac5
+// $res_LSJac5_4.$pDERLSJac5.dummyVarLSJac5
+// $res_LSJac5_3.$pDERLSJac5.dummyVarLSJac5
+// $res_LSJac5_2.$pDERLSJac5.dummyVarLSJac5
+// $res_LSJac5_1.$pDERLSJac5.dummyVarLSJac5
+//
 // ########################################
 // dumpindxdae
 // ########################################
