@@ -490,6 +490,10 @@ void FmuExportOutputWidget::postCompilationProcessFinished(int exitCode, QProces
 {
   mIsPostCompilationProcessRunning = false;
   QString exitCodeStr = tr("Post compilation process failed. Exited with code %1.").arg(Utilities::formatExitCode(exitCode));
+  // Handle the null pointer case
+  if (!mpCompilationProcess) {
+    return;
+  }
   if (exitStatus == QProcess::NormalExit && exitCode == 0) {
     writePostCompilationOutput(tr("Build finished successfully.\n"), Qt::blue);
     postCompilationProcessFinishedHelper(exitCode, exitStatus);
