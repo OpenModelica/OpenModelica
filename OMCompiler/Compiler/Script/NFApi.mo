@@ -1128,7 +1128,7 @@ protected
   Boolean annotation_is_literal = true;
   SCode.Element def;
 algorithm
-  Inst.expand(node, ANNOTATION_CONTEXT);
+  Inst.expand(node, NFInstContext.RELAXED);
   def := InstNode.definition(node);
   json := JSON.addPair("name", dumpJSONNodePath(node), json);
 
