@@ -254,32 +254,32 @@ public slots:
 class PlotException : public std::runtime_error
 {
 public:
-  PlotException(const QString &str);
+  PlotException(const PlotWindow *pPlotWindow, const QString &str);
 };
 
 class InvalidInputException : public PlotException
 {
 public:
-  InvalidInputException(const QString &argName);
+  InvalidInputException(const PlotWindow *pPlotWindow, const QString &argName);
 };
 
 class NoFileException : public PlotException
 {
 public:
-  NoFileException(const QString &error, const QString &fileName = QString());
+  NoFileException(const PlotWindow *pPlotWindow, const QString &error, const QString &fileName = QString());
 };
 
 class NoVariableException : public PlotException
 {
 public:
-  NoVariableException(const QString &error, const QString &varName = QString());
-  NoVariableException(const QString &error, uint32_t nbVars);
+  NoVariableException(const PlotWindow *pPlotWindow, const QString &error, const QString &varName = QString());
+  NoVariableException(const PlotWindow *pPlotWindow, const QString &error, uint32_t nbVars);
 };
 
 class TimeOutOfBoundsException : public PlotException
 {
 public:
-  TimeOutOfBoundsException(const QFileInfo &fileInfo, double startTime, double stopTime);
+  TimeOutOfBoundsException(const PlotWindow *pPlotWindow, const QFileInfo &fileInfo, double startTime, double stopTime);
 };
 
 class SetupDialog;
