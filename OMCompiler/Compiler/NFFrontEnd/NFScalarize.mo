@@ -185,7 +185,7 @@ algorithm
     elem_ty             := Type.arrayElementType(var.ty);
     backend_attributes  := BackendInfo.scalarize(var.backendinfo, listLength(crefs));
     if Binding.isBound(var.binding) then
-      binding_iter      := ExpressionIterator.fromExp(Binding.getTypedExp(var.binding), false);
+      binding_iter      := ExpressionIterator.fromExp(Binding.getTypedExp(var.binding), true, false);
       bind_var          := Binding.variability(var.binding);
       bind_src          := Binding.source(var.binding);
       vars := list(

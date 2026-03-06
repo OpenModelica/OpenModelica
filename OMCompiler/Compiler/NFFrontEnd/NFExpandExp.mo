@@ -55,6 +55,7 @@ public
   function expand
     input output Expression exp;
     input Boolean backend = false;
+    input Boolean resize = false;
           output Boolean expanded;
   algorithm
     (exp, expanded) := match exp
@@ -67,7 +68,7 @@ public
       case Expression.BOOLEAN()      then (exp, true);
       case Expression.ENUM_LITERAL() then (exp, true);
 
-      case Expression.CREF(ty = Type.ARRAY()) then expandCref(exp, backend);
+      case Expression.CREF(ty = Type.ARRAY()) then expandCref(exp, backend, resize);
 
       // One-dimensional arrays are already expanded.
       case Expression.ARRAY() guard Type.isVector(exp.ty) then (exp, true);
@@ -81,17 +82,17 @@ public
 
       case Expression.TYPENAME() then (expandTypename(exp.ty), true);
       case Expression.RANGE()    then expandRange(exp);
-      case Expression.CALL()     then expandCall(exp.call, exp, backend);
+      case Expression.CALL()     then expandCall(exp.call, exp, resize);
       case Expression.SIZE()     then expandSize(exp);
-      case Expression.BINARY()   then expandBinary(exp, exp.operator, backend);
-      case Expression.MULTARY()  then expand(SimplifyExp.splitMultary(exp), backend);
+      case Expression.BINARY()   then expandBinary(exp, exp.operator, resize);
+      case Expression.MULTARY()  then expand(SimplifyExp.splitMultary(exp), resize);
       case Expression.UNARY()    then expandUnary(exp);
       case Expression.LBINARY()  then expandLogicalBinary(exp);
       case Expression.LUNARY()   then expandLogicalUnary(exp);
       case Expression.RELATION() then (exp, true);
       case Expression.CAST()     then expandCast(exp);
       case Expression.FILENAME() then (exp, true);
-      else expandGeneric(exp, backend);
+      else expandGeneric(exp, resize);
     end match;
   end expand;
 
@@ -149,6 +150,7 @@ public
   function expandCref
     input Expression crefExp;
     input Boolean backend = false;
+    input Boolean resize = false;
     output Expression arrayExp;
     output Boolean expanded;
   protected
@@ -161,7 +163,7 @@ public
             arrayExp := Expression.makeEmptyArray(crefExp.ty);
             expanded := true;
           elseif Type.hasKnownSize(crefExp.ty) then
-            subs := expandCref2(crefExp.cref, backend);
+            subs := expandCref2(crefExp.cref, backend, resize);
             arrayExp := expandCref3(subs, crefExp.cref, Type.arrayElementType(crefExp.ty));
             expanded := true;
           else
@@ -178,6 +180,7 @@ public
   function expandCref2
     input ComponentRef cref;
     input Boolean backend;
+    input Boolean resize;
     input output list<list<Subscript>> subs = {};
   protected
     list<Subscript> cr_subs = {};
@@ -189,10 +192,10 @@ public
       case ComponentRef.CREF() guard(backend or cref.origin == Origin.CREF)
         algorithm
           dims := Type.arrayDims(cref.ty);
-          cr_subs := Subscript.expandList(cref.subscripts, dims, backend);
+          cr_subs := Subscript.expandList(cref.subscripts, dims, resize);
         then
           if listEmpty(cr_subs) and not listEmpty(dims) then
-            {} else expandCref2(cref.restCref, backend, cr_subs :: subs);
+            {} else expandCref2(cref.restCref, backend, resize, cr_subs :: subs);
 
       else subs;
     end match;
