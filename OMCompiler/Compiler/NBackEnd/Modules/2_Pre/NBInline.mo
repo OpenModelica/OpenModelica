@@ -130,7 +130,7 @@ public
         (names, ranges) := Iterator.getFrames(eqn.iter);
         for tpl in List.zip(names, ranges) loop
           (name, range) := tpl;
-          (start, _, _) := Expression.getIntegerRange(range);
+          (start, _, _) := Expression.getIntegerRange(range, true);
           UnorderedMap.add(name, Expression.INTEGER(start), replacements);
         end for;
         new_eqn := Equation.map(new_eqn, function Replacements.applySimpleExp(replacements = replacements));

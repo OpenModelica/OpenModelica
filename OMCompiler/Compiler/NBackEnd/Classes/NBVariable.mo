@@ -2356,19 +2356,20 @@ public
     function varSlice
       input VariablePointers vars;
       input Integer scal;
+      input Integer arr;
       input Mapping mapping;
+      input Boolean resize;
       output ComponentRef cref;
     protected
       Pointer<Variable> var;
-      Integer arr, start, size;
+      Integer start;
       Type ty;
       list<Dimension> dims;
       list<Integer> sizes, vals;
       list<Subscript> subs;
     algorithm
       // get array index, start of scalar index and size
-      arr := mapping.var_StA[scal];
-      (start, size) := mapping.var_AtS[arr];
+      (start, _) := mapping.var_AtS[arr];
 
       // get the variable, name and type
       var := VariablePointers.getVarAt(vars, arr);
@@ -2376,7 +2377,7 @@ public
 
       // get the dimensions, their sizes and the respective index values for the subscripts
       dims  := Type.arrayDims(ty);
-      sizes := list(Dimension.size(dim) for dim in dims);
+      sizes := list(Dimension.size(dim, resize) for dim in dims);
       vals  := listReverse(Slice.indexToLocation(scal-start, sizes));
 
       // thread them to the apropriate subscripts and merge them to the cref

@@ -96,8 +96,8 @@ public
   algorithm
     dim := match exp
       local
-        Expression e;
-        Integer value;
+        Expression exp_simple, e1, e2;
+        Integer value, value_original;
         Class cls;
         ComponentRef cref;
         Type ty;
@@ -125,16 +125,23 @@ public
         then fromExp(Expression.arrayFirstScalar(exp.exp), var);
 
       else algorithm
-        e := SimplifyExp.simplify(exp);
-      then match e
+        exp_simple := SimplifyExp.simplify(exp);
+      then match exp_simple
         // if it can be simplified to an integer its just an integer
         case Expression.INTEGER(value) then INTEGER(value, var);
         // if it can be simplified to an integer after replacing resizables its resizable
         else algorithm
-          e := Expression.map(e, Expression.replaceResizableParameter);
-          e := SimplifyExp.simplify(e);
-        then match e
-          case Expression.INTEGER(value) then RESIZABLE(value, NONE(), exp, var);
+          e1 := Expression.map(exp_simple, Expression.replaceResizableParameter);
+          e1 := SimplifyExp.simplify(e1);
+        then match e1
+          case Expression.INTEGER(value) algorithm
+            // if replacing the body with original yields another solution, it has already been resized
+            e2 := Expression.map(exp_simple, Expression.replaceResizableParameterWithOriginal);
+            e2 := SimplifyExp.simplify(e2);
+            then match e2
+              case Expression.INTEGER(value_original) guard(value <> value_original) then RESIZABLE(value_original, SOME(value), exp, var);
+              else RESIZABLE(value, NONE(), exp, var);
+            end match;
           // otherwise it is just an expression
           else EXP(exp, var);
         end match;

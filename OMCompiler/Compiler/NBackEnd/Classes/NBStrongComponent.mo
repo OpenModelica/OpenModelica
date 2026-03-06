@@ -1090,7 +1090,7 @@ public
             Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because single indices did not turn out to be single components."});
             fail();
           end try;
-          comp := SLICED_COMPONENT(VariablePointers.varSlice(vars, var_scal_idx, mapping), var_slice, eqn_slice, NBSolve.Status.UNPROCESSED);
+          comp := SLICED_COMPONENT(VariablePointers.varSlice(vars, var_scal_idx, mapping.var_StA[var_scal_idx], mapping, true), var_slice, eqn_slice, NBSolve.Status.UNPROCESSED);
         elseif Equation.isCompound(eqn) then
           // - case 2: multi components for when/if and algorithm although its size 1
           comp := MULTI_COMPONENT({Slice.SLICE(var, {})}, Slice.SLICE(eqn, {}), NBSolve.Status.UNPROCESSED);
@@ -1102,7 +1102,7 @@ public
             Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because single indices did not turn out to be single components."});
             fail();
           end try;
-          comp := createSliceOrSingle(VariablePointers.varSlice(vars, var_scal_idx, mapping), var_slice, eqn_slice);
+          comp := createSliceOrSingle(VariablePointers.varSlice(vars, var_scal_idx, mapping.var_StA[var_scal_idx], mapping, true), var_slice, eqn_slice);
         end if;
       then comp;
 
