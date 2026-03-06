@@ -170,6 +170,7 @@ CevalFuncWhile1.mo \
 CevalFuncWhile2.mo \
 CevalIdentity1.mo \
 CevalIf1.mo \
+CevalIf2.mo \
 CevalInteger1.mo \
 CevalIntegerEnum1.mo \
 CevalLinspace1.mo \
