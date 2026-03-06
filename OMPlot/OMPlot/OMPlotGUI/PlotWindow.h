@@ -191,6 +191,7 @@ public:
   QString getYRightDisplayUnit() { return mYRightDisplayUnit; }
   void setTimeUnit(QString timeUnit) {mTimeUnit = timeUnit;}
   QString getTimeUnit() {return mTimeUnit;}
+  double getTimeUnitFactor();
   void setXRange(double min, double max);
   QString getXRangeMin();
   QString getXRangeMax();
@@ -224,6 +225,9 @@ public:
   void updatePlot();
   void emitPrefixUnitsChanged();
 private:
+  int setupInterp(double *vals, double val, int N, double &alpha);
+  int readPLTDataset(QString variable, int N, double *valsOut);
+  void readPLTArray(QString variable, double alpha, int intervalSize, int it, QList<double> &arrLstOut);
   void setInteractiveControls(bool enabled);
 signals:
   void closingDown();
@@ -254,32 +258,32 @@ public slots:
 class PlotException : public std::runtime_error
 {
 public:
-  PlotException(const QString &str);
+  PlotException(const QString &windowTitle, const QString &str);
 };
 
 class InvalidInputException : public PlotException
 {
 public:
-  InvalidInputException(const QString &argName);
+  InvalidInputException(const QString &windowTitle, const QString &argName);
 };
 
 class NoFileException : public PlotException
 {
 public:
-  NoFileException(const QString &error, const QString &fileName = QString());
+  NoFileException(const QString &windowTitle, const QString &error, const QString &fileName = QString());
 };
 
 class NoVariableException : public PlotException
 {
 public:
-  NoVariableException(const QString &error, const QString &varName = QString());
-  NoVariableException(const QString &error, uint32_t nbVars);
+  NoVariableException(const QString &windowTitle, const QString &error, const QString &varName = QString());
+  NoVariableException(const QString &windowTitle, const QString &error, uint32_t nbVars);
 };
 
 class TimeOutOfBoundsException : public PlotException
 {
 public:
-  TimeOutOfBoundsException(const QFileInfo &fileInfo, double startTime, double stopTime);
+  TimeOutOfBoundsException(const QString &windowTitle, const QFileInfo &fileInfo, double startTime, double stopTime);
 };
 
 class RecurringPlotException : public PlotException
