@@ -1391,16 +1391,32 @@ protected
   end populateDiffMap;
 
   // Flattened across all components: preserve component order and in-component order
-  function getAllAlgVars
+  function getAllAdjointOrderedVars
     input list<StrongComponent> comps;
     output list<NBVariable.VariablePointer> vars = {};
   algorithm
     for c in comps loop
-      for v in list(v for v guard BVariable.isAlgebraic(v) in StrongComponent.getVariables(c)) loop
+      for v in StrongComponent.getVariables(c) loop
         vars := v :: vars;
       end for;
     end for;
-  end getAllAlgVars;
+    vars := listReverse(vars);
+  end getAllAdjointOrderedVars;
+
+  function isSupportedAdjointStrongComponent
+    input StrongComponent comp;
+    output Boolean ok;
+  algorithm
+    ok := match comp
+      case StrongComponent.SINGLE_COMPONENT()    then true;
+      case StrongComponent.MULTI_COMPONENT()     then true;
+      case StrongComponent.SLICED_COMPONENT()    then true;
+      case StrongComponent.RESIZABLE_COMPONENT() then true;
+      case StrongComponent.ALGEBRAIC_LOOP()      then true;
+      case StrongComponent.ALIAS()               then isSupportedAdjointStrongComponent(comp.original);
+      else false;
+    end match;
+  end isSupportedAdjointStrongComponent;
 
   function jacobianSymbolicAdjoint extends Module.jacobianInterface;
   protected
@@ -1453,10 +1469,12 @@ protected
     newName := name + "_ADJ";
     if Util.isSome(strongComponents) then
       comps := list(comp for comp guard(not StrongComponent.isDiscrete(comp)) in Util.getOption(strongComponents));
-      // only allow single components and algebraic loops
+      // only allow currently implemented adjoint-capable components
       for c in comps loop
-        if not StrongComponent.isSingleComponent(c) and not StrongComponent.isAlgebraicLoop(c) then
-          Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " only supports SINGLE_COMPONENT and ALGEBRAIC_LOOP!"});
+        if not isSupportedAdjointStrongComponent(c) then
+          Error.addMessage(Error.INTERNAL_ERROR, {
+            getInstanceName() + " only supports SINGLE_COMPONENT, MULTI_COMPONENT, SLICED_COMPONENT, RESIZABLE_COMPONENT and ALGEBRAIC_LOOP in symbolic adjoint jacobian generation!"
+          });
           fail();
         end if;
       end for;
@@ -1742,18 +1760,20 @@ protected
     diffed_comps := {};
     i := 1;
 
-    // they are already in reverse order
-    for v in getAllAlgVars(comps) loop
+    // keep temporary equations in original component/variable order
+    for v in getAllAdjointOrderedVars(comps) loop
       baseCref := BVariable.getVarName(v);
       o_pDerCref := UnorderedMap.get(baseCref, diff_map);
       if isSome(o_pDerCref) then
         pDerCref := Util.getOption(o_pDerCref);
         // only emit if we actually collected adjoint terms (key exists in map)
-        if UnorderedMap.contains(pDerCref, adjoint_map) then
+        if UnorderedMap.contains(pDerCref, adjoint_map)
+           and not List.contains(orderedTmpCrefs, pDerCref, ComponentRef.isEqual) then
           orderedTmpCrefs := pDerCref :: orderedTmpCrefs;
         end if;
       end if;
     end for;
+    orderedTmpCrefs := listReverse(orderedTmpCrefs);
     // Emit tmp components in determined order
     for lhsKey in orderedTmpCrefs loop
       tmpComps := makeAdjointComponent(lhsKey, adjoint_map, newName, i) :: tmpComps;

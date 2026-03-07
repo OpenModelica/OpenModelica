@@ -202,6 +202,8 @@ public
     ComponentRef gradCref;
     list<VariablePointer> compVars;
     DifferentiationArguments da;
+    Option<ComponentRef> o_gradCref;
+    Boolean hasMappedSeed;
   algorithm
     diff_map := Util.getOption(diffArguments.diff_map);
     for comp in comps loop
@@ -214,9 +216,15 @@ public
       compVars := StrongComponent.getVariables(comp);
       for var in compVars loop
         lhsCref := BVariable.getVarName(var);
+        hasMappedSeed := false;
         // Update current_grad if we have a mapping for lhsCref
-        if (not ComponentRef.isEmpty(lhsCref)) then
-          gradCref := UnorderedMap.getOrFail(lhsCref, diff_map);
+        if not ComponentRef.isEmpty(lhsCref) then
+          o_gradCref := UnorderedMap.get(lhsCref, diff_map);
+          hasMappedSeed := isSome(o_gradCref);
+        end if;
+
+        if hasMappedSeed then
+          gradCref := Util.getOption(o_gradCref);
           // this is currently not needed, but in case we have subscripts on LHS later, we need to copy them to the seed
           gradCref := match comp
             case StrongComponent.RESIZABLE_COMPONENT() then ComponentRef.copySubscripts(StrongComponent.getVarCref(comp), gradCref); // put subscript on the seed;
@@ -227,14 +235,15 @@ public
           da := Pointer.access(diffArguments_ptr);
           da.current_grad := Expression.fromCref(gradCref);
           Pointer.update(diffArguments_ptr, da);
+          // Differentiate this component
+          dbg("  Differentiating component...");
+          comp := differentiateStrongComponent(comp, diffArguments_ptr, idx, context, name);
+          newComps := comp :: newComps;
+          dbg("  Done differentiating component.");
         else
           dbg("  No seed mapping for: " + ComponentRef.toString(lhsCref));
+          // Skip differentiation when no mapped adjoint seed exists for this variable.
         end if;
-        // Differentiate this component
-        dbg("  Differentiating component...");
-        comp := differentiateStrongComponent(comp, diffArguments_ptr, idx, context, name);
-        newComps := comp :: newComps;
-        dbg("  Done differentiating component.");
       end for;
     end for;
 
