@@ -69,6 +69,21 @@
 
 using namespace OMPlot;
 
+static const QString ERROR_INTERVAL_SIZE_NOT_SPECIFIED = QObject::tr("Interval size not specified.");
+static const QString ERROR_ARRAYS_MUST_HAVE_SAME_LENGTH = QObject::tr("Arrays must be of the same length in array parametric plot.");
+static const QString ERROR_UNKNOWN_TIME_UNIT = QObject::tr("Unknown time unit in plotArray(Parametric).");
+static const QString ERROR_FILE_NOT_FOUND = QObject::tr("File not found");
+static const QString ERROR_FAILED_TO_OPEN_FILE = QObject::tr("Failed to open simulation result file");
+static const QString ERROR_CORRUPTED_FILE = QObject::tr("Corrupted file");
+static const QString ERROR_COULD_NOT_DETERMINE_VARIABLE_NAME = QObject::tr("Could not determine the variable name!");
+static const QString ERROR_NO_VARIABLES_SPECIFIED = QObject::tr("No variables specified!");
+static const QString ERROR_SPECIFY_VARIABLE_PAIRS = QObject::tr("Please specify variable pairs for plot(Array)Parametric.");
+static const QString ERROR_VARIABLES_ARE_NOT_FOUND = QObject::tr("Following variable(s) are not found");
+static const QString ERROR_FAILED_TO_LOAD_VARIABLE = QObject::tr("Failed to load the variable");
+static const QString ERROR_VARIABLE_DOES_NOT_EXIST = QObject::tr("Variable doesn't exist");
+static const QString ERROR_ARRAY_VARIABLE_DOES_NOT_EXIST = QObject::tr("Array variable doesn't exist");
+static const QString ERROR_PARAMETER_DOES_NOT_HAVE_VALUE = QObject::tr("Parameter doesn't have a value");
+
 PlotWindow::PlotWindow(QStringList arguments, QWidget *parent, bool isInteractiveSimulation, int toolbarIconSize)
   : QMainWindow(parent), mIsInteractiveSimulation(isInteractiveSimulation)
 {
@@ -121,14 +136,14 @@ void PlotWindow::initializePlot(QStringList arguments)
   } else if (QString(arguments[5]) == "false") {
     setLogX(false);
   } else {
-    throw PlotException("Invalid input" + arguments[5]);
+    throw InvalidInputException(this, arguments[5]);
   }
   if (QString(arguments[6]) == "true") {
     setLogY(true);
   } else if (QString(arguments[6]) == "false") {
     setLogY(false);
   } else {
-    throw PlotException("Invalid input" + arguments[6]);
+    throw InvalidInputException(this, arguments[6]);
   }
   setXLabel(QString(arguments[7]));
   setYLabel(QString(arguments[8]));
@@ -151,7 +166,7 @@ void PlotWindow::initializePlot(QStringList arguments)
   } else if (QString(arguments[17]) == "false") {
     setAutoScale(false);
   } else {
-    throw PlotException("Invalid input" + arguments[17]);
+    throw InvalidInputException(this, arguments[17]);
   }
   QList<bool> plotRightYAxis;
 
@@ -167,7 +182,7 @@ void PlotWindow::initializePlot(QStringList arguments)
     } else if (yAxis == "L") {
        plotRightYAxis.append(false);
     } else {
-       throw PlotException("Invalid input" + arguments[18]);
+       throw InvalidInputException(this, arguments[18]);
     }
   }
   setYRightLabel(QString(arguments[19]));
@@ -252,7 +267,7 @@ void PlotWindow::initializeFile(QString file)
 {
   mFile.setFileName(file);
   if (!mFile.exists()) {
-    throw NoFileException(QString("File not found : ").append(file).toStdString().c_str());
+    throw NoFileException(this, ERROR_FILE_NOT_FOUND, file);
   }
 }
 
@@ -263,7 +278,7 @@ void PlotWindow::getStartStopTime(double &start, double &stop){
     QString currentLine;
     // open the file
     if (!mFile.open(QIODevice::ReadOnly)) {
-      throw PlotException(tr("Failed to open simulation result file %1").arg(mFile.fileName()));
+      throw NoFileException(this, ERROR_FAILED_TO_OPEN_FILE, mFile.fileName());
     }
     mpTextStream = new QTextStream(&mFile);
     // read the interval size from the file
@@ -301,7 +316,10 @@ void PlotWindow::getStartStopTime(double &start, double &stop){
         }
       }
     }
-    if(mpTextStream->atEnd()) throw NoVariableException("Variable doesnt exist: time");
+    if (mpTextStream->atEnd()) {
+      mFile.close();
+      throw NoVariableException(this, ERROR_VARIABLE_DOES_NOT_EXIST, "time");
+    }
     // close the file
     mFile.close();
   }
@@ -312,13 +330,13 @@ void PlotWindow::getStartStopTime(double &start, double &stop){
     struct csv_data *csvReader;
     csvReader = read_csv(mFile.fileName().toStdString().c_str());
     if (csvReader == NULL) {
-      throw NoVariableException("Variable doesnt exist: time");
+      throw NoFileException(this, ERROR_FAILED_TO_OPEN_FILE, mFile.fileName());
     }
     //Read in timevector
     double *timeVals = read_csv_dataset(csvReader, "time");
     if (timeVals == NULL) {
       omc_free_csv_reader(csvReader);
-      throw NoVariableException("Variable doesnt exist: time");
+      throw NoVariableException(this, ERROR_VARIABLE_DOES_NOT_EXIST, "time");
     }
     start = timeVals[0];
     stop = timeVals[csvReader->numsteps-1];
@@ -333,7 +351,7 @@ void PlotWindow::getStartStopTime(double &start, double &stop){
     const char *msg = "";
     //Read in mat file
     if(0 != (msg = omc_new_matlab4_reader(mFile.fileName().toStdString().c_str(), &reader))) {
-      throw PlotException(msg);
+      throw PlotException(this, msg);
     }
 
     //Read in timevector
@@ -342,7 +360,9 @@ void PlotWindow::getStartStopTime(double &start, double &stop){
 
     // close the file
     omc_free_matlab4_reader(&reader);
-  } else {throw PlotException(tr("Failed to open simulation result file %1").arg(mFile.fileName()));}
+  } else {
+    throw NoFileException(this, ERROR_FAILED_TO_OPEN_FILE, mFile.fileName());
+  }
 }
 
 void PlotWindow::setupToolbar(int toolbarIconSize)
@@ -463,7 +483,7 @@ void PlotWindow::plot(PlotCurve *pPlotCurve)
 {
   QString currentLine;
   if (mVariablesList.isEmpty() && isPlot())
-    throw NoVariableException(QString("No variables specified!").toStdString().c_str());
+    throw NoVariableException(this, ERROR_NO_VARIABLES_SPECIFIED);
 
   bool editCase = pPlotCurve ? true : false;
   //PLOT PLT
@@ -471,7 +491,7 @@ void PlotWindow::plot(PlotCurve *pPlotCurve)
   {
     // open the file
     if (!mFile.open(QIODevice::ReadOnly)) {
-      throw PlotException(tr("Failed to open simulation result file %1").arg(mFile.fileName()));
+      throw NoFileException(this, ERROR_FAILED_TO_OPEN_FILE, mFile.fileName());
     }
     mpTextStream = new QTextStream(&mFile);
     // read the interval size from the file
@@ -539,7 +559,7 @@ void PlotWindow::plot(PlotCurve *pPlotCurve)
     struct csv_data *csvReader;
     csvReader = read_csv(mFile.fileName().toStdString().c_str());
     if (csvReader == NULL)
-      throw PlotException(tr("Failed to open simulation result file %1").arg(mFile.fileName()));
+      throw NoFileException(this, ERROR_FAILED_TO_OPEN_FILE, mFile.fileName());
 
     //Read in timevector
     double *timeVals = read_csv_dataset(csvReader, "time");
@@ -549,7 +569,7 @@ void PlotWindow::plot(PlotCurve *pPlotCurve)
       if (timeVals == NULL)
       {
         omc_free_csv_reader(csvReader);
-        throw NoVariableException(tr("Variable doesnt exist: %1").arg("time or lambda").toStdString().c_str());
+        throw NoVariableException(this, ERROR_VARIABLE_DOES_NOT_EXIST, "time or lambda");
       }
       setXLabel("lambda");
     }
@@ -564,7 +584,7 @@ void PlotWindow::plot(PlotCurve *pPlotCurve)
         if (vals == NULL)
         {
           omc_free_csv_reader(csvReader);
-          throw NoVariableException(tr("Variable doesnt exist: %1").arg(csvReader->variables[i]).toStdString().c_str());
+          throw NoVariableException(this, ERROR_VARIABLE_DOES_NOT_EXIST, csvReader->variables[i]);
         }
 
         if (!editCase) {
@@ -601,12 +621,12 @@ void PlotWindow::plot(PlotCurve *pPlotCurve)
 
     //Read in mat file
     if(0 != (msg = omc_new_matlab4_reader(mFile.fileName().toStdString().c_str(), &reader))) {
-      throw PlotException(msg);
+      throw PlotException(this, msg);
     }
 
     if (reader.nvar < 1) {
       omc_free_matlab4_reader(&reader);
-      throw NoVariableException("Variable doesnt exist: time");
+      throw NoVariableException(this, ERROR_VARIABLE_DOES_NOT_EXIST, "time");
     }
 
     double startTime = omc_matlab4_startTime(&reader);
@@ -615,7 +635,7 @@ void PlotWindow::plot(PlotCurve *pPlotCurve)
     double *timeVals = omc_matlab4_read_vals(&reader,1);
     if (!timeVals) {
       omc_free_matlab4_reader(&reader);
-      throw NoVariableException(QString("Corrupt file. nvar %1").arg(reader.nvar).toStdString().c_str());
+      throw NoVariableException(this, ERROR_CORRUPTED_FILE, reader.nvar);
     }
     // read in all values
     for (uint32_t i = 0; i < reader.nall; i++) {
@@ -631,7 +651,7 @@ void PlotWindow::plot(PlotCurve *pPlotCurve)
         var = omc_matlab4_find_var(&reader, reader.allInfo[i].name);
         if (!var) {
           omc_free_matlab4_reader(&reader);
-          throw NoVariableException(QString("Variable doesn't exist : ").append(reader.allInfo[i].name).toStdString().c_str());
+          throw NoVariableException(this, ERROR_VARIABLE_DOES_NOT_EXIST, reader.allInfo[i].name);
         }
         // clear previous curve data
         pPlotCurve->clearXAxisVector();
@@ -641,7 +661,7 @@ void PlotWindow::plot(PlotCurve *pPlotCurve)
           double *vals = omc_matlab4_read_vals(&reader,var->index);
           if (!vals) {
             omc_free_matlab4_reader(&reader);
-            throw NoVariableException(QString("Corrupt file. nvar %1").arg(reader.nvar).toStdString().c_str());
+            throw NoVariableException(this, ERROR_CORRUPTED_FILE, reader.nvar);
           }
           // set plot curve data and attach it to plot
           for (uint32_t i = 0 ; i < reader.nrows ; i++) {
@@ -655,7 +675,7 @@ void PlotWindow::plot(PlotCurve *pPlotCurve)
           double val;
           if (omc_matlab4_val(&val,&reader,var,0.0)) {
             omc_free_matlab4_reader(&reader);
-            throw NoVariableException(QString("Parameter doesn't have a value : ").append(reader.allInfo[i].name).toStdString().c_str());
+            throw NoVariableException(this, ERROR_PARAMETER_DOES_NOT_HAVE_VALUE, reader.allInfo[i].name);
           }
 
           pPlotCurve->addXAxisValue(startTime);
@@ -682,9 +702,9 @@ void PlotWindow::plotParametric(PlotCurve *pPlotCurve)
   int pair = 0;
 
   if (mVariablesList.isEmpty())
-    throw NoVariableException(QString("No variables specified!").toStdString().c_str());
+    throw NoVariableException(this, ERROR_NO_VARIABLES_SPECIFIED);
   else if (mVariablesList.size()%2 != 0)
-    throw NoVariableException(QString("Please specify variable pairs for plotParametric.").toStdString().c_str());
+    throw NoVariableException(this, ERROR_SPECIFY_VARIABLE_PAIRS);
 
   bool editCase = pPlotCurve ? true : false;
 
@@ -709,7 +729,7 @@ void PlotWindow::plotParametric(PlotCurve *pPlotCurve)
       QString currentLine;
       // open the file
       if (!mFile.open(QIODevice::ReadOnly)) {
-        throw PlotException(tr("Failed to open simulation result file %1").arg(mFile.fileName()));
+        throw NoFileException(this, ERROR_FAILED_TO_OPEN_FILE, mFile.fileName());
       }
       mpTextStream = new QTextStream(&mFile);
       // read the interval size from the file
@@ -785,7 +805,7 @@ void PlotWindow::plotParametric(PlotCurve *pPlotCurve)
       struct csv_data *csvReader;
       csvReader = read_csv(mFile.fileName().toStdString().c_str());
       if (csvReader == NULL)
-        throw PlotException(tr("Failed to open simulation result file %1").arg(mFile.fileName()));
+        throw NoFileException(this, ERROR_FAILED_TO_OPEN_FILE, mFile.fileName());
 
       double *xVals = NULL, *yVals = NULL;
       // read in all values
@@ -797,7 +817,7 @@ void PlotWindow::plotParametric(PlotCurve *pPlotCurve)
           xVals = read_csv_dataset(csvReader, csvReader->variables[i]);
           if (xVals == NULL) {
             omc_free_csv_reader(csvReader);
-            throw NoVariableException(tr("Variable doesnt exist: %1").arg(csvReader->variables[i]).toStdString().c_str());
+            throw NoVariableException(this, ERROR_VARIABLE_DOES_NOT_EXIST, csvReader->variables[i]);
           }
         }
         if ((yVariable.compare(csvReader->variables[i]) == 0))
@@ -806,7 +826,7 @@ void PlotWindow::plotParametric(PlotCurve *pPlotCurve)
           yVals = read_csv_dataset(csvReader, csvReader->variables[i]);
           if (yVals == NULL) {
             omc_free_csv_reader(csvReader);
-            throw NoVariableException(tr("Variable doesnt exist: %1").arg(csvReader->variables[i]).toStdString().c_str());
+            throw NoVariableException(this, ERROR_VARIABLE_DOES_NOT_EXIST, csvReader->variables[i]);
           }
         }
       }
@@ -842,7 +862,7 @@ void PlotWindow::plotParametric(PlotCurve *pPlotCurve)
 
       //Read the .mat file
       if(0 != (msg = omc_new_matlab4_reader(mFile.fileName().toStdString().c_str(), &reader)))
-        throw PlotException(msg);
+        throw PlotException(this, msg);
 
       if (!editCase) {
         QFileInfo fileInfo(mFile);
@@ -853,7 +873,7 @@ void PlotWindow::plotParametric(PlotCurve *pPlotCurve)
       var = omc_matlab4_find_var(&reader, xVariable.toStdString().c_str());
       if (!var) {
         omc_free_matlab4_reader(&reader);
-        throw NoVariableException(QString("Variable doesn't exist : ").append(xVariable).toStdString().c_str());
+        throw NoVariableException(this, ERROR_VARIABLE_DOES_NOT_EXIST, xVariable);
       }
       // clear previous curve data
       pPlotCurve->clearXAxisVector();
@@ -864,7 +884,7 @@ void PlotWindow::plotParametric(PlotCurve *pPlotCurve)
         double *xVals = omc_matlab4_read_vals(&reader,var->index);
         if (!xVals) {
           omc_free_matlab4_reader(&reader);
-          throw NoVariableException(QString("Corrupt file. nvar %1").arg(reader.nvar).toStdString().c_str());
+          throw NoVariableException(this, ERROR_CORRUPTED_FILE, reader.nvar);
         }
         for (uint32_t i = 0 ; i < reader.nrows ; i++)
           pPlotCurve->addXAxisValue(xVals[i]);
@@ -875,7 +895,7 @@ void PlotWindow::plotParametric(PlotCurve *pPlotCurve)
         double xVal;
         if (omc_matlab4_val(&xVal,&reader,var,0.0)) {
           omc_free_matlab4_reader(&reader);
-          throw NoVariableException(QString("Parameter doesn't have a value : ").append(xVariable).toStdString().c_str());
+          throw NoVariableException(this, ERROR_PARAMETER_DOES_NOT_HAVE_VALUE, xVariable);
         }
         for (uint32_t i = 0 ; i < reader.nrows ; i++)
           pPlotCurve->addXAxisValue(xVal);
@@ -884,7 +904,7 @@ void PlotWindow::plotParametric(PlotCurve *pPlotCurve)
       var = omc_matlab4_find_var(&reader, yVariable.toStdString().c_str());
       if (!var) {
         omc_free_matlab4_reader(&reader);
-        throw NoVariableException(QString("Variable doesn't exist : ").append(yVariable).toStdString().c_str());
+        throw NoVariableException(this, ERROR_VARIABLE_DOES_NOT_EXIST, yVariable);
       }
       // if variable is not a parameter then
       if (!var->isParam)
@@ -892,7 +912,7 @@ void PlotWindow::plotParametric(PlotCurve *pPlotCurve)
         double *yVals = omc_matlab4_read_vals(&reader,var->index);
         if (!yVals) {
           omc_free_matlab4_reader(&reader);
-          throw NoVariableException(QString("Corrupt file. nvar %1").arg(reader.nvar).toStdString().c_str());
+          throw NoVariableException(this, ERROR_CORRUPTED_FILE, reader.nvar);
         }
         for (uint32_t i = 0 ; i < reader.nrows ; i++)
           pPlotCurve->addYAxisValue(yVals[i]);
@@ -903,7 +923,7 @@ void PlotWindow::plotParametric(PlotCurve *pPlotCurve)
         double yVal;
         if (omc_matlab4_val(&yVal,&reader,var,0.0)) {
           omc_free_matlab4_reader(&reader);
-          throw NoVariableException(QString("Parameter doesn't have a value : ").append(yVariable).toStdString().c_str());
+          throw NoVariableException(this, ERROR_PARAMETER_DOES_NOT_HAVE_VALUE, yVariable);
         }
         for (uint32_t i = 0 ; i < reader.nrows ; i++)
           pPlotCurve->addYAxisValue(yVal);
@@ -930,7 +950,7 @@ int setupInterp(double *vals, double val, int N, double &alpha){
   return p-vals;
 }
 
-int readPLTDataset(QTextStream *mpTextStream, QString variable, int N, double* valsOut){
+int readPLTDataset(const PlotWindow *pPlotWindow, QTextStream *mpTextStream, QString variable, int N, double* valsOut){
   bool resetDone = false;
   QString currentLine;
   do { //find start of dataset of the varible
@@ -952,13 +972,14 @@ int readPLTDataset(QTextStream *mpTextStream, QString variable, int N, double* v
   for (int i = 0; i < N; i++ ){
     currentLine = mpTextStream->readLine();
     QStringList values = currentLine.split(",");
-    if (values.count()!=2) throw PlotException("Faild to load the " + variable + "variable.");
+    if (values.count() != 2)
+      throw NoVariableException(pPlotWindow, ERROR_FAILED_TO_LOAD_VARIABLE, variable);
     valsOut[i] = QString(values[1]).toDouble();
   }
   return 0;
 }
 
-void readPLTArray(QTextStream *mpTextStream, QString variable, double alpha, int intervalSize, int it, QList<double> &arrLstOut){
+void readPLTArray(const PlotWindow *pPlotWindow, QTextStream *mpTextStream, QString variable, double alpha, int intervalSize, int it, QList<double> &arrLstOut){
   int index = 1;
   auto vals = std::make_unique<double[]>(intervalSize);
   do  //loop over all indexes
@@ -971,9 +992,9 @@ void readPLTArray(QTextStream *mpTextStream, QString variable, double alpha, int
     } else {
       variableWithInd.append("["+QString::number(index)+"]");
     }
-    if (readPLTDataset(mpTextStream, variableWithInd, intervalSize, vals.get())){
+    if (readPLTDataset(pPlotWindow, mpTextStream, variableWithInd, intervalSize, vals.get())){
       if (index == 1)
-        throw NoVariableException(QObject::tr("Array variable doesnt exist: %1").arg(variable).toStdString().c_str());
+        throw NoVariableException(pPlotWindow, ERROR_ARRAY_VARIABLE_DOES_NOT_EXIST, variable);
       else
         break;
     }
@@ -986,20 +1007,20 @@ void readPLTArray(QTextStream *mpTextStream, QString variable, double alpha, int
   return;
 }
 
-double getTimeUnitFactor(QString timeUnit)
+double getTimeUnitFactor(const PlotWindow *pPlotWindow, QString timeUnit)
 {
   if (timeUnit == "s") return 1.0;
   else if (timeUnit == "min") return 1.0/60.0;
   else if (timeUnit == "h") return 1.0/3600.0;
   else if (timeUnit == "d") return 1.0/86400.0;
-  else throw PlotException(QObject::tr("Unknown unit in plotArray(Parametric)."));
+  else throw PlotException(pPlotWindow, ERROR_UNKNOWN_TIME_UNIT);
 }
 
 void PlotWindow::updateTimeText()
 {
   double time = getTime();
   QString timeUnit = getTimeUnit();
-  double timeUnitFactor = getTimeUnitFactor(timeUnit);
+  double timeUnitFactor = getTimeUnitFactor(this, timeUnit);
   QString timeString = QString::number(time * timeUnitFactor);
   mpPlot->setFooter(QString("t = %1 %2").arg(timeString).arg(timeUnit));
   mpPlot->replot();
@@ -1011,7 +1032,7 @@ void PlotWindow::plotArray(double time, PlotCurve *pPlotCurve)
   QString currentLine;
   setTime(time);
   if (mVariablesList.isEmpty() && isPlotArray())
-    throw NoVariableException(QString("No variables specified!").toStdString().c_str());
+    throw NoVariableException(this, ERROR_NO_VARIABLES_SPECIFIED);
   bool editCase = pPlotCurve ? true : false;
   //PLOT PLT
   //we presume time is the first dataset and array elements datasets are consequent
@@ -1019,7 +1040,7 @@ void PlotWindow::plotArray(double time, PlotCurve *pPlotCurve)
   {
     /* open the file */
     if (!mFile.open(QIODevice::ReadOnly))
-      throw PlotException(tr("Failed to open simulation result file %1").arg(mFile.fileName()));
+      throw NoFileException(this, ERROR_FAILED_TO_OPEN_FILE, mFile.fileName());
     mpTextStream = new QTextStream(&mFile);
     // read the interval size from the file
     int intervalSize = -1;
@@ -1034,18 +1055,24 @@ void PlotWindow::plotArray(double time, PlotCurve *pPlotCurve)
     }
     if (intervalSize == -1) {
       mFile.close();
-      throw PlotException(tr("Interval size not specified.").toStdString().c_str());
+      throw PlotException(this, ERROR_INTERVAL_SIZE_NOT_SPECIFIED);
     }
     //    double vals[intervalSize];
     //Read in timevector
     auto timeVals = std::make_unique<double[]>(intervalSize);
-    readPLTDataset(mpTextStream, "time", intervalSize, timeVals.get());
+    readPLTDataset(this, mpTextStream, "time", intervalSize, timeVals.get());
     //Find indexes and alpha to interpolate data in particular time
     double alpha;
     int it = setupInterp(timeVals.get(), time, intervalSize, alpha);
     if (it < 0) {
       mFile.close();
-      throw PlotException("Time out of bounds.");
+      if (mTimeOutOfBounds) {
+        return;
+      }
+      mTimeOutOfBounds = true;
+      throw TimeOutOfBoundsException(this, QFileInfo(mFile), timeVals[0], timeVals[intervalSize - 1]);
+    } else {
+      mTimeOutOfBounds = false;
     }
     QString currentVariable;  //without index part
     // Read variable values and plot them
@@ -1062,7 +1089,7 @@ void PlotWindow::plotArray(double time, PlotCurve *pPlotCurve)
         mpPlot->addPlotCurve(pPlotCurve);
       }
       QList<double> arrLst;
-      readPLTArray(mpTextStream, currentVariable, alpha, intervalSize, it, arrLst);
+      readPLTArray(this, mpTextStream, currentVariable, alpha, intervalSize, it, arrLst);
       for (int i = 0; i < arrLst.length(); i++)
       {
         pPlotCurve->addXAxisValue(i+1);
@@ -1081,19 +1108,25 @@ void PlotWindow::plotArray(double time, PlotCurve *pPlotCurve)
     struct csv_data *csvReader;
     csvReader = read_csv(mFile.fileName().toStdString().c_str());
     if (csvReader == NULL)
-      throw PlotException(tr("Failed to open simulation result file %1").arg(mFile.fileName()));
+      throw NoFileException(this, ERROR_FAILED_TO_OPEN_FILE, mFile.fileName());
     //Read in timevector
     double *timeVals = read_csv_dataset(csvReader, "time");
     if (timeVals == NULL)
     {
       omc_free_csv_reader(csvReader);
-      throw NoVariableException(tr("Variable doesnt exist: %1").arg("time").toStdString().c_str());
+      throw NoVariableException(this, ERROR_VARIABLE_DOES_NOT_EXIST, "time");
     }
     double alpha;
     int it = setupInterp(timeVals, time, csvReader->numsteps, alpha);
     if (it < 0) {
       omc_free_csv_reader(csvReader);
-      throw PlotException("Time out of bounds.");
+      if (mTimeOutOfBounds) {
+        return;
+      }
+      mTimeOutOfBounds = true;
+      throw TimeOutOfBoundsException(this, QFileInfo(mFile), timeVals[0], timeVals[csvReader->numsteps - 1]);
+    } else {
+      mTimeOutOfBounds = false;
     }
     QStringList::Iterator itVarList;
     for (itVarList = mVariablesList.begin(); itVarList != mVariablesList.end(); itVarList++){
@@ -1145,17 +1178,23 @@ void PlotWindow::plotArray(double time, PlotCurve *pPlotCurve)
 
       //Read in mat file
       if(0 != (msg = omc_new_matlab4_reader(mFile.fileName().toStdString().c_str(), &reader)))
-        throw PlotException(msg);
+        throw PlotException(this, msg);
       //calculate time
       double startTime = omc_matlab4_startTime(&reader);
       double stopTime =  omc_matlab4_stopTime(&reader);
       if (reader.nvar < 1) {
         omc_free_matlab4_reader(&reader);
-        throw NoVariableException("Variable doesnt exist: time");
+        throw NoVariableException(this, ERROR_VARIABLE_DOES_NOT_EXIST, "time");
       }
       if (time<startTime || stopTime<time) {
         omc_free_matlab4_reader(&reader);
-        throw PlotException("Time out of bounds.");
+        if (mTimeOutOfBounds) {
+          return;
+        }
+        mTimeOutOfBounds = true;
+        throw TimeOutOfBoundsException(this, QFileInfo(mFile), startTime, stopTime);
+      } else {
+        mTimeOutOfBounds = false;
       }
       QStringList::Iterator itVarList;
       for (itVarList = mVariablesList.begin(); itVarList != mVariablesList.end(); itVarList++){
@@ -1205,9 +1244,9 @@ void PlotWindow::plotArrayParametric(double time, PlotCurve *pPlotCurve)
   int pair = 0;
   setTime(time);
   if (mVariablesList.isEmpty())
-    throw NoVariableException(QString("No variables specified!").toStdString().c_str());
+    throw NoVariableException(this, ERROR_NO_VARIABLES_SPECIFIED);
   else if (mVariablesList.size()%2 != 0)
-    throw NoVariableException(QString("Please specify variable pairs for plotParametric.").toStdString().c_str());
+    throw NoVariableException(this, ERROR_SPECIFY_VARIABLE_PAIRS);
 
   bool editCase = pPlotCurve ? true : false;
 
@@ -1232,7 +1271,7 @@ void PlotWindow::plotArrayParametric(double time, PlotCurve *pPlotCurve)
     {
       /* open the file */
       if (!mFile.open(QIODevice::ReadOnly))
-        throw PlotException(tr("Failed to open simulation result file %1").arg(mFile.fileName()));
+        throw NoFileException(this, ERROR_FAILED_TO_OPEN_FILE, mFile.fileName());
       mpTextStream = new QTextStream(&mFile);
       // read the interval size from the file
       QString currentLine;
@@ -1248,17 +1287,23 @@ void PlotWindow::plotArrayParametric(double time, PlotCurve *pPlotCurve)
       }
       if (intervalSize == -1) {
         mFile.close();
-        throw PlotException(tr("Interval size not specified.").toStdString().c_str());
+        throw PlotException(this, ERROR_INTERVAL_SIZE_NOT_SPECIFIED);
       }
       //Read in timevector
       auto timeVals = std::make_unique<double[]>(intervalSize);
-      readPLTDataset(mpTextStream, "time", intervalSize, timeVals.get());
+      readPLTDataset(this, mpTextStream, "time", intervalSize, timeVals.get());
       //Find indexes and alpha to interpolate data in particular time
       double alpha;
       int it = setupInterp(timeVals.get(), time, intervalSize, alpha);
       if (it < 0) {
         mFile.close();
-        throw PlotException("Time out of bounds.");
+        if (mTimeOutOfBounds) {
+          return;
+        }
+        mTimeOutOfBounds = true;
+        throw TimeOutOfBoundsException(this, QFileInfo(mFile), timeVals[0], timeVals[intervalSize - 1]);
+      } else {
+        mTimeOutOfBounds = false;
       }
       if (editCase) {
         pPlotCurve->clearXAxisVector();
@@ -1270,12 +1315,12 @@ void PlotWindow::plotArrayParametric(double time, PlotCurve *pPlotCurve)
       }
       //Read the values
       QList<double> xValsLst;
-      readPLTArray(mpTextStream, xVariable, alpha, intervalSize, it, xValsLst);
+      readPLTArray(this, mpTextStream, xVariable, alpha, intervalSize, it, xValsLst);
       QList<double> yValsLst;
-      readPLTArray(mpTextStream, yVariable, alpha, intervalSize, it, yValsLst);
+      readPLTArray(this, mpTextStream, yVariable, alpha, intervalSize, it, yValsLst);
       if (xValsLst.length() != yValsLst.length()) {
         mFile.close();
-        throw PlotException(tr("Arrays must be of the same length in array parametric plot."));
+        throw PlotException(this, ERROR_ARRAYS_MUST_HAVE_SAME_LENGTH);
       }
       for (int i = 0; i < xValsLst.length(); i++){
         pPlotCurve->addXAxisValue(xValsLst[i]);
@@ -1293,19 +1338,25 @@ void PlotWindow::plotArrayParametric(double time, PlotCurve *pPlotCurve)
       struct csv_data *csvReader;
       csvReader = read_csv(mFile.fileName().toStdString().c_str());
       if (csvReader == NULL)
-        throw PlotException(tr("Failed to open simulation result file %1").arg(mFile.fileName()));
+        throw NoFileException(this, ERROR_FAILED_TO_OPEN_FILE, mFile.fileName());
       //Read in timevector
       double *timeVals = read_csv_dataset(csvReader, "time");
       if (timeVals == NULL)
       {
         omc_free_csv_reader(csvReader);
-        throw NoVariableException(tr("Variable doesnt exist: %1").arg("time").toStdString().c_str());
+        throw NoVariableException(this, ERROR_VARIABLE_DOES_NOT_EXIST, "time");
       }
       double alpha;
       int it = setupInterp(timeVals, time, csvReader->numsteps, alpha);
       if (it < 0) {
         omc_free_csv_reader(csvReader);
-        throw PlotException("Time out of bounds.");
+        if (mTimeOutOfBounds) {
+          return;
+        }
+        mTimeOutOfBounds = true;
+        throw TimeOutOfBoundsException(this, QFileInfo(mFile), timeVals[0], timeVals[csvReader->numsteps - 1]);
+      } else {
+        mTimeOutOfBounds = false;
       }
       if (!editCase) {
         QFileInfo fileInfo(mFile);
@@ -1342,7 +1393,7 @@ void PlotWindow::plotArrayParametric(double time, PlotCurve *pPlotCurve)
         else { //yVar
           if (pPlotCurve->getXAxisSize()!=res.count()) {
             omc_free_csv_reader(csvReader);
-            throw PlotException(tr("Arrays must be of the same length in array parametric plot."));
+            throw PlotException(this, ERROR_ARRAYS_MUST_HAVE_SAME_LENGTH);
           }
           for (int i = 0; i < res.count(); i++)
             pPlotCurve->addYAxisValue(res[i]);
@@ -1364,7 +1415,7 @@ void PlotWindow::plotArrayParametric(double time, PlotCurve *pPlotCurve)
 
       //Read the .mat file
       if(0 != (msg = omc_new_matlab4_reader(mFile.fileName().toStdString().c_str(), &reader)))
-        throw PlotException(msg);
+        throw PlotException(this, msg);
 
       if (!editCase) {
         QFileInfo fileInfo(mFile);
@@ -1376,11 +1427,17 @@ void PlotWindow::plotArrayParametric(double time, PlotCurve *pPlotCurve)
       double stopTime =  omc_matlab4_stopTime(&reader);
       if (reader.nvar < 1) {
         omc_free_matlab4_reader(&reader);
-        throw NoVariableException("Variable doesnt exist: time");
+        throw NoVariableException(this, ERROR_VARIABLE_DOES_NOT_EXIST, "time");
       }
       if (time<startTime || stopTime<time) {
         omc_free_matlab4_reader(&reader);
-        throw PlotException("Time out of bounds.");
+        if (mTimeOutOfBounds) {
+          return;
+        }
+        mTimeOutOfBounds = true;
+        throw TimeOutOfBoundsException(this, QFileInfo(mFile), startTime, stopTime);
+      } else {
+        mTimeOutOfBounds = false;
       }
       pPlotCurve->clearXAxisVector();
       pPlotCurve->clearYAxisVector();
@@ -1413,7 +1470,7 @@ void PlotWindow::plotArrayParametric(double time, PlotCurve *pPlotCurve)
         else{
           if (pPlotCurve->getXAxisSize()!=vars.count()) {
             omc_free_matlab4_reader(&reader);
-            throw PlotException("Arrays must be of the same length in array parametric plot.");
+            throw PlotException(this, ERROR_ARRAYS_MUST_HAVE_SAME_LENGTH);
           }
           for (int i = 0; i < vars.count(); i++)
             pPlotCurve->addYAxisValue(res[i]);
@@ -1431,9 +1488,9 @@ void PlotWindow::plotArrayParametric(double time, PlotCurve *pPlotCurve)
 QPair<QVector<double>*, QVector<double>*> PlotWindow::plotInteractive(PlotCurve *pPlotCurve)
 {
   if (mVariablesList.isEmpty() && isPlotInteractive()) {
-    throw NoVariableException(QString(tr("No variables specified!")).toStdString().c_str());
+    throw NoVariableException(this, ERROR_NO_VARIABLES_SPECIFIED);
   } else if (mVariablesList.size() != 1) {
-    throw NoVariableException(QString(tr("Could not determine the variable name!")).toStdString().c_str());
+    throw NoVariableException(this, ERROR_COULD_NOT_DETERMINE_VARIABLE_NAME);
   }
   QString variableName = mVariablesList.at(0);
   pPlotCurve = new PlotCurve(mInteractiveModelName, "", "time", getXUnit(), getXDisplayUnit(), variableName, getYUnit(), getYDisplayUnit(), mpPlot);
@@ -1718,8 +1775,7 @@ void PlotWindow::checkForErrors(QStringList variables, QStringList variablesPlot
   }
   if (!nonExistingVariables.isEmpty())
   {
-    throw NoVariableException(QString("Following variable(s) are not found : ")
-                              .append(nonExistingVariables.join(",")).toStdString().c_str());
+    throw NoVariableException(this, ERROR_VARIABLES_ARE_NOT_FOUND, nonExistingVariables.join(", "));
   }
 }
 
@@ -1991,6 +2047,37 @@ void PlotWindow::interactiveSimulationStarted()
 void PlotWindow::interactiveSimulationPaused()
 {
   setInteractiveControls(true);
+}
+
+PlotException::PlotException(const PlotWindow *pPlotWindow, const QString &str)
+  : std::runtime_error((pPlotWindow->windowTitle().isEmpty() ? QString() : QString("[%1] ").arg(pPlotWindow->windowTitle())).append(str).toStdString())
+{
+}
+
+InvalidInputException::InvalidInputException(const PlotWindow *pPlotWindow, const QString &argName)
+  : PlotException(pPlotWindow, QString("%1: %2").arg(QObject::tr("Invalid input")).arg(argName))
+{
+}
+
+NoFileException::NoFileException(const PlotWindow *pPlotWindow, const QString &error, const QString &fileName)
+  : PlotException(pPlotWindow, fileName.isEmpty() ? error : QString("%1: %2").arg(error).arg(fileName))
+{
+}
+
+NoVariableException::NoVariableException(const PlotWindow *pPlotWindow, const QString &error, const QString &varName)
+  : PlotException(pPlotWindow, varName.isEmpty() ? error : QString("%1: %2").arg(error).arg(varName))
+{
+}
+
+NoVariableException::NoVariableException(const PlotWindow *pPlotWindow, const QString &error, uint32_t nbVars)
+  : PlotException(pPlotWindow, QString("%1: nvar = %2").arg(error).arg(nbVars))
+{
+}
+
+TimeOutOfBoundsException::TimeOutOfBoundsException(const PlotWindow *pPlotWindow, const QFileInfo &fileInfo, double startTime, double stopTime)
+  : PlotException(pPlotWindow, QString("%1: %2. (StartTime = %3, StopTime = %4)")
+      .arg(fileInfo.fileName()).arg(QObject::tr("Time out of bounds")).arg(startTime).arg(stopTime))
+{
 }
 
 /*!

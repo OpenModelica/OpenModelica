@@ -44,6 +44,7 @@
 #include <QToolButton>
 #include <QLabel>
 #include <QFile>
+#include <QFileInfo>
 #include <QMdiSubWindow>
 #include <QGroupBox>
 #include <QPushButton>
@@ -114,6 +115,7 @@ private:
 	int mCurveStyle;
 	QFont mLegendFont;
 	double mTime;
+	bool mTimeOutOfBounds = false;
 	bool mIsInteractiveSimulation;
 	QString mInteractiveTreeItemOwner;
 	int mInteractivePort;
@@ -247,24 +249,37 @@ public slots:
   void interactiveSimulationPaused();
 };
 
-//Exception classes
+// Exception classes
+
 class PlotException : public std::runtime_error
 {
 public:
-  PlotException(const char *e) : std::runtime_error(e) {}
-  PlotException(const QString str) : std::runtime_error(str.toStdString().c_str()) {}
+  PlotException(const PlotWindow *pPlotWindow, const QString &str);
+};
+
+class InvalidInputException : public PlotException
+{
+public:
+  InvalidInputException(const PlotWindow *pPlotWindow, const QString &argName);
 };
 
 class NoFileException : public PlotException
 {
 public:
-  NoFileException(const char *fileName) : PlotException(fileName) {}
+  NoFileException(const PlotWindow *pPlotWindow, const QString &error, const QString &fileName = QString());
 };
 
 class NoVariableException : public PlotException
 {
 public:
-  NoVariableException(const char *varName) : PlotException(varName) {}
+  NoVariableException(const PlotWindow *pPlotWindow, const QString &error, const QString &varName = QString());
+  NoVariableException(const PlotWindow *pPlotWindow, const QString &error, uint32_t nbVars);
+};
+
+class TimeOutOfBoundsException : public PlotException
+{
+public:
+  TimeOutOfBoundsException(const PlotWindow *pPlotWindow, const QFileInfo &fileInfo, double startTime, double stopTime);
 };
 
 class SetupDialog;

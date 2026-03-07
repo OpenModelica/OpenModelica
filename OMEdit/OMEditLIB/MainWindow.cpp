@@ -1633,14 +1633,14 @@ void MainWindow::PlotCallbackFunction(void *p, int externalWindow, const char* f
     } else if (QString(logX) == "false") {
       pPlotWindow->setLogX(false);
     } else {
-      throw OMPlot::PlotException("Invalid input" + QString(logX));
+      throw OMPlot::InvalidInputException(pPlotWindow, QString(logX));
     }
     if (QString(logY) == "true") {
       pPlotWindow->setLogY(true);
     } else if (QString(logY) == "false") {
       pPlotWindow->setLogY(false);
     } else {
-      throw OMPlot::PlotException("Invalid input" + QString(logY));
+      throw OMPlot::InvalidInputException(pPlotWindow, QString(logY));
     }
     pPlotWindow->setXLabel(QString(xLabel));
     pPlotWindow->setYLabel(QString(yLabel));
@@ -1655,7 +1655,7 @@ void MainWindow::PlotCallbackFunction(void *p, int externalWindow, const char* f
     } else if (QString(autoScale) == "false") {
       pPlotWindow->setAutoScale(false);
     } else {
-      throw OMPlot::PlotException("Invalid input" + QString(autoScale));
+      throw OMPlot::InvalidInputException(pPlotWindow, QString(autoScale));
     }
     // plot variables
 #if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
