@@ -197,6 +197,7 @@ public
   protected
     Pointer<DifferentiationArguments> diffArguments_ptr = Pointer.create(diffArguments);
     list<StrongComponent> newComps = {};
+    StrongComponent baseComp, diffedComp;
     UnorderedMap<ComponentRef,ComponentRef> diff_map;
     ComponentRef lhsCref;
     ComponentRef gradCref;
@@ -206,14 +207,17 @@ public
     Boolean hasMappedSeed;
   algorithm
     diff_map := Util.getOption(diffArguments.diff_map);
-    for comp in comps loop
+    // Reverse sweep for adjoint mode: process components and their representative
+    // variables in reverse causal order.
+    for comp in listReverse(comps) loop
+      baseComp := comp;
       // Determine LHS cref of this component
       dbg("Component: " + StrongComponent.toString(comp));
       // compVars := match comp
       //   case StrongComponent.ALGEBRAIC_LOOP() then StrongComponent.getLoopIterationVars(comp);
       //   else StrongComponent.getVariables(comp);
       // end match;
-      compVars := StrongComponent.getVariables(comp);
+      compVars := listReverse(StrongComponent.getVariables(comp));
       for var in compVars loop
         lhsCref := BVariable.getVarName(var);
         hasMappedSeed := false;
@@ -237,8 +241,9 @@ public
           Pointer.update(diffArguments_ptr, da);
           // Differentiate this component
           dbg("  Differentiating component...");
-          comp := differentiateStrongComponent(comp, diffArguments_ptr, idx, context, name);
-          newComps := comp :: newComps;
+          diffedComp := baseComp;
+          diffedComp := differentiateStrongComponent(diffedComp, diffArguments_ptr, idx, context, name);
+          newComps := diffedComp :: newComps;
           dbg("  Done differentiating component.");
         else
           dbg("  No seed mapping for: " + ComponentRef.toString(lhsCref));
@@ -2454,6 +2459,7 @@ public
     input output Algorithm alg;
     input output DifferentiationArguments diffArguments;
   protected
+    list<Statement> stmts;
     list<list<Statement>> statements;
     list<Statement> statements_flat;
     list<ComponentRef> inputs, outputs;
@@ -2464,6 +2470,9 @@ public
       case SOME(diffInfo) then UnorderedSet.copy(diffInfo);
       else UnorderedSet.new(Statement.hash, Statement.isEqual);
     end match;
+
+    // Reverse sweep through algorithm statements when collecting adjoints.
+    stmts := if Util.isSome(diffArguments.adjoint_map) then listReverse(alg.statements) else alg.statements;
 
     // differentiate the statements
     (statements, diffArguments) := List.mapFold(alg.statements, function differentiateStatement(diffInfo = diffInfo), diffArguments);
@@ -2491,22 +2500,34 @@ public
         list<Statement> branch_stmts_flat;
         list<list<Statement>> branch_stmts;
         list<tuple<Expression, list<Statement>>> branches = {};
+        list<tuple<Expression, list<Statement>>> if_when_branches;
+        Boolean isReverse = Util.isSome(diffArguments.adjoint_map);
+        list<Statement> body_stmts;
 
       // 0. do not differentiate if it already exists differentiated due to previous differentiation
       case _ guard(UnorderedSet.contains(stmt, diffInfo)) then {stmt};
 
       // I. differentiate 'Real' assignment and return differentiated and original statement
       case diff_stmt as Statement.ASSIGNMENT() guard(Type.isReal(Type.arrayElementType(Expression.typeOf(diff_stmt.lhs)))) algorithm
-        (lhs, diffArguments) := differentiateExpression(diff_stmt.lhs, diffArguments);
+        // In reverse mode the assignment LHS is the destination; traverse it without
+        // collecting into adjoint_map to avoid artificial self-contributions.
+        if isReverse then
+          (lhs, diffArguments) := differentiateExpressionNoCollect(diff_stmt.lhs, diffArguments);
+        else
+          (lhs, diffArguments) := differentiateExpression(diff_stmt.lhs, diffArguments);
+        end if;
         (rhs, diffArguments) := differentiateExpression(diff_stmt.rhs, diffArguments);
         diff_stmt.lhs := lhs;
         diff_stmt.rhs := SimplifyExp.simplifyDump(rhs, true, getInstanceName());
-      then {diff_stmt, stmt};
+      then if isReverse then {diff_stmt} else {diff_stmt, stmt};
 
       // II. delegate differentiation to body and only return differentiated statement
       case diff_stmt as Statement.FOR() algorithm
         (branch_stmts, diffArguments) := List.mapFold(diff_stmt.body, function differentiateStatement(diffInfo = diffInfo), diffArguments);
         diff_stmt.body := List.flatten(branch_stmts);
+        if isReverse then
+          diff_stmt.range := reverseForRange(diff_stmt.range);
+        end if;
       then {diff_stmt};
 
       case diff_stmt as Statement.WHILE() algorithm
@@ -2520,7 +2541,8 @@ public
       then {diff_stmt};
 
       case diff_stmt as Statement.IF() algorithm
-        for branch in diff_stmt.branches loop
+        if_when_branches := if isReverse then listReverse(diff_stmt.branches) else diff_stmt.branches;
+        for branch in if_when_branches loop
           (exp, branch_stmts_flat) := branch;
           (branch_stmts, diffArguments) := List.mapFold(branch_stmts_flat, function differentiateStatement(diffInfo = diffInfo), diffArguments);
           branches := (exp, List.flatten(branch_stmts)) :: branches;
@@ -2529,7 +2551,8 @@ public
       then {diff_stmt};
 
       case diff_stmt as Statement.WHEN() algorithm
-        for branch in diff_stmt.branches loop
+        if_when_branches := if isReverse then listReverse(diff_stmt.branches) else diff_stmt.branches;
+        for branch in if_when_branches loop
           (exp, branch_stmts_flat) := branch;
           (branch_stmts, diffArguments) := List.mapFold(branch_stmts_flat, function differentiateStatement(diffInfo = diffInfo), diffArguments);
           branches := (exp, List.flatten(branch_stmts)) :: branches;
@@ -2551,6 +2574,26 @@ public
       then fail();
     end match;
   end differentiateStatement;
+
+  function reverseForRange
+    "Reverse a for-loop range for adjoint sweeps:
+       start[:step]:stop  ->  stop[:-step]:start
+     If no step is given, use -1 by default (typical forward loops like 1:N)."
+    input Option<Expression> rangeIn;
+    output Option<Expression> rangeOut;
+  protected
+    Expression startExp, stopExp, stepExp;
+  algorithm
+    rangeOut := match rangeIn
+      case SOME(Expression.RANGE(start = startExp, step = SOME(stepExp), stop = stopExp))
+        then SOME(Expression.makeRange(stopExp, SOME(Expression.negate(stepExp)), startExp));
+
+      case SOME(Expression.RANGE(start = startExp, step = NONE(), stop = stopExp))
+        then SOME(Expression.makeRange(stopExp, SOME(Expression.INTEGER(-1)), startExp));
+
+      else rangeIn;
+    end match;
+  end reverseForRange;
 
   function differentiateBinary
     "Some of this is depcreated because of Expression.MULTARY().

@@ -1258,6 +1258,24 @@ protected
     rhs := Expression.map(rhs, Expression.repairOperator);
   end buildAdjointRhs;
 
+  function expressionHasIterator
+    "Returns true if an expression contains a cref that is an iterator symbol."
+    input Expression exp;
+    output Boolean hasIter;
+
+    function foldIter
+      input Expression e;
+      input output Boolean b;
+    algorithm
+      b := match e
+        case Expression.CREF() then b or ComponentRef.isIterator(e.cref);
+        else b;
+      end match;
+    end foldIter;
+  algorithm
+    hasIter := Expression.fold(exp, foldIter, false);
+  end expressionHasIterator;
+
   // Helper: run reverse-mode on a residual expression with a given seed (current_grad),
   // accumulating into the provided adjoint_map. Returns updated DifferentiationArguments.
   function accumulateAdjointForResidual
@@ -1287,23 +1305,17 @@ protected
   end accumulateAdjointForResidual;
 
   // Reusable builder for a SINGLE_COMPONENT adjoint assignment (tmp or result var).
-  function makeAdjointComponent
+  function makeAdjointComponentFromRhs
     input ComponentRef lhsKey;
-    input UnorderedMap<ComponentRef, list<Expression>> adjoint_map;
+    input Expression rhsExpr;
     input String contextName;
     input Integer eqIndex;
     output NBStrongComponent diffed_comp;
   protected
-    list<Expression> terms;
-    Expression rhsExpr;
     Pointer<NBEquation.Equation> eqPtr;
     NBEquation.Equation eq;
     Pointer<Variable> lhsVarPtr;
   algorithm
-    terms := UnorderedMap.getOrFail(lhsKey, adjoint_map);
-
-    rhsExpr := buildAdjointRhs(lhsKey, terms);
-
     eqPtr := Equation.makeAssignment(
       Expression.fromCref(lhsKey),
       rhsExpr,
@@ -1321,9 +1333,9 @@ protected
         if not listEmpty(ComponentRef.subscriptsAllFlat(lhsKey)) then
           // Represent as a sliced component of size 1
           diffed_comp := NBStrongComponent.SLICED_COMPONENT(
-            var_cref = lhsKey,                      // keep the subscripted cref for nice printing
-            var      = Slice.SLICE(lhsVarPtr, {}),  // scalar element; indices not needed here
-            eqn      = Slice.SLICE(eqPtr, {}),      // scalar equation
+            var_cref = lhsKey,
+            var      = Slice.SLICE(lhsVarPtr, {}),
+            eqn      = Slice.SLICE(eqPtr, {}),
             status   = NBSolve.Status.EXPLICIT
           );
         else
@@ -1350,7 +1362,88 @@ protected
         Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " cannot create adjoint strong component for equation " + NBEquation.Equation.toString(eq)});
       then fail();
     end match;
+  end makeAdjointComponentFromRhs;
+
+  function makeAdjointComponent
+    input ComponentRef lhsKey;
+    input UnorderedMap<ComponentRef, list<Expression>> adjoint_map;
+    input String contextName;
+    input Integer eqIndex;
+    output NBStrongComponent diffed_comp;
+  protected
+    list<Expression> terms;
+    Expression rhsExpr;
+    Pointer<NBEquation.Equation> eqPtr;
+    NBEquation.Equation eq;
+    Pointer<Variable> lhsVarPtr;
+  algorithm
+    terms := UnorderedMap.getOrFail(lhsKey, adjoint_map);
+
+    rhsExpr := buildAdjointRhs(lhsKey, terms);
+
+    diffed_comp := makeAdjointComponentFromRhs(lhsKey, rhsExpr, contextName, eqIndex);
   end makeAdjointComponent;
+
+  function makeAdjointAccumulationComponent
+    input ComponentRef lhsKey;
+    input Expression contribution;
+    input String contextName;
+    input Integer eqIndex;
+    output NBStrongComponent diffed_comp;
+  protected
+    Type vty;
+    SizeClassification sc;
+    Operator addOp;
+    Expression rhsExpr;
+  algorithm
+    vty := ComponentRef.getComponentType(lhsKey);
+    if Expression.containsCref(contribution, lhsKey) then
+      rhsExpr := contribution;
+    else
+      sc := sizeClassificationFromType(vty);
+      addOp := Operator.fromClassification((MathClassification.ADDITION, sc), vty);
+      rhsExpr := SimplifyExp.simplify(Expression.MULTARY({Expression.fromCref(lhsKey), contribution}, {}, addOp));
+    end if;
+    rhsExpr := Expression.map(rhsExpr, Expression.repairOperator);
+
+    diffed_comp := makeAdjointComponentFromRhs(lhsKey, rhsExpr, contextName, eqIndex);
+  end makeAdjointAccumulationComponent;
+
+  function isNoOpAdjointContribution
+    input ComponentRef lhsKey;
+    input Expression contribution;
+    output Boolean isNoOp;
+  protected
+    Type vty;
+    SizeClassification sc;
+    Operator addOp;
+    Expression delta;
+  algorithm
+    vty := ComponentRef.getComponentType(lhsKey);
+    sc := sizeClassificationFromType(vty);
+    addOp := Operator.fromClassification((MathClassification.ADDITION, sc), vty);
+
+    // No-op if contribution simplifies to lhs (i.e., contribution - lhs == 0).
+    delta := SimplifyExp.simplify(
+      Expression.MULTARY({contribution, Expression.negate(Expression.fromCref(lhsKey))}, {}, addOp)
+    );
+    delta := Expression.map(delta, Expression.repairOperator);
+    isNoOp := Expression.isZero(delta);
+  end isNoOpAdjointContribution;
+
+  function makeAdjointResetComponent
+    input ComponentRef lhsKey;
+    input String contextName;
+    input Integer eqIndex;
+    output NBStrongComponent diffed_comp;
+  protected
+    Type vty;
+    Expression zeroExpr;
+  algorithm
+    vty := ComponentRef.getComponentType(lhsKey);
+    zeroExpr := Expression.makeZero(vty);
+    diffed_comp := makeAdjointComponentFromRhs(lhsKey, zeroExpr, contextName, eqIndex);
+  end makeAdjointResetComponent;
 
   function addEntryToLPAMap
     input Pointer<Variable> vptr;
@@ -1420,7 +1513,7 @@ protected
 
   function jacobianSymbolicAdjoint extends Module.jacobianInterface;
   protected
-    list<StrongComponent> comps, diffed_comps, comps_non_alg;
+    list<StrongComponent> comps, diffed_comps, comps_non_alg, diffedStructuredComps, diffedIteratorComps = {};
     StrongComponent c_noalias;
     Pointer<list<Pointer<Variable>>> seed_vars_ptr = Pointer.create({});
     Pointer<list<Pointer<Variable>>> pDer_vars_ptr = Pointer.create({});
@@ -1451,6 +1544,7 @@ protected
     UnorderedMap<ComponentRef, ComponentRef> mapSeedToNewPDer =
       UnorderedMap.new<ComponentRef>(ComponentRef.hash, ComponentRef.isEqual);
     list<StrongComponent> algebraicLoopComps = {};
+    list<StrongComponent> algebraicPostComps = {};
     list<ComponentRef> tmpKeys;
     list<ComponentRef> resKeys;
 
@@ -1465,6 +1559,10 @@ protected
     list<ComponentRef> orderedTmpCrefs = {};
     ComponentRef baseCref, pDerCref;
     Option<ComponentRef> o_pDerCref;
+    list<tuple<ComponentRef, Expression>> algebraicPostUpdates = {};
+    Expression contribution;
+    UnorderedMap<ComponentRef, Boolean> structuredAssigned =
+      UnorderedMap.new<Boolean>(ComponentRef.hash, ComponentRef.isEqual);
   algorithm
     newName := name + "_ADJ";
     if Util.isSome(strongComponents) then
@@ -1712,13 +1810,8 @@ protected
                 // and apply required minus sign
                 rhs_x := Expression.negate(buildAdjointRhs(pDerX, terms_x));
 
-                // Append to global adjoint_map so standard emission produces:
-                //   $pDER_...x = - (sum_i lambda_i * d r_i / d x)
-                UnorderedMap.add(
-                  pDerX,
-                  rhs_x :: UnorderedMap.getOrDefault(pDerX, adjoint_map, {}),
-                  adjoint_map
-                );
+                // Emit x-bar post accumulation as explicit components after loop solve.
+                algebraicPostUpdates := (pDerX, rhs_x) :: algebraicPostUpdates;
               end if;
             end for;
           then ();
@@ -1749,7 +1842,54 @@ protected
     );
 
     // differentiate all strong components
-    (_, diffArguments) := Differentiate.differentiateStrongComponentListAdjoint(comps, diffArguments, idx, newName, getInstanceName());
+    (diffedStructuredComps, diffArguments) := Differentiate.differentiateStrongComponentListAdjoint(comps, diffArguments, idx, newName, getInstanceName());
+
+    // Keep only structured components that still carry for-iterator structure.
+    // Scalar/algorithm adjoints remain emitted from map-based accumulation.
+    for comp in diffedStructuredComps loop
+      () := match comp
+        case StrongComponent.SLICED_COMPONENT() guard(Equation.isForEquation(Slice.getT(comp.eqn)))
+          algorithm
+            diffedIteratorComps := comp :: diffedIteratorComps;
+            for v in StrongComponent.getVariables(comp) loop
+              UnorderedMap.tryAdd(BVariable.getVarName(v), true, structuredAssigned);
+            end for;
+            UnorderedMap.tryAdd(StrongComponent.getVarCref(comp), true, structuredAssigned);
+          then ();
+        case StrongComponent.RESIZABLE_COMPONENT() guard(Equation.isForEquation(Slice.getT(comp.eqn)))
+          algorithm
+            diffedIteratorComps := comp :: diffedIteratorComps;
+            for v in StrongComponent.getVariables(comp) loop
+              UnorderedMap.tryAdd(BVariable.getVarName(v), true, structuredAssigned);
+            end for;
+            UnorderedMap.tryAdd(StrongComponent.getVarCref(comp), true, structuredAssigned);
+          then ();
+        case StrongComponent.GENERIC_COMPONENT() guard(Equation.isForEquation(Slice.getT(comp.eqn)))
+          algorithm
+            diffedIteratorComps := comp :: diffedIteratorComps;
+            for v in StrongComponent.getVariables(comp) loop
+              UnorderedMap.tryAdd(BVariable.getVarName(v), true, structuredAssigned);
+            end for;
+            UnorderedMap.tryAdd(StrongComponent.getVarCref(comp), true, structuredAssigned);
+          then ();
+        case StrongComponent.SINGLE_COMPONENT() guard(Equation.isForEquation(comp.eqn))
+          algorithm
+            diffedIteratorComps := comp :: diffedIteratorComps;
+            for v in StrongComponent.getVariables(comp) loop
+              UnorderedMap.tryAdd(BVariable.getVarName(v), true, structuredAssigned);
+            end for;
+          then ();
+        case StrongComponent.MULTI_COMPONENT() guard(Equation.isForEquation(Slice.getT(comp.eqn)))
+          algorithm
+            diffedIteratorComps := comp :: diffedIteratorComps;
+            for v in StrongComponent.getVariables(comp) loop
+              UnorderedMap.tryAdd(BVariable.getVarName(v), true, structuredAssigned);
+            end for;
+          then ();
+        else ();
+      end match;
+    end for;
+    diffedIteratorComps := listReverse(diffedIteratorComps);
 
     if Flags.isSet(Flags.DEBUG_ADJOINT) then
       print("Adjoint map after differentiation:\n" + adjointMapToString(diffArguments.adjoint_map) + "\n");
@@ -1774,10 +1914,33 @@ protected
       end if;
     end for;
     orderedTmpCrefs := listReverse(orderedTmpCrefs);
-    // Emit tmp components in determined order
+    // Emit tmp components in determined order as accumulation + reset.
     for lhsKey in orderedTmpCrefs loop
-      tmpComps := makeAdjointComponent(lhsKey, adjoint_map, newName, i) :: tmpComps;
-      i := i + 1;
+      if UnorderedMap.contains(lhsKey, structuredAssigned) then
+        if Flags.isSet(Flags.DEBUG_ADJOINT) then
+          print("[adjoint] skip map tmp emission already handled structurally for " + ComponentRef.toString(lhsKey) + "\n");
+        end if;
+      else
+        terms := UnorderedMap.getOrFail(lhsKey, adjoint_map);
+        contribution := buildAdjointRhs(lhsKey, terms);
+        if expressionHasIterator(contribution) then
+          if Flags.isSet(Flags.DEBUG_ADJOINT) then
+            print("[adjoint] skip iterator-dependent tmp emission for " + ComponentRef.toString(lhsKey) + ": " + Expression.toString(contribution) + "\n");
+          end if;
+        else
+           if (listLength(terms) == 1 and Expression.isEqual(listHead(terms), Expression.fromCref(lhsKey)))
+             or isNoOpAdjointContribution(lhsKey, contribution) then
+            // No-op accumulation; only keep reset in the reverse sweep.
+            tmpComps := makeAdjointResetComponent(lhsKey, newName, i) :: tmpComps;
+            i := i + 1;
+          else
+            tmpComps := makeAdjointResetComponent(lhsKey, newName, i + 1)
+              :: makeAdjointAccumulationComponent(lhsKey, contribution, newName, i)
+              :: tmpComps;
+            i := i + 2;
+          end if;
+        end if;
+      end if;
     end for;
 
     // Emit any remaining tmp vars (e.g. lambda temporaries) not in orderedTmpCrefs.
@@ -1785,24 +1948,75 @@ protected
       baseCref := BVariable.getVarName(v); // for tmp_vars (already pDer/lambda names)
       if (not List.contains(orderedTmpCrefs, baseCref, ComponentRef.isEqual))
          and UnorderedMap.contains(baseCref, adjoint_map) then
-        tmpComps := makeAdjointComponent(baseCref, adjoint_map, newName, i) :: tmpComps;
-        i := i + 1;
+        if UnorderedMap.contains(baseCref, structuredAssigned) then
+          if Flags.isSet(Flags.DEBUG_ADJOINT) then
+            print("[adjoint] skip map tmp emission already handled structurally for " + ComponentRef.toString(baseCref) + "\n");
+          end if;
+        else
+          terms := UnorderedMap.getOrFail(baseCref, adjoint_map);
+          contribution := buildAdjointRhs(baseCref, terms);
+          if expressionHasIterator(contribution) then
+            if Flags.isSet(Flags.DEBUG_ADJOINT) then
+              print("[adjoint] skip iterator-dependent tmp emission for " + ComponentRef.toString(baseCref) + ": " + Expression.toString(contribution) + "\n");
+            end if;
+          else
+            if (listLength(terms) == 1 and Expression.isEqual(listHead(terms), Expression.fromCref(baseCref)))
+               or isNoOpAdjointContribution(baseCref, contribution) then
+              tmpComps := makeAdjointResetComponent(baseCref, newName, i) :: tmpComps;
+              i := i + 1;
+            else
+              tmpComps := makeAdjointResetComponent(baseCref, newName, i + 1)
+                :: makeAdjointAccumulationComponent(baseCref, contribution, newName, i)
+                :: tmpComps;
+              i := i + 2;
+            end if;
+          end if;
+        end if;
       end if;
     end for;
+    tmpComps := listReverse(tmpComps);
 
     // emit result variable components in any order
     resComps := {};
     for v in res_vars loop
       c := BVariable.getVarName(v);
-      if UnorderedMap.contains(c, adjoint_map) then
-        resComps := makeAdjointComponent(c, adjoint_map, newName, i) :: resComps;
+      if UnorderedMap.contains(c, adjoint_map) and not UnorderedMap.contains(c, structuredAssigned) then
+        terms := UnorderedMap.getOrFail(c, adjoint_map);
+        contribution := buildAdjointRhs(c, terms);
+        if expressionHasIterator(contribution) then
+          if Flags.isSet(Flags.DEBUG_ADJOINT) then
+            print("[adjoint] skip iterator-dependent result emission for " + ComponentRef.toString(c) + ": " + Expression.toString(contribution) + "\n");
+          end if;
+        elseif not ((listLength(terms) == 1 and Expression.isEqual(listHead(terms), Expression.fromCref(c)))
+                 or isNoOpAdjointContribution(c, contribution)) then
+          resComps := makeAdjointAccumulationComponent(c, contribution, newName, i) :: resComps;
+          i := i + 1;
+        end if;
+      end if;
+    end for;
+    resComps := listReverse(resComps);
+    // no reversal needed as order does not matter?
+
+    // Emit post-loop x-bar accumulation components after linear algebraic loop solve.
+    for up in listReverse(algebraicPostUpdates) loop
+      (c, contribution) := up;
+      if UnorderedMap.contains(c, structuredAssigned) then
+        if Flags.isSet(Flags.DEBUG_ADJOINT) then
+          print("[adjoint] skip map post-loop emission already handled structurally for " + ComponentRef.toString(c) + "\n");
+        end if;
+      elseif expressionHasIterator(contribution) then
+        if Flags.isSet(Flags.DEBUG_ADJOINT) then
+          print("[adjoint] skip iterator-dependent post-loop emission for " + ComponentRef.toString(c) + ": " + Expression.toString(contribution) + "\n");
+        end if;
+      else
+        algebraicPostComps := makeAdjointAccumulationComponent(c, contribution, newName, i) :: algebraicPostComps;
         i := i + 1;
       end if;
     end for;
-    // no reversal needed as order does not matter?
+    algebraicPostComps := listReverse(algebraicPostComps);
 
     // here are also the loop components from above which might be empty though if there are none
-    diffed_comps := listAppend(tmpComps, listAppend(algebraicLoopComps, resComps));
+    diffed_comps := listAppend(diffedIteratorComps, listAppend(tmpComps, listAppend(algebraicLoopComps, listAppend(algebraicPostComps, resComps))));
 
     // collect var data (most of this can be removed)
     unknown_vars  := listAppend(res_vars, tmp_vars);
