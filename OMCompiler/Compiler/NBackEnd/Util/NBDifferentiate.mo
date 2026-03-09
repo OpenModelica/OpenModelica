@@ -214,6 +214,16 @@ public
     // variables in reverse causal order.
     for comp in listReverse(comps) loop
       baseComp := comp;
+      // For algorithm multi-components, run one reverse sweep over statements.
+      // Seeding is handled per-assignment in differentiateStatement.
+      if match baseComp case StrongComponent.MULTI_COMPONENT() then Equation.isAlgorithm(Slice.getT(baseComp.eqn)); else false; end match then
+        dbg("Component: " + StrongComponent.toString(comp));
+        dbg("  Differentiating algorithm component once in reverse mode...");
+        diffedComp := baseComp;
+        diffedComp := differentiateStrongComponent(diffedComp, diffArguments_ptr, idx, context, name);
+        newComps := diffedComp :: newComps;
+        dbg("  Done differentiating algorithm component.");
+      else
       // Determine LHS cref of this component
       dbg("Component: " + StrongComponent.toString(comp));
       // compVars := match comp
@@ -254,6 +264,7 @@ public
           // Skip differentiation when no mapped adjoint seed exists for this variable.
         end if;
       end for;
+      end if;
     end for;
 
     comps := listReverse(newComps);
@@ -2523,6 +2534,9 @@ public
       local
         Statement diff_stmt;
         Expression exp, lhs, rhs;
+        Expression grad_save;
+        ComponentRef root_save;
+        ComponentRef lhs_seed_cref;
         list<Statement> branch_stmts_flat;
         list<list<Statement>> branch_stmts;
         list<tuple<Expression, list<Statement>>> branches = {};
@@ -2539,10 +2553,22 @@ public
         // collecting into adjoint_map to avoid artificial self-contributions.
         if isReverse then
           (lhs, diffArguments) := differentiateExpressionNoCollect(diff_stmt.lhs, diffArguments);
+          grad_save := diffArguments.current_grad;
+          root_save := diffArguments.root_seed_cref;
+          diffArguments.current_grad := lhs;
+          lhs_seed_cref := match lhs
+            case Expression.CREF() then lhs.cref;
+            else root_save;
+          end match;
+          diffArguments.root_seed_cref := lhs_seed_cref;
         else
           (lhs, diffArguments) := differentiateExpression(diff_stmt.lhs, diffArguments);
         end if;
         (rhs, diffArguments) := differentiateExpression(diff_stmt.rhs, diffArguments);
+        if isReverse then
+          diffArguments.current_grad := grad_save;
+          diffArguments.root_seed_cref := root_save;
+        end if;
         diff_stmt.lhs := lhs;
         diff_stmt.rhs := SimplifyExp.simplifyDump(rhs, true, getInstanceName());
       then if isReverse then {diff_stmt} else {diff_stmt, stmt};

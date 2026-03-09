@@ -53,6 +53,7 @@ protected
 
   // NF imports
   import ComponentRef = NFComponentRef;
+  import Algorithm = NFAlgorithm;
   import Expression = NFExpression;
   import NFFunction.Function;
   import Statement = NFStatement;
@@ -1569,6 +1570,47 @@ protected
     end for;
   end populateDiffMap;
 
+  function getAlgorithmSeedOrderFromComponent
+    input StrongComponent comp;
+    input UnorderedMap<ComponentRef, ComponentRef> diff_map;
+    output list<ComponentRef> seedKeys = {};
+  protected
+    NBEquation.Equation eq;
+    Algorithm alg;
+    Statement stmt;
+    ComponentRef lhsBase;
+    Option<ComponentRef> o_seed;
+    ComponentRef seedKey;
+  algorithm
+    () := match comp
+      case StrongComponent.MULTI_COMPONENT() algorithm
+        eq := Pointer.access(Slice.getT(comp.eqn));
+        () := match eq
+          case NBEquation.ALGORITHM(alg = alg) algorithm
+            for s in listReverse(alg.statements) loop
+              stmt := s;
+              () := match stmt
+                case Statement.ASSIGNMENT(lhs = Expression.CREF(cref = lhsBase)) algorithm
+                  o_seed := UnorderedMap.get(ComponentRef.stripSubscriptsAll(lhsBase), diff_map);
+                  if isSome(o_seed) then
+                    seedKey := Util.getOption(o_seed);
+                    if not List.contains(seedKeys, seedKey, ComponentRef.isEqual) then
+                      seedKeys := seedKey :: seedKeys;
+                    end if;
+                  end if;
+                then ();
+                else ();
+              end match;
+            end for;
+            seedKeys := listReverse(seedKeys);
+          then ();
+          else ();
+        end match;
+      then ();
+      else ();
+    end match;
+  end getAlgorithmSeedOrderFromComponent;
+
   // Flattened across all components: preserve component order and in-component order
   function getAllAdjointOrderedVars
     input list<StrongComponent> comps;
@@ -1647,6 +1689,7 @@ protected
     Boolean resetAtGroup;
     list<StrongComponent> loopCompsQueue;
     StrongComponent loopComp;
+    list<ComponentRef> algorithmOrderedSeeds;
     Option<BEquation.Iterator> o_defaultIterator = NONE();
     Pointer<NBEquation.Equation> iterEqPtr;
     NBEquation.Equation iterEq;
@@ -1662,6 +1705,11 @@ protected
     Boolean isAlgorithmComp;
     list<StrongComponent> seedGeneratedComps;
     list<Pointer<Variable>> algoVars;
+    list<StrongComponent> pendingAlgorithmComps = {};
+    list<Pointer<Variable>> pendingAlgorithmVars = {};
+    Boolean pendingAlgorithmActive = false;
+    Boolean algoVarExists;
+    Pointer<Variable> algoVarPtr;
     StrongComponent generatedComp;
   algorithm
     newName := name + "_ADJ";
@@ -2137,16 +2185,25 @@ protected
       end match;
 
       for v in listReverse(StrongComponent.getVariables(c_noalias)) loop
-        baseCref := BVariable.getVarName(v);
-        o_pDerCref := UnorderedMap.get(baseCref, diff_map);
-        if isSome(o_pDerCref) then
-          seedKey := Util.getOption(o_pDerCref);
-          if isAlgorithmComp then
+        if isAlgorithmComp then
+          algorithmOrderedSeeds := getAlgorithmSeedOrderFromComponent(c_noalias, diff_map);
+          for seedKey in algorithmOrderedSeeds loop
             UnorderedMap.tryAdd(seedKey, true, algorithmSeedKeys);
-          end if;
-          if not List.contains(orderedSeedCrefs, seedKey, ComponentRef.isEqual) then
-            trailingSeedItems := SOME(seedKey) :: trailingSeedItems;
-            orderedSeedCrefs := seedKey :: orderedSeedCrefs;
+            if not List.contains(orderedSeedCrefs, seedKey, ComponentRef.isEqual) then
+              trailingSeedItems := SOME(seedKey) :: trailingSeedItems;
+              orderedSeedCrefs := seedKey :: orderedSeedCrefs;
+            end if;
+          end for;
+          break;
+        else
+          baseCref := BVariable.getVarName(v);
+          o_pDerCref := UnorderedMap.get(baseCref, diff_map);
+          if isSome(o_pDerCref) then
+            seedKey := Util.getOption(o_pDerCref);
+            if not List.contains(orderedSeedCrefs, seedKey, ComponentRef.isEqual) then
+              trailingSeedItems := SOME(seedKey) :: trailingSeedItems;
+              orderedSeedCrefs := seedKey :: orderedSeedCrefs;
+            end if;
           end if;
         end if;
       end for;
@@ -2196,6 +2253,30 @@ protected
       if isSome(o_seedKey) then
         seedKey := Util.getOption(o_seedKey);
         emitAsAlgorithm := UnorderedMap.contains(seedKey, algorithmSeedKeys);
+        if emitAsAlgorithm then
+          pendingAlgorithmActive := true;
+          algoVarPtr := BVariable.getVarPointer(seedKey, sourceInfo());
+          algoVarExists := false;
+          for v in pendingAlgorithmVars loop
+            if ComponentRef.isEqual(BVariable.getVarName(v), seedKey) then
+              algoVarExists := true;
+              break;
+            end if;
+          end for;
+          if not algoVarExists then
+            pendingAlgorithmVars := algoVarPtr :: pendingAlgorithmVars;
+          end if;
+        elseif pendingAlgorithmActive and not listEmpty(pendingAlgorithmComps) then
+          pendingAlgorithmComps := listReverse(pendingAlgorithmComps);
+          per_seed_comps := makeAdjointAlgorithmComponent(pendingAlgorithmComps, listReverse(pendingAlgorithmVars), newName, i, init) :: per_seed_comps;
+          i := i + 1;
+          pendingAlgorithmComps := {};
+          pendingAlgorithmVars := {};
+          pendingAlgorithmActive := false;
+        elseif pendingAlgorithmActive then
+          pendingAlgorithmVars := {};
+          pendingAlgorithmActive := false;
+        end if;
         seedGeneratedComps := {};
         emittedForSeed := false;
         for o_lhsKey in orderedAdjointItems loop
@@ -2215,7 +2296,7 @@ protected
                     if isSome(o_defaultIterator) then
                       generatedComp := makeAdjointAccumulationComponentWithIterator(c, contribution, Util.getOption(o_defaultIterator), newName, i);
                       if emitAsAlgorithm then
-                        seedGeneratedComps := generatedComp :: seedGeneratedComps;
+                        pendingAlgorithmComps := generatedComp :: pendingAlgorithmComps;
                       else
                         per_seed_comps := generatedComp :: per_seed_comps;
                       end if;
@@ -2227,7 +2308,7 @@ protected
                   else
                     generatedComp := makeAdjointAccumulationComponent(c, contribution, newName, i);
                     if emitAsAlgorithm then
-                      seedGeneratedComps := generatedComp :: seedGeneratedComps;
+                      pendingAlgorithmComps := generatedComp :: pendingAlgorithmComps;
                     else
                       per_seed_comps := generatedComp :: per_seed_comps;
                     end if;
@@ -2244,20 +2325,25 @@ protected
         if resetAtGroup then
           generatedComp := makeAdjointResetComponent(seedKey, newName, i);
           if emitAsAlgorithm then
-            seedGeneratedComps := generatedComp :: seedGeneratedComps;
+            pendingAlgorithmComps := generatedComp :: pendingAlgorithmComps;
           else
             per_seed_comps := generatedComp :: per_seed_comps;
           end if;
           resetSeeds := seedKey :: resetSeeds;
           i := i + 1;
         end if;
-        if emitAsAlgorithm and not listEmpty(seedGeneratedComps) then
-          seedGeneratedComps := listReverse(seedGeneratedComps);
-          algoVars := {BVariable.getVarPointer(seedKey, sourceInfo())};
-          per_seed_comps := makeAdjointAlgorithmComponent(seedGeneratedComps, algoVars, newName, i, init) :: per_seed_comps;
-          i := i + 1;
-        end if;
       elseif not listEmpty(loopCompsQueue) then
+        if pendingAlgorithmActive and not listEmpty(pendingAlgorithmComps) then
+          pendingAlgorithmComps := listReverse(pendingAlgorithmComps);
+          per_seed_comps := makeAdjointAlgorithmComponent(pendingAlgorithmComps, listReverse(pendingAlgorithmVars), newName, i, init) :: per_seed_comps;
+          i := i + 1;
+          pendingAlgorithmComps := {};
+          pendingAlgorithmVars := {};
+          pendingAlgorithmActive := false;
+        elseif pendingAlgorithmActive then
+          pendingAlgorithmVars := {};
+          pendingAlgorithmActive := false;
+        end if;
         loopComp := listHead(loopCompsQueue);
         loopCompsQueue := listRest(loopCompsQueue);
         per_seed_comps := loopComp :: per_seed_comps;
@@ -2282,6 +2368,12 @@ protected
         end if;
       end if;
     end for;
+
+    if pendingAlgorithmActive and not listEmpty(pendingAlgorithmComps) then
+      pendingAlgorithmComps := listReverse(pendingAlgorithmComps);
+      per_seed_comps := makeAdjointAlgorithmComponent(pendingAlgorithmComps, listReverse(pendingAlgorithmVars), newName, i, init) :: per_seed_comps;
+      i := i + 1;
+    end if;
 
     // Keep any remaining loop components in deterministic order.
     for loopComp in loopCompsQueue loop
