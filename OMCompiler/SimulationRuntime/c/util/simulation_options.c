@@ -1166,14 +1166,14 @@ const char *GB_CTRL_METHOD_DESC[GB_CTRL_MAX] = {
 };
 
 const char *GB_INTERPOL_METHOD_NAME[GB_INTERPOL_MAX] = {
-  /* GB_INTERPOL_UNKNOWN */           "unknown",
-  /* GB_INTERPOL_LIN */               "linear",
-  /* GB_INTERPOL_HERMITE */           "hermite",
-  /* GB_INTERPOL_HERMITE_a */         "hermite_a",
-  /* GB_INTERPOL_HERMITE_b */         "hermite_b",
-  /* GB_INTERPOL_HERMITE_ERRCTRL */   "hermite_errctrl",
-  /* GB_DENSE_OUTPUT */               "dense_output",
-  /* GB_DENSE_OUTPUT_ERRCTRL */       "dense_output_errctrl"
+  /* GB_INTERPOL_UNKNOWN */         "unknown",
+  /* GB_INTERPOL_LIN */             "linear",
+  /* GB_INTERPOL_HERMITE */         "hermite",
+  /* GB_INTERPOL_HERMITE_a */       "hermite_a",
+  /* GB_INTERPOL_HERMITE_b */       "hermite_b",
+  /* GB_INTERPOL_HERMITE_ERRCTRL */ "hermite_errctrl",
+  /* GB_DENSE_OUTPUT */             "dense_output",
+  /* GB_DENSE_OUTPUT_ERRCTRL */     "dense_output_errctrl"
 };
 
 const char *GB_INTERPOL_METHOD_DESC[GB_INTERPOL_MAX] = {
@@ -1185,6 +1185,20 @@ const char *GB_INTERPOL_METHOD_DESC[GB_INTERPOL_MAX] = {
   /* GB_INTERPOL_HERMITE_ERRCTRL */ "Hermite interpolation with error control",
   /* GB_DENSE_OUTPUT */             "use dense output formula for interpolation",
   /* GB_DENSE_OUTPUT_ERRCTRL */     "use dense output fomular with error control"
+};
+
+const char *GB_EXTRAPOL_METHOD_NAME[GB_EXT_MAX] = {
+  /* GB_EXT_UNKNOWN */    "unknown",
+  /* GB_EXT_DEFAULT */    "default",
+  /* GB_EXT_RICHARDSON */ "richardson",
+  /* GB_EXT_EMBEDDED */   "embedded"
+};
+
+const char *GB_EXTRAPOL_METHOD_DESC[GB_EXT_MAX] = {
+  /* GB_EXT_UNKNOWN */    "unknown",
+  /* GB_EXT_DEFAULT */    "Default, depending on the Runge-Kutta method",
+  /* GB_EXT_RICHARDSON */ "Richardson extrapolation",
+  /* GB_EXT_EMBEDDED */   "Embedded scheme"
 };
 
 const char *SOLVER_METHOD_NAME[S_MAX] = {
@@ -1209,10 +1223,10 @@ const char *SOLVER_METHOD_DESC[S_MAX] = {
   /* S_GBODE */         "gbode - generic Runge-Kutta ODE solver - implicit (sparse solver)/explicit, fixed/variable step size control, order 1-14, event location, optional bi-rate integration - additional simulation flags -gbm -gbctrl -gbratio - additional advanced flags -gbctrl_filter -gbctrl_fhr -gberr -gbint -gbnls -gbfm -gbfctrl -gbferr -gbfint -gbfnls",
   /* S_EULER */         "euler - explicit Euler, fixed step size, order 1",
   /* S_RUNGEKUTTA */    "rungekutta - classical Runge-Kutta - explicit, fixed step, order 4",
-  /* S_SYM_SOLVER */     "symSolver - symbolic inline Solver [compiler flag '--symSolver' needed] - fixed step size, order 1",
-  /* S_SYM_SOLVER_SSC */ "symSolverSsc - symbolic implicit Euler with step size control [compiler flag '--symSolver' needed] - step size control, order 1",
-  /* S_QSS */            "qss - A QSS solver [experimental]",
-  /* S_OPTIMIZATION */   "optimization - Special solver for dynamic optimization"
+  /* S_SYM_SOLVER */    "symSolver - symbolic inline Solver [compiler flag '--symSolver' needed] - fixed step size, order 1",
+  /* S_SYM_SOLVER_SSC */"symSolverSsc - symbolic implicit Euler with step size control [compiler flag '--symSolver' needed] - step size control, order 1",
+  /* S_QSS */           "qss - A QSS solver [experimental]",
+  /* S_OPTIMIZATION */  "optimization - Special solver for dynamic optimization"
 };
 
 const char *INIT_METHOD_NAME[IIM_MAX] = {

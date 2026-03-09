@@ -33,6 +33,7 @@
 #include "gbode_main.h"
 #include "gbode_internal_nls.h"
 
+#include "../options.h"
 #include "../arrayIndex.h"
 
 // TODO: How to choose TOL for Richardson??

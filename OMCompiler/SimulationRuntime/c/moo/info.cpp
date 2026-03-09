@@ -29,6 +29,7 @@
  */
 
 #include "info.h"
+#include "../simulation/options.h"
 
 #include <base/log.h>
 

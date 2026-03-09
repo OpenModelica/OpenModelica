@@ -28,7 +28,8 @@
  *
  */
 
-#include "simulation/arrayIndex.h"
+#include "../simulation/options.h"
+#include "../simulation/arrayIndex.h"
 
 #include "evaluations.h"
 
