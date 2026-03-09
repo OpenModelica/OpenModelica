@@ -1548,8 +1548,8 @@ algorithm
       equation
 
         if ComponentReference.crefHaveSubs(cr1) or ComponentReference.crefHaveSubs(cr2) then
-          // Removing elements of arrays can lead to issues later on when passing arrays to funvtions.
-          // The array elements are computed from the start of the array plus the position of the element in questoin.
+          // Removing elements of arrays can lead to issues later on when passing arrays to functions.
+          // The array elements are computed from the start of the array plus the position of the element in question.
           // This might be a bit too broad as of now.
           fail();
         end if;
