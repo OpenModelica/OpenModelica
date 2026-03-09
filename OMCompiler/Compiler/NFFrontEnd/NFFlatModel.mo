@@ -251,7 +251,7 @@ public
 
     if BaseModelica.inlineFunctions() then
       // Try to inline all functions regardless of what Inline annotation they have.
-      flat_model := mapExp(flat_model, function Inline.inlineCallExp(forceInline = true));
+      flat_model := mapExp(flat_model, function Expression.map(func = function Inline.inlineCallExp(forceInline = true)));
       // Re-collect the functions to avoid dumping functions that are no longer used.
       funcs := FunctionTree.listValues(Flatten.collectFunctions(flat_model));
     end if;
