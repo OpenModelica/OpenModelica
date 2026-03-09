@@ -116,6 +116,7 @@ private:
   QProgressBar *mpProgressBar;
   QPushButton *mpCancelButton;
   QToolButton *mpOpenTransformationalDebuggerButton;
+  QToolButton *mpReSimulateSetuButton;
   QPushButton *mpOpenOutputFileButton;
   QTabWidget *mpGeneratedFilesTabWidget;
   QList<QString> mGeneratedFilesList;
@@ -153,6 +154,7 @@ private:
   void simulationProcessFinishedHelper();
 private slots:
   void openTransformationalDebugger();
+  void showReSimulateSetup();
   void openSimulationLogFile();
   void createSimulationProgressSocket();
   void readSimulationProgress();
