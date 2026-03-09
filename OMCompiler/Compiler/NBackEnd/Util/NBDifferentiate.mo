@@ -1075,7 +1075,9 @@ public
             // available so loop contributions can be emitted with correct indexing.
             adjointKey := match expCrefSubscripts
               case {} then derCref;
-              else ComponentRef.copySubscripts(exp.cref, derCref);
+              else if subscriptsHaveIterator(expCrefSubscripts)
+                then ComponentRef.copySubscripts(exp.cref, derCref)
+                else derCref;
             end match;
             if not UnorderedMap.contains(adjointKey, Util.getOption(diffArguments.adjoint_map)) then
               UnorderedMap.tryAdd(adjointKey, {}, Util.getOption(diffArguments.adjoint_map));
@@ -3547,6 +3549,46 @@ protected
       print(s + "\n");
     end if;
   end dbg;
+
+  function expressionHasIteratorCref
+    input Expression exp;
+    output Boolean hasIter;
+
+    function foldIter
+      input Expression e;
+      input output Boolean b;
+    algorithm
+      b := match e
+        case Expression.CREF() then b or ComponentRef.isIterator(e.cref);
+        else b;
+      end match;
+    end foldIter;
+  algorithm
+    hasIter := Expression.fold(exp, foldIter, false);
+  end expressionHasIteratorCref;
+
+  function subscriptHasIterator
+    input Subscript sub;
+    output Boolean hasIter;
+  algorithm
+    hasIter := match sub
+      case Subscript.INDEX() then expressionHasIteratorCref(sub.index);
+      case Subscript.SLICE() then expressionHasIteratorCref(sub.slice);
+      else false;
+    end match;
+  end subscriptHasIterator;
+
+  function subscriptsHaveIterator
+    input list<Subscript> subs;
+    output Boolean hasIter = false;
+  algorithm
+    for sub in subs loop
+      if subscriptHasIterator(sub) then
+        hasIter := true;
+        break;
+      end if;
+    end for;
+  end subscriptsHaveIterator;
 
   function updateAdjointList
     input Option<list<tuple<ComponentRef, Expression>>> oldOpt;
