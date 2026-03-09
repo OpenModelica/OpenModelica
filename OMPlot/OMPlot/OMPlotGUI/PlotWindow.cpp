@@ -1045,7 +1045,7 @@ void PlotWindow::plotArray(double time, PlotCurve *pPlotCurve)
     int it = setupInterp(timeVals.get(), time, intervalSize, alpha);
     if (it < 0) {
       mFile.close();
-      throw PlotException("Time out of bounds.");
+      throw TimeOutOfBoundsException(QFileInfo(mFile), timeVals[0], timeVals[intervalSize - 1]);
     }
     QString currentVariable;  //without index part
     // Read variable values and plot them
@@ -1093,7 +1093,7 @@ void PlotWindow::plotArray(double time, PlotCurve *pPlotCurve)
     int it = setupInterp(timeVals, time, csvReader->numsteps, alpha);
     if (it < 0) {
       omc_free_csv_reader(csvReader);
-      throw PlotException("Time out of bounds.");
+      throw TimeOutOfBoundsException(QFileInfo(mFile), timeVals[0], timeVals[csvReader->numsteps - 1]);
     }
     QStringList::Iterator itVarList;
     for (itVarList = mVariablesList.begin(); itVarList != mVariablesList.end(); itVarList++){
@@ -1155,7 +1155,7 @@ void PlotWindow::plotArray(double time, PlotCurve *pPlotCurve)
       }
       if (time<startTime || stopTime<time) {
         omc_free_matlab4_reader(&reader);
-        throw PlotException("Time out of bounds.");
+        throw TimeOutOfBoundsException(QFileInfo(mFile), startTime, stopTime);
       }
       QStringList::Iterator itVarList;
       for (itVarList = mVariablesList.begin(); itVarList != mVariablesList.end(); itVarList++){
@@ -1258,7 +1258,7 @@ void PlotWindow::plotArrayParametric(double time, PlotCurve *pPlotCurve)
       int it = setupInterp(timeVals.get(), time, intervalSize, alpha);
       if (it < 0) {
         mFile.close();
-        throw PlotException("Time out of bounds.");
+        throw TimeOutOfBoundsException(QFileInfo(mFile), timeVals[0], timeVals[intervalSize - 1]);
       }
       if (editCase) {
         pPlotCurve->clearXAxisVector();
@@ -1305,7 +1305,7 @@ void PlotWindow::plotArrayParametric(double time, PlotCurve *pPlotCurve)
       int it = setupInterp(timeVals, time, csvReader->numsteps, alpha);
       if (it < 0) {
         omc_free_csv_reader(csvReader);
-        throw PlotException("Time out of bounds.");
+        throw TimeOutOfBoundsException(QFileInfo(mFile), timeVals[0], timeVals[csvReader->numsteps - 1]);
       }
       if (!editCase) {
         QFileInfo fileInfo(mFile);
@@ -1380,7 +1380,7 @@ void PlotWindow::plotArrayParametric(double time, PlotCurve *pPlotCurve)
       }
       if (time<startTime || stopTime<time) {
         omc_free_matlab4_reader(&reader);
-        throw PlotException("Time out of bounds.");
+        throw TimeOutOfBoundsException(QFileInfo(mFile), startTime, stopTime);
       }
       pPlotCurve->clearXAxisVector();
       pPlotCurve->clearYAxisVector();
@@ -1991,6 +1991,12 @@ void PlotWindow::interactiveSimulationStarted()
 void PlotWindow::interactiveSimulationPaused()
 {
   setInteractiveControls(true);
+}
+
+TimeOutOfBoundsException::TimeOutOfBoundsException(const QFileInfo &fileInfo, double startTime, double stopTime)
+  : PlotException(QString("%1: %2. (StartTime = %3, StopTime = %4)")
+      .arg(fileInfo.fileName()).arg(QObject::tr("Time out of bounds")).arg(startTime).arg(stopTime))
+{
 }
 
 /*!
