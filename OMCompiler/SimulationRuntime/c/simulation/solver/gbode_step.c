@@ -550,7 +550,7 @@ int expl_diag_impl_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solv
 
       if (/* non explicit stage of (E)SDIRK integrator */ (stage != 0 || gbfData->tableau->A[0] != 0) && gbData->nlsSolverMethod == GB_NLS_INTERNAL)
       {
-        // reconstruct k_{stage_} from the solution, avoids repeated call to functionODE()
+        // reconstruct k_{stage} from the solution, avoids repeated call to functionODE()
         double ifac = 1.0 / (gbfData->stepSize * gbfData->tableau->A[stage * nStages + stage]);
         for (int fast_idx = 0; fast_idx < nFastStates; fast_idx++)
         {
