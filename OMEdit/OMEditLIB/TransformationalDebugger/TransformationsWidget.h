@@ -185,7 +185,7 @@ public:
   void fetchOperations(OMEquation *equation, HtmlDiff htmlDiff);
   void clearTreeWidgetItems(QTreeWidget *pTreeWidget);
 private:
-  QString mInfoJSONFullFileName, mProfilingJSONFullFileName, mProfilingDataRealFileName;
+  QString mInfoJSONFullFileName, mProfilingJSONFullFileName;
   bool mProfilingEnabled = false;
   bool mCheckForProfilingFiles = false;
   int profilingNumSteps;

@@ -791,6 +791,7 @@ void OptionsDialog::readSimulationSettings()
 {
   SimulationOptions simulationOptions;
   int currentIndex;
+  // read matching algorithm
   if (mpSettings->contains("simulation/matchingAlgorithm")) {
     currentIndex = mpSimulationPage->getTranslationFlagsWidget()->getMatchingAlgorithmComboBox()->findText(mpSettings->value("simulation/matchingAlgorithm").toString(), Qt::MatchExactly);
   } else {
@@ -800,7 +801,7 @@ void OptionsDialog::readSimulationSettings()
     mpSimulationPage->getTranslationFlagsWidget()->getMatchingAlgorithmComboBox()->setCurrentIndex(currentIndex);
   }
   mMatchingAlgorithm = mpSimulationPage->getTranslationFlagsWidget()->getMatchingAlgorithmComboBox()->currentText();
-
+  // read index reduction
   if (mpSettings->contains("simulation/indexReductionMethod")) {
     currentIndex = mpSimulationPage->getTranslationFlagsWidget()->getIndexReductionMethodComboBox()->findText(mpSettings->value("simulation/indexReductionMethod").toString(), Qt::MatchExactly);
   } else {
@@ -852,6 +853,16 @@ void OptionsDialog::readSimulationSettings()
     mpSimulationPage->getTranslationFlagsWidget()->getEnableFMUImportCheckBox()->setChecked(simulationOptions.getEnableFMUImport());
   }
   mEnableFMUImport = mpSimulationPage->getTranslationFlagsWidget()->getEnableFMUImportCheckBox()->isChecked();
+  // profiling
+  if (mpSettings->contains("simulation/profiling")) {
+    currentIndex = mpSimulationPage->getTranslationFlagsWidget()->getProfilingComboBox()->findText(mpSettings->value("simulation/profiling").toString(), Qt::MatchExactly);
+  } else {
+    currentIndex = mpSimulationPage->getTranslationFlagsWidget()->getProfilingComboBox()->findText(simulationOptions.getProfiling(), Qt::MatchExactly);
+  }
+  if (currentIndex > -1) {
+    mpSimulationPage->getTranslationFlagsWidget()->getProfilingComboBox()->setCurrentIndex(currentIndex);
+  }
+  mProfiling = mpSimulationPage->getTranslationFlagsWidget()->getProfilingComboBox()->currentText();
   // read additional translation flags
   if (mpSettings->contains("simulation/OMCFlags")) {
     mpSimulationPage->getTranslationFlagsWidget()->getAdditionalTranslationFlagsTextBox()->setText(mpSettings->value("simulation/OMCFlags").toString());
@@ -2309,6 +2320,17 @@ void OptionsDialog::saveSimulationSettings()
     mpSettings->remove("simulation/enableFMUImport");
   } else {
     mpSettings->setValue("simulation/enableFMUImport", enableFMUImport);
+  }
+  // save profiling
+  QString profiling = mpSimulationPage->getTranslationFlagsWidget()->getProfilingComboBox()->currentText();
+  if (mProfiling.compare(profiling) != 0) {
+    mProfiling = profiling;
+    changed = true;
+  }
+  if (profiling.compare(simulationOptions.getProfiling()) == 0) {
+    mpSettings->remove("simulation/profiling");
+  } else {
+    mpSettings->setValue("simulation/profiling", profiling);
   }
   // save command line options
   QString additionalFlags = mpSimulationPage->getTranslationFlagsWidget()->getAdditionalTranslationFlagsTextBox()->text();

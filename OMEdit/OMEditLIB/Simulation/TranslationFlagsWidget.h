@@ -42,6 +42,7 @@
 
 class SimulationOptions;
 class Label;
+class ComboBox;
 class TranslationFlagsWidget : public QWidget
 {
   Q_OBJECT
@@ -55,6 +56,7 @@ public:
   QCheckBox *getParmodautoCheckBox() const {return mpParmodautoCheckBox;}
   QCheckBox *getOldInstantiationCheckBox() const {return mpOldInstantiationCheckBox;}
   QCheckBox *getEnableFMUImportCheckBox() const {return mpEnableFMUImportCheckBox;}
+  ComboBox *getProfilingComboBox() const {return mpProfilingComboBox;}
   QLineEdit *getAdditionalTranslationFlagsTextBox() const {return mpAdditionalTranslationFlagsTextBox;}
 
   void applySimulationOptions(const SimulationOptions &simulationOptions);
@@ -72,6 +74,8 @@ private:
   QCheckBox *mpParmodautoCheckBox;
   QCheckBox *mpOldInstantiationCheckBox;
   QCheckBox *mpEnableFMUImportCheckBox;
+  Label  *mpProfilingLabel;
+  ComboBox *mpProfilingComboBox;
   Label *mpAdditionalTranslationFlagsLabel;
   QLineEdit *mpAdditionalTranslationFlagsTextBox;
   QToolButton *mpTranslationFlagsHelpButton;

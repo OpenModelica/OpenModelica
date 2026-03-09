@@ -137,8 +137,6 @@ private:
   ComboBox *mpNonLinearSolverComboBox;
   Label *mpOutputVariablesLabel;
   QLineEdit *mpOutputVariablesTextBox;
-  Label  *mpProfilingLabel;
-  ComboBox *mpProfilingComboBox;
   QCheckBox *mpCPUTimeCheckBox;
   QCheckBox *mpEnableAllWarningsCheckBox;
   QGroupBox *mpLoggingGroupBox;
