@@ -55,6 +55,7 @@ protected
   import ComponentRef = NFComponentRef;
   import Expression = NFExpression;
   import NFFunction.Function;
+  import Statement = NFStatement;
   import Operator = NFOperator;
   import SimplifyExp = NFSimplifyExp;
   import Type = NFType;
@@ -1509,6 +1510,40 @@ protected
     end if;
   end addEntryToLPAMap;
 
+  // Build a MULTI_COMPONENT backed by an algorithm equation from a list of
+  // already prepared assignment strong components.
+  function makeAdjointAlgorithmComponent
+    input list<StrongComponent> assignmentComps;
+    input list<Pointer<Variable>> vars;
+    input String contextName;
+    input Integer eqIndex;
+    input Boolean init;
+    output NBStrongComponent diffed_comp;
+  protected
+    list<Statement> stmts = {};
+    list<Statement> eqnStmts;
+    Pointer<NBEquation.Equation> eqPtr;
+    Pointer<Integer> idxPtr;
+  algorithm
+    for c in assignmentComps loop
+      eqnStmts := Equation.toStatement(Pointer.access(StrongComponent.toSolvedEquation(c)));
+      for s in listReverse(eqnStmts) loop
+        stmts := s :: stmts;
+      end for;
+    end for;
+    stmts := listReverse(stmts);
+
+    eqPtr := Equation.makeAlgorithm(stmts, init);
+    idxPtr := Pointer.create(eqIndex);
+    Equation.createName(eqPtr, idxPtr, contextName);
+
+    diffed_comp := StrongComponent.MULTI_COMPONENT(
+      vars   = list(Slice.SLICE(v, {}) for v in vars),
+      eqn    = Slice.SLICE(eqPtr, {}),
+      status = NBSolve.Status.EXPLICIT
+    );
+  end makeAdjointAlgorithmComponent;
+
   // Build a filtered diff map for a given variable list.
   // For each variable pointer v in 'vars', if there exists a mapping
   //   base = BVariable.getVarName(v) -> mapped in 'globalDiffMap'
@@ -1621,6 +1656,13 @@ protected
     Expression contribution;
     UnorderedMap<ComponentRef, Boolean> structuredAssigned =
       UnorderedMap.new<Boolean>(ComponentRef.hash, ComponentRef.isEqual);
+    UnorderedMap<ComponentRef, Boolean> algorithmSeedKeys =
+      UnorderedMap.new<Boolean>(ComponentRef.hash, ComponentRef.isEqual);
+    Boolean emitAsAlgorithm;
+    Boolean isAlgorithmComp;
+    list<StrongComponent> seedGeneratedComps;
+    list<Pointer<Variable>> algoVars;
+    StrongComponent generatedComp;
   algorithm
     newName := name + "_ADJ";
     if Util.isSome(strongComponents) then
@@ -2071,6 +2113,10 @@ protected
     postUpdatesQueue := listReverse(algebraicPostUpdatesByLoop);
     for c in listReverse(primalComps) loop
       c_noalias := StrongComponent.removeAlias(c);
+      isAlgorithmComp := match c_noalias
+        case StrongComponent.MULTI_COMPONENT() then Equation.isAlgorithm(Slice.getT(c_noalias.eqn));
+        else false;
+      end match;
       trailingSeedItems := {};
       () := match c_noalias
         case StrongComponent.ALGEBRAIC_LOOP() algorithm
@@ -2095,6 +2141,9 @@ protected
         o_pDerCref := UnorderedMap.get(baseCref, diff_map);
         if isSome(o_pDerCref) then
           seedKey := Util.getOption(o_pDerCref);
+          if isAlgorithmComp then
+            UnorderedMap.tryAdd(seedKey, true, algorithmSeedKeys);
+          end if;
           if not List.contains(orderedSeedCrefs, seedKey, ComponentRef.isEqual) then
             trailingSeedItems := SOME(seedKey) :: trailingSeedItems;
             orderedSeedCrefs := seedKey :: orderedSeedCrefs;
@@ -2146,6 +2195,8 @@ protected
     for o_seedKey in orderedSeedItems loop
       if isSome(o_seedKey) then
         seedKey := Util.getOption(o_seedKey);
+        emitAsAlgorithm := UnorderedMap.contains(seedKey, algorithmSeedKeys);
+        seedGeneratedComps := {};
         emittedForSeed := false;
         for o_lhsKey in orderedAdjointItems loop
           if isSome(o_lhsKey) then
@@ -2162,14 +2213,24 @@ protected
                    and not isNoOpAdjointContribution(c, contribution) then
                   if expressionHasIterator(contribution) then
                     if isSome(o_defaultIterator) then
-                      per_seed_comps := makeAdjointAccumulationComponentWithIterator(c, contribution, Util.getOption(o_defaultIterator), newName, i) :: per_seed_comps;
+                      generatedComp := makeAdjointAccumulationComponentWithIterator(c, contribution, Util.getOption(o_defaultIterator), newName, i);
+                      if emitAsAlgorithm then
+                        seedGeneratedComps := generatedComp :: seedGeneratedComps;
+                      else
+                        per_seed_comps := generatedComp :: per_seed_comps;
+                      end if;
                       emittedForSeed := true;
                       i := i + 1;
                     elseif Flags.isSet(Flags.DEBUG_ADJOINT) then
                       print("[adjoint] skip iterator-dependent map emission because no iterator skeleton is available for " + ComponentRef.toString(c) + "\n");
                     end if;
                   else
-                    per_seed_comps := makeAdjointAccumulationComponent(c, contribution, newName, i) :: per_seed_comps;
+                    generatedComp := makeAdjointAccumulationComponent(c, contribution, newName, i);
+                    if emitAsAlgorithm then
+                      seedGeneratedComps := generatedComp :: seedGeneratedComps;
+                    else
+                      per_seed_comps := generatedComp :: per_seed_comps;
+                    end if;
                     emittedForSeed := true;
                     i := i + 1;
                   end if;
@@ -2181,8 +2242,19 @@ protected
         resetAtGroup := (not List.contains(resetSeeds, seedKey, ComponentRef.isEqual))
           and (not UnorderedMap.contains(seedKey, structuredAssigned));
         if resetAtGroup then
-          per_seed_comps := makeAdjointResetComponent(seedKey, newName, i) :: per_seed_comps;
+          generatedComp := makeAdjointResetComponent(seedKey, newName, i);
+          if emitAsAlgorithm then
+            seedGeneratedComps := generatedComp :: seedGeneratedComps;
+          else
+            per_seed_comps := generatedComp :: per_seed_comps;
+          end if;
           resetSeeds := seedKey :: resetSeeds;
+          i := i + 1;
+        end if;
+        if emitAsAlgorithm and not listEmpty(seedGeneratedComps) then
+          seedGeneratedComps := listReverse(seedGeneratedComps);
+          algoVars := {BVariable.getVarPointer(seedKey, sourceInfo())};
+          per_seed_comps := makeAdjointAlgorithmComponent(seedGeneratedComps, algoVars, newName, i, init) :: per_seed_comps;
           i := i + 1;
         end if;
       elseif not listEmpty(loopCompsQueue) then
