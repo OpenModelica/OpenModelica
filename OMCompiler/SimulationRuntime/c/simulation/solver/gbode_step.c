@@ -562,22 +562,16 @@ int expl_diag_impl_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solv
     }
 
     // TODO: get rid of this madness and make k and y only contain fast states!!
-    if (stage == 0 && gbfData->nlsSolverMethod == GB_NLS_INTERNAL)
-    {
-      for (int fast_idx = 0; fast_idx < nFastStates; fast_idx++)
-      {
-        int slow_idx = gbData->fastStatesIdx[fast_idx];
-        gbfData->yOldPacked[fast_idx] = gbfData->yOld[slow_idx];
-      }
-    }
-
-    // TODO: get rid of this madness and make k and y only contain fast states!!
     if (gbfData->nlsSolverMethod == GB_NLS_INTERNAL)
     {
+      int stageOffset = nFastStates * stage;
+
       for (int fast_idx = 0; fast_idx < nFastStates; fast_idx++)
       {
         int slow_idx = gbData->fastStatesIdx[fast_idx];
-        gbfData->kCurrPacked[nFastStates * stage + fast_idx] = fODE[slow_idx];
+
+        if (stage == 0) gbfData->yOldPacked[fast_idx] = gbfData->yOld[slow_idx];
+        gbfData->kCurrPacked[stageOffset + fast_idx] = fODE[slow_idx];
       }
     }
 
