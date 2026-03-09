@@ -103,8 +103,9 @@ public
       DifferentiationType diffType                              "Differentiation use case (time, simple, function, jacobian)";
       UnorderedMap<Path, Function> funcMap                      "Function tree containing all functions and their known derivatives";
       Boolean scalarized                                        "true if the variables are scalarized";
-      Option<UnorderedMap<ComponentRef, list<Expression>>> adjoint_map  "map for accumulating adjoint gradients for component refs";
+      Option<UnorderedMap<ComponentRef, list<tuple<ComponentRef, Expression>>>> adjoint_map  "map for accumulating adjoint gradients for component refs; each entry tagged with root seed cref";
       Expression current_grad                                   "current gradient expression, used in reverse mode";
+      ComponentRef root_seed_cref                               "root seed cref tagging current reverse sweep pass";
       Boolean collectAdjoints                                   "If false, skip writing into adjoint_map (used for LHS traversal in reverse/Jacobian).";
     end DIFFERENTIATION_ARGUMENTS;
 
@@ -120,6 +121,7 @@ public
         scalarized  = false,
         adjoint_map = NONE(),
         current_grad= Expression.EMPTY(Type.REAL()),
+        root_seed_cref = ComponentRef.EMPTY(),
         collectAdjoints = false
       );
     end default;
@@ -136,6 +138,7 @@ public
         scalarized  = false,
         adjoint_map = NONE(),
         current_grad = Expression.EMPTY(Type.REAL()),
+        root_seed_cref = ComponentRef.EMPTY(),
         collectAdjoints = false
       );
     end simpleCref;
@@ -238,6 +241,7 @@ public
           // and update in diffArguments
           da := Pointer.access(diffArguments_ptr);
           da.current_grad := Expression.fromCref(gradCref);
+          da.root_seed_cref := gradCref;
           Pointer.update(diffArguments_ptr, da);
           // Differentiate this component
           dbg("  Differentiating component...");
@@ -989,7 +993,7 @@ public
 
           // Accumulate adjoint contribution: append current_grad to list at key exp.cref.
           if diffArguments.collectAdjoints then
-            UnorderedMap.tryAddUpdate(exp.cref, function updateAdjointList(current_grad = diffArguments.current_grad), Util.getOption(diffArguments.adjoint_map));
+            UnorderedMap.tryAddUpdate(exp.cref, function updateAdjointList(current_grad = diffArguments.current_grad, root_seed_cref = diffArguments.root_seed_cref), Util.getOption(diffArguments.adjoint_map));
           end if;
         else
           // Everything that is not in diff_map gets differentiated to zero
@@ -1043,7 +1047,7 @@ public
             end match;
             dbg("[dCREF:JAC] append adjoint key=" + ComponentRef.toString(derCref)
                 + " expr=" + Expression.toString(adjExpr));
-            UnorderedMap.tryAddUpdate(derCref, function updateAdjointList(current_grad = adjExpr), Util.getOption(diffArguments.adjoint_map));
+            UnorderedMap.tryAddUpdate(derCref, function updateAdjointList(current_grad = adjExpr, root_seed_cref = diffArguments.root_seed_cref), Util.getOption(diffArguments.adjoint_map));
           else
             dbg("[dCREF:JAC] collectAdjoints=false, skip append");
           end if;
@@ -3478,16 +3482,17 @@ protected
   end dbg;
 
   function updateAdjointList
-    input Option<list<Expression>> oldOpt;
+    input Option<list<tuple<ComponentRef, Expression>>> oldOpt;
     input Expression current_grad;
-    output list<Expression> newList;
+    input ComponentRef root_seed_cref;
+    output list<tuple<ComponentRef, Expression>> newList;
   protected
-    list<Expression> oldList;
+    list<tuple<ComponentRef, Expression>> oldList;
   algorithm
     newList := match oldOpt
       // probably the only case since empty list is used to initialize
-      case SOME(oldList) then (current_grad :: oldList);
-      else {current_grad};
+      case SOME(oldList) then ((root_seed_cref, current_grad) :: oldList);
+      else {(root_seed_cref, current_grad)};
     end match;
   end updateAdjointList;
 
