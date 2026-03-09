@@ -1,6 +1,0 @@
-cd("/home/felix/work/OpenModelica/.tmp_adjoint_check");
-loadFile("Example.mo"); getErrorString();
-setCommandLineOptions("--newBackend --generateDynamicJacobian=symbolicadjoint -d=jacDump,debugAdjoint");
-getCommandLineOptions();
-buildModel(Example);
-getErrorString();
