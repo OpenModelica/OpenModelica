@@ -1226,62 +1226,6 @@ protected
     end match;
   end sizeClassificationFromType;
 
-  // Helper: group tagged adjoint terms by root seed cref, preserving first-occurrence order of seeds.
-  function groupTaggedTermsByRootSeed
-    input list<tuple<ComponentRef, Expression>> taggedTerms;
-    output list<tuple<ComponentRef, list<Expression>>> groups;
-  protected
-    type ExprList = list<Expression>;
-    UnorderedMap<ComponentRef, ExprList> seedMap =
-      UnorderedMap.new<ExprList>(ComponentRef.hash, ComponentRef.isEqual);
-    list<ComponentRef> seedOrder = {};
-    ComponentRef sc;
-    Expression se;
-
-    function prependToList
-      input Option<ExprList> oldOpt;
-      input Expression elem;
-      output ExprList newList;
-    algorithm
-      newList := match oldOpt
-        case SOME(newList) then (elem :: newList);
-        else {elem};
-      end match;
-    end prependToList;
-
-  algorithm
-    // Print taggedTerms
-    print("taggedTerms (" + intString(listLength(taggedTerms)) + " entries):\n");
-    for t in taggedTerms loop
-      (sc, se) := t;
-      print("  (" + ComponentRef.toString(sc) + ", " + Expression.toString(se) + ")\n");
-    end for;
-    for t in taggedTerms loop
-      (sc, se) := t;
-      if not UnorderedMap.contains(sc, seedMap) then
-        seedOrder := sc :: seedOrder;
-      end if;
-      UnorderedMap.tryAddUpdate(sc, function prependToList(elem = se), seedMap);
-    end for;
-
-    // Print seedMap
-    print("seedMap:\n");
-    for sc in seedOrder loop
-      print("  " + ComponentRef.toString(sc) + " -> [");
-      print(stringDelimitList(list(Expression.toString(se) for se in UnorderedMap.getOrFail(sc, seedMap)), ", "));
-      print("]\n");
-    end for;
-
-    for sc in seedOrder loop
-      print("Seed: " + ComponentRef.toString(sc) + "\n");
-      for se in UnorderedMap.getSafe(sc, seedMap, sourceInfo()) loop
-        print("  Term: " + Expression.toString(se) + "\n");
-      end for;
-    end for;
-    seedOrder := listReverse(seedOrder);
-    groups := list((sc, listReverse(UnorderedMap.getSafe(sc, seedMap, sourceInfo()))) for sc in seedOrder);
-  end groupTaggedTermsByRootSeed;
-
   // Helper: build addition (or single term) expression from a list of terms for a given LHS cref.
   function buildAdjointRhs
     input ComponentRef lhsCref;
@@ -1572,7 +1516,7 @@ protected
 
   function jacobianSymbolicAdjoint extends Module.jacobianInterface;
   protected
-    list<StrongComponent> comps, diffed_comps, comps_non_alg, diffedStructuredComps, diffedIteratorComps = {};
+    list<StrongComponent> comps, primalComps, diffed_comps, comps_non_alg, diffedStructuredComps, diffedIteratorComps = {};
     StrongComponent c_noalias;
     Pointer<list<Pointer<Variable>>> seed_vars_ptr = Pointer.create({});
     Pointer<list<Pointer<Variable>>> pDer_vars_ptr = Pointer.create({});
@@ -1593,38 +1537,36 @@ protected
     type AdjointTermList = list<tuple<ComponentRef, Expression>>; // tagged terms: (root_seed_cref, expression)
     UnorderedMap<ComponentRef, list<tuple<ComponentRef, Expression>>> adjoint_map;
     list<tuple<ComponentRef, Expression>> taggedTerms;
-    list<Expression> terms, dF_in, dF_out;
+    list<Expression> terms;
     Expression rhsExpr;
     Pointer<Variable> lhsVarPtr;
     Pointer<NBEquation.Equation> eqPtr;
     NBEquation.Equation eq;
 
-    UnorderedMap<ComponentRef, ComponentRef> mapPartialToNewSeed =
-      UnorderedMap.new<ComponentRef>(ComponentRef.hash, ComponentRef.isEqual);
-    UnorderedMap<ComponentRef, ComponentRef> mapSeedToNewPDer =
-      UnorderedMap.new<ComponentRef>(ComponentRef.hash, ComponentRef.isEqual);
     list<StrongComponent> algebraicLoopComps = {};
-    list<StrongComponent> algebraicPostComps = {};
-    list<ComponentRef> tmpKeys;
-    list<ComponentRef> resKeys;
 
-    // added locals for causalization of tmp equations
-    list<Pointer<Variable>> tmpVarPtrs_causal = {};
-    list<Pointer<NBEquation.Equation>> tmpEqPtrs_causal = {};
-    VariablePointers tmpVarsVP;
-    EquationPointers tmpEqnsEP;
-    Matching matchingTmp;
-    list<StrongComponent> tmp_per_seed_comps = {}, res_per_seed_comps = {};
+    // unified adjoint emission list in reverse primal component order
+    list<StrongComponent> per_seed_comps = {};
     list<StrongComponent> fallbackResetComps = {};
     list<ComponentRef> resetSeeds = {};
-    list<tuple<ComponentRef, list<Expression>>> seedGroups;
-    list<Expression> groupExprs;
     ComponentRef seedCrefG;
 
-    list<ComponentRef> orderedTmpCrefs = {};
+    list<ComponentRef> orderedAdjointCrefs = {};
+    list<Option<ComponentRef>> orderedAdjointItems = {}, trailingAdjointItems = {};
+    list<Option<ComponentRef>> orderedSeedItems = {}, trailingSeedItems = {};
+    list<ComponentRef> orderedSeedCrefs = {};
     ComponentRef baseCref, pDerCref;
+    Option<ComponentRef> o_lhsKey;
+    Option<ComponentRef> o_seedKey;
     Option<ComponentRef> o_pDerCref;
-    list<tuple<ComponentRef, Expression>> algebraicPostUpdates = {};
+    ComponentRef seedKey;
+    Boolean emittedForSeed;
+    Boolean resetAtGroup;
+    list<StrongComponent> loopCompsQueue;
+    StrongComponent loopComp;
+    list<list<tuple<ComponentRef, Expression>>> algebraicPostUpdatesByLoop = {};
+    list<list<tuple<ComponentRef, Expression>>> postUpdatesQueue;
+    list<tuple<ComponentRef, Expression>> postUpdatesForLoop;
     Expression contribution;
     UnorderedMap<ComponentRef, Boolean> structuredAssigned =
       UnorderedMap.new<Boolean>(ComponentRef.hash, ComponentRef.isEqual);
@@ -1632,6 +1574,7 @@ protected
     newName := name + "_ADJ";
     if Util.isSome(strongComponents) then
       comps := list(comp for comp guard(not StrongComponent.isDiscrete(comp)) in Util.getOption(strongComponents));
+      primalComps := comps;
       // only allow currently implemented adjoint-capable components
       for c in comps loop
         if not isSupportedAdjointStrongComponent(c) then
@@ -1705,6 +1648,7 @@ protected
           Tearing tearing;
           Integer iRes;
           list<tuple<ComponentRef, Expression>> terms_x;
+          list<tuple<ComponentRef, Expression>> loopPostUpdates = {};
           Expression rhs_x;
 
           UnorderedMap<ComponentRef, ComponentRef> diff_map_y =
@@ -1877,10 +1821,11 @@ protected
                 // and apply required minus sign
                 rhs_x := Expression.negate(buildAdjointRhs(pDerX, list(Util.tuple22(t) for t in terms_x)));
 
-                // Emit x-bar post accumulation as explicit components after loop solve.
-                algebraicPostUpdates := (pDerX, rhs_x) :: algebraicPostUpdates;
+                // Queue x-bar post accumulation to be emitted right after this loop solve.
+                loopPostUpdates := (pDerX, rhs_x) :: loopPostUpdates;
               end if;
             end for;
+            algebraicPostUpdatesByLoop := listReverse(loopPostUpdates) :: algebraicPostUpdatesByLoop;
           then ();
         else algorithm
           // non-algebraic loop handled later
@@ -1968,155 +1913,206 @@ protected
     diffed_comps := {};
     i := 1;
 
-    // keep temporary equations in original component/variable order
-    for v in getAllAdjointOrderedVars(comps) loop
+    // Build ordered destination keys (LHS keys) for deterministic inner traversal.
+    for c in listReverse(primalComps) loop
+      c_noalias := StrongComponent.removeAlias(c);
+      trailingAdjointItems := {};
+      for v in listReverse(StrongComponent.getVariables(c_noalias)) loop
+        baseCref := BVariable.getVarName(v);
+        o_pDerCref := UnorderedMap.get(baseCref, diff_map);
+        if isSome(o_pDerCref) then
+          pDerCref := Util.getOption(o_pDerCref);
+          if UnorderedMap.contains(pDerCref, adjoint_map)
+             and not List.contains(orderedAdjointCrefs, pDerCref, ComponentRef.isEqual) then
+            trailingAdjointItems := SOME(pDerCref) :: trailingAdjointItems;
+            orderedAdjointCrefs := pDerCref :: orderedAdjointCrefs;
+          end if;
+        end if;
+      end for;
+      for o_lhsKey in listReverse(trailingAdjointItems) loop
+        orderedAdjointItems := o_lhsKey :: orderedAdjointItems;
+      end for;
+    end for;
+    orderedAdjointItems := listReverse(orderedAdjointItems);
+
+    // Append remaining map keys that are not tied to primal components (e.g. loop lambda temporaries).
+    trailingAdjointItems := {};
+    for v in tmp_vars loop
       baseCref := BVariable.getVarName(v);
-      o_pDerCref := UnorderedMap.get(baseCref, diff_map);
-      if isSome(o_pDerCref) then
-        pDerCref := Util.getOption(o_pDerCref);
-        // only emit if we actually collected adjoint terms (key exists in map)
-        if UnorderedMap.contains(pDerCref, adjoint_map)
-           and not List.contains(orderedTmpCrefs, pDerCref, ComponentRef.isEqual) then
-          orderedTmpCrefs := pDerCref :: orderedTmpCrefs;
+      if UnorderedMap.contains(baseCref, adjoint_map)
+         and not List.contains(orderedAdjointCrefs, baseCref, ComponentRef.isEqual) then
+        trailingAdjointItems := SOME(baseCref) :: trailingAdjointItems;
+        orderedAdjointCrefs := baseCref :: orderedAdjointCrefs;
+      end if;
+    end for;
+    for v in res_vars loop
+      baseCref := BVariable.getVarName(v);
+      if UnorderedMap.contains(baseCref, adjoint_map)
+         and not List.contains(orderedAdjointCrefs, baseCref, ComponentRef.isEqual) then
+        trailingAdjointItems := SOME(baseCref) :: trailingAdjointItems;
+        orderedAdjointCrefs := baseCref :: orderedAdjointCrefs;
+      end if;
+    end for;
+    if not listEmpty(trailingAdjointItems) then
+      trailingAdjointItems := listReverse(trailingAdjointItems);
+      // Append trailing items without disturbing established order.
+      orderedAdjointItems := listReverse(orderedAdjointItems);
+      for o_lhsKey in trailingAdjointItems loop
+        orderedAdjointItems := o_lhsKey :: orderedAdjointItems;
+      end for;
+      orderedAdjointItems := listReverse(orderedAdjointItems);
+    end if;
+
+    // Build ordered seed stream with loop markers in reverse primal component order.
+    loopCompsQueue := algebraicLoopComps;
+    postUpdatesQueue := listReverse(algebraicPostUpdatesByLoop);
+    for c in listReverse(primalComps) loop
+      c_noalias := StrongComponent.removeAlias(c);
+      trailingSeedItems := {};
+      () := match c_noalias
+        case StrongComponent.ALGEBRAIC_LOOP() algorithm
+          trailingSeedItems := NONE() :: trailingSeedItems;
+          if not listEmpty(loopCompsQueue) then
+            loopComp := listHead(loopCompsQueue);
+            loopCompsQueue := listRest(loopCompsQueue);
+            for v in listReverse(StrongComponent.getVariables(loopComp)) loop
+              seedKey := BVariable.getVarName(v);
+              if not List.contains(orderedSeedCrefs, seedKey, ComponentRef.isEqual) then
+                trailingSeedItems := SOME(seedKey) :: trailingSeedItems;
+                orderedSeedCrefs := seedKey :: orderedSeedCrefs;
+              end if;
+            end for;
+          end if;
+        then ();
+        else ();
+      end match;
+
+      for v in listReverse(StrongComponent.getVariables(c_noalias)) loop
+        baseCref := BVariable.getVarName(v);
+        o_pDerCref := UnorderedMap.get(baseCref, diff_map);
+        if isSome(o_pDerCref) then
+          seedKey := Util.getOption(o_pDerCref);
+          if not List.contains(orderedSeedCrefs, seedKey, ComponentRef.isEqual) then
+            trailingSeedItems := SOME(seedKey) :: trailingSeedItems;
+            orderedSeedCrefs := seedKey :: orderedSeedCrefs;
+          end if;
+        end if;
+      end for;
+
+      for o_seedKey in listReverse(trailingSeedItems) loop
+        orderedSeedItems := o_seedKey :: orderedSeedItems;
+      end for;
+    end for;
+    orderedSeedItems := listReverse(orderedSeedItems);
+
+    // Append remaining root seeds that only appear in tagged terms.
+    trailingSeedItems := {};
+    for o_lhsKey in orderedAdjointItems loop
+      if isSome(o_lhsKey) then
+        c := Util.getOption(o_lhsKey);
+        if UnorderedMap.contains(c, adjoint_map) then
+          taggedTerms := UnorderedMap.getOrFail(c, adjoint_map);
+          for t in listReverse(taggedTerms) loop
+            (seedCrefG, _) := t;
+            if not List.contains(orderedSeedCrefs, seedCrefG, ComponentRef.isEqual) then
+              trailingSeedItems := SOME(seedCrefG) :: trailingSeedItems;
+              orderedSeedCrefs := seedCrefG :: orderedSeedCrefs;
+            end if;
+          end for;
         end if;
       end if;
     end for;
-    orderedTmpCrefs := listReverse(orderedTmpCrefs);
-
-
-    print("After orderedTmpCrefs.\n");
-
-    // Emit tmp components per-seed: for each destination collect grouped terms and
-    // emit one accumulation per seed group followed by a reset of that seed.
-    for lhsKey in orderedTmpCrefs loop
-      if UnorderedMap.contains(lhsKey, structuredAssigned) then
-        if Flags.isSet(Flags.DEBUG_ADJOINT) then
-          print("[adjoint] skip map tmp emission already handled structurally for " + ComponentRef.toString(lhsKey) + "\n");
-        end if;
-      else
-        taggedTerms := UnorderedMap.getOrFail(lhsKey, adjoint_map);
-        seedGroups := groupTaggedTermsByRootSeed(listReverse(taggedTerms));
-        for seedGroup in seedGroups loop
-          (seedCrefG, groupExprs) := seedGroup;
-          contribution := buildAdjointRhs(lhsKey, groupExprs);
-          if not (expressionHasIterator(contribution) or isNoOpAdjointContribution(lhsKey, contribution)) then
-            tmp_per_seed_comps := makeAdjointAccumulationComponent(lhsKey, contribution, newName, i) :: tmp_per_seed_comps;
-            i := i + 1;
-          end if;
-          if not List.contains(resetSeeds, seedCrefG, ComponentRef.isEqual) then
-            tmp_per_seed_comps := makeAdjointResetComponent(seedCrefG, newName, i) :: tmp_per_seed_comps;
-            resetSeeds := seedCrefG :: resetSeeds;
-            i := i + 1;
-          end if;
-        end for;
-      end if;
-    end for;
+    if not listEmpty(trailingSeedItems) then
+      trailingSeedItems := listReverse(trailingSeedItems);
+      // Append trailing seed keys without disturbing established order.
+      orderedSeedItems := listReverse(orderedSeedItems);
+      for o_seedKey in trailingSeedItems loop
+        orderedSeedItems := o_seedKey :: orderedSeedItems;
+      end for;
+      orderedSeedItems := listReverse(orderedSeedItems);
+    end if;
 
     if Flags.isSet(Flags.DEBUG_ADJOINT) then
-      for c in tmp_per_seed_comps loop
-        print("[adjoint] tmp per-seed component: " + StrongComponent.toString(c) + "\n");
-      end for;
-      if listEmpty(tmp_per_seed_comps) then
-        print("[adjoint] no tmp per-seed components to emit.\n");
-      end if;
+      print("[adjoint] built unified ordered adjoint destinations and seed stream.\n");
     end if;
-    print("After tmp_per_seed_comps.\n");
 
-    // Emit any remaining tmp vars (e.g. lambda temporaries) not in orderedTmpCrefs.
-    for v in tmp_vars loop
-      baseCref := BVariable.getVarName(v); // for tmp_vars (already pDer/lambda names)
-      if (not List.contains(orderedTmpCrefs, baseCref, ComponentRef.isEqual))
-         and UnorderedMap.contains(baseCref, adjoint_map) then
-        if UnorderedMap.contains(baseCref, structuredAssigned) then
-          if Flags.isSet(Flags.DEBUG_ADJOINT) then
-            print("[adjoint] skip map tmp emission already handled structurally for " + ComponentRef.toString(baseCref) + "\n");
-          end if;
-        else
-          taggedTerms := UnorderedMap.getOrFail(baseCref, adjoint_map);
-          seedGroups := groupTaggedTermsByRootSeed(listReverse(taggedTerms));
-          for seedGroup in seedGroups loop
-            (seedCrefG, groupExprs) := seedGroup;
-            contribution := buildAdjointRhs(baseCref, groupExprs);
-            if not (expressionHasIterator(contribution) or isNoOpAdjointContribution(baseCref, contribution)) then
-              tmp_per_seed_comps := makeAdjointAccumulationComponent(baseCref, contribution, newName, i) :: tmp_per_seed_comps;
-              i := i + 1;
+    // Emit map-based accumulations/resets in ordered seed stream and interleave
+    // algebraic loop components using NONE() markers.
+    loopCompsQueue := algebraicLoopComps;
+    postUpdatesQueue := listReverse(algebraicPostUpdatesByLoop);
+    for o_seedKey in orderedSeedItems loop
+      if isSome(o_seedKey) then
+        seedKey := Util.getOption(o_seedKey);
+        emittedForSeed := false;
+        for o_lhsKey in orderedAdjointItems loop
+          if isSome(o_lhsKey) then
+            c := Util.getOption(o_lhsKey);
+            if UnorderedMap.contains(c, structuredAssigned) then
+              if Flags.isSet(Flags.DEBUG_ADJOINT) then
+                print("[adjoint] skip map emission already handled structurally for " + ComponentRef.toString(c) + "\n");
+              end if;
+            elseif UnorderedMap.contains(c, adjoint_map) then
+              taggedTerms := UnorderedMap.getOrFail(c, adjoint_map);
+              for t in listReverse(taggedTerms) loop
+                (seedCrefG, contribution) := t;
+                if ComponentRef.isEqual(seedCrefG, seedKey)
+                   and not (expressionHasIterator(contribution) or isNoOpAdjointContribution(c, contribution)) then
+                  per_seed_comps := makeAdjointAccumulationComponent(c, contribution, newName, i) :: per_seed_comps;
+                  emittedForSeed := true;
+                  i := i + 1;
+                end if;
+              end for;
             end if;
-            if not List.contains(resetSeeds, seedCrefG, ComponentRef.isEqual) then
-              tmp_per_seed_comps := makeAdjointResetComponent(seedCrefG, newName, i) :: tmp_per_seed_comps;
-              resetSeeds := seedCrefG :: resetSeeds;
+          end if;
+        end for;
+        resetAtGroup := (not List.contains(resetSeeds, seedKey, ComponentRef.isEqual))
+          and (not UnorderedMap.contains(seedKey, structuredAssigned));
+        if resetAtGroup then
+          per_seed_comps := makeAdjointResetComponent(seedKey, newName, i) :: per_seed_comps;
+          resetSeeds := seedKey :: resetSeeds;
+          i := i + 1;
+        end if;
+      elseif not listEmpty(loopCompsQueue) then
+        loopComp := listHead(loopCompsQueue);
+        loopCompsQueue := listRest(loopCompsQueue);
+        per_seed_comps := loopComp :: per_seed_comps;
+        if not listEmpty(postUpdatesQueue) then
+          postUpdatesForLoop := listHead(postUpdatesQueue);
+          postUpdatesQueue := listRest(postUpdatesQueue);
+          for up in postUpdatesForLoop loop
+            (c, contribution) := up;
+            if UnorderedMap.contains(c, structuredAssigned) then
+              if Flags.isSet(Flags.DEBUG_ADJOINT) then
+                print("[adjoint] skip map post-loop emission already handled structurally for " + ComponentRef.toString(c) + "\n");
+              end if;
+            elseif expressionHasIterator(contribution) then
+              if Flags.isSet(Flags.DEBUG_ADJOINT) then
+                print("[adjoint] skip iterator-dependent post-loop emission for " + ComponentRef.toString(c) + ": " + Expression.toString(contribution) + "\n");
+              end if;
+            else
+              per_seed_comps := makeAdjointAccumulationComponent(c, contribution, newName, i) :: per_seed_comps;
               i := i + 1;
             end if;
           end for;
         end if;
       end if;
     end for;
-    tmp_per_seed_comps := listReverse(tmp_per_seed_comps);
 
-    if Flags.isSet(Flags.DEBUG_ADJOINT) then
-      for c in tmp_per_seed_comps loop
-        print("[adjoint] tmp per-seed component: " + StrongComponent.toString(c) + "\n");
-      end for;
-      if listEmpty(tmp_per_seed_comps) then
-        print("[adjoint] no tmp per-seed components to emit.\n");
-      end if;
-    end if;
-    print("After remaining tmp vars.\n");
-
-    // Emit result variable components per-seed.
-    for v in res_vars loop
-      c := BVariable.getVarName(v);
-      if UnorderedMap.contains(c, adjoint_map) then
-        taggedTerms := UnorderedMap.getOrFail(c, adjoint_map);
-        for t in listReverse(taggedTerms) loop
-          (seedCrefG, contribution) := t;
-          if not (expressionHasIterator(contribution) or isNoOpAdjointContribution(c, contribution)) then
-            res_per_seed_comps := makeAdjointAccumulationComponent(c, contribution, newName, i) :: res_per_seed_comps;
-            i := i + 1;
-          end if;
-          if not List.contains(resetSeeds, seedCrefG, ComponentRef.isEqual) then
-            res_per_seed_comps := makeAdjointResetComponent(seedCrefG, newName, i) :: res_per_seed_comps;
-            resetSeeds := seedCrefG :: resetSeeds;
-            i := i + 1;
-          end if;
-        end for;
-      end if;
+    // Keep any remaining loop components in deterministic order.
+    for loopComp in loopCompsQueue loop
+      per_seed_comps := loopComp :: per_seed_comps;
     end for;
-    res_per_seed_comps := listReverse(res_per_seed_comps);
+    per_seed_comps := listReverse(per_seed_comps);
 
     if Flags.isSet(Flags.DEBUG_ADJOINT) then
-      for c in res_per_seed_comps loop
-        print("[adjoint] res per-seed component: " + StrongComponent.toString(c) + "\n");
+      for c in per_seed_comps loop
+        print("[adjoint] ordered per-seed component: " + StrongComponent.toString(c) + "\n");
       end for;
-      if listEmpty(res_per_seed_comps) then
-        print("[adjoint] no res per-seed components to emit.\n");
+      if listEmpty(per_seed_comps) then
+        print("[adjoint] no ordered per-seed components to emit.\n");
       end if;
     end if;
-    print("After res_per_seed_comps.\n");
-
-    // Emit post-loop x-bar accumulation components after linear algebraic loop solve.
-    for up in listReverse(algebraicPostUpdates) loop
-      (c, contribution) := up;
-      if UnorderedMap.contains(c, structuredAssigned) then
-        if Flags.isSet(Flags.DEBUG_ADJOINT) then
-          print("[adjoint] skip map post-loop emission already handled structurally for " + ComponentRef.toString(c) + "\n");
-        end if;
-      elseif expressionHasIterator(contribution) then
-        if Flags.isSet(Flags.DEBUG_ADJOINT) then
-          print("[adjoint] skip iterator-dependent post-loop emission for " + ComponentRef.toString(c) + ": " + Expression.toString(contribution) + "\n");
-        end if;
-      else
-        algebraicPostComps := makeAdjointAccumulationComponent(c, contribution, newName, i) :: algebraicPostComps;
-        i := i + 1;
-      end if;
-    end for;
-    algebraicPostComps := listReverse(algebraicPostComps);
-
-    if Flags.isSet(Flags.DEBUG_ADJOINT) then
-      for c in algebraicPostComps loop
-        print("[adjoint] algebraic post component: " + StrongComponent.toString(c) + "\n");
-      end for;
-    end if;
-    print("After algebraic post components.\n");
+    print("After unified per-seed emission.\n");
 
     // Fallback resets: for any tmp_var or seed_var whose cref was not yet in resetSeeds.
     for v in tmp_vars loop
@@ -2143,8 +2139,8 @@ protected
       end for;
     end if;
     print("After fallback reset components.\n");
-    // here are also the loop components from above which might be empty though if there are none
-    diffed_comps := listAppend(diffedIteratorComps, listAppend(tmp_per_seed_comps, listAppend(algebraicLoopComps, listAppend(algebraicPostComps, listAppend(res_per_seed_comps, fallbackResetComps)))));
+    // loop components are already interleaved into per_seed_comps via marker-based emission.
+    diffed_comps := listAppend(diffedIteratorComps, listAppend(per_seed_comps, fallbackResetComps));
 
     if Flags.isSet(Flags.DEBUG_ADJOINT) then
       print("Final list of differentiated components:\n");

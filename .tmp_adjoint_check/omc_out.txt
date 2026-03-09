@@ -1,0 +1,7 @@
+"/home/felix/work/OpenModelica/.tmp_adjoint_check"
+true
+""
+false
+{"--newBackend=true", "--generateDynamicJacobian=symbolicadjoint"}
+{"/home/felix/work/OpenModelica/.tmp_adjoint_check/Example", "Example_init.xml"}
+""
