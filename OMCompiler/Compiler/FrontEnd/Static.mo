@@ -7393,7 +7393,7 @@ protected
   DAE.Type restype,functype;
   DAE.FunctionBuiltin isBuiltin;
   DAE.FunctionParallelism funcParal;
-  Boolean isPure,tuple_,builtin,isImpure;
+  Boolean tuple_,builtin,isImpure;
   DAE.InlineType inlineType;
   Absyn.Path fn_1;
   DAE.Properties prop,prop_1;
@@ -7406,14 +7406,14 @@ protected
   FCore.Cache cache;
   Boolean didInline;
   Boolean b,onlyOneFunction,isFunctionPointer;
+  DAE.Purity purity;
 algorithm
   onlyOneFunction := listLength(typelist) == 1;
   (cache,
    args_1,
    constlist,
    restype,
-   functype as DAE.T_FUNCTION(functionAttributes=DAE.FUNCTION_ATTRIBUTES(isOpenModelicaPure=isPure,
-                                                                         isImpure=isImpure,
+   functype as DAE.T_FUNCTION(functionAttributes=DAE.FUNCTION_ATTRIBUTES(purity=purity,
                                                                          inline=inlineType,
                                                                          isFunctionPointer=isFunctionPointer,
                                                                          functionParallelism=funcParal)),
@@ -7421,6 +7421,7 @@ algorithm
    slots) := elabTypes(inCache, inEnv, args, nargs, typeVars, typelist, onlyOneFunction, true/* Check types*/, impl,pre,info)
    "The constness of a function depends on the inputs. If all inputs are constant the call itself is constant.";
 
+  isImpure := purity == DAE.Purity.IMPURE;
   (fn_1,functype) := deoverloadFuncname(fn, functype, inEnv);
   tuple_ := Types.isTuple(restype);
   (isBuiltin,builtin,fn_1) := isBuiltinFunc(fn_1,functype);
@@ -7429,7 +7430,7 @@ algorithm
   true := isValidWRTParallelScope(fn,builtin,funcParal,inEnv,info);
 
   const := List.fold(constlist, Types.constAnd, DAE.C_CONST());
-  const := if (Flags.isSet(Flags.RML) and not builtin) or (not isPure) then DAE.C_VAR() else const "in RML no function needs to be ceval'ed; this speeds up compilation significantly when bootstrapping";
+  const := if (Flags.isSet(Flags.RML) and not builtin) or purity == DAE.Purity.OM_IMPURE then DAE.C_VAR() else const "in RML no function needs to be ceval'ed; this speeds up compilation significantly when bootstrapping";
   (cache,const) := determineConstSpecialFunc(cache,inEnv,const,fn_1);
   tyconst := elabConsts(restype, const);
   prop := getProperties(restype, tyconst);
@@ -7439,7 +7440,7 @@ algorithm
   (args_2, slots2) := addDefaultArgs(slots, info);
   // DO NOT CHECK IF ALL SLOTS ARE FILLED!
   true := List.fold(slots2, slotAnd, true);
-  callExp := DAE.CALL(fn_1,args_2,DAE.CALL_ATTR(tp,tuple_,builtin,isImpure or (not isPure),isFunctionPointer,inlineType,DAE.NO_TAIL()));
+  callExp := DAE.CALL(fn_1,args_2,DAE.CALL_ATTR(tp,tuple_,builtin,isImpure or purity == DAE.Purity.OM_IMPURE,isFunctionPointer,inlineType,DAE.NO_TAIL()));
   // ExpressionDump.dumpExpWithTitle("function elabCallArgs3: ", callExp);
 
   // create a replacement for input variables -> their binding
