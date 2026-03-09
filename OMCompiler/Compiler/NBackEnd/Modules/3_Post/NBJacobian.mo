@@ -1412,6 +1412,54 @@ protected
     diffed_comp := makeAdjointComponentFromRhs(lhsKey, rhsExpr, contextName, eqIndex);
   end makeAdjointAccumulationComponent;
 
+  function makeAdjointAccumulationComponentWithIterator
+    input ComponentRef lhsKey;
+    input Expression contribution;
+    input BEquation.Iterator iter;
+    input String contextName;
+    input Integer eqIndex;
+    output NBStrongComponent diffed_comp;
+  protected
+    Type vty;
+    SizeClassification sc;
+    Operator addOp;
+    Expression rhsExpr;
+    Pointer<NBEquation.Equation> eqPtr;
+    NBEquation.Equation eq;
+    Pointer<Variable> lhsVarPtr;
+  algorithm
+    vty := ComponentRef.getComponentType(lhsKey);
+    if Expression.containsCref(contribution, lhsKey) then
+      rhsExpr := contribution;
+    else
+      sc := sizeClassificationFromType(vty);
+      addOp := Operator.fromClassification((MathClassification.ADDITION, sc), vty);
+      rhsExpr := SimplifyExp.simplify(Expression.MULTARY({Expression.fromCref(lhsKey), contribution}, {}, addOp));
+    end if;
+    rhsExpr := Expression.map(rhsExpr, Expression.repairOperator);
+
+    eqPtr := Equation.makeAssignment(
+      Expression.fromCref(lhsKey),
+      rhsExpr,
+      Pointer.create(eqIndex),
+      contextName,
+      iter,
+      NBEquation.EquationAttributes.default(NBEquation.EquationKind.CONTINUOUS, false)
+    );
+
+    lhsVarPtr := BVariable.getVarPointer(lhsKey, sourceInfo());
+    eq := Pointer.access(eqPtr);
+    diffed_comp := match eq
+      case NBEquation.FOR_EQUATION() then NBStrongComponent.SLICED_COMPONENT(
+        var_cref = lhsKey,
+        var      = Slice.SLICE(lhsVarPtr, {}),
+        eqn      = Slice.SLICE(eqPtr, {}),
+        status   = NBSolve.Status.EXPLICIT
+      );
+      else makeAdjointComponentFromRhs(lhsKey, rhsExpr, contextName, eqIndex);
+    end match;
+  end makeAdjointAccumulationComponentWithIterator;
+
   function isNoOpAdjointContribution
     input ComponentRef lhsKey;
     input Expression contribution;
@@ -1564,6 +1612,9 @@ protected
     Boolean resetAtGroup;
     list<StrongComponent> loopCompsQueue;
     StrongComponent loopComp;
+    Option<BEquation.Iterator> o_defaultIterator = NONE();
+    Pointer<NBEquation.Equation> iterEqPtr;
+    NBEquation.Equation iterEq;
     list<list<tuple<ComponentRef, Expression>>> algebraicPostUpdatesByLoop = {};
     list<list<tuple<ComponentRef, Expression>>> postUpdatesQueue;
     list<tuple<ComponentRef, Expression>> postUpdatesForLoop;
@@ -1904,6 +1955,40 @@ protected
     end for;
     diffedIteratorComps := listReverse(diffedIteratorComps);
 
+    // Reuse one iterator skeleton for iterator-dependent map emissions so they
+    // stay inside loop scope instead of becoming free scalar components.
+    for comp in diffedIteratorComps loop
+      if not isSome(o_defaultIterator) then
+        () := match comp
+          case StrongComponent.SLICED_COMPONENT() algorithm
+            iterEqPtr := Slice.getT(comp.eqn);
+            iterEq := Pointer.access(iterEqPtr);
+            o_defaultIterator := match iterEq case NBEquation.FOR_EQUATION() then SOME(iterEq.iter); else NONE(); end match;
+          then ();
+          case StrongComponent.RESIZABLE_COMPONENT() algorithm
+            iterEqPtr := Slice.getT(comp.eqn);
+            iterEq := Pointer.access(iterEqPtr);
+            o_defaultIterator := match iterEq case NBEquation.FOR_EQUATION() then SOME(iterEq.iter); else NONE(); end match;
+          then ();
+          case StrongComponent.GENERIC_COMPONENT() algorithm
+            iterEqPtr := Slice.getT(comp.eqn);
+            iterEq := Pointer.access(iterEqPtr);
+            o_defaultIterator := match iterEq case NBEquation.FOR_EQUATION() then SOME(iterEq.iter); else NONE(); end match;
+          then ();
+          case StrongComponent.SINGLE_COMPONENT() algorithm
+            iterEq := Pointer.access(comp.eqn);
+            o_defaultIterator := match iterEq case NBEquation.FOR_EQUATION() then SOME(iterEq.iter); else NONE(); end match;
+          then ();
+          case StrongComponent.MULTI_COMPONENT() algorithm
+            iterEqPtr := Slice.getT(comp.eqn);
+            iterEq := Pointer.access(iterEqPtr);
+            o_defaultIterator := match iterEq case NBEquation.FOR_EQUATION() then SOME(iterEq.iter); else NONE(); end match;
+          then ();
+          else ();
+        end match;
+      end if;
+    end for;
+
     if Flags.isSet(Flags.DEBUG_ADJOINT) then
       print("Adjoint map after differentiation:\n" + adjointMapToString(diffArguments.adjoint_map) + "\n");
     end if;
@@ -1956,6 +2041,24 @@ protected
     if not listEmpty(trailingAdjointItems) then
       trailingAdjointItems := listReverse(trailingAdjointItems);
       // Append trailing items without disturbing established order.
+      orderedAdjointItems := listReverse(orderedAdjointItems);
+      for o_lhsKey in trailingAdjointItems loop
+        orderedAdjointItems := o_lhsKey :: orderedAdjointItems;
+      end for;
+      orderedAdjointItems := listReverse(orderedAdjointItems);
+    end if;
+
+    // Also include map keys that are not represented by tmp/res var lists
+    // (e.g. symbolic subscripted keys from iterator-dependent adjoints).
+    trailingAdjointItems := {};
+    for c in UnorderedMap.keyList(adjoint_map) loop
+      if not List.contains(orderedAdjointCrefs, c, ComponentRef.isEqual) then
+        trailingAdjointItems := SOME(c) :: trailingAdjointItems;
+        orderedAdjointCrefs := c :: orderedAdjointCrefs;
+      end if;
+    end for;
+    if not listEmpty(trailingAdjointItems) then
+      trailingAdjointItems := listReverse(trailingAdjointItems);
       orderedAdjointItems := listReverse(orderedAdjointItems);
       for o_lhsKey in trailingAdjointItems loop
         orderedAdjointItems := o_lhsKey :: orderedAdjointItems;
@@ -2056,10 +2159,20 @@ protected
               for t in listReverse(taggedTerms) loop
                 (seedCrefG, contribution) := t;
                 if ComponentRef.isEqual(seedCrefG, seedKey)
-                   and not (expressionHasIterator(contribution) or isNoOpAdjointContribution(c, contribution)) then
-                  per_seed_comps := makeAdjointAccumulationComponent(c, contribution, newName, i) :: per_seed_comps;
-                  emittedForSeed := true;
-                  i := i + 1;
+                   and not isNoOpAdjointContribution(c, contribution) then
+                  if expressionHasIterator(contribution) then
+                    if isSome(o_defaultIterator) then
+                      per_seed_comps := makeAdjointAccumulationComponentWithIterator(c, contribution, Util.getOption(o_defaultIterator), newName, i) :: per_seed_comps;
+                      emittedForSeed := true;
+                      i := i + 1;
+                    elseif Flags.isSet(Flags.DEBUG_ADJOINT) then
+                      print("[adjoint] skip iterator-dependent map emission because no iterator skeleton is available for " + ComponentRef.toString(c) + "\n");
+                    end if;
+                  else
+                    per_seed_comps := makeAdjointAccumulationComponent(c, contribution, newName, i) :: per_seed_comps;
+                    emittedForSeed := true;
+                    i := i + 1;
+                  end if;
                 end if;
               end for;
             end if;

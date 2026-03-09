@@ -523,12 +523,24 @@ public
       then (Equation.IF_EQUATION(eq.size, ifBody, eq.source, attr), Pointer.access(diffArguments_ptr));
 
       case Equation.FOR_EQUATION() algorithm
-        for body_eqn in eq.body loop
-          (body_eqn, diffArguments) := differentiateEquation(body_eqn, diffArguments);
-          forBody := body_eqn :: forBody;
-        end for;
+        if Util.isSome(diffArguments.adjoint_map) then
+          for body_eqn in listReverse(eq.body) loop
+            (body_eqn, diffArguments) := differentiateEquation(body_eqn, diffArguments);
+            forBody := body_eqn :: forBody;
+          end for;
+        else
+          for body_eqn in eq.body loop
+            (body_eqn, diffArguments) := differentiateEquation(body_eqn, diffArguments);
+            forBody := body_eqn :: forBody;
+          end for;
+        end if;
         attr := differentiateEquationAttributes(eq.attr, diffArguments);
-      then (Equation.FOR_EQUATION(eq.size, eq.iter, listReverse(forBody), eq.source, attr), diffArguments);
+      then (Equation.FOR_EQUATION(eq.size,
+                                  if Util.isSome(diffArguments.adjoint_map) then reverseEquationIterator(eq.iter) else eq.iter,
+                                  listReverse(forBody),
+                                  eq.source,
+                                  attr),
+            diffArguments);
 
       case Equation.WHEN_EQUATION() algorithm
         (whenBody, diffArguments) := differentiateWhenEquationBody(eq.body, diffArguments);
@@ -862,6 +874,7 @@ public
         Expression res, adjExpr;
         UnorderedMap<ComponentRef,ComponentRef> diff_map;
         list<Subscript> expCrefSubscripts;
+        ComponentRef adjointKey;
 
       // -------------------------------------
       //    EMPTY and WILD crefs do nothing
@@ -1047,7 +1060,16 @@ public
             end match;
             dbg("[dCREF:JAC] append adjoint key=" + ComponentRef.toString(derCref)
                 + " expr=" + Expression.toString(adjExpr));
-            UnorderedMap.tryAddUpdate(derCref, function updateAdjointList(current_grad = adjExpr, root_seed_cref = diffArguments.root_seed_cref), Util.getOption(diffArguments.adjoint_map));
+            // Keep symbolic subscripts (e.g. iterator indices) on adjoint keys when
+            // available so loop contributions can be emitted with correct indexing.
+            adjointKey := match expCrefSubscripts
+              case {} then derCref;
+              else ComponentRef.copySubscripts(exp.cref, derCref);
+            end match;
+            if not UnorderedMap.contains(adjointKey, Util.getOption(diffArguments.adjoint_map)) then
+              UnorderedMap.tryAdd(adjointKey, {}, Util.getOption(diffArguments.adjoint_map));
+            end if;
+            UnorderedMap.tryAddUpdate(adjointKey, function updateAdjointList(current_grad = adjExpr, root_seed_cref = diffArguments.root_seed_cref), Util.getOption(diffArguments.adjoint_map));
           else
             dbg("[dCREF:JAC] collectAdjoints=false, skip append");
           end if;
@@ -2598,6 +2620,25 @@ public
       else rangeIn;
     end match;
   end reverseForRange;
+
+  function reverseEquationIterator
+    "Reverse all iterator ranges of an equation iterator for reverse sweeps."
+    input NBEquation.Iterator iterIn;
+    output NBEquation.Iterator iterOut;
+  protected
+    list<ComponentRef> names;
+    list<Expression> ranges;
+    list<Option<NBEquation.Iterator>> maps;
+    list<Expression> revRanges = {};
+    Option<Expression> o_range;
+  algorithm
+    (names, ranges, maps) := NBEquation.Iterator.getFrames(iterIn);
+    for range in ranges loop
+      o_range := reverseForRange(SOME(range));
+      revRanges := Util.getOption(o_range) :: revRanges;
+    end for;
+    iterOut := NBEquation.Iterator.fromFrames(List.zip3(names, listReverse(revRanges), maps));
+  end reverseEquationIterator;
 
   function differentiateBinary
     "Some of this is depcreated because of Expression.MULTARY().
