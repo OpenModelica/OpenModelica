@@ -1799,6 +1799,11 @@ void VariablesWidget::findVariableAndUpdateValue(QDomDocument xmlDocument, QHash
   }
 }
 
+/*!
+ * \brief VariablesWidget::reSimulate
+ * Re-simulates the model with the given simulation options.
+ * \param showSetup
+ */
 void VariablesWidget::reSimulate(bool showSetup)
 {
   QModelIndexList indexes = mpVariablesTreeView->selectionModel()->selectedIndexes();
@@ -1813,17 +1818,32 @@ void VariablesWidget::reSimulate(bool showSetup)
   pVariablesTreeItem = pVariablesTreeItem->rootParent();
   SimulationOptions simulationOptions = pVariablesTreeItem->getSimulationOptions();
   if (simulationOptions.isValid()) {
-    MainWindow::instance()->getSimulationDialog()->removeInteractiveSimulation(simulationOptions.isInteractiveSimulation(), pVariablesTreeItem->getFileName(), false);
-    simulationOptions.setReSimulate(true);
-    updateInitXmlFile(pVariablesTreeItem, simulationOptions);
-    if (showSetup) {
-      MainWindow::instance()->getSimulationDialog()->show(0, true, simulationOptions);
-    } else {
-      MainWindow::instance()->getSimulationDialog()->reSimulate(simulationOptions);
-    }
+    reSimulate(simulationOptions, pVariablesTreeItem, showSetup);
   } else {
     QMessageBox::information(this, QString("%1 - %2").arg(Helper::applicationName, Helper::information),
                              tr("You cannot re-simulate this class.<br />This is just a result file loaded via menu <b>File->Open Result File(s)</b>."), QMessageBox::Ok);
+  }
+}
+
+/*!
+ * \brief VariablesWidget::reSimulate
+ * Re-simulates the model with the given simulation options and updates the model_init.xml file if needed.
+ * \param simulationOptions
+ * \param pVariablesTreeItem
+ * \param showSetup
+ */
+void VariablesWidget::reSimulate(SimulationOptions simulationOptions, VariablesTreeItem *pVariablesTreeItem, bool showSetup)
+{
+  simulationOptions.setReSimulate(true);
+  if (pVariablesTreeItem) {
+    MainWindow::instance()->getSimulationDialog()->removeInteractiveSimulation(simulationOptions.isInteractiveSimulation(), pVariablesTreeItem->getFileName(), false);
+    updateInitXmlFile(pVariablesTreeItem, simulationOptions);
+  }
+
+  if (showSetup) {
+    MainWindow::instance()->getSimulationDialog()->show(0, true, simulationOptions);
+  } else {
+    MainWindow::instance()->getSimulationDialog()->reSimulate(simulationOptions);
   }
 }
 
