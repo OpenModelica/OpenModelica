@@ -334,6 +334,22 @@ enum GB_INTERPOL_METHOD {
 extern const char *GB_INTERPOL_METHOD_NAME[GB_INTERPOL_MAX];
 extern const char *GB_INTERPOL_METHOD_DESC[GB_INTERPOL_MAX];
 
+/**
+ * @brief Extrapolation method for single-rate / multi-rate error estimation.
+ */
+enum GB_EXTRAPOL_METHOD {
+  GB_EXT_UNKNOWN = 0,    /* Unknown method */
+
+  GB_EXT_DEFAULT,        /* Default, depending on the Runge-Kutta method */
+  GB_EXT_RICHARDSON,     /* Richardson extrapolation */
+  GB_EXT_EMBEDDED,       /* Embedded scheme */
+
+  GB_EXT_MAX
+};
+
+extern const char *GB_EXTRAPOL_METHOD_NAME[GB_EXT_MAX];
+extern const char *GB_EXTRAPOL_METHOD_DESC[GB_EXT_MAX];
+
 enum SOLVER_METHOD
 {
   S_UNKNOWN = 0,

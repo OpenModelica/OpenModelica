@@ -31,7 +31,8 @@
 /*! \file gbode_ctrl.c
  */
 
-#include "gbode_main.h"
+#include "../options.h"
+#include "gbode_ctrl.h"
 #include "gbode_conf.h"
 
 unsigned int use_fhr = FALSE;

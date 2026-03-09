@@ -38,7 +38,6 @@
 #include "solver_main.h"
 
 #include "gbode_main.h"
-#include "gbode_conf.h"
 
 #ifdef __cplusplus
 extern "C" {

@@ -36,6 +36,7 @@
 #include <nlp/solvers/ipopt/solver.h>
 #include <nlp/instances/gdop/orchestrator.h>
 
+#include "../simulation/options.h"
 #include "problem.h"
 #include "strategies.h"
 #include "streamlog.h"

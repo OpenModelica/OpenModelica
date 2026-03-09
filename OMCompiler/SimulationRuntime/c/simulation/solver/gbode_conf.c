@@ -38,7 +38,23 @@
 
 #include "gbode_conf.h"
 
-void dumOptions(const char* flagName, const char* flagValue, const char** argsArr, unsigned int maxArgs);
+/**
+ * @brief Dump available flag options to stdout.
+ *
+ * @param flagName    Name of flag
+ * @param flagValue   Given value of flag.
+ * @param argsArr     Pointer to flag argument names.
+ * @param maxArgs     Size of maxArgs.
+ */
+static void dumpOptions(const char* flagName, const char* flagValue, const char** argsArr, unsigned int maxArgs)
+{
+  errorStreamPrint(OMC_LOG_STDOUT, 0, "Unknown flag value \"%s\" for flag %s.", flagValue, flagName);
+  infoStreamPrint(OMC_LOG_STDOUT, 1, "Valid arguments are:");
+  for (int i=0; i<maxArgs; i++) {
+    infoStreamPrint(OMC_LOG_STDOUT, 0, "%s", argsArr[i]);
+  }
+  messageClose(OMC_LOG_STDOUT);
+}
 
 /**
  * @brief Get Runge-Kutta method from simulation flag FLAG_SR or FLAG_MR.
@@ -58,19 +74,18 @@ enum GB_METHOD getGB_method(enum _FLAG flag)
 {
   enum GB_METHOD method;
   const char* flag_value;
-  assertStreamPrint(NULL, flag==FLAG_SR || flag==FLAG_MR,
-                    "Illegal input to getGB_method. Expected FLAG_SR or FLAG_MR ");
-  flag_value = omc_flagValue[flag];
+  assertStreamPrint(NULL, flag==FLAG_SR || flag==FLAG_MR, "Illegal input to getGB_method. Expected FLAG_SR or FLAG_MR ");
 
   // Get method from flag
-  if (flag_value != NULL) {
+  if (omc_flag[flag]) {
+    flag_value = omc_flagValue[flag];
     for (method=GB_UNKNOWN; method<RK_MAX; method++) {
-      if (strcmp(flag_value, GB_METHOD_NAME[method]) == 0){
+      if (strcmp(flag_value, GB_METHOD_NAME[method]) == 0) {
         infoStreamPrint(OMC_LOG_SOLVER, 0, "Chosen gbode method: %s", GB_METHOD_NAME[method]);
         return method;
       }
     }
-    dumOptions(FLAG_NAME[flag], flag_value, GB_METHOD_NAME, RK_MAX);
+    dumpOptions(FLAG_NAME[flag], flag_value, GB_METHOD_NAME, RK_MAX);
     return GB_UNKNOWN;
   }
 
@@ -127,20 +142,18 @@ enum GB_NLS_METHOD getGB_NLS_method(enum _FLAG flag)
 {
   enum GB_NLS_METHOD method;
   const char* flag_value;
-
-  assertStreamPrint(NULL, flag==FLAG_SR_NLS || flag==FLAG_MR_NLS,
-                    "Illegal input to getGB_NLS_method. Expected FLAG_SR_NLS or FLAG_MR_NLS ");
-  flag_value = omc_flagValue[flag];
+  assertStreamPrint(NULL, flag==FLAG_SR_NLS || flag==FLAG_MR_NLS, "Illegal input to getGB_NLS_method. Expected FLAG_SR_NLS or FLAG_MR_NLS ");
 
   // Get method from flag
-  if (flag_value != NULL) {
+  if (omc_flag[flag]) {
+    flag_value = omc_flagValue[flag];
     for (method = GB_NLS_UNKNOWN; method < GB_NLS_MAX; method++) {
       if (strcmp(flag_value, GB_NLS_METHOD_NAME[method]) == 0) {
         infoStreamPrint(OMC_LOG_SOLVER, 0, "Chosen gbode NLS method: %s", GB_NLS_METHOD_NAME[method]);
         return method;
       }
     }
-    dumOptions(FLAG_NAME[flag], flag_value, GB_NLS_METHOD_NAME, GB_NLS_MAX);
+    dumpOptions(FLAG_NAME[flag], flag_value, GB_NLS_METHOD_NAME, GB_NLS_MAX);
     return GB_NLS_UNKNOWN;
   }
 
@@ -167,19 +180,17 @@ enum GB_CTRL_METHOD getControllerMethod(enum _FLAG flag)
 {
   enum GB_CTRL_METHOD method;
   const char *flag_value;
+  assertStreamPrint(NULL, flag==FLAG_SR_CTRL || flag==FLAG_MR_CTRL, "Illegal input to getControllerMethod. Expected FLAG_SR_CTRL or FLAG_MR_CTRL ");
 
-  assertStreamPrint(NULL, flag==FLAG_SR_CTRL || flag==FLAG_MR_CTRL,
-                    "Illegal input to getControllerMethod. Expected FLAG_SR_CTRL or FLAG_MR_CTRL ");
-
-  flag_value = omc_flagValue[flag];
-  if (flag_value != NULL) {
+  if (omc_flag[flag]) {
+    flag_value = omc_flagValue[flag];
     for (method = GB_CTRL_UNKNOWN; method < GB_CTRL_MAX; method++) {
       if (strcmp(flag_value, GB_CTRL_METHOD_NAME[method]) == 0) {
         infoStreamPrint(OMC_LOG_SOLVER, 0, "Chosen gbode step size control: %s", GB_CTRL_METHOD_NAME[method]);
         return method;
       }
     }
-    dumOptions(FLAG_NAME[flag], flag_value, GB_CTRL_METHOD_NAME, GB_CTRL_MAX);
+    dumpOptions(FLAG_NAME[flag], flag_value, GB_CTRL_METHOD_NAME, GB_CTRL_MAX);
     return GB_CTRL_UNKNOWN;
   } else {
     // Default value
@@ -207,13 +218,10 @@ enum GB_INTERPOL_METHOD getInterpolationMethod(enum _FLAG flag)
 {
   enum GB_INTERPOL_METHOD method;
   const char *flag_value;
-  char* flag_value_string;
+  assertStreamPrint(NULL, flag==FLAG_SR_INT || flag==FLAG_MR_INT, "Illegal input to getInterpolationMethod. Expected FLAG_SR_INT or FLAG_MR_INT ");
 
-  assertStreamPrint(NULL, flag==FLAG_SR_INT || flag==FLAG_MR_INT,
-                    "Illegal input to getInterpolationMethod. Expected FLAG_SR_INT or FLAG_MR_INT ");
-
-  flag_value = omc_flagValue[flag];
-  if (flag_value != NULL) {
+  if (omc_flag[flag]) {
+    flag_value = omc_flagValue[flag];
     for (method = GB_INTERPOL_UNKNOWN; method < GB_INTERPOL_MAX; method++) {
       if (strcmp(flag_value, GB_INTERPOL_METHOD_NAME[method]) == 0) {
         if (flag == FLAG_MR_INT && (method == GB_INTERPOL_HERMITE_ERRCTRL || method == GB_DENSE_OUTPUT_ERRCTRL)) {
@@ -224,7 +232,7 @@ enum GB_INTERPOL_METHOD getInterpolationMethod(enum _FLAG flag)
         return method;
       }
     }
-    dumOptions(FLAG_NAME[flag], flag_value, GB_INTERPOL_METHOD_NAME, GB_INTERPOL_MAX);
+    dumpOptions(FLAG_NAME[flag], flag_value, GB_INTERPOL_METHOD_NAME, GB_INTERPOL_MAX);
     return GB_INTERPOL_UNKNOWN;
   } else {
     // Default value
@@ -255,17 +263,15 @@ enum GB_INTERPOL_METHOD getInterpolationMethod(enum _FLAG flag)
  */
 double getGBCtrlFilterValue()
 {
-  double filter;
-  const char *flag_value = omc_flagValue[FLAG_SR_CTRL_FILTER];
+  double filter = 1.0;
 
-  if (flag_value) {
+  if (omc_flag[FLAG_SR_CTRL_FILTER]) {
     filter = atof(omc_flagValue[FLAG_SR_CTRL_FILTER]);
     if (filter < 0 || filter > 1) {
-      throwStreamPrint(NULL, "Flag -gbctrl_filter has to be between 0 and 1.");
+      throwStreamPrint(NULL, "Flag -gbctrl_filter has to be between 0.0 and 1.0, but %s was given.", omc_flagValue[FLAG_SR_CTRL_FILTER]);
     }
-  } else {
-    filter = 1.0;
   }
+
   return filter;
 }
 
@@ -280,17 +286,15 @@ double getGBCtrlFilterValue()
  */
 double getGBRatio()
 {
-  double percentage;
-  const char *flag_value = omc_flagValue[FLAG_MR_PAR];
+  double percentage = 0.0;
 
-  if (flag_value) {
+  if (omc_flag[FLAG_MR_PAR]) {
     percentage = atof(omc_flagValue[FLAG_MR_PAR]);
     if (percentage < 0 || percentage > 1) {
-      throwStreamPrint(NULL, "Flag -gbratio has to be between 0 and 1.");
+      throwStreamPrint(NULL, "Flag -gbratio has to be between 0.0 and 1.0, but %s was given.", omc_flagValue[FLAG_MR_PAR]);
     }
-  } else {
-    percentage = 0;
   }
+
   return percentage;
 }
 
@@ -306,47 +310,20 @@ double getGBRatio()
  */
 enum GB_EXTRAPOL_METHOD getGBErr(enum _FLAG flag)
 {
-  assertStreamPrint(NULL, flag==FLAG_SR_ERR || flag==FLAG_MR_ERR, "Illegal input 'flag' to getGBErr!");
+  enum GB_EXTRAPOL_METHOD method;
+  const char *flag_value;
+  assertStreamPrint(NULL, flag==FLAG_SR_ERR || flag==FLAG_MR_ERR, "Illegal input to getGBErr. Expected FLAG_SR_ERR or FLAG_MR_ERR ");
 
-  enum GB_EXTRAPOL_METHOD extrapolationMethod;
-  const char *flag_value = omc_flagValue[flag];
-
-  if (flag_value != NULL) {
-    if (strcmp(flag_value, "default")==0) {
-      extrapolationMethod = GB_EXT_DEFAULT;
-    } else if (strcmp(flag_value, "richardson")==0) {
-      extrapolationMethod = GB_EXT_RICHARDSON;
-    } else if (strcmp(flag_value, "embedded")==0) {
-      extrapolationMethod = GB_EXT_EMBEDDED;
-    } else {
-      errorStreamPrint(OMC_LOG_STDOUT, 0, "Illegal value '%s' for flag -%s", flag_value, FLAG_NAME[flag]);
-      infoStreamPrint(OMC_LOG_STDOUT, 1, "Allowed values are:");
-      infoStreamPrint(OMC_LOG_STDOUT, 0, "default");
-      infoStreamPrint(OMC_LOG_STDOUT, 0, "richardson");
-      infoStreamPrint(OMC_LOG_STDOUT, 0, "embedded");
-      messageClose(OMC_LOG_STDOUT);
-      omc_throw(NULL);
+  if (omc_flag[flag]) {
+    flag_value = omc_flagValue[flag];
+    for (method = GB_EXT_UNKNOWN; method < GB_EXT_MAX; method++) {
+      if (strcmp(flag_value, GB_EXTRAPOL_METHOD_NAME[method]) == 0) {
+        return method;
+      }
     }
-  } else {
-    extrapolationMethod = GB_EXT_DEFAULT;
+    dumpOptions(FLAG_NAME[flag], flag_value, GB_CTRL_METHOD_NAME, GB_CTRL_MAX);
+    omc_throw(NULL);
   }
-  return extrapolationMethod;
-}
 
-/**
- * @brief Dump available flag options to stdout.
- *
- * @param flagName    Name of flag
- * @param flagValue   Given value of flag.
- * @param argsArr     Pointer to flag argument names.
- * @param maxArgs     Size of maxArgs.
- */
-void dumOptions(const char* flagName, const char* flagValue, const char** argsArr, unsigned int maxArgs)
-{
-  errorStreamPrint(OMC_LOG_STDOUT, 0, "Unknown flag value \"%s\" for flag %s.", flagValue, flagName);
-  infoStreamPrint(OMC_LOG_STDOUT, 1, "Valid arguments are:");
-  for (int i=0; i<maxArgs; i++) {
-    infoStreamPrint(OMC_LOG_STDOUT, 0, "%s", argsArr[i]);
-  }
-  messageClose(OMC_LOG_STDOUT);
+  return GB_EXT_DEFAULT;
 }

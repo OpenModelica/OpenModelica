@@ -34,22 +34,11 @@
 #ifndef _GBODE_CONF_H_
 #define _GBODE_CONF_H_
 
-#include "../../simulation/options.h"
+#include "../../util/simulation_options.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-/**
- * @brief Extrapolation method for single-rate / multi-rate error estimation.
- */
-enum GB_EXTRAPOL_METHOD{
-  GB_EXT_UNKNOWN = 0,    /* Unknown method */
-
-  GB_EXT_DEFAULT,        /* Default, depending on the Runge-Kutta method */
-  GB_EXT_RICHARDSON,     /* Richardson extrapolation */
-  GB_EXT_EMBEDDED        /* Embedded scheme */
-};
 
 // Declaration only
 extern unsigned int use_fhr;
