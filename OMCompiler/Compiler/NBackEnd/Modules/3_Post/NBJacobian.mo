@@ -2089,7 +2089,7 @@ protected
     // ===================== Sequential adjoint component generation =====================
     // Process each primal component in reverse order (LIFO), generate adjoint component(s),
     // and prepend to the unified list.
-    for comp in listReverse(primalComps) loop
+    for comp in primalComps loop
       (compAdjComps, compNewVars) := generateAdjointComponent(
         comp, diff_map, funcMap, seedCandidates.scalarized, init, idx, newName, seedCandidates);
 
