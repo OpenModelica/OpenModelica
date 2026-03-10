@@ -1261,24 +1261,6 @@ protected
     rhs := Expression.map(rhs, Expression.repairOperator);
   end buildAdjointRhs;
 
-  function expressionHasIterator
-    "Returns true if an expression contains a cref that is an iterator symbol."
-    input Expression exp;
-    output Boolean hasIter;
-
-    function foldIter
-      input Expression e;
-      input output Boolean b;
-    algorithm
-      b := match e
-        case Expression.CREF() then b or ComponentRef.isIterator(e.cref);
-        else b;
-      end match;
-    end foldIter;
-  algorithm
-    hasIter := Expression.fold(exp, foldIter, false);
-  end expressionHasIterator;
-
   // Helper: run reverse-mode on a residual expression with a given seed (current_grad),
   // accumulating into the provided adjoint_map. Returns updated DifferentiationArguments.
   function accumulateAdjointForResidual
@@ -1414,91 +1396,6 @@ protected
     diffed_comp := makeAdjointComponentFromRhs(lhsKey, rhsExpr, contextName, eqIndex);
   end makeAdjointAccumulationComponent;
 
-  function makeAdjointAccumulationComponentWithIterator
-    input ComponentRef lhsKey;
-    input Expression contribution;
-    input BEquation.Iterator iter;
-    input String contextName;
-    input Integer eqIndex;
-    output NBStrongComponent diffed_comp;
-  protected
-    Type vty;
-    SizeClassification sc;
-    Operator addOp;
-    Expression rhsExpr;
-    Pointer<NBEquation.Equation> eqPtr;
-    NBEquation.Equation eq;
-    Pointer<Variable> lhsVarPtr;
-  algorithm
-    vty := ComponentRef.getComponentType(lhsKey);
-    if Expression.containsCref(contribution, lhsKey) then
-      rhsExpr := contribution;
-    else
-      sc := sizeClassificationFromType(vty);
-      addOp := Operator.fromClassification((MathClassification.ADDITION, sc), vty);
-      rhsExpr := SimplifyExp.simplify(Expression.MULTARY({Expression.fromCref(lhsKey), contribution}, {}, addOp));
-    end if;
-    rhsExpr := Expression.map(rhsExpr, Expression.repairOperator);
-
-    eqPtr := Equation.makeAssignment(
-      Expression.fromCref(lhsKey),
-      rhsExpr,
-      Pointer.create(eqIndex),
-      contextName,
-      iter,
-      NBEquation.EquationAttributes.default(NBEquation.EquationKind.CONTINUOUS, false)
-    );
-
-    lhsVarPtr := BVariable.getVarPointer(lhsKey, sourceInfo());
-    eq := Pointer.access(eqPtr);
-    diffed_comp := match eq
-      case NBEquation.FOR_EQUATION() then NBStrongComponent.SLICED_COMPONENT(
-        var_cref = lhsKey,
-        var      = Slice.SLICE(lhsVarPtr, {}),
-        eqn      = Slice.SLICE(eqPtr, {}),
-        status   = NBSolve.Status.EXPLICIT
-      );
-      else makeAdjointComponentFromRhs(lhsKey, rhsExpr, contextName, eqIndex);
-    end match;
-  end makeAdjointAccumulationComponentWithIterator;
-
-  function isNoOpAdjointContribution
-    input ComponentRef lhsKey;
-    input Expression contribution;
-    output Boolean isNoOp;
-  protected
-    Type vty;
-    SizeClassification sc;
-    Operator addOp;
-    Expression delta;
-  algorithm
-    vty := ComponentRef.getComponentType(lhsKey);
-    sc := sizeClassificationFromType(vty);
-    addOp := Operator.fromClassification((MathClassification.ADDITION, sc), vty);
-
-    // No-op if contribution simplifies to lhs (i.e., contribution - lhs == 0).
-    delta := SimplifyExp.simplify(
-      Expression.MULTARY({contribution, Expression.negate(Expression.fromCref(lhsKey))}, {}, addOp)
-    );
-    delta := Expression.map(delta, Expression.repairOperator);
-    isNoOp := Expression.isZero(delta);
-  end isNoOpAdjointContribution;
-
-  function makeAdjointResetComponent
-    input ComponentRef lhsKey;
-    input String contextName;
-    input Integer eqIndex;
-    output NBStrongComponent diffed_comp;
-  protected
-    Type vty;
-    Expression zeroExpr;
-  algorithm
-    // Use the subscripted type so sliced scalar LHS (e.g. a[2]) gets scalar 0.0.
-    vty := ComponentRef.getSubscriptedType(lhsKey, true);
-    zeroExpr := Expression.makeZero(vty);
-    diffed_comp := makeAdjointComponentFromRhs(lhsKey, zeroExpr, contextName, eqIndex);
-  end makeAdjointResetComponent;
-
   function addEntryToLPAMap
     input Pointer<Variable> vptr;
     input UnorderedMap<ComponentRef, ComponentRef> diff_map;
@@ -1511,40 +1408,6 @@ protected
       UnorderedMap.tryAdd(Util.getOption(mappedSeed), {}, loop_product_adjoint_map);
     end if;
   end addEntryToLPAMap;
-
-  // Build a MULTI_COMPONENT backed by an algorithm equation from a list of
-  // already prepared assignment strong components.
-  function makeAdjointAlgorithmComponent
-    input list<StrongComponent> assignmentComps;
-    input list<Pointer<Variable>> vars;
-    input String contextName;
-    input Integer eqIndex;
-    input Boolean init;
-    output NBStrongComponent diffed_comp;
-  protected
-    list<Statement> stmts = {};
-    list<Statement> eqnStmts;
-    Pointer<NBEquation.Equation> eqPtr;
-    Pointer<Integer> idxPtr;
-  algorithm
-    for c in assignmentComps loop
-      eqnStmts := Equation.toStatement(Pointer.access(StrongComponent.toSolvedEquation(c)));
-      for s in listReverse(eqnStmts) loop
-        stmts := s :: stmts;
-      end for;
-    end for;
-    stmts := listReverse(stmts);
-
-    eqPtr := Equation.makeAlgorithm(stmts, init);
-    idxPtr := Pointer.create(eqIndex);
-    Equation.createName(eqPtr, idxPtr, contextName);
-
-    diffed_comp := StrongComponent.MULTI_COMPONENT(
-      vars   = list(Slice.SLICE(v, {}) for v in vars),
-      eqn    = Slice.SLICE(eqPtr, {}),
-      status = NBSolve.Status.EXPLICIT
-    );
-  end makeAdjointAlgorithmComponent;
 
   // Build a filtered diff map for a given variable list.
   // For each variable pointer v in 'vars', if there exists a mapping
@@ -1570,60 +1433,6 @@ protected
       end if;
     end for;
   end populateDiffMap;
-
-  function getAlgorithmSeedOrderFromComponent
-    input StrongComponent comp;
-    input UnorderedMap<ComponentRef, ComponentRef> diff_map;
-    output list<ComponentRef> seedKeys = {};
-  protected
-    NBEquation.Equation eq;
-    Algorithm alg;
-    Statement stmt;
-    ComponentRef lhsBase;
-    Option<ComponentRef> o_seed;
-    ComponentRef seedKey;
-  algorithm
-    () := match comp
-      case StrongComponent.MULTI_COMPONENT() algorithm
-        eq := Pointer.access(Slice.getT(comp.eqn));
-        () := match eq
-          case NBEquation.ALGORITHM(alg = alg) algorithm
-            for s in listReverse(alg.statements) loop
-              stmt := s;
-              () := match stmt
-                case Statement.ASSIGNMENT(lhs = Expression.CREF(cref = lhsBase)) algorithm
-                  o_seed := UnorderedMap.get(ComponentRef.stripSubscriptsAll(lhsBase), diff_map);
-                  if isSome(o_seed) then
-                    seedKey := Util.getOption(o_seed);
-                    if not List.contains(seedKeys, seedKey, ComponentRef.isEqual) then
-                      seedKeys := seedKey :: seedKeys;
-                    end if;
-                  end if;
-                then ();
-                else ();
-              end match;
-            end for;
-            seedKeys := listReverse(seedKeys);
-          then ();
-          else ();
-        end match;
-      then ();
-      else ();
-    end match;
-  end getAlgorithmSeedOrderFromComponent;
-
-  // Flattened across all components: preserve component order and in-component order
-  function getAllAdjointOrderedVars
-    input list<StrongComponent> comps;
-    output list<NBVariable.VariablePointer> vars = {};
-  algorithm
-    for c in comps loop
-      for v in StrongComponent.getVariables(c) loop
-        vars := v :: vars;
-      end for;
-    end for;
-    vars := listReverse(vars);
-  end getAllAdjointOrderedVars;
 
   function isSupportedAdjointStrongComponent
     input StrongComponent comp;
@@ -1777,8 +1586,6 @@ protected
             end if;
           end if;
         end for;
-
-        adjointComps := listReverse(adjointComps);
       then ();
 
       // ===================== SINGLE_COMPONENT (scalar/array/record equation) =====================
@@ -2094,7 +1901,8 @@ protected
         comp, diff_map, funcMap, seedCandidates.scalarized, init, idx, newName, seedCandidates);
 
       // Prepend adjoint components (already in correct order from generateAdjointComponent)
-      for ac in listReverse(compAdjComps) loop
+      // only more than one if the original component was an algebraic loop
+      for ac in compAdjComps loop
         diffed_comps := ac :: diffed_comps;
       end for;
 
