@@ -4132,6 +4132,7 @@ package Flags
   constant ConfigFlag EXPORT_CLOCKS_IN_MODELDESCRIPTION;
   constant ConfigFlag OBFUSCATE;
   constant ConfigFlag MAX_SIZE_LINEARIZATION;
+  constant ConfigFlag NEW_BACKEND;
 
   function isSet
     input DebugFlag inFlag;
