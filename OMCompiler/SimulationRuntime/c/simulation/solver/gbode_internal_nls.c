@@ -123,7 +123,7 @@ typedef struct GB_INTERNAL_NLS_DATA
   double **cmplx_nls_res;            // complex NLS residuum (packed as real, imag - memory layout is struct{double real, double imag}[])
   double *Z;                         // update variables Z = Y(t_ij) - Y0 for T-transformation (coupled space)
   double *W;                         // update variables W = (T^{-1} otimes I) Z for T-transformation (decoupled space)
-  double *work;                      // some work memory for the T transformation (size: transform->size * x.size) or other stuff, at least 24 * N_STATES bytes
+  double *work;                      // some work memory for the T transformation (size: transform->size * x.size) or other stuff, at least 32 * N_STATES bytes
 
   // stuff for mutlirate
   modelica_boolean multirate;         // multirate or singlerate system?
@@ -285,8 +285,8 @@ static void gbInternal_evalJacobianMR(DATA* data,
   const SPARSE_PATTERN* fullSp  = fullJac->sparsePattern;
   const SPARSE_PATTERN* smallSp = nls->odePatternMR;
 
-  unsigned int* fastIdx = gbData->fastStatesIdx;
-  unsigned int  nFast   = gbData->nFastStates;
+  unsigned int* fast_idx = gbData->fastStatesIdx;
+  unsigned int  size_fast = gbData->nFastStates;
 
   fullJac->evalSelection = gbData->gbfData->jacobian->evalSelection;
 
@@ -294,38 +294,140 @@ static void gbInternal_evalJacobianMR(DATA* data,
 
   for (color = 0; color < nls->maxColors_stub; color++)
   {
-    for (col = 0; col < nFast; col++)
+    for (col = 0; col < size_fast; col++)
     {
-      unsigned int bigCol = fastIdx[col];
+      unsigned int big_col = fast_idx[col];
 
-      if (nls->colorCols_stub[bigCol] - 1 == color)
+      if (nls->colorCols_stub[big_col] - 1 == color)
       {
-        fullJac->seedVars[bigCol] = 1.0;
+        fullJac->seedVars[big_col] = 1.0;
       }
     }
 
     fullJac->evalColumn(data, threadData, fullJac, NULL);
 
-    for (col = 0; col < nFast; col++)
+    for (col = 0; col < size_fast; col++)
     {
-      unsigned int bigCol = fastIdx[col];
+      unsigned int big_col = fast_idx[col];
 
-      if (nls->colorCols_stub[bigCol] - 1 == color)
+      if (nls->colorCols_stub[big_col] - 1 == color)
       {
         for (nz = smallSp->leadindex[col]; nz < smallSp->leadindex[col + 1]; nz++)
         {
-          unsigned int smallRow = smallSp->index[nz];
-          unsigned int fullRow  = fastIdx[smallRow];
+          unsigned int small_row = smallSp->index[nz];
+          unsigned int full_row = fast_idx[small_row];
 
-          smallJac[nz] = fullJac->resultVars[fullRow];
+          smallJac[nz] = fullJac->resultVars[full_row];
         }
 
-        fullJac->seedVars[bigCol] = 0.0;
+        fullJac->seedVars[big_col] = 0.0;
       }
     }
   }
 
   fullJac->evalSelection = NULL;
+}
+
+static void gbInternal_evalNumericalJacobian(DATA *data,
+                                             threadData_t *threadData,
+                                             DATA_GBODE *gbData,
+                                             GB_INTERNAL_NLS_DATA *nls,
+                                             JACOBIAN *jacobian_ODE)
+{
+  const double delta_h = numericalDifferentiationDeltaXsolver;
+
+  const SPARSE_PATTERN *sparsity;
+  EVAL_SELECTION *selection = NULL;
+  unsigned int *state_map = NULL;
+
+  int size;
+  unsigned int max_colors;
+  unsigned int *color_cols;
+  int full_size = gbData->nStates;
+
+  if (nls->multirate)
+  {
+    sparsity = nls->odePatternMR;
+    state_map = gbData->fastStatesIdx;
+    size = gbData->nFastStates;
+    selection = gbData->gbfData->evalSelectionFast;
+    max_colors = nls->maxColors_stub;
+    color_cols = nls->colorCols_stub;
+  }
+  else
+  {
+    sparsity = jacobian_ODE->sparsePattern;
+    size = gbData->nStates;
+    max_colors = sparsity->maxColors;
+    color_cols = sparsity->colorCols;
+  }
+
+  double *x = data->localData[0]->realVars;
+  double *der_x = &data->localData[0]->realVars[full_size];
+
+  // work 0 ... full_size - 1 is used already by the backup data
+  double *der_x_ref = &nls->work[full_size];
+  double *x_save = &nls->work[2 * full_size];
+  double *delta_hh = &nls->work[3 * full_size];
+
+  memcpy(der_x_ref, der_x, full_size * sizeof(double));
+
+  for (unsigned int color = 0; color < max_colors; color++)
+  {
+    // careful perturbation of the variables (a la DASSL interface)
+    for (unsigned int col = 0; col < size; col++)
+    {
+      unsigned int big_col = state_map ? state_map[col] : col;
+
+      if (color_cols[big_col] - 1 == color)
+      {
+        // we follow the procedure of the DASSL interface for the selection of perturbation h_i
+
+        // h * f(x)_i
+        double delta_hhh = delta_h * der_x_ref[big_col];
+
+        const double nominal = getNominalFromScalarIdx(data->simulationInfo, data->modelData, VAR_KIND_STATE, big_col);
+
+        // scal_raw = ATOL * NOMINAL + RTOL * abs(x_i), we use the real (un-transformed) integrator tolerances though
+        double raw_weight = nls->tol_integrator.atol * nominal + nls->tol_integrator.rtol * fabs(x[big_col]);
+
+        // choose h_i := h * max(abs(x_i), h * f(x)_i, ATOL * NOMINAL + RTOL * abs(x_i), 1e-3)
+        delta_hh[big_col] = delta_h * fmax(fmax(fmax(fabs(x[big_col]), 1e-3), fabs(delta_hhh)), fabs(raw_weight));
+        delta_hh[big_col] = x[big_col] + delta_hh[big_col] - x[big_col];
+
+        if (x[big_col] + delta_hh[big_col] >= getMaxFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, VAR_KIND_STATE, big_col))
+        {
+          delta_hh[big_col] *= -1;
+        }
+
+        x_save[big_col] = x[big_col];
+        x[big_col] += delta_hh[big_col];
+        delta_hh[big_col] = 1.0 / delta_hh[big_col];
+      }
+    }
+
+    // eval f(x + h)
+    gbode_fODE(data, threadData, NULL, selection);
+
+    // do forward finite differencing (f(x + h) - f(x)) / h and reset states
+    for (unsigned int col = 0; col < size; col++)
+    {
+      unsigned int big_col = state_map ? state_map[col] : col;
+
+      if (color_cols[big_col] - 1 == color)
+      {
+        for (unsigned int nz = sparsity->leadindex[col]; nz < sparsity->leadindex[col + 1]; nz++)
+        {
+          unsigned int small_row = sparsity->index[nz];
+          unsigned int big_row   = state_map ? state_map[small_row] : small_row;
+
+          nls->jacobian_callback[nz] = (der_x[big_row] - der_x_ref[big_row]) * delta_hh[big_col];
+        }
+
+        x[big_col] = x_save[big_col];
+      }
+    }
+  }
 }
 
 /**
@@ -357,79 +459,15 @@ static int gbInternal_evalJacobian(DATA *data, threadData_t *threadData, DATA_GB
   {
     gbInternal_evalJacobianMR(data, threadData, gbData, jacobian_ODE, nls, nls->jacobian_callback);
   }
-  else if (jacobian_ODE->availability == JACOBIAN_AVAILABLE)
+  else if (!nls->multirate && jacobian_ODE->availability == JACOBIAN_AVAILABLE)
   {
     evalJacobian(data, threadData, jacobian_ODE, NULL, nls->jacobian_callback, FALSE);
   }
   else
   {
-    int nStates = gbData->nStates;
-
-    // base perturbation
-    const double delta_h = numericalDifferentiationDeltaXsolver; // == 1e-8
-
-    // der_x_ref base point, x_save previous x to restore, delta_hh perturbation
-    double *der_x_ref = nls->work;
-    double *x_save = &nls->work[nStates];
-    double *delta_hh = &nls->work[2 * nStates];
-
-    // x current point to eval at, der_x current evaluation
-    double *x = data->localData[0]->realVars;
-    double *der_x = &data->localData[0]->realVars[nStates];
-
-    // move reference point to work
-    memcpy(der_x_ref, der_x, nStates * sizeof(double));
-
-    for (int color = 0; color < jacobian_ODE->sparsePattern->maxColors; color++)
-    {
-      for (int state = 0; state < nStates; state++)
-      {
-        if (jacobian_ODE->sparsePattern->colorCols[state] - 1 == color)
-        {
-          // we follow the procedure of DASSL for the selection of perturbation h_i
-
-          // h * f(x)_i
-          double delta_hhh = delta_h * der_x_ref[state];
-
-          // scal_raw = ATOL * NOMINAL + RTOL * abs(x_i), we use the real (un-transformed) integrator tolerances though
-          const modelica_real nominal = getNominalFromScalarIdx(data->simulationInfo, data->modelData, VAR_KIND_STATE, state);
-          double raw_weight = nls->tol_integrator.atol * nominal + nls->tol_integrator.rtol * fabs(x[state]);
-
-          // choose h_i := h * max(abs(x_i), h * f(x)_i, 1 / (ATOL * NOMINAL + RTOL * abs(x_i)), 1e-3)
-          delta_hh[state] = delta_h * fmax(fmax(fmax(fabs(x[state]) /* x_i */, 1e-3), fabs(delta_hhh) /* h * f_i */), fabs(raw_weight)  /* 1 / wt_i */);
-
-          // some floating point magic
-          delta_hh[state] = x[state] + delta_hh[state] - x[state];
-
-          if (x[state] + delta_hh[state] >= getMaxFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, VAR_KIND_STATE, state))
-          {
-            delta_hh[state] *= -1;
-          }
-
-          x_save[state] = x[state];
-          x[state] += delta_hh[state];
-          delta_hh[state] = 1. / delta_hh[state];
-        }
-      }
-      ret = gbode_fODE(data, threadData, NULL, NULL);
-      if (ret < 0) return ret;
-
-      for (int state = 0; state < nStates; state++)
-      {
-        if (jacobian_ODE->sparsePattern->colorCols[state] - 1 == color)
-        {
-          unsigned int nz = jacobian_ODE->sparsePattern->leadindex[state];
-          while (nz < jacobian_ODE->sparsePattern->leadindex[state + 1])
-          {
-            unsigned int row = jacobian_ODE->sparsePattern->index[nz];
-            nls->jacobian_callback[nz] = (der_x[row] - der_x_ref[row]) * delta_hh[state];
-            nz++;
-          }
-          x[state] = x_save[state];
-        }
-      }
-    }
+    gbInternal_evalNumericalJacobian(data, threadData, gbData, nls, jacobian_ODE);
   }
+
   ret = 0;
 
   #if !defined(OMC_EMCC)
@@ -704,19 +742,20 @@ static int gbInternalEvaluateSimplifiedJacobian(DATA *data,
   SOLVERSTATS *stats = (nls->multirate ? &gbData->gbfData->stats : &gbData->stats);
   double *y_eval = (nls->multirate ? gbData->gbfData->yOld : gbData->yOld);
 
-  if (isDIRK) time_backup = data->localData[0]->timeValue;
-
-  if (nls->multirate && isDIRK)
+  // we need to backup potential interpolation data (e.g. in SDIRK realVars already contains Y_full(t0 + h * c1))
+  // backup the time and all the states and apply them after the simplified Jacobian computation
+  if (isDIRK)
   {
-    memcpy(nls->work, data->localData[0]->realVars, full_size * sizeof(double));
+    time_backup = data->localData[0]->timeValue;
+    if (nls->multirate) memcpy(nls->work, data->localData[0]->realVars, full_size * sizeof(double));
   }
 
-  /* set values for known last point (simplified Newton) */
+  // set values for known last point y_eval (simplified Newton)
   memcpy(data->localData[0]->realVars, y_eval, full_size * sizeof(double));
   data->localData[0]->timeValue = (nls->multirate ? gbData->gbfData->time : gbData->time);
 
-  /* callback ODE + callback Jacobian of ODE -> nls_jacobian buffer */
-  ret = gbode_fODE(data, threadData, &(stats->nCallsODE), NULL); // nls->multirate ? gbData->gbfData->evalSelectionFast :
+  // callback ODE + callback Jacobian of ODE -> nls_jacobian buffer
+  ret = gbode_fODE(data, threadData, &(stats->nCallsODE), nls->multirate ? gbData->gbfData->evalSelectionFast : NULL); // TODO: is this correct?
   if (ret < 0) return ret;
 
   ret = gbInternal_evalJacobian(data, threadData, gbData, nls);
@@ -724,11 +763,11 @@ static int gbInternalEvaluateSimplifiedJacobian(DATA *data,
 
   *jac_called = TRUE;
 
-  if (isDIRK) data->localData[0]->timeValue = time_backup;
-
-  if (nls->multirate && isDIRK)
+  // reapply the interpolated data
+  if (isDIRK)
   {
-    memcpy(data->localData[0]->realVars, nls->work, full_size * sizeof(double));
+    data->localData[0]->timeValue = time_backup;
+    if (nls->multirate) memcpy(data->localData[0]->realVars, nls->work, full_size * sizeof(double));
   }
 
   return 0;
@@ -1427,7 +1466,7 @@ void *gbInternalNlsAllocate(int size,
     nls->real_nls_jacs[0] = (double *) malloc(nls_nnz_estimate * sizeof(double));
 
     // auxiliary memory
-    nls->work = (double *) malloc(3 * nls->size * sizeof(double));
+    nls->work = (double *) malloc(4 * nls->size * sizeof(double));
 
     if (!(nls->klu_internals_real && nls->real_nls_jacs && nls->real_nls_jacs[0] && nls->work))
     {
@@ -1496,7 +1535,7 @@ void *gbInternalNlsAllocate(int size,
     nls->W = (double *) malloc(nls->size * trfm->size * sizeof(double));
 
     // auxiliary memory
-    nls->work = (double *) malloc(nls->size * fmax(trfm->size, 3) * sizeof(double));
+    nls->work = (double *) malloc(nls->size * fmax(trfm->size, 4) * sizeof(double));
 
     if (!(nls->Z && nls->W && nls->work))
     {
@@ -1588,8 +1627,8 @@ void gbInternalScheduleFastStatesUpdate(void *nls_ptr)
 }
 
 static void transferFastColoring(GB_INTERNAL_NLS_DATA *nls,
-                               DATA_GBODE *gbData,
-                               SPARSE_PATTERN *fast_ode_pattern)
+                                 DATA_GBODE *gbData,
+                                 SPARSE_PATTERN *fast_ode_pattern)
 {
   nls->maxColors_stub = fast_ode_pattern->maxColors;
   memset(nls->colorCols_stub, 0, gbData->nStates * sizeof(unsigned int));
@@ -1802,7 +1841,7 @@ modelica_boolean updateFastStates(DATA *data,
   GLOBAL_UPDATE_COUNT++;
 
   // update size
-  nls->size = gbfData->nFastStates;
+  nls->size = gbData->nFastStates;
   nls->call_jac = TRUE;
 
   for (int stage = 0; stage < gbfData->tableau->nStages; stage++)
