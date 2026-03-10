@@ -1493,7 +1493,8 @@ protected
     Type vty;
     Expression zeroExpr;
   algorithm
-    vty := ComponentRef.getComponentType(lhsKey);
+    // Use the subscripted type so sliced scalar LHS (e.g. a[2]) gets scalar 0.0.
+    vty := ComponentRef.getSubscriptedType(lhsKey, true);
     zeroExpr := Expression.makeZero(vty);
     diffed_comp := makeAdjointComponentFromRhs(lhsKey, zeroExpr, contextName, eqIndex);
   end makeAdjointResetComponent;
@@ -1674,6 +1675,7 @@ protected
     list<StrongComponent> per_seed_comps = {};
     list<StrongComponent> fallbackResetComps = {};
     list<ComponentRef> resetSeeds = {};
+    list<ComponentRef> resetSeedBases = {};
     ComponentRef seedCrefG;
 
     list<ComponentRef> orderedAdjointCrefs = {};
@@ -1685,6 +1687,7 @@ protected
     Option<ComponentRef> o_seedKey;
     Option<ComponentRef> o_pDerCref;
     ComponentRef seedKey;
+    ComponentRef baseSeedKey;
     Boolean emittedForSeed;
     Boolean resetAtGroup;
     list<StrongComponent> loopCompsQueue;
@@ -2320,7 +2323,9 @@ protected
             end if;
           end if;
         end for;
-        resetAtGroup := (not List.contains(resetSeeds, seedKey, ComponentRef.isEqual))
+        resetAtGroup := emittedForSeed
+          and (not List.contains(resetSeeds, seedKey, ComponentRef.isEqual))
+          and (not List.contains(resetSeedBases, ComponentRef.stripSubscriptsAll(seedKey), ComponentRef.isEqual))
           and (not UnorderedMap.contains(seedKey, structuredAssigned));
         if resetAtGroup then
           generatedComp := makeAdjointResetComponent(seedKey, newName, i);
@@ -2330,7 +2335,13 @@ protected
             per_seed_comps := generatedComp :: per_seed_comps;
           end if;
           resetSeeds := seedKey :: resetSeeds;
+          baseSeedKey := ComponentRef.stripSubscriptsAll(seedKey);
+          if not List.contains(resetSeedBases, baseSeedKey, ComponentRef.isEqual) then
+            resetSeedBases := baseSeedKey :: resetSeedBases;
+          end if;
           i := i + 1;
+        elseif Flags.isSet(Flags.DEBUG_ADJOINT) and not emittedForSeed then
+          print("[adjoint] skip reset for non-participating seed key " + ComponentRef.toString(seedKey) + "\n");
         end if;
       elseif not listEmpty(loopCompsQueue) then
         if pendingAlgorithmActive and not listEmpty(pendingAlgorithmComps) then
@@ -2394,17 +2405,27 @@ protected
     // Fallback resets: for any tmp_var or seed_var whose cref was not yet in resetSeeds.
     for v in tmp_vars loop
       c := BVariable.getVarName(v);
-      if not List.contains(resetSeeds, c, ComponentRef.isEqual) then
+      baseCref := ComponentRef.stripSubscriptsAll(c);
+      if not List.contains(resetSeeds, c, ComponentRef.isEqual)
+        and not List.contains(resetSeedBases, baseCref, ComponentRef.isEqual) then
         fallbackResetComps := makeAdjointResetComponent(c, newName, i) :: fallbackResetComps;
         resetSeeds := c :: resetSeeds;
+        if not List.contains(resetSeedBases, baseCref, ComponentRef.isEqual) then
+          resetSeedBases := baseCref :: resetSeedBases;
+        end if;
         i := i + 1;
       end if;
     end for;
     for v in seed_vars loop
       c := BVariable.getVarName(v);
-      if not List.contains(resetSeeds, c, ComponentRef.isEqual) then
+      baseCref := ComponentRef.stripSubscriptsAll(c);
+      if not List.contains(resetSeeds, c, ComponentRef.isEqual)
+        and not List.contains(resetSeedBases, baseCref, ComponentRef.isEqual) then
         fallbackResetComps := makeAdjointResetComponent(c, newName, i) :: fallbackResetComps;
         resetSeeds := c :: resetSeeds;
+        if not List.contains(resetSeedBases, baseCref, ComponentRef.isEqual) then
+          resetSeedBases := baseCref :: resetSeedBases;
+        end if;
         i := i + 1;
       end if;
     end for;
