@@ -591,6 +591,461 @@ public
     end if;
   end differentiateEquation;
 
+  function differentiateEquationAdjoint
+    "Adjoint-mode equation differentiation.
+     Given an equation and a DifferentiationArguments with a fresh adjoint_map,
+     populates the map via reverse-mode differentiation of the RHS, then emits
+     accumulation statements (v := v + sum(M[v])) and a seed reset (seed := 0).
+     Returns the list of adjoint statements and updated diffArguments."
+    input Equation eq;
+    input output DifferentiationArguments diffArguments;
+    output list<Statement> adjointStatements;
+  algorithm
+    (diffArguments, adjointStatements) := match eq
+
+      local
+        Expression lhs, rhs, seed, seedExpr;
+        ComponentRef lhsCref, seedCref;
+        UnorderedMap<ComponentRef, ComponentRef> dm;
+        UnorderedMap<ComponentRef, list<tuple<ComponentRef, Expression>>> amap;
+        list<tuple<ComponentRef, Expression>> taggedTerms;
+        list<Expression> terms;
+        Expression accRhs;
+        Type vty;
+        Operator addOp;
+        list<Statement> stmts;
+        list<ComponentRef> mapKeys;
+
+        // For-equation locals
+        list<Statement> bodyStmts, allStmts;
+        Equation bodyEqn;
+
+        // If-equation locals
+        IfEquationBody ifBody;
+        list<tuple<Expression, list<Statement>>> ifBranches;
+        Option<list<tuple<Expression, list<Statement>>>> elseIfBranches;
+
+        // Algorithm locals
+        Algorithm alg;
+        list<Statement> algStmts;
+
+        // Array equation locals
+        ComponentRef lhs_base;
+        ComponentRef seed_base;
+        Integer n, iel;
+        list<Type.Dimension> dims;
+        Expression grad_save, rhs_i, grad_i;
+        Boolean collect_save;
+
+        // For-equation iterator locals
+        list<ComponentRef> iterNames;
+        list<Expression> iterRanges;
+        list<Option<NBEquation.Iterator>> iterMaps;
+        ComponentRef iterName;
+        Expression iterRange;
+        NBEquation.Iterator revIter;
+
+      // ===================== SCALAR_EQUATION (Assignment) =====================
+      case Equation.SCALAR_EQUATION() algorithm
+        SOME(dm) := diffArguments.diff_map;
+        lhsCref := Expression.toCref(eq.lhs);
+
+        if (not ComponentRef.isEmpty(lhsCref)) and UnorderedMap.contains(ComponentRef.stripSubscriptsAll(lhsCref), dm) then
+          seedCref := UnorderedMap.getOrFail(ComponentRef.stripSubscriptsAll(lhsCref), dm);
+          if not diffArguments.scalarized then
+            seedCref := ComponentRef.copySubscripts(lhsCref, seedCref);
+          end if;
+
+          // Set seed and differentiate RHS
+          diffArguments.current_grad := Expression.fromCref(seedCref);
+          diffArguments.root_seed_cref := seedCref;
+          diffArguments.collectAdjoints := true;
+          (_, diffArguments) := differentiateExpression(eq.rhs, diffArguments);
+
+          // Emit accumulation statements from adjoint_map
+          (diffArguments, stmts) := makeAdjointAccumulationStatements(diffArguments);
+
+          // Emit seed reset: seed := 0
+          vty := ComponentRef.getSubscriptedType(seedCref, true);
+          stmts := Statement.ASSIGNMENT(
+            Expression.fromCref(seedCref),
+            Expression.makeZero(vty),
+            vty,
+            DAE.emptyElementSource
+          ) :: stmts;
+          stmts := listReverse(stmts);
+        else
+          stmts := {};
+        end if;
+      then (diffArguments, stmts);
+
+      // ===================== ARRAY_EQUATION (Assignment) =====================
+      case Equation.ARRAY_EQUATION() algorithm
+        SOME(dm) := diffArguments.diff_map;
+        lhs_base := Expression.toCref(eq.lhs);
+
+        if (not ComponentRef.isEmpty(lhs_base)) and UnorderedMap.contains(ComponentRef.stripSubscriptsAll(lhs_base), dm) then
+          seed_base := UnorderedMap.getOrFail(ComponentRef.stripSubscriptsAll(lhs_base), dm);
+
+          // Per-element reverse seeding for explicit array RHS
+          if Expression.isArray(eq.rhs) then
+            n := 0;
+            if Type.isArray(eq.ty) then
+              dims := Type.arrayDims(eq.ty);
+              if not listEmpty(dims) then
+                n := Dimension.size(listHead(dims));
+              end if;
+            end if;
+
+            if n > 0 then
+              grad_save := diffArguments.current_grad;
+              collect_save := diffArguments.collectAdjoints;
+              for iel in 1:n loop
+                grad_i := Expression.applySubscripts(
+                  {Subscript.INDEX(Expression.INTEGER(iel))},
+                  Expression.fromCref(seed_base),
+                  true);
+                rhs_i := Expression.applySubscripts(
+                  {Subscript.INDEX(Expression.INTEGER(iel))},
+                  eq.rhs,
+                  true);
+                diffArguments.current_grad := grad_i;
+                diffArguments.root_seed_cref := seed_base;
+                diffArguments.collectAdjoints := true;
+                (_, diffArguments) := differentiateExpression(rhs_i, diffArguments);
+              end for;
+              diffArguments.current_grad := grad_save;
+              diffArguments.collectAdjoints := collect_save;
+            else
+              // Fallback: use whole seed
+              diffArguments.current_grad := Expression.fromCref(seed_base);
+              diffArguments.root_seed_cref := seed_base;
+              diffArguments.collectAdjoints := true;
+              (_, diffArguments) := differentiateExpression(eq.rhs, diffArguments);
+            end if;
+          else
+            // Non-array RHS: regular reverse
+            diffArguments.current_grad := Expression.fromCref(seed_base);
+            diffArguments.root_seed_cref := seed_base;
+            diffArguments.collectAdjoints := true;
+            (_, diffArguments) := differentiateExpression(eq.rhs, diffArguments);
+          end if;
+
+          (diffArguments, stmts) := makeAdjointAccumulationStatements(diffArguments);
+
+          // Seed reset
+          vty := ComponentRef.getSubscriptedType(seed_base, true);
+          stmts := Statement.ASSIGNMENT(
+            Expression.fromCref(seed_base),
+            Expression.makeZero(vty),
+            vty,
+            DAE.emptyElementSource
+          ) :: stmts;
+          stmts := listReverse(stmts);
+        else
+          stmts := {};
+        end if;
+      then (diffArguments, stmts);
+
+      // ===================== RECORD_EQUATION (same as Scalar) =====================
+      case Equation.RECORD_EQUATION() algorithm
+        SOME(dm) := diffArguments.diff_map;
+        lhsCref := Expression.toCref(eq.lhs);
+
+        if (not ComponentRef.isEmpty(lhsCref)) and UnorderedMap.contains(ComponentRef.stripSubscriptsAll(lhsCref), dm) then
+          seedCref := UnorderedMap.getOrFail(ComponentRef.stripSubscriptsAll(lhsCref), dm);
+          if not diffArguments.scalarized then
+            seedCref := ComponentRef.copySubscripts(lhsCref, seedCref);
+          end if;
+
+          diffArguments.current_grad := Expression.fromCref(seedCref);
+          diffArguments.root_seed_cref := seedCref;
+          diffArguments.collectAdjoints := true;
+          (_, diffArguments) := differentiateExpression(eq.rhs, diffArguments);
+
+          (diffArguments, stmts) := makeAdjointAccumulationStatements(diffArguments);
+
+          vty := ComponentRef.getSubscriptedType(seedCref, true);
+          stmts := Statement.ASSIGNMENT(
+            Expression.fromCref(seedCref),
+            Expression.makeZero(vty),
+            vty,
+            DAE.emptyElementSource
+          ) :: stmts;
+          stmts := listReverse(stmts);
+        else
+          stmts := {};
+        end if;
+      then (diffArguments, stmts);
+
+      // ===================== IF_EQUATION =====================
+      case Equation.IF_EQUATION() algorithm
+        (diffArguments, ifBranches, elseIfBranches) := differentiateIfEquationBodyAdjoint(eq.body, diffArguments);
+
+        // Wrap into a single IF statement
+        stmts := {Statement.IF(ifBranches, DAE.emptyElementSource)};
+      then (diffArguments, stmts);
+
+      // ===================== FOR_EQUATION =====================
+      case Equation.FOR_EQUATION() algorithm
+        allStmts := {};
+        for bodyEqn in eq.body loop
+          (diffArguments, bodyStmts) := differentiateEquationAdjoint(bodyEqn, diffArguments);
+          // Prepend (LIFO order within the for body)
+          for s in bodyStmts loop
+            allStmts := s :: allStmts;
+          end for;
+        end for;
+        // allStmts is already in LIFO (reversed) order
+
+        // Wrap in nested FOR statements with reversed iterator ranges
+        stmts := allStmts;
+        revIter := reverseEquationIterator(eq.iter);
+        (iterNames, iterRanges, iterMaps) := NBEquation.Iterator.getFrames(revIter);
+        for tpl in listReverse(List.zip(iterNames, iterRanges)) loop
+          (iterName, iterRange) := tpl;
+          stmts := {Statement.FOR(
+            ComponentRef.node(iterName),
+            SOME(iterRange),
+            stmts,
+            Statement.ForType.NORMAL(),
+            DAE.emptyElementSource
+          )};
+        end for;
+      then (diffArguments, stmts);
+
+      // ===================== ALGORITHM =====================
+      case Equation.ALGORITHM() algorithm
+        allStmts := {};
+        for s in eq.alg.statements loop
+          (diffArguments, bodyStmts) := differentiateStatementAdjoint(s, diffArguments);
+          for bs in bodyStmts loop
+            allStmts := bs :: allStmts;
+          end for;
+        end for;
+        // allStmts is in LIFO order
+        stmts := allStmts;
+      then (diffArguments, stmts);
+
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for: " + Equation.toString(eq)});
+      then fail();
+    end match;
+  end differentiateEquationAdjoint;
+
+  function differentiateStatementAdjoint
+    "Adjoint-mode statement differentiation.
+     Given a statement and DifferentiationArguments with a fresh adjoint_map,
+     returns adjoint statements and updated diffArguments."
+    input Statement stmt;
+    input output DifferentiationArguments diffArguments;
+    output list<Statement> adjointStatements;
+  algorithm
+    (diffArguments, adjointStatements) := match stmt
+      local
+        Expression lhs, rhs, seedExpr;
+        ComponentRef lhsCref, seedCref;
+        UnorderedMap<ComponentRef, ComponentRef> dm;
+        Type vty;
+        list<Statement> stmts, bodyStmts, allStmts;
+        list<tuple<Expression, list<Statement>>> branches, adjBranches;
+        Expression cond;
+
+      // Real assignment statement
+      case Statement.ASSIGNMENT() guard(Type.isReal(Type.arrayElementType(Expression.typeOf(stmt.lhs)))) algorithm
+        SOME(dm) := diffArguments.diff_map;
+
+        // Differentiate the LHS to get seed variable
+        (lhs, diffArguments) := differentiateExpressionNoCollect(stmt.lhs, diffArguments);
+        lhsCref := match lhs
+          case Expression.CREF() then lhs.cref;
+          else ComponentRef.EMPTY();
+        end match;
+
+        if not ComponentRef.isEmpty(lhsCref) then
+          // Set seed to the differentiated LHS variable
+          diffArguments.current_grad := lhs;
+          diffArguments.root_seed_cref := lhsCref;
+          diffArguments.collectAdjoints := true;
+
+          // Differentiate RHS to accumulate into adjoint_map
+          (_, diffArguments) := differentiateExpression(stmt.rhs, diffArguments);
+
+          // Emit accumulation statements
+          (diffArguments, stmts) := makeAdjointAccumulationStatements(diffArguments);
+
+          // Reset the seed: seed := 0
+          vty := ComponentRef.getSubscriptedType(lhsCref, true);
+          stmts := Statement.ASSIGNMENT(
+            Expression.fromCref(lhsCref),
+            Expression.makeZero(vty),
+            vty,
+            DAE.emptyElementSource
+          ) :: stmts;
+          stmts := listReverse(stmts);
+        else
+          stmts := {};
+        end if;
+      then (diffArguments, stmts);
+
+      // FOR statement
+      case Statement.FOR() algorithm
+        allStmts := {};
+        for s in stmt.body loop
+          (diffArguments, bodyStmts) := differentiateStatementAdjoint(s, diffArguments);
+          for bs in bodyStmts loop
+            allStmts := bs :: allStmts;
+          end for;
+        end for;
+        stmts := {Statement.FOR(
+          stmt.iterator,
+          reverseForRange(stmt.range),
+          allStmts,
+          stmt.forType,
+          stmt.source
+        )};
+      then (diffArguments, stmts);
+
+      // IF statement
+      case Statement.IF() algorithm
+        adjBranches := {};
+        for branch in stmt.branches loop
+          (cond, bodyStmts) := branch;
+          allStmts := {};
+          for s in bodyStmts loop
+            (diffArguments, stmts) := differentiateStatementAdjoint(s, diffArguments);
+            for bs in stmts loop
+              allStmts := bs :: allStmts;
+            end for;
+          end for;
+          adjBranches := (cond, allStmts) :: adjBranches;
+        end for;
+        stmts := {Statement.IF(listReverse(adjBranches), stmt.source)};
+      then (diffArguments, stmts);
+
+      // Non-Real assignments pass through unchanged
+      case Statement.ASSIGNMENT() then (diffArguments, {stmt});
+
+      else (diffArguments, {stmt});
+    end match;
+  end differentiateStatementAdjoint;
+
+  function differentiateIfEquationBodyAdjoint
+    "Adjoint-mode differentiation of an IfEquationBody.
+     Returns branches as (condition, adjointStatements) tuples and optional else branches."
+    input IfEquationBody body;
+    input output DifferentiationArguments diffArguments;
+    output list<tuple<Expression, list<Statement>>> branches;
+    output Option<list<tuple<Expression, list<Statement>>>> elseIfBranches;
+  protected
+    list<Statement> allStmts, bodyStmts;
+    Equation bodyEqn;
+    IfEquationBody elseBody;
+    list<tuple<Expression, list<Statement>>> elseBranches;
+    Option<list<tuple<Expression, list<Statement>>>> nestedElse;
+  algorithm
+    // Process then-equations in LIFO order
+    allStmts := {};
+    for eqPtr in body.then_eqns loop
+      bodyEqn := Pointer.access(eqPtr);
+      (diffArguments, bodyStmts) := differentiateEquationAdjoint(bodyEqn, diffArguments);
+      for s in bodyStmts loop
+        allStmts := s :: allStmts;
+      end for;
+    end for;
+    // allStmts is in LIFO order
+
+    branches := {(body.condition, allStmts)};
+
+    // Recurse into else-if
+    if isSome(body.else_if) then
+      SOME(elseBody) := body.else_if;
+      (diffArguments, elseBranches, nestedElse) := differentiateIfEquationBodyAdjoint(elseBody, diffArguments);
+      // Flatten: append elseBranches and nestedElse
+      for b in elseBranches loop
+        branches := b :: branches;
+      end for;
+      elseIfBranches := nestedElse;
+    else
+      elseIfBranches := NONE();
+    end if;
+    branches := listReverse(branches);
+  end differentiateIfEquationBodyAdjoint;
+
+  function makeAdjointAccumulationStatements
+    "Read the adjoint_map and generate accumulation statements:
+     For each key v in the map with entries [(_, e1), (_, e2), ...]:
+       v := v + e1 + e2 + ...
+     Clears the adjoint_map after reading."
+    input output DifferentiationArguments diffArguments;
+    output list<Statement> stmts;
+  protected
+    UnorderedMap<ComponentRef, list<tuple<ComponentRef, Expression>>> amap;
+    list<ComponentRef> keys;
+    list<tuple<ComponentRef, Expression>> taggedTerms;
+    list<Expression> terms;
+    Expression accRhs;
+    Type vty;
+    NFOperator.SizeClassification sc;
+    Operator addOp;
+    ComponentRef key;
+  algorithm
+    stmts := {};
+    if Util.isSome(diffArguments.adjoint_map) then
+      SOME(amap) := diffArguments.adjoint_map;
+      keys := UnorderedMap.keyList(amap);
+      for key in keys loop
+        taggedTerms := UnorderedMap.getOrFail(key, amap);
+        if not listEmpty(taggedTerms) then
+          terms := list(Util.tuple22(t) for t in taggedTerms);
+
+          // Build RHS: key + sum(terms)
+          vty := ComponentRef.getComponentType(key);
+          if List.hasOneElement(terms) then
+            accRhs := listHead(terms);
+          else
+            sc := match Type.dimensionCount(vty)
+              case 0 then NFOperator.SizeClassification.SCALAR;
+              case 1 then NFOperator.SizeClassification.ELEMENT_WISE;
+              case 2 then NFOperator.SizeClassification.MATRIX;
+              else NFOperator.SizeClassification.ELEMENT_WISE;
+            end match;
+            addOp := Operator.fromClassification((NFOperator.MathClassification.ADDITION, sc), vty);
+            accRhs := SimplifyExp.simplify(Expression.MULTARY(terms, {}, addOp));
+          end if;
+
+          // v := v + accRhs (unless accRhs already contains v, then just use accRhs)
+          if Expression.containsCref(accRhs, key) then
+            // accRhs already includes v
+          else
+            sc := match Type.dimensionCount(vty)
+              case 0 then NFOperator.SizeClassification.SCALAR;
+              case 1 then NFOperator.SizeClassification.ELEMENT_WISE;
+              case 2 then NFOperator.SizeClassification.MATRIX;
+              else NFOperator.SizeClassification.ELEMENT_WISE;
+            end match;
+            addOp := Operator.fromClassification((NFOperator.MathClassification.ADDITION, sc), vty);
+            accRhs := SimplifyExp.simplify(Expression.MULTARY({Expression.fromCref(key), accRhs}, {}, addOp));
+          end if;
+
+          accRhs := Expression.map(accRhs, Expression.repairOperator);
+
+          stmts := Statement.ASSIGNMENT(
+            Expression.fromCref(key),
+            accRhs,
+            vty,
+            DAE.emptyElementSource
+          ) :: stmts;
+        end if;
+      end for;
+
+      // Clear the adjoint_map for next use
+      UnorderedMap.clear(amap);
+      diffArguments.adjoint_map := SOME(amap);
+    end if;
+    // stmts is returned in reverse order (caller should reverse or use as-is for LIFO)
+  end makeAdjointAccumulationStatements;
+
   function differentiateIfEquationBody
     input output IfEquationBody body;
     input output Pointer<DifferentiationArguments> diffArguments_ptr;
