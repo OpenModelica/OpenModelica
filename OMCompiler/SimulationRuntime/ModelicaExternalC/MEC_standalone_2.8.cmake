@@ -5,7 +5,11 @@
 # So we need to know where some of the OpenModelica libraries are to successfully
 # compile DLLs for these files (i.e, no undefined references in the library)
 
+<<<<<<< HEAD
 cmake_minimum_required(VERSION 3.4...4.1)
+=======
+cmake_minimum_required(VERSION 3.5)
+>>>>>>> 7f2530e283 (prepare for new OMDev changes)
 project(OMModelicaExternalC)
 
 # Use the OpenModelica lib and bin dirs as linking directories.
