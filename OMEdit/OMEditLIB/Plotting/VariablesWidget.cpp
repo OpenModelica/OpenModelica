@@ -2117,10 +2117,7 @@ void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickne
         if (!pPlotCurve && !pPlotWindow->getPlot()->getPlotCurvesList().isEmpty()) {
           pPlotCurve = pPlotWindow->getPlot()->getPlotCurvesList().last();
         }
-        if (pPlotCurve == pLastPlotCurve) {
-          unCheckVariableAndErrorMessage(index, tr("Plot curve not drawn. An error occurred while plotting (e.g., time out of bounds)."));
-          return;
-        }
+        assert(pPlotCurve != pLastPlotCurve);
         bool requiresUpdate = false;
         if (!pVariablesTreeItem->isString() && pVariablesTreeItem->getUnit().compare(pVariablesTreeItem->getDisplayUnit()) != 0) {
           OMCInterface::convertUnits_res convertUnit = MainWindow::instance()->getOMCProxy()->convertUnits(pVariablesTreeItem->getUnit(), pVariablesTreeItem->getDisplayUnit());
@@ -2237,10 +2234,7 @@ void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickne
             if (!pPlotCurve && !pPlotWindow->getPlot()->getPlotCurvesList().isEmpty()) {
               pPlotCurve = pPlotWindow->getPlot()->getPlotCurvesList().last();
             }
-            if (pPlotCurve == pLastPlotCurve) {
-              unCheckVariableAndErrorMessage(index, tr("Plot curve not drawn. An error occurred while plotting (e.g., time out of bounds)."));
-              return;
-            }
+            assert(pPlotCurve != pLastPlotCurve);
             bool requiresUpdate = false;
             // convert x value
             if (!plotParametricCurve.xVariable.isString && plotParametricCurve.xVariable.unit.compare(plotParametricCurve.xVariable.displayUnit) != 0) {
@@ -2588,6 +2582,8 @@ void VariablesWidget::updatePlotWindows()
           }
         }
       }
+    } catch (RecurringPlotException &e) {
+      // Silence repeated exceptions
     } catch (PlotException &e) {
       MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, e.what(), Helper::scriptingKind, Helper::errorLevel));
     }

@@ -275,6 +275,12 @@ public:
   TimeOutOfBoundsException(const QFileInfo &fileInfo, double startTime, double stopTime);
 };
 
+class RecurringPlotException : public PlotException
+{
+public:
+  RecurringPlotException(const PlotException &e) : PlotException(e) {}
+};
+
 class SetupDialog;
 class VariablePageWidget : public QWidget
 {
