@@ -246,6 +246,7 @@ int gbodef_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solve
   gbfData->tv             = malloc(gbfData->ringBufferSize*sizeof(double));
   gbfData->yv             = malloc(gbData->nStates*gbfData->ringBufferSize*sizeof(double));
   gbfData->kv             = malloc(gbData->nStates*gbfData->ringBufferSize*sizeof(double));
+  gbfData->slowStateCache = slowStateCache_alloc(gbfData->tableau->nStages, gbData->nStates, gbfData->tableau->c);
 
   gbfData->extrapolationBaseTime = INFINITY;
   gbfData->extrapolationStepSize = 0.0;
@@ -656,6 +657,8 @@ void gbodef_freeData(DATA_GBODEF *gbfData)
   free(gbfData->kv);
   free(gbfData->fastStates_old);
 
+  slowStateCache_free(gbfData->slowStateCache);
+
   if (gbfData->fastStatesDebugFile)
     fclose(gbfData->fastStatesDebugFile);
 
@@ -745,6 +748,7 @@ void gbodef_init(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
   int i;
 
   gbfData->didEventStep = FALSE;
+  slowStateCache_invalidate(gbfData->slowStateCache);
 
   gbfData->time = gbData->time;
   gbfData->stepSize = 0.1*gbData->stepSize*GenericController(&(gbData->err_fast), &(gbData->stepSize), 1, GB_CTRL_I);
@@ -939,6 +943,7 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
     struct dataSolver *solverData = gbfData->nlsData->solverData;
     // set number of non-linear variables and corresponding nominal values (changes dynamically during simulation)
     gbfData->nlsData->size = gbData->nFastStates;
+    slowStateCache_invalidate(gbfData->slowStateCache);
 
     infoStreamPrint(OMC_LOG_GBODE, 1, "Fast states and corresponding nominal values:");
     for (ii = 0; ii < nFastStates; ii++) {
@@ -1067,6 +1072,7 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
           messageClose(OMC_LOG_SOLVER);  // FIXME what does this belong to?
           return -1;
         }
+        slowStateCache_invalidate_keep_left(gbfData->slowStateCache);
         err = INFINITY;
         continue;
       }
@@ -1098,6 +1104,7 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
       if (err > 1) {
         gbfData->stats.nErrorTestFailures++;
         gbfData->stepSize *= 0.5;
+        slowStateCache_invalidate_keep_left(gbfData->slowStateCache);
         infoStreamPrint(OMC_LOG_SOLVER, 0, "Reject step from %10g to %10g, error %10g, new stepsize %10g",
                         gbfData->time, gbfData->time + gbfData->lastStepSize, err, gbfData->stepSize);
         if (OMC_ACTIVE_STREAM(OMC_LOG_GBODE_STATES)) {
@@ -1132,45 +1139,18 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
       }
     }
 
-    gbData->err_fast = err;
-
-    // Rotate and update buffer
-    // TODO actual ring buffer swap...
-    for (i = (gbfData->ringBufferSize - 1); i > 0 ; i--) {
-      gbfData->errValues[i] = gbfData->errValues[i - 1];
-      gbfData->stepSizeValues[i] = gbfData->stepSizeValues[i - 1];
-    }
-
-    gbfData->errValues[0] = err;
-    gbfData->stepSizeValues[0] = gbfData->stepSize;
-
-    // Store performed stepSize for adjusting the time in case of latter interpolation
-    // Call the step size control
-    gbfData->lastStepSize = gbfData->stepSize;
-    gbfData->stepSize *= GenericController(gbfData->errValues, gbfData->stepSizeValues, gbfData->tableau->error_order, gbfData->ctrl_method);
-
     // Count successful integration steps
     gbfData->stats.nStepsTaken += 1;
 
-    // TODO: these nSlowStates, slowStatesIdx interpolations are roughly 6 times as expensive as a full state interpolation:
-    // get rid of them and replace with a full interpolation, unless there are few slow states
+    // pretty sure this is redundant (at least for ESDIRK) -> inspect this further
+    slowStateCache_merge_left(gbData, gbfData->slowStateCache, gbfData->yOld);
 
-    // interpolate the slow states to the boundaries of current integration interval, this is used for event detection
-    // interpolate the slow states on the time of the current stage
-    gb_interpolation(gbfData->interpolation,
-                     gbData->timeLeft,  gbData->yLeft,  gbData->kLeft,
-                     gbData->timeRight, gbData->yRight, gbData->kRight,
-                     gbfData->time, gbfData->yOld,
-                     gbData->nSlowStates, gbData->slowStatesIdx,  nStates, gbData->tableau, gbData->x, gbData->k);
-
-    gb_interpolation(gbfData->interpolation,
-                     gbData->timeLeft,  gbData->yLeft,  gbData->kLeft,
-                     gbData->timeRight, gbData->yRight, gbData->kRight,
-                     gbfData->time + gbfData->lastStepSize, gbfData->y,
-                     gbData->nSlowStates, gbData->slowStatesIdx,  nStates, gbData->tableau, gbData->x, gbData->k);
+    // interpolation to right boundary
+    slowStateCache_merge_right(gbData, gbfData->slowStateCache, gbfData->y);
+    slowStateCache_rotate(gbfData->slowStateCache);
 
     // store right hand values for latter interpolation
-    gbfData->timeRight = gbfData->time + gbfData->lastStepSize;
+    gbfData->timeRight = gbfData->time + gbfData->stepSize;
     memcpy(gbfData->yRight, gbfData->y, nStates * sizeof(double));
     // update kRight
     if (!gbfData->tableau->isKRightAvailable) {
@@ -1180,7 +1160,7 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
     }
     memcpy(gbfData->kRight, fODE, nStates * sizeof(double));
 
-    foundEvent = checkForEvents(data, threadData, solverInfo, gbfData->time, gbfData->yOld, gbfData->time + gbfData->lastStepSize, gbfData->y, TRUE, &eventTime);
+    foundEvent = checkForEvents(data, threadData, solverInfo, gbfData->time, gbfData->yOld, gbfData->time + gbfData->stepSize, gbfData->y, TRUE, &eventTime);
     if (foundEvent) {
       solverInfo->currentTime = eventTime;
       sData->timeValue = solverInfo->currentTime;
@@ -1212,8 +1192,25 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
       return 1;
     }
 
+    // set previously computed error (is accepted at this point) + predict new step size
+    gbData->err_fast = err;
+
+    // Rotate and update buffer
+    for (i = (gbfData->ringBufferSize - 1); i > 0 ; i--) {
+      gbfData->errValues[i] = gbfData->errValues[i - 1];
+      gbfData->stepSizeValues[i] = gbfData->stepSizeValues[i - 1];
+    }
+
+    gbfData->errValues[0] = err;
+    gbfData->stepSizeValues[0] = gbfData->stepSize;
+
     /* update time with performed stepSize */
-    gbfData->time += gbfData->lastStepSize;
+    gbfData->time += gbfData->stepSize;
+
+    // Store performed stepSize for adjusting the time in case of latter interpolation
+    // Call the step size control
+    gbfData->lastStepSize = gbfData->stepSize;
+    gbfData->stepSize *= GenericController(gbfData->errValues, gbfData->stepSizeValues, gbfData->tableau->error_order, gbfData->ctrl_method);
 
     // debug the changes of the states and derivatives during integration
     if (OMC_ACTIVE_STREAM(OMC_LOG_GBODE)) {
@@ -1351,7 +1348,6 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
   int i, retries = 0;
   modelica_boolean foundEvent;
 
-  int *sortedStates;
   double err_states; // error of the (slow, if multirate) states
 
   // root finding will be done in gbode after each accepted step
@@ -1620,31 +1616,10 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
 
       if (gbData->multi_rate) {
         // Multi-rate integration enabled:
-        //
-        // If verbose GBODE logging is active, allocate memory and copy the current sorted state indices
-        // for comparison and debugging purposes.
-        if (OMC_ACTIVE_STREAM(OMC_LOG_GBODE_V)) {
-          sortedStates = (int *)malloc(sizeof(int) * nStates);
-          // FIXME avoid allocs during simulation, they are slow!
-          memcpy(sortedStates, gbData->sortedStatesIdx, sizeof(int) * nStates);
-        }
 
         // Calculate the error threshold for slow states (used to separate slow and fast states).
         err_states = getErrorThreshold(gbData);
         err = err_states;
-
-        // If verbose logging is active, check if the sorted state indices have changed since the copy.
-        // If differences are detected, print the before and after sorted state vectors for debugging.
-        if (OMC_ACTIVE_STREAM(OMC_LOG_GBODE_V)) {
-          for (int k = 0; k < nStates; k++) {
-            if (sortedStates[k] != gbData->sortedStatesIdx[k]) {
-              printIntVector_gb(OMC_LOG_GBODE_V, "sortedStates before:", sortedStates, nStates, gbData->time);
-              printIntVector_gb(OMC_LOG_GBODE_V, "sortedStates after:", gbData->sortedStatesIdx, nStates, gbData->time);
-              break;
-            }
-          }
-          free(sortedStates);
-        }
 
         // Classify states into fast and slow based on the scaled error:
         // - States with error >= 1 are considered fast.
@@ -1886,7 +1861,6 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
             // debug the error of the states and derivatives after outer integration
             infoStreamPrint(OMC_LOG_GBODE, 1, "Error of the states before inner integration: threshold = %15.10g", err_states);
             printVector_gb(OMC_LOG_GBODE, "er", gbData->err, nStates, gbData->timeRight);
-            printIntVector_gb(OMC_LOG_GBODE, "sr", gbData->sortedStatesIdx, nStates, gbData->timeRight);
             messageClose(OMC_LOG_GBODE);
           }
           if (OMC_ACTIVE_STREAM(OMC_LOG_GBODE_STATES)) {

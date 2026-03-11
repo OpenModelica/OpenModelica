@@ -912,3 +912,200 @@ void deprecationWarningGBODE(enum SOLVER_METHOD method)
   messageCloseWarning(OMC_LOG_STDOUT);
   return;
 }
+
+SLOW_STATE_CACHE *slowStateCache_alloc(int n_stages, int n_states, double *c)
+{
+  SLOW_STATE_CACHE *cache = (SLOW_STATE_CACHE*) malloc(sizeof(SLOW_STATE_CACHE));
+  cache->n_stages = n_stages;
+  cache->n_states = n_states;
+  cache->states = (double *) malloc((n_stages + 2) * n_states * sizeof(double));
+  cache->work = (double *) malloc(n_states * sizeof(double));
+  cache->valid = (modelica_boolean *) calloc(n_stages + 2, sizeof(modelica_boolean));
+  cache->offset = 0;
+
+  cache->left_stage = n_stages;
+  cache->right_stage = n_stages + 1;
+
+  for (int i = 0; i < n_stages; i++)
+  {
+    if (c[i] == 0.0) cache->left_stage  = i;
+    if (c[i] == 1.0) cache->right_stage = i;
+  }
+  return cache;
+}
+
+void slowStateCache_free(SLOW_STATE_CACHE *cache)
+{
+  free(cache->states);
+  free(cache->work);
+  free(cache->valid);
+  free(cache);
+}
+
+// physical slot for logical index i
+static inline int slowStateCache_slot(SLOW_STATE_CACHE *cache, int i)
+{
+  return (cache->offset + i) % (cache->n_stages + 2);
+}
+
+/* simple interpolation wrapper that uses
+ *  - GBODE interpolation method
+ *  - big step solution -> interpolate to some provided time value
+ *  - writes solution to out buffer (field in cache structure)
+ *  - uses indirect indexing only if ratio of slow states to all states is very small,
+ *    otherwise interpolates all states from the slow step
+ *  => the latter behavior is not guaranteed and only done to reduce work */
+static inline void slowStateCache_interpolate_slow_to_fast_node(DATA_GBODE *gbData, double time_value, double *out)
+{
+  modelica_boolean use_sparse_slow_interp = ((double) gbData->nSlowStates / (double) gbData->nStates < 0.2);
+  gb_interpolation(gbData->gbfData->interpolation,
+                  gbData->timeLeft,   gbData->yLeft,  gbData->kLeft,
+                  gbData->timeRight,  gbData->yRight, gbData->kRight,
+                  time_value, out,
+                  use_sparse_slow_interp ? gbData->nSlowStates : 0, use_sparse_slow_interp ? gbData->slowStatesIdx : NULL,
+                  gbData->nStates, gbData->tableau, gbData->x, gbData->k);
+}
+
+// interpolate stage node if not cached, return pointer to states slot
+static inline double *slowStateCache_get_or_compute_stage(DATA_GBODE *gbData, SLOW_STATE_CACHE *cache, int stage)
+{
+  int s = slowStateCache_slot(cache, stage);
+  if (!cache->valid[s])
+  {
+    double t_stage = gbData->gbfData->time + gbData->gbfData->tableau->c[stage] * gbData->gbfData->stepSize;
+    slowStateCache_interpolate_slow_to_fast_node(gbData, t_stage, &cache->states[s * cache->n_states]);
+    cache->valid[s] = TRUE;
+  }
+  return &cache->states[s * cache->n_states];
+}
+
+// interpolate left boundary if not cached, return pointer to states slot
+static inline double *slowStateCache_get_or_compute_left(DATA_GBODE *gbData, SLOW_STATE_CACHE *cache)
+{
+  int s = slowStateCache_slot(cache, cache->left_stage);
+  if (!cache->valid[s])
+  {
+    slowStateCache_interpolate_slow_to_fast_node(gbData, gbData->gbfData->time, &cache->states[s * cache->n_states]);
+    cache->valid[s] = TRUE;
+  }
+  return &cache->states[s * cache->n_states];
+}
+
+// interpolate right boundary if not cached, return pointer to states slot
+static inline double *slowStateCache_get_or_compute_right(DATA_GBODE *gbData, SLOW_STATE_CACHE *cache)
+{
+  int s = slowStateCache_slot(cache, cache->right_stage);
+  if (!cache->valid[s])
+  {
+    slowStateCache_interpolate_slow_to_fast_node(gbData, gbData->gbfData->time + gbData->gbfData->stepSize, &cache->states[s * cache->n_states]);
+    cache->valid[s] = TRUE;
+  }
+  return &cache->states[s * cache->n_states];
+}
+
+// write all slow states of interp to x, preserve fast states using work buffer
+static inline void slowStateCache_merge(DATA_GBODE *gbData, SLOW_STATE_CACHE *cache, double *interp, double *x)
+{
+  if (((double) gbData->nSlowStates / (double) gbData->nStates < 0.2))
+  {
+    // do not use memcpy if its really sparse
+    for (int i = 0; i < gbData->nSlowStates; i++)
+    {
+      int full_idx = gbData->slowStatesIdx[i];
+      x[full_idx] = interp[full_idx];
+    }
+  }
+  else
+  {
+    for (int i = 0; i < gbData->nFastStates; i++) cache->work[i] = x[gbData->fastStatesIdx[i]];
+    memcpy(x, interp, cache->n_states * sizeof(double));
+    for (int i = 0; i < gbData->nFastStates; i++) x[gbData->fastStatesIdx[i]] = cache->work[i];
+  }
+}
+
+// write all slow states of interp to x, fast states are potentially overwritten
+static inline void slowStateCache_overwrite(DATA_GBODE *gbData, SLOW_STATE_CACHE *cache, double *interp, double *x)
+{
+  if (((double) gbData->nSlowStates / (double) gbData->nStates < 0.2))
+  {
+    // well we do not fill full, if its very sparse
+    for (int i = 0; i < gbData->nSlowStates; i++)
+    {
+      int full_idx = gbData->slowStatesIdx[i];
+      x[full_idx] = interp[full_idx];
+    }
+  }
+  else
+  {
+    memcpy(x, interp, cache->n_states * sizeof(double));
+  }
+}
+
+// non-static, public functions
+
+void slowStateCache_invalidate(SLOW_STATE_CACHE *cache)
+{
+  memset(cache->valid, 0, sizeof(modelica_boolean) * (cache->n_stages + 2));
+  cache->offset = 0;
+}
+
+void slowStateCache_invalidate_keep_left(SLOW_STATE_CACHE *cache)
+{
+  modelica_boolean carry = cache->valid[slowStateCache_slot(cache, cache->left_stage)];
+  memset(cache->valid, 0, sizeof(modelica_boolean) * (cache->n_stages + 2));
+  cache->valid[slowStateCache_slot(cache, cache->left_stage)] = carry;
+}
+
+void slowStateCache_rotate(SLOW_STATE_CACHE *cache)
+{
+  int left  = cache->left_stage;
+  int right = cache->right_stage;
+
+  // save old right valid flag before disabling all
+  modelica_boolean carry = cache->valid[slowStateCache_slot(cache, right)];
+
+  // rotate offset so logical right maps to logical left:
+  // new_offset + left ≡ old_offset + right  (mod n_stages + 2)
+  int divisor = cache->n_stages + 2;
+  cache->offset = ((cache->offset + right - left + divisor) % divisor);
+
+  // disable all, restore carried left
+  memset(cache->valid, 0, sizeof(modelica_boolean) * (cache->n_stages + 2));
+  cache->valid[slowStateCache_slot(cache, left)] = carry;
+}
+
+void slowStateCache_overwrite_stage(DATA_GBODE *gbData, SLOW_STATE_CACHE *cache, int stage, double *x)
+{
+  double *interp = slowStateCache_get_or_compute_stage(gbData, cache, stage);
+  slowStateCache_overwrite(gbData, cache, interp, x);
+}
+
+void slowStateCache_overwrite_left(DATA_GBODE *gbData, SLOW_STATE_CACHE *cache, double *x)
+{
+  double *interp = slowStateCache_get_or_compute_left(gbData, cache);
+  slowStateCache_overwrite(gbData, cache, interp, x);
+}
+
+void slowStateCache_overwrite_right(DATA_GBODE *gbData, SLOW_STATE_CACHE *cache, double *x)
+{
+  double *interp = slowStateCache_get_or_compute_right(gbData, cache);
+  slowStateCache_overwrite(gbData, cache, interp, x);
+}
+
+void slowStateCache_merge_stage(DATA_GBODE *gbData, SLOW_STATE_CACHE *cache, int stage, double *x)
+{
+  double *interp = slowStateCache_get_or_compute_stage(gbData, cache, stage);
+  slowStateCache_merge(gbData, cache, interp, x);
+}
+
+void slowStateCache_merge_left(DATA_GBODE *gbData, SLOW_STATE_CACHE *cache, double *x)
+{
+  double *interp = slowStateCache_get_or_compute_left(gbData, cache);
+  slowStateCache_merge(gbData, cache, interp, x);
+}
+
+void slowStateCache_merge_right(DATA_GBODE *gbData, SLOW_STATE_CACHE *cache, double *x)
+{
+  double *interp = slowStateCache_get_or_compute_right(gbData, cache);
+  slowStateCache_merge(gbData, cache, interp, x);
+}

@@ -64,6 +64,8 @@ extern "C" {
  */
 typedef int (*gm_step_function)(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo);
 
+typedef struct SLOW_STATE_CACHE SLOW_STATE_CACHE;
+
 typedef struct DATA_GBODEF{
   enum GB_METHOD GM_method;                         /* Method to use for integration. */
   enum GM_TYPE type;                                /* Type of GB method */
@@ -74,6 +76,7 @@ typedef struct DATA_GBODEF{
                                                      * */
   JACOBIAN* jacobian;                               /* Jacobian of non-linear system of implicit Runge-Kutta method */
   SPARSE_PATTERN* sparsePattern_DIRK;               /* Sparsity pattern for the DIRK methd, will be reduced based on the fast states selection */
+  SLOW_STATE_CACHE *slowStateCache;                 /* Reusable cache data of full step, slow state interpolations */
 
   double *y;                                        /* State vector of the current Runge-Kutta step */
   double *yt, *y1;                                  /* Result vector of the states of embedded RK step */

@@ -411,34 +411,7 @@ int expl_diag_impl_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solv
   int nStages = gbfData->tableau->nStages;
   NLS_SOLVER_STATUS solved = NLS_FAILED;
 
-  // if we have we have many slow states, e.g. 90% slow and 10% fast: always interpolate all slow states
-  // as we can we heavily exploit BLAS vectorization; only use sparse indirect indexing for tiny slow sets (< 20%)
-  modelica_boolean use_sparse_slow_interp = ((double)gbData->nSlowStates / (double)gbData->nStates < 0.2);
-
-  // we need to backup yOld into y2 as otherwise we override gbfData->yOld
-  if (!use_sparse_slow_interp)
-  {
-    projVector_gbf(gbData->y2, gbfData->yOld, nFastStates, gbData->fastStatesIdx);
-  }
-
-  // interpolate the slow states on the current time of gbfData->yOld for correct evaluation of gbfData->res_const
-  gb_interpolation(gbData->interpolation,
-                   gbData->timeLeft,   gbData->yLeft,  gbData->kLeft,
-                   gbData->timeRight,  gbData->yRight, gbData->kRight,
-                   gbfData->time,      gbfData->yOld,
-                   use_sparse_slow_interp ? gbData->nSlowStates : 0, use_sparse_slow_interp ? gbData->slowStatesIdx : NULL,
-                   nStates, gbData->tableau, gbData->x, gbData->k);
-
-  // apply backup
-   if (!use_sparse_slow_interp)
-  {
-    for (int fast_idx = 0; fast_idx < nFastStates; fast_idx++)
-    {
-      int full_idx = gbData->fastStatesIdx[fast_idx];
-      gbfData->yOld[full_idx] = gbData->y2[fast_idx];
-    }
-  }
-
+  slowStateCache_merge_left(gbData, gbfData->slowStateCache, gbfData->yOld);
 
   if (OMC_ACTIVE_STREAM(OMC_LOG_GBODE_NLS)) {
     infoStreamPrint(OMC_LOG_GBODE_NLS, 1, "NLS - used values for extrapolation:");
@@ -491,12 +464,7 @@ int expl_diag_impl_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solv
       }
 
       // interpolate the slow states on the time of the current stage
-      gb_interpolation(gbData->interpolation,
-                       gbData->timeLeft,  gbData->yLeft,  gbData->kLeft,
-                       gbData->timeRight, gbData->yRight, gbData->kRight,
-                       sData->timeValue,   sData->realVars,
-                       use_sparse_slow_interp ? gbData->nSlowStates : 0, use_sparse_slow_interp ? gbData->slowStatesIdx : NULL,
-                       nStates, gbData->tableau, gbData->x, gbData->k);
+      slowStateCache_overwrite_stage(gbData, gbfData->slowStateCache,stage, sData->realVars);
 
       // setting the start vector for the newton step
       // solve for x: 0 = yold-x + h*(sum(A[i,j]*k[j], i=1..j-1) + A[i,i]*f(t + c[i]*h, x))
