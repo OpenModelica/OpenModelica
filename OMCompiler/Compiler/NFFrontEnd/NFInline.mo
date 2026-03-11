@@ -160,7 +160,7 @@ algorithm
           end for;
 
           exp := getOutputExp(stmt, listHead(outputs), call);
-          exp := inlineCallExp(exp, forceInline);
+          exp := Expression.map(exp, function inlineCallExp(forceInline = forceInline));
         else
           exp := callExp;
         end try;

@@ -48,6 +48,7 @@ protected
   import FlatModelicaUtil = NFFlatModelicaUtil;
   import Flatten = NFFlatten;
   import NFFlatten.FunctionTree;
+  import FunctionInverse = NFFunctionInverse;
   import Inline = NFInline;
   import InstContext = NFInstContext;
   import IOStream;
@@ -352,14 +353,17 @@ public
         algorithm
           fn := Call.typedFunction(exp.call);
 
-          if Function.hasBuiltinStatus(fn) then
+          if Function.isBuiltin(fn) then
             outExp := exp;
           else
             outExp := Inline.inlineCallExp(exp, forceInline = true);
 
             if referenceEq(exp, outExp) then
               // If the call wasn't inlined, add it to the set of remaining functions.
-              UnorderedSet.add(fn, funcs);
+              collectFunction(fn, funcs);
+            else
+              // Otherwise, collect any calls in the new expression that couldn't be inlined.
+              Expression.apply(outExp, function collectFunctions(funcs = funcs));
             end if;
           end if;
         then
@@ -368,6 +372,40 @@ public
       else exp;
     end match;
   end inlineFunctions_traverser;
+
+  function collectFunctions
+    input Expression exp;
+    input UnorderedSet<Function> funcs;
+  algorithm
+    () := match exp
+      case Expression.CALL()
+        algorithm
+          collectFunction(Call.typedFunction(exp.call), funcs);
+        then
+          ();
+
+      else ();
+    end match;
+  end collectFunctions;
+
+  function collectFunction
+    input Function fn;
+    input UnorderedSet<Function> funcs;
+  algorithm
+    if not Function.isBuiltin(fn) then
+      UnorderedSet.add(fn, funcs);
+
+      for fn_der in fn.derivatives loop
+        for der_fn in Function.getCachedFuncs(fn_der.derivativeFn) loop
+          UnorderedSet.add(der_fn, funcs);
+        end for;
+      end for;
+
+      for fn_inv in fn.inverses loop
+        UnorderedSet.add(FunctionInverse.getFunction(fn_inv), funcs);
+      end for;
+    end if;
+  end collectFunction;
 
   function collectFlatTypes
     input FlatModel flatModel;
