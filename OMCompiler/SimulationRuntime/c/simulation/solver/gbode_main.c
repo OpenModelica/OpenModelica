@@ -1082,22 +1082,6 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
         err += gbfData->err[ii] * gbfData->err[ii];
       }
       err = sqrt(err / (double) nFastStates);
-      gbData->err_fast = err;
-
-      // Rotate and update buffer
-      // TODO memcpy() or actual ring buffer swap...
-      for (i = (gbfData->ringBufferSize - 1); i > 0 ; i--) {
-        gbfData->errValues[i] = gbfData->errValues[i - 1];
-        gbfData->stepSizeValues[i] = gbfData->stepSizeValues[i - 1];
-      }
-
-      gbfData->errValues[0] = err;
-      gbfData->stepSizeValues[0] = gbfData->stepSize;
-
-      // Store performed stepSize for adjusting the time in case of latter interpolation
-      // Call the step size control
-      gbfData->lastStepSize = gbfData->stepSize;
-      gbfData->stepSize *= GenericController(gbfData->errValues, gbfData->stepSizeValues, gbfData->tableau->error_order, gbfData->ctrl_method);
 
       // debug ring buffer for the states and derviatives of the states
       if (OMC_ACTIVE_STREAM(OMC_LOG_GBODE_V)) {
@@ -1147,6 +1131,23 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
         k_extr_strided[fast_idx] = k_strided[slow_idx];
       }
     }
+
+    gbData->err_fast = err;
+
+    // Rotate and update buffer
+    // TODO actual ring buffer swap...
+    for (i = (gbfData->ringBufferSize - 1); i > 0 ; i--) {
+      gbfData->errValues[i] = gbfData->errValues[i - 1];
+      gbfData->stepSizeValues[i] = gbfData->stepSizeValues[i - 1];
+    }
+
+    gbfData->errValues[0] = err;
+    gbfData->stepSizeValues[0] = gbfData->stepSize;
+
+    // Store performed stepSize for adjusting the time in case of latter interpolation
+    // Call the step size control
+    gbfData->lastStepSize = gbfData->stepSize;
+    gbfData->stepSize *= GenericController(gbfData->errValues, gbfData->stepSizeValues, gbfData->tableau->error_order, gbfData->ctrl_method);
 
     // Count successful integration steps
     gbfData->stats.nStepsTaken += 1;
