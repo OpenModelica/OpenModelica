@@ -298,7 +298,7 @@ public
       end convertSubIterator;
     algorithm
       old_iter := match iter
-        case SIM_ITERATOR_RANGE() then OldBackendDAE.SIM_ITERATOR_RANGE(ComponentRef.toDAE(iter.name), Expression.toDAE(iter.start), Expression.toDAE(iter.step), Expression.toDAE(iter.stop), Expression.toDAE(iter.size), Expression.getInteger(iter.size), list(convertSubIterator(si) for si in iter.sub_iter));
+        case SIM_ITERATOR_RANGE() then OldBackendDAE.SIM_ITERATOR_RANGE(ComponentRef.toDAE(iter.name), Expression.toDAE(iter.start), Expression.toDAE(iter.step), Expression.toDAE(iter.stop), Expression.toDAE(iter.size), Expression.getInteger(iter.size, false), list(convertSubIterator(si) for si in iter.sub_iter));
         case SIM_ITERATOR_LIST()  then OldBackendDAE.SIM_ITERATOR_LIST(ComponentRef.toDAE(iter.name), iter.lst, iter.size, list(convertSubIterator(si) for si in iter.sub_iter));
       end match;
     end convert;
