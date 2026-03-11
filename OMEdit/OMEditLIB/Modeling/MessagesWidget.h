@@ -144,6 +144,7 @@ public:
   void addSimulationOutputTab(QWidget *pSimulationOutputTab, const QString &name, bool removeExisting = true);
   int getSimulationOutputTabsSize();
   SimulationOutputWidget* getSimulationOutputWidget(const QString &className);
+  SimulationOutputWidget* getActiveSimulationOutputWidget();
 signals:
   void messageAdded();
   void messageTabAdded(QWidget *pSimulationOutputTab, const QString &name);

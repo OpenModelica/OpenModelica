@@ -1036,7 +1036,6 @@ bool VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
   mpVariablesTreeView->expand(idx);
   mpVariablesTreeView->setCurrentIndex(idx);
   mpVariablesTreeView->setFocus(Qt::ActiveWindowFocusReason);
-  MainWindow::instance()->enableReSimulationToolbar(MainWindow::instance()->getVariablesDockWidget()->isVisible());
 
   return existingTopVariableTreeItem;
 }
@@ -2943,14 +2942,22 @@ void VariablesWidget::showContextMenu(QPoint point)
     bool isActiveVariableTreeItem = pVariablesTreeItem == mpVariablesTreeModel->getActiveVariablesTreeItem();
     pEnableTimeControlsAction->setEnabled(!pVariablesTreeItem->getSimulationOptions().isInteractiveSimulation() && !isDiagramWindow && !isActiveVariableTreeItem);
     connect(pEnableTimeControlsAction, SIGNAL(triggered()), mpVariablesTreeModel, SLOT(enableTimeControls()));
+    /* resimulate action */
+    QAction *pReSimulateAction = new QAction(QIcon(":/Resources/icons/re-simulate.svg"), Helper::reSimulate, this);
+    pReSimulateAction->setStatusTip(Helper::reSimulateTip);
+    connect(pReSimulateAction, SIGNAL(triggered()), this, SLOT(directReSimulate()));
+    /* resimulate setup action */
+    QAction *pReSimulateSetupAction = new QAction(QIcon(":/Resources/icons/re-simulation-center.svg"), Helper::reSimulateSetup, this);
+    pReSimulateSetupAction->setStatusTip(Helper::reSimulateSetupTip);
+    connect(pReSimulateSetupAction, SIGNAL(triggered()), this, SLOT(showReSimulateSetup()));
 
     QMenu menu(this);
     menu.addAction(pDeleteResultAction);
     menu.addSeparator();
     menu.addAction(pEnableTimeControlsAction);
     menu.addSeparator();
-    menu.addAction(MainWindow::instance()->getReSimulateModelAction());
-    menu.addAction(MainWindow::instance()->getReSimulateSetupAction());
+    menu.addAction(pReSimulateAction);
+    menu.addAction(pReSimulateSetupAction);
     point.setY(point.y() + adjust);
     menu.exec(mpVariablesTreeView->mapToGlobal(point));
   } else if (pVariablesTreeItem) {
@@ -3022,7 +3029,6 @@ void VariablesWidget::findVariables()
       mpVariablesTreeView->selectionModel()->select(proxyIndex, QItemSelectionModel::Select | QItemSelectionModel::Rows);
     }
   }
-  MainWindow::instance()->enableReSimulationToolbar(MainWindow::instance()->getVariablesDockWidget()->isVisible());
 }
 
 void VariablesWidget::directReSimulate()

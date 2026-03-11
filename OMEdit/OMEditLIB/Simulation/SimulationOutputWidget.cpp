@@ -241,11 +241,6 @@ SimulationOutputWidget::SimulationOutputWidget(SimulationOptions simulationOptio
   mpCancelButton = new QPushButton(tr("Cancel Compilation"));
   mpCancelButton->setEnabled(false);
   connect(mpCancelButton, SIGNAL(clicked()), SLOT(cancelCompilationOrSimulation()));
-  mpReSimulateSetuButton = new QToolButton;
-  mpReSimulateSetuButton->setIcon(QIcon(":/Resources/icons/re-simulation-center.svg"));
-  mpReSimulateSetuButton->setToolTip(Helper::reSimulateSetup);
-  mpReSimulateSetuButton->setEnabled(false);
-  connect(mpReSimulateSetuButton, SIGNAL(clicked()), SLOT(showReSimulateSetup()));
   mpOpenTransformationalDebuggerButton = new QToolButton;
   mpOpenTransformationalDebuggerButton->setIcon(QIcon(":/Resources/icons/equational-debugger.svg"));
   mpOpenTransformationalDebuggerButton->setToolTip(tr("Open Transformational Debugger"));
@@ -403,10 +398,9 @@ SimulationOutputWidget::SimulationOutputWidget(SimulationOptions simulationOptio
   pMainLayout->addWidget(mpProgressLabel, 0, 0);
   pMainLayout->addWidget(mpProgressBar, 0, 1);
   pMainLayout->addWidget(mpCancelButton, 0, 2);
-  pMainLayout->addWidget(mpReSimulateSetuButton, 0, 3);
-  pMainLayout->addWidget(mpOpenTransformationalDebuggerButton, 0, 4);
-  pMainLayout->addWidget(mpOpenOutputFileButton, 0, 5);
-  pMainLayout->addWidget(mpGeneratedFilesTabWidget, 1, 0, 1, 6);
+  pMainLayout->addWidget(mpOpenTransformationalDebuggerButton, 0, 3);
+  pMainLayout->addWidget(mpOpenOutputFileButton, 0, 4);
+  pMainLayout->addWidget(mpGeneratedFilesTabWidget, 1, 0, 1, 5);
   setLayout(pMainLayout);
   // create the ArchivedSimulationItem
   mpArchivedSimulationItem = new ArchivedSimulationItem(mSimulationOptions.getOutputFileName(), mSimulationOptions.getStartTime().toDouble(), mSimulationOptions.getStopTime().toDouble(), this);
@@ -737,6 +731,17 @@ void SimulationOutputWidget::updateMessageTabProgress()
 }
 
 /*!
+ * \brief SimulationOutputWidget::reSimulate
+ * Calls VariablesWidget::reSimulate which shows the re-simulation setup dialog.
+ * \param showSetup indicates whether to show the re-simulation setup dialog or not.
+ */
+void SimulationOutputWidget::reSimulate(bool showSetup)
+{
+  VariablesTreeItem *pVariablesTreeItem = MainWindow::instance()->getVariablesWidget()->getVariablesTreeModel()->findVariablesTreeItemOneLevel(mSimulationOptions.getFullResultFileName());
+  MainWindow::instance()->getVariablesWidget()->reSimulate(mSimulationOptions, pVariablesTreeItem, showSetup);
+}
+
+/*!
  * \brief SimulationOutputWidget::runSimulationExecutable
  * Runs the simulation executable.
  */
@@ -928,7 +933,6 @@ void SimulationOutputWidget::simulationProcessFinishedHelper()
   mpProgressLabel->setText(progressStr);
   updateMessageTab(progressStr);
   mpCancelButton->setEnabled(false);
-  mpReSimulateSetuButton->setEnabled(true);
   MainWindow::instance()->getSimulationDialog()->simulationProcessFinished(mSimulationOptions, mResultFileLastModifiedDateTime);
   mpArchivedSimulationItem->setStatus(Helper::finished);
   if (mpSimulationOutputHandler) {
@@ -940,41 +944,6 @@ void SimulationOutputWidget::simulationProcessFinishedHelper()
   }
   // this signal is used by testsuite to know that the simulation is finished.
   emit simulationFinished();
-}
-
-/*!
- * \brief SimulationOutputWidget::cancelCompilationOrSimulation
- * Slot activated when mpCancelButton clicked signal is raised.\n
- * Cancels a running compilaiton/simulation by killing the compilation/simulation process.
- */
-void SimulationOutputWidget::cancelCompilationOrSimulation()
-{
-  QString progressStr;
-  if (isCompilationProcessRunning()) {
-    setCompilationProcessKilled(true);
-    mpCompilationProcess->kill();
-    mIsCompilationProcessRunning = false;
-    progressStr = tr("Compilation of %1 is cancelled.").arg(mSimulationOptions.getClassName());
-    mpProgressBar->setRange(0, 1);
-    mpProgressBar->setValue(0);
-  } else if (isPostCompilationProcessRunning()) {
-    setPostCompilationProcessKilled(true);
-    mpPostCompilationProcess->kill();
-    mIsPostCompilationProcessRunning = false;
-    progressStr = tr("Post compilation of %1 is cancelled.").arg(mSimulationOptions.getClassName());
-    mpProgressBar->setRange(0, 1);
-    mpProgressBar->setValue(0);
-  } else if (isSimulationProcessRunning()) {
-    setSimulationProcessKilled(true);
-    mpSimulationProcess->kill();
-    mIsSimulationProcessRunning = false;
-    progressStr = tr("Simulation of %1 is cancelled.").arg(mSimulationOptions.getClassName());
-  }
-  mpCancelButton->setEnabled(false);
-  mpReSimulateSetuButton->setEnabled(true);
-  mpArchivedSimulationItem->setStatus(Helper::finished);
-  mpProgressLabel->setText(progressStr);
-  updateMessageTab(progressStr);
 }
 
 /*!
@@ -991,17 +960,6 @@ void SimulationOutputWidget::openTransformationalDebugger()
   } else {
     QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), GUIMessages::getMessage(GUIMessages::FILE_NOT_FOUND).arg(fileName), QMessageBox::Ok);
   }
-}
-
-/*!
- * \brief SimulationOutputWidget::showReSimulateSetup
- * Slot activated when mpReSimulateSetuButton clicked SIGNAL is raised.\n
- * Calls VariablesWidget::reSimulate which shows the re-simulation setup dialog.
- */
-void SimulationOutputWidget::showReSimulateSetup()
-{
-  VariablesTreeItem *pVariablesTreeItem = MainWindow::instance()->getVariablesWidget()->getVariablesTreeModel()->findVariablesTreeItemOneLevel(mSimulationOptions.getFullResultFileName());
-  MainWindow::instance()->getVariablesWidget()->reSimulate(mSimulationOptions, pVariablesTreeItem, true);
 }
 
 /*!
@@ -1238,6 +1196,40 @@ void SimulationOutputWidget::simulationProcessFinished(int exitCode, QProcess::E
     simulationProcessFinishedHelper();
   }
   MainWindow::instance()->getSimulationDialog()->stopInteractiveSimulationSampling(mSimulationOptions);
+}
+
+/*!
+ * \brief SimulationOutputWidget::cancelCompilationOrSimulation
+ * Slot activated when mpCancelButton clicked signal is raised.\n
+ * Cancels a running compilaiton/simulation by killing the compilation/simulation process.
+ */
+void SimulationOutputWidget::cancelCompilationOrSimulation()
+{
+  QString progressStr;
+  if (isCompilationProcessRunning()) {
+    setCompilationProcessKilled(true);
+    mpCompilationProcess->kill();
+    mIsCompilationProcessRunning = false;
+    progressStr = tr("Compilation of %1 is cancelled.").arg(mSimulationOptions.getClassName());
+    mpProgressBar->setRange(0, 1);
+    mpProgressBar->setValue(0);
+  } else if (isPostCompilationProcessRunning()) {
+    setPostCompilationProcessKilled(true);
+    mpPostCompilationProcess->kill();
+    mIsPostCompilationProcessRunning = false;
+    progressStr = tr("Post compilation of %1 is cancelled.").arg(mSimulationOptions.getClassName());
+    mpProgressBar->setRange(0, 1);
+    mpProgressBar->setValue(0);
+  } else if (isSimulationProcessRunning()) {
+    setSimulationProcessKilled(true);
+    mpSimulationProcess->kill();
+    mIsSimulationProcessRunning = false;
+    progressStr = tr("Simulation of %1 is cancelled.").arg(mSimulationOptions.getClassName());
+  }
+  mpCancelButton->setEnabled(false);
+  mpArchivedSimulationItem->setStatus(Helper::finished);
+  mpProgressLabel->setText(progressStr);
+  updateMessageTab(progressStr);
 }
 
 /*!

@@ -549,7 +549,21 @@ SimulationOutputWidget* MessagesWidget::getSimulationOutputWidget(const QString 
       return pSimulationOutputWidget;
     }
   }
-  return 0;
+  return nullptr;
+}
+
+/*!
+ * \brief MessagesWidget::getActiveSimulationOutputWidget
+ * Returns the active SimulationOutputWidget if active tab is SimulationOutputWidget.
+ * \return
+ */
+SimulationOutputWidget* MessagesWidget::getActiveSimulationOutputWidget()
+{
+  SimulationOutputWidget *pSimulationOutputWidget = qobject_cast<SimulationOutputWidget*>(mpMessagesTabWidget->currentWidget());
+  if (pSimulationOutputWidget) {
+    return pSimulationOutputWidget;
+  }
+  return nullptr;
 }
 
 /*!

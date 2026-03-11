@@ -194,8 +194,6 @@ public:
   QAction* getImportNgspiceNetlistAction() {return mpImportNgspiceNetlistAction;}
   QAction* getConnectModeAction() {return mpConnectModeAction;}
   QAction* getTransitionModeAction() {return mpTransitionModeAction;}
-  QAction* getReSimulateModelAction() {return mpReSimulateModelAction;}
-  QAction* getReSimulateSetupAction() {return mpReSimulateSetupAction;}
   QAction* getAddSystemAction() {return mpAddSystemAction;}
   QAction* getAddOrEditIconAction() {return mpAddOrEditIconAction;}
   QAction* getDeleteIconAction() {return mpDeleteIconAction;}
@@ -564,7 +562,6 @@ public slots:
   void runDebugConfiguration();
   void updateDebuggerToolBarMenu();
   void toggleAutoSave();
-  void enableReSimulationToolbar(bool visible);
 private slots:
   void perspectiveTabChanged(int tabIndex);
   void documentationDockWidgetVisibilityChanged(bool visible);
@@ -584,6 +581,8 @@ private slots:
   void commitFiles();
   void revertCommit();
   void cleanWorkingDirectory();
+  void directReSimulate();
+  void showReSimulateSetup();
 private:
   void createActions();
   void createToolbars();
@@ -597,6 +596,7 @@ private:
   void tileSubWindows(QMdiArea *pMdiArea, bool horizontally);
   void toolBarVisibilityChanged(const QString &toolbar, bool visible);
   MessageTab* createMessageTab(const QString &name, bool fixedTab);
+  void reSimulate(bool showSetup);
 protected:
   virtual void dragEnterEvent(QDragEnterEvent *event) override;
   virtual void dragMoveEvent(QDragMoveEvent *event) override;

@@ -352,8 +352,6 @@ void MainWindow::setUpMainWindow(threadData_t *threadData)
   createActions();
   createToolbars();
   createMenus();
-  // enable/disable re-simulation toolbar based on variable browser visibiltiy.
-  connect(mpVariablesDockWidget, SIGNAL(visibilityChanged(bool)), this, SLOT(enableReSimulationToolbar(bool)));
   // Create the archived simulation widget
   ArchivedSimulationsWidget::create();
   // Create simulation dialog when needed
@@ -544,7 +542,6 @@ void MainWindow::showModelingPerspectiveToolBars(ModelWidget *pModelWidget)
     SHOW_HIDE_TOOLBAR(mpCheckToolBar, ToolBars::checkToolBar, false);
     SHOW_HIDE_TOOLBAR(mpSimulationToolBar, ToolBars::simulationToolBar, false);
     SHOW_HIDE_TOOLBAR(mpReSimulationToolBar, ToolBars::reSimulationToolBar, false);
-    mpReSimulationToolBar->setEnabled(mpVariablesDockWidget->isVisible() && !mpVariablesWidget->getVariablesTreeView()->selectionModel()->selectedIndexes().isEmpty());
     SHOW_HIDE_TOOLBAR(mpPlotToolBar, ToolBars::plotToolBar, false);
     SHOW_HIDE_TOOLBAR(mpDebuggerToolBar, ToolBars::debuggerToolBar, false);
     SHOW_HIDE_TOOLBAR(mpOMSimulatorToolbar, ToolBars::OMSimulatorToolBar, false);
@@ -557,7 +554,6 @@ void MainWindow::showModelingPerspectiveToolBars(ModelWidget *pModelWidget)
     SHOW_HIDE_TOOLBAR(mpCheckToolBar, ToolBars::checkToolBar, false);
     SHOW_HIDE_TOOLBAR(mpSimulationToolBar, ToolBars::simulationToolBar, true);
     SHOW_HIDE_TOOLBAR(mpReSimulationToolBar, ToolBars::reSimulationToolBar, false);
-    mpReSimulationToolBar->setEnabled(mpVariablesDockWidget->isVisible() && !mpVariablesWidget->getVariablesTreeView()->selectionModel()->selectedIndexes().isEmpty());
     SHOW_HIDE_TOOLBAR(mpPlotToolBar, ToolBars::plotToolBar, false);
     SHOW_HIDE_TOOLBAR(mpDebuggerToolBar, ToolBars::debuggerToolBar, false);
     SHOW_HIDE_TOOLBAR(mpOMSimulatorToolbar, ToolBars::OMSimulatorToolBar, true);
@@ -570,7 +566,6 @@ void MainWindow::showModelingPerspectiveToolBars(ModelWidget *pModelWidget)
     SHOW_HIDE_TOOLBAR(mpCheckToolBar, ToolBars::checkToolBar, true);
     SHOW_HIDE_TOOLBAR(mpSimulationToolBar, ToolBars::simulationToolBar, true);
     SHOW_HIDE_TOOLBAR(mpReSimulationToolBar, ToolBars::reSimulationToolBar, false);
-    mpReSimulationToolBar->setEnabled(mpVariablesDockWidget->isVisible() && !mpVariablesWidget->getVariablesTreeView()->selectionModel()->selectedIndexes().isEmpty());
     SHOW_HIDE_TOOLBAR(mpPlotToolBar, ToolBars::plotToolBar, false);
     SHOW_HIDE_TOOLBAR(mpDebuggerToolBar, ToolBars::debuggerToolBar, false);
     SHOW_HIDE_TOOLBAR(mpOMSimulatorToolbar, ToolBars::OMSimulatorToolBar, false);
@@ -599,7 +594,6 @@ void MainWindow::showDebuggingPerspectiveToolBars(ModelWidget *pModelWidget)
     SHOW_HIDE_TOOLBAR(mpCheckToolBar, ToolBars::checkToolBar, false);
     SHOW_HIDE_TOOLBAR(mpSimulationToolBar, ToolBars::simulationToolBar, false);
     SHOW_HIDE_TOOLBAR(mpReSimulationToolBar, ToolBars::reSimulationToolBar, false);
-    mpReSimulationToolBar->setEnabled(mpVariablesDockWidget->isVisible() && !mpVariablesWidget->getVariablesTreeView()->selectionModel()->selectedIndexes().isEmpty());
     SHOW_HIDE_TOOLBAR(mpPlotToolBar, ToolBars::plotToolBar, false);
     SHOW_HIDE_TOOLBAR(mpDebuggerToolBar, ToolBars::debuggerToolBar, true);
     SHOW_HIDE_TOOLBAR(mpOMSimulatorToolbar, ToolBars::OMSimulatorToolBar, false);
@@ -612,7 +606,6 @@ void MainWindow::showDebuggingPerspectiveToolBars(ModelWidget *pModelWidget)
     SHOW_HIDE_TOOLBAR(mpCheckToolBar, ToolBars::checkToolBar, false);
     SHOW_HIDE_TOOLBAR(mpSimulationToolBar, ToolBars::simulationToolBar, false);
     SHOW_HIDE_TOOLBAR(mpReSimulationToolBar, ToolBars::reSimulationToolBar, false);
-    mpReSimulationToolBar->setEnabled(mpVariablesDockWidget->isVisible() && !mpVariablesWidget->getVariablesTreeView()->selectionModel()->selectedIndexes().isEmpty());
     SHOW_HIDE_TOOLBAR(mpPlotToolBar, ToolBars::plotToolBar, false);
     SHOW_HIDE_TOOLBAR(mpDebuggerToolBar, ToolBars::debuggerToolBar, true);
     SHOW_HIDE_TOOLBAR(mpOMSimulatorToolbar, ToolBars::OMSimulatorToolBar, true);
@@ -625,7 +618,6 @@ void MainWindow::showDebuggingPerspectiveToolBars(ModelWidget *pModelWidget)
     SHOW_HIDE_TOOLBAR(mpCheckToolBar, ToolBars::checkToolBar, true);
     SHOW_HIDE_TOOLBAR(mpSimulationToolBar, ToolBars::simulationToolBar, true);
     SHOW_HIDE_TOOLBAR(mpReSimulationToolBar, ToolBars::reSimulationToolBar, false);
-    mpReSimulationToolBar->setEnabled(mpVariablesDockWidget->isVisible() && !mpVariablesWidget->getVariablesTreeView()->selectionModel()->selectedIndexes().isEmpty());
     SHOW_HIDE_TOOLBAR(mpPlotToolBar, ToolBars::plotToolBar, false);
     SHOW_HIDE_TOOLBAR(mpDebuggerToolBar, ToolBars::debuggerToolBar, true);
     SHOW_HIDE_TOOLBAR(mpOMSimulatorToolbar, ToolBars::OMSimulatorToolBar, false);
@@ -3352,21 +3344,6 @@ void MainWindow::toggleAutoSave()
 }
 
 /*!
- * \brief MainWindow::enableReSimulationToolbar
- * * Handles the VisibilityChanged signal of Variables Dock Widget.
- * \param visible
- */
-void MainWindow::enableReSimulationToolbar(bool visible)
-{
-  mpReSimulationToolBar->setVisible(visible);
-  if (visible) {
-    mpReSimulationToolBar->setEnabled(!mpVariablesWidget->getVariablesTreeView()->selectionModel()->selectedIndexes().isEmpty());
-  } else {
-    mpReSimulationToolBar->setEnabled(false);
-  }
-}
-
-/*!
  * \brief MainWindow::perspectiveTabChanged
  * Handles the perspective tab changed case.
  * \param tabIndex
@@ -3643,6 +3620,25 @@ void MainWindow::cleanWorkingDirectory()
 //  }
 }
 
+/*!
+ * \brief MainWindow::directReSimulate
+ * Slot activated when mpDirectReSimulateAction triggered SIGNAL is raised.\n
+ * Calls MainWindow::reSimulate with false to directly re-simulate the model without showing the re-simulation setup dialog.
+ */
+void MainWindow::directReSimulate()
+{
+  reSimulate(false);
+}
+
+/*!
+ * \brief MainWindow::showReSimulateSetup
+ * Slot activated when mpReSimulateSetupAction triggered SIGNAL is raised.\n
+ * Calls MainWindow::reSimulate with true to show the re-simulation setup dialog before re-simulating the model.
+ */
+void MainWindow::showReSimulateSetup()
+{
+  reSimulate(true);
+}
 
 //! Defines the actions used by the toolbars
 void MainWindow::createActions()
@@ -4101,11 +4097,11 @@ void MainWindow::createActions()
   // resimulate action
   mpReSimulateModelAction = new QAction(QIcon(":/Resources/icons/re-simulate.svg"), Helper::reSimulate, this);
   mpReSimulateModelAction->setStatusTip(Helper::reSimulateTip);
-  connect(mpReSimulateModelAction, SIGNAL(triggered()), mpVariablesWidget, SLOT(directReSimulate()));
+  connect(mpReSimulateModelAction, SIGNAL(triggered()), this, SLOT(directReSimulate()));
   // resimulate setup action
   mpReSimulateSetupAction = new QAction(QIcon(":/Resources/icons/re-simulation-center.svg"), Helper::reSimulateSetup, this);
   mpReSimulateSetupAction->setStatusTip(Helper::reSimulateSetupTip);
-  connect(mpReSimulateSetupAction, SIGNAL(triggered()), mpVariablesWidget, SLOT(showReSimulateSetup()));
+  connect(mpReSimulateSetupAction, SIGNAL(triggered()), this, SLOT(showReSimulateSetup()));
   // new plot window action
   mpNewPlotWindowAction = new QAction(QIcon(":/Resources/icons/plot-window.svg"), tr("New Plot Window"), this);
   mpNewPlotWindowAction->setStatusTip(tr("Inserts new plot window"));
@@ -4487,7 +4483,6 @@ void MainWindow::switchToWelcomePerspective()
   SHOW_HIDE_TOOLBAR(mpCheckToolBar, ToolBars::checkToolBar, false);
   SHOW_HIDE_TOOLBAR(mpSimulationToolBar, ToolBars::simulationToolBar, false);
   SHOW_HIDE_TOOLBAR(mpReSimulationToolBar, ToolBars::reSimulationToolBar, false);
-  mpReSimulationToolBar->setEnabled(mpVariablesDockWidget->isVisible() && !mpVariablesWidget->getVariablesTreeView()->selectionModel()->selectedIndexes().isEmpty());
   SHOW_HIDE_TOOLBAR(mpPlotToolBar, ToolBars::plotToolBar, false);
   SHOW_HIDE_TOOLBAR(mpDebuggerToolBar, ToolBars::debuggerToolBar, false);
   SHOW_HIDE_TOOLBAR(mpOMSimulatorToolbar, ToolBars::OMSimulatorToolBar, false);
@@ -4560,7 +4555,6 @@ void MainWindow::switchToPlottingPerspective()
   SHOW_HIDE_TOOLBAR(mpCheckToolBar, ToolBars::checkToolBar, false);
   SHOW_HIDE_TOOLBAR(mpSimulationToolBar, ToolBars::simulationToolBar, false);
   SHOW_HIDE_TOOLBAR(mpReSimulationToolBar, ToolBars::reSimulationToolBar, true);
-  mpReSimulationToolBar->setEnabled(mpVariablesDockWidget->isVisible() && !mpVariablesWidget->getVariablesTreeView()->selectionModel()->selectedIndexes().isEmpty());
   SHOW_HIDE_TOOLBAR(mpPlotToolBar, ToolBars::plotToolBar, true);
   SHOW_HIDE_TOOLBAR(mpDebuggerToolBar, ToolBars::debuggerToolBar, false);
   SHOW_HIDE_TOOLBAR(mpOMSimulatorToolbar, ToolBars::OMSimulatorToolBar, false);
@@ -4770,7 +4764,6 @@ void MainWindow::createToolbars()
   mpReSimulationToolBar = addToolBar(tr("Re-simulation Toolbar"));
   mpReSimulationToolBar->setObjectName("Re-simulation Toolbar");
   mpReSimulationToolBar->setAllowedAreas(Qt::TopToolBarArea);
-  mpReSimulationToolBar->setEnabled(false);
   // add actions to Re-simulation Toolbar
   mpReSimulationToolBar->addAction(mpReSimulateModelAction);
   mpReSimulationToolBar->addAction(mpReSimulateSetupAction);
@@ -4893,6 +4886,22 @@ MessageTab *MainWindow::createMessageTab(const QString &name, bool fixedTab)
   connect(pMessageTab, SIGNAL(clicked(int)), mpMessagesTabWidget, SIGNAL(tabBarClicked(int)));
   connect(this, SIGNAL(resetMessagesTabWidgetNames()), pMessageTab, SLOT(resetTabText()));
   return pMessageTab;
+}
+
+/*!
+ * \brief MainWindow::reSimulate
+ * Re-simulates the model for the active SimulationOutputWidget.
+ * \param showSetup
+ */
+void MainWindow::reSimulate(bool showSetup)
+{
+  SimulationOutputWidget *pSimulationOutputWidget = MessagesWidget::instance()->getActiveSimulationOutputWidget();
+  if (pSimulationOutputWidget) {
+    pSimulationOutputWidget->reSimulate(showSetup);
+  } else {
+    QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::error),
+                          tr("No active simulation output window. Please select a simulation output window for re-simulate."), QMessageBox::Ok);
+  }
 }
 
 //! when the dragged object enters the main window

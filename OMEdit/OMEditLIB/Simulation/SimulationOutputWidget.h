@@ -110,13 +110,13 @@ public:
   void embeddedServerInitialized();
   void updateMessageTab(const QString &text);
   void updateMessageTabProgress();
+  void reSimulate(bool showSetup);
 private:
   SimulationOptions mSimulationOptions;
   Label *mpProgressLabel;
   QProgressBar *mpProgressBar;
   QPushButton *mpCancelButton;
   QToolButton *mpOpenTransformationalDebuggerButton;
-  QToolButton *mpReSimulateSetuButton;
   QPushButton *mpOpenOutputFileButton;
   QTabWidget *mpGeneratedFilesTabWidget;
   QList<QString> mGeneratedFilesList;
@@ -154,7 +154,6 @@ private:
   void simulationProcessFinishedHelper();
 private slots:
   void openTransformationalDebugger();
-  void showReSimulateSetup();
   void openSimulationLogFile();
   void createSimulationProgressSocket();
   void readSimulationProgress();
