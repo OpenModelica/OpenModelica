@@ -71,27 +71,29 @@ algorithm
           else forceInline;
         end match;
       then
-        if shouldInline then inlineCall(call, forceInline) else callExp;
+        if shouldInline then inlineCall(callExp, forceInline) else callExp;
 
     else callExp;
   end match;
 end inlineCallExp;
 
 function inlineCall
-  input Call call;
+  input Expression callExp;
   input Boolean forceInline = false;
   output Expression exp;
+protected
+  Call call;
+  Function fn;
+  Expression arg;
+  list<Expression> args;
+  list<InstNode> inputs, outputs, locals;
+  list<Statement> body;
+  Statement stmt;
+  Binding binding;
 algorithm
-  exp := match call
-    local
-      Function fn;
-      Expression arg;
-      list<Expression> args;
-      list<InstNode> inputs, outputs, locals;
-      list<Statement> body;
-      Statement stmt;
-      Binding binding;
+  Expression.CALL(call = call) := callExp;
 
+  exp := match call
     // Record constructor
     case Call.TYPED_CALL(fn = fn, arguments = args)
         guard InstNode.name(InstNode.parentScope(fn.node)) == "'constructor'"
@@ -127,7 +129,7 @@ algorithm
         // This function can so far only handle functions with at most one
         // statement and output and no local variables.
         if listLength(body) > 1 or listLength(outputs) <> 1 or not listEmpty(locals) then
-          exp := Expression.CALL(call);
+          exp := callExp;
           return;
         end if;
 
@@ -138,7 +140,7 @@ algorithm
         end if;
 
         if not Statement.isAssignment(stmt) then
-          exp := Expression.CALL(call);
+          exp := callExp;
           return;
         end if;
 
@@ -160,12 +162,12 @@ algorithm
           exp := getOutputExp(stmt, listHead(outputs), call);
           exp := inlineCallExp(exp, forceInline);
         else
-          exp := Expression.CALL(call);
+          exp := callExp;
         end try;
       then
         exp;
 
-    else Expression.CALL(call);
+    else callExp;
   end match;
 end inlineCall;
 

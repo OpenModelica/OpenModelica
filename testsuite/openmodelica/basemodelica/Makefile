@@ -16,6 +16,7 @@ TESTFILES = \
 	Expression1.mo \
 	Functional1.mo \
 	Inline1.mo \
+	Inline2.mo \
 	InStreamNominalThreshold.mo \
 	MoveBindings1.mo \
 	NonScalarizedWithRecords1.mo \

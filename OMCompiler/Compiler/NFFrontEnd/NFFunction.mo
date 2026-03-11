@@ -686,6 +686,11 @@ uniontype Function
     InstNode.setFuncCache(cls_node, cache);
   end mapCachedFuncs;
 
+  function hasBuiltinStatus
+    input Function fn;
+    output Boolean isBuiltin = Pointer.access(fn.status) == FunctionStatus.BUILTIN;
+  end hasBuiltinStatus;
+
   function isEvaluated
     input Function fn;
     output Boolean evaluated;
@@ -772,6 +777,17 @@ uniontype Function
       else fn.path;
     end match;
   end nameConsiderBuiltin;
+
+  function nameEqual
+    input Function fn1;
+    input Function fn2;
+    output Boolean equal = AbsynUtil.pathEqual(name(fn1), name(fn2));
+  end nameEqual;
+
+  function nameHash
+    input Function fn;
+    output Integer hash = AbsynUtil.pathHash(name(fn));
+  end nameHash;
 
   function signatureString
     "Constructs a signature string for a function, e.g. Real func(Real x, Real y)"
