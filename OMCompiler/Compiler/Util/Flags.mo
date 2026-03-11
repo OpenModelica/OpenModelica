@@ -570,7 +570,7 @@ constant ConfigFlag RUNNING_TESTSUITE = CONFIG_FLAG(3, "running-testsuite",
   NONE(), INTERNAL(), STRING_FLAG(""), NONE(),
   Gettext.gettext("Used when running the testsuite."));
 constant ConfigFlag SHOW_VERSION = CONFIG_FLAG(4, "version",
-  SOME("-v"), EXTERNAL(), BOOL_FLAG(false), NONE(),
+  NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   Gettext.gettext("Print the version and exit."));
 constant ConfigFlag TARGET = CONFIG_FLAG(5, "target", NONE(), EXTERNAL(),
   STRING_FLAG("gcc"), SOME(STRING_OPTION({"gcc", "msvc","msvc10","msvc12","msvc13","msvc15","msvc19", "vxworks69", "debugrt"})),
