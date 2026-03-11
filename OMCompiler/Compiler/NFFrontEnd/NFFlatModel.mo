@@ -36,6 +36,7 @@ encapsulated uniontype NFFlatModel
 
 protected
   import Binding = NFBinding;
+  import Call = NFCall;
   import Class = NFClass;
   import ComplexType = NFComplexType;
   import Component = NFComponent;
@@ -250,10 +251,7 @@ public
     end if;
 
     if BaseModelica.inlineFunctions() then
-      // Try to inline all functions regardless of what Inline annotation they have.
-      flat_model := mapExp(flat_model, function Expression.map(func = function Inline.inlineCallExp(forceInline = true)));
-      // Re-collect the functions to avoid dumping functions that are no longer used.
-      funcs := FunctionTree.listValues(Flatten.collectFunctions(flat_model));
+      (flat_model, funcs) := inlineFunctions(flat_model);
     end if;
 
     if scalarize then
@@ -328,6 +326,48 @@ public
     s := IOStream.append(s, "  end " + name + ";\n");
     s := IOStream.append(s, "end " + name + ";\n");
   end appendFlatStream;
+
+  function inlineFunctions
+    "Tries to inline all function calls in the flat model, and returns the new
+     flat model and a list of functions that couldn't be inlined."
+    input output FlatModel flatModel;
+          output list<Function> remainingFuncs;
+  protected
+    UnorderedSet<Function> funcs;
+  algorithm
+    funcs := UnorderedSet.new(Function.nameHash, Function.nameEqual);
+    flatModel := mapExp(flatModel, function Expression.map(func = function inlineFunctions_traverser(funcs = funcs)));
+    remainingFuncs := UnorderedSet.toList(funcs);
+  end inlineFunctions;
+
+  function inlineFunctions_traverser
+    input Expression exp;
+    input UnorderedSet<Function> funcs;
+    output Expression outExp;
+  protected
+    Function fn;
+  algorithm
+    outExp := match exp
+      case Expression.CALL()
+        algorithm
+          fn := Call.typedFunction(exp.call);
+
+          if Function.hasBuiltinStatus(fn) then
+            outExp := exp;
+          else
+            outExp := Inline.inlineCallExp(exp, forceInline = true);
+
+            if referenceEq(exp, outExp) then
+              // If the call wasn't inlined, add it to the set of remaining functions.
+              UnorderedSet.add(fn, funcs);
+            end if;
+          end if;
+        then
+          outExp;
+
+      else exp;
+    end match;
+  end inlineFunctions_traverser;
 
   function collectFlatTypes
     input FlatModel flatModel;
