@@ -142,7 +142,7 @@ qtclientsDLLs:
 	cp -puf $(OM_MSYS_ENV_DIR)/bin/libiconv-2.dll $(builddir_bin)/
 	cp -puf $(OM_MSYS_ENV_DIR)/bin/libxslt-1.dll $(builddir_bin)/
 	cp -puf $(OM_MSYS_ENV_DIR)/bin/liblzma-5.dll $(builddir_bin)/
-	cp -puf $(OM_MSYS_ENV_DIR)/bin/libxml2-2.dll $(builddir_bin)/
+	cp -puf $(OM_MSYS_ENV_DIR)/bin/libxml2-*.dll $(builddir_bin)/
 	cp -puf $(OM_MSYS_ENV_DIR)/bin/libwebp-*.dll $(builddir_bin)/
 	cp -puf $(OM_MSYS_ENV_DIR)/bin/libsqlite3-0.dll $(builddir_bin)/
 	cp -puf $(OM_MSYS_ENV_DIR)/bin/zlib1.dll $(builddir_bin)/
