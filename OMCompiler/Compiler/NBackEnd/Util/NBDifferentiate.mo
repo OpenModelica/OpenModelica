@@ -373,66 +373,7 @@ public
 
       case Equation.ARRAY_EQUATION() algorithm
         (lhs, diffArguments) := differentiateExpressionNoCollect(eq.lhs, diffArguments);
-        // Only do per-element reverse seeding for explicit element-wise array assembly on RHS
-        if Util.isSome(diffArguments.adjoint_map) and
-          diffArguments.diffType == DifferentiationType.JACOBIAN and
-          Expression.isArray(eq.rhs) then
-
-          SOME(dm) := diffArguments.diff_map;
-
-          // this must be a variable cref on the LHS so this should work
-          lhs_base := Expression.toCref(eq.lhs);
-
-          // Vector length from equation type
-          if Type.isArray(eq.ty) then
-            dims := Type.arrayDims(eq.ty);
-            if not listEmpty(dims) then
-              n := Dimension.size(listHead(dims));
-            end if;
-          end if;
-
-          if (not ComponentRef.isEmpty(lhs_base)) and UnorderedMap.contains(lhs_base, dm) and n > 0 then
-            seed_base := UnorderedMap.getOrFail(lhs_base, dm);
-
-            // Save and prepare flags
-            grad_save := diffArguments.current_grad;
-            collect_save := diffArguments.collectAdjoints;
-
-            // Accumulate adjoints per element with scalar seeds seed_base[i] on rhs[i]
-            for iel in 1:n loop
-              // current_grad := $SEED...y[i]
-              grad_i := Expression.applySubscripts(
-                {Subscript.INDEX(Expression.INTEGER(iel))},
-                Expression.fromCref(seed_base),
-                true);
-
-              // rhs_i := rhs[i]
-              rhs_i := Expression.applySubscripts(
-                {Subscript.INDEX(Expression.INTEGER(iel))},
-                eq.rhs,
-                true);
-
-              diffArguments.current_grad := grad_i;
-              diffArguments.collectAdjoints := true;
-
-              // Differentiate rhs element to accumulate into adjoint_map
-              (_, diffArguments) := differentiateExpression(rhs_i, diffArguments);
-            end for;
-
-            // Restore state
-            diffArguments.current_grad := grad_save;
-            diffArguments.collectAdjoints := collect_save;
-
-            // Also differentiate the full RHS without collecting (avoid duplicates)
-            (rhs, diffArguments) := differentiateExpressionNoCollect(eq.rhs, diffArguments);
-          else
-            // Fallback: regular vector reverse-mode
-            (rhs, diffArguments) := differentiateExpression(eq.rhs, diffArguments);
-          end if;
-        else
-          // Non-explicit RHS (e.g., A*x): let reverse-mode handle vectors/matrices
-          (rhs, diffArguments) := differentiateExpression(eq.rhs, diffArguments);
-        end if;
+        (rhs, diffArguments) := differentiateExpression(eq.rhs, diffArguments);
         attr := differentiateEquationAttributes(eq.attr, diffArguments);
       then (Equation.ARRAY_EQUATION(eq.ty, lhs, rhs, eq.source, attr, eq.recordSize), diffArguments);
 
@@ -448,20 +389,13 @@ public
       then (Equation.IF_EQUATION(eq.size, ifBody, eq.source, attr), Pointer.access(diffArguments_ptr));
 
       case Equation.FOR_EQUATION() algorithm
-        if Util.isSome(diffArguments.adjoint_map) then
-          for body_eqn in listReverse(eq.body) loop
-            (body_eqn, diffArguments) := differentiateEquation(body_eqn, diffArguments);
-            forBody := body_eqn :: forBody;
-          end for;
-        else
-          for body_eqn in eq.body loop
-            (body_eqn, diffArguments) := differentiateEquation(body_eqn, diffArguments);
-            forBody := body_eqn :: forBody;
-          end for;
-        end if;
+        for body_eqn in eq.body loop
+          (body_eqn, diffArguments) := differentiateEquation(body_eqn, diffArguments);
+          forBody := body_eqn :: forBody;
+        end for;
         attr := differentiateEquationAttributes(eq.attr, diffArguments);
       then (Equation.FOR_EQUATION(eq.size,
-                                  if Util.isSome(diffArguments.adjoint_map) then reverseEquationIterator(eq.iter) else eq.iter,
+                                  eq.iter,
                                   listReverse(forBody),
                                   eq.source,
                                   attr),
@@ -518,17 +452,12 @@ public
     (diffArguments, adjointStatements) := match eq
 
       local
-        Expression lhs, rhs, seed, seedExpr;
+        Expression lhs;
         ComponentRef lhsCref, seedCref;
         UnorderedMap<ComponentRef, ComponentRef> dm;
-        UnorderedMap<ComponentRef, list<tuple<ComponentRef, Expression>>> amap;
-        list<tuple<ComponentRef, Expression>> taggedTerms;
-        list<Expression> terms;
-        Expression accRhs;
         Type vty;
         Operator addOp;
         list<Statement> stmts;
-        list<ComponentRef> mapKeys;
 
         // For-equation locals
         list<Statement> bodyStmts, allStmts;
@@ -538,13 +467,8 @@ public
         DAE.ElementSource splitSource;
 
         // If-equation locals
-        IfEquationBody ifBody;
         list<tuple<Expression, list<Statement>>> ifBranches;
         Option<list<tuple<Expression, list<Statement>>>> elseIfBranches;
-
-        // Algorithm locals
-        Algorithm alg;
-        list<Statement> algStmts;
 
         // Array equation locals
         ComponentRef lhs_base;
@@ -729,7 +653,7 @@ public
             SOME(iterRange),
             stmts,
             Statement.ForType.NORMAL(),
-            splitSource
+            DAE.emptyElementSource
           )};
         end for;
       then (diffArguments, stmts);
@@ -762,18 +686,15 @@ public
   algorithm
     (diffArguments, adjointStatements) := match stmt
       local
-        Expression lhs, rhs, seedExpr;
+        Expression lhs;
         ComponentRef lhsCref, seedCref;
-        UnorderedMap<ComponentRef, ComponentRef> dm;
         Type vty;
         list<Statement> stmts, bodyStmts, allStmts;
-        list<tuple<Expression, list<Statement>>> branches, adjBranches;
+        list<tuple<Expression, list<Statement>>> adjBranches;
         Expression cond;
 
       // Real assignment statement
       case Statement.ASSIGNMENT() guard(Type.isReal(Type.arrayElementType(Expression.typeOf(stmt.lhs)))) algorithm
-        SOME(dm) := diffArguments.diff_map;
-
         // Differentiate the LHS to get seed variable
         (lhs, diffArguments) := differentiateExpressionNoCollect(stmt.lhs, diffArguments);
         lhsCref := match lhs
@@ -923,12 +844,7 @@ public
           if List.hasOneElement(terms) then
             accRhs := listHead(terms);
           else
-            sc := match Type.dimensionCount(vty)
-              case 0 then NFOperator.SizeClassification.SCALAR;
-              case 1 then NFOperator.SizeClassification.ELEMENT_WISE;
-              case 2 then NFOperator.SizeClassification.MATRIX;
-              else NFOperator.SizeClassification.ELEMENT_WISE;
-            end match;
+            sc := sizeClassificationFromType(vty);
             addOp := Operator.fromClassification((NFOperator.MathClassification.ADDITION, sc), vty);
             accRhs := SimplifyExp.simplify(Expression.MULTARY(terms, {}, addOp));
           end if;
@@ -937,12 +853,7 @@ public
           if Expression.containsCref(accRhs, key) then
             // accRhs already includes v
           else
-            sc := match Type.dimensionCount(vty)
-              case 0 then NFOperator.SizeClassification.SCALAR;
-              case 1 then NFOperator.SizeClassification.ELEMENT_WISE;
-              case 2 then NFOperator.SizeClassification.MATRIX;
-              else NFOperator.SizeClassification.ELEMENT_WISE;
-            end match;
+            sc := sizeClassificationFromType(vty);
             addOp := Operator.fromClassification((NFOperator.MathClassification.ADDITION, sc), vty);
             accRhs := SimplifyExp.simplify(Expression.MULTARY({Expression.fromCref(key), accRhs}, {}, addOp));
           end if;
@@ -2927,24 +2838,8 @@ public
       case diff_stmt as Statement.ASSIGNMENT() guard(Type.isReal(Type.arrayElementType(Expression.typeOf(diff_stmt.lhs)))) algorithm
         // In reverse mode the assignment LHS is the destination; traverse it without
         // collecting into adjoint_map to avoid artificial self-contributions.
-        if isReverse then
-          (lhs, diffArguments) := differentiateExpressionNoCollect(diff_stmt.lhs, diffArguments);
-          grad_save := diffArguments.current_grad;
-          root_save := diffArguments.root_seed_cref;
-          diffArguments.current_grad := lhs;
-          lhs_seed_cref := match lhs
-            case Expression.CREF() then lhs.cref;
-            else root_save;
-          end match;
-          diffArguments.root_seed_cref := lhs_seed_cref;
-        else
-          (lhs, diffArguments) := differentiateExpression(diff_stmt.lhs, diffArguments);
-        end if;
+        (lhs, diffArguments) := differentiateExpression(diff_stmt.lhs, diffArguments);
         (rhs, diffArguments) := differentiateExpression(diff_stmt.rhs, diffArguments);
-        if isReverse then
-          diffArguments.current_grad := grad_save;
-          diffArguments.root_seed_cref := root_save;
-        end if;
         diff_stmt.lhs := lhs;
         diff_stmt.rhs := SimplifyExp.simplifyDump(rhs, true, getInstanceName());
       then if isReverse then {diff_stmt} else {diff_stmt, stmt};
@@ -2953,9 +2848,6 @@ public
       case diff_stmt as Statement.FOR() algorithm
         (branch_stmts, diffArguments) := List.mapFold(diff_stmt.body, function differentiateStatement(diffInfo = diffInfo), diffArguments);
         diff_stmt.body := List.flatten(branch_stmts);
-        if isReverse then
-          diff_stmt.range := reverseForRange(diff_stmt.range);
-        end if;
       then {diff_stmt};
 
       case diff_stmt as Statement.WHILE() algorithm
@@ -2969,7 +2861,7 @@ public
       then {diff_stmt};
 
       case diff_stmt as Statement.IF() algorithm
-        if_when_branches := if isReverse then listReverse(diff_stmt.branches) else diff_stmt.branches;
+        if_when_branches := diff_stmt.branches;
         for branch in if_when_branches loop
           (exp, branch_stmts_flat) := branch;
           (branch_stmts, diffArguments) := List.mapFold(branch_stmts_flat, function differentiateStatement(diffInfo = diffInfo), diffArguments);
@@ -2979,7 +2871,7 @@ public
       then {diff_stmt};
 
       case diff_stmt as Statement.WHEN() algorithm
-        if_when_branches := if isReverse then listReverse(diff_stmt.branches) else diff_stmt.branches;
+        if_when_branches := diff_stmt.branches;
         for branch in if_when_branches loop
           (exp, branch_stmts_flat) := branch;
           (branch_stmts, diffArguments) := List.mapFold(branch_stmts_flat, function differentiateStatement(diffInfo = diffInfo), diffArguments);
@@ -3708,6 +3600,18 @@ public
   end differentiateBinding;
 
 protected
+  function sizeClassificationFromType
+    input Type ty;
+    output Operator.SizeClassification sc;
+  algorithm
+    sc := match Type.dimensionCount(ty)
+      case 0 then NFOperator.SizeClassification.SCALAR;
+      case 1 then NFOperator.SizeClassification.ELEMENT_WISE;
+      case 2 then NFOperator.SizeClassification.MATRIX;
+      else NFOperator.SizeClassification.ELEMENT_WISE;
+    end match;
+  end sizeClassificationFromType;
+
   function minusOne
     input output Expression exp;
     input Operator op;
