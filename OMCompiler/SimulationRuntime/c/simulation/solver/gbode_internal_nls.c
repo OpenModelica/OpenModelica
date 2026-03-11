@@ -1062,8 +1062,8 @@ static NLS_SOLVER_STATUS gbInternalSolveNls_T_Transform(DATA *data,
                                 ode_pattern, nls->jacobian_callback, nls->real_nls_jacs[sys_real]);
       ret = gbInternal_dKLU_factorize(&nls->klu_internals_real[sys_real],
                                       size,
-                                      (int *)nls->nlsPattern->leadindex,
-                                      (int *)nls->nlsPattern->index,
+                                      (int *) nls->nlsPattern->leadindex,
+                                      (int *) nls->nlsPattern->index,
                                       nls->real_nls_jacs[sys_real]);
       if (ret < 0) return NLS_FAILED;
     }
@@ -1074,8 +1074,8 @@ static NLS_SOLVER_STATUS gbInternalSolveNls_T_Transform(DATA *data,
                                  ode_pattern, nls->jacobian_callback, nls->cmplx_nls_jacs[sys_cmplx]);
       ret = gbInternal_zKLU_factorize(&nls->klu_internals_cmplx[sys_cmplx],
                                       size,
-                                      (int *)nls->nlsPattern->leadindex,
-                                      (int *)nls->nlsPattern->index,
+                                      (int *) nls->nlsPattern->leadindex,
+                                      (int *) nls->nlsPattern->index,
                                       nls->cmplx_nls_jacs[sys_cmplx]);
       if (ret < 0) return NLS_FAILED;
     }
@@ -1305,13 +1305,8 @@ void *gbInternalNlsAllocate(int size,
   nls->nls_user_data = userData;
   nls->size = jacobian_ODE->sizeRows;
   nls->jacobian_callback = (double *) malloc(jacobian_ODE->sparsePattern->numberOfNonZeros * sizeof(double));
-  nls->ode_to_nls = malloc(jacobian_ODE->sparsePattern->numberOfNonZeros * sizeof(int));
-  nls->nls_diag_indices = malloc(jacobian_ODE->sizeRows * sizeof(int));
-
-  if (!(nls->jacobian_callback && nls->ode_to_nls && nls->nls_diag_indices))
-  {
-    throwStreamPrint(NULL, "Memory allocation in gbInternalNlsAllocate failed.");
-  }
+  nls->ode_to_nls = (int *) malloc(jacobian_ODE->sparsePattern->numberOfNonZeros * sizeof(int));
+  nls->nls_diag_indices = (int *) malloc(jacobian_ODE->sizeRows * sizeof(int));
 
   nls->tabl = tabl;
   nls->use_t_transform = (trfm != NULL);
@@ -1361,18 +1356,12 @@ void *gbInternalNlsAllocate(int size,
   nls->scal = (double *) malloc(jacobian_ODE->sizeRows * sizeof(double));
   nls->etas = (double *) malloc(tabl->nStages * sizeof(double));
 
-  if (!(nls->scal && nls->etas))
-  {
-    throwStreamPrint(NULL, "Memory allocation in gbInternalNlsAllocate failed.");
-  }
-
   for (int i = 0; i < tabl->nStages; i++)
   {
     nls->etas[i] = DBL_MAX;
   }
 
   nls->tol_integrator = (Tolerances){ userData->data->simulationInfo->tolerance, userData->data->simulationInfo->tolerance };
-
 
   // We transform the error such that the error term err = || v || = sqrt(1/n * sum (v[i] / scal[i])^2) is scaled with same measure
   // As we later have v = sum (b - bt) * k = min of local error of b and bt -> scale ATOL and RTOL w.r.t. (min(b, bt) + 1) / (b + 1)
@@ -1468,14 +1457,9 @@ void *gbInternalNlsAllocate(int size,
     // auxiliary memory
     nls->work = (double *) malloc(4 * nls->size * sizeof(double));
 
-    if (!(nls->klu_internals_real && nls->real_nls_jacs && nls->real_nls_jacs[0] && nls->work))
-    {
-      throwStreamPrint(NULL, "Memory allocation in gbInternalNlsAllocate failed.");
-    }
-
     if (!nls->multirate)
     {
-      gbInternal_KLU_analyze(nls->klu_internals_real, nls->size, (int *)nls->nlsPattern->leadindex, (int *)nls->nlsPattern->index);
+      gbInternal_KLU_analyze(nls->klu_internals_real, nls->size, (int *) nls->nlsPattern->leadindex, (int *) nls->nlsPattern->index);
     }
   }
   else
@@ -1488,26 +1472,15 @@ void *gbInternalNlsAllocate(int size,
     nls->cmplx_nls_jacs = (double **) malloc(trfm->nComplexEigenpairs * sizeof(double *));
     nls->cmplx_nls_res = (double **) malloc(trfm->nComplexEigenpairs * sizeof(double *));
 
-    if (!(nls->klu_internals_real && nls->klu_internals_cmplx && nls->real_nls_jacs
-          && nls->real_nls_res && nls->cmplx_nls_jacs && nls->cmplx_nls_res))
-    {
-      throwStreamPrint(NULL, "Memory allocation in gbInternalNlsAllocate failed.");
-    }
-
-    // We might be able to remove these redundant analysis parts, as we can use 1 analysis (symbolic) and compute different factorizations.
+    // TODO: We are able to remove these redundant analysis parts, as we can use 1 analysis (symbolic) and compute different factorizations.
     for (int sys_real = 0; sys_real < trfm->nRealEigenvalues; sys_real++)
     {
       nls->real_nls_res[sys_real] = (double *) malloc(nls->size * sizeof(double));
       nls->real_nls_jacs[sys_real] = (double *) malloc(nls_nnz_estimate * sizeof(double));
 
-      if (!(nls->real_nls_res[sys_real] && nls->real_nls_jacs[sys_real]))
-      {
-        throwStreamPrint(NULL, "Memory allocation in gbInternalNlsAllocate failed.");
-      }
-
       if (!nls->multirate)
       {
-        gbInternal_KLU_analyze(&nls->klu_internals_real[sys_real], nls->size, (int *)nls->nlsPattern->leadindex, (int *)nls->nlsPattern->index);
+        gbInternal_KLU_analyze(&nls->klu_internals_real[sys_real], nls->size, (int *) nls->nlsPattern->leadindex, (int *) nls->nlsPattern->index);
       }
 
       nls->klu_internals_real[sys_real].numeric = NULL;
@@ -1517,14 +1490,9 @@ void *gbInternalNlsAllocate(int size,
       nls->cmplx_nls_res[sys_cmplx] = (double *) malloc(2 * nls->size * sizeof(double));
       nls->cmplx_nls_jacs[sys_cmplx] = (double *) malloc(2 * nls_nnz_estimate * sizeof(double));
 
-      if (!(nls->cmplx_nls_res[sys_cmplx] && nls->cmplx_nls_jacs[sys_cmplx]))
-      {
-        throwStreamPrint(NULL, "Memory allocation in gbInternalNlsAllocate failed.");
-      }
-
       if (!nls->multirate)
       {
-        gbInternal_KLU_analyze(&nls->klu_internals_cmplx[sys_cmplx], nls->size, (int *)nls->nlsPattern->leadindex, (int *)nls->nlsPattern->index);
+        gbInternal_KLU_analyze(&nls->klu_internals_cmplx[sys_cmplx], nls->size, (int *) nls->nlsPattern->leadindex, (int *) nls->nlsPattern->index);
       }
 
       nls->klu_internals_cmplx[sys_cmplx].numeric = NULL;
@@ -1536,11 +1504,6 @@ void *gbInternalNlsAllocate(int size,
 
     // auxiliary memory
     nls->work = (double *) malloc(nls->size * fmax(trfm->size, 4) * sizeof(double));
-
-    if (!(nls->Z && nls->W && nls->work))
-    {
-      throwStreamPrint(NULL, "Memory allocation in gbInternalNlsAllocate failed.");
-    }
   }
 
   return (void *) nls;
@@ -1579,14 +1542,14 @@ void gbInternalNlsFree(void *nls_ptr)
   }
   else
   {
-    for (int sys_real = 0; sys_real < nls->tabl->t_transform->nRealEigenvalues; sys_real++)
+    for (int sys_real = 0; sys_real < 0*nls->tabl->t_transform->nRealEigenvalues; sys_real++)
     {
       free(nls->real_nls_jacs[sys_real]);
       free(nls->real_nls_res[sys_real]);
       if (nls->klu_internals_real[sys_real].numeric) klu_free_numeric(&nls->klu_internals_real[sys_real].numeric, &nls->klu_internals_real[sys_real].common);
       if (nls->klu_internals_real[sys_real].symbolic) klu_free_symbolic(&nls->klu_internals_real[sys_real].symbolic, &nls->klu_internals_real[sys_real].common);
     }
-    for (int sys_cmplx = 0; sys_cmplx < nls->tabl->t_transform->nComplexEigenpairs; sys_cmplx++)
+    for (int sys_cmplx = 0; sys_cmplx < 0*nls->tabl->t_transform->nComplexEigenpairs; sys_cmplx++)
     {
       free(nls->cmplx_nls_jacs[sys_cmplx]);
       free(nls->cmplx_nls_res[sys_cmplx]);
@@ -1867,8 +1830,22 @@ modelica_boolean updateFastStates(DATA *data,
   // create new symbolic factorization
   if (gbfData->tableau->t_transform == NULL)
   {
-    gbInternal_KLU_analyze(nls->klu_internals_real, nls->size, (int *)nls->nlsPattern->leadindex, (int *)nls->nlsPattern->index);
+    gbInternal_KLU_analyze(nls->klu_internals_real, nls->size, (int *) nls->nlsPattern->leadindex, (int *) nls->nlsPattern->index);
     nls->klu_internals_real->numeric = NULL;
+  }
+  else
+  {
+    // TODO: same as in allocation: we are able to remove these redundant analysis parts, as we can use 1 analysis (symbolic) and compute different factorizations.
+    for (int sys_real = 0; sys_real < gbfData->tableau->t_transform->nRealEigenvalues; sys_real++)
+    {
+      gbInternal_KLU_analyze(&nls->klu_internals_real[sys_real], nls->size, (int *) nls->nlsPattern->leadindex, (int *) nls->nlsPattern->index);
+      nls->klu_internals_real[sys_real].numeric = NULL;
+    }
+    for (int sys_cmplx = 0; sys_cmplx < gbfData->tableau->t_transform->nComplexEigenpairs; sys_cmplx++)
+    {
+      gbInternal_KLU_analyze(&nls->klu_internals_cmplx[sys_cmplx], nls->size, (int *) nls->nlsPattern->leadindex, (int *) nls->nlsPattern->index);
+      nls->klu_internals_cmplx[sys_cmplx].numeric = NULL;
+    }
   }
 
   // TODO: do the same for FIRK

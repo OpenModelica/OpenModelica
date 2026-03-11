@@ -207,7 +207,13 @@ int gbodef_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solve
     gbfData->step_fun = &(full_implicit_MS_MR);
     break;
   case GM_TYPE_IMPLICIT:
-    throwStreamPrint(NULL, "Fully Implicit RK method is not supported for the fast states integration!");
+    if (getGB_NLS_method(FLAG_MR_NLS) != GB_NLS_INTERNAL)
+    {
+      throwStreamPrint(NULL, "Unsupported configuration: fully implicit Runge-Kutta multirate integration is only available with -gbnls=internal.");
+    }
+    gbfData->isExplicit = FALSE;
+    gbfData->step_fun = &(full_implicit_RK_MR);
+    break;
   default:
     throwStreamPrint(NULL, "Not handled case for Runge-Kutta method %i", gbfData->type);
   }

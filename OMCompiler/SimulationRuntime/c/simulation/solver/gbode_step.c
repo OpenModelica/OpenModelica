@@ -676,6 +676,94 @@ int full_implicit_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
 }
 
 /**
+ * @brief Single implicit Runge-Kutta step.
+ *
+ * @param data              Runtime data struct.
+ * @param threadData        Thread data for error handling.
+ * @param solverInfo        Storing Runge-Kutta solver data.
+ * @return int              Return 0 on success, -1 on failure.
+ */
+int full_implicit_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
+{
+  SIMULATION_DATA *sData = (SIMULATION_DATA*)data->localData[0];
+  modelica_real* fODE = sData->realVars + data->modelData->nStates;
+  DATA_GBODE* gbData = (DATA_GBODE*)solverInfo->solverData;
+  DATA_GBODEF* gbfData = gbData->gbfData;
+
+  NONLINEAR_SYSTEM_DATA* nlsData = gbData->nlsData;
+
+  int i;
+  int stage_;
+  int nStates = data->modelData->nStates;
+  int nStages = gbData->tableau->nStages;
+
+  NLS_SOLVER_STATUS solved = NLS_FAILED;
+
+  /* Set start values for non-linear solver by extrapolation */
+  for (stage_ = 0; stage_ < nStages; stage_++) {
+    memcpy(nlsData->nlsx + stage_*nStates,    gbData->yOld, nStates*sizeof(modelica_real));
+    memcpy(nlsData->nlsxOld + stage_*nStates, gbData->yOld, nStates*sizeof(modelica_real));
+
+    extrapolation_gb(gbData, nlsData->nlsxExtrapolation + stage_*nStates, gbData->time + gbData->tableau->c[stage_] * gbData->stepSize);
+  }
+
+  if (gbData->time != data->simulationInfo->startTime && !gbData->eventHappened
+      && gbData->tableau->withDenseOutput && gbData->nlsSolverMethod == GB_NLS_INTERNAL
+      && gbData->extrapolationBaseTime != INFINITY)
+  {
+    for (stage_ = 0; stage_ < nStages; stage_++) {
+      double theta = (gbData->time + gbData->tableau->c[stage_] * gbData->stepSize - gbData->extrapolationBaseTime) / gbData->extrapolationStepSize;
+      gbData->tableau->dense_output(gbData->tableau, gbData->yLast, NULL, gbData->kLast,
+                                    theta, gbData->extrapolationStepSize, nlsData->nlsxOld + stage_*nStates, 0, NULL, nStates);
+      }
+  }
+
+  solved = solveNLS_gb(data, threadData, nlsData, gbData);
+
+  if (solved != NLS_SOLVED) {
+    if (OMC_ACTIVE_STREAM(OMC_LOG_SOLVER)) warningStreamPrint(OMC_LOG_SOLVER, 0, "gbode error: Failed to solve NLS in full_implicit_RK at time t=%g", gbData->time);
+    return -1;
+  }
+
+  // Apply RK-scheme for determining the approximations at (gbData->time + gbData->stepSize)
+  // y       = yold+h*sum(b[stage_]  * k[stage_], stage_=1..nStages);
+  // yt      = yold+h*sum(bt[stage_] * k[stage_], stage_=1..nStages);
+
+  // calculate y(t_n+1)
+  for (i = 0; i < nStates; i++) {
+    gbData->y[i] = gbData->yOld[i];
+    for (stage_ = 0; stage_ < nStages; stage_++) {
+      gbData->y[i]  += gbData->stepSize * gbData->tableau->b[stage_]  * (gbData->k + stage_ * nStates)[i];
+    }
+  }
+
+  modelica_boolean use_contractive_error = (gbData->tableau->t_transform != NULL
+                                         && gbData->tableau->t_transform->defect_err != NULL
+                                         && gbData->nlsSolverMethod == GB_NLS_INTERNAL);
+
+  // calculate yt(t_n+1) by contractive or standard embedded error estimate
+  if (use_contractive_error)
+  {
+    gbInternalContraction(data, threadData, gbData->nlsData, gbData, gbData->y, gbData->yt);
+  }
+  else
+  {
+    for (i = 0; i < nStates; i++) {
+      gbData->yt[i] = gbData->yOld[i];
+      for (stage_ = 0; stage_ < nStages; stage_++) {
+        gbData->yt[i] += gbData->stepSize * gbData->tableau->bt[stage_] * (gbData->k + stage_ * nStates)[i];
+      }
+    }
+  }
+
+  // copy the whole solution vector to the inner buffer (for latter extrapolation and dense output)
+  memcpy(gbData->x, nlsData->nlsx, nlsData->size*sizeof(double));
+
+  return 0;
+}
+
+
+/**
  * @brief
  *
  * @param data

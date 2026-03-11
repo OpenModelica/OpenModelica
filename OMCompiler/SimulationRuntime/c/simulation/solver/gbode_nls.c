@@ -364,11 +364,17 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA_MR(DATA* data, threadData_t* threadData, 
     nlsData->getIterationVars = NULL;
 
     break;
+  case GM_TYPE_IMPLICIT:
+    // Only works for -gbnls=internal (error should be caught beforehand, if we are not in -gbnls=internal)
+    // As -gbnls=internal does all the stuff from scratch and only really requires the nlsxOld, nlsxExtrapolation and nlsx fields
+    // we must do nothing here
+    nlsData->initializeStaticNLSData = NULL;
+    break;
   default:
     throwStreamPrint(NULL, "Residual function for NLS type %i not yet implemented.", gbfData->type);
   }
 
-  nlsData->initializeStaticNLSData(data, threadData, nlsData, TRUE, TRUE);
+  if (nlsData->initializeStaticNLSData) nlsData->initializeStaticNLSData(data, threadData, nlsData, TRUE, TRUE);
 
   JACOBIAN* jacobian_ODE = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
   gbfData->jacobian = (JACOBIAN*) malloc(sizeof(JACOBIAN));
