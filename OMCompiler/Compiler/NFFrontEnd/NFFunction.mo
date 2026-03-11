@@ -686,11 +686,6 @@ uniontype Function
     InstNode.setFuncCache(cls_node, cache);
   end mapCachedFuncs;
 
-  function hasBuiltinStatus
-    input Function fn;
-    output Boolean isBuiltin = Pointer.access(fn.status) == FunctionStatus.BUILTIN;
-  end hasBuiltinStatus;
-
   function isEvaluated
     input Function fn;
     output Boolean evaluated;

@@ -38,6 +38,7 @@ encapsulated uniontype NFFunctionInverse
   import Type = NFType;
 
 protected
+  import Call = NFCall;
   import Inst = NFInst;
   import Lookup = NFLookup;
   import SCodeUtil;
@@ -104,6 +105,16 @@ public
     subMod := SCode.SubMod.NAMEMOD("inverse",
       SCode.Mod.MOD(SCode.Final.NOT_FINAL(), SCode.Each.NOT_EACH(), {inv_mod}, NONE(), NONE(), fnInv.info));
   end toSubMod;
+
+  function getFunction
+    input FunctionInverse fnInv;
+    output Function fn;
+  protected
+    Call call;
+  algorithm
+    Expression.CALL(call = call) := fnInv.inverseCall;
+    fn := Call.typedFunction(call);
+  end getFunction;
 
 protected
   function getInverseAnnotations
