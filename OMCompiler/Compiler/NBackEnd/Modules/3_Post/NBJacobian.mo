@@ -296,6 +296,7 @@ public
     func := match Flags.getConfigString(Flags.GENERATE_DYNAMIC_JACOBIAN)
       case "symbolic" then jacobianSymbolic;
       case "symbolicadjoint" then jacobianSymbolicAdjoint;
+      case "bidirectional" then jacobianSymbolic;
       case "numeric"  then jacobianNumeric;
       case "none"     then jacobianNone;
     end match;
@@ -511,7 +512,11 @@ public
       end match;
 
       // create coloring
-      sparsityColoring := SparsityColoring.PartialD2ColoringAlgC(sparsityPattern, jacType);
+      if Flags.getConfigString(Flags.GENERATE_DYNAMIC_JACOBIAN) == "bidirectional" and isDynamic(jacType) then
+        sparsityColoring := SparsityColoring.StarBiColoringAlg(sparsityPattern, jacType);
+      else
+        sparsityColoring := SparsityColoring.PartialD2ColoringAlgC(sparsityPattern, jacType);
+      end if;
       // sparsityColoring := SparsityColoring.PartialD2ColoringAlgColumnAndRow(sparsityPattern, map);
 
       if Flags.isSet(Flags.DUMP_SPARSE) then
@@ -538,24 +543,76 @@ public
       array<SparsityColoringRow> rows;
     end SPARSITY_COLORING;
 
+    record SPARSITY_BICOLORING
+      "bidirectional (star bicoloring) with separate column and row color groups.
+       cols[1..nColColors] are seed variable groups for forward (column-wise) evaluation.
+       rows[1..nRowColors] are partial variable groups for adjoint (row-wise) evaluation."
+      array<SparsityColoringCol> cols   "seed vars per column-color (forward direction)";
+      array<SparsityColoringRow> rows   "partial vars per row-color (adjoint direction)";
+      Integer nColColors                "number of column colors used";
+      Integer nRowColors                "number of row colors used";
+    end SPARSITY_BICOLORING;
+
     function toString
       input SparsityColoring sparsityColoring;
       output String str = StringUtil.headline_2("Sparsity Coloring");
     protected
-      Boolean empty = arrayLength(sparsityColoring.cols) == 0;
+      String body;
     algorithm
-      if empty then
+      body := match sparsityColoring
+        case SPARSITY_COLORING() then toStringUnidirectional(sparsityColoring);
+        case SPARSITY_BICOLORING() then toStringBidirectional(sparsityColoring);
+      end match;
+      str := str + body;
+    end toString;
+
+    function toStringUnidirectional
+      input SparsityColoring sparsityColoring;
+      output String str = "";
+    protected
+      array<SparsityColoringCol> cols;
+      array<SparsityColoringRow> rows;
+    algorithm
+      (cols, rows) := match sparsityColoring
+        case SPARSITY_COLORING() then (sparsityColoring.cols, sparsityColoring.rows);
+        case SPARSITY_BICOLORING() then (sparsityColoring.cols, sparsityColoring.rows);
+      end match;
+      if arrayLength(cols) == 0 then
         str := str + "\n<empty sparsity pattern>\n";
       end if;
-      for i in 1:arrayLength(sparsityColoring.cols) loop
+      for i in 1:arrayLength(cols) loop
         str := str + "Column Color (" + intString(i) + ")\n"
-          + "  - Column: " + ComponentRef.listToString(sparsityColoring.cols[i]) + "\n";
+          + "  - Column: " + ComponentRef.listToString(cols[i]) + "\n";
       end for;
-      for i in 1:arrayLength(sparsityColoring.rows) loop
+      for i in 1:arrayLength(rows) loop
         str := str + "Row Color (" + intString(i) + ")\n"
-          + "  - Row:    " + ComponentRef.listToString(sparsityColoring.rows[i]) + "\n";
+          + "  - Row:    " + ComponentRef.listToString(rows[i]) + "\n";
       end for;
-    end toString;
+    end toStringUnidirectional;
+
+    function toStringBidirectional
+      input SparsityColoring sparsityColoring;
+      output String str = "";
+    protected
+      array<SparsityColoringCol> cols;
+      array<SparsityColoringRow> rows;
+      Integer nColColors, nRowColors;
+    algorithm
+      (cols, rows, nColColors, nRowColors) := match sparsityColoring
+        case SPARSITY_BICOLORING() then (sparsityColoring.cols, sparsityColoring.rows, sparsityColoring.nColColors, sparsityColoring.nRowColors);
+        case SPARSITY_COLORING() then (sparsityColoring.cols, sparsityColoring.rows, arrayLength(sparsityColoring.cols), arrayLength(sparsityColoring.rows));
+      end match;
+      str := str + "\n[Bidirectional] Column colors: " + intString(nColColors)
+        + ", Row colors: " + intString(nRowColors) + "\n";
+      for i in 1:arrayLength(cols) loop
+        str := str + "Forward Column Color (" + intString(i) + ")\n"
+          + "  - Seeds: " + ComponentRef.listToString(cols[i]) + "\n";
+      end for;
+      for i in 1:arrayLength(rows) loop
+        str := str + "Adjoint Row Color (" + intString(i) + ")\n"
+          + "  - Partials: " + ComponentRef.listToString(rows[i]) + "\n";
+      end for;
+    end toStringBidirectional;
 
     function lazy
       "creates a lazy coloring that just groups each independent variable individually
@@ -658,6 +715,109 @@ public
       //sparsityColoring := SPARSITY_COLORING(cref_colored_cols, arrayCreate(arrayLength(cref_colored_cols), {}));
       sparsityColoring := SPARSITY_COLORING(cref_colored_cols, cref_colored_rows);
     end PartialD2ColoringAlgC;
+
+    function StarBiColoringAlg
+      "author: fbrandt 2025
+      Star bicoloring via ColPack for bidirectional Jacobian evaluation.
+      Jointly computes a column and row coloring to minimize total evaluation count.
+      Reference: Gebremedhin, Tarafdar, Manne, Pothen.
+      'New Acyclic and Star Coloring Algorithms with Application to Computing Hessians'
+      https://doi.org/10.1137/050639879"
+      input SparsityPattern sparsityPattern;
+      input JacobianType jacType;
+      output SparsityColoring sparsityColoring;
+    protected
+      array<ComponentRef> seeds, partials;
+      UnorderedMap<ComponentRef, Integer> seed_indices, partial_indices;
+      Integer sizeCols, sizeRows, nnz, ptr, c, ri;
+      ComponentRef idx_cref;
+      list<ComponentRef> deps;
+      // per-row adjacency (0-based column indices)
+      array<list<Integer>> rowAdj;
+      // CSR arrays (values are 0-based)
+      array<Integer> rowPtr, colIdxArr;
+      // ColPack outputs
+      array<Integer> colColors, rowColors;
+      Integer nColColors, nRowColors;
+      // color groups
+      array<list<ComponentRef>> colGroups, rowGroups;
+    algorithm
+      // create index -> cref arrays
+      seeds := listArray(sparsityPattern.seed_vars);
+      if jacType == JacobianType.NLS then
+        partials := listArray(sparsityPattern.partial_vars);
+      else
+        partials := listArray(list(cref for cref guard(isRowInJacobian(cref, jacType)) in sparsityPattern.partial_vars));
+      end if;
+      sizeCols := arrayLength(seeds);
+      sizeRows := arrayLength(partials);
+
+      // handle empty case
+      if sizeCols == 0 or sizeRows == 0 then
+        sparsityColoring := SPARSITY_BICOLORING(listArray({}), listArray({}), 0, 0);
+        return;
+      end if;
+
+      // build cref -> 1-based index maps
+      seed_indices := UnorderedMap.new<Integer>(ComponentRef.hash, ComponentRef.isEqual, Util.nextPrime(sizeCols));
+      partial_indices := UnorderedMap.new<Integer>(ComponentRef.hash, ComponentRef.isEqual, Util.nextPrime(sizeRows));
+      for i in 1:sizeCols loop
+        UnorderedMap.add(seeds[i], i, seed_indices);
+      end for;
+      for i in 1:sizeRows loop
+        UnorderedMap.add(partials[i], i, partial_indices);
+      end for;
+
+      // build per-row adjacency: rowAdj[i] = list of 0-based column indices
+      rowAdj := arrayCreate(sizeRows, {});
+      nnz := 0;
+      for tpl in sparsityPattern.row_wise_pattern loop
+        (idx_cref, deps) := tpl;
+        if UnorderedMap.contains(idx_cref, partial_indices) then
+          ri := UnorderedMap.getSafe(idx_cref, partial_indices, sourceInfo());
+          rowAdj[ri] := list(UnorderedMap.getSafe(dep, seed_indices, sourceInfo()) - 1
+            for dep guard(UnorderedMap.contains(dep, seed_indices)) in deps);
+          nnz := nnz + listLength(rowAdj[ri]);
+        end if;
+      end for;
+
+      // convert to CSR format (0-based values stored in 1-based MetaModelica arrays)
+      rowPtr := arrayCreate(sizeRows + 1, 0);
+      colIdxArr := arrayCreate(max(nnz, 1), 0);
+      ptr := 0;
+      for i in 1:sizeRows loop
+        rowPtr[i] := ptr;
+        for cidx in rowAdj[i] loop
+          colIdxArr[ptr + 1] := cidx;
+          ptr := ptr + 1;
+        end for;
+      end for;
+      rowPtr[sizeRows + 1] := ptr;
+
+      // call ColPack star bicoloring
+      (colColors, nColColors, rowColors, nRowColors) :=
+        colpackStarBicoloring(sizeRows, sizeCols, rowPtr, colIdxArr);
+
+      // group seeds by column color
+      colGroups := arrayCreate(nColColors, {});
+      for j in 1:sizeCols loop
+        c := colColors[j];
+        if c > 0 then
+          colGroups[c] := seeds[j] :: colGroups[c];
+        end if;
+      end for;
+
+      // group partials by row color
+      rowGroups := arrayCreate(nRowColors, {});
+      for i in 1:sizeRows loop
+        c := rowColors[i];
+        if c > 0 then
+          rowGroups[c] := partials[i] :: rowGroups[c];
+        end if;
+      end for;
+
+      sparsityColoring := SPARSITY_BICOLORING(colGroups, rowGroups, nColColors, nRowColors);
+    end StarBiColoringAlg;
 
     function PartialD2ColoringAlgColumnAndRow
       "author: fbrandt 2025-10
@@ -822,6 +982,26 @@ public
       sparsityColoring := SPARSITY_COLORING(listArray(cols_lst), listArray(rows_lst));
     end PartialD2ColoringAlg;
 
+    function getCols
+      input SparsityColoring coloring;
+      output array<SparsityColoringCol> cols;
+    algorithm
+      cols := match coloring
+        case SPARSITY_COLORING() then coloring.cols;
+        case SPARSITY_BICOLORING() then coloring.cols;
+      end match;
+    end getCols;
+
+    function getRows
+      input SparsityColoring coloring;
+      output array<SparsityColoringRow> rows;
+    algorithm
+      rows := match coloring
+        case SPARSITY_COLORING() then coloring.rows;
+        case SPARSITY_BICOLORING() then coloring.rows;
+      end match;
+    end getRows;
+
     function combine
       "combines sparsity patterns by just appending them because they are supposed to
       be entirely independent of each other."
@@ -829,20 +1009,45 @@ public
       input SparsityColoring coloring2;
       output SparsityColoring coloring_out;
     protected
-      SparsityColoring smaller_coloring;
+      array<SparsityColoringCol> bigCols, smallCols;
+      array<SparsityColoringRow> bigRows, smallRows;
     algorithm
       // append the smaller to the bigger
-      (coloring_out, smaller_coloring) := if arrayLength(coloring2.cols) > arrayLength(coloring1.cols) then (coloring2, coloring1) else (coloring1, coloring2);
+      if arrayLength(getCols(coloring2)) > arrayLength(getCols(coloring1)) then
+        bigCols := getCols(coloring2); bigRows := getRows(coloring2);
+        smallCols := getCols(coloring1); smallRows := getRows(coloring1);
+      else
+        bigCols := getCols(coloring1); bigRows := getRows(coloring1);
+        smallCols := getCols(coloring2); smallRows := getRows(coloring2);
+      end if;
 
-      for i in 1:arrayLength(smaller_coloring.cols) loop
-        coloring_out.cols[i] := listAppend(coloring_out.cols[i], smaller_coloring.cols[i]);
-        coloring_out.rows[i] := listAppend(coloring_out.rows[i], smaller_coloring.rows[i]);
+      for i in 1:arrayLength(smallCols) loop
+        arrayUpdate(bigCols, i, listAppend(bigCols[i], smallCols[i]));
+        arrayUpdate(bigRows, i, listAppend(bigRows[i], smallRows[i]));
       end for;
+
+      coloring_out := SPARSITY_COLORING(bigCols, bigRows);
     end combine;
   end SparsityColoring;
 
 protected
   // ToDo: all the DAEMode stuff is probably incorrect!
+
+  function colpackStarBicoloring
+    "Calls ColPack's star bicoloring algorithm via external C wrapper.
+    Input: CSR sparsity pattern (0-based row pointers and column indices).
+    Output: 1-based column and row colors (0 = uncolored by that direction)."
+    input Integer nRows;
+    input Integer nCols;
+    input array<Integer> rowPtr   "CSR row pointers, size nRows+1, 0-based";
+    input array<Integer> colIdx   "CSR column indices, size nnz, 0-based";
+    output array<Integer> colColors "column colors (1-based; 0 = not column-colored)";
+    output Integer nColColors       "number of column colors used";
+    output array<Integer> rowColors "row colors (1-based; 0 = not row-colored)";
+    output Integer nRowColors       "number of row colors used";
+    external "C" ColPackBicoloring_starBicolor(nRows, nCols, rowPtr, colIdx, colColors, nColColors, rowColors, nRowColors)
+      annotation(Library = "omcruntime");
+  end colpackStarBicoloring;
 
   function isRowInJacobian
     "Checks if a cref of the partial derivatives, is an actual row in the sparsity pattern (ODE and OPT-Jacobians). If this is false, its an inner variable."
@@ -1028,6 +1233,7 @@ protected
     list<Pointer<Variable>> derivative_vars, state_vars;
     VariablePointers seedCandidates, partialCandidates;
     Option<Jacobian> jacobian, LFG_jacobian = NONE(), MRF_jacobian = NONE(), R0_jacobian = NONE()  "Resulting jacobians";
+    Option<Jacobian> adjointJac;
     Partition.Kind kind = Partition.Partition.getKind(part);
     Boolean updated;
   algorithm
@@ -1062,7 +1268,11 @@ protected
         (LFG_jacobian, MRF_jacobian, R0_jacobian) := partJacobianDynamicOptimization(part, knowns, name, func, funcMap);
       end if;
 
-      if Util.isSome(jacobian) then
+      if Flags.getConfigString(Flags.GENERATE_DYNAMIC_JACOBIAN) == "bidirectional" and Util.isSome(jacobian) and not BackendDAE.getIsAdjoint(Util.getOption(jacobian)) then
+        // Bidirectional: generate adjoint jacobian in addition to forward
+        adjointJac := jacobianSymbolicAdjoint(name, jacType, seedCandidates, partialCandidates, part.equations, part.strongComponents, part.adjacencyMatrix, funcMap, kind == NBPartition.Kind.INI);
+        part.association := Partition.Association.CONTINUOUS(kind, jacobian, adjointJac, LFG_jacobian, MRF_jacobian, R0_jacobian);
+      elseif Util.isSome(jacobian) then
         if BackendDAE.getIsAdjoint(Util.getOption(jacobian)) then
           part.association := Partition.Association.CONTINUOUS(kind, NONE(), jacobian, LFG_jacobian, MRF_jacobian, R0_jacobian);
         else

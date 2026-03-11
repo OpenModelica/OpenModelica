@@ -205,6 +205,11 @@ typedef struct JACOBIAN
   jacobianColumn_func_ptr constantEqns; /* Constant equations independent of seed vector */
   modelica_boolean isRowEval;           /* Flag indicating if evalColumn evaluates rows instead of columns and
                                            uses CSR sparse pattern and row coloring and seedVars is length sizeRows and resultVars is length sizeCols */
+  /* Bidirectional (star bicoloring) support */
+  modelica_boolean isBidirectional;     /* Flag indicating this jacobian uses bidirectional evaluation (column + row) */
+  struct JACOBIAN* adjointJacobian;             /* Pointer to adjoint jacobian for row evaluation (not owned, do not free) */
+  unsigned char* recoverMask;           /* Per-nonzero boolean: 1=extract from this direction, 0=skip. Size nnz. NULL if not bidirectional */
+  unsigned int* csrToCscMap;            /* Maps adjoint CSR nz positions to forward CSC nz positions. Size nnz. Only for adjoint in bidirectional mode. */
 } JACOBIAN;
 
 /* EXTERNAL_INPUT

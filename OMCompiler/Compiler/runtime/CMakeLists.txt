@@ -147,6 +147,29 @@ set(OMC_BACKENDRUNTIIME_SOURCES
     FMI_omc.c
     cJSON.c)
 
+# Optional ColPack dependency for star bicoloring
+find_package(PkgConfig QUIET)
+if(PkgConfig_FOUND)
+  pkg_check_modules(COLPACK QUIET ColPack)
+endif()
+if(NOT COLPACK_FOUND)
+  find_library(COLPACK_LIB NAMES ColPack)
+  find_path(COLPACK_INCLUDE NAMES ColPack/BipartiteGraphBicoloringInterface.h)
+  if(COLPACK_LIB AND COLPACK_INCLUDE)
+    set(COLPACK_FOUND TRUE)
+    set(COLPACK_LIBRARIES ${COLPACK_LIB})
+    set(COLPACK_INCLUDE_DIRS ${COLPACK_INCLUDE})
+  endif()
+endif()
+
+if(COLPACK_FOUND)
+  list(APPEND OMC_BACKENDRUNTIIME_SOURCES ColPackBicoloring_omc.cpp)
+  message(STATUS "ColPack found: bidirectional Jacobian coloring enabled")
+else()
+  list(APPEND OMC_BACKENDRUNTIIME_SOURCES ColPackBicoloring_stub.c)
+  message(STATUS "ColPack NOT found: bidirectional Jacobian coloring disabled (using stub)")
+endif()
+
 target_sources(omcbackendruntime PRIVATE ${OMC_BACKENDRUNTIIME_SOURCES})
 
 target_link_libraries(omcbackendruntime PUBLIC omc::config)
@@ -156,9 +179,13 @@ target_link_libraries(omcbackendruntime PUBLIC omc::3rd::metis)
 target_link_libraries(omcbackendruntime PUBLIC omc::3rd::fmilib)
 target_link_libraries(omcbackendruntime PUBLIC omc::3rd::zlib)
 target_link_libraries(omcbackendruntime PUBLIC omc::3rd::FMIL::expat)
-
 target_include_directories(omcbackendruntime PUBLIC ${Intl_INCLUDE_DIRS})
 target_include_directories(omcbackendruntime PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+
+if(COLPACK_FOUND)
+  target_link_libraries(omcbackendruntime PUBLIC ${COLPACK_LIBRARIES})
+  target_include_directories(omcbackendruntime PUBLIC ${COLPACK_INCLUDE_DIRS})
+endif()
 
 
 ################################################################################

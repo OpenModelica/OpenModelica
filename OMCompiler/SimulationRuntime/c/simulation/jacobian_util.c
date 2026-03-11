@@ -62,6 +62,10 @@ void initJacobian(JACOBIAN* jacobian, unsigned int sizeCols, unsigned int sizeRo
   jacobian->availability = JACOBIAN_UNKNOWN;
   jacobian->dae_cj = 0;
   jacobian->isRowEval = FALSE;
+  jacobian->isBidirectional = FALSE;
+  jacobian->adjointJacobian = NULL;
+  jacobian->recoverMask = NULL;
+  jacobian->csrToCscMap = NULL;
 }
 
 /**
@@ -84,6 +88,11 @@ JACOBIAN* copyJacobian(JACOBIAN* source)
     source->constantEqns,
     source->sparsePattern);
 
+  jacobian->isBidirectional = source->isBidirectional;
+  jacobian->adjointJacobian = source->adjointJacobian;  /* shared pointer, not deep copy */
+  jacobian->recoverMask = source->recoverMask;           /* shared pointer, not deep copy */
+  jacobian->csrToCscMap = source->csrToCscMap;           /* shared pointer, not deep copy */
+
   return jacobian;
 }
 
@@ -104,6 +113,10 @@ void freeJacobian(JACOBIAN *jac)
     free(jac->sparsePattern); jac->sparsePattern = NULL;
     freeEvalDAG(jac->dag); jac->dag = NULL;
     freeEvalSelection(jac->evalSelection); jac->evalSelection = NULL;
+    free(jac->recoverMask); jac->recoverMask = NULL;
+    free(jac->csrToCscMap); jac->csrToCscMap = NULL;
+    /* adjointJacobian is not owned; do not free */
+    jac->adjointJacobian = NULL;
   }
 }
 
@@ -144,6 +157,11 @@ void evalJacobian(DATA* data, threadData_t *threadData, JACOBIAN* jacobian, JACO
   const SPARSE_PATTERN* sp = jacobian->sparsePattern;
   int sizeDirection = jacobian->isRowEval ? jacobian->sizeRows : jacobian->sizeCols;
 
+  /* Dispatch to bidirectional evaluation if applicable */
+  if (jacobian->isBidirectional && jacobian->adjointJacobian) {
+    evalJacobianBidirectional(data, threadData, jacobian, parentJacobian, jac, isDense);
+    return;
+  }
 
   /* evaluate constant equations of Jacobian */
   if (jacobian->constantEqns != NULL) {
@@ -256,6 +274,168 @@ void evalJacobianRow(DATA* data, threadData_t *threadData,
         }
         /* de-activate seed variable for the corresponding color (row) */
         jacobian->seedVars[row] = 0.0;
+      }
+    }
+  }
+}
+
+/**
+ * @brief Initialize bidirectional recovery masks for star bicoloring.
+ *
+ * For each nonzero in forward (CSC) and adjoint (CSR) patterns, determines
+ * whether the entry is recoverable from the respective direction.
+ * Also computes CSR-to-CSC index mapping for sparse output.
+ *
+ * Must be called after both jacobians are fully initialized (patterns + colors)
+ * and linked (fwd->adjointJacobian != NULL).
+ *
+ * @param fwd   Forward jacobian with CSC pattern + column coloring.
+ */
+void initBidirectionalRecovery(JACOBIAN* fwd)
+{
+  JACOBIAN* adj = fwd->adjointJacobian;
+  if (!adj) return;
+
+  const SPARSE_PATTERN* fwdsp = fwd->sparsePattern;
+  const SPARSE_PATTERN* adjsp = adj->sparsePattern;
+  const unsigned int nCols = fwd->sizeCols;
+  const unsigned int nRows = fwd->sizeRows;
+  const unsigned int nnz = fwdsp->numberOfNonZeros;
+  unsigned int j, i, nz, k, j2, i2;
+
+  fwd->recoverMask = (unsigned char*) calloc(nnz, sizeof(unsigned char));
+  adj->recoverMask = (unsigned char*) calloc(nnz, sizeof(unsigned char));
+  adj->csrToCscMap = (unsigned int*) malloc(nnz * sizeof(unsigned int));
+
+  /* Forward recoverMask: entry (i,j) is column-recoverable if j is the ONLY
+   * column with its column color among all columns having a nonzero in row i. */
+  for (j = 0; j < nCols; j++) {
+    unsigned int cj = fwdsp->colorCols[j];
+    for (nz = fwdsp->leadindex[j]; nz < fwdsp->leadindex[j+1]; nz++) {
+      i = fwdsp->index[nz];
+      int unique = 1;
+      for (k = adjsp->leadindex[i]; k < adjsp->leadindex[i+1]; k++) {
+        j2 = adjsp->index[k];
+        if (j2 != j && fwdsp->colorCols[j2] == cj) {
+          unique = 0;
+          break;
+        }
+      }
+      fwd->recoverMask[nz] = (unsigned char)unique;
+    }
+  }
+
+  /* Adjoint recoverMask: entry (i,j) is row-recoverable if i is the ONLY
+   * row with its row color among all rows having a nonzero in column j. */
+  for (i = 0; i < nRows; i++) {
+    unsigned int ri = adjsp->colorCols[i];
+    for (nz = adjsp->leadindex[i]; nz < adjsp->leadindex[i+1]; nz++) {
+      j = adjsp->index[nz];
+      int unique = 1;
+      for (k = fwdsp->leadindex[j]; k < fwdsp->leadindex[j+1]; k++) {
+        i2 = fwdsp->index[k];
+        if (i2 != i && adjsp->colorCols[i2] == ri) {
+          unique = 0;
+          break;
+        }
+      }
+      adj->recoverMask[nz] = (unsigned char)unique;
+    }
+  }
+
+  /* CSR-to-CSC mapping: for each adjoint CSR position, find forward CSC position */
+  for (i = 0; i < nRows; i++) {
+    for (nz = adjsp->leadindex[i]; nz < adjsp->leadindex[i+1]; nz++) {
+      j = adjsp->index[nz];
+      adj->csrToCscMap[nz] = 0;
+      for (k = fwdsp->leadindex[j]; k < fwdsp->leadindex[j+1]; k++) {
+        if (fwdsp->index[k] == i) {
+          adj->csrToCscMap[nz] = k;
+          break;
+        }
+      }
+    }
+  }
+}
+
+/**
+ * @brief Evaluate Jacobian using bidirectional (star bicoloring) approach.
+ *
+ * Uses both forward (column) and adjoint (row) evaluations to recover all
+ * nonzero entries with fewer total colors than unidirectional coloring.
+ *
+ * Dense output: column-major jac[col * nRows + row].
+ * Sparse output: CSC-indexed jac[nz] matching forward sparse pattern.
+ *
+ * @param data            Runtime data struct.
+ * @param threadData      Thread data for error handling.
+ * @param fwd             Forward jacobian (isBidirectional=TRUE, adjointJacobian set).
+ * @param parentJacobian  Parent Jacobian for nested use (can be NULL).
+ * @param jac             Output buffer.
+ * @param isDense         TRUE for dense, FALSE for sparse CSC.
+ */
+void evalJacobianBidirectional(DATA* data, threadData_t *threadData,
+                               JACOBIAN* fwd, JACOBIAN* parentJacobian,
+                               modelica_real* jac, modelica_boolean isDense)
+{
+  JACOBIAN* adj = fwd->adjointJacobian;
+  const SPARSE_PATTERN* fwdsp = fwd->sparsePattern;
+  const SPARSE_PATTERN* adjsp = adj->sparsePattern;
+  const int nRows = (int)fwd->sizeRows;
+  const int nCols = (int)fwd->sizeCols;
+  int color, column, row, nz;
+
+  if (fwd->constantEqns) fwd->constantEqns(data, threadData, fwd, parentJacobian);
+  if (adj->constantEqns) adj->constantEqns(data, threadData, adj, parentJacobian);
+
+  if (isDense) {
+    memset(jac, 0, (size_t)nRows * (size_t)nCols * sizeof(modelica_real));
+  }
+
+  /* Column phase (forward mode, CSC + column coloring) */
+  for (color = 0; color < (int)fwdsp->maxColors; color++) {
+    for (column = 0; column < nCols; column++)
+      if ((int)fwdsp->colorCols[column] - 1 == color)
+        fwd->seedVars[column] = 1.0;
+
+    fwd->evalColumn(data, threadData, fwd, parentJacobian);
+
+    for (column = 0; column < nCols; column++) {
+      if ((int)fwdsp->colorCols[column] - 1 == color) {
+        for (nz = (int)fwdsp->leadindex[column]; nz < (int)fwdsp->leadindex[column + 1]; nz++) {
+          if (fwd->recoverMask[nz]) {
+            row = (int)fwdsp->index[nz];
+            if (isDense)
+              jac[column * nRows + row] = fwd->resultVars[row];
+            else
+              jac[nz] = fwd->resultVars[row];
+          }
+        }
+        fwd->seedVars[column] = 0.0;
+      }
+    }
+  }
+
+  /* Row phase (adjoint mode, CSR + row coloring) */
+  for (color = 0; color < (int)adjsp->maxColors; color++) {
+    for (row = 0; row < nRows; row++)
+      if ((int)adjsp->colorCols[row] - 1 == color)
+        adj->seedVars[row] = 1.0;
+
+    adj->evalColumn(data, threadData, adj, parentJacobian);
+
+    for (row = 0; row < nRows; row++) {
+      if ((int)adjsp->colorCols[row] - 1 == color) {
+        for (nz = (int)adjsp->leadindex[row]; nz < (int)adjsp->leadindex[row + 1]; nz++) {
+          if (adj->recoverMask[nz]) {
+            column = (int)adjsp->index[nz];
+            if (isDense)
+              jac[column * nRows + row] = adj->resultVars[column];
+            else
+              jac[adj->csrToCscMap[nz]] = adj->resultVars[column];
+          }
+        }
+        adj->seedVars[row] = 0.0;
       }
     }
   }
