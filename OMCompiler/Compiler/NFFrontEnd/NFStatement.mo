@@ -1189,7 +1189,7 @@ public
           s;
 
       case RETURN() then IOStream.append(s, "return");
-      case RETURN() then IOStream.append(s, "break");
+      case BREAK() then IOStream.append(s, "break");
       else IOStream.append(s, "#UNKNOWN STATEMENT#");
     end match;
 
