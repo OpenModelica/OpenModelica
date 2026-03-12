@@ -10,6 +10,7 @@ endif
 
 TESTFILES = \
   ArrayBinding1.mo \
+	Break1.mo \
 	Comments.mo \
   DoublePendulum.mos \
 	Enum1.mo \
