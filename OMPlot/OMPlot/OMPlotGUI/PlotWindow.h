@@ -87,7 +87,6 @@ private:
 	QToolButton* mpPauseSimulationToolButton;
 	QLabel* mpSimulationSpeedLabel;
 	QComboBox* mpSimulationSpeedComboBox;
-	QTextStream* mpTextStream;
 	QFile mFile;
 	QStringList mVariablesList;
 	PlotType mPlotType;
@@ -226,8 +225,8 @@ public:
   void emitPrefixUnitsChanged();
 private:
   int setupInterp(double *vals, double val, int N, double &alpha);
-  int readPLTDataset(QString variable, int N, double *valsOut);
-  void readPLTArray(QString variable, double alpha, int intervalSize, int it, QList<double> &arrLstOut);
+  int readPLTDataset(QTextStream &textStream, QString variable, int N, double *valsOut);
+  void readPLTArray(QTextStream &textStream, QString variable, double alpha, int intervalSize, int it, QList<double> &arrLstOut);
   void setInteractiveControls(bool enabled);
 signals:
   void closingDown();

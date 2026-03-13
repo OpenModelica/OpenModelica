@@ -281,12 +281,12 @@ void PlotWindow::getStartStopTime(double &start, double &stop)
     if (!mFile.open(QIODevice::ReadOnly)) {
       throw NoFileException(windowTitle(), ERROR_FAILED_TO_OPEN_FILE, mFile.fileName());
     }
-    mpTextStream = new QTextStream(&mFile);
+    QTextStream textStream(&mFile);
     // read the interval size from the file
     int intervalSize = 0;
-    while (!mpTextStream->atEnd())
+    while (!textStream.atEnd())
     {
-      currentLine = mpTextStream->readLine();
+      currentLine = textStream.readLine();
       if (currentLine.startsWith("#IntervalSize"))
       {
         intervalSize = static_cast<QString>(currentLine.split("=").last()).toInt();
@@ -294,9 +294,9 @@ void PlotWindow::getStartStopTime(double &start, double &stop)
       }
     }
     // Read start and stop time
-    while (!mpTextStream->atEnd())
+    while (!textStream.atEnd())
     {
-      currentLine = mpTextStream->readLine();
+      currentLine = textStream.readLine();
       QString currentVariable;
       if (currentLine.contains("DataSet:"))
       {
@@ -304,12 +304,12 @@ void PlotWindow::getStartStopTime(double &start, double &stop)
         if (currentVariable == "time")
         {
           // read the variable values now
-          currentLine = mpTextStream->readLine();
+          currentLine = textStream.readLine();
           QStringList values = currentLine.split(",");
           start = QString(values[0]).toDouble();
           for(int j = 0; j < intervalSize-1; j++)
           {
-            currentLine = mpTextStream->readLine();
+            currentLine = textStream.readLine();
           }
           values = currentLine.split(",");
           stop = QString(values[0]).toDouble();
@@ -317,7 +317,7 @@ void PlotWindow::getStartStopTime(double &start, double &stop)
         }
       }
     }
-    if (mpTextStream->atEnd()) {
+    if (textStream.atEnd()) {
       mFile.close();
       throw NoVariableException(windowTitle(), ERROR_VARIABLE_DOES_NOT_EXIST, "time");
     }
@@ -494,12 +494,12 @@ void PlotWindow::plot(PlotCurve *pPlotCurve)
     if (!mFile.open(QIODevice::ReadOnly)) {
       throw NoFileException(windowTitle(), ERROR_FAILED_TO_OPEN_FILE, mFile.fileName());
     }
-    mpTextStream = new QTextStream(&mFile);
+    QTextStream textStream(&mFile);
     // read the interval size from the file
     int intervalSize = 0;
-    while (!mpTextStream->atEnd())
+    while (!textStream.atEnd())
     {
-      currentLine = mpTextStream->readLine();
+      currentLine = textStream.readLine();
       if (currentLine.startsWith("#IntervalSize"))
       {
         intervalSize = static_cast<QString>(currentLine.split("=").last()).toInt();
@@ -509,9 +509,9 @@ void PlotWindow::plot(PlotCurve *pPlotCurve)
 
     QStringList variablesPlotted;
     // Read variable values and plot them
-    while (!mpTextStream->atEnd())
+    while (!textStream.atEnd())
     {
-      currentLine = mpTextStream->readLine();
+      currentLine = textStream.readLine();
       QString currentVariable;
       if (currentLine.contains("DataSet:"))
       {
@@ -528,13 +528,13 @@ void PlotWindow::plot(PlotCurve *pPlotCurve)
           pPlotCurve->clearXAxisVector();
           pPlotCurve->clearYAxisVector();
           // read the variable values now
-          currentLine = mpTextStream->readLine();
+          currentLine = textStream.readLine();
           for(int j = 0; j < intervalSize; j++)
           {
             QStringList values = currentLine.split(",");
             pPlotCurve->addXAxisValue(QString(values[0]).toDouble());
             pPlotCurve->addYAxisValue(QString(values[1]).toDouble());
-            currentLine = mpTextStream->readLine();
+            currentLine = textStream.readLine();
           }
           pPlotCurve->plotData();
           pPlotCurve->attach(mpPlot);
@@ -732,12 +732,12 @@ void PlotWindow::plotParametric(PlotCurve *pPlotCurve)
       if (!mFile.open(QIODevice::ReadOnly)) {
         throw NoFileException(windowTitle(), ERROR_FAILED_TO_OPEN_FILE, mFile.fileName());
       }
-      mpTextStream = new QTextStream(&mFile);
+      QTextStream textStream(&mFile);
       // read the interval size from the file
       int intervalSize = 0;
-      while (!mpTextStream->atEnd())
+      while (!textStream.atEnd())
       {
-        currentLine = mpTextStream->readLine();
+        currentLine = textStream.readLine();
         if (currentLine.startsWith("#IntervalSize"))
         {
           intervalSize = static_cast<QString>(currentLine.split("=").last()).toInt();
@@ -747,9 +747,9 @@ void PlotWindow::plotParametric(PlotCurve *pPlotCurve)
 
       QStringList variablesPlotted;
       // Read variable values and plot them
-      while (!mpTextStream->atEnd())
+      while (!textStream.atEnd())
       {
-        currentLine = mpTextStream->readLine();
+        currentLine = textStream.readLine();
         QString currentVariable;
         if (currentLine.contains("DataSet:"))
         {
@@ -769,7 +769,7 @@ void PlotWindow::plotParametric(PlotCurve *pPlotCurve)
               pPlotCurve->clearYAxisVector();
             }
             // read the variable values now
-            currentLine = mpTextStream->readLine();
+            currentLine = textStream.readLine();
             for(int j = 0; j < intervalSize; j++)
             {
               // add first variable to the xaxis vector and 2nd to yaxis vector
@@ -778,7 +778,7 @@ void PlotWindow::plotParametric(PlotCurve *pPlotCurve)
                 pPlotCurve->addXAxisValue(QString(values[1]).toDouble());
               else if (variablesPlotted.size() == 2)
                 pPlotCurve->addYAxisValue(QString(values[1]).toDouble());
-              currentLine = mpTextStream->readLine();
+              currentLine = textStream.readLine();
             }
             // when two variables are found plot then plot them
             if (variablesPlotted.size() == 2)
@@ -952,28 +952,28 @@ int PlotWindow::setupInterp(double *vals, double val, int N, double &alpha)
   return p-vals;
 }
 
-int PlotWindow::readPLTDataset(QString variable, int N, double *valsOut)
+int PlotWindow::readPLTDataset(QTextStream &textStream, QString variable, int N, double *valsOut)
 {
   bool resetDone = false;
   QString currentLine;
   do { //find start of dataset of the varible
-    currentLine = mpTextStream->readLine();
+    currentLine = textStream.readLine();
     if (currentLine.contains("DataSet:"))
     {
       currentLine.remove("DataSet: ");
       if (currentLine == variable) break;
     }
-    if (mpTextStream->atEnd() && !resetDone){
-      mpTextStream->seek(0);
+    if (textStream.atEnd() && !resetDone){
+      textStream.seek(0);
       resetDone = true;
       //Reset is done for each last index+1, so that the file is searched once again.
       //May be optimized.
     }
-  } while (!mpTextStream->atEnd());
-  if (mpTextStream->atEnd())
+  } while (!textStream.atEnd());
+  if (textStream.atEnd())
     return -1;
   for (int i = 0; i < N; i++ ){
-    currentLine = mpTextStream->readLine();
+    currentLine = textStream.readLine();
     QStringList values = currentLine.split(",");
     if (values.count() != 2)
       throw NoVariableException(windowTitle(), ERROR_FAILED_TO_LOAD_VARIABLE, variable);
@@ -982,7 +982,7 @@ int PlotWindow::readPLTDataset(QString variable, int N, double *valsOut)
   return 0;
 }
 
-void PlotWindow::readPLTArray(QString variable, double alpha, int intervalSize, int it, QList<double> &arrLstOut)
+void PlotWindow::readPLTArray(QTextStream &textStream, QString variable, double alpha, int intervalSize, int it, QList<double> &arrLstOut)
 {
   int index = 1;
   auto vals = std::make_unique<double[]>(intervalSize);
@@ -996,7 +996,7 @@ void PlotWindow::readPLTArray(QString variable, double alpha, int intervalSize, 
     } else {
       variableWithInd.append("["+QString::number(index)+"]");
     }
-    if (readPLTDataset(variableWithInd, intervalSize, vals.get())){
+    if (readPLTDataset(textStream, variableWithInd, intervalSize, vals.get())){
       if (index == 1)
         throw NoVariableException(windowTitle(), ERROR_ARRAY_VARIABLE_DOES_NOT_EXIST, variable);
       else
@@ -1046,12 +1046,12 @@ void PlotWindow::plotArray(double time, PlotCurve *pPlotCurve)
     /* open the file */
     if (!mFile.open(QIODevice::ReadOnly))
       throw NoFileException(windowTitle(), ERROR_FAILED_TO_OPEN_FILE, mFile.fileName());
-    mpTextStream = new QTextStream(&mFile);
+    QTextStream textStream(&mFile);
     // read the interval size from the file
     int intervalSize = -1;
-    while (!mpTextStream->atEnd())
+    while (!textStream.atEnd())
     {
-      currentLine = mpTextStream->readLine();
+      currentLine = textStream.readLine();
       if (currentLine.startsWith("#IntervalSize"))
       {
         intervalSize = static_cast<QString>(currentLine.split("=").last()).toInt();
@@ -1065,7 +1065,7 @@ void PlotWindow::plotArray(double time, PlotCurve *pPlotCurve)
     //    double vals[intervalSize];
     //Read in timevector
     auto timeVals = std::make_unique<double[]>(intervalSize);
-    readPLTDataset("time", intervalSize, timeVals.get());
+    readPLTDataset(textStream, "time", intervalSize, timeVals.get());
     //Find indexes and alpha to interpolate data in particular time
     double alpha;
     int it = setupInterp(timeVals.get(), time, intervalSize, alpha);
@@ -1095,7 +1095,7 @@ void PlotWindow::plotArray(double time, PlotCurve *pPlotCurve)
         mpPlot->addPlotCurve(pPlotCurve);
       }
       QList<double> arrLst;
-      readPLTArray(currentVariable, alpha, intervalSize, it, arrLst);
+      readPLTArray(textStream, currentVariable, alpha, intervalSize, it, arrLst);
       for (int i = 0; i < arrLst.length(); i++)
       {
         pPlotCurve->addXAxisValue(i+1);
@@ -1280,13 +1280,13 @@ void PlotWindow::plotArrayParametric(double time, PlotCurve *pPlotCurve)
       /* open the file */
       if (!mFile.open(QIODevice::ReadOnly))
         throw NoFileException(windowTitle(), ERROR_FAILED_TO_OPEN_FILE, mFile.fileName());
-      mpTextStream = new QTextStream(&mFile);
+      QTextStream textStream(&mFile);
       // read the interval size from the file
       QString currentLine;
       int intervalSize = -1;
-      while (!mpTextStream->atEnd())
+      while (!textStream.atEnd())
       {
-        currentLine = mpTextStream->readLine();
+        currentLine = textStream.readLine();
         if (currentLine.startsWith("#IntervalSize"))
         {
           intervalSize = static_cast<QString>(currentLine.split("=").last()).toInt();
@@ -1299,7 +1299,7 @@ void PlotWindow::plotArrayParametric(double time, PlotCurve *pPlotCurve)
       }
       //Read in timevector
       auto timeVals = std::make_unique<double[]>(intervalSize);
-      readPLTDataset("time", intervalSize, timeVals.get());
+      readPLTDataset(textStream, "time", intervalSize, timeVals.get());
       //Find indexes and alpha to interpolate data in particular time
       double alpha;
       int it = setupInterp(timeVals.get(), time, intervalSize, alpha);
@@ -1324,9 +1324,9 @@ void PlotWindow::plotArrayParametric(double time, PlotCurve *pPlotCurve)
       }
       //Read the values
       QList<double> xValsLst;
-      readPLTArray(xVariable, alpha, intervalSize, it, xValsLst);
+      readPLTArray(textStream, xVariable, alpha, intervalSize, it, xValsLst);
       QList<double> yValsLst;
-      readPLTArray(yVariable, alpha, intervalSize, it, yValsLst);
+      readPLTArray(textStream, yVariable, alpha, intervalSize, it, yValsLst);
       if (xValsLst.length() != yValsLst.length()) {
         mFile.close();
         throw PlotException(windowTitle(), ERROR_ARRAYS_MUST_HAVE_SAME_LENGTH);
