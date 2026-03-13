@@ -1390,7 +1390,7 @@ const char *JACOBIAN_METHOD_DESC[JAC_MAX] = {
   "Colored numerical Jacobian, which is default for dassl and ida. Needs omc compiler flag --generateDynamicJacobian=numeric. With option -idaLS=klu a sparse matrix is used.",
   "Dense solver internal numerical Jacobian.",
   "Colored symbolical Jacobian. Needs omc compiler flag --generateDynamicJacobian=symbolic. With option -idaLS=klu a sparse matrix is used.",
-  "Colored symbolical adjoint Jacobian. Needs omc compiler flags --newBackend and --generateDynamicJacobian=symbolicadjoint.",
+  "Colored symbolical adjoint Jacobian. Needs omc compiler flag --newBackend and --generateDynamicJacobian=symbolicadjoint.",
   "Dense numerical Jacobian.",
   "Dense symbolical Jacobian. Needs omc compiler flag --generateDynamicJacobian=symbolic.",
   "Bidirectional (star bicolored) symbolical Jacobian. Needs omc compiler flag --generateDynamicJacobian=bidirectional.",

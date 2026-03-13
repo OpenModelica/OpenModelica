@@ -5815,7 +5815,8 @@ template functionAnalyticJacobians(list<JacobianMatrix> JacobianMatrices, String
           isAdjoint,
           isBidirectional,
           adjointJacobianIndex,
-          adjointMatrixName)
+          adjointMatrixName,
+          isAdjoint)
       // Normal: use regular sparsity and column coloring
       else
         initialAnalyticJacobians(
@@ -5830,7 +5831,8 @@ template functionAnalyticJacobians(list<JacobianMatrix> JacobianMatrices, String
           isAdjoint,
           isBidirectional,
           adjointJacobianIndex,
-          adjointMatrixName)
+          adjointMatrixName,
+          isAdjoint)
       ;separator="\n")
 
   let jacMats = (JacobianMatrices |> JAC_MATRIX() =>
@@ -5871,6 +5873,7 @@ match sparsepattern
       ;separator="")
     let evalColumn = '<%symbolName(modelNamePrefix,"functionJac")%><%matrixname%>_column'
     let sizeCols = listLength(seedVars)
+    let isRowEval = if isAdjoint then "1" else "0"
     <<
     OMC_DISABLE_OPT
     int <%symbolName(modelNamePrefix,"initialAnalyticJacobian")%><%matrixname%>(DATA* data, threadData_t *threadData, JACOBIAN *jacobian)
@@ -5882,7 +5885,7 @@ match sparsepattern
       initJacobian(jacobian, <%sizeCols%>, <%sizeRows%>, <%tmpvarsSize%>, NULL, <%evalColumn%>, <%constantEqns%>, NULL);
       jacobian->sparsePattern = allocSparsePattern(<%sizeleadindex%>, <%sp_size_index%>, <%maxColor%>);
       jacobian->availability = <%availability%>;
-      jacobian->isRowEval = <%boolStrC(isAdjoint)%>;
+      jacobian->isRowEval = <%isRowEval%>;
 
       /* read lead index of compressed sparse column */
       count = omc_fread(jacobian->sparsePattern->leadindex, sizeof(unsigned int), <%sizeleadindex%>+1, pFile, FALSE);
