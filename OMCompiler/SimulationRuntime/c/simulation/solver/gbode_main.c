@@ -962,10 +962,13 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
     messageClose(OMC_LOG_GBODE);
 
     if (gbfData->nlsData->isPatternAvailable) {
-      // TODO: can we do this without memory allocations and dense matrices?
-      updateSparsePattern_MR(gbData, gbfData->jacobian->sparsePattern);
-      gbfData->jacobian->sizeCols = nFastStates;
-      gbfData->jacobian->sizeRows = nFastStates;
+      if (gbfData->nlsSolverMethod != GB_NLS_INTERNAL)
+      {
+        // internal does it by itself
+        updateSparsePattern_MR(gbData, gbfData->jacobian->sparsePattern);
+        gbfData->jacobian->sizeCols = nFastStates;
+        gbfData->jacobian->sizeRows = nFastStates;
+      }
 
       /* TODO don't free and realloc, instead overwrite large enough buffer */
       switch (gbfData->nlsSolverMethod)
@@ -988,7 +991,7 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
         solverData->ordinaryData = (void*) B_nlsKinsolAllocate(gbfData->nlsData->size, B_nlsUserData, FALSE, gbfData->nlsData->isPatternAvailable);
         break;
       case GB_NLS_INTERNAL:
-        /* Notify internal to update the sparsity + symbolic factorization in the next iteration */
+        // notify internal to update the sparsity + symbolic factorization in the next iteration
         gbInternalScheduleFastStatesUpdate(solverData->ordinaryData);
         break;
       default:

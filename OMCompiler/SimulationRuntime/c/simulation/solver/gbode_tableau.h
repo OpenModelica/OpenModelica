@@ -68,13 +68,9 @@ typedef void (*gb_dense_output)(BUTCHER_TABLEAU* tableau, double* yOld, double* 
  * Note that the LU decomposition of (1 / (h * gamma ) * I - * J)^(-1) is already available from the Newtion iteration, so we actually just compute
  *
  *    ERR = (1 / (h * gamma) * I - J)^(-1) * (f(x0, y0) - d(0)^T * A * k).
- *
- * This struct is a bit more general, as it also allows for generic nodes u: (I - h * gamma * J)^(-1) * h * gamma * (f(x0 + u * h, y0) - d(u)^T * A * k),
- * but note that these estimates with u != 0 always have a limited stability domain (may be quite big though: e.g. unstable for Re(lambda) < -200,
- * the standard embedded method is only stable up to approximately -10).
- *
- * One extension could be to perform another contraction, i.e. ERR_2 := (I - h * gamma * J)^(-1) * h * gamma * (f(x0 + u * h, y0 + h * ERR) - d(u)^T * A * k), which is
- * A-stable for u != 0 (e.g. Lobatto IIIA) and L-stable for u = 0 (e.g. Gauss, Radau). Clearly, this would be double the cost.
+
+ * One extension could be to perform another contraction, i.e. ERR_2 := (I - h * gamma * J)^(-1) * h * gamma * (f(x0 + u * h, y0 + h * ERR) - d(0)^T * A * k),
+ * which is L-stable for Gauss, Radau. Clearly, this would be double the cost.
  *
  * For theory of these estimates refer to
  *     Shampine & Baka "Error estimators for stiff differential equations" (original literature),
@@ -84,14 +80,9 @@ typedef void (*gb_dense_output)(BUTCHER_TABLEAU* tableau, double* yOld, double* 
  */
 typedef struct CONTRACTIVE_DEFECT_ERROR {
   /**
-   * @brief Weights of the stage values d(u)^T * A.
+   * @brief Weights of the stage values d(0)^T * A.
    */
   double *dT_A;
-
-  /**
-   * @brief Uncollocated node u at which to perform the additional function evaluation.
-   */
-  double u;
 } CONTRACTIVE_DEFECT_ERROR;
 
 /**

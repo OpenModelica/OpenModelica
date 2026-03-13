@@ -31,6 +31,7 @@
 #include <klu.h>
 
 #include "gbode_main.h"
+#include "gbode_util.h"
 #include "gbode_internal_nls.h"
 
 #include "../options.h"
@@ -557,7 +558,8 @@ static int jacobian_real_assemble(DATA *data,
 {
   memset(jac_buf_nls, 0, nls->nlsPattern->numberOfNonZeros * sizeof(double));
 
-  const double weight = gamma / gbData->stepSize;
+  const double inv_step = 1.0 / (nls->multirate ? gbData->gbfData->stepSize : gbData->stepSize);
+  const double weight = inv_step * gamma;
 
   for (int nz = 0; nz < ode_jac_sp->numberOfNonZeros; nz++)
   {
@@ -601,7 +603,7 @@ static int jacobian_cmplx_assemble(DATA *data,
 {
   memset(jac_buf_nls, 0, 2 * nls->nlsPattern->numberOfNonZeros * sizeof(double));
 
-  const double inv_step = 1.0 / gbData->stepSize;
+  const double inv_step = 1.0 / (nls->multirate ? gbData->gbfData->stepSize : gbData->stepSize);
   const double weight_real = inv_step * alpha;
   const double weight_imag = inv_step * beta;
 
@@ -997,11 +999,124 @@ static void scaled_blockdiag_matvec(T_TRANSFORM *transform,
   }
 }
 
+#define GB_INTERNAL_LEFT_BOUNDARY -1
+
+/**
+ * @brief Set states and time for a T-transform stage evaluation
+ * @par Runtime: O(nStates)
+ *
+ * In multirate mode, slow states are restored from the slow-state cache and
+ * fast states are overwritten from the input vector using the fast state index
+ * mapping. In single-rate mode, the full state vector is copied from the input.
+ *
+ * The simulation time is set to the corresponding stage time using the tableau
+ * coefficient. If stage < 0, the left interval boundary time is used.
+ *
+ * @param[in,out] data   Data
+ * @param[in]     gbData GBODE data
+ * @param[in]     nls    Internal nonlinear system data
+ * @param[in]     y_fast   Input state vector (size nls->size)
+ * @param[in]     stage  Stage index of the tableau, or negative for left boundary (use macro GB_INTERNAL_LEFT_BOUNDARY)
+ */
+static inline void gbInternal_T_Transform_set_states(DATA *data, DATA_GBODE *gbData, GB_INTERNAL_NLS_DATA *nls, const double *y_fast, int stage)
+{
+  if (nls->multirate)
+  {
+    DATA_GBODEF *gbfData = gbData->gbfData;
+
+    if (stage >= 0)
+    {
+      slowStateCache_overwrite_stage(gbData, gbfData->slowStateCache, stage, data->localData[0]->realVars);
+    }
+    else
+    {
+      slowStateCache_overwrite_left(gbData, gbfData->slowStateCache, data->localData[0]->realVars);
+    }
+
+    for (int fast_idx = 0; fast_idx < nls->size; fast_idx++)
+    {
+      int full_idx = gbData->fastStatesIdx[fast_idx];
+      data->localData[0]->realVars[full_idx] = y_fast[fast_idx];
+    }
+
+    data->localData[0]->timeValue = (stage >= 0 ? gbfData->time + gbfData->tableau->c[stage] * gbfData->stepSize : gbfData->time);
+  }
+  else
+  {
+    memcpy(data->localData[0]->realVars, y_fast, nls->size * sizeof(double));
+    data->localData[0]->timeValue = (stage >= 0 ? gbData->time + gbData->tableau->c[stage] * gbData->stepSize : gbData->time);
+  }
+}
+
+static inline void gbInternal_T_Transform_copy_full_to_fast(DATA_GBODE *gbData, GB_INTERNAL_NLS_DATA *nls, const double *src_full, double *dest_fast)
+{
+  if (nls->multirate)
+  {
+    for (int fast_idx = 0; fast_idx < nls->size; fast_idx++)
+    {
+      int full_idx = gbData->fastStatesIdx[fast_idx];
+      dest_fast[fast_idx] = src_full[full_idx];
+    }
+  }
+  else
+  {
+    memcpy(dest_fast, src_full, nls->size * sizeof(double));
+  }
+}
+
+static inline void gbInternal_T_Transform_copy_fast_to_full(DATA_GBODE *gbData, GB_INTERNAL_NLS_DATA *nls, const double *src_fast, double *dest_full)
+{
+  if (nls->multirate)
+  {
+    for (int fast_idx = 0; fast_idx < nls->size; fast_idx++)
+    {
+      int full_idx = gbData->fastStatesIdx[fast_idx];
+      dest_full[full_idx] = src_fast[fast_idx];
+    }
+  }
+  else
+  {
+    memcpy(dest_full, src_fast, nls->size * sizeof(double));
+  }
+}
+
+static inline void gbInternal_T_Transform_fast_to_full_axpy(DATA_GBODE *gbData, GB_INTERNAL_NLS_DATA *nls, const double alpha, const double *x_fast, double *y_full)
+{
+  if (nls->multirate)
+  {
+    for (int fast_idx = 0; fast_idx < nls->size; fast_idx++)
+    {
+      int full_idx = gbData->fastStatesIdx[fast_idx];
+      y_full[full_idx] += alpha * x_fast[fast_idx];
+    }
+  }
+  else
+  {
+    daxpy_(&nls->size, &alpha, x_fast, &INT_ONE, y_full, &INT_ONE);
+  }
+}
+
+static inline void gbInternal_T_Transform_full_to_fast_axpy(DATA_GBODE *gbData, GB_INTERNAL_NLS_DATA *nls, const double alpha, const double *x_full, double *y_fast)
+{
+  if (nls->multirate)
+  {
+    for (int fast_idx = 0; fast_idx < nls->size; fast_idx++)
+    {
+      int full_idx = gbData->fastStatesIdx[fast_idx];
+      y_fast[fast_idx] += alpha * x_full[full_idx];
+    }
+  }
+  else
+  {
+    daxpy_(&nls->size, &alpha, x_full, &INT_ONE, y_fast, &INT_ONE);
+  }
+}
+
 /** @brief Solve entire NLS of FIRK with possibly singular Runge-Kutta matrix
  *         via the T-transformation (decoupled space).
  *
  * After convergence the solutions are written into nonlinsys->x and the stage updates are
- * written into gbData->k.
+ * written into gbData->k or gbfData->kCurrPacked.
 */
 static NLS_SOLVER_STATUS gbInternalSolveNls_T_Transform(DATA *data,
                                                         threadData_t *threadData,
@@ -1011,11 +1126,20 @@ static NLS_SOLVER_STATUS gbInternalSolveNls_T_Transform(DATA *data,
 {
   int size = nls->size;
   int w_size = nls->size * nls->tabl->t_transform->size;
-  double invh = 1.0 / gbData->stepSize;
+  double stepSize = (nls->multirate ? gbData->gbfData->stepSize : gbData->stepSize);
+  double lastStepSize = (nls->multirate ? gbData->gbfData->lastStepSize : gbData->lastStepSize);
+  double invh = 1.0 / stepSize;
   double minvh = -invh;
   double *x = nonlinsys->nlsx;
   double *x_start = nonlinsys->nlsxOld;
   double *flat_res = nonlinsys->resValues;
+
+  double *yOld = (nls->multirate ? gbData->gbfData->yOldPacked : gbData->yOld);
+  double *kPacked = (nls->multirate ? gbData->gbfData->kCurrPacked : gbData->k);
+
+  EVAL_SELECTION *selection = (nls->multirate ? gbData->gbfData->evalSelectionFast : NULL);
+
+  SOLVERSTATS *stats = (nls->multirate ? &gbData->gbfData->stats : &gbData->stats);
 
   // return code from KLU or RHS / Jac calls
   int ret;
@@ -1023,8 +1147,7 @@ static NLS_SOLVER_STATUS gbInternalSolveNls_T_Transform(DATA *data,
   createGbScales(nls, gbData, x, x_start);
   double *scal = nls->scal;
 
-  RESIDUAL_USERDATA resUserData = {.data=data, .threadData=threadData, .solverData=gbData};
-  SPARSE_PATTERN *ode_pattern = data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A].sparsePattern;
+  SPARSE_PATTERN *ode_pattern = (nls->multirate ? nls->odePatternMR : data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A].sparsePattern);
   T_TRANSFORM *transform = nls->tabl->t_transform;
 
   modelica_boolean jac_called = FALSE;
@@ -1032,17 +1155,17 @@ static NLS_SOLVER_STATUS gbInternalSolveNls_T_Transform(DATA *data,
   if (nls->call_jac || transform->firstRowZero || gbData->eventHappened)
   {
     /* set values for known last point (simplified Newton) */
-    memcpy(data->localData[0]->realVars, gbData->yOld, size * sizeof(double));
-    data->localData[0]->timeValue = gbData->time;
+    gbInternal_T_Transform_set_states(data, gbData, nls, yOld, GB_INTERNAL_LEFT_BOUNDARY);
 
-    /* callback ODE + callback Jacobian of ODE -> nls_jacobian buffer */
-    ret = gbode_fODE(data, threadData, &(gbData->stats.nCallsODE), NULL);
+    /* callback ODE + callback Jacobian of ODE -> nls_jacobian buffer
+       => TODO: if method has property a_{s,:} = b, i.e. FSAL or kLeft is available, we could recycle the k_s from before here */
+    ret = gbode_fODE(data, threadData, &stats->nCallsODE, selection);
     if (ret < 0) return NLS_FAILED;
 
     if (transform->firstRowZero)
     {
       // save explicit stage (e.g. Lobatto IIIA)
-      memcpy(gbData->k, &data->localData[0]->realVars[size], size * sizeof(double));
+      gbInternal_T_Transform_copy_full_to_fast(gbData, nls, &data->localData[0]->realVars[gbData->nStates], kPacked);
     }
 
     if (nls->call_jac || gbData->eventHappened)
@@ -1053,13 +1176,13 @@ static NLS_SOLVER_STATUS gbInternalSolveNls_T_Transform(DATA *data,
     }
   }
 
-  if (jac_called || gbData->stepSize != gbData->lastStepSize)
+  if (jac_called || stepSize != lastStepSize)
   {
     for (int sys_real = 0; sys_real < nls->tabl->t_transform->nRealEigenvalues; sys_real++)
     {
       /* create Jacobian real: gamma/h * I - J_f */
       jacobian_real_assemble(data, threadData, gbData, nls, nls->tabl->t_transform->gamma[sys_real],
-                                ode_pattern, nls->jacobian_callback, nls->real_nls_jacs[sys_real]);
+                             ode_pattern, nls->jacobian_callback, nls->real_nls_jacs[sys_real]);
       ret = gbInternal_dKLU_factorize(&nls->klu_internals_real[sys_real],
                                       size,
                                       (int *) nls->nlsPattern->leadindex,
@@ -1071,7 +1194,7 @@ static NLS_SOLVER_STATUS gbInternalSolveNls_T_Transform(DATA *data,
     {
       /* create Jacobian complex: (alpha + i * beta)/h * I - J_f */
       jacobian_cmplx_assemble(data, threadData, gbData, nls, nls->tabl->t_transform->alpha[sys_cmplx], nls->tabl->t_transform->beta[sys_cmplx],
-                                 ode_pattern, nls->jacobian_callback, nls->cmplx_nls_jacs[sys_cmplx]);
+                              ode_pattern, nls->jacobian_callback, nls->cmplx_nls_jacs[sys_cmplx]);
       ret = gbInternal_zKLU_factorize(&nls->klu_internals_cmplx[sys_cmplx],
                                       size,
                                       (int *) nls->nlsPattern->leadindex,
@@ -1081,14 +1204,13 @@ static NLS_SOLVER_STATUS gbInternalSolveNls_T_Transform(DATA *data,
     }
   }
 
-  // we solve for Z = X(t_ij) - X0 or W = (T^{-1} otimes I) * Z, then get K back via K = 1/h * A^{-1} * Z
-  double *x0 = gbData->yOld;
+  // we solve for Z = X(t_ij) - yOld or W = (T^{-1} otimes I) * Z, then get K back via K = 1/h * A^{-1} * Z
 
-  // set guess Z[j] = X_start[j] - X_0
+  // set guess Z[j] = X_start[j] - yOld
   for (int j = 0; j < transform->size; j++)
   {
     memcpy(&nls->Z[j * size], &x_start[j * size], size * sizeof(double));
-    daxpy_(&size, &DBL_MINUS_ONE, x0, &INT_ONE, &nls->Z[j * size], &INT_ONE);
+    daxpy_(&size, &DBL_MINUS_ONE, yOld, &INT_ONE, &nls->Z[j * size], &INT_ONE);
   }
 
   // W = (T^{-1} otimes I) * Z
@@ -1111,13 +1233,12 @@ static NLS_SOLVER_STATUS gbInternalSolveNls_T_Transform(DATA *data,
     // work[j] = F((T otimes I) * W)[j]
     for (int j = 0; j < transform->size; j++)
     {
-      memcpy(data->localData[0]->realVars, x0, size * sizeof(double));
-      daxpy_(&size, &DBL_ONE, &nls->Z[j * size], &INT_ONE, data->localData[0]->realVars, &INT_ONE);
-      data->localData[0]->timeValue = gbData->time + gbData->tableau->c[j + (int)transform->firstRowZero] * gbData->stepSize;
-      ret = gbode_fODE(data, threadData, &(gbData->stats.nCallsODE), NULL);
+      gbInternal_T_Transform_set_states(data, gbData, nls, yOld, j + (int)transform->firstRowZero);
+      gbInternal_T_Transform_fast_to_full_axpy(gbData, nls, DBL_ONE, &nls->Z[j * size], data->localData[0]->realVars);
+      ret = gbode_fODE(data, threadData, &stats->nCallsODE, selection);
       if (ret < 0) return NLS_FAILED;
 
-      memcpy(&nls->work[j * size], &data->localData[0]->realVars[size], size * sizeof(double));
+      gbInternal_T_Transform_copy_full_to_fast(gbData, nls, &data->localData[0]->realVars[gbData->nStates], &nls->work[j * size]);
     }
 
     // rhs[j] = (T^{-1} otimes I) * F((T otimes I) * W)
@@ -1132,7 +1253,8 @@ static NLS_SOLVER_STATUS gbInternalSolveNls_T_Transform(DATA *data,
     {
       for (int j = 0; j < transform->size; j++)
       {
-        daxpy_(&size, &transform->phi[j], gbData->k, &INT_ONE, &flat_res[j * size], &INT_ONE);
+        daxpy_(&size, &transform->phi[j], kPacked,
+               &INT_ONE, &flat_res[j * size], &INT_ONE);
       }
     }
 
@@ -1222,27 +1344,29 @@ static NLS_SOLVER_STATUS gbInternalSolveNls_T_Transform(DATA *data,
       for (int j = 0; j < transform->size; j++)
       {
         memcpy(&x[j * size + offset], &nls->Z[j * size], size * sizeof(double));
-        daxpy_(&size, &DBL_ONE, x0, &INT_ONE, &x[j * size + offset], &INT_ONE);
+        daxpy_(&size, &DBL_ONE, yOld, &INT_ONE, &x[j * size + offset], &INT_ONE);
       }
 
       // recompute weights K from Z via K = 1 / h * (A_part^{-1} otimes I) * Z + rho * k_1 if k_1 explicit else 0 (rho := -A_part^{-1} * A_{r, 1})
       // where r are all rows that belong to A_part
-      dense_kron_id_vec(transform->size, size, transform->A_part_inv, nls->Z, &gbData->k[offset]);
-      dscal_(&w_size, &invh, &gbData->k[offset], &INT_ONE);
+      dense_kron_id_vec(transform->size, size, transform->A_part_inv, nls->Z,
+                        &kPacked[offset]);
+      dscal_(&w_size, &invh, &kPacked[offset], &INT_ONE);
 
       if (transform->firstRowZero)
       {
         // add k[j] += rho[j] * k_1 or k[j] -= (-A_part^{-1} * A_{r, 1} * k_1)[j] * k_1
         for (int j = 0; j < transform->size; j++)
         {
-          daxpy_(&size, &transform->rho[j], gbData->k, &INT_ONE, &gbData->k[offset + j * size], &INT_ONE);
+          daxpy_(&size, &transform->rho[j], kPacked,
+            &INT_ONE, &kPacked[offset + j * size], &INT_ONE);
         }
       }
 
       // for explicit first stage: copy x0 into x (e.g. Lobatto IIIA)
       if (transform->firstRowZero)
       {
-        memcpy(x, x0, size * sizeof(double));
+        memcpy(x, yOld, size * sizeof(double));
       }
 
       // for explicit last stage: compute final K_s and X_s
@@ -1251,22 +1375,21 @@ static NLS_SOLVER_STATUS gbInternalSolveNls_T_Transform(DATA *data,
         int s_minus1 = nls->tabl->nStages - 1;
 
         // X_s = x0 + h * sum{j=1}^{s-1} A_{s, j} * k_j as A_{s, s} == 0!
-        memcpy(&x[size * s_minus1], x0, size * sizeof(double));
+        memcpy(&x[size * s_minus1], yOld, size * sizeof(double));
         dgemm_(&CHAR_NO_TRANS, &CHAR_TRANS,
                &size, &INT_ONE, &s_minus1,
-               &gbData->stepSize,
-               gbData->k, &size,
-               &gbData->tableau->A[s_minus1 * nls->tabl->nStages], &INT_ONE,
+               &stepSize,
+               kPacked, &size,
+               &nls->tabl->A[s_minus1 * nls->tabl->nStages], &INT_ONE,
                &DBL_ONE,
                &x[size * s_minus1], &size);
 
-        memcpy(data->localData[0]->realVars, &x[size * s_minus1], size * sizeof(double));
-        data->localData[0]->timeValue = gbData->time + gbData->stepSize * nls->tabl->c[s_minus1];
-        ret = gbode_fODE(data, threadData, &(gbData->stats.nCallsODE), NULL);
+        gbInternal_T_Transform_set_states(data, gbData, nls, &x[size * s_minus1], s_minus1);
+        ret = gbode_fODE(data, threadData, &stats->nCallsODE, selection);
         if (ret < 0) return NLS_FAILED;
 
         // k_s = f(t + h * c_s, x0 + h * sum{j=1}^{s-1} A_{s, j} * k_j)
-        memcpy(&gbData->k[size * s_minus1], &data->localData[0]->realVars[size], size * sizeof(double));
+        gbInternal_T_Transform_copy_full_to_fast(gbData, nls, &data->localData[0]->realVars[gbData->nStates], &kPacked[size * s_minus1]);
       }
 
       return NLS_SOLVED;
@@ -1848,8 +1971,6 @@ modelica_boolean updateFastStates(DATA *data,
     }
   }
 
-  // TODO: do the same for FIRK
-
   return TRUE;
 }
 
@@ -1880,15 +2001,11 @@ NLS_SOLVER_STATUS gbInternalSolveNls(DATA *data,
   }
 }
 
-extern void gb_interpolation(enum GB_INTERPOL_METHOD interpolMethod, double ta, double* fa, double* dfa, double tb, double* fb, double* dfb, double t, double* f,
-                             int nIdx, int* idx, int nStates, BUTCHER_TABLEAU* tableau, double* x, double *k);
-
 /**
  * @brief Contractive error estimate for stiff problems. (stiffness filter)
  *
  * Construct an embedded method of order `nStages` for a given collocation method
- * with at least one real eigenvalue. It is preferred to have 0 as an uncollocated point, but
- * this estimate is also possible for e.g. Lobatto IIIA (choose u = 0.3 for example). We exclude
+ * with at least one real eigenvalue and uncollocated point 0.0. We exclude
  * complex eigenvalues as this work would be even more expensive then.
  *
  * This estimate is A-stable and of one order higher than the naive embedded method, which
@@ -1900,52 +2017,43 @@ void gbInternalContraction(DATA *data,
                            threadData_t *threadData,
                            NONLINEAR_SYSTEM_DATA *nonlinsys,
                            DATA_GBODE *gbData,
-                           const double *y,
-                           double *yt)
+                           double *err)
 {
   GB_INTERNAL_NLS_DATA *nls = (GB_INTERNAL_NLS_DATA *) (((struct dataSolver *)nonlinsys->solverData)->ordinaryData);
-  CONTRACTIVE_DEFECT_ERROR *defect_err = gbData->tableau->t_transform->defect_err;
   BUTCHER_TABLEAU *tabl = nls->tabl;
+  CONTRACTIVE_DEFECT_ERROR *defect_err = tabl->t_transform->defect_err;
 
   int nStates = gbData->nStates;
+  int size = nls->size;
   int nStages = (int)tabl->nStages;
 
-  // get f(t_n + u * h, y(t_n + u * h))
-  if (defect_err->u == 0.0)
-  {
-    data->localData[0]->timeValue = gbData->time;
-    memcpy(data->localData[0]->realVars, gbData->yOld, nStates * sizeof(double));
-    gbode_fODE(data, threadData, &(gbData->stats.nCallsODE), NULL);
-  }
-  else
-  {
-    // dense output to t_n + u * h
-    data->localData[0]->timeValue = gbData->time + defect_err->u * gbData->stepSize;
-    gb_interpolation(gbData->interpolation,
-                     gbData->timeLeft,  gbData->yLeft,  gbData->kLeft,
-                     gbData->timeRight, gbData->yRight, gbData->kRight,
-                     data->localData[0]->timeValue,  data->localData[0]->realVars,
-                     nStates, NULL, nStates, gbData->tableau, gbData->yOld, gbData->k);
-    gbode_fODE(data, threadData, &(gbData->stats.nCallsODE), NULL);
-  }
+  double *yOld = (nls->multirate ? gbData->gbfData->yOldPacked : gbData->yOld);
+  double *kPacked = (nls->multirate ? gbData->gbfData->kCurrPacked : gbData->k);
 
-  // ERR := -d^T * A * k
+  // get f(t_n, y(t_n)), TODO: re-use it from previous k_right, now k_left as in simplified Jacobian
+  gbInternal_T_Transform_set_states(data, gbData, nls, yOld, GB_INTERNAL_LEFT_BOUNDARY);
+  gbode_fODE(data, threadData, &(gbData->stats.nCallsODE), NULL);
+
+  // ERR := -d(0)^T * A * k
   dgemm_(&CHAR_NO_TRANS, &CHAR_NO_TRANS,
-         &nStates,
+         &size,
          &INT_ONE,
          &nStages,
-         &DBL_MINUS_ONE, gbData->k, &nStates,
+         &DBL_MINUS_ONE, kPacked, &size,
          defect_err->dT_A, &nStages,
-         &DBL_ZERO, yt, &nStates);
+         &DBL_ZERO, err, &size);
 
-  // ERR := f(t_n + u * h, y(t_n + u * h)) - d^T * A * k
-  daxpy_(&nStates, &DBL_ONE, &data->localData[0]->realVars[nStates], &INT_ONE, yt, &INT_ONE);
+  // ERR := f(t_n, y(t_n)) - d(0)^T * A * k
+  gbInternal_T_Transform_full_to_fast_axpy(gbData, nls, DBL_ONE, &data->localData[0]->realVars[nStates], err);
 
-  // ERR := (gamma / h * I - J)^{-1} * yt = (gamma / h * I - J)^{-1} * (f(t_n + u * h, y(t_n + u * h)) - d(u)^T * A * k) (exact error measure)
-  gbInternal_dKLU_solve(&nls->klu_internals_real[0], nls->size, yt);
+  // ERR := (gamma / h * I - J)^{-1} * yt = (gamma / h * I - J)^{-1} * (f(t_n, y(t_n)) - d(0)^T * A * k) (exact error measure)
+  gbInternal_dKLU_solve(&nls->klu_internals_real[0], size, err);
+}
 
-  // yt := y + ERR = y + (gamma / h * I - J)^{-1} * (f(t_n + u * h, y(t_n + u * h)) - d(u)^T * A * k) (add y to it, as we need yt explicitly)
-  daxpy_(&nStates, &DBL_ONE, y, &INT_ONE, yt, &INT_ONE);
+// returns a work pointer of at least 32 * N_STATES bytes == 4 * N_STATES * sizeof(double)
+double *gbInternalGetWorkPointer(void *nls_ptr)
+{
+  return ((GB_INTERNAL_NLS_DATA *) nls_ptr)->work;
 }
 
 /**

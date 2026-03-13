@@ -58,6 +58,8 @@ void *gbInternalNlsAllocate(int size,
 
 void gbInternalNlsFree(void *nls_ptr);
 
+double *gbInternalGetWorkPointer();
+
 NLS_SOLVER_STATUS gbInternalSolveNls(DATA *data,
                                      threadData_t *threadData,
                                      NONLINEAR_SYSTEM_DATA *nonlinsys,
@@ -68,8 +70,7 @@ void gbInternalContraction(DATA *data,
                            threadData_t *threadData,
                            NONLINEAR_SYSTEM_DATA *nonlinsys,
                            DATA_GBODE *gbData,
-                           const double *y,
-                           double *yt);
+                           double *err);
 
 void gbInternalLinearCombinationSVP(STAGE_VALUE_PREDICTORS *svp,
                                     int active_stage,

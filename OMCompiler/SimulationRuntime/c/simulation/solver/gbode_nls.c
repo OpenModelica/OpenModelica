@@ -367,7 +367,8 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA_MR(DATA* data, threadData_t* threadData, 
   case GM_TYPE_IMPLICIT:
     // Only works for -gbnls=internal (error should be caught beforehand, if we are not in -gbnls=internal)
     // As -gbnls=internal does all the stuff from scratch and only really requires the nlsxOld, nlsxExtrapolation and nlsx fields
-    // we must do nothing here
+    // we must do nothing here except set that pattern is available
+    nlsData->isPatternAvailable = TRUE;
     nlsData->initializeStaticNLSData = NULL;
     break;
   default:
