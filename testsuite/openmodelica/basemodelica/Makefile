@@ -16,6 +16,8 @@ TESTFILES = \
 	Enum1.mo \
 	Expression1.mo \
 	Functional1.mo \
+	If1.mo \
+	If2.mo \
 	Inline1.mo \
 	Inline2.mo \
 	Inline3.mo \
