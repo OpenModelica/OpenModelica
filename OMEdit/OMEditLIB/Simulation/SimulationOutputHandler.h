@@ -46,13 +46,12 @@ public:
   QString mText;
   int mLevel;
   QString mIndex;
-  QString mDeweyId;
   QList<SimulationMessage*> mChildren;
   SimulationMessage* mpParentSimulationMessage;
 public:
   SimulationMessage(SimulationMessage *pParentSimulationMessage = 0)
     : mpParentSimulationMessage(pParentSimulationMessage)
-  {mStream = ""; mType = StringHandler::Unknown; mText = ""; mIndex = ""; mDeweyId="";}
+  {mStream = ""; mType = StringHandler::Unknown; mText = ""; mIndex = "";}
   void setParent(SimulationMessage *pParentSimulationMessage) {mpParentSimulationMessage = pParentSimulationMessage;}
   SimulationMessage *parent() {return mpParentSimulationMessage;}
   SimulationMessage *child(int row) {return mChildren.value(row);}
