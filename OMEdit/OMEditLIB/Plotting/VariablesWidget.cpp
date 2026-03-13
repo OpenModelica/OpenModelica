@@ -2073,7 +2073,7 @@ void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickne
     }
     // if still pPlotWindow is 0 then return.
     if (!pPlotWindow) {
-      unCheckVariableAndErrorMessage(index, tr("No plot window is active for plotting. Please select a plot window or open a new."));
+      unCheckVariableAndErrorMessage(index, tr("No plot window is active for plotting. Please select a plot window or open a new one."));
       return;
     }
     connect(pPlotWindow, SIGNAL(prefixUnitsChanged()), this, SLOT(updatePlottedVariablesDisplayUnitAndValue()), Qt::UniqueConnection);
@@ -2097,6 +2097,10 @@ void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickne
         pPlotWindow->setVariablesList(QStringList(pVariablesTreeItem->getPlotVariable()));
         pPlotWindow->setYUnit(pVariablesTreeItem->getUnit());
         pPlotWindow->setYDisplayUnit(pVariablesTreeItem->getDisplayUnit());
+        PlotCurve *pLastPlotCurve = nullptr;
+        if (!pPlotCurve && !pPlotWindow->getPlot()->getPlotCurvesList().isEmpty()) {
+          pLastPlotCurve = pPlotWindow->getPlot()->getPlotCurvesList().last();
+        }
         if (pPlotWindow->isPlot()) {
           pPlotWindow->plot(pPlotCurve);
           /* Ticket:5839
@@ -2110,11 +2114,12 @@ void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickne
           double time = mpTimeManager->getVisTime();
           pPlotWindow->plotArray(time, pPlotCurve);
         }
-        if (!pPlotCurve) {
+        if (!pPlotCurve && !pPlotWindow->getPlot()->getPlotCurvesList().isEmpty()) {
           pPlotCurve = pPlotWindow->getPlot()->getPlotCurvesList().last();
         }
+        assert(pPlotCurve != pLastPlotCurve);
         bool requiresUpdate = false;
-        if (pPlotCurve && !pVariablesTreeItem->isString() && pVariablesTreeItem->getUnit().compare(pVariablesTreeItem->getDisplayUnit()) != 0) {
+        if (!pVariablesTreeItem->isString() && pVariablesTreeItem->getUnit().compare(pVariablesTreeItem->getDisplayUnit()) != 0) {
           OMCInterface::convertUnits_res convertUnit = MainWindow::instance()->getOMCProxy()->convertUnits(pVariablesTreeItem->getUnit(), pVariablesTreeItem->getDisplayUnit());
           if (convertUnit.unitsCompatible) {
             requiresUpdate = true;
@@ -2126,7 +2131,7 @@ void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickne
           }
         }
         // update the time values if time unit is different then s
-        if (pPlotCurve && pPlotWindow->getTimeUnit().compare("s") != 0) {
+        if (pPlotWindow->getTimeUnit().compare("s") != 0) {
           OMCInterface::convertUnits_res convertUnit = MainWindow::instance()->getOMCProxy()->convertUnits("s", pPlotWindow->getTimeUnit());
           if (convertUnit.unitsCompatible) {
             requiresUpdate = true;
@@ -2135,7 +2140,7 @@ void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickne
             }
           }
         }
-        if (ctrl && pPlotCurve) {
+        if (ctrl) {
           pPlotCurve->setYAxisRight(true);
           requiresUpdate = true;
         }
@@ -2167,7 +2172,6 @@ void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickne
           pVariablesTreeItem->setChecked(false);
           return;
         }
-
         if (Qt::KeyboardModifiers(keyDown).testFlag(Qt::ShiftModifier)) {
           if (!mPlotParametricCurves.isEmpty()) {
             PlotParametricCurve plotParametricCurve = mPlotParametricCurves.last();
@@ -2201,9 +2205,7 @@ void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickne
             plotParametricVariable.displayUnit = pVariablesTreeItem->getDisplayUnit();
             plotParametricVariable.isString = pVariablesTreeItem->isString();
             plotParametricCurve.yVariables.append(plotParametricVariable);
-            // Put the updated PlotParametricCurve to mPlotParametricCurves vector
-            mPlotParametricCurves.append(plotParametricCurve);
-
+            mPlotParametricCurves.append(plotParametricCurve); // Put the updated PlotParametricCurve to mPlotParametricCurves vector
             pPlotWindow->initializeFile(QString("%1/%2").arg(pVariablesTreeItem->getFilePath(), pVariablesTreeItem->getFileName()));
             pPlotWindow->setCurveWidth(curveThickness);
             pPlotWindow->setCurveStyle(curveStyle);
@@ -2212,6 +2214,10 @@ void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickne
             pPlotWindow->setXDisplayUnit(plotParametricCurve.xVariable.displayUnit);
             pPlotWindow->setYUnit(plotParametricVariable.unit);
             pPlotWindow->setYDisplayUnit(plotParametricVariable.displayUnit);
+            PlotCurve *pLastPlotCurve = nullptr;
+            if (!pPlotCurve && !pPlotWindow->getPlot()->getPlotCurvesList().isEmpty()) {
+              pLastPlotCurve = pPlotWindow->getPlot()->getPlotCurvesList().last();
+            }
             if (pPlotWindow->isPlotParametric()) {
               pPlotWindow->plotParametric(pPlotCurve);
               /* Ticket:5839
@@ -2225,12 +2231,13 @@ void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickne
               double time = mpTimeManager->getVisTime();
               pPlotWindow->plotArrayParametric(time, pPlotCurve);
             }
-            if (!pPlotCurve) {
+            if (!pPlotCurve && !pPlotWindow->getPlot()->getPlotCurvesList().isEmpty()) {
               pPlotCurve = pPlotWindow->getPlot()->getPlotCurvesList().last();
             }
-            // convert x value
+            assert(pPlotCurve != pLastPlotCurve);
             bool requiresUpdate = false;
-            if (pPlotCurve && !plotParametricCurve.xVariable.isString && plotParametricCurve.xVariable.unit.compare(plotParametricCurve.xVariable.displayUnit) != 0) {
+            // convert x value
+            if (!plotParametricCurve.xVariable.isString && plotParametricCurve.xVariable.unit.compare(plotParametricCurve.xVariable.displayUnit) != 0) {
               OMCInterface::convertUnits_res convertUnit = MainWindow::instance()->getOMCProxy()->convertUnits(plotParametricCurve.xVariable.unit, plotParametricCurve.xVariable.displayUnit);
               if (convertUnit.unitsCompatible) {
                 requiresUpdate = true;
@@ -2242,7 +2249,7 @@ void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickne
               }
             }
             // convert y value
-            if (pPlotCurve && !plotParametricVariable.isString && plotParametricVariable.unit.compare(plotParametricVariable.displayUnit) != 0) {
+            if (!plotParametricVariable.isString && plotParametricVariable.unit.compare(plotParametricVariable.displayUnit) != 0) {
               OMCInterface::convertUnits_res convertUnit = MainWindow::instance()->getOMCProxy()->convertUnits(plotParametricVariable.unit, plotParametricVariable.displayUnit);
               if (convertUnit.unitsCompatible) {
                 requiresUpdate = true;
@@ -2253,9 +2260,9 @@ void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickne
                 pPlotCurve->setYDisplayUnit(plotParametricVariable.displayUnit);
               }
             }
-            if (ctrl && pPlotCurve) {
-                pPlotCurve->setYAxisRight(true);
-                requiresUpdate = true;
+            if (ctrl) {
+              pPlotCurve->setYAxisRight(true);
+              requiresUpdate = true;
             }
             if (requiresUpdate) {
               pPlotCurve->plotData();
@@ -2341,7 +2348,6 @@ void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickne
         pVariablesTreeRootItem = pVariablesTreeItem->rootParent();
       }
       int port = pVariablesTreeRootItem->getSimulationOptions().getInteractiveSimulationPortNumber();
-
       if (pVariablesTreeItem->isChecked()) { // if user checks the variable
         if (!pVariablesTreeRootItem->getSimulationOptions().isInteractiveSimulation()) {
           QMessageBox::information(this, QString(Helper::applicationName).append(" - ").append(Helper::information), tr("Cannot be attached to an interactive plot window."), QMessageBox::Ok);
@@ -2371,8 +2377,7 @@ void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickne
             }
           }
         }
-      }
-      else if (!pVariablesTreeItem->isChecked()) { // if user unchecks the variable
+      } else if (!pVariablesTreeItem->isChecked()) { // if user unchecks the variable
         // remove the variable from the data fetch list
         OpcUaClient *pOpcUaClient = MainWindow::instance()->getSimulationDialog()->getOpcUaClient(port);
         if (pOpcUaClient) {
@@ -2577,6 +2582,8 @@ void VariablesWidget::updatePlotWindows()
           }
         }
       }
+    } catch (RecurringPlotException &e) {
+      // Silence repeated exceptions
     } catch (PlotException &e) {
       MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, e.what(), Helper::scriptingKind, Helper::errorLevel));
     }
