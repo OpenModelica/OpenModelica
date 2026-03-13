@@ -163,21 +163,6 @@ void SimulationOutputTree::selectAllMessages()
 }
 
 /*!
- * \brief compareSimulationMessageDeweyId
- * Compares the QModelIndexes based on their deweyid
- * \param index1
- * \param index2
- * \return
- */
-bool compareSimulationMessageDeweyId(const QModelIndex &index1, const QModelIndex &index2)
-{
-  SimulationMessage *pSimulationMessage1 = static_cast<SimulationMessage*>(index1.internalPointer());
-  SimulationMessage *pSimulationMessage2 = static_cast<SimulationMessage*>(index2.internalPointer());
-
-  return pSimulationMessage1 && pSimulationMessage2 && pSimulationMessage1->mDeweyId < pSimulationMessage2->mDeweyId;
-}
-
-/*!
  * \brief SimulationOutputTree::copyMessages
  * Copy the selected Messages to the clipboard.
  * Slot activated when mpCopyAction triggered signal is raised.
@@ -188,16 +173,24 @@ void SimulationOutputTree::copyMessages()
   if (pSimulationMessageModel) {
     QStringList textToCopy;
     QModelIndexList modelIndexes = selectionModel()->selectedRows();
-    // sort the selected indexes based on deweyid so that we get the correct order since selectionModel()->selectedRows() changes the order.
-    std::sort(modelIndexes.begin(), modelIndexes.end(), compareSimulationMessageDeweyId);
-    foreach (QModelIndex modelIndex, modelIndexes) {
+
+    // Use persistent indexes to avoid invalidation
+    QList<QPersistentModelIndex> persistent;
+    for (const QModelIndex &idx : modelIndexes) {
+      persistent.append(idx);
+    }
+
+    // Sort in tree/model order so that we get the correct order since selectionModel()->selectedRows() changes the order.
+    std::sort(persistent.begin(), persistent.end());
+
+    for (const QPersistentModelIndex &modelIndex : persistent) {
       SimulationMessage *pSimulationMessage = static_cast<SimulationMessage*>(modelIndex.internalPointer());
       if (pSimulationMessage) {
         /* Ticket:4778 Remove HTML formatting. */
-//        textToCopy.append(QString("%1 | %2 | %3")
-//                          .arg(pSimulationMessage->mStream)
-//                          .arg(StringHandler::getSimulationMessageTypeString(pSimulationMessage->mType))
-//                          .arg(pSimulationMessage->mText));
+        // textToCopy.append(QString("%1 | %2 | %3")
+        //                   .arg(pSimulationMessage->mStream)
+        //                   .arg(StringHandler::getSimulationMessageTypeString(pSimulationMessage->mType))
+        //                   .arg(pSimulationMessage->mText));
         textToCopy.append(QTextDocumentFragment::fromHtml(QString(pSimulationMessage->mText).remove("<p>").remove("</p>")).toPlainText());
       }
     }
@@ -309,54 +302,53 @@ SimulationOutputWidget::SimulationOutputWidget(SimulationOptions simulationOptio
                         << "OMCpp%1StateSelection.h"
                         << "OMCpp%1Types.h"
                         << "OMCpp%1WriteOutput.cpp"
-                        << "OMCpp%1WriteOutput.h";
-
-    mGeneratedAlgLoopFilesList << QString("OMCpp%1Algloop*.h").arg(simulationOptions.getOutputFileName())
-                               << QString("OMCpp%1Algloop*.cpp").arg(simulationOptions.getOutputFileName());
+                        << "OMCpp%1WriteOutput.h"
+                        << "OMCpp%1Algloop*.h"
+                        << "OMCpp%1Algloop*.cpp";
   } else {
     // c-runtime generated files
     mGeneratedFilesList << "%1.c"
                         << "%1.o"
-                        << "%1_01exo.c"
-                        << "%1_01exo.o"
-                        << "%1_02nls.c"
-                        << "%1_02nls.o"
-                        << "%1_03lsy.c"
-                        << "%1_03lsy.o"
-                        << "%1_04set.c"
-                        << "%1_04set.o"
-                        << "%1_05evt.c"
-                        << "%1_05evt.o"
-                        << "%1_06inz.c"
-                        << "%1_06inz.o"
-                        << "%1_07dly.c"
-                        << "%1_07dly.o"
-                        << "%1_08bnd.c"
-                        << "%1_08bnd.o"
-                        << "%1_09alg.c"
-                        << "%1_09alg.o"
-                        << "%1_10asr.c"
-                        << "%1_10asr.o"
-                        << "%1_11mix.c"
-                        << "%1_11mix.o"
-                        << "%1_11mix.h"
-                        << "%1_12jac.c"
-                        << "%1_12jac.o"
-                        << "%1_12jac.h"
-                        << "%1_13opt.c"
-                        << "%1_13opt.o"
-                        << "%1_13opt.h"
-                        << "%1_14lnz.c"
-                        << "%1_14lnz.o"
-                        << "%1_15syn.c"
-                        << "%1_15syn.o"
-                        << "%1_16dae.c"
-                        << "%1_16dae.o"
-                        << "%1_16dae.h"
-                        << "%1_17inl.c"
-                        << "%1_17inl.o"
-                        << "%1_18spd.c"
-                        << "%1_18spd.o"
+                        << "%1_01exo*.c"
+                        << "%1_01exo*.o"
+                        << "%1_02nls*.c"
+                        << "%1_02nls*.o"
+                        << "%1_03lsy*.c"
+                        << "%1_03lsy*.o"
+                        << "%1_04set*.c"
+                        << "%1_04set*.o"
+                        << "%1_05evt*.c"
+                        << "%1_05evt*.o"
+                        << "%1_06inz*.c"
+                        << "%1_06inz*.o"
+                        << "%1_07dly*.c"
+                        << "%1_07dly*.o"
+                        << "%1_08bnd*.c"
+                        << "%1_08bnd*.o"
+                        << "%1_09alg*.c"
+                        << "%1_09alg*.o"
+                        << "%1_10asr*.c"
+                        << "%1_10asr*.o"
+                        << "%1_11mix*.c"
+                        << "%1_11mix*.o"
+                        << "%1_11mix*.h"
+                        << "%1_12jac*.c"
+                        << "%1_12jac*.o"
+                        << "%1_12jac*.h"
+                        << "%1_13opt*.c"
+                        << "%1_13opt*.o"
+                        << "%1_13opt*.h"
+                        << "%1_14lnz*.c"
+                        << "%1_14lnz*.o"
+                        << "%1_15syn*.c"
+                        << "%1_15syn*.o"
+                        << "%1_16dae*.c"
+                        << "%1_16dae*.o"
+                        << "%1_16dae*.h"
+                        << "%1_17inl*.c"
+                        << "%1_17inl*.o"
+                        << "%1_18spd*.c"
+                        << "%1_18spd*.o"
                         << "%1_functions.c"
                         << "%1_functions.o"
                         << "%1_functions.h"
@@ -364,33 +356,21 @@ SimulationOutputWidget::SimulationOutputWidget(SimulationOptions simulationOptio
                         << "%1_records.o"
                         << "%1_includes.h"
                         << "%1_literals.h"
-                        << "%1_model.h";
-
-    mGeneratedAlgLoopFilesList.clear();
+                        << "%1_model.h"
+                        << "%1_JacLSJac*.bin"
+                        << "%1_JacNLSJac*.bin";
   }
-  if (mSimulationOptions.getShowGeneratedFiles()) {
-    QString workingDirectory = mSimulationOptions.getWorkingDirectory();
-    QString outputFile = mSimulationOptions.getOutputFileName();
-    foreach (QString fileName, mGeneratedFilesList) {
-      // filter *.o files and .makefile
-      if (!fileName.endsWith(".o") && fileName.compare(".makefile") != 0) {
-        addGeneratedFileTab(QString("%1/%2").arg(workingDirectory, QString(fileName).arg(outputFile)));
-      }
+  // replace %1 with the output file name in the generated files list.
+  for (QString &file : mGeneratedFilesList) {
+    file = file.arg(simulationOptions.getOutputFileName());
+  }
+  // if show generated files is enabled then open the generated files directory in file explorer.
+  if (simulationOptions.getShowGeneratedFiles()) {
+    QUrl dir (QString("file:///%1").arg(simulationOptions.getWorkingDirectory()));
+    if (!QDesktopServices::openUrl(dir)) {
+      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, GUIMessages::getMessage(GUIMessages::UNABLE_TO_OPEN_FILE).arg(dir.toString()),
+                                                            Helper::scriptingKind, Helper::errorLevel));
     }
-    // Delete the Algloop*.cpp/h files generated by cpp runtime
-    if (mSimulationOptions.getTargetLanguage().compare("Cpp") == 0) {
-      QStringList filesList = QDir(workingDirectory).entryList(mGeneratedAlgLoopFilesList, QDir::Files | QDir::NoSymLinks |
-                                                               QDir::NoDotAndDotDot | QDir::Writable | QDir::CaseSensitive);
-      foreach (QString fileName, filesList) {
-        addGeneratedFileTab(QString("%1/%2").arg(workingDirectory, fileName));
-      }
-    }
-    if (simulationOptions.getTargetLanguage().compare("C") == 0) {
-      /* className_info.json tab */
-      addGeneratedFileTab(QString("%1/%2%3").arg(workingDirectory, outputFile).arg("_info.json"));
-    }
-    /* className_init.xml tab */
-    addGeneratedFileTab(QString("%1/%2%3").arg(workingDirectory, outputFile).arg("_init.xml"));
   }
   // layout
   QGridLayout *pMainLayout = new QGridLayout;
@@ -463,25 +443,6 @@ void SimulationOutputWidget::start()
     compileModel();
   } else {
     runSimulationExecutable();
-  }
-}
-
-void SimulationOutputWidget::addGeneratedFileTab(QString fileName)
-{
-  QFile file(fileName);
-  QFileInfo fileInfo(fileName);
-  if (file.open(QIODevice::ReadOnly)) {
-    BaseEditor *pEditor;
-    if (Utilities::isCFile(fileInfo.suffix())) {
-      pEditor = new CEditor(MainWindow::instance());
-      CHighlighter *pCHighlighter = new CHighlighter(OptionsDialog::instance()->getCEditorPage(), pEditor->getPlainTextEdit());
-      Q_UNUSED(pCHighlighter);
-    } else {
-      pEditor = new TextEditor(MainWindow::instance());
-    }
-    pEditor->getPlainTextEdit()->setPlainText(QString(file.readAll()));
-    mpGeneratedFilesTabWidget->addTab(pEditor, fileInfo.fileName());
-    file.close();
   }
 }
 
@@ -834,21 +795,13 @@ void SimulationOutputWidget::compilationProcessFinishedHelper(int exitCode, QPro
 void SimulationOutputWidget::deleteIntermediateCompilationFiles()
 {
   if (OptionsDialog::instance()->getSimulationPage()->getDeleteIntermediateCompilationFilesCheckBox()->isChecked()) {
-    QString workingDirectory = mSimulationOptions.getWorkingDirectory();
-    QString outputFile = mSimulationOptions.getOutputFileName();
-    foreach (QString fileName, mGeneratedFilesList) {
-      if (QFile::exists(QString("%1/%2").arg(workingDirectory, QString(fileName).arg(outputFile)))) {
-        QFile::remove(QString("%1/%2").arg(workingDirectory, QString(fileName).arg(outputFile)));
-      }
-    }
-    // Delete the Algloop*.cpp/h files generated by cpp runtime
-    if (mSimulationOptions.getTargetLanguage().compare("Cpp") == 0) {
-      QStringList filesList = QDir(workingDirectory).entryList(mGeneratedAlgLoopFilesList, QDir::Files | QDir::NoSymLinks |
-                                                               QDir::NoDotAndDotDot | QDir::Writable | QDir::CaseSensitive);
-      foreach (QString fileName, filesList) {
-        if (QFile::exists(QString("%1/%2").arg(workingDirectory, fileName))) {
-          QFile::remove(QString("%1/%2").arg(workingDirectory, fileName));
-        }
+    const QString workingDirectory = mSimulationOptions.getWorkingDirectory();
+
+    QStringList filesList = QDir(workingDirectory).entryList(mGeneratedFilesList, QDir::Files | QDir::NoSymLinks |
+                                                             QDir::NoDotAndDotDot | QDir::Writable | QDir::CaseSensitive);
+    foreach (QString fileName, filesList) {
+      if (QFile::exists(QString("%1/%2").arg(workingDirectory, fileName))) {
+        QFile::remove(QString("%1/%2").arg(workingDirectory, fileName));
       }
     }
   }

@@ -105,7 +105,6 @@ public:
   void setSimulationProcessKilled(bool killed) {mIsSimulationProcessKilled = killed;}
   bool isSimulationProcessKilled() {return mIsSimulationProcessKilled;}
   bool isSimulationProcessRunning() {return mIsSimulationProcessRunning;}
-  void addGeneratedFileTab(QString fileName);
   void writeSimulationMessage(StringHandler::SimulationMessageType type, QString text, QString index);
   void embeddedServerInitialized();
   void updateMessageTab(const QString &text);
@@ -120,7 +119,6 @@ private:
   QPushButton *mpOpenOutputFileButton;
   QTabWidget *mpGeneratedFilesTabWidget;
   QList<QString> mGeneratedFilesList;
-  QList<QString> mGeneratedAlgLoopFilesList;
   OutputPlainTextEdit *mpCompilationOutputTextBox;
   QString mSimulationStandardOutput;
   QString mSimulationStandardError;
