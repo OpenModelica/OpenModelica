@@ -672,6 +672,7 @@ uniontype NonlinearSystem
     Boolean mixedSystem;
     Boolean tornSystem;
     Option<Integer> clockIndex;
+    Option<tuple<String, Integer>> jacobianInfo "SOME((matrixName, jacobianIndex)) if this NLS is part of a Jacobian evaluation";
   end NONLINEARSYSTEM;
 end NonlinearSystem;
 

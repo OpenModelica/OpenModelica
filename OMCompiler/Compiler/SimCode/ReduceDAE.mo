@@ -434,7 +434,7 @@ protected function addLabelToEquations
         (es_1 ,vars_2,idx3,labels2):= addLabelToEquations(es,vars_1,idx2,reduceList,inVarRepl);
         labels3:=listAppend(labels,labels2);
       then
-        (SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(index=i,eqs=nl_1,crefs=crefs,indexNonLinearSystem=idxNLS,nUnknowns=nUnknownsNLS,jacobianMatrix=jacobianMatrix,homotopySupport=false,mixedSystem=false,tornSystem=false,clockIndex=clockIndex),NONE(), eqAttr) :: es_1,vars_2,idx3,labels3);
+        (SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(index=i,eqs=nl_1,crefs=crefs,indexNonLinearSystem=idxNLS,nUnknowns=nUnknownsNLS,jacobianMatrix=jacobianMatrix,homotopySupport=false,mixedSystem=false,tornSystem=false,clockIndex=clockIndex,jacobianInfo=NONE()),NONE(), eqAttr) :: es_1,vars_2,idx3,labels3);
     // mixed systems
     case (((SimCode.SES_MIXED(i,cont,discVars,disc,indexSys, eqAttr)) :: es),vars,idx,_,_)
       algorithm

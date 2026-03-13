@@ -681,7 +681,7 @@ template simulationFile_nls(SimCode simCode)
     #if defined(__cplusplus)
     extern "C" {
     #endif
-    <%functionNonLinearResidualsMultiFile(nonLinearSystems, Flags.getConfigInt(Flags.EQUATIONS_PER_FILE), simCode.fullPathPrefix, simCode.fileNamePrefix, "02nls", modelNamePrefixStr)%>
+    <%functionNonLinearResidualsMultiFile(nonLinearSystems, Flags.getConfigInt(Flags.EQUATIONS_PER_FILE), simCode.fullPathPrefix, simCode.fileNamePrefix, "02nls", modelNamePrefixStr, simCode.jacobianMatrices)%>
 
     <%if intGt(varInfo.numNonLinearSystems, 0) then functionInitialNonLinearSystems(nonLinearSystems, modelNamePrefixStr)%>
 
@@ -2931,20 +2931,20 @@ template createLocalConstraints(SimEqSystem eq)
    end match
 end createLocalConstraints;
 
-template functionNonLinearResidualsMultiFile(list<SimEqSystem> nonlinearSystems, Integer equationsPerFile, String fullPathPrefix, String fileNamePrefix, String partName, String modelNamePrefix)
+template functionNonLinearResidualsMultiFile(list<SimEqSystem> nonlinearSystems, Integer equationsPerFile, String fullPathPrefix, String fileNamePrefix, String partName, String modelNamePrefix, list<JacobianMatrix> jacobianMatrices)
   "Generates functions in simulation file."
 ::=
-  functionNonLinearResidualsMultiFile2(SimCodeUtil.unbalancedEqSystemPartition(selectNLEqSys(nonlinearSystems), equationsPerFile), fullPathPrefix, fileNamePrefix, partName, modelNamePrefix)
+  functionNonLinearResidualsMultiFile2(SimCodeUtil.unbalancedEqSystemPartition(selectNLEqSys(nonlinearSystems), equationsPerFile), fullPathPrefix, fileNamePrefix, partName, modelNamePrefix, jacobianMatrices)
 end functionNonLinearResidualsMultiFile;
 
-template functionNonLinearResidualsMultiFile2(list<list<SimEqSystem>> nonlinearSystems, String fullPathPrefix, String fileNamePrefix, String partName, String modelNamePrefix)
+template functionNonLinearResidualsMultiFile2(list<list<SimEqSystem>> nonlinearSystems, String fullPathPrefix, String fileNamePrefix, String partName, String modelNamePrefix, list<JacobianMatrix> jacobianMatrices)
   "Generates functions in simulation file."
 ::=
   match nonlinearSystems
   case {} then ""
   case {eqs} then
     let &prototypes = buffer ""
-    functionNonLinearResiduals(eqs, modelNamePrefix, &prototypes)
+    functionNonLinearResiduals(eqs, modelNamePrefix, &prototypes, jacobianMatrices)
   else
     let &prototypes = buffer ""
     let &file = buffer ""
@@ -2961,7 +2961,7 @@ template functionNonLinearResidualsMultiFile2(list<list<SimEqSystem>> nonlinearS
       #if defined(__cplusplus)
       extern "C" {
       #endif
-      <%functionNonLinearResiduals(eqs, modelNamePrefix, &prototypes)%>
+      <%functionNonLinearResiduals(eqs, modelNamePrefix, &prototypes, jacobianMatrices)%>
       #if defined(__cplusplus)
       }
       #endif
@@ -2983,19 +2983,57 @@ template getNLSPrototypes(Integer index)
   >>
 end getNLSPrototypes;
 
-template functionNonLinearResiduals(list<SimEqSystem> nonlinearSystems, String modelNamePrefix, Text &prototypes)
+template functionNonLinearResiduals(list<SimEqSystem> nonlinearSystems, String modelNamePrefix, Text &prototypes, list<JacobianMatrix> jacobianMatrices)
   "Generates functions in simulation file."
 ::=
   (nonlinearSystems |> eqn => (
     let () = tmpTickReset(0)
     match eqn
-    case eq as SES_MIXED(__) then functionNonLinearResiduals(fill(eq.cont,1),modelNamePrefix,prototypes)
+    case eq as SES_MIXED(__) then functionNonLinearResiduals(fill(eq.cont,1),modelNamePrefix,prototypes,jacobianMatrices)
+    // Jacobian NLS with analytic jacobian
+    case eq as SES_NONLINEAR(nlSystem=nls as NONLINEARSYSTEM(
+        jacobianInfo=SOME((jacName as _, jacIndex as _)),
+        jacobianMatrix=SOME(JAC_MATRIX(sparsity=sparsePattern,nonlinear=nonlinearPattern,nonlinearT=nonlinearPatternT,
+        coloredCols=colorList,maxColorCols=maxColor))),
+        alternativeTearing=NONE()) then
+      let residualFunction = generateNonLinearResidualFunctionJacobian(nls, modelNamePrefix, getJacobianContextByName(jacobianMatrices, jacName), jacIndex, jacobianMatrices)
+      let indexName = 'NLS<%nls.index%>'
+      let sparseData = generateStaticSparseData(indexName, 'NONLINEAR_SYSTEM_DATA', sparsePattern, colorList, maxColor)
+      let nonlinearData = generateStaticNonlinearData(indexName, 'NONLINEAR_SYSTEM_DATA', nonlinearPattern, nonlinearPatternT)
+      let bodyStaticData = generateStaticInitialData(nls.crefs, indexName)
+      let updateIterationVars = getIterationVarsJacobian(nls.crefs, indexName, getJacobianContextByName(jacobianMatrices, jacName), jacIndex)
+      let &prototypes += getNLSPrototypes(nls.index)
+      <<
+      <%residualFunction%>
+      <%sparseData%>
+      <%nonlinearData%>
+      <%bodyStaticData%>
+      <%updateIterationVars%>
+      >>
+    // Jacobian NLS without analytic jacobian
+    case eq as SES_NONLINEAR(nlSystem=nls as NONLINEARSYSTEM(
+        jacobianInfo=SOME((jacName as _, jacIndex as _))),
+        alternativeTearing=NONE()) then
+      let residualFunction = generateNonLinearResidualFunctionJacobian(nls, modelNamePrefix, getJacobianContextByName(jacobianMatrices, jacName), jacIndex, jacobianMatrices)
+      let indexName = 'NLS<%nls.index%>'
+      let sparseData = generateStaticEmptySparseData(indexName, 'NONLINEAR_SYSTEM_DATA')
+      let nonlinearData = generateStaticEmptyNonlinearData(indexName, 'NONLINEAR_SYSTEM_DATA')
+      let bodyStaticData = generateStaticInitialData(nls.crefs, indexName)
+      let updateIterationVars = getIterationVarsJacobian(nls.crefs, indexName, getJacobianContextByName(jacobianMatrices, jacName), jacIndex)
+      let &prototypes += getNLSPrototypes(nls.index)
+      <<
+      <%residualFunction%>
+      <%sparseData%>
+      <%nonlinearData%>
+      <%bodyStaticData%>
+      <%updateIterationVars%>
+      >>
     // no dynamic tearing
     case eq as SES_NONLINEAR(nlSystem=nls as NONLINEARSYSTEM(
         jacobianMatrix=SOME(JAC_MATRIX(sparsity=sparsePattern,nonlinear=nonlinearPattern,nonlinearT=nonlinearPatternT,
         coloredCols=colorList,maxColorCols=maxColor))),
         alternativeTearing=NONE()) then
-      let residualFunction = generateNonLinearResidualFunction(nls, modelNamePrefix, 0)
+      let residualFunction = generateNonLinearResidualFunction(nls, modelNamePrefix, 0, jacobianMatrices)
       let indexName = 'NLS<%nls.index%>'
       let sparseData = generateStaticSparseData(indexName, 'NONLINEAR_SYSTEM_DATA', sparsePattern, colorList, maxColor)
       let nonlinearData = generateStaticNonlinearData(indexName, 'NONLINEAR_SYSTEM_DATA', nonlinearPattern, nonlinearPatternT)
@@ -3010,7 +3048,7 @@ template functionNonLinearResiduals(list<SimEqSystem> nonlinearSystems, String m
       <%updateIterationVars%>
       >>
     case eq as SES_NONLINEAR(nlSystem=nls as NONLINEARSYSTEM(__),alternativeTearing=NONE()) then
-      let residualFunction = generateNonLinearResidualFunction(nls, modelNamePrefix, 0)
+      let residualFunction = generateNonLinearResidualFunction(nls, modelNamePrefix, 0, jacobianMatrices)
       let indexName = 'NLS<%nls.index%>'
       let sparseData = generateStaticEmptySparseData(indexName, 'NONLINEAR_SYSTEM_DATA')
       let nonlinearData = generateStaticEmptyNonlinearData(indexName, 'NONLINEAR_SYSTEM_DATA')
@@ -3031,14 +3069,14 @@ template functionNonLinearResiduals(list<SimEqSystem> nonlinearSystems, String m
         jacobianMatrix=SOME(JAC_MATRIX(sparsity=sparsePattern2,coloredCols=colorList2,maxColorCols=maxColor2))))
         ) then
       // for strict tearing set
-      let residualFunction = generateNonLinearResidualFunction(nls, modelNamePrefix, 0)
+      let residualFunction = generateNonLinearResidualFunction(nls, modelNamePrefix, 0, jacobianMatrices)
       let indexName = 'NLS<%nls.index%>'
       let sparseData = generateStaticSparseData(indexName, 'NONLINEAR_SYSTEM_DATA', sparsePattern, colorList, maxColor)
       let nonlinearData = generateStaticNonlinearData(indexName, 'NONLINEAR_SYSTEM_DATA', nonlinearPattern, nonlinearPatternT)
       let bodyStaticData = generateStaticInitialData(nls.crefs, indexName)
       let updateIterationVars = getIterationVars(nls.crefs, indexName)
       // for casual tearing set
-      let residualFunctionCasual = generateNonLinearResidualFunction(at, modelNamePrefix, 1)
+      let residualFunctionCasual = generateNonLinearResidualFunction(at, modelNamePrefix, 1, jacobianMatrices)
       let indexName = 'NLS<%at.index%>'
       let sparseDataCasual = generateStaticSparseData(indexName, 'NONLINEAR_SYSTEM_DATA', sparsePattern, colorList, maxColor)
       let nonlinearDataCasual = generateStaticNonlinearData(indexName, 'NONLINEAR_SYSTEM_DATA', nonlinearPattern, nonlinearPatternT)
@@ -3065,13 +3103,13 @@ template functionNonLinearResiduals(list<SimEqSystem> nonlinearSystems, String m
         alternativeTearing = SOME(at as NONLINEARSYSTEM(__))
         ) then
       // for strict tearing set
-      let residualFunction = generateNonLinearResidualFunction(nls, modelNamePrefix, 0)
+      let residualFunction = generateNonLinearResidualFunction(nls, modelNamePrefix, 0, jacobianMatrices)
       let indexName = 'NLS<%nls.index%>'
       let sparseData = generateStaticEmptySparseData(indexName, 'NONLINEAR_SYSTEM_DATA')
       let bodyStaticData = generateStaticInitialData(nls.crefs, indexName)
       let updateIterationVars = getIterationVars(nls.crefs, indexName)
       // for casual tearing set
-      let residualFunctionCasual = generateNonLinearResidualFunction(at, modelNamePrefix, 1)
+      let residualFunctionCasual = generateNonLinearResidualFunction(at, modelNamePrefix, 1, jacobianMatrices)
       let indexName = 'NLS<%at.index%>'
       let sparseDataCasual = generateStaticEmptySparseData(indexName, 'NONLINEAR_SYSTEM_DATA')
       let bodyStaticDataCasual = generateStaticInitialData(at.crefs, indexName)
@@ -3095,7 +3133,7 @@ template functionNonLinearResiduals(list<SimEqSystem> nonlinearSystems, String m
     ;separator="\n\n")
 end functionNonLinearResiduals;
 
-template generateNonLinearResidualFunction(NonlinearSystem system, String modelNamePrefix, Integer whichSet)
+template generateNonLinearResidualFunction(NonlinearSystem system, String modelNamePrefix, Integer whichSet, list<JacobianMatrix> jacobianMatrices)
   "Generates residual function for nonlinear loops.
    whichSet = 0: Strict Set
    whichSet = 1: Casual Set"
@@ -3107,7 +3145,7 @@ match system
     let &varDecls = buffer ""
     let &innerEqns = buffer ""
     let &dummyPrototypes = buffer ""
-    let innerNLSSystems = functionNonLinearResiduals(nls.eqs, modelNamePrefix, dummyPrototypes)
+    let innerNLSSystems = functionNonLinearResiduals(nls.eqs, modelNamePrefix, dummyPrototypes, jacobianMatrices)
     let backupOutputs = match nls.eqs
       case (alg as SES_INVERSE_ALGORITHM(__))::{} then
         let body = (alg.knownOutputCrefs |> cr hasindex i0 =>
@@ -3243,6 +3281,165 @@ match system
     }
     >>
 end generateNonLinearResidualFunction;
+
+template generateNonLinearResidualFunctionJacobian(NonlinearSystem system, String modelNamePrefix, Context jacContext, Integer jacIndex, list<JacobianMatrix> jacobianMatrices)
+  "Generates residual function for nonlinear loops inside Jacobians.
+   Uses Jacobian context for variable access."
+::=
+let () = tmpTickReset(0)
+let &sub = buffer ""
+match system
+  case nls as NONLINEARSYSTEM(__) then
+    let &varDecls = buffer ""
+    let &innerEqns = buffer ""
+    let &auxFunction = buffer ""
+    let &dummyPrototypes = buffer ""
+    let innerNLSSystems = functionNonLinearResiduals(nls.eqs, modelNamePrefix, dummyPrototypes, jacobianMatrices)
+    let xlocs = (nls.crefs |> cr hasindex i0 => '<%contextCrefNoPrevExp(cr, jacContext, &auxFunction)%> = xloc[<%i0%>];' ;separator="\n")
+    let prebody = (nls.eqs |> eq2 =>
+      functionExtraResidualsPreBodyWithContext(eq2, &innerEqns, modelNamePrefix, jacContext)
+    ;separator="\n")
+    let body =
+        (nls.eqs |> eq2 hasindex i0 => match eq2
+          case SES_RESIDUAL(__) then equationResidualWithContext(exp, varDecls, innerEqns, index, res_index, jacContext)
+          case SES_FOR_RESIDUAL(__) then
+            let &preExp = buffer ""
+            let expPart = daeExp(exp, jacContext, &preExp, &varDecls, &innerEqns)
+            let forPart = (iterators |> iterator as (cref, range as DAE.RANGE()) =>
+                  let iter = daeExp(crefExp(cref), jacContext, &preExp, &varDecls, &innerEqns)
+                  let start = daeExp(range.start, jacContext, &preExp, &varDecls, &innerEqns)
+                  let stop = daeExp(range.stop, jacContext, &preExp, &varDecls, &innerEqns)
+                  let step = match range.step case SOME(step) then daeExp(step, jacContext, &preExp, &varDecls, &innerEqns) else "1"
+                  <<for(int <%iter%>=<%start%>; <%iter%><=<%stop%>; <%iter%>+=<%step%>){>>
+                ;separator="\n")
+            let endForPart = (iterators |> iterator => "}")
+            let indexShift = (iterators |> iterator as (cref, range as DAE.RANGE()) =>
+                  let start = daeExp(range.start, jacContext, &preExp, &varDecls, &innerEqns)
+                  '<%daeExp(crefExp(cref), jacContext, &preExp, &varDecls, &innerEqns)%>-<%start%>'
+                ;separator="+")
+            let assignment = (if isArrayType(typeof(exp))
+              then '<%preExp%>copy_real_array_data_mem(<%expPart%>, res+<%res_index%>+<%indexShift%>);'
+              else '<%preExp%>res[<%res_index%>+<%indexShift%>] = <%expPart%>;')
+            <<
+            <% if profileAll() then 'SIM_PROF_TICK_EQ(<%index%>);' %>
+            <%forPart%>
+            <%assignment%>
+            <%endForPart%>
+            <% if profileAll() then 'SIM_PROF_ACC_EQ(<%index%>);' %>
+            >>
+          case SES_GENERIC_RESIDUAL(__) then
+            let &preExp = buffer ""
+            let idx_len = listLength(scal_indices)
+            let expPart = daeExp(exp, jacContext, &preExp, &varDecls, &innerEqns)
+            let iter_ = (iterators |> iterator as (cref, range as DAE.RANGE()) =>
+                let iter = daeExp(crefExp(cref), jacContext, &preExp, &varDecls, &innerEqns)
+                let start = daeExp(range.start, jacContext, &preExp, &varDecls, &innerEqns)
+                let stop = daeExp(range.stop, jacContext, &preExp, &varDecls, &innerEqns)
+                let step = match range.step case SOME(step) then daeExp(step, jacContext, &preExp, &varDecls, &innerEqns) else "1"
+                <<
+                const int <%iter%>_size = <%stop%> - <%start%> / <%step%> + 1;
+                int <%iter%>_loc = tmp % <%iter%>_size;
+                int <%iter%> = <%step%> * <%iter%>_loc + <%start%>;
+                tmp /= <%iter%>_size;
+                >>;separator="\n")
+            let assignment = (if isArrayType(typeof(exp))
+              then '<%preExp%>copy_real_array_data_mem(<%expPart%>, res+<%res_index%>+i_);'
+              else '<%preExp%>res[<%res_index%>+i_] = <%expPart%>;')
+            <<
+            const int idx_lst_<%res_index%>[<%idx_len%>] = {<%(scal_indices |> idx => '<%idx%>';separator=", ")%>};
+            for(int i_=0; i_<<%idx_len%>; i_++)
+            {
+              int tmp = idx_lst_<%res_index%>[i_];
+              <%iter_%>
+              <%assignment%>
+            }
+            >>
+        ;separator="\n")
+    <<
+    <%innerNLSSystems%>
+
+    /* inner equations */
+    <%&innerEqns%>
+
+    void residualFunc<%nls.index%>(RESIDUAL_USERDATA* userData, const double* xloc, double* res, const int* iflag)
+    {
+      DATA *data = userData->data;
+      threadData_t *threadData = userData->threadData;
+      JACOBIAN *jacobian = &(data->simulationInfo->analyticJacobians[<%jacIndex%>]);
+      JACOBIAN *parentJacobian = NULL;
+      const int equationIndexes[2] = {1,<%nls.index%>};
+      int i,j;
+      <%varDecls%>
+      <%auxFunction%>
+      /* iteration variables */
+      for (i=0; i<<%listLength(nls.crefs)%>; i++) {
+        if (isinf(xloc[i]) || isnan(xloc[i])) {
+          errorStreamPrint(OMC_LOG_NLS, 0, "residualFunc<%nls.index%>: Iteration variable `%s` is inf or nan.",
+            modelInfoGetEquation(&data->modelData->modelDataXml, <%nls.index%>).vars[i]);
+          for (j=0; j<<%listLength(nls.crefs)%>; j++) {
+            res[j] = NAN;
+          }
+          throwStreamPrintWithEquationIndexes(threadData, omc_dummyFileInfo, equationIndexes, "residualFunc<%nls.index%> failed at time=%.15g.\nFor more information please use -lv LOG_NLS.", data->localData[0]->timeValue);
+          return;
+        }
+      }
+      <%xlocs%>
+      /* pre body */
+      <%prebody%>
+      /* body */
+      <%body%>
+      threadData->lastEquationSolved = <%nls.index%>;
+    }
+    >>
+end generateNonLinearResidualFunctionJacobian;
+
+template functionExtraResidualsPreBodyWithContext(SimEqSystem eq, Text &eqs, String modelNamePrefixStr, Context context)
+ "Generates an inner equation for residual functions with a given context."
+::=
+  let () = tmpTickReset(0)
+  match eq
+  case e as SES_RESIDUAL(__)
+   then ""
+  case e as SES_FOR_RESIDUAL(__)
+   then ""
+  case e as SES_GENERIC_RESIDUAL(__)
+   then ""
+  else
+    let &eqs += equation_impl(-1, -1, eq, context, modelNamePrefixStr, false)
+    <<
+    /* local constraints */
+    <%createLocalConstraints(eq)%>
+    <%equation_call(eq, modelNamePrefixStr, context)%>
+    >>
+  end match
+end functionExtraResidualsPreBodyWithContext;
+
+template equationResidualWithContext(Exp exp, Text &varDecls, Text &auxFunction, Integer eq_index, Integer res_index, Context context)
+ "Generates residual equation with a given context for variable access."
+::=
+let &preExp = buffer ""
+let expPart = daeExp(exp, context, &preExp, &varDecls, &auxFunction)
+let assignment = (if isArrayType(typeof(exp))
+  then '<%preExp%>copy_real_array_data_mem(<%expPart%>, res+<%res_index%>);'
+  else '<%preExp%>res[<%res_index%>] = <%expPart%>;')
+equation_withProfile(eq_index, assignment)
+end equationResidualWithContext;
+
+template getIterationVarsJacobian(list<DAE.ComponentRef> crefs, String indexName, Context context, Integer jacIndex)
+  "Generates getIterationVars function for Jacobian NLS using proper Jacobian variable access."
+::=
+  let &sub = buffer ""
+  let &auxFunction = buffer ""
+  <<
+  void getIterationVars<%indexName%>(DATA* data, double *array)
+  {
+    JACOBIAN *jacobian = &(data->simulationInfo->analyticJacobians[<%jacIndex%>]);
+    JACOBIAN *parentJacobian = NULL;
+    <%crefs |> cr hasindex i0 =>
+      '/* <%crefStrNoUnderscore(cr)%> */<%\n%>array[<%i0%>] = <%contextCrefNoPrevExp(cr, context, &auxFunction)%>;' ;separator="\n"%>
+  }
+  >>
+end getIterationVarsJacobian;
 
 template generateStaticEmptySparseData(String indexName, String systemType)
 "template generateStaticEmptySparseData
@@ -6029,7 +6226,11 @@ template equation_impl2(Integer base_idx, Integer sub_idx, SimEqSystem eq, Conte
 
         case e as SES_NONLINEAR(nlSystem=nls as NONLINEARSYSTEM(__))
         then
-            let &tempeqns += (nls.eqs |> eq => 'void <%symbolName(modelNamePrefix,"eqFunction")%>_<%equationIndex(eq)%>(DATA*, threadData_t*);' ; separator = "\n")
+            let &tempeqns += match context
+              case JACOBIAN_CONTEXT() then
+                (nls.eqs |> eq => 'void <%symbolName(modelNamePrefix,"eqFunction")%>_<%equationIndex(eq)%>(DATA*, threadData_t*, JACOBIAN*, JACOBIAN*);' ; separator = "\n")
+              else
+                (nls.eqs |> eq => 'void <%symbolName(modelNamePrefix,"eqFunction")%>_<%equationIndex(eq)%>(DATA*, threadData_t*);' ; separator = "\n")
           equationNonlinear(e, context, modelNamePrefix, init)
 
         case e as SES_WHEN(__)

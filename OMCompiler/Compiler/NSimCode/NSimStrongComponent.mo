@@ -773,7 +773,8 @@ public
             jacobian      = Pointer.create(jacobian),
             homotopy      = comp.homotopy,
             mixed         = comp.mixed,
-            torn          = true
+            torn          = true,
+            jacobianInfo  = NONE()
           );
           simCodeIndices.nonlinearSystemIndex := simCodeIndices.nonlinearSystemIndex + 1;
           simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
@@ -1397,6 +1398,7 @@ public
       Boolean homotopy;
       Boolean mixed;
       Boolean torn;
+      Option<tuple<String, Integer>> jacobianInfo "SOME((matrixName, jacobianIndex)) if this NLS is part of a Jacobian evaluation";
     end NONLINEAR_SYSTEM;
 
     function getJacobian
@@ -1440,7 +1442,8 @@ public
         homotopySupport       = system.homotopy,
         mixedSystem           = system.mixed,
         tornSystem            = system.torn,
-        clockIndex            = NONE() // ToDo update this
+        clockIndex            = NONE(), // ToDo update this
+        jacobianInfo          = system.jacobianInfo
         );
     end convert;
   end NonlinearSystem;

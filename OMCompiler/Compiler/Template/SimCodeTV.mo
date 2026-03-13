@@ -825,6 +825,7 @@ package SimCode
       Boolean mixedSystem;
       Boolean tornSystem;
       Option<Integer> clockIndex;
+      Option<tuple<String, Integer>> jacobianInfo;
     end NONLINEARSYSTEM;
   end NonlinearSystem;
 
@@ -1442,6 +1443,12 @@ package SimCodeUtil
     input Option<HashTableCrefSimVar.HashTable> jacHT;
     output SimCodeFunction.Context outContext;
   end createJacContext;
+
+  function getJacobianContextByName
+    input list<SimCode.JacobianMatrix> jacobians;
+    input String jacName;
+    output SimCodeFunction.Context ctx;
+  end getJacobianContextByName;
 
   function localCref2SimVar
     input DAE.ComponentRef inCref;

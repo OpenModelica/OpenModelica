@@ -441,6 +441,25 @@ public
             //jacobians := jacA :: jacB :: jacC :: jacD :: jacF :: jacH :: jacAdjoint :: jacobians;
             jacobians := listReverse(jacAdjoint :: jacH :: jacF :: jacD :: jacC :: jacB :: jacA :: jacobians);
 
+            // collect nonlinear loops from jacobian column equations
+            for jac in jacobians loop
+              for blck in jac.columnEqns loop
+                _ := match blck
+                  local
+                    Option<SimJacobian> innerJac;
+                  case SimStrongComponent.NONLINEAR() algorithm
+                    innerJac := SimStrongComponent.NonlinearSystem.getJacobian(blck.system);
+                    if Util.isSome(innerJac) then
+                      jacobians := Util.getOption(innerJac) :: jacobians;
+                    end if;
+                    blck.system := SimStrongComponent.NonlinearSystem.setJacobian(blck.system, innerJac);
+                    nonlinearLoops := blck :: nonlinearLoops;
+                  then ();
+                  else ();
+                end match;
+              end for;
+            end for;
+
             for jac in jacobians loop
               if isSome(jac.jac_map) then
                 vars := SimVars.addSeedAndJacobianVars(vars, UnorderedMap.toList(Util.getOption(jac.jac_map)));
