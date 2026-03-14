@@ -802,17 +802,16 @@ bool OMSProxy::getSystemType(QString cref, oms_system_enu_t *pType)
  * \brief OMSProxy::getTolerance
  * Gets the tolerance.
  * \param cref
- * \param absoluteTolerance
  * \param relativeTolerance
  * \return
  */
-bool OMSProxy::getTolerance(QString cref, double *absoluteTolerance, double *relativeTolerance)
+bool OMSProxy::getTolerance(QString cref, double *relativeTolerance)
 {
   QString command = "oms_getTolerance";
   QStringList args;
   args << "\"" + cref + "\"";
   LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_getTolerance(cref.toUtf8().constData(), absoluteTolerance, relativeTolerance);
+  oms_status_enu_t status = oms_getTolerance(cref.toUtf8().constData(), relativeTolerance);
   logResponse(command, status, &commandTime);
   return statusToBool(status);
 }
@@ -1334,16 +1333,16 @@ void OMSProxy::setTempDirectory(QString path)
  * \brief OMSProxy::setTolerance
  * Sets the tolerance.
  * \param cref
- * \param tolerance
+ * \param relativeTolerance
  * \return
  */
-bool OMSProxy::setTolerance(QString cref, double absoluteTolerance, double relativeTolerance)
+bool OMSProxy::setTolerance(QString cref, double relativeTolerance)
 {
   QString command = "oms_setTolerance";
   QStringList args;
-  args << "\"" + cref + "\"" << QString::number(absoluteTolerance) << QString::number(relativeTolerance);
+  args << "\"" + cref + "\"" << QString::number(relativeTolerance);
   LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_setTolerance(cref.toUtf8().constData(), absoluteTolerance, relativeTolerance);
+  oms_status_enu_t status = oms_setTolerance(cref.toUtf8().constData(), relativeTolerance);
   logResponse(command, status, &commandTime);
   return statusToBool(status);
 }
