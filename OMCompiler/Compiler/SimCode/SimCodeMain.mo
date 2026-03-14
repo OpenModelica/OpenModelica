@@ -1292,6 +1292,7 @@ algorithm
       Boolean isFMI2;
       BackendDAE.SymbolicJacobians fmiDer;
       DAE.FunctionTree funcs;
+      BackendDAE.Shared shared;
 
     // old backend
     case (graph) algorithm
@@ -1344,7 +1345,8 @@ algorithm
       if (isFMI2) and not Flags.isSet(Flags.FMI20_DEPENDENCIES) then
         // activate symolic jacobains for fmi 2.0
         // to provide dependence information and partial derivatives
-        (fmiDer, funcs) := SymbolicJacobian.createFMIModelDerivatives(dlow);
+        (fmiDer, funcs, shared) := SymbolicJacobian.createFMIModelDerivatives(dlow, dlow.shared);
+        dlow.shared := shared;
         dlow := BackendDAEUtil.setFunctionTree(dlow, funcs);
       else
         fmiDer := {};
