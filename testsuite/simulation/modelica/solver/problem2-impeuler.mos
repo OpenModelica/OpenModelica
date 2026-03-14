@@ -56,9 +56,8 @@ val(der(y[8]), stopTime);
 // ""
 // record SimulationResult
 //     resultFile = "testSolver.problem2_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 321.8122, numberOfIntervals = 12000, tolerance = 1e-06, method = 'gbode', fileNamePrefix = 'testSolver.problem2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-gbm=impl_euler -gbctrl=const'",
-//     messages = "LOG_STDOUT        | warning | Numerical Jacobians without coloring are currently not supported by GBODE. Colored numerical Jacobian will be used.
-// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+//     simulationOptions = "startTime = 0.0, stopTime = 321.8122, numberOfIntervals = 12000, tolerance = 1e-6, method = 'gbode', fileNamePrefix = 'testSolver.problem2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-gbm=impl_euler -gbctrl=const'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
@@ -69,7 +68,7 @@ val(der(y[8]), stopTime);
 // "
 // 0.0007368273600530499
 // 0.0001441886650318589
-// 5.883073028969187e-05
+// 5.883073028969187e-5
 // 0.0011750850478804
 // 0.0023772358606737
 // 0.006210365748304785

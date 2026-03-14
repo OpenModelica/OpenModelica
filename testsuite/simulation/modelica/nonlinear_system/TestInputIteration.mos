@@ -283,6 +283,29 @@ simulate(TestInputIteration, stopTime=0, simflags="-output=x1[1],x1[2],z1,x2[1],
 //
 // 	Jacobian idx: 6
 //
+// columnVars(21)
+// ----------------------
+// index:0: x1.$pDERA.dummyVarA[1] (no alias)  initial: 	arrCref:x1.$pDERA.dummyVarA index:() [2]
+// index:1: x1.$pDERA.dummyVarA[2] (no alias)  initial: 	no arrCref index:() [2]
+// index:2: x2.$pDERA.dummyVarA[1] (no alias)  initial: 	arrCref:x2.$pDERA.dummyVarA index:() [2]
+// index:3: x2.$pDERA.dummyVarA[2] (no alias)  initial: 	no arrCref index:() [2]
+// index:4: x3.$pDERA.dummyVarA[1] (no alias)  initial: 	arrCref:x3.$pDERA.dummyVarA index:() [2]
+// index:5: x3.$pDERA.dummyVarA[2] (no alias)  initial: 	no arrCref index:() [2]
+// index:6: x4.$pDERA.dummyVarA[1] (no alias)  initial: 	arrCref:x4.$pDERA.dummyVarA index:() [5]
+// index:7: x4.$pDERA.dummyVarA[2] (no alias)  initial: 	no arrCref index:() [5]
+// index:8: x4.$pDERA.dummyVarA[3] (no alias)  initial: 	no arrCref index:() [5]
+// index:9: x4.$pDERA.dummyVarA[4] (no alias)  initial: 	no arrCref index:() [5]
+// index:10: x4.$pDERA.dummyVarA[5] (no alias)  initial: 	no arrCref index:() [5]
+// index:11: x5.$pDERA.dummyVarA (no alias)  initial: 	no arrCref index:() []
+// index:12: y2.$pDERA.dummyVarA (no alias)  initial: 	no arrCref index:() []
+// index:13: y3.$pDERA.dummyVarA (no alias)  initial: 	no arrCref index:() []
+// index:14: y4.$pDERA.dummyVarA (no alias)  initial: 	no arrCref index:() []
+// index:15: y5.$pDERA.dummyVarA (no alias)  initial: 	no arrCref index:() []
+// index:16: z1.$pDERA.dummyVarA (no alias)  initial: 	no arrCref index:() []
+// index:17: z2.$pDERA.dummyVarA (no alias)  initial: 	no arrCref index:() []
+// index:18: z3.$pDERA.dummyVarA (no alias)  initial: 	no arrCref index:() []
+// index:19: z4.$pDERA.dummyVarA (no alias)  initial: 	no arrCref index:() []
+// index:20: z5.$pDERA.dummyVarA (no alias)  initial: 	no arrCref index:() []
 //
 // modelInfo:
 // ========================================

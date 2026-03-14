@@ -116,9 +116,8 @@ getErrorString();
 // ""
 // record SimulationResult
 //     resultFile = "testSolver.problem2_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 321.8122, numberOfIntervals = 3000, tolerance = 1e-06, method = 'gbode', fileNamePrefix = 'testSolver.problem2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-gbm=radauIIA3 -gbctrl=const'",
-//     messages = "LOG_STDOUT        | warning | Numerical Jacobians without coloring are currently not supported by GBODE. Colored numerical Jacobian will be used.
-// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+//     simulationOptions = "startTime = 0.0, stopTime = 321.8122, numberOfIntervals = 3000, tolerance = 1e-6, method = 'gbode', fileNamePrefix = 'testSolver.problem2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-gbm=radauIIA3 -gbctrl=const'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
@@ -129,9 +128,8 @@ getErrorString();
 // "
 // record SimulationResult
 //     resultFile = "testSolver.problem2_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 321.8122, numberOfIntervals = 3000, tolerance = 1e-06, method = 'gbode', fileNamePrefix = 'testSolver.problem2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-gbm=radauIIA2 -gbctrl=const'",
-//     messages = "LOG_STDOUT        | warning | Numerical Jacobians without coloring are currently not supported by GBODE. Colored numerical Jacobian will be used.
-// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+//     simulationOptions = "startTime = 0.0, stopTime = 321.8122, numberOfIntervals = 3000, tolerance = 1e-6, method = 'gbode', fileNamePrefix = 'testSolver.problem2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-gbm=radauIIA2 -gbctrl=const'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
@@ -142,9 +140,8 @@ getErrorString();
 // "
 // record SimulationResult
 //     resultFile = "testSolver.problem2_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 321.8122, numberOfIntervals = 3000, tolerance = 1e-06, method = 'gbode', fileNamePrefix = 'testSolver.problem2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-gbm=lobattoIIIA3 -gbctrl=const'",
-//     messages = "LOG_STDOUT        | warning | Numerical Jacobians without coloring are currently not supported by GBODE. Colored numerical Jacobian will be used.
-// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+//     simulationOptions = "startTime = 0.0, stopTime = 321.8122, numberOfIntervals = 3000, tolerance = 1e-6, method = 'gbode', fileNamePrefix = 'testSolver.problem2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-gbm=lobattoIIIA3 -gbctrl=const'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
@@ -155,9 +152,8 @@ getErrorString();
 // "
 // record SimulationResult
 //     resultFile = "testSolver.problem2_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 321.8122, numberOfIntervals = 3000, tolerance = 1e-06, method = 'gbode', fileNamePrefix = 'testSolver.problem2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-gbm=lobattoIIIA4 -gbctrl=const'",
-//     messages = "LOG_STDOUT        | warning | Numerical Jacobians without coloring are currently not supported by GBODE. Colored numerical Jacobian will be used.
-// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+//     simulationOptions = "startTime = 0.0, stopTime = 321.8122, numberOfIntervals = 3000, tolerance = 1e-6, method = 'gbode', fileNamePrefix = 'testSolver.problem2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-gbm=lobattoIIIA4 -gbctrl=const'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;

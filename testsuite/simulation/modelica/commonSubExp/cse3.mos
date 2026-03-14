@@ -178,9 +178,71 @@ simulate(testCSE); getErrorString();
 // ========================================
 // 1: $cse6 - cosh(y) - {}
 // 2: $cse7 - cosh(z) - {}
+//
+//
+//
+// ###############################################################
+// Final Results
+// ###############################################################
+//
+// ########### Updated Variable List (jacobian) (13)
+// ========================================
+// 1: $cse1.$pDERA.dummyVarA:VARIABLE(protected = true )  type: Real unreplaceable
+// 2: $cse2.$pDERA.dummyVarA:VARIABLE(protected = true )  type: Real unreplaceable
+// 3: $cse3.$pDERA.dummyVarA:VARIABLE(protected = true )  type: Real unreplaceable
+// 4: $cse4.$pDERA.dummyVarA:VARIABLE(protected = true )  type: Real unreplaceable
+// 5: $cse5.$pDERA.dummyVarA:VARIABLE(protected = true )  type: Real unreplaceable
+// 6: $DER.x.$pDERA.dummyVarA:STATE_DER(start = 0.0 fixed = true )  type: Real unreplaceable
+// 7: y.$pDERA.dummyVarA:VARIABLE(start = 1.0 )  type: Real
+// 8: z.$pDERA.dummyVarA:VARIABLE(start = 0.0 )  type: Real
+// 9: $cse12:VARIABLE(protected = true )  type: Real unreplaceable
+// 10: $cse11:VARIABLE(protected = true )  type: Real unreplaceable
+// 11: $cse10:VARIABLE(protected = true )  type: Real unreplaceable
+// 12: $cse9:VARIABLE(protected = true )  type: Real unreplaceable
+// 13: $cse8:VARIABLE(protected = true )  type: Real unreplaceable
+//
+//
+// ########### Updated Equation List (jacobian) (13, 13)
+// ========================================
+// 1/1 (1): $cse1.$pDERA.dummyVarA = x.SeedA * $cse8   [unknown |0|0|0|0|]
+// 2/2 (1): $cse2.$pDERA.dummyVarA = x.SeedA * $cse9   [unknown |0|0|0|0|]
+// 3/3 (1): $cse3.$pDERA.dummyVarA = z.$pDERA.dummyVarA * $cse10   [unknown |0|0|0|0|]
+// 4/4 (1): $cse4.$pDERA.dummyVarA = x.SeedA * $cse11   [unknown |0|0|0|0|]
+// 5/5 (1): $cse5.$pDERA.dummyVarA = y.$pDERA.dummyVarA * $cse12   [unknown |0|0|0|0|]
+// 6/6 (1): $DER.x.$pDERA.dummyVarA = y * z.$pDERA.dummyVarA + y.$pDERA.dummyVarA * z   [dynamic |0|0|0|0|]
+// 7/7 (1): $cse4 * $cse5.$pDERA.dummyVarA + $cse4.$pDERA.dummyVarA * $cse5 + 1.1 * ($cse4 * z.$pDERA.dummyVarA + $cse4.$pDERA.dummyVarA * z) = 0.0   [dynamic |0|0|0|0|]
+// 8/8 (1): $cse1 * y.$pDERA.dummyVarA + $cse1.$pDERA.dummyVarA * y + 1.1 * ($cse2 * $cse3.$pDERA.dummyVarA + $cse2.$pDERA.dummyVarA * $cse3) = 0.0   [dynamic |0|0|0|0|]
+// 9/9 (1): $cse12 = cosh(y)   [unknown |0|0|0|0|]
+// 10/10 (1): $cse11 = $DER$$PtestCSE$Pf4(x, n, 1.0)   [unknown |0|0|0|0|]
+// 11/11 (1): $cse10 = cosh(z)   [unknown |0|0|0|0|]
+// 12/12 (1): $cse9 = $DER$$PtestCSE$Pf2(x, n, 1.0)   [unknown |0|0|0|0|]
+// 13/13 (1): $cse8 = $DER$$PtestCSE$Pf1(x, n, 1.0)   [unknown |0|0|0|0|]
+//
+//
+// ########### Updated globalKnownVars (jacobian) (10)
+// ========================================
+// 1: n:PARAM()  = 100000  type: Integer
+// 2: z:VARIABLE(start = 0.0 )  type: Real
+// 3: y:VARIABLE(start = 1.0 )  type: Real
+// 4: x:STATE(1)(start = 0.0 fixed = true )  type: Real
+// 5: $cse5:VARIABLE(protected = true )  type: Real unreplaceable
+// 6: $cse4:VARIABLE(protected = true )  type: Real unreplaceable
+// 7: $cse3:VARIABLE(protected = true )  type: Real unreplaceable
+// 8: $cse2:VARIABLE(protected = true )  type: Real unreplaceable
+// 9: $cse1:VARIABLE(protected = true )  type: Real unreplaceable
+// 10: input x.SeedA:STATE_DER()  type: Real unreplaceable
+//
+//
+// ########### CSE Replacements (5/50)
+// ========================================
+// 1: $cse8 - $DER$$PtestCSE$Pf1(x, n, 1.0) - {}
+// 2: $cse9 - $DER$$PtestCSE$Pf2(x, n, 1.0) - {}
+// 3: $cse10 - cosh(z) - {}
+// 4: $cse11 - $DER$$PtestCSE$Pf4(x, n, 1.0) - {}
+// 5: $cse12 - cosh(y) - {}
 // record SimulationResult
 //     resultFile = "testCSE_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'testCSE', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'testCSE', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
