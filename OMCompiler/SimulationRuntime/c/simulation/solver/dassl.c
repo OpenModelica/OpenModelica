@@ -1457,10 +1457,57 @@ static int callJacobian(double *t, double *y, double *yprime, double *deltaD,
   }
 
   /* debug */
-  if (OMC_ACTIVE_STREAM(OMC_LOG_JAC)){
-    _omc_matrix* dumpJac = _omc_createMatrix(dasslData->N, dasslData->N, pd);
-    _omc_printMatrix(dumpJac, "DASSL-Solver: Matrix A", OMC_LOG_JAC);
-    _omc_destroyMatrix(dumpJac);
+  /* debug: print flat Jacobian array */
+  if (OMC_ACTIVE_STREAM(OMC_LOG_JAC)) {
+    printVector(OMC_LOG_JAC, "DASSL-Solver: pd (flat)", pd, dasslData->N * dasslData->N, *t);
+  }
+
+  /* Compare evaluated Jacobian against a numerical reference.
+   * Only meaningful when the configured method is not already numerical. */
+  if (OMC_ACTIVE_STREAM(OMC_LOG_JAC)
+      && dasslData->dasslJacobian != COLOREDNUMJAC
+      && dasslData->dasslJacobian != NUMJAC)
+  {
+    double* pdNumerical = (double*) calloc(dasslData->N * dasslData->N, sizeof(double));
+    if (pdNumerical != NULL)
+    {
+      int row, col, k;
+      double absDiff, relDiff;
+      double maxAbsDiff = 0.0, maxRelDiff = 0.0;
+      int maxAbsRow = 0, maxAbsCol = 0, maxRelRow = 0, maxRelCol = 0;
+
+      /* Compute numerical Jacobian ∂F/∂y using finite differences */
+      jacA_num(t, y, yprime, deltaD, pdNumerical, cj, h, wt, rpar, ipar);
+
+      /* Apply the same cj * ∂F/∂y' = -cj*I correction */
+      for (k = 0; k < dasslData->N * dasslData->N; k += dasslData->N + 1)
+      {
+        pdNumerical[k] -= *cj;
+      }
+
+      /* Find maximum absolute and relative element-wise differences */
+      for(col = 0; col < dasslData->N; col++)
+      {
+        for(row = 0; row < dasslData->N; row++)
+        {
+          int idx = col * dasslData->N + row;
+          absDiff = fabs(pd[idx] - pdNumerical[idx]);
+          relDiff = absDiff / fmax(fabs(pdNumerical[idx]), 1e-15);
+          if(absDiff > maxAbsDiff) { maxAbsDiff = absDiff; maxAbsRow = row; maxAbsCol = col; }
+          if(relDiff > maxRelDiff) { maxRelDiff = relDiff; maxRelRow = row; maxRelCol = col; }
+        }
+      }
+
+      infoStreamPrint(OMC_LOG_JAC, 1, "Jacobian verification: analytical vs. numerical");
+      infoStreamPrint(OMC_LOG_JAC, 0, "Max absolute difference: %g at (row=%d, col=%d)", maxAbsDiff, maxAbsRow, maxAbsCol);
+      infoStreamPrint(OMC_LOG_JAC, 0, "Max relative difference: %g at (row=%d, col=%d)", maxRelDiff, maxRelRow, maxRelCol);
+      messageClose(OMC_LOG_JAC);
+
+      /* debug: print flat numerical Jacobian array */
+      printVector(OMC_LOG_JAC, "DASSL-Solver: pdNumerical (flat)", pdNumerical, dasslData->N * dasslData->N, *t);
+
+      free(pdNumerical);
+    }
   }
 
   /* set context for the start values extrapolation of non-linear algebraic loops */
