@@ -1166,8 +1166,13 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
       sData->timeValue = gbfData->timeRight;
       memcpy(sData->realVars, gbfData->yRight, data->modelData->nStates * sizeof(double));
       gbode_fODE(data, threadData, &(gbData->gbfData->stats.nCallsODE), gbfData->evalSelectionFast);
+      memcpy(gbfData->kRight, fODE, nStates * sizeof(double));
     }
-    memcpy(gbfData->kRight, fODE, nStates * sizeof(double));
+    else
+    {
+      // last stage of method already provides the vector
+      memcpy(gbfData->kRight, &gbfData->k[nStates * (nStages - 1)], nStates * sizeof(double));
+    }
 
     foundEvent = checkForEvents(data, threadData, solverInfo, gbfData->time, gbfData->yOld, gbfData->time + gbfData->stepSize, gbfData->y, TRUE, &eventTime);
     if (foundEvent) {
@@ -1727,8 +1732,13 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
         sData->timeValue = gbData->timeRight;
         memcpy(sData->realVars, gbData->y, data->modelData->nStates * sizeof(double));
         gbode_fODE(data, threadData, &(gbData->stats.nCallsODE), NULL);
+        memcpy(gbData->kRight, fODE, nStates * sizeof(double));
       }
-      memcpy(gbData->kRight, fODE, nStates * sizeof(double));
+      else
+      {
+        // last stage of method already provides the vector (we have some tiny error of the Newton iteration though)
+        memcpy(gbData->kRight, &gbData->k[nStates * (nStages - 1)], nStates * sizeof(double));
+      }
 
       if (OMC_ACTIVE_STREAM(OMC_LOG_SOLVER) || noConst_intWithErrctrl) {
         if (gbData->multi_rate && gbData->nFastStates>0) {

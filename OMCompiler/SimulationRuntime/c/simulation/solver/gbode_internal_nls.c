@@ -2022,6 +2022,7 @@ void gbInternalContraction(DATA *data,
   GB_INTERNAL_NLS_DATA *nls = (GB_INTERNAL_NLS_DATA *) (((struct dataSolver *)nonlinsys->solverData)->ordinaryData);
   BUTCHER_TABLEAU *tabl = nls->tabl;
   CONTRACTIVE_DEFECT_ERROR *defect_err = tabl->t_transform->defect_err;
+  SOLVERSTATS *stats = (nls->multirate ? &gbData->gbfData->stats : &gbData->stats);
 
   int nStates = gbData->nStates;
   int size = nls->size;
@@ -2029,10 +2030,6 @@ void gbInternalContraction(DATA *data,
 
   double *yOld = (nls->multirate ? gbData->gbfData->yOldPacked : gbData->yOld);
   double *kPacked = (nls->multirate ? gbData->gbfData->kCurrPacked : gbData->k);
-
-  // get f(t_n, y(t_n)), TODO: re-use it from previous k_right, now k_left as in simplified Jacobian
-  gbInternal_T_Transform_set_states(data, gbData, nls, yOld, GB_INTERNAL_LEFT_BOUNDARY);
-  gbode_fODE(data, threadData, &(gbData->stats.nCallsODE), NULL);
 
   // ERR := -d(0)^T * A * k
   dgemm_(&CHAR_NO_TRANS, &CHAR_NO_TRANS,
@@ -2043,8 +2040,30 @@ void gbInternalContraction(DATA *data,
          defect_err->dT_A, &nStages,
          &DBL_ZERO, err, &size);
 
-  // ERR := f(t_n, y(t_n)) - d(0)^T * A * k
-  gbInternal_T_Transform_full_to_fast_axpy(gbData, nls, DBL_ONE, &data->localData[0]->realVars[nStates], err);
+  modelica_boolean sr_valid = (!nls->multirate && gbData->time != data->simulationInfo->startTime && !gbData->eventHappened && gbData->extrapolationBaseTime != INFINITY);
+  modelica_boolean mr_valid = (nls->multirate && gbData->gbfData->extrapolationValid);
+
+  if (tabl->isKRightAvailable && (sr_valid || mr_valid))
+  {
+    // f(t_n, y(t_n)) == k_right == f(t_n-1 + h_n-1, y(t_n-1 + h_n-1)) of the previous step up to NLS precision
+    //   similar to the FSAL property of ESDIRK or ERK, but the method by itself does not have c_0 = 0 as a node!
+    // Note that the order of this k_right is the order p of the method (e.g. p = 2s-1 for Radau IIA), since kRight is a collocated node
+    // of the previous interval. Therefore, the computed defect will still be O(h^s) even though f(x0, y0) = k_right + O(h^p)
+    double *k0Packed = (nls->multirate ? &gbData->gbfData->kLast[(tabl->nStages - 1) * gbData->nFastStates]
+                                       : &gbData->kLast[(tabl->nStages - 1) * gbData->nStates]);
+
+    // ERR := f(t_n, y(t_n)) - d(0)^T * A * k
+    daxpy_(&nls->size, &DBL_ONE, k0Packed, &INT_ONE, err, &INT_ONE);
+  }
+  else
+  {
+    // fresh computation of f(t_n, y(t_n)) as previous step is not valid or method does not collocate node 1
+    gbInternal_T_Transform_set_states(data, gbData, nls, yOld, GB_INTERNAL_LEFT_BOUNDARY);
+    gbode_fODE(data, threadData, &stats->nCallsODE, (nls->multirate ? gbData->gbfData->evalSelectionFast : NULL));
+
+    // ERR := f(t_n, y(t_n)) - d(0)^T * A * k
+    gbInternal_T_Transform_full_to_fast_axpy(gbData, nls, DBL_ONE, &data->localData[0]->realVars[nStates], err);
+  }
 
   // ERR := (gamma / h * I - J)^{-1} * yt = (gamma / h * I - J)^{-1} * (f(t_n, y(t_n)) - d(0)^T * A * k) (exact error measure)
   gbInternal_dKLU_solve(&nls->klu_internals_real[0], size, err);

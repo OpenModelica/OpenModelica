@@ -273,7 +273,7 @@ void getButcherTableau_ESDIRK2(BUTCHER_TABLEAU* tableau)
   tableau->withDenseOutput = TRUE;
   tableau->dense_output = denseOutput_ESDIRK2;
   tableau->isKLeftAvailable = TRUE;
-  tableau->isKRightAvailable = FALSE;
+  tableau->isKRightAvailable = TRUE;
 
   // predictor cant be stable for stage 2
 }
@@ -311,7 +311,7 @@ void getButcherTableau_ESDIRK3(BUTCHER_TABLEAU* tableau)
   tableau->withDenseOutput = TRUE;
   tableau->dense_output = denseOutput_ESDIRK3;
   tableau->isKLeftAvailable = TRUE;
-  tableau->isKRightAvailable = FALSE;
+  tableau->isKRightAvailable = TRUE;
 
   const double A_predictor[] = {
                                 0, 0,     0, 0,
@@ -404,7 +404,7 @@ void getButcherTableau_ESDIRK4(BUTCHER_TABLEAU* tableau)
   tableau->withDenseOutput = TRUE;
   tableau->dense_output = denseOutput_ESDIRK4;
   tableau->isKLeftAvailable = TRUE;
-  tableau->isKRightAvailable = FALSE;
+  tableau->isKRightAvailable = TRUE;
 
   const double A_predictor[] = {
                                 0, 0, 0, 0, 0, 0,
@@ -502,7 +502,7 @@ void getButcherTableau_ESDIRK4_7L2SA(BUTCHER_TABLEAU* tableau)
   tableau->withDenseOutput = TRUE;
   tableau->dense_output = denseOutput_C0_ESDIRK4_7L2SA;
   tableau->isKLeftAvailable = TRUE;
-  tableau->isKRightAvailable = FALSE;
+  tableau->isKRightAvailable = TRUE;
 
   /* SVP from "Intrastep, Stage-Value Predictors for Diagonally-Implicit Runge–Kutta Methods" (properties of paper can be reproduced) */
   const double A_predictor[] = {
@@ -585,7 +585,7 @@ void getButcherTableau_SDIRK4(BUTCHER_TABLEAU* tableau)
   tableau->withDenseOutput = TRUE;
   tableau->dense_output = denseOutput_SDIRK4;
   tableau->isKLeftAvailable = FALSE;
-  tableau->isKRightAvailable = FALSE;
+  tableau->isKRightAvailable = TRUE;
 
   const double A_predictor[] = {
                                 0, 0, 0, 0, 0,
@@ -617,7 +617,7 @@ void getButcherTableau_SDIRK2(BUTCHER_TABLEAU* tableau)
 
   setButcherTableau(tableau, c, A, b, bt);
   tableau->isKLeftAvailable = FALSE;
-  tableau->isKRightAvailable = FALSE;
+  tableau->isKRightAvailable = TRUE;
 
   // predictor can't be stable for stage 2
 }
@@ -937,7 +937,7 @@ void getButcherTableau_RADAU_IIA_2(BUTCHER_TABLEAU* tableau)
 
   setButcherTableau(tableau, c, A, b, bt);
   tableau->isKLeftAvailable = FALSE;
-  tableau->isKRightAvailable = FALSE;
+  tableau->isKRightAvailable = TRUE;
   tableau->withDenseOutput = TRUE;
   tableau->dense_output = denseOutput_Radau_IIA_2;
 
@@ -990,7 +990,7 @@ void getButcherTableau_RADAU_IIA_3(BUTCHER_TABLEAU* tableau)
 
   setButcherTableau(tableau, c, A, b, bt);
   tableau->isKLeftAvailable = FALSE;
-  tableau->isKRightAvailable = FALSE;
+  tableau->isKRightAvailable = TRUE;
   tableau->withDenseOutput = TRUE;
   tableau->dense_output = denseOutput_Radau_IIA_3;
 
@@ -1052,7 +1052,7 @@ void getButcherTableau_RADAU_IIA_4(BUTCHER_TABLEAU* tableau)
 
   setButcherTableau(tableau, c, A, b, bt);
   tableau->isKLeftAvailable = FALSE;
-  tableau->isKRightAvailable = FALSE;
+  tableau->isKRightAvailable = TRUE;
   tableau->withDenseOutput = TRUE;
   tableau->dense_output = denseOutput_Radau_IIA_4;
 
@@ -1117,7 +1117,7 @@ void getButcherTableau_RADAU_IIA_5(BUTCHER_TABLEAU* tableau)
 
   setButcherTableau(tableau, c, A, b, bt);
   tableau->isKLeftAvailable = FALSE;
-  tableau->isKRightAvailable = FALSE;
+  tableau->isKRightAvailable = TRUE;
   tableau->withDenseOutput = TRUE;
   tableau->dense_output = denseOutput_Radau_IIA_5;
 
@@ -1191,7 +1191,7 @@ void getButcherTableau_RADAU_IIA_6(BUTCHER_TABLEAU* tableau)
 
   setButcherTableau(tableau, c, A, b, bt);
   tableau->isKLeftAvailable = FALSE;
-  tableau->isKRightAvailable = FALSE;
+  tableau->isKRightAvailable = TRUE;
   tableau->withDenseOutput = TRUE;
   tableau->dense_output = denseOutput_Radau_IIA_6;
 
@@ -1266,7 +1266,7 @@ void getButcherTableau_RADAU_IIA_7(BUTCHER_TABLEAU* tableau)
 
   setButcherTableau(tableau, c, A, b, bt);
   tableau->isKLeftAvailable = FALSE;
-  tableau->isKRightAvailable = FALSE;
+  tableau->isKRightAvailable = TRUE;
   tableau->withDenseOutput = TRUE;
   tableau->dense_output = denseOutput_Radau_IIA_7;
 
@@ -1338,7 +1338,7 @@ void getButcherTableau_LOBATTO_IIIA_3(BUTCHER_TABLEAU* tableau)
 
   setButcherTableau(tableau, c, A, b, bt);
   tableau->isKLeftAvailable = TRUE;
-  tableau->isKRightAvailable = FALSE;
+  tableau->isKRightAvailable = TRUE;
   tableau->withDenseOutput = TRUE;
   tableau->dense_output = denseOutput_LOBATTO_IIIA_3;
 
@@ -1401,7 +1401,7 @@ void getButcherTableau_LOBATTO_IIIA_4(BUTCHER_TABLEAU* tableau)
 
   setButcherTableau(tableau, c, A, b, bt);
   tableau->isKLeftAvailable = TRUE;
-  tableau->isKRightAvailable = FALSE;
+  tableau->isKRightAvailable = TRUE;
   tableau->withDenseOutput = TRUE;
   tableau->dense_output = denseOutput_LOBATTO_IIIA_4;
 
@@ -2007,7 +2007,7 @@ void getButcherTableau_TRAPEZOID(BUTCHER_TABLEAU* tableau)
   setButcherTableau(tableau, c, A, b, bt);
 
   tableau->isKLeftAvailable = TRUE;
-  tableau->isKRightAvailable = FALSE;
+  tableau->isKRightAvailable = TRUE;
 }
 
 // TODO: Describe me
