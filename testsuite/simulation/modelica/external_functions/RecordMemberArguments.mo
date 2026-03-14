@@ -4,8 +4,7 @@ model ExtRecordMemberArguments
     Real myRealVar;
     Integer myIntegerArray[3];
     Integer myIntegerVar;
-    // TODO: Boolean arrays are still broken
-    // Boolean myBooleanArray[:];
+    Boolean myBooleanArray[:];
     Boolean myBooleanVar;
     String myStringArray[2];
     String myStringVar;
@@ -14,11 +13,11 @@ model ExtRecordMemberArguments
   function foo
     input R r;
 
-    external "C" foo(r.myRealMatrix, size(r.myRealMatrix, 1), size(r.myRealMatrix, 2), r.myRealVar, r.myIntegerArray, size(r.myIntegerArray, 1), r.myIntegerVar, r.myBooleanVar, r.myStringArray, size(r.myStringArray, 1), r.myStringVar)
+    external "C" foo(r.myRealMatrix, size(r.myRealMatrix, 1), size(r.myRealMatrix, 2), r.myRealVar, r.myIntegerArray, size(r.myIntegerArray, 1), r.myIntegerVar, r.myBooleanArray, size(r.myBooleanArray, 1), r.myBooleanVar, r.myStringArray, size(r.myStringArray, 1), r.myStringVar)
     annotation (
 
     Include="
-void foo(const double* myRealMatrix, size_t dim_myRealMatrix_1, size_t dim_myRealMatrix_2, const double myRealVar, const int* myIntegerArray, size_t dim_myIntegerArray_1, int myIntegerVar, int myBooleanVar, const char** myStringArray, size_t dim_myStringArray_1, const char* myStringVar) {
+void foo(const double* myRealMatrix, size_t dim_myRealMatrix_1, size_t dim_myRealMatrix_2, const double myRealVar, const int* myIntegerArray, size_t dim_myIntegerArray_1, int myIntegerVar, const int* myBooleanArray, size_t dim_myBooleanArray_1, int myBooleanVar, const char** myStringArray, size_t dim_myStringArray_1, const char* myStringVar) {
   size_t i, j;
   printf(\"myRealMatrix (%zu x %zu):\\n\", dim_myRealMatrix_1, dim_myRealMatrix_2);
   for (i = 0; i < dim_myRealMatrix_1; ++i) {
@@ -42,13 +41,12 @@ void foo(const double* myRealMatrix, size_t dim_myRealMatrix_1, size_t dim_myRea
 
   printf(\"myIntegerVar: %d\\n\", myIntegerVar);
 
-  /* TODO: Boolean arrays are still broken */
-  // printf(\"myBooleanArray: {\");
-  // for (i = 0; i < dim_myBooleanArray_1; ++i) {
-  //   printf(\"%s\", myBooleanArray[i] ? \"true\" : \"false\");
-  //   if (i + 1 < dim_myBooleanArray_1) printf(\", \");
-  // }
-  // printf(\"}\\n\");
+  printf(\"myBooleanArray: {\");
+  for (i = 0; i < dim_myBooleanArray_1; ++i) {
+    printf(\"%s\", myBooleanArray[i] ? \"true\" : \"false\");
+    if (i + 1 < dim_myBooleanArray_1) printf(\", \");
+  }
+  printf(\"}\\n\");
 
   printf(\"myBooleanVar: %s\\n\", myBooleanVar ? \"true\" : \"false\");
 
@@ -69,7 +67,7 @@ void foo(const double* myRealMatrix, size_t dim_myRealMatrix_1, size_t dim_myRea
       myRealVar = 7.0,
       myIntegerArray = {-1, -2, -3},
       myIntegerVar = -4,
-      // myBooleanArray = {true, false, false, true, true, true},
+      myBooleanArray = {true, false, false, true, true, true},
       myBooleanVar = true,
       myStringArray = {"one", "two"},
       myStringVar = "scalar");
