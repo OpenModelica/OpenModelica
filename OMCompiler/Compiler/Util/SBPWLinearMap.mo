@@ -204,46 +204,133 @@ public
   function compPW
     input SBPWLinearMap map1;
     input SBPWLinearMap map2;
-    output SBPWLinearMap outMap;
+    output SBPWLinearMap res;
   protected
-    array<SBSet> dom1 = map1.dom, dom2 = map2.dom;
-    Vector<SBSet> ress;
-    array<SBLinearMap> lmap1 = map1.lmap, lmap2 = map2.lmap;
-    Vector<SBLinearMap> reslm;
-    SBSet aux_dom, new_dom, d1, d2;
-    SBLinearMap l1, l2, new_lm;
+    Vector<SBSet> new_dom, notId_dom;
+    Vector<SBLinearMap> new_lmap, notId_lmap;
+    SBPWLinearMap aux1 = normalize(map1);
+    SBPWLinearMap aux2 = normalize(map2);
+    SBPWLinearMap notId;
+    SBSet pre, inter, atomDom, notIdAtomDom, newDom;
+    SBLinearMap new_map;
   algorithm
-    if SBPWLinearMap.isEmpty(map1) or SBPWLinearMap.isEmpty(map2) then
-      outMap := SBPWLinearMap.newEmpty();
-      return;
-    end if;
+    new_dom   := Vector.new<SBSet>();
+    new_lmap  := Vector.new<SBLinearMap>();
+    if isEqual(aux1, aux2) then
+      notId_dom   := Vector.new<SBSet>();
+      notId_lmap  := Vector.new<SBLinearMap>();
+      for i in 1:arrayLength(aux1.dom) loop
+        if SBLinearMap.isIdentity(aux1.lmap[i]) then
+          Vector.push(new_dom, aux1.dom[i]);
+          Vector.push(new_lmap, aux1.lmap[i]);
+          pre := preImage(aux1, aux1.dom[i]);
+          pre := SBSet.complement(pre, aux1.dom[i]);
 
-    ress := Vector.new<SBSet>();
-    reslm := Vector.new<SBLinearMap>();
+          if not SBSet.isEmpty(pre) then
+            for j in 1:arrayLength(aux1.dom) loop
+              inter := SBSet.intersection(pre, aux1.dom[j]);
+              if not SBSet.isEmpty(inter) then
+                Vector.push(new_dom, inter);
+                Vector.push(new_lmap, aux1.lmap[j]);
+              end if;
+            end for;
+          end if;
+        else
+          for dom in UnorderedSet.toList(SBSet.asets(aux1.dom[i])) loop
+            notIdAtomDom := SBSet.newEmpty();
+            if SBLinearMap.isIdentity(aux1.lmap[i]) then
+              atomDom := SBSet.newEmpty();
+              SBSet.addAtomicSet(dom, atomDom);
+              Vector.push(new_dom, atomDom);
+              Vector.push(new_lmap, aux1.lmap[i]);
+              pre := preImage(aux1, atomDom);
 
-    for i in 1:arrayLength(dom1) loop
-      d1 := arrayGetNoBoundsChecking(dom1, i);
+              if not SBSet.isEmpty(pre) then
+                for j in 1:arrayLength(aux1.dom) loop
+                  inter := SBSet.intersection(pre, aux1.dom[j]);
+                  if not SBSet.isEmpty(inter) then
+                    Vector.push(new_dom, inter);
+                    Vector.push(new_lmap, aux1.lmap[j]);
+                  end if;
+                end for;
+              end if;
+            else
+              notIdAtomDom := SBSet.addAtomicSet(dom, notIdAtomDom);
+            end if;
+          end for;
 
-      for j in 1:arrayLength(dom2) loop
-        d2 := arrayGetNoBoundsChecking(dom2, j);
-
-        aux_dom := image(map2, d2);
-        aux_dom := SBSet.intersection(aux_dom, d1);
-        aux_dom := preImage(map2, aux_dom);
-        new_dom := SBSet.intersection(aux_dom, d2);
-
-        if not SBSet.isEmpty(new_dom) then
-          l1 := lmap1[i];
-          l2 := lmap2[j];
-          new_lm := SBLinearMap.compose(l1, l2);
-          Vector.push(ress, new_dom);
-          Vector.push(reslm, new_lm);
+          if not SBSet.isEmpty(notIdAtomDom) then
+            Vector.push(notId_dom, notIdAtomDom);
+            Vector.push(notId_lmap, aux1.lmap[i]);
+          end if;
         end if;
       end for;
+
+      notId := new(Vector.toArray(notId_dom), Vector.toArray(notId_lmap));
+
+      for i in 1:arrayLength(notId.dom) loop
+        // kabdelhak: aux1 is map1 in only this first preImage call in the original
+        //   and i cannot see how it should be correct.
+        pre := preImage(map1, notId.dom[i]);
+        if not SBSet.isEmpty(pre) then
+          for j in 1:arrayLength(aux1.dom) loop
+            inter := SBSet.intersection(pre, aux1.dom[j]);
+            if not SBSet.isEmpty(inter) then
+              new_map := SBLinearMap.compose(notId.lmap[i], aux1.lmap[j]);
+              Vector.push(new_dom, inter);
+              Vector.push(new_lmap, new_map);
+            end if;
+          end for;
+        end if;
+      end for;
+    else
+      /* ... */
+      for i in 1:arrayLength(aux1.dom) loop
+        for j in 1:arrayLength(aux2.dom) loop
+          newDom := image(aux2, aux2.dom[j]);
+          newDom := SBSet.intersection(newDom, aux1.dom[i]);
+          newDom := preImage(aux2, newDom);
+          newDom := SBSet.intersection(newDom, aux2.dom[j]);
+          if not SBSet.isEmpty(newDom) then
+            new_map   := SBLinearMap.compose(aux1.lmap[i], aux2.lmap[j]);
+            Vector.push(new_dom, newDom);
+            Vector.push(new_lmap, new_map);
+          end if;
+        end for;
+      end for;
+    end if;
+
+    res := new(Vector.toArray(new_dom), Vector.toArray(new_lmap));
+  end compPW;
+
+  function normalize
+    input SBPWLinearMap map;
+    output SBPWLinearMap res;
+  protected
+    Vector<SBSet> new_dom = Vector.new<SBSet>();
+    Vector<SBLinearMap> new_lmap = Vector.new<SBLinearMap>();
+    Integer length = arrayLength(map.dom);
+    SBSet newDom, noRepeat = SBSet.newEmpty();
+  algorithm
+    for i in 1:length loop
+      newDom := map.dom[i]  ;
+      if SBSet.isEmpty(SBSet.intersection(map.dom[i], noRepeat)) then
+        for j in (i+1):length loop
+          if SBLinearMap.isEqual(map.lmap[j], map.lmap[i]) then
+            newDom := SBSet.union(newDom, map.dom[j]);
+          end if;
+        end for;
+      end if;
+
+      if not SBSet.isEmpty(newDom) then
+        noRepeat := SBSet.union(noRepeat, newDom);
+        Vector.push(new_dom, SBSet.normalize(newDom));
+        Vector.push(new_lmap, map.lmap[i]);
+      end if;
     end for;
 
-    outMap := new(Vector.toArray(ress), Vector.toArray(reslm));
-  end compPW;
+    res := new(Vector.toArray(new_dom), Vector.toArray(new_lmap));
+  end normalize;
 
   function minInvCompact
     input SBPWLinearMap map;
