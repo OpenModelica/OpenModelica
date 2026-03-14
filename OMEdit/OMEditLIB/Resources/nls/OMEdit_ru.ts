@@ -2005,9 +2005,9 @@ You can choose between waiting longer or abort debugging.</source>
     </message>
     <message>
         <location filename="../../Util/Helper.cpp" line="841"/>
-        <source>Error has occurred while loading the model : 
+        <source>Error has occurred while loading the model :
 %1.</source>
-        <translation>При загрузке модели произошла ошибка: 
+        <translation>При загрузке модели произошла ошибка:
 %1.</translation>
     </message>
     <message>
@@ -4543,8 +4543,8 @@ Please check the Messages browser for error messages and possibly undo the lates
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="3731"/>
-        <source>The system libraries are read from the MODELICAPATH and are always read-only.</source>
-        <translation>Системные библиотеки читаются из MODELICAPATH и всегда доступны только для чтения.</translation>
+        <source>The system libraries are read from OPENMODELICALIBRARY (MODELICAPATH in the language specification) and are always read-only.</source>
+        <translation>Системные библиотеки читаются из OPENMODELICALIBRARY (в спецификации языка — MODELICAPATH) и всегда доступны только для чтения.</translation>
     </message>
     <message>
         <location filename="../../Options/OptionsDialog.cpp" line="3734"/>

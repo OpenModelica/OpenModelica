@@ -1142,7 +1142,7 @@ annotation(Documentation(info="<html>
 <p>
   Note that if the file basename is package.mo and the parent directory is the top-level class, or if the file is a directory, the library structure is loaded as if loadModel(ClassName) was called.
   Uses-annotations are respected if uses=true.
-  The main difference from loadModel is that loadFile appends this directory to the MODELICAPATH (for this call only).
+  The main difference from loadModel is that loadFile appends this directory to OPENMODELICALIBRARY (MODELICAPATH in the language specification) (for this call only).
 </p>
 </html>"), preferredView="text");
 end loadFile;
@@ -1556,7 +1556,7 @@ function setModelicaPath
   output Boolean success;
 external "builtin";
 annotation(Documentation(info="<html>
-<p>Sets the OPENMODELICALIBRARY (MODELICAPATH in the language specification) environment variable in OpenModelica. See <a href=\"modelica://OpenModelica.Scripting.loadModel\">loadModel()</a> for a description of what the MODELICAPATH is used for.</p>
+<p>Sets the OPENMODELICALIBRARY (MODELICAPATH in the language specification) environment variable in OpenModelica. See <a href=\"modelica://OpenModelica.Scripting.loadModel\">loadModel()</a> for a description of what OPENMODELICALIBRARY is used for.</p>
 <p>Set it to empty string to clear it: setModelicaPath(\"\");</p>
 </html>"),
   preferredView="text");
@@ -1567,7 +1567,7 @@ function getModelicaPath
   output String modelicaPath;
 external "builtin";
 annotation(Documentation(info="<html>
-<p>The MODELICAPATH is a list of paths to search when trying to  <a href=\"modelica://OpenModelica.Scripting.loadModel\">load a library</a>. It is a string separated by colon (:) on all OSes except Windows, which uses semicolon (;).</p>
+<p>The OPENMODELICALIBRARY (MODELICAPATH in the language specification) is a list of paths to search when trying to  <a href=\"modelica://OpenModelica.Scripting.loadModel\">load a library</a>. It is a string separated by colon (:) on all OSes except Windows, which uses semicolon (;).</p>
 <p>To override the default path (<a href=\"modelica://OpenModelica.Scripting.getInstallationDirectoryPath\">OPENMODELICAHOME</a>/lib/omlibrary/:~/.openmodelica/libraries/), set the environment variable OPENMODELICALIBRARY=...</p>
 <p>On Windows the HOME directory '~' is replaced by %APPDATA%</p>
 </html>"),
