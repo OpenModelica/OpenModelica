@@ -355,7 +355,7 @@ public
               numberOfResultVars  = listLength(resVars),
               columnEqns          = columnEqns,
               constantEqns        = {},
-              columnVars          = tmpVars,
+              columnVars          = tmpVars, // why not resVars? and does that break anything?
               seedVars            = seedVars,
               sparsity            = sparsity,
               sparsityT           = sparsityT,

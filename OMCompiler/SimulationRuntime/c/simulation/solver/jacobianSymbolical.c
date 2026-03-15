@@ -156,13 +156,16 @@ void genericColoredSymbolicJacobianEvaluation(int rows, int columns, SPARSE_PATT
        }
      }
 
-     /* Reset seed vector */
-     for (j=0; j < columns; j++) {
-       t_jac->seedVars[j] = 0;
-     }
-     /* Reset result vars */
-     for (j=0; j < rows; j++) {
-       t_jac->resultVars[j] = 0;
+     if (t_jac->isRowEval == 1) {
+       // avoid accumulation
+       for (j=0; j < rows; j++) {
+          t_jac->resultVars[j] = 0;
+       }
+     } else {
+        // avoid accumulation
+       for (j=0; j < columns; j++) {
+          t_jac->seedVars[j] = 0;
+       }
      }
    }
 

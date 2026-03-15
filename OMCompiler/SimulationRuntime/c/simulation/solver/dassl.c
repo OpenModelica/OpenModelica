@@ -1443,6 +1443,9 @@ static int callJacobian(double *t, double *y, double *yprime, double *deltaD,
   if (measure_time_flag) rt_accumulate(SIM_TIMER_SOLVER);
   rt_tick(SIM_TIMER_JACOBIAN);
 
+  /* Initialize dense Jacobian buffer since sparse/colored evaluators only write structural non-zeros. */
+  memset(pd, 0, dasslData->N * dasslData->N * sizeof(double));
+
   /* Compute J = (∂F)/(∂y) */
   if(dasslData->jacobianFunction(t, y, yprime, deltaD, pd, cj, h, wt, rpar, ipar))
   {
@@ -1459,7 +1462,22 @@ static int callJacobian(double *t, double *y, double *yprime, double *deltaD,
   /* debug */
   /* debug: print flat Jacobian array */
   if (OMC_ACTIVE_STREAM(OMC_LOG_JAC)) {
-    printVector(OMC_LOG_JAC, "DASSL-Solver: pd (flat)", pd, dasslData->N * dasslData->N, *t);
+    int row, col;
+    //printVector(OMC_LOG_JAC, "DASSL-Solver: pd (flat)", pd, dasslData->N * dasslData->N, *t);
+    infoStreamPrint(OMC_LOG_JAC, 1, "DASSL-Solver: pd flat index mapping (column-major)");
+    for (col = 0; col < dasslData->N; col++)
+    {
+      const char* colName = data->modelData->realVarsData[col].info.name;
+      for (row = 0; row < dasslData->N; row++)
+      {
+        const char* rowName = data->modelData->realVarsData[row].info.name;
+        const int idx = col * dasslData->N + row;
+        infoStreamPrint(OMC_LOG_JAC, 0,
+                        "pd[%d] -> J(row=%d:'%s', col=%d:'%s') = %.16g",
+                        idx, row, rowName, col, colName, pd[idx]);
+      }
+    }
+    messageClose(OMC_LOG_JAC);
   }
 
   /* Compare evaluated Jacobian against a numerical reference.
