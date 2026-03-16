@@ -1438,6 +1438,16 @@ void getButcherTableau_LOBATTO_IIIA_4(BUTCHER_TABLEAU* tableau)
   setTTransform(tableau, A_part_inv, T, T_inv, gamma, alpha, beta, TRUE, FALSE, 1, 1, phi, rho);
 }
 
+// only order 2 accurate dense output: order 3 cannot exist
+void denseOutput_LOBATTO_IIIB_3(BUTCHER_TABLEAU* tableau, double* yOld, double* x, double* k, double dt, double stepSize, double* y, int nIdx, int* idx, int nStates)
+{
+  tableau->b_dt[0] = dt*(0.6666666666666666666666667*dt - 1.5) + 1.0;
+  tableau->b_dt[1] = dt*(2.0 - 1.333333333333333333333333*dt);
+  tableau->b_dt[2] = dt*(0.6666666666666666666666667*dt - 0.5);
+
+  denseOutput(tableau, yOld, x, k, dt, stepSize, y, nIdx, idx, nStates);
+}
+
 // TODO: Describe me
 void getButcherTableau_LOBATTO_IIIB_3(BUTCHER_TABLEAU* tableau)
 {
@@ -1457,6 +1467,8 @@ void getButcherTableau_LOBATTO_IIIB_3(BUTCHER_TABLEAU* tableau)
   setButcherTableau(tableau, c, A, b, bt);
   tableau->isKLeftAvailable = FALSE;
   tableau->isKRightAvailable = FALSE;
+  tableau->withDenseOutput = TRUE;
+  tableau->dense_output = denseOutput_LOBATTO_IIIB_3;
 
   const double T[] = {
       -0.5, -0.8660254037844386467637231707529361834716,
@@ -1480,6 +1492,17 @@ void getButcherTableau_LOBATTO_IIIB_3(BUTCHER_TABLEAU* tableau)
   setTTransform(tableau, A_part_inv, T, T_inv, gamma, alpha, beta, FALSE, TRUE, 0, 1, NULL, NULL);
 }
 
+// only order 3: order 4 cannot exist
+void denseOutput_LOBATTO_IIIB_4(BUTCHER_TABLEAU* tableau, double* yOld, double* x, double* k, double dt, double stepSize, double* y, int nIdx, int* idx, int nStates)
+{
+  tableau->b_dt[0] = dt*(dt*(3.333333333333333333333333 - 1.25*dt) - 3.0) + 1.0;
+  tableau->b_dt[1] = dt*(dt*(2.795084971874737120511467*dt - 6.423503277082807574356268) + 4.045084971874737120511467);
+  tableau->b_dt[2] = dt*(dt*(4.756836610416140907689601 - 2.795084971874737120511467*dt) - 1.545084971874737120511467);
+  tableau->b_dt[3] = dt*(dt*(1.25*dt - 1.666666666666666666666667) + 0.5);
+
+  denseOutput(tableau, yOld, x, k, dt, stepSize, y, nIdx, idx, nStates);
+}
+
 // TODO: Describe me
 void getButcherTableau_LOBATTO_IIIB_4(BUTCHER_TABLEAU* tableau)
 {
@@ -1500,6 +1523,8 @@ void getButcherTableau_LOBATTO_IIIB_4(BUTCHER_TABLEAU* tableau)
   setButcherTableau(tableau, c, A, b, bt);
   tableau->isKLeftAvailable = FALSE;
   tableau->isKRightAvailable = FALSE;
+  tableau->withDenseOutput = TRUE;
+  tableau->dense_output = denseOutput_LOBATTO_IIIB_4;
 
   const double T[] = {
       0.4095301969830458833321950974758598628846, -0.1673815592420907613613286431634840957528, 0.525607543214227178899726386274854899297,
@@ -1526,6 +1551,16 @@ void getButcherTableau_LOBATTO_IIIB_4(BUTCHER_TABLEAU* tableau)
   setTTransform(tableau, A_part_inv, T, T_inv, gamma, alpha, beta, FALSE, TRUE, 1, 1, NULL, NULL);
 }
 
+// order 3 accurate dense output, as A * c = [0, 1/8, 1/2] == A * c of IIIA
+void denseOutput_LOBATTO_IIIC_3(BUTCHER_TABLEAU* tableau, double* yOld, double* x, double* k, double dt, double stepSize, double* y, int nIdx, int* idx, int nStates)
+{
+  tableau->b_dt[0] = dt*(0.6666666666666666666666667*dt - 1.5) + 1.0;
+  tableau->b_dt[1] = dt*(2.0 - 1.333333333333333333333333*dt);
+  tableau->b_dt[2] = dt*(0.6666666666666666666666667*dt - 0.5);
+
+  denseOutput(tableau, yOld, x, k, dt, stepSize, y, nIdx, idx, nStates);
+}
+
 // TODO: Describe me
 void getButcherTableau_LOBATTO_IIIC_3(BUTCHER_TABLEAU* tableau)
 {
@@ -1544,7 +1579,9 @@ void getButcherTableau_LOBATTO_IIIC_3(BUTCHER_TABLEAU* tableau)
 
   setButcherTableau(tableau, c, A, b, bt);
   tableau->isKLeftAvailable = FALSE;
-  tableau->isKRightAvailable = FALSE;
+  tableau->isKRightAvailable = TRUE;
+  tableau->withDenseOutput = TRUE;
+  tableau->dense_output = denseOutput_LOBATTO_IIIC_3;
 
   const double T[] = {
       0.455410041101028467211172034828748294958, -0.602705020550514233605586017414374147479, 0.4309321229203225731070721341350345638889,
@@ -1571,6 +1608,17 @@ void getButcherTableau_LOBATTO_IIIC_3(BUTCHER_TABLEAU* tableau)
   setTTransform(tableau, A_part_inv, T, T_inv, gamma, alpha, beta, FALSE, FALSE, 1, 1, NULL, NULL);
 }
 
+// order 4
+void denseOutput_LOBATTO_IIIC_4(BUTCHER_TABLEAU* tableau, double* yOld, double* x, double* k, double dt, double stepSize, double* y, int nIdx, int* idx, int nStates)
+{
+  tableau->b_dt[0] = dt*(dt*(3.333333333333333333333333 - 1.25*dt) - 3.0) + 1.0;
+  tableau->b_dt[1] = dt*(dt*(2.795084971874737120511467*dt - 6.423503277082807574356268) + 4.045084971874737120511467);
+  tableau->b_dt[2] = dt*(dt*(4.756836610416140907689601 - 2.795084971874737120511467*dt) - 1.545084971874737120511467);
+  tableau->b_dt[3] = dt*(dt*(1.25*dt - 1.666666666666666666666667) + 0.5);
+
+  denseOutput(tableau, yOld, x, k, dt, stepSize, y, nIdx, idx, nStates);
+}
+
 // TODO: Describe me
 void getButcherTableau_LOBATTO_IIIC_4(BUTCHER_TABLEAU* tableau)
 {
@@ -1590,7 +1638,9 @@ void getButcherTableau_LOBATTO_IIIC_4(BUTCHER_TABLEAU* tableau)
 
   setButcherTableau(tableau, c, A, b, bt);
   tableau->isKLeftAvailable = FALSE;
-  tableau->isKRightAvailable = FALSE;
+  tableau->isKRightAvailable = TRUE;
+  tableau->withDenseOutput = TRUE;
+  tableau->dense_output = denseOutput_LOBATTO_IIIC_4;
 
   const double T[] = {
       0.5476452038202714922036315112488560856846, 0.1785412628034932093817159389309281985364, -0.116586249887015966241810926513722590616, -0.2331588855995925881890963658008489845825,

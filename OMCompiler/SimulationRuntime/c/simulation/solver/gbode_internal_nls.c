@@ -37,7 +37,6 @@
 #include "../options.h"
 #include "../arrayIndex.h"
 
-// TODO: How to choose TOL for Richardson??
 // TODO: Calibrate safety factor for internal tolerances
 
 #define DBL_ABSORPTION (10 * DBL_EPSILON)
