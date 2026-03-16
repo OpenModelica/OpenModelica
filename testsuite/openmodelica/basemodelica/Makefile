@@ -10,11 +10,17 @@ endif
 
 TESTFILES = \
   ArrayBinding1.mo \
+	Break1.mo \
 	Comments.mo \
   DoublePendulum.mos \
 	Enum1.mo \
 	Expression1.mo \
 	Functional1.mo \
+	If1.mo \
+	If2.mo \
+	Inline1.mo \
+	Inline2.mo \
+	Inline3.mo \
 	InStreamNominalThreshold.mo \
 	MoveBindings1.mo \
 	NonScalarizedWithRecords1.mo \
@@ -34,6 +40,7 @@ TESTFILES = \
 	Scalarize5.mo \
 	Scalarize6.mo \
 	Scalarize7.mo \
+	ScalarizeFor1.mo \
 	ScalarizedWithRecords1.mo \
 	ScalarizedWithoutRecords1.mo \
 	SD.mo \

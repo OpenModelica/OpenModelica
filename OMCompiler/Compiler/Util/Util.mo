@@ -72,6 +72,7 @@ import List;
 import Print;
 import System;
 
+public constant Integer HASH_SEED = 5381;
 public constant SourceInfo dummyInfo = SOURCEINFO("",false,0,0,0,0,0.0);
 
 public function isIntGreater "Author: BZ"
@@ -1023,6 +1024,14 @@ public function strcmpBool
   input String s2;
   output Boolean b = stringCompare(s1, s2) > 0;
 end strcmpBool;
+
+public function strcmpNoCaseBool
+  "String compare, but ignoring case.
+  Boolean output as is expected by the sort function"
+  input String s1;
+  input String s2;
+  output Boolean b = stringCompare(System.tolower(s1), System.tolower(s2)) > 0;
+end strcmpNoCaseBool;
 
 public function stringAppendReverse
   "@author: adrpo

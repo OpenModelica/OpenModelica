@@ -384,6 +384,7 @@ public
             max := varAttr.max;
             start := varAttr.start;
             nominal := varAttr.nominal;
+            // FIXME parameters have default fixed = true
             isFixed := Util.applyOptionOrDefault(varAttr.fixed, Expression.booleanValue, false);
             isDiscrete := match varKind
               case VariableKind.DISCRETE()        then true;

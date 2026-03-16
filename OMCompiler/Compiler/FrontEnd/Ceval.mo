@@ -197,6 +197,7 @@ algorithm
       list<String> comp;
       DAE.ClockKind ck;
       Absyn.ReductionIterType iterType;
+      list<DAE.Subscript> subs;
 
     // uncomment for debugging
     // case (cache,env,inExp,_,_,_)
@@ -748,7 +749,7 @@ algorithm
         (cache,v);
 
     // indexing for array[integer index]
-    case (cache,env,DAE.ASUB(exp = e,sub = ((DAE.ICONST(indx))::{})),impl,msg,_)
+    case (cache,env,DAE.ASUB(exp = e,sub = ((DAE.INDEX(DAE.ICONST(indx)))::{})),impl,msg,_)
       equation
         (cache,Values.ARRAY(vals,_)) = ceval(cache,env, e, impl, msg,numIter+1) "asub" ;
         v = listGet(vals, indx);
@@ -756,8 +757,9 @@ algorithm
         (cache,v);
 
     // indexing for array[subscripts]
-    case (cache, env, DAE.ASUB(exp = e,sub = expl ), impl, msg,_)
+    case (cache, env, DAE.ASUB(exp = e,sub = subs ), impl, msg,_)
       equation
+        expl = list(Expression.getSubscriptExp(sub) for sub in subs);
         (cache,Values.ARRAY(vals,dims)) = ceval(cache,env, e, impl, msg,numIter+1);
         (cache,es_1) = cevalList(cache,env, expl, impl, msg,numIter);
         v = listHead(es_1);
@@ -1761,9 +1763,15 @@ algorithm
       list<Integer> il;
     case (v,0) then Values.ARRAY({v},{1});
     case (Values.ARRAY(valueLst = vs, dimLst = i::_),n)
-      equation
-        n_1 = n - 1;
-        (vs_1 as (Values.ARRAY(dimLst = il)::_)) = List.map1(vs, cevalBuiltinPromote2, n_1);
+      algorithm
+        n_1 := n - 1;
+        if listEmpty(vs) then
+          vs_1 := vs;
+          il := listRest(inValue.dimLst);
+          il := listAppend(List.fill(0, n-listLength(il)), il);
+        else
+          (vs_1 as (Values.ARRAY(dimLst = il)::_)) := List.map1(vs, cevalBuiltinPromote2, n_1);
+        end if;
       then Values.ARRAY(vs_1,i::il);
     case (v,n)
       equation
@@ -3336,7 +3344,7 @@ algorithm
     case (cache,env,{arr},impl,msg,_)
       algorithm
         (cache, Values.ARRAY(valueLst = vals)) := ceval(cache,env, arr, impl, msg, numIter+1);
-        if Types.isInteger(Expression.typeof(arr)) then
+        if Types.isInteger(Expression.typeof(Expression.unboxExp(arr))) then
           if listEmpty(vals) then
             v := Values.INTEGER(0);
           else

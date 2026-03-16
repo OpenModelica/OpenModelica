@@ -1,20 +1,19 @@
-# Jens Frenkel, Jens.Frenkel@tu-dresden.de, 2011-10-11
-# CMakefile for compilation of OMC
+cmake_minimum_required(VERSION 3.14)
 
-# Quellen und Header
-SET(math_support_sources pivot.c)
+# Define sources
+set(OMC_SIMRT_MATH_SUPPORT_SOURCES
+  "pivot.c"
+)
 
-SET(math_support_headers )
+add_library(OpenModelicaRuntimeCMathSupport OBJECT ${OMC_SIMRT_MATH_SUPPORT_SOURCES})
+add_library(omc::simrt::simruntime::math-support ALIAS OpenModelicaRuntimeCMathSupport)
 
-# Library util
-ADD_LIBRARY(math-support ${math_support_sources} ${math_support_headers})
-#TARGET_LINK_LIBRARIES(util)
+target_include_directories(OpenModelicaRuntimeCMathSupport
+  PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+)
 
-# Install
-INSTALL(TARGETS math-support
-		ARCHIVE DESTINATION lib/omc)
-
-#INSTALL(FILES ${math_support_headers} DESTINATION include)
-
-# add tests
-#ADD_SUBDIRECTORY(test)
+target_link_libraries(OpenModelicaRuntimeCMathSupport
+  PUBLIC
+    omc::simrt::runtime::headers
+)

@@ -292,11 +292,7 @@ void PlotWindowContainer::showDiagramWindow(ModelWidget *pModelWidget, bool init
   if (mpDiagramWindow) {
     mpDiagramWindow->showVisualizationDiagram(pModelWidget ? pModelWidget : MainWindow::instance()->getModelWidgetContainer()->getCurrentModelWidget());
     if (initializeVisualization) {
-      PlotWindowContainer *pPlotWindowContainer = MainWindow::instance()->getPlotWindowContainer();
-      // if DiagramWindow is active
-      if (pPlotWindowContainer->currentSubWindow() && pPlotWindowContainer->isDiagramWindow(pPlotWindowContainer->currentSubWindow()->widget())) {
-        MainWindow::instance()->getVariablesWidget()->initializeVisualization();
-      }
+      MainWindow::instance()->getVariablesWidget()->initializeVisualization();
     }
   }
 }

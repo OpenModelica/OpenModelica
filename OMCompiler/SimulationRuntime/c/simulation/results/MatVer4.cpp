@@ -43,7 +43,14 @@
 extern "C" {
 #endif
 
-const char isBigEndian()
+/**
+ * @brief Check host endianness.
+ *
+ * Returns 1 if the host machine is big-endian, 0 otherwise.
+ *
+ * @return 1 for big-endian, 0 for little-endian
+ */
+char isBigEndian()
 {
   union
   {
@@ -53,6 +60,12 @@ const char isBigEndian()
   return (1 == test.i8[0]);
 }
 
+/**
+ * @brief Get size in bytes for a MatVer4 type.
+ *
+ * @param type MatVer4 data type enum.
+ * @return Size in bytes of the specified type.
+ */
 size_t sizeofMatVer4Type(MatVer4Type_t type)
 {
   switch (type)
@@ -72,7 +85,25 @@ size_t sizeofMatVer4Type(MatVer4Type_t type)
   }
 }
 
-void writeMatrix_matVer4(FILE* file, const char* name, size_t rows, size_t cols, const void* matrixData, MatVer4Type_t type)
+/**
+ * @brief Write a matrix entry to a MAT version 4 file.
+ *
+ * Writes header, name and optionally the matrix data to the provided file
+ * stream in MAT v4 format.
+ *
+ * @param file        Open file stream to write to.
+ * @param name        Name of the matrix variable (null-terminated).
+ * @param rows        Number of rows in the matrix.
+ * @param cols        Number of columns in the matrix.
+ * @param matrixData  Pointer to the matrix data (may be NULL to skip data write).
+ * @param type        Data type of the matrix elements.
+ */
+void writeMatrix_matVer4(FILE* file,
+                         const char* name,
+                         size_t rows,
+                         size_t cols,
+                         const void* matrixData,
+                         MatVer4Type_t type)
 {
   MatVer4Header header;
   size_t size = sizeofMatVer4Type(type);
@@ -86,11 +117,30 @@ void writeMatrix_matVer4(FILE* file, const char* name, size_t rows, size_t cols,
   fwrite(&header, sizeof(MatVer4Header), 1, file);
   fwrite(name, sizeof(uint8_t), header.namelen, file);
 
-  if (matrixData)
+  if (matrixData) {
     fwrite(matrixData, size, rows * cols, file);
+  }
 }
 
-void updateHeader_matVer4(FILE* file, long position, const char* name, size_t rows, size_t additional_cols, MatVer4Type_t type)
+/**
+ * @brief Update an existing MAT v4 matrix header.
+ *
+ * Seeks to the given file position, reads and validates the header, then
+ * increments the column count by `additional_cols` and writes the header back.
+ *
+ * @param file            Open file stream containing the header.
+ * @param position        File position of the header to update.
+ * @param name            Expected name of the matrix (for validation).
+ * @param rows            Expected number of rows (for validation).
+ * @param additional_cols Number of columns to add to the header's column count.
+ * @param type            Expected MatVer4 data type (for validation).
+ */
+void updateHeader_matVer4(FILE* file,
+                          long position,
+                          const char* name,
+                          size_t rows,
+                          size_t additional_cols,
+                          MatVer4Type_t type)
 {
   MatVer4Header header;
 
@@ -110,18 +160,47 @@ void updateHeader_matVer4(FILE* file, long position, const char* name, size_t ro
   fseek(file, eof, SEEK_SET);
 }
 
-void appendMatrix_matVer4(FILE* file, long position, const char* name, size_t rows, size_t cols, const void* matrixData, MatVer4Type_t type)
+/**
+ * @brief Append matrix data to an existing MAT v4 matrix entry.
+ *
+ * Updates the header at `position` to account for the new columns and
+ * writes the additional matrix data at the current file position.
+ * @param file Open file stream to append to.
+ * @param position File position of the matrix header to update.
+ * @param name Name of the matrix variable (for validation).
+ * @param rows Number of rows in the matrix.
+ * @param cols Number of columns being appended.
+ * @param matrixData Pointer to the data to append.
+ * @param type Data type of the matrix elements.
+ */
+void appendMatrix_matVer4(FILE* file,
+                          long position,
+                          const char* name,
+                          size_t rows,
+                          size_t cols,
+                          const void* matrixData,
+                          MatVer4Type_t type)
 {
   size_t size = sizeofMatVer4Type(type);
   updateHeader_matVer4(file, position, name, rows, cols, type);
   fwrite(matrixData, size, rows * cols, file);
 }
 
+/**
+ * @brief Read a MAT v4 matrix from the file.
+ *
+ * Allocates and returns a `MatVer4Matrix` containing the header and data.
+ * Caller is responsible for freeing the returned structure with
+ * `freeMatrix_matVer4`.
+ * @param file Open file stream to read from (positioned at a matrix entry).
+ * @return Pointer to newly allocated MatVer4Matrix, or NULL on allocation failure.
+ */
 MatVer4Matrix* readMatVer4Matrix(FILE* file)
 {
   MatVer4Matrix *matrix = (MatVer4Matrix*) malloc(sizeof(MatVer4Matrix));
-  if (!matrix)
+  if (!matrix) {
     return NULL;
+  }
 
   omc_fread(&matrix->header, sizeof(MatVer4Header), 1, file, 0);
 
@@ -136,17 +215,34 @@ MatVer4Matrix* readMatVer4Matrix(FILE* file)
   return matrix;
 }
 
+/**
+ * @brief Free a MatVer4Matrix and its internal data.
+ *
+ * Frees the allocated data buffer and the structure itself, and sets the
+ * caller's pointer to NULL.
+ *
+ * @param matrix Address of the pointer to the MatVer4Matrix to free.
+ */
 void freeMatrix_matVer4(MatVer4Matrix** matrix)
 {
   if (*matrix)
   {
-    if ((*matrix)->data)
+    if ((*matrix)->data) {
       free((*matrix)->data);
+    }
     free(*matrix);
     *matrix = NULL;
   }
 }
 
+/**
+ * @brief Skip over a MAT v4 matrix entry in the file.
+ *
+ * Reads the header, advances the file position past the name and data so the
+ * next read starts after this matrix entry.
+ *
+ * @param file Open file stream positioned at a matrix entry.
+ */
 void skipMatrix_matVer4(FILE* file)
 {
   MatVer4Header header;

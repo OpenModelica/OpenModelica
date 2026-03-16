@@ -78,7 +78,6 @@
 #include "simulation/results/simulation_result_plt.h"
 #include "simulation/results/simulation_result_csv.h"
 #include "simulation/results/simulation_result_mat4.h"
-#include "simulation/results/simulation_result_wall.h"
 #include "simulation/results/simulation_result_ia.h"
 #include "simulation/solver/solver_main.h"
 #include "simulation/solver/gbode_util.h"
@@ -191,7 +190,7 @@ void setGlobalVerboseLevel(int argc, char**argv)
         warningStreamPrint(OMC_LOG_STDOUT, 1, "current options are:");
         for(i=firstOMCErrorStream; i<OMC_SIM_LOG_MAX; ++i)
           warningStreamPrint(OMC_LOG_STDOUT, 0, "%-18s [%s]", OMC_LOG_STREAM_NAME[i], OMC_LOG_STREAM_DESC[i]);
-        messageClose(OMC_LOG_STDOUT);
+        messageCloseWarning(OMC_LOG_STDOUT);
         throwStreamPrint(NULL,"unrecognized option -lv %s", flags->c_str());
       }
     }while(pos != string::npos);
@@ -319,7 +318,7 @@ static void readFlag(int *flag, int max, const char *value, const char *flagName
   for (i=1; i<max; ++i) {
     warningStreamPrint(OMC_LOG_STDOUT, 0, "%-18s [%s]", names[i], desc[i]);
   }
-  messageClose(OMC_LOG_STDOUT);
+  messageCloseWarning(OMC_LOG_STDOUT);
   throwStreamPrint(NULL,"see last warning");
 }
 
@@ -338,8 +337,14 @@ static double getFlagReal(enum _FLAG flag, double res)
 }
 
 /**
- * Read the variable filter and mark variables that should not be part of the result file.
- * This phase is skipped for interactive simulations
+ * @brief Mark variables that should be filterd from result file.
+ *
+ * Read the variable filter and mark variables that should not be part of the
+ * result file. This phase is skipped for interactive simulations
+ *
+ * @param modelData                                   Model data containing filter property.
+ * @param variableFilter                              Regex to filter variables.
+ * @param resultFormatHasCheapAliasesAndParameters
  */
 void initializeOutputFilter(MODEL_DATA *modelData, const char *variableFilter, int resultFormatHasCheapAliasesAndParameters)
 {
@@ -362,67 +367,86 @@ void initializeOutputFilter(MODEL_DATA *modelData, const char *variableFilter, i
     return;
   }
 
-  for(mmc_sint_t i=0; i<modelData->nVariablesReal; i++) if(!modelData->realVarsData[i].filterOutput) {
-    modelData->realVarsData[i].filterOutput = regexec(&myregex, modelData->realVarsData[i].info.name, 0, NULL, 0) != 0;
+  for(mmc_sint_t i=0; i<modelData->nVariablesRealArray; i++) {
+    if(!modelData->realVarsData[i].filterOutput) {
+      modelData->realVarsData[i].filterOutput = regexec(&myregex, modelData->realVarsData[i].info.name, 0, NULL, 0) != 0;
+    }
   }
-  for(mmc_sint_t i=0; i<modelData->nAliasReal; i++) if(!modelData->realAlias[i].filterOutput) {
-    if(modelData->realAlias[i].aliasType == ALIAS_TYPE_VARIABLE) {
-      modelData->realAlias[i].filterOutput = regexec(&myregex, modelData->realAlias[i].info.name, 0, NULL, 0) != 0;
-      if (0 == modelData->realAlias[i].filterOutput) {
-        modelData->realVarsData[modelData->realAlias[i].nameID].filterOutput = 0;
-      }
-    } else if(modelData->realAlias[i].aliasType == ALIAS_TYPE_PARAMETER) {
-      modelData->realAlias[i].filterOutput = regexec(&myregex, modelData->realAlias[i].info.name, 0, NULL, 0) != 0;
-      if (0 == modelData->realAlias[i].filterOutput && resultFormatHasCheapAliasesAndParameters) {
-        modelData->realParameterData[modelData->realAlias[i].nameID].filterOutput = 0;
+  for(mmc_sint_t i=0; i<modelData->nAliasRealArray; i++) {
+    if(!modelData->realAlias[i].filterOutput) {
+      if(modelData->realAlias[i].aliasType == ALIAS_TYPE_VARIABLE) {
+        modelData->realAlias[i].filterOutput = regexec(&myregex, modelData->realAlias[i].info.name, 0, NULL, 0) != 0;
+        if (0 == modelData->realAlias[i].filterOutput) {
+          modelData->realVarsData[modelData->realAlias[i].nameID].filterOutput = 0;
+        }
+      } else if(modelData->realAlias[i].aliasType == ALIAS_TYPE_PARAMETER) {
+        modelData->realAlias[i].filterOutput = regexec(&myregex, modelData->realAlias[i].info.name, 0, NULL, 0) != 0;
+        if (0 == modelData->realAlias[i].filterOutput && resultFormatHasCheapAliasesAndParameters) {
+          modelData->realParameterData[modelData->realAlias[i].nameID].filterOutput = 0;
+        }
       }
     }
   }
-  for (mmc_sint_t i=0; i<modelData->nVariablesInteger; i++) if(!modelData->integerVarsData[i].filterOutput) {
-    modelData->integerVarsData[i].filterOutput = regexec(&myregex, modelData->integerVarsData[i].info.name, 0, NULL, 0) != 0;
+
+  for (mmc_sint_t i=0; i<modelData->nVariablesIntegerArray; i++) {
+    if(!modelData->integerVarsData[i].filterOutput) {
+      modelData->integerVarsData[i].filterOutput = regexec(&myregex, modelData->integerVarsData[i].info.name, 0, NULL, 0) != 0;
+    }
   }
-  for (mmc_sint_t i=0; i<modelData->nAliasInteger; i++) if(!modelData->integerAlias[i].filterOutput) {
-    if(modelData->integerAlias[i].aliasType == ALIAS_TYPE_VARIABLE) {
-      modelData->integerAlias[i].filterOutput = regexec(&myregex, modelData->integerAlias[i].info.name, 0, NULL, 0) != 0;
-      if (0 == modelData->integerAlias[i].filterOutput) {
-        modelData->integerVarsData[modelData->integerAlias[i].nameID].filterOutput = 0;
-      }
-    } else if(modelData->integerAlias[i].aliasType == ALIAS_TYPE_PARAMETER) {
-      modelData->integerAlias[i].filterOutput = regexec(&myregex, modelData->integerAlias[i].info.name, 0, NULL, 0) != 0;
-      if (0 == modelData->integerAlias[i].filterOutput && resultFormatHasCheapAliasesAndParameters) {
-        modelData->integerParameterData[modelData->integerAlias[i].nameID].filterOutput = 0;
+  for (mmc_sint_t i=0; i<modelData->nAliasIntegerArray; i++) {
+    if(!modelData->integerAlias[i].filterOutput) {
+      if(modelData->integerAlias[i].aliasType == ALIAS_TYPE_VARIABLE) {
+        modelData->integerAlias[i].filterOutput = regexec(&myregex, modelData->integerAlias[i].info.name, 0, NULL, 0) != 0;
+        if (0 == modelData->integerAlias[i].filterOutput) {
+          modelData->integerVarsData[modelData->integerAlias[i].nameID].filterOutput = 0;
+        }
+      } else if(modelData->integerAlias[i].aliasType == ALIAS_TYPE_PARAMETER) {
+        modelData->integerAlias[i].filterOutput = regexec(&myregex, modelData->integerAlias[i].info.name, 0, NULL, 0) != 0;
+        if (0 == modelData->integerAlias[i].filterOutput && resultFormatHasCheapAliasesAndParameters) {
+          modelData->integerParameterData[modelData->integerAlias[i].nameID].filterOutput = 0;
+        }
       }
     }
   }
-  for (mmc_sint_t i=0; i<modelData->nVariablesBoolean; i++) if(!modelData->booleanVarsData[i].filterOutput) {
-    modelData->booleanVarsData[i].filterOutput = regexec(&myregex, modelData->booleanVarsData[i].info.name, 0, NULL, 0) != 0;
+
+  for (mmc_sint_t i=0; i<modelData->nVariablesBooleanArray; i++) {
+    if(!modelData->booleanVarsData[i].filterOutput) {
+      modelData->booleanVarsData[i].filterOutput = regexec(&myregex, modelData->booleanVarsData[i].info.name, 0, NULL, 0) != 0;
+    }
   }
-  for (mmc_sint_t i=0; i<modelData->nAliasBoolean; i++) if(!modelData->booleanAlias[i].filterOutput) {
-    if(modelData->booleanAlias[i].aliasType == ALIAS_TYPE_VARIABLE) {
-      modelData->booleanAlias[i].filterOutput = regexec(&myregex, modelData->booleanAlias[i].info.name, 0, NULL, 0) != 0;
-      if (0 == modelData->booleanAlias[i].filterOutput) {
-        modelData->booleanVarsData[modelData->booleanAlias[i].nameID].filterOutput = 0;
-      }
-    } else if(modelData->booleanAlias[i].aliasType == ALIAS_TYPE_PARAMETER) {
-      modelData->booleanAlias[i].filterOutput = regexec(&myregex, modelData->booleanAlias[i].info.name, 0, NULL, 0) != 0;
-      if (0 == modelData->booleanAlias[i].filterOutput && resultFormatHasCheapAliasesAndParameters) {
-        modelData->booleanParameterData[modelData->booleanAlias[i].nameID].filterOutput = 0;
+  for (mmc_sint_t i=0; i<modelData->nAliasBooleanArray; i++) {
+    if(!modelData->booleanAlias[i].filterOutput) {
+      if(modelData->booleanAlias[i].aliasType == ALIAS_TYPE_VARIABLE) {
+        modelData->booleanAlias[i].filterOutput = regexec(&myregex, modelData->booleanAlias[i].info.name, 0, NULL, 0) != 0;
+        if (0 == modelData->booleanAlias[i].filterOutput) {
+          modelData->booleanVarsData[modelData->booleanAlias[i].nameID].filterOutput = 0;
+        }
+      } else if(modelData->booleanAlias[i].aliasType == ALIAS_TYPE_PARAMETER) {
+        modelData->booleanAlias[i].filterOutput = regexec(&myregex, modelData->booleanAlias[i].info.name, 0, NULL, 0) != 0;
+        if (0 == modelData->booleanAlias[i].filterOutput && resultFormatHasCheapAliasesAndParameters) {
+          modelData->booleanParameterData[modelData->booleanAlias[i].nameID].filterOutput = 0;
+        }
       }
     }
   }
-  for (mmc_sint_t i=0; i<modelData->nVariablesString; i++) if(!modelData->stringVarsData[i].filterOutput) {
-    modelData->stringVarsData[i].filterOutput = regexec(&myregex, modelData->stringVarsData[i].info.name, 0, NULL, 0) != 0;
+
+  for (mmc_sint_t i=0; i<modelData->nVariablesStringArray; i++) {
+    if(!modelData->stringVarsData[i].filterOutput) {
+      modelData->stringVarsData[i].filterOutput = regexec(&myregex, modelData->stringVarsData[i].info.name, 0, NULL, 0) != 0;
+    }
   }
-  for (mmc_sint_t i=0; i<modelData->nAliasString; i++) if(!modelData->stringAlias[i].filterOutput) {
-    if(modelData->stringAlias[i].aliasType == ALIAS_TYPE_VARIABLE) {
-      modelData->stringAlias[i].filterOutput = regexec(&myregex, modelData->stringAlias[i].info.name, 0, NULL, 0) != 0;
-      if (0 == modelData->stringAlias[i].filterOutput) {
-        modelData->stringVarsData[modelData->stringAlias[i].nameID].filterOutput = 0;
-      }
-    } else if(modelData->stringAlias[i].aliasType == ALIAS_TYPE_PARAMETER) {
-      modelData->stringAlias[i].filterOutput = regexec(&myregex, modelData->stringAlias[i].info.name, 0, NULL, 0) != 0;
-      if (0 == modelData->stringAlias[i].filterOutput && resultFormatHasCheapAliasesAndParameters) {
-        modelData->stringParameterData[modelData->stringAlias[i].nameID].filterOutput = 0;
+  for (mmc_sint_t i=0; i<modelData->nAliasStringArray; i++) {
+    if(!modelData->stringAlias[i].filterOutput) {
+      if(modelData->stringAlias[i].aliasType == ALIAS_TYPE_VARIABLE) {
+        modelData->stringAlias[i].filterOutput = regexec(&myregex, modelData->stringAlias[i].info.name, 0, NULL, 0) != 0;
+        if (0 == modelData->stringAlias[i].filterOutput) {
+          modelData->stringVarsData[modelData->stringAlias[i].nameID].filterOutput = 0;
+        }
+      } else if(modelData->stringAlias[i].aliasType == ALIAS_TYPE_PARAMETER) {
+        modelData->stringAlias[i].filterOutput = regexec(&myregex, modelData->stringAlias[i].info.name, 0, NULL, 0) != 0;
+        if (0 == modelData->stringAlias[i].filterOutput && resultFormatHasCheapAliasesAndParameters) {
+          modelData->stringParameterData[modelData->stringAlias[i].nameID].filterOutput = 0;
+        }
       }
     }
   }
@@ -436,8 +460,6 @@ void initializeOutputFilter(MODEL_DATA *modelData, const char *variableFilter, i
  */
 int startNonInteractiveSimulation(int argc, char**argv, DATA* data, threadData_t *threadData)
 {
-  TRACE_PUSH
-
   int retVal = -1;
 
   /* linear model option is set : <-l lintime> */
@@ -680,7 +702,6 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data, threadData_t
     retVal = printModelInfoJSON(data, threadData, output_path.c_str(), jsonInfo.c_str(), data->modelData->resultFileName) && retVal;
   }
 
-  TRACE_POP
   return retVal;
 }
 
@@ -713,12 +734,6 @@ int initializeResultData(DATA* simData, threadData_t *threadData, int cpuTime)
     sim_result.free = mat4_free4;
     resultFormatHasCheapAliasesAndParameters = 1;
 #if !defined(OMC_MINIMAL_RUNTIME)
-  } else if(0 == strcmp("wall", simData->simulationInfo->outputFormat)) {
-    sim_result.init = recon_wall_init;
-    sim_result.emit = recon_wall_emit;
-    sim_result.writeParameterData = recon_wall_writeParameterData;
-    sim_result.free = recon_wall_free;
-    resultFormatHasCheapAliasesAndParameters = 1;
   } else if(0 == strcmp("plt", simData->simulationInfo->outputFormat)) {
     sim_result.init = plt_init;
     sim_result.emit = plt_emit;
@@ -753,7 +768,6 @@ int initializeResultData(DATA* simData, threadData_t *threadData, int cpuTime)
 static int callSolver(DATA* simData, threadData_t *threadData, string init_initMethod, string init_file,
       double init_time, string outputVariablesAtEnd, int cpuTime, const char *argv_0)
 {
-  TRACE_PUSH
   int retVal = -1;
   mmc_sint_t i;
   enum SOLVER_METHOD solverID = S_UNKNOWN;
@@ -762,7 +776,6 @@ static int callSolver(DATA* simData, threadData_t *threadData, string init_initM
   MMC_TRY_INTERNAL(globalJumpBuffer)
 
   if (initializeResultData(simData, threadData, cpuTime)) {
-    TRACE_POP
     return -1;
   }
   simData->real_time_sync.scaling = getFlagReal(FLAG_RT, 0.0);
@@ -841,7 +854,6 @@ static int callSolver(DATA* simData, threadData_t *threadData, string init_initM
 
   sim_result.free(&sim_result, simData, threadData);
 
-  TRACE_POP
   return retVal;
 }
 
@@ -1036,19 +1048,19 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data, threadData_t *thr
             break;
 
           case FLAG_NEWTON_STRATEGY:
-            for(j=firstOMCErrorStream; j<NEWTON_MAX; ++j) {
+            for(j=1; j<NEWTON_MAX; ++j) {
               infoStreamPrint(OMC_LOG_STDOUT, 0, "%-18s [%s]", NEWTONSTRATEGY_NAME[j], NEWTONSTRATEGY_DESC[j]);
             }
             break;
 
           case FLAG_NLS:
-            for(j=firstOMCErrorStream; j<NLS_MAX; ++j) {
+            for(j=1; j<NLS_MAX; ++j) {
               infoStreamPrint(OMC_LOG_STDOUT, 0, "%-18s [%s]", NLS_NAME[j], NLS_DESC[j]);
             }
             break;
 
           case FLAG_NLS_LS:
-            for(j=firstOMCErrorStream; j<NLS_LS_MAX; ++j) {
+            for(j=1; j<NLS_LS_MAX; ++j) {
               infoStreamPrint(OMC_LOG_STDOUT, 0, "%-18s [%s]", NLS_LS_METHOD_NAME[j], NLS_LS_METHOD_DESC[j]);
             }
             break;
@@ -1059,7 +1071,11 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data, threadData_t *thr
             }
             break;
         }
-        messageClose(OMC_LOG_STDOUT);
+        if(FLAG_TYPE[i] == FLAG_TYPE_FLAG || FLAG_TYPE[i] == FLAG_TYPE_OPTION) {
+          messageClose(OMC_LOG_STDOUT);
+        } else {
+          messageCloseWarning(OMC_LOG_STDOUT);
+        }
 
         EXIT(0);
       }

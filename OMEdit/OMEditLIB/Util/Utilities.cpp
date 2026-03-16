@@ -262,6 +262,11 @@ QSize Label::minimumSizeHint() const
 #else // QT_VERSION_CHECK
   QSize size(fm.width("..."), fm.height()+5);
 #endif // QT_VERSION_CHECK
+  // use minimum size width 200 if mUseMinimumSize is true
+  // this is used in parameter dialogs
+  if (mUseMinimumSize && !mText.isEmpty()) {
+    size.setWidth(qMax(size.width(), 200));
+  }
   return size;
 }
 
@@ -315,6 +320,24 @@ ComboBox::ComboBox(QWidget *parent)
   : QComboBox(parent)
 {
   setFocusPolicy(Qt::StrongFocus);
+}
+
+/*!
+ * \brief ComboBox::addItemWithToolTip
+ * Adds an item with tooltip.
+ * \param text
+ * \param value
+ * \param toolTip
+ */
+void ComboBox::addItemWithToolTip(const QString &text, const QString &value, const QString &toolTip)
+{
+  // Calculate the text size and set the minimum width accordingly.
+  // We use qMax to retain the previous minimum width if it is greater.
+  QFontMetrics fm = fontMetrics();
+  int textWidth = fm.boundingRect(value).width() + 30; // add extra for dropdown arrow
+  setMinimumWidth(qMax(textWidth, minimumWidth()));
+  addItem(text, value);
+  setItemData(count() - 1, toolTip, Qt::ToolTipRole);
 }
 
 void ComboBox::wheelEvent(QWheelEvent *event)
@@ -690,6 +713,10 @@ qreal Utilities::convertUnit(qreal value, qreal offset, qreal scaleFactor)
  */
 QStringList Utilities::extractArrayParts(const QString &input) {
   QString trimmed = input.trimmed();
+  // if input is empty then return empty list
+  if (trimmed.isEmpty()) {
+    return QStringList();
+  }
   // If input is NOT an array (doesn't start with { and end with }), return it as single element
   if (!trimmed.startsWith('{') || !trimmed.endsWith('}')) {
     return QStringList{ trimmed };
@@ -731,7 +758,7 @@ bool Utilities::isValueLiteralConstant(QString value)
    * Issue #11840. Allow setting array of values.
    * The following regular expression allows decimal values and array of decimal values. The values can be negative.
    */
-  QRegExp rx("\\{?\\s*-?\\d+(\\.\\d+)?([eE][-+]?\\d+)?(?:\\s*,\\s*-?\\d+(\\.\\d+)?([eE][-+]?\\d+)?)*\\s*\\}?");
+  QRegExp rx("\\{?\\s*-?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][-+]?\\d+)?(?:\\s*,\\s*-?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][-+]?\\d+)?)*\\s*\\}?");
   return rx.exactMatch(value);
 }
 
@@ -779,7 +806,7 @@ QString Utilities::arrayExpressionUnitConversion(OMCProxy *pOMCProxy, QString va
       convertedValues.append(value);
     }
   }
-  return QString("{%1}").arg(convertedValues.join(","));
+  return convertedValues.isEmpty() ? "" : QString("{%1}").arg(convertedValues.join(","));
 }
 
 Label* Utilities::getHeadingLabel(QString heading)

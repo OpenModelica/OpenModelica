@@ -10,6 +10,8 @@ assignees: ''
 ### Description
 A clear and concise description of what the bug is.
 
+Please first try with the latest released version of OpenModelica or with the latest nightly build before reporting a bug, chances are it may have been solved already!
+
 ### Steps to reproduce
 Please provide us with enough information to reproduce the issue on our side, otherwise it's hard to fix it. You can either provide a list of actions, or possibly attach a Modelica script file (mos) that uses the [OpenModelica scripting API](https://openmodelica.org/doc/OpenModelicaUsersGuide/latest/scripting_api.html).
 

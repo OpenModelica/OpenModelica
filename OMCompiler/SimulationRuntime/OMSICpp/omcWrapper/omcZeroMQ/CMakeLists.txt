@@ -1,6 +1,4 @@
-#cmake_minimum_required(VERSION 3.0.0)
-
-
+cmake_minimum_required(VERSION 3.5)
 
 project(${OMCZeroMQName} VERSION 0.1)
 
@@ -95,4 +93,3 @@ ADD_EXECUTABLE(${OMCZeroMQName} src/omc.cpp src/omcZeromqTask.cpp)
 #target_link_libraries(${OMCZeroMQName}  ${ZeroMQ_LIBRARY} ${OMCCAPIName} ${Boost_LIBRARIES}  )
 target_link_libraries(${OMCZeroMQName} libzmq ${OMCCAPIName} ${Boost_LIBRARIES}  )
 install(TARGETS ${OMCZeroMQName} DESTINATION bin )
-

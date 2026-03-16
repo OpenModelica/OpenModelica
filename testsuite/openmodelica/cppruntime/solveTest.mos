@@ -2,7 +2,6 @@
 // keywords: external F77 LAPACK
 // status: correct
 // teardown_command: rm -f *SolveTest*
-// cflags: -d=-newInst
 
 setCommandLineOptions("+simCodeTarget=Cpp");
 

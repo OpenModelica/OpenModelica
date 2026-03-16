@@ -94,6 +94,7 @@ uniontype InstNodeType
     "The root of the instance tree, i.e. the class that the instantiation starts from."
     InstNode parent "The parent of the class, e.g. when instantiating a function
                      in a component where the component is the parent.";
+    Option<Absyn.Path> context "Used by getModelInstance to add context to instances.";
   end ROOT_CLASS;
 
   record NORMAL_COMP
@@ -409,6 +410,14 @@ uniontype InstNode
     end match;
   end isDerivedClass;
 
+  function makeRootClass
+    input output InstNode node;
+    input InstNode parent = EMPTY_NODE();
+    input Option<Absyn.Path> context = NONE();
+  algorithm
+    node := setNodeType(InstNodeType.ROOT_CLASS(parent, context), node);
+  end makeRootClass;
+
   function isRootClass
     input InstNode node;
     output Boolean res;
@@ -418,6 +427,16 @@ uniontype InstNode
       else false;
     end match;
   end isRootClass;
+
+  function rootClassContext
+    input InstNode node;
+    output Option<Absyn.Path> context;
+  algorithm
+    context := match node
+      case CLASS_NODE(nodeType = InstNodeType.ROOT_CLASS(context = context)) then context;
+      else NONE();
+    end match;
+  end rootClassContext;
 
   function isFunction
     input InstNode node;
@@ -1049,7 +1068,7 @@ uniontype InstNode
       case CLASS_NODE() then node.definition;
       case COMPONENT_NODE(definition = SOME(definition)) then definition;
       else algorithm
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for non clasS/component node: " + toString(node)});
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for non class/component node: " + toString(node)});
       then fail();
     end match;
   end definition;
@@ -1062,16 +1081,23 @@ uniontype InstNode
       case CLASS_NODE()     then node.definition;
       case COMPONENT_NODE() then classDefinition(Component.classInstance(Pointer.access(node.component)));
       else algorithm
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for non clasS/component node: " + toString(node)});
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for non class/component node: " + toString(node)});
       then fail();
     end match;
   end classDefinition;
 
   function extendsDefinition
     input InstNode node;
-    output SCode.Element definition;
+    output Option<SCode.Element> definition;
+  protected
+    InstNodeType ty;
   algorithm
-    InstNodeType.BASE_CLASS(definition = definition) := derivedNodeType(node);
+    ty := derivedNodeType(node);
+
+    definition := match ty
+      case InstNodeType.BASE_CLASS() then SOME(ty.definition);
+      else NONE();
+    end match;
   end extendsDefinition;
 
   function setDefinition
@@ -2143,6 +2169,14 @@ uniontype InstNode
     input InstNode node;
     output Integer hash = stringHashDjb2(name(node));
   end hash;
+
+  function hashContinue
+    "Returns the hash of an InstNode's name."
+    input InstNode node;
+    input output Integer hash;
+  algorithm
+    hash := stringHashDjb2Continue(name(node), hash);
+  end hashContinue;
 
   function dimensionCount
     input InstNode node;

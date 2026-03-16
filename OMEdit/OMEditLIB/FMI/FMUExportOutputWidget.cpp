@@ -490,17 +490,29 @@ void FmuExportOutputWidget::postCompilationProcessFinished(int exitCode, QProces
 {
   mIsPostCompilationProcessRunning = false;
   QString exitCodeStr = tr("Post compilation process failed. Exited with code %1.").arg(Utilities::formatExitCode(exitCode));
+
   if (exitStatus == QProcess::NormalExit && exitCode == 0) {
     writePostCompilationOutput(tr("Build finished successfully.\n"), Qt::blue);
     postCompilationProcessFinishedHelper(exitCode, exitStatus);
     zipFMU();
-  } else if (mpCompilationProcess->error() == QProcess::UnknownError) {
+    return;
+  }
+
+  // Null pointer safety
+  if (!mpCompilationProcess) {
     writePostCompilationOutput(exitCodeStr, Qt::red);
     postCompilationProcessFinishedHelper(exitCode, exitStatus);
+    return;
+  }
+
+  // Error handling
+  if (mpCompilationProcess->error() == QProcess::UnknownError) {
+    writePostCompilationOutput(exitCodeStr, Qt::red);
   } else {
     writePostCompilationOutput(mpCompilationProcess->errorString() + "\n" + exitCodeStr, Qt::red);
-    postCompilationProcessFinishedHelper(exitCode, exitStatus);
   }
+
+  postCompilationProcessFinishedHelper(exitCode, exitStatus);
 }
 
 /*!

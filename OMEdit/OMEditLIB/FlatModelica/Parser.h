@@ -43,6 +43,7 @@ namespace FlatModelica
     QString getModelicaComment(QString element);
     void getTypeFromElementRedeclaration(const QString &elmentRedeclaration, QString &type, QString &modifier, QString &comment);
     void getShortClassTypeFromElementRedeclaration(const QString &elmentRedeclaration, QString &type, QString &modifier, QString &comment);
+    void getModifierFromElementModification(const QString &modification, QString &modifier);
     QString getModificationFromStartAndStopInterval(antlr4::Token *pStartToken, antlr4::Token *pStopToken);
   } // namespace Utilities
 } // namespace FlatModelica

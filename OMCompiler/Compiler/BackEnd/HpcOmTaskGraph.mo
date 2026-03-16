@@ -1728,7 +1728,7 @@ protected
   array<ComponentInfo> compInformations;
 algorithm
   TASKGRAPHMETA(inComps=inComps, varCompMapping=varCompMapping, eqCompMapping=eqCompMapping, compParamMapping=compParamMapping, compNames=compNames, compDescs=compDescs, exeCosts=exeCosts, commCosts=commCosts, nodeMark=nodeMark, compInformations=compInformations) := graphDataIn;
-  inComps := listArray(List.deletePositions(arrayList(inComps),List.map1(cutNodes,intSub,1)));
+  inComps := listArray(List.deletePositions(arrayList(inComps),cutNodes));
   rangeLst := List.intRange(arrayLength(nodeMark));
   nodeMark := List.fold1(rangeLst, markRemovedNodes,cutNodes,nodeMark);
   graphDataOut :=TASKGRAPHMETA(inComps,varCompMapping,eqCompMapping,compParamMapping,compNames,compDescs,exeCosts,commCosts,nodeMark,compInformations);
@@ -1961,14 +1961,12 @@ protected function deleteRowInAdjLst "author: waurich TUD 2013-06
 protected
   array<list<Integer>> adjLst;
   list<Integer> copiedRows;
-  list<Integer> rowsDel1;
   Integer size;
 algorithm
   size := arrayLength(adjacencyLstIn)-listLength(rowsDel);
   adjLst := arrayCreate(size,{});
   copiedRows := List.intRange(arrayLength(adjacencyLstIn));
-  rowsDel1 := List.map1(rowsDel,intSub,1);
-  copiedRows := List.deletePositions(copiedRows,rowsDel1);
+  copiedRows := List.deletePositions(copiedRows,rowsDel);
   adjacencyLstOut := arrayCopyRows(adjacencyLstIn,adjLst,copiedRows,1);
   odeMapping := copiedRows;
 end deleteRowInAdjLst;

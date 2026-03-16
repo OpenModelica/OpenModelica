@@ -432,15 +432,18 @@ function typeComponent
   input Boolean typeChildren = true;
   output Type ty;
 protected
-  InstNode node = InstNode.resolveOuter(component);
-  Component c = InstNode.component(node);
+  InstNode node;
+  Component c;
   Expression cond;
   Boolean is_deleted;
   array<Dimension> dims;
 algorithm
-  if InstNode.isOnlyOuter(component) then
+  if InstNode.isEmpty(component) or InstNode.isOnlyOuter(component) then
     return;
   end if;
+
+  node := InstNode.resolveOuter(component);
+  c := InstNode.component(node);
 
   ty := match c
     // An untyped component, type it.
@@ -609,7 +612,6 @@ algorithm
       Type ty;
       TypingError ty_err;
       Integer parent_dims, dim_index;
-      Boolean evaluated;
       Ceval.EvalTarget target;
 
     // A dimension that we're already trying to type.
@@ -634,18 +636,16 @@ algorithm
 
         (exp, ty, var) := typeExp(dimension.dimension, InstContext.set(context, NFInstContext.DIMENSION), info);
         TypeCheck.checkDimensionType(exp, ty, info);
-        evaluated := true;
 
         if not InstContext.inFunction(context) then
           // Dimensions must be parameter expressions in a non-function class.
           if var <= Variability.PARAMETER then
             if InstContext.inRelaxed(context) then
               exp := Ceval.tryEvalExp(exp);
-              evaluated := Expression.isLiteral(exp);
             else
               target := Ceval.EvalTarget.new(info, context,
                 SOME(Ceval.EvalTargetData.DIMENSION_DATA(component, index, exp)));
-              exp := Ceval.evalExp(exp, target);
+              exp := Ceval.tryEvalExpResizable(exp, target);
             end if;
           elseif not var == Variability.NON_STRUCTURAL_PARAMETER then
             Error.addSourceMessage(Error.DIMENSION_NOT_KNOWN, {Expression.toString(exp)}, info);
@@ -992,7 +992,7 @@ function typeComponentBinding
   input InstContext.Type context;
   input Boolean typeChildren = true;
 protected
-  InstNode node = InstNode.resolveOuter(component);
+  InstNode node;
   Component c;
   Binding binding;
   InstNode cls;
@@ -1002,11 +1002,12 @@ protected
   Attributes attrs;
   Type ty;
 algorithm
-  c := InstNode.component(node);
-
-  if InstNode.isOnlyOuter(component) then
+  if InstNode.isEmpty(component) or InstNode.isOnlyOuter(component) then
     return;
   end if;
+
+  node := InstNode.resolveOuter(component);
+  c := InstNode.component(node);
 
   () := match c
     case Component.COMPONENT()
@@ -1431,8 +1432,11 @@ algorithm
     case Expression.CAST()
       algorithm
         next_context := InstContext.set(context, NFInstContext.SUBEXPRESSION);
+        (e1, ty, variability, purity) := typeExp(exp.exp, next_context, info, retype);
+        exp.exp := e1;
+        exp.ty  := Type.copyDims(ty, exp.ty);
       then
-        typeExp(exp.exp, next_context, info, retype);
+        (exp, exp.ty, variability, purity);
 
     case Expression.SUBSCRIPTED_EXP()
       then typeSubscriptedExp(exp, context, info);
@@ -2998,6 +3002,10 @@ function typeComponentSections
 protected
   Component comp;
 algorithm
+  if InstNode.isEmpty(component) then
+    return;
+  end if;
+
   comp := InstNode.component(component);
 
   if Component.isDeleted(comp) or InstNode.isOnlyOuter(component) then

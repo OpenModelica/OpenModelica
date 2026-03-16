@@ -1,7 +1,6 @@
 // name:     Modelica.Fluid.Examples.BranchingDynamicPipes_Debug_Symbols_CPP
 // keywords: simulation MSL Examples
 // status: correct
-// cflags: -d=-newInst
 //
 // Simulation Results
 // Modelica Standard Library
@@ -117,6 +116,8 @@ runScript(modelTesting);getErrorString();
 // Messages: Wrong start value for variable _boundary1_P_medium_P_p_steam_sat_ detected. Got 2339.19 Expected: 100000
 //
 // Files Equal!
+// Warning: The model contains alias variables with redundant start and/or conflicting nominal values. It is recommended to resolve the conflicts, because otherwise the system could be hard to solve. To print the conflicting alias sets and the chosen candidates please use -d=aliasConflicts.
+//
 // "true
 // "
 // ""

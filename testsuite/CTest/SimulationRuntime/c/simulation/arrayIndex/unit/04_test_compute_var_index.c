@@ -65,7 +65,7 @@ int main(void)
 
   // Test
   size_t varsIndex[4] = {0};
-  computeVarsIndex(&realVarsData, T_REAL, 3, varsIndex);
+  computeVarsIndex(&realVarsData, VAR_TYPE_REAL, 3, varsIndex);
 
   // Validate
   if (varsIndex[0] != 0)

@@ -8,7 +8,7 @@ loadString("
     input Real radian(unit = \"rad\");
     output Real degree(unit = \"deg\");
   algorithm
-    degree := (180.0/3.14)*radian;
+    degree := (180.0/3.141592653589793)*radian;
   end to_deg;
 
   block To_deg
@@ -37,7 +37,7 @@ instantiateModel(UnitCheck24); getErrorString();
 //   input Real radian(unit = \"rad\");
 //   output Real degree(unit = \"deg\");
 // algorithm
-//   degree := 57.32484076433121 * radian;
+//   degree := 57.29577951308232 * radian;
 // end to_deg;
 //
 // class UnitCheck24

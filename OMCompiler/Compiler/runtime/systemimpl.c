@@ -321,12 +321,19 @@ extern int SystemImpl__regularFileExists(const char* filename)
   return (buf.st_mode & S_IFREG) != 0;
 }
 
+extern int SystemImpl__regularFileReadable(const char* str)
+{
+  FILE *f;
+  f = omc_fopen(str, "r");
+  if (f == NULL)
+    return 0;
+  fclose(f);
+  return 1;
+}
 
 extern int SystemImpl__regularFileWritable(const char* str)
 {
   FILE *f;
-  if (!SystemImpl__regularFileExists(str))
-    return 0;
   f = omc_fopen(str, "a");
   if (f == NULL)
     return 0;

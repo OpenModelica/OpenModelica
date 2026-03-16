@@ -47,7 +47,7 @@ simulate(function_diff); getErrorString();
 // algorithm
 //   if 'a' >= 0.0 then
 //     'b' := 'a' ^ 2.0;
-//   elseif true then
+//   else
 //     'b' := 'f'(-'a');
 //   end if;
 //   annotation(derivative(order = 1) = '$fDER0.f', Inline = false);
@@ -62,7 +62,7 @@ simulate(function_diff); getErrorString();
 //   if 'a' >= 0.0 then
 //     '$fDER_b' := 2.0 * 'a' * '$fDER_a';
 //     'b' := 'a' ^ 2.0;
-//   elseif true then
+//   else
 //     '$fDER_b' := '$fDER0.f'(-'a', -'$fDER_a');
 //     'b' := 'f'(-'a');
 //   end if;

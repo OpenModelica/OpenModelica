@@ -1314,24 +1314,32 @@ public function pathHash "Hashes a path."
   input Absyn.Path path;
   output Integer hash;
 algorithm
-  hash := pathHashWork(path,5381);
+  hash := pathHashContinue(path, Util.HASH_SEED);
 end pathHash;
 
-public function pathHashWork "Hashes a path."
+public function pathHashContinue "Hashes a path."
   input Absyn.Path path;
-  input Integer acc;
-  output Integer hash;
+  input output Integer hash;
 algorithm
-  hash := match (path,acc)
-    local
-      Absyn.Path p;
-      String s;
-      Integer i,i2;
-    case (Absyn.FULLYQUALIFIED(p),_) then pathHashWork(p, acc*31 + 46 /* '.' */);
-    case (Absyn.QUALIFIED(s,p),_) equation i = stringHashDjb2(s); i2 = acc*31+46; then pathHashWork(p, i2*31 + i);
-    case (Absyn.IDENT(s),_) equation i = stringHashDjb2(s); i2 = acc*31+46; then i2*31 + i;
+  hash := match path
+    case Absyn.FULLYQUALIFIED()
+      algorithm
+        hash := stringHashDjb2Continue(".", hash);
+      then pathHashContinue(path.path, hash);
+
+    case Absyn.QUALIFIED()
+      algorithm
+        hash := stringHashDjb2Continue(".", hash);
+        hash := stringHashDjb2Continue(path.name, hash);
+      then pathHashContinue(path.path, hash);
+
+    case Absyn.IDENT()
+      algorithm
+        hash := stringHashDjb2Continue(".", hash);
+        hash := stringHashDjb2Continue(path.name, hash);
+      then hash;
   end match;
-end pathHashWork;
+end pathHashContinue;
 
 public function optPathString "Returns a path converted to string or an empty string if nothing exist"
   input Option<Absyn.Path> inPathOption;
@@ -1645,25 +1653,20 @@ public function pathToStringList
   input Absyn.Path path;
   output list<String> outPaths;
 algorithm
-  outPaths := listReverse(pathToStringListWork(path,{}));
+  outPaths := listReverse(pathToStringListReverse(path));
 end pathToStringList;
 
-protected function pathToStringListWork
+public function pathToStringListReverse
   input Absyn.Path path;
-  input list<String> acc;
+  input list<String> acc = {};
   output list<String> outPaths;
 algorithm
-  outPaths := match(path,acc)
-    local
-      String n;
-      Absyn.Path p;
-
-    case (Absyn.IDENT(name = n),_) then n::acc;
-    case (Absyn.FULLYQUALIFIED(path = p),_) then pathToStringListWork(p,acc);
-    case (Absyn.QUALIFIED(name = n,path = p),_)
-      then pathToStringListWork(p,n::acc);
+  outPaths := match path
+    case Absyn.IDENT() then path.name :: acc;
+    case Absyn.QUALIFIED() then pathToStringListReverse(path.path, path.name :: acc);
+    case Absyn.FULLYQUALIFIED() then pathToStringListReverse(path.path, acc);
   end match;
-end pathToStringListWork;
+end pathToStringListReverse;
 
 public function addSubscriptsLast
   "Function for appending subscripts at end of last ident"
@@ -2907,6 +2910,83 @@ algorithm
     else false;
   end match;
 end crefEqualNoSubs;
+
+public function crefCompare
+  input Absyn.ComponentRef cr1;
+  input Absyn.ComponentRef cr2;
+  output Integer comp;
+protected
+  String name;
+  Absyn.ComponentRef cr;
+  list<Absyn.Subscript> subs;
+algorithm
+  if referenceEq(cr1, cr2) then
+    comp := 0;
+    return;
+  end if;
+
+  comp := Util.intCompare(valueConstructor(cr1), valueConstructor(cr2));
+
+  if comp <> 0 then
+    return;
+  end if;
+
+  comp := match cr1
+    case Absyn.ComponentRef.CREF_FULLYQUALIFIED()
+      algorithm
+        Absyn.ComponentRef.CREF_FULLYQUALIFIED(cr) := cr2;
+      then
+        crefCompare(cr1.componentRef, cr);
+
+    case Absyn.ComponentRef.CREF_QUAL()
+      algorithm
+        Absyn.ComponentRef.CREF_QUAL(name, subs, cr) := cr2;
+        comp := stringCompare(cr1.name, name);
+
+        if comp == 0 then
+          comp := List.compare(cr1.subscripts, subs, subscriptCompare);
+        end if;
+      then
+        if comp == 0 then crefCompare(cr1.componentRef, cr) else comp;
+
+    case Absyn.ComponentRef.CREF_IDENT()
+      algorithm
+        Absyn.ComponentRef.CREF_IDENT(name, subs) := cr2;
+        comp := stringCompare(cr1.name, name);
+      then
+        if comp == 0 then List.compare(cr1.subscripts, subs, subscriptCompare) else comp;
+
+    else 0;
+  end match;
+end crefCompare;
+
+public function subscriptCompare
+  input Absyn.Subscript sub1;
+  input Absyn.Subscript sub2;
+  output Integer comp;
+protected
+  Absyn.Exp exp;
+algorithm
+  if referenceEq(sub1, sub2) then
+    comp := 0;
+  end if;
+
+  comp := Util.intCompare(valueConstructor(sub1), valueConstructor(sub2));
+
+  if comp <> 0 then
+    return;
+  end if;
+
+  comp := match sub1
+    case Absyn.Subscript.NOSUB() then 0;
+    case Absyn.Subscript.SUBSCRIPT()
+      algorithm
+        Absyn.Subscript.SUBSCRIPT(exp) := sub2;
+      then
+        // TODO: Implement compare for Absyn.Exp instead of converting to strings.
+        stringCompare(Dump.printExpStr(sub1.subscript), Dump.printExpStr(exp));
+  end match;
+end subscriptCompare;
 
 public function isPackageRestriction "checks if the provided parameter is a package or not"
   input Absyn.Restriction inRestriction;

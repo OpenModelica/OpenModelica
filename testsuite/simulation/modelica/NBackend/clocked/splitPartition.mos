@@ -3,7 +3,7 @@
 // status: correct
 // cflags:
 
-// ticket: #14610
+// ticket: #14598
 loadString("
 model splitPartition_MWE
   Clock clk = Clock(0.1);

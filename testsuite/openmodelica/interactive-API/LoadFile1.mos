@@ -1,0 +1,18 @@
+// name: LoadFile1
+// keywords:
+// status: correct
+
+loadFile("nonexistent_file.mo");
+getErrorString();
+
+loadFile(".");
+getErrorString();
+
+// Result:
+// false
+// "Error: Failed to load file nonexistent_file.mo: file does not exist.
+// "
+// false
+// "Error: Failed to load file ./package.mo: file does not exist.
+// "
+// endResult

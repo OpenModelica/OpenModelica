@@ -253,18 +253,17 @@ void GraphicsView::setIsVisualizationView(bool visualizationView)
  * \brief GraphicsView::drawCoordinateSystem
  * Draws the coordinate system.
  */
-void GraphicsView::drawCoordinateSystem()
+void GraphicsView::drawCoordinateSystem(bool openingModel)
 {
   if (isIconView() && mpModelWidget->getLibraryTreeItem()->getAccess() >= LibraryTreeItem::icon) {
     mCoordinateSystem = mpModelWidget->getModelInstance()->getAnnotation()->getIconAnnotation()->mCoordinateSystem;
-    mMergedCoordinateSystem = mpModelWidget->getModelInstance()->getAnnotation()->getIconAnnotation()->mMergedCoordinateSystem;
-    setExtentRectangle(mMergedCoordinateSystem.getExtentRectangle(), false);
+    mMergedCoordinateSystem = mpModelWidget->getModelInstance()->mMergedIconCoordinateSystem;
+    setExtentRectangle(mMergedCoordinateSystem.getExtentRectangle(), openingModel);
   } else if (isDiagramView() && mpModelWidget->getLibraryTreeItem()->getAccess() >= LibraryTreeItem::diagram) {
     mCoordinateSystem = mpModelWidget->getModelInstance()->getAnnotation()->getDiagramAnnotation()->mCoordinateSystem;
-    mMergedCoordinateSystem = mpModelWidget->getModelInstance()->getAnnotation()->getDiagramAnnotation()->mMergedCoordinateSystem;
-    setExtentRectangle(mMergedCoordinateSystem.getExtentRectangle(), false);
+    mMergedCoordinateSystem = mpModelWidget->getModelInstance()->mMergedDiagramCoordinateSystem;
+    setExtentRectangle(mMergedCoordinateSystem.getExtentRectangle(), openingModel);
   }
-  resize(size());
 }
 
 /*!
@@ -276,7 +275,7 @@ void GraphicsView::drawCoordinateSystem()
  */
 void GraphicsView::drawShapes(ModelInstance::Model *pModelInstance, bool inhertied, bool openingModel)
 {
-  QList<ModelInstance::Shape*> shapes;
+  QVector<ModelInstance::Shape*> shapes;
   ModelInstance::Extend *pExtendModel = 0;
   if (inhertied) {
     pExtendModel = pModelInstance->getParentExtend();
@@ -364,7 +363,7 @@ void GraphicsView::drawElements(ModelInstance::Model *pModelInstance, bool inher
 {
   // We use access.icon so we can draw public components so that we can see and set the parameters in the parameters window.
   if (mpModelWidget->getLibraryTreeItem()->getAccess() >= LibraryTreeItem::icon && isDiagramView()) {
-    QList<ModelInstance::Element*> elements = pModelInstance->getElements();
+    QVector<ModelInstance::Element*> elements = pModelInstance->getElements();
     int elementIndex = -1, connectorIndex = -1;
     for (int i = 0; i < elements.size(); ++i) {
       auto pModelInstanceElement = elements.at(i);
@@ -421,7 +420,7 @@ void GraphicsView::drawConnections(ModelInstance::Model *pModelInstance, bool in
   // We use access.diagram so we can draw connections.
   if (mpModelWidget->getLibraryTreeItem()->getAccess() >= LibraryTreeItem::diagram && isDiagramView()) {
     int modelInfoIndex = -1;
-    QList<ModelInstance::Connection*> connections = pModelInstance->getConnections();
+    QVector<ModelInstance::Connection*> connections = pModelInstance->getConnections();
     for (int i = 0; i < connections.size(); ++i) {
       auto pConnection = connections.at(i);
       // if connection is valid and has line annotation
@@ -489,7 +488,7 @@ void GraphicsView::drawTransitions(ModelInstance::Model *pModelInstance, bool in
   // We use access.diagram so we can draw transitions.
   if (mpModelWidget->getLibraryTreeItem()->getAccess() >= LibraryTreeItem::diagram && isDiagramView()) {
     int modelInfoIndex = -1;
-    QList<ModelInstance::Transition*> transitions = pModelInstance->getTransitions();
+    QVector<ModelInstance::Transition*> transitions = pModelInstance->getTransitions();
     for (int i = 0; i < transitions.size(); ++i) {
       auto pTransition = transitions.at(i);
       // if transition is valid and has line annotation
@@ -555,7 +554,7 @@ void GraphicsView::drawInitialStates(ModelInstance::Model *pModelInstance, bool 
   // We use access.diagram so we can draw initial states.
   if (mpModelWidget->getLibraryTreeItem()->getAccess() >= LibraryTreeItem::diagram && isDiagramView()) {
     int modelInfoIndex = -1;
-    QList<ModelInstance::InitialState*> initialStates = pModelInstance->getInitialStates();
+    QVector<ModelInstance::InitialState*> initialStates = pModelInstance->getInitialStates();
     for (int i = 0; i < initialStates.size(); ++i) {
       auto pInitialState = initialStates.at(i);
       // if initialState is valid and has line annotation
@@ -627,15 +626,18 @@ bool GraphicsView::isCreatingShape()
  * \brief GraphicsView::setExtentRectangle
  * Increases the size of the extent rectangle by 25%.
  * \param rectangle
- * \param moveToCenter
+ * \param openingModel
  */
-void GraphicsView::setExtentRectangle(const QRectF rectangle, bool moveToCenter)
+void GraphicsView::setExtentRectangle(const QRectF rectangle, bool openingModel)
 {
   QRectF sceneRectangle = Utilities::adjustSceneRectangle(rectangle, 0.25);
-  setSceneRect(sceneRectangle);
-  if (moveToCenter) {
-    centerOn(sceneRectangle.center());
+  if (openingModel) {
+    setSceneRect(sceneRectangle);
+  } else {
+    updateSceneRect(sceneRectangle);
   }
+  viewport()->update();
+  updateGeometry();
 }
 
 void GraphicsView::setIsCreatingConnection(const bool enable)
@@ -832,7 +834,7 @@ ModelInstance::Component *GraphicsView::createModelInstanceComponent(ModelInstan
   const QJsonArray elementsArray = modelJSON.value("elements").toArray();
   if (!elementsArray.isEmpty()) {
     pModelInstance->deserializeElements(elementsArray);
-    QList<ModelInstance::Element*> elements = pModelInstance->getElements();
+    QVector<ModelInstance::Element*> elements = pModelInstance->getElements();
     if (!elements.isEmpty()) {
       return dynamic_cast<ModelInstance::Component*>(elements.last());
     }
@@ -857,7 +859,7 @@ ModelInstance::Component *GraphicsView::createModelInstanceComponent(ModelInstan
   /* We use getModelInstance with icon flag for bettter performance
    * This model will be updated right after this so it doesn't matter if the Component has complete model or not.
    */
-  ModelInstance::Model *pModel = new ModelInstance::Model(MainWindow::instance()->getOMCProxy()->getModelInstance(className, "", false, true));
+  ModelInstance::Model *pModel = new ModelInstance::Model(MainWindow::instance()->getOMCProxy()->getModelInstance(className, "", "", false, true));
   pModel->setRestriction(isConnector ? "connector" : "model");
   pComponent->setModel(pModel);
   pModelInstance->addElement(pComponent);
@@ -1793,7 +1795,7 @@ bool GraphicsView::updateTransition(LineAnnotation *pTransitionLineAnnotation)
   const QString startElementName = pTransitionLineAnnotation->getStartElementName();
   const QString endElementName = pTransitionLineAnnotation->getEndElementName();
   ModelInfo oldModelInfo = mpModelWidget->createModelInfo();
-  QList<ModelInstance::Transition*> transitions = mpModelWidget->getModelInstance()->getTransitions();
+  QVector<ModelInstance::Transition*> transitions = mpModelWidget->getModelInstance()->getTransitions();
   for (int i = 0; i < transitions.size(); ++i) {
     auto pTransition = transitions.at(i);
     if (pTransition->getStartConnector()->getName().compare(startElementName) == 0 && pTransition->getEndConnector()->getName().compare(endElementName) == 0) {
@@ -2812,7 +2814,7 @@ void GraphicsView::removeItem(QGraphicsItem *pGraphicsItem)
 }
 
 /*!
- * \brief GraphicsView::fitInView
+ * \brief GraphicsView::fitInViewInternal
  * Fits the view.
  */
 void GraphicsView::fitInViewInternal()
@@ -3298,7 +3300,7 @@ void GraphicsView::addConnection(Element *pElement, bool createConnector)
             && (!(pElement->isExpandableConnector() || pElement->isArray()
                 || (pRootParentElement && (pRootParentElement->isExpandableConnector() || pRootParentElement->isArray()))))) {
           if (pElement->getModel()) {
-            QList<ModelInstance::Shape*> shapes = pElement->getModel()->getAnnotation()->getIconAnnotation()->getGraphics();
+            QVector<ModelInstance::Shape*> shapes = pElement->getModel()->getAnnotation()->getIconAnnotation()->getGraphics();
             if (!shapes.isEmpty()) {
               mpConnectionLineAnnotation->setLineColor(shapes.at(0)->getLineColor());
             } else if (pElement->getShapesList().size() > 0) {
@@ -3929,7 +3931,7 @@ void GraphicsView::getCoordinateSystemAndGraphics(QStringList &coOrdinateSystemL
   }
   // add the initial scale
   if (mCoordinateSystem.hasInitialScale()) {
-    coOrdinateSystemList.append(QString("initialScale=%1").arg(mCoordinateSystem.getInitialScale()));
+    coOrdinateSystemList.append(QString("initialScale=%1").arg(mCoordinateSystem.getInitialScale().toQString()));
   }
   // add the grid
   if (mCoordinateSystem.hasGrid()) {
@@ -5710,20 +5712,6 @@ ModelWidget::ModelWidget(LibraryTreeItem* pLibraryTreeItem, ModelWidgetContainer
     mpDiagramGraphicsScene = 0;
     mpDiagramGraphicsView = 0;
   }
-  // Read the file for LibraryTreeItem::Text
-  if (mpLibraryTreeItem->isText() && !mpLibraryTreeItem->isFilePathValid()) {
-    QString contents = "";
-    QFile file(mpLibraryTreeItem->getFileName());
-    if (!file.open(QIODevice::ReadOnly)) {
-      //      QMessageBox::critical(mpLibraryWidget->MainWindow::instance(), QString(Helper::applicationName).append(" - ").append(Helper::error),
-      //                            GUIMessages::getMessage(GUIMessages::ERROR_OPENING_FILE).arg(pLibraryTreeItem->getFileName())
-      //                            .arg(file.errorString()), QMessageBox::Ok);
-    } else {
-      contents = QString(file.readAll());
-      file.close();
-    }
-    mpLibraryTreeItem->setClassText(contents);
-  }
 }
 
 ModelWidget::~ModelWidget()
@@ -5792,8 +5780,8 @@ void ModelWidget::drawModelIconDiagramShapes(QStringList shapes, GraphicsView *p
 
 void ModelWidget::drawModel(const ModelInfo &modelInfo)
 {
-  mpIconGraphicsView->drawCoordinateSystem();
-  mpDiagramGraphicsView->drawCoordinateSystem();
+  mpIconGraphicsView->drawCoordinateSystem(modelInfo.mName.isEmpty());
+  mpDiagramGraphicsView->drawCoordinateSystem(modelInfo.mName.isEmpty());
   clearDependsOnModels();
   disconnect(MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel(), SIGNAL(modelStateChanged(QString,bool)), this, SLOT(updateModelIfDependsOn(QString,bool)));
   // if we are drawing the model inside the element mode and the parent element is extends so draw the element as inherited.
@@ -5817,7 +5805,7 @@ void ModelWidget::drawModel(const ModelInfo &modelInfo)
 
 void ModelWidget::drawModelIconDiagram(ModelInstance::Model *pModelInstance, bool inherited, const ModelInfo &modelInfo)
 {
-  QList<ModelInstance::Element*> elements = pModelInstance->getElements();
+  QVector<ModelInstance::Element*> elements = pModelInstance->getElements();
   foreach (auto pElement, elements) {
     if (pElement->isExtend() && pElement->getModel()) {
       auto pExtend = dynamic_cast<ModelInstance::Extend*>(pElement);
@@ -5844,17 +5832,19 @@ void ModelWidget::loadModelInstance(bool icon, const ModelInfo &modelInfo)
 {
   // save the current ModelInstance pointer so we can delete it later.
   ModelInstance::Model *pOldModelInstance = mpModelInstance;
-  QElapsedTimer timer;
-  timer.start();
   // call getModelInstance
-  const QJsonObject jsonObject = MainWindow::instance()->getOMCProxy()->getModelInstance(mpLibraryTreeItem->getNameStructure(), "", false, icon);
+  const QJsonObject jsonObject = MainWindow::instance()->getOMCProxy()->getModelInstance(mpLibraryTreeItem->getNameStructure(), "", "", false, icon);
+  QElapsedTimer timer;
+  if (MainWindow::instance()->isNewApiProfiling()) {
+    timer.start();
+  }
   // set the new ModelInstance
   mpModelInstance = new ModelInstance::Model(jsonObject);
   if (MainWindow::instance()->isNewApiProfiling()) {
     double elapsed = (double)timer.elapsed() / 1000.0;
-    MainWindow::instance()->writeNewApiProfiling(QString("Time for parsing JSON %1 secs").arg(QString::number(elapsed, 'f', 6)));
+    MainWindow::instance()->writeNewApiProfiling(QString("Time for creating model structure %1 secs").arg(QString::number(elapsed, 'f', 6)));
+    timer.restart();
   }
-  timer.restart();
   // enable skip expression evaluation flag if we are drawing the icon only
   MainWindow::instance()->setSkipExpressionEvaluation(icon);
   // drawing
@@ -5901,7 +5891,7 @@ void ModelWidget::loadDiagramViewNAPI()
  */
 void ModelWidget::detectMultipleDeclarations()
 {
-  QList<ModelInstance::Element*> elements = mpModelInstance->getElements();
+  QVector<ModelInstance::Element*> elements = mpModelInstance->getElements();
   for (int i = 0 ; i < elements.size() ; i++) {
     for (int j = 0 ; j < elements.size() ; j++) {
       if (i == j) {
@@ -6412,9 +6402,6 @@ void ModelWidget::reDrawModelWidget(const ModelInfo &modelInfo)
     updateElementModeButtons();
   }
   loadModelInstance(false, modelInfo);
-  // update the coordinate system according to new values
-  mpIconGraphicsView->resetZoom();
-  mpDiagramGraphicsView->resetZoom();
   reDrawModelWidgetHelper();
   QApplication::restoreOverrideCursor();
 }
@@ -6471,8 +6458,7 @@ bool ModelWidget::modelicaEditorTextChanged(LibraryTreeItem **pLibraryTreeItem)
       pParentLibraryTreeItem->setClassText(stringToLoad);
     }
     if (!errorString.isEmpty()) {
-      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, errorString, Helper::syntaxKind,
-                                                            Helper::errorLevel));
+      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, errorString, Helper::syntaxKind, Helper::errorLevel));
     }
     return false;
   }
@@ -6540,6 +6526,7 @@ bool ModelWidget::modelicaEditorTextChanged(LibraryTreeItem **pLibraryTreeItem)
       pNewLibraryTreeItem->setClassText(stringToLoad);
       updateModelText();
     }
+    pLibraryTreeModel->showModelWidget(pNewLibraryTreeItem);
     *pLibraryTreeItem = pNewLibraryTreeItem;
   }
   return true;
@@ -6601,8 +6588,7 @@ bool ModelWidget::omsimulatorEditorTextChanged()
       return true;
     }
   } else {
-    LibraryTreeModel *pLibraryTreeModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel();
-    LibraryTreeItem *pModelLibraryTreeItem = pLibraryTreeModel->getTopLevelLibraryTreeItem(mpLibraryTreeItem);
+    LibraryTreeItem *pModelLibraryTreeItem = LibraryTreeModel::getTopLevelLibraryTreeItem(mpLibraryTreeItem);
     if (pModelLibraryTreeItem && OMSProxy::instance()->importSnapshot(pModelLibraryTreeItem->getNameStructure(), mpEditor->getPlainTextEdit()->toPlainText(), &newCref)) {
       QString newEditedCref = QString("%1.%2").arg(mpLibraryTreeItem->parent()->getNameStructure(), newCref);
       createOMSimulatorUndoCommand("Text edited", true, false, mpLibraryTreeItem->getNameStructure(), newEditedCref);
@@ -6650,10 +6636,9 @@ void ModelWidget::updateClassAnnotationIfNeeded()
  */
 void ModelWidget::updateModelText()
 {
-  LibraryTreeModel *pLibraryTreeModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel();
   // Don't allow updating the child LibraryTreeItems of OMS model
   if (mpLibraryTreeItem->isSSP()) {
-    LibraryTreeItem *pModelLibraryTreeItem = pLibraryTreeModel->getTopLevelLibraryTreeItem(mpLibraryTreeItem);
+    LibraryTreeItem *pModelLibraryTreeItem = LibraryTreeModel::getTopLevelLibraryTreeItem(mpLibraryTreeItem);
     if (pModelLibraryTreeItem->getModelWidget()) {
       pModelLibraryTreeItem->getModelWidget()->setWindowTitle(QString("%1*").arg(pModelLibraryTreeItem->getName()));
       if (pModelLibraryTreeItem->getModelWidget()->isLoadedWidgetComponents()) {
@@ -6873,7 +6858,7 @@ QList<QVariant> ModelWidget::toOMSensData()
 void ModelWidget::createOMSimulatorUndoCommand(const QString &commandText, const bool doSnapShot, const bool switchToEdited, const QString oldEditedCref, const QString newEditedCref)
 {
   LibraryTreeModel *pLibraryTreeModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel();
-  LibraryTreeItem *pModelLibraryTreeItem = pLibraryTreeModel->getTopLevelLibraryTreeItem(mpLibraryTreeItem);
+  LibraryTreeItem *pModelLibraryTreeItem = LibraryTreeModel::getTopLevelLibraryTreeItem(mpLibraryTreeItem);
   if (!pModelLibraryTreeItem->getModelWidget()) {
     pLibraryTreeModel->showModelWidget(pModelLibraryTreeItem, false);
   }
@@ -6895,7 +6880,7 @@ void ModelWidget::createOMSimulatorUndoCommand(const QString &commandText, const
 void ModelWidget::createOMSimulatorRenameModelUndoCommand(const QString &commandText, const QString &cref, const QString &newCref)
 {
   LibraryTreeModel *pLibraryTreeModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel();
-  LibraryTreeItem *pModelLibraryTreeItem = pLibraryTreeModel->getTopLevelLibraryTreeItem(mpLibraryTreeItem);
+  LibraryTreeItem *pModelLibraryTreeItem = LibraryTreeModel::getTopLevelLibraryTreeItem(mpLibraryTreeItem);
   if (!pModelLibraryTreeItem->getModelWidget()) {
     pLibraryTreeModel->showModelWidget(pModelLibraryTreeItem, false);
   }
@@ -7110,6 +7095,44 @@ void ModelWidget::navigateToClass(const QString &className)
 }
 
 /*!
+ * \brief ModelWidget::getParameterDisplayString
+ * Gets the parameter display string and removes the type prefix if exists.
+ * \param parameterName
+ * \return
+ */
+QPair<QString, bool> ModelWidget::getParameterDisplayString(QString parameterName)
+{
+  QPair<QString, bool> displayString("", false);
+  QString typeName;
+
+  if (mpModelInstance) {
+    displayString = mpModelInstance->getVariableValue(StringHandler::makeVariableParts(parameterName));
+    typeName = mpModelInstance->getVariableType(StringHandler::makeVariableParts(parameterName));
+  }
+  if (displayString.second) {
+    StringHandler::removeTypePrefix(displayString.first, typeName);
+  }
+
+  return displayString;
+}
+
+/*!
+ * \brief ModelWidget::getParameterModifierValue
+ * Gets the parameter modifier value.
+ * \param parameterName
+ * \param modifier
+ * \return
+ */
+QPair<QString, bool> ModelWidget::getParameterModifierValue(const QString &parameterName, const QString &modifier)
+{
+  QPair<QString, bool> modifierValue("", false);
+  if (mpModelInstance) {
+    modifierValue = ModelInstance::Element::getModifierValueFromInheritedType(mpModelInstance, QStringList() << parameterName << modifier);
+  }
+  return qMakePair(StringHandler::removeFirstLastQuotes(modifierValue.first), modifierValue.second);
+}
+
+/*!
  * \brief ModelWidget::createUndoStack
  * Creates the undo stack.
  */
@@ -7121,7 +7144,7 @@ void ModelWidget::createUndoStack()
    */
   if (mpLibraryTreeItem && !mpLibraryTreeItem->isTopLevel() && mpLibraryTreeItem->isSSP()) {
     LibraryTreeModel *pLibraryTreeModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel();
-    LibraryTreeItem *pModelLibraryTreeItem = pLibraryTreeModel->getTopLevelLibraryTreeItem(mpLibraryTreeItem);
+    LibraryTreeItem *pModelLibraryTreeItem = LibraryTreeModel::getTopLevelLibraryTreeItem(mpLibraryTreeItem);
     if (pModelLibraryTreeItem) {
       if (pModelLibraryTreeItem->getModelWidget()) {
         mpUndoStack = pModelLibraryTreeItem->getModelWidget()->getUndoStack();
@@ -7793,7 +7816,7 @@ void ModelWidgetContainer::addModelWidget(ModelWidget *pModelWidget, bool checkP
     }
   }
   if (!hasModelWidget) {
-    int subWindowsSize = subWindowList(QMdiArea::ActivationHistoryOrder).size();
+    int subWindowsSize = subWindowsList.size();
     QMdiSubWindow *pSubWindow = addSubWindow(pModelWidget);
     addCloseActionsToSubWindowSystemMenu(pSubWindow);
     pSubWindow->setWindowIcon(ResourceCache::getIcon(":/Resources/icons/modeling.png"));
@@ -7817,8 +7840,9 @@ void ModelWidgetContainer::addModelWidget(ModelWidget *pModelWidget, bool checkP
     }
     pModelWidget->getEditor()->getPlainTextEdit()->setFocus(Qt::ActiveWindowFocusReason);
   }
-  pModelWidget->updateViewButtonsBasedOnAccess();
+
   if (!checkPreferedView || !pModelWidget->getLibraryTreeItem()->isModelica()) {
+    pModelWidget->updateViewButtonsBasedOnAccess();
     return;
   }
   // get the preferred view to display
@@ -8121,29 +8145,39 @@ void collectSelectedElements(GraphicsView *pGraphicsView, QStringList *pSelected
 /*!
  * \brief ModelWidgetContainer::getOpenedModelWidgetsAndSelectedElementsOfClass
  * Creates the list of opened ModelWidgets and its selected icon and diagram view elements.
- * \param modelName
+ * \param pLibraryTreeItem
  * \param pOpenedModelWidgetsAndSelectedElements
- * \param pIconSelectedItemsList
- * \param pDiagramSelectedItemsList
  */
-void ModelWidgetContainer::getOpenedModelWidgetsAndSelectedElementsOfClass(const QString &modelName,
+void ModelWidgetContainer::getOpenedModelWidgetsAndSelectedElementsOfClass(LibraryTreeItem *pLibraryTreeItem,
                                                                            QHash<QString, QPair<QStringList, QStringList> > *pOpenedModelWidgetsAndSelectedElements)
 {
   QList<QMdiSubWindow*> subWindowsList = subWindowList(QMdiArea::StackingOrder);
   foreach (QMdiSubWindow *pSubWindow, subWindowsList) {
     ModelWidget *pModelWidget = qobject_cast<ModelWidget*>(pSubWindow->widget());
-    if (pModelWidget && pModelWidget->getLibraryTreeItem()
-        && StringHandler::getFirstWordBeforeDot(pModelWidget->getLibraryTreeItem()->getNameStructure()).compare(modelName) == 0) {
-      QStringList iconSelectedItemsList, diagramSelectedItemsList;
-      // icon view selected elements
-      if (pModelWidget->getIconGraphicsView()) {
-        collectSelectedElements(pModelWidget->getIconGraphicsView(), &iconSelectedItemsList);
+    if (pModelWidget && pModelWidget->getLibraryTreeItem()) {
+      LibraryTreeItem *pParentLibraryTreeItem = pModelWidget->getLibraryTreeItem()->parent();
+      bool isChild = false;
+
+      while (pParentLibraryTreeItem) {
+        if (pParentLibraryTreeItem == pLibraryTreeItem) {
+          isChild = true;
+          break;
+        }
+        pParentLibraryTreeItem = pParentLibraryTreeItem->parent();
       }
-      // diagram view selected elements
-      if (pModelWidget && pModelWidget->getDiagramGraphicsView()) {
-        collectSelectedElements(pModelWidget->getDiagramGraphicsView(), &diagramSelectedItemsList);
+
+      if (isChild) {
+        QStringList iconSelectedItemsList, diagramSelectedItemsList;
+        // icon view selected elements
+        if (pModelWidget->getIconGraphicsView()) {
+          collectSelectedElements(pModelWidget->getIconGraphicsView(), &iconSelectedItemsList);
+        }
+        // diagram view selected elements
+        if (pModelWidget && pModelWidget->getDiagramGraphicsView()) {
+          collectSelectedElements(pModelWidget->getDiagramGraphicsView(), &diagramSelectedItemsList);
+        }
+        pOpenedModelWidgetsAndSelectedElements->insert(pModelWidget->getLibraryTreeItem()->getNameStructure(), qMakePair(iconSelectedItemsList, diagramSelectedItemsList));
       }
-      pOpenedModelWidgetsAndSelectedElements->insert(pModelWidget->getLibraryTreeItem()->getNameStructure(), qMakePair(iconSelectedItemsList, diagramSelectedItemsList));
     }
   }
 }

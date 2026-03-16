@@ -262,7 +262,9 @@ void PlotWindow::getStartStopTime(double &start, double &stop){
   {
     QString currentLine;
     // open the file
-    mFile.open(QIODevice::ReadOnly);
+    if (!mFile.open(QIODevice::ReadOnly)) {
+      throw PlotException(tr("Failed to open simulation result file %1").arg(mFile.fileName()));
+    }
     mpTextStream = new QTextStream(&mFile);
     // read the interval size from the file
     int intervalSize = 0;
@@ -468,7 +470,9 @@ void PlotWindow::plot(PlotCurve *pPlotCurve)
   if (mFile.fileName().endsWith("plt"))
   {
     // open the file
-    mFile.open(QIODevice::ReadOnly);
+    if (!mFile.open(QIODevice::ReadOnly)) {
+      throw PlotException(tr("Failed to open simulation result file %1").arg(mFile.fileName()));
+    }
     mpTextStream = new QTextStream(&mFile);
     // read the interval size from the file
     int intervalSize = 0;
@@ -704,7 +708,9 @@ void PlotWindow::plotParametric(PlotCurve *pPlotCurve)
     {
       QString currentLine;
       // open the file
-      mFile.open(QIODevice::ReadOnly);
+      if (!mFile.open(QIODevice::ReadOnly)) {
+        throw PlotException(tr("Failed to open simulation result file %1").arg(mFile.fileName()));
+      }
       mpTextStream = new QTextStream(&mFile);
       // read the interval size from the file
       int intervalSize = 0;
@@ -982,9 +988,8 @@ void readPLTArray(QTextStream *mpTextStream, QString variable, double alpha, int
 
 double getTimeUnitFactor(QString timeUnit)
 {
-  if (timeUnit == "ms") return 1000.0;
-  else if (timeUnit == "s") return 1.0;
-  else if (timeUnit == "min") return 1.0/6.0;
+  if (timeUnit == "s") return 1.0;
+  else if (timeUnit == "min") return 1.0/60.0;
   else if (timeUnit == "h") return 1.0/3600.0;
   else if (timeUnit == "d") return 1.0/86400.0;
   else throw PlotException(QObject::tr("Unknown unit in plotArray(Parametric)."));
@@ -992,9 +997,11 @@ double getTimeUnitFactor(QString timeUnit)
 
 void PlotWindow::updateTimeText()
 {
-  QString unit = getTimeUnit();
-  double timeUnitFactor = getTimeUnitFactor(unit);
-  mpPlot->setFooter(QString("t = %1 " + unit).arg(getTime()*timeUnitFactor,0,'g',3));
+  double time = getTime();
+  QString timeUnit = getTimeUnit();
+  double timeUnitFactor = getTimeUnitFactor(timeUnit);
+  QString timeString = QString::number(time * timeUnitFactor);
+  mpPlot->setFooter(QString("t = %1 %2").arg(timeString).arg(timeUnit));
   mpPlot->replot();
 }
 
@@ -1038,7 +1045,7 @@ void PlotWindow::plotArray(double time, PlotCurve *pPlotCurve)
     int it = setupInterp(timeVals.get(), time, intervalSize, alpha);
     if (it < 0) {
       mFile.close();
-      throw PlotException("Time out of bounds.");
+      throw TimeOutOfBoundsException(QFileInfo(mFile), timeVals[0], timeVals[intervalSize - 1]);
     }
     QString currentVariable;  //without index part
     // Read variable values and plot them
@@ -1086,7 +1093,7 @@ void PlotWindow::plotArray(double time, PlotCurve *pPlotCurve)
     int it = setupInterp(timeVals, time, csvReader->numsteps, alpha);
     if (it < 0) {
       omc_free_csv_reader(csvReader);
-      throw PlotException("Time out of bounds.");
+      throw TimeOutOfBoundsException(QFileInfo(mFile), timeVals[0], timeVals[csvReader->numsteps - 1]);
     }
     QStringList::Iterator itVarList;
     for (itVarList = mVariablesList.begin(); itVarList != mVariablesList.end(); itVarList++){
@@ -1148,7 +1155,7 @@ void PlotWindow::plotArray(double time, PlotCurve *pPlotCurve)
       }
       if (time<startTime || stopTime<time) {
         omc_free_matlab4_reader(&reader);
-        throw PlotException("Time out of bounds.");
+        throw TimeOutOfBoundsException(QFileInfo(mFile), startTime, stopTime);
       }
       QStringList::Iterator itVarList;
       for (itVarList = mVariablesList.begin(); itVarList != mVariablesList.end(); itVarList++){
@@ -1251,7 +1258,7 @@ void PlotWindow::plotArrayParametric(double time, PlotCurve *pPlotCurve)
       int it = setupInterp(timeVals.get(), time, intervalSize, alpha);
       if (it < 0) {
         mFile.close();
-        throw PlotException("Time out of bounds.");
+        throw TimeOutOfBoundsException(QFileInfo(mFile), timeVals[0], timeVals[intervalSize - 1]);
       }
       if (editCase) {
         pPlotCurve->clearXAxisVector();
@@ -1298,7 +1305,7 @@ void PlotWindow::plotArrayParametric(double time, PlotCurve *pPlotCurve)
       int it = setupInterp(timeVals, time, csvReader->numsteps, alpha);
       if (it < 0) {
         omc_free_csv_reader(csvReader);
-        throw PlotException("Time out of bounds.");
+        throw TimeOutOfBoundsException(QFileInfo(mFile), timeVals[0], timeVals[csvReader->numsteps - 1]);
       }
       if (!editCase) {
         QFileInfo fileInfo(mFile);
@@ -1373,7 +1380,7 @@ void PlotWindow::plotArrayParametric(double time, PlotCurve *pPlotCurve)
       }
       if (time<startTime || stopTime<time) {
         omc_free_matlab4_reader(&reader);
-        throw PlotException("Time out of bounds.");
+        throw TimeOutOfBoundsException(QFileInfo(mFile), startTime, stopTime);
       }
       pPlotCurve->clearXAxisVector();
       pPlotCurve->clearYAxisVector();
@@ -1530,8 +1537,8 @@ void PlotWindow::setXRange(double min, double max)
   if (!(max == 0 && min == 0)) {
     mpPlot->setAxisScale(QwtPlot::xBottom, min, max);
   }
-  mXRangeMin = QString::number(min);
-  mXRangeMax = QString::number(max);
+  mXRangeMin = QString::number(min, 'g', 17);
+  mXRangeMax = QString::number(max, 'g', 17);
 }
 
 QString PlotWindow::getXRangeMin()
@@ -1549,8 +1556,8 @@ void PlotWindow::setYRange(double min, double max)
   if (!(max == 0 && min == 0)) {
     mpPlot->setAxisScale(QwtPlot::yLeft, min, max);
   }
-  mYRangeMin = QString::number(min);
-  mYRangeMax = QString::number(max);
+  mYRangeMin = QString::number(min, 'g', 17);
+  mYRangeMax = QString::number(max, 'g', 17);
 }
 
 QString PlotWindow::getYRangeMin()
@@ -1568,8 +1575,8 @@ void PlotWindow::setYRightRange(double min, double max)
     if (!(max == 0 && min == 0)) {
         mpPlot->setAxisScale(QwtPlot::yRight, min, max);
     }
-    mYRightRangeMin = QString::number(min);
-    mYRightRangeMax = QString::number(max);
+    mYRightRangeMin = QString::number(min, 'g', 17);
+    mYRightRangeMax = QString::number(max, 'g', 17);
 }
 
 QString PlotWindow::getYRightRangeMin()
@@ -1986,6 +1993,12 @@ void PlotWindow::interactiveSimulationPaused()
   setInteractiveControls(true);
 }
 
+TimeOutOfBoundsException::TimeOutOfBoundsException(const QFileInfo &fileInfo, double startTime, double stopTime)
+  : PlotException(QString("%1: %2. (StartTime = %3, StopTime = %4)")
+      .arg(fileInfo.fileName()).arg(QObject::tr("Time out of bounds")).arg(startTime).arg(stopTime))
+{
+}
+
 /*!
   \class VariablePageWidget
   \brief Represent the attribute of a plot variable.
@@ -2248,9 +2261,9 @@ SetupDialog::SetupDialog(PlotWindow *pPlotWindow)
   // x-axis
   mpXAxisGroupBox = new QGroupBox(tr("X-Axis"));
   mpXMinimumLabel = new QLabel(tr("Minimum"));
-  mpXMinimumTextBox = new QLineEdit(QString::number(mpPlotWindow->getPlot()->axisScaleDiv(QwtPlot::xBottom).lowerBound()));
+  mpXMinimumTextBox = new QLineEdit(QString::number(mpPlotWindow->getPlot()->axisScaleDiv(QwtPlot::xBottom).lowerBound(), 'g', 17));
   mpXMaximumLabel = new QLabel(tr("Maximum"));
-  mpXMaximumTextBox = new QLineEdit(QString::number(mpPlotWindow->getPlot()->axisScaleDiv(QwtPlot::xBottom).upperBound()));
+  mpXMaximumTextBox = new QLineEdit(QString::number(mpPlotWindow->getPlot()->axisScaleDiv(QwtPlot::xBottom).upperBound(), 'g', 17));
   QGridLayout *pXGridLayout = new QGridLayout;
   pXGridLayout->addWidget(mpXMinimumLabel, 0, 0);
   pXGridLayout->addWidget(mpXMinimumTextBox, 0, 1);
@@ -2261,9 +2274,9 @@ SetupDialog::SetupDialog(PlotWindow *pPlotWindow)
   // y-axis
   mpYAxisGroupBox = new QGroupBox(tr("Left Y-Axis"));
   mpYMinimumLabel = new QLabel(tr("Minimum"));
-  mpYMinimumTextBox = new QLineEdit(QString::number(mpPlotWindow->getPlot()->axisScaleDiv(QwtPlot::yLeft).lowerBound()));
+  mpYMinimumTextBox = new QLineEdit(QString::number(mpPlotWindow->getPlot()->axisScaleDiv(QwtPlot::yLeft).lowerBound(), 'g', 17));
   mpYMaximumLabel = new QLabel(tr("Maximum"));
-  mpYMaximumTextBox = new QLineEdit(QString::number(mpPlotWindow->getPlot()->axisScaleDiv(QwtPlot::yLeft).upperBound()));
+  mpYMaximumTextBox = new QLineEdit(QString::number(mpPlotWindow->getPlot()->axisScaleDiv(QwtPlot::yLeft).upperBound(), 'g', 17));
   QGridLayout *pYGridLayout = new QGridLayout;
   pYGridLayout->addWidget(mpYMinimumLabel, 0, 0);
   pYGridLayout->addWidget(mpYMinimumTextBox, 0, 1);
@@ -2274,9 +2287,9 @@ SetupDialog::SetupDialog(PlotWindow *pPlotWindow)
   // right y-axis
   mpYRightAxisGroupBox = new QGroupBox(tr("Right Y-Axis"));
   mpYRightMinimumLabel = new QLabel(tr("Minimum"));
-  mpYRightMinimumTextBox = new QLineEdit(QString::number(mpPlotWindow->getPlot()->axisScaleDiv(QwtPlot::yRight).lowerBound()));
+  mpYRightMinimumTextBox = new QLineEdit(QString::number(mpPlotWindow->getPlot()->axisScaleDiv(QwtPlot::yRight).lowerBound(), 'g', 17));
   mpYRightMaximumLabel = new QLabel(tr("Maximum"));
-  mpYRightMaximumTextBox = new QLineEdit(QString::number(mpPlotWindow->getPlot()->axisScaleDiv(QwtPlot::yRight).upperBound()));
+  mpYRightMaximumTextBox = new QLineEdit(QString::number(mpPlotWindow->getPlot()->axisScaleDiv(QwtPlot::yRight).upperBound(), 'g', 17));
   QGridLayout* pYRightGridLayout = new QGridLayout;
   pYRightGridLayout->addWidget(mpYRightMinimumLabel, 0, 0);
   pYRightGridLayout->addWidget(mpYRightMinimumTextBox, 0, 1);

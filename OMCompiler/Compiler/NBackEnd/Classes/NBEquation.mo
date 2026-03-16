@@ -37,20 +37,22 @@ encapsulated package NBEquation
 
 public
   // Old Frontend imports
+  import Absyn.Path;
   import DAE;
   import ElementSource;
 
   // New Frontend imports
   import Algorithm = NFAlgorithm;
   import BackendDAE = NBackendDAE;
-  import NFBackendExtension.VariableAttributes;
+  import NFBackendExtension.{VariableAttributes, OptimizerExpression};
   import Binding = NFBinding;
   import Call = NFCall;
   import Class = NFClass;
+  import ComplexType = NFComplexType;
   import ComponentRef = NFComponentRef;
   import Dimension = NFDimension;
   import Expression = NFExpression;
-  import NFFlatten.FunctionTree;
+  import NFFunction.Function;
   import InstNode = NFInstNode.InstNode;
   import Operator = NFOperator;
   import NFPrefixes.{Variability, Purity};
@@ -145,6 +147,46 @@ public
 
     record EMPTY
     end EMPTY;
+
+    function createFrame
+      "takes a typical (name, exp) tuple representing (for name in exp loop)
+      and checks if exp already is RANGE(). if not it creates a RANGE() of
+      correct size and maps the ARRAY() expression to that RANGE().
+      returns frame structure used for Iterator.fromFrames()"
+      input tuple<InstNode, Expression> iter;
+      input UnorderedSet<VariablePointer> set "new iterators";
+      output tuple<ComponentRef, Expression, Option<Iterator>> frame;
+    algorithm
+      frame := match iter
+        local
+          InstNode node, node2;
+          Expression range, range2;
+          Iterator map;
+          ComponentRef iter_cref;
+          Pointer<Variable> iter_var;
+
+        // it already is a proper range, use it for the for loop
+        case (node, range as Expression.RANGE()) then (ComponentRef.makeIterator(node, Type.INTEGER()), range, NONE());
+
+        // it has an array as constructor, map it to a range
+        // used to fix #13031
+        case (node, range as Expression.ARRAY()) algorithm
+          node2   := InstNode.newIterator("$" + InstNode.name(node), Type.INTEGER(), sourceInfo());
+          range2  := Expression.makeRange(Expression.INTEGER(1), NONE(), Expression.INTEGER(Type.sizeOf(Expression.typeOf(range))));
+          map     := Iterator.fromFrames({(ComponentRef.makeIterator(node, Type.arrayElementType(Expression.typeOf(range))), range, NONE())});
+
+          // create the new iterator variable
+          iter_cref := ComponentRef.makeIterator(node2, Type.INTEGER());
+          iter_var  := BackendDAE.lowerIterator(iter_cref);
+          iter_cref := BVariable.getVarName(iter_var);
+          UnorderedSet.add(iter_var, set);
+        then (iter_cref, range2, SOME(map));
+
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed to inline iterator expression: " + InstNode.toString(Util.tuple21(iter)) + " in " + Expression.toString(Util.tuple22(iter)) + "."});
+        then fail();
+      end match;
+    end createFrame;
 
     function fromFrames
       input list<Frame> frames;
@@ -292,6 +334,13 @@ public
     algorithm
       b := match iter case EMPTY() then true; else false; end match;
     end isEmpty;
+
+    function isResizable
+      input Iterator iter;
+      output Boolean b;
+    algorithm
+      b := List.any(types(iter), Type.isResizable);
+    end isResizable;
 
     function intersect
       input Iterator iter1;
@@ -469,14 +518,14 @@ public
           Integer start, step;
 
         case SINGLE() guard(arrayLength(location) == 1) algorithm
-          (start, step, _) := Expression.getIntegerRange(iter.range);
+          (start, step, _) := Expression.getIntegerRange(iter.range, true);
           UnorderedMap.add(iter.name, Expression.INTEGER(start + location[1]*step), replacements);
           createMappedLocationReplacement(iter.map, location[1], replacements);
         then ();
 
         case NESTED() guard(arrayLength(location) == arrayLength(iter.ranges)) algorithm
           for i in 1:arrayLength(location) loop
-            (start, step, _) := Expression.getIntegerRange(iter.ranges[i]);
+            (start, step, _) := Expression.getIntegerRange(iter.ranges[i], true);
             UnorderedMap.add(iter.names[i], Expression.INTEGER(start + location[i]*step), replacements);
             createMappedLocationReplacement(iter.maps[i], location[i], replacements);
           end for;
@@ -555,8 +604,8 @@ public
       Integer or_start, or_step, or_stop, ee_start, ee_step, ee_stop;
       Expression exp;
     algorithm
-      (or_start, or_step, or_stop) := Expression.getIntegerRange(replacor_range);
-      (ee_start, ee_step, ee_stop) := Expression.getIntegerRange(replacee_range);
+      (or_start, or_step, or_stop) := Expression.getIntegerRange(replacor_range, true);
+      (ee_start, ee_step, ee_stop) := Expression.getIntegerRange(replacee_range, true);
       // check if same size
       if (or_stop-or_start+1)/or_step == (ee_stop-ee_start+1)/ee_step then
         // replacee = ee_start + (ee_step/or_step) * (replacor-or_start)
@@ -595,11 +644,11 @@ public
 
         case Call.TYPED_ARRAY_CONSTRUCTOR() algorithm
           (names, ranges, maps) := getFrames(iter);
-        then fromFrames(listAppend(list(Inline.inlineArrayIterator(tpl, new_iters) for tpl in call.iters), List.zip3(names, ranges, maps)));
+        then fromFrames(listAppend(list(createFrame(tpl, new_iters) for tpl in call.iters), List.zip3(names, ranges, maps)));
 
         case Call.TYPED_REDUCTION() algorithm
           (names, ranges, maps) := getFrames(iter);
-        then fromFrames(listAppend(list(Inline.inlineArrayIterator(tpl, new_iters) for tpl in call.iters), List.zip3(names, ranges, maps)));
+        then fromFrames(listAppend(list(createFrame(tpl, new_iters) for tpl in call.iters), List.zip3(names, ranges, maps)));
 
         else iter;
       end match;
@@ -641,7 +690,7 @@ public
         case Expression.CALL(call = call as Call.TYPED_ARRAY_CONSTRUCTOR()) algorithm
           // inline the frontend iterator to get frames for backend iterator
           for tpl in listReverse(call.iters) loop
-            frames := Inline.inlineArrayIterator(tpl, new_iters) :: frames;
+            frames := createFrame(tpl, new_iters) :: frames;
           end for;
           tmp := fromFrames(frames);
 
@@ -780,10 +829,10 @@ public
           occs    := Equation.collectCrefs(tmpEqn, function Equation.collectFromMap(check_map = iter_map));
 
 
-          if listLength(occs) == 1 then
+          if List.hasOneElement(occs) then
             // get the only occuring iterator cref and solve the body for it
             cref := listHead(occs);
-            (tmpEqn, _, status, invert) := Solve.solveBody(tmpEqn, cref, FunctionTree.EMPTY());
+            (tmpEqn, status, invert) := Solve.solveBody(tmpEqn, cref);
             operator := if invert == NBSolve.RelationInversion.TRUE then Operator.invert(condition.operator) else condition.operator;
 
             // if its solvable, get the corresponding iterator range and adapt it with the information of the if-condition
@@ -961,10 +1010,10 @@ public
             // revert an array/list if needed
             case Expression.ARRAY(literal = true) algorithm
               if eo == NBResizable.EvalOrder.FORWARD then
-                elements := list(Expression.getInteger(e) for e in range.elements);
+                elements := list(Expression.getInteger(e, true) for e in range.elements);
                 range.elements := listArray(list(Expression.INTEGER(e) for e in List.sort(elements, intGt)));
               elseif eo == NBResizable.EvalOrder.BACKWARD then
-                elements := list(Expression.getInteger(e) for e in range.elements);
+                elements := list(Expression.getInteger(e, true) for e in range.elements);
                 range.elements := listArray(list(Expression.INTEGER(e) for e in List.sort(elements, intLt)));
               end if;
             then range;
@@ -1380,6 +1429,8 @@ public
       Type ty = Expression.typeOf(lhs);
     algorithm
       e := match ty
+        local
+          ComplexType ct;
         case Type.ARRAY() then ARRAY_EQUATION(
             ty          = ty,
             lhs         = lhs,
@@ -1396,13 +1447,13 @@ public
             attr        = attr,
             recordSize  = Type.sizeOf(ty)
           );
-        case Type.COMPLEX() then RECORD_EQUATION(
+        case Type.COMPLEX(complexTy = ct as ComplexType.RECORD()) then RECORD_EQUATION(
             ty          = ty,
             lhs         = lhs,
             rhs         = rhs,
             source      = DAE.emptyElementSource,
             attr        = attr,
-            recordSize  = Type.sizeOf(ty)
+            recordSize  = arrayLength(ct.fields)
           );
         else SCALAR_EQUATION(
             ty      = ty,
@@ -2049,6 +2100,7 @@ public
       "Creates a residual equation from a regular equation.
       Example (for DAEMode): $RES_DAE_idx := rhs."
       input output Pointer<Equation> eqn_ptr;
+      input Option<ComponentRef> residualCref_opt = NONE();
       input Boolean new = false               "set to true if the resulting pointer should be a new one";
       input Boolean allowFail = false;
     protected
@@ -2065,10 +2117,15 @@ public
 
       // TODO: future improvement - save the residual in [INI] -> re-use for [ODE] tearing
       // get name cref which is the residual
-      residualCref := match eqn
+      residualCref := match (eqn, residualCref_opt)
         local
           list<Subscript> subs;
-        case FOR_EQUATION() algorithm
+
+        // some residual cref given
+        case (_, SOME(residualCref)) then residualCref;
+
+        // no residual cref given
+        case (FOR_EQUATION(), NONE()) algorithm
           residualCref := getEqnName(eqn_ptr);
           subs := Iterator.normalizedSubscripts(eqn.iter);
           subs := listAppend(List.fill(Subscript.WHOLE(), Type.dimensionCount(Equation.getType(listHead(eqn.body)))), subs);
@@ -2079,8 +2136,11 @@ public
 
       (eqn, failed) := match eqn
         case IF_EQUATION() algorithm
-          eqn.body := IfEquationBody.createResidual(eqn.body, residualCref);
+          eqn.body := IfEquationBody.createResidual(eqn.body, residualCref, new, allowFail);
         then (IfEquationBody.inline(eqn.body, eqn), false);
+        case FOR_EQUATION() algorithm
+          eqn.body := list(Pointer.access(createResidual(Pointer.create(body_eqn), SOME(residualCref), new, allowFail)) for body_eqn in eqn.body);
+        then (eqn, false);
         else algorithm
           // update RHS and LHS
           lhs := Expression.fromCref(residualCref);
@@ -2105,7 +2165,6 @@ public
 
       // update pointer or create new
       if new then eqn_ptr := Pointer.create(eqn); else Pointer.update(eqn_ptr, eqn); end if;
-
     end createResidual;
 
     function getResidualExp
@@ -2248,11 +2307,24 @@ public
       b := attr.kind == EquationKind.CONTINUOUS;
     end isContinuous;
 
-    function isDiscontinuous "only for function interface purposes"
+    function isDiscontinuous
+      "only for function interface purposes"
       extends checkEqn;
     algorithm
       b := not isContinuous(eqn_ptr);
     end isDiscontinuous;
+
+    function isContinousRecordAware
+      "acts like isContinous, but returns false if it is part of a record that has a discrete variable"
+      extends checkEqn;
+    protected
+      Equation eqn = Pointer.access(eqn_ptr);
+    algorithm
+      b := match eqn
+        case RECORD_EQUATION() then Type.isContinuous(eqn.ty);
+        else isContinuous(eqn_ptr);
+      end match;
+    end isContinousRecordAware;
 
     function isInitial extends checkEqn;
     protected
@@ -2361,6 +2433,21 @@ public
       end match;
     end isClocked;
 
+    function isCompound extends checkEqn;
+    algorithm
+      b := match Pointer.access(eqn_ptr)
+        case ALGORITHM()      then true;
+        case IF_EQUATION()    then true;
+        case WHEN_EQUATION()  then true;
+        else false;
+      end match;
+    end isCompound;
+
+    function isResizable extends checkEqn;
+    algorithm
+      b := Type.isResizable(getType(Pointer.access(eqn_ptr)));
+    end isResizable;
+
     function expIsParamOrConst
       input output Expression exp;
       input Pointer<Boolean> b_ptr;
@@ -2429,7 +2516,7 @@ public
       if BVariable.isClock(var_ptr) then
         eqnAttr := EquationAttributes.default(EquationKind.CLOCKED, initial_, SOME(-1));
       elseif BVariable.isContinuous(var_ptr, initial_) then
-        eqnAttr := EquationAttributes.default(EquationKind.CONTINUOUS, initial_);
+        eqnAttr := EquationAttributes.default(EquationKind.CONTINUOUS, initial_, NONE(), var.backendinfo.annotations.optimizerExpression);
       else
         eqnAttr := EquationAttributes.default(EquationKind.DISCRETE, initial_);
       end if;
@@ -2645,7 +2732,7 @@ public
       Iterator new_iter;
     algorithm
       // get the sizes of the 'return value' of the equation
-      if listLength(indices) == 1 then
+      if List.hasOneElement(indices) then
         // perform a single replacement for the one index
         location      := Slice.indexToLocation(listHead(indices), sizes);
         replacements  := UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual);
@@ -2701,7 +2788,7 @@ public
       input ComponentRef cref_to_solve                            "the cref to solve the body for (EMPTY() for already solved)";
       input UnorderedMap<ComponentRef, Expression> replacements   "prepared replacement map";
       output Equation sliced_eqn                                  "scalar sliced equation";
-      input output FunctionTree funcTree                          "func tree for solving";
+      input UnorderedMap<Path, Function> funcMap                  "func map for solving";
       output Solve.Status solve_status                            "solve success status";
     protected
       Equation eqn;
@@ -2720,7 +2807,7 @@ public
           sliced_eqn := map(listHead(eqn.body), function Replacements.applySimpleExp(replacements = replacements));
           // solve the body if necessary
           if not ComponentRef.isEmpty(cref_to_solve) then
-            (sliced_eqn, funcTree, solve_status, _) := Solve.solveBody(sliced_eqn, cref_to_solve, funcTree);
+            (sliced_eqn, solve_status, _) := Solve.solveBody(sliced_eqn, cref_to_solve, funcMap);
           end if;
         then (sliced_eqn, solve_status);
 
@@ -3011,20 +3098,18 @@ public
       "needs the if equation to be split"
       input IfEquationBody body;
       input ComponentRef res;
+      input Boolean new = false               "set to true if the resulting pointer should be a new one";
+      input Boolean allowFail = false;
       output IfEquationBody body_res;
     protected
       Pointer<Equation> eqn_ptr;
       Equation eqn;
       Expression exp;
     algorithm
-      body_res := IF_EQUATION_BODY(body.condition, {}, Util.applyOption(body.else_if, function createResidual(res = res)));
+      body_res := IF_EQUATION_BODY(body.condition, {}, Util.applyOption(body.else_if, function createResidual(res = res, new = new, allowFail = allowFail)));
       body_res := match body.then_eqns
         case {eqn_ptr} algorithm
-          eqn := Pointer.access(eqn_ptr);
-          exp := Equation.getResidualExp(eqn);
-          eqn := Equation.setLHS(eqn, Expression.fromCref(res));
-          eqn := Equation.setRHS(eqn, exp);
-          body_res.then_eqns := Pointer.create(eqn) :: body_res.then_eqns;
+          body_res.then_eqns := Equation.createResidual(eqn_ptr, SOME(res), new, allowFail) :: body_res.then_eqns;
         then body_res;
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for:\n" + toString(body)});
@@ -3924,13 +4009,14 @@ public
 
   uniontype EquationAttributes
     record EQUATION_ATTRIBUTES
-      Option<Pointer<Equation>> derivative  "if the equation has been differentiated w.r.t time already";
-      Option<Pointer<Variable>> residualVar "also used to represent the equation itself";
-      Option<Integer> clock_idx             "only set if clocked eq";
-      Boolean residual                      "true if in residual form";
-      Boolean exclusively_initial           "true if in initial equation block";
-      Evaluation.Stages evalStages          "evaluation stages (prior used for DAE mode, still necessary?)";
-      EquationKind kind                     "continuous, clocked, discrete, empty";
+      Option<Pointer<Equation>> derivative            "if the equation has been differentiated w.r.t time already";
+      Option<Pointer<Variable>> residualVar           "also used to represent the equation itself";
+      Option<Integer> clock_idx                       "only set if clocked eq";
+      Boolean residual                                "true if in residual form";
+      Boolean exclusively_initial                     "true if in initial equation block";
+      Evaluation.Stages evalStages                    "evaluation stages (prior used for DAE mode, still necessary?)";
+      EquationKind kind                               "continuous, clocked, discrete, empty";
+      Option<OptimizerExpression> optimizerExpression "dynamic optimization component: Mayer, Lagrange, Path, Boundary";
     end EQUATION_ATTRIBUTES;
 
     function toString
@@ -3989,6 +4075,7 @@ public
     input EquationKind kind;
     input Boolean exclusively_initial;
     input Option<Integer> clock_idx = NONE();
+    input Option<OptimizerExpression> optimizerExpression = NONE();
     output EquationAttributes attr;
   algorithm
     attr := EQUATION_ATTRIBUTES(
@@ -3998,7 +4085,8 @@ public
       residual            = false,
       exclusively_initial = exclusively_initial,
       evalStages          = NBEvaluation.DEFAULT_STAGES,
-      kind                = kind);
+      kind                = kind,
+      optimizerExpression = optimizerExpression);
   end default;
 
   type EquationKind = enumeration(CONTINUOUS, DISCRETE, CLOCKED, EMPTY, UNKNOWN);

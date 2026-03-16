@@ -728,15 +728,16 @@ void DocumentationWidget::updatePreviousNextButtons()
 void DocumentationWidget::writeDocumentationFile(QString documentation)
 {
   /* Create a local file with the html we want to view as otherwise JavaScript does not run properly. */
-  mDocumentationFile.open(QIODevice::WriteOnly);
-  QTextStream out(&mDocumentationFile);
+  if (mDocumentationFile.open(QIODevice::WriteOnly)) {
+    QTextStream out(&mDocumentationFile);
 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
-  out.setEncoding(QStringConverter::Utf8);
+    out.setEncoding(QStringConverter::Utf8);
 #else
-  out.setCodec(Helper::utf8.toUtf8().constData());
+    out.setCodec(Helper::utf8.toUtf8().constData());
 #endif
-  out << documentation;
-  mDocumentationFile.close();
+    out << documentation;
+    mDocumentationFile.close();
+  }
 }
 
 /*!
@@ -1504,11 +1505,9 @@ DocumentationViewer::DocumentationViewer(DocumentationWidget *pDocumentationWidg
   mpDocumentationPage = new DocumentationPage(this);
   setPage(mpDocumentationPage);
   settings()->setFontFamily(QWebEngineSettings::StandardFont, Helper::systemFontInfo.family());
-  settings()->setFontSize(QWebEngineSettings::DefaultFontSize, Helper::systemFontInfo.pointSize());
   settings()->setAttribute(QWebEngineSettings::LocalStorageEnabled, true);
 #else // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
   settings()->setFontFamily(QWebSettings::StandardFont, Helper::systemFontInfo.family());
-  settings()->setFontSize(QWebSettings::DefaultFontSize, Helper::systemFontInfo.pointSize());
   settings()->setAttribute(QWebSettings::LocalStorageEnabled, true);
 #endif // #ifdef OM_OMEDIT_ENABLE_QTWEBENGINE
   settings()->setDefaultTextEncoding(Helper::utf8.toUtf8().constData());

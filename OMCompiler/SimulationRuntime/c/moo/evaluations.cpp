@@ -280,7 +280,7 @@ void set_states_inputs(InfoGDOP& info, const f64* xu_ij) {
 
 void set_time(InfoGDOP& info, const f64 t_ij) {
     /* move time horizon to Modelica model time */
-    info.data->localData[0]->timeValue = t_ij + info.model_start_time;
+    info.data->localData[0]->timeValue = t_ij;
 }
 
 void eval_ode_write(InfoGDOP& info, f64* eval_ode_buffer) {

@@ -36,6 +36,7 @@ encapsulated uniontype NFFlatModel
 
 protected
   import Binding = NFBinding;
+  import Call = NFCall;
   import Class = NFClass;
   import ComplexType = NFComplexType;
   import Component = NFComponent;
@@ -45,6 +46,10 @@ protected
   import ExpandExp = NFExpandExp;
   import Expression = NFExpression;
   import FlatModelicaUtil = NFFlatModelicaUtil;
+  import Flatten = NFFlatten;
+  import NFFlatten.FunctionTree;
+  import FunctionInverse = NFFunctionInverse;
+  import Inline = NFInline;
   import InstContext = NFInstContext;
   import IOStream;
   import Lookup = NFLookup;
@@ -236,6 +241,7 @@ public
     String name = Util.makeQuotedIdentifier(className(flatModel));
     BaseModelica.OutputFormat format;
     Boolean scalarize;
+    list<Function> funcs = functions;
   algorithm
     format := BaseModelica.formatFromFlags();
     scalarize := Flags.isConfigFlagSet(Flags.BASE_MODELICA_OPTIONS, "scalarize");
@@ -243,6 +249,10 @@ public
     if Flags.getConfigString(Flags.OBFUSCATE) == "protected" or
        Flags.getConfigString(Flags.OBFUSCATE) == "encrypted" then
       flat_model := obfuscate(flat_model);
+    end if;
+
+    if BaseModelica.inlineFunctions() then
+      (flat_model, funcs) := inlineFunctions(flat_model);
     end if;
 
     if scalarize then
@@ -253,6 +263,8 @@ public
       flat_model.initialEquations := Equation.splitRecordEquations(flat_model.initialEquations);
       flat_model.initialEquations := Scalarize.scalarizeEquations(flat_model.initialEquations, forceScalarize = true);
       flat_model.initialEquations := Equation.mapExpList(flat_model.initialEquations, ExpandExp.expandCallArgs);
+      flat_model.algorithms := list(Flatten.unrollForStatementsInAlg(a) for a in flat_model.algorithms);
+      flat_model.initialAlgorithms := list(Flatten.unrollForStatementsInAlg(a) for a in flat_model.initialAlgorithms);
     else
       flat_model.variables := reconstructRecordInstances(flat_model.variables);
     end if;
@@ -264,7 +276,7 @@ public
     s := IOStream.append(s, "//! base 0.1.0\n");
     s := IOStream.append(s, "package " + name + "\n");
 
-    for fn in functions loop
+    for fn in funcs loop
       if not (Function.isDefaultRecordConstructor(fn) or Function.isExternalObjectConstructorOrDestructor(fn)) then
         // Function parameters are not affected by the scalarization mode, so use default format here.
         s := Function.toFlatStream(fn, BaseModelica.defaultFormat, "  ", s);
@@ -272,7 +284,7 @@ public
       end if;
     end for;
 
-    for ty in collectFlatTypes(flat_model, functions) loop
+    for ty in collectFlatTypes(flat_model, funcs) loop
       s := Type.toFlatDeclarationStream(ty, format, "  ", s);
       s := IOStream.append(s, ";\n\n");
     end for;
@@ -315,6 +327,85 @@ public
     s := IOStream.append(s, "  end " + name + ";\n");
     s := IOStream.append(s, "end " + name + ";\n");
   end appendFlatStream;
+
+  function inlineFunctions
+    "Tries to inline all function calls in the flat model, and returns the new
+     flat model and a list of functions that couldn't be inlined."
+    input output FlatModel flatModel;
+          output list<Function> remainingFuncs;
+  protected
+    UnorderedSet<Function> funcs;
+  algorithm
+    funcs := UnorderedSet.new(Function.nameHash, Function.nameEqual);
+    flatModel := mapExp(flatModel, function Expression.map(func = function inlineFunctions_traverser(funcs = funcs)));
+    remainingFuncs := UnorderedSet.toList(funcs);
+  end inlineFunctions;
+
+  function inlineFunctions_traverser
+    input Expression exp;
+    input UnorderedSet<Function> funcs;
+    output Expression outExp;
+  protected
+    Function fn;
+  algorithm
+    outExp := match exp
+      case Expression.CALL()
+        algorithm
+          fn := Call.typedFunction(exp.call);
+
+          if Function.isBuiltin(fn) then
+            outExp := exp;
+          else
+            outExp := Inline.inlineCallExp(exp, forceInline = true);
+
+            if referenceEq(exp, outExp) then
+              // If the call wasn't inlined, add it to the set of remaining functions.
+              collectFunction(fn, funcs);
+            else
+              // Otherwise, collect any calls in the new expression that couldn't be inlined.
+              Expression.apply(outExp, function collectFunctions(funcs = funcs));
+            end if;
+          end if;
+        then
+          outExp;
+
+      else exp;
+    end match;
+  end inlineFunctions_traverser;
+
+  function collectFunctions
+    input Expression exp;
+    input UnorderedSet<Function> funcs;
+  algorithm
+    () := match exp
+      case Expression.CALL()
+        algorithm
+          collectFunction(Call.typedFunction(exp.call), funcs);
+        then
+          ();
+
+      else ();
+    end match;
+  end collectFunctions;
+
+  function collectFunction
+    input Function fn;
+    input UnorderedSet<Function> funcs;
+  algorithm
+    if not Function.isBuiltin(fn) then
+      UnorderedSet.add(fn, funcs);
+
+      for fn_der in fn.derivatives loop
+        for der_fn in Function.getCachedFuncs(fn_der.derivativeFn) loop
+          UnorderedSet.add(der_fn, funcs);
+        end for;
+      end for;
+
+      for fn_inv in fn.inverses loop
+        UnorderedSet.add(FunctionInverse.getFunction(fn_inv), funcs);
+      end for;
+    end if;
+  end collectFunction;
 
   function collectFlatTypes
     input FlatModel flatModel;

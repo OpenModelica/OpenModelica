@@ -2,7 +2,7 @@
 // teardown_command: rm -f Modelica.Mechanics.MultiBody.Examples.Elementary.PendulumWithSpringDamper_*.mat
 // keywords: simulation MSL Examples
 // status: correct
-// cflags: 	  -d=-newInst
+// cflags:
 //
 // Simulation Results
 // Modelica Standard Library

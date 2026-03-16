@@ -68,6 +68,11 @@ TranslationFlagsWidget::TranslationFlagsWidget(QWidget *pParent)
   mpParmodautoCheckBox = new QCheckBox(tr("Enable parallelization of independent systems of equations (Experimental)"));
   mpOldInstantiationCheckBox = new QCheckBox(tr("Enable old frontend for code generation"));
   mpEnableFMUImportCheckBox = new QCheckBox(tr("Enable FMU Import"));
+  mpProfilingLabel = new Label(tr("Profiling (enable performance measurements)"));
+  mpProfilingComboBox = new ComboBox;
+  OMCInterface::getConfigFlagValidOptions_res profiling = MainWindow::instance()->getOMCProxy()->getConfigFlagValidOptions("profiling");
+  mpProfilingComboBox->addItems(profiling.validOptions);
+  Utilities::setToolTip(mpProfilingComboBox, profiling.mainDescription, profiling.descriptions);
   mpAdditionalTranslationFlagsLabel = new Label(tr("Additional Translation Flags:"));
   mpAdditionalTranslationFlagsLabel->setToolTip(Helper::translationFlagsTip);
   mpAdditionalTranslationFlagsTextBox = new QLineEdit;
@@ -91,6 +96,8 @@ TranslationFlagsWidget::TranslationFlagsWidget(QWidget *pParent)
   pMainLayout->addWidget(mpParmodautoCheckBox, row++, 0, 1, 3);
   pMainLayout->addWidget(mpOldInstantiationCheckBox, row++, 0, 1, 3);
   pMainLayout->addWidget(mpEnableFMUImportCheckBox, row++, 0, 1, 3);
+  pMainLayout->addWidget(mpProfilingLabel, row, 0);
+  pMainLayout->addWidget(mpProfilingComboBox, row++, 1, 1, 2);
   pMainLayout->addWidget(mpAdditionalTranslationFlagsLabel, row, 0);
   pMainLayout->addWidget(mpAdditionalTranslationFlagsTextBox, row, 1);
   pMainLayout->addWidget(mpTranslationFlagsHelpButton, row++, 2);
@@ -118,6 +125,11 @@ void TranslationFlagsWidget::applySimulationOptions(const SimulationOptions &sim
   mpParmodautoCheckBox->setChecked(simulationOptions.getParmodauto());
   mpOldInstantiationCheckBox->setChecked(simulationOptions.getOldInstantiation());
   mpEnableFMUImportCheckBox->setChecked(simulationOptions.getEnableFMUImport());
+  // profiling
+  currentIndex = mpProfilingComboBox->findText(simulationOptions.getProfiling(), Qt::MatchExactly);
+  if (currentIndex > -1) {
+    mpProfilingComboBox->setCurrentIndex(currentIndex);
+  }
   mpAdditionalTranslationFlagsTextBox->setText(simulationOptions.getAdditionalTranslationFlags());
 }
 
@@ -136,6 +148,7 @@ void TranslationFlagsWidget::createSimulationOptions(SimulationOptions *pSimulat
   pSimulationOptions->setParmodauto(mpParmodautoCheckBox->isChecked());
   pSimulationOptions->setOldInstantiation(mpOldInstantiationCheckBox->isChecked());
   pSimulationOptions->setEnableFMUImport(mpEnableFMUImportCheckBox->isChecked());
+  pSimulationOptions->setProfiling(mpProfilingComboBox->currentText());
   pSimulationOptions->setAdditionalTranslationFlags(mpAdditionalTranslationFlagsTextBox->text());
 }
 
@@ -164,6 +177,8 @@ QString TranslationFlagsWidget::commandLineOptions()
   configFlags.append(QString("--matchingAlgorithm=%1").arg(mpMatchingAlgorithmComboBox->currentText()));
   // index reduction method
   configFlags.append(QString("--indexReductionMethod=%1").arg(mpIndexReductionMethodComboBox->currentText()));
+  // profiling
+  MainWindow::instance()->getOMCProxy()->setCommandLineOptions("--profiling=" + mpProfilingComboBox->currentText());
 
   QStringList debugFlags;
   // initialization

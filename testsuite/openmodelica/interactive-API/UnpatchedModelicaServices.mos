@@ -1,0 +1,22 @@
+// name: UnpatchedModelicaServices
+// keywords:
+// depends: FakeModelicaServices
+// status: correct
+
+loadModel(ModelicaServices);
+getErrorString();
+clear();
+
+setModelicaPath("FakeModelicaServices");
+loadModel(ModelicaServices);
+getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// true
+// true
+// "Warning: This version of ModelicaServices does not appear to be patched for use with OpenModelica, consider using a version distributed by OpenModelica instead to avoid compatibility issues.
+// "
+// endResult

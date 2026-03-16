@@ -88,7 +88,6 @@ public:
     setClock("");
     setLinearSolver("");
     setNonLinearSolver("");
-    setLinearizationTime("");
     setOutputVariables("");
     setProfiling("none");
     setCPUTime(false);
@@ -101,6 +100,7 @@ public:
     setBoundaryConditionCorrelationMatrixInputFile("");
     setDataReconciliationEpsilon("");
     setDataReconciliationSaveSetting(false);
+    setGenerateFMUSaveSetting(false);
     setLogStreams(QStringList() << "LOG_STDOUT" << "LOG_ASSERT" << "LOG_STATS");
     setAdditionalSimulationFlags("");
     // Output
@@ -114,6 +114,8 @@ public:
     setEquidistantTimeGrid(true);
     setStoreVariablesAtEvents(true);
     setShowGeneratedFiles(false);
+    // Linearize
+    setLinearizationDumpLanguage("none");
 
     setSimulationFlags(QStringList());
     setIsValid(false);
@@ -204,8 +206,6 @@ public:
   QString getLinearSolver() const {return mLinearSolver;}
   void setNonLinearSolver(const QString &nonLinearSolver) {mNonLinearSolver = nonLinearSolver;}
   QString getNonLinearSolver() const {return mNonLinearSolver;}
-  void setLinearizationTime(const QString &linearizationTime) {mLinearizationTime = linearizationTime;}
-  QString getLinearizationTime() const {return mLinearizationTime;}
   void setOutputVariables(const QString &outputVariables) {mOutputVariables = outputVariables;}
   QString getOutputVariables() const {return mOutputVariables;}
   void setProfiling(const QString &profiling) {mProfiling = profiling;}
@@ -230,6 +230,9 @@ public:
   QString getDataReconciliationEpsilon() const {return mDataReconciliationEpsilon;}
   void setDataReconciliationSaveSetting(bool dataReconciliationSaveSetting) {mDataReconciliationSaveSetting = dataReconciliationSaveSetting;}
   bool getDataReconciliationSaveSetting() const {return mDataReconciliationSaveSetting;}
+  void setGenerateFMUSaveSetting(bool generateFMUSaveSetting) {mGenerateFMUSaveSetting = generateFMUSaveSetting;}
+  bool getGenerateFMUSaveSetting() const {return mGenerateFMUSaveSetting;}
+
   void setLogStreams(QStringList logStreams) {mLogStreams = logStreams;}
   QStringList getLogStreams() const {return mLogStreams;}
   void setAdditionalSimulationFlags(const QString &additionalSimulationFlags) {mAdditionalSimulationFlags = additionalSimulationFlags;}
@@ -257,6 +260,9 @@ public:
   bool getStoreVariablesAtEvents() const {return mStoreVariablesAtEvents;}
   void setShowGeneratedFiles(bool showGeneratedFiles) {mShowGeneratedFiles = showGeneratedFiles;}
   bool getShowGeneratedFiles() const {return mShowGeneratedFiles;}
+
+  void setLinearizationDumpLanguage(const QString &linearizationDumpLanguage) {mLinearizationDumpLanguage = linearizationDumpLanguage;}
+  QString getLinearizationDumpLanguage() const {return mLinearizationDumpLanguage;}
 
   void setSimulationFlags(QStringList simulationFlags) {mSimulationFlags = simulationFlags;}
   QStringList getSimulationFlags() const {return mSimulationFlags;}
@@ -314,7 +320,6 @@ private:
   QString mClock;
   QString mLinearSolver;
   QString mNonLinearSolver;
-  QString mLinearizationTime;
   QString mOutputVariables;
   QString mProfiling;
   bool mCPUTime;
@@ -327,6 +332,7 @@ private:
   QString mBoundaryConditionCorrelationMatrixInputFile;
   QString mDataReconciliationEpsilon;
   bool mDataReconciliationSaveSetting;
+  bool mGenerateFMUSaveSetting;
   QStringList mLogStreams;
   QString mAdditionalSimulationFlags;
   // output
@@ -340,6 +346,8 @@ private:
   bool mEquidistantTimeGrid;
   bool mStoreVariablesAtEvents;
   bool mShowGeneratedFiles;
+  // linearize
+  QString mLinearizationDumpLanguage;
 
   QStringList mSimulationFlags;
   bool mValid;

@@ -299,7 +299,14 @@ QVariant VariablesTreeItem::data(int column, int role) const
       switch (role) {
         case Qt::DisplayRole:
         case Qt::ToolTipRole:
-          return mDescription;
+          /* Show the description of child in case of array variables
+           * See #14980
+           */
+          if (mIsMainArray && !mChildren.isEmpty()) {
+            return mChildren.at(0)->getDescription();
+          } else {
+            return mDescription;
+          }
         default:
           return QVariant();
       }
@@ -724,11 +731,7 @@ bool VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
     existingTopVariableTreeItem = false;
   }
   // set the newly inserted VariablesTreeItem active
-  PlotWindowContainer *pPlotWindowContainer = MainWindow::instance()->getPlotWindowContainer();
-  if (!(pPlotWindowContainer->currentSubWindow() && pPlotWindowContainer->isDiagramWindow(pPlotWindowContainer->currentSubWindow()->widget()))) {
-    mpActiveVariablesTreeItem = pTopVariablesTreeItem;
-    mpVariablesTreeView->getVariablesWidget()->initializeVisualization();
-  }
+  mpActiveVariablesTreeItem = pTopVariablesTreeItem;
   /* open the model_init.xml file for reading */
   mScalarVariablesHash.clear();
   QString initFileName, infoFileName;
@@ -1033,7 +1036,6 @@ bool VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
   mpVariablesTreeView->expand(idx);
   mpVariablesTreeView->setCurrentIndex(idx);
   mpVariablesTreeView->setFocus(Qt::ActiveWindowFocusReason);
-  MainWindow::instance()->enableReSimulationToolbar(MainWindow::instance()->getVariablesDockWidget()->isVisible());
 
   return existingTopVariableTreeItem;
 }
@@ -1510,7 +1512,7 @@ VariablesWidget::VariablesWidget(QWidget *pParent)
   mpToolBar->addWidget(mpSpeedLabel);
   mpToolBar->addWidget(mpSpeedComboBox);
   // time manager
-  mpTimeManager = new TimeManager(0.0, 0.0, 0.0, 0.0, 0.1, 0.0, 1.0);
+  mpTimeManager = new TimeManager(0.0, 0.0, 0.0, 0.0, 0.016, 0.0, 1.0);
   mpTimeManager->setStartTime(0.0);
   mpTimeManager->setEndTime(1.0);
   mpTimeManager->setVisTime(mpTimeManager->getStartTime());
@@ -1592,6 +1594,7 @@ void VariablesWidget::insertVariablesItemsToTree(QString fileName, QString fileP
   if (updateVariables) {
     variablesUpdated();
   }
+  mOpenedResultFileName = "";
   initializeVisualization();
   mpVariablesTreeView->setSortingEnabled(true);
   mpVariablesTreeView->sortByColumn(0, Qt::AscendingOrder);
@@ -1795,6 +1798,11 @@ void VariablesWidget::findVariableAndUpdateValue(QDomDocument xmlDocument, QHash
   }
 }
 
+/*!
+ * \brief VariablesWidget::reSimulate
+ * Re-simulates the model with the given simulation options.
+ * \param showSetup
+ */
 void VariablesWidget::reSimulate(bool showSetup)
 {
   QModelIndexList indexes = mpVariablesTreeView->selectionModel()->selectedIndexes();
@@ -1809,17 +1817,32 @@ void VariablesWidget::reSimulate(bool showSetup)
   pVariablesTreeItem = pVariablesTreeItem->rootParent();
   SimulationOptions simulationOptions = pVariablesTreeItem->getSimulationOptions();
   if (simulationOptions.isValid()) {
-    MainWindow::instance()->getSimulationDialog()->removeInteractiveSimulation(simulationOptions.isInteractiveSimulation(), pVariablesTreeItem->getFileName(), false);
-    simulationOptions.setReSimulate(true);
-    updateInitXmlFile(pVariablesTreeItem, simulationOptions);
-    if (showSetup) {
-      MainWindow::instance()->getSimulationDialog()->show(0, true, simulationOptions);
-    } else {
-      MainWindow::instance()->getSimulationDialog()->reSimulate(simulationOptions);
-    }
+    reSimulate(simulationOptions, pVariablesTreeItem, showSetup);
   } else {
     QMessageBox::information(this, QString("%1 - %2").arg(Helper::applicationName, Helper::information),
                              tr("You cannot re-simulate this class.<br />This is just a result file loaded via menu <b>File->Open Result File(s)</b>."), QMessageBox::Ok);
+  }
+}
+
+/*!
+ * \brief VariablesWidget::reSimulate
+ * Re-simulates the model with the given simulation options and updates the model_init.xml file if needed.
+ * \param simulationOptions
+ * \param pVariablesTreeItem
+ * \param showSetup
+ */
+void VariablesWidget::reSimulate(SimulationOptions simulationOptions, VariablesTreeItem *pVariablesTreeItem, bool showSetup)
+{
+  simulationOptions.setReSimulate(true);
+  if (pVariablesTreeItem) {
+    MainWindow::instance()->getSimulationDialog()->removeInteractiveSimulation(simulationOptions.isInteractiveSimulation(), pVariablesTreeItem->getFileName(), false);
+    updateInitXmlFile(pVariablesTreeItem, simulationOptions);
+  }
+
+  if (showSetup) {
+    MainWindow::instance()->getSimulationDialog()->show(0, true, simulationOptions);
+  } else {
+    MainWindow::instance()->getSimulationDialog()->reSimulate(simulationOptions);
   }
 }
 
@@ -1848,16 +1871,20 @@ void VariablesWidget::updateInitXmlFile(VariablesTreeItem *pVariablesTreeItem, S
                                                             .arg(initFile.fileName()), Helper::scriptingKind, Helper::errorLevel));
     }
     initFile.close();
-    initFile.open(QIODevice::WriteOnly | QIODevice::Truncate);
-    QTextStream textStream(&initFile);
+    if (initFile.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
+      QTextStream textStream(&initFile);
 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
-    textStream.setEncoding(QStringConverter::Utf8);
+      textStream.setEncoding(QStringConverter::Utf8);
 #else
-    textStream.setCodec(Helper::utf8.toUtf8().constData());
+      textStream.setCodec(Helper::utf8.toUtf8().constData());
 #endif
-    textStream.setGenerateByteOrderMark(false);
-    textStream << initXmlDocument.toString();
-    initFile.close();
+      textStream.setGenerateByteOrderMark(false);
+      textStream << initXmlDocument.toString();
+      initFile.close();
+    } else {
+      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, GUIMessages::getMessage(GUIMessages::ERROR_OPENING_FILE).arg(initFile.fileName())
+                                                            .arg(initFile.errorString()), Helper::scriptingKind, Helper::errorLevel));
+    }
   } else {
     MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, GUIMessages::getMessage(GUIMessages::ERROR_OPENING_FILE).arg(initFile.fileName())
                                                           .arg(initFile.errorString()), Helper::scriptingKind, Helper::errorLevel));
@@ -1870,39 +1897,46 @@ void VariablesWidget::updateInitXmlFile(VariablesTreeItem *pVariablesTreeItem, S
  */
 void VariablesWidget::initializeVisualization()
 {
-  VariablesTreeItem *pVariablesTreeItem = 0;
+  VariablesTreeItem *pVariablesTreeItem = nullptr;
   PlotWindowContainer *pPlotWindowContainer = MainWindow::instance()->getPlotWindowContainer();
   bool isDiagramWindow = (pPlotWindowContainer->currentSubWindow() && pPlotWindowContainer->isDiagramWindow(pPlotWindowContainer->currentSubWindow()->widget())
                           && pPlotWindowContainer->getDiagramWindow() && pPlotWindowContainer->getDiagramWindow()->getModelWidget()
                           && pPlotWindowContainer->getDiagramWindow()->getModelWidget()->getLibraryTreeItem());
-  if (mpVariablesTreeModel->getActiveVariablesTreeItem() || isDiagramWindow) {
-    // if we came in due to diagram window then find the VariablesTreeItem
-    if (isDiagramWindow) {
-      const QString className = pPlotWindowContainer->getDiagramWindow()->getModelWidget()->getLibraryTreeItem()->getNameStructure();
-      pVariablesTreeItem = mpVariablesTreeModel->findVariablesTreeItemFromClassNameTopLevel(className);
-    } else {
-      pVariablesTreeItem = mpVariablesTreeModel->getActiveVariablesTreeItem();
-    }
+  // if we came in due to diagram window then find the VariablesTreeItem
+  if (isDiagramWindow) {
+    const QString className = pPlotWindowContainer->getDiagramWindow()->getModelWidget()->getLibraryTreeItem()->getNameStructure();
+    pVariablesTreeItem = mpVariablesTreeModel->findVariablesTreeItemFromClassNameTopLevel(className);
+  } else {
+    pVariablesTreeItem = mpVariablesTreeModel->getActiveVariablesTreeItem();
   }
 
   if (pVariablesTreeItem) {
-    // close any result file before opening a new one
-    closeResultFile();
-    // Open the file for reading
-    double startTime = 0.0;
-    double stopTime = 0.0;
-    openResultFile(pVariablesTreeItem, startTime, stopTime);
-    // Initialize the time manager
-    mpTimeManager->setStartTime(startTime);
-    mpTimeManager->setEndTime(stopTime);
-    mpTimeManager->setVisTime(mpTimeManager->getStartTime());
-    mpTimeManager->setPause(true);
-    // reset the visualization controls
+    /* Only initialize if already opened result file is different from the current one.
+     * This is especially important when there are multiple plots of interest for the same simulation result and the user wants to inspect each of them at a specific timestamp.
+     */
+    QString fileName = QString("%1/%2").arg(pVariablesTreeItem->getFilePath(), pVariablesTreeItem->getFileName());
+    if (mOpenedResultFileName != fileName) {
+      // close any result file before opening a new one
+      closeResultFile();
+      // Open the file for reading
+      double startTime = 0.0;
+      double stopTime = 0.0;
+      openResultFile(pVariablesTreeItem, startTime, stopTime);
+      // Initialize the time manager
+      mpTimeManager->setStartTime(startTime);
+      mpTimeManager->setEndTime(stopTime);
+      mpTimeManager->setVisTime(mpTimeManager->getStartTime());
+      mpTimeManager->setPause(true);
+      // reset the visualization controls
+      mpTimeTextBox->setText(QString::number(mpTimeManager->getVisTime()));
+      bool state = mpSimulationTimeSlider->blockSignals(true);
+      mpSimulationTimeSlider->setValue(mpTimeManager->getTimeFraction());
+      mpSimulationTimeSlider->blockSignals(state);
+    }
     mpTimeControlsDescriptionLabel->setText(tr("Enabled for %1").arg(pVariablesTreeItem->getVariableName()));
-    mpTimeTextBox->setText(QString::number(mpTimeManager->getVisTime()));
-    mpSimulationTimeSlider->setValue(mpTimeManager->getTimeFraction());
     enableVisualizationControls(true);
     updateVisualization();
+    updatePlotWindows();
   } else {
     mpTimeControlsDescriptionLabel->setText("");
     // disable visualization controls so the call to rewindVisualization doesn't try to update visualization.
@@ -1924,19 +1958,22 @@ QPair<double, bool> VariablesWidget::readVariableValue(QString variable, double 
 {
   double value = 0.0;
   bool found = false;
+  const double tolerance = 1e-12;
 
   if (mModelicaMatReader.file) {
     ModelicaMatVariable_t* var = omc_matlab4_find_var(&mModelicaMatReader, variable.toUtf8().constData());
     if (var) {
       omc_matlab4_val(&value, &mModelicaMatReader, var, time);
       found = true;
-    } else {
     }
   } else if (mpCSVData) {
     double *timeDataSet = read_csv_dataset(mpCSVData, "time");
     if (timeDataSet) {
       for (int i = 0 ; i < mpCSVData->numsteps ; i++) {
-        if (QString::number(timeDataSet[i]).compare(QString::number(time)) == 0) {
+        // relative distance. See #14959
+        double diff  = qAbs(timeDataSet[i] - time);
+        double scale = qMax(qAbs(timeDataSet[i]), qAbs(time));
+        if (diff <= tolerance * qMax(1.0, scale)) {
           double *varDataSet = read_csv_dataset(mpCSVData, variable.toUtf8().constData());
           if (varDataSet) {
             value = varDataSet[i];
@@ -1959,7 +1996,10 @@ QPair<double, bool> VariablesWidget::readVariableValue(QString variable, double 
           break;
         }
         QStringList values = currentLine.split(",");
-        if (QString::number(time).compare(values[0]) == 0) {
+        const double t = values[0].toDouble();
+        double diff  = qAbs(t - time);
+        double scale = qMax(qAbs(t), qAbs(time));
+        if (diff <= tolerance * qMax(1.0, scale)) {
           value = values[1].toDouble();
           found = true;
           break;
@@ -2067,8 +2107,8 @@ void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickne
             pPlotWindow->toggleSign(pPlotCurve, true);
           }
         } else {/* i.e., pPlotWindow->isPlotArray() */
-          double timePercent = mpTimeTextBox->text().toDouble();
-          pPlotWindow->plotArray(timePercent, pPlotCurve);
+          double time = mpTimeManager->getVisTime();
+          pPlotWindow->plotArray(time, pPlotCurve);
         }
         if (!pPlotCurve) {
           pPlotCurve = pPlotWindow->getPlot()->getPlotCurvesList().last();
@@ -2182,8 +2222,8 @@ void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickne
                 pPlotWindow->toggleSign(pPlotCurve, true);
               }
             } else { /* i.e., pPlotWindow->isPlotArrayParametric() */
-              double timePercent = mpTimeTextBox->text().toDouble();
-              pPlotWindow->plotArrayParametric(timePercent, pPlotCurve);
+              double time = mpTimeManager->getVisTime();
+              pPlotWindow->plotArrayParametric(time, pPlotCurve);
             }
             if (!pPlotCurve) {
               pPlotCurve = pPlotWindow->getPlot()->getPlotCurvesList().last();
@@ -2615,6 +2655,7 @@ void VariablesWidget::closeResultFile()
   if (mPlotFileReader.isOpen()) {
     mPlotFileReader.close();
   }
+  mOpenedResultFileName = "";
 }
 
 /*!
@@ -2700,6 +2741,8 @@ void VariablesWidget::openResultFile(VariablesTreeItem *pVariablesTreeItem, doub
       MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
                                                             GUIMessages::getMessage(GUIMessages::ERROR_OPENING_FILE)
                                                             .arg(fileName, errorString), Helper::scriptingKind, Helper::errorLevel));
+    } else {
+      mOpenedResultFileName = fileName;
     }
   }
 }
@@ -2714,14 +2757,20 @@ void VariablesWidget::updateVisualization()
   if (mpSimulationTimeSlider->isEnabled()) {
     mpTimeManager->updateTick();  //for real-time measurement
     double visTime = mpTimeManager->getRealTime();
-    // Update the DiagramWindow by emitting updateDynamicSelect SIGNAL only if its DiagramWindow is active
+    // Update the DiagramWindow by emitting updateDynamicSelect SIGNAL only if the DiagramWindow relates to the currently opened result file
     PlotWindowContainer *pPlotWindowContainer = MainWindow::instance()->getPlotWindowContainer();
-    if (pPlotWindowContainer->currentSubWindow() && pPlotWindowContainer->isDiagramWindow(pPlotWindowContainer->currentSubWindow()->widget())) {
-      emit updateDynamicSelect(mpTimeManager->getVisTime());
-    }
-    if (MainWindow::instance()->getPlotWindowContainer()->getDiagramWindow()
-        && MainWindow::instance()->getPlotWindowContainer()->getDiagramWindow()->getModelWidget()) {
-      MainWindow::instance()->getPlotWindowContainer()->getDiagramWindow()->getModelWidget()->getDiagramGraphicsView()->scene()->update();
+    if (pPlotWindowContainer->getDiagramWindow() &&
+        pPlotWindowContainer->getDiagramWindow()->getModelWidget() &&
+        pPlotWindowContainer->getDiagramWindow()->getModelWidget()->getLibraryTreeItem()) {
+      const QString className = pPlotWindowContainer->getDiagramWindow()->getModelWidget()->getLibraryTreeItem()->getNameStructure();
+      VariablesTreeItem *pVariablesTreeItem = mpVariablesTreeModel->findVariablesTreeItemFromClassNameTopLevel(className);
+      if (pVariablesTreeItem) {
+        QString fileName = QString("%1/%2").arg(pVariablesTreeItem->getFilePath(), pVariablesTreeItem->getFileName());
+        if (mOpenedResultFileName == fileName) {
+          emit updateDynamicSelect(mpTimeManager->getVisTime());
+          pPlotWindowContainer->getDiagramWindow()->getModelWidget()->getDiagramGraphicsView()->scene()->update();
+        }
+      }
     }
     mpTimeManager->updateTick();  //for real-time measurement
     visTime = mpTimeManager->getRealTime() - visTime;
@@ -2851,13 +2900,14 @@ void VariablesWidget::timeUnitChanged(int index)
  */
 void VariablesWidget::updateVariablesTree(QMdiSubWindow *pSubWindow)
 {
-  MainWindow::instance()->getModelWidgetContainer()->currentModelWidgetChanged(0);
+  if (MainWindow::instance()->isPlottingPerspectiveActive() && MainWindow::instance()->getModelWidgetContainer()) {
+    MainWindow::instance()->getModelWidgetContainer()->currentModelWidgetChanged(0);
+  }
   if (!pSubWindow && MainWindow::instance()->getPlotWindowContainer()->subWindowList().size() != 0) {
     return;
   }
   /* if the same sub window is activated again then just return */
   if (mpLastActiveSubWindow == pSubWindow) {
-    mpLastActiveSubWindow = pSubWindow;
     return;
   }
   mpLastActiveSubWindow = pSubWindow;
@@ -2892,14 +2942,22 @@ void VariablesWidget::showContextMenu(QPoint point)
     bool isActiveVariableTreeItem = pVariablesTreeItem == mpVariablesTreeModel->getActiveVariablesTreeItem();
     pEnableTimeControlsAction->setEnabled(!pVariablesTreeItem->getSimulationOptions().isInteractiveSimulation() && !isDiagramWindow && !isActiveVariableTreeItem);
     connect(pEnableTimeControlsAction, SIGNAL(triggered()), mpVariablesTreeModel, SLOT(enableTimeControls()));
+    /* resimulate action */
+    QAction *pReSimulateAction = new QAction(QIcon(":/Resources/icons/re-simulate.svg"), Helper::reSimulate, this);
+    pReSimulateAction->setStatusTip(Helper::reSimulateTip);
+    connect(pReSimulateAction, SIGNAL(triggered()), this, SLOT(directReSimulate()));
+    /* resimulate setup action */
+    QAction *pReSimulateSetupAction = new QAction(QIcon(":/Resources/icons/re-simulation-center.svg"), Helper::reSimulateSetup, this);
+    pReSimulateSetupAction->setStatusTip(Helper::reSimulateSetupTip);
+    connect(pReSimulateSetupAction, SIGNAL(triggered()), this, SLOT(showReSimulateSetup()));
 
     QMenu menu(this);
     menu.addAction(pDeleteResultAction);
     menu.addSeparator();
     menu.addAction(pEnableTimeControlsAction);
     menu.addSeparator();
-    menu.addAction(MainWindow::instance()->getReSimulateModelAction());
-    menu.addAction(MainWindow::instance()->getReSimulateSetupAction());
+    menu.addAction(pReSimulateAction);
+    menu.addAction(pReSimulateSetupAction);
     point.setY(point.y() + adjust);
     menu.exec(mpVariablesTreeView->mapToGlobal(point));
   } else if (pVariablesTreeItem) {
@@ -2971,7 +3029,6 @@ void VariablesWidget::findVariables()
       mpVariablesTreeView->selectionModel()->select(proxyIndex, QItemSelectionModel::Select | QItemSelectionModel::Rows);
     }
   }
-  MainWindow::instance()->enableReSimulationToolbar(MainWindow::instance()->getVariablesDockWidget()->isVisible());
 }
 
 void VariablesWidget::directReSimulate()

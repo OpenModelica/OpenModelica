@@ -34,13 +34,7 @@
 
 #include "StringHandlerTest.h"
 #include "Util.h"
-#include "OMEditApplication.h"
 #include "MainWindow.h"
-
-#define GC_THREADS
-extern "C" {
-#include "meta/meta_modelica.h"
-}
 
 OMEDITTEST_MAIN(StringHandlerTest)
 
@@ -80,6 +74,67 @@ void StringHandlerTest::makeVariablePartsWithIndTest_data()
   QTest::newRow("Array2D")
     << "paramTable[1,1]"
     << QStringList({"paramTable", "[1,1]"});
+}
+
+void StringHandlerTest::removeTypePrefix()
+{
+  QFETCH(QString, string);
+  QFETCH(QString, typeName);
+  QFETCH(QString, result);
+
+  StringHandler::removeTypePrefix(string, typeName);
+  QCOMPARE(string, result);
+}
+
+void StringHandlerTest::removeTypePrefix_data()
+{
+  QTest::addColumn<QString>("string");
+  QTest::addColumn<QString>("typeName");
+  QTest::addColumn<QString>("result");
+
+  QTest::newRow("removeTypePrefix 1")
+      << "P.Dynamics.FixedInitial"
+      << "P.Dynamics"
+      << "FixedInitial";
+
+  QTest::newRow("removeTypePrefix 2")
+      << "Modelica.Blocks.Types.Enumeration.Periodic"
+      << "Modelica.Blocks.Types.Enumeration"
+      << "Periodic";
+}
+
+void StringHandlerTest::splitPath()
+{
+  QFETCH(QString, path);
+  QFETCH(QStringList, result);
+
+  QCOMPARE(StringHandler::splitPath(path), result);
+}
+
+void StringHandlerTest::splitPath_data()
+{
+  QTest::addColumn<QString>("path");
+  QTest::addColumn<QStringList>("result");
+
+  QTest::newRow("Empty path")
+    << ""
+    << QStringList({});
+
+  QTest::newRow("Path 1")
+    << "A.B"
+    << QStringList({"A", "B"});
+
+  QTest::newRow("Path 2")
+    << "A.B.'C'"
+    << QStringList({"A", "B", "'C'"});
+
+  QTest::newRow("Path 3")
+    << "A.B.'C.D'"
+    << QStringList({"A", "B", "'C.D'"});
+
+  QTest::newRow("Path 4")
+    << "A.B.'C.D'.E"
+    << QStringList({"A", "B", "'C.D'", "E"});
 }
 
 void StringHandlerTest::cleanupTestCase()

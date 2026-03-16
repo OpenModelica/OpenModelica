@@ -305,6 +305,18 @@ template dumpEqsWork(list<SimEqSystem> eqs)
       type: FOR_EQUATION
       <%forstatement%>
       >>
+    case e as SES_ALIAS(__) then
+      <<
+      equation index: <%equationIndex(e)%>
+      type: ALIAS
+        alias of <%e.aliasOf%>
+      >>
+    case e as SES_ENTWINED_ASSIGN(__) then
+      <<
+      equation index: <%equationIndex(e)%>
+      type: ENTWINED_ASSIGN
+        <%dumpEqs(e.single_calls)%>
+      >>
     else
       <<
       unknown equation

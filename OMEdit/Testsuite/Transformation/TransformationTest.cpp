@@ -34,14 +34,8 @@
 
 #include "TransformationTest.h"
 #include "Util.h"
-#include "OMEditApplication.h"
 #include "MainWindow.h"
 #include "Element/Transformation.h"
-
-#define GC_THREADS
-extern "C" {
-#include "meta/meta_modelica.h"
-}
 
 OMEDITTEST_MAIN(TransformationTest)
 

@@ -37,8 +37,6 @@
 
 #include <QObject>
 
-#include "Modeling/Model.h"
-
 /*!
  * \brief The ModelInstanceTest class
  * Tests the Model class.
@@ -46,11 +44,6 @@
 class ModelInstanceTest: public QObject
 {
   Q_OBJECT
-private:
-  const QString mFileName = "ModelInstanceTest.mo";
-  const QString mPackageName = "P";
-  const QString mModelName = "P.M";
-  ModelInstance::Model *mpModelInstance = 0;
 private slots:
   void initTestCase();
   /*!
@@ -68,6 +61,18 @@ private slots:
    * Tests the class connections.
    */
   void classConnections();
+  /*!
+   * \brief isParameter
+   * Tests if the element is a parameter.
+   */
+  void isParameter();
+  void isParameter_data();
+  /*!
+   * \brief isInput
+   * Tests if the element is a input.
+   */
+  void isInput();
+  void isInput_data();
   void cleanupTestCase();
 };
 

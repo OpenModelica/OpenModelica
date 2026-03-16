@@ -1,7 +1,6 @@
 // name:     Modelica.Electrical.Analog.Examples.CompareTransformers
 // keywords: simulation MSL Examples
 // status: correct
-// cflags: -d=-newInst
 //
 // Simulation Results
 // Modelica Standard Library

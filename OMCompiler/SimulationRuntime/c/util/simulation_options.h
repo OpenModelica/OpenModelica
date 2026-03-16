@@ -155,6 +155,7 @@ enum _FLAG
   FLAG_OPTIMIZER_NP,
   FLAG_OPTIMIZER_TGRID,
   FLAG_OUTPUT,
+  FLAG_OUTPUT_FORMAT,
   FLAG_OUTPUT_PATH,
   FLAG_OVERRIDE,
   FLAG_OVERRIDE_FILE,
@@ -165,11 +166,13 @@ enum _FLAG
   FLAG_DATA_RECONCILE_STATE,
   FLAG_SR,
   FLAG_SR_CTRL,
+  FLAG_SR_CTRL_EVNT_REINIT,
   FLAG_SR_CTRL_FILTER,
   FLAG_SR_CTRL_FHR,
   FLAG_SR_ERR,
   FLAG_SR_INT,
   FLAG_SR_NLS,
+  FLAG_SR_NLS_INTERNAL_JACKEEP,
   FLAG_MR,
   FLAG_MR_CTRL,
   FLAG_MR_ERR,
@@ -181,13 +184,18 @@ enum _FLAG
   FLAG_SAVE_INITIAL_GUESS_SYSTEM,
   FLAG_SINGLE_PRECISION,
   FLAG_SOLVER_STEPS,
+  FLAG_START_TIME,
   FLAG_STEADY_STATE,
   FLAG_STEADY_STATE_TOL,
+  FLAG_STEP_SIZE,
   FLAG_STOP_AT_SYSTEM,
+  FLAG_STOP_TIME,
   FLAG_SVD_SPARSE_COUNT,
   FLAG_SVD_SPARSE_SIGMA,
   FLAG_DATA_RECONCILE_Sx,
+  FLAG_TOLERANCE,
   FLAG_UP_HESSIAN,
+  FLAG_VARIABLE_FILTER,
   FLAG_W,
   FLAG_PARMODNUMTHREADS,
 
@@ -226,15 +234,20 @@ enum GB_METHOD {
   RK_TRAPEZOID,       /* trapezoid */
   RK_SDIRK2,          /* sdirk2*/
   RK_SDIRK3,          /* sdirk3*/
+  RK_SDIRK4,          /* sdirk4*/
   RK_ESDIRK2,         /* esdirk2*/
   RK_ESDIRK3,         /* esdirk3*/
   RK_ESDIRK4,         /* esdirk4*/
+  RK_ESDIRK4_7L2SA,   /* esdirk4s7*/
   RK_RADAU_IA_2,      /* radauIA2*/
   RK_RADAU_IA_3,      /* radauIA3*/
   RK_RADAU_IA_4,      /* radauIA4*/
   RK_RADAU_IIA_2,     /* radauIIA2*/
   RK_RADAU_IIA_3,     /* radauIIA3*/
   RK_RADAU_IIA_4,     /* radauIIA4*/
+  RK_RADAU_IIA_5,     /* radauIIA5*/
+  RK_RADAU_IIA_6,     /* radauIIA6*/
+  RK_RADAU_IIA_7,     /* radauIIA7*/
   RK_LOBA_IIIA_3,     /* lobattoIIIA3*/
   RK_LOBA_IIIA_4,     /* lobattoIIIA4*/
   RK_LOBA_IIIB_3,     /* lobattoIIIB3*/
@@ -277,6 +290,7 @@ enum GB_NLS_METHOD {
   GB_NLS_NEWTON,
   GB_NLS_KINSOL,
   GB_NLS_KINSOL_B,
+  GB_NLS_INTERNAL,
 
   GB_NLS_MAX
 };
@@ -319,6 +333,22 @@ enum GB_INTERPOL_METHOD {
 
 extern const char *GB_INTERPOL_METHOD_NAME[GB_INTERPOL_MAX];
 extern const char *GB_INTERPOL_METHOD_DESC[GB_INTERPOL_MAX];
+
+/**
+ * @brief Extrapolation method for single-rate / multi-rate error estimation.
+ */
+enum GB_EXTRAPOL_METHOD {
+  GB_EXT_UNKNOWN = 0,    /* Unknown method */
+
+  GB_EXT_DEFAULT,        /* Default, depending on the Runge-Kutta method */
+  GB_EXT_RICHARDSON,     /* Richardson extrapolation */
+  GB_EXT_EMBEDDED,       /* Embedded scheme */
+
+  GB_EXT_MAX
+};
+
+extern const char *GB_EXTRAPOL_METHOD_NAME[GB_EXT_MAX];
+extern const char *GB_EXTRAPOL_METHOD_DESC[GB_EXT_MAX];
 
 enum SOLVER_METHOD
 {
@@ -409,6 +439,11 @@ typedef enum NONLINEAR_SOLVER
   NLS_MIXED_DOESNT_EXIST,
 #endif
   NLS_HOMOTOPY,
+
+  NLS_GB_INTERNAL,
+#if !defined(OMC_MINIMAL_RUNTIME)
+  NLS_GB_INTERNAL_DOESNT_EXIST,
+#endif
 
   NLS_MAX
 } NONLINEAR_SOLVER;

@@ -1035,17 +1035,14 @@ void TransformationsWidget::loadTransformations()
   clearTreeWidgetItems(mpEquationsTreeWidget);
   /* initialize all fields again */
   mProfilingJSONFullFileName = "";
-  mProfilingDataRealFileName = "";
   /* check if profiling is enabled or checkProfilingExists is true then check if the profiling files exists
    * if user enabled profiling in the SimulationSetup then profiling will be true
    * checkProfilingExists is true when user opens the transformation file
    */
   if (mProfilingEnabled || mCheckForProfilingFiles) {
     QString profilingJSONFileName = mInfoJSONFullFileName.left(mInfoJSONFullFileName.size() - 9) + "prof.json";
-    QString profilingDataRealFileName = mInfoJSONFullFileName.left(mInfoJSONFullFileName.size() - 9) + "prof.realdata";
-    if (QFile::exists(profilingJSONFileName) && QFile::exists(profilingDataRealFileName)) {
+    if (QFile::exists(profilingJSONFileName)) {
       mProfilingJSONFullFileName = profilingJSONFileName;
-      mProfilingDataRealFileName = profilingDataRealFileName;
     }
   }
   mEquations.clear();
@@ -1238,10 +1235,9 @@ void TransformationsWidget::fetchEquationData(int equationIndex)
     }
   }
   QFile file(fileName);
-  if (file.exists()) {
+  if (file.open(QIODevice::ReadOnly)) {
     mpTSourceEditorFileLabel->setText(file.fileName());
     mpTSourceEditorFileLabel->show();
-    file.open(QIODevice::ReadOnly);
     mpTransformationsEditor->getPlainTextEdit()->setPlainText(QString(file.readAll()));
     mpTSourceEditorInfoBar->hide();
     file.close();
@@ -1385,10 +1381,9 @@ void TransformationsWidget::fetchVariableData(const QModelIndex &index)
     }
   }
   QFile file(fileName);
-  if (file.exists()) {
+  if (file.open(QIODevice::ReadOnly)) {
     mpTSourceEditorFileLabel->setText(file.fileName());
     mpTSourceEditorFileLabel->show();
-    file.open(QIODevice::ReadOnly);
     mpTransformationsEditor->getPlainTextEdit()->setPlainText(QString(file.readAll()));
     mpTSourceEditorInfoBar->hide();
     file.close();

@@ -47,8 +47,11 @@ protected
   // selfimport
   import Tearing = NBTearing;
 
+  // OF imports
+  import Absyn.Path;
+
   // NF imports
-  import NFFlatten.FunctionTree;
+  import NFFunction.Function;
   import Variable = NFVariable;
   import ComponentRef = NFComponentRef;
 
@@ -84,7 +87,7 @@ public
   function hash
     "compute hash value by only using iteration variables with their first index should be unique enough"
     input Tearing set;
-    output Integer h = 5381;
+    output Integer h = Util.HASH_SEED;
   algorithm
     for var in set.iteration_vars loop
       h := stringHashDjb2Continue(BVariable.pointerToString(Slice.getT(var)), h);
@@ -135,7 +138,6 @@ public
     input Partition.Kind kind;
   protected
     constant list<Module.tearingInterface> funcs = getModule();
-    FunctionTree funcTree;
   algorithm
     if Flags.isSet(Flags.TEARING_DUMP) then
       print(StringUtil.headline_1("[" + Partition.Partition.kindToString(kind) + "] Tearing") + "\n");
@@ -145,29 +147,22 @@ public
         list<Partition.Partition> partitions;
         Pointer<Integer> eq_index;
 
-      case (NBPartition.Kind.ODE, BackendDAE.MAIN(ode = partitions, funcTree = funcTree, eqData = BEquation.EQ_DATA_SIM(uniqueIndex = eq_index)))
+      case (NBPartition.Kind.ODE, BackendDAE.MAIN(eqData = BEquation.EQ_DATA_SIM(uniqueIndex = eq_index)))
         algorithm
-          (partitions, funcTree) := tearingTraverser(partitions, funcs, funcTree, eq_index, kind);
-          bdae.ode := partitions;
-          bdae.funcTree := funcTree;
+          bdae.ode := tearingTraverser(bdae.ode, funcs, bdae.funcMap, eq_index, kind);
       then bdae;
 
-      case (NBPartition.Kind.INI, BackendDAE.MAIN(init = partitions, funcTree = funcTree, eqData = BEquation.EQ_DATA_SIM(uniqueIndex = eq_index)))
+      case (NBPartition.Kind.INI, BackendDAE.MAIN(eqData = BEquation.EQ_DATA_SIM(uniqueIndex = eq_index)))
         algorithm
-          (partitions, funcTree) := tearingTraverser(partitions, funcs, funcTree, eq_index, kind);
-          bdae.init := partitions;
+          bdae.init := tearingTraverser(bdae.init, funcs, bdae.funcMap, eq_index, kind);
           if Util.isSome(bdae.init_0) then
-            (partitions, funcTree) := tearingTraverser(Util.getOption(bdae.init_0), funcs, funcTree, eq_index, kind);
-            bdae.init_0 := SOME(partitions);
+            bdae.init_0 := SOME(tearingTraverser(Util.getOption(bdae.init_0), funcs, bdae.funcMap, eq_index, kind));
           end if;
-          bdae.funcTree := funcTree;
       then bdae;
 
-      case (NBPartition.Kind.DAE, BackendDAE.MAIN(dae = SOME(partitions), funcTree = funcTree, eqData = BEquation.EQ_DATA_SIM(uniqueIndex = eq_index)))
+      case (NBPartition.Kind.DAE, BackendDAE.MAIN(dae = SOME(partitions), eqData = BEquation.EQ_DATA_SIM(uniqueIndex = eq_index)))
         algorithm
-          (partitions, funcTree) := tearingTraverser(partitions, funcs, funcTree, eq_index, kind);
-          bdae.dae := SOME(partitions);
-          bdae.funcTree := funcTree;
+          bdae.dae := SOME(tearingTraverser(partitions, funcs, bdae.funcMap, eq_index, kind));
           // recursively call this function to also apply to the ODE section (used for events)
           // ToDo: only create event partitions, disregard rest
       then main(bdae, NBPartition.Kind.ODE);
@@ -177,17 +172,17 @@ public
   end main;
 
   function implicit
-    input output StrongComponent comp     "the suspected algebraic loop.";
-    input output FunctionTree funcTree    "Function call bodies";
-    input output Integer index            "current unique loop index";
-    input Partition.Kind kind = NBPartition.Kind.ODE   "partition type";
+    input output StrongComponent comp                 "suspected algebraic loop";
+    input UnorderedMap<Path, Function> funcMap        "Function call bodies";
+    input output Integer index                        "current unique loop index";
+    input Partition.Kind kind = NBPartition.Kind.ODE  "partition type";
   protected
     // dummy adjacency matrix, don't need it for implicit
     Adjacency.Matrix dummy = Adjacency.EMPTY(NBAdjacency.MatrixStrictness.FULL);
     StrongComponent new_comp;
     Pointer<Boolean> homotopy = Pointer.create(false);
   algorithm
-    (comp, dummy, funcTree, index) := match comp
+    (comp, dummy, index) := match comp
       // create implicit equations
       case StrongComponent.SINGLE_COMPONENT() algorithm
         Equation.map(Pointer.access(comp.eqn), function Initialization.containsHomotopyCall(b = homotopy));
@@ -199,7 +194,7 @@ public
           mixed   = false,
           homotopy = Pointer.access(homotopy),
           status  = NBSolve.Status.IMPLICIT);
-      then finalize(new_comp, dummy, funcTree, index, VariablePointers.empty(), EquationPointers.empty(), Pointer.create(0), kind);
+      then finalize(new_comp, dummy, funcMap, index, VariablePointers.empty(), EquationPointers.empty(), Pointer.create(0), kind);
 
       case StrongComponent.MULTI_COMPONENT() algorithm
         Equation.map(Pointer.access(Slice.getT(comp.eqn)), function Initialization.containsHomotopyCall(b = homotopy));
@@ -211,7 +206,7 @@ public
           mixed   = false,
           homotopy = Pointer.access(homotopy),
           status  = NBSolve.Status.IMPLICIT);
-      then finalize(new_comp, dummy, funcTree, index, VariablePointers.empty(), EquationPointers.empty(), Pointer.create(0), kind);
+      then finalize(new_comp, dummy, funcMap, index, VariablePointers.empty(), EquationPointers.empty(), Pointer.create(0), kind);
 
       case StrongComponent.RESIZABLE_COMPONENT() algorithm
         Equation.map(Pointer.access(Slice.getT(comp.eqn)), function Initialization.containsHomotopyCall(b = homotopy));
@@ -223,10 +218,10 @@ public
           mixed   = false,
           homotopy = Pointer.access(homotopy),
           status  = NBSolve.Status.IMPLICIT);
-      then finalize(new_comp, dummy, funcTree, index, VariablePointers.empty(), EquationPointers.empty(), Pointer.create(0), kind);
+      then finalize(new_comp, dummy, funcMap, index, VariablePointers.empty(), EquationPointers.empty(), Pointer.create(0), kind);
 
       // do nothing otherwise
-      else (comp, dummy, funcTree, index);
+      else (comp, dummy, index);
     end match;
   end implicit;
 
@@ -261,20 +256,23 @@ public
     end match;
   end getModule;
 
+  function getVariables
+    input Tearing tearing;
+    output list<Pointer<Variable>> variables;
+  algorithm
+     variables := listAppend(var for var in list(Slice.getT(var) for var in tearing.iteration_vars) :: list(StrongComponent.getVariables(comp) for comp in tearing.innerEquations));
+  end getVariables;
+
   function getResidualVars
     input Tearing tearing;
-    output list<Pointer<Variable>> residuals;
-  algorithm
-    residuals := list(Equation.getResidualVar(Slice.getT(eqn)) for eqn in tearing.residual_eqns);
+    output list<Pointer<Variable>> residuals = list(Equation.getResidualVar(Slice.getT(eqn)) for eqn in tearing.residual_eqns);
   end getResidualVars;
 
   function getIterationVars
     input Tearing tearing;
-    output list<Pointer<Variable>> iterationVars;
-  algorithm
-    iterationVars := list(Slice.getT(var) for var in tearing.iteration_vars);
+    output list<Pointer<Variable>> iterationVars = list(Slice.getT(var) for var in tearing.iteration_vars);
   end getIterationVars;
-  
+
   function getResidualEqns
     input Tearing tearing;
     output list<Pointer<Equation>> residuals = list(Slice.getT(eqn) for eqn in tearing.residual_eqns);
@@ -293,7 +291,7 @@ protected
     input list<Partition.Partition> partitions;
     input list<Module.tearingInterface> funcs;
     output list<Partition.Partition> new_partitions = {};
-    input output FunctionTree funcTree;
+    input UnorderedMap<Path, Function> funcMap;
     input Pointer<Integer> eq_index;
     input Partition.Kind kind;
   protected
@@ -310,7 +308,7 @@ protected
           // each module has a list of functions that need to be applied
           tmp := strongComponents[i];
           for func in funcs loop
-            (tmp, full, funcTree, idx) := func(tmp, full, funcTree, idx, part.unknowns, part.equations, eq_index, kind);
+            (tmp, full, idx) := func(tmp, full, funcMap, idx, part.unknowns, part.equations, eq_index, kind);
           end for;
           // only update if it changed
           if not referenceEq(tmp, strongComponents[i]) then
@@ -346,8 +344,8 @@ protected
   protected
     Tearing strict;
     list<ComponentRef> vars_lst, eqns_lst;
-    UnorderedSet<ComponentRef> vars_set         "all loop vars, used to determine solvability";
-    UnorderedMap<ComponentRef, Integer> v, e    "all loop vars and equations map";
+    UnorderedSet<ComponentRef> vars_set       "all loop vars, used to determine solvability";
+    UnorderedMap<ComponentRef, Integer> v, e  "all loop vars and equations map";
     constant Boolean init = kind == NBPartition.Kind.INI;
   algorithm
     (comp, full, index) := match comp
@@ -367,8 +365,8 @@ protected
         e := UnorderedMap.subMap(equations.map, eqns_lst);
 
         // refine the adjacency matrix by updating solvability information
-        (full, funcTree)  := Adjacency.Matrix.refine(full, funcTree, v, e, variables, equations, vars_set, kind == NBPartition.Kind.INI);
-        comp.linear       := checkLinearity(full, v, e);
+        full := Adjacency.Matrix.refine(full, funcMap, v, e, variables, equations, vars_set, kind == NBPartition.Kind.INI);
+        comp.linear := checkLinearity(full, v, e);
       then (comp, full, index);
       else (comp, full, index);
     end match;
@@ -386,7 +384,7 @@ protected
         acc := list(Inline.inlineRecordSliceEquation(eqn, variables, dummy_set, eq_index, true) for eqn in strict.residual_eqns);
 
         // create residual equations
-        strict.residual_eqns  := list(Slice.apply(eqn, function Equation.createResidual(new = true, allowFail = false)) for eqn in List.flatten(acc));
+        strict.residual_eqns  := list(Slice.apply(eqn, function Equation.createResidual(residualCref_opt = NONE(), new = true, allowFail = false)) for eqn in List.flatten(acc));
         comp.strict := strict;
 
         if Flags.isSet(Flags.TEARING_DUMP) then
@@ -404,35 +402,26 @@ protected
     list<Pointer<Variable>> vars_lst, cont_vars, disc_vars;
     list<Pointer<Equation>> eqns_lst, cont_eqns, disc_eqns;
     Integer num_vars, num_eqns;
+    list<Slice<VariablePointer>> matched_vars, iteration_vars = {};
     list<Slice<EquationPointer>> residual_lst;
     Adjacency.Matrix adj;
     Matching matching;
     list<StrongComponent> inner_comps;
-    UnorderedMap<ComponentRef, Integer> v, e  "discrete variables and equations we have to refine";
+    UnorderedMap<ComponentRef, Integer> v, e;
+    UnorderedSet<ComponentRef> matched_set = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
   algorithm
     comp := match comp
       case StrongComponent.ALGEBRAIC_LOOP(strict = strict) algorithm
         // split equations and variables for discretes and continuous
         vars_lst := list(Slice.getT(var) for var in strict.iteration_vars);
         eqns_lst := list(Slice.getT(eqn) for eqn in strict.residual_eqns);
-        (cont_vars, disc_vars) := List.splitOnTrue(vars_lst, function BVariable.isContinuous(init = kind == NBPartition.Kind.INI));
-        (cont_eqns, disc_eqns) := List.splitOnTrue(eqns_lst, Equation.isContinuous);
+        (cont_vars, disc_vars) := filterDiscreteVariables(vars_lst, kind == NBPartition.Kind.INI);
+        (cont_eqns, disc_eqns) := List.splitOnTrue(eqns_lst, Equation.isContinousRecordAware);
         num_vars := sum(BVariable.size(var) for var in disc_vars);
         num_eqns := sum(Equation.size(eqn) for eqn in disc_eqns);
 
-        if num_vars <> num_eqns then
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName()
-            + " failed because number of discrete variables " + intString(num_vars) + " differs from number of discrete equations: " + intString(num_eqns)
-            + ".\n" + StringUtil.headline_4("(" + intString(listLength(disc_vars)) + "|"
-            + intString(num_vars) + ") Discrete Variables")
-            + List.toString(disc_vars, BVariable.pointerToString, "", "\t", "\n\t", "\n", true) + "\n"
-            + StringUtil.headline_4("(" + intString(listLength(disc_eqns)) + "|"
-            + intString(num_eqns) + ") Discrete Equations")
-            + List.toString(disc_eqns, function Equation.pointerToString(str=""), "", "\t", "\n\t", "\n", true) + "\n"});
-          fail();
-        end if;
-
-        if not listEmpty(disc_vars) then
+        // do nothing if there are no discrete equations
+        if not listEmpty(disc_eqns) then
           comp.mixed := true;
 
           // the sets of discrete variables and discrete equations
@@ -440,15 +429,30 @@ protected
           e := UnorderedMap.subMap(equations.map, list(Equation.getEqnName(eqn) for eqn in disc_eqns));
 
           // match the discretes to create inner components
-          adj         := Adjacency.Matrix.fromFull(full, v, e, equations, NBAdjacency.MatrixStrictness.MATCHING);
+          adj         := Adjacency.Matrix.fullToFinal(full, v, e, equations, NBAdjacency.MatrixStrictness.MATCHING);
           matching    := Matching.regular(NBMatching.EMPTY_MATCHING, adj, true, true);
+
+          // get matched vars and remove them from the iteration variable list
+          (matched_vars, _, _, _) := Matching.getMatches(matching, Adjacency.Matrix.getMappingOpt(adj), variables, equations);
+          // build the matched variables set
+          for var in matched_vars loop
+            UnorderedSet.add(BVariable.getVarName(Slice.getT(var)), matched_set);
+          end for;
+          // only take variables that are not in the set
+          for var in strict.iteration_vars loop
+            if not UnorderedSet.contains(BVariable.getVarName(Slice.getT(var)), matched_set) then
+              iteration_vars := var :: iteration_vars;
+            end if;
+          end for;
+
+          // upgrade adjacency matrix and sort the system creating inner equation components
           adj         := Adjacency.Matrix.upgrade(adj, full, v, e, equations, NBAdjacency.MatrixStrictness.SORTING);
           inner_comps := Sorting.tarjan(adj, matching, variables, equations); // probably need other variables and equations here?
           strict.innerEquations := listArray(inner_comps);
 
           // create residuals equations and iteration variables
           strict.residual_eqns  := list(Slice.SLICE(eqn, {}) for eqn in cont_eqns);
-          strict.iteration_vars := list(Slice.SLICE(var, {}) for var in cont_vars);
+          strict.iteration_vars := listReverse(iteration_vars);
           comp.strict := strict;
         end if;
       then comp;
@@ -614,6 +618,58 @@ protected
       then fail();
     end match;
   end checkLinearity;
+
+  function filterDiscreteVariables
+    "splits off all discrete variables. also splits off variables that belong to a record with a discrete variable in this algebraic loop"
+    input list<Pointer<Variable>> vars_lst;
+    input Boolean init;
+    output list<Pointer<Variable>> cont_vars;
+    output list<Pointer<Variable>> disc_vars;
+  protected
+    UnorderedSet<ComponentRef> discrete_records = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
+    list<Pointer<Variable>> rec_disc_vars;
+
+    function addDiscreteRecord
+      "checks if it has a record parent that needs to be added"
+      input Pointer<Variable> var;
+      input UnorderedSet<ComponentRef> discrete_records;
+    algorithm
+      _ := match BVariable.getParent(var)
+        local
+          Pointer<Variable> parent;
+        case SOME(parent) algorithm
+          UnorderedSet.add(BVariable.getVarName(parent), discrete_records);
+          addDiscreteRecord(parent, discrete_records);
+        then ();
+        else ();
+      end match;
+    end addDiscreteRecord;
+
+    function checkDiscreteRecord
+      "checks if continuous variable is part of records of which discretes are in this loop"
+      input Pointer<Variable> var;
+      input UnorderedSet<ComponentRef> discrete_records;
+      input Boolean is_parent;
+      output Boolean b;
+    algorithm
+      b := match BVariable.getParent(var)
+        local
+          Pointer<Variable> parent;
+        case SOME(parent) then checkDiscreteRecord(parent, discrete_records, true);
+        else is_parent and UnorderedSet.contains(BVariable.getVarName(var), discrete_records);
+      end match;
+    end checkDiscreteRecord;
+  algorithm
+    // basic filter all discrete variables
+    (cont_vars, disc_vars) := List.splitOnTrue(vars_lst, function BVariable.isContinuous(init = init));
+    // add all records that contain discrete variables
+    for var in disc_vars loop addDiscreteRecord(var, discrete_records); end for;
+    // split off all variables that are part of records of which discretes are in this loop
+    (rec_disc_vars, cont_vars) := List.splitOnTrue(cont_vars, function checkDiscreteRecord(discrete_records = discrete_records, is_parent = false));
+
+    // add the continous record variables that might be solved alongside discretes to the list
+    disc_vars := listReverse(listAppend(rec_disc_vars, disc_vars));
+  end filterDiscreteVariables;
 
   annotation(__OpenModelica_Interface="backend");
 end NBTearing;

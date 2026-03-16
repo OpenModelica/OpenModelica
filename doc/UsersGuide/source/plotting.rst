@@ -47,7 +47,7 @@ The results are identical, except the detailed plot has a smoother curve.
 
 .. omc-mos ::
 
-  0==system("./HelloWorld -override stepSize=0.008")
+  0==system("./HelloWorld -stepSize=0.008")
   res:=strtok(readFile("HelloWorld_res.csv"), "\n");
   res[end]
 

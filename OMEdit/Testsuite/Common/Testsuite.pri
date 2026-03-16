@@ -28,20 +28,12 @@
  #
  #/
 
-QT += network core gui xml svg opengl printsupport widgets concurrent testlib
-equals(QT_MAJOR_VERSION, 6) {
-  QT += core5compat openglwidgets
-  !win32 {
-    QT += webenginewidgets
-  }
-} else {
-  QT += webkit webkitwidgets
-}
-
 OMEDIT_ROOT = ../../
 
 LIBS += -L$$OMEDIT_ROOT/bin -lOMEdit
 
+include($$OMEDIT_ROOT/OMEdit.config.pre.pri)
+QT += testlib
 # Windows libraries and includes
 win32 {
   include($$OMEDIT_ROOT/OMEditGUI/OMEditGUI.win.config.pri)

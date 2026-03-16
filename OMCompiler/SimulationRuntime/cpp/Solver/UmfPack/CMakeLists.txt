@@ -1,8 +1,11 @@
-cmake_minimum_required(VERSION 2.8.9)
+cmake_minimum_required(VERSION 3.5)
 
 project(${UmfPackName})
 
-add_library(${UmfPackName} UmfPack.cpp UmfPackSettings.cpp FactoryExport)
+add_library(${UmfPackName}
+  UmfPack.cpp
+  UmfPackSettings.cpp
+  FactoryExport.cpp)
 
 if(NOT BUILD_SHARED_LIBS)
   set_target_properties(${UmfPackName} PROPERTIES COMPILE_DEFINITIONS "RUNTIME_STATIC_LINKING")

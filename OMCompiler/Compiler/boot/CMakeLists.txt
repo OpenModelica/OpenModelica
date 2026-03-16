@@ -1,34 +1,6 @@
 cmake_minimum_required(VERSION 3.14)
 project(bomc)
 
-# fetch the sources from the OM server, maybe we should put them in git someplace
-if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/bomc/sources.tar.gz")
-# do nothing!
-else()
-#download and unpack the sources
-file(MAKE_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/bomc/)
-# the OMBOOTSTRAPPING_GIT_HASH needs updating when the boostrapping sources change
-SET(OMBOOTSTRAPPING_GIT_HASH f53f31420ab8a1877b1a423693599028df698e14)
-file(DOWNLOAD https://github.com/OpenModelica/OMBootstrapping/archive/${OMBOOTSTRAPPING_GIT_HASH}.tar.gz
-     ${CMAKE_CURRENT_SOURCE_DIR}/bomc/sources.tar.gz
-     SHOW_PROGRESS
-     STATUS status
-     LOG log)
-# fetch the elements of the status!
-list(GET status 0 status_code)
-list(GET status 1 status_string)
-# check the download status!
-if(NOT status_code EQUAL 0)
-message(FATAL_ERROR "error: downloading 'https://github.com/OpenModelica/OMBootstrapping/archive/${OMBOOTSTRAPPING_GIT_HASH}.tar.gz' failed
-        status_code: ${status_code}
-        status_string: ${status_string}
-        log: ${log}")
-endif()
-message(STATUS "downloading bootstrapping sources ... done")
-execute_process(COMMAND tar xzf sources.tar.gz --strip-components=1
-                 WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/bomc/)
-endif()
-
 # OpenModelicaBootstrappingHeader.h should probably be added to source control and
 # updated just like the bootstrap-source c files.
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/bomc/tarball-include/OpenModelicaBootstrappingHeader.h

@@ -265,6 +265,11 @@ algorithm
     // Connect equations.
     case SCode.EQ_CONNECT(crefLeft = lhs_acr, crefRight = rhs_acr, info = info)
       algorithm
+        if SCodeUtil.isInitial(inInitial) then
+          Error.addSourceMessage(Error.CONNECT_IN_INITIAL_EQUATION, {}, info);
+          fail();
+        end if;
+
         (outCache, outEnv, outIH, outSets, outDae, outGraph) :=
           instConnect(outCache, outEnv, outIH, outSets, inPrefix, lhs_acr,
               rhs_acr, inImpl, inGraph, info);
@@ -5521,7 +5526,7 @@ algorithm
       list<DAE.Subscript> subscriptLst;
       Boolean alreadyInList;
       DAE.Exp debugExp;
-
+      list<DAE.Subscript> subs;
 
     case(_,{},_) then inCrefInfos;
 
@@ -5545,8 +5550,9 @@ algorithm
       then crefInfoList;
 
     // Array subscripting
-    case(crefInfoList, DAE.ASUB(exp1,expLst1)::restExps,_)
+    case(crefInfoList, DAE.ASUB(exp1,subs)::restExps,_)
       equation
+        expLst1 = list(Expression.getSubscriptExp(sub) for sub in subs);
         //check the ASUB specific expressions
         crefInfoList = collectParallelVariablesinExps(crefInfoList,exp1::expLst1,inInfo);
 

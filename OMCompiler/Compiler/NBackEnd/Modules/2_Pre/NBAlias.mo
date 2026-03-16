@@ -79,7 +79,6 @@ protected
   import Type = NFType;
   import Operator = NFOperator;
   import Variable = NFVariable;
-  import NFFlatten.FunctionTreeImpl;
   import NFPrefixes.Variability;
 
   // Backend imports
@@ -90,6 +89,7 @@ protected
   import Differentiate = NBDifferentiate;
   import NBDifferentiate.{DifferentiationType, DifferentiationArguments};
   import NBEquation.{Equation, EquationAttributes, EquationKind, EquationPointers, EqData, Iterator};
+  import Partition = NBPartition;
   import Replacements = NBReplacements;
   import SimplifyExp = NFSimplifyExp;
   import Solve = NBSolve;
@@ -115,6 +115,7 @@ public
      called during simulation and gets the corresponding subfunction from
      Config."
     extends Module.wrapper;
+    input Partition.Kind kind;
   protected
     Module.aliasInterface func;
   algorithm
@@ -127,16 +128,16 @@ public
 
       case BackendDAE.MAIN(varData = varData, eqData = eqData)
         algorithm
-          (varData, eqData) := func(varData, eqData);
+          (varData, eqData) := func(varData, eqData, kind);
           // allways apply clock alias
-          (varData, eqData) := aliasClocks(varData, eqData);
+          (varData, eqData) := aliasClocks(varData, eqData, kind);
           bdae.varData := varData;
           bdae.eqData := eqData;
       then bdae;
 
       case BackendDAE.HESSIAN(varData = varData, eqData = eqData)
         algorithm
-          (varData, eqData) := func(varData, eqData);
+          (varData, eqData) := func(varData, eqData, kind);
           bdae.varData := varData;
           bdae.eqData := eqData;
       then bdae;
@@ -229,7 +230,7 @@ protected
           // -----------------------------------
           //            1. 2. 3.
           // -----------------------------------
-          (replacements, newEquations) := aliasCausalize(varData.unknowns, eqData.simulation, "Simulation");
+          (replacements, newEquations) := aliasCausalize(varData.unknowns, eqData.simulation, kind, "Simulation");
           (replacements, auxEquations) := checkReplacements(replacements, eqData);
 
           // -----------------------------------
@@ -299,7 +300,7 @@ protected
     Pointer<Equation> eqPtr;
     EquationAttributes attr;
   algorithm
-    EqData.mapExp(eqData, function filterPre(acc = exceptionSet));
+    EqData.map(eqData, function filterExceptionsEquation(acc = exceptionSet));
     for keyValueTpl in UnorderedMap.toList(replacements) loop
       (cref, exp) := keyValueTpl;
       if isValidReplacement(cref, exp, exceptionSet) then
@@ -331,24 +332,43 @@ protected
     end if;
   end isValidReplacement;
 
-  function filterPre
-    "Filter expression for pre call"
+  function filterExceptionsEquation
+    input output Equation eqn;
+    input UnorderedSet<ComponentRef> acc;
+  algorithm
+    _ := match eqn
+      case Equation.ALGORITHM() algorithm
+        for cref in eqn.alg.outputs loop
+          UnorderedSet.add(cref, acc);
+        end for;
+      then ();
+      else ();
+    end match;
+    Equation.map(eqn, function filterExceptions(acc = acc));
+  end filterExceptionsEquation;
+
+  function filterExceptions
+    "Filter expression for all forbidden aliases (pre, dynamic optimization annotations, ...)"
     input output Expression exp;
     input UnorderedSet<ComponentRef> acc;
   algorithm
-    () := match exp
+    _ := match exp
       local
         Call call;
         ComponentRef cref;
 
       case Expression.CALL(call = call as Call.TYPED_CALL(arguments = {Expression.CREF(cref = cref)}))
         guard(AbsynUtil.pathString(Function.nameConsiderBuiltin(call.fn)) == "pre") algorithm
-        UnorderedSet.add(cref, acc);
+          UnorderedSet.add(cref, acc);
+        then ();
+      case Expression.CREF(cref = cref) algorithm
+        // TODO: add guard here (dont do alias for optimization annotations)
+        // UnorderedSet.add(cref, acc);
       then ();
 
       else ();
     end match;
-  end filterPre;
+  end filterExceptions;
 
   function dumpReplacements
     input UnorderedMap<ComponentRef, Expression> replacements;
@@ -386,7 +406,7 @@ protected
           // -----------------------------------
           //            1. 2. 3.
           // -----------------------------------
-          (replacements, newEquations) := aliasCausalize(varData.clocks, eqData.clocked, "Clocked");
+          (replacements, newEquations) := aliasCausalize(varData.clocks, eqData.clocked, kind, "Clocked");
           (replacements, auxEquations) := checkReplacements(replacements, eqData);
 
           // -----------------------------------
@@ -418,6 +438,7 @@ protected
     "
     input VariablePointers variables;
     input EquationPointers equations;
+    input Partition.Kind kind;
     input String context;
     output UnorderedMap<ComponentRef, Expression> replacements;
     output EquationPointers newEquations;
@@ -453,7 +474,7 @@ protected
     // --------------------------------------------------------------------------------------------------------
     replacements := UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual, size);
     for set in sets loop
-      replacements := createReplacementRules(set, replacements);
+      replacements := createReplacementRules(set, replacements, kind);
     end for;
 
   end aliasCausalize;
@@ -774,6 +795,7 @@ protected
     "Creates replacement rules from a simple set by causalizing it and replacing the expressions in order"
     input AliasSet set;
     input output UnorderedMap<ComponentRef, Expression> replacements;
+    input Partition.Kind kind;
   algorithm
     // ToDo: fix variable attributes to keep
     // report errors/warnings
@@ -796,7 +818,7 @@ protected
         vars := VariablePointers.fromList(list(BVariable.getVarPointer(cr, sourceInfo()) for cr in set.simple_variables), true);
         eqs := EquationPointers.fromList(const_eq :: set.simple_equations);
         // causalize the system
-        (_, comps) := Causalize.simple(vars, eqs);
+        (_, comps) := Causalize.simple(vars, eqs, kind);
         // create replacements from strong components
         Replacements.simple(comps, replacements);
       then replacements;
@@ -807,7 +829,7 @@ protected
         vars := VariablePointers.fromList(alias_vars);
         eqs := EquationPointers.fromList(set.simple_equations);
         // causalize the system
-        (_, comps) := Causalize.simple(vars, eqs);
+        (_, comps) := Causalize.simple(vars, eqs, kind);
         if Flags.isSet(Flags.DEBUG_ALIAS) then
           print(StringUtil.headline_3("Variable to keep (values of attributes before replacements):") + BVariable.pointerToString(Pointer.access(var_to_keep))+"\n\n");
         end if;
@@ -820,7 +842,7 @@ protected
         for var in var_lst loop
           rhs := UnorderedMap.getSafe(BVariable.getVarName(var), replacements, sourceInfo());
           eq := Equation.makeAssignment(BVariable.toExpression(var), rhs, Pointer.create(0), NBEquation.TMP_STR, Iterator.EMPTY(), EquationAttributes.default(EquationKind.UNKNOWN, false));
-          (solved_eq,_,status, _) := Solve.solveBody(Pointer.access(eq), BVariable.getVarName(Pointer.access(var_to_keep)), FunctionTreeImpl.EMPTY());
+          (solved_eq, status, _) := Solve.solveBody(Pointer.access(eq), BVariable.getVarName(Pointer.access(var_to_keep)));
           collector := AttributeCollector.fixValues(collector, BVariable.getVarName(var), solved_eq);
         end for;
         if Flags.isSet(Flags.DEBUG_ALIAS) then

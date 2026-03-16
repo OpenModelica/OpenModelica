@@ -64,7 +64,7 @@ end der;
 impure function initial "True if in initialization phase"
   discrete output Boolean isInitial;
 external "builtin";
-annotation(__OpenModelica_builtin=true, __OpenModelica_Impure=true, Documentation(info="<html>
+annotation(__OpenModelica_builtin=true, Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'initial()'\">initial()</a>
 </html>"));
 end initial;
@@ -72,7 +72,7 @@ end initial;
 impure function terminal "True after successful analysis"
   discrete output Boolean isTerminal;
 external "builtin";
-annotation(__OpenModelica_builtin=true, __OpenModelica_Impure=true, Documentation(info="<html>
+annotation(__OpenModelica_builtin=true, Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'terminal()'\">terminal()</a>
 </html>"));
 end terminal;
@@ -367,8 +367,8 @@ annotation(__OpenModelica_builtin=true, __OpenModelica_EarlyInline = true, prefe
 </html>"));
 end skew;
 
-function delay = $overload(OpenModelica.Internal.delay2,OpenModelica.Internal.delay3) "Delay expression"
-  annotation(__OpenModelica_builtin=true, __OpenModelica_Impure=true, Documentation(info="<html>
+impure function delay = $overload(OpenModelica.Internal.delay2,OpenModelica.Internal.delay3) "Delay expression"
+  annotation(__OpenModelica_builtin=true, Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'delay()'\">delay()</a>
 </html>"));
 
@@ -631,7 +631,7 @@ impure function DynamicSelect<__Any> "select static or dynamic expressions in th
   input __Any dynamic;
   output __Any selected;
   external "builtin";
-  annotation(__OpenModelica_builtin=true, __OpenModelica_Impure=true, Documentation(info="<html>
+  annotation(__OpenModelica_builtin=true, Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Annotations.DynamicSelect\">DynamicSelect</a>
 </html>"));
 end DynamicSelect;
@@ -804,7 +804,7 @@ end Subtask;
 impure function print "Prints to stdout, useful for debugging."
   input String str;
   external "builtin";
-  annotation(__OpenModelica_Impure=true, version="OpenModelica extension");
+  annotation(version="OpenModelica extension");
 end print;
 
 function classDirectory "Non-standard operator"
@@ -1386,7 +1386,7 @@ external "builtin";
 annotation(Documentation(info="<html>
 <p>Loads the given file using the given encoding.</p>
 <p>
-  Note that if the file basename is package.mo and the parent directory is the top-level class, the library structure is loaded as if loadModel(ClassName) was called.
+  Note that if the file basename is package.mo and the parent directory is the top-level class, or if the file is a directory, the library structure is loaded as if loadModel(ClassName) was called.
   Uses-annotations are respected if uses=true.
   The main difference from loadModel is that loadFile appends this directory to the MODELICAPATH (for this call only).
 </p>
@@ -1553,7 +1553,7 @@ impure function system "Similar to system(3). Executes the given command in the 
   input String outputFile = "" "The output is redirected to this file (unless already done by callStr)";
   output Integer retval "Return value of the system call; usually 0 on success";
 external "builtin";
-annotation(__OpenModelica_Impure=true, preferredView="text");
+annotation(preferredView="text");
 end system;
 
 impure function system_parallel "Similar to system(3). Executes the given commands in the system shell, in parallel if omc was compiled using OpenMP."
@@ -1561,7 +1561,7 @@ impure function system_parallel "Similar to system(3). Executes the given comman
   input Integer numThreads = numProcessors();
   output Integer retval[:] "Return value of the system call; usually 0 on success";
 external "builtin";
-annotation(__OpenModelica_Impure=true, preferredView="text");
+annotation(preferredView="text");
 end system_parallel;
 
 function saveAll "Saves the entire loaded AST to file."
@@ -2059,7 +2059,7 @@ impure function stat
   output Real fileSize;
   output Real mtime;
 external "builtin";
-annotation(__OpenModelica_Impure=true, Documentation(info="<html>
+annotation(Documentation(info="<html>
 <p>Like <a href=\"http://linux.die.net/man/2/stat\">stat(2)</a>, except the output is of type real because of limited precision of Integer.</p>
 </html>"),
   preferredView="text");
@@ -2070,7 +2070,7 @@ impure function readFile
   input String fileName;
   output String contents;
 external "builtin";
-annotation(__OpenModelica_Impure=true, Documentation(info="<html>
+annotation(Documentation(info="<html>
 <p>Returns the contents of a file as a string or an empty string if the file couldn't be read. If the file couldn't be read an error message is emitted which can be viewed with <a href=\"modelica://OpenModelica.Scripting.getErrorString\">getErrorString()</a>.</p>
 </html>"),
   preferredView="text");
@@ -2083,7 +2083,7 @@ impure function writeFile
   input Boolean append = false;
   output Boolean success;
 external "builtin";
-annotation(__OpenModelica_Impure=true, Documentation(info="<html>
+annotation(Documentation(info="<html>
 <p>Returns true on success. If <code>append = true</code> the data is appended to the file, otherwise the file is overwritten with the new content.</p>
 </html>"),
   preferredView="text");
@@ -2095,7 +2095,7 @@ impure function compareFilesAndMove
   input String oldFile;
   output Boolean success;
 external "builtin";
-annotation(__OpenModelica_Impure=true,Documentation(info="<html>
+annotation(Documentation(info="<html>
 <p>Compares <i>newFile</i> and <i>oldFile</i>. If they differ, overwrite <i>oldFile</i> with <i>newFile</i></p>
 <p>Basically: test -f ../oldFile && cmp newFile oldFile || mv newFile oldFile</p>
 </html>"));
@@ -2107,7 +2107,7 @@ impure function compareFiles
   input String file2;
   output Boolean isEqual;
 external "builtin";
-annotation(__OpenModelica_Impure=true,Documentation(info="<html>
+annotation(Documentation(info="<html>
 <p>Compares <i>file1</i> and <i>file2</i> and returns true if their content is equal, otherwise false.</p>
 </html>"));
 end compareFiles;
@@ -2116,8 +2116,8 @@ impure function alarm
   "Schedules an alarm signal for the process."
   input Integer seconds;
   output Integer previousSeconds;
-external "builtin";
-annotation(__OpenModelica_Impure=true,Library = {"omcruntime"},Documentation(info="<html>
+external "builtin" annotation(Library = {"omcruntime"});
+annotation(Documentation(info="<html>
 <p>Like <a href=\"http://linux.die.net/man/2/alarm\">alarm(2)</a>.</p>
 <p>Note that OpenModelica also sends SIGALRM to the process group when the alarm is triggered (in order to kill running simulations).</p>
 </html>"));
@@ -2920,7 +2920,7 @@ annotation(Documentation(info="<html>
 end importFMUModelDescription;
 
 function translateModelFMU
-  "Deprecated: Translates a model into C code for a FMU without building it."
+  "Translates a model into C code for a FMU without building it."
   input TypeName className "the class that should translated";
   input String version = "2.0" "FMU version, 1.0 or 2.0.";
   input String fmuType = "me" "FMU type, me (model exchange), cs (co-simulation), me_cs (both model exchange and co-simulation)";
@@ -2934,13 +2934,12 @@ function translateModelFMU
   output Boolean success;
 external "builtin";
 annotation(Documentation(info="<html>
-<p><b>Deprecated: Use buildModelFMU instead.</b></p>
 <p>The only required argument is the className, while all others have some default values.</p>
 <p>Example command:
 <pre>translateModelFMU(className, version=\"2.0\");</pre>
 </p>
 </html>"),
-  preferredView="text", version="Deprecated");
+  preferredView="text");
 end translateModelFMU;
 
 function buildModelFMU
@@ -3223,7 +3222,8 @@ annotation(Documentation(info="<html>
 <p>The only required argument is the className, while all others have some default values.</p>
 <h2>Usage:</h2>
 <p><b>linearize</b>(<em>A</em>, stopTime=0.0);</p>
-<p>Creates the file \"linear_A.mo\" that contains the linearized matrices at stopTime.</p>
+<p>Creates the file in the selected linearization output language (modelica by default) that contains the linearized matrices at stopTime.</p>
+<p>The output language can be changed with the command line option <em>--linearizationDumpLanguage</em> e.g., <b>setCommandLineOptions(\"--linearizationDumpLanguage=modelica\")</b></p>
 </html>", revisions="<html>
 <table>
 <tr><th>Revision</th><th>Author</th><th>Comment</th></tr>
@@ -5608,6 +5608,7 @@ end convertPackageToLibrary;
 function getModelInstance
   "Dumps a model instance as a JSON string."
   input TypeName className;
+  input TypeName context = $TypeName(__NoContext);
   input String modifier = "";
   input Boolean prettyPrint = false;
   output String result;
@@ -5670,6 +5671,19 @@ annotation(preferredView="text",Documentation(info="<html>
 <p>Used by org.openmodelica.corba.parser.DefinitionsCreator.</p>
 </html>"));
 end getDefinitions;
+
+function reverseLookup
+  input TypeName name;
+  input TypeName scope = $TypeName(AllLoadedClasses);
+  input Boolean exactMatch = true;
+  input Boolean prettyPrint = false;
+  output String matches;
+external "builtin";
+annotation(preferredView="text",Documentation(info="<html>
+<p>Searches for uses of the given name in either all loaded classes or a given class. Returns a JSON array containing the name and source location for each match.</p>
+<p>If exactMatch is true then only names that reference the same element is considered a match, otherwise names that reference elements inside that element are also included. I.e. reverseLookup(A, exactMatch = false) will match both A and A.B, while reverseLookup(A, exactMatch = true) will match A but not A.B.</p>
+</html>"));
+end reverseLookup;
 
 // OMSimulator API calls
 type oms_system = enumeration(oms_system_none,oms_system_tlm, oms_system_wc,oms_system_sc) "OMSimulator enumeration for system type.";

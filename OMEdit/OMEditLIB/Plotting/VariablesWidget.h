@@ -69,6 +69,7 @@ public:
   QString getDisplayUnit() {return mDisplayUnit;}
   QString getPreviousUnit() {return mPreviousUnit;}
   QStringList getDisplayUnits() {return mDisplayUnits;}
+  QString getDescription() const {return mDescription;}
   QStringList getUses() {return mUses;}
   QStringList getInitialUses() {return mInitialUses;}
   QList<IntStringPair> getDefinedIn() {return mDefinedIn;}
@@ -236,6 +237,7 @@ public:
                                  QHash<QString, QHash<QString, QString> > *variables);
   void findVariableAndUpdateValue(QDomDocument xmlDocument, QHash<QString, QHash<QString, QString> > variables);
   void reSimulate(bool showSetup);
+  void reSimulate(SimulationOptions simulationOptions, VariablesTreeItem *pVariablesTreeItem, bool showSetup);
   void updateInitXmlFile(VariablesTreeItem *pVariablesTreeItem, SimulationOptions simulationOptions);
   void initializeVisualization();
   void updateVisualization();
@@ -267,6 +269,7 @@ private:
   ModelicaMatReader mModelicaMatReader;
   csv_data *mpCSVData;
   QFile mPlotFileReader;
+  QString mOpenedResultFileName;
   void selectInteractivePlotWindow(VariablesTreeItem *pVariablesTreeItem);
   void openResultFile(VariablesTreeItem *pVariablesTreeItem, double &startTime, double &stopTime);
   void checkVariable(const QModelIndex &index, bool checkState);

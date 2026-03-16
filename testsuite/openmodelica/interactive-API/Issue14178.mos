@@ -1,0 +1,25 @@
+// name: Issue14178.mos
+// keywords:
+// status: correct
+//
+// tests if the xml output works fine
+// teardown_command: rm -rf ThermofluidStream.Examples.EspressoMachine* Issue14178*.txt
+//
+
+loadFile("Issue14178.mo"); getErrorString();
+buildModel(ThermofluidStream.Examples.EspressoMachine);
+system("./ThermofluidStream.Examples.EspressoMachine -logFormat=xml", outputFile="Issue14178_log.txt");
+system("cat Issue14178_log.txt | grep \"<message\" | grep -v \"/>\" | wc -l > Issue14178_start_tag.txt");
+system("cat Issue14178_log.txt | grep \"</message\" | wc -l > Issue14178_end_tag.txt");
+readFile("Issue14178_start_tag.txt") == readFile("Issue14178_end_tag.txt");
+
+
+// Result:
+// true
+// ""
+// {"ThermofluidStream.Examples.EspressoMachine", "ThermofluidStream.Examples.EspressoMachine_init.xml"}
+// 0
+// 0
+// 0
+// true
+// endResult

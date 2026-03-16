@@ -4474,27 +4474,29 @@ end deleteMemberOnTrue;
 
 public function deletePositions<T>
   "Takes a list and a list of positions, and deletes the positions from the
-   list. Note that positions are indexed from 0.
-     Example: deletePositions({1, 2, 3, 4, 5}, {2, 0, 3}) => {2, 5}"
+   list.
+     Example: deletePositions({1, 2, 3, 4, 5}, {3, 1, 4}) => {2, 5}"
   input list<T> inList;
   input list<Integer> inPositions;
+  input Boolean zeroBased = false;
   output list<T> outList;
 protected
   list<Integer> sorted_pos;
 algorithm
   sorted_pos := sortedUnique(sort(inPositions, intGt), intEq);
-  outList := deletePositionsSorted(inList, sorted_pos);
+  outList := deletePositionsSorted(inList, sorted_pos, zeroBased);
 end deletePositions;
 
 public function deletePositionsSorted<T>
   "Takes a list and a sorted list of positions (smallest index first), and
-   deletes the positions from the list. Note that positions are indexed from 0.
-     Example: deletePositionsSorted({1, 2, 3, 4, 5}, {0, 2, 3}) => {2, 5}"
+   deletes the positions from the list.
+     Example: deletePositionsSorted({1, 2, 3, 4, 5}, {1, 3, 4}) => {2, 5}"
   input list<T> inList;
   input list<Integer> inPositions;
+  input Boolean zeroBased = false;
   output list<T> outList = {};
 protected
-  Integer i = 0;
+  Integer i = if zeroBased then 0 else 1;
   T e;
   list<T> rest = inList;
 algorithm
@@ -4514,27 +4516,29 @@ end deletePositionsSorted;
 
 public function keepPositions<T>
   "Takes a list and a list of positions, and deletes all other elements from the
-   list. Note that positions are indexed from 0.
-     Example: keepPositions({1, 2, 3, 4, 5}, {2, 0, 3}) => {1, 3, 4}"
+   list.
+     Example: keepPositions({1, 2, 3, 4, 5}, {3, 1, 4}) => {1, 3, 4}"
   input list<T> inList;
   input list<Integer> inPositions;
+  input Boolean zeroBased = false;
   output list<T> outList;
 protected
   list<Integer> sorted_pos;
 algorithm
   sorted_pos := sortedUnique(sort(inPositions, intGt), intEq);
-  outList := keepPositionsSorted(inList, sorted_pos);
+  outList := keepPositionsSorted(inList, sorted_pos, zeroBased);
 end keepPositions;
 
 public function keepPositionsSorted<T>
   "Takes a list and a sorted list of positions (smallest index first), and
-   deletes all other positions from the list. Note that positions are indexed from 0.
-     Example: deletePositionsSorted({1, 2, 3, 4, 5}, {0, 2, 3}) => {1, 3, 4}"
+   deletes all other positions from the list.
+     Example: deletePositionsSorted({1, 2, 3, 4, 5}, {1, 3, 4}) => {1, 3, 4}"
   input list<T> inList;
   input list<Integer> inPositions;
+  input Boolean zeroBased = false;
   output list<T> outList = {};
 protected
-  Integer i = 0;
+  Integer i = if zeroBased then 0 else 1;
   T e;
   list<T> rest = inList;
 algorithm

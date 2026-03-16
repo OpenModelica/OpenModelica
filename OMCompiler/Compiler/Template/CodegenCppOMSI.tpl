@@ -12122,6 +12122,10 @@ template giveZeroFunc3(Integer index1, Exp relation, Text &varDecls /*BUFP*/,Tex
         <<
         f[<%index1%>] = std::abs(<%e2%> - <%e1%>);
         >>
+      case EQUAL(ty = T_REAL(__)) then
+        <<
+        f[<%index1%>] = std::abs(<%e2%> - _zeroTol - <%e1%>);
+        >>
       else
         <<
         error(sourceInfo(), 'Unsupported relation: <%ExpressionDumpTpl.dumpExp(rel,"\"")%> for <%index1%>')
@@ -13109,7 +13113,7 @@ template algStmtAssign(DAE.Statement stmt, Context context, Text &varDecls, SimC
         (match exp case ASUB(exp=arr, sub={idx}) then
         let &preExp = buffer ""
         let arr1 = daeExp(arr, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-        let idx1 = daeExp(idx, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+        let idx1 = daeSubscript(idx, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
         let val1 = daeExp(val, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
         <<
         <%preExp%>

@@ -41,7 +41,8 @@ SUBDIRS = Util \
   Utilities \
   StringHandler \
   DynamicAnnotation \
-  AutoCompletion
+  AutoCompletion \
+  MergeExtendsModifiers
 
 BrowseMSL.depends = Util
 Diagram.depends = Util
@@ -54,3 +55,4 @@ Utilities.depends = Util
 StringHandler.depends = Util
 DynamicAnnotation.depends = Util
 AutoCompletion.depends = Util
+MergeExtendsModifiers.depends = Util

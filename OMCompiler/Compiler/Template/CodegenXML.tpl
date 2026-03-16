@@ -1576,7 +1576,7 @@ template algStmtAssignXml(DAE.Statement stmt, Context context, Text &varDecls /*
         (match exp case ASUB(exp=arr, sub={idx}) then
         let &preExp = buffer ""
         let arr1 = daeExpXml(arr, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
-        let idx1 = daeExpXml(idx, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
+        let idx1 = daeSubscriptXML(idx, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
         let val1 = daeExpXml(val, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
         <<
         <%preExp%>
@@ -3538,6 +3538,13 @@ case CAST(__) then
     '<%expVar%> /* could not cast, using the variable as it is */'
 end daeExpCastXml;
 
+template daeSubscriptXML(Subscript sub, Context context, Text &preExp /*BUFP*/, Text &varDecls /*BUFP*/)
+::=
+  match sub
+  case sub as INDEX() then daeExpXml(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
+  else error(sourceInfo(), 'non INDEX(_) (i.e., slice) subscripts probably should not reach here. Check indexedAssign template.')
+  end match
+end daeSubscriptXML;
 
 template daeExpAsubXml(Exp inExp, Context context, Text &preExp /*BUFP*/,
                     Text &varDecls /*BUFP*/)
@@ -3548,7 +3555,7 @@ template daeExpAsubXml(Exp inExp, Context context, Text &preExp /*BUFP*/,
   // MetaModelica Array
     (match inExp case ASUB(exp=e, sub={idx}) then
       let e1 = daeExpXml(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
-      let idx1 = daeExpXml(idx, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
+      let idx1 = daeSubscriptXML(idx, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
       'arrayGet(<%e1%>,<%idx1%>) /* DAE.ASUB */')
   // Modelica Array
   else
@@ -3560,7 +3567,7 @@ template daeExpAsubXml(Exp inExp, Context context, Text &preExp /*BUFP*/,
   // Faster asub: Do not construct a whole new array just to access one subscript
   case ASUB(exp=exp as ARRAY(scalar=true), sub={idx}) then
     let res = tempDeclXml(expTypeFromExpModelicaXml(exp),&varDecls) +' asub tmp test'
-    let idx1 = daeExpXml(idx, context, &preExp, &varDecls)
+    let idx1 = daeSubscriptXML(idx, context, &preExp, &varDecls)
     let expl = (exp.array |> e hasindex i1 fromindex 1 =>
       let &caseVarDecls = buffer ""
       let &casePreExp = buffer ""
@@ -3587,7 +3594,7 @@ template daeExpAsubXml(Exp inExp, Context context, Text &preExp /*BUFP*/,
     error(sourceInfo(),'ASUB_EASY_CASE <%ExpressionDumpTpl.dumpExp(exp,"\"")%>')
 
   case ASUB(exp=ecr as CREF(__), sub=subs) then
-    let arrName = daeExpCrefRhsXml(buildCrefExpFromAsub(ecr, subs), context,
+    let arrName = daeExpCrefRhsXml(buildCrefExpFromSubs(ecr, subs), context,
                               &preExp /*BUFC*/, &varDecls /*BUFD*/)
     match context case FUNCTION_CONTEXT(__)  then
       arrName
@@ -3677,14 +3684,14 @@ end daeExpSharedLiteralXml;
 // TODO: Optimize as in Codegen
 // TODO: Use this function in other places where almost the same thing is hard
 //       coded
-template arrayScalarRhsXml(Type ty, list<Exp> subs, String arrName, Context context,
+template arrayScalarRhsXml(Type ty, list<Subscript> subs, String arrName, Context context,
                Text &preExp /*BUFP*/, Text &varDecls /*BUFP*/)
  "Helper to daeExpAsub."
 ::=
   let arrayType = expTypeArrayXml(ty)
   let dimsLenStr = listLength(subs)
-  let dimsValuesStr = (subs |> exp =>
-      daeExpXml(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
+  let dimsValuesStr = (subs |> sub =>
+      daeSubscriptXML(sub, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
 
     ;separator=", ")
   match arrayType

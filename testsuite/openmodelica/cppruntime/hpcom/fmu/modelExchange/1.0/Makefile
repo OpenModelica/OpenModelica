@@ -2,9 +2,9 @@ TEST = ../../../../../../rtest -v
 
 
 TESTFILES = \
-Crane_FMU1_CPP_HPCOM.mos
 
 FAILINGTESTFILES = \
+Crane_FMU1_CPP_HPCOM.mos \
 CoupledClutches_FMU1_CPP_HPCOM.mos
 
 

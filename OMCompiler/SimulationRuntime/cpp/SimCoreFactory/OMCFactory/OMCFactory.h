@@ -45,15 +45,14 @@ public:
 
 protected:
   /**
-   * This function handles complex c-runtime arguments like "-override=startTime=0,...". The
-   * arguments are separated correctly returned as vector. Furthermore the are added to the given
-   * opts-map (old values are overwritten).
+   * This function handles overridden options, e.g. from OMEdit "-endTime=10".
+   * Furthermore they are added to the given opts-map (old values are overwritten).
    * @param argc Number of arguments in the argv-array.
    * @param argv The command line arguments as c-string array.
    * @param opts Already parsed command line arguments (as key-value-pairs)
    * @return All arguments as simple entries.
    */
-  std::vector<const char *> handleComplexCRuntimeArguments(int argc, const char* argv[], std::map<std::string, std::string> &opts);
+  std::vector<const char *> handleOverrides(int argc, const char* argv[], std::map<std::string, std::string> &opts);
 
   /**
    * Evaluate all given command line arguments and store their values into the SimSettings structure.

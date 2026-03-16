@@ -2244,7 +2244,7 @@ end Test_total;
 //   parameter Real booleanTable.table[7](quantity = "Time", unit = "s") = 2.05 "Vector of time points. At every time point, the output y gets its opposite value (e.g., table={0,1})";
 //   parameter Real booleanTable.table[8](quantity = "Time", unit = "s") = 2.1 "Vector of time points. At every time point, the output y gets its opposite value (e.g., table={0,1})";
 //   parameter Boolean booleanTable.startValue = false "Start value of y. At time = table[1], y changes to 'not startValue'";
-//   parameter enumeration(HoldLastPoint, LastTwoPoints, Periodic, NoExtrapolation) booleanTable.extrapolation = Modelica.Blocks.Types.Extrapolation.HoldLastPoint "Extrapolation of data outside the definition range";
+//   final parameter enumeration(HoldLastPoint, LastTwoPoints, Periodic, NoExtrapolation) booleanTable.extrapolation = Modelica.Blocks.Types.Extrapolation.HoldLastPoint "Extrapolation of data outside the definition range";
 //   parameter Real booleanTable.startTime(quantity = "Time", unit = "s") = 0.1 "Output = false for time < startTime";
 //   parameter Real booleanTable.shiftTime(quantity = "Time", unit = "s") = 0.0 "Shift time of table";
 //   Boolean booleanTable.y "Connector of Boolean output signal";
@@ -2540,7 +2540,6 @@ end Test_total;
 //   end when;
 //   booleanTable.combiTimeTable.y[1] = booleanTable.combiTimeTable.p_offset[1] + Modelica.Blocks.Tables.Internal.getTimeTableValueNoDer(booleanTable.combiTimeTable.tableID, 1, booleanTable.combiTimeTable.timeScaled, booleanTable.combiTimeTable.nextTimeEventScaled, pre(booleanTable.combiTimeTable.nextTimeEventScaled));
 //   booleanTable.realToBoolean.y = booleanTable.realToBoolean.u >= booleanTable.realToBoolean.threshold;
-//   assert(booleanTable.extrapolation <> Modelica.Blocks.Types.Extrapolation.LastTwoPoints, "Unsuitable extrapolation setting.");
 //   when {logicalDelayEquations.u, not logicalDelayEquations.u} then
 //     logicalDelayEquations.tSwitch = time;
 //   end when;

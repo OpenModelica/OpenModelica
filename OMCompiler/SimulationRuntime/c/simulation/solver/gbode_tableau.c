@@ -81,6 +81,94 @@ void setButcherTableau(BUTCHER_TABLEAU* tableau, const double *c, const double *
   tableau->withDenseOutput = FALSE;
   tableau->isKLeftAvailable = FALSE;
   tableau->isKRightAvailable = FALSE;
+  tableau->t_transform = NULL;
+}
+
+void setStageValuePredictors(BUTCHER_TABLEAU *tableau, const double *A_pred, const STAGE_VALUE_PREDICTOR_TYPE *type, gb_dense_output dense_output_pred)
+{
+  tableau->svp = (STAGE_VALUE_PREDICTORS *) malloc(sizeof(STAGE_VALUE_PREDICTORS));
+
+  int stages = tableau->nStages;
+  tableau->svp->nStages = stages;
+
+  tableau->svp->A_predictor = (double *) malloc(stages * stages * sizeof(double));
+  memcpy(tableau->svp->A_predictor, A_pred, stages * stages * sizeof(double));
+
+  tableau->svp->dense_output_predictor = dense_output_pred;
+
+  tableau->svp->type = (STAGE_VALUE_PREDICTOR_TYPE *) malloc(stages * sizeof(STAGE_VALUE_PREDICTOR_TYPE));
+  memcpy(tableau->svp->type, type, stages * sizeof(STAGE_VALUE_PREDICTOR_TYPE));
+}
+
+void setContractiveDefectError(BUTCHER_TABLEAU *tableau, const double *dT_A, double u)
+{
+  if (tableau->t_transform == NULL)
+  {
+    warningStreamPrint(OMC_LOG_STDOUT, 0, "Cannot set contractive defect error, if T-Transformation is NULL. Defaulting to standard embedded scheme.");
+    return;
+  }
+
+  CONTRACTIVE_DEFECT_ERROR *defect = (CONTRACTIVE_DEFECT_ERROR *) malloc(sizeof(CONTRACTIVE_DEFECT_ERROR));
+
+  tableau->t_transform->defect_err = defect;
+
+  defect->dT_A = (double *) malloc(tableau->nStages * sizeof(double));
+  memcpy(defect->dT_A, dT_A, tableau->nStages * sizeof(double));
+
+  defect->u = u;
+
+  // order of contractive error is = s
+  tableau->order_bt = tableau->nStages;
+}
+
+void setTTransform(BUTCHER_TABLEAU *tableau, const double *A_part_inv, const double *T, const double *T_inv, const double *gamma, const double *alpha, const double *beta,
+                   modelica_boolean f_row_zero, modelica_boolean l_col_zero, int n_real_eigs, int n_cmplx_eigs, const double *phi, const double *rho)
+{
+  tableau->t_transform = (T_TRANSFORM *) malloc(sizeof(T_TRANSFORM));
+
+  T_TRANSFORM *tr = tableau->t_transform;
+  tr->firstRowZero = f_row_zero;
+  tr->lastColumnZero = l_col_zero;
+  tr->nRealEigenvalues = n_real_eigs;
+  tr->nComplexEigenpairs = n_cmplx_eigs;
+  tr->size = n_real_eigs + 2 * n_cmplx_eigs;
+  assert(tr->size == tableau->nStages - (int)f_row_zero - (int)l_col_zero);
+
+  tr->A_part_inv = (double *) malloc(tr->size * tr->size * sizeof(double));
+  tr->T = (double *) malloc(tr->size * tr->size * sizeof(double));
+  tr->T_inv = (double *) malloc(tr->size * tr->size * sizeof(double));
+  tr->gamma = (double *) malloc(n_real_eigs * sizeof(double));
+  tr->alpha = (double *) malloc(n_cmplx_eigs * sizeof(double));
+  tr->beta = (double *) malloc(n_cmplx_eigs * sizeof(double));
+
+  if (phi)
+  {
+    tr->phi = (double *) malloc(tr->size * sizeof(double));
+    memcpy(tr->phi, phi, tr->size * sizeof(double));
+  }
+  else
+  {
+    tr->phi = NULL;
+  }
+
+  if (rho)
+  {
+    tr->rho = (double *) malloc(tr->size * sizeof(double));
+    memcpy(tr->rho, rho, tr->size * sizeof(double));
+  }
+  else
+  {
+    tr->rho = NULL;
+  }
+
+  memcpy(tr->A_part_inv, A_part_inv, tr->size * tr->size * sizeof(double));
+  memcpy(tr->T, T, tr->size * tr->size * sizeof(double));
+  memcpy(tr->T_inv, T_inv, tr->size * tr->size * sizeof(double));
+  memcpy(tr->gamma, gamma, n_real_eigs * sizeof(double));
+  memcpy(tr->alpha, alpha, n_cmplx_eigs * sizeof(double));
+  memcpy(tr->beta, beta, n_cmplx_eigs * sizeof(double));
+
+  tr->defect_err = NULL;
 }
 
 // TODO: Describe me
@@ -88,12 +176,16 @@ void denseOutput(BUTCHER_TABLEAU* tableau, double* yOld, double* x, double* k, d
 {
   int i, j;
 
+  for (j = 0; j < tableau->nStages; ++j) {
+    tableau->b_dt[j] *= dt * stepSize;
+  }
+
   if (idx == NULL) {
     // TODO memory layout may be bad, better to iterate over j on the outside?
     for (i=0; i<nStates; i++) {
       y[i] = yOld[i];
       for (j = 0; j<tableau->nStages; j++) {
-        y[i] += dt * stepSize * tableau->b_dt[j] * k[j * nStates + i];
+        y[i] += tableau->b_dt[j] * k[j * nStates + i];
       }
     }
   } else {
@@ -101,7 +193,7 @@ void denseOutput(BUTCHER_TABLEAU* tableau, double* yOld, double* x, double* k, d
       i = idx[ii];
       y[i] = yOld[i];
       for (j = 0; j<tableau->nStages; j++) {
-        y[i] += dt * stepSize * tableau->b_dt[j] * k[j * nStates + i];
+        y[i] += tableau->b_dt[j] * k[j * nStates + i];
       }
     }
   }
@@ -148,6 +240,8 @@ void getButcherTableau_ESDIRK2(BUTCHER_TABLEAU* tableau)
   tableau->dense_output = denseOutput_ESDIRK2;
   tableau->isKLeftAvailable = TRUE;
   tableau->isKRightAvailable = FALSE;
+
+  // predictor cant be stable for stage 2
 }
 
 // TODO: Describe me
@@ -184,6 +278,17 @@ void getButcherTableau_ESDIRK3(BUTCHER_TABLEAU* tableau)
   tableau->dense_output = denseOutput_ESDIRK3;
   tableau->isKLeftAvailable = TRUE;
   tableau->isKRightAvailable = FALSE;
+
+  const double A_predictor[] = {
+                                0, 0,     0, 0,
+                                0, 0,     0, 0,
+                                0.3, 0.3, 0, 0,  // order 1, R_int(-inf) = -0.37657 => strongly A-stable
+                                0.5333190407494745800028006, 0.8095865780886579710085016, -0.3429056188381325309677550, 0.0 // order 2, R_int(-inf) = -0.95666 => strongly A-stable
+                               };
+
+  const STAGE_VALUE_PREDICTOR_TYPE svp_type[] = {SVP_NOT_AVAILABLE, SVP_NOT_AVAILABLE, SVP_LINEAR_COMBINATION, SVP_LINEAR_COMBINATION};
+
+  setStageValuePredictors(tableau, A_predictor, svp_type, NULL);
 }
 
 // TODO: Describe me
@@ -266,9 +371,104 @@ void getButcherTableau_ESDIRK4(BUTCHER_TABLEAU* tableau)
   tableau->dense_output = denseOutput_ESDIRK4;
   tableau->isKLeftAvailable = TRUE;
   tableau->isKRightAvailable = FALSE;
+
+  const double A_predictor[] = {
+                                0, 0, 0, 0, 0, 0,
+                                0, 0, 0, 0, 0, 0,
+                                0.07322330470336311889978890, 0.07322330470336311889978890, 0, 0, 0, 0, /* order 1, R(-inf) = sqrt(2) - 1 => strongly A-stable */
+                                0.5011104345603980506876319, 0.5011104345603980506876319, -0.3772208691207961013752639, 0, 0, 0, /* order 2, R(-inf) = -0.875 => strongly A-stable */
+                                2.755721730042486125344791, 2.755721730042486125344791, -4.090643460084972250689581, -0.3808, 0, 0, /* order 2, R(-inf) = 0 => L-stable */
+                                0.3245695011190811847458344, 0.3245695011190811847458344, -0.1203242647439138855925758, 0.3245695011190811847458344, 0.1466157613866703313550725, 0, /* order 2, R(-inf) = 0 => L-stable, minimizes infinity norm over all order 2 L-stable methods */
+                               };
+
+  const STAGE_VALUE_PREDICTOR_TYPE svp_type[] = {SVP_NOT_AVAILABLE, SVP_NOT_AVAILABLE, SVP_LINEAR_COMBINATION, SVP_LINEAR_COMBINATION, SVP_LINEAR_COMBINATION, SVP_LINEAR_COMBINATION};
+
+  setStageValuePredictors(tableau, A_predictor, svp_type, NULL);
 }
 
-// TODO: Describe me
+/* Dense Output from "Intrastep, Stage-Value Predictors for Diagonally-Implicit Runge–Kutta Methods"
+ *  => I noticed that this dense output is used as extrapolation only. So it is not used for having a continuous
+ *     solution but rather as a stable, low order extrapolation for guesses of the stage 2 system in the next iteration!
+ */
+void predictor_denseOutput_ESDIRK4_7L2SA(BUTCHER_TABLEAU* tableau, double* yOld, double* x, double* k, double dt, double stepSize, double* y, int nIdx, int* idx, int nStates)
+{
+  tableau->b_dt[0] = (-27.59333059022041759502043 * dt + 64.65274650435436557321524) * dt - 37.46026752914355622243673;
+  tableau->b_dt[1] = tableau->b_dt[0];
+  tableau->b_dt[2] = (48.80073718304123520372254 * dt - 113.4655885884012189742302) * dt + 65.60400381988389248115137;
+  tableau->b_dt[3] = (6.195923997399599986313684 * dt - 20.18211580148779384670407) * dt + 14.50473408798312502327690;
+  tableau->b_dt[4] = (-2.0 * dt + 3.84221138118028167447597) * dt - 1.066701349013079462428321;
+  tableau->b_dt[5] = (1.94 * dt + 1.5) * dt - 3.996501500566825597103974;
+  tableau->b_dt[6] = (0.25 * dt - 1.0) * dt + 0.875;
+
+  denseOutput(tableau, yOld, x, k, dt, stepSize, y, nIdx, idx, nStates);
+}
+
+/* Real dense output of the ESDIRK4(3)7L2SA
+ *  => Quartic C1 interpolant (order 4), remaining 2 degrees of freedom are chosen to minimize the error
+ *     (see e.g. https://github.com/WRKampi/extensisq for numeric values, MIT license)
+ */
+void denseOutput_ESDIRK4_7L2SA(BUTCHER_TABLEAU* tableau, double* yOld, double* x, double* k, double dt, double stepSize, double* y, int nIdx, int* idx, int nStates)
+{
+  tableau->b_dt[0] = ((2.940701270662915 * dt + (-4.079699311306614)) * dt + (-0.2618535743659094)) * dt + 1.0;
+  tableau->b_dt[1] = ((9.138591896250813 * dt + (-17.47548056248241)) * dt + 7.936037051221989) * dt;
+  tableau->b_dt[2] = ((-8.276798249263065 * dt + 14.67529166947831) * dt + (-5.459341005691339)) * dt;
+  tableau->b_dt[3] = ((-3.271794891939533 * dt + 5.506505216089204) * dt + (-1.71616804025474)) * dt;
+  tableau->b_dt[4] = ((-3.684277016082155 * dt + 5.817533967829905) * dt + (-1.357746919580548)) * dt;
+  tableau->b_dt[5] = ((2.144128340407973 * dt + (-3.175253679682295)) * dt + 0.4746238387074965) * dt;
+  tableau->b_dt[6] = ((1.009448649963051 * dt + (-1.268897299926103)) * dt + 0.3844486499630515) * dt;
+
+  denseOutput(tableau, yOld, x, k, dt, stepSize, y, nIdx, idx, nStates);
+}
+
+/* 7 stage, L-stable, 4(3) ESDIRK method with stage-value predictor */
+void getButcherTableau_ESDIRK4_7L2SA(BUTCHER_TABLEAU* tableau)
+{
+  tableau->nStages = 7;
+  tableau->order_b = 4;
+  tableau->order_bt = 3;
+  tableau->fac      = 1.0;
+
+  /* method from "Diagonally implicit Runge–Kutta methods for stiff ODEs" */
+  const double c[] = { 0.0, 0.25, 0.07322330470336312069346008, 0.5, 0.6966490299823633325360106, 0.7063492063492063932628184, 1.0 };
+
+  const double A[] = {
+                      0, 0, 0, 0, 0, 0, 0,
+                      0.125, 0.125, 0, 0, 0, 0, 0,
+                      -0.02588834764831843965326996, -0.02588834764831843965326996, 0.125, 0, 0, 0, 0,
+                      0.3383883476483184327143761, 0.3383883476483184327143761, -0.3017766952966368654287521, 0.125, 0, 0, 0,
+                      -0.3592453618381594160346992, -0.3592453618381594160346992, 0.93650786004636443760063, 0.3536318936123176159824766, 0.125, 0, 0,
+                      0.2336106109124456153836036, 0.2336106109124456153836036, -0.04331537381018980142899366, 0.01903274535895701016774417, 0.1384106129755478808984748, 0.125, 0,
+                      -0.4008516150096082530929209, -0.4008516150096082530929209, 0.9391524145239087406622502, 0.5185422838949311774570106, 0.7755100321672021568275568, -0.5565015005668255687609758, 0.125
+                     };
+
+  const double b[] = { -0.4008516150096082530929209, -0.4008516150096082530929209, 0.9391524145239087406622502, 0.5185422838949311774570106, 0.7755100321672021568275568, -0.5565015005668255687609758, 0.125 };
+
+  const double bt[] = { -0.2421068937666858433832573, -0.2421068937666858433832573, 0.6587096818817366195020213, 0.5004777357240689505957221, 0.7607872310157867135060883, -0.5714751468025063285693932, 0.1357142857142857039765005 };
+
+  setButcherTableau(tableau, c, A, b, bt);
+
+  tableau->withDenseOutput = TRUE;
+  tableau->dense_output = denseOutput_ESDIRK4_7L2SA;
+  tableau->isKLeftAvailable = TRUE;
+  tableau->isKRightAvailable = FALSE;
+
+  /* SVP from "Intrastep, Stage-Value Predictors for Diagonally-Implicit Runge–Kutta Methods" (properties of paper can be reproduced) */
+  const double A_predictor[] = {
+                                0, 0, 0, 0, 0, 0, 0,
+                                0, 0, 0, 0, 0, 0, 0,
+                                0.03661165235168154462996192, 0.03661165235168154462996192, 0, 0, 0, 0, 0, /* order 1, R(-inf) = sqrt(2) - 1 => strongly A-stable */
+                                0.8535533905932738214801523, 0.8535533905932738214801523, -1.207106781186547581023924, 0, 0, 0, 0, /* order 2, R(-inf) = 1 => A-stable */
+                                -0.9517714576323296493843248, -0.9517714576323296493843248, 1.920191945247022028907364, 0.68, 0, 0, 0, /* order 2, R(-inf) = -0.05615 => strongly A-stable */
+                                -0.2103336111576326549491873, -0.2103336111576326549491873, 0.6941969710616575148587203, 0.2558194576028144989674432, 0.177, 0, 0, /* order 2, R(-inf) = 0 => L-stable! */
+                                -1.489680406763977982227047, -1.489680406763977982227047, 2.936560813527956077505104, 0.3579, 0.5498, 0.1351, 0, /* order 2, R(-inf) = 1e-7 => strongly A-stable */
+                               };
+
+  const STAGE_VALUE_PREDICTOR_TYPE svp_type[] = {SVP_NOT_AVAILABLE, SVP_DENSE_OUTPUT, SVP_LINEAR_COMBINATION, SVP_LINEAR_COMBINATION, SVP_LINEAR_COMBINATION, SVP_LINEAR_COMBINATION, SVP_LINEAR_COMBINATION};
+
+  setStageValuePredictors(tableau, A_predictor, svp_type, predictor_denseOutput_ESDIRK4_7L2SA);
+}
+
+// 3-stage order 3(2), L-stable SDIRK, embedded bt might be bad, dense output missing
 void getButcherTableau_SDIRK3(BUTCHER_TABLEAU* tableau)
 {
   tableau->nStages = 3;
@@ -276,35 +476,98 @@ void getButcherTableau_SDIRK3(BUTCHER_TABLEAU* tableau)
   tableau->order_bt = 2;
   tableau->fac = 1.0;
 
-  const double c[] = {0.788675134594812882254574390252, 0.21132486540518711774542560975,                               1};
+  const double c[] = {0.4358665215084589994160194, 0.7179332607542294997080097,                               1};
   const double A[] = {
-                          0.788675134594812882254574390252,                                0,                                0,
-                          -0.577350269189625764509148780509, 0.788675134594812882254574390252,                                0,
-                                                        0, 0.211324865405187117745425609748, 0.788675134594812882254574390252};
-  const double b[] = {0.5, 0.5, 0.0};
-  const double bt[] = {-3.52072594216369017578202073251, 1.57735026918962576450914878069, 2.94337567297406441127287195182};
+                      0.4358665215084589994160194,                           0,                           0,
+                      0.2820667392457705002919903, 0.4358665215084589994160194,                           0,
+                      1.2084966491760100703364772, -0.644363170684469069752496, 0.4358665215084589994160194};
+
+  const double b[] = {1.2084966491760100703364772, -0.644363170684469069752496, 0.4358665215084589994160194};
+  const double bt[] = {0.0, 1.7726301276675510709204584, -0.7726301276675510709204578};
 
   setButcherTableau(tableau, c, A, b, bt);
+
+  const double A_predictor[] = {
+                                0, 0, 0,
+                                0.7179332607542294997080097,                            0,  0,  // order 1, R(-inf) = 0 => L-stable
+                                0.7726301276675510709204581,  0.2273698723324489290795419,  0,  // order 2, R(-inf) = 0 => L-stable
+                               };
+
+  const STAGE_VALUE_PREDICTOR_TYPE svp_type[] = {SVP_NOT_AVAILABLE, SVP_LINEAR_COMBINATION, SVP_LINEAR_COMBINATION};
+
+  setStageValuePredictors(tableau, A_predictor, svp_type, NULL);
 }
 
-// TODO: Describe me
+void denseOutput_SDIRK4(BUTCHER_TABLEAU* tableau, double* yOld, double* x, double* k, double dt, double stepSize, double* y, int nIdx, int* idx, int nStates)
+{
+  tableau->b_dt[0] = (((-20./9.  * dt +  217./36.)   * dt -  463./72.)    * dt + 11./3.);
+  tableau->b_dt[1] = (((-10.     * dt +  661./24.)   * dt -  385./16.)    * dt + 11./2.);
+  tableau->b_dt[2] = (((250./27. * dt -  8875./216.) * dt +  20125./432.) * dt - 125./18.);
+  tableau->b_dt[3] = ((                  85./6.      * dt -  85./4.)      * dt);
+  tableau->b_dt[4] = ((( 80./27. * dt -  359./54.)   * dt +  557./108.)    * dt - 11./9.);
+
+  denseOutput(tableau, yOld, x, k, dt, stepSize, y, nIdx, idx, nStates);
+}
+
+// L-stable, SDIRK, order 4(3), 5 stages, gamma = 0.25
+// also implemented in Hairer and Wanner legacy Fortran code `SDIRK4`
+void getButcherTableau_SDIRK4(BUTCHER_TABLEAU* tableau)
+{
+  tableau->nStages = 5;
+  tableau->order_b = 4;
+  tableau->order_bt = 3;
+  tableau->fac = 1.0;
+
+  const double c[] = {0.25, 0.75, 0.55, 0.5, 1.0};
+  const double A[] = {
+                          0.25,       0.0,         0.0,      0.0,      0.0,
+                          0.5,        0.25,        0.0,      0.0,      0.0,
+                          17./50.,    -1./25.,     0.25,     0.0,      0.0,
+                          371./1360., -137./2720., 15./544., 0.25,     0.0,
+                          25./24.,    -49./48.,    125./16., -85./12., 0.25};
+  const double b[]  = {25./24., -49./48., 125./16., -85./12., 0.25};
+  const double bt[] = {59./48., -17./96., 225./32., -85./12., 0.0};
+
+  setButcherTableau(tableau, c, A, b, bt);
+
+  tableau->withDenseOutput = TRUE;
+  tableau->dense_output = denseOutput_SDIRK4;
+  tableau->isKLeftAvailable = FALSE;
+  tableau->isKRightAvailable = FALSE;
+
+  const double A_predictor[] = {
+                                0, 0, 0, 0, 0,
+                                0, 0, 0, 0, 0,
+                                0.275, 0.275, 0, 0, 0, /* order 1, R(-inf) = 1 => A-stable */
+                                0.1875, -0.46875, 0.78125, 0, 0, /* order 2, R(-inf) = 0 => L-stable */
+                                1.03125, 1.03125, 0, -1.0625, 0, /* order 2, R(-inf) = 0 => L-stable */
+                               };
+
+  const STAGE_VALUE_PREDICTOR_TYPE svp_type[] = {SVP_NOT_AVAILABLE, SVP_NOT_AVAILABLE, SVP_LINEAR_COMBINATION, SVP_LINEAR_COMBINATION, SVP_LINEAR_COMBINATION};
+
+  setStageValuePredictors(tableau, A_predictor, svp_type, NULL);
+}
+
+// 2 stage, L-stable, order 2(1), SDIRK with gamma = 0.29289
 void getButcherTableau_SDIRK2(BUTCHER_TABLEAU* tableau)
 {
   tableau->nStages = 2;
   tableau->order_b = 2;
   tableau->order_bt = 1;
-  tableau->fac = 1.5;
+  tableau->fac = 1.0;
 
   /* Butcher Tableau */
-  const double c[] = {0.5, 1.0};
-  const double A[] = {0.5, 0.0,
-                      0.5, 0.5};
-  const double b[] = { 0.5,  0.5};
+  const double c[] = {0.29289321881345247559915563789, 1.0};
+  const double A[] = {0.29289321881345247559915563789, 0.0,
+                      0.707106781186547524400844362104849, 0.29289321881345247559915563789};
+  const double b[] = {0.707106781186547524400844362104849, 0.29289321881345247559915563789};
   const double bt[] = {0.25, 0.75};
 
   setButcherTableau(tableau, c, A, b, bt);
   tableau->isKLeftAvailable = FALSE;
   tableau->isKRightAvailable = FALSE;
+
+  // predictor can't be stable for stage 2
 }
 
 // TODO: Describe me
@@ -429,6 +692,14 @@ void getButcherTableau_RUNGEKUTTA(BUTCHER_TABLEAU* tableau)
   }
 }
 
+void denseOutput_Radau_IA_2(BUTCHER_TABLEAU* tableau, double* yOld, double* x, double* k, double dt, double stepSize, double* y, int nIdx, int* idx, int nStates)
+{
+  tableau->b_dt[0] = 1.0 - 0.75*dt;
+  tableau->b_dt[1] = 0.75*dt;
+
+  denseOutput(tableau, yOld, x, k, dt, stepSize, y, nIdx, idx, nStates);
+}
+
 // TODO: Describe me
 void getButcherTableau_RADAU_IA_2(BUTCHER_TABLEAU* tableau)
 {
@@ -447,6 +718,38 @@ void getButcherTableau_RADAU_IA_2(BUTCHER_TABLEAU* tableau)
   setButcherTableau(tableau, c, A, b, bt);
   tableau->isKLeftAvailable = FALSE;
   tableau->isKRightAvailable = FALSE;
+  tableau->withDenseOutput = TRUE;
+  tableau->dense_output = denseOutput_Radau_IA_2;
+
+  const double T[] = {
+      -0.3333333333333333333333333333333333333333, -0.9428090415820633658677924828064653857131,
+      1.0, 0.0,
+  };
+
+  const double T_inv[] = {
+      0.0, 1.0,
+      -1.060660171779821286601266543157273558927, -0.3535533905932737622004221810524245196424,
+  };
+
+  const double *gamma = NULL;
+  const double alpha[] = { 2.0 };
+  const double beta[] = { -1.41421356237309504880168872420969807857 };
+
+  const double A_part_inv[] = {
+      2.5, 1.5,
+      -1.5, 1.5,
+  };
+
+  setTTransform(tableau, A_part_inv, T, T_inv, gamma, alpha, beta, FALSE, FALSE, 0, 1, NULL, NULL);
+}
+
+void denseOutput_Radau_IA_3(BUTCHER_TABLEAU* tableau, double* yOld, double* x, double* k, double dt, double stepSize, double* y, int nIdx, int* idx, int nStates)
+{
+  tableau->b_dt[0] = dt*(1.111111111111111111111111*dt - 2.0) + 1.0;
+  tableau->b_dt[1] = dt*(2.428869016623520557281749 - 1.916383190435098943442936*dt);
+  tableau->b_dt[2] = dt*(0.8052720793239878323318245*dt - 0.428869016623520557281749);
+
+  denseOutput(tableau, yOld, x, k, dt, stepSize, y, nIdx, idx, nStates);
 }
 
 // TODO: Describe me
@@ -468,6 +771,42 @@ void getButcherTableau_RADAU_IA_3(BUTCHER_TABLEAU* tableau)
   setButcherTableau(tableau, c, A, b, bt);
   tableau->isKLeftAvailable = FALSE;
   tableau->isKRightAvailable = FALSE;
+  tableau->withDenseOutput = TRUE;
+  tableau->dense_output = denseOutput_Radau_IA_3;
+
+  const double T[] = {
+      0.424293819848497965354371036408369014402, -0.3235571519651980681202894497035499844, 0.522137786846287839586599927945046950886,
+      0.05759460949980612889629158542933523690317, 0.003148663231849760131614374283781867410255, -0.4524292476743597785777285103817324145978,
+      1.0, 1.0, 0.0,
+  };
+
+  const double T_inv[] = {
+      1.233523612685027760114769983066164237455, 1.423580134265707095505388133369554087793, 0.3946330125758354736049045150429623937006,
+      -1.233523612685027760114769983066164237455, -1.423580134265707095505388133369554087793, 0.6053669874241645263950954849570376062994,
+      0.1484438963257383124456490049673412705421, -2.03897479493989610968207047178531547655, 0.05445012928926867352993558316925400219062,
+  };
+
+  const double gamma[] = { 3.637834252744495732208418513577775797946 };
+  const double alpha[] = { 2.681082873627752133895790743211112101027 };
+  const double beta[] = { -3.050430199247410569426377624787567904441 };
+
+  const double A_part_inv[] = {
+      5.0, 4.857738033247041114563498087156873290627, -0.857738033247041114563498087156873290627,
+      -1.632993161855452065464856049803927594644, 0.7752551286084109509013579626470543040172, 0.8577380332470411145634980871568732906269,
+      1.632993161855452065464856049803927594644, -4.857738033247041114563498087156873290626, 3.224744871391589049098642037352945695983,
+  };
+
+  setTTransform(tableau, A_part_inv, T, T_inv, gamma, alpha, beta, FALSE, FALSE, 1, 1, NULL, NULL);
+}
+
+void denseOutput_Radau_IA_4(BUTCHER_TABLEAU* tableau, double* yOld, double* x, double* k, double dt, double stepSize, double* y, int nIdx, int* idx, int nStates)
+{
+  tableau->b_dt[0] = dt*(dt*(5.0 - 2.1875*dt) - 3.75) + 1.0;
+  tableau->b_dt[1] = dt*(dt*(4.45320279122433889741358*dt - 8.917955266981970717009466) + 4.793596795737691563540175);
+  tableau->b_dt[2] = dt*(dt*(5.226981759397764219465792 - 3.488522646142565190862877*dt) - 1.350265644412027147822682);
+  tableau->b_dt[3] = dt*(dt*(1.222819854918226293449297*dt - 1.309026492415793502456326) + 0.3066688486743355842825069);
+
+  denseOutput(tableau, yOld, x, k, dt, stepSize, y, nIdx, idx, nStates);
 }
 
 // TODO: Describe me
@@ -476,7 +815,7 @@ void getButcherTableau_RADAU_IA_4(BUTCHER_TABLEAU* tableau)
   tableau->nStages = 4;
   tableau->order_b = 2*tableau->nStages - 1;
   tableau->order_bt = tableau->nStages - 1;
-  tableau->fac = 1.0e2;
+  tableau->fac = 1.0;
 
   const double c[] = {                                         0, 0.2123405382391529439747581101240003766519, 0.5905331355592652891350737479311701059481, 0.9114120404872960526044538562305438031143};
   const double A[] = {
@@ -490,9 +829,46 @@ void getButcherTableau_RADAU_IA_4(BUTCHER_TABLEAU* tableau)
   setButcherTableau(tableau, c, A, b, bt);
   tableau->isKLeftAvailable = FALSE;
   tableau->isKRightAvailable = FALSE;
+  tableau->withDenseOutput = TRUE;
+  tableau->dense_output = denseOutput_Radau_IA_4;
+
+  const double T[] = {
+      0.4596810142815956455308121716669939327617, 0.1399487775423729845360368598977359444425, -0.1244200895100983358061251873386804058926, -0.1753809052622923798882653257620600100744,
+      -0.2912293126476195093651071608956069810829, 0.0, 0.0572125318878470286026075375380116821287, 0.01056535127722349801603696476943187929979,
+      0.3405537054979965130441822541024432834589, -0.3949691005204159378079550283159342199022, 0.1573735208178755115678079780871490628484, -0.1313955561093213295646768821774711762092,
+      1.0, 0.6318461245268408380546926958693830110734, 1.0, 0.0,
+  };
+
+  const double T_inv[] = {
+      -0.2838802337480674984008318103996664659889, -3.285479728790676599552866968576976152613, 0.1147293361991207033850265456189706930225, 0.1345948500784760351393457728368935398759,
+      1.24808182996096621499119816828424477612, 1.270102290454182816966533940406804613162, -1.563756419222931720714249553293717683651, 0.328714538600899775259530084628955888896,
+      -0.5047154336051365530937773542884424581718, 2.482970518814537231947094666425822929513, 0.8733240969908585386817372570066286580769, 0.6577081426309168159531893796896226327998,
+      -5.09194593702242144137000294311631453467, -9.359370126275934829659807517276652291987, -1.566681181856267151030109472634035397665, 0.1484870261226446416736623853207948772257,
+  };
+
+  const double gamma[] = {  };
+  const double alpha[] = { 3.212806896871533982914109940306805502411, 4.787193103128466017085890059693194497589 };
+  const double beta[] = { -4.773087433276642499827429345261277978816, -1.567476416895208124112099648396772661243 };
+
+  const double A_part_inv[] = {
+      8.5, 9.587193591475383127080350958152541085909, -2.700531288824054295645364844598573226012, 0.6133376973486711685650138864460321401041,
+      -2.313357087542357488622512389828233777221, 0.63479209515521873889236075248215867637, 2.071362217177840932628172737279989617223, -0.3927972247907021828980210999339145163721,
+      1.061847731699696823886930479457823709979, -3.375342923186382293532331878083728931248, 1.221100028894691785921766123178559987957, 1.092395162591993683723635275447345233311,
+      -1.962776358443053620978703803915304218474, 5.209408237612634665779116203558318805905, -8.890739755119670519986285523982295923106, 5.644107875950089475185873124339281335674,
+  };
+
+  setTTransform(tableau, A_part_inv, T, T_inv, gamma, alpha, beta, FALSE, FALSE, 0, 2, NULL, NULL);
 }
 
-// TODO: Describe me
+void denseOutput_Radau_IIA_2(BUTCHER_TABLEAU* tableau, double* yOld, double* x, double* k, double dt, double stepSize, double* y, int nIdx, int* idx, int nStates)
+{
+  tableau->b_dt[0] = 1.5 - 0.75*dt;
+  tableau->b_dt[1] = 0.75*dt - 0.5;
+
+  denseOutput(tableau, yOld, x, k, dt, stepSize, y, nIdx, idx, nStates);
+}
+
+/* 2-step, order 3(1), L-stable Radau IIA */
 void getButcherTableau_RADAU_IIA_2(BUTCHER_TABLEAU* tableau)
 {
   tableau->nStages = 2;
@@ -510,9 +886,41 @@ void getButcherTableau_RADAU_IIA_2(BUTCHER_TABLEAU* tableau)
   setButcherTableau(tableau, c, A, b, bt);
   tableau->isKLeftAvailable = FALSE;
   tableau->isKRightAvailable = FALSE;
+  tableau->withDenseOutput = TRUE;
+  tableau->dense_output = denseOutput_Radau_IIA_2;
+
+  const double T[] = {
+      0.1111111111111111111111111111111111111111, -0.3142696805273544552892641609354884619044,
+      1.0, 0.0,
+  };
+
+  const double T_inv[] = {
+      0.0, 1.0,
+      -3.181980515339463859803799629471820676782, 0.3535533905932737622004221810524245196425,
+  };
+
+  const double gamma[] = {  };
+  const double alpha[] = { 2.0 };
+  const double beta[] = { -1.41421356237309504880168872420969807857 };
+
+  const double A_part_inv[] = {
+      1.5, 0.5,
+      -4.5, 2.5,
+  };
+
+  setTTransform(tableau, A_part_inv, T, T_inv, gamma, alpha, beta, FALSE, FALSE, 0, 1, NULL, NULL);
 }
 
-// TODO: Describe me
+void denseOutput_Radau_IIA_3(BUTCHER_TABLEAU* tableau, double* yOld, double* x, double* k, double dt, double stepSize, double* y, int nIdx, int* idx, int nStates)
+{
+  tableau->b_dt[0] = dt*(0.8052720793239878323318245*dt - 1.986947221348442939713724) + 1.558078204724922382431975;
+  tableau->b_dt[1] = dt*(3.320280554681776273047058 - 1.916383190435098943442936*dt) - 0.8914115380582557157653087;
+  tableau->b_dt[2] = dt*(1.111111111111111111111111*dt - 1.333333333333333333333333) + 0.3333333333333333333333333;
+
+  denseOutput(tableau, yOld, x, k, dt, stepSize, y, nIdx, idx, nStates);
+}
+
+/* 3-step, order 5(2), L-stable Radau IIA */
 void getButcherTableau_RADAU_IIA_3(BUTCHER_TABLEAU* tableau)
 {
   tableau->nStages = 3;
@@ -531,9 +939,50 @@ void getButcherTableau_RADAU_IIA_3(BUTCHER_TABLEAU* tableau)
   setButcherTableau(tableau, c, A, b, bt);
   tableau->isKLeftAvailable = FALSE;
   tableau->isKRightAvailable = FALSE;
+  tableau->withDenseOutput = TRUE;
+  tableau->dense_output = denseOutput_Radau_IIA_3;
+
+  const double T[] = {
+      0.09443876248897524148749007950641658628684, -0.1412552950209542084279903838077973094093, 0.03002919410514742449186111708905386666835,
+      0.2502131229653333113765090675125016843586, 0.2041293522937999319959908102983381740865, -0.3829421127572619377954382335998732103578,
+      1.0, 1.0, 0.0,
+  };
+
+  const double T_inv[] = {
+      4.17871859155190472734646265851205623, 0.3276828207610623870825332724296162342454, 0.52337644549944954803993091590898750206,
+      -4.17871859155190472734646265851205623, -0.3276828207610623870825332724296162342454, 0.47662355450055045196006908409101249794,
+      0.5028726349457868759512473431395442928592, -2.571926949855605429186785353601675054695, 0.5960392048282249249688219110993024032899,
+  };
+
+  const double gamma[] = { 3.637834252744495732208418513577775797946 };
+  const double alpha[] = { 2.681082873627752133895790743211112101027 };
+  const double beta[] = { -3.050430199247410569426377624787567904441 };
+
+  const double A_part_inv[] = {
+      3.224744871391589049098642037352945695983, 1.167840084690405494924041272215695012234, -0.2531972647421808261859424199215710378575,
+      -3.567840084690405494924041272215695012233, 0.7752551286084109509013579626470543040171, 1.053197264742180826185942419921571037858,
+      5.531972647421808261859424199215710378576, -7.531972647421808261859424199215710378577, 5.0,
+  };
+
+  setTTransform(tableau, A_part_inv, T, T_inv, gamma, alpha, beta, FALSE, FALSE, 1, 1, NULL, NULL);
+
+  const double dT_A[] = { 1.558078204724922382431975, -0.8914115380582557157653087, 0.3333333333333333333333333 };
+  const double u = 0.0;
+
+  setContractiveDefectError(tableau, dT_A, u);
 }
 
-// TODO: Describe me
+void denseOutput_Radau_IIA_4(BUTCHER_TABLEAU* tableau, double* yOld, double* x, double* k, double dt, double stepSize, double* y, int nIdx, int* idx, int nStates)
+{
+  tableau->b_dt[0] = dt*(dt*(3.582252927257111671340863 - 1.222819854918226293449297*dt) - 3.716508500936312837609313) + 1.577537639774195834993226;
+  tableau->b_dt[1] = dt*(dt*(3.488522646142565190862877*dt - 8.727108825172496543985716) + 6.600456243074125634602569) - 0.9736765952010224006994974;
+  tableau->b_dt[2] = dt*(dt*(8.894855897915384872644852 - 4.45320279122433889741358*dt) - 4.758947742137812796993255) + 0.6461389554268265657062718;
+  tableau->b_dt[3] = dt*(dt*(2.1875*dt - 3.75) + 1.875) - 0.25;
+
+  denseOutput(tableau, yOld, x, k, dt, stepSize, y, nIdx, idx, nStates);
+}
+
+/* 4-step, order 7(3), L-stable Radau IIA */
 void getButcherTableau_RADAU_IIA_4(BUTCHER_TABLEAU* tableau)
 {
   tableau->nStages = 4;
@@ -553,6 +1002,273 @@ void getButcherTableau_RADAU_IIA_4(BUTCHER_TABLEAU* tableau)
   setButcherTableau(tableau, c, A, b, bt);
   tableau->isKLeftAvailable = FALSE;
   tableau->isKRightAvailable = FALSE;
+  tableau->withDenseOutput = TRUE;
+  tableau->dense_output = denseOutput_Radau_IIA_4;
+
+  const double T[] = {
+      0.07123402525218481887381633748646685662888, 0.03545885592224043673823296558715169925362, -0.01178089927329709192120307304120022451655, -0.03545032992850723496445567647562283269565,
+      -0.1994810827230478943203809451008415140774, 0.0, 0.04634447901554471411288231518543351472243, -0.03220730760558414029133566082066998549373,
+      0.2263428533849796285405132956577294710278, -0.4781476917330068561879375571176378807926, 0.3368476074591732346912783221942524204093, -0.1260666211747527339910021827677285012458,
+      1.0, -0.1515563106538475731161345101479080696596, 1.0, 0.0,
+  };
+
+  const double T_inv[] = {
+      2.486335101864526740662016402488078062952, -3.292076411161209112171217869193786806831, 0.1418894057344082618334775030181480926074, 0.1340657227039199440994862543062892653211,
+      4.658362365094468791965671611950347346486, 2.442479726346917144352967828054658539109, -1.933947117516822965233867603497682772791, 0.5931297068662242041622614981917761067601,
+      -1.78033088812207732202898659959643861105, 3.662249627333167095902383128195239777126, -0.4349912958649009426908992476664027339523, 0.9558268274079230792935976991411604260505,
+      -17.96130656749639676506023969758331297225, -5.389086980398025669078941718352030134169, -1.504742273383398638930933017879633925149, 0.545022919619391945643865700981719104208,
+  };
+
+  const double gamma[] = {  };
+  const double alpha[] = { 3.212806896871533982914109940306805502411, 4.78719310312846601708589005969319449759 };
+  const double beta[] = { -4.773087433276642499827429345261277978816, -1.567476416895208124112099648396772661243 };
+
+  const double A_part_inv[] = {
+      5.644107875950089475185873124339281335674, 1.923507277054712676909381646891212291057, -0.5859014821038162923727992472033879019122, 0.173878352574245724838471938326822229815,
+      -5.049214638391408870439161818242149871801, 1.221100028894691785921766123178559987957, 1.754680988760836795174600675333025557611, -0.4347914612125814012409853796201461027369,
+      3.492466158625437409809252496299123113557, -3.984517895782496412958824773485986453816, 0.6347920951552187388923607524821586763698, 1.822137598434254043749452216803527954555,
+      -6.923488256445454508537916405090468743462, 6.595237669628143898443354470278302412971, -12.17174941318268938990543806518783366951, 8.5,
+  };
+
+  setTTransform(tableau, A_part_inv, T, T_inv, gamma, alpha, beta, FALSE, FALSE, 0, 2, NULL, NULL);
+}
+
+void denseOutput_Radau_IIA_5(BUTCHER_TABLEAU* tableau, double* yOld, double* x, double* k, double dt, double stepSize, double* y, int nIdx, int* idx, int nStates)
+{
+  tableau->b_dt[0] = dt*(dt*(dt*(2.282881805816479072042229*dt - 7.763720273930763938098749) + 9.977775909015967027179954) - 5.939631780296784469555989) + 1.586407900186328249755967;
+  tableau->b_dt[1] = dt*(dt*(dt*(21.98658623905104856719118 - 7.03307788889556246946698*dt) - 24.44476872321270683543143) + 10.78073426970505578696508) - 1.008117881498372989065673;
+  tableau->b_dt[2] = dt*(dt*(dt*(10.75006644246363701374663*dt - 29.48457468794770677433421) + 26.82627186871280746067823) - 8.510911966412783907422194) + 0.7309748661597874614134016;
+  tableau->b_dt[3] = dt*(dt*(dt*(26.46170872282742214524178 - 11.03987035938455361632188*dt) - 20.75927905451606765242676) + 6.069809477004512590013105) - 0.5092648848477427221036966;
+  tableau->b_dt[4] = dt*(dt*(dt*(5.04*dt - 11.2) + 8.4) - 2.4) + 0.2;
+
+  denseOutput(tableau, yOld, x, k, dt, stepSize, y, nIdx, idx, nStates);
+}
+
+/* 5-step, order 9(4), L-stable Radau IIA */
+void getButcherTableau_RADAU_IIA_5(BUTCHER_TABLEAU* tableau)
+{
+  tableau->nStages = 5;
+  tableau->order_b = 2*tableau->nStages - 1;
+  tableau->order_bt = tableau->nStages - 1;
+  tableau->fac = 1.0;
+
+  const double c[] = { 0.05710419611451768219312119255411562123507794559875, 0.27684301363812382768004599768562514111088916969503, 0.58359043236891682005669766866291724869343263989677, 0.86024013565621944784791291887511976673837802258723, 1.0 };
+  const double A[] = {
+                         0.072998864317903324305568533778137426004163039777915, -0.026735331107945571877697965352751601211787338539052, 0.018676929763984354412247354802088259852773575327219, -0.012879106093306439853646949838298551565502926670061, 0.0050428392338820152066502191649400881554315957027286,
+                         0.15377523147918246866812357088175097494716794709251, 0.14621486784749350664968724512404244842221927972759, -0.036444568905128089526650202198483305919654211399984, 0.021233063119304719421507662919772852230792907023364, -0.0079355799027287775326222790414578285696367527484454,
+                         0.1400630456848098715137557368144872671248133759532, 0.29896712949128347939830345517875687328015051590253, 0.16758507013524896344206140916157860596789903711498, -0.033969101686617746571922141643423777169061257085197, 0.010944288744192252274499209151518279489630968011257,
+                         0.14489430810953475753660064709320210901047840637514, 0.27650006876015922755593438832926660305873502019195, 0.32579792291042102998492897281091929529418345389728, 0.12875675325490976115823836749179707516127419893507, -0.01570891737880532838778945685006531578629305681221,
+                         0.14371356079122594132341221985411022715892296173188, 0.28135601514946206019217265034065989120000299266737, 0.31182652297574125408185491157664052198806076863409, 0.22310390108357074440256021822858935965301327696665, 0.04,
+  };
+
+  const double b[] = { 0.14371356079122594132341221985411022715892296173188, 0.28135601514946206019217265034065989120000299266737, 0.31182652297574125408185491157664052198806076863409, 0.22310390108357074440256021822858935965301327696665, 0.04 };
+  const double bt[] = { -0.3273572880280475179868889735847914204879, 1.732626055715213045955200342283536620404, -1.906441155627866383675385786616933133121, 2.501172387940700855707074417918187933204, -1.0 };
+
+  setButcherTableau(tableau, c, A, b, bt);
+  tableau->isKLeftAvailable = FALSE;
+  tableau->isKRightAvailable = FALSE;
+  tableau->withDenseOutput = TRUE;
+  tableau->dense_output = denseOutput_Radau_IIA_5;
+
+  const double T[] = {
+      0.01357686734494794324766390817021999803797, -0.03148028100471519415428175690692863340515, -0.0431111479250580662973038265172483283624, -0.01147851525522951470794155541215550493855, 0.0140198588928754102810778942934959307831,
+      0.001617900401719087476438624531872425012895, 0.0921967418813908872382363920296397980126, 0.07198031230119928258134925493044486460326, -0.007668830749180162885156876792036080741161, -0.02470857842651852681252520537778038265537,
+      0.07915785334744720764489838756150393956204, -0.2762927085439168114226356899220493142912, 0.0, 0.01939846399882895091122328964083308722858, -0.08180035370375117083639081222875725330713,
+      0.412256082680461451978718545345271705818, 0.1699640831948430356688757904455530175956, -0.6350920657639433360094201530375953615483, 0.4076011712801990666216623702189598727463, -0.199682427886802525936540566022390695167,
+      1.0, 1.0, -0.4454899495059430496620701331980063414799, 1.0, 0.0,
+  };
+
+  const double T_inv[] = {
+      27.69769377568408840916613663851359043543, 12.78333791130440601500090610772214820099, 3.208489386713429859797686375147941186252, -0.9514904122489162212716699357512562546035, 0.7415504960259896033537032273913420094652,
+      3.065984257033151558597036016460687978092, 5.314212297391761634120492618650282902689, -2.145320556037258493894963059624829924819, 0.436523216090390802570474859992269229371, -0.06036470885664840718608936049758332373722,
+      -5.113924979291519864418947587489420612756, 1.617537568314967167553705069291328747309, 2.00013438779111874611154981417514901898, -1.378565273632228552455277468742193211401, 0.4768096412572696210179697709175100909288,
+      -33.04188021351900000806144694261095077429, -17.37695347906356701945498060589871058527, -0.1721290632540055611515288064277513837495, -0.09916977798254264258816622140173685847264, 0.5312281158383066671849114226060247954266,
+      8.611443979875291977700082512570348519505, -9.699991409528808231335894053420032664971, -1.91472863969687428485137560339172471528, -2.418692006084940026426563434082983507712, 1.047463487935337418694432999211736017659,
+  };
+
+  const double gamma[] = { 6.286704751729276645173153341869409049591 };
+  const double alpha[] = { 3.655694325463572258243207960095433854357, 5.700953298671789419170215368969861620848 };
+  const double beta[] = { -6.543736899360077294021071509393686318364, -3.210265600308549888425010652972117212322 };
+
+  const double A_part_inv[] = {
+      8.755923977938361667631660594828012928629, 2.891942615380117404357456676227386342843, -0.8751863962002650264162825986308431580122, 0.3997052079399654826216566948809341984769, -0.1337061638492158356717020324726304308951,
+      -7.161380720145387027392470252081544389489, 1.806077724083644363529878440042442407507, 2.36379717606860836942210341579987402084, -0.8659007802831345191395346004640476681994, 0.2743380777751942021737668114372655260447,
+      4.122165246243373781044035152113440886055, -4.496017125813394719848837121225239110708, 0.8567652453971776050861934092691799619881, 2.518320949211064374937135022866937259275, -0.6570627571343601062552304235652085673138,
+      -3.878663219724010333635279609635936935001, 3.39315191806495416869295389614082378173, -5.188340906407186879197120489434857930142, 0.5812330525808163637522675558603647018757, 2.809983655279712329602274012227459617569,
+      8.412424223594288656407174329133920050716, -6.970256116656660967032272257996600422679, 8.777114204150473239214026630269378362588, -18.21928231108810092858892870140669799063, 13.0,
+  };
+
+  setTTransform(tableau, A_part_inv, T, T_inv, gamma, alpha, beta, FALSE, FALSE, 1, 2, NULL, NULL);
+
+  const double dT_A[] = { 1.586407900186328249755967, -1.008117881498372989065673, 0.7309748661597874614134016, -0.5092648848477427221036966, 0.2 };
+  const double u = 0.0;
+
+  setContractiveDefectError(tableau, dT_A, u);
+}
+
+void denseOutput_Radau_IIA_6(BUTCHER_TABLEAU* tableau, double* yOld, double* x, double* k, double dt, double stepSize, double* y, int nIdx, int* idx, int nStates)
+{
+  tableau->b_dt[0] = dt*(dt*(dt*(dt*(18.9225493385218286667573 - 4.877573129141801435353665*dt) - 28.98893240310024716281628) + 22.11011240729804065906351) - 8.656553506300387740043632) + 1.591191485349307432497373;
+  tableau->b_dt[1] = dt*(dt*(dt*(dt*(15.64370724304611046709081*dt - 57.71990808176219927045815) + 81.70883091587129711062254) - 54.27568436856385767983224) + 15.87752143417611490469568) - 1.026016475611511662638945;
+  tableau->b_dt[2] = dt*(dt*(dt*(dt*(88.46775869913640827170171 - 26.00690297479666724299257*dt) - 111.154501422397282403308) + 61.18357947116082384375687) - 13.00063798928688484071886) + 0.7711676077783898628459521;
+  tableau->b_dt[3] = dt*(dt*(dt*(dt*(31.63423192612264259314153*dt - 97.83568254816011542580486) + 109.0676231164860909954399) - 52.24124717777430826707687) + 10.20850197388310732726579) - 0.5907336963229322648856225;
+  tableau->b_dt[4] = dt*(dt*(dt*(dt*(83.16528259226407775780401 - 29.22679639856361771521944*dt) - 85.63302020685985853993822) + 38.77879522343485699964428) - 7.345498579138616317865656) + 0.4210577454734132988479087;
+  tableau->b_dt[5] = dt*(dt*(dt*(dt*(12.83333333333333333333333*dt - 35.0) + 35.0) - 15.55555555555555555555556) + 2.916666666666666666666667) - 0.1666666666666666666666667;
+
+  denseOutput(tableau, yOld, x, k, dt, stepSize, y, nIdx, idx, nStates);
+}
+
+/* 6-step, order 11(5), L-stable Radau IIA */
+void getButcherTableau_RADAU_IIA_6(BUTCHER_TABLEAU* tableau)
+{
+  tableau->nStages = 6;
+  tableau->order_b = 2*tableau->nStages - 1;
+  tableau->order_bt = tableau->nStages - 1;
+  tableau->fac = 1.0;
+
+  const double c[] = { 0.039809857051468742340806690093333167704262654228385, 0.19801341787360817253579213679529623603818635883379, 0.43797481024738614400501252000522885251679027421474, 0.69546427335363609451461482372116716139400155499865, 0.90146491420117357387650110211224730961948643045171, 1.0 };
+  const double A[] = {
+                         0.050950010994640609251478059633024629369673958557677, -0.018907306554292139093302793813918249853741307729611, 0.013686071433088228819012995720112285258120537385948, -0.010370038766046045839009537968545118512361729041913, 0.0073606563966398039365575429778365553030154189796668, -0.0029095364525617147339295764551769338604442239233829,
+                         0.10822165891905866038457804818157049157131605614756, 0.10697551993733260380284870869670734188993967399452, -0.027539023355392420328824862378693123673003724790065, 0.017496747141228161531087490197110541281123440201633, -0.011653721891195586803761017683165506213203011975441, 0.0045122371225767539498637697817664911820139252555853,
+                         0.09777967009264535465982146161839735529224057032578, 0.22317225063689583566719958767108380482274346965384, 0.13631467927305188653151585886467910012672516478677, -0.029646965988196216350882814027078247408353061629895, 0.016358578843437159707327494725790347334132545244331, -0.0060034026104478762099690688476435076506984141660894,
+                         0.10212237561293384100253249087632606054417775295884, 0.20297595737309107918373442944059116349390035078792, 0.27639913638074783302191977602414971750729661532819, 0.1310060231360429803526599625595164053496782580727, -0.024876303199822286536339815419573239269286280557463, 0.0078370840506426474901079802401570537682348584084609,
+                         0.10033100138496080156934198475643763175703379375978, 0.21024730855333846180365503705179494054249856988659, 0.25608537205033761639808891688573084503296586073936, 0.25336593470456565097236321199032658663712429116967, 0.092430534335699596829174177922840200031659712265102, -0.010995236827728553696122226494882894381795797368795,
+                         0.1007941926267404201046003778745677818586739544979, 0.20845066715595386947970319137132312166770750468809, 0.26046339159478749128511470328476850990576171084536, 0.2426935942344849580799139577934448339939675840621, 0.15982037661025548327288999189811797479611146812877, 0.027777777777777777777777777777777777777777777777778,
+  };
+
+  const double b[] = { 0.1007941926267404201046003778745677818586739544979, 0.20845066715595386947970319137132312166770750468809, 0.26046339159478749128511470328476850990576171084536, 0.2426935942344849580799139577934448339939675840621, 0.15982037661025548327288999189811797479611146812877, 0.027777777777777777777777777777777777777777777777778 };
+  const double bt[] = { 0.4914223436619063359229674710991495189894, -1.044400345815271427668262344714238545442, 2.343267309489758677412225550810475596188, -2.290783854394384686825360119129050716831, 2.500494547057991101158429441933664147096, -1.0 };
+
+  setButcherTableau(tableau, c, A, b, bt);
+  tableau->isKLeftAvailable = FALSE;
+  tableau->isKRightAvailable = FALSE;
+  tableau->withDenseOutput = TRUE;
+  tableau->dense_output = denseOutput_Radau_IIA_6;
+
+  const double T[] = {
+      -0.1038148248226006161898205420695064592091, -0.01908836807153628814776296557732806093783, 0.0088597273659501606601164392696922504676, 0.2086160715225811696558159893778163643127, -0.002985389218706438089935116050639871855584, -0.005216901633623462885945406085306618216142,
+      0.2112130549617691439111184274195597250668, 0.0, -0.184524594298304021447761374819871369398, -0.2548868410891171762475437838952948767519, 0.003766304136060634630428850049513875410583, 0.001540000791140032695111797113983390890518,
+      -0.4009740551871843064891164933499985899574, 0.1790921711487228785111392987797925981642, 0.2698618618370164674137442733216215429443, -0.3897248318075563415076872084219020493825, 0.006604094642671578758085016324748662744946, -0.01470932441894906164864106080679880145681,
+      0.3197068864656914815962191759363006753834, -0.948332174735003426582138073372013360924, 2.859222562066303274049801708234606998207, 0.0, 0.09164124566731780643202190459884795348705, -0.04635622100372256061266550220804048376218,
+      1.937954480829633716467533394917733949804, 0.9207094338279246586718159903217984034954, 5.612734773430258153255302523460278509845, 9.574346752968413606451068310589284175782, 0.4711629358247579089069386214883825567558, -0.07707921396504256162139415312248054628802,
+      1.0, 3.06156126660675828987093787421894995163, 1.0, 20.88199218332491628229333911231506984253, 1.0, 0.0,
+  };
+
+  const double T_inv[] = {
+      0.8084950779165254542799921043285139353482, 2.604743750958376218809479953620346112733, -0.5949028048095340521559393281580243877771, -0.2081006594973723424839559934261300867909, 0.236001974138585593793882553611834742599, -0.09559256958251549602891021558598191784984,
+      -2.263136997333665548232848628888629021464, 0.04468151003048068274204591942336662721394, 1.398667223466118352550835182350765083553, -0.7615728986538168848208122177182908477042, 0.3451717129302118907612314118422026080058, -0.1090021881944551695579922956379202971038,
+      -2.47776392250236581502010802217796646673, -2.072183788096792577336568852374120898836, 0.02020794372477232859056092587350893572213, -0.013260861215732987303166228450989898173, 0.1304186132420477334053478512954582778365, -0.05995924536272943628901326776409652990988,
+      1.33732872125142115375992879998278850874, -0.6109311332541626587528235740567151720736, -0.5114313686547837336994356292413955129613, -0.09271259527455791996673380714846279579753, 0.05063711026665349416782816226004094971608, -0.005691091452767005680906638056461907628984,
+      -19.32808648706076917151450700377418786363, 12.08810400585885280910901831703294905415, 6.972295307404832111033849209928302103698, 4.488987298748150372314998615936042819647, -2.480588674790497343771940112296136873848, 1.608110019528037191337226250501880475189,
+      -139.162365235214475741044940263579506341, -86.86394280102758379741501913701080348712, -17.68623066595332555896275574105054248767, 0.6289016427699384262857419024505555951776, -2.293422051615319474905768647962374667987, 1.051445880391877517282717746914888988258,
+  };
+
+  const double gamma[] = {  };
+  const double alpha[] = { 4.038847534488800154166195229640030659658, 6.470514936701569753598584495713229000395, 7.490637528809630092235220274646740339948 };
+  const double beta[] = { -8.345600414872215667958594699304708933405, -4.900121147421386424219683046996816065052, -1.621502388778393978353342752338923527676 };
+
+  const double A_part_inv[] = {
+      12.55970347629150885675922532331891964013, 4.075825988876295481749454735031003108456, -1.217203808464260506775607847197515447421, 0.5662318669441424697889579708094353051037, -0.3071042122568407960667849760996157949078, 0.1090860107880072772249851745292611816196,
+      -9.802838712568015725430576296432169103899, 2.525081407963725234258772437798811089788, 3.13222586264734150140421533731192086218, -1.157409992774380785128892186776465603445, 0.5833821924541103918317275645901196840306, -0.2025476984690533992461768091638209559495,
+      5.182157838558718444070870675008570635823, -5.544522909527438071467296426228820867017, 1.141618166847494000345653302051089213997, 2.974976253821251159057453740379448461022, -1.178019327058829407691465284519597084855, 0.3845423620091725705442407299486040901576,
+      -4.10823909345880706187287203809880418017, 3.49150290911386180937795214804147340843, -5.069878750993607337617481796899618876632, 0.7189441918977704032300544771680751155747, 3.46004179608626687413342831161607655431, -0.9264431104031318893392858740223827889184,
+      4.385785063400934178368949557383407904832, -3.464005047451488633583200446630886373753, 3.951542456587611640146050419506078880989, -6.810539438891445229513105959783181559137, 0.5546527569995015054062944596631049405146, 4.01713280695131170404962247640658312851,
+      -9.9429774219288117999498665906756735229, 7.676062157233047637263503126199316779647, -8.232737128218406491411113845062543173202, 11.63870727736801986481207712855794924705, -25.63905488445384921071459981901904933059, 18.5,
+  };
+
+  setTTransform(tableau, A_part_inv, T, T_inv, gamma, alpha, beta, FALSE, FALSE, 0, 3, NULL, NULL);
+}
+
+void denseOutput_Radau_IIA_7(BUTCHER_TABLEAU* tableau, double* yOld, double* x, double* k, double dt, double stepSize, double* y, int nIdx, int* idx, int nStates)
+{
+  tableau->b_dt[0] = dt*(dt*(dt*(dt*(dt*(11.45608158833036806214456*dt - 49.98555780882076668092527) + 88.92081439940893102211075) - 82.61199090290419802347197) + 42.5684376486618505389208) - 11.86735490768121638204296) + 1.594064218561041781197339;
+  tableau->b_dt[1] = dt*(dt*(dt*(dt*(dt*(158.9633239184234411749878 - 37.62732723293232866726756*dt) - 269.587887412209742431544) + 232.1402530759686509011186) - 104.588261408003973813966) + 21.89555492668408003854636) - 1.036553752196476461002723;
+  tableau->b_dt[2] = dt*(dt*(dt*(dt*(dt*(65.57712817876552134254661*dt - 262.5896479037349742050365) + 412.8817621034525634663054) - 317.623307111820279973304) + 119.443396578879996734224) - 18.27080167953064224805401) + 0.7938217234907926875176341;
+  tableau->b_dt[3] = dt*(dt*(dt*(dt*(dt*(324.5017915419364571467466 - 86.63425000191077201940796*dt) - 468.1955191607219892722909) + 322.418851602326298352926) - 106.1667493619430980736871) + 14.93200794707032132572501) - 0.6325776522499342252619287;
+  tableau->b_dt[4] = dt*(dt*(dt*(dt*(dt*(93.83554041388908853603364*dt - 328.4240528650374306928517) + 439.5825098856763818801198) - 280.6792430349470227530511) + 87.24612664352795011661773) - 11.86801681988985282340799) + 0.4976107136030013134425167;
+  tableau->b_dt[5] = dt*(dt*(dt*(dt*(dt*(270.6770002600904161142219 - 81.62758110940718337649827*dt) - 345.0302512441775732361296) + 212.0697220856622657814968) - 64.2172358154084397878237) + 8.607181961918738660662159) - 0.3592223940655679530356959;
+  tableau->b_dt[6] = dt*(dt*(dt*(dt*(dt*(35.02040816326530612244898*dt - 113.1428571428571428571429) + 141.4285714285714285714286) - 85.71428571428571428571429) + 25.71428571428571428571429) - 3.428571428571428571428571) + 0.1428571428571428571428571;
+
+  denseOutput(tableau, yOld, x, k, dt, stepSize, y, nIdx, idx, nStates);
+}
+
+/* 7-step, order 13(6), L-stable Radau IIA */
+void getButcherTableau_RADAU_IIA_7(BUTCHER_TABLEAU* tableau)
+{
+  tableau->nStages = 7;
+  tableau->order_b = 2*tableau->nStages - 1;
+  tableau->order_bt = tableau->nStages - 1;
+  tableau->fac = 1.0;
+
+  const double c[] = { 0.029316427159784891972050276913164910373730392563715, 0.14807859966848429184997685249597921223024877480859, 0.33698469028115429909705297208077570519756875002847, 0.55867151877155013208139334180552194007436828896541, 0.7692338620300545009168833601156454518371421433223, 0.92694567131974111485187396581968201105617241954228, 1.0 };
+  const double A[] = {
+                         0.037546264993921331333686127624105551409844147085069, -0.014039334556460401537626568603936253927078900617188, 0.010352789600742300936755479003273124789107137783342, -0.0081583225402750119092045435772132783491910230755902, 0.0063884138795346849437559514864056804089198993395116, -0.0046023267791486554993520258547685217738229482397359, 0.0018289425614706437040358568352986078159520802883062,
+                         0.080147596515618967795215595316188773478794694453719, 0.081062063985891536679584719357221980974798332396676, -0.021237992120711034937085469604419103836950630324492, 0.014000291238817118983742204835134926788498535743389, -0.010234185730090163829199816607636044633616515605306, 0.0071534651513645904980623821669621411752507610622935, -0.0028126393724067233403427629674734617165264029176848,
+                         0.072063846941881902113362526561137596779695354775321, 0.17106835498388661942435250400905030280034964311372, 0.10961456404007210923322040746184569082289243085783, -0.02461987172898405386231886444110056108884624668374, 0.014760377043950817073195348981742706482163192669642, -0.0095752593967914005563287247266417134307882145349237, 0.003672678397138305671569774234741682832102589830622,
+                         0.075705125819824420424641229496338921969891121384815, 0.15409015514217114464633168204648291517195590999536, 0.22710773667320238641128128794936635009809331118652, 0.11747818703702478198791268067393216144249387082062, -0.02381082715304417358204792932577433437596089393164, 0.012709985533661205633610757619788395064712864489453, -0.0046088442812896334403363666546124692968178949797229,
+                         0.073912342163191846540806321243016399213366859606731, 0.1613556076159424321862201459030948103738282915228, 0.20686724155210419781957884643767073090996149315046, 0.23700711534269423476224677295732751474653439325044, 0.10308679353381344662410584574572164064619759515728, -0.018854139152580448840052190417863035124650910366617, 0.0058589009748887918239776182466773910719044210011886,
+                         0.074705562059796230172292559361766628755621292318113, 0.1583072238724687006584793845146287165740587429923, 0.21415342326720003110869745785686139661908996932591, 0.21987784703186003998748735549076677110629790633148, 0.19875212168063526980182646918453450476047373969754, 0.06926550160550913323097216576197674236468414173589, -0.0081160081977282901078814263508527491240533728589524,
+                         0.074494235556010317933248780209166920975326449423939, 0.15910211573365074087243521723493418210816301632787, 0.21235188950297780419915401957510412235603856069468, 0.22355491450728323474967447682122101798551083778481, 0.19047493682211557690296917393806276186714739147125, 0.11961374461265620289353874038477630083026272388929, 0.020408163265306122448979591836734693877551020408163,
+  };
+
+  const double b[] = { 0.074494235556010317933248780209166920975326449423939, 0.15910211573365074087243521723493418210816301632787, 0.21235188950297780419915401957510412235603856069468, 0.22355491450728323474967447682122101798551083778481, 0.19047493682211557690296917393806276186714739147125, 0.11961374461265620289353874038477630083026272388929, 0.020408163265306122448979591836734693877551020408163 };
+  const double bt[] = { -0.2593076755258768633646696264711447439871, 1.255469459350560084324287142896233783625, -1.698403593561285638182740271940617400542, 2.747862898245942093124032369910816949049, -2.543660856123370685801973692928840823266, 2.498039767614031009901064078533552235122, -1.0 };
+
+  setButcherTableau(tableau, c, A, b, bt);
+  tableau->isKLeftAvailable = FALSE;
+  tableau->isKRightAvailable = FALSE;
+  tableau->withDenseOutput = TRUE;
+  tableau->dense_output = denseOutput_Radau_IIA_7;
+
+  const double T[] = {
+      0.002443584304870611540711873536202848531561, 0.03057363256226740727160820228319680784585, 0.0133303521408942932586562905165599057705, 0.1553315749912116897933707446524199175021, -0.1504188680838382591931303390622714502, -0.001238646187952874056376868703911052855813, 0.002760617480543852499548003790966755920215,
+      -0.001815339648319317160533175196391990035361, -0.06020251369529888889323777376286722108714, -0.01757207293401259272454901288788359061642, -0.1367404059668601680786084200734766453885, 0.3070044919395954545321010518225509827266, -0.00006666635339396338181760478974025762882138, -0.00318547482516620984874835878222687621122,
+      0.004605339331161874804215399488991374721478, 0.1177378929732031113462122942426312152543, 0.0, -0.2578060284538247855586838325247457259425, -0.3012645979829834810979759483212861641103, -0.002352180982943338340535195325555294917767, -0.0004169077725297562691408880305994094134255,
+      0.01787002334285306905849068257903824855579, -0.2081500996515612103846240651203372481344, 0.1265540284996107334107347947615003451285, 0.2592448513227470991176436144863913501697, -1.353657393765926793632746160886720826536, 0.003115071152346175252725470862893152080544, -0.02511660491343882192836382347144669827898,
+      0.1281810080772839100766671546312430702377, 0.03131924638361855826193352153184082217154, -0.5290498247463721566805307728877424022864, 6.961244384316622065828028476816056097468, 0.0, 0.101717732481715146808078931323995112561, -0.09504502035604622821038921444856478951832,
+      0.5200651497488246865988548621276895804526, 1.030227455588015574500700958824363139562, 0.05872839551725000246836177128214284856939, 10.44620810225192099638681714800056701753, 18.6818938966530354810119464511591412779, 0.5217519452747652852946094531818070342094, -0.1280719446355438944141149395109133576625,
+      1.0, 1.0, 1.025332904316196527949082325304222479118, 1.0, 36.00143595926366042046186224468310042601, 1.0, 0.0,
+  };
+
+  const double T_inv[] = {
+      227.5153059626806890388393011506457218667, 166.6480224676097461089729683041486557709, 43.26514588452621505369067359414994228903, 3.62309006134101613248691820771427384463, 3.572674832938798031294821819808770156796, -2.743556365603367314479807161010513177255, 1.451453540254750351507119589228455610535,
+      -5.685745523645763079350865514048924866961, -5.695328798344218027141733594297767776647, 4.194542877032578517961843086390874046146, -0.5634710992339321996180808377612010516316, -0.3498848724553411615264254867470154394264, 0.3756069796496611179047645140420989062868, -0.1561849137021767433223279595403627514527,
+      2.612181217358560762931282975078711182941, -5.189082743784435650126341469959843985057, -2.639867899983247950322993120931920391563, 2.627302066922130948814091292133320033929, -1.430029415997415535093704930283998215574, 0.7399729444472437474488158235476292082286, -0.2521270225044929403266869628692369766825,
+      1.677273518349435847211732932365551834263, -0.2120738668416560450302516429945034788731, -0.8397244598554052735510482356390976884977, -0.03117486427587609209826264725770145751818, -0.005764602480954630438139204022698978950742, 0.05455416283154177035418802690334441677937, -0.02769204001386686020220964034033505132671,
+      2.027726305119479435876562291686551684322, 2.433810222066891779687285693147447606983, 0.1351024776550297482121930310824296295656, -0.1023190145818236310904197663912611548392, -0.09511646667027558029043440693235869873963, 0.07338736849061530135022500434731027343894, -0.02530456575744630621852587940170682984603,
+      -299.1862480282520966786364252394472810794, -243.0407453687447911819005652300830926691, -48.77710407803786921219093448873880326946, -2.03867190574193440528015205293433905622, 1.673560239861084944268290423092132021109, -1.087374032057106164455596925503231110736, 0.9019382492960993738427155148390040529634,
+      93.07650289743530591157194526373738385457, -23.8816310562811442770319002318043863377, -39.27888073081384382710156461367603668344, -14.3889156854910800698761307424979534709, 3.510438399399361221087084324808457349722, -4.863284885566180701214910586997343135036, 2.246482729591239916400469248397112322789,
+  };
+
+  const double gamma[] = { 8.93683278840521633730209691330107970355 };
+  const double alpha[] = { 4.378693561506806002523349192688561291658, 7.141055219187640105774981425715568043182, 8.511834825102945723050620924945330813385 };
+  const double beta[] = { -10.16969328379501162731835441884772989301, -6.623045922639275970620558115911861104681, -3.281013624325058830035942527039391584679 };
+
+  const double A_part_inv[] = {
+      17.05528430442165547204579642034083780888, 5.475299512185491994676800899743790661694, -1.618581105190787041889955300745135338827, 0.7496541282385066885049184474288358203896, -0.4218913759830160165720142934789005507972, 0.2510502142463927595842150825808914698727, -0.09232481935368412048374538505584093461111,
+      -12.94898869881152283841754403823425013411, 3.376585145452421994964218930429040150483, 4.054013503925585809637295490354844936871, -1.486313976006544588232954347118687355463, 0.7728544737788971220359256391434762225789, -0.4449469472010699808091899446981067943297, 0.1617747003353813970800048389116167321952,
+      6.526797433701593265807091002677945510913, -6.912304925481828620862501995874923241214, 1.483746931004011403533388291859476275869, 3.594603354455891352594802457908711647105, -1.450215601222529072070450317290051019103, 0.7670384491813573773469544044383559470547, -0.2714284856198724333173372620881037731888,
+      -4.760415643167770722198704938659524225423, 3.990860318095922048352078547892569959329, -5.660688333657834999015734815429094521088, 0.8949802937859413769491873647105581662855, 3.735899391500152218956023361695343496729, -1.541978502549350374113869407329397092427, 0.5117126570997155963060826760189857664119,
+      4.329451016638691199204567685388105273598, -3.35352800167791874660934423411227064496, 3.690617931862721646605844851741172496253, -6.037309187265788303408780583517567006976, 0.6499973865951115045278719586572919678705, 4.577300941414560376336218683666625758555, -1.244056646677253406230335427134392699808,
+      -4.943623833507561010702885328788319861744, 3.704802676027051056417306323704679214844, -3.745728431373815632639674243616945678846, 4.781665625762614880423664752694490182187, -8.783388755925044456571959399515027354807, 0.53940593874085824797953703400279563061, 5.443680188059144140702182988806165557866,
+      11.4954552051166652806851254229789747493, -8.517072423056624626784124125074774924435, 8.381031301964824604182700076614229058938, -10.03344165195040099094892792489048742766, 15.09439394299116654063449881984594504531, -34.42036637506563080776927226947388650146, 25.0,
+  };
+
+  setTTransform(tableau, A_part_inv, T, T_inv, gamma, alpha, beta, FALSE, FALSE, 1, 3, NULL, NULL);
+
+  const double dT_A[] = { 1.594064218561041781197339, -1.036553752196476461002723, 0.7938217234907926875176341, -0.6325776522499342252619287, 0.4976107136030013134425167, -0.3592223940655679530356959, 0.1428571428571428571428571 };
+  const double u = 0.0;
+
+  setContractiveDefectError(tableau, dT_A, u);
+}
+
+void denseOutput_LOBATTO_IIIA_3(BUTCHER_TABLEAU* tableau, double* yOld, double* x, double* k, double dt, double stepSize, double* y, int nIdx, int* idx, int nStates)
+{
+  tableau->b_dt[0] = dt*(0.6666666666666666666666667*dt - 1.5) + 1.0;
+  tableau->b_dt[1] = dt*(2.0 - 1.333333333333333333333333*dt);
+  tableau->b_dt[2] = dt*(0.6666666666666666666666667*dt - 0.5);
+
+  denseOutput(tableau, yOld, x, k, dt, stepSize, y, nIdx, idx, nStates);
 }
 
 // TODO: Describe me
@@ -574,6 +1290,47 @@ void getButcherTableau_LOBATTO_IIIA_3(BUTCHER_TABLEAU* tableau)
   setButcherTableau(tableau, c, A, b, bt);
   tableau->isKLeftAvailable = TRUE;
   tableau->isKRightAvailable = FALSE;
+  tableau->withDenseOutput = TRUE;
+  tableau->dense_output = denseOutput_LOBATTO_IIIA_3;
+
+  const double T[] = {
+      0.125, -0.2165063509461096616909307926882340458679,
+      1.0, 0.0,
+  };
+
+  const double T_inv[] = {
+      0.0, 1.0,
+      -4.618802153517006116073190244015659645181, 0.5773502691896257645091487805019574556476,
+  };
+
+  const double phi[] = {
+      -1.0, -2.886751345948128822545743902509787278238,
+  };
+
+  const double rho[] = {
+    -0.5, 1.0
+  };
+
+  const double gamma[] = {  };
+  const double alpha[] = { 3.0 };
+  const double beta[] = { -1.732050807568877293527446341505872366943 };
+
+  const double A_part_inv[] = {
+      2.0, 0.5,
+      -8.0, 4.0
+  };
+
+  setTTransform(tableau, A_part_inv, T, T_inv, gamma, alpha, beta, TRUE, FALSE, 0, 1, phi, rho);
+}
+
+void denseOutput_LOBATTO_IIIA_4(BUTCHER_TABLEAU* tableau, double* yOld, double* x, double* k, double dt, double stepSize, double* y, int nIdx, int* idx, int nStates)
+{
+  tableau->b_dt[0] = dt*(dt*(3.333333333333333333333333 - 1.25*dt) - 3.0) + 1.0;
+  tableau->b_dt[1] = dt*(dt*(2.795084971874737120511467*dt - 6.423503277082807574356268) + 4.045084971874737120511467);
+  tableau->b_dt[2] = dt*(dt*(4.756836610416140907689601 - 2.795084971874737120511467*dt) - 1.545084971874737120511467);
+  tableau->b_dt[3] = dt*(dt*(1.25*dt - 1.666666666666666666666667) + 0.5);
+
+  denseOutput(tableau, yOld, x, k, dt, stepSize, y, nIdx, idx, nStates);
 }
 
 // TODO: Describe me
@@ -596,6 +1353,47 @@ void getButcherTableau_LOBATTO_IIIA_4(BUTCHER_TABLEAU* tableau)
   setButcherTableau(tableau, c, A, b, bt);
   tableau->isKLeftAvailable = TRUE;
   tableau->isKRightAvailable = FALSE;
+  tableau->withDenseOutput = TRUE;
+  tableau->dense_output = denseOutput_LOBATTO_IIIA_4;
+
+  const double T[] = {
+      0.05303036326129938105898786144870852883518, -0.07776129960563076320631956091016912560723, 0.006043307469475508514468017399717100581556,
+      0.2637242522173698467283726114649606009693, 0.2193839918662961493126393244533345607049, 0.3198765142300936188514264752235344493226,
+      1.0, 1.0, 0.0,
+  };
+
+  const double T_inv[] = {
+      7.695032983257654470769069079238550159564, -0.1453793830957233720334601186354032099476, 0.6302696746849084900422461036874826845811,
+      -7.695032983257654470769069079238550159564, 0.1453793830957233720334601186354032099476, 0.3697303253150915099577538963125173154189,
+      -1.066660885401270392058552736086175818405, 3.146358406832537460764521760668933441691, -0.7732056038202974770406168510664737222942,
+  };
+
+  const double phi[] = {
+      4.136608679244136045317158325069029505281, -3.13660867924413604531715832506902950528, -2.657325109410866710940683346427133588849,
+  };
+
+  const double rho[] = {
+      -0.447213595499957939281834733746255247088313521, 0.447213595499957939281834733746255247088313521, -1.0,
+  };
+
+  const double gamma[] = { 4.644370709252171185822941421408063969864 };
+  const double alpha[] = { 3.677814645373914407088529289295968015068 };
+  const double beta[] = { 3.508761919567443321903661209182446413836 };
+
+  const double A_part_inv[] = {
+      3.618033988749894848204586834365638117721, 0.854101966249684544613760503096914353161, -0.1708203932499369089227521006193828706321,
+      -5.854101966249684544613760503096914353162, 1.38196601125010515179541316563436188228, 1.170820393249936908922752100619382870632,
+      11.18033988749894848204586834365638117721, -11.1803398874989484820458683436563811772, 7.0
+  };
+
+  setTTransform(tableau, A_part_inv, T, T_inv, gamma, alpha, beta, TRUE, FALSE, 1, 1, phi, rho);
+
+  /* is possible, but also not stable
+  const double dT_A[] = { 0.075, 0.7486067977499789696409174, 0.3013932022500210303590826, -0.125 };
+  const double u = 0.3;
+
+  setContractiveDefectError(tableau, dT_A, u);
+   */
 }
 
 // TODO: Describe me
@@ -617,6 +1415,27 @@ void getButcherTableau_LOBATTO_IIIB_3(BUTCHER_TABLEAU* tableau)
   setButcherTableau(tableau, c, A, b, bt);
   tableau->isKLeftAvailable = FALSE;
   tableau->isKRightAvailable = FALSE;
+
+  const double T[] = {
+      -0.5, -0.8660254037844386467637231707529361834716,
+      1.0, 0.0,
+  };
+
+  const double T_inv[] = {
+      0.0, 1.0,
+      -1.154700538379251529018297561003914911295, -0.5773502691896257645091487805019574556471,
+  };
+
+  const double gamma[] = {  };
+  const double alpha[] = { 3.0 };
+  const double beta[] = { -1.732050807568877293527446341505872366943 };
+
+  const double A_part_inv[] = {
+      4.0, 2.0,
+      -2.0, 2.0,
+  };
+
+  setTTransform(tableau, A_part_inv, T, T_inv, gamma, alpha, beta, FALSE, TRUE, 0, 1, NULL, NULL);
 }
 
 // TODO: Describe me
@@ -639,6 +1458,30 @@ void getButcherTableau_LOBATTO_IIIB_4(BUTCHER_TABLEAU* tableau)
   setButcherTableau(tableau, c, A, b, bt);
   tableau->isKLeftAvailable = FALSE;
   tableau->isKRightAvailable = FALSE;
+
+  const double T[] = {
+      0.4095301969830458833321950974758598628846, -0.1673815592420907613613286431634840957528, 0.525607543214227178899726386274854899297,
+      -0.01889262637496554605520143939163372812018, -0.07414582181377904851735726791652572329615, -0.3986038741564085382228374985742072476019,
+      1.0, 1.0, 0.0,
+  };
+
+  const double T_inv[] = {
+      1.539006596651530894153813815847710031913, 2.029366819297621588718516807615183650697, 0.4080703944098336948671786386275812012701,
+      -1.539006596651530894153813815847710031913, -2.029366819297621588718516807615183650697, 0.5919296055901663051328213613724187987299,
+      0.2133321770802540784117105472172351636811, -2.227452004563088309499495665221802992863, -0.1294483869928769569618834998706596880356,
+  };
+
+  const double gamma[] = { 4.644370709252171185822941421408063969863 };
+  const double alpha[] = { 3.677814645373914407088529289295968015068 };
+  const double beta[] = { -3.508761919567443321903661209182446413836 };
+
+  const double A_part_inv[] = {
+      7.0, 5.854101966249684544613760503096914353162, -0.8541019662496845446137605030969143531609,
+      -2.236067977499789696409173668731276235441, 1.38196601125010515179541316563436188228, 0.854101966249684544613760503096914353161,
+      2.236067977499789696409173668731276235441, -5.854101966249684544613760503096914353162, 3.618033988749894848204586834365638117721,
+  };
+
+  setTTransform(tableau, A_part_inv, T, T_inv, gamma, alpha, beta, FALSE, TRUE, 1, 1, NULL, NULL);
 }
 
 // TODO: Describe me
@@ -660,6 +1503,30 @@ void getButcherTableau_LOBATTO_IIIC_3(BUTCHER_TABLEAU* tableau)
   setButcherTableau(tableau, c, A, b, bt);
   tableau->isKLeftAvailable = FALSE;
   tableau->isKRightAvailable = FALSE;
+
+  const double T[] = {
+      0.455410041101028467211172034828748294958, -0.602705020550514233605586017414374147479, 0.4309321229203225731070721341350345638889,
+      0.2073983055356404377998207752658662409196, 0.1775508472321797811000896123670668795402, -0.5194499080011394844329178845743292375758,
+      1.0, 1.0, 0.0,
+  };
+
+  const double T_inv[] = {
+      0.9234665031131368612140762392432519779126, 0.766101551858351241079239349573394780247, 0.4205559181381766909344950150991348065152,
+      -0.9234665031131368612140762392432519779126, -0.766101551858351241079239349573394780247, 0.5794440818618233090655049849008651934848,
+      0.05306214809504116746618873404230997578571, -1.881093442936075912563125426209995453221, 0.3659705575742745254721332009249516414254,
+  };
+
+  const double gamma[] = { 2.625816818958466716011888933765283331279 };
+  const double alpha[] = { 1.68709159052076664199405553311735833436 };
+  const double beta[] = { -2.508731754924880510838743672432351514192 };
+
+  const double A_part_inv[] = {
+      3.0, 4.0, -1.0,
+      -1.0, 0.0, 1.0,
+      1.0, -4.0, 3.0,
+  };
+
+  setTTransform(tableau, A_part_inv, T, T_inv, gamma, alpha, beta, FALSE, FALSE, 1, 1, NULL, NULL);
 }
 
 // TODO: Describe me
@@ -682,6 +1549,41 @@ void getButcherTableau_LOBATTO_IIIC_4(BUTCHER_TABLEAU* tableau)
   setButcherTableau(tableau, c, A, b, bt);
   tableau->isKLeftAvailable = FALSE;
   tableau->isKRightAvailable = FALSE;
+
+  const double T[] = {
+      0.5476452038202714922036315112488560856846, 0.1785412628034932093817159389309281985364, -0.116586249887015966241810926513722590616, -0.2331588855995925881890963658008489845825,
+      -0.3452980030318587067517740490632527531279, 0.0, 0.06854105219638146056196079302833999354915, -0.01174994570529409329215202085259075914414,
+      0.3297049014432367490412414319564127862527, -0.4798440649214683812526552805265999166067, 0.3151194350690626574023974106907723462365, -0.1462672571725994138598319831765198375652,
+      1.0, 0.1209077169702495639254744487130712632666, 1.0, 0.0,
+  };
+
+  const double T_inv[] = {
+      0.07505408143888482727247086654377807832544, -2.293655690307507431864588601090242744067, 0.06461325673597880267044867004091320603325, 0.1455989553229545430061738977300993432369,
+      0.9348105874590660620392769696329348986682, 1.443808767633432752284503957504533835992, -1.606128903955311262980555484407219419312, 0.5161483215050650446091082595192052794877,
+      -0.1880798953681783131618295873950584167982, 2.119088068471319525358160650028831297255, 0.1295801222011871168763466323760704183975, 0.7919947295058416761575457646970583566547,
+      -3.302757250041810136591302948414990966281, -5.341364646141195278576399308543633031624, -1.142921928129632462955369184619120229001, 0.341203583261795719175206722672451293619,
+  };
+
+  const double gamma[] = {  };
+  const double alpha[] = { 2.220980032989806897423925140476047787088, 3.779019967010193102576074859523952212912 };
+  const double beta[] = { -4.160391445506931982228485188880642430211, -1.380176524272843046226884893083007281595 };
+
+  const double A_part_inv[] = {
+      6.0, 8.090169943749474241022934171828190588602, -3.090169943749474241022934171828190588601, 1.0,
+      -1.61803398874989484820458683436563811772 /* golden ratio nice! */, 0.0, 2.236067977499789696409173668731276235441, -0.6180339887498948482045868343656381177202,
+      0.6180339887498948482045868343656381177203, -2.23606797749978969640917366873127623544, 0.0, 1.61803398874989484820458683436563811772,
+      -1.0, 3.090169943749474241022934171828190588602, -8.090169943749474241022934171828190588603, 6.0,
+  };
+
+  setTTransform(tableau, A_part_inv, T, T_inv, gamma, alpha, beta, FALSE, FALSE, 0, 2, NULL, NULL);
+}
+
+void denseOutput_GAUSS2(BUTCHER_TABLEAU* tableau, double* yOld, double* x, double* k, double dt, double stepSize, double* y, int nIdx, int* idx, int nStates)
+{
+  tableau->b_dt[0] = 1.366025403784438646763723 - 0.8660254037844386467637232*dt;
+  tableau->b_dt[1] = 0.8660254037844386467637232*dt - 0.3660254037844386467637232;
+
+  denseOutput(tableau, yOld, x, k, dt, stepSize, y, nIdx, idx, nStates);
 }
 
 // TODO: Describe me
@@ -716,6 +1618,38 @@ void getButcherTableau_GAUSS2(BUTCHER_TABLEAU* tableau)
   setButcherTableau(tableau, c, A, b, bt);
   tableau->isKLeftAvailable = FALSE;
   tableau->isKRightAvailable = FALSE;
+  tableau->withDenseOutput = TRUE;
+  tableau->dense_output = denseOutput_GAUSS2;
+
+  const double T[] = {
+      0.0, -0.2679491924311227064725536584941276330572,
+      1.0, 0.0,
+  };
+
+  const double T_inv[] = {
+      0.0, 1.0,
+      -3.732050807568877293527446341505872366943, 0.0,
+  };
+
+  const double gamma[] = {  };
+  const double alpha[] = { 3.0 };
+  const double beta[] = { -1.732050807568877293527446341505872366943 };
+
+  const double A_part_inv[] = {
+      3.0, 0.4641016151377545870548926830117447338856,
+      -6.464101615137754587054892683011744733886, 3.0,
+  };
+
+  setTTransform(tableau, A_part_inv, T, T_inv, gamma, alpha, beta, FALSE, FALSE, 0, 1, NULL, NULL);
+}
+
+void denseOutput_GAUSS3(BUTCHER_TABLEAU* tableau, double* yOld, double* x, double* k, double dt, double stepSize, double* y, int nIdx, int* idx, int nStates)
+{
+  tableau->b_dt[0] = dt*(1.111111111111111111111111*dt - 2.312163891034569480863211) + 1.478830557701236147529878;
+  tableau->b_dt[1] = dt*(3.333333333333333333333333 - 2.222222222222222222222222*dt) - 0.6666666666666666666666667;
+  tableau->b_dt[2] = dt*(1.111111111111111111111111*dt - 1.021169442298763852470122) + 0.1878361089654305191367891;
+
+  denseOutput(tableau, yOld, x, k, dt, stepSize, y, nIdx, idx, nStates);
 }
 
 // TODO: Describe me
@@ -739,6 +1673,47 @@ void getButcherTableau_GAUSS3(BUTCHER_TABLEAU* tableau)
   setButcherTableau(tableau, c, A, b, bt);
   tableau->isKLeftAvailable = FALSE;
   tableau->isKRightAvailable = FALSE;
+  tableau->withDenseOutput = TRUE;
+  tableau->dense_output = denseOutput_GAUSS3;
+
+  const double T[] = {
+      0.07215185205520017032081769924185183680953, -0.08224123057363067064866206597566072403805, 0.0601207386193085017308594892116360125871,
+      0.1188325787412778070708888193783509970306, 0.05306509074206139504614411374578745388787, -0.3162050511322915732224862926149834184227,
+      1.0, 1.0, 0.0,
+  };
+
+  const double T_inv[] = {
+      5.991698084937800775649580744061578687781, 1.139214295155735444567002236908970407541, 0.432312113783858385569637590121887828978,
+      -5.991698084937800775649580744061578687781, -1.139214295155735444567002236908970407541, 0.567687886216141614430362409878112171022,
+      1.246213273586231410815571640505856386175, -2.925559646192313662599230367093796217197, 0.2577352012734324923468722837107305932477,
+  };
+
+  const double gamma[] = { 4.644370709252171185822941421433771597933 };
+  const double alpha[] = { 3.677814645373914407088529289322555238311 };
+  const double beta[] = { -3.508761919567443321903661209178714122399 };
+
+  const double A_part_inv[] = {
+      5.0, 1.163977794943222513572353866371255812337, -0.1639777949432225135723538663774535501041,
+      -5.727486121839514070982721166429537582427, 2.0, 0.7274861218395140709827211664861235829424,
+      10.16397779494322251357235386648904159981, -9.163977794943222513572353866527039952332, 5.0,
+  };
+
+  setTTransform(tableau, A_part_inv, T, T_inv, gamma, alpha, beta, FALSE, FALSE, 1, 1, NULL, NULL);
+
+  const double dT_A[] = { 1.478830557701236147529878, -0.6666666666666666666666667, 0.1878361089654305191367891 };
+  const double u = 0.0;
+
+  setContractiveDefectError(tableau, dT_A, u);
+}
+
+void denseOutput_GAUSS4(BUTCHER_TABLEAU* tableau, double* yOld, double* x, double* k, double dt, double stepSize, double* y, int nIdx, int* idx, int nStates)
+{
+  tableau->b_dt[0] = dt*(dt*(4.775286118057296050988874 - 1.855135017009736526300161*dt) - 4.273011803936099382986509) + 1.526788125457266786984328;
+  tableau->b_dt[1] = dt*(dt*(4.698862351888765202815429*dt - 10.46274078781535340401941) + 6.903583462844788533079347) - 0.8136324494869272605618981;
+  tableau->b_dt[2] = dt*(dt*(8.332708619739707407242305 - 4.698862351888765202815429*dt) - 3.70853521073131953791369) + 0.4007615203116504048002818;
+  tableau->b_dt[3] = dt*(dt*(1.855135017009736526300161*dt - 2.645253949981650054211769) + 1.077963551822630387820852) - 0.113917196281989931222712;
+
+  denseOutput(tableau, yOld, x, k, dt, stepSize, y, nIdx, idx, nStates);
 }
 
 // TODO: Describe me
@@ -763,6 +1738,45 @@ void getButcherTableau_GAUSS4(BUTCHER_TABLEAU* tableau)
   setButcherTableau(tableau, c, A, b, bt);
   tableau->isKLeftAvailable = FALSE;
   tableau->isKRightAvailable = FALSE;
+  tableau->withDenseOutput = TRUE;
+  tableau->dense_output = denseOutput_GAUSS4;
+
+  const double T[] = {
+      0.04730400631161964234420937974006781428749, 0.02187190815439641835934120923073859847639, -0.01234175974136383238608052655020345874402, -0.02349691821560328668263181158236618754457,
+      -0.1349975425610351328663664399711196541213, 0.0, 0.02852518491163969017631882672517969123804, -0.01204093363760083640724996665987680462528,
+      0.2147011579332122077737256695166471089732, -0.334766179208954323584200600152395864739, 0.18350916094694874723981328658122864136, -0.1119907859499068431427388614943290829784,
+      1.0, 0.3216155572199857781177657679192506941681, 1.0, 0.0,
+  };
+
+  const double T_inv[] = {
+      1.669850586762205520596031861539765228369, -5.461099863299409029009900408746579322831, 0.2368087530409240829949289898937929519132, 0.1329312025919072622801237161391647934907,
+      8.402299185842810339912921813324204658757, 2.67367529961376021766570870971994802357, -2.050362283792074957624838226344615963836, 0.4036923378475160276114618769449201479523,
+      -4.372160721346073806888385976269741348943, 4.601204291988817110521118696455859499853, 0.4226196553637067191106536419577821831716, 0.7372350612258251163716227958516220162549,
+      -29.07934128989777863623880820139910620706, -10.92230382520138929261285243127942797139, -1.653799987630558089871389676805016519187, 0.2561579407420976532158914021132743634997,
+  };
+
+  const double gamma[] = {  };
+  const double alpha[] = { 4.207578794359255663211212149448079704083, 5.792421205640744336788787850551920295917 };
+  const double beta[] = { -5.31483608371350543371664419726353845149, -1.734468257869007503637946429840248583809 };
+
+  const double A_part_inv[] = {
+      7.738612787525830567284848914004010669764, 2.04508965030390878520553575776619365287, -0.4370708023957989035724639019492015165686, 0.08664402350326167465672853302061613601977,
+      -7.201340999706890565151442798549179026359, 2.261387212474169432715151085995989330236, 1.448782034533681252431492636019454861218, -0.2331339812124165654350344952622329984738,
+      6.343622218624971332778961412625599489274, -5.97155645948202011786179480801143352169, 2.261387212474169432715151085995989330236, 1.090852762294335797807515881185812535556,
+      -15.56386959855492280922642636102863747553, 11.89278387805684136460746043690763843845, -13.50080272596495124624053229272463057475, 7.738612787525830567284848914004010669764,
+  };
+  setTTransform(tableau, A_part_inv, T, T_inv, gamma, alpha, beta, FALSE, FALSE, 0, 2, NULL, NULL);
+}
+
+void denseOutput_GAUSS5(BUTCHER_TABLEAU* tableau, double* yOld, double* x, double* k, double dt, double stepSize, double* y, int nIdx, int* idx, int nStates)
+{
+  tableau->b_dt[0] = dt*(dt*(dt*(3.667944222886234603016645*dt - 11.24724626396974944179701) + 12.88149968511473190032678) - 6.735142250597435530602309) + 1.551408049094313012813028;
+  tableau->b_dt[1] = dt*(dt*(dt*(29.46585378166175338889907 - 10.38794422288623460301664*dt) - 29.40760360938762868341979) + 11.46216677786186486888419) - 0.8931583920000717373261768;
+  tableau->b_dt[2] = dt*(dt*(dt*(13.44*dt - 33.6) + 27.37777777777777777777778) - 7.466666666666666666666667) + 0.5333333333333333333333333;
+  tableau->b_dt[3] = dt*(dt*(dt*(22.47386733276941962618415 - 10.38794422288623460301664*dt) - 15.42363071160296115798994) + 3.844963589192846878147194) - 0.2679416522233875093041099;
+  tableau->b_dt[4] = dt*(dt*(dt*(3.667944222886234603016645*dt - 7.092474850461423573286212) + 4.571956858098080163305177) - 1.105321449790609549762404) + 0.07635866179581290048392539;
+
+  denseOutput(tableau, yOld, x, k, dt, stepSize, y, nIdx, idx, nStates);
 }
 
 // TODO: Describe me
@@ -788,6 +1802,55 @@ void getButcherTableau_GAUSS5(BUTCHER_TABLEAU* tableau)
   setButcherTableau(tableau, c, A, b, bt);
   tableau->isKLeftAvailable = FALSE;
   tableau->isKRightAvailable = FALSE;
+  tableau->withDenseOutput = TRUE;
+  tableau->dense_output = denseOutput_GAUSS5;
+
+  const double T[] = {
+      0.009323625971241084234125362511609184374953, -0.01799870502724134184583176080246228861218, -0.02185893512453071237635098757998244801498, -0.004813985322905043796019789085560666218955, 0.01099049998197756305998379949701398666478,
+      -0.002857691612154794301347917390595674820835, 0.05228601530547596095168002368451364683454, 0.0367617051800750632906330336222283844775, -0.006025133670529664441842082298146755226649, -0.01589274424617578981886017578601875195185,
+      0.04408309618988790251682803452432779562795, -0.160622018595476812593779173256702189655, 0.0, -0.0007999407257445558616264797911019250438662, -0.03731987583729495972503055453663663949612,
+      0.2527928412780782471292841047213249534309, 0.1775067252685303890873671777361937740463, -0.4032710731180368812921980374012739318658, 0.233510552626602054532817531198683051005, -0.1863630466929573859788469309909198630385,
+      1.0, 1.0, 0.08123245710832020252305207300392224228782, 1.0, 0.0,
+  };
+
+  const double T_inv[] = {
+      49.03245971237229820996405937135298161224, 25.03991305561248256273090267488467640131, 5.190018151503777492134043587759401467981, -0.2830631957231549903573419830229027466225, 0.4571603148081065026084176830680204865824,
+      8.692220721583551633260725493273878348402, 9.65427587695765282713927657159919786605, -3.59506867758227605762871441054389418069, 0.4092358024655398495996961643586842989021, 0.00157580539262831196872703645190078235787,
+      -8.504708028585885269813124292942875154115, 4.815817020051187574782824815582403574008, 2.98799206972764001461788317539150909754, -1.510594722031058113824911357742024792845, 0.3432044265344927046810278071226538100014,
+      -57.03382210380496045118190681604479225117, -35.08538958209296189726356511163991551407, -1.837671411565652859834427241248535850488, -0.003463285776942052125913197948808879981098, 0.5133845409414163747840157939206194379759,
+      21.73009042501717049712136794657127806511, -11.22153121403806680664442968680435633773, -5.152501451319085262908023899013025657394, -2.095607516918431410369494304164556510833, 0.5222218844325478716275632159479129582531,
+  };
+
+  const double gamma[] = { 7.293477190659286519470339272318890840413 };
+  const double alpha[] = { 4.649348606363290454232001865356827891725, 6.703912798307066286032828498483726688067 };
+  const double beta[] = { -7.142045840675952800772205226991909306832, -3.485322832366395445452646937918374204533 };
+
+  const double A_part_inv[] = {
+      11.18330013267037773989086012892593744696, 3.131312162011810835274612961546364914478, -0.7587317959808073905318921552256490821719, 0.2391012233536860499432317710450626622847, -0.05431476056533892370823464201185494830169,
+      -9.447599601516149885127420878486756347847, 2.816699867329622260109139871074062553035, 2.217886332274818116899623167368125991838, -0.5571226202937973011826062428567480978308, 0.1183579496046673873215749075103437964386,
+      6.420116503559336619975153316944029317543, -6.220120454669751668308558046671189144163, 2.0, 1.865995288831779493444982885513767335458, -0.3159913377213644451115781557866075088352,
+      -8.015920784810970304463709598174255884543, 6.190522354953041821400885985004873203904, -7.393116276382380167011291621118496236493, 2.816699867329622260109139871074062553036, 1.550036766309846967985286187822844259737,
+      22.42091502590609440348995489986372984221, -16.19339023999923498465294893223300242602, 15.4154432215698509221250420904575008083, -19.08560117865735976998433012273430467822, 11.18330013267037773989086012892593744696,
+  };
+
+  setTTransform(tableau, A_part_inv, T, T_inv, gamma, alpha, beta, FALSE, FALSE, 1, 2, NULL, NULL);
+
+  const double dT_A[] = { 1.551408049094313012813028, -0.8931583920000717373261768, 0.5333333333333333333333333, -0.2679416522233875093041099, 0.07635866179581290048392539 };
+  const double u = 0.0;
+
+  setContractiveDefectError(tableau, dT_A, u);
+}
+
+void denseOutput_GAUSS6(BUTCHER_TABLEAU* tableau, double* yOld, double* x, double* k, double dt, double stepSize, double* y, int nIdx, int* idx, int nStates)
+{
+  tableau->b_dt[0] = dt*(dt*(dt*(dt*(28.97867220869568670696536 - 8.141261729008675572710428*dt) - 40.40836214083929518310538) + 27.78539055506886821337222) - 9.69444984787807092507418) + 1.565673200151071932738285;
+  tableau->b_dt[1] = dt*(dt*(dt*(dt*(24.5337387406955313936922*dt - 83.3343792263619446848799) + 107.8110526437797865347941) - 64.86334697344168417895328) + 16.97377844502872916807496) - 0.9404628431763489277291894;
+  tableau->b_dt[2] = dt*(dt*(dt*(dt*(113.6832974690219996604287 - 36.16834049547210301700248*dt) - 130.8540651977090431843572) + 65.10138838898368337822447) - 12.14525325296868002204901) + 0.6169300554304887058203335;
+  tableau->b_dt[3] = dt*(dt*(dt*(dt*(36.16834049547210261301717*dt - 103.3267455038106176737392) + 104.9626852846805898729287) - 44.84870762107455330454365) + 7.657612014133437770294686) - 0.3792277021146137486624434;
+  tableau->b_dt[4] = dt*(dt*(dt*(dt*(63.86805321781124357030767 - 24.53373874069553130227924*dt) - 59.14523762240303412292029) + 23.71184615196864317386496) - 3.912342234195919969888969) + 0.1918000140386679528147223;
+  tableau->b_dt[5] = dt*(dt*(dt*(dt*(8.141261729008675885282672*dt - 19.86889816535636757908232) + 17.63392703249099608265977) - 6.886570501504957281964625) + 1.120654875880503978642494) - 0.05471272432926591498170661;
+
+  denseOutput(tableau, yOld, x, k, dt, stepSize, y, nIdx, idx, nStates);
 }
 
 // TODO: Describe me
@@ -798,7 +1861,9 @@ void getButcherTableau_GAUSS6(BUTCHER_TABLEAU* tableau)
   tableau->nStages = 6;
   tableau->order_b = 2*tableau->nStages;
   tableau->order_bt = tableau->nStages - 1;
-  tableau->fac = 0.01;
+  tableau->fac = 1.0;
+  tableau->withDenseOutput = TRUE;
+  tableau->dense_output = denseOutput_GAUSS6;
 
   const double c[] = {0.03376524289842398609384922275300269543262, 0.1693953067668677431693002024900473264968, 0.3806904069584015456847491391596440322907, 0.6193095930415984543152508608403559677093, 0.8306046932331322568306997975099526735032, 0.9662347571015760139061507772469973045674};
   const double A[] = {
@@ -814,6 +1879,39 @@ void getButcherTableau_GAUSS6(BUTCHER_TABLEAU* tableau)
   setButcherTableau(tableau, c, A, b, bt);
   tableau->isKLeftAvailable = FALSE;
   tableau->isKRightAvailable = FALSE;
+
+  const double T[] = {
+      0.05819683935124533314911203101952425284358, 0.01062152459310018313199363717518304567091, -0.0004746860484211858111608812112351382463726, -0.01921278325428977724269892914965453894981, -0.00235681976437158541906022285308857072551, -0.003177782710744506699484802371032335488547,
+      -0.1215758135445271454597586360295355513517, 0.0, 0.01442091809146646435345065098028802009371, 0.02602632232137340314773930072090330315228, 0.002941489411118684236986634547883615348973, 0.00168123065728675620144692573672573396192,
+      0.2442333476716466341990224494944017253434, -0.1034843360479971971328629452729889031961, -0.02554199437406594590880776440672062478007, 0.01784039361333296999716470083259079887593, 0.0009243261163793195253317369338204985665452, -0.008475334509244045017164613916401537952978,
+      -0.2656065435197511550550565046939077414743, 0.6014736332403497379588638572970355887575, -0.2214875160995942478676042513701476070444, 0.0, 0.04570485885553615895431239704346178379978, -0.02718216003024652855300999473237305800227,
+      -1.260107221648044085093700477177678381058, -1.078999721026795053186743428998621083242, -0.4287233565511875140024312513805998977395, -1.058729747126248293033772175349953539975, 0.304101382122127392340523983467495195864, -0.07664808166169705959481845218970346541497,
+      1.0, -3.165704361806567902232981719484219334379, 1.0, -2.918135493882638647778178244313391685839, 1.0, 0.0,
+  };
+
+  const double T_inv[] = {
+      -2.845253842542181554792756974029665087239, -4.782550498200484074792798922715820027441, 1.308563721296768892382996006809439439714, 0.215649761341470304382930262204969038454, -0.2081110615058965058726423368697217778863, 0.05958315106980261841434685561994927298963,
+      3.729024127142732630487442086792070525363, -1.21920159004996221168005033270283770315, -2.17365740529480671946516070330148298055, 1.000563193693654344649996668545792306372, -0.2958297485233179423246460492210778672959, 0.05861571049456421855089674896808375933753,
+      35.10591074875389467428313257331890200671, 25.90321350163068798574667563400524167247, -0.3327751195480372218010139658283992990618, -0.6153631714635718282345716523482991733333, -0.6322715174670294389669233340718896758887, 0.2272515980386304700078796442828330614505,
+      -10.23642127812902738752288980937832394265, 11.91681092488190180105359254237172597496, 7.163267968471419528862877616768165322931, 0.7992654130156962829327949079820259306681, -0.3897399844355586883145615573320567664608, 0.01619038624866213238912315971842440945678,
+      -50.32693322367783528220877492962831833242, 9.794574138813399998320765671535001334358, 13.04644118022538335002568953192470831371, 5.899565447415082969620156478634841273828, -1.233441028246152707554212064518149202617, 0.9459710020464902286056916079073339919118,
+      -260.357477667464378861674032468098642792, -174.8433416109965751208330708174578391066, -36.23587733711121805597974087130028813489, -1.822207721476954667948237294424499052019, -1.434475189058847998141941112030882310654, 0.4536875908856169837921210999406586510558,
+  };
+
+  const double gamma[] = {  };
+  const double alpha[] = { 5.031864495621642774245116554146952829577, 7.47141671265162933588272393956048621508, 8.496718791726727889872159506292560955338 };
+  const double beta[] = { -8.985345907307885071836487841700655722412, -5.252544622894251280987103176618812732347, -1.735019346462731212772883142500590703561 };
+
+  const double A_part_inv[] = {
+      15.32559943877134810291330377951104089402, 4.428784593210072962562794358135200768771, -1.135792531200900913361545189434368833845, 0.4136558226524937119178704526283795504533, -0.1537363938179938229939126930621035408299, 0.03747594392723112965647722377429377405147,
+      -12.27449151016906408662667928446698215309, 3.553646711862092105198489815866834937049, 3.104594335912446176940805523770551435049, -0.8962488866310468971150149574131487188661, 0.3084380741837899184933458668943631180377, -0.07300891114463974895157950338498592680059,
+      7.3152536048277401633713305287682793454, -7.214666938638727677327275078776365932649, 2.120753849366559791888206404622124168927, 2.576076559634156611098818162595398987216, -0.6910077565416664142984095472654927956789, 0.1514581391989234463726075832383778559242,
+      -7.05084663619705766195910197506038377504, 5.51203293000633515475857142554820015323, -6.817584258367276194875230971839647325068, 2.120753849366559791888206404622124168927, 2.393641765174058936867113200493658575098, -0.4158651078296059477848361369462734262881,
+      10.24428508749221524726642191025332196249, -7.415731497907974128890325498628032992139, 7.149201047056500819382640271798621728013, -9.357546496337900099208430838156024444196, 3.553646711862092105198489815866834937048, 2.103215333821488588311836877598646117407,
+      -30.68867482146992733548308478279637556212, 21.57160573829669739604721954283601850167, -19.25696288835293632212376234618755233478, 19.97909959690134352356743708299354161816, -25.84665393768877653561610120790911572958, 15.32559943877134810291330377951104089402,
+  };
+
+  setTTransform(tableau, A_part_inv, T, T_inv, gamma, alpha, beta, FALSE, FALSE, 0, 3, NULL, NULL);
 }
 
 // TODO: Describe me
@@ -864,7 +1962,7 @@ void getButcherTableau_TRAPEZOID(BUTCHER_TABLEAU* tableau)
   const double A[] = {0.0, 0.0,
                       0.5, 0.5};
   const double b[] = {0.5, 0.5};  // trapezoidal rule
-  const double bt[] = {1.0, 0.0}; // implicit Euler step
+  const double bt[] = {1.0, 0.0}; // explicit Euler
 
   setButcherTableau(tableau, c, A, b, bt);
 
@@ -1329,7 +2427,7 @@ void getButcherTableau_RKSSC(BUTCHER_TABLEAU* tableau)
   tableau->nStages = 5;
   tableau->order_b = 1;
   tableau->order_bt = 2;
-  tableau->fac = 1e0;
+  tableau->fac = 7;
 
   const double c[] = {                              0,               0.041324301621055,                    0.1611647763,                    0.3608883044,                      0.64049984};
   const double A[] = {
@@ -1418,6 +2516,10 @@ BUTCHER_TABLEAU* initButcherTableau(enum GB_METHOD method, enum _FLAG flag)
     infoStreamPrint(OMC_LOG_SOLVER, 0, "Richardson extrapolation is used for step size control");
   }
 
+  // set optionals to default value
+  tableau->t_transform = NULL;
+  tableau->svp = NULL;
+
   switch(method)
   {
     case MS_ADAMS_MOULTON:
@@ -1492,6 +2594,9 @@ BUTCHER_TABLEAU* initButcherTableau(enum GB_METHOD method, enum _FLAG flag)
     case RK_SDIRK3:
       getButcherTableau_SDIRK3(tableau);
       break;
+    case RK_SDIRK4:
+      getButcherTableau_SDIRK4(tableau);
+      break;
     case RK_ESDIRK2:
       getButcherTableau_ESDIRK2(tableau);
       break;
@@ -1500,6 +2605,9 @@ BUTCHER_TABLEAU* initButcherTableau(enum GB_METHOD method, enum _FLAG flag)
       break;
     case RK_ESDIRK4:
       getButcherTableau_ESDIRK4(tableau);
+      break;
+    case RK_ESDIRK4_7L2SA:
+      getButcherTableau_ESDIRK4_7L2SA(tableau);
       break;
     case RK_RADAU_IA_2:
       if (extrapolMethod == GB_EXT_DEFAULT) tableau->richardson = TRUE;
@@ -1524,6 +2632,18 @@ BUTCHER_TABLEAU* initButcherTableau(enum GB_METHOD method, enum _FLAG flag)
     case RK_RADAU_IIA_4:
       if (extrapolMethod == GB_EXT_DEFAULT) tableau->richardson = TRUE;
       getButcherTableau_RADAU_IIA_4(tableau);
+      break;
+    case RK_RADAU_IIA_5:
+      if (extrapolMethod == GB_EXT_DEFAULT) tableau->richardson = TRUE;
+      getButcherTableau_RADAU_IIA_5(tableau);
+      break;
+    case RK_RADAU_IIA_6:
+      if (extrapolMethod == GB_EXT_DEFAULT) tableau->richardson = TRUE;
+      getButcherTableau_RADAU_IIA_6(tableau);
+      break;
+    case RK_RADAU_IIA_7:
+      if (extrapolMethod == GB_EXT_DEFAULT) tableau->richardson = TRUE;
+      getButcherTableau_RADAU_IIA_7(tableau);
       break;
     case RK_LOBA_IIIA_3:
       if (extrapolMethod == GB_EXT_DEFAULT) tableau->richardson = TRUE;
@@ -1576,6 +2696,33 @@ BUTCHER_TABLEAU* initButcherTableau(enum GB_METHOD method, enum _FLAG flag)
   return tableau;
 }
 
+void freeContractiveDefectError(CONTRACTIVE_DEFECT_ERROR *defect_err)
+{
+  free(defect_err->dT_A);
+  free(defect_err);
+}
+
+void freeStageValuePredictors(STAGE_VALUE_PREDICTORS *svp)
+{
+  free(svp->A_predictor);
+  free(svp->type);
+  free(svp);
+}
+
+void freeTTransform(T_TRANSFORM *t_transform)
+{
+  free(t_transform->A_part_inv);
+  free(t_transform->T);
+  free(t_transform->T_inv);
+  free(t_transform->alpha);
+  free(t_transform->beta);
+  free(t_transform->gamma);
+  if (t_transform->phi) free(t_transform->phi);
+  if (t_transform->rho) free(t_transform->rho);
+  if (t_transform->defect_err) freeContractiveDefectError(t_transform->defect_err);
+  free(t_transform);
+}
+
 /**
  * @brief Free Butcher Tableau memory.
  *
@@ -1588,6 +2735,16 @@ void freeButcherTableau(BUTCHER_TABLEAU* tableau)
   free(tableau->b);
   free(tableau->bt);
   free(tableau->b_dt);
+
+  if (tableau->t_transform)
+  {
+    freeTTransform(tableau->t_transform);
+  }
+
+  if (tableau->svp)
+  {
+    freeStageValuePredictors(tableau->svp);
+  }
 
   free(tableau);
 }

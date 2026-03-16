@@ -37,11 +37,9 @@
 
 #include <QObject>
 
-#include "Modeling/Model.h"
-
 /*!
  * \brief The VariableValue class
- * Tests the variable value from model.
+ * Tests the variable values.
  */
 class VariableValueTest: public QObject
 {
@@ -50,10 +48,16 @@ private slots:
   void initTestCase();
   /*!
    * \brief variableValue
-   * Tests the variable value from model.
+   * Tests the variable value of a componet from a model.
    */
   void variableValue();
   void variableValue_data();
+  /*!
+   * \brief variableValue
+   * Tests the variable value from a model.
+   */
+  void variableValueTopLevel();
+  void variableValueTopLevel_data();
   void cleanupTestCase();
 };
 

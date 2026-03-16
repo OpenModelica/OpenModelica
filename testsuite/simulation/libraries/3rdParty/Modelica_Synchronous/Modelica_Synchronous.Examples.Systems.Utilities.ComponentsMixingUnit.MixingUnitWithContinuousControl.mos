@@ -1,7 +1,6 @@
 // name: Modelica_Synchronous.Examples.Systems.Utilities.ComponentsMixingUnit.MixingUnitWithContinuousControl
 // keywords: simulation Modelica_Synchronous examples
 // status: correct
-// cflags: -d=-newInst
 //
 // Simulation Results
 // Modelica_Synchronous
@@ -24,8 +23,11 @@ runScript(modelTesting);getErrorString();
 // "true
 // "
 // ""
-// Simulation options: startTime = 0.0, stopTime = 500.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica_Synchronous.Examples.Systems.Utilities.ComponentsMixingUnit.MixingUnitWithContinuousControl', options = '', outputFormat = 'mat', variableFilter = 'time|mixingUnit.c|invMixingUnit.T_c|invMixingUnit.T', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
+// Simulation options: startTime = 0.0, stopTime = 500.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica_Synchronous.Examples.Systems.Utilities.ComponentsMixingUnit.MixingUnitWithContinuousControl', options = '', outputFormat = 'mat', variableFilter = 'time|mixingUnit.c|invMixingUnit.T_c|invMixingUnit.T', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
 // Result file: Modelica_Synchronous.Examples.Systems.Utilities.ComponentsMixingUnit.MixingUnitWithContinuousControl_res.mat
+// Messages: LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+//
 // Files Equal!
 // "true
 // "

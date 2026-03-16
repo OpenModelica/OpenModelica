@@ -369,16 +369,6 @@ algorithm
   end if;
 end bytesToReadableUnit;
 
-function stringHashDjb2Work
-  input String str;
-  input Integer hash=5381;
-  output Integer ohash=hash;
-algorithm
-  for i in 1:stringLength(str) loop
-    ohash := ohash*31 + MetaModelica.Dangerous.stringGetNoBoundsChecking(str, i);
-  end for;
-end stringHashDjb2Work;
-
 function startsWith
   input String str;
   input String prefix;

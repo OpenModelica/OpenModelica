@@ -661,7 +661,7 @@ package TestMedia
     end FlueGas;
   end TestModels;
 
-  partial package CompleteModels
+  package CompleteModels
     "Models to compute all available thermodynamic properties from medium models"
     model CompleteFluidConstants "Compute all available medium fluid constants"
       replaceable package Medium =

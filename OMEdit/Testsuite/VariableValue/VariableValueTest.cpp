@@ -34,38 +34,41 @@
 
 #include "VariableValueTest.h"
 #include "Util.h"
-#include "OMEditApplication.h"
 #include "MainWindow.h"
 #include "Modeling/LibraryTreeWidget.h"
-
-#define GC_THREADS
-extern "C" {
-#include "meta/meta_modelica.h"
-}
+#include "Modeling/Model.h"
+#include "Modeling/ModelWidgetContainer.h"
 
 OMEDITTEST_MAIN(VariableValueTest)
 
 void VariableValueTest::initTestCase()
 {
   // load TestIconExtend.mo
-  QString testIconExtendFileName = QFINDTESTDATA("TestIconExtend.mo");
+  const QString testIconExtendFileName = QFINDTESTDATA("TestIconExtend.mo");
   MainWindow::instance()->getLibraryWidget()->openFile(testIconExtendFileName);
   if (!MainWindow::instance()->getOMCProxy()->existClass("TestIconExtend")) {
     QFAIL(QString("Failed to load file %1").arg(testIconExtendFileName).toStdString().c_str());
   }
 
   // load IconsWithValues.mo
-  QString iconsWithValuesFileName = QFINDTESTDATA("IconsWithValues.mo");
+  const QString iconsWithValuesFileName = QFINDTESTDATA("IconsWithValues.mo");
   MainWindow::instance()->getLibraryWidget()->openFile(iconsWithValuesFileName);
   if (!MainWindow::instance()->getOMCProxy()->existClass("IconsWithValues")) {
     QFAIL(QString("Failed to load file %1").arg(iconsWithValuesFileName).toStdString().c_str());
   }
 
   // load TestParameterSubLevelinIcon.mo
-  QString testParameterSubLevelinIconFileName = QFINDTESTDATA("TestParameterSubLevelinIcon.mo");
+  const QString testParameterSubLevelinIconFileName = QFINDTESTDATA("TestParameterSubLevelinIcon.mo");
   MainWindow::instance()->getLibraryWidget()->openFile(testParameterSubLevelinIconFileName);
   if (!MainWindow::instance()->getOMCProxy()->existClass("TestParameterSubLevelinIcon")) {
     QFAIL(QString("Failed to load file %1").arg(testParameterSubLevelinIconFileName).toStdString().c_str());
+  }
+
+  // load P.mo
+  const QString testFileName = QFINDTESTDATA("P.mo");
+  MainWindow::instance()->getLibraryWidget()->openFile(testFileName);
+  if (!MainWindow::instance()->getOMCProxy()->existClass("P")) {
+    QFAIL(QString("Failed to load file %1").arg(testFileName).toStdString().c_str());
   }
 }
 
@@ -196,6 +199,46 @@ void VariableValueTest::variableValue_data()
       << false
       << "testrecord1.c"
       << "3";
+}
+
+void VariableValueTest::variableValueTopLevel()
+{
+  QFETCH(QString, model);
+  QFETCH(QString, variable);
+  QFETCH(QString, result);
+
+  LibraryTreeItem *pLibraryTreeItem = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem(model);
+  if (!pLibraryTreeItem) {
+    QFAIL(QString("Failed to find model %1.").arg(model).toStdString().c_str());
+  }
+  if (!Util::expandLibraryTreeItemParentHierarchy(pLibraryTreeItem)) {
+    QFAIL(QString("Expanding to model %1 failed.").arg(model).toStdString().c_str());
+  }
+
+  // Open the Modelica.Electrical.Analog.Examples.ChuaCircuit diagram.
+  QModelIndex modelIndex = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->libraryTreeItemIndex(pLibraryTreeItem);
+  QModelIndex proxyIndex = MainWindow::instance()->getLibraryWidget()->getLibraryTreeProxyModel()->mapFromSource(modelIndex);
+  MainWindow::instance()->getLibraryWidget()->getLibraryTreeView()->libraryTreeItemDoubleClicked(proxyIndex);
+
+  QPair<QString, bool> displayString = pLibraryTreeItem->getModelWidget()->getParameterDisplayString(variable);
+  QCOMPARE(displayString.first, result);
+}
+
+void VariableValueTest::variableValueTopLevel_data()
+{
+  QTest::addColumn<QString>("model");
+  QTest::addColumn<QString>("variable");
+  QTest::addColumn<QString>("result");
+
+  QTest::newRow("Test %variable")
+      << "P.Test"
+      << "variable"
+      << "Value";
+
+  QTest::newRow("Test enumeration")
+      << "P.Test"
+      << "dynType"
+      << "FixedInitial";
 }
 
 void VariableValueTest::cleanupTestCase()

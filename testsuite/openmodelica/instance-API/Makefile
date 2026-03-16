@@ -41,6 +41,8 @@ GetModelInstanceConnection3.mos \
 GetModelInstanceConnection4.mos \
 GetModelInstanceConnection5.mos \
 GetModelInstanceConnection6.mos \
+GetModelInstanceContext1.mos \
+GetModelInstanceContext2.mos \
 GetModelInstanceDerived1.mos \
 GetModelInstanceDerived2.mos \
 GetModelInstanceDerived3.mos \
@@ -64,6 +66,7 @@ GetModelInstanceIcon2.mos \
 GetModelInstanceIcon3.mos \
 GetModelInstanceIcon4.mos \
 GetModelInstanceIcon5.mos \
+GetModelInstanceIcon6.mos \
 GetModelInstanceImport1.mos \
 GetModelInstanceImport2.mos \
 GetModelInstanceInnerOuter1.mos \
@@ -71,6 +74,8 @@ GetModelInstanceInnerOuter2.mos \
 GetModelInstanceInnerOuter3.mos \
 GetModelInstanceInnerOuter4.mos \
 GetModelInstanceInnerOuter5.mos \
+GetModelInstanceInnerOuter6.mos \
+GetModelInstanceInnerOuter7.mos \
 GetModelInstanceMissingClass1.mos \
 GetModelInstanceMissingClass2.mos \
 GetModelInstanceMissingClass3.mos \

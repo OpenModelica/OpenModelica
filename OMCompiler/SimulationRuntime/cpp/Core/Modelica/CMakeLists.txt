@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 2.8.9)
+cmake_minimum_required(VERSION 3.5)
 
 project(${ModelicaName})
 
@@ -12,8 +12,12 @@ endif(NOT BUILD_SHARED_LIBS)
 
 target_link_libraries(${ModelicaName} ${Boost_LIBRARIES})
 
-GET_TARGET_PROPERTY(libModelicaSystem ${ModelicaName} LOCATION)
-GET_FILENAME_COMPONENT(libModelicaSystemNameExt ${libModelicaSystem} EXT)
+get_target_property(TARGET_TYPE ${ModelicaName} TYPE)
+if(TARGET_TYPE STREQUAL "STATIC_LIBRARY")
+  set(libModelicaSystemNameExt ${CMAKE_STATIC_LIBRARY_SUFFIX})
+elseif(TARGET_TYPE STREQUAL "SHARED_LIBRARY")
+  set(libModelicaSystemNameExt ${CMAKE_SHARED_LIBRARY_SUFFIX})
+endif()
 
 IF(MSVC)
 	SET(LINKER_LIB_PREFIX "")
@@ -299,6 +303,3 @@ install (FILES  ${CMAKE_SOURCE_DIR}/Core/DataExchange/Policies/BufferReaderWrite
 #if(REDUCE_DAE)
 #install (FILES Policies/BufferReaderWriter.h DESTINATION include/omc/cpp/policies)
 #endif()
-
-
-

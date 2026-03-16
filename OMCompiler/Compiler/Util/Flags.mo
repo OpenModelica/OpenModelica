@@ -570,7 +570,7 @@ constant ConfigFlag RUNNING_TESTSUITE = CONFIG_FLAG(3, "running-testsuite",
   NONE(), INTERNAL(), STRING_FLAG(""), NONE(),
   Gettext.gettext("Used when running the testsuite."));
 constant ConfigFlag SHOW_VERSION = CONFIG_FLAG(4, "version",
-  SOME("-v"), EXTERNAL(), BOOL_FLAG(false), NONE(),
+  NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   Gettext.gettext("Print the version and exit."));
 constant ConfigFlag TARGET = CONFIG_FLAG(5, "target", NONE(), EXTERNAL(),
   STRING_FLAG("gcc"), SOME(STRING_OPTION({"gcc", "msvc","msvc10","msvc12","msvc13","msvc15","msvc19", "vxworks69", "debugrt"})),
@@ -1202,7 +1202,7 @@ constant ConfigFlag INITIAL_STATE_SELECTION = CONFIG_FLAG(121, "initialStateSele
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   Gettext.gettext("Activates the state selection inside initialization to avoid singularities."));
 constant ConfigFlag LINEARIZATION_DUMP_LANGUAGE = CONFIG_FLAG(122, "linearizationDumpLanguage",
-  NONE(), EXTERNAL(), STRING_FLAG("modelica"),
+  NONE(), EXTERNAL(), STRING_FLAG("none"),
   SOME(STRING_DESC_OPTION({
     ("none", Gettext.gettext("Don't generate code for linearization.")),
     ("modelica", Gettext.gettext("Generate linearized Modelica model.")),
@@ -1288,8 +1288,9 @@ constant ConfigFlag ALLOW_NON_STANDARD_MODELICA = CONFIG_FLAG(143, "allowNonStan
     ("protectedAccess", Gettext.gettext("Allow access of protected elements")),
     ("reinitInAlgorithms", Gettext.gettext("Allow reinit in algorithm sections")),
     ("unbalancedModel", Gettext.gettext("Allow models to be locally unbalanced and to have unbalanced connectors")),
-    ("implicitParameterStartAttribute", Gettext.gettext("Allow fixed parameters with no binding or start attribute"))
-
+    ("implicitParameterStartAttribute", Gettext.gettext("Allow fixed parameters with no binding or start attribute")),
+    ("initialSimplified", Gettext.gettext("Allow use of experimental operator `initialSimplified()`")),
+    ("illegalConditionalContext", Gettext.gettext("Allow use of components with false conditions in illegal contexts"))
     })),
   Gettext.gettext("Flags to allow non-standard Modelica."));
 constant ConfigFlag EXPORT_CLOCKS_IN_MODELDESCRIPTION = CONFIG_FLAG(144, "exportClocksInModelDescription",
@@ -1359,7 +1360,8 @@ constant ConfigFlag BASE_MODELICA_FORMAT = CONFIG_FLAG(153, "baseModelicaFormat"
 constant ConfigFlag BASE_MODELICA_OPTIONS = CONFIG_FLAG(154, "baseModelicaOptions",
   NONE(), EXTERNAL(), STRING_LIST_FLAG({}), SOME(STRING_DESC_OPTION({
     ("moveBindings", Gettext.notrans("Moves movable binding equations to normal equations.")),
-    ("scalarize", Gettext.notrans("Fully scalarize the Base Modelica model."))
+    ("scalarize", Gettext.notrans("Fully scalarize the Base Modelica model.")),
+    ("inlineFunctions", Gettext.notrans("Inline all functions."))
     })),
   Gettext.gettext("Enables optional Base Modelica options."));
 constant ConfigFlag DEBUG_FOLLOW_EQUATIONS = CONFIG_FLAG(155, "debugFollowEquations",
@@ -1387,7 +1389,13 @@ constant ConfigFlag CAUSALIZE_DAE_MODE = CONFIG_FLAG(160, "causalizeDaeMode",
 /* please remove me once this is supported */
 constant ConfigFlag SIM_CODE_SCALARIZE = CONFIG_FLAG(161, "simCodeScalarize",
   NONE(), EXTERNAL(), BOOL_FLAG(true), NONE(),
-  Gettext.gettext("Sclarizes variables during simcode phase."));
+  Gettext.gettext("Scalarizes variables during simcode phase."));
+constant ConfigFlag EXECUTE_COMMAND = CONFIG_FLAG(162, "cmd",
+  NONE(), EXTERNAL(), STRING_FLAG(""), NONE(),
+  Gettext.gettext("Executes the string argument as a script before any other operation."));
+constant ConfigFlag MOO_DYNAMIC_OPTIMIZATION = CONFIG_FLAG(163, "moo",
+  NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
+  Gettext.gettext("Generate code for dynamic optimization library MOO."));
 
 function getFlags
   "Loads the flags with getGlobalRoot. Assumes flags have been loaded."

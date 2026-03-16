@@ -836,13 +836,13 @@ package SimCode
 
   uniontype BaseUnit
     record BASEUNIT
-      Integer mol "exponent";
-      Integer cd  "exponent";
-      Integer m   "exponent";
       Integer s   "exponent";
+      Integer m   "exponent";
+      Integer kg  "exponent";
       Integer A   "exponent";
       Integer K   "exponent";
-      Integer kg  "exponent";
+      Integer mol "exponent";
+      Integer cd  "exponent";
       Real factor "prefix";
       Real offset "offset";
     end BASEUNIT;
@@ -1155,6 +1155,7 @@ package SimCodeFunction
       Boolean is_parallel;
     end FUNCTION_CONTEXT;
     record JACOBIAN_CONTEXT
+      String name;
       Option<HashTableCrefSimVar.HashTable> jacHT;
     end JACOBIAN_CONTEXT;
     record ALGLOOP_CONTEXT
@@ -1351,6 +1352,12 @@ package SimCodeUtil
     output list<SimCode.SimEqSystem> deps;
   end computeDependencies;
 
+  function getSimEqSysForIndex
+    input Integer idx;
+    input list<SimCode.SimEqSystem> allSimEqs;
+    output SimCode.SimEqSystem outSimEq;
+  end getSimEqSysForIndex;
+
   function getSimEqSystemsByIndexLst
     input list<Integer> idcs;
     input list<SimCode.SimEqSystem> allSes;
@@ -1393,6 +1400,7 @@ package SimCodeUtil
   end simVarFromHT;
 
   function createJacContext
+    input String name;
     input Option<HashTableCrefSimVar.HashTable> jacHT;
     output SimCodeFunction.Context outContext;
   end createJacContext;
@@ -1600,6 +1608,13 @@ package SimCodeFunctionUtil
     input list<DAE.Exp> subs;
     output DAE.Exp cRefOut;
   end buildCrefExpFromAsub;
+
+
+  function buildCrefExpFromSubs
+    input DAE.Exp cref;
+    input list<DAE.Subscript> subs;
+    output DAE.Exp cRefOut;
+  end buildCrefExpFromSubs;
 
   function codegenResetTryThrowIndex
   end codegenResetTryThrowIndex;
@@ -2183,7 +2198,7 @@ package DAE
     end CAST;
     record ASUB
       Exp exp;
-      list<Exp> sub;
+      list<Subscript> sub;
     end ASUB;
     record TSUB
       Exp exp;
@@ -3924,6 +3939,11 @@ package Expression
     output Boolean oCrefWithEqualIdents;
   end isCrefListWithEqualIdents;
 
+  function expDimensions
+    input DAE.Exp inExp;
+    output DAE.Dimensions outDims;
+  end expDimensions;
+
   function dimensionsList
     input DAE.Dimensions inDims;
     output list<Integer> outValues;
@@ -4112,6 +4132,7 @@ package Flags
   constant ConfigFlag EXPORT_CLOCKS_IN_MODELDESCRIPTION;
   constant ConfigFlag OBFUSCATE;
   constant ConfigFlag MAX_SIZE_LINEARIZATION;
+  constant ConfigFlag NEW_BACKEND;
 
   function isSet
     input DebugFlag inFlag;

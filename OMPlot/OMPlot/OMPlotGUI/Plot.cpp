@@ -266,41 +266,42 @@ void Plot::setFontSizes(double titleFontSize, double verticalAxisTitleFontSize, 
  */
 bool Plot::prefixableUnit(const QString &unit)
 {
-  static QStringList prefixableUnits;
-  prefixableUnits << "s"
-                  << "m"
-                  << "m/s"
-                  << "m/s2"
-                  << "rad"
-                  << "rad/s"
-                  << "rad/s2"
-                  << "rpm"
-                  << "Hz"
-                  << "N"
-                  << "N.m"
-                  << "Pa"
-                  << "Pa.s"
-                  << "J"
-                  << "J/kg"
-                  << "J/(kg.K)"
-                  << "K"
-                  << "V"
-                  << "V/m"
-                  << "A"
-                  << "C"
-                  << "F"
-                  << "T"
-                  << "Wb"
-                  << "Wb/m"
-                  << "H"
-                  << "Ohm"
-                  << "S"
-                  << "W"
-                  << "W/m"
-                  << "W/m2"
-                  << "Wh"
-                  << "var";
-
+  static const QSet<QString> prefixableUnits = {
+    "s",
+    "m",
+    "m/s",
+    "m/s2",
+    "rad",
+    "rad/s",
+    "rad/s2",
+    "rpm",
+    "Hz",
+    "N",
+    "N.m",
+    "Pa",
+    "Pa.s",
+    "J",
+    "J/kg",
+    "J/(kg.K)",
+    "K",
+    "V",
+    "V/m",
+    "A",
+    "C",
+    "F",
+    "T",
+    "Wb",
+    "Wb/m",
+    "H",
+    "Ohm",
+    "S",
+    "W",
+    "V.A",
+    "W/m",
+    "W/m2",
+    "Wh",
+    "var"
+  };
   return prefixableUnits.contains(unit);
 }
 
@@ -429,7 +430,9 @@ void Plot::replot()
 
   // Now we need to again loop through curves to set the color and title.
   // Also display y-axis (left or right) only if axis is assigned to at least one curve
-  bool leftAxisVisible = false, rightAxisVisible = false;
+  // if no curves are present then display left y-axis by default. See #14894. The window size is too small without any y-axes.
+  bool leftAxisVisible = mPlotCurvesList.isEmpty() ? true : false;
+  bool rightAxisVisible = false;
   for (int i = 0 ; i < mPlotCurvesList.length() ; i++) {
     // if user has set the custom color for the curve then dont get automatic color for it
     if (!mPlotCurvesList[i]->hasCustomColor()) {

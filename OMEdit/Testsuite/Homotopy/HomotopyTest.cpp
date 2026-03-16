@@ -34,15 +34,9 @@
 
 #include "HomotopyTest.h"
 #include "Util.h"
-#include "OMEditApplication.h"
 #include "MainWindow.h"
 #include "Modeling/LibraryTreeWidget.h"
 #include "Simulation/SimulationOutputWidget.h"
-
-#define GC_THREADS
-extern "C" {
-#include "meta/meta_modelica.h"
-}
 
 OMEDITTEST_MAIN(HomotopyTest)
 

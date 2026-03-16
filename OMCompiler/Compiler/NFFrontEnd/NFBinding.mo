@@ -189,16 +189,6 @@ public
     end match;
   end isInvalid;
 
-  function untypedExp
-    input Binding binding;
-    output Option<Expression> exp;
-  algorithm
-    exp := match binding
-      case UNTYPED_BINDING() then SOME(binding.bindingExp);
-      else NONE();
-    end match;
-  end untypedExp;
-
   function typedExp
     input Binding binding;
     output Option<Expression> exp;
@@ -575,6 +565,40 @@ public
     end match;
   end toDAEExp;
 
+  function applyExp
+    input Binding binding;
+    input ApplyFn fn;
+
+    partial function ApplyFn
+      input Expression exp;
+    end ApplyFn;
+  algorithm
+    () := match binding
+      case UNTYPED_BINDING() algorithm Expression.apply(binding.bindingExp, fn); then ();
+      case TYPED_BINDING()   algorithm Expression.apply(binding.bindingExp, fn); then ();
+      case FLAT_BINDING()    algorithm Expression.apply(binding.bindingExp, fn); then ();
+      case CEVAL_BINDING()   algorithm Expression.apply(binding.bindingExp, fn); then ();
+      else ();
+    end match;
+  end applyExp;
+
+  function applyExpShallow
+    input Binding binding;
+    input ApplyFn fn;
+
+    partial function ApplyFn
+      input Expression exp;
+    end ApplyFn;
+  algorithm
+    () := match binding
+      case UNTYPED_BINDING() algorithm fn(binding.bindingExp); then ();
+      case TYPED_BINDING()   algorithm fn(binding.bindingExp); then ();
+      case FLAT_BINDING()    algorithm fn(binding.bindingExp); then ();
+      case CEVAL_BINDING()   algorithm fn(binding.bindingExp); then ();
+      else ();
+    end match;
+  end applyExpShallow;
+
   function mapExp
     input output Binding binding;
     input MapFunc mapFn;
@@ -728,6 +752,21 @@ public
     input Expression exp;
   algorithm
     binding := match binding
+
+      case WILD()
+      then TYPED_BINDING(
+          bindingExp  = exp,
+          bindingType = Expression.typeOf(exp),
+          variability = Expression.variability(exp),
+          purity      = Expression.purity(exp),
+          eachType    = EachType.NOT_EACH,
+          evalState   = if Expression.isConstNumber(exp)
+                        then Mutable.create(EvalState.EVALUATED)
+                        else Mutable.create(EvalState.NOT_EVALUATED),
+          isFlattened = true,
+          source      = Source.BINDING,
+          info        = sourceInfo()
+        );
 
       case UNBOUND()
       then TYPED_BINDING(

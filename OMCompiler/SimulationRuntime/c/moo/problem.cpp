@@ -29,9 +29,10 @@
  */
 
 #include "simulation_data.h"
+#include "simulation/arrayIndex.h"
 #include "simulation/simulation_runtime.h"
-#include "simulation/solver/gbode_main.h"
 #include "simulation/solver/external_input.h"
+#include "simulation/solver/gbode_main.h"
 
 #include <nlp/instances/gdop/gdop.h>
 
@@ -40,7 +41,7 @@
 
 #include "problem.h"
 
-#define NUM_HES_FD_STEP 1e-6      // base step size for numerical Hessian perturbation
+#define NUM_HES_FD_STEP 1e-8      // base step size for numerical Hessian perturbation
 #define NUM_HES_DF_EXTR_STEPS 1   // number of extrapolation steps
 #define NUM_HES_EXTR_DIV 2        // divisor for new step size in extrapolation
 
@@ -134,19 +135,19 @@ BoundarySweep::BoundarySweep(GDOP::BoundarySweepLayout&& layout_mr,
                                    InfoGDOP& info)
     : GDOP::BoundarySweep(std::move(layout_mr), pc), info(info) {}
 
-void BoundarySweep::callback_eval(const f64* x0_nlp, const f64* xuf_nlp, const f64* p) {
+void BoundarySweep::callback_eval(const f64* xu0_nlp, const f64* xuf_nlp, const f64* p, const f64 t0, const f64 tf) {
     set_parameters(info, p);
     set_states_inputs(info, xuf_nlp);
-    set_time(info, pc.mesh->tf);
+    set_time(info, tf);
     eval_current_point_dae(info);
     eval_mr_write(info, get_eval_buffer());
 }
 
-void BoundarySweep::callback_jac(const f64* x0_nlp, const f64* xuf_nlp, const f64* p) {
+void BoundarySweep::callback_jac(const f64* xu0_nlp, const f64* xuf_nlp, const f64* p, const f64 t0, const f64 tf) {
     f64* jac_buf = get_jac_buffer();
     set_parameters(info, p);
     set_states_inputs(info, xuf_nlp);
-    set_time(info, pc.mesh->tf);
+    set_time(info, tf);
     eval_current_point_dae(info);
     /* TODO: check if C matrix does hold additional ders */
 
@@ -162,10 +163,10 @@ void BoundarySweep::callback_jac(const f64* x0_nlp, const f64* xuf_nlp, const f6
     }
 }
 
-void BoundarySweep::callback_hes(const f64* x0_nlp, const f64* xuf_nlp, const f64* p, const f64 mayer_factor, const f64* lambda) {
+void BoundarySweep::callback_hes(const f64* xu0_nlp, const f64* xuf_nlp, const f64* p, const f64 t0, const f64 tf, const f64 mayer_factor, const f64* lambda) {
     set_parameters(info, p);
     set_states_inputs(info, xuf_nlp);
-    set_time(info, pc.mesh->tf);
+    set_time(info, tf);
     fill_zero_hes_buffer();
 
     f64* jac_buf = get_jac_buffer();
@@ -186,13 +187,13 @@ void BoundarySweep::callback_hes(const f64* x0_nlp, const f64* xuf_nlp, const f6
 
     if (pc.r_size != 0) {
         /* set duals and precomputed Jacobian D */
-        info.exc_hes->C.args.lambda = lambda;
-        info.exc_hes->C.args.jac_csc = jac_buf + info.exc_jac->D.sparsity.nnz_offset;
+        info.exc_hes->D.args.lambda = lambda;
+        info.exc_hes->D.args.jac_csc = jac_buf + info.exc_jac->D.sparsity.nnz_offset;
 
-        richardson_extrapolation(info.exc_hes->C.extr, hessian_fwd_differences_wrapper, &info.exc_hes->C.args,
-                                NUM_HES_FD_STEP, NUM_HES_DF_EXTR_STEPS, NUM_HES_EXTR_DIV, 1, info.exc_hes->C.buffer.raw());
-        for (auto& [index_D, index_buffer] : info.exc_hes->C_to_Mr_buffer) {
-            hes_buffer[index_buffer] += info.exc_hes->C.buffer[index_D];
+        richardson_extrapolation(info.exc_hes->D.extr, hessian_fwd_differences_wrapper, &info.exc_hes->D.args,
+                                NUM_HES_FD_STEP, NUM_HES_DF_EXTR_STEPS, NUM_HES_EXTR_DIV, 1, info.exc_hes->D.buffer.raw());
+        for (auto& [index_D, index_buffer] : info.exc_hes->D_to_Mr_buffer) {
+            hes_buffer[index_buffer] += info.exc_hes->D.buffer[index_D];
         }
     }
 }
@@ -241,7 +242,7 @@ void Dynamics::jac(const f64* x, const f64* u, const f64* p, f64 t, f64* dfdx, v
     eval_write_ode_jacobian(info, dfdx);
 }
 
-GDOP::Problem create_gdop(InfoGDOP& info, const Mesh& mesh) {
+GDOP::Problem create_gdop(InfoGDOP& info, Mesh& mesh) {
     DATA* data = info.data;
 
     // at first call init for all start values
@@ -259,8 +260,8 @@ GDOP::Problem create_gdop(InfoGDOP& info, const Mesh& mesh) {
     FixedVector<Bounds> p_bounds(info.p_size);
 
     for (int x = 0; x < info.x_size; x++) {
-        x_bounds[x].lb = data->modelData->realVarsData[x].attribute.min;
-        x_bounds[x].ub = data->modelData->realVarsData[x].attribute.max;
+        x_bounds[x].lb = getMinFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, VAR_KIND_STATE, x);
+        x_bounds[x].ub = getMaxFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, VAR_KIND_STATE, x);
     }
 
     /* new generated function getInputVarIndices, just fills the index list of all optimizable inputs */
@@ -268,8 +269,8 @@ GDOP::Problem create_gdop(InfoGDOP& info, const Mesh& mesh) {
     data->callback->getInputVarIndicesInOptimization(data, info.u_indices_real_vars.raw());
     for (int u = 0; u < info.u_size; u++) {
         int u_index = info.u_indices_real_vars[u];
-        u_bounds[u].lb = data->modelData->realVarsData[u_index].attribute.min;
-        u_bounds[u].ub = data->modelData->realVarsData[u_index].attribute.max;
+        u_bounds[u].lb = getMinFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, VAR_KIND_VARIABLE, u_index);
+        u_bounds[u].ub = getMaxFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, VAR_KIND_VARIABLE, u_index);
     }
 
     /* constraint sizes */
@@ -299,31 +300,32 @@ GDOP::Problem create_gdop(InfoGDOP& info, const Mesh& mesh) {
     info.index_g_real_vars = data->modelData->nVariablesReal - (info.g_size + info.r_size);
     info.index_r_real_vars = data->modelData->nVariablesReal - info.r_size;
     for (int g = 0; g < info.g_size; g++) {
-        g_bounds[g].lb = data->modelData->realVarsData[info.index_g_real_vars + g].attribute.min;
-        g_bounds[g].ub = data->modelData->realVarsData[info.index_g_real_vars + g].attribute.max;
+        g_bounds[g].lb = getMinFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, VAR_KIND_VARIABLE, info.index_g_real_vars + g);
+        g_bounds[g].ub = getMaxFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, VAR_KIND_VARIABLE, info.index_g_real_vars + g);
     }
 
     for (int r = 0; r < info.r_size; r++) {
-        r_bounds[r].lb = data->modelData->realVarsData[info.index_r_real_vars + r].attribute.min;
-        r_bounds[r].ub = data->modelData->realVarsData[info.index_r_real_vars + r].attribute.max;
+        r_bounds[r].lb = getMinFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, VAR_KIND_VARIABLE, info.index_r_real_vars + r);
+        r_bounds[r].ub = getMaxFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, VAR_KIND_VARIABLE, info.index_r_real_vars + r);
     }
 
     /* for now we ignore xf fixed (need some steps in Backend to detect)
      * and also ignore x0 non fixed, since too complicated
      * => assume x(t_0) = x0 fixed, x(t_f) free to r constraint / maybe the old BE can do that already?!
      * option: generate fixed final states individually */
-    FixedVector<std::optional<f64>> x0_fixed(info.x_size);
-    FixedVector<std::optional<f64>> xf_fixed(info.x_size);
+    FixedVector<std::optional<f64>> xu0_fixed(info.xu_size);
+    FixedVector<std::optional<f64>> xuf_fixed(info.xu_size);
+
+    /* fix time horizon for now to [t0, tf] */
+    std::array<Bounds, 2> T_bounds = { Bounds{ info.t0, info.t0 }, Bounds{ info.tf, info.tf } };
+    std::array<std::optional<f64>, 2> T_fixed = { info.t0, info.tf };
 
     /* set *fixed* initial, final states */
     for (int x = 0; x < info.x_size; x++) {
-        if (data->modelData->realVarsData[x].dimension.numberOfDimensions > 0) {
-            Log::error("Support for array variables not yet implemented!");
-            abort();
-        }
-
-        x0_fixed[x] = real_get(data->modelData->realVarsData[x].attribute.start, 0);
+        xu0_fixed[x] = getStartFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, VAR_KIND_VARIABLE, x);
     }
+
+    /* u0 never fixed for now - let the solver calculate it from u_{0,1} ... u_{0, m} */
 
     /* create CSC <-> COO exchange, init jacobians */
     info.exc_jac = std::make_unique<ExchangeJacobians>(info);
@@ -346,8 +348,10 @@ GDOP::Problem create_gdop(InfoGDOP& info, const Mesh& mesh) {
         std::move(x_bounds),
         std::move(u_bounds),
         std::move(p_bounds),
-        std::move(x0_fixed),
-        std::move(xf_fixed),
+        std::move(T_bounds),
+        std::move(xu0_fixed),
+        std::move(xuf_fixed),
+        std::move(T_fixed),
         std::move(r_bounds),
         std::move(g_bounds),
         mesh

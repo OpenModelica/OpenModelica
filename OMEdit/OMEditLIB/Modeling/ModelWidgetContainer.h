@@ -188,7 +188,7 @@ public:
   void setIsVisualizationView(bool visualizationView);
   bool isVisualizationView() {return mVisualizationView;}
 
-  void drawCoordinateSystem();
+  void drawCoordinateSystem(bool openingModel);
   void drawShapes(ModelInstance::Model *pModelInstance, bool inhertied, bool openingModel);
   void drawElements(ModelInstance::Model *pModelInstance, bool inherited, const ModelInfo &modelInfo);
   void drawConnections(ModelInstance::Model *pModelInstance, bool inherited, const ModelInfo &modelInfo);
@@ -196,7 +196,7 @@ public:
   void drawInitialStates(ModelInstance::Model *pModelInstance, bool inherited, const ModelInfo &modelInfo);
   void handleCollidingConnections();
 
-  void setExtentRectangle(const QRectF rectangle, bool moveToCenter);
+  void setExtentRectangle(const QRectF rectangle, bool openingModel);
   void setIsCustomScale(bool enable) {mIsCustomScale = enable;}
   bool isCustomScale() {return mIsCustomScale;}
   void setAddClassAnnotationNeeded(bool needed) {mAddClassAnnotationNeeded = needed;}
@@ -607,6 +607,9 @@ public:
   void showElement(ModelInstance::Model *pModelInstance, bool addToList);
   void selectDeselectElement(const QString &name, bool selected);
   void navigateToClass(const QString &className);
+
+  QPair<QString, bool> getParameterDisplayString(QString parameterName);
+  QPair<QString, bool> getParameterModifierValue(const QString &parameterName, const QString &modifier);
 private:
   ModelWidgetContainer *mpModelWidgetContainer;
   ModelInstance::Model *mpModelInstance;
@@ -700,7 +703,7 @@ public:
   bool eventFilter(QObject *object, QEvent *event);
   void changeRecentModelsListSelection(bool moveDown);
   bool validateText();
-  void getOpenedModelWidgetsAndSelectedElementsOfClass(const QString &modelName, QHash<QString, QPair<QStringList, QStringList> > *pOpenedModelWidgetsAndSelectedElements);
+  void getOpenedModelWidgetsAndSelectedElementsOfClass(LibraryTreeItem *pLibraryTreeItem, QHash<QString, QPair<QStringList, QStringList> > *pOpenedModelWidgetsAndSelectedElements);
   void openModelWidgetsAndSelectElement(QHash<QString, QPair<QStringList, QStringList> > closedModelWidgetsAndSelectedElements, bool skipSelection = false);
 
   QRect mCopiedItemsBoundingRect;

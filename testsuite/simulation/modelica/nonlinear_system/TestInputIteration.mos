@@ -281,6 +281,8 @@ simulate(TestInputIteration, stopTime=0, simflags="-output=x1[1],x1[2],z1,x2[1],
 //
 // 	Jacobian idx: 5
 //
+// 	Jacobian idx: 6
+//
 //
 // modelInfo:
 // ========================================

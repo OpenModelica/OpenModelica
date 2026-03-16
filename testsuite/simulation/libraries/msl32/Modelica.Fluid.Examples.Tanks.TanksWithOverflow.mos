@@ -1,7 +1,6 @@
 // name:     Modelica.Fluid.Examples.Tanks.TanksWithOverflow
 // keywords: simulation MSL Examples
 // status: correct
-// cflags: -d=-newInst
 //
 // Simulation Results
 // Modelica Standard Library
@@ -34,10 +33,12 @@ runScript(modelTesting);getErrorString();
 // |                 | |       | The following assertion has been violated at time 0.000000
 // |                 | |       | ((overflow.flowModel.states[1].p >= 0.0 and overflow.flowModel.states[1].p <= 1e8)) --> "Variable violating min/max constraint: 0.0 <= overflow.flowModel.states[1].p <= 1e8, has value: -93465.5"
 // LOG_SUCCESS       | info    | The initialization finished successfully with 3 homotopy steps.
-// LOG_ASSERT        | info    | [Modelica 3.2.1+maint.om/Fluid/Interfaces.mo:15:5-15:79:writable]
-// |                 | |       | The following assertion has been violated at time 0.027176
-// |                 | |       | ((lowerTank.ports[2].p >= 0.0 and lowerTank.ports[2].p <= 1e8)) --> "Variable violating min/max constraint: 0.0 <= lowerTank.ports[2].p <= 1e8, has value: -4.72999e+07"
+// LOG_ASSERT        | info    | [Modelica 3.2.1+maint.om/Media/package.mo:5259:7-5259:55:writable]
+// |                 | |       | The following assertion has been violated at time 0.019293
+// |                 | |       | ((overflow.flowModel.states[2].p >= 0.0 and overflow.flowModel.states[2].p <= 1e8)) --> "Variable violating min/max constraint: 0.0 <= overflow.flowModel.states[2].p <= 1e8, has value: -60126.2"
 // LOG_SUCCESS       | info    | The simulation finished successfully.
+//
+// Warning: The model contains alias variables with redundant start and/or conflicting nominal values. It is recommended to resolve the conflicts, because otherwise the system could be hard to solve. To print the conflicting alias sets and the chosen candidates please use -d=aliasConflicts.
 //
 // "true
 // "

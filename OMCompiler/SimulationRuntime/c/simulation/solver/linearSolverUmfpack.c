@@ -101,8 +101,6 @@ allocateUmfPackData(int n_row, int n_col, int nz, void** voiddata)
 int
 freeUmfPackData(void **voiddata)
 {
-  TRACE_PUSH
-
   DATA_UMFPACK* data = (DATA_UMFPACK*) *voiddata;
 
   free(data->Ap);
@@ -118,7 +116,6 @@ freeUmfPackData(void **voiddata)
   if(data->numeric)
     umfpack_di_free_numeric (&data->numeric);
 
-  TRACE_POP
   return 0;
 }
 

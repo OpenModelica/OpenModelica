@@ -317,9 +317,9 @@ void storeSpatialDistribution(DATA* data, threadData_t *threadData, unsigned int
   /* Remove nodes that droppen of spatial distribution */
   walkedOverEvents = pruneSpatialDistribution(spatialDistribution, isPositiveVelocity);
   if (walkedOverEvents > 1) {
-    warningStreamPrint(OMC_LOG_STDOUT, 0, "Removed more then one event from spatialDistribution. Step size to big!");
+    warningStreamPrint(OMC_LOG_STDOUT, 1, "Removed more then one event from spatialDistribution. Step size to big!");
     warningStreamPrint(OMC_LOG_STDOUT, 0, "time: %f, spatialDistribution index: %i, number of events: %i", data->localData[0]->timeValue, index, walkedOverEvents);
-    messageClose(OMC_LOG_STDOUT);
+    messageCloseWarning(OMC_LOG_STDOUT);
   }
 
   /* Update oldPosX */
@@ -417,7 +417,7 @@ double spatialDistribution(DATA* data, threadData_t *threadData, unsigned int in
   if (walkedOverEvents > 1) {
     warningStreamPrint(OMC_LOG_STDOUT, 1, "Need to output more then one event from spatialDistribution. Step size to big!");
     warningStreamPrint(OMC_LOG_STDOUT, 0, "time: %f, spatialDistribution index: %i, number of events: %i", data->localData[0]->timeValue, index, walkedOverEvents);
-    messageClose(OMC_LOG_STDOUT);
+    messageCloseWarning(OMC_LOG_STDOUT);
   }
   if (walkedOverEvents>0 && !data->simulationInfo->discreteCall) {
     infoStreamPrint(OMC_LOG_SPATIALDISTR, 0, "Found event in spatial distribution at time %f", data->localData[0]->timeValue);

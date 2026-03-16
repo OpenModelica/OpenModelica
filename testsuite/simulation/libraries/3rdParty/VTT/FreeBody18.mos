@@ -2,7 +2,6 @@
 // status: correct
 // provided by VTT
 // teardown_command: rm -f _FreeBody18*.h FreeBody18*.c FreeBody18*.libs FreeBody18*.makefile FreeBody18*.log FreeBody18*.h FreeBody18 FreeBody18*.exe FreeBody18*.o FreeBody18*.xml FreeBody18*.mat
-// cflags: -d=-newInst
 //
 
 loadModel(Modelica, {"3.2"}); getErrorString();
@@ -15,6 +14,44 @@ buildModel(FreeBody18); getErrorString();
 // ""
 // true
 // ""
-// {"FreeBody18","FreeBody18_init.xml"}
-// ""
+// {"FreeBody18", "FreeBody18_init.xml"}
+// "[Modelica 3.2.3+maint.om/Mechanics/MultiBody/Parts.mo:1018:5-1019:59:writable] Warning: Parameter FreeBody9_2_FreeBody_3_Body_1.r has no value, and is fixed during initialization (fixed=true), using available start value (start={0, 0, 0}) as default value.
+// [Modelica 3.2.3+maint.om/Mechanics/MultiBody/Parts.mo:1020:5-1021:67:writable] Warning: Parameter FreeBody9_2_FreeBody_3_Body_1.r_CM has no value, and is fixed during initialization (fixed=true), using available start value (start={0, 0, 0}) as default value.
+// [Modelica 3.2.3+maint.om/Mechanics/MultiBody/Parts.mo:1018:5-1019:59:writable] Warning: Parameter FreeBody9_2_FreeBody_2_Body_1.r has no value, and is fixed during initialization (fixed=true), using available start value (start={0, 0, 0}) as default value.
+// [Modelica 3.2.3+maint.om/Mechanics/MultiBody/Parts.mo:1020:5-1021:67:writable] Warning: Parameter FreeBody9_2_FreeBody_2_Body_1.r_CM has no value, and is fixed during initialization (fixed=true), using available start value (start={0, 0, 0}) as default value.
+// [Modelica 3.2.3+maint.om/Mechanics/MultiBody/Parts.mo:1018:5-1019:59:writable] Warning: Parameter FreeBody9_2_FreeBody_9_Body_1.r has no value, and is fixed during initialization (fixed=true), using available start value (start={0, 0, 0}) as default value.
+// [Modelica 3.2.3+maint.om/Mechanics/MultiBody/Parts.mo:1020:5-1021:67:writable] Warning: Parameter FreeBody9_2_FreeBody_9_Body_1.r_CM has no value, and is fixed during initialization (fixed=true), using available start value (start={0, 0, 0}) as default value.
+// [Modelica 3.2.3+maint.om/Mechanics/MultiBody/Parts.mo:1018:5-1019:59:writable] Warning: Parameter FreeBody9_2_FreeBody_1_Body_1.r has no value, and is fixed during initialization (fixed=true), using available start value (start={0, 0, 0}) as default value.
+// [Modelica 3.2.3+maint.om/Mechanics/MultiBody/Parts.mo:1020:5-1021:67:writable] Warning: Parameter FreeBody9_2_FreeBody_1_Body_1.r_CM has no value, and is fixed during initialization (fixed=true), using available start value (start={0, 0, 0}) as default value.
+// [Modelica 3.2.3+maint.om/Mechanics/MultiBody/Parts.mo:1018:5-1019:59:writable] Warning: Parameter FreeBody9_2_FreeBody_8_Body_1.r has no value, and is fixed during initialization (fixed=true), using available start value (start={0, 0, 0}) as default value.
+// [Modelica 3.2.3+maint.om/Mechanics/MultiBody/Parts.mo:1020:5-1021:67:writable] Warning: Parameter FreeBody9_2_FreeBody_8_Body_1.r_CM has no value, and is fixed during initialization (fixed=true), using available start value (start={0, 0, 0}) as default value.
+// [Modelica 3.2.3+maint.om/Mechanics/MultiBody/Parts.mo:1018:5-1019:59:writable] Warning: Parameter FreeBody9_2_FreeBody_7_Body_1.r has no value, and is fixed during initialization (fixed=true), using available start value (start={0, 0, 0}) as default value.
+// [Modelica 3.2.3+maint.om/Mechanics/MultiBody/Parts.mo:1020:5-1021:67:writable] Warning: Parameter FreeBody9_2_FreeBody_7_Body_1.r_CM has no value, and is fixed during initialization (fixed=true), using available start value (start={0, 0, 0}) as default value.
+// [Modelica 3.2.3+maint.om/Mechanics/MultiBody/Parts.mo:1018:5-1019:59:writable] Warning: Parameter FreeBody9_2_FreeBody_6_Body_1.r has no value, and is fixed during initialization (fixed=true), using available start value (start={0, 0, 0}) as default value.
+// [Modelica 3.2.3+maint.om/Mechanics/MultiBody/Parts.mo:1020:5-1021:67:writable] Warning: Parameter FreeBody9_2_FreeBody_6_Body_1.r_CM has no value, and is fixed during initialization (fixed=true), using available start value (start={0, 0, 0}) as default value.
+// [Modelica 3.2.3+maint.om/Mechanics/MultiBody/Parts.mo:1018:5-1019:59:writable] Warning: Parameter FreeBody9_2_FreeBody_5_Body_1.r has no value, and is fixed during initialization (fixed=true), using available start value (start={0, 0, 0}) as default value.
+// [Modelica 3.2.3+maint.om/Mechanics/MultiBody/Parts.mo:1020:5-1021:67:writable] Warning: Parameter FreeBody9_2_FreeBody_5_Body_1.r_CM has no value, and is fixed during initialization (fixed=true), using available start value (start={0, 0, 0}) as default value.
+// [Modelica 3.2.3+maint.om/Mechanics/MultiBody/Parts.mo:1018:5-1019:59:writable] Warning: Parameter FreeBody9_2_FreeBody_4_Body_1.r has no value, and is fixed during initialization (fixed=true), using available start value (start={0, 0, 0}) as default value.
+// [Modelica 3.2.3+maint.om/Mechanics/MultiBody/Parts.mo:1020:5-1021:67:writable] Warning: Parameter FreeBody9_2_FreeBody_4_Body_1.r_CM has no value, and is fixed during initialization (fixed=true), using available start value (start={0, 0, 0}) as default value.
+// [Modelica 3.2.3+maint.om/Mechanics/MultiBody/Parts.mo:1018:5-1019:59:writable] Warning: Parameter FreeBody9_1_FreeBody_3_Body_1.r has no value, and is fixed during initialization (fixed=true), using available start value (start={0, 0, 0}) as default value.
+// [Modelica 3.2.3+maint.om/Mechanics/MultiBody/Parts.mo:1020:5-1021:67:writable] Warning: Parameter FreeBody9_1_FreeBody_3_Body_1.r_CM has no value, and is fixed during initialization (fixed=true), using available start value (start={0, 0, 0}) as default value.
+// [Modelica 3.2.3+maint.om/Mechanics/MultiBody/Parts.mo:1018:5-1019:59:writable] Warning: Parameter FreeBody9_1_FreeBody_2_Body_1.r has no value, and is fixed during initialization (fixed=true), using available start value (start={0, 0, 0}) as default value.
+// [Modelica 3.2.3+maint.om/Mechanics/MultiBody/Parts.mo:1020:5-1021:67:writable] Warning: Parameter FreeBody9_1_FreeBody_2_Body_1.r_CM has no value, and is fixed during initialization (fixed=true), using available start value (start={0, 0, 0}) as default value.
+// [Modelica 3.2.3+maint.om/Mechanics/MultiBody/Parts.mo:1018:5-1019:59:writable] Warning: Parameter FreeBody9_1_FreeBody_9_Body_1.r has no value, and is fixed during initialization (fixed=true), using available start value (start={0, 0, 0}) as default value.
+// [Modelica 3.2.3+maint.om/Mechanics/MultiBody/Parts.mo:1020:5-1021:67:writable] Warning: Parameter FreeBody9_1_FreeBody_9_Body_1.r_CM has no value, and is fixed during initialization (fixed=true), using available start value (start={0, 0, 0}) as default value.
+// [Modelica 3.2.3+maint.om/Mechanics/MultiBody/Parts.mo:1018:5-1019:59:writable] Warning: Parameter FreeBody9_1_FreeBody_1_Body_1.r has no value, and is fixed during initialization (fixed=true), using available start value (start={0, 0, 0}) as default value.
+// [Modelica 3.2.3+maint.om/Mechanics/MultiBody/Parts.mo:1020:5-1021:67:writable] Warning: Parameter FreeBody9_1_FreeBody_1_Body_1.r_CM has no value, and is fixed during initialization (fixed=true), using available start value (start={0, 0, 0}) as default value.
+// [Modelica 3.2.3+maint.om/Mechanics/MultiBody/Parts.mo:1018:5-1019:59:writable] Warning: Parameter FreeBody9_1_FreeBody_8_Body_1.r has no value, and is fixed during initialization (fixed=true), using available start value (start={0, 0, 0}) as default value.
+// [Modelica 3.2.3+maint.om/Mechanics/MultiBody/Parts.mo:1020:5-1021:67:writable] Warning: Parameter FreeBody9_1_FreeBody_8_Body_1.r_CM has no value, and is fixed during initialization (fixed=true), using available start value (start={0, 0, 0}) as default value.
+// [Modelica 3.2.3+maint.om/Mechanics/MultiBody/Parts.mo:1018:5-1019:59:writable] Warning: Parameter FreeBody9_1_FreeBody_7_Body_1.r has no value, and is fixed during initialization (fixed=true), using available start value (start={0, 0, 0}) as default value.
+// [Modelica 3.2.3+maint.om/Mechanics/MultiBody/Parts.mo:1020:5-1021:67:writable] Warning: Parameter FreeBody9_1_FreeBody_7_Body_1.r_CM has no value, and is fixed during initialization (fixed=true), using available start value (start={0, 0, 0}) as default value.
+// [Modelica 3.2.3+maint.om/Mechanics/MultiBody/Parts.mo:1018:5-1019:59:writable] Warning: Parameter FreeBody9_1_FreeBody_6_Body_1.r has no value, and is fixed during initialization (fixed=true), using available start value (start={0, 0, 0}) as default value.
+// [Modelica 3.2.3+maint.om/Mechanics/MultiBody/Parts.mo:1020:5-1021:67:writable] Warning: Parameter FreeBody9_1_FreeBody_6_Body_1.r_CM has no value, and is fixed during initialization (fixed=true), using available start value (start={0, 0, 0}) as default value.
+// [Modelica 3.2.3+maint.om/Mechanics/MultiBody/Parts.mo:1018:5-1019:59:writable] Warning: Parameter FreeBody9_1_FreeBody_5_Body_1.r has no value, and is fixed during initialization (fixed=true), using available start value (start={0, 0, 0}) as default value.
+// [Modelica 3.2.3+maint.om/Mechanics/MultiBody/Parts.mo:1020:5-1021:67:writable] Warning: Parameter FreeBody9_1_FreeBody_5_Body_1.r_CM has no value, and is fixed during initialization (fixed=true), using available start value (start={0, 0, 0}) as default value.
+// [Modelica 3.2.3+maint.om/Mechanics/MultiBody/Parts.mo:1018:5-1019:59:writable] Warning: Parameter FreeBody9_1_FreeBody_4_Body_1.r has no value, and is fixed during initialization (fixed=true), using available start value (start={0, 0, 0}) as default value.
+// [Modelica 3.2.3+maint.om/Mechanics/MultiBody/Parts.mo:1020:5-1021:67:writable] Warning: Parameter FreeBody9_1_FreeBody_4_Body_1.r_CM has no value, and is fixed during initialization (fixed=true), using available start value (start={0, 0, 0}) as default value.
+// Warning: The model contains alias variables with redundant start and/or conflicting nominal values. It is recommended to resolve the conflicts, because otherwise the system could be hard to solve. To print the conflicting alias sets and the chosen candidates please use -d=aliasConflicts.
+// Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// "
 // endResult

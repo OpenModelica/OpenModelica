@@ -2,7 +2,6 @@
 // keywords: simulation ThermoSysPro.Examples.SimpleExamples
 // status: correct
 // teardown_command: rm -rf _ThermoSysPro.Examples.SimpleExamples.TestJunctions5.* ThermoSysPro.Examples.SimpleExamples.TestJunctions5_* ThermoSysPro.Examples.SimpleExamples.TestJunctions5 ThermoSysPro.Examples.SimpleExamples.TestJunctions5.exe ThermoSysPro.Examples.SimpleExamples.TestJunctions5.cpp ThermoSysPro.Examples.SimpleExamples.TestJunctions5.makefile ThermoSysPro.Examples.SimpleExamples.TestJunctions5.libs ThermoSysPro.Examples.SimpleExamples.TestJunctions5.log ThermoSysPro.Examples.SimpleExamples.TestJunctions5.c ThermoSysPro.Examples.SimpleExamples.TestJunctions5.o output.log
-// cflags: -d=-newInst
 //
 // Simulation Results 
 // Modelica Standard Library
@@ -88,7 +87,6 @@ getEnvironmentVar("REFERENCEFILES")+"/ThermoSysPro/ThermoSysPro.Examples.SimpleE
 // [ThermoSysPro 3.2.0/WaterSteam/Connectors.mo:87:3-127:18:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
 // [ThermoSysPro 3.2.0/WaterSteam/Connectors.mo:3:3-43:17:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
 // [ThermoSysPro 3.2.0/WaterSteam/Connectors.mo:87:3-127:18:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// Warning: The model contains alias variables with redundant start and/or conflicting nominal values. It is recommended to resolve the conflicts, because otherwise the system could be hard to solve. To print the conflicting alias sets and the chosen candidates please use -d=aliasConflicts.
 // "
 // {"Files not Equal!","volumeB1.Ce1.Q","splitter2_2.Cs1.Q"}
 // endResult

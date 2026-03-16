@@ -235,6 +235,16 @@ public
     end match;
   end isAssignment;
 
+  function isFor
+    input Statement stmt;
+    output Boolean res;
+  algorithm
+    res := match stmt
+      case FOR() then true;
+      else false;
+    end match;
+  end isFor;
+
   function makeIf
     input list<tuple<Expression, list<Statement>>> branches;
     input DAE.ElementSource src;
@@ -803,6 +813,72 @@ public
     end match;
   end foldExp;
 
+  function contains
+    input Statement stmt;
+    input PredFn fn;
+    output Boolean res;
+
+    partial function PredFn
+      input Statement stmt;
+      output Boolean res;
+    end PredFn;
+  algorithm
+    if fn(stmt) then
+      res := true;
+      return;
+    end if;
+
+    res := match stmt
+      case FOR() then containsList(stmt.body, fn);
+
+      case IF()
+        algorithm
+          for b in stmt.branches loop
+            if containsList(Util.tuple22(b), fn) then
+              res := true;
+              return;
+            end if;
+          end for;
+        then
+          false;
+
+      case WHEN()
+        algorithm
+          for b in stmt.branches loop
+            if containsList(Util.tuple22(b), fn) then
+              res := true;
+              return;
+            end if;
+          end for;
+        then
+          false;
+
+      case WHILE() then containsList(stmt.body, fn);
+
+      else false;
+    end match;
+  end contains;
+
+  function containsList
+    input list<Statement> eql;
+    input PredFn func;
+    output Boolean res;
+
+    partial function PredFn
+      input Statement eq;
+      output Boolean res;
+    end PredFn;
+  algorithm
+    for eq in eql loop
+      if contains(eq, func) then
+        res := true;
+        return;
+      end if;
+    end for;
+
+    res := false;
+  end containsList;
+
   function replaceIteratorList
     input output list<Statement> stmtl;
     input InstNode iterator;
@@ -843,7 +919,10 @@ public
     input String indent;
     input output IOStream.IOStream s;
   protected
-    String str;
+    list<tuple<Expression, list<Statement>>> branches;
+    Expression cond;
+    list<Statement> body;
+    Boolean first;
   algorithm
     s := IOStream.append(s, indent);
 
@@ -882,16 +961,24 @@ public
 
       case IF()
         algorithm
-          str := "if ";
+          first := true;
+          branches := stmt.branches;
 
-          for b in stmt.branches loop
-            s := IOStream.append(s, str);
-            s := IOStream.append(s, Expression.toString(Util.tuple21(b)));
-            s := IOStream.append(s, " then\n");
-            s := toStreamList(Util.tuple22(b), indent + "  ", s);
+          while not listEmpty(branches) loop
+            (cond, body) :: branches := branches;
+
+            if not first and listEmpty(branches) and Expression.isTrue(cond) then
+              s := IOStream.append(s, "else\n");
+            else
+              s := IOStream.append(s, if first then "if " else "elseif ");
+              s := IOStream.append(s, Expression.toString(cond));
+              s := IOStream.append(s, " then\n");
+            end if;
+
+            s := toStreamList(body, indent + "  ", s);
             s := IOStream.append(s, indent);
-            str := "elseif ";
-          end for;
+            first := false;
+          end while;
 
           s := IOStream.append(s, "end if");
         then
@@ -899,15 +986,16 @@ public
 
       case WHEN()
         algorithm
-          str := "when ";
+          first := true;
 
           for b in stmt.branches loop
-            s := IOStream.append(s, str);
-            s := IOStream.append(s, Expression.toString(Util.tuple21(b)));
+            (cond, body) := b;
+            s := IOStream.append(s, if first then "when " else "elsewhen ");
+            s := IOStream.append(s, Expression.toString(cond));
             s := IOStream.append(s, " then\n");
-            s := toStreamList(Util.tuple22(b), indent + "  ", s);
+            s := toStreamList(body, indent + "  ", s);
             s := IOStream.append(s, indent);
-            str := "elsewhen ";
+            first := false;
           end for;
 
           s := IOStream.append(s, "end when");
@@ -997,7 +1085,10 @@ public
     input String indent;
     input output IOStream.IOStream s;
   protected
-    String str;
+    list<tuple<Expression, list<Statement>>> branches;
+    Expression cond;
+    list<Statement> body;
+    Boolean first;
   algorithm
     s := IOStream.append(s, indent);
 
@@ -1036,16 +1127,24 @@ public
 
       case IF()
         algorithm
-          str := "if ";
+          first := true;
+          branches := stmt.branches;
 
-          for b in stmt.branches loop
-            s := IOStream.append(s, str);
-            s := IOStream.append(s, Expression.toFlatString(Util.tuple21(b), format));
-            s := IOStream.append(s, " then\n");
-            s := toFlatStreamList(Util.tuple22(b), format, indent + "  ", s);
+          while not listEmpty(branches) loop
+            (cond, body) :: branches := branches;
+
+            if not first and listEmpty(branches) and Expression.isTrue(cond) then
+              s := IOStream.append(s, "else\n");
+            else
+              s := IOStream.append(s, if first then "if " else "elseif ");
+              s := IOStream.append(s, Expression.toFlatString(cond, format));
+              s := IOStream.append(s, " then\n");
+            end if;
+
+            s := toFlatStreamList(body, format, indent + "  ", s);
             s := IOStream.append(s, indent);
-            str := "elseif ";
-          end for;
+            first := false;
+          end while;
 
           s := IOStream.append(s, "end if");
         then
@@ -1053,15 +1152,16 @@ public
 
       case WHEN()
         algorithm
-          str := "when ";
+          first := true;
 
           for b in stmt.branches loop
-            s := IOStream.append(s, str);
-            s := IOStream.append(s, Expression.toFlatString(Util.tuple21(b), format));
+            (cond, body) := b;
+            s := IOStream.append(s, if first then "when " else "elsewhen ");
+            s := IOStream.append(s, Expression.toFlatString(cond, format));
             s := IOStream.append(s, " then\n");
-            s := toFlatStreamList(Util.tuple22(b), format, indent + "  ", s);
+            s := toFlatStreamList(body, format, indent + "  ", s);
             s := IOStream.append(s, indent);
-            str := "elsewhen ";
+            first := false;
           end for;
 
           s := IOStream.append(s, "end when");
@@ -1113,7 +1213,7 @@ public
           s;
 
       case RETURN() then IOStream.append(s, "return");
-      case RETURN() then IOStream.append(s, "break");
+      case BREAK() then IOStream.append(s, "break");
       else IOStream.append(s, "#UNKNOWN STATEMENT#");
     end match;
 

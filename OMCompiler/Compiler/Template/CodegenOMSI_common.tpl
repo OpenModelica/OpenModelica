@@ -102,7 +102,7 @@ template generateOmsiFunctionCode(OMSIFunction omsiFunction, String FileNamePref
   let _ = generateOmsiFunctionCode_inner(omsiFunction, FileNamePrefix, modelFunctionnamePrefixStr,omsiName, &includes, &evaluationCode, &functionCall, "", &functionPrototypes, omsiName)
 
   // generate header file
-  let &functionPrototypes +='omsi_status <%FileNamePrefix%>_<%omsiName%>_allEqns(omsi_function_t* simulation, omsi_values* model_vars_and_params, void* data);<%\n%>'
+  let &functionPrototypes +='omsi_status <%FileNamePrefix%>_<%omsiName%>_allEqns(struct omsi_function_t* simulation, const omsi_values* model_vars_and_params, void* data);<%\n%>'
 
 
   let headerFileName =     '<%fileNamePrefix%>_<%omsiName%>'
@@ -131,7 +131,7 @@ template generateOmsiFunctionCode(OMSIFunction omsiFunction, String FileNamePref
 
 
     /* Equations evaluation */
-    omsi_status <%FileNamePrefix%>_<%omsiName%>_allEqns(omsi_function_t* <%omsiName%>, omsi_values* model_vars_and_params, void* data){
+    omsi_status <%FileNamePrefix%>_<%omsiName%>_allEqns(struct omsi_function_t* <%omsiName%>, const omsi_values* model_vars_and_params, void* data){
 
 
       /* Variables */

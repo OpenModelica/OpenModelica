@@ -1,0 +1,31 @@
+// For format details, see https://aka.ms/devcontainer.json. For config options, see the
+// README at: https://github.com/devcontainers/templates/tree/main/src/ubuntu
+{
+  "name": "build-deps:leap",
+
+  // Dockerfile
+  "build": {
+    "dockerfile": "Dockerfile",
+    "args": {
+        "USERNAME": "${localEnv:USER}${localEnv:USERNAME}"
+    }
+  },
+
+  // Additional VSCode extensions
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "AnHeuermann.metamodelica",
+        "ms-vscode.cpptools-extension-pack",
+        "njpwerner.autodocstring",
+        "lextudio.restructuredtext",
+        "trond-snekvik.simple-rst",
+        "ms-python.python",
+        "ms-python.vscode-pylance"
+      ]
+    }
+  },
+
+  // Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
+  "remoteUser": "${localEnv:USER}${localEnv:USERNAME}"
+}

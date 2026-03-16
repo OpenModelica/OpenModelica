@@ -82,6 +82,7 @@ OMCProxy::OMCProxy(threadData_t* threadData, QWidget *pParent)
   mpOMCLoggerTextBox->setReadOnly(true);
   mpOMCLoggerTextBox->setLineWrapMode(QPlainTextEdit::WidgetWidth);
   mpOMCLoggerTextBox->setUseTimer(false);
+  mpOMCLoggerTextBox->setFont(QFont(Helper::monospacedFontInfo.family()));
   mpExpressionTextBox = new CustomExpressionBox(this);
   connect(mpExpressionTextBox, SIGNAL(returnPressed()), SLOT(sendCustomExpression()));
   mpOMCLoggerSendButton = new QPushButton(Helper::send);
@@ -416,7 +417,8 @@ void OMCProxy::logCommand(QString command, bool saveToHistory)
   if (isLoggingEnabled()) {
     if (saveToHistory || MainWindow::instance()->isDebug()) {
       // insert the command to the logger window.
-      QFont font(Helper::monospacedFontInfo.family(), Helper::monospacedFontInfo.pointSize() - 2, QFont::Bold, false);
+      QFont font = mpOMCLoggerTextBox->font();
+      font.setBold(true);
       QTextCharFormat format;
       format.setFont(font);
       mpOMCLoggerTextBox->appendOutput(command + "\n", format);
@@ -468,10 +470,7 @@ void OMCProxy::logResponse(QString command, QString response, double elapsed, bo
     }
     if (customCommand || MainWindow::instance()->isDebug()) {
       // insert the response to the logger window.
-      QFont font(Helper::monospacedFontInfo.family(), Helper::monospacedFontInfo.pointSize() - 2, QFont::Normal, false);
-      QTextCharFormat format;
-      format.setFont(font);
-      mpOMCLoggerTextBox->appendOutput(response + "\n\n", format);
+      mpOMCLoggerTextBox->appendOutput(response + "\n\n");
     }
     // write the log to communication log file
     if (mpCommunicationLogFile) {
@@ -1548,10 +1547,8 @@ QString OMCProxy::getDocumentationAnnotation(LibraryTreeItem *pLibraryTreeItem)
   QString documentation = QString("<html>\n"
                                   "  <head>\n"
                                   "    <style>\n"
-                                  "      div.htmlDoc {font-family:\"" % Helper::systemFontInfo.family() % "\";\n"
-                                  "                   font-size:" % QString::number(Helper::systemFontInfo.pointSize()) % "px;}\n"
-                                  "      pre div.textDoc, div.textDoc p {font-family:\"" % Helper::monospacedFontInfo.family() % "\";\n"
-                                  "                   font-size:" % QString::number(Helper::monospacedFontInfo.pointSize()) % "px;}\n"
+                                  "      div.htmlDoc {font-family:\"" % Helper::systemFontInfo.family() % "\";}\n"
+                                  "      pre div.textDoc, div.textDoc p {font-family:\"" % Helper::monospacedFontInfo.family() % "\";}\n"
                                   "    </style>\n"
                                   "    " % infoHeader % "\n"
                                   "  </head>\n"
@@ -1639,17 +1636,29 @@ bool OMCProxy::loadModel(QString className, QString priorityVersion, bool notify
 }
 
 /*!
-  Loads a file in OMC
-  \param fileName - the file to load.
-  \return true on success
-  */
-bool OMCProxy::loadFile(QString fileName, QString encoding, bool uses, bool notify, bool requireExactVersion, bool allowWithin)
+ * \brief OMCProxy::loadFile
+ * Loads a file in OMC.
+ * \param fileName
+ * \param encoding
+ * \param uses
+ * \param notify
+ * \param requireExactVersion
+ * \param allowWithin
+ * \param printErrors
+ * \return
+ */
+bool OMCProxy::loadFile(QString fileName, QString encoding, bool uses, bool notify, bool requireExactVersion, bool allowWithin, bool printErrors)
 {
   mLoadModelError = false;
   bool result = false;
   fileName = fileName.replace('\\', '/');
   result = mpOMCInterface->loadFile(fileName, encoding, uses, notify, requireExactVersion, allowWithin);
-  printMessagesStringInternal();
+  /* If result is true then print messages anyway, because there might be warnings/notifications
+   * If result is false then print messages only if printErrors is true.
+   */
+  if (result || (!result && printErrors)) {
+    printMessagesStringInternal();
+  }
   return result;
 }
 
@@ -1687,16 +1696,19 @@ bool OMCProxy::loadClassContentString(const QString &data, const QString &classN
 }
 
 /*!
-  Parse the file. Doesn't load it into OMC.
-  \param fileName - the file to parse.
-  \return true on success
-  */
-QList<QString> OMCProxy::parseFile(QString fileName, QString encoding)
+ * \brief OMCProxy::parseFile
+ * Parse the file. Doesn't load it into OMC.
+ * \param fileName
+ * \param encoding
+ * \param printErrors
+ * \return
+ */
+QList<QString> OMCProxy::parseFile(QString fileName, QString encoding, bool printErrors)
 {
   QList<QString> result;
   fileName = fileName.replace('\\', '/');
   result = mpOMCInterface->parseFile(fileName, encoding);
-  if (result.isEmpty()) {
+  if (result.isEmpty() && printErrors) {
     printMessagesStringInternal();
   }
   return result;
@@ -3378,12 +3390,16 @@ QList<QString> OMCProxy::getAvailablePackageConversionsFrom(const QString &pkg, 
  * \param icon
  * \return
  */
-QJsonObject OMCProxy::getModelInstance(const QString &className, const QString &modifier, bool prettyPrint, bool icon)
+QJsonObject OMCProxy::getModelInstance(const QString &className, const QString &context, const QString &modifier, bool prettyPrint, bool icon)
 {
   QElapsedTimer timer;
-  timer.start();
+  if (MainWindow::instance()->isNewApiProfiling()) {
+    timer.start();
+  }
 
   QString modelInstanceJson = "";
+  QString cnt = context.isEmpty() ? QString("__NoContext") : context;
+
   if (icon) {
     QList<QString> filter;
     filter << "Icon" << "IconMap" << "Diagram" << "DiagramMap" << "experiment";
@@ -3398,10 +3414,10 @@ QJsonObject OMCProxy::getModelInstance(const QString &className, const QString &
       } else {
         getErrorString();
       }
-      modelInstanceJson = mpOMCInterface->getModelInstance(className, modifier, prettyPrint);
+      modelInstanceJson = mpOMCInterface->getModelInstance(className, cnt, modifier, prettyPrint);
     }
   } else {
-    modelInstanceJson = mpOMCInterface->getModelInstance(className, modifier, prettyPrint);
+    modelInstanceJson = mpOMCInterface->getModelInstance(className, cnt, modifier, prettyPrint);
   }
 
   if (MainWindow::instance()->isNewApiProfiling()) {
@@ -3412,7 +3428,9 @@ QJsonObject OMCProxy::getModelInstance(const QString &className, const QString &
 
   printMessagesStringInternal();
   if (!modelInstanceJson.isEmpty()) {
-    timer.restart();
+    if (MainWindow::instance()->isNewApiProfiling()) {
+      timer.restart();
+    }
     QJsonParseError jsonParserError;
     QJsonDocument doc = QJsonDocument::fromJson(modelInstanceJson.toUtf8(), &jsonParserError);
     if (doc.isNull()) {
@@ -3423,7 +3441,7 @@ QJsonObject OMCProxy::getModelInstance(const QString &className, const QString &
     }
     if (MainWindow::instance()->isNewApiProfiling()) {
       double elapsed = (double)timer.elapsed() / 1000.0;
-      MainWindow::instance()->writeNewApiProfiling(QString("Time for converting to JSON %1 secs").arg(QString::number(elapsed, 'f', 6)));
+      MainWindow::instance()->writeNewApiProfiling(QString("Time for converting string JSON to QJsonDocument %1 secs").arg(QString::number(elapsed, 'f', 6)));
     }
     return doc.object();
   }

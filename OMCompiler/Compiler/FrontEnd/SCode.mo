@@ -131,6 +131,16 @@ uniontype Mod "- Modifications"
     Element       element     "The new element declaration.";
   end REDECL;
 
+  record BREAK_COMPONENT
+    SourceInfo info;
+  end BREAK_COMPONENT;
+
+  record BREAK_CONNECT
+    Absyn.ComponentRef lhs;
+    Absyn.ComponentRef rhs;
+    SourceInfo info;
+  end BREAK_CONNECT;
+
   record NOMOD end NOMOD;
 
 end Mod;

@@ -468,7 +468,7 @@ protected
   InstNode parent, node;
 algorithm
   // Explode the cref into a list of parts in reverse order.
-  cref_parts := ComponentRef.toListReverse(cref, includeScope = false);
+  cref_parts := ComponentRef.toListReverse(cref, includeScope = true);
 
   // If the list is empty it's probably an iterator or _, which shouldn't be replaced.
   if listEmpty(cref_parts) then

@@ -55,7 +55,6 @@ protected
   import NFInstNode.InstNode;
   import InstContext = NFInstContext;
   import NFFunction.Function;
-  import NFFlatten.FunctionTreeImpl;
   import SimplifyExp = NFSimplifyExp;
   import Statement = NFStatement;
   import Subscript = NFSubscript;
@@ -67,6 +66,7 @@ protected
   import BVariable = NBVariable;
   import NBEquation.{EqData, Equation, EquationPointers};
   import Inline = NBInline;
+  import Slice = NBSlice;
   import Solve = NBSolve;
   import StrongComponent = NBStrongComponent;
   import NBVariable.{VarData, VariablePointers};
@@ -121,7 +121,24 @@ public
       case StrongComponent.SINGLE_COMPONENT() algorithm
         // solve the equation for the variable
         varName := BVariable.getVarName(comp.var);
-        (solvedEq, _, status, _) := Solve.solveBody(Pointer.access(comp.eqn), varName, FunctionTreeImpl.EMPTY());
+        (solvedEq, status, _) := Solve.solveBody(Pointer.access(comp.eqn), varName);
+        if status == NBSolve.Status.EXPLICIT then
+          // apply all previous replacements on the RHS
+          SOME(replace_exp) := Equation.getRHS(solvedEq);
+          replace_exp := Expression.map(replace_exp, function applySimpleExp(replacements = replacements));
+          replace_exp := SimplifyExp.simplifyDump(replace_exp, true, getInstanceName());
+          // add the new replacement rule
+          addInputArgTpl((varName, replace_exp) , replacements, true);
+        else
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because strong component cannot be solved explicitly: " + StrongComponent.toString(comp)});
+          fail();
+        end if;
+      then ();
+
+      case StrongComponent.SLICED_COMPONENT() algorithm
+        // solve the equation for the variable
+        varName := BVariable.getVarName(Slice.getT(comp.var));
+        (solvedEq, status, _) := Solve.solveBody(Pointer.access(Slice.getT(comp.eqn)), varName);
         if status == NBSolve.Status.EXPLICIT then
           // apply all previous replacements on the RHS
           SOME(replace_exp) := Equation.getRHS(solvedEq);
@@ -204,8 +221,7 @@ public
           // try to strip the subscripts and see if that cref occurs
           stripped := ComponentRef.stripSubscriptsAll(exp.cref);
           if UnorderedMap.contains(stripped, replacements) then
-            subs  := ComponentRef.subscriptsAllFlat(exp.cref);
-            subs  := list(s for s guard(not Subscript.isWhole(s)) in subs);
+            subs  := ComponentRef.subscriptsAllWithWholeFlat(exp.cref);
             res   := UnorderedMap.getOrFail(stripped, replacements);
             res   := Expression.applySubscripts(subs, res, true);
           else
@@ -341,8 +357,13 @@ public
         if not List.all(input_crefs, ComponentRef.sizeKnown) then
           body_exp := Typing.typeExp(body_exp, NFInstContext.RHS, sourceInfo(), true);
         end if;
+
+        // combine binaries and simplify
         body_exp := SimplifyExp.combineBinaries(body_exp);
         body_exp := SimplifyExp.simplifyDump(body_exp, true, getInstanceName());
+
+        // replace body with possible nested functions
+        body_exp := Expression.map(body_exp, function applyFuncExp(replacements = replacements, variables = variables));
 
         if Flags.isSet(Flags.DUMPBACKENDINLINE) then
           print("[" + getInstanceName() + "] Inlining: " + Expression.toString(exp) + "\n");

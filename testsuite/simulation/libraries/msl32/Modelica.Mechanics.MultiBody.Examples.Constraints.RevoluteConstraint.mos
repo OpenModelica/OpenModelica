@@ -1,11 +1,11 @@
 // name:     Modelica.Mechanics.MultiBody.Examples.Constraints.RevoluteConstraint
 // keywords: simulation MSL Examples
 // status: correct
-// cflags: -d=-newInst
 //
 // Simulation Results
 // Modelica Standard Library
-//
+
+// !!! this model is wrong in the currently tested MSL 3.2.1 (ticket #2584)
 
 runScript("../common/ModelTestingDefaults.mos"); getErrorString();
 

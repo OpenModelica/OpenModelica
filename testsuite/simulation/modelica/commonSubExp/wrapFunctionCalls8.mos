@@ -79,15 +79,15 @@ system("rm -f ./ReferenceFiles/CSE.wrapFunctionCalls8_res.mat");
 //
 // ########### Updated globalKnownVars (simulation) (9)
 // ========================================
-// 1: x:VARIABLE(fixed = true )  = sin(cos(p1))  type: Real
+// 1: x:VARIABLE(fixed = true final = true )  = sin(cos(p1))  type: Real
 // 2: p1:PARAM()  = 5.0  type: Real
-// 3: a:PARAM()  = sin(x)  type: Real
-// 4: d in (d, b, _):PARAM()  = CSE.wrapFunctionCalls8.f1(x, x)  type: Real
-// 5: b in (d, b, _):PARAM()  = CSE.wrapFunctionCalls8.f1(x, x)  type: Real
-// 6: $cse4:PARAM(protected = true )  = cos(p1)  type: Real unreplaceable
-// 7: $cse3:PARAM(protected = true )  = sin($cse4)  type: Real unreplaceable
-// 8: $cse2 in ($cse2, _, _):PARAM(protected = true )  = CSE.wrapFunctionCalls8.f1(x, $cse3)  type: Real unreplaceable
-// 9: $cse1:PARAM(protected = true )  = sin($cse2)  type: Real unreplaceable
+// 3: a:PARAM(final = true )  = sin(x)  type: Real
+// 4: d in (d, b, _):PARAM(final = true )  = CSE.wrapFunctionCalls8.f1(x, x)  type: Real
+// 5: b in (d, b, _):PARAM(final = true )  = CSE.wrapFunctionCalls8.f1(x, x)  type: Real
+// 6: $cse4:PARAM(protected = true final = true )  = cos(p1)  type: Real unreplaceable
+// 7: $cse3:PARAM(protected = true final = true )  = sin($cse4)  type: Real unreplaceable
+// 8: $cse2 in ($cse2, _, _):PARAM(protected = true final = true )  = CSE.wrapFunctionCalls8.f1(x, $cse3)  type: Real unreplaceable
+// 9: $cse1:PARAM(protected = true final = true )  = sin($cse2)  type: Real unreplaceable
 //
 //
 // ########### CSE Replacements (6/46)
@@ -100,7 +100,7 @@ system("rm -f ./ReferenceFiles/CSE.wrapFunctionCalls8_res.mat");
 // 6: a - sin(x) - {}
 // record SimulationResult
 //     resultFile = "CSE.wrapFunctionCalls8_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'CSE.wrapFunctionCalls8', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'CSE.wrapFunctionCalls8', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "

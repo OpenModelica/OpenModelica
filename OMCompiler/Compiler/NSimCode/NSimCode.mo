@@ -48,7 +48,7 @@ protected
   import NFTyping.ExpOrigin;
   import Expression = NFExpression;
   import NFFunction.Function;
-  import NFFlatten.{FunctionTree, FunctionTreeImpl};
+  import NFFlatten.FunctionTree;
   import NFInstNode.InstNode;
   import Type = NFType;
 
@@ -281,7 +281,7 @@ public
           // auxillaries
           VarData varData;
           EqData eqData;
-          FunctionTree funcTree;
+          UnorderedMap<Absyn.Path, Function> funcMap;
           VariablePointers residual_vars;
           SimVars vars;
           // old SimCode strcutures
@@ -318,11 +318,11 @@ public
           algorithm
             // somehow this cannot be set at definition (metamodelica bug?)
             simCodeIndices := EMPTY_SIM_CODE_INDICES();
-            funcTree := BackendDAE.getFunctionTree(bdae);
+            funcMap := BackendDAE.getFunctionMap(bdae);
 
             // get and replace all literals in functions
-            collect_literals    := function Expression.fakeMap(func = function Expression.replaceLiteral(map = literals_map, idx_ptr = literals_idx));
-            funcTree            := FunctionTreeImpl.mapExp(funcTree, collect_literals);
+            collect_literals := function Expression.fakeMap(func = function Expression.replaceLiteral(map = literals_map, idx_ptr = literals_idx));
+            UnorderedMap.apply(funcMap, function Function.mapExp(mapFn = collect_literals, mapFnFields = collect_literals, mapParameters = true, mapBody = true));
 
             // create sim vars before everything else
             residual_vars                       := BackendDAE.getLoopResiduals(bdae);
@@ -352,8 +352,6 @@ public
               init_0 := {};
             end if;
 
-            // create clocked partitions
-            (clockedPartitions, event_clocks, simCodeIndices) := SimStrongComponent.Block.createClockedBlocks(bdae.clocked, simCodeIndices, simcode_map, equation_map, bdae.clockedInfo);
 
             // start allSim with no return equations
             (no_ret, simCodeIndices) := SimStrongComponent.Block.createNoReturnBlocks(eqData.removed, simCodeIndices, NBPartition.Kind.ODE, simcode_map, equation_map);
@@ -365,11 +363,7 @@ public
             if isSome(bdae.dae) then
               // DAEMode
               ode := {};
-              algebraic := if listEmpty(no_ret) then {} else {no_ret};
-              no_ret := listAppend(event_clocks, no_ret);
-              if not listEmpty(no_ret) then
-                allSim    := listReverse(listAppend(no_ret, listReverse(allSim)));
-              end if;
+              algebraic := {};
               (daeModeData, simCodeIndices) := DaeModeData.create(Util.getOption(bdae.dae), simCodeIndices, simcode_map, equation_map);
             else
               // Normal Simulation
@@ -378,17 +372,23 @@ public
               (algebraic, allSim, simCodeIndices)               := SimStrongComponent.Block.createBlocks(bdae.algebraic, allSim, simCodeIndices, simcode_map, equation_map);
               (ode, allSim, event_blocks, simCodeIndices)       := SimStrongComponent.Block.createDiscreteBlocks(bdae.ode_event, ode, allSim, event_blocks, simCodeIndices, simcode_map, equation_map);
               (algebraic, allSim, event_blocks, simCodeIndices) := SimStrongComponent.Block.createDiscreteBlocks(bdae.alg_event, algebraic, allSim, event_blocks, simCodeIndices, simcode_map, equation_map);
-              if not listEmpty(no_ret) then
-                algebraic := listReverse(no_ret :: listReverse(algebraic));
-              end if;
-              // append event_clocks to no_return after adding them to algebraic
-              no_ret := listAppend(event_clocks, no_ret);
-              if not listEmpty(no_ret) then
-                // append them to the end, compiler won't let me do it unless i double reverse the lists
-                allSim := listReverse(listAppend(no_ret, listReverse(allSim)));
-              end if;
             end if;
 
+            // create clocked partitions
+            (clockedPartitions, event_clocks, simCodeIndices) := SimStrongComponent.Block.createClockedBlocks(bdae.clocked, simCodeIndices, simcode_map, equation_map, bdae.clockedInfo);
+
+            // add no return equations (without clocks) to algebraics
+            if not listEmpty(no_ret) then
+              algebraic := listReverse(no_ret :: listReverse(algebraic));
+            end if;
+
+            // append event_clocks to no_return after adding them to algebraic
+            no_ret := listAppend(event_clocks, no_ret);
+
+            if not listEmpty(no_ret) then
+              // append them to the end, compiler won't let me do it unless i double reverse the lists
+              allSim    := listReverse(listAppend(no_ret, listReverse(allSim)));
+            end if;
             // add all entwined equations to all sim
             allSim := listAppend(List.flatten(list(SimStrongComponent.Block.collectEntwinedEquations(blck) for blck in allSim)), allSim);
 
@@ -403,7 +403,7 @@ public
             directory := CevalScriptBackend.getFileDir(AbsynUtil.pathToCref(name), program);
             // The OB function tree is needed both here and when dumping the flat model,
             // but converting it is destructive so return it to avoid doing it again.
-            oldFunctionTree := ConvertDAE.convertFunctionTree(funcTree);
+            oldFunctionTree := ConvertDAE.convertFunctionTree(FunctionTree.fromList(UnorderedMap.toList(funcMap)));
             (libs, libPaths, _, includeDirs, recordDecls, functions, _) := OldSimCodeUtil.createFunctions(program, oldFunctionTree);
             makefileParams := OldSimCodeFunctionUtil.createMakefileParams(includeDirs, libs, libPaths, false, false);
 
@@ -423,7 +423,7 @@ public
             (jacF, simCodeIndices) := SimJacobian.empty("F", simCodeIndices);
             (jacH, simCodeIndices) := SimJacobian.empty("H", simCodeIndices);
             //jacobians := jacA :: jacB :: jacC :: jacD :: jacF :: jacH :: jacAdjoint :: jacobians;
-            jacobians := listReverse(jacH :: jacF :: jacD :: jacC :: jacB :: jacAdjoint :: jacA :: jacobians);
+            jacobians := listReverse(jacAdjoint :: jacH :: jacF :: jacD :: jacC :: jacB :: jacA :: jacobians);
 
             for jac in jacobians loop
               if Util.isSome(jac.jac_map) then
@@ -673,8 +673,8 @@ public
         labels                          = {},
         resourcePaths                   = {},
         sortedClasses                   = {},
-        nClocks                         = UnorderedMap.size(clockedInfo.baseClocks),
-        nSubClocks                      = UnorderedMap.size(clockedInfo.subClocks),
+        nClocks                         = ClockedInfo.baseClockCount(clockedInfo),
+        nSubClocks                      = ClockedInfo.subClockCount(clockedInfo),
         nSpatialDistributions           = 0,
         hasLargeLinearEquationSystems   = true,
         linearLoops                     = linearLoops,

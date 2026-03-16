@@ -38,7 +38,6 @@ public
   // NF imports
   import ComponentRef = NFComponentRef;
   import NFInstNode.InstNode;
-  import FunctionTree = NFFlatten.FunctionTree;
   import Subscript = NFSubscript;
   import Type = NFType;
 
@@ -85,7 +84,7 @@ public
       Integer numColors                                   "number of colors";
       list<SimGenericCall> generic_loop_calls             "Generic for-loop and array calls";
       Option<UnorderedMap<ComponentRef, SimVar>> jac_map  "hash table for cref -> simVar";
-      Boolean isAdjoint                                 "indicates if this is an adjoint jacobian";
+      Boolean isAdjoint                                   "indicates if this is an adjoint jacobian";
     end SIM_JAC;
 
     function toString
@@ -233,7 +232,6 @@ public
           ComponentRef cref;
           list<Subscript> subscripts;
           SparsityPattern sparsity, sparsityT;
-          Jacobian.SparsityPattern Bpattern;
           SparsityColoring coloring, rowColoring;
           SimJacobian jac;
           UnorderedMap<Identifier, Integer> sim_map;
@@ -279,7 +277,7 @@ public
           try
             idx_map := UnorderedMap.new<Integer>(ComponentRef.hash, ComponentRef.isEqual, listLength(seedVars) + listLength(resVars));
             if Jacobian.isDynamic(jacobian.jacType) then
-              if Flags.getConfigString(Flags.GENERATE_DYNAMIC_JACOBIAN) == "symbolicadjoint" then
+              if jacobian.isAdjoint then
                 loopVars := resVars;
               else
                 loopVars := seedVars;
@@ -422,12 +420,11 @@ public
       (sparsity, sparsityT, coloring, rowColoring) := match jacobian
         local
           Jacobian.SparsityPattern Bpattern;
-          Jacobian.SparsityColoring Bcoloring;
 
-        case BackendDAE.JACOBIAN(sparsityPattern = Bpattern, sparsityColoring = Bcoloring) algorithm
+        case BackendDAE.JACOBIAN(sparsityPattern = Bpattern) algorithm
           sparsity  := createSparsityPattern(Bpattern.col_wise_pattern, idx_map);
           sparsityT := createSparsityPattern(Bpattern.row_wise_pattern, idx_map);
-          (coloring, rowColoring) := createSparsityColoring(Bcoloring, idx_map);
+          (coloring, rowColoring) := createSparsityColoring(jacobian.sparsityColoring, idx_map);
         then (sparsity, sparsityT, coloring, rowColoring);
 
         else algorithm
@@ -450,14 +447,8 @@ public
         dep_indices := List.map(dependencies, function UnorderedMap.getOrFail(map = idx_map));
         simPattern := (UnorderedMap.getOrFail(cref, idx_map), List.sort(dep_indices, intGt)) :: simPattern;
       end for;
-      simPattern := List.sort(simPattern, sparsityTplSortGt);
+      simPattern := List.sort(simPattern, Util.compareTupleIntGt);
     end createSparsityPattern;
-
-    function sparsityTplSortGt
-      input tuple<Integer, list<Integer>> col1 "or row1";
-      input tuple<Integer, list<Integer>> col2 "or row2";
-      output Boolean b = Util.tuple21(col1) > Util.tuple21(col2);
-    end sparsityTplSortGt;
 
     function createSparsityColoring
       input Jacobian.SparsityColoring coloring;

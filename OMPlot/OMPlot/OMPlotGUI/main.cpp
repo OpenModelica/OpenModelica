@@ -251,10 +251,10 @@ int main(int argc, char *argv[])
   arguments.append(logy ? "true" : "false");
   arguments.append(xlabel);
   arguments.append(ylabel);
-  arguments.append(QString::number(xrange1));
-  arguments.append(QString::number(xrange2));
-  arguments.append(QString::number(yrange1));
-  arguments.append(QString::number(yrange2));
+  arguments.append(QString::number(xrange1, 'g', 17));
+  arguments.append(QString::number(xrange2, 'g', 17));
+  arguments.append(QString::number(yrange1, 'g', 17));
+  arguments.append(QString::number(yrange2, 'g', 17));
   arguments.append(QString::number(curveWidth));
   arguments.append(QString::number(curveStyle));
   arguments.append(legendPosition);
@@ -262,8 +262,8 @@ int main(int argc, char *argv[])
   arguments.append(autoScale ? "true" : "false");
   arguments.append(yaxisID);
   arguments.append(ylabelRight);
-  arguments.append(QString::number(yrange1right));
-  arguments.append(QString::number(yrange2right));
+  arguments.append(QString::number(yrange1right, 'g', 17));
+  arguments.append(QString::number(yrange2right, 'g', 17));
   arguments.append(vars);
   // create the plot application object that is used to check that only one instance of application is running
 #if (QT_VERSION >= QT_VERSION_CHECK(5, 6, 0) && QT_VERSION < QT_VERSION_CHECK(6, 0, 0))

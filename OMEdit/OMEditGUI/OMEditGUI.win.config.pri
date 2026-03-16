@@ -36,7 +36,7 @@ QMAKE_LFLAGS += -Wl,--stack,33554432,--enable-auto-import
 LIBS += -L$$(OMBUILDDIR)/../OMEdit/OMEditLIB/Debugger/Parser -lGDBMIParser \
   -L$$(OMBUILDDIR)/lib/omc -L$$(OMBUILDDIR)/../OMParser/install/lib -Wl,-Bstatic -lOMParser -lantlr4-runtime -Wl,-Bdynamic -lomantlr3 -lOMPlot -lomqwt -lomopcua -lzmq \
   -lOpenModelicaCompiler -lOpenModelicaRuntimeC -lfmilib -lomcgc -lpthread -lshlwapi \
-  -lws2_32 \
+  -lws2_32 -lgdi32 \
   -L$$(OMBUILDDIR)/bin -lOMSimulator
 
 # libbdf links differently on newer MSYS2, e.g. when using UCRT64

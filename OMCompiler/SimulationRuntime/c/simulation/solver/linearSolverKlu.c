@@ -86,8 +86,6 @@ int allocateKluData(int n_row, int n_col, int nz, void** voiddata)
  */
 int freeKluData(void **voiddata)
 {
-  TRACE_PUSH
-
   DATA_KLU* data = (DATA_KLU*) *voiddata;
 
   free(data->Ap);
@@ -101,7 +99,6 @@ int freeKluData(void **voiddata)
   if(data->numeric)
     klu_free_numeric(&data->numeric, &data->common);
 
-  TRACE_POP
   return 0;
 }
 

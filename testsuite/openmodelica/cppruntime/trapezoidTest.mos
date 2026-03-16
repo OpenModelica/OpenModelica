@@ -2,7 +2,6 @@
 // keywords: events common subexpressions
 // status: correct
 // teardown_command: rm -f *TrapezoidTest*
-// cflags: -d=-newInst
 
 setCommandLineOptions("+simCodeTarget=Cpp");
 

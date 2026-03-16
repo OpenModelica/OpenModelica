@@ -9,12 +9,11 @@
 
 loadFile("../BouncingBall.mo");
 setCommandLineOptions("+simCodeTarget=Cpp"); getErrorString();
-simulate(BouncingBall,method="dassl",stopTime=1.0, tolerance=1e-10, numberOfIntervals=100,outputFormat="mat",simflags="-logFormat=xml -override=startTime=0,stopTime=1,tolerance=1e-10,solver=dassl,outputFormat=mat,variableFilter=.* -r=BouncingBall_res.mat -dasslJacobian=coloredNumerical -emit_protected -w -lv=LOG_STATS");
+simulate(BouncingBall,method="dassl",stopTime=1.0, tolerance=1e-10, numberOfIntervals=100,outputFormat="mat",simflags="-logFormat=xml -startTime=0 -stopTime=1 -tolerance=1e-10 -s=dassl -outputFormat=mat -variableFilter=.* -r=BouncingBall_res.mat -dasslJacobian=coloredNumerical -emit_protected -w -lv=LOG_STATS");
 res := OpenModelica.Scripting.compareSimulationResults("BouncingBall_res.mat",
   "../ReferenceFiles/BouncingBall.mat",
   "BouncingBall_diff.csv",0.01,0.0001,
   {"h","v"});
-
 
 // Result:
 // true
@@ -22,17 +21,22 @@ res := OpenModelica.Scripting.compareSimulationResults("BouncingBall_res.mat",
 // ""
 // record SimulationResult
 //     resultFile = "BouncingBall_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 100, tolerance = 1e-10, method = 'dassl', fileNamePrefix = 'BouncingBall', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-logFormat=xml -override=startTime=0,stopTime=1,tolerance=1e-10,solver=dassl,outputFormat=mat,variableFilter=.* -r=BouncingBall_res.mat -dasslJacobian=coloredNumerical -emit_protected -w -lv=LOG_STATS'",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 100, tolerance = 1e-10, method = 'dassl', fileNamePrefix = 'BouncingBall', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-logFormat=xml -startTime=0 -stopTime=1 -tolerance=1e-10 -s=dassl -outputFormat=mat -variableFilter=.* -r=BouncingBall_res.mat -dasslJacobian=coloredNumerical -emit_protected -w -lv=LOG_STATS'",
 //     messages = "<message stream=\"other\" type=\"warning\" text=\"Warning: unrecognized command line options -dasslJacobian=coloredNumerical \" />
+// <message stream=\"solver\" type=\"info\" text=\"SimManager: Start initialization\" />
 // <message stream=\"solver\" type=\"info\" text=\"SimManager: Start simulation at t = 0.000000\" />
 // <message stream=\"solver\" type=\"info\" text=\"SimManager: Simulation stop time: 1.000000\" />
 // <message stream=\"solver\" type=\"info\" text=\"Simulation info from solver:\" >
-// <message stream=\"solver\" type=\"info\" text=\"Cvode: number steps = 23\" />
-// <message stream=\"solver\" type=\"info\" text=\"Cvode: function evaluations 'f' = 24\" />
-// <message stream=\"solver\" type=\"info\" text=\"Cvode: linear solver setups 'nsetups' = 22\" />
-// <message stream=\"solver\" type=\"info\" text=\"Cvode: nonlinear iterations 'nni' = 23\" />
-// <message stream=\"solver\" type=\"info\" text=\"Cvode: convergence failures 'ncfn' = 0\" />
-// <message stream=\"solver\" type=\"info\" text=\"Cvode: number of evaluateODE calls 'eODE' = 88\" />
+// <message stream=\"solver\" type=\"info\" text=\"DASSL: steps taken nst = 223\" />
+// <message stream=\"solver\" type=\"info\" text=\"DASSL: residual evaluations nre = 293\" />
+// <message stream=\"solver\" type=\"info\" text=\"DASSL: jacobian evaluations nje = 131\" />
+// <message stream=\"solver\" type=\"info\" text=\"DASSL: root evaluations nrt = 253\" />
+// <message stream=\"solver\" type=\"info\" text=\"DASSL: error test failures netf = 20\" />
+// <message stream=\"solver\" type=\"info\" text=\"DASSL: nonlinear convergence failures ncfn = 0\" />
+// <message stream=\"solver\" type=\"info\" text=\"DASSL: nonlinear iterations nni = 293\" />
+// <message stream=\"solver\" type=\"info\" text=\"DASSL: last evaluation time t = 1.007607\" />
+// <message stream=\"solver\" type=\"info\" text=\"DASSL: last step size h = 0.010000\" />
+// <message stream=\"solver\" type=\"info\" text=\"DASSL: last used order k = 2\" />
 // </message>
 // "
 // end SimulationResult;

@@ -579,7 +579,7 @@ public
         (new_residuals, dae_type) := slicedDAEModeComponent(comp.strict.iteration_vars, comp.strict.residual_eqns, variables, uniqueIndex, slice_set);
       then (new_residuals, dae_type);
 
-      else ({}, if StrongComponent.isDiscrete(comp) then DAEType.REMOVED else DAEType.INNER);
+      else ({}, if isDiscrete(comp) then DAEType.REMOVED else DAEType.INNER);
     end match;
 
     if dae_type == DAEType.RESIDUAL then
@@ -674,7 +674,7 @@ public
           dae_type := DAEType.REMOVED;
         end if;
       else
-        new_eqn := Equation.createResidual(eqn, false, true);
+        new_eqn := Equation.createResidual(eqn, NONE(), false, true);
         if Equation.isResidual(new_eqn) then
           // add to residuals
           new_comp := SINGLE_COMPONENT(Equation.getResidualVar(new_eqn), new_eqn, NBSolve.Status.UNPROCESSED);
@@ -899,7 +899,13 @@ public
     ComponentRef cref;
     list<tuple<ComponentRef, list<ComponentRef>>> scalarized_dependencies;
   algorithm
-    Equation.FOR_EQUATION(iter = iter, body = {body}) := eqn;
+    try
+      Equation.FOR_EQUATION(iter = iter, body = {body}) := eqn;
+    else
+      Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because the for-loop had more than one body equation:\n" + Equation.toString(eqn)});
+      fail();
+    end try;
+
     dependencies := Equation.collectCrefs(eqn, function Slice.getDependentCrefCausalized(set = set), Expression.fakeMap);
     if ComponentRef.isEmpty(var_cref) then
       SOME(Expression.CREF(cref = cref)) := Equation.getLHS(body);
@@ -937,8 +943,8 @@ public
     output list<Pointer<Variable>> residuals;
   algorithm
     residuals := match comp
-      case ALGEBRAIC_LOOP()  then Tearing.getResidualVars(comp.strict);
-                        else {};
+      case ALGEBRAIC_LOOP() then Tearing.getResidualVars(comp.strict);
+      else {};
     end match;
   end getLoopResiduals;
 
@@ -957,14 +963,14 @@ public
     output list<Pointer<Variable>> vars;
   algorithm
     vars := match comp
-      case SINGLE_COMPONENT()   then {comp.var};
-      case MULTI_COMPONENT()    then list(Slice.getT(v) for v in comp.vars);
-      case SLICED_COMPONENT()   then {Slice.getT(comp.var)};
-      case RESIZABLE_COMPONENT()then {Slice.getT(comp.var)};
-      case GENERIC_COMPONENT()  then {Slice.getT(comp.var)};
-      case ENTWINED_COMPONENT() then List.flatten(list(getVariables(slice) for slice in comp.entwined_slices));
-      case ALGEBRAIC_LOOP()     then Tearing.getResidualVars(comp.strict); // + inner?
-      case ALIAS()              then getVariables(comp.original);
+      case SINGLE_COMPONENT()     then {comp.var};
+      case MULTI_COMPONENT()      then list(Slice.getT(v) for v in comp.vars);
+      case SLICED_COMPONENT()     then {Slice.getT(comp.var)};
+      case RESIZABLE_COMPONENT()  then {Slice.getT(comp.var)};
+      case GENERIC_COMPONENT()    then {Slice.getT(comp.var)};
+      case ENTWINED_COMPONENT()   then List.flatten(list(getVariables(slice) for slice in comp.entwined_slices));
+      case ALGEBRAIC_LOOP()       then Tearing.getVariables(comp.strict);
+      case ALIAS()                then getVariables(comp.original);
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of wrong component: " + toString(comp)});
       then fail();
@@ -976,42 +982,29 @@ public
     output ComponentRef var_cref;
   algorithm
     var_cref := match comp
-      case SLICED_COMPONENT()   then comp.var_cref;
-      case RESIZABLE_COMPONENT()then comp.var_cref;
-      case GENERIC_COMPONENT()  then comp.var_cref;
-      case ALIAS()              then getVarCref(comp.original);
+      case SLICED_COMPONENT()     then comp.var_cref;
+      case RESIZABLE_COMPONENT()  then comp.var_cref;
+      case GENERIC_COMPONENT()    then comp.var_cref;
+      case ALIAS()                then getVarCref(comp.original);
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of wrong component: " + toString(comp)});
       then fail();
     end match;
   end getVarCref;
 
-  function getEquationPointers
-    input StrongComponent comp;
-    output EquationPointer eqns;
-  algorithm
-    eqns := match comp
-      case SINGLE_COMPONENT()   then comp.eqn;
-      case ALIAS()              then getEquationPointers(comp.original);
-      else algorithm
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of wrong component: " + toString(comp)});
-      then fail();
-    end match;
-  end getEquationPointers;
-  
   function getEquations
     input StrongComponent comp;
     output list<Pointer<Equation>> eqns;
   algorithm
     eqns := match comp
-      case SINGLE_COMPONENT()   then {comp.eqn};
-      case MULTI_COMPONENT()    then {Slice.getT(comp.eqn)};
-      case SLICED_COMPONENT()   then {Slice.getT(comp.eqn)};
-      case RESIZABLE_COMPONENT()then {Slice.getT(comp.eqn)};
-      case GENERIC_COMPONENT()  then {Slice.getT(comp.eqn)};
-      case ENTWINED_COMPONENT() then List.flatten(list(getEquations(slice) for slice in comp.entwined_slices));
-      case ALGEBRAIC_LOOP()     then Tearing.getResidualEqns(comp.strict); // + inner?
-      case ALIAS()              then getEquations(comp.original);
+      case SINGLE_COMPONENT()     then {comp.eqn};
+      case MULTI_COMPONENT()      then {Slice.getT(comp.eqn)};
+      case SLICED_COMPONENT()     then {Slice.getT(comp.eqn)};
+      case RESIZABLE_COMPONENT()  then {Slice.getT(comp.eqn)};
+      case GENERIC_COMPONENT()    then {Slice.getT(comp.eqn)};
+      case ENTWINED_COMPONENT()   then List.flatten(list(getEquations(slice) for slice in comp.entwined_slices));
+      case ALGEBRAIC_LOOP()       then Tearing.getResidualEqns(comp.strict); // + inner?
+      case ALIAS()                then getEquations(comp.original);
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of wrong component: " + toString(comp)});
       then fail();
@@ -1031,20 +1024,20 @@ public
       then fail();
     end match;
   end getVarPointer;
-  
+
   function getSolveStatus
     input StrongComponent comp;
     output Solve.Status status;
   algorithm
     status := match comp
-      case SINGLE_COMPONENT()   then comp.status;
-      case MULTI_COMPONENT()    then comp.status;
-      case SLICED_COMPONENT()   then comp.status;
-      case RESIZABLE_COMPONENT()then comp.status;
-      case GENERIC_COMPONENT()  then NBSolve.Status.EXPLICIT;
-      case ENTWINED_COMPONENT() then NBSolve.Status.EXPLICIT;
-      case ALGEBRAIC_LOOP()     then comp.status;
-      case ALIAS()              then getSolveStatus(comp.original);
+      case SINGLE_COMPONENT()     then comp.status;
+      case MULTI_COMPONENT()      then comp.status;
+      case SLICED_COMPONENT()     then comp.status;
+      case RESIZABLE_COMPONENT()  then comp.status;
+      case GENERIC_COMPONENT()    then NBSolve.Status.EXPLICIT;
+      case ENTWINED_COMPONENT()   then NBSolve.Status.EXPLICIT;
+      case ALGEBRAIC_LOOP()       then comp.status;
+      case ALIAS()                then getSolveStatus(comp.original);
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of wrong component: " + toString(comp)});
       then fail();
@@ -1057,14 +1050,14 @@ public
     output Boolean b;
   algorithm
     b := match comp
-      case SINGLE_COMPONENT()   then Equation.isDiscrete(comp.eqn);
-      case MULTI_COMPONENT()    then Equation.isDiscrete(Slice.getT(comp.eqn));
-      case SLICED_COMPONENT()   then Equation.isDiscrete(Slice.getT(comp.eqn));
-      case RESIZABLE_COMPONENT()then Equation.isDiscrete(Slice.getT(comp.eqn));
-      case ENTWINED_COMPONENT() then List.all(comp.entwined_slices, isDiscrete);
-      case GENERIC_COMPONENT()  then Equation.isDiscrete(Slice.getT(comp.eqn));
-      case ALGEBRAIC_LOOP()     then comp.mixed;
-      case ALIAS()              then isDiscrete(comp.original);
+      case SINGLE_COMPONENT()     then Equation.isDiscrete(comp.eqn);
+      case MULTI_COMPONENT()      then Equation.isDiscrete(Slice.getT(comp.eqn));
+      case SLICED_COMPONENT()     then Equation.isDiscrete(Slice.getT(comp.eqn));
+      case RESIZABLE_COMPONENT()  then Equation.isDiscrete(Slice.getT(comp.eqn));
+      case ENTWINED_COMPONENT()   then List.all(comp.entwined_slices, isDiscrete);
+      case GENERIC_COMPONENT()    then Equation.isDiscrete(Slice.getT(comp.eqn));
+      case ALGEBRAIC_LOOP()       then comp.mixed;
+      case ALIAS()                then isDiscrete(comp.original);
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of wrong component: " + toString(comp)});
       then fail();
@@ -1143,32 +1136,28 @@ public
         eqn := EquationPointers.getEqnAt(eqns, mapping.eqn_StA[i]);
         (_, size) := mapping.var_AtS[var_arr_idx];
 
-        comp := match Pointer.access(eqn)
+        if Equation.isForEquation(eqn) then
           // - case 1: sliced equation because of for-equation
-          case _ guard(Equation.isForEquation(eqn)) algorithm
-            try
-              ({var_slice}, {eqn_slice}) := getLoopVarsAndEqns(comp_indices, eqn_to_var, mapping, vars, eqns);
-            else
-              Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because single indices did not turn out to be single components."});
-              fail();
-            end try;
-          then SLICED_COMPONENT(VariablePointers.varSlice(vars, var_scal_idx, mapping), var_slice, eqn_slice, NBSolve.Status.UNPROCESSED);
-
+          try
+            ({var_slice}, {eqn_slice}) := getLoopVarsAndEqns(comp_indices, eqn_to_var, mapping, vars, eqns);
+          else
+            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because single indices did not turn out to be single components."});
+            fail();
+          end try;
+          comp := SLICED_COMPONENT(VariablePointers.varSlice(vars, var_scal_idx, mapping.var_StA[var_scal_idx], mapping, true), var_slice, eqn_slice, NBSolve.Status.UNPROCESSED);
+        elseif Equation.isCompound(eqn) then
           // - case 2: multi components for when/if and algorithm although its size 1
-          case Equation.WHEN_EQUATION()   then MULTI_COMPONENT({Slice.SLICE(var, {})}, Slice.SLICE(eqn, {}), NBSolve.Status.UNPROCESSED);
-          case Equation.IF_EQUATION()     then MULTI_COMPONENT({Slice.SLICE(var, {})}, Slice.SLICE(eqn, {}), NBSolve.Status.UNPROCESSED);
-          case Equation.ALGORITHM()       then MULTI_COMPONENT({Slice.SLICE(var, {})}, Slice.SLICE(eqn, {}), NBSolve.Status.UNPROCESSED);
-
+          comp := MULTI_COMPONENT({Slice.SLICE(var, {})}, Slice.SLICE(eqn, {}), NBSolve.Status.UNPROCESSED);
+        else
           // - case 3: single or sliced strong component
-          else algorithm
-            try
-              ({var_slice}, {eqn_slice}) := getLoopVarsAndEqns(comp_indices, eqn_to_var, mapping, vars, eqns);
-            else
-              Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because single indices did not turn out to be single components."});
-              fail();
-            end try;
-          then createSliceOrSingle(VariablePointers.varSlice(vars, var_scal_idx, mapping), var_slice, eqn_slice);
-        end match;
+          try
+            ({var_slice}, {eqn_slice}) := getLoopVarsAndEqns(comp_indices, eqn_to_var, mapping, vars, eqns);
+          else
+            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because single indices did not turn out to be single components."});
+            fail();
+          end try;
+          comp := createSliceOrSingle(VariablePointers.varSlice(vars, var_scal_idx, mapping.var_StA[var_scal_idx], mapping, true), var_slice, eqn_slice);
+        end if;
       then comp;
 
       // Size > 1 strong component
@@ -1219,7 +1208,7 @@ public
     input Slice<EquationPointer> eqn_slice;
     output StrongComponent comp;
   algorithm
-    if Slice.isFull(var_slice) and Slice.isFull(eqn_slice) then
+    if Slice.isFull(var_slice) and Slice.isFull(eqn_slice) and not ComponentRef.hasSubscripts(cref) then
       comp := SINGLE_COMPONENT(
         var       = Slice.getT(var_slice),
         eqn       = Slice.getT(eqn_slice),
@@ -1306,29 +1295,39 @@ protected
     input UnorderedMap<ComponentRef, list<ComponentRef>> map;
     input JacobianType jacType;
   protected
-    function addStateDependencies
+    function addSubDependencies
       input ComponentRef dep;
       input UnorderedMap<ComponentRef, list<ComponentRef>> map;
+      input BVariable.checkVar checkFn;
       input output UnorderedSet<ComponentRef> set;
     algorithm
       // if the dependency is a state add itself, otherwise add the dependencies already saved
       // (those are known to be states). ToDo: avoid this check by adding state self dependency beforehand?
-      if BVariable.checkCref(dep, BVariable.isState, sourceInfo()) then
+      if BVariable.checkCref(dep, checkFn, sourceInfo()) then
         UnorderedSet.add(dep, set);
       else
         for tmp in UnorderedMap.getSafe(dep, map, sourceInfo()) loop
           UnorderedSet.add(tmp, set);
         end for;
       end if;
-    end addStateDependencies;
+    end addSubDependencies;
   algorithm
     UnorderedSet.apply(dependencies, function ComponentRef.mapExp(func = Expression.replaceResizableParameter));
     UnorderedSet.apply(dependencies, function ComponentRef.simplifySubscripts(trim = false));
     // replace non derivative dependencies with their previous dependencies
     // (be careful with algebraic loops. this here assumes that cyclic dependencies have already been resolved)
-    if jacType == NBJacobian.JacobianType.ODE then
-      dependencies := UnorderedSet.fold(dependencies, function addStateDependencies(map = map), UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual));
-    end if;
+    dependencies := match jacType
+      case NBJacobian.JacobianType.ODE
+        then UnorderedSet.fold(dependencies, function addSubDependencies(map = map, checkFn = BVariable.isState), UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual));
+      // TODO: for optimization these checks / checkFn are not valid yet, add free time
+      case NBJacobian.JacobianType.OPT_LFG
+        then UnorderedSet.fold(dependencies, function addSubDependencies(map = map, checkFn = BVariable.isStateOrOptimizable), UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual));
+      case NBJacobian.JacobianType.OPT_MRF
+        then UnorderedSet.fold(dependencies, function addSubDependencies(map = map, checkFn = BVariable.isStateOrOptimizable), UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual));
+      case NBJacobian.JacobianType.OPT_R0
+        then UnorderedSet.fold(dependencies, function addSubDependencies(map = map, checkFn = BVariable.isStateOrOptimizable), UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual));
+      else dependencies;
+    end match;
   end prepareDependencies;
 
   annotation(__OpenModelica_Interface="backend");

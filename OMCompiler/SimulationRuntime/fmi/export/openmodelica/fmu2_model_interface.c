@@ -47,7 +47,7 @@
 #include "../simulation/solver/mixedSystem.h"
 #endif
 #include "../simulation/solver/delay.h"
-#include "../simulation/solver/fmi_events.h"
+#include "../simulation/solver/discrete_changes.h"
 #include "../simulation/simulation_info_json.h"
 #include "../simulation/simulation_input_xml.h"
 #include "../simulation/solver/synchronous.h"
@@ -649,8 +649,8 @@ fmi2Component fmi2Instantiate(fmi2String instanceName, fmi2Type fmuType, fmi2Str
   setDefaultStartValues(comp);
   initializeDataStruc(comp->fmuData, comp->threadData);
 
-  setAllParamsToStart(comp->fmuData);
-  setAllVarsToStart(comp->fmuData);
+  setAllParamsToStart(comp->fmuData->simulationInfo, comp->fmuData->modelData);
+  setAllVarsToStart(comp->fmuData->localData[0], comp->fmuData->simulationInfo, comp->fmuData->modelData);
   comp->fmuData->callback->read_input_fmu(comp->fmuData->modelData);
 
 
@@ -1014,8 +1014,8 @@ fmi2Status fmi2Reset(fmi2Component c)
 
   /* reset model data with default start data */
   setDefaultStartValues(comp);
-  setAllParamsToStart(comp->fmuData);
-  setAllVarsToStart(comp->fmuData);
+  setAllParamsToStart(comp->fmuData->simulationInfo, comp->fmuData->modelData);
+  setAllVarsToStart(comp->fmuData->localData[0], comp->fmuData->simulationInfo ,comp->fmuData->modelData);
   comp->fmuData->callback->read_input_fmu(comp->fmuData->modelData);
 #if !defined(OMC_MINIMAL_METADATA)
   modelInfoInit(&(comp->fmuData->modelData->modelDataXml));

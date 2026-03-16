@@ -47,7 +47,7 @@
 #include "util/omc_error.h"
 #include "util/parallel_helper.h"
 
-#include "dassl.h"
+#include "../arrayIndex.h"
 #include "epsilon.h"
 #include "external_input.h"
 #include "jacobianSymbolical.h"
@@ -58,6 +58,8 @@
 #include "simulation/results/simulation_result.h"
 #include "simulation/simulation_runtime.h"
 #include "solver_main.h"
+
+#include "dassl.h"
 
 #define UNUSED(x) (void)(x)   /* Surpress compiler warnings for unused function input */
 
@@ -181,7 +183,6 @@ static int function_ZeroCrossingsDASSL(int *neqm, double *t, double *y,
 int dassl_initial(DATA* data, threadData_t *threadData,
                   SOLVER_INFO* solverInfo, DASSL_DATA *dasslData)
 {
-  TRACE_PUSH
   /* work arrays for DASSL */
   unsigned int i;
   long N;
@@ -232,8 +233,9 @@ int dassl_initial(DATA* data, threadData_t *threadData,
   infoStreamPrint(OMC_LOG_SOLVER, 1, "The relative tolerance is %g. Following absolute tolerances are used for the states: ", data->simulationInfo->tolerance);
   for(i=0; i<dasslData->N; ++i)
   {
+    const modelica_real nominal = getNominalFromScalarIdx(data->simulationInfo, data->modelData, VAR_KIND_STATE, i);
     dasslData->rtol[i] = data->simulationInfo->tolerance;
-    dasslData->atol[i] = data->simulationInfo->tolerance * fmax(fabs(data->modelData->realVarsData[i].attribute.nominal), 1e-32);
+    dasslData->atol[i] = data->simulationInfo->tolerance * fmax(fabs(nominal), 1e-32);
     infoStreamPrint(OMC_LOG_SOLVER_V, 0, "%d. %s -> %g", i+1, data->modelData->realVarsData[i].info.name, dasslData->atol[i]);
   }
   messageClose(OMC_LOG_SOLVER);
@@ -460,7 +462,6 @@ int dassl_initial(DATA* data, threadData_t *threadData,
   /* ### end configuration of dassl ### */
 
   messageClose(OMC_LOG_SOLVER);
-  TRACE_POP
   return 0;
 }
 
@@ -470,7 +471,6 @@ int dassl_initial(DATA* data, threadData_t *threadData,
  */
 int dassl_deinitial(DATA* data, DASSL_DATA *dasslData)
 {
-  TRACE_PUSH
   unsigned int i;
 
   /* free work arrays for DASSL */
@@ -509,7 +509,6 @@ int dassl_deinitial(DATA* data, DASSL_DATA *dasslData)
 
   free(dasslData);
 
-  TRACE_POP
   return 0;
 }
 
@@ -569,7 +568,6 @@ int printVector(int logLevel, const char* name,  double* vec, int n, double time
  **********************************************************************************************/
 int dassl_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
 {
-  TRACE_PUSH
   double tout = 0;
   int i = 0;
   unsigned int ui = 0;
@@ -610,7 +608,6 @@ int dassl_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
   /* If an event is triggered and processed restart dassl. */
   if(!dasslData->dasslAvoidEventRestart && (solverInfo->didEventStep || 0 == dasslData->idid))
   {
-    debugStreamPrint(OMC_LOG_EVENTS_V, 0, "Event-management forced reset of DDASKR");
     /* obtain reset */
     dasslData->info[0] = 0;
     dasslData->idid = 0;
@@ -702,7 +699,6 @@ int dassl_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
         fflush(stdout);
         retVal = continue_DASSL(&dasslData->idid, &data->simulationInfo->tolerance);
         warningStreamPrint(OMC_LOG_STDOUT, 0, "can't continue. time = %f", sData->timeValue);
-        TRACE_POP
         break;
       }
       else if(dasslData->idid == 5)
@@ -743,7 +739,6 @@ int dassl_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
 
   if (return_from_small_step) {
     /* need to do this outside the try-catch macro */
-    TRACE_POP
     return 0;
   }
 
@@ -760,7 +755,7 @@ int dassl_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
   solverInfo->solverStatsTmp.nCallsODE                = dasslData->iwork[11];
   solverInfo->solverStatsTmp.nCallsJacobian           = dasslData->iwork[12];
   solverInfo->solverStatsTmp.nErrorTestFailures       = dasslData->iwork[13];
-  solverInfo->solverStatsTmp.nConvergenveTestFailures = dasslData->iwork[14];
+  solverInfo->solverStatsTmp.nConvergenceTestFailures = dasslData->iwork[14];
 
   if(OMC_ACTIVE_STREAM(OMC_LOG_DASSL))
   {
@@ -775,21 +770,19 @@ int dassl_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
     infoStreamPrint(OMC_LOG_DASSL, 0, "number of steps taken so far: %d", solverInfo->solverStatsTmp.nStepsTaken);
     infoStreamPrint(OMC_LOG_DASSL, 0, "number of calls of functionODE() : %d", solverInfo->solverStatsTmp.nCallsODE);
     infoStreamPrint(OMC_LOG_DASSL, 0, "number of calculation of jacobian : %d", solverInfo->solverStatsTmp.nCallsJacobian);
-    infoStreamPrint(OMC_LOG_DASSL, 0, "total number of convergence test failures: %d", solverInfo->solverStatsTmp.nErrorTestFailures);
-    infoStreamPrint(OMC_LOG_DASSL, 0, "total number of error test failures: %d", solverInfo->solverStatsTmp.nConvergenveTestFailures);
+    infoStreamPrint(OMC_LOG_DASSL, 0, "total number of convergence test failures: %d", solverInfo->solverStatsTmp.nConvergenceTestFailures);
+    infoStreamPrint(OMC_LOG_DASSL, 0, "total number of error test failures: %d", solverInfo->solverStatsTmp.nErrorTestFailures);
     messageClose(OMC_LOG_DASSL);
   }
 
   infoStreamPrint(OMC_LOG_DASSL, 0, "Finished DASSL step.");
   if (measure_time_flag) rt_accumulate(SIM_TIMER_SOLVER);
 
-  TRACE_POP
   return retVal;
 }
 
 static int continue_DASSL(int* idid, double* atol)
 {
-  TRACE_PUSH
   int retValue = -1;
 
   switch(*idid)
@@ -846,7 +839,6 @@ static int continue_DASSL(int* idid, double* atol)
     break;
   }
 
-  TRACE_POP
   return retValue;
 }
 
@@ -870,7 +862,6 @@ static int continue_DASSL(int* idid, double* atol)
 static int functionODE_residual(double *t, double *y, double *yd, double* cj,
                                 double *delta, int *ires, double *rpar, int *ipar)
 {
-  TRACE_PUSH
   UNUSED(cj); UNUSED(ipar); /* Silence compíler warnings */
 
   DATA* data = (DATA*)((double**)rpar)[0];
@@ -938,14 +929,12 @@ static int functionODE_residual(double *t, double *y, double *yd, double* cj,
   if (measure_time_flag) rt_accumulate(SIM_TIMER_RESIDUALS);
   if (measure_time_flag) rt_tick(SIM_TIMER_SOLVER);
 
-  TRACE_POP
   return 0;
 }
 
 static int function_ZeroCrossingsDASSL(int *neqm, double *t, double *y, double *yp,
                                        int *ng, double *gout, double *rpar, int* ipar)
 {
-  TRACE_PUSH
   DATA* data = (DATA*)(void*)((double**)rpar)[0];
   DASSL_DATA* dasslData = (DASSL_DATA*)(void*)((double**)rpar)[1];
   threadData_t *threadData = (threadData_t*)(void*)((double**)rpar)[2];
@@ -985,7 +974,6 @@ static int function_ZeroCrossingsDASSL(int *neqm, double *t, double *y, double *
   if (measure_time_flag) rt_accumulate(SIM_TIMER_EVENT);
   if (measure_time_flag) rt_tick(SIM_TIMER_SOLVER);
 
-  TRACE_POP
   return 0;
 }
 
@@ -1019,7 +1007,6 @@ int jacA_symColored(double *t, double *y, double *yprime, double *delta,
                     double *matrixA, double *cj, double *h, double *wt,
                     double *rpar, int *ipar)
 {
-  TRACE_PUSH
   DATA* data = (DATA*)(void*)((double**)rpar)[0];
   threadData_t *threadData = (threadData_t*)(void*)((double**)rpar)[2];
   DASSL_DATA* dasslData = (DASSL_DATA*)(void*)((double**)rpar)[1];
@@ -1044,7 +1031,6 @@ int jacA_symColored(double *t, double *y, double *yprime, double *delta,
   genericColoredSymbolicJacobianEvaluation(rows, columns, spp, matrixA, t_jac,
                                            data, threadData, &setJacElementDasslSparse);
 
-  TRACE_POP
   return 0;
 }
 
@@ -1120,7 +1106,6 @@ int jacA_sym(double *t, double *y, double *yprime, double *delta,
              double *matrixA, double *cj, double *h, double *wt, double *rpar,
              int *ipar)
 {
-  TRACE_PUSH
 
   DATA* data = (DATA*)(void*)((double**)rpar)[0];
   DASSL_DATA* dasslData = (DASSL_DATA*)(void*)((double**)rpar)[1];
@@ -1175,7 +1160,6 @@ int jacA_sym(double *t, double *y, double *yprime, double *delta,
   } // for loop
 } // omp parallel
 
-  TRACE_POP
   return 0;
 }
 
@@ -1267,7 +1251,6 @@ int jacA_num(double *t, double *y, double *yprime, double *delta,
              double *matrixA, double *cj, double *h, double *wt, double *rpar,
              int *ipar)
 {
-  TRACE_PUSH
   DATA* data = (DATA*)(void*)((double**)rpar)[0];
   DASSL_DATA* dasslData = (DASSL_DATA*)(void*)((double**)rpar)[1];
   threadData_t* threadData = (threadData_t*)(void*)((double**)rpar)[2];
@@ -1304,7 +1287,6 @@ int jacA_num(double *t, double *y, double *yprime, double *delta,
     y[col] = ysave;
   }
 
-  TRACE_POP
   return 0;
 }
 
@@ -1332,7 +1314,6 @@ int jacA_numColored(double *t, double *y, double *yprime, double *delta,
                     double *matrixA, double *cj, double *h, double *wt,
                     double *rpar, int *ipar)
 {
-  TRACE_PUSH
 
   DATA* data = (DATA*)(void*)((double**)rpar)[0];
   DASSL_DATA* dasslData = (DASSL_DATA*)(void*)((double**)rpar)[1];
@@ -1391,7 +1372,6 @@ int jacA_numColored(double *t, double *y, double *yprime, double *delta,
     }
   }
 
-  TRACE_POP
   return 0;
 }
 
@@ -1417,7 +1397,6 @@ static int callJacobian(double *t, double *y, double *yprime, double *deltaD,
                         double *pd, double *cj, double *h, double *wt,
                         double *rpar, int* ipar)
 {
-  TRACE_PUSH
   DATA* data = (DATA*)(void*)((double**)rpar)[0];
   DASSL_DATA* dasslData = (DASSL_DATA*)(void*)((double**)rpar)[1];
   threadData_t *threadData = (threadData_t*)(void*)((double**)rpar)[2];
@@ -1546,7 +1525,6 @@ static int callJacobian(double *t, double *y, double *yprime, double *deltaD,
   rt_accumulate(SIM_TIMER_JACOBIAN);
   if (measure_time_flag) rt_tick(SIM_TIMER_SOLVER);
 
-  TRACE_POP
   return 0;
 }
 

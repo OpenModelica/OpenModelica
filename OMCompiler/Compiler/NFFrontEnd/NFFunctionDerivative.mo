@@ -230,10 +230,6 @@ protected
       local
         SCode.Annotation ann;
 
-      case SCode.Element.CLASS(classDef = SCode.ClassDef.PARTS(
-          externalDecl = SOME(SCode.ExternalDecl.EXTERNALDECL(annotation_ = SOME(ann)))))
-        then SCodeUtil.lookupAnnotations(ann, "derivative");
-
       case SCode.Element.CLASS(cmt = SCode.Comment.COMMENT(annotation_ = SOME(ann)))
         then SCodeUtil.lookupAnnotations(ann, "derivative");
 

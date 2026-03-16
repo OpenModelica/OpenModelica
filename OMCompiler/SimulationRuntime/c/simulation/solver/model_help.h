@@ -84,15 +84,6 @@ void saveZeroCrossings(DATA *data, threadData_t *threadData);
 
 void copyStartValuestoInitValues(DATA *data);
 
-/* functions that are only used in USE_DEBUG_OUTPUT mode */
-#ifdef USE_DEBUG_OUTPUT
-  void printAllVarsDebug(DATA *data, int ringSegment, int stream);
-  void printRelationsDebug(DATA *data, int stream);
-#else
-  #define printAllVarsDebug(data, ringSegment, stream) {}
-  #define printRelationsDebug(data, stream) {}
-#endif
-
 void printAllVars(DATA *data, int ringSegment, int stream);
 void printRelations(DATA *data, int stream);
 void printZeroCrossings(DATA *data, int stream);
@@ -106,8 +97,8 @@ void printRingBufferSimulationData(RINGBUFFER* rb, DATA* data);
 
 void restoreExtrapolationDataOld(DATA *data);
 
-void setAllVarsToStart(DATA* data);
-void setAllParamsToStart(DATA *data);
+void setAllVarsToStart(SIMULATION_DATA *simulationData, const SIMULATION_INFO *simulationInfo, const MODEL_DATA *modelData);
+void setAllParamsToStart(SIMULATION_INFO *simulationInfo, const MODEL_DATA *modelData);
 
 void restoreOldValues(DATA *data);
 

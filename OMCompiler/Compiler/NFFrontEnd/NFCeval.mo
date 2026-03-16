@@ -105,13 +105,34 @@ uniontype EvalTargetData
   end DIMENSION_DATA;
 end EvalTargetData;
 
+function tryEvalExpResizable
+  input output Expression exp;
+  input EvalTarget target = noTarget;
+algorithm
+  ErrorExt.setCheckpoint(getInstanceName());
+  try
+    exp := evalExp(exp, target);
+    ErrorExt.delCheckpoint(getInstanceName());
+  else
+    exp := tryEvalExpPartial(exp, target);
+    if Expression.contains(exp, Expression.isResizableCref) then
+      /* evaluation is allowed to fail for resizables */
+      ErrorExt.rollBack(getInstanceName());
+    else
+      ErrorExt.delCheckpoint(getInstanceName());
+      fail();
+    end if;
+  end try;
+end tryEvalExpResizable;
+
 function tryEvalExp
   input output Expression exp;
+  input EvalTarget target = noTarget;
 algorithm
   ErrorExt.setCheckpoint(getInstanceName());
 
   try
-    exp := evalExp(exp);
+    exp := evalExp(exp, target);
   else
   end try;
 
@@ -242,6 +263,20 @@ algorithm
   end match;
 end evalExp;
 
+function tryEvalExpPartial
+  input output Expression exp;
+  input EvalTarget target = noTarget;
+algorithm
+  ErrorExt.setCheckpoint(getInstanceName());
+
+  try
+    exp := evalExpPartial(exp, target);
+  else
+  end try;
+
+  ErrorExt.rollBack(getInstanceName());
+end tryEvalExpPartial;
+
 function evalExpPartialDefault
   "Simplied version of evalExpPartial to work around MetaModelica issues with
    default arguments and multiple return values when used as a function pointer."
@@ -336,6 +371,7 @@ protected
   Option<Expression> start_exp;
   Type cref_ty, exp_ty;
   Integer dim_diff;
+  list<Integer> errors;
 algorithm
   exp_context := InstContext.nodeContext(node, target.context);
   Typing.typeComponentBinding(node, exp_context, typeChildren = false);
@@ -370,13 +406,18 @@ algorithm
               // Mark the binding as currently being evaluated, to detect loops due
               // to mutually dependent constants/parameters.
               Mutable.update(binding.evalState, NFBinding.EvalState.EVALUATING);
+              ErrorExt.setCheckpoint(getInstanceName());
 
               // Evaluate the binding expression.
               try
                 exp := evalExp(binding.bindingExp, target);
+                ErrorExt.delCheckpoint(getInstanceName());
               else
                 // Reset the flag if the evaluation failed.
                 Mutable.update(binding.evalState, NFBinding.EvalState.NOT_EVALUATED);
+                errors := ErrorExt.popCheckPoint(getInstanceName());
+                Error.addSourceMessage(Error.ERROR_FROM_HERE, {}, binding.info);
+                ErrorExt.pushMessages(errors);
                 fail();
               end try;
 
@@ -746,7 +787,6 @@ algorithm
       else
         // Ignore components that don't have a binding, it might not be an error
         // and if it is we can give better error messages in other places.
-        arg := Expression.EMPTY(ty);
       end try;
     end if;
 
@@ -1078,6 +1118,7 @@ function evalMultaryAddSub
   input list<Expression> inv_arguments;
   input Type operator_ty;
   output Expression exp = Expression.EMPTY(operator_ty);
+  output Boolean isNeutral;
 algorithm
   // add up all arguments
   for arg in arguments loop
@@ -1089,8 +1130,8 @@ algorithm
     exp := evalBinarySub(exp, arg);
   end for;
 
-  // fix expression if its still empty at the end
-  exp := if Expression.isEmpty(exp) then Expression.makeZero(operator_ty) else exp;
+  // return a boolean that is set to true if its the neutral element
+  isNeutral := Expression.isEmpty(exp) or Expression.isZero(exp);
 end evalMultaryAddSub;
 
 function evalBinaryMul
@@ -1149,14 +1190,8 @@ function evalBinaryDiv
   output Expression exp;
 algorithm
   exp := match (exp1, exp2)
-    // while technically not allowed to devide integers, it occurs when solving in the new backend
-    case (_, Expression.INTEGER(1)) then exp1;
-    case (Expression.REAL(), Expression.INTEGER()) then Expression.REAL(exp1.value / exp2.value);
-    case (Expression.INTEGER(), Expression.REAL()) then Expression.REAL(exp1.value / exp2.value);
-    case (Expression.INTEGER(), Expression.INTEGER()) then
-      if intMod(exp1.value, exp2.value) == 0 then Expression.INTEGER(intDiv(exp1.value, exp2.value)) else Expression.REAL(exp1.value / exp2.value);
-
-    case (_, Expression.REAL(0.0))
+    // Division by zero
+    case (_, _) guard Expression.isZero(exp2)
       algorithm
         if EvalTarget.hasInfo(target) then
           Error.addSourceMessage(Error.DIVISION_BY_ZERO,
@@ -1167,6 +1202,14 @@ algorithm
         end if;
       then
         exp;
+
+    // while technically not allowed to divide integers, it occurs when solving in the new backend
+    case (_, Expression.INTEGER(1)) then exp1;
+    case (Expression.REAL(), Expression.INTEGER()) then Expression.REAL(exp1.value / exp2.value);
+    case (Expression.INTEGER(), Expression.REAL()) then Expression.REAL(exp1.value / exp2.value);
+
+    case (Expression.INTEGER(), Expression.INTEGER()) then
+      if intMod(exp1.value, exp2.value) == 0 then Expression.INTEGER(intDiv(exp1.value, exp2.value)) else Expression.REAL(exp1.value / exp2.value);
 
     case (Expression.REAL(), Expression.REAL())
       then Expression.REAL(exp1.value / exp2.value);
@@ -1207,6 +1250,7 @@ function evalMultaryMulDiv
   input list<Expression> inv_arguments;
   input Type operator_ty;
   output Expression exp = Expression.EMPTY(operator_ty);
+  output Boolean isNeutral;
 algorithm
   // multiply all arguments
   for arg in arguments loop
@@ -1218,8 +1262,8 @@ algorithm
     exp := evalBinaryDiv(exp, arg, noTarget);
   end for;
 
-  // fix expression if its still empty at the end
-  exp := if Expression.isEmpty(exp) then Expression.makeOne(operator_ty) else exp;
+  // return a boolean that is set to true if its the neutral element
+  isNeutral := Expression.isEmpty(exp) or Expression.isOne(exp);
 end evalMultaryMulDiv;
 
 function evalBinaryPow

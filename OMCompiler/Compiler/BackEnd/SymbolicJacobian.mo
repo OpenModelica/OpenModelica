@@ -2234,7 +2234,7 @@ algorithm
         diffedVars = BackendVariable.varList(inDifferentiatedVars);
         comref_differentiatedVars = List.map(diffedVars, BackendVariable.varCref);
 
-        reducedDAE = BackendDAEUtil.reduceEqSystemsInDAE(inBackendDAE, diffedVars);
+        reducedDAE = BackendDAEUtil.reduceEqSystemsInDAE(inBackendDAE, diffedVars, true, not Flags.getConfigBool(Flags.CAUSALIZE_DAE_MODE));
 
         indepVars = createInDepVars(inDiffVars, false);
         comref_vars = List.map(inDiffVars, BackendVariable.varCref);
@@ -4104,6 +4104,8 @@ algorithm
       Boolean b;
       Absyn.Path path;
       list<DAE.Exp> expLst;
+      list<DAE.Subscript> subs;
+
     case (DAE.IFEXP(cond,t,f),(vars,b))
       equation
         // check if vars not in condition
@@ -4138,8 +4140,9 @@ algorithm
         // check if vars not in condition
         (_,tpl) = Expression.traverseExpTopDown(exp, BackendDAEUtil.getEqnsysRhsExp2, tpl);
       then (exp,false,tpl);
-    case (DAE.ASUB(exp=e1,sub=expLst),_)
+    case (DAE.ASUB(exp=e1,sub=subs),_)
       equation
+        expLst = list(Expression.getSubscriptExp(sub) for sub in subs);
         // check if vars not in condition
         (_,tpl as (_,b)) = Expression.traverseExpTopDown(e1, varsNotInRelations, tpl);
         if b then
@@ -4251,7 +4254,7 @@ end checkForNonLinearStrongComponents;
 
 function checkForNonLinearStrongComponents_work
   input output BackendDAE.EqSystem syst;
-  input output BackendDAE.Shared shared;
+  input output BackendDAE.Shared shared "unused";
 protected
   BackendDAE.StrongComponents comps;
 algorithm
@@ -4259,17 +4262,27 @@ algorithm
     BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=comps)) := syst;
     for comp in comps loop
       () := match (comp)
-        local
-          BackendDAE.JacobianType jacTp;
-        case BackendDAE.EQUATIONSYSTEM(jacType=BackendDAE.JAC_NONLINEAR())
-          then fail();
-        case BackendDAE.EQUATIONSYSTEM(jacType=BackendDAE.JAC_NO_ANALYTIC())
-          then fail();
-        case BackendDAE.EQUATIONSYSTEM(jacType=BackendDAE.JAC_GENERIC())
-          then fail();
-        case BackendDAE.TORNSYSTEM(linear=false)
-          then fail();
-         else ();
+        case BackendDAE.EQUATIONSYSTEM(jacType=BackendDAE.JAC_NONLINEAR()) algorithm
+          if Flags.isSet(Flags.JAC_DUMP) then
+            print("[symjacdump] Following strong component represents a nonlinear symbolic jacobian:\n" + BackendDump.printComponent(comp, SOME(syst)) + "\n");
+          end if;
+        then fail();
+        case BackendDAE.EQUATIONSYSTEM(jacType=BackendDAE.JAC_NO_ANALYTIC())algorithm
+          if Flags.isSet(Flags.JAC_DUMP) then
+            print("[symjacdump] Following strong component represents a no symbolic jacobian:\n" + BackendDump.printComponent(comp, SOME(syst)) + "\n");
+          end if;
+        then fail();
+        case BackendDAE.EQUATIONSYSTEM(jacType=BackendDAE.JAC_GENERIC())algorithm
+          if Flags.isSet(Flags.JAC_DUMP) then
+            print("[symjacdump] Following strong component represents a generic jacobian:\n" + BackendDump.printComponent(comp, SOME(syst)) + "\n");
+          end if;
+        then fail();
+        case BackendDAE.TORNSYSTEM(linear=false)algorithm
+          if Flags.isSet(Flags.JAC_DUMP) then
+            print("[symjacdump] Following (torn) strong component represents a nonlinear symbolic jacobian:\n" + BackendDump.printComponent(comp, SOME(syst)) + "\n");
+          end if;
+        then fail();
+        else ();
       end match;
     end for;
   else

@@ -67,8 +67,6 @@ typedef struct IA_DATA
 
 void ia_init(simulation_result *self, DATA *data, threadData_t *threadData)
 {
-  TRACE_PUSH
-
   IA_DATA *iaData = new IA_DATA;
   self->storage = iaData;
 
@@ -195,12 +193,10 @@ void ia_init(simulation_result *self, DATA *data, threadData_t *threadData)
   communicateMsg(2, msgSIZE, msgDATA);
   delete[] msgDATA;
 
-  TRACE_POP
 }
 
 void ia_emit(simulation_result *self, DATA *data, threadData_t *threadData)
 {
-  TRACE_PUSH
   rt_tick(SIM_TIMER_OUTPUT);
 
   int i;
@@ -291,17 +287,14 @@ void ia_emit(simulation_result *self, DATA *data, threadData_t *threadData)
   delete[] msgDATA;
 
   rt_accumulate(SIM_TIMER_OUTPUT);
-  TRACE_POP
 }
 
 void ia_free(simulation_result *self, DATA *data, threadData_t *threadData)
 {
-  TRACE_PUSH
   rt_tick(SIM_TIMER_OUTPUT);
 
   delete (IA_DATA*)self->storage;
   communicateMsg(6, 0, 0);
 
   rt_accumulate(SIM_TIMER_OUTPUT);
-  TRACE_POP
 }

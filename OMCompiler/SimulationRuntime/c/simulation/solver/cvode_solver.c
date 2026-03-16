@@ -39,6 +39,7 @@
 #include "../../util/context.h"
 #include "../options.h"
 #include "../solver/external_input.h"
+#include "../arrayIndex.h"
 #include "model_help.h"
 #include "omc_math.h"
 
@@ -296,7 +297,6 @@ static int callDenseJacobian(double t, N_Vector y, N_Vector fy,
  */
 int rootsFunctionCVODE(double time, N_Vector y, double *gout, void *userData)
 {
-  TRACE_PUSH
   CVODE_SOLVER *cvodeData = (CVODE_SOLVER *)userData;
   DATA *data = (DATA *)(((CVODE_USERDATA *)cvodeData->simData)->data);
   threadData_t *threadData = (threadData_t *)(((CVODE_USERDATA *)((CVODE_SOLVER *)userData)->simData)->threadData);
@@ -342,7 +342,6 @@ int rootsFunctionCVODE(double time, N_Vector y, double *gout, void *userData)
   if (measure_time_flag)
     rt_tick(SIM_TIMER_SOLVER);
 
-  TRACE_POP
   return 0;
 }
 
@@ -575,7 +574,8 @@ int cvode_solver_initial(DATA *data, threadData_t *threadData, SOLVER_INFO *solv
   assertStreamPrint(threadData, abstol_tmp != NULL, "Out of memory.");
   for (i = 0; i < cvodeData->N; ++i)
   {
-    abstol_tmp[i] = fmax(fabs(data->modelData->realVarsData[i].attribute.nominal), 1e-32) * data->simulationInfo->tolerance;
+    const modelica_real nominal = getNominalFromScalarIdx(data->simulationInfo, data->modelData, VAR_KIND_STATE, i);
+    abstol_tmp[i] = fmax(fabs(nominal), 1e-32) * data->simulationInfo->tolerance;
   }
   cvodeData->absoluteTolerance = N_VMake_Serial(cvodeData->N, abstol_tmp);
   assertStreamPrint(threadData, NULL != cvodeData->absoluteTolerance, "SUNDIALS_ERROR: N_VMake_Serial failed - returned NULL pointer.");
@@ -831,7 +831,7 @@ void cvode_save_statistics(void *cvode_mem, SOLVERSTATS *solverStats, threadData
   tmp1 = 0;
   flag = CVodeGetNumNonlinSolvConvFails(cvode_mem, &tmp1);
   checkReturnFlag_SUNDIALS(flag, SUNDIALS_CV_FLAG, "CVodeGetNumNonlinSolvConvFails");
-  solverStats->nConvergenveTestFailures = tmp1;
+  solverStats->nConvergenceTestFailures = tmp1;
 
   /* Get even more statistics */
   if (omc_useStream[OMC_LOG_SOLVER_V])
@@ -972,7 +972,7 @@ int cvode_solver_step(DATA *data, threadData_t *threadData, SOLVER_INFO *solverI
     }
 
     /* Closing new step message */
-    messageClose(OMC_LOG_SOLVER);
+    messageClose(OMC_LOG_SOLVER); // TODO make sure this is called even if something in between fails
 
     /* Set time to current time */
     simulationData->timeValue = solverInfo->currentTime;

@@ -126,7 +126,6 @@ public import NFSCodeEnv;
 
 protected import Debug;
 protected import Error;
-protected import ErrorTypes;
 protected import Flags;
 protected import List;
 protected import NFSCodeCheck;
@@ -658,7 +657,6 @@ algorithm
     local
       String bc_str, env_str, part;
       list<Extends> exts;
-      ErrorTypes.Message msg;
       SourceInfo info;
 
     case (_, _, _, _, _)
@@ -690,11 +688,8 @@ algorithm
         (NFSCodeEnv.CLASS(cls = SCode.CLASS(name = part, info = info)), _, _) =
           NFSCodeLookup.lookupFullyQualified(inPartPath, inEnv);
         bc_str = AbsynUtil.pathString(inBaseClass);
-        msg = if bc_str==part
-          then Error.REPLACEABLE_BASE_CLASS_SIMPLE
-          else Error.REPLACEABLE_BASE_CLASS;
         Error.addSourceMessage(Error.ERROR_FROM_HERE, {}, inInfo);
-        Error.addSourceMessage(msg, {part, bc_str}, info);
+        Error.addSourceMessage(Error.REPLACEABLE_BASE_CLASS, {part, bc_str}, info);
       then
         ();
 

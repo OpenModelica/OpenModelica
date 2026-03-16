@@ -23,6 +23,7 @@ cppruntime.log \
 cppruntimeHpcom.log \
 cppruntimeFMU1.log \
 cppruntimeFMU2.log \
+cppruntimeOutputFormat.log \
 cppruntimeStaticLinking.log \
 cppruntimeGenDebugSymbols.log \
 cppruntimeHardcodedStartValues.log \
@@ -63,6 +64,7 @@ simulationnewbackend-differentation.log \
 simulationnewbackend-event_handling.log \
 simulationnewbackend-functions.log \
 simulationnewbackend-index_reduction.log \
+simulationnewbackend-initialization.log \
 simulationnewbackend-ModelicaTest.log \
 simulationnewbackend-msl.log \
 simulationnewbackend-records.log \
@@ -367,6 +369,9 @@ simulationnewbackend-functions.log: omc-diff
 simulationnewbackend-index_reduction.log: omc-diff
 	$(MAKE) -C simulation/modelica/NBackend/index_reduction/ -f Makefile test > $@
 	@echo $@ done
+simulationnewbackend-initialization.log: omc-diff
+	$(MAKE) -C simulation/modelica/NBackend/initialization/ -f Makefile test > $@
+	@echo $@ done
 simulationnewbackend-ModelicaTest.log: omc-diff
 	$(MAKE) -C simulation/modelica/NBackend/ModelicaTest/ -f Makefile test > $@
 	@echo $@ done
@@ -513,6 +518,9 @@ cppruntimeFMU1.log: omc-diff
 	@echo $@ done
 cppruntimeFMU2.log: omc-diff
 	$(MAKE) -j1 -C openmodelica/cppruntime/fmu/modelExchange/2.0 -f Makefile test  > $@
+	@echo $@ done
+cppruntimeOutputFormat.log: omc-diff
+	$(MAKE) -j1 -C openmodelica/cppruntime/outputFormat -f Makefile test  > $@
 	@echo $@ done
 cppruntimeStaticLinking.log: omc-diff
 	$(MAKE) -j1 -C openmodelica/cppruntime/staticLinking -f Makefile test  > $@

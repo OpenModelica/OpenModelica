@@ -988,6 +988,38 @@ QString StringHandler::removeFirstWordAfterDot(QString value)
   return wordsBeforeAfterFirstDot(value, false);
 }
 
+/*!
+ * \brief StringHandler::splitPath
+ * Splits the path into a list of paths.
+ * \param path
+ * \return
+ */
+QStringList StringHandler::splitPath(QString path)
+{
+  QStringList result;
+
+  path = path.trimmed();
+  if (path.isEmpty()) {
+    return result;
+  }
+
+  while (!path.isEmpty()) {
+    QString first = getFirstWordBeforeDot(path);
+    result.append(first);
+
+    QString remaining = removeFirstWordAfterDot(path);
+
+    // If nothing changed, we reached the last element
+    if (remaining == path) {
+      break;
+    }
+
+    path = remaining.trimmed();
+  }
+
+  return result;
+}
+
 QString StringHandler::escapeString(QString value)
 {
   QString res;
@@ -1922,4 +1954,18 @@ QString StringHandler::convertSemVertoReadableString(const QString &semver)
   }
 
   return version;
+}
+
+/*!
+ * \brief StringHandler::removeTypePrefix
+ * Removes the type prefix from the string if it starts with it. For example, if the string is "type1.var1" and the type is "type1" then it returns "var1".
+ * \param str
+ * \param type
+ */
+void StringHandler::removeTypePrefix(QString &str, const QString &type)
+{
+  const QString prefix = type + '.';
+  if (str.startsWith(prefix)) {
+    str.remove(0, prefix.length());
+  }
 }

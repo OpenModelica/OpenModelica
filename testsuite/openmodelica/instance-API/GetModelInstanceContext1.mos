@@ -1,0 +1,106 @@
+// name: GetModelInstanceContext1
+// keywords:
+// status: correct
+// cflags: -d=newInst
+//
+//
+
+loadString("
+  model A
+    Real x;
+  end A;
+
+  model M
+    A a;
+    Real y = a.x;
+    Real z = y;
+  end M;
+");
+
+getModelInstance(M, context = b.c, prettyPrint = true);
+
+// Result:
+// true
+// "{
+//   \"name\": \"M\",
+//   \"restriction\": \"model\",
+//   \"elements\": [
+//     {
+//       \"$kind\": \"component\",
+//       \"name\": \"a\",
+//       \"type\": {
+//         \"name\": \"A\",
+//         \"restriction\": \"model\",
+//         \"elements\": [
+//           {
+//             \"$kind\": \"component\",
+//             \"name\": \"x\",
+//             \"type\": \"Real\"
+//           }
+//         ],
+//         \"source\": {
+//           \"filename\": \"<interactive>\",
+//           \"lineStart\": 2,
+//           \"columnStart\": 3,
+//           \"lineEnd\": 4,
+//           \"columnEnd\": 8
+//         }
+//       }
+//     },
+//     {
+//       \"$kind\": \"component\",
+//       \"name\": \"y\",
+//       \"type\": \"Real\",
+//       \"modifiers\": \"a.x\",
+//       \"value\": {
+//         \"binding\": {
+//           \"$kind\": \"cref\",
+//           \"parts\": [
+//             {
+//               \"name\": \"b\"
+//             },
+//             {
+//               \"name\": \"c\"
+//             },
+//             {
+//               \"name\": \"a\"
+//             },
+//             {
+//               \"name\": \"x\"
+//             }
+//           ]
+//         }
+//       }
+//     },
+//     {
+//       \"$kind\": \"component\",
+//       \"name\": \"z\",
+//       \"type\": \"Real\",
+//       \"modifiers\": \"y\",
+//       \"value\": {
+//         \"binding\": {
+//           \"$kind\": \"cref\",
+//           \"parts\": [
+//             {
+//               \"name\": \"b\"
+//             },
+//             {
+//               \"name\": \"c\"
+//             },
+//             {
+//               \"name\": \"y\"
+//             }
+//           ]
+//         }
+//       }
+//     }
+//   ],
+//   \"source\": {
+//     \"filename\": \"<interactive>\",
+//     \"lineStart\": 6,
+//     \"columnStart\": 3,
+//     \"lineEnd\": 10,
+//     \"columnEnd\": 8
+//   }
+// }"
+// endResult

@@ -27,7 +27,7 @@ b=5
 c=6
 "); getErrorString();
 writeFile("logOverride.txt", ""); getErrorString();
-system("./TestOverride -override=stopTime=0,b=1 -overrideFile=override.txt -lv=LOG_ALL | grep overrid", "logOverride.txt"); getErrorString();
+system("./TestOverride -stopTime=0 -override=b=1 -overrideFile=override.txt -lv=LOG_ALL | grep overrid", "logOverride.txt"); getErrorString();
 readFile("logOverride.txt"); getErrorString();
 
 // Result:
@@ -41,15 +41,14 @@ readFile("logOverride.txt"); getErrorString();
 // ""
 // 0
 // ""
-// "LOG_SOLVER        | info    | using -override=stopTime=0,b=1 and -overrideFile=override.txt
+// "LOG_SOLVER        | info    | using -override=b=1 and -overrideFile=override.txt
 // LOG_SOLVER        | info    | read override values from file: override.txt
-// LOG_SOLVER        | info    | -override=stopTime=0,b=1
+// LOG_SOLVER        | info    | -override=b=1
 // LOG_SOLVER        | info    | -overrideFile=b=5,c=6
 // LOG_STDOUT        | warning | You are overriding variable: b=1 again with b=5.
 // LOG_SOLVER        | info    | override b = 5
 // LOG_SOLVER        | info    | override c = 6
 // LOG_SOLVER        | info    | override done!
-// |                 | |       | | Add `stepSize=<value>` to `-override=` or override file to silence this warning.
 // "
 // ""
 // endResult

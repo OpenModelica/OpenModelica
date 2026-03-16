@@ -2283,6 +2283,9 @@ algorithm
     elseif not Dimension.isKnown(dim2) then
       compatibleDim := dim1;
       compatible := true;
+    elseif Dimension.isResizable(dim1) and Dimension.isResizable(dim2) then
+      compatibleDim := dim1;
+      compatible := true;
     else
       compatibleDim := dim1;
       compatible := false;

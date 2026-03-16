@@ -1,6 +1,6 @@
 // name: scalarAdjointJacobian3
 // keywords: NewBackend
-// status: erroneous
+// status: correct
 // cflags: -d=dumpSimCode
 
 loadString("
@@ -21,11 +21,6 @@ buildModel(scalarAdjointJacobian3); getErrorString();
 // ""
 // true
 // ""
-// tmp vars in symbolic:
-// Tmp Vars Variables (0/0)
-// **************************
-//
-//
 // ########################################
 //
 //     SimCode (scalarAdjointJacobian3)
@@ -72,6 +67,26 @@ buildModel(scalarAdjointJacobian3); getErrorString();
 //   [EMPTY] SimCode Jacobian A(idx = 0, partition = 0)
 // ======================================================
 //
+// ======================================================
+//   [EMPTY] SimCode Jacobian B(idx = 2, partition = 0)
+// ======================================================
+//
+// ======================================================
+//   [EMPTY] SimCode Jacobian C(idx = 3, partition = 0)
+// ======================================================
+//
+// ======================================================
+//   [EMPTY] SimCode Jacobian D(idx = 4, partition = 0)
+// ======================================================
+//
+// ======================================================
+//   [EMPTY] SimCode Jacobian F(idx = 5, partition = 0)
+// ======================================================
+//
+// ======================================================
+//   [EMPTY] SimCode Jacobian H(idx = 6, partition = 0)
+// ======================================================
+//
 // ================================================
 //   SimCode Jacobian ADJ(idx = 1, partition = 1)
 // ================================================
@@ -92,8 +107,8 @@ buildModel(scalarAdjointJacobian3); getErrorString();
 //   --Iteration Vars:{$pDER_ODE_JAC_ADJ.$TMP_1, $pDER_ODE_JAC_ADJ.$TMP_2}
 //   --(11) 0 = $SEED_ODE_LS_JAC_1.$DER.x - (-(2.0 * $pDER_ODE_JAC_ADJ.$TMP_2 * $DER.x + 3.0 * $pDER_ODE_JAC_ADJ.$TMP_1 * $DER.x ^ 2.0))
 //   --(12) 0 = $SEED_ODE_LS_JAC_1.$DER.y - (2.0 * $pDER_ODE_JAC_ADJ.$TMP_1 * $DER.y - 3.0 * $pDER_ODE_JAC_ADJ.$TMP_2 * $DER.y ^ 2.0)
-//   (10) $pDER_ODE_JAC_ADJ.y := -($pDER_ODE_JAC_ADJ.$TMP_2 * x + $pDER_ODE_JAC_ADJ.$TMP_1)
-//   (9) $pDER_ODE_JAC_ADJ.x := -($pDER_ODE_JAC_ADJ.$TMP_2 * y + $pDER_ODE_JAC_ADJ.$TMP_1)
+//   (10) $pDER_ODE_JAC_ADJ.x := -($pDER_ODE_JAC_ADJ.$TMP_2 * y + $pDER_ODE_JAC_ADJ.$TMP_1)
+//   (9) $pDER_ODE_JAC_ADJ.y := -($pDER_ODE_JAC_ADJ.$TMP_2 * x + $pDER_ODE_JAC_ADJ.$TMP_1)
 //
 // Sparsity Pattern Cols
 // ***********************
@@ -114,26 +129,6 @@ buildModel(scalarAdjointJacobian3); getErrorString();
 // ************************
 //   {1}
 //   {0}
-//
-// ======================================================
-//   [EMPTY] SimCode Jacobian B(idx = 2, partition = 0)
-// ======================================================
-//
-// ======================================================
-//   [EMPTY] SimCode Jacobian C(idx = 3, partition = 0)
-// ======================================================
-//
-// ======================================================
-//   [EMPTY] SimCode Jacobian D(idx = 4, partition = 0)
-// ======================================================
-//
-// ======================================================
-//   [EMPTY] SimCode Jacobian F(idx = 5, partition = 0)
-// ======================================================
-//
-// ======================================================
-//   [EMPTY] SimCode Jacobian H(idx = 6, partition = 0)
-// ======================================================
 //
 //
 //
@@ -224,8 +219,8 @@ buildModel(scalarAdjointJacobian3); getErrorString();
 //
 // jacobianEquations:
 // ========================================
-// 15: $pDER_ODE_JAC_ADJ.x=-($pDER_ODE_JAC_ADJ.$TMP_2 * y + $pDER_ODE_JAC_ADJ.$TMP_1) [Real]
-// 14: $pDER_ODE_JAC_ADJ.y=-($pDER_ODE_JAC_ADJ.$TMP_2 * x + $pDER_ODE_JAC_ADJ.$TMP_1) [Real]
+// 15: $pDER_ODE_JAC_ADJ.y=-($pDER_ODE_JAC_ADJ.$TMP_2 * x + $pDER_ODE_JAC_ADJ.$TMP_1) [Real]
+// 14: $pDER_ODE_JAC_ADJ.x=-($pDER_ODE_JAC_ADJ.$TMP_2 * y + $pDER_ODE_JAC_ADJ.$TMP_1) [Real]
 // 13:  (NONLINEAR) index:2 jacobian: false
 // crefs: $pDER_ODE_JAC_ADJ.$TMP_1 , $pDER_ODE_JAC_ADJ.$TMP_2
 // 	11: $SEED_ODE_LS_JAC_1.$DER.x - ((-2.0 * $pDER_ODE_JAC_ADJ.$TMP_2 * $DER.x) - 3.0 * $pDER_ODE_JAC_ADJ.$TMP_1 * $DER.x ^ 2.0) (RESIDUAL)
@@ -236,19 +231,6 @@ buildModel(scalarAdjointJacobian3); getErrorString();
 // ========================================
 // 	Jacobian idx: 0
 //
-// 	Jacobian idx: 1
-// 	13:  (NONLINEAR) index:2 jacobian: false
-// crefs: $pDER_ODE_JAC_ADJ.$TMP_1 , $pDER_ODE_JAC_ADJ.$TMP_2
-// 	11: $SEED_ODE_LS_JAC_1.$DER.x - ((-2.0 * $pDER_ODE_JAC_ADJ.$TMP_2 * $DER.x) - 3.0 * $pDER_ODE_JAC_ADJ.$TMP_1 * $DER.x ^ 2.0) (RESIDUAL)
-// 	12: $SEED_ODE_LS_JAC_1.$DER.y - (2.0 * $pDER_ODE_JAC_ADJ.$TMP_1 * $DER.y - 3.0 * $pDER_ODE_JAC_ADJ.$TMP_2 * $DER.y ^ 2.0) (RESIDUAL)
-//
-// 	10: $pDER_ODE_JAC_ADJ.y=-($pDER_ODE_JAC_ADJ.$TMP_2 * x + $pDER_ODE_JAC_ADJ.$TMP_1) [Real]
-// 	9: $pDER_ODE_JAC_ADJ.x=-($pDER_ODE_JAC_ADJ.$TMP_2 * y + $pDER_ODE_JAC_ADJ.$TMP_1) [Real]
-//
-// columnVars(2)
-// ----------------------
-// index:0: $pDER_ODE_JAC_ADJ.y (no alias)  initial: 	no arrCref index:(1) []
-// index:1: $pDER_ODE_JAC_ADJ.x (no alias)  initial: 	no arrCref index:(2) []
 // 	Jacobian idx: 2
 //
 // 	Jacobian idx: 3
@@ -259,6 +241,19 @@ buildModel(scalarAdjointJacobian3); getErrorString();
 //
 // 	Jacobian idx: 6
 //
+// 	Jacobian idx: 1
+// 	13:  (NONLINEAR) index:2 jacobian: false
+// crefs: $pDER_ODE_JAC_ADJ.$TMP_1 , $pDER_ODE_JAC_ADJ.$TMP_2
+// 	11: $SEED_ODE_LS_JAC_1.$DER.x - ((-2.0 * $pDER_ODE_JAC_ADJ.$TMP_2 * $DER.x) - 3.0 * $pDER_ODE_JAC_ADJ.$TMP_1 * $DER.x ^ 2.0) (RESIDUAL)
+// 	12: $SEED_ODE_LS_JAC_1.$DER.y - (2.0 * $pDER_ODE_JAC_ADJ.$TMP_1 * $DER.y - 3.0 * $pDER_ODE_JAC_ADJ.$TMP_2 * $DER.y ^ 2.0) (RESIDUAL)
+//
+// 	10: $pDER_ODE_JAC_ADJ.x=-($pDER_ODE_JAC_ADJ.$TMP_2 * y + $pDER_ODE_JAC_ADJ.$TMP_1) [Real]
+// 	9: $pDER_ODE_JAC_ADJ.y=-($pDER_ODE_JAC_ADJ.$TMP_2 * x + $pDER_ODE_JAC_ADJ.$TMP_1) [Real]
+//
+// columnVars(2)
+// ----------------------
+// index:0: $pDER_ODE_JAC_ADJ.y (no alias)  initial: 	no arrCref index:(1) []
+// index:1: $pDER_ODE_JAC_ADJ.x (no alias)  initial: 	no arrCref index:(2) []
 //
 // modelInfo:
 // ========================================

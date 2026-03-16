@@ -41,7 +41,6 @@ public
   import NBVariable.{VariablePointer, VariablePointers, VarData};
   import Evaluation = NBEvaluation;
   import Events = NBEvents;
-  import NFFlatten.FunctionTree;
   import Jacobian = NBJacobian;
   import Partitioning = NBPartitioning;
   import NBJacobian.{SparsityPattern, SparsityColoring};
@@ -111,31 +110,32 @@ public
     list<Partition> alg_event             "Partitions for algebraic event iteration";
     list<Partition> clocked               "Clocked Partitions";
     list<Partition> init                  "Partitions for initialization";
-    Option<list<Partition>> init_0        "Partitions for lambda 0 (homotopy) Initialization";
-    // add init_1 for lambda = 1 (test for efficency)
+    Option<list<Partition>> init_0        "Partitions for initialization with lambda = 0 (homotopy)";
+    // add init_1 for lambda = 1? (test for efficency)
     Option<list<Partition>> dae           "Partitions for dae mode";
 
-    VarData varData                       "Variable data.";
-    EqData eqData                         "Equation data.";
+    VarData varData                       "Variable data";
+    EqData eqData                         "Equation data";
 
     Events.EventInfo eventInfo            "contains time and state events";
     Partitioning.ClockedInfo clockedInfo  "contains information about clocked partitions";
-    FunctionTree funcTree                 "Function bodies.";
+    UnorderedMap<Path, Function> funcMap  "Function bodies";
   end MAIN;
 
   record JACOBIAN
     String name                       "unique matrix name";
     JacobianType jacType              "type of jacobian";
-    VarData varData                   "Variable data.";
+    VarData varData                   "Variable data";
     array<StrongComponent> comps      "the sorted equations";
+    //Adjacency.Matrix sparsity         "new sparsity pattern";
     SparsityPattern sparsityPattern   "Sparsity pattern for the jacobian";
     SparsityColoring sparsityColoring "Coloring information";
     Boolean isAdjoint                 "is this an adjoint jacobian?";
   end JACOBIAN;
 
   record HESSIAN
-    VarData varData     "Variable data.";
-    EqData eqData       "Equation data.";
+    VarData varData "Variable data";
+    EqData eqData   "Equation data";
   end HESSIAN;
 
   function toString
@@ -228,17 +228,29 @@ public
     end match;
   end getJacType;
 
-  function getFunctionTree
+  function getIsAdjoint
     input BackendDAE bdae;
-    output FunctionTree funcTree;
+    output Boolean isAdjoint;
   algorithm
-    funcTree := match bdae
-      case MAIN(funcTree = funcTree) then funcTree;
+    isAdjoint := match bdae
+      case JACOBIAN(isAdjoint = isAdjoint) then isAdjoint;
       else algorithm
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed! Only the record type MAIN() has a function tree."});
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed! Only the record type JACOBIAN() has a jacobian."});
       then fail();
     end match;
-  end getFunctionTree;
+  end getIsAdjoint;
+
+  function getFunctionMap
+    input BackendDAE bdae;
+    output UnorderedMap<Path, Function> funcMap;
+  algorithm
+    funcMap := match bdae
+      case MAIN() then bdae.funcMap;
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed! Only the record type MAIN() has a function map."});
+      then fail();
+    end match;
+  end getFunctionMap;
 
   function sizes
     input BackendDAE bdae;
@@ -246,7 +258,7 @@ public
     output tuple<Integer, Integer> eqnSizes "scal, arr";
   algorithm
     (varSizes, eqnSizes) := match bdae
-      case MAIN() then ((VarData.scalarSize(bdae.varData), VarData.size(bdae.varData)), (EqData.scalarSize(bdae.eqData), EqData.size(bdae.eqData)));
+      case MAIN() then ((VarData.scalarSize(bdae.varData, true), VarData.size(bdae.varData)), (EqData.scalarSize(bdae.eqData, true), EqData.size(bdae.eqData)));
       else ((0, 0), (0, 0));
     end match;
   end sizes;
@@ -254,18 +266,17 @@ public
   function lower
     "This function transforms the FlatModel structure to BackendDAE."
     input FlatModel flatModel;
-    input FunctionTree funcTree;
+    input UnorderedMap<Path, Function> funcMap;
     output BackendDAE bdae;
   protected
     VarData variableData;
     EqData equationData;
     Events.EventInfo eventInfo = Events.EventInfo.empty();
     Partitioning.ClockedInfo clockedInfo = Partitioning.ClockedInfo.new();
-    UnorderedMap<Path, Function> functions;
   algorithm
     variableData := lowerVariableData(flatModel.variables);
     (equationData, variableData) := lowerEquationData(flatModel.equations, flatModel.algorithms, flatModel.initialEquations, flatModel.initialAlgorithms, variableData);
-    bdae := MAIN({}, {}, {}, {}, {}, {}, NONE(), NONE(), variableData, equationData, eventInfo, clockedInfo, lowerFunctions(funcTree));
+    bdae := MAIN({}, {}, {}, {}, {}, {}, NONE(), NONE(), variableData, equationData, eventInfo, clockedInfo, lowerFunctions(funcMap));
   end lower;
 
   function main
@@ -290,20 +301,6 @@ public
       eq_filter_opt := SOME(UnorderedSet.fromList(followEquations, stringHashDjb2, stringEqual));
     end if;
 
-    // Pre-Partitioning Modules
-    // (do not change order SIMPLIFY -> ALIAS -> EVENTS -> DETECTSTATES)
-    preOptModules := {
-      (Bindings.main,      "Bindings"),
-      (FunctionAlias.main, "FunctionAlias"),
-      (function Inline.main(inline_types = inline_types, init = false), "Early Inline"),
-      (function simplify(init = false), "Simplify 1"),
-      (Alias.main,         "Alias"),
-      (function simplify(init = false), "Simplify 2"), // TODO simplify in Alias only
-      (removeStream,       "Remove Stream"),
-      (DetectStates.main,  "Detect States"),
-      (Events.main,        "Events")
-    };
-
     if Flags.getConfigBool(Flags.DAE_MODE) then
       mainModules := {(DAEMode.main, "DAE-Mode")};
       kind := NBPartition.Kind.DAE;
@@ -312,6 +309,20 @@ public
       kind := NBPartition.Kind.ODE;
     end if;
 
+    // Pre-Partitioning Modules
+    // (do not change order SIMPLIFY -> ALIAS -> EVENTS -> DETECTSTATES)
+    preOptModules := {
+      (Bindings.main,      "Bindings"),
+      (function FunctionAlias.main(kind = kind), "FunctionAlias"),
+      (function Inline.main(inline_types = inline_types, init = false), "Early Inline"),
+      (function simplify(init = false), "Simplify 1"),
+      (function Alias.main(kind = kind),  "Alias"),
+      (function simplify(init = false), "Simplify 2"), // TODO simplify in Alias only
+      (removeStream,       "Remove Stream"),
+      (DetectStates.main,  "Detect States"),
+      (Events.main,        "Events")
+    };
+
     // all main modules are always done in ODE mode
     mainModules := listAppend({
       (function Partitioning.main(kind = NBPartition.Kind.ODE),             "Partitioning"),
@@ -319,7 +330,6 @@ public
       (function Inline.main(inline_types = {DAE.AFTER_INDEX_RED_INLINE()}, init = false), "After Index Reduction Inline"),
       (Initialization.main,                                                 "Initialization")
     }, mainModules);
-
 
     // (do not change order SOLVE -> JACOBIAN)
     postOptModules := {
@@ -707,7 +717,7 @@ protected
 
     // lower the component references properly
     variables       := VariablePointers.map(variables, function Variable.mapExp(fn = function lowerComponentReferenceExp(variables = variables, complete = true)));
-    variables       := VariablePointers.map(variables, function Variable.applyToType(func = function Type.applyToDims(func = function lowerDimension(variables = variables))));
+    variables       := VariablePointers.map(variables, function Variable.applyToType(func = function Type.applyToDims(func = function lowerDimension(variables = variables, complete = true))));
 
     /* lower the records to add children */
     records         := VariablePointers.mapPtr(records, function lowerRecordChildren(variables = variables));
@@ -1408,7 +1418,7 @@ protected
     end match;
 
     // also lower dimensions in the case of resizable variables
-    exp := Expression.applyToType(exp, function Type.applyToDims(func = function lowerDimension(variables = variables)));
+    exp := Expression.applyToType(exp, function Type.applyToDims(func = function lowerDimension(variables = variables, complete = complete)));
   end lowerComponentReferenceExp;
 
   public function lowerComponentReference
@@ -1423,7 +1433,7 @@ protected
       if not ComponentRef.isWild(cref) then
         var  := VariablePointers.getVarSafe(variables, ComponentRef.stripSubscriptsAll(cref), if complete then SOME(sourceInfo()) else NONE());
         cref := lowerComponentReferenceInstNode(cref, var);
-        cref := ComponentRef.mapSubscripts(cref, function Subscript.mapExp(func = function lowerComponentReferenceExp(variables = variables, complete = true)));
+        cref := ComponentRef.mapSubscripts(cref, function Subscript.mapExp(func = function lowerComponentReferenceExp(variables = variables, complete = complete)));
       end if;
     else
       if Flags.isSet(Flags.FAILTRACE) and complete then
@@ -1435,10 +1445,11 @@ protected
   protected function lowerDimension
     input output Dimension dim;
     input VariablePointers variables;
+    input Boolean complete;
   algorithm
     dim := match dim
       case Dimension.RESIZABLE() algorithm
-        dim.exp := Expression.map(dim.exp, function lowerComponentReferenceExp(variables = variables, complete = true));
+        dim.exp := Expression.map(dim.exp, function lowerComponentReferenceExp(variables = variables, complete = complete));
       then dim;
 
       else dim;
@@ -1457,7 +1468,7 @@ protected
       local
         Call call;
 
-      case Expression.CREF() guard(not (VariablePointers.containsCref(exp.cref, variables)
+      case Expression.CREF() guard(not (VariablePointers.containsCref(ComponentRef.stripSubscriptsAll(exp.cref), variables)
         or ComponentRef.isNameNode(exp.cref) or ComponentRef.isWild(exp.cref))) algorithm
         UnorderedSet.add(lowerIterator(exp.cref), set);
       then ();
@@ -1491,6 +1502,7 @@ protected
     ComponentRef cref;
   algorithm
     cref := ComponentRef.fromNode(iterator, InstNode.getType(iterator), {}, NFComponentRef.Origin.ITERATOR);
+    cref := ComponentRef.stripSubscriptsAll(cref);
     if not VariablePointers.containsCref(cref, variables) then
       UnorderedSet.add(lowerIterator(cref), set);
     end if;
@@ -1571,19 +1583,9 @@ public
   end lowerIteratorExp;
 
   function lowerFunctions
-    input output FunctionTree funcTree;
-  protected
-    // ToDo: replace all function trees with this UnorderedMap
-    UnorderedMap<Path, Function> functions = UnorderedMap.new<Function>(AbsynUtil.pathHash, AbsynUtil.pathEqual);
-  protected
-    Path path;
-    Function fn;
+    input output UnorderedMap<Path, Function> funcMap;
   algorithm
-    for tpl in FunctionTree.toList(funcTree) loop
-      (path, fn) := tpl;
-      (fn, funcTree) := Differentiate.resolvePartialDerivatives(fn, funcTree);
-      UnorderedMap.add(path, fn, functions);
-    end for;
+    UnorderedMap.apply(funcMap, function Differentiate.resolvePartialDerivatives(funcMap = funcMap));
   end lowerFunctions;
 
   function backenddaeinfo

@@ -1,0 +1,51 @@
+// name: static_index_3
+// keywords: NewBackend
+// status: correct
+
+loadString("
+model static_index_3
+  \"simple model where state order solves the problem\"
+  constant Real factor = 1;
+  parameter Real J1 = 2, J2 = 1, i = 10;
+  Real phi1, omega1;
+  Real phi2, omega2;
+  Real tau, tau1, tau2;
+initial equation
+  phi1 = phi2;
+  omega1 = omega2;
+equation
+  tau = sin(time);
+  der(phi1) = factor*omega1;
+  der(phi2) = omega2;
+  J1 * der(omega1) = (tau - tau1);
+  J2 * der(omega2) = tau2;
+  phi1 = i * phi2;
+  i * tau1 = tau2;
+end static_index_3;
+
+model static_index_3_alt
+  \"alternate, almost equivalent model where state order cannot solve the problem\"
+  extends static_index_3(factor = 0.999999);
+end static_index_3_alt;
+"); getErrorString();
+
+setCommandLineOptions("--newBackend"); getErrorString();
+
+simulate(static_index_3_alt); getErrorString();
+
+diffSimulationResults("static_index_3_alt_res.mat", "ReferenceFiles/static_index_3_alt_res.mat", "static_index_3_alt_diff.csv", 1e-8);
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "static_index_3_alt_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'static_index_3_alt', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// (true, {})
+// endResult

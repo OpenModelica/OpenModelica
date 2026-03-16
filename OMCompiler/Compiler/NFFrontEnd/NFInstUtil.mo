@@ -381,7 +381,6 @@ public
     list<list<SCode.Element>> mergeable;
     SCode.Element merged_e;
     Integer i = UnorderedMap.size(nameMap) + 1;
-    Absyn.TypeSpec ty;
     String prefix;
   algorithm
     // Find the groups of mergeable component.
@@ -391,8 +390,7 @@ public
     for el in mergeable loop
       // The name of the merged component will be $LastIdentInTypeOfComponent +
       // an index to ensure the name is unique.
-      ty := SCodeUtil.getComponentTypeSpec(listHead(el));
-      prefix := "$" + AbsynUtil.pathLastIdent(AbsynUtil.typeSpecPath(ty));
+      prefix := "$" + AbsynUtil.pathLastIdent(SCodeUtil.getElementTypePath(listHead(el)));
       merged_e := mergeComponents(el, prefix + String(i), nameMap);
       i := i + 1;
       outElements := merged_e :: outElements;

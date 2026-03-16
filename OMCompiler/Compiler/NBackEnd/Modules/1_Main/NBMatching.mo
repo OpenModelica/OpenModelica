@@ -38,8 +38,11 @@ encapsulated uniontype NBMatching
   import GCExt;
 
 protected
+  // OF imports
+  import Absyn.Path;
+
   // NF import
-  import NFFlatten.FunctionTree;
+  import NFFunction.Function;
   import Variable = NFVariable;
 
   // NB import
@@ -127,10 +130,10 @@ public
     input output Adjacency.Matrix full;
     input output VariablePointers vars;
     input output EquationPointers eqns;
-    input output FunctionTree funcTree;
+    input UnorderedMap<Path, Function> funcMap;
     input output VarData varData;
     input output EqData eqData;
-    input Partition.Kind Kind;
+    input Partition.Kind kind;
     input Boolean transposed = false        "transpose matching if true";
     input Boolean clear = true              "start from scratch if true";
   protected
@@ -151,25 +154,25 @@ public
     end try;
 
     // 2. Resolve singular partitions if necessary
-    if Kind == NBPartition.Kind.INI then
+    if kind == NBPartition.Kind.INI then
       // ####### BALANCE INITIALIZATION #######
-      (adj, full, vars, eqns, varData, eqData, funcTree, changed) := ResolveSingularities.balanceInitialization(adj, full, vars, eqns, varData, eqData, funcTree, matching, mapping);
+      (adj, full, vars, eqns, varData, eqData, changed) := ResolveSingularities.balanceInitialization(adj, full, vars, eqns, varData, eqData, kind, funcMap, matching, mapping);
     else
       // ####### INDEX REDUCTION #######
-      (adj, full, vars, eqns, varData, eqData, funcTree, changed) := ResolveSingularities.indexReduction(adj, full, vars, eqns, varData, eqData, funcTree, matching, mapping);
+      (adj, full, vars, eqns, varData, eqData, changed) := ResolveSingularities.indexReduction(adj, full, vars, eqns, varData, eqData, kind, funcMap, matching, mapping);
     end if;
 
     // 3. Recompute adjacency and restart matching if something changed in step 2.
     if changed then
       // ToDo: keep more of old information by only updating changed stuff
-      full  := Adjacency.Matrix.createFull(vars, eqns);
-      adj   := Adjacency.Matrix.fromFull(full, vars.map, eqns.map, eqns, matrixStrictness);
-      if Kind == NBPartition.Kind.INI then
+      full  := Adjacency.Matrix.createFull(vars, eqns, kind);
+      adj   := Adjacency.Matrix.fullToFinal(full, vars.map, eqns.map, eqns, matrixStrictness);
+      if kind == NBPartition.Kind.INI then
         // ####### DO NOT REDO BALANCING INITIALIZATION #######
         matching := regular(EMPTY_MATCHING, adj);
       else
         // ####### REDO INDEX REDUCTION IF NECESSARY #######
-        (matching, adj, full, vars, eqns, funcTree, varData, eqData) := singular(EMPTY_MATCHING, adj, full, vars, eqns, funcTree, varData, eqData, Kind, transposed);
+        (matching, adj, full, vars, eqns, varData, eqData) := singular(EMPTY_MATCHING, adj, full, vars, eqns, funcMap, varData, eqData, kind, transposed);
       end if;
     end if;
   end singular;

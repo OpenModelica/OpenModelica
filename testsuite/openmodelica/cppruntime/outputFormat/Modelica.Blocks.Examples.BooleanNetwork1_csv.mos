@@ -1,7 +1,6 @@
 // name:     Modelica.Blocks.Examples.BooleanNetwork1_csv
 // keywords: simulation MSL Examples
 // status: correct
-// cflags: -d=-newInst
 //
 // Simulation Results
 // Modelica Standard Library
@@ -29,8 +28,8 @@ runScript(modelTesting);getErrorString();
 // "csv"
 // OpenModelicaModelTesting.Kind.VerifiedSimulation
 // Modelica.Blocks.Examples.BooleanNetwork1
-// {"showValue4.showActive","showValue5.showActive","showValue6.showActive"}
-// Simulation options: startTime = 0.0, stopTime = 10.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Blocks.Examples.BooleanNetwork1', options = '', outputFormat = 'csv', variableFilter = 'time|showValue4.showActive|showValue5.showActive|showValue6.showActive', cflags = '', simflags = ' -emit_protected'
+// {"showValue4.showActive", "showValue5.showActive", "showValue6.showActive"}
+// Simulation options: startTime = 0.0, stopTime = 10.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Blocks.Examples.BooleanNetwork1', options = '', outputFormat = 'csv', variableFilter = 'time|showValue4.showActive|showValue5.showActive|showValue6.showActive', cflags = '', simflags = ' -emit_protected'
 // Result file: Modelica.Blocks.Examples.BooleanNetwork1_res.csv
 // Files Equal!
 // "true

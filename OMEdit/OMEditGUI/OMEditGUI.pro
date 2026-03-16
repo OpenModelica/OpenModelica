@@ -29,6 +29,7 @@
  #/
 
 include(../OMEdit.config.pre.pri)
+TARGET = OMEdit
 
 DESTDIR = ../bin
 ICON = ../OMEditLIB/Resources/icons/omedit.icns

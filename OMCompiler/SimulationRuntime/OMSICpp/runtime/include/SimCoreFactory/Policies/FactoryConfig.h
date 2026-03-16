@@ -32,8 +32,7 @@
   #include <Core/System/ISimObjects.h>
   #include <Core/SimulationSettings/ISimControllerSettings.h>
   #include <Core/SimController/ISimController.h>
-
-#include <SimCoreFactory/VxWorksFactory/VxWorksFactory.h>
+  #include <SimCoreFactory/VxWorksFactory/VxWorksFactory.h>
 
 #elif defined(__TRICORE__)
 
@@ -104,11 +103,9 @@
   #include <Core/System/IMixedSystem.h>
   #include <Core/SimulationSettings/ISimControllerSettings.h>
   #include <Core/SimController/ISimController.h>
- #include <SimCoreFactory/OMCFactory/StaticOMCFactory.h>
-
-
+  #include <SimCoreFactory/OMCFactory/StaticOMCFactory.h>
 #else
-#error "operating system not supported"
+  #error "operating system not supported"
 #endif
 
 /** @} */ // end of simcorefactoriesPolicies

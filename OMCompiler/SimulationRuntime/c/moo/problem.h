@@ -58,9 +58,9 @@ public:
                   const GDOP::ProblemConstants& pc,
                   InfoGDOP& info);
 
-    void callback_eval(const f64* x0_nlp, const f64* xuf_nlp, const f64* p) override;
-    void callback_jac(const f64* x0_nlp, const f64* xuf_nlp, const f64* p) override;
-    void callback_hes(const f64* x0_nlp, const f64* xuf_nlp, const f64* p, const f64 mayer_factor, const f64* lambda) override;
+    void callback_eval(const f64* x0_nlp, const f64* xuf_nlp, const f64* p, const f64 t0, const f64 tf) override;
+    void callback_jac(const f64* x0_nlp, const f64* xuf_nlp, const f64* p, const f64 t0, const f64 tf) override;
+    void callback_hes(const f64* x0_nlp, const f64* xuf_nlp, const f64* p, const f64 t0, const f64 tf, const f64 mayer_factor, const f64* lambda) override;
 };
 
 class Dynamics : public GDOP::Dynamics {
@@ -79,7 +79,7 @@ private:
     bool allocated_ode_matrix = false;
 };
 
-GDOP::Problem create_gdop(InfoGDOP& info, const Mesh& mesh);
+GDOP::Problem create_gdop(InfoGDOP& info, Mesh& mesh);
 
 } // namespace OpenModelica
 

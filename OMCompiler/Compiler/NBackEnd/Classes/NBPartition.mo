@@ -43,6 +43,7 @@ public
 protected
   // NF imports
   import Call = NFCall;
+  import ClockKind = NFClockKind;
   import ComponentRef = NFComponentRef;
   import Expression = NFExpression;
   import Type = NFType;
@@ -69,9 +70,13 @@ public
   uniontype Association
     record CONTINUOUS
       Kind kind;
-      Option<Jacobian> jacobian "Analytic jacobian for the integrator";
+      Option<Jacobian> jacobian     "Analytic jacobian for the integrator";
       Option<Jacobian> jacobianAdjoint "Analytic adjoint jacobian for the integrator";
+      Option<Jacobian> LFG_jacobian "Analytic jacobian of Lagrange term (L), ODE (f), Path Constraints (g) for MOO";
+      Option<Jacobian> MRF_jacobian "Analytic jacobian of Mayer term (Mf), Final Constraints (rf) for MOO";
+      Option<Jacobian> R0_jacobian  "Analytic jacobian of Initial Constraints (r0) for MOO";
     end CONTINUOUS;
+
     record CLOCKED
       BClock clock;
       Option<BClock> baseClock;
@@ -98,6 +103,11 @@ public
         case CONTINUOUS() algorithm
           if Util.isSome(association.jacobian) then
             str := BJacobian.toString(Util.getOption(association.jacobian), Partition.kindToString(association.kind));
+            if (Flags.getConfigBool(Flags.MOO_DYNAMIC_OPTIMIZATION)) then
+              str := "\n" + str + BJacobian.toString(Util.getOption(association.LFG_jacobian), Partition.kindToString(association.kind));
+              str := "\n" + str + BJacobian.toString(Util.getOption(association.MRF_jacobian), Partition.kindToString(association.kind));
+              str := "\n" + str + BJacobian.toString(Util.getOption(association.R0_jacobian), Partition.kindToString(association.kind));
+            end if;
           else
             str := StringUtil.headline_1("No Jacobian");
           end if;
@@ -154,7 +164,7 @@ public
           association := CLOCKED(clock, SOME(UnorderedMap.getSafe(base_name, info.baseClocks, sourceInfo())), clock_deps, false);
         end if;
       else
-        association := CONTINUOUS(kind, NONE(), NONE());
+        association := CONTINUOUS(kind, NONE(), NONE(), NONE(), NONE(), NONE());
       end if;
     end create;
 
@@ -205,9 +215,9 @@ public
 
     function hashClockTpl
       input ClockTpl tpl;
-      output Integer hash = 5381;
+      output Integer hash;
     algorithm
-      hash := stringHashDjb2Continue(ComponentRef.toString(Util.tuple21(tpl)), hash);
+      hash := ComponentRef.hash(Util.tuple21(tpl));
       hash := stringHashDjb2Continue(BClock.toString(Util.tuple22(tpl)), hash);
     end hashClockTpl;
 
@@ -241,6 +251,7 @@ public
           else
             clock_opt := NONE();
           end if;
+
           _ := match (clock_opt, Pointer.access(clock_ptr))
             local
               BClock new, old;
@@ -250,6 +261,14 @@ public
 
             // old base clock getting updated to new sub clock
             case (SOME(new as BClock.SUB_CLOCK()), SOME((_, old as BClock.BASE_CLOCK()))) algorithm
+              Pointer.update(clock_ptr, SOME((exp.cref, new)));
+            then ();
+
+            // new base clock that is inferred --> nothing happens
+            case (SOME(new as BClock.BASE_CLOCK(clock = ClockKind.INFERRED_CLOCK())), _) then ();
+
+            // old base clock is inferred --> always take new clock
+            case (SOME(new), SOME((_, old as BClock.BASE_CLOCK(clock = ClockKind.INFERRED_CLOCK())))) algorithm
               Pointer.update(clock_ptr, SOME((exp.cref, new)));
             then ();
 
@@ -356,7 +375,10 @@ public
       "returns true if the partition is empty.
       maybe check more than only equations?"
       input Partition partition;
-      output Boolean b = EquationPointers.size(partition.equations) == 0;
+      output Boolean b = EquationPointers.size(partition.equations) == 0
+        or Util.applyOptionOrDefault(partition.strongComponents, isEmptyArr, false);
+    protected
+      function isEmptyArr = arrayEmpty; // FIXME MetaModelica bug with inlined functions?
     end isEmpty;
 
     function isODEorDAE

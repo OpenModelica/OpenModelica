@@ -1,0 +1,10 @@
+// name: Cmd2
+// status: correct
+// cflags: --cmd="max(1, 2)"
+
+print("test");
+
+// Result:
+// 2
+// test
+// endResult

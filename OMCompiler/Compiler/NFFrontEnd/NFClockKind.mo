@@ -589,6 +589,40 @@ public
     end match;
   end toJSON;
 
+  function hashContinue
+    input ClockKind clk;
+    input output Integer hash;
+  algorithm
+    hash := stringHashDjb2Continue("Clock(", hash);
+    hash := match clk
+      case INFERRED_CLOCK() then hash;
+
+      case RATIONAL_CLOCK()
+        algorithm
+          hash := Expression.hashContinue(clk.intervalCounter, hash);
+          hash := stringHashDjb2Continue(", ", hash);
+          hash := Expression.hashContinue(clk.resolution, hash);
+        then hash;
+
+      case REAL_CLOCK() then Expression.hashContinue(clk.interval, hash);
+
+      case EVENT_CLOCK()
+        algorithm
+          hash := Expression.hashContinue(clk.condition, hash);
+          hash := stringHashDjb2Continue(", ", hash);
+          hash := Expression.hashContinue(clk.startInterval, hash);
+        then hash;
+
+      case SOLVER_CLOCK()
+        algorithm
+          hash := Expression.hashContinue(clk.c, hash);
+          hash := stringHashDjb2Continue(", ", hash);
+          hash := Expression.hashContinue(clk.solverMethod, hash);
+        then hash;
+    end match;
+    hash := stringHashDjb2Continue(")", hash);
+  end hashContinue;
+
 annotation(__OpenModelica_Interface="frontend");
 end NFClockKind;
 

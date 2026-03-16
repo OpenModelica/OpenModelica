@@ -9840,6 +9840,20 @@ template equation_function_create_single_body(SimEqSystem eq, Context context, S
       equationForEquation(e, context, &varDeclsLocal, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace,
                           additionalFuncs, method, classnameext, stateDerVectorName, useFlatArrayNotation,
                           createMeasureTime, assignToStartValues, overwriteOldStartValue, varDeclsLocal)
+    case e as SES_ALIAS(__)
+      then
+      /* should call alias; duplicate equation code for now
+      <<
+      initEquation_<%aliasOf%>();
+      >>
+      */
+      // get equation from initialization system
+      match simCode
+      case SIMCODE(__) then
+        equation_function_create_single_body(getSimEqSysForIndex(e.aliasOf, initialEquations), context, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace,
+                                             &additionalFuncs, method, classnameext, stateDerVectorName /*=__zDot*/, useFlatArrayNotation,
+                                             createMeasureTime, assignToStartValues, overwriteOldStartValue, &varDeclsLocal)
+      end match
     else
       error(sourceInfo(), 'NOT IMPLEMENTED EQUATION: <%dumpEqs(fill(eq,1))%>')
   end match
@@ -10891,13 +10905,15 @@ case CREF(componentRef = c, ty = ty) then
   match cref2simvar(c, simCode)
   case SIMVAR(varKind=varKind) then
     match varKind
+/* don't use __zDot due to SIMVAR indexing of new backend
     case STATE()
     case STATE_DER() then
       //STATE vars are flat vectors
       <<
-      /*assign to <%cref(c,useFlatArrayNotation)%>*/
+      // assign to <%cref(c,useFlatArrayNotation)%>
       memcpy(&<%lhsStr%>, <%arr%>.getData(), <%arr%>.getNumElems()*sizeof(double));
       >>
+*/
     case JAC_VAR()
     case JAC_TMP_VAR()
     case SEED_VAR() then
@@ -12284,6 +12300,10 @@ template giveZeroFunc3(Integer index1, Exp relation, Text &varDecls /*BUFP*/,Tex
         <<
         f[<%index1%>] = std::abs(<%e2%> - <%e1%>);
         >>
+      case EQUAL(ty = T_REAL(__)) then
+        <<
+        f[<%index1%>] = std::abs(<%e2%> - _zeroTol - <%e1%>);
+        >>
       else
         <<
         error(sourceInfo(), 'Unsupported relation: <%ExpressionDumpTpl.dumpExp(rel,"\"")%> for <%index1%>')
@@ -13277,7 +13297,7 @@ template algStmtAssign(DAE.Statement stmt, Context context, Text &varDecls, SimC
         (match exp case ASUB(exp=arr, sub={idx}) then
         let &preExp = buffer ""
         let arr1 = daeExp(arr, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-        let idx1 = daeExp(idx, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+        let idx1 = daeSubscript(idx, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
         let val1 = daeExp(val, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
         <<
         <%preExp%>
