@@ -1349,12 +1349,12 @@ constant ConfigFlag EXPOSE_LOCAL_IOS = CONFIG_FLAG(152, "exposeLocalIOs",
                   "0 meaning top-level (standard Modelica), 1 inputs/outputs of top-level components, >1 going deeper. " +
                   "This flag is particularly useful for FMI export."));
 constant ConfigFlag BASE_MODELICA_FORMAT = CONFIG_FLAG(153, "baseModelicaFormat",
-  NONE(), EXTERNAL(), STRING_LIST_FLAG({}), SOME(STRING_OPTION({
-    "scalarized",
-    "partiallyScalarized",
-    "nonScalarized",
-    "withRecords",
-    "withoutRecords"
+  NONE(), EXTERNAL(), STRING_LIST_FLAG({}), SOME(STRING_DESC_OPTION({
+    ("scalarized", Gettext.notrans("Include subscripts in the quoted identifiers ('a[1].x[3]').")),
+    ("partiallyScalarized", Gettext.notrans("Include subscripts in the quoted identifiers, except for the last name ('a[1].x'[3]).")),
+    ("nonScalarized", Gettext.notrans("Don't include subscripts in the quoted identifiers ('a'[1].'x'[3]).")),
+    ("withRecords", Gettext.notrans("Keep records and don't expand them.")),
+    ("withoutRecords", Gettext.notrans("Expand records into separate components."))
   })),
   Gettext.gettext("Formatting options for Base Modelica"));
 constant ConfigFlag BASE_MODELICA_OPTIONS = CONFIG_FLAG(154, "baseModelicaOptions",
