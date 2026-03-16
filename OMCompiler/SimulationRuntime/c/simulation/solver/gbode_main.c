@@ -319,6 +319,7 @@ int gbodef_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solve
    /* reset statistics because it is accumulated in solver_main.c */
   resetSolverStats(&gbfData->stats);
   gbfData->fastStateUpdateCount = 0;
+  gbfData->additionalFullODEEvaluations = 0;
 
   return 0;
 }
@@ -1243,7 +1244,13 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
     }
   }
 
-  // 2 more full ODE evals, that should be avoided at all cost -> remove kv, ..., and only keep dense output structs
+  // TODO: these 2 full ODE evaluations are a significant performance issue
+  // I would advocate for removing the kv/yv/tv ring buffer and these 2 ODE evaluations.
+  // For NLS initial guess extrapolation, yLast + kLast is sufficient as we already
+  // have the stage derivatives of the last accepted step and a dense output function. If Hermite interpolation to a
+  // specific point is needed, evaluate kLeft / kRight on demand or with a cache structure similar to slowStateCache.
+  // For result file output, only state variables need to be set. The fODE is called
+  // internally by the emit function anyway, so computing it explicitly here just to fill kv is redundant. (only to maintain the ring buffer)
 
   /* update last two entries of ringbuffer with missing values of new fast derivatives */
   for (i = 0; i < 2; i++) {
@@ -1251,7 +1258,7 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
     // yet know which states will become fast so we compute everything.
     sData->timeValue = gbfData->tv[i];
     memcpy(sData->realVars, gbfData->yv + i * nStates, data->modelData->nStates * sizeof(double));
-    gbode_fODE(data, threadData, &(gbData->stats.nCallsODE), NULL);
+    gbode_fODE(data, threadData, &gbfData->additionalFullODEEvaluations, NULL);
 
     for (j = 0; j < gbData->nSlowStates; j++)
       (gbfData->kv + i * nStates)[gbData->slowStatesIdx[j]] = fODE[gbData->slowStatesIdx[j]];
@@ -2083,14 +2090,14 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
     if (gbData->multi_rate) {
       infoStreamPrint(OMC_LOG_STATS, 0, "gbode (birate integration): slow: %s / fast: %s",
                       GB_METHOD_NAME[gbData->GM_method], GB_METHOD_NAME[gbData->gbfData->GM_method]);
-      logSolverStats(OMC_LOG_STATS, "inner integration", stopTime, stopTime, 0, &gbData->gbfData->stats, &gbData->gbfData->fastStateUpdateCount);
-      logSolverStats(OMC_LOG_STATS, "outer integration", stopTime, stopTime, 0, &gbData->stats, NULL);
+      logSolverStats(OMC_LOG_STATS, "inner integration", stopTime, stopTime, 0, &gbData->gbfData->stats, &gbData->gbfData->fastStateUpdateCount, &gbData->gbfData->additionalFullODEEvaluations);
+      logSolverStats(OMC_LOG_STATS, "outer integration", stopTime, stopTime, 0, &gbData->stats, NULL, NULL);
     } else {
       infoStreamPrint(OMC_LOG_STATS, 0, "gbode (single-rate integration): %s", GB_METHOD_NAME[gbData->GM_method]);
     }
   }
   /* Write statistics to the solverInfo data structure */
-  logSolverStats(OMC_LOG_SOLVER_V, "gb_singlerate", solverInfo->currentTime, gbData->time, gbData->stepSize, &gbData->stats, NULL);
+  logSolverStats(OMC_LOG_SOLVER_V, "gb_singlerate", solverInfo->currentTime, gbData->time, gbData->stepSize, &gbData->stats, NULL, NULL);
   memcpy(&solverInfo->solverStatsTmp, &gbData->stats, sizeof(SOLVERSTATS));
 
   messageClose(OMC_LOG_SOLVER);
