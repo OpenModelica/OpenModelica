@@ -810,8 +810,6 @@ int full_implicit_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solve
     }
   }
 
-  // TODO: contractive errors
-
   return 0;
 }
 

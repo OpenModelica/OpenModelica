@@ -1570,7 +1570,7 @@ void *gbInternalNlsAllocate(int size,
 
   if (!trfm)
   {
-    nls->klu_internals_real = (KLUInternals *) malloc(sizeof(KLUInternals));
+    nls->klu_internals_real = (KLUInternals *) calloc(1, sizeof(KLUInternals));
     nls->klu_internals_real->numeric = NULL;
     nls->klu_internals_cmplx = NULL;
     nls->real_nls_jacs = (double **) malloc(sizeof(double *));
@@ -1586,8 +1586,8 @@ void *gbInternalNlsAllocate(int size,
   }
   else
   {
-    nls->klu_internals_real = (KLUInternals *) malloc(trfm->nRealEigenvalues * sizeof(KLUInternals));
-    nls->klu_internals_cmplx = (KLUInternals *) malloc(trfm->nComplexEigenpairs * sizeof(KLUInternals));
+    nls->klu_internals_real = (KLUInternals *) calloc(trfm->nRealEigenvalues, sizeof(KLUInternals));
+    nls->klu_internals_cmplx = (KLUInternals *) calloc(trfm->nComplexEigenpairs, sizeof(KLUInternals));
 
     nls->real_nls_jacs = (double **) malloc(trfm->nRealEigenvalues * sizeof(double *));
     nls->real_nls_res = (double **) malloc(trfm->nRealEigenvalues * sizeof(double *));
@@ -1664,14 +1664,14 @@ void gbInternalNlsFree(void *nls_ptr)
   }
   else
   {
-    for (int sys_real = 0; sys_real < 0*nls->tabl->t_transform->nRealEigenvalues; sys_real++)
+    for (int sys_real = 0; sys_real < nls->tabl->t_transform->nRealEigenvalues; sys_real++)
     {
       free(nls->real_nls_jacs[sys_real]);
       free(nls->real_nls_res[sys_real]);
       if (nls->klu_internals_real[sys_real].numeric) klu_free_numeric(&nls->klu_internals_real[sys_real].numeric, &nls->klu_internals_real[sys_real].common);
       if (nls->klu_internals_real[sys_real].symbolic) klu_free_symbolic(&nls->klu_internals_real[sys_real].symbolic, &nls->klu_internals_real[sys_real].common);
     }
-    for (int sys_cmplx = 0; sys_cmplx < 0*nls->tabl->t_transform->nComplexEigenpairs; sys_cmplx++)
+    for (int sys_cmplx = 0; sys_cmplx < nls->tabl->t_transform->nComplexEigenpairs; sys_cmplx++)
     {
       free(nls->cmplx_nls_jacs[sys_cmplx]);
       free(nls->cmplx_nls_res[sys_cmplx]);
@@ -1952,6 +1952,8 @@ modelica_boolean updateFastStates(DATA *data,
   // create new symbolic factorization
   if (gbfData->tableau->t_transform == NULL)
   {
+    if (nls->klu_internals_real->numeric) klu_free_numeric(&nls->klu_internals_real->numeric, &nls->klu_internals_real->common);
+    if (nls->klu_internals_real->symbolic) klu_free_symbolic(&nls->klu_internals_real->symbolic, &nls->klu_internals_real->common);
     gbInternal_KLU_analyze(nls->klu_internals_real, nls->size, (int *) nls->nlsPattern->leadindex, (int *) nls->nlsPattern->index);
     nls->klu_internals_real->numeric = NULL;
   }
@@ -1960,11 +1962,15 @@ modelica_boolean updateFastStates(DATA *data,
     // TODO: same as in allocation: we are able to remove these redundant analysis parts, as we can use 1 analysis (symbolic) and compute different factorizations.
     for (int sys_real = 0; sys_real < gbfData->tableau->t_transform->nRealEigenvalues; sys_real++)
     {
+      if (nls->klu_internals_real[sys_real].numeric) klu_free_numeric(&nls->klu_internals_real[sys_real].numeric, &nls->klu_internals_real[sys_real].common);
+      if (nls->klu_internals_real[sys_real].symbolic) klu_free_symbolic(&nls->klu_internals_real[sys_real].symbolic, &nls->klu_internals_real[sys_real].common);
       gbInternal_KLU_analyze(&nls->klu_internals_real[sys_real], nls->size, (int *) nls->nlsPattern->leadindex, (int *) nls->nlsPattern->index);
       nls->klu_internals_real[sys_real].numeric = NULL;
     }
     for (int sys_cmplx = 0; sys_cmplx < gbfData->tableau->t_transform->nComplexEigenpairs; sys_cmplx++)
     {
+      if (nls->klu_internals_cmplx[sys_cmplx].numeric) klu_free_numeric(&nls->klu_internals_cmplx[sys_cmplx].numeric, &nls->klu_internals_cmplx[sys_cmplx].common);
+      if (nls->klu_internals_cmplx[sys_cmplx].symbolic) klu_free_symbolic(&nls->klu_internals_cmplx[sys_cmplx].symbolic, &nls->klu_internals_cmplx[sys_cmplx].common);
       gbInternal_KLU_analyze(&nls->klu_internals_cmplx[sys_cmplx], nls->size, (int *) nls->nlsPattern->leadindex, (int *) nls->nlsPattern->index);
       nls->klu_internals_cmplx[sys_cmplx].numeric = NULL;
     }

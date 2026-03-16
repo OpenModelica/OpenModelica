@@ -73,50 +73,6 @@ extern void communicateStatus(const char *phase, double completionPercent, doubl
 
 // TODO: we should add proper return handling of callbacks: ODE, Jacobian, Zero-Crossings, etc.
 
-#include <execinfo.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
-void dump_callers(const char* marker_str)
-{
-    const int MAX_DEPTH = 4;   // current + 3 callers
-    void *buffer[MAX_DEPTH];
-
-    int nptrs = backtrace(buffer, MAX_DEPTH);
-    char **symbols = backtrace_symbols(buffer, nptrs);
-
-    if (!symbols || nptrs < 3) {
-        free(symbols);
-        return;
-    }
-
-    // Second frame = index 2? Actually:
-    // 0 = dump_callers_with_marker
-    // 1 = function that called dump_callers_with_marker
-    // 2 = its caller -> second in the dump you want
-    char *frame = symbols[2];
-
-    // Extract function name from "libSomething.so(function_name+0xADDR) [0xADDR]"
-    char *start = strchr(frame, '(');
-    char *end = strchr(frame, '+');
-    char func_name[256] = {0};
-
-    if (start && end && end > start+1) {
-        size_t len = end - start - 1;
-        if (len > sizeof(func_name)-1) len = sizeof(func_name)-1;
-        strncpy(func_name, start+1, len);
-        func_name[len] = '\0';
-    } else {
-        strncpy(func_name, "unknown", sizeof(func_name)-1);
-    }
-
-    // Print function name + marker
-    printf("%s_%s\n", func_name, marker_str);
-
-    free(symbols);
-}
-
 /**
  * @brief Calculate function values of function ODE f(t,y).
  *
@@ -130,7 +86,6 @@ void dump_callers(const char* marker_str)
 int gbode_fODE(DATA *data, threadData_t *threadData, unsigned int* counter, EVAL_SELECTION* selection)
 {
   int ret = -1;
-  //dump_callers((selection == NULL ? "null" : "exists"));
   /* try */
 #if !defined(OMC_EMCC)
   MMC_TRY_INTERNAL(simulationJumpBuffer)
@@ -227,25 +182,25 @@ int gbodef_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solve
   }
 
   // allocate memory for the generic RK method
-  gbfData->y    = malloc(gbData->nStates*sizeof(double));
-  gbfData->yOld = malloc(gbData->nStates*sizeof(double));
-  gbfData->yt   = malloc(gbData->nStates*sizeof(double));
-  gbfData->y1   = malloc(gbData->nStates*sizeof(double));
-  gbfData->f    = malloc(gbData->nStates*sizeof(double));
-  gbfData->yLast     = malloc(gbData->nStates*sizeof(double));
+  gbfData->y              = malloc(gbData->nStates*sizeof(double));
+  gbfData->yOld           = malloc(gbData->nStates*sizeof(double));
+  gbfData->yt             = malloc(gbData->nStates*sizeof(double));
+  gbfData->y1             = malloc(gbData->nStates*sizeof(double));
+  gbfData->f              = malloc(gbData->nStates*sizeof(double));
+  gbfData->yLast          = malloc(gbData->nStates*sizeof(double));
   gbfData->yOldPacked     = malloc(gbData->nStates*sizeof(double));
-  gbfData->kLast     = malloc(gbData->nStates*gbfData->tableau->nStages*sizeof(double));
-  gbfData->kCurrPacked     = malloc(gbData->nStates*gbfData->tableau->nStages*sizeof(double));
-  gbfData->k         = malloc(gbData->nStates*gbfData->tableau->nStages*sizeof(double));
-  gbfData->x         = malloc(gbData->nStates*gbfData->tableau->nStages*sizeof(double));
-  gbfData->yLeft     = malloc(gbData->nStates*sizeof(double));
-  gbfData->kLeft     = malloc(gbData->nStates*sizeof(double));
-  gbfData->yRight    = malloc(gbData->nStates*sizeof(double));
-  gbfData->kRight    = malloc(gbData->nStates*sizeof(double));
-  gbfData->res_const = malloc(gbData->nStates*sizeof(double));
-  gbfData->errest    = malloc(gbData->nStates*sizeof(double));
-  gbfData->errtol    = malloc(gbData->nStates*sizeof(double));
-  gbfData->err       = malloc(gbData->nStates*sizeof(double));
+  gbfData->kLast          = malloc(gbData->nStates*gbfData->tableau->nStages*sizeof(double));
+  gbfData->kCurrPacked    = malloc(gbData->nStates*gbfData->tableau->nStages*sizeof(double));
+  gbfData->k              = malloc(gbData->nStates*gbfData->tableau->nStages*sizeof(double));
+  gbfData->x              = malloc(gbData->nStates*gbfData->tableau->nStages*sizeof(double));
+  gbfData->yLeft          = malloc(gbData->nStates*sizeof(double));
+  gbfData->kLeft          = malloc(gbData->nStates*sizeof(double));
+  gbfData->yRight         = malloc(gbData->nStates*sizeof(double));
+  gbfData->kRight         = malloc(gbData->nStates*sizeof(double));
+  gbfData->res_const      = malloc(gbData->nStates*sizeof(double));
+  gbfData->errest         = malloc(gbData->nStates*sizeof(double));
+  gbfData->errtol         = malloc(gbData->nStates*sizeof(double));
+  gbfData->err            = malloc(gbData->nStates*sizeof(double));
   gbfData->ringBufferSize = 4;
   gbfData->errValues      = calloc(gbfData->ringBufferSize, sizeof(double));
   gbfData->stepSizeValues = malloc(gbfData->ringBufferSize*sizeof(double));
@@ -647,6 +602,10 @@ void gbodef_freeData(DATA_GBODEF *gbfData)
   free(gbfData->kLeft);
   free(gbfData->yRight);
   free(gbfData->kRight);
+  free(gbfData->yLast);
+  free(gbfData->yOldPacked);
+  free(gbfData->kLast);
+  free(gbfData->kCurrPacked);
   free(gbfData->yt);
   free(gbfData->y1);
   free(gbfData->f);
@@ -1139,12 +1098,12 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
 
     for (int stage = 0; stage < nStages; stage++)
     {
-      double *k_extr_strided = &gbfData->kLast[stage * nFastStates];
+      double *kLast_strided = &gbfData->kLast[stage * nFastStates];
       double *k_strided = &gbfData->k[stage * nStates];
       for (int fast_idx = 0; fast_idx < nFastStates; fast_idx++)
       {
         int slow_idx = gbData->fastStatesIdx[fast_idx];
-        k_extr_strided[fast_idx] = k_strided[slow_idx];
+        kLast_strided[fast_idx] = k_strided[slow_idx];
       }
     }
 
@@ -1458,6 +1417,7 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
       // run multirate step
       gb_step_info = gbodef_main(data, threadData, solverInfo, targetTime);
       // synchronize y, yRight , kRight and buffer
+      // TODO: inspect this: IMO this is very dangerous. Dont we perform selective evaluation and x and k are only valid for fast state indices???
       if (fabs(gbData->timeRight - gbData->gbfData->timeRight) < GB_MINIMAL_STEP_SIZE) {
         gbData->time = gbData->timeRight;
         memcpy(gbData->y, gbData->gbfData->y, nStates * sizeof(double));
@@ -1891,6 +1851,7 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
           // run multirate step
           gb_step_info = gbodef_main(data, threadData, solverInfo, targetTime);
           // synchronize relevant information
+          // TODO: inspect this: IMO this is very dangerous. Dont we perform selective evaluation and x and k are only valid for fast state indices???
           if (fabs(gbData->timeRight - gbData->gbfData->timeRight) < GB_MINIMAL_STEP_SIZE) {
             memcpy(gbData->y, gbData->gbfData->y, nStates * sizeof(double));
             memcpy(gbData->yRight, gbData->gbfData->yRight, nStates * sizeof(double));
