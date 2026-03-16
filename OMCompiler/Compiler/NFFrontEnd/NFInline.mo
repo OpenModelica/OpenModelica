@@ -96,11 +96,14 @@ algorithm
   exp := match call
     // Record constructor
     case Call.TYPED_CALL(fn = fn, arguments = args)
-        guard InstNode.name(InstNode.parentScope(fn.node)) == "'constructor'"
+        guard not InstNode.isEmpty(fn.node) and InstNode.isNamed(InstNode.parentScope(fn.node), "'constructor'")
       algorithm
         body := Function.getBody(fn);
-        true := listEmpty(body);
-        true := listEmpty(fn.locals);
+
+        if not (listEmpty(body) and listEmpty(fn.locals)) then
+          exp := callExp;
+          return;
+        end if;
 
         binding := Component.getBinding(InstNode.component(listHead(fn.outputs)));
 
