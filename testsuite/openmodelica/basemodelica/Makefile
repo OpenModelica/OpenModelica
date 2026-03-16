@@ -14,6 +14,7 @@ TESTFILES = \
 	Comments.mo \
   DoublePendulum.mos \
 	Enum1.mo \
+	EnumArraySubscript1.mo \
 	Expression1.mo \
 	Functional1.mo \
 	If1.mo \

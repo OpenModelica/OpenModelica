@@ -821,9 +821,14 @@ public
   function toFlatStringList
     input list<Subscript> subscripts;
     input BaseModelica.OutputFormat format;
+    input Boolean escapeQuotes;
     output String string;
   algorithm
     string := List.toString(subscripts, function toFlatString(format = format), "", "[", ",", "]", false);
+
+    if escapeQuotes then
+      string := Util.escapeQuotes(string);
+    end if;
   end toFlatStringList;
 
   function toJSON

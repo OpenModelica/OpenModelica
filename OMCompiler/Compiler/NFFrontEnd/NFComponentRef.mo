@@ -1414,6 +1414,7 @@ public
     list<ComponentRef> crefs;
     list<Subscript> subs;
     ComponentRef cr;
+    Boolean escapeQuotes;
   algorithm
     str := firstName(cref, baseModelica = true);
 
@@ -1436,7 +1437,7 @@ public
           strl := "'" :: strl;
 
           if not listEmpty(subs) then
-            strl := Subscript.toFlatStringList(subs, format) :: strl;
+            strl := Subscript.toFlatStringList(subs, format, escapeQuotes = false) :: strl;
             subs := {};
           end if;
 
@@ -1455,7 +1456,7 @@ public
 
         if not listEmpty(subs) and
            not (format.scalarizeMode == BaseModelica.ScalarizeMode.PARTIALLY_SCALARIZED and listEmpty(crefs)) then
-          strl := Subscript.toFlatStringList(subs, format) :: strl;
+          strl := Subscript.toFlatStringList(subs, format, escapeQuotes = true) :: strl;
         end if;
 
         if not listEmpty(crefs) then
@@ -1478,7 +1479,8 @@ public
     strl := "'" :: strl;
 
     if not listEmpty(subs) then
-      strl := Subscript.toFlatStringList(subs, format) :: strl;
+      strl := Subscript.toFlatStringList(subs, format,
+        escapeQuotes = format.scalarizeMode == BaseModelica.ScalarizeMode.SCALARIZED) :: strl;
     end if;
 
     str := stringAppendList(listReverse(strl));
