@@ -58,7 +58,7 @@ void *gbInternalNlsAllocate(int size,
 
 void gbInternalNlsFree(void *nls_ptr);
 
-double *gbInternalGetWorkPointer();
+double *gbInternalGetWorkPointer(void *nls_ptr);
 
 NLS_SOLVER_STATUS gbInternalSolveNls(DATA *data,
                                      threadData_t *threadData,

@@ -836,13 +836,14 @@ modelica_boolean checkFastStatesChange(DATA_GBODE* gbData)
 /**
  * @brief Log ODE integrator solver stats.
  *
- * @param name            Name of ODE integrator.
- * @param timeValue       Current time value.
- * @param integratorTime  Time value of integrator.
- * @param stepSize        ODE integrator step size.
- * @param stats           Pointer to stats struct.
+ * @param name              Name of ODE integrator.
+ * @param timeValue         Current time value.
+ * @param integratorTime    Time value of integrator.
+ * @param stepSize          ODE integrator step size.
+ * @param stats             Pointer to stats struct.
+ * @param fastStateUpdates  Number of fast state updates.
  */
-void logSolverStats(enum OMC_LOG_STREAM stream, const char* name, double timeValue, double integratorTime, double stepSize, SOLVERSTATS* stats)
+void logSolverStats(enum OMC_LOG_STREAM stream, const char* name, double timeValue, double integratorTime, double stepSize, SOLVERSTATS* stats, int *fastStateUpdates)
 {
   if (OMC_ACTIVE_STREAM(stream)) {
     infoStreamPrint(stream, 1, "%s call statistics:", name);
@@ -851,6 +852,7 @@ void logSolverStats(enum OMC_LOG_STREAM stream, const char* name, double timeVal
     infoStreamPrint(stream, 0, "number of calculation of jacobian : %d", stats->nCallsJacobian);
     infoStreamPrint(stream, 0, "error test failure : %d", stats->nErrorTestFailures);
     infoStreamPrint(stream, 0, "convergence failure : %d", stats->nConvergenceTestFailures);
+    if (fastStateUpdates != NULL) infoStreamPrint(stream, 0, "number of fast state updates : %d", *fastStateUpdates);
     messageClose(stream);
   }
 }

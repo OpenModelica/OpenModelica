@@ -77,7 +77,7 @@ void dumpFastStates_gbf(DATA_GBODE *gbData, double time, int rejectedType);
 
 modelica_boolean checkFastStatesChange(DATA_GBODE* gbData);
 
-void logSolverStats(enum OMC_LOG_STREAM stream, const char* name, double timeValue, double integratorTime, double stepSize, SOLVERSTATS* stats);
+void logSolverStats(enum OMC_LOG_STREAM stream, const char* name, double timeValue, double integratorTime, double stepSize, SOLVERSTATS* stats, int *fastStateUpdates);
 
 void deprecationWarningGBODE(enum SOLVER_METHOD method);
 

@@ -126,6 +126,7 @@ typedef struct DATA_GBODEF{
 
   /* statistics */
   SOLVERSTATS stats;
+  int fastStateUpdateCount;
 } DATA_GBODEF;
 
 typedef struct DATA_GBODE{

@@ -545,7 +545,7 @@ int expl_diag_impl_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solv
       }
     }
 
-    // TODO: get rid of this madness and make k and y only contain fast states!!
+    // TODO: make k and y only contain fast states. Almost all structures depend on this full vector: this is a todo for a rewrite of GBODE
     if (gbfData->nlsSolverMethod == GB_NLS_INTERNAL)
     {
       int stageOffset = nFastStates * stage;

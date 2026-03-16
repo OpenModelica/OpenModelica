@@ -1782,86 +1782,6 @@ static void reduceFullToFastPattern(const SPARSE_PATTERN *full,
   out->sizeofIndex      = nnz;
 }
 
-/**
- * @brief Computes a greedy column coloring for a CSC pattern.
- *
- * Assigns colors to columns such that no two columns sharing a row
- * have the same color.
- *
- * Results are written to `pattern->colorCols` and `pattern->maxColors`.
- *
- * @param[in,out] pattern  Sparse pattern (CSC format). `colorCols` must be preallocated (size entries).
- * @param[in]     size     Number of columns (square matrix assumed).
- * @param[in,out] work     Workspace of at least `2 * size + 1` unsigned integers.
- */
-static void createGreedyColoringTrivial(SPARSE_PATTERN *pattern, unsigned int size, unsigned int *work)
-{
-  for (unsigned int col = 0; col < size; col++)
-  {
-    pattern->colorCols[col] = col + 1;
-  }
-
-  pattern->maxColors = size;
-}
-
-extern void sparsePatternTranspose(int sizeRows, int sizeCols, SPARSE_PATTERN* sparsePattern, SPARSE_PATTERN* sparsePatternT);
-
-/**
- * @brief Simple sparse matrix coloring for a Jacobian pattern J.
- *
- * Columns receive the same color only if they do not share a row.
- * Uses the transpose pattern to efficiently detect conflicts.
- *
- * @param sparsePattern Sparse pattern of J (CSC)
- * @param sizeRows      Number of rows
- * @param sizeCols      Number of columns
- */
-void createGreedyColoringBB(SPARSE_PATTERN* sparsePattern, unsigned int size, unsigned int *work)
-{
-  SPARSE_PATTERN* sparsePatternT;
-  int row, col;
-  int i, j, maxColors = 0;
-
-  int* tabu = (int*) calloc(size * size, sizeof(int));
-
-  sparsePatternT = allocSparsePattern(size,
-                                      sparsePattern->numberOfNonZeros,
-                                      size);
-
-  sparsePatternTranspose(size, size, sparsePattern, sparsePatternT);
-
-  for (col = 0; col < size; col++)
-  {
-    for (i = 0; i < size; i++)
-    {
-      if (tabu[col * size + i] == 0)
-      {
-        sparsePattern->colorCols[col] = i + 1;
-        if (i + 1 > maxColors) maxColors = i + 1;
-
-        for (row = sparsePattern->leadindex[col]; row < sparsePattern->leadindex[col+1]; row++)
-        {
-          int rowIdx = sparsePattern->index[row];
-
-          for (j = sparsePatternT->leadindex[rowIdx]; j < sparsePatternT->leadindex[rowIdx+1]; j++)
-          {
-            int otherCol = sparsePatternT->index[j];
-            tabu[otherCol * size + i] = 1;
-          }
-        }
-
-        break;
-      }
-    }
-  }
-
-  sparsePattern->maxColors = maxColors;
-
-  freeSparsePattern(sparsePatternT);
-  free(sparsePatternT);
-  free(tabu);
-}
-
 static void createGreedyColoring(SPARSE_PATTERN *pattern,
                                  unsigned int size,
                                  unsigned int *work)
@@ -1912,8 +1832,6 @@ static void createGreedyColoring(SPARSE_PATTERN *pattern,
   pattern->maxColors = color - 1;
 }
 
-int GLOBAL_UPDATE_COUNT = 0;
-
 modelica_boolean updateFastStates(DATA *data,
                                   threadData_t *threadData,
                                   NONLINEAR_SYSTEM_DATA* nonlinsys,
@@ -1922,8 +1840,6 @@ modelica_boolean updateFastStates(DATA *data,
 {
   SPARSE_PATTERN *full_ode_pattern = data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A].sparsePattern;
   DATA_GBODEF *gbfData = gbData->gbfData;
-
-  GLOBAL_UPDATE_COUNT++;
 
   // update size
   nls->size = gbData->nFastStates;

@@ -511,8 +511,6 @@ int finishSimulation(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
     }
     else
     {
-      extern int GLOBAL_UPDATE_COUNT;
-
       /* save stats before print */
       addSolverStats(&(solverInfo->solverStats), &(solverInfo->solverStatsTmp));
 
@@ -523,7 +521,6 @@ int finishSimulation(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
       infoStreamPrint(OMC_LOG_STATS, 0, "%5d error test failures", solverInfo->solverStats.nErrorTestFailures);
       infoStreamPrint(OMC_LOG_STATS, 0, "%5d convergence test failures", solverInfo->solverStats.nConvergenceTestFailures);
       infoStreamPrint(OMC_LOG_STATS, 0, "%gs time of jacobian evaluation", rt_accumulated(SIM_TIMER_JACOBIAN));
-      infoStreamPrint(OMC_LOG_STATS, 0, "%5d number of fast state updates", GLOBAL_UPDATE_COUNT);
 #ifdef USE_PARJAC
       infoStreamPrint(OMC_LOG_STATS, 0, "%i OpenMP-threads used for jacobian evaluation", omc_get_max_threads());
       int chunk_size;

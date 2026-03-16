@@ -318,6 +318,7 @@ int gbodef_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solve
 
    /* reset statistics because it is accumulated in solver_main.c */
   resetSolverStats(&gbfData->stats);
+  gbfData->fastStateUpdateCount = 0;
 
   return 0;
 }
@@ -902,6 +903,7 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
   if (fastStatesChange) {
     updateEvalSelection(data, gbData);
     gbfData->extrapolationValid = FALSE;
+    gbfData->fastStateUpdateCount++;
   }
 
   if (fastStatesChange && !gbfData->isExplicit) {
@@ -2081,14 +2083,14 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
     if (gbData->multi_rate) {
       infoStreamPrint(OMC_LOG_STATS, 0, "gbode (birate integration): slow: %s / fast: %s",
                       GB_METHOD_NAME[gbData->GM_method], GB_METHOD_NAME[gbData->gbfData->GM_method]);
-      logSolverStats(OMC_LOG_STATS, "inner integration", stopTime, stopTime, 0, &gbData->gbfData->stats);
-      logSolverStats(OMC_LOG_STATS, "outer integration", stopTime, stopTime, 0, &gbData->stats);
+      logSolverStats(OMC_LOG_STATS, "inner integration", stopTime, stopTime, 0, &gbData->gbfData->stats, &gbData->gbfData->fastStateUpdateCount);
+      logSolverStats(OMC_LOG_STATS, "outer integration", stopTime, stopTime, 0, &gbData->stats, NULL);
     } else {
       infoStreamPrint(OMC_LOG_STATS, 0, "gbode (single-rate integration): %s", GB_METHOD_NAME[gbData->GM_method]);
     }
   }
   /* Write statistics to the solverInfo data structure */
-  logSolverStats(OMC_LOG_SOLVER_V, "gb_singlerate", solverInfo->currentTime, gbData->time, gbData->stepSize, &gbData->stats);
+  logSolverStats(OMC_LOG_SOLVER_V, "gb_singlerate", solverInfo->currentTime, gbData->time, gbData->stepSize, &gbData->stats, NULL);
   memcpy(&solverInfo->solverStatsTmp, &gbData->stats, sizeof(SOLVERSTATS));
 
   messageClose(OMC_LOG_SOLVER);
