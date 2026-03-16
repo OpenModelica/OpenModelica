@@ -245,6 +245,16 @@ public
     end match;
   end isFor;
 
+  function isReturn
+    input Statement stmt;
+    output Boolean res;
+  algorithm
+    res := match stmt
+      case RETURN() then true;
+      else false;
+    end match;
+  end isReturn;
+
   function makeIf
     input list<tuple<Expression, list<Statement>>> branches;
     input DAE.ElementSource src;

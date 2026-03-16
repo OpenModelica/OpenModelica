@@ -23,6 +23,8 @@ TESTFILES = \
 	Inline2.mo \
 	Inline3.mo \
 	Inline4.mo \
+	Inline5.mo \
+	Inline6.mo \
 	InStreamNominalThreshold.mo \
 	MoveBindings1.mo \
 	NonScalarizedWithRecords1.mo \
