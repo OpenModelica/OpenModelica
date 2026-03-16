@@ -661,7 +661,7 @@ protected
     input UnorderedSet<VariablePointer> set "new iterators";
     input Pointer<Integer> index;
   protected
-    Integer n, sz, shift = 0;
+    Integer n, sz;
     list<Expression> rest;
     list<Pointer<Equation>> eqns;
     Type ty;
@@ -669,7 +669,7 @@ protected
     ComponentRef iterator_name, lhs, rhs;
     Pointer<Variable> iterator_var;
     VariablePointers update_vars;
-    Expression range, subscript_exp, lhs_sub, rhs_sub, lhs_exp, rhs_exp;
+    Expression range, subscript_exp, lhs_sub, rhs_sub, lhs_exp, rhs_exp, shift, new_size;
     Iterator local_iter;
     Pointer<Equation> new_eqn;
     Boolean failed = false;
@@ -696,11 +696,13 @@ protected
     // create an expression of the iterator that can be used for subscripting
     subscript_exp := Expression.fromCref(iterator_name);
 
+    // initialize the shift at 0
+    shift := Expression.INTEGER(0);
+
     for arg in rest loop
       failed := match arg
         case Expression.CREF(cref = rhs) guard(not failed) algorithm
           ty  := Expression.typeOf(arg);
-          sz  := Type.sizeOf(ty);
           if Type.isArray(ty) then
             dim := Type.nthDimension(ty, n);
             sz  := Dimension.size(dim);
@@ -708,11 +710,12 @@ protected
             if sz <> 1 or Dimension.isResizable(dim) then
               // ARRAY
               // make a range of proper size to the rhs
-              range       := Expression.makeRange(Expression.INTEGER(1), NONE(), Dimension.sizeExp(dim));
+              new_size    := Dimension.sizeExp(dim);
+              range       := Expression.makeRange(Expression.INTEGER(1), NONE(), new_size);
               // add the new iterator
               local_iter  := Iterator.addFrames(iter, {(iterator_name, range, NONE())});
               // subscript the LHS with the shift+iterator
-              lhs_sub     := if shift == 0 then subscript_exp else Expression.MULTARY({Expression.INTEGER(shift), subscript_exp}, {}, Operator.makeAdd(Type.INTEGER()));
+              lhs_sub     := if Expression.isZero(shift) then subscript_exp else Expression.MULTARY({shift, subscript_exp}, {}, Operator.makeAdd(Type.INTEGER()));
               lhs         := ComponentRef.mergeSubscripts(Subscript.fillWithWholeLeft({Subscript.INDEX(lhs_sub)}, n), cref);
               // subscript the LHS only with iterator
               rhs         := ComponentRef.mergeSubscripts(Subscript.fillWithWholeLeft({Subscript.INDEX(subscript_exp)}, n), rhs);
@@ -722,7 +725,8 @@ protected
             else
               // SCALAR.
               // properly subscript LHS with shift
-              lhs_sub     := Expression.INTEGER(shift+1);
+              new_size    := Expression.INTEGER(1);
+              lhs_sub     := bumpShift(shift, new_size);
               lhs         := ComponentRef.mergeSubscripts(Subscript.fillWithWholeLeft({Subscript.INDEX(lhs_sub)}, n), cref);
               lhs_exp     := Expression.fromCref(lhs);
               // if its an array type RHS needs to be subscripted even though its of size 1
@@ -734,7 +738,8 @@ protected
           else
             // SCALAR
             // properly subscript LHS with shift
-            lhs_sub     := Expression.INTEGER(shift+1);
+            new_size    := Expression.INTEGER(1);
+            lhs_sub     := bumpShift(shift, new_size);
             lhs         := ComponentRef.mergeSubscripts(Subscript.fillWithWholeLeft({Subscript.INDEX(lhs_sub)}, n), cref);
             lhs_exp     := Expression.fromCref(lhs);
             rhs_exp     := Expression.fromCref(rhs);
@@ -744,8 +749,9 @@ protected
 
           // create the new equation
           new_eqn     := Equation.makeAssignment(lhs_exp, rhs_exp, index, NBEquation.SIMULATION_STR, local_iter, attr);
+
           // bump the shift adding the size of this last equation
-          shift := shift + sz;
+          shift := bumpShift(shift, new_size);
 
           eqns := new_eqn :: eqns;
           if Flags.isSet(Flags.DUMPBACKENDINLINE) then
@@ -777,12 +783,12 @@ protected
     input Integer n;
     input Pointer<Integer> index;
     input output list<Pointer<Equation>> eqns;
-    input output Integer shift;
+    input output Expression shift;
     input list<Subscript> subs = {};
   algorithm
     _ := match exp
       local
-        Integer sub_idx;
+        Expression sub_idx;
         Boolean is_cat_dim;
         Subscript sub;
         ComponentRef lhs;
@@ -791,16 +797,16 @@ protected
 
       case Expression.ARRAY() algorithm
         is_cat_dim  := n == listLength(subs) + 1;
-        sub_idx     := if is_cat_dim then shift + 1 else 1;
+        sub_idx     := if is_cat_dim then bumpShift(shift, Expression.INTEGER(1)) else Expression.INTEGER(1);
 
         for elem in exp.elements loop
-          sub           := Subscript.INDEX(Expression.INTEGER(sub_idx));
+          sub           := Subscript.INDEX(sub_idx);
           (eqns, shift) := inlineCatCallLiterals(elem, cref, iter, attr, n, index, eqns, shift, sub :: subs);
-          sub_idx       := sub_idx + 1;
+          sub_idx       := bumpShift(sub_idx, Expression.INTEGER(1));
         end for;
 
         if is_cat_dim then
-          shift := shift + arrayLength(exp.elements);
+          shift := bumpShift(shift, Expression.INTEGER(arrayLength(exp.elements)));
         end if;
       then ();
 
@@ -819,6 +825,32 @@ protected
       then ();
     end match;
   end inlineCatCallLiterals;
+
+  function bumpShift
+    input output Expression shift;
+    input Expression new_size;
+  algorithm
+    shift := match(shift, new_size)
+      local
+        Integer value;
+        Expression arg;
+        list<Expression> args;
+      // two integers, just add them
+      case (Expression.INTEGER(), Expression.INTEGER()) then Expression.INTEGER(shift.value + new_size.value);
+      // add integer to multary. first argument of multary is the integer (the algorithm here makes sure of it)
+      case (Expression.MULTARY(arguments = Expression.INTEGER(value) :: args), Expression.INTEGER())
+        guard(Operator.getMathClassification(shift.operator) == NFOperator.MathClassification.ADDITION) algorithm
+        shift.arguments := Expression.INTEGER(value + new_size.value) :: args;
+      then shift;
+      // add anything to multary. make sure the first argument is untouched
+      case (Expression.MULTARY(arguments = arg :: args), _)
+        guard(Operator.getMathClassification(shift.operator) == NFOperator.MathClassification.ADDITION) algorithm
+        shift.arguments := arg :: new_size :: args;
+      then shift;
+      // add anything else, just create multary
+      else Expression.MULTARY({shift, new_size}, {}, Operator.makeAdd(Type.INTEGER()));
+    end match;
+  end bumpShift;
 
   function createInlinedEquation
     "used for inlining record, tuple and array equations.
