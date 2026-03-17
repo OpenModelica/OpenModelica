@@ -586,14 +586,12 @@ JACOBIAN_METHOD setJacobianMethod(threadData_t* threadData, JACOBIAN_AVAILABILIT
   switch (availability)
   {
   case JACOBIAN_NOT_AVAILABLE:
-    warningStreamPrint(OMC_LOG_STDOUT, 0, "JACOBIAN_NOT_AVAILABLE");
     if (jacobianMethod != INTERNALNUMJAC && jacobianMethod != JAC_UNKNOWN) {
       warningStreamPrint(OMC_LOG_STDOUT, 0, "Jacobian not available, switching to internal numerical Jacobian.");
     }
     jacobianMethod = INTERNALNUMJAC;
     break;
   case JACOBIAN_ONLY_SPARSITY:
-    warningStreamPrint(OMC_LOG_STDOUT, 0, "JACOBIAN_ONLY_SPARSITY");
     if (jacobianMethod == COLOREDSYMJAC) {
       warningStreamPrint(OMC_LOG_STDOUT, 0, "Symbolic Jacobian not available, only sparsity pattern. Switching to colored numerical Jacobian.");
       jacobianMethod = COLOREDNUMJAC;
@@ -605,7 +603,6 @@ JACOBIAN_METHOD setJacobianMethod(threadData_t* threadData, JACOBIAN_AVAILABILIT
     }
     break;
   case JACOBIAN_AVAILABLE:
-    warningStreamPrint(OMC_LOG_STDOUT, 0, "JACOBIAN_AVAILABLE");
     if (jacobianMethod == JAC_UNKNOWN) {
       jacobianMethod = COLOREDSYMJAC;
     }

@@ -251,6 +251,7 @@ public
           generic_loop_calls := list(SimGenericCall.fromIdentifier(tpl) for tpl in UnorderedMap.toList(indices.generic_call_map));
           indices.generic_call_map := sim_map;
 
+          // scalarize variables for sim code
           if Flags.getConfigBool(Flags.SIM_CODE_SCALARIZE) then
             seed_vec := VariablePointers.scalarize(varData.seedVars);
             res_vec  := VariablePointers.scalarize(varData.resultVars);
@@ -343,6 +344,7 @@ public
               jac_map             = SOME(jac_map),
               isAdjoint           = jacobian.isAdjoint
             );
+
             indices.jacobianIndex := indices.jacobianIndex + 1;
             simJacobian := SOME(jac);
           else

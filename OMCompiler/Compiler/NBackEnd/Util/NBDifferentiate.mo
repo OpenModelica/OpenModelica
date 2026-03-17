@@ -2962,7 +2962,7 @@ public
           end for;
           // Restore upstream gradient
           diffArguments.current_grad := upstream;
-          then (Expression.END());
+      then (Expression.END());
 
       case Expression.MULTARY(arguments = arguments, inv_arguments = inv_arguments, operator = operator)
         guard(Operator.getMathClassification(operator) == NFOperator.MathClassification.MULTIPLICATION
@@ -2994,22 +2994,22 @@ public
           diff_divisor := Expression.MULTARY(diff_inv_arguments, {}, addOp);
           // g
           divisor := Expression.MULTARY(inv_arguments, {}, operator);
-          then Expression.MULTARY(
-                  {Expression.MULTARY(
-                    {Expression.MULTARY(diff_enumerator :: inv_arguments, {}, operator)},   // f'g
-                    {Expression.MULTARY(diff_divisor :: arguments, {}, operator)},          // -g'f
-                    addOp
-                  )},
-                  {Expression.BINARY(divisor, powOp, Expression.REAL(2.0))},
-                  operator
-              );
+      then Expression.MULTARY(
+              {Expression.MULTARY(
+                {Expression.MULTARY(diff_enumerator :: inv_arguments, {}, operator)},   // f'g
+                {Expression.MULTARY(diff_divisor :: arguments, {}, operator)},          // -g'f
+                addOp
+              )},
+              {Expression.BINARY(divisor, powOp, Expression.REAL(2.0))},
+              operator
+           );
+
       else algorithm
         // maybe add failtrace here and allow failing
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for: " + Expression.toString(exp)});
       then fail();
     end match;
   end differentiateMultary;
-
 
   function differentiateMultaryMultiplicationArgs
     "prod_i(f_i)' = sum_i((f_i)' * prod(f_k | k <> i))
