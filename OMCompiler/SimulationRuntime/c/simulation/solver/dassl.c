@@ -371,14 +371,7 @@ int dassl_initial(DATA* data, threadData_t *threadData,
     messageClose(OMC_LOG_SIMULATION);
   }
 
-  // Compare user flag to available Jacobian methods
-  const char* flagValue;
-  if(omc_flag[FLAG_JACOBIAN]){
-    flagValue = omc_flagValue[FLAG_JACOBIAN];
-  } else {
-    flagValue = NULL;
-  }
-  dasslData->dasslJacobian = setJacobianMethod(threadData, jacobian->availability, flagValue);
+  dasslData->dasslJacobian = setJacobianMethod(threadData, jacobian->availability);
 
   /* default use a user sub-routine for JAC */
   dasslData->info[4] = 1;

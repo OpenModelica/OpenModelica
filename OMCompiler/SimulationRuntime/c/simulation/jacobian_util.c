@@ -557,22 +557,22 @@ void readSparsePatternColor(threadData_t* threadData, FILE * pFile, unsigned int
  * @param flagValue               Flag value of FLAG_JACOBIAN. Can be NULL.
  * @return JACOBIAN_METHOD   Returns jacobian method that is availble.
  */
-JACOBIAN_METHOD setJacobianMethod(threadData_t* threadData, JACOBIAN_AVAILABILITY availability, const char* flagValue)
+JACOBIAN_METHOD setJacobianMethod(threadData_t* threadData, JACOBIAN_AVAILABILITY availability)
 {
   JACOBIAN_METHOD jacobianMethod = JAC_UNKNOWN;
   assertStreamPrint(threadData, availability != JACOBIAN_UNKNOWN, "Jacobian availability status is unknown.");
 
   /* if FLAG_JACOBIAN is set, choose jacobian calculation method */
-  if (flagValue) {
+  if (omc_flag[FLAG_JACOBIAN]) {
     for (int method=1; method < JAC_MAX; method++) {
-      if (!strcmp(flagValue, JACOBIAN_METHOD_NAME[method])) {
+      if (!strcmp(omc_flagValue[FLAG_JACOBIAN], JACOBIAN_METHOD_NAME[method])) {
         jacobianMethod = (JACOBIAN_METHOD) method;
         break;
       }
     }
     // Error case
     if (jacobianMethod == JAC_UNKNOWN) {
-      errorStreamPrint(OMC_LOG_STDOUT, 0, "Unknown value `%s` for flag `-jacobian`", flagValue);
+      errorStreamPrint(OMC_LOG_STDOUT, 0, "Unknown value `%s` for flag `-jacobian`", omc_flagValue[FLAG_JACOBIAN]);
       infoStreamPrint(OMC_LOG_STDOUT, 1, "Available options are");
       for (int method=1; method < JAC_MAX; method++) {
         infoStreamPrint(OMC_LOG_STDOUT, 0, "%s", JACOBIAN_METHOD_NAME[method]);
