@@ -2370,7 +2370,7 @@ public
       case UNBOX() then toFlatString(exp.exp, format);
       case BOX() then toFlatString(exp.exp, format);
 
-      case SUBSCRIPTED_EXP() then "(" + toFlatString(exp.exp, format) + ")" + Subscript.toFlatStringList(exp.subscripts, format);
+      case SUBSCRIPTED_EXP() then "(" + toFlatString(exp.exp, format) + ")" + Subscript.toFlatStringList(exp.subscripts, format, escapeQuotes = false);
       case TUPLE_ELEMENT() then toFlatString(exp.tupleExp, format);
       case RECORD_ELEMENT() then "(" + toFlatString(exp.recordExp, format) + ")." + exp.fieldName;
       case MUTABLE() then toFlatString(Mutable.access(exp.exp), format);

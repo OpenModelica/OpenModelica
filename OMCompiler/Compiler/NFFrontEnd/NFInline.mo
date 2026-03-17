@@ -96,11 +96,14 @@ algorithm
   exp := match call
     // Record constructor
     case Call.TYPED_CALL(fn = fn, arguments = args)
-        guard InstNode.name(InstNode.parentScope(fn.node)) == "'constructor'"
+        guard not InstNode.isEmpty(fn.node) and InstNode.isNamed(InstNode.parentScope(fn.node), "'constructor'")
       algorithm
         body := Function.getBody(fn);
-        true := listEmpty(body);
-        true := listEmpty(fn.locals);
+
+        if not (listEmpty(body) and listEmpty(fn.locals)) then
+          exp := callExp;
+          return;
+        end if;
 
         binding := Component.getBinding(InstNode.component(listHead(fn.outputs)));
 
@@ -125,6 +128,7 @@ algorithm
       guard Function.hasSingleOrEmptyBody(fn)
       algorithm
         body := Function.getBody(fn);
+        body := removeDeadCode(body);
 
         // This function can so far only handle functions with at most one
         // statement and output and no local variables.
@@ -136,7 +140,7 @@ algorithm
         if listEmpty(body) then
           stmt := makeOutputStatement(listHead(outputs));
         else
-          stmt := listHead(body);
+          stmt := convertToAssignment(listHead(body));
         end if;
 
         if not Statement.isAssignment(stmt) then
@@ -234,6 +238,96 @@ algorithm
     else dim;
   end match;
 end replaceDimExp;
+
+function removeDeadCode
+  input output list<Statement> body;
+algorithm
+  // Everything after a 'return' can be removed, but for inlining we only care
+  // if we can remove everything after the first statement.
+  if listLength(body) > 1 and Statement.isReturn(listGet(body, 2)) then
+    body := {listHead(body)};
+  end if;
+end removeDeadCode;
+
+function convertToAssignment
+  "Converts a statement into an assignment statement."
+  input Statement stmt;
+  output Statement outStmt;
+algorithm
+  outStmt := match stmt
+    case Statement.IF() then convertIfToAssignment(stmt);
+    else stmt;
+  end match;
+end convertToAssignment;
+
+function convertIfToAssignment
+  "Converts an if-statement where all branches assign the same variable into an
+   assignment with an if-expression. Ex:
+     if x > 1 then
+       y := 1;
+     else
+       y := 2;
+     end if;
+     =>
+     y := if x > 1 then 1 else 2;
+  "
+  input output Statement stmt;
+protected
+  list<tuple<Expression, list<Statement>>> branches;
+  Expression cond, if_exp, output_exp, lhs, rhs;
+  Type ty;
+  list<Statement> body;
+  Statement s;
+  DAE.ElementSource source;
+algorithm
+  Statement.IF(branches = branches, source = source) := stmt;
+  (cond, body) :: branches := listReverse(branches);
+
+  // The if-statement must have an else-branch.
+  if not listEmpty(branches) and not Expression.isTrue(cond) then
+    return;
+  end if;
+
+  // The body of the else branch must have exactly one statement.
+  if listLength(body) <> 1 then
+    return;
+  end if;
+
+  // The statement must be, or be convertible to, an assignment.
+  s := convertToAssignment(listHead(body));
+
+  if not Statement.isAssignment(s) then
+    return;
+  end if;
+
+  Statement.ASSIGNMENT(lhs = output_exp, rhs = if_exp) := s;
+
+  for b in branches loop
+    (cond, body) :: branches := branches;
+
+    // Each branch must be a single assignment.
+    if listLength(body) <> 1 then
+      return;
+    end if;
+
+    s := convertToAssignment(listHead(body));
+
+    if not Statement.isAssignment(s) then
+      return;
+    end if;
+
+    Statement.ASSIGNMENT(lhs = lhs, rhs = rhs, ty = ty) := s;
+
+    // Check that all branches have the same lhs.
+    if not Expression.isEqual(lhs, output_exp) then
+      return;
+    end if;
+
+    if_exp := Expression.IF(ty, cond, rhs, if_exp);
+  end for;
+
+  stmt := Statement.ASSIGNMENT(output_exp, if_exp, ty, source);
+end convertIfToAssignment;
 
 function makeOutputStatement
   input InstNode outputNode;

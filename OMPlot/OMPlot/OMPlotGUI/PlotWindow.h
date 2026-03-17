@@ -115,6 +115,7 @@ private:
 	int mCurveStyle;
 	QFont mLegendFont;
 	double mTime;
+	bool mTimeOutOfBounds = false;
 	bool mIsInteractiveSimulation;
 	QString mInteractiveTreeItemOwner;
 	int mInteractivePort;
@@ -272,6 +273,12 @@ class TimeOutOfBoundsException : public PlotException
 {
 public:
   TimeOutOfBoundsException(const QFileInfo &fileInfo, double startTime, double stopTime);
+};
+
+class RecurringPlotException : public PlotException
+{
+public:
+  RecurringPlotException(const PlotException &e) : PlotException(e) {}
 };
 
 class SetupDialog;
