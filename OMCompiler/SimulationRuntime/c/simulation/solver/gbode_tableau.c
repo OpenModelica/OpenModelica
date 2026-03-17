@@ -520,7 +520,17 @@ void getButcherTableau_ESDIRK4_7L2SA(BUTCHER_TABLEAU* tableau)
   setStageValuePredictors(tableau, A_predictor, svp_type, predictor_denseOutput_ESDIRK4_7L2SA);
 }
 
-// 3-stage order 3(2), L-stable SDIRK, embedded bt might be bad, dense output missing
+// order 2 dense output, minimal (L2-norm) leading coefficient for order 3 linear problems
+void denseOutput_SDIRK3(BUTCHER_TABLEAU* tableau, double* yOld, double* x, double* k, double dt, double stepSize, double* y, int nIdx, int* idx, int nStates)
+{
+  tableau->b_dt[0] = -0.7500000000000000 * dt + 1.9584966491760105;
+  tableau->b_dt[1] = -0.2726301276675501 * dt + (-0.3717330430169189);
+  tableau->b_dt[2] =  1.0226301276675507 * dt + (-0.5867636061590916);
+
+  denseOutput(tableau, yOld, x, k, dt, stepSize, y, nIdx, idx, nStates);
+}
+
+// 3-stage order 3(2), L-stable SDIRK
 void getButcherTableau_SDIRK3(BUTCHER_TABLEAU* tableau)
 {
   tableau->nStages = 3;
@@ -535,9 +545,13 @@ void getButcherTableau_SDIRK3(BUTCHER_TABLEAU* tableau)
                       1.2084966491760100703364772, -0.644363170684469069752496, 0.4358665215084589994160194};
 
   const double b[] = {1.2084966491760100703364772, -0.644363170684469069752496, 0.4358665215084589994160194};
-  const double bt[] = {0.0, 1.7726301276675510709204584, -0.7726301276675510709204578};
+  const double bt[] = {0.825, 0.1226301276675510709204581, 0.05236987233244892907954193};
 
   setButcherTableau(tableau, c, A, b, bt);
+  tableau->withDenseOutput = TRUE;
+  tableau->dense_output = denseOutput_SDIRK3;
+  tableau->isKLeftAvailable = FALSE;
+  tableau->isKRightAvailable = TRUE;
 
   const double A_predictor[] = {
                                 0, 0, 0,
@@ -600,6 +614,15 @@ void getButcherTableau_SDIRK4(BUTCHER_TABLEAU* tableau)
   setStageValuePredictors(tableau, A_predictor, svp_type, NULL);
 }
 
+// unique order 2 dense output
+void denseOutput_SDIRK2(BUTCHER_TABLEAU* tableau, double* yOld, double* x, double* k, double dt, double stepSize, double* y, int nIdx, int* idx, int nStates)
+{
+    tableau->b_dt[0] = -0.707106781186547524400844362104849 * dt +   1.414213562373095048801688724209;  // -1/sqrt(2), sqrt(2)
+    tableau->b_dt[1] =  0.707106781186547524400844362104849 * dt + (-0.414213562373095048801688724209); //  1/sqrt(2), 1-sqrt(2)
+
+    denseOutput(tableau, yOld, x, k, dt, stepSize, y, nIdx, idx, nStates);
+}
+
 // 2 stage, L-stable, order 2(1), SDIRK with gamma = 0.29289
 void getButcherTableau_SDIRK2(BUTCHER_TABLEAU* tableau)
 {
@@ -613,9 +636,11 @@ void getButcherTableau_SDIRK2(BUTCHER_TABLEAU* tableau)
   const double A[] = {0.29289321881345247559915563789, 0.0,
                       0.707106781186547524400844362104849, 0.29289321881345247559915563789};
   const double b[] = {0.707106781186547524400844362104849, 0.29289321881345247559915563789};
-  const double bt[] = {0.25, 0.75};
+  const double bt[] = {0.585786437626904951198311275790301, 0.414213562373095048801688724209};
 
   setButcherTableau(tableau, c, A, b, bt);
+  tableau->withDenseOutput = TRUE;
+  tableau->dense_output = denseOutput_SDIRK2;
   tableau->isKLeftAvailable = FALSE;
   tableau->isKRightAvailable = TRUE;
 
@@ -2039,6 +2064,15 @@ void getButcherTableau_IMPLEULER(BUTCHER_TABLEAU* tableau)
   }
 }
 
+// unique order 2 dense output
+void denseOutput_TRAPEZOID(BUTCHER_TABLEAU* tableau, double* yOld, double* x, double* k, double dt, double stepSize, double* y, int nIdx, int* idx, int nStates)
+{
+  tableau->b_dt[0] = -0.5 * dt + 1.0;
+  tableau->b_dt[1] =  0.5 * dt;
+
+  denseOutput(tableau, yOld, x, k, dt, stepSize, y, nIdx, idx, nStates);
+}
+
 // https://en.wikipedia.org/wiki/List_of_Runge%E2%80%93Kutta_methods
 void getButcherTableau_TRAPEZOID(BUTCHER_TABLEAU* tableau)
 {
@@ -2052,10 +2086,12 @@ void getButcherTableau_TRAPEZOID(BUTCHER_TABLEAU* tableau)
   const double A[] = {0.0, 0.0,
                       0.5, 0.5};
   const double b[] = {0.5, 0.5};  // trapezoidal rule
-  const double bt[] = {1.0, 0.0}; // explicit Euler
+  const double bt[] = {0.0, 1.0};
 
   setButcherTableau(tableau, c, A, b, bt);
 
+  tableau->withDenseOutput = TRUE;
+  tableau->dense_output = denseOutput_TRAPEZOID;
   tableau->isKLeftAvailable = TRUE;
   tableau->isKRightAvailable = TRUE;
 }
@@ -2582,7 +2618,7 @@ void analyseButcherTableau(BUTCHER_TABLEAU* tableau, int nStates, unsigned int* 
     tableau->order_bt = tableau->order_b + 1;
   }
   // set order for error control!
-  tableau->error_order = fmin(tableau->order_b, tableau->order_bt);
+  tableau->error_order = (unsigned int) fmin(tableau->order_b, tableau->order_bt);
 }
 
 /**
