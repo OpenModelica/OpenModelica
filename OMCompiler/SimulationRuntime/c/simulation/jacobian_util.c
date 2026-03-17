@@ -636,9 +636,6 @@ JACOBIAN_METHOD setJacobianMethod(threadData_t* threadData, JACOBIAN_AVAILABILIT
   case COLOREDSYMJACADJ:
     infoStreamPrint(OMC_LOG_JAC, 0, "Using Jacobian method: Colored symbolical adjoint Jacobian.");
     break;
-  case SYMJACADJ:
-    infoStreamPrint(OMC_LOG_JAC, 0, "Using Jacobian method: Symbolical adjoint Jacobian.");
-    break;
   default:
     throwStreamPrint(threadData, "Unhandled case in setJacobianMethod");
     break;

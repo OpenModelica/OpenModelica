@@ -477,7 +477,6 @@ typedef enum JACOBIAN_METHOD
   COLOREDSYMJACADJ,   /* Colored symbolic Jacobian (adjoint) */
   NUMJAC,             /* Non-colored numeric Jacobian */
   SYMJAC,             /* Non-colored symbolic Jacobian */
-  SYMJACADJ,          /* Non-colored symbolic Jacobian (adjoint) */
 
   JAC_MAX
 } JACOBIAN_METHOD;

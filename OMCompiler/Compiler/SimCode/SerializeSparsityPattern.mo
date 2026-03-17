@@ -41,7 +41,6 @@ function serialize
 protected
   array<Integer> columnPointers, rowIndices, columns;
   String fname;
-  Boolean adj;
   list<tuple<Integer, list<Integer>>> pattern;
   list<list<Integer>> colorList;
 algorithm

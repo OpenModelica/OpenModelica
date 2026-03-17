@@ -84,7 +84,6 @@ public
   //        TYPES AND UNIONTYPES
   // ================================
   type DifferentiationType = enumeration(TIME, SIMPLE, FUNCTION, JACOBIAN);
-  type ExpressionList = list<Expression>;
 
   uniontype DifferentiationArguments
     record DIFFERENTIATION_ARGUMENTS
@@ -253,7 +252,6 @@ public
         Tearing strict;
         Option<Tearing> casual;
         Boolean linear;
-        Boolean oldCollect;
 
       case StrongComponent.SINGLE_COMPONENT() algorithm
         new_var := differentiateVariablePointer(comp.var, diffArguments_ptr);
@@ -322,8 +320,6 @@ public
     list<Slice<VariablePointer>> ite_vars;
     list<Slice<EquationPointer>> res_eqns;
     array<StrongComponent> inner_eqns;
-    Integer i;
-    Equation eq;
   algorithm
     ite_vars := list(Slice.apply(var, function differentiateVariablePointer(diffArguments_ptr = diffArguments_ptr)) for var in tearing.iteration_vars);
     res_eqns := list(Slice.apply(eqn, function differentiateEquationPointer(diffArguments_ptr = diffArguments_ptr, name = name)) for eqn in tearing.residual_eqns);
@@ -406,15 +402,6 @@ public
         Pointer<DifferentiationArguments> diffArguments_ptr;
         EquationAttributes attr;
         Algorithm alg;
-        Boolean oldCollect;
-
-        UnorderedMap<ComponentRef,ComponentRef> dm;
-        ComponentRef lhs_base = ComponentRef.EMPTY();
-        ComponentRef seed_base;
-        Integer n = 0, iel;
-        list<Type.Dimension> dims;
-        Expression grad_save, rhs_i, grad_i;
-        Boolean collect_save;
 
         UnorderedMap<ComponentRef,ComponentRef> dm;
         ComponentRef lhs_base = ComponentRef.EMPTY();
@@ -425,12 +412,6 @@ public
         Boolean collect_save;
 
       // ToDo: Element source stuff (see old backend)
-      // case Equation.SCALAR_EQUATION() algorithm
-      //   (lhs, diffArguments) := differentiateExpression(eq.lhs, diffArguments);
-      //   (rhs, diffArguments) := differentiateExpression(eq.rhs, diffArguments);
-      //   attr := differentiateEquationAttributes(eq.attr, diffArguments);
-      // then (Equation.SCALAR_EQUATION(eq.ty, lhs, rhs, eq.source, attr), diffArguments);
-
       case Equation.SCALAR_EQUATION() algorithm
         (lhs, diffArguments) := differentiateExpressionNoCollect(eq.lhs, diffArguments);
         (rhs, diffArguments) := differentiateExpression(eq.rhs, diffArguments);
@@ -691,31 +672,6 @@ public
 
       // Forward: (if c then a else b)' = if c then a' else b'
       // Reverse: upstream G is only sent to taken branch:
-      //   grad_a = IF(c, G, 0)
-      //   grad_b = IF(c, 0, G)
-      // Then recurse with those masked gradients.
-      case Expression.IF()
-        guard(isReverse)
-      algorithm
-        // Keep original upstream
-        current_grad := diffArguments.current_grad;
-
-        // Masked gradients
-        gradTrue  := Expression.IF(Expression.typeOf(current_grad), exp.condition, current_grad, Expression.makeZero(Expression.typeOf(current_grad)));
-        gradFalse := Expression.IF(Expression.typeOf(current_grad), exp.condition, Expression.makeZero(Expression.typeOf(current_grad)), current_grad);
-
-        // Recurse true branch
-        diffArguments.current_grad := gradTrue;
-        (elem1, diffArguments) := differentiateExpression(exp.trueBranch, diffArguments);
-
-        // Recurse false branch
-        diffArguments.current_grad := gradFalse;
-        (elem2, diffArguments) := differentiateExpression(exp.falseBranch, diffArguments);
-
-        // Restore upstream
-        diffArguments.current_grad := current_grad;
-      then (Expression.IF(exp.ty, exp.condition, elem1, elem2), diffArguments);
-
       //   grad_a = if c then G else 0
       //   grad_b = if c then 0 else G
       // Then recurse with those masked gradients.
@@ -751,18 +707,6 @@ public
       case Expression.MULTARY() then differentiateMultary(exp, diffArguments);
 
       // (-x)' = -(x')
-      case Expression.UNARY()
-        guard(isReverse)
-      algorithm
-        current_grad := diffArguments.current_grad;
-
-        // apply same unary operator to current_grad
-        diffArguments.current_grad := Expression.UNARY(exp.operator, current_grad);
-        (elem1, diffArguments) := differentiateExpression(exp.exp, diffArguments);
-
-        diffArguments.current_grad := current_grad;
-      then (Expression.UNARY(exp.operator, elem1), diffArguments);
-
       case Expression.UNARY() algorithm
         if isReverse then
           current_grad := diffArguments.current_grad;
@@ -1116,7 +1060,6 @@ public
     DifferentiationArguments diffArguments = Pointer.access(diffArguments_ptr);
     Variable var = Pointer.access(var_ptr);
     Expression crefExp;
-    Boolean oldCollect;
   algorithm
     (crefExp, diffArguments) := differentiateComponentRefNoCollect(Expression.fromCref(var.name), diffArguments);
     diff_ptr := match crefExp
@@ -2820,32 +2763,6 @@ public
     // simplify?
   end differentiateBinary;
 
-  function removeExpAtIndex
-    input list<Expression> es;
-    input Integer i;
-    output list<Expression> outEs;
-  protected
-    Integer k = 1;
-    list<Expression> acc = {};
-    Expression e;
-    list<Expression> rest = es;
-  algorithm
-    // Traverse until end or index hit
-    while not listEmpty(rest) loop
-      e :: rest := rest;
-      if k == i then
-        // Skip this element; append remaining tail to reversed prefix
-        outEs := List.append_reverse(acc, rest);
-        return;
-      else
-        acc := e :: acc;
-        k := k + 1;
-      end if;
-    end while;
-    // i out of range -> return original list
-    outEs := es;
-  end removeExpAtIndex;
-
   function differentiateMultary
     "Differentiates a multary expression. Expression.MULTARY()
     Note: these can only contain commutative operators"
@@ -3583,399 +3500,6 @@ protected
       else NONE();
     end match;
   end buildMultiHotVectorAdjoint;
-
-    function makeMulFromOperator
-      input Operator operator;
-      output Operator mulOp;
-    protected
-      Operator.SizeClassification sizeClass;
-    algorithm
-      (_, sizeClass) := Operator.classify(operator);
-      mulOp := Operator.fromClassification((NFOperator.MathClassification.MULTIPLICATION, sizeClass), operator.ty);
-    end makeMulFromOperator;
-
-  function typeTransposeCall
-    "Create a typed builtin transpose(mat) call without expanding mat.
-     Returns mat if it is not an array with at least 2 dimensions."
-    input Expression mat;
-    output Expression tr;
-  protected
-    Type inTy = Expression.typeOf(mat);
-    list<Type.Dimension> dims;
-    Type elTy;
-    Type resTy;
-    NFCall call;
-    NFPrefixes.Variability var = Expression.variability(mat);
-    NFPrefixes.Purity pur = Expression.purity(mat);
-    NFFunction.Function TRANSPOSE_FUNC;
-  algorithm
-    // Only handle array types
-    if not Type.isArray(inTy) then
-      tr := mat;
-      return;
-    end if;
-
-    elTy := Type.arrayElementType(inTy);
-    dims := Type.arrayDims(inTy);
-
-    // Need at least 2 dimensions to transpose
-    if listLength(dims) < 2 then
-      tr := mat;
-      return;
-    end if;
-
-    // Swap first two dimensions; keep the rest
-    resTy := Type.ARRAY(
-      elTy,
-      listAppend({listGet(dims,2), listGet(dims,1)}, listRest(listRest(dims)))
-    );
-
-    // Build a minimal builtin function descriptor (local, not globally registered)
-    TRANSPOSE_FUNC :=
-      NFFunction.Function.FUNCTION(
-        Absyn.Path.IDENT("transpose"),
-        NFInstNode.EMPTY_NODE(),
-        {}, {}, {}, {},
-        resTy,
-        DAE.FUNCTION_ATTRIBUTES_BUILTIN,
-        {}, {}, listArray({}),
-        Pointer.createImmutable(NFFunction.FunctionStatus.BUILTIN),
-        Pointer.createImmutable(0));
-
-    call := NFCall.makeTypedCall(TRANSPOSE_FUNC, {mat}, var, pur, resTy);
-    tr := Expression.CALL(call);
-  end typeTransposeCall;
-
-    // Helper: build a typed builtin promote(A, n) call that appends (n - ndims(A)) singleton dims.
-  function typePromoteCall
-    input Expression arr;   // A (scalar or array)
-    input Integer n;        // desired rank
-    output Expression promoted;
-  protected
-    Type inTy = Expression.typeOf(arr);
-    Type elTy;
-    list<Type.Dimension> inDims;
-    Integer m, k;
-    list<Type.Dimension> ones = {};
-    list<Type.Dimension> resDims;
-    Type resTy;
-    NFCall call;
-    NFPrefixes.Variability var = Expression.variability(arr);
-    NFPrefixes.Purity pur = Expression.purity(arr);
-    NFFunction.Function PROMOTE_FUNC;
-  algorithm
-    elTy := if Type.isArray(inTy) then Type.arrayElementType(inTy) else inTy;
-    inDims := if Type.isArray(inTy) then Type.arrayDims(inTy) else {};
-    m := listLength(inDims);
-
-    // Append singleton dims to the right until rank n
-    for k in 1:max(0, n - m) loop
-      ones := Dimension.fromInteger(1) :: ones;
-    end for;
-    resDims := List.append_reverse(ones, inDims);
-    resTy := if n > 0 then Type.ARRAY(elTy, resDims) else elTy;
-
-    // Minimal builtin descriptor for 'promote'
-    PROMOTE_FUNC :=
-      NFFunction.Function.FUNCTION(
-        Absyn.Path.IDENT("promote"),
-        NFInstNode.EMPTY_NODE(),
-        {}, {}, {}, {},
-        resTy,
-        DAE.FUNCTION_ATTRIBUTES_BUILTIN,
-        {}, {}, listArray({}),
-        Pointer.createImmutable(NFFunction.FunctionStatus.BUILTIN),
-        Pointer.createImmutable(0));
-
-    call := NFCall.makeTypedCall(PROMOTE_FUNC, {arr, Expression.INTEGER(n)}, var, pur, resTy);
-    promoted := Expression.CALL(call);
-  end typePromoteCall;
-
-
-  function typeSumCall
-      "
-      Create a typed builtin sum(A) call without expanding A.
-        Semantics:
-          - If A is not an array => return A (defensive fallback).
-          - If A is an array => return sum over all elements, resulting in a scalar of element type.
-      "
-      input Expression arr;
-      output Expression s;
-    protected
-      Type inTy = Expression.typeOf(arr);
-      list<Type.Dimension> dims;
-      Type elTy;
-      Type resTy;
-      NFCall call;
-      NFPrefixes.Variability var = Expression.variability(arr);
-      NFPrefixes.Purity pur = Expression.purity(arr);
-      NFFunction.Function SUM_FUNC;
-    algorithm
-      // Not an array: just return expression (sum(x) == x)
-      if not Type.isArray(inTy) then
-        s := arr;
-        return;
-      end if;
-
-      elTy := Type.arrayElementType(inTy);
-      dims := Type.arrayDims(inTy);
-      resTy := elTy; // always reduce to scalar of element type
-
-      // Build minimal builtin function descriptor for 'sum'
-      SUM_FUNC :=
-        NFFunction.Function.FUNCTION(
-          Absyn.Path.IDENT("sum"),
-          NFInstNode.EMPTY_NODE(),
-          {}, {}, {}, {},
-          resTy,
-          DAE.FUNCTION_ATTRIBUTES_BUILTIN,
-          {}, {}, listArray({}),
-          Pointer.createImmutable(NFFunction.FunctionStatus.BUILTIN),
-          Pointer.createImmutable(0));
-
-      call := NFCall.makeTypedCall(SUM_FUNC, {arr}, var, pur, resTy);
-      s := Expression.CALL(call);
-    end typeSumCall;
-
-    // Helper: build matrix * vector (or matrix * matrix) MULTARY with a proper mul operator
-    function makeMul
-      input Expression a;
-      input Expression b;
-      input Operator.SizeClassification sc;
-      input Type ty;
-      output Expression res;
-    algorithm
-      res := Expression.BINARY(
-        a,
-        Operator.fromClassification((NFOperator.MathClassification.MULTIPLICATION, sc), ty),
-        b);
-    end makeMul;
-
-  // Drop the last array dimension by indexing it with 1:
-  // arr[..., 1]. If arr is not an array, return it unchanged.
-  function dropLastDimIndex1
-    input Expression arr;
-    output Expression res;
-  protected
-    Type ty = Expression.typeOf(arr);
-    list<Type.Dimension> dims;
-    Integer m, i;
-    list<Subscript> subs = {};
-  algorithm
-    if not Type.isArray(ty) then
-      res := arr; return;
-    end if;
-
-    dims := Type.arrayDims(ty);
-    m := listLength(dims);
-    if m <= 0 then
-      res := arr; return;
-    end if;
-
-    // Build subscripts: WHOLE for first m-1 dims, INDEX(1) for last
-    for i in 1:(m-1) loop
-      subs := Subscript.WHOLE() :: subs;
-    end for;
-    subs := Subscript.INDEX(Expression.INTEGER(1)) :: subs;
-    subs := listReverse(subs);
-
-    res := Expression.applySubscripts(subs, arr, true);
-  end dropLastDimIndex1;
-
-  // Build vector[n] with elements A[i,i], i=1..n (literal array).
-  function extractDiagonalVector
-    input Expression A;     // matrix
-    input Integer n;
-    input Type vecTy;       // vector[n] type
-    output Expression v;
-  protected
-    list<Expression> elems = {};
-    Integer i;
-  algorithm
-    for i in 1:n loop
-      elems := Expression.applySubscripts(
-        { Subscript.INDEX(Expression.INTEGER(i)), Subscript.INDEX(Expression.INTEGER(i)) },
-        A, true) :: elems;
-    end for;
-    v := Expression.ARRAY(vecTy, listArray(listReverse(elems)), false);
-  end extractDiagonalVector;
-
-  function dbg
-    input String s;
-  algorithm
-    if Flags.isSet(Flags.DEBUG_ADJOINT) then
-      print(s + "\n");
-    end if;
-  end dbg;
-
-  function updateAdjointList
-      input Option<ExpressionList> oldOpt;
-      input Expression current_grad;
-      output ExpressionList newList;
-    protected
-        ExpressionList oldList;
-    algorithm
-      newList := match oldOpt
-        // probably the only case since empty list is used to initialize
-        case SOME(oldList) then (current_grad :: oldList);
-        else {current_grad};
-      end match;
-    end updateAdjointList;
-
-    // Build a 1D one-hot array of the same type as derBaseCref:
-    // zeros(n) with value placed at index idx.
-    function buildOneHotVectorAdjoint
-      input ComponentRef derBaseCref;
-      input Integer idx;                // 1-based
-      input Expression value;           // scalar element to place
-      output Option<Expression> onehot; // NONE if sizes unknown or not vector
-    protected
-      Type arrTy;
-      list<Type.Dimension> dims;
-      list<Integer> sizes;
-      Integer n, i;
-      Type elTy;
-      list<Expression> elems = {};
-    algorithm
-      // Array type of the pDER base cref
-      arrTy := ComponentRef.getSubscriptedType(derBaseCref);
-      if not Type.isArray(arrTy) then
-        onehot := NONE(); return;
-      end if;
-
-      dims := Type.arrayDims(arrTy);
-      if listLength(dims) <> 1 then
-        // Only handle simple vectors here
-        onehot := NONE(); return;
-      end if;
-
-      sizes := NFDimension.sizes(dims);
-      if listEmpty(sizes) then
-        onehot := NONE(); return;
-      end if;
-
-      n := listHead(sizes);
-      elTy := Type.arrayElementType(arrTy);
-
-      // Build [0,0,...,value,...,0]
-      for i in 1:n loop
-        elems := (if i == idx then value else Expression.makeZero(elTy)) :: elems;
-      end for;
-
-      onehot := SOME(Expression.ARRAY(
-        arrTy,
-        listArray(listReverse(elems)),
-        false
-      ));
-    end buildOneHotVectorAdjoint;
-
-    // Build a multi-hot scatter vector for a SLICE subscript:
-    // result = sum_t [onehot(idx_t) * seed_elem_t]
-    // Handles:
-    //   - WHOLE()                     -> returns seed
-    //   - SLICE {i1,i2,...}           -> sum of one-hots; indices must be literal integers
-    //   - SLICE range lo[:st]:hi      -> sum over lo, lo+st, ..., hi; lo,st,hi must be literal integers
-    function buildMultiHotVectorAdjoint
-      input ComponentRef derBaseCref;
-      input Subscript sub;        // SLICE or WHOLE
-      input Expression seed;      // upstream gradient for the sliced view (scalar or vector)
-      output Option<Expression> scatter; // NONE() if not handled
-    protected
-      Type arrTy;
-      Type elTy;
-      Operator addOp;
-      Boolean seedIsArray;
-      Integer m, j, loI, hiI, stI;
-      array<Expression> elems = arrayCreate(0, Expression.INTEGER(0));
-      Option<Expression> accOpt;
-      Option<Expression> ohOpt;
-      Expression acc, seedElem, term;
-      list<Expression> idxElems;
-    algorithm
-      arrTy := ComponentRef.getSubscriptedType(derBaseCref);
-      elTy  := Type.arrayElementType(arrTy);
-      addOp := Operator.fromClassification(
-        (NFOperator.MathClassification.ADDITION, NFOperator.SizeClassification.ELEMENT_WISE),
-        elTy
-      );
-      seedIsArray := Type.isArray(Expression.typeOf(seed));
-
-      scatter := match sub
-        // case Subscript.SLICE(slice = Expression.ARRAY(elements = elems))
-        //     algorithm
-        //       m := arrayLength(elems);
-        //       if m == 0 then
-        //         scatter := SOME(Expression.makeZero(arrTy)); return;
-        //       end if;
-
-        //       acc := Expression.makeZero(arrTy);
-
-        //       for j in 1:m loop
-        //         // slice index must be a literal integer
-        //         if match elems[j] case Expression.INTEGER() then true else false end match then
-        //           // pick element seed[j] if seed is a vector, else reuse scalar seed
-        //           seedElem := if seedIsArray
-        //             then Expression.applySubscripts({Subscript.INDEX(Expression.INTEGER(j))}, seed, true)
-        //             else seed;
-
-        //           ohOpt := buildOneHotVectorAdjoint(derBaseCref, Expression.toInteger(elems[j]), seedElem);
-        //           if Util.isSome(ohOpt) then
-        //             acc := Expression.MULTARY({acc, Util.getOption(ohOpt)}, {}, addOp);
-        //           else
-        //             scatter := NONE(); return;
-        //           end if;
-        //         else
-        //           scatter := NONE(); return;
-        //         end if;
-        //       end for;
-
-        //       scatter := SOME(acc);
-        //     then scatter;
-        // SLICE with range lo:hi (unit step)
-        case Subscript.SLICE(slice = Expression.RANGE(
-            start = Expression.INTEGER(loI),
-            step  = NONE(),
-            stop  = Expression.INTEGER(hiI)))
-          algorithm
-            if hiI < loI then
-              scatter := SOME(Expression.makeZero(arrTy)); return;
-            end if;
-
-            accOpt := NONE();
-            m := hiI - loI + 1;
-            for j in 0:(m-1) loop
-              ohOpt := buildOneHotVectorAdjoint(
-                derBaseCref,
-                loI + j,
-                if seedIsArray
-                  then Expression.applySubscripts({Subscript.INDEX(Expression.INTEGER(j+1))}, seed, true)
-                  else seed
-              );
-              if Util.isSome(ohOpt) then
-                if Util.isSome(accOpt) then
-                  acc := Util.getOption(accOpt);
-                  term := Util.getOption(ohOpt);
-                  accOpt := SOME(Expression.MULTARY({acc, term}, {}, addOp));
-                else
-                  accOpt := ohOpt;
-                end if;
-              else
-                scatter := NONE(); return;
-              end if;
-            end for;
-
-            scatter := if Util.isSome(accOpt) then accOpt else SOME(Expression.makeZero(arrTy));
-          then scatter;
-
-        else NONE();
-      end match;
-    end buildMultiHotVectorAdjoint;
-
-    function subsToString
-      input List<Subscript> subs; output String s;
-    algorithm
-      s := "{" + List.toString(subs, Subscript.toString) + "}";
-    end subsToString;
 
   annotation(__OpenModelica_Interface="backend");
 end NBDifferentiate;

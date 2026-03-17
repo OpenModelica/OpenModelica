@@ -1363,7 +1363,6 @@ const char *JACOBIAN_METHOD_NAME[JAC_MAX] = {
   "coloredSymbolicalAdjoint",
   "numerical",
   "symbolical",
-  "symbolicalAdjoint"
 };
 
 const char *JACOBIAN_METHOD_DESC[JAC_MAX] = {
@@ -1374,7 +1373,6 @@ const char *JACOBIAN_METHOD_DESC[JAC_MAX] = {
   "Colored symbolical Jacobian. Needs omc compiler flag --generateDynamicJacobian=symbolic. With option -idaLS=klu a sparse matrix is used.",
   "Colored symbolical adjoint Jacobian. Needs omc compiler flag --newBackend and --generateDynamicJacobian=symbolicadjoint.",
   "Dense numerical Jacobian.",
-  "Dense symbolical Jacobian. Needs omc compiler flag --generateDynamicJacobian=symbolic.",
  };
 
 const char *IDA_LS_METHOD_NAME[IDA_LS_MAX] = {

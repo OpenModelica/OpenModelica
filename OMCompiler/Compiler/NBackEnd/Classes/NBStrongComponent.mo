@@ -349,36 +349,6 @@ public
     end match;
   end size;
 
-  public function compTypeString
-    "Returns the constructor name of the strong component as a string.
-     If resolveAlias=true, ALIAS() will be unwrapped to the original component."
-    input StrongComponent comp;
-    input Boolean resolveAlias = true;
-    output String kind;
-  protected
-    StrongComponent comp_;
-  algorithm
-    if resolveAlias then
-      comp_ := removeAlias(comp);
-    else
-      comp_ := comp;
-    end if;
-
-    kind := match comp_
-      case SINGLE_COMPONENT()    then "SINGLE_COMPONENT";
-      case MULTI_COMPONENT()     then "MULTI_COMPONENT";
-      case SLICED_COMPONENT()    then "SLICED_COMPONENT";
-      case RESIZABLE_COMPONENT() then "RESIZABLE_COMPONENT";
-      case GENERIC_COMPONENT()   then "GENERIC_COMPONENT";
-      case ENTWINED_COMPONENT()  then "ENTWINED_COMPONENT";
-      case ALGEBRAIC_LOOP()      then "ALGEBRAIC_LOOP";
-      case ALIAS()               then "ALIAS";
-      else algorithm
-        Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed in compTypeString."});
-      then fail();
-    end match;
-  end compTypeString;
-
   function removeAlias
     input output StrongComponent comp;
   algorithm
@@ -948,16 +918,6 @@ public
     end match;
   end getLoopResiduals;
 
-  function getLoopIterationVars
-    input StrongComponent comp;
-    output list<Pointer<Variable>> iterationVars;
-  algorithm
-    iterationVars := match comp
-      case ALGEBRAIC_LOOP()  then Tearing.getIterationVars(comp.strict);
-                        else {};
-    end match;
-  end getLoopIterationVars;
-
   function getVariables
     input StrongComponent comp;
     output list<Pointer<Variable>> vars;
@@ -1010,20 +970,6 @@ public
       then fail();
     end match;
   end getEquations;
-
-  function getVarPointer
-    // ToDo: other types
-    input StrongComponent comp;
-    output Pointer<Variable> vars;
-  algorithm
-    vars := match comp
-      case SINGLE_COMPONENT() then comp.var;
-      case ALIAS()            then getVarPointer(comp.original);
-      else algorithm
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of wrong component: " + toString(comp)});
-      then fail();
-    end match;
-  end getVarPointer;
 
   function getSolveStatus
     input StrongComponent comp;
@@ -1085,7 +1031,7 @@ public
     end match;
   end isAlias;
 
-  public function isSingleComponent
+  function isSingleComponent
     input StrongComponent comp;
     output Boolean b;
   algorithm
@@ -1095,7 +1041,7 @@ public
     end match;
   end isSingleComponent;
 
-  public function isAlgebraicLoop
+  function isAlgebraicLoop
     input StrongComponent comp;
     output Boolean b;
   algorithm
