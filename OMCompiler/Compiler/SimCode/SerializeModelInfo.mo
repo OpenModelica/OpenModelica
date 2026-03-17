@@ -636,6 +636,9 @@ algorithm
 
       File.write(file, ",\"display\":\"linear\",\"unknowns\":" + intString(lSystem.nUnknowns) + ",\"defines\":[");
       serializeList(file, list(v.name for v in lSystem.vars), serializeCref);
+      File.write(file, "],\"uses\":[");
+      crefs := {};
+      serializeList(file, crefs, serializeCref);
       File.write(file, "],\"equation\":[{\"size\":");
       File.write(file,intString(i));
       if i <> 0 then
@@ -693,6 +696,9 @@ algorithm
 
       File.write(file, ",\"display\":\"linear\",\"unknowns\":" + intString(lSystem.nUnknowns) + ",\"defines\":[");
       serializeList(file, list(v.name for v in lSystem.vars), serializeCref);
+      File.write(file, "],\"uses\":[");
+      crefs := {};
+      serializeList(file, crefs, serializeCref);
       File.write(file, "],\"equation\":[{\"size\":");
       File.write(file,intString(i));
       if i <> 0 then
@@ -747,6 +753,9 @@ algorithm
 
       File.write(file, ",\"display\":\"linear\",\"unknowns\":" + intString(atL.nUnknowns) + ",\"defines\":[");
       serializeList(file, list(v.name for v in atL.vars), serializeCref);
+      File.write(file, "],\"uses\":[");
+      crefs := {};
+      serializeList(file, crefs, serializeCref);
       File.write(file, "],\"equation\":[{\"size\":");
       File.write(file,intString(i));
       if i <> 0 then
@@ -842,6 +851,9 @@ algorithm
 
       File.write(file, ",\"display\":\"non-linear\",\"unknowns\":" + intString(nlSystem.nUnknowns) + ",\"defines\":[");
       serializeList(file, nlSystem.crefs, serializeCref);
+      File.write(file, "],\"uses\":[");
+      crefs := {};
+      serializeList(file, crefs, serializeCref);
       File.write(file, "],\"equation\":[[");
       serializeList(file,eqs,serializeEquationIndex);
       File.write(file, "],[");
@@ -883,6 +895,9 @@ algorithm
 
       File.write(file, ",\"display\":\"non-linear\",\"unknowns\":" + intString(nlSystem.nUnknowns) + ",\"defines\":[");
       serializeList(file, nlSystem.crefs, serializeCref);
+      File.write(file, "],\"uses\":[");
+      crefs := {};
+      serializeList(file, crefs, serializeCref);
       File.write(file, "],\"equation\":[[");
       serializeList(file,eqs,serializeEquationIndex);
       File.write(file, "],[");
@@ -921,6 +936,9 @@ algorithm
 
       File.write(file, ",\"display\":\"non-linear\",\"unknowns\":" + intString(atNL.nUnknowns) + ",\"defines\":[");
       serializeList(file, atNL.crefs, serializeCref);
+      File.write(file, "],\"uses\":[");
+      crefs := {};
+      serializeList(file, crefs, serializeCref);
       File.write(file, "],\"equation\":[[");
       serializeList(file,eqs,serializeEquationIndex);
       File.write(file, "],[");
@@ -960,6 +978,9 @@ algorithm
       File.write(file, section);
       File.write(file, "\",\"tag\":\"container\",\"display\":\"mixed\",\"defines\":[");
       serializeList(file, list(v.name for v in eq.discVars), serializeCref);
+      File.write(file, "],\"uses\":[");
+      crefs := {};
+      serializeList(file, crefs, serializeCref);
       File.write(file, "],\"equation\":[");
       serializeEquationIndex(file,eq.cont);
       for e1 in eq.discEqs loop

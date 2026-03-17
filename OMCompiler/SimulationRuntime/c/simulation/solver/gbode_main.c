@@ -218,8 +218,8 @@ int gbodef_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solve
   if (!gbfData->isExplicit) {
     // Allocate Jacobian, if !gbfData->isExplcit and gbData->isExplicit
     // Free is done in gbode_freeData
+    jacobian = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
     if (gbData->isExplicit) {
-      jacobian = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
       data->callback->initialAnalyticJacobianA(data, threadData, jacobian);
       if (jacobian->availability == JACOBIAN_AVAILABLE || jacobian->availability == JACOBIAN_ONLY_SPARSITY) {
         infoStreamPrint(OMC_LOG_SOLVER, 1, "Initialized Jacobian:");
@@ -245,6 +245,9 @@ int gbodef_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solve
       }
     } else {
       gbfData->symJacAvailable = gbData->symJacAvailable;
+    }
+    if (jacobian->availability == JACOBIAN_AVAILABLE) {
+      data->callback->getDAG_JacA(data, threadData, jacobian);
     }
 
     /* Allocate memory for the nonlinear solver */
@@ -468,6 +471,8 @@ int gbode_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solver
 
     /* Allocate memory for the nonlinear solver */
     gbData->nlsSolverMethod = getGB_NLS_method(FLAG_SR_NLS);
+
+    /* Initialize data for the nonlinear solver */
     gbData->nlsData = initRK_NLS_DATA(data, threadData, gbData);
     if (!gbData->nlsData) {
       return -1;

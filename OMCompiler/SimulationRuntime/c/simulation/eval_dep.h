@@ -73,8 +73,15 @@ void freeEvalSelection(EVAL_SELECTION* selection);
 void clearEvalSelection(EVAL_SELECTION* selection);
 void activateEvalDependencies(EVAL_SELECTION* selection);
 
+
+/* * * * * * * * * * * * * * *
+ * OpenModelica specific stuff
+ * * * * * * * * * * * * * * */
+
 typedef struct MODEL_DATA MODEL_DATA;
-void buildEvalDAG(MODEL_DATA* modelData, size_t nEqns, const size_t* ixs);
+typedef struct JACOBIAN JACOBIAN;
+void buildEvalDAG_ODE(MODEL_DATA* modelData, size_t nEqns, const size_t* ixs);
+void buildEvalDAG_Jac(JACOBIAN* jacobian, MODEL_DATA* modelData, size_t nEqns, const size_t* ixs);
 
 #ifdef __cplusplus
 }
