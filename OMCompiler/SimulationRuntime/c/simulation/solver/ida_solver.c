@@ -360,14 +360,7 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
     messageClose(OMC_LOG_SIMULATION);
   }
 
-  // Compare user flag to availabe Jacobian methods
-  const char* flagValue;
-  if(omc_flag[FLAG_JACOBIAN]){
-    flagValue = omc_flagValue[FLAG_JACOBIAN];
-  } else {
-    flagValue = NULL;
-  }
-  idaData->jacobianMethod = setJacobianMethod(threadData, jacobian->availability, flagValue);
+  idaData->jacobianMethod = setJacobianMethod(threadData, jacobian->availability);
 
   // change IDA specific jacobian method
   if(idaData->jacobianMethod == SYMJAC) {

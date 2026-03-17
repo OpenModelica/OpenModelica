@@ -231,14 +231,7 @@ int gbodef_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solve
         throwStreamPrint(threadData, "##GBODE## Implicit method requires a sparse pattern for the jacobian but no sparse pattern is generated.");
       }
 
-      // Compare user flag to availabe Jacobian methods
-      const char* flagValue;
-      if (omc_flag[FLAG_JACOBIAN]) {
-        flagValue = omc_flagValue[FLAG_JACOBIAN];
-      } else {
-        flagValue = NULL;
-      }
-      JACOBIAN_METHOD jacobianMethod = setJacobianMethod(threadData, jacobian->availability, flagValue);
+      JACOBIAN_METHOD jacobianMethod = setJacobianMethod(threadData, jacobian->availability);
 
       gbfData->symJacAvailable = jacobian->availability == JACOBIAN_AVAILABLE;
       // change GBODE specific jacobian method
@@ -460,14 +453,7 @@ int gbode_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solver
       throwStreamPrint(threadData, "##GBODE## Implicit method requires a sparse pattern for the jacobian but no sparse pattern is generated.");
     }
 
-    // Compare user flag to availabe Jacobian methods
-    const char* flagValue;
-    if(omc_flag[FLAG_JACOBIAN]){
-      flagValue = omc_flagValue[FLAG_JACOBIAN];
-    } else {
-      flagValue = NULL;
-    }
-    JACOBIAN_METHOD jacobianMethod = setJacobianMethod(threadData, jacobian->availability, flagValue);
+    JACOBIAN_METHOD jacobianMethod = setJacobianMethod(threadData, jacobian->availability);
 
     gbData->symJacAvailable = jacobian->availability == JACOBIAN_AVAILABLE;
     // change GBODE specific jacobian method
