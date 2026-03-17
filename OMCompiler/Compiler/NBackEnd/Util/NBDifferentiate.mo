@@ -2962,7 +2962,7 @@ public
           end for;
           // Restore upstream gradient
           diffArguments.current_grad := upstream;
-          then (Expression.END());
+      then (Expression.END());
 
       case Expression.MULTARY(arguments = arguments, inv_arguments = inv_arguments, operator = operator)
         guard(Operator.getMathClassification(operator) == NFOperator.MathClassification.MULTIPLICATION

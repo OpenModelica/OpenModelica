@@ -474,6 +474,7 @@ typedef enum JACOBIAN_METHOD
   COLOREDNUMJAC,      /* Colored numeric Jacobian */
   INTERNALNUMJAC,     /* Internal numeric Jacobian */
   COLOREDSYMJAC,      /* Colored symbolic Jacobian */
+  COLOREDSYMJACADJ,   /* Colored symbolic Jacobian (adjoint) */
   NUMJAC,             /* Non-colored numeric Jacobian */
   SYMJAC,             /* Non-colored symbolic Jacobian */
 
