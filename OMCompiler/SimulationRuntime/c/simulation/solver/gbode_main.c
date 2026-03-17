@@ -313,7 +313,7 @@ int gbodef_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solve
   } else {
     gbfData->fastStatesDebugFile = NULL;
   }
-  i = fmin(fmax(round(gbData->nStates * gbData->percentage), 1), gbData->nStates - 1);
+  i = (int) fmin(fmax(round(gbData->nStates * gbData->percentage), 1), gbData->nStates - 1);
   infoStreamPrint(OMC_LOG_SOLVER, 0, "Number of states %d (%d slow states, %d fast states)", gbData->nStates, gbData->nStates-i, i);
 
    /* reset statistics because it is accumulated in solver_main.c */

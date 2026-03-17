@@ -448,23 +448,31 @@ int expl_diag_impl_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solv
     // k[i] = f(tOld + c[i]*h, yOld + h*sum(a[i,j]*k[j], i=j..i))
     // res = f(tOld + c[i]*h, yOld + h*sum(a[i,j]*k[j], i=j..i-1))
 
-    // index of diagonal element of A
+    // check for explicit stage
     if (gbfData->tableau->A[stage * nStages + stage] == 0)
     {
-      // for explicit stages, we update the full res_const buffer as we evaluate the ODE at that point (may be optimized further)
-      memcpy(gbfData->res_const, gbfData->yOld, nStates * sizeof(double));
-
-      for (int full_idx = 0; full_idx < nStates; full_idx++)
+      // check if kLeft is available and potentially reuse said value
+      if (gbfData->tableau->isKLeftAvailable && (stage == 0))
       {
-        for (int s = 0; s < stage; s++)
-        {
-          gbfData->res_const[full_idx] += gbfData->stepSize * gbfData->tableau->A[stage * nStages + s] * gbfData->k[s * nStates + full_idx];
-        }
+        copyVector_gbf(fODE, gbfData->kLeft, nFastStates, gbData->fastStatesIdx);
       }
+      else
+      {
+        // for explicit stages, we update the full res_const buffer as we evaluate the ODE at that point (may be optimized further)
+        memcpy(gbfData->res_const, gbfData->yOld, nStates * sizeof(double));
 
-      // Calculate the fODE values for the explicit stage
-      memcpy(sData->realVars, gbfData->res_const, nStates * sizeof(double));
-      gbode_fODE(data, threadData, &(gbfData->stats.nCallsODE), gbfData->evalSelectionFast);
+        for (int full_idx = 0; full_idx < nStates; full_idx++)
+        {
+          for (int s = 0; s < stage; s++)
+          {
+            gbfData->res_const[full_idx] += gbfData->stepSize * gbfData->tableau->A[stage * nStages + s] * gbfData->k[s * nStates + full_idx];
+          }
+        }
+
+        // calculate the fODE values for the explicit stage
+        memcpy(sData->realVars, gbfData->res_const, nStates * sizeof(double));
+        gbode_fODE(data, threadData, &(gbfData->stats.nCallsODE), gbfData->evalSelectionFast);
+      }
     }
     else
     {
@@ -538,9 +546,9 @@ int expl_diag_impl_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solv
         double ifac = 1.0 / (gbfData->stepSize * gbfData->tableau->A[stage * nStages + stage]);
         for (int fast_idx = 0; fast_idx < nFastStates; fast_idx++)
         {
-          int slow_idx = gbData->fastStatesIdx[fast_idx];
-          fODE[slow_idx] = ifac * (nlsData->nlsx[fast_idx] - gbfData->res_const[slow_idx]);
-          sData->realVars[slow_idx] = nlsData->nlsx[fast_idx];
+          int full_idx = gbData->fastStatesIdx[fast_idx];
+          fODE[full_idx] = ifac * (nlsData->nlsx[fast_idx] - gbfData->res_const[full_idx]);
+          sData->realVars[full_idx] = nlsData->nlsx[fast_idx];
         }
       }
     }
@@ -552,8 +560,8 @@ int expl_diag_impl_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solv
 
       for (int fast_idx = 0; fast_idx < nFastStates; fast_idx++)
       {
-        int slow_idx = gbData->fastStatesIdx[fast_idx];
-        gbfData->kCurrPacked[stageOffset + fast_idx] = fODE[slow_idx];
+        int full_idx = gbData->fastStatesIdx[fast_idx];
+        gbfData->kCurrPacked[stageOffset + fast_idx] = fODE[full_idx];
       }
     }
 
