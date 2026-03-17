@@ -632,8 +632,8 @@ void printVector_gb(enum OMC_LOG_STREAM stream, char name[], double* a, int n, d
 
   // This only works for number of states less than 10!
   // For large arrays, this is not a good output format!
-  char row_to_print[40960];
-  unsigned int bufSize = 40960;
+  const unsigned int bufSize = 40960;
+  char row_to_print[bufSize];
   unsigned int ct;
   ct = snprintf(row_to_print, bufSize, "%s(%8g) =\t", name, time);
   for (int i=0;i<n;i++)
@@ -656,8 +656,8 @@ void printIntVector_gb(enum OMC_LOG_STREAM stream, char name[], int* a, int n, d
   // If stream is not active or size of vector to big do nothing
   if (!OMC_ACTIVE_STREAM(stream) || n>1000) return;
 
-  char row_to_print[40960];
-  unsigned int bufSize = 40960;
+  const unsigned int bufSize = 40960;
+  char row_to_print[bufSize];
   unsigned int ct;
   ct = snprintf(row_to_print, bufSize, "%s(%8g) =\t", name, time);
   for (int i=0;i<n;i++)
@@ -684,8 +684,8 @@ void printVector_gbf(enum OMC_LOG_STREAM stream, char name[], double* a, int n, 
 
   // This only works for number of states less than 10!
   // For large arrays, this is not a good output format!
-  char row_to_print[40960];
-  unsigned int bufSize = 40960;
+  const unsigned int bufSize = 40960;
+  char row_to_print[bufSize];
   unsigned int ct;
   ct = snprintf(row_to_print, bufSize, "%s(%8g) =\t", name, time);
   for (int i=0;i<nIndx;i++)
@@ -744,8 +744,8 @@ void printSparseJacobianLocal(JACOBIAN* jacobian, const char* name)
  */
 void dumpFastStates_gb(DATA_GBODE* gbData, modelica_boolean event, double time, int rejectedType)
 {
-  char fastStates_row[4096];
-  unsigned int bufSize = 4096;
+  const unsigned int bufSize = 4096;
+  char fastStates_row[bufSize];
   unsigned int ct;
   ct = snprintf(fastStates_row, bufSize, "%15.10g %2d %15.10g %15.10g %15.10g", time, rejectedType, gbData->err_slow, gbData->err_int, gbData->err_fast);
   for (int i = 0; i < gbData->nStates; i++) {
@@ -771,8 +771,8 @@ void dumpFastStates_gb(DATA_GBODE* gbData, modelica_boolean event, double time, 
  */
 void dumpFastStates_gbf(DATA_GBODE* gbData, double time, int rejectedType)
 {
-  char fastStates_row[40960];
-  unsigned int bufSize = 40960;
+  const unsigned int bufSize = 40960;
+  char fastStates_row[bufSize];
   unsigned int ct;
   int i, ii;
   ct = snprintf(fastStates_row, bufSize, "%15.10g %2d %15.10g %15.10g %15.10g", time, rejectedType, gbData->err_slow, gbData->err_int, gbData->err_fast);

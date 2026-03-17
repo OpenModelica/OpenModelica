@@ -287,8 +287,8 @@ int gbodef_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solve
   }
 
   if (OMC_ACTIVE_STREAM(OMC_LOG_GBODE_STATES)) {
-    char filename[4096];
-    unsigned int bufSize = 4096;
+    const unsigned int bufSize = 4096;
+    char filename[bufSize];
     snprintf(filename, bufSize, "%s_ActiveStates.txt", data->modelData->modelFilePrefix);
     gbfData->fastStatesDebugFile = omc_fopen(filename, "w");
     warningStreamPrint(OMC_LOG_STDOUT, 0, "LOG_GBODE_STATES sets -noEquidistantTimeGrid for emitting results!");
@@ -515,8 +515,8 @@ int gbode_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solver
     }
   }
 
-  char buffer[1024];
-  unsigned int bufSize = 1024;
+  const unsigned int bufSize = 1024;
+  char buffer[bufSize];
   if (gbData->multi_rate) {
     snprintf(buffer, bufSize, "%s", " and slow states interpolation");
   } else {
@@ -775,8 +775,8 @@ static void updateEvalSelection(DATA* data, DATA_GBODE* gbData)
   /* debug print */
   if (OMC_ACTIVE_STREAM(OMC_LOG_GBODE_V)) {
     infoStreamPrint(OMC_LOG_GBODE_V, 1, "updateEvalSelection");
-    char row_to_print[40960];
-    unsigned int bufSize = 40960;
+    const unsigned int bufSize = 40960;
+    char row_to_print[bufSize];
     unsigned int ct;
     ct = snprintf(row_to_print, bufSize, "%s (time=%g): =", "eqFunctions", data->localData[0]->timeValue);
     for (k = 0; k < selection->n; k++) {
@@ -811,8 +811,8 @@ static void updateEvalSelectionJacobian(DATA* data, DATA_GBODE* gbData)
   /* debug print */
   if (OMC_ACTIVE_STREAM(OMC_LOG_GBODE_V)) {
     infoStreamPrint(OMC_LOG_GBODE_V, 1, "updateEvalSelectionJacobian");
-    char row_to_print[40960];
-    unsigned int bufSize = 40960;
+    const unsigned int bufSize = 40960;
+    char row_to_print[bufSize];
     unsigned int ct;
     ct = snprintf(row_to_print, bufSize, "%s (time=%g): =", "Jacobian eqFunctions", data->localData[0]->timeValue);
     for (k = 0; k < selection->n; k++) {
