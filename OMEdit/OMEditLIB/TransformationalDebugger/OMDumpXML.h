@@ -214,8 +214,8 @@ struct OMVariable {
 
 struct OMEquation {
   QString section;
-  int index,profileBlock,parent,ncall;
-  double time,maxTime,fraction;
+  int index,profileBlock,parent,ncall = 0;
+  double time = 0.0, maxTime = 0.0, fraction = 0.0;
   QString tag, display;
   QStringList text;
   OMInfo info;
@@ -227,7 +227,7 @@ struct OMEquation {
   int unknowns;
   OMEquation();
   ~OMEquation();
-  QString toString();
+  QString toString() const;
 };
 
 class MyHandler {

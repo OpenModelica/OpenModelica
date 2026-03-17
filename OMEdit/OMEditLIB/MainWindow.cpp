@@ -2034,7 +2034,10 @@ void MainWindow::showOpenTransformationFileDialog()
   }
   mpProgressBar->setRange(0, 0);
   mpStatusBar->showMessage(QString("%1: %2").arg(Helper::loading, fileName));
+  QElapsedTimer timer;
+  timer.start();
   showTransformationsWidget(fileName, false, true);
+  qDebug() << "Time taken to load the transformations file: " << (double)timer.elapsed() / 1000.0 << "s";
   mpStatusBar->clearMessage();
   hideProgressBar();
 }

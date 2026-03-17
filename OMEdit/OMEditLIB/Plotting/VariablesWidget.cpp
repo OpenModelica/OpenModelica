@@ -1281,11 +1281,7 @@ void VariablesTreeModel::openTransformationsBrowser()
         }
       }
       TransformationsWidget *pTransformationsWidget = MainWindow::instance()->showTransformationsWidget(fileName, profiling, checkForProfilingFiles);
-      QTreeWidgetItem *pTreeWidgetItem = pTransformationsWidget->findEquationTreeItem(equationIndex);
-      if (pTreeWidgetItem) {
-        pTransformationsWidget->getEquationsTreeWidget()->clearSelection();
-        pTransformationsWidget->getEquationsTreeWidget()->setCurrentItem(pTreeWidgetItem);
-      }
+      pTransformationsWidget->selectEquation(equationIndex);
       pTransformationsWidget->fetchEquationData(equationIndex);
     } else {
       QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::error),

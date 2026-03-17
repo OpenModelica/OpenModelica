@@ -146,13 +146,52 @@ private:
   TransformationsWidget *mpTransformationsWidget;
 };
 
-class EquationTreeWidget : public QTreeWidget
+class EquationTreeItem
+{
+public:
+  EquationTreeItem(const OMEquation *pOMEquation, EquationTreeItem *pParent = nullptr, bool isRootItem = false);
+  ~EquationTreeItem();
+  int childrenSize() const {return mChildren.size();}
+  bool isRootItem() {return mIsRootItem;}
+  void insertChild(int position, EquationTreeItem *pVariablesTreeItem);
+  EquationTreeItem *child(int row);
+  void removeChildren();
+  QVariant data(int column, int role = Qt::DisplayRole) const;
+  int row() const;
+  EquationTreeItem *parent() {return mpParentEquationTreeItem;}
+  int getEquationIndex();
+private:
+  const OMEquation *mpOMEquation = nullptr;
+  QVector<EquationTreeItem*> mChildren;
+  EquationTreeItem *mpParentEquationTreeItem;
+  bool mIsRootItem;
+};
+
+class EquationTreeModel : public QAbstractItemModel
 {
   Q_OBJECT
 public:
-  EquationTreeWidget(TransformationsWidget *pTransformationWidget);
+  EquationTreeModel(QObject *parent = nullptr);
+  int columnCount(const QModelIndex &parent = QModelIndex()) const;
+  int rowCount(const QModelIndex &parent = QModelIndex()) const;
+  QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const;
+  QModelIndex index(int row, int column, const QModelIndex &parent = QModelIndex()) const;
+  QModelIndex parent(const QModelIndex & index) const;
+  QVariant data(const QModelIndex & index, int role = Qt::DisplayRole) const;
+  void insertEquations(const QList<OMEquation*>& equations, bool nestedEquations);
+  EquationTreeItem* findEquationTreeItem(int equationIndex, EquationTreeItem *pEquationTreeItem = 0) const;
+  QModelIndex equationTreeItemIndex(const EquationTreeItem *pEquationTreeItem) const;
 private:
-  TransformationsWidget *mpTransformationWidget;
+  EquationTreeItem *mpRootEquationTreeItem;
+
+  void insertNestedEquations(EquationTreeItem *pParentItem, int index, const QList<OMEquation*> &equations);
+};
+
+class EquationTreeView : public QTreeView
+{
+  Q_OBJECT
+public:
+  EquationTreeView(QWidget *pParent = nullptr);
 };
 
 class InfoBar;
@@ -162,8 +201,8 @@ class TransformationsWidget : public QWidget
   Q_OBJECT
 public:
   TransformationsWidget(QString infoJSONFullFileName, bool profiling, bool checkForProfilingFiles, QWidget *pParent = 0);
+  ~TransformationsWidget();
   MyHandler* getInfoXMLFileHandler() {return mpInfoXMLFileHandler;}
-  QTreeWidget* getEquationsTreeWidget() {return mpEquationsTreeWidget;}
   InfoBar* getTSourceEditorInfoBar() {return mpTSourceEditorInfoBar;}
   QSplitter* getVariablesNestedHorizontalSplitter() {return mpVariablesNestedHorizontalSplitter;}
   QSplitter* getVariablesNestedVerticalSplitter() {return mpVariablesNestedVerticalSplitter;}
@@ -176,9 +215,8 @@ public:
   void fetchDefinedInEquations(const OMVariable &variable);
   void fetchUsedInEquations(const OMVariable &variable);
   void fetchOperations(const OMVariable &variable);
-  void fetchEquations();
-  void fetchNestedEquations(QTreeWidgetItem *pParentTreeWidgetItem, int index);
-  QTreeWidgetItem* findEquationTreeItem(int equationIndex);
+  EquationTreeItem *findEquationTreeItem(int equationIndex);
+  void selectEquation(int equationIndex);
   void fetchEquationData(int equationIndex);
   void fetchDefines(OMEquation *equation);
   void fetchDepends(OMEquation *equation);
@@ -190,15 +228,18 @@ private:
   bool mCheckForProfilingFiles = false;
   int profilingNumSteps;
   int mCurrentEquationIndex;
-  MyHandler *mpInfoXMLFileHandler;
+  MyHandler *mpInfoXMLFileHandler = nullptr;
   TreeSearchFilters *mpTreeSearchFilters;
   TVariablesTreeView *mpTVariablesTreeView;
   TVariablesTreeModel *mpTVariablesTreeModel;
   TVariableTreeProxyModel *mpTVariableTreeProxyModel;
-  EquationTreeWidget *mpDefinedInEquationsTreeWidget;
-  EquationTreeWidget *mpUsedInEquationsTreeWidget;
+  EquationTreeView *mpDefinedInEquationTreeView;
+  EquationTreeModel *mpDefinedInEquationTreeModel;
+  EquationTreeView *mpUsedInEquationTreeView;
+  EquationTreeModel *mpUsedInEquationTreeModel;
   QTreeWidget *mpVariableOperationsTreeWidget;
-  EquationTreeWidget *mpEquationsTreeWidget;
+  EquationTreeView *mpEquationTreeView;
+  EquationTreeModel *mpEquationTreeModel;
   QTreeWidget *mpDefinesVariableTreeWidget;
   QTreeWidget *mpDependsVariableTreeWidget;
   QComboBox *mpEquationDiffFilterComboBox;
@@ -218,13 +259,12 @@ private:
   bool hasOperationsEnabled;
 
   void parseProfiling(QString fileName);
-  QTreeWidgetItem* makeEquationTreeWidgetItem(int equationIndex, int allowChild);
 private slots:
   void loadTransformations();
 public slots:
   void findVariables();
   void fetchVariableData(const QModelIndex &index);
-  void fetchEquationData(QTreeWidgetItem *pEquationTreeItem, int column);
+  void fetchEquationData(const QModelIndex &index);
   void filterEquationOperations(int index);
 };
 
