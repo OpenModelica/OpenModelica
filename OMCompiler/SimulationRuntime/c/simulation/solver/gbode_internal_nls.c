@@ -807,7 +807,7 @@ static NLS_SOLVER_STATUS gbInternalSolveNls_DIRK(DATA *data,
   modelica_boolean sdirk_first_stage = (stage == 0 && !is_esdirk);
   modelica_boolean esdirk_first_stage = (stage == 1 && is_esdirk);
 
-  if ((sdirk_first_stage || esdirk_first_stage) && gbData->type == GM_TYPE_DIRK)
+  if (sdirk_first_stage || esdirk_first_stage)
   {
     if (nls->call_jac || gbData->eventHappened)
     {

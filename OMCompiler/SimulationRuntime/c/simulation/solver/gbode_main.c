@@ -1313,7 +1313,6 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
   if (gbData->nlsSolverMethod == GB_NLS_INTERNAL)
   {
     // use internal tolerances, beneficial for superconvergent methods Gauss, Radau, Lobatto
-    // TODO: How does this work for Richardson????
     Tolerances *internal_tolerances = gbInternalNlsGetScaledTolerances(((struct dataSolver *)gbData->nlsData->solverData)->ordinaryData);
     Atol = internal_tolerances->atol;
     Rtol = internal_tolerances->rtol;
