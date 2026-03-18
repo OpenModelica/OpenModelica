@@ -8024,7 +8024,7 @@ template initializeStaticLSVars(list<SimVar> vars, Integer index)
       <%indices%>
     };
     for (int i = 0; i < <%len%>; ++i) {
-      if (indices[i] == -1) {
+      if (indices[i] < 0) {
         linearSystemData->nominal[i] = 1.0;
         linearSystemData->min[i]     = -DBL_MAX;
         linearSystemData->max[i]     = DBL_MAX;

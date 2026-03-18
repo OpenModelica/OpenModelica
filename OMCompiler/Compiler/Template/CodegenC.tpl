@@ -3581,12 +3581,21 @@ template generateStaticInitialData(list<ComponentRef> crefs, String indexName)
           case PARAM() then 'VAR_KIND_PARAMETER'
           else 'VAR_KIND_VARIABLE'
         end match
-        <<
-        <%cComment%>
-        sysData->nominal[i] = getNominalFromScalarIdx(data->simulationInfo, data->modelData, <%kind%>, <%crefIndexWithComment(cr)%>);
-        sysData->min[i]     = getMinFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, <%kind%>, <%crefIndexWithComment(cr)%>);
-        sysData->max[i++]   = getMaxFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, <%kind%>, <%crefIndexWithComment(cr)%>);
-        >>
+        if intLt(index, 0) then
+          <<
+          <%cComment%>
+          /* Use default scaling/bounds for unresolved temporary indices (e.g. symbolic-adjoint loop vars). */
+          sysData->nominal[i] = 1.0;
+          sysData->min[i]     = -DBL_MAX;
+          sysData->max[i++]   = DBL_MAX;
+          >>
+        else
+          <<
+          <%cComment%>
+          sysData->nominal[i] = getNominalFromScalarIdx(data->simulationInfo, data->modelData, <%kind%>, <%crefIndexWithComment(cr)%>);
+          sysData->min[i]     = getMinFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, <%kind%>, <%crefIndexWithComment(cr)%>);
+          sysData->max[i++]   = getMaxFromScalarIdx(data->simulationInfo, data->modelData, VAR_TYPE_REAL, <%kind%>, <%crefIndexWithComment(cr)%>);
+          >>
       else
         <<
         <%cComment%>

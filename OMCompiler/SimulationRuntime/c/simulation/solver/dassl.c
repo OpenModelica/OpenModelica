@@ -557,6 +557,43 @@ int printVector(int logLevel, const char* name,  double* vec, int n, double time
   return 0;
 }
 
+int printRealVarsVector(int logLevel, DATA* data, double time)
+{
+  unsigned int i;
+  SIMULATION_DATA *sData = data->localData[0];
+
+  infoStreamPrint(logLevel, 1, "realVars at time=%g", time);
+  for(i = 0; i < data->modelData->nVariablesReal; ++i)
+  {
+    infoStreamPrint(logLevel, 0, "%u. %s = %g", i+1, data->modelData->realVarsData[i].info.name, sData->realVars[i]);
+  }
+  messageClose(logLevel);
+
+  return 0;
+}
+
+int printJacobianMatrix(int logLevel, const char* name, double* matrix, DATA* data, int n, double time)
+{
+  int row, col;
+
+  infoStreamPrint(logLevel, 1, "%s at time=%g", name, time);
+  for (col = 0; col < n; ++col)
+  {
+    const char* colName = data->modelData->realVarsData[col].info.name;
+    for (row = 0; row < n; ++row)
+    {
+      const char* rowName = data->modelData->realVarsData[row].info.name;
+      const int idx = col * n + row;
+      infoStreamPrint(logLevel, 0,
+                      "J(row=%d:'%s', col=%d:'%s') = %.16g [flat=%d]",
+                      row, rowName, col, colName, matrix[idx], idx);
+    }
+  }
+  messageClose(logLevel);
+
+  return 0;
+}
+
 
 /**********************************************************************************************
  * DASSL with synchronous treating of when equation
@@ -1460,24 +1497,10 @@ static int callJacobian(double *t, double *y, double *yprime, double *deltaD,
   }
 
   /* debug */
-  /* debug: print flat Jacobian array */
   if (OMC_ACTIVE_STREAM(OMC_LOG_JAC)) {
-    int row, col;
-    //printVector(OMC_LOG_JAC, "DASSL-Solver: pd (flat)", pd, dasslData->N * dasslData->N, *t);
-    infoStreamPrint(OMC_LOG_JAC, 1, "DASSL-Solver: pd flat index mapping (column-major)");
-    for (col = 0; col < dasslData->N; col++)
-    {
-      const char* colName = data->modelData->realVarsData[col].info.name;
-      for (row = 0; row < dasslData->N; row++)
-      {
-        const char* rowName = data->modelData->realVarsData[row].info.name;
-        const int idx = col * dasslData->N + row;
-        infoStreamPrint(OMC_LOG_JAC, 0,
-                        "pd[%d] -> J(row=%d:'%s', col=%d:'%s') = %.16g",
-                        idx, row, rowName, col, colName, pd[idx]);
-      }
-    }
-    messageClose(OMC_LOG_JAC);
+    printRealVarsVector(OMC_LOG_JAC, data, *t);
+    printJacobianMatrix(OMC_LOG_JAC, "DASSL-Solver: analytical Jacobian pd (column-major)", pd,
+                        data, dasslData->N, *t);
   }
 
   /* Compare evaluated Jacobian against a numerical reference.
@@ -1517,12 +1540,18 @@ static int callJacobian(double *t, double *y, double *yprime, double *deltaD,
       }
 
       infoStreamPrint(OMC_LOG_JAC, 1, "Jacobian verification: analytical vs. numerical");
-      infoStreamPrint(OMC_LOG_JAC, 0, "Max absolute difference: %g at (row=%d, col=%d)", maxAbsDiff, maxAbsRow, maxAbsCol);
-      infoStreamPrint(OMC_LOG_JAC, 0, "Max relative difference: %g at (row=%d, col=%d)", maxRelDiff, maxRelRow, maxRelCol);
+      infoStreamPrint(OMC_LOG_JAC, 0,
+                      "Max absolute difference: %g at (row=%d:'%s', col=%d:'%s')",
+                      maxAbsDiff, maxAbsRow, data->modelData->realVarsData[maxAbsRow].info.name,
+                      maxAbsCol, data->modelData->realVarsData[maxAbsCol].info.name);
+      infoStreamPrint(OMC_LOG_JAC, 0,
+                      "Max relative difference: %g at (row=%d:'%s', col=%d:'%s')",
+                      maxRelDiff, maxRelRow, data->modelData->realVarsData[maxRelRow].info.name,
+                      maxRelCol, data->modelData->realVarsData[maxRelCol].info.name);
       messageClose(OMC_LOG_JAC);
 
-      /* debug: print flat numerical Jacobian array */
-      printVector(OMC_LOG_JAC, "DASSL-Solver: pdNumerical (flat)", pdNumerical, dasslData->N * dasslData->N, *t);
+      printJacobianMatrix(OMC_LOG_JAC, "DASSL-Solver: numerical Jacobian pdNumerical (column-major)",
+                          pdNumerical, data, dasslData->N, *t);
 
       free(pdNumerical);
     }
