@@ -364,7 +364,7 @@ void getButcherTableau_TSIT5(BUTCHER_TABLEAU* tableau)
   tableau->withDenseOutput = TRUE;
   tableau->dense_output = denseOutput_TSIT5;
   tableau->isKLeftAvailable = TRUE;
-  tableau->isKRightAvailable = FALSE;
+  tableau->isKRightAvailable = TRUE;
 }
 
 // TODO: Describe me
@@ -2186,7 +2186,7 @@ void getButcherTableau_DOPRI45(BUTCHER_TABLEAU* tableau)
   tableau->nStages = 7;
   tableau->order_b = 5;
   tableau->order_bt = 4;
-  tableau->fac = 1e3;
+  tableau->fac = 1e0;
 
   /* Butcher Tableau */
   const double c[] = {0.0, 1./5, 3./10, 4./5, 8./9, 1., 1.};
@@ -2206,7 +2206,7 @@ void getButcherTableau_DOPRI45(BUTCHER_TABLEAU* tableau)
   tableau->withDenseOutput = TRUE;
   tableau->dense_output = denseOutput_DOPRI45;
   tableau->isKLeftAvailable = TRUE;
-  tableau->isKRightAvailable = FALSE;
+  tableau->isKRightAvailable = TRUE;
 }
 
 // TODO: Describe me

@@ -126,7 +126,7 @@ typedef struct GB_INTERNAL_NLS_DATA
   double *W;                         // update variables W = (T^{-1} otimes I) Z for T-transformation (decoupled space)
   double *work;                      // some work memory for the T transformation (size: transform->size * x.size) or other stuff, at least 32 * N_STATES bytes
 
-  // stuff for mutlirate
+  // stuff for multirate
   modelica_boolean multirate;         // multirate or singlerate system?
   modelica_boolean new_fast_states;   // if the selection changed and we need to update sparse pattern and symbolic factorization - set from NLS routine
   SPARSE_PATTERN *odePatternMR;         // pattern of the ODE / fast states ODE
@@ -881,7 +881,6 @@ static NLS_SOLVER_STATUS gbInternalSolveNls_DIRK(DATA *data,
     // Newton converged
     if (nls->etas[stage] * nrm_delta < nls->fnewt || absorption)
     {
-      //if (nls->multirate) infoStreamPrint(OMC_LOG_STDOUT, 0, "Convergence rate fast: %1.6e", theta);
       if (theta < nls->theta_keep)
       {
         nls->call_jac = FALSE;
