@@ -1510,7 +1510,7 @@ QStringList StringHandler::makeVariableParts(QString variable)
   /* Do not split quoted variable.
    * See https://github.com/OpenModelica/OpenModelica/issues/10599#issuecomment-2077331404
    */
-  QRegularExpression re("\\.(?=(?:[^\']*\'[^\']*\')*[^\']*$)(?![^\\[\\]]*\\])");
+  static const QRegularExpression re("\\.(?=(?:[^\']*\'[^\']*\')*[^\']*$)(?![^\\[\\]]*\\])");
 #if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
   return variable.split(re, Qt::SkipEmptyParts);
 #else // QT_VERSION_CHECK
@@ -1522,12 +1522,13 @@ QStringList StringHandler::makeVariableParts(QString variable)
 
 QStringList StringHandler::makeVariablePartsWithInd(QString variable)
 {
+  static const QRegularExpression arrayRe(Helper::arrayIndexRegularExpression);
   QStringList varParts = makeVariableParts(variable);
   //if the last part is array with index, split it into the name and index parts:
 
   if (!varParts.isEmpty()) {
     QString* lastStr = &(varParts.last());
-    int i = lastStr->lastIndexOf(QRegularExpression(Helper::arrayIndexRegularExpression));
+    int i = lastStr->lastIndexOf(arrayRe);
     if(i>=0){
       QString indexPart = *lastStr;
       indexPart.remove(0,i);

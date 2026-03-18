@@ -1443,3 +1443,110 @@ QMap<QString, QLocale> Utilities::supportedLanguages()
   }
   return languagesMap;
 }
+
+/*!
+ * \brief Utilities::buildVariableNodeTree
+ * Builds the variable node tree for the given variable name and its parts.
+ * \param pRootNode
+ * \param prefix
+ * \param fullVariableName
+ * \param parts
+ * \param makeData
+ * \param postCreate
+ */
+void Utilities::buildVariableNodeTree(VariableNode *pRootNode,
+                                      const QString &prefix,
+                                      const QString &fullVariableName,
+                                      const QStringList &parts,
+                                      std::function<QVector<QVariant>(const QString &, const QString &, bool)> makeData,
+                                      std::function<void(VariableNode*)> postCreate)
+{
+  // Precompile regex once (static inside function)
+  static const QRegularExpression arrayIndexRegex(QRegularExpression::anchoredPattern(Helper::arrayIndexRegularExpression));
+
+  const bool isDer = fullVariableName.startsWith("der(");
+  const bool isPrevious = fullVariableName.startsWith("previous(");
+
+  VariableNode *pParentNode = pRootNode;
+  QString parentVar;
+  int count = 1;
+
+  foreach (const QString &part, parts) {
+    const bool isLast = (parts.size() == count);
+    const bool isSecondLastBeforeArrayIndex = (parts.size() - 1 == count) && parts.last().startsWith('[');
+    const bool isLastOrSecondLastArray = isLast || isSecondLastBeforeArrayIndex;
+
+    // Compute findVariable
+    QString findVariable;
+    // if last item of array
+    if (isLast && arrayIndexRegex.match(part).hasMatch()) {
+      findVariable = prefix % fullVariableName;
+    } else if (isDer && isLastOrSecondLastArray) {
+      QString inner;
+      if (parentVar.isEmpty()) {
+        inner = part;
+      } else {
+        inner = parentVar % "." % part;
+      }
+      findVariable = prefix % StringHandler::joinDerivativeAndPreviousVariable(fullVariableName, inner, "der(");
+    } else if (isPrevious && isLastOrSecondLastArray) {
+      QString inner;
+      if (parentVar.isEmpty()) {
+        inner = part;
+      } else {
+        inner = parentVar % "." % part;
+      }
+      findVariable = prefix % StringHandler::joinDerivativeAndPreviousVariable(fullVariableName, inner, "previous(");
+    } else {
+      if (parentVar.isEmpty()) {
+        findVariable = prefix % part;
+      } else {
+        findVariable = prefix % parentVar % "." % part;
+      }
+    }
+
+    // For non-last parts: reuse existing node if found
+    if (!isLast) {
+      if (VariableNode *found = VariableNode::findVariableNode(findVariable, pParentNode)) {
+        pParentNode = found;
+        if (parentVar.isEmpty()) {
+          parentVar = part;
+        } else {
+          parentVar = parentVar % "." % part;
+        }
+        ++count;
+        continue;
+      }
+    }
+
+    // Compute display name:
+    // der/previous last or 2nd-last-before-array → joined derivative name
+    // everything else (plain, intermediate, array index) → part as-is
+    QString displayName;
+    if (isDer && isLastOrSecondLastArray) {
+      displayName = StringHandler::joinDerivativeAndPreviousVariable(fullVariableName, part, "der(");
+    } else if (isPrevious && isLastOrSecondLastArray) {
+      displayName = StringHandler::joinDerivativeAndPreviousVariable(fullVariableName, part, "previous(");
+    } else {
+      displayName = part;
+    }
+
+    // isMainArray: true when this node is the parent of an array index node
+    const bool isMainArray = isSecondLastBeforeArrayIndex;
+
+    QVector<QVariant> nodeData = makeData(findVariable, displayName, isMainArray);
+    VariableNode *pNewNode = new VariableNode(nodeData);
+    if (postCreate) {
+      postCreate(pNewNode);
+    }
+    pParentNode->mChildren.insert(findVariable, pNewNode);
+    pParentNode = pNewNode;
+
+    if (parentVar.isEmpty()) {
+      parentVar = part;
+    } else {
+      parentVar = parentVar % "." % part;
+    }
+    ++count;
+  }
+}

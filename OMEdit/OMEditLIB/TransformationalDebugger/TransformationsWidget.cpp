@@ -75,9 +75,9 @@ TVariablesTreeItem::~TVariablesTreeItem()
   removeChildren();
 }
 
-void TVariablesTreeItem::insertChild(int position, TVariablesTreeItem *pTVariablesTreeItem)
+void TVariablesTreeItem::appendChild(TVariablesTreeItem *pTVariablesTreeItem)
 {
-  mChildren.insert(position, pTVariablesTreeItem);
+  mChildren.append(pTVariablesTreeItem);
 }
 
 TVariablesTreeItem* TVariablesTreeItem::child(int row)
@@ -285,133 +285,44 @@ void TVariablesTreeModel::insertTVariablesItems(QHashIterator<QString, OMVariabl
       continue;
     }
 
-    QStringList tVariables;
-    QString parentTVariable;
+    QStringList parts;
     if (variable.name.startsWith("der(")) {
       QString str = variable.name;
       str.chop((str.lastIndexOf("der(")/4)+1);
-      tVariables = StringHandler::makeVariablePartsWithInd(str.mid(str.lastIndexOf("der(") + 4));
+      parts = StringHandler::makeVariablePartsWithInd(str.mid(str.lastIndexOf("der(") + 4));
     } else if (variable.name.startsWith("previous(")) {
       QString str = variable.name;
       str.chop((str.lastIndexOf("previous(")/9)+1);
-      tVariables = StringHandler::makeVariablePartsWithInd(str.mid(str.lastIndexOf("previous(") + 9));
+      parts = StringHandler::makeVariablePartsWithInd(str.mid(str.lastIndexOf("previous(") + 9));
     } else {
-      tVariables = StringHandler::makeVariablePartsWithInd(variable.name);
+      parts = StringHandler::makeVariablePartsWithInd(variable.name);
     }
-    int count = 1;
-    VariableNode *pParentVariableNode = 0;
-    foreach (QString tVariable, tVariables) {
-      if (count == 1) /* first loop iteration */ {
-        pParentVariableNode = pRootVariableNode;
-      }
-      QString findVariable;
-
-      /* if last item of derivative */
-      if ((tVariables.size() == count) && (variable.name.startsWith("der("))) {
-        if (parentTVariable.isEmpty()) {
-          findVariable = StringHandler::joinDerivativeAndPreviousVariable(variable.name, tVariable, "der(");
-        } else {
-          findVariable = QString("%1.%2").arg(parentTVariable, StringHandler::joinDerivativeAndPreviousVariable(variable.name, tVariable, "der("));
-        }
-      } else if ((tVariables.size() == count) && (variable.name.startsWith("previous("))) { /* if last item of previous */
-        if (parentTVariable.isEmpty()) {
-          findVariable = StringHandler::joinDerivativeAndPreviousVariable(variable.name, tVariable, "previous(");
-        } else {
-          findVariable = QString("%1.%2").arg(parentTVariable, StringHandler::joinDerivativeAndPreviousVariable(variable.name, tVariable, "previous("));
-        }
-      } else {
-        if (parentTVariable.isEmpty()) {
-          findVariable = tVariable;
-        } else {
-          findVariable = QString("%1.%2").arg(parentTVariable, tVariable);
-        }
-      }
-
-      // if its the last item then don't try to find the item as we will always fail to find it
-      if (tVariables.size() != count) {
-        pParentVariableNode = VariableNode::findVariableNode(findVariable, pParentVariableNode);
-        if (pParentVariableNode) {
-          QString addVar = "";
-          /* if last item of derivative */
-          if ((tVariables.size() == count) && (variable.name.startsWith("der("))) {
-            addVar = StringHandler::joinDerivativeAndPreviousVariable(variable.name, tVariable, "der(");
-          } else if ((tVariables.size() == count) && (variable.name.startsWith("previous("))) { /* if last item of previous */
-            addVar = StringHandler::joinDerivativeAndPreviousVariable(variable.name, tVariable, "previous(");
-          } else {
-            addVar = tVariable;
-          }
-          if (count == 1) {
-            parentTVariable = addVar;
-          } else {
-            parentTVariable += "." + addVar;
-          }
-          count++;
-          continue;
-        }
-      }
-      /* If pParentVariablesTreeItem is 0 and it is first loop iteration then use pTopVariablesTreeItem as parent.
-       * If loop iteration is not first and pParentVariablesTreeItem is 0 then find the parent item.
-       */
-      if (!pParentVariableNode && count > 1) {
-        pParentVariableNode = VariableNode::findVariableNode(parentTVariable, pRootVariableNode);
-      }
-      // Just make sure parent is not NULL
-      if (!pParentVariableNode) {
-        pParentVariableNode = pRootVariableNode;
-      }
-      // data
-      QVector<QVariant> tVariableData;
-      QString parentVarName = "";
-      if (pParentVariableNode != pRootVariableNode) {
-        parentVarName = QString("%1.").arg(pParentVariableNode->mVariableNodeData.at(0).toString());
-      }
-      /* if last item of derivative */
-      if ((tVariables.size() == count) && (variable.name.startsWith("der("))) {
-        tVariableData << variable.name << StringHandler::joinDerivativeAndPreviousVariable(variable.name, tVariable, "der(");
-      } else if ((tVariables.size() == count) && (variable.name.startsWith("previous("))) { /* if last item of previous */
-        tVariableData << variable.name << StringHandler::joinDerivativeAndPreviousVariable(variable.name, tVariable, "previous(");
-      } else if (tVariables.size() == count && QRegularExpression(QRegularExpression::anchoredPattern(Helper::arrayIndexRegularExpression)).match(tVariable).hasMatch()) { /* if last item of array derivative*/
-        tVariableData << variable.name << tVariable;
-      } else {
-        tVariableData << QString("%1%2").arg(parentVarName, tVariable) << tVariable;
-      }
-
-      tVariableData << variable.comment << variable.info.lineStart << variable.info.file;
-
-      VariableNode *pVariableNode = new VariableNode(tVariableData);
-      pParentVariableNode->mChildren.insert(tVariableData.at(0).toString(), pVariableNode);
-      pParentVariableNode = pVariableNode;
-
-      QString addVar = "";
-      /* if last item of derivative */
-      if ((tVariables.size() == count) && (variable.name.startsWith("der("))) {
-        addVar = StringHandler::joinDerivativeAndPreviousVariable(variable.name, tVariable, "der(");
-      } else if ((tVariables.size() == count) && (variable.name.startsWith("previous("))) { /* if last item of previous */
-        addVar = StringHandler::joinDerivativeAndPreviousVariable(variable.name, tVariable, "previous(");
-      } else {
-        addVar = tVariable;
-      }
-      if (count == 1) {
-        parentTVariable = addVar;
-      } else {
-        parentTVariable += "." + addVar;
-      }
-      count++;
-    }
+    // prefix is empty — transformations uses bare variable names with no file prefix
+    Utilities::buildVariableNodeTree(pRootVariableNode, "", variable.name, parts,
+                                     [&variable](const QString &fullName, const QString &displayName, bool /*isMainArray*/) {
+      QVector<QVariant> data;
+      data << fullName
+           << displayName
+           << variable.comment
+           << variable.info.lineStart
+           << variable.info.file;
+      return data;
+    });
   }
   // insert variables to VariablesTreeModel
+  beginResetModel();
   insertVariablesItems(pRootVariableNode, mpRootTVariablesTreeItem);
+  endResetModel();
   // Delete VariableNode
   delete pRootVariableNode;
 }
 
 void TVariablesTreeModel::clearTVariablesTreeItems()
 {
-  const int n = mpRootTVariablesTreeItem->childrenSize();
-  if (n > 0) {
-    beginRemoveRows(tVariablesTreeItemIndex(mpRootTVariablesTreeItem), 0, n - 1);
+  if (mpRootTVariablesTreeItem->childrenSize() > 0) {
+    beginResetModel();
     mpRootTVariablesTreeItem->removeChildren();
-    endRemoveRows();
+    endResetModel();
   }
 }
 
@@ -424,17 +335,13 @@ void TVariablesTreeModel::clearTVariablesTreeItems()
 void TVariablesTreeModel::insertVariablesItems(VariableNode *pParentVariableNode, TVariablesTreeItem *pParentTVariablesTreeItem)
 {
   if (pParentVariableNode && !pParentVariableNode->mChildren.isEmpty()) {
-    QModelIndex index = tVariablesTreeItemIndex(pParentTVariablesTreeItem);
-    int row = 0;
-    beginInsertRows(index, 0, pParentVariableNode->mChildren.size() - 1);
     QHash<QString, VariableNode*>::const_iterator iterator = pParentVariableNode->mChildren.constBegin();
     while (iterator != pParentVariableNode->mChildren.constEnd()) {
       VariableNode *pVariableNode = iterator.value();
       TVariablesTreeItem *pTVariablesTreeItem = new TVariablesTreeItem(pVariableNode->mVariableNodeData, pParentTVariablesTreeItem);
-      pParentTVariablesTreeItem->insertChild(row++, pTVariablesTreeItem);
+      pParentTVariablesTreeItem->appendChild(pTVariablesTreeItem);
       ++iterator;
     }
-    endInsertRows();
 
     foreach (TVariablesTreeItem *pTVariablesTreeItem, pParentTVariablesTreeItem->getChildren()) {
       VariableNode *pVariableNode = pParentVariableNode->mChildren.value(pTVariablesTreeItem->getVariableName());
@@ -512,27 +419,380 @@ TVariablesTreeView::TVariablesTreeView(TransformationsWidget *pTransformationsWi
   setUniformRowHeights(true);
 }
 
-EquationTreeWidget::EquationTreeWidget(TransformationsWidget *pTransformationWidget)
-  : QTreeWidget(pTransformationWidget), mpTransformationWidget(pTransformationWidget)
+
+EquationTreeItem::EquationTreeItem(const OMEquation *pOMEquation, EquationTreeItem *pParent, bool isRootItem)
+{
+  mpParentEquationTreeItem = pParent;
+  mIsRootItem = isRootItem;
+  mpOMEquation = pOMEquation;
+}
+
+EquationTreeItem::~EquationTreeItem()
+{
+  removeChildren();
+}
+
+/*!
+ * \brief EquationTreeItem::insertChild
+ * Inserts a child EquationTreeItem at the given position.
+ * \param position
+ * \param pEquationTreeItem
+ */
+void EquationTreeItem::insertChild(int position, EquationTreeItem *pEquationTreeItem)
+{
+  mChildren.insert(position, pEquationTreeItem);
+}
+
+/*!
+ * \brief EquationTreeItem::child
+ * Returns the child EquationTreeItem stored at given row.
+ * \param row
+ * \return
+ */
+EquationTreeItem* EquationTreeItem::child(int row)
+{
+  return mChildren.value(row);
+}
+
+void EquationTreeItem::removeChildren()
+{
+  qDeleteAll(mChildren);
+  mChildren.clear();
+}
+
+QVariant EquationTreeItem::data(int column, int role) const
+{
+  // safeguard against null pointer
+  if (!mpOMEquation) {
+    return QVariant();
+  }
+
+  /* If the equation is not profiled then show only index, section and equation columns
+   * and hide the rest of the columns by showing empty string in them.
+   * This is done to avoid showing 0 and 0% in NCall, MaxTime, Time and Fraction columns for non-profiled equations.
+   */
+  if (column > 2 && mpOMEquation->profileBlock < 0) {
+    column = 7;
+  }
+
+  switch (column)
+  {
+    case 0: // index
+      switch (role)
+      {
+        case Qt::DisplayRole:
+        case Qt::ToolTipRole:
+          return QString::number(mpOMEquation->index);
+        default:
+          return QVariant();
+      }
+    case 1: // Section
+      switch (role)
+      {
+        case Qt::DisplayRole:
+        case Qt::ToolTipRole:
+          return mpOMEquation->section;
+        default:
+          return QVariant();
+      }
+    case 2: // Equation
+      switch (role)
+      {
+        case Qt::DisplayRole:
+          return mpOMEquation->toString();
+        case Qt::ToolTipRole:
+          return QString("<html><div style=\"margin:3px;\">" +
+                         QString(mpOMEquation->toString()).toHtmlEscaped()
+                         + "</div></html>");
+        default:
+          return QVariant();
+      }
+    case 3: // NCall
+      switch (role)
+      {
+        case Qt::DisplayRole:
+          return QString::number(mpOMEquation->ncall);
+        default:
+          return QVariant();
+      }
+    case 4: // MaxTime
+      switch (role)
+      {
+        case Qt::DisplayRole:
+          return QString::number(mpOMEquation->maxTime, 'g', 3);
+        case Qt::ToolTipRole:
+          return QString("Maximum execution time in a single step.");
+        default:
+          return QVariant();
+      }
+    case 5: // Time
+      switch (role)
+      {
+        case Qt::DisplayRole:
+          return QString::number(mpOMEquation->time, 'g', 3);
+        case Qt::ToolTipRole:
+          return QString("Total time excluding the overhead of measuring.");
+        default:
+          return QVariant();
+      }
+    case 6: // Fraction
+      switch (role)
+      {
+        case Qt::DisplayRole:
+          return QString::number(100 * mpOMEquation->fraction, 'g', 3) + "%";
+        case Qt::ToolTipRole:
+          return QString("Fraction of time, 100% is the total time of all non-child equations.");
+        default:
+          return QVariant();
+      }
+    default:
+      return QVariant();
+  }
+}
+
+int EquationTreeItem::row() const
+{
+  if (mpParentEquationTreeItem)
+    return mpParentEquationTreeItem->mChildren.indexOf(const_cast<EquationTreeItem*>(this));
+
+  return 0;
+}
+
+int EquationTreeItem::getEquationIndex()
+{
+  return mpOMEquation ? mpOMEquation->index : -1;
+}
+
+EquationTreeModel::EquationTreeModel(QObject *parent)
+  : QAbstractItemModel(parent)
+{
+  mpRootEquationTreeItem = new EquationTreeItem(nullptr, nullptr, true);
+}
+
+/*!
+ * \brief EquationTreeModel::columnCount
+ * Returns the number of columns for the children of the given parent.\n
+ * \param parent
+ * \return
+ */
+int EquationTreeModel::columnCount(const QModelIndex &parent) const
+{
+    Q_UNUSED(parent);
+    return 7;
+}
+
+/*!
+ * \brief EquationTreeModel::rowCount
+ * Returns the number of rows under the given parent.\n
+ * \param parent
+ * \return
+ */
+int EquationTreeModel::rowCount(const QModelIndex &parent) const
+{
+  EquationTreeItem *pParentEquationTreeItem;
+  if (parent.column() > 0) {
+    return 0;
+  }
+
+  if (!parent.isValid()) {
+    pParentEquationTreeItem = mpRootEquationTreeItem;
+  } else {
+    pParentEquationTreeItem = static_cast<EquationTreeItem*>(parent.internalPointer());
+  }
+  return pParentEquationTreeItem ? pParentEquationTreeItem->childrenSize() : 0;
+}
+
+/*!
+ * \brief EquationTreeModel::headerData
+ * Returns the data for the given role and section in the header with the specified orientation.\n
+ * \param section
+ * \param orientation
+ * \param role
+ * \return
+ */
+QVariant EquationTreeModel::headerData(int section, Qt::Orientation orientation, int role) const
+{
+    if (role != Qt::DisplayRole || orientation != Qt::Horizontal) return QVariant();
+    switch (section) {
+    case 0: return "Index";
+    case 1: return "Type";
+    case 2: return "Equation";
+    case 3: return "NCall";
+    case 4: return "MaxTime";
+    case 5: return "Time";
+    case 6: return "Fraction";
+    default: return QVariant();
+    }
+}
+
+/*!
+ * \brief EquationTreeModel::index
+ * Returns the index of the item in the model specified by the given row, column and parent index.\n
+ * \param row
+ * \param column
+ * \param parent
+ * \return
+ */
+QModelIndex EquationTreeModel::index(int row, int column, const QModelIndex &parent) const
+{
+  if (!hasIndex(row, column, parent)) {
+    return QModelIndex();
+  }
+
+  EquationTreeItem *pParentEquationTreeItem;
+  if (!parent.isValid()) {
+    pParentEquationTreeItem = mpRootEquationTreeItem;
+  } else {
+    pParentEquationTreeItem = static_cast<EquationTreeItem*>(parent.internalPointer());
+  }
+
+  if (row < 0 || row >= pParentEquationTreeItem->childrenSize()) {
+    return QModelIndex();
+  }
+
+  return createIndex(row, column, pParentEquationTreeItem->child(row));
+}
+
+/*!
+ * \brief EquationTreeModel::parent
+ * Returns the parent of the model item with the given index in the form of a QModelIndex.\n
+ * \param child
+ * \return
+ */
+QModelIndex EquationTreeModel::parent(const QModelIndex &index) const
+{
+  if (!index.isValid()) {
+    return QModelIndex();
+  }
+
+  EquationTreeItem *pChildEquationTreeItem = static_cast<EquationTreeItem*>(index.internalPointer());
+  EquationTreeItem *pParentEquationTreeItem = pChildEquationTreeItem->parent();
+  if (pParentEquationTreeItem == mpRootEquationTreeItem)
+    return QModelIndex();
+
+  return createIndex(pParentEquationTreeItem->row(), 0, pParentEquationTreeItem);
+}
+
+/*!
+ * \brief EquationTreeModel::data
+ * Returns the data stored under the given role for the item referred to by the index.\n
+ * \param index
+ * \param role
+ * \return
+ */
+QVariant EquationTreeModel::data(const QModelIndex &index, int role) const
+{
+  if (!index.isValid()) {
+    return QVariant();
+  }
+
+  EquationTreeItem *pEquationTreeItem = static_cast<EquationTreeItem*>(index.internalPointer());
+  return pEquationTreeItem->data(index.column(), role);
+}
+
+/*!
+ * \brief EquationTreeModel::insertEquations
+ * Inserts the equations in the model.\n
+ * \param equations
+ */
+void EquationTreeModel::insertEquations(const QList<OMEquation*>& equations, bool nestedEquations)
+{
+  beginResetModel();
+
+  mpRootEquationTreeItem->removeChildren();
+
+  // Skip the first equation as it is a dummy equation. see model_info.json {"eqIndex":0,"tag":"dummy"}
+  const int start = nestedEquations ? 1 : 0;
+  for (int i = start; i < equations.size(); ++i)
+  {
+    OMEquation *equation = equations[i];
+
+    if (nestedEquations && equation->parent) {
+      continue; // Only output equations in one position
+    }
+
+    EquationTreeItem *pEquationTreeItem = new EquationTreeItem(equation, mpRootEquationTreeItem);
+    mpRootEquationTreeItem->insertChild(mpRootEquationTreeItem->childrenSize(), pEquationTreeItem);
+
+    if (nestedEquations) {
+      insertNestedEquations(pEquationTreeItem, i, equations);
+    }
+  }
+
+  endResetModel();
+}
+
+/*!
+ * \brief EquationTreeModel::findEquationTreeItem
+ * Finds the EquationTreeItem with the given equation index.\n
+ * \param equationIndex
+ * \param pEquationTreeItem
+ * \return
+ */
+EquationTreeItem *EquationTreeModel::findEquationTreeItem(int equationIndex, EquationTreeItem *pEquationTreeItem) const
+{
+  if (!pEquationTreeItem) {
+    pEquationTreeItem = mpRootEquationTreeItem;
+  }
+
+  if (pEquationTreeItem->getEquationIndex() == equationIndex) {
+    return pEquationTreeItem;
+  }
+
+  for (int i = pEquationTreeItem->childrenSize(); --i >= 0; ) {
+    if (EquationTreeItem *item = findEquationTreeItem(equationIndex, pEquationTreeItem->child(i))) {
+      return item;
+    }
+  }
+  return nullptr;
+}
+
+/*!
+ * \brief EquationTreeModel::equationTreeItemIndex
+ * Returns the QModelIndex of the given EquationTreeItem.\n
+ * \param pEquationTreeItem
+ * \return
+ */
+QModelIndex EquationTreeModel::equationTreeItemIndex(const EquationTreeItem *pEquationTreeItem) const
+{
+  if (!pEquationTreeItem || pEquationTreeItem == mpRootEquationTreeItem) {
+    return QModelIndex();
+  }
+
+  return createIndex(pEquationTreeItem->row(), 0, const_cast<EquationTreeItem*>(pEquationTreeItem));
+}
+
+void EquationTreeModel::insertNestedEquations(EquationTreeItem *pParentItem, int index, const QList<OMEquation*> &equations)
+{
+  OMEquation *equation = equations[index];
+
+  for (int nestedIndex : equation->eqs)
+  {
+    OMEquation *nestedEquation = equations[nestedIndex];
+
+    EquationTreeItem *pNestedItem = new EquationTreeItem(nestedEquation, pParentItem);
+
+    pParentItem->insertChild(pParentItem->childrenSize(), pNestedItem);
+
+    insertNestedEquations(pNestedItem, nestedIndex, equations);
+  }
+}
+
+/*!
+ * \brief EquationTreeView::EquationTreeView
+ * Constructor for the EquationTreeView class.\n
+ * \param parent
+ */
+EquationTreeView::EquationTreeView(QWidget *parent)
+  : QTreeView(parent)
 {
   setItemDelegate(new ItemDelegate(this));
-  setIndentation(0);
-  setColumnCount(7);
   setTextElideMode(Qt::ElideMiddle);
+  setIndentation(Helper::treeIndentation);
   setSortingEnabled(true);
   sortByColumn(0, Qt::AscendingOrder);
-  setColumnWidth(0, 55);
-  setColumnWidth(1, 60);
-  setColumnWidth(2, 200);
-  setColumnWidth(3, 55);
-  setColumnWidth(4, 80);
-  setColumnWidth(5, 80);
-  setColumnWidth(6, 60);
   setExpandsOnDoubleClick(false);
-  QStringList headerLabels;
-  headerLabels << Helper::index << Helper::type << Helper::equation << Helper::executionCount << Helper::executionMaxTime << Helper::executionTime << Helper::executionFraction;
-  setHeaderLabels(headerLabels);
-  connect(this, SIGNAL(itemDoubleClicked(QTreeWidgetItem*,int)), mpTransformationWidget, SLOT(fetchEquationData(QTreeWidgetItem*,int)));
+  setUniformRowHeights(true);
 }
 
 /*!
@@ -591,26 +851,32 @@ TransformationsWidget::TransformationsWidget(QString infoJSONFullFileName, bool 
   pVariablesGridLayout->addWidget(mpTVariablesTreeView, 2, 0);
   QFrame *pVariablesFrame = new QFrame;
   pVariablesFrame->setLayout(pVariablesGridLayout);
-  /* Defined in tree widget */
+  /* Defined in tree view */
   Label *pDefinedInLabel = new Label(tr("Defined In Equations"));
   pDefinedInLabel->setObjectName("LabelWithBorder");
-  mpDefinedInEquationsTreeWidget = new EquationTreeWidget(this);
+  mpDefinedInEquationTreeModel = new EquationTreeModel(this);
+  mpDefinedInEquationTreeView = new EquationTreeView(this);
+  mpDefinedInEquationTreeView->setModel(mpDefinedInEquationTreeModel);
+  connect(mpDefinedInEquationTreeView, SIGNAL(doubleClicked(QModelIndex)), SLOT(fetchEquationData(QModelIndex)));
   QGridLayout *pDefinedInGridLayout = new QGridLayout;
   pDefinedInGridLayout->setSpacing(1);
   pDefinedInGridLayout->setContentsMargins(0, 0, 0, 0);
   pDefinedInGridLayout->addWidget(pDefinedInLabel, 0, 0);
-  pDefinedInGridLayout->addWidget(mpDefinedInEquationsTreeWidget, 1, 0);
+  pDefinedInGridLayout->addWidget(mpDefinedInEquationTreeView, 1, 0);
   QFrame *pDefinedInFrame = new QFrame;
   pDefinedInFrame->setLayout(pDefinedInGridLayout);
   /* Used in tree widget  */
   Label *pUsedInLabel = new Label(tr("Used In Equations"));
   pUsedInLabel->setObjectName("LabelWithBorder");
-  mpUsedInEquationsTreeWidget = new EquationTreeWidget(this);
+  mpUsedInEquationTreeModel = new EquationTreeModel(this);
+  mpUsedInEquationTreeView = new EquationTreeView(this);
+  mpUsedInEquationTreeView->setModel(mpUsedInEquationTreeModel);
+  connect(mpUsedInEquationTreeView, SIGNAL(doubleClicked(QModelIndex)), SLOT(fetchEquationData(QModelIndex)));
   QGridLayout *pUsedInGridLayout = new QGridLayout;
   pUsedInGridLayout->setSpacing(1);
   pUsedInGridLayout->setContentsMargins(0, 0, 0, 0);
   pUsedInGridLayout->addWidget(pUsedInLabel, 0, 0);
-  pUsedInGridLayout->addWidget(mpUsedInEquationsTreeWidget, 1, 0);
+  pUsedInGridLayout->addWidget(mpUsedInEquationTreeView, 1, 0);
   QFrame *pUsedInFrame = new QFrame;
   pUsedInFrame->setLayout(pUsedInGridLayout);
   /* variable operations tree widget */
@@ -632,14 +898,16 @@ TransformationsWidget::TransformationsWidget(QString infoJSONFullFileName, bool 
   /* Equations Heading */
   Label *pEquationBrowserLabel = new Label(tr("Equations"));
   pEquationBrowserLabel->setObjectName("LabelWithBorder");
-  /* Equations tree widget */
-  mpEquationsTreeWidget = new EquationTreeWidget(this);
-  mpEquationsTreeWidget->setIndentation(Helper::treeIndentation);
+  /* Equations tree view */
+  mpEquationTreeModel = new EquationTreeModel(this);
+  mpEquationTreeView = new EquationTreeView(this);
+  mpEquationTreeView->setModel(mpEquationTreeModel);
+  connect(mpEquationTreeView, SIGNAL(doubleClicked(QModelIndex)), SLOT(fetchEquationData(QModelIndex)));
   QGridLayout *pEquationsGridLayout = new QGridLayout;
   pEquationsGridLayout->setSpacing(1);
   pEquationsGridLayout->setContentsMargins(0, 0, 0, 0);
   pEquationsGridLayout->addWidget(pEquationBrowserLabel, 0, 0);
-  pEquationsGridLayout->addWidget(mpEquationsTreeWidget, 1, 0);
+  pEquationsGridLayout->addWidget(mpEquationTreeView, 1, 0);
   QFrame *pEquationsFrame = new QFrame;
   pEquationsFrame->setLayout(pEquationsGridLayout);
   /* defines tree widget */
@@ -833,7 +1101,15 @@ TransformationsWidget::TransformationsWidget(QString infoJSONFullFileName, bool 
   }
 }
 
-static OMOperation* variantToOperationPtr(QVariantMap var)
+TransformationsWidget::~TransformationsWidget()
+{
+  if (mpInfoXMLFileHandler) {
+    delete mpInfoXMLFileHandler;
+  }
+  qDeleteAll(mEquations);
+}
+
+static OMOperation* variantToOperationPtr(const QVariantMap &var)
 {
   QString op = var["op"].toString();
   QString display = var["display"].toString();
@@ -855,7 +1131,7 @@ static OMOperation* variantToOperationPtr(QVariantMap var)
 }
 
 
-static void variantToSource(QVariantMap var, OMInfo &info, QStringList &types, QList<OMOperation*> &ops)
+static void variantToSource(const QVariantMap &var, OMInfo &info, QStringList &types, QList<OMOperation*> &ops)
 {
   Q_UNUSED(types);
   QVariantMap vinfo = var["info"].toMap();
@@ -896,42 +1172,40 @@ void TransformationsWidget::loadTransformations(bool profiling, bool checkForPro
   loadTransformations();
 }
 
+/*!
+ * \brief TransformationsWidget::fetchDefinedInEquations
+ * Fetches the equations in which the variable is defined and inserts them in the Defined In tree view.\n
+ * \param variable
+ */
 void TransformationsWidget::fetchDefinedInEquations(const OMVariable &variable)
 {
-  /* Clear the defined in tree. */
-  clearTreeWidgetItems(mpDefinedInEquationsTreeWidget);
-  /* add defined in equations */
+  // Fetch the equations in which the variable is defined.
+  QList<OMEquation*> equations;
   for (int i=0; i<variable.definedIn.size(); i++) {
     OMEquation *equation = getOMEquation(mEquations, variable.definedIn[i]);
     if (equation) {
-      QStringList values;
-      values << QString::number(variable.definedIn[i]) << equation->section << equation->toString();
-      QTreeWidgetItem *pDefinedInTreeItem = new IntegerTreeWidgetItem(values, mpDefinedInEquationsTreeWidget);
-      pDefinedInTreeItem->setToolTip(0, values[0]);
-      pDefinedInTreeItem->setToolTip(1, values[1]);
-      pDefinedInTreeItem->setToolTip(2, values[2]);
-      mpDefinedInEquationsTreeWidget->addTopLevelItem(pDefinedInTreeItem);
+      equations << equation;
     }
   }
+  mpDefinedInEquationTreeModel->insertEquations(equations, false);
 }
 
+/*!
+ * \brief TransformationsWidget::fetchUsedInEquations
+ * Fetches the equations in which the variable is used and inserts them in the Used In tree view.\n
+ * \param variable
+ */
 void TransformationsWidget::fetchUsedInEquations(const OMVariable &variable)
 {
-  /* Clear the used in tree. */
-  clearTreeWidgetItems(mpUsedInEquationsTreeWidget);
-  /* add used in equations */
+  // Fetch the equations in which the variable is used.
+  QList<OMEquation*> equations;
   foreach (int index, variable.usedIn) {
     OMEquation *equation = getOMEquation(mEquations, index);
     if (equation) {
-      QStringList values;
-      values << QString::number(index) << equation->section << equation->toString();
-      QTreeWidgetItem *pUsedInTreeItem = new IntegerTreeWidgetItem(values, mpUsedInEquationsTreeWidget);
-      pUsedInTreeItem->setToolTip(0, values[0]);
-      pUsedInTreeItem->setToolTip(1, values[1]);
-      pUsedInTreeItem->setToolTip(2, values[2]);
-      mpUsedInEquationsTreeWidget->addTopLevelItem(pUsedInTreeItem);
+      equations << equation;
     }
   }
+  mpUsedInEquationTreeModel->insertEquations(equations, false);
 }
 
 void TransformationsWidget::fetchOperations(const OMVariable &variable)
@@ -959,35 +1233,6 @@ void TransformationsWidget::fetchOperations(const OMVariable &variable)
   mpVariableOperationsTreeWidget->resizeColumnToContents(0);
 }
 
-QTreeWidgetItem* TransformationsWidget::makeEquationTreeWidgetItem(int equationIndex, int allowChild)
-{
-  OMEquation *equation = mEquations[equationIndex];
-  if (!allowChild && equation->parent) {
-    return NULL; // Only output equations in one position
-  }
-  QStringList values;
-  values << QString::number(equation->index)
-         << equation->section
-         << equation->toString();
-  if (equation->profileBlock >= 0) {
-    values << QString::number(equation->ncall)
-         << QString::number(equation->maxTime, 'g', 3)
-         << QString::number(equation->time, 'g', 3)
-         << QString::number(100 * equation->fraction, 'g', 3) + "%";
-  }
-
-  QTreeWidgetItem *pEquationTreeItem = new IntegerTreeWidgetItem(values, mpEquationsTreeWidget);
-  pEquationTreeItem->setToolTip(0, values[0]);
-  pEquationTreeItem->setToolTip(1, values[1]);
-  pEquationTreeItem->setToolTip(2, "<html><div style=\"margin:3px;\">" +
-  QString(values[2]).toHtmlEscaped()
-  + "</div></html>");
-  pEquationTreeItem->setToolTip(4, "Maximum execution time in a single step");
-  pEquationTreeItem->setToolTip(5, "Total time excluding the overhead of measuring.");
-  pEquationTreeItem->setToolTip(6, "Fraction of time, 100% is the total time of all non-child equations.");
-  return pEquationTreeItem;
-}
-
 /*!
  * \brief TransformationsWidget::loadTransformations
  * Loads the transformations from the model_info.json file.
@@ -997,10 +1242,6 @@ void TransformationsWidget::loadTransformations()
   mCurrentEquationIndex = 0;
   /* clear trees */
   mpTVariablesTreeModel->clearTVariablesTreeItems();
-  /* Clear the defined in tree. */
-  clearTreeWidgetItems(mpDefinedInEquationsTreeWidget);
-  /* Clear the used in tree. */
-  clearTreeWidgetItems(mpUsedInEquationsTreeWidget);
   /* Clear the variable operations tree. */
   clearTreeWidgetItems(mpVariableOperationsTreeWidget);
   /* clear the variable tree filters. */
@@ -1018,12 +1259,6 @@ void TransformationsWidget::loadTransformations()
 #else
   mpTVariableTreeProxyModel->setFilterRegExp(QRegExp());
 #endif
-  /* clear equations tree */
-  clearTreeWidgetItems(mpEquationsTreeWidget);
-  /* clear defines in tree */
-  clearTreeWidgetItems(mpDefinesVariableTreeWidget);
-  /* clear depends tree */
-  clearTreeWidgetItems(mpDependsVariableTreeWidget);
   /* clear equation operations tree */
   clearTreeWidgetItems(mpEquationOperationsTreeWidget);
   /* clear TSourceEditor */
@@ -1031,8 +1266,6 @@ void TransformationsWidget::loadTransformations()
   mpTSourceEditorFileLabel->hide();
   mpTransformationsEditor->getPlainTextEdit()->clear();
   mpTSourceEditorInfoBar->hide();
-  /* Clear the equations tree. */
-  clearTreeWidgetItems(mpEquationsTreeWidget);
   /* initialize all fields again */
   mProfilingJSONFullFileName = "";
   /* check if profiling is enabled or checkProfilingExists is true then check if the profiling files exists
@@ -1045,6 +1278,7 @@ void TransformationsWidget::loadTransformations()
       mProfilingJSONFullFileName = profilingJSONFileName;
     }
   }
+  qDeleteAll(mEquations);
   mEquations.clear();
   mVariables.clear();
   hasOperationsEnabled = false;
@@ -1070,14 +1304,14 @@ void TransformationsWidget::loadTransformations()
       }
       mVariables[iter.key()] = var;
     }
-    mpTVariablesTreeView->setSortingEnabled(false);
     mpTVariablesTreeModel->insertTVariablesItems(mVariables);
-    mpTVariablesTreeView->setSortingEnabled(true);
+    // we need to create all equations first since they can refer from parent, then we will fill the details of each equation in the second loop
+    mEquations.reserve(eqs.size());
     for (int i=0; i<eqs.size(); i++) {
       mEquations << new OMEquation();
     }
     for (int i=0; i<eqs.size(); i++) {
-      QVariantMap veq = eqs[i].toMap();
+      const QVariantMap veq = eqs[i].toMap();
       OMEquation *eq = mEquations[i];
       eq->section = veq["section"].toString();
       if (veq["eqIndex"].toInt() != i) {
@@ -1086,93 +1320,84 @@ void TransformationsWidget::loadTransformations()
       }
       eq->index = i;
       eq->profileBlock = -1;
-      if (veq.find("parent") != veq.end()) {
-        eq->parent = veq["parent"].toInt();
+
+      auto parentIt = veq.find("parent");
+      if (parentIt != veq.end()) {
+        eq->parent = parentIt->toInt();
         mEquations[eq->parent]->eqs << eq->index;
       } else {
         eq->parent = 0;
       }
-      if (veq.find("defines") != veq.end()) {
-        eq->defines = Utilities::variantListToStringList(veq["defines"].toList());
-        foreach (QString v, eq->defines) {
+
+      auto definesIt = veq.find("defines");
+      if (definesIt != veq.end()) {
+        eq->defines = Utilities::variantListToStringList(definesIt->toList());
+        for (const QString &v : qAsConst(eq->defines)) {
           mVariables[v].definedIn << eq->index;
         }
       }
-      if (veq.find("uses") != veq.end()) {
-        eq->depends = Utilities::variantListToStringList(veq["uses"].toList());
-        foreach (QString v, eq->depends) {
+
+      auto usesIt = veq.find("uses");
+      if (usesIt != veq.end()) {
+        eq->depends = Utilities::variantListToStringList(usesIt->toList());
+        for (const QString &v : qAsConst(eq->depends)) {
           mVariables[v].usedIn << eq->index;
         }
       }
+
       eq->text = Utilities::variantListToStringList(veq["equation"].toList());
       eq->tag = veq["tag"].toString();
-      if (veq.find("display") != veq.end()) {
-        eq->display = veq["display"].toString();
-      } else {
-        eq->display = eq->tag;
-      }
+      auto displayIt = veq.find("display");
+      eq->display = (displayIt != veq.end()) ? displayIt->toString() : eq->tag;
+
       eq->unknowns = veq["unknowns"].toInt();
-      QVariantMap sourceMap = veq["source"].toMap();
-      variantToSource(veq["source"].toMap(), eq->info, eq->types, eq->ops);
-      if (!hasOperationsEnabled && sourceMap.contains("operations")) {
-        hasOperationsEnabled = true;
+
+      auto sourceIt = veq.find("source");
+      if (sourceIt != veq.end()) {
+        const QVariantMap sourceMap = sourceIt->toMap();
+        variantToSource(sourceMap, eq->info, eq->types, eq->ops);
+        if (!hasOperationsEnabled && sourceMap.contains("operations")) {
+          hasOperationsEnabled = true;
+        }
       }
     }
+
     parseProfiling(mProfilingJSONFullFileName);
-    fetchEquations();
+    mpEquationTreeModel->insertEquations(mEquations, true);
   } else {
     QFile file(mInfoJSONFullFileName);
     mpInfoXMLFileHandler = new MyHandler(file,mVariables,mEquations);
-    mpTVariablesTreeView->setSortingEnabled(false);
     mpTVariablesTreeModel->insertTVariablesItems(mVariables);
-    mpTVariablesTreeView->setSortingEnabled(true);
     /* load equations */
     parseProfiling(mProfilingJSONFullFileName);
-    fetchEquations();
+    mpEquationTreeModel->insertEquations(mEquations, true);
     hasOperationsEnabled = mpInfoXMLFileHandler->hasOperationsEnabled;
   }
   fetchVariableData(mpTVariableTreeProxyModel->index(0, 0));
 }
 
-void TransformationsWidget::fetchEquations()
+EquationTreeItem* TransformationsWidget::findEquationTreeItem(int equationIndex)
 {
-  for (int i = 1 ; i < mEquations.size() ; i++)
-  {
-    QTreeWidgetItem *pEquationTreeItem = makeEquationTreeWidgetItem(i,0);
-    if (pEquationTreeItem) {
-      mpEquationsTreeWidget->addTopLevelItem(pEquationTreeItem);
-      fetchNestedEquations(pEquationTreeItem, i);
-    }
-  }
-}
-
-void TransformationsWidget::fetchNestedEquations(QTreeWidgetItem *pParentTreeWidgetItem, int index)
-{
-  foreach (int nestedIndex, mEquations[index]->eqs)
-  {
-    // OMEquation *nestedEquation = mpInfoXMLFileHandler->equations[nestedIndex];
-    QTreeWidgetItem *pNestedEquationTreeItem = makeEquationTreeWidgetItem(nestedIndex,1);
-    if (pNestedEquationTreeItem) {
-      pParentTreeWidgetItem->addChild(pNestedEquationTreeItem);
-      fetchNestedEquations(pNestedEquationTreeItem, nestedIndex);
-    }
-  }
-}
-
-QTreeWidgetItem* TransformationsWidget::findEquationTreeItem(int equationIndex)
-{
-  QTreeWidgetItemIterator it(mpEquationsTreeWidget);
-  while (*it)
-  {
-    QTreeWidgetItem *pEquationTreeItem = dynamic_cast<QTreeWidgetItem*>(*it);
-    if (pEquationTreeItem->text(0).toInt() == equationIndex)
-      return pEquationTreeItem;
-    ++it;
-  }
-  return 0;
+  return mpEquationTreeModel->findEquationTreeItem(equationIndex);
 }
 
 #include <qwt_plot.h>
+
+/*!
+ * \brief TransformationsWidget::selectEquation
+ * Selects the equation in the equations tree view and scrolls to it.
+ * \param equationIndex
+ */
+void TransformationsWidget::selectEquation(int equationIndex)
+{
+  EquationTreeItem *pEquationTreeItem = findEquationTreeItem(equationIndex);
+  if (pEquationTreeItem) {
+    mpEquationTreeView->clearSelection();
+    QModelIndex idx = mpEquationTreeModel->equationTreeItemIndex(pEquationTreeItem);
+    mpEquationTreeView->setCurrentIndex(idx);
+    mpEquationTreeView->scrollTo(idx);
+  }
+}
 
 void TransformationsWidget::fetchEquationData(int equationIndex)
 {
@@ -1353,12 +1578,15 @@ void TransformationsWidget::findVariables()
 
 void TransformationsWidget::fetchVariableData(const QModelIndex &index)
 {
-  if (!index.isValid())
+  if (!index.isValid()) {
     return;
+  }
+
   QModelIndex modelIndex = mpTVariableTreeProxyModel->mapToSource(index);
   TVariablesTreeItem *pTVariableTreeItem = static_cast<TVariablesTreeItem*>(modelIndex.internalPointer());
-  if (!pTVariableTreeItem)
+  if (!pTVariableTreeItem) {
     return;
+  }
 
   const OMVariable &variable = mVariables[pTVariableTreeItem->getVariableName()];
   /* fetch defined in equations */
@@ -1368,8 +1596,9 @@ void TransformationsWidget::fetchVariableData(const QModelIndex &index)
   /* fetch operations */
   fetchOperations(variable);
 
-  if (!variable.info.isValid)
+  if (!variable.info.isValid) {
     return;
+  }
   /* open the model with and go to the variable line */
   QString fileName = variable.info.file;
   QFileInfo fileInfo(fileName);
@@ -1380,6 +1609,11 @@ void TransformationsWidget::fetchVariableData(const QModelIndex &index)
       fileName = pLibraryTreeItem->getFileName();
     }
   }
+
+  if (!QFile::exists(fileName)) {
+    return;
+  }
+
   QFile file(fileName);
   if (file.open(QIODevice::ReadOnly)) {
     mpTSourceEditorFileLabel->setText(file.fileName());
@@ -1392,23 +1626,30 @@ void TransformationsWidget::fetchVariableData(const QModelIndex &index)
   }
 }
 
-void TransformationsWidget::fetchEquationData(QTreeWidgetItem *pEquationTreeItem, int column)
+void TransformationsWidget::fetchEquationData(const QModelIndex &index)
 {
-  Q_UNUSED(column);
+  if (!index.isValid()) {
+    return;
+  }
+
+  EquationTreeItem *pEquationTreeItem = static_cast<EquationTreeItem*>(index.internalPointer());
   if (!pEquationTreeItem) {
     return;
   }
 
-  int equationIndex = pEquationTreeItem->text(0).toInt();
-  /* if the sender is mpEquationsTreeWidget then there is no need to select the item. */
-  EquationTreeWidget *pSender = qobject_cast<EquationTreeWidget*>(sender());
-  if (pSender != mpEquationsTreeWidget) {
-    QTreeWidgetItem *pTreeWidgetItem = findEquationTreeItem(equationIndex);
-    if (pTreeWidgetItem) {
-      mpEquationsTreeWidget->clearSelection();
-      mpEquationsTreeWidget->setCurrentItem(pTreeWidgetItem);
+  int equationIndex = pEquationTreeItem->getEquationIndex();
+  /* if the sender is mpEquationTreeView then there is no need to select the item. */
+  EquationTreeView *pSender = qobject_cast<EquationTreeView*>(sender());
+  if (pSender != mpEquationTreeView) {
+    EquationTreeItem *pEquationTreeItem = findEquationTreeItem(equationIndex);
+    if (pEquationTreeItem) {
+      mpEquationTreeView->clearSelection();
+      QModelIndex idx = mpEquationTreeModel->equationTreeItemIndex(pEquationTreeItem);
+      mpEquationTreeView->setCurrentIndex(idx);
+      mpEquationTreeView->scrollTo(idx);
     }
   }
+
   fetchEquationData(equationIndex);
 }
 

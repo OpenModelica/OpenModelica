@@ -1116,7 +1116,6 @@ QVariant LibraryTreeModel::data(const QModelIndex &index, int role) const
     return QVariant();
   }
 
-
   LibraryTreeItem *pLibraryTreeItem = static_cast<LibraryTreeItem*>(index.internalPointer());
   return pLibraryTreeItem->data(index.column(), role);
 }
