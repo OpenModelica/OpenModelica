@@ -290,12 +290,11 @@ int expl_diag_impl_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
       // Store values in the ring buffer
       memcpy(gbData->x + stage_ * nStates, gbData->res_const, nStates*sizeof(double));
 
-      if (!gbData->tableau->isKLeftAvailable || (stage > 0)) {
-        // Calculate the fODE values for the explicit stage
+      if (gbData->tableau->isKLeftAvailable && !gbData->didFastStep && (stage == 0)) {
+        memcpy(fODE, gbData->kLeft, nStates*sizeof(double));
+      } else {
         memcpy(sData->realVars, gbData->res_const, nStates*sizeof(double));
         gbode_fODE(data, threadData, &(gbData->stats.nCallsODE), NULL);
-      } else {
-        memcpy(fODE, gbData->kLeft, nStates*sizeof(double));
       }
     } else {
       // solve for x: 0 = yold-x + h*(sum(A[i,j]*k[j], i=1..j-1) + A[i,i]*f(t + c[i]*h, x))
@@ -452,7 +451,7 @@ int expl_diag_impl_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solv
     if (gbfData->tableau->A[stage * nStages + stage] == 0)
     {
       // check if kLeft is available and potentially reuse said value
-      if (gbfData->tableau->isKLeftAvailable && (stage == 0))
+      if (gbfData->tableau->isKLeftAvailable && (stage == 0) && gbData->didFastStep)
       {
         copyVector_gbf(fODE, gbfData->kLeft, nFastStates, gbData->fastStatesIdx);
       }

@@ -420,6 +420,7 @@ int gbode_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solver
   infoStreamPrint(OMC_LOG_SOLVER, 0, "gbode performs a restart after an event occurs %s", gbData->noRestart?"NO":"YES");
 
   gbData->isFirstStep = TRUE;
+  gbData->didFastStep = FALSE;
   gbData->eventHappened = FALSE;
 
   /* mark initial extrapolation data as invalid () */
@@ -1088,6 +1089,7 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
     gbfData->extrapolationBaseTime = gbfData->time;
     gbfData->extrapolationStepSize = gbfData->stepSize;
     gbfData->extrapolationValid = TRUE;
+    gbData->didFastStep = TRUE;
 
     /* remember kLast and yLast for dense output extrapolation, we have to pack them properly though
        TODO: gbfData->k and gbfData->y / yOld should always contain only the fast states packed from
@@ -1807,6 +1809,7 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
       gbData->extrapolationBaseTime = gbData->time;
       gbData->extrapolationStepSize = gbData->stepSize;
       gbData->eventHappened = FALSE;
+      gbData->didFastStep = FALSE;
 
       /* remember kLast and yLast for dense output extrapolation */
       memcpy(gbData->kLast, gbData->k, nStates * nStages * sizeof(double));

@@ -1962,8 +1962,8 @@ void gbInternalContraction(DATA *data,
          defect_err->dT_A, &nStages,
          &DBL_ZERO, err, &size);
 
-  modelica_boolean sr_valid = (!nls->multirate && gbData->time != data->simulationInfo->startTime && !gbData->eventHappened && gbData->extrapolationBaseTime != INFINITY);
-  modelica_boolean mr_valid = (nls->multirate && gbData->gbfData->extrapolationValid);
+  modelica_boolean sr_valid = (!nls->multirate && !gbData->didFastStep && gbData->time != data->simulationInfo->startTime && !gbData->eventHappened && gbData->extrapolationBaseTime != INFINITY);
+  modelica_boolean mr_valid = (nls->multirate && gbData->didFastStep && gbData->gbfData->extrapolationValid);
 
   if (tabl->isKRightAvailable && (sr_valid || mr_valid))
   {
