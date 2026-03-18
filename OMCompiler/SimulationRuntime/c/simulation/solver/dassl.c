@@ -1391,9 +1391,8 @@ int jacA_numColored(double *t, double *y, double *yprime, double *delta,
 }
 
 /**
- * @brief Set element of dense Jacobian matrix transposed.
- * Needed when calculating adjoint Jacobian.
- * Adjoint setter: flip indices to correct transposed storage
+ * @brief Set element of dense Jacobian matrix.
+ *
  * Jac(row, column) = val.
  *
  * @param row       Row of matrix element.
@@ -1407,9 +1406,8 @@ void setJacElementDasslSparseAdj(int row, int column, int nth, double value,
                                  void* Jac, int nRows)
 {
   UNUSED(nth);
-  /* Store so that resulting matrix matches forward layout */
   double* A = (double*) Jac;
-  A[row * nRows + column] = value;
+  A[column*nRows + row] = value;
 }
 
 /* \fn jacADJ_symColored(double *t, double *y, double *yprime, double *deltaD, double *pd, double *cj, double *h, double *wt,
