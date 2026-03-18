@@ -156,10 +156,6 @@ void genericColoredSymbolicJacobianEvaluation(int rows, int columns, SPARSE_PATT
        for (j=0; j < columns; j++) {
           t_jac->resultVars[j] = 0;
        }
-       // reset tmp vars
-       for (j=0; j < t_jac->sizeTmpVars; j++) {
-          t_jac->tmpVars[j] = 0;
-       }
      } else {
        /* Column evaluation: sparse pattern is CSC, colorCols encodes column colors. */
        for (j=0; j < columns; j++) {
