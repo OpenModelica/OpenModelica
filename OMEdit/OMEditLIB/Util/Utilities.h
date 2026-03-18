@@ -527,6 +527,14 @@ namespace Utilities {
   void setToolTip(QComboBox *pComboBox, const QString &description, const QStringList &optionsDescriptions);
   bool isMultiline(const QString &text);
   QMap<QString, QLocale> supportedLanguages();
+  void buildVariableNodeTree(VariableNode *pRootNode,
+                             const QString &prefix,
+                             const QString &fullVariableName,
+                             const QStringList &parts,
+                             std::function<QVector<QVariant>(const QString &fullName,
+                                                             const QString &displayName,
+                                                             bool isMainArray)> makeData,
+                             std::function<void(VariableNode*)> postCreate = nullptr);
 } // namespace Utilities
 
 #endif // UTILITIES_H

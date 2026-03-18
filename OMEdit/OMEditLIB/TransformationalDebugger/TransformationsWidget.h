@@ -59,7 +59,7 @@ public:
   bool isRootItem() {return mIsRootItem;}
   QString getVariableName() {return mVariableName;}
   QString getFilePath() {return mFilePath;}
-  void insertChild(int position, TVariablesTreeItem *pVariablesTreeItem);
+  void appendChild(TVariablesTreeItem *pVariablesTreeItem);
   TVariablesTreeItem *child(int row);
   void removeChildren();
   int columnCount() const;
