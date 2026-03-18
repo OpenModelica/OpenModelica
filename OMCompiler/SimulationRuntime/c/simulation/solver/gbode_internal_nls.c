@@ -1158,7 +1158,8 @@ static NLS_SOLVER_STATUS gbInternalSolveNls_T_Transform(DATA *data,
     gbInternal_T_Transform_set_states(data, gbData, nls, yOld, GB_INTERNAL_LEFT_BOUNDARY);
 
     /* callback ODE + callback Jacobian of ODE -> nls_jacobian buffer
-       => TODO: if method has property a_{s,:} = b, i.e. FSAL or kLeft is available, we could recycle the k_s from before here */
+       => TODO: if method has property a_{s,:} = b, i.e. FSAL or kLeft is available, we could recycle the k_s from before here
+                or does fODE set algebraic variables that may be needed for the Jacobian? */
     ret = gbode_fODE(data, threadData, &stats->nCallsODE, selection);
     if (ret < 0) return NLS_FAILED;
 

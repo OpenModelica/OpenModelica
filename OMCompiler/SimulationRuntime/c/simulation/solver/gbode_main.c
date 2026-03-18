@@ -72,6 +72,8 @@
 extern void communicateStatus(const char *phase, double completionPercent, double currentTime, double currentStepSize);
 
 // TODO: we should add proper return handling of callbacks: ODE, Jacobian, Zero-Crossings, etc.
+// TODO: make the interface between fast steps and slow steps more clear: It would be best to have one central function, which
+//       copies the required fields from fast -> slow
 
 /**
  * @brief Calculate function values of function ODE f(t,y).
@@ -1430,7 +1432,6 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
       // run multirate step
       gb_step_info = gbodef_main(data, threadData, solverInfo, targetTime);
       // synchronize y, yRight , kRight and buffer
-      // TODO: inspect this: IMO this is very dangerous. Dont we perform selective evaluation and x and k are only valid for fast state indices???
       if (fabs(gbData->timeRight - gbData->gbfData->timeRight) < GB_MINIMAL_STEP_SIZE) {
         gbData->time = gbData->timeRight;
         memcpy(gbData->y, gbData->gbfData->y, nStates * sizeof(double));
@@ -1865,7 +1866,6 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
           // run multirate step
           gb_step_info = gbodef_main(data, threadData, solverInfo, targetTime);
           // synchronize relevant information
-          // TODO: inspect this: IMO this is very dangerous. Dont we perform selective evaluation and x and k are only valid for fast state indices???
           if (fabs(gbData->timeRight - gbData->gbfData->timeRight) < GB_MINIMAL_STEP_SIZE) {
             memcpy(gbData->y, gbData->gbfData->y, nStates * sizeof(double));
             memcpy(gbData->yRight, gbData->gbfData->yRight, nStates * sizeof(double));
