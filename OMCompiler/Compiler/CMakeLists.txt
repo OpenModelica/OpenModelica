@@ -283,6 +283,16 @@ endif()
 add_executable(omc .cmake/omc_main.c)
 target_link_libraries(omc PRIVATE OpenModelicaCompiler)
 
+# If ColPack is linked from a non-system prefix, preserve that path in installed
+# compiler binaries so runtime loading works without extra environment variables.
+if(UNIX AND NOT APPLE AND COLPACK_LIB)
+  get_filename_component(COLPACK_LIBDIR "${COLPACK_LIB}" DIRECTORY)
+  if(COLPACK_LIBDIR)
+    set_property(TARGET OpenModelicaCompiler APPEND PROPERTY INSTALL_RPATH "${COLPACK_LIBDIR}")
+    set_property(TARGET omc APPEND PROPERTY INSTALL_RPATH "${COLPACK_LIBDIR}")
+  endif()
+endif()
+
 if(NOT WIN32)
   target_link_options(omc PRIVATE -rdynamic)
 endif()

@@ -154,7 +154,12 @@ if(PkgConfig_FOUND)
 endif()
 if(NOT COLPACK_FOUND)
   find_library(COLPACK_LIB NAMES ColPack)
-  find_path(COLPACK_INCLUDE NAMES ColPack/BipartiteGraphBicoloringInterface.h)
+  find_path(COLPACK_INCLUDE
+    NAMES
+      ColPack/BipartiteGraphBicoloring.h
+      ColPack/BipartiteGraphBicoloringInterface.h
+      ColPack_headers/BipartiteGraphBicoloring.h
+      ColPack_headers/BipartiteGraphBicoloringInterface.h)
   if(COLPACK_LIB AND COLPACK_INCLUDE)
     set(COLPACK_FOUND TRUE)
     set(COLPACK_LIBRARIES ${COLPACK_LIB})
@@ -163,6 +168,10 @@ if(NOT COLPACK_FOUND)
 endif()
 
 if(COLPACK_FOUND)
+  get_filename_component(COLPACK_LIBDIR "${COLPACK_LIBRARIES}" DIRECTORY)
+  if(COLPACK_LIBDIR)
+    list(APPEND CMAKE_INSTALL_RPATH "${COLPACK_LIBDIR}")
+  endif()
   list(APPEND OMC_BACKENDRUNTIIME_SOURCES ColPackBicoloring_omc.cpp)
   message(STATUS "ColPack found: bidirectional Jacobian coloring enabled")
 else()

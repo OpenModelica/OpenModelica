@@ -54,8 +54,25 @@ extern "C" {
 }
 #endif
 
-#include <ColPack/BipartiteGraphBicoloring.h>
-#include <ColPack/BipartiteGraphBicoloringInterface.h>
+#ifdef TRUE
+#undef TRUE
+#endif
+
+#ifdef FALSE
+#undef FALSE
+#endif
+
+#if defined(__has_include)
+#  if __has_include(<ColPack/ColPackHeaders.h>)
+#    include <ColPack/ColPackHeaders.h>
+#  elif __has_include(<ColPack_headers/ColPackHeaders.h>)
+#    include <ColPack_headers/ColPackHeaders.h>
+#  else
+#    error "Required ColPack headers not found"
+#  endif
+#else
+#  include <ColPack/ColPackHeaders.h>
+#endif
 
 #include <vector>
 #include <cstring>
@@ -111,9 +128,8 @@ void ColPackBicoloring_starBicolor(
   }
 
   /* ---- Call ColPack ---- */
-  ColPack::BipartiteGraphBicoloringInterface bgbc;
-  bgbc.BuildBPGraphFromRowCompressedFormat(ppSparsityPattern, nRows, nCols);
-  bgbc.Bicoloring("IMPLICIT_COVERING__STAR_BICOLORING", "SMALLEST_LAST");
+  ColPack::BipartiteGraphBicoloringInterface bgbc(SRC_MEM_ADOLC, ppSparsityPattern, nRows, nCols);
+  bgbc.Bicoloring("SMALLEST_LAST", "IMPLICIT_COVERING__STAR_BICOLORING");
 
   /* Extract results.
    * ColPack returns:
@@ -121,17 +137,17 @@ void ColPackBicoloring_starBicolor(
    *   right colors = column colors, size nCols (0-based; -1 = uncolored by cols)
    * We convert to 1-based (0 = uncolored).
    */
-  int numLeftColors = 0, numRightColors = 0;
-  const std::vector<int>& leftColors = bgbc.GetLeftVertexColors();
-  const std::vector<int>& rightColors = bgbc.GetRightVertexColors();
+  std::vector<int> leftColors;
+  std::vector<int> rightColors;
+  bgbc.GetLeftVertexColors(leftColors);
+  bgbc.GetRightVertexColors_Transformed(rightColors);
 
   /* ---- Build MetaModelica output: column colors ---- */
-  void* colColorsArr = (void*)mmc_mk_box_no_assign(nCols, MMC_ARRAY_TAG);
+  void* colColorsArr = (void*)mmc_mk_box_no_assign(nCols, MMC_ARRAY_TAG, 0);
   int maxColColor = 0;
   for (int j = 0; j < nCols; j++) {
-    int c = (j < (int)rightColors.size()) ? rightColors[j] : -1;
-    if (c >= 0) {
-      c = c + 1;  /* convert 0-based to 1-based */
+    int c = (j < (int)rightColors.size()) ? rightColors[j] : 0;
+    if (c > 0) {
       if (c > maxColColor) maxColColor = c;
     } else {
       c = 0;  /* uncolored by column direction */
@@ -142,12 +158,11 @@ void ColPackBicoloring_starBicolor(
   *outNColColors = maxColColor;
 
   /* ---- Build MetaModelica output: row colors ---- */
-  void* rowColorsArr = (void*)mmc_mk_box_no_assign(nRows, MMC_ARRAY_TAG);
+  void* rowColorsArr = (void*)mmc_mk_box_no_assign(nRows, MMC_ARRAY_TAG, 0);
   int maxRowColor = 0;
   for (int i = 0; i < nRows; i++) {
-    int c = (i < (int)leftColors.size()) ? leftColors[i] : -1;
-    if (c >= 0) {
-      c = c + 1;
+    int c = (i < (int)leftColors.size()) ? leftColors[i] : 0;
+    if (c > 0) {
       if (c > maxRowColor) maxRowColor = c;
     } else {
       c = 0;
