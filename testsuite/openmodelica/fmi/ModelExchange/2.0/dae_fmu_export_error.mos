@@ -1,0 +1,24 @@
+// name:     dae_fmu_export_error
+// keywords: FMU-Export, DAE-FMU, error
+// status:   correct
+// teardown_command: rm -rf DaeModeModel*
+
+loadString("
+model DaeModeModel
+  Real x, y;
+equation
+  der(x) = y;
+  y + x = 2;
+annotation(__OpenModelica_commandLineOptions = \"--daeMode\");
+end DaeModeModel;
+"); getErrorString();
+
+buildModelFMU(DaeModeModel, version = "2.0", fmuType = "me"); getErrorString();
+
+// Result:
+// true
+// ""
+// ""
+// "Error: DAE mode (--daeMode) is not supported for FMU export. Please remove the --daeMode flag.
+// "
+// endResult
