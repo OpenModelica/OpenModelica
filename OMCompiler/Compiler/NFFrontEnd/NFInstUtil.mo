@@ -44,6 +44,7 @@ encapsulated package NFInstUtil
   import NFFlatten.FunctionTree;
   import NFFunction.Function;
   import NFInstNode.InstNode;
+  import NFPrefixes.{Variability, Purity};
   import SCode;
   import Statement = NFStatement;
   import Subscript = NFSubscript;
@@ -52,8 +53,10 @@ encapsulated package NFInstUtil
 
 protected
   import AbsynUtil;
+  import BaseModelica;
   import SCodeUtil;
   import Dump;
+  import ElementSource;
   import Flags;
   import UnorderedMap;
   import MetaModelica.Dangerous.listReverseInPlace;
@@ -977,6 +980,161 @@ public
       else ();
     end match;
   end mergeScalarsComponentBinding;
+
+  function createExtractorModel
+    input FlatModel flatModel;
+    input FunctionTree funcs;
+    output FlatModel extractorModel = flatModel;
+    output FunctionTree outFuncs = funcs;
+  protected
+    list<Variable> top_level_connectors, flows, inputs;
+    Function fn_template;
+    Integer index = 0;
+    list<Equation> eqs = {};
+    Equation eq;
+    list<Expression> args;
+  algorithm
+    (top_level_connectors, flows, inputs) := collectExtractorModelVariables(flatModel.variables);
+    fn_template := createExtractorModelDummyFn(top_level_connectors);
+    args := list(Expression.fromCref(Variable.name(c)) for c in top_level_connectors);
+
+    for f in flows loop
+      (eq, outFuncs, index) := createExtractorModelDummyEq(f, "flow", fn_template, args, outFuncs, index);
+      eqs := eq :: eqs;
+    end for;
+
+    for i in inputs loop
+      (eq, outFuncs, index) := createExtractorModelDummyEq(i, "input", fn_template, args, outFuncs, index);
+      eqs := eq :: eqs;
+    end for;
+
+    eqs := listReverseInPlace(eqs);
+    extractorModel.equations := listAppend(extractorModel.equations, eqs);
+  end createExtractorModel;
+
+  function collectExtractorModelVariables
+    input list<Variable> vars;
+    output list<Variable> topLevelConnectorVars = {};
+    output list<Variable> flowVars = {};
+    output list<Variable> inputVars = {};
+  algorithm
+    for var in listReverse(vars) loop
+      if InstNode.isConnector(ComponentRef.node(ComponentRef.last(var.name))) then
+        topLevelConnectorVars := var :: topLevelConnectorVars;
+      end if;
+
+      if Variable.isFlow(var) then
+        flowVars := var :: flowVars;
+      end if;
+
+      if Variable.isInput(var) then
+        inputVars := var :: inputVars;
+      end if;
+    end for;
+  end collectExtractorModelVariables;
+
+  constant Absyn.TypeSpec REAL_TYPE_SPEC = Absyn.TypeSpec.TPATH(Absyn.Path.IDENT("Real"), NONE());
+
+  function createExtractorModelDummyFn
+    input list<Variable> connectors;
+    output Function fn;
+  protected
+    SCode.ClassDef cdef;
+    SCode.Element output_param, elem;
+    InstNode fn_node;
+    list<SCode.Element> params;
+    SCode.Mod output_binding;
+    SCode.Comment cmt;
+  algorithm
+    output_binding := SCodeUtil.makeMod(binding = SOME(Absyn.Exp.INTEGER(0)));
+    output_param := SCode.Element.COMPONENT("dummy", SCode.defaultPrefixes, SCode.defaultOutputAttr,
+      REAL_TYPE_SPEC, output_binding, SCode.noComment, NONE(), AbsynUtil.dummyInfo);
+    params := listAppend(list(createExtractorModelDummyFnInput(c) for c in connectors), {output_param});
+
+    cdef := SCode.ClassDef.PARTS(
+      params,
+      {},
+      {},
+      {},
+      {},
+      {},
+      {},
+      NONE()
+    );
+
+    cmt := SCode.COMMENT(SOME(SCode.Annotation.ANNOTATION(SCodeUtil.makeMod(subMods =
+      {SCode.SubMod.NAMEMOD("Inline", SCodeUtil.makeMod(binding = SOME(Absyn.Exp.BOOL(false))))}))), NONE());
+
+    elem := SCode.Element.CLASS(
+      "dummy",
+      SCode.defaultPrefixes,
+      SCode.Encapsulated.NOT_ENCAPSULATED(),
+      SCode.Partial.NOT_PARTIAL(),
+      SCode.Restriction.R_FUNCTION(SCode.FunctionRestriction.FR_NORMAL_FUNCTION(Absyn.FunctionPurity.PURE())),
+      cdef,
+      cmt,
+      AbsynUtil.dummyInfo
+    );
+
+    fn_node := InstNode.new(elem, InstNode.EMPTY_NODE());
+    fn_node := Function.instFunctionNode(fn_node, NFInstContext.FUNCTION, AbsynUtil.dummyInfo);
+    fn :: _ := Function.typeNodeCache(fn_node);
+  end createExtractorModelDummyFn;
+
+  function createExtractorModelDummyFnInput
+    input Variable var;
+    output SCode.Element inputElem;
+  algorithm
+    inputElem := SCode.Element.COMPONENT(
+      ComponentRef.toFlatString(var.name, BaseModelica.defaultFormat),
+      SCode.defaultPrefixes,
+      SCode.defaultInputAttr,
+      REAL_TYPE_SPEC,
+      SCode.Mod.NOMOD(),
+      SCode.noComment,
+      NONE(),
+      AbsynUtil.dummyInfo
+    );
+  end createExtractorModelDummyFnInput;
+
+  function createExtractorModelDummyEq
+    input Variable var;
+    input String varType;
+    input Function fn;
+    input list<Expression> args;
+          output Equation eq;
+    input output FunctionTree funcs;
+    input output Integer index;
+  protected
+    Function indexed_fn;
+    Absyn.Path fn_name;
+    DAE.ElementSource src = DAE.emptyElementSource;
+    String var_name;
+  algorithm
+    while true loop
+      index := index + 1;
+      fn_name := Absyn.Path.IDENT("f" + String(index));
+
+      if not FunctionTree.hasKey(funcs, fn_name) then
+        break;
+      end if;
+    end while;
+
+    indexed_fn := Function.setName(fn_name, fn);
+    var_name := ComponentRef.toString(Variable.name(var));
+    src := ElementSource.addCommentToSource(src,
+      SOME(SCode.Comment.COMMENT(NONE(), SOME("Dummy equation for " + var_name + " " + varType + " variable"))));
+
+    eq := Equation.makeEquality(
+      Expression.REAL(0),
+      Expression.CALL(Call.makeTypedCall(indexed_fn, args, Variability.CONTINUOUS, Purity.PURE)),
+      Type.REAL(),
+      fn.node,
+      src
+    );
+
+    funcs := FunctionTree.add(funcs, fn_name, indexed_fn);
+  end createExtractorModelDummyEq;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFInstUtil;

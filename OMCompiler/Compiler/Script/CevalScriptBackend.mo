@@ -3404,6 +3404,9 @@ algorithm
     case ("reverseLookup", {Values.CODE(Absyn.C_TYPENAME(path)), Values.CODE(Absyn.C_TYPENAME(classpath)), Values.BOOL(b1), Values.BOOL(b2)})
       then ValuesUtil.makeString(ReverseLookup.lookup(path, classpath, SymbolTable.getAbsyn(), b1, b2));
 
+    case ("translateResidualsDAE", {Values.CODE(Absyn.C_TYPENAME(path)), Values.STRING(s1)})
+      then ValuesUtil.makeBoolean(NFApi.translateResidualsDAE(path, s1));
+
  end matchcontinue;
 end cevalInteractiveFunctions4;
 
@@ -3520,6 +3523,18 @@ algorithm
   end try;
   FlagsUtil.setConfigBool(Flags.BUILDING_MODEL, false);
 end runFrontEnd;
+
+public function runFrontEndNF
+  input Absyn.Path className;
+  input Boolean relaxedFrontEnd = false;
+  input Boolean dumpFlat = false;
+  output NFFlatModel flatModel;
+  output NFFlatten.FunctionTree functions;
+  output String flatString;
+algorithm
+  true := runFrontEndLoadProgram(className);
+  (flatModel, functions, flatString) := runFrontEndWorkNF(className, relaxedFrontEnd, dumpFlat);
+end runFrontEndNF;
 
 protected function runFrontEndLoadProgram
   input Absyn.Path className;

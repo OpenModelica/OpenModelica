@@ -1300,6 +1300,20 @@ algorithm
   setConfigValue(inFlag, Flags.STRING_LIST_FLAG(inValue));
 end setConfigStringList;
 
+public function appendConfigStringList
+  "Appends a value to a multiple-string configuration flag if the flag doesn't
+   already contain it, and returns the old values of the flag."
+  input Flags.ConfigFlag flag;
+  input String value;
+  output list<String> oldValues;
+algorithm
+  oldValues := Flags.getConfigStringList(flag);
+
+  if not listMember(value, oldValues) then
+    setConfigStringList(flag, value :: oldValues);
+  end if;
+end appendConfigStringList;
+
 public function setConfigEnum
   "Sets the value of an enumeration configuration flag."
   input Flags.ConfigFlag inFlag;

@@ -80,6 +80,7 @@ import DoubleEnded;
 import Error;
 import ErrorExt;
 import ExecStat;
+import FGraph;
 import Flags;
 import FlatModel = NFFlatModel;
 import NFFunction;
@@ -1260,6 +1261,44 @@ algorithm
 
   success := true;
 end translateModel;
+
+public function translateModelCallBackend
+  input FlatModel flatModel;
+  input FunctionTree functions;
+  input Absyn.Path className;
+  input String fileNamePrefix;
+  input Boolean useDAEMode;
+  input Option<SimCode.SimulationSettings> simSettings;
+  output list<String> outLibs;
+  output String outFileDir;
+  output list<tuple<String, Values.Value>> resultValues;
+protected
+  UnorderedMap<Absyn.Path, NFFunction.Function> func_map;
+  DAE.DAElist dae;
+  DAE.FunctionTree dae_funcs;
+  FCore.Graph env;
+  FCore.Cache cache;
+  String file_name_prefix;
+algorithm
+  file_name_prefix := if fileNamePrefix == "<default>" then AbsynUtil.pathString(className) else fileNamePrefix;
+
+  if Flags.getConfigBool(Flags.NEW_BACKEND) then
+    func_map := UnorderedMap.fromLists(FunctionTree.listKeys(functions), FunctionTree.listValues(functions), AbsynUtil.pathHash, AbsynUtil.pathEqual);
+    (outLibs, outFileDir, resultValues, _) := translateModelCallBackendNB(flatModel, func_map, className, file_name_prefix, simSettings);
+  else
+    dae := NFConvertDAE.convertModel(flatModel);
+    dae_funcs := NFConvertDAE.convertFunctionTree(functions);
+    env := FGraph.new("graph", FCore.dummyTopModel);
+    cache := FCore.emptyCache();
+    FCore.setCachedFunctionTree(cache, dae_funcs);
+
+    if useDAEMode then
+      (cache, outLibs, outFileDir, resultValues) := translateModelCallBackendOBDAEMode(cache, env, dae, className, file_name_prefix, simSettings, Absyn.emptyFunctionArgs);
+    else
+      (cache, outLibs, outFileDir, resultValues) := translateModelCallBackendOB(TranslateModelKind.NORMAL(), cache, env, dae, className, file_name_prefix, simSettings, Absyn.emptyFunctionArgs);
+    end if;
+  end if;
+end translateModelCallBackend;
 
 protected function translateModelCallBackendOB
   input TranslateModelKind kind;
