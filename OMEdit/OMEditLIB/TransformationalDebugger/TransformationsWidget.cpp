@@ -32,6 +32,8 @@
  * @author Adeel Asghar <adeel.asghar@liu.se>
  */
 
+#include <utility>
+
 #include "MainWindow.h"
 #include "TransformationsWidget.h"
 #include "Options/OptionsDialog.h"
@@ -1332,7 +1334,7 @@ void TransformationsWidget::loadTransformations()
       auto definesIt = veq.find("defines");
       if (definesIt != veq.end()) {
         eq->defines = Utilities::variantListToStringList(definesIt->toList());
-        for (const QString &v : qAsConst(eq->defines)) {
+        for (const QString &v : std::as_const(eq->defines)) {
           mVariables[v].definedIn << eq->index;
         }
       }
@@ -1340,7 +1342,7 @@ void TransformationsWidget::loadTransformations()
       auto usesIt = veq.find("uses");
       if (usesIt != veq.end()) {
         eq->depends = Utilities::variantListToStringList(usesIt->toList());
-        for (const QString &v : qAsConst(eq->depends)) {
+        for (const QString &v : std::as_const(eq->depends)) {
           mVariables[v].usedIn << eq->index;
         }
       }
