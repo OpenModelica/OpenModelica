@@ -431,6 +431,7 @@ public
           case SIM_JAC() algorithm
             simJac.isBidirectional := true;
             simJac.adjointJacobianIndex := match simJacAdjoint case SIM_JAC() then simJacAdjoint.jacobianIndex; else -1; end match;
+            simJac.adjointMatrixName   := match simJacAdjoint case SIM_JAC() then simJacAdjoint.name; else ""; end match;
           then simJac;
           else simJac;
         end match;

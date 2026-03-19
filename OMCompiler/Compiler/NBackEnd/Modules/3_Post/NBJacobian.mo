@@ -2064,8 +2064,6 @@ protected
             getInstanceName() + " only supports SINGLE_COMPONENT, MULTI_COMPONENT, SLICED_COMPONENT, RESIZABLE_COMPONENT and ALGEBRAIC_LOOP in symbolic adjoint jacobian generation!"
           });
           fail();
-        else
-          print("Processing strong component " + StrongComponent.toString(c) + "\n");
         end if;
       end for;
     else
