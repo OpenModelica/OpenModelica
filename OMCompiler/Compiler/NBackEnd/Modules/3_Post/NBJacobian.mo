@@ -1619,6 +1619,35 @@ protected
     end if;
   end addEntryToLPAMap;
 
+  // Resolve base variables that were actually mapped to tmp pDER vars.
+  // This avoids relying on splitOnTrue output ordering semantics.
+  function getBaseTmpVarCandidates
+    input list<NBVariable.VariablePointer> partialVars;
+    input list<NBVariable.VariablePointer> tmpPDerVars;
+    input UnorderedMap<ComponentRef, ComponentRef> diff_map;
+    output list<NBVariable.VariablePointer> baseTmpVars = {};
+  protected
+    UnorderedSet<ComponentRef> tmpPDerSet;
+    ComponentRef baseCref;
+    Option<ComponentRef> o_mapped;
+  algorithm
+    tmpPDerSet := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual, Util.nextPrime(listLength(tmpPDerVars)));
+
+    for v in tmpPDerVars loop
+      UnorderedSet.add(BVariable.getVarName(v), tmpPDerSet);
+    end for;
+
+    for v in partialVars loop
+      baseCref := BVariable.getVarName(v);
+      o_mapped := UnorderedMap.get(baseCref, diff_map);
+      if isSome(o_mapped) and UnorderedSet.contains(Util.getOption(o_mapped), tmpPDerSet) then
+        baseTmpVars := v :: baseTmpVars;
+      end if;
+    end for;
+
+    baseTmpVars := listReverse(baseTmpVars);
+  end getBaseTmpVarCandidates;
+
   // Build a filtered diff map for a given variable list.
   // For each variable pointer v in 'vars', if there exists a mapping
   //   base = BVariable.getVarName(v) -> mapped in 'globalDiffMap'
@@ -1671,6 +1700,7 @@ protected
     input Pointer<Integer> idx;
     input String contextName;
     input VariablePointers seedCandidates "for algebraic loop x-inputs";
+    input list<Pointer<Variable>> tmpVarCandidates "base tmp variables to also include in diff_map_x for algebraic loops";
     output list<StrongComponent> adjointComps = {};
     output list<Pointer<Variable>> newTmpVars = {};
   protected
@@ -1736,8 +1766,11 @@ protected
 
         // Build filtered diff maps
         diff_map_y := populateDiffMap(itVarPtrs, diff_map);
-        seedPtrListX := BVariable.VariablePointers.toList(seedCandidates);
+        seedPtrListX := listAppend(BVariable.VariablePointers.toList(seedCandidates), tmpVarCandidates);
+        seedPtrListX := list(vp for vp guard(not UnorderedMap.contains(BVariable.getVarName(vp), diff_map_y)) in seedPtrListX);
         diff_map_x := populateDiffMap(seedPtrListX, diff_map);
+        print("Diff map y (iteration vars): " + diffMapToString(diff_map_y));
+        print("Diff map x (seed candidates): " + diffMapToString(diff_map_x));
         diff_map_union := UnorderedMap.merge(diff_map_y, diff_map_x, sourceInfo());
 
         // Pre-populate loop_product_adjoint_map
@@ -1789,6 +1822,11 @@ protected
           if isSome(o_pDerX) then
             pDerX := Util.getOption(o_pDerX);
             terms_x := UnorderedMap.getOrDefault(pDerX, loop_product_adjoint_map, {});
+            // if not listEmpty(terms_x) then
+            //   print("Terms x for pDerX=" + ComponentRef.toString(pDerX) + ": [" + stringDelimitList(list("(" + ComponentRef.toString(Util.tuple21(t)) + ", " + Expression.toString(Util.tuple22(t)) + ")" for t in terms_x), ", ") + "]\n");
+            // else
+            //   print("No terms x for pDerX=" + ComponentRef.toString(pDerX) + "\n");
+            // end if;
             if not listEmpty(terms_x) then
               rhs_x := Expression.negate(buildAdjointRhs(pDerX, list(Util.tuple22(t) for t in terms_x)));
               adjointComps := makeAdjointAccumulationComponent(pDerX, rhs_x, contextName, Pointer.access(idx)) :: adjointComps;
@@ -2040,7 +2078,7 @@ protected
     UnorderedMap<ComponentRef,ComponentRef> diff_map = UnorderedMap.new<ComponentRef>(ComponentRef.hash, ComponentRef.isEqual);
     Pointer<Integer> idx = Pointer.create(0);
 
-    list<Pointer<Variable>> all_vars, unknown_vars, aux_vars, alias_vars, depend_vars, res_vars, tmp_vars, seed_vars, old_res_vars;
+    list<Pointer<Variable>> all_vars, unknown_vars, aux_vars, alias_vars, depend_vars, res_vars, tmp_vars, seed_vars, old_res_vars, baseTmpVarCandidates;
     BVariable.VarData varDataJac;
     SparsityPattern sparsityPattern;
     SparsityColoring sparsityColoring;
@@ -2096,6 +2134,7 @@ protected
     pDer_vars_ptr := Pointer.create({});
     for v in tmp_vars loop makeVarTraverse(v, newName, pDer_vars_ptr, diff_map, function BVariable.makePDerVar(isTmp = true), init = init); end for;
     tmp_vars := Pointer.access(pDer_vars_ptr);
+    baseTmpVarCandidates := getBaseTmpVarCandidates(VariablePointers.toList(partialCandidates), tmp_vars, diff_map);
 
     if Flags.isSet(Flags.DEBUG_ADJOINT) then
       print("Diff map before component generation:\n" + diffMapToString(diff_map) + "\n");
@@ -2106,7 +2145,7 @@ protected
     // and prepend to the unified list.
     for comp in primalComps loop
       (compAdjComps, compNewVars) := generateAdjointComponent(
-        comp, diff_map, funcMap, seedCandidates.scalarized, init, idx, newName, seedCandidates);
+        comp, diff_map, funcMap, seedCandidates.scalarized, init, idx, newName, seedCandidates, baseTmpVarCandidates);
 
       // Prepend adjoint components (already in correct order from generateAdjointComponent)
       // only more than one if the original component was an algebraic loop
