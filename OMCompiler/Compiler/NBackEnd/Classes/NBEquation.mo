@@ -3534,6 +3534,7 @@ public
         end if;
       end for;
 
+      flat_new := {};
       // collect all statements that are not assign or reinit and combine them
       for tpl in flat_when loop
         (condition, stmts) := tpl;
@@ -3545,6 +3546,11 @@ public
           condition := combineConditions(acc_condition, condition, false);
           acc_condition := Expression.EMPTY(Type.INTEGER());
           flat_new := (condition, stmts) :: flat_new;
+          // create body from flat list and add to new bodies
+          new_body := fromFlatList(flat_new);
+          if Util.isSome(new_body) then
+            bodies := Util.getOption(new_body) :: bodies;
+          end if;
         else
           acc_condition := combineConditions(acc_condition, condition, true);
         end if;
