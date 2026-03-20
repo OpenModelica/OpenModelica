@@ -292,6 +292,10 @@ protected
         eqData.simulation := EquationPointers.map(eqData.simulation,
           function introduceFunctionAliasEquation(map = map, variables = variables, set = set, aux_index = aux_index, eqn_index = eqData.uniqueIndex, init = false));
 
+        // also collect all new functions from removed equations
+        eqData.removed := EquationPointers.map(eqData.removed,
+          function introduceFunctionAliasEquation(map = map, variables = variables, set = set, aux_index = aux_index, eqn_index = eqData.uniqueIndex, init = false));
+
         // create new simulation variables and corresponding equations for the function alias
         (new_vars_disc, new_vars_cont, new_vars_init, new_vars_recd, new_eqns_disc, new_eqns_cont, new_eqns_init) :=
           resolveAux(map, eqData.uniqueIndex, false, new_vars_disc, new_vars_cont, new_vars_init, new_vars_recd, new_eqns_disc, new_eqns_cont, new_eqns_init);
@@ -435,26 +439,30 @@ protected
     input Boolean init;
   protected
     Iterator iter;
-    Boolean stop;
+    type Depth = enumeration(FULL, CONDITION, STOP);
+    Depth depth;
   algorithm
     // inline trivial array constructors first
     eqn := Inline.inlineArrayConstructorSingle(eqn, Iterator.EMPTY(), variables, set, eqn_index);
 
     // get iterator and determine if it needs to be checked further
-    (iter, stop) := match eqn
+    (iter, depth) := match eqn
       local
         Equation body;
-      case Equation.FOR_EQUATION(body = {body}) then (eqn.iter, Equation.isWhenEquation(Pointer.create(body))
-                                                            or Equation.isIfEquation(Pointer.create(body)));
-      case Equation.WHEN_EQUATION()             then (Iterator.EMPTY(), true);
-      case Equation.IF_EQUATION()               then (Iterator.EMPTY(), true);
-      case Equation.ALGORITHM()                 then (Iterator.EMPTY(), true);
-                                                else (Iterator.EMPTY(), false);
+      case Equation.FOR_EQUATION(body = {body}) then (eqn.iter, if Equation.isWhenEquation(Pointer.create(body))
+                                                                or Equation.isIfEquation(Pointer.create(body))
+                                                                then Depth.CONDITION else Depth.FULL);
+      case Equation.WHEN_EQUATION()             then (Iterator.EMPTY(), Depth.CONDITION);
+      case Equation.IF_EQUATION()               then (Iterator.EMPTY(), Depth.CONDITION);
+      case Equation.ALGORITHM()                 then (Iterator.EMPTY(), Depth.STOP);
+                                                else (Iterator.EMPTY(), Depth.FULL);
     end match;
 
     // do the function alias replacement
-    if not stop then
+    if depth == Depth.FULL then
       eqn := Equation.map(eqn, function introduceFunctionAlias(map = map, aux_index = aux_index, iter = iter, init = init), NONE(), Expression.fakeMap);
+    elseif depth == Depth.CONDITION then
+      eqn := Equation.mapCondition(eqn, function introduceFunctionAlias(map = map, aux_index = aux_index, iter = iter, init = init), NONE(), Expression.fakeMap);
     end if;
   end introduceFunctionAliasEquation;
 
@@ -656,6 +664,7 @@ protected
   algorithm
     b := match AbsynUtil.pathFirstIdent(Function.nameConsiderBuiltin(fn))
       case "cat" then true;
+      case "terminal" then true;
       else false;
     end match;
   end forceReplacement;

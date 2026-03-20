@@ -1305,8 +1305,8 @@ protected
       local
         FEquation.Equation elem;
         list<FEquation.Equation> rest;
-      case {}         then stmts;
       case elem::rest then lowerWhenBranchBody(condition, rest, lowerWhenBranchStatement(elem, condition) :: stmts);
+      else stmts;
     end match;
   end lowerWhenBranchBody;
 

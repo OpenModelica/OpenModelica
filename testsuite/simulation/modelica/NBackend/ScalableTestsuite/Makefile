@@ -24,6 +24,7 @@ CocurrentHeatExchangerEquations.mos \
 CounterCurrentHeatExchangerEquations.mos \
 SimpleAdvection.mos \
 PowerSystemStepLoad.mos \
+BreakerNetwork.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make failingtest

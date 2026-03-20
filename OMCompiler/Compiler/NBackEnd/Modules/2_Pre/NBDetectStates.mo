@@ -587,6 +587,7 @@ protected
     if Util.isSome(pre) then
       SOME(pre_var) := pre;
       pre_cref := BVariable.getVarName(pre_var);
+      pre_cref := ComponentRef.copySubscripts(var_cref, pre_cref);
     else
       if not scalarized then
         // prevent the created pre variable from having the subscripts, but add it to the pre_cref
