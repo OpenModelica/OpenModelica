@@ -1104,10 +1104,29 @@ int jacA_symBiColored(double *t, double *y, double *yprime, double *delta,
   threadData_t *threadData = (threadData_t*)(void*)((double**)rpar)[2];
   const int index = data->callback->INDEX_JAC_A;
   JACOBIAN* jac = &(data->simulationInfo->analyticJacobians[index]);
+  const SPARSE_PATTERN* sp = jac->sparsePattern;
+  const unsigned int nRows = jac->sizeRows;
+  const unsigned int nCols = jac->sizeCols;
+  const unsigned int nnz = sp->numberOfNonZeros;
+  unsigned int col, nz;
 
-  /* evalJacobian dispatches to evalJacobianBidirectional when jac->isBidirectional is set */
-  evalJacobian(data, threadData, jac, NULL, matrixA, 1 /* isDense */);
+  double* sparse_buf = (double*) malloc(nnz * sizeof(double));
+  if (!sparse_buf) {
+    throwStreamPrint(threadData, "jacA_symBiColored: out of memory allocating sparse buffer (nnz=%u)", nnz);
+    return 1;
+  }
 
+  /* Evaluate into compact nnz-sized sparse buffer (CSC-indexed) */
+  evalJacobian(data, threadData, jac, NULL, sparse_buf, 0 /* isDense */);
+
+  /* Scatter nonzeros to the dense column-major DASSL matrixA */
+  for (col = 0; col < nCols; col++) {
+    for (nz = sp->leadindex[col]; nz < sp->leadindex[col + 1]; nz++) {
+      matrixA[col * nRows + sp->index[nz]] = sparse_buf[nz];
+    }
+  }
+
+  free(sparse_buf);
   return 0;
 }
 
