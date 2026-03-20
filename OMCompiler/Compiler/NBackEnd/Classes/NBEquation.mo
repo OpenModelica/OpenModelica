@@ -1694,6 +1694,53 @@ public
       end match;
     end map;
 
+    function mapCondition
+      "Traverses all expressions in conditions of the equations and applies a function to it.
+      Optional second input to also traverse crefs, only needed for simple
+      eqns, when eqns and algorithms."
+      input output Equation eq;
+      input MapFuncExp funcExp;
+      input Option<MapFuncCref> funcCrefOpt = NONE();
+      input MapFuncExpWrapper mapFunc = Expression.map;
+    algorithm
+      eq := match eq
+        local
+          IfEquationBody ifEqBody;
+          WhenEquationBody whenEqBody;
+          Equation body, new_body;
+
+        // todo, map the conditions here
+        //case ALGORITHM()
+
+        case IF_EQUATION() algorithm
+          ifEqBody := IfEquationBody.mapCondition(eq.body, funcExp, funcCrefOpt, mapFunc);
+          if not referenceEq(ifEqBody, eq.body) then
+            eq.body := ifEqBody;
+          end if;
+        then eq;
+
+        case FOR_EQUATION() algorithm
+          eq.body := list(mapCondition(body_eqn, funcExp, funcCrefOpt, mapFunc) for body_eqn in eq.body);
+        then eq;
+
+        case WHEN_EQUATION() algorithm
+          whenEqBody := WhenEquationBody.mapCondition(eq.body, funcExp, funcCrefOpt, mapFunc);
+          if not referenceEq(whenEqBody, eq.body) then
+            eq.body := whenEqBody;
+          end if;
+        then eq;
+
+        case AUX_EQUATION(body = SOME(body)) algorithm
+          new_body := mapCondition(body, funcExp, funcCrefOpt, mapFunc);
+          if not referenceEq(new_body, body) then
+            eq.body := SOME(new_body);
+          end if;
+        then eq;
+
+        else eq;
+      end match;
+    end mapCondition;
+
     function collectCrefs
       "filters all crefs of an equation and adds them
       to a list of crefs. needs cref filter function."
@@ -2901,7 +2948,6 @@ public
         then fail();
       end match;
     end toStatement;
-
   end Equation;
 
   uniontype IfEquationBody
@@ -3022,6 +3068,24 @@ public
         funcCrefOpt = funcCrefOpt,
         mapFunc     = mapFunc);
     end map;
+
+    function mapCondition
+      "only maps the conditions and not the body"
+      input output IfEquationBody ifBody;
+      input MapFuncExp funcExp;
+      input Option<MapFuncCref> funcCrefOpt;
+      input MapFuncExpWrapper mapFunc;
+    protected
+      Expression condition;
+    algorithm
+      condition := mapFunc(ifBody.condition, funcExp);
+      if not referenceEq(condition, ifBody.condition) then
+        ifBody.condition := condition;
+      end if;
+
+      // map else if
+      ifBody.else_if := Util.applyOption(ifBody.else_if, function mapCondition(funcExp = funcExp, funcCrefOpt = funcCrefOpt, mapFunc = mapFunc));
+    end mapCondition;
 
     function mapEqnExpCref
       input output IfEquationBody ifBody;
