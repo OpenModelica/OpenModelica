@@ -1491,19 +1491,30 @@ protected
     list<ComponentRef> scalarized;
     list<Integer> scal_lst;
     Integer size_comp;
-    list<Boolean> eq_reg;
+    list<Boolean> eq_reg, var_reg;
   algorithm
     // 1. get the cref subscripts and dimensions as well as the equation dimensions (they have to match in length)
     subs    := ComponentRef.subscriptsAllWithWholeFlat(cref);
-    dims    := Type.arrayDims(ComponentRef.getSubscriptedType(cref));
+    dims    := Type.arrayDims(ComponentRef.getSubscriptedType(ComponentRef.stripSubscriptsAll(cref)));
     eq_dims := Type.arrayDims(ty);
 
-    if List.compareLength(subs, dims) == 0 and List.compareLength(subs, regulars) == 0 then
+    if listLength(subs) > listLength(regulars) then
+      var_reg := listAppend(List.fill(false, listLength(subs) - listLength(regulars)), regulars);
+    elseif listLength(subs) < listLength(regulars) then
+      Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because subscripts and dependencies were not of equal length.\n"
+        + "variable subscripts(" + intString(listLength(subs)) + "): " + List.toString(subs, Subscript.toString) + "\n"
+        + "variable dependencies(" + intString(listLength(regulars)) + "): " + List.toString(regulars, boolString) + "\n"});
+      fail();
+    else
+      var_reg := regulars;
+    end if;
+
+    if List.compareLength(subs, dims) == 0 then
       // 2. create a map that maps a configuration key to the corresponding scalar crefs
       stripped  := ComponentRef.stripSubscriptsAll(cref);
       key       := arrayCreate(listLength(subs), 0);
       map1      := UnorderedMap.new<Val1>(keyHash, keyEqual);
-      resolveReductions(List.zip3(subs, dims, regulars), map1, key, stripped);
+      resolveReductions(List.zip3(subs, dims, var_reg), map1, key, stripped);
 
       // 3. create a map that maps a configuration key to the final variable indices
       map2      := UnorderedMap.new<Val2>(keyHash, keyEqual);
@@ -1514,27 +1525,22 @@ protected
       end for;
 
       // 4. check if equation and variable are of same length, if not: fixup the lists to be of equal length
-      size_comp := List.compareLength(eq_dims, regulars);
-      if size_comp > 0 then
+      size_comp := List.compareLength(var_reg, eq_dims);
+      if size_comp < 0 then
         // bigger equation than variable
-        eq_reg := listAppend(regulars, List.fill(false, listLength(eq_dims) - listLength(regulars)));
-      elseif size_comp < 0 then
+        eq_reg := listAppend(var_reg, List.fill(false, listLength(eq_dims) - listLength(var_reg)));
+      elseif size_comp > 0 then
         // bigger variable than equation
-        eq_reg := List.filterOnTrue(regulars, Util.id);
-        size_comp := List.compareLength(eq_dims, eq_reg);
-
-        if size_comp > 0 then
-          eq_reg := listAppend(eq_reg, List.fill(false, listLength(eq_dims) - listLength(eq_reg))) annotation(__OpenModelica_DisableListAppendWarning=true);
-        elseif size_comp < 0 then
-          eq_reg := List.firstN(eq_reg, listLength(eq_dims));
-        end if;
+        eq_reg := resizeRegulars(var_reg, listLength(eq_dims));
       else
-        eq_reg := regulars;
+        eq_reg := var_reg;
       end if;
 
       // 5. iterate over all equation dimensions and use the map to get the correct dependencies
       key := arrayCreate(listLength(subs), 0);
-      resolveEquationDimensions(List.zip(eq_dims, eq_reg), map2, key, m, modes, Mode.create(eqn_name, {original_cref}, false), Pointer.create(skip_idx));
+
+      // pass the size difference as starting point
+      resolveEquationDimensions(List.zip(eq_dims, eq_reg), map2, key, m, modes, Mode.create(eqn_name, {original_cref}, false), Pointer.create(skip_idx), size_comp+1);
     else
       Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because subscripts, dimensions and dependencies were not of equal length.\n"
         + "variable subscripts(" + intString(listLength(subs)) + "): " + List.toString(subs, Subscript.toString) + "\n"
@@ -1544,6 +1550,26 @@ protected
       fail();
     end if;
   end resolveMixed;
+
+  function resizeRegulars
+    input list<Boolean> var_reg;
+    input Integer target_size;
+    output list<Boolean> eq_reg;
+  algorithm
+    if target_size == listLength(var_reg) then
+      eq_reg := var_reg;
+    else
+      eq_reg := match var_reg
+        local
+          list<Boolean> rest;
+        case false :: rest algorithm
+        then resizeRegulars(rest, target_size);
+        case true :: rest algorithm
+        then true :: resizeRegulars(rest, target_size-1);
+        else {};
+      end match;
+    end if;
+  end resizeRegulars;
 
   function resolveAllReduced
     "II.3 all reduced - full dependency per row. scalarize and add to all rows of the equation"
