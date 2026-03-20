@@ -433,11 +433,14 @@ void evalJacobianBidirectional(DATA* data, threadData_t *threadData,
               jac[column * nRows + row] = adj->resultVars[column];
             else
               jac[adj->csrToCscMap[nz]] = adj->resultVars[column];
+
           }
         }
         adj->seedVars[row] = 0.0;
       }
     }
+    /* Reset adjoint result vars to zero after reading to prevent accumulation across colors */
+    memset(adj->resultVars, 0, (size_t)nRows * sizeof(modelica_real));
   }
 }
 
