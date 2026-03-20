@@ -775,6 +775,9 @@ JACOBIAN_METHOD setJacobianMethod(threadData_t* threadData, JACOBIAN_AVAILABILIT
     } else if(jacobianMethod == SYMJAC) {
       warningStreamPrint(OMC_LOG_STDOUT, 0, "Symbolic Jacobian not available, only sparsity pattern. Switching to numerical Jacobian.");
       jacobianMethod = NUMJAC;
+    } else if(jacobianMethod == BICOLOREDSYMJAC) {
+      warningStreamPrint(OMC_LOG_STDOUT, 0, "Symbolic Jacobian not available, only sparsity pattern. Switching to colored numerical Jacobian.");
+      jacobianMethod = COLOREDNUMJAC;
     } else if(jacobianMethod == JAC_UNKNOWN) {
       jacobianMethod = COLOREDNUMJAC;
     }
@@ -809,6 +812,9 @@ JACOBIAN_METHOD setJacobianMethod(threadData_t* threadData, JACOBIAN_AVAILABILIT
     break;
   case COLOREDSYMJACADJ:
     infoStreamPrint(OMC_LOG_JAC, 0, "Using Jacobian method: Colored symbolical adjoint Jacobian.");
+    break;
+  case BICOLOREDSYMJAC:
+    infoStreamPrint(OMC_LOG_JAC, 0, "Using Jacobian method: Bicolored (bidirectional) symbolical Jacobian.");
     break;
   default:
     throwStreamPrint(threadData, "Unhandled case in setJacobianMethod");
