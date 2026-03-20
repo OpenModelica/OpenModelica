@@ -4235,6 +4235,12 @@ algorithm
     Error.addMessage(Error.FMU_EXPORT_NOT_SUPPORTED_CPP, {FMUType});
     FMUType := "me";
   end if;
+  if Flags.getConfigBool(Flags.DAE_MODE) then
+    success := false;
+    outValue := Values.STRING("");
+    Error.addMessage(Error.FMU_EXPORT_DAE_MODE_NOT_SUPPORTED, {});
+    return;
+  end if;
 
   // NOTE: The FMUs use fileNamePrefix for the internal name when it would be expected to be fileNamePrefix that decides the .fmu filename
   //       The scripting environment from a user's perspective is like that. fmuTargetName is the name of the .fmu in the templates, etc.
@@ -4342,6 +4348,11 @@ algorithm
   if Config.simCodeTarget() == "Cpp" and FMI.isFMICSType(FMUType) then
     Error.addMessage(Error.FMU_EXPORT_NOT_SUPPORTED_CPP, {FMUType});
     FMUType := "me";
+  end if;
+  if Flags.getConfigBool(Flags.DAE_MODE) then
+    outValue := Values.STRING("");
+    Error.addMessage(Error.FMU_EXPORT_DAE_MODE_NOT_SUPPORTED, {});
+    return;
   end if;
 
   // NOTE: The FMUs use fileNamePrefix for the internal name when it would be expected to be fileNamePrefix that decides the .fmu filename

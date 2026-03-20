@@ -1310,6 +1310,8 @@ public constant ErrorTypes.Message DUPLICATE_VARIABLE_ERROR = ErrorTypes.MESSAGE
   Gettext.gettext("Duplicate elements:\n %s."));
 public constant ErrorTypes.Message ENCRYPTION_NOT_SUPPORTED = ErrorTypes.MESSAGE(7026, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
   Gettext.gettext("File not Found: %s. Compile OpenModelica with Encryption support."));
+public constant ErrorTypes.Message FMU_EXPORT_DAE_MODE_NOT_SUPPORTED = ErrorTypes.MESSAGE(7027, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
+  Gettext.gettext("DAE mode (--daeMode) is not supported for FMU export. Please remove the --daeMode flag."));
 
 constant SourceInfo dummyInfo = SOURCEINFO("",false,0,0,0,0,0.0);
 
