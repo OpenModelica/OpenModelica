@@ -2124,6 +2124,21 @@ buildModel(testSymjacdump); getErrorString();
 // 98: x[2]:VARIABLE(start = 0.5 )  type: Real [100]
 // 99: input x.SeedNLSJac1[99]:STATE_DER()  type: Real[100] unreplaceable
 //
+// Create symbolic Jacobians from:
+// Independent Variables
+// ========================================
+// Dependent Variables
+// ========================================
+// Basic equation system:
+// differentiated equations
+// ========================================
+// related variables
+// ========================================
+// known variables
+// ========================================
+// 1: h:PARAM(final = true )  = 0.009900990099009901  type: Real
+// 2: N:PARAM(final = true )  = 100  type: Integer
+// 3: x[100]:VARIABLE(start = 0.5 fixed = true final = true )  = 0.0  type: Real [100]
 // {"testSymjacdump", "testSymjacdump_init.xml"}
 // ""
 // endResult
