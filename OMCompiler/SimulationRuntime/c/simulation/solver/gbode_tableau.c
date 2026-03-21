@@ -43,6 +43,19 @@
 #include "util/simulation_options.h"
 #include "simulation/options.h"
 
+/* y := alpha * A * x + beta * y */
+extern void dgemv_(const char *trans,
+                   const int *m,
+                   const int *n,
+                   const double *alpha, const double *A, const int *ldA,
+                   const double *x, const int *incX,
+                   const double *beta, double *y, const int *incY
+);
+
+static const double DBL_ONE = 1.0;
+static const int INT_ONE = 1;
+static const char CHAR_NO_TRANS = 'N';
+
 /**
  * @brief Set Butcher tableau
  *
@@ -174,26 +187,34 @@ void setTTransform(BUTCHER_TABLEAU *tableau, const double *A_part_inv, const dou
 // TODO: Describe me
 void denseOutput(BUTCHER_TABLEAU* tableau, double* yOld, double* x, double* k, double dt, double stepSize, double* y, int nIdx, int* idx, int nStates)
 {
-  int i, j;
-
-  for (j = 0; j < tableau->nStages; ++j) {
-    tableau->b_dt[j] *= dt * stepSize;
+  for (int stage = 0; stage < tableau->nStages; stage++)
+  {
+    tableau->b_dt[stage] *= dt * stepSize;
   }
 
-  if (idx == NULL) {
-    // TODO memory layout may be bad, better to iterate over j on the outside?
-    for (i=0; i<nStates; i++) {
-      y[i] = yOld[i];
-      for (j = 0; j<tableau->nStages; j++) {
-        y[i] += tableau->b_dt[j] * k[j * nStates + i];
-      }
-    }
-  } else {
-    for (int ii=0; ii<nIdx; ii++) {
-      i = idx[ii];
-      y[i] = yOld[i];
-      for (j = 0; j<tableau->nStages; j++) {
-        y[i] += tableau->b_dt[j] * k[j * nStates + i];
+  if (idx == NULL)
+  {
+    // y := yOld
+    memcpy(y, yOld, nStates * sizeof(double));
+
+    // y := K * b_dt + y
+    dgemv_(&CHAR_NO_TRANS,
+           &nStates,
+           &tableau->nStages,
+           &DBL_ONE, k, &nStates,
+           tableau->b_dt, &INT_ONE,
+           &DBL_ONE, y, &INT_ONE);
+  }
+  else
+  {
+    for (int ii = 0; ii < nIdx; ii++)
+    {
+      int state = idx[ii];
+      y[state] = yOld[state];
+
+      for (int stage = 0; stage < tableau->nStages; stage++)
+      {
+        y[state] += tableau->b_dt[stage] * k[stage * nStates + state];
       }
     }
   }

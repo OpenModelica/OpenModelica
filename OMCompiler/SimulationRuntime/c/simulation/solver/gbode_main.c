@@ -1055,6 +1055,9 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
     // Count successful integration steps
     gbfData->stats.nStepsTaken += 1;
 
+    // TODO: these nSlowStates, slowStatesIdx interpolations are roughly 6 times as expensive as a full state interpolation:
+    // get rid of them and replace with a full interpolation, unless there are few slow states
+
     // interpolate the slow states to the boundaries of current integration interval, this is used for event detection
     // interpolate the slow states on the time of the current stage
     gb_interpolation(gbfData->interpolation,
