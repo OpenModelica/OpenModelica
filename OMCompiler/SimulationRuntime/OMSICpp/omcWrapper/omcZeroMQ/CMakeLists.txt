@@ -6,6 +6,10 @@ set(Boost_DEBUG 1)
 MESSAGE(STATUS "MINGW:")
 MESSAGE(STATUS ${IS_MINGW64})
 
+SET(BOOST_STATIC_LINKING OFF)
+set(Boost_USE_STATIC_LIBS OFF)
+set(Boost_USE_STATIC_RUNTIME OFF)
+
 # Check environment variables
 IF(WIN32)
   if(NOT DEFINED ENV{OMDEV})
@@ -56,9 +60,15 @@ endif()
 MESSAGE(STATUS "using boost include for omc - zeromq:  ${Boost_INCLUDE_DIR}")
 MESSAGE(STATUS "Boost Libraries for omc - zeromq:")
 MESSAGE(STATUS ${Boost_LIBRARIES})
-#dynamic link boost
-add_definitions( -DBOOST_ALL_NO_LIB )
+
+# dynamic link boost
+IF(NOT BOOST_STATIC_LINKING)
 add_definitions( -DBOOST_ALL_DYN_LINK )
+add_definitions( -DBOOST_ALL_NO_LIB )
+ELSE(NOT BOOST_STATIC_LINKING)
+add_definitions( -DBOOST_ALL_STATIC_LINK -DBOOST_STATIC_LINKING )
+ENDIF(NOT BOOST_STATIC_LINKING)
+
 #for msvc the c-api library is not supported therfore the generated import library from the mingw dll is used
 IF(MSVC)
     message (STATUS "OMC C API Root: ${OMCAPI_ROOT} " )
