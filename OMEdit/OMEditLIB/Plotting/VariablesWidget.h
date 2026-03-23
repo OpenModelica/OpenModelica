@@ -132,8 +132,23 @@ private:
   bool mExistInResultFile;
 };
 
-class VariablesTreeView;
+struct ScalarVariable {
+  QString name;
+  QString description;
+  bool isValueChangeable = false;
+  QString variability;
+  bool hideResultIsTrue = false;
+  // we need the following flag becasuse hideResult value can be empty.
+  bool hideResultIsFalse = false;
+  bool isProtected = false;
+  bool isEncrypted = false;
+  QString type;
+  QString start;
+  QString unit;
+  QString displayUnit;
+};
 
+class VariablesTreeView;
 class VariableTreeProxyModel : public QSortFilterProxyModel
 {
   Q_OBJECT
@@ -174,10 +189,10 @@ private:
   VariablesTreeView *mpVariablesTreeView;
   VariablesTreeItem *mpRootVariablesTreeItem;
   VariablesTreeItem *mpActiveVariablesTreeItem;
-  QHash<QString, QHash<QString,QString> > mScalarVariablesHash;
+  QHash<QString, ScalarVariable> mScalarVariablesHash;
   void filterVariableTreeItem(VariableNode *pParentVariableNode, VariablesTreeItem *pParentVariablesTreeItem);
   void insertVariablesItems(VariableNode *pParentVariableNode, VariablesTreeItem *pParentVariablesTreeItem);
-  QHash<QString, QString> parseScalarVariable(QXmlStreamReader &xmlReader);
+  static ScalarVariable parseScalarVariable(QXmlStreamReader &xmlReader);
   void getVariableInformation(ModelicaMatReader *pMatReader, QString variableToFind, QString *type, QString *value, bool *changeAble, QString *variability,
                               QString *unit, QString *displayUnit, QString *description);
 signals:

@@ -58,7 +58,7 @@ OMEdit.pro.*
 Makefile.unix
 qm.stamp
 Testsuite/Makefile
-Testsuite/Testsuite.pro.*
+Testsuite.pro.*
 Testsuite/*/generatedfiles/
 Testsuite/*/Makefile
 Testsuite/*/Makefile.Debug
