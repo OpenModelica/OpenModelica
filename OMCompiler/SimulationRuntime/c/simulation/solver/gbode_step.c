@@ -406,20 +406,39 @@ int expl_diag_impl_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solv
   DATA_GBODE* gbData = (DATA_GBODE*)solverInfo->solverData;
   DATA_GBODEF* gbfData = gbData->gbfData;
 
-  int i, ii;
-  int stage, stage_;
-
   int nStates = gbData->nStates;
   int nFastStates = gbData->nFastStates;
   int nStages = gbfData->tableau->nStages;
   NLS_SOLVER_STATUS solved = NLS_FAILED;
+
+  // if we have we have many slow states, e.g. 90% slow and 10% fast: always interpolate all slow states
+  // as we can we heavily exploit BLAS vectorization; only use sparse indirect indexing for tiny slow sets (< 20%)
+  modelica_boolean use_sparse_slow_interp = ((double)gbData->nSlowStates / (double)gbData->nStates < 0.2);
+
+  // we need to backup yOld into y2 as otherwise we override gbfData->yOld
+  if (!use_sparse_slow_interp)
+  {
+    projVector_gbf(gbData->y2, gbfData->yOld, nFastStates, gbData->fastStatesIdx);
+  }
 
   // interpolate the slow states on the current time of gbfData->yOld for correct evaluation of gbfData->res_const
   gb_interpolation(gbData->interpolation,
                    gbData->timeLeft,   gbData->yLeft,  gbData->kLeft,
                    gbData->timeRight,  gbData->yRight, gbData->kRight,
                    gbfData->time,      gbfData->yOld,
-                   gbData->nSlowStates, gbData->slowStatesIdx, nStates, gbData->tableau, gbData->x, gbData->k);
+                   use_sparse_slow_interp ? gbData->nSlowStates : 0, use_sparse_slow_interp ? gbData->slowStatesIdx : NULL,
+                   nStates, gbData->tableau, gbData->x, gbData->k);
+
+  // apply backup
+   if (!use_sparse_slow_interp)
+  {
+    for (int fast_idx = 0; fast_idx < nFastStates; fast_idx++)
+    {
+      int full_idx = gbData->fastStatesIdx[fast_idx];
+      gbfData->yOld[full_idx] = gbData->y2[fast_idx];
+    }
+  }
+
 
   if (OMC_ACTIVE_STREAM(OMC_LOG_GBODE_NLS)) {
     infoStreamPrint(OMC_LOG_GBODE_NLS, 1, "NLS - used values for extrapolation:");
@@ -430,36 +449,54 @@ int expl_diag_impl_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solv
     messageClose(OMC_LOG_GBODE_NLS);
   }
 
-  for (stage = 0; stage < nStages; stage++) {
+  for (int stage = 0; stage < nStages; stage++) {
     gbfData->act_stage = stage;
-    // k[i] = f(tOld + c[i]*h, yOld + h*sum(a[i,j]*k[j], i=j..i))
-    // residual constant part:
-    // res = f(tOld + c[i]*h, yOld + h*sum(a[i,j]*k[j], i=j..i-1))
-    // yOld from integrator is correct for the fast states
-
-    for (i=0; i < nStates; i++) {
-      gbfData->res_const[i] = gbfData->yOld[i];
-      for (stage_ = 0; stage_ < stage; stage_++)
-        gbfData->res_const[i] += gbfData->stepSize * gbfData->tableau->A[stage * nStages + stage_] * gbfData->k[stage_ * nStates + i];
-    }
-    // TODO can be streamlined by taking res_const[i-1] instead of the whole sum.
 
     // set simulation time with respect to the current stage
     // t = t_0 + c[j]*h
     sData->timeValue = gbfData->time + gbfData->tableau->c[stage]*gbfData->stepSize;
 
+    // k[i] = f(tOld + c[i]*h, yOld + h*sum(a[i,j]*k[j], i=j..i))
+    // res = f(tOld + c[i]*h, yOld + h*sum(a[i,j]*k[j], i=j..i-1))
+
     // index of diagonal element of A
-    if (gbfData->tableau->A[stage * nStages + stage_] == 0) {
+    if (gbfData->tableau->A[stage * nStages + stage] == 0)
+    {
+      // for explicit stages, we update the full res_const buffer as we evaluate the ODE at that point (may be optimized further)
+      memcpy(gbfData->res_const, gbfData->yOld, nStates * sizeof(double));
+
+      for (int full_idx = 0; full_idx < nStates; full_idx++)
+      {
+        for (int s = 0; s < stage; s++)
+        {
+          gbfData->res_const[full_idx] += gbfData->stepSize * gbfData->tableau->A[stage * nStages + s] * gbfData->k[s * nStates + full_idx];
+        }
+      }
+
       // Calculate the fODE values for the explicit stage
-      memcpy(sData->realVars, gbfData->res_const, nStates*sizeof(double));
+      memcpy(sData->realVars, gbfData->res_const, nStates * sizeof(double));
       gbode_fODE(data, threadData, &(gbfData->stats.nCallsODE), gbfData->evalSelectionFast);
-    } else {
+    }
+    else
+    {
+      // for implicit stages, only set the fast states for the NLS
+      for (int fast_idx = 0; fast_idx < nFastStates; fast_idx++)
+      {
+        int full_idx = gbData->fastStatesIdx[fast_idx];
+        gbfData->res_const[full_idx] = gbfData->yOld[full_idx];
+        for (int s = 0; s < stage; s++)
+        {
+          gbfData->res_const[full_idx] += gbfData->stepSize * gbfData->tableau->A[stage * nStages + s] * gbfData->k[s * nStates + full_idx];
+        }
+      }
+
       // interpolate the slow states on the time of the current stage
       gb_interpolation(gbData->interpolation,
                        gbData->timeLeft,  gbData->yLeft,  gbData->kLeft,
                        gbData->timeRight, gbData->yRight, gbData->kRight,
                        sData->timeValue,   sData->realVars,
-                       gbData->nSlowStates, gbData->slowStatesIdx, nStates, gbData->tableau, gbData->x, gbData->k);
+                       use_sparse_slow_interp ? gbData->nSlowStates : 0, use_sparse_slow_interp ? gbData->slowStatesIdx : NULL,
+                       nStates, gbData->tableau, gbData->x, gbData->k);
 
       // setting the start vector for the newton step
       // solve for x: 0 = yold-x + h*(sum(A[i,j]*k[j], i=1..j-1) + A[i,i]*f(t + c[i]*h, x))
@@ -469,44 +506,46 @@ int expl_diag_impl_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solv
       memcpy(nlsData->nlsxOld, nlsData->nlsx, nFastStates*sizeof(modelica_real));
 
       // use help vector gbData->y1 for security reasons
-      extrapolation_gbf(gbData, gbData->y1, gbfData->time + gbfData->tableau->c[stage_] * gbfData->stepSize);
+      extrapolation_gbf(gbData, gbData->y1, gbfData->time + gbfData->tableau->c[stage] * gbfData->stepSize);
       projVector_gbf(nlsData->nlsxExtrapolation, gbData->y1, nFastStates, gbData->fastStatesIdx);
 
-      infoStreamPrint(OMC_LOG_GBODE_NLS_V, 0, "Solving NLS of gbf stage %d at time %g", stage_+1, gbfData->time + gbfData->tableau->c[stage_] * gbfData->stepSize);
+      infoStreamPrint(OMC_LOG_GBODE_NLS_V, 0, "Solving NLS of gbf stage %d at time %g", stage+1, gbfData->time + gbfData->tableau->c[stage] * gbfData->stepSize);
       solved = solveNLS_gb(data, threadData, nlsData, gbData);
 
       if (solved != NLS_SOLVED) {
-        if (OMC_ACTIVE_STREAM(OMC_LOG_SOLVER)) warningStreamPrint(OMC_LOG_SOLVER, 0, "gbodef error: Failed to solve NLS in expl_diag_impl_RK_MR in stage %d at time t=%g", stage_+1, gbfData->time + gbfData->tableau->c[stage_] * gbfData->stepSize);
+        if (OMC_ACTIVE_STREAM(OMC_LOG_SOLVER)) warningStreamPrint(OMC_LOG_SOLVER, 0, "gbodef error: Failed to solve NLS in expl_diag_impl_RK_MR in stage %d at time t=%g", stage+1, gbfData->time + gbfData->tableau->c[stage] * gbfData->stepSize);
         return -1;
       }
 
       // debug residuals
       if (OMC_ACTIVE_STREAM(OMC_LOG_GBODE_NLS)) {
         infoStreamPrint(OMC_LOG_GBODE_NLS, 1, "NLS - start values and solution of the NLS:");
-        printVector_gb(OMC_LOG_GBODE_NLS, "xS", nlsData->nlsxExtrapolation, nFastStates, gbfData->time + gbfData->tableau->c[stage_] * gbfData->stepSize);
-        printVector_gb(OMC_LOG_GBODE_NLS, "xL", nlsData->nlsx,              nFastStates, gbfData->time + gbfData->tableau->c[stage_] * gbfData->stepSize);
+        printVector_gb(OMC_LOG_GBODE_NLS, "xS", nlsData->nlsxExtrapolation, nFastStates, gbfData->time + gbfData->tableau->c[stage] * gbfData->stepSize);
+        printVector_gb(OMC_LOG_GBODE_NLS, "xL", nlsData->nlsx,              nFastStates, gbfData->time + gbfData->tableau->c[stage] * gbfData->stepSize);
         messageClose(OMC_LOG_GBODE_NLS);
       }
     }
 
     // copy last values of sData->realVars and fODE, which should coincide with x[i] and k[i]
-    memcpy(gbfData->x + stage_ * nStates, sData->realVars, nStates*sizeof(double));
-    memcpy(gbfData->k + stage_ * nStates, fODE, nStates*sizeof(double));
+    // TODO: Make the fast state structures only contains the current flat k's
+    //       => change the interpolation routines accordingly
+    memcpy(gbfData->x + stage * nStates, sData->realVars, nStates*sizeof(double));
+    memcpy(gbfData->k + stage * nStates, fODE, nStates*sizeof(double));
   }
 
   // Apply RK-scheme for determining the approximations at (gbData->time + gbData->stepSize)
-  // y       = yold+h*sum(b[stage_]  * k[stage_], stage_=1..nStages);
-  // yt      = yold+h*sum(bt[stage_] * k[stage_], stage_=1..nStages);
+  // y       = yold+h*sum(b[stage]  * k[stage], stage=1..nStages);
+  // yt      = yold+h*sum(bt[stage] * k[stage], stage=1..nStages);
   // for the fast states only!
-  for (ii = 0; ii < nFastStates; ii++) {
-    i = gbData->fastStatesIdx[ii];
+  for (int fast_idx = 0; fast_idx < nFastStates; fast_idx++) {
+    int full_idx = gbData->fastStatesIdx[fast_idx];
     // y   is the new approximation
     // yt  is the approximation of the embedded method for error estimation
-    gbfData->y[i]  = gbfData->yOld[i];
-    gbfData->yt[i] = gbfData->yOld[i];
-    for (stage_ = 0; stage_ < nStages; stage_++) {
-      gbfData->y[i]  += gbfData->stepSize * gbfData->tableau->b[stage_]  * (gbfData->k + stage_ * nStates)[i];
-      gbfData->yt[i] += gbfData->stepSize * gbfData->tableau->bt[stage_] * (gbfData->k + stage_ * nStates)[i];
+    gbfData->y[full_idx]  = gbfData->yOld[full_idx];
+    gbfData->yt[full_idx] = gbfData->yOld[full_idx];
+    for (int stage = 0; stage < nStages; stage++) {
+      gbfData->y[full_idx]  += gbfData->stepSize * gbfData->tableau->b[stage]  * (gbfData->k + stage * nStates)[full_idx];
+      gbfData->yt[full_idx] += gbfData->stepSize * gbfData->tableau->bt[stage] * (gbfData->k + stage * nStates)[full_idx];
     }
   }
 
