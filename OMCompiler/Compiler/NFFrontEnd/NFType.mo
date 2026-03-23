@@ -362,6 +362,16 @@ public
     output Boolean b = not List.any(arrayDims(ty), Dimension.isUnknown);
   end sizeKnown;
 
+  function isAny
+    input Type ty;
+    output Boolean b;
+  algorithm
+    b := match ty
+      case Type.ANY() then true;
+      else false;
+    end match;
+  end isAny;
+
   function setConditionalArrayTypes
     input Type condType;
     input Type trueType;
