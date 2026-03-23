@@ -46,12 +46,12 @@ end SD;
 // package 'SD'
 //   model 'SD'
 //     parameter Integer 'N' = 3;
-//     parameter Real[3] 'p' = {1.0, 1.5, 2.0};
-//     parameter Integer[3] 'c.N' = {3, 4, 5};
-//     parameter Real[3] 'c.p' = 'p'[:];
-//     Real[3, {3, 4, 5}] 'c.x';
-//     Real[3] 'c.c.e';
-//     Real[3] 'c.c.f';
+//     parameter Real 'p'[3] = {1.0, 1.5, 2.0};
+//     parameter Integer 'c.N'[3] = {3, 4, 5};
+//     parameter Real 'c.p'[3] = 'p'[:];
+//     Real 'c.x'[3, {3, 4, 5}];
+//     Real 'c.c.e'[3];
+//     Real 'c.c.f'[3];
 //     parameter Real 's.p' = 3.0;
 //     Real 's.c.e';
 //     Real 's.c.f';

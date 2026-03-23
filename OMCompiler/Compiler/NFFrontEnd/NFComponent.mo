@@ -777,15 +777,21 @@ public
     input output IOStream.IOStream s;
   protected
     list<tuple<String, Binding>> ty_attrs;
+    list<Dimension> dims;
   algorithm
     () := match component
       case COMPONENT()
         algorithm
           s := IOStream.append(s, indent);
           s := Attributes.toFlatStream(component.attributes, component.ty, s);
-          s := IOStream.append(s, Type.toFlatString(component.ty, format));
+          s := IOStream.append(s, Type.toFlatString(Type.arrayElementType(component.ty), format));
           s := IOStream.append(s, " ");
           s := IOStream.append(s, Util.makeQuotedIdentifier(name));
+
+          dims := Type.arrayDims(component.ty);
+          if not listEmpty(dims) then
+            s := IOStream.append(s, Dimension.toFlatStringList(dims, format));
+          end if;
 
           ty_attrs := list((Modifier.name(a), Modifier.binding(a)) for a in
             Class.getTypeAttributes(InstNode.getClass(component.classInst)));
