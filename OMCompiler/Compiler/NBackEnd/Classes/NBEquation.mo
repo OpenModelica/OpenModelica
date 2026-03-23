@@ -3417,6 +3417,8 @@ public
         local
           WhenStatement stmt;
         case {stmt} then WhenStatement.getType(stmt);
+        // allow multiple statements for no-return-value when statements
+        case _ guard(List.all(list(WhenStatement.getType(st) for st in body.when_stmts), Type.isAny)) then Type.ANY();
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of not properly split up when equation body: " + toString(body)});
         then fail();
