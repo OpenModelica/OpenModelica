@@ -2736,83 +2736,63 @@ BUTCHER_TABLEAU* initButcherTableau(enum GB_METHOD method, enum _FLAG flag)
       getButcherTableau_ESDIRK4_7L2SA(tableau);
       break;
     case RK_RADAU_IA_2:
-      if (extrapolMethod == GB_EXT_DEFAULT) tableau->richardson = TRUE;
       getButcherTableau_RADAU_IA_2(tableau);
       break;
     case RK_RADAU_IA_3:
-      if (extrapolMethod == GB_EXT_DEFAULT) tableau->richardson = TRUE;
       getButcherTableau_RADAU_IA_3(tableau);
       break;
     case RK_RADAU_IA_4:
-      if (extrapolMethod == GB_EXT_DEFAULT) tableau->richardson = TRUE;
       getButcherTableau_RADAU_IA_4(tableau);
       break;
     case RK_RADAU_IIA_2:
-      if (extrapolMethod == GB_EXT_DEFAULT) tableau->richardson = TRUE;
       getButcherTableau_RADAU_IIA_2(tableau);
       break;
     case RK_RADAU_IIA_3:
-      if (extrapolMethod == GB_EXT_DEFAULT) tableau->richardson = TRUE;
       getButcherTableau_RADAU_IIA_3(tableau);
       break;
     case RK_RADAU_IIA_4:
-      if (extrapolMethod == GB_EXT_DEFAULT) tableau->richardson = TRUE;
       getButcherTableau_RADAU_IIA_4(tableau);
       break;
     case RK_RADAU_IIA_5:
-      if (extrapolMethod == GB_EXT_DEFAULT) tableau->richardson = TRUE;
       getButcherTableau_RADAU_IIA_5(tableau);
       break;
     case RK_RADAU_IIA_6:
-      if (extrapolMethod == GB_EXT_DEFAULT) tableau->richardson = TRUE;
       getButcherTableau_RADAU_IIA_6(tableau);
       break;
     case RK_RADAU_IIA_7:
-      if (extrapolMethod == GB_EXT_DEFAULT) tableau->richardson = TRUE;
       getButcherTableau_RADAU_IIA_7(tableau);
       break;
     case RK_LOBA_IIIA_3:
-      if (extrapolMethod == GB_EXT_DEFAULT) tableau->richardson = TRUE;
       getButcherTableau_LOBATTO_IIIA_3(tableau);
       break;
     case RK_LOBA_IIIA_4:
-      if (extrapolMethod == GB_EXT_DEFAULT) tableau->richardson = TRUE;
       getButcherTableau_LOBATTO_IIIA_4(tableau);
       break;
     case RK_LOBA_IIIB_3:
-      if (extrapolMethod == GB_EXT_DEFAULT) tableau->richardson = TRUE;
       getButcherTableau_LOBATTO_IIIB_3(tableau);
       break;
     case RK_LOBA_IIIB_4:
-      if (extrapolMethod == GB_EXT_DEFAULT) tableau->richardson = TRUE;
       getButcherTableau_LOBATTO_IIIB_4(tableau);
       break;
     case RK_LOBA_IIIC_3:
-      if (extrapolMethod == GB_EXT_DEFAULT) tableau->richardson = TRUE;
       getButcherTableau_LOBATTO_IIIC_3(tableau);
       break;
     case RK_LOBA_IIIC_4:
-      if (extrapolMethod == GB_EXT_DEFAULT) tableau->richardson = TRUE;
       getButcherTableau_LOBATTO_IIIC_4(tableau);
       break;
     case RK_GAUSS2:
-      if (extrapolMethod == GB_EXT_DEFAULT) tableau->richardson = TRUE;
       getButcherTableau_GAUSS2(tableau);
       break;
     case RK_GAUSS3:
-      if (extrapolMethod == GB_EXT_DEFAULT) tableau->richardson = TRUE;
       getButcherTableau_GAUSS3(tableau);
       break;
     case RK_GAUSS4:
-      if (extrapolMethod == GB_EXT_DEFAULT) tableau->richardson = TRUE;
       getButcherTableau_GAUSS4(tableau);
       break;
     case RK_GAUSS5:
-      if (extrapolMethod == GB_EXT_DEFAULT) tableau->richardson = TRUE;
       getButcherTableau_GAUSS5(tableau);
       break;
     case RK_GAUSS6:
-      if (extrapolMethod == GB_EXT_DEFAULT) tableau->richardson = TRUE;
       getButcherTableau_GAUSS6(tableau);
       break;
     default:

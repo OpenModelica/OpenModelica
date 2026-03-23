@@ -92,33 +92,41 @@ enum GB_METHOD getGB_method(enum _FLAG flag)
   // Default value for multi-rate method
   if (flag == FLAG_MR) {
     enum GB_METHOD singleRateMethod = getGB_method(FLAG_SR);
+
+    if (getGB_NLS_method(FLAG_MR_NLS) == GB_NLS_INTERNAL)
+    {
+      // if internal + multirate integrator not set -> use single rate integrator
+      return singleRateMethod;
+    }
+
     switch (singleRateMethod)
     {
-    case RK_GAUSS2:
-    case RK_GAUSS3:
-    case RK_GAUSS4:
-    case RK_GAUSS5:
-    case RK_GAUSS6:
-    case RK_RADAU_IA_2:
-    case RK_RADAU_IA_3:
-    case RK_RADAU_IA_4:
-    case RK_RADAU_IIA_2:
-    case RK_RADAU_IIA_3:
-    case RK_RADAU_IIA_4:
-    case RK_RADAU_IIA_5:
-    case RK_RADAU_IIA_6:
-    case RK_RADAU_IIA_7:
-    case RK_LOBA_IIIA_3:
-    case RK_LOBA_IIIA_4:
-    case RK_LOBA_IIIB_3:
-    case RK_LOBA_IIIB_4:
-    case RK_LOBA_IIIC_3:
-    case RK_LOBA_IIIC_4:
-      // Default value for inner integration method
-      // if the outer integration method is full implicit
-      return RK_ESDIRK4;
-    default:
-      return singleRateMethod;
+      case RK_GAUSS2:
+      case RK_GAUSS3:
+      case RK_GAUSS4:
+      case RK_GAUSS5:
+      case RK_GAUSS6:
+      case RK_RADAU_IA_2:
+      case RK_RADAU_IA_3:
+      case RK_RADAU_IA_4:
+      case RK_RADAU_IIA_2:
+      case RK_RADAU_IIA_3:
+      case RK_RADAU_IIA_4:
+      case RK_RADAU_IIA_5:
+      case RK_RADAU_IIA_6:
+      case RK_RADAU_IIA_7:
+      case RK_LOBA_IIIA_3:
+      case RK_LOBA_IIIA_4:
+      case RK_LOBA_IIIB_3:
+      case RK_LOBA_IIIB_4:
+      case RK_LOBA_IIIC_3:
+      case RK_LOBA_IIIC_4:
+        // if not internal + multirate integrator not set -> use default singlerate integrator
+        // as fully implicit is not implemented for standard multirate
+        return RK_ESDIRK4;
+      default:
+        // use implemented singlerate integrator
+        return singleRateMethod;
     }
   }
 
