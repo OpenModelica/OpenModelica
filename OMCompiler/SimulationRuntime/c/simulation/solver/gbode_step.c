@@ -108,7 +108,7 @@ int full_implicit_MS(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
   memcpy(nlsData->nlsxOld, nlsData->nlsx, nStates*sizeof(modelica_real));
   memcpy(nlsData->nlsxExtrapolation, nlsData->nlsx, nStates*sizeof(modelica_real));
 
-  solved = solveNLS_gb(data, threadData, nlsData, gbData);
+  solved = solveNLS_gb(data, threadData, nlsData, gbData, FALSE);
 
   if (solved != NLS_SOLVED) {
     if (OMC_ACTIVE_STREAM(OMC_LOG_SOLVER)) warningStreamPrint(OMC_LOG_SOLVER, 0, "gbode error: Failed to solve NLS in full_implicit_MS at time t=%g", gbData->time);
@@ -203,7 +203,7 @@ int full_implicit_MS_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solve
   memcpy(nlsData->nlsxOld, nlsData->nlsx, nStates*sizeof(modelica_real));
   memcpy(nlsData->nlsxExtrapolation, nlsData->nlsx, nStates*sizeof(modelica_real));
 
-  solved = solveNLS_gb(data, threadData, nlsData, gbData);
+  solved = solveNLS_gb(data, threadData, nlsData, gbData, TRUE);
 
   if (solved != NLS_SOLVED) {
     if (OMC_ACTIVE_STREAM(OMC_LOG_SOLVER)) warningStreamPrint(OMC_LOG_SOLVER, 0, "gbodef error: Failed to solve NLS in full_implicit_MS_MR at time t=%g", gbfData->time);
@@ -342,7 +342,7 @@ int expl_diag_impl_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
       }
 
       infoStreamPrint(OMC_LOG_GBODE_NLS_V, 0, "Solving NLS of stage %d at time %g", stage_+1, gbData->time + gbData->tableau->c[stage_] * gbData->stepSize);
-      solved = solveNLS_gb(data, threadData, nlsData, gbData);
+      solved = solveNLS_gb(data, threadData, nlsData, gbData, FALSE);
 
       if (solved != NLS_SOLVED) {
         if (OMC_ACTIVE_STREAM(OMC_LOG_SOLVER)) warningStreamPrint(OMC_LOG_SOLVER, 0, "gbode error: Failed to solve NLS in expl_diag_impl_RK in stage %d at time t=%g", stage_+1, gbData->time + gbData->tableau->c[stage_] * gbData->stepSize);
@@ -524,7 +524,7 @@ int expl_diag_impl_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solv
       }
 
       infoStreamPrint(OMC_LOG_GBODE_NLS_V, 0, "Solving NLS of gbf stage %d at time %g", stage+1, gbfData->time + gbfData->tableau->c[stage] * gbfData->stepSize);
-      solved = solveNLS_gb(data, threadData, nlsData, gbData);
+      solved = solveNLS_gb(data, threadData, nlsData, gbData, TRUE);
 
       if (solved != NLS_SOLVED) {
         if (OMC_ACTIVE_STREAM(OMC_LOG_SOLVER)) warningStreamPrint(OMC_LOG_SOLVER, 0, "gbodef error: Failed to solve NLS in expl_diag_impl_RK_MR in stage %d at time t=%g", stage+1, gbfData->time + gbfData->tableau->c[stage] * gbfData->stepSize);
@@ -644,7 +644,7 @@ int full_implicit_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
       }
   }
 
-  solved = solveNLS_gb(data, threadData, nlsData, gbData);
+  solved = solveNLS_gb(data, threadData, nlsData, gbData, FALSE);
 
   if (solved != NLS_SOLVED) {
     if (OMC_ACTIVE_STREAM(OMC_LOG_SOLVER)) warningStreamPrint(OMC_LOG_SOLVER, 0, "gbode error: Failed to solve NLS in full_implicit_RK at time t=%g", gbData->time);
@@ -759,7 +759,7 @@ int full_implicit_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solve
     }
   }
 
-  solved = solveNLS_gb(data, threadData, nlsData, gbData);
+  solved = solveNLS_gb(data, threadData, nlsData, gbData, TRUE);
 
   if (solved != NLS_SOLVED) {
     if (OMC_ACTIVE_STREAM(OMC_LOG_SOLVER)) warningStreamPrint(OMC_LOG_SOLVER, 0, "gbode error: Failed to solve NLS in full_implicit_RK at time t=%g", gbData->time);

@@ -535,10 +535,11 @@ void get_kinsol_statistics(NLS_KINSOL_DATA* kin_mem)
  * @param gbData              Runge-Kutta method.
  * @return NLS_SOLVER_STATUS  Return NLS_SOLVED on success and NLS_FAILED otherwise.
  */
-NLS_SOLVER_STATUS solveNLS_gb(DATA *data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA* nlsData, DATA_GBODE* gbData)
+NLS_SOLVER_STATUS solveNLS_gb(DATA *data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA* nlsData, DATA_GBODE* gbData, modelica_boolean isFast)
 {
   struct dataSolver * solverData = (struct dataSolver *)nlsData->solverData;
   NLS_SOLVER_STATUS solved = NLS_FAILED;
+  enum GB_NLS_METHOD method = (isFast ? gbData->gbfData->nlsSolverMethod : gbData->nlsSolverMethod);
 
   // Debug nonlinear solution process
   rtclock_t clock;
@@ -550,14 +551,14 @@ NLS_SOLVER_STATUS solveNLS_gb(DATA *data, threadData_t *threadData, NONLINEAR_SY
     rt_ext_tp_tick(&clock);
   }
 
-  if (gbData->nlsSolverMethod == GB_NLS_INTERNAL)
+  if (method == GB_NLS_INTERNAL)
   {
     solved = gbInternalSolveNls(data, threadData, nlsData, gbData, solverData->ordinaryData);
   }
-  else if (gbData->nlsSolverMethod == GB_NLS_KINSOL || gbData->nlsSolverMethod == GB_NLS_KINSOL_B) {
+  else if (method == GB_NLS_KINSOL || method == GB_NLS_KINSOL_B) {
     // Get kinsol data object
     void* kin_mem;
-    if (gbData->nlsSolverMethod == GB_NLS_KINSOL){
+    if (method == GB_NLS_KINSOL){
        kin_mem = ((NLS_KINSOL_DATA*)solverData->ordinaryData)->kinsolMemory;
     }
     else {
