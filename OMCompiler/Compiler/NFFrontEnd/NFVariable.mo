@@ -626,13 +626,19 @@ public
     Boolean first;
     Binding b;
     Integer var_dims, binding_dims;
+    list<Dimension> dims;
   algorithm
     s := IOStream.append(s, indent);
 
     s := Attributes.toFlatStream(var.attributes, var.ty, s, ComponentRef.isSimple(var.name));
-    s := IOStream.append(s, Type.toFlatString(var.ty, format));
+    s := IOStream.append(s, Type.toFlatString(Type.arrayElementType(var.ty), format));
     s := IOStream.append(s, " ");
     s := IOStream.append(s, ComponentRef.toFlatString(var.name, format));
+
+    dims := Type.arrayDims(var.ty);
+    if not listEmpty(dims) then
+      s := IOStream.append(s, Dimension.toFlatStringList(dims, format));
+    end if;
 
     if not listEmpty(var.typeAttributes) then
       s := Component.typeAttrsToFlatStream(var.typeAttributes, var.ty, format, s);

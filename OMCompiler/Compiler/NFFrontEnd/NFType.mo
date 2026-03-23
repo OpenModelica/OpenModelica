@@ -1031,7 +1031,7 @@ public
         then if listEmpty(ty.literals) then "enumeration(:)"
              elseif Type.isBuiltinEnumeration(ty) then AbsynUtil.pathString(ty.typePath)
              else Util.makeQuotedIdentifier(AbsynUtil.pathString(ty.typePath));
-      case Type.ARRAY() then List.toString(ty.dimensions, function Dimension.toFlatString(format = format), toFlatString(ty.elementType, format), "[", ", ", "]", false);
+      case Type.ARRAY() then Dimension.toFlatStringList(ty.dimensions, format, toFlatString(ty.elementType, format));
       case Type.TUPLE() then "(" + stringDelimitList(List.map(ty.types, function toFlatString(format = format)), ", ") + ")";
       case Type.NORETCALL() then "()";
       case Type.UNKNOWN() then "unknown()";

@@ -23,7 +23,7 @@ end Break1;
 // //! base 0.1.0
 // package 'Break1'
 //   function 'f'
-//     input Real[:] 'x';
+//     input Real 'x'[:];
 //     output Real 'y' = 0.0;
 //   algorithm
 //     for 'v' in 'x' loop
@@ -35,7 +35,7 @@ end Break1;
 //   end 'f';
 //
 //   model 'Break1'
-//     Real[3] 'x';
+//     Real 'x'[3];
 //     Real 'y' = 'f'('x');
 //   equation
 //     'x' = {1.0, 2.0, 3.0};

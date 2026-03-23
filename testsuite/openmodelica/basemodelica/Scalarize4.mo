@@ -16,7 +16,7 @@ end Scalarize4;
 // //! base 0.1.0
 // package 'Scalarize4'
 //   record 'R'
-//     Real[3] 'x';
+//     Real 'x'[3];
 //   end 'R';
 //
 //   model 'Scalarize4'

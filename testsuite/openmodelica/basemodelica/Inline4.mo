@@ -22,7 +22,7 @@ end Inline4;
 // //! base 0.1.0
 // package 'Inline4'
 //   record 'R'
-//     Real[1] 'x';
+//     Real 'x'[1];
 //   end 'R';
 //
 //   model 'Inline4'

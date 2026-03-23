@@ -499,6 +499,15 @@ public
     end match;
   end toFlatString;
 
+  function toFlatStringList
+    input list<Dimension> dims;
+    input BaseModelica.OutputFormat format;
+    input String name = "";
+    output String str;
+  algorithm
+    str := List.toString(dims, function toFlatString(format = format), name, "[", ", ", "]", false);
+  end toFlatStringList;
+
   function endExp
     "Returns an expression for the last index in a dimension."
     input Dimension dim;
