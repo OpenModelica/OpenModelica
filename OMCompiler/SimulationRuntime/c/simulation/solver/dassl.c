@@ -1380,28 +1380,12 @@ static int callJacobian(double *t, double *y, double *yprime, double *deltaD,
   if (measure_time_flag) rt_accumulate(SIM_TIMER_SOLVER);
   rt_tick(SIM_TIMER_JACOBIAN);
 
-
-  // /* running mean state */
-  // static double jac_time_total = 0.0;
-  // static long   jac_call_count = 0;
-  // /* Time Jacobian evaluation */
-  // struct timespec jac_start, jac_end;
-  // clock_gettime(CLOCK_MONOTONIC, &jac_start);
-
   /* Compute J = (∂F)/(∂y) */
   if(dasslData->jacobianFunction(t, y, yprime, deltaD, pd, cj, h, wt, rpar, ipar))
   {
     throwStreamPrint(threadData, "Error, can not get Matrix A ");
     return 1;
   }
-
-  // clock_gettime(CLOCK_MONOTONIC, &jac_end);
-  // double jac_elapsed = (jac_end.tv_sec - jac_start.tv_sec)
-  //                      + (jac_end.tv_nsec - jac_start.tv_nsec) * 1e-9;
-
-  // jac_time_total += jac_elapsed;
-  // jac_call_count++;
-  // double jac_mean = jac_time_total / jac_call_count;
 
   /* Compute J += cj * (∂F)/(∂y') = cj*(-I) */
   for(i = 0; i < dasslData->N*dasslData->N; i += dasslData->N + 1)
@@ -1414,10 +1398,6 @@ static int callJacobian(double *t, double *y, double *yprime, double *deltaD,
     _omc_matrix* dumpJac = _omc_createMatrix(dasslData->N, dasslData->N, pd);
     _omc_printMatrix(dumpJac, "DASSL-Solver: Matrix A", OMC_LOG_JAC);
     _omc_destroyMatrix(dumpJac);
-
-    // infoStreamPrint(OMC_LOG_JAC, 0,
-    // "Jacobian evaluation time: %.6f s | calls: %ld | running mean: %.6f s",
-    // jac_elapsed, jac_call_count, jac_mean);
   }
 
   /* set context for the start values extrapolation of non-linear algebraic loops */
