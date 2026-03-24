@@ -327,6 +327,7 @@ public
           SimJacobian jacA, jacB, jacC, jacD, jacF, jacH, jacAdjoint;
           list<SimStrongComponent.Block> inlineEquations; // ToDo: what exactly is this?
           mapExp collect_literals;
+          Integer savedEquationIndex;
         case BackendDAE.MAIN(varData = varData as BVariable.VAR_DATA_SIM(), eqData = eqData as BEquation.EQ_DATA_SIM())
           algorithm
             // somehow this cannot be set at definition (metamodelica bug?)
@@ -420,6 +421,10 @@ public
 
             (linearLoops, nonlinearLoops, jacobians, simCodeIndices) := collectAlgebraicLoops(init, init_0, ode, algebraic, daeModeData, simCodeIndices, simcode_map);
 
+            // save the equation index before creating jacobian equations so that
+            // fixIndices below can re-use the same range, keeping info.json sequential
+            savedEquationIndex := simCodeIndices.equationIndex;
+
             if isSome(daeModeData) then
               (jacA, jacAdjoint, simCodeIndices) := SimJacobian.createSimulationJacobian(Util.getOption(bdae.dae), simCodeIndices, simcode_map);
               // should jacAdjoint be added aswell? -> for now no
@@ -444,6 +449,9 @@ public
 
             // jacobian blocks only from simulation jacobians
             jac_blocks := SimJacobian.getJacobiansBlocks({jacA, jacB, jacC, jacD, jacF, jacH, jacAdjoint});
+            // restore equation index so fixIndices assigns the same range used by
+            // createSimulationJacobian, making eqIndex values in info.json sequential
+            simCodeIndices.equationIndex := savedEquationIndex;
             (jac_blocks, simCodeIndices) := SimStrongComponent.Block.fixIndices(jac_blocks, {}, simCodeIndices);
 
             // generate the generic loop calls and replace literal expressions
