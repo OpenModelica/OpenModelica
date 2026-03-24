@@ -1405,6 +1405,7 @@ template simulationFile(SimCode simCode, String guid, String isModelExchangeFMU)
       <%symbolName(modelNamePrefixStr,"functionJacD_column")%>,
       <%symbolName(modelNamePrefixStr,"functionJacF_column")%>,
       <%symbolName(modelNamePrefixStr,"functionJacH_column")%>,
+      <%symbolName(modelNamePrefixStr,"JacA_DAG")%>,
       <%symbolName(modelNamePrefixStr,"linear_model_frame")%>,
       <%symbolName(modelNamePrefixStr,"linear_model_datarecovery_frame")%>,
       <%symbolName(modelNamePrefixStr,"mayer")%>,
@@ -1898,6 +1899,7 @@ template symJacDefinition(list<JacobianMatrix> JacobianMatrices, String modelNam
     #define <%symbolName(modelNamePrefix,"INDEX_JAC_")%><%jac.matrixName%> <%jac.jacobianIndex%>
     int <%symbolName(modelNamePrefix,"functionJac")%><%jac.matrixName%>_column(DATA* data, threadData_t *threadData, JACOBIAN *thisJacobian, JACOBIAN *parentJacobian);
     int <%symbolName(modelNamePrefix,"initialAnalyticJacobian")%><%jac.matrixName%>(DATA* data, threadData_t *threadData, JACOBIAN *jacobian);
+    void <%symbolName(modelNamePrefix,"Jac")%><%jac.matrixName%>_DAG(DATA* data, threadData_t *threadData, JACOBIAN *jacobian);
     <%genericCallHeaders(jac.generic_loop_calls, createJacContext(jac.matrixName, jac.crefsHT))%>
     >>
     ;separator="\n\n";empty)
@@ -4448,7 +4450,7 @@ template functionXXX_DAG(list<SimEqSystem> eqs, String name, String modelNamePre
   void <%symbolName(modelNamePrefix, name)%>_DAG(DATA* data, threadData_t* threadData)
   {
     const size_t eqMap[] = {<%eqs |> eq => equationIndexGeneral(eq); separator=", "%>};
-    buildEvalDAG(data->modelData, sizeof(eqMap)/sizeof(size_t), eqMap);
+    buildEvalDAG_<%name%>(data->modelData, sizeof(eqMap)/sizeof(size_t), eqMap);
   }
   >>
 end functionXXX_DAG;
@@ -5596,7 +5598,7 @@ template functionAnalyticJacobians(list<JacobianMatrix> JacobianMatrices, String
       ;separator="\n")
 
   let jacMats = (JacobianMatrices |> JAC_MATRIX() =>
-    generateMatrix(columns, seedVars, matrixName, partitionIndex, crefsHT, modelNamePrefix) ;separator="\n")
+    generateMatrix(columns, seedVars, matrixName, partitionIndex, crefsHT, modelNamePrefix) ;separator="\n\n")
   let jacGenericCalls = (JacobianMatrices |> JAC_MATRIX() =>
     genericCallBodies(generic_loop_calls, createJacContext(matrixName, crefsHT)) ;separator="\n")
   <<
@@ -5673,7 +5675,7 @@ template generateMatrix(list<JacobianColumn> jacobianColumn, list<SimVar> seedVa
   "This template generates source code for a single jacobian in dense format and sparse format.
   This is a helper of template functionAnalyticJacobians"
 ::=
-  let nRows = (jacobianColumn |> JAC_COLUMN(numberOfResultVars=nRows) => '<%nRows%>')
+  let nRows = (jacobianColumn |> JAC_COLUMN(numberOfResultVars=nRows) => nRows)
   match nRows
   case "0" then
     <<
@@ -5681,6 +5683,8 @@ template generateMatrix(list<JacobianColumn> jacobianColumn, list<SimVar> seedVa
     {
       return 0;
     }
+
+    void <%symbolName(modelNamePrefix, "Jac")%><%matrixname%>_DAG(DATA* data, threadData_t* threadData, JACOBIAN* jacobian) { /* empty */ }
     >>
   case _ then
     match seedVars
@@ -5690,17 +5694,19 @@ template generateMatrix(list<JacobianColumn> jacobianColumn, list<SimVar> seedVa
         {
           return 0;
         }
+
+        void <%symbolName(modelNamePrefix, "Jac")%><%matrixname%>_DAG(DATA* data, threadData_t* threadData, JACOBIAN* jacobian) { /* empty */ }
         >>
       case _ then
         let jacMats =
         (jacobianColumn |> JAC_COLUMN(columnEqns=eqs, constantEqns=constantEqns) =>
           functionJac(eqs, constantEqns, partIdx, createJacContext(matrixname, jacHT), modelNamePrefix)
           ;separator="\n")
-        let indexColumn = (jacobianColumn |> JAC_COLUMN(numberOfResultVars=nRows) =>
-          nRows
-          ;separator="\n")
+        let jacDAG = (jacobianColumn |> JAC_COLUMN(columnEqns=eqs) => functionJac_DAG(eqs, matrixname, modelNamePrefix) ;separator="\n")
         <<
         <%jacMats%>
+
+        <%jacDAG%>
         >>
      end match
   end match
@@ -5749,6 +5755,17 @@ case JACOBIAN_CONTEXT() then
   }
   >>
 end functionJac;
+
+template functionJac_DAG(list<SimEqSystem> eqs, String name, String modelNamePrefix)
+::=
+  <<
+  void <%symbolName(modelNamePrefix, "Jac")%><%name%>_DAG(DATA* data, threadData_t* threadData, JACOBIAN* jacobian)
+  {
+    const size_t eqMap[] = {<%eqs |> eq => equationIndexGeneral(eq); separator=", "%>};
+    buildEvalDAG_Jac(jacobian, data->modelData, sizeof(eqMap)/sizeof(size_t), eqMap);
+  }
+  >>
+end functionJac_DAG;
 
 // function for sparsity pattern generation
 template genSPCRSPtr(Integer sizeColPtr, SparsityPattern sparsepattern, String constArrayName)

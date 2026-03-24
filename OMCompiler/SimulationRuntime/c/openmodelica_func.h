@@ -285,6 +285,9 @@ struct OpenModelicaGeneratedFunctionCallbacks {
   jacobianColumn_func_ptr functionJacH_column;
   /*#endif*/
 
+  /* get dependency graph for JacA */
+  void (*getDAG_JacA)(DATA*, threadData_t*, JACOBIAN*);
+
   const char *(*linear_model_frame)(void); /* printf format-string with holes for 6 strings */
   const char *(*linear_model_datarecovery_frame)(void); /* printf format-string with holes for 9 strings */
 
