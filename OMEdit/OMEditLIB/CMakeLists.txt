@@ -354,6 +354,7 @@ if (OM_QT_MAJOR_VERSION VERSION_GREATER_EQUAL 6)
 endif ()
 
 target_link_libraries(OMEditLib PUBLIC omc::3rd::opcua)
+target_link_libraries(OMEditLib PUBLIC omc::3rd::simdjson)
 target_link_libraries(OMEditLib PUBLIC OMPlotLib)
 target_link_libraries(OMEditLib PUBLIC OpenModelicaCompiler)
 target_link_libraries(OMEditLib PUBLIC ${OPENSCENEGRAPH_LIBRARIES})

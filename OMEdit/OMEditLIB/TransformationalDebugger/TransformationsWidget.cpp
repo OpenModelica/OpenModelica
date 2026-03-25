@@ -43,6 +43,7 @@
 #include "Editors/TransformationsEditor.h"
 #include "Editors/ModelicaEditor.h"
 #include "diff_match_patch.h"
+#include "simdjson.h"
 
 #include <QStatusBar>
 #include <QGridLayout>
@@ -1111,45 +1112,99 @@ TransformationsWidget::~TransformationsWidget()
   qDeleteAll(mEquations);
 }
 
-static OMOperation* variantToOperationPtr(const QVariantMap &var)
+/*!
+ * \brief simdjsonToOperationPtr
+ * Transforms a simdjson::ondemand::object to an OMOperation pointer.\n
+ * \param var
+ * \return
+ */
+static OMOperation* simdjsonToOperationPtr(simdjson::ondemand::object &var)
 {
-  QString op = var["op"].toString();
-  QString display = var["display"].toString();
-  QStringList dataStrings = Utilities::variantListToStringList(var["data"].toList());
-
-  if (op == "before-after") {
-    return new OMOperationBeforeAfter(display != "" ? display : op, dataStrings);
-  } else if (op == "before-after-assert") {
-    return new OMOperationBeforeAfter(display != "" ? display : op, dataStrings);
-  } else if (op == "chain") {
-    QStringList firstLast;
-    firstLast << dataStrings.first() << dataStrings.last();
-    return new OMOperationBeforeAfter(display != "" ? display : op, firstLast);
-  } else if (op == "info") {
-    return new OMOperationInfo(display != "" ? display : op, dataStrings.join(", "));
+  std::string_view sv;
+  QString op;
+  if (!var["op"].get(sv)) {
+    op = QString::fromUtf8(sv.data(), sv.size());
   }
-  // "chain"
-  return NULL;
-}
 
+  QString display;
+  if (!var["display"].get(sv)) {
+    display = QString::fromUtf8(sv.data(), sv.size());
+  }
 
-static void variantToSource(const QVariantMap &var, OMInfo &info, QStringList &types, QList<OMOperation*> &ops)
-{
-  Q_UNUSED(types);
-  QVariantMap vinfo = var["info"].toMap();
-  info.file = vinfo["file"].toString();
-  info.lineStart = vinfo["lineStart"].toInt();
-  info.lineEnd = vinfo["lineEnd"].toInt();
-  info.colStart = vinfo["colStart"].toInt();
-  info.colEnd = vinfo["colEnd"].toInt();
-  info.isValid = true;
-  QVariantList vops = var["operations"].toList();
-  foreach (QVariant vop, vops) {
-    OMOperation *op = variantToOperationPtr(vop.toMap());
-    if (op) {
-      ops += op;
+  QString name = display.isEmpty() ? op : display;
+
+  QStringList dataStrings;
+  simdjson::ondemand::array data;
+  if (!var["data"].get(data)) {
+    for (simdjson::ondemand::value v : data) {
+      if (!v.get(sv)) {
+        dataStrings << QString::fromUtf8(sv.data(), sv.size());
+      }
     }
   }
+
+  if (op == "before-after" || op == "before-after-assert") {
+    return new OMOperationBeforeAfter(name, dataStrings);
+  } else if (op == "chain") {
+    QStringList firstLast;
+    if (!dataStrings.isEmpty()) {
+      firstLast << dataStrings.first() << dataStrings.last();
+    }
+    return new OMOperationBeforeAfter(name, firstLast);
+  } else if (op == "info") {
+    return new OMOperationInfo(name, dataStrings.join(", "));
+  }
+  return nullptr;
+}
+
+/*!
+ * \brief simdjsonToSource
+ * Transforms a simdjson::ondemand::object to source information and operations.\n
+ * \param source
+ * \param info
+ * \param ops
+ * \return
+ */
+static bool simdjsonToSource(simdjson::ondemand::object &source, OMInfo &info, QList<OMOperation*> &ops)
+{
+  bool hasOperations = false;
+
+  simdjson::ondemand::object vinfo;
+  if (!source["info"].get(vinfo)) {
+    std::string_view sv;
+    int64_t iv;
+    if (!vinfo["file"].get(sv)) {
+      info.file = QString::fromUtf8(sv.data(), sv.size());
+    }
+    if (!vinfo["lineStart"].get(iv)) {
+      info.lineStart = (int)iv;
+    }
+    if (!vinfo["lineEnd"].get(iv)) {
+      info.lineEnd = (int)iv;
+    }
+    if (!vinfo["colStart"].get(iv)) {
+      info.colStart = (int)iv;
+    }
+    if (!vinfo["colEnd"].get(iv)) {
+      info.colEnd = (int)iv;
+    }
+    info.isValid = true;
+  }
+
+  simdjson::ondemand::array vops;
+  if (!source["operations"].get(vops)) {
+    hasOperations = true;
+    for (simdjson::ondemand::value vop : vops) {
+      simdjson::ondemand::object opObj;
+      if (!vop.get(opObj)) {
+        OMOperation *op = simdjsonToOperationPtr(opObj);
+        if (op) {
+          ops << op;
+        }
+      }
+    }
+  }
+  return hasOperations;
 }
 
 static OMEquation* getOMEquation(QList<OMEquation*> equations, int index)
@@ -1284,82 +1339,152 @@ void TransformationsWidget::loadTransformations()
   mEquations.clear();
   mVariables.clear();
   hasOperationsEnabled = false;
+
   if (mInfoJSONFullFileName.endsWith(".json")) {
-    JsonDocument jsonDocument;
-    if (!jsonDocument.parse(mInfoJSONFullFileName)) {
-      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, jsonDocument.errorString, Helper::scriptingKind, Helper::errorLevel));
+    // Load file into simdjson padded buffer
+    simdjson::ondemand::parser parser;
+    simdjson::padded_string jsonStr;
+
+    auto loadResult = simdjson::padded_string::load(mInfoJSONFullFileName.toStdString());
+    if (loadResult.error()) {
+      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
+                                                            QString("Failed to load file %1: %2").arg(mInfoJSONFullFileName,
+                                                                                                      QString::fromUtf8(simdjson::error_message(loadResult.error()))),
+                                                            Helper::scriptingKind, Helper::errorLevel));
       MainWindow::instance()->printStandardOutAndErrorFilesMessages();
       return;
     }
-    QVariantMap result = jsonDocument.result.toMap();
-    QVariantMap vars = result["variables"].toMap();
-    QVariantList eqs = result["equations"].toList();
-    for(QVariantMap::const_iterator iter = vars.begin(); iter != vars.end(); ++iter) {
-      QVariantMap value = iter.value().toMap();
-      OMVariable var;
-      var.name = iter.key();
-      var.comment = value["comment"].toString();
-      QVariantMap sourceMap = value["source"].toMap();
-      variantToSource(value["source"].toMap(), var.info, var.types, var.ops);
-      if (!hasOperationsEnabled && sourceMap.contains("operations")) {
-        hasOperationsEnabled = true;
+    jsonStr = std::move(loadResult.value());
+
+    simdjson::ondemand::document doc;
+    if (parser.iterate(jsonStr).get(doc)) {
+      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
+                                                            QString("Failed to parse JSON %1").arg(mInfoJSONFullFileName),
+                                                            Helper::scriptingKind, Helper::errorLevel));
+      MainWindow::instance()->printStandardOutAndErrorFilesMessages();
+      return;
+    }
+    // Parse variables
+    simdjson::ondemand::object varsObj;
+    if (!doc["variables"].get(varsObj)) {
+      for (simdjson::ondemand::field field : varsObj) {
+        std::string_view key = field.unescaped_key();
+        QString name = QString::fromUtf8(key.data(), key.size());
+
+        simdjson::ondemand::object valueObject;
+        if (!field.value().get(valueObject)) {
+          OMVariable var;
+          var.name = name;
+
+          std::string_view sv;
+          if (!valueObject["comment"].get(sv)) {
+            var.comment = QString::fromUtf8(sv.data(), sv.size());
+          }
+
+          simdjson::ondemand::object sourceObject;
+          if (!valueObject["source"].get(sourceObject)) {
+            bool hasOperations = simdjsonToSource(sourceObject, var.info, var.ops);
+            if (!hasOperationsEnabled && hasOperations) {
+              hasOperationsEnabled = true;
+            }
+          }
+
+          mVariables[name] = std::move(var);
+        }
       }
-      mVariables[iter.key()] = var;
     }
     mpTVariablesTreeModel->insertTVariablesItems(mVariables);
-    // we need to create all equations first since they can refer from parent, then we will fill the details of each equation in the second loop
-    mEquations.reserve(eqs.size());
-    for (int i=0; i<eqs.size(); i++) {
-      mEquations << new OMEquation();
-    }
-    for (int i=0; i<eqs.size(); i++) {
-      const QVariantMap veq = eqs[i].toMap();
-      OMEquation *eq = mEquations[i];
-      eq->section = veq["section"].toString();
-      if (veq["eqIndex"].toInt() != i) {
-        QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::parsingFailedJson), Helper::parsingFailedJson + QString(": got index ") + veq["eqIndex"].toString() + QString(" expected ") + QString::number(i), QMessageBox::Ok);
-        return;
+
+    // Parse equations
+    simdjson::ondemand::array eqsArr;
+    if (!doc["equations"].get(eqsArr)) {
+      int eqsCount = (int)eqsArr.count_elements();
+      mEquations.reserve(eqsCount);
+      for (int i = 0; i < eqsCount; i++) {
+        mEquations << new OMEquation();
       }
-      eq->index = i;
-      eq->profileBlock = -1;
+      int i = 0;
+      for (simdjson::ondemand::value eqVal : eqsArr) {
+        simdjson::ondemand::object veq;
+        if (!eqVal.get(veq)) {
+          OMEquation *eq = mEquations[i];
 
-      auto parentIt = veq.find("parent");
-      if (parentIt != veq.end()) {
-        eq->parent = parentIt->toInt();
-        mEquations[eq->parent]->eqs << eq->index;
-      } else {
-        eq->parent = 0;
-      }
+          eq->index = i;
+          eq->profileBlock = -1;
 
-      auto definesIt = veq.find("defines");
-      if (definesIt != veq.end()) {
-        eq->defines = Utilities::variantListToStringList(definesIt->toList());
-        for (const QString &v : std::as_const(eq->defines)) {
-          mVariables[v].definedIn << eq->index;
-        }
-      }
+          std::string_view sv;
+          int64_t iv;
 
-      auto usesIt = veq.find("uses");
-      if (usesIt != veq.end()) {
-        eq->depends = Utilities::variantListToStringList(usesIt->toList());
-        for (const QString &v : std::as_const(eq->depends)) {
-          mVariables[v].usedIn << eq->index;
-        }
-      }
+          if (!veq["section"].get(sv)) {
+            eq->section = QString::fromUtf8(sv.data(), sv.size());
+          }
+          if (!veq["tag"].get(sv)) {
+            eq->tag = QString::fromUtf8(sv.data(), sv.size());
+          }
+          if (!veq["unknowns"].get(iv)) {
+            eq->unknowns = (int)iv;
+          }
 
-      eq->text = Utilities::variantListToStringList(veq["equation"].toList());
-      eq->tag = veq["tag"].toString();
-      auto displayIt = veq.find("display");
-      eq->display = (displayIt != veq.end()) ? displayIt->toString() : eq->tag;
-
-      eq->unknowns = veq["unknowns"].toInt();
-
-      auto sourceIt = veq.find("source");
-      if (sourceIt != veq.end()) {
-        const QVariantMap sourceMap = sourceIt->toMap();
-        variantToSource(sourceMap, eq->info, eq->types, eq->ops);
-        if (!hasOperationsEnabled && sourceMap.contains("operations")) {
-          hasOperationsEnabled = true;
+          // eqIndex sanity check
+          int64_t eqIndex = 0;
+          if (!veq["eqIndex"].get(eqIndex) && (int)eqIndex != i) {
+            QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::parsingFailedJson),
+                                  Helper::parsingFailedJson + QString(": got index ") + QString::number((int)eqIndex) + QString(" expected ") + QString::number(i),
+                                  QMessageBox::Ok);
+            return;
+          }
+          // parent
+          int64_t parent;
+          if (!veq["parent"].get(parent)) {
+            eq->parent = (int)parent;
+            mEquations[eq->parent]->eqs << eq->index;
+          } else {
+            eq->parent = 0;
+          }
+          // defines
+          simdjson::ondemand::array arr;
+          if (!veq["defines"].get(arr)) {
+            for (simdjson::ondemand::value v : arr) {
+              if (!v.get(sv)) {
+                QString vname = QString::fromUtf8(sv.data(), sv.size());
+                eq->defines << vname;
+                mVariables[vname].definedIn << eq->index;
+              }
+            }
+          }
+          // uses
+          if (!veq["uses"].get(arr)) {
+            for (simdjson::ondemand::value v : arr) {
+              if (!v.get(sv)) {
+                QString vname = QString::fromUtf8(sv.data(), sv.size());
+                eq->depends << vname;
+                mVariables[vname].usedIn << eq->index;
+              }
+            }
+          }
+          // display
+          if (!veq["display"].get(sv)) {
+            eq->display = QString::fromUtf8(sv.data(), sv.size());
+          } else {
+            eq->display = eq->tag;
+          }
+          // equation text
+          if (!veq["equation"].get(arr)) {
+            for (simdjson::ondemand::value v : arr) {
+              if (!v.get(sv)) {
+                eq->text << QString::fromUtf8(sv.data(), sv.size());
+              }
+            }
+          }
+          // source
+          simdjson::ondemand::object sourceObject;
+          if (!veq["source"].get(sourceObject)) {
+            bool hasOperations = simdjsonToSource(sourceObject, eq->info, eq->ops);
+            if (!hasOperationsEnabled && hasOperations) {
+              hasOperationsEnabled = true;
+            }
+          }
+          i++;
         }
       }
     }
