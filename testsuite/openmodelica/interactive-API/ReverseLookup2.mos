@@ -53,43 +53,43 @@ getErrorString();
 // "[
 //   {
 //     \"filename\": \"<interactive>\",
-//     \"lineStart\": 9,
-//     \"columnStart\": 7,
-//     \"lineEnd\": 9,
-//     \"columnEnd\": 19,
-//     \"name\": \"P1.M\"
-//   },
-//   {
-//     \"filename\": \"<interactive>\",
-//     \"lineStart\": 13,
-//     \"columnStart\": 7,
-//     \"lineEnd\": 13,
-//     \"columnEnd\": 16,
-//     \"name\": \"M\"
-//   },
-//   {
-//     \"filename\": \"<interactive>\",
-//     \"lineStart\": 24,
-//     \"columnStart\": 19,
-//     \"lineEnd\": 24,
-//     \"columnEnd\": 35,
-//     \"name\": \".P1.M\"
-//   },
-//   {
-//     \"filename\": \"<interactive>\",
-//     \"lineStart\": 38,
-//     \"columnStart\": 7,
-//     \"lineEnd\": 38,
-//     \"columnEnd\": 13,
-//     \"name\": \"P1.M\"
-//   },
-//   {
-//     \"filename\": \"<interactive>\",
-//     \"lineStart\": 39,
-//     \"columnStart\": 7,
-//     \"lineEnd\": 39,
-//     \"columnEnd\": 17,
-//     \"name\": \"P1.M.M1\"
+//     \"matches\": [
+//       {
+//         \"lineStart\": 9,
+//         \"columnStart\": 7,
+//         \"lineEnd\": 9,
+//         \"columnEnd\": 19,
+//         \"name\": \"P1.M\"
+//       },
+//       {
+//         \"lineStart\": 13,
+//         \"columnStart\": 7,
+//         \"lineEnd\": 13,
+//         \"columnEnd\": 16,
+//         \"name\": \"M\"
+//       },
+//       {
+//         \"lineStart\": 24,
+//         \"columnStart\": 19,
+//         \"lineEnd\": 24,
+//         \"columnEnd\": 35,
+//         \"name\": \".P1.M\"
+//       },
+//       {
+//         \"lineStart\": 38,
+//         \"columnStart\": 7,
+//         \"lineEnd\": 38,
+//         \"columnEnd\": 13,
+//         \"name\": \"P1.M\"
+//       },
+//       {
+//         \"lineStart\": 39,
+//         \"columnStart\": 7,
+//         \"lineEnd\": 39,
+//         \"columnEnd\": 17,
+//         \"name\": \"P1.M.M1\"
+//       }
+//     ]
 //   }
 // ]"
 // ""

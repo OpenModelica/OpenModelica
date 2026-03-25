@@ -1888,9 +1888,12 @@ end dumpJSONAnnotationExp2;
 
 function dumpJSONSourceInfo
   input SourceInfo info;
+  input Boolean dumpFilename = true;
   output JSON json = JSON.makeNull();
 algorithm
-  json := JSON.addPair("filename", JSON.makeString(Testsuite.friendly(info.fileName)), json);
+  if dumpFilename then
+    json := JSON.addPair("filename", JSON.makeString(Testsuite.friendly(info.fileName)), json);
+  end if;
 
   json := JSON.addPair("lineStart", JSON.makeInteger(info.lineNumberStart), json);
   json := JSON.addPair("columnStart", JSON.makeInteger(info.columnNumberStart), json);
