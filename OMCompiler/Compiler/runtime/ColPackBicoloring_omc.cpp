@@ -129,7 +129,7 @@ void ColPackBicoloring_starBicolor(
 
   /* ---- Call ColPack ---- */
   ColPack::BipartiteGraphBicoloringInterface bgbc(SRC_MEM_ADOLC, ppSparsityPattern, nRows, nCols);
-  bgbc.Bicoloring("SMALLEST_LAST", "IMPLICIT_COVERING__STAR_BICOLORING");
+  bgbc.Bicoloring("DYNAMIC_LARGEST_FIRST", "IMPLICIT_COVERING__STAR_BICOLORING");
 
   /* Extract results.
    * ColPack returns:

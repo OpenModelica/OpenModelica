@@ -1330,15 +1330,10 @@ public
             // Create adjoint expression from subscripts:
             adjExpr := match expCrefSubscripts
               local
-                Integer iidx;
-                Option<Expression> onehotOpt;
                 Option<Expression> multiOpt;
-              // Single literal index -> one-hot
-              case {Subscript.INDEX(Expression.INTEGER(iidx))}
-                algorithm
-                  dbg("[dCREF:JAC] adjoint via INDEX[" + intString(iidx) + "]");
-                  onehotOpt := buildOneHotVectorAdjoint(derCref, iidx, diffArguments.current_grad);
-                then (if Util.isSome(onehotOpt) then Util.getOption(onehotOpt) else diffArguments.current_grad);
+              // Single literal index: use scalar current_grad directly; adjointKey will be subscripted.
+              case {Subscript.INDEX(Expression.INTEGER())}
+                then diffArguments.current_grad;
 
               // Single slice/range -> multi-hot scatter
               case {Subscript.SLICE()}
@@ -1354,16 +1349,18 @@ public
               // Fallback: keep previous behavior
               else diffArguments.current_grad;
             end match;
-            dbg("[dCREF:JAC] append adjoint key=" + ComponentRef.toString(derCref)
-                + " expr=" + Expression.toString(adjExpr));
-            // Keep symbolic subscripts (e.g. -1 + i) on adjoint keys so loop
-            // contributions emit indexed pDER updates in generated C.
+            // Determine map key: use subscripted cref for INDEX (literal or symbolic) and
+            // symbolic iterator subscripts, so the emitted accumulation is a scalar indexed
+            // assignment (c_adj[k] += a_adj) rather than a full-array operation.
             adjointKey := match expCrefSubscripts
               case {} then derCref;
+              case {Subscript.INDEX()} then ComponentRef.copySubscripts(exp.cref, derCref);
               else if subscriptsHaveIterator(expCrefSubscripts)
                 then ComponentRef.copySubscripts(exp.cref, derCref)
                 else derCref;
             end match;
+            dbg("[dCREF:JAC] append adjoint key=" + ComponentRef.toString(adjointKey)
+                + " expr=" + Expression.toString(adjExpr));
             if not UnorderedMap.contains(adjointKey, Util.getOption(diffArguments.adjoint_map)) then
               UnorderedMap.tryAdd(adjointKey, {}, Util.getOption(diffArguments.adjoint_map));
             end if;
