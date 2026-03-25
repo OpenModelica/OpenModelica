@@ -107,6 +107,7 @@ QString Helper::toolsOptionsPath = tr("OMEdit->Preferences");
 QString Helper::toolsOptionsPath = tr("Tools->Options");
 #endif
 QString Helper::speedOptions = "10,5,2,1,0.5,0.2,0.1";
+QStringList Helper::timeDisplayUnits = QStringList() << "min" << "h" << "d";
 /* Meta Modelica Types */
 QString Helper::MODELICA_METATYPE = QString("modelica_metatype");
 QString Helper::MODELICA_STRING = QString("modelica_string");

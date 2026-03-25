@@ -1395,7 +1395,7 @@ VariablesWidget::VariablesWidget(QWidget *pParent)
   mpSimulationTimeLabel = new Label(tr("Simulation Time Unit"));
   mpSimulationTimeComboBox = new QComboBox;
   mpSimulationTimeComboBox->addItem("s");
-  mpSimulationTimeComboBox->addItems(MainWindow::instance()->getOMCProxy()->getDerivedUnits("s"));
+  mpSimulationTimeComboBox->addItems(Helper::timeDisplayUnits);
   connect(mpSimulationTimeComboBox, SIGNAL(currentIndexChanged(int)), SLOT(timeUnitChanged(int)));
   // simulation time slider
   mSliderRange = 1000;

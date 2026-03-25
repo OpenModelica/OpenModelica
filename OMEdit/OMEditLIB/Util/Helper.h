@@ -113,6 +113,7 @@ public:
   static QFontInfo monospacedFontInfo;
   static QString toolsOptionsPath;
   static QString speedOptions;
+  static QStringList timeDisplayUnits;
   /* Meta Modelica Types */
   static QString MODELICA_METATYPE;
   static QString MODELICA_STRING;
