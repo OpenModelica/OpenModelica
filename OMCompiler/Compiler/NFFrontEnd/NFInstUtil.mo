@@ -83,9 +83,9 @@ public
       print("\n########################################\n\n");
 
       if Flags.getConfigBool(Flags.BASE_MODELICA) then
-        FlatModel.printFlatString(flat_model, FunctionTree.listValues(functions));
+        FlatModel.printFlatString(flat_model, functions);
       else
-        FlatModel.printString(flat_model);
+        FlatModel.printString(flat_model, functions);
       end if;
 
       print("\n");
@@ -145,7 +145,7 @@ public
     FlatModel flat_model;
   algorithm
     flat_model := combineSubscripts(flatModel);
-    str := FlatModel.toFlatString(flat_model, FunctionTree.listValues(functions));
+    str := FlatModel.toFlatString(flat_model, functions);
   end dumpFlatModel;
 
   function replaceEmptyArrays

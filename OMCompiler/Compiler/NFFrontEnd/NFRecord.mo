@@ -361,6 +361,18 @@ algorithm
   end for;
 end foldInputFields;
 
+function toDeclarationStream
+  input InstNode recordNode;
+  input String indent;
+  input output IOStream.IOStream s;
+protected
+  InstNode node;
+algorithm
+  node := getDeclarationNode(recordNode, evaluate = false);
+  s := IOStream.append(s, indent);
+  s := IOStream.append(s, InstNode.toString(node));
+end toDeclarationStream;
+
 function toFlatDeclarationStream
   input InstNode recordNode;
   input BaseModelica.OutputFormat format;
@@ -368,16 +380,28 @@ function toFlatDeclarationStream
   input output IOStream.IOStream s;
 protected
   InstNode node;
+algorithm
+  node := getDeclarationNode(recordNode, evaluate = true);
+  s := IOStream.append(s, InstNode.toFlatString(node, format, indent));
+end toFlatDeclarationStream;
+
+function getDeclarationNode
+  input InstNode recordNode;
+  input Boolean evaluate;
+  output InstNode declNode;
+protected
   InstNodeType node_ty;
 algorithm
   node_ty := InstNode.nodeType(recordNode);
-  node := instRecord(recordNode);
-  Typing.typeClass(node, NFInstContext.RELAXED);
+  declNode := instRecord(recordNode);
+  Typing.typeClass(declNode, NFInstContext.RELAXED);
   // Keep the node type from the original node to get the correct name.
-  node := InstNode.setNodeType(node_ty, node);
-  EvalConstants.evaluateRecordDeclaration(node);
-  s := IOStream.append(s, InstNode.toFlatString(node, format, indent));
-end toFlatDeclarationStream;
+  declNode := InstNode.setNodeType(node_ty, declNode);
+
+  if evaluate then
+    EvalConstants.evaluateRecordDeclaration(declNode);
+  end if;
+end getDeclarationNode;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFRecord;

@@ -706,7 +706,7 @@ algorithm
   end match;
 end dumpVarParallelismStr;
 
-protected function dumpCommentStr
+public function dumpCommentStr
   "Dumps a comment to a string."
   input Option<SCode.Comment> inComment;
   output String outString;
@@ -725,14 +725,14 @@ algorithm
   end match;
 end dumpCommentStr;
 
-protected function dumpClassAnnotationStr
+public function dumpClassAnnotationStr
   input Option<SCode.Comment> inComment;
   output String outString;
 algorithm
   outString := dumpAnnotationStr(inComment, "  ", ";\n");
 end dumpClassAnnotationStr;
 
-protected function dumpCompAnnotationStr
+public function dumpCompAnnotationStr
   input Option<SCode.Comment> inComment;
   output String outString;
 algorithm
