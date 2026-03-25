@@ -104,6 +104,7 @@ public
     Absyn.Class cls;
     Option<Absyn.Path> opt_path;
     Absyn.Path relative_path;
+    list<list<Match>> grouped_matches;
   algorithm
     ExecStat.execStatReset();
 
@@ -125,7 +126,8 @@ public
       end try;
     end if;
 
-    result := serializeMatches(matches, prettyPrint);
+    grouped_matches := groupMatches(matches);
+    result := serializeMatches(grouped_matches, prettyPrint);
     ExecStat.execStat("ReverseLookup.lookup(" + AbsynUtil.pathString(path) + ")");
   end lookup;
 
@@ -1174,21 +1176,61 @@ protected
   end lookupInExternalDecl;
 
   function serializeMatches
-    input Matches matches;
+    input list<Matches> groupedMatches;
     input Boolean prettyPrint;
     output String str;
   protected
-    list<JSON> json_elems = {};
-    JSON json_elem;
+    list<JSON> json_groups = {}, json_elems;
+    JSON json_group, json_elem;
+    Match first_match;
   algorithm
-    for m in matches loop
-      json_elem := NFApi.dumpJSONSourceInfo(m.info);
-      json_elem := JSON.addPair("name", JSON.makeString(Dump.printComponentRefStr(m.name)), json_elem);
-      json_elems := json_elem :: json_elems;
+    for group in groupedMatches loop
+      first_match := listHead(group);
+      json_group := JSON.addPair("filename", JSON.makeString(first_match.info.fileName), JSON.emptyListObject());
+
+      json_elems := {};
+      for m in group loop
+        json_elem := NFApi.dumpJSONSourceInfo(m.info, dumpFilename = false);
+        json_elem := JSON.addPair("name", JSON.makeString(Dump.printComponentRefStr(m.name)), json_elem);
+        json_elems := json_elem :: json_elems;
+      end for;
+
+      json_group := JSON.addPair("matches", JSON.makeArray(json_elems), json_group);
+      json_groups := json_group :: json_groups;
     end for;
 
-    str := JSON.toString(JSON.makeArray(json_elems), prettyPrint);
+    str := JSON.toString(JSON.makeArray(json_groups), prettyPrint);
   end serializeMatches;
+
+  function groupMatches
+    "Sorts matches into groups based on filename."
+    input Matches matches;
+    output list<Matches> outMatches;
+  protected
+    UnorderedMap<String, Matches> grouped_matches;
+
+    function add_match
+      input Option<Matches> oldMatches;
+      input Match newMatch;
+      output Matches outMatches;
+    algorithm
+      if isSome(oldMatches) then
+        SOME(outMatches) := oldMatches;
+        outMatches := newMatch :: outMatches;
+      else
+        outMatches := {newMatch};
+      end if;
+    end add_match;
+  algorithm
+    grouped_matches := UnorderedMap.new<Matches>(stringHashDjb2, stringEq);
+
+    for m in matches loop
+      UnorderedMap.addUpdate(m.info.fileName, function add_match(newMatch = m), grouped_matches);
+    end for;
+
+    outMatches := UnorderedMap.valueList(grouped_matches);
+    outMatches := listReverse(MetaModelica.Dangerous.listReverseInPlace(l) for l in outMatches);
+  end groupMatches;
 
   annotation(__OpenModelica_Interface="backend");
 end ReverseLookup;
