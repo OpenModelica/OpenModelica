@@ -832,8 +832,24 @@ ModelInstance::Component *GraphicsView::createModelInstanceComponent(ModelInstan
   const QJsonObject modelJSON = MainWindow::instance()->getOMCProxy()->getModelInstance(dummyClass);
   MainWindow::instance()->getOMCProxy()->deleteClass(dummyClass);
   const QJsonArray elementsArray = modelJSON.value("elements").toArray();
-  if (!elementsArray.isEmpty()) {
-    pModelInstance->deserializeElements(elementsArray);
+  /*! We need to filter the elements array and get the component we just created because getModelInstance may also contains generated inner components.
+   *  See issue #15092.
+   */
+  QJsonArray filteredArray;
+  // If there is only one element in the array then it has to be the component we created. No need to loop through the array and filter it.
+  if (elementsArray.size() == 1) {
+    filteredArray = elementsArray;
+  } else {
+    for (const QJsonValue &element : elementsArray) {
+      QJsonObject obj = element.toObject();
+      if (obj.value("name").toString() == name) {
+        filteredArray.append(obj);
+        break;
+      }
+    }
+  }
+  if (!filteredArray.isEmpty()) {
+    pModelInstance->deserializeElements(filteredArray);
     QVector<ModelInstance::Element*> elements = pModelInstance->getElements();
     if (!elements.isEmpty()) {
       return dynamic_cast<ModelInstance::Component*>(elements.last());
