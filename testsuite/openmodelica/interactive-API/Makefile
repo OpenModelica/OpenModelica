@@ -162,6 +162,7 @@ Ticket6287and6288.mos \
 Ticket6300.mos \
 Ticket6307.mos \
 Ticket6406.mos \
+translateResidualsDAE1.mos \
 UnpatchedModelicaServices.mos \
 UsesAnnotation1.mos \
 UsesAnnotation2.mos \

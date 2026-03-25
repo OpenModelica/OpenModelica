@@ -6374,6 +6374,24 @@ algorithm
   end match;
 end transformPathedElementInClassDef;
 
+public function makeMod
+  input Boolean isFinal = false;
+  input Boolean isEach = false;
+  input list<SCode.SubMod> subMods = {};
+  input Option<Absyn.Exp> binding = NONE();
+  input Option<String> comment = NONE();
+  input SourceInfo info = AbsynUtil.dummyInfo;
+  output SCode.Mod mod;
+algorithm
+  mod := SCode.Mod.MOD(
+    if isFinal then SCode.Final.FINAL() else SCode.Final.NOT_FINAL(),
+    if isEach then SCode.Each.EACH() else SCode.Each.NOT_EACH(),
+    subMods,
+    binding,
+    comment,
+    info
+  );
+end makeMod;
 
 annotation(__OpenModelica_Interface="frontend");
 end SCodeUtil;

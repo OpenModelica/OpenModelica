@@ -40,6 +40,7 @@ import NFModifier.Modifier;
 protected
 
 import Inst = NFInst;
+import InstUtil = NFInstUtil;
 import NFBinding.Binding;
 import NFComponent.Component;
 import ComponentRef = NFComponentRef;
@@ -58,6 +59,7 @@ import InstContext = NFInstContext;
 
 import Absyn.Path;
 import AbsynToSCode;
+import CevalScriptBackend;
 import Config;
 import ConvertDAE = NFConvertDAE;
 import DAEUtil;
@@ -87,6 +89,7 @@ import Parser;
 import Prefixes = NFPrefixes;
 import Restriction = NFRestriction;
 import Scalarize = NFScalarize;
+import SimCodeMain;
 import SimplifyExp = NFSimplifyExp;
 import SimplifyModel = NFSimplifyModel;
 import SymbolTable;
@@ -3016,6 +3019,36 @@ algorithm
     end if;
   end if;
 end updateMovedCref;
+
+public
+function translateResidualsDAE
+  input Absyn.Path path;
+  input String fileNamePrefix;
+  output Boolean success = true;
+protected
+  Boolean disable_single_flow_eq;
+  list<String> non_std_flags;
+  FlatModel flat_model;
+  Flatten.FunctionTree funcs;
+  Option<SimCode.SimulationSettings> simSettings;
+algorithm
+  disable_single_flow_eq := FlagsUtil.set(Flags.DISABLE_SINGLE_FLOW_EQ, true);
+  non_std_flags := FlagsUtil.appendConfigStringList(Flags.ALLOW_NON_STANDARD_MODELICA, "implicitParameterStartAttribute");
+
+  try
+    (flat_model, funcs) := CevalScriptBackend.runFrontEndNF(path);
+    (flat_model, funcs) := InstUtil.createExtractorModel(flat_model, funcs);
+    InstUtil.dumpFlatModelDebug("translateResidualsDAE", flat_model, funcs);
+
+    simSettings := SOME(CevalScriptBackend.convertSimulationOptionsToSimCode(
+      CevalScriptBackend.buildSimulationOptionsFromModelExperimentAnnotation(path, fileNamePrefix, NONE())));
+    SimCodeMain.translateModelCallBackend(flat_model, funcs, path, fileNamePrefix, true, simSettings);
+  else
+  end try;
+
+  FlagsUtil.setConfigStringList(Flags.ALLOW_NON_STANDARD_MODELICA, non_std_flags);
+  FlagsUtil.set(Flags.DISABLE_SINGLE_FLOW_EQ, disable_single_flow_eq);
+end translateResidualsDAE;
 
   annotation(__OpenModelica_Interface="backend");
 end NFApi;

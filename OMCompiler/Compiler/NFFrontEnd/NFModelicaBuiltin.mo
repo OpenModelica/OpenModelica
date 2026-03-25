@@ -3099,6 +3099,14 @@ external "builtin";
 annotation(preferredView="text");
 end reduceTerms;
 
+function translateResidualsDAE
+  input TypeName className;
+  input String fileNamePrefix = "<default>";
+  output Boolean success;
+external "builtin";
+annotation(preferredView="text");
+end translateResidualsDAE;
+
 function createModel
   "Creates a new empty model."
   input TypeName className;

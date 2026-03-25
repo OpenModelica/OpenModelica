@@ -123,6 +123,11 @@ public
     variable := VARIABLE(cref, ty, binding, vis, attr, {}, children, cmt, info, binfo);
   end fromCref;
 
+  function name
+    input Variable var;
+    output ComponentRef name = var.name;
+  end name;
+
   function size
     input Variable var;
     input Boolean resize = false;
