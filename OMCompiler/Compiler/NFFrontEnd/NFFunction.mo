@@ -883,6 +883,74 @@ uniontype Function
     str := AbsynUtil.pathString(name(fn)) + "<function>(" + inputs + ") => " + outputs;
   end typeString;
 
+  function toStream
+    input Function fn;
+    input String indent;
+    input output IOStream.IOStream s;
+  protected
+    String fn_name;
+    Option<SCode.Comment> cmt;
+  algorithm
+    if isDefaultRecordConstructor(fn) then
+      s := Record.toDeclarationStream(fn.node, indent, s);
+    elseif isPartialDerivative(fn) then
+      fn_name := AbsynUtil.pathString(fn.path);
+      cmt := SCodeUtil.getElementComment(InstNode.definition(fn.node));
+
+      s := IOStream.append(s, indent);
+      s := IOStream.append(s, "function ");
+      s := IOStream.append(s, fn_name);
+      s := IOStream.append(s, " = der(");
+      s := IOStream.append(s, AbsynUtil.pathString(getDerivedFunctionName(fn)));
+      s := IOStream.append(s, ", ");
+      s := IOStream.append(s, stringDelimitList(getDerivedInputNames(fn), ", "));
+      s := IOStream.append(s, DAEDump.dumpCommentAnnotationStr(cmt));
+      s := IOStream.append(s, ")");
+    else
+      fn_name := AbsynUtil.pathString(fn.path);
+      cmt := SCodeUtil.getElementComment(InstNode.definition(fn.node));
+      s := IOStream.append(s, indent);
+
+      if InstNode.isPartial(fn.node) then
+        s := IOStream.append(s, "partial ");
+      end if;
+
+      s := IOStream.append(s, "function ");
+      s := IOStream.append(s, fn_name);
+      s := IOStream.append(s, DAEDump.dumpCommentStr(cmt));
+      s := IOStream.append(s, "\n");
+
+      for i in fn.inputs loop
+        s := IOStream.append(s, indent + "  ");
+        s := IOStream.append(s, InstNode.toString(i));
+        s := IOStream.append(s, ";\n");
+      end for;
+
+      for o in fn.outputs loop
+        s := IOStream.append(s, indent + "  ");
+        s := IOStream.append(s, InstNode.toString(o));
+        s := IOStream.append(s, ";\n");
+      end for;
+
+      if not listEmpty(fn.locals) then
+        s := IOStream.append(s, indent);
+        s := IOStream.append(s, "protected\n");
+
+        for l in fn.locals loop
+          s := IOStream.append(s, indent + "  ");
+          s := IOStream.append(s, InstNode.toString(l));
+          s := IOStream.append(s, ";\n");
+        end for;
+      end if;
+
+      s := Sections.toStream(InstNode.getSections(fn.node), indent, s);
+      s := IOStream.append(s, DAEDump.dumpClassAnnotationStr(cmt));
+      s := IOStream.append(s, indent);
+      s := IOStream.append(s, "end ");
+      s := IOStream.append(s, fn_name);
+    end if;
+  end toStream;
+
   function toFlatStream
     input Function fn;
     input BaseModelica.OutputFormat format;

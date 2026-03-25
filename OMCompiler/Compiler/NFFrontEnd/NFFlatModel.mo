@@ -135,36 +135,45 @@ public
 
   function toString
     input FlatModel flatModel;
+    input FunctionTree functions;
     input Boolean printBindingTypes = false;
-    output String str = IOStream.string(toStream(flatModel, printBindingTypes));
+    output String str = IOStream.string(toStream(flatModel, functions, printBindingTypes));
   end toString;
 
   function printString
     input FlatModel flatModel;
+    input FunctionTree functions;
     input Boolean printBindingTypes = false;
   protected
     IOStream.IOStream s;
   algorithm
-    s := toStream(flatModel, printBindingTypes);
+    s := toStream(flatModel, functions, printBindingTypes);
     IOStream.print(s, IOStream.stdOutput);
   end printString;
 
   function toStream
     input FlatModel flatModel;
+    input FunctionTree functions;
     input Boolean printBindingTypes = false;
     output IOStream.IOStream s;
   algorithm
     s := IOStream.create(getInstanceName(), IOStream.IOStreamType.LIST());
-    s := appendStream(flatModel, printBindingTypes, s);
+    s := appendStream(flatModel, functions, printBindingTypes, s);
   end toStream;
 
   function appendStream
     input FlatModel flatModel;
+    input FunctionTree functions;
     input Boolean printBindingTypes = false;
     input output IOStream.IOStream s;
   protected
     String name = className(flatModel);
   algorithm
+    for fn in FunctionTree.listValues(functions) loop
+      s := Function.toStream(fn, "", s);
+      s := IOStream.append(s, ";\n\n");
+    end for;
+
     s := IOStream.append(s, "class " + name + "\n");
 
     for v in flatModel.variables loop
@@ -202,7 +211,7 @@ public
   function toFlatString
     "Returns a string containing the flat Modelica representation of the given model."
     input FlatModel flatModel;
-    input list<Function> functions;
+    input FunctionTree functions;
     input Boolean printBindingTypes = false;
     output String str = IOStream.string(toFlatStream(flatModel, functions, printBindingTypes));
   end toFlatString;
@@ -210,7 +219,7 @@ public
   function printFlatString
     "Prints a flat Modelica representation of the given model to standard output."
     input FlatModel flatModel;
-    input list<Function> functions;
+    input FunctionTree functions;
     input Boolean printBindingTypes = false;
   protected
     IOStream.IOStream s;
@@ -222,7 +231,7 @@ public
   function toFlatStream
     "Returns a new IOStream containing the flat Modelica representation of the given model."
     input FlatModel flatModel;
-    input list<Function> functions;
+    input FunctionTree functions;
     input Boolean printBindingTypes = false;
     output IOStream.IOStream s;
   algorithm
@@ -233,7 +242,7 @@ public
   function appendFlatStream
     "Appends the flat Modelica representation of the given model to an existing IOStream."
     input FlatModel flatModel;
-    input list<Function> functions;
+    input FunctionTree functions;
     input Boolean printBindingTypes = false;
     input output IOStream.IOStream s;
   protected
@@ -241,7 +250,7 @@ public
     String name = Util.makeQuotedIdentifier(className(flatModel));
     BaseModelica.OutputFormat format;
     Boolean scalarize;
-    list<Function> funcs = functions;
+    list<Function> funcs = FunctionTree.listValues(functions);
   algorithm
     format := BaseModelica.formatFromFlags();
     scalarize := Flags.isConfigFlagSet(Flags.BASE_MODELICA_OPTIONS, "scalarize");
