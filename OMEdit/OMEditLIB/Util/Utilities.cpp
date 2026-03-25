@@ -1340,6 +1340,12 @@ void Utilities::addDefaultDisplayUnit(const QString &unit, QStringList &displayU
      * Whenever unit = "m3/s", we also add "l/s" and "m3/h" even if it is not defined as displayUnits.
      */
     displayUnit << "l/s" << "m3/h";
+  } else if (unit.compare(QStringLiteral("s")) == 0) {
+    /* Issue #15242
+     * For time it would be good to have extra display units min, h, d.
+     * Whenever unit = "s", we also add "min", "h" and "d" even if it is not defined as displayUnits.
+     */
+    displayUnit << Helper::timeDisplayUnits;
   }
 
   // add prefixes if unit is prefixable
