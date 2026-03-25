@@ -22,7 +22,6 @@ set(OMEDITLIB_SOURCES Util/Helper.cpp
                       Util/StringHandler.cpp
                       Util/OutputPlainTextEdit.cpp
                       Util/DirectoryOrFileSelector.cpp
-                      Util/simdjson/simdjson.cpp
                       MainWindow.cpp
                       OMC/OMCProxy.cpp
                       Modeling/Model.cpp
@@ -151,7 +150,6 @@ set(OMEDITLIB_HEADERS Util/Helper.h
                       Util/StringHandler.h
                       Util/OutputPlainTextEdit.h
                       Util/DirectoryOrFileSelector.h
-                      Util/simdjson/simdjson.h
                       MainWindow.h
                       OMC/OMCProxy.h
                       Modeling/Model.h
@@ -356,6 +354,7 @@ if (OM_QT_MAJOR_VERSION VERSION_GREATER_EQUAL 6)
 endif ()
 
 target_link_libraries(OMEditLib PUBLIC omc::3rd::opcua)
+target_link_libraries(OMEditLib PUBLIC omc::3rd::simdjson)
 target_link_libraries(OMEditLib PUBLIC OMPlotLib)
 target_link_libraries(OMEditLib PUBLIC OpenModelicaCompiler)
 target_link_libraries(OMEditLib PUBLIC ${OPENSCENEGRAPH_LIBRARIES})

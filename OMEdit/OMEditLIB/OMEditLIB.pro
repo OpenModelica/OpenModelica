@@ -90,7 +90,6 @@ SOURCES += Util/Helper.cpp \
   Util/StringHandler.cpp \
   Util/OutputPlainTextEdit.cpp \
   Util/DirectoryOrFileSelector.cpp \
-  Util/simdjson/simdjson.cpp \
   MainWindow.cpp \
   $$OPENMODELICAHOME/include/omc/scripting-API/OpenModelicaScriptingAPIQt.cpp \
   OMC/OMCProxy.cpp \
@@ -205,7 +204,6 @@ HEADERS  += Util/Helper.h \
   Util/StringHandler.h \
   Util/OutputPlainTextEdit.h \
   Util/DirectoryOrFileSelector.h \
-  Util/simdjson/simdjson.h \
   MainWindow.h \
   $$OPENMODELICAHOME/include/omc/scripting-API/OpenModelicaScriptingAPIQt.h \
   OMC/OMCProxy.h \

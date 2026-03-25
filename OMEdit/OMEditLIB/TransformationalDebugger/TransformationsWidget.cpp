@@ -43,7 +43,7 @@
 #include "Editors/TransformationsEditor.h"
 #include "Editors/ModelicaEditor.h"
 #include "diff_match_patch.h"
-#include "Util/simdjson/simdjson.h"
+#include "simdjson.h"
 
 #include <QStatusBar>
 #include <QGridLayout>
