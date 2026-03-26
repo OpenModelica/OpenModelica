@@ -39,6 +39,8 @@
 // TODO: How to choose TOL for Richardson??
 // TODO: Calibrate safety factor for internal tolerances
 
+#define DBL_ABSORPTION (10 * DBL_EPSILON)
+
 /* some constants for less verbose BLAS calls */
 static const double DBL_ZERO = 0.0;
 static const double DBL_ONE = 1.0;
@@ -578,6 +580,23 @@ static double gbScalesNorm(GB_INTERNAL_NLS_DATA *nls, double *vec, int stack_siz
   return sqrt(sum / ((double)nls->size * (double)stack_size));
 }
 
+/** @brief Compute scaled norm of possible vector stack vec = (x + v1, x + v2, ..., x + v_{stacksize}). */
+static double gbScalesNormXPlusZ(GB_INTERNAL_NLS_DATA *nls, double *x, double *z, int stack_size)
+{
+  double sum = 0.0;
+  for (int j = 0; j < stack_size; j++)
+  {
+    double *vec_stride = &z[j * nls->size];
+    for (int i = 0; i < nls->size; i++)
+    {
+      double tmp = (x[i] + vec_stride[i]) * nls->scal[i];
+      sum += tmp * tmp;
+    }
+  }
+
+  return sqrt(sum / ((double)nls->size * (double)stack_size));
+}
+
 /** @brief Solve one stage of a DIRK method with the internal solve routine. */
 static NLS_SOLVER_STATUS gbInternalSolveNls_DIRK(DATA *data,
                                                  threadData_t *threadData,
@@ -647,6 +666,7 @@ static NLS_SOLVER_STATUS gbInternalSolveNls_DIRK(DATA *data,
   while (1)
   {
     // norms, convergence rate
+    double nrm_x = 0;
     double nrm_delta = 0;
     double nrm_delta_prev = 0;
     double theta = 0;
@@ -662,15 +682,19 @@ static NLS_SOLVER_STATUS gbInternalSolveNls_DIRK(DATA *data,
       if (ret < 0) return NLS_FAILED;
       daxpy_(&size, &DBL_MINUS_ONE, res, &INT_ONE, x, &INT_ONE);
 
-      nrm_delta_prev = nrm_delta;
+      nrm_delta_prev = fmax(DBL_EPSILON, nrm_delta);
       nrm_delta = gbScalesNorm(nls, res, 1);
+
+      // handle absorption effects
+      nrm_x = gbScalesNorm(nls, x, 1);
+      modelica_boolean absorption = (nrm_delta <= DBL_ABSORPTION * nrm_x);
 
       if (newt_it > 1)
       {
         theta = nrm_delta / nrm_delta_prev;
 
         // Newton failed -> divergence
-        if (theta >= nls->theta_divergence)
+        if (theta >= nls->theta_divergence && !absorption)
         {
           retry_requested = TRUE;
           break;
@@ -691,7 +715,7 @@ static NLS_SOLVER_STATUS gbInternalSolveNls_DIRK(DATA *data,
       }
 
       // Newton converged
-      if (nls->etas[stage] * nrm_delta < nls->fnewt)
+      if (nls->etas[stage] * nrm_delta < nls->fnewt || absorption)
       {
           if (theta < nls->theta_keep)
           {
@@ -942,6 +966,7 @@ static NLS_SOLVER_STATUS gbInternalSolveNls_T_Transform(DATA *data,
   dense_kron_id_vec(transform->size, size, transform->T_inv, nls->Z, nls->W);
 
   // norms, convergence rate
+  double nrm_x = 0;
   double nrm_delta = 0;
   double nrm_delta_prev = 0;
   double theta = 0;
@@ -952,12 +977,6 @@ static NLS_SOLVER_STATUS gbInternalSolveNls_T_Transform(DATA *data,
   // Newton iteration count - we start with newt_it = 1, because we need this for the step size selection and conditions below
   for (int newt_it = 1 ;; newt_it++)
   {
-    // Z = (T otimes I) * W
-    if (newt_it != 1)
-    {
-      dense_kron_id_vec(transform->size, size, transform->T, nls->W, nls->Z);
-    }
-
     // compute residuals: rhs := -1 / h (Lambda otimes I) * W + (T^{-1} * I) * F((T otimes I) * W) + Phi (Phi = T^{-1} A_part^{-1} * K_1 if (K_1 explicit else 0))
 
     // work[j] = F((T otimes I) * W)[j]
@@ -1022,15 +1041,22 @@ static NLS_SOLVER_STATUS gbInternalSolveNls_T_Transform(DATA *data,
     // Newton step (we must do W += dW)
     daxpy_(&w_size, &DBL_ONE, flat_res, &INT_ONE, nls->W, &INT_ONE);
 
-    nrm_delta_prev = nrm_delta;
+    // Z = (T otimes I) * W
+    dense_kron_id_vec(transform->size, size, transform->T, nls->W, nls->Z);
+
+    nrm_delta_prev = fmax(DBL_EPSILON, nrm_delta);
     nrm_delta = gbScalesNorm(nls, flat_res, nls->tabl->t_transform->size);
+
+    // handle absorption effects
+    nrm_x = gbScalesNormXPlusZ(nls, x0, nls->Z, transform->size);
+    modelica_boolean absorption = (nrm_delta <= DBL_ABSORPTION * nrm_x);
 
     if (newt_it > 1)
     {
       theta = nrm_delta / nrm_delta_prev;
 
       // Newton failed -> divergence
-      if (theta >= nls->theta_divergence)
+      if (theta >= nls->theta_divergence && !absorption)
       {
         nls->call_jac = TRUE;
         return NLS_FAILED;
@@ -1051,7 +1077,7 @@ static NLS_SOLVER_STATUS gbInternalSolveNls_T_Transform(DATA *data,
     }
 
     // Newton converged
-    if (*nls->etas * nrm_delta < nls->fnewt)
+    if (*nls->etas * nrm_delta < nls->fnewt || absorption)
     {
       if (theta < nls->theta_keep)
       {
@@ -1061,9 +1087,6 @@ static NLS_SOLVER_STATUS gbInternalSolveNls_T_Transform(DATA *data,
       {
         nls->call_jac = TRUE;
       }
-
-      // Z = (T otimes I) * W
-      dense_kron_id_vec(transform->size, size, transform->T, nls->W, nls->Z);
 
       // set solution X[j] = X_0 + Z[j]
       int offset = transform->firstRowZero ? size : 0;
@@ -1204,7 +1227,7 @@ void *gbInternalNlsAllocate(int size,
     double atol_pred = quot * rtol_pred;
     nls->tol_scaled.rtol = fmax(nls->tol_integrator.rtol, rtol_pred);
     nls->tol_scaled.atol = fmax(nls->tol_integrator.atol, atol_pred);
-    nls->fnewt = fmax(10 * DBL_EPSILON / nls->tol_scaled.rtol, fmin(3e-2, pow(nls->tol_scaled.rtol, 1.0 / order_quot - 1.0)));
+    nls->fnewt = fmax(DBL_ABSORPTION / nls->tol_scaled.rtol, fmin(3e-2, pow(nls->tol_scaled.rtol, 1.0 / order_quot - 1.0)));
   }
 
   // add a history of thetas_last + #newt iterations to detect nearly linear systems, similar to err controller
