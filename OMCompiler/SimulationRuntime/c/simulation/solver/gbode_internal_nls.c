@@ -40,6 +40,7 @@
 // TODO: Calibrate safety factor for internal tolerances
 
 #define DBL_ABSORPTION (10 * DBL_EPSILON)
+#define MAX(a,b) (((a)>(b))?(a):(b))
 
 /* some constants for less verbose BLAS calls */
 static const double DBL_ZERO = 0.0;
@@ -1298,7 +1299,7 @@ static NLS_SOLVER_STATUS gbInternalSolveNls_T_Transform(DATA *data,
     nrm_delta = gbScalesNorm(nls, flat_res, nls->tabl->t_transform->size);
 
     // handle absorption effects
-    nrm_x = gbScalesNormXPlusZ(nls, x0, nls->Z, transform->size);
+    nrm_x = gbScalesNormXPlusZ(nls, yOld, nls->Z, transform->size);
     modelica_boolean absorption = (nrm_delta <= DBL_ABSORPTION * nrm_x);
 
     if (newt_it > 1)
@@ -1625,7 +1626,7 @@ void *gbInternalNlsAllocate(int size,
     nls->W = (double *) malloc(nls->size * trfm->size * sizeof(double));
 
     // auxiliary memory
-    nls->work = (double *) malloc(nls->size * fmax(trfm->size, 4) * sizeof(double));
+    nls->work = (double *) malloc(nls->size * MAX(trfm->size, 4) * sizeof(double));
   }
 
   return (void *) nls;

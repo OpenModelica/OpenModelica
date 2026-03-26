@@ -1281,7 +1281,10 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
   }
   /* Solver statistics */
   if (!gbfData->isExplicit)
+  {
     gbfData->stats.nCallsJacobian += gbfData->nlsData->numberOfJEval;
+    gbfData->nlsData->numberOfJEval = 0;
+  }
 
   infoStreamPrint(OMC_LOG_SOLVER, 0, "gbodef finished (inner steps).");
   messageClose(OMC_LOG_SOLVER);  // FIXME what does this belong to?
