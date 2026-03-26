@@ -1153,7 +1153,7 @@ void ShapeAnnotation::resetDynamicSelect()
   mTextStyles.resetDynamicToStatic();
   mHorizontalAlignment.resetDynamicToStatic();
 
-  update();
+  applyTransformation();
 }
 
 /*!
