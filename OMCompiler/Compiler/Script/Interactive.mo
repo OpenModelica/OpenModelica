@@ -5834,36 +5834,6 @@ algorithm
   end try;
 end getInheritanceCount;
 
-public function getNthInheritedClass
-"This function takes a Path, an integer and a Program and returns
-  the nth inherited class in the class referenced by the Path."
-  input Absyn.Path classPath;
-  input Integer n;
-  output Values.Value result;
-protected
-  Absyn.Class cls;
-  FCore.Graph env;
-  FCore.Cache cache;
-  SCode.Element elem;
-  Absyn.Path path;
-algorithm
-  try
-    cls := InteractiveUtil.getPathedClassInProgram(classPath, SymbolTable.getAbsyn());
-    (cache, env) := Inst.makeEnvFromProgram(SymbolTable.getSCode());
-
-    try
-      (_, elem as SCode.CLASS(), env) := Lookup.lookupClass(cache, env, classPath);
-      result := ValuesUtil.makeCodeTypeName(getNthInheritedClass2(elem, cls, n, env));
-    else
-      // if above fails, baseclass not defined. return its name
-      Absyn.EXTENDS(path = path) := listGet(getExtendsInClass(cls), n);
-      result := ValuesUtil.makeCodeTypeName(path);
-    end try;
-  else
-    result := ValuesUtil.makeBoolean(false);
-  end try;
-end getNthInheritedClass;
-
 protected function getNthInheritedClassAnnotationOpt
 "This function takes a ComponentRef, an integer and a Program and returns
   the ANNOTATION on the extends of the nth inherited class in the class referenced by the modelpath."
@@ -6042,40 +6012,6 @@ algorithm
 
   outExtends := Dangerous.listReverseInPlace(outExtends);
 end getExtendsInParts;
-
-protected function getNthInheritedClass2
-"Helper function to getNthInheritedClass."
-  input SCode.Element element;
-  input Absyn.Class cls;
-  input Integer n;
-  input FCore.Graph env;
-  output Absyn.Path baseClass;
-protected
-  String id;
-  SCode.Encapsulated enc;
-  SCode.Restriction restr;
-  list<Absyn.Path> extends_lst;
-  FCore.Graph cenv;
-  ClassInf.State ci_state;
-  Absyn.Class c;
-algorithm
-  SCode.CLASS(name = id, encapsulatedPrefix = enc, restriction = restr) := element;
-
-  if SCodeUtil.isDerivedClass(element) then
-    // for derived classes, search in parents
-    extends_lst := getBaseClasses(cls, env);
-  else
-    // for non-derived classes, search from inside the class
-    cenv := FGraph.openScope(env, enc, id, FGraph.restrictionToScopeType(restr));
-    ci_state := ClassInf.start(restr, FGraph.getGraphName(cenv));
-    (_, cenv, _, _, _) := Inst.partialInstClassIn(FCore.emptyCache(), cenv,
-      InnerOuter.emptyInstHierarchy, DAE.NOMOD(), DAE.NOPRE(), ci_state,
-      element, SCode.PUBLIC(), {}, 0);
-    extends_lst := getBaseClasses(cls, cenv);
-  end if;
-
-  baseClass := listGet(extends_lst, n);
-end getNthInheritedClass2;
 
 public function getComponentCount
 " This function takes a ComponentRef and a Program and returns the

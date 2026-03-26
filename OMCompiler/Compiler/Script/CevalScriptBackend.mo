@@ -3277,7 +3277,7 @@ algorithm
       then Interactive.getInheritanceCount(classpath, SymbolTable.getAbsyn());
 
     case ("getNthInheritedClass", {Values.CODE(Absyn.C_TYPENAME(classpath)), Values.INTEGER(n)})
-      then Interactive.getNthInheritedClass(classpath, n);
+      then NFApi.getNthInheritedClass(classpath, n, SymbolTable.getAbsyn());
 
     case ("setConnectionComment", {Values.CODE(Absyn.C_TYPENAME(classpath)), Values.CODE(Absyn.C_VARIABLENAME(cr)),
                                    Values.CODE(Absyn.C_VARIABLENAME(cr2)), Values.STRING(str)})

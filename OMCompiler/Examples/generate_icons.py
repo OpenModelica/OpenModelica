@@ -44,10 +44,8 @@ import svgwrite
 from OMPython import OMCSessionZMQ
 omc = OMCSessionZMQ()
 
-# OpenModelica setup commands (use old front-end, see #6301)
-OMC_SETUP_COMMANDS = ['setCommandLineOptions("-d=nogen,noevalfunc,-newInst")']
-# use new front-end and nfAPI
-# OMC_SETUP_COMMANDS = ['setCommandLineOptions("-d=nogen,noevalfunc,newInst,nfAPI")']
+# OpenModelica setup commands
+OMC_SETUP_COMMANDS = ['setCommandLineOptions("-d=nogen,noevalfunc")']
 
 def classToFileName(cl):
   """
