@@ -2859,7 +2859,10 @@ function translateResidualsDAE
   input String fileNamePrefix = "<default>";
   output Boolean success;
 external "builtin";
-annotation(preferredView="text");
+annotation(Documentation(info="<html>
+<p>Takes a model with top-level connectors as input and produces the DAE mode C code for the DAE residuals and Jacobian, guaranteed to be valid for any arbitrary causality once this component is coupled to other ones through the connector variables. Can be used for separate compilation of DAE-based components.</p>
+</html>"),
+  preferredView="text");
 end translateResidualsDAE;
 
 function createModel
