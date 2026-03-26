@@ -580,6 +580,23 @@ static double gbScalesNorm(GB_INTERNAL_NLS_DATA *nls, double *vec, int stack_siz
   return sqrt(sum / ((double)nls->size * (double)stack_size));
 }
 
+/** @brief Compute scaled norm of possible vector stack vec = (x + v1, x + v2, ..., x + v_{stacksize}). */
+static double gbScalesNormXPlusZ(GB_INTERNAL_NLS_DATA *nls, double *x, double *z, int stack_size)
+{
+  double sum = 0.0;
+  for (int j = 0; j < stack_size; j++)
+  {
+    double *vec_stride = &z[j * nls->size];
+    for (int i = 0; i < nls->size; i++)
+    {
+      double tmp = (x[i] + vec_stride[i]) * nls->scal[i];
+      sum += tmp * tmp;
+    }
+  }
+
+  return sqrt(sum / ((double)nls->size * (double)stack_size));
+}
+
 /** @brief Solve one stage of a DIRK method with the internal solve routine. */
 static NLS_SOLVER_STATUS gbInternalSolveNls_DIRK(DATA *data,
                                                  threadData_t *threadData,
@@ -960,12 +977,6 @@ static NLS_SOLVER_STATUS gbInternalSolveNls_T_Transform(DATA *data,
   // Newton iteration count - we start with newt_it = 1, because we need this for the step size selection and conditions below
   for (int newt_it = 1 ;; newt_it++)
   {
-    // Z = (T otimes I) * W
-    if (newt_it != 1)
-    {
-      dense_kron_id_vec(transform->size, size, transform->T, nls->W, nls->Z);
-    }
-
     // compute residuals: rhs := -1 / h (Lambda otimes I) * W + (T^{-1} * I) * F((T otimes I) * W) + Phi (Phi = T^{-1} A_part^{-1} * K_1 if (K_1 explicit else 0))
 
     // work[j] = F((T otimes I) * W)[j]
@@ -1030,11 +1041,14 @@ static NLS_SOLVER_STATUS gbInternalSolveNls_T_Transform(DATA *data,
     // Newton step (we must do W += dW)
     daxpy_(&w_size, &DBL_ONE, flat_res, &INT_ONE, nls->W, &INT_ONE);
 
+    // Z = (T otimes I) * W
+    dense_kron_id_vec(transform->size, size, transform->T, nls->W, nls->Z);
+
     nrm_delta_prev = fmax(DBL_EPSILON, nrm_delta);
     nrm_delta = gbScalesNorm(nls, flat_res, nls->tabl->t_transform->size);
 
     // handle absorption effects
-    nrm_x = gbScalesNorm(nls, x, nls->tabl->t_transform->size);
+    nrm_x = gbScalesNormXPlusZ(nls, x0, nls->Z, transform->size);
     modelica_boolean absorption = (nrm_delta <= DBL_ABSORPTION * nrm_x);
 
     if (newt_it > 1)
@@ -1073,9 +1087,6 @@ static NLS_SOLVER_STATUS gbInternalSolveNls_T_Transform(DATA *data,
       {
         nls->call_jac = TRUE;
       }
-
-      // Z = (T otimes I) * W
-      dense_kron_id_vec(transform->size, size, transform->T, nls->W, nls->Z);
 
       // set solution X[j] = X_0 + Z[j]
       int offset = transform->firstRowZero ? size : 0;
