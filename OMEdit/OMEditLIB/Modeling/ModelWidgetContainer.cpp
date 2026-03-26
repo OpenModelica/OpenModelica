@@ -6036,7 +6036,6 @@ void ModelWidget::createModelWidgetComponents()
     mpMainLayout->setContentsMargins(0, 0, 0, 0);
     mpMainLayout->setSpacing(4);
     mpMainLayout->addWidget(mpModelStatusBar);
-    setLayout(mpMainLayout);
     MainWindow *pMainWindow = MainWindow::instance();
     // show hide widgets based on library type
     if (mpLibraryTreeItem->isModelica()) {
@@ -6157,6 +6156,7 @@ void ModelWidget::createModelWidgetComponents()
       connect(mpEditor->getPlainTextEdit()->document(), SIGNAL(redoAvailable(bool)), SLOT(handleCanRedoChanged(bool)));
       mpMainLayout->addWidget(mpEditor, 1);
     }
+    setLayout(mpMainLayout);
     mCreateModelWidgetComponents = true;
   }
 }

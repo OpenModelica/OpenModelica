@@ -4460,6 +4460,7 @@ void MainWindow::switchToWelcomePerspective()
     mpPerspectiveTabbar->blockSignals(signalsState);
     return;
   }
+  mpLastModelingSubWindow = mpModelWidgetContainer->getCurrentMdiSubWindow();
   mpCentralStackedWidget->setCurrentWidget(mpWelcomePageWidget);
   mpModelWidgetContainer->currentModelWidgetChanged(0);
   mpUndoAction->setEnabled(false);
@@ -4494,7 +4495,7 @@ void MainWindow::switchToWelcomePerspective()
     ModelWidget *pModelWidget = mpPlotWindowContainer->getDiagramWindow()->getModelWidget(); \
     mpPlotWindowContainer->getDiagramWindow()->removeVisualizationDiagram(); \
     pModelWidget->getDiagramGraphicsView()->emitResetDynamicSelect(); \
-    pModelWidget->getMainLayout()->addWidget(pModelWidget->getDiagramGraphicsView(), 1); \
+    pModelWidget->getMainLayout()->addWidget(pModelWidget->getDiagramGraphicsView()); \
   }
 
 /*!
@@ -4505,6 +4506,9 @@ void MainWindow::switchToModelingPerspective()
 {
   ADD_SHOW_DIAGRAMVIEW();
   mpCentralStackedWidget->setCurrentWidget(mpModelWidgetContainer);
+  if (mpLastModelingSubWindow) {
+    mpModelWidgetContainer->setActiveSubWindow(mpLastModelingSubWindow);
+  }
   if (OptionsDialog::instance()->getGeneralSettingsPage()->getHideVariablesBrowserCheckBox()->isChecked()) {
     mpVariablesDockWidget->hide();
   }
@@ -4533,6 +4537,7 @@ void MainWindow::switchToPlottingPerspective()
     return;
   }
   ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
+  mpLastModelingSubWindow = mpModelWidgetContainer->getCurrentMdiSubWindow();
   mpCentralStackedWidget->setCurrentWidget(mpPlotWindowContainer);
   mpUndoAction->setEnabled(false);
   mpRedoAction->setEnabled(false);
@@ -4578,6 +4583,9 @@ void MainWindow::switchToPlottingPerspective()
 void MainWindow::switchToAlgorithmicDebuggingPerspective()
 {
   mpCentralStackedWidget->setCurrentWidget(mpModelWidgetContainer);
+  if (mpLastModelingSubWindow) {
+    mpModelWidgetContainer->setActiveSubWindow(mpLastModelingSubWindow);
+  }
   if (OptionsDialog::instance()->getGeneralSettingsPage()->getHideVariablesBrowserCheckBox()->isChecked()) {
     mpVariablesDockWidget->hide();
   }
