@@ -268,12 +268,11 @@ public
       flat_model.variables := Scalarize.scalarizeVariables(flat_model.variables, forceScalarize = true);
       flat_model.equations := Equation.splitRecordEquations(flat_model.equations);
       flat_model.equations := Scalarize.scalarizeEquations(flat_model.equations, forceScalarize = true);
-      flat_model.equations := Equation.mapExpList(flat_model.equations, ExpandExp.expandCallArgs);
       flat_model.initialEquations := Equation.splitRecordEquations(flat_model.initialEquations);
       flat_model.initialEquations := Scalarize.scalarizeEquations(flat_model.initialEquations, forceScalarize = true);
-      flat_model.initialEquations := Equation.mapExpList(flat_model.initialEquations, ExpandExp.expandCallArgs);
       flat_model.algorithms := list(Flatten.unrollForStatementsInAlg(a) for a in flat_model.algorithms);
       flat_model.initialAlgorithms := list(Flatten.unrollForStatementsInAlg(a) for a in flat_model.initialAlgorithms);
+      flat_model := mapExp(flat_model, ExpandExp.expandCallArgs);
     else
       flat_model.variables := reconstructRecordInstances(flat_model.variables);
     end if;
