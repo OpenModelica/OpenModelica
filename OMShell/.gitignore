@@ -26,5 +26,5 @@
 /OMShell/OMShellGUI/omc_communication.h
 /OMShell/OMShellGUI/omc_config.h
 /OMShell/OMShellGUI/OMShell.config
-/OMShell/OMShellGUI/OMShellGUI.pro.*
+OMShellGUI.pro.*
 /qmake.sh

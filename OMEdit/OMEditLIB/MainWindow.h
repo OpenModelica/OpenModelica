@@ -466,6 +466,7 @@ private:
   QToolButton *mpDebugConfigurationToolButton;
   QToolBar *mpOMSimulatorToolbar;
   QHash<QString, TransformationsWidget*> mTransformationsWidgetHash;
+  QMdiSubWindow *mpLastModelingSubWindow = nullptr;
 signals:
   void resetMessagesTabWidgetNames();
 public slots:
