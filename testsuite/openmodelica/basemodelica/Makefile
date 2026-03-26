@@ -44,6 +44,7 @@ TESTFILES = \
 	Scalarize5.mo \
 	Scalarize6.mo \
 	Scalarize7.mo \
+	Scalarize8.mo \
 	ScalarizeFor1.mo \
 	ScalarizedWithRecords1.mo \
 	ScalarizedWithoutRecords1.mo \
