@@ -80,6 +80,10 @@ typedef struct DATA_GBODEF{
   double *yLeft, *kLeft, *yRight, *kRight;          /* Needed for interpolation of the slow states and emitting to the result files */
   double *yOld;                                     /* State vector of last Runge-Kutta step */
   double *f;                                        /* State derivatives of ODE for initialization */
+  double *yLast;                                    /* Vector y of states at start of previous interval - packed as 0, ..., nFastStates - 1!! */
+  double *kLast;                                    /* Vector k of stage updates for the previous interval - packed as nStages vectors of size nFastStates (not all states) */
+  double *yOldPacked;                               /* YOld but packed - packed as nStages vectors of size nFastStates (not all states) */
+  double *kCurrPacked;                                /* Current solution of NLS - packed as nStages vectors of size nFastStates (not all states) */
   double *k;                                        /* Vector k of derivatives of states with result of intermediate steps of Runge-Kutta method */
   double *x;                                        /* Vector x of states with result of intermediate steps of Runge-Kutta method */
                                                         // k_{i}=f(t_{n}+c_{i}*h, y_{n}+h\sum _{j=1}^{s}a_{ij}*k_{j}),    i=1, ... ,s
@@ -92,6 +96,9 @@ typedef struct DATA_GBODEF{
   double *stepSizeValues;                           /* ring buffer for step size control */
 
   double time, timeLeft, timeRight, eventTime;      /* actual time values and the time values of the current interpolation interval */
+  double extrapolationStepSize;                     /* last step size for extrapolation / in sync with yLast and kLast */
+  double extrapolationBaseTime;                     /* base time for extrapolation / in sync with yLast and kLast */
+  modelica_boolean extrapolationValid;              /* is the extrapolation data yLast and kLast valid? */
   double stepSize, lastStepSize;                    /* actual and last step size of integration */
   int act_stage;                                    /* Current stage of Runge-Kutta method. */
   enum GB_CTRL_METHOD ctrl_method;                  /* Step size control algorithm */

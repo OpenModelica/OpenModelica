@@ -73,6 +73,50 @@ extern void communicateStatus(const char *phase, double completionPercent, doubl
 
 // TODO: we should add proper return handling of callbacks: ODE, Jacobian, Zero-Crossings, etc.
 
+#include <execinfo.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+void dump_callers(const char* marker_str)
+{
+    const int MAX_DEPTH = 4;   // current + 3 callers
+    void *buffer[MAX_DEPTH];
+
+    int nptrs = backtrace(buffer, MAX_DEPTH);
+    char **symbols = backtrace_symbols(buffer, nptrs);
+
+    if (!symbols || nptrs < 3) {
+        free(symbols);
+        return;
+    }
+
+    // Second frame = index 2? Actually:
+    // 0 = dump_callers_with_marker
+    // 1 = function that called dump_callers_with_marker
+    // 2 = its caller -> second in the dump you want
+    char *frame = symbols[2];
+
+    // Extract function name from "libSomething.so(function_name+0xADDR) [0xADDR]"
+    char *start = strchr(frame, '(');
+    char *end = strchr(frame, '+');
+    char func_name[256] = {0};
+
+    if (start && end && end > start+1) {
+        size_t len = end - start - 1;
+        if (len > sizeof(func_name)-1) len = sizeof(func_name)-1;
+        strncpy(func_name, start+1, len);
+        func_name[len] = '\0';
+    } else {
+        strncpy(func_name, "unknown", sizeof(func_name)-1);
+    }
+
+    // Print function name + marker
+    printf("%s_%s\n", func_name, marker_str);
+
+    free(symbols);
+}
+
 /**
  * @brief Calculate function values of function ODE f(t,y).
  *
@@ -86,7 +130,7 @@ extern void communicateStatus(const char *phase, double completionPercent, doubl
 int gbode_fODE(DATA *data, threadData_t *threadData, unsigned int* counter, EVAL_SELECTION* selection)
 {
   int ret = -1;
-
+  //dump_callers((selection == NULL ? "null" : "exists"));
   /* try */
 #if !defined(OMC_EMCC)
   MMC_TRY_INTERNAL(simulationJumpBuffer)
@@ -182,6 +226,10 @@ int gbodef_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solve
   gbfData->yt   = malloc(gbData->nStates*sizeof(double));
   gbfData->y1   = malloc(gbData->nStates*sizeof(double));
   gbfData->f    = malloc(gbData->nStates*sizeof(double));
+  gbfData->yLast     = malloc(gbData->nStates*sizeof(double));
+  gbfData->yOldPacked     = malloc(gbData->nStates*sizeof(double));
+  gbfData->kLast     = malloc(gbData->nStates*gbfData->tableau->nStages*sizeof(double));
+  gbfData->kCurrPacked     = malloc(gbData->nStates*gbfData->tableau->nStages*sizeof(double));
   gbfData->k         = malloc(gbData->nStates*gbfData->tableau->nStages*sizeof(double));
   gbfData->x         = malloc(gbData->nStates*gbfData->tableau->nStages*sizeof(double));
   gbfData->yLeft     = malloc(gbData->nStates*sizeof(double));
@@ -198,6 +246,10 @@ int gbodef_allocateData(DATA *data, threadData_t *threadData, SOLVER_INFO *solve
   gbfData->tv             = malloc(gbfData->ringBufferSize*sizeof(double));
   gbfData->yv             = malloc(gbData->nStates*gbfData->ringBufferSize*sizeof(double));
   gbfData->kv             = malloc(gbData->nStates*gbfData->ringBufferSize*sizeof(double));
+
+  gbfData->extrapolationBaseTime = INFINITY;
+  gbfData->extrapolationStepSize = 0.0;
+  gbfData->extrapolationValid = FALSE;
 
   gbData->nFastStates = 0;
   gbData->nSlowStates = gbData->nFastStates;
@@ -851,6 +903,13 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
   int i, ii, j, jj, l, ll, r, rr;
   int integrator_step_info;
 
+  if (gbfData->nlsSolverMethod == GB_NLS_INTERNAL)
+  {
+    Tolerances *internal_tolerances = gbInternalNlsGetScaledTolerances(((struct dataSolver *)gbfData->nlsData->solverData)->ordinaryData);
+    Atol = internal_tolerances->atol;
+    Rtol = internal_tolerances->rtol;
+  }
+
   int nStates = gbData->nStates;
   int nFastStates = gbData->nFastStates;
   int nStages = gbfData->tableau->nStages;
@@ -873,6 +932,7 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
 
   if (fastStatesChange) {
     updateEvalSelection(data, gbData);
+    gbfData->extrapolationValid = FALSE;
   }
 
   if (fastStatesChange && !gbfData->isExplicit) {
@@ -891,6 +951,7 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
     messageClose(OMC_LOG_GBODE);
 
     if (gbfData->nlsData->isPatternAvailable) {
+      // TODO: can we do this without memory allocations and dense matrices?
       updateSparsePattern_MR(gbData, gbfData->jacobian->sparsePattern);
       gbfData->jacobian->sizeCols = nFastStates;
       gbfData->jacobian->sizeRows = nFastStates;
@@ -914,6 +975,10 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
         NLS_USERDATA* B_nlsUserData = initNlsUserData(data, threadData, -1, gbfData->nlsData, gbfData->jacobian);
         B_nlsUserData->solverData = (void*) gbfData;
         solverData->ordinaryData = (void*) B_nlsKinsolAllocate(gbfData->nlsData->size, B_nlsUserData, FALSE, gbfData->nlsData->isPatternAvailable);
+        break;
+      case GB_NLS_INTERNAL:
+        /* Notify internal to update the sparsity + symbolic factorization in the next iteration */
+        gbInternalScheduleFastStatesUpdate(solverData->ordinaryData);
         break;
       default:
         throwStreamPrint(NULL, "NLS method %s not yet implemented.", GB_NLS_METHOD_NAME[gbfData->nlsSolverMethod]);
@@ -1013,7 +1078,7 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
         const modelica_real nominal = getNominalFromScalarIdx(data->simulationInfo, data->modelData, VAR_KIND_STATE, ii);
         gbfData->errtol[ii] = Atol * fabs(nominal) + fmax(fabs(gbfData->y[ii]), fabs(gbfData->yt[ii])) * Rtol;
         gbfData->errest[ii] = fabs(gbfData->y[ii] - gbfData->yt[ii]);
-        gbfData->err[ii] = gbData->tableau->fac * gbfData->errest[ii] / gbfData->errtol[ii];
+        gbfData->err[ii] = gbfData->tableau->fac * gbfData->errest[ii] / gbfData->errtol[ii];
         err += gbfData->err[ii] * gbfData->err[ii];
       }
       err = sqrt(err / (double) nFastStates);
@@ -1057,6 +1122,32 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
       }
     } while (err > 1);
 
+    /* remember last time values for dense output extrapolation with yLast, kLast */
+    gbfData->extrapolationBaseTime = gbfData->time;
+    gbfData->extrapolationStepSize = gbfData->stepSize;
+    gbfData->extrapolationValid = TRUE;
+
+    /* remember kLast and yLast for dense output extrapolation, we have to pack them properly though
+       TODO: gbfData->k and gbfData->y / yOld should always contain only the fast states packed from
+             fast index 0, ..., nFastIndex - 1 (so no slow states) - we never need them, except for some interpolations
+             but that is purely possible with data from gbData itself!! */
+    for (int fast_idx = 0; fast_idx < nFastStates; fast_idx++)
+    {
+      int slow_idx = gbData->fastStatesIdx[fast_idx];
+      gbfData->yLast[fast_idx] = gbfData->yOld[slow_idx];
+    }
+
+    for (int stage = 0; stage < nStages; stage++)
+    {
+      double *k_extr_strided = &gbfData->kLast[stage * nFastStates];
+      double *k_strided = &gbfData->k[stage * nStates];
+      for (int fast_idx = 0; fast_idx < nFastStates; fast_idx++)
+      {
+        int slow_idx = gbData->fastStatesIdx[fast_idx];
+        k_extr_strided[fast_idx] = k_strided[slow_idx];
+      }
+    }
+
     // Count successful integration steps
     gbfData->stats.nStepsTaken += 1;
 
@@ -1084,7 +1175,7 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
     if (!gbfData->tableau->isKRightAvailable) {
       sData->timeValue = gbfData->timeRight;
       memcpy(sData->realVars, gbfData->yRight, data->modelData->nStates * sizeof(double));
-      gbode_fODE(data, threadData, &(gbData->stats.nCallsODE), gbfData->evalSelectionFast);
+      gbode_fODE(data, threadData, &(gbData->gbfData->stats.nCallsODE), gbfData->evalSelectionFast);
     }
     memcpy(gbfData->kRight, fODE, nStates * sizeof(double));
 
@@ -1179,6 +1270,8 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
     }
   }
 
+  // 2 more full ODE evals, that should be avoided at all cost -> remove kv, ..., and only keep dense output structs
+
   /* update last two entries of ringbuffer with missing values of new fast derivatives */
   for (i = 0; i < 2; i++) {
     // TODO actually we only need fast derivatives, but at this point we don't
@@ -1208,7 +1301,7 @@ int gbodef_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo, d
   }
   /* Solver statistics */
   if (!gbfData->isExplicit)
-    gbfData->stats.nCallsJacobian = gbfData->nlsData->numberOfJEval;
+    gbfData->stats.nCallsJacobian += gbfData->nlsData->numberOfJEval;
 
   infoStreamPrint(OMC_LOG_SOLVER, 0, "gbodef finished (inner steps).");
   messageClose(OMC_LOG_SOLVER);  // FIXME what does this belong to?
@@ -1688,9 +1781,9 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
       // - And the interpolation method supports error control (Hermite or dense output).
       //
       // The error used for step size control is set to the maximum of the interpolation error and the current error.
-      if ((err > 1e-2) && (retries < 4) && noConst_intWithErrctrl && gbData->multi_rate) {
-        err = fmax(gbData->err_int, err);
-      }
+      // if ((err > 1e-2) && (retries < 4) && noConst_intWithErrctrl && gbData->multi_rate) {
+      //   err = fmax(gbData->err_int, err);
+      // }
 
       // Reject the current integration step if the interpolation error exceeds the tolerance,
       // provided that the solver is not running with a fixed step size and interpolation error control is enabled.

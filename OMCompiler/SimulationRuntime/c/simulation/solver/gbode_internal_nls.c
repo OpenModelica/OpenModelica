@@ -100,8 +100,8 @@ typedef struct GB_INTERNAL_NLS_DATA
   NLS_USERDATA *nls_user_data;       // pointer to data, gbode data, etc.
   KLUInternals *klu_internals_real;  // internal data structures for real systems with klu linear solver (might change for ptr + enum, e.g. to have LAPACK)
   KLUInternals *klu_internals_cmplx; // internal data structures for complex systems with klu linear solver (might change for ptr + enum, e.g. to have LAPACK)
-  SPARSE_PATTERN *sparsePattern;     // sparse pattern struct(I + J) (for DIRK == NLS sparse pattern, else created)
-  modelica_boolean createdPattern;   // true if sparse pattern was created or false if taken from the NLS
+  SPARSE_PATTERN *nlsPattern;        // sparse pattern struct(I + J) (for DIRK == NLS sparse pattern, else created)
+  modelica_boolean ownsNlsPattern;   // true if sparse pattern was created or false if taken from the NLS
   double *jacobian_callback;         // buffer for continuous ODE Jacobian (size = nnz(J_f))
   int *ode_to_nls;                   // mapping ODE Jacobian nnz -> NLS Jacobian nnz
   int *nls_diag_indices;             // all diagonal nz indices of NLS Jacobian (size = cols)
@@ -112,7 +112,6 @@ typedef struct GB_INTERNAL_NLS_DATA
   double fnewt;                      // Newton tolerance: if eta * norm(dx) <= fnewt -> convergence
   double theta_keep;                 // if norm(dx_k) / norm(dx_{k-1}) = theta_{k} < theta_keep -> keep old jacobian_callback
   modelica_boolean call_jac;         // call jacobian in the next call to NLS solve
-  int retry;                         // retry count for current Newton iteration
   double theta_divergence;           // if norm(dx_k) / norm(dx_{k-1}) = theta_{k} > theta_divergence (<= 1.0) -> divergence of Newton
   int max_newton_it;                 // maximum number of Newton iterations
   int size;                          // size of the system
@@ -124,7 +123,15 @@ typedef struct GB_INTERNAL_NLS_DATA
   double **cmplx_nls_res;            // complex NLS residuum (packed as real, imag - memory layout is struct{double real, double imag}[])
   double *Z;                         // update variables Z = Y(t_ij) - Y0 for T-transformation (coupled space)
   double *W;                         // update variables W = (T^{-1} otimes I) Z for T-transformation (decoupled space)
-  double *work;                      // some work memory for the T transformation (size: transform->size * x.size)
+  double *work;                      // some work memory for the T transformation (size: transform->size * x.size) or other stuff, at least 24 * N_STATES bytes
+
+  // stuff for mutlirate
+  modelica_boolean multirate;         // multirate or singlerate system?
+  modelica_boolean new_fast_states;   // if the selection changed and we need to update sparse pattern and symbolic factorization - set from NLS routine
+  SPARSE_PATTERN *odePatternMR;         // pattern of the ODE / fast states ODE
+  modelica_boolean ownsODEPatternMR; // true if sparse pattern was created or false if taken from the NLS
+  unsigned int* colorCols_stub;       // contains the coloring for evalJacobian
+  unsigned int maxColors_stub;        // Number of colors
 } GB_INTERNAL_NLS_DATA;
 
 /**
@@ -135,13 +142,13 @@ typedef struct GB_INTERNAL_NLS_DATA
  * positions in the (I + J) pattern column-wise.
  *
  * @param I_plus_J_pat  Sparse pattern of (I + J)
- * @param jacobian_ODE  ODE Jacobian structure
+ * @param J_pat         ODE Jacobian structure
  * @param nls           Internal NLS data (nls_diag_indices and ode_to_nls members are filled)
  * @param size          Number of States
  *
  */
-static void mapSparsePatterns(SPARSE_PATTERN *I_plus_J_pat,
-                              JACOBIAN *jacobian_ODE,
+static void updateSparsePatternMappings(SPARSE_PATTERN *I_plus_J_pat,
+                              SPARSE_PATTERN *J_pat,
                               GB_INTERNAL_NLS_DATA *nls,
                               int size)
 {
@@ -155,15 +162,13 @@ static void mapSparsePatterns(SPARSE_PATTERN *I_plus_J_pat,
         nls->nls_diag_indices[col] = nz;
         break;
       }
+    }
   }
-  }
-
-  SPARSE_PATTERN *pat_ode = jacobian_ODE->sparsePattern;
 
   for (int col = 0; col < size; col++)
   {
-    int ode_start = pat_ode->leadindex[col];
-    int ode_end   = pat_ode->leadindex[col + 1];
+    int ode_start = J_pat->leadindex[col];
+    int ode_end   = J_pat->leadindex[col + 1];
     int nls_start = I_plus_J_pat->leadindex[col];
     int nls_end   = I_plus_J_pat->leadindex[col + 1];
 
@@ -172,7 +177,7 @@ static void mapSparsePatterns(SPARSE_PATTERN *I_plus_J_pat,
 
     while (ptr_ode < ode_end && ptr_nls < nls_end)
     {
-      int row_ode = pat_ode->index[ptr_ode];
+      int row_ode = J_pat->index[ptr_ode];
       int row_nls = I_plus_J_pat->index[ptr_nls];
 
       if (row_ode == row_nls)
@@ -192,11 +197,13 @@ static void mapSparsePatterns(SPARSE_PATTERN *I_plus_J_pat,
  *
  * @param base_pat  Input CSC pattern
  * @param size      Matrix dimension (cols / rows)
+ * @param blueprint Potential Input / Output CSC pattern. Must be allocated with sufficient size. If != NULL it is filled, else new allocation.
  *
  * @note This should be somewhere in GBODE already!!
  */
-static SPARSE_PATTERN* buildSparsePatternWithDiagonal(const SPARSE_PATTERN *base_pat, int size)
+static SPARSE_PATTERN* buildSparsePatternWithDiagonal(const SPARSE_PATTERN *base_pat, int size, SPARSE_PATTERN *blueprint)
 {
+  SPARSE_PATTERN *acc_pat;
   int diag_cnt = 0;
 
   /* Count existing diagonal entries */
@@ -215,7 +222,19 @@ static SPARSE_PATTERN* buildSparsePatternWithDiagonal(const SPARSE_PATTERN *base
   int total_nnz = base_pat->numberOfNonZeros + missing_diags;
 
   // accumulate pattern = struct(I + J), where J is base_pat
-  SPARSE_PATTERN *acc_pat = allocSparsePattern(size, total_nnz, size);
+  if (blueprint != NULL)
+  {
+    // if we have a blueprint, then simply override the entries of the blueprint, we sure that it is allocated with sufficient size though!
+    acc_pat = blueprint;
+    acc_pat->numberOfNonZeros = total_nnz;
+    acc_pat->sizeofIndex = total_nnz;
+    acc_pat->maxColors = size;
+  }
+  else
+  {
+    // if we dont have a blueprint we allocate a new sparse pattern from scratch
+    acc_pat = allocSparsePattern(size, total_nnz, size);
+  }
 
   int acc_nz = 0;
   acc_pat->leadindex[0] = 0;
@@ -256,6 +275,58 @@ static SPARSE_PATTERN* buildSparsePatternWithDiagonal(const SPARSE_PATTERN *base
   return acc_pat;
 }
 
+static void gbInternal_evalJacobianMR(DATA* data,
+                                      threadData_t *threadData,
+                                      DATA_GBODE *gbData,
+                                      JACOBIAN* fullJac,
+                                      GB_INTERNAL_NLS_DATA *nls,
+                                      double* smallJac)
+{
+  const SPARSE_PATTERN* fullSp  = fullJac->sparsePattern;
+  const SPARSE_PATTERN* smallSp = nls->odePatternMR;
+
+  unsigned int* fastIdx = gbData->fastStatesIdx;
+  unsigned int  nFast   = gbData->nFastStates;
+
+  fullJac->evalSelection = gbData->gbfData->jacobian->evalSelection;
+
+  int color, col, nz;
+
+  for (color = 0; color < nls->maxColors_stub; color++)
+  {
+    for (col = 0; col < nFast; col++)
+    {
+      unsigned int bigCol = fastIdx[col];
+
+      if (nls->colorCols_stub[bigCol] - 1 == color)
+      {
+        fullJac->seedVars[bigCol] = 1.0;
+      }
+    }
+
+    fullJac->evalColumn(data, threadData, fullJac, NULL);
+
+    for (col = 0; col < nFast; col++)
+    {
+      unsigned int bigCol = fastIdx[col];
+
+      if (nls->colorCols_stub[bigCol] - 1 == color)
+      {
+        for (nz = smallSp->leadindex[col]; nz < smallSp->leadindex[col + 1]; nz++)
+        {
+          unsigned int smallRow = smallSp->index[nz];
+          unsigned int fullRow  = fastIdx[smallRow];
+
+          smallJac[nz] = fullJac->resultVars[fullRow];
+        }
+
+        fullJac->seedVars[bigCol] = 0.0;
+      }
+    }
+  }
+
+  fullJac->evalSelection = NULL;
+}
 
 /**
  * @brief Calculate ODE Jacobian (numerical or analytic) depending on availability of
@@ -281,14 +352,19 @@ static int gbInternal_evalJacobian(DATA *data, threadData_t *threadData, DATA_GB
 
   rt_tick(SIM_TIMER_JACOBIAN);
   JACOBIAN* jacobian_ODE = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
-  int nStates = gbData->nStates;
 
-  if (jacobian_ODE->availability == JACOBIAN_AVAILABLE)
+  if (nls->multirate && jacobian_ODE->availability == JACOBIAN_AVAILABLE)
+  {
+    gbInternal_evalJacobianMR(data, threadData, gbData, jacobian_ODE, nls, nls->jacobian_callback);
+  }
+  else if (jacobian_ODE->availability == JACOBIAN_AVAILABLE)
   {
     evalJacobian(data, threadData, jacobian_ODE, NULL, nls->jacobian_callback, FALSE);
   }
   else
   {
+    int nStates = gbData->nStates;
+
     // base perturbation
     const double delta_h = numericalDifferentiationDeltaXsolver; // == 1e-8
 
@@ -360,8 +436,17 @@ static int gbInternal_evalJacobian(DATA *data, threadData_t *threadData, DATA_GB
     MMC_CATCH_INTERNAL(simulationJumpBuffer)
   #endif
 
+  if (nls->multirate)
+  {
+    gbData->gbfData->stats.nCallsJacobian++;
+  }
+  else
+  {
+    gbData->stats.nCallsJacobian++;
+  }
+
   rt_accumulate(SIM_TIMER_JACOBIAN);
-  gbData->stats.nCallsJacobian++;
+
   return ret;
 }
 
@@ -380,19 +465,20 @@ static int gbInternal_evalJacobian(DATA *data, threadData_t *threadData, DATA_GB
  * @param[out] jac_buf_nls  Output buffer for NLS Jacobian
  * @return 0 on success
  */
-static int jacobian_SR_DIRK_assemble(DATA *data,
-                                     threadData_t *threadData,
-                                     DATA_GBODE* gbData,
-                                     GB_INTERNAL_NLS_DATA *nls,
-                                     JACOBIAN *jac_ode,
-                                     double *jac_buf_ode,
-                                     double *jac_buf_nls)
+static int jacobian_DIRK_assemble(DATA *data,
+                                  threadData_t *threadData,
+                                  DATA_GBODE* gbData,
+                                  GB_INTERNAL_NLS_DATA *nls,
+                                  SPARSE_PATTERN *ode_jac_sp,
+                                  double *jac_buf_ode,
+                                  double *jac_buf_nls)
 {
-  SPARSE_PATTERN *ode_jac_sp = jac_ode->sparsePattern;
+  memset(jac_buf_nls, 0, nls->nlsPattern->numberOfNonZeros * sizeof(double));
 
-  memset(jac_buf_nls, 0, nls->sparsePattern->numberOfNonZeros * sizeof(double));
+  DATA_GBODEF *gbfData = gbData->gbfData;
 
-  const double fac = gbData->stepSize * gbData->tableau->A[gbData->act_stage * gbData->tableau->nStages + gbData->act_stage];
+  const double fac = (nls->multirate ? gbfData->stepSize * gbfData->tableau->A[gbfData->act_stage * gbfData->tableau->nStages + gbfData->act_stage]
+                                     : gbData->stepSize * gbData->tableau->A[gbData->act_stage * gbData->tableau->nStages + gbData->act_stage]);
 
   for (int nz = 0; nz < ode_jac_sp->numberOfNonZeros; nz++)
   {
@@ -400,7 +486,7 @@ static int jacobian_SR_DIRK_assemble(DATA *data,
     jac_buf_nls[idx] = fac * jac_buf_ode[nz];
   }
 
-  for (int d = 0; d < jac_ode->sizeRows; d++)
+  for (int d = 0; d < nls->size; d++)
   {
     jac_buf_nls[nls->nls_diag_indices[d]] -= 1.0;
   }
@@ -422,18 +508,16 @@ static int jacobian_SR_DIRK_assemble(DATA *data,
  * @param[out] jac_buf_nls  Output buffer for NLS Jacobian
  * @return 0 on success
  */
-static int jacobian_SR_real_assemble(DATA *data,
-                                     threadData_t *threadData,
-                                     DATA_GBODE* gbData,
-                                     GB_INTERNAL_NLS_DATA *nls,
-                                     double gamma,
-                                     JACOBIAN *jac_ode,
-                                     double *jac_buf_ode,
-                                     double *jac_buf_nls)
+static int jacobian_real_assemble(DATA *data,
+                                  threadData_t *threadData,
+                                  DATA_GBODE* gbData,
+                                  GB_INTERNAL_NLS_DATA *nls,
+                                  double gamma,
+                                  SPARSE_PATTERN *ode_jac_sp,
+                                  double *jac_buf_ode,
+                                  double *jac_buf_nls)
 {
-  SPARSE_PATTERN *ode_jac_sp = jac_ode->sparsePattern;
-
-  memset(jac_buf_nls, 0, nls->sparsePattern->numberOfNonZeros * sizeof(double));
+  memset(jac_buf_nls, 0, nls->nlsPattern->numberOfNonZeros * sizeof(double));
 
   const double weight = gamma / gbData->stepSize;
 
@@ -443,7 +527,7 @@ static int jacobian_SR_real_assemble(DATA *data,
     jac_buf_nls[idx] = -jac_buf_ode[nz];
   }
 
-  for (int d = 0; d < jac_ode->sizeRows; d++)
+  for (int d = 0; d < nls->size; d++)
   {
     jac_buf_nls[nls->nls_diag_indices[d]] += weight;
   }
@@ -467,19 +551,17 @@ static int jacobian_SR_real_assemble(DATA *data,
  * @param[out] jac_buf_nls  Output buffer for NLS Jacobian
  * @return 0 on success
  */
-static int jacobian_SR_cmplx_assemble(DATA *data,
-                                      threadData_t *threadData,
-                                      DATA_GBODE* gbData,
-                                      GB_INTERNAL_NLS_DATA *nls,
-                                      double alpha,
-                                      double beta,
-                                      JACOBIAN *jac_ode,
-                                      double *jac_buf_ode,
-                                      double *jac_buf_nls)
+static int jacobian_cmplx_assemble(DATA *data,
+                                   threadData_t *threadData,
+                                   DATA_GBODE* gbData,
+                                   GB_INTERNAL_NLS_DATA *nls,
+                                   double alpha,
+                                   double beta,
+                                   SPARSE_PATTERN *ode_jac_sp,
+                                   double *jac_buf_ode,
+                                   double *jac_buf_nls)
 {
-  SPARSE_PATTERN *ode_jac_sp = jac_ode->sparsePattern;
-
-  memset(jac_buf_nls, 0, 2 * nls->sparsePattern->numberOfNonZeros * sizeof(double));
+  memset(jac_buf_nls, 0, 2 * nls->nlsPattern->numberOfNonZeros * sizeof(double));
 
   const double inv_step = 1.0 / gbData->stepSize;
   const double weight_real = inv_step * alpha;
@@ -491,7 +573,7 @@ static int jacobian_SR_cmplx_assemble(DATA *data,
     jac_buf_nls[2 * idx] = -jac_buf_ode[nz];
   }
 
-  for (int d = 0; d < jac_ode->sizeRows; d++)
+  for (int d = 0; d < nls->size; d++)
   {
     jac_buf_nls[2 * nls->nls_diag_indices[d]] += weight_real;
     jac_buf_nls[2 * nls->nls_diag_indices[d] + 1] += weight_imag;
@@ -554,12 +636,24 @@ static int gbInternal_zKLU_solve(KLUInternals *internals, int size, double *rhs)
 }
 
 /** @brief Create scalings for scaled 2-norms: used for Newton convergence and integration acceptance criteria. */
-static void createGbScales(GB_INTERNAL_NLS_DATA *nls, double *y1, double *y2)
+static void createGbScales(GB_INTERNAL_NLS_DATA *nls, DATA_GBODE *gbData, double *y1, double *y2)
 {
-  for (int i = 0; i < nls->size; i++)
+  if (!nls->multirate)
   {
-    const modelica_real nominal = getNominalFromScalarIdx(nls->nls_user_data->data->simulationInfo, nls->nls_user_data->data->modelData, VAR_KIND_STATE, i);
-    nls->scal[i] = 1.0 / (nls->tol_scaled.atol * fabs(nominal) + fmax(fabs(y1[i]), fabs(y2[i])) * nls->tol_scaled.rtol);
+    for (int i = 0; i < nls->size; i++)
+    {
+      const modelica_real nominal = getNominalFromScalarIdx(nls->nls_user_data->data->simulationInfo, nls->nls_user_data->data->modelData, VAR_KIND_STATE, i);
+      nls->scal[i] = 1.0 / (nls->tol_scaled.atol * fabs(nominal) + fmax(fabs(y1[i]), fabs(y2[i])) * nls->tol_scaled.rtol);
+    }
+  }
+  else
+  {
+    for (int i = 0; i < nls->size; i++)
+    {
+      const size_t fast_idx = (size_t) gbData->fastStatesIdx[i];
+      const modelica_real nominal = getNominalFromScalarIdx(nls->nls_user_data->data->simulationInfo, nls->nls_user_data->data->modelData, VAR_KIND_STATE, fast_idx);
+      nls->scal[i] = 1.0 / (nls->tol_scaled.atol * fabs(nominal) + fmax(fabs(y1[i]), fabs(y2[i])) * nls->tol_scaled.rtol);
+    }
   }
 }
 
@@ -597,6 +691,49 @@ static double gbScalesNormXPlusZ(GB_INTERNAL_NLS_DATA *nls, double *x, double *z
   return sqrt(sum / ((double)nls->size * (double)stack_size));
 }
 
+static int gbInternalEvaluateSimplifiedJacobian(DATA *data,
+                                                threadData_t *threadData,
+                                                DATA_GBODE* gbData,
+                                                GB_INTERNAL_NLS_DATA *nls,
+                                                modelica_boolean *jac_called,
+                                                modelica_boolean isDIRK)
+{
+  int ret;
+  double time_backup;
+  int full_size = gbData->nStates;
+  SOLVERSTATS *stats = (nls->multirate ? &gbData->gbfData->stats : &gbData->stats);
+  double *y_eval = (nls->multirate ? gbData->gbfData->yOld : gbData->yOld);
+
+  if (isDIRK) time_backup = data->localData[0]->timeValue;
+
+  if (nls->multirate && isDIRK)
+  {
+    memcpy(nls->work, data->localData[0]->realVars, full_size * sizeof(double));
+  }
+
+  /* set values for known last point (simplified Newton) */
+  memcpy(data->localData[0]->realVars, y_eval, full_size * sizeof(double));
+  data->localData[0]->timeValue = (nls->multirate ? gbData->gbfData->time : gbData->time);
+
+  /* callback ODE + callback Jacobian of ODE -> nls_jacobian buffer */
+  ret = gbode_fODE(data, threadData, &(stats->nCallsODE), NULL); // nls->multirate ? gbData->gbfData->evalSelectionFast :
+  if (ret < 0) return ret;
+
+  ret = gbInternal_evalJacobian(data, threadData, gbData, nls);
+  if (ret < 0) return ret;
+
+  *jac_called = TRUE;
+
+  if (isDIRK) data->localData[0]->timeValue = time_backup;
+
+  if (nls->multirate && isDIRK)
+  {
+    memcpy(data->localData[0]->realVars, nls->work, full_size * sizeof(double));
+  }
+
+  return 0;
+}
+
 /** @brief Solve one stage of a DIRK method with the internal solve routine. */
 static NLS_SOLVER_STATUS gbInternalSolveNls_DIRK(DATA *data,
                                                  threadData_t *threadData,
@@ -604,55 +741,47 @@ static NLS_SOLVER_STATUS gbInternalSolveNls_DIRK(DATA *data,
                                                  DATA_GBODE* gbData,
                                                  GB_INTERNAL_NLS_DATA *nls)
 {
-  int size = nonlinsys->size;
-  int stage = gbData->act_stage;
+  int size = nls->size;
+  int stage = (nls->multirate ? gbData->gbfData->act_stage : gbData->act_stage);
   double *x = nonlinsys->nlsx;
   double *x_start = nonlinsys->nlsxOld;              // currently the extrapolated (e.g. dense output / hermite guess)
   double *res = nonlinsys->resValues;
+  BUTCHER_TABLEAU *tabl = (nls->multirate ? gbData->gbfData->tableau : gbData->tableau);
+
+  double stepSize = (nls->multirate ? gbData->gbfData->stepSize : gbData->stepSize);
+  double lastStepSize = (nls->multirate ? gbData->gbfData->lastStepSize : gbData->lastStepSize);
 
   // return code from KLU or RHS / Jac calls
   int ret;
 
-  createGbScales(nls, x, x_start);
+  createGbScales(nls, gbData, x, x_start);
   double *scal = nls->scal;
 
-  RESIDUAL_USERDATA resUserData = {.data=data, .threadData=threadData, .solverData=gbData};
-  JACOBIAN* jacobian_ODE = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
+  RESIDUAL_USERDATA resUserData = {.data=data, .threadData=threadData, .solverData=(nls->multirate ? (void *) gbData->gbfData : (void *) gbData)};
+  SPARSE_PATTERN *ode_pattern = (nls->multirate ? nls->odePatternMR : data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A].sparsePattern);
 
   const int flag = 1;
   modelica_boolean jac_called = FALSE;
 
-  modelica_boolean is_esdirk = (gbData->tableau->A[0] == 0.0);
+  modelica_boolean is_esdirk = (tabl->A[0] == 0.0);
   modelica_boolean sdirk_first_stage = (stage == 0 && !is_esdirk);
   modelica_boolean esdirk_first_stage = (stage == 1 && is_esdirk);
 
   if ((sdirk_first_stage || esdirk_first_stage) && gbData->type == GM_TYPE_DIRK)
   {
-    nls->retry = 0;
-
     if (nls->call_jac || gbData->eventHappened)
     {
-      /* set values for known last point (simplified Newton) */
-      memcpy(data->localData[0]->realVars, gbData->yOld, size * sizeof(double));
-      data->localData[0]->timeValue = gbData->time;
-
-      /* callback ODE + callback Jacobian of ODE -> nls_jacobian buffer */
-      ret = gbode_fODE(data, threadData, &(gbData->stats.nCallsODE), NULL);
+      ret = gbInternalEvaluateSimplifiedJacobian(data, threadData, gbData, nls, &jac_called, TRUE);
       if (ret < 0) return NLS_FAILED;
-
-      ret = gbInternal_evalJacobian(data, threadData, gbData, nls);
-      if (ret < 0) return NLS_FAILED;
-
-      jac_called = TRUE;
     }
 
-    if (jac_called || gbData->stepSize != gbData->lastStepSize)
+    if (jac_called || stepSize != lastStepSize)
     {
-      /* fill NLS Jacobian as h * gamma * J_f - I, where J_f is old or newly computed ODE Jacobian nls->nls->jacobian_callback */
-      jacobian_SR_DIRK_assemble(data, threadData, gbData, nls, jacobian_ODE, nls->jacobian_callback, nls->real_nls_jacs[0]);
+      /* fill NLS Jacobian as h * gamma * J_f - I, where J_f is old or newly computed ODE Jacobian nls->jacobian_callback */
+      jacobian_DIRK_assemble(data, threadData, gbData, nls, ode_pattern, nls->jacobian_callback, nls->real_nls_jacs[0]);
 
       /* perform factorization */
-      ret = gbInternal_dKLU_factorize(nls->klu_internals_real, size, (int *)nonlinsys->sparsePattern->leadindex, (int *)nonlinsys->sparsePattern->index, nls->real_nls_jacs[0]);
+      ret = gbInternal_dKLU_factorize(nls->klu_internals_real, size, (int *) nls->nlsPattern->leadindex, (int *) nls->nlsPattern->index, nls->real_nls_jacs[0]);
       if (ret < 0) return NLS_FAILED;
     }
   }
@@ -662,112 +791,73 @@ static NLS_SOLVER_STATUS gbInternalSolveNls_DIRK(DATA *data,
 
   memcpy(x, x_start, size * sizeof(double));
 
-  /* start DIRK retry loop */
-  while (1)
+  // norms, convergence rate
+  double nrm_x = 0;
+  double nrm_delta = 0;
+  double nrm_delta_prev = 0;
+  double theta = 0;
+
+  // Newton iteration count - we start with newt_it = 1, because we need this for the step size selection and conditions below
+  for (int newt_it = 1 ;; newt_it++)
   {
-    // norms, convergence rate
-    double nrm_x = 0;
-    double nrm_delta = 0;
-    double nrm_delta_prev = 0;
-    double theta = 0;
+    nonlinsys->residualFunc(&resUserData, x, res, &flag);
 
-    modelica_boolean retry_requested = FALSE;
+    ret = gbInternal_dKLU_solve(nls->klu_internals_real, size, res);
+    if (ret < 0) return NLS_FAILED;
+    daxpy_(&size, &DBL_MINUS_ONE, res, &INT_ONE, x, &INT_ONE);
 
-    // Newton iteration count - we start with newt_it = 1, because we need this for the step size selection and conditions below
-    for (int newt_it = 1 ;; newt_it++)
+    nrm_delta_prev = fmax(DBL_EPSILON, nrm_delta);
+    nrm_delta = gbScalesNorm(nls, res, 1);
+
+    // handle absorption effects
+    nrm_x = gbScalesNorm(nls, x, 1);
+    modelica_boolean absorption = (nrm_delta <= DBL_ABSORPTION * nrm_x);
+
+    if (newt_it > 1)
     {
-      nonlinsys->residualFunc(&resUserData, x, res, &flag);
+      theta = nrm_delta / nrm_delta_prev;
 
-      ret = gbInternal_dKLU_solve(nls->klu_internals_real, size, res);
-      if (ret < 0) return NLS_FAILED;
-      daxpy_(&size, &DBL_MINUS_ONE, res, &INT_ONE, x, &INT_ONE);
-
-      nrm_delta_prev = fmax(DBL_EPSILON, nrm_delta);
-      nrm_delta = gbScalesNorm(nls, res, 1);
-
-      // handle absorption effects
-      nrm_x = gbScalesNorm(nls, x, 1);
-      modelica_boolean absorption = (nrm_delta <= DBL_ABSORPTION * nrm_x);
-
-      if (newt_it > 1)
+      // Newton failed -> divergence
+      if (theta >= nls->theta_divergence && !absorption)
       {
-        theta = nrm_delta / nrm_delta_prev;
+        break;
+      }
 
-        // Newton failed -> divergence
-        if (theta >= nls->theta_divergence && !absorption)
-        {
-          retry_requested = TRUE;
-          break;
-        }
+      nls->etas[stage] = theta / (1 - theta);
+    }
+    else
+    {
+      nls->etas[stage] = pow(fmax(nls->etas[stage], DBL_EPSILON), 0.8);
+    }
 
-        nls->etas[stage] = theta / (1 - theta);
+    if (!isfinite(nls->etas[stage]) || !isfinite(nrm_delta))
+    {
+      // Inf or NaN detected
+      // Either RHS or Jacobian or solution of the system contained a Inf or NaN
+      return NLS_FAILED;
+    }
+
+    // Newton converged
+    if (nls->etas[stage] * nrm_delta < nls->fnewt || absorption)
+    {
+      //if (nls->multirate) infoStreamPrint(OMC_LOG_STDOUT, 0, "Convergence rate fast: %1.6e", theta);
+      if (theta < nls->theta_keep)
+      {
+        nls->call_jac = FALSE;
       }
       else
       {
-        nls->etas[stage] = pow(fmax(nls->etas[stage], DBL_EPSILON), 0.8);
+        nls->call_jac = TRUE;
       }
 
-      if (!isfinite(nls->etas[stage]) || !isfinite(nrm_delta))
-      {
-        // Inf or NaN detected
-        // Either RHS or Jacobian or solution of the system contained a Inf or NaN
-        return NLS_FAILED;
-      }
-
-      // Newton converged
-      if (nls->etas[stage] * nrm_delta < nls->fnewt || absorption)
-      {
-          if (theta < nls->theta_keep)
-          {
-            nls->call_jac = FALSE;
-          }
-          else
-          {
-            nls->call_jac = TRUE;
-          }
-          return NLS_SOLVED;
-      }
-
-      // Newton failed -> iteration limit exceeded or too slow convergence
-      if (newt_it == nls->max_newton_it || (pow(theta, nls->max_newton_it - newt_it) / (1 - theta) * nrm_delta > nls->fnewt))
-      {
-        retry_requested = TRUE;
-        break;
-      }
+        return NLS_SOLVED;
     }
 
-    /* retry_dirk for constant step size */
-    if (retry_requested && nls->retry < 5 && gbData->ctrl_method == GB_CTRL_CNST)
+    // Newton failed -> iteration limit exceeded or too slow convergence
+    if (newt_it == nls->max_newton_it || (pow(theta, nls->max_newton_it - newt_it) / (1 - theta) * nrm_delta > nls->fnewt))
     {
-      /* try fresh Jacobian at start point */
-      nls->retry++;
-
-      memcpy(x, x_start, size * sizeof(double));
-
-      memcpy(data->localData[0]->realVars, x, size * sizeof(double));
-      data->localData[0]->timeValue = gbData->time + gbData->tableau->c[stage] * gbData->stepSize;
-
-      /* callback ODE + callback Jacobian of ODE -> nls_jacobian buffer */
-      ret = gbode_fODE(data, threadData, &(gbData->stats.nCallsODE), NULL);
-      if (ret < 0) return NLS_FAILED;
-
-      ret = gbInternal_evalJacobian(data, threadData, gbData, nls);
-      if (ret < 0) return NLS_FAILED;
-
-      jacobian_SR_DIRK_assemble(data, threadData, gbData, nls, jacobian_ODE,
-                                nls->jacobian_callback, nls->real_nls_jacs[0]);
-
-      ret = gbInternal_dKLU_factorize(nls->klu_internals_real, size,
-                                      (int *)nonlinsys->sparsePattern->leadindex,
-                                      (int *)nonlinsys->sparsePattern->index,
-                                      nls->real_nls_jacs[0]);
-      if (ret < 0) return NLS_FAILED;
-
-      continue;
+      break;
     }
-
-    /* final failure */
-    break;
   }
 
   nls->call_jac = TRUE;
@@ -891,11 +981,11 @@ static NLS_SOLVER_STATUS gbInternalSolveNls_T_Transform(DATA *data,
   // return code from KLU or RHS / Jac calls
   int ret;
 
-  createGbScales(nls, x, x_start);
+  createGbScales(nls, gbData, x, x_start);
   double *scal = nls->scal;
 
   RESIDUAL_USERDATA resUserData = {.data=data, .threadData=threadData, .solverData=gbData};
-  JACOBIAN *jacobian_ODE = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
+  SPARSE_PATTERN *ode_pattern = data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A].sparsePattern;
   T_TRANSFORM *transform = nls->tabl->t_transform;
 
   modelica_boolean jac_called = FALSE;
@@ -929,24 +1019,24 @@ static NLS_SOLVER_STATUS gbInternalSolveNls_T_Transform(DATA *data,
     for (int sys_real = 0; sys_real < nls->tabl->t_transform->nRealEigenvalues; sys_real++)
     {
       /* create Jacobian real: gamma/h * I - J_f */
-      jacobian_SR_real_assemble(data, threadData, gbData, nls, nls->tabl->t_transform->gamma[sys_real],
-                                jacobian_ODE, nls->jacobian_callback, nls->real_nls_jacs[sys_real]);
+      jacobian_real_assemble(data, threadData, gbData, nls, nls->tabl->t_transform->gamma[sys_real],
+                                ode_pattern, nls->jacobian_callback, nls->real_nls_jacs[sys_real]);
       ret = gbInternal_dKLU_factorize(&nls->klu_internals_real[sys_real],
                                       size,
-                                      (int *)nls->sparsePattern->leadindex,
-                                      (int *)nls->sparsePattern->index,
+                                      (int *)nls->nlsPattern->leadindex,
+                                      (int *)nls->nlsPattern->index,
                                       nls->real_nls_jacs[sys_real]);
       if (ret < 0) return NLS_FAILED;
     }
     for (int sys_cmplx = 0; sys_cmplx < nls->tabl->t_transform->nComplexEigenpairs; sys_cmplx++)
     {
       /* create Jacobian complex: (alpha + i * beta)/h * I - J_f */
-      jacobian_SR_cmplx_assemble(data, threadData, gbData, nls, nls->tabl->t_transform->alpha[sys_cmplx], nls->tabl->t_transform->beta[sys_cmplx],
-                                jacobian_ODE, nls->jacobian_callback, nls->cmplx_nls_jacs[sys_cmplx]);
+      jacobian_cmplx_assemble(data, threadData, gbData, nls, nls->tabl->t_transform->alpha[sys_cmplx], nls->tabl->t_transform->beta[sys_cmplx],
+                                 ode_pattern, nls->jacobian_callback, nls->cmplx_nls_jacs[sys_cmplx]);
       ret = gbInternal_zKLU_factorize(&nls->klu_internals_cmplx[sys_cmplx],
                                       size,
-                                      (int *)nls->sparsePattern->leadindex,
-                                      (int *)nls->sparsePattern->index,
+                                      (int *)nls->nlsPattern->leadindex,
+                                      (int *)nls->nlsPattern->index,
                                       nls->cmplx_nls_jacs[sys_cmplx]);
       if (ret < 0) return NLS_FAILED;
     }
@@ -1156,14 +1246,23 @@ static NLS_SOLVER_STATUS gbInternalSolveNls_T_Transform(DATA *data,
 void *gbInternalNlsAllocate(int size,
                             NLS_USERDATA* userData,
                             modelica_boolean attemptRetry,
-                            modelica_boolean isPatternAvailable)
+                            modelica_boolean isPatternAvailable,
+                            modelica_boolean isFast)
 {
-  DATA_GBODE *gbData = (DATA_GBODE *)userData->solverData;
-  BUTCHER_TABLEAU *tabl = gbData->tableau;
+  BUTCHER_TABLEAU *tabl = (isFast ? ((DATA_GBODEF *) userData->solverData)->tableau
+                                  : ((DATA_GBODE *) userData->solverData)->tableau);
   T_TRANSFORM *trfm = tabl->t_transform;
   JACOBIAN* jacobian_ODE = &(userData->data->simulationInfo->analyticJacobians[userData->data->callback->INDEX_JAC_A]);
 
   GB_INTERNAL_NLS_DATA *nls = (GB_INTERNAL_NLS_DATA *) malloc(sizeof(GB_INTERNAL_NLS_DATA));
+
+  // multirate stuff
+  nls->multirate = isFast;
+  nls->new_fast_states = FALSE;
+
+  // to have sufficiently large buffers, we need an overestimate for the system of the form struct(I + J) * v = b
+  unsigned int nls_nnz_estimate = 0;
+
   nls->nls_user_data = userData;
   nls->size = jacobian_ODE->sizeRows;
   nls->jacobian_callback = (double *) malloc(jacobian_ODE->sparsePattern->numberOfNonZeros * sizeof(double));
@@ -1177,19 +1276,48 @@ void *gbInternalNlsAllocate(int size,
 
   nls->tabl = tabl;
   nls->use_t_transform = (trfm != NULL);
-  if (nls->use_t_transform)
+
+  // we have to delay setting the sparse pattern and the symbolic analysis of KLU
+  // until we know the structure of the fast state system, in case of singlerate everything is known at allocation time
+  if (nls->multirate)
   {
-    nls->sparsePattern = buildSparsePatternWithDiagonal(jacobian_ODE->sparsePattern, jacobian_ODE->sizeRows);
-    nls->createdPattern = TRUE;
+    // overestimate the nnz for the buffer sizes and allocate enough memory for the pattern I + J
+    nls_nnz_estimate = jacobian_ODE->sparsePattern->numberOfNonZeros + jacobian_ODE->sizeRows;
+
+    nls->nlsPattern = allocSparsePattern(jacobian_ODE->sizeRows, nls_nnz_estimate, jacobian_ODE->sizeRows);
+    nls->ownsNlsPattern = TRUE;
+
+    nls->odePatternMR = allocSparsePattern(jacobian_ODE->sizeRows, nls_nnz_estimate, jacobian_ODE->sizeRows);
+    nls->ownsODEPatternMR = TRUE;
+
+    // we also need to allocate the stub data
+    nls->colorCols_stub = (unsigned int *) malloc(jacobian_ODE->sizeRows * sizeof(unsigned int));
+    nls->maxColors_stub = 0;
+  }
+  else if (nls->use_t_transform)
+  {
+    // allocate the correct sparse pattern directly
+    nls->nlsPattern = buildSparsePatternWithDiagonal(jacobian_ODE->sparsePattern, jacobian_ODE->sizeRows, NULL);
+    nls->ownsNlsPattern = TRUE;
   }
   else
   {
-    nls->sparsePattern = userData->nlsData->sparsePattern;
-    nls->createdPattern = FALSE;
+    // use the sparse pattern from the user data
+    nls->nlsPattern = userData->nlsData->sparsePattern;
+    nls->ownsNlsPattern = FALSE;
   }
 
-  // create ODE Jac -> NLS Jacobian mapping
-  mapSparsePatterns(nls->sparsePattern, jacobian_ODE, nls, jacobian_ODE->sizeRows);
+  if (!nls->multirate)
+  {
+    // create ODE Jac -> NLS Jacobian mapping
+    updateSparsePatternMappings(nls->nlsPattern, jacobian_ODE->sparsePattern, nls, jacobian_ODE->sizeRows);
+
+    nls->odePatternMR = NULL;
+    nls->ownsODEPatternMR = FALSE;
+
+    // set exact value
+    nls_nnz_estimate = nls->nlsPattern->numberOfNonZeros;
+  }
 
   nls->scal = (double *) malloc(jacobian_ODE->sizeRows * sizeof(double));
   nls->etas = (double *) malloc(tabl->nStages * sizeof(double));
@@ -1296,7 +1424,7 @@ void *gbInternalNlsAllocate(int size,
     nls->klu_internals_real->numeric = NULL;
     nls->klu_internals_cmplx = NULL;
     nls->real_nls_jacs = (double **) malloc(sizeof(double *));
-    nls->real_nls_jacs[0] = (double *) malloc(nls->sparsePattern->numberOfNonZeros * sizeof(double));
+    nls->real_nls_jacs[0] = (double *) malloc(nls_nnz_estimate * sizeof(double));
 
     // auxiliary memory
     nls->work = (double *) malloc(3 * nls->size * sizeof(double));
@@ -1306,7 +1434,10 @@ void *gbInternalNlsAllocate(int size,
       throwStreamPrint(NULL, "Memory allocation in gbInternalNlsAllocate failed.");
     }
 
-    gbInternal_KLU_analyze(nls->klu_internals_real, nls->size, (int *)nls->sparsePattern->leadindex, (int *)nls->sparsePattern->index);
+    if (!nls->multirate)
+    {
+      gbInternal_KLU_analyze(nls->klu_internals_real, nls->size, (int *)nls->nlsPattern->leadindex, (int *)nls->nlsPattern->index);
+    }
   }
   else
   {
@@ -1328,27 +1459,35 @@ void *gbInternalNlsAllocate(int size,
     for (int sys_real = 0; sys_real < trfm->nRealEigenvalues; sys_real++)
     {
       nls->real_nls_res[sys_real] = (double *) malloc(nls->size * sizeof(double));
-      nls->real_nls_jacs[sys_real] = (double *) malloc(nls->sparsePattern->numberOfNonZeros * sizeof(double));
+      nls->real_nls_jacs[sys_real] = (double *) malloc(nls_nnz_estimate * sizeof(double));
 
       if (!(nls->real_nls_res[sys_real] && nls->real_nls_jacs[sys_real]))
       {
         throwStreamPrint(NULL, "Memory allocation in gbInternalNlsAllocate failed.");
       }
 
-      gbInternal_KLU_analyze(&nls->klu_internals_real[sys_real], nls->size, (int *)nls->sparsePattern->leadindex, (int *)nls->sparsePattern->index);
+      if (!nls->multirate)
+      {
+        gbInternal_KLU_analyze(&nls->klu_internals_real[sys_real], nls->size, (int *)nls->nlsPattern->leadindex, (int *)nls->nlsPattern->index);
+      }
+
       nls->klu_internals_real[sys_real].numeric = NULL;
     }
     for (int sys_cmplx = 0; sys_cmplx < trfm->nComplexEigenpairs; sys_cmplx++)
     {
       nls->cmplx_nls_res[sys_cmplx] = (double *) malloc(2 * nls->size * sizeof(double));
-      nls->cmplx_nls_jacs[sys_cmplx] = (double *) malloc(2 * nls->sparsePattern->numberOfNonZeros * sizeof(double));
+      nls->cmplx_nls_jacs[sys_cmplx] = (double *) malloc(2 * nls_nnz_estimate * sizeof(double));
 
       if (!(nls->cmplx_nls_res[sys_cmplx] && nls->cmplx_nls_jacs[sys_cmplx]))
       {
         throwStreamPrint(NULL, "Memory allocation in gbInternalNlsAllocate failed.");
       }
 
-      gbInternal_KLU_analyze(&nls->klu_internals_cmplx[sys_cmplx], nls->size, (int *)nls->sparsePattern->leadindex, (int *)nls->sparsePattern->index);
+      if (!nls->multirate)
+      {
+        gbInternal_KLU_analyze(&nls->klu_internals_cmplx[sys_cmplx], nls->size, (int *)nls->nlsPattern->leadindex, (int *)nls->nlsPattern->index);
+      }
+
       nls->klu_internals_cmplx[sys_cmplx].numeric = NULL;
     }
 
@@ -1379,10 +1518,16 @@ void gbInternalNlsFree(void *nls_ptr)
   free(nls->etas);
   free(nls->work);
 
-  if (nls->createdPattern)
+  if (nls->ownsNlsPattern)
   {
-    freeSparsePattern(nls->sparsePattern);
-    free(nls->sparsePattern);
+    freeSparsePattern(nls->nlsPattern);
+    free(nls->nlsPattern);
+  }
+
+  if (nls->ownsODEPatternMR)
+  {
+    freeSparsePattern(nls->odePatternMR);
+    free(nls->odePatternMR);
   }
 
   if (!nls->tabl->t_transform)
@@ -1422,6 +1567,11 @@ void gbInternalNlsFree(void *nls_ptr)
     free(nls->W);
   }
 
+  if (nls->multirate)
+  {
+    free(nls->colorCols_stub);
+  }
+
   free(nls);
 }
 
@@ -1429,6 +1579,262 @@ void gbInternalNlsFree(void *nls_ptr)
 Tolerances *gbInternalNlsGetScaledTolerances(void *nls_ptr)
 {
   return &((GB_INTERNAL_NLS_DATA *) nls_ptr)->tol_scaled;
+}
+
+void gbInternalScheduleFastStatesUpdate(void *nls_ptr)
+{
+  assert(((GB_INTERNAL_NLS_DATA *) nls_ptr)->multirate);
+  ((GB_INTERNAL_NLS_DATA *) nls_ptr)->new_fast_states = TRUE;
+}
+
+static void transferFastColoring(GB_INTERNAL_NLS_DATA *nls,
+                               DATA_GBODE *gbData,
+                               SPARSE_PATTERN *fast_ode_pattern)
+{
+  nls->maxColors_stub = fast_ode_pattern->maxColors;
+  memset(nls->colorCols_stub, 0, gbData->nStates * sizeof(unsigned int));
+
+  for (unsigned int i = 0; i < nls->size; i++)
+  {
+    unsigned int fast_idx = gbData->fastStatesIdx[i];
+    nls->colorCols_stub[fast_idx] = fast_ode_pattern->colorCols[i];
+  }
+}
+
+/**
+ * @brief Reduces a full sparse CSC pattern to a smaller subpattern.
+ *
+ * Extracts only the rows and columns specified in the `indices` array.
+ * The output pattern `out` must be preallocated with sufficient size.
+ * Coloring is not handled in this function.
+ *
+ * @param[in]  full         Pointer to the full sparse pattern (CSC format).
+ * @param[in]  size_full    Total number of columns/rows in the full matrix.
+ * @param[out] out          Pointer to the preallocated sparse pattern to fill.
+ * @param[in]  indices      Array of indices to keep (both rows and columns).
+ * @param[in]  size_indices Number of indices in the `indices` array.
+ * @param[in,out] work      Temporary workspace of size `size_full` (mutated).
+ */
+static void reduceFullToFastPattern(const SPARSE_PATTERN *full,
+                                    int size_full,
+                                    SPARSE_PATTERN *out,
+                                    const int *indices,
+                                    int size_indices,
+                                    unsigned int *work)
+{
+  unsigned int nnz = 0;
+
+  for (int i = 0; i < size_full; i++)
+  {
+    work[i] = UINT_MAX;
+  }
+
+  for (int i = 0; i < size_indices; i++)
+  {
+    work[indices[i]] = i;
+  }
+
+  out->leadindex[0] = 0;
+
+  for (int small_col = 0; small_col < size_indices; small_col++)
+  {
+    unsigned int full_col = indices[small_col];
+
+    for (unsigned int nz_full = full->leadindex[full_col]; nz_full < full->leadindex[full_col + 1]; nz_full++)
+    {
+      unsigned int full_row = full->index[nz_full];
+      unsigned int small_row = work[full_row];
+
+      if (small_row != UINT_MAX)
+      {
+        out->index[nnz++] = small_row;
+      }
+    }
+
+    out->leadindex[small_col + 1] = nnz;
+  }
+
+  out->numberOfNonZeros = nnz;
+  out->sizeofIndex      = nnz;
+}
+
+/**
+ * @brief Computes a greedy column coloring for a CSC pattern.
+ *
+ * Assigns colors to columns such that no two columns sharing a row
+ * have the same color.
+ *
+ * Results are written to `pattern->colorCols` and `pattern->maxColors`.
+ *
+ * @param[in,out] pattern  Sparse pattern (CSC format). `colorCols` must be preallocated (size entries).
+ * @param[in]     size     Number of columns (square matrix assumed).
+ * @param[in,out] work     Workspace of at least `2 * size + 1` unsigned integers.
+ */
+static void createGreedyColoringTrivial(SPARSE_PATTERN *pattern, unsigned int size, unsigned int *work)
+{
+  for (unsigned int col = 0; col < size; col++)
+  {
+    pattern->colorCols[col] = col + 1;
+  }
+
+  pattern->maxColors = size;
+}
+
+extern void sparsePatternTranspose(int sizeRows, int sizeCols, SPARSE_PATTERN* sparsePattern, SPARSE_PATTERN* sparsePatternT);
+
+/**
+ * @brief Simple sparse matrix coloring for a Jacobian pattern J.
+ *
+ * Columns receive the same color only if they do not share a row.
+ * Uses the transpose pattern to efficiently detect conflicts.
+ *
+ * @param sparsePattern Sparse pattern of J (CSC)
+ * @param sizeRows      Number of rows
+ * @param sizeCols      Number of columns
+ */
+void createGreedyColoringBB(SPARSE_PATTERN* sparsePattern, unsigned int size, unsigned int *work)
+{
+  SPARSE_PATTERN* sparsePatternT;
+  int row, col;
+  int i, j, maxColors = 0;
+
+  int* tabu = (int*) calloc(size * size, sizeof(int));
+
+  sparsePatternT = allocSparsePattern(size,
+                                      sparsePattern->numberOfNonZeros,
+                                      size);
+
+  sparsePatternTranspose(size, size, sparsePattern, sparsePatternT);
+
+  for (col = 0; col < size; col++)
+  {
+    for (i = 0; i < size; i++)
+    {
+      if (tabu[col * size + i] == 0)
+      {
+        sparsePattern->colorCols[col] = i + 1;
+        if (i + 1 > maxColors) maxColors = i + 1;
+
+        for (row = sparsePattern->leadindex[col]; row < sparsePattern->leadindex[col+1]; row++)
+        {
+          int rowIdx = sparsePattern->index[row];
+
+          for (j = sparsePatternT->leadindex[rowIdx]; j < sparsePatternT->leadindex[rowIdx+1]; j++)
+          {
+            int otherCol = sparsePatternT->index[j];
+            tabu[otherCol * size + i] = 1;
+          }
+        }
+
+        break;
+      }
+    }
+  }
+
+  sparsePattern->maxColors = maxColors;
+
+  freeSparsePattern(sparsePatternT);
+  free(sparsePatternT);
+  free(tabu);
+}
+
+static void createGreedyColoring(SPARSE_PATTERN *pattern,
+                                 unsigned int size,
+                                 unsigned int *work)
+{
+  unsigned int *rowUsed = work;
+  unsigned int remaining = size;
+  unsigned int color = 1;
+
+  for (unsigned int i = 0; i < size; i++)
+    pattern->colorCols[i] = 0;
+
+  while (remaining > 0)
+  {
+    memset(rowUsed, 0, size * sizeof(unsigned int));
+
+    for (unsigned int col = 0; col < size; col++)
+    {
+      if (pattern->colorCols[col] != 0) continue;
+
+      int conflict = 0;
+
+      for (unsigned int nz = pattern->leadindex[col]; nz < pattern->leadindex[col+1]; nz++)
+      {
+        unsigned int row = pattern->index[nz];
+        if (rowUsed[row])
+        {
+          conflict = 1;
+          break;
+        }
+      }
+
+      if (!conflict)
+      {
+        pattern->colorCols[col] = color;
+        remaining--;
+
+        for (unsigned int nz = pattern->leadindex[col]; nz < pattern->leadindex[col+1]; nz++)
+        {
+          unsigned int row = pattern->index[nz];
+          rowUsed[row] = 1;
+        }
+      }
+    }
+
+    color++;
+  }
+
+  pattern->maxColors = color - 1;
+}
+
+int GLOBAL_UPDATE_COUNT = 0;
+
+modelica_boolean updateFastStates(DATA *data,
+                                  threadData_t *threadData,
+                                  NONLINEAR_SYSTEM_DATA* nonlinsys,
+                                  DATA_GBODE* gbData,
+                                  GB_INTERNAL_NLS_DATA *nls)
+{
+  SPARSE_PATTERN *full_ode_pattern = data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A].sparsePattern;
+  DATA_GBODEF *gbfData = gbData->gbfData;
+
+  GLOBAL_UPDATE_COUNT++;
+
+  // update size
+  nls->size = gbfData->nFastStates;
+  nls->call_jac = TRUE;
+
+  for (int stage = 0; stage < gbfData->tableau->nStages; stage++)
+  {
+    nls->etas[stage] = DBL_MAX;
+  }
+
+  // fill preallocated nls->odePatternMR with struct(J)_fast
+  reduceFullToFastPattern(full_ode_pattern, gbData->nStates, nls->odePatternMR, gbData->fastStatesIdx, gbData->nFastStates, (unsigned int *) nls->work);
+
+  // create the coloring for struct(J)_fast
+  createGreedyColoring(nls->odePatternMR, gbData->nFastStates, (unsigned int *) nls->work);
+
+  // transfer the coloring of struct(J)_fast -> struct(J)_fast embedded into J itself for selective evaluation
+  transferFastColoring(nls, gbData, nls->odePatternMR);
+
+  // fill preallocated nls->nlsPattern with struct(I + J)_fast
+  buildSparsePatternWithDiagonal(nls->odePatternMR, gbfData->nFastStates, nls->nlsPattern);
+
+  // update mappings: ode_to_nls and nls_diag_indices
+  updateSparsePatternMappings(nls->nlsPattern, nls->odePatternMR, nls, nls->size);
+
+  // create new symbolic factorization
+  if (gbfData->tableau->t_transform == NULL)
+  {
+    gbInternal_KLU_analyze(nls->klu_internals_real, nls->size, (int *)nls->nlsPattern->leadindex, (int *)nls->nlsPattern->index);
+    nls->klu_internals_real->numeric = NULL;
+  }
+
+  // TODO: do the same for FIRK
+
+  return TRUE;
 }
 
 /* Entry point for `internal` solve routine: DIRK or FIRK */
@@ -1439,6 +1845,14 @@ NLS_SOLVER_STATUS gbInternalSolveNls(DATA *data,
                                      void *nls_ptr)
 {
   GB_INTERNAL_NLS_DATA *nls = (GB_INTERNAL_NLS_DATA *) nls_ptr;
+
+  if (nls->new_fast_states)
+  {
+    // update sparse pattern struct(I + J) and create a new symbolic factorization
+    modelica_boolean success = updateFastStates(data, threadData, nonlinsys, gbData, nls);
+    if (!success) return NLS_FAILED;
+    nls->new_fast_states = FALSE;
+  }
 
   if (nls->use_t_transform)
   {

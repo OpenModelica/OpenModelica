@@ -308,7 +308,7 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA(DATA* data, threadData_t* threadData, DAT
     } else {
       nlsData->nlsLinearSolver = NLS_LS_DEFAULT;
     }
-    solverData->ordinaryData = (void*) gbInternalNlsAllocate(nlsData->size, nlsUserData, FALSE, nlsData->isPatternAvailable);
+    solverData->ordinaryData = (void*) gbInternalNlsAllocate(nlsData->size, nlsUserData, FALSE, nlsData->isPatternAvailable, FALSE);
     solverData->initHomotopyData = NULL;
     nlsData->solverData = solverData;
     break;
@@ -414,18 +414,13 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA_MR(DATA* data, threadData_t* threadData, 
     nlsData->solverData = solverData;
     break;
   case GB_NLS_INTERNAL:
-    /* throw as multi-rate with internal NLS is not implemented */
-    throwStreamPrint(NULL, "GBODE Multi-Rate integration with '-gbnls=internal' is not yet implemented. Proceed by setting '-gbnls' as 'kinsol', 'newton', "
-                            "or 'experimental-kinsol'. Alternatively, you may disable Multi-Rate integration.");
-
-    /* WIP: multi-rate with internal NLS */
     nlsData->nlsMethod = NLS_GB_INTERNAL;
     if (nlsData->isPatternAvailable) {
       nlsData->nlsLinearSolver = NLS_LS_KLU;
     } else {
       nlsData->nlsLinearSolver = NLS_LS_DEFAULT;
     }
-    solverData->ordinaryData = (void*) gbInternalNlsAllocate(nlsData->size, nlsUserData, FALSE, nlsData->isPatternAvailable);
+    solverData->ordinaryData = (void*) gbInternalNlsAllocate(nlsData->size, nlsUserData, FALSE, nlsData->isPatternAvailable, TRUE);
     solverData->initHomotopyData = NULL;
     nlsData->solverData = solverData;
     break;
@@ -782,6 +777,7 @@ void residual_DIRK_MR(RESIDUAL_USERDATA* userData, const double *xloc, double *r
   const int nStages = gbfData->tableau->nStages;
   const int stage_  = gbfData->act_stage;
   const modelica_real fac = gbfData->stepSize * gbfData->tableau->A[stage_ * nStages + stage_];
+  sData->timeValue = gbfData->time + gbfData->tableau->c[stage_] * gbfData->stepSize;
 
   // Set fast states
   // ph: are slow states interpolated and set correctly?
