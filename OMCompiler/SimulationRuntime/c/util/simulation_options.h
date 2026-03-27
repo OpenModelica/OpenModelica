@@ -310,7 +310,14 @@ enum GB_CTRL_METHOD {
   GB_CTRL_PID_H312 = 5,       /* PID controller for step size */
   GB_CTRL_PID_SOEDERLIND = 6, /* PID controller for step size */
   GB_CTRL_PID_STIFF = 7,      /* PID controller for step size */
-  GB_CTRL_CNST = 8,           /* Constant step size */
+  GB_CTRL_PI_PC = 8,          /* Standard PI Predictive controller */
+  GB_CTRL_PI_PC_HYBRID = 9,   /* Hybrid I / PI Predictive controller */
+  GB_CTRL_PI_H211 = 10,       /* PI Predictive controller */
+  GB_CTRL_PI_H0_211 = 11,     /* PI Predictive controller */
+  GB_CTRL_PID_H0_312 = 12,    /* PID Predictive controller */
+  GB_CTRL_PID_H0_321 = 13,    /* PID Predictive controller */
+  GB_CTRL_PPID = 14,          /* PID Predictive controller */
+  GB_CTRL_CNST = 15,          /* Constant step size */
 
   GB_CTRL_MAX
 };

@@ -1150,6 +1150,13 @@ const char *GB_CTRL_METHOD_NAME[GB_CTRL_MAX] = {
   /* GB_CTRL_PID_H312 */        "pid_h312",
   /* GB_CTRL_PID_SOEDERLIND */  "pid_soederlind",
   /* GB_CTRL_PID_STIFF */       "pid_stiff",
+  /* GB_CTRL_PI_PC */           "pc",
+  /* GB_CTRL_PI_PC_HYBRID */    "pc_hybrid",
+  /* GB_CTRL_PI_H211 */         "pi_h211",
+  /* GB_CTRL_PI_H0_211 */       "pi_h0_211",
+  /* GB_CTRL_PID_H0_312 */      "pid_h0_312",
+  /* GB_CTRL_PID_H0_321 */      "pid_h0_321",
+  /* GB_CTRL_PPID */            "ppid",
   /* GB_CTRL_CNST */            "const"
 };
 
@@ -1162,6 +1169,13 @@ const char *GB_CTRL_METHOD_DESC[GB_CTRL_MAX] = {
   /* GB_CTRL_PID_H312 */        "PID controller for step size (alpha1=1./18./k, alpha2=1./9./k, alpha3=1./18./k)",
   /* GB_CTRL_PID_SOEDERLIND */  "PID controller for step size (alpha1=0.1/k, alpha2=0.2/k, alpha3=0.1/k)",
   /* GB_CTRL_PID_STIFF */       "PID controller for step size (alpha1=0.58/k, alpha2=0.21/k, alpha3=0.21/k)",
+  /* GB_CTRL_PI_PC */           "Standard PI Predictive controller (beta1=2/k, beta2=-1/k, ratio=1)",
+  /* GB_CTRL_PI_PC_HYBRID */    "Hybrid I / PI Predictive controller: min(PI Predictive, I)",
+  /* GB_CTRL_PI_H211 */         "PI Predictive controller (beta1=0.25/k, beta2=0.25/k, ratio=-0.25)",
+  /* GB_CTRL_PI_H0_211 */       "PI Predictive controller (beta1=0.5/k, beta2=0.5/k, ratio=-0.5)",
+  /* GB_CTRL_PID_H0_312 */      "PID Predictive controller (alpha1=0.25/k, alpha2=0.5/k, alpha3=0.25/k, ratio1=-0.75, ratio2=-0.25)",
+  /* GB_CTRL_PID_H0_321 */      "PID Predictive controller (alpha1=1.25/k, alpha2=0.5/k, alpha3=-0.75/k, ratio1=0.25, ratio2=0.75)",
+  /* GB_CTRL_PPID */            "PID Predictive controller (alpha1=6./20/k, alpha2=1./20/k, alpha3=-5./20/k, ratio1=1.0, ratio2=0.0)",
   /* GB_CTRL_CNST */            "Constant step size"
 };
 
