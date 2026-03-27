@@ -766,6 +766,43 @@ algorithm
   end match;
 end getInheritedClasses;
 
+function getNthInheritedClass
+  input Absyn.Path classPath;
+  input Integer index;
+  input Absyn.Program program;
+  output Values.Value result;
+protected
+  InstNode cls_node;
+  Class cls;
+  array<InstNode> exts;
+algorithm
+  if not Flags.isSet(Flags.SCODE_INST) then
+    result := ValuesUtil.makeBoolean(false);
+    return;
+  end if;
+
+  (_, _, cls_node) := frontEndLookup(program, classPath);
+
+  if not InstNode.isClass(cls_node) then
+    result := ValuesUtil.makeBoolean(false);
+    return;
+  end if;
+
+  cls := InstNode.getClass(cls_node);
+
+  exts := matchcontinue cls
+    case Class.EXPANDED_DERIVED() then listArray({cls.baseClass});
+    else ClassTree.getExtends(Class.classTree(cls));
+  end matchcontinue;
+
+  if index < 1 or index > arrayLength(exts) then
+    result := ValuesUtil.makeBoolean(false);
+    return;
+  end if;
+
+  result := ValuesUtil.makeCodeTypeName(InstNode.fullPath(exts[index], true));
+end getNthInheritedClass;
+
 uniontype InstanceTree
   record COMPONENT
     InstNode node;
