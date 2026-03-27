@@ -203,6 +203,112 @@ double PIDController(double* err_values, double* step_values, unsigned int err_o
 }
 
 /**
+ * @brief Preditive PI controller of the form hfac := (1/err_0)^(alpha_1/k) * (1/err_{-1})^(alpha_2/k) * (h/n_{-1})^ratio
+ *        where ratio, alpha1 and alpha2 are DOF for the specific controller.
+ */
+double PredictivePIController(double* err_values, double* step_values, unsigned int err_order, enum GB_CTRL_METHOD ctrl_method)
+{
+  unsigned int k = err_order + 1;
+  double beta1, beta2, ratio;
+
+  double err_n     = err_values[0];
+  double err_n1    = err_values[1];
+
+  double h = step_values[0];
+  double h_n1 = step_values[1];
+
+  // Fallback for incomplete history
+  if (err_n1 < DBL_EPSILON || h_n1 < DBL_EPSILON) {
+      return pow(1.0 / err_n, 1.0 / k);
+  }
+
+  switch (ctrl_method) {
+      case GB_CTRL_PI_PC_HYBRID:
+      case GB_CTRL_PI_PC:
+          beta1 = 2.0/k;   // current error (P)
+          beta2 = -1.0/k;  // previous error (I)
+          ratio = 1.0;     // factor for ratio (h / h_n1)
+          break;
+      case GB_CTRL_PI_H211:
+          beta1 = 0.25/k;  // current error (P)
+          beta2 = 0.25/k;  // previous error (I)
+          ratio = -0.25;   // factor for ratio (h / h_n1)
+          break;
+      case GB_CTRL_PI_H0_211:
+          beta1 = 0.5/k;   // current error (P)
+          beta2 = 0.5/k;   // previous error (I)
+          ratio = -0.5;    // factor for ratio (h / h_n1)
+          break;
+      default:
+        throwStreamPrint(NULL, "Unknown step size control method.");
+  }
+
+  double pi_pc = pow(1.0 / err_n,  beta1) * pow(1.0 / err_n1, beta2) * pow(h / h_n1, ratio);
+
+  if (ctrl_method == GB_CTRL_PI_PC_HYBRID)
+  {
+    double i = pow(1.0 / err_n, 1.0 / k);
+    return fmin(pi_pc, i);
+  }
+  else
+  {
+    return pi_pc;
+  }
+}
+
+/**
+ * @brief Preditive PID controller of the form
+ *        hfac := (1/err_0)^(alpha_1/k) * (1/err_{-1})^(alpha_2/k) * (1/err_{-1})^(alpha_3/k) * (h/n_{-1})^ratio1 * (h_{-1}/n_{-2})^ratio2
+ *        where ratio1, ratio2, alpha1, alpha2, alpha3 are DOF for the specific controller.
+ */
+double PredictivePIDController(double* err_values, double* step_values, unsigned int err_order, enum GB_CTRL_METHOD ctrl_method)
+{
+  unsigned int k = err_order + 1;
+  double beta1, beta2, beta3, ratio1, ratio2;
+
+  double err_n     = err_values[0];
+  double err_n1    = err_values[1];
+  double err_n2    = err_values[2];
+
+  double h = step_values[0];
+  double h_n1 = step_values[1];
+  double h_n2 = step_values[2];
+
+  // Fallback for incomplete history
+  if (err_n1 < DBL_EPSILON || h_n1 < DBL_EPSILON || err_n2 < DBL_EPSILON || h_n2 < DBL_EPSILON ) {
+      return pow(1.0 / err_n, 1.0 / k);
+  }
+
+  switch (ctrl_method) {
+      case GB_CTRL_PID_H0_312:
+          beta1 = 0.25/k;  // current error (P)
+          beta2 = 0.5/k;   // previous error (I)
+          beta3 = 0.25/k;  // second previous error (D)
+          ratio1 = -0.75;
+          ratio2 = -0.25;
+          break;
+      case GB_CTRL_PID_H0_321:
+          beta1 = 1.25/k;   // current error (P)
+          beta2 = 0.5/k;    // previous error (I)
+          beta3 = -0.75/k;  // second previous error (D)
+          ratio1 = 0.25;
+          ratio2 = 0.75;
+          break;
+      case GB_CTRL_PPID:
+          beta1 = (6. / 20.)/k;  // current error (P)
+          beta2 = (1. / 20.)/k;  // previous error (I)
+          beta3 = (-5. / 20.)/k; // second previous error (D)
+          ratio1 = 1.0;
+          ratio2 = 0.0;
+          break;
+      default:
+        throwStreamPrint(NULL, "Unknown step size control method.");
+  }
+
+  return pow(1.0 / err_n,  beta1) * pow(1.0 / err_n1, beta2) * pow(1.0 / err_n2, beta3) * pow(h / h_n1, ratio1) * pow(h_n1 / h_n2, ratio2) ;
+}
+
+/**
  * @brief Compute adaptive gamma for FHR controller
  *
  * @param err_now   Current error estimate
@@ -264,6 +370,17 @@ double GenericController(double* err_values, double* step_values, unsigned int e
       case GB_CTRL_PID_SOEDERLIND:
       case GB_CTRL_PID_STIFF:
           h_fac = PIDController(err_values, step_values, err_order, ctrl_method);
+          break;
+      case GB_CTRL_PI_PC:
+      case GB_CTRL_PI_PC_HYBRID:
+      case GB_CTRL_PI_H211:
+      case GB_CTRL_PI_H0_211:
+          h_fac = PredictivePIController(err_values, step_values, err_order, ctrl_method);
+          break;
+      case GB_CTRL_PID_H0_312:
+      case GB_CTRL_PID_H0_321:
+      case GB_CTRL_PPID:
+          h_fac = PredictivePIDController(err_values, step_values, err_order, ctrl_method);
           break;
       default:
         throwStreamPrint(NULL, "Unknown step size control method.");
