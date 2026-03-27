@@ -289,7 +289,7 @@ static void gbInternal_evalJacobianMR(DATA* data,
   unsigned int* fast_idx = gbData->fastStatesIdx;
   unsigned int  size_fast = gbData->nFastStates;
 
-  fullJac->evalSelection = gbData->gbfData->jacobian->evalSelection;
+  fullJac->evalSelection = NULL; // TODO: set evalSelection for Jacobian gbData->gbfData->jacobian->evalSelection;
 
   int color, col, nz;
 
@@ -890,7 +890,7 @@ static NLS_SOLVER_STATUS gbInternalSolveNls_DIRK(DATA *data,
         nls->call_jac = TRUE;
       }
 
-        return NLS_SOLVED;
+      return NLS_SOLVED;
     }
 
     // Newton failed -> iteration limit exceeded or too slow convergence
