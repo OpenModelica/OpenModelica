@@ -1030,7 +1030,7 @@ extern int SystemImpl__copyFile(const char *str_1, const char *str_2)
   return rv;
 }
 
-static char * SystemImpl__NextDir(const char * path)
+static char * SystemImpl__NextDir(char * path)
 {
   char * res = NULL;
 
@@ -1126,7 +1126,7 @@ static int SystemImpl__removeDirectoryItem(const char *path)
 extern int SystemImpl__removeDirectory(const char *path)
 {
   int retval = -1;
-  char * wild = strchr(path, '*');
+  const char * wild = strchr(path, '*');
 
   if (wild == NULL)
   {
@@ -1138,7 +1138,7 @@ extern int SystemImpl__removeDirectory(const char *path)
     /* replace first wildcard item */
     char * basepath;
     char * ctmp = NULL;
-    const char * str = path;
+    char * str = omc_alloc_interface.malloc_strdup(path);
     DIR * d;
     char * pattern;
     char * pat_pre = NULL;
@@ -1167,7 +1167,7 @@ extern int SystemImpl__removeDirectory(const char *path)
         else
         {
           /* basepath is finally found */
-          pattern = omc_alloc_interface.malloc_strdup(str);
+          pattern = str;
           sub = res;
           len_sub = strlen(sub);
           break;
