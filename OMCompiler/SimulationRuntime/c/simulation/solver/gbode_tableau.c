@@ -425,10 +425,28 @@ void predictor_denseOutput_ESDIRK4_7L2SA(BUTCHER_TABLEAU* tableau, double* yOld,
 }
 
 /* Real dense output of the ESDIRK4(3)7L2SA
- *  => Quartic C1 interpolant (order 4), remaining 2 degrees of freedom are chosen to minimize the error
+ *  => Quartic C0 interpolant (order 4), pinned to 2 L-stable points (at theta=0.08493322596570153 and theta=0.5709617099460419) for
+ *     stability on stiff problems. Preferred over the C1 interpolant for stiff ODEs despite ~2x larger error on non-stiff problems.
  *     (see e.g. https://github.com/WRKampi/extensisq for numeric values, MIT license)
  */
-void denseOutput_ESDIRK4_7L2SA(BUTCHER_TABLEAU* tableau, double* yOld, double* x, double* k, double dt, double stepSize, double* y, int nIdx, int* idx, int nStates)
+void denseOutput_C0_ESDIRK4_7L2SA(BUTCHER_TABLEAU* tableau, double* yOld, double* x, double* k, double dt, double stepSize, double* y, int nIdx, int* idx, int nStates)
+{
+  tableau->b_dt[0] = ((-9.810193992009567 * dt + 19.33290157583574) * dt + (-11.67529655238061)) * dt + 1.751737353544831;
+  tableau->b_dt[1] = ((-9.810193992009567 * dt + 19.33290157583574) * dt + (-11.67529655238061)) * dt + 1.751737353544831;
+  tableau->b_dt[2] = ((16.15992821734386 * dt + (-30.87602826958563)) * dt + 17.31058741533003) * dt + (-1.65533494856435);
+  tableau->b_dt[3] = ((8.166079369090214 * dt + (-18.38973592743151)) * dt + 12.32790098775139) * dt + (-1.585702145515156);
+  tableau->b_dt[4] = ((-12.76282880391497 * dt + 25.48988276667239) * dt + (-13.43221397813055)) * dt + 1.480670047540331;
+  tableau->b_dt[5] = ((6.741924328533505 * dt + (-12.78698063999065)) * dt + 6.127838415643804) * dt + (-0.6392836047534802);
+  tableau->b_dt[6] = ((1.315284872966521 * dt + (-2.102941081336072)) * dt + 1.016480264166559) * dt + (-0.1038240557970074);
+  denseOutput(tableau, yOld, x, k, dt, stepSize, y, nIdx, idx, nStates);
+}
+
+/* Alternative dense output of the ESDIRK4(3)7L2SA
+ *  => Quartic C1 interpolant (order 4), 2 free parameters minimized for smallest squared error.
+ *     Smoother than C0 but fails on stiff problems as it is not pinned to L-stable points.
+ *     (see e.g. https://github.com/WRKampi/extensisq for numeric values, MIT license)
+ */
+void denseOutput_C1_ESDIRK4_7L2SA(BUTCHER_TABLEAU* tableau, double* yOld, double* x, double* k, double dt, double stepSize, double* y, int nIdx, int* idx, int nStates)
 {
   tableau->b_dt[0] = ((2.940701270662915 * dt + (-4.079699311306614)) * dt + (-0.2618535743659094)) * dt + 1.0;
   tableau->b_dt[1] = ((9.138591896250813 * dt + (-17.47548056248241)) * dt + 7.936037051221989) * dt;
@@ -469,7 +487,7 @@ void getButcherTableau_ESDIRK4_7L2SA(BUTCHER_TABLEAU* tableau)
   setButcherTableau(tableau, c, A, b, bt);
 
   tableau->withDenseOutput = TRUE;
-  tableau->dense_output = denseOutput_ESDIRK4_7L2SA;
+  tableau->dense_output = denseOutput_C0_ESDIRK4_7L2SA;
   tableau->isKLeftAvailable = TRUE;
   tableau->isKRightAvailable = FALSE;
 
