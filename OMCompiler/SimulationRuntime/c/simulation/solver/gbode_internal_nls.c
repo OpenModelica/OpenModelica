@@ -1227,7 +1227,36 @@ void *gbInternalNlsAllocate(int size,
     double atol_pred = quot * rtol_pred;
     nls->tol_scaled.rtol = fmax(nls->tol_integrator.rtol, rtol_pred);
     nls->tol_scaled.atol = fmax(nls->tol_integrator.atol, atol_pred);
-    nls->fnewt = fmax(DBL_ABSORPTION / nls->tol_scaled.rtol, fmin(3e-2, pow(nls->tol_scaled.rtol, 1.0 / order_quot - 1.0)));
+
+    // default if no tolerance scaling is performed (scaled norm == actual TOL norm)
+    const double alpha_default = 3e-2;
+    const double alpha_maximal = 5e-2;
+    const double safety_newt = 0.1;
+    double fnewt_prop = alpha_default;
+
+    if (nls->tol_scaled.rtol != nls->tol_integrator.rtol)
+    {
+      // undo the tolerance scaling, s.t. raw residual <= alpha * actual TOL, where per default alpha = 3e-2, unless severe tolerance scaling is done
+      double target_alpha = alpha_default;
+
+      if (tabl->order_b - tabl->error_order != 1)
+      {
+        // severe tolerance scaling, possibly be more conservative for high orders / many stages
+        // choose to loosen safety a bit more: act as if safety was given by safety_newt
+        target_alpha = pow(safety_newt, 1.0 / order_quot);
+      }
+
+      target_alpha = fmin(alpha_maximal, target_alpha);
+
+      const double tol_times_one = pow(nls->tol_scaled.rtol, 1.0 / order_quot - 1.0) * pow(safety, -1.0 / order_quot);
+      fnewt_prop = tol_times_one * target_alpha;
+    }
+
+    // in all branches: fnewt * tol_scaled = alpha_eff * rtol_integrator, where
+    //     alpha_eff = alpha_default                                        (no scaling)
+    //     alpha_eff = fmin(alpha_maximal, alpha_default)                   (normal, p-q=1)
+    //     alpha_eff = fmin(alpha_maximal, safety_newt^((order_b+1)/(error_order+1)))  (severe, p-q!=1)
+    nls->fnewt = fmax(DBL_ABSORPTION / nls->tol_scaled.rtol, fmin(alpha_maximal, fnewt_prop));
   }
 
   // add a history of thetas_last + #newt iterations to detect nearly linear systems, similar to err controller
