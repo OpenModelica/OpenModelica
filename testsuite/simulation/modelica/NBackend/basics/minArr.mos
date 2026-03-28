@@ -1,7 +1,8 @@
-// name: minimal_array
+// name: minArr
 // keywords: NewBackend
 // status: correct
 
+setCommandLineOptions("--newBackend --simCodeScalarize=true"); getErrorString();
 
 loadString("
   model minimal_array
@@ -15,6 +16,41 @@ loadString("
   end minimal_array;
 "); getErrorString();
 
-setCommandLineOptions("--newBackend -d=-nfScalarize,dumpSetBasedGraphs --matchingAlgorithm=SBGraph");
 simulate(minimal_array); getErrorString();
 
+val(arr[1], 0.0);
+val(arr[2], 0.0);
+val(for_arr[1], 0.0);
+val(for_arr[2], 0.0);
+val(for_arr[3], 0.0);
+
+val(arr[1], 1.0);
+val(arr[2], 1.0);
+val(for_arr[1], 1.0);
+val(for_arr[2], 1.0);
+val(for_arr[3], 1.0);
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "minimal_array_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'minimal_array', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 0.0
+// 1.0
+// 0.0
+// 0.0
+// 0.0
+// 0.8414709848078965
+// 0.5403023058681398
+// 1.0
+// 2.0
+// 3.0
+// endResult
