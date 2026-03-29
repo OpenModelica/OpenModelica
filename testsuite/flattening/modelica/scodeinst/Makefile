@@ -1136,6 +1136,7 @@ SizeInvalidType3.mo \
 SlicedCref1.mo \
 SlicedCref2.mo \
 SlicedCref3.mo \
+SlicedCref4.mo \
 StatementInvalidType1.mo \
 StateSelectVariability1.mo \
 StateSelect1.mo \
