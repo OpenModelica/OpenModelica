@@ -392,6 +392,15 @@ int expl_diag_impl_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
     }
   }
 
+  modelica_boolean use_contractive_error = (gbData->tableau->contraction != NULL
+                                         && gbData->tableau->contraction->apply_filter_only
+                                         && gbData->nlsSolverMethod == GB_NLS_INTERNAL);
+
+  if (use_contractive_error)
+  {
+    gbInternalContractiveFilter(data, threadData, gbData->nlsData, gbData, gbData->y, gbData->yt);
+  }
+
   return 0;
 }
 
@@ -589,6 +598,15 @@ int expl_diag_impl_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solv
     }
   }
 
+  modelica_boolean use_contractive_error = (gbfData->tableau->contraction != NULL
+                                         && gbfData->tableau->contraction->apply_filter_only
+                                         && gbfData->nlsSolverMethod == GB_NLS_INTERNAL);
+
+  if (use_contractive_error)
+  {
+    gbInternalContractiveFilter(data, threadData, gbData->gbfData->nlsData, gbData, gbfData->y, gbfData->yt);
+  }
+
   return 0;
 }
 
@@ -674,14 +692,14 @@ int full_implicit_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
   }
 
   modelica_boolean use_contractive_error = (gbData->tableau->t_transform != NULL
-                                         && gbData->tableau->t_transform->defect_err != NULL
+                                         && gbData->tableau->contraction != NULL
                                          && gbData->nlsSolverMethod == GB_NLS_INTERNAL);
 
   // calculate yt(t_n+1) by contractive or standard embedded error estimate
   if (use_contractive_error)
   {
     // compute contractive error into gbData->yt = err = (gamma / h * I - J)^{-1} * (f(t_n, y(t_n)) - d(0)^T * A * k)
-    gbInternalContraction(data, threadData, gbData->nlsData, gbData, gbData->yt);
+    gbInternalContractiveDefect(data, threadData, gbData->nlsData, gbData, gbData->yt);
 
     // compute "embedded" method as yt := y + err
     daxpy_(&nStates, &DBL_ONE, gbData->y, &INT_ONE, gbData->yt, &INT_ONE);
@@ -782,7 +800,7 @@ int full_implicit_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solve
   }
 
   modelica_boolean use_contractive_error = (gbfData->tableau->t_transform != NULL
-                                         && gbfData->tableau->t_transform->defect_err != NULL
+                                         && gbfData->tableau->contraction != NULL
                                          && gbfData->nlsSolverMethod == GB_NLS_INTERNAL);
 
   // calculate yt(t_n+1) by contractive or standard embedded error estimate
@@ -792,7 +810,7 @@ int full_implicit_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solve
     double *work = gbInternalGetWorkPointer(((struct dataSolver *)nlsData->solverData)->ordinaryData);
 
     // compute contractive error into gbData->yt = err = (gamma / h * I - J)^{-1} * (f(t_n, y(t_n)) - d(0)^T * A * k)
-    gbInternalContraction(data, threadData, gbfData->nlsData, gbData, work);
+    gbInternalContractiveDefect(data, threadData, gbfData->nlsData, gbData, work);
 
     // compute "embedded" method as yt := y + err
     for (int fast_idx = 0; fast_idx < nFastStates; fast_idx++)

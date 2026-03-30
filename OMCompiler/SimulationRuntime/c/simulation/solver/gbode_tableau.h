@@ -78,12 +78,17 @@ typedef void (*gb_dense_output)(BUTCHER_TABLEAU* tableau, double* yOld, double* 
  *     Gonzalez-Pinto et al. "Two–step error estimators for implicit Runge–Kutta methods applied to stiff systems" (gives an overview of such ideas and
  *                                                                                                                  an alternative 2-step estimator),
  */
-typedef struct CONTRACTIVE_DEFECT_ERROR {
+typedef struct CONTRACTIVE_ERROR {
   /**
    * @brief Weights of the stage values d(0)^T * A.
    */
   double *dT_A;
-} CONTRACTIVE_DEFECT_ERROR;
+
+  /**
+   * @brief Set to true, if we only apply the filter matrix ERR := (1 / (h * gamma) * I - J)^(-1) ERR
+   */
+  modelica_boolean apply_filter_only;
+} CONTRACTIVE_ERROR;
 
 /**
  * @brief Transformation structures for decoupling fully implicit Runge–Kutta systems.
@@ -214,11 +219,6 @@ typedef struct T_TRANSFORM {
    * @brief Size S_r of the T-transformations size_{transform} = #stages - int(explicit_first) - int(explicit_last)
    */
   int size;
-
-  /**
-   * @brief Contractive defect error estimate for FIRK methods.
-   */
-  CONTRACTIVE_DEFECT_ERROR *defect_err;
 } T_TRANSFORM;
 
 typedef enum STAGE_VALUE_PREDICTOR_TYPE
@@ -309,6 +309,7 @@ typedef struct BUTCHER_TABLEAU {
   gb_dense_output dense_output;       /* Generic dense output function */
   T_TRANSFORM *t_transform;           /* T-transformation for FIRK methods */
   STAGE_VALUE_PREDICTORS *svp;        /* Stage-Value-Predictors for (E)SDIRK methods */
+  CONTRACTIVE_ERROR *contraction;     /* Contractive defect error estimate for method using -gbnls=internal */
 } BUTCHER_TABLEAU;
 
 /**

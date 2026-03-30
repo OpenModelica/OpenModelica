@@ -1933,9 +1933,9 @@ NLS_SOLVER_STATUS gbInternalSolveNls(DATA *data,
  * This estimate is A-stable and of one order higher than the naive embedded method, which
  * is crucial for stiff problems.
  *
- * See notes on struct CONTRACTIVE_DEFECT_ERROR for more context.
+ * See notes on struct CONTRACTIVE_ERROR for more context.
  */
-void gbInternalContraction(DATA *data,
+void gbInternalContractiveDefect(DATA *data,
                            threadData_t *threadData,
                            NONLINEAR_SYSTEM_DATA *nonlinsys,
                            DATA_GBODE *gbData,
@@ -1943,7 +1943,7 @@ void gbInternalContraction(DATA *data,
 {
   GB_INTERNAL_NLS_DATA *nls = (GB_INTERNAL_NLS_DATA *) (((struct dataSolver *)nonlinsys->solverData)->ordinaryData);
   BUTCHER_TABLEAU *tabl = nls->tabl;
-  CONTRACTIVE_DEFECT_ERROR *defect_err = tabl->t_transform->defect_err;
+  CONTRACTIVE_ERROR *contraction = tabl->contraction;
   SOLVERSTATS *stats = (nls->multirate ? &gbData->gbfData->stats : &gbData->stats);
 
   int nStates = gbData->nStates;
@@ -1959,7 +1959,7 @@ void gbInternalContraction(DATA *data,
          &INT_ONE,
          &nStages,
          &DBL_MINUS_ONE, kPacked, &size,
-         defect_err->dT_A, &nStages,
+         contraction->dT_A, &nStages,
          &DBL_ZERO, err, &size);
 
   modelica_boolean sr_valid = (!nls->multirate && !gbData->didFastStep && gbData->time != data->simulationInfo->startTime && !gbData->eventHappened && gbData->extrapolationBaseTime != INFINITY);
@@ -1989,6 +1989,28 @@ void gbInternalContraction(DATA *data,
 
   // ERR := (gamma / h * I - J)^{-1} * yt = (gamma / h * I - J)^{-1} * (f(t_n, y(t_n)) - d(0)^T * A * k) (exact error measure)
   gbInternal_dKLU_solve(&nls->klu_internals_real[0], size, err);
+}
+
+void gbInternalContractiveFilter(DATA *data,
+                                 threadData_t *threadData,
+                                 NONLINEAR_SYSTEM_DATA *nonlinsys,
+                                 DATA_GBODE *gbData,
+                                 double *y,
+                                 double *yt)
+{
+  GB_INTERNAL_NLS_DATA *nls = (GB_INTERNAL_NLS_DATA *) (((struct dataSolver *)nonlinsys->solverData)->ordinaryData);
+  int size = nls->size;
+
+  assert(nls->tabl->contraction->apply_filter_only);
+
+  // yt := yt - y
+  daxpy_(&size, &DBL_MINUS_ONE, y, &INT_ONE, yt, &INT_ONE);
+
+  // yt := (I - h * gamma * J)^{-1} (yt - y); no need to dscal_ with some 1 / (h * gamma) as system is written with factor of I = 1
+  gbInternal_dKLU_solve(&nls->klu_internals_real[0], size, yt);
+
+  // yt := yt + y
+  daxpy_(&size, &DBL_ONE, y, &INT_ONE, yt, &INT_ONE);
 }
 
 // returns a work pointer of at least 32 * N_STATES bytes == 4 * N_STATES * sizeof(double)

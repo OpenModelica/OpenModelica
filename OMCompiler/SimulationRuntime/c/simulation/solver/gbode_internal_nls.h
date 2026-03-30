@@ -66,11 +66,18 @@ NLS_SOLVER_STATUS gbInternalSolveNls(DATA *data,
                                      DATA_GBODE *gbData,
                                      void *nls_ptr);
 
-void gbInternalContraction(DATA *data,
-                           threadData_t *threadData,
-                           NONLINEAR_SYSTEM_DATA *nonlinsys,
-                           DATA_GBODE *gbData,
-                           double *err);
+void gbInternalContractiveDefect(DATA *data,
+                                 threadData_t *threadData,
+                                 NONLINEAR_SYSTEM_DATA *nonlinsys,
+                                 DATA_GBODE *gbData,
+                                 double *err);
+
+void gbInternalContractiveFilter(DATA *data,
+                                 threadData_t *threadData,
+                                 NONLINEAR_SYSTEM_DATA *nonlinsys,
+                                 DATA_GBODE *gbData,
+                                 double *y,
+                                 double *yt);
 
 void gbInternalLinearCombinationSVP(STAGE_VALUE_PREDICTORS *svp,
                                     int active_stage,

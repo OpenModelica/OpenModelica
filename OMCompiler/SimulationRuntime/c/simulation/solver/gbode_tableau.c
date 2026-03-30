@@ -102,6 +102,7 @@ void setButcherTableau(BUTCHER_TABLEAU* tableau, const double *c, const double *
   tableau->isKLeftAvailable = FALSE;
   tableau->isKRightAvailable = FALSE;
   tableau->t_transform = NULL;
+  tableau->contraction = NULL;
 }
 
 void setStageValuePredictors(BUTCHER_TABLEAU *tableau, const double *A_pred, const STAGE_VALUE_PREDICTOR_TYPE *type, gb_dense_output dense_output_pred)
@@ -120,23 +121,36 @@ void setStageValuePredictors(BUTCHER_TABLEAU *tableau, const double *A_pred, con
   memcpy(tableau->svp->type, type, stages * sizeof(STAGE_VALUE_PREDICTOR_TYPE));
 }
 
-void setContractiveDefectError(BUTCHER_TABLEAU *tableau, const double *dT_A)
+void setContractiveDefectError(BUTCHER_TABLEAU *tableau, const double *dT_A, modelica_boolean only_filter)
 {
-  if (tableau->t_transform == NULL)
+  if (tableau->t_transform == NULL && !only_filter)
   {
-    warningStreamPrint(OMC_LOG_STDOUT, 0, "Cannot set contractive defect error, if T-Transformation is NULL. Defaulting to standard embedded scheme.");
+    warningStreamPrint(OMC_LOG_STDOUT, 0, "Cannot set contractive error, if T-Transformation is NULL and filtering is disabled. Defaulting to standard embedded scheme.");
     return;
   }
 
-  CONTRACTIVE_DEFECT_ERROR *defect = (CONTRACTIVE_DEFECT_ERROR *) malloc(sizeof(CONTRACTIVE_DEFECT_ERROR));
+  CONTRACTIVE_ERROR *contraction = (CONTRACTIVE_ERROR *) malloc(sizeof(CONTRACTIVE_ERROR));
 
-  tableau->t_transform->defect_err = defect;
+  tableau->contraction = contraction;
 
-  defect->dT_A = (double *) malloc(tableau->nStages * sizeof(double));
-  memcpy(defect->dT_A, dT_A, tableau->nStages * sizeof(double));
+  if (!only_filter)
+  {
+    // perform contractive defect: ERR := ((1 / (h * gamma)) * I - J)^(-1) (f(t0, x0) - 1/h * d^T * A * k)
+    contraction->dT_A = (double *) malloc(tableau->nStages * sizeof(double));
+    memcpy(contraction->dT_A, dT_A, tableau->nStages * sizeof(double));
 
-  // order of contractive error is = s
-  tableau->order_bt = tableau->nStages;
+    // order of contractive error is = s
+    tableau->order_bt = tableau->nStages;
+  }
+  else
+  {
+    // perform filtering only: ERR = (I - h gamma J)^(-1) * ERR, where previous ERR is unbounded for z -> -oo
+    contraction->dT_A = NULL;
+
+    // order stays the same
+  }
+
+  contraction->apply_filter_only = only_filter;
 }
 
 void setTTransform(BUTCHER_TABLEAU *tableau, const double *A_part_inv, const double *T, const double *T_inv, const double *gamma, const double *alpha, const double *beta,
@@ -185,8 +199,6 @@ void setTTransform(BUTCHER_TABLEAU *tableau, const double *A_part_inv, const dou
   memcpy(tr->gamma, gamma, n_real_eigs * sizeof(double));
   memcpy(tr->alpha, alpha, n_cmplx_eigs * sizeof(double));
   memcpy(tr->beta, beta, n_cmplx_eigs * sizeof(double));
-
-  tr->defect_err = NULL;
 }
 
 // TODO: Describe me
@@ -561,6 +573,8 @@ void getButcherTableau_SDIRK3(BUTCHER_TABLEAU* tableau)
 
   const STAGE_VALUE_PREDICTOR_TYPE svp_type[] = {SVP_NOT_AVAILABLE, SVP_LINEAR_COMBINATION, SVP_LINEAR_COMBINATION};
 
+  setContractiveDefectError(tableau, NULL, TRUE);
+
   setStageValuePredictors(tableau, A_predictor, svp_type, NULL);
 }
 
@@ -600,6 +614,8 @@ void getButcherTableau_SDIRK4(BUTCHER_TABLEAU* tableau)
   tableau->dense_output = denseOutput_SDIRK4;
   tableau->isKLeftAvailable = FALSE;
   tableau->isKRightAvailable = TRUE;
+
+  setContractiveDefectError(tableau, NULL, TRUE);
 
   const double A_predictor[] = {
                                 0, 0, 0, 0, 0,
@@ -643,6 +659,8 @@ void getButcherTableau_SDIRK2(BUTCHER_TABLEAU* tableau)
   tableau->dense_output = denseOutput_SDIRK2;
   tableau->isKLeftAvailable = FALSE;
   tableau->isKRightAvailable = TRUE;
+
+  setContractiveDefectError(tableau, NULL, TRUE);
 
   // predictor can't be stable for stage 2
 }
@@ -1045,7 +1063,7 @@ void getButcherTableau_RADAU_IIA_3(BUTCHER_TABLEAU* tableau)
 
   const double dT_A[] = { 1.558078204724922382431975, -0.8914115380582557157653087, 0.3333333333333333333333333 };
 
-  setContractiveDefectError(tableau, dT_A);
+  setContractiveDefectError(tableau, dT_A, FALSE);
 }
 
 void denseOutput_Radau_IIA_4(BUTCHER_TABLEAU* tableau, double* yOld, double* x, double* k, double dt, double stepSize, double* y, int nIdx, int* idx, int nStates)
@@ -1178,7 +1196,7 @@ void getButcherTableau_RADAU_IIA_5(BUTCHER_TABLEAU* tableau)
 
   const double dT_A[] = { 1.586407900186328249755967, -1.008117881498372989065673, 0.7309748661597874614134016, -0.5092648848477427221036966, 0.2 };
 
-  setContractiveDefectError(tableau, dT_A);
+  setContractiveDefectError(tableau, dT_A, FALSE);
 }
 
 void denseOutput_Radau_IIA_6(BUTCHER_TABLEAU* tableau, double* yOld, double* x, double* k, double dt, double stepSize, double* y, int nIdx, int* idx, int nStates)
@@ -1333,7 +1351,7 @@ void getButcherTableau_RADAU_IIA_7(BUTCHER_TABLEAU* tableau)
 
   const double dT_A[] = { 1.594064218561041781197339, -1.036553752196476461002723, 0.7938217234907926875176341, -0.6325776522499342252619287, 0.4976107136030013134425167, -0.3592223940655679530356959, 0.1428571428571428571428571 };
 
-  setContractiveDefectError(tableau, dT_A);
+  setContractiveDefectError(tableau, dT_A, FALSE);
 }
 
 void denseOutput_LOBATTO_IIIA_3(BUTCHER_TABLEAU* tableau, double* yOld, double* x, double* k, double dt, double stepSize, double* y, int nIdx, int* idx, int nStates)
@@ -1819,7 +1837,7 @@ void getButcherTableau_GAUSS3(BUTCHER_TABLEAU* tableau)
 
   const double dT_A[] = { 1.478830557701236147529878, -0.6666666666666666666666667, 0.1878361089654305191367891 };
 
-  setContractiveDefectError(tableau, dT_A);
+  setContractiveDefectError(tableau, dT_A, FALSE);
 }
 
 void denseOutput_GAUSS4(BUTCHER_TABLEAU* tableau, double* yOld, double* x, double* k, double dt, double stepSize, double* y, int nIdx, int* idx, int nStates)
@@ -1953,7 +1971,7 @@ void getButcherTableau_GAUSS5(BUTCHER_TABLEAU* tableau)
 
   const double dT_A[] = { 1.551408049094313012813028, -0.8931583920000717373261768, 0.5333333333333333333333333, -0.2679416522233875093041099, 0.07635866179581290048392539 };
 
-  setContractiveDefectError(tableau, dT_A);
+  setContractiveDefectError(tableau, dT_A, FALSE);
 }
 
 void denseOutput_GAUSS6(BUTCHER_TABLEAU* tableau, double* yOld, double* x, double* k, double dt, double stepSize, double* y, int nIdx, int* idx, int nStates)
@@ -2802,10 +2820,10 @@ BUTCHER_TABLEAU* initButcherTableau(enum GB_METHOD method, enum _FLAG flag)
   return tableau;
 }
 
-void freeContractiveDefectError(CONTRACTIVE_DEFECT_ERROR *defect_err)
+void freeContractiveDefectError(CONTRACTIVE_ERROR *contraction)
 {
-  free(defect_err->dT_A);
-  free(defect_err);
+  free(contraction->dT_A);
+  free(contraction);
 }
 
 void freeStageValuePredictors(STAGE_VALUE_PREDICTORS *svp)
@@ -2825,7 +2843,6 @@ void freeTTransform(T_TRANSFORM *t_transform)
   free(t_transform->gamma);
   if (t_transform->phi) free(t_transform->phi);
   if (t_transform->rho) free(t_transform->rho);
-  if (t_transform->defect_err) freeContractiveDefectError(t_transform->defect_err);
   free(t_transform);
 }
 
@@ -2850,6 +2867,11 @@ void freeButcherTableau(BUTCHER_TABLEAU* tableau)
   if (tableau->svp)
   {
     freeStageValuePredictors(tableau->svp);
+  }
+
+  if (tableau->contraction)
+  {
+    freeContractiveDefectError(tableau->contraction);
   }
 
   free(tableau);
