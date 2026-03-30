@@ -6,6 +6,7 @@
 
 loadString("
   model A end A;
+  model B end B;
 
   package P1
     replaceable model M
@@ -17,6 +18,7 @@ loadString("
     extends P1;
 
     redeclare model extends M
+      extends B;
     end M;
   end P2;
 ");
@@ -28,6 +30,6 @@ getErrorString();
 // Result:
 // true
 // ""
-// {P2.M}
+// {B}
 // ""
 // endResult

@@ -745,6 +745,8 @@ function getInheritedClasses
 protected
   InstNode cls_node;
   Class cls;
+  array<InstNode> exts;
+  Integer start_idx;
 algorithm
   if not Flags.isSet(Flags.SCODE_INST) then
     extendsPaths := {};
@@ -762,7 +764,15 @@ algorithm
 
   extendsPaths := match cls
     case Class.EXPANDED_DERIVED() then {InstNode.fullPath(cls.baseClass, true)};
-    else list(InstNode.fullPath(e, true) for e in ClassTree.getExtends(Class.classTree(cls)));
+    else
+      algorithm
+        exts := ClassTree.getExtends(Class.classTree(cls));
+        // Skip the first extends of a class extends since it would just return
+        // the name of the class itself. That's technically correct, but not
+        // very useful and a potential user trap when using the API recursively.
+        start_idx := if SCodeUtil.isClassExtends(InstNode.definition(cls_node)) then 2 else 1;
+      then
+        list(InstNode.fullPath(exts[i], true) for i in start_idx:arrayLength(exts));
   end match;
 end getInheritedClasses;
 
