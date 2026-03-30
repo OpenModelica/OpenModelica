@@ -1362,7 +1362,11 @@ def exportIcon(modelicaClass, base_classes, includeInvisbleText, warn_duplicates
 
 # Note: The order of the base classes matters
 def getBaseClasses(modelica_class, base_classes):
-    inherited_classes = ask_omc('getInheritedClasses', modelica_class)
+    try:
+        inherited_classes = ask_omc('getInheritedClasses', modelica_class)
+    except Exception as e:
+        logger.error(f"Could not get inherited classes for {modelica_class}, skipping: {e}")
+        return
 
     for inherited_class in inherited_classes:
         if inherited_class not in base_classes:
