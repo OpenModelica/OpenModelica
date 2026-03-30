@@ -1111,6 +1111,22 @@ static inline void gbInternal_T_Transform_full_to_fast_axpy(DATA_GBODE *gbData, 
   }
 }
 
+static inline void gbInternal_T_Transform_copy_full_to_full_axpy(DATA_GBODE *gbData, GB_INTERNAL_NLS_DATA *nls, const double alpha, const double *x_full, double *y_full)
+{
+  if (nls->multirate)
+  {
+    for (int fast_idx = 0; fast_idx < nls->size; fast_idx++)
+    {
+      int full_idx = gbData->fastStatesIdx[fast_idx];
+      y_full[full_idx] += alpha * x_full[full_idx];
+    }
+  }
+  else
+  {
+    daxpy_(&nls->size, &alpha, x_full, &INT_ONE, y_full, &INT_ONE);
+  }
+}
+
 /** @brief Solve entire NLS of FIRK with possibly singular Runge-Kutta matrix
  *         via the T-transformation (decoupled space).
  *
@@ -2003,14 +2019,34 @@ void gbInternalContractiveFilter(DATA *data,
 
   assert(nls->tabl->contraction->apply_filter_only);
 
-  // yt := yt - y
-  daxpy_(&size, &DBL_MINUS_ONE, y, &INT_ONE, yt, &INT_ONE);
+  if (!nls->multirate)
+  {
+    // yt := yt - y
+    daxpy_(&size, &DBL_MINUS_ONE, y, &INT_ONE, yt, &INT_ONE);
 
-  // yt := (I - h * gamma * J)^{-1} (yt - y); no need to dscal_ with some 1 / (h * gamma) as system is written with factor of I = 1
-  gbInternal_dKLU_solve(&nls->klu_internals_real[0], size, yt);
+    // yt := (I - h * gamma * J)^{-1} (yt - y); no need to dscal_ with some 1 / (h * gamma) as system is written with factor of I = 1
+    gbInternal_dKLU_solve(&nls->klu_internals_real[0], size, yt);
 
-  // yt := yt + y
-  daxpy_(&size, &DBL_ONE, y, &INT_ONE, yt, &INT_ONE);
+    // yt := yt + y
+    daxpy_(&size, &DBL_ONE, y, &INT_ONE, yt, &INT_ONE);
+  }
+  else
+  {
+    double *work = nls->work;
+
+    // work := fast(yt - y)
+    gbInternal_T_Transform_copy_full_to_fast(gbData, nls, yt, work);
+    gbInternal_T_Transform_full_to_fast_axpy(gbData, nls, -1.0, y, work);
+
+    // work := (I - h * gamma * J)^{-1} (yt - y); no need to dscal_ with some 1 / (h * gamma) as system is written with factor of I = 1
+    gbInternal_dKLU_solve(&nls->klu_internals_real[0], size, work);
+
+    // yt := full(work)
+    gbInternal_T_Transform_copy_fast_to_full(gbData, nls, work, yt);
+
+    // yt := y + full(work)
+    gbInternal_T_Transform_copy_full_to_full_axpy(gbData, nls, 1.0, y, yt);
+  }
 }
 
 // returns a work pointer of at least 32 * N_STATES bytes == 4 * N_STATES * sizeof(double)
