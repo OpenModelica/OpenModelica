@@ -2142,21 +2142,19 @@ algorithm
         e := evaluateEnd(subscript.exp, dimension, subscriptedExp, index, context, info);
         (e, ty, variability) := typeExp(e, context, info);
 
+        if Type.isArray(ty) and InstContext.inEquation(context) then
+          Structural.markExp(e);
+          e := Ceval.tryEvalExp(e);
+          ty := Expression.typeOf(e);
+        end if;
+
         if checkSubscript then
           (e, matched_ty) := checkSubscriptType(e, Type.arrayElementType(ty), dimension, info);
         else
           matched_ty := ty;
         end if;
 
-        if Type.isArray(ty) then
-          outSubscript := Subscript.SLICE(e);
-
-          if InstContext.inEquation(context) then
-            Structural.markExp(e);
-          end if;
-        else
-          outSubscript := Subscript.INDEX(e);
-        end if;
+        outSubscript := if Type.isArray(ty) then Subscript.SLICE(e) else Subscript.INDEX(e);
       then
         (matched_ty, variability);
 
