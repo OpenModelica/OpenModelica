@@ -69,6 +69,7 @@ getExtendsModifierNames.mos \
 getIconAnnotation.mos \
 getInheritedClasses1.mos \
 getInheritedClasses2.mos \
+getInheritedClasses3.mos \
 getNthComponentAnnotation.mos \
 getNthConnector.mos \
 getNthConnectorIconAnnotation.mos \
