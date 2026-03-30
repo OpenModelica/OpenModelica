@@ -1344,17 +1344,6 @@ algorithm
     return;
   end if;
 
-  // When doing lookup in some of the API functions we only need an expanded package.
-  if InstContext.inFastLookup(context) then
-    if state < PackageCacheState.EXPANDED then
-      InstNode.setPackageCache(node, node, PackageCacheState.PROCESSING);
-      inst := expand(node, context);
-      InstNode.setPackageCache(node, inst, PackageCacheState.EXPANDED);
-    end if;
-
-    return;
-  end if;
-
   // Otherwise we need to at least partially instantiate the package.
   if state < PackageCacheState.PARTIALLY_INSTANTIATED then
     InstNode.setPackageCache(node, node, PackageCacheState.PROCESSING);
@@ -1362,8 +1351,9 @@ algorithm
     InstNode.setPackageCache(node, inst, PackageCacheState.PARTIALLY_INSTANTIATED);
   end if;
 
-  // If the package isn't partial we also instantiate expressions in it.
-  if state < PackageCacheState.INSTANTIATED and
+  // If the package isn't partial we also instantiate expressions in it,
+  // except when doing lookup for API functions that only care about looking up classes.
+  if state < PackageCacheState.INSTANTIATED and not InstContext.inFastLookup(context) and
      (not InstNode.isPartial(inst) or InstContext.inRelaxed(context)) then
     InstNode.setPackageCache(node, inst, PackageCacheState.INSTANTIATED);
     instExpressions(inst, context = context, settings = DEFAULT_SETTINGS);
