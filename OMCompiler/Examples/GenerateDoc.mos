@@ -66,8 +66,9 @@ then
   // should we echo?
   shouldEcho := false;
 else
-  loadModel(Modelica); getErrorString();
-  writeFile("loadModel.mos",sum("if loadModel(" + lib + ") then true else if loadModel(" + lib + ",languageStandard=\"2.x\") then true else loadModel(" + lib + ",languageStandard=\"1.x\");getErrorString();\n" for lib in getAvailableLibraries())); getErrorString();
+  // loadModel(Modelica); getErrorString();
+  // writeFile("loadModel.mos",sum("if loadModel(" + lib + ") then true else if loadModel(" + lib + ",languageStandard=\"2.x\") then true else loadModel(" + lib + ",languageStandard=\"1.x\");getErrorString();\n" for lib in getAvailableLibraries())); getErrorString();
+  writeFile("loadModel.mos",sum("if loadModel(" + lib + ") then true else if loadModel(" + lib + ",languageStandard=\"2.x\") then true else loadModel(" + lib + ",languageStandard=\"1.x\");getErrorString();\n" for lib in {"Modelica"})); getErrorString();
 end if;
 getErrorString();
 runScript("loadModel.mos");
@@ -323,7 +324,7 @@ repls = ["+replaceCommands+"
  (re.compile(r' '), r'%20'),
  (re.compile(r'\\''), r'%27'),
  # Resource files (svg, png, pdf, etc.) - preserve full path with slashes, no .html suffix
- (re.compile(r'[Mm][Oo][Dd][Ee][Ll][Ii][Cc][Aa]://([A-Za-z0-9.\\'()_ %/]*\\.[a-zA-Z]{2,5})'), r'\\1'),
+ (re.compile(r'[Mm][Oo][Dd][Ee][Ll][Ii][Cc][Aa]://([A-Za-z0-9.\\'()_ %/]*[.][a-zA-Z]{2,5})'), r'\\1'),
  # Class links with anchors (modelica://Foo.Bar#section) - convert to Foo.Bar.html#section
  (re.compile(r'[Mm][Oo][Dd][Ee][Ll][Ii][Cc][Aa]://([A-Za-z0-9.\\'()_ %/]*)#'), r'\\1.html#'),
  # Plain class links (modelica://Foo.Bar) - convert to Foo.Bar.html
