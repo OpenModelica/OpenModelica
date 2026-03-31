@@ -317,6 +317,7 @@ import glob
 import sys
 
 repls = ["+replaceCommands+"
+ (re.compile(r'.*/.openmodelica/libraries/'), ''),
  (re.compile(r' '), r'%20'),
  (re.compile(r'\\''), r'%27'),
  # Resource files (svg, png, pdf, etc.) - preserve full path with slashes, no .html suffix
