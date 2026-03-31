@@ -54,6 +54,14 @@ namespace OpenModelica
         explicit Value(std::string_view value) noexcept;
         explicit Value(const char *value) noexcept;
 
+        // Constructs a Value from an enum value, assuming that the enum has
+        // the same enumerators as the MetaModelica one and uses default values.
+        template<typename Enum, typename = std::enable_if_t<std::is_enum_v<Enum>>>
+        explicit Value(Enum e) noexcept
+          : Value(static_cast<int64_t>(e) + 1)
+        {
+        }
+
         Type getType() const noexcept;
         bool isInteger() const noexcept;
         bool isReal() const noexcept;
@@ -77,6 +85,14 @@ namespace OpenModelica
         Record toRecord() const;
         Pointer toPointer() const;
         Mutable toMutable() const;
+
+        // Converts the value to an enum value, assuming that the enum has the
+        // same enumerators as the MetaModelica one and uses default values.
+        template<typename Enum>
+        Enum toEnum() const
+        {
+          return static_cast<Enum>(toInt() - 1);
+        }
 
         // Converts an Option value to an std::optional<T> using T(value).
         template<typename T> std::optional<T> mapOptional() const;
@@ -498,11 +514,13 @@ namespace OpenModelica
         IndexedConstIterator find(std::string_view name) const noexcept;
         bool contains(std::string_view name) const noexcept;
         void* data() const noexcept;
+        std::size_t hash() const noexcept;
 
       private:
         void *_value;
     };
 
+    bool operator== (Record record1, Record record2) noexcept;
     std::ostream& operator<< (std::ostream &os, Record record) noexcept;
 
     class Pointer
@@ -518,6 +536,8 @@ namespace OpenModelica
         Value::ArrowProxy operator->() const noexcept;
         void update(Value value);
         void* data() const noexcept;
+
+        bool isImmutable() const noexcept;
 
       private:
         void *_ptr;
@@ -584,5 +604,15 @@ namespace OpenModelica
     }
   }
 }
+
+template<>
+struct std::hash<OpenModelica::MetaModelica::Record>
+{
+  std::size_t operator()(OpenModelica::MetaModelica::Record value) const noexcept
+  {
+    return value.hash();
+  }
+};
+
 
 #endif /* METAMODELICA_H */

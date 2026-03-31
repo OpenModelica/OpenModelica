@@ -26,6 +26,8 @@ void print_list(Container container, std::ostream &os)
   }
 }
 
+/* These functions will crash on MetaModelica types that don't have headers, i.e. Integers. */
+
 mmc_uint_t get_header(void *data)
 {
   return MMC_HDR_UNMARK(MMC_GETHDR(data));
@@ -139,7 +141,8 @@ bool Value::isInteger() const noexcept
 
 bool Value::isReal() const noexcept
 {
-  return MMC_HDR_UNMARK(MMC_GETHDR(_value)) == MMC_REALHDR;
+  if (isInteger()) return false;
+  return get_header(_value) == MMC_REALHDR;
 }
 
 bool Value::isBoolean() const noexcept
@@ -156,34 +159,40 @@ bool Value::isBoolean() const noexcept
 
 bool Value::isString() const noexcept
 {
+  if (isInteger()) return false;
   return MMC_HDRISSTRING(get_header(_value));
 }
 
 bool Value::isOption() const noexcept
 {
+  if (isInteger()) return false;
   const auto hdr = get_header(_value);
   return MMC_HDRCTOR(hdr) == 1 && MMC_HDRSLOTS(hdr) < 2;
 }
 
 bool Value::isList() const noexcept
 {
+  if (isInteger()) return false;
   const auto hdr = get_header(_value);
   return hdr == MMC_NILHDR || (MMC_HDRCTOR(hdr) == 1 && MMC_HDRSLOTS(hdr) >= 2);
 }
 
 bool Value::isArray() const noexcept
 {
+  if (isInteger()) return false;
   return MMC_HDRCTOR(get_header(_value)) == MMC_ARRAY_TAG;
 }
 
 bool Value::isTuple() const noexcept
 {
+  if (isInteger()) return false;
   const auto hdr = get_header(_value);
   return MMC_HDRCTOR(hdr) == 0 && MMC_HDRSLOTS(hdr) > 0;
 }
 
 bool Value::isRecord() const noexcept
 {
+  if (isInteger()) return false;
   const auto hdr = get_header(_value);
   return MMC_HDRCTOR(hdr) > 1 && MMC_HDRSLOTS(hdr) > 0;
 }
@@ -280,7 +289,7 @@ Record Value::toRecord() const
 
 Pointer Value::toPointer() const
 {
-  if (!isTuple()) { // Pointers are tuples.
+  if (!(isTuple() || isOption())) { // Pointers are tuples (mutable) or Options (immutable).
     throw std::runtime_error("Value::toPointer(): expected Pointer, got " + name());
   }
 
@@ -859,6 +868,16 @@ void* Record::data() const noexcept
   return _value;
 }
 
+std::size_t Record::hash() const noexcept
+{
+  return reinterpret_cast<std::size_t>(MMC_UNTAGPTR(_value));
+}
+
+bool OpenModelica::MetaModelica::operator== (Record record1, Record record2) noexcept
+{
+  return MMC_UNTAGPTR(record1.data()) == MMC_UNTAGPTR(record2.data());
+}
+
 std::ostream& OpenModelica::MetaModelica::operator<< (std::ostream &os, Record record) noexcept
 {
   os << record.fullName() << '(';
@@ -902,6 +921,11 @@ void Pointer::update(Value value)
 void* Pointer::data() const noexcept
 {
   return _ptr;
+}
+
+bool Pointer::isImmutable() const noexcept
+{
+  return Value{_ptr}.isOption();
 }
 
 Mutable::Mutable(void *value) noexcept
