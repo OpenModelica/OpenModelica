@@ -1236,6 +1236,7 @@ protected
     Option<Jacobian> adjointJac;
     Partition.Kind kind = Partition.Partition.getKind(part);
     Boolean updated;
+    Real t_bidi_start;
   algorithm
     // create algebraic loop jacobians
     part.strongComponents := match part.strongComponents
@@ -1345,6 +1346,7 @@ protected
     Adjacency.Matrix sparsity;
 
     BVariable.checkVar func = getTmpFilterFunction(jacType);
+    Real t_start, t_diff, t_sparsity;
   algorithm
     if Util.isSome(strongComponents) then
       // filter all discrete strong components and differentiate the others
@@ -1354,6 +1356,7 @@ protected
       Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because no strong components were given!"});
     end if;
 
+    t_start := clock();
     // create seed vars
     VariablePointers.mapPtr(seedCandidates, function makeVarTraverse(name = name, vars_ptr = seed_vars_ptr, map = diff_map, makeVar = BVariable.makeSeedVar, init = init));
 
@@ -1384,6 +1387,7 @@ protected
 
     // differentiate all strong components
     (diffed_comps, diffArguments) := Differentiate.differentiateStrongComponentList(comps, diffArguments, idx, name, getInstanceName());
+    t_diff := clock() - t_start;
 
     // collect var data (most of this can be removed)
     unknown_vars  := listAppend(res_vars, tmp_vars);
@@ -1413,6 +1417,12 @@ protected
       fail();
     end if;
     (sparsityPattern, sparsityColoring) := SparsityPattern.create(seedCandidates, partialCandidates, strongComponents, jacType);
+    t_sparsity := clock() - t_start - t_diff;
+
+    print("[NBJacobian] jacobianSymbolic('" + name + "' " + jacobianTypeString(jacType)
+      + "): differentiation=" + realString(t_diff) + "s"
+      + ", sparsity+coloring=" + realString(t_sparsity) + "s"
+      + ", total=" + realString(t_diff + t_sparsity) + "s\n");
 
     jacobian := SOME(Jacobian.JACOBIAN(
       name              = name,
@@ -2090,6 +2100,7 @@ protected
     // Per-component adjoint generation
     list<StrongComponent> compAdjComps;
     list<Pointer<Variable>> compNewVars;
+    Real t_start, t_comps, t_sparsity;
   algorithm
     newName := name + "_ADJ";
     if Util.isSome(strongComponents) then
@@ -2109,6 +2120,7 @@ protected
       fail();
     end if;
 
+    t_start := clock();
     if Flags.isSet(Flags.DEBUG_ADJOINT) then
       print("Seed candidates before pDer creation:\n" + BVariable.VariablePointers.toString(seedCandidates, "Seed Candidates") + "\n");
       print("Partial candidates before pDer creation:\n" + BVariable.VariablePointers.toString(partialCandidates, "Partial Candidates") + "\n");
@@ -2164,6 +2176,7 @@ protected
         end for;
       end if;
     end for;
+    t_comps := clock() - t_start;
     // diffed_comps is now in LIFO order (correct for adjoint execution)
 
     if Flags.isSet(Flags.DEBUG_ADJOINT) then
@@ -2195,6 +2208,12 @@ protected
     );
 
     (sparsityPattern, sparsityColoring) := SparsityPattern.create(seedCandidates, partialCandidates, strongComponents, jacType);
+    t_sparsity := clock() - t_start - t_comps;
+
+    print("[NBJacobian] jacobianSymbolicAdjoint('" + name + "' " + jacobianTypeString(jacType)
+      + "): component generation=" + realString(t_comps) + "s"
+      + ", sparsity+coloring=" + realString(t_sparsity) + "s"
+      + ", total=" + realString(t_comps + t_sparsity) + "s\n");
 
     if Flags.isSet(Flags.DEBUG_ADJOINT) then
       print("Adjoint sparsity pattern and coloring:\n");
