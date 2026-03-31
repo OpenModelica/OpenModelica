@@ -47,7 +47,7 @@ void printStateSelectionInfo(DATA *data, STATE_SET_DATA *set)
 {
   long k, l;
 
-  infoStreamPrint(OMC_LOG_DSS, 0, "Select %ld state%s from %ld candidates.", set->nStates, set->nStates == 1 ? "" : "s", set->nCandidates);
+  infoStreamPrint(OMC_LOG_DSS, 0, "Select " OMC_INT_FORMAT " state%s from " OMC_INT_FORMAT " candidates.", set->nStates, set->nStates == 1 ? "" : "s", set->nCandidates);
   infoStreamPrint(OMC_LOG_DSS, 1, "State candidates:");
   for(k=0; k < set->nCandidates; k++)
   {
@@ -332,7 +332,7 @@ int stateSelectionSet(DATA *data, threadData_t *threadData, char reportError, in
       /* error, report the matrix and the time */
 
       char *buffer = (char*)malloc(sizeof(char)*data->simulationInfo->analyticJacobians[set->jacobianIndex].sizeCols*100+5);
-      warningStreamPrint(OMC_LOG_DSS, 1, "jacobian %zux%zu [id: %ld]", data->simulationInfo->analyticJacobians[set->jacobianIndex].sizeRows, data->simulationInfo->analyticJacobians[set->jacobianIndex].sizeCols, set->jacobianIndex);
+      warningStreamPrint(OMC_LOG_DSS, 1, "jacobian %zux%zu [id: " OMC_INT_FORMAT "]", data->simulationInfo->analyticJacobians[set->jacobianIndex].sizeRows, data->simulationInfo->analyticJacobians[set->jacobianIndex].sizeCols, set->jacobianIndex);
 
       for(m=0; m < data->simulationInfo->analyticJacobians[set->jacobianIndex].sizeRows; m++)
       {

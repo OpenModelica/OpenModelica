@@ -121,7 +121,7 @@ double SystemImpl__getSizeOfData(void *data, double *raw_size_res, double *nonsh
       }
       continue;
     }
-    fprintf(stderr, "abort... bytes=%ld num items=%ld\n", sz, handled.size());
+    fprintf(stderr, "abort... bytes=%zu num items=%zu\n", sz, handled.size());
     printAny(item);
     abort();
   }

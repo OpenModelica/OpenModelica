@@ -246,14 +246,12 @@ static int callDenseJacobian(double t, N_Vector y, N_Vector fy,
 {
   /* Variables */
   CVODE_SOLVER *cvodeData;
-  DATA *data;
   threadData_t *threadData;
   int retVal = -1;
   _omc_matrix *dumpJac;
 
   /* Access userData */
   cvodeData = (CVODE_SOLVER *)user_data;
-  data = cvodeData->simData->data;
   threadData = cvodeData->simData->threadData;
 
   /* profiling */
@@ -875,8 +873,6 @@ int cvode_solver_step(DATA *data, threadData_t *threadData, SOLVER_INFO *solverI
 
   CVODE_SOLVER *cvodeData;
   SIMULATION_DATA *simulationData;
-  SIMULATION_DATA *simulationDataOld;
-  MODEL_DATA *modelData;
   SIMULATION_INFO *simulationInfo;
 
   /* Measure time */
@@ -886,8 +882,6 @@ int cvode_solver_step(DATA *data, threadData_t *threadData, SOLVER_INFO *solverI
   /* Access data */
   cvodeData = (CVODE_SOLVER *)solverInfo->solverData;
   simulationData = data->localData[0];
-  simulationDataOld = data->localData[1];
-  modelData = (MODEL_DATA *)data->modelData;
   simulationInfo = data->simulationInfo;
 
   /* Set work array */

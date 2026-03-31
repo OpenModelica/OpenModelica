@@ -145,7 +145,7 @@ static int pool_collect_a_little()
 
 static void print_mem_pool(OMCMemPoolBlock* chunk) {
   printf("----------------------------\n");
-  printf("%p, %ld, %ld, %p\n", chunk->memory, chunk->used, chunk->size, chunk->previous);
+  printf("%p, %zu, %zu, %p\n", chunk->memory, chunk->used, chunk->size, chunk->previous);
   printf("----------------------------\n");
 }
 

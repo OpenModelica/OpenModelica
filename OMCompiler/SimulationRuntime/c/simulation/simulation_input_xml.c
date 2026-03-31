@@ -595,7 +595,8 @@ static void read_var_attribute_int(omc_ModelVariable *v, INTEGER_ATTRIBUTE *attr
   attribute->min = read_value_long(findHashStringStringEmpty(v,"min"), INTEGER_MIN);
   attribute->max = read_value_long(findHashStringStringEmpty(v,"max"), INTEGER_MAX);
 
-  infoStreamPrint(OMC_LOG_DEBUG, 0, "Integer %s(start=%ld, fixed=%s, min=%ld, max=%ld)", findHashStringString(v,"name"), attribute->start, attribute->fixed?"true":"false", attribute->min, attribute->max);
+  infoStreamPrint(OMC_LOG_DEBUG, 0, "Integer %s(start=" OMC_INT_FORMAT ", fixed=%s, min=" OMC_INT_FORMAT ", max=" OMC_INT_FORMAT ")",
+    findHashStringString(v,"name"), attribute->start, attribute->fixed?"true":"false", attribute->min, attribute->max);
 }
 
 static void read_var_attribute_bool(omc_ModelVariable *v, BOOLEAN_ATTRIBUTE *attribute)
@@ -992,7 +993,7 @@ void read_alias_var(DATA_ALIAS* alias,
 {
   // Assert nAliasVariables has correct size
   size_t num_alias_vars_xml = HASH_COUNT(aliasHashMap);
-  assertStreamPrint(NULL, nAliasVariables == num_alias_vars_xml, "Number of alias variables doesn't match up. Expected %zu but found %zu in XML!", nAliasVariables, num_alias_vars_xml);
+  assertStreamPrint(NULL, nAliasVariables == num_alias_vars_xml, "Number of alias variables doesn't match up. Expected %lu but found %zu in XML!", nAliasVariables, num_alias_vars_xml);
 
   long *it, *itParam;
   const char *aliasTmp = NULL;

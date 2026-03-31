@@ -225,7 +225,7 @@ void print_integer_matrix(const integer_array * source)
         for(i = 0; i < source->dim_size[0]; ++i) {
             for(j = 0; j < source->dim_size[1]; ++j) {
                 value = integer_get(*source, (i * source->dim_size[1]) + j);
-                printf("%ld\t", value);
+                printf(OMC_INT_FORMAT "\t", value);
             }
             printf("\n");
         }
@@ -243,11 +243,11 @@ void print_integer_array(const integer_array * source)
     data = (modelica_integer *) source->data;
     if(source->ndims == 1) {
         for(i = 1; i < source->dim_size[0]; ++i) {
-            printf("%ld, ",*data);
+            printf(OMC_INT_FORMAT ", ",*data);
             ++data;
         }
         if(0 < source->dim_size[0]) {
-            printf("%ld",*data);
+            printf(OMC_INT_FORMAT,*data);
         }
     } else if(source->ndims > 1) {
         size_t k, n;
@@ -256,11 +256,11 @@ void print_integer_array(const integer_array * source)
         for(k = 0; k < n; ++k) {
             for(i = 0; i < source->dim_size[1]; ++i) {
                 for(j = 0; j < source->dim_size[0]; ++j) {
-                    printf("%ld, ",*data);
+                    printf(OMC_INT_FORMAT ", ",*data);
                     ++data;
                 }
                 if(0 < source->dim_size[0]) {
-                    printf("%ld",*data);
+                    printf(OMC_INT_FORMAT,*data);
                 }
                 printf("\n");
             }
@@ -1315,7 +1315,7 @@ void outer_product_integer_array(const integer_array * v1,const integer_array * 
   /* Assert b is a vector */
 
   for(i = 0; i < number_of_elements_a; ++i) {
-    for(j = 0; i < number_of_elements_b; ++j) {
+    for(j = 0; j < number_of_elements_b; ++j) {
       integer_set(dest, (i * number_of_elements_b) + j, integer_get(*v1, i)*integer_get(*v2, j));
     }
   }

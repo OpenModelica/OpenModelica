@@ -1243,7 +1243,7 @@ int solve_nonlinear_system(DATA *data, threadData_t *threadData, int sysNumber)
   /* performance measurement */
   rt_ext_tp_tick(&nonlinsys->totalTimeClock);
 
-  infoStreamPrint(OMC_LOG_NLS_EXTRAPOLATE, 1, "Nonlinear system %ld dump OMC_LOG_NLS_EXTRAPOLATE", nonlinsys->equationIndex);
+  infoStreamPrint(OMC_LOG_NLS_EXTRAPOLATE, 1, "Nonlinear system " OMC_INT_FORMAT " dump OMC_LOG_NLS_EXTRAPOLATE", nonlinsys->equationIndex);
   /* grab the initial guess */
   /* if last solving is too long ago use just old values  */
   if (fabs(data->localData[0]->timeValue - nonlinsys->lastTimeSolved) < 5*data->simulationInfo->stepSize || casualTearingSet)
@@ -1263,7 +1263,7 @@ int solve_nonlinear_system(DATA *data, threadData_t *threadData, int sysNumber)
   }
 
   /* print debug initial information */
-  infoStreamPrint(OMC_LOG_NLS, 1, "############ Solve nonlinear system %ld at time %g ############", nonlinsys->equationIndex, data->localData[0]->timeValue);
+  infoStreamPrint(OMC_LOG_NLS, 1, "############ Solve nonlinear system " OMC_INT_FORMAT " at time %g ############", nonlinsys->equationIndex, data->localData[0]->timeValue);
   printNonLinearInitialInfo(OMC_LOG_NLS, data, nonlinsys);
 
 #if !defined(OMC_MINIMAL_RUNTIME)

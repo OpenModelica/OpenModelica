@@ -2929,7 +2929,7 @@ int SystemImpl__fileContentsEqual(const char *file1, const char *file2)
 {
   char buf1[OMC_MAX_FREAD_BUF_SIZE+1],buf2[OMC_MAX_FREAD_BUF_SIZE+1];
   FILE *f1,*f2;
-  int i1,i2,totalread=0,error=0;
+  int i1,i2,error=0;
   omc_stat_t stbuf1;
   omc_stat_t stbuf2;
 
@@ -2951,7 +2951,6 @@ int SystemImpl__fileContentsEqual(const char *file1, const char *file2)
     if (i1 != i2 || strncmp(buf1,buf2,i1)) {
       error = 1;
     }
-    totalread += i1;
   } while(i1 != 0 && error == 0);
   fclose(f1);
   fclose(f2);

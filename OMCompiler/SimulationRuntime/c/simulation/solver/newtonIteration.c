@@ -520,7 +520,7 @@ void damping_heuristic(double* x, genericResidualFunc f,
                        double current_fvec_enorm, int n, double* fvec, double* lambda, int* k,
                        DATA_NEWTON* solverData, NLS_USERDATA* userData)
 {
-  int i,j=0;
+  int i;
   double enorm_new, treshold = 1e-2;
   modelica_boolean startDamping = FALSE; /* remember to close log message */
 
@@ -537,8 +537,6 @@ void damping_heuristic(double* x, genericResidualFunc f,
 
   while (enorm_new >= current_fvec_enorm)
   {
-    j++;
-
     *lambda*=0.5;
 
 
@@ -594,7 +592,7 @@ void damping_heuristic2(double damping_parameter, double* x, genericResidualFunc
                         double current_fvec_enorm, int n, double* fvec, int* k,
                         DATA_NEWTON* solverData, NLS_USERDATA* userdata)
 {
-  int i,j=0;
+  int i;
   double enorm_new, treshold = 1e-4, lambda=1;
   modelica_boolean startDamping = FALSE; /* remember to close log message */
 
@@ -611,8 +609,6 @@ void damping_heuristic2(double damping_parameter, double* x, genericResidualFunc
 
   while (enorm_new >= current_fvec_enorm)
   {
-    j++;
-
     lambda*=damping_parameter;
 
     infoStreamPrint(OMC_LOG_NLS_V, 0, "lambda = %e, k = %d", lambda, *k);

@@ -463,7 +463,7 @@ double spatialDistribution(DATA* data, threadData_t *threadData, unsigned int in
 
 
 /**
- * @brief Returns value of zero crossing at postion x.
+ * @brief Returns value of zero crossing at position x.
  *
  * zeroCross(x):= -1 if there are no events or before the first event.
  * Otherwise zeroCross(x):=(-1)*zeroCross(x_E), where x_E is the position of the nearest event with bigger position.
@@ -482,7 +482,7 @@ double spatialDistributionZeroCrossing(DATA* data, threadData_t *threadData, uns
   DOUBLE_ENDED_LIST* storedEventsList;
   DOUBLE_ENDED_LIST_NODE* currentNode;
   TRANSPORTED_EVENT_DATA* currentNodeData;
-  double zeroCrossingValue;
+  double zeroCrossingValue = -1;
   double prevPosition, prevValue;
 
   /* Access spatialDistribution */

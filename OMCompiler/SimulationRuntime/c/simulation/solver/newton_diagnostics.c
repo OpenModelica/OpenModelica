@@ -1190,7 +1190,7 @@ void newtonDiagnostics(DATA* data, threadData_t *threadData, int sysNumber)
   unsigned m = systemData->size;
   unsigned i, j, k, p, q;
 
-  infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "Running newton diagnostics for system %ld", systemData->equationIndex);
+  infoStreamPrint(OMC_LOG_NLS_NEWTON_DIAGNOSTICS, 0, "Running newton diagnostics for system " OMC_INT_FORMAT, systemData->equationIndex);
 
   // Store all dependents in "x0" and function values as function of x0 in f
   double* x0 = (double*)malloc(m * sizeof(double));

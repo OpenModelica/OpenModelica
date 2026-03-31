@@ -180,7 +180,6 @@ int solveMixedSearch(DATA *data, int sysNumber)
    */
   int i, ix;
 
-  int stepCount = 0;
   int mixedIterations = 0;
   int success = 0;
 
@@ -288,7 +287,6 @@ int solveMixedSearch(DATA *data, int sysNumber)
       }
     }
 
-    stepCount++;
     mixedIterations++;
 
   }while(!found_solution);

@@ -1212,12 +1212,12 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data, threadData_t *thr
   }
 
   if(omc_flag[FLAG_NEWTON_JAC_UPDATES]) {
-    int j = 0;
+    int i = 0, j = 0;
     const char* p = omc_flagValue[FLAG_NEWTON_JAC_UPDATES];
     char* endptr;
     do {
       errno = 0;
-      int i = strtol(p, &endptr, 10);
+      i = strtol(p, &endptr, 10);
       if (errno == ERANGE) {
         throwStreamPrint(threadData,
           "newtonJacUpdates: takes non-negative integers (got '%s')", omc_flagValue[FLAG_NEWTON_JAC_UPDATES]);
