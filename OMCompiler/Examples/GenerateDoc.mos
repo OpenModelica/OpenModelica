@@ -66,9 +66,7 @@ then
   // should we echo?
   shouldEcho := false;
 else
-  // loadModel(Modelica); getErrorString();
-  // writeFile("loadModel.mos",sum("if loadModel(" + lib + ") then true else if loadModel(" + lib + ",languageStandard=\"2.x\") then true else loadModel(" + lib + ",languageStandard=\"1.x\");getErrorString();\n" for lib in getAvailableLibraries())); getErrorString();
-  writeFile("loadModel.mos",sum("if loadModel(" + lib + ") then true else if loadModel(" + lib + ",languageStandard=\"2.x\") then true else loadModel(" + lib + ",languageStandard=\"1.x\");getErrorString();\n" for lib in {"Modelica"})); getErrorString();
+  writeFile("loadModel.mos",sum("if loadModel(" + lib + ") then true else if loadModel(" + lib + ",languageStandard=\"2.x\") then true else loadModel(" + lib + ",languageStandard=\"1.x\");getErrorString();\n" for lib in getAvailableLibraries())); getErrorString();
 end if;
 getErrorString();
 runScript("loadModel.mos");
@@ -275,7 +273,6 @@ for cl in classNames loop
   file := getSourceFile(cl);
   base := basename(file);
   if base <> "ModelicaBuiltin.mo" and base <> "MetaModelicaBuiltin.mo" then
-    base := basename(file);
     modelVersion := getVersion(cl);
     contentStr := typeNameString(cl);
     if base == "package.mo" then
@@ -320,7 +317,6 @@ import glob
 import sys
 
 repls = ["+replaceCommands+"
- (re.compile(r'.*/omlibrary/'), ''),
  (re.compile(r' '), r'%20'),
  (re.compile(r'\\''), r'%27'),
  # Resource files (svg, png, pdf, etc.) - preserve full path with slashes, no .html suffix
@@ -353,7 +349,7 @@ for filepath in sorted(glob.glob('*.html')):
   pid = sub.call(['tidy', '-utf8', '-modify', '-asxhtml', '--add-xml-decl', 'yes', '-quiet', filepath])
   if pid != 2:
     with open(filepath,'r') as html_file:
-      soup = BeautifulSoup(html_file, fromEncoding='utf-8')
+      soup = BeautifulSoup(html_file, from_encoding='utf-8', features='lxml')
       for a in soup.findAll('a'):
         try:
           a['href'] = linkreplace(a['href'],filepath)
@@ -378,10 +374,10 @@ for filepath in sorted(glob.glob('*.html')):
 writeFile("FindFiles.sh","#!/usr/bin/env bash
 rm -f *.png *.pdf FindFiles.log*
 touch FindFiles.log.tmp
-OMLIBRARY=\""+getInstallationDirectoryPath()+"/lib/omlibrary\"
+OMLIBRARY=\""+getModelicaPath()+"\"
 for f in `sort -u tidy.links`; do
   link=`echo $f | cut '-d!' -f2-`
-  link=`python -c \"import sys, urllib as ul; print ul.unquote(sys.argv[1])\" \"$link\"`
+  link=$(python -c \"import sys, urllib.parse; print(urllib.parse.unquote(sys.argv[1]))\" \"$link\")
   if test -f \"$OMLIBRARY/$link\"; then
     d=`dirname \"$link\"`
     mkdir -p \"$d\"
@@ -543,7 +539,7 @@ system("mkdir -p " + dirs);
 system("cp '" + py + "' '" + self + "' .");
 "tar";
 dirs;
-cmd := "find . Icons -maxdepth 1 \\( -name '*.html' -o -name '*.svg' \\) -print | tar cJf ModelicaDocumentation.tar.xz --dereference style.css " + dirs + " GenerateDoc.mos generate_icons.py fix-case-sensitive.py FindFiles.log tidy.filtered tidy.links -T -";
+cmd := "find . Icons -maxdepth 1 \\( -name '*.html' -o -name '*.svg' \\) -print | tar cJf ModelicaDocumentation.tar.xz --dereference style.css " + dirs + " GenerateDoc.mos generate_icons.py fix-case-sensitive.py FindFiles.log tidy.filtered tidy.links tidy.err -T -";
 system(cmd);
 getErrorString();
 
@@ -551,6 +547,6 @@ getErrorString();
 system("python ./fix-case-sensitive.py");
 system("rm -f ModelicaDocumentation.zip");
 "zip";
-cmd := "find . -maxdepth 1 -name '*.html' -print | zip -qr ModelicaDocumentation.zip style.css -@ Icons " + dirs + " GenerateDoc.mos generate_icons.py fix-case-sensitive.py FindFiles.log tidy.filtered tidy.links";
+cmd := "find . -maxdepth 1 -name '*.html' -print | zip -qr ModelicaDocumentation.zip style.css -@ Icons " + dirs + " GenerateDoc.mos generate_icons.py fix-case-sensitive.py FindFiles.log tidy.filtered tidy.links  tidy.err";
 system(cmd);
 getErrorString();
