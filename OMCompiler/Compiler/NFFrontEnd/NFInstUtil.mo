@@ -1027,7 +1027,7 @@ public
         flowVars := var :: flowVars;
       end if;
 
-      if Variable.isInput(var) then
+      if Variable.isInput(var) and Variable.isPublic(var) then
         inputVars := var :: inputVars;
       end if;
     end for;
