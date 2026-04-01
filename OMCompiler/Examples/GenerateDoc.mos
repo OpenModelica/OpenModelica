@@ -194,6 +194,7 @@ record Item
   String comment;
   String interface;
   String short;
+  String version;
 end Item;
 
 function itemString
@@ -208,7 +209,7 @@ algorithm
     then \"<h2><a name=\\\"info\\\">Information</a></h2>\" + item.docInfo[1]
     else preSuffixIfNotEmpty(\"<h2><a name=\\\"info\\\">Information</a></h2><pre>\", toHtml(item.docInfo[1]), \"</pre>\");
   revision := if item.docInfo[2] <> \"\" then \"<h2><a name=\\\"revisions\\\">Revisions</a></h2>\" + item.docInfo[2] else \"\";
-  res := item.head + docDesc + docInfo + item.interface + item.short + item.contents + revision + version + \"</body>\";
+  res := item.head + docDesc + docInfo + item.interface + item.short + item.version + item.contents + revision + version + \"</body>\";
 end itemString;
 
 function itemFile
@@ -249,7 +250,8 @@ for c in allClassNames loop
       ),
     toHtml(OpenModelica.Scripting.getClassComment(c)),
     preSuffixIfNotEmpty("\n<h4><a name=\"interface\">Interface</a></h4>\n<blockquote><pre>",toHtml(OpenModelica.Scripting.list(c,interfaceOnly=true)),"</pre></blockquote>"),
-    preSuffixIfNotEmpty("\n<h4><a name=\"definition\">Definition</a></h4>\n<blockquote><pre>",toHtml(OpenModelica.Scripting.list(c,shortOnly=true)),"</pre></blockquote>")
+    preSuffixIfNotEmpty("\n<h4><a name=\"definition\">Definition</a></h4>\n<blockquote><pre>",toHtml(OpenModelica.Scripting.list(c,shortOnly=true)),"</pre></blockquote>"),
+    preSuffixIfNotEmpty("\n<h4>Version: ",OpenModelica.Scripting.getVersion(c),"</h4>")
   )};
 
   writeFile(itemFile(items) /* Vector of filenames */,itemString(items,version) /* Vector of file contents */);
