@@ -1017,18 +1017,22 @@ public
     output list<Variable> topLevelConnectorVars = {};
     output list<Variable> flowVars = {};
     output list<Variable> inputVars = {};
+  protected
+    InstNode top_node;
   algorithm
     for var in listReverse(vars) loop
-      if InstNode.isConnector(ComponentRef.node(ComponentRef.last(var.name))) then
-        topLevelConnectorVars := var :: topLevelConnectorVars;
-      end if;
+      if not ComponentRef.isSimple(var.name) then
+        top_node := ComponentRef.node(ComponentRef.last(var.name));
 
-      if Variable.isFlow(var) then
-        flowVars := var :: flowVars;
-      end if;
+        if InstNode.isConnector(top_node) and InstNode.isPublic(top_node) then
+          topLevelConnectorVars := var :: topLevelConnectorVars;
 
-      if Variable.isInput(var) and Variable.isPublic(var) then
-        inputVars := var :: inputVars;
+          if Variable.isFlow(var) then
+            flowVars := var :: flowVars;
+          elseif Variable.isInput(var) then
+            inputVars := var :: flowVars;
+          end if;
+        end if;
       end if;
     end for;
   end collectExtractorModelVariables;
