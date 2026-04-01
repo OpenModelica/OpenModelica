@@ -55,7 +55,6 @@
   endLineNo_ = 0;
   endColumnNo_ = 0;
   isReadOnly_ = false;
-  filename_ = std::string("");
   shortMessage = getMessage_(0);
   fullMessage = getFullMessage_();
 }
@@ -75,14 +74,14 @@ ErrorMessage::ErrorMessage(long errorID,
     errorID_(errorID),
     messageType_(type),
     severity_(severity),
+    message_(message),
+    tokens_(tokens),
     startLineNo_(startLineNo),
     startColumnNo_(startColumnNo),
     endLineNo_(endLineNo),
     endColumnNo_(endColumnNo),
     isReadOnly_(isReadOnly),
-    filename_(filename),
-    message_(message),
-    tokens_(tokens)
+    filename_(filename)
 {
   shortMessage = getMessage_(0);
   fullMessage = getFullMessage_();

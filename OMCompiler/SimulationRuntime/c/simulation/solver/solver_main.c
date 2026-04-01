@@ -801,7 +801,7 @@ static int euler_ex_step(DATA* data, SOLVER_INFO* solverInfo)
 
 /***************************************    SYM_SOLVER     *********************************/
 static int sym_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo){
-  int retVal,i,j;
+  int retVal = 0, i;
 
   modelica_integer nStates = data->modelData->nStates;
   SIMULATION_DATA *sData = data->localData[0];
@@ -829,7 +829,7 @@ static int sym_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* so
 
 
     /* update der(x) */
-    for(i=0; i<nStates; ++i, ++j)
+    for(i=0; i<nStates; ++i)
     {
       stateDer[i] = (sData->realVars[i]-data->simulationInfo->inlineData->algOldVars[i])/solverInfo->currentStepSize;
     }
@@ -947,7 +947,7 @@ static void writeOutputVars(char* names, DATA* data)
         fprintf(stdout, ",%s=%.20g", p, (data->localData[0])->realVars[i]);
     for(i = 0; i < data->modelData->nVariablesInteger; i++)
       if(!strcmp(p, data->modelData->integerVarsData[i].info.name))
-        fprintf(stdout, ",%s=%li", p, (data->localData[0])->integerVars[i]);
+        fprintf(stdout, ",%s=" OMC_INT_FORMAT, p, (data->localData[0])->integerVars[i]);
     for(i = 0; i < data->modelData->nVariablesBoolean; i++)
       if(!strcmp(p, data->modelData->booleanVarsData[i].info.name))
         fprintf(stdout, ",%s=%i", p, (data->localData[0])->booleanVars[i]);
@@ -967,9 +967,9 @@ static void writeOutputVars(char* names, DATA* data)
       if(!strcmp(p, data->modelData->integerAlias[i].info.name))
       {
         if(data->modelData->integerAlias[i].negate)
-          fprintf(stdout, ",%s=%li", p, -(data->localData[0])->integerVars[data->modelData->integerAlias[i].nameID]);
+          fprintf(stdout, ",%s=" OMC_INT_FORMAT, p, -(data->localData[0])->integerVars[data->modelData->integerAlias[i].nameID]);
         else
-          fprintf(stdout, ",%s=%li", p, (data->localData[0])->integerVars[data->modelData->integerAlias[i].nameID]);
+          fprintf(stdout, ",%s=" OMC_INT_FORMAT, p, (data->localData[0])->integerVars[data->modelData->integerAlias[i].nameID]);
       }
     for(i = 0; i < data->modelData->nAliasBoolean; i++)
       if(!strcmp(p, data->modelData->booleanAlias[i].info.name))
@@ -990,7 +990,7 @@ static void writeOutputVars(char* names, DATA* data)
 
     for(i = 0; i < data->modelData->nParametersInteger; i++)
       if(!strcmp(p, data->modelData->integerParameterData[i].info.name))
-        fprintf(stdout, ",%s=%li", p, data->simulationInfo->integerParameter[i]);
+        fprintf(stdout, ",%s=" OMC_INT_FORMAT, p, data->simulationInfo->integerParameter[i]);
 
     for(i = 0; i < data->modelData->nParametersBoolean; i++)
       if(!strcmp(p, data->modelData->booleanParameterData[i].info.name))

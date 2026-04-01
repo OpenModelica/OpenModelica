@@ -693,7 +693,7 @@ _omc_matrix* _omc_multiplyMatrixMatrix(_omc_matrix* mat1, _omc_matrix* mat2)
   assertStreamPrint(NULL, NULL != mat2->data, "matrix2 data is NULL pointer");
   for (i = 0; i < l; ++i) {
     for (j = 0; j < n; ++j) {
-      for (k = 0; j < m; ++k) {
+      for (k = 0; k < m; ++k) {
         _omc_setMatrixElement(mat1, i, j,
             _omc_getMatrixElement(mat1, i, k)
                 * _omc_getMatrixElement(mat2, k, j));

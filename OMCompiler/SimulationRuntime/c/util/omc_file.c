@@ -313,7 +313,7 @@ wchar_t* longabspath(wchar_t* unicodePath) {
   retval = GetFullPathNameW(unicodePath, BUFSIZE, unicodeAbsPath, NULL);
   if (retval == 0)
   {
-    printf("GetFullPathName failed for %ls with error code %d\n", unicodePath, GetLastError());
+    printf("GetFullPathName failed for %ls with error code %lu\n", unicodePath, GetLastError());
     return NULL;
   }
   if (wcslen(unicodeAbsPath) >= MAX_PATH) {

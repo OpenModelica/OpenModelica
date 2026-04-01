@@ -269,11 +269,9 @@ void cvodeErrorHandlerFunction(int errorCode, const char *module,
 {
   /* Variables */
   CVODE_SOLVER* cvodeData;
-  DATA* data;
 
   if (userData != NULL && OMC_ACTIVE_STREAM(OMC_LOG_SOLVER)) {
     cvodeData = (CVODE_SOLVER*) userData;
-    data = (DATA*)cvodeData->simData->data;
 
     infoStreamPrint(OMC_LOG_SOLVER, 1, "#### CVODE error message #####");
     infoStreamPrint(OMC_LOG_SOLVER, 0, " -> error code %d\n -> module %s\n -> function %s", errorCode, module, function);
@@ -952,20 +950,20 @@ void sundialsPrintSparseMatrix(SUNMatrix A, const char* name, const int logLevel
     /* Print indexvals array */
     buffer[0] = 0;
     for (i=0; i<lengthData-1; i++) {
-      snprintf(tmpBuffer, tmpBuffSize, "%li, ", indexvals[i]);
+      snprintf(tmpBuffer, tmpBuffSize, "%" OMC_INT_FORMAT ", ", indexvals[i]);
       strncat(buffer, tmpBuffer, tmpBuffSize);
     }
-    snprintf(tmpBuffer, tmpBuffSize, "%li", indexvals[lengthData-1]);
+    snprintf(tmpBuffer, tmpBuffSize, OMC_INT_FORMAT, indexvals[lengthData-1]);
     strncat(buffer, tmpBuffer, tmpBuffSize);
     infoStreamPrint(logLevel, 0, "indexvals = {%s}", buffer);
 
     /* Print indexptrs array */
     buffer[0] = 0;
     for (i=0; i<SUNSparseMatrix_NP(A); i++) {
-      snprintf(tmpBuffer, tmpBuffSize, "%li, ", indexptrs[i]);
+      snprintf(tmpBuffer, tmpBuffSize, OMC_INT_FORMAT ", ", indexptrs[i]);
       strncat(buffer, tmpBuffer, tmpBuffSize);
     }
-    snprintf(tmpBuffer, tmpBuffSize, "%li", indexptrs[SUNSparseMatrix_NP(A)]);
+    snprintf(tmpBuffer, tmpBuffSize, OMC_INT_FORMAT, indexptrs[SUNSparseMatrix_NP(A)]);
     strncat(buffer, tmpBuffer, tmpBuffSize);
     infoStreamPrint(logLevel, 0, "indexvals = {%s}", buffer);
 
@@ -989,11 +987,9 @@ void idaErrorHandlerFunction(int errorCode, const char *module,
 {
   /* Variables */
   IDA_SOLVER* idaData;
-  DATA* data;
 
   if (userData != NULL && OMC_ACTIVE_STREAM(OMC_LOG_SOLVER)) {
     idaData = (IDA_SOLVER*) userData;
-    data = (DATA*)idaData->userData->data;
 
     infoStreamPrint(OMC_LOG_SOLVER, 1, "#### IDA error message #####");
     infoStreamPrint(OMC_LOG_SOLVER, 0, " -> error code %d\n -> module %s\n -> function %s", errorCode, module, function);

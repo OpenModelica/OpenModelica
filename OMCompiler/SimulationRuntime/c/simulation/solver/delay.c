@@ -58,7 +58,7 @@ static int findTime(double time, RINGBUFFER *delayStruct)
 {
   int end = ringBufferLength(delayStruct);
   int pos = 0;
-  double curTime, prevTime;
+  double curTime;
   TIME_AND_VALUE* bufferElem;
 
   /* Check if ring buffer is valid */
@@ -75,7 +75,6 @@ static int findTime(double time, RINGBUFFER *delayStruct)
   while (pos < end-1) {
     pos++;
     bufferElem = getRingData(delayStruct, pos);
-    prevTime = curTime;
     curTime = bufferElem->t;
 
     if (curTime > time) {

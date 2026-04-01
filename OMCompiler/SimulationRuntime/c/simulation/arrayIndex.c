@@ -273,7 +273,7 @@ size_t calculateLength(DIMENSION_INFO *dimensionInfo,
     case DIMENSION_BY_VALUE_REFERENCE:
       structuralParameter = getParamById(dimensionAttribute->valueReference, integerParameterData, nParametersIntegerArray);
       assertStreamPrint(NULL, structuralParameter != NULL,
-                        "Could not find parameter with id '%ld'.\n"
+                        "Could not find parameter with id '" OMC_INT_FORMAT "'.\n"
                         "Failed to calculate length of variable.",
                         dimensionAttribute->valueReference);
 
@@ -763,7 +763,7 @@ modelica_real getStartFromScalarIdx(const SIMULATION_INFO *simulationInfo,
       {
         case VAR_KIND_STATE:
           if (scalar_idx >= modelData->nStates) {
-            throwStreamPrint(NULL, "getStartFromScalarIdx: scalar_idx %zu out of bounds [0, %zu)",
+            throwStreamPrint(NULL, "getStartFromScalarIdx: scalar_idx %zu out of bounds [0, %lu)",
                               scalar_idx, modelData->nStates);
           }
           revIndex = &simulationInfo->realVarsReverseIndex[scalar_idx];
@@ -771,7 +771,7 @@ modelica_real getStartFromScalarIdx(const SIMULATION_INFO *simulationInfo,
 
         case VAR_KIND_VARIABLE:
           if (scalar_idx >= modelData->nVariablesReal) {
-            throwStreamPrint(NULL, "getStartFromScalarIdx: scalar_idx %zu out of bounds [0, %zu)",
+            throwStreamPrint(NULL, "getStartFromScalarIdx: scalar_idx %zu out of bounds [0, %lu)",
                               scalar_idx, modelData->nVariablesReal);
           }
           revIndex = &simulationInfo->realVarsReverseIndex[scalar_idx];
@@ -779,7 +779,7 @@ modelica_real getStartFromScalarIdx(const SIMULATION_INFO *simulationInfo,
 
         case VAR_KIND_PARAMETER:
           if (scalar_idx >= modelData->nParametersReal) {
-            throwStreamPrint(NULL, "getStartFromScalarIdx: scalar_idx %zu out of bounds [0, %zu)",
+            throwStreamPrint(NULL, "getStartFromScalarIdx: scalar_idx %zu out of bounds [0, %lu)",
                               scalar_idx, modelData->nParametersReal);
           }
           revIndex = &simulationInfo->realParamsReverseIndex[scalar_idx];
@@ -822,7 +822,7 @@ modelica_real getNominalFromScalarIdx(const SIMULATION_INFO *simulationInfo,
   {
     case VAR_KIND_STATE:
       if (scalar_idx >= modelData->nStates) {
-        throwStreamPrint(NULL, "getNominalFromScalarIdx: scalar_idx %zu out of bounds [0, %zu)",
+        throwStreamPrint(NULL, "getNominalFromScalarIdx: scalar_idx %zu out of bounds [0, %lu)",
                           scalar_idx, modelData->nStates);
       }
       revIndex = &simulationInfo->realVarsReverseIndex[scalar_idx];
@@ -830,7 +830,7 @@ modelica_real getNominalFromScalarIdx(const SIMULATION_INFO *simulationInfo,
 
     case VAR_KIND_VARIABLE:
       if (scalar_idx >= modelData->nVariablesReal) {
-        throwStreamPrint(NULL, "getNominalFromScalarIdx: scalar_idx %zu out of bounds [0, %zu)",
+        throwStreamPrint(NULL, "getNominalFromScalarIdx: scalar_idx %zu out of bounds [0, %lu)",
                           scalar_idx, modelData->nVariablesReal);
       }
       revIndex = &simulationInfo->realVarsReverseIndex[scalar_idx];
@@ -838,7 +838,7 @@ modelica_real getNominalFromScalarIdx(const SIMULATION_INFO *simulationInfo,
 
     case VAR_KIND_PARAMETER:
       if (scalar_idx >= modelData->nParametersReal) {
-        throwStreamPrint(NULL, "getNominalFromScalarIdx: scalar_idx %zu out of bounds [0, %zu)",
+        throwStreamPrint(NULL, "getNominalFromScalarIdx: scalar_idx %zu out of bounds [0, %lu)",
                           scalar_idx, modelData->nParametersReal);
       }
       revIndex = &simulationInfo->realParamsReverseIndex[scalar_idx];
@@ -882,7 +882,7 @@ modelica_real getMinFromScalarIdx(const SIMULATION_INFO *simulationInfo,
       {
         case VAR_KIND_STATE:
           if (scalar_idx >= modelData->nStates) {
-            throwStreamPrint(NULL, "getMinFromScalarIdx: scalar_idx %zu out of bounds [0, %zu)",
+            throwStreamPrint(NULL, "getMinFromScalarIdx: scalar_idx %zu out of bounds [0, %lu)",
                               scalar_idx, modelData->nStates);
           }
           revIndex = &simulationInfo->realVarsReverseIndex[scalar_idx];
@@ -890,7 +890,7 @@ modelica_real getMinFromScalarIdx(const SIMULATION_INFO *simulationInfo,
 
         case VAR_KIND_VARIABLE:
           if (scalar_idx >= modelData->nVariablesReal) {
-            throwStreamPrint(NULL, "getMinFromScalarIdx: scalar_idx %zu out of bounds [0, %zu)",
+            throwStreamPrint(NULL, "getMinFromScalarIdx: scalar_idx %zu out of bounds [0, %lu)",
                               scalar_idx, modelData->nVariablesReal);
           }
           revIndex = &simulationInfo->realVarsReverseIndex[scalar_idx];
@@ -898,7 +898,7 @@ modelica_real getMinFromScalarIdx(const SIMULATION_INFO *simulationInfo,
 
         case VAR_KIND_PARAMETER:
           if (scalar_idx >= modelData->nParametersReal) {
-            throwStreamPrint(NULL, "getMinFromScalarIdx: scalar_idx %zu out of bounds [0, %zu)",
+            throwStreamPrint(NULL, "getMinFromScalarIdx: scalar_idx %zu out of bounds [0, %lu)",
                               scalar_idx, modelData->nParametersReal);
           }
           revIndex = &simulationInfo->realParamsReverseIndex[scalar_idx];
@@ -947,7 +947,7 @@ modelica_real getMaxFromScalarIdx(const SIMULATION_INFO *simulationInfo,
       {
         case VAR_KIND_STATE:
           if (scalar_idx >= modelData->nStates) {
-            throwStreamPrint(NULL, "getMaxFromScalarIdx: scalar_idx %zu out of bounds [0, %zu)",
+            throwStreamPrint(NULL, "getMaxFromScalarIdx: scalar_idx %zu out of bounds [0, %lu)",
                               scalar_idx, modelData->nStates);
           }
           revIndex = &simulationInfo->realVarsReverseIndex[scalar_idx];
@@ -955,7 +955,7 @@ modelica_real getMaxFromScalarIdx(const SIMULATION_INFO *simulationInfo,
 
         case VAR_KIND_VARIABLE:
           if (scalar_idx >= modelData->nVariablesReal) {
-            throwStreamPrint(NULL, "getMaxFromScalarIdx: scalar_idx %zu out of bounds [0, %zu)",
+            throwStreamPrint(NULL, "getMaxFromScalarIdx: scalar_idx %zu out of bounds [0, %lu)",
                               scalar_idx, modelData->nVariablesReal);
           }
           revIndex = &simulationInfo->realVarsReverseIndex[scalar_idx];
@@ -963,7 +963,7 @@ modelica_real getMaxFromScalarIdx(const SIMULATION_INFO *simulationInfo,
 
         case VAR_KIND_PARAMETER:
           if (scalar_idx >= modelData->nParametersReal) {
-            throwStreamPrint(NULL, "getMaxFromScalarIdx: scalar_idx %zu out of bounds [0, %zu)",
+            throwStreamPrint(NULL, "getMaxFromScalarIdx: scalar_idx %zu out of bounds [0, %lu)",
                               scalar_idx, modelData->nParametersReal);
           }
           revIndex = &simulationInfo->realParamsReverseIndex[scalar_idx];

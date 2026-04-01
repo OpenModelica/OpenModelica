@@ -109,14 +109,13 @@ static void B_print_X(B_NLS_KINSOL_DATA* kinsolData, N_Vector x, const char* nam
 
 static void nlsKinsolInplaceScaleJac(NONLINEAR_SYSTEM_DATA *nlsData, B_NLS_KINSOL_DATA *kinsolData, SUNMatrix Jac) {
   /* scaling pointers */
-  int i, j, size, nz, nnz, col, row;
+  int i, j, size, nz, col, row;
   SPARSE_PATTERN *sp = nlsData->sparsePattern;
 
   double *x_scaling = N_VGetArrayPointer(kinsolData->xScale);
   double *f_scaling = N_VGetArrayPointer(kinsolData->fScale);
 
   size = kinsolData->size;
-  nnz = kinsolData->nnz;
 
   if (SUNMatGetID(Jac) == SUNMATRIX_DENSE) {
     for (col = 0; col < size; col++) {
@@ -140,14 +139,13 @@ static void nlsKinsolInplaceScaleJac(NONLINEAR_SYSTEM_DATA *nlsData, B_NLS_KINSO
 
 static void nlsKinsolInplaceUnscaleJac(NONLINEAR_SYSTEM_DATA *nlsData, B_NLS_KINSOL_DATA *kinsolData, SUNMatrix Jac) {
   /* scaling pointers */
-  int i, j, size, nz, nnz, col, row;
+  int i, j, size, nz, col, row;
   SPARSE_PATTERN *sp = nlsData->sparsePattern;
 
   double *x_scaling = N_VGetArrayPointer(kinsolData->xScale);
   double *f_scaling = N_VGetArrayPointer(kinsolData->fScale);
 
   size = kinsolData->size;
-  nnz = kinsolData->nnz;
 
   if (SUNMatGetID(Jac) == SUNMATRIX_DENSE) {
     for (col = 0; col < size; col++) {
@@ -713,7 +711,7 @@ static void finishSparseColPtr(SUNMatrix A, int nnz) {
 static int nlsKinsolDenseDerivativeTest(DATA *data, NONLINEAR_SYSTEM_DATA *nlsData, B_NLS_KINSOL_DATA *kinsolData,
                                         SUNMatrix Jsym, SolverCaller caller)
 {
-  int row, col, nz, errorCount, numericalErrorCount, structuralErrorCount;
+  int row, col, nz, numericalErrorCount, structuralErrorCount;
   const int size = nlsData->size;
   int ret = 0;
 
@@ -764,10 +762,10 @@ static int nlsKinsolDenseDerivativeTest(DATA *data, NONLINEAR_SYSTEM_DATA *nlsDa
   infoStreamPrint(OMC_LOG_NLS_DERIVATIVE_TEST, 1, "%s: Derivative test (atol=%.5e, rtol=%.5e, scaled = %s, Caller: %s):",
                   SolverCaller_callerString(caller), Atol, Rtol, kinsolData->useScaling ? "true" : "false", SolverCaller_toString(caller));
   infoStreamPrint(OMC_LOG_NLS_DERIVATIVE_TEST, 1, "Matrix Info");
-  infoStreamPrint(OMC_LOG_NLS_DERIVATIVE_TEST, 0, "NLS index = %ld", nlsData->equationIndex);
-  infoStreamPrint(OMC_LOG_NLS_DERIVATIVE_TEST, 0, "Columns   = %li", columns);
-  infoStreamPrint(OMC_LOG_NLS_DERIVATIVE_TEST, 0, "Rows      = %li", rows);
-  infoStreamPrint(OMC_LOG_NLS_DERIVATIVE_TEST, 0, "NNZ       = %li", nnz);
+  infoStreamPrint(OMC_LOG_NLS_DERIVATIVE_TEST, 0, "NLS index = " OMC_INT_FORMAT, nlsData->equationIndex);
+  infoStreamPrint(OMC_LOG_NLS_DERIVATIVE_TEST, 0, "Columns   = " OMC_INT_FORMAT, columns);
+  infoStreamPrint(OMC_LOG_NLS_DERIVATIVE_TEST, 0, "Rows      = " OMC_INT_FORMAT, rows);
+  infoStreamPrint(OMC_LOG_NLS_DERIVATIVE_TEST, 0, "NNZ       = " OMC_INT_FORMAT, nnz);
   infoStreamPrint(OMC_LOG_NLS_DERIVATIVE_TEST, 0, "Curr Time = %-11.5e", data->localData[0]->timeValue);
 
   messageClose(OMC_LOG_NLS_DERIVATIVE_TEST);
@@ -775,7 +773,6 @@ static int nlsKinsolDenseDerivativeTest(DATA *data, NONLINEAR_SYSTEM_DATA *nlsDa
   infoStreamPrint(OMC_LOG_NLS_DERIVATIVE_TEST, 1, "Anomalies");
 
   nz = 0;
-  errorCount = 0;
   numericalErrorCount = 0;
   structuralErrorCount = 0;
 
@@ -957,7 +954,6 @@ static int B_nlsSparseJac(N_Vector vecX, N_Vector vecFX, SUNMatrix Jac,
   /* Variables */
   NLS_USERDATA *kinsolUserData;
   DATA *data;
-  threadData_t *threadData;
   NONLINEAR_SYSTEM_DATA *nlsData;
   B_NLS_KINSOL_DATA *kinsolData;
   SPARSE_PATTERN *sparsePattern;
@@ -986,7 +982,6 @@ static int B_nlsSparseJac(N_Vector vecX, N_Vector vecFX, SUNMatrix Jac,
   /* Access userData and nonlinear system data */
   kinsolUserData = (NLS_USERDATA *)userData;
   data = kinsolUserData->data;
-  threadData = kinsolUserData->threadData;
   nlsData = kinsolUserData->nlsData;
   kinsolData = (B_NLS_KINSOL_DATA *)nlsData->solverData;
   sparsePattern = nlsData->sparsePattern;

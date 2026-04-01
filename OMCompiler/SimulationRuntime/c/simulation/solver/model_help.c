@@ -227,7 +227,7 @@ void printAllVars(DATA *data, int ringSegment, int stream)
 
   infoStreamPrint(stream, 1, "integer variables");
   for(i=0; i<mData->nVariablesInteger; ++i)
-    infoStreamPrint(stream, 0, "%ld: %s = %ld (pre: %ld)", i+1, mData->integerVarsData[i].info.name, data->localData[ringSegment]->integerVars[i], sInfo->integerVarsPre[i]);
+    infoStreamPrint(stream, 0, "%ld: %s = " OMC_INT_FORMAT " (pre: " OMC_INT_FORMAT ")", i+1, mData->integerVarsData[i].info.name, data->localData[ringSegment]->integerVars[i], sInfo->integerVarsPre[i]);
   messageClose(stream);
 
   infoStreamPrint(stream, 1, "boolean variables");
@@ -292,7 +292,7 @@ void printParameters(DATA *data, int stream)
   {
     infoStreamPrint(stream, 1, "integer parameters");
     for(i=0; i<mData->nParametersInteger; ++i)
-      infoStreamPrint(stream, 0, "[%ld] parameter Integer %s(start=%ld, fixed=%s) = %ld", i+1,
+      infoStreamPrint(stream, 0, "[%ld] parameter Integer %s(start=" OMC_INT_FORMAT ", fixed=%s) = " OMC_INT_FORMAT, i+1,
                                  mData->integerParameterData[i].info.name,
                                  mData->integerParameterData[i].attribute.start,
                                  mData->integerParameterData[i].attribute.fixed ? "true" : "false",
