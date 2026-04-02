@@ -64,4 +64,5 @@ Testsuite/*/Makefile
 Testsuite/*/Makefile.Debug
 Testsuite/*/Makefile.Release
 *.o.tmp
+.qtc_clangd/
 
