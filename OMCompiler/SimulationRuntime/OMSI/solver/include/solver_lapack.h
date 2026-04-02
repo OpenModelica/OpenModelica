@@ -110,7 +110,7 @@ void solver_lapack_get_x_element(void*                  specific_data,
                                  solver_unsigned_int    index,
                                  solver_real*           value);
 
-solver_state solver_lapack_solve(void* specific_data);
+solver_status solver_lapack_solve(void* specific_data);
 
 void solver_lapack_print_data(solver_char*          buffer,
                               solver_unsigned_int   buffer_size,

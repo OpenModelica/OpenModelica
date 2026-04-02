@@ -50,7 +50,7 @@
 
 cl_mem ocl_device_alloc(size_t size){
 
-    cl_int err;
+    cl_int err = 0;
     cl_mem tmp = NULL;
 
     if (!device_comm_queue)
@@ -65,7 +65,7 @@ cl_mem ocl_device_alloc(size_t size){
 
 cl_mem ocl_device_alloc_init(modelica_integer* host_array, size_t size){
 
-    cl_int err;
+    cl_int err = 0;
     cl_mem tmp = NULL;
 
     if (!device_comm_queue)
@@ -83,7 +83,7 @@ cl_mem ocl_device_alloc_init(modelica_integer* host_array, size_t size){
 
 cl_mem ocl_device_alloc_init(modelica_real* host_array, size_t size){
 
-    cl_int err;
+    cl_int err = 0;
     cl_mem tmp = NULL;
 
     if (!device_comm_queue)
@@ -101,7 +101,7 @@ cl_mem ocl_device_alloc_init(modelica_real* host_array, size_t size){
 
 
 cl_mem ocl_alloc_init(void* src_data, size_t size){
-    cl_int err;
+    cl_int err = 0;
     cl_mem tmp = NULL;
 
     if (!device_comm_queue)
@@ -124,7 +124,7 @@ cl_mem ocl_alloc_init(void* src_data, size_t size){
 
 void ocl_create_execution_memory_buffer(device_buffer* d_buff){
 
-    cl_int err;
+    cl_int err = 0;
     cl_ulong mem;
     cl_ulong mem2;
     cl_mem tmp;
@@ -151,7 +151,7 @@ void ocl_create_execution_memory_buffer(device_buffer* d_buff){
 
 
 cl_mem ocl_alloc_init_real_arr(modelica_real* host_array, int nr_of_elem){
-    cl_int err;
+    cl_int err = 0;
     cl_mem tmp;
     if (!device_comm_queue)
         ocl_initialize();
@@ -171,7 +171,7 @@ cl_mem ocl_alloc_init_real_arr(modelica_real* host_array, int nr_of_elem){
 }
 
 cl_mem ocl_alloc_init_integer_arr(cl_int* host_array, int nr_of_elem){
-    cl_int err;
+    cl_int err = 0;
     if (!device_comm_queue)
         ocl_initialize();
 

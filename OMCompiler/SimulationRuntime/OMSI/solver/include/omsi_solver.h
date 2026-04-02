@@ -233,7 +233,7 @@ typedef void    (*solver_interact_vector_element)   (void*,
 typedef void    (*solver_get_set_F_func)            (void);
 
 
-typedef solver_state (*solver_solve_func)           (void*);
+typedef solver_status (*solver_solve_func)           (void*);
 
 
 /** \fn solver_status (*evaluate_res_func) (void* data);

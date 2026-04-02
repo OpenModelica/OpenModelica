@@ -85,7 +85,7 @@ int array_shape_eq(const base_array_t *a, const device_array *b)
     int i;
 
     if(a->ndims != b->info[0]) {
-        fprintf(stderr, "a->ndims != b->ndims, %d != %ld\n", a->ndims, b->info[0]);
+        fprintf(stderr, "a->ndims != b->ndims, %d != " OMC_INT_FORMAT "\n", a->ndims, b->info[0]);
         return 0;
     }
 
@@ -105,7 +105,7 @@ int array_shape_eq(const device_array *a, const device_array *b)
     int i;
 
     if(a->info[0] != b->info[0]) {
-        fprintf(stderr, "a->ndims != b->ndims, %ld != %ld\n", a->info[0], b->info[0]);
+        fprintf(stderr, "a->ndims != b->ndims, " OMC_INT_FORMAT " != " OMC_INT_FORMAT "\n", a->info[0], b->info[0]);
         return 0;
     }
 
@@ -187,11 +187,9 @@ void alloc_real_array(device_real_array *dest, int ndims, ...){
 
 //entry point for allocating LOCAL real array on device
 void alloc_device_local_real_array(device_local_real_array *dest, int ndims, ...){
-
-    size_t elements = 0;
     va_list ap;
     va_start(ap, ndims);
-    elements = alloc_device_base_array(dest,ndims,ap);
+    alloc_device_base_array(dest,ndims,ap);
     va_end(ap);
     // dest->data = ocl_device_alloc(elements*sizeof(modelica_real));
     // dest->info_dev = ocl_device_alloc_init(dest->info,

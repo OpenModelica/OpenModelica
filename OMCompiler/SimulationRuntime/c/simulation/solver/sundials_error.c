@@ -267,12 +267,7 @@ static void checkReturnFlag_CVLS(int flag, const char *functionName) {
 void cvodeErrorHandlerFunction(int errorCode, const char *module,
                                const char *function, char *msg, void *userData)
 {
-  /* Variables */
-  CVODE_SOLVER* cvodeData;
-
   if (userData != NULL && OMC_ACTIVE_STREAM(OMC_LOG_SOLVER)) {
-    cvodeData = (CVODE_SOLVER*) userData;
-
     infoStreamPrint(OMC_LOG_SOLVER, 1, "#### CVODE error message #####");
     infoStreamPrint(OMC_LOG_SOLVER, 0, " -> error code %d\n -> module %s\n -> function %s", errorCode, module, function);
     infoStreamPrint(OMC_LOG_SOLVER, 0, " Message: %s", msg);
@@ -950,7 +945,7 @@ void sundialsPrintSparseMatrix(SUNMatrix A, const char* name, const int logLevel
     /* Print indexvals array */
     buffer[0] = 0;
     for (i=0; i<lengthData-1; i++) {
-      snprintf(tmpBuffer, tmpBuffSize, "%" OMC_INT_FORMAT ", ", indexvals[i]);
+      snprintf(tmpBuffer, tmpBuffSize, OMC_INT_FORMAT ", ", indexvals[i]);
       strncat(buffer, tmpBuffer, tmpBuffSize);
     }
     snprintf(tmpBuffer, tmpBuffSize, OMC_INT_FORMAT, indexvals[lengthData-1]);
@@ -985,12 +980,7 @@ void sundialsPrintSparseMatrix(SUNMatrix A, const char* name, const int logLevel
 void idaErrorHandlerFunction(int errorCode, const char *module,
                              const char *function, char *msg, void *userData)
 {
-  /* Variables */
-  IDA_SOLVER* idaData;
-
   if (userData != NULL && OMC_ACTIVE_STREAM(OMC_LOG_SOLVER)) {
-    idaData = (IDA_SOLVER*) userData;
-
     infoStreamPrint(OMC_LOG_SOLVER, 1, "#### IDA error message #####");
     infoStreamPrint(OMC_LOG_SOLVER, 0, " -> error code %d\n -> module %s\n -> function %s", errorCode, module, function);
     infoStreamPrint(OMC_LOG_SOLVER, 0, " Message: %s", msg);

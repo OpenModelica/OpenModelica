@@ -988,7 +988,7 @@ void nlsJacobianRowColSums(DATA *data, NONLINEAR_SYSTEM_DATA *nlsData, SUNMatrix
                   SolverCaller_callerString(caller), scaled ? "true" : "false", SolverCaller_toString(caller));
 
   infoStreamPrint(OMC_LOG_NLS_JAC_SUMS, 1, "Matrix Info");
-  infoStreamPrint(OMC_LOG_NLS_JAC_SUMS, 0, "NLS eq index = %ld", nlsData->equationIndex);
+  infoStreamPrint(OMC_LOG_NLS_JAC_SUMS, 0, "NLS eq index = " OMC_INT_FORMAT, nlsData->equationIndex);
   infoStreamPrint(OMC_LOG_NLS_JAC_SUMS, 0, "Columns      = %d", size);
   infoStreamPrint(OMC_LOG_NLS_JAC_SUMS, 0, "Rows         = %d", size);
   infoStreamPrint(OMC_LOG_NLS_JAC_SUMS, 0, "NNZ          = %u", nlsData->sparsePattern->numberOfNonZeros);

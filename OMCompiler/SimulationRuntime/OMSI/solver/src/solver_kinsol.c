@@ -386,7 +386,7 @@ solver_int solver_kinsol_jacobian_wrapper(long int N,
  * ============================================================================
  */
 
-solver_state solver_kinsol_solve(void* specific_data)
+solver_status solver_kinsol_solve(void* specific_data)
 {
     /* Variables */
     solver_data_kinsol* kinsol_data;
