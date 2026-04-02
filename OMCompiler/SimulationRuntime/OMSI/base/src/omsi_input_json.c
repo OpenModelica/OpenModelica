@@ -295,7 +295,7 @@ static omsi_string skipValue(omsi_string str) {
                                 "fmi2Instantiate: Found end of file, expected end of string");
                         abort();
                     case '\\':
-                        if (str+1 == '\0') {
+                        if (*(str+1) == '\0') {
                             filtered_base_logger(global_logCategories, log_statuserror, omsi_error,
                                     "fmi2Instantiate: Found end of file, expected end of string");
                             abort();

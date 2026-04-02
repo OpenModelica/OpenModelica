@@ -568,7 +568,7 @@ void printRingBufferSimulationData(RINGBUFFER *rb, DATA* data)
     infoStreamPrint(OMC_LOG_STDOUT, 1, "RingBuffer Integer Variable");
     for (int j = 0; j < data->modelData->nVariablesInteger; ++j)
     {
-      infoStreamPrint(OMC_LOG_STDOUT, 0, "%d: %s = %li ", j+1, data->modelData->integerVarsData[j].info.name, sdata->integerVars[j]);
+      infoStreamPrint(OMC_LOG_STDOUT, 0, "%d: %s = " OMC_INT_FORMAT " ", j+1, data->modelData->integerVarsData[j].info.name, sdata->integerVars[j]);
     }
     messageClose(OMC_LOG_STDOUT);
 

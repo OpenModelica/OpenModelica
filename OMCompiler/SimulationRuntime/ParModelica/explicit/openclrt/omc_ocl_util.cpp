@@ -163,10 +163,10 @@ void ocl_get_device(){
             clGetDeviceInfo(ocl_device, CL_DEVICE_MAX_MEM_ALLOC_SIZE, sizeof(cl_ulong), &mem2, NULL);
             printf("%d CL_DEVICE_MAX_MEM_ALLOC_SIZE: %llu MB\n", i, static_cast<unsigned long long>(mem2/1024/1024));
             clGetDeviceInfo(ocl_device, CL_DEVICE_MAX_PARAMETER_SIZE, sizeof(size_t), &arg_nr, NULL);
-            printf("%d CL_DEVICE_MAX_PARAMETER_SIZE: %ld MB\n", i, arg_nr);
+            printf("%d CL_DEVICE_MAX_PARAMETER_SIZE: %zu MB\n", i, arg_nr);
 
             clGetDeviceInfo(ocl_device, CL_DEVICE_MAX_WORK_GROUP_SIZE, sizeof(size_t), &arg_nr, NULL);
-            printf("%d CL_DEVICE_MAX_WORK_GROUP_SIZE: %ld \n", i, arg_nr);
+            printf("%d CL_DEVICE_MAX_WORK_GROUP_SIZE: %zu \n", i, arg_nr);
             MAX_THREADS_WORKGROUP = (modelica_integer)arg_nr;   //default number of threads is the max number of threads!
 
             clGetDeviceInfo(ocl_device, CL_DEVICE_PREFERRED_VECTOR_WIDTH_DOUBLE  , sizeof(cl_uint), &mem, NULL);
@@ -207,7 +207,6 @@ void ocl_get_device(){
 
 void ocl_initialize(){
     timeval t1, t2;
-    double elapsedTime;
     gettimeofday(&t1, NULL);
 
     if (!device_comm_queue){
@@ -221,8 +220,8 @@ void ocl_initialize(){
     gettimeofday(&t2, NULL);
 
 #if BE_OCL_VERBOSE
-    elapsedTime = (t2.tv_sec - t1.tv_sec) * 1000.0;      // sec to ms
-    elapsedTime += (t2.tv_usec - t1.tv_usec) / 1000.0;   // us to ms
+    double elapsedTime = (t2.tv_sec - t1.tv_sec) * 1000.0; // sec to ms
+    elapsedTime += (t2.tv_usec - t1.tv_usec) / 1000.0;     // us to ms
     printf ("\tOpenCL initialization :        %lf ms\n", elapsedTime);
 #endif
 
@@ -434,7 +433,6 @@ void ocl_execute_kernel(cl_kernel kernel){
     cl_int err = 0;
 
     timeval t1, t2;
-    double elapsedTime;
     gettimeofday(&t1, NULL);
 
     if (WORK_DIM == 0){
@@ -475,8 +473,8 @@ void ocl_execute_kernel(cl_kernel kernel){
 
     gettimeofday(&t2, NULL);
 #if BE_OCL_VERBOSE
-    elapsedTime = (t2.tv_sec - t1.tv_sec) * 1000.0;      // sec to ms
-    elapsedTime += (t2.tv_usec - t1.tv_usec) / 1000.0;   // us to ms
+    double elapsedTime = (t2.tv_sec - t1.tv_sec) * 1000.0; // sec to ms
+    elapsedTime += (t2.tv_usec - t1.tv_usec) / 1000.0;     // us to ms
     printf ("\tKernel Execution      :        %lf ms\n", elapsedTime);
 #endif
 

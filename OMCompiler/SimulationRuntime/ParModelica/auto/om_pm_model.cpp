@@ -278,7 +278,7 @@ void OMModel::load_from_json(TaskSystemT& task_system, const std::string& eq_to_
 
     nlohmann::json jmodel_info;
 
-    jmodel_info << f_s;
+    f_s >> jmodel_info;
 
     long node_count = 0;
     for (auto& eq : jmodel_info[eq_to_read]) {

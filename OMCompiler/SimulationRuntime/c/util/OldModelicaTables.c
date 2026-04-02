@@ -524,10 +524,9 @@ static void Text_readTable(TEXT_FILE *f, double *buf, size_t rows, size_t cols)
   char *entp = 0;
   for(i = 0; i < rows; ++i)
   {
-    size_t sl;
     char *number;
     ++f->line;
-    sl = Text_readLine(f,&strLn,&buflen);
+    Text_readLine(f,&strLn,&buflen);
     number = strLn;
     for(j = 0; j < cols; ++j)
     {
@@ -623,13 +622,13 @@ static char Mat_findTable(MAT_FILE *f, const char* tableName, size_t *cols, size
   {
     long pos;
 
-    char * returnTmp = fgets((char*)&f->hdr,sizeof(hdr_t),f->fp);
+    fgets((char*)&f->hdr,sizeof(hdr_t),f->fp);
     if(ferror(f->fp))
     {
       fclose(f->fp);
       ModelicaFormatError("Could not read from file `%s'.",f->filename);
     }
-    returnTmp = fgets(name,fmin(f->hdr.namelen,(long)256),f->fp);
+    fgets(name,fmin(f->hdr.namelen,(long)256),f->fp);
     if(strncmp(tableName,name,strlen(tableName)) == 0)
     {
       if(f->hdr.type%10 != 0 || f->hdr.type/1000 > 1)
@@ -843,11 +842,10 @@ static char csv_findTable(CSV_FILE *f, const char *tableName, size_t *cols, size
   *rows=0;
   while(!feof(f->fp))
   {
-    size_t col;
     /* start new line, update counters */
     ++f->line;
     /* read whole line */
-    col = csv_readLine(f,&strLn,&buflen);
+    csv_readLine(f,&strLn,&buflen);
 
     if(strcmp(strLn,tableName)==0)
     {
@@ -859,7 +857,7 @@ static char csv_findTable(CSV_FILE *f, const char *tableName, size_t *cols, size
       }
       while(!feof(f->fp) && (stop==0))
       {
-        col = csv_readLine(f,&strLn,&buflen);
+        csv_readLine(f,&strLn,&buflen);
         for(i = 0; i<buflen;i++)
         {
           if(strLn[i]== ',')

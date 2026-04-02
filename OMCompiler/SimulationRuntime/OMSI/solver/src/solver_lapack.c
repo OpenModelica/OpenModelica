@@ -280,10 +280,10 @@ void solver_lapack_get_x_element(void*                  specific_data,
  * \param [in,out]  specific_data   LAPACK specific solver data.
  *                                  Gets overwritten by DGESV call.
  *
- * \return          Returns `solver_status` `solver_okay` if solved successful,
+ * \return          Returns `solver_status` `solver_ok` if solved successful,
  *                  otherwise `solver_error`.
  */
-solver_state solver_lapack_solve(void* specific_data) {
+solver_status solver_lapack_solve(void* specific_data) {
 
     /* Variables */
     solver_data_lapack* lapack_data;

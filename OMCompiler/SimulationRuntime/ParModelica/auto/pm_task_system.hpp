@@ -47,7 +47,8 @@
 namespace openmodelica { namespace parmodelica {
 
 struct TaskNode {
-    TaskNode() : level(0), cost(0){};
+    TaskNode() : level(0), cost(0){}
+    virtual ~TaskNode() {}
 
     long   task_id;
     int    level;

@@ -109,7 +109,7 @@ solver_int solver_kinsol_residual_wrapper(N_Vector  x,
                                           N_Vector  fval,
                                           void*     user_data_in);
 
-solver_state solver_kinsol_solve(void* specific_data);
+solver_status solver_kinsol_solve(void* specific_data);
 
 void solver_kinsol_get_x_element(void*                  solver_specififc_data,
                                  solver_unsigned_int    index,

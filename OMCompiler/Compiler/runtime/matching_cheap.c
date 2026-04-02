@@ -575,8 +575,8 @@ void cheap_matching(int *col_ptrs, int *col_ids, int *row_ptrs, int *row_ids, in
 }
 
 void cheapmatching(int* col_ptrs, int* col_ids, int* match, int* row_match, int n, int m, int cheap_id, int clear_match) {
-  int* row_ptrs;
-  int* row_ids;
+  int* row_ptrs = NULL;
+  int* row_ids = NULL;
   int i;
 
   if (clear_match==1)

@@ -147,7 +147,6 @@ NLS_SOLVER_STATUS solveNewton(DATA *data, threadData_t *threadData, NONLINEAR_SY
   double xerror = -1, xerror_scaled = -1;
   NLS_SOLVER_STATUS success = NLS_FAILED;
   int nfunc_evals = 0;
-  int continuous = 1;
   double local_tol = solverData->ftol;
 
   int giveUp = 0;
@@ -298,8 +297,6 @@ NLS_SOLVER_STATUS solveNewton(DATA *data, threadData_t *threadData, NONLINEAR_SY
       retries++;
 
       /* try to solve a discontinuous system */
-      continuous = 0;
-
       nonContinuousCase = 1;
       memcpy(relationsPreBackup, data->simulationInfo->relationsPre, sizeof(modelica_boolean)*data->modelData->nRelations);
 

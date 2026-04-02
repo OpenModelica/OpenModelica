@@ -91,7 +91,7 @@ FMI2_Export fmi2Status fmi2SetDebugLogging(fmi2Component    c,
                                            size_t           nCategories,
                                            const fmi2String categories[]) {
 
-    return omsi_set_debug_logging(c, loggingOn, nCategories, categories);
+    return (fmi2Status)omsi_set_debug_logging(c, loggingOn, nCategories, categories);
 }
 
 
@@ -118,7 +118,7 @@ FMI2_Export fmi2Component fmi2Instantiate(fmi2String                    instance
                                           fmi2Boolean                   loggingOn)
 {
 
-    return (fmi2Component) omsic_instantiate(instanceName, fmuType, fmuGUID, fmuResourceLocation, (const omsi_callback_functions*)functions, visible, loggingOn);
+    return (fmi2Component) omsic_instantiate(instanceName, (omsu_type)fmuType, fmuGUID, fmuResourceLocation, (const omsi_callback_functions*)functions, visible, loggingOn);
 }
 
 
@@ -149,7 +149,7 @@ FMI2_Export fmi2Status fmi2SetupExperiment(fmi2Component    c,
                                            fmi2Boolean      stopTimeDefined,
                                            fmi2Real         stopTime) {
 
-    return omsi_setup_experiment(c, toleranceDefined, tolerance, startTime, stopTimeDefined, stopTime);
+    return (fmi2Status)omsi_setup_experiment(c, toleranceDefined, tolerance, startTime, stopTimeDefined, stopTime);
 }
 
 
@@ -160,7 +160,7 @@ FMI2_Export fmi2Status fmi2SetupExperiment(fmi2Component    c,
  * \return      fmi2Status          Exit status of function.
  */
 FMI2_Export fmi2Status fmi2EnterInitializationMode(fmi2Component c) {
-    return omsi_enter_initialization_mode(c);
+    return (fmi2Status)omsi_enter_initialization_mode(c);
 }
 
 
@@ -172,7 +172,7 @@ FMI2_Export fmi2Status fmi2EnterInitializationMode(fmi2Component c) {
  * \return      fmi2Status          Exit status of function.
  */
 FMI2_Export fmi2Status fmi2ExitInitializationMode(fmi2Component c) {
-    return omsi_exit_initialization_mode(c);
+    return (fmi2Status)omsi_exit_initialization_mode(c);
 }
 
 
@@ -183,7 +183,7 @@ FMI2_Export fmi2Status fmi2ExitInitializationMode(fmi2Component c) {
  * \return      fmi2Status          Exit status of function.
  */
 FMI2_Export fmi2Status fmi2Terminate(fmi2Component c) {
-    return omsi_terminate(c);
+    return (fmi2Status)omsi_terminate(c);
 }
 
 
@@ -194,7 +194,7 @@ FMI2_Export fmi2Status fmi2Terminate(fmi2Component c) {
  * \return      fmi2Status          Exit status of function.
  */
 FMI2_Export fmi2Status fmi2Reset(fmi2Component c) {
-    return omsi_reset(c);
+    return (fmi2Status)omsi_reset(c);
 }
 
 
@@ -214,7 +214,7 @@ FMI2_Export fmi2Status fmi2GetReal(fmi2Component            c,
 
     /* ToDo: Check for Update */
 
-    return omsic_get_real(c, vr, nvr, value);
+    return (fmi2Status)omsic_get_real(c, vr, nvr, value);
 }
 
 
@@ -232,7 +232,7 @@ FMI2_Export fmi2Status fmi2GetInteger(fmi2Component             c,
                                       size_t                    nvr,
                                       fmi2Integer               value[]) {
 
-    return omsic_get_integer(c, vr, nvr, value);
+    return (fmi2Status)omsic_get_integer(c, vr, nvr, value);
 }
 
 
@@ -250,7 +250,7 @@ FMI2_Export fmi2Status fmi2GetBoolean(fmi2Component             component,
                                       size_t                    nvr,
                                       fmi2Boolean               value[]) {
 
-    return omsic_get_boolean(component, vr, nvr, value);
+    return (fmi2Status)omsic_get_boolean(component, vr, nvr, value);
 }
 
 
@@ -268,7 +268,7 @@ FMI2_Export fmi2Status fmi2GetString(fmi2Component              c,
                                      size_t                     nvr,
                                      fmi2String                 value[]) {
 
-    return omsic_get_string(c, vr, nvr, value);
+    return (fmi2Status)omsic_get_string(c, vr, nvr, value);
 }
 
 
@@ -286,7 +286,7 @@ FMI2_Export fmi2Status fmi2SetReal(fmi2Component            c,
                                    size_t                   nvr,
                                    const fmi2Real           value[]) {
 
-    return omsic_set_real(c, vr, nvr, value);
+    return (fmi2Status)omsic_set_real(c, vr, nvr, value);
 }
 
 
@@ -304,7 +304,7 @@ FMI2_Export fmi2Status fmi2SetInteger(fmi2Component             c,
                                       size_t                    nvr,
                                       const fmi2Integer         value[]) {
 
-    return omsic_set_integer(c, vr, nvr, value);
+    return (fmi2Status)omsic_set_integer(c, vr, nvr, value);
 }
 
 
@@ -322,7 +322,7 @@ FMI2_Export fmi2Status fmi2SetBoolean(fmi2Component             c,
                                       size_t                    nvr,
                                       const fmi2Boolean         value[]) {
 
-    return omsic_set_boolean(c, vr, nvr, value);
+    return (fmi2Status)omsic_set_boolean(c, vr, nvr, value);
 }
 
 
@@ -340,7 +340,7 @@ FMI2_Export fmi2Status fmi2SetString(fmi2Component              c,
                                      size_t                     nvr,
                                      const fmi2String           value[]) {
 
-    return omsic_set_string(c, vr, nvr, value);
+    return (fmi2Status)omsic_set_string(c, vr, nvr, value);
 }
 
 
@@ -348,7 +348,7 @@ FMI2_Export fmi2Status fmi2SetString(fmi2Component              c,
 FMI2_Export fmi2Status fmi2GetFMUstate(fmi2Component c,
                                        fmi2FMUstate* FMUstate) {
 
-    return omsi_get_fmu_state(c, FMUstate);
+    return (fmi2Status)omsi_get_fmu_state(c, FMUstate);
 }
 
 
@@ -356,7 +356,7 @@ FMI2_Export fmi2Status fmi2GetFMUstate(fmi2Component c,
 FMI2_Export fmi2Status fmi2SetFMUstate(fmi2Component    c,
                                        fmi2FMUstate     FMUstate) {
 
-    return omsi_set_fmu_state(c, FMUstate);
+    return (fmi2Status)omsi_set_fmu_state(c, FMUstate);
 }
 
 
@@ -423,7 +423,7 @@ FMI2_Export fmi2Status fmi2GetDirectionalDerivative(__attribute__((unused)) fmi2
  */
 FMI2_Export fmi2Status fmi2EnterEventMode(fmi2Component c) {
 
-    return omsi_enter_event_mode(c);
+    return (fmi2Status)omsi_enter_event_mode(c);
 }
 
 
@@ -439,7 +439,7 @@ FMI2_Export fmi2Status fmi2EnterEventMode(fmi2Component c) {
 FMI2_Export fmi2Status fmi2NewDiscreteStates(fmi2Component  c,
                                              fmi2EventInfo* fmiEventInfo) {
 
-    return omsi_new_discrete_state(c, (omsi_event_info*) fmiEventInfo);
+    return (fmi2Status)omsi_new_discrete_state(c, (omsi_event_info*) fmiEventInfo);
 }
 
 
@@ -451,7 +451,7 @@ FMI2_Export fmi2Status fmi2NewDiscreteStates(fmi2Component  c,
  */
 FMI2_Export fmi2Status fmi2EnterContinuousTimeMode(fmi2Component c) {
 
-    return omsi_enter_continuous_time_mode(c);
+    return (fmi2Status)omsi_enter_continuous_time_mode(c);
 }
 
 
@@ -471,7 +471,7 @@ FMI2_Export fmi2Status fmi2CompletedIntegratorStep(fmi2Component    c,
                                                    fmi2Boolean*     enterEventMode,
                                                    fmi2Boolean*     terminateSimulation) {
 
-    return omsi_completed_integrator_step(c, noSetFMUStatePriorToCurrentPoint, enterEventMode, terminateSimulation);
+    return (fmi2Status)omsi_completed_integrator_step(c, noSetFMUStatePriorToCurrentPoint, enterEventMode, terminateSimulation);
 }
 
 
@@ -485,7 +485,7 @@ FMI2_Export fmi2Status fmi2CompletedIntegratorStep(fmi2Component    c,
 FMI2_Export fmi2Status fmi2SetTime(fmi2Component    c,
                                    fmi2Real         time) {
 
-    return omsi_set_time(c, time);
+    return (fmi2Status)omsi_set_time(c, time);
 }
 
 
@@ -501,7 +501,7 @@ FMI2_Export fmi2Status fmi2SetContinuousStates(fmi2Component    c,
                                                const fmi2Real   x[],
                                                size_t           nx) {
 
-    return omsi_set_continuous_states(c, x, nx);
+    return (fmi2Status)omsi_set_continuous_states(c, x, nx);
 }
 
 
@@ -517,7 +517,7 @@ FMI2_Export fmi2Status fmi2GetDerivatives(fmi2Component c,
                                           fmi2Real      derivatives[],
                                           size_t        nx) {
 
-    return omsi_get_derivatives(c, derivatives, nx);
+    return (fmi2Status)omsi_get_derivatives(c, derivatives, nx);
 }
 
 
@@ -533,7 +533,7 @@ FMI2_Export fmi2Status fmi2GetEventIndicators(fmi2Component c,
                                               fmi2Real      eventIndicators[],
                                               size_t        ni) {
 
-    return omsi_get_event_indicators(c, eventIndicators, ni);
+    return (fmi2Status)omsi_get_event_indicators(c, eventIndicators, ni);
 }
 
 
@@ -549,7 +549,7 @@ FMI2_Export fmi2Status fmi2GetContinuousStates(fmi2Component    c,
                                                fmi2Real         x[],
                                                size_t           nx) {
 
-    return omsi_get_continuous_states(c, x, nx);
+    return (fmi2Status)omsi_get_continuous_states(c, x, nx);
 }
 
 
@@ -565,7 +565,7 @@ FMI2_Export fmi2Status fmi2GetNominalsOfContinuousStates(fmi2Component  c,
                                                          fmi2Real       x_nominal[],
                                                          size_t         nx) {
 
-    return omsi_get_nominals_of_continuous_states(c, x_nominal, nx);
+    return (fmi2Status)omsi_get_nominals_of_continuous_states(c, x_nominal, nx);
 }
 
 /** \} */
