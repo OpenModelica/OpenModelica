@@ -467,7 +467,7 @@ int SimulationResults_filterSimulationResults(const char *inFile, const char *ou
       for (i=1; i<numToFilter; i++) {
         fprintf(fout, ",\"%s\"", mat_var[i]->name);
       }
-      fprintf(fout, ",nrows=%d\n", simresglob.matReader.nrows);
+      fprintf(fout, "\n");
       for (i=0; i<simresglob.matReader.nrows; i++) {
         fprintf(fout, "%.15g", vals[0][i]);
         for (j=1; j<numToFilter; j++) {
