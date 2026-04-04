@@ -3652,7 +3652,7 @@ algorithm
        AvlSetInt.Tree vars;
        Integer i;
     case ({}, {}) then inVarIndxLst;
-    case (BackendDAE.VAR()::rest, i::irest)
+    case (BackendDAE.VAR(varKind = BackendDAE.DISCRETE())::rest, i::irest)
       equation
         vars = AvlSetInt.add(inVarIndxLst, i);
       then adjacencyRowExp1DiscreteOrArray(rest,irest,vars);
