@@ -6487,5 +6487,149 @@ algorithm
   end match;
 end offsetGraphicsItemExpression;
 
+public function addToPublic
+  "This function takes a Class definition and adds an
+   ElementItem to the first public section in the class.
+   If no public section is available in the class one is created."
+  input output Absyn.Class cls;
+  input Absyn.ElementItem element;
+protected
+  list<Absyn.ElementItem> elems;
+  Absyn.ClassDef cdef;
+algorithm
+  () := matchcontinue cls
+    case Absyn.CLASS(body = cdef as Absyn.PARTS())
+      algorithm
+        elems := InteractiveUtil.getPublicList(cdef.classParts);
+        elems := List.appendElt(element, elems);
+        cdef.classParts := InteractiveUtil.replacePublicList(cdef.classParts, elems);
+        cls.body := cdef;
+      then
+        ();
+
+    case Absyn.CLASS(body = cdef as Absyn.PARTS())
+      algorithm
+        cdef.classParts := Absyn.PUBLIC({element}) :: cdef.classParts;
+        cls.body := cdef;
+      then
+        ();
+
+    // adrpo: handle also the case model extends X end X;
+    case Absyn.CLASS(body = cdef as Absyn.CLASS_EXTENDS())
+      algorithm
+        elems := InteractiveUtil.getPublicList(cdef.parts);
+        elems := List.appendElt(element, elems);
+        cdef.parts := InteractiveUtil.replacePublicList(cdef.parts, elems);
+        cls.body := cdef;
+      then
+        ();
+
+    // adrpo: handle also the case model extends X end X;
+    case Absyn.CLASS(body = cdef as Absyn.CLASS_EXTENDS())
+      algorithm
+        cdef.parts := Absyn.PUBLIC({element}) :: cdef.parts;
+        cls.body := cdef;
+      then
+        ();
+
+  end matchcontinue;
+end addToPublic;
+
+public function addToProtected
+  "This function takes a Class definition and adds an
+   ElementItem to the first protected section in the class.
+   If no protected section is available in the class one is created."
+  input output Absyn.Class cls;
+  input Absyn.ElementItem element;
+protected
+  list<Absyn.ElementItem> elems;
+  Absyn.ClassDef cdef;
+algorithm
+  () := matchcontinue cls
+    case Absyn.CLASS(body = cdef as Absyn.PARTS())
+      algorithm
+        elems := InteractiveUtil.getProtectedList(cdef.classParts);
+        elems := List.appendElt(element, elems);
+        cdef.classParts := InteractiveUtil.replaceProtectedList(cdef.classParts, elems);
+        cls.body := cdef;
+      then
+        ();
+
+    case Absyn.CLASS(body = cdef as Absyn.PARTS())
+      algorithm
+        cdef.classParts := Absyn.PROTECTED({element}) :: cdef.classParts;
+        cls.body := cdef;
+      then
+        ();
+
+    // adrpo: handle also the case model extends X end X;
+    case Absyn.CLASS(body = cdef as Absyn.CLASS_EXTENDS())
+      algorithm
+        elems := InteractiveUtil.getProtectedList(cdef.parts);
+        elems := List.appendElt(element, elems);
+        cdef.parts := InteractiveUtil.replaceProtectedList(cdef.parts, elems);
+        cls.body := cdef;
+      then
+        ();
+
+    // adrpo: handle also the case model extends X end X;
+    case Absyn.CLASS(body = cdef as Absyn.CLASS_EXTENDS())
+      algorithm
+        cdef.parts := Absyn.PROTECTED({element}) :: cdef.parts;
+        cls.body := cdef;
+      then
+        ();
+
+  end matchcontinue;
+end addToProtected;
+
+public function addToEquation
+  "This function takes a Class definition and adds an
+   EquationItem to the first equation section in the class.
+   If no equation section is available in the class one is created."
+  input output Absyn.Class cls;
+  input Absyn.EquationItem eq;
+protected
+  list<Absyn.EquationItem> eqlst;
+  Absyn.ClassDef cdef;
+algorithm
+  () := matchcontinue cls
+    case Absyn.CLASS(body = cdef as Absyn.PARTS())
+      algorithm
+        eqlst := InteractiveUtil.getEquationList(cdef.classParts);
+        eqlst := List.appendElt(eq, eqlst);
+        cdef.classParts := InteractiveUtil.replaceEquationList(cdef.classParts, eqlst);
+        cls.body := cdef;
+      then
+        ();
+
+    case Absyn.CLASS(body = cdef as Absyn.PARTS())
+      algorithm
+        cdef.classParts := List.appendElt(Absyn.EQUATIONS({eq}), cdef.classParts) "Add the equations last, to make nicer output if public section present" ;
+        cls.body := cdef;
+      then
+        ();
+
+    /* adrpo: handle also the case model extends X end X; */
+    case Absyn.CLASS(body = cdef as Absyn.CLASS_EXTENDS())
+      algorithm
+        eqlst := InteractiveUtil.getEquationList(cdef.parts);
+        eqlst := List.appendElt(eq, eqlst);
+        cdef.parts := InteractiveUtil.replaceEquationList(cdef.parts, eqlst);
+        cls.body := cdef;
+      then
+        ();
+
+    /* adrpo: handle also the case model extends X end X; */
+    case Absyn.CLASS(body = cdef as Absyn.CLASS_EXTENDS())
+      algorithm
+        cdef.parts := List.appendElt(Absyn.EQUATIONS({eq}), cdef.parts) "Add the equations last, to make nicer output if public section present" ;
+        cls.body := cdef;
+      then
+        ();
+
+  end matchcontinue;
+end addToEquation;
+
 annotation(__OpenModelica_Interface="backend");
 end InteractiveUtil;
