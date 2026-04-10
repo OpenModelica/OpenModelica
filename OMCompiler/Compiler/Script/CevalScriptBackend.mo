@@ -3407,6 +3407,12 @@ algorithm
     case ("translateResidualsDAE", {Values.CODE(Absyn.C_TYPENAME(path)), Values.STRING(s1)})
       then ValuesUtil.makeBoolean(NFApi.translateResidualsDAE(path, s1));
 
+    case ("addEquation", {Values.CODE(Absyn.C_TYPENAME(path)), Values.STRING(s1), Values.BOOL(b1)})
+      then ValuesUtil.makeBoolean(Interactive.addEquation(path, s1, b1));
+
+    case ("updateEquation", {Values.CODE(Absyn.C_TYPENAME(path)), Values.STRING(s1), Values.STRING(s2), Values.BOOL(b), Values.BOOL(b1), Values.BOOL(b2), Values.BOOL(b3)})
+      then ValuesUtil.makeBoolean(Interactive.updateEquation(path, s1, s2, b, b1, b2, b3));
+
  end matchcontinue;
 end cevalInteractiveFunctions4;
 

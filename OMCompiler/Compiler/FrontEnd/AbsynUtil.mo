@@ -4768,6 +4768,20 @@ algorithm
   end match;
 end getClassPartsInClass;
 
+public function setClassPartsInClass
+  input list<Absyn.ClassPart> parts;
+  input output Absyn.Class cls;
+protected
+  Absyn.ClassDef cdef = cls.body;
+algorithm
+  () := match cdef
+    case Absyn.ClassDef.PARTS()         algorithm cdef.classParts := parts; then ();
+    case Absyn.ClassDef.CLASS_EXTENDS() algorithm cdef.parts := parts;      then ();
+  end match;
+
+  cls.body := cdef;
+end setClassPartsInClass;
+
 public function getElementItemsInElement
   "Returns the public and protected elements in a class."
   input Absyn.Element element;
@@ -6886,6 +6900,27 @@ algorithm
   end match;
 end isAlgorithmSection;
 
+function getEquationItemsInPart
+  input Absyn.ClassPart part;
+  output list<Absyn.EquationItem> eqs;
+algorithm
+  eqs := match part
+    case Absyn.ClassPart.EQUATIONS() then part.contents;
+    case Absyn.ClassPart.INITIALEQUATIONS() then part.contents;
+    else {};
+  end match;
+end getEquationItemsInPart;
+
+function setEquationItemsInPart
+  input list<Absyn.EquationItem> eqs;
+  input output Absyn.ClassPart part;
+algorithm
+  () := match part
+    case Absyn.ClassPart.EQUATIONS()        algorithm part.contents := eqs; then ();
+    case Absyn.ClassPart.INITIALEQUATIONS() algorithm part.contents := eqs; then ();
+  end match;
+end setEquationItemsInPart;
+
 function setElementType
   "Sets the type of a component or short class definition. If the element
    contains multiple components the type is only changed if
@@ -7007,6 +7042,266 @@ algorithm
     else "";
   end match;
 end classDefStringComment;
+
+function appendEquation
+  input Absyn.EquationItem eq;
+  input Boolean isInitial = false;
+  input output Absyn.Class cls;
+protected
+  list<Absyn.ClassPart> parts;
+  Boolean found;
+
+  function append_eq
+    input Absyn.EquationItem eq;
+    input Boolean isInitial;
+    input output Absyn.ClassPart part;
+          output Boolean found;
+  algorithm
+    found := match part
+      case Absyn.ClassPart.EQUATIONS()
+        guard not isInitial
+        algorithm
+          part.contents := List.appendElt(eq, part.contents);
+        then
+          true;
+
+      case Absyn.ClassPart.INITIALEQUATIONS()
+        guard isInitial
+        algorithm
+          part.contents := List.appendElt(eq, part.contents);
+        then
+          true;
+
+      else false;
+    end match;
+  end append_eq;
+algorithm
+  parts := listReverse(getClassPartsInClass(cls));
+  (parts, found) := List.findMap(parts, function append_eq(eq = eq, isInitial = isInitial));
+
+  if not found then
+    parts := if isInitial then Absyn.ClassPart.INITIALEQUATIONS({eq}) :: parts else
+                               Absyn.ClassPart.EQUATIONS({eq}) :: parts;
+  end if;
+
+  cls := setClassPartsInClass(listReverse(parts), cls);
+end appendEquation;
+
+public function forIteratorEqual
+  input Absyn.ForIterator iter1;
+  input Absyn.ForIterator iter2;
+  output Boolean equal = iter1.name == iter2.name and
+                         Util.optionEqual(iter1.guardExp, iter2.guardExp, expEqual) and
+                         Util.optionEqual(iter1.range, iter2.range, expEqual);
+end forIteratorEqual;
+
+public function functionArgsEqual
+  input Absyn.FunctionArgs args1;
+  input Absyn.FunctionArgs args2;
+  output Boolean equal;
+protected
+  function named_arg_equal
+    input Absyn.NamedArg arg1;
+    input Absyn.NamedArg arg2;
+    output Boolean equal = arg1.argName == arg2.argName and expEqual(arg1.argValue, arg2.argValue);
+  end named_arg_equal;
+algorithm
+  equal := match (args1, args2)
+    case (Absyn.FunctionArgs.FUNCTIONARGS(), Absyn.FunctionArgs.FUNCTIONARGS())
+      then List.isEqualOnTrue(args1.args, args2.args, expEqual) and
+           List.isEqualOnTrue(args1.argNames, args2.argNames, named_arg_equal);
+
+    case (Absyn.FunctionArgs.FOR_ITER_FARG(), Absyn.FunctionArgs.FOR_ITER_FARG())
+      then expEqual(args1.exp, args2.exp) and
+           valueEq(args1.iterType, args2.iterType) and
+           List.isEqualOnTrue(args1.iterators, args2.iterators, forIteratorEqual);
+
+    else false;
+  end match;
+end functionArgsEqual;
+
+public function commentEqual
+  input Absyn.Comment cmt1;
+  input Absyn.Comment cmt2;
+  output Boolean equal = Util.optionEqual(cmt1.comment, cmt2.comment, stringEq) and
+                         Util.optionEqual(cmt1.annotation_, cmt2.annotation_, annotationEqual);
+end commentEqual;
+
+public function annotationEqual
+  input Absyn.Annotation ann1;
+  input Absyn.Annotation ann2;
+  output Boolean equal = List.isEqualOnTrue(ann1.elementArgs, ann2.elementArgs, elementArgEqual);
+end annotationEqual;
+
+public function elementArgEqual
+  input Absyn.ElementArg arg1;
+  input Absyn.ElementArg arg2;
+  output Boolean equal;
+algorithm
+  equal := match (arg1, arg2)
+    case (Absyn.ElementArg.MODIFICATION(), Absyn.ElementArg.MODIFICATION())
+      then arg1.finalPrefix == arg2.finalPrefix and
+           valueEq(arg1.eachPrefix, arg2.eachPrefix) and
+           pathEqual(arg1.path, arg2.path) and
+           Util.optionEqual(arg1.modification, arg2.modification, modEqual) and
+           Util.optionEqual(arg1.comment, arg2.comment, stringEq);
+
+    case (Absyn.ElementArg.ELEMENTARGCOMMENT(), Absyn.ElementArg.ELEMENTARGCOMMENT())
+      then arg1.comment == arg2.comment;
+
+    case (Absyn.ElementArg.INHERITANCEBREAK(), Absyn.ElementArg.INHERITANCEBREAK())
+      then equationEqual(arg1.cnct, arg2.cnct);
+
+    // REDECLARATION not yet implemented, since this is only used for annotations so far.
+
+    else
+      algorithm
+        Error.assertion(false, getInstanceName() + " got unknown element.", sourceInfo());
+      then
+        fail();
+
+  end match;
+end elementArgEqual;
+
+public function modEqual
+  input Absyn.Modification mod1;
+  input Absyn.Modification mod2;
+  output Boolean equal = eqModEqual(mod1.eqMod, mod2.eqMod) and
+                         List.isEqualOnTrue(mod1.elementArgLst, mod2.elementArgLst, elementArgEqual);
+end modEqual;
+
+public function eqModEqual
+  input Absyn.EqMod eqMod1;
+  input Absyn.EqMod eqMod2;
+  output Boolean equal;
+algorithm
+  equal := match (eqMod1, eqMod2)
+    case (Absyn.EqMod.NOMOD(), Absyn.EqMod.NOMOD()) then true;
+    case (Absyn.EqMod.EQMOD(), Absyn.EqMod.EQMOD()) then expEqual(eqMod1.exp, eqMod2.exp);
+    else false;
+  end match;
+end eqModEqual;
+
+public function equationItemEqual
+  input Absyn.EquationItem eq1;
+  input Absyn.EquationItem eq2;
+  input Boolean shallow = false "Ignore the equations inside the equations being checked if true";
+  input Boolean ignoreComment = true "Include comments/annotations in the comparison if true";
+  output Boolean equal;
+algorithm
+  equal := match (eq1, eq2)
+    case (Absyn.EquationItem.EQUATIONITEM(), Absyn.EquationItem.EQUATIONITEM())
+      then equationEqual(eq1.equation_, eq2.equation_, shallow) and
+           (ignoreComment or Util.optionEqual(eq1.comment, eq2.comment, commentEqual));
+
+    case (Absyn.EquationItem.EQUATIONITEMCOMMENT(), Absyn.EquationItem.EQUATIONITEMCOMMENT())
+      then eq1.comment == eq2.comment;
+
+    else false;
+  end match;
+end equationItemEqual;
+
+public function equationItemsEqual
+  input list<Absyn.EquationItem> eql1;
+  input list<Absyn.EquationItem> eql2;
+  input Boolean shallow = false "Ignore the equations inside the equations being checked if true";
+  input Boolean ignoreComment = true "Include comments/annotations in the comparison if true";
+  output Boolean equal = List.isEqualOnTrue(eql1, eql2,
+   function equationItemEqual(shallow = shallow, ignoreComment = ignoreComment));
+end equationItemsEqual;
+
+public function equationEqual
+  input Absyn.Equation eq1;
+  input Absyn.Equation eq2;
+  input Boolean shallow = false "Ignore the equations inside the equations being checked if true";
+  input Boolean ignoreComment = true "Include comments/annotations in the comparison if true";
+  output Boolean equal;
+protected
+  Absyn.Exp e1, e2;
+  list<Absyn.EquationItem> eql1, eql2;
+  list<tuple<Absyn.Exp, list<Absyn.EquationItem>>> branches;
+  Absyn.ComponentRef cr1, cr2;
+  Absyn.ForIterators iters;
+  Absyn.FunctionArgs args;
+  Absyn.EquationItem eq;
+
+  function branch_eq
+    input tuple<Absyn.Exp, list<Absyn.EquationItem>> branch1;
+    input tuple<Absyn.Exp, list<Absyn.EquationItem>> branch2;
+    input Boolean shallow;
+    input Boolean ignoreComment;
+    output Boolean equal = expEqual(Util.tuple21(branch1), Util.tuple21(branch2)) and
+                           (shallow or equationItemsEqual(Util.tuple22(branch1), Util.tuple22(branch2), false, ignoreComment));
+  end branch_eq;
+algorithm
+  if valueConstructor(eq1) <> valueConstructor(eq2) then
+    equal := false;
+    return;
+  end if;
+
+  equal := match eq1
+    case Absyn.Equation.EQ_IF()
+      algorithm
+        Absyn.Equation.EQ_IF(e1, eql1, branches, eql2) := eq2;
+      then
+        expEqual(eq1.ifExp, e1) and
+        (shallow or equationItemsEqual(eq1.equationTrueItems, eql1)) and
+        List.isEqualOnTrue(eq1.elseIfBranches, branches, function branch_eq(shallow = shallow, ignoreComment = ignoreComment)) and
+        (shallow or equationItemsEqual(eq1.equationElseItems, eql2, false, ignoreComment));
+
+    case Absyn.Equation.EQ_EQUALS()
+      algorithm
+        Absyn.Equation.EQ_EQUALS(e1, e2) := eq2;
+      then
+        expEqual(eq1.leftSide, e1) and expEqual(eq1.rightSide, e2);
+
+    case Absyn.Equation.EQ_PDE()
+      algorithm
+        Absyn.Equation.EQ_PDE(e1, e2, cr1) := eq2;
+      then
+        expEqual(eq1.leftSide, e1) and expEqual(eq1.rightSide, e2) and crefEqual(eq1.domain, cr1);
+
+    case Absyn.Equation.EQ_CONNECT()
+      algorithm
+        Absyn.Equation.EQ_CONNECT(cr1, cr2) := eq2;
+      then
+        crefEqual(eq1.connector1, cr1) and crefEqual(eq1.connector2, cr2);
+
+    case Absyn.Equation.EQ_FOR()
+      algorithm
+        Absyn.Equation.EQ_FOR(iters, eql1) := eq2;
+      then
+        List.isEqualOnTrue(eq1.iterators, iters, forIteratorEqual) and
+        (shallow or equationItemsEqual(eq1.forEquations, eql1, false, ignoreComment));
+
+    case Absyn.Equation.EQ_WHEN_E()
+      algorithm
+        Absyn.Equation.EQ_WHEN_E(e1, eql1, branches) := eq2;
+      then
+        expEqual(eq1.whenExp, e1) and
+        equationItemsEqual(eq1.whenEquations, eql1) and
+        List.isEqualOnTrue(eq1.elseWhenEquations, branches, function branch_eq(shallow = shallow, ignoreComment = ignoreComment));
+
+    case Absyn.Equation.EQ_NORETCALL()
+      algorithm
+        Absyn.Equation.EQ_NORETCALL(cr1, args) := eq2;
+      then
+        crefEqual(eq1.functionName, cr1) and functionArgsEqual(eq1.functionArgs, args);
+
+    case Absyn.Equation.EQ_FAILURE()
+      algorithm
+        Absyn.Equation.EQ_FAILURE(eq) := eq2;
+      then
+        shallow or equationItemEqual(eq1.equ, eq, false, ignoreComment);
+
+    else
+      algorithm
+        Error.assertion(false, getInstanceName() + " got unknown equation.", sourceInfo());
+      then
+        fail();
+
+  end match;
+end equationEqual;
 
 annotation(__OpenModelica_Interface="frontend");
 end AbsynUtil;

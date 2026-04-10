@@ -10480,5 +10480,151 @@ algorithm
   end for;
 end astContainsEncryptedClass;
 
+public function addEquation
+  input Absyn.Path clsPath;
+  input String eqStr;
+  input Boolean isInitial;
+  output Boolean success = false;
+protected
+  Absyn.Program program;
+  Absyn.EquationItem eq;
+  Absyn.Class cls;
+algorithm
+  try
+    eq := Parser.stringEq(eqStr);
+    program := transformPathedClassInProgram(clsPath, SymbolTable.getAbsyn(),
+      function AbsynUtil.appendEquation(eq = eq, isInitial = isInitial));
+    SymbolTable.setAbsyn(program);
+    success := true;
+  else
+  end try;
+end addEquation;
+
+public function updateEquation
+  input Absyn.Path clsPath;
+  input String oldEq;
+  input String newEq;
+  input Boolean matchAll;
+  input Boolean matchShallow;
+  input Boolean matchDescription;
+  input Boolean mergeDescription;
+  output Boolean success;
+protected
+  Absyn.Program program;
+  Absyn.EquationItem old_eq;
+  Option<Absyn.EquationItem> new_eq;
+  Absyn.Class cls;
+algorithm
+  try
+    old_eq := Parser.stringEq(oldEq);
+    new_eq := if stringEmpty(newEq) then NONE() else SOME(Parser.stringEq(newEq));
+    program := transformPathedClassInProgram(clsPath, SymbolTable.getAbsyn(),
+      function updateEquation_impl(oldEq = old_eq, newEq = new_eq, matchAll = matchAll,
+        matchShallow = matchShallow, matchDescription = matchDescription, mergeDescription = mergeDescription));
+    SymbolTable.setAbsyn(program);
+    success := true;
+  else
+    success := false;
+  end try;
+end updateEquation;
+
+protected function updateEquation_impl
+  input output Absyn.Class cls;
+  input Absyn.EquationItem oldEq;
+  input Option<Absyn.EquationItem> newEq;
+  input Boolean matchAll;
+  input Boolean matchShallow;
+  input Boolean matchDescription;
+  input Boolean mergeDescription;
+protected
+  Absyn.ClassPart part;
+  list<Absyn.ClassPart> rest_parts, accum_parts = {};
+  Absyn.EquationItem eq, new_eq;
+  list<Absyn.EquationItem> rest_eqs, accum_eqs;
+  Boolean found = false, found_in_part;
+
+  function merge_desc
+    input Absyn.EquationItem oldEq;
+    input output Absyn.EquationItem newEq;
+  protected
+    Absyn.Comment cmt;
+  algorithm
+    () := match (oldEq, newEq)
+      case (Absyn.EquationItem.EQUATIONITEM(), Absyn.EquationItem.EQUATIONITEM())
+        algorithm
+          if isSome(oldEq.comment) then
+            if isNone(newEq.comment) then
+              newEq.comment := oldEq.comment;
+            else
+              SOME(cmt) := newEq.comment;
+              if isNone(cmt.annotation_) then
+                cmt.annotation_ := AbsynUtil.getCommentOptAnnotation(oldEq.comment);
+              else
+                cmt.comment := AbsynUtil.getCommentOptComment(oldEq.comment);
+              end if;
+              newEq.comment := SOME(cmt);
+            end if;
+          end if;
+        then
+          ();
+
+      else ();
+    end match;
+  end merge_desc;
+algorithm
+  rest_parts := AbsynUtil.getClassPartsInClass(cls);
+
+  while not listEmpty(rest_parts) loop
+    part :: rest_parts := rest_parts;
+    rest_eqs := AbsynUtil.getEquationItemsInPart(part);
+    accum_eqs := {};
+    found_in_part := false;
+
+    while not listEmpty(rest_eqs) loop
+      eq :: rest_eqs := rest_eqs;
+
+      if AbsynUtil.equationItemEqual(eq, oldEq, shallow = matchShallow, ignoreComment = not matchDescription) then
+        if isSome(newEq) then
+          new_eq := Util.getOption(newEq);
+
+          if mergeDescription then
+            new_eq := merge_desc(eq, new_eq);
+          end if;
+
+          accum_eqs := new_eq :: accum_eqs;
+        end if;
+
+        found_in_part := true;
+        found := true;
+
+        if not matchAll then
+          accum_eqs := List.append_reverse(rest_eqs, accum_eqs);
+          break;
+        end if;
+      else
+        accum_eqs := eq :: accum_eqs;
+      end if;
+    end while;
+
+    if found_in_part then
+      part := AbsynUtil.setEquationItemsInPart(Dangerous.listReverseInPlace(accum_eqs), part);
+      accum_parts := part :: accum_parts;
+
+      if not matchAll then
+        accum_parts := List.append_reverse(rest_parts, accum_parts);
+        break;
+      end if;
+    else
+      accum_parts := part :: accum_parts;
+    end if;
+  end while;
+
+  if not found then
+    fail();
+  end if;
+
+  cls := AbsynUtil.setClassPartsInClass(Dangerous.listReverseInPlace(accum_parts), cls);
+end updateEquation_impl;
+
 annotation(__OpenModelica_Interface="backend");
 end Interactive;

@@ -119,6 +119,16 @@ public function stringMod
   external "C" cref=ParserExt_stringMod(str, infoFilename, acceptedGram, languageStandardInt, runningTestsuite) annotation(Library = {"omparse","omantlr3","omcruntime"});
 end stringMod;
 
+public function stringEq
+  input String str;
+  input String infoFilename;
+  input Integer acceptedGram;
+  input Integer languageStandardInt;
+  input Boolean runningTestsuite;
+  output Absyn.EquationItem eq;
+  external "C" eq=ParserExt_stringEq(str, infoFilename, acceptedGram, languageStandardInt, runningTestsuite) annotation(Library = {"omparse","omantlr3","omcruntime"});
+end stringEq;
+
 public function startLibraryVendorExecutable "Starts the library vendor executable"
   input String lvePath;
   output Boolean success;

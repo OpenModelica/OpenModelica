@@ -4340,6 +4340,70 @@ annotation(
   preferredView="text");
 end getConnectionList;
 
+function addEquation
+  input TypeName className "The name of the class to add the equation to";
+  input String eq "The equation given as a string";
+  input Boolean isInitial = false "Whether the equation should be added as an initial or normal equation";
+  output Boolean success "true if the equation could be added, otherwise false";
+external "builtin";
+annotation(
+  Documentation(info="<html>
+Adds an equation to a class. The equation is added to the end of the last equation or initial equation section (depending on <pre>isInitial</pre>) in the class, or to a new section if no suitable section exists. The class must be able to contain equations, i.e. be a normal long class or class extends declaration.
+</html>"),
+  preferredView="text");
+end addEquation;
+
+function deleteEquation = updateEquation(newEq = "")
+  annotation(
+    Documentation(info="<html>
+Deletes equations in a class. Alias for <a href=\"modelica://OpenModelica.Scripting.updateEquation\">updateEquation()</a> with <pre>newEq = ""</pre>.
+</html>"),
+    preferredView="text");
+
+function updateEquation
+  input TypeName className "The name of the class";
+  input String oldEq "The equation to replace";
+  input String newEq "The equation to replace with";
+  input Boolean matchAll = false "Update all matching equations if true, otherwise only the first matching";
+  input Boolean matchShallow = true "Ignore nested equations if true, otherwise match the equations recursively";
+  input Boolean matchDescription = false "Match description strings/annotations if true, otherwise ignore them";
+  input Boolean mergeDescription = false "Keep description string/annotations from the old equation if true";
+  output Boolean success "true if any equation was updated, otherwise false";
+external "builtin";
+annotation(
+  Documentation(info="<html>
+Replaces an equation with another equation in a class.
+<h4>Syntax</h4>
+<blockquote>
+<pre><b>updateEquation</b>(MyModel, \"x = 1\", \"x = 2\")</pre>
+</blockquote>
+<h4>Description</h4>
+<p>
+updateEquation takes two equations, given as strings that are parsed as Modelica equations, and replaces an equation in the given class that matches the first equation with the second. If <pre>newEq</pre> is an empty string, then the matching equation is removed instead of replaced.
+</p>
+<h4>Optional arguments</h4>
+<dl>
+  <dt>matchAll</dt>
+  <dd>
+    If <pre>matchAll</pre> is true, then updateEquation replaces all equations that matches. Otherwise it only replaces the first matching equation.
+  </dd>
+  <dt>matchShallow</dt>
+  <dd>
+    If <pre>matchShallow</pre> is true, then equations are only matched shallowly, ignoring any nested equations. I.e. <pre>updateEquation(M, \"if b then end if\", ...)</pre> will replace any if-equation that matches <pre>if b then</pre>, regardless of what equations the if-equation contains. If <pre>matchShallow</pre> is false, then the equations must match recursively.
+  </dd>
+  <dt>matchDescription</dt>
+  <dd>
+    If <pre>matchDescription</pre> is true, then the description strings and annotations of the equations must match. Otherwise these are ignored when matching equations.
+  </dd>
+  <dt>mergeDescription</dt>
+  <dd>
+    If <pre>mergeDescription</pre> is true, then the description string and/or annotations of the replaced equation are copied to the new equation if these are missing on the new equation. This requires that <pre>matchDescription</pre> is false, otherwise there will be nothing to merge since the equations must have the same description to match. If <pre>mergeDescription</pre> is false, then the new equation overwrites the old completely, including description strings and annotations.
+  </dd>
+</dl>
+</html>"),
+  preferredView="text");
+end updateEquation;
+
 function getAlgorithmCount
   "Counts the number of algorithm sections in a class."
   input TypeName class_;
