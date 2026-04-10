@@ -1,0 +1,152 @@
+// name: deleteEquation1
+// keywords:
+// status: correct
+//
+// Tests the deleteEquation API.
+//
+
+loadString("
+  model M
+    Real x;
+    Real y;
+  initial equation
+    y = 1;
+  equation
+    x = 1;
+    x = 3;
+    x = 2 \"test\" annotation(__ann = 1);
+    x = 3;
+    x = 3;
+
+    if b then
+      x = 1;
+    end if;
+
+    if b2 then
+      y = 2;
+    end if;
+  end M;
+");
+getErrorString();
+
+deleteEquation(M, "x = 1");
+list(M);
+
+deleteEquation(M, "x = 3", matchAll = true);
+list(M);
+
+deleteEquation(M, "x = 2", matchDescription = true);
+list(M);
+
+deleteEquation(M, "x = 2 \"test\" annotation(__ann = 1)", matchDescription = true);
+list(M);
+
+deleteEquation(M, "if b then end if");
+list(M);
+
+deleteEquation(M, "if b2 then end if", matchShallow = false);
+list(M);
+
+deleteEquation(M, "if b2 then y = 2; end if", matchShallow = false);
+list(M);
+
+// Result:
+// true
+// ""
+// true
+// "model M
+//   Real x;
+//   Real y;
+// initial equation
+//   y = 1;
+// equation
+//   x = 3;
+//   x = 2 \"test\" annotation(
+//     __ann = 1);
+//   x = 3;
+//   x = 3;
+//   if b then
+//     x = 1;
+//   end if;
+//   if b2 then
+//     y = 2;
+//   end if;
+// end M;"
+// true
+// "model M
+//   Real x;
+//   Real y;
+// initial equation
+//   y = 1;
+// equation
+//   x = 2 \"test\" annotation(
+//     __ann = 1);
+//   if b then
+//     x = 1;
+//   end if;
+//   if b2 then
+//     y = 2;
+//   end if;
+// end M;"
+// false
+// "model M
+//   Real x;
+//   Real y;
+// initial equation
+//   y = 1;
+// equation
+//   x = 2 \"test\" annotation(
+//     __ann = 1);
+//   if b then
+//     x = 1;
+//   end if;
+//   if b2 then
+//     y = 2;
+//   end if;
+// end M;"
+// true
+// "model M
+//   Real x;
+//   Real y;
+// initial equation
+//   y = 1;
+// equation
+//   if b then
+//     x = 1;
+//   end if;
+//   if b2 then
+//     y = 2;
+//   end if;
+// end M;"
+// true
+// "model M
+//   Real x;
+//   Real y;
+// initial equation
+//   y = 1;
+// equation
+//   if b2 then
+//     y = 2;
+//   end if;
+// end M;"
+// false
+// "model M
+//   Real x;
+//   Real y;
+// initial equation
+//   y = 1;
+// equation
+//   if b2 then
+//     y = 2;
+//   end if;
+// end M;"
+// true
+// "model M
+//   Real x;
+//   Real y;
+// initial equation
+//   y = 1;
+// equation
+//
+// end M;"
+// endResult

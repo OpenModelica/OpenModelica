@@ -68,64 +68,43 @@ void* ParserExt_parseexp(const char* filename, const char* infoname, int accepte
   return res;
 }
 
-void* ParserExt_parsestring(const char* data, const char* filename, int acceptedGrammar, int langStd, int strict, int runningTestsuite)
+void* parse_string(const char* data, int flags, const char* filename, int acceptedGrammar, int langStd, int strict, int runningTestsuite)
 {
-  int flags = set_grammar_flag(PARSE_MODELICA, acceptedGrammar);
+  flags = set_grammar_flag(flags, acceptedGrammar);
 
   void *res = parseString(data, filename, flags, langStd, strict, runningTestsuite);
-  if (res != NULL) {
-    return res;
-  } else {
-    MMC_THROW();
-  }
+  if (!res) MMC_THROW();
+  return res;
+}
+
+void* ParserExt_parsestring(const char* data, const char* filename, int acceptedGrammar, int langStd, int strict, int runningTestsuite)
+{
+  return parse_string(data, PARSE_MODELICA, filename, acceptedGrammar, langStd, strict, runningTestsuite);
 }
 
 void* ParserExt_parsestringexp(const char* data, const char* filename, int acceptedGrammar, int langStd, int runningTestsuite)
 {
-  int flags = set_grammar_flag(PARSE_EXPRESSION, acceptedGrammar);
-
-  void *res = parseString(data, filename, flags, langStd, 0, runningTestsuite);
-  if (res != NULL) {
-    return res;
-  } else {
-    MMC_THROW();
-  }
+  return parse_string(data, PARSE_EXPRESSION, filename, acceptedGrammar, langStd, 0, runningTestsuite);
 }
 
 void* ParserExt_stringPath(const char* data, const char* filename, int acceptedGrammar, int langStd, int runningTestsuite)
 {
-  int flags = set_grammar_flag(PARSE_PATH, acceptedGrammar);
-
-  void *res = parseString(data, filename, flags, langStd, 0, runningTestsuite);
-  if (res != NULL) {
-    return res;
-  } else {
-    MMC_THROW();
-  }
+  return parse_string(data, PARSE_PATH, filename, acceptedGrammar, langStd, 0, runningTestsuite);
 }
 
 void* ParserExt_stringCref(const char* data, const char* filename, int acceptedGrammar, int langStd, int runningTestsuite)
 {
-  int flags = set_grammar_flag(PARSE_CREF, acceptedGrammar);
-
-  void *res = parseString(data, filename, flags, langStd, 0, runningTestsuite);
-  if (res != NULL) {
-    return res;
-  } else {
-    MMC_THROW();
-  }
+  return parse_string(data, PARSE_CREF, filename, acceptedGrammar, langStd, 0, runningTestsuite);
 }
 
 void* ParserExt_stringMod(const char* data, const char* filename, int acceptedGrammar, int langStd, int runningTestsuite)
 {
-  int flags = set_grammar_flag(PARSE_MODIFIER, acceptedGrammar);
+  return parse_string(data, PARSE_MODIFIER, filename, acceptedGrammar, langStd, 0, runningTestsuite);
+}
 
-  void *res = parseString(data, filename, flags, langStd, 0, runningTestsuite);
-  if (res != NULL) {
-    return res;
-  } else {
-    MMC_THROW();
-  }
+void* ParserExt_stringEq(const char* data, const char* filename, int acceptedGrammar, int langStd, int runningTestsuite)
+{
+  return parse_string(data, PARSE_EQUATION, filename, acceptedGrammar, langStd, 0, runningTestsuite);
 }
 
 int ParserExt_startLibraryVendorExecutable(const char* path, void** lveInstance)

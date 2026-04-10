@@ -136,6 +136,14 @@ algorithm
   mod := ParserExt.stringMod(str, filename, Config.acceptedGrammar(), Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), Testsuite.isRunning());
 end stringMod;
 
+function stringEq
+  input String str;
+  input String filename = "<internal>";
+  output Absyn.EquationItem eq;
+algorithm
+  eq := ParserExt.stringEq(str, filename, Config.acceptedGrammar(), Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), Testsuite.isRunning());
+end stringEq;
+
 function parallelParseFiles
   input list<String> filenames;
   input String encoding;

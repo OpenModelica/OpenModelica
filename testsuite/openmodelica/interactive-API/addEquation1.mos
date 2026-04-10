@@ -1,0 +1,70 @@
+// name: addEquation1
+// keywords:
+// status: correct
+//
+// Tests the addEquation API.
+//
+
+loadString("
+  model M
+  end M;
+
+  model M2
+    Real x;
+    Real y;
+  initial equation
+    y = 1;
+  equation
+    x = 1;
+  end M2;
+");
+getErrorString();
+
+addEquation(M, "x = y");
+list(M);
+addEquation(M, "y = 1", isInitial = true);
+list(M);
+
+addEquation(M2, "y = 2");
+list(M2);
+addEquation(M2, "x = 3", isInitial = true);
+list(M2);
+
+
+// Result:
+// true
+// ""
+// true
+// "model M
+// equation
+//   x = y;
+// end M;"
+// true
+// "model M
+// equation
+//   x = y;
+// initial equation
+//   y = 1;
+// end M;"
+// true
+// "model M2
+//   Real x;
+//   Real y;
+// initial equation
+//   y = 1;
+// equation
+//   x = 1;
+//   y = 2;
+// end M2;"
+// true
+// "model M2
+//   Real x;
+//   Real y;
+// initial equation
+//   y = 1;
+//   x = 3;
+// equation
+//   x = 1;
+//   y = 2;
+// end M2;"
+// endResult
