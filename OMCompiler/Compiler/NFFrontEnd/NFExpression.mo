@@ -2651,6 +2651,7 @@ public
 
   function toDAE
     input Expression exp;
+    input Boolean allowEmpty = false "Whether to allow conversion of EMPTY or not";
     output DAE.Exp dexp;
   protected
     Boolean changed = true;
@@ -2661,6 +2662,7 @@ public
         Boolean swap, negate;
         DAE.Exp dae1, dae2;
         Function.Function fn;
+        DAE.Type dty;
 
       case INTEGER() then DAE.ICONST(exp.value);
       case REAL() then DAE.RCONST(exp.value);
@@ -2742,6 +2744,16 @@ public
                                Type.toDAE(Type.FUNCTION(fn, NFType.FunctionType.FUNCTIONAL_VARIABLE)));
 
       case MUTABLE() then toDAE(Mutable.access(exp.exp));
+
+      // EMPTY expressions can be a sign of something having gone wrong, but we want to allow them in
+      // some cases such as in records, so only allow them if the caller requests it.
+      case EMPTY()
+        guard allowEmpty
+        algorithm
+          dty := Type.toDAE(exp.ty);
+        then
+          DAE.EMPTY("", DAE.CREF_IDENT("$dummy", dty, {}), dty, Type.toString(exp.ty));
+
       case SHARED_LITERAL() then DAE.SHARED_LITERAL(exp.index, toDAE(exp.exp));
       case FILENAME()
         then if Flags.getConfigBool(Flags.BUILDING_FMU) then
@@ -2778,7 +2790,7 @@ public
         case Record.Field.INPUT()
           algorithm
             field_names := field.name :: field_names;
-            dargs := toDAE(arg) :: dargs;
+            dargs := toDAE(arg, allowEmpty = true) :: dargs;
           then
             ();
 
@@ -2788,7 +2800,7 @@ public
         case Record.Field.LOCAL()
           algorithm
             field_names := field.name :: field_names;
-            dargs := toDAE(arg) :: dargs;
+            dargs := toDAE(arg, allowEmpty = true) :: dargs;
           then
             ();
 
