@@ -4684,6 +4684,7 @@ void MainWindow::createToolbars()
   pNewToolButton->setPopupMode(QToolButton::MenuButtonPopup);
   // Don't change the order of following two lines otherwise the icon of toolbar button is overwritten by default action.
   pNewToolButton->setDefaultAction(mpNewModelicaClassAction);
+  pNewToolButton->setToolTip(Helper::newModelicaClassTip);
   pNewToolButton->setIcon(QIcon(":/Resources/icons/new.svg"));
   mpFileToolBar->addWidget(pNewToolButton);
   mpFileToolBar->addAction(mpOpenModelicaFileAction);
@@ -4738,6 +4739,7 @@ void MainWindow::createToolbars()
   }
   // Model Switcher ToolButton
   mpModelSwitcherToolButton = new QToolButton;
+  mpModelSwitcherToolButton->setToolTip(Helper::switchModel);
   mpModelSwitcherToolButton->setEnabled(false);
   mpModelSwitcherToolButton->setMenu(mpModelSwitcherMenu);
   mpModelSwitcherToolButton->setPopupMode(QToolButton::MenuButtonPopup);

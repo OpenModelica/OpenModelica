@@ -142,6 +142,7 @@ public:
   static QString arrayIndexRegularExpression;
   /* Global translated variables */
   static QString newModelicaClass;
+  static QString newModelicaClassTip;
   static QString newModelicaClassLibraryBrowser;
   static QString createNewModelicaClass;
   static QString openModelicaFiles;
@@ -466,6 +467,7 @@ public:
   static QString replaceSubModel;
   static QString modelicaPathTip;
   static QString selectParentClassName;
+  static QString switchModel;
 };
 
 class GUIMessages : public QObject
