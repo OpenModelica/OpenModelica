@@ -2146,7 +2146,7 @@ uniontype Function
       ptype := Type.toDAE(if boxTypes then Type.box(ty) else ty);
       pconst := Prefixes.variabilityToDAEConst(Component.variability(comp));
       ppar := Prefixes.parallelismToDAE(Component.parallelism(comp));
-      pdefault := Util.applyOption(Binding.typedExp(Component.getBinding(comp)), Expression.toDAE);
+      pdefault := Util.applyOption(Binding.typedExp(Component.getBinding(comp)), function Expression.toDAE(allowEmpty = false));
       params := DAE.FuncArg.FUNCARG(pname, ptype, pconst, ppar, pdefault) :: params;
     end for;
 

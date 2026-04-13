@@ -1184,7 +1184,7 @@ public
               Util.applyOption(call.defaultExp, Expression.toDAEValue),
               fold_id,
               res_id,
-              Util.applyOption(fold_exp, Expression.toDAE)),
+              Util.applyOption(fold_exp, function Expression.toDAE(allowEmpty = false))),
             Expression.toDAE(call.exp),
             list(iteratorToDAE(iter) for iter in call.iters));
 
