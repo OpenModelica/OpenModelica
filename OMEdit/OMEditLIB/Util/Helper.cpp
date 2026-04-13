@@ -136,6 +136,7 @@ QString Helper::displayLimitMsg = QString("Reached display limit. To read the fu
 QString Helper::arrayIndexRegularExpression = QString(R"(\[(\d+)(?:,(\d+))?\])");
 /* Global translated variables */
 QString Helper::newModelicaClass;
+QString Helper::newModelicaClassTip;
 QString Helper::newModelicaClassLibraryBrowser;
 QString Helper::createNewModelicaClass;
 QString Helper::openModelicaFiles;
@@ -459,19 +460,21 @@ QString Helper::dataReconciliation;
 QString Helper::replaceSubModel;
 QString Helper::modelicaPathTip;
 QString Helper::selectParentClassName;
+QString Helper::switchModel;
 
 void Helper::initHelperVariables()
 {
   /* Global translated variables */
   Helper::newModelicaClass = tr("Modelica Class");
+  Helper::newModelicaClassTip = tr("Create New Modelica Class");
   Helper::newModelicaClassLibraryBrowser = tr("New Modelica Class");
-  Helper::createNewModelicaClass = tr("Create New Modelica Class");
+  Helper::createNewModelicaClass = tr("Creates a new Modelica Class");
   Helper::openModelicaFiles = tr("Open Model/Library File(s)");
   Helper::openConvertModelicaFiles = tr("Open/Convert Modelica File(s) With Encoding");
   Helper::newCRMLModel = tr("CRML Model");
   Helper::newCRMLModelTip = tr("Creates a new CRML Model");
   Helper::newMOSScript = tr("Modelica Script");
-  Helper::newMOSScriptTip = tr("Creates a new Modelca Script");
+  Helper::newMOSScriptTip = tr("Creates a new Modelica Script");
   Helper::libraries = tr("Libraries");
   Helper::elements = tr("Elements");
   Helper::clearRecentFiles = tr("Clear Recent Files");
@@ -788,6 +791,7 @@ void Helper::initHelperVariables()
   Helper::replaceSubModel = tr("Replace SubModel");
   Helper::modelicaPathTip = tr("List of paths searched while loading a library. Paths are separated by ; on Windows and : on Linux and macOS.");
   Helper::selectParentClassName = tr("Select Parent Class");
+  Helper::switchModel = tr("Switch Model");
 }
 
 QString GUIMessages::getMessage(int type)
