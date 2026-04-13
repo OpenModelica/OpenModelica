@@ -1154,24 +1154,40 @@ LibraryTreeItem* LibraryTreeModel::findLibraryTreeItem(const QString &name, Libr
     StringHandler::removeTypePrefix(path, pLibraryTreeItem->getNameStructure());
   }
 
-  if (path.isEmpty()) {
-    return nullptr;
-  }
-
-  QStringList parts = StringHandler::splitPath(path);
-  if (parts.isEmpty()) {
-    return nullptr;
-  }
-
-  for (const QString &part : parts) {
-    const QString item = pLibraryTreeItem->getNameStructure().isEmpty() ? part : pLibraryTreeItem->getNameStructure() + "." + part;
-    pLibraryTreeItem = findLibraryTreeItemOneLevel(item, pLibraryTreeItem, caseSensitivity);
-    if (!pLibraryTreeItem) {
-      return nullptr;  // Path broken
+  // if lookup is called for text files then do the linear search
+  if (QFile::exists(name)) {
+    QStack<LibraryTreeItem*> stack;
+    stack.push(pLibraryTreeItem);
+    while (!stack.isEmpty()) {
+      LibraryTreeItem *pCurrentLibraryTreeItem = stack.pop();
+      if (pCurrentLibraryTreeItem->getNameStructure().compare(name, caseSensitivity) == 0) {
+        return pCurrentLibraryTreeItem;
+      }
+      for (int i = pCurrentLibraryTreeItem->childrenSize(); --i >= 0;) {
+        stack.push(pCurrentLibraryTreeItem->childAt(i));
+      }
     }
-  }
+    return nullptr;
+  } else {  // do the incremental lookup.
+    if (path.isEmpty()) {
+      return nullptr;
+    }
 
-  return pLibraryTreeItem;
+    QStringList parts = StringHandler::splitPath(path);
+    if (parts.isEmpty()) {
+      return nullptr;
+    }
+
+    for (const QString &part : parts) {
+      const QString item = pLibraryTreeItem->getNameStructure().isEmpty() ? part : pLibraryTreeItem->getNameStructure() + "." + part;
+      pLibraryTreeItem = findLibraryTreeItemOneLevel(item, pLibraryTreeItem, caseSensitivity);
+      if (!pLibraryTreeItem) {
+        return nullptr;  // Path broken
+      }
+    }
+
+    return pLibraryTreeItem;
+  }
 }
 
 /*!
