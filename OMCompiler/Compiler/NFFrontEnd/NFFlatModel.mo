@@ -275,6 +275,7 @@ public
       flat_model := mapExp(flat_model, ExpandExp.expandCallArgs);
     else
       flat_model.variables := reconstructRecordInstances(flat_model.variables);
+      flat_model.variables := List.filterOnFalse(flat_model.variables, Variable.isEmptyArray);
     end if;
 
     if format.moveBindings then

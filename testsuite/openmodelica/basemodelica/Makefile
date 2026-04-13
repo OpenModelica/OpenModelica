@@ -9,10 +9,11 @@ else
 endif
 
 TESTFILES = \
-  ArrayBinding1.mo \
+	ArrayBinding1.mo \
 	Break1.mo \
 	Comments.mo \
-  DoublePendulum.mos \
+	DoublePendulum.mos \
+	EmptyArray1.mo \
 	Enum1.mo \
 	EnumArraySubscript1.mo \
 	Expression1.mo \
