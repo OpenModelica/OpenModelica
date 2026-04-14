@@ -1312,7 +1312,8 @@ constant ConfigFlag DUMP_FLAT_MODEL = CONFIG_FLAG(147, "dumpFlatModel",
     ("connections", Gettext.gettext("After connection handling.")),
     ("eval", Gettext.gettext("After evaluating constants.")),
     ("simplify", Gettext.gettext("After model simplification.")),
-    ("scalarize", Gettext.gettext("After scalarizing arrays."))
+    ("scalarize", Gettext.gettext("After scalarizing arrays.")),
+    ("translateResidualsDAE", Gettext.gettext("Show the result of the translateResidualsDAE API."))
   })),
   Gettext.gettext("Dumps the flat model at the given stages of the frontend."));
 constant ConfigFlag SIMULATION = CONFIG_FLAG(148, "simulation",
