@@ -4341,6 +4341,7 @@ annotation(
 end getConnectionList;
 
 function addEquation
+  "Adds an equation to a class."
   input TypeName className "The name of the class to add the equation to";
   input String eq "The equation given as a string";
   input Boolean isInitial = false "Whether the equation should be added as an initial or normal equation";
@@ -4348,19 +4349,20 @@ function addEquation
 external "builtin";
 annotation(
   Documentation(info="<html>
-Adds an equation to a class. The equation is added to the end of the last equation or initial equation section (depending on <pre>isInitial</pre>) in the class, or to a new section if no suitable section exists. The class must be able to contain equations, i.e. be a normal long class or class extends declaration.
+The equation is added to the end of the last equation or initial equation section (depending on <pre>isInitial</pre>) in the class, or to a new section if no suitable section exists. The class must be able to contain equations, i.e. be a normal long class or class extends declaration.
 </html>"),
   preferredView="text");
 end addEquation;
 
-function deleteEquation = updateEquation(newEq = "")
+function deleteEquation = updateEquation(newEq = "") "Deletes an equation in a class."
   annotation(
     Documentation(info="<html>
-Deletes equations in a class. Alias for <a href=\"modelica://OpenModelica.Scripting.updateEquation\">updateEquation()</a> with <pre>newEq = ""</pre>.
+Alias for <a href=\"modelica://OpenModelica.Scripting.updateEquation\">updateEquation()</a> with <pre>newEq = ""</pre>.
 </html>"),
     preferredView="text");
 
 function updateEquation
+  "Replaces an equation with another equation in a class."
   input TypeName className "The name of the class";
   input String oldEq "The equation to replace";
   input String newEq "The equation to replace with";
@@ -4372,7 +4374,6 @@ function updateEquation
 external "builtin";
 annotation(
   Documentation(info="<html>
-Replaces an equation with another equation in a class.
 <h4>Syntax</h4>
 <blockquote>
 <pre><b>updateEquation</b>(MyModel, \"x = 1\", \"x = 2\")</pre>
