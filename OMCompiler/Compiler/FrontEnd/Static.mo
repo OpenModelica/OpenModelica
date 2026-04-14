@@ -7430,7 +7430,7 @@ algorithm
   true := isValidWRTParallelScope(fn,builtin,funcParal,inEnv,info);
 
   const := List.fold(constlist, Types.constAnd, DAE.C_CONST());
-  const := if (Flags.isSet(Flags.RML) and not builtin) or purity == DAE.Purity.OM_IMPURE then DAE.C_VAR() else const "in RML no function needs to be ceval'ed; this speeds up compilation significantly when bootstrapping";
+  const := if (Flags.isSet(Flags.RML) and not builtin) or purity == DAE.Purity.OM_IMPURE or isImpure then DAE.C_VAR() else const "in RML no function needs to be ceval'ed; this speeds up compilation significantly when bootstrapping";
   (cache,const) := determineConstSpecialFunc(cache,inEnv,const,fn_1);
   tyconst := elabConsts(restype, const);
   prop := getProperties(restype, tyconst);
