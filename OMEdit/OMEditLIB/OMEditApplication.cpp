@@ -233,10 +233,14 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
 
   if (pSettings->contains("modelContextProtocol/enabled") && pSettings->value("modelContextProtocol/enabled").toBool()) {
     int port = 3000;
+    bool enableAdminTools = false;
     if (pSettings->contains("modelContextProtocol/port")) {
       port = pSettings->value("modelContextProtocol/port").toInt();
     }
-    new MCPServer(pMainwindow->getOMCProxy(), port, pMainwindow);
+    if (pSettings->contains("modelContextProtocol/enableAdminTools")) {
+      enableAdminTools = pSettings->value("modelContextProtocol/enableAdminTools").toBool();
+    }
+    new MCPServer(pMainwindow->getOMCProxy(), port, enableAdminTools, pMainwindow);
   }
 
   if (!testsuiteRunning) {

@@ -752,7 +752,7 @@ QHttpServerResponse MCPServer::handleMCPRequest(const QHttpServerRequest &reques
  * \param port   TCP port the server will listen on (localhost only).
  * \param parent Optional QObject parent.
  */
-MCPServer::MCPServer(OMCProxy *proxy, int port, QObject *parent) : QObject(parent), m_proxy(proxy) {
+MCPServer::MCPServer(OMCProxy *proxy, int port, bool enableAdminTools, QObject *parent) : QObject(parent), m_proxy(proxy) {
     {
         QFile file(":Resources/json/MCPTools.json");
         file.open(QIODevice::ReadOnly);
@@ -776,11 +776,13 @@ MCPServer::MCPServer(OMCProxy *proxy, int port, QObject *parent) : QObject(paren
     }
 
     m_server.route("/mcp", QHttpServerRequest::Method::Options, [](const QHttpServerRequest &request) {return "";});
-    m_server.route("/mcp/novision", QHttpServerRequest::Method::Options, [](const QHttpServerRequest &request) {return "";});
-    m_server.route("/mcp/admin", QHttpServerRequest::Method::Options, [](const QHttpServerRequest &request) {return "";});
     m_server.route("/mcp", QHttpServerRequest::Method::Post, [this](const QHttpServerRequest &request) {return handleMCPRequest(request, true);});
+    m_server.route("/mcp/novision", QHttpServerRequest::Method::Options, [](const QHttpServerRequest &request) {return "";});
     m_server.route("/mcp/novision", QHttpServerRequest::Method::Post, [this](const QHttpServerRequest &request) {return handleMCPRequest(request, false);});
-    m_server.route("/mcp/admin", QHttpServerRequest::Method::Post, [this](const QHttpServerRequest &request) {return handleMCPRequest(request, true, true);});
+    if (enableAdminTools) {
+        m_server.route("/mcp/admin", QHttpServerRequest::Method::Options, [](const QHttpServerRequest &request) {return "";});
+        m_server.route("/mcp/admin", QHttpServerRequest::Method::Post, [this](const QHttpServerRequest &request) {return handleMCPRequest(request, true, true);});
+    }
 
     m_server.route("/", [] () {
         return "";

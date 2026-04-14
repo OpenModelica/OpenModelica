@@ -16,7 +16,7 @@ class MCPServer : public QObject
 {
     Q_OBJECT
 public:
-    explicit MCPServer(OMCProxy *proxy, int port, QObject *parent = nullptr);
+    explicit MCPServer(OMCProxy *proxy, int port, bool enableAdminTools, QObject *parent = nullptr);
 
 #if QT_VERSION >= QT_VERSION_CHECK(6, 4, 0) && __has_include(<QtHttpServer>)
 private:
