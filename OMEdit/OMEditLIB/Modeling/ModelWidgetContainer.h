@@ -482,29 +482,22 @@ public:
   void addRecentFilesListItems();
   QFrame* getLatestNewsFrame();
   QSplitter* getSplitter();
+
+  // QWidget interface
+  /* This tells QMainWindow: "I'm happy with very little height",
+   * so when state is restored the messages dock gets the height you saved rather than being squeezed by the central widget.
+   * The widget itself will still expand to fill whatever space QMainWindow actually gives it.
+   * minimumSizeHint() only affects the negotiation during layout/restore, not the final rendered size.
+   */
+  virtual QSize minimumSizeHint() const override { return QSize(200, 50); }
 private:
-  QFrame *mpMainFrame;
-  QFrame *mpTopFrame;
-  Label *mpPixmapLabel;
-  Label *mpHeadingLabel;
-  QFrame *mpRecentFilesFrame;
-  Label *mpRecentFilesLabel;
   Label *mpNoRecentFileLabel;
-  QListWidget *mpRecentItemsList;
-  QPushButton *mpClearRecentFilesListButton;
+  QListWidget *mpRecentItemsListWidget;
   QFrame *mpLatestNewsFrame;
-  Label *mpLatestNewsLabel;
   Label *mpNoLatestNewsLabel;
   QListWidget *mpLatestNewsListWidget;
-  QPushButton *mpReloadLatestNewsButton;
-  Label *mpVisitWebsiteLabel;
   NetworkAccessManager *mpLatestNewsNetworkAccessManager;
   QSplitter *mpSplitter;
-  QFrame *mpBottomFrame;
-  QPushButton *mpCreateModelButton;
-  QPushButton *mpOpenModelButton;
-  QPushButton *mpSystemLibrariesButton;
-  QPushButton *mpInstallLibraryButton;
 public slots:
   void addLatestNewsListItems();
 private slots:

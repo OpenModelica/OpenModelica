@@ -5341,59 +5341,59 @@ WelcomePageWidget::WelcomePageWidget(QWidget *pParent)
   : QWidget(pParent)
 {
   // main frame
-  mpMainFrame = new QFrame;
-  mpMainFrame->setContentsMargins(0, 0, 0, 0);
-  mpMainFrame->setStyleSheet("QFrame{color:gray;}");
+  QFrame *pMainFrame = new QFrame;
+  pMainFrame->setContentsMargins(0, 0, 0, 0);
+  pMainFrame->setStyleSheet("QFrame{color:gray;}");
   // top frame
-  mpTopFrame = new QFrame;
-  mpTopFrame->setStyleSheet("QFrame{background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #828282, stop: 1 #5e5e5e);}");
+  QFrame *pTopFrame = new QFrame;
+  pTopFrame->setStyleSheet("QFrame{background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #828282, stop: 1 #5e5e5e);}");
   // top frame pixmap
-  mpPixmapLabel = new Label;
+  Label *pPixmapLabel = new Label;
   QPixmap pixmap(":/Resources/icons/omedit.png");
-  mpPixmapLabel->setPixmap(pixmap.scaled(75, 72, Qt::KeepAspectRatio, Qt::SmoothTransformation));
-  mpPixmapLabel->setStyleSheet("background-color : transparent;");
+  pPixmapLabel->setPixmap(pixmap.scaled(75, 72, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+  pPixmapLabel->setStyleSheet("background-color : transparent;");
   // top frame heading
-  mpHeadingLabel = Utilities::getHeadingLabel(QString(Helper::applicationName).append(" - ").append(Helper::applicationIntroText));
-  mpHeadingLabel->setStyleSheet("background-color : transparent; color : white;");
+  Label *pHeadingLabel = Utilities::getHeadingLabel(QString(Helper::applicationName).append(" - ").append(Helper::applicationIntroText));
+  pHeadingLabel->setStyleSheet("background-color : transparent; color : white;");
 #ifndef Q_OS_MAC
-  mpHeadingLabel->setGraphicsEffect(new QGraphicsDropShadowEffect);
+  pHeadingLabel->setGraphicsEffect(new QGraphicsDropShadowEffect);
 #endif
-  mpHeadingLabel->setElideMode(Qt::ElideMiddle);
+  pHeadingLabel->setElideMode(Qt::ElideMiddle);
   // top frame layout
-  QHBoxLayout *topFrameLayout = new QHBoxLayout;
-  topFrameLayout->setAlignment(Qt::AlignLeft);
-  topFrameLayout->addWidget(mpPixmapLabel);
-  topFrameLayout->addWidget(mpHeadingLabel, 1);
-  mpTopFrame->setLayout(topFrameLayout);
+  QHBoxLayout *pTopFrameLayout = new QHBoxLayout;
+  pTopFrameLayout->setAlignment(Qt::AlignLeft);
+  pTopFrameLayout->addWidget(pPixmapLabel);
+  pTopFrameLayout->addWidget(pHeadingLabel);
+  pTopFrame->setLayout(pTopFrameLayout);
   // RecentFiles Frame
-  mpRecentFilesFrame = new QFrame;
-  mpRecentFilesFrame->setFrameShape(QFrame::StyledPanel);
-  mpRecentFilesFrame->setStyleSheet("QFrame{background-color: white;}");
+  QFrame *pRecentFilesFrame = new QFrame;
+  pRecentFilesFrame->setFrameShape(QFrame::StyledPanel);
+  pRecentFilesFrame->setStyleSheet("QFrame{background-color: white;}");
   // recent items list
-  mpRecentFilesLabel = Utilities::getHeadingLabel(tr("Recent Files"));
+  Label *pRecentFilesLabel = Utilities::getHeadingLabel(tr("Recent Files"));
   mpNoRecentFileLabel = new Label(tr("No recent files found."));
-  mpRecentItemsList = new QListWidget;
-  mpRecentItemsList->setObjectName("RecentItemsList");
-  mpRecentItemsList->setContentsMargins(0, 0, 0, 0);
-  mpRecentItemsList->setSpacing(5);
-  mpRecentItemsList->setFrameStyle(QFrame::NoFrame);
-  mpRecentItemsList->setViewMode(QListView::ListMode);
-  mpRecentItemsList->setMovement(QListView::Static);
-  mpRecentItemsList->setIconSize(Helper::iconSize);
-  mpRecentItemsList->setCurrentRow(0, QItemSelectionModel::Select);
-  connect(mpRecentItemsList, SIGNAL(itemClicked(QListWidgetItem*)), SLOT(openRecentFileItem(QListWidgetItem*)));
-  mpClearRecentFilesListButton = new QPushButton(tr("Clear Recent Files"));
-  mpClearRecentFilesListButton->setStyleSheet("QPushButton{padding: 5px 15px 5px 15px;}");
-  connect(mpClearRecentFilesListButton, SIGNAL(clicked()), MainWindow::instance(), SLOT(clearRecentFilesList()));
+  mpRecentItemsListWidget = new QListWidget;
+  mpRecentItemsListWidget->setObjectName("RecentItemsList");
+  mpRecentItemsListWidget->setContentsMargins(0, 0, 0, 0);
+  mpRecentItemsListWidget->setSpacing(5);
+  mpRecentItemsListWidget->setFrameStyle(QFrame::NoFrame);
+  mpRecentItemsListWidget->setViewMode(QListView::ListMode);
+  mpRecentItemsListWidget->setMovement(QListView::Static);
+  mpRecentItemsListWidget->setIconSize(Helper::iconSize);
+  mpRecentItemsListWidget->setCurrentRow(0, QItemSelectionModel::Select);
+  connect(mpRecentItemsListWidget, SIGNAL(itemClicked(QListWidgetItem*)), SLOT(openRecentFileItem(QListWidgetItem*)));
+  QPushButton *pClearRecentFilesListButton = new QPushButton(tr("Clear Recent Files"));
+  pClearRecentFilesListButton->setStyleSheet("QPushButton{padding: 5px 15px 5px 15px;}");
+  connect(pClearRecentFilesListButton, SIGNAL(clicked()), MainWindow::instance(), SLOT(clearRecentFilesList()));
   // RecentFiles Frame layout
   QVBoxLayout *recentFilesFrameVBLayout = new QVBoxLayout;
-  recentFilesFrameVBLayout->addWidget(mpRecentFilesLabel);
+  recentFilesFrameVBLayout->addWidget(pRecentFilesLabel);
   recentFilesFrameVBLayout->addWidget(mpNoRecentFileLabel);
-  recentFilesFrameVBLayout->addWidget(mpRecentItemsList);
+  recentFilesFrameVBLayout->addWidget(mpRecentItemsListWidget);
   QHBoxLayout *recentFilesHBLayout = new QHBoxLayout;
-  recentFilesHBLayout->addWidget(mpClearRecentFilesListButton, 0, Qt::AlignLeft);
+  recentFilesHBLayout->addWidget(pClearRecentFilesListButton, 0, Qt::AlignLeft);
   recentFilesFrameVBLayout->addLayout(recentFilesHBLayout);
-  mpRecentFilesFrame->setLayout(recentFilesFrameVBLayout);
+  pRecentFilesFrame->setLayout(recentFilesFrameVBLayout);
   // LatestNews Frame
   mpLatestNewsFrame = new QFrame;
   mpLatestNewsFrame->setFrameShape(QFrame::StyledPanel);
@@ -5403,7 +5403,7 @@ WelcomePageWidget::WelcomePageWidget(QWidget *pParent)
     mpLatestNewsFrame->setVisible(false);
   }
   // latest news
-  mpLatestNewsLabel = Utilities::getHeadingLabel(tr("Latest News & Events"));
+  Label *pLatestNewsLabel = Utilities::getHeadingLabel(tr("Latest News & Events"));
   mpNoLatestNewsLabel = new Label;
   mpLatestNewsListWidget = new QListWidget;
   mpLatestNewsListWidget->setObjectName("LatestNewsList");
@@ -5414,22 +5414,22 @@ WelcomePageWidget::WelcomePageWidget(QWidget *pParent)
   mpLatestNewsListWidget->setMovement(QListView::Static);
   mpLatestNewsListWidget->setIconSize(Helper::iconSize);
   mpLatestNewsListWidget->setCurrentRow(0, QItemSelectionModel::Select);
-  mpReloadLatestNewsButton = new QPushButton(Helper::reload);
-  mpReloadLatestNewsButton->setStyleSheet("QPushButton{padding: 5px 15px 5px 15px;}");
-  connect(mpReloadLatestNewsButton, SIGNAL(clicked()), SLOT(addLatestNewsListItems()));
-  mpVisitWebsiteLabel = new Label(tr("For more details visit our website <u><a href=\"http://www.openmodelica.org\">www.openmodelica.org</a></u>"));
-  mpVisitWebsiteLabel->setTextFormat(Qt::RichText);
-  mpVisitWebsiteLabel->setTextInteractionFlags(mpVisitWebsiteLabel->textInteractionFlags() | Qt::LinksAccessibleByMouse | Qt::LinksAccessibleByKeyboard);
-  mpVisitWebsiteLabel->setOpenExternalLinks(true);
+  QPushButton *pReloadLatestNewsButton = new QPushButton(Helper::reload);
+  pReloadLatestNewsButton->setStyleSheet("QPushButton{padding: 5px 15px 5px 15px;}");
+  connect(pReloadLatestNewsButton, SIGNAL(clicked()), SLOT(addLatestNewsListItems()));
+  Label *pVisitWebsiteLabel = new Label(tr("For more details visit our website <u><a href=\"http://www.openmodelica.org\">www.openmodelica.org</a></u>"));
+  pVisitWebsiteLabel->setTextFormat(Qt::RichText);
+  pVisitWebsiteLabel->setTextInteractionFlags(pVisitWebsiteLabel->textInteractionFlags() | Qt::LinksAccessibleByMouse | Qt::LinksAccessibleByKeyboard);
+  pVisitWebsiteLabel->setOpenExternalLinks(true);
   connect(mpLatestNewsListWidget, SIGNAL(itemClicked(QListWidgetItem*)), SLOT(openLatestNewsItem(QListWidgetItem*)));
   // Latest News Frame layout
   QVBoxLayout *latestNewsFrameVBLayout = new QVBoxLayout;
-  latestNewsFrameVBLayout->addWidget(mpLatestNewsLabel);
+  latestNewsFrameVBLayout->addWidget(pLatestNewsLabel);
   latestNewsFrameVBLayout->addWidget(mpNoLatestNewsLabel);
   latestNewsFrameVBLayout->addWidget(mpLatestNewsListWidget);
   QHBoxLayout *latestNewsFrameHBLayout = new QHBoxLayout;
-  latestNewsFrameHBLayout->addWidget(mpReloadLatestNewsButton, 0, Qt::AlignLeft);
-  latestNewsFrameHBLayout->addWidget(mpVisitWebsiteLabel, 0, Qt::AlignRight);
+  latestNewsFrameHBLayout->addWidget(pReloadLatestNewsButton, 0, Qt::AlignLeft);
+  latestNewsFrameHBLayout->addWidget(pVisitWebsiteLabel, 0, Qt::AlignRight);
   latestNewsFrameVBLayout->addLayout(latestNewsFrameHBLayout);
   mpLatestNewsFrame->setLayout(latestNewsFrameVBLayout);
   // create http object for request
@@ -5439,7 +5439,7 @@ WelcomePageWidget::WelcomePageWidget(QWidget *pParent)
   // splitter
   mpSplitter = new QSplitter;
   /* Read the welcome page view settings */
-  switch (OptionsDialog::instance()->getGeneralSettingsPage()->getWelcomePageView()){
+  switch (OptionsDialog::instance()->getGeneralSettingsPage()->getWelcomePageView()) {
     case 2:
       mpSplitter->setOrientation(Qt::Vertical);
       break;
@@ -5451,54 +5451,54 @@ WelcomePageWidget::WelcomePageWidget(QWidget *pParent)
   mpSplitter->setChildrenCollapsible(false);
   mpSplitter->setHandleWidth(4);
   mpSplitter->setContentsMargins(0, 0, 0, 0);
-  mpSplitter->addWidget(mpRecentFilesFrame);
+  mpSplitter->addWidget(pRecentFilesFrame);
   mpSplitter->addWidget(mpLatestNewsFrame);
   // Read the welcome page splitter state
   QSettings *pSettings = Utilities::getApplicationSettings();
   mpSplitter->restoreState(pSettings->value("welcomePage/splitterState").toByteArray());
   // bottom frame
-  mpBottomFrame = new QFrame;
-  mpBottomFrame->setStyleSheet("QFrame{background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #828282, stop: 1 #5e5e5e);}");
+  QFrame *pBottomFrame = new QFrame;
+  pBottomFrame->setStyleSheet("QFrame{background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #828282, stop: 1 #5e5e5e);}");
   // bottom frame create and open buttons buttons
   const QString buttonStyleSheet = "QPushButton{padding: 5px 15px 5px 15px;}";
-  mpCreateModelButton = new QPushButton(Helper::createNewModelicaClass);
-  mpCreateModelButton->setStyleSheet(buttonStyleSheet);
-  connect(mpCreateModelButton, SIGNAL(clicked()), MainWindow::instance(), SLOT(createNewModelicaClass()));
-  mpOpenModelButton = new QPushButton(Helper::openModelicaFiles);
-  mpOpenModelButton->setStyleSheet(buttonStyleSheet);
-  connect(mpOpenModelButton, SIGNAL(clicked()), MainWindow::instance(), SLOT(openModelicaFile()));
-  mpSystemLibrariesButton = new QPushButton(tr("System Libraries"));
-  mpSystemLibrariesButton->setStyleSheet(buttonStyleSheet);
-  mpSystemLibrariesButton->setMenu(MainWindow::instance()->getLibrariesMenu());
-  mpInstallLibraryButton = new QPushButton(Helper::installLibrary);
-  mpInstallLibraryButton->setStyleSheet(buttonStyleSheet);
-  connect(mpInstallLibraryButton, SIGNAL(clicked()), MainWindow::instance(), SLOT(openInstallLibraryDialog()));
+  QPushButton *pCreateModelButton = new QPushButton(Helper::createNewModelicaClass);
+  pCreateModelButton->setStyleSheet(buttonStyleSheet);
+  connect(pCreateModelButton, SIGNAL(clicked()), MainWindow::instance(), SLOT(createNewModelicaClass()));
+  QPushButton *pOpenModelButton = new QPushButton(Helper::openModelicaFiles);
+  pOpenModelButton->setStyleSheet(buttonStyleSheet);
+  connect(pOpenModelButton, SIGNAL(clicked()), MainWindow::instance(), SLOT(openModelicaFile()));
+  QPushButton *pSystemLibrariesButton = new QPushButton(tr("System Libraries"));
+  pSystemLibrariesButton->setStyleSheet(buttonStyleSheet);
+  pSystemLibrariesButton->setMenu(MainWindow::instance()->getLibrariesMenu());
+  QPushButton *pInstallLibraryButton = new QPushButton(Helper::installLibrary);
+  pInstallLibraryButton->setStyleSheet(buttonStyleSheet);
+  connect(pInstallLibraryButton, SIGNAL(clicked()), MainWindow::instance(), SLOT(openInstallLibraryDialog()));
   // bottom frame layout
   QHBoxLayout *pBottomFrameLayout = new QHBoxLayout;
   pBottomFrameLayout->setAlignment(Qt::AlignLeft);
-  pBottomFrameLayout->addWidget(mpCreateModelButton);
-  pBottomFrameLayout->addWidget(mpOpenModelButton);
-  pBottomFrameLayout->addWidget(mpSystemLibrariesButton);
-  pBottomFrameLayout->addWidget(mpInstallLibraryButton);
-  mpBottomFrame->setLayout(pBottomFrameLayout);
+  pBottomFrameLayout->addWidget(pCreateModelButton);
+  pBottomFrameLayout->addWidget(pOpenModelButton);
+  pBottomFrameLayout->addWidget(pSystemLibrariesButton);
+  pBottomFrameLayout->addWidget(pInstallLibraryButton);
+  pBottomFrame->setLayout(pBottomFrameLayout);
   // vertical layout for frames
   QVBoxLayout *verticalLayout = new QVBoxLayout;
   verticalLayout->setSpacing(4);
   verticalLayout->setContentsMargins(0, 0, 0, 0);
-  verticalLayout->addWidget(mpTopFrame, 0, Qt::AlignTop);
+  verticalLayout->addWidget(pTopFrame, 0, Qt::AlignTop);
   verticalLayout->addWidget(mpSplitter, 1);
   // Issue #10235. Use QScrollArea so we can resize.
   QScrollArea *pBottomScrollArea = new QScrollArea;
   pBottomScrollArea->setFrameShape(QFrame::NoFrame);
   pBottomScrollArea->setBackgroundRole(QPalette::Base);
   pBottomScrollArea->setWidgetResizable(true);
-  pBottomScrollArea->setWidget(mpBottomFrame);
+  pBottomScrollArea->setWidget(pBottomFrame);
   verticalLayout->addWidget(pBottomScrollArea, 0, Qt::AlignBottom);
   // main frame layout
-  mpMainFrame->setLayout(verticalLayout);
+  pMainFrame->setLayout(verticalLayout);
   QHBoxLayout *layout = new QHBoxLayout;
   layout->setContentsMargins(0, 0, 0, 0);
-  layout->addWidget(mpMainFrame);
+  layout->addWidget(pMainFrame);
   setLayout(layout);
 }
 
@@ -5509,14 +5509,14 @@ WelcomePageWidget::WelcomePageWidget(QWidget *pParent)
 void WelcomePageWidget::addRecentFilesListItems()
 {
   // remove list items first
-  mpRecentItemsList->clear();
+  mpRecentItemsListWidget->clear();
   QSettings *pSettings = Utilities::getApplicationSettings();
   QList<QVariant> files = pSettings->value("recentFilesList/files").toList();
   int recentFilesSize = OptionsDialog::instance()->getGeneralSettingsPage()->getRecentFilesAndLatestNewsSizeSpinBox()->value();
   int numRecentFiles = qMin(files.size(), recentFilesSize);
   for (int i = 0; i < numRecentFiles; ++i) {
     RecentFile recentFile = qvariant_cast<RecentFile>(files[i]);
-    QListWidgetItem *listItem = new QListWidgetItem(mpRecentItemsList);
+    QListWidgetItem *listItem = new QListWidgetItem(mpRecentItemsListWidget);
     listItem->setIcon(ResourceCache::getIcon(":/Resources/icons/next.svg"));
     listItem->setText(recentFile.fileName);
     listItem->setData(Qt::UserRole, recentFile.encoding);
