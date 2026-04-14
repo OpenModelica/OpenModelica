@@ -210,5 +210,7 @@
         <file>Resources/icons/completerAnnotation.svg</file>
         <file>Resources/icons/auto_scale.svg</file>
         <file>Resources/icons/drop-menu.svg</file>
+        <file>Resources/json/MCPTools.json</file>
+        <file>Resources/json/MCPAdminTools.json</file>
     </qresource>
 </RCC>

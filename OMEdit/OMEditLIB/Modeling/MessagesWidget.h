@@ -71,7 +71,7 @@ public:
   QString getFileName() {return mFileName;}
   QString getLineStart() {return QString::number(mLineStart);}
   QString getLocation();
-  QString getMessage() {return mMessage;}
+  QString getMessage() const {return mMessage;}
   StringHandler::OpenModelicaErrorKinds getErrorKind() {return mErrorKind;}
   StringHandler::OpenModelicaErrors getErrorType() {return mErrorType;}
 private:
@@ -132,6 +132,8 @@ private:
   QQueue<MessageItem> mPendingMessagesQueue;
   QMutex mPendingMessagesMutex;
   bool mShowingPendingMessages;
+  QList<MessageItem> mMCPMessages;
+  bool mMCPCollecting = false;
 public:
   static MessagesWidget* instance() {return mpInstance;}
   MessagesTabWidget* getMessagesTabWidget() const {return mpMessagesTabWidget;}
@@ -145,6 +147,8 @@ public:
   int getSimulationOutputTabsSize();
   SimulationOutputWidget* getSimulationOutputWidget(const QString &className);
   SimulationOutputWidget* getActiveSimulationOutputWidget();
+  void startMCPMessageCollection();
+  QList<MessageItem> takeMCPMessages();
 signals:
   void messageAdded();
   void messageTabAdded(QWidget *pSimulationOutputTab, const QString &name);

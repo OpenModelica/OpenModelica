@@ -14,6 +14,7 @@ AC_SUBST(QMAKE_CONFIG_OSG)
 AC_SUBST(LIBOSG)
 AC_SUBST(LSB_RELEASE)
 AC_SUBST(LIB_BOOST_REGEX)
+AC_SUBST(SHREXT)
 
 m4_include([common/m4/pre-commit.m4])
 cp common/install-sh common/config.guess common/config.sub ./
@@ -168,6 +169,12 @@ if test ! -z "$LSB_RELEASE"; then
   LSB_RELEASE="#define LSB_RELEASE \"$LSB_RELEASE\""
 else
   AC_MSG_RESULT([no])
+fi
+
+if echo $host | grep -i darwin; then
+  SHREXT=".dylib"
+else
+  SHREXT=".so"
 fi
 
 m4_include([common/m4/semver.m4])

@@ -433,6 +433,11 @@ SimulationOutputWidget::~SimulationOutputWidget()
   }
 }
 
+QString SimulationOutputWidget::getCompilationOutput()
+{
+  return mpCompilationOutputTextBox ? mpCompilationOutputTextBox->toPlainText() : QString();
+}
+
 /*!
  * \brief SimulationOutputWidget::start
  * Starts the compilation/simulation.
@@ -700,6 +705,23 @@ void SimulationOutputWidget::reSimulate(bool showSetup)
 {
   VariablesTreeItem *pVariablesTreeItem = MainWindow::instance()->getVariablesWidget()->getVariablesTreeModel()->findVariablesTreeItemOneLevel(mSimulationOptions.getFullResultFileName());
   MainWindow::instance()->getVariablesWidget()->reSimulate(mSimulationOptions, pVariablesTreeItem, showSetup);
+}
+
+/*!
+ * \brief SimulationOutputWidget::startSimulationAfterBuild
+ * Resumes execution by launching the simulation executable after a successful
+ * build-only compilation phase.  Clears the build-only flag so the simulation
+ * process is allowed to run and intermediate files are cleaned up correctly
+ * when it finishes.
+ *
+ * This is used by the MCP server to implement a two-phase workflow: compile
+ * first (build-only), inspect the generated artefacts, then run — all without
+ * a second compilation pass.
+ */
+void SimulationOutputWidget::startSimulationAfterBuild()
+{
+  mSimulationOptions.setBuildOnly(false);
+  runSimulationExecutable();
 }
 
 /*!

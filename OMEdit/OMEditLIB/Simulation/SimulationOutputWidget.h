@@ -105,11 +105,15 @@ public:
   void setSimulationProcessKilled(bool killed) {mIsSimulationProcessKilled = killed;}
   bool isSimulationProcessKilled() {return mIsSimulationProcessKilled;}
   bool isSimulationProcessRunning() {return mIsSimulationProcessRunning;}
+  QString getCompilationOutput();
+  QString getSimulationStandardOutput() {return mSimulationStandardOutput;}
+  QString getSimulationStandardError() {return mSimulationStandardError;}
   void writeSimulationMessage(StringHandler::SimulationMessageType type, QString text, QString index);
   void embeddedServerInitialized();
   void updateMessageTab(const QString &text);
   void updateMessageTabProgress();
   void reSimulate(bool showSetup);
+  void startSimulationAfterBuild();
 private:
   SimulationOptions mSimulationOptions;
   Label *mpProgressLabel;
