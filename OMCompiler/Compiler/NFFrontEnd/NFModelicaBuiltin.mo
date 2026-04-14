@@ -64,7 +64,7 @@ end der;
 impure function initial "True if in initialization phase"
   discrete output Boolean isInitial;
 external "builtin";
-annotation(__OpenModelica_builtin=true, Documentation(info="<html>
+annotation(__OpenModelica_Impure=true, __OpenModelica_builtin=true, Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'initial()'\">initial()</a>
 </html>"));
 end initial;
@@ -72,7 +72,7 @@ end initial;
 impure function terminal "True after successful analysis"
   discrete output Boolean isTerminal;
 external "builtin";
-annotation(__OpenModelica_builtin=true, Documentation(info="<html>
+annotation(__OpenModelica_Impure=true, __OpenModelica_builtin=true, Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'terminal()'\">terminal()</a>
 </html>"));
 end terminal;
@@ -368,7 +368,7 @@ annotation(__OpenModelica_builtin=true, __OpenModelica_EarlyInline = true, prefe
 end skew;
 
 impure function delay = $overload(OpenModelica.Internal.delay2,OpenModelica.Internal.delay3) "Delay expression"
-  annotation(__OpenModelica_builtin=true, Documentation(info="<html>
+  annotation(__OpenModelica_Impure=true, __OpenModelica_builtin=true, Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'delay()'\">delay()</a>
 </html>"));
 
@@ -804,7 +804,7 @@ end Subtask;
 impure function print "Prints to stdout, useful for debugging."
   input String str;
   external "builtin";
-  annotation(version="OpenModelica extension");
+  annotation(__OpenModelica_Impure=true, version="OpenModelica extension");
 end print;
 
 function classDirectory "Non-standard operator"
@@ -1553,7 +1553,7 @@ impure function system "Similar to system(3). Executes the given command in the 
   input String outputFile = "" "The output is redirected to this file (unless already done by callStr)";
   output Integer retval "Return value of the system call; usually 0 on success";
 external "builtin";
-annotation(preferredView="text");
+annotation(__OpenModelica_Impure=true, preferredView="text");
 end system;
 
 impure function system_parallel "Similar to system(3). Executes the given commands in the system shell, in parallel if omc was compiled using OpenMP."
@@ -1561,7 +1561,7 @@ impure function system_parallel "Similar to system(3). Executes the given comman
   input Integer numThreads = numProcessors();
   output Integer retval[:] "Return value of the system call; usually 0 on success";
 external "builtin";
-annotation(preferredView="text");
+annotation(__OpenModelica_Impure=true, preferredView="text");
 end system_parallel;
 
 function saveAll "Saves the entire loaded AST to file."
@@ -2059,7 +2059,7 @@ impure function stat
   output Real fileSize;
   output Real mtime;
 external "builtin";
-annotation(Documentation(info="<html>
+annotation(__OpenModelica_Impure=true, Documentation(info="<html>
 <p>Like <a href=\"http://linux.die.net/man/2/stat\">stat(2)</a>, except the output is of type real because of limited precision of Integer.</p>
 </html>"),
   preferredView="text");
@@ -2070,7 +2070,7 @@ impure function readFile
   input String fileName;
   output String contents;
 external "builtin";
-annotation(Documentation(info="<html>
+annotation(__OpenModelica_Impure=true, Documentation(info="<html>
 <p>Returns the contents of a file as a string or an empty string if the file couldn't be read. If the file couldn't be read an error message is emitted which can be viewed with <a href=\"modelica://OpenModelica.Scripting.getErrorString\">getErrorString()</a>.</p>
 </html>"),
   preferredView="text");
@@ -2083,7 +2083,7 @@ impure function writeFile
   input Boolean append = false;
   output Boolean success;
 external "builtin";
-annotation(Documentation(info="<html>
+annotation(__OpenModelica_Impure=true, Documentation(info="<html>
 <p>Returns true on success. If <code>append = true</code> the data is appended to the file, otherwise the file is overwritten with the new content.</p>
 </html>"),
   preferredView="text");
@@ -2095,7 +2095,7 @@ impure function compareFilesAndMove
   input String oldFile;
   output Boolean success;
 external "builtin";
-annotation(Documentation(info="<html>
+annotation(__OpenModelica_Impure=true, Documentation(info="<html>
 <p>Compares <i>newFile</i> and <i>oldFile</i>. If they differ, overwrite <i>oldFile</i> with <i>newFile</i></p>
 <p>Basically: test -f ../oldFile && cmp newFile oldFile || mv newFile oldFile</p>
 </html>"));
@@ -2107,7 +2107,7 @@ impure function compareFiles
   input String file2;
   output Boolean isEqual;
 external "builtin";
-annotation(Documentation(info="<html>
+annotation(__OpenModelica_Impure=true, Documentation(info="<html>
 <p>Compares <i>file1</i> and <i>file2</i> and returns true if their content is equal, otherwise false.</p>
 </html>"));
 end compareFiles;
@@ -2117,7 +2117,7 @@ impure function alarm
   input Integer seconds;
   output Integer previousSeconds;
 external "builtin" annotation(Library = {"omcruntime"});
-annotation(Documentation(info="<html>
+annotation(__OpenModelica_Impure=true, Documentation(info="<html>
 <p>Like <a href=\"http://linux.die.net/man/2/alarm\">alarm(2)</a>.</p>
 <p>Note that OpenModelica also sends SIGALRM to the process group when the alarm is triggered (in order to kill running simulations).</p>
 </html>"));
