@@ -626,6 +626,10 @@ void MessagesWidget::addGUIMessage(MessageItem messageItem)
     }
   }
 
+  if (mMCPCollecting) {
+    mMCPMessages.append(messageItem);
+  }
+
   switch (messageItem.getErrorType()) {
     case StringHandler::Internal:
       mpErrorMessageWidget->addGUIMessage(messageItem);
@@ -699,4 +703,16 @@ void MessagesWidget::clearMessages()
   mpNotificationMessageWidget->clearThisTabMessages();
   mpWarningMessageWidget->clearThisTabMessages();
   mpErrorMessageWidget->clearThisTabMessages();
+}
+
+void MessagesWidget::startMCPMessageCollection()
+{
+  mMCPMessages.clear();
+  mMCPCollecting = true;
+}
+
+QList<MessageItem> MessagesWidget::takeMCPMessages()
+{
+  mMCPCollecting = false;
+  return std::move(mMCPMessages);
 }

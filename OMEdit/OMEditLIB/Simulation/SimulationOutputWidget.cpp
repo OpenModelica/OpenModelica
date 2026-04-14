@@ -433,6 +433,11 @@ SimulationOutputWidget::~SimulationOutputWidget()
   }
 }
 
+QString SimulationOutputWidget::getCompilationOutput()
+{
+  return mpCompilationOutputTextBox ? mpCompilationOutputTextBox->toPlainText() : QString();
+}
+
 /*!
  * \brief SimulationOutputWidget::start
  * Starts the compilation/simulation.

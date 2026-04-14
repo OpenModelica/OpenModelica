@@ -197,7 +197,10 @@ SOURCES += Util/Helper.cpp \
   Util/GitHubArtifactDownloader.cpp \
   FlatModelica/Expression.cpp \
   FlatModelica/ExpressionFuncs.cpp \
-  FlatModelica/Parser.cpp
+  FlatModelica/Parser.cpp \
+  MCP/MCPServer.cpp \
+  MCP/MCPToolsDiagram.cpp \
+  MCP/MCPToolsSimulation.cpp
 
 HEADERS  += Util/Helper.h \
   Util/Utilities.h \
@@ -316,7 +319,9 @@ HEADERS  += Util/Helper.h \
   Util/GitHubArtifactDownloader.h \
   FlatModelica/Expression.h \
   FlatModelica/ExpressionFuncs.h \
-  FlatModelica/Parser.h
+  FlatModelica/Parser.h \
+  MCP/MCPServer.h \
+  MCP/MCPServerPrivate.h
 
 CONFIG(osg) {
 

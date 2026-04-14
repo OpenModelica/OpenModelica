@@ -31,6 +31,9 @@
 QT += network core gui xml svg opengl printsupport widgets concurrent
 equals(QT_MAJOR_VERSION, 6) {
   QT += core5compat openglwidgets
+  greaterThan(QT_MINOR_VERSION, 3) {
+    QT += httpserver
+  }
   win32 {
     # disable documentation since we don't have webkit on qt6 and webengine is not yet supported.
     QMAKE_CXXFLAGS += -DOM_DISABLE_DOCUMENTATION

@@ -31,6 +31,7 @@
  * @author Adeel Asghar <adeel.asghar@liu.se>
  */
 
+#include "MCP/MCPServer.h"
 #include "OMEditApplication.h"
 #include "Util/Utilities.h"
 #include "Util/Helper.h"
@@ -228,6 +229,14 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
     foreach (QString fileToOpen, mFilesToOpenList) {
       pMainwindow->getLibraryWidget()->openFile(fileToOpen);
     }
+  }
+
+  if (pSettings->contains("modelContextProtocol/enabled") && pSettings->value("modelContextProtocol/enabled").toBool()) {
+    int port = 3000;
+    if (pSettings->contains("modelContextProtocol/port")) {
+      port = pSettings->value("modelContextProtocol/port").toInt();
+    }
+    new MCPServer(pMainwindow->getOMCProxy(), port, pMainwindow);
   }
 
   if (!testsuiteRunning) {

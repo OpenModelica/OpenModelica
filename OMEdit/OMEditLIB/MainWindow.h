@@ -258,6 +258,7 @@ public:
 
   QList<QString> mFMUDirectoriesList;
   QList<QString> mMOLDirectoriesList;
+  enum class ViewSelection { SelectedInGUI, Class, Icon };
 private:
   bool mDebug;
   bool mNewApiProfiling = false;
@@ -534,7 +535,9 @@ public slots:
   void updateLibraryIndex(bool forceUpdate);
   void importModelfromOMNotebook();
   void importNgspiceNetlist();
-  void exportModelAsImage(bool copyToClipboard = false);
+  bool checkModelActiveExportModelAsImage();
+  void exportModelAsImage();
+  QImage exportModelAsImage(QString fileName, bool drawExtents = false, ViewSelection diagramSelection = ViewSelection::SelectedInGUI, ModelWidget *pModelWidget = nullptr, QSize size = QSize());
   void exportToClipboard();
   void openTemporaryDirectory();
   void openWorkingDirectory();

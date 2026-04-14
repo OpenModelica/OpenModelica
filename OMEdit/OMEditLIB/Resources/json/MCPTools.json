@@ -1,0 +1,831 @@
+[
+    {
+        "name": "getClassNames",
+        "description": "Lists the Modelica class names loaded. By passing the name of a class, it lists the classes contained in that class. By default, it lists the top-level classes.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "className": {
+                    "type": "string",
+                    "description": "The name of the class to look for classes in."
+                }
+            },
+            "required": []
+        },
+        "annotations": {
+            "readOnlyHint": true,
+            "destructiveHint": false
+        }
+    },
+    {
+        "name": "getSourceCode",
+        "description": "Returns the Modelica source code for the given class. This includes child classes that are stored in the same file, but not those stored in other classes.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "className": {
+                    "type": "string",
+                    "description": "The name of the class to look for classes in."
+                }
+            },
+            "required": ["className"]
+        },
+        "annotations": {
+            "readOnlyHint": true,
+            "destructiveHint": false
+        }
+    },
+    {
+        "name": "setSourceCode",
+        "description": "Replaces the Modelica source code for the given class and reloads it in the GUI. Do not use this for editing diagrams - there are dedicated tools for that. Note that the source code changes each time the model is modified by other tool calls; you will remove icon and diagram annotations unless you read the code again before trying to edit it.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "className": {
+                    "type": "string",
+                    "description": "The name of the class whose source code to replace."
+                },
+                "code": {
+                    "type": "string",
+                    "description": "The new Modelica source code."
+                }
+            },
+            "required": ["className", "code"]
+        },
+        "annotations": {
+            "readOnlyHint": false,
+            "destructiveHint": false
+        }
+    },
+    {
+        "name": "createClass",
+        "description": "Creates a new Modelica class, optionally with an extends clause and/or inside a parent package.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "className": {
+                    "type": "string",
+                    "description": "The fully-qualified name of the new class (e.g. \"MyPackage.MyModel\")."
+                },
+                "specialization": {
+                    "type": "string",
+                    "description": "The class specialization. One of: model, class, connector, expandable connector, record, block, function, package, type, operator, operator record, operator function. Defaults to model."
+                },
+                "extendsClass": {
+                    "type": "string",
+                    "description": "Optional fully-qualified name of the base class to extend from."
+                },
+                "partial": {
+                    "type": "boolean",
+                    "description": "Whether the class is partial. Defaults to false."
+                },
+                "encapsulated": {
+                    "type": "boolean",
+                    "description": "Whether the class is encapsulated. Defaults to false."
+                }
+            },
+            "required": ["className"]
+        },
+        "annotations": {
+            "readOnlyHint": false,
+            "destructiveHint": false
+        }
+    },
+    {
+        "name": "activeModel",
+        "description": "Returns the name of the Modelica model currently active in the OMEdit GUI.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {},
+            "required": []
+        },
+        "annotations": {
+            "readOnlyHint": true,
+            "destructiveHint": false
+        }
+    },
+    {
+        "name": "classDiagram",
+        "description": "Returns a class diagram from the OMEdit GUI. It also returns the name of the model the diagram belongs to and the extent of the diagram (so that you can e.g. calculate the coordinates where there is free space to add additional components to the diagram).",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "className": {
+                    "type": "string",
+                    "description": "The name of the class. Defaults to the currently open model in the GUI."
+                }
+            },
+            "required": []
+        },
+        "annotations": {
+            "readOnlyHint": true,
+            "destructiveHint": false
+        }
+    },
+    {
+        "name": "iconDiagram",
+        "description": "Returns an icon diagram from the OMEdit GUI. It also returns the name of the model the diagram belongs to and the extent of the diagram.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "className": {
+                    "type": "string",
+                    "description": "The name of the class. Defaults to the currently open model in the GUI."
+                }
+            },
+            "required": []
+        },
+        "annotations": {
+            "readOnlyHint": true,
+            "destructiveHint": false
+        }
+    },
+    {
+        "name": "getSimulationResultVariables",
+        "description": "Lists the variables that can be tuned during re-simulation as well as their current values and the unit.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "className": {
+                    "type": "string",
+                    "description": "The name of the class to resimulate."
+                },
+                "filter": {
+                    "type": "string",
+                    "description": "A regular expression to filter variable names."
+                },
+                "onlyEditable": {
+                    "type": "boolean",
+                    "description": "If true, filters out any variables that can not be edited before re-simulation (default=true)."
+                }
+            },
+            "required": ["className"]
+        },
+        "annotations": {
+            "readOnlyHint": true,
+            "destructiveHint": false
+        }
+    },
+    {
+        "name": "simulate",
+        "description": "Simulates the chosen class with default simulation settings (either from the experiment annotation, or OpenModelica defaults).",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "className": {
+                    "type": "string",
+                    "description": "The name of the class to simulate."
+                }
+            },
+            "required": ["className"]
+        },
+        "annotations": {
+            "readOnlyHint": false,
+            "destructiveHint": true
+        }
+    },
+    {
+        "name": "resimulate",
+        "description": "Re-simulates the chosen class with new parameters and start-values. A simulation result already needs to exist. Re-simulation is much more efficient than simulating from scratch, since it reuses the same simulation executable and only changes the parameters and start-values.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "className": {
+                    "type": "string",
+                    "description": "The name of the class to resimulate."
+                },
+                "variables": {
+                    "type": "object",
+                    "patternProperties": {
+                        "": {"type": "number"}
+                    },
+                    "description": "Keys are names of variables or parameters. Values are the values that the names will be set during resimulation, e.g. {\"variables\": {\"x\": 5.0}} sets x to 5.0. Variables that are not set retain the value from the previous (re)-simulation."
+                }
+            }
+        },
+        "required": [],
+        "annotations": {
+            "readOnlyHint": false,
+            "destructiveHint": true
+        }
+    },
+    {
+        "name": "showPlot",
+        "description": "Returns the currently active plot window as well as the name of the model and result-file associated with it.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {},
+            "required": []
+        },
+        "annotations": {
+            "readOnlyHint": true,
+            "destructiveHint": false
+        }
+    },
+    {
+        "name": "plot",
+        "description": "Creates a new plot window with the associated variables added and returns the plot itself.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "className": {
+                    "type": "string",
+                    "description": "The name of the class to plot variables for."
+                },
+                "variables": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "The names of the variables to plot."
+                }
+            },
+            "required": ["className", "variables"]
+        },
+        "annotations": {
+            "readOnlyHint": false,
+            "destructiveHint": false
+        }
+    },
+    {
+        "name": "addComponent",
+        "description": "Adds a component (an instance of a class) to a model diagram with an explicit instance name. Fails if a component with that name already exists.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "className": {
+                    "type": "string",
+                    "description": "The name of the model to add the component to."
+                },
+                "componentClassName": {
+                    "type": "string",
+                    "description": "The fully qualified class name of the component to add (e.g. Modelica.Electrical.Analog.Basic.Resistor)."
+                },
+                "componentName": {
+                    "type": "string",
+                    "description": "The instance name to give the new component (e.g. \"resistor1\"). Must be unique within the model."
+                },
+                "x": {
+                    "type": "number",
+                    "description": "The x coordinate of the component placement in the diagram."
+                },
+                "y": {
+                    "type": "number",
+                    "description": "The y coordinate of the component placement in the diagram."
+                },
+                "rotation": {
+                    "type": "number",
+                    "description": "The rotation angle in degrees (counter-clockwise)."
+                },
+                "width": {
+                    "type": "number",
+                    "description": "The width of the component in diagram coordinates."
+                },
+                "height": {
+                    "type": "number",
+                    "description": "The height of the component in diagram coordinates."
+                }
+            },
+            "required": ["className", "componentClassName", "componentName", "x", "y"]
+        },
+        "annotations": {
+            "readOnlyHint": false,
+            "destructiveHint": false
+        }
+    },
+    {
+        "name": "setComponentPlacement",
+        "description": "Sets the placement (position, rotation, size, visibility) of a component instance in the diagram or icon view. Only the provided parameters are changed; omitted ones keep their current values.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "className": {
+                    "type": "string",
+                    "description": "The name of the model containing the component."
+                },
+                "componentName": {
+                    "type": "string",
+                    "description": "The name of the component instance to modify."
+                },
+                "view": {
+                    "type": "string",
+                    "description": "Which view to modify: \"diagram\" (default) or \"icon\"."
+                },
+                "x": {
+                    "type": "number",
+                    "description": "The x coordinate of the component origin."
+                },
+                "y": {
+                    "type": "number",
+                    "description": "The y coordinate of the component origin."
+                },
+                "rotation": {
+                    "type": "number",
+                    "description": "The rotation angle in degrees (counter-clockwise)."
+                },
+                "width": {
+                    "type": "number",
+                    "description": "The width of the component in diagram coordinates."
+                },
+                "height": {
+                    "type": "number",
+                    "description": "The height of the component in diagram coordinates."
+                },
+                "visible": {
+                    "type": "boolean",
+                    "description": "Whether the component is visible in the diagram views. To disable it in the Icon view, set the extents to (0,0),(0,0)."
+                }
+            },
+            "required": ["className", "componentName"]
+        },
+        "annotations": {
+            "readOnlyHint": false,
+            "destructiveHint": false
+        }
+    },
+    {
+        "name": "addConnection",
+        "description": "Creates a new connection between two components.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "className": {
+                    "type": "string",
+                    "description": "The name of the class to plot variables for."
+                },
+                "first": {
+                    "type": "string",
+                    "description": "The name of the first connector."
+                },
+                "second": {
+                    "type": "string",
+                    "description": "The name of the second connector."
+                }
+            },
+            "required": ["className", "first", "second"]
+        },
+        "annotations": {
+            "readOnlyHint": false,
+            "destructiveHint": false
+        }
+    },
+    {
+        "name": "removeConnection",
+        "description": "Removes an existing connection between two components.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "className": {
+                    "type": "string",
+                    "description": "The name of the model containing the connection."
+                },
+                "first": {
+                    "type": "string",
+                    "description": "The name of the first component (start of the connection)."
+                },
+                "second": {
+                    "type": "string",
+                    "description": "The name of the second component (end of the connection)."
+                }
+            },
+            "required": ["className", "first", "second"]
+        },
+        "annotations": {
+            "readOnlyHint": false,
+            "destructiveHint": false
+        }
+    },
+    {
+        "name": "listConnections",
+        "description": "Lists all connections in a model diagram, as pairs of component names.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "className": {
+                    "type": "string",
+                    "description": "The name of the model to list connections for."
+                }
+            },
+            "required": ["className"]
+        },
+        "annotations": {
+            "readOnlyHint": true,
+            "destructiveHint": false
+        }
+    },
+    {
+        "name": "listConnectors",
+        "description": "Lists all connector ports of a model's components, i.e. the component instances that can be connected to. Returns each connector's name and class.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "className": {
+                    "type": "string",
+                    "description": "The name of the model to list connectors for."
+                }
+            },
+            "required": ["className"]
+        },
+        "annotations": {
+            "readOnlyHint": true,
+            "destructiveHint": false
+        }
+    },
+    {
+        "name": "setConnectionPlacement",
+        "description": "Sets the intermediate routing waypoints of a connection in the model diagram. The first and last points are automatically set to the origins of the start and end connectors (see listConnectors for the points; they are different from the components). Only the intermediate points need to be provided.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "className": {
+                    "type": "string",
+                    "description": "The name of the model containing the connection."
+                },
+                "first": {
+                    "type": "string",
+                    "description": "The name of the first component (start of the connection)."
+                },
+                "second": {
+                    "type": "string",
+                    "description": "The name of the second component (end of the connection)."
+                },
+                "points": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "x": {"type": "number"},
+                            "y": {"type": "number"}
+                        },
+                        "required": ["x", "y"]
+                    },
+                    "description": "The intermediate waypoints for the connection path. The start and end points are set automatically from the component origins."
+                }
+            },
+            "required": ["className", "first", "second"]
+        },
+        "annotations": {
+            "readOnlyHint": false,
+            "destructiveHint": false
+        }
+    },
+    {
+        "name": "setElementModifierValue",
+        "description": "Sets a modifier (parameter value) on a component instance in a model. For example, set the capacitance C of a capacitor named 'capacitor' by passing component='capacitor', modifier='C', value='1e-6'.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "className": {
+                    "type": "string",
+                    "description": "The name of the model containing the component."
+                },
+                "component": {
+                    "type": "string",
+                    "description": "The name of the component instance to modify."
+                },
+                "modifier": {
+                    "type": "string",
+                    "description": "The modifier/parameter name within the component (e.g. 'C', 'R', 'start')."
+                },
+                "value": {
+                    "type": "string",
+                    "description": "The value to assign as a Modelica expression string (e.g. '1e-6', 'true', '273.15', '\"abc\"')."
+                }
+            },
+            "required": ["className", "component", "modifier", "value"]
+        },
+        "annotations": {
+            "readOnlyHint": false,
+            "destructiveHint": false
+        }
+    },
+    {
+        "name": "listComponentParameters",
+        "description": "Lists the parameters of a component instance in a model, including their names, types, current values, and comments. Use this to discover which modifiers can be passed to setElementModifierValue.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "className": {
+                    "type": "string",
+                    "description": "The name of the model containing the component."
+                },
+                "component": {
+                    "type": "string",
+                    "description": "The name of the component instance to inspect."
+                }
+            },
+            "required": ["className", "component"]
+        },
+        "annotations": {
+            "readOnlyHint": true,
+            "destructiveHint": false
+        }
+    },
+    {
+        "name": "listComponents",
+        "description": "Lists all component instances placed in the diagram of a model, including their names and class types.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "className": {
+                    "type": "string",
+                    "description": "The name of the model to list components of."
+                }
+            },
+            "required": ["className"]
+        },
+        "annotations": {
+            "readOnlyHint": true,
+            "destructiveHint": false
+        }
+    },
+    {
+        "name": "getComponentPlacement",
+        "description": "Returns the placement (position, rotation, size, visibility) of a component instance. Returns placement for both diagram and icon views.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "className": {
+                    "type": "string",
+                    "description": "The name of the model containing the component."
+                },
+                "component": {
+                    "type": "string",
+                    "description": "The name of the component instance."
+                }
+            },
+            "required": ["className", "component"]
+        },
+        "annotations": {
+            "readOnlyHint": true,
+            "destructiveHint": false
+        }
+    },
+    {
+        "name": "deleteComponent",
+        "description": "Removes a component instance from a model diagram, along with all its connections.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "className": {
+                    "type": "string",
+                    "description": "The name of the model containing the component."
+                },
+                "component": {
+                    "type": "string",
+                    "description": "The name of the component instance to delete."
+                }
+            },
+            "required": ["className", "component"]
+        },
+        "annotations": {
+            "readOnlyHint": false,
+            "destructiveHint": true
+        }
+    },
+    {
+        "name": "addRectangle",
+        "description": "Draws a rectangle shape in either the icon or diagram view of a class.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "className": {"type": "string", "description": "The name of the class to draw in."},
+                "view": {"type": "string", "description": "Which view to draw in: \"icon\" or \"diagram\"."},
+                "x1": {"type": "number", "description": "X of first corner."},
+                "y1": {"type": "number", "description": "Y of first corner."},
+                "x2": {"type": "number", "description": "X of opposite corner."},
+                "y2": {"type": "number", "description": "Y of opposite corner."},
+                "lineColor": {
+                    "type": "object",
+                    "description": "Border color as {r,g,b} (0-255).",
+                    "properties": {
+                        "r": {"type": "number"},
+                        "g": {"type": "number"},
+                        "b": {"type": "number"}
+                    },
+                    "required": ["r", "g", "b"]
+                },
+                "fillColor": {
+                    "type": "object",
+                    "description": "Fill color as {r,g,b} (0-255).",
+                    "properties": {
+                        "r": {"type": "number"},
+                        "g": {"type": "number"},
+                        "b": {"type": "number"}
+                    },
+                    "required": ["r", "g", "b"]
+                },
+                "fillPattern": {"type": "string", "description": "Fill pattern: None, Solid, Horizontal, Vertical, Cross, Forward, Backward, CrossDiag, HorizontalCylinder, VerticalCylinder, Sphere."},
+                "lineThickness": {"type": "number", "description": "Border line thickness. Default 0.25."},
+                "borderPattern": {"type": "string", "description": "Border pattern: None, Raised, Sunken, Engraved."},
+                "radius": {"type": "number", "description": "Corner radius for rounded corners. Default 0."}
+            },
+            "required": ["className", "view", "x1", "y1", "x2", "y2"]
+        },
+        "annotations": {"readOnlyHint": false, "destructiveHint": false}
+    },
+    {
+        "name": "addEllipse",
+        "description": "Draws an ellipse (or arc) shape in either the icon or diagram view of a class.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "className": {"type": "string", "description": "The name of the class to draw in."},
+                "view": {"type": "string", "description": "Which view to draw in: \"icon\" or \"diagram\"."},
+                "x1": {"type": "number", "description": "X of first corner of the bounding box."},
+                "y1": {"type": "number", "description": "Y of first corner of the bounding box."},
+                "x2": {"type": "number", "description": "X of opposite corner of the bounding box."},
+                "y2": {"type": "number", "description": "Y of opposite corner of the bounding box."},
+                "startAngle": {"type": "number", "description": "Start angle in degrees. Default 0."},
+                "endAngle": {"type": "number", "description": "End angle in degrees. Default 360 (full ellipse)."},
+                "closure": {"type": "string", "description": "Arc closure for partial ellipses: None, Chord, Radial."},
+                "lineColor": {
+                    "type": "object",
+                    "description": "Border color as {r,g,b} (0-255).",
+                    "properties": {
+                        "r": {"type": "number"},
+                        "g": {"type": "number"},
+                        "b": {"type": "number"}
+                    },
+                    "required": ["r", "g", "b"]
+                },
+                "fillColor": {
+                    "type": "object",
+                    "description": "Fill color as {r,g,b} (0-255).",
+                    "properties": {
+                        "r": {"type": "number"},
+                        "g": {"type": "number"},
+                        "b": {"type": "number"}
+                    },
+                    "required": ["r", "g", "b"]
+                },
+                "fillPattern": {"type": "string", "description": "Fill pattern: None, Solid, Horizontal, Vertical, Cross, Forward, Backward, CrossDiag, HorizontalCylinder, VerticalCylinder, Sphere."},
+                "lineThickness": {"type": "number", "description": "Border line thickness. Default 0.25."}
+            },
+            "required": ["className", "view", "x1", "y1", "x2", "y2"]
+        },
+        "annotations": {"readOnlyHint": false, "destructiveHint": false}
+    },
+    {
+        "name": "addLine",
+        "description": "Draws a line (polyline) shape in either the icon or diagram view of a class.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "className": {"type": "string", "description": "The name of the class to draw in."},
+                "view": {"type": "string", "description": "Which view to draw in: \"icon\" or \"diagram\"."},
+                "points": {
+                    "type": "array",
+                    "description": "Array of {x, y} points defining the line path.",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "x": {"type": "number"},
+                            "y": {"type": "number"}
+                        },
+                        "required": ["x", "y"]
+                    }
+                },
+                "color": {
+                    "type": "object",
+                    "description": "Line color as {r,g,b} (0-255).",
+                    "properties": {
+                        "r": {"type": "number"},
+                        "g": {"type": "number"},
+                        "b": {"type": "number"}
+                    },
+                    "required": ["r", "g", "b"]
+                },
+                "pattern": {"type": "string", "description": "Line pattern: None, Solid, Dash, Dot, DashDot, DashDotDot."},
+                "thickness": {"type": "number", "description": "Line thickness. Default 0.25."},
+                "startArrow": {"type": "string", "description": "Start arrow: None, Open, Filled, Half."},
+                "endArrow": {"type": "string", "description": "End arrow: None, Open, Filled, Half."},
+                "arrowSize": {"type": "number", "description": "Arrow size. Default 3."},
+                "smooth": {"type": "string", "description": "Smooth interpolation: None, Bezier."}
+            },
+            "required": ["className", "view", "points"]
+        },
+        "annotations": {"readOnlyHint": false, "destructiveHint": false}
+    },
+    {
+        "name": "addPolygon",
+        "description": "Draws a filled polygon shape in either the icon or diagram view of a class.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "className": {"type": "string", "description": "The name of the class to draw in."},
+                "view": {"type": "string", "description": "Which view to draw in: \"icon\" or \"diagram\"."},
+                "points": {
+                    "type": "array",
+                    "description": "Array of {x, y} vertices defining the polygon.",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "x": {"type": "number"},
+                            "y": {"type": "number"}
+                        },
+                        "required": ["x", "y"]
+                    }
+                },
+                "lineColor": {
+                    "type": "object",
+                    "description": "Border color as {r,g,b} (0-255).",
+                    "properties": {
+                        "r": {"type": "number"},
+                        "g": {"type": "number"},
+                        "b": {"type": "number"}
+                    },
+                    "required": ["r", "g", "b"]
+                },
+                "fillColor": {
+                    "type": "object",
+                    "description": "Fill color as {r,g,b} (0-255).",
+                    "properties": {
+                        "r": {"type": "number"},
+                        "g": {"type": "number"},
+                        "b": {"type": "number"}
+                    },
+                    "required": ["r", "g", "b"]
+                },
+                "fillPattern": {"type": "string", "description": "Fill pattern: None, Solid, Horizontal, Vertical, Cross, Forward, Backward, CrossDiag, HorizontalCylinder, VerticalCylinder, Sphere."},
+                "lineThickness": {"type": "number", "description": "Border line thickness. Default 0.25."},
+                "smooth": {"type": "string", "description": "Smooth interpolation: None, Bezier."}
+            },
+            "required": ["className", "view", "points"]
+        },
+        "annotations": {"readOnlyHint": false, "destructiveHint": false}
+    },
+    {
+        "name": "addText",
+        "description": "Draws a text shape in either the icon or diagram view of a class.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "className": {"type": "string", "description": "The name of the class to draw in."},
+                "view": {"type": "string", "description": "Which view to draw in: \"icon\" or \"diagram\"."},
+                "x1": {"type": "number", "description": "X of first corner of the text bounding box."},
+                "y1": {"type": "number", "description": "Y of first corner of the text bounding box."},
+                "x2": {"type": "number", "description": "X of opposite corner of the text bounding box."},
+                "y2": {"type": "number", "description": "Y of opposite corner of the text bounding box."},
+                "textString": {"type": "string", "description": "The text to display. Use \"%name\" to show the instance name."},
+                "textColor": {
+                    "type": "object",
+                    "description": "Text color as {r,g,b} (0-255).",
+                    "properties": {
+                        "r": {"type": "number"},
+                        "g": {"type": "number"},
+                        "b": {"type": "number"}
+                    },
+                    "required": ["r", "g", "b"]
+                },
+                "fontSize": {"type": "number", "description": "Font size in points. Default 0 (auto-scaled to fit box)."},
+                "fontName": {"type": "string", "description": "Font family name. Defaults to the system font."},
+                "textStyle": {
+                    "type": "array",
+                    "description": "Text styles to apply. Values: Bold, Italic, UnderLine.",
+                    "items": {"type": "string"}
+                },
+                "horizontalAlignment": {"type": "string", "description": "Horizontal alignment: Left, Center, Right."}
+            },
+            "required": ["className", "view", "x1", "y1", "x2", "y2", "textString"]
+        },
+        "annotations": {"readOnlyHint": false, "destructiveHint": false}
+    },
+    {
+        "name": "listShapes",
+        "description": "Lists the graphical shapes in a view of a class as Modelica annotation strings. The returned strings can be passed to removeShape to remove a specific shape.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "className": {"type": "string", "description": "The name of the class."},
+                "view": {"type": "string", "description": "Which view to list shapes from: \"icon\" or \"diagram\"."}
+            },
+            "required": ["className", "view"]
+        },
+        "annotations": {"readOnlyHint": true, "destructiveHint": false}
+    },
+    {
+        "name": "removeShape",
+        "description": "Removes a graphical shape from a view of a class. Identify the shape by its annotation string as returned by listShapes. If the same annotation string appears more than once, only the first occurrence is removed.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "className": {"type": "string", "description": "The name of the class."},
+                "view": {"type": "string", "description": "Which view to remove from: \"icon\" or \"diagram\"."},
+                "shape": {"type": "string", "description": "The annotation string of the shape to remove, exactly as returned by listShapes."}
+            },
+            "required": ["className", "view", "shape"]
+        },
+        "annotations": {"readOnlyHint": false, "destructiveHint": true}
+    },
+    {
+        "name": "checkModel",
+        "description": "Checks the model balance in terms of number of variables and equations. Returns the check result, including any errors or warnings.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "className": {"type": "string", "description": "The name of the class to check."}
+            },
+            "required": ["className"]
+        },
+        "annotations": {"readOnlyHint": true, "destructiveHint": false}
+    }
+]

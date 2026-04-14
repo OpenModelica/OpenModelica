@@ -366,6 +366,7 @@ public:
   void showReplaceSubModelDialog(QString name);
   void addErrorTextShape();
   void removeErrorTextShape();
+  void getCoordinateSystemAndGraphics(QStringList &coOrdinateSystemList, QStringList &graphicsList);
 private:
   void createActions();
   bool isClassDroppedOnItself(LibraryTreeItem *pLibraryTreeItem);
@@ -400,7 +401,6 @@ private:
   void omsOneShapeContextMenu(ShapeAnnotation *pShapeAnnotation, QMenu *pMenu);
   void omsOneComponentContextMenu(Element *pComponent, QMenu *pMenu);
   void omsMultipleItemsContextMenu(QMenu *pMenu);
-  void getCoordinateSystemAndGraphics(QStringList &coOrdinateSystemList, QStringList &graphicsList);
 signals:
   void manhattanize();
   void deleteSignal();
