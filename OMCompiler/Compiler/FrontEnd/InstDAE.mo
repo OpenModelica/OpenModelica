@@ -261,6 +261,12 @@ algorithm
     case (_,DAE.T_ENUMERATION(index = SOME(_)),_,_,_,_,_,_,_,_,_,_,_,_,_)
     then DAE.emptyDae;
 
+    case (vn,DAE.T_CODE(),ct,kind,dir,daePrl,prot,e,inst_dims,_,dae_var_attr,comment,_,_,_)
+      algorithm
+        finst_dims := List.flatten(inst_dims);
+      then
+        DAE.DAE({DAE.VAR(vn,kind,dir,daePrl,prot,inType,e,finst_dims,ct,source,dae_var_attr,comment,io,false)});
+
     // We should not declare each enumeration value of an enumeration when instantiating,
     // e.g Myenum my !=> constant EnumType my.enum1,... {DAE.VAR(vn, kind, dir, DAE.ENUM, e, inst_dims)}
     // instantiation of complex type extending from basic type
