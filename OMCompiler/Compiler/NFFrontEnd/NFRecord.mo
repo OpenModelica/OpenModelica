@@ -63,11 +63,10 @@ import EvalConstants = NFEvalConstants;
 import NFPrefixes.Direction;
 import NFPrefixes.Variability;
 import NFPrefixes.Visibility;
-import NFFunction.Function;
+import NFFunction.{Function, FunctionStatus};
 import NFClassTree.ClassTree;
 import ComplexType = NFComplexType;
 import ComponentRef = NFComponentRef;
-import NFFunction.FunctionStatus;
 import MetaModelica.Dangerous.listReverseInPlace;
 import UnorderedMap;
 import UnorderedSet;
@@ -176,8 +175,8 @@ algorithm
   // Create the constructor function and add it to the function cache.
   attr := DAE.FUNCTION_ATTRIBUTES_DEFAULT;
   status := Pointer.create(FunctionStatus.INITIAL);
-  InstNode.cacheAddFunc(node, Function.FUNCTION(path, ctor_node, inputs,
-    {out_rec}, locals, {}, Type.UNKNOWN(), attr, {}, {}, listArray({}), status, Pointer.create(0)), false);
+  InstNode.cacheAddFunc(node, Function.FUNCTION(path, ctor_node, inputs, {out_rec}, locals,
+  NONE(), {}, Type.UNKNOWN(), attr, {}, {}, listArray({}), status, Pointer.create(0)), false);
 end instDefaultConstructor;
 
 function checkLocalFieldOrder

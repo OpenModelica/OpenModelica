@@ -262,13 +262,13 @@ type FunctionStatus = enumeration(
 );
 
 uniontype Function
-
   record FUNCTION
     Absyn.Path path;
     InstNode node;
     list<InstNode> inputs;
     list<InstNode> outputs;
     list<InstNode> locals;
+    Option<UnorderedSet<InstNode>> interfaceDiffInfo;
     list<Slot> slots;
     Type returnType;
     DAE.FunctionAttributes attributes;
@@ -295,7 +295,7 @@ uniontype Function
     attr := makeAttributes(node, inputs, outputs, comments);
     // Make sure builtin functions aren't added to the function tree.
     status := if isBuiltinAttr(attr) then FunctionStatus.COLLECTED else FunctionStatus.INITIAL;
-    fn := FUNCTION(path, node, inputs, outputs, locals, {}, Type.UNKNOWN(),
+    fn := FUNCTION(path, node, inputs, outputs, locals, NONE(), {}, Type.UNKNOWN(),
       attr, {}, {}, listArray({}), Pointer.create(status), Pointer.create(0));
   end new;
 
