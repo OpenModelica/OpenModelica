@@ -6822,6 +6822,7 @@ end simulationLiteralsFile;
  "Generates the content of the C file for functions in the simulation case.
   used in Compiler/Template/CodegenFMU.tpl"
 ::=
+  let()= textFile( "[\n" + (functions |> fn => match fn case fn as EXTERNAL_FUNCTION(__) then '"<%fn.extName%>"'; separator=",\n") + "\n]", '<%filePrefix%>_external_functions.json')
   <<
   #include "omc_simulation_settings.h"
   #include "<%filePrefix%>_functions.h"

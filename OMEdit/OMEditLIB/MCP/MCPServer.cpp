@@ -5,8 +5,8 @@
 
 #if QT_VERSION < QT_VERSION_CHECK(6, 4, 0) || !__has_include(<QtHttpServer>)
 
-MCPServer::MCPServer(OMCProxy *proxy, int port, QObject *parent) : QObject(parent) {
-  Q_UNUSED(proxy) Q_UNUSED(port)
+MCPServer::MCPServer(OMCProxy *proxy, int port, bool enableAdminTools, QObject *parent) : QObject(parent) {
+  Q_UNUSED(proxy) Q_UNUSED(port) Q_UNUSED(enableAdminTools)
   MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "The MCP server required Qt 6.4.0 (or ideally Qt 6.8.0)", Helper::scriptingKind, Helper::warningLevel));
 }
 
@@ -775,12 +775,12 @@ if (method == "tools/call") {
       m_adminToolsObject.insert(name, tool);
     }
 
-    m_server.route("/mcp", QHttpServerRequest::Method::Options, [](const QHttpServerRequest &request) {return "";});
+    m_server.route("/mcp", QHttpServerRequest::Method::Options, [](const QHttpServerRequest &request) {Q_UNUSED(request) return "";});
     m_server.route("/mcp", QHttpServerRequest::Method::Post, [this](const QHttpServerRequest &request) {return handleMCPRequest(request, true);});
-    m_server.route("/mcp/novision", QHttpServerRequest::Method::Options, [](const QHttpServerRequest &request) {return "";});
+    m_server.route("/mcp/novision", QHttpServerRequest::Method::Options, [](const QHttpServerRequest &request) {Q_UNUSED(request) return "";});
     m_server.route("/mcp/novision", QHttpServerRequest::Method::Post, [this](const QHttpServerRequest &request) {return handleMCPRequest(request, false);});
     if (enableAdminTools) {
-      m_server.route("/mcp/admin", QHttpServerRequest::Method::Options, [](const QHttpServerRequest &request) {return "";});
+      m_server.route("/mcp/admin", QHttpServerRequest::Method::Options, [](const QHttpServerRequest &request) {Q_UNUSED(request) return "";});
       m_server.route("/mcp/admin", QHttpServerRequest::Method::Post, [this](const QHttpServerRequest &request) {return handleMCPRequest(request, true, true);});
     }
 

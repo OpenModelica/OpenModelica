@@ -65,7 +65,7 @@ public:
   SimulationDialog(QWidget *pParent = 0);
   ~SimulationDialog();
   void show(LibraryTreeItem *pLibraryTreeItem, bool isReSimulate, SimulationOptions simulationOptions);
-  void directSimulate(LibraryTreeItem *pLibraryTreeItem, bool launchTransformationalDebugger, bool launchAlgorithmicDebugger, bool launchAnimation, bool enableDataReconciliation);
+  void directSimulate(LibraryTreeItem *pLibraryTreeItem, bool launchTransformationalDebugger, bool launchAlgorithmicDebugger, bool launchAnimation, bool enableDataReconciliation, bool buildOnly = false);
   OpcUaClient* getOpcUaClient(int port);
 private:
   Label *mpSimulationHeading;

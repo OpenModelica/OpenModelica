@@ -915,6 +915,22 @@ void MainWindow::simulate(LibraryTreeItem *pLibraryTreeItem)
   }
 }
 
+void MainWindow::simulateBuildOnly(LibraryTreeItem *pLibraryTreeItem)
+{
+  if (!pLibraryTreeItem->isModelica()) {
+    return;
+  }
+  if (!mpSimulationDialog) {
+    mpSimulationDialog = new SimulationDialog(this);
+  }
+  if (pLibraryTreeItem->getModelWidget()) {
+    if (!pLibraryTreeItem->getModelWidget()->validateText(&pLibraryTreeItem)) {
+      return;
+    }
+  }
+  mpSimulationDialog->directSimulate(pLibraryTreeItem, false, false, false, false, true /* buildOnly */);
+}
+
 void MainWindow::simulateWithTransformationalDebugger(LibraryTreeItem *pLibraryTreeItem)
 {
   if (!mpSimulationDialog) {

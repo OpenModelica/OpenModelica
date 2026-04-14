@@ -113,6 +113,7 @@ public:
   void updateMessageTab(const QString &text);
   void updateMessageTabProgress();
   void reSimulate(bool showSetup);
+  void startSimulationAfterBuild();
 private:
   SimulationOptions mSimulationOptions;
   Label *mpProgressLabel;

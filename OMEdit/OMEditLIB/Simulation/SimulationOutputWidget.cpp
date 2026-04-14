@@ -708,6 +708,23 @@ void SimulationOutputWidget::reSimulate(bool showSetup)
 }
 
 /*!
+ * \brief SimulationOutputWidget::startSimulationAfterBuild
+ * Resumes execution by launching the simulation executable after a successful
+ * build-only compilation phase.  Clears the build-only flag so the simulation
+ * process is allowed to run and intermediate files are cleaned up correctly
+ * when it finishes.
+ *
+ * This is used by the MCP server to implement a two-phase workflow: compile
+ * first (build-only), inspect the generated artefacts, then run — all without
+ * a second compilation pass.
+ */
+void SimulationOutputWidget::startSimulationAfterBuild()
+{
+  mSimulationOptions.setBuildOnly(false);
+  runSimulationExecutable();
+}
+
+/*!
  * \brief SimulationOutputWidget::runSimulationExecutable
  * Runs the simulation executable.
  */
