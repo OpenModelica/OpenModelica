@@ -79,7 +79,12 @@ if test "$WITH_OSG" = 1; then
   AC_LINK_IFELSE(
         [AC_LANG_PROGRAM([[
 #include <osgViewer/GraphicsWindow>
+#include <QtCore/QtGlobal>
+#if QT_VERSION < QT_VERSION(6, 0, 0)
 #include <QGLWidget>
+#else
+#include <QtOpenGLWidgets/QOpenGLWidget>
+#endif
 ]],
   [[]])],
   [AC_MSG_RESULT([OK])],
