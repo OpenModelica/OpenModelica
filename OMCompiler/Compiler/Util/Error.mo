@@ -933,7 +933,7 @@ public constant ErrorTypes.Message SETTING_FIXED_ATTRIBUTE = ErrorTypes.MESSAGE(
 public constant ErrorTypes.Message FAILED_TO_EVALUATE_FUNCTION = ErrorTypes.MESSAGE(506, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   Gettext.gettext("Failed to evaluate function: %s."));
 public constant ErrorTypes.Message WARNING_RELATION_ON_REAL = ErrorTypes.MESSAGE(509, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
-  Gettext.gettext("In relation %s, %s on Real numbers is only allowed inside functions."));
+  Gettext.gettext("In relation %s, %s on Real operands is deprecated in non-function contexts."));
 public constant ErrorTypes.Message OUTER_MODIFICATION = ErrorTypes.MESSAGE(512, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
   Gettext.gettext("Ignoring the modification on outer element: %s."));
 public constant ErrorTypes.Message DERIVATIVE_NON_REAL = ErrorTypes.MESSAGE(514, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),

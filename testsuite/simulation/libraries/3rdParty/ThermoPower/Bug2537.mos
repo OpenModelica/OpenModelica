@@ -27,11 +27,11 @@ simulate(ThermoPower.Examples.CISE.CISESim120501); getErrorString();
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// "[simulation/libraries/3rdParty/ThermoPower/Bug2537.mo:1598:7-1598:102:writable] Warning: In relation Plant.Drum.gl == 0.0, == on Real numbers is only allowed inside functions.
-// [simulation/libraries/3rdParty/ThermoPower/Bug2537.mo:1599:7-1599:102:writable] Warning: In relation Plant.Drum.gv == 0.0, == on Real numbers is only allowed inside functions.
-// [simulation/libraries/3rdParty/ThermoPower/Bug2537.mo:747:7-751:13:writable] Warning: In relation Plant.FeedWater.G == 0.0, == on Real numbers is only allowed inside functions.
-// [simulation/libraries/3rdParty/ThermoPower/Bug2537.mo:801:7-805:13:writable] Warning: In relation Plant.Blowdown.G == 0.0, == on Real numbers is only allowed inside functions.
-// [simulation/libraries/3rdParty/ThermoPower/Bug2537.mo:693:7-697:13:writable] Warning: In relation Plant.Sink.R == 0.0, == on Real numbers is only allowed inside functions.
+// "[simulation/libraries/3rdParty/ThermoPower/Bug2537.mo:1598:7-1598:102:writable] Warning: In relation Plant.Drum.gl == 0.0, == on Real operands is deprecated in non-function contexts.
+// [simulation/libraries/3rdParty/ThermoPower/Bug2537.mo:1599:7-1599:102:writable] Warning: In relation Plant.Drum.gv == 0.0, == on Real operands is deprecated in non-function contexts.
+// [simulation/libraries/3rdParty/ThermoPower/Bug2537.mo:747:7-751:13:writable] Warning: In relation Plant.FeedWater.G == 0.0, == on Real operands is deprecated in non-function contexts.
+// [simulation/libraries/3rdParty/ThermoPower/Bug2537.mo:801:7-805:13:writable] Warning: In relation Plant.Blowdown.G == 0.0, == on Real operands is deprecated in non-function contexts.
+// [simulation/libraries/3rdParty/ThermoPower/Bug2537.mo:693:7-697:13:writable] Warning: In relation Plant.Sink.R == 0.0, == on Real operands is deprecated in non-function contexts.
 // Warning: The model contains alias variables with redundant start and/or conflicting nominal values. It is recommended to resolve the conflicts, because otherwise the system could be hard to solve. To print the conflicting alias sets and the chosen candidates please use -d=aliasConflicts.
 // "
 // endResult
