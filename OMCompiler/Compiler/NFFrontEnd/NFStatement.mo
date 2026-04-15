@@ -171,6 +171,11 @@ public
     end match;
   end filterDiscrete;
 
+  function hash
+    input Statement stmt;
+    output Integer hash = stringHashDjb2(toString(stmt));
+  end hash;
+
   function isEqual
     input Statement stmt1;
     input Statement stmt2;

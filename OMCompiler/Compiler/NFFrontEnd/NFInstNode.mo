@@ -195,8 +195,8 @@ uniontype CachedData
   function setFuncCache
     input array<CachedData> in_caches;
     input CachedData in_cache;
-    algorithm
-      arrayUpdate(in_caches, 1, in_cache);
+  algorithm
+    arrayUpdate(in_caches, 1, in_cache);
   end setFuncCache;
 
   function getPackageCache
@@ -1498,6 +1498,17 @@ uniontype InstNode
       else algorithm Error.assertion(false, getInstanceName() + " got node without cache", sourceInfo()); then fail();
     end match;
   end cacheAddFunc;
+
+  function newFuncCache
+    "overwrites the old cache. use only for entirely new inst nodes from cloning!"
+    input output InstNode node;
+    input CachedData in_func_cache;
+  algorithm
+    () := match node
+      case CLASS_NODE() algorithm node.caches := arrayCreate(1, in_func_cache); then ();
+      else algorithm Error.assertion(false, getInstanceName() + " got node without cache", sourceInfo()); then fail();
+    end match;
+  end newFuncCache;
 
   function getFuncCache
     input InstNode inNode;

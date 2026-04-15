@@ -1056,7 +1056,7 @@ protected
       // wrap no return call in algorithm
       case FEquation.NORETCALL() algorithm
         stmt := Statement.NORETCALL(frontend_equation.exp, frontend_equation.source);
-        alg  := Algorithm.ALGORITHM({stmt}, {}, {}, InstNode.EMPTY_NODE(), frontend_equation.source);
+        alg  := Algorithm.ALGORITHM({stmt}, {}, {}, NONE(), InstNode.EMPTY_NODE(), frontend_equation.source);
         alg  := Algorithm.setInputsOutputs(alg);
       then {lowerAlgorithm(alg, init)};
 
@@ -1227,7 +1227,7 @@ protected
       case FEquation.ASSERT(condition = Expression.CALL(call = call)) guard(Call.isNamed(call, "noEvent")) algorithm
         attr := EquationAttributes.default(EquationKind.EMPTY, init);
         alg := Algorithm.ALGORITHM({Statement.ASSERT(frontend_eq.condition, frontend_eq.message, frontend_eq.level, frontend_eq.source)},
-          {}, {}, frontend_eq.scope, frontend_eq.source);
+          {}, {}, NONE(), frontend_eq.scope, frontend_eq.source);
       then {lowerAlgorithm(alg, init)};
 
       case FEquation.ASSERT() algorithm

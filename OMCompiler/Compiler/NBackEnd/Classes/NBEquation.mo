@@ -1484,7 +1484,7 @@ public
     protected
       Algorithm alg;
     algorithm
-      alg := Algorithm.ALGORITHM(stmts, {}, {}, InstNode.EMPTY_NODE(), DAE.emptyElementSource);
+      alg := Algorithm.ALGORITHM(stmts, {}, {}, NONE(), InstNode.EMPTY_NODE(), DAE.emptyElementSource);
       alg := Algorithm.setInputsOutputs(alg);
       eqn := BackendDAE.lowerAlgorithm(alg, init);
     end makeAlgorithm;
