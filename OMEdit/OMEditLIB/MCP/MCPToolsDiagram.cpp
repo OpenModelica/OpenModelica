@@ -433,9 +433,14 @@ QHttpServerResponse MCPServer::handleDiagramTool(const QString &toolName, QJsonV
     GraphicsView *pGraphicsView = pModelWidget->getDiagramGraphicsView();
     QJsonArray connections;
     for (LineAnnotation *pLine : pGraphicsView->getConnectionsList()) {
+      QJsonArray points;
+      for (const QPointF &pt : pLine->getPoints()) {
+        points.append(QJsonArray{pt.x(), pt.y()});
+      }
       connections.append(QJsonObject{
         {"first", pLine->getStartElementName()},
-        {"second", pLine->getEndElementName()}
+        {"second", pLine->getEndElementName()},
+        {"points", points}
       });
     }
     return makeMCPToolResponse(id, makeContent(connections));
