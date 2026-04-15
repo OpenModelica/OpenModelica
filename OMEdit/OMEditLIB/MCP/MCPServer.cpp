@@ -211,7 +211,19 @@ QJsonObject makeContent(QJsonValue content) {
   if (content.isString()) {
     result.insert("text", content.toString());
   } else {
+    #if QT_VERSION >= QT_VERSION_CHECK(6, 9, 0)
     result.insert("text", QString(content.toJson(QJsonDocument::Compact)));
+    #else
+    if (content.isBool()) {
+      result.insert("text", QVariant(content.toBool()).toString());
+    } else if (content.isDouble()) {
+      result.insert("text", QString::number(content.toDouble()));
+    } else if (content.isArray()) {
+      result.insert("text", QString(QJsonDocument(content.toArray()).toJson(QJsonDocument::Compact)));
+    } else {
+      result.insert("text", QString(QJsonDocument(content.toObject()).toJson(QJsonDocument::Compact)));
+    }
+    #endif
   }
   return result;
 }
@@ -378,7 +390,23 @@ QString typeCheck(QJsonObject argType, QJsonValue argument) {
     }
     return "";
   }
+  #if QT_VERSION >= QT_VERSION_CHECK(6, 9, 0)
   return QString("Wrong type for argument, got %1 expected type %2").arg(argument.toJson(QJsonDocument::Compact)).arg(QJsonDocument(argType).toJson(QJsonDocument::Compact));
+  #else
+  QString argStr;
+  if (argument.isString()) {
+    argStr = argument.toString();
+  } else if (argument.isBool()) {
+    argStr = QVariant(argument.toBool()).toString();
+  } else if (argument.isDouble()) {
+    argStr = QString::number(argument.toDouble());
+  } else if (argument.isArray()) {
+    argStr = QString(QJsonDocument(argument.toArray()).toJson(QJsonDocument::Compact));
+  } else {
+    argStr = QString(QJsonDocument(argument.toObject()).toJson(QJsonDocument::Compact));
+  }
+  return QString("Wrong type for argument, got %1 expected type %2").arg(argStr).arg(QJsonDocument(argType).toJson(QJsonDocument::Compact));
+  #endif
 }
 
 
