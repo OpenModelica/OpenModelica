@@ -197,6 +197,27 @@ const QJsonArray resourcesArray = QJsonArray{
   }
 };
 
+#if QT_VERSION < QT_VERSION_CHECK(6, 9, 0)
+/*!
+* \brief toJson
+* Converts the \c QJsonValue to a \c QByteArray when \c QJsonValue::toJson is
+* not available.
+* \param value JSON value to convert to QByteArray
+* \return QByteArray representing \c value
+*/
+static QByteArray toJson(const QJsonValue &value) {
+  // Wrap any value in a temporary array
+  QJsonArray wrapper;
+  wrapper.append(value);
+
+  QJsonDocument doc(wrapper);
+  QByteArray json = doc.toJson(QJsonDocument::Compact);
+
+  // Remove the leading '[' and trailing ']' added by the array wrapper
+  return json.mid(1, json.size() - 2);
+}
+#endif
+
 /*!
 * \brief makeContent
 * Creates an MCP text content object from \a content.
@@ -211,7 +232,11 @@ QJsonObject makeContent(QJsonValue content) {
   if (content.isString()) {
     result.insert("text", content.toString());
   } else {
+    #if QT_VERSION >= QT_VERSION_CHECK(6, 9, 0)
     result.insert("text", QString(content.toJson(QJsonDocument::Compact)));
+    #else
+    result.insert("text", QString(toJson(content)));
+    #endif
   }
   return result;
 }
@@ -378,7 +403,11 @@ QString typeCheck(QJsonObject argType, QJsonValue argument) {
     }
     return "";
   }
+  #if QT_VERSION >= QT_VERSION_CHECK(6, 9, 0)
   return QString("Wrong type for argument, got %1 expected type %2").arg(argument.toJson(QJsonDocument::Compact)).arg(QJsonDocument(argType).toJson(QJsonDocument::Compact));
+  #else
+  return QString("Wrong type for argument, got %1 expected type %2").arg(toJson(argument)).arg(QJsonDocument(argType).toJson(QJsonDocument::Compact));
+  #endif
 }
 
 
