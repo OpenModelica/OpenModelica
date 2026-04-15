@@ -325,12 +325,8 @@ HEADERS  += Util/Helper.h \
 
 CONFIG(osg) {
 
-  greaterThan(QT_MAJOR_VERSION, 4):greaterThan(QT_MINOR_VERSION, 3) { # if Qt 5.4 or greater
-    SOURCES += Animation/OpenGLWidget.cpp
-  } else {
-    SOURCES += Animation/GLWidget.cpp
-  }
-  SOURCES += Animation/AbstractAnimationWindow.cpp \
+  SOURCES += Animation/OpenGLWidget.cpp \
+    Animation/AbstractAnimationWindow.cpp \
     Animation/ViewerWidget.cpp \
     Animation/AnimationWindow.cpp \
     Animation/ExtraShapes.cpp \
@@ -344,12 +340,8 @@ CONFIG(osg) {
     Animation/Shape.cpp \
     Animation/Vector.cpp
 
-  greaterThan(QT_MAJOR_VERSION, 4):greaterThan(QT_MINOR_VERSION, 3) { # if Qt 5.4 or greater
-    HEADERS += Animation/OpenGLWidget.h
-  } else {
-    HEADERS += Animation/GLWidget.h
-  }
-  HEADERS += Animation/AbstractAnimationWindow.h \
+  HEADERS += Animation/OpenGLWidget.h \
+    Animation/AbstractAnimationWindow.h \
     Animation/ViewerWidget.h \
     Animation/AnimationWindow.h \
     Animation/AnimationUtil.h \
