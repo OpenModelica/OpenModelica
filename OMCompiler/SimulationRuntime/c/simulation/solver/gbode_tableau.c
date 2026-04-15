@@ -198,9 +198,10 @@ void denseOutput(BUTCHER_TABLEAU* tableau, double* yOld, double* x, double* k, d
     memcpy(y, yOld, nStates * sizeof(double));
 
     // y := K * b_dt + y
+    int nStages = (int)tableau->nStages;
     dgemv_(&CHAR_NO_TRANS,
            &nStates,
-           &tableau->nStages,
+           &nStages,
            &DBL_ONE, k, &nStates,
            tableau->b_dt, &INT_ONE,
            &DBL_ONE, y, &INT_ONE);
