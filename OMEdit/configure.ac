@@ -80,7 +80,7 @@ if test "$WITH_OSG" = 1; then
         [AC_LANG_PROGRAM([[
 #include <osgViewer/GraphicsWindow>
 #include <QtCore/QtGlobal>
-#if QT_VERSION < QT_VERSION(6, 0, 0)
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
 #include <QGLWidget>
 #else
 #include <QtOpenGLWidgets/QOpenGLWidget>
