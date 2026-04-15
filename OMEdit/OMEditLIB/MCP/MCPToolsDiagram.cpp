@@ -193,6 +193,7 @@ QHttpServerResponse MCPServer::handleDiagramTool(const QString &toolName, QJsonV
       }
     }
     GraphicsView *pGraphicsView = isIcon ? pModelWidget->getIconGraphicsView() : pModelWidget->getDiagramGraphicsView();
+    pGraphicsView->clearSelection();
     MainWindow::ViewSelection viewSelection = isIcon ? MainWindow::ViewSelection::Icon : MainWindow::ViewSelection::Class;
     QImage modelImage = mainWindow->exportModelAsImage(".png", true, viewSelection, pModelWidget, QSize(1024, 1024));
     QRectF extent = pGraphicsView->mMergedCoordinateSystem.getExtentRectangle();
