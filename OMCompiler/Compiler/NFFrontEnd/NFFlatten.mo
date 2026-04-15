@@ -1417,7 +1417,7 @@ algorithm
           body := {Statement.FOR(iter, SOME(range), body, Statement.ForType.NORMAL(), alg.source)};
         end while;
       then
-        Algorithm.ALGORITHM(body, alg.inputs, alg.outputs, alg.scope, alg.source); // ToDo: update inputs, outputs?
+        Algorithm.ALGORITHM(body, alg.inputs, alg.outputs, NONE(), alg.scope, alg.source); // ToDo: update inputs, outputs?
   end match;
 end vectorizeAlgorithm;
 

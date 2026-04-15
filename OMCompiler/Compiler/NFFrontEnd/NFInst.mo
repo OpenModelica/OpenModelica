@@ -3509,7 +3509,7 @@ protected
 algorithm
   // collect inputs and outputs later when types are computed properly
   statements := instStatements(algorithmSection.statements, scope, context);
-  alg := Algorithm.ALGORITHM(statements, {}, {}, scope, DAE.emptyElementSource);
+  alg := Algorithm.ALGORITHM(statements, {}, {}, NONE(), scope, DAE.emptyElementSource);
 end instAlgorithmSection;
 
 function instStatements

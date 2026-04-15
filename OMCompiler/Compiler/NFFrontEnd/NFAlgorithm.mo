@@ -53,6 +53,7 @@ public
     list<Statement> statements;
     list<ComponentRef> inputs;
     list<ComponentRef> outputs;
+    Option<UnorderedSet<Statement>> stmtDiffInfo;
     InstNode scope;
     DAE.ElementSource source;
   end ALGORITHM;
