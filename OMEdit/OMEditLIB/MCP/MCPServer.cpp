@@ -206,15 +206,15 @@ const QJsonArray resourcesArray = QJsonArray{
 * \return QByteArray representing \c value
 */
 static QByteArray toJson(const QJsonValue &value) {
-    // Wrap any value in a temporary array
-    QJsonArray wrapper;
-    wrapper.append(value);
+  // Wrap any value in a temporary array
+  QJsonArray wrapper;
+  wrapper.append(value);
 
-    QJsonDocument doc(wrapper);
-    QByteArray json = doc.toJson(QJsonDocument::Compact);
+  QJsonDocument doc(wrapper);
+  QByteArray json = doc.toJson(QJsonDocument::Compact);
 
-    // Remove the leading '[' and trailing ']' added by the array wrapper
-    return json.mid(1, json.size() - 2);
+  // Remove the leading '[' and trailing ']' added by the array wrapper
+  return json.mid(1, json.size() - 2);
 }
 #endif
 
