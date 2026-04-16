@@ -1487,7 +1487,9 @@ public
           old_var_ptr := getVarPointer(cref, sourceInfo());
           // prepend the start str
           qual.name := START_STR;
-          start_cref := ComponentRef.append(cref, ComponentRef.fromNode(qual, ComponentRef.scalarType(cref)));
+
+          // remove the subscripts before creating the new cref for the new variable
+          start_cref := ComponentRef.append(ComponentRef.stripSubscriptsAll(cref), ComponentRef.fromNode(qual, ComponentRef.scalarType(cref)));
           var := fromCref(start_cref, Variable.attributes(getVar(cref, sourceInfo())));
           // update the variable to be a start variable and pass the pointer to the original variable
           var.backendinfo := BackendInfo.setVarKind(var.backendinfo, VariableKind.START(old_var_ptr));
@@ -1498,6 +1500,9 @@ public
           old_var := Pointer.access(old_var_ptr);
           BackendInfo.setVarStart(old_var.backendinfo, SOME(var_ptr));
           Pointer.update(old_var_ptr, old_var);
+
+          // copy back all the subscripts
+          start_cref := ComponentRef.copySubscripts(cref, start_cref);
       then ();
 
       else algorithm

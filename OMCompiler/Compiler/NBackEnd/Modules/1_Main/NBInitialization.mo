@@ -469,7 +469,7 @@ public
       start_exp := match BVariable.getStartAttribute(var_ptr)
         // create from start expression if its not a literal
         case SOME(e) guard not Expression.isLiteralXML(e) algorithm
-          (start_exp, var_ptr, name, iterator) := createStartExpressionSlice(e, var_slice, var_ptr, name);
+          (start_exp, var_ptr, name, _, _, iterator) := createStartExpressionSlice(e, var_slice, var_ptr, name);
         then start_exp;
 
         // create a start variable if it is a literal
@@ -484,9 +484,9 @@ public
       start_eq := match BVariable.getStartAttribute(var_ptr)
         // create from start expression only if its not literal
         case SOME(e) guard not Expression.isLiteralXML(e) algorithm
-          (start_var_exp, var_ptr, name, iterator) := createStartVariableSlice(var_slice, var_ptr, name, ptr_start_vars);
-          (start_exp, var_ptr, name, iterator) := createStartExpressionSlice(e, var_slice, var_ptr, name);
-          start_eq := SOME(Equation.makeAssignment(start_var_exp, start_exp, idx, NBEquation.START_STR, iterator, EquationAttributes.default(kind, true)));
+          (start_exp, var_ptr, _, start_var, name, iterator) := createStartExpressionSlice(e, var_slice, var_ptr, name);
+          start_eq := SOME(Equation.makeAssignment(Expression.fromCref(name, true), start_exp, idx, NBEquation.START_STR, iterator, EquationAttributes.default(kind, true)));
+          Pointer.update(ptr_start_vars, start_var :: Pointer.access(ptr_start_vars));
         then start_eq;
 
         // exit the function, no start equation is created
@@ -511,6 +511,8 @@ public
     output Expression start_exp;
     input output Pointer<Variable> var_ptr;
     input output ComponentRef name;
+    output Pointer<Variable> start_var;
+    output ComponentRef start_cref;
     output Iterator iterator;
   algorithm
     (start_exp, iterator) := match exp
@@ -524,7 +526,7 @@ public
 
       // convert array constructor to for-equation
       case Expression.CALL(call = array_constructor as Call.TYPED_ARRAY_CONSTRUCTOR()) algorithm
-        (var_ptr, name, _, _, _, frames, iterator) := createIteratedStartCref(var_ptr, name);
+        (var_ptr, name, start_var, start_cref, _, frames, iterator) := createIteratedStartCref(var_ptr, name);
         replacements := UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual);
         for tpl in List.zip(array_constructor.iters, frames) loop
           ((old_iter, _), (new_iter, _, _)) := tpl;
@@ -535,11 +537,11 @@ public
       // use the start attribute itself
       else algorithm
         if Slice.isFull(var_slice) then
-          (var_ptr, name, _, _) := createStartVar(var_ptr, name, {});
+          (var_ptr, name, start_var, start_cref) := createStartVar(var_ptr, name, {});
           iterator := Iterator.EMPTY();
           start_exp := exp;
         else
-          (var_ptr, name, _, _, subscripts, _, iterator) := createIteratedStartCref(var_ptr, name);
+          (var_ptr, name, start_var, start_cref, subscripts, _, iterator) := createIteratedStartCref(var_ptr, name);
           start_exp := Expression.applySubscripts(subscripts, exp, true);
         end if;
       then (start_exp, iterator);
@@ -565,7 +567,6 @@ public
       (var_ptr, name, start_var, start_name, subscripts, _, iterator) := createIteratedStartCref(var_ptr, name);
     end if;
     Pointer.update(ptr_start_vars, start_var :: Pointer.access(ptr_start_vars));
-
     start_exp := Expression.fromCref(start_name);
   end createStartVariableSlice;
 
