@@ -198,9 +198,19 @@ QHttpServerResponse MCPServer::handleDiagramTool(const QString &toolName, QJsonV
     QImage modelImage = mainWindow->exportModelAsImage(".png", true, viewSelection, pModelWidget, QSize(1024, 1024));
     QRectF extent = pGraphicsView->mMergedCoordinateSystem.getExtentRectangle();
     QString extentStr = QString("(%1,%2), (%3,%4)").arg(extent.topLeft().x()).arg(extent.topLeft().y()).arg(extent.bottomRight().x()).arg(extent.bottomRight().y());
-    QString label = isIcon ? "Icon diagram for " : "Model diagram for ";
-    QString extentNote = isIcon ? ". The diagram has the extent: " : ". The diagram has the extent (marked by a rectangle with a thin gray border): ";
-    QJsonArray contents = QJsonArray{{makeContent(label + className + extentNote + extentStr + " image size: " + QString::number(modelImage.width()) + "x" + QString::number(modelImage.height()))}, makeContent(modelImage)};
+    QJsonObject resultInfo = QJsonObject{
+      {"className", className},
+      {"info", isIcon ? "Icon diagram generated successfully" : "Model diagram generated successfully. The extent of the diagram in the model is given in the 'extent' field and is also marked by a thin gray border in the image."},
+      {"extent", QJsonObject{
+        {"x1", extent.topLeft().x()},
+        {"y1", extent.topLeft().y()},
+        {"x2", extent.bottomRight().x()},
+        {"y2", extent.bottomRight().y()}
+      }},
+      {"imageWidth", modelImage.width()},
+      {"imageHeight", modelImage.height()}
+    };
+    QJsonArray contents = QJsonArray{{makeContent(resultInfo), makeContent(modelImage)}};
     return makeMCPToolResponse(id, contents);
   }
   if (toolName == "addComponent") {
