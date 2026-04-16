@@ -255,6 +255,7 @@ public:
   QString getComponentClassComment() const;
   ModelInstance::Model *getModel() const;
   GraphicsView *getGraphicsView() const {return mpGraphicsView;}
+  ModelInstance::Element *getElement() const {return mpElement;}
   bool hasElement() const {return mpElement ? true : false;}
   bool isElementArray() const {return mpElement->getDimensions().isArray();}
   QString getElementDimensions() const {return mpElement->getDimensions().getTypedDimensionsString();}
