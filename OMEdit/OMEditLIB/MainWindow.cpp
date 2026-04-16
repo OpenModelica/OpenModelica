@@ -2889,7 +2889,6 @@ QImage MainWindow::exportModelAsImage(QString fileName, bool drawExtents, ViewSe
     extentRect.setY(extentRect.y() - 10);
     extentRect.setWidth(extentRect.width() + 10);
     extentRect.setHeight(extentRect.height() + 10);
-    QRect origRect = destinationRect;
 
     destinationRect |= extentRect;
   }
