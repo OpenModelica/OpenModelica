@@ -1476,34 +1476,44 @@ public
     output ComponentRef start_cref    "new component reference";
     output Pointer<Variable> var_ptr  "pointer to new variable";
   algorithm
-    () := match ComponentRef.node(cref)
+    (start_cref, var_ptr) := match ComponentRef.node(cref)
       local
         InstNode qual;
         Pointer<Variable> old_var_ptr;
         Variable var, old_var;
+
       case qual as InstNode.VAR_NODE()
         algorithm
           // get the variable pointer from the old cref to later on link back to it
           old_var_ptr := getVarPointer(cref, sourceInfo());
-          // prepend the start str
-          qual.name := START_STR;
 
-          // remove the subscripts before creating the new cref for the new variable
-          start_cref := ComponentRef.append(ComponentRef.stripSubscriptsAll(cref), ComponentRef.fromNode(qual, ComponentRef.scalarType(cref)));
-          var := fromCref(start_cref, Variable.attributes(getVar(cref, sourceInfo())));
-          // update the variable to be a start variable and pass the pointer to the original variable
-          var.backendinfo := BackendInfo.setVarKind(var.backendinfo, VariableKind.START(old_var_ptr));
-          BackendInfo.setVarStart(var.backendinfo, SOME(old_var_ptr));
-          // create the new variable pointer and safe it to the component reference
-          (var_ptr, start_cref) := makeVarPtrCyclic(var, start_cref);
-          // save the var_ptr to the old var as its start var
-          old_var := Pointer.access(old_var_ptr);
-          BackendInfo.setVarStart(old_var.backendinfo, SOME(var_ptr));
-          Pointer.update(old_var_ptr, old_var);
+          // try to see if it already has a start variable
+          (start_cref, var_ptr) := match getVarStart(old_var_ptr)
+            // there is already a start variable, take it
+            case SOME(var_ptr) then (getVarName(var_ptr), var_ptr);
+
+            // create a new start variable
+            else algorithm
+              // prepend the start str
+              qual.name := START_STR;
+              // remove the subscripts before creating the new cref for the new variable
+              start_cref := ComponentRef.append(ComponentRef.stripSubscriptsAll(cref), ComponentRef.fromNode(qual, ComponentRef.scalarType(cref)));
+              var := fromCref(start_cref, Variable.attributes(getVar(cref, sourceInfo())));
+              // update the variable to be a start variable and pass the pointer to the original variable
+              var.backendinfo := BackendInfo.setVarKind(var.backendinfo, VariableKind.START(old_var_ptr));
+              BackendInfo.setVarStart(var.backendinfo, SOME(old_var_ptr));
+              // create the new variable pointer and safe it to the component reference
+              (var_ptr, start_cref) := makeVarPtrCyclic(var, start_cref);
+              // save the var_ptr to the old var as its start var
+              old_var := Pointer.access(old_var_ptr);
+              BackendInfo.setVarStart(old_var.backendinfo, SOME(var_ptr));
+              Pointer.update(old_var_ptr, old_var);
+            then (start_cref, var_ptr);
+          end match;
 
           // copy back all the subscripts
           start_cref := ComponentRef.copySubscripts(cref, start_cref);
-      then ();
+      then (start_cref, var_ptr);
 
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + ComponentRef.toString(cref)});
