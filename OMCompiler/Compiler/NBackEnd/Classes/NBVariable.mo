@@ -97,7 +97,7 @@ public
   constant Variable TIME_VARIABLE = Variable.VARIABLE(NFBuiltin.TIME_CREF, Type.REAL(),
     NFBinding.EMPTY_BINDING, NFPrefixes.Visibility.PUBLIC, NFAttributes.DEFAULT_ATTR,
     {}, {}, SCode.noComment, SCodeUtil.dummyInfo, BackendInfo.BACKEND_INFO(
-    VariableKind.TIME(), NFBackendExtension.EMPTY_VAR_ATTR_REAL, NFBackendExtension.EMPTY_ANNOTATIONS, NONE(), NONE(), NONE(), NONE()));
+    VariableKind.TIME(), NFBackendExtension.EMPTY_VAR_ATTR_REAL, NFBackendExtension.EMPTY_ANNOTATIONS, NONE(), NONE(), NONE(), NONE(), NONE()));
 
   constant String DERIVATIVE_STR          = "$DER";
   constant String DUMMY_DERIVATIVE_STR    = "$dDER";
@@ -618,6 +618,13 @@ public
       else NONE();
     end match;
   end getVarDummyDer;
+
+  function getVarStart
+    extends getVarPartner;
+  algorithm
+    partnerName := "start";
+    partner := var.backendinfo.var_start;
+  end getVarStart;
 
   function getPartnerCref
     "Like getVarPartner but for cref. Fails if there is no partner."
@@ -1473,7 +1480,7 @@ public
       local
         InstNode qual;
         Pointer<Variable> old_var_ptr;
-        Variable var;
+        Variable var, old_var;
       case qual as InstNode.VAR_NODE()
         algorithm
           // get the variable pointer from the old cref to later on link back to it
@@ -1484,8 +1491,13 @@ public
           var := fromCref(start_cref, Variable.attributes(getVar(cref, sourceInfo())));
           // update the variable to be a start variable and pass the pointer to the original variable
           var.backendinfo := BackendInfo.setVarKind(var.backendinfo, VariableKind.START(old_var_ptr));
+          BackendInfo.setVarStart(var.backendinfo, SOME(old_var_ptr));
           // create the new variable pointer and safe it to the component reference
           (var_ptr, start_cref) := makeVarPtrCyclic(var, start_cref);
+          // save the var_ptr to the old var as its start var
+          old_var := Pointer.access(old_var_ptr);
+          BackendInfo.setVarStart(old_var.backendinfo, SOME(var_ptr));
+          Pointer.update(old_var_ptr, old_var);
       then ();
 
       else algorithm

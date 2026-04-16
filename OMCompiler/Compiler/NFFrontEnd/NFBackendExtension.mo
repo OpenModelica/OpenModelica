@@ -74,6 +74,7 @@ public
       Option<Pointer<Variable>> var_pre   "Pointer (var -> pre) or (pre -> var) if existent.";
       Option<Pointer<Variable>> var_seed  "Pointer (var -> seed) or (seed -> var) if existent.";
       Option<Pointer<Variable>> var_pder  "Pointer (var -> pder) or (pder -> var) if existent.";
+      Option<Pointer<Variable>> var_start "Pointer (var -> start) or (start -> var) if existent.";
       Option<Pointer<Variable>> parent    "record parent if it is part of a record.";
     end BACKEND_INFO;
 
@@ -142,6 +143,11 @@ public
       binfo.var_pder := var_ptr;
     end setVarPDer;
 
+    function setVarStart extends setPartner;
+    algorithm
+      binfo.var_start := var_ptr;
+    end setVarStart;
+
     function setAttributes
       input output BackendInfo binfo;
       input VariableAttributes attributes;
@@ -177,12 +183,12 @@ public
         case VariableKind.FRONTEND_DUMMY() then List.fill(binfo, length);
         else algorithm
           scalar_attributes := VariableAttributes.scalarize(binfo.attributes, length);
-        then list(BACKEND_INFO(binfo.varKind, attr, binfo.annotations, binfo.var_pre, binfo.var_seed, binfo.var_pder, binfo.parent) for attr in scalar_attributes);
+        then list(BACKEND_INFO(binfo.varKind, attr, binfo.annotations, binfo.var_pre, binfo.var_seed, binfo.var_pder, binfo.var_start, binfo.parent) for attr in scalar_attributes);
       end match;
     end scalarize;
   end BackendInfo;
 
-  constant BackendInfo DUMMY_BACKEND_INFO = BackendInfo.BACKEND_INFO(VariableKind.FRONTEND_DUMMY(), EMPTY_VAR_ATTR_REAL, EMPTY_ANNOTATIONS, NONE(), NONE(), NONE(), NONE());
+  constant BackendInfo DUMMY_BACKEND_INFO = BackendInfo.BACKEND_INFO(VariableKind.FRONTEND_DUMMY(), EMPTY_VAR_ATTR_REAL, EMPTY_ANNOTATIONS, NONE(), NONE(), NONE(), NONE(), NONE());
 
   uniontype VariableKind
     record TIME end TIME;
