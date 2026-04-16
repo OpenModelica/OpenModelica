@@ -34,7 +34,6 @@
 
 #include "ElementProperties.h"
 #include "MainWindow.h"
-#include "Modeling/MessagesWidget.h"
 #include "Modeling/Commands.h"
 #include "Options/OptionsDialog.h"
 #include "OMPlot.h"
@@ -170,6 +169,17 @@ Parameter::Parameter(ModelInstance::Element *pElement, bool defaultValue, Elemen
   } else if (mGroup.isEmpty() && (mpModelInstanceElement->isParameter() || mpModelInstanceElement->getAnnotation()->hasDialogAnnotation()
                                   || mpModelInstanceElement->getReplaceable())) {
     mGroup = "Parameters";
+  } else {
+    // List only the modifiers of the element
+    ModelInstance::Modifier *pModelInstanceModifier = mpElementParameters->hasElement() ? mpElementParameters->getElement()->getModifier() : nullptr;
+    if (pModelInstanceModifier) {
+      foreach (auto *pModifier, pModelInstanceModifier->getModifiers()) {
+        if (pModifier->getName() == mpModelInstanceElement->getName()) {
+          mTab = "Modifiers";
+          mGroup = "Modifiers";
+        }
+      }
+    }
   }
 
   mpNameLabel = new Label;
@@ -1384,6 +1394,21 @@ Parameter* ElementParameters::findParameter(const QString &parameter, Qt::CaseSe
 }
 
 /*!
+ * \brief setFinalEachBreak
+ * Helper function to set final, each and break in the FinalEachToolButton according to the modifier.
+ * \param pFinalEachToolButton
+ * \param pModifier
+ */
+static void setFinalEachBreak(FinalEachToolButton *pFinalEachToolButton, ModelInstance::Modifier *pModifier)
+{
+  if (pFinalEachToolButton && pModifier) {
+    pFinalEachToolButton->setFinal(pModifier->isFinal());
+    pFinalEachToolButton->setEach(pModifier->isEach());
+    pFinalEachToolButton->setBreak(pModifier->isBreak());
+  }
+}
+
+/*!
  * \brief ElementParameters::applyFinalStartFixedAndDisplayUnitModifiers
  * \param pParameter
  * \param pModifier
@@ -1424,22 +1449,21 @@ void ElementParameters::applyFinalStartFixedAndDisplayUnitModifiers(Parameter *p
             if (pStartModifier) {
               isStartFinal = pStartModifier->isFinal();
               pParameter->setValueWidget(StringHandler::removeFirstLastQuotes(pStartModifier->getValue()), defaultValue, pParameter->getUnit(), mNested);
-              pParameter->getFinalEachMenu()->setFinal(pStartModifier->isFinal());
-              pParameter->getFinalEachMenu()->setEach(pStartModifier->isEach());
-              pParameter->getFinalEachMenu()->setBreak(pStartModifier->isBreak());
+              setFinalEachBreak(pParameter->getFinalEachMenu(), pStartModifier);
             }
           }
           if (hasFixed) {
             ModelInstance::Modifier *pFixedModifier = pModifier->getModifier("fixed");
             if (pFixedModifier) {
               isFixedFinal = pFixedModifier->isFinal();
-              if (pFixedModifier->isBreak()) {
-                pParameter->getFixedFinalEachMenu()->setBreak(pFixedModifier->isBreak());
-              } else {
-                pParameter->setFixedState(StringHandler::removeFirstLastQuotes(pFixedModifier->getValue()), defaultValue);
+              const QString fixedValue = StringHandler::removeFirstLastQuotes(pFixedModifier->getValue());
+              /* only set the fixed state if the value is true or false.
+               * Don't try to set if value is not defined e.g., in the case of `x(final fixed)`
+               */
+              if (fixedValue == "true" || fixedValue == "false") {
+                pParameter->setFixedState(fixedValue, defaultValue);
               }
-              pParameter->getFixedFinalEachMenu()->setFinal(pFixedModifier->isFinal());
-              pParameter->getFixedFinalEachMenu()->setEach(pFixedModifier->isEach());
+              setFinalEachBreak(pParameter->getFixedFinalEachMenu(), pFixedModifier);
             }
           }
           /* Issue #12898
@@ -1471,9 +1495,7 @@ void ElementParameters::applyFinalStartFixedAndDisplayUnitModifiers(Parameter *p
         } else {
           pParameter->setValueWidget(value, defaultValue, pParameter->getUnit(), mNested);
           // set final and each checkboxes in the menu
-          pParameter->getFinalEachMenu()->setFinal(pModifier->isFinal());
-          pParameter->getFinalEachMenu()->setEach(pModifier->isEach());
-          pParameter->getFinalEachMenu()->setBreak(pModifier->isBreak());
+          setFinalEachBreak(pParameter->getFinalEachMenu(), pModifier);
         }
       } else { // if not builtin type then use all sub modifiers
         QString modifierValue;
@@ -1486,6 +1508,7 @@ void ElementParameters::applyFinalStartFixedAndDisplayUnitModifiers(Parameter *p
           }
         }
         pParameter->setValueWidget(modifierValue, defaultValue, pParameter->getUnit(), mNested);
+        setFinalEachBreak(pParameter->getFinalEachMenu(), pModifier);
       }
       // displayUnit
       ModelInstance::Modifier *pDisplayUnitModifier = pModifier->getModifier("displayUnit");
@@ -1596,6 +1619,49 @@ void ElementParameters::setUpDialog()
   }
   pParametersScrollArea->getLayout()->addWidget(mpComponentClassGroupBox);
   mTabsMap.insert("General", mpParametersTabWidget->addTab(pParametersScrollArea, "General"));
+  // create Modifiers tab
+  ParametersScrollArea *pModifiersParametersScrollArea = new ParametersScrollArea;
+  GroupBox *pGroupBox = new GroupBox("Add New Modifiers");
+  pModifiersParametersScrollArea->addGroupBox(pGroupBox);
+  mpModifiersLabel = new Label(tr("Add new modifiers, e.g., phi(start=1), w(start=2)"));
+  mpModifiersTextBox = new QLineEdit;
+  /* Do not add Modifiers tab when we are modifying top level parameters.
+   * We don't know yet how to set the modifiers in the top level parameter editing.
+   * For now simply hide the Modifiers tab in that case.
+   */
+  if (hasElement()) {
+    /* We hide the groupbox when we create it. Show the groupbox now since it has a parameter. */
+    pGroupBox->show();
+    QGridLayout *pGroupBoxGridLayout = pGroupBox->getGridLayout();
+    int rowIndex = pGroupBoxGridLayout->rowCount();
+    int columnIndex = 0;
+    // we match the layout same as defined for parameters layout below.
+    // label
+    pGroupBoxGridLayout->addWidget(mpModifiersLabel, rowIndex, columnIndex++);
+    pGroupBoxGridLayout->addItem(new QSpacerItem(0, 0), rowIndex, columnIndex++);
+    pGroupBoxGridLayout->addItem(new QSpacerItem(0, 0), rowIndex, columnIndex++);
+    pGroupBoxGridLayout->addWidget(mpModifiersTextBox, rowIndex, columnIndex++);
+    pGroupBoxGridLayout->addItem(new QSpacerItem(0, 0), rowIndex, columnIndex++);
+    pGroupBoxGridLayout->addItem(new QSpacerItem(0, 0), rowIndex, columnIndex++);
+    pGroupBoxGridLayout->addItem(new QSpacerItem(0, 0), rowIndex, columnIndex++);
+    pGroupBoxGridLayout->addItem(new QSpacerItem(0, 0), rowIndex, columnIndex++);
+    pGroupBoxGridLayout->addItem(new QSpacerItem(0, 0), rowIndex, columnIndex++);
+    pGroupBoxGridLayout->addItem(new QSpacerItem(0, 0), rowIndex, columnIndex++);
+    // text field
+    rowIndex++;
+    columnIndex = 0;
+    pGroupBoxGridLayout->addWidget(mpModifiersTextBox, rowIndex, columnIndex++);
+    pGroupBoxGridLayout->addItem(new QSpacerItem(0, 0), rowIndex, columnIndex++);
+    pGroupBoxGridLayout->addItem(new QSpacerItem(0, 0), rowIndex, columnIndex++);
+    pGroupBoxGridLayout->addItem(new QSpacerItem(0, 0), rowIndex, columnIndex++);
+    pGroupBoxGridLayout->addItem(new QSpacerItem(0, 0), rowIndex, columnIndex++);
+    pGroupBoxGridLayout->addItem(new QSpacerItem(0, 0), rowIndex, columnIndex++);
+    pGroupBoxGridLayout->addItem(new QSpacerItem(0, 0), rowIndex, columnIndex++);
+    pGroupBoxGridLayout->addItem(new QSpacerItem(0, 0), rowIndex, columnIndex++);
+    pGroupBoxGridLayout->addItem(new QSpacerItem(0, 0), rowIndex, columnIndex++);
+    pGroupBoxGridLayout->addItem(new QSpacerItem(0, 0), rowIndex, columnIndex++);
+  }
+  mTabsMap.insert("Modifiers", mpParametersTabWidget->addTab(pModifiersParametersScrollArea, "Modifiers"));
   // create parameters tabs and groupboxes
   createTabsGroupBoxesAndParameters(getModel(), hasElement());
   fetchElementExtendsModifiers(getModel(), hasElement());
@@ -1617,6 +1683,9 @@ void ElementParameters::setUpDialog()
   applyModifier(mpReplaceableConstrainedByModifier, true);
   // Apply the modifiers that are given in the redeclaration of the replaceable class or component.
   applyModifier(mpElementModifier, false);
+  // move Modifiers tab to the end
+  int lastIndex = mpParametersTabWidget->count() - 1;
+  mpParametersTabWidget->tabBar()->moveTab(1, lastIndex);
 
   foreach (Parameter *pParameter, mParametersList) {
     ParametersScrollArea *pParametersScrollArea = qobject_cast<ParametersScrollArea*>(mpParametersTabWidget->widget(mTabsMap.value(pParameter->getTab())));
@@ -1670,23 +1739,6 @@ void ElementParameters::setUpDialog()
         }
       }
     }
-  }
-  // create Modifiers tab
-  QWidget *pModifiersTab = new QWidget;
-  // add items to modifiers tab
-  mpModifiersLabel = new Label(tr("Add new modifiers, e.g., phi(start=1), w(start=2)"));
-  mpModifiersTextBox = new QLineEdit;
-  QVBoxLayout *pModifiersTabLayout = new QVBoxLayout;
-  pModifiersTabLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
-  pModifiersTabLayout->addWidget(mpModifiersLabel);
-  pModifiersTabLayout->addWidget(mpModifiersTextBox);
-  pModifiersTab->setLayout(pModifiersTabLayout);
-  /* Do not add Modifiers tab when we are modifying top level parameters.
-   * We don't know yet how to set the modifiers in the top level parameter editing.
-   * For now simply hide the Modifiers tab in that case.
-   */
-  if (hasElement()) {
-    mpParametersTabWidget->addTab(pModifiersTab, "Modifiers");
   }
   // Issue #7494. Hide any empty tab. We start the loop from 1 since we don't want to remove General tab which is always the first tab.
   for (int i = 1; i < mpParametersTabWidget->count(); ++i) {
