@@ -386,7 +386,7 @@ public
         if BVariable.isFixable(var_ptr) then
           // var = $START.var ($PRE.d = $START.d for previous vars)
           // DO NOT SET VARIABLE TO FIXED! we might have to fix it again for Lambda=0 system
-          Initialization.createStartEquationSlice(var, ptr_start_vars, ptr_start_eqns, idx);
+          Initialization.createStartEquationSlice(var, ptr_start_vars, ptr_start_eqns, idx, true);
         else
           failed_vars := var_ptr :: failed_vars;
         end if;
