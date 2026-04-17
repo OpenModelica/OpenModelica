@@ -1,0 +1,23 @@
+name: on-release
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+jobs:
+  build: # run only on pushes to the default branch (master)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+      - name: Build Assets
+        run: |
+          cd ..
+          zip -x '*/.git/*' ${{ github.event.repository.name }}/${{ github.event.repository.name }}-src-with-submodules.zip ${{ github.event.repository.name }} -r
+      - name: Upload Release Assets
+        if: ${{ github.event_name != 'workflow_dispatch' }}
+        uses: softprops/action-gh-release@v1
+        with:
+          files: '*src-with-submodules.zip'
