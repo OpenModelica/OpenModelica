@@ -6113,8 +6113,6 @@ void ModelWidget::createModelWidgetComponents()
       mpModelStatusBar->addPermanentWidget(mpReadOnlyLabel, 0);
       mpModelStatusBar->addPermanentWidget(mpModelFilePathLabel, 1);
       mpModelStatusBar->addPermanentWidget(mpFileLockToolButton, 0);
-      // set layout
-      mpMainLayout->addWidget(mpModelStatusBar);
     } else if (mpLibraryTreeItem->isSSP()) {
       if (mpLibraryTreeItem->isSystemElement() || mpLibraryTreeItem->isComponentElement()) {
         connect(mpIconViewToolButton, SIGNAL(toggled(bool)), SLOT(showIconView(bool)));
@@ -6142,7 +6140,6 @@ void ModelWidget::createModelWidgetComponents()
       mpModelStatusBar->addPermanentWidget(mpModelFilePathLabel, 1);
       mpModelStatusBar->addPermanentWidget(mpFileLockToolButton, 0);
       // set layout
-      mpMainLayout->addWidget(mpModelStatusBar);
       if (MainWindow::instance()->isDebug() && mpUndoView) {
         mpMainLayout->addWidget(mpUndoView);
       }
