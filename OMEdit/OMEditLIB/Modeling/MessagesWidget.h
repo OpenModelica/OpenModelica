@@ -147,6 +147,7 @@ public:
   int getSimulationOutputTabsSize();
   SimulationOutputWidget* getSimulationOutputWidget(const QString &className);
   SimulationOutputWidget* getActiveSimulationOutputWidget();
+  void closeSimulationOutputWidgets(const QString &className);
   void startMCPMessageCollection();
   QList<MessageItem> takeMCPMessages();
 signals:

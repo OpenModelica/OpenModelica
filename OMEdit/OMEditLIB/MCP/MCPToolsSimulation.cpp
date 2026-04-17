@@ -84,6 +84,7 @@ static QImage getPlotImage(OMPlot::PlotWindow *pPlotWindow) {
  */
 static QString waitAndCheckCompilation(SimulationOutputWidget *output)
 {
+    QCoreApplication::processEvents(); // Important: the flag is set in a slot, so we must process events to observe it.
     while (output->isCompilationProcessRunning() || output->isPostCompilationProcessRunning()) {
         QCoreApplication::processEvents();
     }
@@ -112,6 +113,7 @@ static QString waitAndCheckCompilation(SimulationOutputWidget *output)
  */
 static QString waitAndCheckSimulationRun(SimulationOutputWidget *output)
 {
+    QCoreApplication::processEvents(); // Important: the flag is set in a slot, so we must process events to observe it.
     while (!output->isSimulationProcessRunning() && !output->getSimulationProcess()) {
         QCoreApplication::processEvents();
     }
@@ -367,6 +369,26 @@ QHttpServerResponse MCPServer::handleSimulationTool(const QString &toolName, QJs
         if (!pLibraryTreeItem) {
             return makeMCPError(id, QString("Model not found: %1").arg(className));
         }
+
+        // Guard against concurrent simulate calls.  The waitAndCheckCompilation and
+        // waitAndCheckSimulationRun helpers spin with QCoreApplication::processEvents(),
+        // which allows the Qt HTTP server to dispatch a second incoming simulate request
+        // before the first one has finished.  Two concurrent make(1) processes sharing
+        // the same working directory race on the generated C source files and produce
+        // spurious build errors (e.g. "PID_Controller_literals.h: No such file").
+        static bool simulationInProgress = false;
+        if (simulationInProgress) {
+            return makeMCPError(id, QString("A simulation is already in progress. "
+                                           "Wait for it to finish before calling simulate again."));
+        }
+        simulationInProgress = true;
+        // Use a local struct so the flag is always cleared when this scope exits,
+        // whether by return, exception, or fall-through.
+        struct SimulationGuard {
+            ~SimulationGuard() { simulationInProgress = false; }
+        } guard;
+        Q_UNUSED(guard)
+
         // Temporarily disable "save before simulation" so MCP can simulate unsaved models.
         QCheckBox *pSaveCheckBox = OptionsDialog::instance()->getSimulationPage()->getSaveClassBeforeSimulationCheckBox();
         bool savedChecked = pSaveCheckBox->isChecked();
@@ -376,28 +398,35 @@ QHttpServerResponse MCPServer::handleSimulationTool(const QString &toolName, QJs
         // Compile the model without launching the simulation executable so that
         // we can inspect the generated external-functions manifest before any
         // untrusted binary ever runs.
+        // Close any old (completed) simulation output tabs for this class first so
+        // that getSimulationOutputWidget() reliably finds the one we are about to
+        // create rather than a stale tab from a previous run.
+        MessagesWidget::instance()->closeSimulationOutputWidgets(className);
+        QCoreApplication::processEvents();
         mainWindow->simulateBuildOnly(pLibraryTreeItem);
         pSaveCheckBox->setChecked(savedChecked);
         QCoreApplication::processEvents();
 
         SimulationOutputWidget *buildOutput = MessagesWidget::instance()->getSimulationOutputWidget(className);
         if (!buildOutput) {
-            return makeMCPError(id, QString("Simulation output not found for model: %1").arg(className));
-        }
-        QString compilationError = waitAndCheckCompilation(buildOutput);
-        if (!compilationError.isEmpty()) {
-            return makeMCPError(id, QString("Compilation of %1: %2").arg(className, compilationError));
+            return makeMCPError(id, QString("Translation of %1 failed. Check the Messages window for details.").arg(className));
         }
 
         // ── Phase 2: external-function whitelist check ─────────────────────────
+        // translateModel() (called inside simulateBuildOnly) is synchronous, so the
+        // _external_functions.json manifest is already on disk before compilation
+        // has had a chance to finish (or to delete any intermediate files).
         QString externalFunctionError = checkExternalFunctions(buildOutput->getSimulationOptions());
         if (!externalFunctionError.isEmpty()) {
             return makeMCPError(id, QString("Simulation of %1 blocked: %2").arg(className, externalFunctionError));
         }
 
-        // ── Phase 3: run the already-compiled executable ───────────────────────
-        // The build-only phase produced the simulation binary; we just need to
-        // launch it.  No second compilation pass is needed.
+        // ── Phase 3: wait for compilation, then run the executable ────────────
+        QString compilationError = waitAndCheckCompilation(buildOutput);
+        if (!compilationError.isEmpty()) {
+            return makeMCPError(id, QString("Compilation of %1: %2").arg(className, compilationError));
+        }
+
         buildOutput->startSimulationAfterBuild();
         QString error = waitAndCheckSimulationRun(buildOutput);
         if (!error.isEmpty()) {
