@@ -59,7 +59,8 @@ getErrorString();
 //         \"columnStart\": 7,
 //         \"lineEnd\": 38,
 //         \"columnEnd\": 13,
-//         \"name\": \"P1.M\"
+//         \"name\": \"P1.M\",
+//         \"class\": \"P3.A\"
 //       }
 //     ]
 //   }
