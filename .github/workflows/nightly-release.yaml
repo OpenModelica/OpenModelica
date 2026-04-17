@@ -14,9 +14,8 @@ jobs:
 
       - name: Create zip
         run: |
-
           cd ..
-          zip ${{ github.event.repository.name }}/${{ github.event.repository.name }}-nightly.zip ${{ github.event.repository.name }} -r
+          zip -x '*/.git/*' ${{ github.event.repository.name }}/${{ github.event.repository.name }}-nightly.zip ${{ github.event.repository.name }} -r
 
       - uses: pyTooling/Actions/releaser@r0
         with:
