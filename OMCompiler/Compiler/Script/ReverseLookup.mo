@@ -77,12 +77,19 @@ protected
     record PATHS
       PathTree.Tree tree;
       list<String> relativePath;
+      list<String> currentPath;
     end PATHS;
+
+    function currentPathStr
+      input Paths paths;
+      output String str = stringDelimitList(listReverse(paths.currentPath), ".");
+    end currentPathStr;
   end Paths;
 
   uniontype Match
     record MATCH
       Absyn.ComponentRef name;
+      String scope;
       SourceInfo info;
     end MATCH;
   end Match;
@@ -110,13 +117,13 @@ public
 
     if AbsynUtil.pathEqual(scope, Absyn.Path.IDENT("AllLoadedClasses")) then
       tree := addPath(path, PathTree.new());
-      paths := Paths.PATHS(tree, AbsynUtil.pathToStringList(path));
+      paths := Paths.PATHS(tree, AbsynUtil.pathToStringList(path), {});
       matches := lookupInProgram(program, paths, exactMatch);
     else
       opt_path := AbsynUtil.pathStripSamePrefix(path, scope);
       relative_path := Util.getOptionOrDefault(opt_path, path);
       tree := addPath(relative_path, PathTree.new());
-      paths := Paths.PATHS(tree, AbsynUtil.pathToStringList(relative_path));
+      paths := Paths.PATHS(tree, AbsynUtil.pathToStringList(relative_path), {});
 
       try
         cls := InteractiveUtil.getPathedClassInProgram(scope, program);
@@ -204,7 +211,7 @@ protected
     input output Matches matches;
   algorithm
     if lookupPath(path, paths.tree, exactMatch) then
-      matches := Match.MATCH(AbsynUtil.pathToCref(path), info) :: matches;
+      matches := Match.MATCH(AbsynUtil.pathToCref(path), Paths.currentPathStr(paths), info) :: matches;
     end if;
   end matchPath;
 
@@ -252,7 +259,7 @@ protected
     input output Matches matches;
   algorithm
     if lookupCref(cref, paths.tree, exactMatch) then
-      matches := Match.MATCH(cref, info) :: matches;
+      matches := Match.MATCH(cref, Paths.currentPathStr(paths), info) :: matches;
     end if;
   end matchCref;
 
@@ -348,25 +355,30 @@ protected
       end if;
     end if;
 
-    matches := lookupInClassDef(cls.body, local_paths, exactMatch, cls.info, matches);
+    matches := lookupInClassDef(cls.body, cls.name, local_paths, exactMatch, cls.info, matches);
   end lookupInClass;
 
   function lookupInClassDef
     input Absyn.ClassDef cdef;
+    input String name;
     input Paths paths;
     input Boolean exactMatch;
     input SourceInfo info;
     input output Matches matches;
+  protected
+    Paths local_paths = paths;
   algorithm
     matches := match cdef
       case Absyn.ClassDef.PARTS()
         algorithm
+          local_paths.currentPath := name :: local_paths.currentPath;
+
           for part in cdef.classParts loop
-            matches := lookupInClassPart(part, paths, exactMatch, info, matches);
+            matches := lookupInClassPart(part, local_paths, exactMatch, info, matches);
           end for;
 
           for ann in cdef.ann loop
-            matches := lookupInAnnotation(ann, paths, exactMatch, matches);
+            matches := lookupInAnnotation(ann, local_paths, exactMatch, matches);
           end for;
         then
           matches;
@@ -392,16 +404,18 @@ protected
 
       case Absyn.ClassDef.CLASS_EXTENDS()
         algorithm
+          local_paths.currentPath := name :: local_paths.currentPath;
+
           for arg in cdef.modifications loop
-            matches := lookupInElementArg(arg, paths, exactMatch, matches);
+            matches := lookupInElementArg(arg, local_paths, exactMatch, matches);
           end for;
 
           for part in cdef.parts loop
-            matches := lookupInClassPart(part, paths, exactMatch, info, matches);
+            matches := lookupInClassPart(part, local_paths, exactMatch, info, matches);
           end for;
 
           for ann in cdef.ann loop
-            matches := lookupInAnnotation(ann, paths, exactMatch, matches);
+            matches := lookupInAnnotation(ann, local_paths, exactMatch, matches);
           end for;
         then
           matches;
@@ -1192,6 +1206,7 @@ protected
       for m in group loop
         json_elem := NFApi.dumpJSONSourceInfo(m.info, dumpFilename = false);
         json_elem := JSON.addPair("name", JSON.makeString(Dump.printComponentRefStr(m.name)), json_elem);
+        json_elem := JSON.addPair("class", JSON.makeString(m.scope), json_elem);
         json_elems := json_elem :: json_elems;
       end for;
 

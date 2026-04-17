@@ -65,14 +65,16 @@ getErrorString();
 //         \"columnStart\": 7,
 //         \"lineEnd\": 9,
 //         \"columnEnd\": 19,
-//         \"name\": \"P1.M\"
+//         \"name\": \"P1.M\",
+//         \"class\": \"P1.A\"
 //       },
 //       {
 //         \"lineStart\": 13,
 //         \"columnStart\": 7,
 //         \"lineEnd\": 13,
 //         \"columnEnd\": 16,
-//         \"name\": \"M\"
+//         \"name\": \"M\",
+//         \"class\": \"P1.B\"
 //       }
 //     ]
 //   },
@@ -84,7 +86,8 @@ getErrorString();
 //         \"columnStart\": 19,
 //         \"lineEnd\": 9,
 //         \"columnEnd\": 35,
-//         \"name\": \".P1.M\"
+//         \"name\": \".P1.M\",
+//         \"class\": \"P2.B\"
 //       }
 //     ]
 //   },
@@ -96,7 +99,8 @@ getErrorString();
 //         \"columnStart\": 7,
 //         \"lineEnd\": 4,
 //         \"columnEnd\": 13,
-//         \"name\": \"P1.M\"
+//         \"name\": \"P1.M\",
+//         \"class\": \"P3.A\"
 //       }
 //     ]
 //   }
