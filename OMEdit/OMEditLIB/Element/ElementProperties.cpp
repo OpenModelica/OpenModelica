@@ -1683,9 +1683,6 @@ void ElementParameters::setUpDialog()
   applyModifier(mpReplaceableConstrainedByModifier, true);
   // Apply the modifiers that are given in the redeclaration of the replaceable class or component.
   applyModifier(mpElementModifier, false);
-  // move Modifiers tab to the end
-  int lastIndex = mpParametersTabWidget->count() - 1;
-  mpParametersTabWidget->tabBar()->moveTab(1, lastIndex);
 
   foreach (Parameter *pParameter, mParametersList) {
     ParametersScrollArea *pParametersScrollArea = qobject_cast<ParametersScrollArea*>(mpParametersTabWidget->widget(mTabsMap.value(pParameter->getTab())));
@@ -1740,8 +1737,8 @@ void ElementParameters::setUpDialog()
       }
     }
   }
-  // Issue #7494. Hide any empty tab. We start the loop from 1 since we don't want to remove General tab which is always the first tab.
-  for (int i = 1; i < mpParametersTabWidget->count(); ++i) {
+  // Issue #7494. Hide any empty tab. We start the loop from 2 since we don't want to remove General and Modifiers tabs.
+  for (int i = 2; i < mpParametersTabWidget->count(); ++i) {
     ParametersScrollArea *pParametersScrollArea = qobject_cast<ParametersScrollArea*>(mpParametersTabWidget->widget(i));
     if (pParametersScrollArea) {
       bool tabIsEmpty = true;
@@ -1760,6 +1757,9 @@ void ElementParameters::setUpDialog()
       }
     }
   }
+  // move Modifiers tab to the end
+  int lastIndex = mpParametersTabWidget->count() - 1;
+  mpParametersTabWidget->tabBar()->moveTab(1, lastIndex);
   // Create the buttons
   mpOkButton = new QPushButton(Helper::ok);
   mpOkButton->setAutoDefault(true);
