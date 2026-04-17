@@ -240,6 +240,8 @@ public:
   static QString loading;
   static QString question;
   static QString search;
+  static QString findUsage;
+  static QString findUsageTip;
   static QString duplicate;
   static QString duplicateTip;
   static QString unloadClass;

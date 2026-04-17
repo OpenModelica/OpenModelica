@@ -38,6 +38,7 @@
 #include "Modeling/ModelWidgetContainer.h"
 #include "Options/OptionsDialog.h"
 #include "Modeling/MessagesWidget.h"
+#include "Search/FindUsageWidget.h"
 #include "OMS/OMSProxy.h"
 #include "Modeling/LibraryTreeWidget.h"
 #include "Modeling/ElementTreeWidget.h"
@@ -50,9 +51,6 @@
 #include "Modeling/DocumentationWidget.h"
 #include "Plotting/VariablesWidget.h"
 #include "Search/SearchWidget.h"
-#if !defined(WITHOUT_OSG)
-#include "Animation/ViewerWidget.h"
-#endif
 #include "Util/Helper.h"
 #include "Simulation/ArchivedSimulationsWidget.h"
 #include "Simulation/SimulationOutputWidget.h"
@@ -71,7 +69,6 @@
 #include "Git/CleanDialog.h"
 #include "Git/GitCommands.h"
 #include "Traceability/TraceabilityInformationURI.h"
-#include "Traceability/TraceabilityGraphViewWidget.h"
 #include "Plotting/DiagramWindow.h"
 #include "Interfaces/InformationInterface.h"
 #include "Interfaces/ModelInterface.h"
@@ -269,6 +266,14 @@ void MainWindow::setUpMainWindow(threadData_t *threadData)
   mpElementDockWidget->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
   mpElementDockWidget->setWidget(mpElementWidget);
   addDockWidget(Qt::LeftDockWidgetArea, mpElementDockWidget);
+  // Create an object of FindUsageWidget.
+  FindUsageWidget::create();
+  // Create FindUsageDockWidget dock
+  mpFindUsageDockWidget = new QDockWidget(tr("Find Usage"), this);
+  mpFindUsageDockWidget->setObjectName("FindUsage");
+  mpFindUsageDockWidget->setWidget(FindUsageWidget::instance());
+  addDockWidget(Qt::BottomDockWidgetArea, mpFindUsageDockWidget);
+  mpFindUsageDockWidget->hide();
   // Create an object of SearchWidget
   mpSearchWidget = new SearchWidget(this);
   mpSearchDockWidget = new QDockWidget(tr("Search"),this);
@@ -829,6 +834,8 @@ void MainWindow::beforeClosingMainWindow()
   // close any result file
   // delete the MessagesWidget object
   MessagesWidget::destroy();
+  // delete the FindUsageWidget object
+  FindUsageWidget::destroy();
   // set restoring state to true so we don't try to save the toolbars settings after deleting the setting object.
   mRestoringState = true;
   delete pSettings;
@@ -4327,6 +4334,7 @@ void MainWindow::createMenus()
   pViewWindowsMenu->addAction(mpDocumentationDockWidget->toggleViewAction());
   pViewWindowsMenu->addAction(mpVariablesDockWidget->toggleViewAction());
   pViewWindowsMenu->addAction(mpMessagesDockWidget->toggleViewAction());
+  pViewWindowsMenu->addAction(mpFindUsageDockWidget->toggleViewAction());
   pViewWindowsMenu->addAction(mpSearchDockWidget->toggleViewAction());
   pViewWindowsMenu->addAction(mpStackFramesDockWidget->toggleViewAction());
   pViewWindowsMenu->addAction(mpBreakpointsDockWidget->toggleViewAction());

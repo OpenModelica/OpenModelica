@@ -18,6 +18,7 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
 
 set(OMEDITLIB_SOURCES Util/Helper.cpp
+                      Search/FindUsageWidget.cpp
                       Util/Utilities.cpp
                       Util/StringHandler.cpp
                       Util/OutputPlainTextEdit.cpp
@@ -150,6 +151,7 @@ set(OMEDITLIB_SOURCES Util/Helper.cpp
 
 set(OMEDITLIB_HEADERS MCP/MCPServer.h
                       Util/Helper.h
+                      Search/FindUsageWidget.h
                       Util/Utilities.h
                       Util/StringHandler.h
                       Util/OutputPlainTextEdit.h

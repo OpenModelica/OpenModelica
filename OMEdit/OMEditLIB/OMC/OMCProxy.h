@@ -279,6 +279,7 @@ public:
   QJsonObject modifierToJSON(const QString &modifier, bool prettyPrint = false);
   int storeAST();
   bool restoreAST(int id);
+  QJsonArray reverseLookup(const QString &className, const QString &scope = QString("AllLoadedClasses"), bool exactMatch = true, bool prettyPrint = false);
   bool clear();
 signals:
   void commandFinished();
