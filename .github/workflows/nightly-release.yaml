@@ -16,10 +16,10 @@ jobs:
         run: |
 
           cd ..
-          zip ${{ github.event.repository.name }}/${{ github.event.repository.name }}-nightly-${{github.sha}}.zip ${{ github.event.repository.name }} -r
+          zip ${{ github.event.repository.name }}/${{ github.event.repository.name }}-nightly.zip ${{ github.event.repository.name }} -r
 
       - uses: pyTooling/Actions/releaser@r0
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           tag: nightly
-          files: ${{ github.event.repository.name }}-nightly-${{github.sha}}.zip
+          files: ${{ github.event.repository.name }}-nightly.zip
