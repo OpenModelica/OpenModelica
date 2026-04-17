@@ -214,6 +214,22 @@ public
     functions := FunctionTree.map(functions, expandSlicedCrefsFunction);
   end expandSlicedCrefs;
 
+  function addTrailingWholeIndices
+    "Add implicit trailing subscripts to array expressions.
+    E.g. for Real[10,2] a this will replace a[i] with a[i,:]."
+    input output Expression exp;
+  algorithm
+    exp := match exp
+      case Expression.CREF()
+        guard ComponentRef.hasImplicitTrailingIndex(exp.cref)
+        algorithm
+          exp.cref := ComponentRef.fillSubscripts(exp.cref);
+        then exp;
+
+      else exp;
+    end match;
+  end addTrailingWholeIndices;
+
   function expandSlicedCrefsExp
     input output Expression exp;
   algorithm
@@ -252,8 +268,11 @@ public
     Expression e1, e2;
   algorithm
     eq := match eq
+      local
+        Equation eq2;
       case Equation.EQUALITY(rhs = e1)
         algorithm
+          e1:= Expression.map(e1, addTrailingWholeIndices);
           e2 := Expression.map(e1, expandSlicedCrefsExp);
 
           if not referenceEq(e1, e2) then
@@ -264,6 +283,7 @@ public
 
       case Equation.ARRAY_EQUALITY(rhs = e1)
         algorithm
+          e1 := Expression.map(e1, addTrailingWholeIndices);
           e2 := Expression.map(e1, expandSlicedCrefsExp);
 
           if not referenceEq(e1, e2) then
@@ -272,7 +292,10 @@ public
         then
           eq;
 
-      else Equation.mapExpShallow(eq, function Expression.map(func = expandSlicedCrefsExp));
+      else
+        algorithm
+          eq2 := Equation.mapExpShallow(eq, function Expression.map(func = addTrailingWholeIndices));
+        then Equation.mapExpShallow(eq2, function Expression.map(func = expandSlicedCrefsExp));
     end match;
   end expandSlicedCrefsEq;
 
@@ -288,8 +311,12 @@ public
     Expression e1, e2;
   algorithm
     stmt := match stmt
+      local
+        Statement stmt2;
       case Statement.ASSIGNMENT(rhs = e1)
         algorithm
+          stmt.lhs := Expression.map(stmt.lhs, addTrailingWholeIndices);
+          e1 := Expression.map(e1, addTrailingWholeIndices);
           e2 := Expression.map(e1, expandSlicedCrefsExp);
 
           if not referenceEq(e1, e2) then
@@ -298,7 +325,10 @@ public
         then
           stmt;
 
-      else Statement.mapExpShallow(stmt, function Expression.map(func = expandSlicedCrefsExp));
+      else
+        algorithm
+          stmt2 := Statement.mapExpShallow(stmt, function Expression.map(func = addTrailingWholeIndices));
+        then Statement.mapExpShallow(stmt2, function Expression.map(func = expandSlicedCrefsExp));
     end match;
   end expandSlicedCrefsStmt;
 

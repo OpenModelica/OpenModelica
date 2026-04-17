@@ -1995,6 +1995,12 @@ algorithm
   end if;
 
   (cref, subsVariability) := typeCref2(cref, context, info);
+
+  // Fill all implicit array subscripts with explicit `:`
+  if ComponentRef.hasImplicitTrailingIndex(cref) then
+    cref := ComponentRef.fillSubscripts(cref);
+  end if;
+
   ty := ComponentRef.getSubscriptedType(cref);
   nodeVariability := ComponentRef.nodeVariability(cref);
 end typeCref;

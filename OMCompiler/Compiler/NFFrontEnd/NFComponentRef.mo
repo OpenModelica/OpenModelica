@@ -1113,7 +1113,9 @@ public
   end mapSubscripts;
 
   function fillSubscripts
-    "Fills in any unsubscripted dimensions in the cref with : subscripts."
+    "Fills in any unsubscripted dimensions in the cref with : subscripts,
+     appending them at the end to preserve subscript order.
+     E.g. a[i] for Real[10,2] becomes a[i,:]."
     input output ComponentRef cref;
   algorithm
     () := match cref
@@ -2406,6 +2408,22 @@ public
       else false;
     end match;
   end isSliced;
+
+  function hasImplicitTrailingIndex
+    "Returns true if the outermost cref component has fewer subscripts than
+     dimensions.
+     E.g. a[i] where a : Real[10,2] returns true, because
+     one scalar index is given but a second dimension is left implicit (:)."
+    input ComponentRef cref;
+    output Boolean res;
+  algorithm
+    res := match cref
+      case CREF(origin = Origin.CREF)
+        then not listEmpty(cref.subscripts) and
+             listLength(cref.subscripts) < Type.dimensionCount(cref.ty);
+      else false;
+    end match;
+  end hasImplicitTrailingIndex;
 
   function iterate
     input output ComponentRef cref;
