@@ -379,7 +379,7 @@ QHttpServerResponse MCPServer::handleDiagramTool(const QString &toolName, QJsonV
     pLineAnnotation->manhattanizeShape();
     pLineAnnotation->setStartElementName(firstComponent);
     pLineAnnotation->setEndElementName(secondComponent);
-    ModelInstance::Connection *pConnection = pGraphicsView->createModelInstanceConnection(pModel, pLineAnnotation);
+    pGraphicsView->createModelInstanceConnection(pModel, pLineAnnotation);
     pGraphicsView->addConnectionToView(pLineAnnotation, false);
     pGraphicsView->addConnectionToClass(pLineAnnotation);
     pModelWidget->updateModelText();
@@ -487,6 +487,7 @@ QHttpServerResponse MCPServer::handleDiagramTool(const QString &toolName, QJsonV
         connectors.append(QJsonObject{
           {"name", fullName},
           {"className", pEl->getClassName()},
+          {"condition", pEl->isCondition()},
           {"x", pos.x()},
           {"y", pos.y()}
         });
