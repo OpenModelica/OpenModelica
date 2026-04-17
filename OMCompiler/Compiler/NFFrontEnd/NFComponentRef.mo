@@ -1128,7 +1128,7 @@ public
           sub_count := listLength(cref.subscripts);
 
           if sub_count < dim_count then
-            cref.subscripts := listAppend(List.fill(Subscript.WHOLE(), dim_count - sub_count), cref.subscripts);
+            cref.subscripts := listAppend(cref.subscripts, List.fill(Subscript.WHOLE(), dim_count - sub_count));
           end if;
 
           cref.restCref := fillSubscripts(cref.restCref);
