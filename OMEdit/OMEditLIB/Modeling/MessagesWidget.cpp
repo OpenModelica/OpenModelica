@@ -567,6 +567,24 @@ SimulationOutputWidget* MessagesWidget::getActiveSimulationOutputWidget()
 }
 
 /*!
+ * \brief MessagesWidget::closeSimulationOutputWidgets
+ * Closes all completed SimulationOutputWidget tabs for \a className.
+ * Tabs whose compilation or simulation is still running are left open.
+ * \param className The Modelica class name to match against.
+ */
+void MessagesWidget::closeSimulationOutputWidgets(const QString &className)
+{
+  for (int i = fixedTabsCount; i < mpMessagesTabWidget->count(); ++i) {
+    SimulationOutputWidget *pSimulationOutputWidget = qobject_cast<SimulationOutputWidget*>(mpMessagesTabWidget->widget(i));
+    if (pSimulationOutputWidget && pSimulationOutputWidget->getSimulationOptions().getClassName() == className) {
+      if (closeTab(i)) {
+        --i;
+      }
+    }
+  }
+}
+
+/*!
  * \brief MessagesWidget::closeTab
  * Removes the tab from MessagesWidget.
  * Returns true if tab is removed.
