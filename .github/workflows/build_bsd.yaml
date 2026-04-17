@@ -2,10 +2,11 @@
 name: Build FreeBSD
 
 on:
-  push:
-    branches:
-      - master
+  workflow_dispatch:
   pull_request:
+    types:
+      - labeled
+      - synchronize
     paths-ignore:
       - 'doc/**'
 
@@ -39,4 +40,3 @@ jobs:
           cmake -S . -B build_cmake
           cmake --build build_cmake --target install --parallel 2
           ./build_cmake/install_cmake/bin/omc --help
-
