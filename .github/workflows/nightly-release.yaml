@@ -1,11 +1,13 @@
 name: nightly-release
 
 on:
-  push
+  workflow_dispatch:
+  push:
+    branches:
+      - master
 
 jobs:
-  build: # run only on pushes to the default branch (master)
-    if: github.ref_name == github.event.repository.default_branch
+  build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
