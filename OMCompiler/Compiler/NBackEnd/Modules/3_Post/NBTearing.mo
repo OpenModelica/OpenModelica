@@ -519,7 +519,7 @@ protected
               if UnorderedMap.contains(full.equation_names[i], unsolved_equations) then
                 solve_opt := NONE();
                 success := false;
-                for cref in UnorderedSet.toList(full.occurences[i]) loop
+                for cref in UnorderedSet.toList(full.occurrences[i]) loop
                   stripped := ComponentRef.stripSubscriptsAll(cref);
                   if UnorderedMap.contains(stripped, unsolved_inner_vars) then
                     if isNone(solve_opt) then
@@ -612,7 +612,7 @@ protected
     end eqnIsLinear;
   algorithm
     linear := match full
-      case Adjacency.Matrix.FULL() then UnorderedMap.all(e, function eqnIsLinear(occ = full.occurences, sol = full.solvabilities, v = v));
+      case Adjacency.Matrix.FULL() then UnorderedMap.all(e, function eqnIsLinear(occ = full.occurrences, sol = full.solvabilities, v = v));
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " expected type full, got type " + Adjacency.Matrix.strictnessString(Adjacency.Matrix.getStrictness(full)) + "."});
       then fail();
