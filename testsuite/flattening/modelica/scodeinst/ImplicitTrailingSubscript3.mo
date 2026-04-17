@@ -10,13 +10,12 @@ function initFunc
   output Real newArray[3, 2];
 algorithm
   newArray[1:2] := oldArray[2:3];
+  newArray[3] := {0,0};
 end initFunc;
 
 model ImplicitTrailingSubscript3
   Real a[3, 2] = fill({1,2}, 3);
-  Real b[3, 2] = fill({3,4}, 3);
-equation
-  b = initFunc(a);
+  Real b[3, 2] = initFunc(a);
 end ImplicitTrailingSubscript3;
 
 // Result:
@@ -24,7 +23,8 @@ end ImplicitTrailingSubscript3;
 //   input Real[3, 2] oldArray;
 //   output Real[3, 2] newArray;
 // algorithm
-//   newArray[1:2, :] := oldArray[2:3, :];
+//   newArray[1:2,:] := oldArray[2:3,:];
+//   newArray[3,:] := {0.0, 0.0};
 // end initFunc;
 //
 // class ImplicitTrailingSubscript3
@@ -42,7 +42,6 @@ end ImplicitTrailingSubscript3;
 //   Real b[3,2];
 // equation
 //   a = {{1.0, 2.0}, {1.0, 2.0}, {1.0, 2.0}};
-//   b = {{3.0, 4.0}, {3.0, 4.0}, {3.0, 4.0}};
 //   b = initFunc(a);
 // end ImplicitTrailingSubscript3;
 // endResult
