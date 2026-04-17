@@ -912,8 +912,6 @@ public
       // with expandable connector elements, treat the dimensions as unknown.
       outSubscripts := list(simplify(s, Dimension.UNKNOWN()) for s in subscripts);
     else
-      rest_d := List.lastN(dimensions, listLength(subscripts));
-
       for s in subscripts loop
         d :: rest_d := rest_d;
         outSubscripts := simplify(s, d) :: outSubscripts;
