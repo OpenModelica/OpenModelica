@@ -22,7 +22,7 @@ class AssertTest
   Real y;
 equation
   der(x) = -y;
-  y = if x<0.51 then f(x) else 1;
+  y = if x < 0.51 then f(x) else 1;
 equation
 end AssertTest;
 
