@@ -1501,12 +1501,12 @@ public
               var := fromCref(start_cref, Variable.attributes(getVar(cref, sourceInfo())));
               // update the variable to be a start variable and pass the pointer to the original variable
               var.backendinfo := BackendInfo.setVarKind(var.backendinfo, VariableKind.START(old_var_ptr));
-              BackendInfo.setVarStart(var.backendinfo, SOME(old_var_ptr));
+              var.backendinfo := BackendInfo.setVarStart(var.backendinfo, SOME(old_var_ptr));
               // create the new variable pointer and safe it to the component reference
               (var_ptr, start_cref) := makeVarPtrCyclic(var, start_cref);
               // save the var_ptr to the old var as its start var
               old_var := Pointer.access(old_var_ptr);
-              BackendInfo.setVarStart(old_var.backendinfo, SOME(var_ptr));
+              old_var.backendinfo := BackendInfo.setVarStart(old_var.backendinfo, SOME(var_ptr));
               Pointer.update(old_var_ptr, old_var);
             then (start_cref, var_ptr);
           end match;
