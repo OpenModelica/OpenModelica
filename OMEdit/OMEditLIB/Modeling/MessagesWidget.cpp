@@ -288,6 +288,22 @@ void MessageWidget::addGUIMessage(MessageItem messageItem)
 }
 
 /*!
+ * \brief MessageWidget::showContextMenu
+ * Shows a context menu when user right click on the Messages tree.
+ * Slot activated when mpMessagesTextBrowser customContextMenuRequested signal is raised.
+ * \param point
+ */
+void MessageWidget::showContextMenu(QPoint point)
+{
+  QMenu menu(this);
+  menu.addAction(mpSelectAllAction);
+  menu.addAction(mpCopyAction);
+  menu.addAction(mpClearThisTabAction);
+  menu.addAction(mpClearAllTabsAction);
+  menu.exec(mpMessagesTextBrowser->viewport()->mapToGlobal(point));
+}
+
+/*!
  * \brief MessageWidget::openErrorMessageClass
  * Slot activated when a link e.g., "<a href="omeditmessagesbrowser:///className?lineNumber=4></a>" is clicked from MessagesWidget.\n
  * Parses the url and loads the Modelica class with the line selected.
@@ -326,22 +342,6 @@ void MessageWidget::openErrorMessageClass(QUrl url)
                              GUIMessages::getMessage(GUIMessages::CLASS_NOT_FOUND)
                              .arg(className), QMessageBox::Ok);
   }
-}
-
-/*!
- * \brief MessageWidget::showContextMenu
- * Shows a context menu when user right click on the Messages tree.
- * Slot activated when mpMessagesTextBrowser customContextMenuRequested signal is raised.
- * \param point
- */
-void MessageWidget::showContextMenu(QPoint point)
-{
-  QMenu menu(this);
-  menu.addAction(mpSelectAllAction);
-  menu.addAction(mpCopyAction);
-  menu.addAction(mpClearThisTabAction);
-  menu.addAction(mpClearAllTabsAction);
-  menu.exec(mpMessagesTextBrowser->viewport()->mapToGlobal(point));
 }
 
 /*!

@@ -36,7 +36,6 @@
 #include "Helper.h"
 #include "StringHandler.h"
 #include "OMC/OMCProxy.h"
-#include "Modeling/ItemDelegate.h"
 #include "Editors/BaseEditor.h"
 #include "OMPlot.h"
 
@@ -68,9 +67,7 @@ TreeSearchFilters::TreeSearchFilters(QWidget *pParent)
   : QWidget(pParent)
 {
   // create the filter text box
-  mpFilterTextBox = new QLineEdit;
-  mpFilterTextBox->installEventFilter(this);
-  mpFilterTextBox->setClearButtonEnabled(true);
+  mpFilterTextBox = new LineEdit;
   connect(this, SIGNAL(clearFilter(QString)), mpFilterTextBox, SIGNAL(textEdited(QString)));
   // filter timer
   mpFilterTimer = new QTimer(this);
@@ -137,33 +134,6 @@ TreeSearchFilters::TreeSearchFilters(QWidget *pParent)
   pMainLayout->addWidget(mpShowHideButton, 0, 4);
   pMainLayout->addWidget(mpFiltersWidget, 1, 0, 1, 5);
   setLayout(pMainLayout);
-}
-
-/*!
- * \brief TreeSearchFilters::eventFilter
- * Handles the ESC key press for filter text box
- * \param pObject
- * \param pEvent
- * \return
- */
-bool TreeSearchFilters::eventFilter(QObject *pObject, QEvent *pEvent)
-{
-  /* Ticket #3987
-   * Clear contents of filter field by clicking ESC key.
-   */
-  QLineEdit *pFilterTextBox = qobject_cast<QLineEdit*>(pObject);
-  if (pFilterTextBox && pEvent->type() == QEvent::KeyPress) {
-    QKeyEvent *pKeyEvent = static_cast<QKeyEvent*>(pEvent);
-    if (pKeyEvent && pKeyEvent->key() == Qt::Key_Escape) {
-      pFilterTextBox->clear();
-      /* Ticket #5998
-       * Emit clearFilter signal which calls textEdited signal of mpFilterTextBox to reset filter.
-       */
-      emit clearFilter("");
-      return true;
-    }
-  }
-  return QWidget::eventFilter(pObject, pEvent);
 }
 
 void TreeSearchFilters::showHideFilters(bool On)
@@ -314,6 +284,43 @@ void Label::resizeEvent(QResizeEvent *event)
 {
   QLabel::resizeEvent(event);
   QLabel::setText(elidedText());
+}
+
+/*!
+ * \class LineEdit
+ * \brief Subclass for QLineEdit with clear button enabled and ESC key support to clear the text.
+ */
+/*!
+ * \brief LineEdit::LineEdit
+ * Creates a LineEdit with clear button enabled.
+ * \param parent
+ */
+LineEdit::LineEdit(QWidget *parent)
+  : QLineEdit(parent)
+{
+  setClearButtonEnabled(true);
+}
+
+/*!
+ * \brief LineEdit::keyPressEvent
+ * Reimplementation of QLineEdit::keyPressEvent.\n
+ * \param event
+ */
+void LineEdit::keyPressEvent(QKeyEvent *event)
+{
+  /* Ticket #3987
+   * Clear contents of filter field by clicking ESC key.
+   */
+  if (event->key() == Qt::Key_Escape) {
+    clear();
+    /* Ticket #5998
+     * Emit textEdited. Used by filter text box to reset filter.
+     */
+    emit textEdited("");
+    event->accept();
+  } else {
+    QLineEdit::keyPressEvent(event);
+  }
 }
 
 ComboBox::ComboBox(QWidget *parent)

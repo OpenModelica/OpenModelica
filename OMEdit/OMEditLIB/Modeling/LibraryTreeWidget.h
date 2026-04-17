@@ -360,6 +360,7 @@ private:
   QAction *mpSimulateWithAnimationAction;
 #endif
   QAction *mpSimulationSetupAction;
+  QAction *mpFindUsageAction;
   QAction *mpDuplicateClassAction;
   QAction *mpUnloadClassAction;
   QAction *mpReloadClassAction;
@@ -411,6 +412,7 @@ public slots:
   void translateCRML();
   void translateAsCRML();
   void runScript();
+  void findUsageOfClass();
   void duplicateClass();
   void unloadClass();
   void reloadClass();

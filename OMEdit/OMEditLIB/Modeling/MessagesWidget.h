@@ -95,9 +95,9 @@ public:
   void applyMessagesSettings();
   void addGUIMessage(MessageItem messageItem);
 private slots:
-  void openErrorMessageClass(QUrl url);
   void showContextMenu(QPoint point);
 public slots:
+  void openErrorMessageClass(QUrl url);
   void clearThisTabMessages();
   void clearAllTabsMessages();
 };

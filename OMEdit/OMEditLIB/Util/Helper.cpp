@@ -234,6 +234,8 @@ QString Helper::fitToDiagram;
 QString Helper::loading;
 QString Helper::question;
 QString Helper::search;
+QString Helper::findUsage;
+QString Helper::findUsageTip;
 QString Helper::duplicate;
 QString Helper::duplicateTip;
 QString Helper::unloadClass;
@@ -565,6 +567,8 @@ void Helper::initHelperVariables()
   Helper::loading = tr("Loading");
   Helper::question = tr("Question");
   Helper::search = tr("Search");
+  Helper::findUsage = tr("Find Usage");
+  Helper::findUsageTip = tr("Finds the usage of class");
   Helper::duplicate = tr("Duplicate");
   Helper::duplicateTip = tr("Duplicates the item");
   Helper::unloadClass = tr("Unload");

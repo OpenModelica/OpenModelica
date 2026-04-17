@@ -3498,6 +3498,42 @@ bool OMCProxy::restoreAST(int id)
 }
 
 /*!
+ * \brief OMCProxy::reverseLookup
+ * Searches for uses of the given name in either all loaded classes or a given class.
+ * \param className
+ * \param scope
+ * \param exactMatch
+ * \param prettyPrint
+ * \return
+ */
+QJsonArray OMCProxy::reverseLookup(const QString &className, const QString &scope, bool exactMatch, bool prettyPrint)
+{
+  QString resultJson = mpOMCInterface->reverseLookup(className, scope, exactMatch, prettyPrint);
+  printMessagesStringInternal();
+  if (!resultJson.isEmpty()) {
+    QJsonParseError jsonParserError;
+    QJsonDocument doc = QJsonDocument::fromJson(resultJson.toUtf8(), &jsonParserError);
+    // Check for parse errors
+    if (jsonParserError.error != QJsonParseError::NoError) {
+      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
+                                                            QString("Failed to parse reverse lookup json for class %1 with error %2.")
+                                                            .arg(className, jsonParserError.errorString()),
+                                                            Helper::scriptingKind, Helper::errorLevel));
+      return QJsonArray();
+    }
+    // Ensure root is an array
+    if (!doc.isArray()) {
+      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
+                                                            QString("Expected JSON array for class %1 but got different type.")
+                                                            .arg(className), Helper::scriptingKind, Helper::errorLevel));
+      return QJsonArray();
+    }
+    return doc.array();
+  }
+  return QJsonArray();
+}
+
+/*!
  * \brief OMCProxy::clear
  * Clears all loaded classes.
  */

@@ -131,6 +131,7 @@ public:
   PlotWindowContainer* getPlotWindowContainer() {return mpPlotWindowContainer;}
   VariablesWidget* getVariablesWidget() {return mpVariablesWidget;}
   QDockWidget* getVariablesDockWidget() {return mpVariablesDockWidget;}
+  QDockWidget* getFindUsageDockWidget() {return mpFindUsageDockWidget;}
   SearchWidget* getSearchWidget() {return mpSearchWidget;}
   SimulationDialog* getSimulationDialog() {return mpSimulationDialog;}
   OMSSimulationDialog* getOMSSimulationDialog() {return mpOMSSimulationDialog;}
@@ -277,6 +278,7 @@ private:
   QDockWidget *mpLibraryDockWidget;
   ElementWidget *mpElementWidget;
   QDockWidget *mpElementDockWidget;
+  QDockWidget *mpFindUsageDockWidget;
   GDBAdapter *mpGDBAdapter;
   StackFramesWidget *mpStackFramesWidget;
   QDockWidget *mpStackFramesDockWidget;

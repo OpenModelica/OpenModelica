@@ -49,6 +49,7 @@
 #include "Git/GitCommands.h"
 #include "Git/CommitChangesDialog.h"
 #include "Util/ResourceCache.h"
+#include "Search/FindUsageWidget.h"
 
 #include <QClipboard>
 #include <QDockWidget>
@@ -2818,6 +2819,10 @@ void LibraryTreeView::createActions()
   mpSimulationSetupAction = new QAction(QIcon(":/Resources/icons/simulation-center.svg"), Helper::simulationSetup, this);
   mpSimulationSetupAction->setStatusTip(Helper::simulationSetupTip);
   connect(mpSimulationSetupAction, SIGNAL(triggered()), SLOT(simulationSetup()));
+  // find usage Action
+  mpFindUsageAction = new QAction(Helper::findUsage, this);
+  mpFindUsageAction->setStatusTip(Helper::findUsageTip);
+  connect(mpFindUsageAction, SIGNAL(triggered()), SLOT(findUsageOfClass()));
   // Duplicate action
   /* Ticket #3265
    * Changed the name from Copy to Duplicate.
@@ -3093,6 +3098,8 @@ void LibraryTreeView::showContextMenu(QPoint point)
           if (pLibraryTreeItem->getRestriction() == StringHandler::ModelicaClasses::Function) {
             menu.addAction(mpCallFunctionAction);
           }
+          menu.addSeparator();
+          menu.addAction(mpFindUsageAction);
           /* If item is OpenModelica or part of it then don't show the duplicate menu item for it. */
           if (!(StringHandler::getFirstWordBeforeDot(pLibraryTreeItem->getNameStructure()).compare("OpenModelica") == 0)) {
             menu.addSeparator();
@@ -3517,6 +3524,19 @@ void LibraryTreeView::runScript()
   LibraryTreeItem *pLibraryTreeItem = getSelectedLibraryTreeItem();
   if (pLibraryTreeItem) {
     MainWindow::instance()->runScript(pLibraryTreeItem);
+  }
+}
+
+/*!
+ * \brief LibraryTreeView::findUsageOfClass
+ * Calls FindUsageWidget to find the usage of the selected LibraryTreeItem.
+ */
+void LibraryTreeView::findUsageOfClass()
+{
+  LibraryTreeItem *pLibraryTreeItem = getSelectedLibraryTreeItem();
+  if (pLibraryTreeItem) {
+    FindUsageWidget::instance()->findUsageOfClass(pLibraryTreeItem->getNameStructure());
+    MainWindow::instance()->getFindUsageDockWidget()->show();
   }
 }
 
