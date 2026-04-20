@@ -358,6 +358,24 @@ public
       merged_name := name;
     end if;
     (start_name, start_var) := BVariable.makeStartVar(merged_name);
+
+    // set the record parent if neccessary
+    start_var := match BVariable.getParent(var_ptr)
+      local
+        Pointer<Variable> parent, start_parent;
+      case SOME(parent) algorithm
+        start_parent := match BVariable.getVarStart(parent)
+          case SOME(start_parent) then start_parent;
+          else algorithm
+            (_, _, start_parent, _) := createStartVar(parent, BVariable.getVarName(parent), {});
+          then start_parent;
+        end match;
+        // create the parent <-> child link
+        BVariable.addRecordChild(start_parent, start_var);
+        start_var := BVariable.setParent(start_var, start_parent);
+      then start_var;
+      else start_var;
+    end match;
   end createStartVar;
 
   function createParameterEquations
