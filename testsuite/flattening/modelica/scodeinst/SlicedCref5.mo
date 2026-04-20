@@ -26,7 +26,7 @@ end SlicedCref5;
 //   Real y[3,1];
 //   Real y[3,2];
 // algorithm
-//   x[1:2] := y[2:3];
-//   x[:] := y[3:-1:1];
+//   x[1:2,:] := y[2:3,:];
+//   x[:,:] := y[3:-1:1,:];
 // end SlicedCref5;
 // endResult

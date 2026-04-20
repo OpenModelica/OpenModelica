@@ -783,6 +783,9 @@ ImplicitRangeInvalid1.mo \
 ImplicitRangeInvalid2.mo \
 ImplicitRangeType1.mo \
 ImplicitRangeType2.mo \
+ImplicitTrailingSubscript1.mo \
+ImplicitTrailingSubscript2.mo \
+ImplicitTrailingSubscript3.mo \
 ImportComponent1.mo \
 ImportConflict1.mo \
 ImportConflict2.mo \

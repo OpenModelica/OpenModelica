@@ -19,6 +19,7 @@ ArrayReturn.mos \
 ArraySlice.mos \
 ArraySlice2.mos \
 ArraySliceAssigmentFunction.mos \
+ArrayWithImplicitSubscripts.mos \
 AsubCrefExpType.mos \
 BooleanArray.mos \
 BooleanArray2.mos \
