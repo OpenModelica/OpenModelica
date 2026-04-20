@@ -2210,8 +2210,11 @@ fmi2Status fmi2DoStep(fmi2Component c, fmi2Real currentCommunicationPoint, fmi2R
 {
   ModelInstance *comp = (ModelInstance *)c;
   fmi2CallbackFunctions* functions = (fmi2CallbackFunctions*)comp->functions;
+  threadData_t *threadData = comp->threadData;
+  jmp_buf *old_jmp = threadData->mmc_jumper;
   int i, zc_event = 0, time_event = 0;
   int flag;
+  int done = 0;
 
   fmi2Status status = fmi2OK;
   fmi2Real* states = comp->states;
@@ -2228,6 +2231,12 @@ fmi2Status fmi2DoStep(fmi2Component c, fmi2Real currentCommunicationPoint, fmi2R
     return fmi2Error;
 
   MemPoolState doStep_pool_state = omc_util_get_pool_state();
+
+  setThreadData(comp);
+
+  /* try */
+  MMC_TRY_INTERNAL(simulationJumpBuffer)
+    threadData->mmc_jumper = threadData->simulationJumpBuffer;
 
   eventInfo.newDiscreteStatesNeeded           = fmi2False;
   eventInfo.terminateSimulation               = fmi2False;
@@ -2252,7 +2261,8 @@ fmi2Status fmi2DoStep(fmi2Component c, fmi2Real currentCommunicationPoint, fmi2R
   }
 #endif
 
-  internalEventIteration(c, &eventInfo);
+  status = internalEventIteration(c, &eventInfo);
+  if (status != fmi2OK) goto doStep_cleanup;
 
   /* Integration loop */
   while (status == fmi2OK && comp->fmuData->localData[0]->timeValue < tEnd)
@@ -2269,22 +2279,25 @@ fmi2Status fmi2DoStep(fmi2Component c, fmi2Real currentCommunicationPoint, fmi2R
         double dt = comp->fmuData->localData[0]->timeValue - t;
         double new_input_value = realInputDerivatives[mappedIndex] + comp->input_real_derivative[mappedIndex] * dt;
         if (setReal(comp, i, new_input_value) != fmi2OK) // to be implemented by the includer of this file
-          return fmi2Error;
+        {
+          status = fmi2Error;
+          goto doStep_cleanup;
+        }
       }
     }
 #endif
 
 #if NUMBER_OF_STATES > 0
     status = internalGetDerivatives(c, states_der, NUMBER_OF_STATES);
-    if (status != fmi2OK) return fmi2Error;
+  if (status != fmi2OK) goto doStep_cleanup;
 
     status = internalGetContinuousStates(c, states, NUMBER_OF_STATES);
-    if (status != fmi2OK) return fmi2Error;
+  if (status != fmi2OK) goto doStep_cleanup;
 #endif
 
 #if NUMBER_OF_EVENT_INDICATORS > 0
     status = internalGetEventIndicators(c, event_indicators_prev, NUMBER_OF_EVENT_INDICATORS);
-    if (status != fmi2OK) return fmi2Error;
+  if (status != fmi2OK) goto doStep_cleanup;
 #endif
 
     /* adjust for time events */
@@ -2313,16 +2326,19 @@ fmi2Status fmi2DoStep(fmi2Component c, fmi2Real currentCommunicationPoint, fmi2R
         if (flag < 0)
         {
           FILTERED_LOG(comp, fmi2Fatal, LOG_STATUSFATAL, "fmi2DoStep: CVODE integrator step failed.")
-          return fmi2Fatal;
+          status = fmi2Fatal;
+          goto doStep_cleanup;
         }
 #else
         FILTERED_LOG(comp, fmi2Fatal, LOG_STATUSFATAL, "fmi2DoStep: FMU not compiled with SUNDIALS but solver CVODE selected.")
-        return fmi2Fatal;
+        status = fmi2Fatal;
+        goto doStep_cleanup;
 #endif /* WITH_SUNDIALS */
         break;
       default:
         FILTERED_LOG(comp, fmi2Fatal, LOG_STATUSFATAL, "fmi2DoStep: Unknown solver method %d.", comp->solverInfo->solverMethod)
-        return fmi2Fatal;
+        status = fmi2Fatal;
+        goto doStep_cleanup;
     }
 
     // update time
@@ -2339,7 +2355,10 @@ fmi2Status fmi2DoStep(fmi2Component c, fmi2Real currentCommunicationPoint, fmi2R
         double dt = comp->fmuData->localData[0]->timeValue - t;
         double new_input_value = realInputDerivatives[mappedIndex] + comp->input_real_derivative[mappedIndex] * dt;
         if (setReal(comp, i, new_input_value) != fmi2OK) // to be implemented by the includer of this file
-          return fmi2Error;
+        {
+          status = fmi2Error;
+          goto doStep_cleanup;
+        }
       }
     }
 #endif
@@ -2347,17 +2366,17 @@ fmi2Status fmi2DoStep(fmi2Component c, fmi2Real currentCommunicationPoint, fmi2R
     /* set the continuous states */
 #if NUMBER_OF_STATES > 0
     status = internalSetContinuousStates(c, states, NUMBER_OF_STATES);
-    if (status != fmi2OK) return fmi2Error;
+    if (status != fmi2OK) goto doStep_cleanup;
 #endif
 
     /* signal completed integrator step */
     status = internal_CompletedIntegratorStep(c, fmi2True, &enterEventMode, &terminateSimulation);
-    if (status != fmi2OK) return fmi2Error;
+    if (status != fmi2OK) goto doStep_cleanup;
 
     /* check for events */
 #if NUMBER_OF_EVENT_INDICATORS > 0
     status = internalGetEventIndicators(c, event_indicators, NUMBER_OF_EVENT_INDICATORS);
-    if (status != fmi2OK) return fmi2Error;
+  if (status != fmi2OK) goto doStep_cleanup;
 
     for (i = 0; i < NUMBER_OF_EVENT_INDICATORS; i++)
     {
@@ -2382,13 +2401,14 @@ fmi2Status fmi2DoStep(fmi2Component c, fmi2Real currentCommunicationPoint, fmi2R
       eventInfo.valuesOfContinuousStatesChanged   = fmi2True;
       eventInfo.nextEventTimeDefined              = fmi2False;
       eventInfo.nextEventTime                     = 0.0;
-      internalEventIteration(c, &eventInfo);
+      status = internalEventIteration(c, &eventInfo);
+      if (status != fmi2OK) goto doStep_cleanup;
 
       if (eventInfo.valuesOfContinuousStatesChanged)
       {
         #if NUMBER_OF_STATES > 0
           status = internalGetContinuousStates(c, states, NUMBER_OF_STATES);
-          if (status != fmi2OK) return fmi2Error;
+          if (status != fmi2OK) goto doStep_cleanup;
         #endif
       }
 
@@ -2396,20 +2416,38 @@ fmi2Status fmi2DoStep(fmi2Component c, fmi2Real currentCommunicationPoint, fmi2R
       {
         #if NUMBER_OF_STATES > 0
           status = internalGetNominalsOfContinuousStates(c, states, NUMBER_OF_STATES);
-          if (status != fmi2OK) return fmi2Error;
+          if (status != fmi2OK) goto doStep_cleanup;
         #endif
       }
 
       #if NUMBER_OF_EVENT_INDICATORS > 0
         status = internalGetEventIndicators(c, event_indicators_prev, NUMBER_OF_EVENT_INDICATORS);
-        if (status != fmi2OK) return fmi2Error;
+        if (status != fmi2OK) goto doStep_cleanup;
       #endif
 
       comp->solverInfo->didEventStep = 1;
     }
   }
 
+  done = 1;
+
+  /* catch */
+  MMC_CATCH_INTERNAL(simulationJumpBuffer)
+
+doStep_cleanup:
+  threadData->mmc_jumper = old_jmp;
   omc_util_restore_pool_state(doStep_pool_state);
+  resetThreadData(comp);
+
+  if (!done)
+  {
+    if (status == fmi2OK)
+    {
+      FILTERED_LOG(comp, fmi2Error, LOG_FMI2_CALL, "fmi2DoStep: terminated by an assertion.")
+      status = fmi2Error;
+    }
+  }
+
   return status;
 }
 
