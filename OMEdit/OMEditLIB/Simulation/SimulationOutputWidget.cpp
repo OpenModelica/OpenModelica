@@ -356,9 +356,7 @@ SimulationOutputWidget::SimulationOutputWidget(SimulationOptions simulationOptio
                         << "%1_records.o"
                         << "%1_includes.h"
                         << "%1_literals.h"
-                        << "%1_model.h"
-                        << "%1_JacLSJac*.bin"
-                        << "%1_JacNLSJac*.bin";
+                        << "%1_model.h";
   }
   // replace %1 with the output file name in the generated files list.
   for (QString &file : mGeneratedFilesList) {
