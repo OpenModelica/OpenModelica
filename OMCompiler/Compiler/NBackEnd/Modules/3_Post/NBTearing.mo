@@ -152,7 +152,7 @@ public
           bdae.ode := tearingTraverser(bdae.ode, funcs, bdae.funcMap, eq_index, kind);
       then bdae;
 
-      case (NBPartition.Kind.INI, BackendDAE.MAIN(eqData = BEquation.EQ_DATA_SIM(uniqueIndex = eq_index)))
+      case (_, BackendDAE.MAIN(eqData = BEquation.EQ_DATA_SIM(uniqueIndex = eq_index))) guard(Partition.kindIsInitial(kind))
         algorithm
           bdae.init := tearingTraverser(bdae.init, funcs, bdae.funcMap, eq_index, kind);
           if Util.isSome(bdae.init_0) then
@@ -346,7 +346,7 @@ protected
     list<ComponentRef> vars_lst, eqns_lst;
     UnorderedSet<ComponentRef> vars_set       "all loop vars, used to determine solvability";
     UnorderedMap<ComponentRef, Integer> v, e  "all loop vars and equations map";
-    constant Boolean init = kind == NBPartition.Kind.INI;
+    constant Boolean init = Partition.kindIsInitial(kind);
   algorithm
     (comp, full, index) := match comp
       case StrongComponent.ALGEBRAIC_LOOP(strict = strict) algorithm
@@ -365,7 +365,7 @@ protected
         e := UnorderedMap.subMap(equations.map, eqns_lst);
 
         // refine the adjacency matrix by updating solvability information
-        full := Adjacency.Matrix.refine(full, funcMap, v, e, variables, equations, vars_set, kind == NBPartition.Kind.INI);
+        full := Adjacency.Matrix.refine(full, funcMap, v, e, variables, equations, vars_set, Partition.kindIsInitial(kind));
         comp.linear := checkLinearity(full, v, e);
       then (comp, full, index);
       else (comp, full, index);
@@ -415,7 +415,7 @@ protected
         // split equations and variables for discretes and continuous
         vars_lst := list(Slice.getT(var) for var in strict.iteration_vars);
         eqns_lst := list(Slice.getT(eqn) for eqn in strict.residual_eqns);
-        (cont_vars, disc_vars) := filterDiscreteVariables(vars_lst, kind == NBPartition.Kind.INI);
+        (cont_vars, disc_vars) := filterDiscreteVariables(vars_lst, Partition.kindIsInitial(kind));
         (cont_eqns, disc_eqns) := List.splitOnTrue(eqns_lst, Equation.isContinousRecordAware);
         num_vars := sum(BVariable.size(var) for var in disc_vars);
         num_eqns := sum(Equation.size(eqn) for eqn in disc_eqns);
@@ -477,7 +477,7 @@ protected
     EqnSlice solve_eqn;
     Boolean success, var_assigned;
     ComponentRef stripped;
-    constant Boolean init = kind == NBPartition.Kind.INI;
+    constant Boolean init = Partition.kindIsInitial(kind);
   algorithm
     comp := match (comp, full)
       case (StrongComponent.ALGEBRAIC_LOOP(strict = strict), Adjacency.FULL()) algorithm

@@ -102,7 +102,7 @@ public
           bdae.eqData := eqData;
       then bdae;
 
-      case (NBPartition.Kind.INI, BackendDAE.MAIN(init = partitions, varData = varData, eqData = eqData))
+      case (_, BackendDAE.MAIN(init = partitions, varData = varData, eqData = eqData)) guard(Partition.kindIsInitial(kind))
         algorithm
           if Flags.isSet(Flags.INITIALIZATION) then
             print(StringUtil.headline_1("Balance Initialization") + "\n");
@@ -149,7 +149,7 @@ public
     end for;
     new_partitions := listReverse(new_partitions);
 
-    if kind <> NBPartition.Kind.INI then
+    if not Partition.kindIsInitial(kind) then
       for partition in new_partitions loop
         violated := checkSystemVariabilities(partition) or violated;
       end for;
@@ -254,7 +254,7 @@ protected
         list<Pointer<Equation>> initials, simulation;
         UnorderedMap<ComponentRef, Integer> vo, vn, eo, en;
 
-      case kind as NBPartition.Kind.INI algorithm
+      case kind guard(Partition.kindIsInitial(kind)) algorithm
         // compress the arrays to remove gaps
         partition.unknowns   := VariablePointers.compress(partition.unknowns);
         partition.equations  := EquationPointers.compress(partition.equations);
