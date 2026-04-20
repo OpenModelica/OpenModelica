@@ -274,6 +274,7 @@ fmi2Status internalEventUpdate(fmi2Component c, fmi2EventInfo* eventInfo)
   FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "internalEventUpdate: Start Event Update! Next Sample Event %g", eventInfo->nextEventTime)
 
   setThreadData(comp);
+  MemPoolState mem_pool_state = omc_util_get_pool_state();
   /* try */
   MMC_TRY_INTERNAL(simulationJumpBuffer)
 
@@ -370,6 +371,7 @@ fmi2Status internalEventUpdate(fmi2Component c, fmi2EventInfo* eventInfo)
 
   /* catch */
   MMC_CATCH_INTERNAL(simulationJumpBuffer)
+  omc_util_restore_pool_state(mem_pool_state);
   resetThreadData(comp);
 
   if (done) {
@@ -2225,6 +2227,8 @@ fmi2Status fmi2DoStep(fmi2Component c, fmi2Real currentCommunicationPoint, fmi2R
   if (invalidState(comp, "fmi2DoStep", 0, model_state_cs_step_complete))
     return fmi2Error;
 
+  MemPoolState doStep_pool_state = omc_util_get_pool_state();
+
   eventInfo.newDiscreteStatesNeeded           = fmi2False;
   eventInfo.terminateSimulation               = fmi2False;
   eventInfo.nominalsOfContinuousStatesChanged = fmi2False;
@@ -2405,6 +2409,7 @@ fmi2Status fmi2DoStep(fmi2Component c, fmi2Real currentCommunicationPoint, fmi2R
     }
   }
 
+  omc_util_restore_pool_state(doStep_pool_state);
   return status;
 }
 
