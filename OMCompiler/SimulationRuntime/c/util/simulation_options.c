@@ -154,6 +154,7 @@ const char *FLAG_NAME[FLAG_MAX+1] = {
   /* FLAG_SR_ERR */                       "gberr",
   /* FLAG_SR_INT */                       "gbint",
   /* FLAG_SR_NLS */                       "gbnls",
+  /* FLAG_SR_NLS_INTERNAL_DAMPING_FAC */  "gbnls_internal_damping",
   /* FLAG_SR_NLS_INTERNAL_JACKEEP */      "gbnls_internal_jackeep",
   /* FLAG_MR */                           "gbfm",
   /* FLAG_MR_CTRL */                      "gbfctrl",
@@ -308,6 +309,7 @@ const char *FLAG_DESC[FLAG_MAX+1] = {
   /* FLAG_SR_ERR */                       "Error estimation method for solver gbode (single-rate, slow states integrator).",
   /* FLAG_SR_INT */                       "Interpolation method of solver gbode (single-rate, slow states integrator)",
   /* FLAG_SR_NLS */                       "Non-linear solver method of solver gbode (single-rate, slow states integrator)",
+  /* FLAG_SR_NLS_INTERNAL_DAMPING_FAC */  "Value specifies damping applied to the estimated convergence rate in the first Newton iteration (0 <= value <= 1). Only valid for -gbnls=internal.",
   /* FLAG_SR_NLS_INTERNAL_JACKEEP */      "Value specifies how often the ODE Jacobian is recalculated (0 <= value < 1). Only valid for -gbnls=internal.",
   /* FLAG_MR */                           "Value specifies the chosen solver of solver gbode (multi-rate, fast states integrator)",
   /* FLAG_MR_CTRL */                      "Step size control of solver gbode (multi-rate, fast states integrator)",
@@ -650,6 +652,9 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   "  Interpolation method of solver gbode (single-rate, slow states integrator).",
   /* FLAG_SR_NLS */
   "  Non-linear solver method of solver gbode (single-rate, slow states integrator).",
+  /* FLAG_SR_NLS_INTERNAL_DAMPING_FAC */
+  "  Value specifies damping applied to the estimated convergence rate in the first Newton iteration (0 <= value <= 1; 0 = conservative, 1 = optimistic). Only valid for -gbnls=internal.\n"
+  "  Since no history is available in the first Newton iteration, the convergence rate is taken from the previous solve and raised to the power of this value.",
   /* FLAG_SR_NLS_INTERNAL_JACKEEP */
   "  Value specifies how often the ODE Jacobian is recalculated (0 <= value < 1). Only valid for -gbnls=internal.\n"
   "  The Jacobian is kept, if the linear convergence rate || dz_k || / || dz_{k-1} || of the Newton iteration is smaller than the specified value. Small values result in more Jacobian callbacks.",
@@ -838,6 +843,7 @@ const flag_repeat_policy FLAG_REPEAT_POLICIES[FLAG_MAX] = {
   /* FLAG_SR_ERR */                       FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_SR_INT */                       FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_SR_NLS */                       FLAG_REPEAT_POLICY_FORBID,
+  /* FLAG_SR_NLS_INTERNAL_DAMPING_FAC */  FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_SR_NLS_INTERNAL_JACKEEP */      FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_MR */                           FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_MR_CTRL */                      FLAG_REPEAT_POLICY_FORBID,
@@ -991,6 +997,7 @@ const int FLAG_TYPE[FLAG_MAX] = {
   /* FLAG_SR_ERR */                       FLAG_TYPE_OPTION,
   /* FLAG_SR_INT */                       FLAG_TYPE_OPTION,
   /* FLAG_SR_NLS */                       FLAG_TYPE_OPTION,
+  /* FLAG_SR_NLS_INTERNAL_DAMPING_FAC */  FLAG_TYPE_OPTION,
   /* FLAG_SR_NLS_INTERNAL_JACKEEP */      FLAG_TYPE_OPTION,
   /* FLAG_MR */                           FLAG_TYPE_OPTION,
   /* FLAG_MR_CTRL */                      FLAG_TYPE_OPTION,

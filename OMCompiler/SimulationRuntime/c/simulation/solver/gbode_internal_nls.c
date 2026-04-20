@@ -108,6 +108,7 @@ typedef struct GB_INTERNAL_NLS_DATA
   int *nls_diag_indices;             // all diagonal nz indices of NLS Jacobian (size = cols)
   double *scal;                      // scaling vector for termination of Newton loop
   double *etas;                      // Newton contraction factors for each NLS stage (size == number of stages)
+  double eta_inital_damping;         // Initial damping factor eta_new = eta_old^eta_initial_damping
   Tolerances tol_integrator;         // Integrator / user provided tolerances
   Tolerances tol_scaled;             // scaled Integrator tolerances
   double fnewt;                      // Newton tolerance: if eta * norm(dx) <= fnewt -> convergence
@@ -868,7 +869,7 @@ static NLS_SOLVER_STATUS gbInternalSolveNls_DIRK(DATA *data,
     }
     else
     {
-      nls->etas[stage] = pow(fmax(nls->etas[stage], DBL_EPSILON), 0.8);
+      nls->etas[stage] = pow(fmax(nls->etas[stage], DBL_EPSILON), nls->eta_inital_damping);
     }
 
     if (!isfinite(nls->etas[stage]) || !isfinite(nrm_delta))
@@ -1333,7 +1334,7 @@ static NLS_SOLVER_STATUS gbInternalSolveNls_T_Transform(DATA *data,
     }
     else
     {
-      *nls->etas = pow(fmax(*nls->etas, DBL_EPSILON), 0.8);
+      *nls->etas = pow(fmax(*nls->etas, DBL_EPSILON), nls->eta_inital_damping);
     }
 
     if (!isfinite(*nls->etas) || !isfinite(nrm_delta))
@@ -1554,8 +1555,27 @@ void *gbInternalNlsAllocate(int size,
     nls->fnewt = fmax(DBL_ABSORPTION / nls->tol_scaled.rtol, fmin(alpha_maximal, fnewt_prop));
   }
 
+  // damping power for eta
+  if (omc_flag[FLAG_SR_NLS_INTERNAL_DAMPING_FAC])
+  {
+    double eta_damping = atof(omc_flagValue[FLAG_SR_NLS_INTERNAL_DAMPING_FAC]);
+
+    if (eta_damping > 1.0 || eta_damping < 0.0)
+    {
+      throwStreamPrint(NULL, "Invalid value %1.6e for flag '-gbnls_internal_damping'. Value must be less or equal to 1 and greater or equal to 0.", eta_damping);
+    }
+    else
+    {
+      nls->eta_inital_damping = eta_damping;
+    }
+  }
+  else
+  {
+    nls->eta_inital_damping = 0.8;
+  }
+
   // add a history of thetas_last + #newt iterations to detect nearly linear systems, similar to err controller
-  if(omc_flag[FLAG_SR_NLS_INTERNAL_JACKEEP])
+  if (omc_flag[FLAG_SR_NLS_INTERNAL_JACKEEP])
   {
     double keep_flag_value = atof(omc_flagValue[FLAG_SR_NLS_INTERNAL_JACKEEP]);
     if (keep_flag_value >= 1.0)
