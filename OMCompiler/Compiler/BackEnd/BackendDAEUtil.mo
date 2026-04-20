@@ -1928,6 +1928,12 @@ algorithm
         newCref := ComponentReference.prependStringCref(BackendDAE.outputAliasPrefix, cref);
         newVar := BackendVariable.copyVarNewName(newCref, v);
         newVar := BackendVariable.setVarDirection(newVar, DAE.BIDIR());
+        newVar := BackendVariable.setVarKind(newVar, BackendDAE.VARIABLE());
+        /* fix issue https://github.com/OpenModelica/OpenModelica/issues/15311
+         * force StateSelect.never on the alias variable so that state selection never picks the alias
+         * instead of original state variable, which would cause wrong code generation and simulation results.
+         */
+        newVar := BackendVariable.setVarStateSelect(newVar, DAE.NEVER());
         newVars := BackendVariable.addVar(newVar, newVars);
 
         /*fix issue https://github.com/OpenModelica/OpenModelica/issues/13342
