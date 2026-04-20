@@ -52,6 +52,13 @@ extern void dgemv_(const char *trans,
                    const double *beta, double *y, const int *incY
 );
 
+/* y := a * x + y */
+extern void daxpy_(const int *n,
+                   const double *alpha,
+                   const double *x, const int *incX,
+                   double *y, const int *incY);
+
+static const double DBL_ZERO = 0.0;
 static const double DBL_ONE = 1.0;
 static const int INT_ONE = 1;
 static const char CHAR_NO_TRANS = 'N';
@@ -187,27 +194,34 @@ void setTTransform(BUTCHER_TABLEAU *tableau, const double *A_part_inv, const dou
 // TODO: Describe me
 void denseOutput(BUTCHER_TABLEAU* tableau, double* yOld, double* x, double* k, double dt, double stepSize, double* y, int nIdx, int* idx, int nStates)
 {
-  for (int stage = 0; stage < tableau->nStages; stage++)
-  {
-    tableau->b_dt[stage] *= dt * stepSize;
-  }
-
   if (idx == NULL)
   {
-    // y := yOld
-    memcpy(y, yOld, nStates * sizeof(double));
+    // split BLAS operations into matrix-vector product and axpy operation to ensure proper numerical stability in dgemv
+    // alternative: memcpy(y, yOld) and then provide beta = 1 instead of the additional axpy operation
+    // flops should be roughly the same in both cases
 
     // y := K * b_dt + y
     int nStages = (int)tableau->nStages;
+    double dt_h = dt * stepSize;
+
+    // y := dt * h * (K otimes I) * b_dt
     dgemv_(&CHAR_NO_TRANS,
            &nStates,
            &nStages,
-           &DBL_ONE, k, &nStates,
+           &dt_h, k, &nStates,
            tableau->b_dt, &INT_ONE,
-           &DBL_ONE, y, &INT_ONE);
+           &DBL_ZERO, y, &INT_ONE);
+
+    // y := yOld + y = yOld + dt * h * (K otimes I) * b_dt
+    daxpy_(&nStates, &DBL_ONE, yOld, &INT_ONE, y, &INT_ONE);
   }
   else
   {
+    for (int stage = 0; stage < tableau->nStages; stage++)
+    {
+      tableau->b_dt[stage] *= dt * stepSize;
+    }
+
     for (int ii = 0; ii < nIdx; ii++)
     {
       int state = idx[ii];
