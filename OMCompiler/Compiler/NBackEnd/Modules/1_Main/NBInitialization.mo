@@ -713,7 +713,7 @@ public
 
         // create init_0 if homotopy call exists.
         if Pointer.access(hasHom) then
-          init_0 := list(Partition.clone(par, false) for par in bdae.init);
+          init_0 := list(Partition.setKind(Partition.clone(par, false), NBPartition.Kind.INI_0) for par in bdae.init);
 
           // initial() -> true, initialSimplified() -> true
           init_0 := list(Partition.mapEqn(par, function cleanupInitialCall(init = true, init0 = true)) for par in init_0);

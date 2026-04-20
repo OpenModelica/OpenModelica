@@ -490,7 +490,7 @@ public
             (_, tmp) := col;
             nnz := nnz + listLength(tmp);
           end for;
-        then (SPARSITY_PATTERN(cols, rows, listReverse(col_vars), listReverse(row_vars), nnz), map);
+        then (SPARSITY_PATTERN(cols, rows, col_vars, row_vars, nnz), map);
 
         case NONE() algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of missing strong components."});
@@ -979,7 +979,7 @@ protected
     output Option<Jacobian> R0_jacobian;
   protected
     Partition.Kind kind = Partition.Partition.getKind(part);
-    Boolean init = (kind == NBPartition.Kind.INI); // TODO for parameter seed?
+    Boolean init = Partition.kindIsInitial(kind); // TODO for parameter seed?
     VariablePointers seedCandidates, partialCandidates;
   algorithm
     // Lfg Jacobian (Lagrange (L), ODE (f), Path Constraints (g))
@@ -1046,7 +1046,7 @@ protected
       state_vars := list(Util.getOption(BVariable.getVarState(var)) for var in derivative_vars);
       seedCandidates := VariablePointers.fromList(state_vars, partialCandidates.scalarized);
 
-      jacobian := func(name, jacType, seedCandidates, partialCandidates, part.equations, part.strongComponents, part.adjacencyMatrix, funcMap, kind == NBPartition.Kind.INI);
+      jacobian := func(name, jacType, seedCandidates, partialCandidates, part.equations, part.strongComponents, part.adjacencyMatrix, funcMap, Partition.kindIsInitial(kind));
 
       if Flags.getConfigBool(Flags.MOO_DYNAMIC_OPTIMIZATION) then
         /* Add Lfg + Mr Jacobians for MOO dynamic optimization */
@@ -1078,7 +1078,7 @@ protected
     Tearing strict;
     list<StrongComponent> residual_comps;
     list<VariablePointer> seed_candidates, residual_vars, inner_vars;
-    constant Boolean init = kind == NBPartition.Kind.INI;
+    constant Boolean init = Partition.kindIsInitial(kind);
   algorithm
     (comp, updated) := match comp
       case StrongComponent.ALGEBRAIC_LOOP(strict = strict) algorithm
@@ -1099,7 +1099,7 @@ protected
           full              = full,
           funcMap           = funcMap,
           name              = Partition.Partition.kindToString(kind) + (if comp.linear then "_LS_JAC_" else "_NLS_JAC_") + intString(comp.idx),
-          init              = kind == NBPartition.Kind.INI);
+          init              = Partition.kindIsInitial(kind));
         comp.strict := strict;
 
         if Flags.isSet(Flags.JAC_DUMP) then

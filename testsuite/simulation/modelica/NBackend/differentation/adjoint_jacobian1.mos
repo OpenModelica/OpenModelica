@@ -140,13 +140,13 @@ buildModel(scalarAdjointJacobian1); getErrorString();
 //
 // Sparsity Coloring Columns
 // ***************************
-//   {1}
 //   {0}
+//   {1}
 //
 // Sparsity Coloring Rows
 // ************************
-//   {1}
 //   {0}
+//   {1}
 //
 //
 //

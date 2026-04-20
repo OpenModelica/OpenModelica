@@ -2024,7 +2024,7 @@ public
       then set;
 
       // for homotopy outside initial system only look at `actual`
-      case Expression.CALL() guard kind <> NBPartition.Kind.INI and Call.isNamed(exp.call, "homotopy")
+      case Expression.CALL() guard (not Partition.kindIsInitial(kind) and Call.isNamed(exp.call, "homotopy"))
       then collectDependencies(listHead(Call.arguments(exp.call)), depth, kind, map, dep_map, sol_map, rep_set);
 
       // for array constructors replace all iterators (temporarily)
@@ -2394,7 +2394,7 @@ public
     input Partition.Kind kind;
   algorithm
     // only do something if its an initial partition
-    if kind == NBPartition.Kind.INI then
+    if Partition.kindIsInitial(kind) then
       for cref in UnorderedSet.toList(occs) loop
         _ := match BVariable.getVarStart(BVariable.getVarPointer(cref, sourceInfo()))
           local

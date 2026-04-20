@@ -154,7 +154,7 @@ public
     end try;
 
     // 2. Resolve singular partitions if necessary
-    if kind == NBPartition.Kind.INI then
+    if Partition.kindIsInitial(kind) then
       // ####### BALANCE INITIALIZATION #######
       (adj, full, vars, eqns, varData, eqData, changed) := ResolveSingularities.balanceInitialization(adj, full, vars, eqns, varData, eqData, kind, funcMap, matching, mapping);
     else
@@ -167,7 +167,7 @@ public
       // ToDo: keep more of old information by only updating changed stuff
       full  := Adjacency.Matrix.createFull(vars, eqns, kind);
       adj   := Adjacency.Matrix.fullToFinal(full, vars.map, eqns.map, eqns, matrixStrictness);
-      if kind == NBPartition.Kind.INI then
+      if Partition.kindIsInitial(kind) then
         // ####### DO NOT REDO BALANCING INITIALIZATION #######
         matching := regular(EMPTY_MATCHING, adj);
       else

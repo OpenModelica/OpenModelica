@@ -488,9 +488,10 @@ public
         bdae.ode := list(sys for sys guard(not Partition.Partition.isEmpty(sys)) in bdae.ode);
       then bdae;
 
-      case (NBPartition.Kind.INI, BackendDAE.MAIN(
+      case (_, BackendDAE.MAIN(
         varData = BVariable.VAR_DATA_SIM(initials = variables, clocks = clocks),
         eqData = BEquation.EQ_DATA_SIM(initials = equations, clocked = clocked)))
+        guard(Partition.kindIsInitial(kind))
       algorithm
         bdae.init := partitioningNone(kind, variables, equations, clocks, clocked, bdae.clockedInfo);
         bdae.init := list(sys for sys guard(not Partition.Partition.isEmpty(sys)) in bdae.init);
@@ -684,7 +685,7 @@ protected
     protected
       list<ComponentRef> cvars = UnorderedSet.toList(cluster.variables);
       list<ComponentRef> cidnt = UnorderedSet.toList(cluster.eqn_idnts);
-      Boolean isInit = kind == NBPartition.Kind.INI;
+      Boolean isInit = Partition.kindIsInitial(kind);
       Partition.Association association;
       list<Pointer<Variable>> var_lst, filtered_vars;
       list<Pointer<Equation>> eqn_lst;
@@ -799,7 +800,7 @@ protected
 
   function partitioningNone extends Module.partitioningInterface;
   protected
-    Boolean isInit = kind == NBPartition.Kind.INI;
+    Boolean isInit = Partition.kindIsInitial(kind);
     VariablePointers clone_vars;
     EquationPointers clone_eqns;
   algorithm

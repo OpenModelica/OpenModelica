@@ -95,13 +95,13 @@ buildModel(algebraicLoop); getErrorString();
 //
 // Sparsity Coloring Columns
 // ***************************
-//   {1}
 //   {0}
+//   {1}
 //
 // Sparsity Coloring Rows
 // ************************
-//   {1}
 //   {0}
+//   {1}
 //
 // ======================================================
 //   [EMPTY] SimCode Jacobian B(idx = 2, partition = 0)

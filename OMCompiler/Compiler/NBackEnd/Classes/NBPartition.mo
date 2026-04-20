@@ -65,7 +65,7 @@ protected
   import StringUtil;
 
 public
-  type Kind = enumeration(ODE, ALG, ODE_EVT, ALG_EVT, INI, DAE, JAC, CLK);
+  type Kind = enumeration(ODE, ALG, ODE_EVT, ALG_EVT, INI, INI_0, DAE, JAC, CLK);
 
   uniontype Association
     record CONTINUOUS
@@ -480,6 +480,22 @@ public
       Pointer.update(index, clock_idx + 1);
     end setIndex;
 
+    function setKind
+      input output Partition part;
+      input Kind kind;
+    algorithm
+      part.association := match part.association
+        local
+          Association ass;
+        case ass as Association.CONTINUOUS() algorithm
+          ass.kind := kind;
+        then ass;
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed. Cannot set kind for non-continuous partition:\n" + toString(part)});
+        then fail();
+      end match;
+    end setKind;
+
     function getJacobian
       input Partition part;
       output Option<Jacobian> jac;
@@ -595,6 +611,7 @@ public
         case Kind.ODE_EVT     then "ODE_EVT";
         case Kind.ALG_EVT     then "ALG_EVT";
         case Kind.INI         then "INI";
+        case Kind.INI_0       then "INI_0";
         case Kind.DAE         then "DAE";
         case Kind.JAC         then "JAC";
         case Kind.CLK         then "CLK";
@@ -614,9 +631,10 @@ public
         case Kind.ODE_EVT     then 2;
         case Kind.ALG_EVT     then 3;
         case Kind.INI         then 4;
-        case Kind.DAE         then 5;
-        case Kind.JAC         then 6;
-        case Kind.CLK         then 7;
+        case Kind.INI_0       then 5;
+        case Kind.DAE         then 6;
+        case Kind.JAC         then 7;
+        case Kind.CLK         then 8;
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed. Unknown partition kind in match."});
         then fail();
@@ -696,6 +714,12 @@ public
       part1.equations   := EquationPointers.addList(EquationPointers.toList(part2.equations), part1.equations);
     end merge;
   end Partition;
+
+
+  function kindIsInitial
+    input Kind kind;
+    output Boolean b = kind == Kind.INI or kind == Kind.INI_0;
+  end kindIsInitial;
 
   annotation(__OpenModelica_Interface="backend");
 end NBPartition;
