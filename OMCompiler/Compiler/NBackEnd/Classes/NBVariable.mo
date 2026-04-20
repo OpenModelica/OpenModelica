@@ -1500,7 +1500,11 @@ public
               start_cref := ComponentRef.append(ComponentRef.stripSubscriptsAll(cref), ComponentRef.fromNode(qual, ComponentRef.scalarType(cref)));
               var := fromCref(start_cref, Variable.attributes(getVar(cref, sourceInfo())));
               // update the variable to be a start variable and pass the pointer to the original variable
-              var.backendinfo := BackendInfo.setVarKind(var.backendinfo, VariableKind.START(old_var_ptr));
+              if BVariable.isRecord(old_var_ptr) then
+                var.backendinfo := BackendInfo.setVarKind(var.backendinfo, VariableKind.RECORD({}, NFPrefixes.Variability.PARAMETER, NFPrefixes.Variability.CONTINUOUS));
+              else
+                var.backendinfo := BackendInfo.setVarKind(var.backendinfo, VariableKind.START(old_var_ptr));
+              end if;
               var.backendinfo := BackendInfo.setVarStart(var.backendinfo, SOME(old_var_ptr));
               // create the new variable pointer and safe it to the component reference
               (var_ptr, start_cref) := makeVarPtrCyclic(var, start_cref);
