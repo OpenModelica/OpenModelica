@@ -8656,6 +8656,9 @@ algorithm
     // introduced by the symbolic transformations. Hence, this is
     // intended to be used for debugging.
     exportVar := SOME(var.varName);
+  elseif BackendVariable.isOutputAliasVar(var) then
+    // Always filter out output alias vars and their derivatives since they are only used for code generation and have no representation in the original model.
+    exportVar := NONE();
   elseif Flags.getConfigEnum(Flags.FMI_FILTER) == Flags.FMI_INTERNAL then
     // All internal variables introduced by the symbolic
     // transformations are filtered out. Only the variables from the
