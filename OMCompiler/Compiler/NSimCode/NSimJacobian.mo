@@ -333,7 +333,7 @@ public
               numberOfResultVars  = listLength(resVars),
               columnEqns          = columnEqns,
               constantEqns        = {},
-              columnVars          = resVars,
+              columnVars          = tmpVars,
               seedVars            = seedVars,
               sparsity            = sparsity,
               sparsityT           = sparsityT,
