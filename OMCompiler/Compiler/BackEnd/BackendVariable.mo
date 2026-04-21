@@ -1584,17 +1584,16 @@ algorithm
 end isOutputVar;
 
 public function isOutputAliasVar "Return true if variable is declared as output alias.
-  introduced by preoptmodule introduceOutputAliases"
+  introduce by preoptmodule introduceOutputAliases"
   input BackendDAE.Var inVar;
   output Boolean outBoolean;
 protected
+  DAE.ComponentRef cref;
   String s;
 algorithm
   outBoolean := match(inVar)
-    case (BackendDAE.VAR(varName = DAE.CREF_IDENT(ident = s)))
-      then StringUtil.startsWith(s, "$outputAlias");
-    case (BackendDAE.VAR(varName = DAE.CREF_QUAL(ident = DAE.derivativeNamePrefix, componentRef = DAE.CREF_IDENT(ident = s))))
-      then StringUtil.startsWith(s, "$outputAlias");
+    case (BackendDAE.VAR(varName = DAE.CREF_IDENT(ident= s))) then
+      if StringUtil.startsWith(s, "$outputAlias") then true else false;
     else false;
   end match;
 end isOutputAliasVar;
