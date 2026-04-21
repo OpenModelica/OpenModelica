@@ -1030,8 +1030,13 @@ public
           path := Function.nameConsiderBuiltin(call.fn);
           json := JSON.addPair("$kind", JSON.makeString("call"), json);
           json := JSON.addPair("name", JSON.makeString(AbsynUtil.pathString(path)), json);
-          json := JSON.addPair("arguments", JSON.makeArray(
-            list(Expression.toJSON(a) for a in call.arguments)), json);
+
+          if isNamed(call, "String") then
+            json := toJSONStringArgs(call.arguments, json);
+          else
+            json := JSON.addPair("arguments", JSON.makeArray(
+              list(Expression.toJSON(a) for a in call.arguments)), json);
+          end if;
         then
           ();
 
@@ -1062,6 +1067,53 @@ public
 
     end match;
   end toJSON;
+
+  function toJSONStringArgs
+    input list<Expression> args;
+    input output JSON json;
+  protected
+    Integer arg_count;
+    Expression value, arg;
+    list<Expression> rest_args;
+    list<JSON> json_args;
+
+    function make_arg
+      input String name;
+      input Expression value;
+      output JSON json = JSON.emptyListObject();
+    algorithm
+      json := JSON.addPair("$kind", JSON.makeString("named_arg"), json);
+      json := JSON.addPair(name, Expression.toJSON(value), json);
+    end make_arg;
+  algorithm
+    value :: rest_args := args;
+    arg_count := listLength(rest_args);
+    json_args := {Expression.toJSON(value)};
+
+    if arg_count == 1 then
+      arg :: _ := rest_args;
+      json_args := make_arg("format", arg) :: json_args;
+    else
+      if arg_count == 3 then
+        arg :: rest_args := rest_args;
+        if not Expression.isIntegerValue(arg, 6) then
+          json_args := make_arg("significantDigits", arg) :: json_args;
+        end if;
+      end if;
+
+      arg :: rest_args := rest_args;
+      if not Expression.isZero(arg) then
+        json_args := make_arg("minimumLength", arg) :: json_args;
+      end if;
+
+      arg :: rest_args := rest_args;
+      if not Expression.isTrue(arg) then
+        json_args := make_arg("leftJustified", arg) :: json_args;
+      end if;
+    end if;
+
+    json := JSON.addPair("arguments", JSON.makeList(listReverseInPlace(json_args)), json);
+  end toJSONStringArgs;
 
   function toAbsyn
     input Call call;

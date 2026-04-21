@@ -94,6 +94,7 @@ GetModelInstanceReplaceable5.mos \
 GetModelInstanceReplaceable6.mos \
 GetModelInstanceReplaceableComment.mos \
 GetModelInstanceStateMachine1.mos \
+GetModelInstanceString1.mos \
 ModifierToJSON1.mos \
 QualifyPath1.mos \
 
