@@ -6477,16 +6477,18 @@ bool ModelWidget::modelicaEditorTextChanged(LibraryTreeItem **pLibraryTreeItem)
   }
   /* if no errors are found with the Modelica Text then load it in OMC */
   QString className = classNames.at(0);
-  if (pParentLibraryTreeItem != mpLibraryTreeItem) {
-    // only use OMCProxy::loadString merge when LibraryTreeItem::SaveFolderStructure i.e., package.mo
-    if (!pOMCProxy->loadString(stringToLoad, pParentLibraryTreeItem->getFileName(), Helper::utf8, pParentLibraryTreeItem->isSaveFolderStructure())) {
-      return false;
-    }
-  } else {
-    // only use OMCProxy::loadString merge when LibraryTreeItem::SaveFolderStructure i.e., package.mo
-    if (!pOMCProxy->loadString(stringToLoad, mpLibraryTreeItem->getFileName(), Helper::utf8, mpLibraryTreeItem->isSaveFolderStructure())) {
-      return false;
-    }
+  LibraryTreeItem *pLibraryTreeItemForLoadString = pParentLibraryTreeItem != mpLibraryTreeItem ? pParentLibraryTreeItem : mpLibraryTreeItem;
+  /* if the model is not saved in a file and is only loaded in the interactive environment.
+   * Then we need to change the filename here since user might have changed the class name.
+   * So a model M might have been changed to N so we should update its file name to N as well.
+   */
+  QString fileName = pLibraryTreeItemForLoadString->getFileName();
+  if (!pLibraryTreeItemForLoadString->isFilePathValid()) {
+    fileName = className;
+  }
+  // only use OMCProxy::loadString merge when LibraryTreeItem::SaveFolderStructure i.e., package.mo
+  if (!pOMCProxy->loadString(stringToLoad, fileName, Helper::utf8, pLibraryTreeItemForLoadString->isSaveFolderStructure())) {
+    return false;
   }
   /* if user has changed the class contents then refresh it. */
   if (className.compare(mpLibraryTreeItem->getNameStructure()) == 0) {
