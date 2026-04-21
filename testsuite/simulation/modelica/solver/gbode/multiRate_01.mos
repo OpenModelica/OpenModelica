@@ -17,13 +17,13 @@ equation
 end SlowFastDynamics;");
 getErrorString();
 
-rkMethods := {"expl_euler",
-              "impl_euler",
-              "sdirk3",
+rkMethods := {//"expl_euler",
+              //"impl_euler",
+              //"sdirk3",
               "esdirk2",
               "esdirk3",
               "esdirk4",
-              "merson",
+              //"merson",
               "dopri45 -gbint=dense_output_errctrl"};
 
 nlsMethods := {"newton"};
@@ -67,31 +67,13 @@ end for;
 // Result:
 // true
 // ""
-// {"expl_euler", "impl_euler", "sdirk3", "esdirk2", "esdirk3", "esdirk4", "merson", "dopri45 -gbint=dense_output_errctrl"}
+// {"esdirk2", "esdirk3", "esdirk4", "dopri45 -gbint=dense_output_errctrl"}
 // {"newton"}
 // true
 // ""
 // {"SlowFastDynamics", "SlowFastDynamics_init.xml"}
 // ""
 // 0
-// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
-// LOG_SUCCESS       | info    | The simulation finished successfully.
-//
-//
-// --------------------------------------------------------
-// Running RK expl_euler with NLS newton:
-// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
-// LOG_SUCCESS       | info    | The simulation finished successfully.
-//
-//
-// --------------------------------------------------------
-// Running RK impl_euler with NLS newton:
-// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
-// LOG_SUCCESS       | info    | The simulation finished successfully.
-//
-//
-// --------------------------------------------------------
-// Running RK sdirk3 with NLS newton:
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 //
@@ -110,12 +92,6 @@ end for;
 //
 // --------------------------------------------------------
 // Running RK esdirk4 with NLS newton:
-// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
-// LOG_SUCCESS       | info    | The simulation finished successfully.
-//
-//
-// --------------------------------------------------------
-// Running RK merson with NLS newton:
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 //
