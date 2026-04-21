@@ -496,6 +496,17 @@ algorithm
   end match;
 end varStateSelectNever;
 
+public function varStateSelectAvoid
+  "Returns true, if the state select attribute is DAE.AVOID()"
+  input BackendDAE.Var inVar;
+  output Boolean isAvoid;
+algorithm
+  isAvoid := match(varStateSelect(inVar))
+    case DAE.AVOID() then true;
+    else false;
+  end match;
+end varStateSelectAvoid;
+
 public function varStateSelectPrefer
   "Returns true, if the state select attribute is DAE.PREFER()"
   input BackendDAE.Var inVar;
@@ -1571,6 +1582,21 @@ algorithm
     else false;
   end match;
 end isOutputVar;
+
+public function isOutputAliasVar "Return true if variable is declared as output alias.
+  introduce by preoptmodule introduceOutputAliases"
+  input BackendDAE.Var inVar;
+  output Boolean outBoolean;
+protected
+  DAE.ComponentRef cref;
+  String s;
+algorithm
+  outBoolean := match(inVar)
+    case (BackendDAE.VAR(varName = DAE.CREF_IDENT(ident= s))) then
+      if StringUtil.startsWith(s, "$outputAlias") then true else false;
+    else false;
+  end match;
+end isOutputAliasVar;
 
 public function isRealVar "Return true if variable is type Real"
   input BackendDAE.Var inVar;
