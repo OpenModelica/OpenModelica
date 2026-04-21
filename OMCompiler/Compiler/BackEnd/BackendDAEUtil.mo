@@ -1933,7 +1933,7 @@ algorithm
          * force StateSelect.never on the alias variable so that state selection never picks the alias
          * instead of original state variable, which would cause wrong code generation and simulation results.
          */
-        newVar := BackendVariable.setVarStateSelect(newVar, DAE.NEVER());
+        newVar := BackendVariable.setVarStateSelect(newVar, DAE.AVOID());
         newVars := BackendVariable.addVar(newVar, newVars);
 
         /*fix issue https://github.com/OpenModelica/OpenModelica/issues/13342
