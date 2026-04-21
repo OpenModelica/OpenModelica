@@ -1209,6 +1209,7 @@ algorithm
   b := match(cr)
     case(DAE.CREF_QUAL(ident=DAE.derivativeNamePrefix)) then false; // allow exception for derivate vars
     case(DAE.CREF_QUAL(ident=DAE.previousNamePrefix)) then false; // allow exception for Clk-previous vars
+    case(DAE.CREF_IDENT(ident=s)) then StringUtil.startsWith(s, "$outputAlias_");
     case(DAE.CREF_IDENT(ident=s)) then StringUtil.startsWith(s, "$");
     case(DAE.CREF_QUAL(ident=s)) then StringUtil.startsWith(s, "$");
     else false;
