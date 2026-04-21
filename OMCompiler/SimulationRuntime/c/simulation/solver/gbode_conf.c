@@ -138,7 +138,7 @@ enum GB_METHOD getGB_method(enum _FLAG flag)
 /**
  * @brief Get non-linear solver method for Runge-Kutta from flag FLAG_SR_NLS.
  *
- * Defaults to GB_NLS_KINSOL for single-rate.
+ * Defaults to GB_NLS_INTERNAL for single-rate.
  * Defaults to nls method of single-rate for multi-rate.
  * Returns GB_UNKNOWN if flag is not known.
  *
@@ -169,8 +169,8 @@ enum GB_NLS_METHOD getGB_NLS_method(enum _FLAG flag)
   if (flag == FLAG_MR_NLS) {
     return getGB_NLS_method(FLAG_SR_NLS);
   } else {
-    infoStreamPrint(OMC_LOG_SOLVER, 0, "Chosen gbode NLS method: kinsol [default]");
-    return GB_NLS_KINSOL;
+    infoStreamPrint(OMC_LOG_SOLVER, 0, "Chosen gbode NLS method: internal [default]");
+    return GB_NLS_INTERNAL;
   }
 }
 

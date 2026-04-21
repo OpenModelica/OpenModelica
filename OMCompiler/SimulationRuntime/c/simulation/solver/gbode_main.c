@@ -31,7 +31,7 @@
 /*! \file gbode_main.c
  *  Implementation of a generic (implicit and explicit) Runge Kutta solver, which works for any
  *  order and stage based on a provided Butcher tableau. Utilizes the sparsity pattern of the ODE
- *  together with the KINSOL (KLU) solver
+ *  together with the KINSOL / KLU solver
  *
  *  \author bbachmann
  */
