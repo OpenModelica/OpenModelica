@@ -141,13 +141,13 @@ void ClassTreeItem::removeChildren()
 QVariant ClassTreeItem::data(int column, int role) const
 {
   // Matches items don't have any children. So, we show file name for items with children and name for items without children.
-  const QString name = mChildren.isEmpty() ? QString::number(mLineStart) +  "\t" + mName : mFileName;
+  const QString text = mChildren.isEmpty() ? QString::number(mLineStart) +  "\t" + mClassName : mFileName;
   switch (column) {
     case 0:
       switch (role) {
         case Qt::DisplayRole:
         case Qt::ToolTipRole:
-          return name;
+          return text;
         default:
           return QVariant();
       }
@@ -170,9 +170,14 @@ int ClassTreeItem::row() const
   return 0;
 }
 
+/*!
+ * \brief ClassTreeItem::getText
+ * Returns the text to be shown for ClassTreeItem. If ClassTreeItem has children then it returns file name otherwise it returns class name.
+ * \return
+ */
 QString ClassTreeItem::getText() const
 {
-  return mChildren.isEmpty() ? mName : mFileName;
+  return mChildren.isEmpty() ? mClassName : mFileName;
 }
 
 /*!
@@ -474,7 +479,6 @@ void ClassTreeView::onDoubleClicked(const QModelIndex &index)
   if (sourceIndex.isValid()) {
     ClassTreeItem *pClassTreeItem = static_cast<ClassTreeItem*>(sourceIndex.internalPointer());
     if (pClassTreeItem && pClassTreeItem->childrenSize() == 0) {
-      qDebug() << "Double clicked on match item: " << pClassTreeItem->getText();
       QString url = QString("omeditmessagesbrowser:///%1?lineNumber=%2").arg(pClassTreeItem->getClassName()).arg(pClassTreeItem->getLineStart());
       MessagesWidget::instance()->getAllMessageWidget()->openErrorMessageClass(QUrl(url));
     }
