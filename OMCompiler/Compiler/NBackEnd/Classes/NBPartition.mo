@@ -569,6 +569,36 @@ public
       end match;
     end getJacobianAdjoint;
 
+    function getJacobianLfg
+      input Partition part;
+      output Option<Jacobian> jac;
+    algorithm
+      jac := match part.association
+        case CONTINUOUS(LFG_jacobian = jac) then jac;
+        else NONE();
+      end match;
+    end getJacobianLfg;
+
+    function getJacobianMrf
+      input Partition part;
+      output Option<Jacobian> jac;
+    algorithm
+      jac := match part.association
+        case CONTINUOUS(MRF_jacobian = jac) then jac;
+        else NONE();
+      end match;
+    end getJacobianMrf;
+
+    function getJacobianR0
+      input Partition part;
+      output Option<Jacobian> jac;
+    algorithm
+      jac := match part.association
+        case CONTINUOUS(R0_jacobian = jac) then jac;
+        else NONE();
+      end match;
+    end getJacobianR0;
+
     function getKind
       input Partition part;
       output Kind kind;

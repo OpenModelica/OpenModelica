@@ -357,7 +357,7 @@ public
             simJacobian := SOME(jac);
           else
             simJacobian := NONE();
-            Error.addCompilerWarning(getInstanceName() + " could not generate sparsity pattern.");
+            Error.addCompilerWarning(getInstanceName() + " could not generate sparsity pattern of Jacobian " + NBJacobian.jacobianTypeString(jacobian.jacType) + ".");
           end try;
         then simJacobian;
 
@@ -371,13 +371,16 @@ public
       input list<Partition.Partition> partitions;
       output SimJacobian simJac;
       output SimJacobian simJacAdjoint;
+      output SimJacobian simJacLfg;
+      output SimJacobian simJacMrf;
+      output SimJacobian simJacR0;
       input output SimCode.SimCodeIndices simCodeIndices;
       input UnorderedMap<ComponentRef, SimVar> simcode_map;
     protected
-      list<BackendDAE> jacobians = {}, jacobiansAdjoint = {};
-      BackendDAE simJacobian, simJacobianAdjoint;
-      Option<SimJacobian> simJac_opt, simJacAdj_opt;
-      Option<BackendDAE> jacobian, jacobianAdjoint;
+      list<BackendDAE> jacobians = {}, jacobiansAdjoint = {}, jacobiansLfg = {}, jacobiansMrf = {}, jacobiansR0 = {};
+      BackendDAE simJacobian, simJacobianAdjoint, simJacobianLfg, simJacobianMrf, simJacobianR0;
+      Option<SimJacobian> simJac_opt, simJacAdj_opt, simJacLfg_opt, simJacMrf_opt, simJacR0_opt;
+      Option<BackendDAE> jacobian, jacobianAdjoint, jacobianLfg, jacobianMrf, jacobianR0;
     algorithm
       for partition in partitions loop
         // save jacobian if existent
@@ -388,6 +391,20 @@ public
         jacobianAdjoint := Partition.Partition.getJacobianAdjoint(partition);
         if isSome(jacobianAdjoint) then
           jacobiansAdjoint := Util.getOption(jacobianAdjoint) :: jacobiansAdjoint;
+        end if;
+
+        // Optimization Jacobians
+        jacobianLfg := Partition.Partition.getJacobianLfg(partition);
+        if Util.isSome(jacobianLfg) then
+          jacobiansLfg := Util.getOption(jacobianLfg) :: jacobiansLfg;
+        end if;
+        jacobianMrf := Partition.Partition.getJacobianMrf(partition);
+        if Util.isSome(jacobianMrf) then
+          jacobiansMrf := Util.getOption(jacobianMrf) :: jacobiansMrf;
+        end if;
+        jacobianR0 := Partition.Partition.getJacobianR0(partition);
+        if Util.isSome(jacobianR0) then
+          jacobiansR0 := Util.getOption(jacobianR0) :: jacobiansR0;
         end if;
       end for;
 
@@ -415,6 +432,45 @@ public
           simJacAdjoint := Util.getOption(simJacAdj_opt);
         else
           (simJacAdjoint, simCodeIndices) := SimJacobian.empty("ADJ", simCodeIndices);
+        end if;
+      end if;
+
+      // create empty Lfg jacobian as fallback
+      if listEmpty(jacobiansLfg) then
+        (simJacLfg, simCodeIndices) := SimJacobian.empty("OPT_LFG", simCodeIndices);
+      else
+        simJacobianLfg := Jacobian.combine(jacobiansLfg, "OPT_LFG");
+        (simJacLfg_opt, simCodeIndices) := SimJacobian.create(simJacobianLfg, simCodeIndices, simcode_map);
+        if Util.isSome(simJacLfg_opt) then
+          simJacLfg := Util.getOption(simJacLfg_opt);
+        else
+          (simJacLfg, simCodeIndices) := SimJacobian.empty("OPT_LFG", simCodeIndices);
+        end if;
+      end if;
+
+      // create empty Mrf jacobian as fallback
+      if listEmpty(jacobiansMrf) then
+        (simJacMrf, simCodeIndices) := SimJacobian.empty("OPT_MRF", simCodeIndices);
+      else
+        simJacobianMrf := Jacobian.combine(jacobiansMrf, "OPT_MRF");
+        (simJacMrf_opt, simCodeIndices) := SimJacobian.create(simJacobianMrf, simCodeIndices, simcode_map);
+        if Util.isSome(simJacMrf_opt) then
+          simJacMrf := Util.getOption(simJacMrf_opt);
+        else
+          (simJacMrf, simCodeIndices) := SimJacobian.empty("OPT_MRF", simCodeIndices);
+        end if;
+      end if;
+
+      // create empty R0 jacobian as fallback
+      if listEmpty(jacobiansR0) then
+        (simJacR0, simCodeIndices) := SimJacobian.empty("OPT_R0", simCodeIndices);
+      else
+        simJacobianR0 := Jacobian.combine(jacobiansR0, "OPT_R0");
+        (simJacR0_opt, simCodeIndices) := SimJacobian.create(simJacobianR0, simCodeIndices, simcode_map);
+        if Util.isSome(simJacR0_opt) then
+          simJacR0 := Util.getOption(simJacR0_opt);
+        else
+          (simJacR0, simCodeIndices) := SimJacobian.empty("OPT_R0", simCodeIndices);
         end if;
       end if;
     end createSimulationJacobian;
