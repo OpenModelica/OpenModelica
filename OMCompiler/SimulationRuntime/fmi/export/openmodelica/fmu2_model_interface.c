@@ -1706,7 +1706,9 @@ fmi2Status fmi2GetDirectionalDerivativeForInitialization(fmi2Component c,
    * More efficient code could only evaluate the equations needed for the
    * known variables only */
   setThreadData(comp);
+  MemPoolState mem_pool_state = omc_util_get_pool_state();
   fmudata->callback->functionJacFMIDERINIT_column(fmudata, td, comp->fmiDerJacInitialization, NULL);
+  omc_util_restore_pool_state(mem_pool_state);
   resetThreadData(comp);
 
   /* Write the results to dvUnknown array */
@@ -1787,7 +1789,9 @@ fmi2Status fmi2GetDirectionalDerivative(fmi2Component c,
    * More efficient code could only evaluate the equations needed for the
    * known variables only */
   setThreadData(comp);
+  MemPoolState mem_pool_state = omc_util_get_pool_state();
   fmudata->callback->functionJacFMIDER_column(fmudata, td, comp->fmiDerJac, NULL);
+  omc_util_restore_pool_state(mem_pool_state);
   resetThreadData(comp);
 
   /* Write the results to dvUnknown array */
