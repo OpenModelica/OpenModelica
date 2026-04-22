@@ -1,0 +1,226 @@
+# =============================================================================
+# OpenModelica Run-Time System License Check — Exception List
+# =============================================================================
+# Used by: .CI/scripts/check_runtime_license.py
+#
+# Format
+# ------
+# One pattern per line (relative to the repository root).
+# Lines starting with '#' are comments. Blank lines are ignored.
+# Patterns follow Python fnmatch rules:
+#   *   matches any sequence of characters within one path component
+#   **  is NOT supported by fnmatch — use a trailing '/' to match a directory
+#       and all its children (e.g. "OMCompiler/SimulationRuntime/cpp/FMU/")
+#
+# A pattern that ends with '/' or matches a directory name excludes the
+# directory and every file inside it recursively.
+#
+# Categories used in comments below
+# ----------------------------------
+#   [3rd-party]  File originates from a third party; must not be modified.
+#   [TODO]       OpenModelica file that still needs a full license-header
+#                update (copyright year / runtime-license text).  Remove the
+#                entry here once the file has been updated.
+# =============================================================================
+
+# =============================================================================
+# Third-party files in OMCompiler/
+# =============================================================================
+
+OMCompiler/tools/
+
+# =============================================================================
+# Bootstrap sources in OMCompiler/Compiler/boot
+# =============================================================================
+
+OMCompiler/Compiler/boot/bootstrap-sources
+OMCompiler/Compiler/boot/bomc/bootstrap-sources/build/
+
+# =============================================================================
+# SimulationRuntime/c/
+# =============================================================================
+
+# [3rd-party] Modelica Association — ModelicaUtilities.h
+OMCompiler/SimulationRuntime/c/ModelicaUtilities.h
+
+# [3rd-party] Parham Vasaiely / EADS IW Germany — OpenModelica Interactive socket
+OMCompiler/SimulationRuntime/c/simulation/socket.h
+OMCompiler/SimulationRuntime/c/simulation/socket_win.inc
+
+# [3rd-party] Troy D. Hanson — uthash (hash table library)
+OMCompiler/SimulationRuntime/c/util/uthash.h
+
+# [3rd-party] Robert Gamble — libcsv
+OMCompiler/SimulationRuntime/c/util/libcsv.h
+OMCompiler/SimulationRuntime/c/util/libcsv.c
+
+# [3rd-party] Hiroshima University — TinyMT64 (Mersenne Twister)
+OMCompiler/SimulationRuntime/c/util/tinymt64.h
+OMCompiler/SimulationRuntime/c/util/tinymt64.c
+
+# [3rd-party] Oracle / Sun Microsystems — Java Native Interface headers
+OMCompiler/SimulationRuntime/c/util/jni.h
+OMCompiler/SimulationRuntime/c/util/jni_md.h
+OMCompiler/SimulationRuntime/c/util/jni_md_solaris.h
+OMCompiler/SimulationRuntime/c/util/jni_md_windows.h
+
+# Build manifest — not a compiled runtime source file.
+OMCompiler/SimulationRuntime/c/RuntimeSources.mo
+
+# =============================================================================
+# SimulationRuntime/fmi/
+# =============================================================================
+
+# [3rd-party] MODELISAR consortium — FMI 1 standard headers
+OMCompiler/SimulationRuntime/fmi/export/fmi/
+
+
+# =============================================================================
+# SimulationRuntime/cpp/
+# =============================================================================
+
+# [3rd-party] MODELISAR consortium — FMI 1 standard headers
+OMCompiler/SimulationRuntime/cpp/FMU/fmiModelTypes.h
+OMCompiler/SimulationRuntime/cpp/FMU/fmiModelFunctions.h
+
+# [3rd-party] MODELISAR consortium — FMI 2 standard headers
+OMCompiler/SimulationRuntime/cpp/FMU2/fmi2FunctionTypes.h
+OMCompiler/SimulationRuntime/cpp/FMU2/fmi2Functions.h
+OMCompiler/SimulationRuntime/cpp/FMU2/fmi2TypesPlatform.h
+
+# [3rd-party] Si-Lab / Toon Knapen — Boost numeric bindings (BLAS/LAPACK)
+OMCompiler/SimulationRuntime/cpp/Core/Utils/numeric/bindings/
+
+# [3rd-party] Various Boost contributors — Boost Software License
+OMCompiler/SimulationRuntime/cpp/Core/Utils/extension/adaptable_factory.hpp
+OMCompiler/SimulationRuntime/cpp/Core/Utils/extension/common.hpp
+OMCompiler/SimulationRuntime/cpp/Core/Utils/extension/convenience.hpp
+OMCompiler/SimulationRuntime/cpp/Core/Utils/extension/extension.hpp
+OMCompiler/SimulationRuntime/cpp/Core/Utils/extension/factory_map.hpp
+OMCompiler/SimulationRuntime/cpp/Core/Utils/extension/factory.hpp
+OMCompiler/SimulationRuntime/cpp/Core/Utils/extension/filesystem.hpp
+OMCompiler/SimulationRuntime/cpp/Core/Utils/extension/parameter_map.hpp
+OMCompiler/SimulationRuntime/cpp/Core/Utils/extension/parameter.hpp
+OMCompiler/SimulationRuntime/cpp/Core/Utils/extension/registry.hpp
+OMCompiler/SimulationRuntime/cpp/Core/Utils/extension/shared_library.hpp
+OMCompiler/SimulationRuntime/cpp/Core/Utils/extension/type_map.hpp
+
+OMCompiler/SimulationRuntime/cpp/Core/Utils/extension/impl/
+
+# [3rd-party] Linda R. Petzold, Peter N. Brown, Alan C. Hindmarsh / LLNL — DDASKR (f2c-translated Fortran DAE solver)
+OMCompiler/SimulationRuntime/cpp/Solver/CppDASSL/ddaskr.cpp
+OMCompiler/SimulationRuntime/cpp/Solver/CppDASSL/dasslaux.h
+
+# =============================================================================
+# SimulationRuntime/OMSI/
+# =============================================================================
+
+# [3rd-party] MODELISAR consortium — FMI 2 standard headers
+OMCompiler/SimulationRuntime/OMSI/include/fmi2/fmi2Functions.h
+OMCompiler/SimulationRuntime/OMSI/include/fmi2/fmi2FunctionTypes.h
+OMCompiler/SimulationRuntime/OMSI/include/fmi2/fmi2TypesPlatform.h
+
+# [3rd-party] Troy D. Hanson — uthash
+OMCompiler/SimulationRuntime/OMSI/base/include/uthash.h
+
+
+# =============================================================================
+# SimulationRuntime/OMSICpp/
+# =============================================================================
+
+# [3rd-party] MODELISAR consortium — FMI 1 standard headers
+OMCompiler/SimulationRuntime/OMSICpp/runtime/include/FMU/fmiModelTypes.h
+OMCompiler/SimulationRuntime/OMSICpp/runtime/include/FMU/fmiModelFunctions.h
+
+# [3rd-party] MODELISAR consortium — FMI 2 standard headers
+OMCompiler/SimulationRuntime/OMSICpp/runtime/include/FMU2/fmi2FunctionTypes.h
+OMCompiler/SimulationRuntime/OMSICpp/runtime/include/FMU2/fmi2Functions.h
+OMCompiler/SimulationRuntime/OMSICpp/runtime/include/FMU2/fmi2TypesPlatform.h
+
+# [3rd-party] Si-Lab / Toon Knapen — Boost numeric bindings (BLAS/LAPACK)
+OMCompiler/SimulationRuntime/OMSICpp/runtime/include/Core/Utils/numeric/bindings/
+
+# [3rd-party] Various Boost contributors — Boost Software License
+OMCompiler/SimulationRuntime/OMSICpp/runtime/include/Core/Utils/extension/adaptable_factory.hpp
+OMCompiler/SimulationRuntime/OMSICpp/runtime/include/Core/Utils/extension/common.hpp
+OMCompiler/SimulationRuntime/OMSICpp/runtime/include/Core/Utils/extension/convenience.hpp
+OMCompiler/SimulationRuntime/OMSICpp/runtime/include/Core/Utils/extension/extension.hpp
+OMCompiler/SimulationRuntime/OMSICpp/runtime/include/Core/Utils/extension/factory_map.hpp
+OMCompiler/SimulationRuntime/OMSICpp/runtime/include/Core/Utils/extension/factory.hpp
+OMCompiler/SimulationRuntime/OMSICpp/runtime/include/Core/Utils/extension/filesystem.hpp
+OMCompiler/SimulationRuntime/OMSICpp/runtime/include/Core/Utils/extension/parameter_map.hpp
+OMCompiler/SimulationRuntime/OMSICpp/runtime/include/Core/Utils/extension/parameter.hpp
+OMCompiler/SimulationRuntime/OMSICpp/runtime/include/Core/Utils/extension/registry.hpp
+OMCompiler/SimulationRuntime/OMSICpp/runtime/include/Core/Utils/extension/shared_library.hpp
+OMCompiler/SimulationRuntime/OMSICpp/runtime/include/Core/Utils/extension/type_map.hpp
+
+OMCompiler/SimulationRuntime/OMSICpp/runtime/include/Core/Utils/extension/impl/
+
+# [3rd-party] Linda R. Petzold, Peter N. Brown, Alan C. Hindmarsh / LLNL — DDASKR (f2c-translated Fortran DAE solver)
+OMCompiler/SimulationRuntime/OMSICpp/runtime/src/Solver/CppDASSL/ddaskr.cpp
+OMCompiler/SimulationRuntime/OMSICpp/runtime/include/Solver/CppDASSL/dasslaux.h
+
+# [3rd-party] Pieter Hintjens / iMatix — ZeroMQ guide helper (zhelpers.hpp, MIT License)
+OMCompiler/SimulationRuntime/OMSICpp/omcWrapper/omcZeroMQ/include/zhelpers.hpp
+
+# =============================================================================
+# SimulationRuntime/ModelicaExternalC/
+# =============================================================================
+
+# [3rd-party] Modelica Association and contributors — ModelicaExternalC library
+# These files are maintained upstream and must not be modified.
+OMCompiler/SimulationRuntime/ModelicaExternalC/
+
+# =============================================================================
+# SimulationRuntime/ParModelica/
+# =============================================================================
+
+# [3rd-party] Niels Lohmann — JSON for Modern C++
+OMCompiler/SimulationRuntime/ParModelica/auto/json.hpp
+
+# =============================================================================
+# TODO: Specific files missing license headers or needing updates
+# =============================================================================
+
+# Python code-generator scripts (produce meta_modelica box helpers).
+OMCompiler/SimulationRuntime/c/meta/meta_modelica_gen_boxvar.py
+OMCompiler/SimulationRuntime/c/meta/meta_modelica_gen_mk_box.py
+
+# =============================================================================
+# Testsuite files in testsuite/
+# =============================================================================
+
+testsuite/
+
+# =============================================================================
+# Testsuite files in documentaiton
+# =============================================================================
+
+doc/
+OMCompiler/Examples/
+
+# =============================================================================
+# Submodules
+# TODO: Check which submodules need a check
+# =============================================================================
+
+libraries/
+OMCompiler/3rdParty/
+!OMCompiler/3rdParty/ryu/ryu/om_format.*
+OMEdit/
+OMNotebook/
+OMOptim/
+OMParser/
+OMPlot/
+OMSens_Qt/
+OMShell/
+OMSimulator/
+
+# =============================================================================
+# Build files
+# =============================================================================
+
+build_cmake/
+build/
+install/
+install_cmake/
