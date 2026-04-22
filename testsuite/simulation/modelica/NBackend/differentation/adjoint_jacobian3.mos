@@ -91,17 +91,20 @@ buildModel(scalarAdjointJacobian3); getErrorString();
 //   SimCode Jacobian ADJ(idx = 1, partition = 1)
 // ================================================
 //
-// ColumnVars (size = 2)
-// ***********************
-//   (0)[JVAR] (1) Real $pDER_ODE_JAC_ADJ.y
-//   (1)[JVAR] (1) Real $pDER_ODE_JAC_ADJ.x
-//
 // SeedVars (size = 2)
 // *********************
 //   (0)[SEED] (1) Real $SEED_ODE_LS_JAC_1.$DER.y
 //   (1)[SEED] (1) Real $SEED_ODE_LS_JAC_1.$DER.x
 //
-// Column Equations (size = 2)
+// TmpVars (size = 2)
+// ********************
+//   (0)[JTMP] (1) Real $pDER_ODE_JAC_ADJ.$TMP_1
+//   (1)[JTMP] (1) Real $pDER_ODE_JAC_ADJ.$TMP_2
+//
+// ResultVars (size = 2)
+// ***********************
+//
+// Column Equations (size = 3)
 // -----------------------------
 //   (13) Nonlinear System (size = 2, homotopy = false, mixed = false, torn = true)
 //   --Iteration Vars:{$pDER_ODE_JAC_ADJ.$TMP_1, $pDER_ODE_JAC_ADJ.$TMP_2}
@@ -252,8 +255,8 @@ buildModel(scalarAdjointJacobian3); getErrorString();
 //
 // columnVars(2)
 // ----------------------
-// index:0: $pDER_ODE_JAC_ADJ.y (no alias)  initial: 	no arrCref index:(1) []
-// index:1: $pDER_ODE_JAC_ADJ.x (no alias)  initial: 	no arrCref index:(2) []
+// index:0: $pDER_ODE_JAC_ADJ.$TMP_1 (no alias)  initial: 	no arrCref index:(1) []
+// index:1: $pDER_ODE_JAC_ADJ.$TMP_2 (no alias)  initial: 	no arrCref index:(2) []
 //
 // modelInfo:
 // ========================================
