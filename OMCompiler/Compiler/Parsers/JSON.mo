@@ -92,6 +92,12 @@ algorithm
   obj := addPair(key, value, obj);
 end fromPair;
 
+function listObjectFromPair
+  input String key;
+  input JSON value;
+  output JSON obj = LIST_OBJECT({(key, value)});
+end listObjectFromPair;
+
 function emptyArray
   input Integer capacity = 0;
   output JSON obj = ARRAY(Vector.new<JSON>(capacity));

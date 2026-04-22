@@ -35,6 +35,7 @@
 #include <stdexcept>
 #include <array>
 #include <vector>
+#include <utility>
 
 #include <QJsonArray>
 #include <QJsonObject>
@@ -98,6 +99,7 @@ namespace FlatModelica
       LESSEQ,
       GREATER,
       GREATEREQ,
+      ASSIGNMENT,
       DIGIT,
       INTEGER,
       REAL,
@@ -136,6 +138,7 @@ namespace FlatModelica
         case LESSEQ: return "<=";
         case GREATER: return ">";
         case GREATEREQ: return ">=";
+        case ASSIGNMENT: return "=";
         case STRING: return "\"";
         case END_OF_DATA: return "EOF";
         default: return data;
@@ -144,7 +147,7 @@ namespace FlatModelica
 
     bool isOperator() const
     {
-      return type >= OPERATOR && type <= GREATEREQ;
+      return type >= OPERATOR && type <= ASSIGNMENT;
     }
 
     token_t type;
@@ -304,13 +307,12 @@ namespace FlatModelica
           case '=':
             ++_next;
 
-            if (_next == _str.cend()) {
-              throw std::runtime_error(std::string("readOperator unexpected end of data"));
-            } else if (*_next == '=') {
+            if (_next != _str.cend() && *_next == '=') {
               ++_next;
               return Token::EQUAL;
             }
-            break;
+
+            return Token::ASSIGNMENT;
         }
 
         throw std::runtime_error(std::string("readOperator got unknown operator ") + *_next);
@@ -450,6 +452,7 @@ namespace FlatModelica
         Greater,
         GreaterEq,
         Not,
+        Assignment,
         Unknown
       };
 
@@ -834,6 +837,28 @@ namespace FlatModelica
       Expression _false_e;
   };
 
+  class NamedArg : public ExpressionBase
+  {
+    public:
+      NamedArg(std::string name, Expression value)
+        : _name{std::move(name)}, _value{std::move(value)} {}
+
+      NamedArg(Expression name, Expression value);
+      NamedArg(const QJsonObject &value);
+
+      std::unique_ptr<ExpressionBase> clone() const override { return std::make_unique<NamedArg>(*this); }
+      Expression eval(const Expression::VariableEvaluator &var_eval, int recursion_level) const override;
+
+      bool isLiteral() const override { return false; }
+      //int priority(bool /*lhs*/) const override { return 99; }
+      void print(std::ostream &os) const override;
+      QJsonValue serialize() const override;
+
+    private:
+      std::string _name;
+      Expression _value;
+  };
+
   void print_operand(std::ostream &os, const Expression &operand, const ExpressionBase &op, bool lhs)
   {
     int operand_prio = operand.priority(lhs);
@@ -933,6 +958,7 @@ namespace FlatModelica
           case '^': return Pow;
           case '<': return Less;
           case '>': return Greater;
+          case '=': return Assignment;
         }
         break;
 
@@ -991,6 +1017,7 @@ namespace FlatModelica
       case Token::LESSEQ: return LessEq;
       case Token::GREATER: return Greater;
       case Token::GREATEREQ: return GreaterEq;
+      case Token::ASSIGNMENT: return Assignment;
       default:
         throw std::runtime_error("Operator::parse got invalid token type");
     }
@@ -998,8 +1025,8 @@ namespace FlatModelica
 
   const std::string& Operator::toString() const
   {
-    static const std::array<std::string, 20> symbols = {
-      "+", "-", "*", "/", "^", ".+", ".-", ".*", "./", ".^", "and", "or", "==", "<>", "<", "<=", ">", ">=", "not", "?"
+    static const std::array<std::string, 21> symbols = {
+      "+", "-", "*", "/", "^", ".+", ".-", ".*", "./", ".^", "and", "or", "==", "<>", "<", "<=", ">", ">=", "not", "=", "?"
     };
 
     return symbols[static_cast<int>(_op)];
@@ -1044,11 +1071,11 @@ namespace FlatModelica
     }
   }
 
-  Expression parseExp_1(Tokenizer &tokenizer, Expression lhs, int priority);
+  Expression parseExp_1(Tokenizer &tokenizer, Expression lhs, bool isCall, int priority);
 
-  Expression parseExp(Tokenizer &tokenizer)
+  Expression parseExp(Tokenizer &tokenizer, bool isCall = false)
   {
-    return parseExp_1(tokenizer, parsePrimary(tokenizer), 0);
+    return parseExp_1(tokenizer, parsePrimary(tokenizer), isCall, 0);
   }
 
   int opPriority(Token::token_t op)
@@ -1070,7 +1097,7 @@ namespace FlatModelica
     }
   }
 
-  Expression parseExp_1(Tokenizer &tokenizer, Expression lhs, int min_priority)
+  Expression parseExp_1(Tokenizer &tokenizer, Expression lhs, bool isCall, int min_priority)
   {
     while (tokenizer.peekToken().isOperator() &&
            opPriority(tokenizer.peekToken().type) >= min_priority) {
@@ -1081,10 +1108,17 @@ namespace FlatModelica
 
       while (tokenizer.peekToken().isOperator() &&
              opPriority(tokenizer.peekToken().type) > opPriority(op)) {
-        rhs = parseExp_1(tokenizer, std::move(rhs), opPriority(op) + 1);
+        rhs = parseExp_1(tokenizer, std::move(rhs), isCall, opPriority(op) + 1);
       }
 
-      lhs = Expression(std::make_unique<Binary>(std::move(lhs), op, std::move(rhs)));
+      if (op == Token::ASSIGNMENT) {
+        if (!isCall) {
+          throw std::runtime_error("Operator::parse got invalid operator =");
+        }
+        lhs = Expression(std::make_unique<NamedArg>(std::move(lhs), std::move(rhs)));
+      } else {
+        lhs = Expression(std::make_unique<Binary>(std::move(lhs), op, std::move(rhs)));
+      }
     }
 
     return lhs;
@@ -1130,7 +1164,7 @@ namespace FlatModelica
     }
   }
 
-  std::vector<Expression> parseCommaList(Tokenizer &tokenizer)
+  std::vector<Expression> parseCommaList(Tokenizer &tokenizer, bool isCall)
   {
     std::vector<Expression> elems;
 
@@ -1141,7 +1175,7 @@ namespace FlatModelica
     }
 
     while (true) {
-      elems.emplace_back(parseExp(tokenizer));
+      elems.emplace_back(parseExp(tokenizer, isCall));
 
       if (tokenizer.peekToken().type == Token::COMMA) {
         tokenizer.popToken();
@@ -1322,6 +1356,7 @@ namespace FlatModelica
         //case djb2_hash("tuple_element"):     return std::make_unique<TupleElement>(value);
         //case djb2_hash("record_element"):    return std::make_unique<RecordElement>(value);
         //case djb2_hash("function"):          return std::make_unique<Function>(value);
+        case djb2_hash("named_arg"):         return std::make_unique<NamedArg>(value);
       }
     }
 
@@ -1524,7 +1559,7 @@ namespace FlatModelica
       if (t.type == Token::OPEN_BRACKET) {
         tokenizer.popToken();
         ss << "[";
-        printCommaList(ss, parseCommaList(tokenizer));
+        printCommaList(ss, parseCommaList(tokenizer, false));
         ss << "]";
 
         auto tok = tokenizer.peekToken();
@@ -1605,7 +1640,7 @@ namespace FlatModelica
     }
     tokenizer.popToken();
 
-    auto elems = parseCommaList(tokenizer);
+    auto elems = parseCommaList(tokenizer, false);
 
     tok = tokenizer.peekToken();
     if (tok.type != Token::CLOSE_BRACE) {
@@ -1819,7 +1854,7 @@ namespace FlatModelica
     }
     tokenizer.popToken();
 
-    auto args = parseCommaList(tokenizer);
+    auto args = parseCommaList(tokenizer, true);
 
     tok = tokenizer.peekToken();
     if (tok.type != Token::CLOSE_PAREN) {
@@ -2124,6 +2159,39 @@ namespace FlatModelica
     auto false_e = parseExp(tokenizer);
 
     return Expression(std::make_unique<IfExp>(std::move(condition), std::move(true_e), std::move(false_e)));
+  }
+
+  NamedArg::NamedArg(Expression name, Expression value)
+    : _name{name.toString()}, _value{std::move(value)}
+  {
+  }
+
+  NamedArg::NamedArg(const QJsonObject &value)
+  {
+    for (auto it = value.begin(); it != value.end(); ++it) {
+      if (it.key() != "$kind") {
+        _name = it.key().toStdString();
+        _value.deserialize(it.value());
+      }
+    }
+  }
+
+  Expression NamedArg::eval(const Expression::VariableEvaluator &var_eval, int recursion_level) const
+  {
+    return _value.evaluate(var_eval, recursion_level);
+  }
+
+  void NamedArg::print(std::ostream &os) const
+  {
+    os << _name << "=" << _value;
+  }
+
+  QJsonValue NamedArg::serialize() const
+  {
+    return QJsonObject{
+      {"$kind", "named_arg"},
+      {QString::fromStdString(_name), _value.serialize()}
+    };
   }
 
   /*!
