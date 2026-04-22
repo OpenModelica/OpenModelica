@@ -172,17 +172,6 @@ buildModel(AdjointJacobian2); getErrorString();
 //   SimCode Jacobian ADJ(idx = 1, partition = 1)
 // ================================================
 //
-// ColumnVars (size = 8)
-// ***********************
-//   (0)[JVAR] (1) Real $pDER_ODE_JAC_ADJ.m
-//   (1)[JVAR] (1) Real $pDER_ODE_JAC_ADJ.z
-//   (2)[JVAR] (1) Real $pDER_ODE_JAC_ADJ.l
-//   (3)[JVAR] (1) Real $pDER_ODE_JAC_ADJ.y
-//   (4)[JVAR] (1) Real $pDER_ODE_JAC_ADJ.x
-//   (5)[JVAR] (1) Real $pDER_ODE_JAC_ADJ.k[1]
-//   (6)[JVAR] (1) Real $pDER_ODE_JAC_ADJ.k[2]
-//   (7)[JVAR] (1) Real $pDER_ODE_JAC_ADJ.k[3]
-//
 // SeedVars (size = 8)
 // *********************
 //   (0)[SEED] (1) Real $SEED_ODE_JAC_ADJ.$DER.m
@@ -194,8 +183,18 @@ buildModel(AdjointJacobian2); getErrorString();
 //   (6)[SEED] (1) Real $SEED_ODE_JAC_ADJ.$DER.k[2]
 //   (7)[SEED] (1) Real $SEED_ODE_JAC_ADJ.$DER.k[3]
 //
-// Column Equations (size = 8)
-// -----------------------------
+// TmpVars (size = 4)
+// ********************
+//   (0)[JTMP] (1) Real $pDER_ODE_JAC_ADJ.q
+//   (1)[JTMP] (1) Real $pDER_ODE_JAC_ADJ.t
+//   (2)[JTMP] (1) Real $pDER_ODE_JAC_ADJ.$FUN_1
+//   (3)[JTMP] (1) Real $pDER_ODE_JAC_ADJ.$FUN_2
+//
+// ResultVars (size = 8)
+// ***********************
+//
+// Column Equations (size = 10)
+// ------------------------------
 //   (36) $pDER_ODE_JAC_ADJ.t := $SEED_ODE_JAC_ADJ.$DER.m
 //   (35) $pDER_ODE_JAC_ADJ.$FUN_1 := $SEED_ODE_JAC_ADJ.$DER.m .* $FUN_2
 //   (34) $pDER_ODE_JAC_ADJ.$FUN_2 := $SEED_ODE_JAC_ADJ.$DER.m .* $FUN_1
@@ -388,16 +387,12 @@ buildModel(AdjointJacobian2); getErrorString();
 // 	28: $pDER_ODE_JAC_ADJ.m=0.0 [Real]
 // 	27: $pDER_ODE_JAC_ADJ.k=transpose(A * B) * $SEED_ODE_JAC_ADJ.$DER.k [Real[3]]
 //
-// columnVars(8)
+// columnVars(4)
 // ----------------------
-// index:0: $pDER_ODE_JAC_ADJ.m (no alias)  initial: 	no arrCref index:(1) []
-// index:1: $pDER_ODE_JAC_ADJ.z (no alias)  initial: 	no arrCref index:(2) []
-// index:2: $pDER_ODE_JAC_ADJ.l (no alias)  initial: 	no arrCref index:(3) []
-// index:3: $pDER_ODE_JAC_ADJ.y (no alias)  initial: 	no arrCref index:(4) []
-// index:4: $pDER_ODE_JAC_ADJ.x (no alias)  initial: 	no arrCref index:(5) []
-// index:5: $pDER_ODE_JAC_ADJ.k[1] (no alias)  initial: 	arrCref:$pDER_ODE_JAC_ADJ.k index:(6) []
-// index:6: $pDER_ODE_JAC_ADJ.k[2] (no alias)  initial: 	no arrCref index:(7) []
-// index:7: $pDER_ODE_JAC_ADJ.k[3] (no alias)  initial: 	no arrCref index:(8) []
+// index:0: $pDER_ODE_JAC_ADJ.q (no alias)  initial: 	no arrCref index:(1) []
+// index:1: $pDER_ODE_JAC_ADJ.t (no alias)  initial: 	no arrCref index:(2) []
+// index:2: $pDER_ODE_JAC_ADJ.$FUN_1 (no alias)  initial: 	no arrCref index:(3) []
+// index:3: $pDER_ODE_JAC_ADJ.$FUN_2 (no alias)  initial: 	no arrCref index:(4) []
 //
 // modelInfo:
 // ========================================

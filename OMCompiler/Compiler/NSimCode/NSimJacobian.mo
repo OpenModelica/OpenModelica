@@ -100,15 +100,19 @@ public
             str := StringUtil.headline_2("[EMPTY] SimCode Jacobian " + simJac.name + "(idx = " + intString(simJac.jacobianIndex) + ", partition = " + intString(simJac.partitionIndex) + ")") + "\n";
           else
             str := StringUtil.headline_2("SimCode Jacobian " + simJac.name + "(idx = " + intString(simJac.jacobianIndex) + ", partition = " + intString(simJac.jacobianIndex) + ")") + "\n";
-            str := str + StringUtil.headline_4("ColumnVars (size = " + intString(simJac.numberOfResultVars) + ")");
-            for var in simJac.columnVars loop
-              str := str + SimVar.toString(var, "  ") + "\n";
-            end for;
-            str := str + "\n" + StringUtil.headline_4("SeedVars (size = " + intString(listLength(simJac.seedVars)) + ")");
+            str := str + StringUtil.headline_4("SeedVars (size = " + intString(listLength(simJac.seedVars)) + ")");
             for var in simJac.seedVars loop
               str := str + SimVar.toString(var, "  ") + "\n";
             end for;
-            str := str + "\n" + StringUtil.headline_3("Column Equations (size = " + intString(simJac.numberOfResultVars) + ")");
+            str := str + "\n" + StringUtil.headline_4("TmpVars (size = " + intString(listLength(simJac.columnVars)) + ")");
+            for var in simJac.columnVars loop
+              str := str + SimVar.toString(var, "  ") + "\n";
+            end for;
+            // TODO: print list of ResultVars
+            str := str + "\n" + StringUtil.headline_4("ResultVars (size = " + intString(simJac.numberOfResultVars) + ")");
+
+            // TODO: count equations properly, e.g. linear systems are falsely counted as a single equation
+            str := str + "\n" + StringUtil.headline_3("Column Equations (size = " + intString(listLength(simJac.columnEqns)) + ")");
             for eq in simJac.columnEqns loop
               str := str + SimStrongComponent.Block.toString(eq, "  ");
             end for;
