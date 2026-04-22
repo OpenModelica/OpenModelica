@@ -1980,6 +1980,7 @@ namespace ModelInstance
   {
     if (jsonObject.contains("tab")) {
       mTab.deserialize(jsonObject.value("tab"));
+      mTabDefined = true;
     }
 
     if (jsonObject.contains("group")) {

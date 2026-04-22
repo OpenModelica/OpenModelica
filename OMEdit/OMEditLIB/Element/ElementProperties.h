@@ -88,9 +88,9 @@ public:
   ModelInstance::Element* getModelInstanceElement() {return mpModelInstanceElement;}
   void setTab(QString tab) {mTab = tab;}
   const StringAnnotation &getTab() {return mTab;}
+  bool isTabDefined() const {return mTabDefined;}
   void setGroup(QString group) {mGroup = group;}
   const StringAnnotation &getGroup() {return mGroup;}
-  void setGroupDefined(bool groupDefined) {mGroupDefined = groupDefined;}
   bool isGroupDefined() const {return mGroupDefined;}
   void setShowStartAttribute(bool showStartAttribute) {mShowStartAttribute = showStartAttribute;}
   bool isShowStartAttribute() const {return mShowStartAttribute;}
@@ -148,6 +148,7 @@ private:
   ModelInstance::Element *mpModelInstanceElement;
   ElementParameters *mpElementParameters = 0;
   StringAnnotation mTab;
+  bool mTabDefined = false;
   StringAnnotation mGroup;
   bool mGroupDefined;
   BooleanAnnotation mEnable;
