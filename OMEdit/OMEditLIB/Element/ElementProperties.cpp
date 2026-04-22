@@ -50,6 +50,14 @@
 #include <QStringList>
 #include <QStringBuilder>
 
+// tabs
+static QString General("General");
+static QString Modifiers("Modifiers");
+// groups
+static QString Parameters("Parameters");
+static QString Initialization("Initialization");
+static QString AddNewModifiers("Add New Modifiers");
+
 /*!
  * \class FinalEachToolButton
  * \brief Creates a toolbutton with drop menu for final and each modifiers.
@@ -138,6 +146,7 @@ Parameter::Parameter(ModelInstance::Element *pElement, bool defaultValue, Elemen
   mpElementParameters = pElementParameters;
   auto &dialogAnnotation = mpModelInstanceElement->getAnnotation()->getDialogAnnotation();
   mTab = dialogAnnotation.getTab();
+  mTabDefined = dialogAnnotation.isTabDefined();
   mGroup = dialogAnnotation.getGroup();
   mGroupDefined = !mGroup.isEmpty();
   mEnable = dialogAnnotation.isEnabled();
@@ -163,20 +172,24 @@ Parameter::Parameter(ModelInstance::Element *pElement, bool defaultValue, Elemen
   }
   /* if mShowStartAndFixed and group name is empty then set group name to Initialization.
    * else set group name to Parameters for actual parameters or elements that have dialog annotation or replaceable elements.
+   * other elements show in modifiers.
    */
   if (mShowStartAndFixed && mGroup.isEmpty()) {
-    mGroup = "Initialization";
-  } else if (mGroup.isEmpty() && (mpModelInstanceElement->isParameter() || mpModelInstanceElement->getAnnotation()->hasDialogAnnotation()
+    mGroup = Initialization;
+  } else if (mGroup.isEmpty() && !mShowStartAndFixed && (mpModelInstanceElement->isParameter() || mpModelInstanceElement->getAnnotation()->hasDialogAnnotation()
                                   || mpModelInstanceElement->getReplaceable())) {
-    mGroup = "Parameters";
-  } else {
+    mGroup = Parameters;
+  } else if (!mShowStartAndFixed && !(mpModelInstanceElement->isParameter() || mpModelInstanceElement->getAnnotation()->hasDialogAnnotation()
+                                  || mpModelInstanceElement->getReplaceable())) {
     // List only the modifiers of the element
     ModelInstance::Modifier *pModelInstanceModifier = mpElementParameters->hasElement() ? mpElementParameters->getElement()->getModifier() : nullptr;
     if (pModelInstanceModifier) {
       foreach (auto *pModifier, pModelInstanceModifier->getModifiers()) {
         if (pModifier->getName() == mpModelInstanceElement->getName()) {
-          mTab = "Modifiers";
-          mGroup = "Modifiers";
+          if (!mTabDefined) {
+            mTab = Modifiers;
+          }
+          mGroup = Modifiers;
         }
       }
     }
@@ -1439,7 +1452,10 @@ void ElementParameters::applyFinalStartFixedAndDisplayUnitModifiers(Parameter *p
           bool isFixedFinal = false;
           if (hasStart) {
             if (!pParameter->isGroupDefined() && !pParameter->getModelInstanceElement()->isParameter() && !pParameter->getModelInstanceElement()->isInput()) {
-              pParameter->setGroup("Initialization");
+              if (!pParameter->isTabDefined()) {
+                pParameter->setTab(General);
+              }
+              pParameter->setGroup(Initialization);
               addOrUpdateParametersScrollArea(pParameter);
             }
             pParameter->setShowStartAndFixed(true);
@@ -1618,12 +1634,12 @@ void ElementParameters::setUpDialog()
     pParametersScrollArea->getLayout()->addWidget(mpComponentGroupBox);
   }
   pParametersScrollArea->getLayout()->addWidget(mpComponentClassGroupBox);
-  mTabsMap.insert("General", mpParametersTabWidget->addTab(pParametersScrollArea, "General"));
+  mTabsMap.insert(General, mpParametersTabWidget->addTab(pParametersScrollArea, General));
   // create Modifiers tab
   ParametersScrollArea *pModifiersParametersScrollArea = new ParametersScrollArea;
-  GroupBox *pGroupBox = new GroupBox("Add New Modifiers");
+  GroupBox *pGroupBox = new GroupBox(AddNewModifiers);
   pModifiersParametersScrollArea->addGroupBox(pGroupBox);
-  mpModifiersLabel = new Label(tr("Add new modifiers, e.g., phi(start=1), w(start=2)"));
+  mpModifiersLabel = new Label("Add new modifiers, e.g., phi(start = 1), x(nominal = 3), x(max = 2) = y, system1(component3(p = 3))");
   mpModifiersTextBox = new QLineEdit;
   /* Do not add Modifiers tab when we are modifying top level parameters.
    * We don't know yet how to set the modifiers in the top level parameter editing.
@@ -1661,7 +1677,7 @@ void ElementParameters::setUpDialog()
     pGroupBoxGridLayout->addItem(new QSpacerItem(0, 0), rowIndex, columnIndex++);
     pGroupBoxGridLayout->addItem(new QSpacerItem(0, 0), rowIndex, columnIndex++);
   }
-  mTabsMap.insert("Modifiers", mpParametersTabWidget->addTab(pModifiersParametersScrollArea, "Modifiers"));
+  mTabsMap.insert(Modifiers, mpParametersTabWidget->addTab(pModifiersParametersScrollArea, Modifiers));
   // create parameters tabs and groupboxes
   createTabsGroupBoxesAndParameters(getModel(), hasElement());
   fetchElementExtendsModifiers(getModel(), hasElement());
@@ -1696,7 +1712,7 @@ void ElementParameters::setUpDialog()
           int rowIndex = pGroupBoxGridLayout->rowCount();
           int columnIndex = 0;
           pParameter->updateNameLabel();
-          pGroupBoxGridLayout->addWidget(pParameter->getNameLabel(), rowIndex, columnIndex++);
+          pGroupBoxGridLayout->addWidget(pParameter->getNameLabel(), rowIndex, columnIndex++, Qt::AlignRight);
           if (pParameter->isShowStartAndFixed()) {
             pGroupBoxGridLayout->addWidget(pParameter->getFixedCheckBox(), rowIndex, columnIndex++);
             pGroupBoxGridLayout->addWidget(pParameter->getFixedFinalEachMenu(), rowIndex, columnIndex++);
@@ -1755,6 +1771,14 @@ void ElementParameters::setUpDialog()
         mpParametersTabWidget->removeTab(i);
         --i;
       }
+    }
+  }
+  // update modifiers tab name
+  GroupBox *pModifiersGroupBox = pModifiersParametersScrollArea->getGroupBox(Modifiers);
+  if (pModifiersGroupBox) {
+    int count = pModifiersGroupBox->getGridLayout()->rowCount() - 1;
+    if (count > 0) {
+      mpParametersTabWidget->setTabText(1, QString("Modifiers (%1)").arg(count));
     }
   }
   // move Modifiers tab to the end

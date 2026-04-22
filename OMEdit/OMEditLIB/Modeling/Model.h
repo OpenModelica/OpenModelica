@@ -333,6 +333,7 @@ private:
     DialogAnnotation();
     void deserialize(const QJsonObject &jsonObject);
     const StringAnnotation &getTab() const {return mTab;}
+    bool isTabDefined() const {return mTabDefined;}
     const StringAnnotation &getGroup() const {return mGroup;}
     const BooleanAnnotation &isEnabled() const {return mEnable;}
     bool hasShowStartAttribute() const {return mHasShowStartAttribute;}
@@ -345,6 +346,7 @@ private:
     const BooleanAnnotation &isConnectorSizing() const {return mConnectorSizing;}
   private:
     StringAnnotation mTab;
+    bool mTabDefined = false;
     StringAnnotation mGroup;
     BooleanAnnotation mEnable;
     bool mHasShowStartAttribute = false;
