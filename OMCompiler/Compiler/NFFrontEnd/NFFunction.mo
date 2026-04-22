@@ -3101,35 +3101,60 @@ protected
   protected
     Vector<InstNode> unassigned_branch;
     list<InstNode> assigned = {};
+    Boolean has_else = false;
     Integer index;
+    Expression last_cond;
   algorithm
     for b in branches loop
       checkUseBeforeAssignExp(unassigned, Util.tuple21(b), info);
     end for;
 
-    // Check each branch separately, then assume that any variables that were
-    // assigned (or incorrectly used) in at least one branch are assigned after
-    // the if-statement to avoid false positives.
-    for b in branches loop
-      unassigned_branch := Vector.copy(unassigned);
-      checkUseBeforeAssign2(unassigned_branch, Util.tuple22(b));
+    // An explicit else is lowered by the frontend to a trailing branch with
+    // the literal true as its condition. Without one, the implicit else
+    // assigns nothing, so a variable assigned inside the if may still be
+    // unassigned after it. See issue #7433.
+    if not listEmpty(branches) then
+      last_cond := Util.tuple21(List.last(branches));
+      has_else := match last_cond
+        case Expression.BOOLEAN(value = true) then true;
+        else false;
+      end match;
+    end if;
 
-      if Vector.size(unassigned) <> Vector.size(unassigned_branch) then
-        assigned := listAppend(
-          List.setDifferenceOnTrue(Vector.toList(unassigned), Vector.toList(unassigned_branch), InstNode.refEqual),
-          assigned);
-      end if;
-    end for;
+    // When an else branch is present, keep the permissive behaviour: treat
+    // variables assigned (or flagged as used-before-assigned) in any branch
+    // as assigned after the if, to avoid false positives in code where the
+    // author knows the branches together cover the reachable cases.
+    if has_else then
+      for b in branches loop
+        unassigned_branch := Vector.copy(unassigned);
+        checkUseBeforeAssign2(unassigned_branch, Util.tuple22(b));
 
-    if not listEmpty(assigned) then
-      assigned := List.uniqueOnTrue(assigned, InstNode.refEqual);
-
-      for a in assigned loop
-        (_, index) := Vector.find(unassigned, function InstNode.refEqual(node1 = a));
-
-        if index > 0 then
-          Vector.remove(unassigned, index);
+        if Vector.size(unassigned) <> Vector.size(unassigned_branch) then
+          assigned := listAppend(
+            List.setDifferenceOnTrue(Vector.toList(unassigned), Vector.toList(unassigned_branch), InstNode.refEqual),
+            assigned);
         end if;
+      end for;
+
+      if not listEmpty(assigned) then
+        assigned := List.uniqueOnTrue(assigned, InstNode.refEqual);
+
+        for a in assigned loop
+          (_, index) := Vector.find(unassigned, function InstNode.refEqual(node1 = a));
+
+          if index > 0 then
+            Vector.remove(unassigned, index);
+          end if;
+        end for;
+      end if;
+    else
+      // No else: analyse each branch for its own internal uses, but do not
+      // propagate any assignments out of the if. Keep the outer unassigned
+      // set intact so a later use after the if is flagged correctly.
+      for b in branches loop
+        unassigned_branch := Vector.copy(unassigned);
+        checkUseBeforeAssign2(unassigned_branch, Util.tuple22(b));
       end for;
     end if;
   end checkUseBeforeAssignIf;

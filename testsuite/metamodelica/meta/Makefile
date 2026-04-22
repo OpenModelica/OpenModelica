@@ -119,6 +119,7 @@ Try.mos \
 TryExtends.mos \
 TupleInteractive.mos \
 UnboundLocal.mo \
+UnboundLocalIf.mo \
 UnboxCond.mo \
 Uniontype1.mos \
 Uniontype2.mos \
