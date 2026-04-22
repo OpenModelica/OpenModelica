@@ -1,0 +1,28 @@
+name: Check Runtime License Headers
+
+on:
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  check-runtime-license:
+    name: Runtime license headers
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          submodules: 'recursive'
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+
+      - name: Check runtime mark present in SimulationRuntime source files
+        run: |
+          python3 .CI/scripts/check_runtime_license.py \
+            --summary \
+            OMCompiler/SimulationRuntime \
+            OMCompiler/3rdParty
