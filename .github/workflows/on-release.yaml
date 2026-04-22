@@ -9,7 +9,7 @@ jobs:
   build: # run only on pushes to the default branch (master)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           submodules: true
       - name: Build Assets
