@@ -1,5 +1,5 @@
 #!/usr/bin/python
-# NgspicetoModelica.py is a python script to convert ngspice netlists to Modelica code. It is written by Rakhi R.  
+# NgspicetoModelica.py is a python script to convert ngspice netlists to Modelica code. It is written by Rakhi R.
 # Copyright (C) 2014 Rakhi R Warriar, FOSSEE, IIT Bombay.
 # This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 2 of the License, or (at your option) any later version.
 # This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
@@ -31,14 +31,14 @@ def readNetlist(filename):
         if eachline[0]=='+':
 	  netlist.append(netlist.pop()+eachline.replace('+',' ',1))
         else:
-          netlist.append(eachline)  
+          netlist.append(eachline)
     return netlist
 
 def separateNetlistInfo(netlist):
   """ Separate schematic data and option data"""
   optionInfo=[]
   schematicInfo=[]
- 
+
   for eachline in netlist:
     if len(eachline) > 1:
      if eachline[0]=='*':
@@ -85,7 +85,7 @@ def addModel(optionInfo, dir_name):
          for each in iteminfo:
           modelInfo[model][iteminfo[0]] = iteminfo[1]
     elif words[0] == '.param':
-      paramInfo.append(eachline) 
+      paramInfo.append(eachline)
    for eachmodel in modelName:
      filename = eachmodel + '.lib'
      filename = os.path.join(dir_name, filename)
@@ -121,9 +121,9 @@ def addModel(optionInfo, dir_name):
         for eachitem in info:
          modelInfo[eachmodel][info[0]] = info[1] #dictn within a dictn
      f.close()
-          
-   return modelName, modelInfo, subcktName, paramInfo, transInfo     
-     
+
+   return modelName, modelInfo, subcktName, paramInfo, transInfo
+
 
 def processParam(paramInfo):
     """ Process parameter info and update in Modelica syntax"""
@@ -140,7 +140,7 @@ def separatePlot(schematicInfo):
    """ separate print plot and component statements"""
    compInfo = []
    plotInfo = []
-   
+
    for eachline in schematicInfo:
     words = eachline.split()
     if words[0] == 'run':
@@ -177,7 +177,7 @@ def splitIntoVal(val):
            value = newval[0] + 'e-6'
          if val[i] == 'p':
            value = newval[0] + 'e-12'
-         if val[i] == 't':  
+         if val[i] == 't':
            value = newval[0] + 'e12'
          if val[i] == 'g':
            value = newval[0] + 'e9'
@@ -188,7 +188,7 @@ def splitIntoVal(val):
            else:
             value = newval[0] +'e-3'
          if val[i] == 'n':
-           value = newval[0] + 'e-9'       
+           value = newval[0] + 'e-9'
          if val[i] == 'f':
            value = newval[0] +'e-15'
        else:
@@ -202,13 +202,13 @@ def tryExists(wordNo, key,default):
     except KeyError:
        keyval = str(default)
     return keyval
-    
+
 def compInit(compInfo, node, modelInfo, subcktName, dir_name, transInfo):
    """For each component in the netlist initialise it acc to Modelica format"""
 #### initial processign to check if MOSFET is present. If so, library to be used is BondLib
    modelicaCompInit = []
    mosInfo = {}
-   numNodesSub = {} 
+   numNodesSub = {}
    IfMOS = '0'
    for eachline in compInfo:
 #     words = eachline.split()
@@ -240,19 +240,19 @@ def compInit(compInfo, node, modelInfo, subcktName, dir_name, transInfo):
        modelicaCompInit.append(stat)
      elif eachline[0] == 'l':
        stat = 'Analog.Basic.Inductor ' + words[0] + '(L = ' + value + ');'
-       modelicaCompInit.append(stat) 
+       modelicaCompInit.append(stat)
      elif eachline[0] == 'e':
        stat = 'Analog.Basic.VCV ' + words[0] + '(gain = ' + splitIntoVal(words[5]) + ');'
-       modelicaCompInit.append(stat) 
+       modelicaCompInit.append(stat)
      elif eachline[0] == 'g':
        stat = 'Analog.Basic.VCC ' + words[0] + '(transConductance = ' + splitIntoVal(words[5]) + ');'
-       modelicaCompInit.append(stat) 
+       modelicaCompInit.append(stat)
      elif eachline[0] == 'f':
        stat = 'Analog.Basic.CCC ' + words[0] + '(gain = ' + splitIntoVal(words[4]) + ');'
-       modelicaCompInit.append(stat) 
+       modelicaCompInit.append(stat)
      elif eachline[0] == 'h':
        stat = 'Analog.Basic.CCV ' + words[0] + '(transResistance = ' + splitIntoVal(words[4]) + ');'
-       modelicaCompInit.append(stat) 
+       modelicaCompInit.append(stat)
      elif eachline[0] == 'd':
        if len(words) > 3:
         n = float(modelInfo[words[3]]['n'])
@@ -352,7 +352,7 @@ def compInit(compInfo, node, modelInfo, subcktName, dir_name, transInfo):
           per = words[9].split(')')
  #         if IfMOS == '0':
  #          stat = 'Spice3.Sources.V_pulse '+words[0]+'(TR = '+words[6]+', V2 = '+words[4]+', PW = '+words[8]+', PER = '+per[0]+', V1 = '+typ[1]+', TD = '+words[5]+', TF = '+words[7]+');'
- #         elif IfMOS == '1': 
+ #         elif IfMOS == '1':
           stat = 'Analog.Sources.TrapezoidVoltage '+words[0]+'(rising = '+words[6]+', V = '+words[4]+', width = '+words[8]+', period = '+per[0]+', offset = '+typ[1]+', startTime = '+words[5]+', falling = '+words[7]+');'
           modelicaCompInit.append(stat)
        if typ[0] == "sine":
@@ -367,16 +367,16 @@ def compInit(compInfo, node, modelInfo, subcktName, dir_name, transInfo):
 #           keyw = 'Spice3.Sources.V_pwl '
 #          elif IfMOS == '1':
           keyw = 'Analog.Sources.TableVoltage '
-          stat = keyw + words[0] + '(table = [' + typ[1] + ',' + words[4] + ';' 
+          stat = keyw + words[0] + '(table = [' + typ[1] + ',' + words[4] + ';'
           length = len(words);
           for i in range(6,length,2):
              if i == length-2:
                w = words[i].split(')')
-               stat = stat + words[i-1] + ',' + w[0] 
+               stat = stat + words[i-1] + ',' + w[0]
              else:
                stat = stat + words[i-1] + ',' + words[i] + ';'
           stat = stat + ']);'
-          modelicaCompInit.append(stat) 
+          modelicaCompInit.append(stat)
        if typ[0] == words[3] and typ[0] != "dc":
           val_temp = typ[0].split('v')
 #          if IfMOS  == '0':
@@ -386,9 +386,9 @@ def compInit(compInfo, node, modelInfo, subcktName, dir_name, transInfo):
           modelicaCompInit.append(stat)
        elif typ[0] == words[3] and typ[0] == "dc":
 #          if IfMOS  == '0':
-#           stat = 'Spice3.Sources.V_constant ' + words[0] + '(V = ' + words[4] + ');'    
+#           stat = 'Spice3.Sources.V_constant ' + words[0] + '(V = ' + words[4] + ');'
 #          elif IfMOS == '1':
-          stat = 'Analog.Sources.ConstantVoltage ' + words[0] + '(V = ' + words[4] + ');'    
+          stat = 'Analog.Sources.ConstantVoltage ' + words[0] + '(V = ' + words[4] + ');'
           modelicaCompInit.append(stat)
      elif eachline[0] == 'x':
        temp_line = eachline.split()
@@ -422,11 +422,11 @@ def getSubInterface(subname, numNodesSub):
    subOptionInfo_p, subSchemInfo_p = separateNetlistInfo(data_p)
    if len(subOptionInfo_p) > 0:
      newline = subOptionInfo_p[0]
-     newline = newline.split('.subckt '+ subname)       
+     newline = newline.split('.subckt '+ subname)
      intLine = newline[1].split()
      newindex = numNodesSub[subname]
      nodesInfoLine = intLine[0:newindex]
-   return nodesInfoLine 
+   return nodesInfoLine
 
 
 def getSubParamLine(subname, numNodesSub, subParamInfo, dir_name):
@@ -440,7 +440,7 @@ def getSubParamLine(subname, numNodesSub, subParamInfo, dir_name):
    subOptionInfo_p, subSchemInfo_p = separateNetlistInfo(data_p)
    if len(subOptionInfo_p) > 0:
      newline = subOptionInfo_p[0]
-     newline = newline.split('.subckt '+ subname)       
+     newline = newline.split('.subckt '+ subname)
      intLine = newline[1].split()
      newindex = numNodesSub[subname]
      appen_line = intLine[newindex:len(intLine)]
@@ -473,7 +473,7 @@ def nodeSeparate(compInfo, ifSub, subname, subcktName):
       templine = eachline.split()
       for i in range(0,len(templine),1):
         if templine[i] in subcktName:
-          point = i   
+          point = i
       nodeTemp.extend(words[1:point])
      else:
       nodeTemp.append(words[1])
@@ -487,15 +487,15 @@ def nodeSeparate(compInfo, ifSub, subname, subcktName):
        if i != len(node)-1:
         pinInit = pinInit + nodeDic[node[i]] + ', '
        else:
-        pinInit = pinInit + nodeDic[node[i]] 
+        pinInit = pinInit + nodeDic[node[i]]
      else:
        nonprotectedNode = getSubInterface(subname, numNodesSub)
        if node[i] in nonprotectedNode:
         continue
        else:
         protectedNode.append(node[i])
-   if ifSub == '1': 
-     if len(nonprotectedNode) > 0:    
+   if ifSub == '1':
+     if len(nonprotectedNode) > 0:
       for i in range(0, len(nonprotectedNode),1):
         if i != len(nonprotectedNode)-1:
          pinProtectedInit = pinProtectedInit + nodeDic[nonprotectedNode[i]] + ','
@@ -503,14 +503,14 @@ def nodeSeparate(compInfo, ifSub, subname, subcktName):
          pinProtectedInit = pinProtectedInit + nodeDic[nonprotectedNode[i]]
      if len(protectedNode) > 0:
       for i in range(0, len(protectedNode),1):
-        if i != len(protectedNode)-1: 
+        if i != len(protectedNode)-1:
          pinInit = pinInit + nodeDic[protectedNode[i]] + ','
         else:
-         pinInit = pinInit + nodeDic[protectedNode[i]] 
+         pinInit = pinInit + nodeDic[protectedNode[i]]
    pinInit = pinInit + ';'
    pinProtectedInit = pinProtectedInit + ';'
    return node, nodeDic, pinInit, pinProtectedInit
-  
+
 def connectInfo(compInfo, node, nodeDic, numNodesSub):
    """Make node connections in the modelica netlist"""
    connInfo = []
@@ -570,7 +570,7 @@ def connectInfo(compInfo, node, nodeDic, numNodesSub):
       for i in range(0, numNodesSub[subname], 1):
 #        conn = 'connect(' + subname + '_instance' + index + '.' + nodeDic[nodeNumInfo[i]] + ',' + nodeDic[words[i+1]] + ');'
         conn = 'connect(' + subname + '_instance' + index + '.' + 'n'+ nodeNumInfo[i] + ',' + nodeDic[words[i+1]] + ');'
-        connInfo.append(conn)              
+        connInfo.append(conn)
      else:
      #elif eachline[0] == 'q':
      #elif eachline[0] == 'j':
@@ -580,7 +580,7 @@ def connectInfo(compInfo, node, nodeDic, numNodesSub):
      connInfo.append(conn)
    return connInfo
 ## For testing
-     
+
 
 if len(sys.argv) < 2:
   filename=raw_input('Enter file name: ')
@@ -629,7 +629,7 @@ def procesSubckt(subcktName, dir_name):
    subSchemInfo = []
    subModel = []
    subModelInfo = {}
-   subsubName = [] 
+   subsubName = []
    subParamInfo = []
    nodeSubInterface = []
    nodeSub = []
@@ -647,7 +647,7 @@ def procesSubckt(subcktName, dir_name):
      if len(subOptionInfo) > 0:
        newline = subOptionInfo[0]
        subInitLine = newline
-       newline = newline.split('.subckt')       
+       newline = newline.split('.subckt')
        intLine = newline[1].split()
        for i in range(0,len(intLine),1):
          nodeSubInterface.append(intLine[i])
@@ -687,13 +687,13 @@ def procesSubckt(subcktName, dir_name):
       out.writelines('import Modelica.Electrical.*;')
      elif IfMOSsub == '1':
       out.writelines('import BondLib.Electrical.*;')
-     out.writelines('\n') 
+     out.writelines('\n')
      for eachline in modelicaSubParamNew:
        if len(subParamInfo) == 0:
          continue
        else:
-        out.writelines(eachline) 
-        out.writelines('\n') 
+        out.writelines(eachline)
+        out.writelines('\n')
      for eachline in modelicaSubCompInit:
       if len(subSchemInfo) == 0:
        continue
@@ -718,8 +718,8 @@ def procesSubckt(subcktName, dir_name):
      out.writelines('end '+ newfilename + ';')
      out.writelines('\n')
      out.close()
-   
-   return data, subOptionInfo, subSchemInfo, subModel, subModelInfo, subsubName, subParamInfo, modelicaSubCompInit, modelicaSubParam, nodeSubInterface, nodeSub, nodeDicSub, pinInitSub, connSubInfo 
+
+   return data, subOptionInfo, subSchemInfo, subModel, subModelInfo, subsubName, subParamInfo, modelicaSubCompInit, modelicaSubParam, nodeSubInterface, nodeSub, nodeDicSub, pinInitSub, connSubInfo
 
 if len(subcktName) > 0:
  data, subOptionInfo, subSchemInfo, subModel, subModelInfo, subsubName, subParamInfo, modelicaSubCompInit, modelicaSubParam,  nodeSubInterface, nodeSub, nodeDicSub, pinInitSub, connSubInfo = procesSubckt(subcktName, dir_name)
@@ -772,5 +772,3 @@ out.writelines('\n')
 
 
 out.close()
-
-
