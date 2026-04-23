@@ -25,4 +25,5 @@ jobs:
           python3 .CI/scripts/check_runtime_license.py \
             --summary \
             OMCompiler/SimulationRuntime \
-            OMCompiler/3rdParty
+            OMCompiler/3rdParty \
+            OMCompiler/Compiler

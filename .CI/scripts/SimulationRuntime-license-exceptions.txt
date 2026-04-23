@@ -24,17 +24,71 @@
 # =============================================================================
 
 # =============================================================================
-# Third-party files in OMCompiler/
+# OMCompiler/Compiler
 # =============================================================================
 
+# [build] generated files / build artifacts
+OMCompiler/revision.h
+
+# =============================================================================
+# OMCompiler/Compiler
+# =============================================================================
+
+# [3rd-party]
 OMCompiler/tools/
 
-# =============================================================================
-# Bootstrap sources in OMCompiler/Compiler/boot
-# =============================================================================
-
+# [build] generated files / build artifacts
+OMCompiler/Compiler/boot/bomc
 OMCompiler/Compiler/boot/bootstrap-sources
-OMCompiler/Compiler/boot/bomc/bootstrap-sources/build/
+OMCompiler/Compiler/boot/tarball-include/OpenModelicaBootstrappingHeader.h
+OMCompiler/Compiler/Lexers/LexerJSON.mo
+OMCompiler/Compiler/Lexers/LexerModelicaDiff.mo
+OMCompiler/Compiler/OpenModelicaBootstrappingHeader.h
+
+OMCompiler/Compiler/Script/OpenModelicaScriptingAPI.mo
+OMCompiler/Compiler/Script/OpenModelicaScriptingAPIQt.cpp
+OMCompiler/Compiler/Script/OpenModelicaScriptingAPIQt.h
+
+# Rakhi R Warriar, FOSSEE, IIT Bombay - NgspicetoModelica.py
+OMCompiler/Compiler/scripts/ngspicetoModelica.py
+
+OMCompiler/Compiler/susan_codegen/
+
+OMCompiler/Compiler/Template/AbsynDumpTpl.mo
+OMCompiler/Compiler/Template/AbsynToJulia.mo
+OMCompiler/Compiler/Template/AbsynJLDumpTpl.mo
+OMCompiler/Compiler/Template/Codegen*.mo
+OMCompiler/Compiler/Template/DAEDumpTpl.mo
+OMCompiler/Compiler/Template/ExpressionDumpTpl.mo
+OMCompiler/Compiler/Template/GenerateAPIFunctionsTpl.mo
+OMCompiler/Compiler/Template/GraphMLDumpTpl.mo
+OMCompiler/Compiler/Template/GraphvizDump.mo
+OMCompiler/Compiler/Template/MMToJulia.mo
+OMCompiler/Compiler/Template/NFInstDumpTpl.mo
+OMCompiler/Compiler/Template/SCodeDumpTpl.mo
+OMCompiler/Compiler/Template/SimCodeDump.mo
+OMCompiler/Compiler/Template/TplCodegen.mo
+OMCompiler/Compiler/Template/Unparsing.mo
+OMCompiler/Compiler/Template/VisualXMLTpl.mo
+
+OMCompiler/Compiler/Util/MessagePack.mo
+
+# Martin Sjölund - Part of a Modelica library we don't have OSMC-PL for
+OMCompiler/Compiler/boot/include/msgpack-modelica.h
+
+# Dave Gamble - cJSON
+OMCompiler/Compiler/runtime/cJSON.*
+
+# David Robert Nadeau - getMemorySize
+OMCompiler/Compiler/runtime/getMemorySize.c
+
+# Kamer Kaya, Johannes Langguth and Bora Ucar - cheap matching - CeCILL-B license
+OMCompiler/Compiler/runtime/matching_cheap.c
+OMCompiler/Compiler/runtime/matching.c
+OMCompiler/Compiler/runtime/matchmaker.h
+
+# ITI GmbH Dresden - SimulationResultsCmpTubes
+OMCompiler/Compiler/runtime/SimulationResultsCmpTubes.c
 
 # =============================================================================
 # SimulationRuntime/c/
@@ -66,6 +120,7 @@ OMCompiler/SimulationRuntime/c/util/jni_md_windows.h
 
 # Build manifest — not a compiled runtime source file.
 OMCompiler/SimulationRuntime/c/RuntimeSources.mo
+OMCompiler/SimulationRuntime/c/RuntimeSources.mo.tpl
 
 # =============================================================================
 # SimulationRuntime/fmi/
@@ -206,7 +261,7 @@ OMCompiler/Examples/
 
 libraries/
 OMCompiler/3rdParty/
-!OMCompiler/3rdParty/ryu/ryu/om_format.*
+#!OMCompiler/3rdParty/ryu/ryu/om_format.*
 OMEdit/
 OMNotebook/
 OMOptim/
