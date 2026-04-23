@@ -187,6 +187,15 @@ private:
   void insertNestedEquations(EquationTreeItem *pParentItem, int index, const QList<OMEquation*> &equations);
 };
 
+class EquationTreeProxyModel : public QSortFilterProxyModel
+{
+  Q_OBJECT
+public:
+  explicit EquationTreeProxyModel(QObject *parent = nullptr);
+protected:
+  virtual bool lessThan(const QModelIndex &left, const QModelIndex &right) const override;
+};
+
 class EquationTreeView : public QTreeView
 {
   Q_OBJECT
@@ -235,11 +244,14 @@ private:
   TVariableTreeProxyModel *mpTVariableTreeProxyModel;
   EquationTreeView *mpDefinedInEquationTreeView;
   EquationTreeModel *mpDefinedInEquationTreeModel;
+  EquationTreeProxyModel *mpDefinedInEquationProxyModel;
   EquationTreeView *mpUsedInEquationTreeView;
   EquationTreeModel *mpUsedInEquationTreeModel;
+  EquationTreeProxyModel *mpUsedInEquationProxyModel;
   QTreeWidget *mpVariableOperationsTreeWidget;
   EquationTreeView *mpEquationTreeView;
   EquationTreeModel *mpEquationTreeModel;
+  EquationTreeProxyModel *mpEquationProxyModel;
   QTreeWidget *mpDefinesVariableTreeWidget;
   QTreeWidget *mpDependsVariableTreeWidget;
   QComboBox *mpEquationDiffFilterComboBox;

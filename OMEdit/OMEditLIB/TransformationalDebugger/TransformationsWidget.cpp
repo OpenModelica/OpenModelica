@@ -409,6 +409,30 @@ bool TVariableTreeProxyModel::lessThan(const QModelIndex &left, const QModelInde
   return StringHandler::naturalSort(l.toString(), r.toString());
 }
 
+/*!
+ * \brief EquationTreeProxyModel::EquationTreeProxyModel
+ * Creates an EquationTreeProxyModel object with the given parent.
+ * \param parent
+ */
+EquationTreeProxyModel::EquationTreeProxyModel(QObject *parent)
+  : QSortFilterProxyModel(parent)
+{
+}
+
+/*!
+ * \brief EquationTreeProxyModel::lessThan
+ * Reimplementation of QSortFilterProxyModel::lessThan to sort the equations in natural order.
+ * \param left
+ * \param right
+ * \return
+ */
+bool EquationTreeProxyModel::lessThan(const QModelIndex &left, const QModelIndex &right) const
+{
+  QVariant l = (left.model() ? left.model()->data(left) : QVariant());
+  QVariant r = (right.model() ? right.model()->data(right) : QVariant());
+  return StringHandler::naturalSort(l.toString(), r.toString());
+}
+
 TVariablesTreeView::TVariablesTreeView(TransformationsWidget *pTransformationsWidget)
   : QTreeView(pTransformationsWidget)
 {
@@ -701,13 +725,10 @@ QVariant EquationTreeModel::data(const QModelIndex &index, int role) const
 void EquationTreeModel::insertEquations(const QList<OMEquation*>& equations, bool nestedEquations)
 {
   beginResetModel();
-
   mpRootEquationTreeItem->removeChildren();
-
   // Skip the first equation as it is a dummy equation. see model_info.json {"eqIndex":0,"tag":"dummy"}
   const int start = nestedEquations ? 1 : 0;
-  for (int i = start; i < equations.size(); ++i)
-  {
+  for (int i = start; i < equations.size(); ++i) {
     OMEquation *equation = equations[i];
 
     if (nestedEquations && equation->parent) {
@@ -721,7 +742,6 @@ void EquationTreeModel::insertEquations(const QList<OMEquation*>& equations, boo
       insertNestedEquations(pEquationTreeItem, i, equations);
     }
   }
-
   endResetModel();
 }
 
@@ -769,14 +789,10 @@ void EquationTreeModel::insertNestedEquations(EquationTreeItem *pParentItem, int
 {
   OMEquation *equation = equations[index];
 
-  for (int nestedIndex : equation->eqs)
-  {
+  for (int nestedIndex : equation->eqs) {
     OMEquation *nestedEquation = equations[nestedIndex];
-
     EquationTreeItem *pNestedItem = new EquationTreeItem(nestedEquation, pParentItem);
-
     pParentItem->insertChild(pParentItem->childrenSize(), pNestedItem);
-
     insertNestedEquations(pNestedItem, nestedIndex, equations);
   }
 }
@@ -858,8 +874,11 @@ TransformationsWidget::TransformationsWidget(QString infoJSONFullFileName, bool 
   Label *pDefinedInLabel = new Label(tr("Defined In Equations"));
   pDefinedInLabel->setObjectName("LabelWithBorder");
   mpDefinedInEquationTreeModel = new EquationTreeModel(this);
+  mpDefinedInEquationProxyModel = new EquationTreeProxyModel(this);
+  mpDefinedInEquationProxyModel->setDynamicSortFilter(true);
+  mpDefinedInEquationProxyModel->setSourceModel(mpDefinedInEquationTreeModel);
   mpDefinedInEquationTreeView = new EquationTreeView(this);
-  mpDefinedInEquationTreeView->setModel(mpDefinedInEquationTreeModel);
+  mpDefinedInEquationTreeView->setModel(mpDefinedInEquationProxyModel);
   connect(mpDefinedInEquationTreeView, SIGNAL(doubleClicked(QModelIndex)), SLOT(fetchEquationData(QModelIndex)));
   QGridLayout *pDefinedInGridLayout = new QGridLayout;
   pDefinedInGridLayout->setSpacing(1);
@@ -872,8 +891,11 @@ TransformationsWidget::TransformationsWidget(QString infoJSONFullFileName, bool 
   Label *pUsedInLabel = new Label(tr("Used In Equations"));
   pUsedInLabel->setObjectName("LabelWithBorder");
   mpUsedInEquationTreeModel = new EquationTreeModel(this);
+  mpUsedInEquationProxyModel = new EquationTreeProxyModel(this);
+  mpUsedInEquationProxyModel->setDynamicSortFilter(true);
+  mpUsedInEquationProxyModel->setSourceModel(mpUsedInEquationTreeModel);
   mpUsedInEquationTreeView = new EquationTreeView(this);
-  mpUsedInEquationTreeView->setModel(mpUsedInEquationTreeModel);
+  mpUsedInEquationTreeView->setModel(mpUsedInEquationProxyModel);
   connect(mpUsedInEquationTreeView, SIGNAL(doubleClicked(QModelIndex)), SLOT(fetchEquationData(QModelIndex)));
   QGridLayout *pUsedInGridLayout = new QGridLayout;
   pUsedInGridLayout->setSpacing(1);
@@ -903,8 +925,11 @@ TransformationsWidget::TransformationsWidget(QString infoJSONFullFileName, bool 
   pEquationBrowserLabel->setObjectName("LabelWithBorder");
   /* Equations tree view */
   mpEquationTreeModel = new EquationTreeModel(this);
+  mpEquationProxyModel = new EquationTreeProxyModel(this);
+  mpEquationProxyModel->setDynamicSortFilter(true);
+  mpEquationProxyModel->setSourceModel(mpEquationTreeModel);
   mpEquationTreeView = new EquationTreeView(this);
-  mpEquationTreeView->setModel(mpEquationTreeModel);
+  mpEquationTreeView->setModel(mpEquationProxyModel);
   connect(mpEquationTreeView, SIGNAL(doubleClicked(QModelIndex)), SLOT(fetchEquationData(QModelIndex)));
   QGridLayout *pEquationsGridLayout = new QGridLayout;
   pEquationsGridLayout->setSpacing(1);
@@ -1520,9 +1545,10 @@ void TransformationsWidget::selectEquation(int equationIndex)
   EquationTreeItem *pEquationTreeItem = findEquationTreeItem(equationIndex);
   if (pEquationTreeItem) {
     mpEquationTreeView->clearSelection();
-    QModelIndex idx = mpEquationTreeModel->equationTreeItemIndex(pEquationTreeItem);
-    mpEquationTreeView->setCurrentIndex(idx);
-    mpEquationTreeView->scrollTo(idx);
+    QModelIndex sourceIdx = mpEquationTreeModel->equationTreeItemIndex(pEquationTreeItem);
+    QModelIndex proxyIdx = mpEquationProxyModel->mapFromSource(sourceIdx);
+    mpEquationTreeView->setCurrentIndex(proxyIdx);
+    mpEquationTreeView->scrollTo(proxyIdx);
   }
 }
 
@@ -1586,8 +1612,9 @@ void TransformationsWidget::fetchEquationData(int equationIndex)
       fileName = pLibraryTreeItem->getFileName();
     }
   }
+
   QFile file(fileName);
-  if (file.open(QIODevice::ReadOnly)) {
+  if (file.exists() && file.open(QIODevice::ReadOnly)) {
     mpTSourceEditorFileLabel->setText(file.fileName());
     mpTSourceEditorFileLabel->show();
     mpTransformationsEditor->getPlainTextEdit()->setPlainText(QString(file.readAll()));
@@ -1737,12 +1764,8 @@ void TransformationsWidget::fetchVariableData(const QModelIndex &index)
     }
   }
 
-  if (!QFile::exists(fileName)) {
-    return;
-  }
-
   QFile file(fileName);
-  if (file.open(QIODevice::ReadOnly)) {
+  if (file.exists() && file.open(QIODevice::ReadOnly)) {
     mpTSourceEditorFileLabel->setText(file.fileName());
     mpTSourceEditorFileLabel->show();
     mpTransformationsEditor->getPlainTextEdit()->setPlainText(QString(file.readAll()));
@@ -1759,21 +1782,32 @@ void TransformationsWidget::fetchEquationData(const QModelIndex &index)
     return;
   }
 
-  EquationTreeItem *pEquationTreeItem = static_cast<EquationTreeItem*>(index.internalPointer());
+  // Map to the source index before casting the internalPointer to an EquationTreeItem.
+  QModelIndex sourceIndex = index;
+  EquationTreeView *pSender = qobject_cast<EquationTreeView*>(sender());
+  if (pSender == mpDefinedInEquationTreeView) {
+    sourceIndex = mpDefinedInEquationProxyModel->mapToSource(index);
+  } else if (pSender == mpUsedInEquationTreeView) {
+    sourceIndex = mpUsedInEquationProxyModel->mapToSource(index);
+  } else if (pSender == mpEquationTreeView) {
+    sourceIndex = mpEquationProxyModel->mapToSource(index);
+  }
+
+  EquationTreeItem *pEquationTreeItem = static_cast<EquationTreeItem*>(sourceIndex.internalPointer());
   if (!pEquationTreeItem) {
     return;
   }
 
   int equationIndex = pEquationTreeItem->getEquationIndex();
   /* if the sender is mpEquationTreeView then there is no need to select the item. */
-  EquationTreeView *pSender = qobject_cast<EquationTreeView*>(sender());
   if (pSender != mpEquationTreeView) {
     EquationTreeItem *pEquationTreeItem = findEquationTreeItem(equationIndex);
     if (pEquationTreeItem) {
       mpEquationTreeView->clearSelection();
-      QModelIndex idx = mpEquationTreeModel->equationTreeItemIndex(pEquationTreeItem);
-      mpEquationTreeView->setCurrentIndex(idx);
-      mpEquationTreeView->scrollTo(idx);
+      QModelIndex sourceIdx = mpEquationTreeModel->equationTreeItemIndex(pEquationTreeItem);
+      QModelIndex proxyIdx = mpEquationProxyModel->mapFromSource(sourceIdx);
+      mpEquationTreeView->setCurrentIndex(proxyIdx);
+      mpEquationTreeView->scrollTo(proxyIdx);
     }
   }
 
