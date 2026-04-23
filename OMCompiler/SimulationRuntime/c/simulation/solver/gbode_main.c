@@ -2055,6 +2055,13 @@ int gbode_main(DATA *data, threadData_t *threadData, SOLVER_INFO *solverInfo)
                         gbData->timeRight, gbData->yRight, gbData->kRight,
                         sData->timeValue,  sData->realVars,
                         gbData->nSlowStates, gbData->slowStatesIdx,  nStates, gbData->tableau, gbData->x, gbData->k);
+
+        DATA_GBODEF *gbfData = gbData->gbfData;
+        gb_interpolation(gbData->gbfData->interpolation,
+                gbfData->timeLeft,  gbfData->yLeft,  gbfData->kLeft,
+                gbfData->timeRight, gbfData->yRight, gbfData->kRight,
+                sData->timeValue,  sData->realVars,
+                gbfData->nFastStates, gbData->fastStatesIdx,  nStates, gbfData->tableau, gbfData->x, gbfData->k);
       } else {
         gb_interpolation(gbData->interpolation,
                         gbData->timeLeft,  gbData->yLeft,  gbData->kLeft,
