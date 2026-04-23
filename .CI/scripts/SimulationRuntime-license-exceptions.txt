@@ -91,6 +91,8 @@ OMCompiler/Compiler/runtime/matchmaker.h
 # ITI GmbH Dresden - SimulationResultsCmpTubes
 OMCompiler/Compiler/runtime/SimulationResultsCmpTubes.c
 
+OMCompiler/scripts/parallel-wine-msvc.py
+
 # =============================================================================
 # SimulationRuntime/c/
 # =============================================================================
