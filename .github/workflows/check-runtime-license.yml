@@ -23,7 +23,8 @@ jobs:
       - name: Check runtime mark present in SimulationRuntime source files
         run: |
           python3 .CI/scripts/check_runtime_license.py \
-            --summary \
-            OMCompiler/SimulationRuntime \
-            OMCompiler/3rdParty \
-            OMCompiler/Compiler
+            --summary                                  \
+            OMCompiler/SimulationRuntime               \
+            OMCompiler/3rdParty                        \
+            OMCompiler/Compiler                        \
+            OMCompiler/Parser

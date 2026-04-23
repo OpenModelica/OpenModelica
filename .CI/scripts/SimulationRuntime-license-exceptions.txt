@@ -36,6 +36,7 @@ OMCompiler/revision.h
 
 # [3rd-party]
 OMCompiler/tools/
+!OMCompiler/tools/debugging
 
 # [build] generated files / build artifacts
 OMCompiler/Compiler/boot/bomc

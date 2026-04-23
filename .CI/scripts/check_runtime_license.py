@@ -29,9 +29,9 @@ Exception-list format (one entry per line):
   Patterns are evaluated in order; last match wins (same as .gitignore).
 
 Supported file types and their expected comment style:
-  C/C++   .c .h .cpp .cc .cxx .inc .inl .hpp .cl   /* block comment */
-  Python  .py                          # line comments
-  Modelica .mo .tpl                    /* block */ or // line comments
+  C/C++   .c .h .cpp .cc .cxx .inc .inl .hpp .cl .g /* block comment */
+  Python  .py                                       # line comments
+  Modelica .mo .tpl                                 /* block */ or // line comments
 """
 
 from __future__ import annotations
@@ -213,7 +213,7 @@ OSMC_PL_1_8_RUNTIME_LICENSE_TEXT_C = f"""
 # File-type groups
 # ---------------------------------------------------------------------------
 
-C_STYLE_EXTS = frozenset({".c", ".h", ".cpp", ".cc", ".cxx", ".inc", ".inl", ".hpp", ".cl"})
+C_STYLE_EXTS = frozenset({".c", ".h", ".cpp", ".cc", ".cxx", ".inc", ".inl", ".hpp", ".cl", ".g"})
 PYTHON_EXTS = frozenset({".py"})
 MODELICA_EXTS = frozenset({".mo", ".tpl"})
 
