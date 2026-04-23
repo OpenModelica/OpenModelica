@@ -349,18 +349,28 @@ QHttpServerResponse MCPServer::handleDiagramTool(const QString &toolName, QJsonV
     QString firstElementName = firstElementParts.takeLast();
     QStringList secondElementParts = StringHandler::splitPath(secondComponent);
     QString secondElementName = secondElementParts.takeLast();
-    Element *firstElementFirstPart = pGraphicsView->getElementObject(firstElementParts.join("."));
-    if (!firstElementFirstPart) {
-      return makeMCPError(id, QString("Could not find element %1 in model %2").arg(firstComponent).arg(className));
+    Element *pFirstElement = nullptr;
+    if (firstElementParts.isEmpty()) {
+      pFirstElement = pGraphicsView->getElementObject(firstElementName);
+    } else {
+      Element *firstElementFirstPart = pGraphicsView->getElementObject(firstElementParts.join("."));
+      if (!firstElementFirstPart) {
+        return makeMCPError(id, QString("Could not find element %1 in model %2").arg(firstComponent).arg(className));
+      }
+      pFirstElement = pModelWidget->getConnectorElement(firstElementFirstPart, firstElementName);
     }
-    Element *secondElementFirstPart = pGraphicsView->getElementObject(secondElementParts.join("."));
-    if (!secondElementFirstPart) {
-      return makeMCPError(id, QString("Could not find element %1 in model %2").arg(secondComponent).arg(className));
-    }
-    Element *pFirstElement = pModelWidget->getConnectorElement(firstElementFirstPart, firstElementName);
-    Element *pSecondElement = pModelWidget->getConnectorElement(secondElementFirstPart, secondElementName);
     if (!pFirstElement) {
       return makeMCPError(id, QString("Could not find element %1 in model %2").arg(firstComponent).arg(className));
+    }
+    Element *pSecondElement = nullptr;
+    if (secondElementParts.isEmpty()) {
+      pSecondElement = pGraphicsView->getElementObject(secondElementName);
+    } else {
+      Element *secondElementFirstPart = pGraphicsView->getElementObject(secondElementParts.join("."));
+      if (!secondElementFirstPart) {
+        return makeMCPError(id, QString("Could not find element %1 in model %2").arg(secondComponent).arg(className));
+      }
+      pSecondElement = pModelWidget->getConnectorElement(secondElementFirstPart, secondElementName);
     }
     if (!pSecondElement) {
       return makeMCPError(id, QString("Could not find element %1 in model %2").arg(secondComponent).arg(className));
