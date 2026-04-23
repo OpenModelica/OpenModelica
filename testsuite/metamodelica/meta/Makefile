@@ -74,6 +74,7 @@ MatchElse1.mos \
 MatchIfEquation1.mos \
 MatchNoRetCall.mos \
 MatchShadowing.mo \
+MetaRecordFieldAssignMerge.mos \
 OptimizeContinue.mo \
 OptimizeMatchToIfExp.mo \
 OptionInteractive.mos \

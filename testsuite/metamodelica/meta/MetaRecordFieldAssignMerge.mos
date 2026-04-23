@@ -1,0 +1,92 @@
+// status: correct
+// cflags: -d=-newInst
+
+// Regression test for issue #11909.
+//
+// Verifies that consecutive field updates on a singleton uniontype
+// record produce the expected result when the frontend merges them
+// into a single metarecord construction. We cannot observe the
+// allocation count directly from a .mos test, so this test guards the
+// semantics: the grouped updates must yield the same final record the
+// original per-field updates would.
+
+setCommandLineOptions("--grammar=MetaModelica -d=gen");
+loadString("
+encapsulated package MetaRecordFieldAssignMerge
+  uniontype Rec
+    record R
+      Integer a;
+      Integer b;
+      Integer c;
+      Integer d;
+      Integer e;
+    end R;
+  end Rec;
+
+  function updateAll
+    input Rec inR;
+    output Rec outR;
+  algorithm
+    outR := match inR case Rec.R() then inR; end match;
+    outR.a := 11;
+    outR.c := 33;
+    outR.e := 55;
+  end updateAll;
+
+  function updateWithFieldRead
+    // rhs reads a field that has not yet been written in the group; the
+    // merge is still valid because the read sees the original value.
+    input Rec inR;
+    output Rec outR;
+  algorithm
+    outR := match inR case Rec.R() then inR; end match;
+    outR.a := outR.b + 100;
+    outR.c := outR.d + 100;
+  end updateWithFieldRead;
+
+  function updateWithConflict
+    // rhs of the second update reads a field already written; the merge
+    // must NOT fire, so the second read observes the new value.
+    input Rec inR;
+    output Rec outR;
+  algorithm
+    outR := match inR case Rec.R() then inR; end match;
+    outR.a := 7;
+    outR.b := outR.a * 2;
+  end updateWithConflict;
+end MetaRecordFieldAssignMerge;
+");getErrorString();
+
+MetaRecordFieldAssignMerge.updateAll(MetaRecordFieldAssignMerge.Rec.R(1,2,3,4,5));getErrorString();
+MetaRecordFieldAssignMerge.updateWithFieldRead(MetaRecordFieldAssignMerge.Rec.R(1,2,3,4,5));getErrorString();
+MetaRecordFieldAssignMerge.updateWithConflict(MetaRecordFieldAssignMerge.Rec.R(1,2,3,4,5));getErrorString();
+
+// Result:
+// true
+// true
+// ""
+// record MetaRecordFieldAssignMerge.Rec.R
+//     a = 11,
+//     b = 2,
+//     c = 33,
+//     d = 4,
+//     e = 55
+// end MetaRecordFieldAssignMerge.Rec.R;
+// ""
+// record MetaRecordFieldAssignMerge.Rec.R
+//     a = 102,
+//     b = 2,
+//     c = 104,
+//     d = 4,
+//     e = 5
+// end MetaRecordFieldAssignMerge.Rec.R;
+// ""
+// record MetaRecordFieldAssignMerge.Rec.R
+//     a = 7,
+//     b = 14,
+//     c = 3,
+//     d = 4,
+//     e = 5
+// end MetaRecordFieldAssignMerge.Rec.R;
+// ""
+// endResult

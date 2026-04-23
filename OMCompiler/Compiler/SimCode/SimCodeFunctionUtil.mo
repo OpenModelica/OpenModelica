@@ -728,6 +728,7 @@ algorithm
 
         DAE.FUNCTION_ATTRIBUTES(functionParallelism=DAE.FP_NON_PARALLEL()) = funAttrs;
 
+        daeElts = optMRFAElems(daeElts);
         outVars = List.map(DAEUtil.getOutputElements(daeElts), daeInOutSimVar);
         funArgs = List.map1(args, typesSimFunctionArg, NONE());
         collectRecDeclsFromElems(daeElts, recDeclsMap);
@@ -747,6 +748,7 @@ algorithm
 
         DAE.FUNCTION_ATTRIBUTES(functionParallelism=DAE.FP_KERNEL_FUNCTION()) = funAttrs;
 
+        daeElts = optMRFAElems(daeElts);
         outVars = List.map(DAEUtil.getOutputElements(daeElts), daeInOutSimVar);
         funArgs = List.map1(args, typesSimFunctionArg, NONE());
         collectRecDeclsFromElems(daeElts, recDeclsMap);
@@ -766,6 +768,7 @@ algorithm
 
         DAE.FUNCTION_ATTRIBUTES(functionParallelism=DAE.FP_PARALLEL_FUNCTION()) = funAttrs;
 
+        daeElts = optMRFAElems(daeElts);
         outVars = List.map(DAEUtil.getOutputElements(daeElts), daeInOutSimVar);
         funArgs = List.map1(args, typesSimFunctionArg, NONE());
         collectRecDeclsFromElems(daeElts, recDeclsMap);
@@ -1044,6 +1047,31 @@ protected function elaborateStatement
 algorithm
   DAE.ALGORITHM(algorithm_ = DAE.ALGORITHM_STMTS(statementLst = stmts)) := inElement;
 end elaborateStatement;
+
+protected function optMRFAElems
+  "Applies DAEUtil.optimizeMetaRecordFieldAssigns to every algorithm body in
+   the DAE element list. Runs before collectRecDeclsFromElems so that any
+   METARECORDCALL expressions introduced by the pass are picked up when the
+   record-declaration map is populated. See issue #11909."
+  input output list<DAE.Element> elems;
+algorithm
+  elems := list(optMRFAElem(e) for e in elems);
+end optMRFAElems;
+
+protected function optMRFAElem
+  input output DAE.Element elem;
+algorithm
+  elem := match elem
+    local
+      list<DAE.Statement> stmts;
+    case DAE.ALGORITHM(algorithm_ = DAE.ALGORITHM_STMTS(statementLst = stmts))
+      algorithm
+        stmts := DAEUtil.optimizeMetaRecordFieldAssigns(stmts);
+        elem.algorithm_ := DAE.ALGORITHM_STMTS(stmts);
+      then elem;
+    else elem;
+  end match;
+end optMRFAElem;
 
 
 public function checkValidMainFunction
