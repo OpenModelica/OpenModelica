@@ -31,7 +31,7 @@ Exception-list format (one entry per line):
 Supported file types and their expected comment style:
   C/C++   .c .h .cpp .cc .cxx .inc .inl .hpp .cl   /* block comment */
   Python  .py                          # line comments
-  Modelica .mo                         /* block */ or // line comments
+  Modelica .mo .tpl                    /* block */ or // line comments
 """
 
 from __future__ import annotations
@@ -108,6 +108,77 @@ OSMC_PL_1_8_LICENSE_TEXT_C = f"""
  */
 """
 
+OSMC_PL_1_8_LICENSE_TEXT_PY = f"""
+# This file is part of OpenModelica.
+#
+# Copyright (c) 1998-{CURRENT_YEAR}, Open Source Modelica Consortium (OSMC),
+# c/o Linköpings universitet, Department of Computer and Information Science,
+# SE-58183 Linköping, Sweden.
+#
+# All rights reserved.
+#
+# THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+# THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
+# ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
+# RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+# VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
+#
+# The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+# Public License (OSMC-PL) are obtained from OSMC, either from the above
+# address, from the URLs:
+# http://www.openmodelica.org or
+# https://github.com/OpenModelica/ or
+# http://www.ida.liu.se/projects/OpenModelica,
+# and in the OpenModelica distribution.
+#
+# GNU AGPL version 3 is obtained from:
+# https://www.gnu.org/licenses/licenses.html#GPL
+#
+# This program is distributed WITHOUT ANY WARRANTY; without
+# even the implied warranty of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
+# IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
+#
+# See the full OSMC Public License conditions for more details.
+"""
+
+
+OSMC_PL_1_8_RUNTIME_LICENSE_TEXT_PY = f"""
+#
+# This file is part of OpenModelica.
+#
+# Copyright (c) 1998-{CURRENT_YEAR}, Open Source Modelica Consortium (OSMC),
+# c/o Linköpings universitet, Department of Computer and Information Science,
+# SE-58183 Linköping, Sweden.
+#
+# All rights reserved.
+#
+# THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+# THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
+# ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
+# RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+# VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
+#
+# The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+# Public License (OSMC-PL) are obtained from OSMC, either from the above
+# address, from the URLs:
+# http://www.openmodelica.org or
+# https://github.com/OpenModelica/ or
+# http://www.ida.liu.se/projects/OpenModelica,
+# and in the OpenModelica distribution.
+#
+# GNU AGPL version 3 is obtained from:
+# https://www.gnu.org/licenses/licenses.html#GPL
+#
+# This program is distributed WITHOUT ANY WARRANTY; without
+# even the implied warranty of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
+# IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
+#
+# See the full OSMC Public License conditions for more details.
+#
+"""
+
 OSMC_PL_1_8_RUNTIME_LICENSE_TEXT_C = f"""
 /*
  * This file belongs to the OpenModelica Run-Time System
@@ -144,7 +215,7 @@ OSMC_PL_1_8_RUNTIME_LICENSE_TEXT_C = f"""
 
 C_STYLE_EXTS = frozenset({".c", ".h", ".cpp", ".cc", ".cxx", ".inc", ".inl", ".hpp", ".cl"})
 PYTHON_EXTS = frozenset({".py"})
-MODELICA_EXTS = frozenset({".mo"})
+MODELICA_EXTS = frozenset({".mo", ".tpl"})
 
 SUPPORTED_EXTS = C_STYLE_EXTS | PYTHON_EXTS | MODELICA_EXTS
 
@@ -339,6 +410,62 @@ def _replace_c_license_header(filepath: str, content: str, is_runtime: bool) -> 
     return True
 
 
+def _replace_python_license_header(filepath: str, content: str, is_runtime: bool) -> bool:
+    """Replace or prepend the correct OSMC-PL 1.8 license header in a Python file.
+
+    Preserves a shebang line (``#!``) as the very first line.  Any existing
+    leading ``#`` comment block that contains license markers is replaced; if
+    no such block exists the header is inserted right after the shebang (or at
+    the top of the file when there is no shebang).
+    Returns True after rewriting the file.
+    """
+
+    if is_runtime:
+        raise ValueError("No Python runtime license available.")
+    new_header = (OSMC_PL_1_8_LICENSE_TEXT_PY).strip()
+
+    lines = content.splitlines(keepends=True)
+
+    shebang = ""
+    rest_start = 0
+    if lines and lines[0].startswith("#!"):
+        shebang = lines[0]
+        rest_start = 1
+
+    # Find the end of the leading # comment block (after optional shebang).
+    comment_block_end = rest_start
+    for j in range(rest_start, len(lines)):
+        s = lines[j].strip()
+        if s.startswith("#") or s == "":
+            comment_block_end = j + 1
+        else:
+            break
+
+    comment_block = "".join(lines[rest_start:comment_block_end])
+    rest = "".join(lines[comment_block_end:])
+
+    sep = "\n" if shebang else ""
+    lower = comment_block.lower()
+    if "copyright" in lower or "osmc" in lower or "license" in lower:
+        # Remove the old license comment block; insert new header after shebang.
+        new_content = shebang + sep + new_header + "\n\n" + rest.lstrip("\n")
+    else:
+        # No existing license — insert after shebang, preserving any other
+        # leading comments that were already present.
+        new_content = shebang + sep + new_header + "\n\n" + comment_block + rest
+
+    with open(filepath, "w", encoding="utf-8") as fh:
+        fh.write(new_content)
+    return True
+
+
+def _replace_license_header(filepath: str, content: str, is_runtime: bool, ext: str) -> bool:
+    """Dispatch to the correct license-replacement helper based on file type."""
+    if ext in PYTHON_EXTS:
+        return _replace_python_license_header(filepath, content, is_runtime)
+    return _replace_c_license_header(filepath, content, is_runtime)
+
+
 def _update_copyright_year(filepath: str, content: str) -> bool:
     """Update the end year in the first copyright line to CURRENT_YEAR.
 
@@ -396,8 +523,8 @@ def check_file(
                     "runtime header contains spurious normal-file prefix"
                     f' ("{NORMAL_FILE_MARK}")'
                 )
-                if fix_license and ext in C_STYLE_EXTS | MODELICA_EXTS:
-                    if _replace_c_license_header(filepath, content, is_runtime=True):
+                if fix_license and ext in C_STYLE_EXTS | MODELICA_EXTS | PYTHON_EXTS:
+                    if _replace_license_header(filepath, content, is_runtime=True, ext=ext):
                         errors[-1] += " [FIXED]"
             elif fix_year:
                 _update_copyright_year(filepath, content)
@@ -405,16 +532,16 @@ def check_file(
             errors.append(
                 "wrong license type: has normal OSMC-PL 1.8 header, expected runtime header"
             )
-            if fix_license and ext in C_STYLE_EXTS | MODELICA_EXTS:
-                if _replace_c_license_header(filepath, content, is_runtime=True):
+            if fix_license and ext in C_STYLE_EXTS | MODELICA_EXTS | PYTHON_EXTS:
+                if _replace_license_header(filepath, content, is_runtime=True, ext=ext):
                     errors[-1] += " [FIXED]"
         elif has_runtime_mark and not has_osmc_pl_1_8:
             if has_osmc_pl_any:
                 errors.append("wrong OSMC-PL version in runtime header: expected 1.8")
             else:
                 errors.append("missing OSMC-PL 1.8 in runtime license header")
-            if fix_license and ext in C_STYLE_EXTS | MODELICA_EXTS:
-                if _replace_c_license_header(filepath, content, is_runtime=True):
+            if fix_license and ext in C_STYLE_EXTS | MODELICA_EXTS | PYTHON_EXTS:
+                if _replace_license_header(filepath, content, is_runtime=True, ext=ext):
                     errors[-1] += " [FIXED]"
         else:
             # Neither runtime mark nor OSMC-PL 1.8 found.
@@ -422,8 +549,8 @@ def check_file(
                 errors.append("wrong OSMC-PL version: expected 1.8 runtime header")
             else:
                 errors.append("missing OSMC-PL 1.8 runtime license header")
-            if fix_license and ext in C_STYLE_EXTS | MODELICA_EXTS:
-                if _replace_c_license_header(filepath, content, is_runtime=True):
+            if fix_license and ext in C_STYLE_EXTS | MODELICA_EXTS | PYTHON_EXTS:
+                if _replace_license_header(filepath, content, is_runtime=True, ext=ext):
                     errors[-1] += " [FIXED]"
     else:
         if has_osmc_pl_1_8 and not has_runtime_mark:
@@ -434,16 +561,16 @@ def check_file(
             errors.append(
                 "wrong license type: has runtime header, expected normal OSMC-PL 1.8 header"
             )
-            if fix_license and ext in C_STYLE_EXTS | MODELICA_EXTS:
-                if _replace_c_license_header(filepath, content, is_runtime=False):
+            if fix_license and ext in C_STYLE_EXTS | MODELICA_EXTS | PYTHON_EXTS:
+                if _replace_license_header(filepath, content, is_runtime=False, ext=ext):
                     errors[-1] += " [FIXED]"
         else:
             if has_osmc_pl_any:
                 errors.append("wrong OSMC-PL version: expected 1.8")
             else:
                 errors.append("missing OSMC-PL 1.8 license header")
-            if fix_license and ext in C_STYLE_EXTS | MODELICA_EXTS:
-                if _replace_c_license_header(filepath, content, is_runtime=False):
+            if fix_license and ext in C_STYLE_EXTS | MODELICA_EXTS | PYTHON_EXTS:
+                if _replace_license_header(filepath, content, is_runtime=False, ext=ext):
                     errors[-1] += " [FIXED]"
 
     return errors
