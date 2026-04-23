@@ -103,14 +103,14 @@ void addSmultVec_gb(double* a, double* b, double *c, double s, int n)
  * @param idx     Index vector, can be NULL.
  *                Specifies which parts of f should be interpolated.
  */
-void linear_interpolation(double ta, double* fa, double tb, double* fb, double t, double* f, int n, int* idx)
+void linear_interpolation(double ta, double* fa, double tb, double* fb, double t, double* f, int n, int* idx, int nStates)
 {
   double lambda, h0, h1;
   int i, ii;
 
   // omit division by zero
   if (fabs(tb-ta) <= GBODE_EPSILON) {
-    copyVector_gbf(f, fb, n, idx);
+    copyVector_gbf(f, fb, (idx == NULL) ? nStates : n, idx);
     return;
   }
 
@@ -119,7 +119,7 @@ void linear_interpolation(double ta, double* fa, double tb, double* fb, double t
   h1 = lambda;
 
   if (idx == NULL) {
-    for (i=0; i<n; i++) {
+    for (i=0; i<nStates; i++) {
       f[i] = h0*fa[i] + h1*fb[i];
     }
   } else {
@@ -146,14 +146,14 @@ void linear_interpolation(double ta, double* fa, double tb, double* fb, double t
  * @param idx     Index vector, can be NULL.
  *                Specifies which parts of f should be interpolated.
  */
-void hermite_interpolation(double ta, double* fa, double* dfa, double tb, double* fb, double* dfb, double t, double* f, int n, int* idx)
+void hermite_interpolation(double ta, double* fa, double* dfa, double tb, double* fb, double* dfb, double t, double* f, int n, int* idx, int nStates)
 {
   double tt, h00, h01, h10, h11;
   int i, ii;
 
   // omit division by zero
   if (fabs(tb-ta) <= GBODE_EPSILON) {
-    copyVector_gbf(f, fb, n, idx);
+    copyVector_gbf(f, fb, (idx == NULL) ? nStates : n, idx);
     return;
   }
 
@@ -164,7 +164,7 @@ void hermite_interpolation(double ta, double* fa, double* dfa, double tb, double
   h11 = (tb-ta)*(tt-1)*tt*tt;
 
   if (idx == NULL) {
-    for (i=0; i<n; i++) {
+    for (i=0; i<nStates; i++) {
       f[i] = h00*fa[i]+h10*dfa[i]+h01*fb[i]+h11*dfb[i];
     }
   } else {
@@ -191,14 +191,14 @@ void hermite_interpolation(double ta, double* fa, double* dfa, double tb, double
  * @param idx     Index vector, can be NULL.
  *                Specifies which parts of f should be interpolated.
  */
-void hermite_interpolation_b(double ta, double* fa, double tb, double* fb, double* dfb, double t, double* f, int n, int* idx)
+void hermite_interpolation_b(double ta, double* fa, double tb, double* fb, double* dfb, double t, double* f, int n, int* idx, int nStates)
 {
   double tat,tbt,tbta, h00, h01, h11;
   int i, ii;
 
   // omit division by zero
   if (fabs(tb-ta) <= GBODE_EPSILON) {
-    copyVector_gbf(f, fb, n, idx);
+    copyVector_gbf(f, fb, (idx == NULL) ? nStates : n, idx);
     return;
   }
 
@@ -210,7 +210,7 @@ void hermite_interpolation_b(double ta, double* fa, double tb, double* fb, doubl
   h11  = tat*tbt/tbta;
 
   if (idx == NULL) {
-    for (i=0; i<n; i++) {
+    for (i=0; i<nStates; i++) {
       f[i] = h00*fa[i]+h01*fb[i]+h11*dfb[i];
     }
   } else {
@@ -237,14 +237,14 @@ void hermite_interpolation_b(double ta, double* fa, double tb, double* fb, doubl
  * @param idx     Index vector, can be NULL.
  *                Specifies which parts of f should be interpolated.
  */
-void hermite_interpolation_a(double ta, double* fa, double* dfa, double tb, double* fb, double t, double* f, int n, int* idx)
+void hermite_interpolation_a(double ta, double* fa, double* dfa, double tb, double* fb, double t, double* f, int n, int* idx, int nStates)
 {
   double tat,tbt,tbta, h00, h01, h10;
   int i, ii;
 
   // omit division by zero
   if (fabs(tb-ta) <= GBODE_EPSILON) {
-    copyVector_gbf(f, fb, n, idx);
+    copyVector_gbf(f, fb, (idx == NULL) ? nStates : n, idx);
     return;
   }
 
@@ -256,7 +256,7 @@ void hermite_interpolation_a(double ta, double* fa, double* dfa, double tb, doub
   h10  = -tat*tbt/tbta;
 
   if (idx == NULL) {
-    for (i=0; i<n; i++) {
+    for (i=0; i<nStates; i++) {
       f[i] = h00*fa[i]+h01*fb[i]+h10*dfa[i];
     }
   } else {
@@ -312,7 +312,7 @@ void gb_interpolation(enum GB_INTERPOL_METHOD interpolMethod, double ta, double*
   switch (interpolMethod)
   {
   case GB_INTERPOL_LIN:
-    linear_interpolation(ta, fa, tb, fb, t, f, nIdx, idx);
+    linear_interpolation(ta, fa, tb, fb, t, f, nIdx, idx, nStates);
     break;
   case GB_DENSE_OUTPUT:
   case GB_DENSE_OUTPUT_ERRCTRL:
@@ -321,14 +321,14 @@ void gb_interpolation(enum GB_INTERPOL_METHOD interpolMethod, double ta, double*
       break;
     }
   case GB_INTERPOL_HERMITE_a:
-    hermite_interpolation_a(ta, fa, dfa, tb, fb, t, f, nIdx, idx);
+    hermite_interpolation_a(ta, fa, dfa, tb, fb, t, f, nIdx, idx, nStates);
     break;
   case GB_INTERPOL_HERMITE_b:
-    hermite_interpolation_b(ta, fa, tb, fb, dfb, t, f, nIdx, idx);
+    hermite_interpolation_b(ta, fa, tb, fb, dfb, t, f, nIdx, idx, nStates);
     break;
   case GB_INTERPOL_HERMITE_ERRCTRL:
   case GB_INTERPOL_HERMITE:
-    hermite_interpolation(ta, fa, dfa, tb, fb, dfb, t, f, nIdx, idx);
+    hermite_interpolation(ta, fa, dfa, tb, fb, dfb, t, f, nIdx, idx, nStates);
     break;
   default:
     throwStreamPrint(NULL, "Not handled case in gb_interpolation. Unknown interpolation method %i.", interpolMethod);
@@ -354,12 +354,12 @@ double error_interpolation_gb(DATA_GBODE* gbData, int nIdx, int* idx, double tol
     hermite_interpolation_a(gbData->timeLeft,  gbData->yLeft,  gbData->kLeft,
                             gbData->timeRight, gbData->yRight,
                             (gbData->timeLeft + gbData->timeRight)/2, gbData->y1,
-                            nIdx, idx);
+                            nIdx, idx, gbData->nStates);
   }
   hermite_interpolation(gbData->timeLeft,  gbData->yLeft,  gbData->kLeft,
                         gbData->timeRight, gbData->yRight, gbData->kRight,
                         (gbData->timeLeft + gbData->timeRight)/2, gbData->y2,
-                         nIdx, idx);
+                         nIdx, idx, gbData->nStates);
   if (idx == NULL) {
     for (i=0; i<nIdx; i++) {
       errtol = tol * fmax(fabs(gbData->yLeft[i]), fabs(gbData->yRight[i])) + tol;
