@@ -120,6 +120,7 @@ OMCompiler/SimulationRuntime/c/util/jni_md_windows.h
 
 # Build manifest — not a compiled runtime source file.
 OMCompiler/SimulationRuntime/c/RuntimeSources.mo
+OMCompiler/SimulationRuntime/c/RuntimeSources.mo.tpl
 
 # =============================================================================
 # SimulationRuntime/fmi/
