@@ -6228,7 +6228,7 @@ protected
   Absyn.Class cls;
   Interactive.GraphicEnvCache env;
   Boolean silent;
-  list<Values.Value> infos;
+  list<Values.Value> infos = {};
   list<Absyn.Element> elems;
 algorithm
   try
@@ -6236,7 +6236,7 @@ algorithm
 
     if access < Access.icon then // Access.icon
       Error.addMessage(Error.ACCESS_ENCRYPTED_PROTECTED_CONTENTS, {});
-      result := ValuesUtil.makeBoolean(false);
+      result := ValuesUtil.makeArray({});
       return;
     end if;
 
@@ -6258,7 +6258,7 @@ algorithm
 
     result := ValuesUtil.makeArray(infos);
   else
-    result := ValuesUtil.makeBoolean(false);
+    result := ValuesUtil.makeArray({});
   end try;
 
   if silent then

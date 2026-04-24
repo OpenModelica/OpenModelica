@@ -1391,6 +1391,7 @@ algorithm
         vals := {}; // make sure is initialized, see #9250
         str := System.pwd();
         try
+          filename := System.realpath(filename);
           0 := System.cd(System.dirname(filename));
           (b, filename) := unZipEncryptedPackageAndCheckFile(workdir, filename, false);
           if b then
@@ -1416,11 +1417,8 @@ algorithm
       algorithm
         str := System.pwd();
         try
-          if System.cd(System.dirname(filename)) <> 0 then
-            Error.addMessage(Error.FILE_NOT_FOUND_ERROR, {filename});
-            fail();
-          end if;
-
+          filename := System.realpath(filename);
+          0 := System.cd(System.dirname(filename));
           (b, filename) := unZipEncryptedPackageAndCheckFile(workdir, filename, bval);
           if (b) then
             execStatReset();
