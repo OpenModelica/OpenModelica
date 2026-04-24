@@ -633,7 +633,8 @@ if (method == "tools/call") {
       toolName == "deleteComponent" || toolName == "listComponentParameters" ||
       toolName == "addRectangle" || toolName == "addEllipse" || toolName == "addLine" ||
       toolName == "addPolygon" || toolName == "addText" ||
-      toolName == "listShapes" || toolName == "removeShape") {
+      toolName == "listShapes" || toolName == "removeShape" ||
+      toolName == "getCoordinateSystem" || toolName == "setCoordinateSystem") {
         return handleDiagramTool(toolName, id, arguments);
       }
       if (toolName == "checkModel") {

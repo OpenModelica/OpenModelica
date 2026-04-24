@@ -897,6 +897,108 @@ QHttpServerResponse MCPServer::handleDiagramTool(const QString &toolName, QJsonV
         QCoreApplication::processEvents();
         return makeMCPToolResponse(id, makeContent(QString("Shape removed from %1 view of class %2").arg(view, className)));
       }
+      if (toolName == "getCoordinateSystem") {
+        QString className = arguments.value("className").toString();
+        QString view = arguments.value("view").toString();
+        if (view != "icon" && view != "diagram")
+        return makeMCPError(id, QString("Invalid view: %1. Must be \"icon\" or \"diagram\".").arg(view));
+        MainWindow *mainWindow = MainWindow::instance();
+        LibraryTreeModel *pLibraryTreeModel = mainWindow->getLibraryWidget()->getLibraryTreeModel();
+        LibraryTreeItem *pLibraryTreeItem = pLibraryTreeModel->findLibraryTreeItem(className);
+        if (!pLibraryTreeItem)
+        return makeMCPError(id, QString("Class not found: %1").arg(className));
+        if (!pLibraryTreeItem->getModelWidget())
+        pLibraryTreeModel->showModelWidget(pLibraryTreeItem, false);
+        ModelWidget *pModelWidget = pLibraryTreeItem->getModelWidget();
+        if (view == "diagram" && !pModelWidget->isDiagramViewLoaded())
+        pModelWidget->loadDiagramViewNAPI();
+        GraphicsView *pGraphicsView = (view == "icon") ? pModelWidget->getIconGraphicsView() : pModelWidget->getDiagramGraphicsView();
+        const ModelInstance::CoordinateSystem &cs = pGraphicsView->mCoordinateSystem;
+        QJsonObject result;
+        if (cs.hasExtent()) {
+          const ExtentAnnotation &e = cs.getExtent();
+          QJsonObject extent;
+          extent["x1"] = e.at(0).x();
+          extent["y1"] = e.at(0).y();
+          extent["x2"] = e.at(1).x();
+          extent["y2"] = e.at(1).y();
+          result["extent"] = extent;
+        }
+        if (cs.hasPreserveAspectRatio())
+        result["preserveAspectRatio"] = (bool)cs.getPreserveAspectRatio();
+        if (cs.hasInitialScale())
+        result["initialScale"] = (double)(qreal)cs.getInitialScale();
+        if (cs.hasGrid()) {
+          QJsonObject grid;
+          grid["x"] = cs.getGrid().x();
+          grid["y"] = cs.getGrid().y();
+          result["grid"] = grid;
+        }
+        return makeMCPToolResponse(id, makeContent(result));
+      }
+      if (toolName == "setCoordinateSystem") {
+        QString className = arguments.value("className").toString();
+        QString view = arguments.value("view").toString();
+        if (view != "icon" && view != "diagram")
+        return makeMCPError(id, QString("Invalid view: %1. Must be \"icon\" or \"diagram\".").arg(view));
+        MainWindow *mainWindow = MainWindow::instance();
+        LibraryTreeModel *pLibraryTreeModel = mainWindow->getLibraryWidget()->getLibraryTreeModel();
+        LibraryTreeItem *pLibraryTreeItem = pLibraryTreeModel->findLibraryTreeItem(className);
+        if (!pLibraryTreeItem)
+        return makeMCPError(id, QString("Class not found: %1").arg(className));
+        if (isClassReadOnly(className, pLibraryTreeModel))
+        return makeMCPError(id, QString("Cannot modify class in a system library or read-only package: %1").arg(className));
+        if (!pLibraryTreeItem->getModelWidget())
+        pLibraryTreeModel->showModelWidget(pLibraryTreeItem, false);
+        ModelWidget *pModelWidget = pLibraryTreeItem->getModelWidget();
+        if (view == "diagram" && !pModelWidget->isDiagramViewLoaded())
+        pModelWidget->loadDiagramViewNAPI();
+        GraphicsView *pGraphicsView = (view == "icon") ? pModelWidget->getIconGraphicsView() : pModelWidget->getDiagramGraphicsView();
+        const ModelInstance::CoordinateSystem &cs = pGraphicsView->mCoordinateSystem;
+        // Build coordinate system annotation, merging current values with provided overrides
+        QStringList coSysList;
+        if (arguments.contains("extent")) {
+          QJsonObject ext = arguments.value("extent").toObject();
+          coSysList.append(QString("extent={{%1,%2},{%3,%4}}")
+            .arg(ext.value("x1").toDouble()).arg(ext.value("y1").toDouble())
+            .arg(ext.value("x2").toDouble()).arg(ext.value("y2").toDouble()));
+        } else if (cs.hasExtent()) {
+          const ExtentAnnotation &e = cs.getExtent();
+          coSysList.append(QString("extent={{%1,%2},{%3,%4}}").arg(e.at(0).x()).arg(e.at(0).y()).arg(e.at(1).x()).arg(e.at(1).y()));
+        }
+        if (arguments.contains("preserveAspectRatio")) {
+          coSysList.append(QString("preserveAspectRatio=%1").arg(arguments.value("preserveAspectRatio").toBool() ? "true" : "false"));
+        } else if (cs.hasPreserveAspectRatio()) {
+          coSysList.append(QString("preserveAspectRatio=%1").arg((bool)cs.getPreserveAspectRatio() ? "true" : "false"));
+        }
+        if (arguments.contains("initialScale")) {
+          coSysList.append(QString("initialScale=%1").arg(arguments.value("initialScale").toDouble()));
+        } else if (cs.hasInitialScale()) {
+          coSysList.append(QString("initialScale=%1").arg((qreal)cs.getInitialScale()));
+        }
+        if (arguments.contains("grid")) {
+          QJsonObject grid = arguments.value("grid").toObject();
+          coSysList.append(QString("grid={%1,%2}").arg(grid.value("x").toDouble()).arg(grid.value("y").toDouble()));
+        } else if (cs.hasGrid()) {
+          coSysList.append(QString("grid={%1,%2}").arg(cs.getGrid().x()).arg(cs.getGrid().y()));
+        }
+        QStringList dummyCoSysList, graphicsList;
+        pGraphicsView->getCoordinateSystemAndGraphics(dummyCoSysList, graphicsList);
+        QString viewName = (view == "icon") ? "Icon" : "Diagram";
+        QString annotationString;
+        if (!coSysList.isEmpty())
+        annotationString = QString("annotate=%1(coordinateSystem=CoordinateSystem(%2), graphics={%3})").arg(viewName, coSysList.join(","), graphicsList.join(","));
+        else
+        annotationString = QString("annotate=%1(graphics={%2})").arg(viewName, graphicsList.join(","));
+        if (!m_proxy->addClassAnnotation(className, annotationString))
+        return makeMCPError(id, QString("Failed to set coordinate system for %1 of class %2").arg(view, className));
+        pModelWidget->reDrawModelWidget();
+        if (view == "icon")
+        pLibraryTreeItem->handleIconUpdated();
+        pLibraryTreeModel->updateLibraryTreeItemClassText(pLibraryTreeItem);
+        QCoreApplication::processEvents();
+        return makeMCPToolResponse(id, makeContent(QString("Coordinate system updated for %1 view of class %2").arg(view, className)));
+      }
       return makeMCPError(id, QString("Tool not found: %1").arg(toolName));
     }
 
