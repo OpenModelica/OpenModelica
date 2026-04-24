@@ -1871,23 +1871,8 @@ protected
           eqPtr := Equation.makeAlgorithm(adjStmts, init);
           Equation.createName(eqPtr, idx, contextName);
 
-          // Collect output variables from adjoint statements
-          adjVarSlices := {};
-          for s in adjStmts loop
-            () := match s
-              case Statement.ASSIGNMENT(lhs = Expression.CREF()) algorithm
-                baseCref := ComponentRef.stripSubscriptsAll(Expression.toCref(s.lhs));
-                try
-                  vPtr := BVariable.getVarPointer(baseCref, sourceInfo());
-                  adjVarSlices := Slice.SLICE(vPtr, {}) :: adjVarSlices;
-                else
-                  // skip unknown variables
-                end try;
-              then ();
-              else ();
-            end match;
-          end for;
-          adjVarSlices := listReverse(adjVarSlices);
+          // Collect output variables from adjoint statements (handles FOR and IF nesting)
+          adjVarSlices := listReverse(collectAdjointVarSlices(adjStmts, {}));
 
           adjointComps := {StrongComponent.MULTI_COMPONENT(
             vars   = adjVarSlices,
@@ -1922,21 +1907,8 @@ protected
           eqPtr := Equation.makeAlgorithm(adjStmts, init);
           Equation.createName(eqPtr, idx, contextName);
 
-          adjVarSlices := {};
-          for s in adjStmts loop
-            () := match s
-              case Statement.ASSIGNMENT(lhs = Expression.CREF()) algorithm
-                baseCref := ComponentRef.stripSubscriptsAll(Expression.toCref(s.lhs));
-                try
-                  vPtr := BVariable.getVarPointer(baseCref, sourceInfo());
-                  adjVarSlices := Slice.SLICE(vPtr, {}) :: adjVarSlices;
-                else
-                end try;
-              then ();
-              else ();
-            end match;
-          end for;
-          adjVarSlices := listReverse(adjVarSlices);
+          // Collect output variables from adjoint statements (handles FOR and IF nesting)
+          adjVarSlices := listReverse(collectAdjointVarSlices(adjStmts, {}));
 
           adjointComps := {StrongComponent.MULTI_COMPONENT(
             vars   = adjVarSlices,
@@ -2012,26 +1984,8 @@ protected
       eqPtr := Equation.makeAlgorithm(adjStmts, init);
       Equation.createName(eqPtr, idx, contextName);
 
-      // Collect variable slices from statements
-      adjVarSlices := {};
-      for s in adjStmts loop
-        () := match s
-          case Statement.ASSIGNMENT(lhs = Expression.CREF()) algorithm
-            baseCref := ComponentRef.stripSubscriptsAll(Expression.toCref(s.lhs));
-            try
-              vPtr := BVariable.getVarPointer(baseCref, sourceInfo());
-              adjVarSlices := Slice.SLICE(vPtr, {}) :: adjVarSlices;
-            else
-            end try;
-          then ();
-          // For FOR statements, try to extract variables from inner assignments
-          case Statement.FOR() algorithm
-            adjVarSlices := collectForStatementVars(s, adjVarSlices);
-          then ();
-          else ();
-        end match;
-      end for;
-      adjVarSlices := listReverse(adjVarSlices);
+      // Collect variable slices from statements (handles ASSIGNMENT, FOR, and IF nesting)
+      adjVarSlices := listReverse(collectAdjointVarSlices(adjStmts, {}));
 
       // Determine the adjoint var cref for the component wrapper
       adjVarCref := match originalComp
@@ -2048,6 +2002,38 @@ protected
       )};
     end if;
   end generateAdjointForComponent;
+
+  function collectAdjointVarSlices
+    "Recursively collect variable pointer slices from adjoint statements.
+     Handles ASSIGNMENT at any nesting depth inside FOR and IF bodies."
+    input list<Statement> stmts;
+    input output list<Slice<VariablePointer>> varSlices;
+  protected
+    Pointer<Variable> vPtr;
+    ComponentRef baseCref;
+  algorithm
+    for s in stmts loop
+      () := match s
+        case Statement.ASSIGNMENT(lhs = Expression.CREF()) algorithm
+          baseCref := ComponentRef.stripSubscriptsAll(Expression.toCref(s.lhs));
+          try
+            vPtr := BVariable.getVarPointer(baseCref, sourceInfo());
+            varSlices := Slice.SLICE(vPtr, {}) :: varSlices;
+          else
+          end try;
+        then ();
+        case Statement.FOR() algorithm
+          varSlices := collectAdjointVarSlices(s.body, varSlices);
+        then ();
+        case Statement.IF() algorithm
+          for branch in s.branches loop
+            varSlices := collectAdjointVarSlices(Util.tuple22(branch), varSlices);
+          end for;
+        then ();
+        else ();
+      end match;
+    end for;
+  end collectAdjointVarSlices;
 
   function collectForStatementVars
     "Recursively collect variable pointers from FOR statement bodies."
