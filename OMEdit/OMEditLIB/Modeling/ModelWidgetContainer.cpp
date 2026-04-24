@@ -7342,7 +7342,7 @@ void ModelWidget::drawOMSModelConnections()
         Element *pStartConnectorComponent = 0;
         if (startConnectionList.size() > 1) {
           // get start connector component
-          QString startConnectorName = StringHandler::removeFirstWordAfterDot(QString(pConnections[i]->conA));
+          QString startConnectorName = StringHandler::removeFirstWordBeforeDot(QString(pConnections[i]->conA));
           pStartConnectorComponent = getConnectorElement(pStartComponent, startConnectorName);
           if (!pStartConnectorComponent) {
             pMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, GUIMessages::getMessage(GUIMessages::UNABLE_FIND_COMPONENT_IN_CONNECTION)
@@ -7367,7 +7367,7 @@ void ModelWidget::drawOMSModelConnections()
         Element *pEndConnectorComponent = 0;
         if (endConnectionList.size() > 1) {
           // get end connector component
-          QString endConnectorName = StringHandler::removeFirstWordAfterDot(QString(pConnections[i]->conB));
+          QString endConnectorName = StringHandler::removeFirstWordBeforeDot(QString(pConnections[i]->conB));
           pEndConnectorComponent = getConnectorElement(pEndComponent, endConnectorName);
           if (!pEndConnectorComponent) {
             pMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, GUIMessages::getMessage(GUIMessages::UNABLE_FIND_COMPONENT_IN_CONNECTION)

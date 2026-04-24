@@ -58,11 +58,15 @@ private slots:
   void removeTypePrefix();
   void removeTypePrefix_data();
   /*!
-   * \brief splitPath
+   * \brief pathFunctions
+   * Tests the StringHandler::getLastWordAfterDot function.
+   * Tests the StringHandler::removeLastWordAfterDot function.
+   * Tests the StringHandler::getFirstWordBeforeDot function.
+   * Tests the StringHandler::removeFirstWordBeforeDot function.
    * Tests the StringHandler::splitPath function.
    */
-  void splitPath();
-  void splitPath_data();
+  void pathFunctions();
+  void pathFunctions_data();
   void cleanupTestCase();
 };
 
