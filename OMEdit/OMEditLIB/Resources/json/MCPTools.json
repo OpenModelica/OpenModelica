@@ -36,6 +36,21 @@
         }
     },
     {
+        "name": "getTotalModel",
+        "description": "Returns the Modelica source code for the given class together with all classes it depends on, as a single string. Useful for sharing a self-contained model. The result is not a valid .mo file per the specification, but can be reloaded with loadString().",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "className": {"type": "string", "description": "The fully-qualified name of the class."},
+                "stripAnnotations": {"type": "boolean", "description": "If true, remove all annotations from the output. Default false."},
+                "stripComments": {"type": "boolean", "description": "If true, remove all comments from the output. Default false."},
+                "obfuscate": {"type": "boolean", "description": "If true, obfuscate identifiers in the output. Default false."}
+            },
+            "required": ["className"]
+        },
+        "annotations": {"readOnlyHint": true, "destructiveHint": false}
+    },
+    {
         "name": "setSourceCode",
         "description": "Replaces the Modelica source code for the given class and reloads it in the GUI. Do not use this for editing diagrams - there are dedicated tools for that. Note that the source code changes each time the model is modified by other tool calls; you will remove icon and diagram annotations unless you read the code again before trying to edit it.",
         "inputSchema": {

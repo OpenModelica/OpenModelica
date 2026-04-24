@@ -2566,6 +2566,29 @@ loaded with loadFile() or passing the file to the compiler on the command line.<
   preferredView="text");
 end saveTotalModel;
 
+function getTotalModel
+  "Saves a model and dependencies to a single string."
+  input TypeName className;
+  input Boolean stripAnnotations = false;
+  input Boolean stripComments = false;
+  input Boolean obfuscate = false;
+  output String result;
+external "builtin";
+annotation(Documentation(info="<html>
+<p>Save the <code>className</code> model in a single string, together with all the other classes
+that it depends upon, directly and indirectly. This file can be later reloaded
+with the <a href=\"modelica://OpenModelica.Scripting.loadString\">loadString()</a>
+API function, which loads <code>className</code> and all the other needed
+classes into memory.</p>
+<p>This is useful to allow third parties to run a certain model (e.g. for
+debugging) without worrying about all the library dependencies.</p>
+<p>Please note that the resulting file is not a valid Modelica .mo file according
+to the specification and cannot be loaded in OMEdit - it can only be
+loaded with loadFile() or passing the file to the compiler on the command line.</p>
+</html>"),
+  preferredView="text");
+end getTotalModel;
+
 function saveTotalModelDebug
   "Saves a model and dependencies to a single file using a heuristic."
   input String filename;
