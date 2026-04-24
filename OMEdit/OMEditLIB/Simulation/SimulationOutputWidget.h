@@ -105,7 +105,7 @@ public:
   void setSimulationProcessKilled(bool killed) {mIsSimulationProcessKilled = killed;}
   bool isSimulationProcessKilled() {return mIsSimulationProcessKilled;}
   bool isSimulationProcessRunning() {return mIsSimulationProcessRunning;}
-  QString getCompilationOutput();
+  QString getCompilationStandardError();
   QString getSimulationStandardOutput() {return mSimulationStandardOutput;}
   QString getSimulationStandardError() {return mSimulationStandardError;}
   void writeSimulationMessage(StringHandler::SimulationMessageType type, QString text, QString index);
@@ -124,6 +124,7 @@ private:
   QTabWidget *mpGeneratedFilesTabWidget;
   QList<QString> mGeneratedFilesList;
   OutputPlainTextEdit *mpCompilationOutputTextBox;
+  QString mCompilationStandardError;
   QString mSimulationStandardOutput;
   QString mSimulationStandardError;
   SimulationOutputHandler *mpSimulationOutputHandler;
