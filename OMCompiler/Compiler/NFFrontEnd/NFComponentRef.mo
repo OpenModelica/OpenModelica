@@ -917,20 +917,32 @@ public
   algorithm
     subscripts := match cref
       local
+        Expression size;
         list<Expression> sizes_;
         list<Subscript> subs;
 
       case CREF(subscripts = {}) algorithm
         sizes_ := sizes_local_exp(cref, false);
         subs := {};
-        for size in listReverse(sizes_) loop
+        for size in sizes_ loop
           if not Expression.isOne(size) then
             subs := Subscript.SLICE(Expression.makeRange(Expression.INTEGER(1), NONE(), size)) :: subs;
           end if;
         end for;
-      then subscriptsAllWithWhole(cref.restCref, subs :: accumSubs);
+      then subscriptsAllWithWhole(cref.restCref, listReverse(subs) :: accumSubs);
 
-      case CREF() then subscriptsAllWithWhole(cref.restCref, cref.subscripts :: accumSubs);
+      //case CREF() guard(InstNode.isModel(cref.node) and List.all(cref.subscripts, Subscript.isScalar)) then subscriptsAllWithWhole(cref.restCref, {} :: accumSubs);
+
+      case CREF() algorithm
+        sizes_ := sizes_local_exp(cref, false);
+        subs := {};
+        for sub in cref.subscripts loop
+          size :: sizes_ := sizes_;
+          if not Expression.isOne(size) then
+            subs := sub :: subs;
+          end if;
+        end for;
+      then subscriptsAllWithWhole(cref.restCref, listReverse(subs) :: accumSubs);
 
       else accumSubs;
     end match;
