@@ -30,7 +30,8 @@
 # [build] generated files / build artifacts
 OMCompiler/revision.h
 OMCompiler/revision.h.in
-OMCompiler/omc_config.h
+OMCompiler/omc_config.unix.h
+OMCompiler/omc_config.unix.h.in
 
 # =============================================================================
 # OMCompiler/Compiler
