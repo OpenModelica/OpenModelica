@@ -613,16 +613,20 @@ public
           Partition.Kind kind;
           Block tmp;
           list<Block> result = {};
-          Integer index;
+          Integer index, alias_index;
 
         case SOME(comps) algorithm
           kind := Partition.Partition.getKind(partition);
           for i in arrayLength(comps):-1:1 loop
             (tmp, simCodeIndices, index) := fromStrongComponent(comps[i], simCodeIndices, kind, simcode_map, equation_map);
-            // add it to the alias map
-            if not StrongComponent.isAlias(comps[i]) then
-              UnorderedMap.add(AliasInfo.ALIAS_INFO(kind, partition.index, i), index, simCodeIndices.alias_map);
-            end if;
+            // add it to the alias map. correctly map the alias index if itself is an alias
+            alias_index := match comps[i]
+              local
+                StrongComponent.AliasInfo aliasInfo;
+              case StrongComponent.ALIAS(aliasInfo = aliasInfo) then UnorderedMap.getOrDefault(aliasInfo, simCodeIndices.alias_map, -1);
+              else index;
+            end match;
+            UnorderedMap.add(AliasInfo.ALIAS_INFO(kind, partition.index, i), alias_index, simCodeIndices.alias_map);
             result := tmp :: result;
           end for;
         then result;
