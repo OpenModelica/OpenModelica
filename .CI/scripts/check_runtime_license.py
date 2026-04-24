@@ -475,6 +475,11 @@ def _replace_license_header(filepath: str, content: str, is_runtime: bool, ext: 
     return _replace_c_license_header(filepath, content, is_runtime)
 
 
+_PLACEHOLDER_COPYRIGHT_RE = re.compile(
+    r"[Cc]opyright\s+\(c\)\s+[\w]+-?CurrentYear|[Cc]opyright\s+\(c\)\s+CurrentYear"
+)
+
+
 def _update_copyright_year(filepath: str, content: str) -> bool:
     """Update the end year in the first copyright line to CURRENT_YEAR.
 
@@ -492,6 +497,22 @@ def _update_copyright_year(filepath: str, content: str) -> bool:
     with open(filepath, "w", encoding="utf-8") as fh:
         fh.write(new_content)
     return True
+
+
+def _copyright_year_errors(filepath: str, content: str, fix_year: bool) -> list[str]:
+    """Return errors for a wrong or placeholder copyright year."""
+    if _PLACEHOLDER_COPYRIGHT_RE.search(content):
+        return ["copyright year is an unreplaced template placeholder (CurrentYear)"]
+    m = _COPYRIGHT_RE.search(content)
+    if not m:
+        return ["copyright year not found"]
+    end_year = int(m.group(2) or m.group(1))
+    if end_year == CURRENT_YEAR:
+        return []
+    err = f"copyright year out of date ({end_year}, expected {CURRENT_YEAR})"
+    if fix_year and _update_copyright_year(filepath, content):
+        return [err + " [FIXED]"]
+    return [err]
 
 
 # ---------------------------------------------------------------------------
@@ -535,8 +556,8 @@ def check_file(
                 if fix_license and ext in C_STYLE_EXTS | MODELICA_EXTS | PYTHON_EXTS:
                     if _replace_license_header(filepath, content, is_runtime=True, ext=ext):
                         errors[-1] += " [FIXED]"
-            elif fix_year:
-                _update_copyright_year(filepath, content)
+            else:
+                errors.extend(_copyright_year_errors(filepath, content, fix_year))
         elif not has_runtime_mark and has_osmc_pl_1_8:
             errors.append(
                 "wrong license type: has normal OSMC-PL 1.8 header, expected runtime header"
@@ -563,9 +584,8 @@ def check_file(
                     errors[-1] += " [FIXED]"
     else:
         if has_osmc_pl_1_8 and not has_runtime_mark:
-            # Correct normal license; optionally update year.
-            if fix_year:
-                _update_copyright_year(filepath, content)
+            # Correct normal license; check/update year.
+            errors.extend(_copyright_year_errors(filepath, content, fix_year))
         elif has_osmc_pl_1_8 and has_runtime_mark:
             errors.append(
                 "wrong license type: has runtime header, expected normal OSMC-PL 1.8 header"
