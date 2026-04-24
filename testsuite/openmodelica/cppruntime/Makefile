@@ -11,6 +11,7 @@ arrayOperationsTest.mos \
 arraySliceTest.mos \
 clockedAlgloopTest.mos \
 clockedEventTest.mos \
+clockedInitTest.mos \
 clockedSolverTest.mos \
 clockedTypesTest.mos \
 clockedTest.mos \

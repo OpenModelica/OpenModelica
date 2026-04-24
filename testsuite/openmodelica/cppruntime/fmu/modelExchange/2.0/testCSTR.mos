@@ -104,7 +104,7 @@ getErrorString();
 //       <BaseUnit m=\"2\" />
 //     </Unit>
 //     <Unit name=\"1/h\">
-//       <BaseUnit s=\"-1\" factor=\"0.0002777777777777778\" />
+//       <BaseUnit s=\"-1\" factor=\"2.777777777777778e-4\" />
 //     </Unit>
 //     <Unit name=\"kJ/h\">
 //       <BaseUnit m=\"2\" s=\"-3\" kg=\"1\" factor=\"0.2777777777777778\" />
@@ -136,7 +136,7 @@ getErrorString();
 //     <Category name=\"logAll\" />
 //     <Category name=\"logFmi2Call\" />
 //   </LogCategories>
-//   <DefaultExperiment startTime=\"0.0\" stopTime=\"1.0\" tolerance=\"1e-06\" stepSize=\"0.002\"/>
+//   <DefaultExperiment startTime=\"0.0\" stopTime=\"1.0\" tolerance=\"1e-6\" stepSize=\"0.002\"/>
 //   <ModelVariables>
 //   <!-- Index of variable = \"1\" -->
 //   <ScalarVariable
@@ -388,7 +388,7 @@ getErrorString();
 //     variability=\"fixed\"
 //     causality=\"parameter\"
 //     >
-//     <Real start=\"-9758.299999999999\"/>
+//     <Real start=\"-9758.3\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"27\" -->
 //   <ScalarVariable
@@ -397,7 +397,7 @@ getErrorString();
 //     variability=\"fixed\"
 //     causality=\"parameter\"
 //     >
-//     <Real start=\"-9758.299999999999\"/>
+//     <Real start=\"-9758.3\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"28\" -->
 //   <ScalarVariable
@@ -415,7 +415,7 @@ getErrorString();
 //     variability=\"fixed\"
 //     causality=\"parameter\"
 //     >
-//     <Real start=\"4200.0\" nominal=\"20000.0\" unit=\"J/mol\"/>
+//     <Real start=\"4200.0\" nominal=\"2e4\" unit=\"J/mol\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"30\" -->
 //   <ScalarVariable
@@ -424,7 +424,7 @@ getErrorString();
 //     variability=\"fixed\"
 //     causality=\"parameter\"
 //     >
-//     <Real start=\"-11000.0\" nominal=\"20000.0\" unit=\"J/mol\"/>
+//     <Real start=\"-11000.0\" nominal=\"2e4\" unit=\"J/mol\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"31\" -->
 //   <ScalarVariable
@@ -433,7 +433,7 @@ getErrorString();
 //     variability=\"fixed\"
 //     causality=\"parameter\"
 //     >
-//     <Real start=\"-41850.0\" nominal=\"20000.0\" unit=\"J/mol\"/>
+//     <Real start=\"-41850.0\" nominal=\"2e4\" unit=\"J/mol\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"32\" -->
 //   <ScalarVariable
@@ -462,7 +462,7 @@ getErrorString();
 //     variability=\"fixed\"
 //     causality=\"parameter\"
 //     >
-//     <Real start=\"357500000.0\"/>
+//     <Real start=\"3.575e8\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"35\" -->
 //   <ScalarVariable
@@ -471,7 +471,7 @@ getErrorString();
 //     variability=\"fixed\"
 //     causality=\"parameter\"
 //     >
-//     <Real start=\"357500000.0\"/>
+//     <Real start=\"3.575e8\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"36\" -->
 //   <ScalarVariable
@@ -480,7 +480,7 @@ getErrorString();
 //     variability=\"fixed\"
 //     causality=\"parameter\"
 //     >
-//     <Real start=\"2511944.444444444\"/>
+//     <Real start=\"2.5119444444444445e6\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"37\" -->
 //   <ScalarVariable
@@ -553,9 +553,6 @@ getErrorString();
 //       <Unknown index=\"14\" dependencies=\"1 2 3 4 12 15 17\" dependenciesKind=\"dependent dependent dependent dependent dependent dependent dependent\" />
 //     </DiscreteStates>
 //     <InitialUnknowns>
-//       <Unknown index=\"16\" dependencies=\"\" dependenciesKind=\"\" />
-//       <Unknown index=\"18\" dependencies=\"\" dependenciesKind=\"\" />
-//       <Unknown index=\"19\" dependencies=\"\" dependenciesKind=\"\" />
 //       <Unknown index=\"40\" dependencies=\"\" dependenciesKind=\"\" />
 //       <Unknown index=\"41\" dependencies=\"\" dependenciesKind=\"\" />
 //       <Unknown index=\"42\" dependencies=\"\" dependenciesKind=\"\" />

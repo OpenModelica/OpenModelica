@@ -81,7 +81,7 @@ readFile("modelDescription.tmp.xml");
 //     <Category name=\"logAll\" />
 //     <Category name=\"logFmi2Call\" />
 //   </LogCategories>
-//   <DefaultExperiment startTime=\"0.0\" stopTime=\"1.0\" tolerance=\"1e-06\" stepSize=\"0.002\"/>
+//   <DefaultExperiment startTime=\"0.0\" stopTime=\"1.0\" tolerance=\"1e-6\" stepSize=\"0.002\"/>
 //   <ModelVariables>
 //   <!-- Index of variable = \"1\" -->
 //   <ScalarVariable
@@ -156,7 +156,6 @@ readFile("modelDescription.tmp.xml");
 //       <Unknown index=\"3\" dependencies=\"1 2\" dependenciesKind=\"dependent dependent\" />
 //     </DiscreteStates>
 //     <InitialUnknowns>
-//       <Unknown index=\"4\" dependencies=\"\" dependenciesKind=\"\" />
 //       <Unknown index=\"5\" dependencies=\"\" dependenciesKind=\"\" />
 //     </InitialUnknowns>
 //   </ModelStructure>

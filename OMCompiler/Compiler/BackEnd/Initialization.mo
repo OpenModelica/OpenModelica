@@ -2731,7 +2731,7 @@ end checkComponentNames;
 
 protected function collectInitialClockedVarsEqns "author: rfranke
   This function creates initial equations for a clocked partition.
-  Previous states are initialized with the states. All other variables are initialized with start values."
+  Previous states are initialized with the states."
   input BackendDAE.Var inVar;
   input tuple<BackendDAE.Variables, BackendDAE.EquationArray> inTpl;
   output BackendDAE.Var outVar;
@@ -2770,13 +2770,18 @@ algorithm
           previousExp = Expression.crefExp(previousCR);
           vars = BackendVariable.addVar(previousVar, vars);
           eqns = BackendEquation.add(BackendDAE.EQUATION(previousExp, crExp, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_INITIAL), eqns);
+          // add clocked state and initial equation
+          startExp = BackendVariable.varStartValue(var);
+          vars = BackendVariable.addVar(var, vars);
+          eqns = BackendEquation.add(BackendDAE.EQUATION(crExp, startExp, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_INITIAL), eqns);
           then (vars, eqns);
         else (vars, eqns);
       end match;
+      // Note: don't add initial equations for start values as they are already set before initialization
       // add clocked variable and initial equation
-      startExp = BackendVariable.varStartValue(var);
-      vars = BackendVariable.addVar(var, vars);
-      eqns = BackendEquation.add(BackendDAE.EQUATION(crExp, startExp, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_INITIAL), eqns);
+      //startExp = BackendVariable.varStartValue(var);
+      //vars = BackendVariable.addVar(var, vars);
+      //eqns = BackendEquation.add(BackendDAE.EQUATION(crExp, startExp, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_INITIAL), eqns);
     then (var, (vars, eqns));
   end match;
 end collectInitialClockedVarsEqns;
