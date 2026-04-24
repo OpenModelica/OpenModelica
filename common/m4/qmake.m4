@@ -5,12 +5,12 @@ AC_SUBST(LRELEASE)
 AC_SUBST(WITH_QT6)
 AC_ARG_WITH(qt6,  [  --with-qt6       (build with qt6)],[WITH_QT6="$withval"],[WITH_QT6="no"])
 
-# check if we have ubuntu plucky or debian trixie and activate --with-qt6
-# if so as we don't have webkit in that one.
+# check if we have ubuntu noble/plucky or debian trixie and activate --with-qt6
+# if so as we don't have webkit in those distros.
 # maybe we should check if qt5webkit exists and if not activate qt6
 # but I have no idea how to do that
 
-if "lsb_release" -cs | grep "plucky\|trixie\|questing"; then
+if "lsb_release" -cs | grep "noble\|plucky\|trixie\|questing"; then
   WITH_QT6="yes"
   AC_MSG_RESULT([Forcing qt6 as we don't have webkit in newer distros])
 fi

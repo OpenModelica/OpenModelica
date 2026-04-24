@@ -7652,7 +7652,8 @@ template genericCallHeaders(list<SimGenericCall> genericCalls, Context context)
   let sub_name = match context case JACOBIAN_CONTEXT() then "jac_" else ""
   (genericCalls |> call => match call
     case SINGLE_GENERIC_CALL()
-    case IF_GENERIC_CALL() then
+    case IF_GENERIC_CALL()
+    case WHEN_GENERIC_CALL() then
       let &sub = buffer ""
       let &preExp = buffer ""
       let &varDecls = buffer ""
