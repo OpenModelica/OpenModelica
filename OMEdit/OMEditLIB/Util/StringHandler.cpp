@@ -880,18 +880,25 @@ QStringList StringHandler::getStrings(QString value)
  */
 static QString wordsBeforeAfterLastDot(QString value, bool lastWord)
 {
-  if (value.isEmpty())
-  {
+  if (value.isEmpty()) {
     return "";
   }
   value = value.trimmed();
-  int pos;
+  int pos = -1;
+
   if (value.endsWith('\'')) {
-    int i = value.size()-2;
-    while (value[i] != '\'' && i>1 && value[i-1] != '\\') {
+    // Find the matching opening quote of the last quoted segment
+    // by scanning backwards from second-to-last character
+    int i = value.size() - 2;
+    while (i >= 0 && value[i] != '\'') {
       i--;
     }
-    pos = i-1;
+    // i is now at the opening '\'' of the last quoted segment (or -1 if not found)
+    // The dot separator, if any, is immediately before it
+    if (i > 0 && value[i - 1] == '.') {
+      pos = i - 1;
+    }
+    // else: the entire string is one quoted identifier, pos stays -1
   } else {
     pos = value.lastIndexOf('.');
   }
@@ -899,9 +906,9 @@ static QString wordsBeforeAfterLastDot(QString value, bool lastWord)
   if (pos >= 0)
   {
     if (lastWord)
-      return value.mid((pos + 1), (value.length() - 1));
+      return value.mid(pos + 1);
     else
-      return value.mid(0, (pos));
+      return value.mid(0, pos);
   }
   else
   {
@@ -944,22 +951,30 @@ static QString wordsBeforeAfterFirstDot(QString value, bool firstWord)
     return "";
   }
   value = value.trimmed();
-  int pos;
+  int pos = -1;
+
   if (value.startsWith('\'')) {
+    // Find the closing quote of the first quoted segment
+    // by scanning forward from the second character
     int i = 1;
-    while (value[i] != '\'' && i<value.size()-1 && value[i+1] != '\\') {
+    while (i < value.size() && value[i] != '\'') {
       i++;
     }
-    pos = i+1;
+    // i is now at the closing '\'' of the first quoted segment
+    // The dot separator, if any, is immediately after it
+    if (i < value.size() - 1 && value[i + 1] == '.') {
+      pos = i + 1;
+    }
+    // else: the entire string is one quoted identifier, pos stays -1
   } else {
     pos = value.indexOf('.');
   }
 
   if (pos >= 0) {
     if (firstWord) {
-      return value.mid(0, (pos));
+      return value.mid(0, pos);
     } else {
-      return value.mid((pos + 1), (value.length() - 1));
+      return value.mid(pos + 1);
     }
   } else {
     return value;
@@ -978,12 +993,12 @@ QString StringHandler::getFirstWordBeforeDot(QString value)
 }
 
 /*!
- * \brief StringHandler::removeFirstWordAfterDot
+ * \brief StringHandler::removeFirstWordBeforeDot
  * Removes the first word before dot and returns the remaining string.
  * \param value
  * \return
  */
-QString StringHandler::removeFirstWordAfterDot(QString value)
+QString StringHandler::removeFirstWordBeforeDot(QString value)
 {
   return wordsBeforeAfterFirstDot(value, false);
 }
@@ -1007,7 +1022,7 @@ QStringList StringHandler::splitPath(QString path)
     QString first = getFirstWordBeforeDot(path);
     result.append(first);
 
-    QString remaining = removeFirstWordAfterDot(path);
+    QString remaining = removeFirstWordBeforeDot(path);
 
     // If nothing changed, we reached the last element
     if (remaining == path) {
@@ -1685,7 +1700,7 @@ QString StringHandler::getSimulationMessageTypeString(StringHandler::SimulationM
 QString makeClassNameRelativeHelper(QString draggedClassName, QString droppedClassName)
 {
   if (StringHandler::getFirstWordBeforeDot(draggedClassName).compare(StringHandler::getFirstWordBeforeDot(droppedClassName)) == 0) {
-    return makeClassNameRelativeHelper(StringHandler::removeFirstWordAfterDot(draggedClassName), StringHandler::removeFirstWordAfterDot(droppedClassName));
+    return makeClassNameRelativeHelper(StringHandler::removeFirstWordBeforeDot(draggedClassName), StringHandler::removeFirstWordBeforeDot(droppedClassName));
   } else {
     return draggedClassName;
   }

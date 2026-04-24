@@ -114,7 +114,7 @@ public:
   static QString getLastWordAfterDot(QString value);
   static QString removeLastWordAfterDot(QString value);
   static QString getFirstWordBeforeDot(QString value);
-  static QString removeFirstWordAfterDot(QString value);
+  static QString removeFirstWordBeforeDot(QString value);
   static QStringList splitPath(QString path);
   static QString escapeString(QString value);
   static QString escapeStringQuotes(QString value);

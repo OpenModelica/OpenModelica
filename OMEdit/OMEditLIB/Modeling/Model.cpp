@@ -1820,7 +1820,7 @@ namespace ModelInstance
             if (!pElement->getModel()) {
               return nullptr;
             }
-            return pElement->getModel()->getVariableValueOrBinding(StringHandler::removeFirstWordAfterDot(variableName), value);
+            return pElement->getModel()->getVariableValueOrBinding(StringHandler::removeFirstWordBeforeDot(variableName), value);
           }
         }
       } else if (pElement->isExtend() && pElement->getModel()) {
@@ -2884,7 +2884,7 @@ namespace ModelInstance
   {
     while (!str.isEmpty()) {
       mParts.append(StringHandler::getFirstWordBeforeDot(str));
-      auto next_str = StringHandler::removeFirstWordAfterDot(str);
+      auto next_str = StringHandler::removeFirstWordBeforeDot(str);
       if (next_str.size() == str.size()) break;
       str = next_str;
     }
