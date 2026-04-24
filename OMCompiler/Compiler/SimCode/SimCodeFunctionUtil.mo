@@ -1073,7 +1073,6 @@ algorithm
   end match;
 end optMRFAElem;
 
-
 public function checkValidMainFunction
 "Verifies that an in-function can be generated.
 This is not the case if the input involves function-pointers."

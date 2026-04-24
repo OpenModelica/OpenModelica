@@ -6786,26 +6786,22 @@ algorithm
       algorithm
         stmt.statementLst := optimizeMetaRecordFieldAssigns(stmt.statementLst);
         stmt.else_ := optMRFAInElse(stmt.else_);
-      then
-        stmt;
+      then stmt;
 
     case DAE.STMT_FOR()
       algorithm
         stmt.statementLst := optimizeMetaRecordFieldAssigns(stmt.statementLst);
-      then
-        stmt;
+      then stmt;
 
     case DAE.STMT_PARFOR()
       algorithm
         stmt.statementLst := optimizeMetaRecordFieldAssigns(stmt.statementLst);
-      then
-        stmt;
+      then stmt;
 
     case DAE.STMT_WHILE()
       algorithm
         stmt.statementLst := optimizeMetaRecordFieldAssigns(stmt.statementLst);
-      then
-        stmt;
+      then stmt;
 
     case DAE.STMT_WHEN()
       algorithm
@@ -6815,14 +6811,12 @@ algorithm
           else NONE();
         end match;
         stmt.elseWhen := oew;
-      then
-        stmt;
+      then stmt;
 
     case DAE.STMT_FAILURE()
       algorithm
         stmt.body := optimizeMetaRecordFieldAssigns(stmt.body);
-      then
-        stmt;
+      then stmt;
 
     else stmt;
   end match;
@@ -6836,14 +6830,12 @@ algorithm
       algorithm
         els.statementLst := optimizeMetaRecordFieldAssigns(els.statementLst);
         els.else_ := optMRFAInElse(els.else_);
-      then
-        els;
+      then els;
 
     case DAE.ELSE()
       algorithm
         els.statementLst := optimizeMetaRecordFieldAssigns(els.statementLst);
-      then
-        els;
+      then els;
 
     else els;
   end match;
@@ -7194,14 +7186,10 @@ protected function optMRFACheckCrefRead
 protected
   DAE.ComponentRef cref, baseCref;
   String baseIdent, headIdent, fname;
-  DAE.Type baseIdentType;
-  list<DAE.Subscript> baseSubs;
 algorithm
   DAE.CREF(componentRef = cref) := crefExp;
   DAE.CREF(componentRef = baseCref) := baseExp;
   safe := matchcontinue (cref, baseCref)
-    local
-      DAE.ComponentRef innerCref;
     // Wholesale c -- always disqualify if any field already written.
     case (DAE.CREF_IDENT(ident = headIdent), DAE.CREF_IDENT(ident = baseIdent))
       then not (stringEq(headIdent, baseIdent) and not listEmpty(writtenFields));
