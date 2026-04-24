@@ -94,7 +94,7 @@ static QString waitAndCheckCompilation(SimulationOutputWidget *output)
     if (!compilationProc || compilationProc->exitCode() != 0) {
         return QString("Compilation failed (exit code %1):\n%2")
             .arg(compilationProc ? compilationProc->exitCode() : -1)
-            .arg(output->getCompilationOutput());
+            .arg(output->getCompilationStandardError());
     }
     return QString();
 }

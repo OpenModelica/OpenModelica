@@ -251,6 +251,7 @@ SimulationOutputWidget::SimulationOutputWidget(SimulationOptions simulationOptio
   mpCompilationOutputTextBox = new OutputPlainTextEdit;
   mpCompilationOutputTextBox->setFont(QFont(Helper::monospacedFontInfo.family()));
   mpGeneratedFilesTabWidget->addTab(mpCompilationOutputTextBox, tr("Compilation"));
+  mCompilationStandardError.clear();
   mSimulationStandardOutput.clear();
   mSimulationStandardError.clear();
   // Simulation output handler
@@ -431,9 +432,9 @@ SimulationOutputWidget::~SimulationOutputWidget()
   }
 }
 
-QString SimulationOutputWidget::getCompilationOutput()
+QString SimulationOutputWidget::getCompilationStandardError()
 {
-  return mpCompilationOutputTextBox ? mpCompilationOutputTextBox->toPlainText() : QString();
+  return mCompilationStandardError;
 }
 
 /*!
@@ -613,7 +614,9 @@ void SimulationOutputWidget::readPostCompilationStandardOutput()
  */
 void SimulationOutputWidget::readPostCompilationStandardError()
 {
-  writeCompilationOutput(QString(mpPostCompilationProcess->readAllStandardError()), Qt::red);
+  QString output = QString(mpPostCompilationProcess->readAllStandardError());
+  mCompilationStandardError += output;
+  writeCompilationOutput(output, Qt::red);
 }
 
 /*!
@@ -629,7 +632,9 @@ void SimulationOutputWidget::postCompilationProcessError(QProcess::ProcessError 
   if (isPostCompilationProcessKilled()) {
     return;
   }
-  writeCompilationOutput(mpPostCompilationProcess->errorString(), Qt::red);
+  QString errorString = mpPostCompilationProcess->errorString();
+  mCompilationStandardError += errorString;
+  writeCompilationOutput(errorString, Qt::red);
 }
 
 /*!
@@ -1031,7 +1036,9 @@ void SimulationOutputWidget::readCompilationStandardOutput()
  */
 void SimulationOutputWidget::readCompilationStandardError()
 {
-  writeCompilationOutput(QString(mpCompilationProcess->readAllStandardError()), Qt::red);
+  QString output = QString(mpCompilationProcess->readAllStandardError());
+  mCompilationStandardError += output;
+  writeCompilationOutput(output, Qt::red);
 }
 
 /*!
@@ -1047,7 +1054,9 @@ void SimulationOutputWidget::compilationProcessError(QProcess::ProcessError erro
   if (isCompilationProcessKilled()) {
     return;
   }
-  writeCompilationOutput(mpCompilationProcess->errorString(), Qt::red);
+  QString errorString = mpCompilationProcess->errorString();
+  mCompilationStandardError += errorString;
+  writeCompilationOutput(errorString, Qt::red);
 }
 
 /*!
