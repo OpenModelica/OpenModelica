@@ -307,10 +307,16 @@ int expl_diag_impl_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
       modelica_boolean dense_output_valid = (gbData->time != data->simulationInfo->startTime && !gbData->eventHappened
                                              && gbData->nlsSolverMethod == GB_NLS_INTERNAL && gbData->extrapolationBaseTime != INFINITY);
 
+      // for MR integration: start values of fast states are chosen as left boundary y0; avoids poor extrapolation
+      modelica_boolean do_zero_order_hold_fast_states = (gbData->multi_rate && gbData->nFastStates > 0);
+
       if (gbData->tableau->svp != NULL && gbData->tableau->svp->type[stage_] == SVP_LINEAR_COMBINATION)
       {
         /* linear combination stage-value-predictors (highest priority) */
         gbInternalLinearCombinationSVP(gbData->tableau->svp, stage_, nStates, gbData->stepSize, gbData->k, gbData->yOld, nlsData->nlsxOld);
+
+        // never do 0 order hold if we do sophisticated SVPs
+        do_zero_order_hold_fast_states = FALSE;
       }
       else if (dense_output_valid && gbData->tableau->svp != NULL && gbData->tableau->svp->type[stage_] == SVP_DENSE_OUTPUT)
       {
@@ -336,6 +342,16 @@ int expl_diag_impl_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
       {
         /* generic extrapolation */
         extrapolation_gb(gbData, nlsData->nlsxOld, gbData->time + gbData->tableau->c[stage_] * gbData->stepSize);
+      }
+
+      // zero order hold for all fast states
+      if (do_zero_order_hold_fast_states)
+      {
+        for (int fast = 0; fast < gbData->nFastStates; fast++)
+        {
+          int full = gbData->fastStatesIdx[fast];
+          nlsData->nlsxOld[full] = gbData->yOld[full];
+        }
       }
 
       infoStreamPrint(OMC_LOG_GBODE_NLS_V, 0, "Solving NLS of stage %d at time %g", stage_+1, gbData->time + gbData->tableau->c[stage_] * gbData->stepSize);
@@ -624,7 +640,6 @@ int full_implicit_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
   NONLINEAR_SYSTEM_DATA* nlsData = gbData->nlsData;
 
   int i;
-  int stage_;
   int nStates = data->modelData->nStates;
   int nStages = gbData->tableau->nStages;
 
@@ -641,22 +656,36 @@ int full_implicit_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
   }
 
   /* Set start values for non-linear solver by extrapolation */
-  for (stage_ = 0; stage_ < nStages; stage_++) {
-    memcpy(nlsData->nlsx + stage_*nStates,    gbData->yOld, nStates*sizeof(modelica_real));
-    memcpy(nlsData->nlsxOld + stage_*nStates, gbData->yOld, nStates*sizeof(modelica_real));
+  for (int stage = 0; stage < nStages; stage++) {
+    memcpy(nlsData->nlsx + stage*nStates,    gbData->yOld, nStates*sizeof(modelica_real));
+    memcpy(nlsData->nlsxOld + stage*nStates, gbData->yOld, nStates*sizeof(modelica_real));
 
-    extrapolation_gb(gbData, nlsData->nlsxExtrapolation + stage_*nStates, gbData->time + gbData->tableau->c[stage_] * gbData->stepSize);
+    extrapolation_gb(gbData, nlsData->nlsxExtrapolation + stage*nStates, gbData->time + gbData->tableau->c[stage] * gbData->stepSize);
   }
 
+  // use dense output extrapolation for all slow states (if SR: then for all states)
   if (gbData->time != data->simulationInfo->startTime && !gbData->eventHappened
       && gbData->tableau->withDenseOutput && gbData->nlsSolverMethod == GB_NLS_INTERNAL
       && gbData->extrapolationBaseTime != INFINITY)
   {
-    for (stage_ = 0; stage_ < nStages; stage_++) {
-      double theta = (gbData->time + gbData->tableau->c[stage_] * gbData->stepSize - gbData->extrapolationBaseTime) / gbData->extrapolationStepSize;
+    for (int stage = 0; stage < nStages; stage++) {
+      double theta = (gbData->time + gbData->tableau->c[stage] * gbData->stepSize - gbData->extrapolationBaseTime) / gbData->extrapolationStepSize;
       gbData->tableau->dense_output(gbData->tableau, gbData->yLast, NULL, gbData->kLast,
-                                    theta, gbData->extrapolationStepSize, nlsData->nlsxOld + stage_*nStates, 0, NULL, nStates);
+                                    theta, gbData->extrapolationStepSize, nlsData->nlsxOld + stage*nStates, 0, NULL, nStates);
       }
+  }
+
+  // zero order hold for all fast states
+  if (gbData->multi_rate && gbData->nFastStates > 0)
+  {
+    for (int stage = 0; stage < nStages; stage++)
+    {
+      for (int fast = 0; fast < gbData->nFastStates; fast++)
+      {
+        int full = gbData->fastStatesIdx[fast];
+        nlsData->nlsxOld[stage * nStates + full] = gbData->yOld[full];
+      }
+    }
   }
 
   solved = solveNLS_gb(data, threadData, nlsData, gbData, FALSE);
@@ -668,9 +697,9 @@ int full_implicit_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
 
   if (OMC_ACTIVE_STREAM(OMC_LOG_GBODE_NLS)) {
     infoStreamPrint(OMC_LOG_GBODE_NLS, 1, "NLS - start values and solution of the NLS:");
-    for (stage_ = 0; stage_ < nStages; stage_++) {
-      printVector_gb(OMC_LOG_GBODE_NLS, "xS", nlsData->nlsxExtrapolation + stage_*nStates, nStates, gbData->time + gbData->tableau->c[stage_] * gbData->stepSize);
-      printVector_gb(OMC_LOG_GBODE_NLS, "xL", nlsData->nlsx + stage_*nStates,              nStates, gbData->time + gbData->tableau->c[stage_] * gbData->stepSize);
+    for (int stage = 0; stage < nStages; stage++) {
+      printVector_gb(OMC_LOG_GBODE_NLS, "xS", nlsData->nlsxExtrapolation + stage*nStates, nStates, gbData->time + gbData->tableau->c[stage] * gbData->stepSize);
+      printVector_gb(OMC_LOG_GBODE_NLS, "xL", nlsData->nlsx + stage*nStates,              nStates, gbData->time + gbData->tableau->c[stage] * gbData->stepSize);
     }
     messageClose(OMC_LOG_GBODE_NLS);
   }
@@ -683,8 +712,8 @@ int full_implicit_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
   // calculate y(t_n+1)
   for (i = 0; i < nStates; i++) {
     gbData->y[i] = gbData->yOld[i];
-    for (stage_ = 0; stage_ < nStages; stage_++) {
-      gbData->y[i] += gbData->stepSize * gbData->tableau->b[stage_]  * (gbData->k + stage_ * nStates)[i];
+    for (int stage = 0; stage < nStages; stage++) {
+      gbData->y[i] += gbData->stepSize * gbData->tableau->b[stage]  * (gbData->k + stage * nStates)[i];
     }
   }
 
@@ -705,8 +734,8 @@ int full_implicit_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
   {
     for (i = 0; i < nStates; i++) {
       gbData->yt[i] = gbData->yOld[i];
-      for (stage_ = 0; stage_ < nStages; stage_++) {
-        gbData->yt[i] += gbData->stepSize * gbData->tableau->bt[stage_] * (gbData->k + stage_ * nStates)[i];
+      for (int stage = 0; stage < nStages; stage++) {
+        gbData->yt[i] += gbData->stepSize * gbData->tableau->bt[stage] * (gbData->k + stage * nStates)[i];
       }
     }
   }
