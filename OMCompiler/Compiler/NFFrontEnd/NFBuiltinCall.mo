@@ -2135,9 +2135,13 @@ protected
     try
       (arg2, ty2, var2) := Typing.typeExp(expDynamic, context, info);
     else
-      variability := var1;
-      callExp := arg1;
-      return;
+      if InstContext.inInstanceAPI(context) then
+        fail();
+      else
+        variability := var1;
+        callExp := arg1;
+        return;
+      end if;
     end try;
 
     arg2 := ExpandExp.expand(arg2);

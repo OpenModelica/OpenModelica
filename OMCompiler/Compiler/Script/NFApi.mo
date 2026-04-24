@@ -109,6 +109,7 @@ import Testsuite;
 import MetaModelica.Dangerous.listReverseInPlace;
 
 constant InstContext.Type ANNOTATION_CONTEXT = intBitOr(NFInstContext.RELAXED, NFInstContext.ANNOTATION);
+constant InstContext.Type INST_API_ANNOTATION_CONTEXT = intBitOr(ANNOTATION_CONTEXT, NFInstContext.INSTANCE_API);
 constant InstContext.Type FAST_CONTEXT = intBitOr(NFInstContext.RELAXED, NFInstContext.FAST_LOOKUP);
 
 public
@@ -1924,8 +1925,8 @@ protected
 algorithm
   ErrorExt.setCheckpoint(getInstanceName());
   try
-    exp := Inst.instExp(absynExp, scope, ANNOTATION_CONTEXT, info);
-    exp := Typing.typeExp(exp, ANNOTATION_CONTEXT, info);
+    exp := Inst.instExp(absynExp, scope, INST_API_ANNOTATION_CONTEXT, info);
+    exp := Typing.typeExp(exp, INST_API_ANNOTATION_CONTEXT, info);
     exp := SimplifyExp.simplify(exp);
     json := Expression.toJSON(exp);
   else

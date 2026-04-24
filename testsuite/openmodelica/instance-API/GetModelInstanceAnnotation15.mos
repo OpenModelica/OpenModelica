@@ -1,0 +1,81 @@
+// name: GetModelInstanceAnnotation15
+// keywords:
+// status: correct
+// cflags: -d=newInst
+//
+//
+
+loadString("
+  model M
+  annotation(
+    Icon(graphics = {Text(origin = {46, -66}, textColor = {238, 46, 47}, extent = {{-98, 88}, {0, 44}}, textString = DynamicSelect(\"P\", String(P, format=\"9.1f\")))}));
+  end M;
+");
+
+getModelInstance(M, prettyPrint = true);
+
+// Result:
+// true
+// "{
+//   \"name\": \"M\",
+//   \"restriction\": \"model\",
+//   \"annotation\": {
+//     \"Icon\": {
+//       \"graphics\": [
+//         {
+//           \"$error\": \"[<interactive>:4:10-4:164:writable] Error: Variable P not found in scope M.\\n\",
+//           \"value\": {
+//             \"$kind\": \"call\",
+//             \"name\": \"Text\",
+//             \"namedArgs\": {
+//               \"origin\": [
+//                 46,
+//                 -66
+//               ],
+//               \"textColor\": [
+//                 238,
+//                 46,
+//                 47
+//               ],
+//               \"extent\": [
+//                 [
+//                   -98,
+//                   88
+//                 ],
+//                 [
+//                   0,
+//                   44
+//                 ]
+//               ],
+//               \"textString\": {
+//                 \"$kind\": \"call\",
+//                 \"name\": \"DynamicSelect\",
+//                 \"args\": [
+//                   \"P\",
+//                   {
+//                     \"$kind\": \"call\",
+//                     \"name\": \"String\",
+//                     \"args\": [
+//                       \"P\"
+//                     ],
+//                     \"namedArgs\": {
+//                       \"format\": \"9.1f\"
+//                     }
+//                   }
+//                 ]
+//               }
+//             }
+//           }
+//         }
+//       ]
+//     }
+//   },
+//   \"source\": {
+//     \"filename\": \"<interactive>\",
+//     \"lineStart\": 2,
+//     \"columnStart\": 3,
+//     \"lineEnd\": 5,
+//     \"columnEnd\": 8
+//   }
+// }"
+// endResult
