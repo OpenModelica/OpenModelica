@@ -350,16 +350,16 @@ public
     if BVariable.isPrevious(var_ptr) and Util.isSome(var_pre) then
       // for previous change the rhs to the start value of the discrete state
       merged_name := BVariable.getVarName(Util.getOption(var_pre));
-      merged_name := ComponentRef.mergeSubscripts(subscripts, merged_name, true, true);
+      merged_name := ComponentRef.mergeSubscripts(subscripts, merged_name, true, true, true);
     elseif Util.isSome(var_pre) then
       // for vars with previous change the lhs cref to the $PRE cref
-      merged_name := ComponentRef.mergeSubscripts(subscripts, name, true, true);
+      merged_name := ComponentRef.mergeSubscripts(subscripts, name, true, true, true);
       var_ptr := Util.getOption(var_pre);
       name := BVariable.getVarName(var_ptr);
-      name := ComponentRef.mergeSubscripts(subscripts, name, true, true);
+      name := ComponentRef.mergeSubscripts(subscripts, name, true, true, true);
     else
       // just apply subscripts and make start var
-      name := ComponentRef.mergeSubscripts(subscripts, name, true, true);
+      name := ComponentRef.mergeSubscripts(subscripts, name, true, true, true);
       merged_name := name;
     end if;
     (start_name, start_var) := BVariable.makeStartVar(merged_name);
@@ -549,7 +549,7 @@ public
 
       // convert array constructor to for-equation
       case Expression.CALL(call = array_constructor as Call.TYPED_ARRAY_CONSTRUCTOR()) algorithm
-        (var_ptr, name, start_var, start_cref, _, frames, iterator) := createIteratedStartCref(var_ptr, name);
+        (var_ptr, name, start_var, start_cref, _, frames, iterator) := createIteratedStartCref(var_ptr, name, listLength(array_constructor.iters));
         replacements := UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual);
         for tpl in List.zip(array_constructor.iters, frames) loop
           ((old_iter, _), (new_iter, _, _)) := tpl;
@@ -564,7 +564,7 @@ public
           iterator := Iterator.EMPTY();
           start_exp := exp;
         else
-          (var_ptr, name, start_var, start_cref, subscripts, _, iterator) := createIteratedStartCref(var_ptr, name);
+          (var_ptr, name, start_var, start_cref, subscripts, _, iterator) := createIteratedStartCref(var_ptr, name, 0);
           start_exp := Expression.applySubscripts(subscripts, exp, true);
         end if;
       then (start_exp, iterator);
@@ -587,7 +587,7 @@ public
       (var_ptr, name, start_var, start_name) := createStartVar(var_ptr, name, {});
       iterator := Iterator.EMPTY();
     else
-      (var_ptr, name, start_var, start_name, subscripts, _, iterator) := createIteratedStartCref(var_ptr, name);
+      (var_ptr, name, start_var, start_name, subscripts, _, iterator) := createIteratedStartCref(var_ptr, name, 0);
     end if;
     Pointer.update(ptr_start_vars, start_var :: Pointer.access(ptr_start_vars));
     start_exp := Expression.fromCref(start_name);
@@ -596,6 +596,7 @@ public
   protected function createIteratedStartCref
     input output Pointer<Variable> var_ptr;
     input output ComponentRef name;
+    input Integer num_dim;
     output Pointer<Variable> start_var;
     output ComponentRef start_cref;
     output list<Subscript> subscripts;
@@ -609,6 +610,7 @@ public
   algorithm
     // make unique iterators for the new for-loop
     dims        := Type.arrayDims(ComponentRef.getSubscriptedType(name));
+    dims        := if num_dim == 0 then dims else List.firstN(dims, num_dim);
     (iterators, ranges, subscripts) := Flatten.makeIterators(name, dims);
     iter_crefs  := list(ComponentRef.makeIterator(iter, Type.INTEGER()) for iter in iterators);
     iter_crefs  := list(BackendDAE.lowerIteratorCref(iter) for iter in iter_crefs);
@@ -695,7 +697,6 @@ public
   algorithm
     bdae := match bdae
       case BackendDAE.MAIN() algorithm
-
         // initial() -> false, initialSimplified() -> false
         bdae.ode        := list(Partition.mapEqn(par, function cleanupInitialCall(init = false, init0 = false)) for par in bdae.ode);
         bdae.algebraic  := list(Partition.mapEqn(par, function cleanupInitialCall(init = false, init0 = false)) for par in bdae.algebraic);

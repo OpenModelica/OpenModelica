@@ -717,6 +717,7 @@ public
           end if;
 
           if reverse then
+            cref_subs := listReverse(cref_subs);
             (subscripts, rest_cref) := mergeSubscripts2(subscripts, cref.restCref, applyToScope, backend, reverse);
           end if;
         then
