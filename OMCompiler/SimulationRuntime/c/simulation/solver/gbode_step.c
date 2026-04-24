@@ -35,6 +35,16 @@
 
 #include "kinsolSolver.h"
 
+/* some constants for less verbose BLAS calls */
+static const double DBL_ONE = 1.0;
+static const int INT_ONE = 1;
+
+/* y := a * x + y */
+extern void daxpy_(const int *n,
+                   const double *alpha,
+                   const double *x, const int *incX,
+                   double *y, const int *incY);
+
 /**
  * @brief Generic multi-step function.
  *
@@ -95,7 +105,7 @@ int full_implicit_MS(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
   memcpy(nlsData->nlsxOld, nlsData->nlsx, nStates*sizeof(modelica_real));
   memcpy(nlsData->nlsxExtrapolation, nlsData->nlsx, nStates*sizeof(modelica_real));
 
-  solved = solveNLS_gb(data, threadData, nlsData, gbData);
+  solved = solveNLS_gb(data, threadData, nlsData, gbData, FALSE);
 
   if (solved != NLS_SOLVED) {
     if (OMC_ACTIVE_STREAM(OMC_LOG_SOLVER)) warningStreamPrint(OMC_LOG_SOLVER, 0, "gbode error: Failed to solve NLS in full_implicit_MS at time t=%g", gbData->time);
@@ -190,7 +200,7 @@ int full_implicit_MS_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solve
   memcpy(nlsData->nlsxOld, nlsData->nlsx, nStates*sizeof(modelica_real));
   memcpy(nlsData->nlsxExtrapolation, nlsData->nlsx, nStates*sizeof(modelica_real));
 
-  solved = solveNLS_gb(data, threadData, nlsData, gbData);
+  solved = solveNLS_gb(data, threadData, nlsData, gbData, TRUE);
 
   if (solved != NLS_SOLVED) {
     if (OMC_ACTIVE_STREAM(OMC_LOG_SOLVER)) warningStreamPrint(OMC_LOG_SOLVER, 0, "gbodef error: Failed to solve NLS in full_implicit_MS_MR at time t=%g", gbfData->time);
@@ -277,12 +287,11 @@ int expl_diag_impl_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
       // Store values in the ring buffer
       memcpy(gbData->x + stage_ * nStates, gbData->res_const, nStates*sizeof(double));
 
-      if (!gbData->tableau->isKLeftAvailable || (stage > 0)) {
-        // Calculate the fODE values for the explicit stage
+      if (gbData->tableau->isKLeftAvailable && !gbData->didFastStep && (stage == 0)) {
+        memcpy(fODE, gbData->kLeft, nStates*sizeof(double));
+      } else {
         memcpy(sData->realVars, gbData->res_const, nStates*sizeof(double));
         gbode_fODE(data, threadData, &(gbData->stats.nCallsODE), NULL);
-      } else {
-        memcpy(fODE, gbData->kLeft, nStates*sizeof(double));
       }
     } else {
       // solve for x: 0 = yold-x + h*(sum(A[i,j]*k[j], i=1..j-1) + A[i,i]*f(t + c[i]*h, x))
@@ -330,7 +339,7 @@ int expl_diag_impl_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
       }
 
       infoStreamPrint(OMC_LOG_GBODE_NLS_V, 0, "Solving NLS of stage %d at time %g", stage_+1, gbData->time + gbData->tableau->c[stage_] * gbData->stepSize);
-      solved = solveNLS_gb(data, threadData, nlsData, gbData);
+      solved = solveNLS_gb(data, threadData, nlsData, gbData, FALSE);
 
       if (solved != NLS_SOLVED) {
         if (OMC_ACTIVE_STREAM(OMC_LOG_SOLVER)) warningStreamPrint(OMC_LOG_SOLVER, 0, "gbode error: Failed to solve NLS in expl_diag_impl_RK in stage %d at time t=%g", stage_+1, gbData->time + gbData->tableau->c[stage_] * gbData->stepSize);
@@ -380,6 +389,15 @@ int expl_diag_impl_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverI
     }
   }
 
+  modelica_boolean use_contractive_error = (gbData->tableau->contraction != NULL
+                                         && gbData->tableau->contraction->apply_filter_only
+                                         && gbData->nlsSolverMethod == GB_NLS_INTERNAL);
+
+  if (use_contractive_error)
+  {
+    gbInternalContractiveFilter(data, threadData, gbData->nlsData, gbData, gbData->y, gbData->yt);
+  }
+
   return 0;
 }
 
@@ -408,35 +426,6 @@ int expl_diag_impl_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solv
   int nStages = gbfData->tableau->nStages;
   NLS_SOLVER_STATUS solved = NLS_FAILED;
 
-  // if we have we have many slow states, e.g. 90% slow and 10% fast: always interpolate all slow states
-  // as we can we heavily exploit BLAS vectorization; only use sparse indirect indexing for tiny slow sets (< 20%)
-  modelica_boolean use_sparse_slow_interp = ((double)gbData->nSlowStates / (double)gbData->nStates < 0.2);
-
-  // we need to backup yOld into y2 as otherwise we override gbfData->yOld
-  if (!use_sparse_slow_interp)
-  {
-    projVector_gbf(gbData->y2, gbfData->yOld, nFastStates, gbData->fastStatesIdx);
-  }
-
-  // interpolate the slow states on the current time of gbfData->yOld for correct evaluation of gbfData->res_const
-  gb_interpolation(gbData->interpolation,
-                   gbData->timeLeft,   gbData->yLeft,  gbData->kLeft,
-                   gbData->timeRight,  gbData->yRight, gbData->kRight,
-                   gbfData->time,      gbfData->yOld,
-                   use_sparse_slow_interp ? gbData->nSlowStates : 0, use_sparse_slow_interp ? gbData->slowStatesIdx : NULL,
-                   nStates, gbData->tableau, gbData->x, gbData->k);
-
-  // apply backup
-   if (!use_sparse_slow_interp)
-  {
-    for (int fast_idx = 0; fast_idx < nFastStates; fast_idx++)
-    {
-      int full_idx = gbData->fastStatesIdx[fast_idx];
-      gbfData->yOld[full_idx] = gbData->y2[fast_idx];
-    }
-  }
-
-
   if (OMC_ACTIVE_STREAM(OMC_LOG_GBODE_NLS)) {
     infoStreamPrint(OMC_LOG_GBODE_NLS, 1, "NLS - used values for extrapolation:");
     printVector_gbf(OMC_LOG_GBODE_NLS, "xL", gbfData->yv + nStates, nStates, gbfData->tv[1], gbData->nFastStates, gbData->fastStatesIdx);
@@ -444,6 +433,14 @@ int expl_diag_impl_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solv
     printVector_gbf(OMC_LOG_GBODE_NLS, "xR", gbfData->yv, nStates, gbfData->tv[0], gbData->nFastStates, gbData->fastStatesIdx);
     printVector_gbf(OMC_LOG_GBODE_NLS, "kR", gbfData->kv, nStates, gbfData->tv[0], gbData->nFastStates, gbData->fastStatesIdx);
     messageClose(OMC_LOG_GBODE_NLS);
+  }
+
+  slowStateCache_merge_left(gbData, gbfData->slowStateCache, gbfData->yOld);
+
+  for (int fast_idx = 0; fast_idx < nFastStates; fast_idx++)
+  {
+    int full_idx = gbData->fastStatesIdx[fast_idx];
+    gbfData->yOldPacked[fast_idx] = gbfData->yOld[full_idx];
   }
 
   for (int stage = 0; stage < nStages; stage++) {
@@ -456,23 +453,31 @@ int expl_diag_impl_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solv
     // k[i] = f(tOld + c[i]*h, yOld + h*sum(a[i,j]*k[j], i=j..i))
     // res = f(tOld + c[i]*h, yOld + h*sum(a[i,j]*k[j], i=j..i-1))
 
-    // index of diagonal element of A
+    // check for explicit stage
     if (gbfData->tableau->A[stage * nStages + stage] == 0)
     {
-      // for explicit stages, we update the full res_const buffer as we evaluate the ODE at that point (may be optimized further)
-      memcpy(gbfData->res_const, gbfData->yOld, nStates * sizeof(double));
-
-      for (int full_idx = 0; full_idx < nStates; full_idx++)
+      // check if kLeft is available and potentially reuse said value
+      if (gbfData->tableau->isKLeftAvailable && (stage == 0) && gbData->didFastStep)
       {
-        for (int s = 0; s < stage; s++)
-        {
-          gbfData->res_const[full_idx] += gbfData->stepSize * gbfData->tableau->A[stage * nStages + s] * gbfData->k[s * nStates + full_idx];
-        }
+        copyVector_gbf(fODE, gbfData->kLeft, nFastStates, gbData->fastStatesIdx);
       }
+      else
+      {
+        // for explicit stages, we update the full res_const buffer as we evaluate the ODE at that point (may be optimized further)
+        memcpy(gbfData->res_const, gbfData->yOld, nStates * sizeof(double));
 
-      // Calculate the fODE values for the explicit stage
-      memcpy(sData->realVars, gbfData->res_const, nStates * sizeof(double));
-      gbode_fODE(data, threadData, &(gbfData->stats.nCallsODE), gbfData->evalSelectionFast);
+        for (int full_idx = 0; full_idx < nStates; full_idx++)
+        {
+          for (int s = 0; s < stage; s++)
+          {
+            gbfData->res_const[full_idx] += gbfData->stepSize * gbfData->tableau->A[stage * nStages + s] * gbfData->k[s * nStates + full_idx];
+          }
+        }
+
+        // calculate the fODE values for the explicit stage
+        memcpy(sData->realVars, gbfData->res_const, nStates * sizeof(double));
+        gbode_fODE(data, threadData, &(gbfData->stats.nCallsODE), gbfData->evalSelectionFast);
+      }
     }
     else
     {
@@ -488,12 +493,7 @@ int expl_diag_impl_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solv
       }
 
       // interpolate the slow states on the time of the current stage
-      gb_interpolation(gbData->interpolation,
-                       gbData->timeLeft,  gbData->yLeft,  gbData->kLeft,
-                       gbData->timeRight, gbData->yRight, gbData->kRight,
-                       sData->timeValue,   sData->realVars,
-                       use_sparse_slow_interp ? gbData->nSlowStates : 0, use_sparse_slow_interp ? gbData->slowStatesIdx : NULL,
-                       nStates, gbData->tableau, gbData->x, gbData->k);
+      slowStateCache_overwrite_stage(gbData, gbfData->slowStateCache,stage, sData->realVars);
 
       // setting the start vector for the newton step
       // solve for x: 0 = yold-x + h*(sum(A[i,j]*k[j], i=1..j-1) + A[i,i]*f(t + c[i]*h, x))
@@ -506,8 +506,31 @@ int expl_diag_impl_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solv
       extrapolation_gbf(gbData, gbData->y1, gbfData->time + gbfData->tableau->c[stage] * gbfData->stepSize);
       projVector_gbf(nlsData->nlsxExtrapolation, gbData->y1, nFastStates, gbData->fastStatesIdx);
 
+      // is the last solution valid and do we use internal nls
+      modelica_boolean dense_output_valid = (gbfData->extrapolationValid && gbfData->nlsSolverMethod == GB_NLS_INTERNAL);
+
+      if (gbfData->tableau->svp != NULL && gbfData->tableau->svp->type[stage] == SVP_LINEAR_COMBINATION)
+      {
+        /* linear combination stage-value-predictors (highest priority) */
+        gbInternalLinearCombinationSVP(gbfData->tableau->svp, stage, nFastStates, gbfData->stepSize, gbfData->kCurrPacked, gbfData->yOldPacked, nlsData->nlsxOld);
+      }
+      else if (dense_output_valid && gbfData->tableau->svp != NULL && gbfData->tableau->svp->type[stage] == SVP_DENSE_OUTPUT)
+      {
+        /* dense output stage-value-predictor */
+        double theta = (gbfData->time + gbfData->tableau->c[stage] * gbfData->stepSize - gbfData->extrapolationBaseTime) / gbfData->extrapolationStepSize;
+        gbfData->tableau->svp->dense_output_predictor(gbfData->tableau, gbfData->yLast, NULL, gbfData->kLast,
+                                                      theta, gbfData->extrapolationStepSize, nlsData->nlsxOld, 0, NULL, nFastStates);
+      }
+      else if (dense_output_valid && gbfData->tableau->withDenseOutput)
+      {
+        /* standard dense output if available / possible */
+        double theta = (gbfData->time + gbfData->tableau->c[stage] * gbfData->stepSize - gbfData->extrapolationBaseTime) / gbfData->extrapolationStepSize;
+        gbfData->tableau->dense_output(gbfData->tableau, gbfData->yLast, NULL, gbfData->kLast,
+                                       theta, gbfData->extrapolationStepSize, nlsData->nlsxOld, 0, NULL, nFastStates);
+      }
+
       infoStreamPrint(OMC_LOG_GBODE_NLS_V, 0, "Solving NLS of gbf stage %d at time %g", stage+1, gbfData->time + gbfData->tableau->c[stage] * gbfData->stepSize);
-      solved = solveNLS_gb(data, threadData, nlsData, gbData);
+      solved = solveNLS_gb(data, threadData, nlsData, gbData, TRUE);
 
       if (solved != NLS_SOLVED) {
         if (OMC_ACTIVE_STREAM(OMC_LOG_SOLVER)) warningStreamPrint(OMC_LOG_SOLVER, 0, "gbodef error: Failed to solve NLS in expl_diag_impl_RK_MR in stage %d at time t=%g", stage+1, gbfData->time + gbfData->tableau->c[stage] * gbfData->stepSize);
@@ -521,11 +544,37 @@ int expl_diag_impl_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solv
         printVector_gb(OMC_LOG_GBODE_NLS, "xL", nlsData->nlsx,              nFastStates, gbfData->time + gbfData->tableau->c[stage] * gbfData->stepSize);
         messageClose(OMC_LOG_GBODE_NLS);
       }
+
+      if (/* non explicit stage of (E)SDIRK integrator */ (stage != 0 || gbfData->tableau->A[0] != 0) && gbData->nlsSolverMethod == GB_NLS_INTERNAL)
+      {
+        // reconstruct k_{stage} from the solution, avoids repeated call to functionODE()
+        double ifac = 1.0 / (gbfData->stepSize * gbfData->tableau->A[stage * nStages + stage]);
+        for (int fast_idx = 0; fast_idx < nFastStates; fast_idx++)
+        {
+          int full_idx = gbData->fastStatesIdx[fast_idx];
+          fODE[full_idx] = ifac * (nlsData->nlsx[fast_idx] - gbfData->res_const[full_idx]);
+          sData->realVars[full_idx] = nlsData->nlsx[fast_idx];
+        }
+      }
+    }
+
+    // TODO: make k and y only contain fast states. Almost all structures depend on this full vector: this is a todo for a rewrite of GBODE
+    if (gbfData->nlsSolverMethod == GB_NLS_INTERNAL)
+    {
+      int stageOffset = nFastStates * stage;
+
+      for (int fast_idx = 0; fast_idx < nFastStates; fast_idx++)
+      {
+        int full_idx = gbData->fastStatesIdx[fast_idx];
+        gbfData->kCurrPacked[stageOffset + fast_idx] = fODE[full_idx];
+      }
     }
 
     // copy last values of sData->realVars and fODE, which should coincide with x[i] and k[i]
     // TODO: Make the fast state structures only contains the current flat k's
     //       => change the interpolation routines accordingly
+    // in the interpolation routines gbfData->k is also only used with a fastState mapping, so
+    // this is used effectively anyway
     memcpy(gbfData->x + stage * nStates, sData->realVars, nStates*sizeof(double));
     memcpy(gbfData->k + stage * nStates, fODE, nStates*sizeof(double));
   }
@@ -544,6 +593,15 @@ int expl_diag_impl_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solv
       gbfData->y[full_idx]  += gbfData->stepSize * gbfData->tableau->b[stage]  * (gbfData->k + stage * nStates)[full_idx];
       gbfData->yt[full_idx] += gbfData->stepSize * gbfData->tableau->bt[stage] * (gbfData->k + stage * nStates)[full_idx];
     }
+  }
+
+  modelica_boolean use_contractive_error = (gbfData->tableau->contraction != NULL
+                                         && gbfData->tableau->contraction->apply_filter_only
+                                         && gbfData->nlsSolverMethod == GB_NLS_INTERNAL);
+
+  if (use_contractive_error)
+  {
+    gbInternalContractiveFilter(data, threadData, gbData->gbfData->nlsData, gbData, gbfData->y, gbfData->yt);
   }
 
   return 0;
@@ -601,7 +659,7 @@ int full_implicit_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
       }
   }
 
-  solved = solveNLS_gb(data, threadData, nlsData, gbData);
+  solved = solveNLS_gb(data, threadData, nlsData, gbData, FALSE);
 
   if (solved != NLS_SOLVED) {
     if (OMC_ACTIVE_STREAM(OMC_LOG_SOLVER)) warningStreamPrint(OMC_LOG_SOLVER, 0, "gbode error: Failed to solve NLS in full_implicit_RK at time t=%g", gbData->time);
@@ -626,18 +684,22 @@ int full_implicit_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
   for (i = 0; i < nStates; i++) {
     gbData->y[i] = gbData->yOld[i];
     for (stage_ = 0; stage_ < nStages; stage_++) {
-      gbData->y[i]  += gbData->stepSize * gbData->tableau->b[stage_]  * (gbData->k + stage_ * nStates)[i];
+      gbData->y[i] += gbData->stepSize * gbData->tableau->b[stage_]  * (gbData->k + stage_ * nStates)[i];
     }
   }
 
   modelica_boolean use_contractive_error = (gbData->tableau->t_transform != NULL
-                                         && gbData->tableau->t_transform->defect_err != NULL
+                                         && gbData->tableau->contraction != NULL
                                          && gbData->nlsSolverMethod == GB_NLS_INTERNAL);
 
   // calculate yt(t_n+1) by contractive or standard embedded error estimate
   if (use_contractive_error)
   {
-    gbInternalContraction(data, threadData, gbData->nlsData, gbData, gbData->y, gbData->yt);
+    // compute contractive error into gbData->yt = err = (gamma / h * I - J)^{-1} * (f(t_n, y(t_n)) - d(0)^T * A * k)
+    gbInternalContractiveDefect(data, threadData, gbData->nlsData, gbData, gbData->yt);
+
+    // compute "embedded" method as yt := y + err
+    daxpy_(&nStates, &DBL_ONE, gbData->y, &INT_ONE, gbData->yt, &INT_ONE);
   }
   else
   {
@@ -654,6 +716,125 @@ int full_implicit_RK(DATA* data, threadData_t* threadData, SOLVER_INFO* solverIn
 
   return 0;
 }
+
+/**
+ * @brief Single implicit Runge-Kutta step.
+ *
+ * @param data              Runtime data struct.
+ * @param threadData        Thread data for error handling.
+ * @param solverInfo        Storing Runge-Kutta solver data.
+ * @return int              Return 0 on success, -1 on failure.
+ */
+int full_implicit_RK_MR(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo)
+{
+  SIMULATION_DATA *sData = (SIMULATION_DATA*)data->localData[0];
+  modelica_real* fODE = sData->realVars + data->modelData->nStates;
+  DATA_GBODE* gbData = (DATA_GBODE*)solverInfo->solverData;
+  DATA_GBODEF* gbfData = gbData->gbfData;
+  BUTCHER_TABLEAU *tableau = gbfData->tableau;
+
+  NONLINEAR_SYSTEM_DATA* nlsData = gbfData->nlsData;
+
+  int nStates = gbData->nStates;
+  int nStages = tableau->nStages;
+  int nFastStates = gbData->nFastStates;
+  int *fastStatesIdx = gbData->fastStatesIdx;
+
+  NLS_SOLVER_STATUS solved = NLS_FAILED;
+
+  // Attention: as currently all structures in GBODEF_DATA rely on indirect indexing to fast states, e.g.
+  // y(fast_state_i) = gbfData->y[fastStatesIdx[i]], instead of direct (flat) access gbfData->y[i]
+  // usage in gbnls=internal is very inconvenient. Therefore, we use the fields gbfData->yOldPacked and
+  // gbfData->kCurrPacked which represent the yOld and k fields but packed as described above
+  // Thus, internal NLS writes the solutions to kCurrPacked and uses the packed values yOldPacked, so
+  // differences between fast and slow steps is minimal, we can use BLAS routines to full extend and the code is not
+  // that nested. However, we need to extract these solutions to x and k fields at the end though.
+
+  for (int fast_idx = 0; fast_idx < nFastStates; fast_idx++)
+  {
+    int full_idx = fastStatesIdx[fast_idx];
+    gbfData->yOldPacked[fast_idx] = gbfData->yOld[full_idx];
+  }
+
+  /* Set start values for non-linear solver by extrapolation */
+  for (int stage = 0; stage < nStages; stage++) {
+    int offset = stage * nFastStates;
+    memcpy(&nlsData->nlsx[offset], gbfData->yOldPacked, nFastStates * sizeof(double));
+    memcpy(&nlsData->nlsxOld[offset], gbfData->yOldPacked, nFastStates * sizeof(double));
+  }
+
+  if (gbfData->tableau->withDenseOutput && gbfData->extrapolationValid && gbfData->nlsSolverMethod == GB_NLS_INTERNAL)
+  {
+    for (int stage = 0; stage < nStages; stage++)
+    {
+      int offset = stage * nFastStates;
+      double theta = (gbfData->time + tableau->c[stage] * gbfData->stepSize - gbfData->extrapolationBaseTime) / gbfData->extrapolationStepSize;
+      tableau->dense_output(tableau, gbfData->yLast, NULL, gbfData->kLast,
+                            theta, gbfData->extrapolationStepSize, &nlsData->nlsxOld[offset], 0, NULL, nFastStates);
+    }
+  }
+
+  solved = solveNLS_gb(data, threadData, nlsData, gbData, TRUE);
+
+  if (solved != NLS_SOLVED) {
+    if (OMC_ACTIVE_STREAM(OMC_LOG_SOLVER)) warningStreamPrint(OMC_LOG_SOLVER, 0, "gbode error: Failed to solve NLS in full_implicit_RK_MR at time t=%g", gbData->time);
+    return -1;
+  }
+
+  // calculate x, y, k
+  for (int fast_idx = 0; fast_idx < nFastStates; fast_idx++)
+  {
+    int full_idx = fastStatesIdx[fast_idx];
+    gbfData->y[full_idx]  = gbfData->yOld[full_idx];
+    for (int stage = 0; stage < nStages; stage++)
+    {
+      int offset_fast = stage * nFastStates;
+      int offset_full = stage * nStates;
+      gbfData->x[offset_full + full_idx] = nlsData->nlsx[offset_fast + fast_idx];
+      gbfData->y[full_idx] += gbfData->stepSize * gbfData->tableau->b[stage]  * gbfData->kCurrPacked[offset_fast + fast_idx];
+      gbfData->k[offset_full + full_idx] = gbfData->kCurrPacked[offset_fast + fast_idx];
+    }
+  }
+
+  modelica_boolean use_contractive_error = (gbfData->tableau->t_transform != NULL
+                                         && gbfData->tableau->contraction != NULL
+                                         && gbfData->nlsSolverMethod == GB_NLS_INTERNAL);
+
+  // calculate yt(t_n+1) by contractive or standard embedded error estimate
+  if (use_contractive_error)
+  {
+    // get work pointer from internal NLS
+    double *work = gbInternalGetWorkPointer(((struct dataSolver *)nlsData->solverData)->ordinaryData);
+
+    // compute contractive error into gbData->yt = err = (gamma / h * I - J)^{-1} * (f(t_n, y(t_n)) - d(0)^T * A * k)
+    gbInternalContractiveDefect(data, threadData, gbfData->nlsData, gbData, work);
+
+    // compute "embedded" method as yt := y + err
+    for (int fast_idx = 0; fast_idx < nFastStates; fast_idx++)
+    {
+      int full_idx = fastStatesIdx[fast_idx];
+      gbfData->yt[full_idx] = gbfData->y[full_idx] + work[fast_idx];
+    }
+  }
+  else
+  {
+    // calculate yt with standard embedded method
+    for (int fast_idx = 0; fast_idx < nFastStates; fast_idx++)
+    {
+      int full_idx = fastStatesIdx[fast_idx];
+      gbfData->yt[full_idx] = gbfData->yOld[full_idx];
+      for (int stage = 0; stage < nStages; stage++)
+      {
+        int offset_fast = stage * nFastStates;
+        int offset_full = stage * nStates;
+        gbfData->yt[full_idx] += gbfData->stepSize * gbfData->tableau->bt[stage]  * gbfData->kCurrPacked[offset_fast + fast_idx];
+      }
+    }
+  }
+
+  return 0;
+}
+
 
 /**
  * @brief

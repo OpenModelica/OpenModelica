@@ -49,6 +49,13 @@ extern void dgemv_(const char *trans,
                    const double *beta, double *y, const int *incY
 );
 
+/* y := a * x + y */
+extern void daxpy_(const int *n,
+                   const double *alpha,
+                   const double *x, const int *incX,
+                   double *y, const int *incY);
+
+static const double DBL_ZERO = 0.0;
 static const double DBL_ONE = 1.0;
 static const int INT_ONE = 1;
 static const char CHAR_NO_TRANS = 'N';
@@ -92,6 +99,7 @@ void setButcherTableau(BUTCHER_TABLEAU* tableau, const double *c, const double *
   tableau->isKLeftAvailable = FALSE;
   tableau->isKRightAvailable = FALSE;
   tableau->t_transform = NULL;
+  tableau->contraction = NULL;
 }
 
 void setStageValuePredictors(BUTCHER_TABLEAU *tableau, const double *A_pred, const STAGE_VALUE_PREDICTOR_TYPE *type, gb_dense_output dense_output_pred)
@@ -110,25 +118,36 @@ void setStageValuePredictors(BUTCHER_TABLEAU *tableau, const double *A_pred, con
   memcpy(tableau->svp->type, type, stages * sizeof(STAGE_VALUE_PREDICTOR_TYPE));
 }
 
-void setContractiveDefectError(BUTCHER_TABLEAU *tableau, const double *dT_A, double u)
+void setContractiveDefectError(BUTCHER_TABLEAU *tableau, const double *dT_A, modelica_boolean only_filter)
 {
-  if (tableau->t_transform == NULL)
+  if (tableau->t_transform == NULL && !only_filter)
   {
-    warningStreamPrint(OMC_LOG_STDOUT, 0, "Cannot set contractive defect error, if T-Transformation is NULL. Defaulting to standard embedded scheme.");
+    warningStreamPrint(OMC_LOG_STDOUT, 0, "Cannot set contractive error, if T-Transformation is NULL and filtering is disabled. Defaulting to standard embedded scheme.");
     return;
   }
 
-  CONTRACTIVE_DEFECT_ERROR *defect = (CONTRACTIVE_DEFECT_ERROR *) malloc(sizeof(CONTRACTIVE_DEFECT_ERROR));
+  CONTRACTIVE_ERROR *contraction = (CONTRACTIVE_ERROR *) malloc(sizeof(CONTRACTIVE_ERROR));
 
-  tableau->t_transform->defect_err = defect;
+  tableau->contraction = contraction;
 
-  defect->dT_A = (double *) malloc(tableau->nStages * sizeof(double));
-  memcpy(defect->dT_A, dT_A, tableau->nStages * sizeof(double));
+  if (!only_filter)
+  {
+    // perform contractive defect: ERR := ((1 / (h * gamma)) * I - J)^(-1) (f(t0, x0) - 1/h * d^T * A * k)
+    contraction->dT_A = (double *) malloc(tableau->nStages * sizeof(double));
+    memcpy(contraction->dT_A, dT_A, tableau->nStages * sizeof(double));
 
-  defect->u = u;
+    // order of contractive error is = s
+    tableau->order_bt = tableau->nStages;
+  }
+  else
+  {
+    // perform filtering only: ERR = (I - h gamma J)^(-1) * ERR, where previous ERR is unbounded for z -> -oo
+    contraction->dT_A = NULL;
 
-  // order of contractive error is = s
-  tableau->order_bt = tableau->nStages;
+    // order stays the same
+  }
+
+  contraction->apply_filter_only = only_filter;
 }
 
 void setTTransform(BUTCHER_TABLEAU *tableau, const double *A_part_inv, const double *T, const double *T_inv, const double *gamma, const double *alpha, const double *beta,
@@ -177,34 +196,39 @@ void setTTransform(BUTCHER_TABLEAU *tableau, const double *A_part_inv, const dou
   memcpy(tr->gamma, gamma, n_real_eigs * sizeof(double));
   memcpy(tr->alpha, alpha, n_cmplx_eigs * sizeof(double));
   memcpy(tr->beta, beta, n_cmplx_eigs * sizeof(double));
-
-  tr->defect_err = NULL;
 }
 
 // TODO: Describe me
 void denseOutput(BUTCHER_TABLEAU* tableau, double* yOld, double* x, double* k, double dt, double stepSize, double* y, int nIdx, int* idx, int nStates)
 {
-  for (int stage = 0; stage < tableau->nStages; stage++)
-  {
-    tableau->b_dt[stage] *= dt * stepSize;
-  }
-
   if (idx == NULL)
   {
-    // y := yOld
-    memcpy(y, yOld, nStates * sizeof(double));
+    // split BLAS operations into matrix-vector product and axpy operation to ensure proper numerical stability in dgemv
+    // alternative: memcpy(y, yOld) and then provide beta = 1 instead of the additional axpy operation
+    // flops should be roughly the same in both cases
 
     // y := K * b_dt + y
     int nStages = (int)tableau->nStages;
+    double dt_h = dt * stepSize;
+
+    // y := dt * h * (K otimes I) * b_dt
     dgemv_(&CHAR_NO_TRANS,
            &nStates,
            &nStages,
-           &DBL_ONE, k, &nStates,
+           &dt_h, k, &nStates,
            tableau->b_dt, &INT_ONE,
-           &DBL_ONE, y, &INT_ONE);
+           &DBL_ZERO, y, &INT_ONE);
+
+    // y := yOld + y = yOld + dt * h * (K otimes I) * b_dt
+    daxpy_(&nStates, &DBL_ONE, yOld, &INT_ONE, y, &INT_ONE);
   }
   else
   {
+    for (int stage = 0; stage < tableau->nStages; stage++)
+    {
+      tableau->b_dt[stage] *= dt * stepSize;
+    }
+
     for (int ii = 0; ii < nIdx; ii++)
     {
       int state = idx[ii];
@@ -258,7 +282,7 @@ void getButcherTableau_ESDIRK2(BUTCHER_TABLEAU* tableau)
   tableau->withDenseOutput = TRUE;
   tableau->dense_output = denseOutput_ESDIRK2;
   tableau->isKLeftAvailable = TRUE;
-  tableau->isKRightAvailable = FALSE;
+  tableau->isKRightAvailable = TRUE;
 
   // predictor cant be stable for stage 2
 }
@@ -296,7 +320,7 @@ void getButcherTableau_ESDIRK3(BUTCHER_TABLEAU* tableau)
   tableau->withDenseOutput = TRUE;
   tableau->dense_output = denseOutput_ESDIRK3;
   tableau->isKLeftAvailable = TRUE;
-  tableau->isKRightAvailable = FALSE;
+  tableau->isKRightAvailable = TRUE;
 
   const double A_predictor[] = {
                                 0, 0,     0, 0,
@@ -349,7 +373,7 @@ void getButcherTableau_TSIT5(BUTCHER_TABLEAU* tableau)
   tableau->withDenseOutput = TRUE;
   tableau->dense_output = denseOutput_TSIT5;
   tableau->isKLeftAvailable = TRUE;
-  tableau->isKRightAvailable = FALSE;
+  tableau->isKRightAvailable = TRUE;
 }
 
 // TODO: Describe me
@@ -389,7 +413,7 @@ void getButcherTableau_ESDIRK4(BUTCHER_TABLEAU* tableau)
   tableau->withDenseOutput = TRUE;
   tableau->dense_output = denseOutput_ESDIRK4;
   tableau->isKLeftAvailable = TRUE;
-  tableau->isKRightAvailable = FALSE;
+  tableau->isKRightAvailable = TRUE;
 
   const double A_predictor[] = {
                                 0, 0, 0, 0, 0, 0,
@@ -487,7 +511,7 @@ void getButcherTableau_ESDIRK4_7L2SA(BUTCHER_TABLEAU* tableau)
   tableau->withDenseOutput = TRUE;
   tableau->dense_output = denseOutput_C0_ESDIRK4_7L2SA;
   tableau->isKLeftAvailable = TRUE;
-  tableau->isKRightAvailable = FALSE;
+  tableau->isKRightAvailable = TRUE;
 
   /* SVP from "Intrastep, Stage-Value Predictors for Diagonally-Implicit Runge–Kutta Methods" (properties of paper can be reproduced) */
   const double A_predictor[] = {
@@ -505,7 +529,17 @@ void getButcherTableau_ESDIRK4_7L2SA(BUTCHER_TABLEAU* tableau)
   setStageValuePredictors(tableau, A_predictor, svp_type, predictor_denseOutput_ESDIRK4_7L2SA);
 }
 
-// 3-stage order 3(2), L-stable SDIRK, embedded bt might be bad, dense output missing
+// order 2 dense output, minimal (L2-norm) leading coefficient for order 3 linear problems
+void denseOutput_SDIRK3(BUTCHER_TABLEAU* tableau, double* yOld, double* x, double* k, double dt, double stepSize, double* y, int nIdx, int* idx, int nStates)
+{
+  tableau->b_dt[0] = -0.7500000000000000 * dt + 1.9584966491760105;
+  tableau->b_dt[1] = -0.2726301276675501 * dt + (-0.3717330430169189);
+  tableau->b_dt[2] =  1.0226301276675507 * dt + (-0.5867636061590916);
+
+  denseOutput(tableau, yOld, x, k, dt, stepSize, y, nIdx, idx, nStates);
+}
+
+// 3-stage order 3(2), L-stable SDIRK
 void getButcherTableau_SDIRK3(BUTCHER_TABLEAU* tableau)
 {
   tableau->nStages = 3;
@@ -520,9 +554,13 @@ void getButcherTableau_SDIRK3(BUTCHER_TABLEAU* tableau)
                       1.2084966491760100703364772, -0.644363170684469069752496, 0.4358665215084589994160194};
 
   const double b[] = {1.2084966491760100703364772, -0.644363170684469069752496, 0.4358665215084589994160194};
-  const double bt[] = {0.0, 1.7726301276675510709204584, -0.7726301276675510709204578};
+  const double bt[] = {0.825, 0.1226301276675510709204581, 0.05236987233244892907954193};
 
   setButcherTableau(tableau, c, A, b, bt);
+  tableau->withDenseOutput = TRUE;
+  tableau->dense_output = denseOutput_SDIRK3;
+  tableau->isKLeftAvailable = FALSE;
+  tableau->isKRightAvailable = TRUE;
 
   const double A_predictor[] = {
                                 0, 0, 0,
@@ -531,6 +569,8 @@ void getButcherTableau_SDIRK3(BUTCHER_TABLEAU* tableau)
                                };
 
   const STAGE_VALUE_PREDICTOR_TYPE svp_type[] = {SVP_NOT_AVAILABLE, SVP_LINEAR_COMBINATION, SVP_LINEAR_COMBINATION};
+
+  setContractiveDefectError(tableau, NULL, TRUE);
 
   setStageValuePredictors(tableau, A_predictor, svp_type, NULL);
 }
@@ -570,7 +610,9 @@ void getButcherTableau_SDIRK4(BUTCHER_TABLEAU* tableau)
   tableau->withDenseOutput = TRUE;
   tableau->dense_output = denseOutput_SDIRK4;
   tableau->isKLeftAvailable = FALSE;
-  tableau->isKRightAvailable = FALSE;
+  tableau->isKRightAvailable = TRUE;
+
+  setContractiveDefectError(tableau, NULL, TRUE);
 
   const double A_predictor[] = {
                                 0, 0, 0, 0, 0,
@@ -583,6 +625,15 @@ void getButcherTableau_SDIRK4(BUTCHER_TABLEAU* tableau)
   const STAGE_VALUE_PREDICTOR_TYPE svp_type[] = {SVP_NOT_AVAILABLE, SVP_NOT_AVAILABLE, SVP_LINEAR_COMBINATION, SVP_LINEAR_COMBINATION, SVP_LINEAR_COMBINATION};
 
   setStageValuePredictors(tableau, A_predictor, svp_type, NULL);
+}
+
+// unique order 2 dense output
+void denseOutput_SDIRK2(BUTCHER_TABLEAU* tableau, double* yOld, double* x, double* k, double dt, double stepSize, double* y, int nIdx, int* idx, int nStates)
+{
+    tableau->b_dt[0] = -0.707106781186547524400844362104849 * dt +   1.414213562373095048801688724209;  // -1/sqrt(2), sqrt(2)
+    tableau->b_dt[1] =  0.707106781186547524400844362104849 * dt + (-0.414213562373095048801688724209); //  1/sqrt(2), 1-sqrt(2)
+
+    denseOutput(tableau, yOld, x, k, dt, stepSize, y, nIdx, idx, nStates);
 }
 
 // 2 stage, L-stable, order 2(1), SDIRK with gamma = 0.29289
@@ -598,11 +649,15 @@ void getButcherTableau_SDIRK2(BUTCHER_TABLEAU* tableau)
   const double A[] = {0.29289321881345247559915563789, 0.0,
                       0.707106781186547524400844362104849, 0.29289321881345247559915563789};
   const double b[] = {0.707106781186547524400844362104849, 0.29289321881345247559915563789};
-  const double bt[] = {0.25, 0.75};
+  const double bt[] = {0.585786437626904951198311275790301, 0.414213562373095048801688724209};
 
   setButcherTableau(tableau, c, A, b, bt);
+  tableau->withDenseOutput = TRUE;
+  tableau->dense_output = denseOutput_SDIRK2;
   tableau->isKLeftAvailable = FALSE;
-  tableau->isKRightAvailable = FALSE;
+  tableau->isKRightAvailable = TRUE;
+
+  setContractiveDefectError(tableau, NULL, TRUE);
 
   // predictor can't be stable for stage 2
 }
@@ -922,7 +977,7 @@ void getButcherTableau_RADAU_IIA_2(BUTCHER_TABLEAU* tableau)
 
   setButcherTableau(tableau, c, A, b, bt);
   tableau->isKLeftAvailable = FALSE;
-  tableau->isKRightAvailable = FALSE;
+  tableau->isKRightAvailable = TRUE;
   tableau->withDenseOutput = TRUE;
   tableau->dense_output = denseOutput_Radau_IIA_2;
 
@@ -975,7 +1030,7 @@ void getButcherTableau_RADAU_IIA_3(BUTCHER_TABLEAU* tableau)
 
   setButcherTableau(tableau, c, A, b, bt);
   tableau->isKLeftAvailable = FALSE;
-  tableau->isKRightAvailable = FALSE;
+  tableau->isKRightAvailable = TRUE;
   tableau->withDenseOutput = TRUE;
   tableau->dense_output = denseOutput_Radau_IIA_3;
 
@@ -1004,9 +1059,8 @@ void getButcherTableau_RADAU_IIA_3(BUTCHER_TABLEAU* tableau)
   setTTransform(tableau, A_part_inv, T, T_inv, gamma, alpha, beta, FALSE, FALSE, 1, 1, NULL, NULL);
 
   const double dT_A[] = { 1.558078204724922382431975, -0.8914115380582557157653087, 0.3333333333333333333333333 };
-  const double u = 0.0;
 
-  setContractiveDefectError(tableau, dT_A, u);
+  setContractiveDefectError(tableau, dT_A, FALSE);
 }
 
 void denseOutput_Radau_IIA_4(BUTCHER_TABLEAU* tableau, double* yOld, double* x, double* k, double dt, double stepSize, double* y, int nIdx, int* idx, int nStates)
@@ -1038,7 +1092,7 @@ void getButcherTableau_RADAU_IIA_4(BUTCHER_TABLEAU* tableau)
 
   setButcherTableau(tableau, c, A, b, bt);
   tableau->isKLeftAvailable = FALSE;
-  tableau->isKRightAvailable = FALSE;
+  tableau->isKRightAvailable = TRUE;
   tableau->withDenseOutput = TRUE;
   tableau->dense_output = denseOutput_Radau_IIA_4;
 
@@ -1103,7 +1157,7 @@ void getButcherTableau_RADAU_IIA_5(BUTCHER_TABLEAU* tableau)
 
   setButcherTableau(tableau, c, A, b, bt);
   tableau->isKLeftAvailable = FALSE;
-  tableau->isKRightAvailable = FALSE;
+  tableau->isKRightAvailable = TRUE;
   tableau->withDenseOutput = TRUE;
   tableau->dense_output = denseOutput_Radau_IIA_5;
 
@@ -1138,9 +1192,8 @@ void getButcherTableau_RADAU_IIA_5(BUTCHER_TABLEAU* tableau)
   setTTransform(tableau, A_part_inv, T, T_inv, gamma, alpha, beta, FALSE, FALSE, 1, 2, NULL, NULL);
 
   const double dT_A[] = { 1.586407900186328249755967, -1.008117881498372989065673, 0.7309748661597874614134016, -0.5092648848477427221036966, 0.2 };
-  const double u = 0.0;
 
-  setContractiveDefectError(tableau, dT_A, u);
+  setContractiveDefectError(tableau, dT_A, FALSE);
 }
 
 void denseOutput_Radau_IIA_6(BUTCHER_TABLEAU* tableau, double* yOld, double* x, double* k, double dt, double stepSize, double* y, int nIdx, int* idx, int nStates)
@@ -1178,7 +1231,7 @@ void getButcherTableau_RADAU_IIA_6(BUTCHER_TABLEAU* tableau)
 
   setButcherTableau(tableau, c, A, b, bt);
   tableau->isKLeftAvailable = FALSE;
-  tableau->isKRightAvailable = FALSE;
+  tableau->isKRightAvailable = TRUE;
   tableau->withDenseOutput = TRUE;
   tableau->dense_output = denseOutput_Radau_IIA_6;
 
@@ -1253,7 +1306,7 @@ void getButcherTableau_RADAU_IIA_7(BUTCHER_TABLEAU* tableau)
 
   setButcherTableau(tableau, c, A, b, bt);
   tableau->isKLeftAvailable = FALSE;
-  tableau->isKRightAvailable = FALSE;
+  tableau->isKRightAvailable = TRUE;
   tableau->withDenseOutput = TRUE;
   tableau->dense_output = denseOutput_Radau_IIA_7;
 
@@ -1294,9 +1347,8 @@ void getButcherTableau_RADAU_IIA_7(BUTCHER_TABLEAU* tableau)
   setTTransform(tableau, A_part_inv, T, T_inv, gamma, alpha, beta, FALSE, FALSE, 1, 3, NULL, NULL);
 
   const double dT_A[] = { 1.594064218561041781197339, -1.036553752196476461002723, 0.7938217234907926875176341, -0.6325776522499342252619287, 0.4976107136030013134425167, -0.3592223940655679530356959, 0.1428571428571428571428571 };
-  const double u = 0.0;
 
-  setContractiveDefectError(tableau, dT_A, u);
+  setContractiveDefectError(tableau, dT_A, FALSE);
 }
 
 void denseOutput_LOBATTO_IIIA_3(BUTCHER_TABLEAU* tableau, double* yOld, double* x, double* k, double dt, double stepSize, double* y, int nIdx, int* idx, int nStates)
@@ -1326,7 +1378,7 @@ void getButcherTableau_LOBATTO_IIIA_3(BUTCHER_TABLEAU* tableau)
 
   setButcherTableau(tableau, c, A, b, bt);
   tableau->isKLeftAvailable = TRUE;
-  tableau->isKRightAvailable = FALSE;
+  tableau->isKRightAvailable = TRUE;
   tableau->withDenseOutput = TRUE;
   tableau->dense_output = denseOutput_LOBATTO_IIIA_3;
 
@@ -1389,7 +1441,7 @@ void getButcherTableau_LOBATTO_IIIA_4(BUTCHER_TABLEAU* tableau)
 
   setButcherTableau(tableau, c, A, b, bt);
   tableau->isKLeftAvailable = TRUE;
-  tableau->isKRightAvailable = FALSE;
+  tableau->isKRightAvailable = TRUE;
   tableau->withDenseOutput = TRUE;
   tableau->dense_output = denseOutput_LOBATTO_IIIA_4;
 
@@ -1424,13 +1476,16 @@ void getButcherTableau_LOBATTO_IIIA_4(BUTCHER_TABLEAU* tableau)
   };
 
   setTTransform(tableau, A_part_inv, T, T_inv, gamma, alpha, beta, TRUE, FALSE, 1, 1, phi, rho);
+}
 
-  /* is possible, but also not stable
-  const double dT_A[] = { 0.075, 0.7486067977499789696409174, 0.3013932022500210303590826, -0.125 };
-  const double u = 0.3;
+// only order 2 accurate dense output: order 3 cannot exist
+void denseOutput_LOBATTO_IIIB_3(BUTCHER_TABLEAU* tableau, double* yOld, double* x, double* k, double dt, double stepSize, double* y, int nIdx, int* idx, int nStates)
+{
+  tableau->b_dt[0] = dt*(0.6666666666666666666666667*dt - 1.5) + 1.0;
+  tableau->b_dt[1] = dt*(2.0 - 1.333333333333333333333333*dt);
+  tableau->b_dt[2] = dt*(0.6666666666666666666666667*dt - 0.5);
 
-  setContractiveDefectError(tableau, dT_A, u);
-   */
+  denseOutput(tableau, yOld, x, k, dt, stepSize, y, nIdx, idx, nStates);
 }
 
 // TODO: Describe me
@@ -1452,6 +1507,8 @@ void getButcherTableau_LOBATTO_IIIB_3(BUTCHER_TABLEAU* tableau)
   setButcherTableau(tableau, c, A, b, bt);
   tableau->isKLeftAvailable = FALSE;
   tableau->isKRightAvailable = FALSE;
+  tableau->withDenseOutput = TRUE;
+  tableau->dense_output = denseOutput_LOBATTO_IIIB_3;
 
   const double T[] = {
       -0.5, -0.8660254037844386467637231707529361834716,
@@ -1475,6 +1532,17 @@ void getButcherTableau_LOBATTO_IIIB_3(BUTCHER_TABLEAU* tableau)
   setTTransform(tableau, A_part_inv, T, T_inv, gamma, alpha, beta, FALSE, TRUE, 0, 1, NULL, NULL);
 }
 
+// only order 3: order 4 cannot exist
+void denseOutput_LOBATTO_IIIB_4(BUTCHER_TABLEAU* tableau, double* yOld, double* x, double* k, double dt, double stepSize, double* y, int nIdx, int* idx, int nStates)
+{
+  tableau->b_dt[0] = dt*(dt*(3.333333333333333333333333 - 1.25*dt) - 3.0) + 1.0;
+  tableau->b_dt[1] = dt*(dt*(2.795084971874737120511467*dt - 6.423503277082807574356268) + 4.045084971874737120511467);
+  tableau->b_dt[2] = dt*(dt*(4.756836610416140907689601 - 2.795084971874737120511467*dt) - 1.545084971874737120511467);
+  tableau->b_dt[3] = dt*(dt*(1.25*dt - 1.666666666666666666666667) + 0.5);
+
+  denseOutput(tableau, yOld, x, k, dt, stepSize, y, nIdx, idx, nStates);
+}
+
 // TODO: Describe me
 void getButcherTableau_LOBATTO_IIIB_4(BUTCHER_TABLEAU* tableau)
 {
@@ -1495,6 +1563,8 @@ void getButcherTableau_LOBATTO_IIIB_4(BUTCHER_TABLEAU* tableau)
   setButcherTableau(tableau, c, A, b, bt);
   tableau->isKLeftAvailable = FALSE;
   tableau->isKRightAvailable = FALSE;
+  tableau->withDenseOutput = TRUE;
+  tableau->dense_output = denseOutput_LOBATTO_IIIB_4;
 
   const double T[] = {
       0.4095301969830458833321950974758598628846, -0.1673815592420907613613286431634840957528, 0.525607543214227178899726386274854899297,
@@ -1521,6 +1591,16 @@ void getButcherTableau_LOBATTO_IIIB_4(BUTCHER_TABLEAU* tableau)
   setTTransform(tableau, A_part_inv, T, T_inv, gamma, alpha, beta, FALSE, TRUE, 1, 1, NULL, NULL);
 }
 
+// order 3 accurate dense output, as A * c = [0, 1/8, 1/2] == A * c of IIIA
+void denseOutput_LOBATTO_IIIC_3(BUTCHER_TABLEAU* tableau, double* yOld, double* x, double* k, double dt, double stepSize, double* y, int nIdx, int* idx, int nStates)
+{
+  tableau->b_dt[0] = dt*(0.6666666666666666666666667*dt - 1.5) + 1.0;
+  tableau->b_dt[1] = dt*(2.0 - 1.333333333333333333333333*dt);
+  tableau->b_dt[2] = dt*(0.6666666666666666666666667*dt - 0.5);
+
+  denseOutput(tableau, yOld, x, k, dt, stepSize, y, nIdx, idx, nStates);
+}
+
 // TODO: Describe me
 void getButcherTableau_LOBATTO_IIIC_3(BUTCHER_TABLEAU* tableau)
 {
@@ -1539,7 +1619,9 @@ void getButcherTableau_LOBATTO_IIIC_3(BUTCHER_TABLEAU* tableau)
 
   setButcherTableau(tableau, c, A, b, bt);
   tableau->isKLeftAvailable = FALSE;
-  tableau->isKRightAvailable = FALSE;
+  tableau->isKRightAvailable = TRUE;
+  tableau->withDenseOutput = TRUE;
+  tableau->dense_output = denseOutput_LOBATTO_IIIC_3;
 
   const double T[] = {
       0.455410041101028467211172034828748294958, -0.602705020550514233605586017414374147479, 0.4309321229203225731070721341350345638889,
@@ -1566,6 +1648,17 @@ void getButcherTableau_LOBATTO_IIIC_3(BUTCHER_TABLEAU* tableau)
   setTTransform(tableau, A_part_inv, T, T_inv, gamma, alpha, beta, FALSE, FALSE, 1, 1, NULL, NULL);
 }
 
+// order 4
+void denseOutput_LOBATTO_IIIC_4(BUTCHER_TABLEAU* tableau, double* yOld, double* x, double* k, double dt, double stepSize, double* y, int nIdx, int* idx, int nStates)
+{
+  tableau->b_dt[0] = dt*(dt*(3.333333333333333333333333 - 1.25*dt) - 3.0) + 1.0;
+  tableau->b_dt[1] = dt*(dt*(2.795084971874737120511467*dt - 6.423503277082807574356268) + 4.045084971874737120511467);
+  tableau->b_dt[2] = dt*(dt*(4.756836610416140907689601 - 2.795084971874737120511467*dt) - 1.545084971874737120511467);
+  tableau->b_dt[3] = dt*(dt*(1.25*dt - 1.666666666666666666666667) + 0.5);
+
+  denseOutput(tableau, yOld, x, k, dt, stepSize, y, nIdx, idx, nStates);
+}
+
 // TODO: Describe me
 void getButcherTableau_LOBATTO_IIIC_4(BUTCHER_TABLEAU* tableau)
 {
@@ -1585,7 +1678,9 @@ void getButcherTableau_LOBATTO_IIIC_4(BUTCHER_TABLEAU* tableau)
 
   setButcherTableau(tableau, c, A, b, bt);
   tableau->isKLeftAvailable = FALSE;
-  tableau->isKRightAvailable = FALSE;
+  tableau->isKRightAvailable = TRUE;
+  tableau->withDenseOutput = TRUE;
+  tableau->dense_output = denseOutput_LOBATTO_IIIC_4;
 
   const double T[] = {
       0.5476452038202714922036315112488560856846, 0.1785412628034932093817159389309281985364, -0.116586249887015966241810926513722590616, -0.2331588855995925881890963658008489845825,
@@ -1738,9 +1833,8 @@ void getButcherTableau_GAUSS3(BUTCHER_TABLEAU* tableau)
   setTTransform(tableau, A_part_inv, T, T_inv, gamma, alpha, beta, FALSE, FALSE, 1, 1, NULL, NULL);
 
   const double dT_A[] = { 1.478830557701236147529878, -0.6666666666666666666666667, 0.1878361089654305191367891 };
-  const double u = 0.0;
 
-  setContractiveDefectError(tableau, dT_A, u);
+  setContractiveDefectError(tableau, dT_A, FALSE);
 }
 
 void denseOutput_GAUSS4(BUTCHER_TABLEAU* tableau, double* yOld, double* x, double* k, double dt, double stepSize, double* y, int nIdx, int* idx, int nStates)
@@ -1873,9 +1967,8 @@ void getButcherTableau_GAUSS5(BUTCHER_TABLEAU* tableau)
   setTTransform(tableau, A_part_inv, T, T_inv, gamma, alpha, beta, FALSE, FALSE, 1, 2, NULL, NULL);
 
   const double dT_A[] = { 1.551408049094313012813028, -0.8931583920000717373261768, 0.5333333333333333333333333, -0.2679416522233875093041099, 0.07635866179581290048392539 };
-  const double u = 0.0;
 
-  setContractiveDefectError(tableau, dT_A, u);
+  setContractiveDefectError(tableau, dT_A, FALSE);
 }
 
 void denseOutput_GAUSS6(BUTCHER_TABLEAU* tableau, double* yOld, double* x, double* k, double dt, double stepSize, double* y, int nIdx, int* idx, int nStates)
@@ -1986,6 +2079,15 @@ void getButcherTableau_IMPLEULER(BUTCHER_TABLEAU* tableau)
   }
 }
 
+// unique order 2 dense output
+void denseOutput_TRAPEZOID(BUTCHER_TABLEAU* tableau, double* yOld, double* x, double* k, double dt, double stepSize, double* y, int nIdx, int* idx, int nStates)
+{
+  tableau->b_dt[0] = -0.5 * dt + 1.0;
+  tableau->b_dt[1] =  0.5 * dt;
+
+  denseOutput(tableau, yOld, x, k, dt, stepSize, y, nIdx, idx, nStates);
+}
+
 // https://en.wikipedia.org/wiki/List_of_Runge%E2%80%93Kutta_methods
 void getButcherTableau_TRAPEZOID(BUTCHER_TABLEAU* tableau)
 {
@@ -1999,12 +2101,14 @@ void getButcherTableau_TRAPEZOID(BUTCHER_TABLEAU* tableau)
   const double A[] = {0.0, 0.0,
                       0.5, 0.5};
   const double b[] = {0.5, 0.5};  // trapezoidal rule
-  const double bt[] = {1.0, 0.0}; // explicit Euler
+  const double bt[] = {0.0, 1.0};
 
   setButcherTableau(tableau, c, A, b, bt);
 
+  tableau->withDenseOutput = TRUE;
+  tableau->dense_output = denseOutput_TRAPEZOID;
   tableau->isKLeftAvailable = TRUE;
-  tableau->isKRightAvailable = FALSE;
+  tableau->isKRightAvailable = TRUE;
 }
 
 // TODO: Describe me
@@ -2097,7 +2201,7 @@ void getButcherTableau_DOPRI45(BUTCHER_TABLEAU* tableau)
   tableau->nStages = 7;
   tableau->order_b = 5;
   tableau->order_bt = 4;
-  tableau->fac = 1e3;
+  tableau->fac = 1e0;
 
   /* Butcher Tableau */
   const double c[] = {0.0, 1./5, 3./10, 4./5, 8./9, 1., 1.};
@@ -2117,7 +2221,7 @@ void getButcherTableau_DOPRI45(BUTCHER_TABLEAU* tableau)
   tableau->withDenseOutput = TRUE;
   tableau->dense_output = denseOutput_DOPRI45;
   tableau->isKLeftAvailable = TRUE;
-  tableau->isKRightAvailable = FALSE;
+  tableau->isKRightAvailable = TRUE;
 }
 
 // TODO: Describe me
@@ -2529,7 +2633,7 @@ void analyseButcherTableau(BUTCHER_TABLEAU* tableau, int nStates, unsigned int* 
     tableau->order_bt = tableau->order_b + 1;
   }
   // set order for error control!
-  tableau->error_order = fmin(tableau->order_b, tableau->order_bt);
+  tableau->error_order = (unsigned int) fmin(tableau->order_b, tableau->order_bt);
 }
 
 /**
@@ -2647,83 +2751,63 @@ BUTCHER_TABLEAU* initButcherTableau(enum GB_METHOD method, enum _FLAG flag)
       getButcherTableau_ESDIRK4_7L2SA(tableau);
       break;
     case RK_RADAU_IA_2:
-      if (extrapolMethod == GB_EXT_DEFAULT) tableau->richardson = TRUE;
       getButcherTableau_RADAU_IA_2(tableau);
       break;
     case RK_RADAU_IA_3:
-      if (extrapolMethod == GB_EXT_DEFAULT) tableau->richardson = TRUE;
       getButcherTableau_RADAU_IA_3(tableau);
       break;
     case RK_RADAU_IA_4:
-      if (extrapolMethod == GB_EXT_DEFAULT) tableau->richardson = TRUE;
       getButcherTableau_RADAU_IA_4(tableau);
       break;
     case RK_RADAU_IIA_2:
-      if (extrapolMethod == GB_EXT_DEFAULT) tableau->richardson = TRUE;
       getButcherTableau_RADAU_IIA_2(tableau);
       break;
     case RK_RADAU_IIA_3:
-      if (extrapolMethod == GB_EXT_DEFAULT) tableau->richardson = TRUE;
       getButcherTableau_RADAU_IIA_3(tableau);
       break;
     case RK_RADAU_IIA_4:
-      if (extrapolMethod == GB_EXT_DEFAULT) tableau->richardson = TRUE;
       getButcherTableau_RADAU_IIA_4(tableau);
       break;
     case RK_RADAU_IIA_5:
-      if (extrapolMethod == GB_EXT_DEFAULT) tableau->richardson = TRUE;
       getButcherTableau_RADAU_IIA_5(tableau);
       break;
     case RK_RADAU_IIA_6:
-      if (extrapolMethod == GB_EXT_DEFAULT) tableau->richardson = TRUE;
       getButcherTableau_RADAU_IIA_6(tableau);
       break;
     case RK_RADAU_IIA_7:
-      if (extrapolMethod == GB_EXT_DEFAULT) tableau->richardson = TRUE;
       getButcherTableau_RADAU_IIA_7(tableau);
       break;
     case RK_LOBA_IIIA_3:
-      if (extrapolMethod == GB_EXT_DEFAULT) tableau->richardson = TRUE;
       getButcherTableau_LOBATTO_IIIA_3(tableau);
       break;
     case RK_LOBA_IIIA_4:
-      if (extrapolMethod == GB_EXT_DEFAULT) tableau->richardson = TRUE;
       getButcherTableau_LOBATTO_IIIA_4(tableau);
       break;
     case RK_LOBA_IIIB_3:
-      if (extrapolMethod == GB_EXT_DEFAULT) tableau->richardson = TRUE;
       getButcherTableau_LOBATTO_IIIB_3(tableau);
       break;
     case RK_LOBA_IIIB_4:
-      if (extrapolMethod == GB_EXT_DEFAULT) tableau->richardson = TRUE;
       getButcherTableau_LOBATTO_IIIB_4(tableau);
       break;
     case RK_LOBA_IIIC_3:
-      if (extrapolMethod == GB_EXT_DEFAULT) tableau->richardson = TRUE;
       getButcherTableau_LOBATTO_IIIC_3(tableau);
       break;
     case RK_LOBA_IIIC_4:
-      if (extrapolMethod == GB_EXT_DEFAULT) tableau->richardson = TRUE;
       getButcherTableau_LOBATTO_IIIC_4(tableau);
       break;
     case RK_GAUSS2:
-      if (extrapolMethod == GB_EXT_DEFAULT) tableau->richardson = TRUE;
       getButcherTableau_GAUSS2(tableau);
       break;
     case RK_GAUSS3:
-      if (extrapolMethod == GB_EXT_DEFAULT) tableau->richardson = TRUE;
       getButcherTableau_GAUSS3(tableau);
       break;
     case RK_GAUSS4:
-      if (extrapolMethod == GB_EXT_DEFAULT) tableau->richardson = TRUE;
       getButcherTableau_GAUSS4(tableau);
       break;
     case RK_GAUSS5:
-      if (extrapolMethod == GB_EXT_DEFAULT) tableau->richardson = TRUE;
       getButcherTableau_GAUSS5(tableau);
       break;
     case RK_GAUSS6:
-      if (extrapolMethod == GB_EXT_DEFAULT) tableau->richardson = TRUE;
       getButcherTableau_GAUSS6(tableau);
       break;
     default:
@@ -2733,10 +2817,10 @@ BUTCHER_TABLEAU* initButcherTableau(enum GB_METHOD method, enum _FLAG flag)
   return tableau;
 }
 
-void freeContractiveDefectError(CONTRACTIVE_DEFECT_ERROR *defect_err)
+void freeContractiveDefectError(CONTRACTIVE_ERROR *contraction)
 {
-  free(defect_err->dT_A);
-  free(defect_err);
+  free(contraction->dT_A);
+  free(contraction);
 }
 
 void freeStageValuePredictors(STAGE_VALUE_PREDICTORS *svp)
@@ -2756,7 +2840,6 @@ void freeTTransform(T_TRANSFORM *t_transform)
   free(t_transform->gamma);
   if (t_transform->phi) free(t_transform->phi);
   if (t_transform->rho) free(t_transform->rho);
-  if (t_transform->defect_err) freeContractiveDefectError(t_transform->defect_err);
   free(t_transform);
 }
 
@@ -2781,6 +2864,11 @@ void freeButcherTableau(BUTCHER_TABLEAU* tableau)
   if (tableau->svp)
   {
     freeStageValuePredictors(tableau->svp);
+  }
+
+  if (tableau->contraction)
+  {
+    freeContractiveDefectError(tableau->contraction);
   }
 
   free(tableau);

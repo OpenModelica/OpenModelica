@@ -100,14 +100,14 @@ void addSmultVec_gb(double* a, double* b, double *c, double s, int n)
  * @param idx     Index vector, can be NULL.
  *                Specifies which parts of f should be interpolated.
  */
-void linear_interpolation(double ta, double* fa, double tb, double* fb, double t, double* f, int n, int* idx)
+void linear_interpolation(double ta, double* fa, double tb, double* fb, double t, double* f, int n, int* idx, int nStates)
 {
   double lambda, h0, h1;
   int i, ii;
 
   // omit division by zero
   if (fabs(tb-ta) <= GBODE_EPSILON) {
-    copyVector_gbf(f, fb, n, idx);
+    copyVector_gbf(f, fb, (idx == NULL) ? nStates : n, idx);
     return;
   }
 
@@ -116,7 +116,7 @@ void linear_interpolation(double ta, double* fa, double tb, double* fb, double t
   h1 = lambda;
 
   if (idx == NULL) {
-    for (i=0; i<n; i++) {
+    for (i=0; i<nStates; i++) {
       f[i] = h0*fa[i] + h1*fb[i];
     }
   } else {
@@ -143,14 +143,14 @@ void linear_interpolation(double ta, double* fa, double tb, double* fb, double t
  * @param idx     Index vector, can be NULL.
  *                Specifies which parts of f should be interpolated.
  */
-void hermite_interpolation(double ta, double* fa, double* dfa, double tb, double* fb, double* dfb, double t, double* f, int n, int* idx)
+void hermite_interpolation(double ta, double* fa, double* dfa, double tb, double* fb, double* dfb, double t, double* f, int n, int* idx, int nStates)
 {
   double tt, h00, h01, h10, h11;
   int i, ii;
 
   // omit division by zero
   if (fabs(tb-ta) <= GBODE_EPSILON) {
-    copyVector_gbf(f, fb, n, idx);
+    copyVector_gbf(f, fb, (idx == NULL) ? nStates : n, idx);
     return;
   }
 
@@ -161,7 +161,7 @@ void hermite_interpolation(double ta, double* fa, double* dfa, double tb, double
   h11 = (tb-ta)*(tt-1)*tt*tt;
 
   if (idx == NULL) {
-    for (i=0; i<n; i++) {
+    for (i=0; i<nStates; i++) {
       f[i] = h00*fa[i]+h10*dfa[i]+h01*fb[i]+h11*dfb[i];
     }
   } else {
@@ -188,14 +188,14 @@ void hermite_interpolation(double ta, double* fa, double* dfa, double tb, double
  * @param idx     Index vector, can be NULL.
  *                Specifies which parts of f should be interpolated.
  */
-void hermite_interpolation_b(double ta, double* fa, double tb, double* fb, double* dfb, double t, double* f, int n, int* idx)
+void hermite_interpolation_b(double ta, double* fa, double tb, double* fb, double* dfb, double t, double* f, int n, int* idx, int nStates)
 {
   double tat,tbt,tbta, h00, h01, h11;
   int i, ii;
 
   // omit division by zero
   if (fabs(tb-ta) <= GBODE_EPSILON) {
-    copyVector_gbf(f, fb, n, idx);
+    copyVector_gbf(f, fb, (idx == NULL) ? nStates : n, idx);
     return;
   }
 
@@ -207,7 +207,7 @@ void hermite_interpolation_b(double ta, double* fa, double tb, double* fb, doubl
   h11  = tat*tbt/tbta;
 
   if (idx == NULL) {
-    for (i=0; i<n; i++) {
+    for (i=0; i<nStates; i++) {
       f[i] = h00*fa[i]+h01*fb[i]+h11*dfb[i];
     }
   } else {
@@ -234,14 +234,14 @@ void hermite_interpolation_b(double ta, double* fa, double tb, double* fb, doubl
  * @param idx     Index vector, can be NULL.
  *                Specifies which parts of f should be interpolated.
  */
-void hermite_interpolation_a(double ta, double* fa, double* dfa, double tb, double* fb, double t, double* f, int n, int* idx)
+void hermite_interpolation_a(double ta, double* fa, double* dfa, double tb, double* fb, double t, double* f, int n, int* idx, int nStates)
 {
   double tat,tbt,tbta, h00, h01, h10;
   int i, ii;
 
   // omit division by zero
   if (fabs(tb-ta) <= GBODE_EPSILON) {
-    copyVector_gbf(f, fb, n, idx);
+    copyVector_gbf(f, fb, (idx == NULL) ? nStates : n, idx);
     return;
   }
 
@@ -253,7 +253,7 @@ void hermite_interpolation_a(double ta, double* fa, double* dfa, double tb, doub
   h10  = -tat*tbt/tbta;
 
   if (idx == NULL) {
-    for (i=0; i<n; i++) {
+    for (i=0; i<nStates; i++) {
       f[i] = h00*fa[i]+h01*fb[i]+h10*dfa[i];
     }
   } else {
@@ -309,7 +309,7 @@ void gb_interpolation(enum GB_INTERPOL_METHOD interpolMethod, double ta, double*
   switch (interpolMethod)
   {
   case GB_INTERPOL_LIN:
-    linear_interpolation(ta, fa, tb, fb, t, f, nIdx, idx);
+    linear_interpolation(ta, fa, tb, fb, t, f, nIdx, idx, nStates);
     break;
   case GB_DENSE_OUTPUT:
   case GB_DENSE_OUTPUT_ERRCTRL:
@@ -318,14 +318,14 @@ void gb_interpolation(enum GB_INTERPOL_METHOD interpolMethod, double ta, double*
       break;
     }
   case GB_INTERPOL_HERMITE_a:
-    hermite_interpolation_a(ta, fa, dfa, tb, fb, t, f, nIdx, idx);
+    hermite_interpolation_a(ta, fa, dfa, tb, fb, t, f, nIdx, idx, nStates);
     break;
   case GB_INTERPOL_HERMITE_b:
-    hermite_interpolation_b(ta, fa, tb, fb, dfb, t, f, nIdx, idx);
+    hermite_interpolation_b(ta, fa, tb, fb, dfb, t, f, nIdx, idx, nStates);
     break;
   case GB_INTERPOL_HERMITE_ERRCTRL:
   case GB_INTERPOL_HERMITE:
-    hermite_interpolation(ta, fa, dfa, tb, fb, dfb, t, f, nIdx, idx);
+    hermite_interpolation(ta, fa, dfa, tb, fb, dfb, t, f, nIdx, idx, nStates);
     break;
   default:
     throwStreamPrint(NULL, "Not handled case in gb_interpolation. Unknown interpolation method %i.", interpolMethod);
@@ -351,12 +351,12 @@ double error_interpolation_gb(DATA_GBODE* gbData, int nIdx, int* idx, double tol
     hermite_interpolation_a(gbData->timeLeft,  gbData->yLeft,  gbData->kLeft,
                             gbData->timeRight, gbData->yRight,
                             (gbData->timeLeft + gbData->timeRight)/2, gbData->y1,
-                            nIdx, idx);
+                            nIdx, idx, gbData->nStates);
   }
   hermite_interpolation(gbData->timeLeft,  gbData->yLeft,  gbData->kLeft,
                         gbData->timeRight, gbData->yRight, gbData->kRight,
                         (gbData->timeLeft + gbData->timeRight)/2, gbData->y2,
-                         nIdx, idx);
+                         nIdx, idx, gbData->nStates);
   if (idx == NULL) {
     for (i=0; i<nIdx; i++) {
       errtol = tol * fmax(fabs(gbData->yLeft[i]), fabs(gbData->yRight[i])) + tol;
@@ -833,13 +833,14 @@ modelica_boolean checkFastStatesChange(DATA_GBODE* gbData)
 /**
  * @brief Log ODE integrator solver stats.
  *
- * @param name            Name of ODE integrator.
- * @param timeValue       Current time value.
- * @param integratorTime  Time value of integrator.
- * @param stepSize        ODE integrator step size.
- * @param stats           Pointer to stats struct.
+ * @param name              Name of ODE integrator.
+ * @param timeValue         Current time value.
+ * @param integratorTime    Time value of integrator.
+ * @param stepSize          ODE integrator step size.
+ * @param stats             Pointer to stats struct.
+ * @param fastStateUpdates  Number of fast state updates.
  */
-void logSolverStats(enum OMC_LOG_STREAM stream, const char* name, double timeValue, double integratorTime, double stepSize, SOLVERSTATS* stats)
+void logSolverStats(enum OMC_LOG_STREAM stream, const char* name, double timeValue, double integratorTime, double stepSize, SOLVERSTATS* stats, int *fastStateUpdates, int *additionalEvalsFODE)
 {
   if (OMC_ACTIVE_STREAM(stream)) {
     infoStreamPrint(stream, 1, "%s call statistics:", name);
@@ -848,6 +849,8 @@ void logSolverStats(enum OMC_LOG_STREAM stream, const char* name, double timeVal
     infoStreamPrint(stream, 0, "number of calculation of jacobian : %d", stats->nCallsJacobian);
     infoStreamPrint(stream, 0, "error test failure : %d", stats->nErrorTestFailures);
     infoStreamPrint(stream, 0, "convergence failure : %d", stats->nConvergenceTestFailures);
+    if (fastStateUpdates != NULL) infoStreamPrint(stream, 0, "number of fast state updates : %d", *fastStateUpdates);
+    if (additionalEvalsFODE != NULL) infoStreamPrint(stream, 0, "number of additional full calls of functionODE() : %d", *additionalEvalsFODE);
     messageClose(stream);
   }
 }
@@ -908,4 +911,201 @@ void deprecationWarningGBODE(enum SOLVER_METHOD method)
   infoStreamPrint(OMC_LOG_STDOUT, 0 , "See OpenModelica User's Guide section on GBODE for more details: https://www.openmodelica.org/doc/OpenModelicaUsersGuide/latest/solving.html#gbode");
   messageCloseWarning(OMC_LOG_STDOUT);
   return;
+}
+
+SLOW_STATE_CACHE *slowStateCache_alloc(int n_stages, int n_states, double *c)
+{
+  SLOW_STATE_CACHE *cache = (SLOW_STATE_CACHE*) malloc(sizeof(SLOW_STATE_CACHE));
+  cache->n_stages = n_stages;
+  cache->n_states = n_states;
+  cache->states = (double *) malloc((n_stages + 2) * n_states * sizeof(double));
+  cache->work = (double *) malloc(n_states * sizeof(double));
+  cache->valid = (modelica_boolean *) calloc(n_stages + 2, sizeof(modelica_boolean));
+  cache->offset = 0;
+
+  cache->left_stage = n_stages;
+  cache->right_stage = n_stages + 1;
+
+  for (int i = 0; i < n_stages; i++)
+  {
+    if (c[i] == 0.0) cache->left_stage  = i;
+    if (c[i] == 1.0) cache->right_stage = i;
+  }
+  return cache;
+}
+
+void slowStateCache_free(SLOW_STATE_CACHE *cache)
+{
+  free(cache->states);
+  free(cache->work);
+  free(cache->valid);
+  free(cache);
+}
+
+// physical slot for logical index i
+static inline int slowStateCache_slot(SLOW_STATE_CACHE *cache, int i)
+{
+  return (cache->offset + i) % (cache->n_stages + 2);
+}
+
+/* simple interpolation wrapper that uses
+ *  - GBODE interpolation method
+ *  - big step solution -> interpolate to some provided time value
+ *  - writes solution to out buffer (field in cache structure)
+ *  - uses indirect indexing only if ratio of slow states to all states is very small,
+ *    otherwise interpolates all states from the slow step
+ *  => the latter behavior is not guaranteed and only done to reduce work */
+static inline void slowStateCache_interpolate_slow_to_fast_node(DATA_GBODE *gbData, double time_value, double *out)
+{
+  modelica_boolean use_sparse_slow_interp = ((double) gbData->nSlowStates / (double) gbData->nStates < 0.2);
+  gb_interpolation(gbData->gbfData->interpolation,
+                  gbData->timeLeft,   gbData->yLeft,  gbData->kLeft,
+                  gbData->timeRight,  gbData->yRight, gbData->kRight,
+                  time_value, out,
+                  use_sparse_slow_interp ? gbData->nSlowStates : 0, use_sparse_slow_interp ? gbData->slowStatesIdx : NULL,
+                  gbData->nStates, gbData->tableau, gbData->x, gbData->k);
+}
+
+// interpolate stage node if not cached, return pointer to states slot
+static inline double *slowStateCache_get_or_compute_stage(DATA_GBODE *gbData, SLOW_STATE_CACHE *cache, int stage)
+{
+  int s = slowStateCache_slot(cache, stage);
+  if (!cache->valid[s])
+  {
+    double t_stage = gbData->gbfData->time + gbData->gbfData->tableau->c[stage] * gbData->gbfData->stepSize;
+    slowStateCache_interpolate_slow_to_fast_node(gbData, t_stage, &cache->states[s * cache->n_states]);
+    cache->valid[s] = TRUE;
+  }
+  return &cache->states[s * cache->n_states];
+}
+
+// interpolate left boundary if not cached, return pointer to states slot
+static inline double *slowStateCache_get_or_compute_left(DATA_GBODE *gbData, SLOW_STATE_CACHE *cache)
+{
+  int s = slowStateCache_slot(cache, cache->left_stage);
+  if (!cache->valid[s])
+  {
+    slowStateCache_interpolate_slow_to_fast_node(gbData, gbData->gbfData->time, &cache->states[s * cache->n_states]);
+    cache->valid[s] = TRUE;
+  }
+  return &cache->states[s * cache->n_states];
+}
+
+// interpolate right boundary if not cached, return pointer to states slot
+static inline double *slowStateCache_get_or_compute_right(DATA_GBODE *gbData, SLOW_STATE_CACHE *cache)
+{
+  int s = slowStateCache_slot(cache, cache->right_stage);
+  if (!cache->valid[s])
+  {
+    slowStateCache_interpolate_slow_to_fast_node(gbData, gbData->gbfData->time + gbData->gbfData->stepSize, &cache->states[s * cache->n_states]);
+    cache->valid[s] = TRUE;
+  }
+  return &cache->states[s * cache->n_states];
+}
+
+// write all slow states of interp to x, preserve fast states using work buffer
+static inline void slowStateCache_merge(DATA_GBODE *gbData, SLOW_STATE_CACHE *cache, double *interp, double *x)
+{
+  if (((double) gbData->nSlowStates / (double) gbData->nStates < 0.2))
+  {
+    // do not use memcpy if its really sparse
+    for (int i = 0; i < gbData->nSlowStates; i++)
+    {
+      int full_idx = gbData->slowStatesIdx[i];
+      x[full_idx] = interp[full_idx];
+    }
+  }
+  else
+  {
+    for (int i = 0; i < gbData->nFastStates; i++) cache->work[i] = x[gbData->fastStatesIdx[i]];
+    memcpy(x, interp, cache->n_states * sizeof(double));
+    for (int i = 0; i < gbData->nFastStates; i++) x[gbData->fastStatesIdx[i]] = cache->work[i];
+  }
+}
+
+// write all slow states of interp to x, fast states are potentially overwritten
+static inline void slowStateCache_overwrite(DATA_GBODE *gbData, SLOW_STATE_CACHE *cache, double *interp, double *x)
+{
+  if (((double) gbData->nSlowStates / (double) gbData->nStates < 0.2))
+  {
+    // well we do not fill full, if its very sparse
+    for (int i = 0; i < gbData->nSlowStates; i++)
+    {
+      int full_idx = gbData->slowStatesIdx[i];
+      x[full_idx] = interp[full_idx];
+    }
+  }
+  else
+  {
+    memcpy(x, interp, cache->n_states * sizeof(double));
+  }
+}
+
+// non-static, public functions
+
+void slowStateCache_invalidate(SLOW_STATE_CACHE *cache)
+{
+  memset(cache->valid, 0, sizeof(modelica_boolean) * (cache->n_stages + 2));
+  cache->offset = 0;
+}
+
+void slowStateCache_invalidate_keep_left(SLOW_STATE_CACHE *cache)
+{
+  modelica_boolean carry = cache->valid[slowStateCache_slot(cache, cache->left_stage)];
+  memset(cache->valid, 0, sizeof(modelica_boolean) * (cache->n_stages + 2));
+  cache->valid[slowStateCache_slot(cache, cache->left_stage)] = carry;
+}
+
+void slowStateCache_rotate(SLOW_STATE_CACHE *cache)
+{
+  int left  = cache->left_stage;
+  int right = cache->right_stage;
+
+  // save old right valid flag before disabling all
+  modelica_boolean carry = cache->valid[slowStateCache_slot(cache, right)];
+
+  // rotate offset so logical right maps to logical left:
+  // new_offset + left ≡ old_offset + right  (mod n_stages + 2)
+  int divisor = cache->n_stages + 2;
+  cache->offset = ((cache->offset + right - left + divisor) % divisor);
+
+  // disable all, restore carried left
+  memset(cache->valid, 0, sizeof(modelica_boolean) * (cache->n_stages + 2));
+  cache->valid[slowStateCache_slot(cache, left)] = carry;
+}
+
+void slowStateCache_overwrite_stage(DATA_GBODE *gbData, SLOW_STATE_CACHE *cache, int stage, double *x)
+{
+  double *interp = slowStateCache_get_or_compute_stage(gbData, cache, stage);
+  slowStateCache_overwrite(gbData, cache, interp, x);
+}
+
+void slowStateCache_overwrite_left(DATA_GBODE *gbData, SLOW_STATE_CACHE *cache, double *x)
+{
+  double *interp = slowStateCache_get_or_compute_left(gbData, cache);
+  slowStateCache_overwrite(gbData, cache, interp, x);
+}
+
+void slowStateCache_overwrite_right(DATA_GBODE *gbData, SLOW_STATE_CACHE *cache, double *x)
+{
+  double *interp = slowStateCache_get_or_compute_right(gbData, cache);
+  slowStateCache_overwrite(gbData, cache, interp, x);
+}
+
+void slowStateCache_merge_stage(DATA_GBODE *gbData, SLOW_STATE_CACHE *cache, int stage, double *x)
+{
+  double *interp = slowStateCache_get_or_compute_stage(gbData, cache, stage);
+  slowStateCache_merge(gbData, cache, interp, x);
+}
+
+void slowStateCache_merge_left(DATA_GBODE *gbData, SLOW_STATE_CACHE *cache, double *x)
+{
+  double *interp = slowStateCache_get_or_compute_left(gbData, cache);
+  slowStateCache_merge(gbData, cache, interp, x);
+}
+
+void slowStateCache_merge_right(DATA_GBODE *gbData, SLOW_STATE_CACHE *cache, double *x)
+{
+  double *interp = slowStateCache_get_or_compute_right(gbData, cache);
+  slowStateCache_merge(gbData, cache, interp, x);
 }

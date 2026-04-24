@@ -67,7 +67,7 @@ val(foxes,760);
 val(derrabbits,42);
 val(derrabbits,420);
 
-simulate(LotkaVolterraWithInput,startTime=0.0, stopTime=760.0, numberOfIntervals=760, tolerance=1e-8, method="gbode", simflags="-gbm=impl_euler -gbctrl=const -csvInput=LotkaVolterra_res.csv");
+simulate(LotkaVolterraWithInput,startTime=0.0, stopTime=760.0, numberOfIntervals=760, tolerance=1e-8, method="gbode", simflags="-gbm=impl_euler -csvInput=LotkaVolterra_res.csv");
 val(rabbits,180);
 val(foxes,200);
 val(rabbits,666);
@@ -75,7 +75,7 @@ val(foxes,760);
 val(derrabbits,42);
 val(derrabbits,420);
 
-simulate(LotkaVolterraWithInput,startTime=0.0, stopTime=760.0, numberOfIntervals=760, tolerance=1e-8, method="gbode", simflags="-gbm=radauIIA3 -gbctrl=const -csvInput=LotkaVolterra_res.csv");
+simulate(LotkaVolterraWithInput,startTime=0.0, stopTime=760.0, numberOfIntervals=760, tolerance=1e-8, method="gbode", simflags="-gbm=radauIIA3 -csvInput=LotkaVolterra_res.csv");
 val(rabbits,180);
 val(foxes,200);
 val(rabbits,666);
@@ -83,7 +83,7 @@ val(foxes,760);
 val(derrabbits,42);
 val(derrabbits,420);
 
-simulate(LotkaVolterraWithInput,startTime=0.0, stopTime=760.0, numberOfIntervals=760, tolerance=1e-8, method="gbode", simflags="-gbm=lobattoIIIA4 -gbctrl=const -csvInput=LotkaVolterra_res.csv");
+simulate(LotkaVolterraWithInput,startTime=0.0, stopTime=760.0, numberOfIntervals=760, tolerance=1e-8, method="gbode", simflags="-gbm=lobattoIIIA4 -csvInput=LotkaVolterra_res.csv");
 val(rabbits,180);
 val(foxes,200);
 val(rabbits,666);
@@ -96,7 +96,7 @@ val(derrabbits,420);
 // true
 // record SimulationResult
 //     resultFile = "LotkaVolterra_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 760.0, numberOfIntervals = 760, tolerance = 1e-08, method = 'dassl', fileNamePrefix = 'LotkaVolterra', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 760.0, numberOfIntervals = 760, tolerance = 1e-8, method = 'dassl', fileNamePrefix = 'LotkaVolterra', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
@@ -105,31 +105,31 @@ val(derrabbits,420);
 // 312.6463881685007
 // 1154.916262002063
 // 43.73296313290461
-// 120.0717136466132
+// 120.07171364661316
 // 76.4135843120514
 // record SimulationResult
 //     resultFile = "LotkaVolterra_res.csv",
-//     simulationOptions = "startTime = 0.0, stopTime = 760.0, numberOfIntervals = 760, tolerance = 1e-08, method = 'dassl', fileNamePrefix = 'LotkaVolterra', options = '', outputFormat = 'csv', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 760.0, numberOfIntervals = 760, tolerance = 1e-8, method = 'dassl', fileNamePrefix = 'LotkaVolterra', options = '', outputFormat = 'csv', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
 // record SimulationResult
 //     resultFile = "LotkaVolterraWithInput_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 760.0, numberOfIntervals = 760, tolerance = 1e-08, method = 'dassl', fileNamePrefix = 'LotkaVolterraWithInput', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-csvInput=LotkaVolterra_res.csv'",
+//     simulationOptions = "startTime = 0.0, stopTime = 760.0, numberOfIntervals = 760, tolerance = 1e-8, method = 'dassl', fileNamePrefix = 'LotkaVolterraWithInput', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-csvInput=LotkaVolterra_res.csv'",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
 // 4310.037646344885
-// 312.1431109344455
+// 312.14311093444553
 // 1154.916262002063
-// 43.72995074542722
-// 120.0665678317609
+// 43.729950745427224
+// 120.06656783176086
 // 76.4125896314704
 // record SimulationResult
 //     resultFile = "LotkaVolterraWithInput_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 760.0, numberOfIntervals = 760, tolerance = 1e-08, method = 'euler', fileNamePrefix = 'LotkaVolterraWithInput', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-csvInput=LotkaVolterra_res.csv'",
+//     simulationOptions = "startTime = 0.0, stopTime = 760.0, numberOfIntervals = 760, tolerance = 1e-8, method = 'euler', fileNamePrefix = 'LotkaVolterraWithInput', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-csvInput=LotkaVolterra_res.csv'",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
@@ -142,7 +142,7 @@ val(derrabbits,420);
 // 79.63027796167692
 // record SimulationResult
 //     resultFile = "LotkaVolterraWithInput_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 760.0, numberOfIntervals = 760, tolerance = 1e-08, method = 'rungekutta', fileNamePrefix = 'LotkaVolterraWithInput', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-csvInput=LotkaVolterra_res.csv'",
+//     simulationOptions = "startTime = 0.0, stopTime = 760.0, numberOfIntervals = 760, tolerance = 1e-8, method = 'rungekutta', fileNamePrefix = 'LotkaVolterraWithInput', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-csvInput=LotkaVolterra_res.csv'",
 //     messages = "LOG_STDOUT        | warning | Integration method 'rungekutta' is deprecated and will be removed in a future version of OpenModelica.
 // |                 | info    | | Use integration method GBODE with method 'rungekutta' and constant step size instead:
 // |                 | |       | | | Choose integration method 'gbode' in Simulation Setup->General and additional simulation flags '-gbm=rungekutta -gbctrl=const' in Simulation Setup->Simulation Flags.
@@ -154,51 +154,51 @@ val(derrabbits,420);
 // "
 // end SimulationResult;
 // 4310.037646344885
-// 312.1340719997071
+// 312.13407199970715
 // 1154.916262002063
-// 43.7261379252981
-// 120.0665742623086
+// 43.726137925298104
+// 120.06657426230858
 // 76.41278732145514
 // record SimulationResult
 //     resultFile = "LotkaVolterraWithInput_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 760.0, numberOfIntervals = 760, tolerance = 1e-08, method = 'gbode', fileNamePrefix = 'LotkaVolterraWithInput', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-gbm=impl_euler -gbctrl=const -csvInput=LotkaVolterra_res.csv'",
+//     simulationOptions = "startTime = 0.0, stopTime = 760.0, numberOfIntervals = 760, tolerance = 1e-8, method = 'gbode', fileNamePrefix = 'LotkaVolterraWithInput', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-gbm=impl_euler -csvInput=LotkaVolterra_res.csv'",
 //     messages = "LOG_STDOUT        | warning | Numerical Jacobians without coloring are currently not supported by GBODE. Colored numerical Jacobian will be used.
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
 // 4310.037646344885
-// 708.6928679495327
+// 312.3741518288655
 // 1154.916262002063
-// 572.1366944401556
-// 118.7562132961125
-// 63.26222998849814
+// 43.83890093244685
+// 120.06501762370245
+// 76.40626536852709
 // record SimulationResult
 //     resultFile = "LotkaVolterraWithInput_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 760.0, numberOfIntervals = 760, tolerance = 1e-08, method = 'gbode', fileNamePrefix = 'LotkaVolterraWithInput', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-gbm=radauIIA3 -gbctrl=const -csvInput=LotkaVolterra_res.csv'",
+//     simulationOptions = "startTime = 0.0, stopTime = 760.0, numberOfIntervals = 760, tolerance = 1e-8, method = 'gbode', fileNamePrefix = 'LotkaVolterraWithInput', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-gbm=radauIIA3 -csvInput=LotkaVolterra_res.csv'",
 //     messages = "LOG_STDOUT        | warning | Numerical Jacobians without coloring are currently not supported by GBODE. Colored numerical Jacobian will be used.
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
 // 4310.037646344885
-// 312.1425595557779
+// 312.14198091132045
 // 1154.916262002063
-// 43.72963386374561
-// 120.0665739251407
-// 76.4126067599769
+// 43.729429262921386
+// 120.06657898240123
+// 76.41261968318149
 // record SimulationResult
 //     resultFile = "LotkaVolterraWithInput_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 760.0, numberOfIntervals = 760, tolerance = 1e-08, method = 'gbode', fileNamePrefix = 'LotkaVolterraWithInput', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-gbm=lobattoIIIA4 -gbctrl=const -csvInput=LotkaVolterra_res.csv'",
+//     simulationOptions = "startTime = 0.0, stopTime = 760.0, numberOfIntervals = 760, tolerance = 1e-8, method = 'gbode', fileNamePrefix = 'LotkaVolterraWithInput', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-gbm=lobattoIIIA4 -csvInput=LotkaVolterra_res.csv'",
 //     messages = "LOG_STDOUT        | warning | Numerical Jacobians without coloring are currently not supported by GBODE. Colored numerical Jacobian will be used.
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
 // 4310.037646344885
-// 312.1425514441204
+// 312.14255091390504
 // 1154.916262002063
-// 43.72962960061532
-// 120.0665739034563
-// 76.41260698034162
+// 43.72962943065299
+// 120.06657390326177
+// 76.4126069950718
 // endResult

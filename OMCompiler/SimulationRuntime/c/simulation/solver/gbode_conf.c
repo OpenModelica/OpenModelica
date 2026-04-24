@@ -89,33 +89,41 @@ enum GB_METHOD getGB_method(enum _FLAG flag)
   // Default value for multi-rate method
   if (flag == FLAG_MR) {
     enum GB_METHOD singleRateMethod = getGB_method(FLAG_SR);
+
+    if (getGB_NLS_method(FLAG_MR_NLS) == GB_NLS_INTERNAL)
+    {
+      // if internal + multirate integrator not set -> use single rate integrator
+      return singleRateMethod;
+    }
+
     switch (singleRateMethod)
     {
-    case RK_GAUSS2:
-    case RK_GAUSS3:
-    case RK_GAUSS4:
-    case RK_GAUSS5:
-    case RK_GAUSS6:
-    case RK_RADAU_IA_2:
-    case RK_RADAU_IA_3:
-    case RK_RADAU_IA_4:
-    case RK_RADAU_IIA_2:
-    case RK_RADAU_IIA_3:
-    case RK_RADAU_IIA_4:
-    case RK_RADAU_IIA_5:
-    case RK_RADAU_IIA_6:
-    case RK_RADAU_IIA_7:
-    case RK_LOBA_IIIA_3:
-    case RK_LOBA_IIIA_4:
-    case RK_LOBA_IIIB_3:
-    case RK_LOBA_IIIB_4:
-    case RK_LOBA_IIIC_3:
-    case RK_LOBA_IIIC_4:
-      // Default value for inner integration method
-      // if the outer integration method is full implicit
-      return RK_ESDIRK4;
-    default:
-      return singleRateMethod;
+      case RK_GAUSS2:
+      case RK_GAUSS3:
+      case RK_GAUSS4:
+      case RK_GAUSS5:
+      case RK_GAUSS6:
+      case RK_RADAU_IA_2:
+      case RK_RADAU_IA_3:
+      case RK_RADAU_IA_4:
+      case RK_RADAU_IIA_2:
+      case RK_RADAU_IIA_3:
+      case RK_RADAU_IIA_4:
+      case RK_RADAU_IIA_5:
+      case RK_RADAU_IIA_6:
+      case RK_RADAU_IIA_7:
+      case RK_LOBA_IIIA_3:
+      case RK_LOBA_IIIA_4:
+      case RK_LOBA_IIIB_3:
+      case RK_LOBA_IIIB_4:
+      case RK_LOBA_IIIC_3:
+      case RK_LOBA_IIIC_4:
+        // if not internal + multirate integrator not set -> use default singlerate integrator
+        // as fully implicit is not implemented for standard multirate
+        return RK_ESDIRK4;
+      default:
+        // use implemented singlerate integrator
+        return singleRateMethod;
     }
   }
 
@@ -127,7 +135,7 @@ enum GB_METHOD getGB_method(enum _FLAG flag)
 /**
  * @brief Get non-linear solver method for Runge-Kutta from flag FLAG_SR_NLS.
  *
- * Defaults to GB_NLS_KINSOL for single-rate.
+ * Defaults to GB_NLS_INTERNAL for single-rate.
  * Defaults to nls method of single-rate for multi-rate.
  * Returns GB_UNKNOWN if flag is not known.
  *
@@ -158,8 +166,8 @@ enum GB_NLS_METHOD getGB_NLS_method(enum _FLAG flag)
   if (flag == FLAG_MR_NLS) {
     return getGB_NLS_method(FLAG_SR_NLS);
   } else {
-    infoStreamPrint(OMC_LOG_SOLVER, 0, "Chosen gbode NLS method: kinsol [default]");
-    return GB_NLS_KINSOL;
+    infoStreamPrint(OMC_LOG_SOLVER, 0, "Chosen gbode NLS method: internal [default]");
+    return GB_NLS_INTERNAL;
   }
 }
 

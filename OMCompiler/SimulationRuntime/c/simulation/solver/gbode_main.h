@@ -61,6 +61,8 @@ extern "C" {
  */
 typedef int (*gm_step_function)(DATA* data, threadData_t* threadData, SOLVER_INFO* solverInfo);
 
+typedef struct SLOW_STATE_CACHE SLOW_STATE_CACHE;
+
 typedef struct DATA_GBODEF{
   enum GB_METHOD GM_method;                         /* Method to use for integration. */
   enum GM_TYPE type;                                /* Type of GB method */
@@ -71,12 +73,17 @@ typedef struct DATA_GBODEF{
                                                      * */
   JACOBIAN* jacobian;                               /* Jacobian of non-linear system of implicit Runge-Kutta method */
   SPARSE_PATTERN* sparsePattern_DIRK;               /* Sparsity pattern for the DIRK methd, will be reduced based on the fast states selection */
+  SLOW_STATE_CACHE *slowStateCache;                 /* Reusable cache data of full step, slow state interpolations */
 
   double *y;                                        /* State vector of the current Runge-Kutta step */
   double *yt, *y1;                                  /* Result vector of the states of embedded RK step */
   double *yLeft, *kLeft, *yRight, *kRight;          /* Needed for interpolation of the slow states and emitting to the result files */
   double *yOld;                                     /* State vector of last Runge-Kutta step */
   double *f;                                        /* State derivatives of ODE for initialization */
+  double *yLast;                                    /* Vector y of states at start of previous interval - packed as 0, ..., nFastStates - 1!! */
+  double *kLast;                                    /* Vector k of stage updates for the previous interval - packed as nStages vectors of size nFastStates (not all states) */
+  double *yOldPacked;                               /* YOld but packed - packed as nStages vectors of size nFastStates (not all states) */
+  double *kCurrPacked;                                /* Current solution of NLS - packed as nStages vectors of size nFastStates (not all states) */
   double *k;                                        /* Vector k of derivatives of states with result of intermediate steps of Runge-Kutta method */
   double *x;                                        /* Vector x of states with result of intermediate steps of Runge-Kutta method */
                                                         // k_{i}=f(t_{n}+c_{i}*h, y_{n}+h\sum _{j=1}^{s}a_{ij}*k_{j}),    i=1, ... ,s
@@ -89,6 +96,9 @@ typedef struct DATA_GBODEF{
   double *stepSizeValues;                           /* ring buffer for step size control */
 
   double time, timeLeft, timeRight, eventTime;      /* actual time values and the time values of the current interpolation interval */
+  double extrapolationStepSize;                     /* last step size for extrapolation / in sync with yLast and kLast */
+  double extrapolationBaseTime;                     /* base time for extrapolation / in sync with yLast and kLast */
+  modelica_boolean extrapolationValid;              /* is the extrapolation data yLast and kLast valid? */
   double stepSize, lastStepSize;                    /* actual and last step size of integration */
   int act_stage;                                    /* Current stage of Runge-Kutta method. */
   enum GB_CTRL_METHOD ctrl_method;                  /* Step size control algorithm */
@@ -113,6 +123,8 @@ typedef struct DATA_GBODEF{
 
   /* statistics */
   SOLVERSTATS stats;
+  int fastStateUpdateCount;                         /* number of fast state updates */
+  int additionalFullODEEvaluations;                 /* number of overhead fODE evaluations without selection in fast steps */
 } DATA_GBODEF;
 
 typedef struct DATA_GBODE{
@@ -167,6 +179,7 @@ typedef struct DATA_GBODE{
   int *slowStatesIdx;                               /* Indices of slow states */
   int *sortedStatesIdx;                             /* Indices of all states sorted for highest error */
   modelica_boolean isFirstStep;                     /* True during first Runge-Kutta integrator step, false otherwise */
+  modelica_boolean didFastStep;                     /* True if the last completed step was a fast step - else slow step */
   modelica_boolean eventHappened;                   /* True if an event happened in the last iteration - will be reset to FALSE on successful step */
   unsigned int nlSystemSize;                        /* Size of non-linear system to solve in a RK step. */
   modelica_boolean symJacAvailable;                 /* Boolean stating if a symbolic Jacobian is available */

@@ -333,9 +333,9 @@ double computeGamma(double err_now, double err_prev, double h_now, double h_prev
  */
 double GenericController(double* err_values, double* step_values, unsigned int err_order, enum GB_CTRL_METHOD ctrl_method)
 {
-  double fac    = 0.9;
-  double facmax = 2.5;
-  double facmin = 0.2;
+  const double fac    = 0.9;
+  const double facmax = 2.5;
+  const double facmin = 0.2;
 
   unsigned int k = err_order + 1;
 
@@ -400,12 +400,13 @@ double GenericController(double* err_values, double* step_values, unsigned int e
   if (use_filter>0) {
      h_fac = use_filter * h_fac + (1.0 - use_filter);
   }
+  h_fac *= fac;
 
   // Keep step size constant, if there are only small changes
   if ((0.99 < h_fac) && (h_fac < 1.2)) {
     return 1.0;
   } else
-    return fmin(facmax, fmax(facmin, fac*h_fac));
+    return fmin(facmax, fmax(facmin, h_fac));
 }
 
 
