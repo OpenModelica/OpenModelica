@@ -29,6 +29,9 @@
 
 # [build] generated files / build artifacts
 OMCompiler/revision.h
+OMCompiler/revision.h.in
+OMCompiler/omc_config.unix.h
+OMCompiler/omc_config.unix.h.in
 
 # =============================================================================
 # OMCompiler/Compiler
@@ -73,6 +76,11 @@ OMCompiler/Compiler/Template/Unparsing.mo
 OMCompiler/Compiler/Template/VisualXMLTpl.mo
 
 OMCompiler/Compiler/Util/MessagePack.mo
+OMCompiler/Compiler/Util/Autoconf.mo
+
+OMCompiler/Compiler/*.mos
+OMCompiler/Parser/*.mos
+OMCompiler/toJulia/*.mos
 
 # Martin Sjölund - Part of a Modelica library we don't have OSMC-PL for
 OMCompiler/Compiler/boot/include/msgpack-modelica.h
@@ -256,6 +264,23 @@ testsuite/
 
 doc/
 OMCompiler/Examples/
+!OMCompiler/Examples/GenerateDoc.mos
+
+# =============================================================================
+# OMEdit
+# =============================================================================
+
+# Tests
+OMEdit/Testsuite/**/*.mo
+
+# [3rd-party] Marcin Kalicinski - rapidxml
+OMEdit/OMEditLIB/Animation/rapidxml.hpp
+
+# [3rd-party] Cloud Wu - backtrace
+OMEdit/OMEditLIB/CrashReport/backtrace.*
+
+# [3rd-party] Google - Diff Match and Patch
+OMEdit/OMEditLIB/TransformationalDebugger/diff_match_patch.*
 
 # =============================================================================
 # Submodules
@@ -264,8 +289,7 @@ OMCompiler/Examples/
 
 libraries/
 OMCompiler/3rdParty/
-#!OMCompiler/3rdParty/ryu/ryu/om_format.*
-OMEdit/
+!OMCompiler/3rdParty/ryu/ryu/om_format.*
 OMNotebook/
 OMOptim/
 OMParser/

@@ -29,9 +29,9 @@ Exception-list format (one entry per line):
   Patterns are evaluated in order; last match wins (same as .gitignore).
 
 Supported file types and their expected comment style:
-  C/C++   .c .h .cpp .cc .cxx .inc .inl .hpp .cl .g /* block comment */
-  Python  .py                                       # line comments
-  Modelica .mo .tpl                                 /* block */ or // line comments
+  C/C++   .c .h .h.in .cpp .cc .cxx .inc .inl .hpp .cl .g .qss /* block comment */
+  Python  .py .pro .pri                                        # line comments
+  Modelica .mo .mos .tpl                                       /* block */ or // line comments
 """
 
 from __future__ import annotations
@@ -213,11 +213,20 @@ OSMC_PL_1_8_RUNTIME_LICENSE_TEXT_C = f"""
 # File-type groups
 # ---------------------------------------------------------------------------
 
-C_STYLE_EXTS = frozenset({".c", ".h", ".cpp", ".cc", ".cxx", ".inc", ".inl", ".hpp", ".cl", ".g"})
-PYTHON_EXTS = frozenset({".py"})
-MODELICA_EXTS = frozenset({".mo", ".tpl"})
+C_STYLE_EXTS = frozenset({".c", ".h", ".h.in", ".cpp", ".cc", ".cxx", ".inc", ".inl", ".hpp", ".cl", ".g", ".qss"})
+PYTHON_EXTS = frozenset({".py", ".pro", ".pri"})
+MODELICA_EXTS = frozenset({".mo", ".mos", ".tpl"})
 
 SUPPORTED_EXTS = C_STYLE_EXTS | PYTHON_EXTS | MODELICA_EXTS
+
+
+def _file_ext(filename: str) -> str:
+    """Return the file extension, handling double extensions like '.h.in'."""
+    name = os.path.basename(filename)
+    for ext in (".h.in",):
+        if name.endswith(ext):
+            return ext
+    return os.path.splitext(name)[1].lower()
 
 # How many bytes of a file to read when looking for the header.
 HEADER_READ_BYTES = 4096
@@ -466,6 +475,11 @@ def _replace_license_header(filepath: str, content: str, is_runtime: bool, ext: 
     return _replace_c_license_header(filepath, content, is_runtime)
 
 
+_PLACEHOLDER_COPYRIGHT_RE = re.compile(
+    r"[Cc]opyright\s+\(c\)\s+[\w]+-?CurrentYear|[Cc]opyright\s+\(c\)\s+CurrentYear"
+)
+
+
 def _update_copyright_year(filepath: str, content: str) -> bool:
     """Update the end year in the first copyright line to CURRENT_YEAR.
 
@@ -485,6 +499,22 @@ def _update_copyright_year(filepath: str, content: str) -> bool:
     return True
 
 
+def _copyright_year_errors(filepath: str, content: str, fix_year: bool) -> list[str]:
+    """Return errors for a wrong or placeholder copyright year."""
+    if _PLACEHOLDER_COPYRIGHT_RE.search(content):
+        return ["copyright year is an unreplaced template placeholder (CurrentYear)"]
+    m = _COPYRIGHT_RE.search(content)
+    if not m:
+        return ["copyright year not found"]
+    end_year = int(m.group(2) or m.group(1))
+    if end_year == CURRENT_YEAR:
+        return []
+    err = f"copyright year out of date ({end_year}, expected {CURRENT_YEAR})"
+    if fix_year and _update_copyright_year(filepath, content):
+        return [err + " [FIXED]"]
+    return [err]
+
+
 # ---------------------------------------------------------------------------
 # Per-file check
 # ---------------------------------------------------------------------------
@@ -499,7 +529,7 @@ def check_file(
 
     Errors for fixed issues are suffixed with " [FIXED]".
     """
-    ext = os.path.splitext(filepath)[1].lower()
+    ext = _file_ext(filepath)
     errors: list[str] = []
 
     try:
@@ -526,8 +556,8 @@ def check_file(
                 if fix_license and ext in C_STYLE_EXTS | MODELICA_EXTS | PYTHON_EXTS:
                     if _replace_license_header(filepath, content, is_runtime=True, ext=ext):
                         errors[-1] += " [FIXED]"
-            elif fix_year:
-                _update_copyright_year(filepath, content)
+            else:
+                errors.extend(_copyright_year_errors(filepath, content, fix_year))
         elif not has_runtime_mark and has_osmc_pl_1_8:
             errors.append(
                 "wrong license type: has normal OSMC-PL 1.8 header, expected runtime header"
@@ -554,9 +584,8 @@ def check_file(
                     errors[-1] += " [FIXED]"
     else:
         if has_osmc_pl_1_8 and not has_runtime_mark:
-            # Correct normal license; optionally update year.
-            if fix_year:
-                _update_copyright_year(filepath, content)
+            # Correct normal license; check/update year.
+            errors.extend(_copyright_year_errors(filepath, content, fix_year))
         elif has_osmc_pl_1_8 and has_runtime_mark:
             errors.append(
                 "wrong license type: has runtime header, expected normal OSMC-PL 1.8 header"
@@ -590,7 +619,7 @@ def iter_source_files(root: Path, check_dirs: list[Path]) -> Iterable[Path]:
         for dirpath, dirnames, filenames in abs_dir.walk():
             dirnames[:] = sorted(d for d in dirnames if not d.startswith("."))
             for fn in sorted(filenames):
-                if os.path.splitext(fn)[1].lower() in SUPPORTED_EXTS:
+                if _file_ext(fn) in SUPPORTED_EXTS:
                     yield dirpath.joinpath(fn)
 
 
