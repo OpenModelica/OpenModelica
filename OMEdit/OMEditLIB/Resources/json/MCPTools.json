@@ -323,11 +323,11 @@
                 },
                 "width": {
                     "type": "number",
-                    "description": "The width of the component in diagram coordinates."
+                    "description": "The width of the component in diagram coordinates. A negative number flips the component horizontally."
                 },
                 "height": {
                     "type": "number",
-                    "description": "The height of the component in diagram coordinates."
+                    "description": "The height of the component in diagram coordinates. A negative number flips the component vertically."
                 },
                 "visible": {
                     "type": "boolean",
@@ -827,5 +827,53 @@
             "required": ["className"]
         },
         "annotations": {"readOnlyHint": true, "destructiveHint": false}
+    },
+    {
+        "name": "getCoordinateSystem",
+        "description": "Returns the coordinate system of the icon or diagram view of a class. Only fields that are explicitly set in the class annotation are included in the result.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "className": {"type": "string", "description": "The fully-qualified name of the class."},
+                "view": {"type": "string", "description": "Which view to query: \"icon\" or \"diagram\"."}
+            },
+            "required": ["className", "view"]
+        },
+        "annotations": {"readOnlyHint": true, "destructiveHint": false}
+    },
+    {
+        "name": "setCoordinateSystem",
+        "description": "Sets the coordinate system of the icon or diagram view of a class. All fields are optional; omitted fields preserve their current values.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "className": {"type": "string", "description": "The fully-qualified name of the class."},
+                "view": {"type": "string", "description": "Which view to update: \"icon\" or \"diagram\"."},
+                "extent": {
+                    "type": "object",
+                    "description": "Bounding box of the coordinate system.",
+                    "properties": {
+                        "x1": {"type": "number", "description": "X coordinate of the first (lower-left) corner."},
+                        "y1": {"type": "number", "description": "Y coordinate of the first (lower-left) corner."},
+                        "x2": {"type": "number", "description": "X coordinate of the second (upper-right) corner."},
+                        "y2": {"type": "number", "description": "Y coordinate of the second (upper-right) corner."}
+                    },
+                    "required": ["x1", "y1", "x2", "y2"]
+                },
+                "preserveAspectRatio": {"type": "boolean", "description": "Whether to preserve the aspect ratio when the view is resized. Default true."},
+                "initialScale": {"type": "number", "description": "Initial scale factor for the diagram (e.g. 0.1). Default 0.1."},
+                "grid": {
+                    "type": "object",
+                    "description": "Snap grid spacing in x and y directions.",
+                    "properties": {
+                        "x": {"type": "number", "description": "Grid spacing in the x direction."},
+                        "y": {"type": "number", "description": "Grid spacing in the y direction."}
+                    },
+                    "required": ["x", "y"]
+                }
+            },
+            "required": ["className", "view"]
+        },
+        "annotations": {"readOnlyHint": false, "destructiveHint": false}
     }
 ]
