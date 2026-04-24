@@ -177,6 +177,7 @@ public:
   bool saveTotalModel(QString fileName, QString className, bool stripAnnotations, bool stripComments, bool obfuscate, bool simplified);
   QString list(QString className);
   QString listFile(QString className, bool nestedClasses = true);
+  QString getTotalModel(QString className, bool stripAnnotations = false, bool stripComments = false, bool obfuscate = false);
   QString diffModelicaFileListings(const QString &before, const QString &after);
   QString instantiateModel(QString className);
   QString runScript(QString fileName);

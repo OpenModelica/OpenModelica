@@ -519,6 +519,17 @@ if (method == "tools/call") {
     QString code = m_proxy->listFile(className);
     return makeMCPToolResponse(id, makeContent(code));
   }
+  if (toolName == "getTotalModel") {
+    QString className = arguments.value("className").toString(); // required
+    if (!m_proxy->existClass(className)) {
+      return makeMCPError(id, QString("Class not found: %1").arg(className));
+    }
+    bool stripAnnotations = arguments.value("stripAnnotations").toBool(false);
+    bool stripComments = arguments.value("stripComments").toBool(false);
+    bool obfuscate = arguments.value("obfuscate").toBool(false);
+    QString code = m_proxy->getTotalModel(className, stripAnnotations, stripComments, obfuscate);
+    return makeMCPToolResponse(id, makeContent(code));
+  }
   if (toolName == "setSourceCode") {
     QString className = arguments.value("className").toString(); // required
     QStringList parts = StringHandler::splitPath(className);

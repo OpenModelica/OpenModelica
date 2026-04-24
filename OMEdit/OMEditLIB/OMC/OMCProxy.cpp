@@ -1913,6 +1913,22 @@ QString OMCProxy::listFile(QString className, bool nestedClasses)
 }
 
 /*!
+ * \brief OMCProxy::getTotalModel
+ * Returns the class and all its dependencies as a single string.
+ * \param className
+ * \param stripAnnotations
+ * \param stripComments
+ * \param obfuscate
+ * \return
+ */
+QString OMCProxy::getTotalModel(QString className, bool stripAnnotations, bool stripComments, bool obfuscate)
+{
+  QString result = mpOMCInterface->getTotalModel(className, stripAnnotations, stripComments, obfuscate);
+  printMessagesStringInternal();
+  return result;
+}
+
+/*!
  * \brief OMCProxy::diffModelicaFileListings
  * Creates diffs of two strings corresponding to Modelica files.
  * \param before

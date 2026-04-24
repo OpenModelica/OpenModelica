@@ -1899,6 +1899,24 @@ algorithm
       then
         Values.BOOL(false);
 
+    case ("getTotalModel",{Values.CODE(Absyn.C_TYPENAME(classpath)),
+                           Values.BOOL(b1), Values.BOOL(b2), Values.BOOL(b3)})
+      equation
+        access = Interactive.checkAccessAnnotationAndEncryption(classpath, SymbolTable.getAbsyn());
+        if access >= Access.all then
+          s1 = getTotalModel(classpath, b1, b2, b3);
+          b = true;
+        else
+          Error.addMessage(Error.SAVE_ENCRYPTED_CLASS_ERROR, {});
+          b = false;
+        end if;
+      then
+        Values.STRING(s1);
+
+    case ("getTotalModel",{Values.CODE(Absyn.C_TYPENAME(_)),
+                           Values.BOOL(_), Values.BOOL(_), Values.BOOL(_)})
+      then Values.STRING("");
+
     case ("saveTotalModel",{Values.STRING(filename),Values.CODE(Absyn.C_TYPENAME(classpath)),
                                     Values.BOOL(b1), Values.BOOL(b2), Values.BOOL(b3)})
       equation
@@ -7789,11 +7807,27 @@ protected function saveTotalModel
   input Boolean stripComments;
   input Boolean obfuscate;
 protected
+  String result, obfuscate_map;
+algorithm
+  (result, obfuscate_map) := getTotalModel(classpath, stripAnnotations, stripComments, obfuscate);
+  if obfuscate then
+    System.writeFile(StringUtil.stripFileExtension(filename) + "_mapping.json", obfuscate_map);
+  end if;
+  System.writeFile(filename, result);
+end saveTotalModel;
+
+protected function getTotalModel
+  input Absyn.Path classpath;
+  input Boolean stripAnnotations;
+  input Boolean stripComments;
+  input Boolean obfuscate;
+  output String result;
+  output String obfuscate_map;
+protected
   SCode.Program scodeP;
   String str,str1,str2,str3;
   NFSCodeEnv.Env env;
   SCode.Comment cmt;
-  String obfuscate_map;
   Absyn.Path cls_path = classpath;
 algorithm
   runFrontEndLoadProgram(cls_path);
@@ -7808,7 +7842,6 @@ algorithm
 
   if obfuscate then
     (scodeP, cls_path, cmt, obfuscate_map) := Obfuscate.obfuscateProgram(scodeP, cls_path, cmt);
-    System.writeFile(StringUtil.stripFileExtension(filename) + "_mapping.json", obfuscate_map);
   end if;
 
   str := SCodeDump.programStr(scodeP,SCodeDump.defaultOptions);
@@ -7818,8 +7851,8 @@ algorithm
   str3 := if stripAnnotations then "" else SCodeDump.printAnnotationStr(cmt,SCodeDump.defaultOptions);
   str3 := if stringEq(str3,"") then "" else (str3 + ";\n");
   str1 := "\nmodel " + str1 + str2 + "\n  extends " + AbsynUtil.pathString(cls_path) + ";\n" + str3 + "end " + str1 + ";\n";
-  System.writeFile(filename, str + str1);
-end saveTotalModel;
+  result := str + str1;
+end getTotalModel;
 
 protected function saveTotalModelDebug
   input String filename;
