@@ -432,9 +432,24 @@ constant Function NO_EVENT = Function.FUNCTION(Path.IDENT("noEvent"),
     Type.UNKNOWN(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, {}, {}, listArray({}),
     Pointer.createImmutable(FunctionStatus.BUILTIN), Pointer.createImmutable(0));
 
+constant Function INITIAL = Function.FUNCTION(Path.IDENT("initial"),
+  InstNode.EMPTY_NODE(), {}, {}, {}, NONE(), {},
+    Type.BOOLEAN(), DAE.FUNCTION_ATTRIBUTES_BUILTIN_IMPURE, {}, {}, listArray({}),
+    Pointer.createImmutable(FunctionStatus.BUILTIN), Pointer.createImmutable(0));
+
 constant Function PRE = Function.FUNCTION(Path.IDENT("pre"),
   InstNode.EMPTY_NODE(), {}, {}, {}, NONE(), {},
     Type.UNKNOWN(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, {}, {}, listArray({}),
+    Pointer.createImmutable(FunctionStatus.BUILTIN), Pointer.createImmutable(0));
+
+constant Function PREVIOUS = Function.FUNCTION(Path.IDENT("previous"),
+  InstNode.EMPTY_NODE(), {}, {}, {}, NONE(), {},
+    Type.UNKNOWN(), DAE.FUNCTION_ATTRIBUTES_BUILTIN_IMPURE, {}, {}, listArray({}),
+    Pointer.createImmutable(FunctionStatus.BUILTIN), Pointer.createImmutable(0));
+
+constant Function MAX_INT_ARR = Function.FUNCTION(Path.IDENT("max"),
+  InstNode.EMPTY_NODE(), {INT_PARAM}, {INT_PARAM}, {}, NONE(), {},
+    Type.INTEGER(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, {}, {}, listArray({}),
     Pointer.createImmutable(FunctionStatus.BUILTIN), Pointer.createImmutable(0));
 
 constant Function SUM = Function.FUNCTION(Path.IDENT("sum"),
