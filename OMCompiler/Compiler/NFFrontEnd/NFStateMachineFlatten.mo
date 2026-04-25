@@ -111,11 +111,14 @@ function flatten
   "Main entry point. Transforms state machine NORETCALL equations to flat data-flow equations."
   input output FlatModel flatModel;
 protected
+  type OuterVarList = list<tuple<ComponentRef, ComponentRef>>;
   list<ComponentRef> initStates;
   list<list<ComponentRef>> smGroups;
   list<Equation> smEqs, otherEqs, resultEqs;
   list<Variable> smVars, resultVars;
-  Integer nSubstitutions;
+  list<ComponentRef> allStateCrefs;
+  // outerVarMap: outer var cref → list of (stateActiveRef, perStateVarRef) pairs
+  UnorderedMap<ComponentRef, OuterVarList> outerVarMap;
 algorithm
   // Quick exit if no state machines present
   // initialState() lives in initialEquations; transition() in equations
@@ -131,8 +134,18 @@ algorithm
     return;
   end if;
 
-  // Remove SM equations from both equation sections
+  // Collect all state crefs across all SM groups
+  allStateCrefs := List.flatten(smGroups);
+
+  // Remove SM equations and outer-state equations from otherEqs
+  // (outer-state equations are those whose scope matches a state component name)
   otherEqs := List.filterOnFalse(flatModel.equations, isTransitionOrInitialState);
+  otherEqs := List.filterOnFalse(otherEqs,
+    function isOuterStateEquation(stateCrefs = allStateCrefs));
+
+  // outerVarMap collects: outer var → [(activeRef, perStateVar)] for merge equation generation
+  outerVarMap := UnorderedMap.new<OuterVarList>(
+    ComponentRef.hash, ComponentRef.isEqual);
 
   smVars := {};
   smEqs := {};
@@ -143,7 +156,14 @@ algorithm
       flatModel.equations,
       flatModel.variables,
       NONE(), NONE(),
-      smEqs, smVars);
+      smEqs, smVars,
+      outerVarMap);
+  end for;
+
+  // Generate merge equations for outer variables written by state components
+  // e.g.: i = if state1.active then state1.i else if state2.active then state2.i else previous(i)
+  for outerVarCref in UnorderedMap.keyList(outerVarMap) loop
+    (smEqs, smVars) := generateMergeEquation(outerVarCref, outerVarMap, flatModel.variables, smEqs, smVars);
   end for;
 
   // Substitute activeState(x) → x.active globally; SM eqs come after
@@ -281,6 +301,7 @@ function flatSmToDataFlow
   input Option<FlatSmSemantics> enclosingSmSemOpt;
   input output list<Equation> accEqs;
   input output list<Variable> accVars;
+  input UnorderedMap<ComponentRef, list<tuple<ComponentRef, ComponentRef>>> outerVarMap;
 protected
   list<Equation> transitionEqs, initialStateEqs, stateEqs;
   FlatSmSemantics sem, semWithProp, semFinal;
@@ -306,7 +327,7 @@ algorithm
 
   // Transform state component equations
   for stateCref in stateCrefs loop
-    (accEqs, accVars) := smCompToDataFlow(stateCref, semFinal, allEquations, allVariables, accEqs, accVars);
+    (accEqs, accVars) := smCompToDataFlow(stateCref, semFinal, allEquations, allVariables, accEqs, accVars, outerVarMap);
   end for;
 end flatSmToDataFlow;
 
@@ -323,19 +344,19 @@ function smCompToDataFlow
   input list<Variable> allVariables;
   input output list<Equation> accEqs;
   input output list<Variable> accVars;
+  input UnorderedMap<ComponentRef, list<tuple<ComponentRef, ComponentRef>>> outerVarMap;
 protected
   list<Equation> stateEqs;
   list<Variable> stateVars;
-  list<ComponentRef> stateVarCrefs;
   UnorderedMap<ComponentRef, Expression> crToStart;
   list<Equation> transformedEqs;
   list<Variable> extraVars;
 algorithm
-  // Equations whose LHS cref has stateCref as prefix
+  // Equations belonging to this state (by LHS prefix or by instantiation scope)
   stateEqs := List.filterOnTrue(allEquations,
     function isEquationOfState(stateCref = stateCref));
 
-  // Variables belonging to this state
+  // Variables belonging to this state (by cref prefix)
   stateVars := List.filterOnTrue(allVariables,
     function isVariableOfState(stateCref = stateCref));
 
@@ -349,7 +370,7 @@ algorithm
   transformedEqs := {};
   extraVars := {};
   for eq in stateEqs loop
-    (transformedEqs, extraVars) := addStateActivationAndReset(eq, stateCref, sem, crToStart, transformedEqs, extraVars);
+    (transformedEqs, extraVars) := addStateActivationAndReset(eq, stateCref, sem, crToStart, transformedEqs, extraVars, outerVarMap);
   end for;
 
   accEqs := listAppend(listReverse(transformedEqs), accEqs);
@@ -369,17 +390,18 @@ function addStateActivationAndReset
   input UnorderedMap<ComponentRef, Expression> crToStart;
   input output list<Equation> accEqs;
   input output list<Variable> accVars;
+  input UnorderedMap<ComponentRef, list<tuple<ComponentRef, ComponentRef>>> outerVarMap;
 algorithm
   () := match inEq
     case Equation.EQUALITY()
       algorithm
-        (accEqs, accVars) := addStateActivationAndReset1(inEq, stateCref, sem, crToStart, accEqs, accVars);
+        (accEqs, accVars) := addStateActivationAndReset1(inEq, stateCref, sem, crToStart, accEqs, accVars, outerVarMap);
       then ();
 
     case Equation.WHEN()
       algorithm
         // Recursively transform equations in WHEN branches
-        accEqs := transformWhenBranches(inEq, stateCref, sem, crToStart) :: accEqs;
+        accEqs := transformWhenBranches(inEq, stateCref, sem, crToStart, outerVarMap) :: accEqs;
       then ();
 
     else
@@ -395,6 +417,7 @@ function transformWhenBranches
   input ComponentRef stateCref;
   input FlatSmSemantics sem;
   input UnorderedMap<ComponentRef, Expression> crToStart;
+  input UnorderedMap<ComponentRef, list<tuple<ComponentRef, ComponentRef>>> outerVarMap;
   output Equation outEq;
 protected
   list<Equation.Branch> branches, newBranches;
@@ -415,7 +438,7 @@ algorithm
           transformedBody := {};
           dummyVars := {};
           for eq in branchBody loop
-            (transformedBody, dummyVars) := addStateActivationAndReset(eq, stateCref, sem, crToStart, transformedBody, dummyVars);
+            (transformedBody, dummyVars) := addStateActivationAndReset(eq, stateCref, sem, crToStart, transformedBody, dummyVars, outerVarMap);
           end for;
         then Equation.Branch.BRANCH(branchCond, branchCondVar, listReverse(transformedBody));
       else branch;
@@ -427,24 +450,27 @@ end transformWhenBranches;
 
 protected
 function addStateActivationAndReset1
-  "Transform a simple equation: make conditional on state.active; add reset for state variables."
+  "Transform a simple equation: make conditional on state.active; add reset for state variables.
+   For outer-output equations (LHS is not state-prefixed but scope is state): create per-state variable."
   input Equation inEq;
   input ComponentRef stateCref;
   input FlatSmSemantics sem;
   input UnorderedMap<ComponentRef, Expression> crToStart;
   input output list<Equation> accEqs;
   input output list<Variable> accVars;
+  input UnorderedMap<ComponentRef, list<tuple<ComponentRef, ComponentRef>>> outerVarMap;
 protected
   Expression lhs, rhs;
-  ComponentRef lhsCref;
+  ComponentRef lhsCref, perStateVarCref, stateActiveCref;
   Type lhsTy;
   InstNode eqScope;
   DAE.ElementSource eqSource;
   list<ComponentRef> stateVarCrefs;
-  Boolean hasStateVarOnLHS, hasPreviousOfStateVar;
-  Expression newRhs;
+  Boolean hasStateVarOnLHS, isOuterOutput;
+  Expression newRhs, perStateVarExp;
   Equation eq1, eq2;
-  Variable var2;
+  Variable perStateVar;
+  list<tuple<ComponentRef, ComponentRef>> prevList;
 algorithm
   Equation.EQUALITY(lhs = lhs, rhs = rhs, ty = lhsTy, scope = eqScope, source = eqSource) := inEq;
   stateVarCrefs := UnorderedMap.keyList(crToStart);
@@ -457,35 +483,75 @@ algorithm
       function subsPreviousCrefs(stateVarCrefs = stateVarCrefs), false);
     eq1 := Equation.EQUALITY(lhs, newRhs, lhsTy, eqScope, eqSource);
 
-    // If LHS is a state variable (one that has previous(x) applied to it)
-    hasStateVarOnLHS := false;
-    for svc in stateVarCrefs loop
-      hasStateVarOnLHS := ComponentRef.isEqual(svc, lhsCref);
-      if hasStateVarOnLHS then
-        break;
-      end if;
-    end for;
-    if hasStateVarOnLHS then
-      // Transform: x = e → x = if active then e else x_previous
-      eq1 := wrapInStateActivationConditional(eq1, stateCref, true);
-      // Add reset equation: x_previous = if active and (reset or activeResetStates[i]) then x_start else previous(x)
-      eq2 := createResetEquation(lhsCref, lhsTy, stateCref, sem, crToStart);
-      // Add fresh variable x_previous
-      var2 := makeVar(
-        ComponentRef.prefixCref(InstNode.NAME_NODE(ComponentRef.firstName(lhsCref) + "_previous"),
-          lhsTy, {}, ComponentRef.rest(lhsCref)),
-        lhsTy, Variability.DISCRETE);
-      accEqs := eq1 :: eq2 :: accEqs;
-      accVars := var2 :: accVars;
+    // Check if this is an outer-output equation:
+    // LHS is NOT state-prefixed but the equation's scope is the state component
+    isOuterOutput := not crefHasPrefix(stateCref, lhsCref) and
+                     stringEqual(InstNode.name(eqScope), ComponentRef.firstName(stateCref));
+
+    if isOuterOutput then
+      // Outer output: x = rhs from state1 → create state1.x per-state variable
+      // Generate: state1.x = if state1.active then rhs else previous(state1.x)
+      // Track in outerVarMap for merge equation generation
+      perStateVarCref := ComponentRef.prefixCref(
+        InstNode.NAME_NODE(ComponentRef.firstName(lhsCref)), lhsTy, {}, stateCref);
+      perStateVar := makeVarWithStart(perStateVarCref, lhsTy, Variability.DISCRETE,
+        getDefaultStart(lhsTy));
+      perStateVarExp := makeCrefExp(perStateVarCref, lhsTy);
+      // state1.x = if state1.active then rhs else previous(state1.x)
+      eq1 := Equation.EQUALITY(perStateVarExp, newRhs, lhsTy, eqScope, eqSource);
+      eq1 := wrapInStateActivationConditional(eq1, stateCref, false);
+      accEqs := eq1 :: accEqs;
+      accVars := perStateVar :: accVars;
+      // Record in outerVarMap: outerVar → (stateActiveCref, perStateVarCref)
+      stateActiveCref := qCref("active", Type.BOOLEAN(), {}, stateCref);
+      prevList := UnorderedMap.getOrDefault(lhsCref, outerVarMap, {});
+      UnorderedMap.add(lhsCref, (stateActiveCref, perStateVarCref) :: prevList, outerVarMap);
+
     else
-      // Not a state variable: just wrap with activation condition
-      accEqs := wrapInStateActivationConditional(eq1, stateCref, false) :: accEqs;
+      // Check if LHS is a state variable (one that has previous(x) applied to it)
+      hasStateVarOnLHS := false;
+      for svc in stateVarCrefs loop
+        hasStateVarOnLHS := ComponentRef.isEqual(svc, lhsCref);
+        if hasStateVarOnLHS then
+          break;
+        end if;
+      end for;
+      if hasStateVarOnLHS then
+        // Transform: x = e → x = if active then e else x_previous
+        eq1 := wrapInStateActivationConditional(eq1, stateCref, true);
+        // Add reset equation: x_previous = if active and (reset or activeResetStates[i]) then x_start else previous(x)
+        eq2 := createResetEquation(lhsCref, lhsTy, stateCref, sem, crToStart);
+        // Add fresh variable x_previous
+        accEqs := eq1 :: eq2 :: accEqs;
+        accVars := makeVar(
+          ComponentRef.prefixCref(InstNode.NAME_NODE(ComponentRef.firstName(lhsCref) + "_previous"),
+            lhsTy, {}, ComponentRef.rest(lhsCref)),
+          lhsTy, Variability.DISCRETE) :: accVars;
+      else
+        // Not a state variable: just wrap with activation condition
+        accEqs := wrapInStateActivationConditional(eq1, stateCref, false) :: accEqs;
+      end if;
     end if;
   else
     // Fallback: pass equation through unchanged
     accEqs := inEq :: accEqs;
   end try;
 end addStateActivationAndReset1;
+
+protected
+function getDefaultStart
+  "Get a default start value for a given type."
+  input Type ty;
+  output Expression result;
+algorithm
+  result := match ty
+    case Type.INTEGER() then Expression.INTEGER(0);
+    case Type.REAL() then Expression.REAL(0.0);
+    case Type.BOOLEAN() then Expression.BOOLEAN(false);
+    case Type.STRING() then Expression.STRING("");
+    else Expression.INTEGER(0);
+  end match;
+end getDefaultStart;
 
 // ============================================================
 // basicFlatSmSemantics
@@ -1398,17 +1464,30 @@ end isInitialStateForGroup;
 
 protected
 function isEquationOfState
-  "True if the LHS cref of the equation has stateCref as its outer prefix."
+  "True if the equation belongs to state component stateCref.
+   Checks either LHS cref prefix (for state1.x = ...) or the equation's scope
+   (for outer-output equations where the LHS is already the outer variable)."
   input Equation eq;
   input ComponentRef stateCref;
   output Boolean res = false;
 protected
   ComponentRef lhsCref;
+  InstNode eqScope;
+  String stateName;
 algorithm
+  stateName := ComponentRef.firstName(stateCref);
   () := match eq
-    case Equation.EQUALITY(lhs = Expression.CREF(cref = lhsCref))
+    case Equation.EQUALITY(lhs = Expression.CREF(cref = lhsCref), scope = eqScope)
       algorithm
-        res := crefHasPrefix(stateCref, lhsCref);
+        // Either LHS has the state prefix (state1.x = rhs)
+        // or the equation's instantiation scope is named after this state
+        // (outer output x in state1 flattens to x = rhs but scope = state1 node)
+        res := crefHasPrefix(stateCref, lhsCref) or
+               stringEqual(InstNode.name(eqScope), stateName);
+      then ();
+    case Equation.EQUALITY(scope = eqScope)
+      algorithm
+        res := stringEqual(InstNode.name(eqScope), stateName);
       then ();
     else ();
   end match;
@@ -1423,6 +1502,78 @@ function isVariableOfState
 algorithm
   res := crefHasPrefix(stateCref, var.name);
 end isVariableOfState;
+
+protected
+function isOuterStateEquation
+  "True if the equation is an outer-output equation from ANY state in stateCrefs.
+   These are equations whose scope matches a state component name but whose LHS is the outer variable."
+  input Equation eq;
+  input list<ComponentRef> stateCrefs;
+  output Boolean res = false;
+protected
+  InstNode eqScope;
+  String scopeName;
+algorithm
+  () := match eq
+    case Equation.EQUALITY(scope = eqScope)
+      algorithm
+        scopeName := InstNode.name(eqScope);
+        for stateCref in stateCrefs loop
+          if stringEqual(scopeName, ComponentRef.firstName(stateCref)) then
+            res := true;
+            return;
+          end if;
+        end for;
+      then ();
+    else ();
+  end match;
+end isOuterStateEquation;
+
+protected
+function generateMergeEquation
+  "Generate merge equation for an outer variable written by state components.
+   Result: x = if state1.active then state1.x else if state2.active then state2.x else previous(x)"
+  input ComponentRef outerVarCref;
+  input UnorderedMap<ComponentRef, list<tuple<ComponentRef, ComponentRef>>> outerVarMap;
+  input list<Variable> allVariables;
+  input output list<Equation> accEqs;
+  input output list<Variable> accVars;
+protected
+  list<tuple<ComponentRef, ComponentRef>> stateEntries;
+  Expression mergeRhs, outerVarExp;
+  Type ty;
+  ComponentRef activeRef, perStateVarRef;
+  DAE.ElementSource src;
+algorithm
+  stateEntries := UnorderedMap.getOrDefault(outerVarCref, outerVarMap, {});
+  if listEmpty(stateEntries) then
+    return;
+  end if;
+
+  // Determine type from the outer variable
+  ty := Type.INTEGER(); // default
+  for v in allVariables loop
+    if ComponentRef.isEqual(v.name, outerVarCref) then
+      ty := v.ty;
+      break;
+    end if;
+  end for;
+  outerVarExp := makeCrefExp(outerVarCref, ty);
+
+  // Build merge rhs: if state1.active then state1.x else if state2.active then state2.x else previous(x)
+  // stateEntries is in reverse order (last state processed first), so build from the end
+  mergeRhs := makePreviousCall(outerVarExp, ty);
+  for entry in stateEntries loop
+    (activeRef, perStateVarRef) := entry;
+    mergeRhs := makeIfExp(
+      makeCrefExp(activeRef, Type.BOOLEAN()),
+      makeCrefExp(perStateVarRef, ty),
+      mergeRhs, ty);
+  end for;
+
+  src := ElementSource.createElementSource(AbsynUtil.dummyInfo);
+  accEqs := Equation.EQUALITY(outerVarExp, mergeRhs, ty, InstNode.EMPTY_NODE(), src) :: accEqs;
+end generateMergeEquation;
 
 // ============================================================
 // ComponentRef utilities
