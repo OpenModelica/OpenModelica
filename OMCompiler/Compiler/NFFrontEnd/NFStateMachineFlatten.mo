@@ -1555,7 +1555,7 @@ function makePreviousCall
   output Expression result;
 algorithm
   result := Expression.CALL(Call.makeTypedCall(
-    NFBuiltinFuncs.PRE, {exp}, Variability.DISCRETE, Purity.IMPURE, ty));
+    NFBuiltinFuncs.PREVIOUS, {exp}, Variability.DISCRETE, Purity.IMPURE, ty));
 end makePreviousCall;
 
 function makeInitialCall
