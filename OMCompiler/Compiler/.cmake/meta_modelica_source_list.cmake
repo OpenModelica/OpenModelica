@@ -375,6 +375,7 @@ set(OMC_MM_BACKEND_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFSBGraphUtil.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFScalarize.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFSections.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFStateMachineFlatten.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFSimplifyExp.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFSimplifyModel.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFStatement.mo
