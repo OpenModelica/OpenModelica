@@ -49,6 +49,7 @@
 #include "Git/GitCommands.h"
 #include "Git/CommitChangesDialog.h"
 #include "Util/ResourceCache.h"
+#include "Search/FindUsageWidget.h"
 
 #include <QClipboard>
 #include <QDockWidget>
@@ -620,7 +621,7 @@ void LibraryTreeItem::moveChild(int from, int to)
 const QList<LibraryTreeItem*> &LibraryTreeItem::getInheritedClasses()
 {
   if (mpModelWidget && mpModelWidget->isDiagramViewLoaded()) {
-    QList<ModelInstance::Element*> elements = mpModelWidget->getModelInstance()->getElements();
+    QVector<ModelInstance::Element*> elements = mpModelWidget->getModelInstance()->getElements();
     // reuse the mInheritedClasses list
     mInheritedClasses.clear();
     foreach (auto pElement, elements) {
@@ -684,7 +685,7 @@ const QList<ElementInfo> &LibraryTreeItem::getComponentsList()
 {
   if (mpModelWidget) {
     if (mpModelWidget->isDiagramViewLoaded()) {
-      QList<ModelInstance::Element*> elements = mpModelWidget->getModelInstance()->getElements();
+      QVector<ModelInstance::Element*> elements = mpModelWidget->getModelInstance()->getElements();
       // reuse the mComponents list
       mComponents.clear();
       foreach (auto pElement, elements) {
@@ -1116,7 +1117,6 @@ QVariant LibraryTreeModel::data(const QModelIndex &index, int role) const
     return QVariant();
   }
 
-
   LibraryTreeItem *pLibraryTreeItem = static_cast<LibraryTreeItem*>(index.internalPointer());
   return pLibraryTreeItem->data(index.column(), role);
 }
@@ -1145,17 +1145,50 @@ Qt::ItemFlags LibraryTreeModel::flags(const QModelIndex &index) const
  */
 LibraryTreeItem* LibraryTreeModel::findLibraryTreeItem(const QString &name, LibraryTreeItem *pLibraryTreeItem, Qt::CaseSensitivity caseSensitivity) const
 {
+  QString path = name;
   if (!pLibraryTreeItem) {
     pLibraryTreeItem = mpRootLibraryTreeItem;
   } else if (pLibraryTreeItem->getNameStructure().compare(name, caseSensitivity) == 0) {
     return pLibraryTreeItem;
+  } else {
+    // strip the prefix of the path if it is same as the name structure of the current item
+    StringHandler::removeTypePrefix(path, pLibraryTreeItem->getNameStructure());
   }
-  for (int i = pLibraryTreeItem->childrenSize(); --i >= 0; ) {
-    if (LibraryTreeItem *item = findLibraryTreeItem(name, pLibraryTreeItem->childAt(i), caseSensitivity)) {
-      return item;
+
+  // if lookup is called for text files then do the linear search
+  if (QFile::exists(name)) {
+    QStack<LibraryTreeItem*> stack;
+    stack.push(pLibraryTreeItem);
+    while (!stack.isEmpty()) {
+      LibraryTreeItem *pCurrentLibraryTreeItem = stack.pop();
+      if (pCurrentLibraryTreeItem->getNameStructure().compare(name, caseSensitivity) == 0) {
+        return pCurrentLibraryTreeItem;
+      }
+      for (int i = pCurrentLibraryTreeItem->childrenSize(); --i >= 0;) {
+        stack.push(pCurrentLibraryTreeItem->childAt(i));
+      }
     }
+    return nullptr;
+  } else {  // do the incremental lookup.
+    if (path.isEmpty()) {
+      return nullptr;
+    }
+
+    QStringList parts = StringHandler::splitPath(path);
+    if (parts.isEmpty()) {
+      return nullptr;
+    }
+
+    for (const QString &part : parts) {
+      const QString item = pLibraryTreeItem->getNameStructure().isEmpty() ? part : pLibraryTreeItem->getNameStructure() + "." + part;
+      pLibraryTreeItem = findLibraryTreeItemOneLevel(item, pLibraryTreeItem, caseSensitivity);
+      if (!pLibraryTreeItem) {
+        return nullptr;  // Path broken
+      }
+    }
+
+    return pLibraryTreeItem;
   }
-  return 0;
 }
 
 /*!
@@ -2786,6 +2819,10 @@ void LibraryTreeView::createActions()
   mpSimulationSetupAction = new QAction(QIcon(":/Resources/icons/simulation-center.svg"), Helper::simulationSetup, this);
   mpSimulationSetupAction->setStatusTip(Helper::simulationSetupTip);
   connect(mpSimulationSetupAction, SIGNAL(triggered()), SLOT(simulationSetup()));
+  // find usage Action
+  mpFindUsageAction = new QAction(Helper::findUsage, this);
+  mpFindUsageAction->setStatusTip(Helper::findUsageTip);
+  connect(mpFindUsageAction, SIGNAL(triggered()), SLOT(findUsageOfClass()));
   // Duplicate action
   /* Ticket #3265
    * Changed the name from Copy to Duplicate.
@@ -3061,6 +3098,8 @@ void LibraryTreeView::showContextMenu(QPoint point)
           if (pLibraryTreeItem->getRestriction() == StringHandler::ModelicaClasses::Function) {
             menu.addAction(mpCallFunctionAction);
           }
+          menu.addSeparator();
+          menu.addAction(mpFindUsageAction);
           /* If item is OpenModelica or part of it then don't show the duplicate menu item for it. */
           if (!(StringHandler::getFirstWordBeforeDot(pLibraryTreeItem->getNameStructure()).compare("OpenModelica") == 0)) {
             menu.addSeparator();
@@ -3485,6 +3524,19 @@ void LibraryTreeView::runScript()
   LibraryTreeItem *pLibraryTreeItem = getSelectedLibraryTreeItem();
   if (pLibraryTreeItem) {
     MainWindow::instance()->runScript(pLibraryTreeItem);
+  }
+}
+
+/*!
+ * \brief LibraryTreeView::findUsageOfClass
+ * Calls FindUsageWidget to find the usage of the selected LibraryTreeItem.
+ */
+void LibraryTreeView::findUsageOfClass()
+{
+  LibraryTreeItem *pLibraryTreeItem = getSelectedLibraryTreeItem();
+  if (pLibraryTreeItem) {
+    FindUsageWidget::instance()->findUsageOfClass(pLibraryTreeItem->getNameStructure());
+    MainWindow::instance()->getFindUsageDockWidget()->show();
   }
 }
 

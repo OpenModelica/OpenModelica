@@ -1,3 +1,5 @@
+/.cache/
+/.claude/
 /.externalToolBuilders/*.launch
 /.metadata/
 /.project
@@ -15,6 +17,7 @@
 /install_cmake/
 /install/
 /issues/
+/.mailmap
 /Makefile
 /OMCompiler/SimulationRuntime/ModelicaExternalC/build/
 /OMCompiler/compile

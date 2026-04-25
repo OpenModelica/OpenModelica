@@ -1,27 +1,31 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
@@ -117,40 +121,56 @@ public
 
     function toStream
       input Branch branch;
+      input String header;
+      input Boolean potentialElse;
       input String indent;
       input output IOStream.IOStream s;
     algorithm
       s := match branch
         case BRANCH()
           algorithm
-            s := IOStream.append(s, Expression.toString(branch.condition));
-            s := IOStream.append(s, " then\n");
+            if potentialElse and Expression.isTrue(branch.condition) then
+              s := IOStream.append(s, "else\n");
+            else
+              s := IOStream.append(s, header);
+              s := IOStream.append(s, Expression.toString(branch.condition));
+              s := IOStream.append(s, " then\n");
+            end if;
+
             s := toStreamList(branch.body, indent + "  ", s);
           then
             s;
 
         case INVALID_BRANCH()
-          then toStream(branch.branch, indent, s);
+          then toStream(branch.branch, header, potentialElse, indent, s);
       end match;
     end toStream;
 
     function toFlatStream
       input Branch branch;
+      input String header;
       input BaseModelica.OutputFormat format;
+      input Boolean potentialElse;
       input String indent;
       input output IOStream.IOStream s;
     algorithm
       s := match branch
         case BRANCH()
           algorithm
-            s := IOStream.append(s, Expression.toFlatString(branch.condition, format));
-            s := IOStream.append(s, " then\n");
+            if potentialElse and Expression.isTrue(branch.condition) then
+              s := IOStream.append(s, "else\n");
+            else
+              s := IOStream.append(s, header);
+              s := IOStream.append(s, Expression.toFlatString(branch.condition, format));
+              s := IOStream.append(s, " then\n");
+            end if;
+
             s := toFlatStreamList(branch.body, format, indent + "  ", s);
           then
             s;
 
         case INVALID_BRANCH()
-          then toFlatStream(branch.branch, format, indent, s);
+          then toFlatStream(branch.branch, header, format, potentialElse, indent, s);
       end match;
     end toFlatStream;
 
@@ -162,7 +182,7 @@ public
       IOStream.IOStream s;
     algorithm
       s := IOStream.create(getInstanceName(), IOStream.IOStreamType.LIST());
-      s := toStream(branch, indent, s);
+      s := toStream(branch, "", false, indent, s);
       str := IOStream.string(s);
       IOStream.delete(s);
     end toString;
@@ -1278,6 +1298,9 @@ public
     input Equation eq;
     input String indent;
     input output IOStream.IOStream s;
+  protected
+    list<Branch> branches;
+    Branch branch;
   algorithm
     s := IOStream.append(s, indent);
 
@@ -1327,14 +1350,14 @@ public
 
       case IF()
         algorithm
-          s := IOStream.append(s, "if ");
-          s := Branch.toStream(listHead(eq.branches), indent, s);
+          branch :: branches := eq.branches;
+          s := Branch.toStream(listHead(eq.branches), "if ", false, indent, s);
 
-          for b in listRest(eq.branches) loop
+          while not listEmpty(branches) loop
+            branch :: branches := branches;
             s := IOStream.append(s, indent);
-            s := IOStream.append(s, "elseif ");
-            s := Branch.toStream(b, indent, s);
-          end for;
+            s := Branch.toStream(branch, "elseif ", listEmpty(branches), indent, s);
+          end while;
 
           s := IOStream.append(s, indent);
           s := IOStream.append(s, "end if");
@@ -1343,13 +1366,11 @@ public
 
       case WHEN()
         algorithm
-          s := IOStream.append(s, "when ");
-          s := Branch.toStream(listHead(eq.branches), indent, s);
+          s := Branch.toStream(listHead(eq.branches), "when ", false, indent, s);
 
           for b in listRest(eq.branches) loop
             s := IOStream.append(s, indent);
-            s := IOStream.append(s, "elsewhen ");
-            s := Branch.toStream(b, indent, s);
+            s := Branch.toStream(b, "elsewhen ", false, indent, s);
           end for;
 
           s := IOStream.append(s, indent);
@@ -1425,6 +1446,9 @@ public
     input BaseModelica.OutputFormat format;
     input String indent;
     input output IOStream.IOStream s;
+  protected
+    list<Branch> branches;
+    Branch branch;
   algorithm
     s := IOStream.append(s, indent);
 
@@ -1474,14 +1498,14 @@ public
 
       case IF()
         algorithm
-          s := IOStream.append(s, "if ");
-          s := Branch.toFlatStream(listHead(eq.branches), format, indent, s);
+          branch :: branches := eq.branches;
+          s := Branch.toFlatStream(branch, "if ", format, false, indent, s);
 
-          for b in listRest(eq.branches) loop
+          while not listEmpty(branches) loop
+            branch :: branches := branches;
             s := IOStream.append(s, indent);
-            s := IOStream.append(s, "elseif ");
-            s := Branch.toFlatStream(b, format, indent, s);
-          end for;
+            s := Branch.toFlatStream(branch, "elseif ", format, listEmpty(branches), indent, s);
+          end while;
 
           s := IOStream.append(s, indent);
           s := IOStream.append(s, "end if");
@@ -1490,13 +1514,11 @@ public
 
       case WHEN()
         algorithm
-          s := IOStream.append(s, "when ");
-          s := Branch.toFlatStream(listHead(eq.branches), format, indent, s);
+          s := Branch.toFlatStream(listHead(eq.branches), "when ", format, false, indent, s);
 
           for b in listRest(eq.branches) loop
             s := IOStream.append(s, indent);
-            s := IOStream.append(s, "elsewhen ");
-            s := Branch.toFlatStream(b, format, indent, s);
+            s := Branch.toFlatStream(b, "elsewhen ", format, false, indent, s);
           end for;
 
           s := IOStream.append(s, indent);

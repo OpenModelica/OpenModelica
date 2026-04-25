@@ -2,7 +2,6 @@
 // keywords: redeclare component constraining class
 // status: correct
 // teardown_command: rm -rf ThermoPower.Test.DistributedParameterComponents.TestWaterFlow1DFV_B_* ThermoPower.Test.DistributedParameterComponents.TestWaterFlow1DFV_B ThermoPower.Test.DistributedParameterComponents.TestWaterFlow1DFV_B.exe ThermoPower.Test.DistributedParameterComponents.TestWaterFlow1DFV_B.cpp ThermoPower.Test.DistributedParameterComponents.TestWaterFlow1DFV_B.makefile ThermoPower.Test.DistributedParameterComponents.TestWaterFlow1DFV_B.libs ThermoPower.Test.DistributedParameterComponents.TestWaterFlow1DFV_B.log output.log *.o *.c *.h
-// cflags: -d=-newInst
 
 loadModel(ThermoPower); getErrorString();
 checkModel(ThermoPower.Test.DistributedParameterComponents.TestWaterFlow1DFV_B); getErrorString();
@@ -13,11 +12,11 @@ simulate(ThermoPower.Test.DistributedParameterComponents.TestWaterFlow1DFV_B); g
 // ""
 // "Check of ThermoPower.Test.DistributedParameterComponents.TestWaterFlow1DFV_B completed successfully.
 // Class ThermoPower.Test.DistributedParameterComponents.TestWaterFlow1DFV_B has 420 equation(s) and 420 variable(s).
-// 170 of these are trivial equation(s)."
+// 180 of these are trivial equation(s)."
 // ""
 // record SimulationResult
 //     resultFile = "ThermoPower.Test.DistributedParameterComponents.TestWaterFlow1DFV_B_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 40.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'ThermoPower.Test.DistributedParameterComponents.TestWaterFlow1DFV_B', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 40.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'ThermoPower.Test.DistributedParameterComponents.TestWaterFlow1DFV_B', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "

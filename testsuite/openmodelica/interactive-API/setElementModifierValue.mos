@@ -53,6 +53,20 @@ setElementModifierValue(M, c, $Code((x(start, each fixed = true))));
 getErrorString();
 list(M);
 
+loadString("
+  model M2
+    Real x;
+    Real y = 10;
+    Real z, w = 20;
+  end M2;
+");
+
+setElementModifierValue(M2, x, $Code(= 1)); getErrorString();
+setElementModifierValue(M2, y, $Code(= 2)); getErrorString();
+setElementModifierValue(M2, z, $Code(= 3)); getErrorString();
+setElementModifierValue(M2, w, $Code(= 4)); getErrorString();
+list(M2);
+
 // Result:
 // true
 // true
@@ -115,4 +129,18 @@ list(M);
 //   ClasswithReplaceable classwithReplaceable(otherClass(redeclare ClassB testClass = Real \"C\"), B = 2);
 //   Class c(x(each fixed = true));
 // end M;"
+// true
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// "model M2
+//   Real x = 1;
+//   Real y = 2;
+//   Real z = 3, w = 4;
+// end M2;"
 // endResult

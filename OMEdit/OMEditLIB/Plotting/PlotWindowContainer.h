@@ -72,7 +72,7 @@ private:
   void addRenameTabToSubWindowSystemMenu(QMdiSubWindow *pMdiSubWindow);
   DiagramWindow *mpDiagramWindow;
 public slots:
-  void addPlotWindow();
+  OMPlot::PlotWindow* addPlotWindow();
   void addParametricPlotWindow();
   void addArrayPlotWindow();
   void addArrayParametricPlotWindow();

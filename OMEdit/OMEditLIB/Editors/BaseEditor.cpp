@@ -665,11 +665,21 @@ PlainTextEdit::PlainTextEdit(BaseEditor *pBaseEditor)
 {
   setObjectName("BaseEditor");
   setMouseTracking(true);
-  QTextDocument *pTextDocument = document();
-  pTextDocument->setDocumentMargin(2);
-  BaseEditorDocumentLayout *pModelicaTextDocumentLayout = new BaseEditorDocumentLayout(pTextDocument);
-  pTextDocument->setDocumentLayout(pModelicaTextDocumentLayout);
-  setDocument(pTextDocument);
+  // set the font
+  QFont font;
+  font.setFamily(OptionsDialog::instance()->getTextEditorPage()->getFontFamilyComboBox()->currentFont().family());
+  font.setPointSizeF(OptionsDialog::instance()->getTextEditorPage()->getFontSizeSpinBox()->value());
+  /*! Set the font on both editor and its underlying document
+   *  See issue #15005
+   *  If the font is set only on the document and not on the editor, a mismatch can occur between the editor and document fonts after a DPI change.
+   *  When the DPI changes, Qt re-evaluates the fonts and, due to this mismatch, resets the document font to match the editor font.
+   *  Setting the font on both the editor and the document ensures they remain synchronized, even after DPI changes.
+   */
+  setFont(font);
+  document()->setDefaultFont(font);
+  document()->setDocumentMargin(2);
+  BaseEditorDocumentLayout *pModelicaTextDocumentLayout = new BaseEditorDocumentLayout(document());
+  document()->setDocumentLayout(pModelicaTextDocumentLayout);
   // line numbers widget
   mpLineNumberArea = new LineNumberArea(mpBaseEditor, this);
   mCanHaveBreakpoints = false;

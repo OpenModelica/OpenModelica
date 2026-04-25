@@ -20,6 +20,6 @@
 /OMNotebook/OMNotebookGUI/object_script.*
 /OMNotebook/OMNotebookGUI/omc_config.h
 /OMNotebook/OMNotebookGUI/OMNotebook.config
-/OMNotebook/OMNotebookGUI/OMNotebookGUI.pro.*
+OMNotebookGUI.pro.*
 qm.stamp
 qmake.sh

@@ -1,27 +1,31 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
@@ -71,34 +75,39 @@ algorithm
           else forceInline;
         end match;
       then
-        if shouldInline then inlineCall(call, forceInline) else callExp;
+        if shouldInline then inlineCall(callExp, forceInline) else callExp;
 
     else callExp;
   end match;
 end inlineCallExp;
 
 function inlineCall
-  input Call call;
+  input Expression callExp;
   input Boolean forceInline = false;
   output Expression exp;
+protected
+  Call call;
+  Function fn;
+  Expression arg;
+  list<Expression> args;
+  list<InstNode> inputs, outputs, locals;
+  list<Statement> body;
+  Statement stmt;
+  Binding binding;
 algorithm
-  exp := match call
-    local
-      Function fn;
-      Expression arg;
-      list<Expression> args;
-      list<InstNode> inputs, outputs, locals;
-      list<Statement> body;
-      Statement stmt;
-      Binding binding;
+  Expression.CALL(call = call) := callExp;
 
+  exp := match call
     // Record constructor
     case Call.TYPED_CALL(fn = fn, arguments = args)
-        guard InstNode.name(InstNode.parentScope(fn.node)) == "'constructor'"
+        guard not InstNode.isEmpty(fn.node) and InstNode.isNamed(InstNode.parentScope(fn.node), "'constructor'")
       algorithm
         body := Function.getBody(fn);
-        true := listEmpty(body);
-        true := listEmpty(fn.locals);
+
+        if not (listEmpty(body) and listEmpty(fn.locals)) then
+          exp := callExp;
+          return;
+        end if;
 
         binding := Component.getBinding(InstNode.component(listHead(fn.outputs)));
 
@@ -123,22 +132,23 @@ algorithm
       guard Function.hasSingleOrEmptyBody(fn)
       algorithm
         body := Function.getBody(fn);
+        body := removeDeadCode(body);
 
         // This function can so far only handle functions with at most one
         // statement and output and no local variables.
         if listLength(body) > 1 or listLength(outputs) <> 1 or not listEmpty(locals) then
-          exp := Expression.CALL(call);
+          exp := callExp;
           return;
         end if;
 
         if listEmpty(body) then
           stmt := makeOutputStatement(listHead(outputs));
         else
-          stmt := listHead(body);
+          stmt := convertToAssignment(listHead(body));
         end if;
 
         if not Statement.isAssignment(stmt) then
-          exp := Expression.CALL(call);
+          exp := callExp;
           return;
         end if;
 
@@ -158,14 +168,14 @@ algorithm
           end for;
 
           exp := getOutputExp(stmt, listHead(outputs), call);
-          exp := inlineCallExp(exp, forceInline);
+          exp := Expression.map(exp, function inlineCallExp(forceInline = forceInline));
         else
-          exp := Expression.CALL(call);
+          exp := callExp;
         end try;
       then
         exp;
 
-    else Expression.CALL(call);
+    else callExp;
   end match;
 end inlineCall;
 
@@ -232,6 +242,96 @@ algorithm
     else dim;
   end match;
 end replaceDimExp;
+
+function removeDeadCode
+  input output list<Statement> body;
+algorithm
+  // Everything after a 'return' can be removed, but for inlining we only care
+  // if we can remove everything after the first statement.
+  if listLength(body) > 1 and Statement.isReturn(listGet(body, 2)) then
+    body := {listHead(body)};
+  end if;
+end removeDeadCode;
+
+function convertToAssignment
+  "Converts a statement into an assignment statement."
+  input Statement stmt;
+  output Statement outStmt;
+algorithm
+  outStmt := match stmt
+    case Statement.IF() then convertIfToAssignment(stmt);
+    else stmt;
+  end match;
+end convertToAssignment;
+
+function convertIfToAssignment
+  "Converts an if-statement where all branches assign the same variable into an
+   assignment with an if-expression. Ex:
+     if x > 1 then
+       y := 1;
+     else
+       y := 2;
+     end if;
+     =>
+     y := if x > 1 then 1 else 2;
+  "
+  input output Statement stmt;
+protected
+  list<tuple<Expression, list<Statement>>> branches;
+  Expression cond, if_exp, output_exp, lhs, rhs;
+  Type ty;
+  list<Statement> body;
+  Statement s;
+  DAE.ElementSource source;
+algorithm
+  Statement.IF(branches = branches, source = source) := stmt;
+  (cond, body) :: branches := listReverse(branches);
+
+  // The if-statement must have an else-branch.
+  if not listEmpty(branches) and not Expression.isTrue(cond) then
+    return;
+  end if;
+
+  // The body of the else branch must have exactly one statement.
+  if listLength(body) <> 1 then
+    return;
+  end if;
+
+  // The statement must be, or be convertible to, an assignment.
+  s := convertToAssignment(listHead(body));
+
+  if not Statement.isAssignment(s) then
+    return;
+  end if;
+
+  Statement.ASSIGNMENT(lhs = output_exp, rhs = if_exp) := s;
+
+  for b in branches loop
+    (cond, body) :: branches := branches;
+
+    // Each branch must be a single assignment.
+    if listLength(body) <> 1 then
+      return;
+    end if;
+
+    s := convertToAssignment(listHead(body));
+
+    if not Statement.isAssignment(s) then
+      return;
+    end if;
+
+    Statement.ASSIGNMENT(lhs = lhs, rhs = rhs, ty = ty) := s;
+
+    // Check that all branches have the same lhs.
+    if not Expression.isEqual(lhs, output_exp) then
+      return;
+    end if;
+
+    if_exp := Expression.IF(ty, cond, rhs, if_exp);
+  end for;
+
+  stmt := Statement.ASSIGNMENT(output_exp, if_exp, ty, source);
+end convertIfToAssignment;
 
 function makeOutputStatement
   input InstNode outputNode;

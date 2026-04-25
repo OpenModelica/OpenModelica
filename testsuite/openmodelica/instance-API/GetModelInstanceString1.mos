@@ -1,0 +1,131 @@
+// name: GetModelInstanceString1
+// keywords:
+// status: correct
+//
+//
+
+loadString("
+  model M
+    Real P = 15;
+  equation
+  annotation(
+    Icon(graphics = {Text(origin = {46, -66}, textColor = {238, 46, 47}, extent = {{-98, 88}, {0, 44}}, textString = DynamicSelect(\"P\", String(P, format=\"9.1f\")))}));
+  end M;
+");
+
+getModelInstance(M, prettyPrint = true);
+
+// Result:
+// true
+// "{
+//   \"name\": \"M\",
+//   \"restriction\": \"model\",
+//   \"annotation\": {
+//     \"Icon\": {
+//       \"graphics\": [
+//         {
+//           \"$kind\": \"record\",
+//           \"name\": \"Text\",
+//           \"elements\": [
+//             true,
+//             [
+//               46,
+//               -66
+//             ],
+//             0,
+//             [
+//               0,
+//               0,
+//               0
+//             ],
+//             [
+//               0,
+//               0,
+//               0
+//             ],
+//             {
+//               \"$kind\": \"enum\",
+//               \"name\": \"LinePattern.Solid\",
+//               \"index\": 2
+//             },
+//             {
+//               \"$kind\": \"enum\",
+//               \"name\": \"FillPattern.None\",
+//               \"index\": 1
+//             },
+//             0.25,
+//             [
+//               [
+//                 -98,
+//                 88
+//               ],
+//               [
+//                 0,
+//                 44
+//               ]
+//             ],
+//             {
+//               \"$kind\": \"call\",
+//               \"name\": \"DynamicSelect\",
+//               \"arguments\": [
+//                 \"P\",
+//                 {
+//                   \"$kind\": \"call\",
+//                   \"name\": \"String\",
+//                   \"arguments\": [
+//                     {
+//                       \"$kind\": \"cref\",
+//                       \"parts\": [
+//                         {
+//                           \"name\": \"P\"
+//                         }
+//                       ]
+//                     },
+//                     {
+//                       \"$kind\": \"named_arg\",
+//                       \"format\": \"9.1f\"
+//                     }
+//                   ]
+//                 }
+//               ]
+//             },
+//             0,
+//             [
+//               238,
+//               46,
+//               47
+//             ],
+//             \"\",
+//             [
+//
+//             ],
+//             {
+//               \"$kind\": \"enum\",
+//               \"name\": \"TextAlignment.Center\",
+//               \"index\": 2
+//             }
+//           ]
+//         }
+//       ]
+//     }
+//   },
+//   \"elements\": [
+//     {
+//       \"$kind\": \"component\",
+//       \"name\": \"P\",
+//       \"type\": \"Real\",
+//       \"modifiers\": \"15\",
+//       \"value\": {
+//         \"binding\": 15
+//       }
+//     }
+//   ],
+//   \"source\": {
+//     \"filename\": \"<interactive>\",
+//     \"lineStart\": 2,
+//     \"columnStart\": 3,
+//     \"lineEnd\": 7,
+//     \"columnEnd\": 8
+//   }
+// }"
+// endResult

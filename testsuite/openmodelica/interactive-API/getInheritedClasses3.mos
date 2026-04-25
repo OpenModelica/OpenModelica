@@ -1,0 +1,35 @@
+// name: getInheritedClasses3
+// keywords:
+// status: correct
+// cflags: -d=newInst
+//
+
+loadString("
+  model A end A;
+  model B end B;
+
+  package P1
+    replaceable model M
+      extends A;
+    end M;
+  end P1;
+
+  package P2
+    extends P1;
+
+    redeclare model extends M
+      extends B;
+    end M;
+  end P2;
+");
+getErrorString();
+
+getInheritedClasses(P2.M);
+getErrorString();
+
+// Result:
+// true
+// ""
+// {B}
+// ""
+// endResult

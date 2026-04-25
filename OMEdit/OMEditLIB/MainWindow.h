@@ -131,6 +131,7 @@ public:
   PlotWindowContainer* getPlotWindowContainer() {return mpPlotWindowContainer;}
   VariablesWidget* getVariablesWidget() {return mpVariablesWidget;}
   QDockWidget* getVariablesDockWidget() {return mpVariablesDockWidget;}
+  QDockWidget* getFindUsageDockWidget() {return mpFindUsageDockWidget;}
   SearchWidget* getSearchWidget() {return mpSearchWidget;}
   SimulationDialog* getSimulationDialog() {return mpSimulationDialog;}
   OMSSimulationDialog* getOMSSimulationDialog() {return mpOMSSimulationDialog;}
@@ -194,8 +195,6 @@ public:
   QAction* getImportNgspiceNetlistAction() {return mpImportNgspiceNetlistAction;}
   QAction* getConnectModeAction() {return mpConnectModeAction;}
   QAction* getTransitionModeAction() {return mpTransitionModeAction;}
-  QAction* getReSimulateModelAction() {return mpReSimulateModelAction;}
-  QAction* getReSimulateSetupAction() {return mpReSimulateSetupAction;}
   QAction* getAddSystemAction() {return mpAddSystemAction;}
   QAction* getAddOrEditIconAction() {return mpAddOrEditIconAction;}
   QAction* getDeleteIconAction() {return mpDeleteIconAction;}
@@ -225,6 +224,7 @@ public:
   void openDroppedFile(const QMimeData *pMimeData);
   void openResultFile(const QString &fileName);
   void simulate(LibraryTreeItem *pLibraryTreeItem);
+  void simulateBuildOnly(LibraryTreeItem *pLibraryTreeItem);
   void simulateWithTransformationalDebugger(LibraryTreeItem *pLibraryTreeItem);
   void simulateWithAlgorithmicDebugger(LibraryTreeItem *pLibraryTreeItem);
 #if !defined(WITHOUT_OSG)
@@ -260,6 +260,7 @@ public:
 
   QList<QString> mFMUDirectoriesList;
   QList<QString> mMOLDirectoriesList;
+  enum class ViewSelection { SelectedInGUI, Class, Icon };
 private:
   bool mDebug;
   bool mNewApiProfiling = false;
@@ -277,6 +278,7 @@ private:
   QDockWidget *mpLibraryDockWidget;
   ElementWidget *mpElementWidget;
   QDockWidget *mpElementDockWidget;
+  QDockWidget *mpFindUsageDockWidget;
   GDBAdapter *mpGDBAdapter;
   StackFramesWidget *mpStackFramesWidget;
   QDockWidget *mpStackFramesDockWidget;
@@ -468,6 +470,7 @@ private:
   QToolButton *mpDebugConfigurationToolButton;
   QToolBar *mpOMSimulatorToolbar;
   QHash<QString, TransformationsWidget*> mTransformationsWidgetHash;
+  QMdiSubWindow *mpLastModelingSubWindow = nullptr;
 signals:
   void resetMessagesTabWidgetNames();
 public slots:
@@ -535,7 +538,9 @@ public slots:
   void updateLibraryIndex(bool forceUpdate);
   void importModelfromOMNotebook();
   void importNgspiceNetlist();
-  void exportModelAsImage(bool copyToClipboard = false);
+  bool checkModelActiveExportModelAsImage();
+  void exportModelAsImage();
+  QImage exportModelAsImage(QString fileName, bool drawExtents = false, ViewSelection diagramSelection = ViewSelection::SelectedInGUI, ModelWidget *pModelWidget = nullptr, QSize size = QSize());
   void exportToClipboard();
   void openTemporaryDirectory();
   void openWorkingDirectory();
@@ -564,7 +569,6 @@ public slots:
   void runDebugConfiguration();
   void updateDebuggerToolBarMenu();
   void toggleAutoSave();
-  void enableReSimulationToolbar(bool visible);
 private slots:
   void perspectiveTabChanged(int tabIndex);
   void documentationDockWidgetVisibilityChanged(bool visible);
@@ -584,6 +588,8 @@ private slots:
   void commitFiles();
   void revertCommit();
   void cleanWorkingDirectory();
+  void directReSimulate();
+  void showReSimulateSetup();
 private:
   void createActions();
   void createToolbars();
@@ -597,6 +603,7 @@ private:
   void tileSubWindows(QMdiArea *pMdiArea, bool horizontally);
   void toolBarVisibilityChanged(const QString &toolbar, bool visible);
   MessageTab* createMessageTab(const QString &name, bool fixedTab);
+  void reSimulate(bool showSetup);
 protected:
   virtual void dragEnterEvent(QDragEnterEvent *event) override;
   virtual void dragMoveEvent(QDragMoveEvent *event) override;

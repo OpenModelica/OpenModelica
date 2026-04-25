@@ -1,30 +1,27 @@
 /*
- * This file is part of OpenModelica.
+ * This file belongs to the OpenModelica Run-Time System
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
- * c/o Linköpings universitet, Department of Computer and Information Science,
- * SE-58183 Linköping, Sweden.
- *
- * All rights reserved.
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC), c/o Linköpings
+ * universitet, Department of Computer and Information Science, SE-58183 Linköping, Sweden. All rights
+ * reserved.
  *
  * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THE BSD NEW LICENSE OR THE
- * GPL VERSION 3 LICENSE OR THE OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * AGPL VERSION 3 LICENSE OR THE OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8. ANY
+ * USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
+ * ACCEPTANCE OF THE BSD NEW LICENSE OR THE OSMC PUBLIC LICENSE OR THE AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
- * Public License (OSMC-PL) are obtained from OSMC, either from the above
- * address, from the URLs: http://www.openmodelica.org or
- * http://www.ida.liu.se/projects/OpenModelica, and in the OpenModelica
- * distribution. GNU version 3 is obtained from:
- * http://www.gnu.org/copyleft/gpl.html. The New BSD License is obtained from:
- * http://www.opensource.org/licenses/BSD-3-Clause.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium) Public License
+ * (OSMC-PL) are obtained from OSMC, either from the above address, from the URLs:
+ * http://www.openmodelica.org or https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica, and in the OpenModelica distribution. GNU
+ * AGPL version 3 is obtained from: https://www.gnu.org/licenses/licenses.html#GPL. The BSD NEW
+ * License is obtained from: http://www.opensource.org/licenses/BSD-3-Clause.
  *
- * This program is distributed WITHOUT ANY WARRANTY; without even the implied
- * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, EXCEPT AS
- * EXPRESSLY SET FORTH IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE
- * CONDITIONS OF OSMC-PL.
+ * This program is distributed WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY
+ * SET FORTH IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF
+ * OSMC-PL.
  *
  */
 
@@ -52,7 +49,7 @@ void saveZeroCrossingsAfterEvent(DATA *data, threadData_t *threadData);
  *
  *  \param [ref] [data]
  *  \param [ref] [solverInfo]
- *  \return indicates if a time event is occuered or not.
+ *  \return indicates if a time event is occurred or not.
  *
  *  Function check if a sample expression should be activated
  *  before next step and sets then the next step size to the
@@ -159,12 +156,15 @@ void handleEvents(DATA* data, threadData_t *threadData, LIST* eventLst, double *
     storePreValues(data);
 
     /* activate time event */
-    for(i=0; i<data->modelData->nSamples; ++i)
+    for(i=0; i<data->modelData->nSamples; ++i) {
       if(data->simulationInfo->nextSampleTimes[i] <= time + SAMPLE_EPS)
       {
         data->simulationInfo->samples[i] = 1;
         infoStreamPrint(OMC_LOG_EVENTS, 0, "[%ld] sample(%g, %g)", data->modelData->samplesInfo[i].index, data->modelData->samplesInfo[i].start, data->modelData->samplesInfo[i].interval);
       }
+    }
+
+    solverInfo->sampleEvents++;
   }
   data->simulationInfo->chatteringInfo.lastStepsNumStateEvents-=data->simulationInfo->chatteringInfo.lastSteps[data->simulationInfo->chatteringInfo.currentIndex];
   /* state event */
@@ -220,28 +220,16 @@ void handleEvents(DATA* data, threadData_t *threadData, LIST* eventLst, double *
   saveZeroCrossingsAfterEvent(data, threadData);
   /*sim_result_emit(data);*/
 
-  /* time event */
+  /* Compute time of next time event, disable sampleActivated */
   if(data->simulationInfo->sampleActivated)
   {
-    /* deactivate time events */
-    for(i=0; i<data->modelData->nSamples; ++i)
-    {
-      if(data->simulationInfo->samples[i])
-      {
-        data->simulationInfo->samples[i] = 0;
-        data->simulationInfo->nextSampleTimes[i] += data->modelData->samplesInfo[i].interval;
-      }
-    }
-
     for(i=0; i<data->modelData->nSamples; ++i) {
       if((i == 0) || (data->simulationInfo->nextSampleTimes[i] < data->simulationInfo->nextSampleEvent)) {
+        // data->simulationInfo->nextSampleTimes[i] update in updateDiscreteSystem
         data->simulationInfo->nextSampleEvent = data->simulationInfo->nextSampleTimes[i];
       }
     }
-
     data->simulationInfo->sampleActivated = 0;
-
-    solverInfo->sampleEvents++;
   }
 }
 

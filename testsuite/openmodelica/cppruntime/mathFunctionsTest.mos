@@ -2,7 +2,6 @@
 // keywords: built-in math functions
 // status: correct
 // teardown_command: rm -f *MathFunctions.Test*
-// cflags: -d=-newInst
 
 setCommandLineOptions("+simCodeTarget=Cpp");
 
@@ -26,7 +25,7 @@ package MathFunctions
     output Real exp = Modelica.Math.exp(x);
     output Real log = Modelica.Math.log(exp);
     output Real log10 = Modelica.Math.log10(10^x);
-    output Real sqrt = Modelica.Math.sqrt(4*x);
+    output Real sqrt = .sqrt(4*x);
   end g;
   model Test
     input Real u = 0; // avoid pre-evaluation

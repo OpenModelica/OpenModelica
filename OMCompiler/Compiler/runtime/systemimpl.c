@@ -1,28 +1,33 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2010, Linköpings University,
- * Department of Computer and Information Science,
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
+ * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THIS OSMC PUBLIC
- * LICENSE (OSMC-PL). ANY USE, REPRODUCTION OR DISTRIBUTION OF
- * THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THE OSMC
- * PUBLIC LICENSE.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from Linköpings University, either from the above address,
- * from the URL: http://www.ida.liu.se/projects/OpenModelica
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
  * and in the OpenModelica distribution.
  *
- * This program is distributed  WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
+ *
+ * This program is distributed WITHOUT ANY WARRANTY; without
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
- * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS
- * OF OSMC-PL.
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
  * See the full OSMC Public License conditions for more details.
  *
@@ -1037,7 +1042,7 @@ extern int SystemImpl__copyFile(const char *str_1, const char *str_2)
   return rv;
 }
 
-static char * SystemImpl__NextDir(const char * path)
+static char * SystemImpl__NextDir(char * path)
 {
   char * res = NULL;
 
@@ -1133,7 +1138,7 @@ static int SystemImpl__removeDirectoryItem(const char *path)
 extern int SystemImpl__removeDirectory(const char *path)
 {
   int retval = -1;
-  char * wild = strchr(path, '*');
+  const char * wild = strchr(path, '*');
 
   if (wild == NULL)
   {
@@ -1145,7 +1150,7 @@ extern int SystemImpl__removeDirectory(const char *path)
     /* replace first wildcard item */
     char * basepath;
     char * ctmp = NULL;
-    const char * str = path;
+    char * str = omc_alloc_interface.malloc_strdup(path);
     DIR * d;
     char * pattern;
     char * pat_pre = NULL;
@@ -1174,7 +1179,7 @@ extern int SystemImpl__removeDirectory(const char *path)
         else
         {
           /* basepath is finally found */
-          pattern = omc_alloc_interface.malloc_strdup(str);
+          pattern = str;
           sub = res;
           len_sub = strlen(sub);
           break;
@@ -2929,7 +2934,7 @@ int SystemImpl__fileContentsEqual(const char *file1, const char *file2)
 {
   char buf1[OMC_MAX_FREAD_BUF_SIZE+1],buf2[OMC_MAX_FREAD_BUF_SIZE+1];
   FILE *f1,*f2;
-  int i1,i2,totalread=0,error=0;
+  int i1,i2,error=0;
   omc_stat_t stbuf1;
   omc_stat_t stbuf2;
 
@@ -2951,7 +2956,6 @@ int SystemImpl__fileContentsEqual(const char *file1, const char *file2)
     if (i1 != i2 || strncmp(buf1,buf2,i1)) {
       error = 1;
     }
-    totalread += i1;
   } while(i1 != 0 && error == 0);
   fclose(f1);
   fclose(f2);

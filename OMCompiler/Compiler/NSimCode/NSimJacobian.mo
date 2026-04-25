@@ -1,33 +1,38 @@
 /*
-* This file is part of OpenModelica.
-*
-* Copyright (c) 1998-2020, Open Source Modelica Consortium (OSMC),
-* c/o Linköpings universitet, Department of Computer and Information Science,
-* SE-58183 Linköping, Sweden.
-*
-* All rights reserved.
-*
-* THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
-* THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
-* ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
-* RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
-* ACCORDING TO RECIPIENTS CHOICE.
-*
-* The OpenModelica software and the Open Source Modelica
-* Consortium (OSMC) Public License (OSMC-PL) are obtained
-* from OSMC, either from the above address,
-* from the URLs: http://www.ida.liu.se/projects/OpenModelica or
-* http://www.openmodelica.org, and in the OpenModelica distribution.
-* GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
-*
-* This program is distributed WITHOUT ANY WARRANTY; without
-* even the implied warranty of  MERCHANTABILITY or FITNESS
-* FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
-* IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
-*
-* See the full OSMC Public License conditions for more details.
-*
-*/
+ * This file is part of OpenModelica.
+ *
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
+ * c/o Linköpings universitet, Department of Computer and Information Science,
+ * SE-58183 Linköping, Sweden.
+ *
+ * All rights reserved.
+ *
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
+ *
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
+ *
+ * This program is distributed WITHOUT ANY WARRANTY; without
+ * even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
+ *
+ * See the full OSMC Public License conditions for more details.
+ *
+ */
+
 encapsulated package NSimJacobian
 "file:        NSimJacobian.mo
  package:     NSimJacobian
@@ -100,15 +105,19 @@ public
             str := StringUtil.headline_2("[EMPTY] SimCode Jacobian " + simJac.name + "(idx = " + intString(simJac.jacobianIndex) + ", partition = " + intString(simJac.partitionIndex) + ")") + "\n";
           else
             str := StringUtil.headline_2("SimCode Jacobian " + simJac.name + "(idx = " + intString(simJac.jacobianIndex) + ", partition = " + intString(simJac.jacobianIndex) + ")") + "\n";
-            str := str + StringUtil.headline_4("ColumnVars (size = " + intString(simJac.numberOfResultVars) + ")");
-            for var in simJac.columnVars loop
-              str := str + SimVar.toString(var, "  ") + "\n";
-            end for;
-            str := str + "\n" + StringUtil.headline_4("SeedVars (size = " + intString(listLength(simJac.seedVars)) + ")");
+            str := str + StringUtil.headline_4("SeedVars (size = " + intString(listLength(simJac.seedVars)) + ")");
             for var in simJac.seedVars loop
               str := str + SimVar.toString(var, "  ") + "\n";
             end for;
-            str := str + "\n" + StringUtil.headline_3("Column Equations (size = " + intString(simJac.numberOfResultVars) + ")");
+            str := str + "\n" + StringUtil.headline_4("TmpVars (size = " + intString(listLength(simJac.columnVars)) + ")");
+            for var in simJac.columnVars loop
+              str := str + SimVar.toString(var, "  ") + "\n";
+            end for;
+            // TODO: print list of ResultVars
+            str := str + "\n" + StringUtil.headline_4("ResultVars (size = " + intString(simJac.numberOfResultVars) + ")");
+
+            // TODO: count equations properly, e.g. linear systems are falsely counted as a single equation
+            str := str + "\n" + StringUtil.headline_3("Column Equations (size = " + intString(listLength(simJac.columnEqns)) + ")");
             for eq in simJac.columnEqns loop
               str := str + SimStrongComponent.Block.toString(eq, "  ");
             end for;
@@ -333,7 +342,7 @@ public
               numberOfResultVars  = listLength(resVars),
               columnEqns          = columnEqns,
               constantEqns        = {},
-              columnVars          = resVars,
+              columnVars          = tmpVars,
               seedVars            = seedVars,
               sparsity            = sparsity,
               sparsityT           = sparsityT,

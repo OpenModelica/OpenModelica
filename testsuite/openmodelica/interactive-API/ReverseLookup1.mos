@@ -17,7 +17,9 @@ loadString("
       extends M;
     end B;
   end P1;
+", filename = "P1.mo");
 
+loadString("
   package P2
     model A
       extends P1.M;
@@ -36,52 +38,71 @@ loadString("
       end A;
     end P1;
   end P2;
+", filename = "P2.mo");
 
+loadString("
   package P3
     model A
       P1.M m;
       P1.M.M1 m1;
     end A;
   end P3;
-");
+", filename = "P3.mo");
 
 reverseLookup(P1.M, exactMatch = true, prettyPrint = true);
 getErrorString();
 
 // Result:
 // true
+// true
+// true
 // "[
 //   {
-//     \"filename\": \"<interactive>\",
-//     \"lineStart\": 9,
-//     \"columnStart\": 7,
-//     \"lineEnd\": 9,
-//     \"columnEnd\": 19,
-//     \"name\": \"P1.M\"
+//     \"filename\": \"P1.mo\",
+//     \"matches\": [
+//       {
+//         \"lineStart\": 9,
+//         \"columnStart\": 7,
+//         \"lineEnd\": 9,
+//         \"columnEnd\": 19,
+//         \"name\": \"P1.M\",
+//         \"class\": \"P1.A\"
+//       },
+//       {
+//         \"lineStart\": 13,
+//         \"columnStart\": 7,
+//         \"lineEnd\": 13,
+//         \"columnEnd\": 16,
+//         \"name\": \"M\",
+//         \"class\": \"P1.B\"
+//       }
+//     ]
 //   },
 //   {
-//     \"filename\": \"<interactive>\",
-//     \"lineStart\": 13,
-//     \"columnStart\": 7,
-//     \"lineEnd\": 13,
-//     \"columnEnd\": 16,
-//     \"name\": \"M\"
+//     \"filename\": \"P2.mo\",
+//     \"matches\": [
+//       {
+//         \"lineStart\": 9,
+//         \"columnStart\": 19,
+//         \"lineEnd\": 9,
+//         \"columnEnd\": 35,
+//         \"name\": \".P1.M\",
+//         \"class\": \"P2.B\"
+//       }
+//     ]
 //   },
 //   {
-//     \"filename\": \"<interactive>\",
-//     \"lineStart\": 24,
-//     \"columnStart\": 19,
-//     \"lineEnd\": 24,
-//     \"columnEnd\": 35,
-//     \"name\": \".P1.M\"
-//   },
-//   {
-//     \"filename\": \"<interactive>\",
-//     \"lineStart\": 38,
-//     \"columnStart\": 7,
-//     \"lineEnd\": 38,
-//     \"columnEnd\": 13,
-//     \"name\": \"P1.M\"
+//     \"filename\": \"P3.mo\",
+//     \"matches\": [
+//       {
+//         \"lineStart\": 4,
+//         \"columnStart\": 7,
+//         \"lineEnd\": 4,
+//         \"columnEnd\": 13,
+//         \"name\": \"P1.M\",
+//         \"class\": \"P3.A\"
+//       }
+//     ]
 //   }
 // ]"
 // ""

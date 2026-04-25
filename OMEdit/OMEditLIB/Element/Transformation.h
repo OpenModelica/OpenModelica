@@ -58,6 +58,7 @@ public:
   void setWidth(const qreal &width) {mWidth = width;}
   void setHeight(const qreal &height) {mHeight = height;}
   const BooleanAnnotation& getVisible() const {return mVisible;}
+  void setVisible(bool visible) {mVisible = visible;}
   const BooleanAnnotation& getVisibleIcon() const {return mVisibleIcon;}
   void adjustPosition(qreal x, qreal y);
   void setOrigin(QPointF origin);

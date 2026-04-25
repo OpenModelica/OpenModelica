@@ -2,7 +2,7 @@
 // keywords: events
 // status: correct
 // teardown_command: rm -rf  tearnonlin1_res.csv
-// cflags: 	 +simCodeTarget=Cpp -d=-newInst
+// cflags: 	 +simCodeTarget=Cpp
 //
 // Algebraic loop
 //

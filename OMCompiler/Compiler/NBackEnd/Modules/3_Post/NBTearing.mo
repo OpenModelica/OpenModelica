@@ -1,33 +1,38 @@
 /*
-* This file is part of OpenModelica.
-*
-* Copyright (c) 1998-2020, Open Source Modelica Consortium (OSMC),
-* c/o Linköpings universitet, Department of Computer and Information Science,
-* SE-58183 Linköping, Sweden.
-*
-* All rights reserved.
-*
-* THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
-* THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
-* ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
-* RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
-* ACCORDING TO RECIPIENTS CHOICE.
-*
-* The OpenModelica software and the Open Source Modelica
-* Consortium (OSMC) Public License (OSMC-PL) are obtained
-* from OSMC, either from the above address,
-* from the URLs: http://www.ida.liu.se/projects/OpenModelica or
-* http://www.openmodelica.org, and in the OpenModelica distribution.
-* GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
-*
-* This program is distributed WITHOUT ANY WARRANTY; without
-* even the implied warranty of  MERCHANTABILITY or FITNESS
-* FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
-* IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
-*
-* See the full OSMC Public License conditions for more details.
-*
-*/
+ * This file is part of OpenModelica.
+ *
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
+ * c/o Linköpings universitet, Department of Computer and Information Science,
+ * SE-58183 Linköping, Sweden.
+ *
+ * All rights reserved.
+ *
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
+ *
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
+ *
+ * This program is distributed WITHOUT ANY WARRANTY; without
+ * even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
+ *
+ * See the full OSMC Public License conditions for more details.
+ *
+ */
+
 encapsulated uniontype NBTearing
 "file:        NBTearing.mo
  package:     NBTearing
@@ -87,7 +92,7 @@ public
   function hash
     "compute hash value by only using iteration variables with their first index should be unique enough"
     input Tearing set;
-    output Integer h = 5381;
+    output Integer h = Util.HASH_SEED;
   algorithm
     for var in set.iteration_vars loop
       h := stringHashDjb2Continue(BVariable.pointerToString(Slice.getT(var)), h);
@@ -152,7 +157,7 @@ public
           bdae.ode := tearingTraverser(bdae.ode, funcs, bdae.funcMap, eq_index, kind);
       then bdae;
 
-      case (NBPartition.Kind.INI, BackendDAE.MAIN(eqData = BEquation.EQ_DATA_SIM(uniqueIndex = eq_index)))
+      case (_, BackendDAE.MAIN(eqData = BEquation.EQ_DATA_SIM(uniqueIndex = eq_index))) guard(Partition.kindIsInitial(kind))
         algorithm
           bdae.init := tearingTraverser(bdae.init, funcs, bdae.funcMap, eq_index, kind);
           if Util.isSome(bdae.init_0) then
@@ -346,7 +351,7 @@ protected
     list<ComponentRef> vars_lst, eqns_lst;
     UnorderedSet<ComponentRef> vars_set       "all loop vars, used to determine solvability";
     UnorderedMap<ComponentRef, Integer> v, e  "all loop vars and equations map";
-    constant Boolean init = kind == NBPartition.Kind.INI;
+    constant Boolean init = Partition.kindIsInitial(kind);
   algorithm
     (comp, full, index) := match comp
       case StrongComponent.ALGEBRAIC_LOOP(strict = strict) algorithm
@@ -365,7 +370,7 @@ protected
         e := UnorderedMap.subMap(equations.map, eqns_lst);
 
         // refine the adjacency matrix by updating solvability information
-        full := Adjacency.Matrix.refine(full, funcMap, v, e, variables, equations, vars_set, kind == NBPartition.Kind.INI);
+        full := Adjacency.Matrix.refine(full, funcMap, v, e, variables, equations, vars_set, Partition.kindIsInitial(kind));
         comp.linear := checkLinearity(full, v, e);
       then (comp, full, index);
       else (comp, full, index);
@@ -415,7 +420,7 @@ protected
         // split equations and variables for discretes and continuous
         vars_lst := list(Slice.getT(var) for var in strict.iteration_vars);
         eqns_lst := list(Slice.getT(eqn) for eqn in strict.residual_eqns);
-        (cont_vars, disc_vars) := filterDiscreteVariables(vars_lst, kind == NBPartition.Kind.INI);
+        (cont_vars, disc_vars) := filterDiscreteVariables(vars_lst, Partition.kindIsInitial(kind));
         (cont_eqns, disc_eqns) := List.splitOnTrue(eqns_lst, Equation.isContinousRecordAware);
         num_vars := sum(BVariable.size(var) for var in disc_vars);
         num_eqns := sum(Equation.size(eqn) for eqn in disc_eqns);
@@ -477,7 +482,7 @@ protected
     EqnSlice solve_eqn;
     Boolean success, var_assigned;
     ComponentRef stripped;
-    constant Boolean init = kind == NBPartition.Kind.INI;
+    constant Boolean init = Partition.kindIsInitial(kind);
   algorithm
     comp := match (comp, full)
       case (StrongComponent.ALGEBRAIC_LOOP(strict = strict), Adjacency.FULL()) algorithm
@@ -519,7 +524,7 @@ protected
               if UnorderedMap.contains(full.equation_names[i], unsolved_equations) then
                 solve_opt := NONE();
                 success := false;
-                for cref in UnorderedSet.toList(full.occurences[i]) loop
+                for cref in UnorderedSet.toList(full.occurrences[i]) loop
                   stripped := ComponentRef.stripSubscriptsAll(cref);
                   if UnorderedMap.contains(stripped, unsolved_inner_vars) then
                     if isNone(solve_opt) then
@@ -612,7 +617,7 @@ protected
     end eqnIsLinear;
   algorithm
     linear := match full
-      case Adjacency.Matrix.FULL() then UnorderedMap.all(e, function eqnIsLinear(occ = full.occurences, sol = full.solvabilities, v = v));
+      case Adjacency.Matrix.FULL() then UnorderedMap.all(e, function eqnIsLinear(occ = full.occurrences, sol = full.solvabilities, v = v));
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " expected type full, got type " + Adjacency.Matrix.strictnessString(Adjacency.Matrix.getStrictness(full)) + "."});
       then fail();

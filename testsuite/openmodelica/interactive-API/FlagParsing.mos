@@ -71,6 +71,9 @@ setCommandLineOptions("-d failtrace --debug=ceval"); getErrorString();
 // Shouldn't work, some flags require a value.
 setCommandLineOptions("-i="); getErrorString();
 
+// Shouldn't work, argument beginning with - are always treated as flags.
+setCommandLineOptions("--debug -failtrace");
+
 // Result:
 // true
 // ""
@@ -157,4 +160,5 @@ setCommandLineOptions("-i="); getErrorString();
 // false
 // "Error: Invalid type of flag instClass, expected a string but got nothing.
 // "
+// false
 // endResult

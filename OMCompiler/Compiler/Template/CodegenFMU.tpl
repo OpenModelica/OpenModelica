@@ -1,3 +1,38 @@
+/*
+ * This file is part of OpenModelica.
+ *
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
+ * c/o Linköpings universitet, Department of Computer and Information Science,
+ * SE-58183 Linköping, Sweden.
+ *
+ * All rights reserved.
+ *
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
+ *
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
+ *
+ * This program is distributed WITHOUT ANY WARRANTY; without
+ * even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
+ *
+ * See the full OSMC Public License conditions for more details.
+ *
+ */
+
 // This file defines templates for transforming Modelica/MetaModelica code to FMU
 // code. They are used in the code generator phase of the compiler to write
 // target code.
@@ -2368,7 +2403,7 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
         input Real realValuesReferences[:];
         input Real inFlowStatesInput;
         output Real realValues[size(realValuesReferences, 1)];
-        external "C" fmi2GetReal_OMC(fmi2me, size(realValuesReferences, 1), realValuesReferences, inFlowStatesInput, realValues, 1) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"});
+        external "C" fmi2GetReal_OMC(fmi2me, size(realValuesReferences, 1), realValuesReferences, inFlowStatesInput, realValues) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"});
       end fmi2GetReal;
 
       function fmi2SetReal
@@ -2376,7 +2411,7 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
         input Real realValueReferences[:];
         input Real realValues[size(realValueReferences, 1)];
         output Real outValues[size(realValueReferences, 1)] = realValues;
-        external "C" fmi2SetReal_OMC(fmi2me, size(realValueReferences, 1), realValueReferences, realValues, 1) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"});
+        external "C" fmi2SetReal_OMC(fmi2me, size(realValueReferences, 1), realValueReferences, realValues) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"});
       end fmi2SetReal;
 
       function fmi2SetRealParameter
@@ -2384,7 +2419,7 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
         input Real realValueReferences[:];
         input Real realValues[size(realValueReferences, 1)];
         output Real out_Value = 1;
-        external "C" fmi2SetReal_OMC(fmi2me, size(realValueReferences, 1), realValueReferences, realValues, 1) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"});
+        external "C" fmi2SetReal_OMC(fmi2me, size(realValueReferences, 1), realValueReferences, realValues) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"});
       end fmi2SetRealParameter;
 
       function fmi2GetInteger
@@ -2392,7 +2427,7 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
         input Real integerValueReferences[:];
         input Real inFlowStatesInput;
         output Integer integerValues[size(integerValueReferences, 1)];
-        external "C" fmi2GetInteger_OMC(fmi2me, size(integerValueReferences, 1), integerValueReferences, inFlowStatesInput, integerValues, 1) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"});
+        external "C" fmi2GetInteger_OMC(fmi2me, size(integerValueReferences, 1), integerValueReferences, inFlowStatesInput, integerValues) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"});
       end fmi2GetInteger;
 
       function fmi2SetInteger
@@ -2400,7 +2435,7 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
         input Real integerValuesReferences[:];
         input Integer integerValues[size(integerValuesReferences, 1)];
         output Integer outValues[size(integerValuesReferences, 1)] = integerValues;
-        external "C" fmi2SetInteger_OMC(fmi2me, size(integerValuesReferences, 1), integerValuesReferences, integerValues, 1) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"});
+        external "C" fmi2SetInteger_OMC(fmi2me, size(integerValuesReferences, 1), integerValuesReferences, integerValues) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"});
       end fmi2SetInteger;
 
       function fmi2SetIntegerParameter
@@ -2408,7 +2443,7 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
         input Real integerValuesReferences[:];
         input Integer integerValues[size(integerValuesReferences, 1)];
         output Real out_Value = 1;
-        external "C" fmi2SetInteger_OMC(fmi2me, size(integerValuesReferences, 1), integerValuesReferences, integerValues, 1) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"});
+        external "C" fmi2SetInteger_OMC(fmi2me, size(integerValuesReferences, 1), integerValuesReferences, integerValues) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"});
       end fmi2SetIntegerParameter;
 
       function fmi2GetBoolean
@@ -2416,7 +2451,7 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
         input Real booleanValuesReferences[:];
         input Real inFlowStatesInput;
         output Boolean booleanValues[size(booleanValuesReferences, 1)];
-        external "C" fmi2GetBoolean_OMC(fmi2me, size(booleanValuesReferences, 1), booleanValuesReferences, inFlowStatesInput, booleanValues, 1) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"});
+        external "C" fmi2GetBoolean_OMC(fmi2me, size(booleanValuesReferences, 1), booleanValuesReferences, inFlowStatesInput, booleanValues) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"});
       end fmi2GetBoolean;
 
       function fmi2SetBoolean
@@ -2424,7 +2459,7 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
         input Real booleanValueReferences[:];
         input Boolean booleanValues[size(booleanValueReferences, 1)];
         output Boolean outValues[size(booleanValueReferences, 1)] = booleanValues;
-        external "C" fmi2SetBoolean_OMC(fmi2me, size(booleanValueReferences, 1), booleanValueReferences, booleanValues, 1) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"});
+        external "C" fmi2SetBoolean_OMC(fmi2me, size(booleanValueReferences, 1), booleanValueReferences, booleanValues) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"});
       end fmi2SetBoolean;
 
       function fmi2SetBooleanParameter
@@ -2432,7 +2467,7 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
         input Real booleanValueReferences[:];
         input Boolean booleanValues[size(booleanValueReferences, 1)];
         output Real out_Value = 1;
-        external "C" fmi2SetBoolean_OMC(fmi2me, size(booleanValueReferences, 1), booleanValueReferences, booleanValues, 1) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"});
+        external "C" fmi2SetBoolean_OMC(fmi2me, size(booleanValueReferences, 1), booleanValueReferences, booleanValues) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"});
       end fmi2SetBooleanParameter;
 
       function fmi2GetString
@@ -2440,7 +2475,7 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
         input Real stringValuesReferences[:];
         input Real inFlowStatesInput;
         output String stringValues[size(stringValuesReferences, 1)];
-        external "C" fmi2GetString_OMC(fmi2me, size(stringValuesReferences, 1), stringValuesReferences, inFlowStatesInput, stringValues, 1) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"});
+        external "C" fmi2GetString_OMC(fmi2me, size(stringValuesReferences, 1), stringValuesReferences, inFlowStatesInput, stringValues) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"});
       end fmi2GetString;
 
       function fmi2SetString
@@ -2448,7 +2483,7 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
         input Real stringValueReferences[:];
         input String stringValues[size(stringValueReferences, 1)];
         output String outValues[size(stringValueReferences, 1)] = stringValues;
-        external "C" fmi2SetString_OMC(fmi2me, size(stringValueReferences, 1), stringValueReferences, stringValues, 1) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"});
+        external "C" fmi2SetString_OMC(fmi2me, size(stringValueReferences, 1), stringValueReferences, stringValues) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"});
       end fmi2SetString;
 
       function fmi2SetStringParameter
@@ -2456,7 +2491,7 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
         input Real stringValueReferences[:];
         input String stringValues[size(stringValueReferences, 1)];
         output Real out_Value = 1;
-        external "C" fmi2SetString_OMC(fmi2me, size(stringValueReferences, 1), stringValueReferences, stringValues, 1) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"});
+        external "C" fmi2SetString_OMC(fmi2me, size(stringValueReferences, 1), stringValueReferences, stringValues) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"});
       end fmi2SetStringParameter;
 
       function fmi2StartEventUpdate

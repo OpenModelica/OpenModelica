@@ -1,30 +1,27 @@
 /*
- * This file is part of OpenModelica.
+ * This file belongs to the OpenModelica Run-Time System
  *
- * Copyright (c) 1998-2020, Open Source Modelica Consortium (OSMC),
- * c/o Linköpings universitet, Department of Computer and Information Science,
- * SE-58183 Linköping, Sweden.
- *
- * All rights reserved.
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC), c/o Linköpings
+ * universitet, Department of Computer and Information Science, SE-58183 Linköping, Sweden. All rights
+ * reserved.
  *
  * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THE BSD NEW LICENSE OR THE
- * GPL VERSION 3 LICENSE OR THE OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * AGPL VERSION 3 LICENSE OR THE OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8. ANY
+ * USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
+ * ACCEPTANCE OF THE BSD NEW LICENSE OR THE OSMC PUBLIC LICENSE OR THE AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
- * Public License (OSMC-PL) are obtained from OSMC, either from the above
- * address, from the URLs: http://www.openmodelica.org or
- * http://www.ida.liu.se/projects/OpenModelica, and in the OpenModelica
- * distribution. GNU version 3 is obtained from:
- * http://www.gnu.org/copyleft/gpl.html. The New BSD License is obtained from:
- * http://www.opensource.org/licenses/BSD-3-Clause.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium) Public License
+ * (OSMC-PL) are obtained from OSMC, either from the above address, from the URLs:
+ * http://www.openmodelica.org or https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica, and in the OpenModelica distribution. GNU
+ * AGPL version 3 is obtained from: https://www.gnu.org/licenses/licenses.html#GPL. The BSD NEW
+ * License is obtained from: http://www.opensource.org/licenses/BSD-3-Clause.
  *
- * This program is distributed WITHOUT ANY WARRANTY; without even the implied
- * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, EXCEPT AS
- * EXPRESSLY SET FORTH IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE
- * CONDITIONS OF OSMC-PL.
+ * This program is distributed WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY
+ * SET FORTH IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF
+ * OSMC-PL.
  *
  */
 
@@ -267,14 +264,7 @@ static void checkReturnFlag_CVLS(int flag, const char *functionName) {
 void cvodeErrorHandlerFunction(int errorCode, const char *module,
                                const char *function, char *msg, void *userData)
 {
-  /* Variables */
-  CVODE_SOLVER* cvodeData;
-  DATA* data;
-
   if (userData != NULL && OMC_ACTIVE_STREAM(OMC_LOG_SOLVER)) {
-    cvodeData = (CVODE_SOLVER*) userData;
-    data = (DATA*)cvodeData->simData->data;
-
     infoStreamPrint(OMC_LOG_SOLVER, 1, "#### CVODE error message #####");
     infoStreamPrint(OMC_LOG_SOLVER, 0, " -> error code %d\n -> module %s\n -> function %s", errorCode, module, function);
     infoStreamPrint(OMC_LOG_SOLVER, 0, " Message: %s", msg);
@@ -952,20 +942,20 @@ void sundialsPrintSparseMatrix(SUNMatrix A, const char* name, const int logLevel
     /* Print indexvals array */
     buffer[0] = 0;
     for (i=0; i<lengthData-1; i++) {
-      snprintf(tmpBuffer, tmpBuffSize, "%li, ", indexvals[i]);
+      snprintf(tmpBuffer, tmpBuffSize, OMC_INT_FORMAT ", ", indexvals[i]);
       strncat(buffer, tmpBuffer, tmpBuffSize);
     }
-    snprintf(tmpBuffer, tmpBuffSize, "%li", indexvals[lengthData-1]);
+    snprintf(tmpBuffer, tmpBuffSize, OMC_INT_FORMAT, indexvals[lengthData-1]);
     strncat(buffer, tmpBuffer, tmpBuffSize);
     infoStreamPrint(logLevel, 0, "indexvals = {%s}", buffer);
 
     /* Print indexptrs array */
     buffer[0] = 0;
     for (i=0; i<SUNSparseMatrix_NP(A); i++) {
-      snprintf(tmpBuffer, tmpBuffSize, "%li, ", indexptrs[i]);
+      snprintf(tmpBuffer, tmpBuffSize, OMC_INT_FORMAT ", ", indexptrs[i]);
       strncat(buffer, tmpBuffer, tmpBuffSize);
     }
-    snprintf(tmpBuffer, tmpBuffSize, "%li", indexptrs[SUNSparseMatrix_NP(A)]);
+    snprintf(tmpBuffer, tmpBuffSize, OMC_INT_FORMAT, indexptrs[SUNSparseMatrix_NP(A)]);
     strncat(buffer, tmpBuffer, tmpBuffSize);
     infoStreamPrint(logLevel, 0, "indexvals = {%s}", buffer);
 
@@ -987,14 +977,7 @@ void sundialsPrintSparseMatrix(SUNMatrix A, const char* name, const int logLevel
 void idaErrorHandlerFunction(int errorCode, const char *module,
                              const char *function, char *msg, void *userData)
 {
-  /* Variables */
-  IDA_SOLVER* idaData;
-  DATA* data;
-
   if (userData != NULL && OMC_ACTIVE_STREAM(OMC_LOG_SOLVER)) {
-    idaData = (IDA_SOLVER*) userData;
-    data = (DATA*)idaData->userData->data;
-
     infoStreamPrint(OMC_LOG_SOLVER, 1, "#### IDA error message #####");
     infoStreamPrint(OMC_LOG_SOLVER, 0, " -> error code %d\n -> module %s\n -> function %s", errorCode, module, function);
     infoStreamPrint(OMC_LOG_SOLVER, 0, " Message: %s", msg);

@@ -1,27 +1,31 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
@@ -80,6 +84,7 @@ import DoubleEnded;
 import Error;
 import ErrorExt;
 import ExecStat;
+import FGraph;
 import Flags;
 import FlatModel = NFFlatModel;
 import NFFunction;
@@ -131,6 +136,7 @@ public function createSimulationSettings
   input String outputFormat;
   input String variableFilter;
   input String cflags;
+  input String simflags;
   output SimCode.SimulationSettings simSettings;
 protected
   Real stepSize;
@@ -140,7 +146,7 @@ algorithm
   stepSize := (stopTime - startTime) / intReal(numberOfIntervals);
   simSettings := SimCode.SIMULATION_SETTINGS(
     startTime, stopTime, numberOfIntervals, stepSize, tolerance,
-    method, options, outputFormat, variableFilter, cflags);
+    method, options, outputFormat, variableFilter, cflags, simflags);
 end createSimulationSettings;
 
 
@@ -1260,6 +1266,44 @@ algorithm
   success := true;
 end translateModel;
 
+public function translateModelCallBackend
+  input FlatModel flatModel;
+  input FunctionTree functions;
+  input Absyn.Path className;
+  input String fileNamePrefix;
+  input Boolean useDAEMode;
+  input Option<SimCode.SimulationSettings> simSettings;
+  output list<String> outLibs;
+  output String outFileDir;
+  output list<tuple<String, Values.Value>> resultValues;
+protected
+  UnorderedMap<Absyn.Path, NFFunction.Function> func_map;
+  DAE.DAElist dae;
+  DAE.FunctionTree dae_funcs;
+  FCore.Graph env;
+  FCore.Cache cache;
+  String file_name_prefix;
+algorithm
+  file_name_prefix := if fileNamePrefix == "<default>" then AbsynUtil.pathString(className) else fileNamePrefix;
+
+  if Flags.getConfigBool(Flags.NEW_BACKEND) then
+    func_map := UnorderedMap.fromLists(FunctionTree.listKeys(functions), FunctionTree.listValues(functions), AbsynUtil.pathHash, AbsynUtil.pathEqual);
+    (outLibs, outFileDir, resultValues, _) := translateModelCallBackendNB(flatModel, func_map, className, file_name_prefix, simSettings);
+  else
+    dae := NFConvertDAE.convertModel(flatModel);
+    dae_funcs := NFConvertDAE.convertFunctionTree(functions);
+    env := FGraph.new("graph", FCore.dummyTopModel);
+    cache := FCore.emptyCache();
+    FCore.setCachedFunctionTree(cache, dae_funcs);
+
+    if useDAEMode then
+      (cache, outLibs, outFileDir, resultValues) := translateModelCallBackendOBDAEMode(cache, env, dae, className, file_name_prefix, simSettings, Absyn.emptyFunctionArgs);
+    else
+      (cache, outLibs, outFileDir, resultValues) := translateModelCallBackendOB(TranslateModelKind.NORMAL(), cache, env, dae, className, file_name_prefix, simSettings, Absyn.emptyFunctionArgs);
+    end if;
+  end if;
+end translateModelCallBackend;
+
 protected function translateModelCallBackendOB
   input TranslateModelKind kind;
   input output FCore.Cache cache;
@@ -1314,7 +1358,7 @@ algorithm
       end if;
 
       description := DAEUtil.daeDescription(dae);
-      dlow := BackendDAECreate.lower(dae, cache, graph, BackendDAE.EXTRA_INFO(description, inFileNamePrefix));
+      dlow := BackendDAECreate.lower(dae, cache, graph, BackendDAE.EXTRA_INFO(description, inFileNamePrefix, inSimSettingsOpt));
 
       GCExt.free(dae);
       dae := DAE.emptyDae;
@@ -1437,7 +1481,7 @@ algorithm
       end if;
 
       description := DAEUtil.daeDescription(dae);
-      dlow := BackendDAECreate.lower(dae, cache, graph, BackendDAE.EXTRA_INFO(description,inFileNamePrefix));
+      dlow := BackendDAECreate.lower(dae, cache, graph, BackendDAE.EXTRA_INFO(description,inFileNamePrefix,inSimSettingsOpt));
 
       GCExt.free(dae);
       dae := DAE.emptyDae;
@@ -1497,10 +1541,10 @@ protected function translateModelCallBackendNB
 protected
   Real timeSimCode=0.0, timeTemplates=0.0, timeBackend=0.0;
   NBackendDAE bdae;
+  Boolean nf_api;
 algorithm
   FlagsUtil.setConfigBool(Flags.BUILDING_MODEL, true);
-
-  // ToDo: set permanently matching -> SBGraphs
+  nf_api := FlagsUtil.set(Flags.NF_API, false);
 
   System.realtimeTick(ClockIndexes.RT_CLOCK_BACKEND);
   bdae := NBackendDAE.lower(inFlatModel, funcMap);
@@ -1510,12 +1554,14 @@ algorithm
   bdae := NBackendDAE.main(bdae);
   timeBackend := System.realtimeTock(ClockIndexes.RT_CLOCK_BACKEND);
   ExecStat.execStat("backend");
+  FlagsUtil.set(Flags.NF_API, nf_api);
 
   (outLibs, outFileDir, timeSimCode, timeTemplates, oldFunctionTree) := generateModelCodeNewBackend(bdae, inClassName, inFileNamePrefix, inSimSettingsOpt);
 
   resultValues := {("timeTemplates", Values.REAL(timeTemplates)),
                   ("timeSimCode", Values.REAL(timeSimCode)),
                   ("timeBackend", Values.REAL(timeBackend))};
+
 end translateModelCallBackendNB;
 
 protected function generateModelCodeDAE

@@ -1,33 +1,38 @@
 /*
-* This file is part of OpenModelica.
-*
-* Copyright (c) 1998-2021, Open Source Modelica Consortium (OSMC),
-* c/o Linköpings universitet, Department of Computer and Information Science,
-* SE-58183 Linköping, Sweden.
-*
-* All rights reserved.
-*
-* THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
-* THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
-* ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
-* RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
-* ACCORDING TO RECIPIENTS CHOICE.
-*
-* The OpenModelica software and the Open Source Modelica
-* Consortium (OSMC) Public License (OSMC-PL) are obtained
-* from OSMC, either from the above address,
-* from the URLs: http://www.ida.liu.se/projects/OpenModelica or
-* http://www.openmodelica.org, and in the OpenModelica distribution.
-* GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
-*
-* This program is distributed WITHOUT ANY WARRANTY; without
-* even the implied warranty of  MERCHANTABILITY or FITNESS
-* FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
-* IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
-*
-* See the full OSMC Public License conditions for more details.
-*
-*/
+ * This file is part of OpenModelica.
+ *
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
+ * c/o Linköpings universitet, Department of Computer and Information Science,
+ * SE-58183 Linköping, Sweden.
+ *
+ * All rights reserved.
+ *
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
+ *
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
+ *
+ * This program is distributed WITHOUT ANY WARRANTY; without
+ * even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
+ *
+ * See the full OSMC Public License conditions for more details.
+ *
+ */
+
 encapsulated package NBVariable
 " file:         NBVariable.mo
   description:  This ONLY contains the backend variable functions!
@@ -97,7 +102,7 @@ public
   constant Variable TIME_VARIABLE = Variable.VARIABLE(NFBuiltin.TIME_CREF, Type.REAL(),
     NFBinding.EMPTY_BINDING, NFPrefixes.Visibility.PUBLIC, NFAttributes.DEFAULT_ATTR,
     {}, {}, SCode.noComment, SCodeUtil.dummyInfo, BackendInfo.BACKEND_INFO(
-    VariableKind.TIME(), NFBackendExtension.EMPTY_VAR_ATTR_REAL, NFBackendExtension.EMPTY_ANNOTATIONS, NONE(), NONE(), NONE(), NONE()));
+    VariableKind.TIME(), NFBackendExtension.EMPTY_VAR_ATTR_REAL, NFBackendExtension.EMPTY_ANNOTATIONS, NONE(), NONE(), NONE(), NONE(), NONE()));
 
   constant String DERIVATIVE_STR          = "$DER";
   constant String DUMMY_DERIVATIVE_STR    = "$dDER";
@@ -106,6 +111,7 @@ public
   constant String FUNCTION_STR            = "$FUN";
   constant String PREVIOUS_STR            = "$PRE";
   constant String AUXILIARY_STR           = "$AUX";
+  constant String STATE_ALIAS_STR         = "$STA";
   constant String START_STR               = "$START";
   constant String RESIDUAL_STR            = "$RES";
   constant String TEMPORARY_STR           = "$TMP";
@@ -617,6 +623,13 @@ public
       else NONE();
     end match;
   end getVarDummyDer;
+
+  function getVarStart
+    extends getVarPartner;
+  algorithm
+    partnerName := "start";
+    partner := var.backendinfo.var_start;
+  end getVarStart;
 
   function getPartnerCref
     "Like getVarPartner but for cref. Fails if there is no partner."
@@ -1468,24 +1481,48 @@ public
     output ComponentRef start_cref    "new component reference";
     output Pointer<Variable> var_ptr  "pointer to new variable";
   algorithm
-    () := match ComponentRef.node(cref)
+    (start_cref, var_ptr) := match ComponentRef.node(cref)
       local
         InstNode qual;
         Pointer<Variable> old_var_ptr;
-        Variable var;
+        Variable var, old_var;
+
       case qual as InstNode.VAR_NODE()
         algorithm
           // get the variable pointer from the old cref to later on link back to it
           old_var_ptr := getVarPointer(cref, sourceInfo());
-          // prepend the start str
-          qual.name := START_STR;
-          start_cref := ComponentRef.append(cref, ComponentRef.fromNode(qual, ComponentRef.scalarType(cref)));
-          var := fromCref(start_cref, Variable.attributes(getVar(cref, sourceInfo())));
-          // update the variable to be a start variable and pass the pointer to the original variable
-          var.backendinfo := BackendInfo.setVarKind(var.backendinfo, VariableKind.START(old_var_ptr));
-          // create the new variable pointer and safe it to the component reference
-          (var_ptr, start_cref) := makeVarPtrCyclic(var, start_cref);
-      then ();
+
+          // try to see if it already has a start variable
+          (start_cref, var_ptr) := match getVarStart(old_var_ptr)
+            // there is already a start variable, take it
+            case SOME(var_ptr) then (getVarName(var_ptr), var_ptr);
+
+            // create a new start variable
+            else algorithm
+              // prepend the start str
+              qual.name := START_STR;
+              // remove the subscripts before creating the new cref for the new variable
+              start_cref := ComponentRef.append(ComponentRef.stripSubscriptsAll(cref), ComponentRef.fromNode(qual, ComponentRef.scalarType(cref)));
+              var := fromCref(start_cref, Variable.attributes(getVar(cref, sourceInfo())));
+              // update the variable to be a start variable and pass the pointer to the original variable
+              if BVariable.isRecord(old_var_ptr) then
+                var.backendinfo := BackendInfo.setVarKind(var.backendinfo, VariableKind.RECORD({}, NFPrefixes.Variability.PARAMETER, NFPrefixes.Variability.CONTINUOUS));
+              else
+                var.backendinfo := BackendInfo.setVarKind(var.backendinfo, VariableKind.START(old_var_ptr));
+              end if;
+              var.backendinfo := BackendInfo.setVarStart(var.backendinfo, SOME(old_var_ptr));
+              // create the new variable pointer and safe it to the component reference
+              (var_ptr, start_cref) := makeVarPtrCyclic(var, start_cref);
+              // save the var_ptr to the old var as its start var
+              old_var := Pointer.access(old_var_ptr);
+              old_var.backendinfo := BackendInfo.setVarStart(old_var.backendinfo, SOME(var_ptr));
+              Pointer.update(old_var_ptr, old_var);
+            then (start_cref, var_ptr);
+          end match;
+
+          // copy back all the subscripts
+          start_cref := ComponentRef.copySubscripts(cref, start_cref);
+      then (start_cref, var_ptr);
 
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + ComponentRef.toString(cref)});
@@ -1533,7 +1570,6 @@ public
     Variable var;
     list<ComponentRef> iter_crefs;
     list<Subscript> iter_subs;
-    list<Integer> sub_sizes;
     Type ty;
   algorithm
     // get subscripts from optional iterator
@@ -1542,8 +1578,7 @@ public
     if listEmpty(iter_subs) then
       ty := var_ty;
     else
-      sub_sizes := Iterator.sizes(iterator);
-      ty := Type.liftArrayLeftList(var_ty, list(Dimension.fromInteger(sub_size) for sub_size in sub_sizes));
+      ty := Type.liftArrayLeftList(var_ty, Iterator.dimensions(iterator));
     end if;
     // create inst node with dummy variable pointer and create cref from it
     node := InstNode.VAR_NODE(name + "_" + intString(uniqueIndex), Pointer.create(DUMMY_VARIABLE));
@@ -2225,6 +2260,7 @@ public
     function getScalarVarNames
       "Returns the names of all variables, with arrays and records expanded."
       input VariablePointers variables;
+      input Boolean resize;
       output list<ComponentRef> names = {};
     protected
       Variable var;
@@ -2233,7 +2269,7 @@ public
         var := Pointer.access(var_ptr);
 
         if Type.isArray(var.ty) then
-          for cr in ComponentRef.scalarizeAll(ComponentRef.stripSubscriptsAll(var.name), true) loop
+          for cr in ComponentRef.scalarizeAll(ComponentRef.stripSubscriptsAll(var.name), resize) loop
             if Type.isComplex(ComponentRef.nodeType(cr)) then
               names := listAppend(ComponentRef.getRecordChildren(cr), names);
             else
@@ -2356,19 +2392,20 @@ public
     function varSlice
       input VariablePointers vars;
       input Integer scal;
+      input Integer arr;
       input Mapping mapping;
+      input Boolean resize;
       output ComponentRef cref;
     protected
       Pointer<Variable> var;
-      Integer arr, start, size;
+      Integer start;
       Type ty;
       list<Dimension> dims;
       list<Integer> sizes, vals;
       list<Subscript> subs;
     algorithm
       // get array index, start of scalar index and size
-      arr := mapping.var_StA[scal];
-      (start, size) := mapping.var_AtS[arr];
+      (start, _) := mapping.var_AtS[arr];
 
       // get the variable, name and type
       var := VariablePointers.getVarAt(vars, arr);
@@ -2376,7 +2413,7 @@ public
 
       // get the dimensions, their sizes and the respective index values for the subscripts
       dims  := Type.arrayDims(ty);
-      sizes := list(Dimension.size(dim) for dim in dims);
+      sizes := list(Dimension.size(dim, resize) for dim in dims);
       vals  := listReverse(Slice.indexToLocation(scal-start, sizes));
 
       // thread them to the apropriate subscripts and merge them to the cref
@@ -2573,7 +2610,7 @@ public
               VariablePointers.toString(varData.previous, "Previous", NONE(), false) +
               VariablePointers.toString(varData.clocks, "Clock", NONE(), false) +
               VariablePointers.toString(varData.top_level_inputs, "Top Level Input", NONE(), false) +
-              VariablePointers.toString(varData.resizables, "Resizable Parameters", NONE(), false) +
+              VariablePointers.toString(varData.resizables, "Resizable Parameter", NONE(), false) +
               VariablePointers.toString(varData.parameters, "Parameter", NONE(), false) +
               VariablePointers.toString(varData.constants, "Constant", NONE(), false) +
               VariablePointers.toString(varData.records, "Record", NONE(), false) +
@@ -2710,6 +2747,7 @@ public
         then varData;
 
         case (VAR_DATA_SIM(), VarType.PARAMETER) algorithm
+          varData.variables   := VariablePointers.addList(var_lst, varData.variables);
           varData.parameters  := VariablePointers.addList(var_lst, varData.parameters);
           varData.knowns      := VariablePointers.addList(var_lst, varData.knowns);
         then varData;

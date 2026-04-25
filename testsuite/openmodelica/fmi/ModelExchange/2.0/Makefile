@@ -1,6 +1,7 @@
 TEST = ../../../../rtest -v
 
 TESTFILES = \
+dae_fmu_export_error.mos \
 fmi_attributes_01.mos \
 fmi_attributes_02.mos \
 fmi_attributes_03.mos \

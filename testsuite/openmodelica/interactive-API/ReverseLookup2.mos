@@ -53,43 +53,48 @@ getErrorString();
 // "[
 //   {
 //     \"filename\": \"<interactive>\",
-//     \"lineStart\": 9,
-//     \"columnStart\": 7,
-//     \"lineEnd\": 9,
-//     \"columnEnd\": 19,
-//     \"name\": \"P1.M\"
-//   },
-//   {
-//     \"filename\": \"<interactive>\",
-//     \"lineStart\": 13,
-//     \"columnStart\": 7,
-//     \"lineEnd\": 13,
-//     \"columnEnd\": 16,
-//     \"name\": \"M\"
-//   },
-//   {
-//     \"filename\": \"<interactive>\",
-//     \"lineStart\": 24,
-//     \"columnStart\": 19,
-//     \"lineEnd\": 24,
-//     \"columnEnd\": 35,
-//     \"name\": \".P1.M\"
-//   },
-//   {
-//     \"filename\": \"<interactive>\",
-//     \"lineStart\": 38,
-//     \"columnStart\": 7,
-//     \"lineEnd\": 38,
-//     \"columnEnd\": 13,
-//     \"name\": \"P1.M\"
-//   },
-//   {
-//     \"filename\": \"<interactive>\",
-//     \"lineStart\": 39,
-//     \"columnStart\": 7,
-//     \"lineEnd\": 39,
-//     \"columnEnd\": 17,
-//     \"name\": \"P1.M.M1\"
+//     \"matches\": [
+//       {
+//         \"lineStart\": 9,
+//         \"columnStart\": 7,
+//         \"lineEnd\": 9,
+//         \"columnEnd\": 19,
+//         \"name\": \"P1.M\",
+//         \"class\": \"P1.A\"
+//       },
+//       {
+//         \"lineStart\": 13,
+//         \"columnStart\": 7,
+//         \"lineEnd\": 13,
+//         \"columnEnd\": 16,
+//         \"name\": \"M\",
+//         \"class\": \"P1.B\"
+//       },
+//       {
+//         \"lineStart\": 24,
+//         \"columnStart\": 19,
+//         \"lineEnd\": 24,
+//         \"columnEnd\": 35,
+//         \"name\": \".P1.M\",
+//         \"class\": \"P2.B\"
+//       },
+//       {
+//         \"lineStart\": 38,
+//         \"columnStart\": 7,
+//         \"lineEnd\": 38,
+//         \"columnEnd\": 13,
+//         \"name\": \"P1.M\",
+//         \"class\": \"P3.A\"
+//       },
+//       {
+//         \"lineStart\": 39,
+//         \"columnStart\": 7,
+//         \"lineEnd\": 39,
+//         \"columnEnd\": 17,
+//         \"name\": \"P1.M.M1\",
+//         \"class\": \"P3.A\"
+//       }
+//     ]
 //   }
 // ]"
 // ""

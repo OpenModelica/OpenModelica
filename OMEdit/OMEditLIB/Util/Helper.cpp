@@ -107,6 +107,7 @@ QString Helper::toolsOptionsPath = tr("OMEdit->Preferences");
 QString Helper::toolsOptionsPath = tr("Tools->Options");
 #endif
 QString Helper::speedOptions = "10,5,2,1,0.5,0.2,0.1";
+QStringList Helper::timeDisplayUnits = QStringList() << "min" << "h" << "d";
 /* Meta Modelica Types */
 QString Helper::MODELICA_METATYPE = QString("modelica_metatype");
 QString Helper::MODELICA_STRING = QString("modelica_string");
@@ -135,6 +136,7 @@ QString Helper::displayLimitMsg = QString("Reached display limit. To read the fu
 QString Helper::arrayIndexRegularExpression = QString(R"(\[(\d+)(?:,(\d+))?\])");
 /* Global translated variables */
 QString Helper::newModelicaClass;
+QString Helper::newModelicaClassTip;
 QString Helper::newModelicaClassLibraryBrowser;
 QString Helper::createNewModelicaClass;
 QString Helper::openModelicaFiles;
@@ -232,6 +234,8 @@ QString Helper::fitToDiagram;
 QString Helper::loading;
 QString Helper::question;
 QString Helper::search;
+QString Helper::findUsage;
+QString Helper::findUsageTip;
 QString Helper::duplicate;
 QString Helper::duplicateTip;
 QString Helper::unloadClass;
@@ -458,19 +462,21 @@ QString Helper::dataReconciliation;
 QString Helper::replaceSubModel;
 QString Helper::modelicaPathTip;
 QString Helper::selectParentClassName;
+QString Helper::switchModel;
 
 void Helper::initHelperVariables()
 {
   /* Global translated variables */
   Helper::newModelicaClass = tr("Modelica Class");
+  Helper::newModelicaClassTip = tr("Create New Modelica Class");
   Helper::newModelicaClassLibraryBrowser = tr("New Modelica Class");
-  Helper::createNewModelicaClass = tr("Create New Modelica Class");
+  Helper::createNewModelicaClass = tr("Creates a new Modelica Class");
   Helper::openModelicaFiles = tr("Open Model/Library File(s)");
   Helper::openConvertModelicaFiles = tr("Open/Convert Modelica File(s) With Encoding");
   Helper::newCRMLModel = tr("CRML Model");
   Helper::newCRMLModelTip = tr("Creates a new CRML Model");
   Helper::newMOSScript = tr("Modelica Script");
-  Helper::newMOSScriptTip = tr("Creates a new Modelca Script");
+  Helper::newMOSScriptTip = tr("Creates a new Modelica Script");
   Helper::libraries = tr("Libraries");
   Helper::elements = tr("Elements");
   Helper::clearRecentFiles = tr("Clear Recent Files");
@@ -561,6 +567,8 @@ void Helper::initHelperVariables()
   Helper::loading = tr("Loading");
   Helper::question = tr("Question");
   Helper::search = tr("Search");
+  Helper::findUsage = tr("Find Usage");
+  Helper::findUsageTip = tr("Finds the usage of class");
   Helper::duplicate = tr("Duplicate");
   Helper::duplicateTip = tr("Duplicates the item");
   Helper::unloadClass = tr("Unload");
@@ -787,6 +795,7 @@ void Helper::initHelperVariables()
   Helper::replaceSubModel = tr("Replace SubModel");
   Helper::modelicaPathTip = tr("List of paths searched while loading a library. Paths are separated by ; on Windows and : on Linux and macOS.");
   Helper::selectParentClassName = tr("Select Parent Class");
+  Helper::switchModel = tr("Switch Model");
 }
 
 QString GUIMessages::getMessage(int type)

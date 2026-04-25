@@ -1,33 +1,38 @@
 /*
-* This file is part of OpenModelica.
-*
-* Copyright (c) 1998-2020, Open Source Modelica Consortium (OSMC),
-* c/o Linköpings universitet, Department of Computer and Information Science,
-* SE-58183 Linköping, Sweden.
-*
-* All rights reserved.
-*
-* THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
-* THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
-* ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
-* RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
-* ACCORDING TO RECIPIENTS CHOICE.
-*
-* The OpenModelica software and the Open Source Modelica
-* Consortium (OSMC) Public License (OSMC-PL) are obtained
-* from OSMC, either from the above address,
-* from the URLs: http://www.ida.liu.se/projects/OpenModelica or
-* http://www.openmodelica.org, and in the OpenModelica distribution.
-* GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
-*
-* This program is distributed WITHOUT ANY WARRANTY; without
-* even the implied warranty of  MERCHANTABILITY or FITNESS
-* FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
-* IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
-*
-* See the full OSMC Public License conditions for more details.
-*
-*/
+ * This file is part of OpenModelica.
+ *
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
+ * c/o Linköpings universitet, Department of Computer and Information Science,
+ * SE-58183 Linköping, Sweden.
+ *
+ * All rights reserved.
+ *
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
+ *
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
+ *
+ * This program is distributed WITHOUT ANY WARRANTY; without
+ * even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
+ *
+ * See the full OSMC Public License conditions for more details.
+ *
+ */
+
 encapsulated package NBPartition
 "file:        NBPartition.mo
  package:     NBPartition
@@ -65,7 +70,7 @@ protected
   import StringUtil;
 
 public
-  type Kind = enumeration(ODE, ALG, ODE_EVT, ALG_EVT, INI, DAE, JAC, CLK);
+  type Kind = enumeration(ODE, ALG, ODE_EVT, ALG_EVT, INI, INI_0, DAE, JAC, CLK);
 
   uniontype Association
     record CONTINUOUS
@@ -215,9 +220,9 @@ public
 
     function hashClockTpl
       input ClockTpl tpl;
-      output Integer hash = 5381;
+      output Integer hash;
     algorithm
-      hash := stringHashDjb2Continue(ComponentRef.toString(Util.tuple21(tpl)), hash);
+      hash := ComponentRef.hash(Util.tuple21(tpl));
       hash := stringHashDjb2Continue(BClock.toString(Util.tuple22(tpl)), hash);
     end hashClockTpl;
 
@@ -375,7 +380,10 @@ public
       "returns true if the partition is empty.
       maybe check more than only equations?"
       input Partition partition;
-      output Boolean b = EquationPointers.size(partition.equations) == 0;
+      output Boolean b = EquationPointers.size(partition.equations) == 0
+        or Util.applyOptionOrDefault(partition.strongComponents, isEmptyArr, false);
+    protected
+      function isEmptyArr = arrayEmpty; // FIXME MetaModelica bug with inlined functions?
     end isEmpty;
 
     function isODEorDAE
@@ -476,6 +484,22 @@ public
       end if;
       Pointer.update(index, clock_idx + 1);
     end setIndex;
+
+    function setKind
+      input output Partition part;
+      input Kind kind;
+    algorithm
+      part.association := match part.association
+        local
+          Association ass;
+        case ass as Association.CONTINUOUS() algorithm
+          ass.kind := kind;
+        then ass;
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed. Cannot set kind for non-continuous partition:\n" + toString(part)});
+        then fail();
+      end match;
+    end setKind;
 
     function getJacobian
       input Partition part;
@@ -592,6 +616,7 @@ public
         case Kind.ODE_EVT     then "ODE_EVT";
         case Kind.ALG_EVT     then "ALG_EVT";
         case Kind.INI         then "INI";
+        case Kind.INI_0       then "INI_0";
         case Kind.DAE         then "DAE";
         case Kind.JAC         then "JAC";
         case Kind.CLK         then "CLK";
@@ -611,9 +636,10 @@ public
         case Kind.ODE_EVT     then 2;
         case Kind.ALG_EVT     then 3;
         case Kind.INI         then 4;
-        case Kind.DAE         then 5;
-        case Kind.JAC         then 6;
-        case Kind.CLK         then 7;
+        case Kind.INI_0       then 5;
+        case Kind.DAE         then 6;
+        case Kind.JAC         then 7;
+        case Kind.CLK         then 8;
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed. Unknown partition kind in match."});
         then fail();
@@ -693,6 +719,12 @@ public
       part1.equations   := EquationPointers.addList(EquationPointers.toList(part2.equations), part1.equations);
     end merge;
   end Partition;
+
+
+  function kindIsInitial
+    input Kind kind;
+    output Boolean b = kind == Kind.INI or kind == Kind.INI_0;
+  end kindIsInitial;
 
   annotation(__OpenModelica_Interface="backend");
 end NBPartition;

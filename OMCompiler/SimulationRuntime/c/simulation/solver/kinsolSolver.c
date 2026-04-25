@@ -1,30 +1,27 @@
 /*
- * This file is part of OpenModelica.
+ * This file belongs to the OpenModelica Run-Time System
  *
- * Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
- * c/o Linköpings universitet, Department of Computer and Information Science,
- * SE-58183 Linköping, Sweden.
- *
- * All rights reserved.
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC), c/o Linköpings
+ * universitet, Department of Computer and Information Science, SE-58183 Linköping, Sweden. All rights
+ * reserved.
  *
  * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THE BSD NEW LICENSE OR THE
- * GPL VERSION 3 LICENSE OR THE OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * AGPL VERSION 3 LICENSE OR THE OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8. ANY
+ * USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
+ * ACCEPTANCE OF THE BSD NEW LICENSE OR THE OSMC PUBLIC LICENSE OR THE AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
- * Public License (OSMC-PL) are obtained from OSMC, either from the above
- * address, from the URLs: http://www.openmodelica.org or
- * http://www.ida.liu.se/projects/OpenModelica, and in the OpenModelica
- * distribution. GNU version 3 is obtained from:
- * http://www.gnu.org/copyleft/gpl.html. The New BSD License is obtained from:
- * http://www.opensource.org/licenses/BSD-3-Clause.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium) Public License
+ * (OSMC-PL) are obtained from OSMC, either from the above address, from the URLs:
+ * http://www.openmodelica.org or https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica, and in the OpenModelica distribution. GNU
+ * AGPL version 3 is obtained from: https://www.gnu.org/licenses/licenses.html#GPL. The BSD NEW
+ * License is obtained from: http://www.opensource.org/licenses/BSD-3-Clause.
  *
- * This program is distributed WITHOUT ANY WARRANTY; without even the implied
- * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, EXCEPT AS
- * EXPRESSLY SET FORTH IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE
- * CONDITIONS OF OSMC-PL.
+ * This program is distributed WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY
+ * SET FORTH IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF
+ * OSMC-PL.
  *
  */
 
@@ -478,7 +475,7 @@ static void finishSparseColPtr(SUNMatrix A, int nnz) {
 static int nlsKinsolDenseDerivativeTest(DATA *data, NONLINEAR_SYSTEM_DATA *nlsData,
                                         NLS_KINSOL_DATA *kinsolData, SUNMatrix Jsym, SolverCaller caller)
 {
-  int row, col, nz, errorCount, numericalErrorCount, structuralErrorCount;
+  int row, col, nz, numericalErrorCount, structuralErrorCount;
   const int size = nlsData->size;
   int ret = 0;
 
@@ -525,10 +522,10 @@ static int nlsKinsolDenseDerivativeTest(DATA *data, NONLINEAR_SYSTEM_DATA *nlsDa
   infoStreamPrint(OMC_LOG_NLS_DERIVATIVE_TEST, 1, "%s: Derivative test (atol=%.5e, rtol=%.5e, scaled = %s, Caller: %s):",
                   SolverCaller_callerString(caller), Atol, Rtol, kinsolData->nominalJac ? "true" : "false", SolverCaller_toString(caller));
   infoStreamPrint(OMC_LOG_NLS_DERIVATIVE_TEST, 1, "Matrix Info");
-  infoStreamPrint(OMC_LOG_NLS_DERIVATIVE_TEST, 0, "NLS index = %ld", nlsData->equationIndex);
-  infoStreamPrint(OMC_LOG_NLS_DERIVATIVE_TEST, 0, "Columns   = %li", columns);
-  infoStreamPrint(OMC_LOG_NLS_DERIVATIVE_TEST, 0, "Rows      = %li", rows);
-  infoStreamPrint(OMC_LOG_NLS_DERIVATIVE_TEST, 0, "NNZ       = %li", nnz);
+  infoStreamPrint(OMC_LOG_NLS_DERIVATIVE_TEST, 0, "NLS index = " OMC_INT_FORMAT, nlsData->equationIndex);
+  infoStreamPrint(OMC_LOG_NLS_DERIVATIVE_TEST, 0, "Columns   = " OMC_INT_FORMAT, columns);
+  infoStreamPrint(OMC_LOG_NLS_DERIVATIVE_TEST, 0, "Rows      = " OMC_INT_FORMAT, rows);
+  infoStreamPrint(OMC_LOG_NLS_DERIVATIVE_TEST, 0, "NNZ       = " OMC_INT_FORMAT, nnz);
   infoStreamPrint(OMC_LOG_NLS_DERIVATIVE_TEST, 0, "Curr Time = %-11.5e", data->localData[0]->timeValue);
 
   messageClose(OMC_LOG_NLS_DERIVATIVE_TEST);
@@ -536,7 +533,6 @@ static int nlsKinsolDenseDerivativeTest(DATA *data, NONLINEAR_SYSTEM_DATA *nlsDa
   infoStreamPrint(OMC_LOG_NLS_DERIVATIVE_TEST, 1, "Anomalies");
 
   nz = 0;
-  errorCount = 0;
   numericalErrorCount = 0;
   structuralErrorCount = 0;
 
@@ -719,7 +715,6 @@ static int nlsSparseJac(N_Vector vecX, N_Vector vecFX, SUNMatrix Jac,
   /* Variables */
   NLS_USERDATA *kinsolUserData;
   DATA *data;
-  threadData_t *threadData;
   NONLINEAR_SYSTEM_DATA *nlsData;
   NLS_KINSOL_DATA *kinsolData;
   SPARSE_PATTERN *sparsePattern;
@@ -745,7 +740,6 @@ static int nlsSparseJac(N_Vector vecX, N_Vector vecFX, SUNMatrix Jac,
   /* Access userData and nonlinear system data */
   kinsolUserData = (NLS_USERDATA *)userData;
   data = kinsolUserData->data;
-  threadData = kinsolUserData->threadData;
   nlsData = kinsolUserData->nlsData;
   kinsolData = (NLS_KINSOL_DATA *)nlsData->solverData;
   sparsePattern = nlsData->sparsePattern;

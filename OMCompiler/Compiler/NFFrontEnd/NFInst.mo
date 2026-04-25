@@ -1,27 +1,31 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
@@ -1344,17 +1348,6 @@ algorithm
     return;
   end if;
 
-  // When doing lookup in some of the API functions we only need an expanded package.
-  if InstContext.inFastLookup(context) then
-    if state < PackageCacheState.EXPANDED then
-      InstNode.setPackageCache(node, node, PackageCacheState.PROCESSING);
-      inst := expand(node, context);
-      InstNode.setPackageCache(node, inst, PackageCacheState.EXPANDED);
-    end if;
-
-    return;
-  end if;
-
   // Otherwise we need to at least partially instantiate the package.
   if state < PackageCacheState.PARTIALLY_INSTANTIATED then
     InstNode.setPackageCache(node, node, PackageCacheState.PROCESSING);
@@ -1362,8 +1355,9 @@ algorithm
     InstNode.setPackageCache(node, inst, PackageCacheState.PARTIALLY_INSTANTIATED);
   end if;
 
-  // If the package isn't partial we also instantiate expressions in it.
-  if state < PackageCacheState.INSTANTIATED and
+  // If the package isn't partial we also instantiate expressions in it,
+  // except when doing lookup for API functions that only care about looking up classes.
+  if state < PackageCacheState.INSTANTIATED and not InstContext.inFastLookup(context) and
      (not InstNode.isPartial(inst) or InstContext.inRelaxed(context)) then
     InstNode.setPackageCache(node, inst, PackageCacheState.INSTANTIATED);
     instExpressions(inst, context = context, settings = DEFAULT_SETTINGS);
@@ -1729,6 +1723,7 @@ protected
   InstNodeType node_ty;
   Modifier mod;
   Option<InstNode> orig_opt;
+  ClassTree cls_tree;
 algorithm
   // Check that the redeclare element is actually a class.
   if not InstNode.isClass(redeclareNode) then
@@ -1774,12 +1769,9 @@ algorithm
         algorithm
           node_ty := InstNodeType.BASE_CLASS(InstNode.parent(orig_node), InstNode.definition(orig_node), InstNode.nodeType(orig_node));
           orig_node := InstNode.setNodeType(node_ty, orig_node);
-          rdcl_cls.elements := ClassTree.setClassExtends(orig_node, rdcl_cls.elements);
-          rdcl_cls.modifier := mod;
-          rdcl_cls.ccMod := constrainingMod;
-          rdcl_cls.prefixes := prefs;
+          cls_tree := ClassTree.setClassExtends(orig_node, rdcl_cls.elements);
         then
-          rdcl_cls;
+          Class.PARTIAL_CLASS(cls_tree, mod, constrainingMod, prefs);
 
       else
         algorithm
@@ -1793,12 +1785,7 @@ algorithm
         then redeclareEnum(rdcl_cls, orig_cls, prefs, mod, redeclareNode, originalNode, context);
 
       case (_, Class.PARTIAL_CLASS())
-        algorithm
-          rdcl_cls.prefixes := prefs;
-          rdcl_cls.modifier := mod;
-          rdcl_cls.ccMod := constrainingMod;
-        then
-          rdcl_cls;
+        then Class.PARTIAL_CLASS(rdcl_cls.elements, mod, constrainingMod, prefs);
 
       else
         algorithm
@@ -3360,7 +3347,10 @@ algorithm
 
     case SCode.Equation.EQ_CONNECT(info = info)
       algorithm
-        if InstContext.inWhen(context) then
+        if InstContext.inInitial(context) then
+          Error.addSourceMessage(Error.CONNECT_IN_INITIAL_EQUATION, {}, info);
+          fail();
+        elseif InstContext.inWhen(context) then
           Error.addSourceMessage(Error.CONNECT_IN_WHEN,
             {Dump.printComponentRefStr(scodeEq.crefLeft),
              Dump.printComponentRefStr(scodeEq.crefRight)}, info);
@@ -3523,7 +3513,7 @@ protected
 algorithm
   // collect inputs and outputs later when types are computed properly
   statements := instStatements(algorithmSection.statements, scope, context);
-  alg := Algorithm.ALGORITHM(statements, {}, {}, scope, DAE.emptyElementSource);
+  alg := Algorithm.ALGORITHM(statements, {}, {}, NONE(), scope, DAE.emptyElementSource);
 end instAlgorithmSection;
 
 function instStatements

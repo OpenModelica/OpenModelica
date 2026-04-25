@@ -5,6 +5,7 @@ AddClassAnnotation.mos \
 addComponent1.mos \
 addComponent2.mos \
 addConnection1.mos \
+addEquation1.mos \
 ArraySlicing.mos \
 Bug2871.mos \
 Bug2882.mos \
@@ -34,10 +35,12 @@ CopyClass4.mos \
 CopyClass5.mos \
 CopyClass6.mos \
 CopyClass7.mos \
+CopyClass8.mos \
 CopyClassInvalid1.mos \
 CopyClassRedeclare1.mos \
 DefaultComponentName.mos \
 DeleteConnection.mos \
+deleteEquation1.mos \
 DialogAnnotation.mos \
 FlagParsing.mos \
 ForStatement1.mos \
@@ -68,6 +71,7 @@ getExtendsModifierNames.mos \
 getIconAnnotation.mos \
 getInheritedClasses1.mos \
 getInheritedClasses2.mos \
+getInheritedClasses3.mos \
 getNthComponentAnnotation.mos \
 getNthConnector.mos \
 getNthConnectorIconAnnotation.mos \
@@ -129,6 +133,7 @@ ReverseLookup3.mos \
 RunScript.mos \
 saveShort.mos \
 saveTotalModel.mos \
+saveTotalModel2.mos \
 setComponentComment.mos \
 setComponentModifierValue.mos \
 setElementAnnotation.mos \
@@ -160,7 +165,9 @@ Ticket6287and6288.mos \
 Ticket6300.mos \
 Ticket6307.mos \
 Ticket6406.mos \
+translateResidualsDAE1.mos \
 UnpatchedModelicaServices.mos \
+updateEquation1.mos \
 UsesAnnotation1.mos \
 UsesAnnotation2.mos \
 variables.mos \

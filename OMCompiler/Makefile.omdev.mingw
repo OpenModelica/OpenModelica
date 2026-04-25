@@ -124,6 +124,10 @@ ZLIB_DIR=3rdParty/zlib
 LIBMODELICAZLIB=$(OMBUILDDIR)/lib/omc/libzlib$(STAEXT)
 LIBMODELICAZLIB_MSVC=$(OMBUILDDIR_MSVC)\lib\omc\msvc\zlib.lib
 
+SIMDJSON_DIR=3rdParty/simdjson
+SIMDJSON_BUILD_DIR=$(SIMDJSON_DIR)/build
+LIBSIMDJSONLIB=libsimdjson.a
+
 SUITESPARSE_LIBS=
 
 defaultMakefileTarget = Makefile.omdev.mingw

@@ -1,30 +1,27 @@
 /*
- * This file is part of OpenModelica.
+ * This file belongs to the OpenModelica Run-Time System
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
- * c/o Linköpings universitet, Department of Computer and Information Science,
- * SE-58183 Linköping, Sweden.
- *
- * All rights reserved.
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC), c/o Linköpings
+ * universitet, Department of Computer and Information Science, SE-58183 Linköping, Sweden. All rights
+ * reserved.
  *
  * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THE BSD NEW LICENSE OR THE
- * GPL VERSION 3 LICENSE OR THE OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * AGPL VERSION 3 LICENSE OR THE OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8. ANY
+ * USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
+ * ACCEPTANCE OF THE BSD NEW LICENSE OR THE OSMC PUBLIC LICENSE OR THE AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
- * Public License (OSMC-PL) are obtained from OSMC, either from the above
- * address, from the URLs: http://www.openmodelica.org or
- * http://www.ida.liu.se/projects/OpenModelica, and in the OpenModelica
- * distribution. GNU version 3 is obtained from:
- * http://www.gnu.org/copyleft/gpl.html. The New BSD License is obtained from:
- * http://www.opensource.org/licenses/BSD-3-Clause.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium) Public License
+ * (OSMC-PL) are obtained from OSMC, either from the above address, from the URLs:
+ * http://www.openmodelica.org or https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica, and in the OpenModelica distribution. GNU
+ * AGPL version 3 is obtained from: https://www.gnu.org/licenses/licenses.html#GPL. The BSD NEW
+ * License is obtained from: http://www.opensource.org/licenses/BSD-3-Clause.
  *
- * This program is distributed WITHOUT ANY WARRANTY; without even the implied
- * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, EXCEPT AS
- * EXPRESSLY SET FORTH IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE
- * CONDITIONS OF OSMC-PL.
+ * This program is distributed WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY
+ * SET FORTH IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF
+ * OSMC-PL.
  *
  */
 
@@ -524,10 +521,9 @@ static void Text_readTable(TEXT_FILE *f, double *buf, size_t rows, size_t cols)
   char *entp = 0;
   for(i = 0; i < rows; ++i)
   {
-    size_t sl;
     char *number;
     ++f->line;
-    sl = Text_readLine(f,&strLn,&buflen);
+    Text_readLine(f,&strLn,&buflen);
     number = strLn;
     for(j = 0; j < cols; ++j)
     {
@@ -623,13 +619,13 @@ static char Mat_findTable(MAT_FILE *f, const char* tableName, size_t *cols, size
   {
     long pos;
 
-    char * returnTmp = fgets((char*)&f->hdr,sizeof(hdr_t),f->fp);
+    fgets((char*)&f->hdr,sizeof(hdr_t),f->fp);
     if(ferror(f->fp))
     {
       fclose(f->fp);
       ModelicaFormatError("Could not read from file `%s'.",f->filename);
     }
-    returnTmp = fgets(name,fmin(f->hdr.namelen,(long)256),f->fp);
+    fgets(name,fmin(f->hdr.namelen,(long)256),f->fp);
     if(strncmp(tableName,name,strlen(tableName)) == 0)
     {
       if(f->hdr.type%10 != 0 || f->hdr.type/1000 > 1)
@@ -843,11 +839,10 @@ static char csv_findTable(CSV_FILE *f, const char *tableName, size_t *cols, size
   *rows=0;
   while(!feof(f->fp))
   {
-    size_t col;
     /* start new line, update counters */
     ++f->line;
     /* read whole line */
-    col = csv_readLine(f,&strLn,&buflen);
+    csv_readLine(f,&strLn,&buflen);
 
     if(strcmp(strLn,tableName)==0)
     {
@@ -859,7 +854,7 @@ static char csv_findTable(CSV_FILE *f, const char *tableName, size_t *cols, size
       }
       while(!feof(f->fp) && (stop==0))
       {
-        col = csv_readLine(f,&strLn,&buflen);
+        csv_readLine(f,&strLn,&buflen);
         for(i = 0; i<buflen;i++)
         {
           if(strLn[i]== ',')

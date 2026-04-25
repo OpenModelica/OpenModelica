@@ -1,33 +1,38 @@
 /*
-* This file is part of OpenModelica.
-*
-* Copyright (c) 1998-2020, Open Source Modelica Consortium (OSMC),
-* c/o Linköpings universitet, Department of Computer and Information Science,
-* SE-58183 Linköping, Sweden.
-*
-* All rights reserved.
-*
-* THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
-* THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
-* ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
-* RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
-* ACCORDING TO RECIPIENTS CHOICE.
-*
-* The OpenModelica software and the Open Source Modelica
-* Consortium (OSMC) Public License (OSMC-PL) are obtained
-* from OSMC, either from the above address,
-* from the URLs: http://www.ida.liu.se/projects/OpenModelica or
-* http://www.openmodelica.org, and in the OpenModelica distribution.
-* GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
-*
-* This program is distributed WITHOUT ANY WARRANTY; without
-* even the implied warranty of  MERCHANTABILITY or FITNESS
-* FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
-* IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
-*
-* See the full OSMC Public License conditions for more details.
-*
-*/
+ * This file is part of OpenModelica.
+ *
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
+ * c/o Linköpings universitet, Department of Computer and Information Science,
+ * SE-58183 Linköping, Sweden.
+ *
+ * All rights reserved.
+ *
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
+ *
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
+ *
+ * This program is distributed WITHOUT ANY WARRANTY; without
+ * even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
+ *
+ * See the full OSMC Public License conditions for more details.
+ *
+ */
+
 encapsulated uniontype NBackendDAE
 "file:        NBackendDAE.mo
  package:     NBackendDAE
@@ -246,7 +251,7 @@ public
     output tuple<Integer, Integer> eqnSizes "scal, arr";
   algorithm
     (varSizes, eqnSizes) := match bdae
-      case MAIN() then ((VarData.scalarSize(bdae.varData), VarData.size(bdae.varData)), (EqData.scalarSize(bdae.eqData), EqData.size(bdae.eqData)));
+      case MAIN() then ((VarData.scalarSize(bdae.varData, true), VarData.size(bdae.varData)), (EqData.scalarSize(bdae.eqData, true), EqData.size(bdae.eqData)));
       else ((0, 0), (0, 0));
     end match;
   end sizes;
@@ -289,20 +294,6 @@ public
       eq_filter_opt := SOME(UnorderedSet.fromList(followEquations, stringHashDjb2, stringEqual));
     end if;
 
-    // Pre-Partitioning Modules
-    // (do not change order SIMPLIFY -> ALIAS -> EVENTS -> DETECTSTATES)
-    preOptModules := {
-      (Bindings.main,      "Bindings"),
-      (FunctionAlias.main, "FunctionAlias"),
-      (function Inline.main(inline_types = inline_types, init = false), "Early Inline"),
-      (function simplify(init = false), "Simplify 1"),
-      (Alias.main,         "Alias"),
-      (function simplify(init = false), "Simplify 2"), // TODO simplify in Alias only
-      (removeStream,       "Remove Stream"),
-      (DetectStates.main,  "Detect States"),
-      (Events.main,        "Events")
-    };
-
     if Flags.getConfigBool(Flags.DAE_MODE) then
       mainModules := {(DAEMode.main, "DAE-Mode")};
       kind := NBPartition.Kind.DAE;
@@ -311,6 +302,20 @@ public
       kind := NBPartition.Kind.ODE;
     end if;
 
+    // Pre-Partitioning Modules
+    // (do not change order SIMPLIFY -> ALIAS -> EVENTS -> DETECTSTATES)
+    preOptModules := {
+      (Bindings.main,      "Bindings"),
+      (function FunctionAlias.main(kind = kind), "FunctionAlias"),
+      (function Inline.main(inline_types = inline_types, init = false), "Early Inline"),
+      (function simplify(init = false), "Simplify 1"),
+      (function Alias.main(kind = kind),  "Alias"),
+      (function simplify(init = false), "Simplify 2"), // TODO simplify in Alias only
+      (removeStream,       "Remove Stream"),
+      (DetectStates.main,  "Detect States"),
+      (Events.main,        "Events")
+    };
+
     // all main modules are always done in ODE mode
     mainModules := listAppend({
       (function Partitioning.main(kind = NBPartition.Kind.ODE),             "Partitioning"),
@@ -318,7 +323,6 @@ public
       (function Inline.main(inline_types = {DAE.AFTER_INDEX_RED_INLINE()}, init = false), "After Index Reduction Inline"),
       (Initialization.main,                                                 "Initialization")
     }, mainModules);
-
 
     // (do not change order SOLVE -> JACOBIAN)
     postOptModules := {
@@ -706,7 +710,7 @@ protected
 
     // lower the component references properly
     variables       := VariablePointers.map(variables, function Variable.mapExp(fn = function lowerComponentReferenceExp(variables = variables, complete = true)));
-    variables       := VariablePointers.map(variables, function Variable.applyToType(func = function Type.applyToDims(func = function lowerDimension(variables = variables))));
+    variables       := VariablePointers.map(variables, function Variable.applyToType(func = function Type.applyToDims(func = function lowerDimension(variables = variables, complete = true))));
 
     /* lower the records to add children */
     records         := VariablePointers.mapPtr(records, function lowerRecordChildren(variables = variables));
@@ -743,7 +747,7 @@ protected
       var.backendinfo := match var.backendinfo
         case BackendInfo.BACKEND_INFO(varKind = VariableKind.FRONTEND_DUMMY()) algorithm
           (varKind, attributes) := lowerVariableKind(var, attributes, var.ty);
-        then BackendInfo.BACKEND_INFO(varKind, attributes, annotations, NONE(), NONE(), NONE(), NONE());
+        then BackendInfo.BACKEND_INFO(varKind, attributes, annotations, NONE(), NONE(), NONE(), NONE(), NONE());
         else BackendInfo.setAttributes(var.backendinfo, attributes, annotations);
       end match;
 
@@ -1057,7 +1061,7 @@ protected
       // wrap no return call in algorithm
       case FEquation.NORETCALL() algorithm
         stmt := Statement.NORETCALL(frontend_equation.exp, frontend_equation.source);
-        alg  := Algorithm.ALGORITHM({stmt}, {}, {}, InstNode.EMPTY_NODE(), frontend_equation.source);
+        alg  := Algorithm.ALGORITHM({stmt}, {}, {}, NONE(), InstNode.EMPTY_NODE(), frontend_equation.source);
         alg  := Algorithm.setInputsOutputs(alg);
       then {lowerAlgorithm(alg, init)};
 
@@ -1228,7 +1232,7 @@ protected
       case FEquation.ASSERT(condition = Expression.CALL(call = call)) guard(Call.isNamed(call, "noEvent")) algorithm
         attr := EquationAttributes.default(EquationKind.EMPTY, init);
         alg := Algorithm.ALGORITHM({Statement.ASSERT(frontend_eq.condition, frontend_eq.message, frontend_eq.level, frontend_eq.source)},
-          {}, {}, frontend_eq.scope, frontend_eq.source);
+          {}, {}, NONE(), frontend_eq.scope, frontend_eq.source);
       then {lowerAlgorithm(alg, init)};
 
       case FEquation.ASSERT() algorithm
@@ -1306,8 +1310,8 @@ protected
       local
         FEquation.Equation elem;
         list<FEquation.Equation> rest;
-      case {}         then stmts;
       case elem::rest then lowerWhenBranchBody(condition, rest, lowerWhenBranchStatement(elem, condition) :: stmts);
+      else stmts;
     end match;
   end lowerWhenBranchBody;
 
@@ -1407,7 +1411,7 @@ protected
     end match;
 
     // also lower dimensions in the case of resizable variables
-    exp := Expression.applyToType(exp, function Type.applyToDims(func = function lowerDimension(variables = variables)));
+    exp := Expression.applyToType(exp, function Type.applyToDims(func = function lowerDimension(variables = variables, complete = complete)));
   end lowerComponentReferenceExp;
 
   public function lowerComponentReference
@@ -1422,7 +1426,7 @@ protected
       if not ComponentRef.isWild(cref) then
         var  := VariablePointers.getVarSafe(variables, ComponentRef.stripSubscriptsAll(cref), if complete then SOME(sourceInfo()) else NONE());
         cref := lowerComponentReferenceInstNode(cref, var);
-        cref := ComponentRef.mapSubscripts(cref, function Subscript.mapExp(func = function lowerComponentReferenceExp(variables = variables, complete = true)));
+        cref := ComponentRef.mapSubscripts(cref, function Subscript.mapExp(func = function lowerComponentReferenceExp(variables = variables, complete = complete)));
       end if;
     else
       if Flags.isSet(Flags.FAILTRACE) and complete then
@@ -1434,10 +1438,11 @@ protected
   protected function lowerDimension
     input output Dimension dim;
     input VariablePointers variables;
+    input Boolean complete;
   algorithm
     dim := match dim
       case Dimension.RESIZABLE() algorithm
-        dim.exp := Expression.map(dim.exp, function lowerComponentReferenceExp(variables = variables, complete = true));
+        dim.exp := Expression.map(dim.exp, function lowerComponentReferenceExp(variables = variables, complete = complete));
       then dim;
 
       else dim;
@@ -1456,7 +1461,7 @@ protected
       local
         Call call;
 
-      case Expression.CREF() guard(not (VariablePointers.containsCref(exp.cref, variables)
+      case Expression.CREF() guard(not (VariablePointers.containsCref(ComponentRef.stripSubscriptsAll(exp.cref), variables)
         or ComponentRef.isNameNode(exp.cref) or ComponentRef.isWild(exp.cref))) algorithm
         UnorderedSet.add(lowerIterator(exp.cref), set);
       then ();
@@ -1490,6 +1495,7 @@ protected
     ComponentRef cref;
   algorithm
     cref := ComponentRef.fromNode(iterator, InstNode.getType(iterator), {}, NFComponentRef.Origin.ITERATOR);
+    cref := ComponentRef.stripSubscriptsAll(cref);
     if not VariablePointers.containsCref(cref, variables) then
       UnorderedSet.add(lowerIterator(cref), set);
     end if;

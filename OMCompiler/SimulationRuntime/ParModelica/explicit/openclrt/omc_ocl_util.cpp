@@ -1,31 +1,27 @@
 /*
- * This file is part of OpenModelica.
+ * This file belongs to the OpenModelica Run-Time System
  *
- * Copyright (c) 1998-CurrentYear, Linköping University,
- * Department of Computer and Information Science,
- * SE-58183 Linköping, Sweden.
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC), c/o Linköpings
+ * universitet, Department of Computer and Information Science, SE-58183 Linköping, Sweden. All rights
+ * reserved.
  *
- * All rights reserved.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THE BSD NEW LICENSE OR THE
+ * AGPL VERSION 3 LICENSE OR THE OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8. ANY
+ * USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
+ * ACCEPTANCE OF THE BSD NEW LICENSE OR THE OSMC PUBLIC LICENSE OR THE AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
- * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium) Public License
+ * (OSMC-PL) are obtained from OSMC, either from the above address, from the URLs:
+ * http://www.openmodelica.org or https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica, and in the OpenModelica distribution. GNU
+ * AGPL version 3 is obtained from: https://www.gnu.org/licenses/licenses.html#GPL. The BSD NEW
+ * License is obtained from: http://www.opensource.org/licenses/BSD-3-Clause.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from Linköping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
- *
- * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
- * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS
- * OF OSMC-PL.
- *
- * See the full OSMC Public License conditions for more details.
+ * This program is distributed WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY
+ * SET FORTH IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF
+ * OSMC-PL.
  *
  */
 
@@ -163,10 +159,10 @@ void ocl_get_device(){
             clGetDeviceInfo(ocl_device, CL_DEVICE_MAX_MEM_ALLOC_SIZE, sizeof(cl_ulong), &mem2, NULL);
             printf("%d CL_DEVICE_MAX_MEM_ALLOC_SIZE: %llu MB\n", i, static_cast<unsigned long long>(mem2/1024/1024));
             clGetDeviceInfo(ocl_device, CL_DEVICE_MAX_PARAMETER_SIZE, sizeof(size_t), &arg_nr, NULL);
-            printf("%d CL_DEVICE_MAX_PARAMETER_SIZE: %ld MB\n", i, arg_nr);
+            printf("%d CL_DEVICE_MAX_PARAMETER_SIZE: %zu MB\n", i, arg_nr);
 
             clGetDeviceInfo(ocl_device, CL_DEVICE_MAX_WORK_GROUP_SIZE, sizeof(size_t), &arg_nr, NULL);
-            printf("%d CL_DEVICE_MAX_WORK_GROUP_SIZE: %ld \n", i, arg_nr);
+            printf("%d CL_DEVICE_MAX_WORK_GROUP_SIZE: %zu \n", i, arg_nr);
             MAX_THREADS_WORKGROUP = (modelica_integer)arg_nr;   //default number of threads is the max number of threads!
 
             clGetDeviceInfo(ocl_device, CL_DEVICE_PREFERRED_VECTOR_WIDTH_DOUBLE  , sizeof(cl_uint), &mem, NULL);
@@ -207,7 +203,6 @@ void ocl_get_device(){
 
 void ocl_initialize(){
     timeval t1, t2;
-    double elapsedTime;
     gettimeofday(&t1, NULL);
 
     if (!device_comm_queue){
@@ -221,8 +216,8 @@ void ocl_initialize(){
     gettimeofday(&t2, NULL);
 
 #if BE_OCL_VERBOSE
-    elapsedTime = (t2.tv_sec - t1.tv_sec) * 1000.0;      // sec to ms
-    elapsedTime += (t2.tv_usec - t1.tv_usec) / 1000.0;   // us to ms
+    double elapsedTime = (t2.tv_sec - t1.tv_sec) * 1000.0; // sec to ms
+    elapsedTime += (t2.tv_usec - t1.tv_usec) / 1000.0;     // us to ms
     printf ("\tOpenCL initialization :        %lf ms\n", elapsedTime);
 #endif
 
@@ -434,7 +429,6 @@ void ocl_execute_kernel(cl_kernel kernel){
     cl_int err = 0;
 
     timeval t1, t2;
-    double elapsedTime;
     gettimeofday(&t1, NULL);
 
     if (WORK_DIM == 0){
@@ -475,8 +469,8 @@ void ocl_execute_kernel(cl_kernel kernel){
 
     gettimeofday(&t2, NULL);
 #if BE_OCL_VERBOSE
-    elapsedTime = (t2.tv_sec - t1.tv_sec) * 1000.0;      // sec to ms
-    elapsedTime += (t2.tv_usec - t1.tv_usec) / 1000.0;   // us to ms
+    double elapsedTime = (t2.tv_sec - t1.tv_sec) * 1000.0; // sec to ms
+    elapsedTime += (t2.tv_usec - t1.tv_usec) / 1000.0;     // us to ms
     printf ("\tKernel Execution      :        %lf ms\n", elapsedTime);
 #endif
 

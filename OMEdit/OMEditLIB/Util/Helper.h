@@ -113,6 +113,7 @@ public:
   static QFontInfo monospacedFontInfo;
   static QString toolsOptionsPath;
   static QString speedOptions;
+  static QStringList timeDisplayUnits;
   /* Meta Modelica Types */
   static QString MODELICA_METATYPE;
   static QString MODELICA_STRING;
@@ -141,6 +142,7 @@ public:
   static QString arrayIndexRegularExpression;
   /* Global translated variables */
   static QString newModelicaClass;
+  static QString newModelicaClassTip;
   static QString newModelicaClassLibraryBrowser;
   static QString createNewModelicaClass;
   static QString openModelicaFiles;
@@ -238,6 +240,8 @@ public:
   static QString loading;
   static QString question;
   static QString search;
+  static QString findUsage;
+  static QString findUsageTip;
   static QString duplicate;
   static QString duplicateTip;
   static QString unloadClass;
@@ -465,6 +469,7 @@ public:
   static QString replaceSubModel;
   static QString modelicaPathTip;
   static QString selectParentClassName;
+  static QString switchModel;
 };
 
 class GUIMessages : public QObject

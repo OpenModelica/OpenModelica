@@ -1,27 +1,31 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2017, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
@@ -1928,6 +1932,14 @@ algorithm
         newCref := ComponentReference.prependStringCref(BackendDAE.outputAliasPrefix, cref);
         newVar := BackendVariable.copyVarNewName(newCref, v);
         newVar := BackendVariable.setVarDirection(newVar, DAE.BIDIR());
+        newVar := BackendVariable.setVarKind(newVar, BackendDAE.VARIABLE());
+        /* fix issue https://github.com/OpenModelica/OpenModelica/issues/15311
+         * force StateSelect.never on the alias variable so that state selection never picks the alias
+         * instead of original state variable, which would cause wrong code generation and simulation results.
+         */
+        if BackendVariable.isRealVar(v) then
+          newVar := BackendVariable.setVarStateSelect(newVar, DAE.AVOID());
+        end if;
         newVars := BackendVariable.addVar(newVar, newVars);
 
         /*fix issue https://github.com/OpenModelica/OpenModelica/issues/13342
@@ -3082,7 +3094,7 @@ algorithm
       BackendDAE.Variables vars;
       DAE.Exp e1, e2, startvalue, stopvalue, stepvalue;
       list<BackendDAE.Var> varslst;
-      Boolean b, isInitial;
+      Boolean b, b1, b2, isInitial;
       list<DAE.Exp> explst;
       Option<DAE.Exp> stepvalueopt;
       Integer i;
@@ -3174,11 +3186,9 @@ algorithm
     // homotopy operator for initialization system
     case (DAE.CALL(path=Absyn.IDENT(name="homotopy"), expLst = {e1, e2}), (_, _, _, true, _))
       algorithm
-        (_, b, tpl) := traversingadjacencyRowExpSolvableFinder(e1, inTpl);
-        if b then
-          (_, b, tpl) := traversingadjacencyRowExpSolvableFinder(e2, tpl);
-        end if;
-    then (inExp, b, tpl);
+        (_, b1, tpl) := traversingadjacencyRowExpSolvableFinder(e1, inTpl);
+        (_, b2, tpl) := traversingadjacencyRowExpSolvableFinder(e2, tpl);
+    then (inExp, b1 and b2, tpl);
 
     // only traverse position and direction for spatialDistribution, not the inputs!
     case (DAE.CALL(path=Absyn.IDENT(name="spatialDistribution"), expLst = {_, _, _, e1, e2, _, _}), _)
@@ -3512,7 +3522,7 @@ algorithm
       BackendDAE.Variables vars;
       DAE.Exp e,e1,e2;
       list<BackendDAE.Var> varslst;
-      Boolean b, isInitial;
+      Boolean b, b1, b2, isInitial;
       Integer i;
       String str;
       tuple<BackendDAE.Variables,AvlSetInt.Tree, Boolean> tpl;
@@ -3571,11 +3581,9 @@ algorithm
     // homotopy operator for initialization system
     case (DAE.CALL(path=Absyn.IDENT(name="homotopy"), expLst = {e1, e2}), (_, _, true))
       algorithm
-        (_, b, tpl) := traversingadjacencyRowExpFinder(e1, inTpl);
-        if b then
-          (_, b, tpl) := traversingadjacencyRowExpFinder(e2, tpl);
-        end if;
-    then (inExp, b, tpl);
+        (_, b1, tpl) := traversingadjacencyRowExpFinder(e1, inTpl);
+        (_, b2, tpl) := traversingadjacencyRowExpFinder(e2, tpl);
+    then (inExp, b1 and b2, tpl);
 
     // only traverse position and direction for spatialDistribution, not the inputs!
     case (DAE.CALL(path=Absyn.IDENT(name="spatialDistribution"), expLst = {_, _, _, e1, e2, _, _}), _)
@@ -3656,7 +3664,7 @@ algorithm
        AvlSetInt.Tree vars;
        Integer i;
     case ({}, {}) then inVarIndxLst;
-    case (BackendDAE.VAR()::rest, i::irest)
+    case (BackendDAE.VAR(varKind = BackendDAE.DISCRETE())::rest, i::irest)
       equation
         vars = AvlSetInt.add(inVarIndxLst, i);
       then adjacencyRowExp1DiscreteOrArray(rest,irest,vars);
@@ -3681,7 +3689,7 @@ algorithm
       DAE.Exp e, e1, e2;
       list<BackendDAE.Var> varslst;
       tuple<BackendDAE.Variables,AvlSetInt.Tree, Boolean> tpl;
-      Boolean b, isInitial;
+      Boolean b, b1, b2, isInitial;
 
     // inner variable
     case (DAE.CREF(componentRef = cr),(vars,pa,isInitial))
@@ -3738,11 +3746,9 @@ algorithm
     // homotopy operator for initialization system
     case (DAE.CALL(path=Absyn.IDENT(name="homotopy"), expLst = {e1, e2}), (_, _, true))
       algorithm
-        (_, b, tpl) := traversingadjacencyRowExpFinderwithInput(e1, inTpl);
-        if b then
-          (_, b, tpl) := traversingadjacencyRowExpFinderwithInput(e2, tpl);
-        end if;
-    then (inExp, b, tpl);
+        (_, b1, tpl) := traversingadjacencyRowExpFinderwithInput(e1, inTpl);
+        (_, b2, tpl) := traversingadjacencyRowExpFinderwithInput(e2, tpl);
+    then (inExp, b1 and b2, tpl);
 
     // only traverse position and direction for spatialDistribution, not the inputs!
     case (DAE.CALL(path=Absyn.IDENT(name="spatialDistribution"), expLst = {_, _, _, e1, e2, _, _}), _)
@@ -6011,7 +6017,7 @@ algorithm
       BackendDAE.Variables vars;
       DAE.Exp e1, e2, e3;
       list<BackendDAE.Var> varslst;
-      Boolean b, bs, isInitial;
+      Boolean b, b1, b2, bs, isInitial;
       Integer mark, i;
       array<Integer> rowmark;
       BinaryTree.BinTree bt;
@@ -6093,13 +6099,11 @@ algorithm
     then traversingAdjacencyRowExpSolvableEnhancedFinder(e1, inTpl);
 
     // homotopy operator for initialization system
-    case (DAE.CALL(path=Absyn.IDENT(name="homotopy"), expLst = {e1, e2}), (_, _, true, _, _, _))
+    case (DAE.CALL(path=Absyn.IDENT(name="homotopy"), expLst = {e1, e2}), (vars, bs, true, it, at, pa))
       algorithm
-        (_, b, tpl) := traversingAdjacencyRowExpSolvableEnhancedFinder(e1, inTpl);
-        if b then
-          (_, b, tpl) := traversingAdjacencyRowExpSolvableEnhancedFinder(e2, tpl);
-        end if;
-    then (inExp, b, tpl);
+        (_, b1, tpl) := traversingAdjacencyRowExpSolvableEnhancedFinder(e1, inTpl);
+        (_, b2, tpl) := traversingAdjacencyRowExpSolvableEnhancedFinder(e2, tpl);
+    then (inExp, b1 and b2, tpl);
 
     // only traverse position and direction for spatialDistribution, not the inputs!
     case (DAE.CALL(path=Absyn.IDENT(name="spatialDistribution"), expLst = {_, _, _, e1, e2, _, _}), _)

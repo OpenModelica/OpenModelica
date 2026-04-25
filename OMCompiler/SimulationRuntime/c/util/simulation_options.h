@@ -1,30 +1,27 @@
 /*
- * This file is part of OpenModelica.
+ * This file belongs to the OpenModelica Run-Time System
  *
- * Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
- * c/o Linköpings universitet, Department of Computer and Information Science,
- * SE-58183 Linköping, Sweden.
- *
- * All rights reserved.
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC), c/o Linköpings
+ * universitet, Department of Computer and Information Science, SE-58183 Linköping, Sweden. All rights
+ * reserved.
  *
  * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THE BSD NEW LICENSE OR THE
- * GPL VERSION 3 LICENSE OR THE OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * AGPL VERSION 3 LICENSE OR THE OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8. ANY
+ * USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
+ * ACCEPTANCE OF THE BSD NEW LICENSE OR THE OSMC PUBLIC LICENSE OR THE AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
- * Public License (OSMC-PL) are obtained from OSMC, either from the above
- * address, from the URLs: http://www.openmodelica.org or
- * http://www.ida.liu.se/projects/OpenModelica, and in the OpenModelica
- * distribution. GNU version 3 is obtained from:
- * http://www.gnu.org/copyleft/gpl.html. The New BSD License is obtained from:
- * http://www.opensource.org/licenses/BSD-3-Clause.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium) Public License
+ * (OSMC-PL) are obtained from OSMC, either from the above address, from the URLs:
+ * http://www.openmodelica.org or https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica, and in the OpenModelica distribution. GNU
+ * AGPL version 3 is obtained from: https://www.gnu.org/licenses/licenses.html#GPL. The BSD NEW
+ * License is obtained from: http://www.opensource.org/licenses/BSD-3-Clause.
  *
- * This program is distributed WITHOUT ANY WARRANTY; without even the implied
- * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, EXCEPT AS
- * EXPRESSLY SET FORTH IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE
- * CONDITIONS OF OSMC-PL.
+ * This program is distributed WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY
+ * SET FORTH IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF
+ * OSMC-PL.
  *
  */
 
@@ -172,6 +169,7 @@ enum _FLAG
   FLAG_SR_ERR,
   FLAG_SR_INT,
   FLAG_SR_NLS,
+  FLAG_SR_NLS_INTERNAL_DAMPING_FAC,
   FLAG_SR_NLS_INTERNAL_JACKEEP,
   FLAG_MR,
   FLAG_MR_CTRL,
@@ -238,6 +236,7 @@ enum GB_METHOD {
   RK_ESDIRK2,         /* esdirk2*/
   RK_ESDIRK3,         /* esdirk3*/
   RK_ESDIRK4,         /* esdirk4*/
+  RK_ESDIRK4_7L2SA,   /* esdirk4s7*/
   RK_RADAU_IA_2,      /* radauIA2*/
   RK_RADAU_IA_3,      /* radauIA3*/
   RK_RADAU_IA_4,      /* radauIA4*/
@@ -309,7 +308,14 @@ enum GB_CTRL_METHOD {
   GB_CTRL_PID_H312 = 5,       /* PID controller for step size */
   GB_CTRL_PID_SOEDERLIND = 6, /* PID controller for step size */
   GB_CTRL_PID_STIFF = 7,      /* PID controller for step size */
-  GB_CTRL_CNST = 8,           /* Constant step size */
+  GB_CTRL_PI_PC = 8,          /* Standard PI Predictive controller */
+  GB_CTRL_PI_PC_HYBRID = 9,   /* Hybrid I / PI Predictive controller */
+  GB_CTRL_PI_H211 = 10,       /* PI Predictive controller */
+  GB_CTRL_PI_H0_211 = 11,     /* PI Predictive controller */
+  GB_CTRL_PID_H0_312 = 12,    /* PID Predictive controller */
+  GB_CTRL_PID_H0_321 = 13,    /* PID Predictive controller */
+  GB_CTRL_PPID = 14,          /* PID Predictive controller */
+  GB_CTRL_CNST = 15,          /* Constant step size */
 
   GB_CTRL_MAX
 };
@@ -332,6 +338,22 @@ enum GB_INTERPOL_METHOD {
 
 extern const char *GB_INTERPOL_METHOD_NAME[GB_INTERPOL_MAX];
 extern const char *GB_INTERPOL_METHOD_DESC[GB_INTERPOL_MAX];
+
+/**
+ * @brief Extrapolation method for single-rate / multi-rate error estimation.
+ */
+enum GB_EXTRAPOL_METHOD {
+  GB_EXT_UNKNOWN = 0,    /* Unknown method */
+
+  GB_EXT_DEFAULT,        /* Default, depending on the Runge-Kutta method */
+  GB_EXT_RICHARDSON,     /* Richardson extrapolation */
+  GB_EXT_EMBEDDED,       /* Embedded scheme */
+
+  GB_EXT_MAX
+};
+
+extern const char *GB_EXTRAPOL_METHOD_NAME[GB_EXT_MAX];
+extern const char *GB_EXTRAPOL_METHOD_DESC[GB_EXT_MAX];
 
 enum SOLVER_METHOD
 {
@@ -457,6 +479,7 @@ typedef enum JACOBIAN_METHOD
   COLOREDNUMJAC,      /* Colored numeric Jacobian */
   INTERNALNUMJAC,     /* Internal numeric Jacobian */
   COLOREDSYMJAC,      /* Colored symbolic Jacobian */
+  COLOREDSYMJACADJ,   /* Colored symbolic Jacobian (adjoint) */
   NUMJAC,             /* Non-colored numeric Jacobian */
   SYMJAC,             /* Non-colored symbolic Jacobian */
 

@@ -38,6 +38,7 @@
 #include "Modeling/ModelWidgetContainer.h"
 #include "Options/OptionsDialog.h"
 #include "Modeling/MessagesWidget.h"
+#include "Search/FindUsageWidget.h"
 #include "OMS/OMSProxy.h"
 #include "Modeling/LibraryTreeWidget.h"
 #include "Modeling/ElementTreeWidget.h"
@@ -50,9 +51,6 @@
 #include "Modeling/DocumentationWidget.h"
 #include "Plotting/VariablesWidget.h"
 #include "Search/SearchWidget.h"
-#if !defined(WITHOUT_OSG)
-#include "Animation/ViewerWidget.h"
-#endif
 #include "Util/Helper.h"
 #include "Simulation/ArchivedSimulationsWidget.h"
 #include "Simulation/SimulationOutputWidget.h"
@@ -71,7 +69,6 @@
 #include "Git/CleanDialog.h"
 #include "Git/GitCommands.h"
 #include "Traceability/TraceabilityInformationURI.h"
-#include "Traceability/TraceabilityGraphViewWidget.h"
 #include "Plotting/DiagramWindow.h"
 #include "Interfaces/InformationInterface.h"
 #include "Interfaces/ModelInterface.h"
@@ -269,6 +266,14 @@ void MainWindow::setUpMainWindow(threadData_t *threadData)
   mpElementDockWidget->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
   mpElementDockWidget->setWidget(mpElementWidget);
   addDockWidget(Qt::LeftDockWidgetArea, mpElementDockWidget);
+  // Create an object of FindUsageWidget.
+  FindUsageWidget::create();
+  // Create FindUsageDockWidget dock
+  mpFindUsageDockWidget = new QDockWidget(tr("Find Usage"), this);
+  mpFindUsageDockWidget->setObjectName("FindUsage");
+  mpFindUsageDockWidget->setWidget(FindUsageWidget::instance());
+  addDockWidget(Qt::BottomDockWidgetArea, mpFindUsageDockWidget);
+  mpFindUsageDockWidget->hide();
   // Create an object of SearchWidget
   mpSearchWidget = new SearchWidget(this);
   mpSearchDockWidget = new QDockWidget(tr("Search"),this);
@@ -352,8 +357,6 @@ void MainWindow::setUpMainWindow(threadData_t *threadData)
   createActions();
   createToolbars();
   createMenus();
-  // enable/disable re-simulation toolbar based on variable browser visibiltiy.
-  connect(mpVariablesDockWidget, SIGNAL(visibilityChanged(bool)), this, SLOT(enableReSimulationToolbar(bool)));
   // Create the archived simulation widget
   ArchivedSimulationsWidget::create();
   // Create simulation dialog when needed
@@ -544,7 +547,6 @@ void MainWindow::showModelingPerspectiveToolBars(ModelWidget *pModelWidget)
     SHOW_HIDE_TOOLBAR(mpCheckToolBar, ToolBars::checkToolBar, false);
     SHOW_HIDE_TOOLBAR(mpSimulationToolBar, ToolBars::simulationToolBar, false);
     SHOW_HIDE_TOOLBAR(mpReSimulationToolBar, ToolBars::reSimulationToolBar, false);
-    mpReSimulationToolBar->setEnabled(mpVariablesDockWidget->isVisible() && !mpVariablesWidget->getVariablesTreeView()->selectionModel()->selectedIndexes().isEmpty());
     SHOW_HIDE_TOOLBAR(mpPlotToolBar, ToolBars::plotToolBar, false);
     SHOW_HIDE_TOOLBAR(mpDebuggerToolBar, ToolBars::debuggerToolBar, false);
     SHOW_HIDE_TOOLBAR(mpOMSimulatorToolbar, ToolBars::OMSimulatorToolBar, false);
@@ -557,7 +559,6 @@ void MainWindow::showModelingPerspectiveToolBars(ModelWidget *pModelWidget)
     SHOW_HIDE_TOOLBAR(mpCheckToolBar, ToolBars::checkToolBar, false);
     SHOW_HIDE_TOOLBAR(mpSimulationToolBar, ToolBars::simulationToolBar, true);
     SHOW_HIDE_TOOLBAR(mpReSimulationToolBar, ToolBars::reSimulationToolBar, false);
-    mpReSimulationToolBar->setEnabled(mpVariablesDockWidget->isVisible() && !mpVariablesWidget->getVariablesTreeView()->selectionModel()->selectedIndexes().isEmpty());
     SHOW_HIDE_TOOLBAR(mpPlotToolBar, ToolBars::plotToolBar, false);
     SHOW_HIDE_TOOLBAR(mpDebuggerToolBar, ToolBars::debuggerToolBar, false);
     SHOW_HIDE_TOOLBAR(mpOMSimulatorToolbar, ToolBars::OMSimulatorToolBar, true);
@@ -570,7 +571,6 @@ void MainWindow::showModelingPerspectiveToolBars(ModelWidget *pModelWidget)
     SHOW_HIDE_TOOLBAR(mpCheckToolBar, ToolBars::checkToolBar, true);
     SHOW_HIDE_TOOLBAR(mpSimulationToolBar, ToolBars::simulationToolBar, true);
     SHOW_HIDE_TOOLBAR(mpReSimulationToolBar, ToolBars::reSimulationToolBar, false);
-    mpReSimulationToolBar->setEnabled(mpVariablesDockWidget->isVisible() && !mpVariablesWidget->getVariablesTreeView()->selectionModel()->selectedIndexes().isEmpty());
     SHOW_HIDE_TOOLBAR(mpPlotToolBar, ToolBars::plotToolBar, false);
     SHOW_HIDE_TOOLBAR(mpDebuggerToolBar, ToolBars::debuggerToolBar, false);
     SHOW_HIDE_TOOLBAR(mpOMSimulatorToolbar, ToolBars::OMSimulatorToolBar, false);
@@ -599,7 +599,6 @@ void MainWindow::showDebuggingPerspectiveToolBars(ModelWidget *pModelWidget)
     SHOW_HIDE_TOOLBAR(mpCheckToolBar, ToolBars::checkToolBar, false);
     SHOW_HIDE_TOOLBAR(mpSimulationToolBar, ToolBars::simulationToolBar, false);
     SHOW_HIDE_TOOLBAR(mpReSimulationToolBar, ToolBars::reSimulationToolBar, false);
-    mpReSimulationToolBar->setEnabled(mpVariablesDockWidget->isVisible() && !mpVariablesWidget->getVariablesTreeView()->selectionModel()->selectedIndexes().isEmpty());
     SHOW_HIDE_TOOLBAR(mpPlotToolBar, ToolBars::plotToolBar, false);
     SHOW_HIDE_TOOLBAR(mpDebuggerToolBar, ToolBars::debuggerToolBar, true);
     SHOW_HIDE_TOOLBAR(mpOMSimulatorToolbar, ToolBars::OMSimulatorToolBar, false);
@@ -612,7 +611,6 @@ void MainWindow::showDebuggingPerspectiveToolBars(ModelWidget *pModelWidget)
     SHOW_HIDE_TOOLBAR(mpCheckToolBar, ToolBars::checkToolBar, false);
     SHOW_HIDE_TOOLBAR(mpSimulationToolBar, ToolBars::simulationToolBar, false);
     SHOW_HIDE_TOOLBAR(mpReSimulationToolBar, ToolBars::reSimulationToolBar, false);
-    mpReSimulationToolBar->setEnabled(mpVariablesDockWidget->isVisible() && !mpVariablesWidget->getVariablesTreeView()->selectionModel()->selectedIndexes().isEmpty());
     SHOW_HIDE_TOOLBAR(mpPlotToolBar, ToolBars::plotToolBar, false);
     SHOW_HIDE_TOOLBAR(mpDebuggerToolBar, ToolBars::debuggerToolBar, true);
     SHOW_HIDE_TOOLBAR(mpOMSimulatorToolbar, ToolBars::OMSimulatorToolBar, true);
@@ -625,7 +623,6 @@ void MainWindow::showDebuggingPerspectiveToolBars(ModelWidget *pModelWidget)
     SHOW_HIDE_TOOLBAR(mpCheckToolBar, ToolBars::checkToolBar, true);
     SHOW_HIDE_TOOLBAR(mpSimulationToolBar, ToolBars::simulationToolBar, true);
     SHOW_HIDE_TOOLBAR(mpReSimulationToolBar, ToolBars::reSimulationToolBar, false);
-    mpReSimulationToolBar->setEnabled(mpVariablesDockWidget->isVisible() && !mpVariablesWidget->getVariablesTreeView()->selectionModel()->selectedIndexes().isEmpty());
     SHOW_HIDE_TOOLBAR(mpPlotToolBar, ToolBars::plotToolBar, false);
     SHOW_HIDE_TOOLBAR(mpDebuggerToolBar, ToolBars::debuggerToolBar, true);
     SHOW_HIDE_TOOLBAR(mpOMSimulatorToolbar, ToolBars::OMSimulatorToolBar, false);
@@ -837,6 +834,8 @@ void MainWindow::beforeClosingMainWindow()
   // close any result file
   // delete the MessagesWidget object
   MessagesWidget::destroy();
+  // delete the FindUsageWidget object
+  FindUsageWidget::destroy();
   // set restoring state to true so we don't try to save the toolbars settings after deleting the setting object.
   mRestoringState = true;
   delete pSettings;
@@ -921,6 +920,22 @@ void MainWindow::simulate(LibraryTreeItem *pLibraryTreeItem)
       }
     }
   }
+}
+
+void MainWindow::simulateBuildOnly(LibraryTreeItem *pLibraryTreeItem)
+{
+  if (!pLibraryTreeItem->isModelica()) {
+    return;
+  }
+  if (!mpSimulationDialog) {
+    mpSimulationDialog = new SimulationDialog(this);
+  }
+  if (pLibraryTreeItem->getModelWidget()) {
+    if (!pLibraryTreeItem->getModelWidget()->validateText(&pLibraryTreeItem)) {
+      return;
+    }
+  }
+  mpSimulationDialog->directSimulate(pLibraryTreeItem, false, false, false, false, true /* buildOnly */);
 }
 
 void MainWindow::simulateWithTransformationalDebugger(LibraryTreeItem *pLibraryTreeItem)
@@ -1633,14 +1648,14 @@ void MainWindow::PlotCallbackFunction(void *p, int externalWindow, const char* f
     } else if (QString(logX) == "false") {
       pPlotWindow->setLogX(false);
     } else {
-      throw OMPlot::PlotException("Invalid input" + QString(logX));
+      throw OMPlot::InvalidInputException(pPlotWindow->windowTitle(), QString(logX));
     }
     if (QString(logY) == "true") {
       pPlotWindow->setLogY(true);
     } else if (QString(logY) == "false") {
       pPlotWindow->setLogY(false);
     } else {
-      throw OMPlot::PlotException("Invalid input" + QString(logY));
+      throw OMPlot::InvalidInputException(pPlotWindow->windowTitle(), QString(logY));
     }
     pPlotWindow->setXLabel(QString(xLabel));
     pPlotWindow->setYLabel(QString(yLabel));
@@ -1655,7 +1670,7 @@ void MainWindow::PlotCallbackFunction(void *p, int externalWindow, const char* f
     } else if (QString(autoScale) == "false") {
       pPlotWindow->setAutoScale(false);
     } else {
-      throw OMPlot::PlotException("Invalid input" + QString(autoScale));
+      throw OMPlot::InvalidInputException(pPlotWindow->windowTitle(), QString(autoScale));
     }
     // plot variables
 #if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
@@ -2817,73 +2832,106 @@ void MainWindow::importNgspiceNetlist()
   hideProgressBar();
 }
 
-//! Exports the current model as image
-void MainWindow::exportModelAsImage(bool copyToClipboard)
+bool MainWindow::checkModelActiveExportModelAsImage()
 {
   ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
-  if (pModelWidget) {
-    LibraryTreeItem *pLibraryTreeItem = pModelWidget->getLibraryTreeItem();
-    QString fileName;
-    if (!copyToClipboard) {
-      fileName = StringHandler::getSaveFileName(this, QString("%1 - %2").arg(Helper::applicationName, Helper::exportAsImage),
-                                                NULL, Helper::imageFileTypes, NULL, "svg", &pLibraryTreeItem->getName());
-      // if user cancels the operation. or closes the export dialog box.
-      if (fileName.isEmpty()) {
-        return;
-      }
-    }
-    // show the progressbar and set the message in status bar
-    mpProgressBar->setRange(0, 0);
-    showProgressBar();
-    mpStatusBar->showMessage(tr("Exporting model as an Image"));
-    QPainter painter;
-    QSvgGenerator svgGenerator;
-    GraphicsView *pGraphicsView;
-    if (pLibraryTreeItem->getModelWidget()->getIconGraphicsView()->isVisible()) {
-      pGraphicsView = pLibraryTreeItem->getModelWidget()->getIconGraphicsView();
-    } else {
-      pGraphicsView = pLibraryTreeItem->getModelWidget()->getDiagramGraphicsView();
-    }
-    QRect destinationRect = pGraphicsView->itemsBoundingRect().toAlignedRect();
-    QImage modelImage(destinationRect.size(), QImage::Format_ARGB32_Premultiplied);
-    // export svg
-    if (fileName.endsWith(".svg")) {
-      svgGenerator.setTitle(QString("%1 - %2").arg(Helper::applicationName, Helper::applicationIntroText));
-      svgGenerator.setDescription("Generated by OMEdit - OpenModelica Connection Editor");
-      svgGenerator.setSize(destinationRect.size());
-      svgGenerator.setViewBox(QRect(0, 0, destinationRect.width(), destinationRect.height()));
-      svgGenerator.setFileName(fileName);
-      painter.begin(&svgGenerator);
-    } else {
-      if (fileName.endsWith(".png") || fileName.endsWith(".tiff")) {
-        modelImage.fill(QColor(Qt::transparent));
-      } else if (fileName.endsWith(".bmp") || copyToClipboard) {
-        modelImage.fill(QColor(Qt::white));
-      }
-      painter.begin(&modelImage);
-    }
-    painter.setWindow(destinationRect);
-    // paint all the items
-    bool oldSkipDrawBackground = pGraphicsView->mSkipBackground;
-    pGraphicsView->mSkipBackground = true;
-    pGraphicsView->render(&painter, destinationRect, destinationRect);
-    painter.end();
-    pGraphicsView->mSkipBackground = oldSkipDrawBackground;
-    if (!fileName.endsWith(".svg") && !copyToClipboard) {
-      if (!modelImage.save(fileName)) {
-        QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), tr("Error saving the image file"), QMessageBox::Ok);
-      }
-    } else if (copyToClipboard) {
-      QClipboard *pClipboard = QApplication::clipboard();
-      pClipboard->setImage(modelImage);
-    }
-    // hide the progressbar and clear the message in status bar
-    mpStatusBar->clearMessage();
-    hideProgressBar();
-  } else {
+  if (!pModelWidget) {
     MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, GUIMessages::getMessage(GUIMessages::NO_MODELICA_CLASS_OPEN)
                                                 .arg(tr("exporting to Image")), Helper::scriptingKind, Helper::notificationLevel));
+    return false;
   }
+  return true;
+}
+
+//! Exports the current model as image
+void MainWindow::exportModelAsImage()
+{
+  if (!checkModelActiveExportModelAsImage()) {
+    return;
+  }
+  ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
+  LibraryTreeItem *pLibraryTreeItem = pModelWidget->getLibraryTreeItem();
+  QString fileName;
+  fileName = StringHandler::getSaveFileName(this, QString("%1 - %2").arg(Helper::applicationName, Helper::exportAsImage),
+                                            NULL, Helper::imageFileTypes, NULL, "svg", &pLibraryTreeItem->getName());
+  // if user cancels the operation. or closes the export dialog box.
+  if (fileName.isEmpty()) {
+    return;
+  }
+  QImage modelImage = exportModelAsImage(fileName);
+  if (!fileName.endsWith(".svg")) {
+    if (!modelImage.save(fileName)) {
+      QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), tr("Error saving the image file"), QMessageBox::Ok);
+    }
+  }
+}
+
+QImage MainWindow::exportModelAsImage(QString fileName, bool drawExtents, ViewSelection diagramSelection, ModelWidget *pModelWidget, QSize size)
+{
+  if (pModelWidget == nullptr) {
+     if (!checkModelActiveExportModelAsImage()) {
+       return QImage();
+     }
+     pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
+  }
+  LibraryTreeItem *pLibraryTreeItem = pModelWidget->getLibraryTreeItem();
+  // show the progressbar and set the message in status bar
+  mpProgressBar->setRange(0, 0);
+  showProgressBar();
+  mpStatusBar->showMessage(tr("Exporting model as an Image"));
+  QPainter painter;
+  QSvgGenerator svgGenerator;
+  GraphicsView *pGraphicsView;
+  if (diagramSelection == ViewSelection::Icon || (diagramSelection == ViewSelection::SelectedInGUI && pLibraryTreeItem->getModelWidget()->getIconGraphicsView()->isVisible())) {
+    pGraphicsView = pLibraryTreeItem->getModelWidget()->getIconGraphicsView();
+  } else {
+    pGraphicsView = pLibraryTreeItem->getModelWidget()->getDiagramGraphicsView();
+  }
+
+  QRect destinationRect = pGraphicsView->itemsBoundingRect().toAlignedRect();
+
+  if (drawExtents) {
+    QRect extentRect = pGraphicsView->mapFromScene(pGraphicsView->mMergedCoordinateSystem.getExtentRectangle()).boundingRect();
+    extentRect.setX(extentRect.x() - 10);
+    extentRect.setY(extentRect.y() - 10);
+    extentRect.setWidth(extentRect.width() + 10);
+    extentRect.setHeight(extentRect.height() + 10);
+
+    destinationRect |= extentRect;
+  }
+
+  if (!size.isValid()) {
+    size = destinationRect.size();
+  }
+
+  QImage modelImage(size, QImage::Format_ARGB32_Premultiplied);
+  // export svg
+  if (fileName.endsWith(".svg")) {
+    svgGenerator.setTitle(QString("%1 - %2").arg(Helper::applicationName, Helper::applicationIntroText));
+    svgGenerator.setDescription("Generated by OMEdit - OpenModelica Connection Editor");
+    svgGenerator.setSize(destinationRect.size());
+    svgGenerator.setViewBox(QRect(0, 0, destinationRect.width(), destinationRect.height()));
+    svgGenerator.setFileName(fileName);
+    painter.begin(&svgGenerator);
+  } else {
+    if (fileName.endsWith(".png") || fileName.endsWith(".tiff")) {
+      modelImage.fill(QColor(Qt::transparent));
+    } else if (fileName.endsWith(".bmp")) {
+      modelImage.fill(QColor(Qt::white));
+    }
+    painter.begin(&modelImage);
+  }
+  painter.setWindow(QRect(QPoint(0, 0), size));
+  // paint all the items
+  bool oldSkipDrawBackground = pGraphicsView->mSkipBackground;
+  pGraphicsView->mSkipBackground = !drawExtents;
+  pGraphicsView->render(&painter, QRect(QPoint(0, 0), size), destinationRect);
+  painter.end();
+  pGraphicsView->mSkipBackground = oldSkipDrawBackground;
+  // hide the progressbar and clear the message in status bar
+  mpStatusBar->clearMessage();
+  hideProgressBar();
+  return modelImage;
 }
 
 /*!
@@ -2892,7 +2940,11 @@ void MainWindow::exportModelAsImage(bool copyToClipboard)
   */
 void MainWindow::exportToClipboard()
 {
-  exportModelAsImage(true);
+  if (!checkModelActiveExportModelAsImage()) {
+    return;
+  }
+  QClipboard *pClipboard = QApplication::clipboard();
+  pClipboard->setImage(exportModelAsImage(".bmp"));
 }
 
 /*!
@@ -3352,21 +3404,6 @@ void MainWindow::toggleAutoSave()
 }
 
 /*!
- * \brief MainWindow::enableReSimulationToolbar
- * * Handles the VisibilityChanged signal of Variables Dock Widget.
- * \param visible
- */
-void MainWindow::enableReSimulationToolbar(bool visible)
-{
-  mpReSimulationToolBar->setVisible(visible);
-  if (visible) {
-    mpReSimulationToolBar->setEnabled(!mpVariablesWidget->getVariablesTreeView()->selectionModel()->selectedIndexes().isEmpty());
-  } else {
-    mpReSimulationToolBar->setEnabled(false);
-  }
-}
-
-/*!
  * \brief MainWindow::perspectiveTabChanged
  * Handles the perspective tab changed case.
  * \param tabIndex
@@ -3643,6 +3680,25 @@ void MainWindow::cleanWorkingDirectory()
 //  }
 }
 
+/*!
+ * \brief MainWindow::directReSimulate
+ * Slot activated when mpDirectReSimulateAction triggered SIGNAL is raised.\n
+ * Calls MainWindow::reSimulate with false to directly re-simulate the model without showing the re-simulation setup dialog.
+ */
+void MainWindow::directReSimulate()
+{
+  reSimulate(false);
+}
+
+/*!
+ * \brief MainWindow::showReSimulateSetup
+ * Slot activated when mpReSimulateSetupAction triggered SIGNAL is raised.\n
+ * Calls MainWindow::reSimulate with true to show the re-simulation setup dialog before re-simulating the model.
+ */
+void MainWindow::showReSimulateSetup()
+{
+  reSimulate(true);
+}
 
 //! Defines the actions used by the toolbars
 void MainWindow::createActions()
@@ -4101,11 +4157,11 @@ void MainWindow::createActions()
   // resimulate action
   mpReSimulateModelAction = new QAction(QIcon(":/Resources/icons/re-simulate.svg"), Helper::reSimulate, this);
   mpReSimulateModelAction->setStatusTip(Helper::reSimulateTip);
-  connect(mpReSimulateModelAction, SIGNAL(triggered()), mpVariablesWidget, SLOT(directReSimulate()));
+  connect(mpReSimulateModelAction, SIGNAL(triggered()), this, SLOT(directReSimulate()));
   // resimulate setup action
   mpReSimulateSetupAction = new QAction(QIcon(":/Resources/icons/re-simulation-center.svg"), Helper::reSimulateSetup, this);
   mpReSimulateSetupAction->setStatusTip(Helper::reSimulateSetupTip);
-  connect(mpReSimulateSetupAction, SIGNAL(triggered()), mpVariablesWidget, SLOT(showReSimulateSetup()));
+  connect(mpReSimulateSetupAction, SIGNAL(triggered()), this, SLOT(showReSimulateSetup()));
   // new plot window action
   mpNewPlotWindowAction = new QAction(QIcon(":/Resources/icons/plot-window.svg"), tr("New Plot Window"), this);
   mpNewPlotWindowAction->setStatusTip(tr("Inserts new plot window"));
@@ -4278,6 +4334,7 @@ void MainWindow::createMenus()
   pViewWindowsMenu->addAction(mpDocumentationDockWidget->toggleViewAction());
   pViewWindowsMenu->addAction(mpVariablesDockWidget->toggleViewAction());
   pViewWindowsMenu->addAction(mpMessagesDockWidget->toggleViewAction());
+  pViewWindowsMenu->addAction(mpFindUsageDockWidget->toggleViewAction());
   pViewWindowsMenu->addAction(mpSearchDockWidget->toggleViewAction());
   pViewWindowsMenu->addAction(mpStackFramesDockWidget->toggleViewAction());
   pViewWindowsMenu->addAction(mpBreakpointsDockWidget->toggleViewAction());
@@ -4464,6 +4521,7 @@ void MainWindow::switchToWelcomePerspective()
     mpPerspectiveTabbar->blockSignals(signalsState);
     return;
   }
+  mpLastModelingSubWindow = mpModelWidgetContainer->getCurrentMdiSubWindow();
   mpCentralStackedWidget->setCurrentWidget(mpWelcomePageWidget);
   mpModelWidgetContainer->currentModelWidgetChanged(0);
   mpUndoAction->setEnabled(false);
@@ -4487,7 +4545,6 @@ void MainWindow::switchToWelcomePerspective()
   SHOW_HIDE_TOOLBAR(mpCheckToolBar, ToolBars::checkToolBar, false);
   SHOW_HIDE_TOOLBAR(mpSimulationToolBar, ToolBars::simulationToolBar, false);
   SHOW_HIDE_TOOLBAR(mpReSimulationToolBar, ToolBars::reSimulationToolBar, false);
-  mpReSimulationToolBar->setEnabled(mpVariablesDockWidget->isVisible() && !mpVariablesWidget->getVariablesTreeView()->selectionModel()->selectedIndexes().isEmpty());
   SHOW_HIDE_TOOLBAR(mpPlotToolBar, ToolBars::plotToolBar, false);
   SHOW_HIDE_TOOLBAR(mpDebuggerToolBar, ToolBars::debuggerToolBar, false);
   SHOW_HIDE_TOOLBAR(mpOMSimulatorToolbar, ToolBars::OMSimulatorToolBar, false);
@@ -4499,7 +4556,7 @@ void MainWindow::switchToWelcomePerspective()
     ModelWidget *pModelWidget = mpPlotWindowContainer->getDiagramWindow()->getModelWidget(); \
     mpPlotWindowContainer->getDiagramWindow()->removeVisualizationDiagram(); \
     pModelWidget->getDiagramGraphicsView()->emitResetDynamicSelect(); \
-    pModelWidget->getMainLayout()->addWidget(pModelWidget->getDiagramGraphicsView(), 1); \
+    pModelWidget->getMainLayout()->addWidget(pModelWidget->getDiagramGraphicsView()); \
   }
 
 /*!
@@ -4510,6 +4567,9 @@ void MainWindow::switchToModelingPerspective()
 {
   ADD_SHOW_DIAGRAMVIEW();
   mpCentralStackedWidget->setCurrentWidget(mpModelWidgetContainer);
+  if (mpLastModelingSubWindow) {
+    mpModelWidgetContainer->setActiveSubWindow(mpLastModelingSubWindow);
+  }
   if (OptionsDialog::instance()->getGeneralSettingsPage()->getHideVariablesBrowserCheckBox()->isChecked()) {
     mpVariablesDockWidget->hide();
   }
@@ -4538,6 +4598,7 @@ void MainWindow::switchToPlottingPerspective()
     return;
   }
   ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
+  mpLastModelingSubWindow = mpModelWidgetContainer->getCurrentMdiSubWindow();
   mpCentralStackedWidget->setCurrentWidget(mpPlotWindowContainer);
   mpUndoAction->setEnabled(false);
   mpRedoAction->setEnabled(false);
@@ -4560,7 +4621,6 @@ void MainWindow::switchToPlottingPerspective()
   SHOW_HIDE_TOOLBAR(mpCheckToolBar, ToolBars::checkToolBar, false);
   SHOW_HIDE_TOOLBAR(mpSimulationToolBar, ToolBars::simulationToolBar, false);
   SHOW_HIDE_TOOLBAR(mpReSimulationToolBar, ToolBars::reSimulationToolBar, true);
-  mpReSimulationToolBar->setEnabled(mpVariablesDockWidget->isVisible() && !mpVariablesWidget->getVariablesTreeView()->selectionModel()->selectedIndexes().isEmpty());
   SHOW_HIDE_TOOLBAR(mpPlotToolBar, ToolBars::plotToolBar, true);
   SHOW_HIDE_TOOLBAR(mpDebuggerToolBar, ToolBars::debuggerToolBar, false);
   SHOW_HIDE_TOOLBAR(mpOMSimulatorToolbar, ToolBars::OMSimulatorToolBar, false);
@@ -4584,6 +4644,9 @@ void MainWindow::switchToPlottingPerspective()
 void MainWindow::switchToAlgorithmicDebuggingPerspective()
 {
   mpCentralStackedWidget->setCurrentWidget(mpModelWidgetContainer);
+  if (mpLastModelingSubWindow) {
+    mpModelWidgetContainer->setActiveSubWindow(mpLastModelingSubWindow);
+  }
   if (OptionsDialog::instance()->getGeneralSettingsPage()->getHideVariablesBrowserCheckBox()->isChecked()) {
     mpVariablesDockWidget->hide();
   }
@@ -4682,6 +4745,7 @@ void MainWindow::createToolbars()
   pNewToolButton->setPopupMode(QToolButton::MenuButtonPopup);
   // Don't change the order of following two lines otherwise the icon of toolbar button is overwritten by default action.
   pNewToolButton->setDefaultAction(mpNewModelicaClassAction);
+  pNewToolButton->setToolTip(Helper::newModelicaClassTip);
   pNewToolButton->setIcon(QIcon(":/Resources/icons/new.svg"));
   mpFileToolBar->addWidget(pNewToolButton);
   mpFileToolBar->addAction(mpOpenModelicaFileAction);
@@ -4736,6 +4800,7 @@ void MainWindow::createToolbars()
   }
   // Model Switcher ToolButton
   mpModelSwitcherToolButton = new QToolButton;
+  mpModelSwitcherToolButton->setToolTip(Helper::switchModel);
   mpModelSwitcherToolButton->setEnabled(false);
   mpModelSwitcherToolButton->setMenu(mpModelSwitcherMenu);
   mpModelSwitcherToolButton->setPopupMode(QToolButton::MenuButtonPopup);
@@ -4770,7 +4835,6 @@ void MainWindow::createToolbars()
   mpReSimulationToolBar = addToolBar(tr("Re-simulation Toolbar"));
   mpReSimulationToolBar->setObjectName("Re-simulation Toolbar");
   mpReSimulationToolBar->setAllowedAreas(Qt::TopToolBarArea);
-  mpReSimulationToolBar->setEnabled(false);
   // add actions to Re-simulation Toolbar
   mpReSimulationToolBar->addAction(mpReSimulateModelAction);
   mpReSimulationToolBar->addAction(mpReSimulateSetupAction);
@@ -4893,6 +4957,22 @@ MessageTab *MainWindow::createMessageTab(const QString &name, bool fixedTab)
   connect(pMessageTab, SIGNAL(clicked(int)), mpMessagesTabWidget, SIGNAL(tabBarClicked(int)));
   connect(this, SIGNAL(resetMessagesTabWidgetNames()), pMessageTab, SLOT(resetTabText()));
   return pMessageTab;
+}
+
+/*!
+ * \brief MainWindow::reSimulate
+ * Re-simulates the model for the active SimulationOutputWidget.
+ * \param showSetup
+ */
+void MainWindow::reSimulate(bool showSetup)
+{
+  SimulationOutputWidget *pSimulationOutputWidget = MessagesWidget::instance()->getActiveSimulationOutputWidget();
+  if (pSimulationOutputWidget) {
+    pSimulationOutputWidget->reSimulate(showSetup);
+  } else {
+    QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::error),
+                          tr("No active simulation output window. Please select a simulation output window for re-simulate."), QMessageBox::Ok);
+  }
 }
 
 //! when the dragged object enters the main window

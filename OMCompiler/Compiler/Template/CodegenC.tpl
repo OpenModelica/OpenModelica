@@ -1,3 +1,38 @@
+/*
+ * This file is part of OpenModelica.
+ *
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
+ * c/o Linköpings universitet, Department of Computer and Information Science,
+ * SE-58183 Linköping, Sweden.
+ *
+ * All rights reserved.
+ *
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
+ *
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
+ *
+ * This program is distributed WITHOUT ANY WARRANTY; without
+ * even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
+ *
+ * See the full OSMC Public License conditions for more details.
+ *
+ */
+
 // This file defines templates for transforming Modelica/MetaModelica code to C
 // code. They are used in the code generator phase of the compiler to write
 // target code.
@@ -1405,6 +1440,7 @@ template simulationFile(SimCode simCode, String guid, String isModelExchangeFMU)
       <%symbolName(modelNamePrefixStr,"functionJacD_column")%>,
       <%symbolName(modelNamePrefixStr,"functionJacF_column")%>,
       <%symbolName(modelNamePrefixStr,"functionJacH_column")%>,
+      <%symbolName(modelNamePrefixStr,"JacA_DAG")%>,
       <%symbolName(modelNamePrefixStr,"linear_model_frame")%>,
       <%symbolName(modelNamePrefixStr,"linear_model_datarecovery_frame")%>,
       <%symbolName(modelNamePrefixStr,"mayer")%>,
@@ -1898,6 +1934,7 @@ template symJacDefinition(list<JacobianMatrix> JacobianMatrices, String modelNam
     #define <%symbolName(modelNamePrefix,"INDEX_JAC_")%><%jac.matrixName%> <%jac.jacobianIndex%>
     int <%symbolName(modelNamePrefix,"functionJac")%><%jac.matrixName%>_column(DATA* data, threadData_t *threadData, JACOBIAN *thisJacobian, JACOBIAN *parentJacobian);
     int <%symbolName(modelNamePrefix,"initialAnalyticJacobian")%><%jac.matrixName%>(DATA* data, threadData_t *threadData, JACOBIAN *jacobian);
+    void <%symbolName(modelNamePrefix,"Jac")%><%jac.matrixName%>_DAG(DATA* data, threadData_t *threadData, JACOBIAN *jacobian);
     <%genericCallHeaders(jac.generic_loop_calls, createJacContext(jac.matrixName, jac.crefsHT))%>
     >>
     ;separator="\n\n";empty)
@@ -4448,7 +4485,7 @@ template functionXXX_DAG(list<SimEqSystem> eqs, String name, String modelNamePre
   void <%symbolName(modelNamePrefix, name)%>_DAG(DATA* data, threadData_t* threadData)
   {
     const size_t eqMap[] = {<%eqs |> eq => equationIndexGeneral(eq); separator=", "%>};
-    buildEvalDAG(data->modelData, sizeof(eqMap)/sizeof(size_t), eqMap);
+    buildEvalDAG_<%name%>(data->modelData, sizeof(eqMap)/sizeof(size_t), eqMap);
   }
   >>
 end functionXXX_DAG;
@@ -5579,7 +5616,8 @@ template functionAnalyticJacobians(list<JacobianMatrix> JacobianMatrices, String
           coloredRows,
           listLength(coloredRows),
           modelNamePrefix,
-          fileNamePrefix)
+          fileNamePrefix,
+          isAdjoint)
       // Normal: use regular sparsity and column coloring
       else
         initialAnalyticJacobians(
@@ -5590,11 +5628,12 @@ template functionAnalyticJacobians(list<JacobianMatrix> JacobianMatrices, String
           coloredCols,
           maxColorCols,
           modelNamePrefix,
-          fileNamePrefix)
+          fileNamePrefix,
+          isAdjoint)
       ;separator="\n")
 
   let jacMats = (JacobianMatrices |> JAC_MATRIX() =>
-    generateMatrix(columns, seedVars, matrixName, partitionIndex, crefsHT, modelNamePrefix) ;separator="\n")
+    generateMatrix(columns, seedVars, matrixName, partitionIndex, crefsHT, modelNamePrefix) ;separator="\n\n")
   let jacGenericCalls = (JacobianMatrices |> JAC_MATRIX() =>
     genericCallBodies(generic_loop_calls, createJacContext(matrixName, crefsHT)) ;separator="\n")
   <<
@@ -5606,7 +5645,7 @@ template functionAnalyticJacobians(list<JacobianMatrix> JacobianMatrices, String
   >>
 end functionAnalyticJacobians;
 
-template initialAnalyticJacobians(list<JacobianColumn> jacobianColumn, list<SimVar> seedVars, String matrixname, SparsityPattern sparsepattern, list<list<Integer>> colorList, Integer maxColor, String modelNamePrefix, String fileNamePrefix)
+template initialAnalyticJacobians(list<JacobianColumn> jacobianColumn, list<SimVar> seedVars, String matrixname, SparsityPattern sparsepattern, list<list<Integer>> colorList, Integer maxColor, String modelNamePrefix, String fileNamePrefix, Boolean isAdjoint)
 "template initialAnalyticJacobians
   This template generates source code for functions that initialize the sparse-pattern for a single jacobian.
   This is a helper of template functionAnalyticJacobians"
@@ -5642,6 +5681,7 @@ match sparsepattern
       initJacobian(jacobian, <%sizeCols%>, <%sizeRows%>, <%tmpvarsSize%>, NULL, <%evalColumn%>, <%constantEqns%>, NULL);
       jacobian->sparsePattern = allocSparsePattern(<%sizeleadindex%>, <%sp_size_index%>, <%maxColor%>);
       jacobian->availability = <%availability%>;
+      jacobian->isRowEval = <%boolStrC(isAdjoint)%>;
 
       /* read lead index of compressed sparse column */
       count = omc_fread(jacobian->sparsePattern->leadindex, sizeof(unsigned int), <%sizeleadindex%>+1, pFile, FALSE);
@@ -5670,7 +5710,7 @@ template generateMatrix(list<JacobianColumn> jacobianColumn, list<SimVar> seedVa
   "This template generates source code for a single jacobian in dense format and sparse format.
   This is a helper of template functionAnalyticJacobians"
 ::=
-  let nRows = (jacobianColumn |> JAC_COLUMN(numberOfResultVars=nRows) => '<%nRows%>')
+  let nRows = (jacobianColumn |> JAC_COLUMN(numberOfResultVars=nRows) => nRows)
   match nRows
   case "0" then
     <<
@@ -5678,6 +5718,8 @@ template generateMatrix(list<JacobianColumn> jacobianColumn, list<SimVar> seedVa
     {
       return 0;
     }
+
+    void <%symbolName(modelNamePrefix, "Jac")%><%matrixname%>_DAG(DATA* data, threadData_t* threadData, JACOBIAN* jacobian) { /* empty */ }
     >>
   case _ then
     match seedVars
@@ -5687,17 +5729,19 @@ template generateMatrix(list<JacobianColumn> jacobianColumn, list<SimVar> seedVa
         {
           return 0;
         }
+
+        void <%symbolName(modelNamePrefix, "Jac")%><%matrixname%>_DAG(DATA* data, threadData_t* threadData, JACOBIAN* jacobian) { /* empty */ }
         >>
       case _ then
         let jacMats =
         (jacobianColumn |> JAC_COLUMN(columnEqns=eqs, constantEqns=constantEqns) =>
           functionJac(eqs, constantEqns, partIdx, createJacContext(matrixname, jacHT), modelNamePrefix)
           ;separator="\n")
-        let indexColumn = (jacobianColumn |> JAC_COLUMN(numberOfResultVars=nRows) =>
-          nRows
-          ;separator="\n")
+        let jacDAG = (jacobianColumn |> JAC_COLUMN(columnEqns=eqs) => functionJac_DAG(eqs, matrixname, modelNamePrefix) ;separator="\n")
         <<
         <%jacMats%>
+
+        <%jacDAG%>
         >>
      end match
   end match
@@ -5746,6 +5790,17 @@ case JACOBIAN_CONTEXT() then
   }
   >>
 end functionJac;
+
+template functionJac_DAG(list<SimEqSystem> eqs, String name, String modelNamePrefix)
+::=
+  <<
+  void <%symbolName(modelNamePrefix, "Jac")%><%name%>_DAG(DATA* data, threadData_t* threadData, JACOBIAN* jacobian)
+  {
+    const size_t eqMap[] = {<%eqs |> eq => equationIndexGeneral(eq); separator=", "%>};
+    buildEvalDAG_Jac(jacobian, data->modelData, sizeof(eqMap)/sizeof(size_t), eqMap);
+  }
+  >>
+end functionJac_DAG;
 
 // function for sparsity pattern generation
 template genSPCRSPtr(Integer sizeColPtr, SparsityPattern sparsepattern, String constArrayName)
@@ -6802,6 +6857,7 @@ end simulationLiteralsFile;
  "Generates the content of the C file for functions in the simulation case.
   used in Compiler/Template/CodegenFMU.tpl"
 ::=
+  let()= textFile( "[\n" + (functions |> fn => match fn case fn as EXTERNAL_FUNCTION(__) then '"<%fn.extName%>"'; separator=",\n") + "\n]", '<%filePrefix%>_external_functions.json')
   <<
   #include "omc_simulation_settings.h"
   #include "<%filePrefix%>_functions.h"

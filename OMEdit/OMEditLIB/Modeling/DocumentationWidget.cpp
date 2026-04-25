@@ -1033,6 +1033,35 @@ void DocumentationWidget::editInfoHeaderDocumentation()
 }
 
 /*!
+ * \brief buildDocumentationAnnotationString
+ * Helper: builds a Documentation(...) annotation string from the three doc fields.
+ * Empty fields are omitted from the output.
+ * \param info
+ * \param revisions
+ * \param infoHeader
+ * \return
+ */
+QString buildDocumentationAnnotationString(const QString &info, const QString &revisions, const QString &infoHeader)
+{
+  static const struct { const char *key; const QString &value; } fields[] = {
+  {"info", info},
+  {"revisions", revisions},
+  {"__OpenModelica_infoHeader", infoHeader},
+};
+
+  QStringList parts;
+  for (const auto &field : fields) {
+    if (!field.value.isEmpty()) {
+      parts.append(QString("%1=\"%2\"")
+                   .arg(field.key)
+                   .arg(StringHandler::escapeStringQuotes(field.value)));
+    }
+  }
+
+  return QString("annotate=Documentation(%1)").arg(parts.join(","));
+}
+
+/*!
  * \brief DocumentationWidget::saveDocumentation
  * Saves the documentaiton annotation. If pLibraryTreeItem is 0 then the documentation of the editing class is shown after save.\n
  * Otherwise the documentation of pLibraryTreeItem is shown.
@@ -1041,73 +1070,40 @@ void DocumentationWidget::editInfoHeaderDocumentation()
  */
 void DocumentationWidget::saveDocumentation(LibraryTreeItem *pNextLibraryTreeItem)
 {
-  if (mDocumentationHistoryPos >= 0) {
-    LibraryTreeItem *pLibraryTreeItem = mpDocumentationHistoryList->at(mDocumentationHistoryPos).mpLibraryTreeItem;
-    if (pLibraryTreeItem) {
-      QList<QString> documentation = MainWindow::instance()->getOMCProxy()->getDocumentationAnnotationInClass(pLibraryTreeItem);
-      // old documentation annotation
-      QList<QString> oldDocAnnotationList;
-      if (!documentation.at(0).isEmpty()) {
-        oldDocAnnotationList.append(QString("info=\"%1\"").arg(StringHandler::escapeStringQuotes(documentation.at(0))));
-      }
-      if (!documentation.at(1).isEmpty()) {
-        oldDocAnnotationList.append(QString("revisions=\"%1\"").arg(StringHandler::escapeStringQuotes(documentation.at(1))));
-      }
-      if (!documentation.at(2).isEmpty()) {
-        oldDocAnnotationList.append(QString("__OpenModelica_infoHeader=\"%1\"").arg(StringHandler::escapeStringQuotes(documentation.at(2))));
-      }
-      QString oldDocAnnotationString = QString("annotate=Documentation(%1)").arg(oldDocAnnotationList.join(","));
-      // if we are on html editor tab then update the source before saving the documentation
-      if (mpTabBar->currentIndex() == 0) {
-        updateHTMLSourceEditor();
-      }
-      // new documentation annotation
-      QList<QString> newDocAnnotationList;
-      if (mEditType == EditType::Info) { // if editing the info section
-        if (!mpHTMLSourceEditor->getPlainTextEdit()->toPlainText().isEmpty()) {
-          newDocAnnotationList.append(QString("info=\"%1\"").arg(StringHandler::escapeStringQuotes(mpHTMLSourceEditor->getPlainTextEdit()->toPlainText())));
-        }
-        if (!documentation.at(1).isEmpty()) {
-          newDocAnnotationList.append(QString("revisions=\"%1\"").arg(StringHandler::escapeStringQuotes(documentation.at(1))));
-        }
-        if (!documentation.at(2).isEmpty()) {
-          newDocAnnotationList.append(QString("__OpenModelica_infoHeader=\"").arg(StringHandler::escapeStringQuotes(documentation.at(2))));
-        }
-      } else if (mEditType == EditType::Revisions) { // if editing the revisions section
-        if (!documentation.at(0).isEmpty()) {
-          newDocAnnotationList.append(QString("info=\"%1\"").arg(StringHandler::escapeStringQuotes(documentation.at(0))));
-        }
-        if (!mpHTMLSourceEditor->getPlainTextEdit()->toPlainText().isEmpty()) {
-          newDocAnnotationList.append(QString("revisions=\"%1\"").arg(StringHandler::escapeStringQuotes(mpHTMLSourceEditor->getPlainTextEdit()->toPlainText())));
-        }
-        if (!documentation.at(2).isEmpty()) {
-          newDocAnnotationList.append(QString("__OpenModelica_infoHeader=\"%1\"").arg(StringHandler::escapeStringQuotes(documentation.at(2))));
-        }
-      } else if (mEditType == EditType::InfoHeader) { // if editing the __OpenModelica_infoHeader section
-        if (!documentation.at(0).isEmpty()) {
-          newDocAnnotationList.append(QString("info=\"%1\"").arg(StringHandler::escapeStringQuotes(documentation.at(0))));
-        }
-        if (!documentation.at(1).isEmpty()) {
-          newDocAnnotationList.append(QString("revisions=\"%1\"").arg(StringHandler::escapeStringQuotes(documentation.at(1))));
-        }
-        if (!mpHTMLSourceEditor->getPlainTextEdit()->toPlainText().isEmpty()) {
-          newDocAnnotationList.append(QString("__OpenModelica_infoHeader=\"%1\"").arg(StringHandler::escapeStringQuotes(mpHTMLSourceEditor->getPlainTextEdit()->toPlainText())));
-        }
-      }
-      QString newDocAnnotationString = QString("annotate=Documentation(%1)").arg(newDocAnnotationList.join(","));
-      // if we have ModelWidget for class then put the change on undo stack.
-      if (pLibraryTreeItem->getModelWidget()) {
-        UpdateClassAnnotationCommand *pUpdateClassExperimentAnnotationCommand;
-        pUpdateClassExperimentAnnotationCommand = new UpdateClassAnnotationCommand(pLibraryTreeItem, oldDocAnnotationString, newDocAnnotationString);
-        pLibraryTreeItem->getModelWidget()->getUndoStack()->push(pUpdateClassExperimentAnnotationCommand);
-        pLibraryTreeItem->getModelWidget()->updateModelText();
-      }
-      /* ticket:5190 Save the class when documentation save button is hit. */
-      MainWindow::instance()->getLibraryWidget()->saveLibraryTreeItem(pLibraryTreeItem);
-      mEditType = EditType::None;
-      showDocumentation(pNextLibraryTreeItem ? pNextLibraryTreeItem : pLibraryTreeItem);
-    }
+  // fail safe check
+  if (mDocumentationHistoryPos < 0) {
+    return;
   }
+
+  LibraryTreeItem *pLibraryTreeItem = mpDocumentationHistoryList->at(mDocumentationHistoryPos).mpLibraryTreeItem;
+  if (!pLibraryTreeItem) {
+    return;
+  }
+
+  // if we are on html editor tab then update the source before saving the documentation
+  if (mpTabBar->currentIndex() == 0) {
+    updateHTMLSourceEditor();
+  }
+
+  const QList<QString> documentation = MainWindow::instance()->getOMCProxy()->getDocumentationAnnotationInClass(pLibraryTreeItem);
+  const QString currentText = mpHTMLSourceEditor->getPlainTextEdit()->toPlainText();
+  const QString oldAnnotation = buildDocumentationAnnotationString(documentation[0], documentation[1], documentation[2]);
+  const QString newAnnotation  = buildDocumentationAnnotationString(
+                                   mEditType == EditType::Info        ? currentText : documentation[0],
+                                   mEditType == EditType::Revisions   ? currentText : documentation[1],
+                                   mEditType == EditType::InfoHeader  ? currentText : documentation[2]);
+
+  // if we have ModelWidget for class then put the change on undo stack.
+  if (pLibraryTreeItem->getModelWidget()) {
+    UpdateClassAnnotationCommand *pUpdateClassExperimentAnnotationCommand;
+    pUpdateClassExperimentAnnotationCommand = new UpdateClassAnnotationCommand(pLibraryTreeItem, oldAnnotation, newAnnotation);
+    pLibraryTreeItem->getModelWidget()->getUndoStack()->push(pUpdateClassExperimentAnnotationCommand);
+    pLibraryTreeItem->getModelWidget()->updateModelText();
+  }
+  // ticket:5190 - Save the class when documentation save button is hit
+  MainWindow::instance()->getLibraryWidget()->saveLibraryTreeItem(pLibraryTreeItem);
+  mEditType = EditType::None;
+  showDocumentation(pNextLibraryTreeItem ? pNextLibraryTreeItem : pLibraryTreeItem);
 }
 
 /*!

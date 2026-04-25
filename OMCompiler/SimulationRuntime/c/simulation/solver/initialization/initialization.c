@@ -1,30 +1,27 @@
 /*
- * This file is part of OpenModelica.
+ * This file belongs to the OpenModelica Run-Time System
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
- * c/o Linköpings universitet, Department of Computer and Information Science,
- * SE-58183 Linköping, Sweden.
- *
- * All rights reserved.
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC), c/o Linköpings
+ * universitet, Department of Computer and Information Science, SE-58183 Linköping, Sweden. All rights
+ * reserved.
  *
  * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THE BSD NEW LICENSE OR THE
- * GPL VERSION 3 LICENSE OR THE OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * AGPL VERSION 3 LICENSE OR THE OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8. ANY
+ * USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
+ * ACCEPTANCE OF THE BSD NEW LICENSE OR THE OSMC PUBLIC LICENSE OR THE AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
- * Public License (OSMC-PL) are obtained from OSMC, either from the above
- * address, from the URLs: http://www.openmodelica.org or
- * http://www.ida.liu.se/projects/OpenModelica, and in the OpenModelica
- * distribution. GNU version 3 is obtained from:
- * http://www.gnu.org/copyleft/gpl.html. The New BSD License is obtained from:
- * http://www.opensource.org/licenses/BSD-3-Clause.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium) Public License
+ * (OSMC-PL) are obtained from OSMC, either from the above address, from the URLs:
+ * http://www.openmodelica.org or https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica, and in the OpenModelica distribution. GNU
+ * AGPL version 3 is obtained from: https://www.gnu.org/licenses/licenses.html#GPL. The BSD NEW
+ * License is obtained from: http://www.opensource.org/licenses/BSD-3-Clause.
  *
- * This program is distributed WITHOUT ANY WARRANTY; without even the implied
- * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, EXCEPT AS
- * EXPRESSLY SET FORTH IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE
- * CONDITIONS OF OSMC-PL.
+ * This program is distributed WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY
+ * SET FORTH IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF
+ * OSMC-PL.
  *
  */
 
@@ -158,7 +155,7 @@ void dumpInitialSolution(DATA *simData)
   {
     infoStreamPrint(OMC_LOG_SOTI, 1, "integer variables");
     for(i=0; i<mData->nVariablesInteger; ++i)
-      infoStreamPrint(OMC_LOG_SOTI, 0, "[%ld] Integer %s(start=%ld) = %ld (pre: %ld)", i+1,
+      infoStreamPrint(OMC_LOG_SOTI, 0, "[%ld] Integer %s(start=" OMC_INT_FORMAT ") = " OMC_INT_FORMAT " (pre: " OMC_INT_FORMAT ")", i+1,
                                    mData->integerVarsData[i].info.name,
                                    mData->integerVarsData[i].attribute.start,
                                    simData->localData[0]->integerVars[i],
@@ -615,7 +612,7 @@ int importStartValues(DATA *data, threadData_t *threadData, const char *pInitFil
       if(pVar) {
         omc_matlab4_val(&value, &reader, pVar, initTime);
         mData->integerVarsData[i].attribute.start = (modelica_integer) value;
-        infoStreamPrint(OMC_LOG_INIT_V, 0, "| %s(start=%ld)", mData->integerVarsData[i].info.name, mData->integerVarsData[i].attribute.start);
+        infoStreamPrint(OMC_LOG_INIT_V, 0, "| %s(start=" OMC_INT_FORMAT ")", mData->integerVarsData[i].info.name, mData->integerVarsData[i].attribute.start);
       } else if((strlen(mData->integerVarsData[i].info.name) > 0) &&
               (mData->integerVarsData[i].info.name[0] != '$') &&
               (strncmp(mData->integerVarsData[i].info.name, "der($", 5) != 0)) {
@@ -685,7 +682,7 @@ int importStartValues(DATA *data, threadData_t *threadData, const char *pInitFil
         omc_matlab4_val(&value, &reader, pVar, initTime);
         mData->integerParameterData[i].attribute.start = (modelica_integer)value;
         data->simulationInfo->integerParameter[i] = (modelica_integer)value;
-        infoStreamPrint(OMC_LOG_INIT_V, 0, "| %s(start=%ld)", mData->integerParameterData[i].info.name, mData->integerParameterData[i].attribute.start);
+        infoStreamPrint(OMC_LOG_INIT_V, 0, "| %s(start=" OMC_INT_FORMAT ")", mData->integerParameterData[i].info.name, mData->integerParameterData[i].attribute.start);
       } else {
         warningStreamPrint(OMC_LOG_INIT, 0, "unable to import integer parameter %s from given file", mData->integerParameterData[i].info.name);
       }

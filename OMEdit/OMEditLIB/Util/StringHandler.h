@@ -114,7 +114,8 @@ public:
   static QString getLastWordAfterDot(QString value);
   static QString removeLastWordAfterDot(QString value);
   static QString getFirstWordBeforeDot(QString value);
-  static QString removeFirstWordAfterDot(QString value);
+  static QString removeFirstWordBeforeDot(QString value);
+  static QStringList splitPath(QString path);
   static QString escapeString(QString value);
   static QString escapeStringQuotes(QString value);
   static QString escapeTextAnnotationString(QString value);
@@ -164,6 +165,7 @@ public:
   static QString insertClassAtPosition(QString parentClassText, QString childClassText, int linePosition, int nestedLevel);
   static QString number(double value);
   static QString convertSemVertoReadableString(const QString &semver);
+  static void removeTypePrefix(QString &str, const QString &type);
 protected:
   static QString mLastOpenDir;
 };

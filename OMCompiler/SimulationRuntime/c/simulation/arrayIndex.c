@@ -1,30 +1,27 @@
 /*
- * This file is part of OpenModelica.
+ * This file belongs to the OpenModelica Run-Time System
  *
- * Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
- * c/o Linköpings universitet, Department of Computer and Information Science,
- * SE-58183 Linköping, Sweden.
- *
- * All rights reserved.
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC), c/o Linköpings
+ * universitet, Department of Computer and Information Science, SE-58183 Linköping, Sweden. All rights
+ * reserved.
  *
  * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THE BSD NEW LICENSE OR THE
- * GPL VERSION 3 LICENSE OR THE OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * AGPL VERSION 3 LICENSE OR THE OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8. ANY
+ * USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
+ * ACCEPTANCE OF THE BSD NEW LICENSE OR THE OSMC PUBLIC LICENSE OR THE AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
- * Public License (OSMC-PL) are obtained from OSMC, either from the above
- * address, from the URLs: http://www.openmodelica.org or
- * http://www.ida.liu.se/projects/OpenModelica, and in the OpenModelica
- * distribution. GNU version 3 is obtained from:
- * http://www.gnu.org/copyleft/gpl.html. The New BSD License is obtained from:
- * http://www.opensource.org/licenses/BSD-3-Clause.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium) Public License
+ * (OSMC-PL) are obtained from OSMC, either from the above address, from the URLs:
+ * http://www.openmodelica.org or https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica, and in the OpenModelica distribution. GNU
+ * AGPL version 3 is obtained from: https://www.gnu.org/licenses/licenses.html#GPL. The BSD NEW
+ * License is obtained from: http://www.opensource.org/licenses/BSD-3-Clause.
  *
- * This program is distributed WITHOUT ANY WARRANTY; without even the implied
- * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, EXCEPT AS
- * EXPRESSLY SET FORTH IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE
- * CONDITIONS OF OSMC-PL.
+ * This program is distributed WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY
+ * SET FORTH IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF
+ * OSMC-PL.
  *
  */
 
@@ -273,7 +270,7 @@ size_t calculateLength(DIMENSION_INFO *dimensionInfo,
     case DIMENSION_BY_VALUE_REFERENCE:
       structuralParameter = getParamById(dimensionAttribute->valueReference, integerParameterData, nParametersIntegerArray);
       assertStreamPrint(NULL, structuralParameter != NULL,
-                        "Could not find parameter with id '%ld'.\n"
+                        "Could not find parameter with id '" OMC_INT_FORMAT "'.\n"
                         "Failed to calculate length of variable.",
                         dimensionAttribute->valueReference);
 
@@ -763,7 +760,7 @@ modelica_real getStartFromScalarIdx(const SIMULATION_INFO *simulationInfo,
       {
         case VAR_KIND_STATE:
           if (scalar_idx >= modelData->nStates) {
-            throwStreamPrint(NULL, "getStartFromScalarIdx: scalar_idx %zu out of bounds [0, %zu)",
+            throwStreamPrint(NULL, "getStartFromScalarIdx: scalar_idx %zu out of bounds [0, %lu)",
                               scalar_idx, modelData->nStates);
           }
           revIndex = &simulationInfo->realVarsReverseIndex[scalar_idx];
@@ -771,7 +768,7 @@ modelica_real getStartFromScalarIdx(const SIMULATION_INFO *simulationInfo,
 
         case VAR_KIND_VARIABLE:
           if (scalar_idx >= modelData->nVariablesReal) {
-            throwStreamPrint(NULL, "getStartFromScalarIdx: scalar_idx %zu out of bounds [0, %zu)",
+            throwStreamPrint(NULL, "getStartFromScalarIdx: scalar_idx %zu out of bounds [0, %lu)",
                               scalar_idx, modelData->nVariablesReal);
           }
           revIndex = &simulationInfo->realVarsReverseIndex[scalar_idx];
@@ -779,7 +776,7 @@ modelica_real getStartFromScalarIdx(const SIMULATION_INFO *simulationInfo,
 
         case VAR_KIND_PARAMETER:
           if (scalar_idx >= modelData->nParametersReal) {
-            throwStreamPrint(NULL, "getStartFromScalarIdx: scalar_idx %zu out of bounds [0, %zu)",
+            throwStreamPrint(NULL, "getStartFromScalarIdx: scalar_idx %zu out of bounds [0, %lu)",
                               scalar_idx, modelData->nParametersReal);
           }
           revIndex = &simulationInfo->realParamsReverseIndex[scalar_idx];
@@ -822,7 +819,7 @@ modelica_real getNominalFromScalarIdx(const SIMULATION_INFO *simulationInfo,
   {
     case VAR_KIND_STATE:
       if (scalar_idx >= modelData->nStates) {
-        throwStreamPrint(NULL, "getNominalFromScalarIdx: scalar_idx %zu out of bounds [0, %zu)",
+        throwStreamPrint(NULL, "getNominalFromScalarIdx: scalar_idx %zu out of bounds [0, %lu)",
                           scalar_idx, modelData->nStates);
       }
       revIndex = &simulationInfo->realVarsReverseIndex[scalar_idx];
@@ -830,7 +827,7 @@ modelica_real getNominalFromScalarIdx(const SIMULATION_INFO *simulationInfo,
 
     case VAR_KIND_VARIABLE:
       if (scalar_idx >= modelData->nVariablesReal) {
-        throwStreamPrint(NULL, "getNominalFromScalarIdx: scalar_idx %zu out of bounds [0, %zu)",
+        throwStreamPrint(NULL, "getNominalFromScalarIdx: scalar_idx %zu out of bounds [0, %lu)",
                           scalar_idx, modelData->nVariablesReal);
       }
       revIndex = &simulationInfo->realVarsReverseIndex[scalar_idx];
@@ -838,7 +835,7 @@ modelica_real getNominalFromScalarIdx(const SIMULATION_INFO *simulationInfo,
 
     case VAR_KIND_PARAMETER:
       if (scalar_idx >= modelData->nParametersReal) {
-        throwStreamPrint(NULL, "getNominalFromScalarIdx: scalar_idx %zu out of bounds [0, %zu)",
+        throwStreamPrint(NULL, "getNominalFromScalarIdx: scalar_idx %zu out of bounds [0, %lu)",
                           scalar_idx, modelData->nParametersReal);
       }
       revIndex = &simulationInfo->realParamsReverseIndex[scalar_idx];
@@ -882,7 +879,7 @@ modelica_real getMinFromScalarIdx(const SIMULATION_INFO *simulationInfo,
       {
         case VAR_KIND_STATE:
           if (scalar_idx >= modelData->nStates) {
-            throwStreamPrint(NULL, "getMinFromScalarIdx: scalar_idx %zu out of bounds [0, %zu)",
+            throwStreamPrint(NULL, "getMinFromScalarIdx: scalar_idx %zu out of bounds [0, %lu)",
                               scalar_idx, modelData->nStates);
           }
           revIndex = &simulationInfo->realVarsReverseIndex[scalar_idx];
@@ -890,7 +887,7 @@ modelica_real getMinFromScalarIdx(const SIMULATION_INFO *simulationInfo,
 
         case VAR_KIND_VARIABLE:
           if (scalar_idx >= modelData->nVariablesReal) {
-            throwStreamPrint(NULL, "getMinFromScalarIdx: scalar_idx %zu out of bounds [0, %zu)",
+            throwStreamPrint(NULL, "getMinFromScalarIdx: scalar_idx %zu out of bounds [0, %lu)",
                               scalar_idx, modelData->nVariablesReal);
           }
           revIndex = &simulationInfo->realVarsReverseIndex[scalar_idx];
@@ -898,7 +895,7 @@ modelica_real getMinFromScalarIdx(const SIMULATION_INFO *simulationInfo,
 
         case VAR_KIND_PARAMETER:
           if (scalar_idx >= modelData->nParametersReal) {
-            throwStreamPrint(NULL, "getMinFromScalarIdx: scalar_idx %zu out of bounds [0, %zu)",
+            throwStreamPrint(NULL, "getMinFromScalarIdx: scalar_idx %zu out of bounds [0, %lu)",
                               scalar_idx, modelData->nParametersReal);
           }
           revIndex = &simulationInfo->realParamsReverseIndex[scalar_idx];
@@ -947,7 +944,7 @@ modelica_real getMaxFromScalarIdx(const SIMULATION_INFO *simulationInfo,
       {
         case VAR_KIND_STATE:
           if (scalar_idx >= modelData->nStates) {
-            throwStreamPrint(NULL, "getMaxFromScalarIdx: scalar_idx %zu out of bounds [0, %zu)",
+            throwStreamPrint(NULL, "getMaxFromScalarIdx: scalar_idx %zu out of bounds [0, %lu)",
                               scalar_idx, modelData->nStates);
           }
           revIndex = &simulationInfo->realVarsReverseIndex[scalar_idx];
@@ -955,7 +952,7 @@ modelica_real getMaxFromScalarIdx(const SIMULATION_INFO *simulationInfo,
 
         case VAR_KIND_VARIABLE:
           if (scalar_idx >= modelData->nVariablesReal) {
-            throwStreamPrint(NULL, "getMaxFromScalarIdx: scalar_idx %zu out of bounds [0, %zu)",
+            throwStreamPrint(NULL, "getMaxFromScalarIdx: scalar_idx %zu out of bounds [0, %lu)",
                               scalar_idx, modelData->nVariablesReal);
           }
           revIndex = &simulationInfo->realVarsReverseIndex[scalar_idx];
@@ -963,7 +960,7 @@ modelica_real getMaxFromScalarIdx(const SIMULATION_INFO *simulationInfo,
 
         case VAR_KIND_PARAMETER:
           if (scalar_idx >= modelData->nParametersReal) {
-            throwStreamPrint(NULL, "getMaxFromScalarIdx: scalar_idx %zu out of bounds [0, %zu)",
+            throwStreamPrint(NULL, "getMaxFromScalarIdx: scalar_idx %zu out of bounds [0, %lu)",
                               scalar_idx, modelData->nParametersReal);
           }
           revIndex = &simulationInfo->realParamsReverseIndex[scalar_idx];

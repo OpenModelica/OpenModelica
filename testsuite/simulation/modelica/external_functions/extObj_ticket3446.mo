@@ -5,7 +5,7 @@ package TestMyExternalObj
       input Integer size=3;
       output MyExternalObj outMyExternalObj;
 
-      external "C" outMyExternalObj=initMyExternalObj(size);
+      external "C" outMyExternalObj=initMyExternalObj(size)
       annotation(Include="
         #include <stdio.h>
         #include <stdlib.h> /* for Linux malloc and exit */
@@ -32,7 +32,7 @@ package TestMyExternalObj
     function destructor
       input MyExternalObj inMyExternalObj;
 
-      external "C" closeMyExternalObj(inMyExternalObj) ;
+      external "C" closeMyExternalObj(inMyExternalObj)
       annotation(Include="
         #include <stdio.h>
         #include <stdlib.h> /* for Linux malloc and exit */
@@ -56,7 +56,7 @@ package TestMyExternalObj
     input Integer i;
     output Real y;
 
-    external "C" y=readFromMyExternalObj(extObj, i);
+    external "C" y=readFromMyExternalObj(extObj, i)
     annotation(Include="
       #include <stdio.h>
       #include <stdlib.h> /* for Linux malloc and exit */

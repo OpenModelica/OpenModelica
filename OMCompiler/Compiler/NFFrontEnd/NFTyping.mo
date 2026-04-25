@@ -1,27 +1,31 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
@@ -612,7 +616,6 @@ algorithm
       Type ty;
       TypingError ty_err;
       Integer parent_dims, dim_index;
-      Boolean evaluated;
       Ceval.EvalTarget target;
 
     // A dimension that we're already trying to type.
@@ -637,18 +640,16 @@ algorithm
 
         (exp, ty, var) := typeExp(dimension.dimension, InstContext.set(context, NFInstContext.DIMENSION), info);
         TypeCheck.checkDimensionType(exp, ty, info);
-        evaluated := true;
 
         if not InstContext.inFunction(context) then
           // Dimensions must be parameter expressions in a non-function class.
           if var <= Variability.PARAMETER then
             if InstContext.inRelaxed(context) then
               exp := Ceval.tryEvalExp(exp);
-              evaluated := Expression.isLiteral(exp);
             else
               target := Ceval.EvalTarget.new(info, context,
                 SOME(Ceval.EvalTargetData.DIMENSION_DATA(component, index, exp)));
-              exp := Ceval.evalExp(exp, target);
+              exp := Ceval.tryEvalExpResizable(exp, target);
             end if;
           elseif not var == Variability.NON_STRUCTURAL_PARAMETER then
             Error.addSourceMessage(Error.DIMENSION_NOT_KNOWN, {Expression.toString(exp)}, info);
@@ -1435,8 +1436,11 @@ algorithm
     case Expression.CAST()
       algorithm
         next_context := InstContext.set(context, NFInstContext.SUBEXPRESSION);
+        (e1, ty, variability, purity) := typeExp(exp.exp, next_context, info, retype);
+        exp.exp := e1;
+        exp.ty  := Type.copyDims(ty, exp.ty);
       then
-        typeExp(exp.exp, next_context, info, retype);
+        (exp, exp.ty, variability, purity);
 
     case Expression.SUBSCRIPTED_EXP()
       then typeSubscriptedExp(exp, context, info);
@@ -1995,6 +1999,12 @@ algorithm
   end if;
 
   (cref, subsVariability) := typeCref2(cref, context, info);
+
+  // Fill all implicit array subscripts with explicit `:`
+  if ComponentRef.hasImplicitTrailingIndex(cref) then
+    cref := ComponentRef.fillSubscripts(cref);
+  end if;
+
   ty := ComponentRef.getSubscriptedType(cref);
   nodeVariability := ComponentRef.nodeVariability(cref);
 end typeCref;
@@ -2142,21 +2152,19 @@ algorithm
         e := evaluateEnd(subscript.exp, dimension, subscriptedExp, index, context, info);
         (e, ty, variability) := typeExp(e, context, info);
 
+        if Type.isArray(ty) and InstContext.inEquation(context) then
+          Structural.markExp(e);
+          e := Ceval.tryEvalExp(e);
+          ty := Expression.typeOf(e);
+        end if;
+
         if checkSubscript then
           (e, matched_ty) := checkSubscriptType(e, Type.arrayElementType(ty), dimension, info);
         else
           matched_ty := ty;
         end if;
 
-        if Type.isArray(ty) then
-          outSubscript := Subscript.SLICE(e);
-
-          if InstContext.inEquation(context) then
-            Structural.markExp(e);
-          end if;
-        else
-          outSubscript := Subscript.INDEX(e);
-        end if;
+        outSubscript := if Type.isArray(ty) then Subscript.SLICE(e) else Subscript.INDEX(e);
       then
         (matched_ty, variability);
 

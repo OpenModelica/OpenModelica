@@ -1,27 +1,31 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
@@ -56,6 +60,11 @@ import Matching;
 import Util;
 import System;
 import Settings;
+import SimCode;
+import SymbolTable;
+import Absyn;
+import CevalScript;
+import StringUtil;
 
 protected type ExtAdjacencyMatrixRow = tuple<Integer,list<Integer>>;
 protected type ExtAdjacencyMatrix = list<ExtAdjacencyMatrixRow>;
@@ -82,13 +91,14 @@ protected
   list<DAE.ComponentRef> cr_lst;
   BackendDAE.Jacobian simCodeJacobian, simCodeJacobianH;
   BackendDAE.Shared shared;
-  String str, modelicaOutput, modelicaFileName, modelName, auxillaryConditionsFilename, auxillaryEquations, intermediateEquationsFilename, intermediateEquations;
+  String str, modelicaOutput, modelicaFileName, modelName, auxillaryConditionsFilename, auxillaryEquations, intermediateEquationsFilename, intermediateEquations, csvfileName;
   list<tuple<Integer, list<Integer>>> mappedEbltSetS;
   list<tuple<Integer, BackendDAE.Equation, list<Integer>>> setBFailedBoundaryConditionEquations;
 
   list<Integer> allVarsList, knowns, unknowns, boundaryConditionVars, exactEquationVars, extractedVarsfromSetS, constantVars, knownVariablesWithEquationBinding, boundaryConditionTaggedEquationSolvedVars, unknownVarsInSetC, unMeasuredVariablesOfInterest;
   BackendDAE.Variables inputVars, outDiffVars, outOtherVars, outResidualVars;
   Integer procedureCount;
+  list<tuple<String, String>> measurementcsvData;
   Boolean debug = false, status = false;
 
 algorithm
@@ -233,6 +243,12 @@ algorithm
   // set uncertain variables unreplaceable attributes to be true
   outDiffVars := BackendVariable.listVar(List.map1(BackendVariable.varList(outDiffVars), BackendVariable.setVarUnreplaceable, true));
 
+  // read the measurements from csv file and set the start values of the variables of interest to be the measurements to help initialization
+  (csvfileName, measurementcsvData) := readMeasurementsFromCSV(shared);
+
+  // set the start values of the variables of interest to be the measurements for better convergence of the data reconciliation problem
+  outDiffVars :=setStartValuesToMeasurements(outDiffVars, measurementcsvData, csvfileName);
+
   // prepare set-c residual equations and residual vars
   (_, residualEquations) := BackendEquation.traverseEquationArray(BackendEquation.listEquation(setC_Eq), BackendEquation.traverseEquationToScalarResidualForm, (shared.functionTree, {}));
   (residualEquations, residualVars) := BackendEquation.convertResidualsIntoSolvedEquations(listReverse(residualEquations), "$res_F_", 1);
@@ -291,9 +307,17 @@ algorithm
 
   // write the list of known variables to the csv file with the headers
   if not System.regularFileExists(inDAE.shared.info.fileNamePrefix + "_Inputs.csv") then
-    str := "Variable Names,Measured Value-x,HalfWidthConfidenceInterval,xi,xk,rx_ik\n";
+    str := "Variable Names,Measured Value-x,HalfWidthConfidenceInterval\n";
     str := dumpToCsv(str, BackendVariable.varList(outDiffVars));
     System.writeFile(shared.info.fileNamePrefix + "_Inputs.csv", str);
+  end if;
+
+  // write the list of known variables to the correlation matrix csv file with the headers
+  if not System.regularFileExists(inDAE.shared.info.fileNamePrefix + "_Correlation_Inputs.csv") then
+    //str := "Variable Names,Measured Value-x,HalfWidthConfidenceInterval\n";
+    str := dumpCorrelationVarsToCsv(BackendVariable.varList(outDiffVars));
+    str := dumpToCsv(str + "\n", BackendVariable.varList(outDiffVars));
+    System.writeFile(shared.info.fileNamePrefix + "_Correlation_Inputs.csv", str);
   end if;
 
   // write the new Reconciled vars and equations to .mo File
@@ -313,10 +337,134 @@ algorithm
   modelicaOutput := modelicaOutput + "\nend " + modelName + ";";
   System.writeFile(modelicaFileName + ".mo", modelicaOutput);
 
-  // update the DAE with new system of equations and vars computed by the dataReconciliation extraction algorithm
   outDAE := BackendDAE.DAE({currentSystem}, shared);
-
 end newExtractionAlgorithm;
+
+// extract the "-sx =.csv" file path from simflags
+function extractSxPath
+  input String simflags;
+  output String csvFilePath;
+protected
+  Integer nummatches;
+  String filePath = "";
+algorithm
+  // if there is no -sx in the simflags, return
+  if  System.stringFind(simflags, "-sx") < 0 then
+    Error.addMessage(Error.INTERNAL_ERROR, {": No -sx flag found in simflags, hence no csv file will be read for setting start values of the variables of interest for data reconciliation initialization."});
+    fail();
+  end if;
+
+  // should never fail!
+  try
+    (nummatches, {_, filePath}) := System.regex(simflags, "-sx[ \t]*=[ \t]*(\"[^\"]*\"|[^, \t]+)", 2, true);
+    if nummatches == 2 then
+      csvFilePath := System.stringReplace(filePath, " ", ""); // remove the double quotes if present in the file path
+      csvFilePath := System.stringReplace(csvFilePath, "\"", ""); // remove the double quotes if present in the file path
+      return;
+    end if;
+  else
+    return "";
+  end try;
+end extractSxPath;
+
+// read the csv file and extract the measurement data for setting start values for data reconciliation initialization.
+protected function readMeasurementsFromCSV
+  input BackendDAE.Shared shared;
+  output String csvFileName;
+  output list<tuple<String, String>> measurementData = {};
+protected
+  String content;
+  list<String> tokens, lines;
+  SimCode.SimulationSettings simulationSettings;
+  Absyn.Program p;
+algorithm
+  if isNone(shared.info.simSettingsOption) then
+    Error.addMessage(Error.INTERNAL_ERROR, {": SimulationSettings is NONE, expected SimulationSettings to be present in shared.info.simSettingsOption for reading measurements from csv file for data reconciliation initialization."});
+    fail();
+  end if;
+
+  simulationSettings := Util.getOption(shared.info.simSettingsOption);
+  // extract the csv file path from simflags
+  csvFileName := extractSxPath(simulationSettings.simflags);
+
+  if stringEmpty(csvFileName) then
+    Error.addMessage(Error.INTERNAL_ERROR, {": No csv file provided or failed to read file with -sx flag in simflags."});
+    fail();
+  end if;
+
+  // resolve uri if the csv file path is provided as a uri (e.g) modelica:// or file://, otherwise get the absolute path for the csv file
+  if (StringUtil.startsWith(csvFileName, "modelica://") or StringUtil.startsWith(csvFileName, "file://")) then
+    p := SymbolTable.getAbsyn();
+    csvFileName := CevalScript.getFullPathFromUri(p, csvFileName, true);
+  end if;
+
+  content := System.readFile(csvFileName);
+
+  if stringEmpty(content) then
+    Error.addMessage(Error.INTERNAL_ERROR, {": Failed to read csv file content from " + csvFileName + " and hence start values can not be set."});
+    fail();
+  end if;
+
+  lines := System.strtok(content, "\n");
+  for line in lines loop
+    line := System.stringReplace(line, ";", ",");
+    line := System.trim(line);
+    tokens := Util.stringSplitAtChar(line, ",");
+    if not listEmpty(tokens) and listLength(tokens) >= 2 then
+      measurementData := (listGet(tokens, 1), listGet(tokens, 2)) :: measurementData;
+    end if;
+  end for;
+  //print("Extracted measurement data from csv file:\n" + anyString(listReverse(measurementData)) + "=>" + anyString(listLength(measurementData)) + "\n");
+end readMeasurementsFromCSV;
+
+protected function setStartValuesToMeasurements
+  input BackendDAE.Variables inVariables;
+  input list<tuple<String, String>> measurementData;
+  input String csvFileName;
+  output BackendDAE.Variables outVariables;
+protected
+  list<BackendDAE.Var> varList;
+  String varName, valueStr;
+  Real value;
+  BackendDAE.Var var1;
+  Boolean foundMeasurement;
+  list<DAE.Exp> startValueList = {DAE.RCONST(10.0), DAE.RCONST(600), DAE.RCONST(550.0), DAE.RCONST(70e5), DAE.RCONST(68e5), DAE.RCONST(500), DAE.RCONST(1.0), DAE.RCONST(1e9), DAE.RCONST(5)};
+algorithm
+  varList := {};
+  for var in BackendVariable.varList(inVariables) loop
+    (valueStr, foundMeasurement) := checkVarExistenceInMeasurementData(var, measurementData);
+    if not foundMeasurement then
+      Error.addMessage(Error.INTERNAL_ERROR, {": Entry for variable of interest " + ComponentReference.printComponentRefStr(var.varName) + " not found in the measurement csv file " + csvFileName});
+      fail();
+    end if;
+    try
+      value := stringReal(valueStr);
+    else
+      Error.addMessage(Error.INTERNAL_ERROR, {": Failed to convert the measurement value \"" + valueStr + "\" for variable of interest " + ComponentReference.printComponentRefStr(var.varName) + " from csv file " + csvFileName + " to a valid Real number for setting start value for data reconciliation initialization."});
+      fail();
+    end try;
+    var := BackendVariable.setVarStartValue(var, DAE.RCONST(value));
+    varList := var :: varList;
+  end for;
+  outVariables := BackendVariable.listVar(listReverse(varList));
+end setStartValuesToMeasurements;
+
+protected function checkVarExistenceInMeasurementData
+  input BackendDAE.Var var;
+  input list<tuple<String, String>> measurementData;
+  output String valueStr = "";
+  output Boolean exists = false;
+protected
+  String varName;
+algorithm
+  for measurement in measurementData loop
+    (varName, valueStr) := measurement;
+    if varName == ComponentReference.crefStr(var.varName) then
+      exists := true;
+      break;
+    end if;
+  end for;
+end checkVarExistenceInMeasurementData;
 
 protected function dumpRelatedBoundaryConditionsEquations
   input list<tuple<Integer, BackendDAE.Equation, list<Integer>>> setBFailedBoundaryConditionEquations;
@@ -363,13 +511,14 @@ protected
   list<DAE.ComponentRef> cr_lst;
   BackendDAE.Jacobian simCodeJacobian;
   BackendDAE.Shared shared;
-  String str, modelicaOutput, modelicaFileName, modelName, auxillaryConditionsFilename, auxillaryEquations, intermediateEquationsFilename, intermediateEquations;
+  String str, modelicaOutput, modelicaFileName, modelName, auxillaryConditionsFilename, auxillaryEquations, intermediateEquationsFilename, intermediateEquations, csvfileName;
   list<tuple<Integer, list<Integer>>> mappedEbltSetS;
   list<tuple<Integer, BackendDAE.Equation, list<Integer>>> setBFailedBoundaryConditionEquations;
 
   list<Integer> allVarsList, knowns, unknowns, boundaryConditionVars, exactEquationVars, extractedVarsfromSetS, constantVars, knownVariablesWithEquationBinding, boundaryConditionTaggedEquationSolvedVars, unknownVarsInSetC, unMeasuredVariablesOfInterest;
   BackendDAE.Variables inputVars, outDiffVars, outOtherVars, outResidualVars, outBoundaryConditionVars;
   Integer procedureCount;
+  list<tuple<String, String>> measurementcsvData;
   Boolean debug = false, status = false;
 
 algorithm
@@ -522,6 +671,12 @@ algorithm
   // set uncertain variables unreplaceable attributes to be true
   outDiffVars := BackendVariable.listVar(List.map1(BackendVariable.varList(outDiffVars), BackendVariable.setVarUnreplaceable, true));
 
+  // read the measurements from csv file and set the start values of the variables of interest to be the measurements to help initialization
+  (csvfileName, measurementcsvData) := readMeasurementsFromCSV(shared);
+
+  // set the start values of the variables of interest to be the measurements for better convergence of the data reconciliation problem
+  outDiffVars :=setStartValuesToMeasurements(outDiffVars, measurementcsvData, csvfileName);
+
   // set boundaryConditionsVars unreplaceable attributes to be true
   outBoundaryConditionVars := BackendVariable.listVar(List.map1(listReverse(failedboundaryConditionVars), BackendVariable.setVarUnreplaceable, true));
 
@@ -621,13 +776,14 @@ protected
   list<DAE.ComponentRef> cr_lst;
   BackendDAE.Jacobian simCodeJacobian, simCodeJacobianH;
   BackendDAE.Shared shared;
-  String str, modelicaOutput, modelicaFileName, modelName, auxillaryConditionsFilename, auxillaryEquations, intermediateEquationsFilename, intermediateEquations;
+  String str, modelicaOutput, modelicaFileName, modelName, auxillaryConditionsFilename, auxillaryEquations, intermediateEquationsFilename, intermediateEquations, csvfileName;
   list<tuple<Integer, list<Integer>>> mappedEbltSetS;
   list<tuple<Integer, BackendDAE.Equation, list<Integer>>> setBFailedBoundaryConditionEquations;
 
   list<Integer> allVarsList, knowns, unknowns, unMeasuredVariablesOfInterest, failedboundaryConditionEquationIndex, boundaryConditionVars, exactEquationVars, extractedVarsfromSetS, constantVars, knownVariablesWithEquationBinding, boundaryConditionTaggedEquationSolvedVars, unknownVarsInSetC;
   BackendDAE.Variables inputVars, outDiffVars, outOtherVars, outResidualVars, outBoundaryConditionVars, outOtherVarsSetSPrime;
   Integer procedureCount, numRelatedBoundaryConditions;
+  list<tuple<String, String>> measurementcsvData;
   Boolean debug = false, status = false;
 
 algorithm
@@ -762,6 +918,12 @@ algorithm
   outDiffVars := BackendVariable.listVar(List.map1r(knowns, BackendVariable.getVarAt, currentSystem.orderedVars));
   // set uncertain variables unreplaceable attributes to be true
   outDiffVars := BackendVariable.listVar(List.map1(BackendVariable.varList(outDiffVars), BackendVariable.setVarUnreplaceable, true));
+
+  // read the measurements from csv file and set the start values of the variables of interest to be the measurements to help initialization
+  (csvfileName, measurementcsvData) := readMeasurementsFromCSV(shared);
+
+  // set the start values of the variables of interest to be the measurements for better convergence of the data reconciliation problem
+  outDiffVars :=setStartValuesToMeasurements(outDiffVars, measurementcsvData, csvfileName);
 
   // prepare set-c residual equations and residual vars
   (_, residualEquations) := BackendEquation.traverseEquationArray(BackendEquation.listEquation(setC_Eq), BackendEquation.traverseEquationToScalarResidualForm, (shared.functionTree, {}));
@@ -962,6 +1124,14 @@ algorithm
     str := dumpToCsv(str, BackendVariable.varList(outDiffVars));
     str := dumpToCsv(str, BackendVariable.varList(outBoundaryConditionVars));
     System.writeFile(shared.info.fileNamePrefix + "_Inputs.csv", str);
+  end if;
+
+  // write the list of known variables to the correlation matrix csv file with the headers
+  if not System.regularFileExists(inDAE.shared.info.fileNamePrefix + "_Correlation_Inputs.csv") then
+    //str := "Variable Names,Measured Value-x,HalfWidthConfidenceInterval\n";
+    str := dumpCorrelationVarsToCsv(BackendVariable.varList(outDiffVars));
+    str := dumpToCsv(str + "\n", BackendVariable.varList(outDiffVars));
+    System.writeFile(shared.info.fileNamePrefix + "_Correlation_Inputs.csv", str);
   end if;
 
   // write the list of unmeasured variables variables to txt file "XXX_BoundaryConditionVars.txt"
@@ -1800,7 +1970,7 @@ algorithm
 
   // write the list of known variables to the csv file with the headers
   if not System.regularFileExists(inDAE.shared.info.fileNamePrefix + "_Inputs.csv") then
-    str := "Variable Names,Measured Value-x,HalfWidthConfidenceInterval,xi,xk,rx_ik\n";
+    str := "Variable Names,Measured Value-x,HalfWidthConfidenceInterval\n";
     str := dumpToCsv(str, BackendVariable.varList(outDiffVars));
     System.writeFile(shared.info.fileNamePrefix + "_Inputs.csv", str);
   end if;
@@ -1982,16 +2152,27 @@ protected function dumpExtractedVars
   input String comment;
   output String outstring="";
 protected
-  DAE.ComponentRef cr;
+  DAE.ComponentRef cr, cr1, creflast;
+  Boolean isRec;
+  Absyn.Path path;
+  list<String> recordvarlist;
 algorithm
   outstring := "\n  //"+ comment;
+  recordvarlist := {};
   for var in invar loop
     cr := BackendVariable.varCref(var);
+    // check for record type variable and extract the path of the record to print in modelica format
+    (cr1, isRec) := ComponentReference.crefGetFirstRec(cr);
     if BackendVariable.varHasUncertainValueRefine(var) then
       outstring := outstring + "\n  parameter "  + DAEDump.daeTypeStr(var.varType) + " " + System.stringReplace(ComponentReference.crefStr(cr), ".", "_") + ";";
     elseif BackendVariable.isParam(var) then
       outstring := outstring + "\n  parameter "  + DAEDump.daeTypeStr(var.varType) + " " + System.stringReplace(ComponentReference.crefStr(cr), ".", "_") + " = " + ExpressionDump.printOptExpStr(var.bindExp) +";";
-    else
+    elseif isRec and not listMember(ComponentReference.crefStr(cr1), recordvarlist) then
+      creflast := ComponentReference.crefLastCref(cr1);
+      path := Types.getRecordPath(ComponentReference.crefType(creflast));
+      recordvarlist := ComponentReference.crefStr(cr1) :: recordvarlist;
+      outstring := outstring + "\n  "  + AbsynUtil.pathString(path) + " " + System.stringReplace(ComponentReference.crefStr(cr1), ".", "_") + ";";
+    elseif not isRec then
       outstring := outstring + "\n  "  + DAEDump.daeTypeStr(var.varType) + " " + System.stringReplace(ComponentReference.crefStr(cr), ".", "_") + ";";
     end if;
   end for;
@@ -3539,6 +3720,21 @@ algorithm
   outstring := instring+outstring;
 end dumpToCsv;
 
+/* function which dumps the variable names to csv file */
+public function dumpCorrelationVarsToCsv
+  input list<BackendDAE.Var> invar;
+  output String outstring="";
+protected
+  DAE.ComponentRef cr;
+  String str = "Sxij,";
+algorithm
+  for i in invar loop
+    cr := BackendVariable.varCref(i);
+    outstring := outstring + ComponentReference.crefStr(cr) + ",";
+  end for;
+  outstring := str + outstring;
+end dumpCorrelationVarsToCsv;
+
 /* function which dumps non reconciledVars failing for condition -2 to a log file*/
 public function dumpNonReconciledVars
   input list<BackendDAE.Var> invar;
@@ -3580,7 +3776,7 @@ algorithm
     case (BackendDAE.COMPLEX_EQUATION(left = e1, right = e2))
       equation
         s1 = ExpressionDump.printExp2Str(e1, "", NONE(), NONE());
-        s2 = ExpressionDump.printExpStr(e2);
+        s2 = ExpressionDump.printExp2Str(e2, "", NONE(), NONE());
         res = stringAppendList({s1," = ",s2});
       then
         res;

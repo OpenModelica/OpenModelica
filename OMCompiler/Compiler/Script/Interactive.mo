@@ -1,27 +1,31 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
@@ -5460,7 +5464,7 @@ algorithm
       ty_path := typeName;
     end if;
 
-    cdef := addToPublic(cdef,
+    cdef := InteractiveUtil.addToPublic(cdef,
       Absyn.ELEMENTITEM(
         Absyn.ELEMENT(false, redecl, io,
           Absyn.COMPONENTS(attr, Absyn.TPATH(ty_path, NONE()),
@@ -5834,36 +5838,6 @@ algorithm
   end try;
 end getInheritanceCount;
 
-public function getNthInheritedClass
-"This function takes a Path, an integer and a Program and returns
-  the nth inherited class in the class referenced by the Path."
-  input Absyn.Path classPath;
-  input Integer n;
-  output Values.Value result;
-protected
-  Absyn.Class cls;
-  FCore.Graph env;
-  FCore.Cache cache;
-  SCode.Element elem;
-  Absyn.Path path;
-algorithm
-  try
-    cls := InteractiveUtil.getPathedClassInProgram(classPath, SymbolTable.getAbsyn());
-    (cache, env) := Inst.makeEnvFromProgram(SymbolTable.getSCode());
-
-    try
-      (_, elem as SCode.CLASS(), env) := Lookup.lookupClass(cache, env, classPath);
-      result := ValuesUtil.makeCodeTypeName(getNthInheritedClass2(elem, cls, n, env));
-    else
-      // if above fails, baseclass not defined. return its name
-      Absyn.EXTENDS(path = path) := listGet(getExtendsInClass(cls), n);
-      result := ValuesUtil.makeCodeTypeName(path);
-    end try;
-  else
-    result := ValuesUtil.makeBoolean(false);
-  end try;
-end getNthInheritedClass;
-
 protected function getNthInheritedClassAnnotationOpt
 "This function takes a ComponentRef, an integer and a Program and returns
   the ANNOTATION on the extends of the nth inherited class in the class referenced by the modelpath."
@@ -6042,40 +6016,6 @@ algorithm
 
   outExtends := Dangerous.listReverseInPlace(outExtends);
 end getExtendsInParts;
-
-protected function getNthInheritedClass2
-"Helper function to getNthInheritedClass."
-  input SCode.Element element;
-  input Absyn.Class cls;
-  input Integer n;
-  input FCore.Graph env;
-  output Absyn.Path baseClass;
-protected
-  String id;
-  SCode.Encapsulated enc;
-  SCode.Restriction restr;
-  list<Absyn.Path> extends_lst;
-  FCore.Graph cenv;
-  ClassInf.State ci_state;
-  Absyn.Class c;
-algorithm
-  SCode.CLASS(name = id, encapsulatedPrefix = enc, restriction = restr) := element;
-
-  if SCodeUtil.isDerivedClass(element) then
-    // for derived classes, search in parents
-    extends_lst := getBaseClasses(cls, env);
-  else
-    // for non-derived classes, search from inside the class
-    cenv := FGraph.openScope(env, enc, id, FGraph.restrictionToScopeType(restr));
-    ci_state := ClassInf.start(restr, FGraph.getGraphName(cenv));
-    (_, cenv, _, _, _) := Inst.partialInstClassIn(FCore.emptyCache(), cenv,
-      InnerOuter.emptyInstHierarchy, DAE.NOMOD(), DAE.NOPRE(), ci_state,
-      element, SCode.PUBLIC(), {}, 0);
-    extends_lst := getBaseClasses(cls, cenv);
-  end if;
-
-  baseClass := listGet(extends_lst, n);
-end getNthInheritedClass2;
 
 public function getComponentCount
 " This function takes a ComponentRef and a Program and returns the
@@ -6292,7 +6232,7 @@ protected
   Absyn.Class cls;
   Interactive.GraphicEnvCache env;
   Boolean silent;
-  list<Values.Value> infos;
+  list<Values.Value> infos = {};
   list<Absyn.Element> elems;
 algorithm
   try
@@ -6300,7 +6240,7 @@ algorithm
 
     if access < Access.icon then // Access.icon
       Error.addMessage(Error.ACCESS_ENCRYPTED_PROTECTED_CONTENTS, {});
-      result := ValuesUtil.makeBoolean(false);
+      result := ValuesUtil.makeArray({});
       return;
     end if;
 
@@ -6322,7 +6262,7 @@ algorithm
 
     result := ValuesUtil.makeArray(infos);
   else
-    result := ValuesUtil.makeBoolean(false);
+    result := ValuesUtil.makeArray({});
   end try;
 
   if silent then
@@ -6571,7 +6511,7 @@ algorithm
     eq := Absyn.EquationItem.EQUATIONITEM(Absyn.Equation.EQ_CONNECT(connector1, connector2),
       cmt, AbsynUtil.dummyInfo);
     program := transformPathedClassInProgram(classPath, program,
-      function addToEquation(inEquationItem = eq));
+      function InteractiveUtil.addToEquation(eq = eq));
     success := true;
   else
     success := false;
@@ -6717,7 +6657,7 @@ algorithm
         cdef = InteractiveUtil.getPathedClassInProgram(modelpath, p);
         cmt = SOME(Absyn.COMMENT(SOME(ann), NONE()));
         GlobalScript.ISTMTS({GlobalScript.IEXP(conditionExp, _)}, _) = Parser.parsestringexp(condition_);
-        newcdef = addToEquation(cdef, Absyn.EQUATIONITEM(Absyn.EQ_NORETCALL(Absyn.CREF_IDENT("transition", {}),
+        newcdef = InteractiveUtil.addToEquation(cdef, Absyn.EQUATIONITEM(Absyn.EQ_NORETCALL(Absyn.CREF_IDENT("transition", {}),
                                 Absyn.FUNCTIONARGS({Absyn.CREF(Absyn.CREF_IDENT(from_, {})), Absyn.CREF(Absyn.CREF_IDENT(to_, {})),
                                 conditionExp}, {Absyn.NAMEDARG("immediate", Absyn.BOOL(immediate_)),
                                 Absyn.NAMEDARG("reset", Absyn.BOOL(reset_)), Absyn.NAMEDARG("synchronize", Absyn.BOOL(synchronize_)),
@@ -6733,7 +6673,7 @@ algorithm
         package_ = AbsynUtil.stripLast(modelpath);
         cmt = SOME(Absyn.COMMENT(SOME(ann), NONE()));
         GlobalScript.ISTMTS({GlobalScript.IEXP(conditionExp, _)}, _) = Parser.parsestringexp(condition_);
-        newcdef = addToEquation(cdef, Absyn.EQUATIONITEM(Absyn.EQ_NORETCALL(Absyn.CREF_IDENT("transition", {}),
+        newcdef = InteractiveUtil.addToEquation(cdef, Absyn.EQUATIONITEM(Absyn.EQ_NORETCALL(Absyn.CREF_IDENT("transition", {}),
                                 Absyn.FUNCTIONARGS({Absyn.CREF(Absyn.CREF_IDENT(from_, {})), Absyn.CREF(Absyn.CREF_IDENT(to_, {})),
                                 conditionExp}, {Absyn.NAMEDARG("immediate", Absyn.BOOL(immediate_)),
                                 Absyn.NAMEDARG("reset", Absyn.BOOL(reset_)), Absyn.NAMEDARG("synchronize", Absyn.BOOL(synchronize_)),
@@ -8895,229 +8835,6 @@ algorithm
   end match;
 end getComponentInfoOld;
 
-public function addToPublic
-" This function takes a Class definition and adds an
-   ElementItem to the first public list in the class.
-   If no public list is available in the class one is created."
-  input Absyn.Class inClass;
-  input Absyn.ElementItem inElementItem;
-  output Absyn.Class outClass;
-algorithm
-  outClass:=
-  matchcontinue (inClass,inElementItem)
-    local
-      list<Absyn.ElementItem> publst,publst2;
-      list<Absyn.ClassPart> parts2,parts;
-      String i, baseClassName;
-      Boolean p,f,e;
-      Absyn.Restriction r;
-      Option<String> cmt;
-      SourceInfo file_info;
-      Absyn.ElementItem eitem;
-      list<Absyn.ElementArg> modifications;
-      list<String> typeVars;
-      list<Absyn.NamedArg> classAttrs;
-      list<Absyn.Annotation> ann;
-
-    case (outClass as Absyn.CLASS(name = i,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
-                      body = Absyn.PARTS(typeVars = typeVars,classAttrs=classAttrs,classParts = parts,comment = cmt,ann = ann),
-                      info = file_info),eitem)
-      equation
-        publst = InteractiveUtil.getPublicList(parts);
-        publst2 = listAppend(publst, {eitem});
-        parts2 = InteractiveUtil.replacePublicList(parts, publst2);
-        outClass.body = Absyn.PARTS(typeVars,classAttrs,parts2,ann,cmt);
-      then
-        outClass;
-
-    case (outClass as Absyn.CLASS(name = i,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
-                      body = Absyn.PARTS(typeVars = typeVars,classAttrs = classAttrs,classParts = parts,comment = cmt,ann=ann),
-                      info = file_info),eitem)
-      algorithm
-        outClass.body := Absyn.PARTS(typeVars,classAttrs,(Absyn.PUBLIC({eitem}) :: parts),ann,cmt);
-      then
-        outClass;
-
-    // adrpo: handle also the case model extends X end X;
-    case (outClass as Absyn.CLASS(name = i,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
-                      body = Absyn.CLASS_EXTENDS(baseClassName = baseClassName,
-                                                 modifications = modifications,
-                                                 comment = cmt,ann = ann,
-                                                 parts = parts),
-                      info = file_info),eitem)
-      equation
-        publst = InteractiveUtil.getPublicList(parts);
-        publst2 = listAppend(publst, {eitem});
-        parts2 = InteractiveUtil.replacePublicList(parts, publst2);
-        outClass.body = Absyn.CLASS_EXTENDS(baseClassName,modifications,cmt,parts2,ann);
-      then outClass;
-
-    // adrpo: handle also the case model extends X end X;
-    case (outClass as Absyn.CLASS(name = i,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
-                      body = Absyn.CLASS_EXTENDS(baseClassName = baseClassName,
-                                                 modifications = modifications,
-                                                 comment = cmt,ann = ann,
-                                                 parts = parts),
-                      info = file_info),eitem)
-      algorithm
-        outClass.body := Absyn.CLASS_EXTENDS(baseClassName,modifications,cmt,(Absyn.PUBLIC({eitem}) :: parts),ann);
-      then outClass;
-
-  end matchcontinue;
-end addToPublic;
-
-protected function addToProtected
-" This function takes a Class definition and adds an
-   ElementItem to the first protected list in the class.
-   If no protected list is available in the class one is created."
-  input Absyn.Class inClass;
-  input Absyn.ElementItem inElementItem;
-  output Absyn.Class outClass;
-algorithm
-  outClass:=
-  matchcontinue (inClass,inElementItem)
-    local
-      list<Absyn.ElementItem> protlst,protlst2;
-      list<Absyn.ClassPart> parts2,parts;
-      String i, baseClassName;
-      Boolean p,f,e;
-      Absyn.Restriction r;
-      Option<String> cmt;
-      SourceInfo file_info;
-      Absyn.ElementItem eitem;
-      list<Absyn.ElementArg> modifications;
-      list<String> typeVars;
-      list<Absyn.NamedArg> classAttrs;
-      list<Absyn.Annotation> ann;
-
-    case (outClass as Absyn.CLASS(name = i,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
-                      body = Absyn.PARTS(typeVars = typeVars, classAttrs = classAttrs, classParts = parts,comment = cmt, ann = ann),
-                      info = file_info),eitem)
-      equation
-        protlst = InteractiveUtil.getProtectedList(parts);
-        protlst2 = listAppend(protlst, {eitem});
-        parts2 = InteractiveUtil.replaceProtectedList(parts, protlst2);
-        outClass.body = Absyn.PARTS(typeVars,classAttrs,parts2,ann,cmt);
-      then outClass;
-
-    case (outClass as Absyn.CLASS(name = i,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
-                      body = Absyn.PARTS(typeVars = typeVars,classAttrs = classAttrs,classParts = parts,comment = cmt, ann = ann),
-                      info = file_info),eitem)
-      algorithm
-        outClass.body := Absyn.PARTS(typeVars,classAttrs,(Absyn.PROTECTED({eitem}) :: parts),ann,cmt);
-      then outClass;
-
-    // adrpo: handle also the case model extends X end X;
-    case (outClass as Absyn.CLASS(name = i,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
-                      body = Absyn.CLASS_EXTENDS(baseClassName = baseClassName,
-                                                 modifications = modifications,
-                                                 comment = cmt, ann = ann,
-                                                 parts = parts),
-                      info = file_info),eitem)
-      equation
-        protlst = InteractiveUtil.getProtectedList(parts);
-        protlst2 = listAppend(protlst, {eitem});
-        parts2 = InteractiveUtil.replaceProtectedList(parts, protlst2);
-        outClass.body = Absyn.CLASS_EXTENDS(baseClassName,modifications,cmt,parts2, ann);
-      then
-        outClass;
-
-    // adrpo: handle also the case model extends X end X;
-    case (outClass as Absyn.CLASS(name = i,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
-                      body = Absyn.CLASS_EXTENDS(baseClassName = baseClassName,
-                                                 modifications = modifications,
-                                                 comment = cmt, ann = ann,
-                                                 parts = parts),
-                      info = file_info),eitem)
-      algorithm
-        outClass.body := Absyn.CLASS_EXTENDS(baseClassName,modifications,cmt,(Absyn.PROTECTED({eitem}) :: parts),ann);
-      then outClass;
-
-    // handle the model X = Y case
-    /*
-    case (Absyn.CLASS(body = Absyn.DERIVED()),_)
-      then fail();
-    */
-  end matchcontinue;
-end addToProtected;
-
-public function addToEquation
-" This function takes a Class definition and adds an
-   EquationItem to the first equation list in the class.
-   If no public list is available in the class one is created."
-  input Absyn.Class inClass;
-  input Absyn.EquationItem inEquationItem;
-  output Absyn.Class outClass;
-algorithm
-  outClass:=
-  matchcontinue (inClass,inEquationItem)
-    local
-      list<Absyn.EquationItem> eqlst,eqlst2;
-      list<Absyn.ClassPart> parts2,parts,newparts;
-      String i, baseClassName;
-      Boolean p,f,e;
-      Absyn.Restriction r;
-      Option<String> cmt;
-      SourceInfo file_info;
-      Absyn.EquationItem eitem;
-      list<Absyn.ElementArg> modifications;
-      list<String> typeVars;
-      list<Absyn.NamedArg> classAttrs;
-      list<Absyn.Annotation> ann;
-
-    case (outClass as Absyn.CLASS(name = i,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
-                      body = Absyn.PARTS(typeVars = typeVars, classAttrs = classAttrs, classParts = parts,ann = ann,comment = cmt),
-                      info = file_info),eitem)
-      equation
-        eqlst = InteractiveUtil.getEquationList(parts);
-        eqlst2 = listAppend(eqlst, {eitem});
-        parts2 = InteractiveUtil.replaceEquationList(parts, eqlst2);
-        outClass.body = Absyn.PARTS(typeVars,classAttrs,parts2,ann,cmt);
-      then
-        outClass;
-
-    case (outClass as Absyn.CLASS(name = i,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
-                      body = Absyn.PARTS(typeVars = typeVars, classAttrs = classAttrs, classParts = parts,ann = ann,comment = cmt),
-                      info = file_info),eitem)
-      equation
-        newparts = listAppend(parts, {Absyn.EQUATIONS({eitem})}) "Add the equations last, to make nicer output if public section present" ;
-        outClass.body = Absyn.PARTS(typeVars,classAttrs,newparts,ann,cmt);
-      then
-        outClass;
-
-    /* adrpo: handle also the case model extends X end X; */
-    case (outClass as Absyn.CLASS(name = i,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
-                      body = Absyn.CLASS_EXTENDS(baseClassName = baseClassName,
-                                                 modifications = modifications,
-                                                 comment = cmt,
-                                                 ann = ann,
-                                                 parts = parts),
-                      info = file_info),eitem)
-      equation
-        eqlst = InteractiveUtil.getEquationList(parts);
-        eqlst2 = listAppend(eqlst, {eitem});
-        parts2 = InteractiveUtil.replaceEquationList(parts, eqlst2);
-        outClass.body = Absyn.CLASS_EXTENDS(baseClassName,modifications,cmt,parts2,ann);
-      then
-        outClass;
-
-    /* adrpo: handle also the case model extends X end X; */
-    case (outClass as Absyn.CLASS(name = i,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
-                      body = Absyn.CLASS_EXTENDS(baseClassName = baseClassName,
-                                                 modifications = modifications,
-                                                 ann = ann,
-                                                 comment = cmt,
-                                                 parts = parts),
-                      info = file_info),eitem)
-      equation
-        newparts = listAppend(parts, {Absyn.EQUATIONS({eitem})}) "Add the equations last, to make nicer output if public section present" ;
-        outClass.body = Absyn.CLASS_EXTENDS(baseClassName,modifications,cmt,newparts,ann);
-      then
-        outClass;
-
-  end matchcontinue;
-end addToEquation;
-
 public function transformPathedClassInProgram
   "Transforms a referenced class in a program by applying the given function to it."
   input Absyn.Path inPath;
@@ -10766,6 +10483,152 @@ algorithm
     if containsEncryptedClass then break; end if;
   end for;
 end astContainsEncryptedClass;
+
+public function addEquation
+  input Absyn.Path clsPath;
+  input String eqStr;
+  input Boolean isInitial;
+  output Boolean success = false;
+protected
+  Absyn.Program program;
+  Absyn.EquationItem eq;
+  Absyn.Class cls;
+algorithm
+  try
+    eq := Parser.stringEq(eqStr);
+    program := transformPathedClassInProgram(clsPath, SymbolTable.getAbsyn(),
+      function AbsynUtil.appendEquation(eq = eq, isInitial = isInitial));
+    SymbolTable.setAbsyn(program);
+    success := true;
+  else
+  end try;
+end addEquation;
+
+public function updateEquation
+  input Absyn.Path clsPath;
+  input String oldEq;
+  input String newEq;
+  input Boolean matchAll;
+  input Boolean matchShallow;
+  input Boolean matchDescription;
+  input Boolean mergeDescription;
+  output Boolean success;
+protected
+  Absyn.Program program;
+  Absyn.EquationItem old_eq;
+  Option<Absyn.EquationItem> new_eq;
+  Absyn.Class cls;
+algorithm
+  try
+    old_eq := Parser.stringEq(oldEq);
+    new_eq := if stringEmpty(newEq) then NONE() else SOME(Parser.stringEq(newEq));
+    program := transformPathedClassInProgram(clsPath, SymbolTable.getAbsyn(),
+      function updateEquation_impl(oldEq = old_eq, newEq = new_eq, matchAll = matchAll,
+        matchShallow = matchShallow, matchDescription = matchDescription, mergeDescription = mergeDescription));
+    SymbolTable.setAbsyn(program);
+    success := true;
+  else
+    success := false;
+  end try;
+end updateEquation;
+
+protected function updateEquation_impl
+  input output Absyn.Class cls;
+  input Absyn.EquationItem oldEq;
+  input Option<Absyn.EquationItem> newEq;
+  input Boolean matchAll;
+  input Boolean matchShallow;
+  input Boolean matchDescription;
+  input Boolean mergeDescription;
+protected
+  Absyn.ClassPart part;
+  list<Absyn.ClassPart> rest_parts, accum_parts = {};
+  Absyn.EquationItem eq, new_eq;
+  list<Absyn.EquationItem> rest_eqs, accum_eqs;
+  Boolean found = false, found_in_part;
+
+  function merge_desc
+    input Absyn.EquationItem oldEq;
+    input output Absyn.EquationItem newEq;
+  protected
+    Absyn.Comment cmt;
+  algorithm
+    () := match (oldEq, newEq)
+      case (Absyn.EquationItem.EQUATIONITEM(), Absyn.EquationItem.EQUATIONITEM())
+        algorithm
+          if isSome(oldEq.comment) then
+            if isNone(newEq.comment) then
+              newEq.comment := oldEq.comment;
+            else
+              SOME(cmt) := newEq.comment;
+              if isNone(cmt.annotation_) then
+                cmt.annotation_ := AbsynUtil.getCommentOptAnnotation(oldEq.comment);
+              else
+                cmt.comment := AbsynUtil.getCommentOptComment(oldEq.comment);
+              end if;
+              newEq.comment := SOME(cmt);
+            end if;
+          end if;
+        then
+          ();
+
+      else ();
+    end match;
+  end merge_desc;
+algorithm
+  rest_parts := AbsynUtil.getClassPartsInClass(cls);
+
+  while not listEmpty(rest_parts) loop
+    part :: rest_parts := rest_parts;
+    rest_eqs := AbsynUtil.getEquationItemsInPart(part);
+    accum_eqs := {};
+    found_in_part := false;
+
+    while not listEmpty(rest_eqs) loop
+      eq :: rest_eqs := rest_eqs;
+
+      if AbsynUtil.equationItemEqual(eq, oldEq, shallow = matchShallow, ignoreComment = not matchDescription) then
+        if isSome(newEq) then
+          new_eq := Util.getOption(newEq);
+
+          if mergeDescription then
+            new_eq := merge_desc(eq, new_eq);
+          end if;
+
+          accum_eqs := new_eq :: accum_eqs;
+        end if;
+
+        found_in_part := true;
+        found := true;
+
+        if not matchAll then
+          accum_eqs := List.append_reverse(rest_eqs, accum_eqs);
+          break;
+        end if;
+      else
+        accum_eqs := eq :: accum_eqs;
+      end if;
+    end while;
+
+    if found_in_part then
+      part := AbsynUtil.setEquationItemsInPart(Dangerous.listReverseInPlace(accum_eqs), part);
+      accum_parts := part :: accum_parts;
+
+      if not matchAll then
+        accum_parts := List.append_reverse(rest_parts, accum_parts);
+        break;
+      end if;
+    else
+      accum_parts := part :: accum_parts;
+    end if;
+  end while;
+
+  if not found then
+    fail();
+  end if;
+
+  cls := AbsynUtil.setClassPartsInClass(Dangerous.listReverseInPlace(accum_parts), cls);
+end updateEquation_impl;
 
 annotation(__OpenModelica_Interface="backend");
 end Interactive;

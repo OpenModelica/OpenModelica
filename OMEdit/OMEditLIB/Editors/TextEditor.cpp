@@ -40,10 +40,7 @@
 TextEditor::TextEditor(QWidget *pParent)
   : BaseEditor(pParent)
 {
-  QFont font;
-  font.setFamily(OptionsDialog::instance()->getTextEditorPage()->getFontFamilyComboBox()->currentFont().family());
-  font.setPointSizeF(OptionsDialog::instance()->getTextEditorPage()->getFontSizeSpinBox()->value());
-  mpPlainTextEdit->document()->setDefaultFont(font);
+  const QFont font = mpPlainTextEdit->font();
 #if QT_VERSION >= QT_VERSION_CHECK(5, 11, 0)
   mpPlainTextEdit->setTabStopDistance((qreal)(OptionsDialog::instance()->getTextEditorPage()->getTabSizeSpinBox()->value() * QFontMetrics(font).horizontalAdvance(QLatin1Char(' '))));
 #else // QT_VERSION_CHECK

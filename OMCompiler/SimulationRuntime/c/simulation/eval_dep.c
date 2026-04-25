@@ -1,30 +1,27 @@
 /*
- * This file is part of OpenModelica.
+ * This file belongs to the OpenModelica Run-Time System
  *
- * Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
- * c/o Linköpings universitet, Department of Computer and Information Science,
- * SE-58183 Linköping, Sweden.
- *
- * All rights reserved.
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC), c/o Linköpings
+ * universitet, Department of Computer and Information Science, SE-58183 Linköping, Sweden. All rights
+ * reserved.
  *
  * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THE BSD NEW LICENSE OR THE
- * GPL VERSION 3 LICENSE OR THE OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * AGPL VERSION 3 LICENSE OR THE OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8. ANY
+ * USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
+ * ACCEPTANCE OF THE BSD NEW LICENSE OR THE OSMC PUBLIC LICENSE OR THE AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
- * Public License (OSMC-PL) are obtained from OSMC, either from the above
- * address, from the URLs: http://www.openmodelica.org or
- * http://www.ida.liu.se/projects/OpenModelica, and in the OpenModelica
- * distribution. GNU version 3 is obtained from:
- * http://www.gnu.org/copyleft/gpl.html. The New BSD License is obtained from:
- * http://www.opensource.org/licenses/BSD-3-Clause.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium) Public License
+ * (OSMC-PL) are obtained from OSMC, either from the above address, from the URLs:
+ * http://www.openmodelica.org or https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica, and in the OpenModelica distribution. GNU
+ * AGPL version 3 is obtained from: https://www.gnu.org/licenses/licenses.html#GPL. The BSD NEW
+ * License is obtained from: http://www.opensource.org/licenses/BSD-3-Clause.
  *
- * This program is distributed WITHOUT ANY WARRANTY; without even the implied
- * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, EXCEPT AS
- * EXPRESSLY SET FORTH IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE
- * CONDITIONS OF OSMC-PL.
+ * This program is distributed WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY
+ * SET FORTH IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF
+ * OSMC-PL.
  *
  */
 
@@ -244,8 +241,8 @@ static void clearHashTable()
 static size_t varIndexFromName(MODEL_DATA *modelData, const char *name)
 {
   /* for now only look at real vars */
-  for (int i = 0; i < modelData->nVariablesReal; i++) {
-    if (strcmp(modelData->realVarsData[i].info.name, name)==0) {
+  for (int i = 0; i < modelData->nVariablesReal; ++i) {
+    if (strcmp(modelData->realVarsData[i].info.name, name) == 0) {
       if (modelData->realVarsData[i].info.id >= 1000) {
         return (size_t)(modelData->realVarsData[i].info.id - 1000);
       } else {
@@ -265,7 +262,7 @@ static size_t varIndexFromName(MODEL_DATA *modelData, const char *name)
  * @param nEqns       Number of equations in this DAG
  * @param ixs         Map from local eqIndices in this DAG to global eqIndices
  */
-void buildEvalDAG(MODEL_DATA *modelData, size_t nEqns, const size_t* ixs)
+void buildEvalDAG_ODE(MODEL_DATA *modelData, size_t nEqns, const size_t* ixs)
 {
   size_t nEdges = 0;
   EVAL_DAG *dag = allocEvalDAG(modelData->nVariablesReal, nEqns);
@@ -313,4 +310,64 @@ void buildEvalDAG(MODEL_DATA *modelData, size_t nEqns, const size_t* ixs)
   }
 
   clearHashTable();
+}
+
+/**
+ * @brief Set up DAG based on modelInfo
+ *
+ * Reads system info from modelData and sets all edges and var->eqn map in DAG.
+ *
+ * @param jacobian    Pointer to the jacobian
+ * @param modelData   Pointer to model data structure
+ * @param nEqns       Number of equations in this DAG
+ * @param ixs         Map from local eqIndices in this DAG to global eqIndices
+ */
+void buildEvalDAG_Jac(JACOBIAN* jacobian, MODEL_DATA *modelData, size_t nEqns, const size_t* ixs)
+{
+  size_t nEdges = 0;
+  EVAL_DAG *dag = allocEvalDAG(jacobian->sizeRows + jacobian->sizeTmpVars, nEqns);
+  jacobian->dag = dag;
+
+  for (size_t i = 0; i < dag->nEqns; ++i) {
+    EQUATION_INFO eqInfo = modelInfoGetEquation(&modelData->modelDataXml, ixs[i]);
+
+    /* see what variables it defines */
+    for (size_t j = 0; j < eqInfo.numVar; ++j) {
+      size_t varIndex = varIndexFromName(modelData, eqInfo.vars[j]);
+      if (varIndex != (size_t)(-1)) {
+        /* store (varName -> eqIndex) in hash table */
+        addVarToHashTable(eqInfo.vars[j], i);
+
+        /* set var -> eqn map */
+        dag->mapVarToEqNode[varIndex] = i;
+      }
+    }
+
+    /* count how many edges will be in the DAG */
+    // TODO remove duplicates if two vars are solved in the same eqn
+    nEdges += eqInfo.numVarUsed;
+    dag->nEqDep[i] = eqInfo.numVarUsed;
+  }
+
+  /* allocate space for all edges in one go */
+  dag->eqDep[0] = (size_t*) malloc(nEdges * sizeof(size_t));
+  for (size_t i = 1; i < dag->nEqns; ++i) {
+    dag->eqDep[i] = dag->eqDep[i-1] + dag->nEqDep[i-1];
+  }
+
+  for (size_t i = 0; i < dag->nEqns; ++i) {
+    EQUATION_INFO eqInfo = modelInfoGetEquation(&modelData->modelDataXml, ixs[i]);
+
+    for (size_t j = 0; j < eqInfo.numVarUsed; ++j) {
+      /* look up variable in hash table */
+      hash_varName_eqIndex *s;
+      HASH_FIND_STR(varIndex_ht, eqInfo.varsUsed[j], s);
+      /* if it exists, add the corresponding equation to the dependency */
+      // TODO reduce size of eqDep if used variables are not solved in the
+      // system corresponding to this DAG
+      dag->eqDep[i][j] = s ? s->val : (size_t)(-1);
+    }
+  }
+
+  clearHashTable(); // done
 }

@@ -1,27 +1,31 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
@@ -48,7 +52,6 @@ import Config;
 import ErrorExt;
 import Flags;
 import ParserExt;
-import AbsynToSCode;
 import System;
 import Testsuite;
 import Util;
@@ -61,15 +64,20 @@ function parse "Parse a mo-file"
   input String encoding;
   input String libraryPath = "";
   input Option<Integer> lveInstance = NONE();
+  input Integer acceptedGram = Config.acceptedGrammar();
+  input Integer languageStandardInt = Flags.getConfigEnum(Flags.LANGUAGE_STANDARD);
+  input Boolean strict = Flags.getConfigBool(Flags.STRICT);
   output Absyn.Program outProgram;
 protected
   list<Absyn.Class> classes, classes1;
   Absyn.Within w;
   Absyn.Class cs;
+  String realpath;
 algorithm
-  outProgram := parsebuiltin(filename,encoding,libraryPath,lveInstance);
-  /* Check that the program is not totally off the charts */
-  _ := AbsynToSCode.translateAbsyn2SCode(outProgram);
+  realpath := Util.replaceWindowsBackSlashWithPathDelimiter(System.realpath(filename));
+  outProgram := ParserExt.parse(realpath, Testsuite.friendly(realpath),
+    acceptedGram, encoding, languageStandardInt, strict, Testsuite.isRunning(), libraryPath, lveInstance);
+
   // Check license features
   if (isSome(lveInstance)) then
     Absyn.PROGRAM(classes, w) := outProgram;
@@ -99,27 +107,7 @@ function parsestring "Parse a string as if it were a stored definition"
   output Absyn.Program outProgram;
 algorithm
   outProgram := ParserExt.parsestring(str, infoFilename, grammar, languageStd, strict, Testsuite.isRunning());
-  /* Check that the program is not totally off the charts */
-  _ := AbsynToSCode.translateAbsyn2SCode(outProgram);
 end parsestring;
-
-function parsebuiltin "Like parse, but skips the SCode check to avoid infinite loops for ModelicaBuiltin.mo."
-  input String filename;
-  input String encoding;
-  input String libraryPath = "";
-  input Option<Integer> lveInstance = NONE();
-  input Integer acceptedGram=Config.acceptedGrammar();
-  input Integer languageStandardInt=Flags.getConfigEnum(Flags.LANGUAGE_STANDARD);
-  input Boolean strict = Flags.getConfigBool(Flags.STRICT);
-  output Absyn.Program outProgram;
-  annotation(__OpenModelica_EarlyInline = true);
-protected
-  String realpath;
-algorithm
-  realpath := Util.replaceWindowsBackSlashWithPathDelimiter(System.realpath(filename));
-  outProgram := ParserExt.parse(realpath, Testsuite.friendly(realpath),
-    acceptedGram, encoding, languageStandardInt, strict, Testsuite.isRunning(), libraryPath, lveInstance);
-end parsebuiltin;
 
 function parsestringexp "Parse a string as if it was a sequence of statements"
   input String str;
@@ -151,6 +139,14 @@ function stringMod
 algorithm
   mod := ParserExt.stringMod(str, filename, Config.acceptedGrammar(), Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), Testsuite.isRunning());
 end stringMod;
+
+function stringEq
+  input String str;
+  input String filename = "<internal>";
+  output Absyn.EquationItem eq;
+algorithm
+  eq := ParserExt.stringEq(str, filename, Config.acceptedGrammar(), Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), Testsuite.isRunning());
+end stringEq;
 
 function parallelParseFiles
   input list<String> filenames;

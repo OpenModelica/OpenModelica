@@ -1913,6 +1913,22 @@ QString OMCProxy::listFile(QString className, bool nestedClasses)
 }
 
 /*!
+ * \brief OMCProxy::getTotalModel
+ * Returns the class and all its dependencies as a single string.
+ * \param className
+ * \param stripAnnotations
+ * \param stripComments
+ * \param obfuscate
+ * \return
+ */
+QString OMCProxy::getTotalModel(QString className, bool stripAnnotations, bool stripComments, bool obfuscate)
+{
+  QString result = mpOMCInterface->getTotalModel(className, stripAnnotations, stripComments, obfuscate);
+  printMessagesStringInternal();
+  return result;
+}
+
+/*!
  * \brief OMCProxy::diffModelicaFileListings
  * Creates diffs of two strings corresponding to Modelica files.
  * \param before
@@ -3393,7 +3409,9 @@ QList<QString> OMCProxy::getAvailablePackageConversionsFrom(const QString &pkg, 
 QJsonObject OMCProxy::getModelInstance(const QString &className, const QString &context, const QString &modifier, bool prettyPrint, bool icon)
 {
   QElapsedTimer timer;
-  timer.start();
+  if (MainWindow::instance()->isNewApiProfiling()) {
+    timer.start();
+  }
 
   QString modelInstanceJson = "";
   QString cnt = context.isEmpty() ? QString("__NoContext") : context;
@@ -3426,7 +3444,9 @@ QJsonObject OMCProxy::getModelInstance(const QString &className, const QString &
 
   printMessagesStringInternal();
   if (!modelInstanceJson.isEmpty()) {
-    timer.restart();
+    if (MainWindow::instance()->isNewApiProfiling()) {
+      timer.restart();
+    }
     QJsonParseError jsonParserError;
     QJsonDocument doc = QJsonDocument::fromJson(modelInstanceJson.toUtf8(), &jsonParserError);
     if (doc.isNull()) {
@@ -3437,7 +3457,7 @@ QJsonObject OMCProxy::getModelInstance(const QString &className, const QString &
     }
     if (MainWindow::instance()->isNewApiProfiling()) {
       double elapsed = (double)timer.elapsed() / 1000.0;
-      MainWindow::instance()->writeNewApiProfiling(QString("Time for converting to JSON %1 secs").arg(QString::number(elapsed, 'f', 6)));
+      MainWindow::instance()->writeNewApiProfiling(QString("Time for converting string JSON to QJsonDocument %1 secs").arg(QString::number(elapsed, 'f', 6)));
     }
     return doc.object();
   }
@@ -3491,6 +3511,42 @@ bool OMCProxy::restoreAST(int id)
   bool result = mpOMCInterface->restoreAST(id);
   printMessagesStringInternal();
   return result;
+}
+
+/*!
+ * \brief OMCProxy::reverseLookup
+ * Searches for uses of the given name in either all loaded classes or a given class.
+ * \param className
+ * \param scope
+ * \param exactMatch
+ * \param prettyPrint
+ * \return
+ */
+QJsonArray OMCProxy::reverseLookup(const QString &className, const QString &scope, bool exactMatch, bool prettyPrint)
+{
+  QString resultJson = mpOMCInterface->reverseLookup(className, scope, exactMatch, prettyPrint);
+  printMessagesStringInternal();
+  if (!resultJson.isEmpty()) {
+    QJsonParseError jsonParserError;
+    QJsonDocument doc = QJsonDocument::fromJson(resultJson.toUtf8(), &jsonParserError);
+    // Check for parse errors
+    if (jsonParserError.error != QJsonParseError::NoError) {
+      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
+                                                            QString("Failed to parse reverse lookup json for class %1 with error %2.")
+                                                            .arg(className, jsonParserError.errorString()),
+                                                            Helper::scriptingKind, Helper::errorLevel));
+      return QJsonArray();
+    }
+    // Ensure root is an array
+    if (!doc.isArray()) {
+      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
+                                                            QString("Expected JSON array for class %1 but got different type.")
+                                                            .arg(className), Helper::scriptingKind, Helper::errorLevel));
+      return QJsonArray();
+    }
+    return doc.array();
+  }
+  return QJsonArray();
 }
 
 /*!

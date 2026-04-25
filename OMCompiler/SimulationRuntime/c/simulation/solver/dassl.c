@@ -1,30 +1,27 @@
 /*
- * This file is part of OpenModelica.
+ * This file belongs to the OpenModelica Run-Time System
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
- * c/o Linköpings universitet, Department of Computer and Information Science,
- * SE-58183 Linköping, Sweden.
- *
- * All rights reserved.
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC), c/o Linköpings
+ * universitet, Department of Computer and Information Science, SE-58183 Linköping, Sweden. All rights
+ * reserved.
  *
  * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THE BSD NEW LICENSE OR THE
- * GPL VERSION 3 LICENSE OR THE OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * AGPL VERSION 3 LICENSE OR THE OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8. ANY
+ * USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
+ * ACCEPTANCE OF THE BSD NEW LICENSE OR THE OSMC PUBLIC LICENSE OR THE AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
- * Public License (OSMC-PL) are obtained from OSMC, either from the above
- * address, from the URLs: http://www.openmodelica.org or
- * http://www.ida.liu.se/projects/OpenModelica, and in the OpenModelica
- * distribution. GNU version 3 is obtained from:
- * http://www.gnu.org/copyleft/gpl.html. The New BSD License is obtained from:
- * http://www.opensource.org/licenses/BSD-3-Clause.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium) Public License
+ * (OSMC-PL) are obtained from OSMC, either from the above address, from the URLs:
+ * http://www.openmodelica.org or https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica, and in the OpenModelica distribution. GNU
+ * AGPL version 3 is obtained from: https://www.gnu.org/licenses/licenses.html#GPL. The BSD NEW
+ * License is obtained from: http://www.opensource.org/licenses/BSD-3-Clause.
  *
- * This program is distributed WITHOUT ANY WARRANTY; without even the implied
- * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, EXCEPT AS
- * EXPRESSLY SET FORTH IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE
- * CONDITIONS OF OSMC-PL.
+ * This program is distributed WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY
+ * SET FORTH IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF
+ * OSMC-PL.
  *
  */
 #ifdef USE_PARJAC
@@ -115,8 +112,15 @@ int jacA_symColored(double *t, double *y, double *yprime,
                    double *deltaD, double *pd, double *cj, double *h,
                    double *wt, double *rpar, int* ipar);
 
+int jacADJ_symColored(double *t, double *y, double *yprime,
+                   double *deltaD, double *pd, double *cj, double *h,
+                   double *wt, double *rpar, int* ipar);
+
 void setJacElementDasslSparse(int l, int k, int nth, double val,
                                      void* matrixA, int rows);
+
+void setJacElementDasslSparseAdj(int row, int column, int nth, double value,
+                                 void* Jac, int nCols);
 
 void  DDASKR(
     int (*res) (double *t, double *y, double *yprime, double* cj, double *delta, int *ires, double *rpar, int* ipar),
@@ -349,8 +353,14 @@ int dassl_initial(DATA* data, threadData_t *threadData,
     dasslData->dasslJacobian = COLOREDNUMJAC;
   }
 
-  JACOBIAN* jacobian = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
-  data->callback->initialAnalyticJacobianA(data, threadData, jacobian);
+  JACOBIAN* jacobian = NULL;
+  if (dasslData->dasslJacobian == COLOREDSYMJACADJ) {
+    jacobian = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_ADJ]);
+    data->callback->initialAnalyticJacobianADJ(data, threadData, jacobian);
+  } else {
+    jacobian = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
+    data->callback->initialAnalyticJacobianA(data, threadData, jacobian);
+  }
   if(jacobian->availability == JACOBIAN_AVAILABLE || jacobian->availability == JACOBIAN_ONLY_SPARSITY) {
     infoStreamPrint(OMC_LOG_SIMULATION, 1, "Initialized Jacobian:");
     infoStreamPrint(OMC_LOG_SIMULATION, 0, "columns: %zu rows: %zu", jacobian->sizeCols, jacobian->sizeRows);
@@ -358,14 +368,7 @@ int dassl_initial(DATA* data, threadData_t *threadData,
     messageClose(OMC_LOG_SIMULATION);
   }
 
-  // Compare user flag to available Jacobian methods
-  const char* flagValue;
-  if(omc_flag[FLAG_JACOBIAN]){
-    flagValue = omc_flagValue[FLAG_JACOBIAN];
-  } else {
-    flagValue = NULL;
-  }
-  dasslData->dasslJacobian = setJacobianMethod(threadData, jacobian->availability, flagValue);
+  dasslData->dasslJacobian = setJacobianMethod(threadData, jacobian->availability);
 
   /* default use a user sub-routine for JAC */
   dasslData->info[4] = 1;
@@ -379,6 +382,10 @@ int dassl_initial(DATA* data, threadData_t *threadData,
     case COLOREDSYMJAC:
       data->simulationInfo->jacobianEvals = data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A].sparsePattern->maxColors;
       dasslData->jacobianFunction = jacA_symColored;
+      break;
+    case COLOREDSYMJACADJ:
+      data->simulationInfo->jacobianEvals = data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_ADJ].sparsePattern->maxColors;
+      dasslData->jacobianFunction = jacADJ_symColored;
 #ifdef USE_PARJAC
       allocateThreadLocalJacobians(data, &(dasslData->jacColumns));
       dasslData->allocatedParMem = 1;   /* true */
@@ -462,8 +469,13 @@ int dassl_deinitial(DATA* data, DASSL_DATA *dasslData)
   free(dasslData->states);
 
   /* Free Jacobians */
-  JACOBIAN* jacobian = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
-  freeJacobian(jacobian);
+  if (dasslData->dasslJacobian == COLOREDSYMJACADJ) {
+    JACOBIAN* jacobian = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_ADJ]);
+    freeJacobian(jacobian);
+  } else {
+    JACOBIAN* jacobian = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
+    freeJacobian(jacobian);
+  }
 
 #ifdef USE_PARJAC
   if (dasslData->allocatedParMem) {
@@ -959,7 +971,7 @@ void setJacElementDasslSparse(int row, int column, int nth, double value, void* 
   UNUSED(nth);  /* Disables compiler warning */
 
   double* A = (double*) Jac;
-  A[column*nRows + row] = value;
+  A[column * nRows + row] = value;
 }
 
 /* \fn jacA_symColored(double *t, double *y, double *yprime, double *deltaD, double *pd, double *cj, double *h, double *wt,
@@ -996,6 +1008,65 @@ int jacA_symColored(double *t, double *y, double *yprime, double *delta,
   genericColoredSymbolicJacobianEvaluation(rows, columns, spp, matrixA, t_jac,
                                            data, threadData, &setJacElementDasslSparse);
 
+  return 0;
+}
+
+/**
+ * @brief Set element of dense Jacobian matrix transposed.
+ * Needed when calculating adjoint Jacobian.
+ * Adjoint setter: flip indices to correct transposed storage
+ * Jac(row, column) = val.
+ *
+ * @param row       Row of matrix element.
+ * @param column    Column of matrix element.
+ * @param nth       Sparsity pattern lead index, unused.
+ * @param value     Value to set in position (i,j)
+ * @param Jac       Pointer to double array storing matrix.
+ * @param nCols     Number of columns of Jacobian matrix
+ */
+void setJacElementDasslSparseAdj(int row, int column, int nth, double value,
+                                 void* Jac, int nCols)
+{
+  UNUSED(nth);
+  /* Store so that resulting matrix matches forward layout */
+  double* A = (double*) Jac;
+  A[row * nCols + column] = value;
+}
+
+/* \fn jacADJ_symColored(double *t, double *y, double *yprime, double *deltaD, double *pd, double *cj, double *h, double *wt,
+   double *rpar, int* ipar)
+ *
+ *
+ * This function calculates symbolically the adjoint jacobian matrix and exploiting the coloring.
+ */
+int jacADJ_symColored(double *t, double *y, double *yprime, double *delta,
+                    double *matrixA, double *cj, double *h, double *wt,
+                    double *rpar, int *ipar)
+{
+  DATA* data = (DATA*)(void*)((double**)rpar)[0];
+  threadData_t *threadData = (threadData_t*)(void*)((double**)rpar)[2];
+  DASSL_DATA* dasslData = (DASSL_DATA*)(void*)((double**)rpar)[1];
+  const int index = data->callback->INDEX_JAC_ADJ;
+  JACOBIAN* jac = &(data->simulationInfo->analyticJacobians[index]);
+
+#ifdef USE_PARJAC
+  JACOBIAN* t_jac = (dasslData->jacColumns);
+#else
+  JACOBIAN* t_jac = jac;
+#endif
+
+  unsigned int columns = jac->sizeCols;
+  unsigned int rows = jac->sizeRows;
+  SPARSE_PATTERN* spp = jac->sparsePattern;
+
+  /* Evaluate constant equations if available */
+  if (jac->constantEqns != NULL) {
+      jac->constantEqns(data, threadData, jac, NULL);
+  }
+
+  // Note: this assumes a square matrix i.e. `nRows == nCols`
+  genericColoredSymbolicJacobianEvaluation(rows, columns, spp, matrixA, t_jac,
+                                           data, threadData, &setJacElementDasslSparseAdj);
   return 0;
 }
 

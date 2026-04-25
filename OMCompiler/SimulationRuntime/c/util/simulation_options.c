@@ -1,30 +1,27 @@
 /*
- * This file is part of OpenModelica.
+ * This file belongs to the OpenModelica Run-Time System
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
- * c/o Linköpings universitet, Department of Computer and Information Science,
- * SE-58183 Linköping, Sweden.
- *
- * All rights reserved.
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC), c/o Linköpings
+ * universitet, Department of Computer and Information Science, SE-58183 Linköping, Sweden. All rights
+ * reserved.
  *
  * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THE BSD NEW LICENSE OR THE
- * GPL VERSION 3 LICENSE OR THE OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * AGPL VERSION 3 LICENSE OR THE OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8. ANY
+ * USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
+ * ACCEPTANCE OF THE BSD NEW LICENSE OR THE OSMC PUBLIC LICENSE OR THE AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
- * Public License (OSMC-PL) are obtained from OSMC, either from the above
- * address, from the URLs: http://www.openmodelica.org or
- * http://www.ida.liu.se/projects/OpenModelica, and in the OpenModelica
- * distribution. GNU version 3 is obtained from:
- * http://www.gnu.org/copyleft/gpl.html. The New BSD License is obtained from:
- * http://www.opensource.org/licenses/BSD-3-Clause.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium) Public License
+ * (OSMC-PL) are obtained from OSMC, either from the above address, from the URLs:
+ * http://www.openmodelica.org or https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica, and in the OpenModelica distribution. GNU
+ * AGPL version 3 is obtained from: https://www.gnu.org/licenses/licenses.html#GPL. The BSD NEW
+ * License is obtained from: http://www.opensource.org/licenses/BSD-3-Clause.
  *
- * This program is distributed WITHOUT ANY WARRANTY; without even the implied
- * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, EXCEPT AS
- * EXPRESSLY SET FORTH IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE
- * CONDITIONS OF OSMC-PL.
+ * This program is distributed WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY
+ * SET FORTH IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF
+ * OSMC-PL.
  *
  */
 
@@ -154,6 +151,7 @@ const char *FLAG_NAME[FLAG_MAX+1] = {
   /* FLAG_SR_ERR */                       "gberr",
   /* FLAG_SR_INT */                       "gbint",
   /* FLAG_SR_NLS */                       "gbnls",
+  /* FLAG_SR_NLS_INTERNAL_DAMPING_FAC */  "gbnls_internal_damping",
   /* FLAG_SR_NLS_INTERNAL_JACKEEP */      "gbnls_internal_jackeep",
   /* FLAG_MR */                           "gbfm",
   /* FLAG_MR_CTRL */                      "gbfctrl",
@@ -308,6 +306,7 @@ const char *FLAG_DESC[FLAG_MAX+1] = {
   /* FLAG_SR_ERR */                       "Error estimation method for solver gbode (single-rate, slow states integrator).",
   /* FLAG_SR_INT */                       "Interpolation method of solver gbode (single-rate, slow states integrator)",
   /* FLAG_SR_NLS */                       "Non-linear solver method of solver gbode (single-rate, slow states integrator)",
+  /* FLAG_SR_NLS_INTERNAL_DAMPING_FAC */  "Value specifies damping applied to the estimated convergence rate in the first Newton iteration (0 <= value <= 1). Only valid for -gbnls=internal.",
   /* FLAG_SR_NLS_INTERNAL_JACKEEP */      "Value specifies how often the ODE Jacobian is recalculated (0 <= value < 1). Only valid for -gbnls=internal.",
   /* FLAG_MR */                           "Value specifies the chosen solver of solver gbode (multi-rate, fast states integrator)",
   /* FLAG_MR_CTRL */                      "Step size control of solver gbode (multi-rate, fast states integrator)",
@@ -650,6 +649,9 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   "  Interpolation method of solver gbode (single-rate, slow states integrator).",
   /* FLAG_SR_NLS */
   "  Non-linear solver method of solver gbode (single-rate, slow states integrator).",
+  /* FLAG_SR_NLS_INTERNAL_DAMPING_FAC */
+  "  Value specifies damping applied to the estimated convergence rate in the first Newton iteration (0 <= value <= 1; 0 = conservative, 1 = optimistic). Only valid for -gbnls=internal.\n"
+  "  Since no history is available in the first Newton iteration, the convergence rate is taken from the previous solve and raised to the power of this value.",
   /* FLAG_SR_NLS_INTERNAL_JACKEEP */
   "  Value specifies how often the ODE Jacobian is recalculated (0 <= value < 1). Only valid for -gbnls=internal.\n"
   "  The Jacobian is kept, if the linear convergence rate || dz_k || / || dz_{k-1} || of the Newton iteration is smaller than the specified value. Small values result in more Jacobian callbacks.",
@@ -838,6 +840,7 @@ const flag_repeat_policy FLAG_REPEAT_POLICIES[FLAG_MAX] = {
   /* FLAG_SR_ERR */                       FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_SR_INT */                       FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_SR_NLS */                       FLAG_REPEAT_POLICY_FORBID,
+  /* FLAG_SR_NLS_INTERNAL_DAMPING_FAC */  FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_SR_NLS_INTERNAL_JACKEEP */      FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_MR */                           FLAG_REPEAT_POLICY_FORBID,
   /* FLAG_MR_CTRL */                      FLAG_REPEAT_POLICY_FORBID,
@@ -991,6 +994,7 @@ const int FLAG_TYPE[FLAG_MAX] = {
   /* FLAG_SR_ERR */                       FLAG_TYPE_OPTION,
   /* FLAG_SR_INT */                       FLAG_TYPE_OPTION,
   /* FLAG_SR_NLS */                       FLAG_TYPE_OPTION,
+  /* FLAG_SR_NLS_INTERNAL_DAMPING_FAC */  FLAG_TYPE_OPTION,
   /* FLAG_SR_NLS_INTERNAL_JACKEEP */      FLAG_TYPE_OPTION,
   /* FLAG_MR */                           FLAG_TYPE_OPTION,
   /* FLAG_MR_CTRL */                      FLAG_TYPE_OPTION,
@@ -1031,6 +1035,7 @@ const char *GB_METHOD_NAME[RK_MAX] = {
   /* RK_ESDIRK2 */       "esdirk2",
   /* RK_ESDIRK3 */       "esdirk3",
   /* RK_ESDIRK4 */       "esdirk4",
+  /* RK_ESDIRK4_7L2SA */ "esdirk4s7",
   /* RK_RADAU_IA_2 */    "radauIA2",
   /* RK_RADAU_IA_3 */    "radauIA3",
   /* RK_RADAU_IA_4 */    "radauIA4",
@@ -1082,7 +1087,8 @@ const char *GB_METHOD_DESC[RK_MAX] = {
   /* RK_SDIRK4 */        "Singly-diagonal implicit Runge-Kutta (order 4, L-stable)",
   /* RK_ESDIRK2 */       "Explicit singly-diagonal implicit Runge-Kutta (order 2, L-stable)",
   /* RK_ESDIRK3 */       "Explicit singly-diagonal implicit Runge-Kutta (order 3, L-stable)",
-  /* RK_ESDIRK4 */       "Explicit singly-diagonal implicit Runge-Kutta (order 4, L-stable)",
+  /* RK_ESDIRK4 */       "Explicit singly-diagonal implicit Runge-Kutta (order 4, L-stable, 6 stages)",
+  /* RK_ESDIRK4_7L2SA */ "Explicit singly-diagonal implicit Runge-Kutta (order 4, L-stable, 7 stages)",
   /* RK_RADAU_IA_2 */    "Implicit Runge-Kutta method of Radau family IA (order 3, L-stable)",
   /* RK_RADAU_IA_3 */    "Implicit Runge-Kutta method of Radau family IA (order 5, L-stable)",
   /* RK_RADAU_IA_4 */    "Implicit Runge-Kutta method of Radau family IA (order 7, L-stable)",
@@ -1136,7 +1142,7 @@ const char *GB_NLS_METHOD_DESC[GB_NLS_MAX] = {
   /* GB_NLS_NEWTON */     "Newton method, dense",
   /* GB_NLS_KINSOL */     "SUNDIALS KINSOL: Inexact Newton, sparse",
   /* GB_NLS_KINSOL_B */   "experimental kinsol",
-  /* GB_NLS_INTERNAL */   "Internal simplified Newton iteration with decoupling transformation (uses KLU)"
+  /* GB_NLS_INTERNAL */   "simplified Newton with decoupling transformation (uses KLU)"
 };
 
 const char *GB_CTRL_METHOD_NAME[GB_CTRL_MAX] = {
@@ -1148,6 +1154,13 @@ const char *GB_CTRL_METHOD_NAME[GB_CTRL_MAX] = {
   /* GB_CTRL_PID_H312 */        "pid_h312",
   /* GB_CTRL_PID_SOEDERLIND */  "pid_soederlind",
   /* GB_CTRL_PID_STIFF */       "pid_stiff",
+  /* GB_CTRL_PI_PC */           "pc",
+  /* GB_CTRL_PI_PC_HYBRID */    "pc_hybrid",
+  /* GB_CTRL_PI_H211 */         "pi_h211",
+  /* GB_CTRL_PI_H0_211 */       "pi_h0_211",
+  /* GB_CTRL_PID_H0_312 */      "pid_h0_312",
+  /* GB_CTRL_PID_H0_321 */      "pid_h0_321",
+  /* GB_CTRL_PPID */            "ppid",
   /* GB_CTRL_CNST */            "const"
 };
 
@@ -1160,18 +1173,25 @@ const char *GB_CTRL_METHOD_DESC[GB_CTRL_MAX] = {
   /* GB_CTRL_PID_H312 */        "PID controller for step size (alpha1=1./18./k, alpha2=1./9./k, alpha3=1./18./k)",
   /* GB_CTRL_PID_SOEDERLIND */  "PID controller for step size (alpha1=0.1/k, alpha2=0.2/k, alpha3=0.1/k)",
   /* GB_CTRL_PID_STIFF */       "PID controller for step size (alpha1=0.58/k, alpha2=0.21/k, alpha3=0.21/k)",
+  /* GB_CTRL_PI_PC */           "Standard PI Predictive controller (beta1=2/k, beta2=-1/k, ratio=1)",
+  /* GB_CTRL_PI_PC_HYBRID */    "Hybrid I / PI Predictive controller: min(PI Predictive, I)",
+  /* GB_CTRL_PI_H211 */         "PI Predictive controller (beta1=0.25/k, beta2=0.25/k, ratio=-0.25)",
+  /* GB_CTRL_PI_H0_211 */       "PI Predictive controller (beta1=0.5/k, beta2=0.5/k, ratio=-0.5)",
+  /* GB_CTRL_PID_H0_312 */      "PID Predictive controller (alpha1=0.25/k, alpha2=0.5/k, alpha3=0.25/k, ratio1=-0.75, ratio2=-0.25)",
+  /* GB_CTRL_PID_H0_321 */      "PID Predictive controller (alpha1=1.25/k, alpha2=0.5/k, alpha3=-0.75/k, ratio1=0.25, ratio2=0.75)",
+  /* GB_CTRL_PPID */            "PID Predictive controller (alpha1=6./20/k, alpha2=1./20/k, alpha3=-5./20/k, ratio1=1.0, ratio2=0.0)",
   /* GB_CTRL_CNST */            "Constant step size"
 };
 
 const char *GB_INTERPOL_METHOD_NAME[GB_INTERPOL_MAX] = {
-  /* GB_INTERPOL_UNKNOWN */           "unknown",
-  /* GB_INTERPOL_LIN */               "linear",
-  /* GB_INTERPOL_HERMITE */           "hermite",
-  /* GB_INTERPOL_HERMITE_a */         "hermite_a",
-  /* GB_INTERPOL_HERMITE_b */         "hermite_b",
-  /* GB_INTERPOL_HERMITE_ERRCTRL */   "hermite_errctrl",
-  /* GB_DENSE_OUTPUT */               "dense_output",
-  /* GB_DENSE_OUTPUT_ERRCTRL */       "dense_output_errctrl"
+  /* GB_INTERPOL_UNKNOWN */         "unknown",
+  /* GB_INTERPOL_LIN */             "linear",
+  /* GB_INTERPOL_HERMITE */         "hermite",
+  /* GB_INTERPOL_HERMITE_a */       "hermite_a",
+  /* GB_INTERPOL_HERMITE_b */       "hermite_b",
+  /* GB_INTERPOL_HERMITE_ERRCTRL */ "hermite_errctrl",
+  /* GB_DENSE_OUTPUT */             "dense_output",
+  /* GB_DENSE_OUTPUT_ERRCTRL */     "dense_output_errctrl"
 };
 
 const char *GB_INTERPOL_METHOD_DESC[GB_INTERPOL_MAX] = {
@@ -1183,6 +1203,20 @@ const char *GB_INTERPOL_METHOD_DESC[GB_INTERPOL_MAX] = {
   /* GB_INTERPOL_HERMITE_ERRCTRL */ "Hermite interpolation with error control",
   /* GB_DENSE_OUTPUT */             "use dense output formula for interpolation",
   /* GB_DENSE_OUTPUT_ERRCTRL */     "use dense output fomular with error control"
+};
+
+const char *GB_EXTRAPOL_METHOD_NAME[GB_EXT_MAX] = {
+  /* GB_EXT_UNKNOWN */    "unknown",
+  /* GB_EXT_DEFAULT */    "default",
+  /* GB_EXT_RICHARDSON */ "richardson",
+  /* GB_EXT_EMBEDDED */   "embedded"
+};
+
+const char *GB_EXTRAPOL_METHOD_DESC[GB_EXT_MAX] = {
+  /* GB_EXT_UNKNOWN */    "unknown",
+  /* GB_EXT_DEFAULT */    "Default, depending on the Runge-Kutta method",
+  /* GB_EXT_RICHARDSON */ "Richardson extrapolation",
+  /* GB_EXT_EMBEDDED */   "Embedded scheme"
 };
 
 const char *SOLVER_METHOD_NAME[S_MAX] = {
@@ -1207,10 +1241,10 @@ const char *SOLVER_METHOD_DESC[S_MAX] = {
   /* S_GBODE */         "gbode - generic Runge-Kutta ODE solver - implicit (sparse solver)/explicit, fixed/variable step size control, order 1-14, event location, optional bi-rate integration - additional simulation flags -gbm -gbctrl -gbratio - additional advanced flags -gbctrl_filter -gbctrl_fhr -gberr -gbint -gbnls -gbfm -gbfctrl -gbferr -gbfint -gbfnls",
   /* S_EULER */         "euler - explicit Euler, fixed step size, order 1",
   /* S_RUNGEKUTTA */    "rungekutta - classical Runge-Kutta - explicit, fixed step, order 4",
-  /* S_SYM_SOLVER */     "symSolver - symbolic inline Solver [compiler flag '--symSolver' needed] - fixed step size, order 1",
-  /* S_SYM_SOLVER_SSC */ "symSolverSsc - symbolic implicit Euler with step size control [compiler flag '--symSolver' needed] - step size control, order 1",
-  /* S_QSS */            "qss - A QSS solver [experimental]",
-  /* S_OPTIMIZATION */   "optimization - Special solver for dynamic optimization"
+  /* S_SYM_SOLVER */    "symSolver - symbolic inline Solver [compiler flag '--symSolver' needed] - fixed step size, order 1",
+  /* S_SYM_SOLVER_SSC */"symSolverSsc - symbolic implicit Euler with step size control [compiler flag '--symSolver' needed] - step size control, order 1",
+  /* S_QSS */           "qss - A QSS solver [experimental]",
+  /* S_OPTIMIZATION */  "optimization - Special solver for dynamic optimization"
 };
 
 const char *INIT_METHOD_NAME[IIM_MAX] = {
@@ -1344,6 +1378,7 @@ const char *JACOBIAN_METHOD_NAME[JAC_MAX] = {
   "coloredNumerical",
   "internalNumerical",
   "coloredSymbolical",
+  "coloredSymbolicalAdjoint",
   "numerical",
   "symbolical"
 };
@@ -1354,8 +1389,9 @@ const char *JACOBIAN_METHOD_DESC[JAC_MAX] = {
   "Colored numerical Jacobian, which is default for dassl and ida. Needs omc compiler flag --generateDynamicJacobian=numeric. With option -idaLS=klu a sparse matrix is used.",
   "Dense solver internal numerical Jacobian.",
   "Colored symbolical Jacobian. Needs omc compiler flag --generateDynamicJacobian=symbolic. With option -idaLS=klu a sparse matrix is used.",
+  "Colored symbolical adjoint Jacobian. Needs omc compiler flags --newBackend and --generateDynamicJacobian=symbolicadjoint.",
   "Dense numerical Jacobian.",
-  "Dense symbolical Jacobian. Needs omc compiler flag --generateDynamicJacobian=symbolic.",
+  "Dense symbolical Jacobian. Needs omc compiler flag --generateDynamicJacobian=symbolic."
  };
 
 const char *IDA_LS_METHOD_NAME[IDA_LS_MAX] = {

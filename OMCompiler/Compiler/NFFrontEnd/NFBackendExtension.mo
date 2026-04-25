@@ -1,33 +1,38 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2020, Linköping University,
- * Department of Computer and Information Science,
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
+ * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
- * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from Linköping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
- * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS
- * OF OSMC-PL.
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
  * See the full OSMC Public License conditions for more details.
  *
  */
+
 encapsulated package NFBackendExtension
   " ==========================================================================
     kabdelhak: The following structures are used only in the backend to avoid a
@@ -74,6 +79,7 @@ public
       Option<Pointer<Variable>> var_pre   "Pointer (var -> pre) or (pre -> var) if existent.";
       Option<Pointer<Variable>> var_seed  "Pointer (var -> seed) or (seed -> var) if existent.";
       Option<Pointer<Variable>> var_pder  "Pointer (var -> pder) or (pder -> var) if existent.";
+      Option<Pointer<Variable>> var_start "Pointer (var -> start) or (start -> var) if existent.";
       Option<Pointer<Variable>> parent    "record parent if it is part of a record.";
     end BACKEND_INFO;
 
@@ -142,6 +148,11 @@ public
       binfo.var_pder := var_ptr;
     end setVarPDer;
 
+    function setVarStart extends setPartner;
+    algorithm
+      binfo.var_start := var_ptr;
+    end setVarStart;
+
     function setAttributes
       input output BackendInfo binfo;
       input VariableAttributes attributes;
@@ -177,12 +188,12 @@ public
         case VariableKind.FRONTEND_DUMMY() then List.fill(binfo, length);
         else algorithm
           scalar_attributes := VariableAttributes.scalarize(binfo.attributes, length);
-        then list(BACKEND_INFO(binfo.varKind, attr, binfo.annotations, binfo.var_pre, binfo.var_seed, binfo.var_pder, binfo.parent) for attr in scalar_attributes);
+        then list(BACKEND_INFO(binfo.varKind, attr, binfo.annotations, binfo.var_pre, binfo.var_seed, binfo.var_pder, binfo.var_start, binfo.parent) for attr in scalar_attributes);
       end match;
     end scalarize;
   end BackendInfo;
 
-  constant BackendInfo DUMMY_BACKEND_INFO = BackendInfo.BACKEND_INFO(VariableKind.FRONTEND_DUMMY(), EMPTY_VAR_ATTR_REAL, EMPTY_ANNOTATIONS, NONE(), NONE(), NONE(), NONE());
+  constant BackendInfo DUMMY_BACKEND_INFO = BackendInfo.BACKEND_INFO(VariableKind.FRONTEND_DUMMY(), EMPTY_VAR_ATTR_REAL, EMPTY_ANNOTATIONS, NONE(), NONE(), NONE(), NONE(), NONE());
 
   uniontype VariableKind
     record TIME end TIME;

@@ -1,27 +1,31 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
@@ -1870,8 +1874,8 @@ impure function alarm
   "Schedules an alarm signal for the process."
   input Integer seconds;
   output Integer previousSeconds;
-external "builtin";
-annotation(__OpenModelica_Impure=true,Library = {"omcruntime"},Documentation(info="<html>
+external "builtin" annotation(Library = {"omcruntime"});
+annotation(__OpenModelica_Impure=true,Documentation(info="<html>
 <p>Like <a href=\"http://linux.die.net/man/2/alarm\">alarm(2)</a>.</p>
 <p>Note that OpenModelica also sends SIGALRM to the process group when the alarm is triggered (in order to kill running simulations).</p>
 </html>"));
@@ -2316,6 +2320,30 @@ loaded with loadFile() or passing the file to the compiler on the command line.<
 </html>"),
   preferredView="text");
 end saveTotalModel;
+
+
+function getTotalModel
+  "Saves a model and dependencies to a single string."
+  input TypeName className;
+  input Boolean stripAnnotations = false;
+  input Boolean stripComments = false;
+  input Boolean obfuscate = false;
+  output String result;
+external "builtin";
+annotation(Documentation(info="<html>
+<p>Save the <code>className</code> model in a single string, together with all the other classes
+that it depends upon, directly and indirectly. This file can be later reloaded
+with the <a href=\"modelica://OpenModelica.Scripting.loadString\">loadString()</a>
+API function, which loads <code>className</code> and all the other needed
+classes into memory.</p>
+<p>This is useful to allow third parties to run a certain model (e.g. for
+debugging) without worrying about all the library dependencies.</p>
+<p>Please note that the resulting file is not a valid Modelica .mo file according
+to the specification and cannot be loaded in OMEdit - it can only be
+loaded with loadFile() or passing the file to the compiler on the command line.</p>
+</html>"),
+  preferredView="text");
+end getTotalModel;
 
 function saveTotalModelDebug
   "Saves a model and dependencies to a single file using a heuristic."
@@ -2853,6 +2881,17 @@ function reduceTerms
 external "builtin";
 annotation(preferredView="text");
 end reduceTerms;
+
+function translateResidualsDAE
+  input TypeName className;
+  input String fileNamePrefix = "<default>";
+  output Boolean success;
+external "builtin";
+annotation(Documentation(info="<html>
+<p>Takes a model with top-level connectors as input and produces the DAE mode C code for the DAE residuals and Jacobian, guaranteed to be valid for any arbitrary causality once this component is coupled to other ones through the connector variables. Can be used for separate compilation of DAE-based components.</p>
+</html>"),
+  preferredView="text");
+end translateResidualsDAE;
 
 function createModel
   "Creates a new empty model."
@@ -4083,6 +4122,71 @@ annotation(
 </html>"),
   preferredView="text");
 end getConnectionList;
+
+function addEquation
+  "Adds an equation to a class."
+  input TypeName className "The name of the class to add the equation to";
+  input String eq "The equation given as a string";
+  input Boolean isInitial = false "Whether the equation should be added as an initial or normal equation";
+  output Boolean success "true if the equation could be added, otherwise false";
+external "builtin";
+annotation(
+  Documentation(info="<html>
+The equation is added to the end of the last equation or initial equation section (depending on <pre>isInitial</pre>) in the class, or to a new section if no suitable section exists. The class must be able to contain equations, i.e. be a normal long class or class extends declaration.
+</html>"),
+  preferredView="text");
+end addEquation;
+
+function deleteEquation = updateEquation(newEq = "") "Deletes an equation in a class."
+  annotation(
+    Documentation(info="<html>
+Alias for <a href=\"modelica://OpenModelica.Scripting.updateEquation\">updateEquation()</a> with <pre>newEq = ""</pre>.
+</html>"),
+    preferredView="text");
+
+function updateEquation
+  "Replaces an equation with another equation in a class."
+  input TypeName className "The name of the class";
+  input String oldEq "The equation to replace";
+  input String newEq "The equation to replace with";
+  input Boolean matchAll = false "Update all matching equations if true, otherwise only the first matching";
+  input Boolean matchShallow = true "Ignore nested equations if true, otherwise match the equations recursively";
+  input Boolean matchDescription = false "Match description strings/annotations if true, otherwise ignore them";
+  input Boolean mergeDescription = false "Keep description string/annotations from the old equation if true";
+  output Boolean success "true if any equation was updated, otherwise false";
+external "builtin";
+annotation(
+  Documentation(info="<html>
+<h4>Syntax</h4>
+<blockquote>
+<pre><b>updateEquation</b>(MyModel, \"x = 1\", \"x = 2\")</pre>
+</blockquote>
+<h4>Description</h4>
+<p>
+updateEquation takes two equations, given as strings that are parsed as Modelica equations, and replaces an equation in the given class that matches the first equation with the second. If <pre>newEq</pre> is an empty string, then the matching equation is removed instead of replaced.
+</p>
+<h4>Optional arguments</h4>
+<dl>
+  <dt>matchAll</dt>
+  <dd>
+    If <pre>matchAll</pre> is true, then updateEquation replaces all equations that matches. Otherwise it only replaces the first matching equation.
+  </dd>
+  <dt>matchShallow</dt>
+  <dd>
+    If <pre>matchShallow</pre> is true, then equations are only matched shallowly, ignoring any nested equations. I.e. <pre>updateEquation(M, \"if b then end if\", ...)</pre> will replace any if-equation that matches <pre>if b then</pre>, regardless of what equations the if-equation contains. If <pre>matchShallow</pre> is false, then the equations must match recursively.
+  </dd>
+  <dt>matchDescription</dt>
+  <dd>
+    If <pre>matchDescription</pre> is true, then the description strings and annotations of the equations must match. Otherwise these are ignored when matching equations.
+  </dd>
+  <dt>mergeDescription</dt>
+  <dd>
+    If <pre>mergeDescription</pre> is true, then the description string and/or annotations of the replaced equation are copied to the new equation if these are missing on the new equation. This requires that <pre>matchDescription</pre> is false, otherwise there will be nothing to merge since the equations must have the same description to match. If <pre>mergeDescription</pre> is false, then the new equation overwrites the old completely, including description strings and annotations.
+  </dd>
+</dl>
+</html>"),
+  preferredView="text");
+end updateEquation;
 
 function getAlgorithmCount
   "Counts the number of algorithm sections in a class."

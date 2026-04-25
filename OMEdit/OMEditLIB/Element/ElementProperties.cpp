@@ -34,7 +34,6 @@
 
 #include "ElementProperties.h"
 #include "MainWindow.h"
-#include "Modeling/MessagesWidget.h"
 #include "Modeling/Commands.h"
 #include "Options/OptionsDialog.h"
 #include "OMPlot.h"
@@ -50,6 +49,14 @@
 #include <QScreen>
 #include <QStringList>
 #include <QStringBuilder>
+
+// tabs
+static QString General("General");
+static QString Modifiers("Modifiers");
+// groups
+static QString Parameters("Parameters");
+static QString Initialization("Initialization");
+static QString AddNewModifiers("Add New Modifiers");
 
 /*!
  * \class FinalEachToolButton
@@ -139,6 +146,7 @@ Parameter::Parameter(ModelInstance::Element *pElement, bool defaultValue, Elemen
   mpElementParameters = pElementParameters;
   auto &dialogAnnotation = mpModelInstanceElement->getAnnotation()->getDialogAnnotation();
   mTab = dialogAnnotation.getTab();
+  mTabDefined = dialogAnnotation.isTabDefined();
   mGroup = dialogAnnotation.getGroup();
   mGroupDefined = !mGroup.isEmpty();
   mEnable = dialogAnnotation.isEnabled();
@@ -164,12 +172,27 @@ Parameter::Parameter(ModelInstance::Element *pElement, bool defaultValue, Elemen
   }
   /* if mShowStartAndFixed and group name is empty then set group name to Initialization.
    * else set group name to Parameters for actual parameters or elements that have dialog annotation or replaceable elements.
+   * other elements show in modifiers.
    */
   if (mShowStartAndFixed && mGroup.isEmpty()) {
-    mGroup = "Initialization";
-  } else if (mGroup.isEmpty() && (mpModelInstanceElement->isParameter() || mpModelInstanceElement->getAnnotation()->hasDialogAnnotation()
+    mGroup = Initialization;
+  } else if (mGroup.isEmpty() && !mShowStartAndFixed && (mpModelInstanceElement->isParameter() || mpModelInstanceElement->getAnnotation()->hasDialogAnnotation()
                                   || mpModelInstanceElement->getReplaceable())) {
-    mGroup = "Parameters";
+    mGroup = Parameters;
+  } else if (!mShowStartAndFixed && !(mpModelInstanceElement->isParameter() || mpModelInstanceElement->getAnnotation()->hasDialogAnnotation()
+                                  || mpModelInstanceElement->getReplaceable())) {
+    // List only the modifiers of the element
+    ModelInstance::Modifier *pModelInstanceModifier = mpElementParameters->hasElement() ? mpElementParameters->getElement()->getModifier() : nullptr;
+    if (pModelInstanceModifier) {
+      foreach (auto *pModifier, pModelInstanceModifier->getModifiers()) {
+        if (pModifier->getName() == mpModelInstanceElement->getName()) {
+          if (!mTabDefined) {
+            mTab = Modifiers;
+          }
+          mGroup = Modifiers;
+        }
+      }
+    }
   }
 
   mpNameLabel = new Label;
@@ -858,7 +881,7 @@ void Parameter::editClassButtonClicked()
   }
   QString modifier = value;
   QString defaultModifier = defaultValue;
-  ModelInstance::Modifier *pReplaceableConstrainedByModifier = 0;
+  ModelInstance::Modifier *pReplaceableConstrainedByModifier = nullptr;
   QString comment;
   if (isReplaceableComponent()) {
     type = mpModelInstanceElement->getType();
@@ -877,6 +900,8 @@ void Parameter::editClassButtonClicked()
     } else if (isReplaceableClass()) {
       FlatModelica::Parser::getShortClassTypeFromElementRedeclaration(value, type, modifier, comment);
     }
+  } else if (!value.isEmpty()) {
+    FlatModelica::Parser::getModifierFromElementModification(value, modifier);
   }
 
   QString classPath;
@@ -895,9 +920,30 @@ void Parameter::editClassButtonClicked()
   }
   // get type as qualified path
   const QString qualifiedType = MainWindow::instance()->getOMCProxy()->qualifyPath(classPath, type);
+  // qDebug() << "element modifier" << modifier;
   const QJsonObject modifierJSON = MainWindow::instance()->getOMCProxy()->modifierToJSON(modifier);
   ModelInstance::Modifier *pElementModifier = new ModelInstance::Modifier("", QJsonValue(modifierJSON), mpModelInstanceElement->getParentModel());
-  modifier = mpModelInstanceElement->getModifiersHierarchically(pElementModifier);
+  if (pReplaceableConstrainedByModifier) {
+    // qDebug() << "replaceable constrainedby modifier" << pReplaceableConstrainedByModifier->toString();
+    /*! Read the constrainedby modifiers and if they have a modifier from this class then use its value.
+     *  See issue #14393
+     */
+    foreach (auto *pModifier, pReplaceableConstrainedByModifier->getModifiers()) {
+      Parameter *pParameter = mpElementParameters->findParameter(pModifier->getName());
+      if (pParameter) {
+        // qDebug() << "pParameter->getValue()" << pParameter->getValue();
+        pModifier->setValue(pParameter->getValue());
+      }
+    }
+    // qDebug() << "replaceable constrainedby modifier" << pReplaceableConstrainedByModifier->toString();
+    QVector<const ModelInstance::Modifier*> modifiers;
+    modifiers.append(pReplaceableConstrainedByModifier);
+    modifiers.append(pElementModifier);
+    ModelInstance::Modifier *pMergedModifier = ModelInstance::Modifier::mergeModifiersIntoOne(modifiers, mpModelInstanceElement->getParentModel());
+    modifier = pMergedModifier->toString();
+    delete pMergedModifier;
+  }
+  // qDebug() << "element and replaceable constrainedby merged modifier" << modifier;
   ModelInstance::Model *pCurrentModel = mpModelInstanceElement->getModel();
   const QJsonObject newModelJSON = MainWindow::instance()->getOMCProxy()->getModelInstance(qualifiedType, mpModelInstanceElement->getQualifiedName(), modifier);
   if (!newModelJSON.isEmpty()) {
@@ -1344,6 +1390,38 @@ ModelInstance::Model *ElementParameters::getModel() const
 }
 
 /*!
+ * \brief ElementParameters::findParameter
+ * Finds the Parameter.
+ * \param parameter
+ * \param caseSensitivity
+ * \return
+ */
+Parameter* ElementParameters::findParameter(const QString &parameter, Qt::CaseSensitivity caseSensitivity) const
+{
+  foreach (Parameter *pParameter, mParametersList) {
+    if (pParameter->getModelInstanceElement()->getName().compare(parameter, caseSensitivity) == 0) {
+      return pParameter;
+    }
+  }
+  return nullptr;
+}
+
+/*!
+ * \brief setFinalEachBreak
+ * Helper function to set final, each and break in the FinalEachToolButton according to the modifier.
+ * \param pFinalEachToolButton
+ * \param pModifier
+ */
+static void setFinalEachBreak(FinalEachToolButton *pFinalEachToolButton, ModelInstance::Modifier *pModifier)
+{
+  if (pFinalEachToolButton && pModifier) {
+    pFinalEachToolButton->setFinal(pModifier->isFinal());
+    pFinalEachToolButton->setEach(pModifier->isEach());
+    pFinalEachToolButton->setBreak(pModifier->isBreak());
+  }
+}
+
+/*!
  * \brief ElementParameters::applyFinalStartFixedAndDisplayUnitModifiers
  * \param pParameter
  * \param pModifier
@@ -1358,7 +1436,7 @@ void ElementParameters::applyFinalStartFixedAndDisplayUnitModifiers(Parameter *p
      * Redeclared but not replaceable classes should not show up in the parameter window. See issue #11311.
      * Only check for redeclare and replaceable modification for top level and when its not element modification. See issue #13334.
      */
-    if (defaultValue && (pModifier->isFinal() || (!isElementModification && pModifier->isRedeclare() && !pModifier->isReplaceable()))) {
+    if (defaultValue && (pModifier->isFinal() || (!isElementModification && !pParameter->getModelInstanceElement()->isParameter() && pModifier->isRedeclare() && !pModifier->isReplaceable()))) {
       if (mParametersList.removeOne(pParameter)) {
         delete pParameter;
       }
@@ -1374,7 +1452,11 @@ void ElementParameters::applyFinalStartFixedAndDisplayUnitModifiers(Parameter *p
           bool isFixedFinal = false;
           if (hasStart) {
             if (!pParameter->isGroupDefined() && !pParameter->getModelInstanceElement()->isParameter() && !pParameter->getModelInstanceElement()->isInput()) {
-              pParameter->setGroup("Initialization");
+              if (!pParameter->isTabDefined()) {
+                pParameter->setTab(General);
+              }
+              pParameter->setGroup(Initialization);
+              addOrUpdateParametersScrollArea(pParameter);
             }
             pParameter->setShowStartAndFixed(true);
           }
@@ -1383,22 +1465,21 @@ void ElementParameters::applyFinalStartFixedAndDisplayUnitModifiers(Parameter *p
             if (pStartModifier) {
               isStartFinal = pStartModifier->isFinal();
               pParameter->setValueWidget(StringHandler::removeFirstLastQuotes(pStartModifier->getValue()), defaultValue, pParameter->getUnit(), mNested);
-              pParameter->getFinalEachMenu()->setFinal(pStartModifier->isFinal());
-              pParameter->getFinalEachMenu()->setEach(pStartModifier->isEach());
-              pParameter->getFinalEachMenu()->setBreak(pStartModifier->isBreak());
+              setFinalEachBreak(pParameter->getFinalEachMenu(), pStartModifier);
             }
           }
           if (hasFixed) {
             ModelInstance::Modifier *pFixedModifier = pModifier->getModifier("fixed");
             if (pFixedModifier) {
               isFixedFinal = pFixedModifier->isFinal();
-              if (pFixedModifier->isBreak()) {
-                pParameter->getFixedFinalEachMenu()->setBreak(pFixedModifier->isBreak());
-              } else {
-                pParameter->setFixedState(StringHandler::removeFirstLastQuotes(pFixedModifier->getValue()), defaultValue);
+              const QString fixedValue = StringHandler::removeFirstLastQuotes(pFixedModifier->getValue());
+              /* only set the fixed state if the value is true or false.
+               * Don't try to set if value is not defined e.g., in the case of `x(final fixed)`
+               */
+              if (fixedValue == "true" || fixedValue == "false") {
+                pParameter->setFixedState(fixedValue, defaultValue);
               }
-              pParameter->getFixedFinalEachMenu()->setFinal(pFixedModifier->isFinal());
-              pParameter->getFixedFinalEachMenu()->setEach(pFixedModifier->isEach());
+              setFinalEachBreak(pParameter->getFixedFinalEachMenu(), pFixedModifier);
             }
           }
           /* Issue #12898
@@ -1430,9 +1511,7 @@ void ElementParameters::applyFinalStartFixedAndDisplayUnitModifiers(Parameter *p
         } else {
           pParameter->setValueWidget(value, defaultValue, pParameter->getUnit(), mNested);
           // set final and each checkboxes in the menu
-          pParameter->getFinalEachMenu()->setFinal(pModifier->isFinal());
-          pParameter->getFinalEachMenu()->setEach(pModifier->isEach());
-          pParameter->getFinalEachMenu()->setBreak(pModifier->isBreak());
+          setFinalEachBreak(pParameter->getFinalEachMenu(), pModifier);
         }
       } else { // if not builtin type then use all sub modifiers
         QString modifierValue;
@@ -1445,6 +1524,7 @@ void ElementParameters::applyFinalStartFixedAndDisplayUnitModifiers(Parameter *p
           }
         }
         pParameter->setValueWidget(modifierValue, defaultValue, pParameter->getUnit(), mNested);
+        setFinalEachBreak(pParameter->getFinalEachMenu(), pModifier);
       }
       // displayUnit
       ModelInstance::Modifier *pDisplayUnitModifier = pModifier->getModifier("displayUnit");
@@ -1554,7 +1634,50 @@ void ElementParameters::setUpDialog()
     pParametersScrollArea->getLayout()->addWidget(mpComponentGroupBox);
   }
   pParametersScrollArea->getLayout()->addWidget(mpComponentClassGroupBox);
-  mTabsMap.insert("General", mpParametersTabWidget->addTab(pParametersScrollArea, "General"));
+  mTabsMap.insert(General, mpParametersTabWidget->addTab(pParametersScrollArea, General));
+  // create Modifiers tab
+  ParametersScrollArea *pModifiersParametersScrollArea = new ParametersScrollArea;
+  GroupBox *pGroupBox = new GroupBox(AddNewModifiers);
+  pModifiersParametersScrollArea->addGroupBox(pGroupBox);
+  mpModifiersLabel = new Label("Add new modifiers, e.g., phi(start = 1), x(nominal = 3), x(max = 2) = y, system1(component3(p = 3))");
+  mpModifiersTextBox = new QLineEdit;
+  /* Do not add Modifiers tab when we are modifying top level parameters.
+   * We don't know yet how to set the modifiers in the top level parameter editing.
+   * For now simply hide the Modifiers tab in that case.
+   */
+  if (hasElement()) {
+    /* We hide the groupbox when we create it. Show the groupbox now since it has a parameter. */
+    pGroupBox->show();
+    QGridLayout *pGroupBoxGridLayout = pGroupBox->getGridLayout();
+    int rowIndex = pGroupBoxGridLayout->rowCount();
+    int columnIndex = 0;
+    // we match the layout same as defined for parameters layout below.
+    // label
+    pGroupBoxGridLayout->addWidget(mpModifiersLabel, rowIndex, columnIndex++);
+    pGroupBoxGridLayout->addItem(new QSpacerItem(0, 0), rowIndex, columnIndex++);
+    pGroupBoxGridLayout->addItem(new QSpacerItem(0, 0), rowIndex, columnIndex++);
+    pGroupBoxGridLayout->addWidget(mpModifiersTextBox, rowIndex, columnIndex++);
+    pGroupBoxGridLayout->addItem(new QSpacerItem(0, 0), rowIndex, columnIndex++);
+    pGroupBoxGridLayout->addItem(new QSpacerItem(0, 0), rowIndex, columnIndex++);
+    pGroupBoxGridLayout->addItem(new QSpacerItem(0, 0), rowIndex, columnIndex++);
+    pGroupBoxGridLayout->addItem(new QSpacerItem(0, 0), rowIndex, columnIndex++);
+    pGroupBoxGridLayout->addItem(new QSpacerItem(0, 0), rowIndex, columnIndex++);
+    pGroupBoxGridLayout->addItem(new QSpacerItem(0, 0), rowIndex, columnIndex++);
+    // text field
+    rowIndex++;
+    columnIndex = 0;
+    pGroupBoxGridLayout->addWidget(mpModifiersTextBox, rowIndex, columnIndex++);
+    pGroupBoxGridLayout->addItem(new QSpacerItem(0, 0), rowIndex, columnIndex++);
+    pGroupBoxGridLayout->addItem(new QSpacerItem(0, 0), rowIndex, columnIndex++);
+    pGroupBoxGridLayout->addItem(new QSpacerItem(0, 0), rowIndex, columnIndex++);
+    pGroupBoxGridLayout->addItem(new QSpacerItem(0, 0), rowIndex, columnIndex++);
+    pGroupBoxGridLayout->addItem(new QSpacerItem(0, 0), rowIndex, columnIndex++);
+    pGroupBoxGridLayout->addItem(new QSpacerItem(0, 0), rowIndex, columnIndex++);
+    pGroupBoxGridLayout->addItem(new QSpacerItem(0, 0), rowIndex, columnIndex++);
+    pGroupBoxGridLayout->addItem(new QSpacerItem(0, 0), rowIndex, columnIndex++);
+    pGroupBoxGridLayout->addItem(new QSpacerItem(0, 0), rowIndex, columnIndex++);
+  }
+  mTabsMap.insert(Modifiers, mpParametersTabWidget->addTab(pModifiersParametersScrollArea, Modifiers));
   // create parameters tabs and groupboxes
   createTabsGroupBoxesAndParameters(getModel(), hasElement());
   fetchElementExtendsModifiers(getModel(), hasElement());
@@ -1589,7 +1712,7 @@ void ElementParameters::setUpDialog()
           int rowIndex = pGroupBoxGridLayout->rowCount();
           int columnIndex = 0;
           pParameter->updateNameLabel();
-          pGroupBoxGridLayout->addWidget(pParameter->getNameLabel(), rowIndex, columnIndex++);
+          pGroupBoxGridLayout->addWidget(pParameter->getNameLabel(), rowIndex, columnIndex++, Qt::AlignRight);
           if (pParameter->isShowStartAndFixed()) {
             pGroupBoxGridLayout->addWidget(pParameter->getFixedCheckBox(), rowIndex, columnIndex++);
             pGroupBoxGridLayout->addWidget(pParameter->getFixedFinalEachMenu(), rowIndex, columnIndex++);
@@ -1630,25 +1753,8 @@ void ElementParameters::setUpDialog()
       }
     }
   }
-  // create Modifiers tab
-  QWidget *pModifiersTab = new QWidget;
-  // add items to modifiers tab
-  mpModifiersLabel = new Label(tr("Add new modifiers, e.g., phi(start=1), w(start=2)"));
-  mpModifiersTextBox = new QLineEdit;
-  QVBoxLayout *pModifiersTabLayout = new QVBoxLayout;
-  pModifiersTabLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
-  pModifiersTabLayout->addWidget(mpModifiersLabel);
-  pModifiersTabLayout->addWidget(mpModifiersTextBox);
-  pModifiersTab->setLayout(pModifiersTabLayout);
-  /* Do not add Modifiers tab when we are modifying top level parameters.
-   * We don't know yet how to set the modifiers in the top level parameter editing.
-   * For now simply hide the Modifiers tab in that case.
-   */
-  if (hasElement()) {
-    mpParametersTabWidget->addTab(pModifiersTab, "Modifiers");
-  }
-  // Issue #7494. Hide any empty tab. We start the loop from 1 since we don't want to remove General tab which is always the first tab.
-  for (int i = 1; i < mpParametersTabWidget->count(); ++i) {
+  // Issue #7494. Hide any empty tab. We start the loop from 2 since we don't want to remove General and Modifiers tabs.
+  for (int i = 2; i < mpParametersTabWidget->count(); ++i) {
     ParametersScrollArea *pParametersScrollArea = qobject_cast<ParametersScrollArea*>(mpParametersTabWidget->widget(i));
     if (pParametersScrollArea) {
       bool tabIsEmpty = true;
@@ -1667,6 +1773,17 @@ void ElementParameters::setUpDialog()
       }
     }
   }
+  // update modifiers tab name
+  GroupBox *pModifiersGroupBox = pModifiersParametersScrollArea->getGroupBox(Modifiers);
+  if (pModifiersGroupBox) {
+    int count = pModifiersGroupBox->getGridLayout()->rowCount() - 1;
+    if (count > 0) {
+      mpParametersTabWidget->setTabText(1, QString("Modifiers (%1)").arg(count));
+    }
+  }
+  // move Modifiers tab to the end
+  int lastIndex = mpParametersTabWidget->count() - 1;
+  mpParametersTabWidget->tabBar()->moveTab(1, lastIndex);
   // Create the buttons
   mpOkButton = new QPushButton(Helper::ok);
   mpOkButton->setAutoDefault(true);
@@ -1731,28 +1848,38 @@ void ElementParameters::createTabsGroupBoxesAndParameters(ModelInstance::Model *
       }
       // create the Parameter
       Parameter *pParameter = new Parameter(pElement, defaultValue, this);
-      if (!mTabsMap.contains(pParameter->getTab())) {
-        ParametersScrollArea *pParametersScrollArea = new ParametersScrollArea;
-        GroupBox *pGroupBox = new GroupBox(pParameter->getGroup());
-        // set the group image
-        pGroupBox->setGroupImage(pParameter->getGroupImage());
-        pParametersScrollArea->addGroupBox(pGroupBox);
-        mTabsMap.insert(pParameter->getTab(), mpParametersTabWidget->addTab(pParametersScrollArea, pParameter->getTab()));
-      } else {
-        ParametersScrollArea *pParametersScrollArea;
-        pParametersScrollArea = qobject_cast<ParametersScrollArea*>(mpParametersTabWidget->widget(mTabsMap.value(pParameter->getTab())));
-        GroupBox *pGroupBox = pParametersScrollArea->getGroupBox(pParameter->getGroup());
-        if (pParametersScrollArea && !pGroupBox) {
-          pGroupBox = new GroupBox(pParameter->getGroup());
-          pParametersScrollArea->addGroupBox(pGroupBox);
-        }
-        // set the group image
-        pGroupBox->setGroupImage(pParameter->getGroupImage());
-      }
+      addOrUpdateParametersScrollArea(pParameter);
       mParametersList.append(pParameter);
     } else if (pElement->isExtend() && pElement->getModel()) {
       createTabsGroupBoxesAndParameters(pElement->getModel(), true);
     }
+  }
+}
+
+/*!
+ * \brief ElementParameters::addOrUpdateParametersScrollArea
+ * Adds or updates the ParametersScrollArea for the parameter.
+ * \param pParameter
+ */
+void ElementParameters::addOrUpdateParametersScrollArea(Parameter *pParameter)
+{
+  if (!mTabsMap.contains(pParameter->getTab())) {
+    ParametersScrollArea *pParametersScrollArea = new ParametersScrollArea;
+    GroupBox *pGroupBox = new GroupBox(pParameter->getGroup());
+    // set the group image
+    pGroupBox->setGroupImage(pParameter->getGroupImage());
+    pParametersScrollArea->addGroupBox(pGroupBox);
+    mTabsMap.insert(pParameter->getTab(), mpParametersTabWidget->addTab(pParametersScrollArea, pParameter->getTab()));
+  } else {
+    ParametersScrollArea *pParametersScrollArea;
+    pParametersScrollArea = qobject_cast<ParametersScrollArea*>(mpParametersTabWidget->widget(mTabsMap.value(pParameter->getTab())));
+    GroupBox *pGroupBox = pParametersScrollArea->getGroupBox(pParameter->getGroup());
+    if (pParametersScrollArea && !pGroupBox) {
+      pGroupBox = new GroupBox(pParameter->getGroup());
+      pParametersScrollArea->addGroupBox(pGroupBox);
+    }
+    // set the group image
+    pGroupBox->setGroupImage(pParameter->getGroupImage());
   }
 }
 
@@ -1901,23 +2028,6 @@ void ElementParameters::applyModifier(ModelInstance::Modifier *pModifier, bool d
 }
 
 /*!
- * \brief ElementParameters::findParameter
- * Finds the Parameter.
- * \param parameter
- * \param caseSensitivity
- * \return
- */
-Parameter* ElementParameters::findParameter(const QString &parameter, Qt::CaseSensitivity caseSensitivity) const
-{
-  foreach (Parameter *pParameter, mParametersList) {
-    if (pParameter->getModelInstanceElement()->getName().compare(parameter, caseSensitivity) == 0) {
-      return pParameter;
-    }
-  }
-  return 0;
-}
-
-/*!
  * \brief ElementParameters::commentLinkClicked
  * \param link
  */
@@ -2003,46 +2113,46 @@ void ElementParameters::updateElementParameters()
     if (pParameter->getGroup().isEmpty()) {
       continue;
     }
-    ElementModifier elementModifier;
-    elementModifier.mName = pParameter->getName();
-    elementModifier.mExtendName = pParameter->getExtendName();
-    elementModifier.mInherited = pParameter->isInherited();
-    elementModifier.mKey = pParameter->getName();
-    QString elementModifierValue = pParameter->getValue();
-    elementModifier.mIsReplaceable = (pParameter->isReplaceableComponent() || pParameter->isReplaceableClass());
-    elementModifier.mFinal = pParameter->getFinalEachMenu()->isFinal();
-    elementModifier.mEach = pParameter->getFinalEachMenu()->isEach();
-    elementModifier.mBreak = pParameter->getFinalEachMenu()->isBreak();
-    elementModifier.mStartAndFixed = pParameter->isShowStartAndFixed();
-    // if break
-    if (elementModifier.mBreak) {
-      elementModifierValue = Helper::BREAK;
-    } else {
-      // convert the value to display unit
-      if (!pParameter->getUnit().isEmpty()
-          && pParameter->getUnit().compare(pParameter->getUnitComboBox()->itemData(pParameter->getUnitComboBox()->currentIndex()).toString()) != 0) {
-        bool ok = true;
-        qreal elementModifierRealValue = elementModifierValue.toDouble(&ok);
-        // if the modifier is a literal constant
-        if (ok) {
-          OMCInterface::convertUnits_res convertUnit = pOMCProxy->convertUnits(pParameter->getUnitComboBox()->itemData(pParameter->getUnitComboBox()->currentIndex()).toString(),
-                                                                               pParameter->getUnit());
-          if (convertUnit.unitsCompatible) {
-            elementModifierRealValue = Utilities::convertUnit(elementModifierRealValue, convertUnit.offset, convertUnit.scaleFactor);
-            elementModifierValue = StringHandler::number(elementModifierRealValue);
-          }
-        } else { // if expression
-          elementModifierValue = Utilities::arrayExpressionUnitConversion(pOMCProxy, elementModifierValue,
-                                                                          pParameter->getUnitComboBox()->itemData(pParameter->getUnitComboBox()->currentIndex()).toString(),
-                                                                          pParameter->getUnit());
-        }
-      }
-    }
 
     QStringList subModifiers;
     // if value is changed
     if (pParameter->isValueModified()) {
       valueChanged = true;
+      ElementModifier elementModifier;
+      elementModifier.mName = pParameter->getName();
+      elementModifier.mExtendName = pParameter->getExtendName();
+      elementModifier.mInherited = pParameter->isInherited();
+      elementModifier.mKey = pParameter->getName();
+      QString elementModifierValue = pParameter->getValue();
+      elementModifier.mIsReplaceable = (pParameter->isReplaceableComponent() || pParameter->isReplaceableClass());
+      elementModifier.mFinal = pParameter->getFinalEachMenu()->isFinal();
+      elementModifier.mEach = pParameter->getFinalEachMenu()->isEach();
+      elementModifier.mBreak = pParameter->getFinalEachMenu()->isBreak();
+      elementModifier.mStartAndFixed = pParameter->isShowStartAndFixed();
+      // if break
+      if (elementModifier.mBreak) {
+        elementModifierValue = Helper::BREAK;
+      } else {
+        // convert the value to display unit
+        if (!pParameter->getUnit().isEmpty()
+            && pParameter->getUnit().compare(pParameter->getUnitComboBox()->itemData(pParameter->getUnitComboBox()->currentIndex()).toString()) != 0) {
+          bool ok = true;
+          qreal elementModifierRealValue = elementModifierValue.toDouble(&ok);
+          // if the modifier is a literal constant
+          if (ok) {
+            OMCInterface::convertUnits_res convertUnit = pOMCProxy->convertUnits(pParameter->getUnitComboBox()->itemData(pParameter->getUnitComboBox()->currentIndex()).toString(),
+                                                                                 pParameter->getUnit());
+            if (convertUnit.unitsCompatible) {
+              elementModifierRealValue = Utilities::convertUnit(elementModifierRealValue, convertUnit.offset, convertUnit.scaleFactor);
+              elementModifierValue = StringHandler::number(elementModifierRealValue);
+            }
+          } else { // if expression
+            elementModifierValue = Utilities::arrayExpressionUnitConversion(pOMCProxy, elementModifierValue,
+                                                                            pParameter->getUnitComboBox()->itemData(pParameter->getUnitComboBox()->currentIndex()).toString(),
+                                                                            pParameter->getUnit());
+          }
+        }
+      }
       // set start value
       if (pParameter->isShowStartAndFixed()) {
         QString startModifier;

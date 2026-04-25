@@ -1,27 +1,31 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
@@ -392,9 +396,9 @@ algorithm
         Error.assertionOrAddSourceMessage(System.regularFileExists(fileModelicaNF),Error.FILE_NOT_FOUND_ERROR,{fileModelicaNF},AbsynUtil.dummyInfo);
         Error.assertionOrAddSourceMessage(System.regularFileExists(fileModelicaCF),Error.FILE_NOT_FOUND_ERROR,{fileModelicaCF},AbsynUtil.dummyInfo);
         Error.assertionOrAddSourceMessage(System.regularFileExists(fileMetaModelica),Error.FILE_NOT_FOUND_ERROR,{fileMetaModelica},AbsynUtil.dummyInfo);
-        pNF := Parser.parsebuiltin(fileModelicaNF, "UTF-8", "", NONE(), acceptedGram = Flags.METAMODELICA);
-        pCF := Parser.parsebuiltin(fileModelicaCF, "UTF-8", "", NONE(), acceptedGram = Flags.METAMODELICA);
-        pMM := Parser.parsebuiltin(fileMetaModelica, "UTF-8", "", NONE(), acceptedGram = Flags.METAMODELICA);
+        pNF := Parser.parse(fileModelicaNF, "UTF-8", "", NONE(), acceptedGram = Flags.METAMODELICA);
+        pCF := Parser.parse(fileModelicaCF, "UTF-8", "", NONE(), acceptedGram = Flags.METAMODELICA);
+        pMM := Parser.parse(fileMetaModelica, "UTF-8", "", NONE(), acceptedGram = Flags.METAMODELICA);
         pNF := mergePrograms(pNF, pMM);
         pCF := mergePrograms(pCF, pMM);
         pNF := MetaUtil.createMetaClassesInProgram(pNF);
@@ -411,9 +415,9 @@ algorithm
         Error.assertionOrAddSourceMessage(System.regularFileExists(fileModelicaNF),Error.FILE_NOT_FOUND_ERROR,{fileModelicaNF},AbsynUtil.dummyInfo);
         Error.assertionOrAddSourceMessage(System.regularFileExists(fileModelicaCF),Error.FILE_NOT_FOUND_ERROR,{fileModelicaCF},AbsynUtil.dummyInfo);
         Error.assertionOrAddSourceMessage(System.regularFileExists(fileMetaModelica),Error.FILE_NOT_FOUND_ERROR,{fileMetaModelica},AbsynUtil.dummyInfo);
-        pNF := Parser.parsebuiltin(fileModelicaNF, "UTF-8", "", NONE(), acceptedGram = Flags.METAMODELICA);
-        pCF := Parser.parsebuiltin(fileModelicaCF, "UTF-8", "", NONE(), acceptedGram = Flags.METAMODELICA);
-        pMM := Parser.parsebuiltin(fileParModelica, "UTF-8", "", NONE(), acceptedGram = Flags.METAMODELICA);
+        pNF := Parser.parse(fileModelicaNF, "UTF-8", "", NONE(), acceptedGram = Flags.METAMODELICA);
+        pCF := Parser.parse(fileModelicaCF, "UTF-8", "", NONE(), acceptedGram = Flags.METAMODELICA);
+        pMM := Parser.parse(fileParModelica, "UTF-8", "", NONE(), acceptedGram = Flags.METAMODELICA);
         pNF := mergePrograms(pNF, pMM);
         pCF := mergePrograms(pCF, pMM);
         spNF := list(AbsynToSCode.translateClass(c) for c in pNF.classes);
@@ -427,8 +431,8 @@ algorithm
         true := intEq(Flags.getConfigEnum(Flags.GRAMMAR), Flags.MODELICA) or intEq(Flags.getConfigEnum(Flags.GRAMMAR), Flags.OPTIMICA);
         Error.assertionOrAddSourceMessage(System.regularFileExists(fileModelicaNF),Error.FILE_NOT_FOUND_ERROR,{fileModelicaNF},AbsynUtil.dummyInfo);
         Error.assertionOrAddSourceMessage(System.regularFileExists(fileModelicaCF),Error.FILE_NOT_FOUND_ERROR,{fileModelicaCF},AbsynUtil.dummyInfo);
-        pNF := Parser.parsebuiltin(fileModelicaNF, "UTF-8", "", NONE(), acceptedGram = Flags.METAMODELICA);
-        pCF := Parser.parsebuiltin(fileModelicaCF, "UTF-8", "", NONE(), acceptedGram = Flags.METAMODELICA);
+        pNF := Parser.parse(fileModelicaNF, "UTF-8", "", NONE(), acceptedGram = Flags.METAMODELICA);
+        pCF := Parser.parse(fileModelicaCF, "UTF-8", "", NONE(), acceptedGram = Flags.METAMODELICA);
         spNF := list(AbsynToSCode.translateClass(c) for c in pNF.classes);
         spCF := list(AbsynToSCode.translateClass(c) for c in pCF.classes);
         assocLst := getGlobalRoot(Global.builtinIndex);
@@ -441,9 +445,9 @@ algorithm
         Error.assertionOrAddSourceMessage(System.regularFileExists(fileModelicaNF),Error.FILE_NOT_FOUND_ERROR,{fileModelicaNF},AbsynUtil.dummyInfo);
         Error.assertionOrAddSourceMessage(System.regularFileExists(fileModelicaCF),Error.FILE_NOT_FOUND_ERROR,{fileModelicaCF},AbsynUtil.dummyInfo);
         Error.assertionOrAddSourceMessage(System.regularFileExists(filePDEModelica),Error.FILE_NOT_FOUND_ERROR,{filePDEModelica},AbsynUtil.dummyInfo);
-        pNF := Parser.parsebuiltin(fileModelicaNF, "UTF-8", "", NONE(), acceptedGram = Flags.METAMODELICA);
-        pCF := Parser.parsebuiltin(fileModelicaCF, "UTF-8", "", NONE(), acceptedGram = Flags.METAMODELICA);
-        pMM := Parser.parsebuiltin(filePDEModelica, "UTF-8", "", NONE(), acceptedGram = Flags.METAMODELICA);
+        pNF := Parser.parse(fileModelicaNF, "UTF-8", "", NONE(), acceptedGram = Flags.METAMODELICA);
+        pCF := Parser.parse(fileModelicaCF, "UTF-8", "", NONE(), acceptedGram = Flags.METAMODELICA);
+        pMM := Parser.parse(filePDEModelica, "UTF-8", "", NONE(), acceptedGram = Flags.METAMODELICA);
         pNF := mergePrograms(pNF, pMM);
         pCF := mergePrograms(pCF, pMM);
         spNF := list(AbsynToSCode.translateClass(c) for c in pNF.classes);

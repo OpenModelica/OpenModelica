@@ -1,33 +1,38 @@
 /*
-* This file is part of OpenModelica.
-*
-* Copyright (c) 1998-2021, Open Source Modelica Consortium (OSMC),
-* c/o Linköpings universitet, Department of Computer and Information Science,
-* SE-58183 Linköping, Sweden.
-*
-* All rights reserved.
-*
-* THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
-* THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
-* ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
-* RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
-* ACCORDING TO RECIPIENTS CHOICE.
-*
-* The OpenModelica software and the Open Source Modelica
-* Consortium (OSMC) Public License (OSMC-PL) are obtained
-* from OSMC, either from the above address,
-* from the URLs: http://www.ida.liu.se/projects/OpenModelica or
-* http://www.openmodelica.org, and in the OpenModelica distribution.
-* GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
-*
-* This program is distributed WITHOUT ANY WARRANTY; without
-* even the implied warranty of  MERCHANTABILITY or FITNESS
-* FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
-* IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
-*
-* See the full OSMC Public License conditions for more details.
-*
-*/
+ * This file is part of OpenModelica.
+ *
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
+ * c/o Linköpings universitet, Department of Computer and Information Science,
+ * SE-58183 Linköping, Sweden.
+ *
+ * All rights reserved.
+ *
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
+ *
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
+ *
+ * This program is distributed WITHOUT ANY WARRANTY; without
+ * even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
+ *
+ * See the full OSMC Public License conditions for more details.
+ *
+ */
+
 encapsulated package NBAlias
 "file:        NBAlias.mo
  package:     NBAlias
@@ -89,6 +94,7 @@ protected
   import Differentiate = NBDifferentiate;
   import NBDifferentiate.{DifferentiationType, DifferentiationArguments};
   import NBEquation.{Equation, EquationAttributes, EquationKind, EquationPointers, EqData, Iterator};
+  import Partition = NBPartition;
   import Replacements = NBReplacements;
   import SimplifyExp = NFSimplifyExp;
   import Solve = NBSolve;
@@ -114,6 +120,7 @@ public
      called during simulation and gets the corresponding subfunction from
      Config."
     extends Module.wrapper;
+    input Partition.Kind kind;
   protected
     Module.aliasInterface func;
   algorithm
@@ -126,16 +133,16 @@ public
 
       case BackendDAE.MAIN(varData = varData, eqData = eqData)
         algorithm
-          (varData, eqData) := func(varData, eqData);
+          (varData, eqData) := func(varData, eqData, kind);
           // allways apply clock alias
-          (varData, eqData) := aliasClocks(varData, eqData);
+          (varData, eqData) := aliasClocks(varData, eqData, kind);
           bdae.varData := varData;
           bdae.eqData := eqData;
       then bdae;
 
       case BackendDAE.HESSIAN(varData = varData, eqData = eqData)
         algorithm
-          (varData, eqData) := func(varData, eqData);
+          (varData, eqData) := func(varData, eqData, kind);
           bdae.varData := varData;
           bdae.eqData := eqData;
       then bdae;
@@ -228,7 +235,7 @@ protected
           // -----------------------------------
           //            1. 2. 3.
           // -----------------------------------
-          (replacements, newEquations) := aliasCausalize(varData.unknowns, eqData.simulation, "Simulation");
+          (replacements, newEquations) := aliasCausalize(varData.unknowns, eqData.simulation, kind, "Simulation");
           (replacements, auxEquations) := checkReplacements(replacements, eqData);
 
           // -----------------------------------
@@ -404,7 +411,7 @@ protected
           // -----------------------------------
           //            1. 2. 3.
           // -----------------------------------
-          (replacements, newEquations) := aliasCausalize(varData.clocks, eqData.clocked, "Clocked");
+          (replacements, newEquations) := aliasCausalize(varData.clocks, eqData.clocked, kind, "Clocked");
           (replacements, auxEquations) := checkReplacements(replacements, eqData);
 
           // -----------------------------------
@@ -436,6 +443,7 @@ protected
     "
     input VariablePointers variables;
     input EquationPointers equations;
+    input Partition.Kind kind;
     input String context;
     output UnorderedMap<ComponentRef, Expression> replacements;
     output EquationPointers newEquations;
@@ -471,7 +479,7 @@ protected
     // --------------------------------------------------------------------------------------------------------
     replacements := UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual, size);
     for set in sets loop
-      replacements := createReplacementRules(set, replacements);
+      replacements := createReplacementRules(set, replacements, kind);
     end for;
 
   end aliasCausalize;
@@ -792,6 +800,7 @@ protected
     "Creates replacement rules from a simple set by causalizing it and replacing the expressions in order"
     input AliasSet set;
     input output UnorderedMap<ComponentRef, Expression> replacements;
+    input Partition.Kind kind;
   algorithm
     // ToDo: fix variable attributes to keep
     // report errors/warnings
@@ -814,7 +823,7 @@ protected
         vars := VariablePointers.fromList(list(BVariable.getVarPointer(cr, sourceInfo()) for cr in set.simple_variables), true);
         eqs := EquationPointers.fromList(const_eq :: set.simple_equations);
         // causalize the system
-        (_, comps) := Causalize.simple(vars, eqs);
+        (_, comps) := Causalize.simple(vars, eqs, kind);
         // create replacements from strong components
         Replacements.simple(comps, replacements);
       then replacements;
@@ -825,7 +834,7 @@ protected
         vars := VariablePointers.fromList(alias_vars);
         eqs := EquationPointers.fromList(set.simple_equations);
         // causalize the system
-        (_, comps) := Causalize.simple(vars, eqs);
+        (_, comps) := Causalize.simple(vars, eqs, kind);
         if Flags.isSet(Flags.DEBUG_ALIAS) then
           print(StringUtil.headline_3("Variable to keep (values of attributes before replacements):") + BVariable.pointerToString(Pointer.access(var_to_keep))+"\n\n");
         end if;

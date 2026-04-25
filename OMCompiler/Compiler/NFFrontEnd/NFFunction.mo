@@ -1,27 +1,31 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
@@ -262,13 +266,13 @@ type FunctionStatus = enumeration(
 );
 
 uniontype Function
-
   record FUNCTION
     Absyn.Path path;
     InstNode node;
     list<InstNode> inputs;
     list<InstNode> outputs;
     list<InstNode> locals;
+    Option<UnorderedSet<InstNode>> interfaceDiffInfo;
     list<Slot> slots;
     Type returnType;
     DAE.FunctionAttributes attributes;
@@ -295,7 +299,7 @@ uniontype Function
     attr := makeAttributes(node, inputs, outputs, comments);
     // Make sure builtin functions aren't added to the function tree.
     status := if isBuiltinAttr(attr) then FunctionStatus.COLLECTED else FunctionStatus.INITIAL;
-    fn := FUNCTION(path, node, inputs, outputs, locals, {}, Type.UNKNOWN(),
+    fn := FUNCTION(path, node, inputs, outputs, locals, NONE(), {}, Type.UNKNOWN(),
       attr, {}, {}, listArray({}), Pointer.create(status), Pointer.create(0));
   end new;
 
@@ -773,6 +777,17 @@ uniontype Function
     end match;
   end nameConsiderBuiltin;
 
+  function nameEqual
+    input Function fn1;
+    input Function fn2;
+    output Boolean equal = AbsynUtil.pathEqual(name(fn1), name(fn2));
+  end nameEqual;
+
+  function nameHash
+    input Function fn;
+    output Integer hash = AbsynUtil.pathHash(name(fn));
+  end nameHash;
+
   function signatureString
     "Constructs a signature string for a function, e.g. Real func(Real x, Real y)"
     input Function fn;
@@ -871,6 +886,74 @@ uniontype Function
 
     str := AbsynUtil.pathString(name(fn)) + "<function>(" + inputs + ") => " + outputs;
   end typeString;
+
+  function toStream
+    input Function fn;
+    input String indent;
+    input output IOStream.IOStream s;
+  protected
+    String fn_name;
+    Option<SCode.Comment> cmt;
+  algorithm
+    if isDefaultRecordConstructor(fn) then
+      s := Record.toDeclarationStream(fn.node, indent, s);
+    elseif isPartialDerivative(fn) then
+      fn_name := AbsynUtil.pathString(fn.path);
+      cmt := SCodeUtil.getElementComment(InstNode.definition(fn.node));
+
+      s := IOStream.append(s, indent);
+      s := IOStream.append(s, "function ");
+      s := IOStream.append(s, fn_name);
+      s := IOStream.append(s, " = der(");
+      s := IOStream.append(s, AbsynUtil.pathString(getDerivedFunctionName(fn)));
+      s := IOStream.append(s, ", ");
+      s := IOStream.append(s, stringDelimitList(getDerivedInputNames(fn), ", "));
+      s := IOStream.append(s, DAEDump.dumpCommentAnnotationStr(cmt));
+      s := IOStream.append(s, ")");
+    else
+      fn_name := AbsynUtil.pathString(fn.path);
+      cmt := SCodeUtil.getElementComment(InstNode.definition(fn.node));
+      s := IOStream.append(s, indent);
+
+      if InstNode.isPartial(fn.node) then
+        s := IOStream.append(s, "partial ");
+      end if;
+
+      s := IOStream.append(s, "function ");
+      s := IOStream.append(s, fn_name);
+      s := IOStream.append(s, DAEDump.dumpCommentStr(cmt));
+      s := IOStream.append(s, "\n");
+
+      for i in fn.inputs loop
+        s := IOStream.append(s, indent + "  ");
+        s := IOStream.append(s, InstNode.toString(i));
+        s := IOStream.append(s, ";\n");
+      end for;
+
+      for o in fn.outputs loop
+        s := IOStream.append(s, indent + "  ");
+        s := IOStream.append(s, InstNode.toString(o));
+        s := IOStream.append(s, ";\n");
+      end for;
+
+      if not listEmpty(fn.locals) then
+        s := IOStream.append(s, indent);
+        s := IOStream.append(s, "protected\n");
+
+        for l in fn.locals loop
+          s := IOStream.append(s, indent + "  ");
+          s := IOStream.append(s, InstNode.toString(l));
+          s := IOStream.append(s, ";\n");
+        end for;
+      end if;
+
+      s := Sections.toStream(InstNode.getSections(fn.node), indent, s);
+      s := IOStream.append(s, DAEDump.dumpClassAnnotationStr(cmt));
+      s := IOStream.append(s, indent);
+      s := IOStream.append(s, "end ");
+      s := IOStream.append(s, fn_name);
+    end if;
+  end toStream;
 
   function toFlatStream
     input Function fn;
@@ -1655,7 +1738,7 @@ uniontype Function
       // The function does contain impure calls, mark the function as impure.
       if not pure then
         attr := fn.attributes;
-        attr.isImpure := true;
+        attr.purity := DAE.Purity.IMPURE;
         fn.attributes := attr;
       end if;
     end if;
@@ -1727,7 +1810,7 @@ uniontype Function
     fn :: _ := typeRefCache(fn_ref);
     slots_arr := listArray(fn.slots);
 
-    purity := if Function.isImpure(fn) or Function.isOMImpure(fn) then Purity.IMPURE else Purity.PURE;
+    purity := if Function.isImpure(fn) then Purity.IMPURE else Purity.PURE;
     variability := Variability.CONSTANT;
 
     // Type the arguments and add them to the slots.
@@ -1919,13 +2002,8 @@ uniontype Function
 
   function isImpure
     input Function fn;
-    output Boolean isImpure = fn.attributes.isImpure;
+    output Boolean isImpure = fn.attributes.purity == DAE.Purity.IMPURE;
   end isImpure;
-
-  function isOMImpure
-    input Function fn;
-    output Boolean isImpure = not fn.attributes.isOpenModelicaPure;
-  end isOMImpure;
 
   function isFunctionPointer
     input Function fn;
@@ -2039,7 +2117,7 @@ uniontype Function
   algorithm
     vis := SCode.PUBLIC(); // TODO: Use the actual visibility.
     par := false; // TODO: Use the actual partial prefix.
-    impr := fn.attributes.isImpure;
+    impr := fn.attributes.purity == DAE.Purity.IMPURE;
     ity := fn.attributes.inline;
     ty := makeDAEType(fn);
     unused_inputs := analyseUnusedParameters(fn);
@@ -2072,7 +2150,7 @@ uniontype Function
       ptype := Type.toDAE(if boxTypes then Type.box(ty) else ty);
       pconst := Prefixes.variabilityToDAEConst(Component.variability(comp));
       ppar := Prefixes.parallelismToDAE(Component.parallelism(comp));
-      pdefault := Util.applyOption(Binding.typedExp(Component.getBinding(comp)), Expression.toDAE);
+      pdefault := Util.applyOption(Binding.typedExp(Component.getBinding(comp)), function Expression.toDAE(allowEmpty = false));
       params := DAE.FuncArg.FUNCARG(pname, ptype, pconst, ppar, pdefault) :: params;
     end for;
 
@@ -2436,12 +2514,6 @@ protected
       not SCodeUtil.commentHasBooleanNamedAnnotation(cmt, "__OpenModelica_Impure");
   end hasOMPure;
 
-  function hasImpure
-    input SCode.Comment cmt;
-    output Boolean res =
-      SCodeUtil.commentHasBooleanNamedAnnotation(cmt, "__ModelicaAssociation_Impure");
-  end hasImpure;
-
   function getBuiltinPtr
     input SCode.Comment cmt;
     output DAE.FunctionBuiltin builtin =
@@ -2488,6 +2560,7 @@ protected
     SCode.FunctionRestriction fres;
     Boolean is_partial;
     SCode.Comment cmt;
+    DAE.Purity purity;
   algorithm
     def := InstNode.classDefinition(Class.lastBaseClass(node));
     res := SCodeUtil.getClassRestriction(def);
@@ -2498,27 +2571,26 @@ protected
     is_partial := InstNode.isPartial(node);
 
     cmt := mergeFunctionAnnotations(comments);
+    purity := InstUtil.getFunctionRestrictionPurity(SCodeUtil.getFunctionRestrictionPurity(fres), cmt, newFrontend = true);
 
     attr := matchcontinue fres
       local
-        Boolean is_impure, is_om_pure, has_out_params, has_unbox_args;
+        Boolean has_unbox_args;
         String name;
         list<String> in_params, out_params;
         DAE.InlineType inline_ty;
         DAE.FunctionBuiltin builtin;
-        Absyn.FunctionPurity purity;
 
       // External builtin function.
-      case SCode.FunctionRestriction.FR_EXTERNAL_FUNCTION(purity)
+      case SCode.FunctionRestriction.FR_EXTERNAL_FUNCTION()
         algorithm
           in_params := list(InstNode.name(i) for i in inputs);
           out_params := list(InstNode.name(o) for o in outputs);
           name := SCodeUtil.isBuiltinFunction(def, in_params, out_params);
           inline_ty := InstUtil.commentIsInlineFunc(cmt);
-          is_impure := AbsynUtil.isImpure(purity) or hasImpure(cmt);
           has_unbox_args := hasUnboxArgsAnnotation(cmt);
         then
-          DAE.FUNCTION_ATTRIBUTES(inline_ty, hasOMPure(cmt), is_impure, is_partial,
+          DAE.FUNCTION_ATTRIBUTES(inline_ty, purity, is_partial,
             DAE.FUNCTION_BUILTIN(SOME(name), has_unbox_args), DAE.FP_NON_PARALLEL());
 
       // Parallel function: there are some builtin functions.
@@ -2530,7 +2602,7 @@ protected
           inline_ty := InstUtil.commentIsInlineFunc(cmt);
           has_unbox_args := hasUnboxArgsAnnotation(cmt);
         then
-          DAE.FUNCTION_ATTRIBUTES(inline_ty, hasOMPure(cmt), false, is_partial,
+          DAE.FUNCTION_ATTRIBUTES(inline_ty, purity, is_partial,
             DAE.FUNCTION_BUILTIN(SOME(name), has_unbox_args), DAE.FP_PARALLEL_FUNCTION());
 
       // Parallel function: non-builtin.
@@ -2538,12 +2610,12 @@ protected
         algorithm
           inline_ty := InstUtil.commentIsInlineFunc(cmt);
         then
-          DAE.FUNCTION_ATTRIBUTES(inline_ty, hasOMPure(cmt), false, is_partial,
+          DAE.FUNCTION_ATTRIBUTES(inline_ty, purity, is_partial,
             getBuiltinPtr(cmt), DAE.FP_PARALLEL_FUNCTION());
 
       // Kernel functions: never builtin and never inlined.
       case SCode.FunctionRestriction.FR_KERNEL_FUNCTION()
-        then DAE.FUNCTION_ATTRIBUTES(DAE.NO_INLINE(), true, false, is_partial,
+        then DAE.FUNCTION_ATTRIBUTES(DAE.NO_INLINE(), purity, is_partial,
           DAE.FUNCTION_NOT_BUILTIN(), DAE.FP_KERNEL_FUNCTION());
 
       // Normal function.
@@ -2551,17 +2623,16 @@ protected
         algorithm
           inline_ty := InstUtil.commentIsInlineFunc(cmt);
 
-          // In Modelica 3.2 and before, external functions with side-effects are not marked.
-          is_impure := SCodeUtil.isRestrictionImpure(res,
-              Config.languageStandardAtMost(Config.LanguageStandard.'3.2')) or
-            SCodeUtil.commentHasBooleanNamedAnnotation(cmt, "__ModelicaAssociation_Impure");
+          // Since Modelica 3.3, normal functions are pure by default and external functions are impure.
+          if purity == DAE.Purity.UNDEFINED and Config.languageStandardAtLeast(Config.LanguageStandard.'3.3') then
+            purity := if SCodeUtil.isExternalFunctionRestriction(fres) then DAE.Purity.IMPURE else DAE.Purity.PURE;
+          end if;
 
           if SCodeUtil.hasNamedExternalCall("ModelicaError", SCodeUtil.getClassDef(def)) then
-            is_impure := false;
+            purity := DAE.Purity.PURE;
           end if;
         then
-          DAE.FUNCTION_ATTRIBUTES(inline_ty, hasOMPure(cmt), is_impure, is_partial,
-            getBuiltinPtr(cmt), DAE.FP_NON_PARALLEL());
+          DAE.FUNCTION_ATTRIBUTES(inline_ty, purity, is_partial, getBuiltinPtr(cmt), DAE.FP_NON_PARALLEL());
 
     end matchcontinue;
   end makeAttributes;

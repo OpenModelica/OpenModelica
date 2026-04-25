@@ -18,6 +18,7 @@ ModelicaTest.Media.TestAllProperties.IncompleteMedia.Essotherm650.mos \
 ModelicaTest.Utilities.TestExamplesCalculator.mos \
 ModelicaTest.Media.TestAllProperties.IncompleteMedia.ReferenceAir_dT.mos \
 ModelicaTest.Fluid.TestComponents.Sensors.TestSpecificEnthalpy.mos \
+ModelicaTest.Tables.CombiTimeTable.Test1.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make failingtest

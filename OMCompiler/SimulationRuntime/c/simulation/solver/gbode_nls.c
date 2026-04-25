@@ -1,30 +1,27 @@
 /*
- * This file is part of OpenModelica.
+ * This file belongs to the OpenModelica Run-Time System
  *
- * Copyright (c) 1998-2022, Open Source Modelica Consortium (OSMC),
- * c/o Linköpings universitet, Department of Computer and Information Science,
- * SE-58183 Linköping, Sweden.
- *
- * All rights reserved.
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC), c/o Linköpings
+ * universitet, Department of Computer and Information Science, SE-58183 Linköping, Sweden. All rights
+ * reserved.
  *
  * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THE BSD NEW LICENSE OR THE
- * GPL VERSION 3 LICENSE OR THE OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * AGPL VERSION 3 LICENSE OR THE OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8. ANY
+ * USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
+ * ACCEPTANCE OF THE BSD NEW LICENSE OR THE OSMC PUBLIC LICENSE OR THE AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
- * Public License (OSMC-PL) are obtained from OSMC, either from the above
- * address, from the URLs: http://www.openmodelica.org or
- * http://www.ida.liu.se/projects/OpenModelica, and in the OpenModelica
- * distribution. GNU version 3 is obtained from:
- * http://www.gnu.org/copyleft/gpl.html. The New BSD License is obtained from:
- * http://www.opensource.org/licenses/BSD-3-Clause.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium) Public License
+ * (OSMC-PL) are obtained from OSMC, either from the above address, from the URLs:
+ * http://www.openmodelica.org or https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica, and in the OpenModelica distribution. GNU
+ * AGPL version 3 is obtained from: https://www.gnu.org/licenses/licenses.html#GPL. The BSD NEW
+ * License is obtained from: http://www.opensource.org/licenses/BSD-3-Clause.
  *
- * This program is distributed WITHOUT ANY WARRANTY; without even the implied
- * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, EXCEPT AS
- * EXPRESSLY SET FORTH IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE
- * CONDITIONS OF OSMC-PL.
+ * This program is distributed WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY
+ * SET FORTH IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF
+ * OSMC-PL.
  *
  */
 
@@ -308,7 +305,7 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA(DATA* data, threadData_t* threadData, DAT
     } else {
       nlsData->nlsLinearSolver = NLS_LS_DEFAULT;
     }
-    solverData->ordinaryData = (void*) gbInternalNlsAllocate(nlsData->size, nlsUserData, FALSE, nlsData->isPatternAvailable);
+    solverData->ordinaryData = (void*) gbInternalNlsAllocate(nlsData->size, nlsUserData, FALSE, nlsData->isPatternAvailable, FALSE);
     solverData->initHomotopyData = NULL;
     nlsData->solverData = solverData;
     break;
@@ -364,16 +361,23 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA_MR(DATA* data, threadData_t* threadData, 
     nlsData->getIterationVars = NULL;
 
     break;
+  case GM_TYPE_IMPLICIT:
+    // Only works for -gbnls=internal (error should be caught beforehand, if we are not in -gbnls=internal)
+    // As -gbnls=internal does all the stuff from scratch and only really requires the nlsxOld, nlsxExtrapolation and nlsx fields
+    // we must do nothing here except set that pattern is available
+    nlsData->isPatternAvailable = TRUE;
+    nlsData->initializeStaticNLSData = NULL;
+    break;
   default:
     throwStreamPrint(NULL, "Residual function for NLS type %i not yet implemented.", gbfData->type);
   }
 
-  nlsData->initializeStaticNLSData(data, threadData, nlsData, TRUE, TRUE);
+  if (nlsData->initializeStaticNLSData) nlsData->initializeStaticNLSData(data, threadData, nlsData, TRUE, TRUE);
 
   JACOBIAN* jacobian_ODE = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
   gbfData->jacobian = (JACOBIAN*) malloc(sizeof(JACOBIAN));
   initJacobian(gbfData->jacobian, gbfData->nlSystemSize, gbfData->nlSystemSize, gbfData->nlSystemSize, jacobian_ODE->dag, nlsData->analyticalJacobianColumn, NULL, nlsData->sparsePattern);
-  gbfData->jacobian->evalSelection = NULL;//allocEvalSelection(gbfData->jacobian->dag);
+  gbfData->jacobian->evalSelection = allocEvalSelection(gbfData->jacobian->dag);
   nlsData->initialAnalyticalJacobian = NULL;
   nlsData->jacobianIndex = -1;
 
@@ -414,18 +418,13 @@ NONLINEAR_SYSTEM_DATA* initRK_NLS_DATA_MR(DATA* data, threadData_t* threadData, 
     nlsData->solverData = solverData;
     break;
   case GB_NLS_INTERNAL:
-    /* throw as multi-rate with internal NLS is not implemented */
-    throwStreamPrint(NULL, "GBODE Multi-Rate integration with '-gbnls=internal' is not yet implemented. Proceed by setting '-gbnls' as 'kinsol', 'newton', "
-                            "or 'experimental-kinsol'. Alternatively, you may disable Multi-Rate integration.");
-
-    /* WIP: multi-rate with internal NLS */
     nlsData->nlsMethod = NLS_GB_INTERNAL;
     if (nlsData->isPatternAvailable) {
       nlsData->nlsLinearSolver = NLS_LS_KLU;
     } else {
       nlsData->nlsLinearSolver = NLS_LS_DEFAULT;
     }
-    solverData->ordinaryData = (void*) gbInternalNlsAllocate(nlsData->size, nlsUserData, FALSE, nlsData->isPatternAvailable);
+    solverData->ordinaryData = (void*) gbInternalNlsAllocate(nlsData->size, nlsUserData, FALSE, nlsData->isPatternAvailable, TRUE);
     solverData->initHomotopyData = NULL;
     nlsData->solverData = solverData;
     break;
@@ -533,10 +532,11 @@ void get_kinsol_statistics(NLS_KINSOL_DATA* kin_mem)
  * @param gbData              Runge-Kutta method.
  * @return NLS_SOLVER_STATUS  Return NLS_SOLVED on success and NLS_FAILED otherwise.
  */
-NLS_SOLVER_STATUS solveNLS_gb(DATA *data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA* nlsData, DATA_GBODE* gbData)
+NLS_SOLVER_STATUS solveNLS_gb(DATA *data, threadData_t *threadData, NONLINEAR_SYSTEM_DATA* nlsData, DATA_GBODE* gbData, modelica_boolean isFast)
 {
   struct dataSolver * solverData = (struct dataSolver *)nlsData->solverData;
   NLS_SOLVER_STATUS solved = NLS_FAILED;
+  enum GB_NLS_METHOD method = (isFast ? gbData->gbfData->nlsSolverMethod : gbData->nlsSolverMethod);
 
   // Debug nonlinear solution process
   rtclock_t clock;
@@ -548,14 +548,14 @@ NLS_SOLVER_STATUS solveNLS_gb(DATA *data, threadData_t *threadData, NONLINEAR_SY
     rt_ext_tp_tick(&clock);
   }
 
-  if (gbData->nlsSolverMethod == GB_NLS_INTERNAL)
+  if (method == GB_NLS_INTERNAL)
   {
     solved = gbInternalSolveNls(data, threadData, nlsData, gbData, solverData->ordinaryData);
   }
-  else if (gbData->nlsSolverMethod == GB_NLS_KINSOL || gbData->nlsSolverMethod == GB_NLS_KINSOL_B) {
+  else if (method == GB_NLS_KINSOL || method == GB_NLS_KINSOL_B) {
     // Get kinsol data object
     void* kin_mem;
-    if (gbData->nlsSolverMethod == GB_NLS_KINSOL){
+    if (method == GB_NLS_KINSOL){
        kin_mem = ((NLS_KINSOL_DATA*)solverData->ordinaryData)->kinsolMemory;
     }
     else {
@@ -782,6 +782,7 @@ void residual_DIRK_MR(RESIDUAL_USERDATA* userData, const double *xloc, double *r
   const int nStages = gbfData->tableau->nStages;
   const int stage_  = gbfData->act_stage;
   const modelica_real fac = gbfData->stepSize * gbfData->tableau->A[stage_ * nStages + stage_];
+  sData->timeValue = gbfData->time + gbfData->tableau->c[stage_] * gbfData->stepSize;
 
   // Set fast states
   // ph: are slow states interpolated and set correctly?

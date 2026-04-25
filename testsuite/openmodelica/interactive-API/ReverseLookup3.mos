@@ -53,11 +53,16 @@ getErrorString();
 // "[
 //   {
 //     \"filename\": \"<interactive>\",
-//     \"lineStart\": 38,
-//     \"columnStart\": 7,
-//     \"lineEnd\": 38,
-//     \"columnEnd\": 13,
-//     \"name\": \"P1.M\"
+//     \"matches\": [
+//       {
+//         \"lineStart\": 38,
+//         \"columnStart\": 7,
+//         \"lineEnd\": 38,
+//         \"columnEnd\": 13,
+//         \"name\": \"P1.M\",
+//         \"class\": \"P3.A\"
+//       }
+//     ]
 //   }
 // ]"
 // ""

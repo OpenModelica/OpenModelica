@@ -1,30 +1,27 @@
 /*
- * This file is part of OpenModelica.
+ * This file belongs to the OpenModelica Run-Time System
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
- * c/o Linköpings universitet, Department of Computer and Information Science,
- * SE-58183 Linköping, Sweden.
- *
- * All rights reserved.
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC), c/o Linköpings
+ * universitet, Department of Computer and Information Science, SE-58183 Linköping, Sweden. All rights
+ * reserved.
  *
  * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THE BSD NEW LICENSE OR THE
- * GPL VERSION 3 LICENSE OR THE OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * AGPL VERSION 3 LICENSE OR THE OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8. ANY
+ * USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
+ * ACCEPTANCE OF THE BSD NEW LICENSE OR THE OSMC PUBLIC LICENSE OR THE AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
- * Public License (OSMC-PL) are obtained from OSMC, either from the above
- * address, from the URLs: http://www.openmodelica.org or
- * http://www.ida.liu.se/projects/OpenModelica, and in the OpenModelica
- * distribution. GNU version 3 is obtained from:
- * http://www.gnu.org/copyleft/gpl.html. The New BSD License is obtained from:
- * http://www.opensource.org/licenses/BSD-3-Clause.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium) Public License
+ * (OSMC-PL) are obtained from OSMC, either from the above address, from the URLs:
+ * http://www.openmodelica.org or https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica, and in the OpenModelica distribution. GNU
+ * AGPL version 3 is obtained from: https://www.gnu.org/licenses/licenses.html#GPL. The BSD NEW
+ * License is obtained from: http://www.opensource.org/licenses/BSD-3-Clause.
  *
- * This program is distributed WITHOUT ANY WARRANTY; without even the implied
- * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, EXCEPT AS
- * EXPRESSLY SET FORTH IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE
- * CONDITIONS OF OSMC-PL.
+ * This program is distributed WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY
+ * SET FORTH IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF
+ * OSMC-PL.
  *
  */
 
@@ -96,12 +93,15 @@ int homBacktraceStrategy = 1;
 
 static double tolZC;
 
-/*! \fn updateDiscreteSystem
+/*!
+ * @brief Update discrete system with event iteration.
  *
- *  Function to update the whole system with event iteration.
- *  Evaluates functionDAE()
+ * Evaluate `functionDAE` until no discrete changes occur.
+ * If `data->simulationInfo->sampleActivated` is active deactivate samples after
+ * first event iteration and update next sample time for that sample event.
  *
- *  \param [ref] [data]
+ * @param data          Data object.
+ * @param threadData    thread data for error handling.
  */
 void updateDiscreteSystem(DATA *data, threadData_t *threadData)
 {
@@ -120,6 +120,21 @@ void updateDiscreteSystem(DATA *data, threadData_t *threadData)
 
   relationChanged = checkRelations(data);
   discreteChanged = checkForDiscreteChanges(data, threadData);
+
+  /* Deactivate possible sample events after first event iteration */
+  if(data->simulationInfo->sampleActivated)
+  {
+    for(int i = 0; i < data->modelData->nSamples; i++)
+    {
+      if(data->simulationInfo->samples[i])
+      {
+        data->simulationInfo->samples[i] = 0;
+        data->simulationInfo->nextSampleTimes[i] += data->modelData->samplesInfo[i].interval;
+      }
+    }
+  }
+
+  /* Update discrete system until nothing changes any more */
   while(discreteChanged || data->simulationInfo->needToIterate || relationChanged)
   {
     storePreValues(data);
@@ -139,7 +154,6 @@ void updateDiscreteSystem(DATA *data, threadData_t *threadData)
     discreteChanged = checkForDiscreteChanges(data, threadData);
   }
   storeRelations(data);
-
 }
 
 /*! \fn saveZeroCrossings
@@ -210,7 +224,7 @@ void printAllVars(DATA *data, int ringSegment, int stream)
 
   infoStreamPrint(stream, 1, "integer variables");
   for(i=0; i<mData->nVariablesInteger; ++i)
-    infoStreamPrint(stream, 0, "%ld: %s = %ld (pre: %ld)", i+1, mData->integerVarsData[i].info.name, data->localData[ringSegment]->integerVars[i], sInfo->integerVarsPre[i]);
+    infoStreamPrint(stream, 0, "%ld: %s = " OMC_INT_FORMAT " (pre: " OMC_INT_FORMAT ")", i+1, mData->integerVarsData[i].info.name, data->localData[ringSegment]->integerVars[i], sInfo->integerVarsPre[i]);
   messageClose(stream);
 
   infoStreamPrint(stream, 1, "boolean variables");
@@ -275,7 +289,7 @@ void printParameters(DATA *data, int stream)
   {
     infoStreamPrint(stream, 1, "integer parameters");
     for(i=0; i<mData->nParametersInteger; ++i)
-      infoStreamPrint(stream, 0, "[%ld] parameter Integer %s(start=%ld, fixed=%s) = %ld", i+1,
+      infoStreamPrint(stream, 0, "[%ld] parameter Integer %s(start=" OMC_INT_FORMAT ", fixed=%s) = " OMC_INT_FORMAT, i+1,
                                  mData->integerParameterData[i].info.name,
                                  mData->integerParameterData[i].attribute.start,
                                  mData->integerParameterData[i].attribute.fixed ? "true" : "false",
@@ -551,7 +565,7 @@ void printRingBufferSimulationData(RINGBUFFER *rb, DATA* data)
     infoStreamPrint(OMC_LOG_STDOUT, 1, "RingBuffer Integer Variable");
     for (int j = 0; j < data->modelData->nVariablesInteger; ++j)
     {
-      infoStreamPrint(OMC_LOG_STDOUT, 0, "%d: %s = %li ", j+1, data->modelData->integerVarsData[j].info.name, sdata->integerVars[j]);
+      infoStreamPrint(OMC_LOG_STDOUT, 0, "%d: %s = " OMC_INT_FORMAT " ", j+1, data->modelData->integerVarsData[j].info.name, sdata->integerVars[j]);
     }
     messageClose(OMC_LOG_STDOUT);
 

@@ -170,6 +170,7 @@ CevalFuncWhile1.mo \
 CevalFuncWhile2.mo \
 CevalIdentity1.mo \
 CevalIf1.mo \
+CevalIf2.mo \
 CevalInteger1.mo \
 CevalIntegerEnum1.mo \
 CevalLinspace1.mo \
@@ -285,6 +286,10 @@ Condition8.mo \
 Condition9.mo \
 Condition10.mo \
 ConditionInvalid1.mo \
+ConditionInvalidContext1.mo \
+ConditionInvalidContext2.mo \
+ConditionInvalidContext3.mo \
+ConditionInvalidContext4.mo \
 ConditionInvalidBinding1.mo \
 ConditionInvalidBinding2.mo \
 ConditionInvalidType1.mo \
@@ -778,6 +783,9 @@ ImplicitRangeInvalid1.mo \
 ImplicitRangeInvalid2.mo \
 ImplicitRangeType1.mo \
 ImplicitRangeType2.mo \
+ImplicitTrailingSubscript1.mo \
+ImplicitTrailingSubscript2.mo \
+ImplicitTrailingSubscript3.mo \
 ImportComponent1.mo \
 ImportConflict1.mo \
 ImportConflict2.mo \
@@ -815,6 +823,7 @@ InnerOuter9.mo \
 InnerOuter10.mo \
 InnerOuter11.mo \
 InnerOuter12.mo \
+InnerOuter13.mo \
 InnerOuterClass1.mo \
 InnerOuterConnect1.mo \
 InnerOuterDuplicate1.mo \
@@ -1130,6 +1139,8 @@ SizeInvalidType3.mo \
 SlicedCref1.mo \
 SlicedCref2.mo \
 SlicedCref3.mo \
+SlicedCref4.mo \
+SlicedCref5.mo \
 StatementInvalidType1.mo \
 StateSelectVariability1.mo \
 StateSelect1.mo \

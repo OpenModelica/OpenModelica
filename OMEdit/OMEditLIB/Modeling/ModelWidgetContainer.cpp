@@ -257,11 +257,11 @@ void GraphicsView::drawCoordinateSystem(bool openingModel)
 {
   if (isIconView() && mpModelWidget->getLibraryTreeItem()->getAccess() >= LibraryTreeItem::icon) {
     mCoordinateSystem = mpModelWidget->getModelInstance()->getAnnotation()->getIconAnnotation()->mCoordinateSystem;
-    mMergedCoordinateSystem = mpModelWidget->getModelInstance()->getAnnotation()->getIconAnnotation()->mMergedCoordinateSystem;
+    mMergedCoordinateSystem = mpModelWidget->getModelInstance()->mMergedIconCoordinateSystem;
     setExtentRectangle(mMergedCoordinateSystem.getExtentRectangle(), openingModel);
   } else if (isDiagramView() && mpModelWidget->getLibraryTreeItem()->getAccess() >= LibraryTreeItem::diagram) {
     mCoordinateSystem = mpModelWidget->getModelInstance()->getAnnotation()->getDiagramAnnotation()->mCoordinateSystem;
-    mMergedCoordinateSystem = mpModelWidget->getModelInstance()->getAnnotation()->getDiagramAnnotation()->mMergedCoordinateSystem;
+    mMergedCoordinateSystem = mpModelWidget->getModelInstance()->mMergedDiagramCoordinateSystem;
     setExtentRectangle(mMergedCoordinateSystem.getExtentRectangle(), openingModel);
   }
 }
@@ -275,7 +275,7 @@ void GraphicsView::drawCoordinateSystem(bool openingModel)
  */
 void GraphicsView::drawShapes(ModelInstance::Model *pModelInstance, bool inhertied, bool openingModel)
 {
-  QList<ModelInstance::Shape*> shapes;
+  QVector<ModelInstance::Shape*> shapes;
   ModelInstance::Extend *pExtendModel = 0;
   if (inhertied) {
     pExtendModel = pModelInstance->getParentExtend();
@@ -363,7 +363,7 @@ void GraphicsView::drawElements(ModelInstance::Model *pModelInstance, bool inher
 {
   // We use access.icon so we can draw public components so that we can see and set the parameters in the parameters window.
   if (mpModelWidget->getLibraryTreeItem()->getAccess() >= LibraryTreeItem::icon && isDiagramView()) {
-    QList<ModelInstance::Element*> elements = pModelInstance->getElements();
+    QVector<ModelInstance::Element*> elements = pModelInstance->getElements();
     int elementIndex = -1, connectorIndex = -1;
     for (int i = 0; i < elements.size(); ++i) {
       auto pModelInstanceElement = elements.at(i);
@@ -420,7 +420,7 @@ void GraphicsView::drawConnections(ModelInstance::Model *pModelInstance, bool in
   // We use access.diagram so we can draw connections.
   if (mpModelWidget->getLibraryTreeItem()->getAccess() >= LibraryTreeItem::diagram && isDiagramView()) {
     int modelInfoIndex = -1;
-    QList<ModelInstance::Connection*> connections = pModelInstance->getConnections();
+    QVector<ModelInstance::Connection*> connections = pModelInstance->getConnections();
     for (int i = 0; i < connections.size(); ++i) {
       auto pConnection = connections.at(i);
       // if connection is valid and has line annotation
@@ -488,7 +488,7 @@ void GraphicsView::drawTransitions(ModelInstance::Model *pModelInstance, bool in
   // We use access.diagram so we can draw transitions.
   if (mpModelWidget->getLibraryTreeItem()->getAccess() >= LibraryTreeItem::diagram && isDiagramView()) {
     int modelInfoIndex = -1;
-    QList<ModelInstance::Transition*> transitions = pModelInstance->getTransitions();
+    QVector<ModelInstance::Transition*> transitions = pModelInstance->getTransitions();
     for (int i = 0; i < transitions.size(); ++i) {
       auto pTransition = transitions.at(i);
       // if transition is valid and has line annotation
@@ -554,7 +554,7 @@ void GraphicsView::drawInitialStates(ModelInstance::Model *pModelInstance, bool 
   // We use access.diagram so we can draw initial states.
   if (mpModelWidget->getLibraryTreeItem()->getAccess() >= LibraryTreeItem::diagram && isDiagramView()) {
     int modelInfoIndex = -1;
-    QList<ModelInstance::InitialState*> initialStates = pModelInstance->getInitialStates();
+    QVector<ModelInstance::InitialState*> initialStates = pModelInstance->getInitialStates();
     for (int i = 0; i < initialStates.size(); ++i) {
       auto pInitialState = initialStates.at(i);
       // if initialState is valid and has line annotation
@@ -832,9 +832,25 @@ ModelInstance::Component *GraphicsView::createModelInstanceComponent(ModelInstan
   const QJsonObject modelJSON = MainWindow::instance()->getOMCProxy()->getModelInstance(dummyClass);
   MainWindow::instance()->getOMCProxy()->deleteClass(dummyClass);
   const QJsonArray elementsArray = modelJSON.value("elements").toArray();
-  if (!elementsArray.isEmpty()) {
-    pModelInstance->deserializeElements(elementsArray);
-    QList<ModelInstance::Element*> elements = pModelInstance->getElements();
+  /*! We need to filter the elements array and get the component we just created because getModelInstance may also contains generated inner components.
+   *  See issue #15092.
+   */
+  QJsonArray filteredArray;
+  // If there is only one element in the array then it has to be the component we created. No need to loop through the array and filter it.
+  if (elementsArray.size() == 1) {
+    filteredArray = elementsArray;
+  } else {
+    for (const QJsonValue &element : elementsArray) {
+      QJsonObject obj = element.toObject();
+      if (obj.value("name").toString() == name) {
+        filteredArray.append(obj);
+        break;
+      }
+    }
+  }
+  if (!filteredArray.isEmpty()) {
+    pModelInstance->deserializeElements(filteredArray);
+    QVector<ModelInstance::Element*> elements = pModelInstance->getElements();
     if (!elements.isEmpty()) {
       return dynamic_cast<ModelInstance::Component*>(elements.last());
     }
@@ -1795,7 +1811,7 @@ bool GraphicsView::updateTransition(LineAnnotation *pTransitionLineAnnotation)
   const QString startElementName = pTransitionLineAnnotation->getStartElementName();
   const QString endElementName = pTransitionLineAnnotation->getEndElementName();
   ModelInfo oldModelInfo = mpModelWidget->createModelInfo();
-  QList<ModelInstance::Transition*> transitions = mpModelWidget->getModelInstance()->getTransitions();
+  QVector<ModelInstance::Transition*> transitions = mpModelWidget->getModelInstance()->getTransitions();
   for (int i = 0; i < transitions.size(); ++i) {
     auto pTransition = transitions.at(i);
     if (pTransition->getStartConnector()->getName().compare(startElementName) == 0 && pTransition->getEndConnector()->getName().compare(endElementName) == 0) {
@@ -3300,7 +3316,7 @@ void GraphicsView::addConnection(Element *pElement, bool createConnector)
             && (!(pElement->isExpandableConnector() || pElement->isArray()
                 || (pRootParentElement && (pRootParentElement->isExpandableConnector() || pRootParentElement->isArray()))))) {
           if (pElement->getModel()) {
-            QList<ModelInstance::Shape*> shapes = pElement->getModel()->getAnnotation()->getIconAnnotation()->getGraphics();
+            QVector<ModelInstance::Shape*> shapes = pElement->getModel()->getAnnotation()->getIconAnnotation()->getGraphics();
             if (!shapes.isEmpty()) {
               mpConnectionLineAnnotation->setLineColor(shapes.at(0)->getLineColor());
             } else if (pElement->getShapesList().size() > 0) {
@@ -5325,59 +5341,59 @@ WelcomePageWidget::WelcomePageWidget(QWidget *pParent)
   : QWidget(pParent)
 {
   // main frame
-  mpMainFrame = new QFrame;
-  mpMainFrame->setContentsMargins(0, 0, 0, 0);
-  mpMainFrame->setStyleSheet("QFrame{color:gray;}");
+  QFrame *pMainFrame = new QFrame;
+  pMainFrame->setContentsMargins(0, 0, 0, 0);
+  pMainFrame->setStyleSheet("QFrame{color:gray;}");
   // top frame
-  mpTopFrame = new QFrame;
-  mpTopFrame->setStyleSheet("QFrame{background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #828282, stop: 1 #5e5e5e);}");
+  QFrame *pTopFrame = new QFrame;
+  pTopFrame->setStyleSheet("QFrame{background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #828282, stop: 1 #5e5e5e);}");
   // top frame pixmap
-  mpPixmapLabel = new Label;
+  Label *pPixmapLabel = new Label;
   QPixmap pixmap(":/Resources/icons/omedit.png");
-  mpPixmapLabel->setPixmap(pixmap.scaled(75, 72, Qt::KeepAspectRatio, Qt::SmoothTransformation));
-  mpPixmapLabel->setStyleSheet("background-color : transparent;");
+  pPixmapLabel->setPixmap(pixmap.scaled(75, 72, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+  pPixmapLabel->setStyleSheet("background-color : transparent;");
   // top frame heading
-  mpHeadingLabel = Utilities::getHeadingLabel(QString(Helper::applicationName).append(" - ").append(Helper::applicationIntroText));
-  mpHeadingLabel->setStyleSheet("background-color : transparent; color : white;");
+  Label *pHeadingLabel = Utilities::getHeadingLabel(QString(Helper::applicationName).append(" - ").append(Helper::applicationIntroText));
+  pHeadingLabel->setStyleSheet("background-color : transparent; color : white;");
 #ifndef Q_OS_MAC
-  mpHeadingLabel->setGraphicsEffect(new QGraphicsDropShadowEffect);
+  pHeadingLabel->setGraphicsEffect(new QGraphicsDropShadowEffect);
 #endif
-  mpHeadingLabel->setElideMode(Qt::ElideMiddle);
+  pHeadingLabel->setElideMode(Qt::ElideMiddle);
   // top frame layout
-  QHBoxLayout *topFrameLayout = new QHBoxLayout;
-  topFrameLayout->setAlignment(Qt::AlignLeft);
-  topFrameLayout->addWidget(mpPixmapLabel);
-  topFrameLayout->addWidget(mpHeadingLabel, 1);
-  mpTopFrame->setLayout(topFrameLayout);
+  QHBoxLayout *pTopFrameLayout = new QHBoxLayout;
+  pTopFrameLayout->setAlignment(Qt::AlignLeft);
+  pTopFrameLayout->addWidget(pPixmapLabel);
+  pTopFrameLayout->addWidget(pHeadingLabel);
+  pTopFrame->setLayout(pTopFrameLayout);
   // RecentFiles Frame
-  mpRecentFilesFrame = new QFrame;
-  mpRecentFilesFrame->setFrameShape(QFrame::StyledPanel);
-  mpRecentFilesFrame->setStyleSheet("QFrame{background-color: white;}");
+  QFrame *pRecentFilesFrame = new QFrame;
+  pRecentFilesFrame->setFrameShape(QFrame::StyledPanel);
+  pRecentFilesFrame->setStyleSheet("QFrame{background-color: white;}");
   // recent items list
-  mpRecentFilesLabel = Utilities::getHeadingLabel(tr("Recent Files"));
+  Label *pRecentFilesLabel = Utilities::getHeadingLabel(tr("Recent Files"));
   mpNoRecentFileLabel = new Label(tr("No recent files found."));
-  mpRecentItemsList = new QListWidget;
-  mpRecentItemsList->setObjectName("RecentItemsList");
-  mpRecentItemsList->setContentsMargins(0, 0, 0, 0);
-  mpRecentItemsList->setSpacing(5);
-  mpRecentItemsList->setFrameStyle(QFrame::NoFrame);
-  mpRecentItemsList->setViewMode(QListView::ListMode);
-  mpRecentItemsList->setMovement(QListView::Static);
-  mpRecentItemsList->setIconSize(Helper::iconSize);
-  mpRecentItemsList->setCurrentRow(0, QItemSelectionModel::Select);
-  connect(mpRecentItemsList, SIGNAL(itemClicked(QListWidgetItem*)), SLOT(openRecentFileItem(QListWidgetItem*)));
-  mpClearRecentFilesListButton = new QPushButton(tr("Clear Recent Files"));
-  mpClearRecentFilesListButton->setStyleSheet("QPushButton{padding: 5px 15px 5px 15px;}");
-  connect(mpClearRecentFilesListButton, SIGNAL(clicked()), MainWindow::instance(), SLOT(clearRecentFilesList()));
+  mpRecentItemsListWidget = new QListWidget;
+  mpRecentItemsListWidget->setObjectName("RecentItemsList");
+  mpRecentItemsListWidget->setContentsMargins(0, 0, 0, 0);
+  mpRecentItemsListWidget->setSpacing(5);
+  mpRecentItemsListWidget->setFrameStyle(QFrame::NoFrame);
+  mpRecentItemsListWidget->setViewMode(QListView::ListMode);
+  mpRecentItemsListWidget->setMovement(QListView::Static);
+  mpRecentItemsListWidget->setIconSize(Helper::iconSize);
+  mpRecentItemsListWidget->setCurrentRow(0, QItemSelectionModel::Select);
+  connect(mpRecentItemsListWidget, SIGNAL(itemClicked(QListWidgetItem*)), SLOT(openRecentFileItem(QListWidgetItem*)));
+  QPushButton *pClearRecentFilesListButton = new QPushButton(tr("Clear Recent Files"));
+  pClearRecentFilesListButton->setStyleSheet("QPushButton{padding: 5px 15px 5px 15px;}");
+  connect(pClearRecentFilesListButton, SIGNAL(clicked()), MainWindow::instance(), SLOT(clearRecentFilesList()));
   // RecentFiles Frame layout
   QVBoxLayout *recentFilesFrameVBLayout = new QVBoxLayout;
-  recentFilesFrameVBLayout->addWidget(mpRecentFilesLabel);
+  recentFilesFrameVBLayout->addWidget(pRecentFilesLabel);
   recentFilesFrameVBLayout->addWidget(mpNoRecentFileLabel);
-  recentFilesFrameVBLayout->addWidget(mpRecentItemsList);
+  recentFilesFrameVBLayout->addWidget(mpRecentItemsListWidget);
   QHBoxLayout *recentFilesHBLayout = new QHBoxLayout;
-  recentFilesHBLayout->addWidget(mpClearRecentFilesListButton, 0, Qt::AlignLeft);
+  recentFilesHBLayout->addWidget(pClearRecentFilesListButton, 0, Qt::AlignLeft);
   recentFilesFrameVBLayout->addLayout(recentFilesHBLayout);
-  mpRecentFilesFrame->setLayout(recentFilesFrameVBLayout);
+  pRecentFilesFrame->setLayout(recentFilesFrameVBLayout);
   // LatestNews Frame
   mpLatestNewsFrame = new QFrame;
   mpLatestNewsFrame->setFrameShape(QFrame::StyledPanel);
@@ -5387,7 +5403,7 @@ WelcomePageWidget::WelcomePageWidget(QWidget *pParent)
     mpLatestNewsFrame->setVisible(false);
   }
   // latest news
-  mpLatestNewsLabel = Utilities::getHeadingLabel(tr("Latest News & Events"));
+  Label *pLatestNewsLabel = Utilities::getHeadingLabel(tr("Latest News & Events"));
   mpNoLatestNewsLabel = new Label;
   mpLatestNewsListWidget = new QListWidget;
   mpLatestNewsListWidget->setObjectName("LatestNewsList");
@@ -5398,22 +5414,22 @@ WelcomePageWidget::WelcomePageWidget(QWidget *pParent)
   mpLatestNewsListWidget->setMovement(QListView::Static);
   mpLatestNewsListWidget->setIconSize(Helper::iconSize);
   mpLatestNewsListWidget->setCurrentRow(0, QItemSelectionModel::Select);
-  mpReloadLatestNewsButton = new QPushButton(Helper::reload);
-  mpReloadLatestNewsButton->setStyleSheet("QPushButton{padding: 5px 15px 5px 15px;}");
-  connect(mpReloadLatestNewsButton, SIGNAL(clicked()), SLOT(addLatestNewsListItems()));
-  mpVisitWebsiteLabel = new Label(tr("For more details visit our website <u><a href=\"http://www.openmodelica.org\">www.openmodelica.org</a></u>"));
-  mpVisitWebsiteLabel->setTextFormat(Qt::RichText);
-  mpVisitWebsiteLabel->setTextInteractionFlags(mpVisitWebsiteLabel->textInteractionFlags() | Qt::LinksAccessibleByMouse | Qt::LinksAccessibleByKeyboard);
-  mpVisitWebsiteLabel->setOpenExternalLinks(true);
+  QPushButton *pReloadLatestNewsButton = new QPushButton(Helper::reload);
+  pReloadLatestNewsButton->setStyleSheet("QPushButton{padding: 5px 15px 5px 15px;}");
+  connect(pReloadLatestNewsButton, SIGNAL(clicked()), SLOT(addLatestNewsListItems()));
+  Label *pVisitWebsiteLabel = new Label(tr("For more details visit our website <u><a href=\"http://www.openmodelica.org\">www.openmodelica.org</a></u>"));
+  pVisitWebsiteLabel->setTextFormat(Qt::RichText);
+  pVisitWebsiteLabel->setTextInteractionFlags(pVisitWebsiteLabel->textInteractionFlags() | Qt::LinksAccessibleByMouse | Qt::LinksAccessibleByKeyboard);
+  pVisitWebsiteLabel->setOpenExternalLinks(true);
   connect(mpLatestNewsListWidget, SIGNAL(itemClicked(QListWidgetItem*)), SLOT(openLatestNewsItem(QListWidgetItem*)));
   // Latest News Frame layout
   QVBoxLayout *latestNewsFrameVBLayout = new QVBoxLayout;
-  latestNewsFrameVBLayout->addWidget(mpLatestNewsLabel);
+  latestNewsFrameVBLayout->addWidget(pLatestNewsLabel);
   latestNewsFrameVBLayout->addWidget(mpNoLatestNewsLabel);
   latestNewsFrameVBLayout->addWidget(mpLatestNewsListWidget);
   QHBoxLayout *latestNewsFrameHBLayout = new QHBoxLayout;
-  latestNewsFrameHBLayout->addWidget(mpReloadLatestNewsButton, 0, Qt::AlignLeft);
-  latestNewsFrameHBLayout->addWidget(mpVisitWebsiteLabel, 0, Qt::AlignRight);
+  latestNewsFrameHBLayout->addWidget(pReloadLatestNewsButton, 0, Qt::AlignLeft);
+  latestNewsFrameHBLayout->addWidget(pVisitWebsiteLabel, 0, Qt::AlignRight);
   latestNewsFrameVBLayout->addLayout(latestNewsFrameHBLayout);
   mpLatestNewsFrame->setLayout(latestNewsFrameVBLayout);
   // create http object for request
@@ -5423,7 +5439,7 @@ WelcomePageWidget::WelcomePageWidget(QWidget *pParent)
   // splitter
   mpSplitter = new QSplitter;
   /* Read the welcome page view settings */
-  switch (OptionsDialog::instance()->getGeneralSettingsPage()->getWelcomePageView()){
+  switch (OptionsDialog::instance()->getGeneralSettingsPage()->getWelcomePageView()) {
     case 2:
       mpSplitter->setOrientation(Qt::Vertical);
       break;
@@ -5435,54 +5451,54 @@ WelcomePageWidget::WelcomePageWidget(QWidget *pParent)
   mpSplitter->setChildrenCollapsible(false);
   mpSplitter->setHandleWidth(4);
   mpSplitter->setContentsMargins(0, 0, 0, 0);
-  mpSplitter->addWidget(mpRecentFilesFrame);
+  mpSplitter->addWidget(pRecentFilesFrame);
   mpSplitter->addWidget(mpLatestNewsFrame);
   // Read the welcome page splitter state
   QSettings *pSettings = Utilities::getApplicationSettings();
   mpSplitter->restoreState(pSettings->value("welcomePage/splitterState").toByteArray());
   // bottom frame
-  mpBottomFrame = new QFrame;
-  mpBottomFrame->setStyleSheet("QFrame{background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #828282, stop: 1 #5e5e5e);}");
+  QFrame *pBottomFrame = new QFrame;
+  pBottomFrame->setStyleSheet("QFrame{background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #828282, stop: 1 #5e5e5e);}");
   // bottom frame create and open buttons buttons
   const QString buttonStyleSheet = "QPushButton{padding: 5px 15px 5px 15px;}";
-  mpCreateModelButton = new QPushButton(Helper::createNewModelicaClass);
-  mpCreateModelButton->setStyleSheet(buttonStyleSheet);
-  connect(mpCreateModelButton, SIGNAL(clicked()), MainWindow::instance(), SLOT(createNewModelicaClass()));
-  mpOpenModelButton = new QPushButton(Helper::openModelicaFiles);
-  mpOpenModelButton->setStyleSheet(buttonStyleSheet);
-  connect(mpOpenModelButton, SIGNAL(clicked()), MainWindow::instance(), SLOT(openModelicaFile()));
-  mpSystemLibrariesButton = new QPushButton(tr("System Libraries"));
-  mpSystemLibrariesButton->setStyleSheet(buttonStyleSheet);
-  mpSystemLibrariesButton->setMenu(MainWindow::instance()->getLibrariesMenu());
-  mpInstallLibraryButton = new QPushButton(Helper::installLibrary);
-  mpInstallLibraryButton->setStyleSheet(buttonStyleSheet);
-  connect(mpInstallLibraryButton, SIGNAL(clicked()), MainWindow::instance(), SLOT(openInstallLibraryDialog()));
+  QPushButton *pCreateModelButton = new QPushButton(Helper::createNewModelicaClass);
+  pCreateModelButton->setStyleSheet(buttonStyleSheet);
+  connect(pCreateModelButton, SIGNAL(clicked()), MainWindow::instance(), SLOT(createNewModelicaClass()));
+  QPushButton *pOpenModelButton = new QPushButton(Helper::openModelicaFiles);
+  pOpenModelButton->setStyleSheet(buttonStyleSheet);
+  connect(pOpenModelButton, SIGNAL(clicked()), MainWindow::instance(), SLOT(openModelicaFile()));
+  QPushButton *pSystemLibrariesButton = new QPushButton(tr("System Libraries"));
+  pSystemLibrariesButton->setStyleSheet(buttonStyleSheet);
+  pSystemLibrariesButton->setMenu(MainWindow::instance()->getLibrariesMenu());
+  QPushButton *pInstallLibraryButton = new QPushButton(Helper::installLibrary);
+  pInstallLibraryButton->setStyleSheet(buttonStyleSheet);
+  connect(pInstallLibraryButton, SIGNAL(clicked()), MainWindow::instance(), SLOT(openInstallLibraryDialog()));
   // bottom frame layout
   QHBoxLayout *pBottomFrameLayout = new QHBoxLayout;
   pBottomFrameLayout->setAlignment(Qt::AlignLeft);
-  pBottomFrameLayout->addWidget(mpCreateModelButton);
-  pBottomFrameLayout->addWidget(mpOpenModelButton);
-  pBottomFrameLayout->addWidget(mpSystemLibrariesButton);
-  pBottomFrameLayout->addWidget(mpInstallLibraryButton);
-  mpBottomFrame->setLayout(pBottomFrameLayout);
+  pBottomFrameLayout->addWidget(pCreateModelButton);
+  pBottomFrameLayout->addWidget(pOpenModelButton);
+  pBottomFrameLayout->addWidget(pSystemLibrariesButton);
+  pBottomFrameLayout->addWidget(pInstallLibraryButton);
+  pBottomFrame->setLayout(pBottomFrameLayout);
   // vertical layout for frames
   QVBoxLayout *verticalLayout = new QVBoxLayout;
   verticalLayout->setSpacing(4);
   verticalLayout->setContentsMargins(0, 0, 0, 0);
-  verticalLayout->addWidget(mpTopFrame, 0, Qt::AlignTop);
+  verticalLayout->addWidget(pTopFrame, 0, Qt::AlignTop);
   verticalLayout->addWidget(mpSplitter, 1);
   // Issue #10235. Use QScrollArea so we can resize.
   QScrollArea *pBottomScrollArea = new QScrollArea;
   pBottomScrollArea->setFrameShape(QFrame::NoFrame);
   pBottomScrollArea->setBackgroundRole(QPalette::Base);
   pBottomScrollArea->setWidgetResizable(true);
-  pBottomScrollArea->setWidget(mpBottomFrame);
+  pBottomScrollArea->setWidget(pBottomFrame);
   verticalLayout->addWidget(pBottomScrollArea, 0, Qt::AlignBottom);
   // main frame layout
-  mpMainFrame->setLayout(verticalLayout);
+  pMainFrame->setLayout(verticalLayout);
   QHBoxLayout *layout = new QHBoxLayout;
   layout->setContentsMargins(0, 0, 0, 0);
-  layout->addWidget(mpMainFrame);
+  layout->addWidget(pMainFrame);
   setLayout(layout);
 }
 
@@ -5493,14 +5509,14 @@ WelcomePageWidget::WelcomePageWidget(QWidget *pParent)
 void WelcomePageWidget::addRecentFilesListItems()
 {
   // remove list items first
-  mpRecentItemsList->clear();
+  mpRecentItemsListWidget->clear();
   QSettings *pSettings = Utilities::getApplicationSettings();
   QList<QVariant> files = pSettings->value("recentFilesList/files").toList();
   int recentFilesSize = OptionsDialog::instance()->getGeneralSettingsPage()->getRecentFilesAndLatestNewsSizeSpinBox()->value();
   int numRecentFiles = qMin(files.size(), recentFilesSize);
   for (int i = 0; i < numRecentFiles; ++i) {
     RecentFile recentFile = qvariant_cast<RecentFile>(files[i]);
-    QListWidgetItem *listItem = new QListWidgetItem(mpRecentItemsList);
+    QListWidgetItem *listItem = new QListWidgetItem(mpRecentItemsListWidget);
     listItem->setIcon(ResourceCache::getIcon(":/Resources/icons/next.svg"));
     listItem->setText(recentFile.fileName);
     listItem->setData(Qt::UserRole, recentFile.encoding);
@@ -5805,7 +5821,7 @@ void ModelWidget::drawModel(const ModelInfo &modelInfo)
 
 void ModelWidget::drawModelIconDiagram(ModelInstance::Model *pModelInstance, bool inherited, const ModelInfo &modelInfo)
 {
-  QList<ModelInstance::Element*> elements = pModelInstance->getElements();
+  QVector<ModelInstance::Element*> elements = pModelInstance->getElements();
   foreach (auto pElement, elements) {
     if (pElement->isExtend() && pElement->getModel()) {
       auto pExtend = dynamic_cast<ModelInstance::Extend*>(pElement);
@@ -5832,17 +5848,19 @@ void ModelWidget::loadModelInstance(bool icon, const ModelInfo &modelInfo)
 {
   // save the current ModelInstance pointer so we can delete it later.
   ModelInstance::Model *pOldModelInstance = mpModelInstance;
-  QElapsedTimer timer;
-  timer.start();
   // call getModelInstance
   const QJsonObject jsonObject = MainWindow::instance()->getOMCProxy()->getModelInstance(mpLibraryTreeItem->getNameStructure(), "", "", false, icon);
+  QElapsedTimer timer;
+  if (MainWindow::instance()->isNewApiProfiling()) {
+    timer.start();
+  }
   // set the new ModelInstance
   mpModelInstance = new ModelInstance::Model(jsonObject);
   if (MainWindow::instance()->isNewApiProfiling()) {
     double elapsed = (double)timer.elapsed() / 1000.0;
-    MainWindow::instance()->writeNewApiProfiling(QString("Time for parsing JSON %1 secs").arg(QString::number(elapsed, 'f', 6)));
+    MainWindow::instance()->writeNewApiProfiling(QString("Time for creating model structure %1 secs").arg(QString::number(elapsed, 'f', 6)));
+    timer.restart();
   }
-  timer.restart();
   // enable skip expression evaluation flag if we are drawing the icon only
   MainWindow::instance()->setSkipExpressionEvaluation(icon);
   // drawing
@@ -5889,7 +5907,7 @@ void ModelWidget::loadDiagramViewNAPI()
  */
 void ModelWidget::detectMultipleDeclarations()
 {
-  QList<ModelInstance::Element*> elements = mpModelInstance->getElements();
+  QVector<ModelInstance::Element*> elements = mpModelInstance->getElements();
   for (int i = 0 ; i < elements.size() ; i++) {
     for (int j = 0 ; j < elements.size() ; j++) {
       if (i == j) {
@@ -6018,7 +6036,6 @@ void ModelWidget::createModelWidgetComponents()
     mpMainLayout->setContentsMargins(0, 0, 0, 0);
     mpMainLayout->setSpacing(4);
     mpMainLayout->addWidget(mpModelStatusBar);
-    setLayout(mpMainLayout);
     MainWindow *pMainWindow = MainWindow::instance();
     // show hide widgets based on library type
     if (mpLibraryTreeItem->isModelica()) {
@@ -6096,8 +6113,6 @@ void ModelWidget::createModelWidgetComponents()
       mpModelStatusBar->addPermanentWidget(mpReadOnlyLabel, 0);
       mpModelStatusBar->addPermanentWidget(mpModelFilePathLabel, 1);
       mpModelStatusBar->addPermanentWidget(mpFileLockToolButton, 0);
-      // set layout
-      mpMainLayout->addWidget(mpModelStatusBar);
     } else if (mpLibraryTreeItem->isSSP()) {
       if (mpLibraryTreeItem->isSystemElement() || mpLibraryTreeItem->isComponentElement()) {
         connect(mpIconViewToolButton, SIGNAL(toggled(bool)), SLOT(showIconView(bool)));
@@ -6125,7 +6140,6 @@ void ModelWidget::createModelWidgetComponents()
       mpModelStatusBar->addPermanentWidget(mpModelFilePathLabel, 1);
       mpModelStatusBar->addPermanentWidget(mpFileLockToolButton, 0);
       // set layout
-      mpMainLayout->addWidget(mpModelStatusBar);
       if (MainWindow::instance()->isDebug() && mpUndoView) {
         mpMainLayout->addWidget(mpUndoView);
       }
@@ -6139,6 +6153,7 @@ void ModelWidget::createModelWidgetComponents()
       connect(mpEditor->getPlainTextEdit()->document(), SIGNAL(redoAvailable(bool)), SLOT(handleCanRedoChanged(bool)));
       mpMainLayout->addWidget(mpEditor, 1);
     }
+    setLayout(mpMainLayout);
     mCreateModelWidgetComponents = true;
   }
 }
@@ -6462,16 +6477,18 @@ bool ModelWidget::modelicaEditorTextChanged(LibraryTreeItem **pLibraryTreeItem)
   }
   /* if no errors are found with the Modelica Text then load it in OMC */
   QString className = classNames.at(0);
-  if (pParentLibraryTreeItem != mpLibraryTreeItem) {
-    // only use OMCProxy::loadString merge when LibraryTreeItem::SaveFolderStructure i.e., package.mo
-    if (!pOMCProxy->loadString(stringToLoad, pParentLibraryTreeItem->getFileName(), Helper::utf8, pParentLibraryTreeItem->isSaveFolderStructure())) {
-      return false;
-    }
-  } else {
-    // only use OMCProxy::loadString merge when LibraryTreeItem::SaveFolderStructure i.e., package.mo
-    if (!pOMCProxy->loadString(stringToLoad, mpLibraryTreeItem->getFileName(), Helper::utf8, mpLibraryTreeItem->isSaveFolderStructure())) {
-      return false;
-    }
+  LibraryTreeItem *pLibraryTreeItemForLoadString = pParentLibraryTreeItem != mpLibraryTreeItem ? pParentLibraryTreeItem : mpLibraryTreeItem;
+  /* if the model is not saved in a file and is only loaded in the interactive environment.
+   * Then we need to change the filename here since user might have changed the class name.
+   * So a model M might have been changed to N so we should update its file name to N as well.
+   */
+  QString fileName = pLibraryTreeItemForLoadString->getFileName();
+  if (!pLibraryTreeItemForLoadString->isFilePathValid()) {
+    fileName = className;
+  }
+  // only use OMCProxy::loadString merge when LibraryTreeItem::SaveFolderStructure i.e., package.mo
+  if (!pOMCProxy->loadString(stringToLoad, fileName, Helper::utf8, pLibraryTreeItemForLoadString->isSaveFolderStructure())) {
+    return false;
   }
   /* if user has changed the class contents then refresh it. */
   if (className.compare(mpLibraryTreeItem->getNameStructure()) == 0) {
@@ -7093,6 +7110,44 @@ void ModelWidget::navigateToClass(const QString &className)
 }
 
 /*!
+ * \brief ModelWidget::getParameterDisplayString
+ * Gets the parameter display string and removes the type prefix if exists.
+ * \param parameterName
+ * \return
+ */
+QPair<QString, bool> ModelWidget::getParameterDisplayString(QString parameterName)
+{
+  QPair<QString, bool> displayString("", false);
+  QString typeName;
+
+  if (mpModelInstance) {
+    displayString = mpModelInstance->getVariableValue(StringHandler::makeVariableParts(parameterName));
+    typeName = mpModelInstance->getVariableType(StringHandler::makeVariableParts(parameterName));
+  }
+  if (displayString.second) {
+    StringHandler::removeTypePrefix(displayString.first, typeName);
+  }
+
+  return displayString;
+}
+
+/*!
+ * \brief ModelWidget::getParameterModifierValue
+ * Gets the parameter modifier value.
+ * \param parameterName
+ * \param modifier
+ * \return
+ */
+QPair<QString, bool> ModelWidget::getParameterModifierValue(const QString &parameterName, const QString &modifier)
+{
+  QPair<QString, bool> modifierValue("", false);
+  if (mpModelInstance) {
+    modifierValue = ModelInstance::Element::getModifierValueFromInheritedType(mpModelInstance, QStringList() << parameterName << modifier);
+  }
+  return qMakePair(StringHandler::removeFirstLastQuotes(modifierValue.first), modifierValue.second);
+}
+
+/*!
  * \brief ModelWidget::createUndoStack
  * Creates the undo stack.
  */
@@ -7287,7 +7342,7 @@ void ModelWidget::drawOMSModelConnections()
         Element *pStartConnectorComponent = 0;
         if (startConnectionList.size() > 1) {
           // get start connector component
-          QString startConnectorName = StringHandler::removeFirstWordAfterDot(QString(pConnections[i]->conA));
+          QString startConnectorName = StringHandler::removeFirstWordBeforeDot(QString(pConnections[i]->conA));
           pStartConnectorComponent = getConnectorElement(pStartComponent, startConnectorName);
           if (!pStartConnectorComponent) {
             pMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, GUIMessages::getMessage(GUIMessages::UNABLE_FIND_COMPONENT_IN_CONNECTION)
@@ -7312,7 +7367,7 @@ void ModelWidget::drawOMSModelConnections()
         Element *pEndConnectorComponent = 0;
         if (endConnectionList.size() > 1) {
           // get end connector component
-          QString endConnectorName = StringHandler::removeFirstWordAfterDot(QString(pConnections[i]->conB));
+          QString endConnectorName = StringHandler::removeFirstWordBeforeDot(QString(pConnections[i]->conB));
           pEndConnectorComponent = getConnectorElement(pEndComponent, endConnectorName);
           if (!pEndConnectorComponent) {
             pMessagesWidget->addGUIMessage(MessageItem(MessageItem::Modelica, GUIMessages::getMessage(GUIMessages::UNABLE_FIND_COMPONENT_IN_CONNECTION)
@@ -7800,8 +7855,9 @@ void ModelWidgetContainer::addModelWidget(ModelWidget *pModelWidget, bool checkP
     }
     pModelWidget->getEditor()->getPlainTextEdit()->setFocus(Qt::ActiveWindowFocusReason);
   }
-  pModelWidget->updateViewButtonsBasedOnAccess();
+
   if (!checkPreferedView || !pModelWidget->getLibraryTreeItem()->isModelica()) {
+    pModelWidget->updateViewButtonsBasedOnAccess();
     return;
   }
   // get the preferred view to display

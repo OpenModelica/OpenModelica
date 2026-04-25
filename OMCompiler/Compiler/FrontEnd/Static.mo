@@ -1,27 +1,31 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
@@ -7393,7 +7397,7 @@ protected
   DAE.Type restype,functype;
   DAE.FunctionBuiltin isBuiltin;
   DAE.FunctionParallelism funcParal;
-  Boolean isPure,tuple_,builtin,isImpure;
+  Boolean tuple_,builtin,isImpure;
   DAE.InlineType inlineType;
   Absyn.Path fn_1;
   DAE.Properties prop,prop_1;
@@ -7406,14 +7410,14 @@ protected
   FCore.Cache cache;
   Boolean didInline;
   Boolean b,onlyOneFunction,isFunctionPointer;
+  DAE.Purity purity;
 algorithm
   onlyOneFunction := listLength(typelist) == 1;
   (cache,
    args_1,
    constlist,
    restype,
-   functype as DAE.T_FUNCTION(functionAttributes=DAE.FUNCTION_ATTRIBUTES(isOpenModelicaPure=isPure,
-                                                                         isImpure=isImpure,
+   functype as DAE.T_FUNCTION(functionAttributes=DAE.FUNCTION_ATTRIBUTES(purity=purity,
                                                                          inline=inlineType,
                                                                          isFunctionPointer=isFunctionPointer,
                                                                          functionParallelism=funcParal)),
@@ -7421,6 +7425,7 @@ algorithm
    slots) := elabTypes(inCache, inEnv, args, nargs, typeVars, typelist, onlyOneFunction, true/* Check types*/, impl,pre,info)
    "The constness of a function depends on the inputs. If all inputs are constant the call itself is constant.";
 
+  isImpure := purity == DAE.Purity.IMPURE;
   (fn_1,functype) := deoverloadFuncname(fn, functype, inEnv);
   tuple_ := Types.isTuple(restype);
   (isBuiltin,builtin,fn_1) := isBuiltinFunc(fn_1,functype);
@@ -7429,7 +7434,7 @@ algorithm
   true := isValidWRTParallelScope(fn,builtin,funcParal,inEnv,info);
 
   const := List.fold(constlist, Types.constAnd, DAE.C_CONST());
-  const := if (Flags.isSet(Flags.RML) and not builtin) or (not isPure) then DAE.C_VAR() else const "in RML no function needs to be ceval'ed; this speeds up compilation significantly when bootstrapping";
+  const := if (Flags.isSet(Flags.RML) and not builtin) or purity == DAE.Purity.OM_IMPURE then DAE.C_VAR() else const "in RML no function needs to be ceval'ed; this speeds up compilation significantly when bootstrapping";
   (cache,const) := determineConstSpecialFunc(cache,inEnv,const,fn_1);
   tyconst := elabConsts(restype, const);
   prop := getProperties(restype, tyconst);
@@ -7439,7 +7444,7 @@ algorithm
   (args_2, slots2) := addDefaultArgs(slots, info);
   // DO NOT CHECK IF ALL SLOTS ARE FILLED!
   true := List.fold(slots2, slotAnd, true);
-  callExp := DAE.CALL(fn_1,args_2,DAE.CALL_ATTR(tp,tuple_,builtin,isImpure or (not isPure),isFunctionPointer,inlineType,DAE.NO_TAIL()));
+  callExp := DAE.CALL(fn_1,args_2,DAE.CALL_ATTR(tp,tuple_,builtin,isImpure or purity == DAE.Purity.OM_IMPURE,isFunctionPointer,inlineType,DAE.NO_TAIL()));
   // ExpressionDump.dumpExpWithTitle("function elabCallArgs3: ", callExp);
 
   // create a replacement for input variables -> their binding

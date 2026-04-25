@@ -86,6 +86,7 @@ INCLUDEPATH += . ../ \
   $$OPENMODELICAHOME/../OMParser/3rdParty/antlr4/runtime/Cpp/runtime/src
 
 SOURCES += Util/Helper.cpp \
+  Search/FindUsageWidget.cpp \
   Util/Utilities.cpp \
   Util/StringHandler.cpp \
   Util/OutputPlainTextEdit.cpp \
@@ -197,9 +198,13 @@ SOURCES += Util/Helper.cpp \
   Util/GitHubArtifactDownloader.cpp \
   FlatModelica/Expression.cpp \
   FlatModelica/ExpressionFuncs.cpp \
-  FlatModelica/Parser.cpp
+  FlatModelica/Parser.cpp \
+  MCP/MCPServer.cpp \
+  MCP/MCPToolsDiagram.cpp \
+  MCP/MCPToolsSimulation.cpp
 
 HEADERS  += Util/Helper.h \
+  Search/FindUsageWidget.h \
   Util/Utilities.h \
   Util/StringHandler.h \
   Util/OutputPlainTextEdit.h \
@@ -316,16 +321,14 @@ HEADERS  += Util/Helper.h \
   Util/GitHubArtifactDownloader.h \
   FlatModelica/Expression.h \
   FlatModelica/ExpressionFuncs.h \
-  FlatModelica/Parser.h
+  FlatModelica/Parser.h \
+  MCP/MCPServer.h \
+  MCP/MCPServerPrivate.h
 
 CONFIG(osg) {
 
-  greaterThan(QT_MAJOR_VERSION, 4):greaterThan(QT_MINOR_VERSION, 3) { # if Qt 5.4 or greater
-    SOURCES += Animation/OpenGLWidget.cpp
-  } else {
-    SOURCES += Animation/GLWidget.cpp
-  }
-  SOURCES += Animation/AbstractAnimationWindow.cpp \
+  SOURCES += Animation/OpenGLWidget.cpp \
+    Animation/AbstractAnimationWindow.cpp \
     Animation/ViewerWidget.cpp \
     Animation/AnimationWindow.cpp \
     Animation/ExtraShapes.cpp \
@@ -339,12 +342,8 @@ CONFIG(osg) {
     Animation/Shape.cpp \
     Animation/Vector.cpp
 
-  greaterThan(QT_MAJOR_VERSION, 4):greaterThan(QT_MINOR_VERSION, 3) { # if Qt 5.4 or greater
-    HEADERS += Animation/OpenGLWidget.h
-  } else {
-    HEADERS += Animation/GLWidget.h
-  }
-  HEADERS += Animation/AbstractAnimationWindow.h \
+  HEADERS += Animation/OpenGLWidget.h \
+    Animation/AbstractAnimationWindow.h \
     Animation/ViewerWidget.h \
     Animation/AnimationWindow.h \
     Animation/AnimationUtil.h \

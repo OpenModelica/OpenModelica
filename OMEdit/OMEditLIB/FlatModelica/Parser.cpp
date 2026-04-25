@@ -138,6 +138,27 @@ void FlatModelica::Parser::getShortClassTypeFromElementRedeclaration(const QStri
 }
 
 /*!
+ * \brief FlatModelica::Parser::getModifierFromElementModification
+ * \param modification
+ * \param modifier
+ * Parses code like,
+ * replRecord1(realParam1=1, realParam2=4)
+ */
+void FlatModelica::Parser::getModifierFromElementModification(const QString &modification, QString &modifier)
+{
+  antlr4::ANTLRInputStream input(modification.toStdString());
+  openmodelica::modelicaLexer lexer(&input);
+  antlr4::CommonTokenStream tokens(&lexer);
+  openmodelica::modelicaParser parser(&tokens);
+  openmodelica::modelicaParser::Element_modificationContext *pElement_modificationContext = parser.element_modification();
+
+  if (pElement_modificationContext && pElement_modificationContext->modification() && pElement_modificationContext->modification()->class_modification()) {
+    modifier = getModificationFromStartAndStopInterval(pElement_modificationContext->modification()->class_modification()->start,
+                                                       pElement_modificationContext->modification()->class_modification()->stop);
+  }
+}
+
+/*!
  * \brief FlatModelica::Parser::getModificationFromStartAndStopInterval
  * Calling getText on non-terminals removes the spaces.
  * So we need to get the text from the interval.

@@ -1,11 +1,12 @@
 // status: correct
 // cflags: -d=-newInst
+// teardown_command: rm DoublePendulum.mof
 
 loadModel(Modelica, {"3.2.3"});getErrorString();
 setCommandLineOptions("-d=newInst -f -m");
-writeFile("DoublePendulum.mo", OpenModelica.Scripting.instantiateModel(Modelica.Mechanics.MultiBody.Examples.Elementary.DoublePendulum));getErrorString();
+writeFile("DoublePendulum.mof", OpenModelica.Scripting.instantiateModel(Modelica.Mechanics.MultiBody.Examples.Elementary.DoublePendulum));getErrorString();
 clear();
-loadFile("DoublePendulum.mo");getErrorString();
+loadFile("DoublePendulum.mof");getErrorString();
 setCommandLineOptions("--std=experimental");
 translateModel('DoublePendulum'.'DoublePendulum', fileNamePrefix="DP");getErrorString();
 // Result:

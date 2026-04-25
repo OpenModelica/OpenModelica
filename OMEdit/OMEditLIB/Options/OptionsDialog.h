@@ -214,6 +214,7 @@ private:
   bool mParmodauto;
   bool mOldInstantiation;
   bool mEnableFMUImport;
+  QString mProfiling;
   QString mAdditionalTranslationFlags;
   MessagesPage *mpMessagesPage;
   NotificationsPage *mpNotificationsPage;

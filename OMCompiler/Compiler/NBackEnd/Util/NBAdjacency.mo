@@ -1,33 +1,38 @@
 /*
-* This file is part of OpenModelica.
-*
-* Copyright (c) 1998-2020, Open Source Modelica Consortium (OSMC),
-* c/o Linköpings universitet, Department of Computer and Information Science,
-* SE-58183 Linköping, Sweden.
-*
-* All rights reserved.
-*
-* THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
-* THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
-* ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
-* RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
-* ACCORDING TO RECIPIENTS CHOICE.
-*
-* The OpenModelica software and the Open Source Modelica
-* Consortium (OSMC) Public License (OSMC-PL) are obtained
-* from OSMC, either from the above address,
-* from the URLs: http://www.ida.liu.se/projects/OpenModelica or
-* http://www.openmodelica.org, and in the OpenModelica distribution.
-* GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
-*
-* This program is distributed WITHOUT ANY WARRANTY; without
-* even the implied warranty of  MERCHANTABILITY or FITNESS
-* FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
-* IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
-*
-* See the full OSMC Public License conditions for more details.
-*
-*/
+ * This file is part of OpenModelica.
+ *
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
+ * c/o Linköpings universitet, Department of Computer and Information Science,
+ * SE-58183 Linköping, Sweden.
+ *
+ * All rights reserved.
+ *
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
+ *
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
+ *
+ * This program is distributed WITHOUT ANY WARRANTY; without
+ * even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
+ *
+ * See the full OSMC Public License conditions for more details.
+ *
+ */
+
 encapsulated package NBAdjacency
 "file:        NBAdjacency.mo
  package:     NBAdjacency
@@ -59,6 +64,7 @@ protected
   import NBDifferentiate.{DifferentiationArguments, DifferentiationType};
   import BEquation = NBEquation;
   import NBEquation.{Equation, EquationAttributes, EquationPointers, Iterator, IfEquationBody, WhenEquationBody, WhenStatement};
+  import Partition = NBPartition;
   import Solve = NBSolve;
   import BVariable = NBVariable;
   import NBVariable.{VariablePointers, VarData};
@@ -381,7 +387,7 @@ public
 
     record FULL "contains all information needed. create specific final matrices from this"
       array<ComponentRef> equation_names;
-      array<UnorderedSet<ComponentRef>> occurences;
+      array<UnorderedSet<ComponentRef>> occurrences;
       array<UnorderedMap<ComponentRef, Dependency>> dependencies;
       array<UnorderedMap<ComponentRef, Solvability>> solvabilities;
       array<UnorderedSet<ComponentRef>> repetitions;
@@ -406,11 +412,12 @@ public
     function createFull
       input VariablePointers vars;
       input EquationPointers eqns;
+      input Partition.Kind kind;
       output Matrix adj;
     protected
       Integer index, size = EquationPointers.size(eqns);
       array<ComponentRef> equation_names;
-      array<UnorderedSet<ComponentRef>> occurences;
+      array<UnorderedSet<ComponentRef>> occurrences;
       array<UnorderedMap<ComponentRef, Dependency>> dependencies;
       array<UnorderedMap<ComponentRef, Solvability>> solvabilities;
       array<UnorderedSet<ComponentRef>> repetitions;
@@ -423,7 +430,7 @@ public
       if ExpandableArray.getNumberOfElements(vars.varArr) > 0 or ExpandableArray.getNumberOfElements(eqns.eqArr) > 0 then
         // create empty arrays for the structures
         equation_names  := arrayCreate(size, ComponentRef.EMPTY());
-        occurences      := arrayCreate(size, UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual));
+        occurrences      := arrayCreate(size, UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual));
         dependencies    := arrayCreate(size, UnorderedMap.new<Dependency>(ComponentRef.hash, ComponentRef.isEqual));
         solvabilities   := arrayCreate(size, UnorderedMap.new<Solvability>(ComponentRef.hash, ComponentRef.isEqual));
         repetitions     := arrayCreate(size, UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual));
@@ -433,16 +440,20 @@ public
           dep_map := UnorderedMap.new<Dependency>(ComponentRef.hash, ComponentRef.isEqual);
           sol_map := UnorderedMap.new<Solvability>(ComponentRef.hash, ComponentRef.isEqual);
           rep_set := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
-          occ_set := collectDependenciesEquation(Pointer.access(eqn_ptr), vars.map, dep_map, sol_map, rep_set);
+
+          // collect the dependencies and add start variable dependencies for the initial system
+          occ_set := collectDependenciesEquation(Pointer.access(eqn_ptr), kind, vars.map, dep_map, sol_map, rep_set);
+          addInitialStartOccurrences(occ_set, dep_map, sol_map, rep_set, kind);
+
           equation_names[index] := Equation.getEqnName(eqn_ptr);
-          occurences[index]     := occ_set;
+          occurrences[index]     := occ_set;
           dependencies[index]   := dep_map;
           solvabilities[index]  := sol_map;
           repetitions[index]    := rep_set;
         end for;
         // create the index mapping and the matrix
         mapping := Mapping.create(eqns, vars);
-        adj := FULL(equation_names, occurences, dependencies, solvabilities, repetitions, mapping);
+        adj := FULL(equation_names, occurrences, dependencies, solvabilities, repetitions, mapping);
       else
         adj := EMPTY(MatrixStrictness.FULL);
       end if;
@@ -532,7 +543,7 @@ public
                   dep_map := UnorderedMap.new<Dependency>(ComponentRef.hash, ComponentRef.isEqual);
                   rep_set := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
                   for tpl in local_deps loop
-                    // this might lead to duplicate occurences. can and should not be optimized here
+                    // this might lead to duplicate occurrences. can and should not be optimized here
                     // as dependency information might not be combinable. optimize afterwards!
                     (inner_deps, dep, repeated) := tpl;
                     for dep_cref in inner_deps loop
@@ -623,7 +634,7 @@ public
               if max == min then
                 result := adj;
               elseif max > min then
-                (occ, dep, sol, rep) := (full.occurences, full.dependencies, full.solvabilities, full.repetitions);
+                (occ, dep, sol, rep) := (full.occurrences, full.dependencies, full.solvabilities, full.repetitions);
                 for index in UnorderedMap.valueList(eqns_map) loop
                   filtered := Solvability.filter(UnorderedSet.toList(occ[index]), sol[index], vars_map, min, max);
                   // upgrade the row and all meta data
@@ -660,7 +671,7 @@ public
       end match;
 
       if Flags.isSet(Flags.BLT_MATRIX_DUMP) then
-        print(toString(adj, "Final") + "\n");
+        print(toString(adj, "") + "\n");
       end if;
     end upgrade;
 
@@ -673,6 +684,7 @@ public
       input UnorderedMap<ComponentRef, Integer> eo, en    "old and new equation index map";
       input VariablePointers vars                         "all variables, containing new and old";
       input EquationPointers eqns                         "all equations, containing new and old";
+      input Partition.Kind kind;
     protected
       Integer size_vo, size_vn, size_eo, size_en; //only for debugging
     algorithm
@@ -687,7 +699,7 @@ public
       // check if full has to be expanded
       full := match full
         case FULL() guard(EquationPointers.size(eqns) > arrayLength(full.equation_names))
-          then expandFull(full, vo, vn, eo, en, vars, eqns);
+          then expandFull(full, vo, vn, eo, en, vars, eqns, kind);
         else full;
       end match;
 
@@ -702,7 +714,7 @@ public
         case (EMPTY(), FULL()) algorithm
           new := initialize(full.mapping, adj.st);
           if not isEmpty(new) then
-            new := expand(new, full, vo, vn, eo, en, vars, eqns);
+            new := expand(new, full, vo, vn, eo, en, vars, eqns, kind);
           end if;
         then new;
 
@@ -722,7 +734,7 @@ public
           // I. update all old equations with the new variables
           if not UnorderedMap.isEmpty(vn) then
             for e in UnorderedMap.valueList(eo) loop
-              filtered := Solvability.filter(UnorderedSet.toList(full.occurences[e]), full.solvabilities[e], vn, 0, rank);
+              filtered := Solvability.filter(UnorderedSet.toList(full.occurrences[e]), full.solvabilities[e], vn, 0, rank);
               upgradeRow(EquationPointers.getEqnAt(eqns, e), e, filtered, full.dependencies[e], full.repetitions[e], vn, vars.map, adj.m, adj.mapping, adj.modes);
             end for;
           end if;
@@ -730,7 +742,7 @@ public
           // II. update new equations with all variables
           if not UnorderedMap.isEmpty(en) then
             for e in UnorderedMap.valueList(en) loop
-              filtered := Solvability.filter(UnorderedSet.toList(full.occurences[e]), full.solvabilities[e], v, 0, rank);
+              filtered := Solvability.filter(UnorderedSet.toList(full.occurrences[e]), full.solvabilities[e], v, 0, rank);
               upgradeRow(EquationPointers.getEqnAt(eqns, e), e, filtered, full.dependencies[e], full.repetitions[e], v, vars.map, adj.m, adj.mapping, adj.modes);
             end for;
           end if;
@@ -762,7 +774,7 @@ public
       end match;
 
       if Flags.isSet(Flags.BLT_MATRIX_DUMP) then
-        print(toString(adj, "Expanded Final") + "\n");
+        print(toString(adj, "Expanded ") + "\n");
       end if;
     end expand;
 
@@ -773,6 +785,7 @@ public
       input UnorderedMap<ComponentRef, Integer> eo, en    "old and new equation index map";
       input VariablePointers vars                         "all variables, containing new and old";
       input EquationPointers eqns                         "all equations, containing new and old";
+      input Partition.Kind kind;
     algorithm
       full := match full
         local
@@ -784,7 +797,7 @@ public
         case FULL() algorithm
           // 0. enlargen the arrays
           full := FULL(Array.expandToSize(size, full.equation_names, ComponentRef.EMPTY()),
-            Array.expandToSize(size, full.occurences, UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual)),
+            Array.expandToSize(size, full.occurrences, UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual)),
             Array.expandToSize(size, full.dependencies, UnorderedMap.new<Dependency>(ComponentRef.hash, ComponentRef.isEqual)),
             Array.expandToSize(size, full.solvabilities, UnorderedMap.new<Solvability>(ComponentRef.hash, ComponentRef.isEqual)),
             Array.expandToSize(size, full.repetitions, UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual)),
@@ -795,8 +808,8 @@ public
             for e in UnorderedMap.valueList(eo) loop
               eqn_ptr := EquationPointers.getEqnAt(eqns, e);
               index   := UnorderedMap.getSafe(Equation.getEqnName(eqn_ptr), eqns.map, sourceInfo());
-              occ_set := collectDependenciesEquation(Pointer.access(eqn_ptr), vn, full.dependencies[index], full.solvabilities[index], full.repetitions[index]);
-              full.occurences[index] := UnorderedSet.union(full.occurences[index], occ_set);
+              occ_set := collectDependenciesEquation(Pointer.access(eqn_ptr), kind, vn, full.dependencies[index], full.solvabilities[index], full.repetitions[index]);
+              full.occurrences[index] := UnorderedSet.union(full.occurrences[index], occ_set);
             end for;
           end if;
 
@@ -805,9 +818,9 @@ public
             for e in UnorderedMap.valueList(en) loop
               eqn_ptr := EquationPointers.getEqnAt(eqns, e);
               index   := UnorderedMap.getSafe(Equation.getEqnName(eqn_ptr), eqns.map, sourceInfo());
-              occ_set := collectDependenciesEquation(Pointer.access(eqn_ptr), vars.map, full.dependencies[index], full.solvabilities[index], full.repetitions[index]);
+              occ_set := collectDependenciesEquation(Pointer.access(eqn_ptr), kind, vars.map, full.dependencies[index], full.solvabilities[index], full.repetitions[index]);
               full.equation_names[index] := Equation.getEqnName(eqn_ptr);
-              full.occurences[index] := occ_set;
+              full.occurrences[index] := occ_set;
             end for;
           end if;
         then full;
@@ -852,7 +865,7 @@ public
             if not (eqnIsDiscrete or eqnIsIf) then
               residual := Equation.getResidualExp(Pointer.access(eqn_ptr));
             end if;
-            for var in UnorderedSet.toArray(full.occurences[eqn_idx]) loop
+            for var in UnorderedSet.toArray(full.occurrences[eqn_idx]) loop
               // only do something if var is to be refined
               if UnorderedMap.contains(var, v) then
                 // only do something if it is not implicit or unsolvable)
@@ -915,7 +928,7 @@ public
       Integer index_old, index_new, size = EquationPointers.size(eqns);
       ComponentRef name;
       array<ComponentRef> equation_names;
-      array<UnorderedSet<ComponentRef>> occurences;
+      array<UnorderedSet<ComponentRef>> occurrences;
       array<UnorderedMap<ComponentRef, Dependency>> dependencies;
       array<UnorderedMap<ComponentRef, Solvability>> solvabilities;
       array<UnorderedSet<ComponentRef>> repetitions;
@@ -933,7 +946,7 @@ public
           // create empty arrays for the structures
           m               := arrayCreate(arrayLength(mapping.eqn_StA), {});
           equation_names  := arrayCreate(size, ComponentRef.EMPTY());
-          occurences      := arrayCreate(size, UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual));
+          occurrences      := arrayCreate(size, UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual));
           dependencies    := arrayCreate(size, UnorderedMap.new<Dependency>(ComponentRef.hash, ComponentRef.isEqual));
           solvabilities   := arrayCreate(size, UnorderedMap.new<Solvability>(ComponentRef.hash, ComponentRef.isEqual));
           repetitions     := arrayCreate(size, UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual));
@@ -956,14 +969,14 @@ public
             end if;
             // create the structures for full matrix
             equation_names[index_new] := name;
-            occurences[index_new]     := full.occurences[index_old];
+            occurrences[index_new]     := full.occurrences[index_old];
             dependencies[index_new]   := full.dependencies[index_old];
             solvabilities[index_new]  := full.solvabilities[index_old];
             repetitions[index_new]    := full.repetitions[index_old];
           end for;
 
           new_adj  := FINAL(m, transposeScalar(m, VariablePointers.scalarSize(vars, true)), mapping, adj.modes, adj.st);
-          new_full := FULL(equation_names, occurences, dependencies, solvabilities, repetitions, mapping);
+          new_full := FULL(equation_names, occurrences, dependencies, solvabilities, repetitions, mapping);
         then (new_adj, new_full);
 
         else algorithm
@@ -1002,7 +1015,7 @@ public
               + arrayGet(complex_sizes, i) + " " + StringUtil.repeat(" ", length0 - stringLength(arrayGet(complex_sizes, i))) + " | "
               + arrayGet(types_str, i) + " " + StringUtil.repeat(".", length1 - stringLength(arrayGet(types_str, i)))
               + arrayGet(names, i) + " " + StringUtil.repeat(".", length2 - stringLength(arrayGet(names, i)))
-              + " " + List.toString(UnorderedSet.toList(adj.occurences[i]), function fullString(dep_map = adj.dependencies[i],
+              + " " + List.toString(UnorderedSet.toList(adj.occurrences[i]), function fullString(dep_map = adj.dependencies[i],
               sol_map = adj.solvabilities[i], rep_set = adj.repetitions[i])) + "\n";
           end for;
         then str;
@@ -1066,7 +1079,7 @@ public
           types := listArray(list(intString(Type.sizeOf(ComponentRef.getSubscriptedType(name), true)) for name in adj.equation_names));
           names := listArray(list(ComponentRef.toString(name) for name in adj.equation_names));
           for i in arrayLength(names):-1:1 loop
-            (XX, II, NM, NP, LV, LP, LC, QQ) := Solvability.categorize(UnorderedSet.toList(adj.occurences[i]), adj.solvabilities[i]);
+            (XX, II, NM, NP, LV, LP, LC, QQ) := Solvability.categorize(UnorderedSet.toList(adj.occurrences[i]), adj.solvabilities[i]);
             xx := List.toString(XX, ComponentRef.toString, "XX ", "{", ",", "}", false) :: xx;
             ii := List.toString(II, ComponentRef.toString, "II ", "{", ",", "}", false) :: ii;
             nm := List.toString(NM, ComponentRef.toString, "N- ", "{", ",", "}", false) :: nm;
@@ -1127,7 +1140,7 @@ public
           types := listArray(list(intString(Type.sizeOf(ComponentRef.getSubscriptedType(name), true)) for name in adj.equation_names));
           names := listArray(list(ComponentRef.toString(name) for name in adj.equation_names));
           for i in arrayLength(names):-1:1 loop
-            (F, R, E, A, S, K) := Dependency.categorize(UnorderedSet.toList(adj.occurences[i]), adj.dependencies[i], adj.repetitions[i]);
+            (F, R, E, A, S, K) := Dependency.categorize(UnorderedSet.toList(adj.occurrences[i]), adj.dependencies[i], adj.repetitions[i]);
             f := List.toString(F, ComponentRef.toString, "[!]", "{", ",", "}", false) :: f;
             r := List.toString(R, ComponentRef.toString, "[-]", "{", ",", "}", false) :: r;
             e := List.toString(E, ComponentRef.toString, "[+]", "{", ",", "}", false) :: e;
@@ -1607,7 +1620,7 @@ public
     end addListFull;
 
     function isReductionKind
-      input Dependency.Kind kind;
+      input Kind kind;
       output Boolean b = kind == Kind.REDUCTION;
     end isReductionKind;
 
@@ -1800,33 +1813,34 @@ public
     "collects all relevant component references from an equation
     furthermore it collects additional data about dependency and solvability."
     input Equation eqn;
+    input Partition.Kind kind;
     input UnorderedMap<ComponentRef, Integer> map "unordered map to check for relevance";
     input UnorderedMap<ComponentRef, Dependency> dep_map;
     input UnorderedMap<ComponentRef, Solvability> sol_map;
     input UnorderedSet<ComponentRef> rep_set;
-    output UnorderedSet<ComponentRef> occurences;
+    output UnorderedSet<ComponentRef> occurrences;
   protected
     list<ComponentRef> inputs, outputs;
   algorithm
-    occurences := match eqn
+    occurrences := match eqn
       local
         UnorderedSet<ComponentRef> occ1, occ2;
         Equation body;
         Slice.filterCref filter;
 
       case Equation.SCALAR_EQUATION() algorithm
-        occ1 := collectDependencies(eqn.lhs, 0, map, dep_map, sol_map, rep_set);
-        occ2 := collectDependencies(eqn.rhs, 0, map, dep_map, sol_map, rep_set);
+        occ1 := collectDependencies(eqn.lhs, 0, kind, map, dep_map, sol_map, rep_set);
+        occ2 := collectDependencies(eqn.rhs, 0, kind, map, dep_map, sol_map, rep_set);
       then UnorderedSet.union(occ1, occ2);
 
       case Equation.ARRAY_EQUATION() algorithm
-        occ1 := collectDependencies(eqn.lhs, 0, map, dep_map, sol_map, rep_set);
-        occ2 := collectDependencies(eqn.rhs, 0, map, dep_map, sol_map, rep_set);
+        occ1 := collectDependencies(eqn.lhs, 0, kind, map, dep_map, sol_map, rep_set);
+        occ2 := collectDependencies(eqn.rhs, 0, kind, map, dep_map, sol_map, rep_set);
       then UnorderedSet.union(occ1, occ2);
 
       case Equation.RECORD_EQUATION() algorithm
-        occ1 := collectDependencies(eqn.lhs, 0, map, dep_map, sol_map, rep_set);
-        occ2 := collectDependencies(eqn.rhs, 0, map, dep_map, sol_map, rep_set);
+        occ1 := collectDependencies(eqn.lhs, 0, kind, map, dep_map, sol_map, rep_set);
+        occ2 := collectDependencies(eqn.rhs, 0, kind, map, dep_map, sol_map, rep_set);
       then UnorderedSet.union(occ1, occ2);
 
       case Equation.ALGORITHM() algorithm
@@ -1845,7 +1859,7 @@ public
 
       case Equation.FOR_EQUATION(body = {body}) algorithm
         // gather solvables from body
-        occ1 := collectDependenciesEquation(body, map, dep_map, sol_map, rep_set);
+        occ1 := collectDependenciesEquation(body, kind, map, dep_map, sol_map, rep_set);
         // gather unsolvables from iterator
         occ2 := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
         filter := function Slice.getDependentCref(map = map, pseudo = true);
@@ -1856,10 +1870,10 @@ public
       then UnorderedSet.union(occ1, occ2);
 
       case Equation.IF_EQUATION()
-      then collectDependenciesIf(eqn.body, map, dep_map, sol_map, rep_set);
+      then collectDependenciesIf(eqn.body, kind, map, dep_map, sol_map, rep_set);
 
       case Equation.WHEN_EQUATION()
-      then collectDependenciesWhen(eqn.body, map, dep_map, sol_map, rep_set);
+      then collectDependenciesWhen(eqn.body, kind, map, dep_map, sol_map, rep_set);
 
       else UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
     end match;
@@ -1870,6 +1884,7 @@ public
     furthermore it collects additional data about dependency and solvability."
     input Expression exp;
     input Integer depth;
+    input Partition.Kind kind;
     input UnorderedMap<ComponentRef, Integer> map "unknowns map to check for relevance";
     input UnorderedMap<ComponentRef, Dependency> dep_map;
     input UnorderedMap<ComponentRef, Solvability> sol_map;
@@ -1893,7 +1908,7 @@ public
       // add skips for arrays
       case Expression.ARRAY(literal = false) algorithm
         for i in 1:arrayLength(exp.elements) loop
-          set1 := collectDependencies(exp.elements[i], depth + 1, map, dep_map, sol_map, rep_set);
+          set1 := collectDependencies(exp.elements[i], depth + 1, kind, map, dep_map, sol_map, rep_set);
           Dependency.skipList(UnorderedSet.toList(set1), depth + 1, i, dep_map);
           sets := set1 :: sets;
         end for;
@@ -1903,7 +1918,7 @@ public
       case Expression.TUPLE() algorithm
         ind := 1;
         for elem in exp.elements loop
-          set1 := collectDependencies(elem, depth + 1, map, dep_map, sol_map, rep_set);
+          set1 := collectDependencies(elem, depth + 1, kind, map, dep_map, sol_map, rep_set);
           Dependency.skipList(UnorderedSet.toList(set1), depth + 1, ind, dep_map);
           sets := set1 :: sets;
           ind := ind + 1;
@@ -1913,18 +1928,18 @@ public
 
       // reduce the dependency and remove skips for these
       case Expression.SUBSCRIPTED_EXP() algorithm
-        set := collectDependencies(exp.exp, depth, map, dep_map, sol_map, rep_set);
+        set := collectDependencies(exp.exp, depth, kind, map, dep_map, sol_map, rep_set);
         Dependency.updateList(UnorderedSet.toList(set), listLength(exp.subscripts), true, dep_map);
         Dependency.removeSkipsList(UnorderedSet.toList(set), dep_map);
       then set;
 
       // should not change anything
-      case Expression.TUPLE_ELEMENT()   then collectDependencies(exp.tupleExp, depth, map, dep_map, sol_map, rep_set);
-      case Expression.RECORD_ELEMENT()  then collectDependencies(exp.recordExp, depth, map, dep_map, sol_map, rep_set);
+      case Expression.TUPLE_ELEMENT()   then collectDependencies(exp.tupleExp, depth, kind, map, dep_map, sol_map, rep_set);
+      case Expression.RECORD_ELEMENT()  then collectDependencies(exp.recordExp, depth, kind, map, dep_map, sol_map, rep_set);
 
       case Expression.BINARY() algorithm
-        set1  := collectDependencies(exp.exp1, depth, map, dep_map, sol_map, rep_set);
-        set2  := collectDependencies(exp.exp2, depth, map, dep_map, sol_map, rep_set);
+        set2  := collectDependencies(exp.exp2, depth, kind, map, dep_map, sol_map, rep_set);
+        set1  := collectDependencies(exp.exp1, depth, kind, map, dep_map, sol_map, rep_set);
         // add repetitions if needed (.+, .*)
         (repeatLeft, repeatRight) := Operator.repetition(exp.operator);
         if repeatLeft then addRepetitions(set1, rep_set); end if;
@@ -1944,14 +1959,14 @@ public
         repeatLeft := repeatLeft or repeatRight;
         // traverse arguments
         for arg in exp.arguments loop
-          set1 := collectDependencies(arg, depth, map, dep_map, sol_map, rep_set);
+          set1 := collectDependencies(arg, depth, kind, map, dep_map, sol_map, rep_set);
           // add repetitions if needed
           addRepetitionsCond(set1, arg, repeatLeft, rep_set);
           sets := set1 :: sets;
         end for;
         // traverse inverse arguments
         for arg in exp.inv_arguments loop
-          set2 := collectDependencies(arg, depth, map, dep_map, sol_map, rep_set);
+          set2 := collectDependencies(arg, depth, kind, map, dep_map, sol_map, rep_set);
           // add repetitions if needed
           addRepetitionsCond(set2, arg, repeatLeft, rep_set);
           sets := set2 :: sets;
@@ -1961,33 +1976,33 @@ public
 
       // cannot solve from lbinary
       case Expression.LBINARY() algorithm
-        set1  := collectDependencies(exp.exp1, depth, map, dep_map, sol_map, rep_set);
-        set2  := collectDependencies(exp.exp2, depth, map, dep_map, sol_map, rep_set);
+        set1  := collectDependencies(exp.exp1, depth, kind, map, dep_map, sol_map, rep_set);
+        set2  := collectDependencies(exp.exp2, depth, kind, map, dep_map, sol_map, rep_set);
         set   := UnorderedSet.union(set1, set2);
         Solvability.updateList(UnorderedSet.toList(set), Solvability.UNSOLVABLE(), sol_map);
       then set;
 
       // cannot solve from relation
       case Expression.RELATION() algorithm
-        set1  := collectDependencies(exp.exp1, depth, map, dep_map, sol_map, rep_set);
-        set2  := collectDependencies(exp.exp2, depth, map, dep_map, sol_map, rep_set);
+        set1  := collectDependencies(exp.exp1, depth, kind, map, dep_map, sol_map, rep_set);
+        set2  := collectDependencies(exp.exp2, depth, kind, map, dep_map, sol_map, rep_set);
         set   := UnorderedSet.union(set1, set2);
         Solvability.updateList(UnorderedSet.toList(set), Solvability.UNSOLVABLE(), sol_map);
       then set;
 
       // these don't really change anything, just pass on the argument
-      case Expression.CAST()    then collectDependencies(exp.exp, depth, map, dep_map, sol_map, rep_set);
-      case Expression.BOX()     then collectDependencies(exp.exp, depth, map, dep_map, sol_map, rep_set);
-      case Expression.UNBOX()   then collectDependencies(exp.exp, depth, map, dep_map, sol_map, rep_set);
-      case Expression.UNARY()   then collectDependencies(exp.exp, depth, map, dep_map, sol_map, rep_set);
-      case Expression.LUNARY()  then collectDependencies(exp.exp, depth, map, dep_map, sol_map, rep_set);
-      case Expression.MUTABLE() then collectDependencies(Mutable.access(exp.exp), depth, map, dep_map, sol_map, rep_set);
+      case Expression.CAST()    then collectDependencies(exp.exp, depth, kind, map, dep_map, sol_map, rep_set);
+      case Expression.BOX()     then collectDependencies(exp.exp, depth, kind, map, dep_map, sol_map, rep_set);
+      case Expression.UNBOX()   then collectDependencies(exp.exp, depth, kind, map, dep_map, sol_map, rep_set);
+      case Expression.UNARY()   then collectDependencies(exp.exp, depth, kind, map, dep_map, sol_map, rep_set);
+      case Expression.LUNARY()  then collectDependencies(exp.exp, depth, kind, map, dep_map, sol_map, rep_set);
+      case Expression.MUTABLE() then collectDependencies(Mutable.access(exp.exp), depth, kind, map, dep_map, sol_map, rep_set);
 
       // in the size() operator nothing is solvable
       case Expression.SIZE() algorithm
-        set  := collectDependencies(exp.exp, depth, map, dep_map, sol_map, rep_set);
+        set  := collectDependencies(exp.exp, depth, kind, map, dep_map, sol_map, rep_set);
         if Util.isSome(exp.dimIndex) then
-          set2  := collectDependencies(Util.getOption(exp.dimIndex), depth, map, dep_map, sol_map, rep_set);
+          set2  := collectDependencies(Util.getOption(exp.dimIndex), depth, kind, map, dep_map, sol_map, rep_set);
           set := UnorderedSet.union(set, set2);
         end if;
         Solvability.updateList(UnorderedSet.toList(set), Solvability.UNSOLVABLE(), sol_map);
@@ -1995,16 +2010,27 @@ public
 
       // variables in conditions are unsolvable and variables not occuring in both branches are implicit
       case Expression.IF() algorithm
-        set1  := collectDependencies(exp.trueBranch, depth, map, dep_map, sol_map, rep_set);
-        set2  := collectDependencies(exp.falseBranch, depth, map, dep_map, sol_map, rep_set);
-        // variables not occuring in both branches will be tagged implicit
-        diff  := UnorderedSet.sym_difference(set1, set2);
-        Solvability.updateList(UnorderedSet.toList(diff), Solvability.IMPLICIT(), sol_map);
-        // variables in conditions are unsolvable, their skips have to be removed and they can be repeated
-        set   := collectDependencies(exp.condition, depth, map, dep_map, sol_map, rep_set);
-        addRepetitions(set, rep_set);
-        updateConditionCrefs(UnorderedSet.toList(set), dep_map, sol_map);
-      then UnorderedSet.union_list({set, set1, set2}, ComponentRef.hash, ComponentRef.isEqual);
+        if isInitialException(exp.condition) then
+          // branches only in the initial system are ignored
+          // only look at the falseBranch
+          set   := collectDependencies(exp.falseBranch, depth, kind, map, dep_map, sol_map, rep_set);
+        else
+          set1  := collectDependencies(exp.trueBranch, depth, kind, map, dep_map, sol_map, rep_set);
+          set2  := collectDependencies(exp.falseBranch, depth, kind, map, dep_map, sol_map, rep_set);
+          // variables not occuring in both branches will be tagged implicit
+          diff  := UnorderedSet.sym_difference(set1, set2);
+          Solvability.updateList(UnorderedSet.toList(diff), Solvability.IMPLICIT(), sol_map);
+          // variables in conditions are unsolvable, their skips have to be removed and they can be repeated
+          set   := collectDependencies(exp.condition, depth, kind, map, dep_map, sol_map, rep_set);
+          addRepetitions(set, rep_set);
+          updateConditionCrefs(UnorderedSet.toList(set), dep_map, sol_map);
+          set := UnorderedSet.union_list({set, set1, set2}, ComponentRef.hash, ComponentRef.isEqual);
+        end if;
+      then set;
+
+      // for homotopy outside initial system only look at `actual`
+      case Expression.CALL() guard (not Partition.kindIsInitial(kind) and Call.isNamed(exp.call, "homotopy"))
+      then collectDependencies(listHead(Call.arguments(exp.call)), depth, kind, map, dep_map, sol_map, rep_set);
 
       // for array constructors replace all iterators (temporarily)
       case Expression.CALL(call = call as Call.TYPED_ARRAY_CONSTRUCTOR(exp = call_exp)) algorithm
@@ -2012,7 +2038,7 @@ public
           call_exp := Expression.replaceIterator(call_exp, Util.tuple21(iter), Util.tuple22(iter));
         end for;
         // if these are not simplified before this step, they can only be solved implicitely
-        set := collectDependencies(call_exp, depth, map, dep_map, sol_map, rep_set);
+        set := collectDependencies(call_exp, depth, kind, map, dep_map, sol_map, rep_set);
         Solvability.updateList(UnorderedSet.toList(set), Solvability.IMPLICIT(), sol_map);
       then set;
 
@@ -2021,7 +2047,7 @@ public
         for iter in call.iters loop
           call_exp := Expression.replaceIterator(call_exp, Util.tuple21(iter), Util.tuple22(iter));
         end for;
-        set := collectDependencies(call_exp, depth, map, dep_map, sol_map, rep_set);
+        set := collectDependencies(call_exp, depth, kind, map, dep_map, sol_map, rep_set);
         Dependency.updateList(UnorderedSet.toList(set), -1, false, dep_map);
       then set;
 
@@ -2031,7 +2057,7 @@ public
         isTuple := Type.isTuple(call.ty);
         new_depth := if isTuple then depth + 1 else depth;
         for arg in call.arguments loop
-          sets := collectDependencies(arg, new_depth, map, dep_map, sol_map, rep_set) :: sets;
+          sets := collectDependencies(arg, new_depth, kind, map, dep_map, sol_map, rep_set) :: sets;
         end for;
         set := UnorderedSet.union_list(sets, ComponentRef.hash, ComponentRef.isEqual);
         Dependency.updateList(UnorderedSet.toList(set), -1, false, dep_map);
@@ -2046,7 +2072,7 @@ public
       // for not inlined record constructors set the dependency to full reduction (+ repetition) and solvability to implicit
       case Expression.RECORD() algorithm
         for arg in exp.elements loop
-          sets := collectDependencies(arg, depth, map, dep_map, sol_map, rep_set) :: sets;
+          sets := collectDependencies(arg, depth, kind, map, dep_map, sol_map, rep_set) :: sets;
         end for;
         set := UnorderedSet.union_list(sets, ComponentRef.hash, ComponentRef.isEqual);
         Dependency.updateList(UnorderedSet.toList(set), -1, false, dep_map);
@@ -2056,11 +2082,11 @@ public
 
       // nothing is solvable from ranges
       case Expression.RANGE() algorithm
-        sets := collectDependencies(exp.start, depth, map, dep_map, sol_map, rep_set) :: sets;
+        sets := collectDependencies(exp.start, depth, kind, map, dep_map, sol_map, rep_set) :: sets;
         if Util.isSome(exp.step) then
-          sets := collectDependencies(Util.getOption(exp.step), depth, map, dep_map, sol_map, rep_set) :: sets;
+          sets := collectDependencies(Util.getOption(exp.step), depth, kind, map, dep_map, sol_map, rep_set) :: sets;
         end if;
-        sets := collectDependencies(exp.stop, depth, map, dep_map, sol_map, rep_set) :: sets;
+        sets := collectDependencies(exp.stop, depth, kind, map, dep_map, sol_map, rep_set) :: sets;
         set := UnorderedSet.union_list(sets, ComponentRef.hash, ComponentRef.isEqual);
         Solvability.updateList(UnorderedSet.toList(set), Solvability.UNSOLVABLE(), sol_map);
       then set;
@@ -2135,6 +2161,7 @@ public
     furthermore it collects additional data about dependency and solvability.
     variables in conditions and variables not contained in all branches are unsolvable"
     input IfEquationBody body;
+    input Partition.Kind kind;
     input UnorderedMap<ComponentRef, Integer> map "unordered map to check for relevance";
     input UnorderedMap<ComponentRef, Dependency> dep_map;
     input UnorderedMap<ComponentRef, Solvability> sol_map;
@@ -2144,25 +2171,33 @@ public
     list<UnorderedSet<ComponentRef>> sets1 = {};
     UnorderedSet<ComponentRef> set1, set2, diff;
   algorithm
-    // variables in conditions are unsolvable, repeated and get their skips removed
-    set := collectDependencies(body.condition, 0, map, dep_map, sol_map, rep_set);
-    addRepetitions(set, rep_set);
-    updateConditionCrefs(UnorderedSet.toList(set), dep_map, sol_map);
-
-    // get variables from 'then' branch
-    for eqn in body.then_eqns loop
-      sets1  := collectDependenciesEquation(Pointer.access(eqn), map, dep_map, sol_map, rep_set) :: sets1;
-    end for;
-
-    // if there is an 'else' branch, mark those not occuring in both as implicit (maybe it should be unsolvable?)
-    if Util.isSome(body.else_if) then
-      set1 := UnorderedSet.union_list(sets1, ComponentRef.hash, ComponentRef.isEqual);
-      set2 := collectDependenciesIf(Util.getOption(body.else_if), map, dep_map, sol_map, rep_set);
-      diff  := UnorderedSet.sym_difference(set1, set2);
-      Solvability.updateList(UnorderedSet.toList(diff), Solvability.IMPLICIT(), sol_map);
-      set := UnorderedSet.union_list({set, set1, set2}, ComponentRef.hash, ComponentRef.isEqual);
+    if isInitialException(body.condition) then
+      // branches only in the initial system are ignored
+      // only look at the 'else' branch if it exists
+      if Util.isSome(body.else_if) then
+        set := collectDependenciesIf(Util.getOption(body.else_if), kind, map, dep_map, sol_map, rep_set);
+      end if;
     else
-      set := UnorderedSet.union_list(set :: sets1, ComponentRef.hash, ComponentRef.isEqual);
+      // variables in conditions are unsolvable, repeated and get their skips removed
+      set := collectDependencies(body.condition, 0, kind, map, dep_map, sol_map, rep_set);
+      addRepetitions(set, rep_set);
+      updateConditionCrefs(UnorderedSet.toList(set), dep_map, sol_map);
+
+      // get variables from 'then' branch
+      for eqn in body.then_eqns loop
+        sets1  := collectDependenciesEquation(Pointer.access(eqn), kind, map, dep_map, sol_map, rep_set) :: sets1;
+      end for;
+
+      // if there is an 'else' branch, mark those not occuring in both as implicit (maybe it should be unsolvable?)
+      if Util.isSome(body.else_if) then
+        set1 := UnorderedSet.union_list(sets1, ComponentRef.hash, ComponentRef.isEqual);
+        set2 := collectDependenciesIf(Util.getOption(body.else_if), kind, map, dep_map, sol_map, rep_set);
+        diff  := UnorderedSet.sym_difference(set1, set2);
+        Solvability.updateList(UnorderedSet.toList(diff), Solvability.IMPLICIT(), sol_map);
+        set := UnorderedSet.union_list({set, set1, set2}, ComponentRef.hash, ComponentRef.isEqual);
+      else
+        set := UnorderedSet.union_list(set :: sets1, ComponentRef.hash, ComponentRef.isEqual);
+      end if;
     end if;
   end collectDependenciesIf;
 
@@ -2172,6 +2207,7 @@ public
     variables assigned on the left hand side are solvable,
     variables from the right hand side (-lhs variables) are unsolvable"
     input WhenEquationBody body;
+    input Partition.Kind kind;
     input UnorderedMap<ComponentRef, Integer> map "unordered map to check for relevance";
     input UnorderedMap<ComponentRef, Dependency> dep_map;
     input UnorderedMap<ComponentRef, Solvability> sol_map;
@@ -2184,34 +2220,43 @@ public
     list<UnorderedSet<ComponentRef>> lst = {}, lst1, lst2;
     list<tuple<UnorderedSet<ComponentRef>, UnorderedSet<ComponentRef>>> tpl_lst = {};
   algorithm
-    // variables in conditions are unsolvable, reduced and get their skips removed
-    set := collectDependencies(body.condition, 0, map, dep_map, sol_map, rep_set);
-    updateConditionCrefs(UnorderedSet.toList(set), dep_map, sol_map);
+    if isInitialException(body.condition) then
+      // branches only in the initial system are ignored
+      // traverse else when if it exists
+      if Util.isSome(body.else_when) then
+        lst := collectDependenciesWhen(Util.getOption(body.else_when), kind, map, dep_map, sol_map, rep_set) :: lst;
+      end if;
+      set := UnorderedSet.union_list(lst, ComponentRef.hash, ComponentRef.isEqual);
+    else
+      // variables in conditions are unsolvable, reduced and get their skips removed
+      set := collectDependencies(body.condition, 0, kind, map, dep_map, sol_map, rep_set);
+      updateConditionCrefs(UnorderedSet.toList(set), dep_map, sol_map);
 
-    // make condition repeat if the body is larger than 1
-    if sum(WhenStatement.size(stmt, true) for stmt in body.when_stmts) > 1 then
-      addRepetitions(set, rep_set);
+      // make condition repeat if the body is larger than 1
+      if sum(WhenStatement.size(stmt, true) for stmt in body.when_stmts) > 1 then
+        addRepetitions(set, rep_set);
+      end if;
+
+      // collect all dependencies from the statments
+      for stmt in body.when_stmts loop
+        tpl_lst := collectDependenciesStmt(stmt, kind, map, dep_map, sol_map, rep_set) :: tpl_lst;
+      end for;
+
+      // create the two sets for solvables and potentially unsovables
+      (lst1, lst2) := List.unzip(tpl_lst);
+      set1 := UnorderedSet.union_list(lst1, ComponentRef.hash, ComponentRef.isEqual);
+      set2 := UnorderedSet.union_list(lst2, ComponentRef.hash, ComponentRef.isEqual);
+
+      // get the set difference to determine the unsolvables and tag them as such
+      diff := UnorderedSet.difference(set2, set1);
+      Solvability.updateList(UnorderedSet.toList(diff), Solvability.UNSOLVABLE(), sol_map);
+
+      // traverse else when if it exists
+      if Util.isSome(body.else_when) then
+        lst := collectDependenciesWhen(Util.getOption(body.else_when), kind, map, dep_map, sol_map, rep_set) :: lst;
+      end if;
+      set := UnorderedSet.union_list(set :: set1 :: set2 :: lst, ComponentRef.hash, ComponentRef.isEqual);
     end if;
-
-    // collect all dependencies from the statments
-    for stmt in body.when_stmts loop
-      tpl_lst := collectDependenciesStmt(stmt, map, dep_map, sol_map, rep_set) :: tpl_lst;
-    end for;
-
-    // create the two sets for solvables and potentially unsovables
-    (lst1, lst2) := List.unzip(tpl_lst);
-    set1 := UnorderedSet.union_list(lst1, ComponentRef.hash, ComponentRef.isEqual);
-    set2 := UnorderedSet.union_list(lst2, ComponentRef.hash, ComponentRef.isEqual);
-
-    // get the set difference to determine the unsolvables and tag them as such
-    diff := UnorderedSet.difference(set2, set1);
-    Solvability.updateList(UnorderedSet.toList(diff), Solvability.UNSOLVABLE(), sol_map);
-
-    // traverse else when if it exists
-    if Util.isSome(body.else_when) then
-      lst := collectDependenciesWhen(Util.getOption(body.else_when), map, dep_map, sol_map, rep_set) :: lst;
-    end if;
-    set := UnorderedSet.union_list(set :: set1 :: set2 :: lst, ComponentRef.hash, ComponentRef.isEqual);
   end collectDependenciesWhen;
 
   function collectDependenciesStmt
@@ -2220,6 +2265,7 @@ public
     Returns a tuple of two sets, one containing the solvables and the other
     containing potentially unsolvables"
     input WhenStatement stmt;
+    input Partition.Kind kind;
     input UnorderedMap<ComponentRef, Integer> map "unordered map to check for relevance";
     input UnorderedMap<ComponentRef, Dependency> dep_map;
     input UnorderedMap<ComponentRef, Solvability> sol_map;
@@ -2231,18 +2277,18 @@ public
   algorithm
     set_tpl := match stmt
       case WhenStatement.ASSIGN() algorithm
-        set1 := collectDependencies(stmt.lhs, 0, map, dep_map, sol_map, rep_set);
-        set2 := collectDependencies(stmt.rhs, 0, map, dep_map, sol_map, rep_set);
+        set1 := collectDependencies(stmt.lhs, 0, kind, map, dep_map, sol_map, rep_set);
+        set2 := collectDependencies(stmt.rhs, 0, kind, map, dep_map, sol_map, rep_set);
       then (set1, set2);
 
       case WhenStatement.REINIT() algorithm
         set1 := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
-        set2 := collectDependencies(stmt.value, 0, map, dep_map, sol_map, rep_set);
+        set2 := collectDependencies(stmt.value, 0, kind, map, dep_map, sol_map, rep_set);
       then (set1, set2);
 
       case WhenStatement.ASSERT() algorithm
         set1 := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
-        set2 := collectDependencies(stmt.condition, 0, map, dep_map, sol_map, rep_set);
+        set2 := collectDependencies(stmt.condition, 0, kind, map, dep_map, sol_map, rep_set);
         updateConditionCrefs(UnorderedSet.toList(set2), dep_map, sol_map);
       then (set1, set2);
 
@@ -2275,7 +2321,7 @@ public
   algorithm
     _ := match stmt
 
-      // actual occurence can only happen here
+      // actual occurrence can only happen here
       case Statement.ASSIGNMENT() algorithm
         Slice.filterExp(stmt.lhs, function Equation.collectFromSet(check_set = candidates), result);
         Slice.filterExp(stmt.rhs, function Equation.collectFromSet(check_set = candidates), result);
@@ -2298,22 +2344,28 @@ public
       // skip conditions but map body
       case Statement.IF() algorithm
         for branch in stmt.branches loop
-          for s in Util.tuple22(branch) loop
-            collectDependenciesAlgorithmStatement(s, candidates, result);
-          end for;
+          // branches only in the initial system are ignored
+          if not isInitialException(Util.tuple21(branch)) then
+            for s in Util.tuple22(branch) loop
+              collectDependenciesAlgorithmStatement(s, candidates, result);
+            end for;
+          end if;
         end for;
       then ();
 
       // skip conditions but map body
       case Statement.WHEN() algorithm
         for branch in stmt.branches loop
-          for s in Util.tuple22(branch) loop
-            collectDependenciesAlgorithmStatement(s, candidates, result);
-          end for;
+          // branches only in the initial system are ignored
+          if not isInitialException(Util.tuple21(branch)) then
+            for s in Util.tuple22(branch) loop
+              collectDependenciesAlgorithmStatement(s, candidates, result);
+            end for;
+          end if;
         end for;
       then ();
 
-      // all other cases do not produce an occurence
+      // all other cases do not produce an occurrence
       else ();
     end match;
   end collectDependenciesAlgorithmStatement;
@@ -2328,6 +2380,50 @@ public
     Dependency.updateList(crefs, -1, false, dep_map);
     Solvability.updateList(crefs, Solvability.UNSOLVABLE(), sol_map);
   end updateConditionCrefs;
+
+  function isInitialException
+    input Expression exp;
+    output Boolean b = Expression.isCallNamed(exp, "initial") or
+      (Flags.isConfigFlagSet(Flags.ALLOW_NON_STANDARD_MODELICA, "initialSimplified") and Expression.isCallNamed(exp, "initialSimplified"));
+  end isInitialException;
+
+  function addInitialStartOccurrences
+    "in the initial system start value dependencies must be included.
+      - x has a start value x.start which is unfixed
+      - x is iteration variable in an algebraic loop
+      - the equation for x.start has to be solved before x is used"
+    input UnorderedSet<ComponentRef> occs;
+    input UnorderedMap<ComponentRef, Dependency> dep_map;
+    input UnorderedMap<ComponentRef, Solvability> sol_map;
+    input UnorderedSet<ComponentRef> rep_set;
+    input Partition.Kind kind;
+  algorithm
+    // only do something if its an initial partition
+    if Partition.kindIsInitial(kind) then
+      for cref in UnorderedSet.toList(occs) loop
+        _ := match BVariable.getVarStart(BVariable.getVarPointer(cref, sourceInfo()))
+          local
+            Pointer<Variable> start;
+            ComponentRef start_cref;
+
+          // only save the x -> x.start dependency not the other way around
+          case SOME(start) guard(BVariable.isStart(start)) algorithm
+            start_cref := BVariable.getVarName(start);
+            // add the start cref dependency in the same way the original variable occured
+            // but with UNSOLVABLE as it is only relevant for sorting and cannot be solved
+            // dependency and repetition irrelevant as its only used when solving for it, but to make it clean add it
+            UnorderedSet.add(start_cref, occs);
+            UnorderedMap.add(start_cref, UnorderedMap.getSafe(cref, dep_map, sourceInfo()), dep_map);
+            UnorderedMap.add(start_cref, Solvability.UNSOLVABLE(), sol_map);
+            if UnorderedSet.contains(cref, rep_set) then
+              UnorderedSet.add(start_cref, rep_set);
+            end if;
+          then ();
+          else ();
+        end match;
+      end for;
+    end if;
+  end addInitialStartOccurrences;
 
   annotation(__OpenModelica_Interface="backend");
 end NBAdjacency;

@@ -18,6 +18,7 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
 
 set(OMEDITLIB_SOURCES Util/Helper.cpp
+                      Search/FindUsageWidget.cpp
                       Util/Utilities.cpp
                       Util/StringHandler.cpp
                       Util/OutputPlainTextEdit.cpp
@@ -76,6 +77,9 @@ set(OMEDITLIB_SOURCES Util/Helper.cpp
                       Element/ElementProperties.cpp
                       Element/Transformation.cpp
                       Modeling/DocumentationWidget.cpp
+                      MCP/MCPServer.cpp
+                      MCP/MCPToolsSimulation.cpp
+                      MCP/MCPToolsDiagram.cpp
                       Simulation/TranslationFlagsWidget.cpp
                       Simulation/SimulationDialog.cpp
                       Simulation/SimulationOutputWidget.cpp
@@ -145,7 +149,9 @@ set(OMEDITLIB_SOURCES Util/Helper.cpp
                       Animation/Vector.cpp
                       resource_omedit.qrc)
 
-set(OMEDITLIB_HEADERS Util/Helper.h
+set(OMEDITLIB_HEADERS MCP/MCPServer.h
+                      Util/Helper.h
+                      Search/FindUsageWidget.h
                       Util/Utilities.h
                       Util/StringHandler.h
                       Util/OutputPlainTextEdit.h
@@ -350,10 +356,15 @@ target_link_libraries(OMEditLib PUBLIC Qt${OM_QT_MAJOR_VERSION}::Network)
 target_link_libraries(OMEditLib PUBLIC Qt${OM_QT_MAJOR_VERSION}::Svg)
 
 if (OM_QT_MAJOR_VERSION VERSION_GREATER_EQUAL 6)
-  target_link_libraries(OMEditLib PUBLIC Qt6::Core5Compat)
+  target_link_libraries(OMEditLib PUBLIC Qt${OM_QT_MAJOR_VERSION}::Core5Compat)
+endif ()
+
+if (Qt${OM_QT_MAJOR_VERSION}HttpServer_FOUND)
+  target_link_libraries(OMEditLib PUBLIC Qt${OM_QT_MAJOR_VERSION}::HttpServer)
 endif ()
 
 target_link_libraries(OMEditLib PUBLIC omc::3rd::opcua)
+target_link_libraries(OMEditLib PUBLIC omc::3rd::simdjson)
 target_link_libraries(OMEditLib PUBLIC OMPlotLib)
 target_link_libraries(OMEditLib PUBLIC OpenModelicaCompiler)
 target_link_libraries(OMEditLib PUBLIC ${OPENSCENEGRAPH_LIBRARIES})

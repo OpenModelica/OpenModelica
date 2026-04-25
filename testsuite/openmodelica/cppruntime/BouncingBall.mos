@@ -2,7 +2,7 @@
 // keywords: events
 // status: correct
 // teardown_command: rm -rf BouncingBall_diff.csv
-// cflags: 	 +simCodeTarget=Cpp -d=-newInst
+// cflags: 	 +simCodeTarget=Cpp
 //
 // Event handling
 //

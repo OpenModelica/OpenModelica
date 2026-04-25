@@ -1,30 +1,27 @@
 /*
- * This file is part of OpenModelica.
+ * This file belongs to the OpenModelica Run-Time System
  *
- * Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
- * c/o Linköpings universitet, Department of Computer and Information Science,
- * SE-58183 Linköping, Sweden.
- *
- * All rights reserved.
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC), c/o Linköpings
+ * universitet, Department of Computer and Information Science, SE-58183 Linköping, Sweden. All rights
+ * reserved.
  *
  * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THE BSD NEW LICENSE OR THE
- * GPL VERSION 3 LICENSE OR THE OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * AGPL VERSION 3 LICENSE OR THE OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8. ANY
+ * USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
+ * ACCEPTANCE OF THE BSD NEW LICENSE OR THE OSMC PUBLIC LICENSE OR THE AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
- * Public License (OSMC-PL) are obtained from OSMC, either from the above
- * address, from the URLs: http://www.openmodelica.org or
- * http://www.ida.liu.se/projects/OpenModelica, and in the OpenModelica
- * distribution. GNU version 3 is obtained from:
- * http://www.gnu.org/copyleft/gpl.html. The New BSD License is obtained from:
- * http://www.opensource.org/licenses/BSD-3-Clause.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium) Public License
+ * (OSMC-PL) are obtained from OSMC, either from the above address, from the URLs:
+ * http://www.openmodelica.org or https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica, and in the OpenModelica distribution. GNU
+ * AGPL version 3 is obtained from: https://www.gnu.org/licenses/licenses.html#GPL. The BSD NEW
+ * License is obtained from: http://www.opensource.org/licenses/BSD-3-Clause.
  *
- * This program is distributed WITHOUT ANY WARRANTY; without even the implied
- * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, EXCEPT AS
- * EXPRESSLY SET FORTH IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE
- * CONDITIONS OF OSMC-PL.
+ * This program is distributed WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY
+ * SET FORTH IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF
+ * OSMC-PL.
  *
  */
 
@@ -801,7 +798,7 @@ static int euler_ex_step(DATA* data, SOLVER_INFO* solverInfo)
 
 /***************************************    SYM_SOLVER     *********************************/
 static int sym_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo){
-  int retVal,i,j;
+  int retVal = 0, i;
 
   modelica_integer nStates = data->modelData->nStates;
   SIMULATION_DATA *sData = data->localData[0];
@@ -829,7 +826,7 @@ static int sym_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* so
 
 
     /* update der(x) */
-    for(i=0; i<nStates; ++i, ++j)
+    for(i=0; i<nStates; ++i)
     {
       stateDer[i] = (sData->realVars[i]-data->simulationInfo->inlineData->algOldVars[i])/solverInfo->currentStepSize;
     }
@@ -947,7 +944,7 @@ static void writeOutputVars(char* names, DATA* data)
         fprintf(stdout, ",%s=%.20g", p, (data->localData[0])->realVars[i]);
     for(i = 0; i < data->modelData->nVariablesInteger; i++)
       if(!strcmp(p, data->modelData->integerVarsData[i].info.name))
-        fprintf(stdout, ",%s=%li", p, (data->localData[0])->integerVars[i]);
+        fprintf(stdout, ",%s=" OMC_INT_FORMAT, p, (data->localData[0])->integerVars[i]);
     for(i = 0; i < data->modelData->nVariablesBoolean; i++)
       if(!strcmp(p, data->modelData->booleanVarsData[i].info.name))
         fprintf(stdout, ",%s=%i", p, (data->localData[0])->booleanVars[i]);
@@ -967,9 +964,9 @@ static void writeOutputVars(char* names, DATA* data)
       if(!strcmp(p, data->modelData->integerAlias[i].info.name))
       {
         if(data->modelData->integerAlias[i].negate)
-          fprintf(stdout, ",%s=%li", p, -(data->localData[0])->integerVars[data->modelData->integerAlias[i].nameID]);
+          fprintf(stdout, ",%s=" OMC_INT_FORMAT, p, -(data->localData[0])->integerVars[data->modelData->integerAlias[i].nameID]);
         else
-          fprintf(stdout, ",%s=%li", p, (data->localData[0])->integerVars[data->modelData->integerAlias[i].nameID]);
+          fprintf(stdout, ",%s=" OMC_INT_FORMAT, p, (data->localData[0])->integerVars[data->modelData->integerAlias[i].nameID]);
       }
     for(i = 0; i < data->modelData->nAliasBoolean; i++)
       if(!strcmp(p, data->modelData->booleanAlias[i].info.name))
@@ -990,7 +987,7 @@ static void writeOutputVars(char* names, DATA* data)
 
     for(i = 0; i < data->modelData->nParametersInteger; i++)
       if(!strcmp(p, data->modelData->integerParameterData[i].info.name))
-        fprintf(stdout, ",%s=%li", p, data->simulationInfo->integerParameter[i]);
+        fprintf(stdout, ",%s=" OMC_INT_FORMAT, p, data->simulationInfo->integerParameter[i]);
 
     for(i = 0; i < data->modelData->nParametersBoolean; i++)
       if(!strcmp(p, data->modelData->booleanParameterData[i].info.name))

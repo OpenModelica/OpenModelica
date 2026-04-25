@@ -1,33 +1,38 @@
 /*
-* This file is part of OpenModelica.
-*
-* Copyright (c) 1998-2021, Open Source Modelica Consortium (OSMC),
-* c/o Linköpings universitet, Department of Computer and Information Science,
-* SE-58183 Linköping, Sweden.
-*
-* All rights reserved.
-*
-* THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
-* THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
-* ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
-* RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
-* ACCORDING TO RECIPIENTS CHOICE.
-*
-* The OpenModelica software and the Open Source Modelica
-* Consortium (OSMC) Public License (OSMC-PL) are obtained
-* from OSMC, either from the above address,
-* from the URLs: http://www.ida.liu.se/projects/OpenModelica or
-* http://www.openmodelica.org, and in the OpenModelica distribution.
-* GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
-*
-* This program is distributed WITHOUT ANY WARRANTY; without
-* even the implied warranty of  MERCHANTABILITY or FITNESS
-* FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
-* IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
-*
-* See the full OSMC Public License conditions for more details.
-*
-*/
+ * This file is part of OpenModelica.
+ *
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
+ * c/o Linköpings universitet, Department of Computer and Information Science,
+ * SE-58183 Linköping, Sweden.
+ *
+ * All rights reserved.
+ *
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
+ *
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
+ *
+ * This program is distributed WITHOUT ANY WARRANTY; without
+ * even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
+ *
+ * See the full OSMC Public License conditions for more details.
+ *
+ */
+
 encapsulated uniontype NBReplacements
 "file:        NBReplacements.mo
  package:     NBReplacements
@@ -66,6 +71,7 @@ protected
   import BVariable = NBVariable;
   import NBEquation.{EqData, Equation, EquationPointers};
   import Inline = NBInline;
+  import Slice = NBSlice;
   import Solve = NBSolve;
   import StrongComponent = NBStrongComponent;
   import NBVariable.{VarData, VariablePointers};
@@ -121,6 +127,23 @@ public
         // solve the equation for the variable
         varName := BVariable.getVarName(comp.var);
         (solvedEq, status, _) := Solve.solveBody(Pointer.access(comp.eqn), varName);
+        if status == NBSolve.Status.EXPLICIT then
+          // apply all previous replacements on the RHS
+          SOME(replace_exp) := Equation.getRHS(solvedEq);
+          replace_exp := Expression.map(replace_exp, function applySimpleExp(replacements = replacements));
+          replace_exp := SimplifyExp.simplifyDump(replace_exp, true, getInstanceName());
+          // add the new replacement rule
+          addInputArgTpl((varName, replace_exp) , replacements, true);
+        else
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because strong component cannot be solved explicitly: " + StrongComponent.toString(comp)});
+          fail();
+        end if;
+      then ();
+
+      case StrongComponent.SLICED_COMPONENT() algorithm
+        // solve the equation for the variable
+        varName := BVariable.getVarName(Slice.getT(comp.var));
+        (solvedEq, status, _) := Solve.solveBody(Pointer.access(Slice.getT(comp.eqn)), varName);
         if status == NBSolve.Status.EXPLICIT then
           // apply all previous replacements on the RHS
           SOME(replace_exp) := Equation.getRHS(solvedEq);
@@ -203,8 +226,7 @@ public
           // try to strip the subscripts and see if that cref occurs
           stripped := ComponentRef.stripSubscriptsAll(exp.cref);
           if UnorderedMap.contains(stripped, replacements) then
-            subs  := ComponentRef.subscriptsAllFlat(exp.cref);
-            subs  := list(s for s guard(not Subscript.isWhole(s)) in subs);
+            subs  := ComponentRef.subscriptsAllWithWholeFlat(exp.cref);
             res   := UnorderedMap.getOrFail(stripped, replacements);
             res   := Expression.applySubscripts(subs, res, true);
           else

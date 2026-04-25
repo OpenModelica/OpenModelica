@@ -1,27 +1,31 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
@@ -54,6 +58,9 @@ end LIST_OBJECT;
 record ARRAY
   Vector<JSON> values;
 end ARRAY;
+record LIST
+  list<JSON> values;
+end LIST;
 record STRING
   String str;
 end STRING;
@@ -89,6 +96,12 @@ algorithm
   obj := addPair(key, value, obj);
 end fromPair;
 
+function listObjectFromPair
+  input String key;
+  input JSON value;
+  output JSON obj = LIST_OBJECT({(key, value)});
+end listObjectFromPair;
+
 function emptyArray
   input Integer capacity = 0;
   output JSON obj = ARRAY(Vector.new<JSON>(capacity));
@@ -98,6 +111,11 @@ function makeArray
   input list<JSON> elements;
   output JSON obj = ARRAY(Vector.fromList(elements));
 end makeArray;
+
+function makeList
+  input list<JSON> elements;
+  output JSON obj = LIST(elements);
+end makeList;
 
 function makeString
   input String str;
@@ -260,6 +278,12 @@ algorithm
       then
         ();
 
+    case LIST()
+      algorithm
+        toString_list(value.values);
+      then
+        ();
+
     case OBJECT()
       algorithm
         toString_object(value.values);
@@ -291,6 +315,26 @@ algorithm
 
   Print.printBuf("]");
 end toString_array;
+
+function toString_list
+  input list<JSON> values;
+protected
+  Boolean first = true;
+algorithm
+  Print.printBuf("[");
+
+  for v in values loop
+    if first then
+      first := false;
+    else
+      Print.printBuf(", ");
+    end if;
+
+    toString_work(v);
+  end for;
+
+  Print.printBuf("]");
+end toString_list;
 
 function toString_object
   input UnorderedMap<String, JSON> map;
@@ -387,6 +431,12 @@ algorithm
       then
         ();
 
+    case LIST()
+      algorithm
+        toStringPP_list(value.values, indent);
+      then
+        ();
+
     case OBJECT()
       algorithm
         toStringPP_object(value.values, indent);
@@ -424,6 +474,31 @@ algorithm
   Print.printBuf(indent);
   Print.printBuf("]");
 end toStringPP_array;
+
+function toStringPP_list
+  input list<JSON> values;
+  input String indent;
+protected
+  String next_indent = indent + "  ";
+  Boolean first = true;
+algorithm
+  Print.printBuf("[\n");
+
+  for v in values loop
+    if first then
+      first := false;
+    else
+      Print.printBuf(",\n");
+    end if;
+
+    Print.printBuf(next_indent);
+    toStringPP_work(v, next_indent);
+  end for;
+
+  Print.printBuf("\n");
+  Print.printBuf(indent);
+  Print.printBuf("]");
+end toStringPP_list;
 
 function toStringPP_object
   input UnorderedMap<String, JSON> map;
@@ -585,6 +660,7 @@ algorithm
     case OBJECT() then list(getString(v) for v in UnorderedMap.valueList(obj.values));
     case LIST_OBJECT() then listReverse(getString(Util.tuple22(v)) for v in obj.values);
     case ARRAY() then Vector.mapToList(obj.values, getString);
+    case LIST() then list(getString(v) for v in obj.values);
   end match;
 end getStringList;
 
@@ -616,6 +692,7 @@ algorithm
     case OBJECT() then UnorderedMap.size(obj.values);
     case LIST_OBJECT() then listLength(obj.values);
     case ARRAY() then Vector.size(obj.values);
+    case LIST() then listLength(obj.values);
     else 1;
   end match;
 end size;

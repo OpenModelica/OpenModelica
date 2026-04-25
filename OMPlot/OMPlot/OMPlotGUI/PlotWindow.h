@@ -44,6 +44,7 @@
 #include <QToolButton>
 #include <QLabel>
 #include <QFile>
+#include <QFileInfo>
 #include <QMdiSubWindow>
 #include <QGroupBox>
 #include <QPushButton>
@@ -86,7 +87,6 @@ private:
 	QToolButton* mpPauseSimulationToolButton;
 	QLabel* mpSimulationSpeedLabel;
 	QComboBox* mpSimulationSpeedComboBox;
-	QTextStream* mpTextStream;
 	QFile mFile;
 	QStringList mVariablesList;
 	PlotType mPlotType;
@@ -114,6 +114,7 @@ private:
 	int mCurveStyle;
 	QFont mLegendFont;
 	double mTime;
+	bool mTimeOutOfBounds = false;
 	bool mIsInteractiveSimulation;
 	QString mInteractiveTreeItemOwner;
 	int mInteractivePort;
@@ -189,6 +190,7 @@ public:
   QString getYRightDisplayUnit() { return mYRightDisplayUnit; }
   void setTimeUnit(QString timeUnit) {mTimeUnit = timeUnit;}
   QString getTimeUnit() {return mTimeUnit;}
+  double getTimeUnitFactor();
   void setXRange(double min, double max);
   QString getXRangeMin();
   QString getXRangeMax();
@@ -216,12 +218,15 @@ public:
   Plot* getPlot();
   void receiveMessage(QStringList arguments);
   void closeEvent(QCloseEvent *event);
-  void setTime(double time){mTime = time;}
+  void setTime(double time) {mTime = time;}
   double getTime() {return mTime;}
   void updateTimeText();
   void updatePlot();
   void emitPrefixUnitsChanged();
 private:
+  int setupInterp(double *vals, double val, int N, double &alpha);
+  int readPLTDataset(QTextStream &textStream, QString variable, int N, double *valsOut);
+  void readPLTArray(QTextStream &textStream, QString variable, double alpha, int intervalSize, int it, QList<double> &arrLstOut);
   void setInteractiveControls(bool enabled);
 signals:
   void closingDown();
@@ -247,24 +252,43 @@ public slots:
   void interactiveSimulationPaused();
 };
 
-//Exception classes
+// Exception classes
+
 class PlotException : public std::runtime_error
 {
 public:
-  PlotException(const char *e) : std::runtime_error(e) {}
-  PlotException(const QString str) : std::runtime_error(str.toStdString().c_str()) {}
+  PlotException(const QString &windowTitle, const QString &str);
+};
+
+class InvalidInputException : public PlotException
+{
+public:
+  InvalidInputException(const QString &windowTitle, const QString &argName);
 };
 
 class NoFileException : public PlotException
 {
 public:
-  NoFileException(const char *fileName) : PlotException(fileName) {}
+  NoFileException(const QString &windowTitle, const QString &error, const QString &fileName = QString());
 };
 
 class NoVariableException : public PlotException
 {
 public:
-  NoVariableException(const char *varName) : PlotException(varName) {}
+  NoVariableException(const QString &windowTitle, const QString &error, const QString &varName = QString());
+  NoVariableException(const QString &windowTitle, const QString &error, uint32_t nbVars);
+};
+
+class TimeOutOfBoundsException : public PlotException
+{
+public:
+  TimeOutOfBoundsException(const QString &windowTitle, const QFileInfo &fileInfo, double startTime, double stopTime);
+};
+
+class RecurringPlotException : public PlotException
+{
+public:
+  RecurringPlotException(const PlotException &e) : PlotException(e) {}
 };
 
 class SetupDialog;

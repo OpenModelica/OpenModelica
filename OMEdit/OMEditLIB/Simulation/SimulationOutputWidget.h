@@ -105,11 +105,15 @@ public:
   void setSimulationProcessKilled(bool killed) {mIsSimulationProcessKilled = killed;}
   bool isSimulationProcessKilled() {return mIsSimulationProcessKilled;}
   bool isSimulationProcessRunning() {return mIsSimulationProcessRunning;}
-  void addGeneratedFileTab(QString fileName);
+  QString getCompilationStandardError();
+  QString getSimulationStandardOutput() {return mSimulationStandardOutput;}
+  QString getSimulationStandardError() {return mSimulationStandardError;}
   void writeSimulationMessage(StringHandler::SimulationMessageType type, QString text, QString index);
   void embeddedServerInitialized();
   void updateMessageTab(const QString &text);
   void updateMessageTabProgress();
+  void reSimulate(bool showSetup);
+  void startSimulationAfterBuild();
 private:
   SimulationOptions mSimulationOptions;
   Label *mpProgressLabel;
@@ -119,8 +123,8 @@ private:
   QPushButton *mpOpenOutputFileButton;
   QTabWidget *mpGeneratedFilesTabWidget;
   QList<QString> mGeneratedFilesList;
-  QList<QString> mGeneratedAlgLoopFilesList;
   OutputPlainTextEdit *mpCompilationOutputTextBox;
+  QString mCompilationStandardError;
   QString mSimulationStandardOutput;
   QString mSimulationStandardError;
   SimulationOutputHandler *mpSimulationOutputHandler;

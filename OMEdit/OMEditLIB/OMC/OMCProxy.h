@@ -177,6 +177,7 @@ public:
   bool saveTotalModel(QString fileName, QString className, bool stripAnnotations, bool stripComments, bool obfuscate, bool simplified);
   QString list(QString className);
   QString listFile(QString className, bool nestedClasses = true);
+  QString getTotalModel(QString className, bool stripAnnotations = false, bool stripComments = false, bool obfuscate = false);
   QString diffModelicaFileListings(const QString &before, const QString &after);
   QString instantiateModel(QString className);
   QString runScript(QString fileName);
@@ -279,6 +280,7 @@ public:
   QJsonObject modifierToJSON(const QString &modifier, bool prettyPrint = false);
   int storeAST();
   bool restoreAST(int id);
+  QJsonArray reverseLookup(const QString &className, const QString &scope = QString("AllLoadedClasses"), bool exactMatch = true, bool prettyPrint = false);
   bool clear();
 signals:
   void commandFinished();

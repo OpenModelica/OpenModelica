@@ -1,33 +1,38 @@
 /*
-* This file is part of OpenModelica.
-*
-* Copyright (c) 1998-2020, Open Source Modelica Consortium (OSMC),
-* c/o Linköpings universitet, Department of Computer and Information Science,
-* SE-58183 Linköping, Sweden.
-*
-* All rights reserved.
-*
-* THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
-* THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
-* ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
-* RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
-* ACCORDING TO RECIPIENTS CHOICE.
-*
-* The OpenModelica software and the Open Source Modelica
-* Consortium (OSMC) Public License (OSMC-PL) are obtained
-* from OSMC, either from the above address,
-* from the URLs: http://www.ida.liu.se/projects/OpenModelica or
-* http://www.openmodelica.org, and in the OpenModelica distribution.
-* GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
-*
-* This program is distributed WITHOUT ANY WARRANTY; without
-* even the implied warranty of  MERCHANTABILITY or FITNESS
-* FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
-* IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
-*
-* See the full OSMC Public License conditions for more details.
-*
-*/
+ * This file is part of OpenModelica.
+ *
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
+ * c/o Linköpings universitet, Department of Computer and Information Science,
+ * SE-58183 Linköping, Sweden.
+ *
+ * All rights reserved.
+ *
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
+ *
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
+ *
+ * This program is distributed WITHOUT ANY WARRANTY; without
+ * even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
+ *
+ * See the full OSMC Public License conditions for more details.
+ *
+ */
+
 encapsulated package NBJacobian
 "file:        NBJacobian.mo
  package:     NBJacobian
@@ -373,8 +378,8 @@ public
       Integer nnz;
     algorithm
       // get all relevant crefs
-      seed_vars     := VariablePointers.getScalarVarNames(seedCandidates);
-      partial_vars  := VariablePointers.getScalarVarNames(partialCandidates);
+      seed_vars     := VariablePointers.getScalarVarNames(seedCandidates, false);
+      partial_vars  := VariablePointers.getScalarVarNames(partialCandidates, false);
 
       // assume full dependency
       cols := list((s, partial_vars) for s in seed_vars);
@@ -434,8 +439,8 @@ public
           partial_mapping := Mapping.create(EquationPointers.empty(), partialCandidates);
 
           // get all relevant crefs
-          partial_vars        := VariablePointers.getScalarVarNames(partialCandidates);
-          seed_vars           := VariablePointers.getScalarVarNames(seedCandidates);
+          partial_vars        := VariablePointers.getScalarVarNames(partialCandidates, false);
+          seed_vars           := VariablePointers.getScalarVarNames(seedCandidates, false);
           // unscalarized seed vars are currently needed for sparsity pattern
           seed_vars_array     := VariablePointers.getVarNames(seedCandidates);
           partial_vars_array  := VariablePointers.getVarNames(partialCandidates);
@@ -490,7 +495,7 @@ public
             (_, tmp) := col;
             nnz := nnz + listLength(tmp);
           end for;
-        then (SPARSITY_PATTERN(cols, rows, listReverse(col_vars), listReverse(row_vars), nnz), map);
+        then (SPARSITY_PATTERN(cols, rows, col_vars, row_vars, nnz), map);
 
         case NONE() algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of missing strong components."});
@@ -979,7 +984,7 @@ protected
     output Option<Jacobian> R0_jacobian;
   protected
     Partition.Kind kind = Partition.Partition.getKind(part);
-    Boolean init = (kind == NBPartition.Kind.INI); // TODO for parameter seed?
+    Boolean init = Partition.kindIsInitial(kind); // TODO for parameter seed?
     VariablePointers seedCandidates, partialCandidates;
   algorithm
     // Lfg Jacobian (Lagrange (L), ODE (f), Path Constraints (g))
@@ -1046,7 +1051,7 @@ protected
       state_vars := list(Util.getOption(BVariable.getVarState(var)) for var in derivative_vars);
       seedCandidates := VariablePointers.fromList(state_vars, partialCandidates.scalarized);
 
-      jacobian := func(name, jacType, seedCandidates, partialCandidates, part.equations, part.strongComponents, part.adjacencyMatrix, funcMap, kind == NBPartition.Kind.INI);
+      jacobian := func(name, jacType, seedCandidates, partialCandidates, part.equations, part.strongComponents, part.adjacencyMatrix, funcMap, Partition.kindIsInitial(kind));
 
       if Flags.getConfigBool(Flags.MOO_DYNAMIC_OPTIMIZATION) then
         /* Add Lfg + Mr Jacobians for MOO dynamic optimization */
@@ -1078,7 +1083,7 @@ protected
     Tearing strict;
     list<StrongComponent> residual_comps;
     list<VariablePointer> seed_candidates, residual_vars, inner_vars;
-    constant Boolean init = kind == NBPartition.Kind.INI;
+    constant Boolean init = Partition.kindIsInitial(kind);
   algorithm
     (comp, updated) := match comp
       case StrongComponent.ALGEBRAIC_LOOP(strict = strict) algorithm
@@ -1099,7 +1104,7 @@ protected
           full              = full,
           funcMap           = funcMap,
           name              = Partition.Partition.kindToString(kind) + (if comp.linear then "_LS_JAC_" else "_NLS_JAC_") + intString(comp.idx),
-          init              = kind == NBPartition.Kind.INI);
+          init              = Partition.kindIsInitial(kind));
         comp.strict := strict;
 
         if Flags.isSet(Flags.JAC_DUMP) then

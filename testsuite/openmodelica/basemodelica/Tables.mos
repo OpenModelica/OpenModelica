@@ -1,12 +1,13 @@
 // status: correct
 // cflags: -d=-newInst
+// teardown_command: rm Tables.mof
 
 loadModel(ModelicaServices, {"3.2.3+maint.om"});getErrorString();
 loadModel(ModelicaTest, {"3.2.3"});getErrorString();
 setCommandLineOptions("-d=newInst -f -m");
-writeFile("Tables.mo", OpenModelica.Scripting.instantiateModel(ModelicaTest.Tables.CombiTable1D.Test33));getErrorString();
+writeFile("Tables.mof", OpenModelica.Scripting.instantiateModel(ModelicaTest.Tables.CombiTable1D.Test33));getErrorString();
 clear();
-loadFile("Tables.mo");getErrorString();
+loadFile("Tables.mof");getErrorString();
 setCommandLineOptions("--std=experimental");
 echo(false);
 res := simulate('Test33'.'Test33', fileNamePrefix="Tables");
@@ -27,7 +28,7 @@ res.resultFile;
 // ""
 // true
 // true
-// "[openmodelica/basemodelica/Tables.mo:33:3-47:43:writable] Warning: Pure function ''Test33'.'Modelica.Utilities.Strings.isEmpty'' contains a call to impure function ''Test33'.'Modelica.Utilities.Strings.Advanced.skipWhiteSpace''.
+// "[openmodelica/basemodelica/Tables.mof:33:3-47:43:writable] Warning: Pure function ''Test33'.'Modelica.Utilities.Strings.isEmpty'' contains a call to impure function ''Test33'.'Modelica.Utilities.Strings.Advanced.skipWhiteSpace''.
 // "
 // "Tables_res.mat"
 // endResult

@@ -1,7 +1,6 @@
 // name: Modelica_DeviceDrivers.Blocks.Examples.TestSerialPackager_UDPExternalTrigger
 // keywords: simulation Modelica_DeviceDrivers examples
 // status: correct
-// cflags: -d=-newInst
 //
 // Simulation Results
 // Modelica_DeviceDrivers
@@ -20,22 +19,32 @@ runScript(modelTesting);getErrorString();
 // "true
 // "
 // ""
-// Simulation options: startTime = 0.0, stopTime = 5.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica_DeviceDrivers.Blocks.Examples.TestSerialPackager_UDPExternalTrigger', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ' -abortSlowSimulation -alarm=360'
+// Simulation options: startTime = 0.0, stopTime = 5.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica_DeviceDrivers.Blocks.Examples.TestSerialPackager_UDPExternalTrigger', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ' -abortSlowSimulation -alarm=360'
 // Result file: Modelica_DeviceDrivers.Blocks.Examples.TestSerialPackager_UDPExternalTrigger_res.mat
-// Note: Reference file /home/bernhard/data/workspace/openmodelica/testsuite/ReferenceFiles/Modelica_DeviceDrivers/Modelica_DeviceDrivers.Blocks.Examples.TestSerialPackager_UDPExternalTrigger.mat does not exist. Cannot determine if the result improved!
+// Note: Reference file /home/per/workspace/OpenModelica/testsuite/ReferenceFiles/Modelica_DeviceDrivers/Modelica_DeviceDrivers.Blocks.Examples.TestSerialPackager_UDPExternalTrigger.mat does not exist. Cannot determine if the result improved!
+// Warning: Requested package Modelica_Synchronous of version 0.92.2, but this package was already loaded with version 0.93.0-dev. There are no conversion annotations and 0.92.2 is older than 0.93.0-dev, so the libraries are probably incompatible.
+// [Modelica_DeviceDrivers 1.8.2/Blocks/Packaging/SerialPackager.mo:130:7-137:16:writable] Warning: Pure function 'Modelica_DeviceDrivers.Blocks.Packaging.SerialPackager.Internal.DummyFunctions.clear' contains a call to impure function 'Modelica_DeviceDrivers.Packaging.SerialPackager_.clear'.
+// [Modelica_DeviceDrivers 1.8.2/Blocks/Packaging/SerialPackager.mo:30:7-39:18:writable] Warning: Pure function 'Modelica_DeviceDrivers.Blocks.Packaging.SerialPackager.Internal.DummyFunctions.addReal' contains a call to impure function 'Modelica_DeviceDrivers.Packaging.SerialPackager_.addReal'.
+// [Modelica_DeviceDrivers 1.8.2/Blocks/Communication.mo:1178:7-1189:20:writable] Warning: Pure function 'Modelica_DeviceDrivers.Blocks.Communication.Internal.DummyFunctions.sendToUDP' contains a call to impure function 'Modelica_DeviceDrivers.Communication.UDPSocket_.sendTo'.
+// [Modelica_DeviceDrivers 1.8.2/Blocks/Packaging/SerialPackager.mo:63:7-72:21:writable] Warning: Pure function 'Modelica_DeviceDrivers.Blocks.Packaging.SerialPackager.Internal.DummyFunctions.addInteger' contains a call to impure function 'Modelica_DeviceDrivers.Packaging.SerialPackager_.addInteger'.
+// [Modelica_DeviceDrivers 1.8.2/Blocks/Communication.mo:1165:7-1176:18:writable] Warning: Pure function 'Modelica_DeviceDrivers.Blocks.Communication.Internal.DummyFunctions.readUDP' contains a call to impure function 'Modelica_DeviceDrivers.Communication.UDPSocket_.read'.
+// [Modelica_DeviceDrivers 1.8.2/Blocks/Packaging/SerialPackager.mo:74:7-84:18:writable] Warning: Pure function 'Modelica_DeviceDrivers.Blocks.Packaging.SerialPackager.Internal.DummyFunctions.getReal' contains a call to impure function 'Modelica_DeviceDrivers.Packaging.SerialPackager_.getReal'.
+// [Modelica_DeviceDrivers 1.8.2/Blocks/Packaging/SerialPackager.mo:107:7-117:21:writable] Warning: Pure function 'Modelica_DeviceDrivers.Blocks.Packaging.SerialPackager.Internal.DummyFunctions.getInteger' contains a call to impure function 'Modelica_DeviceDrivers.Packaging.SerialPackager_.getInteger'.
+// [Modelica_DeviceDrivers 1.8.2/Blocks/Packaging/SerialPackager.mo:41:7-50:25:writable] Warning: Pure function 'Modelica_DeviceDrivers.Blocks.Packaging.SerialPackager.Internal.DummyFunctions.addRealAsFloat' contains a call to impure function 'Modelica_DeviceDrivers.Packaging.SerialPackager_.addRealAsFloat'.
+// [Modelica_DeviceDrivers 1.8.2/Blocks/Packaging/SerialPackager.mo:86:7-96:27:writable] Warning: Pure function 'Modelica_DeviceDrivers.Blocks.Packaging.SerialPackager.Internal.DummyFunctions.getRealFromFloat' contains a call to impure function 'Modelica_DeviceDrivers.Packaging.SerialPackager_.getRealFromFloat'.
 // Warning: Alias equations of external objects are not Modelica compliant as in:
-//     getFloat.pkgOut[1].pkg = getInteger.pkgIn.pkg
-//     getFloat.pkgIn.pkg = getReal.pkgOut[1].pkg
-//     addInteger.pkgOut[1].pkg = uDPSend.pkgIn.pkg
-//     addFloat.pkgOut[1].pkg = addInteger.pkgIn.pkg
-//     addFloat.pkgIn.pkg = addReal.pkgOut[1].pkg
-//     getReal.pkgIn.pkg = uDPReceive.pkgOut.pkg
-//     addReal.pkgIn.pkg = packager.pkgOut.pkg
 //     getFloat.pkgOut[1].pkg = getFloat.pkgIn.pkg
 //     addFloat.pkgOut[1].pkg = addFloat.pkgIn.pkg
 //     getReal.pkgOut[1].pkg = getReal.pkgIn.pkg
 //     addInteger.pkgOut[1].pkg = addInteger.pkgIn.pkg
 //     addReal.pkgOut[1].pkg = addReal.pkgIn.pkg
+//     getInteger.pkgIn.pkg = getFloat.pkgOut[1].pkg
+//     getReal.pkgOut[1].pkg = getFloat.pkgIn.pkg
+//     uDPSend.pkgIn.pkg = addInteger.pkgOut[1].pkg
+//     addFloat.pkgOut[1].pkg = addInteger.pkgIn.pkg
+//     addReal.pkgOut[1].pkg = addFloat.pkgIn.pkg
+//     uDPReceive.pkgOut.pkg = getReal.pkgIn.pkg
+//     packager.pkgOut.pkg = addReal.pkgIn.pkg
 //
 // "true
 // "

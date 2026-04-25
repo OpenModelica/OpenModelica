@@ -31,6 +31,8 @@
  * @author Adeel Asghar <adeel.asghar@liu.se>
  */
 
+#include <QtGlobal>
+#if QT_VERSION >= QT_VERSION_CHECK(5, 4, 0)
 #include "OpenGLWidget.h"
 
 /*!
@@ -47,3 +49,7 @@ GLWidget::GLWidget(QWidget* parent, Qt::WindowFlags flags)
 {
 
 }
+
+#else
+#include "GLWidget.cpp"
+#endif

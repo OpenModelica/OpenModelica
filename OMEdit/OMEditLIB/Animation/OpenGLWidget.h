@@ -34,6 +34,8 @@
 #ifndef OPENGLWIDGET_H
 #define OPENGLWIDGET_H
 
+#include <QtGlobal>
+#if QT_VERSION >= QT_VERSION_CHECK(5, 4, 0)
 #include <QOpenGLWidget>
 
 class GLWidget : public QOpenGLWidget
@@ -41,5 +43,9 @@ class GLWidget : public QOpenGLWidget
 public:
   GLWidget(QWidget *pParent = 0, Qt::WindowFlags flags = Qt::WindowFlags());
 };
+
+#else
+#include "GLWidget.h"
+#endif
 
 #endif // OPENGLWIDGET_H

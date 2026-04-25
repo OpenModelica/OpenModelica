@@ -1,31 +1,27 @@
 /*
- * This file is part of OpenModelica.
+ * This file belongs to the OpenModelica Run-Time System
  *
- * Copyright (c) 1998-CurrentYear, Linköping University,
- * Department of Computer and Information Science,
- * SE-58183 Linköping, Sweden.
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC), c/o Linköpings
+ * universitet, Department of Computer and Information Science, SE-58183 Linköping, Sweden. All rights
+ * reserved.
  *
- * All rights reserved.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THE BSD NEW LICENSE OR THE
+ * AGPL VERSION 3 LICENSE OR THE OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8. ANY
+ * USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
+ * ACCEPTANCE OF THE BSD NEW LICENSE OR THE OSMC PUBLIC LICENSE OR THE AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
- * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium) Public License
+ * (OSMC-PL) are obtained from OSMC, either from the above address, from the URLs:
+ * http://www.openmodelica.org or https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica, and in the OpenModelica distribution. GNU
+ * AGPL version 3 is obtained from: https://www.gnu.org/licenses/licenses.html#GPL. The BSD NEW
+ * License is obtained from: http://www.opensource.org/licenses/BSD-3-Clause.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from Linköping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
- *
- * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
- * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS
- * OF OSMC-PL.
- *
- * See the full OSMC Public License conditions for more details.
+ * This program is distributed WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY
+ * SET FORTH IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF
+ * OSMC-PL.
  *
  */
 
@@ -50,7 +46,7 @@
 
 cl_mem ocl_device_alloc(size_t size){
 
-    cl_int err;
+    cl_int err = 0;
     cl_mem tmp = NULL;
 
     if (!device_comm_queue)
@@ -65,7 +61,7 @@ cl_mem ocl_device_alloc(size_t size){
 
 cl_mem ocl_device_alloc_init(modelica_integer* host_array, size_t size){
 
-    cl_int err;
+    cl_int err = 0;
     cl_mem tmp = NULL;
 
     if (!device_comm_queue)
@@ -83,7 +79,7 @@ cl_mem ocl_device_alloc_init(modelica_integer* host_array, size_t size){
 
 cl_mem ocl_device_alloc_init(modelica_real* host_array, size_t size){
 
-    cl_int err;
+    cl_int err = 0;
     cl_mem tmp = NULL;
 
     if (!device_comm_queue)
@@ -101,7 +97,7 @@ cl_mem ocl_device_alloc_init(modelica_real* host_array, size_t size){
 
 
 cl_mem ocl_alloc_init(void* src_data, size_t size){
-    cl_int err;
+    cl_int err = 0;
     cl_mem tmp = NULL;
 
     if (!device_comm_queue)
@@ -124,7 +120,7 @@ cl_mem ocl_alloc_init(void* src_data, size_t size){
 
 void ocl_create_execution_memory_buffer(device_buffer* d_buff){
 
-    cl_int err;
+    cl_int err = 0;
     cl_ulong mem;
     cl_ulong mem2;
     cl_mem tmp;
@@ -151,7 +147,7 @@ void ocl_create_execution_memory_buffer(device_buffer* d_buff){
 
 
 cl_mem ocl_alloc_init_real_arr(modelica_real* host_array, int nr_of_elem){
-    cl_int err;
+    cl_int err = 0;
     cl_mem tmp;
     if (!device_comm_queue)
         ocl_initialize();
@@ -171,7 +167,7 @@ cl_mem ocl_alloc_init_real_arr(modelica_real* host_array, int nr_of_elem){
 }
 
 cl_mem ocl_alloc_init_integer_arr(cl_int* host_array, int nr_of_elem){
-    cl_int err;
+    cl_int err = 0;
     if (!device_comm_queue)
         ocl_initialize();
 

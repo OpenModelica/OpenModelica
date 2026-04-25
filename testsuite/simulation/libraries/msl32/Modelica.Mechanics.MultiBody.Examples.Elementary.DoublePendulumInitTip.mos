@@ -1,7 +1,6 @@
 // name:     Modelica.Mechanics.MultiBody.Examples.Elementary.DoublePendulumInitTip
 // keywords: simulation MSL Examples
 // status: correct
-// cflags: -d=-newInst
 //
 // Simulation Results
 // Modelica Standard Library

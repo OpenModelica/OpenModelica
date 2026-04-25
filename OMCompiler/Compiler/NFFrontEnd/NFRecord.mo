@@ -1,27 +1,31 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
@@ -63,11 +67,10 @@ import EvalConstants = NFEvalConstants;
 import NFPrefixes.Direction;
 import NFPrefixes.Variability;
 import NFPrefixes.Visibility;
-import NFFunction.Function;
+import NFFunction.{Function, FunctionStatus};
 import NFClassTree.ClassTree;
 import ComplexType = NFComplexType;
 import ComponentRef = NFComponentRef;
-import NFFunction.FunctionStatus;
 import MetaModelica.Dangerous.listReverseInPlace;
 import UnorderedMap;
 import UnorderedSet;
@@ -176,8 +179,8 @@ algorithm
   // Create the constructor function and add it to the function cache.
   attr := DAE.FUNCTION_ATTRIBUTES_DEFAULT;
   status := Pointer.create(FunctionStatus.INITIAL);
-  InstNode.cacheAddFunc(node, Function.FUNCTION(path, ctor_node, inputs,
-    {out_rec}, locals, {}, Type.UNKNOWN(), attr, {}, {}, listArray({}), status, Pointer.create(0)), false);
+  InstNode.cacheAddFunc(node, Function.FUNCTION(path, ctor_node, inputs, {out_rec}, locals,
+  NONE(), {}, Type.UNKNOWN(), attr, {}, {}, listArray({}), status, Pointer.create(0)), false);
 end instDefaultConstructor;
 
 function checkLocalFieldOrder
@@ -361,6 +364,18 @@ algorithm
   end for;
 end foldInputFields;
 
+function toDeclarationStream
+  input InstNode recordNode;
+  input String indent;
+  input output IOStream.IOStream s;
+protected
+  InstNode node;
+algorithm
+  node := getDeclarationNode(recordNode, evaluate = false);
+  s := IOStream.append(s, indent);
+  s := IOStream.append(s, InstNode.toString(node));
+end toDeclarationStream;
+
 function toFlatDeclarationStream
   input InstNode recordNode;
   input BaseModelica.OutputFormat format;
@@ -368,16 +383,28 @@ function toFlatDeclarationStream
   input output IOStream.IOStream s;
 protected
   InstNode node;
+algorithm
+  node := getDeclarationNode(recordNode, evaluate = true);
+  s := IOStream.append(s, InstNode.toFlatString(node, format, indent));
+end toFlatDeclarationStream;
+
+function getDeclarationNode
+  input InstNode recordNode;
+  input Boolean evaluate;
+  output InstNode declNode;
+protected
   InstNodeType node_ty;
 algorithm
   node_ty := InstNode.nodeType(recordNode);
-  node := instRecord(recordNode);
-  Typing.typeClass(node, NFInstContext.RELAXED);
+  declNode := instRecord(recordNode);
+  Typing.typeClass(declNode, NFInstContext.RELAXED);
   // Keep the node type from the original node to get the correct name.
-  node := InstNode.setNodeType(node_ty, node);
-  EvalConstants.evaluateRecordDeclaration(node);
-  s := IOStream.append(s, InstNode.toFlatString(node, format, indent));
-end toFlatDeclarationStream;
+  declNode := InstNode.setNodeType(node_ty, declNode);
+
+  if evaluate then
+    EvalConstants.evaluateRecordDeclaration(declNode);
+  end if;
+end getDeclarationNode;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFRecord;

@@ -36,7 +36,6 @@
 #include "Helper.h"
 #include "StringHandler.h"
 #include "OMC/OMCProxy.h"
-#include "Modeling/ItemDelegate.h"
 #include "Editors/BaseEditor.h"
 #include "OMPlot.h"
 
@@ -68,9 +67,7 @@ TreeSearchFilters::TreeSearchFilters(QWidget *pParent)
   : QWidget(pParent)
 {
   // create the filter text box
-  mpFilterTextBox = new QLineEdit;
-  mpFilterTextBox->installEventFilter(this);
-  mpFilterTextBox->setClearButtonEnabled(true);
+  mpFilterTextBox = new LineEdit;
   connect(this, SIGNAL(clearFilter(QString)), mpFilterTextBox, SIGNAL(textEdited(QString)));
   // filter timer
   mpFilterTimer = new QTimer(this);
@@ -137,33 +134,6 @@ TreeSearchFilters::TreeSearchFilters(QWidget *pParent)
   pMainLayout->addWidget(mpShowHideButton, 0, 4);
   pMainLayout->addWidget(mpFiltersWidget, 1, 0, 1, 5);
   setLayout(pMainLayout);
-}
-
-/*!
- * \brief TreeSearchFilters::eventFilter
- * Handles the ESC key press for filter text box
- * \param pObject
- * \param pEvent
- * \return
- */
-bool TreeSearchFilters::eventFilter(QObject *pObject, QEvent *pEvent)
-{
-  /* Ticket #3987
-   * Clear contents of filter field by clicking ESC key.
-   */
-  QLineEdit *pFilterTextBox = qobject_cast<QLineEdit*>(pObject);
-  if (pFilterTextBox && pEvent->type() == QEvent::KeyPress) {
-    QKeyEvent *pKeyEvent = static_cast<QKeyEvent*>(pEvent);
-    if (pKeyEvent && pKeyEvent->key() == Qt::Key_Escape) {
-      pFilterTextBox->clear();
-      /* Ticket #5998
-       * Emit clearFilter signal which calls textEdited signal of mpFilterTextBox to reset filter.
-       */
-      emit clearFilter("");
-      return true;
-    }
-  }
-  return QWidget::eventFilter(pObject, pEvent);
 }
 
 void TreeSearchFilters::showHideFilters(bool On)
@@ -314,6 +284,43 @@ void Label::resizeEvent(QResizeEvent *event)
 {
   QLabel::resizeEvent(event);
   QLabel::setText(elidedText());
+}
+
+/*!
+ * \class LineEdit
+ * \brief Subclass for QLineEdit with clear button enabled and ESC key support to clear the text.
+ */
+/*!
+ * \brief LineEdit::LineEdit
+ * Creates a LineEdit with clear button enabled.
+ * \param parent
+ */
+LineEdit::LineEdit(QWidget *parent)
+  : QLineEdit(parent)
+{
+  setClearButtonEnabled(true);
+}
+
+/*!
+ * \brief LineEdit::keyPressEvent
+ * Reimplementation of QLineEdit::keyPressEvent.\n
+ * \param event
+ */
+void LineEdit::keyPressEvent(QKeyEvent *event)
+{
+  /* Ticket #3987
+   * Clear contents of filter field by clicking ESC key.
+   */
+  if (event->key() == Qt::Key_Escape) {
+    clear();
+    /* Ticket #5998
+     * Emit textEdited. Used by filter text box to reset filter.
+     */
+    emit textEdited("");
+    event->accept();
+  } else {
+    QLineEdit::keyPressEvent(event);
+  }
 }
 
 ComboBox::ComboBox(QWidget *parent)
@@ -713,6 +720,10 @@ qreal Utilities::convertUnit(qreal value, qreal offset, qreal scaleFactor)
  */
 QStringList Utilities::extractArrayParts(const QString &input) {
   QString trimmed = input.trimmed();
+  // if input is empty then return empty list
+  if (trimmed.isEmpty()) {
+    return QStringList();
+  }
   // If input is NOT an array (doesn't start with { and end with }), return it as single element
   if (!trimmed.startsWith('{') || !trimmed.endsWith('}')) {
     return QStringList{ trimmed };
@@ -802,7 +813,7 @@ QString Utilities::arrayExpressionUnitConversion(OMCProxy *pOMCProxy, QString va
       convertedValues.append(value);
     }
   }
-  return QString("{%1}").arg(convertedValues.join(","));
+  return convertedValues.isEmpty() ? "" : QString("{%1}").arg(convertedValues.join(","));
 }
 
 Label* Utilities::getHeadingLabel(QString heading)
@@ -1336,6 +1347,12 @@ void Utilities::addDefaultDisplayUnit(const QString &unit, QStringList &displayU
      * Whenever unit = "m3/s", we also add "l/s" and "m3/h" even if it is not defined as displayUnits.
      */
     displayUnit << "l/s" << "m3/h";
+  } else if (unit.compare(QStringLiteral("s")) == 0) {
+    /* Issue #15242
+     * For time it would be good to have extra display units min, h, d.
+     * Whenever unit = "s", we also add "min", "h" and "d" even if it is not defined as displayUnits.
+     */
+    displayUnit << Helper::timeDisplayUnits;
   }
 
   // add prefixes if unit is prefixable
@@ -1438,4 +1455,111 @@ QMap<QString, QLocale> Utilities::supportedLanguages()
     languagesMap.insert(QObject::tr("Swedish").append(" (sv)"), QLocale(QLocale::Swedish));
   }
   return languagesMap;
+}
+
+/*!
+ * \brief Utilities::buildVariableNodeTree
+ * Builds the variable node tree for the given variable name and its parts.
+ * \param pRootNode
+ * \param prefix
+ * \param fullVariableName
+ * \param parts
+ * \param makeData
+ * \param postCreate
+ */
+void Utilities::buildVariableNodeTree(VariableNode *pRootNode,
+                                      const QString &prefix,
+                                      const QString &fullVariableName,
+                                      const QStringList &parts,
+                                      std::function<QVector<QVariant>(const QString &, const QString &, bool)> makeData,
+                                      std::function<void(VariableNode*)> postCreate)
+{
+  // Precompile regex once (static inside function)
+  static const QRegularExpression arrayIndexRegex(QRegularExpression::anchoredPattern(Helper::arrayIndexRegularExpression));
+
+  const bool isDer = fullVariableName.startsWith("der(");
+  const bool isPrevious = fullVariableName.startsWith("previous(");
+
+  VariableNode *pParentNode = pRootNode;
+  QString parentVar;
+  int count = 1;
+
+  foreach (const QString &part, parts) {
+    const bool isLast = (parts.size() == count);
+    const bool isSecondLastBeforeArrayIndex = (parts.size() - 1 == count) && parts.last().startsWith('[');
+    const bool isLastOrSecondLastArray = isLast || isSecondLastBeforeArrayIndex;
+
+    // Compute findVariable
+    QString findVariable;
+    // if last item of array
+    if (isLast && arrayIndexRegex.match(part).hasMatch()) {
+      findVariable = prefix % fullVariableName;
+    } else if (isDer && isLastOrSecondLastArray) {
+      QString inner;
+      if (parentVar.isEmpty()) {
+        inner = part;
+      } else {
+        inner = parentVar % "." % part;
+      }
+      findVariable = prefix % StringHandler::joinDerivativeAndPreviousVariable(fullVariableName, inner, "der(");
+    } else if (isPrevious && isLastOrSecondLastArray) {
+      QString inner;
+      if (parentVar.isEmpty()) {
+        inner = part;
+      } else {
+        inner = parentVar % "." % part;
+      }
+      findVariable = prefix % StringHandler::joinDerivativeAndPreviousVariable(fullVariableName, inner, "previous(");
+    } else {
+      if (parentVar.isEmpty()) {
+        findVariable = prefix % part;
+      } else {
+        findVariable = prefix % parentVar % "." % part;
+      }
+    }
+
+    // For non-last parts: reuse existing node if found
+    if (!isLast) {
+      if (VariableNode *found = VariableNode::findVariableNode(findVariable, pParentNode)) {
+        pParentNode = found;
+        if (parentVar.isEmpty()) {
+          parentVar = part;
+        } else {
+          parentVar = parentVar % "." % part;
+        }
+        ++count;
+        continue;
+      }
+    }
+
+    // Compute display name:
+    // der/previous last or 2nd-last-before-array → joined derivative name
+    // everything else (plain, intermediate, array index) → part as-is
+    QString displayName;
+    if (isDer && isLastOrSecondLastArray) {
+      displayName = StringHandler::joinDerivativeAndPreviousVariable(fullVariableName, part, "der(");
+    } else if (isPrevious && isLastOrSecondLastArray) {
+      displayName = StringHandler::joinDerivativeAndPreviousVariable(fullVariableName, part, "previous(");
+    } else {
+      displayName = part;
+    }
+
+    // isMainArray: true when this node is the parent of an array index node
+    const bool isMainArray = isSecondLastBeforeArrayIndex;
+
+    QVector<QVariant> nodeData = makeData(findVariable, displayName, isMainArray);
+    VariableNode *pNewNode = new VariableNode(nodeData);
+    if (postCreate) {
+      postCreate(pNewNode);
+    }
+    pParentNode->mChildren.insert(findVariable, pNewNode);
+    pParentNode = pNewNode;
+
+    if (parentVar.isEmpty()) {
+      parentVar = part;
+    } else {
+      parentVar = parentVar % "." % part;
+    }
+    ++count;
+  }
 }

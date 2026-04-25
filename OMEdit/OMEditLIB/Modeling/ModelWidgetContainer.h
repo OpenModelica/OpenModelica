@@ -366,6 +366,7 @@ public:
   void showReplaceSubModelDialog(QString name);
   void addErrorTextShape();
   void removeErrorTextShape();
+  void getCoordinateSystemAndGraphics(QStringList &coOrdinateSystemList, QStringList &graphicsList);
 private:
   void createActions();
   bool isClassDroppedOnItself(LibraryTreeItem *pLibraryTreeItem);
@@ -400,7 +401,6 @@ private:
   void omsOneShapeContextMenu(ShapeAnnotation *pShapeAnnotation, QMenu *pMenu);
   void omsOneComponentContextMenu(Element *pComponent, QMenu *pMenu);
   void omsMultipleItemsContextMenu(QMenu *pMenu);
-  void getCoordinateSystemAndGraphics(QStringList &coOrdinateSystemList, QStringList &graphicsList);
 signals:
   void manhattanize();
   void deleteSignal();
@@ -482,29 +482,22 @@ public:
   void addRecentFilesListItems();
   QFrame* getLatestNewsFrame();
   QSplitter* getSplitter();
+
+  // QWidget interface
+  /* This tells QMainWindow: "I'm happy with very little height",
+   * so when state is restored the messages dock gets the height you saved rather than being squeezed by the central widget.
+   * The widget itself will still expand to fill whatever space QMainWindow actually gives it.
+   * minimumSizeHint() only affects the negotiation during layout/restore, not the final rendered size.
+   */
+  virtual QSize minimumSizeHint() const override { return QSize(200, 50); }
 private:
-  QFrame *mpMainFrame;
-  QFrame *mpTopFrame;
-  Label *mpPixmapLabel;
-  Label *mpHeadingLabel;
-  QFrame *mpRecentFilesFrame;
-  Label *mpRecentFilesLabel;
   Label *mpNoRecentFileLabel;
-  QListWidget *mpRecentItemsList;
-  QPushButton *mpClearRecentFilesListButton;
+  QListWidget *mpRecentItemsListWidget;
   QFrame *mpLatestNewsFrame;
-  Label *mpLatestNewsLabel;
   Label *mpNoLatestNewsLabel;
   QListWidget *mpLatestNewsListWidget;
-  QPushButton *mpReloadLatestNewsButton;
-  Label *mpVisitWebsiteLabel;
   NetworkAccessManager *mpLatestNewsNetworkAccessManager;
   QSplitter *mpSplitter;
-  QFrame *mpBottomFrame;
-  QPushButton *mpCreateModelButton;
-  QPushButton *mpOpenModelButton;
-  QPushButton *mpSystemLibrariesButton;
-  QPushButton *mpInstallLibraryButton;
 public slots:
   void addLatestNewsListItems();
 private slots:
@@ -607,6 +600,9 @@ public:
   void showElement(ModelInstance::Model *pModelInstance, bool addToList);
   void selectDeselectElement(const QString &name, bool selected);
   void navigateToClass(const QString &className);
+
+  QPair<QString, bool> getParameterDisplayString(QString parameterName);
+  QPair<QString, bool> getParameterModifierValue(const QString &parameterName, const QString &modifier);
 private:
   ModelWidgetContainer *mpModelWidgetContainer;
   ModelInstance::Model *mpModelInstance;

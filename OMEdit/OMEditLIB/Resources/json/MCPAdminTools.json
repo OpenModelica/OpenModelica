@@ -1,0 +1,73 @@
+[
+    {
+        "name": "loadModel",
+        "description": "Loads a Modelica library by name into OMEdit (e.g. \"Modelica\"). Use loadFile to load a .mo file instead.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "library": {
+                    "type": "string",
+                    "description": "Name of the Modelica library to load (e.g. \"Modelica\")."
+                },
+                "version": {
+                    "type": "string",
+                    "description": "Version of the library to load (e.g. \"4.0.0\"). Defaults to \"default\"."
+                }
+            },
+            "required": ["library"]
+        },
+        "annotations": {
+            "readOnlyHint": false,
+            "destructiveHint": false
+        }
+    },
+    {
+        "name": "loadFile",
+        "description": "Loads a .mo file into OMEdit by absolute file path.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "fileName": {
+                    "type": "string",
+                    "description": "Absolute path to the .mo file to load."
+                }
+            },
+            "required": ["fileName"]
+        },
+        "annotations": {
+            "readOnlyHint": false,
+            "destructiveHint": false
+        }
+    },
+    {
+        "name": "getSimulationResultPath",
+        "description": "Returns the file path of the simulation result file for a given class, if it has been simulated and the result is loaded in OMEdit.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "className": {
+                    "type": "string",
+                    "description": "Fully qualified name of the model class."
+                }
+            },
+            "required": ["className"]
+        },
+        "annotations": {
+            "readOnlyHint": true,
+            "destructiveHint": false
+        }
+    },
+    {
+        "name": "resetEnvironment",
+        "description": "Resets the OMEdit environment to a clean state: unloads all user-defined classes from the library, removes all open simulation result files, closes all plot windows, and clears all compilation and simulation output logs. Use this before loading a new test case.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {},
+            "required": []
+        },
+        "annotations": {
+            "readOnlyHint": false,
+            "destructiveHint": true
+        }
+    }
+]

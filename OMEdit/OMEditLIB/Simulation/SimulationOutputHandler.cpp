@@ -47,7 +47,6 @@ SimulationMessageModel::SimulationMessageModel(SimulationOutputWidget *pSimulati
 {
   mpSimulationOutputWidget = pSimulationOutputWidget;
   mpRootSimulationMessage = new SimulationMessage;
-  mpRootSimulationMessage->mDeweyId = "1";
 }
 
 /*!
@@ -352,17 +351,7 @@ void SimulationOutputHandler::parseSimulationOutput(const QString &output)
           SimulationMessage *pSimulationMessage = mSimulationMessagesLevelMap.value(mLevel - 1, 0);
           if (pSimulationMessage) {
             mpSimulationMessage->setParent(pSimulationMessage);
-            if (mpSimulationOutputWidget->isOutputStructured()) {
-              mpSimulationMessage->mDeweyId = pSimulationMessage->mDeweyId + "." + QString::number(pSimulationMessage->children().size() + 1);
-              mpSimulationMessage->mDeweyId = QString("%1.%2").arg(pSimulationMessage->mDeweyId)
-                                              .arg(QString::number(pSimulationMessage->children().size() + 1));
-            }
             pSimulationMessage->mChildren.append(mpSimulationMessage);
-          }
-        } else {
-          if (mpSimulationOutputWidget->isOutputStructured()) {
-            mpSimulationMessage->mDeweyId = QString("%1.%2").arg(mpSimulationMessageModel->getRootSimulationMessage()->mDeweyId)
-                                            .arg(QString::number(mpSimulationMessageModel->getRootSimulationMessage()->children().size() + 1));
           }
         }
         mLevel++;

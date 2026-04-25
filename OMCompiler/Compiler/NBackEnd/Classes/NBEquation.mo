@@ -1,33 +1,38 @@
 /*
-* This file is part of OpenModelica.
-*
-* Copyright (c) 1998-2020, Open Source Modelica Consortium (OSMC),
-* c/o Linköpings universitet, Department of Computer and Information Science,
-* SE-58183 Linköping, Sweden.
-*
-* All rights reserved.
-*
-* THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
-* THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
-* ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
-* RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
-* ACCORDING TO RECIPIENTS CHOICE.
-*
-* The OpenModelica software and the Open Source Modelica
-* Consortium (OSMC) Public License (OSMC-PL) are obtained
-* from OSMC, either from the above address,
-* from the URLs: http://www.ida.liu.se/projects/OpenModelica or
-* http://www.openmodelica.org, and in the OpenModelica distribution.
-* GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
-*
-* This program is distributed WITHOUT ANY WARRANTY; without
-* even the implied warranty of  MERCHANTABILITY or FITNESS
-* FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
-* IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
-*
-* See the full OSMC Public License conditions for more details.
-*
-*/
+ * This file is part of OpenModelica.
+ *
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
+ * c/o Linköpings universitet, Department of Computer and Information Science,
+ * SE-58183 Linköping, Sweden.
+ *
+ * All rights reserved.
+ *
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
+ *
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
+ *
+ * This program is distributed WITHOUT ANY WARRANTY; without
+ * even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
+ *
+ * See the full OSMC Public License conditions for more details.
+ *
+ */
+
 encapsulated package NBEquation
 " file:         NBEquation.mo
   package:      NBEquation
@@ -147,6 +152,46 @@ public
 
     record EMPTY
     end EMPTY;
+
+    function createFrame
+      "takes a typical (name, exp) tuple representing (for name in exp loop)
+      and checks if exp already is RANGE(). if not it creates a RANGE() of
+      correct size and maps the ARRAY() expression to that RANGE().
+      returns frame structure used for Iterator.fromFrames()"
+      input tuple<InstNode, Expression> iter;
+      input UnorderedSet<VariablePointer> set "new iterators";
+      output tuple<ComponentRef, Expression, Option<Iterator>> frame;
+    algorithm
+      frame := match iter
+        local
+          InstNode node, node2;
+          Expression range, range2;
+          Iterator map;
+          ComponentRef iter_cref;
+          Pointer<Variable> iter_var;
+
+        // it already is a proper range, use it for the for loop
+        case (node, range as Expression.RANGE()) then (ComponentRef.makeIterator(node, Type.INTEGER()), range, NONE());
+
+        // it has an array as constructor, map it to a range
+        // used to fix #13031
+        case (node, range as Expression.ARRAY()) algorithm
+          node2   := InstNode.newIterator("$" + InstNode.name(node), Type.INTEGER(), sourceInfo());
+          range2  := Expression.makeRange(Expression.INTEGER(1), NONE(), Expression.INTEGER(Type.sizeOf(Expression.typeOf(range))));
+          map     := Iterator.fromFrames({(ComponentRef.makeIterator(node, Type.arrayElementType(Expression.typeOf(range))), range, NONE())});
+
+          // create the new iterator variable
+          iter_cref := ComponentRef.makeIterator(node2, Type.INTEGER());
+          iter_var  := BackendDAE.lowerIterator(iter_cref);
+          iter_cref := BVariable.getVarName(iter_var);
+          UnorderedSet.add(iter_var, set);
+        then (iter_cref, range2, SOME(map));
+
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed to inline iterator expression: " + InstNode.toString(Util.tuple21(iter)) + " in " + Expression.toString(Util.tuple22(iter)) + "."});
+        then fail();
+      end match;
+    end createFrame;
 
     function fromFrames
       input list<Frame> frames;
@@ -294,6 +339,13 @@ public
     algorithm
       b := match iter case EMPTY() then true; else false; end match;
     end isEmpty;
+
+    function isResizable
+      input Iterator iter;
+      output Boolean b;
+    algorithm
+      b := List.any(types(iter), Type.isResizable);
+    end isResizable;
 
     function intersect
       input Iterator iter1;
@@ -471,14 +523,14 @@ public
           Integer start, step;
 
         case SINGLE() guard(arrayLength(location) == 1) algorithm
-          (start, step, _) := Expression.getIntegerRange(iter.range);
+          (start, step, _) := Expression.getIntegerRange(iter.range, true);
           UnorderedMap.add(iter.name, Expression.INTEGER(start + location[1]*step), replacements);
           createMappedLocationReplacement(iter.map, location[1], replacements);
         then ();
 
         case NESTED() guard(arrayLength(location) == arrayLength(iter.ranges)) algorithm
           for i in 1:arrayLength(location) loop
-            (start, step, _) := Expression.getIntegerRange(iter.ranges[i]);
+            (start, step, _) := Expression.getIntegerRange(iter.ranges[i], true);
             UnorderedMap.add(iter.names[i], Expression.INTEGER(start + location[i]*step), replacements);
             createMappedLocationReplacement(iter.maps[i], location[i], replacements);
           end for;
@@ -557,8 +609,8 @@ public
       Integer or_start, or_step, or_stop, ee_start, ee_step, ee_stop;
       Expression exp;
     algorithm
-      (or_start, or_step, or_stop) := Expression.getIntegerRange(replacor_range);
-      (ee_start, ee_step, ee_stop) := Expression.getIntegerRange(replacee_range);
+      (or_start, or_step, or_stop) := Expression.getIntegerRange(replacor_range, true);
+      (ee_start, ee_step, ee_stop) := Expression.getIntegerRange(replacee_range, true);
       // check if same size
       if (or_stop-or_start+1)/or_step == (ee_stop-ee_start+1)/ee_step then
         // replacee = ee_start + (ee_step/or_step) * (replacor-or_start)
@@ -597,11 +649,11 @@ public
 
         case Call.TYPED_ARRAY_CONSTRUCTOR() algorithm
           (names, ranges, maps) := getFrames(iter);
-        then fromFrames(listAppend(list(Inline.inlineArrayIterator(tpl, new_iters) for tpl in call.iters), List.zip3(names, ranges, maps)));
+        then fromFrames(listAppend(list(createFrame(tpl, new_iters) for tpl in call.iters), List.zip3(names, ranges, maps)));
 
         case Call.TYPED_REDUCTION() algorithm
           (names, ranges, maps) := getFrames(iter);
-        then fromFrames(listAppend(list(Inline.inlineArrayIterator(tpl, new_iters) for tpl in call.iters), List.zip3(names, ranges, maps)));
+        then fromFrames(listAppend(list(createFrame(tpl, new_iters) for tpl in call.iters), List.zip3(names, ranges, maps)));
 
         else iter;
       end match;
@@ -643,7 +695,7 @@ public
         case Expression.CALL(call = call as Call.TYPED_ARRAY_CONSTRUCTOR()) algorithm
           // inline the frontend iterator to get frames for backend iterator
           for tpl in listReverse(call.iters) loop
-            frames := Inline.inlineArrayIterator(tpl, new_iters) :: frames;
+            frames := createFrame(tpl, new_iters) :: frames;
           end for;
           tmp := fromFrames(frames);
 
@@ -963,10 +1015,10 @@ public
             // revert an array/list if needed
             case Expression.ARRAY(literal = true) algorithm
               if eo == NBResizable.EvalOrder.FORWARD then
-                elements := list(Expression.getInteger(e) for e in range.elements);
+                elements := list(Expression.getInteger(e, true) for e in range.elements);
                 range.elements := listArray(list(Expression.INTEGER(e) for e in List.sort(elements, intGt)));
               elseif eo == NBResizable.EvalOrder.BACKWARD then
-                elements := list(Expression.getInteger(e) for e in range.elements);
+                elements := list(Expression.getInteger(e, true) for e in range.elements);
                 range.elements := listArray(list(Expression.INTEGER(e) for e in List.sort(elements, intLt)));
               end if;
             then range;
@@ -1437,7 +1489,7 @@ public
     protected
       Algorithm alg;
     algorithm
-      alg := Algorithm.ALGORITHM(stmts, {}, {}, InstNode.EMPTY_NODE(), DAE.emptyElementSource);
+      alg := Algorithm.ALGORITHM(stmts, {}, {}, NONE(), InstNode.EMPTY_NODE(), DAE.emptyElementSource);
       alg := Algorithm.setInputsOutputs(alg);
       eqn := BackendDAE.lowerAlgorithm(alg, init);
     end makeAlgorithm;
@@ -1646,6 +1698,53 @@ public
 
       end match;
     end map;
+
+    function mapCondition
+      "Traverses all expressions in conditions of the equations and applies a function to it.
+      Optional second input to also traverse crefs, only needed for simple
+      eqns, when eqns and algorithms."
+      input output Equation eq;
+      input MapFuncExp funcExp;
+      input Option<MapFuncCref> funcCrefOpt = NONE();
+      input MapFuncExpWrapper mapFunc = Expression.map;
+    algorithm
+      eq := match eq
+        local
+          IfEquationBody ifEqBody;
+          WhenEquationBody whenEqBody;
+          Equation body, new_body;
+
+        // todo, map the conditions here
+        //case ALGORITHM()
+
+        case IF_EQUATION() algorithm
+          ifEqBody := IfEquationBody.mapCondition(eq.body, funcExp, funcCrefOpt, mapFunc);
+          if not referenceEq(ifEqBody, eq.body) then
+            eq.body := ifEqBody;
+          end if;
+        then eq;
+
+        case FOR_EQUATION() algorithm
+          eq.body := list(mapCondition(body_eqn, funcExp, funcCrefOpt, mapFunc) for body_eqn in eq.body);
+        then eq;
+
+        case WHEN_EQUATION() algorithm
+          whenEqBody := WhenEquationBody.mapCondition(eq.body, funcExp, funcCrefOpt, mapFunc);
+          if not referenceEq(whenEqBody, eq.body) then
+            eq.body := whenEqBody;
+          end if;
+        then eq;
+
+        case AUX_EQUATION(body = SOME(body)) algorithm
+          new_body := mapCondition(body, funcExp, funcCrefOpt, mapFunc);
+          if not referenceEq(new_body, body) then
+            eq.body := SOME(new_body);
+          end if;
+        then eq;
+
+        else eq;
+      end match;
+    end mapCondition;
 
     function collectCrefs
       "filters all crefs of an equation and adds them
@@ -2386,6 +2485,21 @@ public
       end match;
     end isClocked;
 
+    function isCompound extends checkEqn;
+    algorithm
+      b := match Pointer.access(eqn_ptr)
+        case ALGORITHM()      then true;
+        case IF_EQUATION()    then true;
+        case WHEN_EQUATION()  then true;
+        else false;
+      end match;
+    end isCompound;
+
+    function isResizable extends checkEqn;
+    algorithm
+      b := Type.isResizable(getType(Pointer.access(eqn_ptr)));
+    end isResizable;
+
     function expIsParamOrConst
       input output Expression exp;
       input Pointer<Boolean> b_ptr;
@@ -2839,7 +2953,6 @@ public
         then fail();
       end match;
     end toStatement;
-
   end Equation;
 
   uniontype IfEquationBody
@@ -2960,6 +3073,24 @@ public
         funcCrefOpt = funcCrefOpt,
         mapFunc     = mapFunc);
     end map;
+
+    function mapCondition
+      "only maps the conditions and not the body"
+      input output IfEquationBody ifBody;
+      input MapFuncExp funcExp;
+      input Option<MapFuncCref> funcCrefOpt;
+      input MapFuncExpWrapper mapFunc;
+    protected
+      Expression condition;
+    algorithm
+      condition := mapFunc(ifBody.condition, funcExp);
+      if not referenceEq(condition, ifBody.condition) then
+        ifBody.condition := condition;
+      end if;
+
+      // map else if
+      ifBody.else_if := Util.applyOption(ifBody.else_if, function mapCondition(funcExp = funcExp, funcCrefOpt = funcCrefOpt, mapFunc = mapFunc));
+    end mapCondition;
 
     function mapEqnExpCref
       input output IfEquationBody ifBody;
@@ -3291,6 +3422,8 @@ public
         local
           WhenStatement stmt;
         case {stmt} then WhenStatement.getType(stmt);
+        // allow multiple statements for no-return-value when statements
+        case _ guard(List.all(list(WhenStatement.getType(st) for st in body.when_stmts), Type.isAny)) then Type.ANY();
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of not properly split up when equation body: " + toString(body)});
         then fail();
@@ -3472,6 +3605,7 @@ public
         end if;
       end for;
 
+      flat_new := {};
       // collect all statements that are not assign or reinit and combine them
       for tpl in flat_when loop
         (condition, stmts) := tpl;
@@ -3483,6 +3617,11 @@ public
           condition := combineConditions(acc_condition, condition, false);
           acc_condition := Expression.EMPTY(Type.INTEGER());
           flat_new := (condition, stmts) :: flat_new;
+          // create body from flat list and add to new bodies
+          new_body := fromFlatList(flat_new);
+          if Util.isSome(new_body) then
+            bodies := Util.getOption(new_body) :: bodies;
+          end if;
         else
           acc_condition := combineConditions(acc_condition, condition, true);
         end if;

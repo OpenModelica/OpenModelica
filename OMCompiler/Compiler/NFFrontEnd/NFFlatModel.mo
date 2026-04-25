@@ -1,29 +1,33 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-CurrentYear, Linköping University,
- * Department of Computer and Information Science,
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
+ * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
- * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from Linköping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
- * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS
- * OF OSMC-PL.
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
  * See the full OSMC Public License conditions for more details.
  *
@@ -36,6 +40,7 @@ encapsulated uniontype NFFlatModel
 
 protected
   import Binding = NFBinding;
+  import Call = NFCall;
   import Class = NFClass;
   import ComplexType = NFComplexType;
   import Component = NFComponent;
@@ -45,6 +50,10 @@ protected
   import ExpandExp = NFExpandExp;
   import Expression = NFExpression;
   import FlatModelicaUtil = NFFlatModelicaUtil;
+  import Flatten = NFFlatten;
+  import NFFlatten.FunctionTree;
+  import FunctionInverse = NFFunctionInverse;
+  import Inline = NFInline;
   import InstContext = NFInstContext;
   import IOStream;
   import Lookup = NFLookup;
@@ -130,36 +139,45 @@ public
 
   function toString
     input FlatModel flatModel;
+    input FunctionTree functions;
     input Boolean printBindingTypes = false;
-    output String str = IOStream.string(toStream(flatModel, printBindingTypes));
+    output String str = IOStream.string(toStream(flatModel, functions, printBindingTypes));
   end toString;
 
   function printString
     input FlatModel flatModel;
+    input FunctionTree functions;
     input Boolean printBindingTypes = false;
   protected
     IOStream.IOStream s;
   algorithm
-    s := toStream(flatModel, printBindingTypes);
+    s := toStream(flatModel, functions, printBindingTypes);
     IOStream.print(s, IOStream.stdOutput);
   end printString;
 
   function toStream
     input FlatModel flatModel;
+    input FunctionTree functions;
     input Boolean printBindingTypes = false;
     output IOStream.IOStream s;
   algorithm
     s := IOStream.create(getInstanceName(), IOStream.IOStreamType.LIST());
-    s := appendStream(flatModel, printBindingTypes, s);
+    s := appendStream(flatModel, functions, printBindingTypes, s);
   end toStream;
 
   function appendStream
     input FlatModel flatModel;
+    input FunctionTree functions;
     input Boolean printBindingTypes = false;
     input output IOStream.IOStream s;
   protected
     String name = className(flatModel);
   algorithm
+    for fn in FunctionTree.listValues(functions) loop
+      s := Function.toStream(fn, "", s);
+      s := IOStream.append(s, ";\n\n");
+    end for;
+
     s := IOStream.append(s, "class " + name + "\n");
 
     for v in flatModel.variables loop
@@ -197,7 +215,7 @@ public
   function toFlatString
     "Returns a string containing the flat Modelica representation of the given model."
     input FlatModel flatModel;
-    input list<Function> functions;
+    input FunctionTree functions;
     input Boolean printBindingTypes = false;
     output String str = IOStream.string(toFlatStream(flatModel, functions, printBindingTypes));
   end toFlatString;
@@ -205,7 +223,7 @@ public
   function printFlatString
     "Prints a flat Modelica representation of the given model to standard output."
     input FlatModel flatModel;
-    input list<Function> functions;
+    input FunctionTree functions;
     input Boolean printBindingTypes = false;
   protected
     IOStream.IOStream s;
@@ -217,7 +235,7 @@ public
   function toFlatStream
     "Returns a new IOStream containing the flat Modelica representation of the given model."
     input FlatModel flatModel;
-    input list<Function> functions;
+    input FunctionTree functions;
     input Boolean printBindingTypes = false;
     output IOStream.IOStream s;
   algorithm
@@ -228,7 +246,7 @@ public
   function appendFlatStream
     "Appends the flat Modelica representation of the given model to an existing IOStream."
     input FlatModel flatModel;
-    input list<Function> functions;
+    input FunctionTree functions;
     input Boolean printBindingTypes = false;
     input output IOStream.IOStream s;
   protected
@@ -236,6 +254,7 @@ public
     String name = Util.makeQuotedIdentifier(className(flatModel));
     BaseModelica.OutputFormat format;
     Boolean scalarize;
+    list<Function> funcs = FunctionTree.listValues(functions);
   algorithm
     format := BaseModelica.formatFromFlags();
     scalarize := Flags.isConfigFlagSet(Flags.BASE_MODELICA_OPTIONS, "scalarize");
@@ -245,16 +264,22 @@ public
       flat_model := obfuscate(flat_model);
     end if;
 
+    if BaseModelica.inlineFunctions() then
+      (flat_model, funcs) := inlineFunctions(flat_model);
+    end if;
+
     if scalarize then
       flat_model.variables := Scalarize.scalarizeVariables(flat_model.variables, forceScalarize = true);
       flat_model.equations := Equation.splitRecordEquations(flat_model.equations);
       flat_model.equations := Scalarize.scalarizeEquations(flat_model.equations, forceScalarize = true);
-      flat_model.equations := Equation.mapExpList(flat_model.equations, ExpandExp.expandCallArgs);
       flat_model.initialEquations := Equation.splitRecordEquations(flat_model.initialEquations);
       flat_model.initialEquations := Scalarize.scalarizeEquations(flat_model.initialEquations, forceScalarize = true);
-      flat_model.initialEquations := Equation.mapExpList(flat_model.initialEquations, ExpandExp.expandCallArgs);
+      flat_model.algorithms := list(Flatten.unrollForStatementsInAlg(a) for a in flat_model.algorithms);
+      flat_model.initialAlgorithms := list(Flatten.unrollForStatementsInAlg(a) for a in flat_model.initialAlgorithms);
+      flat_model := mapExp(flat_model, ExpandExp.expandCallArgs);
     else
       flat_model.variables := reconstructRecordInstances(flat_model.variables);
+      flat_model.variables := List.filterOnFalse(flat_model.variables, Variable.isEmptyArray);
     end if;
 
     if format.moveBindings then
@@ -264,7 +289,7 @@ public
     s := IOStream.append(s, "//! base 0.1.0\n");
     s := IOStream.append(s, "package " + name + "\n");
 
-    for fn in functions loop
+    for fn in funcs loop
       if not (Function.isDefaultRecordConstructor(fn) or Function.isExternalObjectConstructorOrDestructor(fn)) then
         // Function parameters are not affected by the scalarization mode, so use default format here.
         s := Function.toFlatStream(fn, BaseModelica.defaultFormat, "  ", s);
@@ -272,7 +297,7 @@ public
       end if;
     end for;
 
-    for ty in collectFlatTypes(flat_model, functions) loop
+    for ty in collectFlatTypes(flat_model, funcs) loop
       s := Type.toFlatDeclarationStream(ty, format, "  ", s);
       s := IOStream.append(s, ";\n\n");
     end for;
@@ -315,6 +340,85 @@ public
     s := IOStream.append(s, "  end " + name + ";\n");
     s := IOStream.append(s, "end " + name + ";\n");
   end appendFlatStream;
+
+  function inlineFunctions
+    "Tries to inline all function calls in the flat model, and returns the new
+     flat model and a list of functions that couldn't be inlined."
+    input output FlatModel flatModel;
+          output list<Function> remainingFuncs;
+  protected
+    UnorderedSet<Function> funcs;
+  algorithm
+    funcs := UnorderedSet.new(Function.nameHash, Function.nameEqual);
+    flatModel := mapExp(flatModel, function Expression.map(func = function inlineFunctions_traverser(funcs = funcs)));
+    remainingFuncs := UnorderedSet.toList(funcs);
+  end inlineFunctions;
+
+  function inlineFunctions_traverser
+    input Expression exp;
+    input UnorderedSet<Function> funcs;
+    output Expression outExp;
+  protected
+    Function fn;
+  algorithm
+    outExp := match exp
+      case Expression.CALL()
+        algorithm
+          fn := Call.typedFunction(exp.call);
+
+          if Function.isBuiltin(fn) then
+            outExp := exp;
+          else
+            outExp := Inline.inlineCallExp(exp, forceInline = true);
+
+            if referenceEq(exp, outExp) then
+              // If the call wasn't inlined, add it to the set of remaining functions.
+              collectFunction(fn, funcs);
+            else
+              // Otherwise, collect any calls in the new expression that couldn't be inlined.
+              Expression.apply(outExp, function collectFunctions(funcs = funcs));
+            end if;
+          end if;
+        then
+          outExp;
+
+      else exp;
+    end match;
+  end inlineFunctions_traverser;
+
+  function collectFunctions
+    input Expression exp;
+    input UnorderedSet<Function> funcs;
+  algorithm
+    () := match exp
+      case Expression.CALL()
+        algorithm
+          collectFunction(Call.typedFunction(exp.call), funcs);
+        then
+          ();
+
+      else ();
+    end match;
+  end collectFunctions;
+
+  function collectFunction
+    input Function fn;
+    input UnorderedSet<Function> funcs;
+  algorithm
+    if not Function.isBuiltin(fn) then
+      UnorderedSet.add(fn, funcs);
+
+      for fn_der in fn.derivatives loop
+        for der_fn in Function.getCachedFuncs(fn_der.derivativeFn) loop
+          UnorderedSet.add(der_fn, funcs);
+        end for;
+      end for;
+
+      for fn_inv in fn.inverses loop
+        UnorderedSet.add(FunctionInverse.getFunction(fn_inv), funcs);
+      end for;
+    end if;
+  end collectFunction;
 
   function collectFlatTypes
     input FlatModel flatModel;

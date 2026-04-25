@@ -1,30 +1,27 @@
 /*
- * This file is part of OpenModelica.
+ * This file belongs to the OpenModelica Run-Time System
  *
- * Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
- * c/o Linköpings universitet, Department of Computer and Information Science,
- * SE-58183 Linköping, Sweden.
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC), c/o Linköpings
+ * universitet, Department of Computer and Information Science, SE-58183 Linköping, Sweden. All rights
+ * reserved.
  *
- * All rights reserved.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THE BSD NEW LICENSE OR THE
+ * AGPL VERSION 3 LICENSE OR THE OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8. ANY
+ * USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
+ * ACCEPTANCE OF THE BSD NEW LICENSE OR THE OSMC PUBLIC LICENSE OR THE AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE
- * OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium) Public License
+ * (OSMC-PL) are obtained from OSMC, either from the above address, from the URLs:
+ * http://www.openmodelica.org or https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica, and in the OpenModelica distribution. GNU
+ * AGPL version 3 is obtained from: https://www.gnu.org/licenses/licenses.html#GPL. The BSD NEW
+ * License is obtained from: http://www.opensource.org/licenses/BSD-3-Clause.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
- *
- * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
- * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
- *
- * See the full OSMC Public License conditions for more details.
+ * This program is distributed WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY
+ * SET FORTH IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF
+ * OSMC-PL.
  *
  */
 
@@ -274,6 +271,7 @@ fmi2Status internalEventUpdate(fmi2Component c, fmi2EventInfo* eventInfo)
   FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "internalEventUpdate: Start Event Update! Next Sample Event %g", eventInfo->nextEventTime)
 
   setThreadData(comp);
+  MemPoolState mem_pool_state = omc_util_get_pool_state();
   /* try */
   MMC_TRY_INTERNAL(simulationJumpBuffer)
 
@@ -370,6 +368,7 @@ fmi2Status internalEventUpdate(fmi2Component c, fmi2EventInfo* eventInfo)
 
   /* catch */
   MMC_CATCH_INTERNAL(simulationJumpBuffer)
+  omc_util_restore_pool_state(mem_pool_state);
   resetThreadData(comp);
 
   if (done) {
@@ -891,6 +890,7 @@ fmi2Status fmi2ExitInitializationMode(fmi2Component c)
   FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2ExitInitializationMode...")
 
   setThreadData(comp);
+  MemPoolState mem_pool_state = omc_util_get_pool_state();
 
   /* try */
   MMC_TRY_INTERNAL(simulationJumpBuffer)
@@ -942,6 +942,7 @@ fmi2Status fmi2ExitInitializationMode(fmi2Component c)
   }
 
   comp->state = isCoSimulation(comp) ? model_state_cs_step_complete : model_state_me_event_mode;
+  omc_util_restore_pool_state(mem_pool_state);
   resetThreadData(comp);
 
   FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2ExitInitializationMode: succeed")
@@ -1704,7 +1705,9 @@ fmi2Status fmi2GetDirectionalDerivativeForInitialization(fmi2Component c,
    * More efficient code could only evaluate the equations needed for the
    * known variables only */
   setThreadData(comp);
+  MemPoolState mem_pool_state = omc_util_get_pool_state();
   fmudata->callback->functionJacFMIDERINIT_column(fmudata, td, comp->fmiDerJacInitialization, NULL);
+  omc_util_restore_pool_state(mem_pool_state);
   resetThreadData(comp);
 
   /* Write the results to dvUnknown array */
@@ -1785,7 +1788,9 @@ fmi2Status fmi2GetDirectionalDerivative(fmi2Component c,
    * More efficient code could only evaluate the equations needed for the
    * known variables only */
   setThreadData(comp);
+  MemPoolState mem_pool_state = omc_util_get_pool_state();
   fmudata->callback->functionJacFMIDER_column(fmudata, td, comp->fmiDerJac, NULL);
+  omc_util_restore_pool_state(mem_pool_state);
   resetThreadData(comp);
 
   /* Write the results to dvUnknown array */
@@ -2208,8 +2213,11 @@ fmi2Status fmi2DoStep(fmi2Component c, fmi2Real currentCommunicationPoint, fmi2R
 {
   ModelInstance *comp = (ModelInstance *)c;
   fmi2CallbackFunctions* functions = (fmi2CallbackFunctions*)comp->functions;
+  threadData_t *threadData = comp->threadData;
+  jmp_buf *old_jmp = threadData->mmc_jumper;
   int i, zc_event = 0, time_event = 0;
   int flag;
+  int done = 0;
 
   fmi2Status status = fmi2OK;
   fmi2Real* states = comp->states;
@@ -2224,6 +2232,14 @@ fmi2Status fmi2DoStep(fmi2Component c, fmi2Real currentCommunicationPoint, fmi2R
 
   if (invalidState(comp, "fmi2DoStep", 0, model_state_cs_step_complete))
     return fmi2Error;
+
+  MemPoolState doStep_pool_state = omc_util_get_pool_state();
+
+  setThreadData(comp);
+
+  /* try */
+  MMC_TRY_INTERNAL(simulationJumpBuffer)
+    threadData->mmc_jumper = threadData->simulationJumpBuffer;
 
   eventInfo.newDiscreteStatesNeeded           = fmi2False;
   eventInfo.terminateSimulation               = fmi2False;
@@ -2248,7 +2264,8 @@ fmi2Status fmi2DoStep(fmi2Component c, fmi2Real currentCommunicationPoint, fmi2R
   }
 #endif
 
-  internalEventIteration(c, &eventInfo);
+  status = internalEventIteration(c, &eventInfo);
+  if (status != fmi2OK) goto doStep_cleanup;
 
   /* Integration loop */
   while (status == fmi2OK && comp->fmuData->localData[0]->timeValue < tEnd)
@@ -2265,22 +2282,25 @@ fmi2Status fmi2DoStep(fmi2Component c, fmi2Real currentCommunicationPoint, fmi2R
         double dt = comp->fmuData->localData[0]->timeValue - t;
         double new_input_value = realInputDerivatives[mappedIndex] + comp->input_real_derivative[mappedIndex] * dt;
         if (setReal(comp, i, new_input_value) != fmi2OK) // to be implemented by the includer of this file
-          return fmi2Error;
+        {
+          status = fmi2Error;
+          goto doStep_cleanup;
+        }
       }
     }
 #endif
 
 #if NUMBER_OF_STATES > 0
     status = internalGetDerivatives(c, states_der, NUMBER_OF_STATES);
-    if (status != fmi2OK) return fmi2Error;
+  if (status != fmi2OK) goto doStep_cleanup;
 
     status = internalGetContinuousStates(c, states, NUMBER_OF_STATES);
-    if (status != fmi2OK) return fmi2Error;
+  if (status != fmi2OK) goto doStep_cleanup;
 #endif
 
 #if NUMBER_OF_EVENT_INDICATORS > 0
     status = internalGetEventIndicators(c, event_indicators_prev, NUMBER_OF_EVENT_INDICATORS);
-    if (status != fmi2OK) return fmi2Error;
+  if (status != fmi2OK) goto doStep_cleanup;
 #endif
 
     /* adjust for time events */
@@ -2309,16 +2329,19 @@ fmi2Status fmi2DoStep(fmi2Component c, fmi2Real currentCommunicationPoint, fmi2R
         if (flag < 0)
         {
           FILTERED_LOG(comp, fmi2Fatal, LOG_STATUSFATAL, "fmi2DoStep: CVODE integrator step failed.")
-          return fmi2Fatal;
+          status = fmi2Fatal;
+          goto doStep_cleanup;
         }
 #else
         FILTERED_LOG(comp, fmi2Fatal, LOG_STATUSFATAL, "fmi2DoStep: FMU not compiled with SUNDIALS but solver CVODE selected.")
-        return fmi2Fatal;
+        status = fmi2Fatal;
+        goto doStep_cleanup;
 #endif /* WITH_SUNDIALS */
         break;
       default:
         FILTERED_LOG(comp, fmi2Fatal, LOG_STATUSFATAL, "fmi2DoStep: Unknown solver method %d.", comp->solverInfo->solverMethod)
-        return fmi2Fatal;
+        status = fmi2Fatal;
+        goto doStep_cleanup;
     }
 
     // update time
@@ -2335,7 +2358,10 @@ fmi2Status fmi2DoStep(fmi2Component c, fmi2Real currentCommunicationPoint, fmi2R
         double dt = comp->fmuData->localData[0]->timeValue - t;
         double new_input_value = realInputDerivatives[mappedIndex] + comp->input_real_derivative[mappedIndex] * dt;
         if (setReal(comp, i, new_input_value) != fmi2OK) // to be implemented by the includer of this file
-          return fmi2Error;
+        {
+          status = fmi2Error;
+          goto doStep_cleanup;
+        }
       }
     }
 #endif
@@ -2343,17 +2369,17 @@ fmi2Status fmi2DoStep(fmi2Component c, fmi2Real currentCommunicationPoint, fmi2R
     /* set the continuous states */
 #if NUMBER_OF_STATES > 0
     status = internalSetContinuousStates(c, states, NUMBER_OF_STATES);
-    if (status != fmi2OK) return fmi2Error;
+    if (status != fmi2OK) goto doStep_cleanup;
 #endif
 
     /* signal completed integrator step */
     status = internal_CompletedIntegratorStep(c, fmi2True, &enterEventMode, &terminateSimulation);
-    if (status != fmi2OK) return fmi2Error;
+    if (status != fmi2OK) goto doStep_cleanup;
 
     /* check for events */
 #if NUMBER_OF_EVENT_INDICATORS > 0
     status = internalGetEventIndicators(c, event_indicators, NUMBER_OF_EVENT_INDICATORS);
-    if (status != fmi2OK) return fmi2Error;
+  if (status != fmi2OK) goto doStep_cleanup;
 
     for (i = 0; i < NUMBER_OF_EVENT_INDICATORS; i++)
     {
@@ -2378,13 +2404,14 @@ fmi2Status fmi2DoStep(fmi2Component c, fmi2Real currentCommunicationPoint, fmi2R
       eventInfo.valuesOfContinuousStatesChanged   = fmi2True;
       eventInfo.nextEventTimeDefined              = fmi2False;
       eventInfo.nextEventTime                     = 0.0;
-      internalEventIteration(c, &eventInfo);
+      status = internalEventIteration(c, &eventInfo);
+      if (status != fmi2OK) goto doStep_cleanup;
 
       if (eventInfo.valuesOfContinuousStatesChanged)
       {
         #if NUMBER_OF_STATES > 0
           status = internalGetContinuousStates(c, states, NUMBER_OF_STATES);
-          if (status != fmi2OK) return fmi2Error;
+          if (status != fmi2OK) goto doStep_cleanup;
         #endif
       }
 
@@ -2392,16 +2419,35 @@ fmi2Status fmi2DoStep(fmi2Component c, fmi2Real currentCommunicationPoint, fmi2R
       {
         #if NUMBER_OF_STATES > 0
           status = internalGetNominalsOfContinuousStates(c, states, NUMBER_OF_STATES);
-          if (status != fmi2OK) return fmi2Error;
+          if (status != fmi2OK) goto doStep_cleanup;
         #endif
       }
 
       #if NUMBER_OF_EVENT_INDICATORS > 0
         status = internalGetEventIndicators(c, event_indicators_prev, NUMBER_OF_EVENT_INDICATORS);
-        if (status != fmi2OK) return fmi2Error;
+        if (status != fmi2OK) goto doStep_cleanup;
       #endif
 
       comp->solverInfo->didEventStep = 1;
+    }
+  }
+
+  done = 1;
+
+  /* catch */
+  MMC_CATCH_INTERNAL(simulationJumpBuffer)
+
+doStep_cleanup:
+  threadData->mmc_jumper = old_jmp;
+  omc_util_restore_pool_state(doStep_pool_state);
+  resetThreadData(comp);
+
+  if (!done)
+  {
+    if (status == fmi2OK)
+    {
+      FILTERED_LOG(comp, fmi2Error, LOG_FMI2_CALL, "fmi2DoStep: terminated by an assertion.")
+      status = fmi2Error;
     }
   }
 

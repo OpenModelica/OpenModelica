@@ -16,6 +16,7 @@ GetModelInstanceAnnotation11.mos \
 GetModelInstanceAnnotation12.mos \
 GetModelInstanceAnnotation13.mos \
 GetModelInstanceAnnotation14.mos \
+GetModelInstanceAnnotation15.mos \
 GetModelInstanceAttributes1.mos \
 GetModelInstanceAttributes2.mos \
 GetModelInstanceBinding1.mos \
@@ -66,6 +67,7 @@ GetModelInstanceIcon2.mos \
 GetModelInstanceIcon3.mos \
 GetModelInstanceIcon4.mos \
 GetModelInstanceIcon5.mos \
+GetModelInstanceIcon6.mos \
 GetModelInstanceImport1.mos \
 GetModelInstanceImport2.mos \
 GetModelInstanceInnerOuter1.mos \
@@ -93,6 +95,7 @@ GetModelInstanceReplaceable5.mos \
 GetModelInstanceReplaceable6.mos \
 GetModelInstanceReplaceableComment.mos \
 GetModelInstanceStateMachine1.mos \
+GetModelInstanceString1.mos \
 ModifierToJSON1.mos \
 QualifyPath1.mos \
 

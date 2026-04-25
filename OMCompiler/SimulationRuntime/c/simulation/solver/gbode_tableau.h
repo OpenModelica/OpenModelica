@@ -1,30 +1,27 @@
 /*
- * This file is part of OpenModelica.
+ * This file belongs to the OpenModelica Run-Time System
  *
- * Copyright (c) 1998-2022, Open Source Modelica Consortium (OSMC),
- * c/o Linköpings universitet, Department of Computer and Information Science,
- * SE-58183 Linköping, Sweden.
- *
- * All rights reserved.
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC), c/o Linköpings
+ * universitet, Department of Computer and Information Science, SE-58183 Linköping, Sweden. All rights
+ * reserved.
  *
  * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THE BSD NEW LICENSE OR THE
- * GPL VERSION 3 LICENSE OR THE OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * AGPL VERSION 3 LICENSE OR THE OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8. ANY
+ * USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
+ * ACCEPTANCE OF THE BSD NEW LICENSE OR THE OSMC PUBLIC LICENSE OR THE AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
- * Public License (OSMC-PL) are obtained from OSMC, either from the above
- * address, from the URLs: http://www.openmodelica.org or
- * http://www.ida.liu.se/projects/OpenModelica, and in the OpenModelica
- * distribution. GNU version 3 is obtained from:
- * http://www.gnu.org/copyleft/gpl.html. The New BSD License is obtained from:
- * http://www.opensource.org/licenses/BSD-3-Clause.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium) Public License
+ * (OSMC-PL) are obtained from OSMC, either from the above address, from the URLs:
+ * http://www.openmodelica.org or https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica, and in the OpenModelica distribution. GNU
+ * AGPL version 3 is obtained from: https://www.gnu.org/licenses/licenses.html#GPL. The BSD NEW
+ * License is obtained from: http://www.opensource.org/licenses/BSD-3-Clause.
  *
- * This program is distributed WITHOUT ANY WARRANTY; without even the implied
- * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, EXCEPT AS
- * EXPRESSLY SET FORTH IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE
- * CONDITIONS OF OSMC-PL.
+ * This program is distributed WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY
+ * SET FORTH IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF
+ * OSMC-PL.
  *
  */
 
@@ -50,6 +47,45 @@ typedef struct BUTCHER_TABLEAU BUTCHER_TABLEAU;
 typedef void (*gb_dense_output)(BUTCHER_TABLEAU* tableau, double* yOld, double* x, double* k, double dt, double stepSize, double* y, int nIdx, int* idx, int nStates);
 
 #define MAX_GBODE_FIRK_STAGES 7
+
+/**
+ * @brief Data for contractive error estimates (requires T-Transformation + internal NLS strategy).
+ *
+ * Error estimates for superconvergent FIRK methods are extremely difficult as an embedded method can obtain a
+ * maximum order of s-1 for s stages, while the methods have order 2s (Gauss), 2s-1 (Radau), 2s-2 (Lobatto). This
+ * leads to poor and non-A-stable error estimates.
+ *
+ * However, for collocation methods with at least one real eigenvalue (gamma) and 0 as a non-collocated point, we can get
+ * an A-stable error estimate of order s by using one additional function evaluation and one LU-solve:
+ *
+ *    ERR = (I - h * gamma * J)^(-1) * h * gamma * (f(x0, y0) - d(0)^T * A * k),
+ *
+ * where d(0) are the weights of the differentiation matrix at node 0.
+ *
+ * Note that the LU decomposition of (1 / (h * gamma ) * I - * J)^(-1) is already available from the Newtion iteration, so we actually just compute
+ *
+ *    ERR = (1 / (h * gamma) * I - J)^(-1) * (f(x0, y0) - d(0)^T * A * k).
+
+ * One extension could be to perform another contraction, i.e. ERR_2 := (I - h * gamma * J)^(-1) * h * gamma * (f(x0 + u * h, y0 + h * ERR) - d(0)^T * A * k),
+ * which is L-stable for Gauss, Radau. Clearly, this would be double the cost.
+ *
+ * For theory of these estimates refer to
+ *     Shampine & Baka "Error estimators for stiff differential equations" (original literature),
+ *     Hairer & Wanner pp.123 "Solving Ordinary Differential Equations II" (Radau IIA estimate),
+ *     Gonzalez-Pinto et al. "Two–step error estimators for implicit Runge–Kutta methods applied to stiff systems" (gives an overview of such ideas and
+ *                                                                                                                  an alternative 2-step estimator),
+ */
+typedef struct CONTRACTIVE_ERROR {
+  /**
+   * @brief Weights of the stage values d(0)^T * A.
+   */
+  double *dT_A;
+
+  /**
+   * @brief Set to true, if we only apply the filter matrix ERR := (1 / (h * gamma) * I - J)^(-1) ERR
+   */
+  modelica_boolean apply_filter_only;
+} CONTRACTIVE_ERROR;
 
 /**
  * @brief Transformation structures for decoupling fully implicit Runge–Kutta systems.
@@ -182,6 +218,57 @@ typedef struct T_TRANSFORM {
   int size;
 } T_TRANSFORM;
 
+typedef enum STAGE_VALUE_PREDICTOR_TYPE
+{
+  SVP_NOT_AVAILABLE = 0,
+  SVP_LINEAR_COMBINATION = 1,
+  SVP_DENSE_OUTPUT = 2
+} STAGE_VALUE_PREDICTOR_TYPE;
+
+/**
+ * @brief Stage-value predictors (SVPs) for ESDIRK and SDIRK methods
+ *
+ * As (E)SDIRK methods can be solved sequentially (stage by stage in order),
+ * it is possible to get good and stable predictions of the stage k_s by doing a linear
+ * combination of the previous stages k_1, ..., k_{s-1}. This can be interpreted as a
+ * so-called EDIRK method (see "Intrastep, Stage-Value Predictors for Diagonally-Implicit Runge–Kutta Methods"
+ * by Carpenter et al: https://ntrs.nasa.gov/api/citations/20240008442/downloads/NASA-TM-20240008442.pdf).
+ *
+ * This structure contains the additional explicit EDIRK row for stage s, to predict the (E)SDIRK row s.
+ */
+typedef struct STAGE_VALUE_PREDICTORS {
+  /**
+   * @brief Row s of this predictor matrix builds the predicton for stage s of the real system (A_predictor is referred to as beta in the literature):
+   *            y_pred^{s} := y0 + h * sum_{i=1}^{s-1} A_predictor[s, i] * k[i]
+   *
+   * @note We express this predictor such that it outputs y_pred^{s}, as this way we dont need to form k_pred^{s} and then y^{s} from it again.
+   */
+  double *A_predictor;
+
+  /**
+   * @brief Stable dense output SVP. This predictor is not a standard dense output, i.e. a smooth
+   *        interpolation of the solution on the last interval, but rather a stable, medium order interpolation
+   *        that can be used for extrapolation e.g. for stages 2 or 3 of an ESDIRK method.
+   *
+   * @note If no dedicated stable dense output exists, one may just keep this as NULL and fallback to standard
+   *       dense output / Hermite extrapolation for the stage 2 or 3 guesses.
+   */
+  gb_dense_output dense_output_predictor;
+
+  /**
+   * @brief Stage type for predictors.
+   *            type[s] == SVP_NOT_AVAILABLE: no predictor, use default (constant, dense output, Hermite) initial guess
+   *            type[s] == SVP_LINEAR_COMBINATION: use row s of `A_predictor` field to form the linear combination guess
+   *            type[s] == SVP_DENSE_OUTPUT: use the provided stable `dense_output_predictor` guess.
+   */
+  STAGE_VALUE_PREDICTOR_TYPE *type;
+
+  /**
+   * @brief Number of stages in the original Butcher tableau.
+   */
+  int nStages;
+} STAGE_VALUE_PREDICTORS;
+
 /**
  * @brief Butcher tableau specifiying a Runge-Kutta method.
  *
@@ -218,6 +305,8 @@ typedef struct BUTCHER_TABLEAU {
   modelica_boolean isKRightAvailable; /* Availability of function values on right hand side */
   gb_dense_output dense_output;       /* Generic dense output function */
   T_TRANSFORM *t_transform;           /* T-transformation for FIRK methods */
+  STAGE_VALUE_PREDICTORS *svp;        /* Stage-Value-Predictors for (E)SDIRK methods */
+  CONTRACTIVE_ERROR *contraction;     /* Contractive defect error estimate for method using -gbnls=internal */
 } BUTCHER_TABLEAU;
 
 /**

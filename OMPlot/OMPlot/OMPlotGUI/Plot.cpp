@@ -296,6 +296,7 @@ bool Plot::prefixableUnit(const QString &unit)
     "Ohm",
     "S",
     "W",
+    "V.A",
     "W/m",
     "W/m2",
     "Wh",

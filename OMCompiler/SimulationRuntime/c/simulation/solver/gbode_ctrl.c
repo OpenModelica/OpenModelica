@@ -1,68 +1,117 @@
 /*
- * This file is part of OpenModelica.
+ * This file belongs to the OpenModelica Run-Time System
  *
- * Copyright (c) 1998-2022, Open Source Modelica Consortium (OSMC),
- * c/o Linköpings universitet, Department of Computer and Information Science,
- * SE-58183 Linköping, Sweden.
- *
- * All rights reserved.
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC), c/o Linköpings
+ * universitet, Department of Computer and Information Science, SE-58183 Linköping, Sweden. All rights
+ * reserved.
  *
  * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THE BSD NEW LICENSE OR THE
- * GPL VERSION 3 LICENSE OR THE OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * AGPL VERSION 3 LICENSE OR THE OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8. ANY
+ * USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
+ * ACCEPTANCE OF THE BSD NEW LICENSE OR THE OSMC PUBLIC LICENSE OR THE AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
- * Public License (OSMC-PL) are obtained from OSMC, either from the above
- * address, from the URLs: http://www.openmodelica.org or
- * http://www.ida.liu.se/projects/OpenModelica, and in the OpenModelica
- * distribution. GNU version 3 is obtained from:
- * http://www.gnu.org/copyleft/gpl.html. The New BSD License is obtained from:
- * http://www.opensource.org/licenses/BSD-3-Clause.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium) Public License
+ * (OSMC-PL) are obtained from OSMC, either from the above address, from the URLs:
+ * http://www.openmodelica.org or https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica, and in the OpenModelica distribution. GNU
+ * AGPL version 3 is obtained from: https://www.gnu.org/licenses/licenses.html#GPL. The BSD NEW
+ * License is obtained from: http://www.opensource.org/licenses/BSD-3-Clause.
  *
- * This program is distributed WITHOUT ANY WARRANTY; without even the implied
- * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, EXCEPT AS
- * EXPRESSLY SET FORTH IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE
- * CONDITIONS OF OSMC-PL.
+ * This program is distributed WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY
+ * SET FORTH IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF
+ * OSMC-PL.
  *
  */
 
 /*! \file gbode_ctrl.c
  */
 
-#include "gbode_main.h"
+#include "../options.h"
+#include "gbode_ctrl.h"
 #include "gbode_conf.h"
 
 unsigned int use_fhr = FALSE;
 double use_filter = 1.0;
 
-/**
- * @brief Determine the error threshold depending on the percentage of fast states
- *        to all states. Use the sorted states with respect to the error.
- *
- * @param gbData        Pointer to generik GBODE data struct.
- * @return * double     Error threshold for the fast state selection
- */
-double getErrorThreshold(DATA_GBODE* gbData)
+static inline void swap(int *a, int *b)
 {
-  int i, j, temp;
+  int tmp = *a;
+  *a = *b;
+  *b = tmp;
+}
 
-  if (gbData->percentage == 1)
-    return -1;
+/**
+ * @brief Partitions an index array around a pivot value using Hoare's scheme in ascending order.
+ * @see https://en.wikipedia.org/wiki/Quicksort#Hoare_partition_scheme
+ *
+ * @param idx    Index array being rearranged
+ * @param value  Array of values
+ * @param left   Left boundary of partition range (inclusive)
+ * @param right  Right boundary of partition range (inclusive)
+ * @return       Split point j, such that no element in [left, ... , j] is greater
+ *               than any element in [j+1, ... , right]
+ */
+static int partition(int *idx, const double *value, int left, int right)
+{
+  double pivot = value[idx[(left + right) / 2]];
 
-  for (i = 0;  i < gbData->nStates - 1; i++) {
-    for (j = 0; j < gbData->nStates - i - 1; j++) {
-      if (gbData->err[gbData->sortedStatesIdx[j]] < gbData->err[gbData->sortedStatesIdx[j+1]]) {
-        temp = gbData->sortedStatesIdx[j];
-        gbData->sortedStatesIdx[j] = gbData->sortedStatesIdx[j+1];
-        gbData->sortedStatesIdx[j+1] = temp;
-      }
+  int i = left - 1;
+  int j = right + 1;
+
+  while (1)
+  {
+    do { i++; } while (value[idx[i]] < pivot);
+    do { j--; } while (value[idx[j]] > pivot);
+
+    if (i >= j) return j;
+
+    swap(&idx[i], &idx[j]);
+  }
+}
+
+/**
+ * @brief Finds the error threshold at the given percentage of fast states
+ *        to all states using a quickselect algorithm.
+ *
+ * Returns the error value such that "percentage" of states have a higher error.
+ * Runs in O(n) best and average time without fully sorting the array.
+ *
+ * @param gbData  GBODE data object
+ * @return        Error threshold value, or -1.0 if percentage >= 1.0
+ */
+double getErrorThreshold(DATA_GBODE *gbData)
+{
+  if (gbData->percentage >= 1.0) return -1.0;
+
+  int length = gbData->nStates;
+  int last = length - 1;
+
+  // make percentage fit the ascending order of partition()
+  int target = last - (int)round(length * gbData->percentage);
+
+  if (target < 0) target = 0;
+  if (target >= length) target = last;
+
+  int left = 0;
+  int right = last;
+
+  while (left < right)
+  {
+    int split = partition(gbData->sortedStatesIdx, gbData->err, left, right);
+
+    if (target <= split)
+    {
+      right = split;
+    }
+    else
+    {
+      left = split + 1;
     }
   }
-  i = fmin(fmax(round(gbData->nStates * gbData->percentage), 1), gbData->nStates - 1);
 
-  return gbData->err[gbData->sortedStatesIdx[i]];
+  return gbData->err[gbData->sortedStatesIdx[target]];
 }
 
 /**
@@ -151,6 +200,112 @@ double PIDController(double* err_values, double* step_values, unsigned int err_o
 }
 
 /**
+ * @brief Preditive PI controller of the form hfac := (1/err_0)^(alpha_1/k) * (1/err_{-1})^(alpha_2/k) * (h/n_{-1})^ratio
+ *        where ratio, alpha1 and alpha2 are DOF for the specific controller.
+ */
+double PredictivePIController(double* err_values, double* step_values, unsigned int err_order, enum GB_CTRL_METHOD ctrl_method)
+{
+  unsigned int k = err_order + 1;
+  double beta1, beta2, ratio;
+
+  double err_n     = err_values[0];
+  double err_n1    = err_values[1];
+
+  double h = step_values[0];
+  double h_n1 = step_values[1];
+
+  // Fallback for incomplete history
+  if (err_n1 < DBL_EPSILON || h_n1 < DBL_EPSILON) {
+      return pow(1.0 / err_n, 1.0 / k);
+  }
+
+  switch (ctrl_method) {
+      case GB_CTRL_PI_PC_HYBRID:
+      case GB_CTRL_PI_PC:
+          beta1 = 2.0/k;   // current error (P)
+          beta2 = -1.0/k;  // previous error (I)
+          ratio = 1.0;     // factor for ratio (h / h_n1)
+          break;
+      case GB_CTRL_PI_H211:
+          beta1 = 0.25/k;  // current error (P)
+          beta2 = 0.25/k;  // previous error (I)
+          ratio = -0.25;   // factor for ratio (h / h_n1)
+          break;
+      case GB_CTRL_PI_H0_211:
+          beta1 = 0.5/k;   // current error (P)
+          beta2 = 0.5/k;   // previous error (I)
+          ratio = -0.5;    // factor for ratio (h / h_n1)
+          break;
+      default:
+        throwStreamPrint(NULL, "Unknown step size control method.");
+  }
+
+  double pi_pc = pow(1.0 / err_n,  beta1) * pow(1.0 / err_n1, beta2) * pow(h / h_n1, ratio);
+
+  if (ctrl_method == GB_CTRL_PI_PC_HYBRID)
+  {
+    double i = pow(1.0 / err_n, 1.0 / k);
+    return fmin(pi_pc, i);
+  }
+  else
+  {
+    return pi_pc;
+  }
+}
+
+/**
+ * @brief Preditive PID controller of the form
+ *        hfac := (1/err_0)^(alpha_1/k) * (1/err_{-1})^(alpha_2/k) * (1/err_{-1})^(alpha_3/k) * (h/n_{-1})^ratio1 * (h_{-1}/n_{-2})^ratio2
+ *        where ratio1, ratio2, alpha1, alpha2, alpha3 are DOF for the specific controller.
+ */
+double PredictivePIDController(double* err_values, double* step_values, unsigned int err_order, enum GB_CTRL_METHOD ctrl_method)
+{
+  unsigned int k = err_order + 1;
+  double beta1, beta2, beta3, ratio1, ratio2;
+
+  double err_n     = err_values[0];
+  double err_n1    = err_values[1];
+  double err_n2    = err_values[2];
+
+  double h = step_values[0];
+  double h_n1 = step_values[1];
+  double h_n2 = step_values[2];
+
+  // Fallback for incomplete history
+  if (err_n1 < DBL_EPSILON || h_n1 < DBL_EPSILON || err_n2 < DBL_EPSILON || h_n2 < DBL_EPSILON ) {
+      return pow(1.0 / err_n, 1.0 / k);
+  }
+
+  switch (ctrl_method) {
+      case GB_CTRL_PID_H0_312:
+          beta1 = 0.25/k;  // current error (P)
+          beta2 = 0.5/k;   // previous error (I)
+          beta3 = 0.25/k;  // second previous error (D)
+          ratio1 = -0.75;
+          ratio2 = -0.25;
+          break;
+      case GB_CTRL_PID_H0_321:
+          beta1 = 1.25/k;   // current error (P)
+          beta2 = 0.5/k;    // previous error (I)
+          beta3 = -0.75/k;  // second previous error (D)
+          ratio1 = 0.25;
+          ratio2 = 0.75;
+          break;
+      case GB_CTRL_PPID:
+          beta1 = (6. / 20.)/k;  // current error (P)
+          beta2 = (1. / 20.)/k;  // previous error (I)
+          beta3 = (-5. / 20.)/k; // second previous error (D)
+          ratio1 = 1.0;
+          ratio2 = 0.0;
+          break;
+      default:
+        throwStreamPrint(NULL, "Unknown step size control method.");
+  }
+
+  return pow(1.0 / err_n,  beta1) * pow(1.0 / err_n1, beta2) * pow(1.0 / err_n2, beta3) * pow(h / h_n1, ratio1) * pow(h_n1 / h_n2, ratio2) ;
+}
+
+/**
  * @brief Compute adaptive gamma for FHR controller
  *
  * @param err_now   Current error estimate
@@ -178,9 +333,9 @@ double computeGamma(double err_now, double err_prev, double h_now, double h_prev
  */
 double GenericController(double* err_values, double* step_values, unsigned int err_order, enum GB_CTRL_METHOD ctrl_method)
 {
-  double fac    = 0.9;
-  double facmax = 2.5;
-  double facmin = 0.2;
+  const double fac    = 0.9;
+  const double facmax = 2.5;
+  const double facmin = 0.2;
 
   unsigned int k = err_order + 1;
 
@@ -213,6 +368,17 @@ double GenericController(double* err_values, double* step_values, unsigned int e
       case GB_CTRL_PID_STIFF:
           h_fac = PIDController(err_values, step_values, err_order, ctrl_method);
           break;
+      case GB_CTRL_PI_PC:
+      case GB_CTRL_PI_PC_HYBRID:
+      case GB_CTRL_PI_H211:
+      case GB_CTRL_PI_H0_211:
+          h_fac = PredictivePIController(err_values, step_values, err_order, ctrl_method);
+          break;
+      case GB_CTRL_PID_H0_312:
+      case GB_CTRL_PID_H0_321:
+      case GB_CTRL_PPID:
+          h_fac = PredictivePIDController(err_values, step_values, err_order, ctrl_method);
+          break;
       default:
         throwStreamPrint(NULL, "Unknown step size control method.");
   }
@@ -234,12 +400,13 @@ double GenericController(double* err_values, double* step_values, unsigned int e
   if (use_filter>0) {
      h_fac = use_filter * h_fac + (1.0 - use_filter);
   }
+  h_fac *= fac;
 
   // Keep step size constant, if there are only small changes
   if ((0.99 < h_fac) && (h_fac < 1.2)) {
     return 1.0;
   } else
-    return fmin(facmax, fmax(facmin, fac*h_fac));
+    return fmin(facmax, fmax(facmin, h_fac));
 }
 
 

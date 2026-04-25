@@ -197,10 +197,7 @@ OMSimulatorHighlighter::OMSimulatorHighlighter(OMSimulatorEditorPage *pOMSimulat
  */
 void OMSimulatorHighlighter::initializeSettings()
 {
-  QFont font;
-  font.setFamily(mpOMSimulatorEditorPage->getOptionsDialog()->getTextEditorPage()->getFontFamilyComboBox()->currentFont().family());
-  font.setPointSizeF(mpOMSimulatorEditorPage->getOptionsDialog()->getTextEditorPage()->getFontSizeSpinBox()->value());
-  mpPlainTextEdit->document()->setDefaultFont(font);
+  const QFont font = mpPlainTextEdit->font();
 #if QT_VERSION >= QT_VERSION_CHECK(5, 11, 0)
   mpPlainTextEdit->setTabStopDistance((qreal)(mpOMSimulatorEditorPage->getOptionsDialog()->getTextEditorPage()->getTabSizeSpinBox()->value() * QFontMetrics(font).horizontalAdvance(QLatin1Char(' '))));
 #else // QT_VERSION_CHECK

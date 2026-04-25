@@ -1,7 +1,6 @@
 // name:     Modelica.Electrical.Analog.Examples.CauerLowPassSC_HPCOM_Level_OMP_measureTime
 // keywords: simulation MSL Examples
 // status: correct
-// cflags: -d=-newInst
 //
 // Simulation Results
 // Modelica Standard Library
@@ -59,12 +58,12 @@ runScript(modelTesting);getErrorString();
 // OpenModelicaModelTesting.Kind.VerifiedSimulation
 // Modelica.Electrical.Analog.Examples.CauerLowPassSC
 // 600
-// {"R4.Capacitor1.v","R5.Capacitor1.v","R8.Capacitor1.v","R9.Capacitor1.v","R1.Capacitor1.v","R2.Capacitor1.v","R3.Capacitor1.v","Rp1.Capacitor1.v","R7.Capacitor1.v","R10.Capacitor1.v","R11.Capacitor1.v","C3.v","C7.v","C1.v","C4.v","C8.v"}
+// {"R4.Capacitor1.v", "R5.Capacitor1.v", "R8.Capacitor1.v", "R9.Capacitor1.v", "R1.Capacitor1.v", "R2.Capacitor1.v", "R3.Capacitor1.v", "Rp1.Capacitor1.v", "R7.Capacitor1.v", "R10.Capacitor1.v", "R11.Capacitor1.v", "C3.v", "C7.v", "C1.v", "C4.v", "C8.v"}
 // true
 // ""
 // record SimulationResult
 //     resultFile = "Modelica.Electrical.Analog.Examples.CauerLowPassSC_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 10.0, numberOfIntervals = 1500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Analog.Examples.CauerLowPassSC', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 10.0, numberOfIntervals = 1500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Analog.Examples.CauerLowPassSC', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "Profiling results written to Modelica.Electrical.Analog.Examples.CauerLowPassSC_prof.json
 // "
 // end SimulationResult;
@@ -78,10 +77,10 @@ runScript(modelTesting);getErrorString();
 // Using level Scheduler for the ODE system
 // Using level Scheduler for the ZeroFunc system
 // HpcOm is still under construction.
-// Simulation options: startTime = 0.0, stopTime = 60.0, numberOfIntervals = 1500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Analog.Examples.CauerLowPassSC', options = '', outputFormat = 'mat', variableFilter = 'time|R4.Capacitor1.v|R5.Capacitor1.v|R8.Capacitor1.v|R9.Capacitor1.v|R1.Capacitor1.v|R2.Capacitor1.v|R3.Capacitor1.v|Rp1.Capacitor1.v|R7.Capacitor1.v|R10.Capacitor1.v|R11.Capacitor1.v|C3.v|C7.v|C1.v|C4.v|C8.v', cflags = '', simflags = ' -emit_protected'
+// Simulation options: startTime = 0.0, stopTime = 60.0, numberOfIntervals = 1500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Analog.Examples.CauerLowPassSC', options = '', outputFormat = 'mat', variableFilter = 'time|R4.Capacitor1.v|R5.Capacitor1.v|R8.Capacitor1.v|R9.Capacitor1.v|R1.Capacitor1.v|R2.Capacitor1.v|R3.Capacitor1.v|Rp1.Capacitor1.v|R7.Capacitor1.v|R10.Capacitor1.v|R11.Capacitor1.v|C3.v|C7.v|C1.v|C4.v|C8.v', cflags = '', simflags = ' -emit_protected'
 // Result file: Modelica.Electrical.Analog.Examples.CauerLowPassSC_res.mat
 // Messages: Profiling results written to Modelica.Electrical.Analog.Examples.CauerLowPassSC_prof.json
-// 
+//
 // Files Equal!
 // "true
 // "

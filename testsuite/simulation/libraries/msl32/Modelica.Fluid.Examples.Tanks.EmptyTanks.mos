@@ -1,7 +1,6 @@
 // name:     Modelica.Fluid.Examples.Tanks.EmptyTanks
 // keywords: simulation MSL Examples
 // status: correct
-// cflags: -d=-newInst
 //
 // Simulation Results
 // Modelica Standard Library
@@ -43,15 +42,17 @@ runScript(modelTesting);getErrorString();
 // Simulation options: startTime = 0.0, stopTime = 50.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Fluid.Examples.Tanks.EmptyTanks', options = '', outputFormat = 'mat', variableFilter = 'time|tank1.level|tank1.medium.T|tank2.level|tank2.medium.T|tank2.traceDynamics|tank2.substanceDynamics|tank2.massDynamics|tank2.energyDynamics|tank1.traceDynamics|tank1.substanceDynamics|tank1.massDynamics|tank1.energyDynamics|system.traceDynamics|system.substanceDynamics|system.massDynamics|system.energyDynamics', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
 // Result file: Modelica.Fluid.Examples.Tanks.EmptyTanks_res.mat
 // Messages: LOG_SUCCESS       | info    | The initialization finished successfully with 3 homotopy steps.
-// LOG_ASSERT        | info    | [Modelica 3.2.1+maint.om/Fluid/Interfaces.mo:580:7-580:32:writable]
-// |                 | |       | The following assertion has been violated at time 35.406941
-// |                 | |       | ((tank1.m >= 0.0)) --> "Variable violating min constraint: 0.0 <= tank1.m, has value: -9.95587e-08"
 // LOG_ASSERT        | info    | [Modelica 3.2.1+maint.om/Fluid/Vessels.mo:53:3-54:29:writable]
 // |                 | |       | The following assertion has been violated at time 35.406941
 // |                 | |       | ((tank1.level >= 0.0)) --> "Variable violating min constraint: 0.0 <= tank1.level, has value: -1e-10"
+// LOG_ASSERT        | info    | [Modelica 3.2.1+maint.om/Fluid/Interfaces.mo:580:7-580:32:writable]
+// |                 | |       | The following assertion has been violated at time 35.406941
+// |                 | |       | ((tank1.m >= 0.0)) --> "Variable violating min constraint: 0.0 <= tank1.m, has value: -9.9559e-08"
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 //
 // Files Equal!
+// Warning: The model contains alias variables with redundant start and/or conflicting nominal values. It is recommended to resolve the conflicts, because otherwise the system could be hard to solve. To print the conflicting alias sets and the chosen candidates please use -d=aliasConflicts.
+//
 // "true
 // "
 // ""

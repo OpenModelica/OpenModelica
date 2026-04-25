@@ -1,33 +1,38 @@
 /*
-* This file is part of OpenModelica.
-*
-* Copyright (c) 1998-2021, Open Source Modelica Consortium (OSMC),
-* c/o Linköpings universitet, Department of Computer and Information Science,
-* SE-58183 Linköping, Sweden.
-*
-* All rights reserved.
-*
-* THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
-* THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
-* ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
-* RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
-* ACCORDING TO RECIPIENTS CHOICE.
-*
-* The OpenModelica software and the Open Source Modelica
-* Consortium (OSMC) Public License (OSMC-PL) are obtained
-* from OSMC, either from the above address,
-* from the URLs: http://www.ida.liu.se/projects/OpenModelica or
-* http://www.openmodelica.org, and in the OpenModelica distribution.
-* GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
-*
-* This program is distributed WITHOUT ANY WARRANTY; without
-* even the implied warranty of  MERCHANTABILITY or FITNESS
-* FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
-* IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
-*
-* See the full OSMC Public License conditions for more details.
-*
-*/
+ * This file is part of OpenModelica.
+ *
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
+ * c/o Linköpings universitet, Department of Computer and Information Science,
+ * SE-58183 Linköping, Sweden.
+ *
+ * All rights reserved.
+ *
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
+ *
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
+ *
+ * This program is distributed WITHOUT ANY WARRANTY; without
+ * even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
+ *
+ * See the full OSMC Public License conditions for more details.
+ *
+ */
+
 encapsulated package NBSolve
 " file:         NBSolve.mo
   package:      NBSolve
@@ -209,6 +214,11 @@ public
         case StrongComponent.SINGLE_COMPONENT() algorithm
           (eqn, solve_status, implicit_index) := solveSingleStrongComponent(Pointer.access(comp.eqn), Pointer.access(comp.var), funcMap, kind, implicit_index, slicing_map, varData, eqData);
         then ({StrongComponent.SINGLE_COMPONENT(comp.var, Pointer.create(eqn), solve_status)}, solve_status);
+
+        // solve component that was simplified
+        case StrongComponent.MULTI_COMPONENT(vars = {var_slice}) guard(not Equation.isCompound(Slice.getT(comp.eqn))) algorithm
+          (solved_comps, implicit_index) := solveStrongComponent(StrongComponent.createSliceOrSingle(BVariable.getVarName(Slice.getT(var_slice)), var_slice, comp.eqn), funcMap, kind, implicit_index, slicing_map, varData, eqData);
+        then (solved_comps, Status.UNPROCESSED); // status is unknown, but does not matter because errors were handled in the recursive call.
 
         case StrongComponent.MULTI_COMPONENT() algorithm
           eqn_ptr := Slice.getT(comp.eqn);
@@ -706,7 +716,7 @@ public
     list<Pointer<Equation>> new_then_eqns = {};
   algorithm
     // causalize this branch equations for the unknowns
-    (_, comps) := Causalize.simple(vars, EquationPointers.fromList(body.then_eqns), iter = iter);
+    (_, comps) := Causalize.simple(vars, EquationPointers.fromList(body.then_eqns), kind, iter = iter);
     // solve each strong component explicitly and save equations to branch
     for comp in comps loop
       (solved_comps, implicit_index) := solveStrongComponent(comp, funcMap, kind, implicit_index, slicing_map, varData, eqData);
@@ -1250,10 +1260,8 @@ protected
   algorithm
     () := match exp
       case (Expression.CALL(call = call as Call.TYPED_CALL())) guard List.hasOneElement(Call.arguments(exp.call)) algorithm
-        name :=  AbsynUtil.pathString(Function.nameConsiderBuiltin(call.fn));
-        argExp := match Call.arguments(call)
-          case {argExp} then argExp;
-        end match;
+        name := AbsynUtil.pathString(Function.nameConsiderBuiltin(call.fn));
+        argExp := listHead(Call.arguments(call));
         (crefFoundInRecursion, inverseInstructions, status) := solveUniqueFindInstructions(argExp, cref, crefFound, inverseInstructions);
         if status == Status.IMPLICIT then
           return;
@@ -1326,10 +1334,8 @@ protected
   algorithm
     () := match exp
       case (Expression.CALL(call = call as Call.TYPED_CALL())) guard(listLength(Call.arguments(exp.call)) == 2) algorithm
-        name :=  AbsynUtil.pathString(Function.nameConsiderBuiltin(call.fn));
-        {argExp1, argExp2} := match Call.arguments(call)
-          case {argExp1, argExp2} then {argExp1, argExp2};
-        end match;
+        name := AbsynUtil.pathString(Function.nameConsiderBuiltin(call.fn));
+        {argExp1, argExp2} := Call.arguments(call);
         (crefFoundInRecursion, inverseInstructions, status) := solveUniqueFindInstructions(argExp1, cref, crefFound, inverseInstructions);
         if status == Status.IMPLICIT then
           return;

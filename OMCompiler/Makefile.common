@@ -71,7 +71,7 @@ $(info Creating dirs: $(BUILD_DIRS))
 $(info $(shell mkdir -p $(BUILD_DIRS)))
 endif
 
-.PHONY : interactive omc release all fmi test install-dirs susan susan_all susgen sustst runtimeCPPinstall runtimeCPPinstallOld CMinpack metis Cdaskr libryu boehm-gc libzmq cppzmq libffi $(MINGW_EXTRA_LIBS) antlr-copy $(SEMLA_LIB) $(SEMLA_CLEAN)
+.PHONY : interactive omc release all fmi test install-dirs susan susan_all susgen sustst runtimeCPPinstall runtimeCPPinstallOld CMinpack metis Cdaskr libryu boehm-gc libzmq cppzmq libffi $(MINGW_EXTRA_LIBS) antlr-copy $(SEMLA_LIB) $(SEMLA_CLEAN) simdjson
 
 ifeq ($(OM_ENABLE_ENCRYPTION),yes)
 semla:
@@ -127,7 +127,7 @@ interactive-common: .testvariables boehm-gc libryu idl antlr-copy libffi $(MINGW
 interactive-short: .testvariables interactive-common
 	$(MAKE) -C SimulationRuntime/c -f $(defaultMakefileTarget) bootstrap-dependencies OMBUILDDIR=$(OMBUILDDIR)
 
-interactive: .testvariables interactive-common lis Cdaskr CMinpack docs cppzmq $(MOO_TARGET) $(PRIMME_TARGET) $(SUITESPARSE_TARGET) antlr-copy $(MINGW_EXTRA_LIBS) OMSI $(SEMLA_LIB)
+interactive: .testvariables interactive-common lis Cdaskr CMinpack docs cppzmq $(MOO_TARGET) $(PRIMME_TARGET) $(SUITESPARSE_TARGET) antlr-copy $(MINGW_EXTRA_LIBS) OMSI $(SEMLA_LIB) simdjson
 	$(MAKE) -C SimulationRuntime/c -f $(defaultMakefileTarget) OMBUILDDIR=$(OMBUILDDIR)
 	$(MAKE) -f $(defaultMakefileTarget) bootstrap-dependencies-post
 
@@ -172,7 +172,7 @@ $(OMBUILDDIR)/include/omc/c/gc_pthread_redirects.h: 3rdParty/gc/include/gc_pthre
 # TODO or DISCARD: for now, we only build static ipopt and dmumps (not MOO) directy into the runtime
 moo:
 	mkdir -p $(OMC_MOO_ROOT)/build
-	cd $(OMC_MOO_ROOT)/build && $(CMAKE) .. \
+	cd $(OMC_MOO_ROOT)/build && $(CMAKE) \
 		-G $(CMAKE_TARGET) \
 		-DCMAKE_VERBOSE_MAKEFILE:Bool=ON \
 		-DCMAKE_INSTALL_PREFIX:PATH="$(top_builddir)" \
@@ -182,7 +182,8 @@ moo:
 		-DCMAKE_C_FLAGS="$(CFLAGS)" \
 		-DCMAKE_CXX_FLAGS="$(CXXFLAGS)" \
 		-DCMAKE_Fortran_FLAGS="$(FCFLAGS)" \
-		-DCMAKE_Fortran_COMPILER="$(FC)"
+		-DCMAKE_Fortran_COMPILER="$(FC)" \
+		..
 
 	$(CMAKE) --build $(OMC_MOO_ROOT)/build --target ipopt dmumps
 	$(CMAKE) --build $(OMC_MOO_ROOT)/build --target install
@@ -489,6 +490,15 @@ metis-clean:
 	test ! -f 3rdParty/metis-5.1.0/Makefile || $(MAKE) -C 3rdParty/metis-5.1.0 clean
 	rm -rf 3rdParty/metis-5.1.0/CMakeCache.txt 3rdParty/metis-5.1.0/libmetis/libmetis.a 3rdParty/metis-5.1.0/CMakeFiles 3rdParty/metis-5.1.0/Makefile 3rdParty/metis-5.1.0/cmake_install.cmake 3rdParty/metis-5.1.0/include/CMakeFiles 3rdParty/metis-5.1.0/include/Makefile 3rdParty/metis-5.1.0/include/cmake_install.cmake 3rdParty/metis-5.1.0/libmetis/CMakeFiles 3rdParty/metis-5.1.0/libmetis/Makefile 3rdParty/metis-5.1.0/libmetis/cmake_install.cmake 3rdParty/metis-5.1.0/programs/CMakeFiles 3rdParty/metis-5.1.0/programs/Makefile 3rdParty/metis-5.1.0/programs/cmake_install.cmake
 
+simdjson:
+	mkdir -p $(SIMDJSON_BUILD_DIR)
+	cd $(SIMDJSON_BUILD_DIR) && CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)" $(CMAKE) .. \
+		-G $(CMAKE_TARGET) \
+		-DCMAKE_INSTALL_LIBDIR="$(builddir_lib_omc)" \
+		-DCMAKE_INSTALL_INCLUDEDIR="$(builddir_inc)" \
+		-DCMAKE_BUILD_TYPE=Release
+	$(MAKE) -C $(SIMDJSON_BUILD_DIR)/ install
+
 libryu: 3rdParty/ryu/ryu/libryu.a
 3rdParty/ryu/ryu/libryu.a:
 	test -d 3rdParty/ryu/ryu
@@ -546,7 +556,7 @@ openblas-clean:
 	# OpenBLAS make clean actually gives error-messages. Let it do it, but silently
 	test ! -d 3rdParty/OpenBLAS-0.2.8 || $(MAKE) -C 3rdParty/OpenBLAS-0.2.8 clean > /dev/null 2>&1
 
-clean: $(SEMLA_CLEAN) fmil-clean opencl_rt_clean gc-clean lis-clean runtimeCPPclean CMinpack-clean metis-clean Cdaskr-clean bootstrap-clean msgpack-clean openblas-clean suitesparse-clean OMSI-clean libffi-clean moo-clean primme-clean ModelicaExternalC-clean zlib-clean
+clean: $(SEMLA_CLEAN) fmil-clean opencl_rt_clean gc-clean lis-clean runtimeCPPclean CMinpack-clean metis-clean Cdaskr-clean bootstrap-clean msgpack-clean openblas-clean suitesparse-clean OMSI-clean libffi-clean moo-clean primme-clean ModelicaExternalC-clean zlib-clean simdjson-clean
 	(cd SimulationRuntime/c && $(MAKE) -f $(defaultMakefileTarget) clean OMBUILDDIR=$(OMBUILDDIR))
 	(cd Compiler && $(MAKE) -f $(defaultMakefileTarget) clean OMBUILDDIR=$(OMBUILDDIR))
 	(cd Parser && $(MAKE) -f $(defaultMakefileTarget) clean OMBUILDDIR=$(OMBUILDDIR))
@@ -738,6 +748,10 @@ $(LIBMODELICAZLIB):
 zlib-clean:
 	if test -f $(ZLIB_DIR)/build/Makefile; then $(MAKE) -C $(ZLIB_DIR)/build/ clean; fi
 	rm -rf $(ZLIB_DIR)/build
+
+simdjson-clean:
+	if test -f $(SIMDJSON_BUILD_DIR)/Makefile; then $(MAKE) -C $(SIMDJSON_BUILD_DIR)/ clean; fi
+	rm -rf $(SIMDJSON_BUILD_DIR)
 
 MODELICAEXTERNALC_DIR=SimulationRuntime/ModelicaExternalC
 ModelicaExternalC: interactive $(LIBMODELICAZLIB)

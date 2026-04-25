@@ -281,8 +281,17 @@ ClassNameFilterProxyModel::ClassNameFilterProxyModel(QObject *parent)
 
 void ClassNameFilterProxyModel::setFilterString(const QString &pattern)
 {
+#if QT_VERSION >= QT_VERSION_CHECK(6, 10, 0)
+  beginFilterChange();
+#endif // QT_VERSION_CHECK
+
   mFuzzyPattern = pattern;
+
+#if QT_VERSION >= QT_VERSION_CHECK(6, 10, 0)
+  endFilterChange(QSortFilterProxyModel::Direction::Rows);
+#else // QT_VERSION_CHECK
   invalidateFilter(); // Retriggers filtering and sorting
+#endif // QT_VERSION_CHECK
 }
 
 bool ClassNameFilterProxyModel::filterAcceptsRow(int source_row,

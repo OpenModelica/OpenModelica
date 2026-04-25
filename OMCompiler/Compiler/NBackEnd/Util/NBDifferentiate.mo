@@ -1,33 +1,38 @@
 /*
-* This file is part of OpenModelica.
-*
-* Copyright (c) 1998-2020, Open Source Modelica Consortium (OSMC),
-* c/o Linköpings universitet, Department of Computer and Information Science,
-* SE-58183 Linköping, Sweden.
-*
-* All rights reserved.
-*
-* THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
-* THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
-* ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
-* RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
-* ACCORDING TO RECIPIENTS CHOICE.
-*
-* The OpenModelica software and the Open Source Modelica
-* Consortium (OSMC) Public License (OSMC-PL) are obtained
-* from OSMC, either from the above address,
-* from the URLs: http://www.ida.liu.se/projects/OpenModelica or
-* http://www.openmodelica.org, and in the OpenModelica distribution.
-* GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
-*
-* This program is distributed WITHOUT ANY WARRANTY; without
-* even the implied warranty of  MERCHANTABILITY or FITNESS
-* FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
-* IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
-*
-* See the full OSMC Public License conditions for more details.
-*
-*/
+ * This file is part of OpenModelica.
+ *
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
+ * c/o Linköpings universitet, Department of Computer and Information Science,
+ * SE-58183 Linköping, Sweden.
+ *
+ * All rights reserved.
+ *
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
+ *
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
+ *
+ * This program is distributed WITHOUT ANY WARRANTY; without
+ * even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
+ *
+ * See the full OSMC Public License conditions for more details.
+ *
+ */
+
 encapsulated package NBDifferentiate
 "file:        NBDifferentiate.mo
  package:     NBDifferentiate
@@ -1102,7 +1107,7 @@ public
         Operator addOp, mulOp;
         list<tuple<Expression, InstNode>> arguments_inputs;
         InstNode inp;
-        Boolean isCont, isReal, isFunc;
+        Boolean isCont, isReal, isFunc, isSkipped;
         // interface map. If the map contains a variable it has a zero derivative
         // if the value is "true" it has to be stripped from the interface
         // (it is possible that a variable has a zero derivative, but still appears in the interface)
@@ -1131,7 +1136,6 @@ public
         if Util.isSome(func_opt) then
           // The function is in the function tree
           SOME(func) := func_opt;
-
           interface_map := UnorderedMap.new<Boolean>(stringHashDjb2, stringEqual);
 
           // build interface map to check if a function fits
@@ -1139,13 +1143,15 @@ public
           arguments_inputs := List.zip(call.arguments, func.inputs);
           for tpl in arguments_inputs loop
             (arg, inp) := tpl;
-            // do not check for continuous if it is for functions (differentiating a function inside a function)
-            // crefs are not lowered there! assume it is continuous
-            isCont := (diffArguments.diffType == DifferentiationType.FUNCTION) or BackendUtil.isContinuous(arg, false);
-            // input type has to be real value or a function pointer
-            isReal := Type.isReal(Type.arrayElementType(Expression.typeOf(arg)));
-            isFunc := InstNode.isFunction(inp);
-            if not (isFunc or (isCont and isReal)) then
+            // check if it is continuous
+            // do not check for continuous if it is for functions (differentiating a function inside a function) crefs are not lowered there! assume it is continuous
+            isCont := ((diffArguments.diffType == DifferentiationType.FUNCTION) or BackendUtil.isContinuous(arg, false));
+
+            // input type has to be real value or a function pointer, skip if its in the interface diff info
+            isReal    := Type.isReal(Type.arrayElementType(Expression.typeOf(arg)));
+            isFunc    := InstNode.isFunction(inp);
+            isSkipped := Util.applyOptionOrDefault(func.interfaceDiffInfo, function UnorderedSet.contains(key = inp), false);
+            if isSkipped or not (isFunc or (isCont and isReal)) then
               // add to map; if it is not Real also already set to true (always removed from interface)
               UnorderedMap.add(InstNode.name(inp), not (isFunc or isReal), interface_map);
             end if;
@@ -1161,9 +1167,11 @@ public
 
           for tpl in listReverse(arguments_inputs) loop
             (arg, inp) := tpl;
+            isSkipped := Util.applyOptionOrDefault(func.interfaceDiffInfo, function UnorderedSet.contains(key = inp), false);
             // only keep the arguments which are not in the map or have value false
-            if not UnorderedMap.getOrDefault(InstNode.name(inp), interface_map, false) then
+            if not (isSkipped or UnorderedMap.getOrDefault(InstNode.name(inp), interface_map, false)) then
               arguments := arg :: arguments;
+            else
             end if;
           end for;
 
@@ -1234,7 +1242,7 @@ public
       local
         Integer i;
         Expression ret, ret1, ret2, arg1, arg2, arg3, diffArg1, diffArg2, diffArg3, current_grad, cond1, cond2, cond, zero1, zero2, grad_x, grad_y, old_grad;
-        list<Expression> rest;
+        list<Expression> rest, diffRest;
         Type ty;
         DifferentiationType diffType;
         Integer rY, rX;
@@ -1507,6 +1515,23 @@ public
         (ret1, diffArguments) := differentiateExpression(arg1, diffArguments);
         (ret2, diffArguments) := differentiateExpression(arg2, diffArguments);
         exp.call := Call.setArguments(exp.call, {ret1, ret2});
+      then exp;
+
+      // d/dz cat(k, A, B, C, ...) = cat(k, dA/dz, dB/dz, dC/dz, ...)
+      case Expression.CALL() guard name == "cat"
+      algorithm
+        if isReverse then
+          Error.addInternalError(getInstanceName() + " failed for: " + Expression.toString(exp) + "\nReverse Mode not implemented for `cat()`.", sourceInfo());
+          fail();
+        end if;
+
+        arg1 :: rest := Call.arguments(exp.call);
+        diffRest := {};
+        for arg in listReverse(rest) loop
+          (ret, diffArguments) := differentiateExpression(arg, diffArguments);
+          diffRest := ret :: diffRest;
+        end for;
+        exp.call := Call.setArguments(exp.call, arg1 :: diffRest);
       then exp;
 
       // d/dz promote(A, n) = promote(dA/dz, n)
@@ -2027,6 +2052,7 @@ public
         Class new_cls;
         DifferentiationArguments funcDiffArgs;
         UnorderedMap<ComponentRef, ComponentRef> diff_map = UnorderedMap.new<ComponentRef>(ComponentRef.hash, ComponentRef.isEqual);
+        UnorderedSet<InstNode> diffInfo;
         list<Algorithm> algorithms;
         FunctionDerivative funcDer;
         Function dummy_func;
@@ -2046,15 +2072,21 @@ public
             funcDiffArgs          := DifferentiationArguments.default();
             funcDiffArgs.diffType := DifferentiationType.FUNCTION;
             funcDiffArgs.funcMap  := diffArguments.funcMap;
+            // prepare interface diff info if the function
+            diffInfo := match der_func.interfaceDiffInfo
+              case SOME(diffInfo) then UnorderedSet.copy(diffInfo);
+              else UnorderedSet.new(InstNode.hash, InstNode.nameEqual);
+            end match;
+
             createInterfaceDerivatives(der_func.inputs, interface_map, diff_map);
             createInterfaceDerivatives(der_func.locals, interface_map, diff_map);
             createInterfaceDerivatives(der_func.outputs, interface_map, diff_map);
             funcDiffArgs.diff_map := SOME(diff_map);
 
             // differentiate interface arguments
-            (inputs, funcDiffArgs)  := differentiateFunctionInterfaceNodes(der_func.inputs, interface_map, diff_map, funcDiffArgs, true);
-            (locals, funcDiffArgs)  := differentiateFunctionInterfaceNodes(der_func.locals, interface_map, diff_map, funcDiffArgs, false);
-            (outputs, funcDiffArgs) := differentiateFunctionInterfaceNodes(der_func.outputs, interface_map, diff_map, funcDiffArgs, false);
+            (inputs, funcDiffArgs)  := differentiateFunctionInterfaceNodes(der_func.inputs, interface_map, diff_map, funcDiffArgs, diffInfo, true);
+            (locals, funcDiffArgs)  := differentiateFunctionInterfaceNodes(der_func.locals, interface_map, diff_map, funcDiffArgs, diffInfo, false);
+            (outputs, funcDiffArgs) := differentiateFunctionInterfaceNodes(der_func.outputs, interface_map, diff_map, funcDiffArgs, diffInfo, false);
 
             // update inputs, outputs and locals, add old outputs to locals as they might still be used as temporary variables
             der_func.inputs   := inputs;
@@ -2075,9 +2107,12 @@ public
             node.name       := der_func_name + "." + node.name;
             node.definition := SCodeUtil.setElementName(node.definition, node.name);
             // create "fake" function from new node, update cache to get correct derivative name
-            der_func.path   := AbsynUtil.prefixPath(der_func_name, der_func.path);
-            cachedData      := CachedData.FUNCTION({der_func}, true, false);
-            der_func.node   := InstNode.setFuncCache(node, cachedData);
+            der_func.path               := AbsynUtil.prefixPath(der_func_name, der_func.path);
+            der_func.derivatives        := {};
+            der_func.derivedInputs      := {};
+            der_func.interfaceDiffInfo  := SOME(diffInfo);
+            cachedData                  := CachedData.FUNCTION({der_func}, true, false);
+            der_func.node               := InstNode.newFuncCache(node, cachedData);
 
             // create fake derivative
             funcDer := FunctionDerivative.FUNCTION_DER(
@@ -2106,10 +2141,12 @@ public
               else funcDiffArgs;
             end match;
 
-            node.cls              := Pointer.create(new_cls);
-            cachedData            := CachedData.FUNCTION({der_func}, true, false);
-            der_func.node         := InstNode.setFuncCache(node, cachedData);
-            der_func.derivatives  := {};
+            node.cls                    := Pointer.create(new_cls);
+            der_func.derivatives        := {};
+            der_func.derivedInputs      := {};
+            der_func.interfaceDiffInfo  := SOME(diffInfo);
+            cachedData                  := CachedData.FUNCTION({der_func}, true, false);
+            der_func.node               := InstNode.newFuncCache(node, cachedData);
 
             // save the function tree
             diffArguments.funcMap := funcDiffArgs.funcMap;
@@ -2148,11 +2185,13 @@ public
     "differentiates function interface nodes (inputs, outputs, locals) and
     adds them to the diff_map used for differentiation. Also returns the new
     interface node lists for the differentiated function.
-    (outputs only have the differentiated and not the original interface nodes)"
+    Note1: outputs only have the differentiated and not the original interface nodes
+    Note2: for derivatives of higher orders skip the previously differentiated interface nodes"
     input output list<InstNode> interface_nodes;
     input UnorderedMap<String, Boolean> interface_map;
     input UnorderedMap<ComponentRef, ComponentRef> diff_map;
     input output DifferentiationArguments diffArgs;
+    input UnorderedSet<InstNode> diffInfo;
     input Boolean keepOld;
   protected
     list<InstNode> new_nodes;
@@ -2160,9 +2199,15 @@ public
   algorithm
     new_nodes := if keepOld then listReverse(interface_nodes) else {};
     for node in interface_nodes loop
+      // check if its part of the interface
       if not UnorderedMap.contains(InstNode.name(node), interface_map) then
-        (d_node, diffArgs) := differentiateFunctionInterfaceNode(node, diff_map, diffArgs);
-        new_nodes := d_node :: new_nodes;
+        // check if derivative of higher order skips this
+        if not UnorderedSet.contains(node, diffInfo) then
+          (d_node, diffArgs) := differentiateFunctionInterfaceNode(node, diff_map, diffArgs);
+          new_nodes := d_node :: new_nodes;
+          // add to skipped nodes if differentiated again because the derivative now already exists
+          UnorderedSet.add(node, diffInfo);
+        end if;
       end if;
     end for;
     interface_nodes := listReverse(new_nodes);
@@ -2272,12 +2317,14 @@ public
     UnorderedMap<ComponentRef, ComponentRef> diff_map = UnorderedMap.new<ComponentRef>(ComponentRef.hash, ComponentRef.isEqual);
     UnorderedMap<String, Boolean> interface_map;
     DifferentiationArguments diffArgs = DifferentiationArguments.default();
+    UnorderedSet<InstNode> diffInfo;
     list<Algorithm> algorithms;
     CachedData cachedData;
     InstNode diffVar;
     ComponentRef diffCref;
     list<InstNode> locals, outputs, local_outputs;
     Boolean changed = false;
+
   algorithm
     func := match func
       case der_func as Function.FUNCTION(node = InstNode.CLASS_NODE(cls = cls)) algorithm
@@ -2289,6 +2336,11 @@ public
                 // prepare differentiation arguments
                 diffArgs.diffType     := DifferentiationType.FUNCTION;
                 diffArgs.funcMap      := funcMap;
+                // prepare interface diff info if the function
+                diffInfo := match der_func.interfaceDiffInfo
+                  case SOME(diffInfo) then UnorderedSet.copy(diffInfo);
+                  else UnorderedSet.new(InstNode.hash, InstNode.nameEqual);
+                end match;
 
                 interface_map := UnorderedMap.fromLists(list(InstNode.name(var) for var in der_func.inputs), List.fill(false, listLength(der_func.inputs)), stringHashDjb2, stringEqual);
 
@@ -2306,12 +2358,13 @@ public
                   createInterfaceDerivatives(der_func.outputs, interface_map, diff_map);
                   diffArgs.diff_map   := SOME(diff_map);
 
-                  (locals, diffArgs)  := differentiateFunctionInterfaceNodes(der_func.locals, interface_map, diff_map, diffArgs, true);
-                  (outputs, diffArgs) := differentiateFunctionInterfaceNodes(der_func.outputs, interface_map, diff_map, diffArgs, false);
+                  (locals, diffArgs)  := differentiateFunctionInterfaceNodes(der_func.locals, interface_map, diff_map, diffArgs, diffInfo, true);
+                  (outputs, diffArgs) := differentiateFunctionInterfaceNodes(der_func.outputs, interface_map, diff_map, diffArgs, diffInfo, false);
 
-                  diffCref          := UnorderedMap.getSafe(ComponentRef.fromNode(var, InstNode.getType(var)), diff_map, sourceInfo());
-                  der_func.locals   := listAppend(locals, local_outputs);
-                  der_func.outputs  := outputs;
+                  diffCref                    := UnorderedMap.getSafe(ComponentRef.fromNode(var, InstNode.getType(var)), diff_map, sourceInfo());
+                  der_func.locals             := listAppend(locals, local_outputs);
+                  der_func.outputs            := outputs;
+                  der_func.interfaceDiffInfo  := SOME(diffInfo);
 
                   // differentiate function statements
                   (algorithms, diffArgs) := List.mapFold(algorithms, differentiateAlgorithm, diffArgs);
@@ -2321,15 +2374,17 @@ public
                 end for;
 
                 // add them to new node
-                sections.algorithms     := algorithms;
-                new_cls.sections        := sections;
-                new_cls.ty              := wrap_cls.ty;
-                new_cls.restriction     := wrap_cls.restriction;
-                node.cls                := Pointer.create(new_cls);
-                cachedData              := CachedData.FUNCTION({der_func}, true, false);
-                der_func.node           := InstNode.setFuncCache(node, cachedData);
-                der_func.derivatives    := {};
-                der_func.derivedInputs  := {};
+                sections.algorithms         := algorithms;
+                new_cls.sections            := sections;
+                new_cls.ty                  := wrap_cls.ty;
+                new_cls.restriction         := wrap_cls.restriction;
+                node.cls                    := Pointer.create(new_cls);
+                der_func.derivatives        := {};
+                der_func.derivedInputs      := {};
+                der_func.interfaceDiffInfo  := SOME(diffInfo);
+                cachedData                  := CachedData.FUNCTION({der_func}, true, false);
+                der_func.node               := InstNode.newFuncCache(node, cachedData);
+
 
                 changed := true;
               then new_cls;
@@ -2360,15 +2415,30 @@ public
     list<list<Statement>> statements;
     list<Statement> statements_flat;
     list<ComponentRef> inputs, outputs;
+    UnorderedSet<Statement> diffInfo;
   algorithm
-    (statements, diffArguments) := List.mapFold(alg.statements, differentiateStatement, diffArguments);
+    // store which statements are differentiated so they wont be differentiated again
+    diffInfo := match alg.stmtDiffInfo
+      case SOME(diffInfo) then UnorderedSet.copy(diffInfo);
+      else UnorderedSet.new(Statement.hash, Statement.isEqual);
+    end match;
+
+    // differentiate the statements
+    (statements, diffArguments) := List.mapFold(alg.statements, function differentiateStatement(diffInfo = diffInfo), diffArguments);
+
+    // add all original statements to the set of statements that should not be differentiated
+    for stmt in alg.statements loop
+      UnorderedSet.add(stmt, diffInfo);
+    end for;
+
     statements_flat := List.flatten(statements);
     (inputs, outputs) := Algorithm.getInputsOutputs(statements_flat);
-    alg := Algorithm.ALGORITHM(statements_flat, inputs, outputs, alg.scope, alg.source);
+    alg := Algorithm.ALGORITHM(statements_flat, inputs, outputs, SOME(diffInfo), alg.scope, alg.source);
   end differentiateAlgorithm;
 
   function differentiateStatement
     input Statement stmt;
+    input UnorderedSet<Statement> diffInfo;
     output list<Statement> diff_stmts "two statements for 'Real' assignments (diff; original) and else one";
     input output DifferentiationArguments diffArguments;
   algorithm
@@ -2380,6 +2450,9 @@ public
         list<list<Statement>> branch_stmts;
         list<tuple<Expression, list<Statement>>> branches = {};
 
+      // 0. do not differentiate if it already exists differentiated due to previous differentiation
+      case _ guard(UnorderedSet.contains(stmt, diffInfo)) then {stmt};
+
       // I. differentiate 'Real' assignment and return differentiated and original statement
       case diff_stmt as Statement.ASSIGNMENT() guard(Type.isReal(Type.arrayElementType(Expression.typeOf(diff_stmt.lhs)))) algorithm
         (lhs, diffArguments) := differentiateExpression(diff_stmt.lhs, diffArguments);
@@ -2390,24 +2463,24 @@ public
 
       // II. delegate differentiation to body and only return differentiated statement
       case diff_stmt as Statement.FOR() algorithm
-        (branch_stmts, diffArguments) := List.mapFold(diff_stmt.body, differentiateStatement, diffArguments);
+        (branch_stmts, diffArguments) := List.mapFold(diff_stmt.body, function differentiateStatement(diffInfo = diffInfo), diffArguments);
         diff_stmt.body := List.flatten(branch_stmts);
       then {diff_stmt};
 
       case diff_stmt as Statement.WHILE() algorithm
-        (branch_stmts, diffArguments) := List.mapFold(diff_stmt.body, differentiateStatement, diffArguments);
+        (branch_stmts, diffArguments) := List.mapFold(diff_stmt.body, function differentiateStatement(diffInfo = diffInfo), diffArguments);
         diff_stmt.body := List.flatten(branch_stmts);
       then {diff_stmt};
 
       case diff_stmt as Statement.FAILURE() algorithm
-        (branch_stmts, diffArguments) := List.mapFold(diff_stmt.body, differentiateStatement, diffArguments);
+        (branch_stmts, diffArguments) := List.mapFold(diff_stmt.body, function differentiateStatement(diffInfo = diffInfo), diffArguments);
         diff_stmt.body := List.flatten(branch_stmts);
       then {diff_stmt};
 
       case diff_stmt as Statement.IF() algorithm
         for branch in diff_stmt.branches loop
           (exp, branch_stmts_flat) := branch;
-          (branch_stmts, diffArguments) := List.mapFold(branch_stmts_flat, differentiateStatement, diffArguments);
+          (branch_stmts, diffArguments) := List.mapFold(branch_stmts_flat, function differentiateStatement(diffInfo = diffInfo), diffArguments);
           branches := (exp, List.flatten(branch_stmts)) :: branches;
         end for;
         diff_stmt.branches := listReverse(branches);
@@ -2416,7 +2489,7 @@ public
       case diff_stmt as Statement.WHEN() algorithm
         for branch in diff_stmt.branches loop
           (exp, branch_stmts_flat) := branch;
-          (branch_stmts, diffArguments) := List.mapFold(branch_stmts_flat, differentiateStatement, diffArguments);
+          (branch_stmts, diffArguments) := List.mapFold(branch_stmts_flat, function differentiateStatement(diffInfo = diffInfo), diffArguments);
           branches := (exp, List.flatten(branch_stmts)) :: branches;
         end for;
         diff_stmt.branches := listReverse(branches);
@@ -2501,7 +2574,7 @@ public
       then (Expression.MULTARY({diffExp1}, {diffExp2}, addOp), diffArguments);
 
       // Multiplication (MUL, MUL_EW, ...)
-      // (f * g)' =  fg' + f'g
+      // (f * g)' =  f'g + fg'
       // ∂(f * g)/∂f = g, ∂(f * g)/∂g = f
       case Expression.BINARY(exp1 = exp1, operator = operator, exp2 = exp2)
         guard(Operator.getMathClassification(operator) == NFOperator.MathClassification.MULTIPLICATION)
@@ -2622,8 +2695,8 @@ public
           (NFOperator.MathClassification.ADDITION, sizeClass),
           operator.ty);
       then (Expression.MULTARY(
-              {Expression.BINARY(exp1, operator, diffExp2),
-                Expression.BINARY(diffExp1, operator, exp2)},
+              {Expression.BINARY(diffExp1, operator, exp2),       // f'g
+                Expression.BINARY(exp1, operator, diffExp2)},     // fg'
               {},
               addOp
             ),
@@ -2673,8 +2746,8 @@ public
           mulOp := Operator.fromClassification((NFOperator.MathClassification.MULTIPLICATION, sizeClass), operator.ty);
       then (Expression.MULTARY(
               {Expression.MULTARY(
-                {Expression.BINARY(exp1, mulOp, diffExp2)},              // fg'
-                {Expression.BINARY(diffExp1, mulOp, exp2)},              // - f'g
+                {Expression.BINARY(diffExp1, mulOp, exp2)},              // f'g
+                {Expression.BINARY(exp1, mulOp, diffExp2)},              // - fg'
                 addOp
               )},
               {Expression.BINARY(exp2, powOp, Expression.REAL(2.0))},    // / g^2
@@ -2945,7 +3018,7 @@ public
           end for;
           // Restore upstream gradient
           diffArguments.current_grad := upstream;
-          then (Expression.END());
+      then (Expression.END());
 
       case Expression.MULTARY(arguments = arguments, inv_arguments = inv_arguments, operator = operator)
         guard(Operator.getMathClassification(operator) == NFOperator.MathClassification.MULTIPLICATION

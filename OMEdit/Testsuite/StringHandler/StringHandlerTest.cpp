@@ -76,6 +76,115 @@ void StringHandlerTest::makeVariablePartsWithIndTest_data()
     << QStringList({"paramTable", "[1,1]"});
 }
 
+void StringHandlerTest::removeTypePrefix()
+{
+  QFETCH(QString, string);
+  QFETCH(QString, typeName);
+  QFETCH(QString, result);
+
+  StringHandler::removeTypePrefix(string, typeName);
+  QCOMPARE(string, result);
+}
+
+void StringHandlerTest::removeTypePrefix_data()
+{
+  QTest::addColumn<QString>("string");
+  QTest::addColumn<QString>("typeName");
+  QTest::addColumn<QString>("result");
+
+  QTest::newRow("removeTypePrefix 1")
+      << "P.Dynamics.FixedInitial"
+      << "P.Dynamics"
+      << "FixedInitial";
+
+  QTest::newRow("removeTypePrefix 2")
+      << "Modelica.Blocks.Types.Enumeration.Periodic"
+      << "Modelica.Blocks.Types.Enumeration"
+      << "Periodic";
+}
+
+void StringHandlerTest::pathFunctions()
+{
+  QFETCH(QString, path);
+  QFETCH(QString, result_getLastWordAfterDot);
+  QFETCH(QString, result_removeLastWordAfterDot);
+  QFETCH(QString, result_getFirstWordBeforeDot);
+  QFETCH(QString, result_removeFirstWordBeforeDot);
+  QFETCH(QStringList, result_splitPath);
+
+  QCOMPARE(StringHandler::getLastWordAfterDot(path), result_getLastWordAfterDot);
+  QCOMPARE(StringHandler::removeLastWordAfterDot(path), result_removeLastWordAfterDot);
+  QCOMPARE(StringHandler::getFirstWordBeforeDot(path), result_getFirstWordBeforeDot);
+  QCOMPARE(StringHandler::removeFirstWordBeforeDot(path), result_removeFirstWordBeforeDot);
+  QCOMPARE(StringHandler::splitPath(path), result_splitPath);
+}
+
+void StringHandlerTest::pathFunctions_data()
+{
+  QTest::addColumn<QString>("path");
+  QTest::addColumn<QString>("result_getLastWordAfterDot");
+  QTest::addColumn<QString>("result_removeLastWordAfterDot");
+  QTest::addColumn<QString>("result_getFirstWordBeforeDot");
+  QTest::addColumn<QString>("result_removeFirstWordBeforeDot");
+  QTest::addColumn<QStringList>("result_splitPath");
+
+  QTest::newRow("Empty path")
+    << ""
+    << ""
+    << ""
+    << ""
+    << ""
+    << QStringList({});
+
+  QTest::newRow("Path 1")
+    << "A.B"
+    << QString("B")
+    << QString("A")
+    << QString("A")
+    << QString("B")
+    << QStringList({"A", "B"});
+
+  QTest::newRow("Path 2")
+    << "A.B.'C'"
+    << QString("'C'")
+    << QString("A.B")
+    << QString("A")
+    << QString("B.'C'")
+    << QStringList({"A", "B", "'C'"});
+
+  QTest::newRow("Path 3")
+    << "A.B.'C.D'"
+    << QString("'C.D'")
+    << QString("A.B")
+    << QString("A")
+    << QString("B.'C.D'")
+    << QStringList({"A", "B", "'C.D'"});
+
+  QTest::newRow("Path 4")
+    << "A.B.'C.D'.E"
+    << QString("E")
+    << QString("A.B.'C.D'")
+    << QString("A")
+    << QString("B.'C.D'.E")
+    << QStringList({"A", "B", "'C.D'", "E"});
+
+  QTest::newRow("Path 5")
+    << "'BM_Idempotent_lowered'"
+    << QString("'BM_Idempotent_lowered'")
+    << QString("'BM_Idempotent_lowered'")
+    << QString("'BM_Idempotent_lowered'")
+    << QString("'BM_Idempotent_lowered'")
+    << QStringList({"'BM_Idempotent_lowered'"});
+
+  QTest::newRow("Path 6")
+    << "'BM_Idempotent_lowered'.'BM_Idempotent'"
+    << QString("'BM_Idempotent'")
+    << QString("'BM_Idempotent_lowered'")
+    << QString("'BM_Idempotent_lowered'")
+    << QString("'BM_Idempotent'")
+    << QStringList({"'BM_Idempotent_lowered'", "'BM_Idempotent'"});
+}
+
 void StringHandlerTest::cleanupTestCase()
 {
   MainWindow::instance()->close();

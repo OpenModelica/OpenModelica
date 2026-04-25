@@ -1,27 +1,31 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
@@ -570,7 +574,7 @@ constant ConfigFlag RUNNING_TESTSUITE = CONFIG_FLAG(3, "running-testsuite",
   NONE(), INTERNAL(), STRING_FLAG(""), NONE(),
   Gettext.gettext("Used when running the testsuite."));
 constant ConfigFlag SHOW_VERSION = CONFIG_FLAG(4, "version",
-  SOME("-v"), EXTERNAL(), BOOL_FLAG(false), NONE(),
+  NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   Gettext.gettext("Print the version and exit."));
 constant ConfigFlag TARGET = CONFIG_FLAG(5, "target", NONE(), EXTERNAL(),
   STRING_FLAG("gcc"), SOME(STRING_OPTION({"gcc", "msvc","msvc10","msvc12","msvc13","msvc15","msvc19", "vxworks69", "debugrt"})),
@@ -1288,8 +1292,9 @@ constant ConfigFlag ALLOW_NON_STANDARD_MODELICA = CONFIG_FLAG(143, "allowNonStan
     ("protectedAccess", Gettext.gettext("Allow access of protected elements")),
     ("reinitInAlgorithms", Gettext.gettext("Allow reinit in algorithm sections")),
     ("unbalancedModel", Gettext.gettext("Allow models to be locally unbalanced and to have unbalanced connectors")),
-    ("implicitParameterStartAttribute", Gettext.gettext("Allow fixed parameters with no binding or start attribute"))
-
+    ("implicitParameterStartAttribute", Gettext.gettext("Allow fixed parameters with no binding or start attribute")),
+    ("initialSimplified", Gettext.gettext("Allow use of experimental operator `initialSimplified()`")),
+    ("illegalConditionalContext", Gettext.gettext("Allow use of components with false conditions in illegal contexts"))
     })),
   Gettext.gettext("Flags to allow non-standard Modelica."));
 constant ConfigFlag EXPORT_CLOCKS_IN_MODELDESCRIPTION = CONFIG_FLAG(144, "exportClocksInModelDescription",
@@ -1311,7 +1316,8 @@ constant ConfigFlag DUMP_FLAT_MODEL = CONFIG_FLAG(147, "dumpFlatModel",
     ("connections", Gettext.gettext("After connection handling.")),
     ("eval", Gettext.gettext("After evaluating constants.")),
     ("simplify", Gettext.gettext("After model simplification.")),
-    ("scalarize", Gettext.gettext("After scalarizing arrays."))
+    ("scalarize", Gettext.gettext("After scalarizing arrays.")),
+    ("translateResidualsDAE", Gettext.gettext("Show the result of the translateResidualsDAE API."))
   })),
   Gettext.gettext("Dumps the flat model at the given stages of the frontend."));
 constant ConfigFlag SIMULATION = CONFIG_FLAG(148, "simulation",
@@ -1348,18 +1354,19 @@ constant ConfigFlag EXPOSE_LOCAL_IOS = CONFIG_FLAG(152, "exposeLocalIOs",
                   "0 meaning top-level (standard Modelica), 1 inputs/outputs of top-level components, >1 going deeper. " +
                   "This flag is particularly useful for FMI export."));
 constant ConfigFlag BASE_MODELICA_FORMAT = CONFIG_FLAG(153, "baseModelicaFormat",
-  NONE(), EXTERNAL(), STRING_LIST_FLAG({}), SOME(STRING_OPTION({
-    "scalarized",
-    "partiallyScalarized",
-    "nonScalarized",
-    "withRecords",
-    "withoutRecords"
+  NONE(), EXTERNAL(), STRING_LIST_FLAG({}), SOME(STRING_DESC_OPTION({
+    ("scalarized", Gettext.notrans("Include subscripts in the quoted identifiers ('a[1].x[3]').")),
+    ("partiallyScalarized", Gettext.notrans("Include subscripts in the quoted identifiers, except for the last name ('a[1].x'[3]).")),
+    ("nonScalarized", Gettext.notrans("Don't include subscripts in the quoted identifiers ('a'[1].'x'[3]).")),
+    ("withRecords", Gettext.notrans("Keep records and don't expand them.")),
+    ("withoutRecords", Gettext.notrans("Expand records into separate components."))
   })),
   Gettext.gettext("Formatting options for Base Modelica"));
 constant ConfigFlag BASE_MODELICA_OPTIONS = CONFIG_FLAG(154, "baseModelicaOptions",
   NONE(), EXTERNAL(), STRING_LIST_FLAG({}), SOME(STRING_DESC_OPTION({
     ("moveBindings", Gettext.notrans("Moves movable binding equations to normal equations.")),
-    ("scalarize", Gettext.notrans("Fully scalarize the Base Modelica model."))
+    ("scalarize", Gettext.notrans("Fully scalarize the Base Modelica model.")),
+    ("inlineFunctions", Gettext.notrans("Inline all functions."))
     })),
   Gettext.gettext("Enables optional Base Modelica options."));
 constant ConfigFlag DEBUG_FOLLOW_EQUATIONS = CONFIG_FLAG(155, "debugFollowEquations",

@@ -555,7 +555,7 @@ and the accompanying <b>disclaimer</b>
     input SI.Angle u;
     output Real y;
 
-  external "C" y=  sin(u);
+  external "C" y=  sin(u) annotation(Library="ModelicaExternalC");
     annotation (
       Icon(coordinateSystem(
           preserveAspectRatio=true,
@@ -626,7 +626,7 @@ This function returns y = sin(u), with -&infin; &lt; u &lt; &infin;:
 <p>
 <img src=\"../Images/Math/sin.png\">
 </p>
-</html>"),   Library="ModelicaExternalC");
+</html>"));
   end sin;
 
   function asin "Inverse sine (-1 <= u <= 1)"
@@ -634,7 +634,7 @@ This function returns y = sin(u), with -&infin; &lt; u &lt; &infin;:
     input Real u;
     output SI.Angle y;
 
-  external "C" y=  asin(u);
+  external "C" y=  asin(u) annotation(Library="ModelicaExternalC");
     annotation (
       Icon(coordinateSystem(
           preserveAspectRatio=true,
@@ -705,7 +705,7 @@ This function returns y = asin(u), with -1 &le; u &le; +1:
 <p>
 <img src=\"../Images/Math/asin.png\">
 </p>
-</html>"),   Library="ModelicaExternalC");
+</html>"));
   end asin;
 
   partial function baseIcon1

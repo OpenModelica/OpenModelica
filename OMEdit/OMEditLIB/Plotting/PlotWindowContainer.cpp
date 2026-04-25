@@ -292,11 +292,7 @@ void PlotWindowContainer::showDiagramWindow(ModelWidget *pModelWidget, bool init
   if (mpDiagramWindow) {
     mpDiagramWindow->showVisualizationDiagram(pModelWidget ? pModelWidget : MainWindow::instance()->getModelWidgetContainer()->getCurrentModelWidget());
     if (initializeVisualization) {
-      PlotWindowContainer *pPlotWindowContainer = MainWindow::instance()->getPlotWindowContainer();
-      // if DiagramWindow is active
-      if (pPlotWindowContainer->currentSubWindow() && pPlotWindowContainer->isDiagramWindow(pPlotWindowContainer->currentSubWindow()->widget())) {
-        MainWindow::instance()->getVariablesWidget()->initializeVisualization();
-      }
+      MainWindow::instance()->getVariablesWidget()->initializeVisualization();
     }
   }
 }
@@ -305,7 +301,7 @@ void PlotWindowContainer::showDiagramWindow(ModelWidget *pModelWidget, bool init
  * \brief PlotWindowContainer::addPlotWindow
  * Adds a new Plot Window.
  */
-void PlotWindowContainer::addPlotWindow()
+PlotWindow* PlotWindowContainer::addPlotWindow()
 {
   try {
     PlotWindow *pPlotWindow = new PlotWindow(QStringList(), this, false, OptionsDialog::instance()->getGeneralSettingsPage()->getToolbarIconSizeSpinBox()->value());
@@ -333,10 +329,12 @@ void PlotWindowContainer::addPlotWindow()
     if (maximize) {
       pPlotWindow->setWindowState(Qt::WindowMaximized);
     }
+    return pPlotWindow;
   }
   catch (PlotException &e) {
     MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, e.what(), Helper::scriptingKind, Helper::errorLevel));
   }
+  return nullptr;
 }
 
 /*!

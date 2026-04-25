@@ -2,10 +2,9 @@
 // keywords: array equations, for loops
 // status: correct
 // teardown_command: rm -f *ArrayEquationsTest*
-// cflags: -d=-newInst
 
 setCommandLineOptions("--std=3.3"); getErrorString();
-setCommandLineOptions("-d=newInst,-nfScalarize,dumpSimCode"); getErrorString();
+setCommandLineOptions("-d=-nfScalarize,dumpSimCode"); getErrorString();
 setCommandLineOptions("--simCodeTarget=Cpp"); getErrorString();
 
 loadString("

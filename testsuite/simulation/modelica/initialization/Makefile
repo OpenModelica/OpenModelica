@@ -40,6 +40,7 @@ homotopy4.mos \
 homotopy4_solver.mos \
 homotopy5.mos \
 homotopy6.mos \
+homotopy7.mos \
 initial_equation.mos \
 parameters.mos \
 parameterWithoutBinding.mos \

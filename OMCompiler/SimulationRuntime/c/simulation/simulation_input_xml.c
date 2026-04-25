@@ -1,30 +1,27 @@
 /*
- * This file is part of OpenModelica.
+ * This file belongs to the OpenModelica Run-Time System
  *
- * Copyright (c) 1998-2010, Linköpings University,
- * Department of Computer and Information Science,
- * SE-58183 Linköping, Sweden.
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC), c/o Linköpings
+ * universitet, Department of Computer and Information Science, SE-58183 Linköping, Sweden. All rights
+ * reserved.
  *
- * All rights reserved.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THE BSD NEW LICENSE OR THE
+ * AGPL VERSION 3 LICENSE OR THE OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8. ANY
+ * USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
+ * ACCEPTANCE OF THE BSD NEW LICENSE OR THE OSMC PUBLIC LICENSE OR THE AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THIS OSMC PUBLIC
- * LICENSE (OSMC-PL). ANY USE, REPRODUCTION OR DISTRIBUTION OF
- * THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THE OSMC
- * PUBLIC LICENSE.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium) Public License
+ * (OSMC-PL) are obtained from OSMC, either from the above address, from the URLs:
+ * http://www.openmodelica.org or https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica, and in the OpenModelica distribution. GNU
+ * AGPL version 3 is obtained from: https://www.gnu.org/licenses/licenses.html#GPL. The BSD NEW
+ * License is obtained from: http://www.opensource.org/licenses/BSD-3-Clause.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from Linköpings University, either from the above address,
- * from the URL: http://www.ida.liu.se/projects/OpenModelica
- * and in the OpenModelica distribution.
- *
- * This program is distributed  WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
- * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS
- * OF OSMC-PL.
- *
- * See the full OSMC Public License conditions for more details.
+ * This program is distributed WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY
+ * SET FORTH IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF
+ * OSMC-PL.
  *
  */
 
@@ -595,7 +592,8 @@ static void read_var_attribute_int(omc_ModelVariable *v, INTEGER_ATTRIBUTE *attr
   attribute->min = read_value_long(findHashStringStringEmpty(v,"min"), INTEGER_MIN);
   attribute->max = read_value_long(findHashStringStringEmpty(v,"max"), INTEGER_MAX);
 
-  infoStreamPrint(OMC_LOG_DEBUG, 0, "Integer %s(start=%ld, fixed=%s, min=%ld, max=%ld)", findHashStringString(v,"name"), attribute->start, attribute->fixed?"true":"false", attribute->min, attribute->max);
+  infoStreamPrint(OMC_LOG_DEBUG, 0, "Integer %s(start=" OMC_INT_FORMAT ", fixed=%s, min=" OMC_INT_FORMAT ", max=" OMC_INT_FORMAT ")",
+    findHashStringString(v,"name"), attribute->start, attribute->fixed?"true":"false", attribute->min, attribute->max);
 }
 
 static void read_var_attribute_bool(omc_ModelVariable *v, BOOLEAN_ATTRIBUTE *attribute)
@@ -992,7 +990,7 @@ void read_alias_var(DATA_ALIAS* alias,
 {
   // Assert nAliasVariables has correct size
   size_t num_alias_vars_xml = HASH_COUNT(aliasHashMap);
-  assertStreamPrint(NULL, nAliasVariables == num_alias_vars_xml, "Number of alias variables doesn't match up. Expected %zu but found %zu in XML!", nAliasVariables, num_alias_vars_xml);
+  assertStreamPrint(NULL, nAliasVariables == num_alias_vars_xml, "Number of alias variables doesn't match up. Expected %lu but found %zu in XML!", nAliasVariables, num_alias_vars_xml);
 
   long *it, *itParam;
   const char *aliasTmp = NULL;

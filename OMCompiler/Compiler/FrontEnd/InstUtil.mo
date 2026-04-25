@@ -1,27 +1,31 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
@@ -7172,31 +7176,34 @@ i.e. Inline and Purity"
   input list<DAE.Var> vl;
   input SCode.Comment inheritedComment;
   output DAE.FunctionAttributes attr;
+protected
+  SCode.Restriction restriction;
+  SCode.FunctionRestriction fres;
+  Boolean isOpenModelicaPure, isImpure, hasOutVars, unboxArgs;
+  DAE.FunctionBuiltin isBuiltin;
+  DAE.InlineType inlineType;
+  String name;
+  list<DAE.Var> inVars,outVars;
+  Absyn.FunctionPurity purity;
+  DAE.Purity daePurity;
 algorithm
-  attr := matchcontinue cl
-    local
-      SCode.Restriction restriction;
-      Boolean isOpenModelicaPure, isImpure, hasOutVars, unboxArgs;
-      DAE.FunctionBuiltin isBuiltin;
-      DAE.InlineType inlineType;
-      String name;
-      list<DAE.Var> inVars,outVars;
-      Absyn.FunctionPurity purity;
+  restriction := SCodeUtil.getClassRestriction(cl);
+  SCode.Restriction.R_FUNCTION(functionRestriction = fres) := restriction;
+  daePurity := getFunctionRestrictionPurity(SCodeUtil.getFunctionRestrictionPurity(fres), inheritedComment, newFrontend = false);
 
-    case SCode.CLASS(restriction=SCode.R_FUNCTION(SCode.FR_EXTERNAL_FUNCTION(purity)))
+  attr := matchcontinue fres
+    case SCode.FR_EXTERNAL_FUNCTION(purity)
       equation
         isImpure = AbsynUtil.isImpure(purity);
         inVars = List.select(vl,Types.isInputVar);
         outVars = List.select(vl,Types.isOutputVar);
         name = SCodeUtil.isBuiltinFunction(cl,List.map(inVars,Types.getVarName),List.map(outVars,Types.getVarName));
         inlineType = commentIsInlineFunc(inheritedComment);
-        isOpenModelicaPure = not SCodeUtil.commentHasBooleanNamedAnnotation(inheritedComment,"__OpenModelica_Impure");
-        isImpure = if isImpure then true else SCodeUtil.commentHasBooleanNamedAnnotation(inheritedComment,"__ModelicaAssociation_Impure");
         unboxArgs = SCodeUtil.commentHasBooleanNamedAnnotation(inheritedComment, "__OpenModelica_UnboxArguments");
-      then (DAE.FUNCTION_ATTRIBUTES(inlineType,isOpenModelicaPure,isImpure,false,DAE.FUNCTION_BUILTIN(SOME(name), unboxArgs),DAE.FP_NON_PARALLEL()));
+      then (DAE.FUNCTION_ATTRIBUTES(inlineType,daePurity,false,DAE.FUNCTION_BUILTIN(SOME(name), unboxArgs),DAE.FP_NON_PARALLEL()));
 
     //parallel functions: There are some builtin functions.
-    case SCode.CLASS(restriction=SCode.R_FUNCTION(SCode.FR_PARALLEL_FUNCTION()))
+    case SCode.FR_PARALLEL_FUNCTION()
       equation
         inVars = List.select(vl,Types.isInputVar);
         outVars = List.select(vl,Types.isOutputVar);
@@ -7204,31 +7211,57 @@ algorithm
         inlineType = commentIsInlineFunc(inheritedComment);
         isOpenModelicaPure = not SCodeUtil.commentHasBooleanNamedAnnotation(inheritedComment,"__OpenModelica_Impure");
         unboxArgs = SCodeUtil.commentHasBooleanNamedAnnotation(inheritedComment, "__OpenModelica_UnboxArguments");
-      then (DAE.FUNCTION_ATTRIBUTES(inlineType,isOpenModelicaPure,false,false,DAE.FUNCTION_BUILTIN(SOME(name), unboxArgs),DAE.FP_PARALLEL_FUNCTION()));
+      then (DAE.FUNCTION_ATTRIBUTES(inlineType,daePurity,false,DAE.FUNCTION_BUILTIN(SOME(name), unboxArgs),DAE.FP_PARALLEL_FUNCTION()));
 
     //parallel functions: non-builtin
-    case SCode.CLASS(restriction=SCode.R_FUNCTION(SCode.FR_PARALLEL_FUNCTION()))
+    case SCode.FR_PARALLEL_FUNCTION()
       equation
         inlineType = commentIsInlineFunc(inheritedComment);
         isBuiltin = if SCodeUtil.commentHasBooleanNamedAnnotation(inheritedComment,"__OpenModelica_BuiltinPtr") then DAE.FUNCTION_BUILTIN_PTR() else DAE.FUNCTION_NOT_BUILTIN();
         isOpenModelicaPure = not SCodeUtil.commentHasBooleanNamedAnnotation(inheritedComment,"__OpenModelica_Impure");
-      then DAE.FUNCTION_ATTRIBUTES(inlineType,isOpenModelicaPure,false,false,isBuiltin,DAE.FP_PARALLEL_FUNCTION());
+      then DAE.FUNCTION_ATTRIBUTES(inlineType,daePurity,false,isBuiltin,DAE.FP_PARALLEL_FUNCTION());
 
     //kernel functions: never builtin and never inlined.
-    case SCode.CLASS(restriction=SCode.R_FUNCTION(SCode.FR_KERNEL_FUNCTION()))
-      then DAE.FUNCTION_ATTRIBUTES(DAE.NO_INLINE(), true, false, false, DAE.FUNCTION_NOT_BUILTIN(),DAE.FP_KERNEL_FUNCTION());
+    case SCode.FR_KERNEL_FUNCTION()
+      then DAE.FUNCTION_ATTRIBUTES(DAE.NO_INLINE(), daePurity, false, DAE.FUNCTION_NOT_BUILTIN(),DAE.FP_KERNEL_FUNCTION());
 
-    case SCode.CLASS(restriction=restriction)
-      equation
-        inlineType = commentIsInlineFunc(inheritedComment);
-        hasOutVars = List.any(vl,Types.isOutputVar);
-        isBuiltin = if SCodeUtil.commentHasBooleanNamedAnnotation(inheritedComment,"__OpenModelica_BuiltinPtr") then DAE.FUNCTION_BUILTIN_PTR() else DAE.FUNCTION_NOT_BUILTIN();
-        isOpenModelicaPure = not SCodeUtil.commentHasBooleanNamedAnnotation(inheritedComment,"__OpenModelica_Impure");
-        // In Modelica 3.2 and before, external functions with side-effects are not marked
-        isImpure = SCodeUtil.commentHasBooleanNamedAnnotation(inheritedComment,"__ModelicaAssociation_Impure") or SCodeUtil.isRestrictionImpure(restriction,hasOutVars or Config.languageStandardAtLeast(Config.LanguageStandard.'3.3'));
-      then DAE.FUNCTION_ATTRIBUTES(inlineType,isOpenModelicaPure,isImpure,false,isBuiltin,DAE.FP_NON_PARALLEL());
+    else
+      algorithm
+        inlineType := commentIsInlineFunc(inheritedComment);
+        hasOutVars := List.any(vl,Types.isOutputVar);
+        isBuiltin := if SCodeUtil.commentHasBooleanNamedAnnotation(inheritedComment,"__OpenModelica_BuiltinPtr") then DAE.FUNCTION_BUILTIN_PTR() else DAE.FUNCTION_NOT_BUILTIN();
+
+        // In Modelica 3.2 and before, external functions with side-effects are not marked.
+        if daePurity == DAE.Purity.UNDEFINED and SCodeUtil.isExternalFunctionRestriction(fres) and
+           not (hasOutVars or Config.languageStandardAtLeast(Config.LanguageStandard.'3.3')) then
+          daePurity := DAE.Purity.IMPURE;
+        end if;
+      then
+        DAE.FUNCTION_ATTRIBUTES(inlineType,daePurity,false,isBuiltin,DAE.FP_NON_PARALLEL());
   end matchcontinue;
 end getFunctionAttributes;
+
+public function getFunctionRestrictionPurity
+  input Absyn.FunctionPurity purity;
+  input SCode.Comment cmt;
+  input Boolean newFrontend;
+  output DAE.Purity outPurity;
+algorithm
+  outPurity := match purity
+    case Absyn.FunctionPurity.PURE() then DAE.Purity.PURE;
+    case Absyn.FunctionPurity.IMPURE() then DAE.Purity.IMPURE;
+    else DAE.Purity.UNDEFINED;
+  end match;
+
+  if outPurity == DAE.Purity.UNDEFINED then
+    if SCodeUtil.commentHasBooleanNamedAnnotation(cmt, "__ModelicaAssociation_Impure") then
+      outPurity := DAE.Purity.IMPURE;
+    elseif not newFrontend and SCodeUtil.commentHasBooleanNamedAnnotation(cmt, "__OpenModelica_Impure") then
+      // __OpenModelica_Impure is only used for MetaModelica, which the NF doesn't care about.
+      outPurity := DAE.Purity.OM_IMPURE;
+    end if;
+  end if;
+end getFunctionRestrictionPurity;
 
 public function checkFunctionElement
 "Verifies that an element of a function is correct, i.e.

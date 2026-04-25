@@ -2,7 +2,6 @@
 // keywords: simulation ThermoSysPro.Examples.SimpleExamples
 // status: correct
 // teardown_command: rm -rf _ThermoSysPro.Examples.SimpleExamples.TestAirHumidity.* ThermoSysPro.Examples.SimpleExamples.TestAirHumidity_* ThermoSysPro.Examples.SimpleExamples.TestAirHumidity ThermoSysPro.Examples.SimpleExamples.TestAirHumidity.exe ThermoSysPro.Examples.SimpleExamples.TestAirHumidity.cpp ThermoSysPro.Examples.SimpleExamples.TestAirHumidity.makefile ThermoSysPro.Examples.SimpleExamples.TestAirHumidity.libs ThermoSysPro.Examples.SimpleExamples.TestAirHumidity.log ThermoSysPro.Examples.SimpleExamples.TestAirHumidity.c ThermoSysPro.Examples.SimpleExamples.TestAirHumidity.o output.log
-// cflags: -d=-newInst
 //
 // Simulation Results 
 // Modelica Standard Library
@@ -21,6 +20,7 @@ getEnvironmentVar("REFERENCEFILES")+"/ThermoSysPro/ThermoSysPro.Examples.SimpleE
 {"singularPressureLoss.Q",
  "singularPressureLoss.T",
  "singularPressureLoss.deltaPf"});
+getErrorString();
  
 
 // Result:
@@ -30,19 +30,19 @@ getEnvironmentVar("REFERENCEFILES")+"/ThermoSysPro/ThermoSysPro.Examples.SimpleE
 // ""
 // record SimulationResult
 //     resultFile = "ThermoSysPro.Examples.SimpleExamples.TestAirHumidity_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1000.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'ThermoSysPro.Examples.SimpleExamples.TestAirHumidity', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 1000.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'ThermoSysPro.Examples.SimpleExamples.TestAirHumidity', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// "[ThermoSysPro 3.2.0/FlueGases/Connectors.mo:3:3-51:22:writable] Warning: Connector .ThermoSysPro.FlueGases.Connectors.FlueGasesOutlet is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
-// [ThermoSysPro 3.2.0/FlueGases/Connectors.mo:53:3-101:21:writable] Warning: Connector .ThermoSysPro.FlueGases.Connectors.FlueGasesInlet is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
-// [ThermoSysPro 3.2.0/FlueGases/Connectors.mo:3:3-51:22:writable] Warning: Connector .ThermoSysPro.FlueGases.Connectors.FlueGasesOutlet is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
-// [ThermoSysPro 3.2.0/Properties/WaterSteam/Common.mo:703:3-754:22:writable] Warning: pro.x was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [ThermoSysPro 3.2.0/Properties/WaterSteam/Common.mo:1185:3-1241:26:writable] Warning: pro.x was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [ThermoSysPro 3.2.0/FlueGases/Connectors.mo:53:3-101:21:writable] Warning: Connector .ThermoSysPro.FlueGases.Connectors.FlueGasesInlet is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
-// [ThermoSysPro 3.2.0/FlueGases/Connectors.mo:3:3-51:22:writable] Warning: Connector .ThermoSysPro.FlueGases.Connectors.FlueGasesOutlet is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
-// [ThermoSysPro 3.2.0/FlueGases/Connectors.mo:53:3-101:21:writable] Warning: Connector .ThermoSysPro.FlueGases.Connectors.FlueGasesInlet is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
+// "[ThermoSysPro 3.2.0/FlueGases/BoundaryConditions/SourcePQ.mo:18:3-19:83:writable] Warning: Connector C is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.2.0/FlueGases/BoundaryConditions/AirHumidity.mo:33:3-35:16:writable] Warning: Connector C1 is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.2.0/FlueGases/BoundaryConditions/AirHumidity.mo:42:3-43:83:writable] Warning: Connector C2 is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.2.0/FlueGases/PressureLosses/SingularPressureLoss.mo:18:3-20:42:writable] Warning: Connector C1 is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.2.0/FlueGases/PressureLosses/SingularPressureLoss.mo:21:3-23:37:writable] Warning: Connector C2 is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.2.0/FlueGases/BoundaryConditions/Sink.mo:15:3-17:16:writable] Warning: Connector C is not balanced: The number of potential variables (7) is not equal to the number of flow variables (0).
 // "
 // {"Files Equal!"}
+// "Warning: 'compareSimulationResults' is deprecated. It is recommended to use 'diffSimulationResults' instead.
+// "
 // endResult

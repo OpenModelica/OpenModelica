@@ -1,27 +1,31 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
@@ -249,12 +253,13 @@ function simplifyBuiltinCall
   output Expression exp;
 algorithm
   exp := match AbsynUtil.pathFirstIdent(name)
-    case "cat"
-      algorithm
-        // ToDo: prevent this for NB
+    case "cat" algorithm
+      if(not Flags.getConfigBool(Flags.NEW_BACKEND) or List.all(args, Expression.isLiteral)) then
         exp := ExpandExp.expandBuiltinCat(args, call, false);
-      then
-        exp;
+      else
+        exp := simplifyCat(args, call);
+      end if;
+    then exp;
 
     case "pre" then match args
       case {exp as Expression.BOOLEAN()} then exp;
@@ -281,6 +286,26 @@ algorithm
     else Expression.CALL(call);
   end match;
 end simplifyBuiltinCall;
+
+function simplifyCat
+  input list<Expression> args;
+  input Call call;
+  output Expression exp;
+protected
+  list<Expression> nonempty_args = list(arg for arg guard(not Expression.sizeZero(arg)) in args);
+algorithm
+  // first argument is always the dimension to concatenate over
+  if listLength(nonempty_args) == 2 then
+    // if there are two nonempty arguments, take the second as the other does not matter
+    {_, exp} := nonempty_args;
+  elseif listLength(nonempty_args) == 1 then
+    // if there is only one nonempty argument, its the dimension, so return any of the empty arguments (first one here)
+    _ :: exp :: _ := args;
+  else
+    // do nothing, just return original call without the empty arguments
+    exp := Expression.CALL(Call.setArguments(call, nonempty_args));
+  end if;
+end simplifyCat;
 
 function simplifySemiLinear
   input list<Expression> args;

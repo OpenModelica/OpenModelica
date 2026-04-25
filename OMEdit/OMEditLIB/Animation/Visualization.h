@@ -76,11 +76,6 @@
 
 class VisualizationAbstract; // Forward declaration for passing a pointer to various constructors before class declaration
 
-struct UserSimSettingsMAT
-{
-  double speedup;
-};
-
 class UpdateVisitor : public osg::NodeVisitor
 {
 public:

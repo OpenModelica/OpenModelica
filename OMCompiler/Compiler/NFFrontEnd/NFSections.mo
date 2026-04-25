@@ -1,27 +1,31 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
@@ -36,9 +40,10 @@ encapsulated uniontype NFSections
   import Statement = NFStatement;
   import ComponentRef = NFComponentRef;
   import Expression = NFExpression;
-  import SCode.Annotation;
+  import SCode;
 
 protected
+  import DAEDump;
   import Sections = NFSections;
   import SCodeUtil;
   import IOStream;
@@ -56,7 +61,7 @@ public
     list<Expression> args;
     ComponentRef outputRef;
     String language;
-    Option<Annotation> ann;
+    Option<SCode.Annotation> ann;
     Boolean explicit;
     SourceInfo info;
   end EXTERNAL;
@@ -388,6 +393,54 @@ public
     end match;
   end isEmpty;
 
+  function toStream
+    input Sections sections;
+    input String indent;
+    input output IOStream.IOStream s;
+  algorithm
+    () := match sections
+      case SECTIONS()
+        algorithm
+          for alg in sections.algorithms loop
+            s := IOStream.append(s, indent);
+            s := IOStream.append(s, "algorithm\n");
+            s := Statement.toStreamList(alg.statements, indent + "  ", s);
+          end for;
+        then
+          ();
+
+      case EXTERNAL()
+        algorithm
+          s := IOStream.append(s, indent);
+          s := IOStream.append(s, "external \"");
+          s := IOStream.append(s, sections.language);
+          s := IOStream.append(s, "\"");
+
+          if sections.explicit then
+            if not ComponentRef.isEmpty(sections.outputRef) then
+              s := IOStream.append(s, " ");
+              s := IOStream.append(s, ComponentRef.toString(sections.outputRef));
+              s := IOStream.append(s, " =");
+            end if;
+            s := IOStream.append(s, " ");
+            s := IOStream.append(s, sections.name);
+            s := IOStream.append(s, "(");
+            s := IOStream.append(s, stringDelimitList(list(Expression.toString(e) for e in sections.args), ", "));
+            s := IOStream.append(s, ")");
+          end if;
+
+          if isSome(sections.ann) then
+            s := IOStream.append(s, DAEDump.dumpCompAnnotationStr(SOME(SCode.Comment.COMMENT(sections.ann, NONE()))));
+          end if;
+
+          s := IOStream.append(s, ";\n");
+        then
+          ();
+
+      else ();
+    end match;
+  end toStream;
+
   function toFlatStream
     input Sections sections;
     input Absyn.Path scopeName;
@@ -395,7 +448,7 @@ public
     input String indent;
     input output IOStream.IOStream s;
   protected
-    Annotation ann;
+    SCode.Annotation ann;
     SCode.Mod mod, modLib, modInc, modLibDir, modIncDir;
   algorithm
     () := match sections

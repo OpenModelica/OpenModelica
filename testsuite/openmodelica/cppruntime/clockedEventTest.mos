@@ -2,7 +2,6 @@
 // keywords: synchronous clocked equations
 // status: correct
 // teardown_command: rm -f *EvenClock*
-// cflags: -d=-newInst
 
 setCommandLineOptions("+simCodeTarget=Cpp");
 

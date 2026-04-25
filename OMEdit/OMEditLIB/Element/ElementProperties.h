@@ -88,9 +88,9 @@ public:
   ModelInstance::Element* getModelInstanceElement() {return mpModelInstanceElement;}
   void setTab(QString tab) {mTab = tab;}
   const StringAnnotation &getTab() {return mTab;}
+  bool isTabDefined() const {return mTabDefined;}
   void setGroup(QString group) {mGroup = group;}
   const StringAnnotation &getGroup() {return mGroup;}
-  void setGroupDefined(bool groupDefined) {mGroupDefined = groupDefined;}
   bool isGroupDefined() const {return mGroupDefined;}
   void setShowStartAttribute(bool showStartAttribute) {mShowStartAttribute = showStartAttribute;}
   bool isShowStartAttribute() const {return mShowStartAttribute;}
@@ -148,6 +148,7 @@ private:
   ModelInstance::Element *mpModelInstanceElement;
   ElementParameters *mpElementParameters = 0;
   StringAnnotation mTab;
+  bool mTabDefined = false;
   StringAnnotation mGroup;
   bool mGroupDefined;
   BooleanAnnotation mEnable;
@@ -255,6 +256,7 @@ public:
   QString getComponentClassComment() const;
   ModelInstance::Model *getModel() const;
   GraphicsView *getGraphicsView() const {return mpGraphicsView;}
+  ModelInstance::Element *getElement() const {return mpElement;}
   bool hasElement() const {return mpElement ? true : false;}
   bool isElementArray() const {return mpElement->getDimensions().isArray();}
   QString getElementDimensions() const {return mpElement->getDimensions().getTypedDimensionsString();}
@@ -262,6 +264,7 @@ public:
   bool isNested() const {return mNested;}
   bool skipFocusOutEvent() const {return mSkipFocusOutEvent;}
   QString getModification() const {return mModification;}
+  Parameter* findParameter(const QString &parameter, Qt::CaseSensitivity caseSensitivity = Qt::CaseSensitive) const;
   void applyFinalStartFixedAndDisplayUnitModifiers(Parameter *pParameter, ModelInstance::Modifier *pModifier, bool defaultValue, bool isElementModification);
   void updateParameters();
 private:
@@ -297,13 +300,13 @@ private:
 
   void setUpDialog();
   void createTabsGroupBoxesAndParameters(ModelInstance::Model *pModelInstance, bool defaultValue);
+  void addOrUpdateParametersScrollArea(Parameter *pParameter);
   void fetchElementExtendsModifiers(ModelInstance::Model *pModelInstance, bool defaultValue);
   void fetchModifiers(ModelInstance::Modifier *pModifier);
   void fetchRootElementModifiers(ModelInstance::Element *pModelElement);
   void fetchClassExtendsModifiers(ModelInstance::Element *pModelElement);
   void fetchRootClassExtendsModifiers(ModelInstance::Element *pModelElement);
   void applyModifier(ModelInstance::Modifier *pModifier, bool defaultValue);
-  Parameter* findParameter(const QString &parameter, Qt::CaseSensitivity caseSensitivity = Qt::CaseSensitive) const;
 public slots:
   void commentLinkClicked(QString link);
   void updateElementParameters();

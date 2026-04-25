@@ -1,27 +1,31 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
@@ -428,9 +432,251 @@ public
 
   function hash
     input Expression exp;
-    output Integer hash = stringHashDjb2(toString(exp));
-    // TODO use stringHashDjb2Continue
+    output Integer hash = hashContinue(exp, Util.HASH_SEED);
   end hash;
+
+  function hashContinue
+    input Expression exp;
+    input output Integer hash;
+  algorithm
+    hash := match exp
+      local
+        Absyn.Path path;
+
+      case INTEGER() then stringHashDjb2Continue(intString(exp.value), hash);
+      case REAL() then stringHashDjb2Continue(realString(exp.value), hash);
+      case STRING() then stringHashDjb2Continue(exp.value, hash);
+      case BOOLEAN() then stringHashDjb2Continue(boolString(exp.value), hash);
+
+      case ENUM_LITERAL(ty = Type.ENUMERATION(typePath = path))
+        algorithm
+          hash := AbsynUtil.pathHashContinue(path, hash);
+          hash := stringHashDjb2Continue(".", hash);
+          hash := stringHashDjb2Continue(exp.name, hash);
+        then hash;
+
+      case CLKCONST() then ClockKind.hashContinue(exp.clk, hash);
+      case CREF() then ComponentRef.hashContinue(exp.cref, false, hash);
+      case TYPENAME() then Type.hashContinue(Type.arrayElementType(exp.ty), hash);
+
+      case ARRAY()
+        algorithm
+          hash := stringHashDjb2Continue("{", hash);
+          for e in exp.elements loop
+            hash := hashContinue(e, hash);
+            hash := stringHashDjb2Continue(", ", hash); // trailing comma, don't care...
+          end for;
+          hash := stringHashDjb2Continue("}", hash);
+        then hash;
+
+      case MATRIX()
+        algorithm
+          hash := stringHashDjb2Continue("[", hash);
+          for el in exp.elements loop
+            for e in el loop
+              hash := hashContinue(e, hash);
+              hash := stringHashDjb2Continue(", ", hash); // trailing comma, don't care...
+            end for;
+            hash := stringHashDjb2Continue("; ", hash); // trailing semicolon, don't care...
+          end for;
+          hash := stringHashDjb2Continue("]", hash);
+        then hash;
+
+      case RANGE()
+        algorithm
+          hash := hashContinue(exp.start, hash);
+          hash := stringHashDjb2Continue(":", hash);
+          if isSome(exp.step) then
+            hash := hashContinue(Util.getOption(exp.step), hash);
+            hash := stringHashDjb2Continue(":", hash);
+          end if;
+          hash := hashContinue(exp.stop, hash);
+        then hash;
+
+      case TUPLE()
+        algorithm
+          hash := stringHashDjb2Continue("(", hash);
+          for e in exp.elements loop
+            hash := hashContinue(e, hash);
+            hash := stringHashDjb2Continue(", ", hash); // trailing comma, don't care...
+          end for;
+          hash := stringHashDjb2Continue(")", hash);
+        then hash;
+
+      case RECORD()
+        algorithm
+        hash := AbsynUtil.pathHashContinue(exp.path, hash);
+        hash := stringHashDjb2Continue("(", hash);
+          for e in exp.elements loop
+            hash := hashContinue(e, hash);
+            hash := stringHashDjb2Continue(", ", hash); // trailing comma, don't care...
+          end for;
+          hash := stringHashDjb2Continue(")", hash);
+        then hash;
+
+      case CALL() then stringHashDjb2Continue(Call.toString(exp.call), hash); // TODO use Call.hashContinue
+
+      case SIZE()
+        algorithm
+          hash := stringHashDjb2Continue("size(", hash);
+          hash := hashContinue(exp.exp, hash);
+          if isSome(exp.dimIndex) then
+            hash := stringHashDjb2Continue(", ", hash);
+            hash := hashContinue(Util.getOption(exp.dimIndex), hash);
+          end if;
+          hash := stringHashDjb2Continue(")", hash);
+        then hash;
+
+      case END() then stringHashDjb2Continue("end", hash);
+
+      case BINARY()
+        algorithm
+          hash := hashContinue(exp.exp1, hash);
+          hash := stringHashDjb2Continue(Operator.symbol(exp.operator), hash);
+          hash := hashContinue(exp.exp2, hash);
+        then hash;
+
+      case UNARY()
+        algorithm
+          hash := stringHashDjb2Continue(Operator.symbol(exp.operator, ""), hash);
+          hash := hashContinue(exp.exp, hash);
+        then hash;
+
+      case LBINARY()
+        algorithm
+          hash := hashContinue(exp.exp1, hash);
+          hash := stringHashDjb2Continue(Operator.symbol(exp.operator), hash);
+          hash := hashContinue(exp.exp2, hash);
+        then hash;
+
+      case LUNARY()
+        algorithm
+          hash := stringHashDjb2Continue(Operator.symbol(exp.operator, ""), hash);
+          hash := stringHashDjb2Continue(" ", hash);
+          hash := hashContinue(exp.exp, hash);
+        then hash;
+
+      case RELATION()
+        algorithm
+          hash := hashContinue(exp.exp1, hash);
+          hash := stringHashDjb2Continue(Operator.symbol(exp.operator), hash);
+          hash := hashContinue(exp.exp2, hash);
+        then hash;
+
+      case MULTARY()
+        algorithm
+          hash := stringHashDjb2Continue("(", hash);
+          for e in exp.arguments loop
+            hash := stringHashDjb2Continue(Operator.symbol(exp.operator), hash);
+            hash := hashContinue(e, hash);
+          end for;
+          hash := stringHashDjb2Continue(")", hash);
+          hash := stringHashDjb2Continue(Operator.symbol(Operator.invert(exp.operator)), hash);
+          hash := stringHashDjb2Continue("(", hash);
+          for e in exp.inv_arguments loop
+            hash := stringHashDjb2Continue(Operator.symbol(exp.operator), hash);
+            hash := hashContinue(e, hash);
+          end for;
+          hash := stringHashDjb2Continue(")", hash);
+        then hash;
+
+      case IF()
+        algorithm
+          hash := stringHashDjb2Continue("if ", hash);
+          hash := hashContinue(exp.condition, hash);
+          hash := stringHashDjb2Continue(" then ", hash);
+          hash := hashContinue(exp.trueBranch, hash);
+          hash := stringHashDjb2Continue(" else ", hash);
+          hash := hashContinue(exp.falseBranch, hash);
+        then hash;
+
+      case CAST()
+        algorithm
+          hash := stringHashDjb2Continue("CAST(", hash);
+          hash := Type.hashContinue(exp.ty, hash);
+          hash := stringHashDjb2Continue(", ", hash);
+          hash := hashContinue(exp.exp, hash);
+          hash := stringHashDjb2Continue(")", hash);
+        then hash;
+
+      case BOX()
+        algorithm
+          hash := stringHashDjb2Continue("BOX(", hash);
+          hash := hashContinue(exp.exp, hash);
+          hash := stringHashDjb2Continue(")", hash);
+        then hash;
+
+      case UNBOX()
+        algorithm
+          hash := stringHashDjb2Continue("UNBOX(", hash);
+          hash := hashContinue(exp.exp, hash);
+          hash := stringHashDjb2Continue(")", hash);
+        then hash;
+
+      case SUBSCRIPTED_EXP()
+        algorithm
+          hash := stringHashDjb2Continue("(", hash);
+          hash := hashContinue(exp.exp, hash);
+          hash := stringHashDjb2Continue(")[", hash);
+          for sub in exp.subscripts loop
+            hash := Subscript.hashContinue(sub, hash);
+            hash := stringHashDjb2Continue(", ", hash); // trailing comma, don't care...
+          end for;
+          hash := stringHashDjb2Continue("]", hash);
+        then hash;
+
+      case TUPLE_ELEMENT()
+        algorithm
+          hash := hashContinue(exp.tupleExp, hash);
+          hash := stringHashDjb2Continue("[", hash);
+          hash := stringHashDjb2Continue(intString(exp.index), hash);
+          hash := stringHashDjb2Continue("]", hash);
+        then hash;
+
+      case RECORD_ELEMENT()
+        algorithm
+          hash := stringHashDjb2Continue("(", hash);
+          hash := hashContinue(exp.recordExp, hash);
+          hash := stringHashDjb2Continue(").", hash);
+          hash := stringHashDjb2Continue(exp.fieldName, hash);
+        then hash;
+
+      case MUTABLE() then hashContinue(Mutable.access(exp.exp), hash);
+      case EMPTY() then stringHashDjb2Continue("#EMPTY#", hash);
+
+      case PARTIAL_FUNCTION_APPLICATION()
+        algorithm
+          hash := stringHashDjb2Continue("function ", hash);
+          hash := ComponentRef.hashContinue(exp.fn, false, hash);
+          hash := stringHashDjb2Continue("(", hash);
+          //list(n + " = " + toString(a) threaded for a in exp.args, n in exp.argNames)
+          for n in exp.argNames loop
+            hash := stringHashDjb2Continue(n, hash);
+            hash := stringHashDjb2Continue(", ", hash); // trailing comma, don't care...
+          end for;
+          hash := stringHashDjb2Continue(" = ", hash);
+          for a in exp.args loop
+            hash := hashContinue(a, hash);
+            hash := stringHashDjb2Continue(", ", hash); // trailing comma, don't care...
+          end for;
+          hash := stringHashDjb2Continue(")", hash);
+        then hash;
+
+      case FILENAME() then stringHashDjb2Continue(exp.filename, hash);
+
+      case SHARED_LITERAL()
+        algorithm
+          hash := stringHashDjb2Continue("LITERAL(", hash);
+          hash := stringHashDjb2Continue(intString(exp.index), hash);
+          hash := stringHashDjb2Continue(", ", hash);
+          hash := hashContinue(exp.exp, hash);
+          hash := stringHashDjb2Continue(")", hash);
+        then hash;
+
+      case INSTANCE_NAME() then stringHashDjb2Continue("getInstanceName()", hash);
+      else hash;
+    end match;
+  end hashContinue;
 
   function isEqual
     "Returns true if the two expressions are equal, otherwise false."
@@ -476,7 +722,7 @@ public
         Operator op;
         Call c;
         list<Subscript> subs;
-        ClockKind clk1, clk2;
+        ClockKind clk;
         Mutable<Expression> me;
         list<list<Expression>> mat;
         array<Expression> arr;
@@ -517,11 +763,11 @@ public
         then
           comp;
 
-      case CLKCONST(clk1)
+      case CLKCONST()
         algorithm
-          CLKCONST(clk2) := exp2;
+          CLKCONST(clk) := exp2;
         then
-          ClockKind.compare(clk1, clk2);
+          ClockKind.compare(exp1.clk, clk);
 
       case CREF()
         algorithm
@@ -836,6 +1082,24 @@ public
       else Type.UNKNOWN();
     end match;
   end typeOf;
+
+  function sizeOf
+    "this can fail for certain untyped expressions"
+    input Expression exp;
+    output Integer sz = Type.sizeOf(typeOf(exp));
+  end sizeOf;
+
+  function sizeZero
+    "returns true if its a constructor that is definitely of size zero;"
+    input Expression exp;
+    output Boolean b;
+  algorithm
+    try
+      b := 0 == sizeOf(exp);
+    else
+      b := false;
+    end try;
+  end sizeZero;
 
   function setType
     input Type ty;
@@ -1202,6 +1466,7 @@ public
 
   function getIntegerRange
     input Expression range  "has to be RANGE()!";
+    input Boolean resize;
     output Integer start;
     output Integer step;
     output Integer stop;
@@ -1212,10 +1477,10 @@ public
         Option<Expression> step_opt;
       case RANGE(step = step_opt) algorithm
         try
-          start := getInteger(range.start);
-          stop  := getInteger(range.stop);
+          start := getInteger(range.start, resize);
+          stop  := getInteger(range.stop, resize);
           if Util.isSome(range.step) then
-            step := getInteger(Util.getOption(range.step));
+            step := getInteger(Util.getOption(range.step), resize);
           else
             step := if start > stop then -1 else 1;
           end if;
@@ -1232,11 +1497,16 @@ public
 
   function getInteger
     input Expression exp;
+    input Boolean resize;
     output Integer i;
   protected
     Expression e;
   algorithm
-    e := Expression.map(exp, Expression.replaceResizableParameter);
+    if resize then
+      e := Expression.map(exp, Expression.replaceResizableParameter);
+    else
+      e := Expression.map(exp, Expression.replaceResizableParameterWithOriginal);
+    end if;
     i := match SimplifyExp.simplify(e)
       case INTEGER(i) then i;
       else algorithm
@@ -1260,10 +1530,15 @@ public
   end makeTuple;
 
   function rangeSize
-    input Expression range  "has to be RANGE()!";
+    input Expression range "has to be RANGE()!";
     input Boolean resize = false;
     output Integer size = Dimension.size(Type.nthDimension(typeOf(range), 1), resize);
   end rangeSize;
+
+  function rangeSizeExp
+    input Expression range "has to be RANGE()!";
+    output Expression size = Dimension.sizeExp(Type.nthDimension(typeOf(range), 1));
+  end rangeSizeExp;
 
   function applySubscripts
     "Subscripts an expression with the given list of subscripts."
@@ -1922,7 +2197,6 @@ public
     output String str;
   protected
     Type t;
-    ClockKind clk;
     Expression first, first_inv;
     list<Expression> rest, rest_inv;
   algorithm
@@ -1935,7 +2209,7 @@ public
       case ENUM_LITERAL(ty = t as Type.ENUMERATION())
         then AbsynUtil.pathString(t.typePath) + "." + exp.name;
 
-      case CLKCONST(clk) then ClockKind.toString(clk);
+      case CLKCONST() then ClockKind.toString(exp.clk);
       case CREF() then ComponentRef.toString(exp.cref);
       case TYPENAME() then Type.typenameString(Type.arrayElementType(exp.ty));
       case ARRAY() then "{" + stringDelimitList(list(toString(e) for e in exp.elements), ", ") + "}";
@@ -2019,7 +2293,6 @@ public
     output String str;
   protected
     Type t;
-    ClockKind clk;
     Expression first;
     list<Expression> rest;
   algorithm
@@ -2035,7 +2308,7 @@ public
           else
             Util.makeQuotedIdentifier(AbsynUtil.pathString(t.typePath)) + "." + Util.makeQuotedIdentifier(exp.name);
 
-      case CLKCONST(clk) then ClockKind.toFlatString(clk, format);
+      case CLKCONST() then ClockKind.toFlatString(exp.clk, format);
 
       case CREF() then ComponentRef.toFlatString(exp.cref, format);
       case TYPENAME() then Type.typenameString(Type.arrayElementType(exp.ty));
@@ -2101,7 +2374,7 @@ public
       case UNBOX() then toFlatString(exp.exp, format);
       case BOX() then toFlatString(exp.exp, format);
 
-      case SUBSCRIPTED_EXP() then "(" + toFlatString(exp.exp, format) + ")" + Subscript.toFlatStringList(exp.subscripts, format);
+      case SUBSCRIPTED_EXP() then "(" + toFlatString(exp.exp, format) + ")" + Subscript.toFlatStringList(exp.subscripts, format, escapeQuotes = false);
       case TUPLE_ELEMENT() then toFlatString(exp.tupleExp, format);
       case RECORD_ELEMENT() then "(" + toFlatString(exp.recordExp, format) + ")." + exp.fieldName;
       case MUTABLE() then toFlatString(Mutable.access(exp.exp), format);
@@ -2382,6 +2655,7 @@ public
 
   function toDAE
     input Expression exp;
+    input Boolean allowEmpty = false "Whether to allow conversion of EMPTY or not";
     output DAE.Exp dexp;
   protected
     Boolean changed = true;
@@ -2392,6 +2666,7 @@ public
         Boolean swap, negate;
         DAE.Exp dae1, dae2;
         Function.Function fn;
+        DAE.Type dty;
 
       case INTEGER() then DAE.ICONST(exp.value);
       case REAL() then DAE.RCONST(exp.value);
@@ -2473,6 +2748,16 @@ public
                                Type.toDAE(Type.FUNCTION(fn, NFType.FunctionType.FUNCTIONAL_VARIABLE)));
 
       case MUTABLE() then toDAE(Mutable.access(exp.exp));
+
+      // EMPTY expressions can be a sign of something having gone wrong, but we want to allow them in
+      // some cases such as in records, so only allow them if the caller requests it.
+      case EMPTY()
+        guard allowEmpty
+        algorithm
+          dty := Type.toDAE(exp.ty);
+        then
+          DAE.EMPTY("", DAE.CREF_IDENT("$dummy", dty, {}), dty, Type.toString(exp.ty));
+
       case SHARED_LITERAL() then DAE.SHARED_LITERAL(exp.index, toDAE(exp.exp));
       case FILENAME()
         then if Flags.getConfigBool(Flags.BUILDING_FMU) then
@@ -2509,7 +2794,7 @@ public
         case Record.Field.INPUT()
           algorithm
             field_names := field.name :: field_names;
-            dargs := toDAE(arg) :: dargs;
+            dargs := toDAE(arg, allowEmpty = true) :: dargs;
           then
             ();
 
@@ -2519,7 +2804,7 @@ public
         case Record.Field.LOCAL()
           algorithm
             field_names := field.name :: field_names;
-            dargs := toDAE(arg) :: dargs;
+            dargs := toDAE(arg, allowEmpty = true) :: dargs;
           then
             ();
 
@@ -5331,7 +5616,11 @@ public
       // Such an expression can't be promoted here, so we create a promote call instead.
       case (_, _) guard isArray
         algorithm
-          (outExp, expanded) := ExpandExp.expand(exp);
+          if Flags.getConfigBool(Flags.NEW_BACKEND) and not Expression.isLiteral(exp) then
+            expanded := false;
+          else
+            (outExp, expanded) := ExpandExp.expand(exp);
+          end if;
 
           if expanded then
             outExp := promote2(outExp, true, dims, types);
@@ -6361,7 +6650,7 @@ public
       case ENUM_LITERAL()
         algorithm
           json := JSON.emptyListObject();
-          json := JSON.addPair("$kind", JSON.makeString("enum"), json);
+          json := JSON.addPair("$kind", JSON.STRING("enum"), json);
           json := JSON.addPair("name", JSON.makeString(toString(exp)), json);
           json := JSON.addPair("index", JSON.makeInteger(exp.index), json);
         then
@@ -6375,24 +6664,18 @@ public
       case TYPENAME()
         algorithm
           json := JSON.emptyListObject();
-          json := JSON.addPair("$kind", JSON.makeString("typename"), json);
+          json := JSON.addPair("$kind", JSON.STRING("typename"), json);
           json := JSON.addPair("name", JSON.makeString(Type.toString(exp.ty)), json);
         then
           json;
 
       case ARRAY()
-        algorithm
-          json := JSON.emptyArray(arrayLength(exp.elements));
-          for e in exp.elements loop
-            json := JSON.addElement(toJSON(e), json);
-          end for;
-        then
-          json;
+        then JSON.makeList(list(toJSON(e) for e in exp.elements));
 
       case RANGE()
         algorithm
           json := JSON.emptyListObject();
-          json := JSON.addPair("$kind", JSON.makeString("range"), json);
+          json := JSON.addPair("$kind", JSON.STRING("range"), json);
           json := JSON.addPair("start", toJSON(exp.start), json);
 
           if isSome(exp.step) then
@@ -6406,19 +6689,19 @@ public
       case TUPLE()
         algorithm
           json := JSON.emptyListObject();
-          json := JSON.addPair("$kind", JSON.makeString("tuple"), json);
+          json := JSON.addPair("$kind", JSON.STRING("tuple"), json);
           json := JSON.addPair("elements",
-            JSON.makeArray(list(toJSON(e) for e in exp.elements)), json);
+            JSON.makeList(list(toJSON(e) for e in exp.elements)), json);
         then
           json;
 
       case RECORD()
         algorithm
           json := JSON.emptyListObject();
-          json := JSON.addPair("$kind", JSON.makeString("record"), json);
+          json := JSON.addPair("$kind", JSON.STRING("record"), json);
           json := JSON.addPair("name", JSON.makeString(AbsynUtil.pathString(exp.path)), json);
           json := JSON.addPair("elements",
-            JSON.makeArray(list(toJSON(e) for e in exp.elements)), json);
+            JSON.makeList(list(toJSON(e) for e in exp.elements)), json);
         then
           json;
 
@@ -6428,12 +6711,12 @@ public
       case SIZE()
         algorithm
           json := JSON.emptyListObject();
-          json := JSON.addPair("$kind", JSON.makeString("call"), json);
-          json := JSON.addPair("name", JSON.makeString("size"), json);
+          json := JSON.addPair("$kind", JSON.STRING("call"), json);
+          json := JSON.addPair("name", JSON.STRING("size"), json);
 
           if isSome(exp.dimIndex) then
             json := JSON.addPair("arguments",
-              JSON.makeArray({toJSON(exp.exp), toJSON(Util.getOption(exp.dimIndex))}), json);
+              JSON.makeList({toJSON(exp.exp), toJSON(Util.getOption(exp.dimIndex))}), json);
           else
             json := JSON.addPair("arguments", JSON.makeArray({toJSON(exp.exp)}), json);
           end if;
@@ -6443,9 +6726,9 @@ public
       case BINARY()
         algorithm
           json := JSON.emptyListObject();
-          json := JSON.addPair("$kind", JSON.makeString("binary_op"), json);
+          json := JSON.addPair("$kind", JSON.STRING("binary_op"), json);
           json := JSON.addPair("lhs", toJSON(exp.exp1), json);
-          json := JSON.addPair("op", JSON.makeString(Operator.symbol(exp.operator, spacing = "")), json);
+          json := JSON.addPair("op", Operator.toJSON(exp.operator), json);
           json := JSON.addPair("rhs", toJSON(exp.exp2), json);
         then
           json;
@@ -6453,8 +6736,8 @@ public
       case UNARY()
         algorithm
           json := JSON.emptyListObject();
-          json := JSON.addPair("$kind", JSON.makeString("unary_op"), json);
-          json := JSON.addPair("op", JSON.makeString(Operator.symbol(exp.operator, spacing = "")), json);
+          json := JSON.addPair("$kind", JSON.STRING("unary_op"), json);
+          json := JSON.addPair("op", Operator.toJSON(exp.operator), json);
           json := JSON.addPair("exp", toJSON(exp.exp), json);
         then
           json;
@@ -6462,9 +6745,9 @@ public
       case LBINARY()
         algorithm
           json := JSON.emptyListObject();
-          json := JSON.addPair("$kind", JSON.makeString("binary_op"), json);
+          json := JSON.addPair("$kind", JSON.STRING("binary_op"), json);
           json := JSON.addPair("lhs", toJSON(exp.exp1), json);
-          json := JSON.addPair("op", JSON.makeString(Operator.symbol(exp.operator, spacing = "")), json);
+          json := JSON.addPair("op", Operator.toJSON(exp.operator), json);
           json := JSON.addPair("rhs", toJSON(exp.exp2), json);
         then
           json;
@@ -6472,8 +6755,8 @@ public
       case LUNARY()
         algorithm
           json := JSON.emptyListObject();
-          json := JSON.addPair("$kind", JSON.makeString("unary_op"), json);
-          json := JSON.addPair("op", JSON.makeString(Operator.symbol(exp.operator, spacing = "")), json);
+          json := JSON.addPair("$kind", JSON.STRING("unary_op"), json);
+          json := JSON.addPair("op", Operator.toJSON(exp.operator), json);
           json := JSON.addPair("exp", toJSON(exp.exp), json);
         then
           json;
@@ -6481,9 +6764,9 @@ public
       case RELATION()
         algorithm
           json := JSON.emptyListObject();
-          json := JSON.addPair("$kind", JSON.makeString("binary_op"), json);
+          json := JSON.addPair("$kind", JSON.STRING("binary_op"), json);
           json := JSON.addPair("lhs", toJSON(exp.exp1), json);
-          json := JSON.addPair("op", JSON.makeString(Operator.symbol(exp.operator, spacing = "")), json);
+          json := JSON.addPair("op", Operator.toJSON(exp.operator), json);
           json := JSON.addPair("rhs", toJSON(exp.exp2), json);
         then
           json;
@@ -6491,19 +6774,19 @@ public
       case MULTARY()
         algorithm
           json := JSON.emptyListObject();
-          json := JSON.addPair("$kind", JSON.makeString("multary_op"), json);
+          json := JSON.addPair("$kind", JSON.STRING("multary_op"), json);
           json := JSON.addPair("args",
             JSON.makeArray(list(toJSON(a) for a in exp.arguments)), json);
           json := JSON.addPair("inv_args",
             JSON.makeArray(list(toJSON(a) for a in exp.inv_arguments)), json);
-          json := JSON.addPair("op", JSON.makeString(Operator.symbol(exp.operator, spacing = "")), json);
+          json := JSON.addPair("op", Operator.toJSON(exp.operator), json);
         then
           json;
 
       case IF()
         algorithm
           json := JSON.emptyListObject();
-          json := JSON.addPair("$kind", JSON.makeString("if"), json);
+          json := JSON.addPair("$kind", JSON.STRING("if"), json);
           json := JSON.addPair("condition", toJSON(exp.condition), json);
           json := JSON.addPair("true", toJSON(exp.trueBranch), json);
           json := JSON.addPair("false", toJSON(exp.falseBranch), json);
@@ -6517,7 +6800,7 @@ public
       case SUBSCRIPTED_EXP()
         algorithm
           json := JSON.emptyListObject();
-          json := JSON.addPair("$kind", JSON.makeString("sub"), json);
+          json := JSON.addPair("$kind", JSON.STRING("sub"), json);
           json := JSON.addPair("exp", toJSON(exp.exp), json);
           json := JSON.addPair("subscripts", Subscript.toJSONList(exp.subscripts), json);
         then
@@ -6526,7 +6809,7 @@ public
       case TUPLE_ELEMENT()
         algorithm
           json := JSON.emptyListObject();
-          json := JSON.addPair("$kind", JSON.makeString("tuple_element"), json);
+          json := JSON.addPair("$kind", JSON.STRING("tuple_element"), json);
           json := JSON.addPair("exp", toJSON(exp.tupleExp), json);
           json := JSON.addPair("index", JSON.makeInteger(exp.index), json);
         then
@@ -6535,7 +6818,7 @@ public
       case RECORD_ELEMENT()
         algorithm
           json := JSON.emptyListObject();
-          json := JSON.addPair("$kind", JSON.makeString("record_element"), json);
+          json := JSON.addPair("$kind", JSON.STRING("record_element"), json);
           json := JSON.addPair("exp", toJSON(exp.recordExp), json);
           json := JSON.addPair("index", JSON.makeInteger(exp.index), json);
           json := JSON.addPair("field", JSON.makeString(exp.fieldName), json);
@@ -6545,9 +6828,9 @@ public
       case PARTIAL_FUNCTION_APPLICATION()
         algorithm
           json := JSON.emptyListObject();
-          json := JSON.addPair("$kind", JSON.makeString("function"), json);
+          json := JSON.addPair("$kind", JSON.STRING("function"), json);
           json := JSON.addPair("name", JSON.makeString(ComponentRef.toString(exp.fn)), json);
-          json := JSON.addPair("arguments", JSON.makeArray(
+          json := JSON.addPair("arguments", JSON.makeList(
             list(dump_arg(name, arg) threaded for arg in exp.args, name in exp.argNames)), json);
         then
           json;
@@ -6673,26 +6956,41 @@ public
     end match;
   end replaceLiteralArrayElements;
 
+  function replaceCrefWithBinding
+    input ComponentRef cref;
+    input output Expression exp;
+    input recurse func;
+    partial function recurse
+      input output Expression exp;
+    end recurse;
+  protected
+    Expression e;
+  algorithm
+    exp := match InstNode.getBindingExpOpt(ComponentRef.node(cref))
+      case SOME(e as Expression.INTEGER())                                    then e;
+      case SOME(e as Expression.CREF())                                       then replaceCrefWithBinding(e.cref, e, func);
+      case SOME(Expression.SUBSCRIPTED_EXP(exp = e as Expression.INTEGER()))  then e;
+      case SOME(Expression.SUBSCRIPTED_EXP(exp = e as Expression.CREF()))     then replaceCrefWithBinding(e.cref, e, func);
+      case SOME(e) algorithm
+        e := Expression.map(e, func);
+      then e;
+      else exp;
+    end match;
+  end replaceCrefWithBinding;
+
+  function replaceResizableParameterWithOriginal
+    input output Expression exp;
+  algorithm
+    exp := match exp
+      // frontend replacement
+      case Expression.CREF() guard(ComponentRef.isResizable(exp.cref)) algorithm
+      then replaceCrefWithBinding(exp.cref, exp, replaceResizableParameterWithOriginal);
+      else exp;
+    end match;
+  end replaceResizableParameterWithOriginal;
+
   function replaceResizableParameter
     input output Expression exp;
-  protected
-    function replaceWithBinding
-      input ComponentRef cref;
-      input output Expression exp;
-    protected
-      Expression e;
-    algorithm
-      exp := match InstNode.getBindingExpOpt(ComponentRef.node(cref))
-        case SOME(e as Expression.INTEGER()) then e;
-        case SOME(e as Expression.CREF()) then replaceWithBinding(e.cref, e);
-        case SOME(Expression.SUBSCRIPTED_EXP(exp = e as Expression.INTEGER())) then e;
-        case SOME(Expression.SUBSCRIPTED_EXP(exp = e as Expression.CREF())) then replaceWithBinding(e.cref, e);
-        case SOME(e) algorithm
-          e := Expression.map(e, replaceResizableParameter);
-        then e;
-        else exp;
-      end match;
-    end replaceWithBinding;
   algorithm
     exp := match exp
       local
@@ -6707,12 +7005,12 @@ public
           then Expression.INTEGER(v);
 
           // optimal value not yet computed
-          else replaceWithBinding(exp.cref, exp);
+          else replaceCrefWithBinding(exp.cref, exp, replaceResizableParameter);
         end match;
 
       // frontend replacement
       case Expression.CREF() guard(ComponentRef.isResizable(exp.cref))
-      then replaceWithBinding(exp.cref, exp);
+      then replaceCrefWithBinding(exp.cref, exp, replaceResizableParameter);
 
       else exp;
     end match;

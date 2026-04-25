@@ -18,7 +18,7 @@ end Scalarize7;
 // //! base 0.1.0
 // package 'Scalarize7'
 //   function 'f'
-//     input Real[3] 'x';
+//     input Real 'x'[3];
 //     output Real 'y' = 'x'[1] + 'x'[2] + 'x'[3];
 //   end 'f';
 //

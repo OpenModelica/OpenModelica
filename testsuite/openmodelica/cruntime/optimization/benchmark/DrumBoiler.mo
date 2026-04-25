@@ -25,7 +25,8 @@ package drumBoiler
     Modelica.Blocks.Sources.TimeTable q_F_Tab(table = [0, 0; 3600, 400; 7210, 400]) if not use_inputs annotation(Placement(transformation(extent = {{-90, -80}, {-70, -60}}, rotation = 0)));
     Modelica.Blocks.Sources.TimeTable Y_Valve_Tab(table = [0, 0; 900, 1; 7210, 1]) if not use_inputs annotation(Placement(transformation(extent = {{30, -80}, {50, -60}}, rotation = 0)));
     /*Modelica.Blocks.Interfaces.RealInput*/
-    Real q_F(unit = "MW") if use_inputs "fuel flow rate" annotation(Placement(transformation(extent = {{-112, -56}, {-100, -44}})));
+    connector RealConnector = Real;
+    RealConnector q_F(unit = "MW") if use_inputs "fuel flow rate" annotation(Placement(transformation(extent = {{-112, -56}, {-100, -44}})));
     Modelica.Blocks.Interfaces.RealInput Y_Valve if use_inputs "valve opening" annotation(Placement(transformation(extent = {{-112, -96}, {-100, -84}})));
     //Modelica.Blocks.Sources.RealExpression sigma_D_expr(y = (-1000.0 * der(evaporator.T_D)) + 1e-05 * evaporator.p) annotation(Placement(transformation(extent = {{24, -108}, {82, -92}})));
     //Modelica.Blocks.Interfaces.RealOutput sigma_D(unit = "N/mm2") "thermal stress of drum" annotation(Placement(transformation(extent = {{100, -68}, {112, -56}}, rotation = 0)));

@@ -1,27 +1,31 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
@@ -393,23 +397,8 @@ protected function setSubmodifierInElement
   input Absyn.Path elementName;
   input Absyn.Modification mod;
         output Boolean outContinue = true;
-protected
-  list<Absyn.ElementArg> args_old, args_new;
-  Absyn.EqMod eqmod_old, eqmod_new;
-  String el_id, id = "";
-  Absyn.ElementSpec el_spec;
 algorithm
-  el_id := AbsynUtil.pathFirstIdent(elementName);
-  el_spec := AbsynUtil.elementSpec(element);
-
-  if not AbsynUtil.isClassOrComponentElementSpec(el_spec) then
-    return;
-  end if;
-
-  // this will fail if no class or component (extends, import, etc)
-  id := AbsynUtil.elementSpecName(el_spec);
-
-  if el_id == id then
+  if AbsynUtil.isElementNamed(AbsynUtil.pathFirstIdent(elementName), element) then
     try
       () := match element
         case Absyn.ELEMENT()
@@ -1898,7 +1887,7 @@ algorithm
               "/lib/omc/AnnotationsBuiltin_" +
               Util.stringReplaceChar(annotationVersion, ".", "_") +
               ".mo";
-  annotationProgram := Parser.parsebuiltin(filename, "UTF-8");
+  annotationProgram := Parser.parse(filename, "UTF-8");
 end modelicaAnnotationProgram;
 
 public function buildEnvForGraphicProgram
@@ -6501,6 +6490,150 @@ algorithm
     else ();
   end match;
 end offsetGraphicsItemExpression;
+
+public function addToPublic
+  "This function takes a Class definition and adds an
+   ElementItem to the first public section in the class.
+   If no public section is available in the class one is created."
+  input output Absyn.Class cls;
+  input Absyn.ElementItem element;
+protected
+  list<Absyn.ElementItem> elems;
+  Absyn.ClassDef cdef;
+algorithm
+  () := matchcontinue cls
+    case Absyn.CLASS(body = cdef as Absyn.PARTS())
+      algorithm
+        elems := InteractiveUtil.getPublicList(cdef.classParts);
+        elems := List.appendElt(element, elems);
+        cdef.classParts := InteractiveUtil.replacePublicList(cdef.classParts, elems);
+        cls.body := cdef;
+      then
+        ();
+
+    case Absyn.CLASS(body = cdef as Absyn.PARTS())
+      algorithm
+        cdef.classParts := Absyn.PUBLIC({element}) :: cdef.classParts;
+        cls.body := cdef;
+      then
+        ();
+
+    // adrpo: handle also the case model extends X end X;
+    case Absyn.CLASS(body = cdef as Absyn.CLASS_EXTENDS())
+      algorithm
+        elems := InteractiveUtil.getPublicList(cdef.parts);
+        elems := List.appendElt(element, elems);
+        cdef.parts := InteractiveUtil.replacePublicList(cdef.parts, elems);
+        cls.body := cdef;
+      then
+        ();
+
+    // adrpo: handle also the case model extends X end X;
+    case Absyn.CLASS(body = cdef as Absyn.CLASS_EXTENDS())
+      algorithm
+        cdef.parts := Absyn.PUBLIC({element}) :: cdef.parts;
+        cls.body := cdef;
+      then
+        ();
+
+  end matchcontinue;
+end addToPublic;
+
+public function addToProtected
+  "This function takes a Class definition and adds an
+   ElementItem to the first protected section in the class.
+   If no protected section is available in the class one is created."
+  input output Absyn.Class cls;
+  input Absyn.ElementItem element;
+protected
+  list<Absyn.ElementItem> elems;
+  Absyn.ClassDef cdef;
+algorithm
+  () := matchcontinue cls
+    case Absyn.CLASS(body = cdef as Absyn.PARTS())
+      algorithm
+        elems := InteractiveUtil.getProtectedList(cdef.classParts);
+        elems := List.appendElt(element, elems);
+        cdef.classParts := InteractiveUtil.replaceProtectedList(cdef.classParts, elems);
+        cls.body := cdef;
+      then
+        ();
+
+    case Absyn.CLASS(body = cdef as Absyn.PARTS())
+      algorithm
+        cdef.classParts := Absyn.PROTECTED({element}) :: cdef.classParts;
+        cls.body := cdef;
+      then
+        ();
+
+    // adrpo: handle also the case model extends X end X;
+    case Absyn.CLASS(body = cdef as Absyn.CLASS_EXTENDS())
+      algorithm
+        elems := InteractiveUtil.getProtectedList(cdef.parts);
+        elems := List.appendElt(element, elems);
+        cdef.parts := InteractiveUtil.replaceProtectedList(cdef.parts, elems);
+        cls.body := cdef;
+      then
+        ();
+
+    // adrpo: handle also the case model extends X end X;
+    case Absyn.CLASS(body = cdef as Absyn.CLASS_EXTENDS())
+      algorithm
+        cdef.parts := Absyn.PROTECTED({element}) :: cdef.parts;
+        cls.body := cdef;
+      then
+        ();
+
+  end matchcontinue;
+end addToProtected;
+
+public function addToEquation
+  "This function takes a Class definition and adds an
+   EquationItem to the first equation section in the class.
+   If no equation section is available in the class one is created."
+  input output Absyn.Class cls;
+  input Absyn.EquationItem eq;
+protected
+  list<Absyn.EquationItem> eqlst;
+  Absyn.ClassDef cdef;
+algorithm
+  () := matchcontinue cls
+    case Absyn.CLASS(body = cdef as Absyn.PARTS())
+      algorithm
+        eqlst := InteractiveUtil.getEquationList(cdef.classParts);
+        eqlst := List.appendElt(eq, eqlst);
+        cdef.classParts := InteractiveUtil.replaceEquationList(cdef.classParts, eqlst);
+        cls.body := cdef;
+      then
+        ();
+
+    case Absyn.CLASS(body = cdef as Absyn.PARTS())
+      algorithm
+        cdef.classParts := List.appendElt(Absyn.EQUATIONS({eq}), cdef.classParts) "Add the equations last, to make nicer output if public section present" ;
+        cls.body := cdef;
+      then
+        ();
+
+    /* adrpo: handle also the case model extends X end X; */
+    case Absyn.CLASS(body = cdef as Absyn.CLASS_EXTENDS())
+      algorithm
+        eqlst := InteractiveUtil.getEquationList(cdef.parts);
+        eqlst := List.appendElt(eq, eqlst);
+        cdef.parts := InteractiveUtil.replaceEquationList(cdef.parts, eqlst);
+        cls.body := cdef;
+      then
+        ();
+
+    /* adrpo: handle also the case model extends X end X; */
+    case Absyn.CLASS(body = cdef as Absyn.CLASS_EXTENDS())
+      algorithm
+        cdef.parts := List.appendElt(Absyn.EQUATIONS({eq}), cdef.parts) "Add the equations last, to make nicer output if public section present" ;
+        cls.body := cdef;
+      then
+        ();
+
+  end matchcontinue;
+end addToEquation;
 
 annotation(__OpenModelica_Interface="backend");
 end InteractiveUtil;

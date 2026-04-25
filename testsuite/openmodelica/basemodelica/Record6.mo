@@ -31,11 +31,11 @@ end Record6;
 //   end 'specificEnthalpy';
 //
 //   record 'ThermodynamicState'
-//     Real[2] 'X'(min = fill(0.0, 2));
+//     Real 'X'[2](min = fill(0.0, 2));
 //   end 'ThermodynamicState';
 //
 //   model 'Record6'
-//     Real[2] 'X_in_internal';
+//     Real 'X_in_internal'[2];
 //     Real 'h_internal' = 'specificEnthalpy'('ThermodynamicState'('X_in_internal'));
 //   end 'Record6';
 // end 'Record6';

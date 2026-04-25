@@ -1,27 +1,31 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
- * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
  * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
- * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
- * ACCORDING TO RECIPIENTS CHOICE.
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
  *
- * The OpenModelica software and the Open Source Modelica
- * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from OSMC, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
- * http://www.openmodelica.org, and in the OpenModelica distribution.
- * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
  *
@@ -303,7 +307,7 @@ algorithm
   local
     Real startTime,stopTime,stepSize,tolerance;
     Integer nIntervals;
-    String method,format,varFilter,cflags,options;
+    String method,format,varFilter,cflags,options,simflags;
 
     case(GlobalScript.SIMULATION_OPTIONS(
       DAE.RCONST(startTime),
@@ -317,10 +321,10 @@ algorithm
       DAE.SCONST(format),
       DAE.SCONST(varFilter),
       DAE.SCONST(cflags),
-      _)) equation
+      DAE.SCONST(simflags))) equation
         options = "";
 
-    then SimCode.SIMULATION_SETTINGS(startTime,stopTime,nIntervals,stepSize,tolerance,method,options,format,varFilter,cflags);
+    then SimCode.SIMULATION_SETTINGS(startTime,stopTime,nIntervals,stepSize,tolerance,method,options,format,varFilter,cflags,simflags);
   end match;
 end convertSimulationOptionsToSimCode;
 
@@ -1154,7 +1158,7 @@ algorithm
         (outCache, env, SOME(dae), _) = runFrontEnd(outCache, inEnv, path, true, transform = true);
         filenameprefix = AbsynUtil.pathString(path);
         description = DAEUtil.daeDescription(dae);
-        daelow = BackendDAECreate.lower(dae,outCache,env,BackendDAE.EXTRA_INFO(description,filenameprefix));
+        daelow = BackendDAECreate.lower(dae,outCache,env,BackendDAE.EXTRA_INFO(description,filenameprefix,NONE()));
         (BackendDAE.DAE({syst},shared)) = BackendDAEUtil.preOptimizeBackendDAE(daelow,NONE());
         (syst,m,_) = BackendDAEUtil.getAdjacencyMatrixfromOption(syst,BackendDAE.NORMAL(),NONE(),BackendDAEUtil.isInitializationDAE(shared));
         vars = BackendVariable.daeVars(syst);
@@ -1894,6 +1898,24 @@ algorithm
         Error.addMessage(Error.LOOKUP_ERROR, {cname,"global"});
       then
         Values.BOOL(false);
+
+    case ("getTotalModel",{Values.CODE(Absyn.C_TYPENAME(classpath)),
+                           Values.BOOL(b1), Values.BOOL(b2), Values.BOOL(b3)})
+      equation
+        access = Interactive.checkAccessAnnotationAndEncryption(classpath, SymbolTable.getAbsyn());
+        if access >= Access.all then
+          s1 = getTotalModel(classpath, b1, b2, b3);
+          b = true;
+        else
+          Error.addMessage(Error.SAVE_ENCRYPTED_CLASS_ERROR, {});
+          b = false;
+        end if;
+      then
+        Values.STRING(s1);
+
+    case ("getTotalModel",{Values.CODE(Absyn.C_TYPENAME(_)),
+                           Values.BOOL(_), Values.BOOL(_), Values.BOOL(_)})
+      then Values.STRING("");
 
     case ("saveTotalModel",{Values.STRING(filename),Values.CODE(Absyn.C_TYPENAME(classpath)),
                                     Values.BOOL(b1), Values.BOOL(b2), Values.BOOL(b3)})
@@ -3277,7 +3299,7 @@ algorithm
       then Interactive.getInheritanceCount(classpath, SymbolTable.getAbsyn());
 
     case ("getNthInheritedClass", {Values.CODE(Absyn.C_TYPENAME(classpath)), Values.INTEGER(n)})
-      then Interactive.getNthInheritedClass(classpath, n);
+      then NFApi.getNthInheritedClass(classpath, n, SymbolTable.getAbsyn());
 
     case ("setConnectionComment", {Values.CODE(Absyn.C_TYPENAME(classpath)), Values.CODE(Absyn.C_VARIABLENAME(cr)),
                                    Values.CODE(Absyn.C_VARIABLENAME(cr2)), Values.STRING(str)})
@@ -3404,6 +3426,15 @@ algorithm
     case ("reverseLookup", {Values.CODE(Absyn.C_TYPENAME(path)), Values.CODE(Absyn.C_TYPENAME(classpath)), Values.BOOL(b1), Values.BOOL(b2)})
       then ValuesUtil.makeString(ReverseLookup.lookup(path, classpath, SymbolTable.getAbsyn(), b1, b2));
 
+    case ("translateResidualsDAE", {Values.CODE(Absyn.C_TYPENAME(path)), Values.STRING(s1)})
+      then ValuesUtil.makeBoolean(NFApi.translateResidualsDAE(path, s1));
+
+    case ("addEquation", {Values.CODE(Absyn.C_TYPENAME(path)), Values.STRING(s1), Values.BOOL(b1)})
+      then ValuesUtil.makeBoolean(Interactive.addEquation(path, s1, b1));
+
+    case ("updateEquation", {Values.CODE(Absyn.C_TYPENAME(path)), Values.STRING(s1), Values.STRING(s2), Values.BOOL(b), Values.BOOL(b1), Values.BOOL(b2), Values.BOOL(b3)})
+      then ValuesUtil.makeBoolean(Interactive.updateEquation(path, s1, s2, b, b1, b2, b3));
+
  end matchcontinue;
 end cevalInteractiveFunctions4;
 
@@ -3464,7 +3495,7 @@ algorithm
         description = DAEUtil.daeDescription(dae);
         a_cref = AbsynUtil.pathToCref(className);
         file_dir = getFileDir(a_cref, SymbolTable.getAbsyn());
-        dlow = BackendDAECreate.lower(dae,cache,env,BackendDAE.EXTRA_INFO(description,filenameprefix));
+        dlow = BackendDAECreate.lower(dae,cache,env,BackendDAE.EXTRA_INFO(description,filenameprefix,NONE()));
         dlow = FindZeroCrossings.findZeroCrossings(dlow);
         flatModelicaStr = DAEDump.dumpStr(dae,FCore.getFunctionTree(cache));
         flatModelicaStr = stringAppend("OldEqStr={'", flatModelicaStr);
@@ -3520,6 +3551,18 @@ algorithm
   end try;
   FlagsUtil.setConfigBool(Flags.BUILDING_MODEL, false);
 end runFrontEnd;
+
+public function runFrontEndNF
+  input Absyn.Path className;
+  input Boolean relaxedFrontEnd = false;
+  input Boolean dumpFlat = false;
+  output NFFlatModel flatModel;
+  output NFFlatten.FunctionTree functions;
+  output String flatString;
+algorithm
+  true := runFrontEndLoadProgram(className);
+  (flatModel, functions, flatString) := runFrontEndWorkNF(className, relaxedFrontEnd, dumpFlat);
+end runFrontEndNF;
 
 protected function runFrontEndLoadProgram
   input Absyn.Path className;
@@ -4235,6 +4278,12 @@ algorithm
     Error.addMessage(Error.FMU_EXPORT_NOT_SUPPORTED_CPP, {FMUType});
     FMUType := "me";
   end if;
+  if Flags.getConfigBool(Flags.DAE_MODE) then
+    success := false;
+    outValue := Values.STRING("");
+    Error.addMessage(Error.FMU_EXPORT_DAE_MODE_NOT_SUPPORTED, {});
+    return;
+  end if;
 
   // NOTE: The FMUs use fileNamePrefix for the internal name when it would be expected to be fileNamePrefix that decides the .fmu filename
   //       The scripting environment from a user's perspective is like that. fmuTargetName is the name of the .fmu in the templates, etc.
@@ -4342,6 +4391,11 @@ algorithm
   if Config.simCodeTarget() == "Cpp" and FMI.isFMICSType(FMUType) then
     Error.addMessage(Error.FMU_EXPORT_NOT_SUPPORTED_CPP, {FMUType});
     FMUType := "me";
+  end if;
+  if Flags.getConfigBool(Flags.DAE_MODE) then
+    outValue := Values.STRING("");
+    Error.addMessage(Error.FMU_EXPORT_DAE_MODE_NOT_SUPPORTED, {});
+    return;
   end if;
 
   // NOTE: The FMUs use fileNamePrefix for the internal name when it would be expected to be fileNamePrefix that decides the .fmu filename
@@ -4595,13 +4649,13 @@ algorithm
       Integer interval_i;
       Real starttime_r,stoptime_r,tolerance_r;
       FCore.Cache cache;
-      String cflags;
-    case (cache, {Values.CODE(Absyn.C_TYPENAME(_)),starttime_v,stoptime_v,Values.INTEGER(interval_i),tolerance_v,Values.STRING(method_str),_,Values.STRING(options_str),Values.STRING(outputFormat_str),Values.STRING(variableFilter_str),Values.STRING(cflags),Values.STRING(_)})
+      String cflags, simflags;
+    case (cache, {Values.CODE(Absyn.C_TYPENAME(_)),starttime_v,stoptime_v,Values.INTEGER(interval_i),tolerance_v,Values.STRING(method_str),_,Values.STRING(options_str),Values.STRING(outputFormat_str),Values.STRING(variableFilter_str),Values.STRING(cflags),Values.STRING(simflags)})
       equation
         starttime_r = ValuesUtil.valueReal(starttime_v);
         stoptime_r = ValuesUtil.valueReal(stoptime_v);
         tolerance_r = ValuesUtil.valueReal(tolerance_v);
-        outSimSettings = SimCodeMain.createSimulationSettings(starttime_r,stoptime_r,interval_i,tolerance_r,method_str,options_str,outputFormat_str,variableFilter_str,cflags);
+        outSimSettings = SimCodeMain.createSimulationSettings(starttime_r,stoptime_r,interval_i,tolerance_r,method_str,options_str,outputFormat_str,variableFilter_str,cflags,simflags);
       then
         (cache, outSimSettings);
     else
@@ -5888,20 +5942,20 @@ algorithm
         // className, startTime, stopTime, numberOfIntervals, tolerance, method, fileNamePrefix,
         // options, outputFormat, variableFilter, cflags, simflags
         values := vals;
-        (Values.CODE(Absyn.C_TYPENAME(classname)),vals) := getListFirstShowError(vals, "while retreaving the className (1 arg) from the buildModel arguments");
-        (_,vals) := getListFirstShowError(vals, "while retreaving the startTime (2 arg) from the buildModel arguments");
-        (_,vals) := getListFirstShowError(vals, "while retreaving the stopTime (3 arg) from the buildModel arguments");
-        (_,vals) := getListFirstShowError(vals, "while retreaving the numberOfIntervals (4 arg) from the buildModel arguments");
-        (_,vals) := getListFirstShowError(vals, "while retreaving the tolerance (5 arg) from the buildModel arguments");
-        (_,vals) := getListFirstShowError(vals, "while retreaving the method (6 arg) from the buildModel arguments");
+        (Values.CODE(Absyn.C_TYPENAME(classname)),vals) := getListFirstShowError(vals, "while retrieving the className (1 arg) from the buildModel arguments");
+        (_,vals) := getListFirstShowError(vals, "while retrieving the startTime (2 arg) from the buildModel arguments");
+        (_,vals) := getListFirstShowError(vals, "while retrieving the stopTime (3 arg) from the buildModel arguments");
+        (_,vals) := getListFirstShowError(vals, "while retrieving the numberOfIntervals (4 arg) from the buildModel arguments");
+        (_,vals) := getListFirstShowError(vals, "while retrieving the tolerance (5 arg) from the buildModel arguments");
+        (_,vals) := getListFirstShowError(vals, "while retrieving the method (6 arg) from the buildModel arguments");
         (Values.STRING(filenameprefix),vals) := getListFirstShowError(vals, "while retreaving the fileNamePrefix (7 arg) from the buildModel arguments");
 
 
-        (_,vals) := getListFirstShowError(vals, "while retreaving the options (8 arg) from the buildModel arguments");
-        (_,vals) := getListFirstShowError(vals, "while retreaving the outputFormat (9 arg) from the buildModel arguments");
-        (_,vals) := getListFirstShowError(vals, "while retreaving the variableFilter (10 arg) from the buildModel arguments");
-        (_,vals) := getListFirstShowError(vals, "while retreaving the cflags (11 arg) from the buildModel arguments");
-        (Values.STRING(simflags),vals) := getListFirstShowError(vals, "while retreaving the simflags (12 arg) from the buildModel arguments");
+        (_,vals) := getListFirstShowError(vals, "while retrieving the options (8 arg) from the buildModel arguments");
+        (_,vals) := getListFirstShowError(vals, "while retrieving the outputFormat (9 arg) from the buildModel arguments");
+        (_,vals) := getListFirstShowError(vals, "while retrieving the variableFilter (10 arg) from the buildModel arguments");
+        (_,vals) := getListFirstShowError(vals, "while retrieving the cflags (11 arg) from the buildModel arguments");
+        (Values.STRING(simflags),vals) := getListFirstShowError(vals, "while retrieving the simflags (12 arg) from the buildModel arguments");
 
         Error.clearMessages() "Clear messages";
 
@@ -6201,7 +6255,7 @@ algorithm
         cname_str = AbsynUtil.pathString(classname);
         filenameprefix = if filenameprefix == "<default>" then cname_str else filenameprefix;
 
-        dlow = BackendDAECreate.lower(dae,cache,env,BackendDAE.EXTRA_INFO(description,filenameprefix)); //Verificare cosa fa
+        dlow = BackendDAECreate.lower(dae,cache,env,BackendDAE.EXTRA_INFO(description,filenameprefix,NONE())); //Verificare cosa fa
         dlow_1 = BackendDAEUtil.preOptimizeBackendDAE(dlow,NONE());
         dlow_1 = FindZeroCrossings.findZeroCrossings(dlow_1);
         xml_filename = stringAppendList({filenameprefix,".xml"});
@@ -6241,7 +6295,7 @@ algorithm
         cname_str = AbsynUtil.pathString(classname);
         filenameprefix = if filenameprefix == "<default>" then cname_str else filenameprefix;
 
-        dlow = BackendDAECreate.lower(dae,cache,env,BackendDAE.EXTRA_INFO(description,filenameprefix)); //Verificare cosa fa
+        dlow = BackendDAECreate.lower(dae,cache,env,BackendDAE.EXTRA_INFO(description,filenameprefix,NONE())); //Verificare cosa fa
         dlow_1 = BackendDAEUtil.preOptimizeBackendDAE(dlow,NONE());
         dlow_1 = BackendDAEUtil.transformBackendDAE(dlow_1,NONE(),NONE(),NONE());
         dlow_1 = FindZeroCrossings.findZeroCrossings(dlow_1);
@@ -6282,7 +6336,7 @@ algorithm
         cname_str = AbsynUtil.pathString(classname);
         filenameprefix = if filenameprefix == "<default>" then cname_str else filenameprefix;
 
-        dlow = BackendDAECreate.lower(dae,cache,env,BackendDAE.EXTRA_INFO(description,filenameprefix));
+        dlow = BackendDAECreate.lower(dae,cache,env,BackendDAE.EXTRA_INFO(description,filenameprefix, NONE()));
         indexed_dlow = BackendDAEUtil.getSolvedSystem(dlow,"");
         xml_filename = stringAppendList({filenameprefix,".xml"});
 
@@ -6321,7 +6375,7 @@ algorithm
         cname_str = AbsynUtil.pathString(classname);
         filenameprefix = if filenameprefix == "<default>" then cname_str else filenameprefix;
 
-        dlow = BackendDAECreate.lower(dae,cache,env,BackendDAE.EXTRA_INFO(description,filenameprefix));
+        dlow = BackendDAECreate.lower(dae,cache,env,BackendDAE.EXTRA_INFO(description,filenameprefix,NONE()));
         indexed_dlow = BackendDAEUtil.getSolvedSystem(dlow,"");
         xml_filename = stringAppendList({filenameprefix,".xml"});
 
@@ -7753,11 +7807,27 @@ protected function saveTotalModel
   input Boolean stripComments;
   input Boolean obfuscate;
 protected
+  String result, obfuscate_map;
+algorithm
+  (result, obfuscate_map) := getTotalModel(classpath, stripAnnotations, stripComments, obfuscate);
+  if obfuscate then
+    System.writeFile(StringUtil.stripFileExtension(filename) + "_mapping.json", obfuscate_map);
+  end if;
+  System.writeFile(filename, result);
+end saveTotalModel;
+
+protected function getTotalModel
+  input Absyn.Path classpath;
+  input Boolean stripAnnotations;
+  input Boolean stripComments;
+  input Boolean obfuscate;
+  output String result;
+  output String obfuscate_map;
+protected
   SCode.Program scodeP;
   String str,str1,str2,str3;
   NFSCodeEnv.Env env;
   SCode.Comment cmt;
-  String obfuscate_map;
   Absyn.Path cls_path = classpath;
 algorithm
   runFrontEndLoadProgram(cls_path);
@@ -7772,7 +7842,6 @@ algorithm
 
   if obfuscate then
     (scodeP, cls_path, cmt, obfuscate_map) := Obfuscate.obfuscateProgram(scodeP, cls_path, cmt);
-    System.writeFile(StringUtil.stripFileExtension(filename) + "_mapping.json", obfuscate_map);
   end if;
 
   str := SCodeDump.programStr(scodeP,SCodeDump.defaultOptions);
@@ -7782,8 +7851,8 @@ algorithm
   str3 := if stripAnnotations then "" else SCodeDump.printAnnotationStr(cmt,SCodeDump.defaultOptions);
   str3 := if stringEq(str3,"") then "" else (str3 + ";\n");
   str1 := "\nmodel " + str1 + str2 + "\n  extends " + AbsynUtil.pathString(cls_path) + ";\n" + str3 + "end " + str1 + ";\n";
-  System.writeFile(filename, str + str1);
-end saveTotalModel;
+  result := str + str1;
+end getTotalModel;
 
 protected function saveTotalModelDebug
   input String filename;
@@ -8352,7 +8421,7 @@ algorithm
       equation
         cdef = InteractiveUtil.getPathedClassInProgram(modelpath, p);
         cmt = SOME(Absyn.COMMENT(SOME(ann), NONE()));
-        newcdef = Interactive.addToEquation(cdef, Absyn.EQUATIONITEM(Absyn.EQ_NORETCALL(Absyn.CREF_IDENT("initialState", {}),
+        newcdef = InteractiveUtil.addToEquation(cdef, Absyn.EQUATIONITEM(Absyn.EQ_NORETCALL(Absyn.CREF_IDENT("initialState", {}),
                                 Absyn.FUNCTIONARGS({Absyn.CREF(Absyn.CREF_IDENT(state_, {}))}, {})), cmt, AbsynUtil.dummyInfo));
         if AbsynUtil.pathIsIdent(AbsynUtil.makeNotFullyQualified(modelpath)) then
           newp = InteractiveUtil.updateProgram(Absyn.PROGRAM({newcdef},p.within_), p);

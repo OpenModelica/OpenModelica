@@ -286,8 +286,15 @@ QStringList FilledShape::getTextShapeAnnotation()
 ShapeAnnotation::ShapeAnnotation(QGraphicsItem *pParent)
   : QGraphicsItem(pParent)
 {
-  mpGraphicsView = 0;
-  mpParentComponent = dynamic_cast<Element*>(pParent);
+  // pParent can be ShapeAnnotation. See #15295.
+  ShapeAnnotation *pParentShapeAnnotation = dynamic_cast<ShapeAnnotation*>(pParent);
+  if (pParentShapeAnnotation) {
+    mpGraphicsView = pParentShapeAnnotation->getGraphicsView();
+    mpParentComponent = nullptr;
+  } else {
+    mpGraphicsView = nullptr;
+    mpParentComponent = dynamic_cast<Element*>(pParent);
+  }
   //mTransformation = 0;
   mIsInheritedShape = false;
   setOldScenePosition(QPointF(0, 0));
@@ -558,10 +565,10 @@ QList<QPointF> ShapeAnnotation::getExtentsForInheritedShapeFromIconDiagramMap(Gr
   if (pExtend) {
     if (pGraphicsView->isIconView()) {
       extent = pExtend->getIconDiagramMapExtent(true);
-      preserveAspectRatio = pExtend->getModel()->getAnnotation()->getIconAnnotation()->mMergedCoordinateSystem.getPreserveAspectRatio();
+      preserveAspectRatio = pExtend->getModel()->mMergedIconCoordinateSystem.getPreserveAspectRatio();
     } else {
       extent = pExtend->getIconDiagramMapExtent(false);
-      preserveAspectRatio = pExtend->getModel()->getAnnotation()->getDiagramAnnotation()->mMergedCoordinateSystem.getPreserveAspectRatio();
+      preserveAspectRatio = pExtend->getModel()->mMergedDiagramCoordinateSystem.getPreserveAspectRatio();
     }
   }
 
@@ -1153,7 +1160,7 @@ void ShapeAnnotation::resetDynamicSelect()
   mTextStyles.resetDynamicToStatic();
   mHorizontalAlignment.resetDynamicToStatic();
 
-  update();
+  applyTransformation();
 }
 
 /*!

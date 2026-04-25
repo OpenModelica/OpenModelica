@@ -1,7 +1,6 @@
 // name:     Modelica.Electrical.Spice3.Examples.Spice3BenchmarkFourBitBinaryAdder
 // keywords: simulation MSL Examples
 // status: correct
-// cflags: -d=-newInst
 //
 // Simulation Results
 // Modelica Standard Library
@@ -81,19 +80,19 @@ runScript(modelTesting);getErrorString();
 // Simulation options: startTime = 0.0, stopTime = 1e-9, numberOfIntervals = 999, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Spice3.Examples.Spice3BenchmarkFourBitBinaryAdder', options = '', outputFormat = 'mat', variableFilter = 'time|X1.X1.X1.X1.Q1.vbe|X1.X1.X1.X1.Q2.vbc|X1.X1.X1.X1.Q2.vbe|X1.X1.X1.X1.Q3.vbc|X1.X1.X1.X1.Q3.vbe|X1.X1.X1.X1.Q4.vbc|X1.X1.X1.X1.Q4.vbe|X1.X1.X1.X1.Q5.vbc|X1.X1.X1.X1.Q5.vbe|X1.X1.X1.X2.Q1.vbc|X1.X1.X1.X2.Q1.vbe|X1.X1.X1.X2.Q2.vbe|X1.X1.X1.X2.Q3.vbc|X1.X1.X1.X2.Q3.vbe|X1.X1.X1.X2.Q4.vbc|X1.X1.X1.X2.Q4.vbe|X1.X1.X1.X2.Q5.vbc|X1.X1.X1.X2.Q5.vbe|X1.X1.X2.X3.Q1.vbc|X1.X1.X2.X3.Q1.vbe|X1.X1.X2.X3.Q2.vbe|X1.X1.X2.X3.Q3.vbc|X1.X1.X2.X3.Q3.vbe|X1.X1.X2.X3.Q4.vbc|X1.X1.X2.X3.Q4.vbe|X1.X1.X2.X3.Q5.vbe|X1.X1.X2.X4.Q1.vbc|X1.X1.X2.X4.Q1.vbe|X1.X1.X2.X4.Q2.vbc|X1.X1.X2.X4.Q2.vbe|X1.X1.X2.X4.Q3.vbc|X1.X1.X2.X4.Q3.vbe|X1.X1.X2.X4.Q4.vbc|X1.X1.X2.X4.Q4.vbe|X1.X1.X2.X4.Q5.vbc|X1.X1.X2.X4.Q5.vbe|X1.X2.X2.X9.Q1.vbc|X1.X2.X2.X9.Q1.vbe|X1.X2.X2.X9.Q2.vbc|X1.X2.X2.X9.Q2.vbe|X1.X2.X2.X9.Q3.vbc|X1.X2.X2.X9.Q3.vbe|X1.X2.X2.X9.Q4.vbc|X1.X2.X2.X9.Q4.vbe|X1.X2.X2.X9.Q5.vbc|X1.X2.X2.X9.Q5.vbe', cflags = '', simflags = ' -abortSlowSimulation -alarm=360 -emit_protected'
 // Result file: Modelica.Electrical.Spice3.Examples.Spice3BenchmarkFourBitBinaryAdder_res.mat
 // Messages: LOG_STDOUT        | info    | Using sparse solver for linear system 12,
-// |                 | |       | because density of 0.158 remains under threshold of 0.200.
+// |                 | |       | because density of 0.184 remains under threshold of 0.200.
 // LOG_STDOUT        | info    | Using sparse solver for linear system 25,
-// |                 | |       | because density of 0.158 remains under threshold of 0.200.
+// |                 | |       | because density of 0.189 remains under threshold of 0.200.
 // LOG_STDOUT        | info    | Using sparse solver for linear system 38,
-// |                 | |       | because density of 0.186 remains under threshold of 0.200.
+// |                 | |       | because density of 0.167 remains under threshold of 0.200.
 // LOG_STDOUT        | info    | Using sparse solver for linear system 51,
-// |                 | |       | because density of 0.186 remains under threshold of 0.200.
+// |                 | |       | because density of 0.167 remains under threshold of 0.200.
 // LOG_STDOUT        | info    | Using sparse solver for linear system 75,
-// |                 | |       | because density of 0.182 remains under threshold of 0.200.
+// |                 | |       | because density of 0.178 remains under threshold of 0.200.
 // LOG_STDOUT        | info    | Using sparse solver for linear system 87,
-// |                 | |       | because density of 0.162 remains under threshold of 0.200.
+// |                 | |       | because density of 0.169 remains under threshold of 0.200.
 // LOG_STDOUT        | info    | Using sparse solver for linear system 97,
-// |                 | |       | because density of 0.173 remains under threshold of 0.200.
+// |                 | |       | because density of 0.153 remains under threshold of 0.200.
 // LOG_STDOUT        | info    | Using sparse solver for linear system 102,
 // |                 | |       | because density of 0.168 remains under threshold of 0.200.
 // LOG_STDOUT        | info    | The maximum density for using sparse solvers can be specified
@@ -102,6 +101,8 @@ runScript(modelTesting);getErrorString();
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 //
 // Files Equal!
+// Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions("-d=initialization").
+//
 // "true
 // "
 // ""

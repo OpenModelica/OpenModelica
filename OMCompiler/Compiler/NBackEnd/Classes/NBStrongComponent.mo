@@ -1,33 +1,38 @@
 /*
-* This file is part of OpenModelica.
-*
-* Copyright (c) 1998-2021, Open Source Modelica Consortium (OSMC),
-* c/o Linköpings universitet, Department of Computer and Information Science,
-* SE-58183 Linköping, Sweden.
-*
-* All rights reserved.
-*
-* THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
-* THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
-* ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
-* RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
-* ACCORDING TO RECIPIENTS CHOICE.
-*
-* The OpenModelica software and the Open Source Modelica
-* Consortium (OSMC) Public License (OSMC-PL) are obtained
-* from OSMC, either from the above address,
-* from the URLs: http://www.ida.liu.se/projects/OpenModelica or
-* http://www.openmodelica.org, and in the OpenModelica distribution.
-* GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
-*
-* This program is distributed WITHOUT ANY WARRANTY; without
-* even the implied warranty of  MERCHANTABILITY or FITNESS
-* FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
-* IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
-*
-* See the full OSMC Public License conditions for more details.
-*
-*/
+ * This file is part of OpenModelica.
+ *
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
+ * c/o Linköpings universitet, Department of Computer and Information Science,
+ * SE-58183 Linköping, Sweden.
+ *
+ * All rights reserved.
+ *
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
+ *
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
+ *
+ * This program is distributed WITHOUT ANY WARRANTY; without
+ * even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
+ *
+ * See the full OSMC Public License conditions for more details.
+ *
+ */
+
 encapsulated uniontype NBStrongComponent
 "file:        NBStrongComponent.mo
  package:     NBStrongComponent
@@ -869,7 +874,13 @@ public
     ComponentRef cref;
     list<tuple<ComponentRef, list<ComponentRef>>> scalarized_dependencies;
   algorithm
-    Equation.FOR_EQUATION(iter = iter, body = {body}) := eqn;
+    try
+      Equation.FOR_EQUATION(iter = iter, body = {body}) := eqn;
+    else
+      Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because the for-loop had more than one body equation:\n" + Equation.toString(eqn)});
+      fail();
+    end try;
+
     dependencies := Equation.collectCrefs(eqn, function Slice.getDependentCrefCausalized(set = set), Expression.fakeMap);
     if ComponentRef.isEmpty(var_cref) then
       SOME(Expression.CREF(cref = cref)) := Equation.getLHS(body);
@@ -1076,32 +1087,28 @@ public
         eqn := EquationPointers.getEqnAt(eqns, mapping.eqn_StA[i]);
         (_, size) := mapping.var_AtS[var_arr_idx];
 
-        comp := match Pointer.access(eqn)
+        if Equation.isForEquation(eqn) then
           // - case 1: sliced equation because of for-equation
-          case _ guard(Equation.isForEquation(eqn)) algorithm
-            try
-              ({var_slice}, {eqn_slice}) := getLoopVarsAndEqns(comp_indices, eqn_to_var, mapping, vars, eqns);
-            else
-              Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because single indices did not turn out to be single components."});
-              fail();
-            end try;
-          then SLICED_COMPONENT(VariablePointers.varSlice(vars, var_scal_idx, mapping), var_slice, eqn_slice, NBSolve.Status.UNPROCESSED);
-
+          try
+            ({var_slice}, {eqn_slice}) := getLoopVarsAndEqns(comp_indices, eqn_to_var, mapping, vars, eqns);
+          else
+            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because single indices did not turn out to be single components."});
+            fail();
+          end try;
+          comp := SLICED_COMPONENT(VariablePointers.varSlice(vars, var_scal_idx, mapping.var_StA[var_scal_idx], mapping, true), var_slice, eqn_slice, NBSolve.Status.UNPROCESSED);
+        elseif Equation.isCompound(eqn) then
           // - case 2: multi components for when/if and algorithm although its size 1
-          case Equation.WHEN_EQUATION()   then MULTI_COMPONENT({Slice.SLICE(var, {})}, Slice.SLICE(eqn, {}), NBSolve.Status.UNPROCESSED);
-          case Equation.IF_EQUATION()     then MULTI_COMPONENT({Slice.SLICE(var, {})}, Slice.SLICE(eqn, {}), NBSolve.Status.UNPROCESSED);
-          case Equation.ALGORITHM()       then MULTI_COMPONENT({Slice.SLICE(var, {})}, Slice.SLICE(eqn, {}), NBSolve.Status.UNPROCESSED);
-
+          comp := MULTI_COMPONENT({Slice.SLICE(var, {})}, Slice.SLICE(eqn, {}), NBSolve.Status.UNPROCESSED);
+        else
           // - case 3: single or sliced strong component
-          else algorithm
-            try
-              ({var_slice}, {eqn_slice}) := getLoopVarsAndEqns(comp_indices, eqn_to_var, mapping, vars, eqns);
-            else
-              Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because single indices did not turn out to be single components."});
-              fail();
-            end try;
-          then createSliceOrSingle(VariablePointers.varSlice(vars, var_scal_idx, mapping), var_slice, eqn_slice);
-        end match;
+          try
+            ({var_slice}, {eqn_slice}) := getLoopVarsAndEqns(comp_indices, eqn_to_var, mapping, vars, eqns);
+          else
+            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because single indices did not turn out to be single components."});
+            fail();
+          end try;
+          comp := createSliceOrSingle(VariablePointers.varSlice(vars, var_scal_idx, mapping.var_StA[var_scal_idx], mapping, true), var_slice, eqn_slice);
+        end if;
       then comp;
 
       // Size > 1 strong component
@@ -1152,7 +1159,7 @@ public
     input Slice<EquationPointer> eqn_slice;
     output StrongComponent comp;
   algorithm
-    if Slice.isFull(var_slice) and Slice.isFull(eqn_slice) then
+    if Slice.isFull(var_slice) and Slice.isFull(eqn_slice) and not ComponentRef.hasSubscripts(cref) then
       comp := SINGLE_COMPONENT(
         var       = Slice.getT(var_slice),
         eqn       = Slice.getT(eqn_slice),

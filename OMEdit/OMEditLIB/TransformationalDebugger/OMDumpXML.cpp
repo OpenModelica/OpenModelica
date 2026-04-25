@@ -227,7 +227,7 @@ OMEquation::~OMEquation() {
   }
 }
 
-QString OMEquation::toString()
+QString OMEquation::toString() const
 {
   if (tag == "dummy") {
     return "";

@@ -1,0 +1,205 @@
+// name: init_if_exp
+// keywords: NewBackend, initialization, adjacency
+// status: correct
+// cflags: --newBackend
+
+loadString("
+model init_if_exp
+  Real u, y;
+equation
+  1 = if initial() then y + y^2 else u;
+  y = u^3 + u;
+end init_if_exp;
+"); getErrorString();
+
+setCommandLineOptions("-d=dumpSimCode"); getErrorString();
+simulate(init_if_exp); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// #############################
+//
+//     SimCode (init_if_exp)
+//
+// #############################
+// ============
+//   SimVars
+// ============
+// Algebraic Variables (2)
+// *************************
+//   (0)[ALGB] (1) Real u
+//   (1)[ALGB] (1) Real y
+//
+// Residual Variables (2)
+// ************************
+//   (0)[RES-] (1) Real $RES_SIM_0
+//   (1)[RES-] (1) Real $RES_SIM_1
+//
+// Initial Partition
+// -------------------
+//   (4) Nonlinear System (size = 1, homotopy = false, mixed = false, torn = true)
+//   --Iteration Vars:{y}
+//   --(3) 0 = (-1.0) + (y + y ^ 2.0)
+//   (2) Nonlinear System (size = 1, homotopy = false, mixed = false, torn = true)
+//   --Iteration Vars:{u}
+//   --(1) 0 = (u ^ 3.0 + u) - y
+//
+// Algebraic Partition 1
+// -----------------------
+//   (6) u := 1.0
+//   (5) y := u ^ 3.0 + u
+//
+// Event Partition
+// -----------------
+//
+// ======================================================
+//   [EMPTY] SimCode Jacobian A(idx = 0, partition = 0)
+// ======================================================
+//
+// ======================================================
+//   [EMPTY] SimCode Jacobian B(idx = 2, partition = 0)
+// ======================================================
+//
+// ======================================================
+//   [EMPTY] SimCode Jacobian C(idx = 3, partition = 0)
+// ======================================================
+//
+// ======================================================
+//   [EMPTY] SimCode Jacobian D(idx = 4, partition = 0)
+// ======================================================
+//
+// ======================================================
+//   [EMPTY] SimCode Jacobian F(idx = 5, partition = 0)
+// ======================================================
+//
+// ======================================================
+//   [EMPTY] SimCode Jacobian H(idx = 6, partition = 0)
+// ======================================================
+//
+// ========================================================
+//   [EMPTY] SimCode Jacobian ADJ(idx = 1, partition = 0)
+// ========================================================
+//
+//
+//
+// *********************
+// * SimCode Equations *
+// *********************
+//
+//
+// allEquations:
+// ========================================
+//
+// 6: u=1.0 [Real]
+// 5: y=u ^ 3.0 + u [Real]
+// ========================================
+//
+//
+//
+// odeEquations (0 systems):
+// ========================================
+// ========================================
+//
+//
+//
+// algebraicEquations (1 systems):
+// ========================================
+// 6: u=1.0 [Real]
+// 5: y=u ^ 3.0 + u [Real]
+// ========================================
+//
+//
+// clockPartitions (0 systems):
+//
+// ========================================
+//
+//
+//
+// initialEquations: (2)
+// ========================================
+// 4:  (NONLINEAR) index:1 jacobian: false
+// crefs: y
+// 	3: -1.0 + y + y ^ 2.0 (RESIDUAL)
+//
+// 2:  (NONLINEAR) index:0 jacobian: false
+// crefs: u
+// 	1: u ^ 3.0 + u - y (RESIDUAL)
+//
+// ========================================
+//
+//
+//
+// initialEquations_lambda0: (0)
+// ========================================
+//
+// removedInitialEquations:
+// ========================================
+//
+// startValueEquations:
+// ========================================
+//
+// nominalValueEquations:
+// ========================================
+//
+// minValueEquations:
+// ========================================
+//
+// maxValueEquations:
+// ========================================
+//
+// parameterEquations:
+// ========================================
+//
+// removedEquations:
+// ========================================
+//
+// algorithmAndEquationAsserts:
+// ========================================
+//
+// equationsForZeroCrossings:
+// ========================================
+//
+// generic calls:
+// ========================================
+//
+// jacobianEquations:
+// ========================================
+//
+// jacobianMatrices:
+// ========================================
+// 	Jacobian idx: 0
+//
+// 	Jacobian idx: 2
+//
+// 	Jacobian idx: 3
+//
+// 	Jacobian idx: 4
+//
+// 	Jacobian idx: 5
+//
+// 	Jacobian idx: 6
+//
+// 	Jacobian idx: 1
+//
+//
+// modelInfo:
+// ========================================
+// algVars (2)
+// ----------------------
+// index:0: u (no alias)  initial: 	no arrCref index:(1) []
+// index:1: y (no alias)  initial: 	no arrCref index:(2) []
+// functions:
+// -----------
+//
+// record SimulationResult
+//     resultFile = "init_if_exp_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-6, method = 'dassl', fileNamePrefix = 'init_if_exp', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// endResult

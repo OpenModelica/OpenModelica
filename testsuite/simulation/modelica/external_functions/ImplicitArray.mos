@@ -9,7 +9,7 @@ model Ticket4009
     input Real x;
     input T t_in;
     output Real y;
-    external \"C\";
+    external \"C\"
   annotation(Include =
   \"
   #include <stddef.h>

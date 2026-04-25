@@ -1,33 +1,38 @@
 /*
-* This file is part of OpenModelica.
-*
-* Copyright (c) 1998-2020, Open Source Modelica Consortium (OSMC),
-* c/o Linköpings universitet, Department of Computer and Information Science,
-* SE-58183 Linköping, Sweden.
-*
-* All rights reserved.
-*
-* THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
-* THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
-* ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
-* RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
-* ACCORDING TO RECIPIENTS CHOICE.
-*
-* The OpenModelica software and the Open Source Modelica
-* Consortium (OSMC) Public License (OSMC-PL) are obtained
-* from OSMC, either from the above address,
-* from the URLs: http://www.ida.liu.se/projects/OpenModelica or
-* http://www.openmodelica.org, and in the OpenModelica distribution.
-* GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
-*
-* This program is distributed WITHOUT ANY WARRANTY; without
-* even the implied warranty of  MERCHANTABILITY or FITNESS
-* FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
-* IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
-*
-* See the full OSMC Public License conditions for more details.
-*
-*/
+ * This file is part of OpenModelica.
+ *
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
+ * c/o Linköpings universitet, Department of Computer and Information Science,
+ * SE-58183 Linköping, Sweden.
+ *
+ * All rights reserved.
+ *
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
+ *
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
+ *
+ * This program is distributed WITHOUT ANY WARRANTY; without
+ * even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
+ *
+ * See the full OSMC Public License conditions for more details.
+ *
+ */
+
 encapsulated package NBResolveSingularities
 "file:        NBResolveSingularities.mo
  package:     NBResolveSingularities
@@ -100,12 +105,12 @@ public
   extends Module.resolveSingularitiesInterface;
   protected
     Adjacency.Mapping mapping;
-    array<Boolean> discrete_eqns, discrete_vars;
+    array<Boolean> discrete_eqns;
     array<list<Integer>> msss;
     list<Integer> marked_eqns;
     Adjacency.Matrix state_adj;
     Pointer<Equation> constraint, sliced_eqn, diffed_eqn;
-    list<Slice<VariablePointer>> state_candidates = {}, states, dummy_states;
+    list<Slice<VariablePointer>> state_candidates = {}, states, dummy_states, sliced_dummies = {};
     list<Pointer<Variable>> sliced_candidates, sliced_states, sliced_dummy_states, state_derivatives, dummy_derivatives = {};
     list<Pointer<Variable>> current_candidates, rest_candidates;
     list<Slice<EquationPointer>> constraint_eqns = {}, matched_eqns, unmatched_eqns;
@@ -132,11 +137,10 @@ public
 
     // mark the discrete equations
     discrete_eqns := listArray(list(Equation.isDiscrete(eqn) for eqn in EquationPointers.toList(equations)));
-    discrete_vars := listArray(list(BVariable.isDiscrete(var) for var in VariablePointers.toList(variables)));
 
     // get the minimally structurally singular subset
     msss := match adj
-      case Adjacency.FINAL() then getMSSS(adj.m, adj.mT, matching, discrete_eqns, discrete_vars, mapping);
+      case Adjacency.FINAL() then getMSSS(adj.m, adj.mT, matching, discrete_eqns, mapping);
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " expected final matrix as adj input but got :\n"
           + Adjacency.Matrix.toString(adj)});
@@ -170,31 +174,11 @@ public
             + EquationPointers.toString(constraint_ptrs, "Constraint"));
       end if;
 
-      // Build differentiation argument structure
-      diffArguments           := Differentiate.DifferentiationArguments.default(NBDifferentiate.DifferentiationType.TIME, funcMap);
-      diffArguments.diff_map  := SOME(VarData.getStateOrder(varData));
-      diffArguments_ptr       := Pointer.create(diffArguments);
-
-      if Flags.isSet(Flags.DUMMY_SELECT) then
-        print(StringUtil.headline_3("[dummyselect] 1. Differentiate the constraint equations"));
-      end if;
-
-      // differentiate all eqns
-      for constraint in EquationPointers.toList(constraint_ptrs) loop
-        diffed_eqn := Differentiate.differentiateEquationPointer(constraint, diffArguments_ptr);
-        new_eqns := diffed_eqn :: new_eqns;
-        if Flags.isSet(Flags.DUMMY_SELECT) then
-          print("[dummyselect] constraint eqn:\t\t" + Equation.toString(Pointer.access(constraint)) + "\n");
-          print("[dummyselect] differentiated eqn:\t" + Equation.toString(Pointer.access(diffed_eqn)) + "\n\n");
-        end if;
-      end for;
-      diffArguments := Pointer.access(diffArguments_ptr);
-
       // --------------------------------------------------------
       //  2. DUMMY DERIVATIVE
       // --------------------------------------------------------
       // create full adjacency matrix and prepare data
-      full_local      := Adjacency.Matrix.createFull(candidate_ptrs, constraint_ptrs);
+      full_local      := Adjacency.Matrix.createFull(candidate_ptrs, constraint_ptrs, kind);
       set_adj         := Adjacency.Matrix.EMPTY(NBAdjacency.MatrixStrictness.LINEAR);
       rest_candidates := VariablePointers.toList(candidate_ptrs);
       eo              := constraint_ptrs.map;
@@ -217,7 +201,7 @@ public
         // split the candidates to get all currently relevant ones
         (current_candidates, rest_candidates) := List.splitOnTrue(rest_candidates, stageFunc);
 
-        if listEmpty(current_candidates) or (not Matching.isEmpty(set_matching) and Matching.isPerfect(set_matching)) then
+        if listEmpty(current_candidates) then
           // nothing to do, no candidates for this stage or matching is already perfect
           if debug then
             print(StringUtil.headline_2("Nothing done for (" + stageStr + ") Index Reduction") + "\n");
@@ -227,7 +211,7 @@ public
           vo := UnorderedMap.merge(vo, UnorderedMap.copy(vn), sourceInfo());
           vn := UnorderedMap.subMap(candidate_ptrs.map, list(BVariable.getVarName(var) for var in current_candidates));
           // expand the adjacency matrix
-          (set_adj, full_local)   := Adjacency.Matrix.expand(set_adj, full_local, vo, vn, eo, en, candidate_ptrs, constraint_ptrs);
+          (set_adj, full_local)   := Adjacency.Matrix.expand(set_adj, full_local, vo, vn, eo, en, candidate_ptrs, constraint_ptrs, kind);
           // continue matching
           set_matching            := Matching.regular(set_matching, set_adj, false, true, false);
 
@@ -235,11 +219,38 @@ public
             print(Adjacency.Matrix.toString(set_adj, "(" + stageStr + ") Index Reduction"));
             print(Matching.toString(set_matching, "(" + stageStr + ") Index Reduction"));
           end if;
+
+          if Matching.isEmpty(set_matching) and Matching.isPerfect(set_matching) then
+            if debug then
+              print(StringUtil.headline_2("Finished with perfect matching in stage " + stageStr + ".") + "\n");
+            end if;
+            break;
+          end if;
         end if;
       end for;
 
       // parse the result of the matching
       (dummy_states, states, matched_eqns, unmatched_eqns) := Matching.getMatches(set_matching, Adjacency.Matrix.getMappingOpt(set_adj), candidate_ptrs, constraint_ptrs);
+
+      // Build differentiation argument structure
+      diffArguments           := Differentiate.DifferentiationArguments.default(NBDifferentiate.DifferentiationType.TIME, funcMap);
+      diffArguments.diff_map  := SOME(VarData.getStateOrder(varData));
+      diffArguments_ptr       := Pointer.create(diffArguments);
+
+      if Flags.isSet(Flags.DUMMY_SELECT) then
+        print(StringUtil.headline_3("[dummyselect] 1. Differentiate the constraint equations"));
+      end if;
+
+      // differentiate all eqns
+      for constraint in EquationPointers.toList(constraint_ptrs) loop
+        diffed_eqn := Differentiate.differentiateEquationPointer(constraint, diffArguments_ptr);
+        new_eqns := diffed_eqn :: new_eqns;
+        if Flags.isSet(Flags.DUMMY_SELECT) then
+          print("[dummyselect] constraint eqn:\t\t" + Equation.toString(Pointer.access(constraint)) + "\n");
+          print("[dummyselect] differentiated eqn:\t" + Equation.toString(Pointer.access(diffed_eqn)) + "\n\n");
+        end if;
+      end for;
+      diffArguments := Pointer.access(diffArguments_ptr);
 
       // --------------------------------------------------------
       //  3. STATIC AND DYNAMIC STATE SELECTION
@@ -249,11 +260,23 @@ public
         if listEmpty(dummy.indices) then
           dummy_derivatives := BVariable.makeDummyState(Slice.getT(dummy)) :: dummy_derivatives;
         else
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because slicing during index reduction is not yet supported.\n"
-            + "  needed sliced dummy:\t\t" + Slice.toString(dummy, BVariable.pointerToString) + "\n"});
-          fail();
+          sliced_dummies := dummy :: sliced_dummies;
         end if;
       end for;
+
+      if not listEmpty(sliced_dummies) then
+        // ToDo: instead do state replacements (FunctionAlias)
+        // shift the order to first get dummy derivatives then differentiate
+
+        // find the state indices (all indices without the dummy indices)
+        // make an iterator that iterates over these (local indices to frame locations)
+        // introduceAlias for this iterator and the sliced state
+        // create equations for the introduced alias
+
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because slicing during index reduction is not yet supported.\n"
+          + List.toString(sliced_dummies, function Slice.toString(func = BVariable.pointerToString, maxLength = 10), "Sliced Dummies:", "\n  ", "\n  ", "\n")});
+        fail();
+      end if;
 
       if Flags.isSet(Flags.DUMMY_SELECT) then
         print(StringUtil.headline_4("[dummyselect] (" + intString(listLength(states)) + ") Selected States"));
@@ -280,7 +303,7 @@ public
         if Flags.isSet(Flags.DUMMY_SELECT) then
           print(toStringDynamicSelect(dummy_states, unmatched_eqns));
         end if;
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because dynamic index reduction is not yet supported."});
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because dynamic state selection is not yet supported."});
         fail();
       end if;
 
@@ -317,66 +340,6 @@ public
       changed := false;
     end if;
   end indexReduction;
-
-  function noIndexReduction
-    "fails if the system has unmatched variables"
-    extends Module.resolveSingularitiesInterface;
-  protected
-    Adjacency.Mapping mapping;
-    array<Boolean> discrete_eqns, discrete_vars;
-    list<Slice<VariablePointer>> unmatched_vars, matched_vars;
-    list<Slice<EquationPointer>> unmatched_eqns, matched_eqns;
-    String err_str;
-    array<list<Integer>> msss;
-    VariablePointers candidates;
-    EquationPointers constraints;
-    Integer msss_idx = 1;
-  algorithm
-    // get the mapping and fail if there is none
-    mapping := match mapping_opt
-      case SOME(mapping) then mapping;
-      else algorithm
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because no mapping was provided."});
-      then fail();
-    end match;
-
-    (matched_vars, unmatched_vars, matched_eqns, unmatched_eqns) := Matching.getMatches(matching, mapping_opt, variables, equations);
-    if not listEmpty(unmatched_vars) then
-      err_str := getInstanceName()
-        + " failed.\n" + StringUtil.headline_4("(" + intString(listLength(unmatched_vars)) + "|"
-        + intString(sum(Slice.size(v, function BVariable.size(resize = true)) for v in unmatched_vars)) + ") Unmatched Variables")
-        + List.toString(unmatched_vars, function Slice.toString(func=BVariable.pointerToString, maxLength=10), "", "\t", "\n\t", "\n", true) + "\n"
-        + StringUtil.headline_4("(" + intString(listLength(unmatched_eqns)) + "|"
-        + intString(sum(Slice.size(e, function Equation.size(resize = true)) for e in unmatched_eqns)) + ") Unmatched Equations")
-        + List.toString(unmatched_eqns, function Slice.toString(func=function Equation.pointerToString(str=""), maxLength=10), "", "\t", "\n\t", "\n", true) + "\n";
-
-      if Flags.isSet(Flags.BLT_DUMP) then
-        // mark the discrete equations
-        discrete_eqns := listArray(list(Equation.isDiscrete(eqn) for eqn in EquationPointers.toList(equations)));
-        discrete_vars := listArray(list(BVariable.isDiscrete(var) for var in VariablePointers.toList(variables)));
-
-        // get the minimally structurally singular subset
-        msss := match adj
-          case Adjacency.FINAL() then getMSSS(adj.m, adj.mT, matching, discrete_eqns, discrete_vars, mapping);
-          else algorithm
-            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " expected final matrix as adj input but got :\n"
-              + Adjacency.Matrix.toString(adj)});
-          then fail();
-        end match;
-
-        for marked_eqns in msss loop
-          (constraints, candidates, _) := getConstraintsAndCandidates(equations, marked_eqns, mapping);
-          err_str := err_str + StringUtil.headline_2("MSSS " + intString(msss_idx) + "") + "\n"
-            + EquationPointers.toString(constraints, "Constraint")
-            + VariablePointers.toString(candidates, "State Candidate");
-          msss_idx := msss_idx + 1;
-        end for;
-      end if;
-      Error.addMessage(Error.INTERNAL_ERROR,{err_str});
-      fail();
-    end if;
-    changed := false;
-  end noIndexReduction;
 
   function balanceInitialization
     extends Module.resolveSingularitiesInterface;
@@ -428,7 +391,7 @@ public
         if BVariable.isFixable(var_ptr) then
           // var = $START.var ($PRE.d = $START.d for previous vars)
           // DO NOT SET VARIABLE TO FIXED! we might have to fix it again for Lambda=0 system
-          Initialization.createStartEquationSlice(var, ptr_start_vars, ptr_start_eqns, idx);
+          Initialization.createStartEquationSlice(var, ptr_start_vars, ptr_start_eqns, idx, true);
         else
           failed_vars := var_ptr :: failed_vars;
         end if;
@@ -452,7 +415,7 @@ public
         // update adjacency matrices
         vn := UnorderedMap.new<Integer>(ComponentRef.hash, ComponentRef.isEqual);
         en := UnorderedMap.subMap(equations.map, list(Equation.getEqnName(eqn) for eqn in start_eqns));
-        (adj, full) := Adjacency.Matrix.expand(adj, full, vo, vn, eo, en, variables, equations);
+        (adj, full) := Adjacency.Matrix.expand(adj, full, vo, vn, eo, en, variables, equations, kind);
 
         if Flags.isSet(Flags.INITIALIZATION) then
           print(List.toString(start_eqns, function Equation.pointerToString(str = ""),
@@ -485,42 +448,49 @@ public
 
 protected
   function getMSSS
-    "finds the minimally structurally singular subsets"
+    "finds the minimal structurally singular subsets"
     input array<list<Integer>> m              "eqn -> list<var>";
     input array<list<Integer>> mT             "var -> list<eqn>";
     input Matching matching;
     input array<Boolean> discrete_eqns;
-    input array<Boolean> discrete_vars;
     input Adjacency.Mapping mapping;
     output array<list<Integer>> msss;
   protected
     list<Integer> eqn_candidates = {};
+    array<Integer> color_clustering;
     array<Integer> eqn_coloring = arrayCreate(arrayLength(m), -1);
     array<Integer> var_coloring = arrayCreate(arrayLength(mT), -1);
     Integer color = 0;
   algorithm
-    // find all unmatched variable and equation indices
+    // find all unmatched equation indices
     for eqn in 1:arrayLength(matching.eqn_to_var) loop
-      if matching.eqn_to_var[eqn] == -1 and not discrete_eqns[mapping.eqn_StA[eqn]] then
+      if matching.eqn_to_var[eqn] == -1 then
         eqn_candidates := eqn :: eqn_candidates;
       end if;
     end for;
+    color_clustering := listArray(list(i for i in 1:listLength(eqn_candidates)));
 
     // use a new color for each uncolored equation
     for eqn in eqn_candidates loop
       if eqn_coloring[eqn] == -1 then
         color := color + 1;
-        fillColorEqn(eqn, color, eqn_coloring, var_coloring, m, mT, discrete_eqns, discrete_vars, mapping);
+        fillColorEqn(eqn, color, eqn_coloring, var_coloring, color_clustering, m, mT, matching, mapping);
       end if;
     end for;
+
+    resolveClustering(color_clustering);
 
     // fill the msss array, sorting each equation to their respective color
     msss := arrayCreate(color, {});
     for eqn in 1:arrayLength(eqn_coloring) loop
-      if eqn_coloring[eqn] <> -1 then
-        msss[eqn_coloring[eqn]] := eqn :: msss[eqn_coloring[eqn]];
+      if eqn_coloring[eqn] <> -1 and not discrete_eqns[mapping.eqn_StA[eqn]] then
+        color := color_clustering[eqn_coloring[eqn]];
+        msss[color] := eqn :: msss[color];
       end if;
     end for;
+
+    // remove all empty colors (purely discrete)
+    msss := listArray(list(ms for ms guard(not listEmpty(ms)) in arrayList(msss)));
   end getMSSS;
 
   function fillColorEqn
@@ -530,17 +500,15 @@ protected
     input Integer color;
     input array<Integer> eqn_coloring;
     input array<Integer> var_coloring;
+    input array<Integer> color_clustering;
     input array<list<Integer>> m              "eqn -> list<var>";
     input array<list<Integer>> mT             "var -> list<eqn>";
-    input array<Boolean> discrete_eqns;
-    input array<Boolean> discrete_vars;
+    input Matching matching;
     input Adjacency.Mapping mapping;
   algorithm
     arrayUpdate(eqn_coloring, eqn, color);
     for var in m[eqn] loop
-      if var_coloring[var] == -1 and not discrete_vars[mapping.var_StA[var]] then
-        fillColorVar(var, color, eqn_coloring, var_coloring, m, mT, discrete_eqns, discrete_vars, mapping);
-      end if;
+      fillColorVar(var, color, eqn_coloring, var_coloring, color_clustering, m, mT, matching, mapping);
     end for;
   end fillColorEqn;
 
@@ -551,19 +519,50 @@ protected
     input Integer color;
     input array<Integer> eqn_coloring;
     input array<Integer> var_coloring;
+    input array<Integer> color_clustering;
     input array<list<Integer>> m              "eqn -> list<var>";
     input array<list<Integer>> mT             "var -> list<eqn>";
-    input array<Boolean> discrete_eqns;
-    input array<Boolean> discrete_vars;
+    input Matching matching;
     input Adjacency.Mapping mapping;
+  protected
+    Integer eqn = matching.var_to_eqn[var];
   algorithm
-    arrayUpdate(var_coloring, var, color);
-    for eqn in mT[var] loop
-      if eqn_coloring[eqn] == -1 and not discrete_eqns[mapping.eqn_StA[eqn]] then
-        fillColorEqn(eqn, color, eqn_coloring, var_coloring, m, mT, discrete_eqns, discrete_vars, mapping);
+    if var_coloring[var] == -1 then
+      arrayUpdate(var_coloring, var, color);
+      if eqn <> -1 then
+        if eqn_coloring[eqn] == -1 then
+          fillColorEqn(eqn, color, eqn_coloring, var_coloring, color_clustering, m, mT, matching, mapping);
+        end if;
       end if;
-    end for;
+    else
+      colorClustering(var_coloring[var], color, color_clustering);
+    end if;
   end fillColorVar;
+
+  function colorClustering
+    input Integer old_color;
+    input Integer new_color;
+    input array<Integer> color_clustering;
+  algorithm
+    if color_clustering[old_color] <> old_color then
+      colorClustering(color_clustering[old_color], new_color, color_clustering);
+    end if;
+    arrayUpdate(color_clustering, old_color, new_color);
+  end colorClustering;
+
+  function resolveClustering
+    input array<Integer> color_clustering;
+  protected
+    Integer color, color2;
+  algorithm
+    for i in 1:arrayLength(color_clustering) loop
+      color := i;
+      while color_clustering[color] <> color loop
+        color := color_clustering[color];
+      end while;
+      arrayUpdate(color_clustering, i, color);
+    end for;
+  end resolveClustering;
 
   function getConstraintsAndCandidates
     input EquationPointers equations;

@@ -136,21 +136,20 @@ end Modelica;
 model DewPointTemperatureDerivativeCheck_amb
   extends Buildings.Utilities.Psychrometrics.Functions.BaseClasses.Examples.DewPointTemperatureDerivativeCheck_amb;
   annotation(__Dymola_Commands(file = "modelica://Buildings/Resources/Scripts/Dymola/Utilities/Psychrometrics/Functions/BaseClasses/Examples/DewPointTemperatureDerivativeCheck_amb.mos"), experiment(StartTime = 273.15, StopTime = 323.15));
-  annotation(__OpenModelica_commandLineOptions="-d=-newInst");
 end DewPointTemperatureDerivativeCheck_amb;
 
 // Result:
 // function Buildings.Utilities.Psychrometrics.Functions.pW_TDewPoi_amb
+//   input Real T(quantity = "ThermodynamicTemperature", unit = "K", displayUnit = "degC", min = 0.0, start = 288.15, nominal = 300.0);
+//   output Real p_w(quantity = "Pressure", unit = "Pa", displayUnit = "Pa", min = 100.0);
 //   protected constant Real T1(quantity = "ThermodynamicTemperature", unit = "K", displayUnit = "degC", min = 0.0, start = 288.15, nominal = 300.0) = 283.15;
 //   protected constant Real T2(quantity = "ThermodynamicTemperature", unit = "K", displayUnit = "degC", min = 0.0, start = 288.15, nominal = 300.0) = 293.15;
 //   protected constant Real p1(quantity = "Pressure", unit = "Pa", displayUnit = "bar") = 1227.97;
 //   protected constant Real p2(quantity = "Pressure", unit = "Pa", displayUnit = "bar") = 2338.76;
-//   input Real T(quantity = "ThermodynamicTemperature", unit = "K", displayUnit = "degC", min = 0.0, start = 288.15, nominal = 300.0);
-//   output Real p_w(quantity = "Pressure", unit = "Pa", displayUnit = "Pa", min = 100.0);
-//   protected constant Real a1 = -11.12906103909587;
-//   protected constant Real a2(unit = "1/K") = 0.06442584749262621;
+//   protected constant Real a1 = (log(p2) - log(p1) * T2 / T1) / (1.0 - T2 / T1);
+//   protected constant Real a2(unit = "1/K") = (log(p1) - a1) / T1;
 // algorithm
-//   p_w := exp(-11.12906103909587 + 0.06442584749262621 * T);
+//   p_w := exp(a1 + a2 * T);
 // end Buildings.Utilities.Psychrometrics.Functions.pW_TDewPoi_amb;
 //
 // class DewPointTemperatureDerivativeCheck_amb

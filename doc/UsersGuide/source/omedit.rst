@@ -713,8 +713,6 @@ Simulation Flags
 -  *Output Variables (Optional)* - outputs the variables a, b and c at
    the end of the simulation to the standard output.
 
--  *Profiling* - creates a profiling HTML file.
-
 -  *CPU Time* - dumps the cpu-time into the result file.
 
 -  *Enable All Warnings* - outputs all warnings.
@@ -1656,6 +1654,8 @@ Simulation Options
     -  *Enable old frontend for code generation*
 
     -  *Enable FMU Import* - See :ref:`fmi-import`.
+
+    -  *Profiling* - creates a profiling HTML file.
 
     -  *Additional Translation Flags* - sets the translation flags see :ref:`omcflags-options`
 

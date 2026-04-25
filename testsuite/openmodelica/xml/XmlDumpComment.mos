@@ -1166,7 +1166,7 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // </quantity>
 // <unit string=\"&quot;rad/s2&quot;\">
 // </unit>
-// <initialValue string=\"body.z_0_start[3]\">
+// <initialValue string=\"body.R_start.T[3,1] * body.z_0_start[1] + body.R_start.T[3,2] * body.z_0_start[2] + body.R_start.T[3,3] * body.z_0_start[3]\">
 // </initialValue>
 // <fixed string=\"false\">
 // </fixed>
@@ -1186,7 +1186,7 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // </quantity>
 // <unit string=\"&quot;rad/s2&quot;\">
 // </unit>
-// <initialValue string=\"body.z_0_start[2]\">
+// <initialValue string=\"body.R_start.T[2,1] * body.z_0_start[1] + body.R_start.T[2,2] * body.z_0_start[2] + body.R_start.T[2,3] * body.z_0_start[3]\">
 // </initialValue>
 // <fixed string=\"false\">
 // </fixed>
@@ -1206,7 +1206,7 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // </quantity>
 // <unit string=\"&quot;rad/s2&quot;\">
 // </unit>
-// <initialValue string=\"body.z_0_start[1]\">
+// <initialValue string=\"body.R_start.T[1,1] * body.z_0_start[1] + body.R_start.T[1,2] * body.z_0_start[2] + body.R_start.T[1,3] * body.z_0_start[3]\">
 // </initialValue>
 // <fixed string=\"false\">
 // </fixed>
@@ -1229,7 +1229,7 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // <stateSelect>
 // Avoid
 // </stateSelect>
-// <initialValue string=\"body.w_0_start[3]\">
+// <initialValue string=\"body.R_start.T[3,1] * body.w_0_start[1] + body.R_start.T[3,2] * body.w_0_start[2] + body.R_start.T[3,3] * body.w_0_start[3]\">
 // </initialValue>
 // <fixed string=\"false\">
 // </fixed>
@@ -1252,7 +1252,7 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // <stateSelect>
 // Avoid
 // </stateSelect>
-// <initialValue string=\"body.w_0_start[2]\">
+// <initialValue string=\"body.R_start.T[2,1] * body.w_0_start[1] + body.R_start.T[2,2] * body.w_0_start[2] + body.R_start.T[2,3] * body.w_0_start[3]\">
 // </initialValue>
 // <fixed string=\"false\">
 // </fixed>
@@ -1275,7 +1275,7 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // <stateSelect>
 // Avoid
 // </stateSelect>
-// <initialValue string=\"body.w_0_start[1]\">
+// <initialValue string=\"body.R_start.T[1,1] * body.w_0_start[1] + body.R_start.T[1,2] * body.w_0_start[2] + body.R_start.T[1,3] * body.w_0_start[3]\">
 // </initialValue>
 // <fixed string=\"false\">
 // </fixed>
@@ -13152,7 +13152,7 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // </attributesValues>
 // </variable>
 // <variable id=\"583\" name=\"body.R_start.T[1,1]\" variability=\"parameter\" direction=\"none\" type=\"Real\" fixed=\"true\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Transformation matrix from world frame to local frame\">
-// <bindExpression string=\"1.0\">
+// <bindExpression string=\"cos(body.angles_start[3]) * cos(body.angles_start[2])\">
 // </bindExpression>
 // <classesNames>
 // <element>
@@ -13167,7 +13167,7 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // </classesNames>
 // </variable>
 // <variable id=\"584\" name=\"body.R_start.T[1,2]\" variability=\"parameter\" direction=\"none\" type=\"Real\" fixed=\"true\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Transformation matrix from world frame to local frame\">
-// <bindExpression string=\"0.0\">
+// <bindExpression string=\"sin(body.angles_start[3]) * cos(body.angles_start[1]) + cos(body.angles_start[3]) * sin(body.angles_start[2]) * sin(body.angles_start[1])\">
 // </bindExpression>
 // <classesNames>
 // <element>
@@ -13182,7 +13182,7 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // </classesNames>
 // </variable>
 // <variable id=\"585\" name=\"body.R_start.T[1,3]\" variability=\"parameter\" direction=\"none\" type=\"Real\" fixed=\"true\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Transformation matrix from world frame to local frame\">
-// <bindExpression string=\"0.0\">
+// <bindExpression string=\"sin(body.angles_start[3]) * sin(body.angles_start[1]) - cos(body.angles_start[3]) * sin(body.angles_start[2]) * cos(body.angles_start[1])\">
 // </bindExpression>
 // <classesNames>
 // <element>
@@ -13197,7 +13197,7 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // </classesNames>
 // </variable>
 // <variable id=\"586\" name=\"body.R_start.T[2,1]\" variability=\"parameter\" direction=\"none\" type=\"Real\" fixed=\"true\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Transformation matrix from world frame to local frame\">
-// <bindExpression string=\"0.0\">
+// <bindExpression string=\"(-sin(body.angles_start[3])) * cos(body.angles_start[2])\">
 // </bindExpression>
 // <classesNames>
 // <element>
@@ -13212,7 +13212,7 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // </classesNames>
 // </variable>
 // <variable id=\"587\" name=\"body.R_start.T[2,2]\" variability=\"parameter\" direction=\"none\" type=\"Real\" fixed=\"true\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Transformation matrix from world frame to local frame\">
-// <bindExpression string=\"1.0\">
+// <bindExpression string=\"cos(body.angles_start[3]) * cos(body.angles_start[1]) - sin(body.angles_start[3]) * sin(body.angles_start[2]) * sin(body.angles_start[1])\">
 // </bindExpression>
 // <classesNames>
 // <element>
@@ -13227,7 +13227,7 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // </classesNames>
 // </variable>
 // <variable id=\"588\" name=\"body.R_start.T[2,3]\" variability=\"parameter\" direction=\"none\" type=\"Real\" fixed=\"true\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Transformation matrix from world frame to local frame\">
-// <bindExpression string=\"0.0\">
+// <bindExpression string=\"cos(body.angles_start[3]) * sin(body.angles_start[1]) + sin(body.angles_start[3]) * sin(body.angles_start[2]) * cos(body.angles_start[1])\">
 // </bindExpression>
 // <classesNames>
 // <element>
@@ -13242,7 +13242,7 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // </classesNames>
 // </variable>
 // <variable id=\"589\" name=\"body.R_start.T[3,1]\" variability=\"parameter\" direction=\"none\" type=\"Real\" fixed=\"true\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Transformation matrix from world frame to local frame\">
-// <bindExpression string=\"0.0\">
+// <bindExpression string=\"sin(body.angles_start[2])\">
 // </bindExpression>
 // <classesNames>
 // <element>
@@ -13257,7 +13257,7 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // </classesNames>
 // </variable>
 // <variable id=\"590\" name=\"body.R_start.T[3,2]\" variability=\"parameter\" direction=\"none\" type=\"Real\" fixed=\"true\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Transformation matrix from world frame to local frame\">
-// <bindExpression string=\"0.0\">
+// <bindExpression string=\"(-cos(body.angles_start[2])) * sin(body.angles_start[1])\">
 // </bindExpression>
 // <classesNames>
 // <element>
@@ -13272,7 +13272,7 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // </classesNames>
 // </variable>
 // <variable id=\"591\" name=\"body.R_start.T[3,3]\" variability=\"parameter\" direction=\"none\" type=\"Real\" fixed=\"true\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Transformation matrix from world frame to local frame\">
-// <bindExpression string=\"1.0\">
+// <bindExpression string=\"cos(body.angles_start[2]) * cos(body.angles_start[1])\">
 // </bindExpression>
 // <classesNames>
 // <element>
@@ -13350,7 +13350,7 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // </attributesValues>
 // </variable>
 // <variable id=\"595\" name=\"body.z_a_start[1]\" variability=\"parameter\" direction=\"none\" type=\"Real\" fixed=\"true\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Initial values of angular acceleration z_a = der(w_a), i.e., time derivative of angular velocity resolved in frame_a\">
-// <bindExpression string=\"{body.z_0_start[1], body.z_0_start[2], body.z_0_start[3]}\">
+// <bindExpression string=\"{body.R_start.T[1,1] * body.z_0_start[1] + body.R_start.T[1,2] * body.z_0_start[2] + body.R_start.T[1,3] * body.z_0_start[3], body.R_start.T[2,1] * body.z_0_start[1] + body.R_start.T[2,2] * body.z_0_start[2] + body.R_start.T[2,3] * body.z_0_start[3], body.R_start.T[3,1] * body.z_0_start[1] + body.R_start.T[3,2] * body.z_0_start[2] + body.R_start.T[3,3] * body.z_0_start[3]}\">
 // </bindExpression>
 // <classesNames>
 // <element>
@@ -13368,7 +13368,7 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // </attributesValues>
 // </variable>
 // <variable id=\"596\" name=\"body.z_a_start[2]\" variability=\"parameter\" direction=\"none\" type=\"Real\" fixed=\"true\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Initial values of angular acceleration z_a = der(w_a), i.e., time derivative of angular velocity resolved in frame_a\">
-// <bindExpression string=\"{body.z_0_start[1], body.z_0_start[2], body.z_0_start[3]}\">
+// <bindExpression string=\"{body.R_start.T[1,1] * body.z_0_start[1] + body.R_start.T[1,2] * body.z_0_start[2] + body.R_start.T[1,3] * body.z_0_start[3], body.R_start.T[2,1] * body.z_0_start[1] + body.R_start.T[2,2] * body.z_0_start[2] + body.R_start.T[2,3] * body.z_0_start[3], body.R_start.T[3,1] * body.z_0_start[1] + body.R_start.T[3,2] * body.z_0_start[2] + body.R_start.T[3,3] * body.z_0_start[3]}\">
 // </bindExpression>
 // <classesNames>
 // <element>
@@ -13386,7 +13386,7 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // </attributesValues>
 // </variable>
 // <variable id=\"597\" name=\"body.z_a_start[3]\" variability=\"parameter\" direction=\"none\" type=\"Real\" fixed=\"true\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Initial values of angular acceleration z_a = der(w_a), i.e., time derivative of angular velocity resolved in frame_a\">
-// <bindExpression string=\"{body.z_0_start[1], body.z_0_start[2], body.z_0_start[3]}\">
+// <bindExpression string=\"{body.R_start.T[1,1] * body.z_0_start[1] + body.R_start.T[1,2] * body.z_0_start[2] + body.R_start.T[1,3] * body.z_0_start[3], body.R_start.T[2,1] * body.z_0_start[1] + body.R_start.T[2,2] * body.z_0_start[2] + body.R_start.T[2,3] * body.z_0_start[3], body.R_start.T[3,1] * body.z_0_start[1] + body.R_start.T[3,2] * body.z_0_start[2] + body.R_start.T[3,3] * body.z_0_start[3]}\">
 // </bindExpression>
 // <classesNames>
 // <element>
@@ -13404,7 +13404,7 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // </attributesValues>
 // </variable>
 // <variable id=\"598\" name=\"body.Q_start[1]\" variability=\"parameter\" direction=\"none\" type=\"Real\" fixed=\"true\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Quaternion orientation object from world frame to frame_a at initial time\">
-// <bindExpression string=\"{0.0, 0.0, 0.0, 1.0}\">
+// <bindExpression string=\"Modelica.Mechanics.MultiBody.Frames.Quaternions.from_T(body.R_start.T, {0.0, 0.0, 0.0, 1.0})\">
 // </bindExpression>
 // <classesNames>
 // <element>
@@ -13416,7 +13416,7 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // </classesNames>
 // </variable>
 // <variable id=\"599\" name=\"body.Q_start[2]\" variability=\"parameter\" direction=\"none\" type=\"Real\" fixed=\"true\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Quaternion orientation object from world frame to frame_a at initial time\">
-// <bindExpression string=\"{0.0, 0.0, 0.0, 1.0}\">
+// <bindExpression string=\"Modelica.Mechanics.MultiBody.Frames.Quaternions.from_T(body.R_start.T, {0.0, 0.0, 0.0, 1.0})\">
 // </bindExpression>
 // <classesNames>
 // <element>
@@ -13428,7 +13428,7 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // </classesNames>
 // </variable>
 // <variable id=\"600\" name=\"body.Q_start[3]\" variability=\"parameter\" direction=\"none\" type=\"Real\" fixed=\"true\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Quaternion orientation object from world frame to frame_a at initial time\">
-// <bindExpression string=\"{0.0, 0.0, 0.0, 1.0}\">
+// <bindExpression string=\"Modelica.Mechanics.MultiBody.Frames.Quaternions.from_T(body.R_start.T, {0.0, 0.0, 0.0, 1.0})\">
 // </bindExpression>
 // <classesNames>
 // <element>
@@ -13440,7 +13440,7 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // </classesNames>
 // </variable>
 // <variable id=\"601\" name=\"body.Q_start[4]\" variability=\"parameter\" direction=\"none\" type=\"Real\" fixed=\"true\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Quaternion orientation object from world frame to frame_a at initial time\">
-// <bindExpression string=\"{0.0, 0.0, 0.0, 1.0}\">
+// <bindExpression string=\"Modelica.Mechanics.MultiBody.Frames.Quaternions.from_T(body.R_start.T, {0.0, 0.0, 0.0, 1.0})\">
 // </bindExpression>
 // <classesNames>
 // <element>

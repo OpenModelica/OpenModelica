@@ -115,22 +115,21 @@ protected:
   void run() {}
 };
 
+class LineEdit;
 class TreeSearchFilters : public QWidget
 {
   Q_OBJECT
 public:
   TreeSearchFilters(QWidget *pParent = 0);
-  QLineEdit* getFilterTextBox() {return mpFilterTextBox;}
+  LineEdit* getFilterTextBox() {return mpFilterTextBox;}
   QTimer* getFilterTimer() {return mpFilterTimer;}
   QToolButton* getScrollToActiveButton() {return mpScrollToActiveButton;}
   QToolButton* getExpandAllButton() {return mpExpandAllButton;}
   QToolButton* getCollapseAllButton() {return mpCollapseAllButton;}
   QComboBox* getSyntaxComboBox() {return mpSyntaxComboBox;}
   QCheckBox* getCaseSensitiveCheckBox() {return mpCaseSensitiveCheckBox;}
-
-  bool eventFilter(QObject *pObject, QEvent *pEvent);
 private:
-  QLineEdit *mpFilterTextBox;
+  LineEdit *mpFilterTextBox;
   QTimer *mpFilterTimer;
   QToolButton *mpScrollToActiveButton;
   QToolButton *mpExpandAllButton;
@@ -185,6 +184,16 @@ private:
   QString elidedText() const;
 protected:
   virtual void resizeEvent(QResizeEvent *event) override;
+};
+
+class LineEdit : public QLineEdit
+{
+  Q_OBJECT
+public:
+  LineEdit(QWidget *parent = 0);
+protected:
+  // QWidget interface
+  virtual void keyPressEvent(QKeyEvent *event) override;
 };
 
 /* ticket:10458 ticket:13591
@@ -527,6 +536,14 @@ namespace Utilities {
   void setToolTip(QComboBox *pComboBox, const QString &description, const QStringList &optionsDescriptions);
   bool isMultiline(const QString &text);
   QMap<QString, QLocale> supportedLanguages();
+  void buildVariableNodeTree(VariableNode *pRootNode,
+                             const QString &prefix,
+                             const QString &fullVariableName,
+                             const QStringList &parts,
+                             std::function<QVector<QVariant>(const QString &fullName,
+                                                             const QString &displayName,
+                                                             bool isMainArray)> makeData,
+                             std::function<void(VariableNode*)> postCreate = nullptr);
 } // namespace Utilities
 
 #endif // UTILITIES_H

@@ -1,33 +1,38 @@
 /*
-* This file is part of OpenModelica.
-*
-* Copyright (c) 1998-2020, Open Source Modelica Consortium (OSMC),
-* c/o Linköpings universitet, Department of Computer and Information Science,
-* SE-58183 Linköping, Sweden.
-*
-* All rights reserved.
-*
-* THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 LICENSE OR
-* THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.2.
-* ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
-* RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GPL VERSION 3,
-* ACCORDING TO RECIPIENTS CHOICE.
-*
-* The OpenModelica software and the Open Source Modelica
-* Consortium (OSMC) Public License (OSMC-PL) are obtained
-* from OSMC, either from the above address,
-* from the URLs: http://www.ida.liu.se/projects/OpenModelica or
-* http://www.openmodelica.org, and in the OpenModelica distribution.
-* GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
-*
-* This program is distributed WITHOUT ANY WARRANTY; without
-* even the implied warranty of  MERCHANTABILITY or FITNESS
-* FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
-* IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
-*
-* See the full OSMC Public License conditions for more details.
-*
-*/
+ * This file is part of OpenModelica.
+ *
+ * Copyright (c) 1998-2026, Open Source Modelica Consortium (OSMC),
+ * c/o Linköpings universitet, Department of Computer and Information Science,
+ * SE-58183 Linköping, Sweden.
+ *
+ * All rights reserved.
+ *
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF AGPL VERSION 3 LICENSE OR
+ * THIS OSMC PUBLIC LICENSE (OSMC-PL) VERSION 1.8.
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES
+ * RECIPIENT'S ACCEPTANCE OF THE OSMC PUBLIC LICENSE OR THE GNU AGPL
+ * VERSION 3, ACCORDING TO RECIPIENTS CHOICE.
+ *
+ * The OpenModelica software and the OSMC (Open Source Modelica Consortium)
+ * Public License (OSMC-PL) are obtained from OSMC, either from the above
+ * address, from the URLs:
+ * http://www.openmodelica.org or
+ * https://github.com/OpenModelica/ or
+ * http://www.ida.liu.se/projects/OpenModelica,
+ * and in the OpenModelica distribution.
+ *
+ * GNU AGPL version 3 is obtained from:
+ * https://www.gnu.org/licenses/licenses.html#GPL
+ *
+ * This program is distributed WITHOUT ANY WARRANTY; without
+ * even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS OF OSMC-PL.
+ *
+ * See the full OSMC Public License conditions for more details.
+ *
+ */
+
 encapsulated package NBInitialization
 "file:        NBInitialization.mo
  package:     NBInitialization
@@ -111,11 +116,11 @@ public
             EquationPointers.map(initialEqs, function collectAlgorithmOutputs(outputs = algorithm_outputs));
 
             // create the equations from fixed variables.
-            (variables, equations, initialEqs) := createStartEquations(varData.states, variables, equations, initialEqs, eqData.uniqueIndex, algorithm_outputs, "State");
-            (variables, equations, initialEqs) := createStartEquations(varData.algebraics, variables, equations, initialEqs, eqData.uniqueIndex, algorithm_outputs, "Algebraic");
-            (variables, equations, initialEqs) := createStartEquations(varData.discretes, variables, equations, initialEqs, eqData.uniqueIndex, algorithm_outputs, "Discrete");
-            (variables, equations, initialEqs) := createStartEquations(varData.discrete_states, variables, equations, initialEqs, eqData.uniqueIndex, algorithm_outputs, "Discrete State");
-            (variables, equations, initialEqs) := createStartEquations(varData.clocked_states, variables, equations, initialEqs, eqData.uniqueIndex, algorithm_outputs, "Clocked State");
+            (variables, initialVars, equations, initialEqs) := createStartEquations(varData.states, variables, initialVars, equations, initialEqs, eqData.uniqueIndex, algorithm_outputs, "State");
+            (variables, initialVars, equations, initialEqs) := createStartEquations(varData.algebraics, variables, initialVars, equations, initialEqs, eqData.uniqueIndex, algorithm_outputs, "Algebraic");
+            (variables, initialVars, equations, initialEqs) := createStartEquations(varData.discretes, variables, initialVars, equations, initialEqs, eqData.uniqueIndex, algorithm_outputs, "Discrete");
+            (variables, initialVars, equations, initialEqs) := createStartEquations(varData.discrete_states, variables, initialVars, equations, initialEqs, eqData.uniqueIndex, algorithm_outputs, "Discrete State");
+            (variables, initialVars, equations, initialEqs) := createStartEquations(varData.clocked_states, variables, initialVars, equations, initialEqs, eqData.uniqueIndex, algorithm_outputs, "Clocked State");
             (equations, initialEqs, initialVars) := createParameterEquations(varData.parameters, equations, initialEqs, initialVars, new_iters, eqData.uniqueIndex, " ");
             (equations, initialEqs, initialVars) := createParameterEquations(varData.records, equations, initialEqs, initialVars, new_iters, eqData.uniqueIndex, " Record ");
             (equations, initialEqs, initialVars) := createParameterEquations(varData.external_objects, equations, initialEqs, initialVars, new_iters, eqData.uniqueIndex, " External Object ");
@@ -169,9 +174,10 @@ public
   end main;
 
   function createStartEquations
-    "Creates start equations from fixed start values."
+    "Creates start equations from (fixed) start values."
     input VariablePointers states;
     input output VariablePointers variables;
+    input output VariablePointers initialVars;
     input output EquationPointers equations;
     input output EquationPointers initialEqs;
     input Pointer<Integer> idx;
@@ -179,15 +185,15 @@ public
     input String str "only for debugging dump";
   protected
     Pointer<list<Pointer<Variable>>> ptr_start_vars = Pointer.create({});
+    Pointer<list<Pointer<Variable>>> ptr_start_vars_init = Pointer.create({});
     Pointer<list<Pointer<Equation>>> ptr_start_eqs = Pointer.create({});
-    list<Pointer<Variable>> start_vars;
     list<Pointer<Equation>> start_eqs;
   algorithm
-    _ := VariablePointers.mapPtr(states, function createStartEquation(ptr_start_vars = ptr_start_vars, ptr_start_eqs = ptr_start_eqs, idx = idx, algorithm_outputs = algorithm_outputs));
-    start_vars := Pointer.access(ptr_start_vars);
+    _ := VariablePointers.mapPtr(states, function createStartEquation(ptr_start_vars = ptr_start_vars, ptr_start_vars_init = ptr_start_vars_init, ptr_start_eqs = ptr_start_eqs, idx = idx, algorithm_outputs = algorithm_outputs));
     start_eqs := Pointer.access(ptr_start_eqs);
 
-    variables := BVariable.VariablePointers.addList(start_vars, variables);
+    variables := BVariable.VariablePointers.addList(Pointer.access(ptr_start_vars), variables);
+    initialVars := BVariable.VariablePointers.addList(Pointer.access(ptr_start_vars_init), initialVars);
     equations := EquationPointers.addList(start_eqs, equations);
     initialEqs := EquationPointers.addList(start_eqs, initialEqs);
 
@@ -200,8 +206,9 @@ public
   function createStartEquation
     "creates a start equation for a fixed variable."
     input Pointer<Variable> var;
-    input Pointer<list<Pointer<Variable>>> ptr_start_vars;
-    input Pointer<list<Pointer<Equation>>> ptr_start_eqs;
+    input Pointer<list<Pointer<Variable>>> ptr_start_vars       "new start vars that are just initialized by the init xml";
+    input Pointer<list<Pointer<Variable>>> ptr_start_vars_init  "new start vars that are unknowns in the system";
+    input Pointer<list<Pointer<Equation>>> ptr_start_eqs        "new start equations";
     input Pointer<Integer> idx;
     input UnorderedSet<ComponentRef> algorithm_outputs;
   algorithm
@@ -214,12 +221,16 @@ public
           EquationKind kind;
           Expression start_exp;
 
-        // if it is an array create for equation
-        case Variable.VARIABLE() guard BVariable.isFixed(var) and BVariable.isArray(var) algorithm
-          createStartEquationSlice(Slice.SLICE(var, {}), ptr_start_vars, ptr_start_eqs, idx);
+        // if it is an array create for-equation (fixed or unfixed)
+        case Variable.VARIABLE() guard BVariable.isArray(var) algorithm
+          if BVariable.isFixed(var) then
+            createStartEquationSlice(Slice.SLICE(var, {}), ptr_start_vars, ptr_start_eqs, idx, BVariable.isFixed(var));
+          else
+            createStartEquationSlice(Slice.SLICE(var, {}), ptr_start_vars_init, ptr_start_eqs, idx, BVariable.isFixed(var));
+          end if;
         then ();
 
-        // create scalar equation
+        // create fixed scalar equation
         case Variable.VARIABLE() guard BVariable.isFixed(var) algorithm
           name := BVariable.getVarName(var);
           start_exp := match BVariable.getStartAttribute(var)
@@ -238,6 +249,26 @@ public
           kind := if BVariable.isContinuous(var, true) then EquationKind.CONTINUOUS else EquationKind.DISCRETE;
           start_eq := Equation.makeAssignment(Expression.fromCref(name), start_exp, idx, NBEquation.START_STR, Iterator.EMPTY(), EquationAttributes.default(kind, true));
           Pointer.update(ptr_start_eqs, start_eq :: Pointer.access(ptr_start_eqs));
+        then ();
+
+        // create unfixed scalar start equation
+        case Variable.VARIABLE() algorithm
+          _ := match BVariable.getStartAttribute(var)
+            local
+              Expression e;
+            // only create if there is a start attribute that is not literal
+            case SOME(e) guard not Expression.isLiteralXML(e) algorithm
+              (_, _, start_var, start_name) := createStartVar(var, BVariable.getVarName(var), {});
+              // make the new start equation
+              kind := if BVariable.isContinuous(var, true) then EquationKind.CONTINUOUS else EquationKind.DISCRETE;
+              start_eq := Equation.makeAssignment(Expression.fromCref(start_name), e, idx, NBEquation.START_STR, Iterator.EMPTY(), EquationAttributes.default(kind, true));
+              Pointer.update(ptr_start_eqs, start_eq :: Pointer.access(ptr_start_eqs));
+              // add the new variable to initial unknowns
+              Pointer.update(ptr_start_vars_init, start_var :: Pointer.access(ptr_start_vars_init));
+            then ();
+
+            else ();
+          end match;
         then ();
 
         else ();
@@ -319,19 +350,37 @@ public
     if BVariable.isPrevious(var_ptr) and Util.isSome(var_pre) then
       // for previous change the rhs to the start value of the discrete state
       merged_name := BVariable.getVarName(Util.getOption(var_pre));
-      merged_name := ComponentRef.mergeSubscripts(subscripts, merged_name, true, true);
+      merged_name := ComponentRef.mergeSubscripts(subscripts, merged_name, true, true, true);
     elseif Util.isSome(var_pre) then
       // for vars with previous change the lhs cref to the $PRE cref
-      merged_name := ComponentRef.mergeSubscripts(subscripts, name, true, true);
+      merged_name := ComponentRef.mergeSubscripts(subscripts, name, true, true, true);
       var_ptr := Util.getOption(var_pre);
       name := BVariable.getVarName(var_ptr);
-      name := ComponentRef.mergeSubscripts(subscripts, name, true, true);
+      name := ComponentRef.mergeSubscripts(subscripts, name, true, true, true);
     else
       // just apply subscripts and make start var
-      name := ComponentRef.mergeSubscripts(subscripts, name, true, true);
+      name := ComponentRef.mergeSubscripts(subscripts, name, true, true, true);
       merged_name := name;
     end if;
     (start_name, start_var) := BVariable.makeStartVar(merged_name);
+
+    // set the record parent if neccessary
+    start_var := match BVariable.getParent(var_ptr)
+      local
+        Pointer<Variable> parent, start_parent;
+      case SOME(parent) algorithm
+        start_parent := match BVariable.getVarStart(parent)
+          case SOME(start_parent) then start_parent;
+          else algorithm
+            (_, _, start_parent, _) := createStartVar(parent, BVariable.getVarName(parent), {});
+          then start_parent;
+        end match;
+        // create the parent <-> child link
+        BVariable.addRecordChild(start_parent, start_var);
+        start_var := BVariable.setParent(start_var, start_parent);
+      then start_var;
+      else start_var;
+    end match;
   end createStartVar;
 
   function createParameterEquations
@@ -422,79 +471,132 @@ public
     "creates a start equation for a sliced variable.
     usually results in a for equation, but might be scalarized if that is not possible."
     input Slice<VariablePointer> var_slice;
-    input Pointer<list<Pointer<Variable>>> ptr_start_vars;
-    input Pointer<list<Pointer<Equation>>> ptr_start_eqs;
+    input Pointer<list<Pointer<Variable>>> ptr_start_vars "either the new start vars initialized by init xml or intial unkowns depending on fixed=true or false";
+    input Pointer<list<Pointer<Equation>>> ptr_start_eqs  "new start equations";
     input Pointer<Integer> idx;
+    input Boolean fixed;
   protected
-    Expression start_exp;
+    Expression start_exp, start_var_exp, e;
     Pointer<Variable> var_ptr, start_var;
     ComponentRef name, start_name;
-    Pointer<Equation> start_eq;
+    Option<Pointer<Equation>> start_eq = NONE();
     EquationKind kind;
     Iterator iterator;
     list<Pointer<Equation>> sliced_eqn;
   algorithm
     var_ptr := Slice.getT(var_slice);
     name    := BVariable.getVarName(var_ptr);
-    start_exp := match BVariable.getStartAttribute(var_ptr)
+    kind := if BVariable.isContinuous(var_ptr, true) then EquationKind.CONTINUOUS else EquationKind.DISCRETE;
+
+    if fixed then
+      start_exp := match BVariable.getStartAttribute(var_ptr)
+        // create from start expression if its not a literal
+        case SOME(e) guard not Expression.isLiteralXML(e) algorithm
+          (start_exp, var_ptr, name, _, _, iterator) := createStartExpressionSlice(e, var_slice, var_ptr, name);
+        then start_exp;
+
+        // create a start variable if it is a literal
+        else algorithm
+          (start_var_exp, var_ptr, name, iterator) := createStartVariableSlice(var_slice, var_ptr, name, ptr_start_vars);
+        then start_var_exp;
+      end match;
+
+      // make the new start equation
+      start_eq := SOME(Equation.makeAssignment(Expression.fromCref(name, true), start_exp, idx, NBEquation.START_STR, iterator, EquationAttributes.default(kind, true)));
+    else
+      start_eq := match BVariable.getStartAttribute(var_ptr)
+        // create from start expression only if its not literal
+        case SOME(e) guard not Expression.isLiteralXML(e) algorithm
+          (start_exp, var_ptr, _, start_var, name, iterator) := createStartExpressionSlice(e, var_slice, var_ptr, name);
+          start_eq := SOME(Equation.makeAssignment(Expression.fromCref(name, true), start_exp, idx, NBEquation.START_STR, iterator, EquationAttributes.default(kind, true)));
+          Pointer.update(ptr_start_vars, start_var :: Pointer.access(ptr_start_vars));
+        then start_eq;
+
+        // exit the function, no start equation is created
+        else NONE();
+      end match;
+    end if;
+
+    if Util.isSome(start_eq) then
+      // empty list indicates full array, slice otherwise
+      if not listEmpty(var_slice.indices) then
+        (sliced_eqn, _) := Equation.slice(Util.getOption(start_eq), var_slice.indices);
+        Pointer.update(ptr_start_eqs, listAppend(Pointer.access(ptr_start_eqs), sliced_eqn));
+      else
+        Pointer.update(ptr_start_eqs, Util.getOption(start_eq) :: Pointer.access(ptr_start_eqs));
+      end if;
+    end if;
+  end createStartEquationSlice;
+
+  function createStartExpressionSlice
+    input Expression exp;
+    input Slice<VariablePointer> var_slice;
+    output Expression start_exp;
+    input output Pointer<Variable> var_ptr;
+    input output ComponentRef name;
+    output Pointer<Variable> start_var;
+    output ComponentRef start_cref;
+    output Iterator iterator;
+  algorithm
+    (start_exp, iterator) := match exp
       local
-        Expression e;
         Call array_constructor;
-        list<Subscript> subscripts;
         list<tuple<ComponentRef, Expression, Option<Iterator>>> frames;
         UnorderedMap<ComponentRef, Expression> replacements;
         InstNode old_iter;
         ComponentRef new_iter;
+        list<Subscript> subscripts;
 
-      // convert array constructor to for-equation if elements are not a literal
-      case SOME(Expression.CALL(call = array_constructor as Call.TYPED_ARRAY_CONSTRUCTOR(exp = e))) guard not Expression.isLiteralXML(e) algorithm
-        (var_ptr, name, _, _, _, frames, iterator) := createIteratedStartCref(var_ptr, name);
+      // convert array constructor to for-equation
+      case Expression.CALL(call = array_constructor as Call.TYPED_ARRAY_CONSTRUCTOR()) algorithm
+        (var_ptr, name, start_var, start_cref, _, frames, iterator) := createIteratedStartCref(var_ptr, name, listLength(array_constructor.iters));
         replacements := UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual);
         for tpl in List.zip(array_constructor.iters, frames) loop
           ((old_iter, _), (new_iter, _, _)) := tpl;
           UnorderedMap.add(ComponentRef.fromNode(old_iter, InstNode.getType(old_iter)), Expression.fromCref(new_iter), replacements);
         end for;
-      then Expression.map(array_constructor.exp, function Replacements.applySimpleExp(replacements = replacements));
+      then (Expression.map(array_constructor.exp, function Replacements.applySimpleExp(replacements = replacements)), iterator);
 
-      // use the start attribute itself if it is not a literal
-      case SOME(e) guard not Expression.isLiteralXML(e) algorithm
-        if Slice.isFull(var_slice) then
-          (var_ptr, name, _, _) := createStartVar(var_ptr, name, {});
-          iterator := Iterator.EMPTY();
-        else
-          (var_ptr, name, _, _, subscripts, _, iterator) := createIteratedStartCref(var_ptr, name);
-          e := Expression.applySubscripts(subscripts, e, true);
-        end if;
-      then e;
-
-      // create a start variable if it is a literal
+      // use the start attribute itself
       else algorithm
         if Slice.isFull(var_slice) then
-          (var_ptr, name, start_var, start_name) := createStartVar(var_ptr, name, {});
-          Pointer.update(ptr_start_vars, start_var :: Pointer.access(ptr_start_vars));
+          (var_ptr, name, start_var, start_cref) := createStartVar(var_ptr, name, {});
           iterator := Iterator.EMPTY();
+          start_exp := exp;
         else
-          (var_ptr, name, start_var, start_name, subscripts, _, iterator) := createIteratedStartCref(var_ptr, name);
-          Pointer.update(ptr_start_vars, start_var :: Pointer.access(ptr_start_vars));
+          (var_ptr, name, start_var, start_cref, subscripts, _, iterator) := createIteratedStartCref(var_ptr, name, 0);
+          start_exp := Expression.applySubscripts(subscripts, exp, true);
         end if;
-      then Expression.fromCref(start_name);
+      then (start_exp, iterator);
     end match;
+  end createStartExpressionSlice;
 
-    // make the new start equation
-    kind := if BVariable.isContinuous(var_ptr, true) then EquationKind.CONTINUOUS else EquationKind.DISCRETE;
-    start_eq := Equation.makeAssignment(Expression.fromCref(name, true), start_exp, idx, NBEquation.START_STR, iterator, EquationAttributes.default(kind, true));
-    if not listEmpty(var_slice.indices) then
-      // empty list indicates full array, slice otherwise
-      (sliced_eqn, _) := Equation.slice(start_eq, var_slice.indices);
-      Pointer.update(ptr_start_eqs, listAppend(Pointer.access(ptr_start_eqs), sliced_eqn));
+  function createStartVariableSlice
+    input Slice<VariablePointer> var_slice;
+    output Expression start_exp;
+    input output Pointer<Variable> var_ptr;
+    input output ComponentRef name;
+    input Pointer<list<Pointer<Variable>>> ptr_start_vars;
+    output Iterator iterator;
+  protected
+    Pointer<Variable> start_var;
+    ComponentRef start_name;
+    list<Subscript> subscripts;
+  algorithm
+    if Slice.isFull(var_slice) then
+      (var_ptr, name, start_var, start_name) := createStartVar(var_ptr, name, {});
+      iterator := Iterator.EMPTY();
     else
-      Pointer.update(ptr_start_eqs, start_eq :: Pointer.access(ptr_start_eqs));
+      (var_ptr, name, start_var, start_name, subscripts, _, iterator) := createIteratedStartCref(var_ptr, name, 0);
     end if;
-  end createStartEquationSlice;
+    Pointer.update(ptr_start_vars, start_var :: Pointer.access(ptr_start_vars));
+    start_exp := Expression.fromCref(start_name);
+  end createStartVariableSlice;
 
   protected function createIteratedStartCref
     input output Pointer<Variable> var_ptr;
     input output ComponentRef name;
+    input Integer num_dim;
     output Pointer<Variable> start_var;
     output ComponentRef start_cref;
     output list<Subscript> subscripts;
@@ -508,6 +610,7 @@ public
   algorithm
     // make unique iterators for the new for-loop
     dims        := Type.arrayDims(ComponentRef.getSubscriptedType(name));
+    dims        := if num_dim == 0 then dims else List.firstN(dims, num_dim);
     (iterators, ranges, subscripts) := Flatten.makeIterators(name, dims);
     iter_crefs  := list(ComponentRef.makeIterator(iter, Type.INTEGER()) for iter in iterators);
     iter_crefs  := list(BackendDAE.lowerIteratorCref(iter) for iter in iter_crefs);
@@ -594,36 +697,41 @@ public
   algorithm
     bdae := match bdae
       case BackendDAE.MAIN() algorithm
-
-        // initial() -> false
-        bdae.ode        := list(Partition.mapEqn(par, function cleanupInitialCall(init = false)) for par in bdae.ode);
-        bdae.algebraic  := list(Partition.mapEqn(par, function cleanupInitialCall(init = false)) for par in bdae.algebraic);
-        bdae.ode_event  := list(Partition.mapEqn(par, function cleanupInitialCall(init = false)) for par in bdae.ode_event);
-        bdae.alg_event  := list(Partition.mapEqn(par, function cleanupInitialCall(init = false)) for par in bdae.alg_event);
+        // initial() -> false, initialSimplified() -> false
+        bdae.ode        := list(Partition.mapEqn(par, function cleanupInitialCall(init = false, init0 = false)) for par in bdae.ode);
+        bdae.algebraic  := list(Partition.mapEqn(par, function cleanupInitialCall(init = false, init0 = false)) for par in bdae.algebraic);
+        bdae.ode_event  := list(Partition.mapEqn(par, function cleanupInitialCall(init = false, init0 = false)) for par in bdae.ode_event);
+        bdae.alg_event  := list(Partition.mapEqn(par, function cleanupInitialCall(init = false, init0 = false)) for par in bdae.alg_event);
         if Util.isSome(bdae.dae) then
-          bdae.dae := SOME(list(Partition.mapEqn(par, function cleanupInitialCall(init = false)) for par in Util.getOption(bdae.dae)));
+          bdae.dae := SOME(list(Partition.mapEqn(par, function cleanupInitialCall(init = false, init0 = false)) for par in Util.getOption(bdae.dae)));
         end if;
-        // initial() -> true
-        bdae.init := list(Partition.mapEqn(par, function cleanupInitialCall(init = true)) for par in bdae.init);
-
         // homotopy(actual, simplified) -> actual
-        bdae.ode        := list(Partition.mapExp(par, function cleanupHomotopy(init0 = false, hasHom = hasHom)) for par in bdae.ode);
-        bdae.algebraic  := list(Partition.mapExp(par, function cleanupHomotopy(init0 = false, hasHom = hasHom)) for par in bdae.algebraic);
-        bdae.ode_event  := list(Partition.mapExp(par, function cleanupHomotopy(init0 = false, hasHom = hasHom)) for par in bdae.ode_event);
-        bdae.alg_event  := list(Partition.mapExp(par, function cleanupHomotopy(init0 = false, hasHom = hasHom)) for par in bdae.alg_event);
+        bdae.ode        := list(Partition.mapExp(par, function cleanupHomotopy(init0 = false)) for par in bdae.ode);
+        bdae.algebraic  := list(Partition.mapExp(par, function cleanupHomotopy(init0 = false)) for par in bdae.algebraic);
+        bdae.ode_event  := list(Partition.mapExp(par, function cleanupHomotopy(init0 = false)) for par in bdae.ode_event);
+        bdae.alg_event  := list(Partition.mapExp(par, function cleanupHomotopy(init0 = false)) for par in bdae.alg_event);
         if Util.isSome(bdae.dae) then
-          bdae.dae := SOME(list(Partition.mapExp(par, function cleanupHomotopy(init0 = false, hasHom = hasHom)) for par in Util.getOption(bdae.dae)));
+          bdae.dae := SOME(list(Partition.mapExp(par, function cleanupHomotopy(init0 = false)) for par in Util.getOption(bdae.dae)));
         end if;
+
+        // check if we have init lambda0 system
+        bdae.init := list(Partition.mapExp(par, function containsLambda0(b = hasHom)) for par in bdae.init);
 
         // create init_0 if homotopy call exists.
         if Pointer.access(hasHom) then
-          init_0 := list(Partition.clone(par, false) for par in bdae.init);
+          init_0 := list(Partition.setKind(Partition.clone(par, false), NBPartition.Kind.INI_0) for par in bdae.init);
 
+          // initial() -> true, initialSimplified() -> true
+          init_0 := list(Partition.mapEqn(par, function cleanupInitialCall(init = true, init0 = true)) for par in init_0);
           // homotopy(actual, simplified) -> simplified
-          init_0 := list(Partition.mapExp(par, function cleanupHomotopy(init0 = true, hasHom = hasHom)) for par in init_0);
+          init_0 := list(Partition.mapExp(par, function cleanupHomotopy(init0 = true)) for par in init_0);
 
           bdae.init_0 := SOME(init_0);
         end if;
+
+        // initial() -> true, initialSimplified() -> false
+        bdae.init := list(Partition.mapEqn(par, function cleanupInitialCall(init = true, init0 = false)) for par in bdae.init);
+
       then bdae;
 
       else bdae;
@@ -633,21 +741,26 @@ public
   function cleanupInitialCall
     input output Equation eq;
     input Boolean init;
+    input Boolean init0;
   protected
     Pointer<Boolean> simplify = Pointer.create(false);
 
     function cleanupInitialCallExp
       input output Expression exp;
       input Boolean init;
+      input Boolean init0;
       input Pointer<Boolean> simplify "output, determines if when-equation should be simplified";
     algorithm
       if Expression.isCallNamed(exp, "initial") then
         exp := Expression.BOOLEAN(init);
         Pointer.update(simplify, true);
+      elseif Flags.isConfigFlagSet(Flags.ALLOW_NON_STANDARD_MODELICA, "initialSimplified") and Expression.isCallNamed(exp, "initialSimplified") then
+        exp := Expression.BOOLEAN(init0);
+        Pointer.update(simplify, true);
       end if;
     end cleanupInitialCallExp;
   algorithm
-    eq := Equation.map(eq, function cleanupInitialCallExp(init = init, simplify = simplify));
+    eq := Equation.map(eq, function cleanupInitialCallExp(init = init, init0 = init0, simplify = simplify));
     if Pointer.access(simplify) then
       eq := Equation.simplify(eq);
     end if;
@@ -656,27 +769,38 @@ public
   function cleanupHomotopy
     input output Expression exp;
     input Boolean init0 "if init0 then replace with simplified, else replace with actual";
-    input Pointer<Boolean> hasHom   "output, determines if partition contains homotopy()";
   algorithm
-    if Expression.isCallNamed(exp, "homotopy") then
-      Pointer.update(hasHom, true);
-      exp := match exp
-        case Expression.CALL()
+    exp := match exp
+      case Expression.CALL() guard Call.isNamed(exp.call, "homotopy")
         then listGet(Call.arguments(exp.call), if init0 then 2 else 1);
-
-        else exp;
-      end match;
-    end if;
+      else exp;
+    end match;
   end cleanupHomotopy;
 
   function containsHomotopyCall
     input output Expression exp;
     input Pointer<Boolean> b;
   algorithm
-    if not Pointer.access(b) then
-      Pointer.update(b, Expression.isCallNamed(exp, "homotopy"));
+    if not Pointer.access(b) and Expression.isCallNamed(exp, "homotopy") then
+      Pointer.update(b, true);
     end if;
   end containsHomotopyCall;
+
+  function containsLambda0
+    input output Expression exp;
+    input Pointer<Boolean> b;
+  algorithm
+    if not Pointer.access(b) and (
+        Expression.isCallNamed(exp, "homotopy") or
+        (
+          Flags.isConfigFlagSet(Flags.ALLOW_NON_STANDARD_MODELICA, "initialSimplified") and
+          Expression.isCallNamed(exp, "initialSimplified")
+        )
+      )
+    then
+      Pointer.update(b, true);
+    end if;
+  end containsLambda0;
 
   function removeWhenEquation
     "this function checks if an equation has to be removed before initialization.
