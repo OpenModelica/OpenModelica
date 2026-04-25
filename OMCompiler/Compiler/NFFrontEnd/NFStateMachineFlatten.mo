@@ -642,9 +642,7 @@ algorithm
     else
       // Delayed: c[i] = if initial() then false else pre(cImmediate[i])
       // initial() guard prevents event-iteration cycling during initialization
-      makeIfExp(makeInitialCall(), Expression.BOOLEAN(false),
-        makePreviousCall(makeCrefExp(listGet(cImmediateRefs, i), Type.BOOLEAN()), Type.BOOLEAN()),
-        Type.BOOLEAN());
+      makePreviousCall(makeCrefExp(listGet(cImmediateRefs, i), Type.BOOLEAN()), Type.BOOLEAN());
     eqs := makeEq(makeCrefExp(listGet(cRefs, i), Type.BOOLEAN()), rhs, Type.BOOLEAN()) :: eqs;
   end for;
 
@@ -821,8 +819,7 @@ algorithm
     // reset = initial() or pre(init)  -- initial() guard prevents event-iteration cycling
     peqs := makeEq(
       makeCrefExp(resetRef, Type.BOOLEAN()),
-      Expression.LBINARY(makeInitialCall(), Operator.makeOr(Type.BOOLEAN()), makePreviousCall(makeCrefExp(initRef, Type.BOOLEAN()), Type.BOOLEAN())),
-      Type.BOOLEAN()) :: peqs;
+      makePreviousCall(makeCrefExp(initRef, Type.BOOLEAN()), Type.BOOLEAN()), Type.BOOLEAN()) :: peqs;
     // active = true (toplevel SM always active)
     peqs := makeEq(makeCrefExp(activeRef, Type.BOOLEAN()), Expression.BOOLEAN(true), Type.BOOLEAN()) :: peqs;
   else
@@ -1049,9 +1046,7 @@ algorithm
   ticksVar := makeVarWithStart(ticksRef, Type.INTEGER(), Variability.DISCRETE, Expression.INTEGER(0));
   ticksExp := makeCrefExp(ticksRef, Type.INTEGER());
   // $ticksInState = if initial() or not active then 0 else pre($ticksInState) + 1
-  // initial() guard prevents event-iteration cycling during initialization
-  expCond := Expression.LBINARY(makeInitialCall(), Operator.makeOr(Type.BOOLEAN()),
-    Expression.LUNARY(Operator.makeNot(Type.BOOLEAN()), makeCrefExp(stateActiveRef, Type.BOOLEAN())));
+  expCond := Expression.LUNARY(Operator.makeNot(Type.BOOLEAN()), makeCrefExp(stateActiveRef, Type.BOOLEAN()));
   expThen := Expression.INTEGER(0);
   expElse := Expression.BINARY(
     makePreviousCall(ticksExp, Type.INTEGER()),
