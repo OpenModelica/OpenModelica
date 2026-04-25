@@ -432,9 +432,24 @@ constant Function NO_EVENT = Function.FUNCTION(Path.IDENT("noEvent"),
     Type.UNKNOWN(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, {}, {}, listArray({}),
     Pointer.createImmutable(FunctionStatus.BUILTIN), Pointer.createImmutable(0));
 
+constant Function INITIAL = Function.FUNCTION(Path.IDENT("initial"),
+  InstNode.EMPTY_NODE(), {}, {}, {}, NONE(), {},
+    Type.BOOLEAN(), DAE.FUNCTION_ATTRIBUTES_BUILTIN_IMPURE, {}, {}, listArray({}),
+    Pointer.createImmutable(FunctionStatus.BUILTIN), Pointer.createImmutable(0));
+
 constant Function PRE = Function.FUNCTION(Path.IDENT("pre"),
   InstNode.EMPTY_NODE(), {}, {}, {}, NONE(), {},
     Type.UNKNOWN(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, {}, {}, listArray({}),
+    Pointer.createImmutable(FunctionStatus.BUILTIN), Pointer.createImmutable(0));
+
+constant Function PREVIOUS = Function.FUNCTION(Path.IDENT("previous"),
+  InstNode.EMPTY_NODE(), {}, {}, {}, NONE(), {},
+    Type.UNKNOWN(), DAE.FUNCTION_ATTRIBUTES_BUILTIN_IMPURE, {}, {}, listArray({}),
+    Pointer.createImmutable(FunctionStatus.BUILTIN), Pointer.createImmutable(0));
+
+constant Function MAX_INT_ARR = Function.FUNCTION(Path.IDENT("max"),
+  InstNode.EMPTY_NODE(), {INT_PARAM}, {INT_PARAM}, {}, NONE(), {},
+    Type.INTEGER(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, {}, {}, listArray({}),
     Pointer.createImmutable(FunctionStatus.BUILTIN), Pointer.createImmutable(0));
 
 constant Function SUM = Function.FUNCTION(Path.IDENT("sum"),
@@ -450,6 +465,11 @@ constant Function FMU_LOAD_RESOURCE = Function.FUNCTION(Path.IDENT("OpenModelica
 constant Function SAMPLE = Function.FUNCTION(Path.QUALIFIED("OMC_NO_CLOCK", Path.IDENT("sample")),
   InstNode.EMPTY_NODE(), {REAL_PARAM, REAL_PARAM}, {REAL_PARAM}, {}, NONE(), {},
     Type.BOOLEAN(), DAE.FUNCTION_ATTRIBUTES_BUILTIN_IMPURE, {}, {}, listArray({}),
+    Pointer.createImmutable(FunctionStatus.BUILTIN), Pointer.createImmutable(0));
+
+constant Function SAMPLE_CLOCKED = Function.FUNCTION(Path.IDENT("sample"),
+  InstNode.EMPTY_NODE(), {REAL_PARAM, CLOCK_PARAM}, {REAL_PARAM}, {}, NONE(), {},
+    Type.REAL(), DAE.FUNCTION_ATTRIBUTES_BUILTIN_IMPURE, {}, {}, listArray({}),
     Pointer.createImmutable(FunctionStatus.BUILTIN), Pointer.createImmutable(0));
 
 constant Function TRANSPOSE = Function.FUNCTION(Path.IDENT("transpose"),

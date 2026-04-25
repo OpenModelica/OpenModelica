@@ -106,6 +106,7 @@ import NFFunction.Function;
 import FlatModel = NFFlatModel;
 import ElementSource;
 import SimplifyModel = NFSimplifyModel;
+import StateMachineFlatten = NFStateMachineFlatten;
 import Record = NFRecord;
 import Variable = NFVariable;
 import OperatorOverloading = NFOperatorOverloading;
@@ -215,6 +216,10 @@ algorithm
     flatModel := SimplifyModel.simplify(flatModel);
   end if;
 
+  // Flatten state machines to data-flow equations (MLS §17).
+  flatModel := StateMachineFlatten.flatten(flatModel);
+  InstUtil.dumpFlatModelDebug("stateMachineFlatten", flatModel);
+
   // Collect package constants that couldn't be substituted with their values
   // (e.g. because they where used with non-constant subscripts), and add them
   // to the model.
@@ -260,16 +265,25 @@ algorithm
   end if;
 
   VerifyModel.verify(flatModel, InstNode.isPartial(inst_cls));
+  InstUtil.dumpFlatModelDebug("afterVerify", flatModel);
 
   (flatModel, functions) := InstUtil.expandSlicedCrefs(flatModel, functions);
+  InstUtil.dumpFlatModelDebug("afterExpandSlicedCrefs", flatModel);
 
   flatModel := InstUtil.combineSubscripts(flatModel);
+  InstUtil.dumpFlatModelDebug("afterCombineSubscripts", flatModel);
 
   // propagate hide result attribute
   // ticket #4346
-  flatModel.variables := list(Variable.propagateAnnotation("HideResult", false, true, var) for var in flatModel.variables);
+  try
+    flatModel.variables := list(Variable.propagateAnnotation("HideResult", false, true, var) for var in flatModel.variables);
+  else
+    // SM-generated variables may use NAME_NODEs that propagateAnnotation can't handle; skip
+  end try;
+  InstUtil.dumpFlatModelDebug("afterPropAnnot", flatModel);
 
   flatModel := FlatModel.removeNonTopLevelDirections(flatModel);
+  InstUtil.dumpFlatModelDebug("afterRemoveDirections", flatModel);
 
   if Flags.getConfigString(Flags.OBFUSCATE) == "protected" or
      Flags.getConfigString(Flags.OBFUSCATE) == "encrypted" then

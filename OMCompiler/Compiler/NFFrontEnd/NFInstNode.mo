@@ -1168,6 +1168,7 @@ uniontype InstNode
       case VAR_NODE() algorithm
         var := Pointer.access(node.varPointer);
       then var.ty;
+      case NAME_NODE()      then Type.UNKNOWN();
     end match;
   end getType;
 
