@@ -1729,12 +1729,20 @@ end makeMaxIntArrCall;
 
 protected
 function makeSampleTimeCall
-  "Create sample(time, Clock()) for time-related SM equations."
+  "Create sample(time, Clock()) with an inferred clock for time-related SM equations.
+   The sample() call is needed so the backend detects a clocked partition."
   output Expression result;
+protected
+  Expression timeExp, clockExp;
+  Type ty;
 algorithm
-  // Approximation: just use 'time' directly (sample semantics handled by backend)
-  result := Expression.CREF(Type.REAL(),
-    ComponentRef.prefixCref(InstNode.NAME_NODE("time"), Type.REAL(), {}, ComponentRef.EMPTY()));
+  ty := Type.REAL();
+  timeExp := Expression.CREF(ty,
+    ComponentRef.prefixCref(InstNode.NAME_NODE("time"), ty, {}, ComponentRef.EMPTY()));
+  clockExp := Expression.CLKCONST(Expression.ClockKind.INFERRED_CLOCK());
+  result := Expression.CALL(Call.makeTypedCall(
+    NFBuiltinFuncs.SAMPLE_CLOCKED, {timeExp, clockExp},
+    Variability.CONTINUOUS, Purity.IMPURE, ty));
 end makeSampleTimeCall;
 
 protected

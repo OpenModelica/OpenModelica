@@ -467,6 +467,11 @@ constant Function SAMPLE = Function.FUNCTION(Path.QUALIFIED("OMC_NO_CLOCK", Path
     Type.BOOLEAN(), DAE.FUNCTION_ATTRIBUTES_BUILTIN_IMPURE, {}, {}, listArray({}),
     Pointer.createImmutable(FunctionStatus.BUILTIN), Pointer.createImmutable(0));
 
+constant Function SAMPLE_CLOCKED = Function.FUNCTION(Path.IDENT("sample"),
+  InstNode.EMPTY_NODE(), {REAL_PARAM, CLOCK_PARAM}, {REAL_PARAM}, {}, NONE(), {},
+    Type.REAL(), DAE.FUNCTION_ATTRIBUTES_BUILTIN_IMPURE, {}, {}, listArray({}),
+    Pointer.createImmutable(FunctionStatus.BUILTIN), Pointer.createImmutable(0));
+
 constant Function TRANSPOSE = Function.FUNCTION(Path.IDENT("transpose"),
   InstNode.EMPTY_NODE(), {}, {}, {}, NONE(), {},
     Type.UNKNOWN(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, {}, {}, listArray({}),
