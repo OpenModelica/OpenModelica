@@ -6159,7 +6159,13 @@ template equations_call(list<SimEqSystem> eqs, String modelNamePrefix, Context c
       case "" then
         <<
         for (int id = 0; id < <%nFuncs%>; id++) {
+          #if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+          MemPoolState mem_pool_state = omc_util_get_pool_state();
+          #endif /* #if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME) */
           eqFunctions[id](<%args%>);
+          #if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+          omc_util_restore_pool_state(mem_pool_state);
+          #endif /* #if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME) */
         }
         >>
       else
@@ -6167,11 +6173,23 @@ template equations_call(list<SimEqSystem> eqs, String modelNamePrefix, Context c
         if (<%selection%>) {
           for (int i = 0; i < <%selection%>->n; i++) {
             int id = <%selection%>->idx[i];
+            #if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+            MemPoolState mem_pool_state = omc_util_get_pool_state();
+            #endif /* #if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME) */
             eqFunctions[id](<%args%>);
+            #if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+            omc_util_restore_pool_state(mem_pool_state);
+            #endif /* #if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME) */
           }
         } else {
           for (int id = 0; id < <%nFuncs%>; id++) {
+            #if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+            MemPoolState mem_pool_state = omc_util_get_pool_state();
+            #endif /* #if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME) */
             eqFunctions[id](<%args%>);
+            #if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)
+            omc_util_restore_pool_state(mem_pool_state);
+            #endif /* #if defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME) */
           }
         }
         >>
