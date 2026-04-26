@@ -305,6 +305,8 @@ function flatSmToDataFlow
 protected
   list<Equation> transitionEqs, initialStateEqs, stateEqs;
   FlatSmSemantics sem, semWithProp, semFinal;
+  ComponentRef parentPrefix;
+  list<String> varCrefStrings;
 algorithm
   // Extract transition and initialState equations for this SM group
   transitionEqs := List.filterOnTrue(allEquations,
@@ -321,6 +323,16 @@ algorithm
   // Elaborate ticksInState/timeInState operators
   semFinal := elabXInStateOps(semWithProp, enclosingStateCrefOpt);
 
+  // Fix inner/outer variable references in transition conditions.
+  // NF resolves 'inner outer y' to the outermost scope variable, but nested SM
+  // transition conditions need the intermediate-scope version (e.g., 'a.y' not 'y').
+  parentPrefix := ComponentRef.rest(listHead(stateCrefs));
+  if not ComponentRef.isEmpty(parentPrefix) then
+    varCrefStrings := list(ComponentRef.toString(v.name) for v in allVariables);
+    semFinal.eqs := List.map(semFinal.eqs,
+      function Equation.mapExp(func = function qualifyOuterVarExpr(parentPrefix = parentPrefix, varCrefStrings = varCrefStrings)));
+  end if;
+
   // Accumulate SMS variables and equations
   accVars := List.flatten({accVars, semFinal.vars, semFinal.knowns, semFinal.pvars});
   accEqs := List.flatten({accEqs, semFinal.eqs, semFinal.peqs});
@@ -330,6 +342,39 @@ algorithm
     (accEqs, accVars) := smCompToDataFlow(stateCref, semFinal, allEquations, allVariables, accEqs, accVars, outerVarMap);
   end for;
 end flatSmToDataFlow;
+
+protected
+function qualifyOuterVarExpr
+  "Applied via Equation.mapExp: recursively qualifies bare crefs in an expression."
+  input output Expression e;
+  input ComponentRef parentPrefix;
+  input list<String> varCrefStrings;
+algorithm
+  e := Expression.map(e, function qualifyOuterVarCref(parentPrefix = parentPrefix, varCrefStrings = varCrefStrings));
+end qualifyOuterVarExpr;
+
+protected
+function qualifyOuterVarCref
+  "Replace a bare cref 'v' with 'parentPrefix.v' if 'parentPrefix.v' is a flat model variable.
+   Fixes NF inner/outer resolution in transition conditions of nested state machines."
+  input output Expression e;
+  input ComponentRef parentPrefix;
+  input list<String> varCrefStrings;
+protected
+  ComponentRef qualCref;
+algorithm
+  () := match e
+    case Expression.CREF()
+      guard ComponentRef.isSimple(e.cref)
+      algorithm
+        qualCref := ComponentRef.append(e.cref, parentPrefix);
+        if listMember(ComponentRef.toString(qualCref), varCrefStrings) then
+          e := Expression.CREF(e.ty, qualCref);
+        end if;
+      then ();
+    else ();
+  end match;
+end qualifyOuterVarCref;
 
 // ============================================================
 // State machine component to data-flow
@@ -375,7 +420,61 @@ algorithm
 
   accEqs := listAppend(listReverse(transformedEqs), accEqs);
   accVars := listAppend(listReverse(extraVars), accVars);
+
+  // For hierarchical states: add outerVarMap entries for inner-outer variables.
+  // E.g., state 'a' with 'inner outer output y' → a.y exists in flat model.
+  // The inner SM merge already gives 'a.y = ...'; we need 'y = if a.active then a.y else previous(y)'.
+  addHierarchicalPassThroughs(stateCref, sem, allVariables, outerVarMap);
 end smCompToDataFlow;
+
+protected
+function addHierarchicalPassThroughs
+  "For a hierarchical state s (one that has inner state machines), generate
+   outerVarMap entries for inner-outer variables: s.v → (s.active, s.v).
+   This causes generateMergeEquation to emit: v = if s.active then s.v else previous(v).
+   Only adds entries when v is a top-level flat variable and not already in outerVarMap."
+  input ComponentRef stateCref;
+  input FlatSmSemantics sem;
+  input list<Variable> allVariables;
+  input UnorderedMap<ComponentRef, list<tuple<ComponentRef, ComponentRef>>> outerVarMap;
+protected
+  String stateStr, leafName;
+  ComponentRef activeRef, topVarCref;
+  Variable topVar;
+algorithm
+  stateStr := ComponentRef.toString(stateCref);
+  activeRef := qCref("active", Type.BOOLEAN(), {}, stateCref);
+
+  for v in allVariables loop
+    // Check if v is a direct child of stateCref (rest(v.name) == stateCref)
+    if not ComponentRef.isSimple(v.name) and
+       stringEqual(ComponentRef.toString(ComponentRef.rest(v.name)), stateStr) then
+      leafName := ComponentRef.firstName(v.name);
+      // Find the top-level (bare) variable with the same leaf name
+      try
+        topVar := List.find(allVariables,
+          function isSimpleVarNamed(name = leafName));
+        topVarCref := topVar.name;
+        // Only add if not already in outerVarMap (direct outer-output already added it)
+        if not UnorderedMap.contains(topVarCref, outerVarMap) then
+          UnorderedMap.add(topVarCref, {(activeRef, v.name)}, outerVarMap);
+        end if;
+      else
+        // No top-level variable found — not an inner-outer variable, skip
+      end try;
+    end if;
+  end for;
+end addHierarchicalPassThroughs;
+
+protected
+function isSimpleVarNamed
+  "True if the variable has a bare cref (no prefix) with the given leaf name."
+  input Variable v;
+  input String name;
+  output Boolean res;
+algorithm
+  res := ComponentRef.isSimple(v.name) and stringEqual(ComponentRef.firstName(v.name), name);
+end isSimpleVarNamed;
 
 // ============================================================
 // addStateActivationAndReset
@@ -1465,26 +1564,18 @@ end isInitialStateForGroup;
 protected
 function isEquationOfState
   "True if the equation belongs to state component stateCref.
-   Checks either LHS cref prefix (for state1.x = ...) or the equation's scope
-   (for outer-output equations where the LHS is already the outer variable)."
+   Uses the equation's instantiation scope to avoid ambiguity:
+   an equation 'a.y = ...' with scope='c' belongs to state 'a.c' (inner SM),
+   not to state 'a' (outer SM), even though 'a.y' has 'a' as a prefix."
   input Equation eq;
   input ComponentRef stateCref;
   output Boolean res = false;
 protected
-  ComponentRef lhsCref;
   InstNode eqScope;
   String stateName;
 algorithm
   stateName := ComponentRef.firstName(stateCref);
   () := match eq
-    case Equation.EQUALITY(lhs = Expression.CREF(cref = lhsCref), scope = eqScope)
-      algorithm
-        // Either LHS has the state prefix (state1.x = rhs)
-        // or the equation's instantiation scope is named after this state
-        // (outer output x in state1 flattens to x = rhs but scope = state1 node)
-        res := crefHasPrefix(stateCref, lhsCref) or
-               stringEqual(InstNode.name(eqScope), stateName);
-      then ();
     case Equation.EQUALITY(scope = eqScope)
       algorithm
         res := stringEqual(InstNode.name(eqScope), stateName);
