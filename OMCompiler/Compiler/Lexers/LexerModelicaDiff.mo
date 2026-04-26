@@ -38,7 +38,7 @@ protected
   String contents;
 algorithm
   contents := System.readFile(fileName);
-  (tokens, errorTokens) := lex(fileName,contents);
+  (tokens, errorTokens) := lex(fileName,System.stringReplace(contents, "\r", ""));
 end scan;
 
 function scanString "Scan starts the lexical analysis, load the tables and consume the program to output the tokens"
@@ -47,7 +47,7 @@ function scanString "Scan starts the lexical analysis, load the tables and consu
   output list<Token> tokens "return list of tokens";
   output list<Token> errorTokens;
 algorithm
-  (tokens, errorTokens) := lex(fileName,fileSource);
+  (tokens, errorTokens) := lex(fileName,System.stringReplace(fileSource, "\r", ""));
 end scanString;
 
 
@@ -671,6 +671,8 @@ uniontype Token
 end Token;
 
 constant Token noToken = TOKEN("<NoFile>",TokenId._NO_TOKEN,"",0,0,0,0,0,0);
+constant Token newlineToken = TOKEN("<NoFile>", TokenId.NEWLINE, "\n", 1, 1, 1, 1, 1, 1);
+constant Token newlineTokenFake = TOKEN("<FAKE_EOF>", TokenId.NEWLINE, "\n", 1, 1, 1, 1, 1, 1);
 
 function printToken
   input Token token;
@@ -702,9 +704,8 @@ protected
   String contents1,contents2;
   Integer offset1,length1,offset2,length2;
 algorithm
-  TOKEN(fileContents=contents1,byteOffset=offset1,length=length1) := token1;
-  TOKEN(fileContents=contents2,byteOffset=offset2,length=length2) := token2;
-  // We do not need to know in which order to sort. If lengths differ, the tokens differ
+  TOKEN(fileContents=contents1, byteOffset=offset1, length=length1) := token1;
+  TOKEN(fileContents=contents2, byteOffset=offset2, length=length2) := token2;
   b := if length1 <> length2 then false else (0 == System.strcmp_offset(contents1, offset1, length1, contents2, offset2, length2));
 end tokenContentEq;
 
@@ -764,6 +765,11 @@ algorithm
      (tokens,numBacktrack,startSt,currSt,pos,sPos,ePos,linenr,lineNrStart,buffer,states,errorTokens) := consume(cTok,tokens,contents,startSt,currSt,pos,sPos,ePos,linenr,lineNrStart,buffer,states,fileName,errorTokens);
      i := i - numBacktrack + 1;
   end while;
+  // add newline at end of file if not already there, to ensure that the last line is properly terminated and tokenized.
+  tokens := match listHead(tokens)
+    case TOKEN(id = TokenId.NEWLINE) then tokens;
+    else newlineTokenFake :: tokens;
+  end match;
   tokens := listReverseInPlace(tokens);
   errorTokens := listReverseInPlace(errorTokens);
 end lex;
