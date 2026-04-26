@@ -117,8 +117,15 @@ protected
   list<Equation> smEqs, otherEqs, resultEqs;
   list<Variable> smVars, resultVars;
   list<ComponentRef> allStateCrefs;
-  // outerVarMap: outer var cref → list of (stateActiveRef, perStateVarRef) pairs
   UnorderedMap<ComponentRef, OuterVarList> outerVarMap;
+  // Hierarchy detection: map from stateCref → semantics of SM it belongs to
+  UnorderedMap<ComponentRef, FlatSmSemantics> stateToSem;
+  list<tuple<ComponentRef, list<ComponentRef>>> smGroupPairs, smGroupsSorted;
+  FlatSmSemantics sem;
+  ComponentRef initState, parentPrefix;
+  list<ComponentRef> stateCrefs;
+  Option<ComponentRef> enclosingStateCrefOpt;
+  Option<FlatSmSemantics> enclosingSmSemOpt;
 algorithm
   // Quick exit if no state machines present
   // initialState() lives in initialEquations; transition() in equations
@@ -147,17 +154,40 @@ algorithm
   outerVarMap := UnorderedMap.new<OuterVarList>(
     ComponentRef.hash, ComponentRef.isEqual);
 
+  // Sort SM groups by init state cref depth so outer SMs are processed first
+  smGroupPairs := List.zip(initStates, smGroups);
+  smGroupsSorted := List.sort(smGroupPairs, smGroupDepthLt);
+
+  // Map from state cref to SM semantics — used to find enclosing SM for nested SMs
+  stateToSem := UnorderedMap.new<FlatSmSemantics>(ComponentRef.hash, ComponentRef.isEqual);
+
   smVars := {};
   smEqs := {};
-  for i in 1:listLength(initStates) loop
-    (smEqs, smVars) := flatSmToDataFlow(
-      listGet(initStates, i),
-      listGet(smGroups, i),
+  for smPair in smGroupsSorted loop
+    (initState, stateCrefs) := smPair;
+    // Detect hierarchy: if initState has a parent prefix that is a state in another SM
+    parentPrefix := ComponentRef.rest(initState);
+    if ComponentRef.isEmpty(parentPrefix) then
+      enclosingStateCrefOpt := NONE();
+      enclosingSmSemOpt := NONE();
+    else
+      enclosingSmSemOpt := UnorderedMap.get(parentPrefix, stateToSem);
+      enclosingStateCrefOpt := if isSome(enclosingSmSemOpt) then SOME(parentPrefix) else NONE();
+    end if;
+
+    (smEqs, smVars, sem) := flatSmToDataFlow(
+      initState,
+      stateCrefs,
       flatModel.equations,
       flatModel.variables,
-      NONE(), NONE(),
+      enclosingStateCrefOpt, enclosingSmSemOpt,
       smEqs, smVars,
       outerVarMap);
+
+    // Register all states with their SM semantics for nested SM detection
+    for sc in stateCrefs loop
+      UnorderedMap.addUnique(sc, sem, stateToSem);
+    end for;
   end for;
 
   // Generate merge equations for outer variables written by state components
@@ -166,8 +196,8 @@ algorithm
     (smEqs, smVars) := generateMergeEquation(outerVarCref, outerVarMap, flatModel.variables, smEqs, smVars);
   end for;
 
-  // Substitute activeState(x) → x.active globally; SM eqs come after
-  resultEqs := listAppend(smEqs, list(subsActiveStateInEq(eq) for eq in otherEqs));
+  // Substitute activeState(x) → x.active in all equations (SM eqs may contain activeState() from model code)
+  resultEqs := listAppend(list(subsActiveStateInEq(eq) for eq in smEqs), list(subsActiveStateInEq(eq) for eq in otherEqs));
   resultVars := listAppend(smVars, flatModel.variables);
 
   flatModel.equations := resultEqs;
@@ -291,6 +321,20 @@ end statePriorityGt;
 // ============================================================
 
 protected
+function smGroupDepthLt
+  "Comparator for sorting SM groups by cref depth (outer SMs first)."
+  input tuple<ComponentRef, list<ComponentRef>> g1;
+  input tuple<ComponentRef, list<ComponentRef>> g2;
+  output Boolean lt;
+protected
+  ComponentRef c1, c2;
+algorithm
+  (c1, _) := g1;
+  (c2, _) := g2;
+  lt := ComponentRef.depth(c1) < ComponentRef.depth(c2);
+end smGroupDepthLt;
+
+protected
 function flatSmToDataFlow
   "Transform one flat state machine into data-flow equations and variables."
   input ComponentRef initStateCref;
@@ -302,6 +346,7 @@ function flatSmToDataFlow
   input output list<Equation> accEqs;
   input output list<Variable> accVars;
   input UnorderedMap<ComponentRef, list<tuple<ComponentRef, ComponentRef>>> outerVarMap;
+  output FlatSmSemantics outSem;
 protected
   list<Equation> transitionEqs, initialStateEqs, stateEqs;
   FlatSmSemantics sem, semWithProp, semFinal;
@@ -341,6 +386,8 @@ algorithm
   for stateCref in stateCrefs loop
     (accEqs, accVars) := smCompToDataFlow(stateCref, semFinal, allEquations, allVariables, accEqs, accVars, outerVarMap);
   end for;
+
+  outSem := semFinal;
 end flatSmToDataFlow;
 
 protected
@@ -503,8 +550,8 @@ algorithm
 
     case Equation.WHEN()
       algorithm
-        // Recursively transform equations in WHEN branches
-        accEqs := transformWhenBranches(inEq, stateCref, sem, crToStart, outerVarMap) :: accEqs;
+        // Recursively transform equations in WHEN branches; propagate generated vars
+        (accEqs, accVars) := transformWhenBranchesAndAccumulate(inEq, stateCref, sem, crToStart, outerVarMap, accEqs, accVars);
       then ();
 
     else
@@ -515,6 +562,77 @@ algorithm
 end addStateActivationAndReset;
 
 protected
+function transformWhenBranchesAndAccumulate
+  "Transforms WHEN equation equations belonging to a state.
+   For clocked when (Clock condition): extracts inner equations as plain equations
+   to match old StateMachineFlatten behavior (backend detects clocked partition via previous()).
+   For event when (Boolean condition): keeps WHEN wrapper."
+  input Equation whenEq;
+  input ComponentRef stateCref;
+  input FlatSmSemantics sem;
+  input UnorderedMap<ComponentRef, Expression> crToStart;
+  input UnorderedMap<ComponentRef, list<tuple<ComponentRef, ComponentRef>>> outerVarMap;
+  input output list<Equation> accEqs;
+  input output list<Variable> accVars;
+protected
+  list<Equation.Branch> branches;
+  Equation.Branch firstBranch;
+  Expression branchCond;
+  Equation outEq;
+  list<Variable> extraVars;
+  list<Equation> innerEqs;
+  list<Variable> innerVars;
+algorithm
+  Equation.WHEN(branches = branches) := whenEq;
+  firstBranch := listHead(branches);
+  Equation.Branch.BRANCH(condition = branchCond) := firstBranch;
+  if Type.isClock(Expression.typeOf(branchCond)) then
+    // Clocked when: extract inner equations as plain equations
+    (innerEqs, innerVars) := transformWhenInnerAsPlain(whenEq, stateCref, sem, crToStart, outerVarMap);
+    accEqs := listAppend(innerEqs, accEqs);
+    accVars := listAppend(innerVars, accVars);
+  else
+    // Event when: keep WHEN wrapper
+    (outEq, extraVars) := transformWhenBranches(whenEq, stateCref, sem, crToStart, outerVarMap);
+    accEqs := outEq :: accEqs;
+    accVars := listAppend(extraVars, accVars);
+  end if;
+end transformWhenBranchesAndAccumulate;
+
+protected
+function transformWhenInnerAsPlain
+  "For a clocked when equation, extract and transform inner equations as plain equations."
+  input Equation whenEq;
+  input ComponentRef stateCref;
+  input FlatSmSemantics sem;
+  input UnorderedMap<ComponentRef, Expression> crToStart;
+  input UnorderedMap<ComponentRef, list<tuple<ComponentRef, ComponentRef>>> outerVarMap;
+  output list<Equation> outEqs = {};
+  output list<Variable> outVars = {};
+protected
+  list<Equation.Branch> branches;
+  list<Equation> branchBody, transformedBody;
+  list<Variable> branchVars;
+algorithm
+  Equation.WHEN(branches = branches) := whenEq;
+  for branch in branches loop
+    () := match branch
+      case Equation.Branch.BRANCH(body = branchBody)
+        algorithm
+          transformedBody := {};
+          branchVars := {};
+          for eq in branchBody loop
+            (transformedBody, branchVars) := addStateActivationAndReset(eq, stateCref, sem, crToStart, transformedBody, branchVars, outerVarMap);
+          end for;
+          outEqs := listAppend(listReverse(transformedBody), outEqs);
+          outVars := listAppend(branchVars, outVars);
+        then ();
+      else ();
+    end match;
+  end for;
+end transformWhenInnerAsPlain;
+
+protected
 function transformWhenBranches
   input Equation whenEq;
   input ComponentRef stateCref;
@@ -522,10 +640,11 @@ function transformWhenBranches
   input UnorderedMap<ComponentRef, Expression> crToStart;
   input UnorderedMap<ComponentRef, list<tuple<ComponentRef, ComponentRef>>> outerVarMap;
   output Equation outEq;
+  output list<Variable> extraVars = {};
 protected
   list<Equation.Branch> branches, newBranches;
   list<Equation> transformedBody;
-  list<Variable> dummyVars;
+  list<Variable> branchVars;
   InstNode whenScope;
   DAE.ElementSource whenSource;
   Expression branchCond;
@@ -539,10 +658,11 @@ algorithm
       case Equation.Branch.BRANCH(condition = branchCond, conditionVar = branchCondVar, body = branchBody)
         algorithm
           transformedBody := {};
-          dummyVars := {};
+          branchVars := {};
           for eq in branchBody loop
-            (transformedBody, dummyVars) := addStateActivationAndReset(eq, stateCref, sem, crToStart, transformedBody, dummyVars, outerVarMap);
+            (transformedBody, branchVars) := addStateActivationAndReset(eq, stateCref, sem, crToStart, transformedBody, branchVars, outerVarMap);
           end for;
+          extraVars := listAppend(branchVars, extraVars);
         then Equation.Branch.BRANCH(branchCond, branchCondVar, listReverse(transformedBody));
       else branch;
     end match;
@@ -629,7 +749,7 @@ algorithm
         accVars := makeVar(
           ComponentRef.prefixCref(InstNode.NAME_NODE(ComponentRef.firstName(lhsCref) + "_previous"),
             lhsTy, {}, ComponentRef.rest(lhsCref)),
-          lhsTy, Variability.DISCRETE) :: accVars;
+          lhsTy, Variability.CONTINUOUS) :: accVars;
       else
         // Not a state variable: just wrap with activation condition
         accEqs := wrapInStateActivationConditional(eq1, stateCref, false) :: accEqs;
@@ -1623,6 +1743,10 @@ algorithm
       algorithm
         res := stringEqual(InstNode.name(eqScope), stateName);
       then ();
+    case Equation.WHEN(scope = eqScope)
+      algorithm
+        res := stringEqual(InstNode.name(eqScope), stateName);
+      then ();
     else ();
   end match;
 end isEquationOfState;
@@ -1650,6 +1774,16 @@ protected
 algorithm
   () := match eq
     case Equation.EQUALITY(scope = eqScope)
+      algorithm
+        scopeName := InstNode.name(eqScope);
+        for stateCref in stateCrefs loop
+          if stringEqual(scopeName, ComponentRef.firstName(stateCref)) then
+            res := true;
+            return;
+          end if;
+        end for;
+      then ();
+    case Equation.WHEN(scope = eqScope)
       algorithm
         scopeName := InstNode.name(eqScope);
         for stateCref in stateCrefs loop
