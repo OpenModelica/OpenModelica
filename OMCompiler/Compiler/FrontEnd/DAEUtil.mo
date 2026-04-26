@@ -6764,80 +6764,115 @@ public function optimizeMetaRecordFieldAssigns
   "Merges consecutive field-update statements on the same MetaModelica
    uniontype/metarecord variable into a single metarecord construction.
    For N consecutive updates the emitted C code drops from N pairs of
-   mmc_alloc_words+memcpy to a single mmc_mk_box call. See issue #11909."
+   mmc_alloc_words+memcpy to a single mmc_mk_box call. See issue #11909.
+
+   When a group is merged each rhs is first assigned to a fresh local temp
+   and the merged METARECORDCALL takes refs to those temps as arguments.
+   This pins evaluation order at the DAE level so the C codegen does not
+   leave it up to the C compiler's unspecified argument-evaluation order
+   (the inlined function-call args of mmc_mk_box would otherwise be
+   evaluated right-to-left under gcc and left-to-right under clang).
+   `tempVars` accumulates the DAE.VAR declarations the caller must lift
+   into the surrounding function's element list."
   input list<DAE.Statement> inStmts;
   output list<DAE.Statement> outStmts;
+  input output list<DAE.Element> tempVars;
+protected
+  DAE.Statement s2;
 algorithm
   // First recurse into compound statements, then merge contiguous runs.
-  outStmts := list(optMRFAInStmt(s) for s in inStmts);
-  outStmts := optMRFAMergeList(outStmts);
+  outStmts := {};
+  for s in inStmts loop
+    (s2, tempVars) := optMRFAInStmt(s, tempVars);
+    outStmts := s2 :: outStmts;
+  end for;
+  outStmts := listReverse(outStmts);
+  (outStmts, tempVars) := optMRFAMergeList(outStmts, tempVars);
 end optimizeMetaRecordFieldAssigns;
 
 protected function optMRFAInStmt
   "Recurses into compound statements so inner bodies are optimized too."
   input output DAE.Statement stmt;
+  input output list<DAE.Element> tempVars;
 algorithm
-  stmt := match stmt
+  (stmt, tempVars) := match stmt
     local
-      Option<DAE.Statement> oew;
       DAE.Statement ew;
+      list<DAE.Statement> stmts;
+      DAE.Else els;
 
     case DAE.STMT_IF()
       algorithm
-        stmt.statementLst := optimizeMetaRecordFieldAssigns(stmt.statementLst);
-        stmt.else_ := optMRFAInElse(stmt.else_);
-      then stmt;
+        (stmts, tempVars) := optimizeMetaRecordFieldAssigns(stmt.statementLst, tempVars);
+        stmt.statementLst := stmts;
+        (els, tempVars) := optMRFAInElse(stmt.else_, tempVars);
+        stmt.else_ := els;
+      then (stmt, tempVars);
 
     case DAE.STMT_FOR()
       algorithm
-        stmt.statementLst := optimizeMetaRecordFieldAssigns(stmt.statementLst);
-      then stmt;
+        (stmts, tempVars) := optimizeMetaRecordFieldAssigns(stmt.statementLst, tempVars);
+        stmt.statementLst := stmts;
+      then (stmt, tempVars);
 
     case DAE.STMT_PARFOR()
       algorithm
-        stmt.statementLst := optimizeMetaRecordFieldAssigns(stmt.statementLst);
-      then stmt;
+        (stmts, tempVars) := optimizeMetaRecordFieldAssigns(stmt.statementLst, tempVars);
+        stmt.statementLst := stmts;
+      then (stmt, tempVars);
 
     case DAE.STMT_WHILE()
       algorithm
-        stmt.statementLst := optimizeMetaRecordFieldAssigns(stmt.statementLst);
-      then stmt;
+        (stmts, tempVars) := optimizeMetaRecordFieldAssigns(stmt.statementLst, tempVars);
+        stmt.statementLst := stmts;
+      then (stmt, tempVars);
 
     case DAE.STMT_WHEN()
       algorithm
-        stmt.statementLst := optimizeMetaRecordFieldAssigns(stmt.statementLst);
-        oew := match stmt.elseWhen
-          case SOME(ew) then SOME(optMRFAInStmt(ew));
+        (stmts, tempVars) := optimizeMetaRecordFieldAssigns(stmt.statementLst, tempVars);
+        stmt.statementLst := stmts;
+        stmt.elseWhen := match stmt.elseWhen
+          case SOME(ew)
+            algorithm
+              (ew, tempVars) := optMRFAInStmt(ew, tempVars);
+            then SOME(ew);
           else NONE();
         end match;
-        stmt.elseWhen := oew;
-      then stmt;
+      then (stmt, tempVars);
 
     case DAE.STMT_FAILURE()
       algorithm
-        stmt.body := optimizeMetaRecordFieldAssigns(stmt.body);
-      then stmt;
+        (stmts, tempVars) := optimizeMetaRecordFieldAssigns(stmt.body, tempVars);
+        stmt.body := stmts;
+      then (stmt, tempVars);
 
-    else stmt;
+    else (stmt, tempVars);
   end match;
 end optMRFAInStmt;
 
 protected function optMRFAInElse
   input output DAE.Else els;
+  input output list<DAE.Element> tempVars;
 algorithm
-  els := match els
+  (els, tempVars) := match els
+    local
+      list<DAE.Statement> stmts;
+      DAE.Else nestedEls;
     case DAE.ELSEIF()
       algorithm
-        els.statementLst := optimizeMetaRecordFieldAssigns(els.statementLst);
-        els.else_ := optMRFAInElse(els.else_);
-      then els;
+        (stmts, tempVars) := optimizeMetaRecordFieldAssigns(els.statementLst, tempVars);
+        els.statementLst := stmts;
+        (nestedEls, tempVars) := optMRFAInElse(els.else_, tempVars);
+        els.else_ := nestedEls;
+      then (els, tempVars);
 
     case DAE.ELSE()
       algorithm
-        els.statementLst := optimizeMetaRecordFieldAssigns(els.statementLst);
-      then els;
+        (stmts, tempVars) := optimizeMetaRecordFieldAssigns(els.statementLst, tempVars);
+        els.statementLst := stmts;
+      then (els, tempVars);
 
-    else els;
+    else (els, tempVars);
   end match;
 end optMRFAInElse;
 
@@ -6851,6 +6886,7 @@ protected function optMRFAMergeList
    observe each other's writes, and emits a single merged statement per run."
   input list<DAE.Statement> inStmts;
   output list<DAE.Statement> outStmts = {};
+  input output list<DAE.Element> tempVars;
 protected
   list<DAE.Statement> rest = inStmts;
   DAE.Statement stmt;
@@ -6865,7 +6901,7 @@ algorithm
   while not listEmpty(rest) loop
     stmt :: rest := rest;
     m := optMRFAMatch(stmt);
-    (outStmts, rest) := match m
+    (outStmts, rest, tempVars) := match m
       case SOME((base, mrecTy, field, rhs))
         algorithm
           group := {(field, rhs, stmt)};
@@ -6878,10 +6914,10 @@ algorithm
               rest := listRest(rest);
             end if;
           end while;
-          outStmts := optMRFACommitGroup(listReverse(group), base, mrecTy, outStmts);
-        then (outStmts, rest);
+          (outStmts, tempVars) := optMRFACommitGroup(listReverse(group), base, mrecTy, outStmts, tempVars);
+        then (outStmts, rest, tempVars);
       else
-        (stmt :: outStmts, rest);
+        (stmt :: outStmts, rest, tempVars);
     end match;
   end while;
   outStmts := listReverse(outStmts);
@@ -6890,34 +6926,48 @@ end optMRFAMergeList;
 protected function optMRFACommitGroup
   "Emits either the original statement (group size 1) or the merged
    metarecord construction (group size >= 2), accumulating in reverse
-   order onto `acc`."
+   order onto `acc`. For a merged group also emits one STMT_ASSIGN per
+   updated field to a fresh local temp before the box statement, and
+   appends the temp's DAE.VAR declaration to tempVars."
   input list<MRFAUpdate> group;
   input DAE.Exp baseExp;
   input DAE.Type mrecTy;
   input list<DAE.Statement> acc;
   output list<DAE.Statement> outAcc;
+  input output list<DAE.Element> tempVars;
 protected
-  DAE.Statement original, merged;
-  String f;
-  DAE.Exp rhs;
+  DAE.Statement original;
+  list<DAE.Statement> mergedStmts;
 algorithm
-  outAcc := match group
-    case {(_, _, original)} then original :: acc;
+  (outAcc, tempVars) := match group
+    case {(_, _, original)} then (original :: acc, tempVars);
     else
       algorithm
-        merged := optMRFABuildMerged(group, baseExp, mrecTy);
-      then merged :: acc;
+        // optMRFABuildMerged returns a list of statements: first the
+        // temp assignments in source order, then the final box. Push
+        // them onto `acc` in order so reversing acc later yields source
+        // order.
+        (mergedStmts, tempVars) := optMRFABuildMerged(group, baseExp, mrecTy, tempVars);
+      then (List.append_reverse(mergedStmts, acc), tempVars);
   end match;
 end optMRFACommitGroup;
 
 protected function optMRFABuildMerged
-  "Builds a single STMT_ASSIGN whose rhs is a METARECORDCALL that sets all
-   fields at once. Updated fields use the group's rhs; unchanged fields are
-   read from the original record via RSUB expressions."
+  "Builds the statements that replace a merged group of N field-update
+   statements: N STMT_ASSIGN to fresh local temps (one per updated
+   field, in source order) followed by one STMT_ASSIGN whose rhs is a
+   METARECORDCALL that builds the record from the temps and from RSUB
+   reads of the unchanged fields. The temp assignments fix the
+   evaluation order at the DAE level; the C codegen would otherwise
+   inline the rhses directly into mmc_mk_box arguments and leave the
+   order to the C compiler. Appends the temp DAE.VAR declarations to
+   tempVars; the caller lifts these into the surrounding function's
+   element list."
   input list<MRFAUpdate> group;
   input DAE.Exp baseExp;
   input DAE.Type mrecTy;
-  output DAE.Statement outStmt;
+  output list<DAE.Statement> outStmts;
+  input output list<DAE.Element> tempVars;
 protected
   Absyn.Path path;
   Integer index;
@@ -6926,20 +6976,46 @@ protected
   list<DAE.Exp> args = {};
   list<String> fieldNames = {};
   DAE.Var fv;
-  String fname;
-  DAE.Type fty;
+  String fname, gname, tname;
+  DAE.Type fty, gty;
+  DAE.Exp grhs;
   Integer pos = 1;
   DAE.Exp arg;
-  Option<DAE.Exp> mrhs;
   DAE.ElementSource src;
   DAE.Type baseTy;
+  list<DAE.Statement> tempAssigns = {};
+  list<tuple<String, DAE.Exp>> fieldRefs = {};
+  DAE.ComponentRef tcref;
+  DAE.Exp tref;
+  DAE.Element tvar;
 algorithm
   (path, index, typeVars) := optMRFAMetaRecordInfo(mrecTy);
   fields := Types.getMetaRecordFields(mrecTy);
+  // Reuse the element source of the first statement in the group.
+  DAE.STMT_ASSIGN(source = src) := Util.tuple33(listHead(group));
+  // Walk the group in source order: emit one temp assignment per
+  // updated field, declare the temp's DAE.VAR, and remember the temp's
+  // CREF so the METARECORDCALL builder below can refer to it.
+  for upd in group loop
+    (gname, grhs, _) := upd;
+    gty := optMRFAFieldType(fields, gname);
+    tname := "$mrfa_" + Util.tickStr();
+    tcref := DAE.CREF_IDENT(tname, gty, {});
+    tref := DAE.CREF(tcref, gty);
+    tempAssigns := DAE.STMT_ASSIGN(gty, tref, grhs, src) :: tempAssigns;
+    tvar := DAE.VAR(tcref, DAE.VARIABLE(), DAE.BIDIR(), DAE.NON_PARALLEL(),
+                    DAE.PROTECTED(), gty, NONE(), {}, DAE.NON_CONNECTOR(),
+                    src, NONE(), NONE(), Absyn.NOT_INNER_OUTER(), false);
+    tempVars := tvar :: tempVars;
+    fieldRefs := (gname, tref) :: fieldRefs;
+  end for;
+  // Build the METARECORDCALL args: temp ref for updated fields, RSUB
+  // read of the original record for unchanged fields. Field iteration
+  // order here is the metarecord's declaration order, which is what
+  // the box constructor needs.
   for fv in fields loop
     DAE.TYPES_VAR(name = fname, ty = fty) := fv;
-    mrhs := optMRFALookupUpdate(group, fname);
-    arg := match mrhs
+    arg := match optMRFALookupRef(fieldRefs, fname)
       case SOME(arg) then arg;
       else DAE.RSUB(baseExp, pos, fname, fty);
     end match;
@@ -6949,32 +7025,53 @@ algorithm
   end for;
   args := listReverse(args);
   fieldNames := listReverse(fieldNames);
-  // Reuse the element source of the first statement in the group.
-  DAE.STMT_ASSIGN(source = src) := Util.tuple33(listHead(group));
   baseTy := Expression.typeof(baseExp);
-  outStmt := DAE.STMT_ASSIGN(baseTy, baseExp,
-                             DAE.METARECORDCALL(path, args, fieldNames, index, typeVars),
-                             src);
+  // tempAssigns is in reverse source order (head = last temp). Prepend
+  // the box statement to that reverse-ordered list so a single
+  // listReverse produces [tassign_1, ..., tassign_N, boxStmt].
+  tempAssigns := DAE.STMT_ASSIGN(baseTy, baseExp,
+                                 DAE.METARECORDCALL(path, args, fieldNames, index, typeVars),
+                                 src) :: tempAssigns;
+  outStmts := listReverse(tempAssigns);
 end optMRFABuildMerged;
 
-protected function optMRFALookupUpdate
-  "Finds the rhs for `fname` in the ordered group, or NONE() if not updated."
-  input list<MRFAUpdate> group;
+protected function optMRFAFieldType
+  "Looks up the type of `fname` among the metarecord field descriptors."
+  input list<DAE.Var> fields;
   input String fname;
-  output Option<DAE.Exp> outRhs;
+  output DAE.Type ty;
 protected
-  String gname;
-  DAE.Exp grhs;
+  String n;
 algorithm
-  outRhs := NONE();
-  for upd in group loop
-    (gname, grhs, _) := upd;
-    if stringEq(gname, fname) then
-      outRhs := SOME(grhs);
+  for fv in fields loop
+    DAE.TYPES_VAR(name = n, ty = ty) := fv;
+    if stringEq(n, fname) then return; end if;
+  end for;
+  // Should not happen: the merge pre-checks that the field belongs to
+  // the metarecord. If we ever get here, fail loudly so we notice.
+  Error.addInternalError("optMRFAFieldType: field " + fname + " not found in metarecord", sourceInfo());
+  fail();
+end optMRFAFieldType;
+
+protected function optMRFALookupRef
+  "Finds the temp CREF for `fname` in the field-ref list, or NONE() if
+   the field was not updated by the group."
+  input list<tuple<String, DAE.Exp>> fieldRefs;
+  input String fname;
+  output Option<DAE.Exp> outRef;
+protected
+  String n;
+  DAE.Exp r;
+algorithm
+  outRef := NONE();
+  for fr in fieldRefs loop
+    (n, r) := fr;
+    if stringEq(n, fname) then
+      outRef := SOME(r);
       return;
     end if;
   end for;
-end optMRFALookupUpdate;
+end optMRFALookupRef;
 
 protected function optMRFAMetaRecordInfo
   "Extracts (path, ctor_index, typeVars) needed to construct a METARECORDCALL

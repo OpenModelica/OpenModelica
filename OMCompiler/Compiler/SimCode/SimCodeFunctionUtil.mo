@@ -1050,26 +1050,40 @@ end elaborateStatement;
 
 protected function optMRFAElems
   "Applies DAEUtil.optimizeMetaRecordFieldAssigns to every algorithm body in
-   the DAE element list. Runs before collectRecDeclsFromElems so that any
-   METARECORDCALL expressions introduced by the pass are picked up when the
-   record-declaration map is populated. See issue #11909."
+   the DAE element list and lifts the temp DAE.VAR declarations the pass
+   created into the function's local-var section. Runs before
+   collectRecDeclsFromElems so that any METARECORDCALL expressions
+   introduced by the pass are picked up when the record-declaration map
+   is populated. See issue #11909."
   input output list<DAE.Element> elems;
+protected
+  list<DAE.Element> processed = {};
+  list<DAE.Element> tempVars = {};
+  DAE.Element e2;
 algorithm
-  elems := list(optMRFAElem(e) for e in elems);
+  for e in elems loop
+    (e2, tempVars) := optMRFAElem(e, tempVars);
+    processed := e2 :: processed;
+  end for;
+  // Prepend new temp DAE.VAR declarations. Inputs/outputs are filtered
+  // by direction downstream, not by position, so the extra BIDIR locals
+  // do not perturb the function signature.
+  elems := listAppend(listReverse(tempVars), listReverse(processed));
 end optMRFAElems;
 
 protected function optMRFAElem
   input output DAE.Element elem;
+  input output list<DAE.Element> tempVars;
 algorithm
-  elem := match elem
+  (elem, tempVars) := match elem
     local
       list<DAE.Statement> stmts;
     case DAE.ALGORITHM(algorithm_ = DAE.ALGORITHM_STMTS(statementLst = stmts))
       algorithm
-        stmts := DAEUtil.optimizeMetaRecordFieldAssigns(stmts);
+        (stmts, tempVars) := DAEUtil.optimizeMetaRecordFieldAssigns(stmts, tempVars);
         elem.algorithm_ := DAE.ALGORITHM_STMTS(stmts);
-      then elem;
-    else elem;
+      then (elem, tempVars);
+    else (elem, tempVars);
   end match;
 end optMRFAElem;
 
