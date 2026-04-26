@@ -405,10 +405,14 @@ algorithm
   stateVars := List.filterOnTrue(allVariables,
     function isVariableOfState(stateCref = stateCref));
 
-  // Build map: stateVar cref → start value
+  // Build map: stateVar cref → start value, but only for variables where
+  // previous(x) appears in an equation (matches old StateMachineFlatten behavior).
+  // Variables without previous(x) in equations use plain previous(x) in the else branch.
   crToStart := UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual);
   for v in stateVars loop
-    UnorderedMap.addUnique(v.name, getStartValue(v), crToStart);
+    if List.any(stateEqs, function equationHasPrevious(varCref = v.name)) then
+      UnorderedMap.addUnique(v.name, getStartValue(v), crToStart);
+    end if;
   end for;
 
   // Transform each equation
@@ -636,6 +640,45 @@ algorithm
     accEqs := inEq :: accEqs;
   end try;
 end addStateActivationAndReset1;
+
+protected
+function equationHasPrevious
+  "True if previous(varCref) appears anywhere in the equation's expressions."
+  input Equation eq;
+  input ComponentRef varCref;
+  output Boolean found;
+algorithm
+  found := Equation.containsExp(eq,
+    function Expression.contains(func = function isPreviousOfCref(varCref = varCref)));
+end equationHasPrevious;
+
+protected
+function isPreviousOfCref
+  "True if e is previous(varCref)."
+  input Expression e;
+  input ComponentRef varCref;
+  output Boolean res;
+protected
+  Call expCall;
+  list<Expression> args;
+  ComponentRef argCref;
+algorithm
+  res := match e
+    case Expression.CALL(call = expCall)
+      guard stringEq(Call.functionNameLast(expCall), "previous")
+      algorithm
+        args := Call.arguments(expCall);
+        res := false;
+        if listLength(args) == 1 then
+          res := match listHead(args)
+            case Expression.CREF(cref = argCref) then ComponentRef.isEqual(argCref, varCref);
+            else false;
+          end match;
+        end if;
+      then res;
+    else false;
+  end match;
+end isPreviousOfCref;
 
 protected
 function getDefaultStart
