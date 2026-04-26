@@ -57,7 +57,6 @@ import DAE;
 import ElementSource;
 import Error;
 import ExecStat.execStat;
-import Flags;
 import List;
 import NFBackendExtension;
 import NFBuiltinFuncs;
