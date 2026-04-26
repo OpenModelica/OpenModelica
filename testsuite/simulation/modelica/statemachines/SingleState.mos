@@ -1,8 +1,6 @@
 // name:     SingleState
 // keywords: state machines
 // status: correct
-// cflags: -d=-newInst
-//
 
 loadFile("SingleState.mo");
 simulate(SingleState, startTime=0, stopTime=2, numberOfIntervals=0); getErrorString();

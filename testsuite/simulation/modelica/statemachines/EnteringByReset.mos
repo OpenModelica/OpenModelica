@@ -1,8 +1,6 @@
 // name:     EnteringByReset
 // keywords: state machines
 // status: correct
-// cflags: -d=-newInst
-//
 
 loadString("
 model EnteringByReset
@@ -28,7 +26,7 @@ equation
 end StateX;
 "); getErrorString();
 
-echo(false);
+// echo(false);
 setCommandLineOptions({"+simCodeTarget=Cpp"}); getErrorString();
 simulate(EnteringByReset, startTime=0, stopTime=1.0, numberOfIntervals = 0); getErrorString();
 echo(true);

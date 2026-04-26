@@ -1220,7 +1220,7 @@ algorithm
       flatString := NFFlatString;
     elseif not runSilent then
       funcs := FCore.getFunctionTree(cache);
-      flatString := DAEDump.dumpStr(dae, funcs);
+      flatString := DAEDump.dumpStr(DAEUtil.transformationsBeforeBackend(cache, env, dae), funcs);
     end if;
 
 
@@ -1340,6 +1340,7 @@ algorithm
     case (graph) algorithm
       System.realtimeTick(ClockIndexes.RT_CLOCK_BACKEND);
       dae := DAEUtil.transformationsBeforeBackend(cache, graph, inDae);
+
       ExecStat.execStat("Transformations before backend");
 
       if Flags.isSet(Flags.SERIALIZED_SIZE) then
