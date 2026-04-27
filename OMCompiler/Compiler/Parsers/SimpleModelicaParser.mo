@@ -2973,7 +2973,8 @@ end getNodes;
 
 function extractSingleAddDiffBeforeAndAfter "Ignores whitespace"
   input list<tuple<Diff,list<ParseTree>>> diffs;
-  output ParseTree addedTree, deletedTree;
+  output ParseTree addedTree;
+  output ParseTree deletedTree;
   output list<ParseTree> before, middle, after;
   output Boolean addedBeforeDeleted;
 protected

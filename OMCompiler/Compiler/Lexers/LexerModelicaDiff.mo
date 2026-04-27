@@ -781,7 +781,12 @@ function consume
   output list<Token> resToken;
   output Integer bkBuffer = 0;
   output Integer mm_startSt;
-  output Integer mm_currSt,mm_pos,mm_sPos,mm_ePos,mm_linenr,lineNrStart;
+  output Integer mm_currSt;
+  output Integer mm_pos;
+  output Integer mm_sPos;
+  output Integer mm_ePos;
+  output Integer mm_linenr;
+  output Integer lineNrStart;
   output Integer buffer;
   output list<Integer> states;
   output list<Token> errorTokens=inErrorTokens;
