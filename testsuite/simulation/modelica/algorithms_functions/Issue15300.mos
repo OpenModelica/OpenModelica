@@ -1,0 +1,17 @@
+// name:     Issue15300
+// keywords: discrete output in algorithm
+// status: correct
+// teardown_command: rm -rf Issue15300_* Issue15300 Issue15300.exe Issue15300.cpp Issue15300.makefile Issue15300.libs Issue15300.log output.log
+//
+// check that Issue #15300 is fixed
+//
+
+loadFile("Issue15300.mo"); getErrorString();
+buildModel(Issue15300); getErrorString();
+
+// Result:
+// true
+// ""
+// {"Issue15300", "Issue15300_init.xml"}
+// ""
+// endResult
