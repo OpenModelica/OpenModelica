@@ -15409,12 +15409,14 @@ algorithm
         local Integer index;
         case SOME(index)
         then SOME(index + getScalarElementIndex(subs, List.map(sv.numArrayElement, stringInt)) - 1);
+        else sv.variable_index;
       end match;
       // fix fmi_index when using nfScalarize
       sv.fmi_index := match sv.fmi_index
         local Integer fmiIndex;
         case SOME(fmiIndex)
         then SOME(fmiIndex + getScalarElementIndex(subs, List.map(sv.numArrayElement, stringInt)) - 1);
+        else sv.fmi_index;
       end match;
     end if;
     sv := match sv.aliasvar
