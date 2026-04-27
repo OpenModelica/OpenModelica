@@ -82,10 +82,12 @@ protected
 
   // Old SimCode imports
   import HpcOmSimCode;
+  import InteractiveUtil;
   import OldSimCode = SimCode;
   import OldSimCodeFunction = SimCodeFunction;
   import OldSimCodeFunctionUtil = SimCodeFunctionUtil;
   import OldSimCodeUtil = SimCodeUtil;
+  import System;
 
   // Util imports
   import Error;
@@ -291,8 +293,8 @@ public
           SimVars vars;
           // old SimCode strcutures
           Absyn.Program program;
-          list<String> libs, includes, includeDirs, libPaths;
-          String directory;
+          list<String> libs, includeDirs, libPaths;
+          String directory, fileName;
           OldSimCodeFunction.MakefileParams makefileParams;
           list<OldSimCodeFunction.Function> functions;
           list<OldSimCodeFunction.RecordDeclaration> recordDecls;
@@ -338,8 +340,6 @@ public
             // create empty equation map and fill while creating the blocks
             equation_map := UnorderedMap.new<SimStrongComponent.Block>(ComponentRef.hash, ComponentRef.isEqual);
 
-            externalFunctionIncludes := {};
-
             independent := {};
             nominal := {};
             min := {};
@@ -356,7 +356,6 @@ public
             else
               init_0 := {};
             end if;
-
 
             // start allSim with no return equations
             (no_ret, simCodeIndices) := SimStrongComponent.Block.createNoReturnBlocks(eqData.removed, simCodeIndices, NBPartition.Kind.ODE, simcode_map, equation_map);
@@ -409,8 +408,9 @@ public
             // The OB function tree is needed both here and when dumping the flat model,
             // but converting it is destructive so return it to avoid doing it again.
             oldFunctionTree := ConvertDAE.convertFunctionTree(FunctionTree.fromList(UnorderedMap.toList(funcMap)));
-            (libs, libPaths, _, includeDirs, recordDecls, functions, _) := OldSimCodeUtil.createFunctions(program, oldFunctionTree);
-            makefileParams := OldSimCodeFunctionUtil.createMakefileParams(includeDirs, libs, libPaths, false, false);
+            (libs, libPaths, externalFunctionIncludes, includeDirs, recordDecls, functions, _) := OldSimCodeUtil.createFunctions(program, oldFunctionTree);
+            makefileParams  := OldSimCodeFunctionUtil.createMakefileParams(includeDirs, libs, libPaths, false, false);
+            fileName        := System.basename(AbsynUtil.classFilename(InteractiveUtil.getPathedClassInProgram(name, program)));
 
             (linearLoops, nonlinearLoops, jacobians, simCodeIndices) := collectAlgebraicLoops(init, init_0, ode, algebraic, daeModeData, simCodeIndices, simcode_map);
 
@@ -445,7 +445,7 @@ public
             generic_loop_calls  := list(SimGenericCall.mapShallow(call, collect_literals) for call in generic_loop_calls);
             literals            := UnorderedMap.keyList(literals_map);
 
-            (modelInfo, simCodeIndices) := ModelInfo.create(vars, name, directory, functions, linearLoops, nonlinearLoops, bdae.eventInfo, bdae.clockedInfo, simCodeIndices);
+            (modelInfo, simCodeIndices) := ModelInfo.create(vars, name, fileName, directory, functions, linearLoops, nonlinearLoops, bdae.eventInfo, bdae.clockedInfo, simCodeIndices);
 
             simCode := SIM_CODE(
               modelInfo                 = modelInfo,
@@ -651,6 +651,7 @@ public
     function create
       input SimVars vars;
       input Absyn.Path name;
+      input String fileName;
       input String directory;
       input list<OldSimCodeFunction.Function> functions;
       input list<SimStrongComponent.Block> linearLoops;
@@ -671,7 +672,7 @@ public
         license                         = "",
         copyright                       = "",
         directory                       = directory,
-        fileName                        = "",
+        fileName                        = fileName,
         vars                            = vars,
         varInfo                         = info,
         functions                       = functions,
