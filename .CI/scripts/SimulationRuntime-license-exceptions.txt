@@ -286,6 +286,11 @@ OMEdit/OMEditLIB/CrashReport/backtrace.*
 OMEdit/OMEditLIB/TransformationalDebugger/diff_match_patch.*
 
 # =============================================================================
+# OMNotebook
+# =============================================================================
+OMNotebook/OMNotebook/OMNotebookGUI/OMNotebookGUI.pro
+
+# =============================================================================
 # Submodules
 # TODO: Check which submodules need a check
 # =============================================================================
@@ -293,7 +298,6 @@ OMEdit/OMEditLIB/TransformationalDebugger/diff_match_patch.*
 libraries/
 OMCompiler/3rdParty/
 !OMCompiler/3rdParty/ryu/ryu/om_format.*
-OMNotebook/
 OMOptim/
 OMParser/
 OMPlot/
