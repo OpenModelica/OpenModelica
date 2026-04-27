@@ -25,4 +25,5 @@ jobs:
           python3 .CI/scripts/check_runtime_license.py \
             --summary                                  \
             OMCompiler                                 \
-            OMEdit
+            OMEdit                                     \
+            OMNotebook
