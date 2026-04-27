@@ -1574,7 +1574,7 @@ algorithm
     case Type.TUPLE()
       algorithm
         (exp1, compatibleType, matchKind) :=
-          matchTupleTypes(type1, type1, exp1, options);
+          matchTupleTypes(type1, type2, exp1, options);
       then
         compatibleType;
 

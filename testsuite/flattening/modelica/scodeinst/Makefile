@@ -708,6 +708,7 @@ FunctionMultiOutput2.mo \
 FunctionMultiOutput3.mo \
 FunctionMultiOutput4.mo \
 FunctionMultiOutput5.mo \
+FunctionMultiOutput6.mo \
 FunctionNoOutput1.mo \
 FunctionNonInputOutputParameter.mo \
 FunctionParamVariability.mo \
