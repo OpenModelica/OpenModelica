@@ -110,6 +110,6 @@ loadModel(Invalid);getErrorString();
 // "Invalid"
 // false
 // "[flattening/modelica/mosfiles/TestLibrary/Invalid/package.mo:1:1-2:12:writable] Error: The same class is defined in multiple files: flattening/modelica/mosfiles/TestLibrary/Invalid/Duplicate.mo, flattening/modelica/mosfiles/TestLibrary/Invalid/Duplicate/package.mo.
-// Error: Failed to load package Invalid (default) using MODELICAPATH TestLibrary/.
+// Error: Failed to load package Invalid (default) using OPENMODELICALIBRARY (MODELICAPATH in the language specification) TestLibrary/.
 // "
 // endResult
