@@ -172,7 +172,7 @@ $(OMBUILDDIR)/include/omc/c/gc_pthread_redirects.h: 3rdParty/gc/include/gc_pthre
 # TODO or DISCARD: for now, we only build static ipopt and dmumps (not MOO) directy into the runtime
 moo:
 	mkdir -p $(OMC_MOO_ROOT)/build
-	cd $(OMC_MOO_ROOT)/build && $(CMAKE) .. \
+	cd $(OMC_MOO_ROOT)/build && $(CMAKE) \
 		-G $(CMAKE_TARGET) \
 		-DCMAKE_VERBOSE_MAKEFILE:Bool=ON \
 		-DCMAKE_INSTALL_PREFIX:PATH="$(top_builddir)" \
@@ -182,7 +182,8 @@ moo:
 		-DCMAKE_C_FLAGS="$(CFLAGS)" \
 		-DCMAKE_CXX_FLAGS="$(CXXFLAGS)" \
 		-DCMAKE_Fortran_FLAGS="$(FCFLAGS)" \
-		-DCMAKE_Fortran_COMPILER="$(FC)"
+		-DCMAKE_Fortran_COMPILER="$(FC)" \
+		..
 
 	$(CMAKE) --build $(OMC_MOO_ROOT)/build --target ipopt dmumps
 	$(CMAKE) --build $(OMC_MOO_ROOT)/build --target install
