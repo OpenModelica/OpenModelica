@@ -1150,17 +1150,35 @@ Qt::ItemFlags LibraryTreeModel::flags(const QModelIndex &index) const
  */
 LibraryTreeItem* LibraryTreeModel::findLibraryTreeItem(const QString &name, LibraryTreeItem *pLibraryTreeItem, Qt::CaseSensitivity caseSensitivity) const
 {
-  QString path = name;
   if (!pLibraryTreeItem) {
     pLibraryTreeItem = mpRootLibraryTreeItem;
   } else if (pLibraryTreeItem->getNameStructure().compare(name, caseSensitivity) == 0) {
     return pLibraryTreeItem;
-  } else {
-    // strip the prefix of the path if it is same as the name structure of the current item
-    StringHandler::removeTypePrefix(path, pLibraryTreeItem->getNameStructure());
   }
 
-  // if lookup is called for text files then do the linear search
+  // Strip the prefix of the path if it matches the name structure of the current item
+  QString path = name;
+  StringHandler::removeTypePrefix(path, pLibraryTreeItem->getNameStructure());
+
+  // 1. Try incremental (qualified name) lookup first — cheap, no I/O
+  if (!path.isEmpty()) {
+    QStringList parts = StringHandler::splitPath(path);
+    if (!parts.isEmpty()) {
+      LibraryTreeItem *pCandidate = pLibraryTreeItem;
+      for (const QString &part : parts) {
+        const QString item = pCandidate->getNameStructure().isEmpty() ? part : pCandidate->getNameStructure() + "." + part;
+        pCandidate = findLibraryTreeItemOneLevel(item, pCandidate, caseSensitivity);
+        if (!pCandidate) {
+          break;  // Qualified path broken, fall through to file lookup
+        }
+      }
+      if (pCandidate) {
+        return pCandidate;  // Qualified name resolved successfully
+      }
+    }
+  }
+
+  // 2. Fall back to file-based linear search — only pay the QFile::exists cost if needed
   if (QFile::exists(name)) {
     QStack<LibraryTreeItem*> stack;
     stack.push(pLibraryTreeItem);
@@ -1173,27 +1191,9 @@ LibraryTreeItem* LibraryTreeModel::findLibraryTreeItem(const QString &name, Libr
         stack.push(pCurrentLibraryTreeItem->childAt(i));
       }
     }
-    return nullptr;
-  } else {  // do the incremental lookup.
-    if (path.isEmpty()) {
-      return nullptr;
-    }
-
-    QStringList parts = StringHandler::splitPath(path);
-    if (parts.isEmpty()) {
-      return nullptr;
-    }
-
-    for (const QString &part : parts) {
-      const QString item = pLibraryTreeItem->getNameStructure().isEmpty() ? part : pLibraryTreeItem->getNameStructure() + "." + part;
-      pLibraryTreeItem = findLibraryTreeItemOneLevel(item, pLibraryTreeItem, caseSensitivity);
-      if (!pLibraryTreeItem) {
-        return nullptr;  // Path broken
-      }
-    }
-
-    return pLibraryTreeItem;
   }
+
+  return nullptr;
 }
 
 /*!
