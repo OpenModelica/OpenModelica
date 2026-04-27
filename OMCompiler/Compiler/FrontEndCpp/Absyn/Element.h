@@ -77,6 +77,8 @@ namespace OpenModelica::Absyn
       SourceInfo _info;
   };
 
+  void swap(Element &first, Element &second) noexcept;
+
   std::ostream& operator<< (std::ostream &os, const Element &element) noexcept;
 }
 

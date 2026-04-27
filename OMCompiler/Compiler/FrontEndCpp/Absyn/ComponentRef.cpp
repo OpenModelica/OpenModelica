@@ -89,24 +89,24 @@ ComponentRef::~ComponentRef() = default;
 MetaModelica::Value ComponentRef::toAbsyn() const noexcept
 {
   if (_parts.empty()) {
-    return MetaModelica::Record(WILD, Absyn_ComponentRef_WILD__desc);
+    return MetaModelica::Record{WILD, Absyn_ComponentRef_WILD__desc};
   }
 
-  MetaModelica::Value res = MetaModelica::Record(CREF_IDENT, Absyn_ComponentRef_CREF__IDENT__desc, {
-    MetaModelica::Value(_parts.back().first),
+  MetaModelica::Value res = MetaModelica::Record{CREF_IDENT, Absyn_ComponentRef_CREF__IDENT__desc, {
+    MetaModelica::Value{_parts.back().first},
     Subscript::toAbsynList(_parts.back().second)
-  });
+  }};
 
   for (auto it = ++_parts.rbegin(); it != _parts.rend(); ++it) {
-    res = MetaModelica::Record(CREF_QUAL, Absyn_ComponentRef_CREF__QUAL__desc, {
-      MetaModelica::Value(it->first),
+    res = MetaModelica::Record{CREF_QUAL, Absyn_ComponentRef_CREF__QUAL__desc, {
+      MetaModelica::Value{it->first},
       Subscript::toAbsynList(it->second),
       res
-    });
+    }};
   }
 
   if (_fullyQualified) {
-    res = MetaModelica::Record(CREF_FULLYQUALIFIED, Absyn_ComponentRef_CREF__FULLYQUALIFIED__desc, {res});
+    res = MetaModelica::Record{CREF_FULLYQUALIFIED, Absyn_ComponentRef_CREF__FULLYQUALIFIED__desc, {res}};
   }
 
   return res;

@@ -177,9 +177,9 @@ std::unique_ptr<Expression::Base> Integer::clone() const noexcept
 
 MetaModelica::Value Integer::toAbsyn() const noexcept
 {
-  return MetaModelica::Record(INTEGER, Absyn_Exp_INTEGER__desc, {
-    MetaModelica::Value(_value)
-  });
+  return MetaModelica::Record{INTEGER, Absyn_Exp_INTEGER__desc, {
+    MetaModelica::Value{_value}
+  }};
 }
 
 void Integer::print(std::ostream &os) const noexcept
@@ -211,9 +211,9 @@ std::unique_ptr<Expression::Base> Real::clone() const noexcept
 
 MetaModelica::Value Real::toAbsyn() const noexcept
 {
-  return MetaModelica::Record(REAL, Absyn_Exp_REAL__desc, {
-    MetaModelica::Value(_value)
-  });
+  return MetaModelica::Record{REAL, Absyn_Exp_REAL__desc, {
+    MetaModelica::Value{_value}
+  }};
 }
 
 void Real::print(std::ostream &os) const noexcept
@@ -240,9 +240,9 @@ std::unique_ptr<Expression::Base> Boolean::clone() const noexcept
 
 MetaModelica::Value Boolean::toAbsyn() const noexcept
 {
-  return MetaModelica::Record(BOOL, Absyn_Exp_BOOL__desc, {
-    MetaModelica::Value(_value)
-  });
+  return MetaModelica::Record{BOOL, Absyn_Exp_BOOL__desc, {
+    MetaModelica::Value{_value}
+  }};
 }
 
 void Boolean::print(std::ostream &os) const noexcept
@@ -269,9 +269,9 @@ std::unique_ptr<Expression::Base> String::clone() const noexcept
 
 MetaModelica::Value String::toAbsyn() const noexcept
 {
-  return MetaModelica::Record(STRING, Absyn_Exp_STRING__desc, {
-    MetaModelica::Value(_value)
-  });
+  return MetaModelica::Record{STRING, Absyn_Exp_STRING__desc, {
+    MetaModelica::Value{_value}
+  }};
 }
 
 void String::print(std::ostream &os) const noexcept
@@ -298,7 +298,7 @@ std::unique_ptr<Expression::Base> Cref::clone() const noexcept
 
 MetaModelica::Value Cref::toAbsyn() const noexcept
 {
-  return MetaModelica::Record(CREF, Absyn_Exp_CREF__desc, {_cref.toAbsyn()});
+  return MetaModelica::Record{CREF, Absyn_Exp_CREF__desc, {_cref.toAbsyn()}};
 }
 
 void Cref::print(std::ostream &os) const noexcept
@@ -322,18 +322,18 @@ std::unique_ptr<Expression::Base> Binary::clone() const noexcept
 MetaModelica::Value Binary::toAbsyn() const noexcept
 {
   if (_op.isLogical()) {
-    return MetaModelica::Record(LBINARY, Absyn_Exp_LBINARY__desc, {
+    return MetaModelica::Record{LBINARY, Absyn_Exp_LBINARY__desc, {
       _exp1.toAbsyn(), _op.toAbsyn(), _exp2.toAbsyn()
-    });
+    }};
   } else if (_op.isRelational()) {
-    return MetaModelica::Record(RELATION, Absyn_Exp_RELATION__desc, {
+    return MetaModelica::Record{RELATION, Absyn_Exp_RELATION__desc, {
       _exp1.toAbsyn(), _op.toAbsyn(), _exp2.toAbsyn()
-    });
+    }};
   }
 
-  return MetaModelica::Record(BINARY, Absyn_Exp_BINARY__desc, {
+  return MetaModelica::Record{BINARY, Absyn_Exp_BINARY__desc, {
     _exp1.toAbsyn(), _op.toAbsyn(), _exp2.toAbsyn()
-  });
+  }};
 }
 
 void Binary::print(std::ostream &os) const noexcept
@@ -356,10 +356,10 @@ std::unique_ptr<Expression::Base> Unary::clone() const noexcept
 MetaModelica::Value Unary::toAbsyn() const noexcept
 {
   if (_op.isLogical()) {
-    return MetaModelica::Record(LUNARY, Absyn_Exp_LUNARY__desc, {_op.toAbsyn(), _exp.toAbsyn()});
+    return MetaModelica::Record{LUNARY, Absyn_Exp_LUNARY__desc, {_op.toAbsyn(), _exp.toAbsyn()}};
   }
 
-  return MetaModelica::Record(UNARY, Absyn_Exp_UNARY__desc, {_op.toAbsyn(), _exp.toAbsyn()});
+  return MetaModelica::Record{UNARY, Absyn_Exp_UNARY__desc, {_op.toAbsyn(), _exp.toAbsyn()}};
 }
 
 void Unary::print(std::ostream &os) const noexcept
@@ -399,12 +399,12 @@ std::unique_ptr<Expression::Base> IfExpression::clone() const noexcept
 
 MetaModelica::Value IfExpression::toAbsyn() const noexcept
 {
-  return MetaModelica::Record(IFEXP, Absyn_Exp_IFEXP__desc, {
+  return MetaModelica::Record{IFEXP, Absyn_Exp_IFEXP__desc, {
     _condition.toAbsyn(),
     _true.toAbsyn(),
     _false.toAbsyn(),
-    MetaModelica::List()
-  });
+    MetaModelica::List{}
+  }};
 }
 
 void IfExpression::print(std::ostream &os) const noexcept
@@ -414,7 +414,8 @@ void IfExpression::print(std::ostream &os) const noexcept
 
 Call::Call(MetaModelica::Record value)
   : _functionName{value[0]},
-    _args{value[1]}
+    _args{value[1]},
+    _typeVars{value[2]}
 {
 
 }
@@ -426,11 +427,11 @@ std::unique_ptr<Expression::Base> Call::clone() const noexcept
 
 MetaModelica::Value Call::toAbsyn() const noexcept
 {
-  return MetaModelica::Record(CALL, Absyn_Exp_CALL__desc, {
+  return MetaModelica::Record{CALL, Absyn_Exp_CALL__desc, {
     _functionName.toAbsyn(),
     _args.toAbsyn(),
-    MetaModelica::List()
-  });
+    _typeVars
+  }};
 }
 
 void Call::print(std::ostream &os) const noexcept
@@ -452,10 +453,10 @@ std::unique_ptr<Expression::Base> PartEvalFunction::clone() const noexcept
 
 MetaModelica::Value PartEvalFunction::toAbsyn() const noexcept
 {
-  return MetaModelica::Record(PARTEVALFUNCTION, Absyn_Exp_PARTEVALFUNCTION__desc, {
+  return MetaModelica::Record{PARTEVALFUNCTION, Absyn_Exp_PARTEVALFUNCTION__desc, {
     _functionName.toAbsyn(),
     _args.toAbsyn()
-  });
+  }};
 }
 
 void PartEvalFunction::print(std::ostream &os) const noexcept
@@ -482,9 +483,9 @@ std::unique_ptr<Expression::Base> Array::clone() const noexcept
 
 MetaModelica::Value Array::toAbsyn() const noexcept
 {
-  return MetaModelica::Record(ARRAY, Absyn_Exp_ARRAY__desc, {
-    MetaModelica::List(_elements, [](const auto &e) { return e.toAbsyn(); })
-  });
+  return MetaModelica::Record{ARRAY, Absyn_Exp_ARRAY__desc, {
+    MetaModelica::List{_elements, [](const auto &e) { return e.toAbsyn(); }}
+  }};
 }
 
 void Array::print(std::ostream &os) const noexcept
@@ -507,11 +508,11 @@ std::unique_ptr<Expression::Base> Matrix::clone() const noexcept
 
 MetaModelica::Value Matrix::toAbsyn() const noexcept
 {
-  return MetaModelica::Record(MATRIX, Absyn_Exp_MATRIX__desc, {
-    MetaModelica::List(_matrix, [](const auto &arr) {
-      return MetaModelica::List(arr.elements(), [](const auto &e) { return e.toAbsyn(); });
-    })
-  });
+  return MetaModelica::Record{MATRIX, Absyn_Exp_MATRIX__desc, {
+    MetaModelica::List{_matrix, [](const auto &arr) {
+      return MetaModelica::List{arr.elements(), [](const auto &e) { return e.toAbsyn(); }};
+    }}
+  }};
 }
 
 void Matrix::print(std::ostream &os) const noexcept
@@ -546,11 +547,11 @@ std::unique_ptr<Expression::Base> Range::clone() const noexcept
 
 MetaModelica::Value Range::toAbsyn() const noexcept
 {
-  return MetaModelica::Record(RANGE, Absyn_Exp_RANGE__desc, {
+  return MetaModelica::Record{RANGE, Absyn_Exp_RANGE__desc, {
     _start.toAbsyn(),
-    MetaModelica::Option(_step, [](const auto &e) { return e.toAbsyn(); }),
+    MetaModelica::Option{_step, [](const auto &e) { return e.toAbsyn(); }},
     _stop.toAbsyn()
-  });
+  }};
 }
 
 void Range::print(std::ostream &os) const noexcept
@@ -573,9 +574,9 @@ std::unique_ptr<Expression::Base> Tuple::clone() const noexcept
 
 MetaModelica::Value Tuple::toAbsyn() const noexcept
 {
-  return MetaModelica::Record(TUPLE, Absyn_Exp_TUPLE__desc, {
-    MetaModelica::List(_elements, [](const auto &e) { return e.toAbsyn(); })
-  });
+  return MetaModelica::Record{TUPLE, Absyn_Exp_TUPLE__desc, {
+    MetaModelica::List{_elements, [](const auto &e) { return e.toAbsyn(); }}
+  }};
 }
 
 void Tuple::print(std::ostream &os) const noexcept
@@ -592,7 +593,7 @@ std::unique_ptr<Expression::Base> End::clone() const noexcept
 
 MetaModelica::Value End::toAbsyn() const noexcept
 {
-  return MetaModelica::Record(END, Absyn_Exp_END__desc);
+  return MetaModelica::Record{END, Absyn_Exp_END__desc};
 }
 
 void End::print(std::ostream &os) const noexcept
@@ -601,6 +602,7 @@ void End::print(std::ostream &os) const noexcept
 }
 
 Code::Code(MetaModelica::Record value)
+  : _value{value}
 {
 
 }
@@ -612,9 +614,11 @@ std::unique_ptr<Expression::Base> Code::clone() const noexcept
 
 MetaModelica::Value Code::toAbsyn() const noexcept
 {
-  return MetaModelica::Record(CODE, Absyn_Exp_CODE__desc, {
-    // TODO: Implement
-  });
+  //return MetaModelica::Record{CODE, Absyn_Exp_CODE__desc, {
+  //  // TODO: Implement
+  //}};
+
+  return _value;
 }
 
 void Code::print(std::ostream &os) const noexcept
@@ -636,10 +640,10 @@ std::unique_ptr<Expression::Base> SubscriptedExp::clone() const noexcept
 
 MetaModelica::Value SubscriptedExp::toAbsyn() const noexcept
 {
-  return MetaModelica::Record(SUBSCRIPTED_EXP, Absyn_Exp_SUBSCRIPTED__EXP__desc, {
+  return MetaModelica::Record{SUBSCRIPTED_EXP, Absyn_Exp_SUBSCRIPTED__EXP__desc, {
     _exp.toAbsyn(),
     Subscript::toAbsynList(_subscripts)
-  });
+  }};
 }
 
 void SubscriptedExp::print(std::ostream &os) const noexcept
@@ -654,7 +658,7 @@ std::unique_ptr<Expression::Base> Break::clone() const noexcept
 
 MetaModelica::Value Break::toAbsyn() const noexcept
 {
-  return MetaModelica::Record(BREAK, Absyn_Exp_BREAK__desc);
+  return MetaModelica::Record{BREAK, Absyn_Exp_BREAK__desc};
 }
 
 void Break::print(std::ostream &os) const noexcept

@@ -42,6 +42,12 @@ namespace OpenModelica::Absyn
   class Annotation;
   class Class;
   class ClassDef;
+  class ClassParts;
+  class ClassExtends;
+  class Derived;
+  class Enumeration;
+  class Overload;
+  class PartialDerivative;
   struct ClassDefVisitor;
   class Comment;
   class Component;

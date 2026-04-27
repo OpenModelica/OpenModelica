@@ -62,11 +62,11 @@ MetaModelica::Value FunctionArgsIter::toAbsyn() const noexcept
 {
   static const MetaModelica::Record combineIterType{0, Absyn_ReductionIterType_COMBINE__desc};
 
-  return MetaModelica::Record(FunctionArgs::FOR_ITER_FARG, Absyn_FunctionArgs_FOR__ITER__FARG__desc, {
+  return MetaModelica::Record{FunctionArgs::FOR_ITER_FARG, Absyn_FunctionArgs_FOR__ITER__FARG__desc, {
     _exp.toAbsyn(),
     combineIterType,
-    MetaModelica::List(_iterators, [](const auto &i) { return i.toAbsyn(); })
-  });
+    MetaModelica::List{_iterators, [](const auto &i) { return i.toAbsyn(); }}
+  }};
 }
 
 void FunctionArgsIter::print(std::ostream &os) const noexcept

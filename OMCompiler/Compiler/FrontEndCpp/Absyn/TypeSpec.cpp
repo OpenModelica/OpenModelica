@@ -66,16 +66,16 @@ TypeSpec::TypeSpec(MetaModelica::Record value)
 MetaModelica::Value TypeSpec::toAbsyn() const noexcept
 {
   if (_typeSpecs.empty()) {
-    return MetaModelica::Record(TPATH, Absyn_TypeSpec_TPATH__desc, {
+    return MetaModelica::Record{TPATH, Absyn_TypeSpec_TPATH__desc, {
       _path.toAbsyn(),
-      _arrayDims.empty() ?  MetaModelica::Option() : MetaModelica::Option(Subscript::toAbsynList(_arrayDims))
-    });
+      _arrayDims.empty() ?  MetaModelica::Option{} : MetaModelica::Option{Subscript::toAbsynList(_arrayDims)}
+    }};
   } else {
-    return MetaModelica::Record(TCOMPLEX, Absyn_TypeSpec_TCOMPLEX__desc, {
+    return MetaModelica::Record{TCOMPLEX, Absyn_TypeSpec_TCOMPLEX__desc, {
       _path.toAbsyn(),
-      MetaModelica::List(_typeSpecs, [](const auto &ty) { return ty.toAbsyn(); }),
-      _arrayDims.empty() ?  MetaModelica::Option() : MetaModelica::Option(Subscript::toAbsynList(_arrayDims))
-    });
+      MetaModelica::List{_typeSpecs, [](const auto &ty) { return ty.toAbsyn(); }},
+      _arrayDims.empty() ?  MetaModelica::Option{} : MetaModelica::Option{Subscript::toAbsynList(_arrayDims)}
+    }};
   }
 }
 

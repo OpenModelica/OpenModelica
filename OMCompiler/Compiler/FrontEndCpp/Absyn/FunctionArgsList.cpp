@@ -62,15 +62,15 @@ std::unique_ptr<FunctionArgs::Base> FunctionArgsList::clone() const noexcept
 
 MetaModelica::Value FunctionArgsList::toAbsyn() const noexcept
 {
-  return MetaModelica::Record(FunctionArgs::FUNCTIONARGS, Absyn_FunctionArgs_FUNCTIONARGS__desc, {
-    MetaModelica::List(_args, [](const auto &arg) { return arg.toAbsyn(); }),
-    MetaModelica::List(_namedArgs, [](const auto &arg) {
-      return MetaModelica::Record(0, Absyn_NamedArg_NAMEDARG__desc, {
-        MetaModelica::Value(arg.first),
+  return MetaModelica::Record{FunctionArgs::FUNCTIONARGS, Absyn_FunctionArgs_FUNCTIONARGS__desc, {
+    MetaModelica::List{_args, [](const auto &arg) { return arg.toAbsyn(); }},
+    MetaModelica::List{_namedArgs, [](const auto &arg) {
+      return MetaModelica::Record{0, Absyn_NamedArg_NAMEDARG__desc, {
+        MetaModelica::Value{arg.first},
         arg.second.toAbsyn()
-      });
-    })
-  });
+      }};
+    }}
+  }};
 }
 
 namespace OpenModelica::Absyn

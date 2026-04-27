@@ -63,8 +63,8 @@ MetaModelica::Value DefineUnit::toSCode() const noexcept
   return MetaModelica::Record{Element::DEFINEUNIT, SCode_Element_DEFINEUNIT__desc, {
     MetaModelica::Value{_name},
     _visibility.toSCode(),
-    MetaModelica::Option(_exp),
-    MetaModelica::Option(_weight),
+    MetaModelica::Option{_exp},
+    MetaModelica::Option{_weight},
     info()
   }};
 }

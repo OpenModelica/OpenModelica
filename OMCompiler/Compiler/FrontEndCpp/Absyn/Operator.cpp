@@ -117,7 +117,7 @@ Operator::Operator(MetaModelica::Record value)
 
 MetaModelica::Value Operator::toAbsyn() const noexcept
 {
-  return MetaModelica::Record(static_cast<int>(_value), *descs[static_cast<int>(_value)]);
+  return MetaModelica::Record{static_cast<int>(_value), *descs[static_cast<int>(_value)]};
 }
 
 bool Operator::isArithmetic() const noexcept

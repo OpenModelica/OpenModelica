@@ -47,6 +47,9 @@ namespace OpenModelica::Absyn
   class Comment
   {
     public:
+      static MetaModelica::Value noCommentSCode();
+
+    public:
       Comment() = default;
       Comment(MetaModelica::Record value);
       Comment(std::string description, Annotation annotation = Annotation()) noexcept;

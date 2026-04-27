@@ -1,33 +1,32 @@
-# Existence checks
-#################################################################################################
-
-# Some example portability checks. Add more just like this if you need more.
-# e.g this will define HAVE_TIME_H 1 if found or HAVE_TIME_H 0 otherwise
-omc_check_header_exists_and_define(time.h)
-# e.g this will define HAVE_CTIME_S 1 if found or HAVE_CTIME_S 0 otherwise
-omc_check_function_exists_and_define(ctime_s)
-omc_check_function_exists_and_define(ctime_r)
-
-
 add_subdirectory(Absyn)
 
 # Libraries
 ##################################################################################################
 set(OMC_FRONTEND_CPP_SOURCES
+    Attributes.cpp
+    Binding.cpp
     Class.cpp
     ClassNode.cpp
     ClassTree.cpp
+    ComplexType.cpp
     Component.cpp
     ComponentNode.cpp
+    ComponentRef.cpp
+    ConstrainingClass.cpp
+    Dimension.cpp
     Import.cpp
     Inst.cpp
     InstNode.cpp
     InstNodeType.cpp
     MetaModelica.cpp
+    Modifier.cpp
+    NameNode.cpp
     Path.cpp
     Prefixes.cpp
     Restriction.cpp
-    SourceInfo.cpp)
+    SourceInfo.cpp
+    Subscript.cpp
+    Type.cpp)
 
 # ######################################################################################################################
 # Library: omcruntime

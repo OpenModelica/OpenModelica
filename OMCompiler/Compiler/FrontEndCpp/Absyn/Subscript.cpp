@@ -59,15 +59,15 @@ Subscript::~Subscript() noexcept = default;
 MetaModelica::Value Subscript::toAbsyn() const noexcept
 {
   if (_subscript) {
-    return MetaModelica::Record(SUBSCRIPT, Absyn_Subscript_SUBSCRIPT__desc, {_subscript->toAbsyn()});
+    return MetaModelica::Record{SUBSCRIPT, Absyn_Subscript_SUBSCRIPT__desc, {_subscript->toAbsyn()}};
   }
 
-  return MetaModelica::Record(NOSUB, Absyn_Subscript_NOSUB__desc);
+  return MetaModelica::Record{NOSUB, Absyn_Subscript_NOSUB__desc};
 }
 
 MetaModelica::Value Subscript::toAbsynList(const std::vector<Subscript> &subs) noexcept
 {
-  return MetaModelica::List(subs, [](const auto &s) { return s.toAbsyn(); });
+  return MetaModelica::List{subs, [](const auto &s) { return s.toAbsyn(); }};
 }
 
 const std::optional<Expression>& Subscript::expression() const noexcept

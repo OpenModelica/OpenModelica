@@ -50,12 +50,12 @@ Annotation::Annotation(MetaModelica::Record value)
 
 MetaModelica::Value Annotation::toSCode() const noexcept
 {
-  return MetaModelica::Record(0, SCode_Annotation_ANNOTATION__desc, { _modifier.toSCode() });
+  return MetaModelica::Record{0, SCode_Annotation_ANNOTATION__desc, { _modifier.toSCode() }};
 }
 
 MetaModelica::Value Annotation::toSCodeOpt() const noexcept
 {
-  return _modifier.isEmpty() ? MetaModelica::Option() : MetaModelica::Option(toSCode());
+  return _modifier.isEmpty() ? MetaModelica::Option{} : MetaModelica::Option{toSCode()};
 }
 
 void Annotation::print(std::ostream &os, std::string_view indent) const noexcept

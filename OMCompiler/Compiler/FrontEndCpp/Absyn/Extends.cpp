@@ -60,13 +60,13 @@ void Extends::apply(ElementVisitor &visitor)
 
 MetaModelica::Value Extends::toSCode() const noexcept
 {
-  return MetaModelica::Record(Element::EXTENDS, SCode_Element_EXTENDS__desc, {
+  return MetaModelica::Record{Element::EXTENDS, SCode_Element_EXTENDS__desc, {
     _baseClassPath.toAbsyn(),
     _visibility.toSCode(),
     _modifier.toSCode(),
     _annotation.toSCodeOpt(),
     info()
-  });
+  }};
 }
 
 std::unique_ptr<Element> Extends::clone() const noexcept
