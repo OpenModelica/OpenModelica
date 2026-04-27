@@ -35,6 +35,7 @@
 
 #include "MMAvlTree.h"
 #include "Absyn/ElementVisitor.h"
+#include "Util.h"
 #include "ClassNode.h"
 #include "Class.h"
 #include "Import.h"
@@ -70,6 +71,38 @@ int compareClassTreeKeys(MetaModelica::Value key1, MetaModelica::Value key2)
 DEFINE_MM_AVL_TREE_TYPE(LookupTree, NFLookupTree_Tree, compareClassTreeKeys);
 DEFINE_MM_AVL_TREE_TYPE(DuplicateTree, NFDuplicateTree_Tree, compareClassTreeKeys);
 
+ClassTree::LookupTable lookup_table_from_mm(MetaModelica::Record value)
+{
+  LookupTree tree{value};
+  ClassTree::LookupTable table;
+
+  tree.apply([&](auto key, auto value) {
+    table.try_emplace(key.toString(), value);
+  });
+
+  return table;
+}
+
+ClassTree::DuplicateTable duplicate_table_from_mm(MetaModelica::Record /*value*/)
+{
+  ClassTree::DuplicateTable table;
+  // TODO: Implement me
+  return table;
+}
+
+ClassTree::Entry::Entry(EntryType type, size_t index)
+  : type{type}, index{index}
+{
+
+}
+
+ClassTree::Entry::Entry(MetaModelica::Record value)
+  : type{static_cast<ClassTree::EntryType>(value.index())},
+    index{static_cast<size_t>(value[0].toInt()-1)}
+{
+
+}
+
 ClassTree::Entry::operator MetaModelica::Value() const noexcept
 {
   int idx = 0;
@@ -90,7 +123,7 @@ ClassTree::Entry::operator MetaModelica::Value() const noexcept
       break;
   }
 
-  return MetaModelica::Record(idx, *desc, {MetaModelica::Value(static_cast<int64_t>(index + 1))});
+  return MetaModelica::Record{idx, *desc, {MetaModelica::Value{static_cast<int64_t>(index + 1)}}};
 }
 
 ClassTree::Entry ClassTree::Entry::offset(size_t classOffset, size_t componentOffset) const
@@ -118,8 +151,52 @@ ClassTree::Duplicate::Duplicate(Entry kept, Entry duplicate)
   children.emplace_back(DuplicateType::Entry, duplicate);
 }
 
+ClassTree::ClassTree(MetaModelica::Record value)
+{
+  switch (value.index()) {
+    case PARTIAL_TREE:
+      _table = lookup_table_from_mm(value[0]);
+      _classes = InstNode::getOwnedPtrs(value[1]);
+      _components = InstNode::getOwnedPtrs(value[2]);
+      _extends = InstNode::getOwnedPtrs(value[3]);
+      _imports = value[4].mapVector<Import>();
+      _duplicates = duplicate_table_from_mm(value[5]);
+      break;
+
+    case EXPANDED_TREE:
+      _state = State::Expanded;
+      _table = lookup_table_from_mm(value[0]);
+      _classes = InstNode::getOwnedPtrs(value[1]);
+      _components = InstNode::getOwnedPtrs(value[2]);
+      _extends = InstNode::getOwnedPtrs(value[3]);
+      _imports = value[4].mapVector<Import>();
+      _duplicates = duplicate_table_from_mm(value[5]);
+      break;
+
+    case INSTANTIATED_TREE:
+      _state = State::Instantiated;
+      _table = lookup_table_from_mm(value[0]);
+      _classes = value[1].mapVector([](auto v) { return InstNode::getOwnedPtr(v.toMutable().access()); });
+      _components = value[2].mapVector([](auto v) { return InstNode::getOwnedPtr(v.toMutable().access()); });
+      _localComponents = value[3].mapVector([](auto v) { return v.toInt(); });
+      _extends = InstNode::getOwnedPtrs(value[4]);
+      _imports = value[5].mapVector<Import>();
+      _duplicates = duplicate_table_from_mm(value[6]);
+      break;
+
+    case FLAT_TREE:
+      _state = State::Flat;
+      _table = lookup_table_from_mm(value[0]);
+      _classes = InstNode::getOwnedPtrs(value[1]);
+      _components = InstNode::getOwnedPtrs(value[2]);
+      _imports = value[3].mapVector<Import>();
+      _duplicates = duplicate_table_from_mm(value[4]);
+      break;
+  }
+}
+
 ClassTree::ClassTree(const Absyn::ClassParts &definition, bool isClassExtends, InstNode *parent)
-  : _parent{parent}, _state{State::Partial}
+  : _parent{parent}
 {
   // If the class is a class extends, reserve space for the extends.
   if (isClassExtends) {
@@ -162,7 +239,45 @@ ClassTree::ClassTree(const Absyn::ClassParts &definition, bool isClassExtends, I
   //}
 }
 
+ClassTree::ClassTree(const ClassTree &other)
+  : _parent{other._parent},
+    _state{other._state},
+    _table{other._table},
+    _classes{Util::cloneVector(other._classes)},
+    _components{Util::cloneVector(other._components)},
+    _localComponents{other._localComponents},
+    _extends{Util::cloneVector(other._extends)},
+    _imports{other._imports},
+    _duplicates{other._duplicates},
+    _mmCache{other._mmCache}
+{
+
+}
+
+ClassTree::ClassTree(ClassTree &&other) noexcept = default;
+
 ClassTree::~ClassTree() = default;
+
+ClassTree& ClassTree::operator=(ClassTree other)
+{
+  swap(*this, other);
+  return *this;
+}
+
+void OpenModelica::swap(ClassTree &first, ClassTree &second) noexcept
+{
+  using std::swap;
+  swap(first._parent, second._parent);
+  swap(first._state, second._state);
+  swap(first._table, second._table);
+  swap(first._classes, second._classes);
+  swap(first._components, second._components);
+  swap(first._localComponents, second._localComponents);
+  swap(first._extends, second._extends);
+  swap(first._imports, second._imports);
+  swap(first._duplicates, second._duplicates);
+  swap(first._mmCache, second._mmCache);
+}
 
 void ClassTree::add(Absyn::Class &cls)
 {
@@ -200,6 +315,32 @@ void ClassTree::add(Absyn::Extends &/*ext*/)
 void ClassTree::add(Absyn::Import &/*imp*/)
 {
   // TODO
+}
+
+bool ClassTree::add(std::unique_ptr<InstNode> node)
+{
+  if (!node) return false;
+
+  if (node->isComponent()) {
+    auto [it, added] = _table.try_emplace(node->name(), EntryType::Component, _components.size());
+
+    if (added) {
+      _components.push_back(std::move(node));
+      _localComponents.push_back(_components.size());
+    }
+
+    return added;
+  } else if (node->isClass()) {
+    auto [it, added] = _table.try_emplace(node->name(), EntryType::Component, _classes.size());
+
+    if (added) {
+      _classes.push_back(std::move(node));
+    }
+
+    return added;
+  }
+
+  return false;
 }
 
 // This function adds all local and inherited class and component names to the
@@ -279,9 +420,9 @@ MetaModelica::Record ClassTree::toNF() const
     case State::Partial:
       return MetaModelica::Record{PARTIAL_TREE, NFClassTree_ClassTree_PARTIAL__TREE__desc, {
         ltree,
-        MetaModelica::Array{_classes, [](auto &c) { return c->toMetaModelica(); }},
-        MetaModelica::Array{_components, [](auto &c) { return c->toMetaModelica(); }},
-        MetaModelica::Array{_extends, [](auto &e) { return e->toMetaModelica(); }},
+        MetaModelica::Array{_classes, [](auto &c) { return c->toNF(); }},
+        MetaModelica::Array{_components, [](auto &c) { return c->toNF(); }},
+        MetaModelica::Array{_extends, [](auto &e) { return e->toNF(); }},
         MetaModelica::Array{_imports, [](auto &i) { return i.toNF(); }},
         DuplicateTree{}
       }};
@@ -289,9 +430,9 @@ MetaModelica::Record ClassTree::toNF() const
     case State::Expanded:
       return MetaModelica::Record{EXPANDED_TREE, NFClassTree_ClassTree_EXPANDED__TREE__desc, {
         ltree,
-        MetaModelica::Array{_classes, [](auto &c) { return c->toMetaModelica(); }},
-        MetaModelica::Array{_components, [](auto &c) { return c->toMetaModelica(); }},
-        MetaModelica::Array{_extends, [](auto &e) { return e->toMetaModelica(); }},
+        MetaModelica::Array{_classes, [](auto &c) { return c->toNF(); }},
+        MetaModelica::Array{_components, [](auto &c) { return c->toNF(); }},
+        MetaModelica::Array{_extends, [](auto &e) { return e->toNF(); }},
         MetaModelica::Array{_imports, [](auto &i) { return i.toNF(); }},
         DuplicateTree{},
       }};
@@ -299,10 +440,10 @@ MetaModelica::Record ClassTree::toNF() const
     case State::Instantiated:
       return MetaModelica::Record{INSTANTIATED_TREE, NFClassTree_ClassTree_INSTANTIATED__TREE__desc, {
         ltree,
-        MetaModelica::Array{_classes, [](auto &c) { return MetaModelica::Mutable{c->toMetaModelica()}; }},
-        MetaModelica::Array{_components, [](auto &c) { return MetaModelica::Mutable{c->toMetaModelica()}; }},
+        MetaModelica::Array{_classes, [](auto &c) { return MetaModelica::Mutable{c->toNF()}; }},
+        MetaModelica::Array{_components, [](auto &c) { return MetaModelica::Mutable{c->toNF()}; }},
         MetaModelica::List{_localComponents, [](auto &c) { return MetaModelica::Value{static_cast<int64_t>(c)}; }},
-        MetaModelica::Array{_extends, [](auto &e) { return e->toMetaModelica(); }},
+        MetaModelica::Array{_extends, [](auto &e) { return e->toNF(); }},
         MetaModelica::Array{_imports, [](auto &i) { return i.toNF(); }},
         DuplicateTree{}
       }};
@@ -310,8 +451,8 @@ MetaModelica::Record ClassTree::toNF() const
     case State::Flat:
       return MetaModelica::Record{FLAT_TREE, NFClassTree_ClassTree_FLAT__TREE__desc, {
         ltree,
-        MetaModelica::Array{_classes, [](auto &c) { return c->toMetaModelica(); }},
-        MetaModelica::Array{_components, [](auto &c) { return c->toMetaModelica(); }},
+        MetaModelica::Array{_classes, [](auto &c) { return c->toNF(); }},
+        MetaModelica::Array{_components, [](auto &c) { return c->toNF(); }},
         MetaModelica::Array{_imports, [](auto &i) { return i.toNF(); }},
         DuplicateTree{}
       }};

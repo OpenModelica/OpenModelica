@@ -55,14 +55,14 @@ ElementAttributes::ElementAttributes(MetaModelica::Record value)
 
 MetaModelica::Value ElementAttributes::toSCode() const noexcept
 {
-  return MetaModelica::Record(0, SCode_Attributes_ATTR__desc, {
+  return MetaModelica::Record{0, SCode_Attributes_ATTR__desc, {
     Subscript::toAbsynList(_arrayDims),
     _connectorType.toSCode(),
     _parallelism.toSCode(),
     _variability.toSCode(),
     _direction.toAbsyn(),
     _field.toAbsyn()
-  });
+  }};
 }
 
 std::ostream& OpenModelica::Absyn::operator<< (std::ostream &os, const ElementAttributes &attrs) noexcept

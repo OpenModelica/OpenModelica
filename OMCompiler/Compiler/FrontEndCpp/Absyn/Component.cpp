@@ -66,16 +66,16 @@ void Component::apply(ElementVisitor &visitor)
 
 MetaModelica::Value Component::toSCode() const noexcept
 {
-  return MetaModelica::Record(Element::COMPONENT, SCode_Element_COMPONENT__desc, {
-    MetaModelica::Value(_name),
+  return MetaModelica::Record{Element::COMPONENT, SCode_Element_COMPONENT__desc, {
+    MetaModelica::Value{_name},
     _prefixes.toSCode(),
     _attributes.toSCode(),
     _typeSpec.toAbsyn(),
     _modifier.toSCode(),
     _comment.toSCode(),
-    MetaModelica::Option(_condition, [](const auto &c) { return c.toAbsyn(); }),
+    MetaModelica::Option{_condition, [](const auto &c) { return c.toAbsyn(); }},
     info()
-  });
+  }};
 }
 
 const std::string& Component::name() const noexcept

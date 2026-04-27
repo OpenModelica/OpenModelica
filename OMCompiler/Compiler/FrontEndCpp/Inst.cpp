@@ -77,7 +77,7 @@ class Timer
 void* Inst_makeTopNode(void *program, void *annotationProgram)
 {
   // Create an Absyn class for the top scope to put the elements in.
-  auto top_elements = MetaModelica::List(program).mapVector(
+  auto top_elements = MetaModelica::List{program}.mapVector(
     [] (auto e) { return Absyn::Element::fromSCode(e); }
   );
 
@@ -96,7 +96,7 @@ void* Inst_makeTopNode(void *program, void *annotationProgram)
   // Create a node for the builtin annotation classes. These should only be
   // accessible in annotations, so they're stored in a separate scope stored in
   // the node type for the top scope.
-  auto ann_elements = MetaModelica::List(annotationProgram).mapVector(
+  auto ann_elements = MetaModelica::List{annotationProgram}.mapVector(
     [] (auto e) { return Absyn::Element::fromSCode(e); }
   );
   auto ann_package = Absyn::Class("<annotations>", Absyn::ElementPrefixes{}, Encapsulated{true},
@@ -136,7 +136,7 @@ void* Inst_makeTopNode(void *program, void *annotationProgram)
   // the actual Clock node (which can't be defined in regular Modelica).
   // ClassTree.replaceClass(NFBuiltin.CLOCK_NODE, elems);
 
-  return top_node->toMetaModelica().data();
+  return top_node->toNF().data();
 }
 
 void* Inst_test(void *scode)

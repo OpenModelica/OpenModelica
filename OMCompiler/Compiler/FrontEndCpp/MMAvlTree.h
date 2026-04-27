@@ -36,7 +36,10 @@
 #ifndef MMAVLTREE_H
 #define MMAVLTREE_H
 
-#include <iosfwd>
+#include <ostream>
+#include <string>
+#include <algorithm>
+
 #include "MetaModelica.h"
 
 #define DEFINE_MM_AVL_TREE_TYPE(name, mm_type, comp_func) \
@@ -69,11 +72,22 @@ namespace OpenModelica
         {
         }
 
+        AvlTree(MetaModelica::Record value)
+          : _value{value}
+        {
+        }
+
         operator Value() const noexcept { return _value; }
 
         void add(Value key, Value value)
         {
           _value = add(_value, key, value);
+        }
+
+        template<typename FoldFunc>
+        void apply(FoldFunc f) const
+        {
+          apply(_value, f);
         }
 
         static std::string treeString(Record tree)
@@ -249,6 +263,22 @@ namespace OpenModelica
         static Record makeEmpty()
         {
           return Record(EMPTY, EmptyDesc, {});
+        }
+
+        template<typename FoldFunc>
+        static void apply(Record tree, FoldFunc f)
+        {
+          switch (tree.index()) {
+            case NODE:
+              apply(tree[LEFT], f);
+              f(tree[KEY], tree[VALUE]);
+              apply(tree[RIGHT], f);
+              break;
+
+            case LEAF:
+              f(tree[KEY], tree[VALUE]);
+              break;
+          }
         }
 
         static std::string treeString2(Record tree, bool isLeft, std::string indent)

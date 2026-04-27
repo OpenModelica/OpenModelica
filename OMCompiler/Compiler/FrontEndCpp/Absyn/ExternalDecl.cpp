@@ -60,13 +60,13 @@ ExternalDecl::~ExternalDecl() = default;
 
 MetaModelica::Value ExternalDecl::toSCode() const noexcept
 {
-  return MetaModelica::Record(0, SCode_ExternalDecl_EXTERNALDECL__desc, {
-    _functionName.empty() ? MetaModelica::Option() : MetaModelica::Option(MetaModelica::Value(_functionName)),
-    _language.empty() ? MetaModelica::Option() : MetaModelica::Option(MetaModelica::Value(_language)),
-    MetaModelica::Option(_outputParam, [](const auto &o) { return o.toAbsyn(); }),
-    MetaModelica::List(_args, [](const auto &a) { return a.toAbsyn(); }),
+  return MetaModelica::Record{0, SCode_ExternalDecl_EXTERNALDECL__desc, {
+    _functionName.empty() ? MetaModelica::Option{} : MetaModelica::Option{MetaModelica::Value{_functionName}},
+    _language.empty() ? MetaModelica::Option{} : MetaModelica::Option{MetaModelica::Value{_language}},
+    MetaModelica::Option{_outputParam, [](const auto &o) { return o.toAbsyn(); }},
+    MetaModelica::List{_args, [](const auto &a) { return a.toAbsyn(); }},
     _annotation.toSCodeOpt()
-  });
+  }};
 }
 
 std::ostream& OpenModelica::Absyn::operator<< (std::ostream& os, const ExternalDecl &externalDecl) noexcept

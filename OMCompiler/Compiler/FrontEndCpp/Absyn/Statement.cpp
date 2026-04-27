@@ -119,7 +119,7 @@ MetaModelica::Value Statement::toSCode() const noexcept
 
 MetaModelica::Value Statement::toSCodeList(const std::vector<Statement> &stmts) noexcept
 {
-  return MetaModelica::List(stmts, [](const auto &s) { return s.toSCode(); });
+  return MetaModelica::List{stmts, [](const auto &s) { return s.toSCode(); }};
 }
 
 void Statement::print(std::ostream &os, std::string_view indent) const noexcept
@@ -149,12 +149,12 @@ std::unique_ptr<Statement::Base> AssignmentStatement::clone() const noexcept
 
 MetaModelica::Value AssignmentStatement::toSCode() const noexcept
 {
-  return MetaModelica::Record(ALG_ASSIGN, SCode_Statement_ALG__ASSIGN__desc, {
+  return MetaModelica::Record{ALG_ASSIGN, SCode_Statement_ALG__ASSIGN__desc, {
     _lhs.toAbsyn(),
     _rhs.toAbsyn(),
     _comment.toSCode(),
     _info
-  });
+  }};
 }
 
 void AssignmentStatement::print(std::ostream &os) const noexcept
@@ -183,18 +183,18 @@ std::unique_ptr<Statement::Base> IfStatement::clone() const noexcept
 
 MetaModelica::Value IfStatement::toSCode() const noexcept
 {
-  auto branches = MetaModelica::List(++_branches.begin(), _branches.end(), [](const auto &b) {
-    return MetaModelica::Tuple({b.first.toAbsyn(), Statement::toSCodeList(b.second)});
-  });
+  auto branches = MetaModelica::List{++_branches.begin(), _branches.end(), [](const auto &b) {
+    return MetaModelica::Tuple{{b.first.toAbsyn(), Statement::toSCodeList(b.second)}};
+  }};
 
-  return MetaModelica::Record(ALG_IF, SCode_Statement_ALG__IF__desc, {
+  return MetaModelica::Record{ALG_IF, SCode_Statement_ALG__IF__desc, {
     _branches.front().first.toAbsyn(),
     Statement::toSCodeList(_branches.front().second),
     branches,
     Statement::toSCodeList(_else),
     _comment.toSCode(),
     _info
-  });
+  }};
 }
 
 void IfStatement::print(std::ostream &os) const noexcept
@@ -237,17 +237,17 @@ std::unique_ptr<Statement::Base> ForStatement::clone() const noexcept
 
 MetaModelica::Value ForStatement::toSCode() const noexcept
 {
-  return MetaModelica::Record(
+  return MetaModelica::Record{
     _parallel ? ALG_PARFOR : ALG_FOR,
     _parallel ? SCode_Statement_ALG__PARFOR__desc : SCode_Statement_ALG__FOR__desc,
     {
-      MetaModelica::Value(_iterator),
-      MetaModelica::Option(_range, [](const auto &r) { return r.toAbsyn(); }),
+      MetaModelica::Value{_iterator},
+      MetaModelica::Option{_range, [](const auto &r) { return r.toAbsyn(); }},
       Statement::toSCodeList(_body),
       _comment.toSCode(),
       _info
     }
-  );
+  };
 }
 
 void ForStatement::print(std::ostream &os) const noexcept
@@ -276,12 +276,12 @@ std::unique_ptr<Statement::Base> WhileStatement::clone() const noexcept
 
 MetaModelica::Value WhileStatement::toSCode() const noexcept
 {
-  return MetaModelica::Record(ALG_WHILE, SCode_Statement_ALG__WHILE__desc, {
+  return MetaModelica::Record{ALG_WHILE, SCode_Statement_ALG__WHILE__desc, {
     _condition.toAbsyn(),
     Statement::toSCodeList(_body),
     _comment.toSCode(),
     _info
-  });
+  }};
 }
 
 void WhileStatement::print(std::ostream &os) const noexcept
@@ -313,13 +313,13 @@ std::unique_ptr<Statement::Base> WhenStatement::clone() const noexcept
 
 MetaModelica::Value WhenStatement::toSCode() const noexcept
 {
-  return MetaModelica::Record(ALG_WHEN_A, SCode_Statement_ALG__WHEN__A__desc, {
-    MetaModelica::List(_branches, [](const auto &b) {
-      return MetaModelica::Tuple({b.first.toAbsyn(), Statement::toSCodeList(b.second)});
-    }),
+  return MetaModelica::Record{ALG_WHEN_A, SCode_Statement_ALG__WHEN__A__desc, {
+    MetaModelica::List{_branches, [](const auto &b) {
+      return MetaModelica::Tuple{{b.first.toAbsyn(), Statement::toSCodeList(b.second)}};
+    }},
     _comment.toSCode(),
     _info
-  });
+  }};
 }
 
 void WhenStatement::print(std::ostream &os) const noexcept
@@ -356,13 +356,13 @@ std::unique_ptr<Statement::Base> AssertStatement::clone() const noexcept
 
 MetaModelica::Value AssertStatement::toSCode() const noexcept
 {
-  return MetaModelica::Record(ALG_ASSERT, SCode_Statement_ALG__ASSERT__desc, {
+  return MetaModelica::Record{ALG_ASSERT, SCode_Statement_ALG__ASSERT__desc, {
     _condition.toAbsyn(),
     _message.toAbsyn(),
     _level.toAbsyn(),
     _comment.toSCode(),
     _info
-  });
+  }};
 }
 
 void AssertStatement::print(std::ostream &os) const noexcept
@@ -384,11 +384,11 @@ std::unique_ptr<Statement::Base> TerminateStatement::clone() const noexcept
 
 MetaModelica::Value TerminateStatement::toSCode() const noexcept
 {
-  return MetaModelica::Record(ALG_TERMINATE, SCode_Statement_ALG__TERMINATE__desc, {
+  return MetaModelica::Record{ALG_TERMINATE, SCode_Statement_ALG__TERMINATE__desc, {
     _message.toAbsyn(),
     _comment.toSCode(),
     _info
-  });
+  }};
 }
 
 void TerminateStatement::print(std::ostream &os) const noexcept
@@ -411,12 +411,12 @@ std::unique_ptr<Statement::Base> ReinitStatement::clone() const noexcept
 
 MetaModelica::Value ReinitStatement::toSCode() const noexcept
 {
-  return MetaModelica::Record(ALG_REINIT, SCode_Statement_ALG__REINIT__desc, {
+  return MetaModelica::Record{ALG_REINIT, SCode_Statement_ALG__REINIT__desc, {
     _variable.toAbsyn(),
     _exp.toAbsyn(),
     _comment.toSCode(),
     _info
-  });
+  }};
 }
 
 void ReinitStatement::print(std::ostream &os) const noexcept
@@ -438,11 +438,11 @@ std::unique_ptr<Statement::Base> CallStatement::clone() const noexcept
 
 MetaModelica::Value CallStatement::toSCode() const noexcept
 {
-  return MetaModelica::Record(ALG_NORETCALL, SCode_Statement_ALG__NORETCALL__desc, {
+  return MetaModelica::Record{ALG_NORETCALL, SCode_Statement_ALG__NORETCALL__desc, {
     _callExp.toAbsyn(),
     _comment.toSCode(),
     _info
-  });
+  }};
 }
 
 void CallStatement::print(std::ostream &os) const noexcept
@@ -463,10 +463,10 @@ std::unique_ptr<Statement::Base> ReturnStatement::clone() const noexcept
 
 MetaModelica::Value ReturnStatement::toSCode() const noexcept
 {
-  return MetaModelica::Record(ALG_RETURN, SCode_Statement_ALG__RETURN__desc, {
+  return MetaModelica::Record{ALG_RETURN, SCode_Statement_ALG__RETURN__desc, {
     _comment.toSCode(),
     _info
-  });
+  }};
 }
 
 void ReturnStatement::print(std::ostream &os) const noexcept
@@ -487,10 +487,10 @@ std::unique_ptr<Statement::Base> BreakStatement::clone() const noexcept
 
 MetaModelica::Value BreakStatement::toSCode() const noexcept
 {
-  return MetaModelica::Record(ALG_BREAK, SCode_Statement_ALG__BREAK__desc, {
+  return MetaModelica::Record{ALG_BREAK, SCode_Statement_ALG__BREAK__desc, {
     _comment.toSCode(),
     _info
-  });
+  }};
 }
 
 void BreakStatement::print(std::ostream &os) const noexcept

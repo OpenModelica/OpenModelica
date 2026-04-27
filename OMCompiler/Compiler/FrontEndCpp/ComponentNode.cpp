@@ -33,6 +33,8 @@
  *
  */
 
+#include <utility>
+
 #include "Absyn/Component.h"
 #include "Component.h"
 #include "ComponentNode.h"
@@ -48,13 +50,28 @@ constexpr int COMPONENT_INDEX = 3;
 constexpr int PARENT_INDEX = 4;
 constexpr int NODE_TYPE_INDEX = 5;
 
+MMSharedCache<Component> ComponentNode::_cache;
+
+ComponentNode::ComponentNode(MetaModelica::Record value)
+  : _name{value[NAME_INDEX].toString()},
+    _definition{nullptr},
+    _visibility{value[VISIBILITY_INDEX]},
+    // _component is initialized by initialize()
+    _parent{InstNode::getReference(value[PARENT_INDEX])},
+    // _nodeType is initialized by initialize()
+    _mmCache{value}
+{
+
+}
+
 ComponentNode::ComponentNode(Absyn::Component *definition, InstNode *parent)
   : ComponentNode(definition, parent, std::make_unique<NormalComponentType>())
 {
 
 }
 
-ComponentNode::ComponentNode(Absyn::Component *definition, InstNode *parent, std::unique_ptr<InstNodeType> nodeType)
+ComponentNode::ComponentNode(Absyn::Component *definition, InstNode *parent,
+  std::unique_ptr<InstNodeType> nodeType)
   : _name{definition ? definition->name() : ""},
     _definition{definition},
     _visibility{definition ? definition->prefixes().visibility() : Visibility::Public},
@@ -65,7 +82,41 @@ ComponentNode::ComponentNode(Absyn::Component *definition, InstNode *parent, std
 
 }
 
+ComponentNode::ComponentNode(std::string name, Absyn::Component *definition, Visibility visibility,
+  std::unique_ptr<Component> _component, InstNode *parent, std::unique_ptr<InstNodeType> nodeType)
+  : _name{name},
+    _definition{definition},
+    _visibility{visibility},
+    _component{std::move(_component)},
+    _parent{parent},
+    _nodeType{std::move(nodeType)}
+{
+
+}
+
 ComponentNode::~ComponentNode() = default;
+
+std::unique_ptr<InstNode> ComponentNode::clone() const
+{
+  return std::make_unique<ComponentNode>(_name, _definition, _visibility,
+    _component->clone(), _parent, _nodeType ? _nodeType->clone() : nullptr);
+}
+
+Path ComponentNode::scopePath() const
+{
+  if (_parent && !_parent->isRootClass()) {
+    auto path = _parent->scopePath();
+    path.pushBack(_name);
+    return path;
+  } else {
+    return Path{_name};
+  }
+}
+
+const Absyn::Element* ComponentNode::definition() const noexcept
+{
+  return _definition;
+}
 
 const InstNodeType* ComponentNode::nodeType() const noexcept
 {
@@ -78,11 +129,41 @@ void ComponentNode::setNodeType(std::unique_ptr<InstNodeType> nodeType) noexcept
   _mmCache.reset();
 }
 
-MetaModelica::Value ComponentNode::toMetaModelica() const
+void ComponentNode::setParent(InstNode *parent) noexcept
+{
+  _parent = parent;
+}
+
+const Class* ComponentNode::getClass() const noexcept
+{
+  if (_component) {
+    auto cls_inst = _component->classInstance();
+    if (cls_inst) return cls_inst->getClass();
+  }
+
+  return nullptr;
+}
+
+Class* ComponentNode::getClass() noexcept
+{
+  return const_cast<Class*>(std::as_const(*this).getClass());
+}
+
+const Type& ComponentNode::type() const noexcept
+{
+  return _component ? _component->type() : Type::UnknownType;
+}
+
+bool ComponentNode::isExpandableConnector() const noexcept
+{
+  return _component->isExpandableConnector();
+}
+
+MetaModelica::Value ComponentNode::toNF() const
 {
   // Nodes need to be cached to deal with the cyclical dependencies between nodes.
   if (!_mmCache) {
-    auto comp_ptr = MetaModelica::Pointer();
+    auto comp_ptr = MetaModelica::Pointer{};
 
     // Create a MetaModelica record for the node.
     auto rec = MetaModelica::Record{InstNode::COMPONENT_NODE, NFInstNode_InstNode_COMPONENT__NODE__desc, {
@@ -91,7 +172,7 @@ MetaModelica::Value ComponentNode::toMetaModelica() const
       _visibility.toSCode(),
       comp_ptr,
       InstNode::emptyMMNode(),
-      MetaModelica::Value(static_cast<int64_t>(0))
+      MetaModelica::Value{static_cast<int64_t>(0)}
     }};
 
     // Set the cache.
@@ -99,9 +180,22 @@ MetaModelica::Value ComponentNode::toMetaModelica() const
 
     // Set any of the record members that might depend on this node now that we have a cached value.
     comp_ptr.update(_component->toNF());
-    if (_parent) rec.set(PARENT_INDEX, _parent->toMetaModelica());
-    rec.set(NODE_TYPE_INDEX, _nodeType->toMetaModelica());
+    if (_parent) rec.set(PARENT_INDEX, _parent->toNF());
+    rec.set(NODE_TYPE_INDEX, _nodeType->toNF());
   }
 
   return *_mmCache;
+}
+
+void ComponentNode::initialize()
+{
+  if (_mmCache) {
+    auto value = *_mmCache;
+    _component = _cache.getOwnedPtr(value[COMPONENT_INDEX].toPointer().access());
+
+    if (!_component) {
+      throw std::runtime_error("no component");
+    }
+    //_nodeType = InstNodeType::fromNF(value[NODE_TYPE_INDEX]);
+  }
 }

@@ -38,6 +38,7 @@
 
 #include <bitset>
 #include <iosfwd>
+#include <string>
 
 #include "MetaModelica.h"
 #include "Prefixes.h"
@@ -90,8 +91,10 @@ namespace OpenModelica
       static Restriction Enumeration() noexcept       { return Kind::Enumeration; }
       static Restriction Clock() noexcept             { return Kind::Clock; }
       static Restriction Record() noexcept            { return Kind::Record; }
+      static Restriction Record(bool isOperator, bool isExternal) noexcept;
       static Restriction RecordConstructor() noexcept { return {Prefix::Constructor, Kind::Record}; }
       static Restriction OperatorRecord() noexcept    { return {Prefix::Operator, Kind::Record}; }
+      static Restriction ExternalRecord() noexcept    { return {Prefix::External, Kind::Record}; }
       static Restriction Function(Purity purity) noexcept;
       static Restriction ExternalFunction(Purity purity) noexcept;
       static Restriction ParallelFunction() noexcept  { return {Prefix::Parallel, Kind::Function}; }
@@ -101,6 +104,7 @@ namespace OpenModelica
       static Restriction ExternalObject() noexcept    { return Kind::ExternalObject; }
 
       MetaModelica::Value toSCode() const noexcept;
+      MetaModelica::Value toNF() const noexcept;
 
       Kind kind() const noexcept;
       Purity purity() const noexcept;

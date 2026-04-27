@@ -94,7 +94,6 @@ namespace OpenModelica::Absyn
       ~ClassParts();
 
       ClassParts& operator= (ClassParts other) noexcept;
-      ClassParts& operator= (ClassParts &&other) = default;
       friend void swap(ClassParts &first, ClassParts &second) noexcept;
 
       std::unique_ptr<ClassDef> clone() const noexcept override;
@@ -115,7 +114,9 @@ namespace OpenModelica::Absyn
       std::vector<Algorithm> _algorithms;
       std::vector<Algorithm> _initialAlgorithms;
       //std::vector<ConstraintSection> _constraints;
+      MetaModelica::Value _constraints;
       //std::vector<NamedArg> _classAttributes;
+      MetaModelica::Value _classAttributes;
       std::unique_ptr<ExternalDecl> _externalDecl;
   };
 
@@ -128,7 +129,6 @@ namespace OpenModelica::Absyn
       ~ClassExtends();
 
       ClassExtends& operator= (ClassExtends other) noexcept;
-      ClassExtends& operator= (ClassExtends &&other) = default;
       friend void swap(ClassExtends &first, ClassExtends &second) noexcept;
 
       std::unique_ptr<ClassDef> clone() const noexcept override;

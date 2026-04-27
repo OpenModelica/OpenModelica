@@ -58,11 +58,11 @@ void Import::apply(ElementVisitor &visitor)
 
 MetaModelica::Value Import::toSCode() const noexcept
 {
-  return MetaModelica::Record(Element::IMPORT, SCode_Element_IMPORT__desc, {
+  return MetaModelica::Record{Element::IMPORT, SCode_Element_IMPORT__desc, {
     _path.toAbsyn(),
     _visibility.toSCode(),
     info()
-  });
+  }};
 }
 
 const ImportPath& Import::importPath() const noexcept

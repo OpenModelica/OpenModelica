@@ -49,6 +49,12 @@ constexpr int UNRESOLVED_IMPORT = 0;
 constexpr int RESOLVED_IMPORT = 1;
 constexpr int CONFLICTING_IMPORT = 2;
 
+Import::Import(MetaModelica::Record value)
+  : _mmCache{value}
+{
+
+}
+
 Import::Import(Absyn::Import *absyn, InstNode *scope)
   : _absyn{absyn}, _scope{scope}
 {
@@ -57,17 +63,19 @@ Import::Import(Absyn::Import *absyn, InstNode *scope)
 
 MetaModelica::Record Import::toNF() const
 {
+  if (_mmCache) return *_mmCache;
+
   if (!_node) {
     assert(_scope);
     return MetaModelica::Record{UNRESOLVED_IMPORT, NFImport_UNRESOLVED__IMPORT__desc, {
       _absyn->toSCode(),
-      _scope->toMetaModelica(),
+      _scope->toNF(),
       _absyn->info()
     }};
   } else {
     assert(_node);
     return MetaModelica::Record{RESOLVED_IMPORT, NFImport_RESOLVED__IMPORT__desc, {
-      _node->toMetaModelica(),
+      _node->toNF(),
       MetaModelica::Value{_absyn->importPath().shortName()},
       _absyn->info()
     }};

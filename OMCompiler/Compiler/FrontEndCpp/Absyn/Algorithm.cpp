@@ -49,7 +49,7 @@ Algorithm::Algorithm(MetaModelica::Record value)
 
 MetaModelica::Value Algorithm::toSCode() const noexcept
 {
-  return MetaModelica::Record(0, SCode_AlgorithmSection_ALGORITHM__desc, { Statement::toSCodeList(_statements) });
+  return MetaModelica::Record{0, SCode_AlgorithmSection_ALGORITHM__desc, { Statement::toSCodeList(_statements) }};
 }
 
 std::ostream& OpenModelica::Absyn::operator<< (std::ostream &os, const Algorithm &algorithm)

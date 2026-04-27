@@ -36,15 +36,20 @@
 #ifndef INSTNODE_H
 #define INSTNODE_H
 
+#include <memory>
+
 #include "Absyn/AbsynFwd.h"
+#include "Util/MMCache.h"
 #include "MetaModelica.h"
 #include "InstNodeType.h"
-
-#include <memory>
+#include "Type.h"
+#include "Path.h"
 
 namespace OpenModelica
 {
   class Class;
+
+  std::unique_ptr<InstNode> node_from_mm(MetaModelica::Record value);
 
   class InstNode
   {
@@ -64,25 +69,57 @@ namespace OpenModelica
     public:
       virtual ~InstNode() = default;
 
-      bool isComponent() const noexcept { return false; }
-      bool isClass() const noexcept { return false; }
-      bool isRef() const noexcept { return false; }
-      bool isRedeclare() const noexcept { return false; }
+      virtual std::unique_ptr<InstNode> clone() const = 0;
+
+      virtual bool isComponent() const noexcept { return false; }
+      virtual bool isClass() const noexcept { return false; }
+      virtual bool isRef() const noexcept { return false; }
+      virtual bool isName() const noexcept { return false; }
+      virtual bool isRedeclare() const noexcept { return false; }
+      bool isRootClass() const noexcept;
 
       virtual const std::string& name() const noexcept = 0;
-      virtual Absyn::Element* definition() const noexcept = 0;
+      std::string str() const { return name(); }
+      virtual Path scopePath() const;
+      virtual const Absyn::Element* definition() const noexcept { return nullptr; }
       int refIndex() const noexcept { return 0; }
 
       virtual const InstNodeType* nodeType() const noexcept { return nullptr; }
       virtual void setNodeType(std::unique_ptr<InstNodeType>) noexcept {};
 
+      virtual void setParent(InstNode*) noexcept {}
+
       virtual const Class* getClass() const noexcept { return nullptr; }
+      virtual Class* getClass() noexcept { return nullptr; }
 
-      virtual void partialInst() {};
-      virtual void expand() {};
-      virtual void instantiate() {};
+      virtual const Type& type() const noexcept { return Type::UnknownType; }
+      virtual bool isExpandableConnector() const noexcept { return false; }
 
-      virtual MetaModelica::Value toMetaModelica() const = 0;
+      virtual void partialInst() {}
+      virtual void expand() {}
+      virtual void instantiate() {}
+
+      static std::unique_ptr<InstNode> getOwnedPtr(MetaModelica::Record value);
+      static std::vector<std::unique_ptr<InstNode>> getOwnedPtrs(MetaModelica::Value value);
+      static InstNode* getReference(MetaModelica::Record value);
+      static std::vector<InstNode*> getReferences(MetaModelica::Value value);
+      virtual MetaModelica::Value toNF() const = 0;
+
+    protected:
+      InstNode() = default;
+      InstNode(const InstNode&) = default;
+      InstNode(InstNode&&) noexcept = default;
+      InstNode& operator=(const InstNode&) = default;
+      InstNode& operator=(InstNode&&) noexcept = default;
+
+      virtual void initialize() {}
+
+    private:
+      static std::unique_ptr<InstNode> fromMM(MetaModelica::Record value);
+
+    private:
+      friend class MMCache<InstNode>;
+      static MMCache<InstNode> _cache;
   };
 
 

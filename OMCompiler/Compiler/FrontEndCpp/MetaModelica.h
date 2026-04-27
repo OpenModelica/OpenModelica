@@ -82,6 +82,7 @@ namespace OpenModelica
         class ArrowProxy;
 
       public:
+        Value() noexcept;
         explicit Value(void *value) noexcept;
         explicit Value(int64_t value) noexcept;
         explicit Value(double value) noexcept;
@@ -523,7 +524,7 @@ namespace OpenModelica
       public:
         explicit Record(void *value) noexcept;
         Record(Value value);
-        Record(int index, record_description &desc, std::initializer_list<Value> values = {});
+        Record(int index, record_description &desc, std::initializer_list<Value> values = {}) noexcept;
 
         operator Value() const noexcept { return Value{_value}; }
 

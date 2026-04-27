@@ -84,9 +84,16 @@ int get_ctor(void *data)
   return MMC_HDRCTOR(MMC_HDR_UNMARK(MMC_GETHDR(data)));
 }
 
+Value::Value() noexcept
+  : _value{nullptr}
+{
+
+}
+
 Value::Value(void *value) noexcept
   : _value{value}
 {
+
 }
 
 Value::Value(int64_t value) noexcept
@@ -787,7 +794,7 @@ Record::Record(Value value)
 
 }
 
-Record::Record(int index, record_description &desc, std::initializer_list<Value> values)
+Record::Record(int index, record_description &desc, std::initializer_list<Value> values) noexcept
 {
   mmc_struct *p = static_cast<mmc_struct*>(mmc_alloc_words(values.size() + 2));
   p->header = MMC_STRUCTHDR(values.size() + 1, index + 3);

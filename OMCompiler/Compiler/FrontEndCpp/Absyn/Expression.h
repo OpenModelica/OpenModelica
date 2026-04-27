@@ -45,6 +45,7 @@
 #include "MetaModelica.h"
 #include "ComponentRef.h"
 #include "Operator.h"
+#include "Path.h"
 #include "FunctionArgs.h"
 
 namespace OpenModelica::Absyn
@@ -245,6 +246,7 @@ namespace OpenModelica::Absyn
     private:
       ComponentRef _functionName;
       FunctionArgs _args;
+      MetaModelica::Value _typeVars;
   };
 
   class PartEvalFunction : public Expression::Base
@@ -353,6 +355,7 @@ namespace OpenModelica::Absyn
 
     private:
       //std::unique_ptr<CodeNode> _code;
+      MetaModelica::Value _value;
   };
 
   class SubscriptedExp : public Expression::Base

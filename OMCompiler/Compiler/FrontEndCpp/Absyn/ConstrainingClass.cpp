@@ -52,11 +52,11 @@ ConstrainingClass::ConstrainingClass(MetaModelica::Record value)
 
 MetaModelica::Value ConstrainingClass::toSCode() const noexcept
 {
-  return MetaModelica::Record(0, SCode_ConstrainClass_CONSTRAINCLASS__desc, {
+  return MetaModelica::Record{0, SCode_ConstrainClass_CONSTRAINCLASS__desc, {
     _path.toAbsyn(),
     _modifier.toSCode(),
     _comment.toSCode()
-  });
+  }};
 }
 
 std::ostream& OpenModelica::Absyn::operator<< (std::ostream &os, const ConstrainingClass &cc) noexcept

@@ -56,7 +56,6 @@ namespace OpenModelica::Absyn
       Class(Class &&other) = default;
 
       Class& operator= (Class other) noexcept;
-      Class& operator= (Class &&other) = default;
       friend void swap(Class &first, Class &second) noexcept;
 
       void apply(ElementVisitor &visitor) override;

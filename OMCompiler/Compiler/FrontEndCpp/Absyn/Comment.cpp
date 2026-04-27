@@ -42,6 +42,12 @@ using namespace OpenModelica::Absyn;
 
 extern record_description SCode_Comment_COMMENT__desc;
 
+MetaModelica::Value Comment::noCommentSCode()
+{
+  static auto val = Comment().toSCode();
+  return val;
+}
+
 Comment::Comment(MetaModelica::Record value)
   : _annotation{value[0].mapOptionalOrDefault<Annotation>()},
     _description{value[1].toOptional<std::string>()}
@@ -56,10 +62,10 @@ Comment::Comment(std::string description, Annotation annotation) noexcept
 
 MetaModelica::Value Comment::toSCode() const noexcept
 {
-  return MetaModelica::Record(0, SCode_Comment_COMMENT__desc, {
+  return MetaModelica::Record{0, SCode_Comment_COMMENT__desc, {
     _annotation.toSCodeOpt(),
-    MetaModelica::Option(_description)
-  });
+    MetaModelica::Option{_description}
+  }};
 }
 
 std::optional<std::string> Comment::descriptionString() const noexcept
