@@ -5491,15 +5491,15 @@ template daeExpCrefRhsSimContext(Exp ecr, Context context, Text &preExp,
       let dimsValuesStr = (dims |> dim => '(_index_t)<%dimension(dim, context, &preExp, &varDecls, &auxFunction)%>' ;separator=", ")
       // Workaround for https://github.com/OpenModelica/OpenModelica/issues/14470
       let arrayData = if hasZeroDimension(dims) then
-        'NULL'
-      else if Flags.getConfigBool(Flags.NEW_BACKEND) then
-        let &sub = buffer '<%indexSubs(crefDims(cr), crefSubs(crefArrayGetFirstCref(cr)), context, &preExp, &varDecls, &auxFunction)%>'
-        let nosubname = contextCref(crefStripSubs(cr), context, &preExp, &varDecls, &auxFunction, &sub)
-        '((modelica_<%type%>*)&(<%nosubname%>))'
-      else
-        let &sub = buffer ""
-        let nosubname = contextCref(crefArrayGetFirstCref(cr), context, &preExp, &varDecls, &auxFunction, &sub)
-        '((modelica_<%type%>*)&(<%nosubname%>))'
+          'NULL'
+        else if Flags.getConfigBool(Flags.NEW_BACKEND) then
+          let &sub = buffer '<%indexSubs(crefDims(cr), crefSubs(crefArrayGetFirstCref(cr)), context, &preExp, &varDecls, &auxFunction)%>'
+          let nosubname = contextCref(crefStripSubs(cr), context, &preExp, &varDecls, &auxFunction, &sub)
+          '((modelica_<%type%>*)&(<%nosubname%>))'
+        else
+          let &sub = buffer ""
+          let nosubname = contextCref(crefArrayGetFirstCref(cr), context, &preExp, &varDecls, &auxFunction, &sub)
+          '((modelica_<%type%>*)&(<%nosubname%>))'
       let t = '<%type%>_array_create(&<%wrapperArray%>, <%arrayData%>, <%dimsLenStr%>, <%dimsValuesStr%>);<%\n%>'
       let &preExp += t
     wrapperArray
@@ -5660,8 +5660,19 @@ template daeExpCrefLhsSimContext(Exp ecr, Context context, Text &preExp,
     if crefSubIsScalar(cr) then
       let dimsLenStr = listLength(dims)
       let dimsValuesStr = (dims |> dim => '(_index_t)<%dimension(dim, context, &preExp, &varDecls, &auxFunction)%>' ;separator=", ")
+      // Workaround for https://github.com/OpenModelica/OpenModelica/issues/14470
+      let arrayData = if hasZeroDimension(dims) then
+          'NULL'
+        else if Flags.getConfigBool(Flags.NEW_BACKEND) then
+          let &sub = buffer '<%indexSubs(crefDims(cr), crefSubs(crefArrayGetFirstCref(cr)), context, &preExp, &varDecls, &auxFunction)%>'
+          let nosubname = contextCref(crefStripSubs(cr), context, &preExp, &varDecls, &auxFunction, &sub)
+          '((modelica_<%type%>*)&(<%nosubname%>))'
+        else
+          let &sub = buffer ""
+          let nosubname = contextCref(crefArrayGetFirstCref(cr), context, &preExp, &varDecls, &auxFunction, &sub)
+          '((modelica_<%type%>*)&(<%nosubname%>))'
       let nosubname = contextCrefIsPre(crefStripSubs(cr),context, &auxFunction, isPre)
-      let t = '<%type%>_array_create(&<%wrapperArray%>, ((modelica_<%type%>*)&((&<%nosubname%>)<%indexSubs(crefDims(cr), crefSubs(crefArrayGetFirstCref(cr)), context, &preExp, &varDecls, &auxFunction)%>)), <%dimsLenStr%>, <%dimsValuesStr%>);<%\n%>'
+      let t = '<%type%>_array_create(&<%wrapperArray%>, <%arrayData%>, <%dimsLenStr%>, <%dimsValuesStr%>);<%\n%>'
       let &preExp += t
     wrapperArray
   else
