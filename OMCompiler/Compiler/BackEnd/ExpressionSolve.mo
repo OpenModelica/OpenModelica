@@ -1553,7 +1553,8 @@ author: Vitalij Ruge
  input list<DAE.ComponentRef> inewVarsCrefs "cref for tmp vars";
  input Integer uniqueEqIndex, idepth "need for tmp vars";
 
- output DAE.Exp rhs, lhs;
+ output DAE.Exp rhs;
+ output DAE.Exp lhs;
  output list<BackendDAE.Equation> eqnForNewVars;
  output list<DAE.ComponentRef> newVarsCrefs;
 

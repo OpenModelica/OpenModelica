@@ -8685,7 +8685,8 @@ end attrDirectionStr;
 function getComponentitemsName
   " separated list of all component names and comments (if any)."
   input Absyn.ComponentItem ci;
-  output String name, comment;
+  output String name;
+  output String comment;
 algorithm
   (name, comment) := match ci
     local
