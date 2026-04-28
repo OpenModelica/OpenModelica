@@ -70,9 +70,9 @@ PlotWindowContainer::PlotWindowContainer(QWidget *pParent)
   setTabsClosable(true);
   setTabsMovable(true);
   if (OptionsDialog::instance()->getPlottingPage()->getPlottingViewMode().compare(Helper::subWindow) == 0) {
-    setViewMode(QMdiArea::SubWindowView);
+    MainWindow::switchToWindowMode(this);
   } else {
-    setViewMode(QMdiArea::TabbedView);
+    MainWindow::switchToTabbedMode(this);
   }
 }
 

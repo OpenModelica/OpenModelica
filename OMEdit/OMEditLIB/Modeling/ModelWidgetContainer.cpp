@@ -7783,9 +7783,9 @@ ModelWidgetContainer::ModelWidgetContainer(QWidget *pParent)
   setTabsClosable(true);
   setTabsMovable(true);
   if (OptionsDialog::instance()->getGraphicalViewsPage()->getModelingViewMode().compare(Helper::subWindow) == 0) {
-    setViewMode(QMdiArea::SubWindowView);
+    MainWindow::switchToWindowMode(this);
   } else {
-    setViewMode(QMdiArea::TabbedView);
+    MainWindow::switchToTabbedMode(this);
   }
   // create a Model Swicther Dialog
   mpModelSwitcherDialog = new QDialog(this, Qt::Popup);

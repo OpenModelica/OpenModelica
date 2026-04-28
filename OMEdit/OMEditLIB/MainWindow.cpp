@@ -1815,6 +1815,44 @@ void MainWindow::markMessagesTabWidgetChangedForNewMessage(StringHandler::OpenMo
 }
 
 /*!
+ * \brief MainWindow::switchToWindowMode
+ * Switches the QMdiArea to Window mode.
+ * \param pMdiArea
+ */
+void MainWindow::switchToWindowMode(QMdiArea *pMdiArea)
+{
+  pMdiArea->setViewMode(QMdiArea::SubWindowView);
+  // No disconnect needed — QTabBar is destroyed, signals auto-disconnect
+}
+
+/*!
+ * \brief MainWindow::switchToTabbedMode
+ * Switches the QMdiArea to Tabbed mode and connects the tabMoved signal of QTabBar to a lambda function which sets the active subwindow to the moved window.
+ * \param pMdiArea
+ */
+void MainWindow::switchToTabbedMode(QMdiArea *pMdiArea)
+{
+  pMdiArea->setViewMode(QMdiArea::TabbedView);
+
+  /* See #15239
+   * When switching to tabbed mode, the order of subwindows is not updated until a tab is moved.
+   * To fix this, we connect to the tabMoved signal and set the active subwindow to the moved window.
+   * This way, the order of subwindows is updated immediately after switching to tabbed mode.
+   * This issue is not seen in Qt6.
+   */
+  QTabBar* tabBar = pMdiArea->findChild<QTabBar*>();
+  if (tabBar) {
+    connect(tabBar, &QTabBar::tabMoved, MainWindow::instance(), [pMdiArea](int from, int to) {
+      Q_UNUSED(from)
+      QMdiSubWindow* movedWindow = pMdiArea->subWindowList().at(to);
+      if (movedWindow) {
+        pMdiArea->setActiveSubWindow(movedWindow);
+      }
+    });
+  }
+}
+
+/*!
  * \brief MainWindow::showMessageBrowser
  * Slot activated when MessagesWidget::messageAdded signal is raised.\n
  * Shows the Message Browser.
@@ -2438,10 +2476,10 @@ void MainWindow::toggleTabOrSubWindowView()
     QMdiSubWindow *pSubWindow = 0;
     switch (pMdiArea->viewMode()) {
       case QMdiArea::SubWindowView:
-        pMdiArea->setViewMode(QMdiArea::TabbedView);
+        MainWindow::switchToTabbedMode(pMdiArea);
         break;
       case QMdiArea::TabbedView:
-        pMdiArea->setViewMode(QMdiArea::SubWindowView);
+        MainWindow::switchToWindowMode(pMdiArea);
         pSubWindow = pMdiArea->currentSubWindow();
         if (pSubWindow) {
           pSubWindow->show();
