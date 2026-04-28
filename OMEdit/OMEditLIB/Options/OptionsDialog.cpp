@@ -2205,10 +2205,10 @@ void OptionsDialog::saveGraphicalViewsSettings()
   QString modelingViewMode = mpGraphicalViewsPage->getModelingViewMode();
   if (modelingViewMode.compare(Helper::tabbed) == 0) {
     mpSettings->remove("modeling/viewmode");
-    MainWindow::instance()->getModelWidgetContainer()->setViewMode(QMdiArea::TabbedView);
+    MainWindow::switchToTabbedMode(MainWindow::instance()->getModelWidgetContainer());
   } else {
     mpSettings->setValue("modeling/viewmode", modelingViewMode);
-    MainWindow::instance()->getModelWidgetContainer()->setViewMode(QMdiArea::SubWindowView);
+    MainWindow::switchToWindowMode(MainWindow::instance()->getModelWidgetContainer());
     ModelWidget *pModelWidget = MainWindow::instance()->getModelWidgetContainer()->getCurrentModelWidget();
     if (pModelWidget) {
       pModelWidget->show();
@@ -2714,10 +2714,10 @@ void OptionsDialog::savePlottingSettings()
   QString plottingViewMode = mpPlottingPage->getPlottingViewMode();
   if (mpPlottingPage->getPlottingViewMode().compare(Helper::tabbed) == 0) {
     mpSettings->remove("plotting/viewmode");
-    MainWindow::instance()->getPlotWindowContainer()->setViewMode(QMdiArea::TabbedView);
+    MainWindow::switchToTabbedMode(MainWindow::instance()->getPlotWindowContainer());
   } else {
     mpSettings->setValue("plotting/viewmode", plottingViewMode);
-    MainWindow::instance()->getPlotWindowContainer()->setViewMode(QMdiArea::SubWindowView);
+    MainWindow::switchToWindowMode(MainWindow::instance()->getPlotWindowContainer());
     OMPlot::PlotWindow *pPlotWindow = MainWindow::instance()->getPlotWindowContainer()->getCurrentWindow();
     if (pPlotWindow) {
       pPlotWindow->show();

@@ -262,6 +262,8 @@ public:
   QString getLibraryIndexFilePath() const;
   void writeNewApiProfiling(const QString &str);
   void markMessagesTabWidgetChangedForNewMessage(StringHandler::OpenModelicaErrors errorType);
+  static void switchToWindowMode(QMdiArea *pMdiArea);
+  static void switchToTabbedMode(QMdiArea *pMdiArea);
 
   QList<QString> mFMUDirectoriesList;
   QList<QString> mMOLDirectoriesList;
