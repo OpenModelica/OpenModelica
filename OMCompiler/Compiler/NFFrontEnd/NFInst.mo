@@ -1938,6 +1938,7 @@ algorithm
       SCode.Element elementDefinition;
       Boolean in_function;
       Restriction parent_res, res;
+      SCode.Comment cmt;
 
     case SCode.COMPONENT(info = info)
       algorithm
@@ -1991,12 +1992,14 @@ algorithm
           res := Class.restriction(ty);
 
           /* fix issue https://github.com/OpenModelica/OpenModelica/issues/12533
-           * check if restriction is TYPE and has named annotation absolulteValue=false, then copy the derived annotations to components annotation
+           * check if restriction is TYPE and has named annotation absoluteValue=false, if so set absoluteValue=false in the component's annotation too.
            * (e.g) type TemperatureDifference = Real (final quantity="ThermodynamicTemperature", final unit="K") annotation(absoluteValue=false);
           */
           elementDefinition := InstNode.definition(ty_node);
           if (Restriction.isType(res) and SCodeUtil.optCommentHasBooleanNamedAnnotationFalse(SCodeUtil.getElementComment(elementDefinition), "absoluteValue")) then
-            InstNode.componentApply(node, Component.setComment, Util.getOption(SCodeUtil.getElementComment(elementDefinition)));
+            cmt := Component.comment(InstNode.component(node));
+            cmt := SCodeUtil.setAnnotationInComment("absoluteValue", Absyn.Exp.BOOL(false), cmt, replace = false);
+            InstNode.componentApply(node, Component.setComment, cmt);
           end if;
 
           if not InstContext.inRedeclared(context) then

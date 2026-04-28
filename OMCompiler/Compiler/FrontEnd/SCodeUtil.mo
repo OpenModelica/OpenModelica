@@ -3572,6 +3572,16 @@ algorithm
   end match;
 end getModifierBinding;
 
+public function setModifierBinding
+  input Option<Absyn.Exp> binding;
+  input output SCode.Mod mod;
+algorithm
+  () := match mod
+    case SCode.Mod.MOD() algorithm mod.binding := binding; then ();
+    else ();
+  end match;
+end setModifierBinding;
+
 function getComponentCondition
   input SCode.Element element;
   output Option<Absyn.Exp> condition;
@@ -6395,6 +6405,95 @@ algorithm
     info
   );
 end makeMod;
+
+public function makeSingleAnnotation
+  "Creates an annotation(name = value) annotation."
+  input String name;
+  input Absyn.Exp value;
+  output SCode.Annotation ann;
+algorithm
+  ann := SCode.Annotation.ANNOTATION(SCode.Mod.MOD(
+    SCode.Final.NOT_FINAL(),
+    SCode.Each.NOT_EACH(),
+    {
+      SCode.SubMod.NAMEMOD(
+        name,
+        SCode.Mod.MOD(
+          SCode.Final.NOT_FINAL(),
+          SCode.Each.NOT_EACH(),
+          {},
+          SOME(value),
+          NONE(),
+          AbsynUtil.dummyInfo
+        )
+      )
+    },
+    NONE(),
+    NONE(),
+    AbsynUtil.dummyInfo
+  ));
+end makeSingleAnnotation;
+
+public function setAnnotationInComment
+  "Sets the value of an annotation in a comment. If the annotation doesn't already exist it's added."
+  input String name;
+  input Absyn.Exp value;
+  input output SCode.Comment cmt;
+  input Boolean replace = true "Whether to replace the value of an existing annotation or not";
+protected
+  SCode.Annotation ann;
+  SCode.Mod mod;
+algorithm
+  if isNone(cmt.annotation_) then
+    cmt.annotation_ := SOME(makeSingleAnnotation(name, value));
+    return;
+  else
+    cmt.annotation_ := SOME(setAnnotationValue(name, value, Util.getOption(cmt.annotation_), replace));
+  end if;
+end setAnnotationInComment;
+
+public function setAnnotationValue
+  "Sets the value of an annotation. If the annotation doesn't already exist it's added."
+  input String name;
+  input Absyn.Exp value;
+  input output SCode.Annotation ann;
+  input Boolean replace = true "Whether to replace the value of an existing annotation or not";
+protected
+  SCode.Mod mod;
+  list<SCode.SubMod> submods;
+  Boolean found;
+
+  function replace_mod
+    input String name;
+    input Absyn.Exp value;
+    input Boolean replace;
+    input output SCode.SubMod mod;
+          output Boolean found;
+  algorithm
+    found := mod.ident == name;
+    if found and replace then
+      mod.mod := setModifierBinding(SOME(value), mod.mod);
+    end if;
+  end replace_mod;
+algorithm
+  () := match ann
+    case SCode.Annotation.ANNOTATION(modification = mod as SCode.Mod.MOD())
+      algorithm
+        (submods, found) := List.findMap(mod.subModLst,
+          function replace_mod(name = name, value = value, replace = replace));
+
+        if not found then
+          submods := SCode.SubMod.NAMEMOD(name, makeMod(binding = SOME(value))) :: submods;
+        end if;
+
+        mod.subModLst := submods;
+        ann.modification := mod;
+      then
+        ();
+
+    else ();
+  end match;
+end setAnnotationValue;
 
 annotation(__OpenModelica_Interface="frontend");
 end SCodeUtil;
