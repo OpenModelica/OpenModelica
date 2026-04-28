@@ -40,6 +40,7 @@ OMCompiler/omc_config.unix.h.in
 # [3rd-party]
 OMCompiler/tools/
 !OMCompiler/tools/debugging
+!OMCompiler/tools/xml
 
 # [build] generated files / build artifacts
 OMCompiler/Compiler/boot/bomc
