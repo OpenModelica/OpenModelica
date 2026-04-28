@@ -2,6 +2,7 @@ TEST=../../../rtest -v
 
 TESTFILES=\
 Annotations.mo \
+Annotations2.mo \
 BuiltinTime1.mo \
 BuiltinTimeInvalid1.mo \
 BuiltinTimeInvalid2.mo \
