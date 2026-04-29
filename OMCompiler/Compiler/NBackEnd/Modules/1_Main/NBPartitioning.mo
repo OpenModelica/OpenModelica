@@ -170,15 +170,20 @@ public
       b := match clock case BASE_CLOCK(clock = ClockKind.EVENT_CLOCK()) then true; else false; end match;
     end isEventClock;
 
-    function getInferredRef
-      input BClock clock;
-      output Option<ComponentRef> cref;
+    function baseClockInferrence
+      input output BClock clock;
+      input UnorderedMap<ComponentRef, BClock> base_clock_inferrence;
     algorithm
-      cref := match clock
-        case INFERRED_CLOCK() then SOME(clock.base_ref);
-        else NONE();
+      clock := match clock
+        local
+          BClock base_clock;
+        case INFERRED_CLOCK() algorithm
+          base_clock := UnorderedMap.getSafe(clock.base_ref, base_clock_inferrence, sourceInfo());
+        then baseClockInferrence(base_clock, base_clock_inferrence);
+        case BClock.BASE_CLOCK(clock = ClockKind.INFERRED_CLOCK()) then DEFAULT_BASE_CLOCK;
+        else clock;
       end match;
-    end getInferredRef;
+    end baseClockInferrence;
 
     function convertBase
       input BClock clock;
@@ -720,7 +725,7 @@ protected
       input Partition.Kind kind;
       input ClockedInfo info;
       input UnorderedSet<ComponentRef> held_crefs;
-      input UnorderedSet<ComponentRef> inferred_clocks;
+      input UnorderedSet<ComponentRef> infer_del;
       output Partition.Partition partition;
     protected
       list<ComponentRef> cvars = UnorderedSet.toList(cluster.variables);
@@ -732,6 +737,7 @@ protected
       VariablePointers partVariables;
       EquationPointers partEquations;
       Integer var_idx;
+      UnorderedSet<ComponentRef> inferred_clocks = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
     algorithm
       // find all variables and equations
       var_lst := list(BVariable.getVarPointer(cref, sourceInfo()) for cref in cvars);
@@ -743,7 +749,7 @@ protected
       partEquations := EquationPointers.fromList(eqn_lst);
 
       // create the association (clocked/continuous)
-      association := Partition.Association.create(partEquations, kind, info);
+      association := Partition.Association.create(partEquations, kind, info, infer_del);
 
       // replace the clocked functions, inline clocked when equations and set equations to clocked
       partEquations := EquationPointers.mapExp(partEquations, function replaceClockedFunctions(held_crefs = held_crefs));
@@ -754,6 +760,11 @@ protected
         // replace clocked when equations and make all variables clocked
         partEquations := EquationPointers.map(partEquations, replaceClockedWhen);
         partVariables := VariablePointers.mapPtr(partVariables, function BVariable.setVarKind(varKind = VariableKind.CLOCKED()));
+
+        // if the partition will be removed add all unused inferred clocks
+        if EquationPointers.size(partEquations) == 0 then
+          UnorderedSet.merge(infer_del, inferred_clocks);
+        end if;
       end if;
 
       partition := Partition.PARTITION(
@@ -902,9 +913,10 @@ protected
     array<Boolean> marked_vars;
     list<Pointer<Variable>> single_vars;
     UnorderedSet<ComponentRef> held_crefs = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
-    UnorderedSet<ComponentRef> inferred_clocks = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
     // maps each cref to the clock it is listening to
     UnorderedMap<ComponentRef, ComponentRef> clock_map = UnorderedMap.new<ComponentRef>(ComponentRef.hash, ComponentRef.isEqual);
+    UnorderedSet<ComponentRef> infer_del = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
+    Pointer<Integer> index = Pointer.create(1);
   algorithm
     // parse clock assignments
     for eq_idx in UnorderedMap.valueList(clocked.map) loop
@@ -979,11 +991,18 @@ protected
     ClockedInfo.resolveSubClocks(info, clock_map);
 
     // get the actual partitions from the clusters and split continuous/clocked
-    partitions := list(Cluster.toPartition(cl, variables, equations, kind, info, held_crefs, inferred_clocks) for cl in UnorderedMap.valueList(cluster_map));
+    partitions := list(Cluster.toPartition(cl, variables, equations, kind, info, held_crefs, infer_del) for cl in UnorderedMap.valueList(cluster_map));
     // update the partitions if one of their variables is in a hold() function
     partitions := list(Partition.Partition.updateHeldVars(part, held_crefs) for part in partitions);
     // merge all clocked partitions with equal base and sub clock and find the proper order
-    partitions := sortAndMergeClockedPartitions(partitions, info);
+    partitions := list(Partition.Partition.setIndex(partition, index) for partition guard(not Partition.Partition.isEmpty(partition)) in sortAndMergeClockedPartitions(partitions, info));
+
+    // remove the unused inferred clocks from clock structure
+    for unused_infer in UnorderedSet.toList(infer_del) loop
+      UnorderedMap.remove(unused_infer, info.baseClocks);
+      UnorderedMap.remove(unused_infer, info.baseToSub);
+    end for;
+
 
     if Flags.isSet(Flags.DUMP_SYNCHRONOUS) then
       print(StringUtil.headline_1("[dumpSynchronous] Partitioning result:") + "\n" + List.toString(partitions, function Partition.Partition.toString(level = 2), "", "", "\n", "\n"));
@@ -1005,8 +1024,6 @@ protected
     Option<BClock> baseClock_opt;
     SubMap subClockMap "maps sub clock to it's partition for current base clock";
     Partition.Partition new_part;
-    ComponentRef base_ref;
-    Pointer<Integer> index = Pointer.create(1);
   algorithm
     // filter all clocked partitions
     (clocked_partitions, partitions) := List.splitOnTrue(partitions, Partition.Partition.isClocked);
@@ -1028,27 +1045,21 @@ protected
       end for;
     end for;
 
-    // merge clocked partitions by bclock, subclock
+    // merge clocked partitions by baseclock, subclock
     for partition in clocked_partitions loop
       (clock, baseClock_opt, _)  := Partition.Partition.getClocks(partition);
       if Util.isSome(baseClock_opt) then
         // it is a sub clock
         SOME(baseClock) := baseClock_opt;
+        baseClock       := BClock.baseClockInferrence(baseClock, base_clock_inferrence);
         subClock        := clock;
       else
-        clock := match BClock.getInferredRef(clock)
-          case SOME(base_ref) algorithm
-            clock := UnorderedMap.getSafe(base_ref, base_clock_inferrence, sourceInfo());
-          then clock;
-          else clock;
-        end match;
-
         // it is a base clock, use the default sub clock
-        baseClock       := clock;
+        baseClock       := BClock.baseClockInferrence(clock, base_clock_inferrence);
         subClock        := DEFAULT_SUB_CLOCK;
-        partition := Partition.Partition.setClocks(partition, subClock, SOME(baseClock));
       end if;
-      subClockMap := UnorderedMap.getSafe(baseClock, clock_collector, sourceInfo());
+      partition       := Partition.Partition.setClocks(partition, subClock, SOME(baseClock));
+      subClockMap     := UnorderedMap.getSafe(baseClock, clock_collector, sourceInfo());
       new_part := match UnorderedMap.get(subClock, subClockMap)
         case SOME(new_part) then Partition.Partition.merge(new_part, partition, true);
         else partition;
@@ -1064,7 +1075,6 @@ protected
 
     // append all clocked partitions in the end and apply proper indexing
     partitions := listAppend(partition for partition in listReverse(partitions :: new_clocked));
-    partitions := list(Partition.Partition.setIndex(partition, index) for partition in partitions);
   end sortAndMergeClockedPartitions;
 
   function sortClockedPartitions

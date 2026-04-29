@@ -644,7 +644,7 @@ public
 
   function merge
     "set1 U set2
-    like union, but always merges the second into the first list"
+    like union, but always merges the second into the first set"
     input output UnorderedSet<T> set1;
     input UnorderedSet<T> set2;
   algorithm
