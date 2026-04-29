@@ -290,7 +290,16 @@ OMEdit/OMEditLIB/TransformationalDebugger/diff_match_patch.*
 # =============================================================================
 # OMNotebook
 # =============================================================================
+
 OMNotebook/OMNotebook/OMNotebookGUI/OMNotebookGUI.pro
+
+# =============================================================================
+# OMParser
+# =============================================================================
+
+OMParser/3rdParty/
+OMParser/test/
+
 
 # =============================================================================
 # Submodules
@@ -301,7 +310,6 @@ libraries/
 OMCompiler/3rdParty/
 !OMCompiler/3rdParty/ryu/ryu/om_format.*
 OMOptim/
-OMParser/
 OMPlot/
 OMSens_Qt/
 OMSimulator/
