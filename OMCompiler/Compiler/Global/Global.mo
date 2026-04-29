@@ -94,6 +94,8 @@ constant Integer backendDAE_cseIndex = 23;
 constant Integer strongComponent_index = 24;
 // class extends
 constant Integer classExtends_index = 25;
+// inferred clock index
+constant Integer inferredClock_index = 31;
 
 // ----------------------
 

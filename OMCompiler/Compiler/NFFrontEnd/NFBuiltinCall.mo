@@ -44,6 +44,7 @@ encapsulated package NFBuiltinCall
   import Type = NFType;
   import Subscript = NFSubscript;
   import System;
+  import Global;
 
 protected
   import Config;
@@ -1890,7 +1891,7 @@ protected
 
     callExp := match args
       // Clock() - inferred clock.
-      case {} then Expression.CLKCONST(Expression.ClockKind.INFERRED_CLOCK());
+      case {} then Expression.CLKCONST(Expression.ClockKind.INFERRED_CLOCK(System.tmpTickIndex(Global.inferredClock_index)));
       // Clock(interval) - real clock.
       case {e1} then Expression.CLKCONST(Expression.ClockKind.REAL_CLOCK(e1));
       case {e1, e2}
@@ -1987,7 +1988,7 @@ protected
       case ({TypedArg.TYPED_ARG(value = e1, ty = t1, var = v1)}, {})
         algorithm
           ty_call := Call.makeTypedCall(clockedSample,
-            {e1, Expression.CLKCONST(Expression.ClockKind.INFERRED_CLOCK())}, v1, purity, t1);
+            {e1, Expression.CLKCONST(Expression.ClockKind.INFERRED_CLOCK(System.tmpTickIndex(Global.inferredClock_index)))}, v1, purity, t1);
         then
           (Expression.CALL(ty_call), t1, v1);
 
