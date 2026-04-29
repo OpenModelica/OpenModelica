@@ -27,5 +27,6 @@ jobs:
             OMCompiler                                 \
             OMEdit                                     \
             OMNotebook                                 \
+            OMOptim                                    \
             OMParser                                   \
             OMShell

@@ -300,6 +300,25 @@ OMNotebook/OMNotebook/OMNotebookGUI/OMNotebookGUI.pro
 OMParser/3rdParty/
 OMParser/test/
 
+# =============================================================================
+# OMOptim
+# =============================================================================
+
+# [3rd-party] Thales group / INRIA / DOLPHIN — ParadisEO (LGPL 2.1 & CeCILL)
+OMOptim/ParadisEO-2.0.1/
+# [3rd-party] DOLPHIN Project-Team, INRIA Lille — CeCILL license
+OMOptim/OMOptim/Core/Optim/EA/SA1/SA1moFullEvalByCopy.h
+# CEP-ARMINES copyright — mixed OSMC-PL + CEP-ARMINES header
+OMOptim/OMOptim/GUI/Dialogs/AboutOMOptim.cpp
+# [3rd-party] Nokia Corporation — Qt Toolkit example (LGPL 2.1)
+OMOptim/OMOptim/GUI/Scene/arrow.cpp
+OMOptim/OMOptim/GUI/Scene/arrow.h
+OMOptim/OMOptim/GUI/Scene/diagramitem.cpp
+OMOptim/OMOptim/GUI/Scene/diagramitem.h
+OMOptim/OMOptim/GUI/Scene/diagramscene.cpp
+OMOptim/OMOptim/GUI/Scene/diagramscene.h
+OMOptim/OMOptim/GUI/Scene/diagramtextitem.cpp
+OMOptim/OMOptim/GUI/Scene/diagramtextitem.h
 
 # =============================================================================
 # Submodules
@@ -309,7 +328,6 @@ OMParser/test/
 libraries/
 OMCompiler/3rdParty/
 !OMCompiler/3rdParty/ryu/ryu/om_format.*
-OMOptim/
 OMPlot/
 OMSens_Qt/
 OMSimulator/
