@@ -13,7 +13,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
-          submodules: true
+          submodules: recursive
 
       - name: Create zip
         run: |
