@@ -140,17 +140,24 @@ public
       input EquationPointers equations;
       input Kind kind;
       input ClockedInfo info;
+      input UnorderedSet<ComponentRef> infer_del;
       output Association association;
     protected
       Pointer<Option<ClockTpl>> clock_ptr = Pointer.create(NONE());
+      Pointer<Option<ComponentRef>> infer_ptr = Pointer.create(NONE());
       UnorderedSet<ClockTpl> failed_set = UnorderedSet.new(hashClockTpl, isEqualClockTpl);
       UnorderedSet<BClock> clock_deps = UnorderedSet.new(BClock.hash, BClock.isEqual);
       Option<ClockTpl> clock_tpl;
+      Option<ComponentRef> infer;
       ComponentRef name, base_name;
       BClock clock;
     algorithm
-      EquationPointers.mapExp(equations, function expClocked(info = info, clock_ptr = clock_ptr, failed_set = failed_set, clock_deps = clock_deps), NONE(), Expression.fakeMap);
+      EquationPointers.mapExp(equations, function expClocked(
+        info = info, clock_ptr = clock_ptr, infer_ptr = infer_ptr, failed_set = failed_set, clock_deps = clock_deps, infer_del = infer_del), NONE(), Expression.fakeMap);
+
+      // get the clock tuple and the inferred reference
       clock_tpl := Pointer.access(clock_ptr);
+      infer := Pointer.access(infer_ptr);
 
       if Util.isSome(clock_tpl) then
         SOME((name, clock)) := clock_tpl;
@@ -163,6 +170,15 @@ public
         end if;
 
         if BClock.isBaseClock(clock) then
+          // if the clock is still an inferred clock without reference, update it to the default base clock and add to the base clocks
+          if BClock.isInferredClock(clock) then
+            if Util.isNone(infer) then
+              clock := NBPartitioning.DEFAULT_BASE_CLOCK;
+              UnorderedMap.add(name, clock, info.baseClocks);
+            else
+              clock := BClock.INFERRED_CLOCK(Util.getOption(infer));
+            end if;
+          end if;
           association := CLOCKED(clock, NONE(), clock_deps, false);
         else
           base_name := UnorderedMap.getSafe(name, info.subToBase, sourceInfo());
@@ -198,7 +214,7 @@ public
 
         // unmergable
         else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed. Cannot merge " + toString(ass1) + " and " + toString(ass2) + "."});
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed. Cannot merge\n" + toString(ass1) + " and\n" + toString(ass2) + "."});
         then fail();
       end match;
     end merge;
@@ -236,11 +252,13 @@ public
   protected
     function expClocked
       "checks if an expression is a clock and collects it. Also finds all other clock dependencies"
-      input output Expression exp               "the examined expression";
-      input ClockedInfo info                    "contains all base- and sub-clocks";
-      input Pointer<Option<ClockTpl>> clock_ptr "the first found clock";
-      input UnorderedSet<ClockTpl> failed_set   "clocks that are not equal to the first found clock";
-      input UnorderedSet<BClock> clock_deps     "clock dependencies found in sub sampling functions";
+      input output Expression exp                     "the examined expression";
+      input ClockedInfo info                          "contains all base- and sub-clocks";
+      input Pointer<Option<ClockTpl>> clock_ptr       "the first found clock";
+      input Pointer<Option<ComponentRef>> infer_ptr   "potential inferred clock dependency";
+      input UnorderedSet<ClockTpl> failed_set         "clocks that are not equal to the first found clock";
+      input UnorderedSet<BClock> clock_deps           "clock dependencies found in sub sampling functions";
+      input UnorderedSet<ComponentRef> infer_del      "inferred clocks that can be removed";
     algorithm
       exp := match exp
         local
@@ -260,17 +278,17 @@ public
           _ := match (clock_opt, Pointer.access(clock_ptr))
             local
               BClock new, old;
+              ComponentRef name;
 
-            // old sub clock and new base clock -> no conflict
-            case (SOME(new as BClock.BASE_CLOCK()), SOME((_, old as BClock.SUB_CLOCK()))) then ();
+            // old sub clock and new base clock -> potentially update inferred base clock
+            case (SOME(new as BClock.BASE_CLOCK()), SOME((name, old as BClock.SUB_CLOCK()))) algorithm
+              removeInferredClock(name, exp.cref, info, infer_del);
+            then ();
 
             // old base clock getting updated to new sub clock
             case (SOME(new as BClock.SUB_CLOCK()), SOME((_, old as BClock.BASE_CLOCK()))) algorithm
               Pointer.update(clock_ptr, SOME((exp.cref, new)));
             then ();
-
-            // new base clock that is inferred --> nothing happens
-            case (SOME(new as BClock.BASE_CLOCK(clock = ClockKind.INFERRED_CLOCK())), _) then ();
 
             // old base clock is inferred --> always take new clock
             case (SOME(new), SOME((_, old as BClock.BASE_CLOCK(clock = ClockKind.INFERRED_CLOCK())))) algorithm
@@ -279,7 +297,10 @@ public
 
             // clocks -> equal: success / different: fail
             case (SOME(new), SOME((_, old))) algorithm
-              if not BClock.isEqual(new, old) then
+              // if the old clock is inferred just override it
+              if BClock.isInferredClock(old) then
+                Pointer.update(clock_ptr, SOME((exp.cref, new)));
+              elseif not (BClock.isInferredClock(new) or BClock.isEqual(new, old)) then
                 UnorderedSet.add((exp.cref, new), failed_set);
               end if;
             then ();
@@ -297,13 +318,41 @@ public
         case Expression.CALL(call = Call.TYPED_CALL(arguments = Expression.CREF(cref = arg) :: _)) guard(Expression.isClockOrSampleFunction(exp)) algorithm
           if UnorderedMap.contains(arg, info.subClocks) then
             UnorderedSet.add(UnorderedMap.getSafe(arg, info.subClocks, sourceInfo()), clock_deps);
+            Pointer.update(infer_ptr, SOME(arg));
           end if;
         then exp;
 
         // go deeper on everything else
-        else Expression.mapShallow(exp, function expClocked(info = info, clock_ptr = clock_ptr, failed_set = failed_set, clock_deps = clock_deps));
+        else Expression.mapShallow(exp, function expClocked(info = info, clock_ptr = clock_ptr, infer_ptr = infer_ptr, failed_set = failed_set, clock_deps = clock_deps, infer_del = infer_del));
       end match;
     end expClocked;
+
+  protected
+    function removeInferredClock
+      input ComponentRef name;
+      input ComponentRef new_name;
+      input ClockedInfo info;
+      input UnorderedSet<ComponentRef> infer_del;
+    protected
+      BClock base;
+      ComponentRef base_name;
+      list<ComponentRef> sub_clock_names1, sub_clock_names2;
+    algorithm
+      base_name := UnorderedMap.getSafe(name, info.subToBase, sourceInfo());
+      base      := UnorderedMap.getSafe(base_name, info.baseClocks, sourceInfo());
+      if BClock.isInferredClock(base) then
+        // update the sub clock (and all other related ones) to the correct base clock
+        sub_clock_names1 := UnorderedMap.getSafe(base_name, info.baseToSub, sourceInfo());
+        for s_name in sub_clock_names1 loop
+          UnorderedMap.add(s_name, new_name, info.subToBase);
+        end for;
+        // add all the sub clocks to the correct base clock
+        sub_clock_names2 := UnorderedMap.getOrDefault(new_name, info.baseToSub, {});
+        UnorderedMap.add(new_name, listAppend(sub_clock_names1, sub_clock_names2), info.baseToSub);
+        // add the old inferred clock to clocks that can be removed
+        UnorderedSet.add(base_name, infer_del);
+      end if;
+    end removeInferredClock;
   end Association;
 
   uniontype Partition
@@ -540,10 +589,29 @@ public
       (clock, baseClock, holdEvents) := match part.association
         case Association.CLOCKED(clock = clock, baseClock = baseClock, holdEvents = holdEvents) then (clock, baseClock, holdEvents);
         else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed. Cannot get clock for continuous partition:\n" + toString(part)});
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed. Cannot get clocks for continuous partition:\n" + toString(part)});
         then fail();
       end match;
     end getClocks;
+
+    function setClocks
+      input output Partition part;
+      input BClock clock;
+      input Option<BClock> baseClock;
+    algorithm
+      part := match part.association
+        local
+          Association association;
+        case association as Association.CLOCKED() algorithm
+          association.clock := clock;
+          association.baseClock := baseClock;
+          part.association := association;
+        then part;
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed. Cannot set clocks for continuous partition:\n" + toString(part)});
+        then fail();
+      end match;
+    end setClocks;
 
     function getClockDependencies
       input Partition part;

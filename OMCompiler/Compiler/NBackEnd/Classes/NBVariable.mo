@@ -2144,6 +2144,16 @@ public
       variables := compress(variables);
     end removeList;
 
+    function removeCheck
+      input output VariablePointers variables;
+      input checkVar func;
+    protected
+      list<Pointer<Variable>> vars;
+    algorithm
+      vars := list(var for var guard(not func(var)) in toList(variables));
+      variables := fromList(vars);
+    end removeCheck;
+
     function add
       "Adds a variable pointer to the set, or updates it if it already exists."
       input Pointer<Variable> varPointer;
@@ -2778,6 +2788,76 @@ public
       end match;
     end addTypedList;
 
+    function removeTypedCheck
+      "can also be used to add single variables"
+      input output VarData varData;
+      input checkVar func;
+      input VarType varType;
+    algorithm
+      varData := match (varData, varType)
+
+        case (VAR_DATA_SIM(), VarType.STATE) algorithm
+          varData.variables   := VariablePointers.removeCheck(varData.variables, func);
+          varData.knowns      := VariablePointers.removeCheck(varData.knowns, func);
+          varData.states      := VariablePointers.removeCheck(varData.states, func);
+          varData.initials    := VariablePointers.removeCheck(varData.initials, func);
+        then varData;
+
+        case (VAR_DATA_SIM(), VarType.STATE_DER) algorithm
+          varData.variables   := VariablePointers.removeCheck(varData.variables, func);
+          varData.unknowns    := VariablePointers.removeCheck(varData.unknowns, func);
+          varData.derivatives := VariablePointers.removeCheck(varData.derivatives, func);
+          varData.initials    := VariablePointers.removeCheck(varData.initials, func);
+        then varData;
+
+        case (VAR_DATA_SIM(), VarType.ALGEBRAIC) algorithm
+          varData.variables   := VariablePointers.removeCheck(varData.variables, func);
+          varData.unknowns    := VariablePointers.removeCheck(varData.unknowns, func);
+          varData.algebraics  := VariablePointers.removeCheck(varData.algebraics, func);
+          varData.initials    := VariablePointers.removeCheck(varData.initials, func);
+        then varData;
+
+        case (VAR_DATA_SIM(), VarType.DISCRETE) algorithm
+          varData.variables   := VariablePointers.removeCheck(varData.variables, func);
+          varData.unknowns    := VariablePointers.removeCheck(varData.unknowns, func);
+          varData.discretes   := VariablePointers.removeCheck(varData.discretes, func);
+          varData.initials    := VariablePointers.removeCheck(varData.initials, func);
+        then varData;
+
+        case (VAR_DATA_SIM(), VarType.START) algorithm
+          varData.variables   := VariablePointers.removeCheck(varData.variables, func);
+          varData.initials    := VariablePointers.removeCheck(varData.initials, func);
+        then varData;
+
+        case (VAR_DATA_SIM(), VarType.PARAMETER) algorithm
+          varData.variables   := VariablePointers.removeCheck(varData.variables, func);
+          varData.parameters  := VariablePointers.removeCheck(varData.parameters, func);
+          varData.knowns      := VariablePointers.removeCheck(varData.knowns, func);
+        then varData;
+
+        case (VAR_DATA_SIM(), VarType.ITERATOR) algorithm
+          varData.variables   := VariablePointers.removeCheck(varData.variables, func);
+          varData.knowns      := VariablePointers.removeCheck(varData.knowns, func);
+          varData.artificials := VariablePointers.removeCheck(varData.artificials, func);
+        then varData;
+
+        case (VAR_DATA_SIM(), VarType.CLOCK) algorithm
+          varData.clocks      := VariablePointers.removeCheck(varData.clocks, func);
+        then varData;
+
+        case (VAR_DATA_SIM(), VarType.RECORD) algorithm
+          varData.variables   := VariablePointers.removeCheck(varData.variables, func);
+          varData.records     := VariablePointers.removeCheck(varData.records, func);
+          varData.knowns      := VariablePointers.removeCheck(varData.knowns, func);
+        then varData;
+
+        // ToDo: other cases
+
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed."});
+        then fail();
+      end match;
+    end removeTypedCheck;
   end VarData;
 
   // ==========================================================================

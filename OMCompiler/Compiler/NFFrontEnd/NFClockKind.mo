@@ -46,6 +46,7 @@ protected
 
 public
   record INFERRED_CLOCK         "Clock()"
+    Integer idx                 "unique index to correctly associate equal inferred clocks";
   end INFERRED_CLOCK;
 
   record RATIONAL_CLOCK
@@ -99,7 +100,7 @@ public
     comp := match (ck1, ck2)
       local
         Expression i1, ic1, r1, c1, si1, sm1, i2, ic2, r2, c2, si2, sm2;
-      case (INFERRED_CLOCK(), INFERRED_CLOCK()) then 0;
+      case (INFERRED_CLOCK(), INFERRED_CLOCK()) then Util.intCompare(ck1.idx, ck2.idx);
       case (RATIONAL_CLOCK(i1, r1),RATIONAL_CLOCK(i2, r2))
         algorithm
           comp := Expression.compare(i1, i2);
@@ -503,7 +504,7 @@ public
     ock := match ick
       local
         Expression i, ic, r, c, si, sm;
-      case INFERRED_CLOCK()     then "INFERRED_CLOCK()";
+      case INFERRED_CLOCK()     then "INFERRED_CLOCK(" + intString(ick.idx) + ")";
       case RATIONAL_CLOCK(i, r) then "RATIONAL_CLOCK(" + Expression.toString(i) + ", " + Expression.toString(r) + ")";
       case REAL_CLOCK(i)        then "REAL_CLOCK(" + Expression.toString(i) + ")";
       case EVENT_CLOCK(c, si)   then "EVENT_CLOCK(" + Expression.toString(c) + ", " + Expression.toString(si) + ")";
@@ -599,7 +600,7 @@ public
   algorithm
     hash := stringHashDjb2Continue("Clock(", hash);
     hash := match clk
-      case INFERRED_CLOCK() then hash;
+      case INFERRED_CLOCK() then hash + clk.idx;
 
       case RATIONAL_CLOCK()
         algorithm

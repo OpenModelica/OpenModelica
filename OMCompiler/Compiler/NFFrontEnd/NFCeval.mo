@@ -55,6 +55,7 @@ import Subscript = NFSubscript;
 import NFTyping.TypingError;
 import Record = NFRecord;
 import InstContext = NFInstContext;
+import Global;
 
 protected
 import NFFunction.Function;
@@ -3199,7 +3200,7 @@ function evalInferredClock
 algorithm
   result := match args
     case {}
-      then Expression.CLKCONST(Expression.ClockKind.INFERRED_CLOCK());
+      then Expression.CLKCONST(Expression.ClockKind.INFERRED_CLOCK(System.tmpTickIndex(Global.inferredClock_index)));
 
     else algorithm printWrongArgsError(getInstanceName(), args, sourceInfo()); then fail();
   end match;

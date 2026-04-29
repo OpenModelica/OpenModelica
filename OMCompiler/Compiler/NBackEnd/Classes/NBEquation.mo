@@ -2485,6 +2485,18 @@ public
       end match;
     end isClocked;
 
+    function isTypeClock extends checkEqn;
+    protected
+      Equation eq = Pointer.access(eqn_ptr);
+    algorithm
+      // only check scalar equations as clocks have to be scalar
+      // ToDo: for-equations?
+      b := match eq
+        case SCALAR_EQUATION()  then Type.isClock(eq.ty);
+        else false;
+      end match;
+    end isTypeClock;
+
     function isCompound extends checkEqn;
     algorithm
       b := match Pointer.access(eqn_ptr)
@@ -4356,6 +4368,16 @@ public
       equations := compress(equations);
     end removeList;
 
+    function removeCheck
+      input output EquationPointers equations;
+      input checkEqn func;
+    protected
+      list<Pointer<Equation>> eqns;
+    algorithm
+      eqns := list(eqn for eqn guard(not func(eqn)) in toList(equations));
+      equations := fromList(eqns);
+    end removeCheck;
+
     function add
       input Pointer<Equation> eqn;
       input output EquationPointers equations;
@@ -4993,6 +5015,7 @@ public
           eqData.simulation   := EquationPointers.removeList(eq_lst, eqData.simulation);
           eqData.continuous   := EquationPointers.removeList(eq_lst, eqData.continuous);
           eqData.discretes    := EquationPointers.removeList(eq_lst, eqData.discretes);
+          eqData.clocked      := EquationPointers.removeList(eq_lst, eqData.clocked);
           eqData.initials     := EquationPointers.removeList(eq_lst, eqData.initials);
           eqData.auxiliaries  := EquationPointers.removeList(eq_lst, eqData.auxiliaries);
           eqData.removed      := EquationPointers.removeList(eq_lst, eqData.removed);
@@ -5018,6 +5041,41 @@ public
         then fail();
       end match;
     end removeList;
+
+    function removeTypedCheck
+      input output EqData eqData;
+      input checkEqn func;
+      input EqType eqType;
+    algorithm
+      eqData := match (eqData, eqType)
+        case (EQ_DATA_SIM(), EqType.CONTINUOUS) algorithm
+          eqData.equations    := EquationPointers.removeCheck(eqData.equations, func);
+          eqData.simulation   := EquationPointers.removeCheck(eqData.simulation, func);
+          eqData.continuous   := EquationPointers.removeCheck(eqData.continuous, func);
+        then eqData;
+
+        case (EQ_DATA_SIM(), EqType.DISCRETE) algorithm
+          eqData.equations    := EquationPointers.removeCheck(eqData.equations, func);
+          eqData.simulation   := EquationPointers.removeCheck(eqData.simulation, func);
+          eqData.discretes    := EquationPointers.removeCheck(eqData.discretes, func);
+        then eqData;
+
+        case (EQ_DATA_SIM(), EqType.CLOCKED) algorithm
+          eqData.clocked      := EquationPointers.removeCheck(eqData.clocked, func);
+        then eqData;
+
+        case (EQ_DATA_SIM(), EqType.INITIAL) algorithm
+          eqData.equations    := EquationPointers.removeCheck(eqData.equations, func);
+          eqData.initials     := EquationPointers.removeCheck(eqData.initials, func);
+        then eqData;
+
+        // ToDo: other cases
+
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed."});
+        then fail();
+      end match;
+    end removeTypedCheck;
 
     function compress
       input output EqData eqData;
