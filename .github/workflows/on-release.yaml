@@ -11,13 +11,13 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
-          submodules: true
+          submodules: recursive
       - name: Build Assets
         run: |
           cd ..
           zip ${{ github.event.repository.name }}/${{ github.event.repository.name }}-src-with-submodules.zip ${{ github.event.repository.name }} -r -x '*/.git/*'
       - name: Upload Release Assets
         if: ${{ github.event_name != 'workflow_dispatch' }}
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v3
         with:
           files: '*src-with-submodules.zip'
