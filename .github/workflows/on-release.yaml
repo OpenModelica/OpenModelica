@@ -1,12 +1,13 @@
 name: on-release
 
 on:
-  release:
-    types: [published]
   workflow_dispatch:
+  push: # run only on push tags
+    tags:
+      - 'v*.*.*' # Trigger on version tags like v1.0.0
 
 jobs:
-  build: # run only on pushes to the default branch (master)
+  build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
