@@ -561,6 +561,8 @@ constant DebugFlag FORCE_SCALARIZE = DEBUG_FLAG(196, "forceScalarize", false,
   Gettext.gettext("Forces scalarization to be done when it would normally be automatically disabled."));
 constant DebugFlag DEBUG_ADJOINT = DEBUG_FLAG(197, "debugAdjoint", false,
   Gettext.gettext("Dumps debug output for the adjoint differentiation process in the new backend."));
+constant DebugFlag FLOW_ALIAS_ELIMINATION = DEBUG_FLAG(198, "flowAliasElimination", false,
+  Gettext.gettext("Enables simple alias elimination of flow variables in stream connectors."));
 
 public
 // CONFIGURATION FLAGS

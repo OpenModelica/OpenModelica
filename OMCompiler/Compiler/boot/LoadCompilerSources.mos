@@ -422,6 +422,7 @@ if true then /* Suppress output */
     "../NFFrontEnd/NFSimplifyModel.mo",
     "../NFFrontEnd/NFStateMachineFlatten.mo",
     "../NFFrontEnd/NFStatement.mo",
+    "../NFFrontEnd/NFStreamFlowAlias.mo",
     "../NFFrontEnd/NFStructural.mo",
     "../NFFrontEnd/NFSubscript.mo",
     "../NFFrontEnd/NFTypeCheck.mo",

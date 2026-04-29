@@ -88,6 +88,7 @@ function generateEquations
   input UnorderedMap<ComponentRef, Variable> variables;
   output list<Equation> equations = {};
   output UnorderedSet<ComponentRef> connectedLocalIOs;
+  output list<list<Connector>> unhandledStreamSets = {};
 protected
   partial function potFunc
     input list<Connector> elements;
@@ -99,6 +100,7 @@ protected
   potFunc potfunc;
   Expression flowThreshold;
   ConnectorType.Type cty;
+  Boolean flow_alias_elim = Flags.isSet(Flags.FLOW_ALIAS_ELIMINATION);
 algorithm
   setGlobalRoot(Global.isInStream, NONE());
   connectedLocalIOs := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
@@ -115,7 +117,14 @@ algorithm
     elseif ConnectorType.isFlow(cty) then
       set_eql := generateFlowEquations(set);
     elseif ConnectorType.isStream(cty) then
-      set_eql := generateStreamEquations(set, flowThreshold, variables);
+      if flow_alias_elim then
+        // If doing flow alias elimination in stream connectors we need to
+        // save the stream connectors and process them later.
+        unhandledStreamSets := set :: unhandledStreamSets;
+        set_eql := {};
+      else
+        set_eql := generateStreamEquations(set, flowThreshold, variables);
+      end if;
     else
       Error.addInternalError(getInstanceName() + " got connection set with invalid type '" +
         ConnectorType.toDebugString(cty) + "': " +
@@ -125,6 +134,8 @@ algorithm
 
     equations := listAppend(set_eql, equations);
   end for;
+
+  unhandledStreamSets := listReverseInPlace(unhandledStreamSets);
 end generateEquations;
 
 function evaluateOperators

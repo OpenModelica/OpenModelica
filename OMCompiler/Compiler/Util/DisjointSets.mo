@@ -204,6 +204,15 @@ algorithm
   sets := union(set1, set2, sets);
 end merge;
 
+function contains
+  "Returns whether an entry already exists in the forest or not."
+  input Entry entry;
+  input Sets sets;
+  output Boolean found;
+algorithm
+  found := isSome(UnorderedMap.get(entry, sets.elements));
+end contains;
+
 function find
   "This function finds and returns the node associated with a given entry.
    If the entry does not a have a node in the forest, then a new node will be

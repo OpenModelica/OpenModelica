@@ -586,6 +586,16 @@ public
     end match;
   end isConnector;
 
+  function isStreamConnector
+    input Type ty;
+    output Boolean isStreamConnector;
+  algorithm
+    isStreamConnector := match ty
+      case COMPLEX(complexTy = ComplexType.CONNECTOR(streams = _ :: _)) then true;
+      else false;
+    end match;
+  end isStreamConnector;
+
   function isExpandableConnector
     input Type ty;
     output Boolean isExpandable;

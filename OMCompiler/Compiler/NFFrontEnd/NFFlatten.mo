@@ -102,6 +102,7 @@ import UnorderedSet;
 import Inline = NFInline;
 import ExpandExp = NFExpandExp;
 import InstUtil = NFInstUtil;
+import StreamFlowAlias = NFStreamFlowAlias;
 
 public
 type FunctionTree = FunctionTreeImpl.Tree;
@@ -2441,6 +2442,7 @@ protected
   list<Variable> tlio_vars;
   ConnectionSets.Sets csets;
   array<list<Connector>> csets_array;
+  list<list<Connector>> unhandled_stream_sets;
   CardinalityTable.Table ctable;
   Connections.BrokenEdges broken = {};
   UnorderedMap<ComponentRef, Variable> vars;
@@ -2485,7 +2487,7 @@ algorithm
   csets := ConnectionSets.fromConnections(conns);
   csets_array := ConnectionSets.extractSets(csets);
   // generate the equations
-  (conn_eql, connectedLocalIOs) := ConnectEquations.generateEquations(csets_array, vars);
+  (conn_eql, connectedLocalIOs, unhandled_stream_sets) := ConnectEquations.generateEquations(csets_array, vars);
 
   // append the equalityConstraint call equations for the broken connects
   if System.getHasOverconstrainedConnectors() then
@@ -2495,6 +2497,10 @@ algorithm
 
   // add the equations to the flat model
   flatModel.equations := listAppend(conn_eql, flatModel.equations);
+
+  if not listEmpty(unhandled_stream_sets) then
+    flatModel := StreamFlowAlias.removeAliases(flatModel);
+  end if;
 
   // add top-level IOs for unconnected local IOs
   exposeLocalIOs := Flags.getConfigInt(Flags.EXPOSE_LOCAL_IOS);
