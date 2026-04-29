@@ -32,6 +32,7 @@ OMCompiler/revision.h
 OMCompiler/revision.h.in
 OMCompiler/omc_config.unix.h
 OMCompiler/omc_config.unix.h.in
+*/omc_config*.h.in
 
 # =============================================================================
 # OMCompiler/Compiler
@@ -303,7 +304,6 @@ OMOptim/
 OMParser/
 OMPlot/
 OMSens_Qt/
-OMShell/
 OMSimulator/
 
 # =============================================================================
