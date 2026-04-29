@@ -71,6 +71,7 @@ public
   import Variable = NFVariable;
 
   // Backend imports
+  import NFBackendExtension.BackendInfo;
   import NBEquation.{Equation, EquationAttributes, EquationPointer, EquationPointers, IfEquationBody, WhenEquationBody, WhenStatement};
   import NBVariable.{VariablePointer};
   import BVariable = NBVariable;
@@ -3617,6 +3618,144 @@ public
     end if;
   end differentiateBinding;
 
+  function algorithmToSSA
+    "Transforms a MULTI_COMPONENT algorithm strong component into SSA
+     (Static Single Assignment) form.
+
+     Variables assigned more than once receive fresh indexed names,
+     e.g. x -> x_1, x_2, ...  RHS reads are updated to use the latest
+     SSA name of each written variable.
+     Only ASSIGNMENT statements are expected in the algorithm body.
+
+     Each entry (orig_cref, (ssa_cref, line_index)) in `replacements`
+     records that orig_cref was renamed to ssa_cref at the statement
+     with 1-based index line_index within the original algorithm."
+    input  StrongComponent comp;
+    output StrongComponent ssaComp;
+    output list<tuple<ComponentRef, tuple<ComponentRef, Integer>>> replacements
+      "original_var -> (ssa_var, line_of_replacement)";
+    output list<Pointer<Variable>> newVars
+      "newly created SSA variable pointers; caller must register them in the variable system";
+  protected
+    Equation eqn;
+    Algorithm alg;
+    Statement stmt;
+    ComponentRef lhsCref, baseCref, ssaCref;
+    Integer cnt, idx, lineIdx;
+    Pointer<Variable> ssaVarPtr;
+    Expression lhsExp, rhsExp;
+    // Phase 1: how many times is each base cref assigned?
+    UnorderedMap<ComponentRef, Integer> assignCount =
+      UnorderedMap.new<Integer>(ComponentRef.hash, ComponentRef.isEqual);
+    // Phase 2: current per-variable SSA counter
+    UnorderedMap<ComponentRef, Integer> ssaIdx =
+      UnorderedMap.new<Integer>(ComponentRef.hash, ComponentRef.isEqual);
+    // Phase 2: current active SSA expression for each multi-assigned cref
+    UnorderedMap<ComponentRef, Expression> activeRepl =
+      UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual);
+    list<Statement> ssaStmts = {};
+    list<tuple<ComponentRef, tuple<ComponentRef, Integer>>> replAcc = {};
+    list<Pointer<Variable>> newVarsAcc = {};
+    Pointer<Equation> ssaEqnPtr;
+  algorithm
+    (ssaComp, replacements, newVars) := match comp
+
+      case StrongComponent.MULTI_COMPONENT() algorithm
+        eqn := Pointer.access(Slice.getT(comp.eqn));
+        Equation.ALGORITHM(alg = alg) := eqn;
+
+        // ── Phase 1: count how many times each base cref appears on the LHS ──
+        for origStmt in alg.statements loop
+          () := match origStmt
+            case Statement.ASSIGNMENT() algorithm
+              lhsCref := match origStmt.lhs
+                case Expression.CREF(cref = lhsCref) then lhsCref;
+                else ComponentRef.EMPTY();
+              end match;
+              if not ComponentRef.isEmpty(lhsCref) then
+                baseCref := ComponentRef.stripSubscriptsAll(lhsCref);
+                cnt := UnorderedMap.getOrDefault(baseCref, assignCount, 0);
+                UnorderedMap.add(baseCref, cnt + 1, assignCount);
+              end if;
+            then ();
+            else ();
+          end match;
+        end for;
+
+        // ── Phase 2: rename multi-assigned variables; substitute RHS reads ──
+        lineIdx := 1;
+        for origStmt in alg.statements loop
+          stmt := match origStmt
+            case Statement.ASSIGNMENT() algorithm
+              // Substitute every RHS read with its current SSA name
+              rhsExp := Expression.map(origStmt.rhs,
+                function Replacements.applySimpleExp(replacements = activeRepl));
+
+              // Check whether the LHS variable needs SSA renaming
+              lhsExp  := origStmt.lhs;
+              lhsCref := match origStmt.lhs
+                case Expression.CREF(cref = lhsCref) then lhsCref;
+                else ComponentRef.EMPTY();
+              end match;
+
+              if not ComponentRef.isEmpty(lhsCref) then
+                baseCref := ComponentRef.stripSubscriptsAll(lhsCref);
+                if UnorderedMap.getOrDefault(baseCref, assignCount, 1) > 1 then
+                  // Increment the SSA index and create a fresh variable
+                  idx := UnorderedMap.getOrDefault(baseCref, ssaIdx, 0) + 1;
+                  UnorderedMap.add(baseCref, idx, ssaIdx);
+                  (ssaVarPtr, ssaCref) := makeSSAVar(baseCref, idx);
+                  newVarsAcc := ssaVarPtr :: newVarsAcc;
+
+                  // Re-attach original subscripts to the new SSA cref
+                  ssaCref := ComponentRef.copySubscripts(lhsCref, ssaCref);
+
+                  // Update active replacement map (keyed by unsubscripted base cref)
+                  UnorderedMap.add(baseCref,
+                    Expression.fromCref(ComponentRef.stripSubscriptsAll(ssaCref)),
+                    activeRepl);
+
+                  // Record: original base cref -> (ssa base cref, 1-based line index)
+                  replAcc := (baseCref,
+                    (ComponentRef.stripSubscriptsAll(ssaCref), lineIdx)) :: replAcc;
+
+                  // Replace the LHS with the SSA cref expression
+                  lhsExp := Expression.fromCref(ssaCref);
+                end if;
+              end if;
+            then Statement.ASSIGNMENT(lhsExp, rhsExp, origStmt.ty, origStmt.source);
+
+            else origStmt;
+          end match;
+
+          ssaStmts := stmt :: ssaStmts;
+          lineIdx   := lineIdx + 1;
+        end for;
+
+        // Build a fresh equation pointer with the SSA statement list so the
+        // original primal equation (used in simulation code generation) is left
+        // untouched.  SSA variables are appended to the component's var list so
+        // that code generation can declare them as local temporaries.
+        alg.statements := listReverse(ssaStmts);
+        eqn := match eqn
+          case Equation.ALGORITHM() algorithm eqn.alg := alg; then eqn;
+          else eqn;
+        end match;
+        ssaEqnPtr := Pointer.create(eqn);
+      then (StrongComponent.MULTI_COMPONENT(
+              vars   = listAppend(comp.vars, list(Slice.SLICE(v, {}) for v in listReverse(newVarsAcc))),
+              eqn    = Slice.SLICE(ssaEqnPtr, {}),
+              status = comp.status
+            ), listReverse(replAcc), listReverse(newVarsAcc));
+
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,
+          {getInstanceName() + " expects a MULTI_COMPONENT with an ALGORITHM equation."});
+      then fail();
+
+    end match;
+  end algorithmToSSA;
+
 protected
   function sizeClassificationFromType
     input Type ty;
@@ -4064,6 +4203,50 @@ protected
       else false;
     end match;
   end stmtHasCrefAsLhs;
+
+  function makeSSAVar
+    "Creates a fresh SSA variable named 'baseName_idx' that copies all
+     attributes from the variable referenced by baseCref.
+     The new variable and its component reference are linked cyclically
+     via the InstNode VAR_NODE pointer (same pattern as BVariable.makeAuxVar)."
+    input  ComponentRef baseCref "original base cref (no subscripts)";
+    input  Integer idx           "SSA subscript index (1 for x_1, 2 for x_2, ...)";
+    output Pointer<Variable> ssaVarPtr;
+    output ComponentRef ssaCref;
+  protected
+    Pointer<Variable> origVarPtr;
+    Variable origVar;
+    InstNode newNode;
+    Type ty;
+  algorithm
+    origVarPtr := BVariable.getVarPointer(baseCref, sourceInfo());
+    origVar    := Pointer.access(origVarPtr);
+    ty         := ComponentRef.getSubscriptedType(baseCref, false);
+
+    // Build a fresh VAR_NODE with the SSA name; the variable pointer is
+    // initially a dummy and becomes cyclic via makeVarPtrCyclic below.
+    newNode := InstNode.VAR_NODE(
+      ComponentRef.firstName(baseCref) + "_" + intString(idx),
+      Pointer.create(NBVariable.DUMMY_VARIABLE));
+    ssaCref := ComponentRef.CREF(newNode, {}, ty,
+      NFComponentRef.Origin.CREF, ComponentRef.EMPTY());
+
+    // Clear any inherited partner pointers (pDer, seed) so that a fresh pDer
+    // variable is created for this SSA temporary rather than reusing the
+    // original variable's existing partner.
+    origVar.backendinfo := BackendInfo.BACKEND_INFO(
+      origVar.backendinfo.varKind,
+      origVar.backendinfo.attributes,
+      origVar.backendinfo.annotations,
+      origVar.backendinfo.var_pre,
+      NONE() /* var_seed */,
+      NONE() /* var_pder */,
+      origVar.backendinfo.parent
+    );
+
+    // Establish the cyclic Variable <-> InstNode pointer link
+    (ssaVarPtr, ssaCref) := BVariable.makeVarPtrCyclic(origVar, ssaCref);
+  end makeSSAVar;
 
   annotation(__OpenModelica_Interface="backend");
 end NBDifferentiate;

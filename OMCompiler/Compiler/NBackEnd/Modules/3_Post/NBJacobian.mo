@@ -50,6 +50,7 @@ public
 protected
   // OF imports
   import Absyn.Path;
+  import DAE;
 
   // NF imports
   import ComponentRef = NFComponentRef;
@@ -1724,6 +1725,8 @@ protected
     list<Slice<VariablePointer>> adjVarSlices;
     Pointer<Variable> vPtr;
     ComponentRef baseCref;
+    // SSA helper: accumulator for pDer vars created for SSA temporaries
+    Pointer<list<Pointer<Variable>>> ssaPDerVarsPtr = Pointer.create({});
   algorithm
     c_noalias := StrongComponent.removeAlias(comp);
 
@@ -1753,6 +1756,14 @@ protected
         Option<ComponentRef> o_ySeedCref, o_pDerX;
         ComponentRef ySeedCref, baseX, pDerX;
         StrongComponent loopComp;
+
+        StrongComponent ssaAlg;
+        list<tuple<ComponentRef, tuple<ComponentRef, Integer>>> replacements;
+        list<Pointer<Variable>> newVars;
+        // SSA seed-init locals (used in MULTI_COMPONENT adjoint)
+        UnorderedSet<ComponentRef> seenCrefs;
+        ComponentRef origCref, finalSsaCref, pDerOrigCref, pDerSsaCref;
+        Type vty;
 
       // ===================== ALGEBRAIC_LOOP =====================
       case StrongComponent.ALGEBRAIC_LOOP(strict = tearing) algorithm
@@ -1884,7 +1895,31 @@ protected
 
       // ===================== MULTI_COMPONENT (algorithm or if-equation) =====================
       case StrongComponent.MULTI_COMPONENT() algorithm
-        eq := Pointer.access(Slice.getT(c_noalias.eqn));
+        eq := match Pointer.access(Slice.getT(c_noalias.eqn))
+          case Equation.ALGORITHM() algorithm
+            (ssaAlg, replacements, newVars) := Differentiate.algorithmToSSA(c_noalias);
+            print("SSA algorithm for adjoint of component " + StrongComponent.toString(c_noalias) + ":\n" + StrongComponent.toString(ssaAlg) + "\n");
+
+            // ── Register SSA variables in diff_map ──
+            // For each new SSA variable, create a pDer companion and add the mapping
+            // ssaCref -> pDerCref to diff_map so the adjoint differentiation can propagate
+            // gradients through the SSA rename chain (e.g. x_1 -> pDer.x_1).
+            for ssaVarPtr in newVars loop
+              makeVarTraverse(ssaVarPtr, contextName, ssaPDerVarsPtr, diff_map,
+                function BVariable.makePDerVar(isTmp = true), init = init);
+            end for;
+            // Collect the newly created pDer vars as temporaries
+            for pDerVarPtr in Pointer.access(ssaPDerVarsPtr) loop
+              newTmpVars := pDerVarPtr :: newTmpVars;
+            end for;
+
+          then match ssaAlg
+            case StrongComponent.MULTI_COMPONENT() then Pointer.access(Slice.getT(ssaAlg.eqn));
+            else Pointer.access(Slice.getT(c_noalias.eqn));
+          end match;
+          else algorithm
+          then Pointer.access(Slice.getT(c_noalias.eqn));
+          end match;
 
         // Build fresh adjoint_map
         fresh_adjoint_map := UnorderedMap.new<AdjointTermList>(ComponentRef.hash, ComponentRef.isEqual, 16);
@@ -1902,6 +1937,44 @@ protected
         );
 
         (diffArgs, adjStmts) := Differentiate.differentiateEquationAdjoint(eq, diffArgs);
+
+        // ── Prepend seed-initialization statements for the final SSA variable of each
+        //    multi-assigned original variable ──
+        // The last SSA rename (x_N) represents the final value of x after the algorithm.
+        // Before the adjoint reverse sweep we must:
+        //   1. seed  pDer.x_N := pDer.x   (transfer the incoming gradient for x)
+        //   2. reset pDer.x   := 0         (so it only picks up gradient from RHS reads of x)
+        // We iterate replacements in REVERSE line order so the FIRST entry we see for
+        // each base variable IS its final SSA rename.  A local seen-set avoids re-seeding
+        // non-final renames.
+        if not listEmpty(newVars) then
+          seenCrefs := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual, 4);
+          for replacement in listReverse(replacements) loop
+            (origCref, (finalSsaCref, _)) := replacement;
+            if not UnorderedSet.contains(origCref, seenCrefs) then
+              UnorderedSet.add(origCref, seenCrefs);
+              if UnorderedMap.contains(origCref, diff_map) and
+                 UnorderedMap.contains(finalSsaCref, diff_map) then
+                pDerOrigCref := UnorderedMap.getOrFail(origCref, diff_map);
+                pDerSsaCref  := UnorderedMap.getOrFail(finalSsaCref, diff_map);
+                vty := ComponentRef.getSubscriptedType(pDerSsaCref, true);
+                // Prepend in reverse execution order (each :: inserts at HEAD of list).
+                // Desired execution order: (1) pDer.x_N := pDer.x  then  (2) pDer.x := 0
+                // So prepend (2) first so (1) ends up at HEAD and executes first.
+                // pDer.x := 0  —  reset so it only accumulates from RHS reads of x
+                adjStmts := Statement.ASSIGNMENT(
+                  Expression.fromCref(pDerOrigCref),
+                  Expression.makeZero(vty),
+                  vty, DAE.emptyElementSource) :: adjStmts;
+                // pDer.x_N := pDer.x  —  seed the final SSA bar from the incoming x-bar
+                adjStmts := Statement.ASSIGNMENT(
+                  Expression.fromCref(pDerSsaCref),
+                  Expression.fromCref(pDerOrigCref),
+                  vty, DAE.emptyElementSource) :: adjStmts;
+              end if;
+            end if;
+          end for;
+        end if;
 
         if not listEmpty(adjStmts) then
           eqPtr := Equation.makeAlgorithm(adjStmts, init);
@@ -2100,6 +2173,7 @@ protected
           });
           fail();
         end if;
+        //print("Primal component: " + StrongComponent.toString(c) + "\n");
       end for;
     else
       Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed because no strong components were given!"});
