@@ -321,6 +321,13 @@ OMOptim/OMOptim/GUI/Scene/diagramtextitem.cpp
 OMOptim/OMOptim/GUI/Scene/diagramtextitem.h
 
 # =============================================================================
+# OMOptim
+# =============================================================================
+
+# [3rd-party] Uwe Rathmann / Qwt project — Qwt License 1.0
+OMPlot/qwt/
+
+# =============================================================================
 # Submodules
 # TODO: Check which submodules need a check
 # =============================================================================
@@ -328,7 +335,6 @@ OMOptim/OMOptim/GUI/Scene/diagramtextitem.h
 libraries/
 OMCompiler/3rdParty/
 !OMCompiler/3rdParty/ryu/ryu/om_format.*
-OMPlot/
 OMSens_Qt/
 OMSimulator/
 
