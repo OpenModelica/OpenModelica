@@ -335,7 +335,6 @@ OMPlot/qwt/
 libraries/
 OMCompiler/3rdParty/
 !OMCompiler/3rdParty/ryu/ryu/om_format.*
-OMSens_Qt/
 OMSimulator/
 
 # =============================================================================
