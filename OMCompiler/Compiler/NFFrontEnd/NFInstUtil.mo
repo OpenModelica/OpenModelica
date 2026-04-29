@@ -270,24 +270,12 @@ public
     input output Equation eq;
   protected
     Expression e1, e2;
+    Equation eq2;
   algorithm
     eq := match eq
-      local
-        Equation eq2;
       case Equation.EQUALITY(rhs = e1)
         algorithm
           e1:= Expression.map(e1, addTrailingWholeIndices);
-          e2 := Expression.map(e1, expandSlicedCrefsExp);
-
-          if not referenceEq(e1, e2) then
-            eq.rhs := e2;
-          end if;
-        then
-          eq;
-
-      case Equation.ARRAY_EQUALITY(rhs = e1)
-        algorithm
-          e1 := Expression.map(e1, addTrailingWholeIndices);
           e2 := Expression.map(e1, expandSlicedCrefsExp);
 
           if not referenceEq(e1, e2) then
@@ -1167,8 +1155,8 @@ public
       Expression.REAL(0),
       Expression.CALL(Call.makeTypedCall(indexed_fn, args, Variability.CONTINUOUS, Purity.PURE)),
       Type.REAL(),
-      fn.node,
-      src
+      src,
+      fn.node
     );
 
     funcs := FunctionTree.add(funcs, fn_name, indexed_fn);

@@ -339,12 +339,22 @@ algorithm
       DAE.ElementSource src;
       SourceInfo info;
       list<Equation> eql;
+      Boolean scalarize;
 
-    case Equation.EQUALITY(lhs = lhs, rhs = rhs, ty = ty, source = src) guard Type.isArray(ty)
+    case Equation.EQUALITY(lhs = lhs, rhs = rhs, ty = ty, source = src)
+        guard Type.isArray(ty)
       algorithm
-        if not forceScalarize and (Expression.hasArrayCall(lhs) or Expression.hasArrayCall(rhs)) then
-          equations := Equation.ARRAY_EQUALITY(lhs, rhs, ty, eq.scope, src) :: equations;
+        if forceScalarize or eq.scalarizeMode == NFEquation.ScalarizeMode.SCALARIZE then
+          scalarize := true;
+        elseif eq.scalarizeMode == NFEquation.ScalarizeMode.DONT_SCALARIZE then
+          scalarize := false;
+        elseif Expression.hasArrayCall(lhs) or Expression.hasArrayCall(rhs) then
+          scalarize := false;
         else
+          scalarize := true;
+        end if;
+
+        if scalarize then
           lhs_iter := ExpressionIterator.fromExp(lhs);
           rhs_iter := ExpressionIterator.fromExp(rhs);
           ty := Type.arrayElementType(ty);
@@ -357,14 +367,13 @@ algorithm
 
             (lhs_iter, lhs) := ExpressionIterator.next(lhs_iter);
             (rhs_iter, rhs) := ExpressionIterator.next(rhs_iter);
-            equations := Equation.EQUALITY(lhs, rhs, ty, eq.scope, src) :: equations;
+            equations := Equation.makeEquality(lhs, rhs, ty, src, eq.scope) :: equations;
           end while;
+        else
+          equations := eq :: equations;
         end if;
       then
         equations;
-
-    case Equation.ARRAY_EQUALITY() guard forceScalarize
-      then scalarizeEquation(Equation.EQUALITY(eq.lhs, eq.rhs, eq.ty, eq.scope, eq.source), equations, true);
 
     case Equation.CONNECT() then equations;
 

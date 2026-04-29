@@ -991,11 +991,6 @@ protected
         Algorithm alg;
         list<IfEquationBody> bodies;
 
-      case FEquation.ARRAY_EQUALITY(lhs = lhs, rhs = rhs, ty = ty, source = source)
-        guard(Type.isArray(ty)) algorithm
-        attr := lowerEquationAttributes(ty, init);
-      then {Pointer.create(BEquation.ARRAY_EQUATION(ty, lhs, rhs, source, attr, Type.complexSize(ty)))};
-
       case FEquation.EQUALITY(lhs = lhs, rhs = rhs, ty = ty, source = source) algorithm
         attr := lowerEquationAttributes(ty, init);
         result := match ty
@@ -1329,7 +1324,6 @@ protected
       case FEquation.NORETCALL()                                  then BEquation.NORETCALL(eq.exp, eq.source);
       case FEquation.ASSERT()                                     then BEquation.ASSERT(eq.condition, eq.message, eq.level, eq.source);
       case FEquation.EQUALITY()                                   then BEquation.ASSIGN(eq.lhs, eq.rhs, eq.source);
-      case FEquation.ARRAY_EQUALITY()                             then BEquation.ASSIGN(eq.lhs, eq.rhs, eq.source);
 
       /* ToDo! implement proper cases for FOR and IF --> need FOR_ASSIGN and IF_ASSIGN ?
       case FEquation.FOR(iterator = iterator, range = SOME(range), body = body, source = source)

@@ -169,7 +169,6 @@ protected
     for eq in eql loop
       crefs := match eq
         case Equation.EQUALITY()       then whenEquationEqualityCrefs(eq.lhs, crefs);
-        case Equation.ARRAY_EQUALITY() then whenEquationEqualityCrefs(eq.lhs, crefs);
         case Equation.IF()             then whenEquationIfCrefs(eq.branches, eq.source, crefs);
         else crefs;
       end match;
@@ -429,13 +428,6 @@ protected
         list<Equation.Branch> branches;
 
       case Equation.EQUALITY(lhs = lhs)
-        guard(when_found)
-        algorithm
-          checkDiscreteRealExp(lhs, discreteReals);
-        then
-          ();
-
-      case Equation.ARRAY_EQUALITY(lhs = lhs)
         guard(when_found)
         algorithm
           checkDiscreteRealExp(lhs, discreteReals);

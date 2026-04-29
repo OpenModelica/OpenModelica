@@ -705,8 +705,8 @@ algorithm
        not Type.isExternalObject(Type.arrayElementType(ty)) and Binding.isBound(binding)
        or fillVectorizedBindingFails then
       name := ComponentRef.prefixCref(comp_node, ty, {}, Prefix.prefix(prefix));
-      eq := Equation.ARRAY_EQUALITY(Expression.CREF(ty, name), Binding.getTypedExp(binding), ty,
-        InstNode.EMPTY_NODE(), ElementSource.createElementSource(info));
+      eq := Equation.makeEquality(Expression.CREF(ty, name), Binding.getTypedExp(binding), ty,
+        ElementSource.createElementSource(info), scalarizeMode = NFEquation.ScalarizeMode.DONT_SCALARIZE);
       sections := Sections.prependEquation(eq, sections);
       binding := NFBinding.EMPTY_BINDING;
 
@@ -997,8 +997,8 @@ algorithm
       // conflict with the binding on the actual record instance.
       if not settings.newBackend then
         name := ComponentRef.prefixCref(node, ty, {}, Prefix.prefix(prefix));
-        eq := Equation.EQUALITY(Expression.CREF(ty, name),  binding_exp, ty,
-          InstNode.EMPTY_NODE(), ElementSource.createElementSource(info));
+        eq := Equation.makeEquality(Expression.CREF(ty, name),  binding_exp, ty,
+          ElementSource.createElementSource(info));
         sections := Sections.prependEquation(eq, sections, isInitial = comp_var <= Variability.PARAMETER);
       end if;
       opt_binding := SOME(NFBinding.EMPTY_BINDING);
@@ -1328,7 +1328,7 @@ algorithm
           ty := Type.liftArrayLeftList(eq.ty, dimensions);
           lhs := Expression.CREF(ty, lhs.cref);
           rhs := Expression.CREF(ty, rhs.cref);
-        then Equation.ARRAY_EQUALITY(lhs, rhs, ty, eq.scope, eq.source) :: equations;
+        then Equation.EQUALITY(lhs, rhs, ty, eq.scope, eq.source, eq.scalarizeMode) :: equations;
 
       // Pass Connections.* operators as they are and let the connection
       // handling deal with them.
@@ -1879,7 +1879,7 @@ algorithm
         e2 := flattenExp(eq.rhs, prefix, info);
         ty := flattenType(eq.ty, prefix, info);
       then
-        Equation.EQUALITY(e1, e2, ty, eq.scope, eq.source) :: equations;
+        Equation.EQUALITY(e1, e2, ty, eq.scope, eq.source, eq.scalarizeMode) :: equations;
 
     case Equation.FOR()
       algorithm
@@ -2759,14 +2759,6 @@ algorithm
     case Equation.EQUALITY()
       algorithm
         funcs := collectExpFuncs(eq.lhs, funcs);
-        funcs := collectExpFuncs(eq.rhs, funcs);
-        funcs := collectTypeFuncs(eq.ty, funcs);
-      then
-        ();
-
-    case Equation.ARRAY_EQUALITY()
-      algorithm
-        // Lhs is always a cref, no need to check it.
         funcs := collectExpFuncs(eq.rhs, funcs);
         funcs := collectTypeFuncs(eq.ty, funcs);
       then

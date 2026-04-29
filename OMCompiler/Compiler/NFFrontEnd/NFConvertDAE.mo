@@ -576,14 +576,6 @@ algorithm
          else
            DAE.Element.EQUATION(e1, e2, eq.source)) :: elements;
 
-    case Equation.ARRAY_EQUALITY()
-      algorithm
-        e1 := Expression.toDAE(eq.lhs);
-        e2 := Expression.toDAE(eq.rhs);
-        dims := list(Dimension.toDAE(d) for d in Type.arrayDims(eq.ty));
-      then
-        DAE.Element.ARRAY_EQUATION(dims, e1, e2, eq.source) :: elements;
-
     case Equation.FOR()
       then convertForEquation(eq, isInitial = false) :: elements;
 
@@ -747,16 +739,11 @@ algorithm
         e2 := Expression.toDAE(eq.rhs);
       then
         (if Type.isComplex(eq.ty) then
-           DAE.Element.INITIAL_COMPLEX_EQUATION(e1, e2, eq.source) else
+           DAE.Element.INITIAL_COMPLEX_EQUATION(e1, e2, eq.source)
+         elseif Type.isArray(eq.ty) then
+           DAE.Element.INITIAL_ARRAY_EQUATION(list(Dimension.toDAE(d) for d in Type.arrayDims(eq.ty)), e1, e2, eq.source)
+         else
            DAE.Element.INITIALEQUATION(e1, e2, eq.source)) :: elements;
-
-    case Equation.ARRAY_EQUALITY()
-      algorithm
-        e1 := Expression.toDAE(eq.lhs);
-        e2 := Expression.toDAE(eq.rhs);
-        dims := list(Dimension.toDAE(d) for d in Type.arrayDims(eq.ty));
-      then
-        DAE.Element.INITIAL_ARRAY_EQUATION(dims, e1, e2, eq.source) :: elements;
 
     case Equation.FOR()
       then convertForEquation(eq, isInitial = true) :: elements;

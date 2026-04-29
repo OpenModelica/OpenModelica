@@ -331,7 +331,7 @@ algorithm
   exp_lhs := Expression.CALL(Call.UNTYPED_CALL(fcref_lhs, Expression.REAL(0.0)::list(Dimension.sizeExp(d) for d in Type.arrayDims(ty)), {}, fn_node_lhs));
   (exp_lhs, ty) := Typing.typeExp(exp_lhs, context, info);
 
-  equalityConstraintEq := Equation.EQUALITY(exp_rhs, exp_lhs, ty, InstNode.EMPTY_NODE(), source);
+  equalityConstraintEq := Equation.makeEquality(exp_rhs, exp_lhs, ty, source);
 end generateEqualityConstraintEquation;
 
 function getOverconstrainedCrefs

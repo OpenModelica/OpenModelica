@@ -375,14 +375,7 @@ algorithm
         e1 := evaluateExp(eq.lhs, info);
         e2 := evaluateExp(eq.rhs, info);
       then
-        Equation.EQUALITY(e1, e2, ty, eq.scope, eq.source);
-
-    case Equation.ARRAY_EQUALITY()
-      algorithm
-        ty := Type.mapDims(eq.ty, function evaluateDimension(info = info));
-        e2 := evaluateExp(eq.rhs, info);
-      then
-        Equation.ARRAY_EQUALITY(eq.lhs, e2, ty, eq.scope, eq.source);
+        Equation.EQUALITY(e1, e2, ty, eq.scope, eq.source, eq.scalarizeMode);
 
     case Equation.FOR()
       algorithm

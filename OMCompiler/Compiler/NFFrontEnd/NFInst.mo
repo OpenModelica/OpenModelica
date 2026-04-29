@@ -3346,7 +3346,7 @@ algorithm
         exp1 := instExp(scodeEq.expLeft, scope, context, info);
         exp2 := instExp(scodeEq.expRight, scope, context, info);
       then
-        Equation.EQUALITY(exp1, exp2, Type.UNKNOWN(), scope, makeSource(scodeEq.comment, info)) :: equations;
+        Equation.makeEquality(exp1, exp2, Type.UNKNOWN(), makeSource(scodeEq.comment, info), scope) :: equations;
 
     case SCode.Equation.EQ_CONNECT(info = info)
       algorithm

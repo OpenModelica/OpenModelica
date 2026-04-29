@@ -733,7 +733,7 @@ public
   algorithm
     if variability(var) >= Variability.DISCRETE and Binding.isBound(var.binding) then
       equations := Equation.makeEquality(Expression.fromCref(var.name),
-        Binding.getExp(var.binding), var.ty, InstNode.EMPTY_NODE(),
+        Binding.getExp(var.binding), var.ty,
         ElementSource.createElementSource(var.info)) :: equations;
       var.binding := NFBinding.EMPTY_BINDING;
     end if;
