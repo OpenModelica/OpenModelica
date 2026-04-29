@@ -30,4 +30,5 @@ jobs:
             OMOptim                                    \
             OMParser                                   \
             OMPlot                                     \
+            OMSens_Qt                                  \
             OMShell
