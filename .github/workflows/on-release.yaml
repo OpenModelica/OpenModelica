@@ -8,16 +8,21 @@ on:
 jobs:
   build: # run only on pushes to the default branch (master)
     runs-on: ubuntu-latest
+    env:
+      REVISION : ''
     steps:
       - uses: actions/checkout@v6
         with:
-          submodules: true
+          submodules: recursive
       - name: Build Assets
         run: |
+          export REVISION=`git describe --match "v*.*" --always`
           cd ..
-          zip ${{ github.event.repository.name }}/${{ github.event.repository.name }}-src-with-submodules.zip ${{ github.event.repository.name }} -r -x '*/.git/*'
+          ln -s ${{ github.event.repository.name }} ${{ github.event.repository.name }}-$REVISION
+          zip ${{ github.event.repository.name }}/${{ github.event.repository.name }}-nightly.zip ${{ github.event.repository.name }}-$REVISION -r -x '*/.git/*'
+          rm -f ${{ github.event.repository.name }}-$REVISION
       - name: Upload Release Assets
         if: ${{ github.event_name != 'workflow_dispatch' }}
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v3
         with:
           files: '*src-with-submodules.zip'
