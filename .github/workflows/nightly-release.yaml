@@ -10,15 +10,20 @@ jobs:
   build:
     if: ${{ !github.event.repository.fork }}
     runs-on: ubuntu-latest
+    env:
+      REVISION : ''
     steps:
       - uses: actions/checkout@v6
         with:
-          submodules: true
+          submodules: recursive
 
-      - name: Create zip
+      - name: Build Assets
         run: |
+          export REVISION=`git describe --match "v*.*" --always`
           cd ..
-          zip ${{ github.event.repository.name }}/${{ github.event.repository.name }}-nightly.zip ${{ github.event.repository.name }} -r -x '*/.git/*'
+          ln -s ${{ github.event.repository.name }} ${{ github.event.repository.name }}-$REVISION
+          zip ${{ github.event.repository.name }}/${{ github.event.repository.name }}-nightly.zip ${{ github.event.repository.name }}-$REVISION -r -x '*/.git/*'
+          rm -f ${{ github.event.repository.name }}-$REVISION
 
       - uses: pyTooling/Actions/releaser@r0
         with:
