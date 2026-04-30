@@ -91,7 +91,7 @@ algorithm
       Ref r;
       Graph g;
     case (r, _, _, g)
-      equation
+      algorithm
       then
         (g, r);
   end match;
@@ -111,7 +111,7 @@ algorithm
       Ref r;
       Graph g;
     case (r, _, g)
-      equation
+      algorithm
       then
         (g, r);
   end match;
@@ -171,14 +171,14 @@ algorithm
       SCode.SubMod submod;
 
     case (SCode.NAMEMOD(ident = name1), SCode.NAMEMOD(ident = name2), _, _)
-      equation
-        false = stringEqual(name1, name2);
+      algorithm
+        false := stringEqual(name1, name2);
       then
         (inExistingMod, false);
 
     case (SCode.NAMEMOD(ident = name1), _, _, _)
-      equation
-        submod = mergeSubModsInSameScope(inExistingMod, inNewMod, name1 :: inName, inModScope);
+      algorithm
+        submod := mergeSubModsInSameScope(inExistingMod, inNewMod, name1 :: inName, inModScope);
       then
         (submod, true);
 
@@ -202,16 +202,16 @@ algorithm
   outMod := match(mod1, mod2)
     // The second modifier has no binding, use the binding from the first.
     case (SCode.MOD(), SCode.MOD(binding = NONE()))
-      equation
-        submods = List.fold2(mod1.subModLst, compactSubMod, inModScope, inElementName, mod2.subModLst);
+      algorithm
+        submods := List.fold2(mod1.subModLst, compactSubMod, inModScope, inElementName, mod2.subModLst);
       then
         SCode.NAMEMOD(inMod1.ident, SCode.MOD(mod1.finalPrefix, mod1.eachPrefix,
           submods, mod1.binding, mod1.comment, mod1.info));
 
     // The first modifier has no binding, use the binding from the second.
     case (SCode.MOD(binding = NONE()), SCode.MOD())
-      equation
-        submods = List.fold2(mod1.subModLst, compactSubMod, inModScope, inElementName, mod2.subModLst);
+      algorithm
+        submods := List.fold2(mod1.subModLst, compactSubMod, inModScope, inElementName, mod2.subModLst);
       then
         SCode.NAMEMOD(inMod2.ident, SCode.MOD(mod2.finalPrefix, mod2.eachPrefix,
           submods, mod2.binding, mod2.comment, mod2.info));

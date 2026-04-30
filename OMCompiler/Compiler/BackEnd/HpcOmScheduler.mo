@@ -192,49 +192,49 @@ algorithm
                                                  iSccSimEqMapping, iSimVarMapping, iLockWithPredecessorHandler, iSchedule)
     case((head as HpcOmSimCode.CALCTASK(weighting=weighting,index=index,calcTime=calcTime,eqIdc=(eqIdc as firstEq::_)))
       ::rest,_,_,_,_,_,_,_,_,HpcOmSimCode.THREADSCHEDULE(threadTasks=allThreadTasks, outgoingDepTasks=outgoingDepTasks,allCalcTasks=allCalcTasks))
-      equation
+      algorithm
         //get all predecessors (childs)
-        (predecessors, _) = getSuccessorsByTask(head, iTaskGraphT, allCalcTasks);
-        (successors, successorIdc) = getSuccessorsByTask(head, iTaskGraph, allCalcTasks);
+        (predecessors, _) := getSuccessorsByTask(head, iTaskGraphT, allCalcTasks);
+        (successors, successorIdc) := getSuccessorsByTask(head, iTaskGraph, allCalcTasks);
 
         if(boolNot(listEmpty(predecessors))) then //in this case the node has predecessors
-          lastChild = getTaskWithHighestFinishTime(predecessors, NONE());
-          HpcOmSimCode.CALCTASK(timeFinished=lastChildFinishTime) = lastChild;
+          lastChild := getTaskWithHighestFinishTime(predecessors, NONE());
+          HpcOmSimCode.CALCTASK(timeFinished=lastChildFinishTime) := lastChild;
         else
-          lastChildFinishTime = 0.0;
+          lastChildFinishTime := 0.0;
         end if;
 
-        threadFinishTimes = calculateFinishTimes(lastChildFinishTime, head, predecessors, iCommCosts, iThreadReadyTimes);
-        ((threadId, threadFinishTime)) = getThreadFinishTimesMin(1,threadFinishTimes,-1,0.0);
-        tmpThreadReadyTimes = arrayUpdate(iThreadReadyTimes, threadId, threadFinishTime);
-        threadTasks = arrayGet(allThreadTasks,threadId);
+        threadFinishTimes := calculateFinishTimes(lastChildFinishTime, head, predecessors, iCommCosts, iThreadReadyTimes);
+        ((threadId, threadFinishTime)) := getThreadFinishTimesMin(1,threadFinishTimes,-1,0.0);
+        tmpThreadReadyTimes := arrayUpdate(iThreadReadyTimes, threadId, threadFinishTime);
+        threadTasks := arrayGet(allThreadTasks,threadId);
 
         //print("Scheduling task " + intString(index) + " to thread " + intString(threadId) + "\n");
         if(boolNot(listEmpty(predecessors))) then //in this case the node has predecessors
           //find all predecessors which are scheduled to another thread and thus require a lock
-          (lockTasks,newOutgoingDepTasks) = iLockWithPredecessorHandler(head,predecessors,threadId,iCommCosts,iCompTaskMapping,iSimVarMapping);
-          outgoingDepTasks = listAppend(outgoingDepTasks,newOutgoingDepTasks) annotation(__OpenModelica_DisableListAppendWarning=true);
+          (lockTasks,newOutgoingDepTasks) := iLockWithPredecessorHandler(head,predecessors,threadId,iCommCosts,iCompTaskMapping,iSimVarMapping);
+          outgoingDepTasks := listAppend(outgoingDepTasks,newOutgoingDepTasks) annotation(__OpenModelica_DisableListAppendWarning=true);
           //threadTasks = listAppend(List.map(newLockIdc,convertLockIdToAssignTask), threadTasks);
-          threadTasks = listAppend(lockTasks, threadTasks);
+          threadTasks := listAppend(lockTasks, threadTasks);
 
           //print("Eq idc: " + stringDelimitList(List.map(eqIdc, intString), ",") + "\n");
-          simEqIdc = List.map(List.map1(eqIdc,getSimEqSysIdxForComp,iSccSimEqMapping), List.last);
+          simEqIdc := List.map(List.map1(eqIdc,getSimEqSysIdxForComp,iSccSimEqMapping), List.last);
           //simEqIdc = List.sort(simEqIdc,intGt);
         else
-          simEqIdc = List.flatten(List.map1(eqIdc,getSimEqSysIdxForComp,iSccSimEqMapping));
+          simEqIdc := List.flatten(List.map1(eqIdc,getSimEqSysIdxForComp,iSccSimEqMapping));
         end if;
 
-        newTask = HpcOmSimCode.CALCTASK(weighting,index,calcTime,threadFinishTime,threadId,simEqIdc);
-        threadTasks = newTask::threadTasks;
-        allThreadTasks = arrayUpdate(allThreadTasks,threadId,threadTasks);
+        newTask := HpcOmSimCode.CALCTASK(weighting,index,calcTime,threadFinishTime,threadId,simEqIdc);
+        threadTasks := newTask::threadTasks;
+        allThreadTasks := arrayUpdate(allThreadTasks,threadId,threadTasks);
 
         //add all successors with refcounter = 1
-        (allCalcTasks,tmpNodeList) = updateRefCounterBySuccessorIdc(allCalcTasks,successorIdc,{});
-        tmpNodeList = listAppend(tmpNodeList, rest) annotation(__OpenModelica_DisableListAppendWarning=true);
-        tmpNodeList = List.sort(tmpNodeList, compareTasksByWeighting);
-        ((_,newTaskRefCount)) = arrayGet(allCalcTasks,index);
+        (allCalcTasks,tmpNodeList) := updateRefCounterBySuccessorIdc(allCalcTasks,successorIdc,{});
+        tmpNodeList := listAppend(tmpNodeList, rest) annotation(__OpenModelica_DisableListAppendWarning=true);
+        tmpNodeList := List.sort(tmpNodeList, compareTasksByWeighting);
+        ((_,newTaskRefCount)) := arrayGet(allCalcTasks,index);
         arrayUpdate(allCalcTasks,index,(newTask,newTaskRefCount));
-        (tmpSchedule,tmpThreadReadyTimes) = createListSchedule1(tmpNodeList,tmpThreadReadyTimes,iTaskGraph, iTaskGraphT, iCommCosts, iCompTaskMapping, iSccSimEqMapping, iSimVarMapping, iLockWithPredecessorHandler, HpcOmSimCode.THREADSCHEDULE(allThreadTasks,outgoingDepTasks,{},allCalcTasks));
+        (tmpSchedule,tmpThreadReadyTimes) := createListSchedule1(tmpNodeList,tmpThreadReadyTimes,iTaskGraph, iTaskGraphT, iCommCosts, iCompTaskMapping, iSccSimEqMapping, iSimVarMapping, iLockWithPredecessorHandler, HpcOmSimCode.THREADSCHEDULE(allThreadTasks,outgoingDepTasks,{},allCalcTasks));
       then (tmpSchedule,tmpThreadReadyTimes);
     case({},_,_,_,_,_,_,_,_,_) then (iSchedule,iThreadReadyTimes);
     else
@@ -344,44 +344,44 @@ algorithm
                                                  iSccSimEqMapping, iSimVarMapping, iLockWithPredecessorHandler, iNumberOfThreads, iSchedule)
     case((head as HpcOmSimCode.CALCTASK(weighting=weighting,index=index,calcTime=calcTime,eqIdc=(eqIdc as firstEq::_)))::rest
          ,_,_,_,_,_,_,_,_,_,HpcOmSimCode.THREADSCHEDULE(threadTasks=allThreadTasks, outgoingDepTasks=outgoingDepTasks, allCalcTasks=allCalcTasks))
-      equation
+      algorithm
         //Get all predecessors (childs)
-        (predecessors, _) = getSuccessorsByTask(head, iTaskGraphT, allCalcTasks);
-        (successors, successorIdc) = getSuccessorsByTask(head, iTaskGraph, allCalcTasks);
-        false = listEmpty(predecessors); //in this case the node has predecessors
+        (predecessors, _) := getSuccessorsByTask(head, iTaskGraphT, allCalcTasks);
+        (successors, successorIdc) := getSuccessorsByTask(head, iTaskGraph, allCalcTasks);
+        false := listEmpty(predecessors); //in this case the node has predecessors
         //!print("Handle1 task " + intString(index) + "\n");// + " with " + intString(listLength(predecessors)) + " child nodes and "
               //+ intString(listLength(successorIdc)) + " parent nodes.\n");
         //!print("\tZeile 367\t" + stringDelimitList(List.mapArray(iThreadReadyTimes, realString), "\t\t") + "\n");
 
         //! Randomly chose thread for scheduling.
-        threadId = System.intRandom(iNumberOfThreads) + 1;
+        threadId := System.intRandom(iNumberOfThreads) + 1;
 
-        threadFinishTimes = calculateFinishTimes(0.0, head, {}, iCommCosts, iThreadReadyTimes);
-        threadFinishTime = arrayGet(threadFinishTimes, threadId);
-        tmpThreadReadyTimes = arrayUpdate(iThreadReadyTimes, threadId, threadFinishTime);
-        threadTasks = arrayGet(allThreadTasks,threadId);
+        threadFinishTimes := calculateFinishTimes(0.0, head, {}, iCommCosts, iThreadReadyTimes);
+        threadFinishTime := arrayGet(threadFinishTimes, threadId);
+        tmpThreadReadyTimes := arrayUpdate(iThreadReadyTimes, threadId, threadFinishTime);
+        threadTasks := arrayGet(allThreadTasks,threadId);
 
         //Find all predecessors which are scheduled to another thread and thus require a lock
-        (lockTasks,newOutgoingDepTasks) = iLockWithPredecessorHandler(head, predecessors, threadId, iCommCosts, iCompTaskMapping,
+        (lockTasks,newOutgoingDepTasks) := iLockWithPredecessorHandler(head, predecessors, threadId, iCommCosts, iCompTaskMapping,
                                                                       iSimVarMapping);
-        outgoingDepTasks = listAppend(outgoingDepTasks, newOutgoingDepTasks) annotation(__OpenModelica_DisableListAppendWarning=true);
-        threadTasks = listAppend(lockTasks, threadTasks);
+        outgoingDepTasks := listAppend(outgoingDepTasks, newOutgoingDepTasks) annotation(__OpenModelica_DisableListAppendWarning=true);
+        threadTasks := listAppend(lockTasks, threadTasks);
 
-        simEqIdc = List.map(List.map1(eqIdc, getSimEqSysIdxForComp, iSccSimEqMapping), List.last);
+        simEqIdc := List.map(List.map1(eqIdc, getSimEqSysIdxForComp, iSccSimEqMapping), List.last);
         //simEqIdc = List.sort(simEqIdc,intGt);
 
         //! Add task to thread
-        newTask = HpcOmSimCode.CALCTASK(weighting, index, calcTime, threadFinishTime, threadId, simEqIdc);
-        threadTasks = newTask::threadTasks;
-        allThreadTasks = arrayUpdate(allThreadTasks, threadId, threadTasks);
+        newTask := HpcOmSimCode.CALCTASK(weighting, index, calcTime, threadFinishTime, threadId, simEqIdc);
+        threadTasks := newTask::threadTasks;
+        allThreadTasks := arrayUpdate(allThreadTasks, threadId, threadTasks);
 
         //add all successors with refcounter = 1
-        (allCalcTasks, tmpNodeList) = updateRefCounterBySuccessorIdc(allCalcTasks, successorIdc, {});
-        tmpNodeList = listAppend(tmpNodeList, rest) annotation(__OpenModelica_DisableListAppendWarning=true);
-        tmpNodeList = List.sort(tmpNodeList, compareTasksByWeighting);
-        (_, newTaskRefCount) = arrayGet(allCalcTasks, index);
-        _ = arrayUpdate(allCalcTasks, index, (newTask, newTaskRefCount));
-        (tmpSchedule, tmpThreadReadyTimes) = createRandomSchedule1(tmpNodeList,tmpThreadReadyTimes, iTaskGraph, iTaskGraphT,
+        (allCalcTasks, tmpNodeList) := updateRefCounterBySuccessorIdc(allCalcTasks, successorIdc, {});
+        tmpNodeList := listAppend(tmpNodeList, rest) annotation(__OpenModelica_DisableListAppendWarning=true);
+        tmpNodeList := List.sort(tmpNodeList, compareTasksByWeighting);
+        (_, newTaskRefCount) := arrayGet(allCalcTasks, index);
+        _ := arrayUpdate(allCalcTasks, index, (newTask, newTaskRefCount));
+        (tmpSchedule, tmpThreadReadyTimes) := createRandomSchedule1(tmpNodeList,tmpThreadReadyTimes, iTaskGraph, iTaskGraphT,
                                                                    iCommCosts, iCompTaskMapping, iSccSimEqMapping, iSimVarMapping,
                                                                    iLockWithPredecessorHandler, iNumberOfThreads,
                                                                    HpcOmSimCode.THREADSCHEDULE(allThreadTasks, outgoingDepTasks,
@@ -390,33 +390,33 @@ algorithm
     case((head as HpcOmSimCode.CALCTASK(weighting=weighting,index=index,calcTime=calcTime,eqIdc=(eqIdc as firstEq::_)))::rest
           ,_,_,_,_,_,_,_,_,_,
           HpcOmSimCode.THREADSCHEDULE(threadTasks=allThreadTasks,outgoingDepTasks=outgoingDepTasks, allCalcTasks=allCalcTasks))
-      equation
-        (successors, successorIdc) = getSuccessorsByTask(head, iTaskGraph, allCalcTasks);
+      algorithm
+        (successors, successorIdc) := getSuccessorsByTask(head, iTaskGraph, allCalcTasks);
 
         //Randomly chose thread for scheduling
-        threadId = System.intRandom(iNumberOfThreads)+1;
+        threadId := System.intRandom(iNumberOfThreads)+1;
         //print("ThreadId= " + intString(threadId) + "\n");
 
-        threadFinishTimes = calculateFinishTimes(0.0, head, {}, iCommCosts, iThreadReadyTimes);
-        threadFinishTime = arrayGet(threadFinishTimes, threadId);
+        threadFinishTimes := calculateFinishTimes(0.0, head, {}, iCommCosts, iThreadReadyTimes);
+        threadFinishTime := arrayGet(threadFinishTimes, threadId);
 
         // Update array containg thread finish times.
-        tmpThreadReadyTimes = arrayUpdate(iThreadReadyTimes, threadId, threadFinishTime);
-        threadTasks = arrayGet(allThreadTasks, threadId);
+        tmpThreadReadyTimes := arrayUpdate(iThreadReadyTimes, threadId, threadFinishTime);
+        threadTasks := arrayGet(allThreadTasks, threadId);
 
-        simEqIdc = List.flatten(List.map1(eqIdc, getSimEqSysIdxForComp, iSccSimEqMapping));
+        simEqIdc := List.flatten(List.map1(eqIdc, getSimEqSysIdxForComp, iSccSimEqMapping));
         //simEqIdc = List.sort(simEqIdc,intGt);
 
-        newTask = HpcOmSimCode.CALCTASK(weighting, index, calcTime, threadFinishTime, threadId, simEqIdc);
-        allThreadTasks = arrayUpdate(allThreadTasks, threadId, newTask::threadTasks);
+        newTask := HpcOmSimCode.CALCTASK(weighting, index, calcTime, threadFinishTime, threadId, simEqIdc);
+        allThreadTasks := arrayUpdate(allThreadTasks, threadId, newTask::threadTasks);
 
         //Add all successors with refcounter = 1
-        (allCalcTasks, tmpNodeList) = updateRefCounterBySuccessorIdc(allCalcTasks, successorIdc, {});
-        tmpNodeList = listAppend(tmpNodeList, rest) annotation(__OpenModelica_DisableListAppendWarning=true);
-        tmpNodeList = List.sort(tmpNodeList, compareTasksByWeighting);
-        (_, newTaskRefCount) = arrayGet(allCalcTasks, index);
-        _ = arrayUpdate(allCalcTasks, index, (newTask, newTaskRefCount));
-        (tmpSchedule,tmpThreadReadyTimes) = createRandomSchedule1(tmpNodeList, tmpThreadReadyTimes, iTaskGraph, iTaskGraphT,
+        (allCalcTasks, tmpNodeList) := updateRefCounterBySuccessorIdc(allCalcTasks, successorIdc, {});
+        tmpNodeList := listAppend(tmpNodeList, rest) annotation(__OpenModelica_DisableListAppendWarning=true);
+        tmpNodeList := List.sort(tmpNodeList, compareTasksByWeighting);
+        (_, newTaskRefCount) := arrayGet(allCalcTasks, index);
+        _ := arrayUpdate(allCalcTasks, index, (newTask, newTaskRefCount));
+        (tmpSchedule,tmpThreadReadyTimes) := createRandomSchedule1(tmpNodeList, tmpThreadReadyTimes, iTaskGraph, iTaskGraphT,
                                                                   iCommCosts, iCompTaskMapping, iSccSimEqMapping, iSimVarMapping,
                                                                   iLockWithPredecessorHandler, iNumberOfThreads,
                                                                   HpcOmSimCode.THREADSCHEDULE(allThreadTasks, outgoingDepTasks,
@@ -502,9 +502,9 @@ protected
 algorithm
   oSchedule := match(iTaskGraph,iCreateLockFunction,iCommCosts,iCompTaskMapping,iSimVarMapping,iSchedule)
     case(_,_,_,_,_,HpcOmSimCode.THREADSCHEDULE(threadTasks=allThreadTasks,outgoingDepTasks=outgoingDepTasks,allCalcTasks=allCalcTasks))
-      equation
-        ((allThreadTasks,_)) = Array.fold(allThreadTasks, function addSuccessorLocksToSchedule0(iTaskGraph = iTaskGraph, iAllCalcTasks = allCalcTasks, iSimVarMapping = iSimVarMapping, iCommCosts = iCommCosts, iCompTaskMapping = iCompTaskMapping, iCreateLockFunction = iCreateLockFunction), (allThreadTasks,1));
-        tmpSchedule = HpcOmSimCode.THREADSCHEDULE(allThreadTasks,outgoingDepTasks,{},allCalcTasks);
+      algorithm
+        ((allThreadTasks,_)) := Array.fold(allThreadTasks, function addSuccessorLocksToSchedule0(iTaskGraph = iTaskGraph, iAllCalcTasks = allCalcTasks, iSimVarMapping = iSimVarMapping, iCommCosts = iCommCosts, iCompTaskMapping = iCompTaskMapping, iCreateLockFunction = iCreateLockFunction), (allThreadTasks,1));
+        tmpSchedule := HpcOmSimCode.THREADSCHEDULE(allThreadTasks,outgoingDepTasks,{},allCalcTasks);
     then tmpSchedule;
     else
       equation
@@ -573,16 +573,16 @@ protected
 algorithm
   oThreadTasks := match(iTask, iTaskGraph, iAllCalcTasks, iSimVarMapping, iCommCosts, iCompTaskMapping, iThreadIdLockFunction, iThreadTasks)
     case(HpcOmSimCode.CALCTASK(threadIdx=threadIdx,index=index),_,_,_,_,_,(iThreadId,iCreateLockFunction),tmpThreadTasks)
-      equation
-        (successors,_) = getSuccessorsByTask(iTask, iTaskGraph, iAllCalcTasks);
-        successors = List.removeOnTrue(threadIdx, compareTaskWithThreadIdx, successors);
-        releaseTasks = List.fold4(successors, iCreateLockFunction, iTask, iCommCosts, iCompTaskMapping, iSimVarMapping, {});
-        tmpThreadTasks = listAppend(releaseTasks,tmpThreadTasks);
-        tmpThreadTasks = iTask :: tmpThreadTasks;
+      algorithm
+        (successors,_) := getSuccessorsByTask(iTask, iTaskGraph, iAllCalcTasks);
+        successors := List.removeOnTrue(threadIdx, compareTaskWithThreadIdx, successors);
+        releaseTasks := List.fold4(successors, iCreateLockFunction, iTask, iCommCosts, iCompTaskMapping, iSimVarMapping, {});
+        tmpThreadTasks := listAppend(releaseTasks,tmpThreadTasks);
+        tmpThreadTasks := iTask :: tmpThreadTasks;
       then tmpThreadTasks;
     case(_,_,_,_,_,_,_,tmpThreadTasks)
-      equation
-        tmpThreadTasks = iTask :: tmpThreadTasks;
+      algorithm
+        tmpThreadTasks := iTask :: tmpThreadTasks;
       then tmpThreadTasks;
     else
       equation
@@ -691,12 +691,12 @@ protected
 algorithm
   oLockTasks := matchcontinue(iPredecessorTask,iTask,iThreadIdx,iCommCosts,iCompTaskMapping,iSimVarMapping,iLockTasks)
     case((predTask as HpcOmSimCode.CALCTASK(threadIdx=threadIdx,index=predIndex),_),HpcOmSimCode.CALCTASK(index=taskIndex),_,_,_,_,tmpLockTasks)
-      equation
-        true = intNe(iThreadIdx,threadIdx);
+      algorithm
+        true := intNe(iThreadIdx,threadIdx);
         //print("Adding a new lock for the tasks " + intString(iTaskIdx) + " " + intString(predIndex) + "\n");
-        tmpTask = createDepTaskAndCommunicationInfo(predTask, iTask, false, iCommCosts, iCompTaskMapping, iSimVarMapping);
+        tmpTask := createDepTaskAndCommunicationInfo(predTask, iTask, false, iCommCosts, iCompTaskMapping, iSimVarMapping);
         //print("Because task " + intString(predIndex) + " is scheduled to " + intString(threadIdx) + "\n");
-        tmpLockTasks = tmpTask::tmpLockTasks;
+        tmpLockTasks := tmpTask::tmpLockTasks;
       then tmpLockTasks;
     else iLockTasks;
   end matchcontinue;
@@ -732,12 +732,12 @@ protected
 algorithm
   oLockTasks := matchcontinue(iPredecessorTask,iTask,iThreadIdx,iCommCosts,iCompTaskMapping,iSimVarMapping,iLockTasks)
     case((predTask as HpcOmSimCode.CALCTASK(threadIdx=threadIdx,index=index),_),_,_,_,_,_,_)
-      equation
-        true = intNe(iThreadIdx,threadIdx);
+      algorithm
+        true := intNe(iThreadIdx,threadIdx);
         //print("Adding a new lock for the tasks " + intString(iTaskIdx) + " " + intString(index) + "\n");
         //print("Because task " + intString(index) + " is scheduled to " + intString(threadIdx) + "\n");
-        tmpTask = createDepTaskAndCommunicationInfo(iTask,predTask,true,iCommCosts,iCompTaskMapping,iSimVarMapping);
-        tmpLockTasks = tmpTask :: iLockTasks;
+        tmpTask := createDepTaskAndCommunicationInfo(iTask,predTask,true,iCommCosts,iCompTaskMapping,iSimVarMapping);
+        tmpLockTasks := tmpTask :: iLockTasks;
       then tmpLockTasks;
     else iLockTasks;
   end matchcontinue;
@@ -775,8 +775,8 @@ algorithm
     list<Integer> ints1,ints2,fl1,fl2,b1,b2,s1,s2;
     Real reqT1,reqT2;
    case(HpcOmTaskGraph.COMMUNICATION(nV1,ints1,fl1,b1,s1,childNode,reqT1),_,HpcOmTaskGraph.COMMUNICATION(nV2,ints2,fl2,b2,s2,_,reqT2))
-     equation
-       true = listMember(childNode,tasks);
+     algorithm
+       true := listMember(childNode,tasks);
      then HpcOmTaskGraph.COMMUNICATION(nV1+nV2,listAppend(ints1,ints2),listAppend(fl1,fl2),listAppend(b1,b2),listAppend(s1,s2),childNode,reqT1+reqT2);
    else iCommunication;
  end matchcontinue;
@@ -795,10 +795,10 @@ protected
 algorithm
   oCommInfo := match(iCommunication,iSimVarMapping)
     case(HpcOmTaskGraph.COMMUNICATION(integerVars=integerVars,floatVars=floatVars,booleanVars=booleanVars),_)
-      equation
-        intSimVars = List.fold1(integerVars, convertVarIdxToSimVar, iSimVarMapping, {});
-        floatSimVars = List.fold1(floatVars, convertVarIdxToSimVar, iSimVarMapping, {});
-        boolSimVars = List.fold1(booleanVars, convertVarIdxToSimVar, iSimVarMapping, {});
+      algorithm
+        intSimVars := List.fold1(integerVars, convertVarIdxToSimVar, iSimVarMapping, {});
+        floatSimVars := List.fold1(floatVars, convertVarIdxToSimVar, iSimVarMapping, {});
+        boolSimVars := List.fold1(booleanVars, convertVarIdxToSimVar, iSimVarMapping, {});
       then HpcOmSimCode.COMMUNICATION_INFO(floatSimVars,intSimVars,boolSimVars);
   end match;
 end convertCommunicationToCommInfo;
@@ -844,11 +844,11 @@ protected
 algorithm
   oAssignTask := matchcontinue(iSourceTask,iTargetTask,iOutgoing,iCommCosts,iCompTaskMapping,iSimVarMapping)
     case(HpcOmSimCode.CALCTASK(index=predIndex),HpcOmSimCode.CALCTASK(index=taskIndex),_,_,_,_)
-      equation
+      algorithm
         //print("createDepTaskAndCommunicationInfo: Creating dependency (outgoing=" + boolString(iOutgoing) + ") between " + intString(predIndex) + " and " + intString(taskIndex) + "\n");
-        commBetweenTasks = getCommunicationObjBetweenMergedTasks(predIndex,taskIndex,iCompTaskMapping,iCommCosts);
-        commInfo = convertCommunicationToCommInfo(commBetweenTasks, iSimVarMapping);
-        tmpTask = createDepTask(iSourceTask, iTargetTask, iOutgoing, commInfo);
+        commBetweenTasks := getCommunicationObjBetweenMergedTasks(predIndex,taskIndex,iCompTaskMapping,iCommCosts);
+        commInfo := convertCommunicationToCommInfo(commBetweenTasks, iSimVarMapping);
+        tmpTask := createDepTask(iSourceTask, iTargetTask, iOutgoing, commInfo);
       then tmpTask;
     /*case(HpcOmSimCode.CALCTASK(index=predIndex),HpcOmSimCode.CALCTASK(index=taskIndex),false,_,_,_)
       equation
@@ -919,19 +919,19 @@ protected
 algorithm
   (oAllCalcTasks,oRefZeroTasks) := matchcontinue(iAllCalcTasks,iSuccessorIdc,iRefZeroTasks)
     case(_,head::rest,_)
-      equation
-        ((currentTask,currentRefCount)) = arrayGet(iAllCalcTasks,head);
+      algorithm
+        ((currentTask,currentRefCount)) := arrayGet(iAllCalcTasks,head);
         //print("\tTask " + intString(head) + " has ref-counter of " + intString(currentRefCount) + "\n");
-        true = intEq(currentRefCount,1); //Task-refcounter = 0
-        tmpAllCalcTasks = arrayUpdate(iAllCalcTasks,head,(currentTask,0));
-        tmpRefZeroTasks = currentTask :: iRefZeroTasks;
-        (tmpAllCalcTasks,tmpRefZeroTasks) = updateRefCounterBySuccessorIdc(tmpAllCalcTasks,rest,tmpRefZeroTasks);
+        true := intEq(currentRefCount,1); //Task-refcounter = 0
+        tmpAllCalcTasks := arrayUpdate(iAllCalcTasks,head,(currentTask,0));
+        tmpRefZeroTasks := currentTask :: iRefZeroTasks;
+        (tmpAllCalcTasks,tmpRefZeroTasks) := updateRefCounterBySuccessorIdc(tmpAllCalcTasks,rest,tmpRefZeroTasks);
       then (tmpAllCalcTasks,tmpRefZeroTasks);
     case(_,head::rest,_)
-      equation
-        ((currentTask,currentRefCount)) = arrayGet(iAllCalcTasks,head); //Task-refcounter != 0
-        tmpAllCalcTasks = arrayUpdate(iAllCalcTasks,head,(currentTask,currentRefCount-1));
-        (tmpAllCalcTasks,tmpRefZeroTasks) = updateRefCounterBySuccessorIdc(tmpAllCalcTasks,rest,iRefZeroTasks);
+      algorithm
+        ((currentTask,currentRefCount)) := arrayGet(iAllCalcTasks,head); //Task-refcounter != 0
+        tmpAllCalcTasks := arrayUpdate(iAllCalcTasks,head,(currentTask,currentRefCount-1));
+        (tmpAllCalcTasks,tmpRefZeroTasks) := updateRefCounterBySuccessorIdc(tmpAllCalcTasks,rest,iRefZeroTasks);
       then (tmpAllCalcTasks,tmpRefZeroTasks);
     else (iAllCalcTasks,iRefZeroTasks);
   end matchcontinue;
@@ -948,13 +948,13 @@ protected
 algorithm
   minThreadTime_Idx := matchcontinue(iThreadIdx,iThreadFinishTimes,iCurrentMinThreadIdx,iCurrentMinFinishTime)
     case(_,_,_,_)
-      equation
-        true = intGt(iThreadIdx,arrayLength(iThreadFinishTimes));
+      algorithm
+        true := intGt(iThreadIdx,arrayLength(iThreadFinishTimes));
       then ((iCurrentMinThreadIdx, iCurrentMinFinishTime));
     case(_,_,_,_)
-      equation
-        threadFinishTime = arrayGet(iThreadFinishTimes, iThreadIdx);
-        true = realLt(threadFinishTime,iCurrentMinFinishTime) or intEq(iCurrentMinThreadIdx,-1);
+      algorithm
+        threadFinishTime := arrayGet(iThreadFinishTimes, iThreadIdx);
+        true := realLt(threadFinishTime,iCurrentMinFinishTime) or intEq(iCurrentMinThreadIdx,-1);
       then getThreadFinishTimesMin(iThreadIdx+1,iThreadFinishTimes, iThreadIdx, threadFinishTime);
     else getThreadFinishTimesMin(iThreadIdx+1,iThreadFinishTimes, iCurrentMinThreadIdx, iCurrentMinFinishTime);
   end matchcontinue;
@@ -974,8 +974,8 @@ algorithm
   oTask := matchcontinue(iTasks, iCurrentTask)
     case((head,_)::tail, NONE()) then getTaskWithHighestFinishTime(tail, SOME(head));
     case(((head as HpcOmSimCode.CALCTASK(timeFinished=timeFinishedHead)),_)::tail, SOME(HpcOmSimCode.CALCTASK(timeFinished=timeFinishedCurrent)))
-      equation
-        true = realGt(timeFinishedHead, timeFinishedCurrent);
+      algorithm
+        true := realGt(timeFinishedHead, timeFinishedCurrent);
       then getTaskWithHighestFinishTime(tail, SOME(head));
     case((head,_)::tail, SOME(_)) then getTaskWithHighestFinishTime(tail, iCurrentTask);
     case({},SOME(tmpTask)) then tmpTask;
@@ -1029,12 +1029,12 @@ protected
 algorithm
   oTasks := matchcontinue(iTaskGraphMeta, iTaskGraphT, iIndex, iConverterFunc, iTasks)
     case(_,_,_,_,_)
-      equation
-        true = intLe(iIndex, arrayLength(iTaskGraphT));
-        refCount = listLength(arrayGet(iTaskGraphT, iIndex));
-        newTask = iConverterFunc(iIndex, iTaskGraphMeta);
-        tmpTasks = arrayUpdate(iTasks, iIndex, (newTask,refCount));
-        tmpTasks = convertTaskGraphToTasks1(iTaskGraphMeta,iTaskGraphT,iIndex+1,iConverterFunc,tmpTasks);
+      algorithm
+        true := intLe(iIndex, arrayLength(iTaskGraphT));
+        refCount := listLength(arrayGet(iTaskGraphT, iIndex));
+        newTask := iConverterFunc(iIndex, iTaskGraphMeta);
+        tmpTasks := arrayUpdate(iTasks, iIndex, (newTask,refCount));
+        tmpTasks := convertTaskGraphToTasks1(iTaskGraphMeta,iTaskGraphT,iIndex+1,iConverterFunc,tmpTasks);
       then tmpTasks;
     else iTasks;
   end matchcontinue;
@@ -1055,13 +1055,13 @@ protected
 algorithm
   oTask := match(iNodeIdx,iTaskGraphMeta)
     case(_,HpcOmTaskGraph.TASKGRAPHMETA(inComps=inComps,nodeMark=nodeMarks, exeCosts=exeCosts))
-      equation
-        components = arrayGet(inComps,iNodeIdx);
-        primalComp = listGet(components,1);
-        nodeMark = arrayGet(nodeMarks,primalComp);
+      algorithm
+        components := arrayGet(inComps,iNodeIdx);
+        primalComp := listGet(components,1);
+        nodeMark := arrayGet(nodeMarks,primalComp);
         //nodeMark = nodeMark * (-1); //switch from LLP to HLP
         //((_,exeCost)) = arrayGet(exeCosts,iNodeIdx);
-        ((_,exeCost)) = HpcOmTaskGraph.getExeCost(iNodeIdx,iTaskGraphMeta);
+        ((_,exeCost)) := HpcOmTaskGraph.getExeCost(iNodeIdx,iTaskGraphMeta);
       then HpcOmSimCode.CALCTASK(nodeMark,iNodeIdx,exeCost,-1.0,-1, components);
     else
       equation
@@ -1085,12 +1085,12 @@ protected
 algorithm
   oTask := match(iNodeIdx,iTaskGraphMeta)
     case(_,HpcOmTaskGraph.TASKGRAPHMETA(inComps=inComps,nodeMark=nodeMarks, exeCosts=exeCosts))
-      equation
-        components = arrayGet(inComps,iNodeIdx);
-        primalComp = listGet(components,1);
-        nodeMark = arrayGet(nodeMarks,primalComp);
-        ((_,exeCost)) = arrayGet(exeCosts,iNodeIdx);
-        nodeMark = nodeMark * (-1);
+      algorithm
+        components := arrayGet(inComps,iNodeIdx);
+        primalComp := listGet(components,1);
+        nodeMark := arrayGet(nodeMarks,primalComp);
+        ((_,exeCost)) := arrayGet(exeCosts,iNodeIdx);
+        nodeMark := nodeMark * (-1);
       then HpcOmSimCode.CALCTASK(nodeMark,iNodeIdx,exeCost,-1.0,-1, components);
     else
       equation
@@ -1129,11 +1129,11 @@ protected
 algorithm
   oFinishTimes := matchcontinue(iPredecessorTaskLastFinished, iTask, iPredecessorTasks, iCommCosts, iThreadReadyTimes, iThreadIdx, iFinishTimes)
     case(_,_,_,_,_,_,_)
-      equation
-        true = intLe(iThreadIdx,arrayLength(iThreadReadyTimes));
-        thReadyTime = arrayGet(iThreadReadyTimes, iThreadIdx);
-        thFinishTime = calculateFinishTimeByThreadId(thReadyTime, iPredecessorTaskLastFinished, iThreadIdx, iTask, iPredecessorTasks, iCommCosts);
-        tmpFinishTimes = arrayUpdate(iFinishTimes,iThreadIdx,thFinishTime);
+      algorithm
+        true := intLe(iThreadIdx,arrayLength(iThreadReadyTimes));
+        thReadyTime := arrayGet(iThreadReadyTimes, iThreadIdx);
+        thFinishTime := calculateFinishTimeByThreadId(thReadyTime, iPredecessorTaskLastFinished, iThreadIdx, iTask, iPredecessorTasks, iCommCosts);
+        tmpFinishTimes := arrayUpdate(iFinishTimes,iThreadIdx,thFinishTime);
       then calculateFinishTimes1(iPredecessorTaskLastFinished, iTask, iPredecessorTasks, iCommCosts, iThreadReadyTimes, iThreadIdx+1, tmpFinishTimes);
     else iFinishTimes;
   end matchcontinue;
@@ -1154,10 +1154,10 @@ protected
 algorithm
   oFinishTime := match(iThreadReadyTime, iPredecessorTaskLastFinished, iThreadId, iTask, iPredecessorTasks, iCommCosts)
     case(_,_,_,HpcOmSimCode.CALCTASK(calcTime=calcTime),_,_)
-      equation
-        predecessorTasksOtherTh = List.removeOnTrue(iThreadId, compareTaskWithThreadIdx, iPredecessorTasks);
-        startTime = realMax(iThreadReadyTime, iPredecessorTaskLastFinished);
-        commCost = getMaxCommCostsByTaskList(iTask,predecessorTasksOtherTh, iCommCosts);
+      algorithm
+        predecessorTasksOtherTh := List.removeOnTrue(iThreadId, compareTaskWithThreadIdx, iPredecessorTasks);
+        startTime := realMax(iThreadReadyTime, iPredecessorTaskLastFinished);
+        commCost := getMaxCommCostsByTaskList(iTask,predecessorTasksOtherTh, iCommCosts);
       then realAdd(realAdd(startTime, commCost), calcTime);
     else
       equation
@@ -1193,11 +1193,11 @@ protected
 algorithm
   oCommCost := matchcontinue(iTask, iParentTask, iCommCosts, iCurrentMax)
     case((HpcOmSimCode.CALCTASK(index=taskIdx,eqIdc=eqIdc),_),HpcOmSimCode.CALCTASK(eqIdc=parentEqIdc),_,_)
-      equation
+      algorithm
         //print("Try to find edge cost from scc " + intString(listHead(eqIdc)) + " to scc " + intString(listHead(parentEqIdc)) + "\n");
-        childCommCosts = arrayGet(iCommCosts,listHead(eqIdc));
-        HpcOmTaskGraph.COMMUNICATION(requiredTime=reqCycles) = getMaxCommCostsByTaskList2(childCommCosts, listHead(parentEqIdc));
-        true = realGt(reqCycles, iCurrentMax);
+        childCommCosts := arrayGet(iCommCosts,listHead(eqIdc));
+        HpcOmTaskGraph.COMMUNICATION(requiredTime=reqCycles) := getMaxCommCostsByTaskList2(childCommCosts, listHead(parentEqIdc));
+        true := realGt(reqCycles, iCurrentMax);
       then reqCycles;
     else iCurrentMax;
   end matchcontinue;
@@ -1214,8 +1214,8 @@ protected
 algorithm
   oComm := matchcontinue(iCommCosts, iIdx)
     case((head as HpcOmTaskGraph.COMMUNICATION(childNode=childIdxHead))::tail, _)
-      equation
-        true = intEq(childIdxHead,iIdx);
+      algorithm
+        true := intEq(childIdxHead,iIdx);
       then head;
     case(_::tail, _) then getMaxCommCostsByTaskList2(tail, iIdx);
     else
@@ -1247,9 +1247,9 @@ protected
 algorithm
   (oTasks, oTaskIdc) := matchcontinue(iTask,iTaskGraph,iAllCalcTasks)
     case(HpcOmSimCode.CALCTASK(index=taskIdx),_,_)
-      equation
-        successors = arrayGet(iTaskGraph,taskIdx);
-        tmpTasks = List.map1(successors, getTaskByIndex, iAllCalcTasks);
+      algorithm
+        successors := arrayGet(iTaskGraph,taskIdx);
+        tmpTasks := List.map1(successors, getTaskByIndex, iAllCalcTasks);
       then (tmpTasks, successors);
     else
       equation
@@ -1367,10 +1367,10 @@ protected
 algorithm
   oString := match(iTask)
     case(HpcOmSimCode.SCHEDULED_TASK(compIdx=compIdx,numThreads=numThreads,taskSchedule=taskSchedule))
-      equation
-      s = "Scheduled Task (comp: "+intString(compIdx)+", numThreads: "+intString(numThreads)+"):\n------------------------------------------------------\n";
-      s = s +"\t"+ System.stringReplace(dumpSchedule(taskSchedule),"\n","\n\t");
-      s = s + "------------------------------------------------------\n";
+      algorithm
+      s := "Scheduled Task (comp: "+intString(compIdx)+", numThreads: "+intString(numThreads)+"):\n------------------------------------------------------\n";
+      s := s +"\t"+ System.stringReplace(dumpSchedule(taskSchedule),"\n","\n\t");
+      s := s + "------------------------------------------------------\n";
       then s;
     case(HpcOmSimCode.CALCTASK(weighting=weighting,timeFinished=timeFinished, index=index, eqIdc=eqIdc))
       then ("Calculation task with index " + intString(index) + " including the equations: "+stringDelimitList(List.map(eqIdc,intString),", ")+ " is finished at  " + realString(timeFinished) + "\n");
@@ -1379,10 +1379,10 @@ algorithm
     case(HpcOmSimCode.CALCTASK_LEVEL(eqIdc=eqIdc, nodeIdc=nodeIdc, threadIdx=SOME(threadIdx)))
       then ("Calculation task ("+stringDelimitList(List.map(nodeIdc,intString),", ")+") including the equations: "+stringDelimitList(List.map(eqIdc,intString),", ")+" by thread " + intString(threadIdx) + "\n");
     case(HpcOmSimCode.DEPTASK(sourceTask=HpcOmSimCode.CALCTASK(index=sourceIndex), targetTask=HpcOmSimCode.CALCTASK(index=targetIndex),outgoing=outgoing))
-      equation
-        s = "Dependency task ";
-        s = s + (if outgoing then "(outgoing)" else "(incoming)");
-        s = s + " between " + intString(sourceIndex) + " and " + intString(targetIndex) + "\n";
+      algorithm
+        s := "Dependency task ";
+        s := s + (if outgoing then "(outgoing)" else "(incoming)");
+        s := s + " between " + intString(sourceIndex) + " and " + intString(targetIndex) + "\n";
       then s;
     case(HpcOmSimCode.TASKEMPTY())
       then "empty task\n";
@@ -1413,24 +1413,24 @@ protected
 algorithm
   oScheduleInfo := match(iSchedule,iTaskCount)
     case(HpcOmSimCode.EMPTYSCHEDULE(tasks=HpcOmSimCode.SERIALTASKLIST(tasks=allTasks)),_)
-      equation
-        tmpScheduleInfo = arrayCreate(iTaskCount,(-1,-1,-1.0));
-        threadTasks=arrayCreate(1, allTasks);
-        tmpScheduleInfo = Array.fold(threadTasks,convertScheduleStrucToInfo0,tmpScheduleInfo);
+      algorithm
+        tmpScheduleInfo := arrayCreate(iTaskCount,(-1,-1,-1.0));
+        threadTasks:=arrayCreate(1, allTasks);
+        tmpScheduleInfo := Array.fold(threadTasks,convertScheduleStrucToInfo0,tmpScheduleInfo);
       then tmpScheduleInfo;
     case(HpcOmSimCode.THREADSCHEDULE(threadTasks=threadTasks),_)
-      equation
-        tmpScheduleInfo = arrayCreate(iTaskCount,(-1,-1,-1.0));
-        tmpScheduleInfo = Array.fold(threadTasks,convertScheduleStrucToInfo0,tmpScheduleInfo);
+      algorithm
+        tmpScheduleInfo := arrayCreate(iTaskCount,(-1,-1,-1.0));
+        tmpScheduleInfo := Array.fold(threadTasks,convertScheduleStrucToInfo0,tmpScheduleInfo);
       then tmpScheduleInfo;
     case(HpcOmSimCode.LEVELSCHEDULE(tasksOfLevels=tasksOfLevels),_)
-      equation
-        tmpScheduleInfo = arrayCreate(iTaskCount,(-1,-1,-1.0));
-        tmpScheduleInfo = convertScheduleStrucToInfoLevel(tasksOfLevels,1,tmpScheduleInfo);
+      algorithm
+        tmpScheduleInfo := arrayCreate(iTaskCount,(-1,-1,-1.0));
+        tmpScheduleInfo := convertScheduleStrucToInfoLevel(tasksOfLevels,1,tmpScheduleInfo);
       then tmpScheduleInfo;
     case(HpcOmSimCode.TASKDEPSCHEDULE(_),_)
-      equation
-        tmpScheduleInfo = arrayCreate(iTaskCount,(-1,-1,-1.0));
+      algorithm
+        tmpScheduleInfo := arrayCreate(iTaskCount,(-1,-1,-1.0));
       then tmpScheduleInfo;
     else
       equation
@@ -1461,8 +1461,8 @@ protected
 algorithm
   oScheduleInfo := match(iTask,iScheduleInfo)
     case(HpcOmSimCode.CALCTASK(index=taskIdx,threadIdx=threadIdx,timeFinished=timeFinished),(tmpScheduleInfo,taskNumber))
-      equation
-        tmpScheduleInfo = arrayUpdate(tmpScheduleInfo,taskIdx,(threadIdx,taskNumber,timeFinished));
+      algorithm
+        tmpScheduleInfo := arrayUpdate(tmpScheduleInfo,taskIdx,(threadIdx,taskNumber,timeFinished));
       then ((tmpScheduleInfo,taskNumber+1));
     case (HpcOmSimCode.DEPTASK(),_) then iScheduleInfo;
     else
@@ -1487,12 +1487,12 @@ algorithm
     case({},_,_)
       then iScheduleInfo;
     case(HpcOmSimCode.PARALLELTASKLIST(tasks=tasks)::rest,_,_)
-      equation
-        scheduleInfo = convertScheduleStrucToInfoLevel1(tasks,sectionsNumber,1,iScheduleInfo);
+      algorithm
+        scheduleInfo := convertScheduleStrucToInfoLevel1(tasks,sectionsNumber,1,iScheduleInfo);
       then convertScheduleStrucToInfoLevel(rest,sectionsNumber+1,scheduleInfo);
     case(HpcOmSimCode.SERIALTASKLIST(tasks=tasks)::rest,_,_)
-      equation
-        scheduleInfo = convertScheduleStrucToInfoLevel1(tasks,sectionsNumber,1,iScheduleInfo);
+      algorithm
+        scheduleInfo := convertScheduleStrucToInfoLevel1(tasks,sectionsNumber,1,iScheduleInfo);
       then convertScheduleStrucToInfoLevel(rest,sectionsNumber+1,scheduleInfo);
     else
     equation
@@ -1519,10 +1519,10 @@ algorithm
     case({},_,_,_)
       then iScheduleInfo;
     case(HpcOmSimCode.CALCTASK_LEVEL(nodeIdc=nodeIdc,threadIdx=threadIdxOpt)::rest,_,_,_)
-      equation
-        numNodes = listLength(nodeIdc);
-        threadIdx = Util.getOptionOrDefault(threadIdxOpt,-1);
-        tuplLst = List.threadMap1(List.fill(threadIdx,numNodes),List.fill(-1,numNodes),Util.make3Tuple,0.0);
+      algorithm
+        numNodes := listLength(nodeIdc);
+        threadIdx := Util.getOptionOrDefault(threadIdxOpt,-1);
+        tuplLst := List.threadMap1(List.fill(threadIdx,numNodes),List.fill(-1,numNodes),Util.make3Tuple,0.0);
         List.threadMap1_0(nodeIdc,tuplLst,Array.updateIndexFirst,iScheduleInfo);
       then convertScheduleStrucToInfoLevel1(rest,sectionsNumber,sectionIdx+1,iScheduleInfo);
   end match;
@@ -1607,13 +1607,13 @@ sectionsOut := match(sectionsIn,iMeta,targetCosts)
     list<list<list<Integer>>> sectionsNewUnflattened;
     list<Real> sectionCosts;
   case(_,_,_)
-    equation
-      costs = List.map1List(sectionsIn,HpcOmTaskGraph.getExeCostReqCycles,iMeta);
-      sectionCosts = List.map(costs,realSum);
-      (mergedSectionIdcs,_) = BLS_mergeToTargetSize(List.intRange(listLength(sectionsIn)),sectionCosts,targetCosts,{});
-      sectionsNewUnflattened = List.map1List(mergedSectionIdcs,List.getIndexFirst,sectionsIn);
-      sectionsNew = List.map(sectionsNewUnflattened,List.flatten);
-      sectionsNew = List.map1(sectionsNew,List.sort,intGt);  // restore the calculation order
+    algorithm
+      costs := List.map1List(sectionsIn,HpcOmTaskGraph.getExeCostReqCycles,iMeta);
+      sectionCosts := List.map(costs,realSum);
+      (mergedSectionIdcs,_) := BLS_mergeToTargetSize(List.intRange(listLength(sectionsIn)),sectionCosts,targetCosts,{});
+      sectionsNewUnflattened := List.map1List(mergedSectionIdcs,List.getIndexFirst,sectionsIn);
+      sectionsNew := List.map(sectionsNewUnflattened,List.flatten);
+      sectionsNew := List.map1(sectionsNew,List.sort,intGt);  // restore the calculation order
   then sectionsNew;
   end match;
 end BLS_mergeSmallSections;
@@ -1634,18 +1634,18 @@ algorithm
       HpcOmSimCode.Task task;
       HpcOmSimCode.TaskList taskLst;
     case({section},HpcOmTaskGraph.TASKGRAPHMETA(inComps=inComps),_)
-      equation
+      algorithm
         // generate a serial section
-        _ = List.flatten(List.map1(section,Array.getIndexFirst,inComps));
+        _ := List.flatten(List.map1(section,Array.getIndexFirst,inComps));
         //simEqSysIdcs = List.sort(simEqSysIdcs,intGt);
-        task = makeCalcTaskLevel(section,inComps,iSccSimEqMapping);
-        taskLst = HpcOmSimCode.SERIALTASKLIST({task}, true);
+        task := makeCalcTaskLevel(section,inComps,iSccSimEqMapping);
+        taskLst := HpcOmSimCode.SERIALTASKLIST({task}, true);
     then taskLst;
     case(_::_,HpcOmTaskGraph.TASKGRAPHMETA(inComps=inComps),_)
-      equation
+      algorithm
         // generate parallel sections
         //sectionSimEqSysIdcs = List.map1(sectionSimEqSysIdcs,List.sort,intGt);
-        taskLst = makeCalcLevelParTaskLstForMergedNodes(level,iSccSimEqMapping,inComps);
+        taskLst := makeCalcLevelParTaskLstForMergedNodes(level,iSccSimEqMapping,inComps);
     then taskLst;
   end matchcontinue;
 end BLS_generateSchedule;
@@ -1678,96 +1678,96 @@ algorithm
       list<list<list<Integer>>> sectionLst;
       list<Real> necPredCosts,levelNodeClusterCosts,                       levelNodeCosts;
     case(_,_,{},_,_,_,_,_,_,_)
-      equation
+      algorithm
         //print("done\n");
     then listReverse(sectionsIn);
     case(_,_,critPathNode::{},_,_,_,_,_,_,_)
-      equation
-        _ = HpcOmTaskGraph.getExeCostReqCycles(critPathNode,iMeta);
-        critNodeLevel = arrayGet(levelAssIn,critPathNode);
+      algorithm
+        _ := HpcOmTaskGraph.getExeCostReqCycles(critPathNode,iMeta);
+        critNodeLevel := arrayGet(levelAssIn,critPathNode);
         //print("critPathNode (last): \n"+intString(critPathNode)+" of level: "+intString(critNodeLevel)+"\n");
 
         // the last level: build the section, collect unassigned nodes and level nodes and put everything in this section
         //levelNodes = List.flatten(List.map1(List.intRange2(levelIdx,critNodeLevel),List.getIndexFirst,levelIn));
-        critNodeLevel = intMin(levelIdx,critNodeLevel);
-        (_,followingLevel) =  List.split(levelIn,critNodeLevel-1);
-        levelNodes = List.flatten(followingLevel);
+        critNodeLevel := intMin(levelIdx,critNodeLevel);
+        (_,followingLevel) :=  List.split(levelIn,critNodeLevel-1);
+        levelNodes := List.flatten(followingLevel);
           //print("levelNodes: \n"+stringDelimitList(List.map(levelNodes,intString)," ; ")+"\n");
 
-        unassNodes = listAppend(levelNodes,unassNodesIn);
-        levelNodeCluster = BLS_mergeDependentLevelTask(unassNodes,iGraph,iGraphT,{});
+        unassNodes := listAppend(levelNodes,unassNodesIn);
+        levelNodeCluster := BLS_mergeDependentLevelTask(unassNodes,iGraph,iGraphT,{});
           //print("section: \n"+stringDelimitList(List.map(levelNodeCluster,intListString),"  |  ")+"\n");
-        sectionLst = levelNodeCluster::sectionsIn;
-        sectionLst = BLS_fillParallelSections(levelIn,levelAssIn,{},critNodeLevel+1,targetCosts,iGraph,iGraphT,iMeta,unassNodes,sectionLst);
+        sectionLst := levelNodeCluster::sectionsIn;
+        sectionLst := BLS_fillParallelSections(levelIn,levelAssIn,{},critNodeLevel+1,targetCosts,iGraph,iGraphT,iMeta,unassNodes,sectionLst);
       then sectionLst;
     case(_,_,critPathNode::restCritNodes,_,_,_,_,_,_,_)
-      equation
-        critPathCost = HpcOmTaskGraph.getExeCostReqCycles(critPathNode,iMeta);
-        critNodeLevel = arrayGet(levelAssIn,critPathNode);
+      algorithm
+        critPathCost := HpcOmTaskGraph.getExeCostReqCycles(critPathNode,iMeta);
+        critNodeLevel := arrayGet(levelAssIn,critPathNode);
 
         // the critical path node in this section is to SMALL, gather as few as possible nodes in this level (onyl the necessary ones)
-        true = critPathCost < targetCosts;
+        true := critPathCost < targetCosts;
           //print("critPathNode (small): \n"+intString(critPathNode)+" of level: "+intString(critNodeLevel)+"\n");
 
         // get the nodes that are necessary to compute the next critical path node, collect unassigned
-        levelNodes = List.flatten(List.map1(List.intRange2(levelIdx,critNodeLevel),List.getIndexFirst,levelIn));
-        levelNodes = List.deleteMemberOnTrue(critPathNode,levelNodes,intEq);
+        levelNodes := List.flatten(List.map1(List.intRange2(levelIdx,critNodeLevel),List.getIndexFirst,levelIn));
+        levelNodes := List.deleteMemberOnTrue(critPathNode,levelNodes,intEq);
           //print("levelNodes: \n"+stringDelimitList(List.map(levelNodes,intString)," ; ")+"\n");
-        necessaryPredecessors = arrayGet(iGraphT,listHead(restCritNodes));
+        necessaryPredecessors := arrayGet(iGraphT,listHead(restCritNodes));
           //print("necessaryPredecessors: "+stringDelimitList(List.map(necessaryPredecessors,intString)," ; ")+"\n");
-        unassNodes = listAppend(levelNodes,unassNodesIn);  // to check for unassNodesIn
+        unassNodes := listAppend(levelNodes,unassNodesIn);  // to check for unassNodesIn
           //print("unassNodes: \n"+stringDelimitList(List.map(unassNodes,intString)," ; ")+"\n");
-        necessaryPredecessors = List.flatten(List.map4(List.map(necessaryPredecessors,List.create),BLS_getDependentGroups,iGraph,iGraphT,unassNodes,{}));  // get all unassigned dependents for the necessary predecessors
-        necessaryPredecessors = List.unique(necessaryPredecessors);
-        (necessaryPredecessors,_,unassNodes) = List.intersection1OnTrue(necessaryPredecessors,unassNodes,intEq);
+        necessaryPredecessors := List.flatten(List.map4(List.map(necessaryPredecessors,List.create),BLS_getDependentGroups,iGraph,iGraphT,unassNodes,{}));  // get all unassigned dependents for the necessary predecessors
+        necessaryPredecessors := List.unique(necessaryPredecessors);
+        (necessaryPredecessors,_,unassNodes) := List.intersection1OnTrue(necessaryPredecessors,unassNodes,intEq);
 
         // build the section
-        section = critPathNode::necessaryPredecessors;
-        section = List.unique(section);
-        sectionLst = {section}::sectionsIn;
+        section := critPathNode::necessaryPredecessors;
+        section := List.unique(section);
+        sectionLst := {section}::sectionsIn;
           //print("section: \n"+stringDelimitList(List.map(section,intString),"  ,  ")+"\n");
 
         // update levelAss and levelIn
         List.map2_0(section,Array.updateIndexFirst,critNodeLevel,levelAssIn);
-        level = List.map1(levelIn,deleteIntListMembers,section);
-        level = List.set(level,critNodeLevel,section);
+        level := List.map1(levelIn,deleteIntListMembers,section);
+        level := List.set(level,critNodeLevel,section);
           //print("level: \n"+stringDelimitList(List.map(level,intListString),"\n")+"\n");
 
-        sectionLst = BLS_fillParallelSections(level,levelAssIn,restCritNodes,critNodeLevel+1,targetCosts,iGraph,iGraphT,iMeta,unassNodes,sectionLst);
+        sectionLst := BLS_fillParallelSections(level,levelAssIn,restCritNodes,critNodeLevel+1,targetCosts,iGraph,iGraphT,iMeta,unassNodes,sectionLst);
       then sectionLst;
     case(_,_,critPathNode::restCritNodes,_,_,_,_,_,_,_)
-      equation
-        critPathCost = HpcOmTaskGraph.getExeCostReqCycles(critPathNode,iMeta);
-        critNodeLevel = arrayGet(levelAssIn,critPathNode);
+      algorithm
+        critPathCost := HpcOmTaskGraph.getExeCostReqCycles(critPathNode,iMeta);
+        critNodeLevel := arrayGet(levelAssIn,critPathNode);
 
         // the critical path node in this section is BIG enough, gather as much as possible nodes in this level
-        true = critPathCost >= targetCosts;
-        _ = Flags.getConfigInt(Flags.NUM_PROC);
+        true := critPathCost >= targetCosts;
+        _ := Flags.getConfigInt(Flags.NUM_PROC);
           //print("critPathNode (big): \n"+intString(critPathNode)+" of level: "+intString(critNodeLevel)+"\n");
 
         // get the nodes that are necessary to compute the next critical path node
-        levelNodes = List.flatten(List.map1(List.intRange2(levelIdx,critNodeLevel),List.getIndexFirst,levelIn));
-        (levelNodes,_) = List.deleteMemberOnTrue(critPathNode,levelNodes,intEq);
-        _ = arrayGet(iGraphT,listHead(restCritNodes));
+        levelNodes := List.flatten(List.map1(List.intRange2(levelIdx,critNodeLevel),List.getIndexFirst,levelIn));
+        (levelNodes,_) := List.deleteMemberOnTrue(critPathNode,levelNodes,intEq);
+        _ := arrayGet(iGraphT,listHead(restCritNodes));
           //print("necessaryPredecessors: \n"+stringDelimitList(List.map(necessaryPredecessors,intString)," ; ")+"\n");
 
         // use the unassigned nodes first to fill the sections
-        unassNodes = listAppend(unassNodesIn,levelNodes);
+        unassNodes := listAppend(unassNodesIn,levelNodes);
           //print("unassNodes: \n"+stringDelimitList(List.map(unassNodes,intString)," ; ")+"\n");
-        unassNodes = critPathNode::unassNodes;
-        unassNodes = List.unique(unassNodes);
-        levelNodeCluster = BLS_mergeDependentLevelTask(unassNodes,iGraph,iGraphT,{});
-        (_,unassNodes,_) = List.intersection1OnTrue(unassNodes,List.flatten(levelNodeCluster),intEq);
-        sectionLst = levelNodeCluster::sectionsIn;
+        unassNodes := critPathNode::unassNodes;
+        unassNodes := List.unique(unassNodes);
+        levelNodeCluster := BLS_mergeDependentLevelTask(unassNodes,iGraph,iGraphT,{});
+        (_,unassNodes,_) := List.intersection1OnTrue(unassNodes,List.flatten(levelNodeCluster),intEq);
+        sectionLst := levelNodeCluster::sectionsIn;
           //print("section: \n"+stringDelimitList(List.map(levelNodeCluster,intListString),"  |  ")+"\n");
 
         // update levelAss and levelIn
         List.map2_0(List.flatten(levelNodeCluster),Array.updateIndexFirst,critNodeLevel,levelAssIn);
-        level = List.map1(levelIn,deleteIntListMembers,List.flatten(levelNodeCluster));
-        level = List.set(level,critNodeLevel,List.flatten(levelNodeCluster));
+        level := List.map1(levelIn,deleteIntListMembers,List.flatten(levelNodeCluster));
+        level := List.set(level,critNodeLevel,List.flatten(levelNodeCluster));
           //print("level: \n"+stringDelimitList(List.map(level,intListString),"\n")+"\n");
 
-        sectionLst = BLS_fillParallelSections(level,levelAssIn,restCritNodes,critNodeLevel+1,targetCosts,iGraph,iGraphT,iMeta,{},sectionLst);
+        sectionLst := BLS_fillParallelSections(level,levelAssIn,restCritNodes,critNodeLevel+1,targetCosts,iGraph,iGraphT,iMeta,{},sectionLst);
       then sectionLst;
   end matchcontinue;
 end BLS_fillParallelSections;
@@ -1787,18 +1787,18 @@ algorithm
       list<Integer> rest,dependentNodes,section;
       list<list<Integer>> sections;
   case({},_,_,_)
-    equation
+    algorithm
     then listReverse(sectionsIn);
   case(node::rest,_,_,_)
-    equation
+    algorithm
       //print("node: "+intString(node)+"\n");
-      dependentNodes = BLS_getDependentGroups({node},iGraph,iGraphT,nodesIn,{});
-      section = node::dependentNodes;
-      section = List.unique(section);
-      (_,rest,_) = List.intersection1OnTrue(rest,dependentNodes,intEq);
-      section = listReverse(section);
+      dependentNodes := BLS_getDependentGroups({node},iGraph,iGraphT,nodesIn,{});
+      section := node::dependentNodes;
+      section := List.unique(section);
+      (_,rest,_) := List.intersection1OnTrue(rest,dependentNodes,intEq);
+      section := listReverse(section);
       //print("section: \n"+stringDelimitList(List.map(section,intString)," ; ")+"\n");
-      sections = BLS_mergeDependentLevelTask(rest,iGraph,iGraphT,section::sectionsIn);
+      sections := BLS_mergeDependentLevelTask(rest,iGraph,iGraphT,section::sectionsIn);
     then sections;
   end match;
 end BLS_mergeDependentLevelTask;
@@ -1819,19 +1819,19 @@ algorithm
   case({},_,_,_,_)
     then List.unique(dependentsIn);
   case(node::rest,_,_,_,_)
-    equation
+    algorithm
       //print("node: "+intString(node)+"\n");
-      successors = arrayGet(iGraph,node);
-      predecessors = arrayGet(iGraphT,node);
+      successors := arrayGet(iGraph,node);
+      predecessors := arrayGet(iGraphT,node);
       //print("successors: \n"+stringDelimitList(List.map(successors,intString)," ; ")+"\n");
       //print("predecessors: \n"+stringDelimitList(List.map(predecessors,intString)," ; ")+"\n");
-      (successors,_,referenceNodes) = List.intersection1OnTrue(successors,referenceNodesIn,intEq);
-      (predecessors,_,referenceNodes) = List.intersection1OnTrue(predecessors,referenceNodes,intEq);
+      (successors,_,referenceNodes) := List.intersection1OnTrue(successors,referenceNodesIn,intEq);
+      (predecessors,_,referenceNodes) := List.intersection1OnTrue(predecessors,referenceNodes,intEq);
       //print("successors: \n"+stringDelimitList(List.map(successors,intString)," ; ")+"\n");
       //print("predecessors: \n"+stringDelimitList(List.map(predecessors,intString)," ; ")+"\n");
-      dependentNodes = listAppend(predecessors,successors);
-      allNodes = node::dependentNodes;
-      dependentNodes = BLS_getDependentGroups(listAppend(rest,dependentNodes),iGraph,iGraphT,referenceNodes,listAppend(allNodes,dependentsIn));
+      dependentNodes := listAppend(predecessors,successors);
+      allNodes := node::dependentNodes;
+      dependentNodes := BLS_getDependentGroups(listAppend(rest,dependentNodes),iGraph,iGraphT,referenceNodes,listAppend(allNodes,dependentsIn));
    then dependentNodes;
   else
     equation
@@ -1861,36 +1861,36 @@ algorithm
   case({},{},_,{})
     then ({},{});
   case({},{},_,_)
-    equation
+    algorithm
       // finished
-      clusterCostsTmp = List.map(mergedNodesIn,Util.tuple22);
-      clusterTmp = listReverse(List.map(mergedNodesIn,Util.tuple21));
-      cluster::clusterTmp = clusterTmp;  // reverse the first cluster if there is only one cluster
-      cluster = if listEmpty(clusterTmp) then listReverse(cluster) else cluster;
-      clusterTmp = cluster::clusterTmp;
+      clusterCostsTmp := List.map(mergedNodesIn,Util.tuple22);
+      clusterTmp := listReverse(List.map(mergedNodesIn,Util.tuple21));
+      cluster::clusterTmp := clusterTmp;  // reverse the first cluster if there is only one cluster
+      cluster := if listEmpty(clusterTmp) then listReverse(cluster) else cluster;
+      clusterTmp := cluster::clusterTmp;
     then (clusterTmp,clusterCostsTmp);
    case(node::nodeRest,cost::costRest,_, {})
-    equation
+    algorithm
       // first cluster
-      (clusterTmp,clusterCostsTmp) = BLS_mergeToTargetSize(nodeRest,costRest,targetSize,{({node},cost)});
+      (clusterTmp,clusterCostsTmp) := BLS_mergeToTargetSize(nodeRest,costRest,targetSize,{({node},cost)});
     then (clusterTmp,clusterCostsTmp);
   case(node::nodeRest,cost::costRest,_, group::restGroups)
-    equation
+    algorithm
       // add to previous Cluster
-      (cluster,clusterCost) = group;
-      true = clusterCost + cost < targetSize;
-      group = (node::cluster,cost + clusterCost);
-      (clusterTmp,clusterCostsTmp) = BLS_mergeToTargetSize(nodeRest,costRest,targetSize,group::restGroups);
+      (cluster,clusterCost) := group;
+      true := clusterCost + cost < targetSize;
+      group := (node::cluster,cost + clusterCost);
+      (clusterTmp,clusterCostsTmp) := BLS_mergeToTargetSize(nodeRest,costRest,targetSize,group::restGroups);
     then (clusterTmp,clusterCostsTmp);
   case(node::nodeRest,cost::costRest,_,group::restGroups)
-    equation
+    algorithm
       // start a new cluster
-      (cluster,clusterCost) = group;
-      true = clusterCost + cost >= targetSize;
-      cluster = listReverse(cluster);
-      restGroups = (cluster,clusterCost)::restGroups;  // reverse the cluster
-      group = ({node},cost);
-      (clusterTmp,clusterCostsTmp) = BLS_mergeToTargetSize(nodeRest,costRest,targetSize,group::restGroups);
+      (cluster,clusterCost) := group;
+      true := clusterCost + cost >= targetSize;
+      cluster := listReverse(cluster);
+      restGroups := (cluster,clusterCost)::restGroups;  // reverse the cluster
+      group := ({node},cost);
+      (clusterTmp,clusterCostsTmp) := BLS_mergeToTargetSize(nodeRest,costRest,targetSize,group::restGroups);
     then (clusterTmp,clusterCostsTmp);
   else
     equation
@@ -2057,14 +2057,14 @@ protected
 algorithm
   (levelStr,oLevel) := match(iLevelInfo, iLevel)
     case(HpcOmSimCode.PARALLELTASKLIST(tasks=tasks),_)
-      equation
-        s = "Parallel Level " + intString(iLevel) + ":\n";
-        s = s + dumpTaskList(tasks);
+      algorithm
+        s := "Parallel Level " + intString(iLevel) + ":\n";
+        s := s + dumpTaskList(tasks);
       then (s,iLevel + 1);
     case(HpcOmSimCode.SERIALTASKLIST(tasks=tasks),_)
-      equation
-        s = "Serial Level " + intString(iLevel) + ":\n";
-        s = s + dumpTaskList(tasks);
+      algorithm
+        s := "Serial Level " + intString(iLevel) + ":\n";
+        s := s + dumpTaskList(tasks);
       then (s,iLevel + 1);
     else
       equation
@@ -2270,17 +2270,17 @@ protected
 algorithm
   oTupleList := matchcontinue(iArray, iCurrentIdx, iTupleList)
     case(_,_,_)
-      equation
-        true = intLe(iCurrentIdx, arrayLength(iArray));
-        currentValue = arrayGet(iArray, iCurrentIdx);
-        true = intNe(currentValue, 0);
-        tmpTupleList = (iCurrentIdx, currentValue)::iTupleList;
-        tmpTupleList = arrayToTupleListZeroRemoved(iArray, iCurrentIdx+1, tmpTupleList);
+      algorithm
+        true := intLe(iCurrentIdx, arrayLength(iArray));
+        currentValue := arrayGet(iArray, iCurrentIdx);
+        true := intNe(currentValue, 0);
+        tmpTupleList := (iCurrentIdx, currentValue)::iTupleList;
+        tmpTupleList := arrayToTupleListZeroRemoved(iArray, iCurrentIdx+1, tmpTupleList);
       then tmpTupleList;
     case(_,_,_)
-      equation
-        true = intLe(iCurrentIdx, arrayLength(iArray));
-        tmpTupleList = arrayToTupleListZeroRemoved(iArray, iCurrentIdx+1, iTupleList);
+      algorithm
+        true := intLe(iCurrentIdx, arrayLength(iArray));
+        tmpTupleList := arrayToTupleListZeroRemoved(iArray, iCurrentIdx+1, iTupleList);
       then tmpTupleList;
     else iTupleList;
   end matchcontinue;
@@ -2311,15 +2311,15 @@ protected
 algorithm
   oThreadIdx := matchcontinue(iAdviceList, iLevelExecCosts, iThreadReadyList)
     case({},_,_)
-      equation
-        threadIdx = getFirstReadyThread(iThreadReadyList);
+      algorithm
+        threadIdx := getFirstReadyThread(iThreadReadyList);
       then threadIdx;
     case(head::tail,_,_)
-      equation
-        readyTime = arrayGet(iThreadReadyList, head);
-        numOfThreads = arrayLength(iThreadReadyList);
-        averageThreadTime = realDiv(iLevelExecCosts, intReal(numOfThreads));
-        true = realLt(readyTime, averageThreadTime);
+      algorithm
+        readyTime := arrayGet(iThreadReadyList, head);
+        numOfThreads := arrayLength(iThreadReadyList);
+        averageThreadTime := realDiv(iLevelExecCosts, intReal(numOfThreads));
+        true := realLt(readyTime, averageThreadTime);
       then head;
     case(head::tail,_,_)
       then getBestFittingThread(tail,iLevelExecCosts, iThreadReadyList);
@@ -2346,10 +2346,10 @@ algorithm
     case(_,(-1,_,currentThreadIdx)) //no thread set as firstThread
       then ((currentThreadIdx, iThreadReadyTime, currentThreadIdx+1));
     case(_,(firstThreadIdx,readyTime,currentThreadIdx))
-      equation
-        isLower = realLt(iThreadReadyTime, readyTime);
-        firstThreadIdx = if isLower then currentThreadIdx else firstThreadIdx;
-        readyTime = if isLower then iThreadReadyTime else readyTime;
+      algorithm
+        isLower := realLt(iThreadReadyTime, readyTime);
+        firstThreadIdx := if isLower then currentThreadIdx else firstThreadIdx;
+        readyTime := if isLower then iThreadReadyTime else readyTime;
       then ((firstThreadIdx, readyTime, currentThreadIdx+1));
     else
       equation
@@ -2378,13 +2378,13 @@ protected
 algorithm
   oSchedule := matchcontinue(iTaskGraph,iTaskGraphMeta,iSccSimEqMapping)
     case(_,HpcOmTaskGraph.TASKGRAPHMETA(inComps=inComps,nodeMark=nodeMark),_)
-      equation
-        taskGraphT = AdjacencyMatrix.transposeAdjacencyMatrix(iTaskGraph,arrayLength(iTaskGraph));
-        ((_,nodeLevelMap)) = Array.fold(taskGraphT, function createNodeLevelMapping(nodeMarks = nodeMark, inComps = inComps, iSccSimEqMapping = iSccSimEqMapping), (1,{}));
-        nodeLevelMap = List.sort(nodeLevelMap, sortNodeLevelMapping);
-        filteredNodeLevelMap = List.map(nodeLevelMap, filterNodeLevelMapping);
-        filteredNodeLevelMap = listReverse(filteredNodeLevelMap);
-        tmpSchedule = HpcOmSimCode.TASKDEPSCHEDULE(filteredNodeLevelMap);
+      algorithm
+        taskGraphT := AdjacencyMatrix.transposeAdjacencyMatrix(iTaskGraph,arrayLength(iTaskGraph));
+        ((_,nodeLevelMap)) := Array.fold(taskGraphT, function createNodeLevelMapping(nodeMarks = nodeMark, inComps = inComps, iSccSimEqMapping = iSccSimEqMapping), (1,{}));
+        nodeLevelMap := List.sort(nodeLevelMap, sortNodeLevelMapping);
+        filteredNodeLevelMap := List.map(nodeLevelMap, filterNodeLevelMapping);
+        filteredNodeLevelMap := listReverse(filteredNodeLevelMap);
+        tmpSchedule := HpcOmSimCode.TASKDEPSCHEDULE(filteredNodeLevelMap);
       then tmpSchedule;
     else
       equation
@@ -2484,46 +2484,46 @@ protected
 algorithm
   oSchedule := matchcontinue(iTaskGraph,iTaskGraphMeta,iNumberOfThreads,iSccSimEqMapping,iSimVarMapping)
     case(_,HpcOmTaskGraph.TASKGRAPHMETA(commCosts=commCosts,inComps=inComps),_,_,_)
-      equation
-        (xadj,adjncy,vwgt,adjwgt) = prepareMetis(iTaskGraph,iTaskGraphMeta);
+      algorithm
+        (xadj,adjncy,vwgt,adjwgt) := prepareMetis(iTaskGraph,iTaskGraphMeta);
 
         //print("createMetisSchedule: Weights of nodes = " + stringDelimitList(List.mapArray(vwgt, intString), ",") + "\n");
 
         if(intGt(iNumberOfThreads, 1)) then //check if more then one thread is given -- otherwise a division through zero will occur
-          extInfo = HpcOmSchedulerExt.scheduleMetis(xadj, adjncy, vwgt, adjwgt, iNumberOfThreads);
-          extInfoArr = listArray(extInfo);
+          extInfo := HpcOmSchedulerExt.scheduleMetis(xadj, adjncy, vwgt, adjwgt, iNumberOfThreads);
+          extInfoArr := listArray(extInfo);
         else
-          extInfoArr = arrayCreate(arrayLength(iTaskGraph), 1);
-          extInfo = arrayList(extInfoArr);
+          extInfoArr := arrayCreate(arrayLength(iTaskGraph), 1);
+          extInfo := arrayList(extInfoArr);
         end if;
 
         //print("Metis scheduling info: " + stringDelimitList(List.map(extInfo, intString), ",") + "\n");
-        true = intEq(arrayLength(iTaskGraph),arrayLength(extInfoArr));
-        taskGraphT = AdjacencyMatrix.transposeAdjacencyMatrix(iTaskGraph,arrayLength(iTaskGraph));
-        rootNodes = HpcOmTaskGraph.getRootNodes(iTaskGraph);
+        true := intEq(arrayLength(iTaskGraph),arrayLength(extInfoArr));
+        taskGraphT := AdjacencyMatrix.transposeAdjacencyMatrix(iTaskGraph,arrayLength(iTaskGraph));
+        rootNodes := HpcOmTaskGraph.getRootNodes(iTaskGraph);
 
         //sort the tasks in the partitions, always the tasks that are predecessors of other partitions first.
-        priorityArr = arrayCreate(arrayLength(iTaskGraph),0);
+        priorityArr := arrayCreate(arrayLength(iTaskGraph),0);
         createMetisSchedule1(List.intRange(arrayLength(iTaskGraph)),extInfoArr,iTaskGraph,taskGraphT,priorityArr);
-        levelNodes = HpcOmTaskGraph.getLevelNodes(iTaskGraph);
-        allCalcTasks = convertTaskGraphToTasks(taskGraphT,iTaskGraphMeta,convertNodeToTask);
-        (priorityTasks,otherTasks) = createMetisSchedule2(levelNodes,priorityArr,{},{});
-        order = listAppend(priorityTasks,otherTasks);
+        levelNodes := HpcOmTaskGraph.getLevelNodes(iTaskGraph);
+        allCalcTasks := convertTaskGraphToTasks(taskGraphT,iTaskGraphMeta,convertNodeToTask);
+        (priorityTasks,otherTasks) := createMetisSchedule2(levelNodes,priorityArr,{},{});
+        order := listAppend(priorityTasks,otherTasks);
 
         //create schedule
-        procAss = arrayCreate(iNumberOfThreads,{});
+        procAss := arrayCreate(iNumberOfThreads,{});
         List.map2_0(List.intRange(arrayLength(iTaskGraph)),getProcAss,extInfoArr,procAss);
-        threadTasks = arrayCreate(iNumberOfThreads,{});
-        removeLocks = {};
-        tmpSchedule = HpcOmSimCode.THREADSCHEDULE(threadTasks,{},{},allCalcTasks);
+        threadTasks := arrayCreate(iNumberOfThreads,{});
+        removeLocks := {};
+        tmpSchedule := HpcOmSimCode.THREADSCHEDULE(threadTasks,{},{},allCalcTasks);
 
-        (tmpSchedule,removeLocks) = createScheduleFromAssignments(extInfoArr,procAss,SOME(order),iTaskGraph,taskGraphT,iTaskGraphMeta,iSccSimEqMapping,removeLocks,order,iSimVarMapping,tmpSchedule);
+        (tmpSchedule,removeLocks) := createScheduleFromAssignments(extInfoArr,procAss,SOME(order),iTaskGraph,taskGraphT,iTaskGraphMeta,iSccSimEqMapping,removeLocks,order,iSimVarMapping,tmpSchedule);
         // remove superfluous locks
         if Flags.isSet(Flags.HPCOM_DUMP) then
           print("number of removed superfluous locks: "+intString(intDiv(listLength(removeLocks),2))+"\n");
         end if;
-        tmpSchedule = traverseAndUpdateThreadsInSchedule(tmpSchedule,removeLocksFromThread,removeLocks);
-        tmpSchedule = updateLockIdcsInThreadschedule(tmpSchedule,removeLocksFromLockList,removeLocks);
+        tmpSchedule := traverseAndUpdateThreadsInSchedule(tmpSchedule,removeLocksFromThread,removeLocks);
+        tmpSchedule := updateLockIdcsInThreadschedule(tmpSchedule,removeLocksFromLockList,removeLocks);
 
         //nodeList_refCount = List.map1(rootNodes, getTaskByIndex, allCalcTasks);
         //nodeList = List.map(nodeList_refCount, Util.tuple21);
@@ -2661,25 +2661,25 @@ protected
 algorithm
   oSchedule := matchcontinue(iTaskGraph,iTaskGraphMeta,iNumberOfThreads,iSccSimEqMapping,iSimVarMapping)
     case(_,HpcOmTaskGraph.TASKGRAPHMETA(commCosts=commCosts,inComps=inComps),_,_,_)
-      equation
+      algorithm
         print("Funktionsaufruf!");
-        (xadj,adjncy,vwgt,adjwgt) = preparehMetis(iTaskGraph,iTaskGraphMeta);
-        extInfo = HpcOmSchedulerExt.schedulehMetis(xadj, adjncy, vwgt, adjwgt, iNumberOfThreads);
-        extInfoArr = listArray(extInfo);
+        (xadj,adjncy,vwgt,adjwgt) := preparehMetis(iTaskGraph,iTaskGraphMeta);
+        extInfo := HpcOmSchedulerExt.schedulehMetis(xadj, adjncy, vwgt, adjwgt, iNumberOfThreads);
+        extInfoArr := listArray(extInfo);
         print("Hier geht MetaModelica los!\n");
         print("External scheduling info: " + stringDelimitList(List.map(extInfo, intString), ",") + "\n");
-        true = intEq(arrayLength(iTaskGraph),arrayLength(extInfoArr));
+        true := intEq(arrayLength(iTaskGraph),arrayLength(extInfoArr));
 
-        taskGraphT = AdjacencyMatrix.transposeAdjacencyMatrix(iTaskGraph,arrayLength(iTaskGraph));
-        rootNodes = HpcOmTaskGraph.getRootNodes(iTaskGraph);
-        allCalcTasks = convertTaskGraphToTasks(taskGraphT,iTaskGraphMeta,convertNodeToTask);
-        nodeList_refCount = List.map1(rootNodes, getTaskByIndex, allCalcTasks);
-        nodeList = List.map(nodeList_refCount, Util.tuple21);
-        nodeList = List.sort(nodeList, compareTasksByWeighting);
-        threadTasks = arrayCreate(iNumberOfThreads,{});
-        tmpSchedule = HpcOmSimCode.THREADSCHEDULE(threadTasks,{},{},allCalcTasks);
-        tmpSchedule = createExtSchedule1(nodeList,extInfoArr, iTaskGraph, taskGraphT, commCosts, inComps, iSccSimEqMapping, iSimVarMapping, getLocksByPredecessorList, tmpSchedule);
-        tmpSchedule = addSuccessorLocksToSchedule(iTaskGraph,addReleaseLocksToSchedule,commCosts,inComps,iSimVarMapping,tmpSchedule);
+        taskGraphT := AdjacencyMatrix.transposeAdjacencyMatrix(iTaskGraph,arrayLength(iTaskGraph));
+        rootNodes := HpcOmTaskGraph.getRootNodes(iTaskGraph);
+        allCalcTasks := convertTaskGraphToTasks(taskGraphT,iTaskGraphMeta,convertNodeToTask);
+        nodeList_refCount := List.map1(rootNodes, getTaskByIndex, allCalcTasks);
+        nodeList := List.map(nodeList_refCount, Util.tuple21);
+        nodeList := List.sort(nodeList, compareTasksByWeighting);
+        threadTasks := arrayCreate(iNumberOfThreads,{});
+        tmpSchedule := HpcOmSimCode.THREADSCHEDULE(threadTasks,{},{},allCalcTasks);
+        tmpSchedule := createExtSchedule1(nodeList,extInfoArr, iTaskGraph, taskGraphT, commCosts, inComps, iSccSimEqMapping, iSimVarMapping, getLocksByPredecessorList, tmpSchedule);
+        tmpSchedule := addSuccessorLocksToSchedule(iTaskGraph,addReleaseLocksToSchedule,commCosts,inComps,iSimVarMapping,tmpSchedule);
         //printSchedule(tmpSchedule);
       then setScheduleLockIds(tmpSchedule); // set unique lock ids
     else
@@ -2742,8 +2742,8 @@ algorithm
       Integer fromnode;
       Integer cost;
     case ((fromnode,tonode,cost),_,_,_,_)
-      equation
-        true = intEq(fromnode,actnode);
+      algorithm
+        true := intEq(fromnode,actnode);
         arrayUpdate(adjwgt,imarker,cost);
         arrayUpdate(adjncy,imarker,tonode-1);
       then
@@ -2840,17 +2840,17 @@ algorithm
         list<Integer> l_hewgts;
         tuple<Integer,Integer,list<Integer>,list<Integer>,list<Integer>> help;
     case ({},(node,position,l_eptr,l_eint,l_hewgts))
-        equation
-            help=(node+1,position,l_eptr,l_eint,l_hewgts);
+        algorithm
+            help:=(node+1,position,l_eptr,l_eint,l_hewgts);
         then help;
     case (_,(node,position,l_eptr,l_eint,l_hewgts))
-        equation
-            n=node-1;
-            l_eint = List.appendElt(n, l_eint);
-            l_eint = List.fold(childnodes,listNodes,l_eint);
-            n=position+listLength(childnodes)+1;
-            l_eptr = List.appendElt(n, l_eptr);
-            help = (node+1,n,l_eptr,l_eint,l_hewgts);
+        algorithm
+            n:=node-1;
+            l_eint := List.appendElt(n, l_eint);
+            l_eint := List.fold(childnodes,listNodes,l_eint);
+            n:=position+listLength(childnodes)+1;
+            l_eptr := List.appendElt(n, l_eptr);
+            help := (node+1,n,l_eptr,l_eint,l_hewgts);
         then help;
     end match;
 end getHedge;
@@ -2911,21 +2911,21 @@ protected
 algorithm
   oSchedule := matchcontinue(iTaskGraph,iTaskGraphMeta,iNumberOfThreads,iSccSimEqMapping,iSimVarMapping,iGraphMLFile)
     case(_,HpcOmTaskGraph.TASKGRAPHMETA(commCosts=commCosts,inComps=inComps),_,_,_,_)
-      equation
-        extInfo = HpcOmSchedulerExt.readScheduleFromGraphMl(iGraphMLFile);
-        extInfoArr = listArray(extInfo);
-        true = intEq(arrayLength(iTaskGraph),arrayLength(extInfoArr));
+      algorithm
+        extInfo := HpcOmSchedulerExt.readScheduleFromGraphMl(iGraphMLFile);
+        extInfoArr := listArray(extInfo);
+        true := intEq(arrayLength(iTaskGraph),arrayLength(extInfoArr));
         //print("External scheduling info: " + stringDelimitList(List.map(extInfo, intString), ",") + "\n");
-        taskGraphT = AdjacencyMatrix.transposeAdjacencyMatrix(iTaskGraph,arrayLength(iTaskGraph));
-        rootNodes = HpcOmTaskGraph.getRootNodes(iTaskGraph);
-        allCalcTasks = convertTaskGraphToTasks(taskGraphT,iTaskGraphMeta,convertNodeToTask);
-        nodeList_refCount = List.map1(rootNodes, getTaskByIndex, allCalcTasks);
-        nodeList = List.map(nodeList_refCount, Util.tuple21);
-        nodeList = List.sort(nodeList, compareTasksByWeighting);
-        threadTasks = arrayCreate(iNumberOfThreads,{});
-        tmpSchedule = HpcOmSimCode.THREADSCHEDULE(threadTasks,{},{},allCalcTasks);
-        tmpSchedule = createExtSchedule1(nodeList,extInfoArr, iTaskGraph, taskGraphT, commCosts, inComps, iSccSimEqMapping, iSimVarMapping, getLocksByPredecessorList, tmpSchedule);
-        tmpSchedule = addSuccessorLocksToSchedule(iTaskGraph,addReleaseLocksToSchedule,commCosts,inComps,iSimVarMapping,tmpSchedule);
+        taskGraphT := AdjacencyMatrix.transposeAdjacencyMatrix(iTaskGraph,arrayLength(iTaskGraph));
+        rootNodes := HpcOmTaskGraph.getRootNodes(iTaskGraph);
+        allCalcTasks := convertTaskGraphToTasks(taskGraphT,iTaskGraphMeta,convertNodeToTask);
+        nodeList_refCount := List.map1(rootNodes, getTaskByIndex, allCalcTasks);
+        nodeList := List.map(nodeList_refCount, Util.tuple21);
+        nodeList := List.sort(nodeList, compareTasksByWeighting);
+        threadTasks := arrayCreate(iNumberOfThreads,{});
+        tmpSchedule := HpcOmSimCode.THREADSCHEDULE(threadTasks,{},{},allCalcTasks);
+        tmpSchedule := createExtSchedule1(nodeList,extInfoArr, iTaskGraph, taskGraphT, commCosts, inComps, iSccSimEqMapping, iSimVarMapping, getLocksByPredecessorList, tmpSchedule);
+        tmpSchedule := addSuccessorLocksToSchedule(iTaskGraph,addReleaseLocksToSchedule,commCosts,inComps,iSimVarMapping,tmpSchedule);
         //printSchedule(tmpSchedule);
       then tmpSchedule;
     else
@@ -2984,65 +2984,65 @@ protected
 algorithm
   oSchedule := matchcontinue(iNodeList,iThreadAssignments, iTaskGraph, iTaskGraphT, iCommCosts, iCompTaskMapping, iSccSimEqMapping, iSimVarMapping, iLockWithPredecessorHandler, iSchedule)
     case((head as HpcOmSimCode.CALCTASK(weighting=weighting,index=index,calcTime=calcTime,eqIdc=(eqIdc as firstEq::_)))::rest,_,_,_,_,_,_,_,_,HpcOmSimCode.THREADSCHEDULE(threadTasks=allThreadTasks, outgoingDepTasks=outgoingDepTasks, allCalcTasks=allCalcTasks))
-      equation
+      algorithm
         //get all predecessors (childs)
-        (predecessors, _) = getSuccessorsByTask(head, iTaskGraphT, allCalcTasks);
-        (successors, successorIdc) = getSuccessorsByTask(head, iTaskGraph, allCalcTasks);
-        false = listEmpty(predecessors); //in this case the node has predecessors
+        (predecessors, _) := getSuccessorsByTask(head, iTaskGraphT, allCalcTasks);
+        (successors, successorIdc) := getSuccessorsByTask(head, iTaskGraph, allCalcTasks);
+        false := listEmpty(predecessors); //in this case the node has predecessors
         //print("Handle task " + intString(index) + " with " + intString(listLength(predecessors)) + " child nodes and " + intString(listLength(successorIdc)) + " parent nodes.\n");
 
         //find thread for scheduling
-        threadId = arrayGet(iThreadAssignments,index);
-        threadFinishTime = -1.0;
-        threadTasks = arrayGet(allThreadTasks,threadId);
+        threadId := arrayGet(iThreadAssignments,index);
+        threadFinishTime := -1.0;
+        threadTasks := arrayGet(allThreadTasks,threadId);
 
         //find all predecessors which are scheduled to another thread and thus require a lock
-        (lockTasks,newOutgoingDepTasks) = iLockWithPredecessorHandler(head,predecessors,threadId,iCommCosts,iCompTaskMapping,iSimVarMapping);
-        outgoingDepTasks = listAppend(outgoingDepTasks,newOutgoingDepTasks) annotation(__OpenModelica_DisableListAppendWarning=true);
+        (lockTasks,newOutgoingDepTasks) := iLockWithPredecessorHandler(head,predecessors,threadId,iCommCosts,iCompTaskMapping,iSimVarMapping);
+        outgoingDepTasks := listAppend(outgoingDepTasks,newOutgoingDepTasks) annotation(__OpenModelica_DisableListAppendWarning=true);
         //threadTasks = listAppend(List.map(newLockIdc,convertLockIdToAssignTask), threadTasks);
-        threadTasks = listAppend(lockTasks, threadTasks);
+        threadTasks := listAppend(lockTasks, threadTasks);
 
         //print("Eq idc: " + stringDelimitList(List.map(eqIdc, intString), ",") + "\n");
-        simEqIdc = List.map(List.map1(eqIdc,getSimEqSysIdxForComp,iSccSimEqMapping), List.last);
+        simEqIdc := List.map(List.map1(eqIdc,getSimEqSysIdxForComp,iSccSimEqMapping), List.last);
         //print("Simcodeeq idc: " + stringDelimitList(List.map(simEqIdc, intString), ",") + "\n");
         //simEqIdc = List.sort(simEqIdc,intGt);
 
-        newTask = HpcOmSimCode.CALCTASK(weighting,index,calcTime,threadFinishTime,threadId,simEqIdc);
-        threadTasks = newTask::threadTasks;
-        allThreadTasks = arrayUpdate(allThreadTasks,threadId,threadTasks);
+        newTask := HpcOmSimCode.CALCTASK(weighting,index,calcTime,threadFinishTime,threadId,simEqIdc);
+        threadTasks := newTask::threadTasks;
+        allThreadTasks := arrayUpdate(allThreadTasks,threadId,threadTasks);
         //print("Successors: " + stringDelimitList(List.map(successorIdc, intString), ",") + "\n");
         //add all successors with refcounter = 1
-        (allCalcTasks,tmpNodeList) = updateRefCounterBySuccessorIdc(allCalcTasks,successorIdc,{});
-        tmpNodeList = listAppend(tmpNodeList, rest) annotation(__OpenModelica_DisableListAppendWarning=true);
-        tmpNodeList = List.sort(tmpNodeList, compareTasksByWeighting);
-        ((_,newTaskRefCount)) = arrayGet(allCalcTasks,index);
+        (allCalcTasks,tmpNodeList) := updateRefCounterBySuccessorIdc(allCalcTasks,successorIdc,{});
+        tmpNodeList := listAppend(tmpNodeList, rest) annotation(__OpenModelica_DisableListAppendWarning=true);
+        tmpNodeList := List.sort(tmpNodeList, compareTasksByWeighting);
+        ((_,newTaskRefCount)) := arrayGet(allCalcTasks,index);
         arrayUpdate(allCalcTasks,index,(newTask,newTaskRefCount));
-        tmpSchedule = createExtSchedule1(tmpNodeList,iThreadAssignments,iTaskGraph, iTaskGraphT, iCommCosts, iCompTaskMapping, iSccSimEqMapping, iSimVarMapping, iLockWithPredecessorHandler, HpcOmSimCode.THREADSCHEDULE(allThreadTasks,outgoingDepTasks,{},allCalcTasks));
+        tmpSchedule := createExtSchedule1(tmpNodeList,iThreadAssignments,iTaskGraph, iTaskGraphT, iCommCosts, iCompTaskMapping, iSccSimEqMapping, iSimVarMapping, iLockWithPredecessorHandler, HpcOmSimCode.THREADSCHEDULE(allThreadTasks,outgoingDepTasks,{},allCalcTasks));
       then tmpSchedule;
     case((head as HpcOmSimCode.CALCTASK(weighting=weighting,index=index,calcTime=calcTime,eqIdc=(eqIdc as firstEq::_)))::rest,_,_,_,_,_,_,_,_,HpcOmSimCode.THREADSCHEDULE(threadTasks=allThreadTasks,outgoingDepTasks=outgoingDepTasks,allCalcTasks=allCalcTasks))
-      equation
-        (successors, successorIdc) = getSuccessorsByTask(head, iTaskGraph, allCalcTasks);
+      algorithm
+        (successors, successorIdc) := getSuccessorsByTask(head, iTaskGraph, allCalcTasks);
         //print("Handle task " + intString(index) + " with 0 child nodes and " + intString(listLength(successorIdc)) + " parent nodes.\n");
         //print("Parents: {" + stringDelimitList(List.map(successorIdc, intString), ",") + "}\n");
 
         //find thread for scheduling
-        threadId = arrayGet(iThreadAssignments,index);
-        threadFinishTime = -1.0;
-        threadTasks = arrayGet(allThreadTasks,threadId);
+        threadId := arrayGet(iThreadAssignments,index);
+        threadFinishTime := -1.0;
+        threadTasks := arrayGet(allThreadTasks,threadId);
 
-        simEqIdc = List.flatten(List.map1(eqIdc,getSimEqSysIdxForComp,iSccSimEqMapping));
+        simEqIdc := List.flatten(List.map1(eqIdc,getSimEqSysIdxForComp,iSccSimEqMapping));
         //simEqIdc = List.sort(simEqIdc,intGt);
 
-        newTask = HpcOmSimCode.CALCTASK(weighting,index,calcTime,threadFinishTime,threadId,simEqIdc);
-        allThreadTasks = arrayUpdate(allThreadTasks,threadId,newTask::threadTasks);
+        newTask := HpcOmSimCode.CALCTASK(weighting,index,calcTime,threadFinishTime,threadId,simEqIdc);
+        allThreadTasks := arrayUpdate(allThreadTasks,threadId,newTask::threadTasks);
         //print("Successors: " + stringDelimitList(List.map(successorIdc, intString), ",") + "\n");
         //add all successors with refcounter = 1
-        (allCalcTasks,tmpNodeList) = updateRefCounterBySuccessorIdc(allCalcTasks,successorIdc,{});
-        tmpNodeList = listAppend(tmpNodeList, rest) annotation(__OpenModelica_DisableListAppendWarning=true);
-        tmpNodeList = List.sort(tmpNodeList, compareTasksByWeighting);
-        ((_,newTaskRefCount)) = arrayGet(allCalcTasks,index);
+        (allCalcTasks,tmpNodeList) := updateRefCounterBySuccessorIdc(allCalcTasks,successorIdc,{});
+        tmpNodeList := listAppend(tmpNodeList, rest) annotation(__OpenModelica_DisableListAppendWarning=true);
+        tmpNodeList := List.sort(tmpNodeList, compareTasksByWeighting);
+        ((_,newTaskRefCount)) := arrayGet(allCalcTasks,index);
         arrayUpdate(allCalcTasks,index,(newTask,newTaskRefCount));
-        tmpSchedule = createExtSchedule1(tmpNodeList,iThreadAssignments,iTaskGraph, iTaskGraphT, iCommCosts, iCompTaskMapping, iSccSimEqMapping, iSimVarMapping, iLockWithPredecessorHandler, HpcOmSimCode.THREADSCHEDULE(allThreadTasks,outgoingDepTasks,{},allCalcTasks));
+        tmpSchedule := createExtSchedule1(tmpNodeList,iThreadAssignments,iTaskGraph, iTaskGraphT, iCommCosts, iCompTaskMapping, iSccSimEqMapping, iSimVarMapping, iLockWithPredecessorHandler, HpcOmSimCode.THREADSCHEDULE(allThreadTasks,outgoingDepTasks,{},allCalcTasks));
       then tmpSchedule;
     case({},_,_,_,_,_,_,_,_,_) then iSchedule;
     else
@@ -3155,36 +3155,36 @@ algorithm
       array<Integer> taskAss;
       array<list<Integer>> procAss;
     case({},_,_,_,_,_,_,(threads,outgoingDepTasks))
-      equation
-        threads = {}::threads;
+      algorithm
+        threads := {}::threads;
       then ((threads,outgoingDepTasks));
     case(HpcOmSimCode.CALCTASK(index=idx,threadIdx=thr)::rest,(iTaskGraph,iTaskGraphT),(taskAss,_),_,_,_,_,(threads,outgoingDepTasks))
-      equation
-        task = listHead(threadsIn);
+      algorithm
+        task := listHead(threadsIn);
         //print("node "+intString(idx)+"\n");
-        preds = arrayGet(iTaskGraphT,idx);
-        succs = arrayGet(iTaskGraph,idx);
+        preds := arrayGet(iTaskGraphT,idx);
+        succs := arrayGet(iTaskGraph,idx);
         //print("all preds "+intListString(preds)+"\n");
         //print("all succs "+intListString(succs)+"\n");
-        predThr = List.map1(preds,Array.getIndexFirst,taskAss);
-        succThr = List.map1(succs,Array.getIndexFirst,taskAss);
-        (_,preds) = List.filter1OnTrueSync(predThr,intNe,thr,preds);
-        (_,succs) = List.filter1OnTrueSync(succThr,intNe,thr,succs);
+        predThr := List.map1(preds,Array.getIndexFirst,taskAss);
+        succThr := List.map1(succs,Array.getIndexFirst,taskAss);
+        (_,preds) := List.filter1OnTrueSync(predThr,intNe,thr,preds);
+        (_,succs) := List.filter1OnTrueSync(succThr,intNe,thr,succs);
         //print("other preds "+intListString(preds)+"\n");
         //print("other succs "+intListString(succs)+"\n");
         //print("assLockStrs "+stringDelimitList(assLockStrs,"  ;  ")+"\n");
         //print("relLockStrs "+stringDelimitList(relLockStrs,"  ;  ")+"\n");
-        assLocks = List.map6(preds,createDepTaskByTaskIdc,idx,iAllCalcTasks,false,iCommCosts,iCompTaskMapping,iSimVarMapping);
-        relLocks = List.map6(succs,createDepTaskByTaskIdc,idx,iAllCalcTasks,true,iCommCosts,iCompTaskMapping,iSimVarMapping);
+        assLocks := List.map6(preds,createDepTaskByTaskIdc,idx,iAllCalcTasks,false,iCommCosts,iCompTaskMapping,iSimVarMapping);
+        relLocks := List.map6(succs,createDepTaskByTaskIdc,idx,iAllCalcTasks,true,iCommCosts,iCompTaskMapping,iSimVarMapping);
         //tasks = task::assLocks;
-        tasks = listAppend(listAppend(relLocks,{task}),assLocks);
-        thread = if not listEmpty(threads) then listHead(threads) else {};
-        thread = listAppend(tasks,thread);
-        threads = if not listEmpty(threads) then List.replaceAt(thread,1,threads) else {thread};
+        tasks := listAppend(listAppend(relLocks,{task}),assLocks);
+        thread := if not listEmpty(threads) then listHead(threads) else {};
+        thread := listAppend(tasks,thread);
+        threads := if not listEmpty(threads) then List.replaceAt(thread,1,threads) else {thread};
         //_ = printThreadSchedule(thread,thr);
-        outgoingDepTasks = listAppend(relLocks,outgoingDepTasks);
-        outgoingDepTasks = listAppend(assLocks,outgoingDepTasks);
-        ((threads,outgoingDepTasks)) = insertLocksInSchedule1(rest,iTaskGraphTransposed,taskProcAss,iAllCalcTasks,iCommCosts,iCompTaskMapping,iSimVarMapping,(threads,outgoingDepTasks));
+        outgoingDepTasks := listAppend(relLocks,outgoingDepTasks);
+        outgoingDepTasks := listAppend(assLocks,outgoingDepTasks);
+        ((threads,outgoingDepTasks)) := insertLocksInSchedule1(rest,iTaskGraphTransposed,taskProcAss,iAllCalcTasks,iCommCosts,iCompTaskMapping,iSimVarMapping,(threads,outgoingDepTasks));
       then ((threads,outgoingDepTasks));
   end match;
 end insertLocksInSchedule1;
@@ -3235,35 +3235,35 @@ algorithm
       array<list<Integer>> compParamMapping;
       array<HpcOmTaskGraph.ComponentInfo> compInformations;
     case(_,_,_,_,_,_,_,_,_,_,_)
-      equation
+      algorithm
         // we need cluster duplication, repeat until numProc=num(clusters)
-        true = listLength(clustersIn) < numProc;
+        true := listLength(clustersIn) < numProc;
         print("There are less initial clusters than processors. we need duplication, but since this is a rare case, it is not done. Less processors are used.\n");
-        clusters = List.map(clustersIn,listReverse);
+        clusters := List.map(clustersIn,listReverse);
         FlagsUtil.setConfigInt(Flags.NUM_PROC,listLength(clustersIn));
-        (schedule,simCode,taskGraph,meta,sccSimEqMap) = TDS_schedule1(clusters,iTaskGraph,iTaskGraphT,iTaskGraphMeta,TDSLevel,listLength(clustersIn),iSccSimEqMapping,iSimCode,iCommCosts,iCompTaskMapping,iSimVarMapping);
+        (schedule,simCode,taskGraph,meta,sccSimEqMap) := TDS_schedule1(clusters,iTaskGraph,iTaskGraphT,iTaskGraphMeta,TDSLevel,listLength(clustersIn),iSccSimEqMapping,iSimCode,iCommCosts,iCompTaskMapping,iSimVarMapping);
       then
         (schedule,simCode,taskGraph,meta,sccSimEqMap);
     case(_,_,_,_,_,_,_,_,_,_,_)
-      equation
+      algorithm
         // we need cluster compaction, repeat until numProc=num(clusters)
-        true = listLength(clustersIn) > numProc;
-        clusters = TDS_CompactClusters(clustersIn,iTaskGraph,iTaskGraphMeta,TDSLevel,numProc);
-        (schedule,simCode,taskGraph,meta,sccSimEqMap) = TDS_schedule1(clusters,iTaskGraph,iTaskGraphT,iTaskGraphMeta,TDSLevel,numProc,iSccSimEqMapping,iSimCode,iCommCosts,iCompTaskMapping,iSimVarMapping);
+        true := listLength(clustersIn) > numProc;
+        clusters := TDS_CompactClusters(clustersIn,iTaskGraph,iTaskGraphMeta,TDSLevel,numProc);
+        (schedule,simCode,taskGraph,meta,sccSimEqMap) := TDS_schedule1(clusters,iTaskGraph,iTaskGraphT,iTaskGraphMeta,TDSLevel,numProc,iSccSimEqMapping,iSimCode,iCommCosts,iCompTaskMapping,iSimVarMapping);
       then
         (schedule,simCode,taskGraph,meta,sccSimEqMap);
     case(_,_,_,_,_,_,_,_,_,_,_)
-      equation
+      algorithm
         // the clusters can be scheduled,
-        true = listLength(clustersIn) == numProc;
+        true := listLength(clustersIn) == numProc;
         // order the tasks in the clusters
-        clusters = List.map1(clustersIn,TDS_SortCompactClusters,TDSLevel);
+        clusters := List.map1(clustersIn,TDS_SortCompactClusters,TDSLevel);
         //print("clusters:\n"+stringDelimitList(List.map(clusters,intListString),"\n")+"\n");
 
         // extract object stuff
-        SimCode.SIMCODE(modelInfo = SimCode.MODELINFO(vars=simVars), odeEquations=odes) = iSimCode;
-        SimCodeVar.SIMVARS(algVars=algVars) = simVars;
-        HpcOmTaskGraph.TASKGRAPHMETA(inComps=inComps,varCompMapping=varCompMapping,eqCompMapping=eqCompMapping,compParamMapping=compParamMapping,compNames=compNames,compDescs=compDescs,exeCosts=exeCosts,commCosts=commCosts,nodeMark=nodeMark,compInformations=compInformations) = iTaskGraphMeta;
+        SimCode.SIMCODE(modelInfo = SimCode.MODELINFO(vars=simVars), odeEquations=odes) := iSimCode;
+        SimCodeVar.SIMVARS(algVars=algVars) := simVars;
+        HpcOmTaskGraph.TASKGRAPHMETA(inComps=inComps,varCompMapping=varCompMapping,eqCompMapping=eqCompMapping,compParamMapping=compParamMapping,compNames=compNames,compDescs=compDescs,exeCosts=exeCosts,commCosts=commCosts,nodeMark=nodeMark,compInformations=compInformations) := iTaskGraphMeta;
         /*
         //dumping stuff-------------------------
         print("simCode1 \n");
@@ -3275,50 +3275,50 @@ algorithm
         //--------------------------------------
 */
         // prepare everything  in order to create new variables and equations for the duplicated tasks
-        sizeTasks = List.fold(List.map(clusters,listLength),intAdd,0);
-        taskAss = arrayCreate(sizeTasks,-1);
-        procAss = arrayCreate(listLength(clusters),{});
-        taskGraph = arrayCreate(sizeTasks,{});
-        taskDuplAss = arrayCreate(sizeTasks,-1); // the original task for every task (for not duplicated tasks, its itself)
-        threadTask = arrayCreate(numProc,{});
-        allCalcTasks = arrayCreate(sizeTasks, (HpcOmSimCode.TASKEMPTY(),0));
-        schedule = HpcOmSimCode.THREADSCHEDULE(threadTask,{},{},allCalcTasks);
-        duplSccSimEqMap = {};  // a list that is later appended to the sccSimEqMapping
-        duplComps = {}; // a list that is later appended to the inComps
-        threadIdx = 1;
-        compIdx = arrayLength(iSccSimEqMapping)+1;  // the next available component index
-        taskIdx = arrayLength(iTaskGraph)+1;
-        simVarIdx = max(v.index for v in algVars)+1;// the next available simVar index
-        simEqSysIdx = SimCodeUtil.getMaxSimEqSystemIndex(iSimCode)+1;// the next available simEqSys index
-        lsIdx = List.fold(List.map(List.flatten(odes),SimCodeUtil.getLSindex),intMax,0)+1;// the next available linear system index
-        nlsIdx = List.fold(List.map(List.flatten(odes),SimCodeUtil.getNLSindex),intMax,0)+1;// the next available nonlinear system index
-        mIdx = List.fold(List.map(List.flatten(odes),SimCodeUtil.getMixedindex),intMax,0)+1;// the next available mixed system  index
+        sizeTasks := List.fold(List.map(clusters,listLength),intAdd,0);
+        taskAss := arrayCreate(sizeTasks,-1);
+        procAss := arrayCreate(listLength(clusters),{});
+        taskGraph := arrayCreate(sizeTasks,{});
+        taskDuplAss := arrayCreate(sizeTasks,-1); // the original task for every task (for not duplicated tasks, its itself)
+        threadTask := arrayCreate(numProc,{});
+        allCalcTasks := arrayCreate(sizeTasks, (HpcOmSimCode.TASKEMPTY(),0));
+        schedule := HpcOmSimCode.THREADSCHEDULE(threadTask,{},{},allCalcTasks);
+        duplSccSimEqMap := {};  // a list that is later appended to the sccSimEqMapping
+        duplComps := {}; // a list that is later appended to the inComps
+        threadIdx := 1;
+        compIdx := arrayLength(iSccSimEqMapping)+1;  // the next available component index
+        taskIdx := arrayLength(iTaskGraph)+1;
+        simVarIdx := max(v.index for v in algVars)+1;// the next available simVar index
+        simEqSysIdx := SimCodeUtil.getMaxSimEqSystemIndex(iSimCode)+1;// the next available simEqSys index
+        lsIdx := List.fold(List.map(List.flatten(odes),SimCodeUtil.getLSindex),intMax,0)+1;// the next available linear system index
+        nlsIdx := List.fold(List.map(List.flatten(odes),SimCodeUtil.getNLSindex),intMax,0)+1;// the next available nonlinear system index
+        mIdx := List.fold(List.map(List.flatten(odes),SimCodeUtil.getMixedindex),intMax,0)+1;// the next available mixed system  index
 
         //traverse the clusters and duplicate tasks if needed
-        (taskAss,procAss,taskGraph,taskDuplAss,idcs,simCode,schedule,duplSccSimEqMap,duplComps) = TDS_duplicateTasks(clusters,taskAss,procAss,(threadIdx,taskIdx,compIdx,simVarIdx,simEqSysIdx,lsIdx,nlsIdx,mIdx),iTaskGraph,iTaskGraphT,taskGraph,taskDuplAss,iTaskGraphMeta,iSimCode,schedule,iSccSimEqMapping,duplSccSimEqMap,duplComps);
+        (taskAss,procAss,taskGraph,taskDuplAss,idcs,simCode,schedule,duplSccSimEqMap,duplComps) := TDS_duplicateTasks(clusters,taskAss,procAss,(threadIdx,taskIdx,compIdx,simVarIdx,simEqSysIdx,lsIdx,nlsIdx,mIdx),iTaskGraph,iTaskGraphT,taskGraph,taskDuplAss,iTaskGraphMeta,iSimCode,schedule,iSccSimEqMapping,duplSccSimEqMap,duplComps);
 
         //update stuff
-        simCode = TDS_updateModelInfo(simCode,idcs);
-        numDupl = List.fold(List.map(duplComps,listLength),intAdd,0);
-        procAss = Array.map(procAss,listReverse);
-        sccSimEqMap = arrayAppend(iSccSimEqMapping,listArray(listReverse(duplSccSimEqMap)));
-        comps = arrayAppend(inComps,listArray(listReverse(duplComps)));
-        varCompMapping = arrayAppend(varCompMapping,arrayCreate(numDupl,(0,0,0)));
-        eqCompMapping = arrayAppend(eqCompMapping,arrayCreate(numDupl,(0,0,0)));
-        compParamMapping = arrayAppend(compParamMapping,arrayCreate(numDupl,{}));
-        compNames = arrayAppend(compNames,arrayCreate(numDupl,"duplicated"));
-        compDescs = arrayAppend(compDescs,arrayCreate(numDupl,"duplicated"));
-        exeCosts = arrayAppend(exeCosts,arrayCreate(numDupl,(1,1.0)));
-        nodeMark = arrayAppend(nodeMark,arrayCreate(numDupl,-1));
-        meta = HpcOmTaskGraph.TASKGRAPHMETA(comps,varCompMapping,eqCompMapping,compParamMapping,compNames,compDescs,exeCosts,commCosts,nodeMark,compInformations);
+        simCode := TDS_updateModelInfo(simCode,idcs);
+        numDupl := List.fold(List.map(duplComps,listLength),intAdd,0);
+        procAss := Array.map(procAss,listReverse);
+        sccSimEqMap := arrayAppend(iSccSimEqMapping,listArray(listReverse(duplSccSimEqMap)));
+        comps := arrayAppend(inComps,listArray(listReverse(duplComps)));
+        varCompMapping := arrayAppend(varCompMapping,arrayCreate(numDupl,(0,0,0)));
+        eqCompMapping := arrayAppend(eqCompMapping,arrayCreate(numDupl,(0,0,0)));
+        compParamMapping := arrayAppend(compParamMapping,arrayCreate(numDupl,{}));
+        compNames := arrayAppend(compNames,arrayCreate(numDupl,"duplicated"));
+        compDescs := arrayAppend(compDescs,arrayCreate(numDupl,"duplicated"));
+        exeCosts := arrayAppend(exeCosts,arrayCreate(numDupl,(1,1.0)));
+        nodeMark := arrayAppend(nodeMark,arrayCreate(numDupl,-1));
+        meta := HpcOmTaskGraph.TASKGRAPHMETA(comps,varCompMapping,eqCompMapping,compParamMapping,compNames,compDescs,exeCosts,commCosts,nodeMark,compInformations);
         //assign new simEqSysIndexes
-        newIdxAss = arrayCreate(SimCodeUtil.getMaxSimEqSystemIndex(simCode),-1);
-        (simCode,newIdxAss) = TDS_assignNewSimEqSysIdxs(simCode,newIdxAss);
+        newIdxAss := arrayCreate(SimCodeUtil.getMaxSimEqSystemIndex(simCode),-1);
+        (simCode,newIdxAss) := TDS_assignNewSimEqSysIdxs(simCode,newIdxAss);
 
         // insert Locks
-        taskGraphT = AdjacencyMatrix.transposeAdjacencyMatrix(taskGraph,arrayLength(taskGraph));
-        schedule = insertLocksInSchedule(schedule,taskGraph,taskGraphT,taskAss,procAss,iCommCosts,iCompTaskMapping,iSimVarMapping);
-        schedule = TDS_replaceSimEqSysIdxsInSchedule(schedule,newIdxAss);
+        taskGraphT := AdjacencyMatrix.transposeAdjacencyMatrix(taskGraph,arrayLength(taskGraph));
+        schedule := insertLocksInSchedule(schedule,taskGraph,taskGraphT,taskAss,procAss,iCommCosts,iCompTaskMapping,iSimVarMapping);
+        schedule := TDS_replaceSimEqSysIdxsInSchedule(schedule,newIdxAss);
 /*
         //dumping stuff-------------------------
         print("simCode 2\n");
@@ -3355,9 +3355,9 @@ algorithm
       list<HpcOmSimCode.Task> scheduledTasks;
       array<tuple<HpcOmSimCode.Task,Integer>> allCalcTasks;
   case(HpcOmSimCode.THREADSCHEDULE(threadTasks=threadTasks,outgoingDepTasks=outgoingDepTasks,scheduledTasks=scheduledTasks,allCalcTasks=allCalcTasks),_)
-    equation
-      scheduledTasks = List.map1(scheduledTasks,TDS_replaceSimEqSysIdxsInTask,assIn);
-      threadTasks = Array.map1(threadTasks,TDS_replaceSimEqSysIdxsInTaskLst,assIn);
+    algorithm
+      scheduledTasks := List.map1(scheduledTasks,TDS_replaceSimEqSysIdxsInTask,assIn);
+      threadTasks := Array.map1(threadTasks,TDS_replaceSimEqSysIdxsInTaskLst,assIn);
     then HpcOmSimCode.THREADSCHEDULE(threadTasks,outgoingDepTasks,scheduledTasks,allCalcTasks);
   end match;
 end TDS_replaceSimEqSysIdxsInSchedule;
@@ -3374,8 +3374,8 @@ algorithm
       Real calcTime,timeFinished;
       list<Integer> eqIdc;
   case(HpcOmSimCode.CALCTASK(weighting=weighting,index=index,calcTime=calcTime,timeFinished=timeFinished,threadIdx=threadIdx,eqIdc=eqIdc),_)
-    equation
-      eqIdc = List.map1(eqIdc,Array.getIndexFirst,assIn);
+    algorithm
+      eqIdc := List.map1(eqIdc,Array.getIndexFirst,assIn);
     then HpcOmSimCode.CALCTASK(weighting,index,calcTime,timeFinished,threadIdx,eqIdc);
   else taskIn;
   end matchcontinue;
@@ -3455,32 +3455,32 @@ algorithm
       SimCode.NonlinearSystem nlSystem;
       SimCode.LinearSystem lSystem;
     case (simEqSys as SimCode.SES_NONLINEAR(nlSystem=nlSystem as SimCode.NONLINEARSYSTEM(eqs=eqs,jacobianMatrix=jacobianMatrix)))
-      equation
-        eqs = List.map1(eqs,TDS_replaceSimEqSysIndex,assIn);
-        oldIdx = SimCodeUtil.simEqSystemIndex(simEqIn);
-        newIdx = arrayGet(assIn,oldIdx);
-        jacobianMatrix = TDS_replaceSimEqSysIdxInJacobianMatrix(jacobianMatrix,assIn);
-        nlSystem.jacobianMatrix = jacobianMatrix;
-        nlSystem.index = newIdx;
-        nlSystem.eqs = eqs;
-        simEqSys.nlSystem = nlSystem;
+      algorithm
+        eqs := List.map1(eqs,TDS_replaceSimEqSysIndex,assIn);
+        oldIdx := SimCodeUtil.simEqSystemIndex(simEqIn);
+        newIdx := arrayGet(assIn,oldIdx);
+        jacobianMatrix := TDS_replaceSimEqSysIdxInJacobianMatrix(jacobianMatrix,assIn);
+        nlSystem.jacobianMatrix := jacobianMatrix;
+        nlSystem.index := newIdx;
+        nlSystem.eqs := eqs;
+        simEqSys.nlSystem := nlSystem;
     then simEqSys;
     case (simEqSys as SimCode.SES_LINEAR(lSystem=lSystem as SimCode.LINEARSYSTEM(residual=eqs,jacobianMatrix=jacobianMatrix)))
-      equation
-        eqs = List.map1(eqs,TDS_replaceSimEqSysIndex,assIn);
-        oldIdx = SimCodeUtil.simEqSystemIndex(simEqIn);
-        newIdx = arrayGet(assIn,oldIdx);
-        jacobianMatrix = TDS_replaceSimEqSysIdxInJacobianMatrix(jacobianMatrix,assIn);
-        lSystem.jacobianMatrix = jacobianMatrix;
-        lSystem.index = newIdx;
-        lSystem.residual = eqs;
-        simEqSys.lSystem = lSystem;
+      algorithm
+        eqs := List.map1(eqs,TDS_replaceSimEqSysIndex,assIn);
+        oldIdx := SimCodeUtil.simEqSystemIndex(simEqIn);
+        newIdx := arrayGet(assIn,oldIdx);
+        jacobianMatrix := TDS_replaceSimEqSysIdxInJacobianMatrix(jacobianMatrix,assIn);
+        lSystem.jacobianMatrix := jacobianMatrix;
+        lSystem.index := newIdx;
+        lSystem.residual := eqs;
+        simEqSys.lSystem := lSystem;
    then simEqSys;
     case(_)
-      equation
-        oldIdx = SimCodeUtil.simEqSystemIndex(simEqIn);
-        newIdx = arrayGet(assIn,oldIdx);
-        simEqSys = SimCodeUtil.replaceSimEqSysIndex(simEqIn,newIdx);
+      algorithm
+        oldIdx := SimCodeUtil.simEqSystemIndex(simEqIn);
+        newIdx := arrayGet(assIn,oldIdx);
+        simEqSys := SimCodeUtil.replaceSimEqSysIndex(simEqIn,newIdx);
    then simEqSys;
   end matchcontinue;
 end TDS_replaceSimEqSysIndex;
@@ -3503,35 +3503,35 @@ algorithm
       SimCode.NonlinearSystem nlSystem;
       SimCode.LinearSystem lSystem;
     case (simEqSys as SimCode.SES_NONLINEAR(nlSystem=nlSystem as SimCode.NONLINEARSYSTEM(index=oldIdx,eqs=eqs,crefs=crefs,jacobianMatrix=jacobianMatrix)),(newIdx,ass))
-      equation
-        (eqs,(newIdx,ass)) = List.mapFold(eqs,TDS_replaceSimEqSysIndexWithUpdate,(newIdx,ass));
-        (jacobianMatrix,(newIdx,ass)) = TDS_replaceSimEqSysIdxInJacobianMatrixWithUpdate(jacobianMatrix,(newIdx,ass));
-        ass = arrayUpdate(ass,oldIdx,newIdx);
-        nlSystem.jacobianMatrix = jacobianMatrix;
-        nlSystem.index = newIdx; nlSystem.eqs = eqs;
-        simEqSys.nlSystem = nlSystem;
+      algorithm
+        (eqs,(newIdx,ass)) := List.mapFold(eqs,TDS_replaceSimEqSysIndexWithUpdate,(newIdx,ass));
+        (jacobianMatrix,(newIdx,ass)) := TDS_replaceSimEqSysIdxInJacobianMatrixWithUpdate(jacobianMatrix,(newIdx,ass));
+        ass := arrayUpdate(ass,oldIdx,newIdx);
+        nlSystem.jacobianMatrix := jacobianMatrix;
+        nlSystem.index := newIdx; nlSystem.eqs := eqs;
+        simEqSys.nlSystem := nlSystem;
     then (simEqSys,(newIdx+1,ass));
     case (simEqSys as SimCode.SES_LINEAR(lSystem=lSystem as SimCode.LINEARSYSTEM(index=oldIdx,residual=eqs,jacobianMatrix=jacobianMatrix)),(newIdx,ass))
-      equation
-        (eqs,(newIdx,ass)) = List.mapFold(eqs,TDS_replaceSimEqSysIndexWithUpdate,(newIdx,ass));
-        (jacobianMatrix,(newIdx,ass)) = TDS_replaceSimEqSysIdxInJacobianMatrixWithUpdate(jacobianMatrix,(newIdx,ass));
-        ass = arrayUpdate(ass,oldIdx,newIdx);
-        lSystem.jacobianMatrix = jacobianMatrix;
-        lSystem.index = newIdx; lSystem.residual = eqs;
-        simEqSys.lSystem = lSystem;
+      algorithm
+        (eqs,(newIdx,ass)) := List.mapFold(eqs,TDS_replaceSimEqSysIndexWithUpdate,(newIdx,ass));
+        (jacobianMatrix,(newIdx,ass)) := TDS_replaceSimEqSysIdxInJacobianMatrixWithUpdate(jacobianMatrix,(newIdx,ass));
+        ass := arrayUpdate(ass,oldIdx,newIdx);
+        lSystem.jacobianMatrix := jacobianMatrix;
+        lSystem.index := newIdx; lSystem.residual := eqs;
+        simEqSys.lSystem := lSystem;
     then (simEqSys,(newIdx+1,ass));
     case (simEqSys as SimCode.SES_MIXED(index=oldIdx,cont=cont,discEqs=eqs),(newIdx,ass))
-      equation
-        (cont,(newIdx,ass)) = TDS_replaceSimEqSysIndexWithUpdate(cont,(newIdx,ass));
-        (eqs,(newIdx,ass)) = List.mapFold(eqs,TDS_replaceSimEqSysIndexWithUpdate,(newIdx,ass));
-        ass = arrayUpdate(ass,oldIdx,newIdx);
-        simEqSys.cont = cont; simEqSys.discEqs = eqs;
+      algorithm
+        (cont,(newIdx,ass)) := TDS_replaceSimEqSysIndexWithUpdate(cont,(newIdx,ass));
+        (eqs,(newIdx,ass)) := List.mapFold(eqs,TDS_replaceSimEqSysIndexWithUpdate,(newIdx,ass));
+        ass := arrayUpdate(ass,oldIdx,newIdx);
+        simEqSys.cont := cont; simEqSys.discEqs := eqs;
    then (simEqSys,(newIdx+1,ass));
     case(_,(newIdx,ass))
-      equation
-        oldIdx = SimCodeUtil.simEqSystemIndex(simEqIn);
-        ass = arrayUpdate(ass,oldIdx,newIdx);
-        simEqSys = SimCodeUtil.replaceSimEqSysIndex(simEqIn,newIdx);
+      algorithm
+        oldIdx := SimCodeUtil.simEqSystemIndex(simEqIn);
+        ass := arrayUpdate(ass,oldIdx,newIdx);
+        simEqSys := SimCodeUtil.replaceSimEqSysIndex(simEqIn,newIdx);
    then (simEqSys,(newIdx+1,ass));
   end matchcontinue;
 end TDS_replaceSimEqSysIndexWithUpdate;
@@ -3557,8 +3557,8 @@ algorithm
       Boolean isAdj;
       Option<HashTableCrefSimVar.HashTable> crefToSimVarHTJacobian;
     case(SOME(SimCode.JAC_MATRIX(jacCols,vars,name,sparsity,sparsityT,nonlinearPat,nonlinearPatT,colCols,colRows,maxCol,jacIdx,partIdx,{},crefToSimVarHTJacobian,isAdj)),(newIdx,ass))
-      equation
-        (jacCols,(newIdx,ass)) = List.mapFold(jacCols,TDS_replaceSimEqSysIdxInJacobianColumnWithUpdate,(newIdx,ass));
+      algorithm
+        (jacCols,(newIdx,ass)) := List.mapFold(jacCols,TDS_replaceSimEqSysIdxInJacobianColumnWithUpdate,(newIdx,ass));
    then (SOME(SimCode.JAC_MATRIX(jacCols,vars,name,sparsity,sparsityT,nonlinearPat,nonlinearPatT,colCols,colRows,maxCol,jacIdx,partIdx,{},crefToSimVarHTJacobian,isAdj)),(newIdx,ass));
    else (jacIn,tplIn);
   end matchcontinue;
@@ -3579,8 +3579,8 @@ algorithm
       array<Integer> ass;
       Integer newIdx;
     case (SimCode.JAC_COLUMN(simEqs,simVars,rowLen,constEqns),(newIdx,ass))
-      equation
-        (simEqs,(newIdx,ass)) = List.mapFold(simEqs,TDS_replaceSimEqSysIndexWithUpdate,(newIdx,ass));
+      algorithm
+        (simEqs,(newIdx,ass)) := List.mapFold(simEqs,TDS_replaceSimEqSysIndexWithUpdate,(newIdx,ass));
    then (SimCode.JAC_COLUMN(simEqs,simVars,rowLen,constEqns),(newIdx,ass));
    else (jacIn,tplIn);
   end matchcontinue;
@@ -3596,8 +3596,8 @@ algorithm
     local
       SimCode.JacobianMatrix jacMatrix;
     case SOME(jacMatrix as SimCode.JAC_MATRIX())
-      equation
-        jacMatrix.columns = List.map1(jacMatrix.columns, TDS_replaceSimEqSysIdxInJacobianColumn, assIn);
+      algorithm
+        jacMatrix.columns := List.map1(jacMatrix.columns, TDS_replaceSimEqSysIdxInJacobianColumn, assIn);
    then SOME(jacMatrix);
    else jacIn;
   end matchcontinue;
@@ -3683,22 +3683,22 @@ algorithm
       list<list<SimCode.SimEqSystem>> odes;
       array<tuple<HpcOmSimCode.Task,Integer>> allCalcTasks;
     case({},_,_,_,_,_,_,_,_,_,_,_,_,_)
-      equation
+      algorithm
       then
         (taskAssIn,procAssIn,taskGraphIn,taskDuplAssIn,idcsIn,simCodeIn,scheduleIn,duplSccSimEqMapIn,duplCompsIn);
     case(cluster::rest,_,_,_,_,_,_,_,_,_,_,_,_,_)
-      equation
-        repl = BackendVarTransform.emptyReplacements();
+      algorithm
+        repl := BackendVarTransform.emptyReplacements();
         //traverse the cluster and build schedule
-        (taskAss,procAss,taskGraph,taskDuplAss,thread,(threadIdx,taskIdx,compIdx,simVarIdx,simEqSysIdx,lsIdx,nlsIdx,mIdx),simCode,duplSccSimEqMap,duplComps) = TDS_duplicateTasks1(cluster,clustersIn,repl,taskAssIn,procAssIn,{},idcsIn,taskGraphOrig,taskGraphTOrig,taskGraphIn,taskDuplAssIn,iTaskGraphMeta,simCodeIn,sccSimEqMappingIn,duplSccSimEqMapIn,duplCompsIn);
-        SimCode.SIMCODE() = simCode;
+        (taskAss,procAss,taskGraph,taskDuplAss,thread,(threadIdx,taskIdx,compIdx,simVarIdx,simEqSysIdx,lsIdx,nlsIdx,mIdx),simCode,duplSccSimEqMap,duplComps) := TDS_duplicateTasks1(cluster,clustersIn,repl,taskAssIn,procAssIn,{},idcsIn,taskGraphOrig,taskGraphTOrig,taskGraphIn,taskDuplAssIn,iTaskGraphMeta,simCodeIn,sccSimEqMappingIn,duplSccSimEqMapIn,duplCompsIn);
+        SimCode.SIMCODE() := simCode;
         //print("the simEqSysts after cluster: "+intString(threadIdx)+" \n"+stringDelimitList(List.map(odes,SimCodeUtil.dumpSimEqSystemLst),"\n")+"\n");
 
-        HpcOmSimCode.THREADSCHEDULE(threadTasks=threadTasks,outgoingDepTasks=outgoingDepTasks,allCalcTasks=allCalcTasks) = scheduleIn;
-        threadTasks = arrayUpdate(threadTasks,threadIdx,listReverse(thread));
-        schedule = HpcOmSimCode.THREADSCHEDULE(threadTasks,outgoingDepTasks,{},allCalcTasks);
-        threadIdx = threadIdx+1;
-        (taskAss,procAss,taskGraph,taskDuplAss,idcs,simCode,schedule,duplSccSimEqMap,duplComps) = TDS_duplicateTasks(rest,taskAss,procAss,(threadIdx,taskIdx,compIdx,simVarIdx,simEqSysIdx,lsIdx,nlsIdx,mIdx),taskGraphOrig,taskGraphTOrig,taskGraph,taskDuplAss,iTaskGraphMeta,simCode,schedule,sccSimEqMappingIn,duplSccSimEqMap,duplComps);
+        HpcOmSimCode.THREADSCHEDULE(threadTasks=threadTasks,outgoingDepTasks=outgoingDepTasks,allCalcTasks=allCalcTasks) := scheduleIn;
+        threadTasks := arrayUpdate(threadTasks,threadIdx,listReverse(thread));
+        schedule := HpcOmSimCode.THREADSCHEDULE(threadTasks,outgoingDepTasks,{},allCalcTasks);
+        threadIdx := threadIdx+1;
+        (taskAss,procAss,taskGraph,taskDuplAss,idcs,simCode,schedule,duplSccSimEqMap,duplComps) := TDS_duplicateTasks(rest,taskAss,procAss,(threadIdx,taskIdx,compIdx,simVarIdx,simEqSysIdx,lsIdx,nlsIdx,mIdx),taskGraphOrig,taskGraphTOrig,taskGraph,taskDuplAss,iTaskGraphMeta,simCode,schedule,sccSimEqMappingIn,duplSccSimEqMap,duplComps);
       then
         (taskAssIn,procAssIn,taskGraph,taskDuplAss,idcs,simCode,schedule,duplSccSimEqMap,duplComps);
   end match;
@@ -3751,62 +3751,62 @@ algorithm
     case({},_,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
       then (taskAssIn,procAssIn,taskGraphIn,taskDuplAssIn,threadIn,idcsIn,simCodeIn,duplSccSimEqMapIn,duplCompsIn);
     case(node::rest,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
-      equation
+      algorithm
         // the task is already assigned, duplicate it
-        ass = arrayGet(taskAssIn,node);
-        true = intNe(ass,-1);
+        ass := arrayGet(taskAssIn,node);
+        true := intNe(ass,-1);
         //duplicate it
-        (repl,taskAss,procAss,taskGraph,taskDuplAss,thread,idcs,simCode,duplSccSimEqMap,duplComps) = TDS_duplicateTasks2(node,allCluster,replIn,taskAssIn,procAssIn,threadIn,idcsIn,taskGraphOrig,taskGraphTOrig,taskGraphIn,taskDuplAssIn,iTaskGraphMeta,simCodeIn,sccSimEqMappingIn,duplSccSimEqMapIn,duplCompsIn);
-        (taskAss,procAss,taskGraph,taskDuplAss,thread,idcs,simCode,duplSccSimEqMap,duplComps) = TDS_duplicateTasks1(rest,allCluster,repl,taskAss,procAss,thread,idcs,taskGraphOrig,taskGraphTOrig,taskGraph,taskDuplAss,iTaskGraphMeta,simCode,sccSimEqMappingIn,duplSccSimEqMap,duplComps);
+        (repl,taskAss,procAss,taskGraph,taskDuplAss,thread,idcs,simCode,duplSccSimEqMap,duplComps) := TDS_duplicateTasks2(node,allCluster,replIn,taskAssIn,procAssIn,threadIn,idcsIn,taskGraphOrig,taskGraphTOrig,taskGraphIn,taskDuplAssIn,iTaskGraphMeta,simCodeIn,sccSimEqMappingIn,duplSccSimEqMapIn,duplCompsIn);
+        (taskAss,procAss,taskGraph,taskDuplAss,thread,idcs,simCode,duplSccSimEqMap,duplComps) := TDS_duplicateTasks1(rest,allCluster,repl,taskAss,procAss,thread,idcs,taskGraphOrig,taskGraphTOrig,taskGraph,taskDuplAss,iTaskGraphMeta,simCode,sccSimEqMappingIn,duplSccSimEqMap,duplComps);
       then (taskAss,procAss,taskGraph,taskDuplAss,thread,idcs,simCode,duplSccSimEqMap,duplComps);
     case(node::rest,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
-      equation
+      algorithm
         // the task is not yet assigned
-        ass = arrayGet(taskAssIn,node);
-        true = intEq(ass,-1);
+        ass := arrayGet(taskAssIn,node);
+        true := intEq(ass,-1);
         // assign task
-        (threadIdx,_,_,_,_,_,_,_) = idcsIn;
-        HpcOmTaskGraph.TASKGRAPHMETA(inComps=inComps) = iTaskGraphMeta;
+        (threadIdx,_,_,_,_,_,_,_) := idcsIn;
+        HpcOmTaskGraph.TASKGRAPHMETA(inComps=inComps) := iTaskGraphMeta;
         //print("node "+intString(node)+"\n" );
-        taskAss = arrayUpdate(taskAssIn,node,threadIdx);
-        taskLst = arrayGet(procAssIn,threadIdx);
-        procAss = arrayUpdate(procAssIn,threadIdx,node::taskLst);
-        comps = arrayGet(inComps,node);
+        taskAss := arrayUpdate(taskAssIn,node,threadIdx);
+        taskLst := arrayGet(procAssIn,threadIdx);
+        procAss := arrayUpdate(procAssIn,threadIdx,node::taskLst);
+        comps := arrayGet(inComps,node);
         //print("comps :"+intListString(comps)+"\n");
-        simEqsLst = List.map1(comps,Array.getIndexFirst,sccSimEqMappingIn);
-        simEqs = List.flatten(simEqsLst);
-        simEqs = listReverse(simEqs);
+        simEqsLst := List.map1(comps,Array.getIndexFirst,sccSimEqMappingIn);
+        simEqs := List.flatten(simEqsLst);
+        simEqs := listReverse(simEqs);
         //print("simEqs :"+intListString(simEqs)+"\n");
 
         //change the simEqSystems in odes and allEqs if there is a duplicated predecessor
-        SimCode.SIMCODE(odeEquations=odes, allEquations=allEqs) = simCodeIn;
-        simEqSysts = List.map1(simEqs,SimCodeUtil.getSimEqSysForIndex,List.flatten(odes));
-        (simEqSysts,_) = replaceInSimEqSystemLst(simEqSysts,replIn);
-        allEqs = replaceSimEqSystemLstWithSameIndex(simEqSysts,allEqs);
-        odes = List.map1r(odes,replaceSimEqSystemLstWithSameIndex,simEqSysts);
-        simCode = SimCodeUtil.replaceODEandALLequations(allEqs,odes,simCodeIn);
+        SimCode.SIMCODE(odeEquations=odes, allEquations=allEqs) := simCodeIn;
+        simEqSysts := List.map1(simEqs,SimCodeUtil.getSimEqSysForIndex,List.flatten(odes));
+        (simEqSysts,_) := replaceInSimEqSystemLst(simEqSysts,replIn);
+        allEqs := replaceSimEqSystemLstWithSameIndex(simEqSysts,allEqs);
+        odes := List.map1r(odes,replaceSimEqSystemLstWithSameIndex,simEqSysts);
+        simCode := SimCodeUtil.replaceODEandALLequations(allEqs,odes,simCodeIn);
 
         //update taskGraph
-        clTasks = listHead(allCluster);// the current cluster
+        clTasks := listHead(allCluster);// the current cluster
         //print("clTasks :"+intListString(clTasks)+"\n");
-        origPredTasks = arrayGet(taskGraphTOrig,node);
-        (clPredTasks,origPredTasks,_) = List.intersection1OnTrue(origPredTasks,clTasks,intEq);
+        origPredTasks := arrayGet(taskGraphTOrig,node);
+        (clPredTasks,origPredTasks,_) := List.intersection1OnTrue(origPredTasks,clTasks,intEq);
         //print("origPredTasks :"+intListString(origPredTasks)+"\n");
-        pos = List.map1(clPredTasks,List.position,clTasks);
-        clTasks = arrayGet(procAssIn,threadIdx);
-        clTasks = listReverse(clTasks);  // the current cluster with duplicated taskIdcs
+        pos := List.map1(clPredTasks,List.position,clTasks);
+        clTasks := arrayGet(procAssIn,threadIdx);
+        clTasks := listReverse(clTasks);  // the current cluster with duplicated taskIdcs
         //print("clTasks :"+intListString(clTasks)+"\n");
-        clPredTasks = List.map1(pos,List.getIndexFirst,clTasks);
+        clPredTasks := List.map1(pos,List.getIndexFirst,clTasks);
         //print("clPredTasks :"+intListString(clPredTasks)+"\n");
-        (duplPredTasks,_,_) = List.intersection1OnTrue(clPredTasks,clTasks,intEq);
+        (duplPredTasks,_,_) := List.intersection1OnTrue(clPredTasks,clTasks,intEq);
         //print("duplPredTasks :"+intListString(duplPredTasks)+"\n");
-        taskGraph = List.fold1(duplPredTasks,Array.appendToElement,{node},taskGraphIn); // add edges from duplicated predecessors to task
-        taskGraphOut = List.fold1(origPredTasks,Array.appendToElement,{node},taskGraph); // add edges from non duplicated predecessors to task
+        taskGraph := List.fold1(duplPredTasks,Array.appendToElement,{node},taskGraphIn); // add edges from duplicated predecessors to task
+        taskGraphOut := List.fold1(origPredTasks,Array.appendToElement,{node},taskGraph); // add edges from non duplicated predecessors to task
 
-        task = HpcOmSimCode.CALCTASK(1,node,0.0,-1.0,threadIdx,simEqs);
-        thread = task::threadIn;
-        taskDuplAss = arrayUpdate(taskDuplAssIn,node,node);
-        (taskAss,procAss,taskGraph,taskDuplAss,thread,idcs,simCode,duplSccSimEqMap,duplComps) = TDS_duplicateTasks1(rest,allCluster,replIn,taskAss,procAss,thread,idcsIn,taskGraphOrig,taskGraphTOrig,taskGraph,taskDuplAss,iTaskGraphMeta,simCode,sccSimEqMappingIn,duplSccSimEqMapIn,duplCompsIn);
+        task := HpcOmSimCode.CALCTASK(1,node,0.0,-1.0,threadIdx,simEqs);
+        thread := task::threadIn;
+        taskDuplAss := arrayUpdate(taskDuplAssIn,node,node);
+        (taskAss,procAss,taskGraph,taskDuplAss,thread,idcs,simCode,duplSccSimEqMap,duplComps) := TDS_duplicateTasks1(rest,allCluster,replIn,taskAss,procAss,thread,idcsIn,taskGraphOrig,taskGraphTOrig,taskGraph,taskDuplAss,iTaskGraphMeta,simCode,sccSimEqMappingIn,duplSccSimEqMapIn,duplCompsIn);
       then (taskAss,procAss,taskGraph,taskDuplAss,thread,idcs,simCode,duplSccSimEqMap,duplComps);
   end matchcontinue;
 end TDS_duplicateTasks1;
@@ -3980,18 +3980,18 @@ algorithm
    case({},_,_,_)
      then (listReverse(simEqsFold),simEqSysIdxIn);
    case((simEqSys as SimCode.SES_LINEAR(lSystem=lSystem as SimCode.LINEARSYSTEM(residual=residual)))::rest,_,_,_)
-     equation
+     algorithm
        //print("the systemSimEqSys "+SimCodeUtil.dumpSimEqSystemLst(residual)+"\n");
-       numEqs = listLength(residual);
-       systSimEqSysIdcs2 = if intEq(numEqs,0) then {} else List.intRange2(simEqSysIdxIn,simEqSysIdxIn+numEqs-1);
+       numEqs := listLength(residual);
+       systSimEqSysIdcs2 := if intEq(numEqs,0) then {} else List.intRange2(simEqSysIdxIn,simEqSysIdxIn+numEqs-1);
        //print("systSimEqSysIdcs2 :"+intListString(systSimEqSysIdcs2)+"\n");
-       (duplicated,_) = List.map1_2(residual,replaceExpsInSimEqSystem,repl);// replace the exps and crefs
-       duplicated = List.threadMap(duplicated,systSimEqSysIdcs2,SimCodeUtil.replaceSimEqSysIndex);
-       lSystem.residual = duplicated;
-       simEqSys.lSystem = lSystem;
+       (duplicated,_) := List.map1_2(residual,replaceExpsInSimEqSystem,repl);// replace the exps and crefs
+       duplicated := List.threadMap(duplicated,systSimEqSysIdcs2,SimCodeUtil.replaceSimEqSysIndex);
+       lSystem.residual := duplicated;
+       simEqSys.lSystem := lSystem;
        //print("the systemSimEqSysDupl "+SimCodeUtil.dumpSimEqSystemLst(duplicated)+"\n");
-       simEqSysIdx = simEqSysIdxIn + numEqs;
-       (duplicated,simEqSysIdx)  = TDS_duplicateSystemOfEquations(rest,simEqSysIdx,repl,simEqSys::simEqsFold);
+       simEqSysIdx := simEqSysIdxIn + numEqs;
+       (duplicated,simEqSysIdx)  := TDS_duplicateSystemOfEquations(rest,simEqSysIdx,repl,simEqSys::simEqsFold);
      then (duplicated,simEqSysIdx);
    else
      equation
@@ -4032,10 +4032,10 @@ algorithm
       Integer idx, pos;
       list<SimCode.SimEqSystem> eqSysLst;
     case(_,_)
-      equation
-      _ = SimCodeUtil.simEqSystemIndex(eqSysIn);
-      pos = List.position1OnTrue(eqSysLstIn,SimCodeUtil.equationIndexEqual,eqSysIn);
-      eqSysLst = List.replaceAt(eqSysIn,pos,eqSysLstIn);
+      algorithm
+      _ := SimCodeUtil.simEqSystemIndex(eqSysIn);
+      pos := List.position1OnTrue(eqSysLstIn,SimCodeUtil.equationIndexEqual,eqSysIn);
+      eqSysLst := List.replaceAt(eqSysIn,pos,eqSysLstIn);
     then eqSysLst;
     else eqSysLstIn;
   end matchcontinue;
@@ -4055,23 +4055,23 @@ algorithm
       SimCode.LinearSystem lSystem;
       SimCode.NonlinearSystem nlSystem;
     case (simEqSys as SimCode.SES_LINEAR(lSystem=lSystem))
-      equation
-        (lsIdx,nlsIdx,mIdx) = idcsIn;
-        lSystem.indexLinearSystem = lsIdx;
-        simEqSys.lSystem = lSystem;
+      algorithm
+        (lsIdx,nlsIdx,mIdx) := idcsIn;
+        lSystem.indexLinearSystem := lsIdx;
+        simEqSys.lSystem := lSystem;
       then (simEqSys,(lsIdx+1,nlsIdx,mIdx));
 
     case (simEqSys as SimCode.SES_NONLINEAR(nlSystem=nlSystem))
-      equation
-        (lsIdx,nlsIdx,mIdx) = idcsIn;
-        nlSystem.indexNonLinearSystem = nlsIdx;
-        simEqSys.nlSystem = nlSystem;
+      algorithm
+        (lsIdx,nlsIdx,mIdx) := idcsIn;
+        nlSystem.indexNonLinearSystem := nlsIdx;
+        simEqSys.nlSystem := nlSystem;
       then (simEqSys,(lsIdx,nlsIdx+1,mIdx));
 
     case (simEqSys as SimCode.SES_MIXED())
-      equation
-        (lsIdx,nlsIdx,mIdx) = idcsIn;
-        simEqSys.indexMixedSystem = mIdx;
+      algorithm
+        (lsIdx,nlsIdx,mIdx) := idcsIn;
+        simEqSys.indexMixedSystem := mIdx;
       then (simEqSys,(lsIdx,nlsIdx,mIdx+1));
     else (simEqSysIn,idcsIn);
   end match;
@@ -4116,99 +4116,99 @@ algorithm
       SimCode.NonlinearSystem nlSystem;
       SimCode.SimEqSystem elseWhen;
     case (simEqSys as SimCode.SES_RESIDUAL())
-      equation
-        (exp,changed) = BackendVarTransform.replaceExp(simEqSys.exp,replIn,NONE());
-        simEqSys.exp = exp;
+      algorithm
+        (exp,changed) := BackendVarTransform.replaceExp(simEqSys.exp,replIn,NONE());
+        simEqSys.exp := exp;
     then (simEqSys,changed);
     case (simEqSys as SimCode.SES_SIMPLE_ASSIGN(cref=cref,exp=exp))
-      equation
-        hasRepl = BackendVarTransform.hasReplacement(replIn,cref);
-        DAE.CREF(componentRef=cref) = if hasRepl then BackendVarTransform.getReplacement(replIn,cref) else DAE.CREF(cref,DAE.T_UNKNOWN_DEFAULT);
-        (exp,changed) = BackendVarTransform.replaceExp(exp,replIn,NONE());
-        simEqSys.cref = cref; simEqSys.exp = exp;
+      algorithm
+        hasRepl := BackendVarTransform.hasReplacement(replIn,cref);
+        DAE.CREF(componentRef=cref) := if hasRepl then BackendVarTransform.getReplacement(replIn,cref) else DAE.CREF(cref,DAE.T_UNKNOWN_DEFAULT);
+        (exp,changed) := BackendVarTransform.replaceExp(exp,replIn,NONE());
+        simEqSys.cref := cref; simEqSys.exp := exp;
     then (simEqSys,changed or hasRepl);
     case (simEqSys as SimCode.SES_SIMPLE_ASSIGN_CONSTRAINTS(cref=cref,exp=exp))
-      equation
-        hasRepl = BackendVarTransform.hasReplacement(replIn,cref);
-        DAE.CREF(componentRef=cref) = if hasRepl then BackendVarTransform.getReplacement(replIn,cref) else DAE.CREF(cref,DAE.T_UNKNOWN_DEFAULT);
-        (exp,changed) = BackendVarTransform.replaceExp(exp,replIn,NONE());
-        simEqSys.cref = cref; simEqSys.exp = exp;
+      algorithm
+        hasRepl := BackendVarTransform.hasReplacement(replIn,cref);
+        DAE.CREF(componentRef=cref) := if hasRepl then BackendVarTransform.getReplacement(replIn,cref) else DAE.CREF(cref,DAE.T_UNKNOWN_DEFAULT);
+        (exp,changed) := BackendVarTransform.replaceExp(exp,replIn,NONE());
+        simEqSys.cref := cref; simEqSys.exp := exp;
     then (simEqSys,changed or hasRepl);
     case (simEqSys as SimCode.SES_ARRAY_CALL_ASSIGN(lhs=lhs,exp=exp))
-      equation
-        cref = Expression.expCref(lhs);
-        hasRepl = BackendVarTransform.hasReplacement(replIn,cref);
-        lhs = if hasRepl then BackendVarTransform.getReplacement(replIn,cref) else DAE.CREF(cref,DAE.T_UNKNOWN_DEFAULT);
-        (exp,changed) = BackendVarTransform.replaceExp(exp,replIn,NONE());
-        simEqSys.lhs = lhs; simEqSys.exp = exp;
+      algorithm
+        cref := Expression.expCref(lhs);
+        hasRepl := BackendVarTransform.hasReplacement(replIn,cref);
+        lhs := if hasRepl then BackendVarTransform.getReplacement(replIn,cref) else DAE.CREF(cref,DAE.T_UNKNOWN_DEFAULT);
+        (exp,changed) := BackendVarTransform.replaceExp(exp,replIn,NONE());
+        simEqSys.lhs := lhs; simEqSys.exp := exp;
     then (simEqSys,changed or hasRepl);
     case (simEqSys as SimCode.SES_IFEQUATION(ifbranches=ifs,elsebranch=elsebranch))
-      equation
-        expLst = List.map(ifs,Util.tuple21);
-        (expLst,changed) = BackendVarTransform.replaceExpList(expLst,replIn,NONE());
-        simEqSysLstLst = List.map(ifs,Util.tuple22);
-        (simEqSysLstLst,_) = List.map1_2(simEqSysLstLst,replaceInSimEqSystemLst,replIn);
-        ifs = List.threadMap(expLst,simEqSysLstLst,Util.makeTuple);
-        (elsebranch,bLst) = List.map1_2(elsebranch,replaceExpsInSimEqSystem,replIn);
-        changed = List.fold(bLst,boolOr,changed);
-        simEqSys.ifbranches = ifs; simEqSys.elsebranch = elsebranch;
+      algorithm
+        expLst := List.map(ifs,Util.tuple21);
+        (expLst,changed) := BackendVarTransform.replaceExpList(expLst,replIn,NONE());
+        simEqSysLstLst := List.map(ifs,Util.tuple22);
+        (simEqSysLstLst,_) := List.map1_2(simEqSysLstLst,replaceInSimEqSystemLst,replIn);
+        ifs := List.threadMap(expLst,simEqSysLstLst,Util.makeTuple);
+        (elsebranch,bLst) := List.map1_2(elsebranch,replaceExpsInSimEqSystem,replIn);
+        changed := List.fold(bLst,boolOr,changed);
+        simEqSys.ifbranches := ifs; simEqSys.elsebranch := elsebranch;
     then (simEqSys,changed);
     case (simEqSys as SimCode.SES_ALGORITHM(statements=stmts))
-      equation
-        (stmts,changed) = BackendVarTransform.replaceStatementLst(stmts,replIn,NONE(),{},false);
-        simEqSys.statements = stmts;
+      algorithm
+        (stmts,changed) := BackendVarTransform.replaceStatementLst(stmts,replIn,NONE(),{},false);
+        simEqSys.statements := stmts;
     then (simEqSys,changed);
     case (simEqSys as SimCode.SES_LINEAR(lSystem=lSystem))
-      equation
-        (simVars,bLst) = List.map1_2(lSystem.vars,replaceCrefInSimVar,replIn);
-        (expLst,changed) = BackendVarTransform.replaceExpList(lSystem.beqs,replIn,NONE());
-        changed = List.fold(bLst,boolOr,changed);
-        simJac = List.map1(lSystem.simJac,replaceInSimJac,replIn);
-        lSystem.vars = simVars; lSystem.beqs = expLst; lSystem.simJac = simJac;
-        simEqSys.lSystem = lSystem;
+      algorithm
+        (simVars,bLst) := List.map1_2(lSystem.vars,replaceCrefInSimVar,replIn);
+        (expLst,changed) := BackendVarTransform.replaceExpList(lSystem.beqs,replIn,NONE());
+        changed := List.fold(bLst,boolOr,changed);
+        simJac := List.map1(lSystem.simJac,replaceInSimJac,replIn);
+        lSystem.vars := simVars; lSystem.beqs := expLst; lSystem.simJac := simJac;
+        simEqSys.lSystem := lSystem;
     then (simEqSys,changed);
     case (simEqSys as SimCode.SES_NONLINEAR(nlSystem=nlSystem))
-      equation
-        expLst = List.map(nlSystem.crefs,Expression.crefExp);
-        (expLst,changed) = BackendVarTransform.replaceExpList(expLst,replIn,NONE());
-        crefs = List.map(expLst,Expression.expCref);
-        (simEqSysLst,bLst) = List.map1_2(nlSystem.eqs,replaceExpsInSimEqSystem,replIn);
-        changed = changed or List.fold(bLst,boolOr,false);
+      algorithm
+        expLst := List.map(nlSystem.crefs,Expression.crefExp);
+        (expLst,changed) := BackendVarTransform.replaceExpList(expLst,replIn,NONE());
+        crefs := List.map(expLst,Expression.expCref);
+        (simEqSysLst,bLst) := List.map1_2(nlSystem.eqs,replaceExpsInSimEqSystem,replIn);
+        changed := changed or List.fold(bLst,boolOr,false);
         print("implement Jacobian replacement for SES_NONLINEAR in HpcOmScheduler.replaceExpsInSimEqSystems!\n");
-        nlSystem.crefs = crefs; nlSystem.eqs = simEqSysLst;
-        simEqSys.nlSystem = nlSystem;
+        nlSystem.crefs := crefs; nlSystem.eqs := simEqSysLst;
+        simEqSys.nlSystem := nlSystem;
     then (simEqSys,changed);
     case (simEqSys as SimCode.SES_MIXED(cont=cont,discVars=simVars,discEqs=simEqSysLst))
-      equation
-        (cont,changed) = replaceExpsInSimEqSystem(cont,replIn);
-        (simVars,bLst) = List.map1_2(simVars,replaceCrefInSimVar,replIn);
-        changed = List.fold(bLst,boolOr,changed);
-        (simEqSysLst,bLst) = List.map1_2(simEqSysLst,replaceExpsInSimEqSystem,replIn);
-        changed = List.fold(bLst,boolOr,changed);
-        simEqSys.discVars = simVars; simEqSys.discEqs=simEqSysLst; simEqSys.cont = cont;
+      algorithm
+        (cont,changed) := replaceExpsInSimEqSystem(cont,replIn);
+        (simVars,bLst) := List.map1_2(simVars,replaceCrefInSimVar,replIn);
+        changed := List.fold(bLst,boolOr,changed);
+        (simEqSysLst,bLst) := List.map1_2(simEqSysLst,replaceExpsInSimEqSystem,replIn);
+        changed := List.fold(bLst,boolOr,changed);
+        simEqSys.discVars := simVars; simEqSys.discEqs:=simEqSysLst; simEqSys.cont := cont;
     then (simEqSys,changed);
     case (simEqSys as SimCode.SES_WHEN(conditions=crefs,whenStmtLst={BackendDAE.ASSIGN(left=lhs,right=exp,source=source)},elseWhen=NONE()))
-      equation
-        (crefExps,bLst) = List.map1_2(crefs,BackendVarTransform.replaceCref,replIn);
-        crefs = List.map(crefExps,Expression.expCref);
-        (lhs,changed) = BackendVarTransform.replaceExp(lhs,replIn, NONE());
-        changed = List.fold(bLst,boolOr,changed);
-        (exp,changed1) = BackendVarTransform.replaceExp(exp,replIn,NONE());
-        changed = boolOr(changed,changed1);
-        simEqSys.conditions = crefs; simEqSys.whenStmtLst = {BackendDAE.ASSIGN(lhs, exp, source)};
+      algorithm
+        (crefExps,bLst) := List.map1_2(crefs,BackendVarTransform.replaceCref,replIn);
+        crefs := List.map(crefExps,Expression.expCref);
+        (lhs,changed) := BackendVarTransform.replaceExp(lhs,replIn, NONE());
+        changed := List.fold(bLst,boolOr,changed);
+        (exp,changed1) := BackendVarTransform.replaceExp(exp,replIn,NONE());
+        changed := boolOr(changed,changed1);
+        simEqSys.conditions := crefs; simEqSys.whenStmtLst := {BackendDAE.ASSIGN(lhs, exp, source)};
     then (simEqSys,changed);
     case (simEqSys as SimCode.SES_WHEN(conditions=crefs,whenStmtLst={BackendDAE.ASSIGN(left=lhs,right=exp,source=source)},elseWhen=SOME(elseWhen)))
-      equation
-        (crefExps,bLst) = List.map1_2(crefs,BackendVarTransform.replaceCref,replIn);
-        crefs = List.map(crefExps,Expression.expCref);
-        (lhs,changed) = BackendVarTransform.replaceExp(lhs,replIn, NONE());
-        changed = List.fold(bLst,boolOr,changed);
-        (exp,changed1) = BackendVarTransform.replaceExp(exp,replIn,NONE());
-        changed = boolOr(changed,changed1);
-        (simEqSys,changed1) = replaceExpsInSimEqSystem(simEqSys,replIn);
-        changed = boolOr(changed,changed1);
-        simEqSys.conditions = crefs; simEqSys.whenStmtLst = {BackendDAE.ASSIGN(lhs, exp, source)};
-        simEqSys.elseWhen = SOME(elseWhen);
+      algorithm
+        (crefExps,bLst) := List.map1_2(crefs,BackendVarTransform.replaceCref,replIn);
+        crefs := List.map(crefExps,Expression.expCref);
+        (lhs,changed) := BackendVarTransform.replaceExp(lhs,replIn, NONE());
+        changed := List.fold(bLst,boolOr,changed);
+        (exp,changed1) := BackendVarTransform.replaceExp(exp,replIn,NONE());
+        changed := boolOr(changed,changed1);
+        (simEqSys,changed1) := replaceExpsInSimEqSystem(simEqSys,replIn);
+        changed := boolOr(changed,changed1);
+        simEqSys.conditions := crefs; simEqSys.whenStmtLst := {BackendDAE.ASSIGN(lhs, exp, source)};
+        simEqSys.elseWhen := SOME(elseWhen);
     then (simEqSys,changed);
   else
     equation
@@ -4365,68 +4365,68 @@ algorithm
       list<Integer> rest, parents, parentsNofpred, parentAssgmnts, unAssParents, thread;
       list<list<Integer>> clusters;
     case(_,_,_,_,_,_,_,_,_,{},_)
-      equation
-        clusters = List.filterOnFalse(clustersIn,listEmpty);
-        clusters = List.map(clusters,listReverse);
+      algorithm
+        clusters := List.filterOnFalse(clustersIn,listEmpty);
+        clusters := List.map(clusters,listReverse);
       then clusters;
     case(_,_,_,_,_,_,_,_,_,front::rest,_)
-      equation
+      algorithm
         // the node is an rootNode
-        true = List.isMemberOnTrue(front,rootNodes,intEq);
+        true := List.isMemberOnTrue(front,rootNodes,intEq);
         //print("node (root): "+intString(front)+"\n");
         //assign rootNode to current thread and start a new thread(cluster)
-        thread = listGet(clustersIn,currThread);
-        thread = front::thread;
-        clusters = List.replaceAt(thread,currThread,clustersIn);
+        thread := listGet(clustersIn,currThread);
+        thread := front::thread;
+        clusters := List.replaceAt(thread,currThread,clustersIn);
         //print("cluster: "+intListString(thread)+"\n");
-        clusters = List.appendElt({}, clusters);
-        clusters = TDS_InitialCluster1(iTaskGraph,iTaskGraphT,iTaskGraphMeta,lastArrayIn,lactArrayIn,fpredArrayIn,rootNodes,taskAssIn,currThread+1,rest,clusters);
+        clusters := List.appendElt({}, clusters);
+        clusters := TDS_InitialCluster1(iTaskGraph,iTaskGraphT,iTaskGraphMeta,lastArrayIn,lactArrayIn,fpredArrayIn,rootNodes,taskAssIn,currThread+1,rest,clusters);
       then clusters;
     case(_,_,_,_,_,_,_,_,_,front::rest,_)
-      equation
+      algorithm
         // assign node, fpred is critical --> choose the fpred as next node
-        fpred = arrayGet(fpredArrayIn,front);
-        isCritical = TDSpredIsCritical(front,fpred,iTaskGraphMeta,lastArrayIn,lactArrayIn);
-        true = isCritical;
+        fpred := arrayGet(fpredArrayIn,front);
+        isCritical := TDSpredIsCritical(front,fpred,iTaskGraphMeta,lastArrayIn,lactArrayIn);
+        true := isCritical;
         //print("node (new pred): "+intString(front)+"\n");
         //assign node from queue to a thread (in reversed order)
-        thread = listGet(clustersIn,currThread);
-        thread = front::thread;
-        clusters = List.replaceAt(thread,currThread,clustersIn);
+        thread := listGet(clustersIn,currThread);
+        thread := front::thread;
+        clusters := List.replaceAt(thread,currThread,clustersIn);
         //print("cluster: "+intListString(thread)+"\n");
         arrayUpdate(taskAssIn,front,currThread);
         // go to predecessor
-        rest = List.removeOnTrue(fpred,intEq,rest);
-        rest = fpred::rest;
-        clusters = TDS_InitialCluster1(iTaskGraph,iTaskGraphT,iTaskGraphMeta,lastArrayIn,lactArrayIn,fpredArrayIn,rootNodes,taskAssIn,currThread,rest,clusters);
+        rest := List.removeOnTrue(fpred,intEq,rest);
+        rest := fpred::rest;
+        clusters := TDS_InitialCluster1(iTaskGraph,iTaskGraphT,iTaskGraphMeta,lastArrayIn,lactArrayIn,fpredArrayIn,rootNodes,taskAssIn,currThread,rest,clusters);
       then clusters;
     case(_,_,_,_,_,_,_,_,_,front::rest,_)
-      equation
+      algorithm
         // assign node, pred is not critical, look for another pred to assign
-        fpred = arrayGet(fpredArrayIn,front);
-        isCritical = TDSpredIsCritical(front,fpred,iTaskGraphMeta,lastArrayIn,lactArrayIn);
-        true  = not isCritical;
+        fpred := arrayGet(fpredArrayIn,front);
+        isCritical := TDSpredIsCritical(front,fpred,iTaskGraphMeta,lastArrayIn,lactArrayIn);
+        true  := not isCritical;
         //assign node from queue to a thread (in reversed order)
-        thread = listGet(clustersIn,currThread);
-        thread = front::thread;
-        clusters = List.replaceAt(thread,currThread,clustersIn);
+        thread := listGet(clustersIn,currThread);
+        thread := front::thread;
+        clusters := List.replaceAt(thread,currThread,clustersIn);
         //print("cluster: "+intListString(thread)+"\n");
         arrayUpdate(taskAssIn,front,currThread);
         // check for other parents to get the next fpred
-        parents = arrayGet(iTaskGraphT,front);
-        parentsNofpred = List.removeOnTrue(fpred,intEq,parents);// choose not the fpred
-        parentAssgmnts = List.map1(parentsNofpred,Array.getIndexFirst,taskAssIn);
-        (_,unAssParents) = List.filter1OnTrueSync(parentAssgmnts,intEq,-1,parentsNofpred); // not yet assigned parents
+        parents := arrayGet(iTaskGraphT,front);
+        parentsNofpred := List.removeOnTrue(fpred,intEq,parents);// choose not the fpred
+        parentAssgmnts := List.map1(parentsNofpred,Array.getIndexFirst,taskAssIn);
+        (_,unAssParents) := List.filter1OnTrueSync(parentAssgmnts,intEq,-1,parentsNofpred); // not yet assigned parents
         // if there are unassigned parents, use them, otherwise all parents including fpred. take the one with the least execution cost
-        parents = if listEmpty(unAssParents) then parents else unAssParents;
-        parentExeCost = List.map1(parents,HpcOmTaskGraph.getExeCostReqCycles,iTaskGraphMeta);
-        maxExeCost = List.fold(parentExeCost,realMax,0.0);
-        pos = List.position(maxExeCost,parentExeCost);
-        fpred = listGet(parents,pos);
+        parents := if listEmpty(unAssParents) then parents else unAssParents;
+        parentExeCost := List.map1(parents,HpcOmTaskGraph.getExeCostReqCycles,iTaskGraphMeta);
+        maxExeCost := List.fold(parentExeCost,realMax,0.0);
+        pos := List.position(maxExeCost,parentExeCost);
+        fpred := listGet(parents,pos);
         // go to predecessor
-        rest = List.removeOnTrue(fpred,intEq,rest);
-        rest = fpred::rest;
-        clusters = TDS_InitialCluster1(iTaskGraph,iTaskGraphT,iTaskGraphMeta,lastArrayIn,lactArrayIn,fpredArrayIn,rootNodes,taskAssIn,currThread,rest,clusters);
+        rest := List.removeOnTrue(fpred,intEq,rest);
+        rest := fpred::rest;
+        clusters := TDS_InitialCluster1(iTaskGraph,iTaskGraphT,iTaskGraphMeta,lastArrayIn,lactArrayIn,fpredArrayIn,rootNodes,taskAssIn,currThread,rest,clusters);
       then clusters;
     else
      equation
@@ -4486,22 +4486,22 @@ algorithm
       list<Integer> parents;
       list<Real> parentECTs,commCosts,costs;
     case(_,_,_,_,_)
-      equation
-        parents = arrayGet(graphT,nodeIdx);
-        false = listEmpty(parents);
-        parentECTs = List.map1(parents,Array.getIndexFirst,ect);
-        commCosts = List.map2(parents,HpcOmTaskGraph.getCommCostTimeBetweenNodes,nodeIdx,iTaskGraphMeta);
-        costs = List.threadMap(parentECTs,commCosts,realAdd);
-        maxCost = List.fold(costs,realMax,0.0);
-        fpredPos = List.position(maxCost,costs);
-        fpred = listGet(parents,fpredPos); // if there is no predecessor, the fpred value is 0
-        fpredOut = arrayUpdate(fpredIn,nodeIdx,fpred);
+      algorithm
+        parents := arrayGet(graphT,nodeIdx);
+        false := listEmpty(parents);
+        parentECTs := List.map1(parents,Array.getIndexFirst,ect);
+        commCosts := List.map2(parents,HpcOmTaskGraph.getCommCostTimeBetweenNodes,nodeIdx,iTaskGraphMeta);
+        costs := List.threadMap(parentECTs,commCosts,realAdd);
+        maxCost := List.fold(costs,realMax,0.0);
+        fpredPos := List.position(maxCost,costs);
+        fpred := listGet(parents,fpredPos); // if there is no predecessor, the fpred value is 0
+        fpredOut := arrayUpdate(fpredIn,nodeIdx,fpred);
       then fpredOut;
     case(_,_,_,_,_)
-      equation
-        parents = arrayGet(graphT,nodeIdx);
-        true = listEmpty(parents);
-        fpredOut = arrayUpdate(fpredIn,nodeIdx,0);
+      algorithm
+        parents := arrayGet(graphT,nodeIdx);
+        true := listEmpty(parents);
+        fpredOut := arrayUpdate(fpredIn,nodeIdx,0);
       then fpredOut;
   end matchcontinue;
 end computeFavouritePred1;
@@ -4800,23 +4800,23 @@ algorithm
       array<Integer> taskAss;
       array<list<Integer>> procAss;
     case({},_,_,_,_,_)
-      equation
+      algorithm
       then
         (taskAssIn,procAssIn);
     case(node::rest,_,_,_,_,_)
-      equation
-        eft = List.fold(processorTimeIn,realMin,listGet(processorTimeIn,1));
-        processor = List.position(eft,processorTimeIn);
-        taskAss = arrayUpdate(taskAssIn,node,processor);
-        taskLst = arrayGet(procAssIn,processor);
-        taskLst = node::taskLst;
-        procAss = arrayUpdate(procAssIn,processor,taskLst);
+      algorithm
+        eft := List.fold(processorTimeIn,realMin,listGet(processorTimeIn,1));
+        processor := List.position(eft,processorTimeIn);
+        taskAss := arrayUpdate(taskAssIn,node,processor);
+        taskLst := arrayGet(procAssIn,processor);
+        taskLst := node::taskLst;
+        procAss := arrayUpdate(procAssIn,processor,taskLst);
         // update the processorTimes
-        ((_,exeCost)) = HpcOmTaskGraph.getExeCost(node,taskGraphMetaIn);
-        newTime = eft + exeCost;
-        processorTime = List.replaceAt(newTime,processor,processorTimeIn);
+        ((_,exeCost)) := HpcOmTaskGraph.getExeCost(node,taskGraphMetaIn);
+        newTime := eft + exeCost;
+        processorTime := List.replaceAt(newTime,processor,processorTimeIn);
         // next node
-        (taskAss,procAss) = MCP_getTaskAssignment1(rest,taskAss,procAss,processorTime,taskGraphIn,taskGraphMetaIn);
+        (taskAss,procAss) := MCP_getTaskAssignment1(rest,taskAss,procAss,processorTime,taskGraphIn,taskGraphMetaIn);
       then
         (taskAss,procAss);
     else
@@ -4847,9 +4847,9 @@ algorithm
       list<HpcOmSimCode.Task> outgoingDepTasks;
       array<tuple<HpcOmSimCode.Task,Integer>> allCalcTasks;
     case(HpcOmSimCode.THREADSCHEDULE(threadTasks=threadTasks,outgoingDepTasks=outgoingDepTasks,allCalcTasks=allCalcTasks),_,_)
-      equation
-        outgoingDepTasks = inFunc(outgoingDepTasks,extraArg);
-        schedule = HpcOmSimCode.THREADSCHEDULE(threadTasks,outgoingDepTasks,{},allCalcTasks);
+      algorithm
+        outgoingDepTasks := inFunc(outgoingDepTasks,extraArg);
+        schedule := HpcOmSimCode.THREADSCHEDULE(threadTasks,outgoingDepTasks,{},allCalcTasks);
       then
         schedule;
     else
@@ -4884,9 +4884,9 @@ algorithm
       then
         scheduleIn;
     case(HpcOmSimCode.THREADSCHEDULE(threadTasks=threadTasks,outgoingDepTasks=outgoingDepTasks,allCalcTasks=allCalcTasks),_,_)
-      equation
-        threadTasks = Array.map1(threadTasks,funcIn,extraArg);
-        schedule = HpcOmSimCode.THREADSCHEDULE(threadTasks,outgoingDepTasks,{},allCalcTasks);
+      algorithm
+        threadTasks := Array.map1(threadTasks,funcIn,extraArg);
+        schedule := HpcOmSimCode.THREADSCHEDULE(threadTasks,outgoingDepTasks,{},allCalcTasks);
       then
         schedule;
     case(HpcOmSimCode.EMPTYSCHEDULE(),_,_)
@@ -4927,52 +4927,52 @@ algorithm
       HpcOmSimCode.Task task;
       array<tuple<HpcOmSimCode.Task,Integer>> allCalcTasks;
     case(_,_,SOME({}),_,_,_,_,_,_,_,HpcOmSimCode.THREADSCHEDULE())
-      equation
+      algorithm
       then
         (scheduleIn,removeLocksIn);
     case(_,_,SOME(order),_,_,HpcOmTaskGraph.TASKGRAPHMETA(commCosts=inCommCosts,inComps=inComps,nodeMark=nodeMark),_,_,_,_,HpcOmSimCode.THREADSCHEDULE(threadTasks=threadTasks, outgoingDepTasks=outgoingDepTasks, allCalcTasks=allCalcTasks))
-      equation
-        numProc = arrayLength(procAss);
-        (node::rest) = order;
-        proc = arrayGet(taskAss,node);
-        taskLst = arrayGet(threadTasks, proc);
+      algorithm
+        numProc := arrayLength(procAss);
+        (node::rest) := order;
+        proc := arrayGet(taskAss,node);
+        taskLst := arrayGet(threadTasks, proc);
         // get the locks
-        parentNodes = arrayGet(taskGraphTIn,node);
-        childNodes = arrayGet(taskGraphIn,node);
-        sameProcTasks = arrayGet(procAss,proc);
+        parentNodes := arrayGet(taskGraphTIn,node);
+        childNodes := arrayGet(taskGraphIn,node);
+        sameProcTasks := arrayGet(procAss,proc);
         //print("Node: " + intString(node) + "\n");
         //print("Children: {" + stringDelimitList(List.map(childNodes, intString), ",") + "}\n");
         //print("Parents: {" + stringDelimitList(List.map(parentNodes, intString), ",") + "}\n");
-        (_,otherParents,_) = List.intersection1OnTrue(parentNodes,sameProcTasks,intEq);
-        (_,otherChildren,_) = List.intersection1OnTrue(childNodes,sameProcTasks,intEq);
+        (_,otherParents,_) := List.intersection1OnTrue(parentNodes,sameProcTasks,intEq);
+        (_,otherChildren,_) := List.intersection1OnTrue(childNodes,sameProcTasks,intEq);
         //print("Other children: {" + stringDelimitList(List.map(otherChildren, intString), ",") + "}\n");
         //print("Other parents: {" + stringDelimitList(List.map(otherParents, intString), ",") + "}\n");
         // keep the locks that are superfluous, remove them later
-        removeLocks = getSuperfluousLocks(otherParents,node,taskAss,orderIn,numProc,allCalcTasks,inCommCosts,inComps,iSimVarMapping,removeLocksIn);
-        taskLstAss = List.map6(otherParents,createDepTaskByTaskIdc,node,allCalcTasks,false,inCommCosts,inComps,iSimVarMapping);
+        removeLocks := getSuperfluousLocks(otherParents,node,taskAss,orderIn,numProc,allCalcTasks,inCommCosts,inComps,iSimVarMapping,removeLocksIn);
+        taskLstAss := List.map6(otherParents,createDepTaskByTaskIdc,node,allCalcTasks,false,inCommCosts,inComps,iSimVarMapping);
         //print("Locks: " + stringDelimitList(List.map(taskLstAss,dumpTask), ",") + "\n");
         //relLockDepTasks = List.map1(otherChildren,getReleaseLockString,node);
-        taskLstRel = List.map6(otherChildren,createDepTaskByTaskIdcR,node,allCalcTasks,true,inCommCosts,inComps,iSimVarMapping);
+        taskLstRel := List.map6(otherChildren,createDepTaskByTaskIdcR,node,allCalcTasks,true,inCommCosts,inComps,iSimVarMapping);
 
         //build the calcTask
-        components = arrayGet(inComps,node);
-        mark = arrayGet(nodeMark,node);
-        ((_,exeCost)) = HpcOmTaskGraph.getExeCost(node,taskGraphMetaIn);
-        simEqIdc = List.map(List.map1(components,getSimEqSysIdxForComp,SccSimEqMappingIn), List.last);
+        components := arrayGet(inComps,node);
+        mark := arrayGet(nodeMark,node);
+        ((_,exeCost)) := HpcOmTaskGraph.getExeCost(node,taskGraphMetaIn);
+        simEqIdc := List.map(List.map1(components,getSimEqSysIdxForComp,SccSimEqMappingIn), List.last);
         //simEqIdc = List.sort(simEqIdc,intGt);
-        task = HpcOmSimCode.CALCTASK(mark,node,exeCost,-1.0,proc,simEqIdc);
-        taskLst1 = task::taskLstRel;
-        taskLst1 = listAppend(taskLstAss,taskLst1);
-        taskLst1 = listAppend(taskLst,taskLst1);
+        task := HpcOmSimCode.CALCTASK(mark,node,exeCost,-1.0,proc,simEqIdc);
+        taskLst1 := task::taskLstRel;
+        taskLst1 := listAppend(taskLstAss,taskLst1);
+        taskLst1 := listAppend(taskLst,taskLst1);
         //update schedule
-        threadTasks = arrayUpdate(threadTasks,proc,taskLst1);
-        outgoingDepTasks = listAppend(outgoingDepTasks,taskLstAss) annotation(__OpenModelica_DisableListAppendWarning=true);
-        schedule = HpcOmSimCode.THREADSCHEDULE(threadTasks,outgoingDepTasks,{},allCalcTasks);
-        (schedule,removeLocks) = createScheduleFromAssignments(taskAss,procAss,SOME(rest),taskGraphIn,taskGraphTIn,taskGraphMetaIn,SccSimEqMappingIn,removeLocks,orderIn,iSimVarMapping,schedule);
+        threadTasks := arrayUpdate(threadTasks,proc,taskLst1);
+        outgoingDepTasks := listAppend(outgoingDepTasks,taskLstAss) annotation(__OpenModelica_DisableListAppendWarning=true);
+        schedule := HpcOmSimCode.THREADSCHEDULE(threadTasks,outgoingDepTasks,{},allCalcTasks);
+        (schedule,removeLocks) := createScheduleFromAssignments(taskAss,procAss,SOME(rest),taskGraphIn,taskGraphTIn,taskGraphMetaIn,SccSimEqMappingIn,removeLocks,orderIn,iSimVarMapping,schedule);
       then
         (schedule,removeLocks);
     case(_,_,NONE(),_,_,_,_,_,_,_,HpcOmSimCode.THREADSCHEDULE())
-      equation
+      algorithm
         print("createSchedulerFromAssignments failed.implement this!\n");
       then
         fail();
@@ -4991,8 +4991,8 @@ algorithm
     Real calcTime, timeFinished;
     list<Integer> eqIdc;
   case(HpcOmSimCode.CALCTASK(weighting=weighting,index=index,calcTime=calcTime,timeFinished=timeFinished,threadIdx=threadIdx,eqIdc=eqIdc))
-    equation
-      eqIdc = List.flatten(List.map1(eqIdc,getSimEqSysIdxForComp,SccSimEqMappingIn));
+    algorithm
+      eqIdc := List.flatten(List.map1(eqIdc,getSimEqSysIdxForComp,SccSimEqMappingIn));
   then HpcOmSimCode.CALCTASK(weighting,index,calcTime,timeFinished,threadIdx,eqIdc);
   else
     then taskIn;
@@ -5036,17 +5036,17 @@ algorithm
       list<Integer> nodeIdc1, nodeIdc2;
       HpcOmSimCode.Task sourceTask1, sourceTask2, targetTask1, targetTask2;
     case(HpcOmSimCode.CALCTASK(index=id1),HpcOmSimCode.CALCTASK(index=id2))
-      equation
-        isEq = intEq(id1,id2);
+      algorithm
+        isEq := intEq(id1,id2);
       then isEq;
     case(HpcOmSimCode.CALCTASK_LEVEL(nodeIdc=nodeIdc1),HpcOmSimCode.CALCTASK_LEVEL(nodeIdc=nodeIdc2))
-      equation
-        isEq = List.isEqual(nodeIdc1, nodeIdc2, true);
+      algorithm
+        isEq := List.isEqual(nodeIdc1, nodeIdc2, true);
       then isEq;
     case(HpcOmSimCode.DEPTASK(sourceTask=sourceTask1,targetTask=targetTask1), HpcOmSimCode.DEPTASK(sourceTask=sourceTask2,targetTask=targetTask2))
-      equation
-        isEq = tasksEqual(sourceTask1, sourceTask2);
-        isEq = boolAnd(isEq, tasksEqual(targetTask1, targetTask2));
+      algorithm
+        isEq := tasksEqual(sourceTask1, sourceTask2);
+        isEq := boolAnd(isEq, tasksEqual(targetTask1, targetTask2));
       then isEq;
     case(HpcOmSimCode.TASKEMPTY(),HpcOmSimCode.TASKEMPTY())
       then false;
@@ -5114,16 +5114,16 @@ algorithm
      list<Integer> posInOrder, taskLst;
      Integer latestTask;
     case({},_)
-      equation
+      algorithm
         then
           taskLstIn;
     case(_,_)
-      equation
-        posInOrder = List.map1(taskLstIn,List.position,taskOrderIn);  //just to remember, index starts at one
-        posInOrder = List.map1(posInOrder,intSub,1);                  //convert indices to zero-based (TODO: remove this)
-        latestTask = List.fold(posInOrder,intMax,-1);
-        latestTask = listGet(taskOrderIn,latestTask+1);
-        taskLst = List.removeOnTrue(latestTask,intEq,taskLstIn);
+      algorithm
+        posInOrder := List.map1(taskLstIn,List.position,taskOrderIn);  //just to remember, index starts at one
+        posInOrder := List.map1(posInOrder,intSub,1);                  //convert indices to zero-based (TODO: remove this)
+        latestTask := List.fold(posInOrder,intMax,-1);
+        latestTask := listGet(taskOrderIn,latestTask+1);
+        taskLst := List.removeOnTrue(latestTask,intEq,taskLstIn);
      then
        taskLst;
   end match;
@@ -5178,23 +5178,23 @@ algorithm
       list<Integer> orderTmp;
       list<Real> lstTmp;
     case(_)
-      equation
-        length = listLength(lstIn);
-        orderTmp = List.intRange(length);
-        r1 = listHead(lstIn);
-        r2 = List.last(lstIn);
-        r3 = listGet(lstIn,intDiv(length,2));
-        (pivotValue,_) = getMedian3(r1,r2,r3);  // the pivot element.
-        pivotIdx = List.position(pivotValue,lstIn);
-        (lstTmp,orderTmp) = quicksortWithOrder1(lstIn,orderTmp,pivotIdx,lstIn,length);
+      algorithm
+        length := listLength(lstIn);
+        orderTmp := List.intRange(length);
+        r1 := listHead(lstIn);
+        r2 := List.last(lstIn);
+        r3 := listGet(lstIn,intDiv(length,2));
+        (pivotValue,_) := getMedian3(r1,r2,r3);  // the pivot element.
+        pivotIdx := List.position(pivotValue,lstIn);
+        (lstTmp,orderTmp) := quicksortWithOrder1(lstIn,orderTmp,pivotIdx,lstIn,length);
       then
         (lstTmp,orderTmp);
     case({r1})
-      equation
+      algorithm
       then
         ({r1},{1});
     case({})
-      equation
+      algorithm
       then
         ({},{});
   end matchcontinue;
@@ -5218,13 +5218,13 @@ algorithm
       list<Real> marked;
       list<Real> lstTmp,leftLst,rightLst;
     case({},_,_,_,_)
-      equation
+      algorithm
       then ({},{});
     case({e},_,_,_,_)
-      equation
+      algorithm
       then ({e},{1});
     case(_,_,_,{},_)
-      equation
+      algorithm
       then (lstIn,orderIn);
     else
       equation
@@ -5269,16 +5269,16 @@ algorithm
       then
         (({},0));
     case(_,_::_,_)
-      equation
-        pivotElement = listGet(lstIn,pivotIdx);
-        marked = List.deleteMemberOnTrue(pivotElement,markedLstIn,realEq);
-        r1 = listHead(marked);
-        r2 = List.last(marked);
-        midIdx = intDiv(listLength(marked),2);
-        midIdx = if intEq(midIdx,0) then 1 else midIdx;
-        r3 = listGet(marked,midIdx);
-        (pivotElement,_) = getMedian3(r1,r2,r3);
-        newIdx = List.position(pivotElement,lstIn);
+      algorithm
+        pivotElement := listGet(lstIn,pivotIdx);
+        marked := List.deleteMemberOnTrue(pivotElement,markedLstIn,realEq);
+        r1 := listHead(marked);
+        r2 := List.last(marked);
+        midIdx := intDiv(listLength(marked),2);
+        midIdx := if intEq(midIdx,0) then 1 else midIdx;
+        r3 := listGet(marked,midIdx);
+        (pivotElement,_) := getMedian3(r1,r2,r3);
+        newIdx := List.position(pivotElement,lstIn);
       then
         ((marked,newIdx));
   end match;
@@ -5323,18 +5323,18 @@ algorithm
       Integer idx;
       Boolean b;
     case(_,_,{},_)
-      equation
+      algorithm
       then
         (0.0,0,false);
     case (_,_, e :: _, _)
-      equation
-        b = inCompFunc(inValue, e);
-        true = b;
+      algorithm
+        b := inCompFunc(inValue, e);
+        true := b;
       then
         (e,inIdx,b);
     case (_,_, _ :: rest, _)
-      equation
-        (value,idx,b) = getMemberOnTrueWithIdx1(inIdx+1,inValue, rest, inCompFunc);
+      algorithm
+        (value,idx,b) := getMemberOnTrueWithIdx1(inIdx+1,inValue, rest, inCompFunc);
       then (value,idx,b);
   end matchcontinue;
 end getMemberOnTrueWithIdx1;
@@ -5419,9 +5419,9 @@ algorithm
       list<Integer> rest, parents, children;
       list<Real> parentEcts, parentAsaps, parentAsaps2, parentsExeCosts, commCosts, ectsWithComm; //ect: earliestCompletionTime
   case (node::rest,_,_,_,asap,est,ect)
-    equation
-      (asap,est,ect,children) = computeGraphValuesBottomUp2(node,graph,graphT,iTaskGraphMeta,asap,est,ect);
-      (asap,est,ect) = computeGraphValuesBottomUp1(listAppend(rest,children) /* If speed is needed, create a second work list */,graph,graphT,iTaskGraphMeta,asap,est,ect);
+    algorithm
+      (asap,est,ect,children) := computeGraphValuesBottomUp2(node,graph,graphT,iTaskGraphMeta,asap,est,ect);
+      (asap,est,ect) := computeGraphValuesBottomUp1(listAppend(rest,children) /* If speed is needed, create a second work list */,graph,graphT,iTaskGraphMeta,asap,est,ect);
     then (asap,est,ect);
   case({},_,_,_,_,_,_)
     then (asapIn,estIn,ectIn);
@@ -5449,30 +5449,30 @@ algorithm
       list<Integer> rest, parents;
       list<Real> parentEcts, parentAsaps, parentAsaps2, parentsExeCosts, commCosts, ectsWithComm; //ect: earliestCompletionTime
   case (_,_,_,_,_,_,_)
-    equation
+    algorithm
       // all parents have been investigated, update this node
-      parents = arrayGet(graphT,node);
-      parentAsaps = List.map1(parents,Array.getIndexFirst,asapIn); // the parent asaps
-      false = List.isMemberOnTrue(-1.0,parentAsaps,realEq);
-      exeCost = HpcOmTaskGraph.getExeCostReqCycles(node,iTaskGraphMeta);
-      parentsExeCosts = List.map1(parents,HpcOmTaskGraph.getExeCostReqCycles,iTaskGraphMeta);
-      commCosts = List.map2(parents,HpcOmTaskGraph.getCommCostTimeBetweenNodes,node,iTaskGraphMeta);
-      parentAsaps2 = List.threadMap(parentAsaps,parentsExeCosts,realAdd); // add the exeCosts
-      parentAsaps2 = List.threadMap(parentAsaps2,commCosts,realAdd); // add commCosts
-      maxASAP = List.fold(parentAsaps2,realMax,0.0);
-      asap = arrayUpdate(asapIn,node,maxASAP);
-      parentEcts = List.map1(parents,Array.getIndexFirst,ectIn);
-      maxEct = List.fold(parentEcts,realMax,0.0);
-      est = arrayUpdate(estIn,node,maxEct);
-      ect = arrayUpdate(ectIn,node,realAdd(maxEct,exeCost));
-      children = arrayGet(graph,node);
+      parents := arrayGet(graphT,node);
+      parentAsaps := List.map1(parents,Array.getIndexFirst,asapIn); // the parent asaps
+      false := List.isMemberOnTrue(-1.0,parentAsaps,realEq);
+      exeCost := HpcOmTaskGraph.getExeCostReqCycles(node,iTaskGraphMeta);
+      parentsExeCosts := List.map1(parents,HpcOmTaskGraph.getExeCostReqCycles,iTaskGraphMeta);
+      commCosts := List.map2(parents,HpcOmTaskGraph.getCommCostTimeBetweenNodes,node,iTaskGraphMeta);
+      parentAsaps2 := List.threadMap(parentAsaps,parentsExeCosts,realAdd); // add the exeCosts
+      parentAsaps2 := List.threadMap(parentAsaps2,commCosts,realAdd); // add commCosts
+      maxASAP := List.fold(parentAsaps2,realMax,0.0);
+      asap := arrayUpdate(asapIn,node,maxASAP);
+      parentEcts := List.map1(parents,Array.getIndexFirst,ectIn);
+      maxEct := List.fold(parentEcts,realMax,0.0);
+      est := arrayUpdate(estIn,node,maxEct);
+      ect := arrayUpdate(ectIn,node,realAdd(maxEct,exeCost));
+      children := arrayGet(graph,node);
     then (asap,est,ect,children);
   case (_,_,_,_,_,_,_)
-    equation
+    algorithm
       // some parents have not been investigated, skip this node
-      parents = arrayGet(graphT,node);
-      parentAsaps = List.map1(parents,Array.getIndexFirst,asapIn);
-      true = List.isMemberOnTrue(-1.0,parentAsaps,realEq);
+      parents := arrayGet(graphT,node);
+      parentAsaps := List.map1(parents,Array.getIndexFirst,asapIn);
+      true := List.isMemberOnTrue(-1.0,parentAsaps,realEq);
     then
       (asapIn,estIn,ectIn,{node});
   else
@@ -5642,27 +5642,27 @@ protected
 algorithm
   str := match(iSchedule)
     case(HpcOmSimCode.THREADSCHEDULE(threadTasks=threadTasks,outgoingDepTasks=outgoingDepTasks))
-      equation
-        (sLst,_) = List.mapFold(arrayList(threadTasks), dumpThreadSchedule, 1);
-        s = stringDelimitList(sLst,"\n");
-        s = s + "\nDependency tasks: {\n" + stringDelimitList(List.map(outgoingDepTasks, dumpTask), "") + "}\n";
-        s = "THREADSCHEDULE\n"+s;
+      algorithm
+        (sLst,_) := List.mapFold(arrayList(threadTasks), dumpThreadSchedule, 1);
+        s := stringDelimitList(sLst,"\n");
+        s := s + "\nDependency tasks: {\n" + stringDelimitList(List.map(outgoingDepTasks, dumpTask), "") + "}\n";
+        s := "THREADSCHEDULE\n"+s;
       then s;
     case(HpcOmSimCode.LEVELSCHEDULE(tasksOfLevels=tasksOfLevels))
-      equation
-        (sLst,_) = List.mapFold(tasksOfLevels,dumpLevelSchedule,1);
-        s = stringDelimitList(sLst,"\n");
-        s = "LEVELSCHEDULE\n"+s;
+      algorithm
+        (sLst,_) := List.mapFold(tasksOfLevels,dumpLevelSchedule,1);
+        s := stringDelimitList(sLst,"\n");
+        s := "LEVELSCHEDULE\n"+s;
       then s;
     case(HpcOmSimCode.TASKDEPSCHEDULE(tasks=taskDepTasks))
-      equation
-        s = stringDelimitList(List.map(taskDepTasks,dumpTaskDepSchedule),"\n")+"\n";
-        s = "TASKDEPSCHEDULE\n"+s;
+      algorithm
+        s := stringDelimitList(List.map(taskDepTasks,dumpTaskDepSchedule),"\n")+"\n";
+        s := "TASKDEPSCHEDULE\n"+s;
       then s;
     case(HpcOmSimCode.EMPTYSCHEDULE(tasks=HpcOmSimCode.SERIALTASKLIST(tasks=allTasks)))
-      equation
-        (s,_) = dumpThreadSchedule(allTasks, 1);
-        s = "EMPTYSCHEDULE\n"+s;
+      algorithm
+        (s,_) := dumpThreadSchedule(allTasks, 1);
+        s := "EMPTYSCHEDULE\n"+s;
       then s;
     else fail();
   end match;
@@ -5689,32 +5689,32 @@ algorithm
       Real cpCosts, cpCostsWoC, serTime, parTime, speedUp, speedUpMax;
       String criticalPathInfo;
     case(HpcOmSimCode.EMPTYSCHEDULE(_),_,_,_,_)
-      equation
-        ((criticalPaths,cpCosts),(criticalPathsWoC,cpCostsWoC)) = HpcOmTaskGraph.getCriticalPaths(taskGraphIn,taskGraphMetaIn);
-        criticalPathInfo = HpcOmTaskGraph.dumpCriticalPathInfo((criticalPaths,cpCosts),(criticalPathsWoC,cpCostsWoC));
+      algorithm
+        ((criticalPaths,cpCosts),(criticalPathsWoC,cpCostsWoC)) := HpcOmTaskGraph.getCriticalPaths(taskGraphIn,taskGraphMetaIn);
+        criticalPathInfo := HpcOmTaskGraph.dumpCriticalPathInfo((criticalPaths,cpCosts),(criticalPathsWoC,cpCostsWoC));
       then criticalPathInfo;
     case(HpcOmSimCode.LEVELSCHEDULE(tasksOfLevels=tasksOfLevels, useFixedAssignments=false),_,_,_,_)
-      equation
-        criticalPathInfo = analyseScheduledTaskGraphLevel(tasksOfLevels, numProcIn, taskGraphIn,taskGraphMetaIn, getLevelParallelTime);
+      algorithm
+        criticalPathInfo := analyseScheduledTaskGraphLevel(tasksOfLevels, numProcIn, taskGraphIn,taskGraphMetaIn, getLevelParallelTime);
       then
         criticalPathInfo;
     case(HpcOmSimCode.LEVELSCHEDULE(tasksOfLevels=tasksOfLevels, useFixedAssignments=true),_,_,_,_)
-      equation
-        criticalPathInfo = analyseScheduledTaskGraphLevel(tasksOfLevels, numProcIn, taskGraphIn,taskGraphMetaIn, getLevelParallelTime);
+      algorithm
+        criticalPathInfo := analyseScheduledTaskGraphLevel(tasksOfLevels, numProcIn, taskGraphIn,taskGraphMetaIn, getLevelParallelTime);
       then criticalPathInfo;
     case(HpcOmSimCode.THREADSCHEDULE(outgoingDepTasks=outgoingDepTasks),_,_,_,_)
-      equation
+      algorithm
         if Flags.isSet(Flags.HPCOM_DUMP) then
           print("the number of locks: "+intString(listLength(outgoingDepTasks))+"\n");
         end if;
         //get the criticalPath
-        ((criticalPaths,cpCosts),(criticalPathsWoC,cpCostsWoC)) = HpcOmTaskGraph.getCriticalPaths(taskGraphIn,taskGraphMetaIn);
-        criticalPathInfo = HpcOmTaskGraph.dumpCriticalPathInfo((criticalPaths,cpCosts),(criticalPathsWoC,cpCostsWoC));
+        ((criticalPaths,cpCosts),(criticalPathsWoC,cpCostsWoC)) := HpcOmTaskGraph.getCriticalPaths(taskGraphIn,taskGraphMetaIn);
+        criticalPathInfo := HpcOmTaskGraph.dumpCriticalPathInfo((criticalPaths,cpCosts),(criticalPathsWoC,cpCostsWoC));
         //predict speedup etc.
-        (serTime,parTime,speedUp,speedUpMax) = predictExecutionTime(scheduleIn,SOME(cpCostsWoC),numProcIn,taskGraphIn,taskGraphMetaIn);
-        serTime = HpcOmTaskGraph.roundReal(serTime,2);
-        parTime = HpcOmTaskGraph.roundReal(parTime,2);
-        cpCostsWoC = HpcOmTaskGraph.roundReal(cpCostsWoC,2);
+        (serTime,parTime,speedUp,speedUpMax) := predictExecutionTime(scheduleIn,SOME(cpCostsWoC),numProcIn,taskGraphIn,taskGraphMetaIn);
+        serTime := HpcOmTaskGraph.roundReal(serTime,2);
+        parTime := HpcOmTaskGraph.roundReal(parTime,2);
+        cpCostsWoC := HpcOmTaskGraph.roundReal(cpCostsWoC,2);
         if Flags.isSet(Flags.HPCOM_DUMP) then
           print("the serialCosts: "+realString(serTime)+"\n");
           print("the parallelCosts: "+realString(parTime)+"\n");
@@ -5730,9 +5730,9 @@ algorithm
       then
         criticalPathInfo;
     case(HpcOmSimCode.TASKDEPSCHEDULE(),_,_,_,_)
-      equation
-        ((criticalPaths,cpCosts),(criticalPathsWoC,cpCostsWoC)) = HpcOmTaskGraph.getCriticalPaths(taskGraphIn,taskGraphMetaIn);
-        criticalPathInfo = HpcOmTaskGraph.dumpCriticalPathInfo((criticalPaths,cpCosts),(criticalPathsWoC,cpCostsWoC));
+      algorithm
+        ((criticalPaths,cpCosts),(criticalPathsWoC,cpCostsWoC)) := HpcOmTaskGraph.getCriticalPaths(taskGraphIn,taskGraphMetaIn);
+        criticalPathInfo := HpcOmTaskGraph.dumpCriticalPathInfo((criticalPaths,cpCosts),(criticalPathsWoC,cpCostsWoC));
       then criticalPathInfo;
     else
       equation
@@ -5829,16 +5829,16 @@ protected
 algorithm
   oThreadWorkLoad := match(iTask, iTaskGraphMeta, iThreadWorkLoad)
     case(HpcOmSimCode.CALCTASK_LEVEL(threadIdx = NONE()),_,_)
-      equation
-        taskCosts = getLevelTaskCosts(iTask, iTaskGraphMeta);
-        minWorkLoad = Array.fold(iThreadWorkLoad,realMin,arrayGet(iThreadWorkLoad,1));
-        threadIdx = List.position(minWorkLoad,arrayList(iThreadWorkLoad));
-        tmpThreadWorkLoad = arrayUpdate(iThreadWorkLoad,threadIdx,minWorkLoad + taskCosts);
+      algorithm
+        taskCosts := getLevelTaskCosts(iTask, iTaskGraphMeta);
+        minWorkLoad := Array.fold(iThreadWorkLoad,realMin,arrayGet(iThreadWorkLoad,1));
+        threadIdx := List.position(minWorkLoad,arrayList(iThreadWorkLoad));
+        tmpThreadWorkLoad := arrayUpdate(iThreadWorkLoad,threadIdx,minWorkLoad + taskCosts);
       then tmpThreadWorkLoad;
     case(HpcOmSimCode.CALCTASK_LEVEL(threadIdx = SOME(threadIdx)),_,_)
-      equation
-        taskCosts = getLevelTaskCosts(iTask, iTaskGraphMeta);
-        tmpThreadWorkLoad = arrayUpdate(iThreadWorkLoad,threadIdx,arrayGet(iThreadWorkLoad, threadIdx) + taskCosts);
+      algorithm
+        taskCosts := getLevelTaskCosts(iTask, iTaskGraphMeta);
+        tmpThreadWorkLoad := arrayUpdate(iThreadWorkLoad,threadIdx,arrayGet(iThreadWorkLoad, threadIdx) + taskCosts);
       then tmpThreadWorkLoad;
   end match;
 end getLevelParallelTime1;
@@ -5884,9 +5884,9 @@ algorithm
       list<Real> nodeCosts;
       Real costs;
     case(HpcOmSimCode.CALCTASK_LEVEL(nodeIdc=nodeIdc),_)
-      equation
-        nodeCosts = List.map1(nodeIdc,HpcOmTaskGraph.getExeCostReqCycles,iMeta);
-        costs = List.fold(nodeCosts,realAdd,0.0);
+      algorithm
+        nodeCosts := List.map1(nodeIdc,HpcOmTaskGraph.getExeCostReqCycles,iMeta);
+        costs := List.fold(nodeCosts,realAdd,0.0);
       then costs;
     else
       equation
@@ -5942,12 +5942,12 @@ algorithm
     local
       String isOkString, isNotOkString;
     case(_,_,_,0.0,_)// possibly there is no ode-system that can be parallelized
-      equation
+      algorithm
       then
         ();
     case(_,_,_,_,_)
-      equation
-        true = speedUpMax == -1.0;
+      algorithm
+        true := speedUpMax == -1.0;
         if Flags.isSet(Flags.HPCOM_DUMP) then
           print("The predicted SpeedUp with "+intString(numProc)+" processors is " + System.snprintff("%.2f", 25, speedUp) + ".\n");
         end if;
@@ -6008,26 +6008,26 @@ algorithm
       HpcOmSimCode.Schedule schedule;
       array<tuple<HpcOmSimCode.Task,Integer>> allCalcTasks;
     case(HpcOmSimCode.THREADSCHEDULE(threadTasks=threadTasks,outgoingDepTasks=outgoingDepTasks,allCalcTasks=allCalcTasks),_,_,_)
-      equation
-        taskIdcs = arrayCreate(arrayLength(threadTasks),1);  // the TaskIdcs to be checked for every thread
-        taskGraphT = AdjacencyMatrix.transposeAdjacencyMatrix(taskGraphIn,arrayLength(taskGraphIn));
-        checkedTasks = arrayCreate(arrayLength(taskGraphIn),HpcOmSimCode.TASKEMPTY());
+      algorithm
+        taskIdcs := arrayCreate(arrayLength(threadTasks),1);  // the TaskIdcs to be checked for every thread
+        taskGraphT := AdjacencyMatrix.transposeAdjacencyMatrix(taskGraphIn,arrayLength(taskGraphIn));
+        checkedTasks := arrayCreate(arrayLength(taskGraphIn),HpcOmSimCode.TASKEMPTY());
         computeTimeFinished(threadTasks,taskIdcs,1,checkedTasks,taskGraphIn,taskGraphT,taskGraphMetaIn,numProc,{});
-        finTimes = Array.map(threadTasks,getTimeFinishedOfLastTask);
-        finTime = Array.fold(finTimes,realMax,0.0);
-        schedule = HpcOmSimCode.THREADSCHEDULE(threadTasks,outgoingDepTasks,{},allCalcTasks);
+        finTimes := Array.map(threadTasks,getTimeFinishedOfLastTask);
+        finTime := Array.fold(finTimes,realMax,0.0);
+        schedule := HpcOmSimCode.THREADSCHEDULE(threadTasks,outgoingDepTasks,{},allCalcTasks);
       then
         (schedule,finTime);
     case(HpcOmSimCode.LEVELSCHEDULE(_,_),_,_,_)
-      equation
-        schedule = scheduleIn;
-        finTime = 0.0;
+      algorithm
+        schedule := scheduleIn;
+        finTime := 0.0;
       then
         (schedule,finTime);
     case(HpcOmSimCode.EMPTYSCHEDULE(),_,_,_)
-      equation
-        schedule = scheduleIn;
-        finTime = -1.0;
+      algorithm
+        schedule := scheduleIn;
+        finTime := -1.0;
       then
         (schedule,finTime);
     else
@@ -6047,13 +6047,13 @@ algorithm
       HpcOmSimCode.Task lastTask;
       Real finTime;
     case(_)
-      equation
-        lastTask = List.last(threadTasksIn);
-        finTime = getTimeFinished(lastTask);
+      algorithm
+        lastTask := List.last(threadTasksIn);
+        finTime := getTimeFinished(lastTask);
       then
         finTime;
     case({})
-      equation
+      algorithm
       then
         -1.0;
   end matchcontinue;
@@ -6111,38 +6111,38 @@ algorithm
       array<HpcOmSimCode.Task> checkedTasks;
       list<HpcOmSimCode.Task> thread;
     case(_,_,_,_,_,_,_,_,_)
-      equation
+      algorithm
         // get the task
-        true = threadIdxIn <= arrayLength(taskIdcsIn);
-        taskIdx = arrayGet(taskIdcsIn,threadIdxIn);
-        thread = arrayGet(threadTasksIn,threadIdxIn);
-        true = taskIdx <= listLength(thread);
-        task = listGet(thread,taskIdx);
+        true := threadIdxIn <= arrayLength(taskIdcsIn);
+        taskIdx := arrayGet(taskIdcsIn,threadIdxIn);
+        thread := arrayGet(threadTasksIn,threadIdxIn);
+        true := taskIdx <= listLength(thread);
+        task := listGet(thread,taskIdx);
         //compute timeFinished for the task
-        (_,_,nextTaskIdx) = updateFinishingTime(task,taskIdx,threadIdxIn,threadTasksIn,checkedTasksIn,taskGraphTIn,taskGraphMetaIn);
-        _ = arrayUpdate(taskIdcsIn,threadIdxIn,nextTaskIdx);
-        nextThreadIdx = getNextThreadIdx(threadIdxIn,closedThreadsIn,numProc);
+        (_,_,nextTaskIdx) := updateFinishingTime(task,taskIdx,threadIdxIn,threadTasksIn,checkedTasksIn,taskGraphTIn,taskGraphMetaIn);
+        _ := arrayUpdate(taskIdcsIn,threadIdxIn,nextTaskIdx);
+        nextThreadIdx := getNextThreadIdx(threadIdxIn,closedThreadsIn,numProc);
         //threadTasks = computeTimeFinished(threadTasks,taskIdcs,nextThreadIdx,checkedTasks,taskGraphIn,taskGraphTIn,taskGraphMetaIn,numProc,closedThreadsIn);
       then
         (nextThreadIdx,closedThreadsIn);
     case(_,_,_,_,_,_,_,_,_)
-      equation
+      algorithm
         // next thread
-        true = threadIdxIn > arrayLength(taskIdcsIn);
-        nextThreadIdx = if intGe(threadIdxIn,numProc) then 1 else (threadIdxIn+1);
+        true := threadIdxIn > arrayLength(taskIdcsIn);
+        nextThreadIdx := if intGe(threadIdxIn,numProc) then 1 else (threadIdxIn+1);
         //threadTasks = computeTimeFinished(threadTasksIn,taskIdcsIn,nextThreadIdx,checkedTasksIn,taskGraphIn,taskGraphTIn,taskGraphMetaIn,numProc,closedThreadsIn);
       then
         (nextThreadIdx,closedThreadsIn);
     case(_,_,_,_,_,_,_,_,_)
-      equation
+      algorithm
         // thread done
-        true = threadIdxIn <= arrayLength(taskIdcsIn);
-        taskIdx = arrayGet(taskIdcsIn,threadIdxIn);
-        thread = arrayGet(threadTasksIn,threadIdxIn);
-        true = taskIdx > listLength(thread);
-        nextThreadIdx = if intGe(threadIdxIn,numProc) then 1 else (threadIdxIn+1);
-        closedThreads1 = threadIdxIn::closedThreadsIn;
-        closedThreads1 = List.unique(closedThreads1);
+        true := threadIdxIn <= arrayLength(taskIdcsIn);
+        taskIdx := arrayGet(taskIdcsIn,threadIdxIn);
+        thread := arrayGet(threadTasksIn,threadIdxIn);
+        true := taskIdx > listLength(thread);
+        nextThreadIdx := if intGe(threadIdxIn,numProc) then 1 else (threadIdxIn+1);
+        closedThreads1 := threadIdxIn::closedThreadsIn;
+        closedThreads1 := List.unique(closedThreads1);
         //threadTasks = computeTimeFinished(threadTasksIn,taskIdcsIn,nextThreadIdx,checkedTasksIn,taskGraphIn,taskGraphTIn,taskGraphMetaIn,numProc,closedThreads1);
       then
         (nextThreadIdx,closedThreads1);
@@ -6194,20 +6194,20 @@ algorithm
       array<HpcOmSimCode.Task> checkedTasks;
       array<list<HpcOmSimCode.Task>> threadTasks;
     case(HpcOmSimCode.CALCTASK(index=taskID),_,_,_,_,_,_)
-      equation
-        parentLst = arrayGet(taskGraphTIn,taskID);
+      algorithm
+        parentLst := arrayGet(taskGraphTIn,taskID);
         // gets the parentIdcs which are not yet checked and computes the latest finishingTime of all parentNodes
-        ((parentLst, latestTask)) = List.fold1(parentLst, updateFinishingTime1, checkedTasksIn, ({},HpcOmSimCode.TASKEMPTY()));
-        isComputable = listEmpty(parentLst);
-        taskIdxNew = if isComputable then (taskIdxIn+1) else taskIdxIn;
+        ((parentLst, latestTask)) := List.fold1(parentLst, updateFinishingTime1, checkedTasksIn, ({},HpcOmSimCode.TASKEMPTY()));
+        isComputable := listEmpty(parentLst);
+        taskIdxNew := if isComputable then (taskIdxIn+1) else taskIdxIn;
         //update the threadTasks and checked Tasks
-        ((threadTasks,checkedTasks)) = if isComputable then computeFinishingTimeForOneTask((threadTasksIn,checkedTasksIn,taskIdxIn,threadIdxIn,latestTask,taskGraphMetaIn)) else (threadTasksIn,checkedTasksIn);
+        ((threadTasks,checkedTasks)) := if isComputable then computeFinishingTimeForOneTask((threadTasksIn,checkedTasksIn,taskIdxIn,threadIdxIn,latestTask,taskGraphMetaIn)) else (threadTasksIn,checkedTasksIn);
       then
         (threadTasks,checkedTasks,taskIdxNew);
     case(HpcOmSimCode.DEPTASK(),_,_,_,_,_,_)
-      equation
+      algorithm
         //skip the assignlock
-        taskIdxNew = taskIdxIn+1;
+        taskIdxNew := taskIdxIn+1;
       then
         (threadTasksIn,checkedTasksIn,taskIdxNew);
   end match;
@@ -6253,48 +6253,48 @@ algorithm
       list<HpcOmSimCode.Task> thread;
     case((threadTasksIn,checkedTasksIn,taskNum,threadIdx,latestTask,taskGraphMeta))
       // a rootNode
-      equation
-        true = isEmptyTask(latestTask);
-        thread = arrayGet(threadTasksIn,threadIdx);
-        task = listGet(thread,taskNum);
-        threadIdx = getThreadId(task);
-        preTask = getPredecessorCalcTask(thread,taskNum);
-        finishingTime = getTimeFinished(preTask);
-        taskIdx = getTaskIdx(task);
-        ((_,exeCost)) = HpcOmTaskGraph.getExeCost(taskIdx,taskGraphMeta);
-        finishingTime = finishingTime + exeCost;
-        task = updateTimeFinished(task, finishingTime);
-        thread = List.replaceAt(task, taskNum, thread);
-        threadTasks = arrayUpdate(threadTasksIn,threadIdx,thread);
-        checkedTasks = arrayUpdate(checkedTasksIn,taskIdx,task);
+      algorithm
+        true := isEmptyTask(latestTask);
+        thread := arrayGet(threadTasksIn,threadIdx);
+        task := listGet(thread,taskNum);
+        threadIdx := getThreadId(task);
+        preTask := getPredecessorCalcTask(thread,taskNum);
+        finishingTime := getTimeFinished(preTask);
+        taskIdx := getTaskIdx(task);
+        ((_,exeCost)) := HpcOmTaskGraph.getExeCost(taskIdx,taskGraphMeta);
+        finishingTime := finishingTime + exeCost;
+        task := updateTimeFinished(task, finishingTime);
+        thread := List.replaceAt(task, taskNum, thread);
+        threadTasks := arrayUpdate(threadTasksIn,threadIdx,thread);
+        checkedTasks := arrayUpdate(checkedTasksIn,taskIdx,task);
       then
         ((threadTasks,checkedTasks));
     case((threadTasksIn,checkedTasksIn,taskNum,threadIdx,latestTask,taskGraphMeta))
       // not a rootNode
-      equation
-        false = isEmptyTask(latestTask);
-        finishingTime = getTimeFinished(latestTask);
-        threadIdxLatest = getThreadId(latestTask);
-        taskIdxLatest = getTaskIdx(latestTask);
-        thread = arrayGet(threadTasksIn,threadIdx);
-        task = listGet(thread,taskNum);
-        taskIdx = getTaskIdx(task);
+      algorithm
+        false := isEmptyTask(latestTask);
+        finishingTime := getTimeFinished(latestTask);
+        threadIdxLatest := getThreadId(latestTask);
+        taskIdxLatest := getTaskIdx(latestTask);
+        thread := arrayGet(threadTasksIn,threadIdx);
+        task := listGet(thread,taskNum);
+        taskIdx := getTaskIdx(task);
         // get the costs for the node which is computed after the latest parent and decide whether to take commCost into account or not
-        commCost = HpcOmTaskGraph.getCommCostTimeBetweenNodes(taskIdxLatest,taskIdx,taskGraphMeta);
-        ((_,exeCost)) = HpcOmTaskGraph.getExeCost(taskIdx,taskGraphMeta);
-        finishingTime = finishingTime + exeCost;
-        finishingTimeComm = finishingTime + commCost;
-        finishingTime = if intEq(threadIdxLatest,threadIdx) then finishingTime else finishingTimeComm;
+        commCost := HpcOmTaskGraph.getCommCostTimeBetweenNodes(taskIdxLatest,taskIdx,taskGraphMeta);
+        ((_,exeCost)) := HpcOmTaskGraph.getExeCost(taskIdx,taskGraphMeta);
+        finishingTime := finishingTime + exeCost;
+        finishingTimeComm := finishingTime + commCost;
+        finishingTime := if intEq(threadIdxLatest,threadIdx) then finishingTime else finishingTimeComm;
         // choose if the parentTask or the preTask(task on the same processor) is later.
-        preTask = getPredecessorCalcTask(thread,taskNum);
-        finishingTime1 = getTimeFinished(preTask);
-        finishingTime1 = finishingTime1 + exeCost;
-        finishingTime = realMax(finishingTime,finishingTime1);
+        preTask := getPredecessorCalcTask(thread,taskNum);
+        finishingTime1 := getTimeFinished(preTask);
+        finishingTime1 := finishingTime1 + exeCost;
+        finishingTime := realMax(finishingTime,finishingTime1);
         // update
-        task = updateTimeFinished(task, finishingTime);
-        thread = List.replaceAt(task, taskNum, thread);
-        threadTasks = arrayUpdate(threadTasksIn,threadIdx,thread);
-        checkedTasks = arrayUpdate(checkedTasksIn,taskIdx,task);
+        task := updateTimeFinished(task, finishingTime);
+        thread := List.replaceAt(task, taskNum, thread);
+        threadTasks := arrayUpdate(threadTasksIn,threadIdx,thread);
+        checkedTasks := arrayUpdate(checkedTasksIn,taskIdx,task);
        then
          ((threadTasks,checkedTasks));
   end matchcontinue;
@@ -6312,17 +6312,17 @@ algorithm
       Integer index;
       HpcOmSimCode.Task preTask;
     case(_,_)
-      equation
-        true = indexIn==1;
+      algorithm
+        true := indexIn==1;
       then
         HpcOmSimCode.TASKEMPTY();
     case(_,_)
-      equation
-        true = indexIn >= 2;
-        index = indexIn-1;
-        preTask = listGet(threadIn,index);
-        isCalc = isCalcTask(preTask);
-        preTask = if boolNot(isCalc) then getPredecessorCalcTask(threadIn,index) else preTask;
+      algorithm
+        true := indexIn >= 2;
+        index := indexIn-1;
+        preTask := listGet(threadIn,index);
+        isCalc := isCalcTask(preTask);
+        preTask := if boolNot(isCalc) then getPredecessorCalcTask(threadIn,index) else preTask;
       then
         preTask;
   end matchcontinue;
@@ -6447,8 +6447,8 @@ protected
 algorithm
   oLevelThreadLists := match(iSchedule, iNumOfThreads)
     case(HpcOmSimCode.LEVELSCHEDULE(tasksOfLevels=tasksOfLevels,useFixedAssignments=true),_)
-      equation
-        tmpLevelThreadLists = List.map(tasksOfLevels, function convertFixedLevelScheduleToLevelThreadLists0(iNumOfThreads=iNumOfThreads));
+      algorithm
+        tmpLevelThreadLists := List.map(tasksOfLevels, function convertFixedLevelScheduleToLevelThreadLists0(iNumOfThreads=iNumOfThreads));
       then tmpLevelThreadLists;
     else
       then {};
@@ -6489,17 +6489,17 @@ protected
 algorithm
   oThreadLevelTasks := match(iOdeSchedule, iDaeSchedule, iZeroFuncSchedule, iNumOfThreads)
     case(HpcOmSimCode.LEVELSCHEDULE(tasksOfLevels=tasksOfLevelsOde,useFixedAssignments=true),HpcOmSimCode.LEVELSCHEDULE(tasksOfLevels=tasksOfLevelsDae,useFixedAssignments=true),HpcOmSimCode.LEVELSCHEDULE(tasksOfLevels=tasksOfLevelsZeroFunc,useFixedAssignments=true),_)
-      equation
-        tmpResultLists = arrayCreate(iNumOfThreads, ({},{},{}));
-        tmpThreadLevelTasksOde = List.map1(tasksOfLevelsOde, convertFixedLevelScheduleToTaskListsForLevel, iNumOfThreads);
-        tmpThreadLevelTasksDae = List.map1(tasksOfLevelsDae, convertFixedLevelScheduleToTaskListsForLevel, iNumOfThreads);
-        tmpThreadLevelTasksZeroFunc = List.map1(tasksOfLevelsZeroFunc, convertFixedLevelScheduleToTaskListsForLevel, iNumOfThreads);
+      algorithm
+        tmpResultLists := arrayCreate(iNumOfThreads, ({},{},{}));
+        tmpThreadLevelTasksOde := List.map1(tasksOfLevelsOde, convertFixedLevelScheduleToTaskListsForLevel, iNumOfThreads);
+        tmpThreadLevelTasksDae := List.map1(tasksOfLevelsDae, convertFixedLevelScheduleToTaskListsForLevel, iNumOfThreads);
+        tmpThreadLevelTasksZeroFunc := List.map1(tasksOfLevelsZeroFunc, convertFixedLevelScheduleToTaskListsForLevel, iNumOfThreads);
         //print("convertFixedLevelScheduleToTaskLists: len of tmpThreadLevelTasksOde=" + intString(listLength(tmpThreadLevelTasksOde)) + "\n");
-        tmpResultLists = List.fold(tmpThreadLevelTasksOde, function convertFixedLevelScheduleToTaskLists1(iCurrentThreadIdx=1, iModifiedSystemIdx=0), tmpResultLists);
-        tmpResultLists = List.fold(tmpThreadLevelTasksDae, function convertFixedLevelScheduleToTaskLists1(iCurrentThreadIdx=1, iModifiedSystemIdx=1), tmpResultLists);
-        tmpResultLists = List.fold(tmpThreadLevelTasksZeroFunc, function convertFixedLevelScheduleToTaskLists1(iCurrentThreadIdx=1, iModifiedSystemIdx=2), tmpResultLists);
+        tmpResultLists := List.fold(tmpThreadLevelTasksOde, function convertFixedLevelScheduleToTaskLists1(iCurrentThreadIdx=1, iModifiedSystemIdx=0), tmpResultLists);
+        tmpResultLists := List.fold(tmpThreadLevelTasksDae, function convertFixedLevelScheduleToTaskLists1(iCurrentThreadIdx=1, iModifiedSystemIdx=1), tmpResultLists);
+        tmpResultLists := List.fold(tmpThreadLevelTasksZeroFunc, function convertFixedLevelScheduleToTaskLists1(iCurrentThreadIdx=1, iModifiedSystemIdx=2), tmpResultLists);
         //print("convertFixedLevelScheduleToTaskLists: len of tmpResultLists[0]=" + intString(listLength(Util.tuple21(arrayGet(tmpResultLists, 1)))) + "\n");
-        tmpResultLists = revertTaskLists(1, tmpResultLists);
+        tmpResultLists := revertTaskLists(1, tmpResultLists);
         //print("convertFixedLevelScheduleToTaskLists: len of tmpResultLists[0]=" + intString(listLength(Util.tuple21(arrayGet(tmpResultLists, 1)))) + "\n");
       then tmpResultLists;
     else
@@ -6523,20 +6523,20 @@ protected
 algorithm
   oResultList := matchcontinue(iLevelTasks, iCurrentThreadIdx, iModifiedSystemIdx, iResultList)
     case(_,_,_,_)
-      equation
-        true = intLe(iCurrentThreadIdx, arrayLength(iLevelTasks));
-        (entryOde, entryDae, entryZeroFunc) = arrayGet(iResultList, iCurrentThreadIdx);
+      algorithm
+        true := intLe(iCurrentThreadIdx, arrayLength(iLevelTasks));
+        (entryOde, entryDae, entryZeroFunc) := arrayGet(iResultList, iCurrentThreadIdx);
         if(intEq(iModifiedSystemIdx,0)) then
-          entryOde = arrayGet(iLevelTasks, iCurrentThreadIdx)::entryOde;
+          entryOde := arrayGet(iLevelTasks, iCurrentThreadIdx)::entryOde;
         else
           if(intEq(iModifiedSystemIdx, 1)) then
-            entryDae = arrayGet(iLevelTasks, iCurrentThreadIdx)::entryDae;
+            entryDae := arrayGet(iLevelTasks, iCurrentThreadIdx)::entryDae;
           else
-            entryZeroFunc = arrayGet(iLevelTasks, iCurrentThreadIdx)::entryZeroFunc;
+            entryZeroFunc := arrayGet(iLevelTasks, iCurrentThreadIdx)::entryZeroFunc;
           end if;
         end if;
-        tmpResultList = arrayUpdate(iResultList, iCurrentThreadIdx, (entryOde, entryDae, entryZeroFunc));
-        tmpResultList = convertFixedLevelScheduleToTaskLists1(iLevelTasks, iCurrentThreadIdx+1, iModifiedSystemIdx, tmpResultList);
+        tmpResultList := arrayUpdate(iResultList, iCurrentThreadIdx, (entryOde, entryDae, entryZeroFunc));
+        tmpResultList := convertFixedLevelScheduleToTaskLists1(iLevelTasks, iCurrentThreadIdx+1, iModifiedSystemIdx, tmpResultList);
       then tmpResultList;
     else iResultList;
   end matchcontinue;
@@ -6552,14 +6552,14 @@ protected
 algorithm
   oResultList := matchcontinue(iCurrentArrayIdx, iResultList)
     case(_,_)
-      equation
-        true = intLe(iCurrentArrayIdx, arrayLength(iResultList));
-        ((entryOde,entryDae,entryZeroFunc)) = arrayGet(iResultList, iCurrentArrayIdx);
-        entryOde = listReverse(entryOde);
-        entryDae = listReverse(entryDae);
-        entryZeroFunc = listReverse(entryZeroFunc);
-        tmpResultList = arrayUpdate(iResultList, iCurrentArrayIdx, (entryOde,entryDae,entryZeroFunc));
-        tmpResultList = revertTaskLists(iCurrentArrayIdx+1, tmpResultList);
+      algorithm
+        true := intLe(iCurrentArrayIdx, arrayLength(iResultList));
+        ((entryOde,entryDae,entryZeroFunc)) := arrayGet(iResultList, iCurrentArrayIdx);
+        entryOde := listReverse(entryOde);
+        entryDae := listReverse(entryDae);
+        entryZeroFunc := listReverse(entryZeroFunc);
+        tmpResultList := arrayUpdate(iResultList, iCurrentArrayIdx, (entryOde,entryDae,entryZeroFunc));
+        tmpResultList := revertTaskLists(iCurrentArrayIdx+1, tmpResultList);
       then tmpResultList;
     else iResultList;
   end matchcontinue;
@@ -6575,11 +6575,11 @@ protected
 algorithm
   oResultList := matchcontinue(iCurrentArrayIdx, iResultList)
     case(_,_)
-      equation
-        true = intLe(iCurrentArrayIdx, arrayLength(iResultList));
-        entry = arrayGet(iResultList, iCurrentArrayIdx);
-        entry = listReverse(entry);
-        tmpResultList = arrayUpdate(iResultList, iCurrentArrayIdx, entry);
+      algorithm
+        true := intLe(iCurrentArrayIdx, arrayLength(iResultList));
+        entry := arrayGet(iResultList, iCurrentArrayIdx);
+        entry := listReverse(entry);
+        tmpResultList := arrayUpdate(iResultList, iCurrentArrayIdx, entry);
         //tmpResultList = revertTaskList(iCurrentArrayIdx+1, tmpResultList);
       then tmpResultList;
     else iResultList;
@@ -6677,12 +6677,12 @@ protected
 algorithm
   oTask := match(iTask)
     case(HpcOmSimCode.DEPTASK(sourceTask = sourceTask,targetTask = targetTask,outgoing = outgoing,communicationInfo = communicationInfo))
-      equation
+      algorithm
           // Finding Nemo
-          HpcOmSimCode.CALCTASK(index = sourceTaskId) = sourceTask;
-          HpcOmSimCode.CALCTASK(index = targetTaskId) = targetTask;
-          lockId = findInIntTuple1(arrayGet(lockIds,sourceTaskId),targetTaskId);
-          tmpTask = HpcOmSimCode.DEPTASK(sourceTask,targetTask,outgoing,lockId,communicationInfo);
+          HpcOmSimCode.CALCTASK(index = sourceTaskId) := sourceTask;
+          HpcOmSimCode.CALCTASK(index = targetTaskId) := targetTask;
+          lockId := findInIntTuple1(arrayGet(lockIds,sourceTaskId),targetTaskId);
+          tmpTask := HpcOmSimCode.DEPTASK(sourceTask,targetTask,outgoing,lockId,communicationInfo);
       then tmpTask;
     else
     then iTask;
@@ -6723,15 +6723,15 @@ protected
 algorithm
   oThreadTasks := match(iTasksOfLevel,iThreadCount)
     case(HpcOmSimCode.PARALLELTASKLIST(tasks=tasks),_)
-      equation
-        tmpTaskLists = arrayCreate(iThreadCount, {});
-        tmpTaskLists = List.fold(tasks, convertFixedLevelScheduleToTaskListsForTask, tmpTaskLists);
-        tmpTaskLists = revertTaskList(1, tmpTaskLists);
+      algorithm
+        tmpTaskLists := arrayCreate(iThreadCount, {});
+        tmpTaskLists := List.fold(tasks, convertFixedLevelScheduleToTaskListsForTask, tmpTaskLists);
+        tmpTaskLists := revertTaskList(1, tmpTaskLists);
       then tmpTaskLists;
     case(HpcOmSimCode.SERIALTASKLIST(tasks=tasks),_)
-      equation
-        tmpTaskLists = arrayCreate(iThreadCount, {});
-        tmpTaskLists = arrayUpdate(tmpTaskLists, 1, tasks);
+      algorithm
+        tmpTaskLists := arrayCreate(iThreadCount, {});
+        tmpTaskLists := arrayUpdate(tmpTaskLists, 1, tasks);
       then tmpTaskLists;
   end match;
 end convertFixedLevelScheduleToTaskListsForLevel;
@@ -6749,12 +6749,12 @@ protected
 algorithm
   oThreadTasks := match(iTask, iThreadTasks)
     case(HpcOmSimCode.CALCTASK_LEVEL(threadIdx=SOME(threadIdx)),_)
-      equation
-        oldTaskList = arrayGet(iThreadTasks, threadIdx);
-        tmpTaskLists = arrayUpdate(iThreadTasks, threadIdx, iTask::oldTaskList);
+      algorithm
+        oldTaskList := arrayGet(iThreadTasks, threadIdx);
+        tmpTaskLists := arrayUpdate(iThreadTasks, threadIdx, iTask::oldTaskList);
       then tmpTaskLists;
     case(_,_)
-      equation
+      algorithm
         print("ConvertFixedLevelScheduleToTaskListsForTask can just handle CALCTASK_LEVEL with defined thread idx!\n");
       then iThreadTasks;
   end match;
@@ -6813,8 +6813,8 @@ algorithm
     case(_,_,HpcOmSimCode.LEVELSCHEDULE())
       then iSchedule;
     case(_,_,HpcOmSimCode.THREADSCHEDULE(threadTasks=threadTasks,outgoingDepTasks=outgoingDepTasks,scheduledTasks=scheduledTasks,allCalcTasks=allCalcTasks))
-      equation
-        threadTasks = Array.expandToSize(iNumProc, threadTasks, {});
+      algorithm
+        threadTasks := Array.expandToSize(iNumProc, threadTasks, {});
       then HpcOmSimCode.THREADSCHEDULE(threadTasks,outgoingDepTasks,scheduledTasks,allCalcTasks);
     case(_,_,HpcOmSimCode.TASKDEPSCHEDULE())
       then iSchedule;

@@ -316,46 +316,46 @@ algorithm
       list<Style> style;
       list<Tag> tags;
     case (HEADING(stage=i, text=t), _)
-      equation
-        str = iBuffer + "\n<h" + intString(i) + ">" + t + "</h" + intString(i) + ">";
+      algorithm
+        str := iBuffer + "\n<h" + intString(i) + ">" + t + "</h" + intString(i) + ">";
       then
         str;
     case (HYPERLINK(href=t, title=t1, text=t2), _)
-      equation
-        str = iBuffer + "\n<a href=\"" + t + "\" title=\"" + t1 + "\">" + t2 + "</a>";
+      algorithm
+        str := iBuffer + "\n<a href=\"" + t + "\" title=\"" + t1 + "\">" + t2 + "</a>";
       then
         str;
     case (ANKER(name=t), _)
-      equation
-        str = iBuffer + "\n<a name=\"" + t + "\"/>";
+      algorithm
+        str := iBuffer + "\n<a name=\"" + t + "\"/>";
       then
         str;
     case (LINE(text=t), _)
-      equation
-        str = iBuffer + "\n" + t + "<br>";
+      algorithm
+        str := iBuffer + "\n" + t + "<br>";
       then
         str;
     case (DIVISION(id=t, style=style, tags=tags), _)
-      equation
-        t1 = stringDelimitList(List.map(style, dumpStyle), "; ");
-        t2 = List.fold(tags, dumpTag, "");
-        str = iBuffer + "\n<div id=\"" + t + "\" style=\"" + t1 + "\">\n" + t2 + "\n</div>";
+      algorithm
+        t1 := stringDelimitList(List.map(style, dumpStyle), "; ");
+        t2 := List.fold(tags, dumpTag, "");
+        str := iBuffer + "\n<div id=\"" + t + "\" style=\"" + t1 + "\">\n" + t2 + "\n</div>";
       then
         str;
     case (SCRIPT(type_=t1, text=t2), _)
-      equation
-        str = iBuffer + "\n<script type=\"" + t1 + "\">\n" + t2 + "\n</script>";
+      algorithm
+        str := iBuffer + "\n<script type=\"" + t1 + "\">\n" + t2 + "\n</script>";
       then
         str;
     case (SCRIPT_BODY(type_=t1, text=t2), _)
-      equation
-        str = iBuffer + "\n<SCRIPT \"" + t1 + "\">\n" + t2 + "\n</SCRIPT>";
+      algorithm
+        str := iBuffer + "\n<SCRIPT \"" + t1 + "\">\n" + t2 + "\n</SCRIPT>";
       then
         str;
     case (CANVAS(attr=attr), _)
-      equation
-        t1 = stringDelimitList(attr, " ");
-        str = iBuffer + "\n<canvas " + t1 + "\">\n";
+      algorithm
+        t1 := stringDelimitList(attr, " ");
+        str := iBuffer + "\n<canvas " + t1 + "\">\n";
       then
         str;
   end match;
@@ -505,8 +505,8 @@ algorithm
       //BackendDAE.StrongComponents comps;
 
     case (BackendDAE.NO_MATCHING()) then inTags;
-    case (BackendDAE.MATCHING(ass1, _, _)) equation
-      tags = dumpMatching(ass1, prefixId, inTags);
+    case (BackendDAE.MATCHING(ass1, _, _)) algorithm
+      tags := dumpMatching(ass1, prefixId, inTags);
       //dumpComponents(comps);
     then tags;
   end match;

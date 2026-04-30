@@ -230,9 +230,9 @@ algorithm
       Node n;
 
     case (g, _, _, _)
-      equation
-        i = System.tmpTickIndex(Global.fgraph_nextId);
-        n = FNode.new(inName, i, inParents, inData);
+      algorithm
+        i := System.tmpTickIndex(Global.fgraph_nextId);
+        n := FNode.new(inName, i, inParents, inData);
         // uncomment this if unique node id's are not unique!
         /*
         b = (id == i);
@@ -264,18 +264,18 @@ algorithm
       array<Graph> ag;
 
     case FCore.G(t, s)
-      equation
+      algorithm
         // make a new top
-        nt = FNode.toRef(FNode.fromRef(t.node));
+        nt := FNode.toRef(FNode.fromRef(t.node));
         // make new graph
         // g = FCore.G(t, s);
         // deep copy the top, clone the entire subtree, update references
-        (g, nt) = FNode.copyRef(nt, inGraph);
+        (g, nt) := FNode.copyRef(nt, inGraph);
         // update scope references
-        s = List.map1r(s, FNode.lookupRefFromRef, nt);
-        ag = arrayCreate(1, emptyGraph);
-        t = FCore.GTOP(ag, t.name, nt, t.extra);
-        g = FCore.G(t, s);
+        s := List.map1r(s, FNode.lookupRefFromRef, nt);
+        ag := arrayCreate(1, emptyGraph);
+        t := FCore.GTOP(ag, t.name, nt, t.extra);
+        g := FCore.G(t, s);
         arrayUpdate(ag, 1, g);
       then g;
 
@@ -309,24 +309,24 @@ algorithm
 
     // update in the current frame
     case (g, v as DAE.TYPES_VAR(name = n), _, _)
-      equation
-        pr = lastScopeRef(g);
-        r = FNode.child(pr, n);
-        FCore.N(n, id, p, c, FCore.CO(e, m, k, _)) = FNode.fromRef(r);
-        r = FNode.updateRef(r, FCore.N(n, id, p, c, FCore.CO(e, m, k, instStatus)));
+      algorithm
+        pr := lastScopeRef(g);
+        r := FNode.child(pr, n);
+        FCore.N(n, id, p, c, FCore.CO(e, m, k, _)) := FNode.fromRef(r);
+        r := FNode.updateRef(r, FCore.N(n, id, p, c, FCore.CO(e, m, k, instStatus)));
         // update the target scope
-        r = updateSourceTargetScope(r, currentScope(inTargetGraph));
-        r = updateInstance(r, v);
+        r := updateSourceTargetScope(r, currentScope(inTargetGraph));
+        r := updateInstance(r, v);
       then
         g;
 
     // if not found update in the parent frame
     case (g, v, _, _)
-      equation
-        pr = lastScopeRef(g);
-        true = FNode.isImplicitRefName(pr);
-        (g, _) = stripLastScopeRef(g);
-        g = updateComp(g, v, instStatus, inTargetGraph);
+      algorithm
+        pr := lastScopeRef(g);
+        true := FNode.isImplicitRefName(pr);
+        (g, _) := stripLastScopeRef(g);
+        g := updateComp(g, v, instStatus, inTargetGraph);
       then
         g;
 
@@ -350,15 +350,15 @@ algorithm
 
     // update the target scope of the node, hopefully existing
     case (r, _)
-      equation
-        r = FNode.refRef(r);
-        r = FNode.updateRef(r, FNode.setData(FNode.fromRef(r), FCore.REF(inTargetScope)));
+      algorithm
+        r := FNode.refRef(r);
+        r := FNode.updateRef(r, FNode.setData(FNode.fromRef(r), FCore.REF(inTargetScope)));
       then
         inRef;
 
     // create one and update it
     case (r, _)
-      equation
+      algorithm
         Error.addCompilerWarning("FNode.updateSourceTargetScope: node does not yet have a reference child: " + FNode.toPathStr(FNode.fromRef(r)) +
               " target scope: " + FNode.scopeStr(inTargetScope) + "\n");
       then
@@ -381,9 +381,9 @@ algorithm
 
     // update the instance node
     case (r, _)
-      equation
-        r = FNode.refInstance(r);
-        r = FNode.updateRef(r, FNode.setData(FNode.fromRef(r), FCore.IT(inVar)));
+      algorithm
+        r := FNode.refInstance(r);
+        r := FNode.updateRef(r, FNode.setData(FNode.fromRef(r), FCore.IT(inVar)));
       then
         inRef;
 
@@ -422,23 +422,23 @@ algorithm
 
     // update in the current frame
     case (g, v as DAE.TYPES_VAR(name = n), _, _, _)
-      equation
-        pr = lastScopeRef(g);
-        r = FNode.child(pr, n);
-        FCore.N(n, id, p, c, FCore.CO(e, _, k, _)) = FNode.fromRef(r);
-        r = FNode.updateRef(r, FCore.N(n, id, p, c, FCore.CO(e, inMod, k, instStatus)));
-        r = updateSourceTargetScope(r, currentScope(inTargetGraph));
-        r = updateInstance(r, v);
+      algorithm
+        pr := lastScopeRef(g);
+        r := FNode.child(pr, n);
+        FCore.N(n, id, p, c, FCore.CO(e, _, k, _)) := FNode.fromRef(r);
+        r := FNode.updateRef(r, FCore.N(n, id, p, c, FCore.CO(e, inMod, k, instStatus)));
+        r := updateSourceTargetScope(r, currentScope(inTargetGraph));
+        r := updateInstance(r, v);
       then
         g;
 
     // if not found update in the parent frame
     case (g, v, _, _, _)
-      equation
-        pr = lastScopeRef(g);
-        true = FNode.isImplicitRefName(pr);
-        (g, _) = stripLastScopeRef(g);
-        g = updateVarAndMod(g, v, inMod, instStatus, inTargetGraph);
+      algorithm
+        pr := lastScopeRef(g);
+        true := FNode.isImplicitRefName(pr);
+        (g, _) := stripLastScopeRef(g);
+        g := updateVarAndMod(g, v, inMod, instStatus, inTargetGraph);
       then
         g;
 
@@ -475,22 +475,22 @@ algorithm
 
     // update in the current frame
     case (g, e as SCode.CLASS(name = n), _, _, _, _)
-      equation
-        pr = lastScopeRef(g);
-        r = FNode.child(pr, n);
-        FCore.N(n, id, p, c, FCore.CL(_, _, _, k, _)) = FNode.fromRef(r);
-        r = FNode.updateRef(r, FCore.N(n, id, p, c, FCore.CL(e, inPrefix, inMod, k, instStatus)));
+      algorithm
+        pr := lastScopeRef(g);
+        r := FNode.child(pr, n);
+        FCore.N(n, id, p, c, FCore.CL(_, _, _, k, _)) := FNode.fromRef(r);
+        r := FNode.updateRef(r, FCore.N(n, id, p, c, FCore.CL(e, inPrefix, inMod, k, instStatus)));
         // r = updateSourceTargetScope(r, currentScope(inTargetGraph));
       then
         g;
 
     // if not found update in the parent frame
     case (g, e, _, _, _, _)
-      equation
-        pr = lastScopeRef(g);
-        true = FNode.isImplicitRefName(pr);
-        (g, _) = stripLastScopeRef(g);
-        g = updateClass(g, e, inPrefix, inMod, instStatus, inTargetGraph);
+      algorithm
+        pr := lastScopeRef(g);
+        true := FNode.isImplicitRefName(pr);
+        (g, _) := stripLastScopeRef(g);
+        g := updateClass(g, e, inPrefix, inMod, instStatus, inTargetGraph);
       then
         g;
   end matchcontinue;
@@ -522,9 +522,9 @@ algorithm
       DAE.Prefix pre;
 
     case (r, e as SCode.CLASS(name = n), _, _, _, _)
-      equation
-        FCore.N(_, id, p, c, FCore.CL(_, _, _, k, _)) = FNode.fromRef(r);
-        r = FNode.updateRef(r, FCore.N(n, id, p, c, FCore.CL(e, inPrefix, inMod, k, instStatus)));
+      algorithm
+        FCore.N(_, id, p, c, FCore.CL(_, _, _, k, _)) := FNode.fromRef(r);
+        r := FNode.updateRef(r, FCore.N(n, id, p, c, FCore.CL(e, inPrefix, inMod, k, instStatus)));
       then
         r;
 
@@ -549,24 +549,24 @@ algorithm
       DAE.Var v;
 
     case (g, _, _, _,_,_)
-      equation
-        c = SCode.COMPONENT(
+      algorithm
+        c := SCode.COMPONENT(
               name,
               SCode.defaultPrefixes,
               SCode.ATTR({}, SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.CONST(), Absyn.BIDIR(), Absyn.NONFIELD()),
               Absyn.TPATH(Absyn.IDENT(""), NONE()), SCode.NOMOD(),
               SCode.noComment, NONE(), AbsynUtil.dummyInfo);
-        v = DAE.TYPES_VAR(
+        v := DAE.TYPES_VAR(
               name,
               DAE.ATTR(DAE.NON_CONNECTOR(), SCode.NON_PARALLEL(), variability, Absyn.BIDIR(), Absyn.NOT_INNER_OUTER(), SCode.PUBLIC()),
               ty,
               binding,
               false,
               constOfForIteratorRange);
-        r = lastScopeRef(g);
-        g = FGraphBuildEnv.mkCompNode(c, r, FCore.BUILTIN(), g);
+        r := lastScopeRef(g);
+        g := FGraphBuildEnv.mkCompNode(c, r, FCore.BUILTIN(), g);
         // update the var too!
-        g = updateVarAndMod(g, v, DAE.NOMOD(), FCore.VAR_UNTYPED(), empty());
+        g := updateVarAndMod(g, v, DAE.NOMOD(), FCore.VAR_UNTYPED(), empty());
       then
         g;
 
@@ -583,10 +583,10 @@ algorithm
       Scope s;
 
     case (FCore.G(scope = s as _::_::_))
-      equation
+      algorithm
         // remove top
-        _::s = listReverse(s);
-        str = stringDelimitList(List.map(s, FNode.refName), ".");
+        _::s := listReverse(s);
+        str := stringDelimitList(List.map(s, FNode.refName), ".");
       then
         str;
 
@@ -612,12 +612,12 @@ algorithm
 
     // else open a new scope!
     case (g, _, SOME(n), _)
-      equation
-        p = lastScopeRef(g);
-        (g, no) = node(g, n, {p}, FCore.ND(inScopeType));
-        r = FNode.toRef(no);
+      algorithm
+        p := lastScopeRef(g);
+        (g, no) := node(g, n, {p}, FCore.ND(inScopeType));
+        r := FNode.toRef(no);
         // FNode.addChildRef(p, n, r);
-        g = pushScopeRef(g, r);
+        g := pushScopeRef(g, r);
       then
         g;
 
@@ -651,31 +651,31 @@ algorithm
 
     // see if we have it as a class instance
     case (g, _, n, _)
-      equation
-        r = FNode.child(p, n);
-        FCore.CL(status = FCore.CLS_INSTANCE(_)) = FNode.refData(r);
+      algorithm
+        r := FNode.child(p, n);
+        FCore.CL(status = FCore.CLS_INSTANCE(_)) := FNode.refData(r);
         FNode.addChildRef(p, n, r);
-        g = pushScopeRef(g, r);
+        g := pushScopeRef(g, r);
       then
         g;
 
     // see if we have a child with the same name!
     case (g, _, n, _)
-      equation
-        r = FNode.child(p, n);
-        r = FNode.copyRefNoUpdate(r);
+      algorithm
+        r := FNode.child(p, n);
+        r := FNode.copyRefNoUpdate(r);
         // FNode.addChildRef(p, n, r);
-        g = pushScopeRef(g, r);
+        g := pushScopeRef(g, r);
       then
         g;
 
     // else open a new scope!
     case (g, _, n, _)
-      equation
-        (g, no) = node(g, n, {p}, FCore.ND(inScopeType));
-        r = FNode.toRef(no);
+      algorithm
+        (g, no) := node(g, n, {p}, FCore.ND(inScopeType));
+        r := FNode.toRef(no);
         // FNode.addChildRef(p, n, r);
-        g = pushScopeRef(g, r);
+        g := pushScopeRef(g, r);
       then
         g;
 
@@ -697,9 +697,9 @@ algorithm
       String name;
 
     case(_)
-      equation
-        name = FNode.refName(listHead(currentScope(inGraph)));
-        true = stringEq(name, FCore.forScopeName);
+      algorithm
+        name := FNode.refName(listHead(currentScope(inGraph)));
+        true := stringEq(name, FCore.forScopeName);
       then true;
 
     else false;
@@ -715,9 +715,9 @@ algorithm
     local String name;
 
     case (_)
-      equation
-        name = FNode.refName(listHead(currentScope(inGraph)));
-        true = stringEq(name, FCore.forIterScopeName) or stringEq(name, FCore.parForIterScopeName);
+      algorithm
+        name := FNode.refName(listHead(currentScope(inGraph)));
+        true := stringEq(name, FCore.forIterScopeName) or stringEq(name, FCore.parForIterScopeName);
       then true;
 
     else false;
@@ -735,15 +735,15 @@ algorithm
       Ref r;
 
     case (_)
-      equation
-        {r} = currentScope(inGraph);
-        true = FNode.isRefTop(r);
+      algorithm
+        {r} := currentScope(inGraph);
+        true := FNode.isRefTop(r);
       then
         NONE();
 
     case (_)
-      equation
-        p = getGraphName(inGraph);
+      algorithm
+        p := getGraphName(inGraph);
       then
         SOME(p);
 
@@ -867,8 +867,8 @@ algorithm
   isTop := matchcontinue graph
 
     case _
-      equation
-        true = FNode.isRefTop(lastScopeRef(graph));
+      algorithm
+        true := FNode.isRefTop(lastScopeRef(graph));
       then
         true;
 
@@ -916,20 +916,20 @@ algorithm
       Absyn.ComponentRef cref1, cref2;
 
     case (_, _, _)
-      equation
-        false = Flags.isSet(Flags.STRIP_PREFIX);
+      algorithm
+        false := Flags.isSet(Flags.STRIP_PREFIX);
       then
         inCref;
 
     case (_, _, _)
-      equation
-        SOME(env_path) = getScopePath(inEnv);
-        cref1 = AbsynUtil.unqualifyCref(inCref);
-        env_path = AbsynUtil.makeNotFullyQualified(env_path);
+      algorithm
+        SOME(env_path) := getScopePath(inEnv);
+        cref1 := AbsynUtil.unqualifyCref(inCref);
+        env_path := AbsynUtil.makeNotFullyQualified(env_path);
         // try to strip as much as possible
-        cref2 = crefStripGraphScopePrefix2(cref1, env_path, stripPartial);
+        cref2 := crefStripGraphScopePrefix2(cref1, env_path, stripPartial);
         // check if we really did anything, fail if we did nothing!
-        false = AbsynUtil.crefEqual(cref1, cref2);
+        false := AbsynUtil.crefEqual(cref1, cref2);
       then
         cref2;
 
@@ -951,23 +951,23 @@ algorithm
 
     case (Absyn.CREF_QUAL(name = id1, subscripts = {}, componentRef = cref),
           Absyn.QUALIFIED(name = id2, path = env_path), _)
-      equation
-        true = stringEqual(id1, id2);
+      algorithm
+        true := stringEqual(id1, id2);
       then
         crefStripGraphScopePrefix2(cref, env_path, stripPartial);
 
     case (Absyn.CREF_QUAL(name = id1, subscripts = {}, componentRef = cref),
           Absyn.IDENT(name = id2), _)
-      equation
-        true = stringEqual(id1, id2);
+      algorithm
+        true := stringEqual(id1, id2);
       then
         cref;
 
     // adrpo: leave it as stripped as you can if you can't match it above and we have true for stripPartial
     case (Absyn.CREF_QUAL(name = id1, subscripts = {}),
           env_path, true)
-      equation
-        false = stringEqual(id1, AbsynUtil.pathFirstIdent(env_path));
+      algorithm
+        false := stringEqual(id1, AbsynUtil.pathFirstIdent(env_path));
       then
         inCref;
   end matchcontinue;
@@ -986,19 +986,19 @@ algorithm
       Absyn.Path path1, path2;
 
     case (_, _, _)
-      equation
-        false = Flags.isSet(Flags.STRIP_PREFIX);
+      algorithm
+        false := Flags.isSet(Flags.STRIP_PREFIX);
       then inPath;
 
     case (_, _, _)
-      equation
-        SOME(env_path) = getScopePath(inEnv);
-        path1 = AbsynUtil.makeNotFullyQualified(inPath);
-        env_path = AbsynUtil.makeNotFullyQualified(env_path);
+      algorithm
+        SOME(env_path) := getScopePath(inEnv);
+        path1 := AbsynUtil.makeNotFullyQualified(inPath);
+        env_path := AbsynUtil.makeNotFullyQualified(env_path);
         // try to strip as much as possible
-        path2 = pathStripGraphScopePrefix2(path1, env_path, stripPartial);
+        path2 := pathStripGraphScopePrefix2(path1, env_path, stripPartial);
         // check if we really did anything, fail if we did nothing!
-        false = AbsynUtil.pathEqual(path1, path2);
+        false := AbsynUtil.pathEqual(path1, path2);
       then
         path2;
 
@@ -1059,22 +1059,22 @@ algorithm
 
     // Graph of component
     case (_, DAE.TYPES_VAR(name = n),c,_,_,_)
-      equation
+      algorithm
         // maks sure the element name and the DAE.TYPES_VAR name is the same!
-        false = stringEq(n, SCodeUtil.elementName(c));
+        false := stringEq(n, SCodeUtil.elementName(c));
         Error.addCompilerError("FGraph.mkComponentNode: The component name: " + SCodeUtil.elementName(c) + " is not the same as its DAE.TYPES_VAR: " + n + "\n");
       then
         fail();
 
     // Graph of component
     case (g, v as DAE.TYPES_VAR(name = n),c,m,i,cg)
-      equation
+      algorithm
         // make sure the element name and the DAE.TYPES_VAR name is the same!
-        true = stringEq(n, SCodeUtil.elementName(c));
-        r = lastScopeRef(g);
-        g = FGraphBuildEnv.mkCompNode(c, r, FCore.USERDEFINED(), g);
+        true := stringEq(n, SCodeUtil.elementName(c));
+        r := lastScopeRef(g);
+        g := FGraphBuildEnv.mkCompNode(c, r, FCore.USERDEFINED(), g);
         // update the var too!
-        g = updateVarAndMod(g, v, m, i, cg);
+        g := updateVarAndMod(g, v, m, i, cg);
       then
         g;
 
@@ -1099,17 +1099,17 @@ algorithm
 
     // already there as class instance, do nothing!
     case (g, SCode.CLASS(name = n), _, _)
-      equation
-        r = lastScopeRef(g);
-        r = FNode.child(r, n);
-        FCore.CL(status = FCore.CLS_INSTANCE(_)) = FNode.refData(r);
+      algorithm
+        r := lastScopeRef(g);
+        r := FNode.child(r, n);
+        FCore.CL(status = FCore.CLS_INSTANCE(_)) := FNode.refData(r);
       then
         g;
 
     case (g, SCode.CLASS(), _, _)
-      equation
-        r = lastScopeRef(g);
-        g = FGraphBuildEnv.mkClassNode(inClass, inPrefix, inMod, r,
+      algorithm
+        r := lastScopeRef(g);
+        g := FGraphBuildEnv.mkClassNode(inClass, inPrefix, inMod, r,
           FCore.USERDEFINED(), g, checkDuplicate);
       then
         g;
@@ -1132,9 +1132,9 @@ algorithm
       Ref r;
 
     case (g, _, _)
-      equation
-        r = lastScopeRef(g);
-        g = FGraphBuildEnv.mkTypeNode({inType}, r, inName, g);
+      algorithm
+        r := lastScopeRef(g);
+        g := FGraphBuildEnv.mkTypeNode({inType}, r, inName, g);
       then
         g;
 
@@ -1155,9 +1155,9 @@ algorithm
       Ref r;
 
     case (g, _)
-      equation
-        r = lastScopeRef(g);
-        g = FGraphBuildEnv.mkElementNode(inImport, r, FCore.USERDEFINED(), g);
+      algorithm
+        r := lastScopeRef(g);
+        g := FGraphBuildEnv.mkElementNode(inImport, r, FCore.USERDEFINED(), g);
       then
         g;
 
@@ -1178,9 +1178,9 @@ algorithm
       Ref r;
 
     case (g, _)
-      equation
-        r = lastScopeRef(g);
-        g = FGraphBuildEnv.mkElementNode(inDu, r, FCore.USERDEFINED(), g);
+      algorithm
+        r := lastScopeRef(g);
+        g := FGraphBuildEnv.mkElementNode(inDu, r, FCore.USERDEFINED(), g);
       then
         g;
 
@@ -1261,11 +1261,11 @@ algorithm
   name := match (inGraph)
     local Ref r;
     case (_)
-      equation
-        r = lastScopeRef(inGraph);
+      algorithm
+        r := lastScopeRef(inGraph);
         // not top
-        false = FNode.isRefTop(r);
-        name = FNode.refName(r);
+        false := FNode.isRefTop(r);
+        name := FNode.refName(r);
       then
         name;
   end match;
@@ -1287,18 +1287,18 @@ algorithm
 
     // classes
     case (r::_, _)
-      equation
-        true = FNode.isRefClass(r);
-        restr = SCodeUtil.getClassRestriction(FNode.getElement(FNode.fromRef(r)));
-        true = valueEq(restrictionToScopeType(restr), inScopeType);
+      algorithm
+        true := FNode.isRefClass(r);
+        restr := SCodeUtil.getClassRestriction(FNode.getElement(FNode.fromRef(r)));
+        true := valueEq(restrictionToScopeType(restr), inScopeType);
       then
         true;
 
     // FCore.ND(scopeType)
     case (r::_, _)
-      equation
-        FCore.N(data = FCore.ND(st)) = FNode.fromRef(r);
-        true = valueEq(st, inScopeType);
+      algorithm
+        FCore.N(data = FCore.ND(st)) := FNode.fromRef(r);
+        true := valueEq(st, inScopeType);
       then
         true;
 
@@ -1444,13 +1444,13 @@ algorithm
     case (FCore.EG(_), _) then (inGraph, listReverse(inAcc));
 
     case (FCore.G(scope = r::_), _)
-      equation
+      algorithm
         if FNode.isImplicitRefName(r) then
-          (g, _) = stripLastScopeRef(inGraph);
-          (g, s) = splitGraphScope_dispatch(g, r::inAcc);
+          (g, _) := stripLastScopeRef(inGraph);
+          (g, s) := splitGraphScope_dispatch(g, r::inAcc);
         else
-          g = inGraph;
-          s = listReverse(inAcc);
+          g := inGraph;
+          s := listReverse(inAcc);
         end if;
       then
         (g, s);
@@ -1477,8 +1477,8 @@ algorithm
 
     // some graph
     case FCore.G(scope = r::_)
-      equation
-        lst = List.map(FNode.filter(r, FNode.isRefComponent), FNode.refName);
+      algorithm
+        lst := List.map(FNode.filter(r, FNode.isRefComponent), FNode.refName);
       then
         lst;
 
@@ -1578,38 +1578,38 @@ algorithm
         (inTargetClassEnv, c, inIH);*/
 
     case (_, _, _, _, _, _, _)
-      equation
-        c = inTargetClass;
-        gclass = inTargetClassEnv;
-        targetClassName = SCodeUtil.elementName(c);
+      algorithm
+        c := inTargetClass;
+        gclass := inTargetClassEnv;
+        targetClassName := SCodeUtil.elementName(c);
 
-        (newTargetClassName, crefPrefix) = mkVersionName(inSourceEnv, inSourceName, inPrefix, inMod, inTargetClassEnv, targetClassName);
+        (newTargetClassName, crefPrefix) := mkVersionName(inSourceEnv, inSourceName, inPrefix, inMod, inTargetClassEnv, targetClassName);
 
         // get the last item in the source env
-        sourceRef = FNode.child(lastScopeRef(inSourceEnv), inSourceName);
-        _ = sourceRef :: currentScope(inSourceEnv);
+        sourceRef := FNode.child(lastScopeRef(inSourceEnv), inSourceName);
+        _ := sourceRef :: currentScope(inSourceEnv);
 
         // get the last scope from target
-        targetClassParentRef = lastScopeRef(inTargetClassEnv);
+        targetClassParentRef := lastScopeRef(inTargetClassEnv);
         // get the class from class env
-        classRef = FNode.child(targetClassParentRef, targetClassName);
+        classRef := FNode.child(targetClassParentRef, targetClassName);
         // clone the class
-        classRef = FNode.copyRefNoUpdate(classRef);
+        classRef := FNode.copyRefNoUpdate(classRef);
 
         // check if the name of the class already exists!
         // failure(_ = FNode.child(targetClassParentRef, newTargetClassName));
 
         // change class name (so unqualified references to the same class reach the original element
-        FCore.CL(e = c) = FNode.refData(classRef);
-        c = SCodeUtil.setClassName(newTargetClassName, c);
-        classRef = updateClassElement(classRef, c, crefPrefix, inMod, FCore.CLS_INSTANCE(targetClassName) /* FCore.CLS_UNTYPED() */, empty());
+        FCore.CL(e = c) := FNode.refData(classRef);
+        c := SCodeUtil.setClassName(newTargetClassName, c);
+        classRef := updateClassElement(classRef, c, crefPrefix, inMod, FCore.CLS_INSTANCE(targetClassName) /* FCore.CLS_UNTYPED() */, empty());
         // parent the classRef
         FNode.addChildRef(targetClassParentRef, newTargetClassName, classRef);
         // update the source target scope
-        sourceRef = updateSourceTargetScope(sourceRef, classRef :: currentScope(gclass));
+        sourceRef := updateSourceTargetScope(sourceRef, classRef :: currentScope(gclass));
 
         // we never need to add the instance as inner!
-        ih = inIH; // ih = InnerOuter.addClassIfInner(c, crefPrefix, gclass, inIH);
+        ih := inIH; // ih = InnerOuter.addClassIfInner(c, crefPrefix, gclass, inIH);
 
         /*
         print("Instance1: CL(" + getGraphNameStr(inSourceEnv) + ").CO(" +
@@ -1670,8 +1670,8 @@ algorithm
 
     // don't do this for MetaModelica, target class is builtin or builtin type, functions
     case (_, _, _, _, _, _, _)
-      equation
-        true = Config.acceptMetaModelicaGrammar() or
+      algorithm
+        true := Config.acceptMetaModelicaGrammar() or
                isTargetClassBuiltin(inTargetClassEnv, inTargetClass) or
                inFunctionScope(inSourceEnv) or
                SCodeUtil.isOperatorRecord(inTargetClass);
@@ -1680,15 +1680,15 @@ algorithm
 
     // or OpenModelica scripting stuff
     case (_, _, _, _, _, _, _)
-      equation
-        true = stringEq(AbsynUtil.pathFirstIdent(getGraphName(inTargetClassEnv)), "OpenModelica");
+      algorithm
+        true := stringEq(AbsynUtil.pathFirstIdent(getGraphName(inTargetClassEnv)), "OpenModelica");
       then
         (inTargetClassEnv, inTargetClass, inIH);
 
     // need to create a new version of the class
     case (_, _, _, _, _, _, _)
-      equation
-        (gclass, c, outIH) = mkVersionNode(inSourceEnv, inSourceName, inPrefix, inMod, inTargetClassEnv, inTargetClass, inIH);
+      algorithm
+        (gclass, c, outIH) := mkVersionNode(inSourceEnv, inSourceName, inPrefix, inMod, inTargetClassEnv, inTargetClass, inIH);
       then
         (gclass, c, outIH);
 
@@ -1703,9 +1703,9 @@ algorithm
   yes := matchcontinue(inGraph, inClass)
     local Ref r;
     case (_, _)
-      equation
-        r = FNode.child(lastScopeRef(inGraph), SCodeUtil.elementName(inClass));
-        yes = FNode.isRefBasicType(r) or FNode.isRefBuiltin(r);
+      algorithm
+        r := FNode.child(lastScopeRef(inGraph), SCodeUtil.elementName(inClass));
+        yes := FNode.isRefBasicType(r) or FNode.isRefBuiltin(r);
       then
         yes;
 
@@ -1734,11 +1734,11 @@ algorithm
       Name name;
 
     case (_, _, _, _, _, _)
-      equation
-        crefPrefix = PrefixUtil.prefixAdd(inSourceName,{},{},inPrefix,SCode.CONST(),ClassInf.UNKNOWN(Absyn.IDENT("")), AbsynUtil.dummyInfo); // variability doesn't matter
+      algorithm
+        crefPrefix := PrefixUtil.prefixAdd(inSourceName,{},{},inPrefix,SCode.CONST(),ClassInf.UNKNOWN(Absyn.IDENT("")), AbsynUtil.dummyInfo); // variability doesn't matter
 
         // name = inTargetClassName + "$" + ComponentReference.printComponentRefStr(PrefixUtil.prefixToCref(crefPrefix));
-        name = inTargetClassName + "$" + AbsynUtil.pathString(AbsynUtil.stringListPath(listReverse(AbsynUtil.pathToStringList(PrefixUtil.prefixToPath(crefPrefix)))), "$", usefq=false)
+        name := inTargetClassName + "$" + AbsynUtil.pathString(AbsynUtil.stringListPath(listReverse(AbsynUtil.pathToStringList(PrefixUtil.prefixToPath(crefPrefix)))), "$", usefq=false)
                ; // + "$" + AbsynUtil.pathString2NoLeadingDot(getGraphName(inSourceEnv), "$");
         // name = "'$" + inTargetClassName + "@" + AbsynUtil.pathString(AbsynUtil.stringListPath(listReverse(AbsynUtil.pathToStringList(PrefixUtil.prefixToPath(crefPrefix))))) + "'";
         // name = "'$" + getGraphNameStr(inSourceEnv) + "." + AbsynUtil.pathString(AbsynUtil.stringListPath(listReverse(AbsynUtil.pathToStringList(PrefixUtil.prefixToPath(crefPrefix))))) + "'";
@@ -1762,9 +1762,9 @@ algorithm
       Ref r;
 
     case (_, _)
-      equation
-        r = FNode.child(lastScopeRef(inEnv), inClassName);
-        FCore.CL(pre = p) = FNode.refData(r);
+      algorithm
+        r := FNode.child(lastScopeRef(inEnv), inClassName);
+        FCore.CL(pre = p) := FNode.refData(r);
       then
         p;
 
@@ -1781,8 +1781,8 @@ algorithm
   yes := matchcontinue(inEnv, inName)
 
     case (_, _)
-      equation
-         FCore.CL(status = FCore.CLS_INSTANCE(_)) = FNode.refData(FNode.child(lastScopeRef(inEnv), inName));
+      algorithm
+         FCore.CL(status = FCore.CLS_INSTANCE(_)) := FNode.refData(FNode.child(lastScopeRef(inEnv), inName));
        then
          true;
 
@@ -1799,8 +1799,8 @@ algorithm
   outName := matchcontinue(inEnv, inName)
 
     case (_, _)
-      equation
-         FCore.CL(status = FCore.CLS_INSTANCE(outName)) = FNode.refData(FNode.child(lastScopeRef(inEnv), inName));
+      algorithm
+         FCore.CL(status = FCore.CLS_INSTANCE(outName)) := FNode.refData(FNode.child(lastScopeRef(inEnv), inName));
        then
          outName;
 
@@ -1857,18 +1857,18 @@ algorithm
       Ref ref, refParent;
 
     case (g, _, _)
-      equation
-        refParent = lastScopeRef(g);
+      algorithm
+        refParent := lastScopeRef(g);
         if FNode.refHasChild(refParent, inName) then
-          ref = FNode.child(refParent, inName);
+          ref := FNode.child(refParent, inName);
           if FNode.refHasChild(ref, FNode.statusNodeName) then
             // child exists and has a status node
-            ref = FNode.child(ref, FNode.statusNodeName);
-            n = FNode.setData(FNode.fromRef(ref), inStatus);
-            ref = FNode.updateRef(ref, n);
+            ref := FNode.child(ref, FNode.statusNodeName);
+            n := FNode.setData(FNode.fromRef(ref), inStatus);
+            ref := FNode.updateRef(ref, n);
           else
             // child exists but has no status node
-            (g, n) = node(g, FNode.statusNodeName, {ref}, inStatus);
+            (g, n) := node(g, FNode.statusNodeName, {ref}, inStatus);
             FNode.addChildRef(ref, FNode.statusNodeName, FNode.toRef(n));
           end if;
         //else child does not exist, do nothing, is an import or extends
@@ -1878,7 +1878,7 @@ algorithm
 
     // did we fail for some weird reson?
     case (g, _, _)
-      equation
+      algorithm
         print("FGraph.setStatus failed on: " + getGraphNameStr(g) + " element: " + inName + "\n");
       then
         g;
@@ -1900,19 +1900,19 @@ algorithm
 
     // child exists and has a status node
     case (g, _)
-      equation
-        refParent = lastScopeRef(g);
-        true = FNode.refHasChild(refParent, inName);
-        ref = FNode.child(refParent, inName);
-        true = FNode.refHasChild(ref, FNode.statusNodeName);
-        ref = FNode.child(ref, FNode.statusNodeName);
-        s = FNode.refData(ref);
+      algorithm
+        refParent := lastScopeRef(g);
+        true := FNode.refHasChild(refParent, inName);
+        ref := FNode.child(refParent, inName);
+        true := FNode.refHasChild(ref, FNode.statusNodeName);
+        ref := FNode.child(ref, FNode.statusNodeName);
+        s := FNode.refData(ref);
       then
         s;
 
     // we can fail here with no problem, there is no status node!
     case (_, _)
-      equation
+      algorithm
         // print("FGraph.getStatus failed on: " + getGraphNameStr(g) + " element: " + inName + "\n");
       then
         fail();
@@ -1935,16 +1935,16 @@ algorithm
       Absyn.Path p;
 
     case (_, _)
-      equation
-        p = AbsynUtil.stripLast(inPath);
-        true = AbsynUtil.pathPrefixOf(p, getGraphName(inEnv));
-        pl = AbsynUtil.pathToStringList(p);
-        lp = listLength(pl);
-        cs = currentScope(inEnv);
-        le = listLength(cs) - 1;
-        diff = le - lp;
-        cs = List.stripN(cs, diff);
-        env = setScope(inEnv, cs);
+      algorithm
+        p := AbsynUtil.stripLast(inPath);
+        true := AbsynUtil.pathPrefixOf(p, getGraphName(inEnv));
+        pl := AbsynUtil.pathToStringList(p);
+        lp := listLength(pl);
+        cs := currentScope(inEnv);
+        le := listLength(cs) - 1;
+        diff := le - lp;
+        cs := List.stripN(cs, diff);
+        env := setScope(inEnv, cs);
         // print("F: " + AbsynUtil.pathString(inPath) + "\n"); print("E: " + getGraphNameStr(inEnv) + "\n"); print("R: " + getGraphNameStr(env) + "\n");
       then
         env;

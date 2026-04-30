@@ -541,8 +541,8 @@ algorithm
     local
       Mutable<DAE.FunctionTree> ef;
     case(CACHE(functions=ef),_)
-      equation
-        SOME(func) = DAE.AvlTreePathFunction.get(Mutable.access(ef),path);
+      algorithm
+        SOME(func) := DAE.AvlTreePathFunction.get(Mutable.access(ef),path);
       then func;
   end match;
 end getCachedInstFunc;
@@ -555,7 +555,7 @@ algorithm
   _ := match(inCache,path)
     local
       Mutable<DAE.FunctionTree> ef;
-    case(CACHE(functions=ef),_) equation
+    case(CACHE(functions=ef),_) algorithm
       DAE.AvlTreePathFunction.get(Mutable.access(ef),path);
     then ();
   end match;
@@ -590,20 +590,20 @@ algorithm
 
     // Don't overwrite SOME() with NONE()
     case (_, _)
-      equation
+      algorithm
         checkCachedInstFuncGuard(cache, func);
         // print("Func quard [there]: " + AbsynUtil.pathString(func) + "\n");
       then cache;
 
     case (CACHE(functions=ef),Absyn.FULLYQUALIFIED(_))
-      equation
+      algorithm
         Mutable.update(ef,DAE.AvlTreePathFunction.add(Mutable.access(ef),func,NONE()));
         // print("Func quard [new]: " + AbsynUtil.pathString(func) + "\n");
       then cache;
 
     // Non-FQ paths mean aliased functions; do not add these to the cache
     case (_,_)
-      equation
+      algorithm
         // print("Func quard [unqual]: " + AbsynUtil.pathString(func) + "\n");
       then (cache);
 
@@ -624,7 +624,7 @@ algorithm
       Absyn.Path p;
 
     case (CACHE(_,ef,_,_),_)
-      equation
+      algorithm
         Mutable.update(ef,DAEUtil.addDaeFunction(funcs, Mutable.access(ef)));
       then inCache;
     else inCache;
@@ -646,7 +646,7 @@ algorithm
       Absyn.Path p;
 
     case (CACHE(_,ef,_,_),_)
-      equation
+      algorithm
         Mutable.update(ef,DAEUtil.addDaeExtFunction(funcs, Mutable.access(ef)));
       then inCache;
     else inCache;
@@ -660,7 +660,7 @@ public function setCachedFunctionTree
 algorithm
   _ := match inCache
     case CACHE()
-      equation
+      algorithm
         Mutable.update(inCache.functions, inFunctions);
       then ();
     else ();

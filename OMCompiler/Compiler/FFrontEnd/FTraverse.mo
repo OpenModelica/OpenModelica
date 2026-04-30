@@ -96,7 +96,7 @@ public function walk
 algorithm
   (outGraph, outExtra) := match(inGraph, inWalker, inExtra, inOptions)
     case (_, _, _, _)
-      equation
+      algorithm
       then
         (inGraph, inExtra);
   end match;

@@ -81,19 +81,19 @@ protected
 algorithm
   calcTimes := matchcontinue(iFileNamePrefix)
     case(_)
-      equation
-        fullFileName = iFileNamePrefix + ".json";
-        SOME(_) = System.getFileModificationTime(fullFileName);
+      algorithm
+        fullFileName := iFileNamePrefix + ".json";
+        SOME(_) := System.getFileModificationTime(fullFileName);
         //json-file does exist
         print("Using json-file\n");
-        tmpCalcTimes = readCalcTimesFromJson(fullFileName);
+        tmpCalcTimes := readCalcTimesFromJson(fullFileName);
       then tmpCalcTimes;
     case(_)
-      equation
-        fullFileName = iFileNamePrefix + ".xml";
-        SOME(_) = System.getFileModificationTime(fullFileName);
+      algorithm
+        fullFileName := iFileNamePrefix + ".xml";
+        SOME(_) := System.getFileModificationTime(fullFileName);
         //xml-file does exist
-        tmpCalcTimes = readCalcTimesFromXml(fullFileName);
+        tmpCalcTimes := readCalcTimesFromXml(fullFileName);
       then tmpCalcTimes;
     else
       equation
@@ -140,11 +140,11 @@ protected
 algorithm
   oTuples := matchcontinue(iList, iTuples)
   case(numOfCalcs::calcTimeSum::eqIdx::rest,_)
-    equation
+    algorithm
       //print("readCalcTimesFromXml1 eqIdx: " + intString(realInt(eqIdx)) + " numOfCalcs: " + intString(realInt(numOfCalcs)) + " calcTime: " + realString(calcTimeSum) + " \n");
-      intNumOfCalcs = realInt(numOfCalcs);
-      intEqIdx = realInt(eqIdx);
-      tmpTuples = expandCalcTimes(rest, (intEqIdx,intNumOfCalcs,calcTimeSum)::iTuples);
+      intNumOfCalcs := realInt(numOfCalcs);
+      intEqIdx := realInt(eqIdx);
+      tmpTuples := expandCalcTimes(rest, (intEqIdx,intNumOfCalcs,calcTimeSum)::iTuples);
     then tmpTuples;
   case ({},_)
     then iTuples;

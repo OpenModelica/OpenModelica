@@ -2909,8 +2909,8 @@ algorithm
       list<SCode.Comment> comment;
       Boolean isApproximatedEquation, isboundaryConditionEquations;
     case(BackendDAE.EQUATION(source=DAE.SOURCE(comment=comment)))
-      equation
-        (isApproximatedEquation, isboundaryConditionEquations) = isEquationTaggedApproximatedOrBoundaryConditionHelper(comment);
+      algorithm
+        (isApproximatedEquation, isboundaryConditionEquations) := isEquationTaggedApproximatedOrBoundaryConditionHelper(comment);
       then
         (isApproximatedEquation, isboundaryConditionEquations);
     case(_) then (false, false);
@@ -2930,14 +2930,14 @@ algorithm
       list<SCode.SubMod> subModLst;
     case({}) then (false, false);
     case(SCode.COMMENT(annotation_=SOME(SCode.ANNOTATION(SCode.MOD(subModLst=subModLst))))::t)
-      equation
-        isApproximatedEquation = List.any(subModLst, isEquationTaggedApproximated) or isEquationTaggedApproximatedOrBoundaryConditionHelper(t);
-        isboundaryConditionEquation = List.any(subModLst, isEquationTaggedBoundaryCondition) or isEquationTaggedApproximatedOrBoundaryConditionHelper(t);
+      algorithm
+        isApproximatedEquation := List.any(subModLst, isEquationTaggedApproximated) or isEquationTaggedApproximatedOrBoundaryConditionHelper(t);
+        isboundaryConditionEquation := List.any(subModLst, isEquationTaggedBoundaryCondition) or isEquationTaggedApproximatedOrBoundaryConditionHelper(t);
       then
         (isApproximatedEquation, isboundaryConditionEquation);
     case(_::t)
-      equation
-        (isApproximatedEquation, isboundaryConditionEquation) = isEquationTaggedApproximatedOrBoundaryConditionHelper(t);
+      algorithm
+        (isApproximatedEquation, isboundaryConditionEquation) := isEquationTaggedApproximatedOrBoundaryConditionHelper(t);
       then
         (isApproximatedEquation, isboundaryConditionEquation);
   end matchcontinue;
@@ -3063,13 +3063,13 @@ algorithm
      ExtAdjacencyMatrix mxt1;
      Boolean b;
    case(first::rest, firstitem::restitem, solvar, mxt1, originalblocks, b)
-     equation
-       (dependencyequation, eBLTList1) = findBlockTargetsHelper1((first::rest), solvar, mxt1);
+     algorithm
+       (dependencyequation, eBLTList1) := findBlockTargetsHelper1((first::rest), solvar, mxt1);
        if debug then
          print("\nTargetBlocks :" + anyString(dependencyequation) + " || EBLT_Block" + anyString(eBLTList1) + "\n");
        end if;
-       targetblocks = getActualBlocks(dependencyequation, originalblocks, first);
-       (targetblocks1, eBLTList2) = findBlockTargetsHelper(targetblocks, firstitem::restitem, solvar, mxt1, originalblocks, b);
+       targetblocks := getActualBlocks(dependencyequation, originalblocks, first);
+       (targetblocks1, eBLTList2) := findBlockTargetsHelper(targetblocks, firstitem::restitem, solvar, mxt1, originalblocks, b);
      then
        (List.unique(listAppend(targetblocks,targetblocks1)), List.unique(listAppend(eBLTList1,eBLTList2)));
    case(_, _, _, _, _, _) then ({}, {});
@@ -3767,64 +3767,64 @@ algorithm
       list<BackendDAE.Equation> eqnsfalse, eqns;
       list<BackendDAE.WhenOperator> whenStmtLst;
     case (BackendDAE.EQUATION(exp = e1, scalar = e2))
-      equation
-        s1 = ExpressionDump.printExp2Str(e1, "", NONE(), NONE());
-        s2 = ExpressionDump.printExp2Str(e2, "", NONE(), NONE());
-        res = stringAppendList({s1," = ",s2});
+      algorithm
+        s1 := ExpressionDump.printExp2Str(e1, "", NONE(), NONE());
+        s2 := ExpressionDump.printExp2Str(e2, "", NONE(), NONE());
+        res := stringAppendList({s1," = ",s2});
       then
         res;
     case (BackendDAE.COMPLEX_EQUATION(left = e1, right = e2))
-      equation
-        s1 = ExpressionDump.printExp2Str(e1, "", NONE(), NONE());
-        s2 = ExpressionDump.printExp2Str(e2, "", NONE(), NONE());
-        res = stringAppendList({s1," = ",s2});
+      algorithm
+        s1 := ExpressionDump.printExp2Str(e1, "", NONE(), NONE());
+        s2 := ExpressionDump.printExp2Str(e2, "", NONE(), NONE());
+        res := stringAppendList({s1," = ",s2});
       then
         res;
     case (BackendDAE.ARRAY_EQUATION(left = e1, right = e2))
-      equation
-        s1 = ExpressionDump.printExp2Str(e1, "", NONE(), NONE());
-        s2 = ExpressionDump.printExp2Str(e2, "", NONE(), NONE());
-        res = stringAppendList({s1," = ",s2});
+      algorithm
+        s1 := ExpressionDump.printExp2Str(e1, "", NONE(), NONE());
+        s2 := ExpressionDump.printExp2Str(e2, "", NONE(), NONE());
+        res := stringAppendList({s1," = ",s2});
       then
         res;
     case (BackendDAE.SOLVED_EQUATION(componentRef = cr, exp = e2))
-      equation
-        s1 = ComponentReference.printComponentRefStr(cr);
-        s1 = System.stringReplace(s1, ".", "_");
-        s1 = System.stringReplace(s1, "$", "");
-        s2 = ExpressionDump.printExp2Str(e2, "", NONE(), NONE());
-        res = stringAppendList({s1," = ",s2});
+      algorithm
+        s1 := ComponentReference.printComponentRefStr(cr);
+        s1 := System.stringReplace(s1, ".", "_");
+        s1 := System.stringReplace(s1, "$", "");
+        s2 := ExpressionDump.printExp2Str(e2, "", NONE(), NONE());
+        res := stringAppendList({s1," = ",s2});
       then
         res;
     case (BackendDAE.WHEN_EQUATION(whenEquation = weqn))
-      equation
-        res = BackendDump.whenEquationString(weqn, true);
+      algorithm
+        res := BackendDump.whenEquationString(weqn, true);
       then
         res;
     case (BackendDAE.RESIDUAL_EQUATION(exp = e))
-      equation
-        s1 = ExpressionDump.printExp2Str(e, "", NONE(), NONE());
-        res = stringAppendList({s1, "= 0"});
+      algorithm
+        s1 := ExpressionDump.printExp2Str(e, "", NONE(), NONE());
+        res := stringAppendList({s1, "= 0"});
       then
         res;
     case (BackendDAE.ALGORITHM(alg = alg, source = source))
-      equation
-        res = DAEDump.dumpAlgorithmsStr({DAE.ALGORITHM(alg, source)});
+      algorithm
+        res := DAEDump.dumpAlgorithmsStr({DAE.ALGORITHM(alg, source)});
       then
         res;
     case (BackendDAE.IF_EQUATION(conditions=e1::expl, eqnstrue=eqns::eqnstrue, eqnsfalse=eqnsfalse))
-      equation
-        s1 = ExpressionDump.printExp2Str(e1, "", NONE(), NONE());
-        s2 = stringDelimitList(List.map(eqns, dumpEquationString),"\n  ");
-        s3 = stringAppendList({"if ",s1," then\n  ",s2});
-        res = BackendDump.ifequationString(expl, eqnstrue, eqnsfalse, s3);
+      algorithm
+        s1 := ExpressionDump.printExp2Str(e1, "", NONE(), NONE());
+        s2 := stringDelimitList(List.map(eqns, dumpEquationString),"\n  ");
+        s3 := stringAppendList({"if ",s1," then\n  ",s2});
+        res := BackendDump.ifequationString(expl, eqnstrue, eqnsfalse, s3);
       then
         res;
     case BackendDAE.FOR_EQUATION(iter = iter, start = start, stop = stop, body = eqn)
-      equation
-        s1 = ExpressionDump.printExp2Str(iter, "", NONE(), NONE()) + " in " + ExpressionDump.printExp2Str(start, "", NONE(), NONE()) + " : " + ExpressionDump.printExp2Str(stop, "", NONE(), NONE());
-        s2 = dumpEquationString(eqn);
-        res = stringAppendList({"for ", s1, " loop\n    ", s2, "; end for; "});
+      algorithm
+        s1 := ExpressionDump.printExp2Str(iter, "", NONE(), NONE()) + " in " + ExpressionDump.printExp2Str(start, "", NONE(), NONE()) + " : " + ExpressionDump.printExp2Str(stop, "", NONE(), NONE());
+        s2 := dumpEquationString(eqn);
+        res := stringAppendList({"for ", s1, " loop\n    ", s2, "; end for; "});
       then
         res;
   end match;

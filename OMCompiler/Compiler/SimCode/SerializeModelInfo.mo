@@ -200,11 +200,11 @@ function serializeTypeName
   input DAE.Type ty;
 algorithm
   () := match ty
-    case DAE.T_REAL() equation File.write(file,",\"type\":\"Real\""); then ();
-    case DAE.T_INTEGER() equation File.write(file,",\"type\":\"Integer\""); then ();
-    case DAE.T_BOOL() equation File.write(file,",\"type\":\"Boolean\""); then ();
-    case DAE.T_STRING() equation File.write(file,",\"type\":\"String\""); then ();
-    case DAE.T_ENUMERATION() equation File.write(file,",\"type\":\"Enumeration\""); then ();
+    case DAE.T_REAL() algorithm File.write(file,",\"type\":\"Real\""); then ();
+    case DAE.T_INTEGER() algorithm File.write(file,",\"type\":\"Integer\""); then ();
+    case DAE.T_BOOL() algorithm File.write(file,",\"type\":\"Boolean\""); then ();
+    case DAE.T_STRING() algorithm File.write(file,",\"type\":\"String\""); then ();
+    case DAE.T_ENUMERATION() algorithm File.write(file,",\"type\":\"Enumeration\""); then ();
     else ();
   end match;
 end serializeTypeName;
@@ -282,7 +282,7 @@ algorithm
     local
       DAE.Element elt;
     case DAE.FLATTEN(dae=SOME(elt))
-      equation
+      algorithm
         File.write(file,"{\"op\":\"before-after\",\"display\":\"flattening\",\"data\":[\"");
         File.writeEscape(file,System.trim(SCodeDump.equationStr(op.scode,SCodeDump.defaultOptions)),escape=JSON);
         File.write(file,"\",\"");
@@ -290,13 +290,13 @@ algorithm
         File.write(file,"\"]}");
       then ();
     case DAE.FLATTEN()
-      equation
+      algorithm
         File.write(file,"{\"op\":\"info\",\"display\":\"scode\",\"data\":[\"");
         File.writeEscape(file,System.trim(SCodeDump.equationStr(op.scode,SCodeDump.defaultOptions)),escape=JSON);
         File.write(file,"\"]}");
       then ();
     case DAE.SIMPLIFY()
-      equation
+      algorithm
         File.write(file,"{\"op\":\"before-after\",\"display\":\"simplify\",\"data\":[\"");
         writeEqExpStr(file,op.before);
         File.write(file,"\",\"");
@@ -304,7 +304,7 @@ algorithm
         File.write(file,"\"]}");
       then ();
     case DAE.OP_INLINE()
-      equation
+      algorithm
         File.write(file,"{\"op\":\"before-after\",\"display\":\"inline\",\"data\":[\"");
         writeEqExpStr(file,op.before);
         File.write(file,"\",\"");
@@ -312,7 +312,7 @@ algorithm
         File.write(file,"\"]}");
       then ();
     case DAE.SOLVE(assertConds={})
-      equation
+      algorithm
         File.write(file,"{\"op\":\"before-after\",\"display\":\"solved\",\"data\":[\"");
         File.writeEscape(file,expStr(op.exp1),escape=JSON);
         File.write(file," = ");
@@ -338,7 +338,7 @@ algorithm
         File.write(file,"]}");
       then ();
     case DAE.OP_RESIDUAL()
-      equation
+      algorithm
         File.write(file,"{\"op\":\"before-after\",\"display\":\"residual\",\"data\":[");
         File.writeEscape(file,expStr(op.e1),escape=JSON);
         File.write(file," = ");
@@ -348,7 +348,7 @@ algorithm
         File.write(file,"\"]}");
       then ();
     case DAE.SUBSTITUTION()
-      equation
+      algorithm
         File.write(file,"{\"op\":\"chain\",\"display\":\"substitution\",\"data\":[\"");
         File.writeEscape(file,expStr(op.source),escape=JSON);
         File.write(file,"\"");
@@ -356,7 +356,7 @@ algorithm
         File.write(file,"]}");
       then ();
     case DAE.SOLVED()
-      equation
+      algorithm
         File.write(file,"{\"op\":\"info\",\"display\":\"solved\",\"data\":[\"");
         writeCref(file,op.cr,escape=JSON);
         File.write(file," = ");
@@ -364,7 +364,7 @@ algorithm
         File.write(file,"\"]}");
       then ();
     case DAE.OP_DIFFERENTIATE()
-      equation
+      algorithm
         File.write(file,"{\"op\":\"before-after\",\"display\":\"differentiate d/d");
         writeCref(file,op.cr,escape=JSON);
         File.write(file,"\",\"data\":[\"");
@@ -375,7 +375,7 @@ algorithm
       then ();
 
     case DAE.OP_SCALARIZE()
-      equation
+      algorithm
         File.write(file,"{\"op\":\"before-after\",\"display\":\"scalarize [");
         File.write(file,intString(op.index));
         File.write(file,"]\",\"data\":[\"");
@@ -387,7 +387,7 @@ algorithm
 
       // Custom operations - operations that can not be described in a general way because they are specialized
     case DAE.NEW_DUMMY_DER()
-      equation
+      algorithm
         File.write(file,"{\"op\":\"dummy-der\",\"display\":\"dummy derivative");
         File.write(file,"\",\"data\":[\"");
         writeCref(file,op.chosen);
@@ -438,7 +438,7 @@ algorithm
       BackendDAE.WhenOperator whenOp;
       list<DAE.ComponentRef> crefs;
 
-    case SimCode.SES_RESIDUAL() equation
+    case SimCode.SES_RESIDUAL() algorithm
       File.write(file, "\n{\"eqIndex\":");
       File.writeInt(file, eq.index);
       if parent <> 0 then
@@ -456,7 +456,7 @@ algorithm
       File.write(file, "}");
     then ();
 
-    case SimCode.SES_FOR_RESIDUAL() equation
+    case SimCode.SES_FOR_RESIDUAL() algorithm
       File.write(file, "\n{\"eqIndex\":");
       File.writeInt(file, eq.index);
       if parent <> 0 then
@@ -474,7 +474,7 @@ algorithm
       File.write(file, "}");
     then ();
 
-    case SimCode.SES_GENERIC_RESIDUAL() equation
+    case SimCode.SES_GENERIC_RESIDUAL() algorithm
       File.write(file, "\n{\"eqIndex\":");
       File.writeInt(file, eq.index);
       if parent <> 0 then
@@ -492,7 +492,7 @@ algorithm
       File.write(file, "}");
     then ();
 
-    case SimCode.SES_SIMPLE_ASSIGN() equation
+    case SimCode.SES_SIMPLE_ASSIGN() algorithm
       File.write(file, "\n{\"eqIndex\":");
       File.writeInt(file, eq.index);
       if parent <> 0 then
@@ -512,7 +512,7 @@ algorithm
       File.write(file, "}");
     then ();
 
-    case SimCode.SES_RESIZABLE_ASSIGN() equation
+    case SimCode.SES_RESIZABLE_ASSIGN() algorithm
       File.write(file, "\n{\"eqIndex\":");
       File.writeInt(file, eq.index);
       if parent <> 0 then
@@ -527,7 +527,7 @@ algorithm
       File.write(file, "}");
     then ();
 
-    case SimCode.SES_GENERIC_ASSIGN() equation
+    case SimCode.SES_GENERIC_ASSIGN() algorithm
       File.write(file, "\n{\"eqIndex\":");
       File.writeInt(file, eq.index);
       if parent <> 0 then
@@ -542,7 +542,7 @@ algorithm
       File.write(file, "}");
     then ();
 
-    case SimCode.SES_ENTWINED_ASSIGN() equation
+    case SimCode.SES_ENTWINED_ASSIGN() algorithm
       File.write(file, "\n{\"eqIndex\":");
       File.writeInt(file, eq.index);
       if parent <> 0 then
@@ -557,7 +557,7 @@ algorithm
       File.write(file, "}");
     then ();
 
-    case SimCode.SES_SIMPLE_ASSIGN_CONSTRAINTS() equation
+    case SimCode.SES_SIMPLE_ASSIGN_CONSTRAINTS() algorithm
       File.write(file, "\n{\"eqIndex\":");
       File.writeInt(file, eq.index);
       if parent <> 0 then
@@ -577,7 +577,7 @@ algorithm
       File.write(file, "}");
     then ();
 
-    case SimCode.SES_ARRAY_CALL_ASSIGN() equation
+    case SimCode.SES_ARRAY_CALL_ASSIGN() algorithm
       File.write(file, "\n{\"eqIndex\":");
       File.writeInt(file, eq.index);
       if parent <> 0 then
@@ -1118,7 +1118,7 @@ algorithm
       Integer i,j;
       SimCode.SimEqSystem eq;
     case (i,j,eq as SimCode.SES_RESIDUAL())
-      equation
+      algorithm
         File.write(file,"{\"row\":");
         File.write(file,intString(i));
         File.write(file,",\"column\":");

@@ -205,19 +205,19 @@ algorithm
       BackendDAE.Equation eqn;
 
     case(BackendDAE.EQUATION(e1,e2,source,attr),_)
-      equation
-        (e1_1,source,b1,_) = Inline.inlineExp(e1,fns,source);
-        (e2_1,source,b2,_) = Inline.inlineExp(e2,fns,source);
-        true = b1 or b2;
+      algorithm
+        (e1_1,source,b1,_) := Inline.inlineExp(e1,fns,source);
+        (e2_1,source,b2,_) := Inline.inlineExp(e2,fns,source);
+        true := b1 or b2;
       then
        (BackendDAE.EQUATION(e1_1,e2_1,source,attr),true);
 
     case(BackendDAE.ARRAY_EQUATION(dimSize,e1,e2,source,attr,recordSize),_)
-      equation
-        (e1_1,source,b1,_) = Inline.inlineExp(e1,fns,source);
-        (e2_1,source,b2,_) = Inline.inlineExp(e2,fns,source);
-        true = b1 or b2;
-        eqn = match (e1_1, e2_1)
+      algorithm
+        (e1_1,source,b1,_) := Inline.inlineExp(e1,fns,source);
+        (e2_1,source,b2,_) := Inline.inlineExp(e2,fns,source);
+        true := b1 or b2;
+        eqn := match (e1_1, e2_1)
           case (DAE.ARRAY(array = {e1}), DAE.ARRAY(array = {e2}))
           then BackendDAE.EQUATION(e1,e2,source,attr); // flatten if size==1
           else BackendDAE.ARRAY_EQUATION(dimSize,e1_1,e2_1,source,attr,recordSize);
@@ -226,50 +226,50 @@ algorithm
         (eqn, true);
 
     case(BackendDAE.FOR_EQUATION(e, e1, e2, eqn, source, attr), _)
-      equation
-        (eqn, true) = inlineEq(eqn, fns);
+      algorithm
+        (eqn, true) := inlineEq(eqn, fns);
       then
         (BackendDAE.FOR_EQUATION(e, e1, e2, eqn, source, attr), true);
 
     case(BackendDAE.SOLVED_EQUATION(cref,e,source,attr),_)
-      equation
-        (e_1,source,true,_) = Inline.inlineExp(e,fns,source);
+      algorithm
+        (e_1,source,true,_) := Inline.inlineExp(e,fns,source);
       then
         (BackendDAE.SOLVED_EQUATION(cref,e_1,source,attr),true);
 
     case(BackendDAE.RESIDUAL_EQUATION(e,source,attr),_)
-      equation
-        (e_1,source,true,_) = Inline.inlineExp(e,fns,source);
+      algorithm
+        (e_1,source,true,_) := Inline.inlineExp(e,fns,source);
       then
         (BackendDAE.RESIDUAL_EQUATION(e_1,source,attr),true);
 
     case(BackendDAE.ALGORITHM(size,DAE.ALGORITHM_STMTS(statementLst=stmts),source,crefExpand,attr),_)
-      equation
-        (stmts1,true) = Inline.inlineStatements(stmts,fns,{},false);
-        alg = DAE.ALGORITHM_STMTS(stmts1);
+      algorithm
+        (stmts1,true) := Inline.inlineStatements(stmts,fns,{},false);
+        alg := DAE.ALGORITHM_STMTS(stmts1);
       then
         (BackendDAE.ALGORITHM(size,alg,source,crefExpand,attr),true);
 
     case(BackendDAE.WHEN_EQUATION(size,weq,source,attr),_)
-      equation
-        (weq_1,source,true) = inlineWhenEq(weq,fns,source);
+      algorithm
+        (weq_1,source,true) := inlineWhenEq(weq,fns,source);
       then
         (BackendDAE.WHEN_EQUATION(size,weq_1,source,attr),true);
 
     case(BackendDAE.COMPLEX_EQUATION(size,e1,e2,source,attr),_)
-      equation
-        (e1_1,source,b1,_) = Inline.inlineExp(e1,fns,source);
-        (e2_1,source,b2,_) = Inline.inlineExp(e2,fns,source);
-        true = b1 or b2;
+      algorithm
+        (e1_1,source,b1,_) := Inline.inlineExp(e1,fns,source);
+        (e2_1,source,b2,_) := Inline.inlineExp(e2,fns,source);
+        true := b1 or b2;
       then
         (BackendDAE.COMPLEX_EQUATION(size,e1_1,e2_1,source,attr),true);
 
     case(BackendDAE.IF_EQUATION(explst,eqnslst,eqns,source,attr),_)
-      equation
-        (explst,source,b1) = Inline.inlineExps(explst,fns,source);
-        (eqnslst,b2) = inlineEqsLst(eqnslst,fns,{},false);
-        (eqns,b3) = inlineEqs(eqns,fns,{},false);
-        true = b1 or b2 or b3;
+      algorithm
+        (explst,source,b1) := Inline.inlineExps(explst,fns,source);
+        (eqnslst,b2) := inlineEqsLst(eqnslst,fns,{},false);
+        (eqns,b3) := inlineEqs(eqns,fns,{},false);
+        true := b1 or b2 or b3;
       then
         (BackendDAE.IF_EQUATION(explst,eqnslst,eqns,source,attr),true);
     else
@@ -293,9 +293,9 @@ algorithm
       Boolean inlined;
     case ({},_,_,_) then (listReverse(iAcc),iInlined);
     case (eqn::rest,_,_,_)
-      equation
-        (eqn,inlined) = inlineEqs(eqn,inFunctions,{},false);
-        (acc,inlined) = inlineEqsLst(rest,inFunctions,eqn::iAcc,inlined or iInlined);
+      algorithm
+        (eqn,inlined) := inlineEqs(eqn,inFunctions,{},false);
+        (acc,inlined) := inlineEqsLst(rest,inFunctions,eqn::iAcc,inlined or iInlined);
       then
         (acc,inlined);
   end match;
@@ -316,9 +316,9 @@ algorithm
       Boolean inlined;
     case ({},_,_,_) then (listReverse(iAcc),iInlined);
     case (eqn::rest,_,_,_)
-      equation
-        (eqn,inlined) = inlineEq(eqn,inFunctions);
-        (acc,inlined) = inlineEqs(rest,inFunctions,eqn::iAcc,inlined or iInlined);
+      algorithm
+        (eqn,inlined) := inlineEq(eqn,inFunctions);
+        (acc,inlined) := inlineEqs(rest,inFunctions,eqn::iAcc,inlined or iInlined);
       then
         (acc,inlined);
   end match;
@@ -346,17 +346,17 @@ algorithm
       list<BackendDAE.WhenOperator> whenStmtLst;
 
     case BackendDAE.WHEN_STMTS(condition=cond, whenStmtLst=whenStmtLst, elsewhenPart = oelsewe)
-      equation
-        (cond, source, b1,_) = Inline.inlineExp(cond, fns, inSource);
-        (whenStmtLst, b2) = inlineWhenOps(whenStmtLst, fns);
+      algorithm
+        (cond, source, b1,_) := Inline.inlineExp(cond, fns, inSource);
+        (whenStmtLst, b2) := inlineWhenOps(whenStmtLst, fns);
 
         if isSome(oelsewe) then
-          SOME(elsewe) = oelsewe;
-          (elsewe, source, b3) = inlineWhenEq(elsewe, fns, source);
-          oelsewe = SOME(elsewe);
+          SOME(elsewe) := oelsewe;
+          (elsewe, source, b3) := inlineWhenEq(elsewe, fns, source);
+          oelsewe := SOME(elsewe);
         else
-          oelsewe = NONE();
-          b3 = false;
+          oelsewe := NONE();
+          b3 := false;
         end if;
       then (BackendDAE.WHEN_STMTS(cond, whenStmtLst, oelsewe), source, b1 or b2 or b3);
 
@@ -381,39 +381,39 @@ algorithm
       DAE.ElementSource source;
 
     case BackendDAE.ASSIGN(left = e1, right = e2, source = source)
-      equation
-        (e2, source, b,_) = Inline.inlineExp(e2, fns, source);
-        outWhenOps = (if b then BackendDAE.ASSIGN(e1, e2, source) else whenOp)::outWhenOps;
-        inlined = inlined or b;
+      algorithm
+        (e2, source, b,_) := Inline.inlineExp(e2, fns, source);
+        outWhenOps := (if b then BackendDAE.ASSIGN(e1, e2, source) else whenOp)::outWhenOps;
+        inlined := inlined or b;
       then ();
 
     case BackendDAE.REINIT(stateVar = cr, value = e2,  source = source)
-      equation
-        (e2, source, b,_) = Inline.inlineExp(e2, fns, source);
-        outWhenOps = (if b then BackendDAE.REINIT(cr, e2, source) else whenOp)::outWhenOps;
-        inlined = inlined or b;
+      algorithm
+        (e2, source, b,_) := Inline.inlineExp(e2, fns, source);
+        outWhenOps := (if b then BackendDAE.REINIT(cr, e2, source) else whenOp)::outWhenOps;
+        inlined := inlined or b;
       then ();
 
     case BackendDAE.ASSERT(condition = e1, message = e2, level = level,  source = source)
-      equation
-        (e1, source, b,_) = Inline.inlineExp(e1, fns, source);
-        (e2, source, b2,_) = Inline.inlineExp(e2, fns, source);
-        outWhenOps = (if b or b2 then BackendDAE.ASSERT(e1, e2, level, source) else whenOp)::outWhenOps;
-        inlined = inlined or b or b2;
+      algorithm
+        (e1, source, b,_) := Inline.inlineExp(e1, fns, source);
+        (e2, source, b2,_) := Inline.inlineExp(e2, fns, source);
+        outWhenOps := (if b or b2 then BackendDAE.ASSERT(e1, e2, level, source) else whenOp)::outWhenOps;
+        inlined := inlined or b or b2;
       then ();
 
     case BackendDAE.TERMINATE(message = e1,  source = source)
-      equation
-        (e1, source, b,_) = Inline.inlineExp(e1, fns, source);
-        outWhenOps = (if b then BackendDAE.TERMINATE(e1, source) else whenOp)::outWhenOps;
-        inlined = inlined or b;
+      algorithm
+        (e1, source, b,_) := Inline.inlineExp(e1, fns, source);
+        outWhenOps := (if b then BackendDAE.TERMINATE(e1, source) else whenOp)::outWhenOps;
+        inlined := inlined or b;
       then ();
 
     case BackendDAE.NORETCALL(exp = e1,  source = source)
-      equation
-        (e1, source, b,_) = Inline.inlineExp(e1, fns, source);
-        outWhenOps = (if b then BackendDAE.NORETCALL(e1, source) else whenOp)::outWhenOps;
-        inlined = inlined or b;
+      algorithm
+        (e1, source, b,_) := Inline.inlineExp(e1, fns, source);
+        outWhenOps := (if b then BackendDAE.NORETCALL(e1, source) else whenOp)::outWhenOps;
+        inlined := inlined or b;
       then ();
   end match;
   end for;
@@ -433,8 +433,8 @@ algorithm
       Integer i1,i2,i3;
       array<Option<BackendDAE.Var>> vararr;
     case(BackendDAE.VARIABLES(crefind,BackendDAE.VARIABLE_ARRAY(i3,vararr),i1,i2),fns)
-      equation
-        inlined = inlineVarOptArray(vararr,fns);
+      algorithm
+        inlined := inlineVarOptArray(vararr,fns);
       then
         (BackendDAE.VARIABLES(crefind,BackendDAE.VARIABLE_ARRAY(i3,vararr),i1,i2),inlined);
     else
@@ -480,8 +480,8 @@ algorithm
       Boolean b;
     case(NONE(),_) then (NONE(),false);
     case(SOME(var),_)
-      equation
-        (var2,b) = inlineVar(var,fns);
+      algorithm
+        (var2,b) := inlineVar(var,fns);
       then
         (if referenceEq(var, var2) then inVarOption else SOME(var2),b);
   end match;
@@ -516,9 +516,9 @@ algorithm
       Boolean unreplaceable;
       Boolean e;
 
-    case BackendDAE.VAR(varName,varKind,varDirection,varParallelism,varType,bind,tplExp,arrayDim,source,values,ts,hideResult,comment,ct,io,unreplaceable,_,e) equation
-      (bind,source,b1) = Inline.inlineExpOpt(bind,inElementList,source);
-      (values1,source,b2) = Inline.inlineStartAttribute(values,source,inElementList);
+    case BackendDAE.VAR(varName,varKind,varDirection,varParallelism,varType,bind,tplExp,arrayDim,source,values,ts,hideResult,comment,ct,io,unreplaceable,_,e) algorithm
+      (bind,source,b1) := Inline.inlineExpOpt(bind,inElementList,source);
+      (values1,source,b2) := Inline.inlineStartAttribute(values,source,inElementList);
     then (BackendDAE.VAR(varName,varKind,varDirection,varParallelism,varType,bind,tplExp,arrayDim,source,values1,ts,hideResult,comment,ct,io,unreplaceable,false,e), b1 or b2);
 
     else (inVar, false);
@@ -534,7 +534,7 @@ algorithm
       BackendDAE.ZeroCrossingSet zclst;
       DoubleEnded.MutableList<BackendDAE.ZeroCrossing> relations;
 
-    case BackendDAE.EVENT_INFO(zeroCrossings=zclst, relations=relations) equation
+    case BackendDAE.EVENT_INFO(zeroCrossings=zclst, relations=relations) algorithm
       inlineZeroCrossings(zclst.zc, fns);
       inlineZeroCrossings(relations, fns);
     then ();
@@ -566,8 +566,8 @@ algorithm
       Boolean b;
 
     case BackendDAE.ZERO_CROSSING(relation_ = e)
-      equation
-        (e_1, _,_, _) = Inline.inlineExp(e, fns, DAE.emptyElementSource/*TODO: Propagate operation info*/);
+      algorithm
+        (e_1, _,_, _) := Inline.inlineExp(e, fns, DAE.emptyElementSource/*TODO: Propagate operation info*/);
       then if not referenceEq(e,e_1) then BackendDAE.ZERO_CROSSING(zc.index, e_1, zc.occurEquLst, zc.iter) else zc;
 
     else zc;
@@ -752,70 +752,70 @@ algorithm
       list<BackendDAE.Equation> eqns;
 
     case BackendDAE.EQUATION(e1,e2,source,attr)
-      equation
-        (e1,source,outEqs,b1,shared) = inlineCallsAppend(e1,fns,source,inEqs,shared);
-        (e2,source,outEqs,b2,shared) = inlineCallsAppend(e2,fns,source,outEqs,shared);
-        b3 = b1 or b2;
+      algorithm
+        (e1,source,outEqs,b1,shared) := inlineCallsAppend(e1,fns,source,inEqs,shared);
+        (e2,source,outEqs,b2,shared) := inlineCallsAppend(e2,fns,source,outEqs,shared);
+        b3 := b1 or b2;
       then
         (BackendEquation.generateEquation(e1,e2,source,attr),outEqs,b3);
 
     case BackendDAE.COMPLEX_EQUATION(left=e1, right=e2, source=source, attr=attr)
-      equation
-        (e1,source,outEqs,b1,shared) = inlineCallsAppend(e1,fns,source,inEqs,shared);
-        (e2,source,outEqs,b2,shared) = inlineCallsAppend(e2,fns,source,outEqs,shared);
-        b3 = b1 or b2;
+      algorithm
+        (e1,source,outEqs,b1,shared) := inlineCallsAppend(e1,fns,source,inEqs,shared);
+        (e2,source,outEqs,b2,shared) := inlineCallsAppend(e2,fns,source,outEqs,shared);
+        b3 := b1 or b2;
         if b2 and Expression.isScalar(e1) and Expression.isTuple(e2) then
-          e2 = DAE.TSUB(e2, 1, Expression.typeof(e1));
+          e2 := DAE.TSUB(e2, 1, Expression.typeof(e1));
         end if;
       then
         (BackendEquation.generateEquation(e1,e2,source,attr),outEqs,b3);
 
     case BackendDAE.ARRAY_EQUATION(left=e1, right=e2, source=source, attr=attr)
-      equation
-        (e1,source,outEqs,b1,shared) = inlineCallsAppend(e1,fns,source,inEqs,shared);
-        (e2,source,outEqs,b2,shared) = inlineCallsAppend(e2,fns,source,outEqs,shared);
-         b3 = b1 or b2;
+      algorithm
+        (e1,source,outEqs,b1,shared) := inlineCallsAppend(e1,fns,source,inEqs,shared);
+        (e2,source,outEqs,b2,shared) := inlineCallsAppend(e2,fns,source,outEqs,shared);
+         b3 := b1 or b2;
       then
         (BackendEquation.generateEquation(e1,e2,source,attr),outEqs,b3);
 
      case BackendDAE.SOLVED_EQUATION(cref,e2,source,attr)
-       equation
-       (e2,source,outEqs,b2,shared) = inlineCallsAppend(e2,fns,source,inEqs,shared);
+       algorithm
+       (e2,source,outEqs,b2,shared) := inlineCallsAppend(e2,fns,source,inEqs,shared);
        then
         (BackendDAE.SOLVED_EQUATION(cref,e2,source,attr),outEqs,b2);
 
      case BackendDAE.RESIDUAL_EQUATION(e1,source,attr)
-       equation
-       (e1,source,outEqs,b1,shared) = inlineCallsAppend(e1,fns,source,inEqs,shared);
+       algorithm
+       (e1,source,outEqs,b1,shared) := inlineCallsAppend(e1,fns,source,inEqs,shared);
      then
        (BackendDAE.RESIDUAL_EQUATION(e1,source,attr),outEqs,b1);
 
       case eqn as BackendDAE.ALGORITHM(size, DAE.ALGORITHM_STMTS(statementLst=stmts),source,crefExpand,attr)
-      equation
-        (stmts1,b1) = Inline.inlineStatements(stmts,fns,{},false);
+      algorithm
+        (stmts1,b1) := Inline.inlineStatements(stmts,fns,{},false);
         if b1 then
-          eqn = BackendDAE.ALGORITHM(size,DAE.ALGORITHM_STMTS(stmts1),source,crefExpand,attr);
+          eqn := BackendDAE.ALGORITHM(size,DAE.ALGORITHM_STMTS(stmts1),source,crefExpand,attr);
         end if;
       then
         (eqn,inEqs,b1);
 
      case eqn as BackendDAE.WHEN_EQUATION(size,weq,source,attr)
-      equation
-        (weq_1,source,b1) = inlineWhenEq(weq,fns,source);
+      algorithm
+        (weq_1,source,b1) := inlineWhenEq(weq,fns,source);
         if b1 then
-           eqn = BackendDAE.WHEN_EQUATION(size,weq_1,source,attr);
+           eqn := BackendDAE.WHEN_EQUATION(size,weq_1,source,attr);
         end if;
       then
         (eqn,inEqs, b1);
 
      case eqn as BackendDAE.IF_EQUATION(explst,eqnslst,eqns,source,attr)
-      equation
-        (explst,source,b1) = Inline.inlineExps(explst,fns,source);
-        (eqnslst,b2) = inlineEqsLst(eqnslst,fns,{},false);
-        (eqns,b3) = inlineEqs(eqns,fns,{},false);
-        b3 = b1 or b2 or b3;
+      algorithm
+        (explst,source,b1) := Inline.inlineExps(explst,fns,source);
+        (eqnslst,b2) := inlineEqsLst(eqnslst,fns,{},false);
+        (eqns,b3) := inlineEqs(eqns,fns,{},false);
+        b3 := b1 or b2 or b3;
         if b3 then
-          eqn = BackendDAE.IF_EQUATION(explst,eqnslst,eqns,source,attr);
+          eqn := BackendDAE.IF_EQUATION(explst,eqnslst,eqns,source,attr);
         end if;
       then
         (eqn, inEqs, b3);
@@ -847,11 +847,11 @@ algorithm
       Boolean b;
 
     case (e)
-      equation
-        (e1,(_,outEqs,b,_)) = Expression.traverseExpBottomUp(e,inlineCallsWork,(fns,inEqs,false,false));
+      algorithm
+        (e1,(_,outEqs,b,_)) := Expression.traverseExpBottomUp(e,inlineCallsWork,(fns,inEqs,false,false));
         //source = DAEUtil.addSymbolicTransformation(b, inSource,DAE.OP_INLINE(DAE.PARTIAL_EQUATION(e),DAE.PARTIAL_EQUATION(e1)));
-        source = inSource;
-        e2 = e1;
+        source := inSource;
+        e2 := e1;
         //(DAE.PARTIAL_EQUATION(e2),source) = ExpressionSimplify.simplifyAddSymbolicOperation(DAE.PARTIAL_EQUATION(e1), source);
         // debug
         if Flags.isSet(Flags.DUMPBACKENDINLINE_VERBOSE) then
@@ -903,37 +903,37 @@ algorithm
 
     case (DAE.CALL(p,args,DAE.CALL_ATTR(inlineType=inlineType)),(fns,eqSys,_,false))
     guard Inline.checkInlineType(inlineType,fns) and Flags.getConfigEnum(Flags.INLINE_METHOD)==2
-      equation
-        (fn,comment) = Inline.getFunctionBody(p,fns);
-        funcname = BackendUtil.modelicaStringToCStr(AbsynUtil.pathString(p), false);
+      algorithm
+        (fn,comment) := Inline.getFunctionBody(p,fns);
+        funcname := BackendUtil.modelicaStringToCStr(AbsynUtil.pathString(p), false);
         if Flags.isSet(Flags.DUMPBACKENDINLINE_VERBOSE) then
           print("Inline Function " +funcname+" type: "+DAEDump.dumpInlineTypeStr(inlineType)+"\n");
           print("in : " + ExpressionDump.printExpStr(inExp) + "\n");
         end if;
 
         // get inputs, body and output
-        (outputCrefs, newEqSys) = createEqnSysfromFunction(fn,args,funcname);
-        newExp = Expression.makeTuple(list( Expression.crefExp(cr) for cr in outputCrefs));
+        (outputCrefs, newEqSys) := createEqnSysfromFunction(fn,args,funcname);
+        newExp := Expression.makeTuple(list( Expression.crefExp(cr) for cr in outputCrefs));
         if Flags.isSet(Flags.DUMPBACKENDINLINE_VERBOSE) then
           print("out: " + ExpressionDump.printExpStr(newExp) + "\n");
         end if;
 
         // MSL 3.2.1 need GenerateEvents to disable this
         if not Inline.hasGenerateEventsAnnotation(comment) then
-          _ = BackendDAEUtil.traverseBackendDAEExpsEqSystemWithUpdate(newEqSys, addNoEvent, false);
+          _ := BackendDAEUtil.traverseBackendDAEExpsEqSystemWithUpdate(newEqSys, addNoEvent, false);
         end if;
-        newEqSys = BackendDAEUtil.mergeEqSystems(newEqSys, eqSys);
+        newEqSys := BackendDAEUtil.mergeEqSystems(newEqSys, eqSys);
       then
         (newExp,(fns,newEqSys,true,false));
 
     //fallback use old implementation
     case (DAE.CALL(p,_,DAE.CALL_ATTR(inlineType=inlineType)),(fns,eqSys,b,insideIfExp))
-      equation
+      algorithm
         //TODO sace assertLst
-        (newExp, _) = Inline.inlineCall(inExp, {}, fns);
+        (newExp, _) := Inline.inlineCall(inExp, {}, fns);
 
         if Flags.isSet(Flags.DUMPBACKENDINLINE_VERBOSE) then
-          funcname = BackendUtil.modelicaStringToCStr(AbsynUtil.pathString(p), false);
+          funcname := BackendUtil.modelicaStringToCStr(AbsynUtil.pathString(p), false);
           print("\nBackendInline fallback replace implementation: " +funcname+" type: " +DAEDump.dumpInlineTypeStr(inlineType)+"\n");
           print("in : " + ExpressionDump.printExpStr(inExp) + "\n");
           print("out: " + ExpressionDump.printExpStr(newExp) + "\n");
@@ -1088,9 +1088,9 @@ algorithm
       then ();
 
     case (DAE.ALGORITHM(algorithm_ = DAE.ALGORITHM_STMTS(st)))
-      equation
-        eqlst = List.map(st, BackendEquation.statementEq);
-        outEqs = BackendEquation.equationsAddDAE(eqlst, outEqs);
+      algorithm
+        eqlst := List.map(st, BackendEquation.statementEq);
+        outEqs := BackendEquation.equationsAddDAE(eqlst, outEqs);
       then ();
     end match;
   end for;

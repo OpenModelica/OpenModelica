@@ -176,15 +176,15 @@ algorithm
       SimCode.ModelInfo modelInfo,modelInfo_1;
 
      case (eqns,modelInfo,Absyn.FUNCTIONARGS(args=inExpArgList,argNames=inNamedArgList))
-      equation
+      algorithm
         //make an integer list of labels to be reduced
 
-         (outStringList,outExpList) = AbsynUtil.getNamedFuncArgNamesAndValues(inNamedArgList);
+         (outStringList,outExpList) := AbsynUtil.getNamedFuncArgNamesAndValues(inNamedArgList);
 
-        reduceListStr=System.stringReplace(ExpressionDump.printExpStr(Expression.fromAbsynExp(listGet(outExpList,1))), "\"", "");
-        reduceList=StringDelimit2Int(reduceListStr,",");
+        reduceListStr:=System.stringReplace(ExpressionDump.printExpStr(Expression.fromAbsynExp(listGet(outExpList,1))), "\"", "");
+        reduceList:=StringDelimit2Int(reduceListStr,",");
         //reduce terms by calling buildLabels (buildLabels functions differently depending whether GENERATE_LABELED_SIMCODE or REDUCE_TERMS is enabled)
-       (eqns,modelInfo_1)= buildLabels(eqns,modelInfo,reduceList,Absyn.FUNCTIONARGS(args=inExpArgList,argNames=inNamedArgList));
+       (eqns,modelInfo_1):= buildLabels(eqns,modelInfo,reduceList,Absyn.FUNCTIONARGS(args=inExpArgList,argNames=inNamedArgList));
 
       then
         (eqns,modelInfo_1);
@@ -204,14 +204,14 @@ algorithm
       list<SimCodeVar.SimVar> alg,intAlg,boolAlg,states,listVars,listVars1,listVars2;
       BackendVarTransform.VariableReplacements repl;
     case(SimCodeVar.SIMVARS(algVars=alg,intAlgVars=intAlg,boolAlgVars=boolAlg,stateVars=states),_)
-      equation
+      algorithm
         //empty replacements
-        repl=BackendVarTransform.emptyReplacements();
+        repl:=BackendVarTransform.emptyReplacements();
         //create a list of algVars, intAlgVars, boolAlgvars and stateVars
-        listVars1 = listAppend(alg,intAlg);
-        listVars2 = listAppend(listVars1,boolAlg);
-        listVars = listAppend(listVars2,states);
-        repl=meanValueReplacements2(repl,listVars,exp_list);
+        listVars1 := listAppend(alg,intAlg);
+        listVars2 := listAppend(listVars1,boolAlg);
+        listVars := listAppend(listVars2,states);
+        repl:=meanValueReplacements2(repl,listVars,exp_list);
       then repl;
   end matchcontinue;
 end meanValueReplacements;
@@ -239,9 +239,9 @@ algorithm
     case(repl,{},{}) then repl;
     //adds replacement for the time variable
     case(repl,{},Absyn.REAL(value)::{})
-      equation
+      algorithm
 
-        repl=BackendVarTransform.addReplacement(repl,DAE.crefTime,DAE.RCONST(stringReal(value)),NONE());
+        repl:=BackendVarTransform.addReplacement(repl,DAE.crefTime,DAE.RCONST(stringReal(value)),NONE());
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
         Debug.trace("Add replacement for time\n" );
@@ -252,9 +252,9 @@ algorithm
       then repl;
     //replacements for real values
     case(repl,SimCodeVar.SIMVAR(name = name,type_ = DAE.T_REAL(_))::restVar,Absyn.REAL(value)::restVal)
-      equation
-        repl=BackendVarTransform.addReplacement(repl,name,DAE.RCONST(stringReal(value)),NONE());
-        repl=meanValueReplacements2(repl,restVar,restVal);
+      algorithm
+        repl:=BackendVarTransform.addReplacement(repl,name,DAE.RCONST(stringReal(value)),NONE());
+        repl:=meanValueReplacements2(repl,restVar,restVal);
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
         Debug.trace("Add replacement for " + ComponentReference.printComponentRefStr(name) + " by " + value + "\n" );
@@ -263,10 +263,10 @@ algorithm
       then repl;
     //replacements for integer values
     case(repl,SimCodeVar.SIMVAR(name = name,type_ = DAE.T_REAL(_))::restVar,Absyn.INTEGER(value = value2)::restVal)
-      equation
-        value=intString(value2);
-        repl=BackendVarTransform.addReplacement(repl,name,DAE.RCONST(stringReal(value)),NONE());
-        repl=meanValueReplacements2(repl,restVar,restVal);
+      algorithm
+        value:=intString(value2);
+        repl:=BackendVarTransform.addReplacement(repl,name,DAE.RCONST(stringReal(value)),NONE());
+        repl:=meanValueReplacements2(repl,restVar,restVal);
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
         Debug.trace("Add replacement for " + ComponentReference.printComponentRefStr(name) + " by " + value + "\n" );
@@ -274,9 +274,9 @@ algorithm
       then repl;
     //replacements for negative reals
     case(repl,SimCodeVar.SIMVAR(name = name,type_ = DAE.T_REAL(_))::restVar,Absyn.UNARY(op = Absyn.UMINUS(),exp = Absyn.REAL(value))::restVal)
-      equation
-        repl=BackendVarTransform.addReplacement(repl,name,DAE.UNARY(DAE.UMINUS(DAE.T_REAL_DEFAULT),DAE.RCONST(stringReal(value))),NONE());
-        repl=meanValueReplacements2(repl,restVar,restVal);
+      algorithm
+        repl:=BackendVarTransform.addReplacement(repl,name,DAE.UNARY(DAE.UMINUS(DAE.T_REAL_DEFAULT),DAE.RCONST(stringReal(value))),NONE());
+        repl:=meanValueReplacements2(repl,restVar,restVal);
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
         Debug.trace("Add replacement for " + ComponentReference.printComponentRefStr(name) + " by -" + value + "\n" );
@@ -287,25 +287,25 @@ algorithm
       then repl;
     //replacements for negative integers
     case(repl,SimCodeVar.SIMVAR(name = name,type_ = DAE.T_REAL(_))::restVar,Absyn.UNARY(op = Absyn.UMINUS(),exp = Absyn.INTEGER(value2))::restVal)
-      equation
-        value=intString(value2);
-        repl=BackendVarTransform.addReplacement(repl,name,DAE.UNARY(DAE.UMINUS(DAE.T_REAL_DEFAULT),DAE.RCONST(stringReal(value))),NONE());
-        repl=meanValueReplacements2(repl,restVar,restVal);
+      algorithm
+        value:=intString(value2);
+        repl:=BackendVarTransform.addReplacement(repl,name,DAE.UNARY(DAE.UMINUS(DAE.T_REAL_DEFAULT),DAE.RCONST(stringReal(value))),NONE());
+        repl:=meanValueReplacements2(repl,restVar,restVal);
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
         Debug.trace("Add replacement for " + ComponentReference.printComponentRefStr(name) + " by -" + value + "\n" );
     end if;
       then repl;
     case(repl,var::restVar,meanValue::restVal)
-      equation
+      algorithm
         if(Flags.isSet(Flags.REDUCE_DAE)) then
         Debug.trace("Add no replacement\n" );
     end if;
 
       then repl;
     case(repl,var::restVar,meanValue::restVal)
-      equation
-        repl=meanValueReplacements2(repl,restVar,restVal);
+      algorithm
+        repl:=meanValueReplacements2(repl,restVar,restVal);
       then repl;
   end matchcontinue;
 end meanValueReplacements2;
@@ -355,40 +355,40 @@ protected function addLabelToEquations
     case ({},vars,idx,_,_) then ({},vars,idx,{});
     // residuals
     case (((eq as SimCode.SES_RESIDUAL(i,res_i,e,source, eqAttr)) :: es),vars,idx,_,_)
-      equation
+      algorithm
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
         Debug.trace("---Replace residuals\n" );
     end if;
 
         //label a residual equation
-        (e2,vars_1,idx2,labels) = addLabelToExp(e,vars,idx,true,reduceList,inVarRepl);
+        (e2,vars_1,idx2,labels) := addLabelToExp(e,vars,idx,true,reduceList,inVarRepl);
         //simplify the labeled equation
-        (e2,_)=ExpressionSimplify.simplify(e2);
+        (e2,_):=ExpressionSimplify.simplify(e2);
         //label rest
-        (es_1 ,vars_2,idx3,labels2)= addLabelToEquations(es,vars_1,idx2,reduceList,inVarRepl);
-        labels3=listAppend(labels,labels2);
+        (es_1 ,vars_2,idx3,labels2):= addLabelToEquations(es,vars_1,idx2,reduceList,inVarRepl);
+        labels3:=listAppend(labels,labels2);
       then
         (SimCode.SES_RESIDUAL(i,res_i,e2,source, eqAttr) :: es_1,vars_2,idx3,labels3);
     // simple assignments
     case (((eq as SimCode.SES_SIMPLE_ASSIGN(i,cr,e,source, eqAttr)) :: es),vars,idx,_,_)
-      equation
+      algorithm
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
         Debug.trace("---Replace simple assignments\n" );
     end if;
         //label simple assigment
-        (e2,vars_1,idx2,labels) = addLabelToExp(e,vars,idx,true,reduceList,inVarRepl);
+        (e2,vars_1,idx2,labels) := addLabelToExp(e,vars,idx,true,reduceList,inVarRepl);
         //simplify the labeled equation
-        (e2,_)=ExpressionSimplify.simplify(e2);
+        (e2,_):=ExpressionSimplify.simplify(e2);
         //label rest
-        (es_1 ,vars_2,idx3,labels2)= addLabelToEquations(es,vars_1,idx2,reduceList,inVarRepl);
-        labels3=listAppend(labels,labels2);
+        (es_1 ,vars_2,idx3,labels2):= addLabelToEquations(es,vars_1,idx2,reduceList,inVarRepl);
+        labels3:=listAppend(labels,labels2);
       then
         (SimCode.SES_SIMPLE_ASSIGN(i,cr,e2,source, eqAttr) :: es_1,vars_2,idx3,labels3);
     // algorithms
     case (((eq as SimCode.SES_ALGORITHM(i,statements, eqAttr)) :: es),vars,idx,_,_)
-      equation
+      algorithm
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
         Debug.trace("---Replace algorithms\n" );
@@ -397,88 +397,88 @@ protected function addLabelToEquations
         //Debug.fcall(Flags.CPP,print,"---Replace algorithms\n" );
 
         //call helper function for labeling algorithms
-        (statements2,vars_1,idx2,labels)=addLabelToAlgorithms(statements,vars,idx,reduceList,inVarRepl);
+        (statements2,vars_1,idx2,labels):=addLabelToAlgorithms(statements,vars,idx,reduceList,inVarRepl);
         //label rest
-        (es_1 ,vars_2,idx3,labels2)= addLabelToEquations(es,vars_1,idx2,reduceList,inVarRepl);
-        labels3=listAppend(labels,labels2);
+        (es_1 ,vars_2,idx3,labels2):= addLabelToEquations(es,vars_1,idx2,reduceList,inVarRepl);
+        labels3:=listAppend(labels,labels2);
       then
         (SimCode.SES_ALGORITHM(i,statements2, eqAttr) :: es_1,vars_2,idx3,labels3);
 
     // linear systems
     case (((eq as SimCode.SES_LINEAR (SimCode.LINEARSYSTEM(i,partOfLinear,tornSystem,varsLin,b,A,residual,jacobianMatrix,sourcelist,idxLS,nUnknownsLS,partOfJac),NONE(), eqAttr)) :: es),vars,idx,_,_)
-      equation
+      algorithm
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
         Debug.trace("---Replace linear equation systems\n" );
     end if;
         //call helper function for labeling linear equation systems
-        (A2,vars_1,idx2,labels)=addLabelToLinearEquationSystems(A,vars,idx,reduceList,inVarRepl);
+        (A2,vars_1,idx2,labels):=addLabelToLinearEquationSystems(A,vars,idx,reduceList,inVarRepl);
         //label rest
-        (es_1 ,vars_2,idx3,labels2)= addLabelToEquations(es,vars_1,idx2,reduceList,inVarRepl);
-        labels3=listAppend(labels,labels2);
+        (es_1 ,vars_2,idx3,labels2):= addLabelToEquations(es,vars_1,idx2,reduceList,inVarRepl);
+        labels3:=listAppend(labels,labels2);
 
       then
         (SimCode.SES_LINEAR(SimCode.LINEARSYSTEM(i,partOfLinear,tornSystem,varsLin,b,A2,residual,jacobianMatrix,sourcelist,idxLS,nUnknownsLS, partOfJac),NONE(), eqAttr) :: es_1,vars_2,idx3,labels3);
 
     // non-linear systems
     case (((eq as SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(index=i,eqs=nl,crefs=crefs,indexNonLinearSystem=idxNLS,nUnknowns=nUnknownsNLS,jacobianMatrix=jacobianMatrix,clockIndex=clockIndex),NONE(), eqAttr)) :: es),vars,idx,_,_)
-      equation
+      algorithm
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
         Debug.trace("---Replace non-linear equation systems\n" );
     end if;
         //call addLabelToEquations for equations in a nonlinear equation system
-        (nl_1,vars_1,idx2,labels)=addLabelToEquations(nl,vars,idx,reduceList,inVarRepl);
+        (nl_1,vars_1,idx2,labels):=addLabelToEquations(nl,vars,idx,reduceList,inVarRepl);
         //label rest
-        (es_1 ,vars_2,idx3,labels2)= addLabelToEquations(es,vars_1,idx2,reduceList,inVarRepl);
-        labels3=listAppend(labels,labels2);
+        (es_1 ,vars_2,idx3,labels2):= addLabelToEquations(es,vars_1,idx2,reduceList,inVarRepl);
+        labels3:=listAppend(labels,labels2);
       then
         (SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(index=i,eqs=nl_1,crefs=crefs,indexNonLinearSystem=idxNLS,nUnknowns=nUnknownsNLS,jacobianMatrix=jacobianMatrix,homotopySupport=false,mixedSystem=false,tornSystem=false,clockIndex=clockIndex),NONE(), eqAttr) :: es_1,vars_2,idx3,labels3);
     // mixed systems
     case (((eq as SimCode.SES_MIXED(i,cont,discVars,disc,indexSys, eqAttr)) :: es),vars,idx,_,_)
-      equation
+      algorithm
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
         Debug.trace("---Replace mixed equation systems\n" );
     end if;
         //call addLabelToEquations for equations in a mixed system
-        ({cont_1},vars_1,idx2,labels)=addLabelToEquations({cont},vars,idx,reduceList,inVarRepl);
+        ({cont_1},vars_1,idx2,labels):=addLabelToEquations({cont},vars,idx,reduceList,inVarRepl);
         //label rest
-        (es_1 ,vars_2,idx3,labels2)= addLabelToEquations(es,vars_1,idx2,reduceList,inVarRepl);
-        labels3=listAppend(labels,labels2);
+        (es_1 ,vars_2,idx3,labels2):= addLabelToEquations(es,vars_1,idx2,reduceList,inVarRepl);
+        labels3:=listAppend(labels,labels2);
       then
         (SimCode.SES_MIXED(i,cont_1,discVars,disc,indexSys, eqAttr) :: es_1,vars_2,idx3,labels3);
     // when without else
   case (((eq as SimCode.SES_WHEN(i,conditions,initialCall,whenStmtLst,NONE(),source, eqAttr)) :: es),vars,idx,_,_)
-      equation
+      algorithm
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
         Debug.trace("---Replace when equations without else statement\n" );
     end if;
         //label rest
-        (es_1 ,vars_1,idx2,labels)= addLabelToEquations(es,vars,idx,reduceList,inVarRepl);
+        (es_1 ,vars_1,idx2,labels):= addLabelToEquations(es,vars,idx,reduceList,inVarRepl);
       then
         //(SimCode.SES_WHEN(i,conditions,initialCall,whenStmtLst,NONE(),source, eqAttr) :: es_1,vars,idx2,labels);
         (SimCode.SES_WHEN(i,conditions,initialCall,whenStmtLst,NONE(),source, eqAttr) :: es_1,vars_1,idx2,labels);
     // when with else
     case (((eq as SimCode.SES_WHEN(i,conditions,initialCall,whenStmtLst,SOME(elsePart),source, eqAttr)) :: es),vars,idx,_,_)
-      equation
+      algorithm
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
         Debug.trace("---Replace when equations with else statement\n" );
     end if;
         //label when equations
         //call addLabelToEquations for labeling else part
-        ({elsePart} ,vars_1,idx2,labels)= addLabelToEquations({elsePart},vars,idx,reduceList,inVarRepl);
+        ({elsePart} ,vars_1,idx2,labels):= addLabelToEquations({elsePart},vars,idx,reduceList,inVarRepl);
         //label rest
-        (es_1 ,vars_2,idx3,labels2)= addLabelToEquations(es,vars_1,idx2,reduceList,inVarRepl);
-        labels3=listAppend(labels,labels2);
+        (es_1 ,vars_2,idx3,labels2):= addLabelToEquations(es,vars_1,idx2,reduceList,inVarRepl);
+        labels3:=listAppend(labels,labels2);
       then
         (SimCode.SES_WHEN(i,conditions,initialCall,whenStmtLst,SOME(elsePart),source, eqAttr) :: es_1,vars_2,idx3,labels3);
     // add other types of equations
     // unknown equations
     case (eq::es,vars,idx,_,_)
-      equation
+      algorithm
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
         Debug.trace("---Replace unknown equations\n" );
@@ -486,7 +486,7 @@ protected function addLabelToEquations
 
         //Debug.fcall(Flags.CPP,print,"---Replace unknown equations\n" );
 
-        (es_1,vars_1,idx2,labels) = addLabelToEquations(es,vars,idx,reduceList,inVarRepl);
+        (es_1,vars_1,idx2,labels) := addLabelToEquations(es,vars,idx,reduceList,inVarRepl);
       then
         (eq::es_1,vars_1,idx2,labels);
   end matchcontinue;
@@ -522,7 +522,7 @@ protected function addLabelToAlgorithms
     list<DAE.ComponentRef> conditions;
     Boolean initialCall;
     case({},vars,idx,_,_)
-      equation
+      algorithm
 
       if Flags.isSet(Flags.REDUCE_DAE) then
            Debug.trace("---Replace empty algorithm\n" );
@@ -530,88 +530,88 @@ protected function addLabelToAlgorithms
       then ({},vars,idx,{});
 
   case(DAE.STMT_ASSIGN(ty,e1,e,source)::rest,vars,idx,_,_)
-      equation
+      algorithm
 
         if Flags.isSet(Flags.REDUCE_DAE) then
           Debug.trace("---Replace assignment algorithm\n");
         end if;
-    (e2,vars_1,idx2,labels) = addLabelToExp(e,vars,idx,true,reduceList,inVarRepl);
-        (rest2,vars_2,idx3,labels2) = addLabelToAlgorithms(rest,vars_1,idx2,reduceList,inVarRepl);
+    (e2,vars_1,idx2,labels) := addLabelToExp(e,vars,idx,true,reduceList,inVarRepl);
+        (rest2,vars_2,idx3,labels2) := addLabelToAlgorithms(rest,vars_1,idx2,reduceList,inVarRepl);
 
-        labels3=listAppend(labels,labels2);
+        labels3:=listAppend(labels,labels2);
       then
         (DAE.STMT_ASSIGN(ty,e1,e2,source)::rest2,vars_2,idx3,labels3);
 
     case(DAE.STMT_IF(e,stmtLst,else_,source)::rest,vars,idx,_,_)
-      equation
+      algorithm
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
         Debug.trace("---Replace if algorithm\n" );
     end if;
        // //Debug.fcall(Flags.CPP,print,"---Replace if algorithm\n" );
-        (stmtLst2,vars_1,idx2,labels) = addLabelToAlgorithms(stmtLst,vars,idx,reduceList,inVarRepl);
-        (rest2,vars_2,idx3,labels2) = addLabelToAlgorithms(rest,vars_1,idx2,reduceList,inVarRepl);
+        (stmtLst2,vars_1,idx2,labels) := addLabelToAlgorithms(stmtLst,vars,idx,reduceList,inVarRepl);
+        (rest2,vars_2,idx3,labels2) := addLabelToAlgorithms(rest,vars_1,idx2,reduceList,inVarRepl);
 
-        labels3=listAppend(labels,labels2);
+        labels3:=listAppend(labels,labels2);
       then
         (DAE.STMT_IF(e,stmtLst2,else_,source)::rest2,vars_2,idx3,labels3);
 
     case(DAE.STMT_FOR(ty,iterIsArray,iter,e,stmtLst,source)::rest,vars,idx,_,_)
-      equation
+      algorithm
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
         Debug.trace("---Replace for algorithm\n" );
     end if;
-        (stmtLst2,vars_1,idx2,labels) = addLabelToAlgorithms(stmtLst,vars,idx,reduceList,inVarRepl);
-        (rest2,vars_2,idx3,labels2) = addLabelToAlgorithms(rest,vars_1,idx2,reduceList,inVarRepl);
-        labels3=listAppend(labels,labels2);
+        (stmtLst2,vars_1,idx2,labels) := addLabelToAlgorithms(stmtLst,vars,idx,reduceList,inVarRepl);
+        (rest2,vars_2,idx3,labels2) := addLabelToAlgorithms(rest,vars_1,idx2,reduceList,inVarRepl);
+        labels3:=listAppend(labels,labels2);
       then
         (DAE.STMT_FOR(ty,iterIsArray,iter,e,stmtLst2,source)::rest2,vars_2,idx3,labels3);
 
     case(DAE.STMT_WHILE(e,stmtLst,source)::rest,vars,idx,_,_)
-      equation
+      algorithm
         if(Flags.isSet(Flags.REDUCE_DAE)) then
         Debug.trace("---Replace while algorithm\n" );
     end if;
-        (stmtLst2,vars_1,idx2,labels) = addLabelToAlgorithms(stmtLst,vars,idx,reduceList,inVarRepl);
-        (rest2,vars_2,idx3,labels2) = addLabelToAlgorithms(rest,vars_1,idx2,reduceList,inVarRepl);
-        labels3=listAppend(labels,labels2);
+        (stmtLst2,vars_1,idx2,labels) := addLabelToAlgorithms(stmtLst,vars,idx,reduceList,inVarRepl);
+        (rest2,vars_2,idx3,labels2) := addLabelToAlgorithms(rest,vars_1,idx2,reduceList,inVarRepl);
+        labels3:=listAppend(labels,labels2);
       then
         (DAE.STMT_WHILE(e,stmtLst2,source)::rest2,vars_2,idx3,labels3);
 
     case(DAE.STMT_WHEN(e,conditions,initialCall,stmtLst,NONE(),source)::rest,vars,idx,_,_)
-      equation
+      algorithm
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
         Debug.trace("---Replace when algorithm without else statement\n" );
     end if;
-        (stmtLst2,vars_1,idx2,labels) = addLabelToAlgorithms(stmtLst,vars,idx,reduceList,inVarRepl);
-        (rest2,vars_2,idx3,labels2) = addLabelToAlgorithms(rest,vars_1,idx2,reduceList,inVarRepl);
-        labels3=listAppend(labels,labels2);
+        (stmtLst2,vars_1,idx2,labels) := addLabelToAlgorithms(stmtLst,vars,idx,reduceList,inVarRepl);
+        (rest2,vars_2,idx3,labels2) := addLabelToAlgorithms(rest,vars_1,idx2,reduceList,inVarRepl);
+        labels3:=listAppend(labels,labels2);
       then
         (DAE.STMT_WHEN(e,conditions,initialCall,stmtLst2,NONE(),source)::rest2,vars_2,idx3,labels3);
 
     case(DAE.STMT_WHEN(e,conditions,initialCall,stmtLst,SOME(elseWhen),source)::rest,vars,idx,_,_)
-      equation
+      algorithm
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
         Debug.trace("---Replace when algorithm with else statement\n" );
     end if;
-        (stmtLst2,vars_1,idx2,labels) = addLabelToAlgorithms(stmtLst,vars,idx,reduceList,inVarRepl);
-        ({elseWhen2},vars_2,idx3,labels2) = addLabelToAlgorithms({elseWhen},vars_1,idx2,reduceList,inVarRepl);
-        (rest2,vars_3,idx4,labels3) = addLabelToAlgorithms(rest,vars_2,idx3,reduceList,inVarRepl);
-        labels4=listAppend(labels,labels2);
-        labels5=listAppend(labels4,labels3);
+        (stmtLst2,vars_1,idx2,labels) := addLabelToAlgorithms(stmtLst,vars,idx,reduceList,inVarRepl);
+        ({elseWhen2},vars_2,idx3,labels2) := addLabelToAlgorithms({elseWhen},vars_1,idx2,reduceList,inVarRepl);
+        (rest2,vars_3,idx4,labels3) := addLabelToAlgorithms(rest,vars_2,idx3,reduceList,inVarRepl);
+        labels4:=listAppend(labels,labels2);
+        labels5:=listAppend(labels4,labels3);
       then
         (DAE.STMT_WHEN(e,conditions,initialCall,stmtLst2,SOME(elseWhen2),source)::rest2,vars_3,idx4,labels5);
 
     case(stmt::rest,vars,idx,_,_)
-      equation
+      algorithm
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
         Debug.trace("---Replace other algorithm\n" );
     end if;
-        (rest2,vars_1,idx2,labels) = addLabelToAlgorithms(rest,vars,idx,reduceList,inVarRepl);
+        (rest2,vars_1,idx2,labels) := addLabelToAlgorithms(rest,vars,idx,reduceList,inVarRepl);
       then
         (stmt::rest2,vars_1,idx2,labels);
   end matchcontinue;
@@ -679,10 +679,10 @@ protected function addLabelToLinearEquationSystems
       list<String> labels,labels2,labels3,labels4,labels5;
     case({},vars,idx,_,_) then ({},vars,idx,{});
     case((i,j,el)::rest,vars,idx,_,_)
-      equation
-        ({el2},vars_1,idx2,labels) = addLabelToEquations({el},vars,idx,reduceList,inVarRepl);
-        (rest2,vars_2,idx3,labels2) = addLabelToLinearEquationSystems(rest,vars_1,idx2,reduceList,inVarRepl);
-        labels3=listAppend(labels,labels2);
+      algorithm
+        ({el2},vars_1,idx2,labels) := addLabelToEquations({el},vars,idx,reduceList,inVarRepl);
+        (rest2,vars_2,idx3,labels2) := addLabelToLinearEquationSystems(rest,vars_1,idx2,reduceList,inVarRepl);
+        labels3:=listAppend(labels,labels2);
       then
         ((i,j,el2)::rest2,vars_2,idx3,labels3);
   end matchcontinue;
@@ -712,24 +712,24 @@ algorithm
       tuple<Integer,Integer> idx;
       list<String> labels;
     case (_,_,_,_,_,_)
-      equation
+      algorithm
         //case for deletion
-        "deletion"=Flags.getConfigString(Flags.REDUCTION_METHOD);
-        (e,vars,idx,labels)=addLabelToExpForDeletion(inExp1,inVarLst,inIntdex,add,reduceList);
+        "deletion":=Flags.getConfigString(Flags.REDUCTION_METHOD);
+        (e,vars,idx,labels):=addLabelToExpForDeletion(inExp1,inVarLst,inIntdex,add,reduceList);
       then
         (e,vars,idx,labels);
     case (_,_,_,_,_,_)
-      equation
+      algorithm
         //case for substitution
-        "substitution"=Flags.getConfigString(Flags.REDUCTION_METHOD);
-        (e,vars,idx,labels,_)=addLabelToExpForSubstitution(inExp1,inVarLst,inIntdex,reduceList,inVarRepl);
+        "substitution":=Flags.getConfigString(Flags.REDUCTION_METHOD);
+        (e,vars,idx,labels,_):=addLabelToExpForSubstitution(inExp1,inVarLst,inIntdex,reduceList,inVarRepl);
       then
         (e,vars,idx,labels);
     case (_,_,_,_,_,_)
-      equation
+      algorithm
         //case for linearization
-        "linearization"=Flags.getConfigString(Flags.REDUCTION_METHOD);
-        (e,vars,idx,labels)=addLabelToExpForLinearization(inExp1,inVarLst,inIntdex,reduceList,inVarRepl);
+        "linearization":=Flags.getConfigString(Flags.REDUCTION_METHOD);
+        (e,vars,idx,labels):=addLabelToExpForLinearization(inExp1,inVarLst,inIntdex,reduceList,inVarRepl);
       then
         (e,vars,idx,labels);
   end matchcontinue;
@@ -771,71 +771,71 @@ algorithm
      ///Add label to a+b
      case  (e as DAE.BINARY(exp1 = e1,operator = (op as DAE.ADD(ty = _)),exp2 = e2),vars,idx,_,_)
 
-      equation
+      algorithm
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
     Debug.trace("Add label to add exp " + ExpressionDump.printExpStr(e) +  "\n");
     end if;
 
         //labels e_1
-        (e1_1,vars_1,idx2,labels) = addLabelToExpForDeletion(e1,vars,idx,true,reduceList);
+        (e1_1,vars_1,idx2,labels) := addLabelToExpForDeletion(e1,vars,idx,true,reduceList);
         //labels e_2
-        (e2_1,vars_2,idx3,labels2) = addLabelToExpForDeletion(e2,vars_1,idx2,true,reduceList);
+        (e2_1,vars_2,idx3,labels2) := addLabelToExpForDeletion(e2,vars_1,idx2,true,reduceList);
         //creates a label variable and multiplies it with the all expression
         if Flags.getConfigBool(Flags.DISABLE_EXTRA_LABELING) then
-        (e3,vars_3, idx4,labels3) = addOneLabel(DAE.BINARY(e1_1,op,e2_1),false,idx3,vars_2,reduceList);
+        (e3,vars_3, idx4,labels3) := addOneLabel(DAE.BINARY(e1_1,op,e2_1),false,idx3,vars_2,reduceList);
         else
-        (e3,vars_3, idx4,labels3) = addOneLabel(DAE.BINARY(e1_1,op,e2_1),add,idx3,vars_2,reduceList);
+        (e3,vars_3, idx4,labels3) := addOneLabel(DAE.BINARY(e1_1,op,e2_1),add,idx3,vars_2,reduceList);
         end if;
-        labels4=listAppend(labels,labels2);
-        labels5=listAppend(labels4,labels3);
+        labels4:=listAppend(labels,labels2);
+        labels5:=listAppend(labels4,labels3);
       then
         (e3,vars_3,idx4,labels5);
 
       ///Add labe to a-b
      case  (e as DAE.BINARY(exp1 = e1,operator = (op as DAE.SUB(ty = _)),exp2 = e2),vars,idx,_,_)
 
-      equation
+      algorithm
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
     Debug.trace("Add label to sub exp " + ExpressionDump.printExpStr(e) +  "\n");
     end if;
         //labels e_1
-        (e1_1,vars_1,idx2,labels) = addLabelToExpForDeletion(e1,vars,idx,true,reduceList);
+        (e1_1,vars_1,idx2,labels) := addLabelToExpForDeletion(e1,vars,idx,true,reduceList);
         //labels e_2
-        (e2_1,vars_2,idx3,labels2) = addLabelToExpForDeletion(e2,vars_1,idx2,true,reduceList);
+        (e2_1,vars_2,idx3,labels2) := addLabelToExpForDeletion(e2,vars_1,idx2,true,reduceList);
         //creates a label variable and multiplies it with the all expression
          if Flags.getConfigBool(Flags.DISABLE_EXTRA_LABELING) then
-        (e3,vars_3, idx4,labels3) = addOneLabel(DAE.BINARY(e1_1,op,e2_1),false,idx3,vars_2,reduceList);
+        (e3,vars_3, idx4,labels3) := addOneLabel(DAE.BINARY(e1_1,op,e2_1),false,idx3,vars_2,reduceList);
         else
-        (e3,vars_3, idx4,labels3) = addOneLabel(DAE.BINARY(e1_1,op,e2_1),add,idx3,vars_2,reduceList);
+        (e3,vars_3, idx4,labels3) := addOneLabel(DAE.BINARY(e1_1,op,e2_1),add,idx3,vars_2,reduceList);
         end if;
-        labels4=listAppend(labels,labels2);
-        labels5=listAppend(labels4,labels3);
+        labels4:=listAppend(labels,labels2);
+        labels5:=listAppend(labels4,labels3);
       then
         (e3,vars_3,idx4,labels5);
 
       ///Add  label to a*b
      case  (e as DAE.BINARY(exp1 = e1,operator = (op as DAE.MUL(ty = _)),exp2 = e2),vars,idx,_,_)
-      equation
+      algorithm
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
     Debug.trace("Add label to mul exp " + ExpressionDump.printExpStr(e) +  "\n");
     end if;
         //labels e_1
-        (e1_1,vars_1,idx2,labels) = addLabelToExpForDeletion(e1,vars,idx,false,reduceList);
+        (e1_1,vars_1,idx2,labels) := addLabelToExpForDeletion(e1,vars,idx,false,reduceList);
         //labels e_2
-        (e2_1,vars_2,idx3,labels2) = addLabelToExpForDeletion(e2,vars_1,idx2,false,reduceList);
+        (e2_1,vars_2,idx3,labels2) := addLabelToExpForDeletion(e2,vars_1,idx2,false,reduceList);
         //creates a label variable and multiplies it with the all expression
-        (e3,vars_3, idx4,labels3) = addOneLabel(DAE.BINARY(e1_1,op,e2_1),add,idx3,vars_2,reduceList);
-        labels4=listAppend(labels,labels2);
-        labels5=listAppend(labels4,labels3);
+        (e3,vars_3, idx4,labels3) := addOneLabel(DAE.BINARY(e1_1,op,e2_1),add,idx3,vars_2,reduceList);
+        labels4:=listAppend(labels,labels2);
+        labels5:=listAppend(labels4,labels3);
       then
         (e3,vars_3,idx4,labels5);
 
       ///Add label to a/b
      case  (e as DAE.BINARY(exp1 = e1,operator = (op as DAE.DIV(ty = _)),exp2 = e2),vars,idx,_,_)
-      equation
+      algorithm
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
     Debug.trace("Add label to div exp " + ExpressionDump.printExpStr(e) + "\n");
@@ -844,7 +844,7 @@ algorithm
         //Debug.fcall(Flags.CPP,print,"Add label to div exp " +& ExpressionDump.printExpStr(e) +&  "\n");
 
         //labels only the nominator
-        (e1_1,vars_1,idx2,labels) = addLabelToExpForDeletion(e1,vars,idx,true,reduceList);
+        (e1_1,vars_1,idx2,labels) := addLabelToExpForDeletion(e1,vars,idx,true,reduceList);
         //(e2_1,vars_2,idx3,labels2) = addLabelToExpForDeletion(e2,vars_1,idx2,true,reduceList);
         //labels3=listAppend(labels,labels2);
       then
@@ -852,30 +852,30 @@ algorithm
 
       ///Add  label to a^b
      case  (e as DAE.BINARY(exp1 = e1,operator = (op as DAE.POW(ty = _)),exp2 = e2),vars,idx,_,_)
-      equation
+      algorithm
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
     Debug.trace("Add label to pow exp " + ExpressionDump.printExpStr(e) +  "\n");
     end if;
 
         //labels e_1
-        (e1_1,vars_1,idx2,labels) = addLabelToExpForDeletion(e1,vars,idx,true,reduceList);
+        (e1_1,vars_1,idx2,labels) := addLabelToExpForDeletion(e1,vars,idx,true,reduceList);
         //labels e_2
-        (e2_1,vars_2,idx3,labels2) = addLabelToExpForDeletion(e2,vars_1,idx2,true,reduceList);
+        (e2_1,vars_2,idx3,labels2) := addLabelToExpForDeletion(e2,vars_1,idx2,true,reduceList);
         //create a label and multiplies it with the all variable
          if Flags.getConfigBool(Flags.DISABLE_EXTRA_LABELING) then
-        (e3,vars_3, idx4,labels3) = addOneLabel(DAE.BINARY(e1_1,op,e2_1),false,idx3,vars_2,reduceList);
+        (e3,vars_3, idx4,labels3) := addOneLabel(DAE.BINARY(e1_1,op,e2_1),false,idx3,vars_2,reduceList);
          else
-        (e3,vars_3, idx4,labels3) = addOneLabel(DAE.BINARY(e1_1,op,e2_1),add,idx3,vars_2,reduceList);
+        (e3,vars_3, idx4,labels3) := addOneLabel(DAE.BINARY(e1_1,op,e2_1),add,idx3,vars_2,reduceList);
          end if;
-        labels4=listAppend(labels,labels2);
-        labels5=listAppend(labels4,labels3);
+        labels4:=listAppend(labels,labels2);
+        labels5:=listAppend(labels4,labels3);
       then
         (e3,vars_3,idx4,labels5);
 
    ///Add  label to -a
     case (e as DAE.UNARY(operator = op,exp = e1),vars,idx,_,_)
-      equation
+      algorithm
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
     Debug.trace("Add label to unary exp "+ ExpressionDump.printExpStr(e) +"\n");
@@ -883,14 +883,14 @@ algorithm
 
         //Debug.fcall(Flags.CPP,print,"Add label to unary exp "+& ExpressionDump.printExpStr(e) +&"\n");
 
-        (e1_1,vars_1,idx2,labels) = addLabelToExpForDeletion(e1,vars,idx,true,reduceList);
+        (e1_1,vars_1,idx2,labels) := addLabelToExpForDeletion(e1,vars,idx,true,reduceList);
 
       then
         (DAE.UNARY(op,e1_1),vars_1,idx2,labels);
 
    ///Add  label to relations
     case (e as DAE.RELATION(exp1 = e1,operator = op,exp2 = e2),vars,idx,_,_)
-      equation
+      algorithm
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
     Debug.trace("Not Implemented: Add label to relation " + ExpressionDump.printExpStr(e)+"\n");
@@ -901,82 +901,82 @@ algorithm
     ///Add label to if expr
     case (e as DAE.IFEXP(expCond = e1,expThen = e2,expElse = e3),vars,idx,_,_)
 
-      equation
+      algorithm
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
     Debug.trace("Add label to if exp" + ExpressionDump.printExpStr(e)+"\n");
     end if;
         //labels if-clause
-        (e2_1,vars_1,idx2,labels) = addLabelToExpForDeletion(e2,vars,idx,true,reduceList);
+        (e2_1,vars_1,idx2,labels) := addLabelToExpForDeletion(e2,vars,idx,true,reduceList);
         //labels else-clause
-        (e3_1,vars_2,idx3,labels2) = addLabelToExpForDeletion(e3,vars_1,idx2,true,reduceList);
-        labels3=listAppend(labels,labels2);
+        (e3_1,vars_2,idx3,labels2) := addLabelToExpForDeletion(e3,vars_1,idx2,true,reduceList);
+        labels3:=listAppend(labels,labels2);
 
       then
         (DAE.IFEXP(e1,e2_1,e3_1),vars_2,idx3,labels3);
 
     //Add label to pre expr
     case ((e as DAE.CALL(path = Absyn.IDENT(name = "pre"))),vars,idx,_,_)
-     equation
+     algorithm
 
           if(Flags.isSet(Flags.REDUCE_DAE)) then
     Debug.trace("add no label to pre arguments\n");
     end if;
           //creates a label and multiplies it with the expression
-          (e2,vars_1, idx1,labels) = addOneLabel(e,add,idx,vars,reduceList);
+          (e2,vars_1, idx1,labels) := addOneLabel(e,add,idx,vars,reduceList);
       then
         (e2,vars_1,idx1,labels);
 
      ///Add label to edge operator
      case ((e as DAE.CALL(path = Absyn.IDENT(name = "edge"))),vars,idx,_,_)
-      equation
+      algorithm
 
           if(Flags.isSet(Flags.REDUCE_DAE)) then
     Debug.trace("add no label to edge arguments\n");
     end if;
           //creates a label and multiplies it with the expression
-          (e2,vars_1, idx1,labels) = addOneLabel(e,add,idx,vars,reduceList);
+          (e2,vars_1, idx1,labels) := addOneLabel(e,add,idx,vars,reduceList);
       then
           (e2,vars_1,idx1,labels);
 
        ///Add label to change operator
       case ((e as DAE.CALL(path = Absyn.IDENT(name = "change"))),vars,idx,_,_)
-        equation
+        algorithm
 
           if(Flags.isSet(Flags.REDUCE_DAE)) then
     Debug.trace("add no label to change arguments\n");
     end if;
           //creates a label and multiplies it with the expression
-          (e2,vars_1, idx1,labels) = addOneLabel(e,add,idx,vars,reduceList);
+          (e2,vars_1, idx1,labels) := addOneLabel(e,add,idx,vars,reduceList);
         then
           (e2,vars_1,idx1,labels);
 
       ///Add label to sample operator
       case ((e as DAE.CALL(path = Absyn.IDENT(name = "sample"))),vars,idx,_,_)
-        equation
+        algorithm
 
           if(Flags.isSet(Flags.REDUCE_DAE)) then
     Debug.trace("add no label to sample arguments\n");
     end if;
           //creates a label and multiplies it with the expression
-          (e2,vars_1, idx1,labels) = addOneLabel(e,add,idx,vars,reduceList);
+          (e2,vars_1, idx1,labels) := addOneLabel(e,add,idx,vars,reduceList);
         then
           (e2,vars_1,idx1,labels);
 
        ///Add label to no event operator
       case ((e as DAE.CALL(path = Absyn.IDENT(name = "noEvent"))),vars,idx,_,_)
-        equation
+        algorithm
 
           if(Flags.isSet(Flags.REDUCE_DAE)) then
     Debug.trace("add no label for no event arguments\n");
     end if;
           //creates a label and multiplies it with the expression
-          (e2,vars_1, idx1,labels) = addOneLabel(e,add,idx,vars,reduceList);
+          (e2,vars_1, idx1,labels) := addOneLabel(e,add,idx,vars,reduceList);
         then
           (e2,vars_1, idx1,labels);
 
   case ((e as DAE.CALL(path = Absyn.IDENT(name="max"),expLst = {e1,e2},attr = attr)),vars,idx,_,_)
-    equation
+    algorithm
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
     Debug.trace("Add label to max exp " + ExpressionDump.printExpStr(e) +  "\n");
@@ -985,35 +985,35 @@ algorithm
         //Debug.fcall(Flags.CPP,print,"Add label to max exp " +& ExpressionDump.printExpStr(e) +&  "\n");
 
         //labels e_1
-        (e1_1,vars_1,idx2,labels) = addLabelToExpForDeletion(e1,vars,idx,true,reduceList);
+        (e1_1,vars_1,idx2,labels) := addLabelToExpForDeletion(e1,vars,idx,true,reduceList);
         //labels e_2
-        (e2_1,vars_2,idx3,labels2) = addLabelToExpForDeletion(e2,vars_1,idx2,true,reduceList);
+        (e2_1,vars_2,idx3,labels2) := addLabelToExpForDeletion(e2,vars_1,idx2,true,reduceList);
         //create a label and multiplies it with the all expression
-        (e3,vars_3, idx4,labels3) = addOneLabel(DAE.CALL(Absyn.IDENT("max"),{e1_1,e2_1},attr),add,idx3,vars_2,reduceList);
-        labels4=listAppend(labels,labels2);
-        labels5=listAppend(labels4,labels3);
+        (e3,vars_3, idx4,labels3) := addOneLabel(DAE.CALL(Absyn.IDENT("max"),{e1_1,e2_1},attr),add,idx3,vars_2,reduceList);
+        labels4:=listAppend(labels,labels2);
+        labels5:=listAppend(labels4,labels3);
       then
         (e3,vars_3,idx4,labels5);
 
   case ((e as DAE.CALL(path = Absyn.IDENT(name="min"),expLst = {e1,e2},attr = attr)),vars,idx,_,_)
-    equation
+    algorithm
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
     Debug.trace("Add label to min exp " + ExpressionDump.printExpStr(e) +  "\n");
     end if;
         //labels e_1
-        (e1_1,vars_1,idx2,labels) = addLabelToExpForDeletion(e1,vars,idx,true,reduceList);
+        (e1_1,vars_1,idx2,labels) := addLabelToExpForDeletion(e1,vars,idx,true,reduceList);
         //labels e_2
-        (e2_1,vars_2,idx3,labels2) = addLabelToExpForDeletion(e2,vars_1,idx2,true,reduceList);
+        (e2_1,vars_2,idx3,labels2) := addLabelToExpForDeletion(e2,vars_1,idx2,true,reduceList);
         //creates a label and multiplies it with the all expression
-        (e3,vars_3, idx4,labels3) = addOneLabel(DAE.CALL(Absyn.IDENT("min"),{e1_1,e2_1},attr),add,idx3,vars_2,reduceList);
-        labels4=listAppend(labels,labels2);
-        labels5=listAppend(labels4,labels3);
+        (e3,vars_3, idx4,labels3) := addOneLabel(DAE.CALL(Absyn.IDENT("min"),{e1_1,e2_1},attr),add,idx3,vars_2,reduceList);
+        labels4:=listAppend(labels,labels2);
+        labels5:=listAppend(labels4,labels3);
       then
         (e3,vars_3,idx4,labels5);
 
     case ((e as DAE.CALL(path = Absyn.IDENT(name="abs"),expLst = {e1},attr = attr)),vars,idx,_,_)
-      equation
+      algorithm
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
     Debug.trace("Add label to abs exp "+ ExpressionDump.printExpStr(e) + "\n");
@@ -1022,127 +1022,127 @@ algorithm
         //Debug.fcall(Flags.CPP,print,"Add label to abs exp "+& ExpressionDump.printExpStr(e) +& "\n");
 
         //labels e1
-        (e2,vars_1,idx2,labels) = addLabelToExpForDeletion(e1,vars,idx,true,reduceList);
+        (e2,vars_1,idx2,labels) := addLabelToExpForDeletion(e1,vars,idx,true,reduceList);
         //creates a label and multiplies it with the all expression
           if Flags.getConfigBool(Flags.DISABLE_EXTRA_LABELING) then
-          (e3,vars_2, idx3,labels2) = addOneLabel(DAE.CALL(Absyn.IDENT("abs"),{e2},attr),false,idx2,vars_1,reduceList);
+          (e3,vars_2, idx3,labels2) := addOneLabel(DAE.CALL(Absyn.IDENT("abs"),{e2},attr),false,idx2,vars_1,reduceList);
           else
-        (e3,vars_2, idx3,labels2) = addOneLabel(DAE.CALL(Absyn.IDENT("abs"),{e2},attr),add,idx2,vars_1,reduceList);
+        (e3,vars_2, idx3,labels2) := addOneLabel(DAE.CALL(Absyn.IDENT("abs"),{e2},attr),add,idx2,vars_1,reduceList);
          end if;
-        labels3=listAppend(labels,labels2);
+        labels3:=listAppend(labels,labels2);
       then
         (e3,vars_2,idx3,labels3);
 
     case ((e as DAE.CALL(path = Absyn.IDENT("sqrt"),expLst = {e1},attr = attr)),vars,idx,_,_)
-      equation
+      algorithm
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
     Debug.trace("Add label to sqrt exp "+ ExpressionDump.printExpStr(e) + "\n");
     end if;
         //labels the expression under the square root
-        (e2,vars_1,idx2,labels) = addLabelToExpForDeletion(e1,vars,idx,true,reduceList);
+        (e2,vars_1,idx2,labels) := addLabelToExpForDeletion(e1,vars,idx,true,reduceList);
         //creates a label and multiplies it with the all expression
          if Flags.getConfigBool(Flags.DISABLE_EXTRA_LABELING) then
-        (e3,vars_2, idx3,labels2) = addOneLabel(DAE.CALL(Absyn.IDENT("sqrt"),{e2},attr),false,idx2,vars_1,reduceList);
+        (e3,vars_2, idx3,labels2) := addOneLabel(DAE.CALL(Absyn.IDENT("sqrt"),{e2},attr),false,idx2,vars_1,reduceList);
         else
-        (e3,vars_2, idx3,labels2) = addOneLabel(DAE.CALL(Absyn.IDENT("sqrt"),{e2},attr),add,idx2,vars_1,reduceList);
+        (e3,vars_2, idx3,labels2) := addOneLabel(DAE.CALL(Absyn.IDENT("sqrt"),{e2},attr),add,idx2,vars_1,reduceList);
          end if;
-        labels3=listAppend(labels,labels2);
+        labels3:=listAppend(labels,labels2);
       then
         (e3,vars_2,idx3,labels3);
 
     case ((e as DAE.CALL(path = Absyn.IDENT("sin"),expLst = {e1},attr = attr)),vars,idx,_,_)
-      equation
+      algorithm
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
     Debug.trace("Add label to sin exp "+ ExpressionDump.printExpStr(e) + "\n");
     end if;
         //labels the expression e_1
-        (e2,vars_1,idx2,labels) = addLabelToExpForDeletion(e1,vars,idx,true,reduceList);
+        (e2,vars_1,idx2,labels) := addLabelToExpForDeletion(e1,vars,idx,true,reduceList);
       then
         (DAE.CALL(Absyn.IDENT("sin"),{e2},attr),vars_1,idx2,labels);
 
     case ((e as DAE.CALL(path = Absyn.IDENT("cos"),expLst = {e1},attr = attr)),vars,idx,_,_)
-      equation
+      algorithm
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
     Debug.trace("Add label to cos exp "+ ExpressionDump.printExpStr(e) + "\n");
     end if;
         //labels the expression e_1
-        (e2,vars_1,idx2,labels) = addLabelToExpForDeletion(e1,vars,idx,true,reduceList);
+        (e2,vars_1,idx2,labels) := addLabelToExpForDeletion(e1,vars,idx,true,reduceList);
         //creates a label and multiplies it with the all expression
-        (e3,vars_2, idx3,labels2) = addOneLabel(DAE.CALL(Absyn.IDENT("cos"),{e2},attr),add,idx2,vars_1,reduceList);
-        labels3=listAppend(labels,labels2);
+        (e3,vars_2, idx3,labels2) := addOneLabel(DAE.CALL(Absyn.IDENT("cos"),{e2},attr),add,idx2,vars_1,reduceList);
+        labels3:=listAppend(labels,labels2);
       then
         (e3,vars_2,idx3,labels3);
     case ((e as DAE.CALL(path = Absyn.IDENT("asin"),expLst = {e1},attr = attr)),vars,idx,_,_)
-      equation
+      algorithm
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
     Debug.trace("Add label to sin exp "+ ExpressionDump.printExpStr(e) + "\n");
     end if;
         //labels the expression e_1
-        (e2,vars_1,idx2,labels) = addLabelToExpForDeletion(e1,vars,idx,true,reduceList);
+        (e2,vars_1,idx2,labels) := addLabelToExpForDeletion(e1,vars,idx,true,reduceList);
       then
         (DAE.CALL(Absyn.IDENT("asin"),{e2},attr),vars_1,idx2,labels);
 
     case ((e as DAE.CALL(path = Absyn.IDENT("acos"),expLst = {e1},attr = attr)),vars,idx,_,_)
-      equation
+      algorithm
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
     Debug.trace("Add label to cos exp "+ ExpressionDump.printExpStr(e) + "\n");
     end if;
         //labels the expression e_1
-        (e2,vars_1,idx2,labels) = addLabelToExpForDeletion(e1,vars,idx,true,reduceList);
+        (e2,vars_1,idx2,labels) := addLabelToExpForDeletion(e1,vars,idx,true,reduceList);
         //creates a label and multiplies it with the all expression
-        (e3,vars_2, idx3,labels2) = addOneLabel(DAE.CALL(Absyn.IDENT("acos"),{e2},attr),add,idx2,vars_1,reduceList);
-        labels3=listAppend(labels,labels2);
+        (e3,vars_2, idx3,labels2) := addOneLabel(DAE.CALL(Absyn.IDENT("acos"),{e2},attr),add,idx2,vars_1,reduceList);
+        labels3:=listAppend(labels,labels2);
       then
         (e3,vars_2,idx3,labels3);
     case ((e as DAE.CALL(path = Absyn.IDENT("tan"),expLst = {e1},attr = attr)),vars,idx,_,_)
-      equation
+      algorithm
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
     Debug.trace("Add label to tan exp "+ ExpressionDump.printExpStr(e) + "\n");
     end if;
         //labels the expression e_1
-        (e1_1,vars_1,idx2,labels) = addLabelToExpForDeletion(e1,vars,idx,true,reduceList);
+        (e1_1,vars_1,idx2,labels) := addLabelToExpForDeletion(e1,vars,idx,true,reduceList);
       then
         (DAE.CALL(Absyn.IDENT("tan"),{e1_1},attr),vars_1,idx2,labels);
 
    case ((e as DAE.CALL(path = Absyn.IDENT("atan"),expLst = {e1},attr = attr)),vars,idx,_,_)
-      equation
+      algorithm
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
     Debug.trace("Add label to atan exp "+ ExpressionDump.printExpStr(e) + "\n");
     end if;
         //labels the expression e_1
-        (e1_1,vars_1,idx2,labels) = addLabelToExpForDeletion(e1,vars,idx,true,reduceList);
+        (e1_1,vars_1,idx2,labels) := addLabelToExpForDeletion(e1,vars,idx,true,reduceList);
       then
         (DAE.CALL(Absyn.IDENT("atan"),{e1_1},attr),vars_1,idx2,labels);
 
    case ((e as DAE.CALL(path = Absyn.IDENT("exp"),expLst = {e1},attr = attr)),vars,idx,_,_)
-      equation
+      algorithm
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
     Debug.trace("Add label to exp exp "+ ExpressionDump.printExpStr(e) + "\n");
     end if;
         //labels the expression e_1
-        (e2,vars_1,idx2,labels) = addLabelToExpForDeletion(e1,vars,idx,true,reduceList);
+        (e2,vars_1,idx2,labels) := addLabelToExpForDeletion(e1,vars,idx,true,reduceList);
         //creates a label and multiplies it with the all expression
-        (e3,vars_2, idx3,labels2) = addOneLabel(DAE.CALL(Absyn.IDENT("exp"),{e2},attr),add,idx2,vars_1,reduceList);
-        labels3=listAppend(labels,labels2);
+        (e3,vars_2, idx3,labels2) := addOneLabel(DAE.CALL(Absyn.IDENT("exp"),{e2},attr),add,idx2,vars_1,reduceList);
+        labels3:=listAppend(labels,labels2);
       then
         (e3,vars_2,idx3,labels3);
 
   case ((e as DAE.CALL(path = Absyn.IDENT(name="div"),expLst = {e1,e2},attr = attr)),vars,idx,_,_)
-    equation
+    algorithm
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
     Debug.trace("Add label to div exp " + ExpressionDump.printExpStr(e) +  "\n");
     end if;
         //labels only the nominator of a division expression
-        (e1_1,vars_1,idx2,labels) = addLabelToExpForDeletion(e1,vars,idx,true,reduceList);
+        (e1_1,vars_1,idx2,labels) := addLabelToExpForDeletion(e1,vars,idx,true,reduceList);
         //(e2_1,vars_2,idx3,labels2) = addLabelToExpForDeletion(e2,vars_1,idx2,false,reduceList);
         //labels3=listAppend(labels,labels2);
       then
@@ -1150,7 +1150,7 @@ algorithm
 
       ///Add no label to all other call functions
     case ((e as DAE.CALL(path = path,expLst = expl,attr = attr)),vars,idx,_,_)
-      equation
+      algorithm
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
     Debug.trace("Add no label to other call function "+ ExpressionDump.printExpStr(e) + "\n");
@@ -1159,31 +1159,27 @@ algorithm
         (DAE.CALL(path,expl,attr),vars,idx,{});
 
        ///Add label to real const 0.0
-     case (DAE.RCONST(real = valueR),vars,idx,_,_)
-       equation
-         equality(valueR = 0.0);
-
+     case (DAE.RCONST(real = valueR),vars,idx,_,_) guard valueR == 0.0
+       algorithm
          if(Flags.isSet(Flags.REDUCE_DAE)) then
-    Debug.trace("Add no label to const 0.0\n");
-    end if;
+           Debug.trace("Add no label to const 0.0\n");
+         end if;
        then
         (DAE.RCONST(0.0),vars,idx,{});
 
      ///Add label to real const
      case ((e as DAE.RCONST(_)),vars,idx,_,_)
-       equation
+       algorithm
           if(Flags.isSet(Flags.REDUCE_DAE)) then
     Debug.trace("Add label to real const variable " + ExpressionDump.printExpStr(e) +  "\n");
     end if;
-          (e2,vars_1, idx1,labels) = addOneLabel(e,add,idx,vars,reduceList);
+          (e2,vars_1, idx1,labels) := addOneLabel(e,add,idx,vars,reduceList);
        then
         (e2,vars_1,idx1,labels);
 
        ///Add label to int const 0
-      case ( DAE.ICONST(integer=valueI),vars,idx,_,_)
-      equation
-        equality(valueI = 0);
-
+      case ( DAE.ICONST(integer=valueI),vars,idx,_,_) guard valueI == 0
+      algorithm
           if(Flags.isSet(Flags.REDUCE_DAE)) then
     Debug.trace("Add no label to const 0\n");
     end if;
@@ -1192,17 +1188,17 @@ algorithm
 
       ///Add label to int const
       case ((e as DAE.ICONST(_)),vars,idx,_,_)
-      equation
+      algorithm
            if(Flags.isSet(Flags.REDUCE_DAE)) then
     Debug.trace("Add label to integer const variable " + ExpressionDump.printExpStr(e) +  "\n");
     end if;
-          (e2,vars_1, idx1,labels) = addOneLabel(e,add,idx,vars,reduceList);
+          (e2,vars_1, idx1,labels) := addOneLabel(e,add,idx,vars,reduceList);
        then
         (e2,vars_1,idx1,labels);
 
        ///Add label to string const
       case ((e as DAE.SCONST(_)),vars,idx,_,_)
-      equation
+      algorithm
         if(Flags.isSet(Flags.REDUCE_DAE)) then
     Debug.trace("Add no label to string const variable " + ExpressionDump.printExpStr(e) + "\n");
     end if;
@@ -1212,7 +1208,7 @@ algorithm
       ///Add label to bool const
       case ((e as DAE.BCONST(_)),vars,idx,_,_)
 
-      equation
+      algorithm
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
     Debug.trace("Add no label to boolean const variable " + ExpressionDump.printExpStr(e) + "\n");
@@ -1222,7 +1218,7 @@ algorithm
 
      ///Add label string const values, variables, parameters
      case(e as DAE.CREF(_,DAE.T_STRING(_)),vars,idx,_,_)
-        equation
+        algorithm
           if(Flags.isSet(Flags.REDUCE_DAE)) then
     Debug.trace("Add no label to string variable " + ExpressionDump.printExpStr(e) +  "\n");
     end if;
@@ -1230,7 +1226,7 @@ algorithm
         (e,vars,idx,{});
      ///Add label string const values, variables, parameters
      case(e as DAE.CREF(_,DAE.T_BOOL(_)),vars,idx,_,_)
-        equation
+        algorithm
           if(Flags.isSet(Flags.REDUCE_DAE)) then
     Debug.trace("Add no label to boolean variable " + ExpressionDump.printExpStr(e) +  "\n");
     end if;
@@ -1239,18 +1235,18 @@ algorithm
      ///Add label const values, variables, parameters
      case(e as DAE.CREF(_,_),vars,idx,_,_)
 
-        equation
+        algorithm
 
           if(Flags.isSet(Flags.REDUCE_DAE)) then
     Debug.trace("Add label to variable " + ExpressionDump.printExpStr(e) + "\n");
     end if;
-          (e2,vars_1, idx1,labels) = addOneLabel(e,add,idx,vars,reduceList);
+          (e2,vars_1, idx1,labels) := addOneLabel(e,add,idx,vars,reduceList);
        then
         (e2,vars_1,idx1,labels);
 
     ///Add label to all other expressions
      case(e,vars,idx,_,_)
-       equation
+       algorithm
 
          if(Flags.isSet(Flags.REDUCE_DAE)) then
     Debug.trace("Add label to unknown expression " + ExpressionDump.printExpStr(e) + "\n");
@@ -1316,38 +1312,38 @@ algorithm
         SimCodeVar.SimVars vars,vars_1;
         Integer i,p,p_1,i_1;
      case (e,true,(i,p),vars,_)
-       equation
+       algorithm
          //case reduce terms
-         true = Flags.getConfigBool(Flags.REDUCE_TERMS);
+         true := Flags.getConfigBool(Flags.REDUCE_TERMS);
          //the number of the term is on the reduceList
-         _ = List.getMember(i, reduceList);
+         _ := List.getMember(i, reduceList);
          //multiplies the term by 0
-         e2=Expression.expMul(DAE.RCONST(0.0),e);
+         e2:=Expression.expMul(DAE.RCONST(0.0),e);
          //increases the number of (invisible) labels
-         i_1=i+1;
+         i_1:=i+1;
        then
          (e2,vars,(i_1,p),{});
      case (e,true,(i,p),vars,_)
-       equation
+       algorithm
          //case reduce terms
-         true = Flags.getConfigBool(Flags.REDUCE_TERMS);
+         true := Flags.getConfigBool(Flags.REDUCE_TERMS);
          //multiplies the term by 1
-         e2=Expression.expMul(DAE.RCONST(1.0),e);
+         e2:=Expression.expMul(DAE.RCONST(1.0),e);
          //increases the number of (invisible) labels
-         i_1=i+1;
+         i_1:=i+1;
        then
          (e2,vars,(i_1,p),{});
      //case for labeling terms
      case  (e,true,(i,p),vars,_)
-      equation
+      algorithm
         //creates a label variable
-         (vars_1,name)= createLabelVar(vars,p,i);
-          name1=stringAppend(name,"_1");
+         (vars_1,name):= createLabelVar(vars,p,i);
+          name1:=stringAppend(name,"_1");
           //multiplies the label with the expression
-          e2=multiply(e,name1);
+          e2:=multiply(e,name1);
           //increases the number of parameters by 2 (label_1 and label_2) and the number of labels by 1
-          p_1=p+2;
-          i_1=i+1;
+          p_1:=p+2;
+          i_1:=i+1;
       then
         (e2,vars_1,(i_1,p_1),{name});
     case  (e,false,(i,p),vars,_)
@@ -1385,9 +1381,9 @@ algorithm
       DAE.Type tp;
     //Linearize x^a
     case (e as DAE.BINARY(exp1 = e1,operator = DAE.POW(ty = tp),exp2 = e2),vars,idx,_,_)
-      equation
-        true = Expression.expHasCrefs(e1);
-        false = Expression.expHasCrefs(e2);
+      algorithm
+        true := Expression.expHasCrefs(e1);
+        false := Expression.expHasCrefs(e2);
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
     Debug.trace("Add label to pow exp "+ ExpressionDump.printExpStr(e) + "\n");
@@ -1395,14 +1391,14 @@ algorithm
 
         //Debug.fcall(Flags.CPP,print,"Add label to pow exp "+& ExpressionDump.printExpStr(e) +& "\n");
 
-        (e3,vars1,idx1,labels)=addLabelToExpForLinearization(e1,vars,idx,reduceList,inVarRepl);
+        (e3,vars1,idx1,labels):=addLabelToExpForLinearization(e1,vars,idx,reduceList,inVarRepl);
       then
         (DAE.BINARY(e3,DAE.POW(tp),e2),vars1,idx1,labels);
     //Linearize a^x
     case (e as DAE.BINARY(exp1 = e1,operator = DAE.POW(ty = tp),exp2 = e2),vars,idx,_,_)
-      equation
-        false = Expression.expHasCrefs(e1);
-        true = Expression.expHasCrefs(e2);
+      algorithm
+        false := Expression.expHasCrefs(e1);
+        true := Expression.expHasCrefs(e2);
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
     Debug.trace("Add label to pow exp "+ ExpressionDump.printExpStr(e) + "\n");
@@ -1410,16 +1406,16 @@ algorithm
 
         //Debug.fcall(Flags.CPP,print,"Add label to pow exp "+& ExpressionDump.printExpStr(e) +& "\n");
 
-        (e3,vars1,idx1,labels)=addLabelToExpForLinearization(e2,vars,idx,reduceList,inVarRepl);
-        e4=DAE.BINARY(e1,DAE.POW(tp),e3);
-        e5=linearizeExp(e4,e3,vars,inVarRepl);
-        (e6,vars2,idx2,labels1)=addTwoLabels(e4,e5,true,vars1,idx1,reduceList);
-        labels2=listAppend(labels,labels1);
+        (e3,vars1,idx1,labels):=addLabelToExpForLinearization(e2,vars,idx,reduceList,inVarRepl);
+        e4:=DAE.BINARY(e1,DAE.POW(tp),e3);
+        e5:=linearizeExp(e4,e3,vars,inVarRepl);
+        (e6,vars2,idx2,labels1):=addTwoLabels(e4,e5,true,vars1,idx1,reduceList);
+        labels2:=listAppend(labels,labels1);
       then
         (e6,vars2,idx2,labels2);
     //Linearize a+b,a-b,a*b,a/b
     case  (e as DAE.BINARY(exp1 = e1,operator = op ,exp2 = e2),vars,idx,_,_)
-      equation
+      algorithm
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
     Debug.trace("Add label to binary exp "+ ExpressionDump.printExpStr(e) + "\n");
@@ -1427,14 +1423,14 @@ algorithm
 
         //Debug.fcall(Flags.CPP,print,"Add label to binary exp "+& ExpressionDump.printExpStr(e) +& "\n");
 
-        (e3,vars1,idx1,labels)=addLabelToExpForLinearization(e1,vars,idx,reduceList,inVarRepl);
-        (e4,vars2,idx2,labels1)=addLabelToExpForLinearization(e2,vars1,idx1,reduceList,inVarRepl);
-        labels2=listAppend(labels,labels1);
+        (e3,vars1,idx1,labels):=addLabelToExpForLinearization(e1,vars,idx,reduceList,inVarRepl);
+        (e4,vars2,idx2,labels1):=addLabelToExpForLinearization(e2,vars1,idx1,reduceList,inVarRepl);
+        labels2:=listAppend(labels,labels1);
       then
         (DAE.BINARY(e3,op,e4),vars2,idx2,labels2);
     //Linearize -a
     case (e as DAE.UNARY(operator = op,exp = e1),vars,idx,_,_)
-      equation
+      algorithm
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
     Debug.trace("Add label to unary exp "+ ExpressionDump.printExpStr(e) + "\n");
@@ -1442,12 +1438,12 @@ algorithm
 
         //Debug.fcall(Flags.CPP,print,"Add label to unary exp "+& ExpressionDump.printExpStr(e) +& "\n");
 
-        (e2,vars1,idx1,labels)=addLabelToExpForLinearization(e1,vars,idx,reduceList,inVarRepl);
+        (e2,vars1,idx1,labels):=addLabelToExpForLinearization(e1,vars,idx,reduceList,inVarRepl);
       then
         (DAE.UNARY(op,e2),vars1,idx1,labels);
     //Linearize if-expressions
     case (e as DAE.IFEXP(expCond = e1,expThen = e2,expElse = e3),vars,idx,_,_)
-      equation
+      algorithm
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
     Debug.trace("Add label to if exp "+ ExpressionDump.printExpStr(e) + "\n");
@@ -1455,16 +1451,16 @@ algorithm
 
         //Debug.fcall(Flags.CPP,print,"Add label to if exp "+& ExpressionDump.printExpStr(e) +& "\n");
 
-        (e4,vars1,idx1,labels) = addLabelToExpForLinearization(e2,vars,idx,reduceList,inVarRepl);
-        (e5,vars2,idx2,labels1) = addLabelToExpForLinearization(e3,vars1,idx1,reduceList,inVarRepl);
-        labels2=listAppend(labels,labels1);
+        (e4,vars1,idx1,labels) := addLabelToExpForLinearization(e2,vars,idx,reduceList,inVarRepl);
+        (e5,vars2,idx2,labels1) := addLabelToExpForLinearization(e3,vars1,idx1,reduceList,inVarRepl);
+        labels2:=listAppend(labels,labels1);
       then
         (DAE.IFEXP(e1,e4,e5),vars2,idx2,labels2);
    //Linearize sin x
     case  (e as DAE.CALL(path = Absyn.IDENT("sin"),expLst = {e1},attr = attr),vars,idx,_,_)
-      equation
+      algorithm
         //check that the expression contains variables -> otherwise does not make sense to linearize the expression
-        true = Expression.expHasCrefs(e);
+        true := Expression.expHasCrefs(e);
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
     Debug.trace("Add label to sin exp "+ ExpressionDump.printExpStr(e) + "\n");
@@ -1472,18 +1468,18 @@ algorithm
 
         //Debug.fcall(Flags.CPP,print,"Add label to sin exp "+& ExpressionDump.printExpStr(e) +& "\n");
 
-        (e2,vars1,idx1,labels)=addLabelToExpForLinearization(e1,vars,idx,reduceList,inVarRepl);
-        e3=DAE.CALL(Absyn.IDENT("sin"),{e2},attr);
-        e4=linearizeExp(e3,e2,vars,inVarRepl);
-        (e5,vars2,idx2,labels1)=addTwoLabels(e3,e4,true,vars1,idx1,reduceList);
-        labels2=listAppend(labels,labels1);
+        (e2,vars1,idx1,labels):=addLabelToExpForLinearization(e1,vars,idx,reduceList,inVarRepl);
+        e3:=DAE.CALL(Absyn.IDENT("sin"),{e2},attr);
+        e4:=linearizeExp(e3,e2,vars,inVarRepl);
+        (e5,vars2,idx2,labels1):=addTwoLabels(e3,e4,true,vars1,idx1,reduceList);
+        labels2:=listAppend(labels,labels1);
       then
         (e5,vars2,idx2,labels2);
     //Linearize cos x
     case  (e as DAE.CALL(path = Absyn.IDENT("cos"),expLst = {e1},attr = attr),vars,idx,_,_)
-      equation
+      algorithm
         //check that the expression contains variables -> otherwise does not make sense to linearize the expression
-        true = Expression.expHasCrefs(e);
+        true := Expression.expHasCrefs(e);
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
     Debug.trace("Add label to cos exp "+ ExpressionDump.printExpStr(e) + "\n");
@@ -1491,18 +1487,18 @@ algorithm
 
         //Debug.fcall(Flags.CPP,print,"Add label to cos exp "+& ExpressionDump.printExpStr(e) +& "\n");
 
-        (e2,vars1,idx1,labels)=addLabelToExpForLinearization(e1,vars,idx,reduceList,inVarRepl);
-        e3=DAE.CALL(Absyn.IDENT("cos"),{e2},attr);
-        e4=linearizeExp(e3,e2,vars,inVarRepl);
-        (e5,vars2,idx2,labels1)=addTwoLabels(e3,e4,true,vars1,idx1,reduceList);
-        labels2=listAppend(labels,labels1);
+        (e2,vars1,idx1,labels):=addLabelToExpForLinearization(e1,vars,idx,reduceList,inVarRepl);
+        e3:=DAE.CALL(Absyn.IDENT("cos"),{e2},attr);
+        e4:=linearizeExp(e3,e2,vars,inVarRepl);
+        (e5,vars2,idx2,labels1):=addTwoLabels(e3,e4,true,vars1,idx1,reduceList);
+        labels2:=listAppend(labels,labels1);
       then
         (e5,vars2,idx2,labels2);
     //Linearize tan x
     case  (e as DAE.CALL(path = Absyn.IDENT("tan"),expLst = {e1},attr = attr),vars,idx,_,_)
-      equation
+      algorithm
         //check that the expression contains variables -> otherwise does not make sense to linearize the expression
-        true = Expression.expHasCrefs(e);
+        true := Expression.expHasCrefs(e);
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
     Debug.trace("Add label to tan exp "+ ExpressionDump.printExpStr(e) + "\n");
@@ -1510,18 +1506,18 @@ algorithm
 
         //Debug.fcall(Flags.CPP,print,"Add label to tan exp "+& ExpressionDump.printExpStr(e) +& "\n");
 
-        (e2,vars1,idx1,labels)=addLabelToExpForLinearization(e1,vars,idx,reduceList,inVarRepl);
-        e3=DAE.CALL(Absyn.IDENT("tan"),{e2},attr);
-        e4=linearizeExp(e3,e2,vars,inVarRepl);
-        (e5,vars2,idx2,labels1)=addTwoLabels(e3,e4,true,vars1,idx1,reduceList);
-        labels2=listAppend(labels,labels1);
+        (e2,vars1,idx1,labels):=addLabelToExpForLinearization(e1,vars,idx,reduceList,inVarRepl);
+        e3:=DAE.CALL(Absyn.IDENT("tan"),{e2},attr);
+        e4:=linearizeExp(e3,e2,vars,inVarRepl);
+        (e5,vars2,idx2,labels1):=addTwoLabels(e3,e4,true,vars1,idx1,reduceList);
+        labels2:=listAppend(labels,labels1);
       then
         (e5,vars2,idx2,labels2);
     //Linearize asin x
     case  (e as DAE.CALL(path = Absyn.IDENT("asin"),expLst = {e1},attr = attr),vars,idx,_,_)
-      equation
+      algorithm
         //check that the expression contains variables -> otherwise does not make sense to linearize the expression
-        true = Expression.expHasCrefs(e);
+        true := Expression.expHasCrefs(e);
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
     Debug.trace("Add label to asin exp "+ ExpressionDump.printExpStr(e) + "\n");
@@ -1529,18 +1525,18 @@ algorithm
 
         //Debug.fcall(Flags.CPP,print,"Add label to asin exp "+& ExpressionDump.printExpStr(e) +& "\n");
 
-        (e2,vars1,idx1,labels)=addLabelToExpForLinearization(e1,vars,idx,reduceList,inVarRepl);
-        e3=DAE.CALL(Absyn.IDENT("asin"),{e2},attr);
-        e4=linearizeExp(e3,e2,vars,inVarRepl);
-        (e5,vars2,idx2,labels1)=addTwoLabels(e3,e4,true,vars1,idx1,reduceList);
-        labels2=listAppend(labels,labels1);
+        (e2,vars1,idx1,labels):=addLabelToExpForLinearization(e1,vars,idx,reduceList,inVarRepl);
+        e3:=DAE.CALL(Absyn.IDENT("asin"),{e2},attr);
+        e4:=linearizeExp(e3,e2,vars,inVarRepl);
+        (e5,vars2,idx2,labels1):=addTwoLabels(e3,e4,true,vars1,idx1,reduceList);
+        labels2:=listAppend(labels,labels1);
       then
         (e5,vars2,idx2,labels2);
     //Linearize acos x
     case  (e as DAE.CALL(path = Absyn.IDENT("acos"),expLst = {e1},attr = attr),vars,idx,_,_)
-      equation
+      algorithm
         //check that the expression contains variables -> otherwise does not make sense to linearize the expression
-        true = Expression.expHasCrefs(e);
+        true := Expression.expHasCrefs(e);
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
     Debug.trace("Add label to acos exp "+ ExpressionDump.printExpStr(e) + "\n");
@@ -1548,18 +1544,18 @@ algorithm
 
         //Debug.fcall(Flags.CPP,print,"Add label to acos exp "+& ExpressionDump.printExpStr(e) +& "\n");
 
-        (e2,vars1,idx1,labels)=addLabelToExpForLinearization(e1,vars,idx,reduceList,inVarRepl);
-        e3=DAE.CALL(Absyn.IDENT("acos"),{e2},attr);
-        e4=linearizeExp(e3,e2,vars,inVarRepl);
-        (e5,vars2,idx2,labels1)=addTwoLabels(e3,e4,true,vars1,idx1,reduceList);
-        labels2=listAppend(labels,labels1);
+        (e2,vars1,idx1,labels):=addLabelToExpForLinearization(e1,vars,idx,reduceList,inVarRepl);
+        e3:=DAE.CALL(Absyn.IDENT("acos"),{e2},attr);
+        e4:=linearizeExp(e3,e2,vars,inVarRepl);
+        (e5,vars2,idx2,labels1):=addTwoLabels(e3,e4,true,vars1,idx1,reduceList);
+        labels2:=listAppend(labels,labels1);
       then
         (e5,vars2,idx2,labels2);
     //Linearize atan x
     case  (e as DAE.CALL(path = Absyn.IDENT("atan"),expLst = {e1},attr = attr),vars,idx,_,_)
-      equation
+      algorithm
         //check that the expression contains variables -> otherwise does not make sense to linearize the expression
-        true = Expression.expHasCrefs(e);
+        true := Expression.expHasCrefs(e);
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
     Debug.trace("Add label to atan exp "+ ExpressionDump.printExpStr(e) + "\n");
@@ -1567,18 +1563,18 @@ algorithm
 
         //Debug.fcall(Flags.CPP,print,"Add label to atan exp "+& ExpressionDump.printExpStr(e) +& "\n");
 
-        (e2,vars1,idx1,labels)=addLabelToExpForLinearization(e1,vars,idx,reduceList,inVarRepl);
-        e3=DAE.CALL(Absyn.IDENT("atan"),{e2},attr);
-        e4=linearizeExp(e3,e2,vars,inVarRepl);
-        (e5,vars2,idx2,labels1)=addTwoLabels(e3,e4,true,vars1,idx1,reduceList);
-        labels2=listAppend(labels,labels1);
+        (e2,vars1,idx1,labels):=addLabelToExpForLinearization(e1,vars,idx,reduceList,inVarRepl);
+        e3:=DAE.CALL(Absyn.IDENT("atan"),{e2},attr);
+        e4:=linearizeExp(e3,e2,vars,inVarRepl);
+        (e5,vars2,idx2,labels1):=addTwoLabels(e3,e4,true,vars1,idx1,reduceList);
+        labels2:=listAppend(labels,labels1);
       then
         (e5,vars2,idx2,labels2);
     //Linearize e^x
     case  (e as DAE.CALL(path = Absyn.IDENT("exp"),expLst = {e1},attr = attr),vars,idx,_,_)
-      equation
+      algorithm
         //check that the expression contains variables -> otherwise does not make sense to linearize the expression
-        true = Expression.expHasCrefs(e);
+        true := Expression.expHasCrefs(e);
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
     Debug.trace("Add label to exp exp "+ ExpressionDump.printExpStr(e) + "\n");
@@ -1586,18 +1582,18 @@ algorithm
 
         //Debug.fcall(Flags.CPP,print,"Add label to exp exp "+& ExpressionDump.printExpStr(e) +& "\n");
 
-        (e2,vars1,idx1,labels)=addLabelToExpForLinearization(e1,vars,idx,reduceList,inVarRepl);
-        e3=DAE.CALL(Absyn.IDENT("exp"),{e2},attr);
-        e4=linearizeExp(e3,e2,vars,inVarRepl);
-        (e5,vars2,idx2,labels1)=addTwoLabels(e3,e4,true,vars1,idx1,reduceList);
-        labels2=listAppend(labels,labels1);
+        (e2,vars1,idx1,labels):=addLabelToExpForLinearization(e1,vars,idx,reduceList,inVarRepl);
+        e3:=DAE.CALL(Absyn.IDENT("exp"),{e2},attr);
+        e4:=linearizeExp(e3,e2,vars,inVarRepl);
+        (e5,vars2,idx2,labels1):=addTwoLabels(e3,e4,true,vars1,idx1,reduceList);
+        labels2:=listAppend(labels,labels1);
       then
         (e5,vars2,idx2,labels2);
     //Linearize log x
     case  (e as DAE.CALL(path = Absyn.IDENT("log"),expLst = {e1},attr = attr),vars,idx,_,_)
-      equation
+      algorithm
         //check that the expression contains variables -> otherwise does not make sense to linearize the expression
-        true = Expression.expHasCrefs(e);
+        true := Expression.expHasCrefs(e);
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
     Debug.trace("Add label to log exp "+ ExpressionDump.printExpStr(e) + "\n");
@@ -1605,18 +1601,18 @@ algorithm
 
         //Debug.fcall(Flags.CPP,print,"Add label to log exp "+& ExpressionDump.printExpStr(e) +& "\n");
 
-        (e2,vars1,idx1,labels)=addLabelToExpForLinearization(e1,vars,idx,reduceList,inVarRepl);
-        e3=DAE.CALL(Absyn.IDENT("log"),{e2},attr);
-        e4=linearizeExp(e3,e2,vars,inVarRepl);
-        (e5,vars2,idx2,labels1)=addTwoLabels(e3,e4,true,vars1,idx1,reduceList);
-        labels2=listAppend(labels,labels1);
+        (e2,vars1,idx1,labels):=addLabelToExpForLinearization(e1,vars,idx,reduceList,inVarRepl);
+        e3:=DAE.CALL(Absyn.IDENT("log"),{e2},attr);
+        e4:=linearizeExp(e3,e2,vars,inVarRepl);
+        (e5,vars2,idx2,labels1):=addTwoLabels(e3,e4,true,vars1,idx1,reduceList);
+        labels2:=listAppend(labels,labels1);
       then
         (e5,vars2,idx2,labels2);
     //Linearize square root
     case  (e as DAE.CALL(path = Absyn.IDENT("sqrt"),expLst = {e1},attr = attr),vars,idx,_,_)
-      equation
+      algorithm
         //check that the expression contains variables -> otherwise does not make sense to linearize the expression
-        true = Expression.expHasCrefs(e);
+        true := Expression.expHasCrefs(e);
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
     Debug.trace("Add label to sqrt exp "+ ExpressionDump.printExpStr(e) + "\n");
@@ -1624,11 +1620,11 @@ algorithm
 
         //Debug.fcall(Flags.CPP,print,"Add label to sqrt exp "+& ExpressionDump.printExpStr(e) +& "\n");
 
-        (e2,vars1,idx1,labels)=addLabelToExpForLinearization(e1,vars,idx,reduceList,inVarRepl);
-        e3=DAE.CALL(Absyn.IDENT("sqrt"),{e2},attr);
-        e4=linearizeExp(e3,e2,vars,inVarRepl);
-        (e5,vars2,idx2,labels1)=addTwoLabels(e3,e4,true,vars1,idx1,reduceList);
-        labels2=listAppend(labels,labels1);
+        (e2,vars1,idx1,labels):=addLabelToExpForLinearization(e1,vars,idx,reduceList,inVarRepl);
+        e3:=DAE.CALL(Absyn.IDENT("sqrt"),{e2},attr);
+        e4:=linearizeExp(e3,e2,vars,inVarRepl);
+        (e5,vars2,idx2,labels1):=addTwoLabels(e3,e4,true,vars1,idx1,reduceList);
+        labels2:=listAppend(labels,labels1);
       then
         (e5,vars2,idx2,labels2);
     case (e,vars,idx,_,_)
@@ -1665,36 +1661,36 @@ algorithm
       String name,name1,name2;
     //case for reduce terms
     case  (e1,e2,true,vars,(i,p),_)
-      equation
-        true = Flags.getConfigBool(Flags.REDUCE_TERMS);
-        _ = List.getMember(i,reduceList);
-        e3=Expression.expMul(DAE.RCONST(0.0),e1);
-        e4=Expression.expMul(DAE.RCONST(1.0),e2);
-        e5=Expression.expAdd(e3,e4);
-        i_1=i+1;
+      algorithm
+        true := Flags.getConfigBool(Flags.REDUCE_TERMS);
+        _ := List.getMember(i,reduceList);
+        e3:=Expression.expMul(DAE.RCONST(0.0),e1);
+        e4:=Expression.expMul(DAE.RCONST(1.0),e2);
+        e5:=Expression.expAdd(e3,e4);
+        i_1:=i+1;
       then
         (e5,vars,(i_1,p),{});
     //case for reduce terms
     case  (e1,e2,true,vars,(i,p),_)
-      equation
-        true = Flags.getConfigBool(Flags.REDUCE_TERMS);
-        e3=Expression.expMul(DAE.RCONST(1.0),e1);
-        e4=Expression.expMul(DAE.RCONST(0.0),e2);
-        e5=Expression.expAdd(e3,e4);
-        i_1=i+1;
+      algorithm
+        true := Flags.getConfigBool(Flags.REDUCE_TERMS);
+        e3:=Expression.expMul(DAE.RCONST(1.0),e1);
+        e4:=Expression.expMul(DAE.RCONST(0.0),e2);
+        e5:=Expression.expAdd(e3,e4);
+        i_1:=i+1;
       then
         (e5,vars,(i_1,p),{});
     //case for generating labels
     case  (e1,e2,true,vars,(i,p),_)
-      equation
-        (vars_1,name)= createLabelVar(vars,p,i);
-        name1=stringAppend(name,"_1");
-        name2=stringAppend(name,"_2");
-        e3=multiply(e1,name1);
-        e4=multiply(e2,name2);
-        e5=Expression.expAdd(e3,e4);
-        p_1=p+2;
-        i_1=i+1;
+      algorithm
+        (vars_1,name):= createLabelVar(vars,p,i);
+        name1:=stringAppend(name,"_1");
+        name2:=stringAppend(name,"_2");
+        e3:=multiply(e1,name1);
+        e4:=multiply(e2,name2);
+        e5:=Expression.expAdd(e3,e4);
+        p_1:=p+2;
+        i_1:=i+1;
       then
         (e5,vars_1,(i_1,p_1),{name});
     case  (e1,e2,false,vars,(i,p),_)
@@ -1720,20 +1716,20 @@ algorithm
       SimCodeVar.SimVars vars;
       BackendVarTransform.VariableReplacements repl;
     case  (e1,e2,vars,repl)
-      equation
+      algorithm
         //replaced variable
-        (replExp,_)=BackendVarTransform.replaceExp(e2,repl,NONE());
+        (replExp,_):=BackendVarTransform.replaceExp(e2,repl,NONE());
         //first summand
-        ((e,_))=Expression.replaceExp(e1,e2,replExp);
+        ((e,_)):=Expression.replaceExp(e1,e2,replExp);
         //make a variable for derivation
-        tmp=ComponentReference.makeCrefIdent("linVar",DAE.T_UNKNOWN_DEFAULT,{});
-        tmpExp=Expression.crefExp(tmp);
+        tmp:=ComponentReference.makeCrefIdent("linVar",DAE.T_UNKNOWN_DEFAULT,{});
+        tmpExp:=Expression.crefExp(tmp);
         //second summand
-        ((e3,_))=Expression.replaceExp(e1,e2,tmpExp);
-        e4=Differentiate.differentiateExpSolve(e3,tmp,NONE());
-        ((e5,_))=Expression.replaceExp(e4,tmpExp,replExp);
+        ((e3,_)):=Expression.replaceExp(e1,e2,tmpExp);
+        e4:=Differentiate.differentiateExpSolve(e3,tmp,NONE());
+        ((e5,_)):=Expression.replaceExp(e4,tmpExp,replExp);
         //first+second
-        e6=Expression.expAdd(e,Expression.expMul(e5,Expression.expSub(e2,replExp)));
+        e6:=Expression.expAdd(e,Expression.expMul(e5,Expression.expSub(e2,replExp)));
       then
         e6;
   end matchcontinue;
@@ -1774,17 +1770,17 @@ algorithm
       Boolean subs,subs1,subs2,subs3,subs4;
     //Substitute binary expressions
     case  (e as DAE.BINARY(exp1 = e1,operator = op ,exp2 = e2),vars,idx,_,_)
-      equation
-        (ex,true)=substituteExp(e,inVarRepl);
-        (e3,vars1,idx1,labels,subs1)=addLabelToExpForSubstitution(e1,vars,idx,reduceList,inVarRepl);
-        (e4,vars2,idx2,labels1,subs2)=addLabelToExpForSubstitution(e2,vars1,idx1,reduceList,inVarRepl);
+      algorithm
+        (ex,true):=substituteExp(e,inVarRepl);
+        (e3,vars1,idx1,labels,subs1):=addLabelToExpForSubstitution(e1,vars,idx,reduceList,inVarRepl);
+        (e4,vars2,idx2,labels1,subs2):=addLabelToExpForSubstitution(e2,vars1,idx1,reduceList,inVarRepl);
         //a binary expression should be labeled only if its both members contain labels
-        subs3=boolAnd(subs1,subs2);
-        (e5,vars3,idx3,labels2)=addTwoLabels(DAE.BINARY(e3,op,e4),ex,subs3,vars2,idx2,reduceList);
+        subs3:=boolAnd(subs1,subs2);
+        (e5,vars3,idx3,labels2):=addTwoLabels(DAE.BINARY(e3,op,e4),ex,subs3,vars2,idx2,reduceList);
         //subs4 shows if an expressions contains labels
-        subs4=boolOr(subs1,subs2);
-        labels3=listAppend(labels,labels1);
-        labels4=listAppend(labels3,labels2);
+        subs4:=boolOr(subs1,subs2);
+        labels3:=listAppend(labels,labels1);
+        labels4:=listAppend(labels3,labels2);
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
     Debug.trace("Add label to binary exp " + ExpressionDump.printExpStr(e) +  "\n");
@@ -1796,7 +1792,7 @@ algorithm
         (e5,vars3,idx3,labels4,subs4);
     //Substitute -a
     case (e as DAE.UNARY(operator = op,exp = e1),vars,idx,_,_)
-      equation
+      algorithm
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
     Debug.trace("Add label to unary exp " + ExpressionDump.printExpStr(e) +  "\n");
@@ -1804,12 +1800,12 @@ algorithm
 
         //Debug.fcall(Flags.CPP,print,"Add label to unary exp " +& ExpressionDump.printExpStr(e) +&  "\n");
 
-        (e2,vars1,idx1,labels,subs)=addLabelToExpForSubstitution(e1,vars,idx,reduceList,inVarRepl);
+        (e2,vars1,idx1,labels,subs):=addLabelToExpForSubstitution(e1,vars,idx,reduceList,inVarRepl);
       then
         (DAE.UNARY(op,e2),vars1,idx1,labels,subs);
     //Substitute if-expressions
     case (e as DAE.IFEXP(expCond = e1,expThen = e2,expElse = e3),vars,idx,_,_)
-      equation
+      algorithm
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
     Debug.trace("Add label to if exp " + ExpressionDump.printExpStr(e) +  "\n");
@@ -1817,15 +1813,15 @@ algorithm
 
         //Debug.fcall(Flags.CPP,print,"Add label to if exp " +& ExpressionDump.printExpStr(e) +&  "\n");
 
-        (e4,vars1,idx1,labels,_) = addLabelToExpForSubstitution(e2,vars,idx,reduceList,inVarRepl);
-        (e5,vars2,idx2,labels1,_) = addLabelToExpForSubstitution(e3,vars1,idx1,reduceList,inVarRepl);
-        labels2=listAppend(labels,labels1);
+        (e4,vars1,idx1,labels,_) := addLabelToExpForSubstitution(e2,vars,idx,reduceList,inVarRepl);
+        (e5,vars2,idx2,labels1,_) := addLabelToExpForSubstitution(e3,vars1,idx1,reduceList,inVarRepl);
+        labels2:=listAppend(labels,labels1);
       then
         (DAE.IFEXP(e1,e4,e5),vars2,idx2,labels2,true);
   //Substitute max-expressions
   case (e as (DAE.CALL(path = Absyn.IDENT(name="max"),expLst = {e1,e2},attr = attr)),vars,idx,_,_)
-    equation
-        (ex,true)=substituteExp(e,inVarRepl);
+    algorithm
+        (ex,true):=substituteExp(e,inVarRepl);
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
     Debug.trace("Add label to max exp " + ExpressionDump.printExpStr(e) +  "\n");
@@ -1833,20 +1829,20 @@ algorithm
 
         //Debug.fcall(Flags.CPP,print,"Add label to max exp " +& ExpressionDump.printExpStr(e) +&  "\n");
 
-        (e3,vars1,idx1,labels,subs1)=addLabelToExpForSubstitution(e1,vars,idx,reduceList,inVarRepl);
-        (e4,vars2,idx2,labels1,subs2)=addLabelToExpForSubstitution(e2,vars1,idx1,reduceList,inVarRepl);
-        subs3=boolAnd(subs1,subs2);
-        (e5,vars3,idx3,labels2)=addTwoLabels(DAE.CALL(Absyn.IDENT("max"),{e3,e4},attr),ex,subs3,vars2,idx2,reduceList);
-        subs4=boolOr(subs1,subs2);
-        labels3=listAppend(labels,labels1);
-        labels4=listAppend(labels3,labels2);
+        (e3,vars1,idx1,labels,subs1):=addLabelToExpForSubstitution(e1,vars,idx,reduceList,inVarRepl);
+        (e4,vars2,idx2,labels1,subs2):=addLabelToExpForSubstitution(e2,vars1,idx1,reduceList,inVarRepl);
+        subs3:=boolAnd(subs1,subs2);
+        (e5,vars3,idx3,labels2):=addTwoLabels(DAE.CALL(Absyn.IDENT("max"),{e3,e4},attr),ex,subs3,vars2,idx2,reduceList);
+        subs4:=boolOr(subs1,subs2);
+        labels3:=listAppend(labels,labels1);
+        labels4:=listAppend(labels3,labels2);
       then
         (e5,vars3,idx3,labels4,subs4);
   //Substitute min-expressions
   case (e as (DAE.CALL(path = Absyn.IDENT(name="min"),expLst = {e1,e2},attr = attr)),vars,idx,_,_)
-    equation
+    algorithm
 
-        (ex,true)=substituteExp(e,inVarRepl);
+        (ex,true):=substituteExp(e,inVarRepl);
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
     Debug.trace("Add label to min exp " + ExpressionDump.printExpStr(e) +  "\n");
@@ -1854,20 +1850,20 @@ algorithm
 
         //Debug.fcall(Flags.CPP,print,"Add label to min exp " +& ExpressionDump.printExpStr(e) +&  "\n");
 
-        (e3,vars1,idx1,labels,subs1)=addLabelToExpForSubstitution(e1,vars,idx,reduceList,inVarRepl);
-        (e4,vars2,idx2,labels1,subs2)=addLabelToExpForSubstitution(e2,vars1,idx1,reduceList,inVarRepl);
-        subs3=boolAnd(subs1,subs2);
-        (e5,vars3,idx3,labels2)=addTwoLabels(DAE.CALL(Absyn.IDENT("min"),{e3,e4},attr),ex,subs3,vars2,idx2,reduceList);
-        subs4=boolOr(subs1,subs2);
-        labels3=listAppend(labels,labels1);
-        labels4=listAppend(labels3,labels2);
+        (e3,vars1,idx1,labels,subs1):=addLabelToExpForSubstitution(e1,vars,idx,reduceList,inVarRepl);
+        (e4,vars2,idx2,labels1,subs2):=addLabelToExpForSubstitution(e2,vars1,idx1,reduceList,inVarRepl);
+        subs3:=boolAnd(subs1,subs2);
+        (e5,vars3,idx3,labels2):=addTwoLabels(DAE.CALL(Absyn.IDENT("min"),{e3,e4},attr),ex,subs3,vars2,idx2,reduceList);
+        subs4:=boolOr(subs1,subs2);
+        labels3:=listAppend(labels,labels1);
+        labels4:=listAppend(labels3,labels2);
       then
         (e5,vars3,idx3,labels4,subs4);
     //Substitute absolute value expressions
     case (e as (DAE.CALL(path = Absyn.IDENT(name="abs"),expLst = {e1},attr = attr)),vars,idx,_,_)
-      equation
+      algorithm
 
-        (ex,true)=substituteExp(e,inVarRepl);
+        (ex,true):=substituteExp(e,inVarRepl);
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
     Debug.trace("Add label to abs exp "+ ExpressionDump.printExpStr(e) + "\n");
@@ -1875,16 +1871,16 @@ algorithm
 
         //Debug.fcall(Flags.CPP,print,"Add label to abs exp "+& ExpressionDump.printExpStr(e) +& "\n");
 
-        (e2,vars1,idx1,labels,subs) = addLabelToExpForSubstitution(e1,vars,idx,reduceList,inVarRepl);
+        (e2,vars1,idx1,labels,subs) := addLabelToExpForSubstitution(e1,vars,idx,reduceList,inVarRepl);
         //(e3,vars2,idx2,labels2)=addTwoLabels(DAE.CALL(Absyn.IDENT("abs"),{e2},attr),e,vars1,idx1,reduceList);
         //labels3=listAppend(labels,labels2);
       then
         (e2,vars1,idx1,labels,subs);
     //Substitute square root expressions
     case (e as (DAE.CALL(path = Absyn.IDENT("sqrt"),expLst = {e1},attr = attr)),vars,idx,_,_)
-      equation
+      algorithm
 
-        (ex,true)=substituteExp(e,inVarRepl);
+        (ex,true):=substituteExp(e,inVarRepl);
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
     Debug.trace("Add label to sqrt exp "+ ExpressionDump.printExpStr(e) + "\n");
@@ -1892,16 +1888,16 @@ algorithm
 
         //Debug.fcall(Flags.CPP,print,"Add label to sqrt exp "+& ExpressionDump.printExpStr(e) +& "\n");
 
-        (e2,vars1,idx1,labels,subs) = addLabelToExpForSubstitution(e1,vars,idx,reduceList,inVarRepl);
+        (e2,vars1,idx1,labels,subs) := addLabelToExpForSubstitution(e1,vars,idx,reduceList,inVarRepl);
         //(e3,vars2,idx2,labels2)=addTwoLabels(DAE.CALL(Absyn.IDENT("sqrt"),{e2},attr),e,vars1,idx1,reduceList);
         //labels3=listAppend(labels,labels2);
       then
         (e2,vars1,idx1,labels,subs);
     //Substitute sin expressions
     case (e as(DAE.CALL(path = Absyn.IDENT("sin"),expLst = {e1},attr = attr)),vars,idx,_,_)
-      equation
+      algorithm
 
-        (ex,true)=substituteExp(e,inVarRepl);
+        (ex,true):=substituteExp(e,inVarRepl);
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
     Debug.trace("Add label to sin exp "+ ExpressionDump.printExpStr(e) + "\n");
@@ -1909,16 +1905,16 @@ algorithm
 
         //Debug.fcall(Flags.CPP,print,"Add label to sin exp "+& ExpressionDump.printExpStr(e) +& "\n");
 
-        (e2,vars1,idx1,labels,subs) = addLabelToExpForSubstitution(e1,vars,idx,reduceList,inVarRepl);
+        (e2,vars1,idx1,labels,subs) := addLabelToExpForSubstitution(e1,vars,idx,reduceList,inVarRepl);
         //(e3,vars2,idx2,labels2)=addTwoLabels(DAE.CALL(Absyn.IDENT("sin"),{e2},attr),e,vars1,idx1,reduceList);
         //labels3=listAppend(labels,labels2);
       then
         (e2,vars1,idx1,labels,subs);
     //Substitute cos expressions
     case (e as (DAE.CALL(path = Absyn.IDENT("cos"),expLst = {e1},attr = attr)),vars,idx,_,_)
-      equation
+      algorithm
 
-        (ex,true)=substituteExp(e,inVarRepl);
+        (ex,true):=substituteExp(e,inVarRepl);
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
     Debug.trace("Add label to cos exp "+ ExpressionDump.printExpStr(e) + "\n");
@@ -1926,16 +1922,16 @@ algorithm
 
         //Debug.fcall(Flags.CPP,print,"Add label to cos exp "+& ExpressionDump.printExpStr(e) +& "\n");
 
-        (e2,vars1,idx1,labels,subs) = addLabelToExpForSubstitution(e1,vars,idx,reduceList,inVarRepl);
+        (e2,vars1,idx1,labels,subs) := addLabelToExpForSubstitution(e1,vars,idx,reduceList,inVarRepl);
         //(e3,vars2,idx2,labels2)=addTwoLabels(DAE.CALL(Absyn.IDENT("cos"),{e2},attr),e,vars1,idx1,reduceList);
         //labels3=listAppend(labels,labels2);
       then
         (e2,vars1,idx1,labels,subs);
     //Substitute tan expressions
     case (e as (DAE.CALL(path = Absyn.IDENT("tan"),expLst = {e1},attr = attr)),vars,idx,_,_)
-      equation
+      algorithm
 
-        (ex,true)=substituteExp(e,inVarRepl);
+        (ex,true):=substituteExp(e,inVarRepl);
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
     Debug.trace("Add label to tan exp "+ ExpressionDump.printExpStr(e) + "\n");
@@ -1943,16 +1939,16 @@ algorithm
 
         //Debug.fcall(Flags.CPP,print,"Add label to tan exp "+& ExpressionDump.printExpStr(e) +& "\n");
 
-        (e2,vars1,idx1,labels,subs) = addLabelToExpForSubstitution(e1,vars,idx,reduceList,inVarRepl);
+        (e2,vars1,idx1,labels,subs) := addLabelToExpForSubstitution(e1,vars,idx,reduceList,inVarRepl);
         //(e3,vars2,idx2,labels2)=addTwoLabels(DAE.CALL(Absyn.IDENT("tan"),{e2},attr),e,vars1,idx1,reduceList);
         //labels3=listAppend(labels,labels2);
       then
         (e2,vars1,idx1,labels,subs);
         //Substitute asin expressions
     case (e as (DAE.CALL(path = Absyn.IDENT("asin"),expLst = {e1},attr = attr)),vars,idx,_,_)
-      equation
+      algorithm
 
-        (ex,true)=substituteExp(e,inVarRepl);
+        (ex,true):=substituteExp(e,inVarRepl);
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
     Debug.trace("Add label to asin exp "+ ExpressionDump.printExpStr(e) + "\n");
@@ -1960,16 +1956,16 @@ algorithm
 
         //Debug.fcall(Flags.CPP,print,"Add label to asin exp "+& ExpressionDump.printExpStr(e) +& "\n");
 
-        (e2,vars1,idx1,labels,subs) = addLabelToExpForSubstitution(e1,vars,idx,reduceList,inVarRepl);
+        (e2,vars1,idx1,labels,subs) := addLabelToExpForSubstitution(e1,vars,idx,reduceList,inVarRepl);
         //(e3,vars2,idx2,labels2)=addTwoLabels(DAE.CALL(Absyn.IDENT("asin"),{e2},attr),e,vars1,idx1,reduceList);
         //labels3=listAppend(labels,labels2);
       then
         (e2,vars1,idx1,labels,subs);
     //Substitute acos expressions
     case (e as (DAE.CALL(path = Absyn.IDENT("acos"),expLst = {e1},attr = attr)),vars,idx,_,_)
-      equation
+      algorithm
 
-        (ex,true)=substituteExp(e,inVarRepl);
+        (ex,true):=substituteExp(e,inVarRepl);
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
     Debug.trace("Add label to acos exp "+ ExpressionDump.printExpStr(e) + "\n");
@@ -1977,16 +1973,16 @@ algorithm
 
         //Debug.fcall(Flags.CPP,print,"Add label to acos exp "+& ExpressionDump.printExpStr(e) +& "\n");
 
-        (e2,vars1,idx1,labels,subs) = addLabelToExpForSubstitution(e1,vars,idx,reduceList,inVarRepl);
+        (e2,vars1,idx1,labels,subs) := addLabelToExpForSubstitution(e1,vars,idx,reduceList,inVarRepl);
         //(e3,vars2,idx2,labels2)=addTwoLabels(DAE.CALL(Absyn.IDENT("acos"),{e2},attr),e,vars1,idx1,reduceList);
         //labels3=listAppend(labels,labels2);
       then
         (e2,vars1,idx1,labels,subs);
    //Substitute atan expressions
    case (e as (DAE.CALL(path = Absyn.IDENT("atan"),expLst = {e1},attr = attr)),vars,idx,_,_)
-      equation
+      algorithm
 
-        (ex,true)=substituteExp(e,inVarRepl);
+        (ex,true):=substituteExp(e,inVarRepl);
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
     Debug.trace("Add label to atan exp "+ ExpressionDump.printExpStr(e) + "\n");
@@ -1994,16 +1990,16 @@ algorithm
 
         //Debug.fcall(Flags.CPP,print,"Add label to atan exp "+& ExpressionDump.printExpStr(e) +& "\n");
 
-        (e2,vars1,idx1,labels,subs) = addLabelToExpForSubstitution(e1,vars,idx,reduceList,inVarRepl);
+        (e2,vars1,idx1,labels,subs) := addLabelToExpForSubstitution(e1,vars,idx,reduceList,inVarRepl);
         //(e3,vars2,idx2,labels2)=addTwoLabels(DAE.CALL(Absyn.IDENT("atan"),{e2},attr),e,vars1,idx1,reduceList);
         //labels3=listAppend(labels,labels2);
       then
         (e2,vars1,idx1,labels,subs);
    //Substitute e^x
    case (e as (DAE.CALL(path = Absyn.IDENT("exp"),expLst = {e1},attr = attr)),vars,idx,_,_)
-      equation
+      algorithm
 
-        (ex,true)=substituteExp(e,inVarRepl);
+        (ex,true):=substituteExp(e,inVarRepl);
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
     Debug.trace("Add label to exp exp "+ ExpressionDump.printExpStr(ex) + "\n");
@@ -2011,16 +2007,16 @@ algorithm
 
         //Debug.fcall(Flags.CPP,print,"Add label to exp exp "+& ExpressionDump.printExpStr(e) +& "\n");
 
-        (e2,vars1,idx1,labels,subs) = addLabelToExpForSubstitution(e1,vars,idx,reduceList,inVarRepl);
+        (e2,vars1,idx1,labels,subs) := addLabelToExpForSubstitution(e1,vars,idx,reduceList,inVarRepl);
         //(e3,vars2,idx2,labels2)=addTwoLabels(DAE.CALL(Absyn.IDENT("exp"),{e2},attr),e,vars1,idx1,reduceList);
         //labels3=listAppend(labels,labels2);
       then
         (e2,vars1,idx1,labels,subs);
   //Substitute div expression
   case (e as (DAE.CALL(path = Absyn.IDENT(name="div"),expLst = {e1,e2},attr = attr)),vars,idx,_,_)
-    equation
+    algorithm
 
-        (ex,true)=substituteExp(e,inVarRepl);
+        (ex,true):=substituteExp(e,inVarRepl);
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
     Debug.trace("Add label to div exp " + ExpressionDump.printExpStr(e) +  "\n");
@@ -2028,13 +2024,13 @@ algorithm
 
         //Debug.fcall(Flags.CPP,print,"Add label to div exp " +& ExpressionDump.printExpStr(e) +&  "\n");
 
-        (e3,vars1,idx1,labels,subs1)=addLabelToExpForSubstitution(e1,vars,idx,reduceList,inVarRepl);
-        (e4,vars2,idx2,labels1,subs2)=addLabelToExpForSubstitution(e2,vars1,idx1,reduceList,inVarRepl);
-        subs3=boolAnd(subs1,subs2);
-        (e5,vars3,idx3,labels2)=addTwoLabels(DAE.CALL(Absyn.IDENT("div"),{e3,e4},attr),ex,subs3,vars2,idx2,reduceList);
-        subs4=boolOr(subs1,subs2);
-        labels3=listAppend(labels,labels1);
-        labels4=listAppend(labels3,labels2);
+        (e3,vars1,idx1,labels,subs1):=addLabelToExpForSubstitution(e1,vars,idx,reduceList,inVarRepl);
+        (e4,vars2,idx2,labels1,subs2):=addLabelToExpForSubstitution(e2,vars1,idx1,reduceList,inVarRepl);
+        subs3:=boolAnd(subs1,subs2);
+        (e5,vars3,idx3,labels2):=addTwoLabels(DAE.CALL(Absyn.IDENT("div"),{e3,e4},attr),ex,subs3,vars2,idx2,reduceList);
+        subs4:=boolOr(subs1,subs2);
+        labels3:=listAppend(labels,labels1);
+        labels4:=listAppend(labels3,labels2);
       then
         (e5,vars3,idx3,labels4,subs4);
 
@@ -2047,9 +2043,9 @@ algorithm
        /// (DAE.CALL(path,expLst2,attr,subs),vars1,idx1,labels);
     //Substitute integer algebraic, state and derivative variables
     case  (e as DAE.CREF(_,DAE.T_INTEGER(_)),vars,idx,_,_)
-      equation
+      algorithm
 
-        (e1,true)=substituteExp(e,inVarRepl);
+        (e1,true):=substituteExp(e,inVarRepl);
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
     Debug.trace("Add label to integer variable " + ExpressionDump.printExpStr(e) +  "\n");
@@ -2057,14 +2053,14 @@ algorithm
 
         //Debug.fcall(Flags.CPP,print,"Add label to integer variable " +& ExpressionDump.printExpStr(e) +&  "\n");
 
-        (e2,vars1,idx1,labels)=addTwoLabels(e,e1,true,vars,idx,reduceList);
+        (e2,vars1,idx1,labels):=addTwoLabels(e,e1,true,vars,idx,reduceList);
       then
         (e2,vars1,idx1,labels,true);
     //Substitute real algebraic, state and derivative variables
     case  (e as DAE.CREF(_,DAE.T_REAL(_)),vars,idx,_,_)
-      equation
+      algorithm
 
-        (e1,true)=substituteExp(e,inVarRepl);
+        (e1,true):=substituteExp(e,inVarRepl);
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
     Debug.trace("Add label to real variable " + ExpressionDump.printExpStr(e) +  "\n");
@@ -2072,7 +2068,7 @@ algorithm
 
         //Debug.fcall(Flags.CPP,print,"Add label to real variable " +& ExpressionDump.printExpStr(e) +&  "\n");
 
-        (e2,vars1,idx1,labels)=addTwoLabels(e,e1,true,vars,idx,reduceList);
+        (e2,vars1,idx1,labels):=addTwoLabels(e,e1,true,vars,idx,reduceList);
       then
         (e2,vars1,idx1,labels,true);
     //Do nothing in other cases
@@ -2129,9 +2125,9 @@ algorithm
     BackendVarTransform.VariableReplacements repl;
     Boolean replPerf;
     case(e,repl)
-      equation
+      algorithm
         //replaced variable
-        (e1,replPerformed)=BackendVarTransform.replaceExp(e,repl,NONE());
+        (e1,replPerformed):=BackendVarTransform.replaceExp(e,repl,NONE());
       then
         (e1,replPerformed);
   end matchcontinue;
@@ -2151,8 +2147,8 @@ algorithm
         DAE.Exp e,e2;
         String name;
    case  (e,name)
-      equation
-        e2 = Expression.expMul(DAE.CREF(DAE.CREF_IDENT(name,DAE.T_REAL_DEFAULT,{}),DAE.T_REAL_DEFAULT),e);
+      algorithm
+        e2 := Expression.expMul(DAE.CREF(DAE.CREF_IDENT(name,DAE.T_REAL_DEFAULT,{}),DAE.T_REAL_DEFAULT),e);
 
         if(Flags.isSet(Flags.REDUCE_DAE)) then
     Debug.trace("generate label  " + ExpressionDump.printExpStr(e2) + " for term " +ExpressionDump.printExpStr(e)+ "\n");
@@ -2188,25 +2184,25 @@ algorithm
                            intParam,boolParam,stringAlg,stringParam,stringAlias,extObjVar,const,intConst,boolConst,stringConst,jacobianVar,
                seedVar,realOptConst,realOptFinalConst,sensVar,setcVar,datareconinputvar,setBVar),p,i)
 
-      equation
-        indexStr = intString(i);
-        name = stringAppend(LABELNAME,indexStr);
-        name1 = stringAppend(name,"_1");
-        name2 = stringAppend(name,"_2");
+      algorithm
+        indexStr := intString(i);
+        name := stringAppend(LABELNAME,indexStr);
+        name1 := stringAppend(name,"_1");
+        name2 := stringAppend(name,"_2");
         //create simVar for label_1
 
-        simVar_1 = SimCodeVar.SIMVAR(DAE.CREF_IDENT(name1,DAE.T_REAL_DEFAULT,{}),BackendDAE.PARAM(),"","","",p,NONE(),NONE(),SOME(DAE.RCONST(1.0)),NONE(),
+        simVar_1 := SimCodeVar.SIMVAR(DAE.CREF_IDENT(name1,DAE.T_REAL_DEFAULT,{}),BackendDAE.PARAM(),"","","",p,NONE(),NONE(),SOME(DAE.RCONST(1.0)),NONE(),
                    true,DAE.T_REAL_DEFAULT,false,NONE(),SimCodeVar.NOALIAS(),DAE.emptyElementSource,SOME(SimCodeVar.LOCAL()),NONE(),NONE(),{},false,false,NONE(),false,NONE(),false,NONE(),NONE(),NONE(),NONE(),false);
-        param=listReverse(param);
+        param:=listReverse(param);
         //add simVar_1 to parameter list
-        param_1=simVar_1::param;
-        p=p+1;
+        param_1:=simVar_1::param;
+        p:=p+1;
         //create simVar_2 to parameter list
-        simVar_2 = SimCodeVar.SIMVAR(DAE.CREF_IDENT(name2,DAE.T_REAL_DEFAULT,{}),BackendDAE.PARAM(),"","","",p,NONE(),NONE(),SOME(DAE.RCONST(0.0)),NONE(),
+        simVar_2 := SimCodeVar.SIMVAR(DAE.CREF_IDENT(name2,DAE.T_REAL_DEFAULT,{}),BackendDAE.PARAM(),"","","",p,NONE(),NONE(),SOME(DAE.RCONST(0.0)),NONE(),
                    true,DAE.T_REAL_DEFAULT,false,NONE(),SimCodeVar.NOALIAS(),DAE.emptyElementSource,SOME(SimCodeVar.LOCAL()),NONE(),NONE(),{},false,false,NONE(),false,NONE(),false,NONE(),NONE(),NONE(),NONE(),false);
         //add simVar_2 to parameter list
-        param_2=simVar_2::param_1;
-        param_2=listReverse(param_2);
+        param_2:=simVar_2::param_1;
+        param_2:=listReverse(param_2);
 
       then
 
@@ -2231,10 +2227,10 @@ algorithm outList := matchcontinue(expLst,inList)
     case({},lst)
        then (lst);
     case((Absyn.INTEGER(value=v))::expLstRest,lst)
-    equation
-         i = v;
-         lst2 = listAppend(lst, {i});
-         lst3 = makeReduceList(expLstRest,lst2);
+    algorithm
+         i := v;
+         lst2 := listAppend(lst, {i});
+         lst3 := makeReduceList(expLstRest,lst2);
       then lst3;
    end matchcontinue;
 end makeReduceList;
@@ -2251,9 +2247,9 @@ algorithm
       list<Integer> lst2;
       String v,delim;
     case (v,delim)
-      equation
-        lst=Util.stringSplitAtChar(v,delim);
-        lst2=list(stringInt(s) for s in lst);
+      algorithm
+        lst:=Util.stringSplitAtChar(v,delim);
+        lst2:=list(stringInt(s) for s in lst);
       then lst2;
     else {};
   end matchcontinue;
@@ -2270,9 +2266,9 @@ algorithm
     list<String> labels;
     list<BackendDAE.Var> list1;
   case(SimCode.MODELINFO(varInfo=SimCode.VARINFO(numParams=numParams),labels=labels))
-    equation
+    algorithm
       //NB! index is not correct
-      list1=createBackendLabelVars2(labels,numParams);
+      list1:=createBackendLabelVars2(labels,numParams);
     then
       list1;
   end matchcontinue;
@@ -2294,30 +2290,30 @@ algorithm
     Integer p,p2;
   case({},p) then ({});
   case(name::rest,p)
-    equation
-      name1 = stringAppend(name,"_1");
-      name2 = stringAppend(name,"_2");
+    algorithm
+      name1 := stringAppend(name,"_1");
+      name2 := stringAppend(name,"_2");
       //create Backend variable for label_1
 
 
-       var1 = BackendDAE.VAR(DAE.CREF_IDENT(name1,DAE.T_REAL_DEFAULT,{}), BackendDAE.PARAM(),DAE.BIDIR(),DAE.NON_PARALLEL(),DAE.T_REAL_DEFAULT,NONE(),SOME(DAE.RCONST(1.0)),{},
+       var1 := BackendDAE.VAR(DAE.CREF_IDENT(name1,DAE.T_REAL_DEFAULT,{}), BackendDAE.PARAM(),DAE.BIDIR(),DAE.NON_PARALLEL(),DAE.T_REAL_DEFAULT,NONE(),SOME(DAE.RCONST(1.0)),{},
                             DAE.emptyElementSource,
                             SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE())),
                             NONE(),NONE(),NONE(),DAE.NON_CONNECTOR(),DAE.NOT_INNER_OUTER(),false,false,false);
 
-      p=p+1;
+      p:=p+1;
 
 
       //create Backend variable for label_2
-      var2 = BackendDAE.VAR(DAE.CREF_IDENT(name2,DAE.T_REAL_DEFAULT,{}), BackendDAE.PARAM(),DAE.BIDIR(),DAE.NON_PARALLEL(),DAE.T_REAL_DEFAULT,NONE(),SOME(DAE.RCONST(0.0)),{},
+      var2 := BackendDAE.VAR(DAE.CREF_IDENT(name2,DAE.T_REAL_DEFAULT,{}), BackendDAE.PARAM(),DAE.BIDIR(),DAE.NON_PARALLEL(),DAE.T_REAL_DEFAULT,NONE(),SOME(DAE.RCONST(0.0)),{},
                             DAE.emptyElementSource,
                             SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE())),
                             NONE(),NONE(),NONE(),DAE.NON_CONNECTOR(),DAE.NOT_INNER_OUTER(),false,false,false);
 
-      list1={var1,var2};
-      p=p+1;
-     list2=createBackendLabelVars2(rest,p);
-     list3=listAppend(list1,list2);
+      list1:={var1,var2};
+      p:=p+1;
+     list2:=createBackendLabelVars2(rest,p);
+     list3:=listAppend(list1,list2);
     then
       (list3);
   end matchcontinue;

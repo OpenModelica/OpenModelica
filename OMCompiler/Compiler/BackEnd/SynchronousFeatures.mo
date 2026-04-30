@@ -194,10 +194,10 @@ algorithm
         BackendDAE.WhenEquation whenEq;
         BackendDAE.Equation eq;
       case DAE.EVENT_CLOCK(c, _)
-        equation
-          e = DAE.CALL(Absyn.IDENT("$_clkfire"), {DAE.ICONST(i)}, DAE.callAttrBuiltinOther);
-          whenEq = BackendDAE.WHEN_STMTS(c, {BackendDAE.NORETCALL(e, DAE.emptyElementSource)}, NONE());
-          eq = BackendDAE.WHEN_EQUATION(0, whenEq, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC);
+        algorithm
+          e := DAE.CALL(Absyn.IDENT("$_clkfire"), {DAE.ICONST(i)}, DAE.callAttrBuiltinOther);
+          whenEq := BackendDAE.WHEN_STMTS(c, {BackendDAE.NORETCALL(e, DAE.emptyElementSource)}, NONE());
+          eq := BackendDAE.WHEN_EQUATION(0, whenEq, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_DYNAMIC);
         then eq::outRemovedEqs;
       else outRemovedEqs;
     end match;
@@ -691,7 +691,7 @@ algorithm
       DAE.Exp e;
       DAE.ComponentRef cr;
     case DAE.CALL(Absyn.IDENT("hold"), {e}, _)
-      equation DAE.CREF(cr, _) = e;
+      algorithm DAE.CREF(cr, _) := e;
       then (substGetPartition(e), cr::inComps);
     else (inExp, inComps);
   end match;
@@ -2250,8 +2250,8 @@ protected
 algorithm
   (newEqs, newVars, cnt, shared) := inTpl;
   (outExp, outTpl) := match inExp
-    case DAE.CLKCONST(clk) equation
-      (clk, newEqs, newVars, cnt) = substClock(clk, newEqs, newVars, cnt, shared);
+    case DAE.CLKCONST(clk) algorithm
+      (clk, newEqs, newVars, cnt) := substClock(clk, newEqs, newVars, cnt, shared);
     then (DAE.CLKCONST(clk), (newEqs, newVars, cnt, shared));
 
     case DAE.CALL(path=path, expLst=exps, attr=attr)
@@ -2278,16 +2278,16 @@ protected
   list<BackendDAE.Var> vars;
 algorithm
   (outClk, outNewEqs, outNewVars, outCnt) := match inClk
-    case DAE.EVENT_CLOCK(e, f) equation
-      ({e}, eqs, vars, cnt) = substExp({e}, inNewEqs, inNewVars, inCnt);
+    case DAE.EVENT_CLOCK(e, f) algorithm
+      ({e}, eqs, vars, cnt) := substExp({e}, inNewEqs, inNewVars, inCnt);
     then (DAE.EVENT_CLOCK(e, f), eqs, vars, cnt);
 
-    case DAE.REAL_CLOCK(e) equation
-      (e, eqs, vars, cnt) = substClockExp(e, inNewEqs, inNewVars, inCnt, inShared);
+    case DAE.REAL_CLOCK(e) algorithm
+      (e, eqs, vars, cnt) := substClockExp(e, inNewEqs, inNewVars, inCnt, inShared);
     then (DAE.REAL_CLOCK(e), eqs, vars, cnt);
 
-    case DAE.RATIONAL_CLOCK(e, i) equation
-      (e, eqs, vars, cnt) = substClockExp(e, inNewEqs, inNewVars, inCnt, inShared);
+    case DAE.RATIONAL_CLOCK(e, i) algorithm
+      (e, eqs, vars, cnt) := substClockExp(e, inNewEqs, inNewVars, inCnt, inShared);
     then (DAE.RATIONAL_CLOCK(e, i), eqs, vars, cnt);
 
     else (inClk, inNewEqs, inNewVars, inCnt);
@@ -2457,8 +2457,8 @@ algorithm
     local
       list<Integer> ixs;
     case _
-      equation
-        (_, ixs) = BackendVariable.getVar(inComp, inVariables);
+      algorithm
+        (_, ixs) := BackendVariable.getVar(inComp, inVariables);
       then ixs;
     else
       then {};
@@ -2695,8 +2695,8 @@ algorithm
       DAE.Exp e;
       DAE.ComponentRef cr;
     case DAE.CLKCONST(DAE.EVENT_CLOCK(e, _))
-      equation
-        DAE.CREF(cr, _) = e;
+      algorithm
+        DAE.CREF(cr, _) := e;
       then (partition, (cr, false)::refs, false);
     case DAE.CALL(path = path, expLst = exps)
       then detectEqPartitionCall(path, exps, refs, partition, info);
@@ -2751,7 +2751,7 @@ algorithm
     local
       DAE.ComponentRef cr;
     case DAE.CREF(cr, _)
-      equation
+      algorithm
       then (setClockedPartition(SOME(expClocked), inPartition, NONE(), info), (cr, refClocked)::inRefs);
     else
       algorithm

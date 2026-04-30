@@ -280,9 +280,9 @@ algorithm
       BackendDAE.StrongComponent comp;
       Boolean b;
     case comp
-      equation
-        (comp, b, strongComponentIndexOut) = traverseComponent(comp, isyst, ishared, inMethod, strongComponentIndexOut);
-        outRunMatching = outRunMatching or b;
+      algorithm
+        (comp, b, strongComponentIndexOut) := traverseComponent(comp, isyst, ishared, inMethod, strongComponentIndexOut);
+        outRunMatching := outRunMatching or b;
       then comp;
     end match for co in inComps);
 end traverseComponents;
@@ -301,7 +301,7 @@ protected
   Boolean debugFlag = Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE);
 algorithm
   strongComponentIndexOut := match(inComp)
-    case(BackendDAE.EQUATIONSYSTEM(jac=BackendDAE.FULL_JACOBIAN())) equation
+    case(BackendDAE.EQUATIONSYSTEM(jac=BackendDAE.FULL_JACOBIAN())) algorithm
       if debugFlag then
         print("Handle strong component with index: " + intString(strongComponentIndexOut+1) + "\n");
         if not listMember(strongComponentIndexOut+1, Flags.getConfigIntList(Flags.NO_TEARING_FOR_COMPONENT)) then
@@ -684,23 +684,23 @@ algorithm
     case ({}, _, _, _, _, _, _)
     then iMark;
 
-    case ({c}::comps, _, _, _, _, _, _) equation
+    case ({c}::comps, _, _, _, _, _, _) algorithm
       // get var of eqn
-      v = ass2[c];
+      v := ass2[c];
       // get TVars of Eqn
-      vars = List.select(m[c], Util.intPositive);
-      tvars = tVarsofEqn(vars, ass1, mT, visited, iMark, {});
+      vars := List.select(m[c], Util.intPositive);
+      tvars := tVarsofEqn(vars, ass1, mT, visited, iMark, {});
       // update map
       arrayUpdate(mT, v, tvars);
     then getDependenciesOfVars(comps, ass1, ass2, m, mT, visited, iMark+1);
 
-    case (comp::comps, _, _, _, _, _, _) equation
+    case (comp::comps, _, _, _, _, _, _) algorithm
       // get var of eqns
-      vars = List.map1r(comp,arrayGet,ass2);
+      vars := List.map1r(comp,arrayGet,ass2);
       // get TVars of Eqns
-      tvars = tVarsofEqns(comp, m, ass1, mT, visited, iMark);
+      tvars := tVarsofEqns(comp, m, ass1, mT, visited, iMark);
       // update map
-      _ = List.fold1r(vars, arrayUpdate, tvars, mT);
+      _ := List.fold1r(vars, arrayUpdate, tvars, mT);
     then getDependenciesOfVars(comps, ass1, ass2, m, mT, visited, iMark+1);
   end match;
 end getDependenciesOfVars;
@@ -831,12 +831,12 @@ algorithm
           Integer e;
           list<Integer> eqns,vars,tvars;
         case e
-          equation
-            vars = List.select(m[e], Util.intPositive);
-            tvars = tVarsofEqn(vars,ass1,mT,visited,oMark,{});
+          algorithm
+            vars := List.select(m[e], Util.intPositive);
+            tvars := tVarsofEqn(vars,ass1,mT,visited,oMark,{});
             // change indices to local
-            tvars = List.map1r(tvars,arrayGet,varGlobalLocal);
-            oMark = oMark + 1;
+            tvars := List.map1r(tvars,arrayGet,varGlobalLocal);
+            oMark := oMark + 1;
           then tvars;
     end match for eq in iEqns);
 end tVarsofResidualEqns;
@@ -854,9 +854,9 @@ algorithm
       Integer e;
     case (0,_,_,_) then iAcc;
     case (_,_,_,_)
-      equation
-        e = v1[index];
-        e = eqnLocalGlobal[e];
+      algorithm
+        e := v1[index];
+        e := eqnLocalGlobal[e];
       then
         getTVarResiduals(index-1,v1,eqnLocalGlobal,e::iAcc);
   end match;
@@ -892,19 +892,19 @@ algorithm
       BackendDAE.AdjacencyMatrixElementEnhanced vareqns;
     // if there are no unsolvables choose tvar by heuristic
     case ({},{})
-      equation
+      algorithm
         // select tearing var
         if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
           print("\n" + BORDER + "\nBEGINNING of omcTearingSelectTearingVar\n\n\n");
         end if;
-        tvar = omcTearingSelectTearingVar(vars,ass1,ass2,m,mt,tSel_prefer,tSel_avoid,tSel_never);
+        tvar := omcTearingSelectTearingVar(vars,ass1,ass2,m,mt,tSel_prefer,tSel_avoid,tSel_never);
         if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
           print("\nEND of omcTearingSelectTearingVar\n" + BORDER + "\n\n");
         end if;
         // mark tearing var
         arrayUpdate(ass1,tvar,size*2);
         // equations not yet assigned containing the tvar
-        vareqns = List.removeOnTrue(ass2, isAssignedSaveEnhanced, mt[tvar]);
+        vareqns := List.removeOnTrue(ass2, isAssignedSaveEnhanced, mt[tvar]);
         if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
           print("Assignable equations containing new tvar:\n");
           BackendDump.dumpAdjacencyRowEnhanced(vareqns);
@@ -913,13 +913,13 @@ algorithm
         // cheap matching
         tearingBFS(vareqns,m,mt,mapEqnIncRow,mapIncRowEqn,size,ass1,ass2,{});
         // check for unassigned vars, if there some rerun
-        unassigned = Matching.getUnassigned(size,ass1,{});
-        (outTVars,oMark) = omcTearing3(unassigned,{},tSel_always,tSel_prefer,tSel_avoid,tSel_never,m,mt,mapEqnIncRow,mapIncRowEqn,size,vars,ishared,ass1,ass2,columark,mark+1,tvar::inTVars);
+        unassigned := Matching.getUnassigned(size,ass1,{});
+        (outTVars,oMark) := omcTearing3(unassigned,{},tSel_always,tSel_prefer,tSel_avoid,tSel_never,m,mt,mapEqnIncRow,mapIncRowEqn,size,vars,ishared,ass1,ass2,columark,mark+1,tvar::inTVars);
       then
         (outTVars,oMark);
     // if there are unsolvables choose unsolvables as tvars
     case (tvar::rest,{})
-      equation
+      algorithm
         if listMember(tvar,tSel_never) then
           Error.addCompilerWarning("There are tearing variables with annotation attribute '__OpenModelica_tearingSelect = TearingSelect.never'. Use -d=tearingdump and -d=tearingdumpV for more information.");
         end if;
@@ -930,7 +930,7 @@ algorithm
         // mark tearing var
         arrayUpdate(ass1,tvar,size*2);
         // equations not yet assigned containing the tvar
-        vareqns = List.removeOnTrue(ass2, isAssignedSaveEnhanced, mt[tvar]);
+        vareqns := List.removeOnTrue(ass2, isAssignedSaveEnhanced, mt[tvar]);
         if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
           print("Assignable equations containing new tvar:\n");
           BackendDump.dumpAdjacencyRowEnhanced(vareqns);
@@ -939,21 +939,21 @@ algorithm
         // cheap matching
         tearingBFS(vareqns,m,mt,mapEqnIncRow,mapIncRowEqn,size,ass1,ass2,{});
         // check for unassigned vars, if there some rerun
-        unassigned = Matching.getUnassigned(size,ass1,{});
-        (outTVars,oMark) = omcTearing3(unassigned,rest,tSel_always,tSel_prefer,tSel_avoid,tSel_never,m,mt,mapEqnIncRow,mapIncRowEqn,size,vars,ishared,ass1,ass2,columark,mark+1,tvar::inTVars);
+        unassigned := Matching.getUnassigned(size,ass1,{});
+        (outTVars,oMark) := omcTearing3(unassigned,rest,tSel_always,tSel_prefer,tSel_avoid,tSel_never,m,mt,mapEqnIncRow,mapIncRowEqn,size,vars,ishared,ass1,ass2,columark,mark+1,tvar::inTVars);
       then
         (outTVars,oMark);
     case (_,_)
-      equation
+      algorithm
         if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
           print("\nForced selection of Tearing Variables:\n" + UNDERLINE + "\n");
           print("Variables with annotation attribute 'always' as tVars: " + stringDelimitList(List.map(tSel_always,intString),",")+"\n");
         end if;
         // mark tearing var
         markTVarsOrResiduals(tSel_always, ass1);
-        (_,unsolv,_) = List.intersection1OnTrue(unsolvables,tSel_always,intEq);
+        (_,unsolv,_) := List.intersection1OnTrue(unsolvables,tSel_always,intEq);
         // equations not yet assigned containing the tvars
-        vareqns = findVareqns(ass2,isAssignedSaveEnhanced,mt,tSel_always);
+        vareqns := findVareqns(ass2,isAssignedSaveEnhanced,mt,tSel_always);
         if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
           print("Assignable equations containing new tvars:\n");
           BackendDump.dumpAdjacencyRowEnhanced(vareqns);
@@ -962,8 +962,8 @@ algorithm
         // cheap matching
         tearingBFS(vareqns,m,mt,mapEqnIncRow,mapIncRowEqn,size,ass1,ass2,{});
         // check for unassigned vars, if there some rerun
-        unassigned = Matching.getUnassigned(size,ass1,{});
-        (outTVars,oMark) = omcTearing3(unassigned,unsolv,{},tSel_prefer,tSel_avoid,tSel_never,m,mt,mapEqnIncRow,mapIncRowEqn,size,vars,ishared,ass1,ass2,columark,mark+1,listAppend(tSel_always,inTVars));
+        unassigned := Matching.getUnassigned(size,ass1,{});
+        (outTVars,oMark) := omcTearing3(unassigned,unsolv,{},tSel_prefer,tSel_avoid,tSel_never,m,mt,mapEqnIncRow,mapIncRowEqn,size,vars,ishared,ass1,ass2,columark,mark+1,listAppend(tSel_always,inTVars));
       then
         (outTVars,oMark);
     else
@@ -1016,10 +1016,10 @@ algorithm
 
     // if there is a variable unsolvable select it
     case(_,_,_,_,_,_,_,_)
-      equation
-        unsolvables = getUnsolvableVarsConsiderMatching(BackendVariable.varsSize(vars),mt,ass1,ass2);
-        false = listEmpty(unsolvables);
-        tvar = listHead(unsolvables);
+      algorithm
+        unsolvables := getUnsolvableVarsConsiderMatching(BackendVariable.varsSize(vars),mt,ass1,ass2);
+        false := listEmpty(unsolvables);
+        tvar := listHead(unsolvables);
         if listMember(tvar,tSel_never) then
           Error.addCompilerWarning("There are tearing variables with annotation attribute '__OpenModelica_tearingSelect = TearingSelect.never'. Use -d=tearingdump and -d=tearingdumpV for more information.");
         end if;
@@ -1033,50 +1033,50 @@ algorithm
         tvar;
 
     case(_,_,_,_,_,_,_,_)
-      equation
-        varsize = BackendVariable.varsSize(vars);
+      algorithm
+        varsize := BackendVariable.varsSize(vars);
         // variables not assigned yet:
-        freeVars = Matching.getUnassigned(varsize,ass1,{});
+        freeVars := Matching.getUnassigned(varsize,ass1,{});
         if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
           print("omcTearingSelectTearingVar Candidates(unassigned vars):\n");
           BackendDump.debuglst(freeVars,intString,", ","\n");
         end if;
-        (_,freeVars,_) = List.intersection1OnTrue(freeVars,tSel_never,intEq);
+        (_,freeVars,_) := List.intersection1OnTrue(freeVars,tSel_never,intEq);
         if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
           print("Candidates without variables with annotation attribute 'never':\n");
           BackendDump.debuglst(freeVars,intString,", ","\n");
         end if;
-        false = listEmpty(freeVars);
+        false := listEmpty(freeVars);
 
         // CALCULATE TEARING-VARIABLE WEIGHTS
-        points = arrayCreate(varsize,0);
+        points := arrayCreate(varsize,0);
         // 1st: Points for solvability (see function solvabilityWeights)
-        points = List.fold2(freeVars, calcVarWeights,mt,ass2,points);
+        points := List.fold2(freeVars, calcVarWeights,mt,ass2,points);
         if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
           print("\nPoints after 'calcVarWeights':\n" + stringDelimitList(List.mapArray(points, intString),",") + "\n\n");
         end if;
-        eqns = Matching.getUnassigned(arrayLength(m),ass2,{});
+        eqns := Matching.getUnassigned(arrayLength(m),ass2,{});
         // 2nd: 5 points for each equation this variable would causalize
-        points = List.fold2(eqns,addEqnWeights,m,ass1,points);
+        points := List.fold2(eqns,addEqnWeights,m,ass1,points);
         if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
           print("Points after 'addEqnWeights':\n" + stringDelimitList(List.mapArray(points, intString),",") + "\n\n");
         end if;
         // 3rd: only one-tenth of points for each discrete variable
-        points = List.fold1(freeVars,discriminateDiscrete,vars,points);
+        points := List.fold1(freeVars,discriminateDiscrete,vars,points);
         if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
           print("Points after 'discriminateDiscrete':\n" + stringDelimitList(List.mapArray(points, intString),",") + "\n\n");
         end if;
         // 4th: Prefer variables with annotation attribute '__OpenModelica_tearingSelect = TearingSelect.prefer'
-        pointsLst = preferAvoidVariables(freeVars, arrayList(points), tSel_prefer, 3.0);
+        pointsLst := preferAvoidVariables(freeVars, arrayList(points), tSel_prefer, 3.0);
         if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
           print("Points after preferring variables with attribute 'prefer':\n" + stringDelimitList(List.map(pointsLst,intString),",") + "\n\n");
         end if;
         // 5th: Avoid variables with annotation attribute '__OpenModelica_tearingSelect = TearingSelect.avoid'
-        pointsLst = preferAvoidVariables(freeVars, pointsLst, tSel_avoid, 0.334);
+        pointsLst := preferAvoidVariables(freeVars, pointsLst, tSel_avoid, 0.334);
         if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
           print("Points after discrimination against variables with attribute 'avoid':\n" + stringDelimitList(List.map(pointsLst,intString),",") + "\n\n");
         end if;
-        tvar = selectVarWithMostPoints(freeVars,pointsLst);
+        tvar := selectVarWithMostPoints(freeVars,pointsLst);
           // fcall(Flags.TEARING_DUMPVERBOSE,print,"VarsWithMostEqns:\n");
           // fcall(Flags.TEARING_DUMPVERBOSE,BackendDump.debuglst,(freeVars,intString,", ","\n"));
         if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
@@ -1181,8 +1181,8 @@ algorithm
       guard
         intGt(eq,0) and
         not intGt(ass[eq], 0)
-      equation
-        w = solvabilityWeights(s);
+      algorithm
+        w := solvabilityWeights(s);
       then
         intAdd(w,iW);
     else iW;
@@ -1226,11 +1226,11 @@ algorithm
        Integer v1,v2;
        array<Integer> points;
      case (_,_,_,_)
-       equation
+       algorithm
          // finds equations with exact two variables (v1,v2)
-         ((v1,_,_)::(v2,_,_)::{}) = List.removeOnTrue(ass1, isAssignedSaveEnhanced, m[e]);
-         points = arrayUpdate(iPoints,v1,iPoints[v1]+5);
-         points = arrayUpdate(iPoints,v2,points[v2]+5);
+         ((v1,_,_)::(v2,_,_)::{}) := List.removeOnTrue(ass1, isAssignedSaveEnhanced, m[e]);
+         points := arrayUpdate(iPoints,v1,iPoints[v1]+5);
+         points := arrayUpdate(iPoints,v2,points[v2]+5);
        then
          points;
      else
@@ -1318,11 +1318,11 @@ algorithm
 
     // if queue is empty, use next queue
     case ({},_,_,_,_,_,_,_,_)
-      equation
+      algorithm
         // use only equations from next queue which are not assigned yet
-        newqueue = List.removeOnTrue(ass2, isAssignedSaveEnhanced, nextQueue);
+        newqueue := List.removeOnTrue(ass2, isAssignedSaveEnhanced, nextQueue);
         // use linear equations first
-        newqueue = sortEqnsSolvable(newqueue,m);
+        newqueue := sortEqnsSolvable(newqueue,m);
         if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
           print("Use next Queue!\n");
         end if;
@@ -1330,18 +1330,18 @@ algorithm
       then
         ();
     case((c,_,_)::rest,_,_,_,_,_,_,_,_)
-      equation
+      algorithm
         if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
           print("Queue:\n");
           BackendDump.dumpAdjacencyRowEnhanced(queue);
           print("Process Eqn: " + intString(c) + "\n");
         end if;
         // not assigned variables in equation c:
-        rows = List.removeOnTrue(ass1, isAssignedSaveEnhanced, m[c]);
+        rows := List.removeOnTrue(ass1, isAssignedSaveEnhanced, m[c]);
           //arrayUpdate(columark,c,mark);
         // For Equationarrays
-        cnonscalar = mapIncRowEqn[c];
-        eqnsize = listLength(mapEqnIncRow[cnonscalar]);
+        cnonscalar := mapIncRowEqn[c];
+        eqnsize := listLength(mapEqnIncRow[cnonscalar]);
         if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
           print("Eqn Size: " + intString(eqnsize) + "\n");
           // fcall(Flags.TEARING_DUMPVERBOSE, print,"Rows(not assigned variables in eqn " + intString(c) + ":\n" + stringDelimitList(List.mapMap(rows,Util.tuple21,intString),", ") + "\n");
@@ -1350,7 +1350,7 @@ algorithm
           print("\n");
         end if;
         // make assignment and find next equations to get causalized
-        newqueue = tearingBFS1(rows,eqnsize,mapEqnIncRow[cnonscalar],mt,ass1,ass2,nextQueue);
+        newqueue := tearingBFS1(rows,eqnsize,mapEqnIncRow[cnonscalar],mt,ass1,ass2,nextQueue);
         if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
           print("Next Queue:\n");
           BackendDump.dumpAdjacencyRowEnhanced(newqueue);
@@ -1429,7 +1429,7 @@ algorithm
       guard
         intEq(listLength(rows),size) and
         solvableLst(rows)
-      equation
+      algorithm
         if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
           print("Assign Eqns: " + stringDelimitList(List.map(c,intString),", ") + "\n");
         end if;
@@ -1525,7 +1525,7 @@ algorithm
       BackendDAE.AdjacencyMatrixElementEnhanced rest,vareqns,newqueue;
     case ({},_,_,_,_,_) then inNextQueue;
     case ((r,_,_)::rest,c::ilst,_,_,_,_)
-      equation
+      algorithm
         if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
            print("Assignment: Eq " + intString(c) + " - Var " + intString(r) + "\n");
         end if;
@@ -1537,8 +1537,8 @@ algorithm
           print("ass2: " + stringDelimitList(List.mapArray(ass2, intString),",")+"\n");
         end if;
         // not yet assigned equations containing var r
-        vareqns = List.removeOnTrue(ass2, isAssignedSaveEnhanced, mt[r]);
-        newqueue = listAppend(inNextQueue,vareqns);
+        vareqns := List.removeOnTrue(ass2, isAssignedSaveEnhanced, mt[r]);
+        newqueue := listAppend(inNextQueue,vareqns);
       then
         tearingBFS2(rest,ilst,mt,ass1,ass2,newqueue);
   end match;
@@ -1610,19 +1610,19 @@ algorithm
       array<Integer> eindxarr,varindxarr;
       Boolean linear;
     case (_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
-      equation
+      algorithm
         if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
           print("handle torn System\n");
         end if;
-        residual1 = List.map1r(residual,arrayGet,mapIncRowEqn);
-        residual1 = List.fold2(residual1,uniqueIntLst,mark,columark,{});
+        residual1 := List.map1r(residual,arrayGet,mapIncRowEqn);
+        residual1 := List.fold2(residual1,uniqueIntLst,mark,columark,{});
         // map indexes back
-        eindxarr = listArray(eindex);
-        ores = List.map1r(residual1,arrayGet,eindxarr);
-        varindxarr = listArray(vindx);
-        ovars = List.map1r(tvars,arrayGet,varindxarr);
-        innerEquations = omcTearing4_1(othercomps,ass2,mapIncRowEqn,eindxarr,varindxarr,columark,mark);
-        linear = BackendDAEUtil.getLinearfromJacType(jacType);
+        eindxarr := listArray(eindex);
+        ores := List.map1r(residual1,arrayGet,eindxarr);
+        varindxarr := listArray(vindx);
+        ovars := List.map1r(tvars,arrayGet,varindxarr);
+        innerEquations := omcTearing4_1(othercomps,ass2,mapIncRowEqn,eindxarr,varindxarr,columark,mark);
+        linear := BackendDAEUtil.getLinearfromJacType(jacType);
       then
         (BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(ovars, ores, innerEquations, BackendDAE.EMPTY_JACOBIAN()), NONE(), linear,mixedSystem),true);
     case (_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
@@ -1651,22 +1651,22 @@ algorithm
         Integer e,v,c;
 
       case {c}
-        equation
-          e = mapIncRowEqn[c];
-          e = eindxarr[e];
-          v = ass2[c];
-          v = varindxarr[v];
+        algorithm
+          e := mapIncRowEqn[c];
+          e := eindxarr[e];
+          v := ass2[c];
+          v := varindxarr[v];
        then
         BackendDAE.INNEREQUATION(eqn=e,vars={v});
 
       case clst
-        equation
-          elst = List.map1r(clst,arrayGet,mapIncRowEqn);
-          elst = List.fold2(elst,uniqueIntLst,mark,columark,{});
-          {e} = elst;
-          e = eindxarr[e];
-          vlst = List.map1r(clst,arrayGet,ass2);
-          vlst = List.map1r(vlst,arrayGet,varindxarr);
+        algorithm
+          elst := List.map1r(clst,arrayGet,mapIncRowEqn);
+          elst := List.fold2(elst,uniqueIntLst,mark,columark,{});
+          {e} := elst;
+          e := eindxarr[e];
+          vlst := List.map1r(clst,arrayGet,ass2);
+          vlst := List.map1r(vlst,arrayGet,varindxarr);
        then
         BackendDAE.INNEREQUATION(eqn=e,vars=vlst);
     end match
@@ -2481,12 +2481,12 @@ algorithm
 
   // case: There are no unsolvables and no variables with annotation '__OpenModelica_tearingSelect = TearingSelect.always'
   case ({},{})
-    equation
+    algorithm
       // select tearing Var
       if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
         print("\n" + BORDER + "\nBEGINNING of selectTearingVar\n\n");
       end if;
-      tvar = selectTearingVar(meIn,meTIn,mIn,mtIn,ass1In,ass2In,discreteVars,tSel_prefer,tSel_avoid,tSel_never,mapEqnIncRow,mapIncRowEqn);
+      tvar := selectTearingVar(meIn,meTIn,mIn,mtIn,ass1In,ass2In,discreteVars,tSel_prefer,tSel_avoid,tSel_never,mapEqnIncRow,mapIncRowEqn);
       if debug then execStat("Tearing.CellierTearing2 - 1.0"); end if;
       if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
         print("\nEND of selectTearingVar\n" + BORDER + "\n\n");
@@ -2501,20 +2501,20 @@ algorithm
         print("\n\n###BEGIN print Adjacency Matrix w/o tvar############\n(Function: CellierTearing2)\n");
         BackendDump.dumpAdjacencyMatrix(mIn);
       end if;
-      _ = Array.replaceAtWithFill(tvar,{},{},mtIn);
+      _ := Array.replaceAtWithFill(tvar,{},{},mtIn);
       if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
         BackendDump.dumpAdjacencyMatrixT(mtIn);
         print("\n###END print Adjacency Matrix w/o tvar##############\n(Function: CellierTearing2)\n\n\n");
       end if;
 
       if debug then execStat("Tearing.CellierTearing2 - 1.1"); end if;
-      tvars = tvar::tvarsIn;
+      tvars := tvar::tvarsIn;
 
       // assign vars to eqs until complete or partially causalisation(and restart algorithm)
       if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
         print("\n" + BORDER + "\nBEGINNING of TarjanMatching\n\n");
       end if;
-      (order,causal) = TarjanMatching(mIn,mtIn,meIn,ass1In,ass2In,orderIn,mapEqnIncRow,mapIncRowEqn,eqnNonlinPoints);
+      (order,causal) := TarjanMatching(mIn,mtIn,meIn,ass1In,ass2In,orderIn,mapEqnIncRow,mapIncRowEqn,eqnNonlinPoints);
       if debug then execStat("Tearing.CellierTearing2 - 1.2"); end if;
       if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
         print("\nEND of TarjanMatching\n" + BORDER + "\n\n");
@@ -2529,14 +2529,14 @@ algorithm
       end if;
 
       // ascertain if there are new unsolvables now
-      unsolvables = getUnsolvableVarsConsiderMatching(arrayLength(meTIn),meTIn,ass1In,ass2In);
+      unsolvables := getUnsolvableVarsConsiderMatching(arrayLength(meTIn),meTIn,ass1In,ass2In);
       if debug then execStat("Tearing.CellierTearing2 - 1.3"); end if;
-      (_,unsolvables,_) = List.intersection1OnTrue(unsolvables,tvars,intEq);
+      (_,unsolvables,_) := List.intersection1OnTrue(unsolvables,tvars,intEq);
 
       if debug then execStat("Tearing.CellierTearing2 - 1 done"); end if;
 
       // repeat until system is causal
-      (tvars, order) = CellierTearing2(causal,mIn,mtIn,meIn,meTIn,ass1In,ass2In,unsolvables,tvars,discreteVars,tSel_always,tSel_prefer,tSel_avoid,tSel_never,order,mapEqnIncRow,mapIncRowEqn,eqnNonlinPoints);
+      (tvars, order) := CellierTearing2(causal,mIn,mtIn,meIn,meTIn,ass1In,ass2In,unsolvables,tvars,discreteVars,tSel_always,tSel_prefer,tSel_avoid,tSel_never,order,mapEqnIncRow,mapIncRowEqn,eqnNonlinPoints);
 
    then
      (tvars,order);
@@ -3511,23 +3511,23 @@ algorithm
       Integer p,v;
       list<Integer> prest,vrest;
     case(v::{}, p::{})
-      equation
+      algorithm
         if intGt(p, outMax) then
-          outMax = p;
-          outVarList = {v};
+          outMax := p;
+          outVarList := {v};
         elseif intEq(p, outMax) then
-          outVarList = v::outVarList;
+          outVarList := v::outVarList;
         end if;
       then ();
     case(v::vrest, p::prest)
-      equation
+      algorithm
         if intGt(p, outMax) then
-          outMax = p;
-          outVarList = {v};
+          outMax := p;
+          outVarList := {v};
         elseif intEq(p, outMax) then
-          outVarList = v::outVarList;
+          outVarList := v::outVarList;
         end if;
-        (outVarList, outMax) = getAllVarsWithMostPoints(vrest, prest, outVarList, outMax);
+        (outVarList, outMax) := getAllVarsWithMostPoints(vrest, prest, outVarList, outMax);
       then ();
     else
       equation
@@ -3895,22 +3895,22 @@ algorithm
         BackendDAE.Constraints constraints;
         BackendDAE.AdjacencyMatrixEnhanced me;
       case (eq,NONE())
-        equation
-          vars = List.map1r(mapEqnIncRow[eq],arrayGet,ass2);
-          otherEqn = listGet(eindex,eq);
-          otherVars = selectFromList_rev(vindex,vars);
+        algorithm
+          vars := List.map1r(mapEqnIncRow[eq],arrayGet,ass2);
+          otherEqn := listGet(eindex,eq);
+          otherVars := selectFromList_rev(vindex,vars);
        then BackendDAE.INNEREQUATION(eqn=otherEqn, vars=otherVars);
       case (eq,SOME(me))
-        equation
-          eqns = mapEqnIncRow[eq];
-          vars = List.map1r(eqns,arrayGet,ass2);
-          otherEqn = listGet(eindex,eq);
-          otherVars = selectFromList_rev(vindex,vars);
-          constraints = findConstraintForInnerEquation(me[listHead(eqns)],listHead(vars));
+        algorithm
+          eqns := mapEqnIncRow[eq];
+          vars := List.map1r(eqns,arrayGet,ass2);
+          otherEqn := listGet(eindex,eq);
+          otherVars := selectFromList_rev(vindex,vars);
+          constraints := findConstraintForInnerEquation(me[listHead(eqns)],listHead(vars));
           if listEmpty(constraints) then
-            innerEquation = BackendDAE.INNEREQUATION(eqn=otherEqn, vars=otherVars);
+            innerEquation := BackendDAE.INNEREQUATION(eqn=otherEqn, vars=otherVars);
           else
-            innerEquation = BackendDAE.INNEREQUATIONCONSTRAINTS(eqn=otherEqn, vars=otherVars, cons=constraints);
+            innerEquation := BackendDAE.INNEREQUATIONCONSTRAINTS(eqn=otherEqn, vars=otherVars, cons=constraints);
           end if;
        then (innerEquation);
     end match for eqn in inEqns);
@@ -4006,9 +4006,9 @@ algorithm
       Integer value,number;
       list<Integer> val,num,rest;
     case(_,value::rest,_,_)
-      equation
-        number = listLength(lstIn)-listLength(List.removeOnTrue(value,intEq,lstIn));
-        (val,num) = countMultiples3(lstIn,rest,value::valIn,number::numIn);
+      algorithm
+        number := listLength(lstIn)-listLength(List.removeOnTrue(value,intEq,lstIn));
+        (val,num) := countMultiples3(lstIn,rest,value::valIn,number::numIn);
       then
         (val,num);
     else (valIn,numIn);

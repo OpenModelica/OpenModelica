@@ -81,12 +81,12 @@ algorithm
   res_str := matchcontinue(str,changeDerCall)
     local String s;
     case(_,false)
-      equation
-        res_str = "$"+ modelicaStringToCStr1(str, replaceStringPatterns);
+      algorithm
+        res_str := "$"+ modelicaStringToCStr1(str, replaceStringPatterns);
         // debug_print("prefix$", res_str);
       then res_str;
-    case(s,true) equation
-      s = modelicaStringToCStr2(s);
+    case(s,true) algorithm
+      s := modelicaStringToCStr2(s);
     then s;
   end matchcontinue;
 end modelicaStringToCStr;
@@ -105,9 +105,9 @@ algorithm
       list<ReplacePattern> res;
     case (str,{}) then str;
     case (str,(REPLACEPATTERN(from = from,to = to) :: res))
-      equation
-        str_1 = modelicaStringToCStr1(str, res);
-        res_str = System.stringReplace(str_1, from, to);
+      algorithm
+        str_1 := modelicaStringToCStr1(str, res);
+        res_str := System.stringReplace(str_1, from, to);
       then
         res_str;
     else
@@ -128,20 +128,20 @@ algorithm
       String name, derName;
       list<String> names;
 
-    case(derName) equation
-      0 = System.strncmp(derName,"der(",4);
+    case(derName) algorithm
+      0 := System.strncmp(derName,"der(",4);
       // adrpo: 2009-09-08
       // the commented text: _::name::_ = listLast(System.strtok(derName,"()"));
       // is wrong as der(der(x)) ends up beeing translated to $der$der instead
       // of $der$der$x. Changed to the following 2 lines below!
-      _::names = (System.strtok(derName,"()"));
-      names = List.map1(names, modelicaStringToCStr, false);
-      name = DAE.derivativeNamePrefix + stringAppendList(names);
+      _::names := (System.strtok(derName,"()"));
+      names := List.map1(names, modelicaStringToCStr, false);
+      name := DAE.derivativeNamePrefix + stringAppendList(names);
     then name;
-    case(derName) equation
-      0 = System.strncmp(derName,"pre(",4);
-      _::name::_= System.strtok(derName,"()");
-      name = "pre(" + modelicaStringToCStr(name,false) + ")";
+    case(derName) algorithm
+      0 := System.strncmp(derName,"pre(",4);
+      _::name::_:= System.strtok(derName,"()");
+      name := "pre(" + modelicaStringToCStr(name,false) + ")";
     then name;
     case(derName) then modelicaStringToCStr(derName,false);
   end matchcontinue;

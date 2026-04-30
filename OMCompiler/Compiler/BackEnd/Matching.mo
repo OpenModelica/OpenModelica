@@ -340,29 +340,29 @@ algorithm
       BackendDAE.AdjacencyMatrixT mt;
 
     case (BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt)),_,_,_,_,_)
-      equation
-        neqns = BackendDAEUtil.systemSize(isyst);
-        nvars = BackendVariable.daenumVariables(isyst);
-        true = intGt(nvars,0);
-        true = intGt(neqns,0);
-        vmark = arrayCreate(nvars,-1);
-        emark = arrayCreate(neqns,-1);
-        (vec1,vec2) = getAssignment(clearMatching,nvars,neqns,isyst);
-        _ = cheapmatchingalgorithm(nvars,neqns,m,mt,vec1,vec2,false);
-        (vec1,vec2,syst,shared,arg) = DFSLH2(isyst,ishared,nvars,neqns,1,emark,vmark,vec1,vec2,inMatchingOptions,sssHandler,inArg);
-        syst = BackendDAEUtil.setEqSystMatching(syst,BackendDAE.MATCHING(vec1,vec2,{}));
+      algorithm
+        neqns := BackendDAEUtil.systemSize(isyst);
+        nvars := BackendVariable.daenumVariables(isyst);
+        true := intGt(nvars,0);
+        true := intGt(neqns,0);
+        vmark := arrayCreate(nvars,-1);
+        emark := arrayCreate(neqns,-1);
+        (vec1,vec2) := getAssignment(clearMatching,nvars,neqns,isyst);
+        _ := cheapmatchingalgorithm(nvars,neqns,m,mt,vec1,vec2,false);
+        (vec1,vec2,syst,shared,arg) := DFSLH2(isyst,ishared,nvars,neqns,1,emark,vmark,vec1,vec2,inMatchingOptions,sssHandler,inArg);
+        syst := BackendDAEUtil.setEqSystMatching(syst,BackendDAE.MATCHING(vec1,vec2,{}));
       then
         (syst,shared,arg);
     // fail case if system is empty
     case (_,_,_,_,_,_)
-      equation
-        neqns = BackendDAEUtil.systemSize(isyst);
-        nvars = BackendVariable.daenumVariables(isyst);
-        false = intGt(nvars,0);
-        false = intGt(neqns,0);
-        vec1 = listArray({});
-        vec2 = listArray({});
-        syst = BackendDAEUtil.setEqSystMatching(isyst,BackendDAE.MATCHING(vec2,vec1,{}));
+      algorithm
+        neqns := BackendDAEUtil.systemSize(isyst);
+        nvars := BackendVariable.daenumVariables(isyst);
+        false := intGt(nvars,0);
+        false := intGt(neqns,0);
+        vec1 := listArray({});
+        vec2 := listArray({});
+        syst := BackendDAEUtil.setEqSystMatching(isyst,BackendDAE.MATCHING(vec2,vec1,{}));
       then
         (syst,ishared,inArg);
     else
@@ -420,32 +420,32 @@ algorithm
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
     case (syst as BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt)),_,_,_,_,_,_,_,_,_,_,_)
-      equation
-        true = intGe(i,nv);
-        (ass1_1,ass2_1) = pathFound(m, mt, i, i,emark, vmark, ass1, ass2) "eMark(i)=vMark(i)=false; eMark(i)=vMark(i)=false exit loop";
+      algorithm
+        true := intGe(i,nv);
+        (ass1_1,ass2_1) := pathFound(m, mt, i, i,emark, vmark, ass1, ass2) "eMark(i)=vMark(i)=false; eMark(i)=vMark(i)=false exit loop";
       then
         (ass1_1,ass2_1,syst,ishared,inArg);
 
     case (syst as BackendDAE.EQSYSTEM(m=SOME(_),mT=SOME(_)),_,_,_,_,_,_,_,_,_,_,_)
-      equation
-        i_1 = i + 1;
-        true = intGt(ass2[i],0);
-        (ass1_2,ass2_2,syst,shared,arg) = DFSLH2(syst, ishared, nv, nf, i_1, emark, vmark, ass1, ass2, match_opts, sssHandler, inArg);
+      algorithm
+        i_1 := i + 1;
+        true := intGt(ass2[i],0);
+        (ass1_2,ass2_2,syst,shared,arg) := DFSLH2(syst, ishared, nv, nf, i_1, emark, vmark, ass1, ass2, match_opts, sssHandler, inArg);
       then
         (ass1_2,ass2_2,syst,shared,arg);
 
     case (syst as BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt)),_,_,_,_,_,_,_,_,_,_,_)
-      equation
-        i_1 = i + 1;
-        (ass1_1,ass2_1) = pathFound(m, mt, i, i,emark, vmark, ass1, ass2) "eMark(i)=vMark(i)=false";
-        (ass1_2,ass2_2,syst,shared,arg) = DFSLH2(syst, ishared, nv, nf, i_1, emark, vmark, ass1_1, ass2_1, match_opts, sssHandler, inArg);
+      algorithm
+        i_1 := i + 1;
+        (ass1_1,ass2_1) := pathFound(m, mt, i, i,emark, vmark, ass1, ass2) "eMark(i)=vMark(i)=false";
+        (ass1_2,ass2_2,syst,shared,arg) := DFSLH2(syst, ishared, nv, nf, i_1, emark, vmark, ass1_1, ass2_1, match_opts, sssHandler, inArg);
       then
         (ass1_2,ass2_2,syst,shared,arg);
 
     case (_,_,_,_,_,_,_,_,_,(BackendDAE.INDEX_REDUCTION(),_),_,_)
-      equation
-        meqns = getMarked(nf,i,emark,{});
-        (_,i_1,syst,shared,ass1_1,ass2_1,arg) = sssHandler({meqns},i,isyst,ishared,ass1,ass2,inArg)
+      algorithm
+        meqns := getMarked(nf,i,emark,{});
+        (_,i_1,syst,shared,ass1_1,ass2_1,arg) := sssHandler({meqns},i,isyst,ishared,ass1,ass2,inArg)
         "path_found failed, Try index reduction using dummy derivatives.
          When a constraint exist between states and index reduction is needed
          the dummy derivative will select one of the states as a dummy state
@@ -456,8 +456,8 @@ algorithm
          In the dummy derivative method this equation is added and the original equation
          u1=u2 is kept. This is not the case for the original pantilides algorithm, where
          the original equation is removed from the system.";
-        eqns = BackendEquation.getEqnsFromEqSystem(syst);
-        nf_1 = BackendEquation.equationArraySize(eqns) "and try again, restarting. This could be optimized later. It should not
+        eqns := BackendEquation.getEqnsFromEqSystem(syst);
+        nf_1 := BackendEquation.equationArraySize(eqns) "and try again, restarting. This could be optimized later. It should not
                                    be necessary to restart the matching, according to Bernard Bachmann. Instead one
                                    could continue the matching as usual. This was tested (2004-11-22) and it does not
                                    work to continue without restarting.
@@ -466,18 +466,18 @@ algorithm
                                    2004-12-29 PA. This was a bug, assignment lists needed to be expanded with the size
                                    of the system in order to work. SO: Matching is not needed to be restarted from
                                    scratch.";
-        nv_1 = BackendVariable.varsSize(BackendVariable.daeVars(syst));
-        ass1_2 = assignmentsArrayExpand(ass1_1, nv_1,arrayLength(ass1_1),-1);
-        ass2_2 = assignmentsArrayExpand(ass2_1, nf_1,arrayLength(ass2_1),-1);
-        vmark1 = assignmentsArrayExpand(vmark, nv_1,arrayLength(vmark),-1);
-        emark1 = assignmentsArrayExpand(emark, nf_1,arrayLength(emark),-1);
-        (ass1_3,ass2_3,syst,shared,arg1) = DFSLH2(syst,shared,nv_1,nf_1,i_1,emark1, vmark1,ass1_2,ass2_2,match_opts,sssHandler,arg);
+        nv_1 := BackendVariable.varsSize(BackendVariable.daeVars(syst));
+        ass1_2 := assignmentsArrayExpand(ass1_1, nv_1,arrayLength(ass1_1),-1);
+        ass2_2 := assignmentsArrayExpand(ass2_1, nf_1,arrayLength(ass2_1),-1);
+        vmark1 := assignmentsArrayExpand(vmark, nv_1,arrayLength(vmark),-1);
+        emark1 := assignmentsArrayExpand(emark, nf_1,arrayLength(emark),-1);
+        (ass1_3,ass2_3,syst,shared,arg1) := DFSLH2(syst,shared,nv_1,nf_1,i_1,emark1, vmark1,ass1_2,ass2_2,match_opts,sssHandler,arg);
       then
         (ass1_3,ass2_3,syst,shared,arg1);
 
     case (_,_,_,_,_,_,_,_,_,_,_,_)
-      equation
-        eqn_lst = getMarked(nf,i,emark,{});
+      algorithm
+        eqn_lst := getMarked(nf,i,emark,{});
         singularSystemError({eqn_lst},i,isyst,ishared,ass1,ass2,inArg);
       then
         fail();
@@ -507,14 +507,14 @@ algorithm
     local
       array<Integer> ass1_1,ass2_1;
     case (_,_,_,_,_,_,_,_)
-      equation
+      algorithm
         arrayUpdate(emark,i,imark) "Side effect";
-        (ass1_1,ass2_1) = assignOneInEqn(m, mt, i, ass1, ass2);
+        (ass1_1,ass2_1) := assignOneInEqn(m, mt, i, ass1, ass2);
       then
         (ass1_1,ass2_1);
     case (_,_,_,_,_,_,_,_)
-      equation
-        (ass1_1,ass2_1) = forallUnmarkedVarsInEqn(m, mt, i, imark, emark, vmark, ass1, ass2);
+      algorithm
+        (ass1_1,ass2_1) := forallUnmarkedVarsInEqn(m, mt, i, imark, emark, vmark, ass1, ass2);
       then
         (ass1_1,ass2_1);
   end matchcontinue;
@@ -560,15 +560,15 @@ algorithm
       Integer v;
       list<Integer> vs;
     case (_,(v :: _),_,_)
-      equation
-        false = intGt(ass1[v],0);
-        ass1_1 = arrayUpdate(ass1,v,i);
-        ass2_1 = arrayUpdate(ass2,i,v);
+      algorithm
+        false := intGt(ass1[v],0);
+        ass1_1 := arrayUpdate(ass1,v,i);
+        ass2_1 := arrayUpdate(ass2,i,v);
       then
         (ass1_1,ass2_1);
     case (_,(_ :: vs),_,_)
-      equation
-        (ass1_1,ass2_1) = assignFirstUnassigned(i, vs, ass1, ass2);
+      algorithm
+        (ass1_1,ass2_1) := assignFirstUnassigned(i, vs, ass1, ass2);
       then
         (ass1_1,ass2_1);
   end matchcontinue;
@@ -645,17 +645,17 @@ algorithm
       array<Integer> ass1_1,ass2_1,ass1_2,ass2_2;
       list<Integer> vars,vs;
     case (_,_,_,_,_,_,((v :: _)),_,_)
-      equation
+      algorithm
         arrayUpdate(vmark,v,imark);
-        assarg = ass1[v];
-        (ass1_1,ass2_1) = pathFound(m, mt, assarg, imark, emark, vmark, ass1, ass2);
-        ass1_2 = arrayUpdate(ass1_1,v,i);
-        ass2_2 = arrayUpdate(ass2_1,i,v);
+        assarg := ass1[v];
+        (ass1_1,ass2_1) := pathFound(m, mt, assarg, imark, emark, vmark, ass1, ass2);
+        ass1_2 := arrayUpdate(ass1_1,v,i);
+        ass2_2 := arrayUpdate(ass2_1,i,v);
       then
         (ass1_2,ass2_2);
     case (_,_,_,_,_,_,((_ :: vs)),_,_)
-      equation
-        (ass1_1,ass2_1) = forallUnmarkedVarsInEqnBody(m, mt, i, imark, emark, vmark, vs, ass1, ass2);
+      algorithm
+        (ass1_1,ass2_1) := forallUnmarkedVarsInEqnBody(m, mt, i, imark, emark, vmark, vs, ass1, ass2);
       then
         (ass1_1,ass2_1);
   end matchcontinue;
@@ -688,30 +688,30 @@ algorithm
       BackendDAE.AdjacencyMatrixT mt;
 
     case (BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt)),_,_,_,_,_)
-      equation
-        neqns = BackendDAEUtil.systemSize(isyst);
-        nvars = BackendVariable.daenumVariables(isyst);
-        true = intGt(nvars,0);
-        true = intGt(neqns,0);
-        rowmarks = arrayCreate(nvars,-1);
-        parentcolum = arrayCreate(nvars,-1);
-        (vec1,vec2) = getAssignment(clearMatching,nvars,neqns,isyst);
-        _ = cheapmatchingalgorithm(nvars,neqns,m,mt,vec1,vec2,false);
-        (vec1,vec2,syst,shared,arg) = BFSB1(1,1,nvars,neqns,m,mt,rowmarks,parentcolum,vec1,vec2,isyst,ishared,inMatchingOptions, sssHandler, inArg);
-        syst = BackendDAEUtil.setEqSystMatching(syst,BackendDAE.MATCHING(vec2,vec1,{}));
+      algorithm
+        neqns := BackendDAEUtil.systemSize(isyst);
+        nvars := BackendVariable.daenumVariables(isyst);
+        true := intGt(nvars,0);
+        true := intGt(neqns,0);
+        rowmarks := arrayCreate(nvars,-1);
+        parentcolum := arrayCreate(nvars,-1);
+        (vec1,vec2) := getAssignment(clearMatching,nvars,neqns,isyst);
+        _ := cheapmatchingalgorithm(nvars,neqns,m,mt,vec1,vec2,false);
+        (vec1,vec2,syst,shared,arg) := BFSB1(1,1,nvars,neqns,m,mt,rowmarks,parentcolum,vec1,vec2,isyst,ishared,inMatchingOptions, sssHandler, inArg);
+        syst := BackendDAEUtil.setEqSystMatching(syst,BackendDAE.MATCHING(vec2,vec1,{}));
       then
         (syst,shared,arg);
 
     // fail case if system is empty
     case (_,_,_,_,_,_)
-      equation
-        neqns = BackendDAEUtil.systemSize(isyst);
-        nvars = BackendVariable.daenumVariables(isyst);
-        false = intGt(nvars,0);
-        false = intGt(neqns,0);
-        vec1 = listArray({});
-        vec2 = listArray({});
-        syst = BackendDAEUtil.setEqSystMatching(isyst,BackendDAE.MATCHING(vec2,vec1,{}));
+      algorithm
+        neqns := BackendDAEUtil.systemSize(isyst);
+        nvars := BackendVariable.daenumVariables(isyst);
+        false := intGt(nvars,0);
+        false := intGt(neqns,0);
+        vec1 := listArray({});
+        vec2 := listArray({});
+        syst := BackendDAEUtil.setEqSystMatching(isyst,BackendDAE.MATCHING(vec2,vec1,{}));
       then
         (syst,ishared,inArg);
 
@@ -761,29 +761,29 @@ algorithm
       array<Integer> ass1_1,ass1_2,ass2_1,ass2_2,rowmarks1,parentcolum1;
 
     case (_,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
-      equation
-        true=intGt(i,ne);
+      algorithm
+        true:=intGt(i,ne);
       then
         (ass1,ass2,isyst,ishared,inArg);
 
     case (_,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
-      equation
+      algorithm
         // not assigned
-        false = intGt(ass1[i],0);
+        false := intGt(ass1[i],0);
         // search augmenting paths
-        visitedcolums = BFSBphase({i},rowmark,i,nv,ne,m,mT,rowmarks,parentcolum,ass1,ass2,{},{});
+        visitedcolums := BFSBphase({i},rowmark,i,nv,ne,m,mT,rowmarks,parentcolum,ass1,ass2,{},{});
         // if visitedcolums is not zero matching fails -> try index reduction and matching aggain
-        (_,i_1,syst as BackendDAE.EQSYSTEM(m=SOME(m1),mT=SOME(mt1)),shared,nv_1,ne_1,ass1_1,ass2_1,arg) = reduceIndexifNecessary(visitedcolums,i,isyst,ishared,nv,ne,ass1,ass2,inMatchingOptions,sssHandler,inArg);
-        rowmarks1 = assignmentsArrayExpand(rowmarks,nv_1,arrayLength(rowmarks),-1);
-        parentcolum1 = assignmentsArrayExpand(parentcolum,nv_1,arrayLength(parentcolum),-1);
-        (ass1_2,ass2_2,syst,shared,arg) = BFSB1(i_1,rowmark+1,nv_1,ne_1,m1,mt1,rowmarks1,parentcolum1,ass1_1,ass2_1,syst,shared,inMatchingOptions,sssHandler,arg);
+        (_,i_1,syst as BackendDAE.EQSYSTEM(m=SOME(m1),mT=SOME(mt1)),shared,nv_1,ne_1,ass1_1,ass2_1,arg) := reduceIndexifNecessary(visitedcolums,i,isyst,ishared,nv,ne,ass1,ass2,inMatchingOptions,sssHandler,inArg);
+        rowmarks1 := assignmentsArrayExpand(rowmarks,nv_1,arrayLength(rowmarks),-1);
+        parentcolum1 := assignmentsArrayExpand(parentcolum,nv_1,arrayLength(parentcolum),-1);
+        (ass1_2,ass2_2,syst,shared,arg) := BFSB1(i_1,rowmark+1,nv_1,ne_1,m1,mt1,rowmarks1,parentcolum1,ass1_1,ass2_1,syst,shared,inMatchingOptions,sssHandler,arg);
       then
         (ass1_2,ass2_2,syst,shared,arg);
 
     case (_,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
-      equation
-        true = intGt(ass1[i],0);
-        (ass1_1,ass2_1,syst,shared,arg) = BFSB1(i+1,rowmark,nv,ne,m,mT,rowmarks,parentcolum,ass1,ass2,isyst,ishared,inMatchingOptions,sssHandler,inArg);
+      algorithm
+        true := intGt(ass1[i],0);
+        (ass1_1,ass2_1,syst,shared,arg) := BFSB1(i+1,rowmark,nv,ne,m,mT,rowmarks,parentcolum,ass1,ass2,isyst,ishared,inMatchingOptions,sssHandler,inArg);
       then
         (ass1_1,ass2_1,syst,shared,arg);
 
@@ -826,10 +826,10 @@ algorithm
        then
          BFSBphase(nextQueue,rowmark,i,nv,ne,m,mT,rowmarks,parentcolum,ass1,ass2,{},inVisitedColums);
     case (c::rest,_,_,_,_,_,_,_,_,_,_,_,_)
-      equation
+      algorithm
         // traverse all adiacent rows
-        rows = List.select(m[c], Util.intPositive);
-        (queue1,b) = BFSBtraverseRows(rows,nextQueue,rowmark,i,c,nv,ne,m,mT,rowmarks,parentcolum,ass1,ass2);
+        rows := List.select(m[c], Util.intPositive);
+        (queue1,b) := BFSBtraverseRows(rows,nextQueue,rowmark,i,c,nv,ne,m,mT,rowmarks,parentcolum,ass1,ass2);
       then
         BFSBphase1(b,rest,rowmark,i,nv,ne,m,mT,rowmarks,parentcolum,ass1,ass2,queue1,c::inVisitedColums);
     else
@@ -901,19 +901,19 @@ algorithm
       Boolean b;
       case ({},_,_,_,_,_,_,_,_,_,_,_,_) then (listReverse(queue),false);
     case (r::_,_,_,_,_,_,_,_,_,_,_,_,_)
-      equation
+      algorithm
         // row is unmatched -> augmenting path found
-        true = intLt(ass2[r],0);
+        true := intLt(ass2[r],0);
         BFSBreasign(i,c,parentcolum,r,ass1,ass2);
       then
         ({},true);
     case (r::rest,_,_,_,_,_,_,_,_,_,_,_,_)
-      equation
+      algorithm
         // row is matched
-        rc = ass2[r];
-        false = intLt(rc,0);
-        queue1 = BFSBenque(queue,rowmark,c,rc,r,intLt(rowmarks[r],rowmark),rowmarks,parentcolum);
-        (queue2,b) = BFSBtraverseRows(rest,queue1,rowmark,i,c,nv,ne,m,mT,rowmarks,parentcolum,ass1,ass2);
+        rc := ass2[r];
+        false := intLt(rc,0);
+        queue1 := BFSBenque(queue,rowmark,c,rc,r,intLt(rowmarks[r],rowmark),rowmarks,parentcolum);
+        (queue2,b) := BFSBtraverseRows(rest,queue1,rowmark,i,c,nv,ne,m,mT,rowmarks,parentcolum,ass1,ass2);
       then
         (queue2,b);
     else
@@ -941,14 +941,14 @@ algorithm
     local
       Integer r;
     case (_,_,_,_,_,_)
-      equation
-        true = intEq(i,c);
+      algorithm
+        true := intEq(i,c);
         arrayUpdate(ass1,c,l);
         arrayUpdate(ass2,l,c);
       then ();
     case (_,_,_,_,_,_)
-      equation
-        r = ass1[c];
+      algorithm
+        r := ass1[c];
         arrayUpdate(ass1,c,l);
         arrayUpdate(ass2,l,c);
         BFSBreasign(i,parentcolum[r],parentcolum,r,ass1,ass2);
@@ -979,7 +979,7 @@ algorithm
   match (queue,rowmark,c,rc,r,visited,rowmarks,parentcolum)
     case (_,_,_,_,_,false,_,_) then queue;
     case (_,_,_,_,_,true,_,_)
-      equation
+      algorithm
         // mark row
         arrayUpdate(rowmarks,r,rowmark);
         // store parent colum
@@ -1022,29 +1022,29 @@ algorithm
       array<Integer> rowmarks;
 
     case (BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt)),_,_,_,_,_)
-      equation
-        neqns = BackendDAEUtil.systemSize(isyst);
-        nvars = BackendVariable.daenumVariables(isyst);
-        true = intGt(nvars,0);
-        true = intGt(neqns,0);
-        rowmarks = arrayCreate(nvars,-1);
-        (vec1,vec2) = getAssignment(clearMatching,nvars,neqns,isyst);
-        _ = cheapmatchingalgorithm(nvars,neqns,m,mt,vec1,vec2,false);
-        (vec1,vec2,syst,shared,arg) = DFSB1(1,1,nvars,neqns,m,mt,rowmarks,vec1,vec2,isyst,ishared,inMatchingOptions,sssHandler,inArg);
-        syst = BackendDAEUtil.setEqSystMatching(syst,BackendDAE.MATCHING(vec2,vec1,{}));
+      algorithm
+        neqns := BackendDAEUtil.systemSize(isyst);
+        nvars := BackendVariable.daenumVariables(isyst);
+        true := intGt(nvars,0);
+        true := intGt(neqns,0);
+        rowmarks := arrayCreate(nvars,-1);
+        (vec1,vec2) := getAssignment(clearMatching,nvars,neqns,isyst);
+        _ := cheapmatchingalgorithm(nvars,neqns,m,mt,vec1,vec2,false);
+        (vec1,vec2,syst,shared,arg) := DFSB1(1,1,nvars,neqns,m,mt,rowmarks,vec1,vec2,isyst,ishared,inMatchingOptions,sssHandler,inArg);
+        syst := BackendDAEUtil.setEqSystMatching(syst,BackendDAE.MATCHING(vec2,vec1,{}));
       then
         (syst,shared,arg);
 
     // fail case if system is empty
     case (_,_,_,_,_,_)
-      equation
-        neqns = BackendDAEUtil.systemSize(isyst);
-        nvars = BackendVariable.daenumVariables(isyst);
-        false = intGt(nvars,0);
-        false = intGt(neqns,0);
-        vec1 = listArray({});
-        vec2 = listArray({});
-        syst = BackendDAEUtil.setEqSystMatching(isyst,BackendDAE.MATCHING(vec2,vec1,{}));
+      algorithm
+        neqns := BackendDAEUtil.systemSize(isyst);
+        nvars := BackendVariable.daenumVariables(isyst);
+        false := intGt(nvars,0);
+        false := intGt(neqns,0);
+        vec1 := listArray({});
+        vec2 := listArray({});
+        syst := BackendDAEUtil.setEqSystMatching(isyst,BackendDAE.MATCHING(vec2,vec1,{}));
       then
         (syst,ishared,inArg);
 
@@ -1092,28 +1092,28 @@ algorithm
       BackendDAE.Shared shared;
       array<Integer> ass1_1,ass1_2,ass2_1,ass2_2,rowmarks1;
     case (_,_,_,_,_,_,_,_,_,_,_,_,_,_)
-      equation
-        true=intGt(i,ne);
+      algorithm
+        true:=intGt(i,ne);
       then
         (ass1,ass2,isyst,ishared,inArg);
     case (_,_,_,_,_,_,_,_,_,_,_,_,_,_)
-      equation
+      algorithm
         // not assigned
-        false = intGt(ass1[i],0);
+        false := intGt(ass1[i],0);
         // search augmenting paths
-        visitedcolums = DFSBphase({i},rowmark,i,nv,ne,m,mT,rowmarks,ass1,ass2,{i});
+        visitedcolums := DFSBphase({i},rowmark,i,nv,ne,m,mT,rowmarks,ass1,ass2,{i});
         // if visitedcolums is not zero matching fails -> try index reduction and matching aggain
         // if visitedcolums is not zero matching fails -> try index reduction and matching aggain
-        (_,i_1,syst as BackendDAE.EQSYSTEM(m=SOME(m1),mT=SOME(mt1)),shared,nv_1,ne_1,ass1_1,ass2_1,arg) = reduceIndexifNecessary(visitedcolums,i,isyst,ishared,nv,ne,ass1,ass2,inMatchingOptions,sssHandler,inArg);
-        rowmarks1 = assignmentsArrayExpand(rowmarks,nv_1,arrayLength(rowmarks),-1);
-        (ass1_2,ass2_2,syst,shared,arg) = DFSB1(i_1,rowmark+1,nv_1,ne_1,m1,mt1,rowmarks1,ass1_1,ass2_1,syst,shared,inMatchingOptions,sssHandler,arg);
+        (_,i_1,syst as BackendDAE.EQSYSTEM(m=SOME(m1),mT=SOME(mt1)),shared,nv_1,ne_1,ass1_1,ass2_1,arg) := reduceIndexifNecessary(visitedcolums,i,isyst,ishared,nv,ne,ass1,ass2,inMatchingOptions,sssHandler,inArg);
+        rowmarks1 := assignmentsArrayExpand(rowmarks,nv_1,arrayLength(rowmarks),-1);
+        (ass1_2,ass2_2,syst,shared,arg) := DFSB1(i_1,rowmark+1,nv_1,ne_1,m1,mt1,rowmarks1,ass1_1,ass2_1,syst,shared,inMatchingOptions,sssHandler,arg);
       then
         (ass1_2,ass2_2,syst,shared,arg);
 
     case (_,_,_,_,_,_,_,_,_,_,_,_,_,_)
-      equation
-        true = intGt(ass1[i],0);
-        (ass1_1,ass2_1,syst,shared,arg) = DFSB1(i+1,rowmark,nv,ne,m,mT,rowmarks,ass1,ass2,isyst,ishared,inMatchingOptions,sssHandler,inArg);
+      algorithm
+        true := intGt(ass1[i],0);
+        (ass1_1,ass2_1,syst,shared,arg) := DFSB1(i+1,rowmark,nv,ne,m,mT,rowmarks,ass1,ass2,isyst,ishared,inMatchingOptions,sssHandler,inArg);
       then
         (ass1_1,ass2_1,syst,shared,arg);
 
@@ -1149,9 +1149,9 @@ algorithm
       list<Integer> rows;
     case ({},_,_,_,_,_,_,_,_,_,_) then inVisitedColums;
     case (_,_,_,_,_,_,_,_,_,_,_)
-      equation
+      algorithm
         // traverse all adiacent rows
-        rows = List.select(m[c], Util.intPositive);
+        rows := List.select(m[c], Util.intPositive);
       then
         DFSBtraverseRows(rows,stack,i,nv,ne,m,mT,rowmarks,ass1,ass2,inVisitedColums);
     else
@@ -1186,20 +1186,20 @@ algorithm
       Integer rc,r;
     case ({},_,_,_,_,_,_,_,_,_,_) then inVisitedColums;
     case (r::_,_,_,_,_,_,_,_,_,_,_)
-      equation
+      algorithm
         // row is unmatched -> augmenting path found
-        true = intLt(ass2[r],0);
+        true := intLt(ass2[r],0);
         DFSBreasign(stack,r,ass1,ass2);
       then
         {};
     case (r::rest,_,_,_,_,_,_,_,_,_,_)
-      equation
+      algorithm
         // row is matched
-        rc = ass2[r];
-        false = intLt(rc,0);
-        true = intLt(rowmarks[r],i);
+        rc := ass2[r];
+        false := intLt(rc,0);
+        true := intLt(rowmarks[r],i);
         arrayUpdate(rowmarks,r,i);
-        visitedColums = DFSBphase(rc::stack,i,rc,nv,ne,m,mT,rowmarks,ass1,ass2,rc::inVisitedColums);
+        visitedColums := DFSBphase(rc::stack,i,rc,nv,ne,m,mT,rowmarks,ass1,ass2,rc::inVisitedColums);
       then
         DFSBtraverseRows1(rest,stack,i,nv,ne,m,mT,rowmarks,ass1,ass2,visitedColums);
     case (_::rest,_,_,_,_,_,_,_,_,_,_)
@@ -1253,8 +1253,8 @@ algorithm
       list<Integer> rest;
     case ({},_,_,_) then ();
     case (c::rest,_,_,_)
-      equation
-        rc = ass1[c];
+      algorithm
+        rc := ass1[c];
         arrayUpdate(ass1,c,r);
         arrayUpdate(ass2,r,c);
         DFSBreasign(rest,rc,ass1,ass2);
@@ -1288,29 +1288,29 @@ algorithm
       array<Integer> rowmarks,lookahead;
 
     case (syst as BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt)),_,_,_,_,_)
-      equation
-        neqns = BackendDAEUtil.systemSize(isyst);
-        nvars = BackendVariable.daenumVariables(isyst);
-        true = intGt(nvars,0);
-        true = intGt(neqns,0);
-        rowmarks = arrayCreate(nvars,-1);
-        lookahead = arrayCreate(neqns,0);
-        (vec1,vec2) = getAssignment(clearMatching,nvars,neqns,isyst);
-        _ = cheapmatchingalgorithm(nvars,neqns,m,mt,vec1,vec2,false);
-        (vec1,vec2,syst,shared,arg) = MC21A1(1,1,nvars,neqns,m,mt,rowmarks,lookahead,vec1,vec2,isyst,ishared,inMatchingOptions,sssHandler,inArg);
-        syst = BackendDAEUtil.setEqSystMatching(syst,BackendDAE.MATCHING(vec2,vec1,{}));
+      algorithm
+        neqns := BackendDAEUtil.systemSize(isyst);
+        nvars := BackendVariable.daenumVariables(isyst);
+        true := intGt(nvars,0);
+        true := intGt(neqns,0);
+        rowmarks := arrayCreate(nvars,-1);
+        lookahead := arrayCreate(neqns,0);
+        (vec1,vec2) := getAssignment(clearMatching,nvars,neqns,isyst);
+        _ := cheapmatchingalgorithm(nvars,neqns,m,mt,vec1,vec2,false);
+        (vec1,vec2,syst,shared,arg) := MC21A1(1,1,nvars,neqns,m,mt,rowmarks,lookahead,vec1,vec2,isyst,ishared,inMatchingOptions,sssHandler,inArg);
+        syst := BackendDAEUtil.setEqSystMatching(syst,BackendDAE.MATCHING(vec2,vec1,{}));
       then
         (syst,shared,arg);
     // fail case if system is empty
     case (_,_,_,_,_,_)
-      equation
-        neqns = BackendDAEUtil.systemSize(isyst);
-        nvars = BackendVariable.daenumVariables(isyst);
-        false = intGt(nvars,0);
-        false = intGt(neqns,0);
-        vec1 = listArray({});
-        vec2 = listArray({});
-        syst = BackendDAEUtil.setEqSystMatching(isyst,BackendDAE.MATCHING(vec2,vec1,{}));
+      algorithm
+        neqns := BackendDAEUtil.systemSize(isyst);
+        nvars := BackendVariable.daenumVariables(isyst);
+        false := intGt(nvars,0);
+        false := intGt(neqns,0);
+        vec1 := listArray({});
+        vec2 := listArray({});
+        syst := BackendDAEUtil.setEqSystMatching(isyst,BackendDAE.MATCHING(vec2,vec1,{}));
       then
         (syst,ishared,inArg);
     else
@@ -1359,26 +1359,26 @@ algorithm
       array<Integer> ass1_1,ass1_2,ass2_1,ass2_2,rowmarks1,lookahead1;
 
     case (_,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
-      equation
-        true=intGt(i,ne);
+      algorithm
+        true:=intGt(i,ne);
       then
         (ass1,ass2,isyst,ishared,inArg);
     case (_,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
-      equation
+      algorithm
         // not assigned
-        false = intGt(ass1[i],0);
+        false := intGt(ass1[i],0);
         // search augmenting paths
-        visitedcolums = MC21Aphase({i},rowmark,i,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2,{i});
+        visitedcolums := MC21Aphase({i},rowmark,i,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2,{i});
         // if visitedcolums is not zero matching fails -> try index reduction and matching aggain
-        (changedEqns,i_1,syst as BackendDAE.EQSYSTEM(m=SOME(m1),mT=SOME(mt1)),shared,nv_1,ne_1,ass1_1,ass2_1,arg) = reduceIndexifNecessary(visitedcolums,i,isyst,ishared,nv,ne,ass1,ass2,inMatchingOptions,sssHandler,inArg);
-        (rowmarks1,lookahead1) = MC21A1fixArrays(visitedcolums,nv_1,ne_1,rowmarks,lookahead,changedEqns);
-        (ass1_2,ass2_2,syst,shared,arg) = MC21A1(i_1,rowmark+1,nv_1,ne_1,m1,mt1,rowmarks1,lookahead1,ass1_1,ass2_1,syst,shared,inMatchingOptions,sssHandler,arg);
+        (changedEqns,i_1,syst as BackendDAE.EQSYSTEM(m=SOME(m1),mT=SOME(mt1)),shared,nv_1,ne_1,ass1_1,ass2_1,arg) := reduceIndexifNecessary(visitedcolums,i,isyst,ishared,nv,ne,ass1,ass2,inMatchingOptions,sssHandler,inArg);
+        (rowmarks1,lookahead1) := MC21A1fixArrays(visitedcolums,nv_1,ne_1,rowmarks,lookahead,changedEqns);
+        (ass1_2,ass2_2,syst,shared,arg) := MC21A1(i_1,rowmark+1,nv_1,ne_1,m1,mt1,rowmarks1,lookahead1,ass1_1,ass2_1,syst,shared,inMatchingOptions,sssHandler,arg);
       then
         (ass1_2,ass2_2,syst,shared,arg);
     case (_,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
-      equation
-        true = intGt(ass1[i],0);
-        (ass1_1,ass2_1,syst,shared,arg) = MC21A1(i+1,rowmark,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2,isyst,ishared,inMatchingOptions,sssHandler,inArg);
+      algorithm
+        true := intGt(ass1[i],0);
+        (ass1_1,ass2_1,syst,shared,arg) := MC21A1(i+1,rowmark,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2,isyst,ishared,inMatchingOptions,sssHandler,inArg);
       then
         (ass1_1,ass2_1,syst,shared,arg);
     else
@@ -1408,10 +1408,10 @@ algorithm
       array<Integer> rowmarks1,lookahead1;
     case ({},_,_,_,_,_) then (rowmarks,lookahead);
     case (_::_,_,_,_,_,_)
-      equation
-        memsize = arrayLength(rowmarks);
-        rowmarks1 = assignmentsArrayExpand(rowmarks,nv,memsize,-1);
-        lookahead1 = assignmentsArrayExpand(lookahead,ne,memsize,0);
+      algorithm
+        memsize := arrayLength(rowmarks);
+        rowmarks1 := assignmentsArrayExpand(rowmarks,nv,memsize,-1);
+        lookahead1 := assignmentsArrayExpand(lookahead,ne,memsize,0);
         MC21A1fixArray(changedEqns,lookahead1);
       then
         (rowmarks1,lookahead1);
@@ -1435,7 +1435,7 @@ algorithm
       list<Integer> rest;
     case ({},_) then ();
     case (e::rest,_)
-      equation
+      algorithm
         arrayUpdate(arr,e,0);
         MC21A1fixArray(rest,arr);
       then
@@ -1473,10 +1473,10 @@ algorithm
       Boolean b;
     case ({},_,_,_,_,_,_,_,_,_,_,_) then inVisitedColums;
     case (_,_,_,_,_,_,_,_,_,_,_,_)
-      equation
+      algorithm
         // traverse all adiacent rows
-        rows = List.select(m[c], Util.intPositive);
-        b = intLt(lookahead[c],listLength(rows));
+        rows := List.select(m[c], Util.intPositive);
+        b := intLt(lookahead[c],listLength(rows));
      then
         MC21Achecklookahead(b,rows,stack,i,c,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2,inVisitedColums);
     else
@@ -1542,14 +1542,14 @@ algorithm
       list<Integer> rest;
       Integer r;
     case ({},_,_,_,_,_,_,_,_,_,_,_,_,_,_)
-      equation
+      algorithm
         arrayUpdate(lookahead,c,l);
        then
          MC21AtraverseRows(rows1,stack,i,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2,inVisitedColums);
     case (r::_,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
-      equation
+      algorithm
         // row is unmatched -> augmenting path found
-        true = intLt(ass2[r],0);
+        true := intLt(ass2[r],0);
         DFSBreasign(stack,r,ass1,ass2);
       then
         {};
@@ -1583,13 +1583,13 @@ algorithm
       Integer rc,r;
     case ({},_,_,_,_,_,_,_,_,_,_,_) then inVisitedColums;
     case (r::rest,_,_,_,_,_,_,_,_,_,_,_)
-      equation
+      algorithm
         // row is matched
-        rc = ass2[r];
-        false = intLt(rc,0);
-        true = intLt(rowmarks[r],i);
+        rc := ass2[r];
+        false := intLt(rc,0);
+        true := intLt(rowmarks[r],i);
         arrayUpdate(rowmarks,r,i);
-        visitedColums = MC21Aphase(rc::stack,i,rc,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2,rc::inVisitedColums);
+        visitedColums := MC21Aphase(rc::stack,i,rc,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2,rc::inVisitedColums);
       then
         MC21AtraverseRows1(rest,stack,i,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2,visitedColums);
     case (_::rest,_,_,_,_,_,_,_,_,_,_,_)
@@ -1654,29 +1654,29 @@ algorithm
       array<Integer> rowmarks,lookahead;
       list<Integer> unmatched;
     case (BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt)),_,_,_,_,_)
-      equation
-        neqns = BackendDAEUtil.systemSize(isyst);
-        nvars = BackendVariable.daenumVariables(isyst);
-        true = intGt(nvars,0);
-        true = intGt(neqns,0);
-        (vec1,vec2) = getAssignment(clearMatching,nvars,neqns,isyst);
-        rowmarks = arrayCreate(nvars,-1);
-        lookahead = arrayCreate(neqns,0);
-        unmatched = cheapmatchingalgorithm(nvars,neqns,m,mt,vec1,vec2,true);
-        (vec1,vec2,syst,shared,arg) = PF1(0,unmatched,rowmarks,lookahead,isyst,ishared,nvars,neqns,vec1,vec2,inMatchingOptions,sssHandler,inArg);
-        syst = BackendDAEUtil.setEqSystMatching(syst,BackendDAE.MATCHING(vec2,vec1,{}));
+      algorithm
+        neqns := BackendDAEUtil.systemSize(isyst);
+        nvars := BackendVariable.daenumVariables(isyst);
+        true := intGt(nvars,0);
+        true := intGt(neqns,0);
+        (vec1,vec2) := getAssignment(clearMatching,nvars,neqns,isyst);
+        rowmarks := arrayCreate(nvars,-1);
+        lookahead := arrayCreate(neqns,0);
+        unmatched := cheapmatchingalgorithm(nvars,neqns,m,mt,vec1,vec2,true);
+        (vec1,vec2,syst,shared,arg) := PF1(0,unmatched,rowmarks,lookahead,isyst,ishared,nvars,neqns,vec1,vec2,inMatchingOptions,sssHandler,inArg);
+        syst := BackendDAEUtil.setEqSystMatching(syst,BackendDAE.MATCHING(vec2,vec1,{}));
       then
         (syst,shared,arg);
     // fail case if system is empty
     case (_,_,_,_,_,_)
-      equation
-        neqns = BackendDAEUtil.systemSize(isyst);
-        nvars = BackendVariable.daenumVariables(isyst);
-        false = intGt(nvars,0);
-        false = intGt(neqns,0);
-        vec1 = listArray({});
-        vec2 = listArray({});
-        syst = BackendDAEUtil.setEqSystMatching(isyst,BackendDAE.MATCHING(vec2,vec1,{}));
+      algorithm
+        neqns := BackendDAEUtil.systemSize(isyst);
+        nvars := BackendVariable.daenumVariables(isyst);
+        false := intGt(nvars,0);
+        false := intGt(neqns,0);
+        vec1 := listArray({});
+        vec2 := listArray({});
+        syst := BackendDAEUtil.setEqSystMatching(isyst,BackendDAE.MATCHING(vec2,vec1,{}));
       then
         (syst,ishared,inArg);
     else
@@ -1726,11 +1726,11 @@ algorithm
       then
         (ass1,ass2,isyst,ishared,inArg);
     case (_,_,_,_,BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt)),_,_,_,_,_,_,_,_)
-      equation
-        (i_1,unmatched1) = PFaugmentmatching(i,unmatched,nv,ne,m,mt,rowmarks,lookahead,ass1,ass2,listLength(unmatched),{});
-        meqns = getEqnsforIndexReduction(unmatched1,ne,m,mt,ass1,ass2,inArg);
-        (unmatched1,rowmarks1,lookahead1,nv_1,ne_1,ass1_1,ass2_1,syst,shared,arg) = PF2(meqns,unmatched1,{},rowmarks,lookahead,isyst,ishared,nv,ne,ass1,ass2,inMatchingOptions,sssHandler,inArg);
-        (ass1_2,ass2_2,syst,shared,arg1) = PF1(i_1+1,unmatched1,rowmarks1,lookahead1,syst,shared,nv_1,ne_1,ass1_1,ass2_1,inMatchingOptions,sssHandler,arg);
+      algorithm
+        (i_1,unmatched1) := PFaugmentmatching(i,unmatched,nv,ne,m,mt,rowmarks,lookahead,ass1,ass2,listLength(unmatched),{});
+        meqns := getEqnsforIndexReduction(unmatched1,ne,m,mt,ass1,ass2,inArg);
+        (unmatched1,rowmarks1,lookahead1,nv_1,ne_1,ass1_1,ass2_1,syst,shared,arg) := PF2(meqns,unmatched1,{},rowmarks,lookahead,isyst,ishared,nv,ne,ass1,ass2,inMatchingOptions,sssHandler,inArg);
+        (ass1_2,ass2_2,syst,shared,arg1) := PF1(i_1+1,unmatched1,rowmarks1,lookahead1,syst,shared,nv_1,ne_1,ass1_1,ass2_1,inMatchingOptions,sssHandler,arg);
       then
         (ass1_2,ass2_2,syst,shared,arg1);
   end match;
@@ -1778,19 +1778,19 @@ algorithm
       then
         (unmatched,rowmarks,lookahead,nv,ne,ass1,ass2,isyst,ishared,inArg);
     case (_,_,_,_,_,_,_,_,_,_,_,(BackendDAE.INDEX_REDUCTION(),_),_,_)
-      equation
-        (unmatched1,_,syst,shared,ass2_1,ass1_1,arg) = sssHandler(meqns,0,isyst,ishared,ass2,ass1,inArg);
-        ne_1 = BackendDAEUtil.systemSize(syst);
-        nv_1 = BackendVariable.daenumVariables(syst);
-        ass1_1 = assignmentsArrayExpand(ass1_1,ne_1,ne,-1);
-        ass2_1 = assignmentsArrayExpand(ass2_1,nv_1,nv,-1);
-        rowmarks1 = assignmentsArrayExpand(rowmarks,nv_1,nv,-1);
-        lookahead1 = assignmentsArrayExpand(lookahead,ne_1,ne,0);
+      algorithm
+        (unmatched1,_,syst,shared,ass2_1,ass1_1,arg) := sssHandler(meqns,0,isyst,ishared,ass2,ass1,inArg);
+        ne_1 := BackendDAEUtil.systemSize(syst);
+        nv_1 := BackendVariable.daenumVariables(syst);
+        ass1_1 := assignmentsArrayExpand(ass1_1,ne_1,ne,-1);
+        ass2_1 := assignmentsArrayExpand(ass2_1,nv_1,nv,-1);
+        rowmarks1 := assignmentsArrayExpand(rowmarks,nv_1,nv,-1);
+        lookahead1 := assignmentsArrayExpand(lookahead,ne_1,ne,0);
         MC21A1fixArray(unmatched1,lookahead1);
       then
         (unmatched1,rowmarks1,lookahead1,nv_1,ne_1,ass1_1,ass2_1,syst,shared,arg);
     case (_,_,_,_,_,_,_,_,_,_,_,_,_,_)
-      equation
+      algorithm
         singularSystemError(meqns,0,isyst,ishared,ass1,ass2,inArg);
       then
         fail();
@@ -1823,28 +1823,28 @@ algorithm
       Integer c,i_1;
       Boolean b;
     case (_,{},_,_,_,_,_,_,_,_,_,_)
-      equation
+      algorithm
         // no augmenting path is found in pass
-        true=intEq(previousUnmatched,listLength(unMatched));
+        true:=intEq(previousUnmatched,listLength(unMatched));
       then
         (i,unMatched);
     case (_,{},_,_,_,_,_,_,_,_,_,_)
-      equation
+      algorithm
        // augmenting path is found in pass, next round
-       (i_1,unmatched) = PFaugmentmatching(i+1,unMatched,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2,listLength(unMatched),{});
+       (i_1,unmatched) := PFaugmentmatching(i+1,unMatched,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2,listLength(unMatched),{});
       then
         (i_1,unmatched);
     case (_,c::rest,_,_,_,_,_,_,_,_,_,_)
-      equation
-        true = intGt(ass1[c],-1);
-        (i_1,unmatched) = PFaugmentmatching(i,rest,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2,previousUnmatched,unMatched);
+      algorithm
+        true := intGt(ass1[c],-1);
+        (i_1,unmatched) := PFaugmentmatching(i,rest,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2,previousUnmatched,unMatched);
       then
         (i_1,unmatched);
     case (_,c::rest,_,_,_,_,_,_,_,_,_,_)
-      equation
-        b = PFphase({c},i,c,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2);
-        unmatched = List.consOnTrue(not b, c, unMatched);
-        (i_1,unmatched) = PFaugmentmatching(i,rest,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2,previousUnmatched,unmatched);
+      algorithm
+        b := PFphase({c},i,c,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2);
+        unmatched := List.consOnTrue(not b, c, unMatched);
+        (i_1,unmatched) := PFaugmentmatching(i,rest,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2,previousUnmatched,unmatched);
       then
         (i_1,unmatched);
     else
@@ -1878,10 +1878,10 @@ algorithm
       Boolean b;
     case ({},_,_,_,_,_,_,_,_,_,_) then false;
     case (_,_,_,_,_,_,_,_,_,_,_)
-      equation
+      algorithm
         // traverse all adiacent rows
-        rows = List.select(m[c], Util.intPositive);
-        b = intLt(lookahead[c],listLength(rows));
+        rows := List.select(m[c], Util.intPositive);
+        b := intLt(lookahead[c],listLength(rows));
       then
         PFchecklookahead(b,rows,stack,i,c,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2);
     else
@@ -1946,14 +1946,14 @@ algorithm
       list<Integer> rest;
       Integer r;
     case ({},_,_,_,_,_,_,_,_,_,_,_,_,_)
-      equation
+      algorithm
         arrayUpdate(lookahead,c,l);
        then
          PFtraverseRows(rows1,stack,i,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2);
     case (r::_,_,_,_,_,_,_,_,_,_,_,_,_,_)
-      equation
+      algorithm
         // row is unmatched -> augmenting path found
-        true = intLt(ass2[r],0);
+        true := intLt(ass2[r],0);
         DFSBreasign(stack,r,ass1,ass2);
       then
         true;
@@ -1987,13 +1987,13 @@ algorithm
       Boolean b;
     case ({},_,_,_,_,_,_,_,_,_,_) then false;
     case (r::rest,_,_,_,_,_,_,_,_,_,_)
-      equation
+      algorithm
         // row is matched
-        rc = ass2[r];
-        false = intLt(rc,0);
-        false = intEq(rowmarks[r],i);
+        rc := ass2[r];
+        false := intLt(rc,0);
+        false := intEq(rowmarks[r],i);
         arrayUpdate(rowmarks,r,i);
-        b = PFphase(rc::stack,i,rc,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2);
+        b := PFphase(rc::stack,i,rc,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2);
       then
         PFtraverseRows1(rest,stack,i,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2,b);
     case (_::rest,_,_,_,_,_,_,_,_,_,_)
@@ -2057,29 +2057,29 @@ algorithm
       array<Integer> rowmarks,lookahead;
       list<Integer> unmatched;
     case (BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt)),_,_,_,_,_)
-      equation
-        neqns = BackendDAEUtil.systemSize(isyst);
-        nvars = BackendVariable.daenumVariables(isyst);
-        true = intGt(nvars,0);
-        true = intGt(neqns,0);
-        (vec1,vec2) = getAssignment(clearMatching,nvars,neqns,isyst);
-        rowmarks = arrayCreate(nvars,-1);
-        lookahead = arrayCreate(neqns,0);
-        unmatched = cheapmatchingalgorithm(nvars,neqns,m,mt,vec1,vec2,true);
-        (_,vec1,vec2,syst,shared,arg) = PFPlus1(0,unmatched,rowmarks,lookahead,isyst,ishared,nvars,neqns,vec1,vec2,inMatchingOptions,sssHandler,inArg);
-        syst = BackendDAEUtil.setEqSystMatching(syst,BackendDAE.MATCHING(vec2,vec1,{}));
+      algorithm
+        neqns := BackendDAEUtil.systemSize(isyst);
+        nvars := BackendVariable.daenumVariables(isyst);
+        true := intGt(nvars,0);
+        true := intGt(neqns,0);
+        (vec1,vec2) := getAssignment(clearMatching,nvars,neqns,isyst);
+        rowmarks := arrayCreate(nvars,-1);
+        lookahead := arrayCreate(neqns,0);
+        unmatched := cheapmatchingalgorithm(nvars,neqns,m,mt,vec1,vec2,true);
+        (_,vec1,vec2,syst,shared,arg) := PFPlus1(0,unmatched,rowmarks,lookahead,isyst,ishared,nvars,neqns,vec1,vec2,inMatchingOptions,sssHandler,inArg);
+        syst := BackendDAEUtil.setEqSystMatching(syst,BackendDAE.MATCHING(vec2,vec1,{}));
       then
         (syst,shared,arg);
     // fail case if system is empty
     case (_,_,_,_,_,_)
-      equation
-        neqns = BackendDAEUtil.systemSize(isyst);
-        nvars = BackendVariable.daenumVariables(isyst);
-        false = intGt(nvars,0);
-        false = intGt(neqns,0);
-        vec1 = listArray({});
-        vec2 = listArray({});
-        syst = BackendDAEUtil.setEqSystMatching(isyst,BackendDAE.MATCHING(vec2,vec1,{}));
+      algorithm
+        neqns := BackendDAEUtil.systemSize(isyst);
+        nvars := BackendVariable.daenumVariables(isyst);
+        false := intGt(nvars,0);
+        false := intGt(neqns,0);
+        vec1 := listArray({});
+        vec2 := listArray({});
+        syst := BackendDAEUtil.setEqSystMatching(isyst,BackendDAE.MATCHING(vec2,vec1,{}));
       then
         (syst,ishared,inArg);
     else
@@ -2130,11 +2130,11 @@ algorithm
       then
         (i,ass1,ass2,isyst,ishared,inArg);
     case (_,_,_,_,syst as BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt)),_,_,_,_,_,_,_,_)
-      equation
-        (i_1,unmatched1) = PFPlusaugmentmatching(i,unmatched,nv,ne,m,mt,rowmarks,lookahead,ass1,ass2,listLength(unmatched),{},false);
-        meqns = getEqnsforIndexReduction(unmatched1,ne,m,mt,ass1,ass2,inArg);
-        (unmatched1,rowmarks1,lookahead1,nv_1,ne_1,ass1_1,ass2_1,syst,shared,arg) = PF2(meqns,unmatched1,{},rowmarks,lookahead,syst,ishared,nv,ne,ass1,ass2,inMatchingOptions,sssHandler,inArg);
-        (i_1,ass1_2,ass2_2,syst,shared,arg1) = PFPlus1(i_1+1,unmatched1,rowmarks1,lookahead1,syst,shared,nv_1,ne_1,ass1_1,ass2_1,inMatchingOptions,sssHandler,arg);
+      algorithm
+        (i_1,unmatched1) := PFPlusaugmentmatching(i,unmatched,nv,ne,m,mt,rowmarks,lookahead,ass1,ass2,listLength(unmatched),{},false);
+        meqns := getEqnsforIndexReduction(unmatched1,ne,m,mt,ass1,ass2,inArg);
+        (unmatched1,rowmarks1,lookahead1,nv_1,ne_1,ass1_1,ass2_1,syst,shared,arg) := PF2(meqns,unmatched1,{},rowmarks,lookahead,syst,ishared,nv,ne,ass1,ass2,inMatchingOptions,sssHandler,inArg);
+        (i_1,ass1_2,ass2_2,syst,shared,arg1) := PFPlus1(i_1+1,unmatched1,rowmarks1,lookahead1,syst,shared,nv_1,ne_1,ass1_1,ass2_1,inMatchingOptions,sssHandler,arg);
       then
         (i_1,ass1_2,ass2_2,syst,shared,arg1);
   end match;
@@ -2167,28 +2167,28 @@ algorithm
       Integer c,i_1;
       Boolean b;
     case (_,{},_,_,_,_,_,_,_,_,_,_,_)
-      equation
+      algorithm
         // no augmenting path is found in pass
-        true=intEq(previousUnmatched,listLength(unMatched));
+        true:=intEq(previousUnmatched,listLength(unMatched));
       then
         (i,unMatched);
     case (_,{},_,_,_,_,_,_,_,_,_,_,_)
-      equation
+      algorithm
        // augmenting path is found in pass, next round
-       (i_1,unmatched) = PFPlusaugmentmatching(i+1,unMatched,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2,listLength(unMatched),{},reverseRows);
+       (i_1,unmatched) := PFPlusaugmentmatching(i+1,unMatched,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2,listLength(unMatched),{},reverseRows);
       then
         (i_1,unmatched);
     case (_,c::rest,_,_,_,_,_,_,_,_,_,_,_)
-      equation
-        true = intGt(ass1[c],-1);
-        (i_1,unmatched) = PFPlusaugmentmatching(i,rest,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2,previousUnmatched,unMatched,reverseRows);
+      algorithm
+        true := intGt(ass1[c],-1);
+        (i_1,unmatched) := PFPlusaugmentmatching(i,rest,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2,previousUnmatched,unMatched,reverseRows);
       then
         (i_1,unmatched);
     case (_,c::rest,_,_,_,_,_,_,_,_,_,_,_)
-      equation
-        b = PFPlusphase({c},i,c,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2,reverseRows);
-        unmatched = List.consOnTrue(not b, c, unMatched);
-        (i_1,unmatched) = PFPlusaugmentmatching(i,rest,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2,previousUnmatched,unmatched,not reverseRows);
+      algorithm
+        b := PFPlusphase({c},i,c,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2,reverseRows);
+        unmatched := List.consOnTrue(not b, c, unMatched);
+        (i_1,unmatched) := PFPlusaugmentmatching(i,rest,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2,previousUnmatched,unmatched,not reverseRows);
       then
         (i_1,unmatched);
     else
@@ -2223,17 +2223,17 @@ algorithm
       Boolean b;
     case ({},_,_,_,_,_,_,_,_,_,_,_) then false;
     case (_,_,_,_,_,_,_,_,_,_,_,false)
-      equation
+      algorithm
         // traverse all adiacent rows
-        rows = List.select(m[c], Util.intPositive);
-        b = intLt(lookahead[c],listLength(rows));
+        rows := List.select(m[c], Util.intPositive);
+        b := intLt(lookahead[c],listLength(rows));
      then
         PFPluschecklookahead(b,rows,stack,i,c,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2,reverseRows);
     case (_,_,_,_,_,_,_,_,_,_,_,true)
-      equation
+      algorithm
         // traverse all adiacent rows
-        rows = List.select(m[c], Util.intPositive);
-        b = intLt(lookahead[c],listLength(rows));
+        rows := List.select(m[c], Util.intPositive);
+        b := intLt(lookahead[c],listLength(rows));
       then
         PFPluschecklookahead(b,listReverse(rows),stack,i,c,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2,reverseRows);
     else
@@ -2300,14 +2300,14 @@ algorithm
       list<Integer> rest;
       Integer r;
     case ({},_,_,_,_,_,_,_,_,_,_,_,_,_,_)
-      equation
+      algorithm
         arrayUpdate(lookahead,c,l);
        then
          PFPlustraverseRows(rows1,stack,i,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2,reverseRows);
     case (r::_,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
-      equation
+      algorithm
         // row is unmatched -> augmenting path found
-        true = intLt(ass2[r],0);
+        true := intLt(ass2[r],0);
         DFSBreasign(stack,r,ass1,ass2);
       then
         true;
@@ -2342,13 +2342,13 @@ algorithm
       Boolean b;
     case ({},_,_,_,_,_,_,_,_,_,_,_) then false;
     case (r::rest,_,_,_,_,_,_,_,_,_,_,_)
-      equation
+      algorithm
         // row is matched
-        rc = ass2[r];
-        false = intLt(rc,0);
-        false = intEq(rowmarks[r],i);
+        rc := ass2[r];
+        false := intLt(rc,0);
+        false := intEq(rowmarks[r],i);
         arrayUpdate(rowmarks,r,i);
-        b = PFPlusphase(rc::stack,i,rc,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2,reverseRows);
+        b := PFPlusphase(rc::stack,i,rc,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2,reverseRows);
       then
         PFPlustraverseRows1(rest,stack,i,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2,b,reverseRows);
     case (_::rest,_,_,_,_,_,_,_,_,_,_,_)
@@ -2413,30 +2413,30 @@ algorithm
       array<Integer> rowmarks,level,collummarks;
       list<Integer> unmatched;
     case (BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt)),_,_,_,_,_)
-      equation
-        neqns = BackendDAEUtil.systemSize(isyst);
-        nvars = BackendVariable.daenumVariables(isyst);
-        true = intGt(nvars,0);
-        true = intGt(neqns,0);
-        (vec1,vec2) = getAssignment(clearMatching,nvars,neqns,isyst);
-        rowmarks = arrayCreate(nvars,-1);
-        collummarks = arrayCreate(neqns,-1);
-        level = arrayCreate(neqns,-1);
-        unmatched = cheapmatchingalgorithm(nvars,neqns,m,mt,vec1,vec2,true);
-        (vec1,vec2,syst,shared,arg) = HK1(0,unmatched,rowmarks,collummarks,level,isyst,ishared,nvars,neqns,vec1,vec2,inMatchingOptions,sssHandler,inArg);
-        syst = BackendDAEUtil.setEqSystMatching(syst,BackendDAE.MATCHING(vec2,vec1,{}));
+      algorithm
+        neqns := BackendDAEUtil.systemSize(isyst);
+        nvars := BackendVariable.daenumVariables(isyst);
+        true := intGt(nvars,0);
+        true := intGt(neqns,0);
+        (vec1,vec2) := getAssignment(clearMatching,nvars,neqns,isyst);
+        rowmarks := arrayCreate(nvars,-1);
+        collummarks := arrayCreate(neqns,-1);
+        level := arrayCreate(neqns,-1);
+        unmatched := cheapmatchingalgorithm(nvars,neqns,m,mt,vec1,vec2,true);
+        (vec1,vec2,syst,shared,arg) := HK1(0,unmatched,rowmarks,collummarks,level,isyst,ishared,nvars,neqns,vec1,vec2,inMatchingOptions,sssHandler,inArg);
+        syst := BackendDAEUtil.setEqSystMatching(syst,BackendDAE.MATCHING(vec2,vec1,{}));
       then
         (syst,shared,arg);
     // fail case if system is empty
     case (_,_,_,_,_,_)
-      equation
-        neqns = BackendDAEUtil.systemSize(isyst);
-        nvars = BackendVariable.daenumVariables(isyst);
-        false = intGt(nvars,0);
-        false = intGt(neqns,0);
-        vec1 = listArray({});
-        vec2 = listArray({});
-        syst = BackendDAEUtil.setEqSystMatching(isyst,BackendDAE.MATCHING(vec2,vec1,{}));
+      algorithm
+        neqns := BackendDAEUtil.systemSize(isyst);
+        nvars := BackendVariable.daenumVariables(isyst);
+        false := intGt(nvars,0);
+        false := intGt(neqns,0);
+        vec1 := listArray({});
+        vec2 := listArray({});
+        syst := BackendDAEUtil.setEqSystMatching(isyst,BackendDAE.MATCHING(vec2,vec1,{}));
       then
         (syst,ishared,inArg);
     else
@@ -2487,11 +2487,11 @@ algorithm
       then
         (ass1,ass2,isyst,ishared,inArg);
     case (_,_,_,_,_,syst as BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt)),_,_,_,_,_,_,_,_)
-      equation
-        (i_1,unmatched1) = HKphase(i,unmatched,nv,ne,m,mt,rowmarks,collummarks,level,ass1,ass2,listLength(unmatched),{});
-        meqns = getEqnsforIndexReduction(unmatched1,ne,m,mt,ass1,ass2,inArg);
-        (unmatched1,rowmarks1,collummarks1,level1,nv_1,ne_1,ass1_1,ass2_1,syst,shared,arg) = HK2(meqns,unmatched1,{},rowmarks,collummarks,level,syst,ishared,nv,ne,ass1,ass2,inMatchingOptions,sssHandler,inArg);
-        (ass1_2,ass2_2,syst,shared,arg1) = HK1(i_1+1,unmatched1,rowmarks1,collummarks1,level1,syst,shared,nv_1,ne_1,ass1_1,ass2_1,inMatchingOptions,sssHandler,arg);
+      algorithm
+        (i_1,unmatched1) := HKphase(i,unmatched,nv,ne,m,mt,rowmarks,collummarks,level,ass1,ass2,listLength(unmatched),{});
+        meqns := getEqnsforIndexReduction(unmatched1,ne,m,mt,ass1,ass2,inArg);
+        (unmatched1,rowmarks1,collummarks1,level1,nv_1,ne_1,ass1_1,ass2_1,syst,shared,arg) := HK2(meqns,unmatched1,{},rowmarks,collummarks,level,syst,ishared,nv,ne,ass1,ass2,inMatchingOptions,sssHandler,inArg);
+        (ass1_2,ass2_2,syst,shared,arg1) := HK1(i_1+1,unmatched1,rowmarks1,collummarks1,level1,syst,shared,nv_1,ne_1,ass1_1,ass2_1,inMatchingOptions,sssHandler,arg);
       then
         (ass1_2,ass2_2,syst,shared,arg1);
   end match;
@@ -2541,19 +2541,19 @@ algorithm
       then
         (unmatched,rowmarks,collummarks,level,nv,ne,ass1,ass2,isyst,ishared,inArg);
     case (_,_,_,_,_,_,_,_,_,_,_,_,(BackendDAE.INDEX_REDUCTION(),_),_,_)
-      equation
-        (unmatched1,_,syst,shared,ass2_1,ass1_1,arg) = sssHandler(meqns,0,isyst,ishared,ass2,ass1,inArg);
-        ne_1 = BackendDAEUtil.systemSize(syst);
-        nv_1 = BackendVariable.daenumVariables(syst);
-        ass1_1 = assignmentsArrayExpand(ass1_1,ne_1,arrayLength(ass1),-1);
-        ass2_1 = assignmentsArrayExpand(ass2_1,nv_1,arrayLength(ass2),-1);
-        rowmarks1 = assignmentsArrayExpand(rowmarks,nv_1,arrayLength(rowmarks),-1);
-        collummarks1 = assignmentsArrayExpand(collummarks,ne_1,arrayLength(collummarks),-1);
-        level1 = assignmentsArrayExpand(level,ne_1,arrayLength(level),-1);
+      algorithm
+        (unmatched1,_,syst,shared,ass2_1,ass1_1,arg) := sssHandler(meqns,0,isyst,ishared,ass2,ass1,inArg);
+        ne_1 := BackendDAEUtil.systemSize(syst);
+        nv_1 := BackendVariable.daenumVariables(syst);
+        ass1_1 := assignmentsArrayExpand(ass1_1,ne_1,arrayLength(ass1),-1);
+        ass2_1 := assignmentsArrayExpand(ass2_1,nv_1,arrayLength(ass2),-1);
+        rowmarks1 := assignmentsArrayExpand(rowmarks,nv_1,arrayLength(rowmarks),-1);
+        collummarks1 := assignmentsArrayExpand(collummarks,ne_1,arrayLength(collummarks),-1);
+        level1 := assignmentsArrayExpand(level,ne_1,arrayLength(level),-1);
       then
         (unmatched1,rowmarks1,collummarks1,level1,nv_1,ne_1,ass1_1,ass2_1,syst,shared,arg);
     case (_,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
-      equation
+      algorithm
         singularSystemError(meqns,0,isyst,ishared,ass1,ass2,inArg);
       then
         fail();
@@ -2587,26 +2587,26 @@ algorithm
       list<tuple<Integer,Integer>> rows;
       Integer i_1;
     case (_,{},_,_,_,_,_,_,_,_,_,_,_)
-      equation
+      algorithm
         // no augmenting path is found in phase
-        true=intEq(previousUnmatched,listLength(unMatched));
+        true:=intEq(previousUnmatched,listLength(unMatched));
       then
         (i,unMatched);
     case (_,{},_,_,_,_,_,_,_,_,_,_,_)
-      equation
+      algorithm
         // augmenting path is found in phase, next round
-        (i_1,unmatched) = HKphase(i+1,unMatched,nv,ne,m,mT,rowmarks,collummarks,level,ass1,ass2,listLength(unMatched),{});
+        (i_1,unmatched) := HKphase(i+1,unMatched,nv,ne,m,mT,rowmarks,collummarks,level,ass1,ass2,listLength(unMatched),{});
       then
         (i_1,unmatched);
     case (_,_,_,_,_,_,_,_,_,_,_,_,_)
-      equation
+      algorithm
         // BFS phase to get the level information
-        rows = HKBFS(U,nv,ne,m,mT,rowmarks,i,level,NONE(),ass1,ass2,{});
+        rows := HKBFS(U,nv,ne,m,mT,rowmarks,i,level,NONE(),ass1,ass2,{});
         // DFS to match
-        _ = HKDFS(rows,i,nv,ne,m,mT,collummarks,level,ass1,ass2,{});
+        _ := HKDFS(rows,i,nv,ne,m,mT,collummarks,level,ass1,ass2,{});
         // remove matched collums from U
-        unmatched = HKgetUnmatched(U,ass1,{});
-        (i_1,unmatched) = HKphase(i,{},nv,ne,m,mT,rowmarks,collummarks,level,ass1,ass2,previousUnmatched,unmatched);
+        unmatched := HKgetUnmatched(U,ass1,{});
+        (i_1,unmatched) := HKphase(i,{},nv,ne,m,mT,rowmarks,collummarks,level,ass1,ass2,previousUnmatched,unmatched);
       then
         (i_1,unmatched);
     else
@@ -2630,8 +2630,8 @@ algorithm
       Integer c;
     case ({},_,_) then inUnmatched;
     case (c::rest,_,_)
-      equation
-        true = intGt(ass1[c],0);
+      algorithm
+        true := intGt(ass1[c],0);
       then
         HKgetUnmatched(rest,ass1,inUnmatched);
     case (c::rest,_,_)
@@ -2667,8 +2667,8 @@ algorithm
       Option<Integer> ll;
     case ({},_,_,_,_,_,_,_,_,_,_,_) then inRows;
     case (c::rest,_,_,_,_,_,_,_,_,_,_,_)
-      equation
-        (rows,ll) = HKBFSBphase({c},i,0,lowestL,nv,ne,m,mT,rowmarks,level,ass1,ass2,inRows,{});
+      algorithm
+        (rows,ll) := HKBFSBphase({c},i,0,lowestL,nv,ne,m,mT,rowmarks,level,ass1,ass2,inRows,{});
       then
         HKBFS(rest,nv,ne,m,mT,rowmarks,i,level,ll,ass1,ass2,rows);
     else
@@ -2709,26 +2709,26 @@ algorithm
       Option<Integer> ll;
     case ({},_,_,_,_,_,_,_,_,_,_,_,_,{}) then (inRows,lowestL);
     case ({},_,_,SOME(lowl),_,_,_,_,_,_,_,_,_,_)
-      equation
-        l_1 = l+1;
-        b = intGt(l_1,lowl);
-        (rows,ll) = HKBFSBphase1(b,queue1,i,l_1,lowestL,nv,ne,m,mT,rowmarks,level,ass1,ass2,inRows,{});
+      algorithm
+        l_1 := l+1;
+        b := intGt(l_1,lowl);
+        (rows,ll) := HKBFSBphase1(b,queue1,i,l_1,lowestL,nv,ne,m,mT,rowmarks,level,ass1,ass2,inRows,{});
       then
         (rows,ll);
     case ({},_,_,NONE(),_,_,_,_,_,_,_,_,_,_)
-      equation
-        (rows,ll) = HKBFSBphase(queue1,i,l+1,lowestL,nv,ne,m,mT,rowmarks,level,ass1,ass2,inRows,{});
+      algorithm
+        (rows,ll) := HKBFSBphase(queue1,i,l+1,lowestL,nv,ne,m,mT,rowmarks,level,ass1,ass2,inRows,{});
       then
         (rows,ll);
     case (c::rest,_,_,_,_,_,_,_,_,_,_,_,_,_)
-      equation
+      algorithm
         // traverse all adiacent rows
-        cr = List.select(m[c], Util.intPositive);
+        cr := List.select(m[c], Util.intPositive);
         arrayUpdate(level,c,l);
-        (queue2,rows,b) = HKBFStraverseRows(cr,{},i,l,m,mT,rowmarks,level,ass1,ass2,inRows,false);
-        queue2 = listAppend(queue1,queue2);
-        ll = if b then SOME(l) else lowestL;
-        (rows,ll) = HKBFSBphase(rest,i,l,ll,nv,ne,m,mT,rowmarks,level,ass1,ass2,rows,queue2);
+        (queue2,rows,b) := HKBFStraverseRows(cr,{},i,l,m,mT,rowmarks,level,ass1,ass2,inRows,false);
+        queue2 := listAppend(queue1,queue2);
+        ll := if b then SOME(l) else lowestL;
+        (rows,ll) := HKBFSBphase(rest,i,l,ll,nv,ne,m,mT,rowmarks,level,ass1,ass2,rows,queue2);
       then
         (rows,ll);
     else
@@ -2768,8 +2768,8 @@ algorithm
       list<tuple<Integer,Integer>> rows;
     case (true,_,_,_,_,_,_,_,_,_,_,_,_,_,_) then (inRows,SOME(l));
     case (false,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
-      equation
-        (rows,ll) = HKBFSBphase(queue,i,l,lowestL,nv,ne,m,mT,rowmarks,level,ass1,ass2,inRows,queue1);
+      algorithm
+        (rows,ll) := HKBFSBphase(queue,i,l,lowestL,nv,ne,m,mT,rowmarks,level,ass1,ass2,inRows,queue1);
       then
         (rows,ll);
     else
@@ -2808,27 +2808,27 @@ algorithm
       Boolean b;
     case ({},_,_,_,_,_,_,_,_,_,_,_) then (listReverse(queue),inRows,inunmarowFound);
     case (r::rest,_,_,_,_,_,_,_,_,_,_,_)
-      equation
+      algorithm
         // row is visited
-        false = intLt(rowmarks[r],i);
-        (queue1,rowstpl,b) = HKBFStraverseRows(rest,queue,i,l,m,mT,rowmarks,level,ass1,ass2,inRows,inunmarowFound);
+        false := intLt(rowmarks[r],i);
+        (queue1,rowstpl,b) := HKBFStraverseRows(rest,queue,i,l,m,mT,rowmarks,level,ass1,ass2,inRows,inunmarowFound);
       then
         (queue1,rowstpl,b);
     case (r::rest,_,_,_,_,_,_,_,_,_,_,_)
-      equation
+      algorithm
         // row is unmatched
-        true = intLt(ass2[r],0);
+        true := intLt(ass2[r],0);
         arrayUpdate(rowmarks,r,i);
-        (queue1,rowstpl,b) = HKBFStraverseRows(rest,queue,i,l,m,mT,rowmarks,level,ass1,ass2,(r,l)::inRows,true);
+        (queue1,rowstpl,b) := HKBFStraverseRows(rest,queue,i,l,m,mT,rowmarks,level,ass1,ass2,(r,l)::inRows,true);
       then
         (queue1,rowstpl,b);
     case (r::rest,_,_,_,_,_,_,_,_,_,_,_)
-      equation
+      algorithm
         // row is matched
-        rc = ass2[r];
-        false = intLt(rc,0);
+        rc := ass2[r];
+        false := intLt(rc,0);
         arrayUpdate(rowmarks,r,i);
-        (queue1,rowstpl,b) = HKBFStraverseRows(rest,rc::queue,i,l,m,mT,rowmarks,level,ass1,ass2,inRows,inunmarowFound);
+        (queue1,rowstpl,b) := HKBFStraverseRows(rest,rc::queue,i,l,m,mT,rowmarks,level,ass1,ass2,inRows,inunmarowFound);
       then
         (queue1,rowstpl,b);
     else
@@ -2865,10 +2865,10 @@ algorithm
        Boolean b;
     case ({},_,_,_,_,_,_,_,_,_,_) then inUnmatchedRows;
     case ((r,l)::rest,_,_,_,_,_,_,_,_,_,_)
-      equation
+      algorithm
         // search augmenting paths
-        b = HKDFSphase({r},i,r,l,nv,ne,m,mT,collummarks,level,ass1,ass2,false);
-        ur = List.consOnTrue(not b,r,inUnmatchedRows);
+        b := HKDFSphase({r},i,r,l,nv,ne,m,mT,collummarks,level,ass1,ass2,false);
+        ur := List.consOnTrue(not b,r,inUnmatchedRows);
       then
         HKDFS(rest,i,nv,ne,m,mT,collummarks,level,ass1,ass2,ur);
     else
@@ -2904,9 +2904,9 @@ algorithm
       list<Integer> collums;
     case ({},_,_,_,_,_,_,_,_,_,_,_,_) then inMatched;
     case (_,_,_,_,_,_,_,_,_,_,_,_,_)
-      equation
+      algorithm
         // traverse all adiacent rows
-        collums = List.select(mT[r], Util.intPositive);
+        collums := List.select(mT[r], Util.intPositive);
       then
         HKDFStraverseCollums(collums,stack,i,l,nv,ne,m,mT,collummarks,level,ass1,ass2,inMatched);
     else
@@ -2943,41 +2943,41 @@ algorithm
       Boolean b;
     case ({},_,_,_,_,_,_,_,_,_,_,_,_) then inMatched;
     case (c::rest,_,_,_,_,_,_,_,_,_,_,_,_)
-      equation
+      algorithm
         // collum is not in graph
-        false = intEq(level[c],l);
+        false := intEq(level[c],l);
       then
         HKDFStraverseCollums(rest,stack,i,l,nv,ne,m,mT,collummarks,level,ass1,ass2,inMatched);
     case (c::_,_,_,_,_,_,_,_,_,_,_,_,_)
-      equation
+      algorithm
         // collum is in graph
-        true = intEq(level[c],l);
+        true := intEq(level[c],l);
         // collum is unvisited
-        true = intLt(collummarks[c],i);
+        true := intLt(collummarks[c],i);
         // collum is unmatched
-        true = intLt(ass1[c],0);
+        true := intLt(ass1[c],0);
         HKDFSreasign(stack,c,ass1,ass2);
       then
         true;
     case (c::rest,_,_,_,_,_,_,_,_,_,_,_,_)
-      equation
+      algorithm
         // collum is in graph
-        true = intEq(level[c],l);
+        true := intEq(level[c],l);
         // collum is unvisited
-        true = intLt(collummarks[c],i);
+        true := intLt(collummarks[c],i);
         // collum is matched
-        r = ass1[c];
-        false = intLt(r,0);
+        r := ass1[c];
+        false := intLt(r,0);
         arrayUpdate(collummarks,c,i);
-        b = HKDFSphase(r::stack,i,r,l-1,nv,ne,m,mT,collummarks,level,ass1,ass2,inMatched);
+        b := HKDFSphase(r::stack,i,r,l-1,nv,ne,m,mT,collummarks,level,ass1,ass2,inMatched);
       then
         HKDFStraverseCollums1(b,rest,stack,i,l,nv,ne,m,mT,collummarks,level,ass1,ass2);
     case (c::rest,_,_,_,_,_,_,_,_,_,_,_,_)
-      equation
+      algorithm
         // collum is in graph
-        true = intEq(level[c],l);
+        true := intEq(level[c],l);
         // collum is visited
-        false = intLt(collummarks[c],i);
+        false := intLt(collummarks[c],i);
       then
         HKDFStraverseCollums(rest,stack,i,l,nv,ne,m,mT,collummarks,level,ass1,ass2,inMatched);
     else
@@ -3029,8 +3029,8 @@ algorithm
       list<Integer> rest;
     case ({},_,_,_) then ();
     case (r::rest,_,_,_)
-      equation
-        cr = ass2[r];
+      algorithm
+        cr := ass2[r];
         arrayUpdate(ass1,c,r);
         arrayUpdate(ass2,r,c);
         HKDFSreasign(rest,cr,ass1,ass2);
@@ -3065,30 +3065,30 @@ algorithm
       array<Integer> rowmarks,level,collummarks;
       list<Integer> unmatched;
     case (BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt)),_,_,_,_,_)
-      equation
-        neqns = BackendDAEUtil.systemSize(isyst);
-        nvars = BackendVariable.daenumVariables(isyst);
-        true = intGt(nvars,0);
-        true = intGt(neqns,0);
-        (vec1,vec2) = getAssignment(clearMatching,nvars,neqns,isyst);
-        rowmarks = arrayCreate(nvars,-1);
-        collummarks = arrayCreate(neqns,-1);
-        level = arrayCreate(neqns,-1);
-        unmatched = cheapmatchingalgorithm(nvars,neqns,m,mt,vec1,vec2,true);
-        (vec1,vec2,syst,shared,arg) = HKDW1(0,unmatched,rowmarks,collummarks,level,isyst,ishared,nvars,neqns,vec1,vec2,inMatchingOptions,sssHandler,inArg);
-        syst = BackendDAEUtil.setEqSystMatching(syst,BackendDAE.MATCHING(vec2,vec1,{}));
+      algorithm
+        neqns := BackendDAEUtil.systemSize(isyst);
+        nvars := BackendVariable.daenumVariables(isyst);
+        true := intGt(nvars,0);
+        true := intGt(neqns,0);
+        (vec1,vec2) := getAssignment(clearMatching,nvars,neqns,isyst);
+        rowmarks := arrayCreate(nvars,-1);
+        collummarks := arrayCreate(neqns,-1);
+        level := arrayCreate(neqns,-1);
+        unmatched := cheapmatchingalgorithm(nvars,neqns,m,mt,vec1,vec2,true);
+        (vec1,vec2,syst,shared,arg) := HKDW1(0,unmatched,rowmarks,collummarks,level,isyst,ishared,nvars,neqns,vec1,vec2,inMatchingOptions,sssHandler,inArg);
+        syst := BackendDAEUtil.setEqSystMatching(syst,BackendDAE.MATCHING(vec2,vec1,{}));
       then
         (syst,shared,arg);
     // fail case if system is empty
     case (_,_,_,_,_,_)
-      equation
-        neqns = BackendDAEUtil.systemSize(isyst);
-        nvars = BackendVariable.daenumVariables(isyst);
-        false = intGt(nvars,0);
-        false = intGt(neqns,0);
-        vec1 = listArray({});
-        vec2 = listArray({});
-        syst = BackendDAEUtil.setEqSystMatching(isyst,BackendDAE.MATCHING(vec2,vec1,{}));
+      algorithm
+        neqns := BackendDAEUtil.systemSize(isyst);
+        nvars := BackendVariable.daenumVariables(isyst);
+        false := intGt(nvars,0);
+        false := intGt(neqns,0);
+        vec1 := listArray({});
+        vec2 := listArray({});
+        syst := BackendDAEUtil.setEqSystMatching(isyst,BackendDAE.MATCHING(vec2,vec1,{}));
       then
         (syst,ishared,inArg);
     else
@@ -3139,11 +3139,11 @@ algorithm
       then
         (ass1,ass2,isyst,ishared,inArg);
     case (_,_,_,_,_,syst as BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt)),_,_,_,_,_,_,_,_)
-      equation
-        (i_1,unmatched1) = HKDWphase(i,unmatched,nv,ne,m,mt,rowmarks,collummarks,level,ass1,ass2,listLength(unmatched),{});
-        meqns = getEqnsforIndexReduction(unmatched1,ne,m,mt,ass1,ass2,inArg);
-        (unmatched1,rowmarks1,collummarks1,level1,nv_1,ne_1,ass1_1,ass2_1,syst,shared,arg) = HK2(meqns,unmatched1,{},rowmarks,collummarks,level,syst,ishared,nv,ne,ass1,ass2,inMatchingOptions,sssHandler,inArg);
-        (ass1_2,ass2_2,syst,shared,arg1) = HKDW1(i_1+1,unmatched1,rowmarks1,collummarks1,level1,syst,shared,nv_1,ne_1,ass1_1,ass2_1,inMatchingOptions,sssHandler,arg);
+      algorithm
+        (i_1,unmatched1) := HKDWphase(i,unmatched,nv,ne,m,mt,rowmarks,collummarks,level,ass1,ass2,listLength(unmatched),{});
+        meqns := getEqnsforIndexReduction(unmatched1,ne,m,mt,ass1,ass2,inArg);
+        (unmatched1,rowmarks1,collummarks1,level1,nv_1,ne_1,ass1_1,ass2_1,syst,shared,arg) := HK2(meqns,unmatched1,{},rowmarks,collummarks,level,syst,ishared,nv,ne,ass1,ass2,inMatchingOptions,sssHandler,inArg);
+        (ass1_2,ass2_2,syst,shared,arg1) := HKDW1(i_1+1,unmatched1,rowmarks1,collummarks1,level1,syst,shared,nv_1,ne_1,ass1_1,ass2_1,inMatchingOptions,sssHandler,arg);
       then
         (ass1_2,ass2_2,syst,shared,arg1);
   end match;
@@ -3177,28 +3177,28 @@ algorithm
       list<Integer> ur;
       Integer i_1;
     case (_,{},_,_,_,_,_,_,_,_,_,_,_)
-      equation
+      algorithm
         // no augmenting path is found in phase
-        true=intEq(previousUnmatched,listLength(unMatched));
+        true:=intEq(previousUnmatched,listLength(unMatched));
       then
         (i,unMatched);
     case (_,{},_,_,_,_,_,_,_,_,_,_,_)
-      equation
+      algorithm
        // augmenting path is found in phase, next round
-        (i_1,unmatched) = HKphase(i+1,unMatched,nv,ne,m,mT,rowmarks,collummarks,level,ass1,ass2,listLength(unMatched),{});
+        (i_1,unmatched) := HKphase(i+1,unMatched,nv,ne,m,mT,rowmarks,collummarks,level,ass1,ass2,listLength(unMatched),{});
       then
         (i_1,unmatched);
     case (_,_,_,_,_,_,_,_,_,_,_,_,_)
-      equation
+      algorithm
         // BFS phase to get the level information
-        rows = HKBFS(U,nv,ne,m,mT,rowmarks,i,level,NONE(),ass1,ass2,{});
+        rows := HKBFS(U,nv,ne,m,mT,rowmarks,i,level,NONE(),ass1,ass2,{});
         // DFS to match
-        ur = HKDFS(rows,i,nv,ne,m,mT,collummarks,level,ass1,ass2,{});
+        ur := HKDFS(rows,i,nv,ne,m,mT,collummarks,level,ass1,ass2,{});
         // second DFS in full graph
         HKDWDFS(ur,i,nv,ne,m,mT,collummarks,ass1,ass2);
         // remove matched collums from U
-        unmatched = HKgetUnmatched(U,ass1,{});
-        (i_1,unmatched) = HKphase(i,{},nv,ne,m,mT,rowmarks,collummarks,level,ass1,ass2,previousUnmatched,unmatched);
+        unmatched := HKgetUnmatched(U,ass1,{});
+        (i_1,unmatched) := HKphase(i,{},nv,ne,m,mT,rowmarks,collummarks,level,ass1,ass2,previousUnmatched,unmatched);
       then
         (i_1,unmatched);
     else
@@ -3229,9 +3229,9 @@ algorithm
        Integer r;
     case ({},_,_,_,_,_,_,_,_) then ();
     case (r::rest,_,_,_,_,_,_,_,_)
-      equation
+      algorithm
         // search augmenting paths
-        _ = HKDWDFSphase({r},i,r,nv,ne,m,mT,collummarks,ass1,ass2,false);
+        _ := HKDWDFSphase({r},i,r,nv,ne,m,mT,collummarks,ass1,ass2,false);
         HKDWDFS(rest,i,nv,ne,m,mT,collummarks,ass1,ass2);
       then
         ();
@@ -3266,9 +3266,9 @@ algorithm
       list<Integer> collums;
     case ({},_,_,_,_,_,_,_,_,_,_) then inMatched;
     case (_,_,_,_,_,_,_,_,_,_,_)
-      equation
+      algorithm
         // traverse all adiacent rows
-        collums = List.select(mT[r], Util.intPositive);
+        collums := List.select(mT[r], Util.intPositive);
       then
         HKDWDFStraverseCollums(collums,stack,i,nv,ne,m,mT,collummarks,ass1,ass2,inMatched);
     else
@@ -3303,29 +3303,29 @@ algorithm
       Boolean b;
     case ({},_,_,_,_,_,_,_,_,_,_) then inMatched;
     case (c::_,_,_,_,_,_,_,_,_,_,_)
-      equation
+      algorithm
         // collum is unvisited
-        true = intLt(collummarks[c],i);
+        true := intLt(collummarks[c],i);
         // collum is unmatched
-        true = intLt(ass1[c],0);
+        true := intLt(ass1[c],0);
         HKDFSreasign(stack,c,ass1,ass2);
       then
         true;
     case (c::rest,_,_,_,_,_,_,_,_,_,_)
-      equation
+      algorithm
         // collum is unvisited
-        true = intLt(collummarks[c],i);
+        true := intLt(collummarks[c],i);
         // collum is matched
-        r = ass1[c];
-        false = intLt(r,0);
+        r := ass1[c];
+        false := intLt(r,0);
         arrayUpdate(collummarks,c,i);
-        b = HKDWDFSphase(r::stack,i,r,nv,ne,m,mT,collummarks,ass1,ass2,inMatched);
+        b := HKDWDFSphase(r::stack,i,r,nv,ne,m,mT,collummarks,ass1,ass2,inMatched);
       then
         HKDWDFStraverseCollums1(b,rest,stack,i,nv,ne,m,mT,collummarks,ass1,ass2);
     case (c::rest,_,_,_,_,_,_,_,_,_,_)
-      equation
+      algorithm
         // collum is visited
-        false = intLt(collummarks[c],i);
+        false := intLt(collummarks[c],i);
       then
         HKDWDFStraverseCollums(rest,stack,i,nv,ne,m,mT,collummarks,ass1,ass2,inMatched);
     else
@@ -3386,32 +3386,32 @@ algorithm
       array<Integer> rowmarks,level,collummarks,rlevel,colptrs;
       list<Integer> unmatched;
     case (BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt)),_,_,_,_,_)
-      equation
-        neqns = BackendDAEUtil.systemSize(isyst);
-        nvars = BackendVariable.daenumVariables(isyst);
-        true = intGt(nvars,0);
-        true = intGt(neqns,0);
-        (vec1,vec2) = getAssignment(clearMatching,nvars,neqns,isyst);
-        rowmarks = arrayCreate(nvars,-1);
-        collummarks = arrayCreate(neqns,-1);
-        level = arrayCreate(neqns,-1);
-        rlevel = arrayCreate(nvars,nvars);
-        colptrs = arrayCreate(neqns,-1);
-        unmatched = cheapmatchingalgorithm(nvars,neqns,m,mt,vec1,vec2,true);
-        (vec1,vec2,syst,shared,arg) = ABMP1(1,unmatched,rowmarks,collummarks,level,rlevel,colptrs,isyst,ishared,nvars,neqns,vec1,vec2,inMatchingOptions,sssHandler,inArg);
-        syst = BackendDAEUtil.setEqSystMatching(syst,BackendDAE.MATCHING(vec2,vec1,{}));
+      algorithm
+        neqns := BackendDAEUtil.systemSize(isyst);
+        nvars := BackendVariable.daenumVariables(isyst);
+        true := intGt(nvars,0);
+        true := intGt(neqns,0);
+        (vec1,vec2) := getAssignment(clearMatching,nvars,neqns,isyst);
+        rowmarks := arrayCreate(nvars,-1);
+        collummarks := arrayCreate(neqns,-1);
+        level := arrayCreate(neqns,-1);
+        rlevel := arrayCreate(nvars,nvars);
+        colptrs := arrayCreate(neqns,-1);
+        unmatched := cheapmatchingalgorithm(nvars,neqns,m,mt,vec1,vec2,true);
+        (vec1,vec2,syst,shared,arg) := ABMP1(1,unmatched,rowmarks,collummarks,level,rlevel,colptrs,isyst,ishared,nvars,neqns,vec1,vec2,inMatchingOptions,sssHandler,inArg);
+        syst := BackendDAEUtil.setEqSystMatching(syst,BackendDAE.MATCHING(vec2,vec1,{}));
       then
         (syst,shared,arg);
     // fail case if system is empty
     case (_,_,_,_,_,_)
-      equation
-        neqns = BackendDAEUtil.systemSize(isyst);
-        nvars = BackendVariable.daenumVariables(isyst);
-        false = intGt(nvars,0);
-        false = intGt(neqns,0);
-        vec1 = listArray({});
-        vec2 = listArray({});
-        syst = BackendDAEUtil.setEqSystMatching(isyst,BackendDAE.MATCHING(vec2,vec1,{}));
+      algorithm
+        neqns := BackendDAEUtil.systemSize(isyst);
+        nvars := BackendVariable.daenumVariables(isyst);
+        false := intGt(nvars,0);
+        false := intGt(neqns,0);
+        vec1 := listArray({});
+        vec2 := listArray({});
+        syst := BackendDAEUtil.setEqSystMatching(isyst,BackendDAE.MATCHING(vec2,vec1,{}));
       then
         (syst,ishared,inArg);
     else
@@ -3464,13 +3464,13 @@ algorithm
       then
         (ass1,ass2,isyst,ishared,inArg);
     case (_,_,_,_,_,_,_,BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt)),_,_,_,_,_,_,_,_)
-      equation
-        lim = integer(0.1 * sqrt(arrayLength(ass1)));
-        unmatched1 = ABMPphase(unmatched,i,nv,ne,m,mt,rowmarks,rlevel,colptrs,lim,ass1,ass2);
-        (i_1,unmatched1) = HKphase(i+1,unmatched,nv,ne,m,mt,rowmarks,collummarks,level,ass1,ass2,listLength(unmatched),{});
-        meqns = getEqnsforIndexReduction(unmatched1,ne,m,mt,ass1,ass2,inArg);
-        (unmatched1,rowmarks1,collummarks1,level1,rlevel1,nv_1,ne_1,ass1_1,ass2_1,syst,shared,arg) = ABMP2(meqns,unmatched1,{},rowmarks,collummarks,level,rlevel,isyst,ishared,nv,ne,ass1,ass2,inMatchingOptions,sssHandler,inArg);
-        (ass1_2,ass2_2,syst,shared,arg1) = ABMP1(i_1+1,unmatched1,rowmarks1,collummarks1,level1,rlevel1,colptrs,syst,shared,nv_1,ne_1,ass1_1,ass2_1,inMatchingOptions,sssHandler,arg);
+      algorithm
+        lim := integer(0.1 * sqrt(arrayLength(ass1)));
+        unmatched1 := ABMPphase(unmatched,i,nv,ne,m,mt,rowmarks,rlevel,colptrs,lim,ass1,ass2);
+        (i_1,unmatched1) := HKphase(i+1,unmatched,nv,ne,m,mt,rowmarks,collummarks,level,ass1,ass2,listLength(unmatched),{});
+        meqns := getEqnsforIndexReduction(unmatched1,ne,m,mt,ass1,ass2,inArg);
+        (unmatched1,rowmarks1,collummarks1,level1,rlevel1,nv_1,ne_1,ass1_1,ass2_1,syst,shared,arg) := ABMP2(meqns,unmatched1,{},rowmarks,collummarks,level,rlevel,isyst,ishared,nv,ne,ass1,ass2,inMatchingOptions,sssHandler,inArg);
+        (ass1_2,ass2_2,syst,shared,arg1) := ABMP1(i_1+1,unmatched1,rowmarks1,collummarks1,level1,rlevel1,colptrs,syst,shared,nv_1,ne_1,ass1_1,ass2_1,inMatchingOptions,sssHandler,arg);
       then
         (ass1_2,ass2_2,syst,shared,arg1);
   end match;
@@ -3522,20 +3522,20 @@ algorithm
       then
         (unmatched,rowmarks,collummarks,level,rlevel,nv,ne,ass1,ass2,isyst,ishared,inArg);
     case (_,_,_,_,_,_,_,_,_,_,_,_,_,(BackendDAE.INDEX_REDUCTION(),_),_,_)
-      equation
-        (unmatched1,_,syst,shared,ass2_1,ass1_1,arg) = sssHandler(meqns,0,isyst,ishared,ass2,ass1,inArg);
-        ne_1 = BackendDAEUtil.systemSize(syst);
-        nv_1 = BackendVariable.daenumVariables(syst);
-        ass1_1 = assignmentsArrayExpand(ass1_1,ne_1,arrayLength(ass1_1),-1);
-        ass2_1 = assignmentsArrayExpand(ass2_1,nv_1,arrayLength(ass2_1),-1);
-        rowmarks1 = assignmentsArrayExpand(rowmarks,nv_1,arrayLength(rowmarks),-1);
-        collummarks1 = assignmentsArrayExpand(collummarks,ne_1,arrayLength(collummarks),-1);
-        rlevel1 = arrayCreate(arrayLength(ass2_1),arrayLength(ass2_1));
-        level1 = assignmentsArrayExpand(level,ne_1,arrayLength(level),-1);
+      algorithm
+        (unmatched1,_,syst,shared,ass2_1,ass1_1,arg) := sssHandler(meqns,0,isyst,ishared,ass2,ass1,inArg);
+        ne_1 := BackendDAEUtil.systemSize(syst);
+        nv_1 := BackendVariable.daenumVariables(syst);
+        ass1_1 := assignmentsArrayExpand(ass1_1,ne_1,arrayLength(ass1_1),-1);
+        ass2_1 := assignmentsArrayExpand(ass2_1,nv_1,arrayLength(ass2_1),-1);
+        rowmarks1 := assignmentsArrayExpand(rowmarks,nv_1,arrayLength(rowmarks),-1);
+        collummarks1 := assignmentsArrayExpand(collummarks,ne_1,arrayLength(collummarks),-1);
+        rlevel1 := arrayCreate(arrayLength(ass2_1),arrayLength(ass2_1));
+        level1 := assignmentsArrayExpand(level,ne_1,arrayLength(level),-1);
       then
         (unmatched1,rowmarks1,collummarks1,level1,rlevel1,nv_1,ne_1,ass1_1,ass2_1,syst,shared,arg);
     case (_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
-      equation
+      algorithm
         singularSystemError(meqns,0,isyst,ishared,ass2,ass1,inArg);
       then
         fail();
@@ -3567,9 +3567,9 @@ algorithm
       list<Integer> ur;
     case ({},_,_,_,_,_,_,_,_,_,_,_) then {};
     case (_,_,_,_,_,_,_,_,_,_,_,_)
-      equation
+      algorithm
         // BFS to assign levels
-        ur = ABMPBFSphase(U,i,0,lim,listLength(U),nv,ne,m,mT,rowmarks,level,ass1,ass2,{},{});
+        ur := ABMPBFSphase(U,i,0,lim,listLength(U),nv,ne,m,mT,rowmarks,level,ass1,ass2,{},{});
       then
         ABMPphase1(U,ur,i,nv,ne,m,mT,rowmarks,level,colptrs,lim,ass1,ass2);
     else
@@ -3607,11 +3607,11 @@ algorithm
       Integer L,r;
     case (_,{},_,_,_,_,_,_,_,_,_,_,_) then U;
     case (_,r::_,_,_,_,_,_,_,_,_,_,_,_)
-      equation
-        L = level[r];
+      algorithm
+        L := level[r];
         ABMPDFS(unmatchedRows,0,L,nv,ne,m,mT,level,colptrs,ass1,ass2,{});
         // remove unmatched collums from U
-        unmatched = HKgetUnmatched(U,ass1,{});
+        unmatched := HKgetUnmatched(U,ass1,{});
       then
         ABMPphase2(unmatched,i,L,nv,ne,m,mT,rowmarks,level,colptrs,lim,ass1,ass2);
     else
@@ -3646,8 +3646,8 @@ algorithm
   matchcontinue (U,i,L,nv,ne,m,mT,rowmarks,level,colptrs,lim,ass1,ass2)
     case ({},_,_,_,_,_,_,_,_,_,_,_,_) then U;
     case (_,_,_,_,_,_,_,_,_,_,_,_,_)
-      equation
-        true = intGt(50*L,listLength(U));
+      algorithm
+        true := intGt(50*L,listLength(U));
       then
        U;
     case (_,_,_,_,_,_,_,_,_,_,_,_,_)
@@ -3690,16 +3690,16 @@ algorithm
       Boolean b;
     case ({},_,_,_,_,_,_,_,_,_,_,_,_,{},_) then unMatched;
     case ({},_,_,_,_,_,_,_,_,_,_,_,_,_,_)
-      equation
-        l = L+2;
-        b = intGt(l,lim) or intGt(50*l,lim1);
+      algorithm
+        l := L+2;
+        b := intGt(l,lim) or intGt(50*l,lim1);
       then
         ABMPBFSphase1(b,nextqueue,i,l,lim,lim1,nv,ne,m,mT,rowmarks,level,ass1,ass2,{},unMatched);
     case (c::rest,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
-      equation
+      algorithm
         // traverse all adiacent rows
-        rows = List.select(m[c], Util.intPositive);
-        (queue1,unmatched) = ABMPBFStraverseRows(rows,i,L,nv,ne,m,mT,rowmarks,level,ass1,ass2,nextqueue,unMatched);
+        rows := List.select(m[c], Util.intPositive);
+        (queue1,unmatched) := ABMPBFStraverseRows(rows,i,L,nv,ne,m,mT,rowmarks,level,ass1,ass2,nextqueue,unMatched);
       then
         ABMPBFSphase(rest,i,L,lim,lim1,nv,ne,m,mT,rowmarks,level,ass1,ass2,queue1,unmatched);
     else
@@ -3771,32 +3771,32 @@ algorithm
       Integer rc,r;
     case ({},_,_,_,_,_,_,_,_,_,_,_,_) then (listReverse(queue),unMatched);
     case (r::rest,_,_,_,_,_,_,_,_,_,_,_,_)
-      equation
+      algorithm
         // row is unvisited
-        false = intEq(rowmarks[r],i);
+        false := intEq(rowmarks[r],i);
         // row is unmatched
-        true = intLt(ass2[r],0);
+        true := intLt(ass2[r],0);
         arrayUpdate(level,r,L);
         arrayUpdate(rowmarks,r,i);
-        (queue1,unmatched) = ABMPBFStraverseRows(rest,i,L,nv,ne,m,mT,rowmarks,level,ass1,ass2,queue,r::unMatched);
+        (queue1,unmatched) := ABMPBFStraverseRows(rest,i,L,nv,ne,m,mT,rowmarks,level,ass1,ass2,queue,r::unMatched);
       then
         (queue1,unmatched);
     case (r::rest,_,_,_,_,_,_,_,_,_,_,_,_)
-      equation
+      algorithm
         // row is unvisited
-        false = intEq(rowmarks[r],i);
+        false := intEq(rowmarks[r],i);
         // row is matched
-        rc = ass2[r];
-        false = intLt(rc,0);
+        rc := ass2[r];
+        false := intLt(rc,0);
         arrayUpdate(rowmarks,r,i);
-        (queue1,unmatched) = ABMPBFStraverseRows(rest,i,L,nv,ne,m,mT,rowmarks,level,ass1,ass2,rc::queue,unMatched);
+        (queue1,unmatched) := ABMPBFStraverseRows(rest,i,L,nv,ne,m,mT,rowmarks,level,ass1,ass2,rc::queue,unMatched);
       then
         (queue1,unmatched);
     case (r::rest,_,_,_,_,_,_,_,_,_,_,_,_)
-      equation
+      algorithm
         // row is visited
-        true = intEq(rowmarks[r],i);
-        (queue1,unmatched) = ABMPBFStraverseRows(rest,i,L,nv,ne,m,mT,rowmarks,level,ass1,ass2,queue,unMatched);
+        true := intEq(rowmarks[r],i);
+        (queue1,unmatched) := ABMPBFStraverseRows(rest,i,L,nv,ne,m,mT,rowmarks,level,ass1,ass2,queue,unMatched);
       then
         (queue1,unmatched);
     else
@@ -3831,15 +3831,15 @@ algorithm
        Boolean b;
     case ({},_,_,_,_,_,_,_,_,_,_,_) then ();
     case (_,_,_,_,_,_,_,_,_,_,_,_)
-      equation
-        false = intLt(i,ne);
+      algorithm
+        false := intLt(i,ne);
       then ();
     case (r::rest,_,_,_,_,_,_,_,_,_,_,_)
-      equation
+      algorithm
         // search augmenting paths
         arrayUpdate(colptrs,r,0);
-        (i_1,b) = ABMPDFSphase({r},i,r,nv,ne,m,mT,level,colptrs,ass1,ass2);
-        unmatched = List.consOnTrue(not b, r, unMatched);
+        (i_1,b) := ABMPDFSphase({r},i,r,nv,ne,m,mT,level,colptrs,ass1,ass2);
+        unmatched := List.consOnTrue(not b, r, unMatched);
         ABMPDFS1(b,r,rest,unmatched,i_1,L,nv,ne,m,mT,level,colptrs,ass1,ass2);
       then
         ();
@@ -3876,47 +3876,47 @@ algorithm
        Integer r1,r2,l;
     case (_,_,{},_,_,_,_,_,_,_,_,_,_,_) then ();
     case (true,_,_,_,_,_,_,_,_,_,_,_,_,_)
-      equation
-        true = intGt(50*L,listLength(unmatchedRows)+listLength(unMatched));
+      algorithm
+        true := intGt(50*L,listLength(unmatchedRows)+listLength(unMatched));
       then ();
     case (true,_,_,{},_,_,_,_,_,_,_,_,_,_)
-      equation
-        false = intGt(50*L,listLength(unmatchedRows)+listLength(unMatched));
+      algorithm
+        false := intGt(50*L,listLength(unmatchedRows)+listLength(unMatched));
         ABMPDFS(unmatchedRows,i,L,nv,ne,m,mT,level,colptrs,ass1,ass2,{});
       then ();
     case (true,_,r1::_,r2::{},_,_,_,_,_,_,_,_,_,_)
-      equation
-        false = intGt(50*L,listLength(unmatchedRows)+listLength(unMatched));
-        false = intEq(L,level[r1]);
-        l = level[r2];
+      algorithm
+        false := intGt(50*L,listLength(unmatchedRows)+listLength(unMatched));
+        false := intEq(L,level[r1]);
+        l := level[r2];
         ABMPDFS(r2::unmatchedRows,i,l,nv,ne,m,mT,level,colptrs,ass1,ass2,{});
       then ();
     case (true,_,r1::_,_,_,_,_,_,_,_,_,_,_,_)
-      equation
-        false = intGt(50*L,listLength(unmatchedRows)+listLength(unMatched));
-        false = intEq(L,level[r1]);
-        (r2::unmatched) = listReverse(unMatched);
-        l = level[r2];
-        unmatched = listAppend(unmatched,r2::unmatchedRows) annotation(__OpenModelica_DisableListAppendWarning=true);
+      algorithm
+        false := intGt(50*L,listLength(unmatchedRows)+listLength(unMatched));
+        false := intEq(L,level[r1]);
+        (r2::unmatched) := listReverse(unMatched);
+        l := level[r2];
+        unmatched := listAppend(unmatched,r2::unmatchedRows) annotation(__OpenModelica_DisableListAppendWarning=true);
         ABMPDFS(unmatchedRows,i,l,nv,ne,m,mT,level,colptrs,ass1,ass2,{});
       then ();
     case (_,_,r1::_,{},_,_,_,_,_,_,_,_,_,_)
-      equation
-        false = intEq(L,level[r1]);
-        l = level[r];
+      algorithm
+        false := intEq(L,level[r1]);
+        l := level[r];
         ABMPDFS(unmatchedRows,i,l,nv,ne,m,mT,level,colptrs,ass1,ass2,{});
       then ();
     case (_,_,r1::_,_,_,_,_,_,_,_,_,_,_,_)
-      equation
-        false = intEq(L,level[r1]);
-        (r2::unmatched) = listReverse(unMatched);
-        l = level[r2];
-        unmatched = listAppend(r2::unmatched,unmatchedRows);
+      algorithm
+        false := intEq(L,level[r1]);
+        (r2::unmatched) := listReverse(unMatched);
+        l := level[r2];
+        unmatched := listAppend(r2::unmatched,unmatchedRows);
         ABMPDFS(unmatched,i,l,nv,ne,m,mT,level,colptrs,ass1,ass2,{});
       then ();
     case (_,_,r1::_,_,_,_,_,_,_,_,_,_,_,_)
-      equation
-        true = intEq(L,level[r1]);
+      algorithm
+        true := intEq(L,level[r1]);
         ABMPDFS(unmatchedRows,i,L,nv,ne,m,mT,level,colptrs,ass1,ass2,unMatched);
       then ();
     else
@@ -3952,12 +3952,12 @@ algorithm
       Boolean b;
     case ({},_,_,_,_,_,_,_,_,_,_) then (i,false);
     case (_,_,_,_,_,_,_,_,_,_,_)
-      equation
+      algorithm
         // traverse all adiacent rows
-        collums = List.select(mT[r], Util.intPositive);
-        collums = List.stripN(collums,colptrs[r]);
-        desL = level[r]-2;
-        (i_1,b) = ABMPDFStraverseCollums(collums,1,stack,r,i,desL,nv,ne,m,mT,level,colptrs,ass1,ass2);
+        collums := List.select(mT[r], Util.intPositive);
+        collums := List.stripN(collums,colptrs[r]);
+        desL := level[r]-2;
+        (i_1,b) := ABMPDFStraverseCollums(collums,1,stack,r,i,desL,nv,ne,m,mT,level,colptrs,ass1,ass2);
       then
         (i_1,b);
     else
@@ -3995,34 +3995,34 @@ algorithm
       Integer rc,c,i_1;
       Boolean b;
     case ({},_,_,_,_,_,_,_,_,_,_,_,_,_)
-      equation
+      algorithm
         arrayUpdate(level,r,level[r]+2);
         arrayUpdate(colptrs,r,0);
       then
         (i+1,false);
     case (c::_,_,_,_,_,_,_,_,_,_,_,_,_,_)
-      equation
+      algorithm
         // collum is unmatched
-        true = intLt(ass1[c],0);
+        true := intLt(ass1[c],0);
         arrayUpdate(colptrs,r,counter);
         HKDFSreasign(stack,c,ass1,ass2);
       then
         (i,true);
     case (c::rest,_,_,_,_,_,_,_,_,_,_,_,_,_)
-      equation
+      algorithm
         // collum is unvisited
-        true = intEq(level[c],desL);
+        true := intEq(level[c],desL);
         // collum is matched
-        rc = ass1[c];
-        true = intGt(rc,0);
+        rc := ass1[c];
+        true := intGt(rc,0);
         arrayUpdate(colptrs,r,counter);
-        (i_1,b) = ABMPDFSphase(rc::stack,i,rc,nv,ne,m,mT,level,colptrs,ass1,ass2);
-        (i_1,b) = ABMPDFStraverseCollums1(b,counter+1,rest,stack,r,i_1,desL,nv,ne,m,mT,level,colptrs,ass1,ass2);
+        (i_1,b) := ABMPDFSphase(rc::stack,i,rc,nv,ne,m,mT,level,colptrs,ass1,ass2);
+        (i_1,b) := ABMPDFStraverseCollums1(b,counter+1,rest,stack,r,i_1,desL,nv,ne,m,mT,level,colptrs,ass1,ass2);
       then
         (i_1,b);
     case (_::rest,_,_,_,_,_,_,_,_,_,_,_,_,_)
-      equation
-        (i_1,b) = ABMPDFStraverseCollums(rest,counter+1,stack,r,i,desL,nv,ne,m,mT,level,colptrs,ass1,ass2);
+      algorithm
+        (i_1,b) := ABMPDFStraverseCollums(rest,counter+1,stack,r,i,desL,nv,ne,m,mT,level,colptrs,ass1,ass2);
       then
         (i_1,b);
     else
@@ -4097,29 +4097,29 @@ algorithm
       list<Integer> unmatched;
 
     case (BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt)),_,_,_,_,_)
-      equation
-        neqns = BackendDAEUtil.systemSize(isyst);
-        nvars = BackendVariable.daenumVariables(isyst);
-        true = intGt(nvars,0);
-        true = intGt(neqns,0);
-        (vec1,vec2) = getAssignment(clearMatching,nvars,neqns,isyst);
-        l_label = arrayCreate(neqns,-1);
-        r_label = arrayCreate(nvars,-1);
-        unmatched = cheapmatchingalgorithm(nvars,neqns,m,mt,vec1,vec2,true);
-        (vec1,vec2,syst,shared,arg) = PR_FIFO_FAIR1(unmatched,l_label,r_label,isyst,ishared,nvars,neqns,vec1,vec2,inMatchingOptions,sssHandler,inArg);
-        syst = BackendDAEUtil.setEqSystMatching(syst,BackendDAE.MATCHING(vec2,vec1,{}));
+      algorithm
+        neqns := BackendDAEUtil.systemSize(isyst);
+        nvars := BackendVariable.daenumVariables(isyst);
+        true := intGt(nvars,0);
+        true := intGt(neqns,0);
+        (vec1,vec2) := getAssignment(clearMatching,nvars,neqns,isyst);
+        l_label := arrayCreate(neqns,-1);
+        r_label := arrayCreate(nvars,-1);
+        unmatched := cheapmatchingalgorithm(nvars,neqns,m,mt,vec1,vec2,true);
+        (vec1,vec2,syst,shared,arg) := PR_FIFO_FAIR1(unmatched,l_label,r_label,isyst,ishared,nvars,neqns,vec1,vec2,inMatchingOptions,sssHandler,inArg);
+        syst := BackendDAEUtil.setEqSystMatching(syst,BackendDAE.MATCHING(vec2,vec1,{}));
       then
         (syst,shared,arg);
     // fail case if system is empty
     case (_,_,_,_,_,_)
-      equation
-        neqns = BackendDAEUtil.systemSize(isyst);
-        nvars = BackendVariable.daenumVariables(isyst);
-        false = intGt(nvars,0);
-        false = intGt(neqns,0);
-        vec1 = listArray({});
-        vec2 = listArray({});
-        syst = BackendDAEUtil.setEqSystMatching(isyst,BackendDAE.MATCHING(vec2,vec1,{}));
+      algorithm
+        neqns := BackendDAEUtil.systemSize(isyst);
+        nvars := BackendVariable.daenumVariables(isyst);
+        false := intGt(nvars,0);
+        false := intGt(neqns,0);
+        vec1 := listArray({});
+        vec2 := listArray({});
+        syst := BackendDAEUtil.setEqSystMatching(isyst,BackendDAE.MATCHING(vec2,vec1,{}));
       then
         (syst,ishared,inArg);
     else
@@ -4172,25 +4172,25 @@ algorithm
       then
         (ass1,ass2,isyst,ishared,inArg);
     case (_,_,_,syst as BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt)),_,_,_,_,_,_,_,_)
-      equation
+      algorithm
         PR_Global_Relabel(l_label,r_label,nv,ne,m,mt,ass1,ass2);
         PR_FIFO_FAIRphase(0,unmatched,nv+ne,-1,nv,ne,m,mt,l_label,r_label,ass1,ass2,{});
-        unmatched1 = getUnassigned(ne, ass1, {});
-        meqns = getEqnsforIndexReduction(unmatched1,ne,m,mt,ass1,ass2,inArg);
-        (unmatched1,l_label1,r_label1,nv_1,ne_1,ass1_1,ass2_1,syst,shared,arg) = PR_FIFO_FAIR2(meqns,unmatched1,{},l_label,r_label,syst,ishared,nv,ne,ass1,ass2,inMatchingOptions,sssHandler,inArg);
-        (ass1_2,ass2_2,syst,shared,arg1) = PR_FIFO_FAIR1(unmatched1,l_label1,r_label1,syst,shared,nv_1,ne_1,ass1_1,ass2_1,inMatchingOptions,sssHandler,arg);
+        unmatched1 := getUnassigned(ne, ass1, {});
+        meqns := getEqnsforIndexReduction(unmatched1,ne,m,mt,ass1,ass2,inArg);
+        (unmatched1,l_label1,r_label1,nv_1,ne_1,ass1_1,ass2_1,syst,shared,arg) := PR_FIFO_FAIR2(meqns,unmatched1,{},l_label,r_label,syst,ishared,nv,ne,ass1,ass2,inMatchingOptions,sssHandler,inArg);
+        (ass1_2,ass2_2,syst,shared,arg1) := PR_FIFO_FAIR1(unmatched1,l_label1,r_label1,syst,shared,nv_1,ne_1,ass1_1,ass2_1,inMatchingOptions,sssHandler,arg);
       then
         (ass1_2,ass2_2,syst,shared,arg1);
     case (_,_,_,_,_,_,_,_,_,_,_,(_,_,_,mapIncRowEqn,_))
-      equation
+      algorithm
         // get from scalar eqns indexes the indexes in the equation array
-        unmatched1 = List.map1r(unmatched,arrayGet,mapIncRowEqn);
-        unmatched1 = List.uniqueIntN(unmatched1,arrayLength(mapIncRowEqn));
-        eqn_str = BackendDump.dumpMarkedEqns(isyst, unmatched1);
-        unmatched1 = getUnassigned(nv, ass2, {});
-        var_str = BackendDump.dumpMarkedVars(isyst, unmatched1);
-        source = BackendEquation.markedEquationSource(isyst, listHead(unmatched1));
-        info = ElementSource.getElementSourceFileInfo(source);
+        unmatched1 := List.map1r(unmatched,arrayGet,mapIncRowEqn);
+        unmatched1 := List.uniqueIntN(unmatched1,arrayLength(mapIncRowEqn));
+        eqn_str := BackendDump.dumpMarkedEqns(isyst, unmatched1);
+        unmatched1 := getUnassigned(nv, ass2, {});
+        var_str := BackendDump.dumpMarkedVars(isyst, unmatched1);
+        source := BackendEquation.markedEquationSource(isyst, listHead(unmatched1));
+        info := ElementSource.getElementSourceFileInfo(source);
         Error.addSourceMessage(Error.STRUCT_SINGULAR_SYSTEM, {eqn_str,var_str}, info);
       then
         fail();
@@ -4239,18 +4239,18 @@ algorithm
       then
         (unmatched,l_label,r_label,nv,ne,ass1,ass2,isyst,ishared,inArg);
     case (_,_,_,_,_,_,_,_,_,_,_,(BackendDAE.INDEX_REDUCTION(),_),_,_)
-      equation
-        (unmatched1,_,syst,shared,ass2_1,ass1_1,arg) = sssHandler(meqns,0,isyst,ishared,ass2,ass1,inArg);
-        ne_1 = BackendDAEUtil.systemSize(syst);
-        nv_1 = BackendVariable.daenumVariables(syst);
-        ass1_1 = assignmentsArrayExpand(ass1_1,ne_1,arrayLength(ass1_1),-1);
-        ass2_1 = assignmentsArrayExpand(ass2_1,nv_1,arrayLength(ass2_1),-1);
-        l_label1 = assignmentsArrayExpand(l_label,ne_1,arrayLength(l_label),-1);
-        r_label1 = assignmentsArrayExpand(r_label,nv_1,arrayLength(r_label),-1);
+      algorithm
+        (unmatched1,_,syst,shared,ass2_1,ass1_1,arg) := sssHandler(meqns,0,isyst,ishared,ass2,ass1,inArg);
+        ne_1 := BackendDAEUtil.systemSize(syst);
+        nv_1 := BackendVariable.daenumVariables(syst);
+        ass1_1 := assignmentsArrayExpand(ass1_1,ne_1,arrayLength(ass1_1),-1);
+        ass2_1 := assignmentsArrayExpand(ass2_1,nv_1,arrayLength(ass2_1),-1);
+        l_label1 := assignmentsArrayExpand(l_label,ne_1,arrayLength(l_label),-1);
+        r_label1 := assignmentsArrayExpand(r_label,nv_1,arrayLength(r_label),-1);
       then
         (unmatched1,l_label1,r_label1,nv_1,ne_1,ass1_1,ass2_1,syst,shared,arg);
     case (_,_,_,_,_,_,_,_,_,_,_,_,_,_)
-      equation
+      algorithm
         singularSystemError(meqns,0,isyst,ishared,ass1,ass2,inArg);
       then
         fail();
@@ -4289,8 +4289,8 @@ protected function PR_Global_Relabel_init_l_label
 algorithm
   _ := matchcontinue(i,ne,max,l_label)
     case(_,_,_,_)
-      equation
-        true = intGt(i,ne);
+      algorithm
+        true := intGt(i,ne);
       then
         ();
     else
@@ -4315,14 +4315,14 @@ protected function PR_Global_Relabel_init_r_label
 algorithm
   outQueue := matchcontinue(i,nv,max,r_label,ass2,inQueue)
     case(_,_,_,_,_,_)
-      equation
-        true = intGt(i,nv);
+      algorithm
+        true := intGt(i,nv);
       then
         listReverse(inQueue);
     case(_,_,_,_,_,_)
-      equation
-        false = intGt(i,nv);
-        false = intGt(ass2[i],0);
+      algorithm
+        false := intGt(i,nv);
+        false := intGt(ass2[i],0);
         arrayUpdate(r_label,i,0);
       then
         PR_Global_Relabel_init_r_label(i+1,nv,max,r_label,ass2,i::inQueue);
@@ -4356,14 +4356,14 @@ algorithm
       Integer r;
     case({},_,_,_,_,_,_,_,_,_,{}) then ();
     case({},_,_,_,_,_,_,_,_,_,_)
-      equation
+      algorithm
         PR_Global_Relabel1(listReverse(nextqueue),l_label,r_label,max,nv,ne,m,mT,ass1,ass2,{});
       then
         ();
     case(r::rest,_,_,_,_,_,_,_,_,_,_)
-      equation
-        collums = List.select(mT[r], Util.intPositive);
-        queue1 = PR_Global_Relabel_traverseCollums(collums,max,r,l_label,r_label,nv,ne,m,mT,ass1,ass2,nextqueue);
+      algorithm
+        collums := List.select(mT[r], Util.intPositive);
+        queue1 := PR_Global_Relabel_traverseCollums(collums,max,r,l_label,r_label,nv,ne,m,mT,ass1,ass2,nextqueue);
         PR_Global_Relabel1(rest,l_label,r_label,max,nv,ne,m,mT,ass1,ass2,queue1);
       then
         ();
@@ -4394,12 +4394,12 @@ algorithm
       Integer rc,c;
     case ({},_,_,_,_,_,_,_,_,_,_,_) then nextqueue;
     case (c::rest,_,_,_,_,_,_,_,_,_,_,_)
-      equation
-        true = intEq(l_label[c],max);
+      algorithm
+        true := intEq(l_label[c],max);
         arrayUpdate(l_label,c,r_label[r]+1);
-        rc = ass1[c];
-        true = intGt(rc,-1);
-        true = intEq(r_label[rc] ,max);
+        rc := ass1[c];
+        true := intGt(rc,-1);
+        true := intEq(r_label[rc] ,max);
         arrayUpdate(r_label,rc,l_label[c]+1);
       then
         PR_Global_Relabel_traverseCollums(rest,max,r,l_label,r_label,nv,ne,m,mT,ass1,ass2,rc::nextqueue);
@@ -4438,19 +4438,19 @@ algorithm
       Integer c,min_label,rlcount,minvertex;
     case(_,{},_,_,_,_,_,_,_,_,_,_,{}) then ();
     case(_,{},_,_,_,_,_,_,_,_,_,_,_)
-      equation
+      algorithm
         PR_FIFO_FAIRphase(relabels,nextqueue,max,min_vertex,nv,ne,m,mT,l_label,r_label,ass1,ass2,{});
       then ();
     case(_,_,_,_,_,_,_,_,_,_,_,_,_)
-      equation
-        true = intEq(relabels,max);
+      algorithm
+        true := intEq(relabels,max);
         PR_Global_Relabel(l_label,r_label,nv,ne,m,mT,ass1,ass2);
         PR_FIFO_FAIRphase(0,U,max,min_vertex,nv,ne,m,mT,l_label,r_label,ass1,ass2,nextqueue);
       then ();
     case(_,c::rest,_,_,_,_,_,_,_,_,_,_,_)
-      equation
-        (rlcount,min_label,minvertex) = PR_FIFO_FAIRphase1(intLt(l_label[c],max),relabels+1,c,min_vertex,max,max,nv,ne,m,mT,l_label,r_label,ass1,ass2);
-        queue = PR_FIFO_FAIRrelabel(c,minvertex,min_label,max,nv,ne,m,mT,l_label,r_label,ass1,ass2,nextqueue);
+      algorithm
+        (rlcount,min_label,minvertex) := PR_FIFO_FAIRphase1(intLt(l_label[c],max),relabels+1,c,min_vertex,max,max,nv,ne,m,mT,l_label,r_label,ass1,ass2);
+        queue := PR_FIFO_FAIRrelabel(c,minvertex,min_label,max,nv,ne,m,mT,l_label,r_label,ass1,ass2,nextqueue);
         PR_FIFO_FAIRphase(rlcount,rest,max,minvertex,nv,ne,m,mT,l_label,r_label,ass1,ass2,queue);
       then ();
   end matchcontinue;
@@ -4482,9 +4482,9 @@ algorithm
     local
       Integer rel,minlab,minvert,tmp;
     case(true,_,_,_,_,_,_,_,_,_,_,_,_,_)
-      equation
-        tmp = intMod(l_label[max_vertex],4);
-        (rel,minlab,minvert) = PR_FIFO_FAIRphase2(intEq(tmp,1),relabels,max_vertex,min_vertec,min_label,max,nv,ne,m,mT,l_label,r_label,ass1,ass2);
+      algorithm
+        tmp := intMod(l_label[max_vertex],4);
+        (rel,minlab,minvert) := PR_FIFO_FAIRphase2(intEq(tmp,1),relabels,max_vertex,min_vertec,min_label,max,nv,ne,m,mT,l_label,r_label,ass1,ass2);
       then
         (rel,minlab,minvert);
     else
@@ -4520,9 +4520,9 @@ algorithm
       list<Integer> rows;
       Integer rel,minlab,minvert;
     case(true,_,_,_,_,_,_,_,_,_,_,_,_,_)
-      equation
-        rows = List.select(m[max_vertex], Util.intPositive);
-        (rel,minlab,minvert) = PR_FIFO_FAIRphase_traverseRows(rows,relabels,max_vertex,min_vertec,min_label,max,nv,ne,m,mT,l_label,r_label,ass1,ass2);
+      algorithm
+        rows := List.select(m[max_vertex], Util.intPositive);
+        (rel,minlab,minvert) := PR_FIFO_FAIRphase_traverseRows(rows,relabels,max_vertex,min_vertec,min_label,max,nv,ne,m,mT,l_label,r_label,ass1,ass2);
       then
         (rel,minlab,minvert);
     else
@@ -4563,25 +4563,25 @@ algorithm
       Integer r,minlabel,minvertex,rel;
     case ({},_,_,_,_,_,_,_,_,_,_,_,_,_) then (relabels,min_label,min_vertex);
     case (r::_,_,_,_,_,_,_,_,_,_,_,_,_,_)
-      equation
-        true = intLt(r_label[r],min_label);
-        minlabel = r_label[r];
-        minvertex = r;
-        true = intEq(r_label[minvertex],l_label[max_vertex]-1);
+      algorithm
+        true := intLt(r_label[r],min_label);
+        minlabel := r_label[r];
+        minvertex := r;
+        true := intEq(r_label[minvertex],l_label[max_vertex]-1);
       then
         (relabels-1,minlabel,minvertex);
     case (r::rest,_,_,_,_,_,_,_,_,_,_,_,_,_)
-      equation
-        true = intLt(r_label[r],min_label);
-        minlabel = r_label[r];
-        minvertex = r;
-        false = intEq(r_label[minvertex],l_label[max_vertex]-1);
-        (rel,minlabel,minvertex) = PR_FIFO_FAIRphase_traverseRows(rest,relabels,max_vertex,minvertex,minlabel,max,nv,ne,m,mT,l_label,r_label,ass1,ass2);
+      algorithm
+        true := intLt(r_label[r],min_label);
+        minlabel := r_label[r];
+        minvertex := r;
+        false := intEq(r_label[minvertex],l_label[max_vertex]-1);
+        (rel,minlabel,minvertex) := PR_FIFO_FAIRphase_traverseRows(rest,relabels,max_vertex,minvertex,minlabel,max,nv,ne,m,mT,l_label,r_label,ass1,ass2);
       then
         (rel,minlabel,minvertex);
     case (_::rest,_,_,_,_,_,_,_,_,_,_,_,_,_)
-      equation
-        (rel,minlabel,minvertex) = PR_FIFO_FAIRphase_traverseRows(rest,relabels,max_vertex,min_vertex,min_label,max,nv,ne,m,mT,l_label,r_label,ass1,ass2);
+      algorithm
+        (rel,minlabel,minvertex) := PR_FIFO_FAIRphase_traverseRows(rest,relabels,max_vertex,min_vertex,min_label,max,nv,ne,m,mT,l_label,r_label,ass1,ass2);
       then
         (rel,minlabel,minvertex);
     else
@@ -4614,19 +4614,19 @@ algorithm
     local
       Integer next_vertex;
     case(_,_,_,_,_,_,_,_,_,_,_,_,_)
-      equation
-        true = intLt(min_label,max);
-        true = intLt(ass2[min_vertex],0);
+      algorithm
+        true := intLt(min_label,max);
+        true := intLt(ass2[min_vertex],0);
         arrayUpdate(ass2,min_vertex,max_vertex);
         arrayUpdate(ass1,max_vertex,min_vertex);
         arrayUpdate(r_label,min_vertex,min_label+2);
       then
         inQueue;
     case(_,_,_,_,_,_,_,_,_,_,_,_,_)
-      equation
-        true = intLt(min_label,max);
-        false = intLt(ass2[min_vertex],0);
-        next_vertex = ass2[min_vertex];
+      algorithm
+        true := intLt(min_label,max);
+        false := intLt(ass2[min_vertex],0);
+        next_vertex := ass2[min_vertex];
         arrayUpdate(ass2,min_vertex,max_vertex);
         arrayUpdate(ass1,max_vertex,min_vertex);
         arrayUpdate(ass1,next_vertex,-1);
@@ -4699,14 +4699,14 @@ algorithm
     local
       list<Integer> rows;
     case (_,_,_,_,_,_,_,_)
-      equation
-        true=intGt(i,ne);
+      algorithm
+        true:=intGt(i,ne);
       then
         inUnMatched;
     case (_,_,_,_,_,_,_,_)
-      equation
+      algorithm
         // search cheap matching
-        rows = List.select(m[i], Util.intPositive);
+        rows := List.select(m[i], Util.intPositive);
         cheapmatching1(rows,i,ass1,ass2);
       then
         cheapmatching(i+1,nv,ne,m,mT,ass1,ass2,inUnMatched);
@@ -4736,15 +4736,15 @@ algorithm
       list<Integer> rest;
       Integer r;
     case (r::_,_,_,_)
-      equation
+      algorithm
         // row is unmatched -> return
-        true = intLt(ass2[r],0);
+        true := intLt(ass2[r],0);
         arrayUpdate(ass1,c,r);
         arrayUpdate(ass2,r,c);
       then
         ();
     case (_::rest,_,_,_)
-      equation
+      algorithm
         cheapmatching1(rest,c,ass1,ass2);
       then
         ();
@@ -4796,16 +4796,16 @@ algorithm
       Integer c;
       Boolean b;
       case (_,_,_,_,_,_,_,_,_,_,_)
-        equation
-          false = intLe(i,ne);
+        algorithm
+          false := intLe(i,ne);
         then
           ();
       case (_,_,_,_,_,_,_,_,_,_,_)
-        equation
+        algorithm
           ks_rand_match(onerows,onecolums,row_degrees,col_degrees,mT,m,ass2,ass1);
-          c = randarr[i];
-          b = intLt(ass1[c],0) and intGt(col_degrees[c],0);
-          (onecolums1,onerows1) = ks_rand_cheapmatching2(b,c,col_degrees,row_degrees,randarr,m,mT,ass1,ass2);
+          c := randarr[i];
+          b := intLt(ass1[c],0) and intGt(col_degrees[c],0);
+          (onecolums1,onerows1) := ks_rand_cheapmatching2(b,c,col_degrees,row_degrees,randarr,m,mT,ass1,ass2);
           ks_rand_cheapmatching1(i+1,ne,onecolums1,onerows1,col_degrees,row_degrees,randarr,m,mT,ass1,ass2);
         then
           ();
@@ -4832,12 +4832,12 @@ algorithm
       list<Integer> clst,rlst,lst;
       Integer e_id,r;
     case (true,_,_,_,_,_,_,_,_)
-      equation
-        e_id = realInt(realMod(System.realRand(),intReal(col_degrees[c])));
-        lst = List.select(m[c], Util.intPositive);
-        (rlst,r) = ks_rand_cheapmatching3(e_id,lst,row_degrees,c,ass1,ass2,{},0);
-        lst = List.select(mT[r], Util.intPositive);
-        clst = ks_rand_cheapmatching4(lst,row_degrees[r],col_degrees,ass1,{});
+      algorithm
+        e_id := realInt(realMod(System.realRand(),intReal(col_degrees[c])));
+        lst := List.select(m[c], Util.intPositive);
+        (rlst,r) := ks_rand_cheapmatching3(e_id,lst,row_degrees,c,ass1,ass2,{},0);
+        lst := List.select(mT[r], Util.intPositive);
+        clst := ks_rand_cheapmatching4(lst,row_degrees[r],col_degrees,ass1,{});
       then
         (clst,rlst);
     else
@@ -4865,25 +4865,25 @@ algorithm
         Integer r,r_1;
       case (_,{},_,_,_,_,_,_) then (onerows,inR);
       case (_,r::rest,_,_,_,_,_,_)
-        equation
-          true = intLt(ass2[r],0);
-          true = intEq(e_id,0);
+        algorithm
+          true := intLt(ass2[r],0);
+          true := intEq(e_id,0);
           arrayUpdate(ass1,c,r);
           arrayUpdate(ass2,r,c);
-          stack = ks_rand_match_degree(rest,row_degrees,ass2,onerows);
+          stack := ks_rand_match_degree(rest,row_degrees,ass2,onerows);
         then
           (stack,r);
       case (_,r::rest,_,_,_,_,_,_)
-        equation
-           true = intLt(ass2[r],0);
+        algorithm
+           true := intLt(ass2[r],0);
           arrayUpdate(row_degrees,r,row_degrees[r]-1);
-          stack = List.consOnTrue(intEq(row_degrees[r],1),r,onerows);
-         (statck1,r_1) = ks_rand_cheapmatching3(e_id-1,rest,row_degrees,c,ass1,ass2,stack,r);
+          stack := List.consOnTrue(intEq(row_degrees[r],1),r,onerows);
+         (statck1,r_1) := ks_rand_cheapmatching3(e_id-1,rest,row_degrees,c,ass1,ass2,stack,r);
         then
           (statck1,r_1);
       case (_,r::rest,_,_,_,_,_,_)
-        equation
-         (statck1,r_1) = ks_rand_cheapmatching3(e_id-1,rest,row_degrees,c,ass1,ass2,onerows,r);
+        algorithm
+         (statck1,r_1) := ks_rand_cheapmatching3(e_id-1,rest,row_degrees,c,ass1,ass2,onerows,r);
         then
           (statck1,r_1);
     end matchcontinue;
@@ -4905,15 +4905,15 @@ algorithm
         Integer c;
       case ({},_,_,_,_) then inStack;
       case (_,_,_,_,_)
-        equation
-          false = intGt(count,0);
+        algorithm
+          false := intGt(count,0);
         then
           inStack;
       case (c::rest,_,_,_,_)
-        equation
-          true = intLt(ass1[c],0);
+        algorithm
+          true := intLt(ass1[c],0);
           arrayUpdate(col_degrees,c,col_degrees[c]-1);
-          stack = List.consOnTrue(intEq(col_degrees[c],1),c,inStack);
+          stack := List.consOnTrue(intEq(col_degrees[c],1),c,inStack);
         then
           ks_rand_cheapmatching4(rest,count-1,col_degrees,ass1,stack);
       case (_::rest,_,_,_,_)
@@ -4989,44 +4989,44 @@ algorithm
       list<Integer> rest,lst,stack;
     case ({},{},_,_,_,_,_,_) then ();
     case (e::rest,{},_,_,_,_,_,_)
-      equation
-        true = intEq(degrees1[e],1);
-        true = intLt(ass1[e],0);
-        lst = List.select(m1[e], Util.intPositive);
-        stack = ks_rand_match1(e,lst,rest,degrees1,degrees2,m2,ass1,ass2);
+      algorithm
+        true := intEq(degrees1[e],1);
+        true := intLt(ass1[e],0);
+        lst := List.select(m1[e], Util.intPositive);
+        stack := ks_rand_match1(e,lst,rest,degrees1,degrees2,m2,ass1,ass2);
         ks_rand_match(stack,{},degrees1,degrees2,m1,m2,ass1,ass2);
       then
         ();
     case (_::rest,{},_,_,_,_,_,_)
-      equation
+      algorithm
         ks_rand_match(rest,{},degrees1,degrees2,m1,m2,ass1,ass2);
       then
         ();
     case ({},e::rest,_,_,_,_,_,_)
-      equation
-        true = intEq(degrees2[e],1);
-        true = intLt(ass2[e],0);
-        lst = List.select(m2[e], Util.intPositive);
-        stack = ks_rand_match1(e,lst,rest,degrees2,degrees1,m1,ass2,ass1);
+      algorithm
+        true := intEq(degrees2[e],1);
+        true := intLt(ass2[e],0);
+        lst := List.select(m2[e], Util.intPositive);
+        stack := ks_rand_match1(e,lst,rest,degrees2,degrees1,m1,ass2,ass1);
         ks_rand_match(stack,{},degrees2,degrees1,m2,m1,ass2,ass1);
       then
         ();
     case ({},_::rest,_,_,_,_,_,_)
-      equation
+      algorithm
         ks_rand_match(rest,{},degrees2,degrees1,m2,m1,ass2,ass1);
       then
         ();
     case (e::rest,_,_,_,_,_,_,_)
-      equation
-        true = intEq(degrees1[e],1);
-        true = intLt(ass1[e],0);
-        lst = List.select(m1[e], Util.intPositive);
-        stack = ks_rand_match1(e,lst,rest,degrees1,degrees2,m2,ass1,ass2);
+      algorithm
+        true := intEq(degrees1[e],1);
+        true := intLt(ass1[e],0);
+        lst := List.select(m1[e], Util.intPositive);
+        stack := ks_rand_match1(e,lst,rest,degrees1,degrees2,m2,ass1,ass2);
         ks_rand_match(stack2,stack,degrees2,degrees1,m2,m1,ass2,ass1);
       then
         ();
     case (_::rest,_,_,_,_,_,_,_)
-      equation
+      algorithm
         ks_rand_match(stack2,rest,degrees2,degrees1,m2,m1,ass2,ass1);
       then
         ();
@@ -5052,9 +5052,9 @@ algorithm
         Integer e;
       case (_,{},_,_,_,_,_,_) then stack;
       case (_,e::_,_,_,_,_,_,_)
-        equation
-          true = intLt(ass2[e],0);
-          lst = List.select(adjacency[e], Util.intPositive);
+        algorithm
+          true := intLt(ass2[e],0);
+          lst := List.select(adjacency[e], Util.intPositive);
           arrayUpdate(ass1,i,e);
           arrayUpdate(ass2,e,i);
         then
@@ -5080,10 +5080,10 @@ algorithm
         Integer e;
       case ({},_,_,_) then inStack;
       case (e::rest,_,_,_)
-        equation
-          true = intLt(ass[e],0);
+        algorithm
+          true := intLt(ass[e],0);
           arrayUpdate(degrees,e,degrees[e]-1);
-          stack = List.consOnTrue(intEq(degrees[e],1),e,inStack);
+          stack := List.consOnTrue(intEq(degrees[e],1),e,inStack);
         then
           ks_rand_match_degree(rest,degrees,ass,stack);
       case (_::rest,_,_,_)
@@ -5119,27 +5119,27 @@ algorithm
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
     case (_,_,_,_,_,_)
-      equation
-        neqns = BackendDAEUtil.systemSize(isyst);
-        nvars = BackendVariable.daenumVariables(isyst);
-        true = intGt(nvars,0);
-        true = intGt(neqns,0);
-        (vec1,vec2) = getAssignment(clearMatching,nvars,neqns,isyst);
-        true = if not clearMatching then BackendDAEEXT.setAssignment(neqns, nvars, vec1, vec2) else true;
-        (vec1,vec2,syst,shared,arg) = matchingExternal({},false,1,Config.getCheapMatchingAlgorithm(),if clearMatching then 1 else 0,isyst,ishared,nvars, neqns, vec1, vec2, inMatchingOptions, sssHandler, inArg);
-        syst = BackendDAEUtil.setEqSystMatching(syst,BackendDAE.MATCHING(vec2,vec1,{}));
+      algorithm
+        neqns := BackendDAEUtil.systemSize(isyst);
+        nvars := BackendVariable.daenumVariables(isyst);
+        true := intGt(nvars,0);
+        true := intGt(neqns,0);
+        (vec1,vec2) := getAssignment(clearMatching,nvars,neqns,isyst);
+        true := if not clearMatching then BackendDAEEXT.setAssignment(neqns, nvars, vec1, vec2) else true;
+        (vec1,vec2,syst,shared,arg) := matchingExternal({},false,1,Config.getCheapMatchingAlgorithm(),if clearMatching then 1 else 0,isyst,ishared,nvars, neqns, vec1, vec2, inMatchingOptions, sssHandler, inArg);
+        syst := BackendDAEUtil.setEqSystMatching(syst,BackendDAE.MATCHING(vec2,vec1,{}));
       then
         (syst,shared,arg);
     // fail case if system is empty
     case (_,_,_,_,_,_)
-      equation
-        neqns = BackendDAEUtil.systemSize(isyst);
-        nvars = BackendVariable.daenumVariables(isyst);
-        false = intGt(nvars,0);
-        false = intGt(neqns,0);
-        vec1 = listArray({});
-        vec2 = listArray({});
-        syst = BackendDAEUtil.setEqSystMatching(isyst,BackendDAE.MATCHING(vec2,vec1,{}));
+      algorithm
+        neqns := BackendDAEUtil.systemSize(isyst);
+        nvars := BackendVariable.daenumVariables(isyst);
+        false := intGt(nvars,0);
+        false := intGt(neqns,0);
+        vec1 := listArray({});
+        vec2 := listArray({});
+        syst := BackendDAEUtil.setEqSystMatching(isyst,BackendDAE.MATCHING(vec2,vec1,{}));
       then
         (syst,ishared,inArg);
     else
@@ -5173,27 +5173,27 @@ algorithm
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
     case (_,_,_,_,_,_)
-      equation
-        neqns = BackendDAEUtil.systemSize(isyst);
-        nvars = BackendVariable.daenumVariables(isyst);
-        true = intGt(nvars,0);
-        true = intGt(neqns,0);
-        (vec1,vec2) = getAssignment(clearMatching,nvars,neqns,isyst);
-        true = if not clearMatching then BackendDAEEXT.setAssignment(neqns, nvars, vec1, vec2) else true;
-        (vec1,vec2,syst,shared,arg) = matchingExternal({},false,2,Config.getCheapMatchingAlgorithm(),if clearMatching then 1 else 0,isyst,ishared,nvars, neqns, vec1, vec2, inMatchingOptions, sssHandler, inArg);
-        syst = BackendDAEUtil.setEqSystMatching(syst,BackendDAE.MATCHING(vec2,vec1,{}));
+      algorithm
+        neqns := BackendDAEUtil.systemSize(isyst);
+        nvars := BackendVariable.daenumVariables(isyst);
+        true := intGt(nvars,0);
+        true := intGt(neqns,0);
+        (vec1,vec2) := getAssignment(clearMatching,nvars,neqns,isyst);
+        true := if not clearMatching then BackendDAEEXT.setAssignment(neqns, nvars, vec1, vec2) else true;
+        (vec1,vec2,syst,shared,arg) := matchingExternal({},false,2,Config.getCheapMatchingAlgorithm(),if clearMatching then 1 else 0,isyst,ishared,nvars, neqns, vec1, vec2, inMatchingOptions, sssHandler, inArg);
+        syst := BackendDAEUtil.setEqSystMatching(syst,BackendDAE.MATCHING(vec2,vec1,{}));
       then
         (syst,shared,arg);
     // fail case if system is empty
     case (_,_,_,_,_,_)
-      equation
-        neqns = BackendDAEUtil.systemSize(isyst);
-        nvars = BackendVariable.daenumVariables(isyst);
-        false = intGt(nvars,0);
-        false = intGt(neqns,0);
-        vec1 = listArray({});
-        vec2 = listArray({});
-        syst = BackendDAEUtil.setEqSystMatching(isyst,BackendDAE.MATCHING(vec2,vec1,{}));
+      algorithm
+        neqns := BackendDAEUtil.systemSize(isyst);
+        nvars := BackendVariable.daenumVariables(isyst);
+        false := intGt(nvars,0);
+        false := intGt(neqns,0);
+        vec1 := listArray({});
+        vec2 := listArray({});
+        syst := BackendDAEUtil.setEqSystMatching(isyst,BackendDAE.MATCHING(vec2,vec1,{}));
       then
         (syst,ishared,inArg);
     else
@@ -5227,27 +5227,27 @@ algorithm
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
     case (_,_,_,_,_,_)
-      equation
-        neqns = BackendDAEUtil.systemSize(isyst);
-        nvars = BackendVariable.daenumVariables(isyst);
-        true = intGt(nvars,0);
-        true = intGt(neqns,0);
-        (vec1,vec2) = getAssignment(clearMatching,nvars,neqns,isyst);
-        true = if not clearMatching then BackendDAEEXT.setAssignment(neqns, nvars, vec1, vec2) else true;
-        (vec1,vec2,syst,shared,arg) = matchingExternal({},false,3,Config.getCheapMatchingAlgorithm(),if clearMatching then 1 else 0,isyst,ishared,nvars, neqns, vec1, vec2, inMatchingOptions, sssHandler, inArg);
-        syst = BackendDAEUtil.setEqSystMatching(syst,BackendDAE.MATCHING(vec2,vec1,{}));
+      algorithm
+        neqns := BackendDAEUtil.systemSize(isyst);
+        nvars := BackendVariable.daenumVariables(isyst);
+        true := intGt(nvars,0);
+        true := intGt(neqns,0);
+        (vec1,vec2) := getAssignment(clearMatching,nvars,neqns,isyst);
+        true := if not clearMatching then BackendDAEEXT.setAssignment(neqns, nvars, vec1, vec2) else true;
+        (vec1,vec2,syst,shared,arg) := matchingExternal({},false,3,Config.getCheapMatchingAlgorithm(),if clearMatching then 1 else 0,isyst,ishared,nvars, neqns, vec1, vec2, inMatchingOptions, sssHandler, inArg);
+        syst := BackendDAEUtil.setEqSystMatching(syst,BackendDAE.MATCHING(vec2,vec1,{}));
       then
         (syst,shared,arg);
     // fail case if system is empty
     case (_,_,_,_,_,_)
-      equation
-        neqns = BackendDAEUtil.systemSize(isyst);
-        nvars = BackendVariable.daenumVariables(isyst);
-        false = intGt(nvars,0);
-        false = intGt(neqns,0);
-        vec1 = listArray({});
-        vec2 = listArray({});
-        syst = BackendDAEUtil.setEqSystMatching(isyst,BackendDAE.MATCHING(vec2,vec1,{}));
+      algorithm
+        neqns := BackendDAEUtil.systemSize(isyst);
+        nvars := BackendVariable.daenumVariables(isyst);
+        false := intGt(nvars,0);
+        false := intGt(neqns,0);
+        vec1 := listArray({});
+        vec2 := listArray({});
+        syst := BackendDAEUtil.setEqSystMatching(isyst,BackendDAE.MATCHING(vec2,vec1,{}));
       then
         (syst,ishared,inArg);
     else
@@ -5281,27 +5281,27 @@ algorithm
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
     case (_,_,_,_,_,_)
-      equation
-        neqns = BackendDAEUtil.systemSize(isyst);
-        nvars = BackendVariable.daenumVariables(isyst);
-        true = intGt(nvars,0);
-        true = intGt(neqns,0);
-        (vec1,vec2) = getAssignment(clearMatching,nvars,neqns,isyst);
-        true = if not clearMatching then BackendDAEEXT.setAssignment(neqns, nvars, vec1, vec2) else true;
-        (vec1,vec2,syst,shared,arg) = matchingExternal({},false,4,Config.getCheapMatchingAlgorithm(),if clearMatching then 1 else 0,isyst,ishared,nvars, neqns, vec1, vec2, inMatchingOptions, sssHandler, inArg);
-        syst = BackendDAEUtil.setEqSystMatching(syst,BackendDAE.MATCHING(vec2,vec1,{}));
+      algorithm
+        neqns := BackendDAEUtil.systemSize(isyst);
+        nvars := BackendVariable.daenumVariables(isyst);
+        true := intGt(nvars,0);
+        true := intGt(neqns,0);
+        (vec1,vec2) := getAssignment(clearMatching,nvars,neqns,isyst);
+        true := if not clearMatching then BackendDAEEXT.setAssignment(neqns, nvars, vec1, vec2) else true;
+        (vec1,vec2,syst,shared,arg) := matchingExternal({},false,4,Config.getCheapMatchingAlgorithm(),if clearMatching then 1 else 0,isyst,ishared,nvars, neqns, vec1, vec2, inMatchingOptions, sssHandler, inArg);
+        syst := BackendDAEUtil.setEqSystMatching(syst,BackendDAE.MATCHING(vec2,vec1,{}));
       then
         (syst,shared,arg);
     // fail case if system is empty
     case (_,_,_,_,_,_)
-      equation
-        neqns = BackendDAEUtil.systemSize(isyst);
-        nvars = BackendVariable.daenumVariables(isyst);
-        false = intGt(nvars,0);
-        false = intGt(neqns,0);
-        vec1 = listArray({});
-        vec2 = listArray({});
-        syst = BackendDAEUtil.setEqSystMatching(isyst,BackendDAE.MATCHING(vec2,vec1,{}));
+      algorithm
+        neqns := BackendDAEUtil.systemSize(isyst);
+        nvars := BackendVariable.daenumVariables(isyst);
+        false := intGt(nvars,0);
+        false := intGt(neqns,0);
+        vec1 := listArray({});
+        vec2 := listArray({});
+        syst := BackendDAEUtil.setEqSystMatching(isyst,BackendDAE.MATCHING(vec2,vec1,{}));
       then
         (syst,ishared,inArg);
     else
@@ -5338,19 +5338,19 @@ algorithm
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
     case (_,_,_,_,_,_) guard intGt(nvars,0) and intGt(neqns,0)
-      equation
-        (vec1,vec2) = getAssignment(clearMatching,nvars,neqns,isyst);
-        true = if not clearMatching then BackendDAEEXT.setAssignment(neqns, nvars, vec1, vec2) else true;
-        (vec1,vec2,syst,shared,arg) = matchingExternal({},false,5,Config.getCheapMatchingAlgorithm(),if clearMatching then 1 else 0,isyst,ishared,nvars, neqns, vec1, vec2, inMatchingOptions, sssHandler, inArg);
-        syst = BackendDAEUtil.setEqSystMatching(syst,BackendDAE.MATCHING(vec2,vec1,{}));
+      algorithm
+        (vec1,vec2) := getAssignment(clearMatching,nvars,neqns,isyst);
+        true := if not clearMatching then BackendDAEEXT.setAssignment(neqns, nvars, vec1, vec2) else true;
+        (vec1,vec2,syst,shared,arg) := matchingExternal({},false,5,Config.getCheapMatchingAlgorithm(),if clearMatching then 1 else 0,isyst,ishared,nvars, neqns, vec1, vec2, inMatchingOptions, sssHandler, inArg);
+        syst := BackendDAEUtil.setEqSystMatching(syst,BackendDAE.MATCHING(vec2,vec1,{}));
       then
         (syst,shared,arg);
     // fail case if system is empty
     case (_,_,_,_,_,_) guard not intGt(nvars,0) and not intGt(neqns,0)
-      equation
-        vec1 = listArray({});
-        vec2 = listArray({});
-        syst = BackendDAEUtil.setEqSystMatching(isyst,BackendDAE.MATCHING(vec2,vec1,{}));
+      algorithm
+        vec1 := listArray({});
+        vec2 := listArray({});
+        syst := BackendDAEUtil.setEqSystMatching(isyst,BackendDAE.MATCHING(vec2,vec1,{}));
       then
         (syst,ishared,inArg);
     else
@@ -5384,27 +5384,27 @@ algorithm
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
     case (_,_,_,_,_,_)
-      equation
-        neqns = BackendDAEUtil.systemSize(isyst);
-        nvars = BackendVariable.daenumVariables(isyst);
-        true = intGt(nvars,0);
-        true = intGt(neqns,0);
-        (vec1,vec2) = getAssignment(clearMatching,nvars,neqns,isyst);
-        true = if not clearMatching then BackendDAEEXT.setAssignment(neqns, nvars, vec1, vec2) else true;
-        (vec1,vec2,syst,shared,arg) = matchingExternal({},false,6,Config.getCheapMatchingAlgorithm(),if clearMatching then 1 else 0,isyst,ishared,nvars, neqns, vec1, vec2, inMatchingOptions, sssHandler, inArg);
-        syst = BackendDAEUtil.setEqSystMatching(syst,BackendDAE.MATCHING(vec2,vec1,{}));
+      algorithm
+        neqns := BackendDAEUtil.systemSize(isyst);
+        nvars := BackendVariable.daenumVariables(isyst);
+        true := intGt(nvars,0);
+        true := intGt(neqns,0);
+        (vec1,vec2) := getAssignment(clearMatching,nvars,neqns,isyst);
+        true := if not clearMatching then BackendDAEEXT.setAssignment(neqns, nvars, vec1, vec2) else true;
+        (vec1,vec2,syst,shared,arg) := matchingExternal({},false,6,Config.getCheapMatchingAlgorithm(),if clearMatching then 1 else 0,isyst,ishared,nvars, neqns, vec1, vec2, inMatchingOptions, sssHandler, inArg);
+        syst := BackendDAEUtil.setEqSystMatching(syst,BackendDAE.MATCHING(vec2,vec1,{}));
       then
         (syst,shared,arg);
     // fail case if system is empty
     case (_,_,_,_,_,_)
-      equation
-        neqns = BackendDAEUtil.systemSize(isyst);
-        nvars = BackendVariable.daenumVariables(isyst);
-        false = intGt(nvars,0);
-        false = intGt(neqns,0);
-        vec1 = listArray({});
-        vec2 = listArray({});
-        syst = BackendDAEUtil.setEqSystMatching(isyst,BackendDAE.MATCHING(vec2,vec1,{}));
+      algorithm
+        neqns := BackendDAEUtil.systemSize(isyst);
+        nvars := BackendVariable.daenumVariables(isyst);
+        false := intGt(nvars,0);
+        false := intGt(neqns,0);
+        vec1 := listArray({});
+        vec2 := listArray({});
+        syst := BackendDAEUtil.setEqSystMatching(isyst,BackendDAE.MATCHING(vec2,vec1,{}));
       then
         (syst,ishared,inArg);
     else
@@ -5438,27 +5438,27 @@ algorithm
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
     case (_,_,_,_,_,_)
-      equation
-        neqns = BackendDAEUtil.systemSize(isyst);
-        nvars = BackendVariable.daenumVariables(isyst);
-        true = intGt(nvars,0);
-        true = intGt(neqns,0);
-        (vec1,vec2) = getAssignment(clearMatching,nvars,neqns,isyst);
-        true = if not clearMatching then BackendDAEEXT.setAssignment(neqns, nvars, vec1, vec2) else true;
-        (vec1,vec2,syst,shared,arg) = matchingExternal({},false,7,Config.getCheapMatchingAlgorithm(),if clearMatching then 1 else 0,isyst,ishared,nvars, neqns, vec1, vec2, inMatchingOptions, sssHandler, inArg);
-        syst = BackendDAEUtil.setEqSystMatching(syst,BackendDAE.MATCHING(vec2,vec1,{}));
+      algorithm
+        neqns := BackendDAEUtil.systemSize(isyst);
+        nvars := BackendVariable.daenumVariables(isyst);
+        true := intGt(nvars,0);
+        true := intGt(neqns,0);
+        (vec1,vec2) := getAssignment(clearMatching,nvars,neqns,isyst);
+        true := if not clearMatching then BackendDAEEXT.setAssignment(neqns, nvars, vec1, vec2) else true;
+        (vec1,vec2,syst,shared,arg) := matchingExternal({},false,7,Config.getCheapMatchingAlgorithm(),if clearMatching then 1 else 0,isyst,ishared,nvars, neqns, vec1, vec2, inMatchingOptions, sssHandler, inArg);
+        syst := BackendDAEUtil.setEqSystMatching(syst,BackendDAE.MATCHING(vec2,vec1,{}));
       then
         (syst,shared,arg);
     // fail case if system is empty
     case (_,_,_,_,_,_)
-      equation
-        neqns = BackendDAEUtil.systemSize(isyst);
-        nvars = BackendVariable.daenumVariables(isyst);
-        false = intGt(nvars,0);
-        false = intGt(neqns,0);
-        vec1 = listArray({});
-        vec2 = listArray({});
-        syst = BackendDAEUtil.setEqSystMatching(isyst,BackendDAE.MATCHING(vec2,vec1,{}));
+      algorithm
+        neqns := BackendDAEUtil.systemSize(isyst);
+        nvars := BackendVariable.daenumVariables(isyst);
+        false := intGt(nvars,0);
+        false := intGt(neqns,0);
+        vec1 := listArray({});
+        vec2 := listArray({});
+        syst := BackendDAEUtil.setEqSystMatching(isyst,BackendDAE.MATCHING(vec2,vec1,{}));
       then
         (syst,ishared,inArg);
     else
@@ -5492,27 +5492,27 @@ algorithm
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
     case (_,_,_,_,_,_)
-      equation
-        neqns = BackendDAEUtil.systemSize(isyst);
-        nvars = BackendVariable.daenumVariables(isyst);
-        true = intGt(nvars,0);
-        true = intGt(neqns,0);
-        (vec1,vec2) = getAssignment(clearMatching,nvars,neqns,isyst);
-        true = if not clearMatching then BackendDAEEXT.setAssignment(neqns, nvars, vec1, vec2) else true;
-        (vec1,vec2,syst,shared,arg) = matchingExternal({},false,8,Config.getCheapMatchingAlgorithm(),if clearMatching then 1 else 0,isyst,ishared,nvars, neqns, vec1, vec2, inMatchingOptions, sssHandler, inArg);
-        syst = BackendDAEUtil.setEqSystMatching(syst,BackendDAE.MATCHING(vec2,vec1,{}));
+      algorithm
+        neqns := BackendDAEUtil.systemSize(isyst);
+        nvars := BackendVariable.daenumVariables(isyst);
+        true := intGt(nvars,0);
+        true := intGt(neqns,0);
+        (vec1,vec2) := getAssignment(clearMatching,nvars,neqns,isyst);
+        true := if not clearMatching then BackendDAEEXT.setAssignment(neqns, nvars, vec1, vec2) else true;
+        (vec1,vec2,syst,shared,arg) := matchingExternal({},false,8,Config.getCheapMatchingAlgorithm(),if clearMatching then 1 else 0,isyst,ishared,nvars, neqns, vec1, vec2, inMatchingOptions, sssHandler, inArg);
+        syst := BackendDAEUtil.setEqSystMatching(syst,BackendDAE.MATCHING(vec2,vec1,{}));
       then
         (syst,shared,arg);
     // fail case if system is empty
     case (_,_,_,_,_,_)
-      equation
-        neqns = BackendDAEUtil.systemSize(isyst);
-        nvars = BackendVariable.daenumVariables(isyst);
-        false = intGt(nvars,0);
-        false = intGt(neqns,0);
-        vec1 = listArray({});
-        vec2 = listArray({});
-        syst = BackendDAEUtil.setEqSystMatching(isyst,BackendDAE.MATCHING(vec2,vec1,{}));
+      algorithm
+        neqns := BackendDAEUtil.systemSize(isyst);
+        nvars := BackendVariable.daenumVariables(isyst);
+        false := intGt(nvars,0);
+        false := intGt(neqns,0);
+        vec1 := listArray({});
+        vec2 := listArray({});
+        syst := BackendDAEUtil.setEqSystMatching(isyst,BackendDAE.MATCHING(vec2,vec1,{}));
       then
         (syst,ishared,inArg);
     else
@@ -5546,27 +5546,27 @@ algorithm
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
     case (_,_,_,_,_,_)
-      equation
-        neqns = BackendDAEUtil.systemSize(isyst);
-        nvars = BackendVariable.daenumVariables(isyst);
-        true = intGt(nvars,0);
-        true = intGt(neqns,0);
-        (vec1,vec2) = getAssignment(clearMatching,nvars,neqns,isyst);
-        true = if not clearMatching then BackendDAEEXT.setAssignment(neqns, nvars, vec1, vec2) else true;
-        (vec1,vec2,syst,shared,arg) = matchingExternal({},false,10,Config.getCheapMatchingAlgorithm(),if clearMatching then 1 else 0,isyst,ishared,nvars, neqns, vec1, vec2, inMatchingOptions, sssHandler, inArg);
-        syst = BackendDAEUtil.setEqSystMatching(syst,BackendDAE.MATCHING(vec2,vec1,{}));
+      algorithm
+        neqns := BackendDAEUtil.systemSize(isyst);
+        nvars := BackendVariable.daenumVariables(isyst);
+        true := intGt(nvars,0);
+        true := intGt(neqns,0);
+        (vec1,vec2) := getAssignment(clearMatching,nvars,neqns,isyst);
+        true := if not clearMatching then BackendDAEEXT.setAssignment(neqns, nvars, vec1, vec2) else true;
+        (vec1,vec2,syst,shared,arg) := matchingExternal({},false,10,Config.getCheapMatchingAlgorithm(),if clearMatching then 1 else 0,isyst,ishared,nvars, neqns, vec1, vec2, inMatchingOptions, sssHandler, inArg);
+        syst := BackendDAEUtil.setEqSystMatching(syst,BackendDAE.MATCHING(vec2,vec1,{}));
       then
         (syst,shared,arg);
     // fail case if system is empty
     case (_,_,_,_,_,_)
-      equation
-        neqns = BackendDAEUtil.systemSize(isyst);
-        nvars = BackendVariable.daenumVariables(isyst);
-        false = intGt(nvars,0);
-        false = intGt(neqns,0);
-        vec1 = listArray({});
-        vec2 = listArray({});
-        syst = BackendDAEUtil.setEqSystMatching(isyst,BackendDAE.MATCHING(vec2,vec1,{}));
+      algorithm
+        neqns := BackendDAEUtil.systemSize(isyst);
+        nvars := BackendVariable.daenumVariables(isyst);
+        false := intGt(nvars,0);
+        false := intGt(neqns,0);
+        vec1 := listArray({});
+        vec2 := listArray({});
+        syst := BackendDAEUtil.setEqSystMatching(isyst,BackendDAE.MATCHING(vec2,vec1,{}));
       then
         (syst,ishared,inArg);
     else
@@ -6051,8 +6051,8 @@ algorithm
       then
         iMarked;
     case (_,_,_,_)
-      equation
-        marked = List.consOnTrue(intEq(markArr[ne],mark), ne, iMarked);
+      algorithm
+        marked := List.consOnTrue(intEq(markArr[ne],mark), ne, iMarked);
       then
         getMarked(ne-1,mark,markArr,marked);
   end match;
@@ -6073,8 +6073,8 @@ algorithm
       then
         inUnassigned;
     case (_,_,_)
-      equation
-        unassigned = List.consOnTrue(intLt(ass[ne],1), ne, inUnassigned);
+      algorithm
+        unassigned := List.consOnTrue(intLt(ass[ne],1), ne, inUnassigned);
       then
         getUnassigned(ne-1,ass,unassigned);
   end match;
@@ -6128,8 +6128,8 @@ algorithm
       then
         inAssigned;
     case (_,_,_)
-      equation
-        assigned = List.consOnTrue(intGt(ass[ne],0), ne, inAssigned);
+      algorithm
+        assigned := List.consOnTrue(intGt(ass[ne],0), ne, inAssigned);
       then
         getAssigned(ne-1,ass,assigned);
   end match;
@@ -6156,11 +6156,11 @@ algorithm
       array<Integer> mapIncRowEqn;
     case({},_,_,_,_,_,_) then {};
     case(_,_,_,_,_,_,(_,_,mapEqnIncRow,mapIncRowEqn,_))
-      equation
-        colummarks = arrayCreate(neqns,-1);
-        lengthU = listLength(U);
-        subsets = arrayCreate(lengthU,{}) "maximal number of subsets is each unassigned eqn has its own";
-        subsets = getEqnsforIndexReduction1(U,m,mT,1,colummarks,ass1,ass2,mapEqnIncRow,mapIncRowEqn,subsets);
+      algorithm
+        colummarks := arrayCreate(neqns,-1);
+        lengthU := listLength(U);
+        subsets := arrayCreate(lengthU,{}) "maximal number of subsets is each unassigned eqn has its own";
+        subsets := getEqnsforIndexReduction1(U,m,mT,1,colummarks,ass1,ass2,mapEqnIncRow,mapIncRowEqn,subsets);
         // remove empty subsets
       then
         removeEmptySubsets(1,lengthU,subsets,{});
@@ -6180,9 +6180,9 @@ algorithm
       list<list<Integer>> acc;
     case (_,_,_,_)
       guard intLe(index,length)
-      equation
-        eqns = subsets[index];
-        acc = appendNonEmpty(eqns,iAcc);
+      algorithm
+        eqns := subsets[index];
+        acc := appendNonEmpty(eqns,iAcc);
       then
         removeEmptySubsets(index+1,length,subsets,acc);
     else iAcc;
@@ -6222,14 +6222,14 @@ algorithm
     case ({},_,_,_,_,_,_,_,_,_) then inSubsets;
     case (e::rest,_,_,_,_,_,_,_,_,_)
       guard not intGt(colummarks[e],0)
-      equation
+      algorithm
         // row is not visited
         // if it is a multi dim equation take all scalare equations
-        e1 = mapIncRowEqn[e];
-        eqns = mapEqnIncRow[e1];
-        _ = List.fold1r(eqns,arrayUpdate,mark,colummarks);
+        e1 := mapIncRowEqn[e];
+        eqns := mapEqnIncRow[e1];
+        _ := List.fold1r(eqns,arrayUpdate,mark,colummarks);
         //  print("Seach for unassigned Eqns " + stringDelimitList(List.map(eqns,intString),", ") + "\n");
-        eqns = getEqnsforIndexReductionphase(eqns,m,mT,mark,colummarks,ass1,ass2,mapEqnIncRow,mapIncRowEqn,inSubsets,eqns);
+        eqns := getEqnsforIndexReductionphase(eqns,m,mT,mark,colummarks,ass1,ass2,mapEqnIncRow,mapIncRowEqn,inSubsets,eqns);
         //  print("Found Eqns " + stringDelimitList(List.map(eqns,intString),", ") + "\n");
         Array.appendToElement(mark,eqns,inSubsets);
       then
@@ -6262,11 +6262,11 @@ algorithm
       list<Integer> rows,rest,eqns;
     case ({},_,_,_,_,_,_,_,_,_,_) then inEqns;
     case (e::rest,_,_,_,_,_,_,_,_,_,_)
-      equation
+      algorithm
         // traverse all adiacent rows
-        rows = List.select(m[e], Util.intPositive);
+        rows := List.select(m[e], Util.intPositive);
           //print("search in Vars " + stringDelimitList(List.map(rows,intString),", ") + " from equation " + intString(e) + "\n");
-        eqns = getEqnsforIndexReductiontraverseRows(rows,{},m,mT,mark,colummarks,ass1,ass2,mapEqnIncRow,mapIncRowEqn,inSubsets,inEqns);
+        eqns := getEqnsforIndexReductiontraverseRows(rows,{},m,mT,mark,colummarks,ass1,ass2,mapEqnIncRow,mapIncRowEqn,inSubsets,inEqns);
       then
         getEqnsforIndexReductionphase(rest,m,mT,mark,colummarks,ass1,ass2,mapEqnIncRow,mapIncRowEqn,inSubsets,eqns);
     else
@@ -6302,29 +6302,29 @@ algorithm
       then
         getEqnsforIndexReductionphase(nextColums,m,mT,mark,colummarks,ass1,ass2,mapEqnIncRow,mapIncRowEqn,inSubsets,inEqns);
     case (r::rest,_,_,_,_,_,_,_,_,_,_,_)
-      equation
+      algorithm
         // row is matched
         // print("check Row " + intString(r) + "\n");
-        rc = ass2[r];
+        rc := ass2[r];
         // print("check Colum " + intString(rc) + "\n");
         if List.exist1(mT[r],intEq,rc) and intGt(rc,0) and not intEq(colummarks[rc],mark) then
           if intGt(colummarks[rc],0) then
             mergeSubsets(mark,colummarks[rc],inSubsets,colummarks);
-            nextqueue = nextColums;
-            queue = inEqns;
+            nextqueue := nextColums;
+            queue := inEqns;
           else
             // if it is a multi dim equation take all scalare equations
-            e = mapIncRowEqn[rc];
-            eqns = mapEqnIncRow[e];
-            _ = List.fold1r(eqns,arrayUpdate,mark,colummarks);
+            e := mapIncRowEqn[rc];
+            eqns := mapEqnIncRow[e];
+            _ := List.fold1r(eqns,arrayUpdate,mark,colummarks);
             //  print("add to nextQueue and Queue " + stringDelimitList(List.map(eqns,intString),", ") + "\n");
-            nextqueue = listAppend(nextColums,eqns);
-            queue = listAppend(inEqns,eqns);
+            nextqueue := listAppend(nextColums,eqns);
+            queue := listAppend(inEqns,eqns);
             //(nextqueue,queue) = getEqnsforIndexReductiontraverseColums(mT[r],colummarks,ass1,rc::nextColums,rc::inEqns);
           end if;
         else
-          nextqueue = nextColums;
-          queue = inEqns;
+          nextqueue := nextColums;
+          queue := inEqns;
         end if;
       then
         getEqnsforIndexReductiontraverseRows(rest,nextqueue,m,mT,mark,colummarks,ass1,ass2,mapEqnIncRow,mapIncRowEqn,inSubsets,queue);
@@ -6383,16 +6383,16 @@ algorithm
       then
         ({},actualEqn+1,isyst,ishared,nv,ne,ass1,ass2,inArg);
     case (_::_,_,_,_,_,_,_,_,(BackendDAE.INDEX_REDUCTION(),_),_,_)
-      equation
-        (changedEqns,i_1,syst,shared,ass2_1,ass1_1,arg) = sssHandler({meqns},actualEqn,isyst,ishared,ass2,ass1,inArg);
-        ne_1 = BackendDAEUtil.systemSize(syst);
-        nv_1 = BackendVariable.daenumVariables(syst);
-        ass1_2 = assignmentsArrayExpand(ass1_1,ne_1,arrayLength(ass1_1),-1);
-        ass2_2 = assignmentsArrayExpand(ass2_1,nv_1,arrayLength(ass2_1),-1);
+      algorithm
+        (changedEqns,i_1,syst,shared,ass2_1,ass1_1,arg) := sssHandler({meqns},actualEqn,isyst,ishared,ass2,ass1,inArg);
+        ne_1 := BackendDAEUtil.systemSize(syst);
+        nv_1 := BackendVariable.daenumVariables(syst);
+        ass1_2 := assignmentsArrayExpand(ass1_1,ne_1,arrayLength(ass1_1),-1);
+        ass2_2 := assignmentsArrayExpand(ass2_1,nv_1,arrayLength(ass2_1),-1);
       then
         (changedEqns,i_1,syst,shared,nv_1,ne_1,ass1_2,ass2_2,arg);
     case (_,_,_,_,_,_,_,_,_,_,_)
-      equation
+      algorithm
         singularSystemError({meqns},actualEqn,isyst,ishared,ass1,ass2,inArg);
       then
         fail();
@@ -6410,13 +6410,13 @@ protected function assignmentsArrayExpand
 algorithm
   outAss := matchcontinue(ass,needed,memsize,default)
     case (_,_,_,_)
-      equation
-        true = intGt(memsize,needed);
+      algorithm
+        true := intGt(memsize,needed);
       then
         ass;
     case (_,_,_,_)
-      equation
-        false = intGt(memsize,needed);
+      algorithm
+        false := intGt(memsize,needed);
       then
         Array.expand(needed-memsize, ass, default);
     else
@@ -6438,13 +6438,13 @@ protected function assignmentsArrayBooleanExpand
 algorithm
   outAss := matchcontinue(ass,needed,memsize,default)
     case (_,_,_,_)
-      equation
-        true = intGt(memsize,needed);
+      algorithm
+        true := intGt(memsize,needed);
       then
         ass;
     case (_,_,_,_)
-      equation
-        false = intGt(memsize,needed);
+      algorithm
+        false := intGt(memsize,needed);
       then
         Array.expand(needed-memsize, ass, default);
     else
@@ -6471,14 +6471,14 @@ algorithm
       Integer r,c;
       list<Integer> unassigned;
     case (_,_,_,_,_)
-      equation
-        true = intGt(indx,ne);
+      algorithm
+        true := intGt(indx,ne);
       then
         inUnassigned;
     case (_,_,_,_,_)
-      equation
-        r = ass1[indx];
-        unassigned = List.consOnTrue(intLt(r,0), indx, inUnassigned);
+      algorithm
+        r := ass1[indx];
+        unassigned := List.consOnTrue(intLt(r,0), indx, inUnassigned);
       then
         checkAssignment(indx+1,ne,ass1,ass2,unassigned);
   end matchcontinue;
@@ -6494,9 +6494,9 @@ protected function getAssignment
 algorithm
   (ass1,ass2) := matchcontinue(clearMatching,nVars,nEqns,iSyst)
     case(false,_,_,BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(ass1=ass1,ass2=ass2)))
-      equation
-        true = intGe(nVars,arrayLength(ass1));
-        true = intGe(nEqns,arrayLength(ass2));
+      algorithm
+        true := intGe(nVars,arrayLength(ass1));
+        true := intGe(nEqns,arrayLength(ass2));
       then
         (ass2,ass1);
     else
@@ -6592,16 +6592,16 @@ algorithm
     case ({},_,_,_)
       then ();
     case ((str,matchingAlgorithm)::rest,_,_,_)
-      equation
+      algorithm
         System.realtimeTick(ClockIndexes.RT_PROFILER0);
         testMatchingAlgorithm(10,matchingAlgorithm,isyst,ishared,inMatchingOptions);
-        t = System.realtimeTock(ClockIndexes.RT_PROFILER0);
+        t := System.realtimeTock(ClockIndexes.RT_PROFILER0);
         print(str + realString(realDiv(t,10.0)) + "\n");
         testMatchingAlgorithms1(rest,isyst,ishared,inMatchingOptions);
       then
         ();
     case ((str,_)::rest,_,_,_)
-      equation
+      algorithm
         print(str + "failed!\n");
         testMatchingAlgorithms1(rest,isyst,ishared,inMatchingOptions);
       then
@@ -6697,18 +6697,18 @@ algorithm
       BackendDAE.EqSystem syst;
 
    case syst as BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns)
-     equation
-       ne = BackendDAEUtil.systemSize(isyst);
-       nv = BackendVariable.daenumVariables(isyst);
-       randarr = Array.createIntRange(ne);
+     algorithm
+       ne := BackendDAEUtil.systemSize(isyst);
+       nv := BackendVariable.daenumVariables(isyst);
+       randarr := Array.createIntRange(ne);
        setrandArray(ne, randarr);
-       randarr1 = Array.createIntRange(nv);
+       randarr1 := Array.createIntRange(nv);
        setrandArray(nv, randarr1);
-       syst.orderedEqs = randSortSystem1( ne, 0, randarr, eqns, BackendEquation.listEquation({}),
+       syst.orderedEqs := randSortSystem1( ne, 0, randarr, eqns, BackendEquation.listEquation({}),
                                           BackendEquation.get, BackendEquation.add );
-       syst.orderedVars = randSortSystem1( nv, 0, randarr1, vars, BackendVariable.emptyVars(),
+       syst.orderedVars := randSortSystem1( nv, 0, randarr1, vars, BackendVariable.emptyVars(),
                                            BackendVariable.getVarAt, BackendVariable.addVar );
-       (syst, _, _) = BackendDAEUtil.getAdjacencyMatrix( BackendDAEUtil.clearEqSyst(syst), BackendDAE.NORMAL(), NONE(), BackendDAEUtil.isInitializationDAE(ishared));
+       (syst, _, _) := BackendDAEUtil.getAdjacencyMatrix( BackendDAEUtil.clearEqSyst(syst), BackendDAE.NORMAL(), NONE(), BackendDAEUtil.isInitializationDAE(ishared));
      then
        syst;
   end match;
