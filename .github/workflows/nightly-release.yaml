@@ -15,12 +15,13 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
+          fetch-depth: 0
           fetch-tags: true
           submodules: recursive
 
       - name: Build Assets
         run: |
-          export OMVERSION=`git describe --match "v*.*" --always`
+          export OMVERSION=`git describe --tags --match "v*.*" --always`
           echo Version: $OMVERSION
           cd ..
           ln -s ${{ github.event.repository.name }} ${{ github.event.repository.name }}-$OMVERSION
