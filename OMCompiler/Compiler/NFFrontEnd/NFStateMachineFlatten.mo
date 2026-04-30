@@ -2006,7 +2006,7 @@ algorithm
   ty := Type.REAL();
   timeExp := Expression.CREF(ty,
     ComponentRef.prefixCref(InstNode.NAME_NODE("time"), ty, {}, ComponentRef.EMPTY()));
-  clockExp := Expression.CLKCONST(Expression.ClockKind.INFERRED_CLOCK());
+  clockExp := Expression.CLKCONST(Expression.ClockKind.INFERRED_CLOCK(System.tmpTickIndex(Global.inferredClock_index)));
   result := Expression.CALL(Call.makeTypedCall(
     NFBuiltinFuncs.SAMPLE_CLOCKED, {timeExp, clockExp},
     Variability.CONTINUOUS, Purity.IMPURE, ty));
