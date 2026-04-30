@@ -3523,7 +3523,7 @@ algorithm
     fail();
   end if;
 
-  eq := Equation.EQUALITY(e1, e2, ty, scope, source);
+  eq := Equation.makeEquality(e1, e2, ty, source, scope);
 
   if Expression.isExternalCall(e2) then
     Call.updateExternalRecordArgs(Expression.tupleElements(e1));

@@ -394,7 +394,7 @@ algorithm
     end for;
   end if;
 
-  equations := {Equation.EQUALITY(sum, Expression.REAL(0.0), Type.arrayElementType(c.ty), InstNode.EMPTY_NODE(), src)};
+  equations := {Equation.makeEquality(sum, Expression.REAL(0.0), Type.arrayElementType(c.ty), src)};
 
   while not listEmpty(iterators) loop
     equations := {Equation.FOR(listHead(iterators), SOME(listHead(ranges)), equations, InstNode.EMPTY_NODE(), src)};
@@ -455,8 +455,8 @@ algorithm
         e2 := makeInStreamCall(cref1);
         src := ElementSource.mergeSources(src1, src2);
       then
-        {Equation.EQUALITY(cref1, e1, Type.REAL(), InstNode.EMPTY_NODE(), src),
-         Equation.EQUALITY(cref2, e2, Type.REAL(), InstNode.EMPTY_NODE(), src)};
+        {Equation.makeEquality(cref1, e1, Type.REAL(), src),
+         Equation.makeEquality(cref2, e2, Type.REAL(), src)};
 
     // One inside, one outside:
     // cr1 = cr2;
@@ -492,7 +492,7 @@ algorithm
     outside := removeStreamSetElement(e.name, reduced_outside);
     res := streamSumEquationExp(outside, insideElements, flowThreshold, Expression.INTEGER(0), variables);
     src := ElementSource.addAdditionalComment(e.source, " equation generated from stream connection");
-    equations := Equation.EQUALITY(cref_exp, res, Type.REAL(), InstNode.EMPTY_NODE(), src) :: equations;
+    equations := Equation.makeEquality(cref_exp, res, Type.REAL(), src) :: equations;
   end for;
 end streamEquationGeneral;
 

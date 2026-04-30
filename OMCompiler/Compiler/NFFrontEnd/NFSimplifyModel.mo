@@ -152,17 +152,6 @@ algorithm
 
     case Equation.EQUALITY() then simplifyEqualityEquation(eq, equations);
 
-    case Equation.ARRAY_EQUALITY()
-      algorithm
-        ty := Type.mapDims(eq.ty, simplifyDimension);
-
-        if not Type.isEmptyArray(ty) then
-          rhs := removeEmptyFunctionArguments(SimplifyExp.simplify(eq.rhs));
-          equations := Equation.ARRAY_EQUALITY(eq.lhs, rhs, ty, eq.scope, eq.source) :: equations;
-        end if;
-      then
-        equations;
-
     case Equation.FOR(range = SOME(e))
       algorithm
         body := simplifyEquations(eq.body);
@@ -247,8 +236,9 @@ protected
   Type ty;
   DAE.ElementSource src;
   InstNode scope;
+  Equation.ScalarizeMode scalarize_mode;
 algorithm
-  Equation.EQUALITY(lhs = lhs, rhs = rhs, ty = ty, scope = scope, source = src) := eq;
+  Equation.EQUALITY(lhs = lhs, rhs = rhs, ty = ty, scope = scope, source = src, scalarizeMode = scalarize_mode) := eq;
   ty := Type.mapDims(ty, simplifyDimension);
 
   if Type.isEmptyArray(ty) then
@@ -263,9 +253,9 @@ algorithm
   equations := match (lhs, rhs)
     case (Expression.TUPLE(), Expression.TUPLE())
       then simplifyTupleElement(lhs.elements, rhs.elements, ty, src,
-        function Equation.makeEquality(scope = scope), equations);
+        function Equation.makeEquality(scope = scope, scalarizeMode = scalarize_mode), equations);
 
-    else Equation.EQUALITY(lhs, rhs, ty, scope, src) :: equations;
+    else Equation.EQUALITY(lhs, rhs, ty, scope, src, scalarize_mode) :: equations;
   end match;
 end simplifyEqualityEquation;
 

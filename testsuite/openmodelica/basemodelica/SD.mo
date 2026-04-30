@@ -57,7 +57,7 @@ end SD;
 //     Real 's.c.f';
 //   equation
 //     'c.x'[:,1] = 'c.c.e'[:];
-//     'c.x'[:,'c.N'[:]] = 'c.c.f'[:];
+//     'c.x'[:,{3, 4, 5}] = 'c.c.f'[:];
 //
 //     for '$i0' in 1:3 loop
 //       for 'i' in 2:({3, 4, 5})['$i0'] loop

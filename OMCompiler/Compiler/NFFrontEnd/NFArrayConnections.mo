@@ -506,13 +506,7 @@ protected
           l := generateConnector(var1, inds1);
           r := generateConnector(var2, inds2);
           ty := Expression.typeOf(l);
-
-          if Type.isArray(ty) then
-            eq := Equation.ARRAY_EQUALITY(l, r, ty, InstNode.EMPTY_NODE(), DAE.emptyElementSource);
-          else
-            eq := Equation.EQUALITY(l, r, ty, InstNode.EMPTY_NODE(), DAE.emptyElementSource);
-          end if;
-
+          eq := Equation.makeEquality(l, r, ty, scalarizeMode = NFEquation.ScalarizeMode.DONT_SCALARIZE);
           equations := eq :: equations;
         end if;
       end for;
@@ -577,7 +571,7 @@ protected
       end while;
 
       ty := Expression.typeOf(sum_exp);
-      eq := Equation.EQUALITY(sum_exp, Expression.makeZero(ty), ty, InstNode.EMPTY_NODE(), DAE.emptyElementSource);
+      eq := Equation.makeEquality(sum_exp, Expression.makeZero(ty), ty);
       equations := generateForLoop({eq}, iterators, ranges, equations);
     end if;
   end generateFlowEquation;

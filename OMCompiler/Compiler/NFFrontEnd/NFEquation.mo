@@ -202,21 +202,20 @@ public
     end triggerErrors;
   end Branch;
 
+  type ScalarizeMode = enumeration(
+    DONT_SCALARIZE,
+    SCALARIZE,
+    NO_PREFERENCE
+  );
+
   record EQUALITY
     Expression lhs "The left hand side expression.";
     Expression rhs "The right hand side expression.";
     Type ty;
     InstNode scope;
     DAE.ElementSource source;
+    ScalarizeMode scalarizeMode;
   end EQUALITY;
-
-  record ARRAY_EQUALITY
-    Expression lhs;
-    Expression rhs;
-    Type ty;
-    InstNode scope;
-    DAE.ElementSource source;
-  end ARRAY_EQUALITY;
 
   record CONNECT
     Expression lhs;
@@ -276,11 +275,12 @@ public
     input Expression lhs;
     input Expression rhs;
     input Type ty;
-    input InstNode scope;
-    input DAE.ElementSource src;
+    input DAE.ElementSource src = DAE.emptyElementSource;
+    input InstNode scope = InstNode.EMPTY_NODE();
+    input ScalarizeMode scalarizeMode = ScalarizeMode.NO_PREFERENCE;
     output Equation eq;
   algorithm
-    eq := EQUALITY(lhs, rhs, ty, scope, src);
+    eq := EQUALITY(lhs, rhs, ty, scope, src, scalarizeMode);
     annotation(__OpenModelica_EarlyInline=true);
   end makeEquality;
 
@@ -295,7 +295,7 @@ public
   algorithm
     e1 := Expression.fromCref(lhsCref);
     e2 := Expression.fromCref(rhsCref);
-    eq := makeEquality(e1, e2, Expression.typeOf(e1), scope, src);
+    eq := makeEquality(e1, e2, Expression.typeOf(e1), src, scope);
   end makeCrefEquality;
 
   function makeBranch
@@ -324,7 +324,6 @@ public
   algorithm
     source := match eq
       case EQUALITY() then eq.source;
-      case ARRAY_EQUALITY() then eq.source;
       case CONNECT() then eq.source;
       case FOR() then eq.source;
       case IF() then eq.source;
@@ -342,7 +341,6 @@ public
   algorithm
     () := match eq
       case EQUALITY()       algorithm eq.source := source; then ();
-      case ARRAY_EQUALITY() algorithm eq.source := source; then ();
       case CONNECT()        algorithm eq.source := source; then ();
       case FOR()            algorithm eq.source := source; then ();
       case IF()             algorithm eq.source := source; then ();
@@ -360,7 +358,6 @@ public
   algorithm
     scope := match eq
       case EQUALITY() then eq.scope;
-      case ARRAY_EQUALITY() then eq.scope;
       case CONNECT() then eq.scope;
       case FOR() then eq.scope;
       case IF() then eq.scope;
@@ -523,13 +520,6 @@ public
         then
           ();
 
-      case Equation.ARRAY_EQUALITY()
-        algorithm
-          func(eq.lhs);
-          func(eq.rhs);
-        then
-          ();
-
       case Equation.CONNECT()
         algorithm
           func(eq.lhs);
@@ -622,13 +612,6 @@ public
   algorithm
     () := match eq
       case Equation.EQUALITY()
-        algorithm
-          func(eq.lhs);
-          func(eq.rhs);
-        then
-          ();
-
-      case Equation.ARRAY_EQUALITY()
         algorithm
           func(eq.lhs);
           func(eq.rhs);
@@ -739,22 +722,7 @@ public
           e2 := func(eq.rhs);
         then
           if referenceEq(e1, eq.lhs) and referenceEq(e2, eq.rhs)
-            then eq else EQUALITY(e1, e2, eq.ty, eq.scope, eq.source);
-
-      case ARRAY_EQUALITY()
-        algorithm
-          e1 := func(eq.lhs);
-          e2 := func(eq.rhs);
-        then
-          if referenceEq(e1, eq.lhs) and referenceEq(e2, eq.rhs)
-            then eq else ARRAY_EQUALITY(e1, e2, eq.ty, eq.scope, eq.source);
-
-      //case CREF_EQUALITY()
-      //  algorithm
-      //    Expression.CREF(cref = cr1) := func(Expression.fromCref(eq.lhs));
-      //    Expression.CREF(cref = cr2) := func(Expression.fromCref(eq.rhs));
-      //  then
-      //    Equation.CREF_EQUALITY(cr1, cr2, eq.source);
+            then eq else EQUALITY(e1, e2, eq.ty, eq.scope, eq.source, eq.scalarizeMode);
 
       case CONNECT()
         algorithm
@@ -830,15 +798,7 @@ public
           e2 := func(eq.rhs);
         then
           if referenceEq(e1, eq.lhs) and referenceEq(e2, eq.rhs)
-            then eq else EQUALITY(e1, e2, eq.ty, eq.scope, eq.source);
-
-      case ARRAY_EQUALITY()
-        algorithm
-          e1 := func(eq.lhs);
-          e2 := func(eq.rhs);
-        then
-          if referenceEq(e1, eq.lhs) and referenceEq(e2, eq.rhs)
-            then eq else ARRAY_EQUALITY(e1, e2, eq.ty, eq.scope, eq.source);
+            then eq else EQUALITY(e1, e2, eq.ty, eq.scope, eq.source, eq.scalarizeMode);
 
       case CONNECT()
         algorithm
@@ -926,13 +886,6 @@ public
   algorithm
     () := match eq
       case Equation.EQUALITY()
-        algorithm
-          arg := func(eq.lhs, arg);
-          arg := func(eq.rhs, arg);
-        then
-          ();
-
-      case Equation.ARRAY_EQUALITY()
         algorithm
           arg := func(eq.lhs, arg);
           arg := func(eq.rhs, arg);
@@ -1113,7 +1066,6 @@ public
   algorithm
     res := match eq
       case Equation.EQUALITY() then fn(eq.lhs) or fn(eq.rhs);
-      case Equation.ARRAY_EQUALITY() then fn(eq.lhs) or fn(eq.rhs);
       case Equation.CONNECT() then fn(eq.lhs) or fn(eq.rhs);
 
       case Equation.FOR()
@@ -1254,7 +1206,6 @@ public
   algorithm
     size := matchcontinue eq
       case EQUALITY() then Type.sizeOf(eq.ty);
-      case ARRAY_EQUALITY() then Type.sizeOf(eq.ty);
       case CONNECT() then Type.sizeOf(Expression.typeOf(eq.lhs));
       case FOR()
         algorithm
@@ -1306,14 +1257,6 @@ public
 
     s := match eq
       case EQUALITY()
-        algorithm
-          s := IOStream.append(s, Expression.toString(eq.lhs));
-          s := IOStream.append(s, " = ");
-          s := IOStream.append(s, Expression.toString(eq.rhs));
-        then
-          s;
-
-      case ARRAY_EQUALITY()
         algorithm
           s := IOStream.append(s, Expression.toString(eq.lhs));
           s := IOStream.append(s, " = ");
@@ -1454,14 +1397,6 @@ public
 
     s := match eq
       case EQUALITY()
-        algorithm
-          s := IOStream.append(s, Expression.toFlatString(eq.lhs, format));
-          s := IOStream.append(s, " = ");
-          s := IOStream.append(s, Expression.toFlatString(eq.rhs, format));
-        then
-          s;
-
-      case ARRAY_EQUALITY()
         algorithm
           s := IOStream.append(s, Expression.toFlatString(eq.lhs, format));
           s := IOStream.append(s, " = ");
@@ -1633,14 +1568,10 @@ public
           for i in 1:Type.recordFieldCount(Type.arrayElementType(eq.ty)) loop
             lhs := Expression.nthRecordElement(i, eq.lhs);
             rhs := Expression.nthRecordElement(i, eq.rhs);
-            equations := EQUALITY(lhs, rhs, Expression.typeOf(lhs), eq.scope, eq.source) :: equations;
+            equations := EQUALITY(lhs, rhs, Expression.typeOf(lhs), eq.scope, eq.source, eq.scalarizeMode) :: equations;
           end for;
         then
           equations;
-
-      case ARRAY_EQUALITY()
-        guard Type.isRecord(Type.arrayElementType(eq.ty))
-        then splitRecordEquation(EQUALITY(eq.lhs, eq.rhs, eq.ty, eq.scope, eq.source), equations);
 
       case FOR()
         algorithm

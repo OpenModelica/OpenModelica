@@ -258,7 +258,7 @@ algorithm
   if Type.isReal(var.ty) and Binding.isBound(var.binding) then
     binding_exp := Binding.getTypedExp(var.binding);
     eq := Equation.makeEquality(Expression.fromCref(var.name), binding_exp, var.ty,
-      InstNode.EMPTY_NODE(), ElementSource.createElementSource(var.info));
+      ElementSource.createElementSource(var.info));
     foldEquation(eq, htCr2U, htS2U, htU2S, fnCache, dumpEqInitStruct);
   end if;
 end foldBindingExp;
@@ -342,19 +342,6 @@ algorithm
         end if;
 
         (_, inconsistentUnits) := insertUnitInEquation(temp, Unit.MASTER({}), htCr2U, htS2U, htU2S, fnCache);
-      then
-        inconsistentUnits;
-
-    case Equation.ARRAY_EQUALITY()
-      algorithm
-        temp := Expression.BINARY(eq.rhs, Operator.makeSub(Type.REAL()), eq.lhs);
-
-        if dumpEqInitStruct then
-          ExpressionDump.dumpExp(Expression.toDAE(temp));
-        end if;
-
-        (_, inconsistentUnits) :=
-          insertUnitInEquation(temp, Unit.MASTER({}), htCr2U, htS2U, htU2S, fnCache);
       then
         inconsistentUnits;
 

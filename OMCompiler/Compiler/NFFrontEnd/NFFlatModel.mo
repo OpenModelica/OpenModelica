@@ -513,14 +513,6 @@ public
         then
           ();
 
-      case Equation.ARRAY_EQUALITY()
-        algorithm
-          collectExpFlatTypes(eq.lhs, types);
-          collectExpFlatTypes(eq.rhs, types);
-          collectFlatType(eq.ty, types);
-        then
-          ();
-
       case Equation.FOR()
         algorithm
           if isSome(eq.range) then
